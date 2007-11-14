@@ -171,6 +171,7 @@ SRC_EULER1D_EXE = $(EULER_1D_DIR)Euler1DMain.cc
 SRC_ADVECTDIFFUSE = $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DState.cc \
 	            $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DInput.cc \
                     $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuad.cc \
+                    $(ADVECTDIFFUSE_DIR)New_AdvectDiffuse2DQuad.cc \
 	            $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuadSingleBlock.cc \
                     $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuadMultiBlock.cc \
                     $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuadGrid.cc \
@@ -185,7 +186,9 @@ SRC_ADVECTDIFFUSE = $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DState.cc \
 SRC_ADVECTDIFFUSE_EXE = $(ADVECTDIFFUSE_DIR)AdvectDiffuse2D.cc
 
 # Add AdvectDiffuse 2D Testing If Required:
-SRC_ADVECTDIFFUSE_TESTS = test_AdvectDiffuse2DState.cc test_SourceTermFields.cc
+SRC_ADVECTDIFFUSE_TESTS = test_AdvectDiffuse2DState.cc \
+                          test_SourceTermFields.cc \
+                          test_AdvectDiffuse2DQuad.cc
 SRC_ADVECTDIFFUSE_TESTS := $(addprefix $(ADVECTDIFFUSE_DIR)UnitTests/, $(SRC_ADVECTDIFFUSE_TESTS))
 ifeq ($(TUT_TESTING),ON) 
   SRC_ADVECTDIFFUSE += $(SRC_ADVECTDIFFUSE_TESTS)
