@@ -1,6 +1,6 @@
 #ifndef _NKS_INCLUDED
 #define _NKS_INCLUDED
-/*! ********************** NKS2D.h ***********************************************
+/*! ********************** NKS.h *************************************************
  *          3D Newton-Krylov-Schwarz Parallel Implicit Solver                    *  
  *                                                                               *
  * These Templated Classes & Functions are designed to work with all (well most) *
@@ -244,18 +244,12 @@ Newton_Update(){
 	    for (int i = Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].ICl; 
 		 i <= Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].ICu; i++){
 
-// 	      cout<<"\n Uo["<<i<<","<<j<<","<<k<<"] = "<<Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].Uo[i][j][k];
-// 	      cout<<"\n dU["<<i<<","<<j<<","<<k<<"] = ";
-
 	      //Update solutions in conversed variables  U = Uo + deltaU = Uo + denormalized(x)	 
 	      for(int varindex =1; varindex <= Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].NumVar() ; varindex++){  
 		Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].U[i][j][k][varindex] = 
 		Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].Uo[i][j][k][varindex] 
 		+  GMRES.deltaU(Bcount,i,j,k,varindex-1);
-// 	      cout<<" "<<GMRES.deltaU(Bcount,i,j,k,varindex-1);
 	      } 	      	  
-
-// 	      cout<<"\n U["<<i<<","<<j<<","<<k<<"] = "<<Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].U[i][j][k];
 
 	      // THIS FUNCTION HAS NO CHECKS FOR INVALID SOLUTIONS, 
 	      // YOU PROBABLY WANT TO CREATE A SPECIALIZATION OF THIS FUNCTION SPECIFIC 
@@ -294,13 +288,11 @@ Finite_Time_Step(const int &Number_of_Newton_Steps){
   if (L2norm_current_n > Solution_Data->Input.NKS_IP.Min_Finite_Time_Step_Norm_Ratio ) { 
     CFL_current = Solution_Data->Input.NKS_IP.Finite_Time_Step_Initial_CFL*
       pow( max(ONE, ONE/L2norm_current_n),ONE ); 
-      //      pow(min(ONE, max(ONE, ONE/L2norm_current_n)*MIN_FINITE_TIME_STEP_NORM_RATIO),ONE );     
   } else {
     CFL_current = Solution_Data->Input.NKS_IP.Finite_Time_Step_Initial_CFL;
   } 
  
   return CFL_current;
-
 }
 
 
@@ -320,8 +312,6 @@ Solve(){
   // NKS Specific Output 
   if (CFFC_Primary_MPI_Processor() && !Data->batch_flag){ 
     cout << "\n\n Beginning NKS computations on " << Date_And_Time() << ".\n\n";
-
-    //cout << Solution_Data->Input.NKS_IP;   // Causes linking error ?? so call output directly
     Solution_Data->Input.NKS_IP.Output(cout);
     //Input_Parameters.NKS_IP.Memory_Estimates(blocksize,SolnBlk[0].NCi*SolnBlk[0].NCj,Used_blocks_count);
   }  
@@ -378,7 +368,7 @@ Solve(){
       error_flag = Steady_Solve(physical_time, DTS_Step);
              
       /**************************************************************************/
-
+      
       /**************************************************************************/			
       // After first step, reset to requested Time Integration Method
       if (DTS_Step == 1) {
@@ -421,8 +411,9 @@ Solve(){
     error_flag = Steady_Solve(Data->Time, DTS_Step);
   }
  
-
-  if (!Data->batch_flag) cout << "\n\n NKS computations complete on " << Date_And_Time() << ".\n"; cout.flush();
+  if (!Data->batch_flag){
+    cout << "\n\n NKS computations complete on " << Date_And_Time() << ".\n"; cout.flush();
+  }
 
   /**************************************************************************/  
   return CFFC_OR_MPI(error_flag); 
@@ -561,7 +552,7 @@ Steady_Solve(const double &physical_time,const int &DTS_Step){
     /**************************************************************************/
     /***************** NEWTON STEP ********************************************/
     /**************************************************************************/
- 
+    
     if (L2norm_current_n > Solution_Data->Input.NKS_IP.Overall_Tolerance){  
      
       /************************** TIME STEP *************************************/ 
@@ -588,7 +579,7 @@ Steady_Solve(const double &physical_time,const int &DTS_Step){
 		   j <= Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].JCu; j++){
 		for (int i = Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].ICl; 
 		     i <= Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].ICu; i++){
-		  Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].dt[i][j][k] *= CFL_current;
+		  Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].dt[i][j][k] *= CFL_current; 
 		}
 	      }
 	    }
@@ -609,7 +600,7 @@ Steady_Solve(const double &physical_time,const int &DTS_Step){
       /**************************************************************************/
 
    
-      // POSSIBLE MOVE THIS TO ITS OWN FUNCTION, LIKE NEWTON_UPDATE
+      // POSSIBLE MOVE THIS TO ITS OWN FUNCTION, CALL IT Store ??? or something
       /**************************************************************************/
       // Store  Uo, dt for use in GMRES & Preconditioner Calculations
       for ( int Bcount = 0 ; Bcount < Data->Local_Adaptive_Block_List.Nblk; ++Bcount ) {
@@ -630,7 +621,9 @@ Steady_Solve(const double &physical_time,const int &DTS_Step){
 		Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].Uo[i][j][k]= 
 		  Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].U[i][j][k];
 	          	      		
+		//if (Solution_Data->Input.Local_Time_Stepping != GLOBAL_TIME_STEPPING ){
 		//Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].dt[i][j][k] *= CFL_current;  //instead of above???
+		//}
 	      }
 	    } 
 	  } 	  
@@ -722,9 +715,10 @@ Steady_Solve(const double &physical_time,const int &DTS_Step){
       // END OF  if (L2norm_current_n > Solution_Data->Input.NKS_IP.Overall_Tolerance)
       /**************************************************************************/
     } else {       
+
       // L2norm_current_n < Solution_Data->Input.NKS_IP.Overall_Tolerance so set flag to "stop"     
       NKS_continue_flag = false;
-    } /* endif */
+    } 
     /**************************************************************************/
  
   }  // END OF NEWTON ITERATION WHILE LOOP
