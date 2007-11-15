@@ -1,7 +1,6 @@
 #ifndef _DTS_INCLUDED
 #define _DTS_INCLUDED
 
-
 /*! *****************************************************************************************
  * class: DTS_Quad_Block
  *

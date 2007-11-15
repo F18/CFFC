@@ -2133,11 +2133,10 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Linear_Reconstruction_LeastSquares(co
     
 }
 /********************************************************
- * Routine: dUdt_Multistage_Explicit                    *
+ * Routine: dUdt_Residual_Evaluation                    *
  *                                                      *
- * This routine determines the solution residuals for a *
- * given stage of a variety of multi-stage explicit     *
- * time integration schemes for a given solution block. *
+ * This routine determines the inviscid solution        *
+ * residuals for the given solution block.              *  
  *                                                      *
  ********************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>

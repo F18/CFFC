@@ -43,11 +43,6 @@ int dUdt_Residual_Evaluation_DTS(HexaSolver_Solution_Data<SOLN_pSTATE, SOLN_cSTA
 				 
   int error_flag = Solution_Data->Local_Solution_Blocks.Soln_Blks[Block].dUdt_Residual_Evaluation(Solution_Data->Input);
 
- 
-//   error_flag = Solution_Data->Local_Solution_Blocks.Soln_Blks[Block].dUdt_Multistage_Explicit(1,Solution_Data->Input);
-//   cout<<"\n R2 "<<Solution_Data->Local_Solution_Blocks.Soln_Blks[Block].dUdt[2][2][2][0]/
-//     (Solution_Data->Input.CFL_Number*Solution_Data->Local_Solution_Blocks.Soln_Blks[Block].dt[2][2][2]);
-
   // Add dual time stepping Source Term to Residual ie. dUdt[i][j][0]
   if ( Solution_Data->Input.NKS_IP.Dual_Time_Stepping) {                 //Do these line up with dUdt_Residual_Evaluation?????   
     for (int i = Solution_Data->Local_Solution_Blocks.Soln_Blks[Block].ICl; i <= Solution_Data->Local_Solution_Blocks.Soln_Blks[Block].ICu; i++) {   
