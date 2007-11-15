@@ -1,6 +1,7 @@
-/**********************************************************************
- * LevelSet2DState.h: Header file defining 2D LevelSet Solution State *
- *                    Classes.                                        *
+/******************************************************************//**
+ * \file LevelSet2DState.h
+ *
+ * Header file defining 2D LevelSet Solution State Classes.
  **********************************************************************/
 
 #ifndef _LEVELSET2D_STATE_INCLUDED

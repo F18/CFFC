@@ -1,0 +1,18 @@
+#!/bin/tcsh
+#
+#PBS -N star
+#PBS -q iqmaster
+#PBS -l walltime=1:00:00,nodes=1:ppn=4:itanium-8G,other=night
+#PBS -W group_list=cfd
+
+cd /nfs/fe03/d1/cfd/samuel/CFFC/examples/LevelSet2D/star/curvature/
+mpirun -np 4 --gm-no-shmem --gm-kill 2 /nfs/fe03/d1/cfd/samuel/CFFC/src_2D/levelset2D -f star.in >& star.log
+cat star_cpu*.dat > points.dat
+cat star_cells_cpu*.dat > cells.dat
+cat star_nodes_cpu*.dat > nodes.dat
+cat star_interface_list_cpu*.dat > interface_list.dat
+rm star_cpu*.dat
+rm star_cells_cpu*.dat
+rm star_nodes_cpu*.dat
+rm star_interface_list_cpu*.dat
+rm star.e* star.o*

@@ -1,7 +1,6 @@
 #ifndef _DTS_INCLUDED
 #define _DTS_INCLUDED
 
-
 /*! *****************************************************************************************
  * class: DTS_Quad_Block
  *
@@ -71,7 +70,7 @@ class DTS_Hexa_Block {
     if (Unminus1 != NULL) { delete []Unminus1; Unminus1 = NULL; }
   }
  
-  void Store_Previous();
+  void Store_Previous(Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> &);
 };
 
 /*! *******************************************************************
@@ -82,17 +81,17 @@ class DTS_Hexa_Block {
  **********************************************************************/
 template <typename SOLN_pSTATE, typename SOLN_cSTATE> 
 void DTS_Hexa_Block<SOLN_pSTATE,SOLN_cSTATE>::
-Store_Previous(){
-
-//   for (int i = SolnBlk.ICl; i <= SolnBlk.ICu; i++) {
-//     for (int j = SolnBlk.JCl; j <= SolnBlk.JCu; j++) {
-//       for (int k = 0; k < blocksize; k++) {
-// 	Unminus1[i][j][k] =Un[i][j][k];        // t(n-1) 
-// 	Un[i][j][k] = SolnBlk.U[i][j][k+1];    // t(n)	          
-//       }
-//     } 	      
-//   }
- 
+Store_Previous(Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> &Soln_Blk){
+  
+  for (int i = Soln_Blk.ICl; i <= Soln_Blk.ICu; i++) {   
+    for (int j = Soln_Blk.JCl; j <= Soln_Blk.JCu; j++) {
+      for (int k = Soln_Blk.KCl; k <= Soln_Blk.KCu; k++) {
+	
+	Unminus1[i][j][k] = Un[i][j][k];        // t(n-1) 
+	Un[i][j][k] = Soln_Blk.U[i][j][k];    // t(n)	          
+      }
+    }
+  } 	       
 }
 
 

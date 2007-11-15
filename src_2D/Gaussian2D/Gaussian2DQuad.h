@@ -31,10 +31,6 @@
 #include "Gaussian2DInput.h"
 #endif // _GAUSSIAN2D_INPUT_INCLUDED
 
-#ifndef _GAUSSIAN2D_INPUT_INCLUDED
-#include "Gaussian2DInput.h"
-#endif // _GAUSSIAN2D_INPUT_INCLUDED
-
 #ifndef _SYSTEM_LINUX_INCLUDED
 #include "../System/System_Linux.h"
 #endif // _GAUSSIAN2D_INPUT_INCLUDED

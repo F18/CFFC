@@ -1,8 +1,8 @@
-/**********************************************************************
- * LevelSet2DInput.cc                                                 *
- *                                                                    *
- * Subroutines for 2D Level Set input classes.                        *
- *                                                                    *
+/******************************************************************//**
+ * \file LevelSet2DInput.cc                                           
+ *                                                                    
+ * Subroutines for 2D Level Set input classes.                        
+ *                                                                    
  **********************************************************************/
 
 // Include 2D LevelSet input parameter header file.
@@ -14,11 +14,11 @@
  * LevelSet2D_Input_Parameters -- External subroutines.               *
  **********************************************************************/
 
-/**********************************************************************
- * Routine: Open_Input_File                                           *
- *                                                                    *
- * Opens the appropriate input data file.                             *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Open_Input_File                                           
+ *                                                                    
+ * Opens the appropriate input data file.                             
+ *                                                                    
  **********************************************************************/
 void Open_Input_File(LevelSet2D_Input_Parameters &IP) {
 
@@ -30,11 +30,11 @@ void Open_Input_File(LevelSet2D_Input_Parameters &IP) {
 
 }
 
-/**********************************************************************
- * Routine: Close_Input_File                                          *
- *                                                                    *
- * Closes the appropriate input data file.                            *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Close_Input_File                                          
+ *                                                                    
+ * Closes the appropriate input data file.                            
+ *                                                                    
  **********************************************************************/
 void Close_Input_File(LevelSet2D_Input_Parameters &IP) {
 
@@ -43,11 +43,11 @@ void Close_Input_File(LevelSet2D_Input_Parameters &IP) {
 
 }
 
-/**********************************************************************
- * Routine: Set_Default_Input_Parameters                              *
- *                                                                    *
- * Assigns default values to the input parameters.                    *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Set_Default_Input_Parameters                              
+ *                                                                    
+ * Assigns default values to the input parameters.                    
+ *                                                                    
  **********************************************************************/
 void Set_Default_Input_Parameters(LevelSet2D_Input_Parameters &IP) {
 
@@ -80,6 +80,9 @@ void Set_Default_Input_Parameters(LevelSet2D_Input_Parameters &IP) {
   IP.Extension_Distance = MILLION;
 
   // Eikonal equation parameters:
+  string_ptr = "Frequency";
+  strcpy(IP.Redistance_Criteria,string_ptr);
+  IP.i_Redistance_Criteria = EIKONAL_CRITERIA_FREQUENCY;
   IP.Redistance_Frequency = 1;
   IP.Redistance_Tolerance = 0.001;
   IP.Number_of_Initial_Redistance_Iterations = 200;
@@ -87,12 +90,10 @@ void Set_Default_Input_Parameters(LevelSet2D_Input_Parameters &IP) {
   string_ptr = "Sussman";
   strcpy(IP.Eikonal_Scheme,string_ptr);
   IP.i_Eikonal_Scheme = EIKONAL_SCHEME_SUSSMAN;
-  string_ptr = "Godunov";
-  strcpy(IP.Eikonal_Selection,string_ptr);
-  IP.i_Eikonal_Selection = EIKONAL_SELECTION_GODUNOV;
   string_ptr = "Derivative";
   strcpy(IP.Eikonal_Sign_Function,string_ptr);
   IP.i_Eikonal_Sign_Function = EIKONAL_SIGN_FUNCTION_DERIVATIVE;
+  IP.Eikonal_Threshold = HALF;
 
   // Scalar extension equation parameters:
   IP.Scalar_Extension_CFL_Number = HALF;
@@ -112,6 +113,12 @@ void Set_Default_Input_Parameters(LevelSet2D_Input_Parameters &IP) {
   string_ptr = "Constant_Extrapolation";
   strcpy(IP.BC_Type,string_ptr);
   IP.i_BC_Type = BC_CONSTANT_EXTRAPOLATION;
+
+  // Curvature driven flow default value.
+  IP.Curvature_Speed = ZERO;
+  string_ptr = "Laplacian";
+  strcpy(IP.Curvature_Scheme,string_ptr);
+  IP.i_Curvature_Scheme = CURVATURE_SCHEME_LAPLACIAN;
 
   // Bulk flow field default values.
   string_ptr = "None";
@@ -195,13 +202,13 @@ void Set_Default_Input_Parameters(LevelSet2D_Input_Parameters &IP) {
 
 }
 
-/**********************************************************************
- * Routine: Broadcast_Input_Parameters                                *
- *                                                                    *
- * Broadcast the input parameters variables to all processors         *
- * involved in the calculation from the primary processor using the   *
- * MPI broadcast routine.                                             *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Broadcast_Input_Parameters                                
+ *                                                                    
+ * Broadcast the input parameters variables to all processors         
+ * involved in the calculation from the primary processor using the   
+ * MPI broadcast routine.                                             
+ *                                                                    
  **********************************************************************/
 void Broadcast_Input_Parameters(LevelSet2D_Input_Parameters &IP) {
 
@@ -280,6 +287,9 @@ void Broadcast_Input_Parameters(LevelSet2D_Input_Parameters &IP) {
 			1,
 			MPI::DOUBLE,0);
   // Eikonal equation parameters.
+  MPI::COMM_WORLD.Bcast(&(IP.i_Redistance_Criteria),
+			1,
+			MPI::INT,0);
   MPI::COMM_WORLD.Bcast(&(IP.Redistance_Frequency),
 			1,
 			MPI::INT,0);
@@ -301,23 +311,30 @@ void Broadcast_Input_Parameters(LevelSet2D_Input_Parameters &IP) {
   MPI::COMM_WORLD.Bcast(&(IP.i_Eikonal_Scheme),
 			1,
 			MPI::INT,0);
-  MPI::COMM_WORLD.Bcast(IP.Eikonal_Selection,
-			INPUT_PARAMETER_LENGTH_LEVELSET2D,
-			MPI::CHAR,0);
-  MPI::COMM_WORLD.Bcast(&(IP.i_Eikonal_Selection),
-			1,
-			MPI::INT,0);
   MPI::COMM_WORLD.Bcast(IP.Eikonal_Sign_Function,
 			INPUT_PARAMETER_LENGTH_LEVELSET2D,
 			MPI::CHAR,0);
   MPI::COMM_WORLD.Bcast(&(IP.i_Eikonal_Sign_Function),
 			1,
 			MPI::INT,0);
+  MPI::COMM_WORLD.Bcast(&(IP.Eikonal_Threshold),
+			1,
+			MPI::DOUBLE,0);
   // Scalar (front speed) extension equation parameters.
   MPI::COMM_WORLD.Bcast(&(IP.Scalar_Extension_CFL_Number),
 			1,
 			MPI::DOUBLE,0);
   MPI::COMM_WORLD.Bcast(&(IP.Number_of_Scalar_Extension_Iterations),
+			1,
+			MPI::INT,0);
+  // Pass the curvature motion parameters.
+  MPI::COMM_WORLD.Bcast(&(IP.Curvature_Speed),
+			1,
+			MPI::DOUBLE,0);
+  MPI::COMM_WORLD.Bcast(IP.Curvature_Scheme,
+			INPUT_PARAMETER_LENGTH_LEVELSET2D,
+			MPI::CHAR,0);
+  MPI::COMM_WORLD.Bcast(&(IP.i_Curvature_Scheme),
 			1,
 			MPI::INT,0);
   // Pass the bulk flowfield type.
@@ -503,13 +520,13 @@ void Broadcast_Input_Parameters(LevelSet2D_Input_Parameters &IP) {
 }
 
 #ifdef _MPI_VERSION
-/**********************************************************************
- * Routine: Broadcast_Input_Parameters                                *
- *                                                                    *
- * Broadcast the input parameters variables to all processors         *
- * associated with the specified communicator from the specified      *
- * processor using the MPI broadcast routine.                         *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Broadcast_Input_Parameters                                
+ *                                                                    
+ * Broadcast the input parameters variables to all processors         
+ * associated with the specified communicator from the specified      
+ * processor using the MPI broadcast routine.                         
+ *                                                                    
  **********************************************************************/
 void Broadcast_Input_Parameters(LevelSet2D_Input_Parameters &IP,
                                 MPI::Intracomm &Communicator,
@@ -591,6 +608,9 @@ void Broadcast_Input_Parameters(LevelSet2D_Input_Parameters &IP,
 		     1,
 		     MPI::DOUBLE,Source_Rank);
   // Eikonal equation parameters:
+  Communicator.Bcast(&(IP.i_Redistance_Criteria),
+		     1,
+		     MPI::INT,Source_Rank);
   Communicator.Bcast(&(IP.Redistance_Frequency),
 		     1,
 		     MPI::INT,Source_Rank);
@@ -612,23 +632,30 @@ void Broadcast_Input_Parameters(LevelSet2D_Input_Parameters &IP,
   Communicator.Bcast(&(IP.i_Eikonal_Scheme),
 		     1,
 		     MPI::INT,Source_Rank);
-  Communicator.Bcast(IP.Eikonal_Selection,
-		     INPUT_PARAMETER_LENGTH_LEVELSET2D,
-		     MPI::CHAR,Source_Rank);
-  Communicator.Bcast(&(IP.i_Eikonal_Selection),
-		     1,
-		     MPI::INT,Source_Rank);
   Communicator.Bcast(IP.Eikonal_Sign_Function,
 		     INPUT_PARAMETER_LENGTH_LEVELSET2D,
 		     MPI::CHAR,Source_Rank);
   Communicator.Bcast(&(IP.i_Eikonal_Sign_Function),
 		     1,
 		     MPI::INT,Source_Rank);
+  Communicator.Bcast(&(IP.Eikonal_Threshold),
+		     1,
+		     MPI::DOUBLE,Source_Rank);
   // Scalar (front speed) extension equation parameters:
   Communicator.Bcast(&(IP.Scalar_Extension_CFL_Number),
 		     1,
 		     MPI::DOUBLE,Source_Rank);
   Communicator.Bcast(&(IP.Number_of_Scalar_Extension_Iterations),
+		     1,
+		     MPI::INT,Source_Rank);
+  // Pass the curvature motion parameters:
+  Communicator.Bcast(&(IP.Curvature_Speed),
+		     1,
+		     MPI::DOUBLE,Source_Rank);
+  Communicator.Bcast(IP.Curvature_Scheme,
+		     INPUT_PARAMETER_LENGTH_LEVELSET2D,
+		     MPI::CHAR,Source_Rank);
+  Communicator.Bcast(&(IP.i_Curvature_Scheme),
 		     1,
 		     MPI::INT,Source_Rank);
   // Pass the bulk flowfield type:
@@ -813,11 +840,11 @@ void Broadcast_Input_Parameters(LevelSet2D_Input_Parameters &IP,
 }
 #endif
 
-/**********************************************************************
- * Routine: Get_Next_Input_Control_Parameter                          *
- *                                                                    *
- * Get the next input control parameter from the input file.          *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Get_Next_Input_Control_Parameter                          
+ *                                                                    
+ * Get the next input control parameter from the input file.          
+ *                                                                    
  **********************************************************************/
 void Get_Next_Input_Control_Parameter(LevelSet2D_Input_Parameters &IP) {
 
@@ -839,12 +866,12 @@ void Get_Next_Input_Control_Parameter(LevelSet2D_Input_Parameters &IP) {
 
 }
 
-/**********************************************************************
- * Routine: Parse_Next_Input_Control_Parameter                        *
- *                                                                    *
- * Parses and executes the next input control parameter from the      *
- * input file.                                                        *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Parse_Next_Input_Control_Parameter                        
+ *                                                                    
+ * Parses and executes the next input control parameter from the      
+ * input file.                                                        
+ *                                                                    
  **********************************************************************/
 int Parse_Next_Input_Control_Parameter(LevelSet2D_Input_Parameters &IP) {
 
@@ -947,11 +974,9 @@ int Parse_Next_Input_Control_Parameter(LevelSet2D_Input_Parameters &IP) {
   } else if (strcmp(IP.Next_Control_Parameter,"Perturb_Distance_Function") == 0) {
     i_command = 5;
     Get_Next_Input_Control_Parameter(IP);
-    if (strcmp(IP.Next_Control_Parameter,"ON") == 0 ||
-	strcmp(IP.Next_Control_Parameter,"ON") == 0) {
+    if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
       IP.Perturb_Distance_Function = ON;
-    } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0 ||
-	       strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
+    } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
       IP.Perturb_Distance_Function = OFF;
     } else {
       i_command = INVALID_INPUT_VALUE;
@@ -963,6 +988,19 @@ int Parse_Next_Input_Control_Parameter(LevelSet2D_Input_Parameters &IP) {
     IP.Input_File >> IP.Extension_Distance;
     IP.Input_File.getline(buffer,sizeof(buffer));
     if (IP.Extension_Distance <= ZERO) i_command = INVALID_INPUT_VALUE;
+
+  } else if (strcmp(IP.Next_Control_Parameter,"Redistance_Criteria") == 0) {
+    i_command = 5;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.Redistance_Criteria;
+    IP.Input_File.getline(buffer,sizeof(buffer));
+    if (strcmp(IP.Redistance_Criteria,"Threshold") == 0) {
+      IP.i_Redistance_Criteria = EIKONAL_CRITERIA_THRESHOLD;
+    } else if (strcmp(IP.Redistance_Criteria,"Frequency") == 0) {
+      IP.i_Redistance_Criteria = EIKONAL_CRITERIA_FREQUENCY;
+    } else {
+      i_command = INVALID_INPUT_VALUE;
+    }
 
   } else if (strcmp(IP.Next_Control_Parameter,"Redistance_Frequency") == 0) {
     i_command = 5;
@@ -1005,18 +1043,6 @@ int Parse_Next_Input_Control_Parameter(LevelSet2D_Input_Parameters &IP) {
       i_command = INVALID_INPUT_VALUE;
     }
 
-  } else if (strcmp(IP.Next_Control_Parameter,"Eikonal_Selection") == 0) {
-    i_command = 5;
-    Get_Next_Input_Control_Parameter(IP);
-    strcpy(IP.Eikonal_Selection,IP.Next_Control_Parameter);
-    if (strcmp(IP.Eikonal_Selection,"Godunov") == 0) {
-      IP.i_Eikonal_Selection = EIKONAL_SELECTION_GODUNOV;
-    } else if (strcmp(IP.Eikonal_Selection,"Original") == 0) {
-      IP.i_Eikonal_Selection = EIKONAL_SELECTION_ORIGINAL;
-    } else {
-      i_command = INVALID_INPUT_VALUE;
-    }
-
   } else if (strcmp(IP.Next_Control_Parameter,"Eikonal_Sign_Function") == 0) {
     i_command = 5;
     Get_Next_Input_Control_Parameter(IP);
@@ -1025,11 +1051,20 @@ int Parse_Next_Input_Control_Parameter(LevelSet2D_Input_Parameters &IP) {
       IP.i_Eikonal_Sign_Function = EIKONAL_SIGN_FUNCTION_DISCRETE;
     } else if (strcmp(IP.Eikonal_Sign_Function,"Smeared") == 0) {
       IP.i_Eikonal_Sign_Function = EIKONAL_SIGN_FUNCTION_SMEARED;
+    } else if (strcmp(IP.Eikonal_Sign_Function,"Smeared_Macdonald") == 0) {
+      IP.i_Eikonal_Sign_Function = EIKONAL_SIGN_FUNCTION_SMEARED_MACDONALD;
     } else if (strcmp(IP.Eikonal_Sign_Function,"Derivative") == 0) {
       IP.i_Eikonal_Sign_Function = EIKONAL_SIGN_FUNCTION_DERIVATIVE;
     } else {
       i_command = INVALID_INPUT_VALUE;
     }
+
+  } else if (strcmp(IP.Next_Control_Parameter,"Eikonal_Threshold") == 0) {
+    i_command = 5;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.Eikonal_Threshold;
+    IP.Input_File.getline(buffer,sizeof(buffer));
+    if (IP.Eikonal_Threshold < ZERO) i_command = INVALID_INPUT_VALUE;
 
   } else if (strcmp(IP.Next_Control_Parameter,"Number_of_Scalar_Extension_Iterations") == 0) {
     i_command = 5;
@@ -1037,6 +1072,25 @@ int Parse_Next_Input_Control_Parameter(LevelSet2D_Input_Parameters &IP) {
     IP.Input_File >> IP.Number_of_Scalar_Extension_Iterations;
     IP.Input_File.getline(buffer,sizeof(buffer));
     if (IP.Number_of_Scalar_Extension_Iterations < 0) i_command = INVALID_INPUT_VALUE;
+
+  } else if (strcmp(IP.Next_Control_Parameter,"Curvature_Speed") == 0) {
+    i_command = 5;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.Curvature_Speed;
+    IP.Input_File.getline(buffer,sizeof(buffer));
+    if (IP.Curvature_Speed < ZERO) i_command = INVALID_INPUT_VALUE;
+
+  } else if (strcmp(IP.Next_Control_Parameter,"Curvature_Scheme") == 0) {
+    i_command = 5;
+    Get_Next_Input_Control_Parameter(IP);
+    strcpy(IP.Curvature_Scheme,IP.Next_Control_Parameter);
+    if (strcmp(IP.Curvature_Scheme,"Laplacian") == 0) {
+      IP.i_Curvature_Scheme = CURVATURE_SCHEME_LAPLACIAN;
+    } else if (strcmp(IP.Curvature_Scheme,"Regular") == 0) {
+      IP.i_Curvature_Scheme = CURVATURE_SCHEME_REGULAR;
+    } else {
+      i_command = INVALID_INPUT_VALUE;
+    }
 
   } else if (strcmp(IP.Next_Control_Parameter,"Bulk_Flow_Field_Type") == 0) {
     i_command = 6;
@@ -1563,6 +1617,8 @@ int Parse_Next_Input_Control_Parameter(LevelSet2D_Input_Parameters &IP) {
       IP.Interface_IP.Component_List[IP.Interface_IP.ci].Type = INTERFACE_NACA0015_AEROFOIL;
     } else if (strcmp(IP.Interface_IP.Type,"Zalesaks_Disk") == 0) {
       IP.Interface_IP.Component_List[IP.Interface_IP.ci].Type = INTERFACE_ZALESAK;
+    } else if (strcmp(IP.Interface_IP.Type,"Star") == 0) {
+      IP.Interface_IP.Component_List[IP.Interface_IP.ci].Type = INTERFACE_STAR;
     } else if (strcmp(IP.Interface_IP.Type,"User_Specified") == 0) {
       IP.Interface_IP.Component_List[IP.Interface_IP.ci].Type = INTERFACE_USER_SPECIFIED;
     } else if (strcmp(IP.Interface_IP.Type,"Restart") == 0) {
@@ -1699,12 +1755,12 @@ int Parse_Next_Input_Control_Parameter(LevelSet2D_Input_Parameters &IP) {
 
 }
 
-/**********************************************************************
- * Routine: Process_Input_Control_Parameter_File                      *
- *                                                                    *
- * Reads,parses,and executes the list of input control parameters     *
- * from the standard input file.                                      *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Process_Input_Control_Parameter_File                      
+ *                                                                    
+ * Reads,parses,and executes the list of input control parameters     
+ * from the standard input file.                                      
+ *                                                                    
  **********************************************************************/
 int Process_Input_Control_Parameter_File(LevelSet2D_Input_Parameters &Input_Parameters,
                                          char *Input_File_Name_ptr,
@@ -1750,7 +1806,7 @@ int Process_Input_Control_Parameter_File(LevelSet2D_Input_Parameters &Input_Para
     }
   }
 
-  // Perform consitency checks on the refinement criteria.
+  // Perform consistency checks on the refinement criteria.
   Input_Parameters.Number_of_Refinement_Criteria = 0;
   if (Input_Parameters.Refinement_Criteria_Curvature) Input_Parameters.Number_of_Refinement_Criteria++;
   if (Input_Parameters.Refinement_Criteria_Zero_Level_Set) {

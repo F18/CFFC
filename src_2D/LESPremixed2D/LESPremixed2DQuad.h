@@ -1,9 +1,11 @@
-/********************** LESPremixed2DQuad.h **********************************
-  Header file defining 2D Thermally Perfect Multiple Species Favre-Filtered
-  Navier-Stokes  Solution State Classes.
+/**
+   \file LESPremixed2DQuad.h
 
-  - based on Chem2DQuad.h 
-************************************************************************/
+   Header file defining 2D Thermally Perfect Multiple Species Favre-Filtered
+   Navier-Stokes  Solution State Classes.
+
+   - based on Chem2DQuad.h 
+*/
 
 #ifndef _LESPREMIXED2D_QUAD_INCLUDED
 #define _LESPREMIXED2D_QUAD_INCLUDED
@@ -192,8 +194,9 @@
  * cout << S; (output function)                         *
  * cin  >> S; (input function)                          *
  *                                                      *
- * \endverbatim
- */
+ * \endverbatim                                         *
+ *                                                      *
+ ********************************************************/
 class LESPremixed2D_Quad_Block{
   private:
   public:
@@ -367,42 +370,52 @@ class LESPremixed2D_Quad_Block{
   double enstrophy_n(const int &ii, const int &jj);
   double vorticity(const int &i,const int &j);
   double enstrophy(const int &i,const int &j);        
-    /****************************************************************************/   
 
-    double M_x_n(const int &ii, const int &jj);
-    double M_y_n(const int &ii, const int &jj);
-    double Reaction_Rate_Progvar_n(const int &ii, const int &jj);
-    double Reaction_Rate_Algebraic_n(const int &ii, const int &jj, const int &Flow_Type, const int &Axisymmetric);
-    double Reaction_Rate_NGT_C_Fsd_n(const int &ii, const int &jj);
-    double Reaction_Rate_Fsd_n(const int &ii, const int &jj);
-    double Resolved_Strain_n(const int &ii, const int &jj);
-    double Resolved_Propagation_Curvature_n(const int &ii, const int &jj);
-    double Resolved_Curvature_n(const int &ii, const int &jj); 
-    double Resolved_Propagation_n(const int &ii, const int &jj); 
-    double SFS_Strain_n(const int &ii, const int &jj, const int &Flow_Type, const int &Axisymmetric);
-    double SFS_Curvature_n(const int &ii, const int &jj, const int &Flow_Type);
-    double Resolved_Convection_Progvar_n(const int &ii, const int &jj); 
-    double Resolved_Convection_Fsd_n(const int &ii, const int &jj); 
-    double NGT_Progvar_n(const int &ii, const int &jj); 
-    double NGT_Fsd_n(const int &ii, const int &jj); 
-    double Heat_Release_Strain_n(const int &ii, const int &jj); 
+  /****************************************************************************/   
+
+  double M_x_n(const int &ii, const int &jj);
+  double M_y_n(const int &ii, const int &jj);
+  double Reaction_Rate_Progvar_n(const int &ii, const int &jj);
+  double Reaction_Rate_Algebraic_n(const int &ii, const int &jj, const int &Flow_Type, const int &Axisymmetric);
+  double Reaction_Rate_NGT_C_Fsd_n(const int &ii, const int &jj);
+  double Reaction_Rate_Fsd_n(const int &ii, const int &jj);
+  double Resolved_Strain_n(const int &ii, const int &jj);
+  double Resolved_Propagation_Curvature_n(const int &ii, const int &jj);
+  double Resolved_Curvature_n(const int &ii, const int &jj); 
+  double Resolved_Propagation_n(const int &ii, const int &jj); 
+  double SFS_Strain_n(const int &ii, const int &jj, const int &Flow_Type, const int &Axisymmetric);
+  double SFS_Curvature_n(const int &ii, const int &jj, const int &Flow_Type);
+  double Resolved_Convection_Progvar_n(const int &ii, const int &jj); 
+  double Resolved_Convection_Fsd_n(const int &ii, const int &jj); 
+  double NGT_Progvar_n(const int &ii, const int &jj); 
+  double NGT_Fsd_n(const int &ii, const int &jj); 
+  double Heat_Release_Strain_n(const int &ii, const int &jj); 
   
-  /* Set flags for limiter evaluation. */
-  void evaluate_limiters(void) {Freeze_Limiter = OFF; } 
-  void freeze_limiters(void) {Freeze_Limiter = ON; }
-  
-  /* Input-output operators. */
+  /************************************************************//**
+   * @name Set flags for limiter evaluation.
+   ****************************************************************/
+  //@{
+  //! Unfreeze limiters.
+  void evaluate_limiters(void) { Freeze_Limiter = OFF; } 
+  //! Freeze limiters.
+  void freeze_limiters(void) { Freeze_Limiter = ON; }
+  //@}
+
+  /************************************************************//**
+   * @name Input-output operators.
+   ****************************************************************/
   friend ostream &operator << (ostream &out_file,
-			       const LESPremixed2D_Quad_Block
-			       &Soln);
+			       const LESPremixed2D_Quad_Block &Soln);
   friend istream &operator >> (istream &in_file,
-			       LESPremixed2D_Quad_Block
-			       &Soln);
+			       LESPremixed2D_Quad_Block &Soln);
 
-  /* MEMBER FUNCTIONS REQUIRED FOR MESSAGE PASSING. */
-  /* Number of solution state variables. */
+  /************************************************************//**
+   * @name Member functions required for message passing.
+   ****************************************************************/
+  //@{
+  //! Number of solution state variables.
   int NumVar(void);
-  /* Load send message passing buffer. */
+  //! Load send message passing buffer.
   int LoadSendBuffer(double *buffer,
 		     int &buffer_count,
 		     const int buffer_size,
@@ -412,6 +425,7 @@ class LESPremixed2D_Quad_Block{
 		     const int j_min,
 		     const int j_max,
 		     const int j_inc);
+  //! Load F2C send message passing buffer.
   int LoadSendBuffer_F2C(double *buffer,
 			 int &buffer_count,
 			 const int buffer_size,
@@ -421,6 +435,7 @@ class LESPremixed2D_Quad_Block{
 			 const int j_min,
 			 const int j_max,
 			 const int j_inc);
+  //! Load C2F send message passing buffer.
   int LoadSendBuffer_C2F(double *buffer,
 			 int &buffer_count,
 			 const int buffer_size,
@@ -432,7 +447,7 @@ class LESPremixed2D_Quad_Block{
 			 const int j_inc,
 			 const int face,
 			 const int sector);
-  /* Unload receive message passing buffer. */
+  //! Unload receive message passing buffer.
   int UnloadReceiveBuffer(double *buffer,
 			  int &buffer_count,
 			  const int buffer_size,
@@ -442,6 +457,7 @@ class LESPremixed2D_Quad_Block{
 			  const int j_min,
 			  const int j_max,
 			  const int j_inc);
+  //! Unload F2C receive message passing buffer.
   int UnloadReceiveBuffer_F2C(double *buffer,
 			      int &buffer_count,
 			      const int buffer_size,
@@ -451,6 +467,7 @@ class LESPremixed2D_Quad_Block{
 			      const int j_min,
 			      const int j_max,
 			      const int j_inc);
+  //! Unload C2F receive message passing buffer.
   int UnloadReceiveBuffer_C2F(double *buffer,
 			      int &buffer_count,
 			      const int buffer_size,
@@ -459,13 +476,13 @@ class LESPremixed2D_Quad_Block{
 			      const int i_inc,
 			      const int j_min,
 			      const int j_max,
-                                const int j_inc);
-  /* Subcell solution reconstruction within given computational cell. */
+			      const int j_inc);
+  //! Subcell solution reconstruction within given computational cell.
   void SubcellReconstruction(const int i,
 			     const int j,
 			     const int Limiter);
   
-  /* Load and unload conservative flux message passing buffer. */
+  //! Load and unload conservative flux message passing buffer.
   int LoadSendBuffer_Flux_F2C(double *buffer,
 			      int &buffer_count,
 			      const int buffer_size,
@@ -475,6 +492,7 @@ class LESPremixed2D_Quad_Block{
 			      const int j_min,
 			      const int j_max,
 			      const int j_inc);
+  //! Unload F2C conservative flux message passing buffer.
   int UnloadReceiveBuffer_Flux_F2C(double *buffer,
 				   int &buffer_count,
 				   const int buffer_size,
@@ -484,6 +502,8 @@ class LESPremixed2D_Quad_Block{
 				   const int j_min,
 				   const int j_max,
 				   const int j_inc);
+  //@}
+
   /* Destructor. */
   // ~LESPremixed2D_Quad_Block(void);
   // Use automatically generated destructor
@@ -507,7 +527,7 @@ class LESPremixed2D_Quad_Block{
  **************************************************************************/
 inline void LESPremixed2D_Quad_Block::allocate(const int Ni, const int Nj, const int Ng) {
   assert(Ni > 1 && Nj > 1); Grid.allocate(Ni, Nj, Ng);
-   NCi = Ni+2*Ng; ICl = Ng; ICu = Ni+Ng-1;
+  NCi = Ni+2*Ng; ICl = Ng; ICu = Ni+Ng-1;
    NCj = Nj+2*Ng; JCl = Ng; JCu = Nj+Ng-1; Nghost = Ng;
    W = new LESPremixed2D_pState*[NCi]; U = new LESPremixed2D_cState*[NCi];
    dt = new double*[NCi];
@@ -1451,14 +1471,14 @@ inline int LESPremixed2D_Quad_Block::NumVar(void) {
  * LESPremixed2D_Quad_Block::LoadSendBuffer -- Loads send message buffer.      *
  *******************************************************************************/
 inline int LESPremixed2D_Quad_Block::LoadSendBuffer(double *buffer,
-                                              int &buffer_count,
-                                              const int buffer_size,
-                                              const int i_min, 
-                                              const int i_max,
-                                              const int i_inc,
-                                              const int j_min, 
-                                              const int j_max,
-                                              const int j_inc) {
+						    int &buffer_count,
+						    const int buffer_size,
+						    const int i_min, 
+						    const int i_max,
+						    const int i_inc,
+						    const int j_min, 
+						    const int j_max,
+						    const int j_inc) {
   int NUM_VAR_LESPREMIXED2D = NumVar();
   int i, j, k;
   for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
@@ -1479,14 +1499,14 @@ inline int LESPremixed2D_Quad_Block::LoadSendBuffer(double *buffer,
  *                                           passing.                          *
  *******************************************************************************/
 inline int LESPremixed2D_Quad_Block::LoadSendBuffer_F2C(double *buffer,
-                                                  int &buffer_count,
-                                                  const int buffer_size,
-                                                  const int i_min, 
-                                                  const int i_max,
-                                                  const int i_inc,
-                                                  const int j_min, 
-                                                  const int j_max,
-                                                  const int j_inc) {
+							int &buffer_count,
+							const int buffer_size,
+							const int i_min, 
+							const int i_max,
+							const int i_inc,
+							const int j_min, 
+							const int j_max,
+							const int j_inc) {
   int NUM_VAR_LESPREMIXED2D = NumVar();
   int i, j, k;
   for ( j  = j_min ; ((j_inc+2)/4) ? (j < j_max):(j > j_max) ; j += j_inc ) {
@@ -1518,16 +1538,16 @@ inline int LESPremixed2D_Quad_Block::LoadSendBuffer_F2C(double *buffer,
  *                                           passing.                          *
  *******************************************************************************/
 inline int LESPremixed2D_Quad_Block::LoadSendBuffer_C2F(double *buffer,
-						 int &buffer_count,
-						 const int buffer_size,
-						 const int i_min, 
-						 const int i_max,
-						 const int i_inc,
-						 const int j_min, 
-						 const int j_max,
-						 const int j_inc,
-						 const int face,
-						 const int sector) {
+							int &buffer_count,
+							const int buffer_size,
+							const int i_min, 
+							const int i_max,
+							const int i_inc,
+							const int j_min, 
+							const int j_max,
+							const int j_inc,
+							const int face,
+							const int sector) {
   int NUM_VAR_LESPREMIXED2D = NumVar();
   int i, j, k;
   Vector2D dX;

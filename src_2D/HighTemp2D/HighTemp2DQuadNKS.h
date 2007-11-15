@@ -164,58 +164,57 @@ inline void Block_Preconditioner<HighTemp2D_pState,
 normalize_Preconditioner_dFdU(DenseMatrix &dFdU) 
 {
 	double ao  = HighTemp2D_W_STDATM.a();
-
-	// First row of dFdU is partial of (rho)(u) w.r.t. [U] 
-	// and as such should be scaled as:
-	dFdU(0,0) *= ONE/ao;
+	
+  // First row of dFdU is partial of (rho)(u) w.r.t. [U] 
+  // and as such should be scaled as:
+  dFdU(0,0) *= ONE/ao;
 //dFdU(0,1) *= ONE;
 //dFdU(0,2) *= ONE;
-	dFdU(0,3) *= ao;
-	dFdU(0,4) *= ONE/ao;
-	dFdU(0,5) *= ONE/ao;
+  dFdU(0,3) *= ao;
+  for (int i = 4; i < blocksize; i++) {
+    dFdU(0,i) *= ONE/ao;
+  }
 
-	// Next row is partial of (rho)(u)(u) w.r.t. [U]
-	// so it is scaled as the first row, but with an additional
-	// division by ao for each entry:
-	dFdU(1,0) *= ONE/ao/ao;
-	dFdU(1,1) *= ONE/ao;
-	dFdU(1,2) *= ONE/ao;
+  // Next row is partial of (rho)(u)(u) w.r.t. [U]
+  // so it is scaled as the first row, but with an additional
+  // division by ao for each entry:
+  dFdU(1,0) *= ONE/ao/ao;
+  dFdU(1,1) *= ONE/ao;
+  dFdU(1,2) *= ONE/ao;
 //dFdU(1,3) *= ONE;
-	dFdU(1,4) *= ONE/ao/ao;
-	dFdU(1,5) *= ONE/ao/ao;
+  for (int i = 4; i < blocksize; i++) {
+    dFdU(1,i) *= ONE/ao/ao;
+  }
 
-	// Next row is the same.
-	dFdU(2,0) *= ONE/ao/ao;
-	dFdU(2,1) *= ONE/ao;
-	dFdU(2,2) *= ONE/ao;
+  // Next row is the same.
+  dFdU(2,0) *= ONE/ao/ao;
+  dFdU(2,1) *= ONE/ao;
+  dFdU(2,2) *= ONE/ao;
 //dFdU(2,3) *= ONE;
-	dFdU(2,4) *= ONE/ao/ao;
-	dFdU(2,5) *= ONE/ao/ao;
+  for (int i = 4; i < blocksize; i++) {
+    dFdU(2,i) *= ONE/ao/ao;
+  }
 
-	// Add an additional /ao for energy flux:
-	dFdU(3,0) *= ONE/ao/ao/ao;
-	dFdU(3,1) *= ONE/ao/ao;
-	dFdU(3,2) *= ONE/ao/ao;
-	dFdU(3,3) *= ONE/ao;
-	dFdU(3,4) *= ONE/ao/ao/ao;
-	dFdU(3,5) *= ONE/ao/ao/ao;
+  // Add an additional /ao for energy flux:
+  dFdU(3,0) *= ONE/ao/ao/ao;
+  dFdU(3,1) *= ONE/ao/ao;
+  dFdU(3,2) *= ONE/ao/ao;
+  dFdU(3,3) *= ONE/ao;
+  for (int i = 4; i < blocksize; i++) {
+    dFdU(3,i) *= ONE/ao/ao/ao;
+  }
 
-	// We have scaled the two turbulence equations by rho. 
-	// So their rows are like the density flux rows:
-	dFdU(4,0) *= ONE/ao;
-//dFdU(4,1) *= ONE;
-//dFdU(4,2) *= ONE;
-	dFdU(4,3) *= ao;
-	dFdU(4,4) *= ONE/ao;
-	dFdU(4,5) *= ONE/ao;
-
-	dFdU(5,0) *= ONE/ao;
-//dFdU(5,1) *= ONE;
-//dFdU(5,2) *= ONE;
-	dFdU(5,3) *= ao;
-	dFdU(5,4) *= ONE/ao;
-	dFdU(5,5) *= ONE/ao;
-
+  // and then for the turbulence modelling: 
+  for (int i = 4; i < blocksize; i++) {
+    dFdU(i,0) *= ONE/ao;
+  //dFdU(i,1) *= ONE;
+  //dFdU(i,2) *= ONE;
+    dFdU(i,3) *= ao;
+    for (int j = 4; j < blocksize; j++) {
+      dFdU(i,j) *= ONE/ao;
+      dFdU(i,j) *= ONE/ao;
+    }
+  }
 }
 
 /************************************************************************/
@@ -242,15 +241,18 @@ set_normalize_values(void)
 	normalize_valuesU[1] = rho*ao;       //rho*u
 	normalize_valuesU[2] = rho*ao;       //rho*v
 	normalize_valuesU[3] = rho*ao*ao;    //rho*e
-  normalize_valuesU[4] = rho;          //rho*k     
-  normalize_valuesU[5] = rho;          //rho*omega 
+  // turbulence modelling variables all scale by the same value.
+  for (int i = 4; i < blocksize; i++) {
+    normalize_valuesU[i] = rho;
+  }
 
 	normalize_valuesR[0] = rho*ao;
 	normalize_valuesR[1] = rho*ao*ao;
 	normalize_valuesR[2] = rho*ao*ao;
 	normalize_valuesR[3] = rho*ao*ao*ao;
-  normalize_valuesR[4] = rho*ao;          //rho*k     
-  normalize_valuesR[5] = rho*ao;          //rho*omega 
+  for (int i = 4; i < blocksize; i++) {
+    normalize_valuesR[i] = rho*ao;
+  }
 }
 
 /*!**************************************************************
@@ -291,10 +293,11 @@ Preconditioner_dFVdU(DenseMatrix &dFvdU, int Rii, int Rjj,
     break;  
   }
 
-	int n_vars_wo_vel = NUM_VAR_HIGHTEMP2D - 2;
+  int spatial_dimension = 2;
+  int n_vars_wo_vel = NUM_VAR_HIGHTEMP2D - spatial_dimension;
 
-	// [rho , u , v , p , k , omega , rhox , ux , uy , vx , vy , px , kx , omegax]
-  int n_face_vars = (n_vars_wo_vel * 2) + 2 + 2*2;
+  // Wfx := [rho, rhox, u, ux, uy, v, vx, vy, p, px, k, kx, etc ...]
+  int n_face_vars = (n_vars_wo_vel * 2) + spatial_dimension*(spatial_dimension+1);
 
   DenseMatrix dFvdWf(NUM_VAR_HIGHTEMP2D, n_face_vars, ZERO);
   DenseMatrix dGvdWf(NUM_VAR_HIGHTEMP2D, n_face_vars, ZERO);

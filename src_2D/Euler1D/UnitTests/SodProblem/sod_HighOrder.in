@@ -1,0 +1,86 @@
+Time_Integration_Type =
+	Explicit_Predictor_Corrector
+Reconstruction_Type =
+	CENO
+Limiter_Type = 
+	Barth_Jespersen
+
+#********** CENO Parameters ********* 
+CENO_Epsilon = 
+	      1.0e-8
+CENO_Relative_Epsilon = 
+			5.0e-3
+CENO_Absolute_Epsilon = 
+			5.0e-7
+CENO_Tolerance =
+	    500
+CENO_Execution_Mode = 
+	     Speed_Efficient
+CENO_Padding = 
+	      No
+CENO_Drop_Order =
+	      Yes
+
+
+Flux_Function_Type = 
+	Godunov
+ICs_Type = 
+	Sod
+Grid_Type =
+	Uniform
+Space_Accuracy =
+        4
+Number_of_Cells = 
+	500
+CFL_Number =
+	0.70
+Time_Max = 
+	0.0018
+Output_File_Name = 
+	Euler1D/UnitTests/SodProblem/Current_HighOrder_sod
+Output_Format_Type = 
+	tecplot
+Execute
+Write_Output
+Terminate
+
+Uniform                        :ICs_Type
+Sod                            :ICs_Type
+Groth                          :ICs_Type 
+Einfeldt                       :ICs_Type 
+
+Explicit_Euler                 :Time_Integration_Type
+Explicit_Predictor_Corrector   :Time_Integration_Type
+Lax_Friedrichs                 :Time_Integration_Type
+Lax_Wendroff                   :Time_Integration_Type
+MacCormack                     :Time_Integration_Type
+Hancock                       :Time_Integration_Type
+
+MUSCL                          :Reconstruction_Type
+Least_Squares                  :Reconstruction_Type
+Green_Gauss                    :Reconstruction_Type
+Characteristic                 :Reconstruction_Type
+
+Zero                           :Limiter_Type
+One                            :Limiter_Type
+Minmod                         :Limiter_Type
+UMIST                          :Limiter_Type
+Double_Minmod                  :Limiter_Type
+Superbee                       :Limiter_Type
+Phi                            :Limiter_Type
+VanLeer                        :Limiter_Type
+VanAlbada                      :Limiter_Type
+Venkatakrishnan                :Limiter_Type
+Barth_Jespersen                :Limiter_Type
+
+Godunov                        :Flux_Function_Type
+Roe                            :Flux_Function_Type
+Rusanov                        :Flux_Function_Type
+HLLE                           :Flux_Function_Type
+Linde                          :Flux_Function_Type
+HLLC                           :Flux_Function_Type
+Osher                          :Flux_Function_Type
+
+Tecplot                        :Output_Format_Type
+Gnuplot                        :Output_Format_Type
+Matlab                         :Output_Format_Type

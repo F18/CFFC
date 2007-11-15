@@ -1,9 +1,9 @@
-/**********************************************************************
- * LevelSet2DQuadIOSingleBlock.cc                                     *
- *                                                                    *
- * Single-block versions of input and output subroutines for 2D Level *
- * Set multi-block quadrilateral mesh solution class.                 *
- *                                                                    *
+/******************************************************************//**
+ * \file LevelSet2DQuadIOSingleBlock.cc                               
+ *                                                                    
+ * Single-block versions of input and output subroutines for 2D Level 
+ * Set multi-block quadrilateral mesh solution class.                 
+ *                                                                    
  **********************************************************************/
 
 // Include 2D LevelSet quadrilateral mesh solution header file.
@@ -17,13 +17,13 @@
  *                          Subroutines.                              *
  **********************************************************************/
 
-/**********************************************************************
- * Routine: Write_Solution_Block                                      *
- *                                                                    *
- * Writes the cell centred solution values of the specified           *
- * quadrilateral solution block to the specified output stream for    *
- * restart purposes.                                                  *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Write_Solution_Block                                      
+ *                                                                    
+ * Writes the cell centred solution values of the specified           
+ * quadrilateral solution block to the specified output stream for    
+ * restart purposes.                                                  
+ *                                                                    
  **********************************************************************/
 void Write_Solution_Block(LevelSet2D_Quad_Block &SolnBlk,
 	                  ostream &Out_File) {
@@ -32,13 +32,13 @@ void Write_Solution_Block(LevelSet2D_Quad_Block &SolnBlk,
   
 }
 
-/**********************************************************************
- * Routine: Read_Solution_Block                                       *
- *                                                                    *
- * Reads the cell centred solution values for the specified           *
- * quadrilateral solution block from the specified input stream as    *
- * required for restart purposes.                                     *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Read_Solution_Block                                       
+ *                                                                    
+ * Reads the cell centred solution values for the specified           
+ * quadrilateral solution block from the specified input stream as    
+ * required for restart purposes.                                     
+ *                                                                    
  **********************************************************************/
 void Read_Solution_Block(LevelSet2D_Quad_Block &SolnBlk,
 	                 istream &In_File) {
@@ -47,13 +47,13 @@ void Read_Solution_Block(LevelSet2D_Quad_Block &SolnBlk,
   
 }
 
-/**********************************************************************
- * Routine: Output_Tecplot                                            *
- *                                                                    *
- * Writes the solution values at the nodes of the specified           *
- * quadrilateral solution block to the specified output stream        *
- * suitable for plotting with TECPLOT.                                *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Output_Tecplot                                            
+ *                                                                    
+ * Writes the solution values at the nodes of the specified           
+ * quadrilateral solution block to the specified output stream        
+ * suitable for plotting with TECPLOT.                                
+ *                                                                    
  **********************************************************************/
 void Output_Tecplot(LevelSet2D_Quad_Block &SolnBlk,
                     const int Number_of_Time_Steps,
@@ -96,13 +96,13 @@ void Output_Tecplot(LevelSet2D_Quad_Block &SolnBlk,
  
 }
 
-/**********************************************************************
- * Routine: Output_Cells_Tecplot                                      *
- *                                                                    *
- * Writes the cell centred solution values of the specified           *
- * quadrilateral solution block to the specified output stream        *
- * suitable for plotting with TECPLOT.                                *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Output_Cells_Tecplot                                      
+ *                                                                    
+ * Writes the cell centred solution values of the specified           
+ * quadrilateral solution block to the specified output stream        
+ * suitable for plotting with TECPLOT.                                
+ *                                                                    
  **********************************************************************/
 void Output_Cells_Tecplot(LevelSet2D_Quad_Block &SolnBlk,
                           const int Number_of_Time_Steps,
@@ -112,7 +112,7 @@ void Output_Cells_Tecplot(LevelSet2D_Quad_Block &SolnBlk,
                           const int Output_Title,
 	                  ostream &Out_File) {
 
-  int ng = ON;
+  int ng = ON;  // Turn ON to print ghost cells.
   double ddU;
 
   // Ensure boundary conditions are updated before evaluating
@@ -136,6 +136,8 @@ void Output_Cells_Tecplot(LevelSet2D_Quad_Block &SolnBlk,
 	     << "\"sign\" \\ \n"
 	     << "\"dpsidx\" \\ \n"
 	     << "\"dpsidy\" \\ \n"
+	     << "\"kappa\" \\ \n"
+	     << "\"gradMag\" \\ \n"
 	     << "\"dFdx\" \\ \n"
 	     << "\"dFdy\" \\ \n"
 	     << "\"ddpsi\" \\ \n"
@@ -159,9 +161,15 @@ void Output_Cells_Tecplot(LevelSet2D_Quad_Block &SolnBlk,
 	       << " " << SolnBlk.sign[i][j]
 	       << " " << SolnBlk.dUdx[i][j].psi
 	       << " " << SolnBlk.dUdy[i][j].psi
+ 	       << " " << SolnBlk.kappa[i][j].psi
+	       << " " << SolnBlk.gradMag[i][j].psi
 	       << " " << SolnBlk.dUdx[i][j].F
 	       << " " << SolnBlk.dUdy[i][j].F
-	       << " " << sqrt(sqr(SolnBlk.dUdx[i][j].psi) + sqr(SolnBlk.dUdy[i][j].psi)) - ONE
+// 	       << " " << sqrt(sqr(SolnBlk.dUdx[i][j].psi) + sqr(SolnBlk.dUdy[i][j].psi)) - ONE
+	       << " " << abs( sqrt(max(sqr(max(SolnBlk.dUdxm[i][j].psi,ZERO)),
+				       sqr(min(SolnBlk.dUdxp[i][j].psi,ZERO))) +
+				   max(sqr(max(SolnBlk.dUdym[i][j].psi,ZERO)),
+				       sqr(min(SolnBlk.dUdyp[i][j].psi,ZERO)))) - ONE )
 	       << " " << ddU
 	       << endl;
     }
@@ -170,13 +178,13 @@ void Output_Cells_Tecplot(LevelSet2D_Quad_Block &SolnBlk,
 
 }
 
-/**********************************************************************
- * Routine: Output_Nodes_Tecplot                                      *
- *                                                                    *
- * Writes the node locations of the specified quadrilateral solution  *
- * block to the specified output stream suitable for plotting with    *
- * TECPLOT.                                                           *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Output_Nodes_Tecplot                                      
+ *                                                                    
+ * Writes the node locations of the specified quadrilateral solution  
+ * block to the specified output stream suitable for plotting with    
+ * TECPLOT.                                                           
+ *                                                                    
  **********************************************************************/
 void Output_Nodes_Tecplot(LevelSet2D_Quad_Block &SolnBlk,
                           const int Block_Number,
@@ -206,12 +214,12 @@ void Output_Nodes_Tecplot(LevelSet2D_Quad_Block &SolnBlk,
 
 }
 
-/**********************************************************************
- * Routine: Output_Interface_Tecplot                                  *
- *                                                                    *
- * Writes the interface spline nodes to the specified output stream   *
- * suitable for plotting with TECPLOT.                                *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Output_Interface_Tecplot                                  
+ *                                                                    
+ * Writes the interface spline nodes to the specified output stream   
+ * suitable for plotting with TECPLOT.                                
+ *                                                                    
  **********************************************************************/
 void Output_Interface_Tecplot(LevelSet2D_Quad_Block &SolnBlk,
 			      const int Number_of_Time_Steps,
@@ -256,13 +264,13 @@ void Output_Interface_Tecplot(LevelSet2D_Quad_Block &SolnBlk,
 
 }
 
-/**********************************************************************
- * Routine: Output_Circle_Tecplot                                     *
- *                                                                    *
- * Writes the comparison of the exact and computed solutions for a    *
- * circle interface to the specified output stream suitable for       *
- * plotting with TECPLOT.                                             *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Output_Circle_Tecplot                                     
+ *                                                                    
+ * Writes the comparison of the exact and computed solutions for a    
+ * circle interface to the specified output stream suitable for       
+ * plotting with TECPLOT.                                             
+ *                                                                    
  **********************************************************************/
 void Output_Circle_Tecplot(LevelSet2D_Quad_Block &SolnBlk,
 			   LevelSet2D_Input_Parameters &IP,
@@ -281,8 +289,7 @@ void Output_Circle_Tecplot(LevelSet2D_Quad_Block &SolnBlk,
   b = SolnBlk.Interface_List[1].Xref.y;
   r = SolnBlk.Interface_List[1].Length1;
 
-  if (SolnBlk.Interface_List[1].Motion == INTERFACE_MOTION_CONSTANT ||
-      SolnBlk.Interface_List[1].Motion == INTERFACE_MOTION_EXPAND) {
+  if (SolnBlk.Interface_List[1].Motion == INTERFACE_MOTION_LEVELSET_EXPAND) {
     r += Time*SolnBlk.Interface_List[1].Speed.x;
   }
 
@@ -331,13 +338,13 @@ void Output_Circle_Tecplot(LevelSet2D_Quad_Block &SolnBlk,
 
 }
 
-/**********************************************************************
- * Routine: Output_Ellipse_Tecplot                                    *
- *                                                                    *
- * Writes the comparison of the exact and computed solutions for an   *
- * ellipse interface to the specified output stream suitable for      *
- * plotting with TECPLOT.                                             *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Output_Ellipse_Tecplot                                    
+ *                                                                    
+ * Writes the comparison of the exact and computed solutions for an   
+ * ellipse interface to the specified output stream suitable for      
+ * plotting with TECPLOT.                                             
+ *                                                                    
  **********************************************************************/
 void Output_Ellipse_Tecplot(LevelSet2D_Quad_Block &SolnBlk,
 			    LevelSet2D_Input_Parameters &IP,
@@ -351,13 +358,13 @@ void Output_Ellipse_Tecplot(LevelSet2D_Quad_Block &SolnBlk,
 
 }
 
-/**********************************************************************
- * Routine: Output_Zalesaks_Disk_Tecplot                              *
- *                                                                    *
- * Writes the comparison of the exact and computed solutions for      *
- * Zalesak's disk to the specified output stream suitable for         *
- * plotting with TECPLOT.                                             *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Output_Zalesaks_Disk_Tecplot                              
+ *                                                                    
+ * Writes the comparison of the exact and computed solutions for      
+ * Zalesak's disk to the specified output stream suitable for         
+ * plotting with TECPLOT.                                             
+ *                                                                    
  **********************************************************************/
 void Output_Zalesaks_Disk_Tecplot(LevelSet2D_Quad_Block &SolnBlk,
 				  LevelSet2D_Input_Parameters &IP,

@@ -82,14 +82,14 @@ private:
 
   //3D Solution Block i,j,k,[var] indexing conversion to 1D Vector 
   int index(const int i, const int j, const int k,const int var) {return ((k*NCi*NCj+j*NCi+i)*blocksize+var);}
-  int index(const int i, const int j, const int k) {return ((k*NCi*NCj+j*NCi+i)*blocksize);}
+  //int index(const int i, const int j, const int k) {return ((k*NCi*NCj+j*NCi+i)*blocksize);} //DANGERSOUS TO HAVE BOTH, ie 2D screwups
 
 public:
   /* Solutition INFORMATION THAT DOESN'T CHANGE , could be static ???*/
   int                     restart; // number of gmres iterations before restart
   int                     overlap; // level of overlap  
   int                   blocksize; // number of variables         
-  int                  scalar_dim; // xpts * ypts * blocksize
+  int                  scalar_dim; // xpts * ypts * zpts * blocksize
 
   /* USED INTERNAL TO GMRES ROUTINE */
   int               vector_switch; // to select the specified vector for message passing
@@ -153,12 +153,12 @@ public:
   //Norm Calculations and Vector Operations
   double L2_Norm(const double* v); 
   double L2_Norm(int N, const double* v, int inc);
-  double L2_Norm(int k, const double* v);
+  double L2_Norm(int var, const double* v);
   double Dotproduct(const double *v1, const double *v2);
 
   //Return denormalized deltaU
   double deltaU(const int i, const int j, const int k, const int var){ 
-    return ( denormalizeU( x[index(i,j,k) ], var) ); }  
+    return ( denormalizeU( x[index(i,j,k,var) ], var) ); }  
 
 //   //Return info for testing/degugging.
 //   double deltaU_test(const int i, const int j, const int k){ return x[index(i,j,k)]; }   
@@ -333,7 +333,7 @@ template <typename SOLN_pSTATE,typename SOLN_cSTATE>
 inline void GMRES_Block<SOLN_pSTATE,SOLN_cSTATE>::
 calculate_perturbed_residual(const double &epsilon)
 {    
-  for (int k = KCl- Nghost;  k <= KCu- Nghost; k++){
+  for (int k = KCl- Nghost;  k <= KCu+ Nghost; k++){
     for (int j = JCl - Nghost ; j <= JCu + Nghost ; j++) {  //includes ghost cells 
       for (int i = ICl - Nghost ; i <= ICu + Nghost ; i++) {
 	for(int varindex = 0; varindex < blocksize; varindex++){	
@@ -352,7 +352,7 @@ template <typename SOLN_pSTATE,typename SOLN_cSTATE>
 inline void GMRES_Block<SOLN_pSTATE,SOLN_cSTATE>::
 calculate_perturbed_residual_2nd(const double &epsilon)
 {    
-  for (int k = KCl- Nghost;  k <= KCu- Nghost; k++){
+  for (int k = KCl- Nghost;  k <= KCu + Nghost; k++){
     for (int j = JCl - Nghost ; j <= JCu + Nghost ; j++) {  //includes ghost cells 
       for (int i = ICl - Nghost ; i <= ICu + Nghost ; i++) {
 	//copy back R + epsilon * W(i)
@@ -374,7 +374,7 @@ template <typename SOLN_pSTATE,typename SOLN_cSTATE>
 inline void GMRES_Block<SOLN_pSTATE,SOLN_cSTATE>::
 calculate_perturbed_residual_Restart(const double &epsilon)
 {    
-  for (int k = KCl- Nghost;  k <= KCu- Nghost; k++){
+  for (int k = KCl- Nghost;  k <= KCu+ Nghost; k++){
     for (int j = JCl - Nghost ; j <= JCu + Nghost ; j++) {
       for (int i = ICl - Nghost ; i <= ICu + Nghost ; i++) {
 	for(int varindex = 0; varindex < blocksize; varindex++){	
@@ -393,7 +393,7 @@ template <typename SOLN_pSTATE,typename SOLN_cSTATE>
 inline void GMRES_Block<SOLN_pSTATE,SOLN_cSTATE>::
 calculate_perturbed_residual_2nd_Restart(const double &epsilon)
 {    
-  for (int k = KCl- Nghost;  k <= KCu- Nghost; k++){
+  for (int k = KCl- Nghost;  k <= KCu+ Nghost; k++){
     for (int j = JCl - Nghost ; j <= JCu + Nghost ; j++) {
       for (int i = ICl - Nghost ; i <= ICu + Nghost ; i++) {  
 	//copy back R + epsilon * W(i)
@@ -430,7 +430,7 @@ calculate_Matrix_Free(const double &epsilon)
 	   
   // Non-Overlap Ghost Cells R(U) already set to zero by dUdt calculation  
   /* V(i+1) = ( R(U+epsilon*W) - b) / epsilon - z / h */ 
-  for (int k = KCl- KCl_overlap;  k <= KCu- KCu_overlap; k++){
+  for (int k = KCl- KCl_overlap;  k <= KCu + KCu_overlap; k++){
     for (int j = JCl - JCl_overlap; j <= JCu + JCu_overlap; j++) {
       for (int i = ICl - ICl_overlap; i <= ICu + ICu_overlap; i++) {
 	for(int var =0; var < blocksize; var++){	
@@ -476,11 +476,11 @@ calculate_Matrix_Free_Restart(const double &epsilon)
   // Non-Overlap Ghost Cells R(U) already set to zero by dUdt 
   
   /* V(0) = ( R(U + epsilon*W) - b) / epsilon - x / h */
-  for (int k = KCl- KCl_overlap;  k <= KCu- KCu_overlap; k++){
+  for (int k = KCl- KCl_overlap;  k <= KCu + KCu_overlap; k++){
     for (int j = JCl - JCl_overlap; j <= JCu + JCu_overlap; j++) {
       for (int i = ICl - ICl_overlap; i <= ICu + ICu_overlap; i++) {
 	for(int var =0; var < blocksize; var++){	
-	  int iter = index(i,j,k);		
+	  int iter = index(i,j,k,var);		
 	  //Matrix Free V(0) 
 	  V[iter] =  ( normalizeR(SolnBlk->dUdt[i][j][k][0][var+1],var) - b[iter]) / epsilon 
 	    - normalizeUtoR( x[iter] *  LHS_Time<SOLN_pSTATE,SOLN_cSTATE>(*Input, 
@@ -511,15 +511,17 @@ L2_Norm(int N, const double* v, int inc) {
 
 template <typename SOLN_pSTATE,typename SOLN_cSTATE> 
 inline double GMRES_Block<SOLN_pSTATE,SOLN_cSTATE>::
-L2_Norm(int k, const double* v){
+L2_Norm(int var, const double* v){
   int ind;
   double l2_norm(ZERO);
-  for (int j = JCl ; j <= JCu ; j++) {
-    for (int i = ICl ; i <= ICu ; i++) {
-      ind = index(i,j,k);
-      l2_norm += v[ind]*v[ind];             
-    }
-  }  
+  for (int k = KCl ; k <= KCu ; k++) {
+    for (int j = JCl ; j <= JCu ; j++) {
+      for (int i = ICl ; i <= ICu ; i++) {
+	ind = index(i,j,k,var);
+	l2_norm += v[ind]*v[ind];             
+      }
+    }  
+  }
   return(sqrt(l2_norm));
 }
 
@@ -567,21 +569,23 @@ LoadSendBuffer(double *buffer,
 	       const int k_max,
 	       const int k_inc) {
   
-  cerr<< "\n GMRES LoadSendBuffer NOT FINISHED ! "; exit(1);
-
-//   for (int j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
-//     for (int i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-//       for (int  k = 0 ; k < blocksize; ++ k) {
-// 	buffer_count++;
-// 	if (buffer_count >= buffer_size) return(1);
-// 	if (vector_switch) {
-// 	  buffer[buffer_count] = W[(search_directions)*scalar_dim + index(i,j,k)];
-// 	} else {
-// 	  buffer[buffer_count] = x[index(i,j,k)];
-// 	}
-//       } 
-//     } 
-//   } 
+  for (int k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc ) {
+    for (int j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
+      for (int i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
+        for (int nV = 0 ; nV < blocksize; nV++) {
+	  buffer_count++;
+	  if (buffer_count >= buffer_size) return(1);
+	  
+	  if (vector_switch) {
+	    buffer[buffer_count] = W[(search_directions)*scalar_dim + index(i,j,k,nV)];
+	  } else {
+	    buffer[buffer_count] = x[index(i,j,k,nV)];
+	  }	  
+        }
+      }
+    } 
+  }
+ 
   return(0);
 } 
 
@@ -604,22 +608,22 @@ UnloadReceiveBuffer(double *buffer,
 		    const int k_max,
 		    const int k_inc) {
 
-  cerr<< "\n GMRES UnloadReceiveBuffer NOT FINISHED ! "; exit(1);
-
-//   int i, j, k;
-//   for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
-//      for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-//         for ( k = 0 ; k < blocksize; ++ k) {
-// 	  buffer_count++;
-//            if (buffer_count >= buffer_size) return(1);
-// 	   if (vector_switch) {
-// 	     W[(search_directions)*scalar_dim + index(i,j,k)] = buffer[buffer_count];  
-// 	   } else {
-// 	     x[index(i,j,k)] = buffer[buffer_count];
-// 	   }
-//         } 
-//      } 
-//   } 
+  for (int k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc) {
+    for (int j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc) {
+      for (int i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc) {
+	for (int nV = 0 ; nV < blocksize ; nV++) {          
+	  buffer_count++;
+	  if (buffer_count >= buffer_size) return(1);
+	  if (vector_switch) {
+	    W[(search_directions)*scalar_dim + index(i,j,k,nV)] = buffer[buffer_count];  
+	  } else {
+	    x[index(i,j,k,nV)] = buffer[buffer_count];
+	  }
+	}
+      }
+    }
+  }
+  
   return(0);
 }
 
@@ -688,8 +692,7 @@ public:
   int solve(Block_Preconditioner<SOLN_pSTATE,SOLN_cSTATE> *Block_precon);
 
   int GMRES_Iterations(){ return Number_of_GMRES_Iterations;}
-
-//   // CHANGE FOR 3D !!
+   
   double deltaU(const int Block, const int i, const int j, const int k,const int var){
     return (G[Block].deltaU(i,j,k,var)); }
 //   double deltaU_test(const int Block, const int i, const int j, const int k){
@@ -853,7 +856,7 @@ solve(Block_Preconditioner<SOLN_pSTATE,SOLN_cSTATE> *Block_precon) {
 	if (Data->Local_Adaptive_Block_List.Block[Bcount].used == ADAPTIVEBLOCK3D_USED) {   	  
 	  //Calculate R(U+epsilon*(Minv*x(i))) -> Soln_ptr.U =  Soln_ptr.Uo + epsilon * W(i)
 	  G[Bcount].calculate_perturbed_residual_Restart(epsilon);	  
-	  Solution_Data->Local_Solution_Blocks.BCs(Solution_Data->Input);
+	  Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].BCs(Solution_Data->Input);
 	  error_flag = dUdt_Residual_Evaluation_DTS<SOLN_pSTATE,SOLN_cSTATE>(Solution_Data,
 									     DTS_SolnBlk,
 									     Bcount);
@@ -883,7 +886,7 @@ solve(Block_Preconditioner<SOLN_pSTATE,SOLN_cSTATE> *Block_precon) {
 	  if (Data->Local_Adaptive_Block_List.Block[Bcount].used == ADAPTIVEBLOCK3D_USED) {   	  
 	    //Calculate R(U+epsilon*(Minv*x(i))) -> Soln_ptr.U =  Soln_ptr.Uo + epsilon * W(i)
 	    G[Bcount].calculate_perturbed_residual_2nd_Restart(epsilon);	  
-	    Solution_Data->Local_Solution_Blocks.BCs(Solution_Data->Input);
+	    Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].BCs(Solution_Data->Input);
 	    error_flag = dUdt_Residual_Evaluation_DTS<SOLN_pSTATE,SOLN_cSTATE>(Solution_Data,
 									       DTS_SolnBlk,
 									       Bcount);	  
@@ -1054,7 +1057,7 @@ solve(Block_Preconditioner<SOLN_pSTATE,SOLN_cSTATE> *Block_precon) {
 	  //Calculate R(U+epsilon*(Minv*V(i))) -> Soln_ptr.U =  Soln_ptr.Uo + epsilon * W(i)
  	  G[Bcount].calculate_perturbed_residual(epsilon);
 	  //Apply Regular Soln_ptr BC'S 
-	  Solution_Data->Local_Solution_Blocks.BCs(Solution_Data->Input);	    
+	  Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].BCs(Solution_Data->Input);
 	  error_flag = dUdt_Residual_Evaluation_DTS<SOLN_pSTATE,SOLN_cSTATE>(Solution_Data,
 									     DTS_SolnBlk,
 									     Bcount);	  	  
@@ -1088,7 +1091,7 @@ solve(Block_Preconditioner<SOLN_pSTATE,SOLN_cSTATE> *Block_precon) {
 	    //Calculate R(U+epsilon*(Minv*V(i))) -> Soln_ptr.U =  Soln_ptr.Uo - epsilon * W(i)
 	    G[Bcount].calculate_perturbed_residual_2nd(epsilon);
 	    //Apply Regular Soln_ptr BC'S 
-	    Solution_Data->Local_Solution_Blocks.BCs(Solution_Data->Input);	    
+	    Solution_Data->Local_Solution_Blocks.Soln_Blks[Bcount].BCs(Solution_Data->Input);
 	    error_flag = dUdt_Residual_Evaluation_DTS<SOLN_pSTATE,SOLN_cSTATE>(Solution_Data,
 									       DTS_SolnBlk,
 									       Bcount);	  	  
@@ -1256,8 +1259,8 @@ solve(Block_Preconditioner<SOLN_pSTATE,SOLN_cSTATE> *Block_precon) {
       //Standard Output
       if (relative_residual <= Solution_Data->Input.NKS_IP.GMRES_Initial_Tolerance || 
 	  Number_of_GMRES_Iterations+1 > Solution_Data->Input.NKS_IP.Maximum_Number_of_GMRES_Iterations ) {
-
-	if (CFFC_Primary_MPI_Processor()) { 
+	  
+	if (CFFC_Primary_MPI_Processor()&& !Solution_Data->Input.NKS_IP.Dual_Time_Stepping) { 
 	  cout << "\n Finished GMRES with (Inner Iterations) = " << Number_of_GMRES_Iterations << " resid0 = " 
 	       << resid0 << " resid = " << relative_residual*resid0 << " relative_residual = " << relative_residual<<endl;
 	} 

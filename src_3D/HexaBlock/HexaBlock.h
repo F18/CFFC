@@ -1001,8 +1001,8 @@ ICs(const int i_ICtype,
       case IC_SOD_XDIR :
          Wl = SOLN_pSTATE(DENSITY_STDATM, Vector3D_ZERO,
                           PRESSURE_STDATM);
-         Wr = SOLN_pSTATE(DENSITY_STDATM*8.0, Vector3D_ZERO,
-                          PRESSURE_STDATM*10.0);
+         Wr = SOLN_pSTATE(DENSITY_STDATM*EIGHT, Vector3D_ZERO,
+                          PRESSURE_STDATM*TEN);
 	 for (int k = KCl-Nghost; k <= KCu+Nghost; ++k) {
             for (int j = JCl-Nghost; j <= JCu+Nghost; ++j) {
                for (int i = ICl-Nghost; i <= ICu+Nghost; ++i) {
@@ -1020,8 +1020,8 @@ ICs(const int i_ICtype,
       case IC_SOD_YDIR :
          Wl = SOLN_pSTATE(DENSITY_STDATM, Vector3D_ZERO,
 	                  PRESSURE_STDATM);
-         Wr = SOLN_pSTATE(DENSITY_STDATM*8.0, Vector3D_ZERO,
-                          PRESSURE_STDATM*10.0);
+         Wr = SOLN_pSTATE(DENSITY_STDATM*EIGHT, Vector3D_ZERO,
+                          PRESSURE_STDATM*TEN);
          for (int k = KCl-Nghost; k <= KCu+Nghost; ++k) {
             for (int j = JCl-Nghost; j <= JCu+Nghost; ++j) {
                for (int i = ICl-Nghost; i <= ICu+Nghost; ++i) {
@@ -1039,8 +1039,8 @@ ICs(const int i_ICtype,
       case IC_SOD_ZDIR :
          Wl = SOLN_pSTATE(DENSITY_STDATM, Vector3D_ZERO,
                           PRESSURE_STDATM);
-         Wr = SOLN_pSTATE(DENSITY_STDATM*8.0, Vector3D_ZERO,
-                          PRESSURE_STDATM*10.0);
+         Wr = SOLN_pSTATE(DENSITY_STDATM*EIGHT, Vector3D_ZERO,
+                          PRESSURE_STDATM*TEN);
          for (int k = KCl-Nghost; k <= KCu+Nghost; ++k) {
             for (int j = JCl-Nghost; j <= JCu+Nghost; ++j) {
                for (int i = ICl-Nghost; i <= ICu+Nghost; ++i) {
@@ -1192,11 +1192,20 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
    Vector3D MOVING_WALL_VELOCITY = IPs.Moving_Wall_Velocity, dX;
    double dpdx;
      
+   //BC_NONE is default due to switch fall through.
+
    for ( k =  KCl- Nghost ; k <=  KCu+ Nghost ; ++k) {
       for ( j =  JCl- Nghost ; j <=  JCu+ Nghost ; ++j ) {
          // Prescribe West boundary conditions.
          switch( Grid.BCtypeW[j][k]) {
             
+	 case BC_FIXED :
+            W[ ICl-1][j][k] = WoW[j][k];
+            U[ ICl-1][j][k] = W[ICl-1][j][k].U();
+            W[ ICl-2][j][k] = WoW[j][k];
+            U[ ICl-2][j][k] = W[ICl-2][j][k].U();
+	    break;
+
          case BC_REFLECTION :
             W[ ICl-1][j][k] = SOLN_pSTATE::Reflect(W[ICl][j][k],
                                                    Grid.nfaceW( ICl,j,k));
@@ -1279,6 +1288,14 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
          
          // Prescribe East boundary conditions.
          switch( Grid.BCtypeE[j][k]) {
+
+	 case BC_FIXED :
+	    W[ ICu+1][j][k] = WoE[j][k];
+            U[ ICu+1][j][k] = W[ICu+1][j][k].U();
+            W[ ICu+2][j][k] = WoE[j][k];
+            U[ ICu+2][j][k] = W[ICl+2][j][k].U();
+	    break;
+
          case BC_REFLECTION :
             W[ ICu+1][j][k] = SOLN_pSTATE::Reflect(W[ICu][j][k],
                                                    Grid.nfaceE(ICu,j,k));
@@ -1298,7 +1315,7 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
             break;
 
          case BC_CONSTANT_EXTRAPOLATION :
-            W[ ICu+1][j][k] = W[ICu][j][k];
+	   W[ ICu+1][j][k] = W[ICu][j][k];                
             U[ ICu+1][j][k] = W[ICu+1][j][k].U();
             W[ ICu+2][j][k] = W[ICu][j][k];
             U[ ICu+2][j][k] = W[ICu+2][j][k].U();
@@ -1366,6 +1383,13 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
       for ( i =  ICl- Nghost ; i <=  ICu+ Nghost ; ++i ) {
          // Prescribe South boundary conditions.
          switch( Grid.BCtypeS[i][k]) {
+	 case BC_FIXED :
+	    W[i][JCl-1][k] = WoS[i][k];
+            U[i][JCl-1][k] = W[i][JCl-1][k].U();
+            W[i][JCl-2][k] = WoS[i][k];
+            U[i][JCl-2][k] = W[i][JCl-1][k].U();
+	    break;
+
          case BC_REFLECTION :
             W[i][ JCl-1][k] = SOLN_pSTATE::Reflect(W[i][JCl][k],
                                                    Grid.nfaceS(i,JCl,k));
@@ -1433,8 +1457,15 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
          } /* endswitch */
           
          // Prescribe North boundary conditions.
-         switch( Grid.BCtypeN[i][k]) {
-         case BC_REFLECTION :
+         switch( Grid.BCtypeN[i][k]) {	
+	 case BC_FIXED :
+	    W[i][JCu+1][k] = WoN[i][k];
+            U[i][JCu+1][k] = W[i][JCu+1][k].U();
+            W[i][JCu+2][k] = WoN[i][k];
+            U[i][JCu+2][k] = W[i][JCu+1][k].U();
+	    break;
+         
+	 case BC_REFLECTION :
             W[i][ JCu+1][k] = SOLN_pSTATE::Reflect(W[i][ JCu][k],
                                                    Grid.nfaceN(i,JCu,k));
             U[i][ JCu+1][k] = W[i][ JCu+1][k].U();
@@ -1506,6 +1537,13 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
       for ( i =  ICl- Nghost ; i <=  ICu+ Nghost ; ++i ) {
          // Prescribe Bottom boundary conditions.
          switch( Grid.BCtypeB[i][j]) {
+	 case BC_FIXED :
+	    W[i][j][KCl-1] = WoB[i][j];
+            U[i][j][KCl-1] = W[i][j][KCl-1].U();
+            W[i][j][KCl-2] = WoB[i][j];
+            U[i][j][KCl-2] = W[i][j][KCl-2].U();
+	    break;
+
          case BC_REFLECTION :
             W[i][j][ KCl-1 ] = SOLN_pSTATE::Reflect(W[i][j][ KCl],
                                                     Grid.nfaceBot(i,j, KCl));
@@ -1573,8 +1611,16 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
          } /* endswitch */
          
          // Prescribe Top boundary conditions.
-         switch( Grid.BCtypeT[i][j]) {
-         case BC_REFLECTION :
+         switch( Grid.BCtypeT[i][j]) {	
+
+	 case BC_FIXED :
+	    W[i][j][KCu+1] = WoT[i][j];
+            U[i][j][KCu+1] = W[i][j][KCu+1].U();
+            W[i][j][KCu+2] = WoT[i][j];
+            U[i][j][KCu+2] = W[i][j][KCu+2].U();
+	    break;
+         
+	 case BC_REFLECTION :
             W[i][j][ KCu+1] = SOLN_pSTATE::Reflect(W[i][j][ KCu],
                                                    Grid.nfaceTop(i,j,KCu));
             U[i][j][ KCu+1] = W[i][j][ KCu+1].U();
@@ -2087,19 +2133,17 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Linear_Reconstruction_LeastSquares(co
     
 }
 /********************************************************
- * Routine: dUdt_Multistage_Explicit                    *
+ * Routine: dUdt_Residual_Evaluation                    *
  *                                                      *
- * This routine determines the solution residuals for a *
- * given stage of a variety of multi-stage explicit     *
- * time integration schemes for a given solution block. *
+ * This routine determines the inviscid solution        *
+ * residuals for the given solution block.              *  
  *                                                      *
  ********************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::
 dUdt_Residual_Evaluation(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
 
-   int i, j, k,  k_residual;
-   double omega; 
+  int i, j, k;
    Vector3D dX;
    
    SOLN_pSTATE Wl, Wr;
@@ -2129,7 +2173,7 @@ dUdt_Residual_Evaluation(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
  
    // Add i-direction (zeta-direction) fluxes.
    for ( k  =  KCl-1 ; k <=  KCu+1 ; ++k ){
-      for ( j  =  JCl-1 ; j <=  JCu+1 ; ++j ) {	
+     for ( j  =  JCl-1 ; j <=  JCu+1 ; ++j ) {	
 	dUdt[ ICl-1][j][k][0] = U_VACUUM;      
 	
 	for ( i =  ICl-1 ; i <=  ICu ; ++i ) {

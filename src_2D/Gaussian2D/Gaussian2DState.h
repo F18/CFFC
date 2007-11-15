@@ -55,8 +55,11 @@ using namespace std;
 #define GAUSSIAN_MONATOMIC    1
 #define GAUSSIAN_DIATOMIC     2
 
+#define _GAUSSIAN_HEAT_TRANSFER_
+
 
 class Gaussian2D_cState;
+class Gaussian2D_Input_Parameters;
 
 /********************************************************
  * Class: Gaussian2D_pState                             *
@@ -74,6 +77,11 @@ class Gaussian2D_cState;
  *     axx      -- Return pxx/rho.                      *
  *     ayy      -- Return pyy/rho.                      *
  *     sound    -- Return sound speed.                  *
+ *     R        -- Return specific gas constant.        *
+ *     Gamma    -- Return gamma for gas.                *
+ *     Cv       -- Return specific heat at constant V.  *
+ *     Cp       -- Return specific heat at constant P.  *
+ *     K        -- Return thermal conductivity.         *
  *     dv       -- Return momentum.                     *
  *     U        -- Return conserved solution state.     *
  *     F        -- Return x-direction solution flux.    *
@@ -107,8 +115,16 @@ class Gaussian2D_cState;
  *                 vector.                              *
  *     tt       -- translational relaxation time        *
  *     tr       -- rotational relaxation time           *
+ *     gt       -- temperature jump distance            *
+ *                 for temperature slip BC              *
  *     relax    -- relaxes state towards thermodynamic  *
  *                 equilibrium (BGK source terms)       *
+ *     set_temperature_d                                *
+ *              -- change density so that the state has *
+ *                 the desired temperature              *
+ *     set_state_from_ips                               *
+ *              -- set ics relating to temperature and  *
+ *                 mach number etc.                     *
  *                                                      *
  * Member operators                                     *
  *      W -- a primitive solution state                 *
@@ -140,11 +156,14 @@ class Gaussian2D_pState{
     Vector2D                  v;   // Flow velocity (2D vector).
     Tensor2D                  p;   // Pressure tensor.
     double                 erot;   // rotational energy
+#ifdef _GAUSSIAN_HEAT_TRANSFER_
     Third_order_tensor2D      q;   // third-order heat tensor
+#endif
     static double             M;   // Molar Weight
     static int            atoms;   // Monatomic or Diatomic
     static int              gas;   // Gas type
-    static double         alpha;   // Accommodation coefficient for gas/solid boundary
+    static double       alpha_m;   // Momentum accommodation coefficient for gas/solid boundary
+    static double       alpha_t;   // Thermal accommodation coefficient for gas/solid boundary
     static double         omega;   // Viscosity exponent
     static double        mu_not;   // Reference viscosity
     static double            pr;   // Prandtl number
@@ -224,21 +243,19 @@ class Gaussian2D_pState{
     /* Vacuum operator. */
     void Vacuum(void) {
        d = ZERO; v = Vector2D_ZERO; p.xx = ZERO;
-       p.xy = ZERO; p.yy = ZERO; p.zz = ZERO; erot = ZERO; q.zero();
+       p.xy = ZERO; p.yy = ZERO; p.zz = ZERO; erot = ZERO;
+#ifdef _GAUSSIAN_HEAT_TRANSFER_
+       q.zero();
+#endif
     }
 
     /* Standard atmosphere operator. */
     void Standard_Atmosphere(void) {
        d = DENSITY_STDATM; v.zero(); p.xx = PRESSURE_STDATM;
        p.xy = ZERO; p.yy = PRESSURE_STDATM; p.zz = PRESSURE_STDATM; erot = PRESSURE_STDATM;
+#ifdef _GAUSSIAN_HEAT_TRANSFER_
        q.zero();
-    }
-
-
-    /* Source terms */
-    void relax(double deltat, int stage, const Gaussian2D_pState &W);
-    int analytically_inverted_relaxation() { //this is needed for embeddedboundaries with gaussian2D
-      return 1;
+#endif
     }
 
 
@@ -282,6 +299,13 @@ class Gaussian2D_pState{
 
     double sound(void);
     double sound(void) const;
+
+    /* Other gas properties */
+    double R(void) const;
+    double Gamma(void) const;
+    double Cv(void) const;
+    double Cp(void) const;
+    double K(void) const;
 
     /* Momentum. */
     Vector2D dv(void);
@@ -400,9 +424,22 @@ class Gaussian2D_pState{
     Gaussian2D_pState lp_y(int index) const;
     friend Gaussian2D_pState lp_y(const Gaussian2D_pState &W, int index);
 
+    /* Source terms */
+    void relax(double deltat, int stage, const Gaussian2D_pState &W);
+    int analytically_inverted_relaxation() { //this is needed for embeddedboundaries with gaussian2D
+      return 1;
+    }
+
     //translational and rotational relaxation times
     double tt() const;
     double tr() const;
+
+    //temperature slip distance
+    double gt() const;
+
+    //set temperature and set state from ics
+    void set_temperature_d(double temperature);
+    void set_state_from_ips(Gaussian2D_Input_Parameters &IP); //in Gaussian2D_State.cc
 
     /* Source vector (axisymmetric terms). */
     Gaussian2D_cState S(const Vector2D &X);
@@ -575,12 +612,15 @@ class Gaussian2D_cState{
     double                   d;   // Density.
     Vector2D                dv;   // Momentum.
     Tensor2D                 E;   // Total Energy.
+#ifdef _GAUSSIAN_HEAT_TRANSFER_
     Third_order_tensor2D     q;   // third-order heat tensor
+#endif
     double                erot;   // Rotational Energy
     static double            M;   // Molar Weight
     static int           atoms;   // Monatomic or Diatomic
     static int             gas;   // gas type
-    static double        alpha;   // Accommodation coefficient for gas/solid boundary
+    static double      alpha_m;   // Momentum accommodation coefficient for gas/solid boundary
+    static double      alpha_t;   // Thermal accommodation coefficient for gas/solid boundary
     static double           pr;   // Prandtl number
 	                          // Made public so can access them.
 		      
@@ -629,14 +669,19 @@ class Gaussian2D_cState{
     /* Vacuum operator. */
     void Vacuum(void) {
        d = ZERO; dv = Vector2D_ZERO; E.xx = ZERO;
-       E.xy = ZERO; E.yy = ZERO; E.zz = ZERO; erot = ZERO; q.zero();
+       E.xy = ZERO; E.yy = ZERO; E.zz = ZERO; erot = ZERO; 
+#ifdef _GAUSSIAN_HEAT_TRANSFER_
+       q.zero();
+#endif
     }
 
     /* Standard atmosphere operator. */
     void Standard_Atmosphere(void) {
        d = DENSITY_STDATM; dv.zero(); E.xx = PRESSURE_STDATM;
        E.xy = ZERO; E.yy = PRESSURE_STDATM; E.zz = PRESSURE_STDATM; erot = PRESSURE_STDATM;
+#ifdef _GAUSSIAN_HEAT_TRANSFER_
        q.zero();
+#endif
     }
 
     /* Set gas constants. */
@@ -1063,6 +1108,52 @@ inline double Gaussian2D_pState::sound(void) const {
 }
 
 /********************************************************
+ * Gaussian2D_pState::R -- Specific Gas Constant.       *
+ ********************************************************/
+inline double Gaussian2D_pState::R(void) const {
+  return R_UNIVERSAL/M;
+}
+
+/********************************************************
+ * Gaussian2D_pState::Gamma                             *
+ ********************************************************/
+inline double Gaussian2D_pState::Gamma(void) const {
+  switch(atoms) {
+    case 1 :
+      return (5.0/3.0);
+    case 2 :
+      return 1.4;
+    default :
+      cout << "Error determining Gamma." << endl;
+      return -1.0;
+  };
+}
+
+/********************************************************
+ * Gaussian2D_pState::Cv -- specific heat at constant V.*
+ ********************************************************/
+inline double Gaussian2D_pState::Cv(void) const {
+  return R()/(Gamma()-1.0);
+}
+
+/********************************************************
+ * Gaussian2D_pState::Cp -- specific heat at constant P.*
+ ********************************************************/
+inline double Gaussian2D_pState::Cp(void) const {
+  double g(Gamma());
+  return R()*g/(g-1.0);
+}
+
+/********************************************************
+ * Gaussian2D_pState::K -- Thermal conductivity.        *
+ ********************************************************/
+inline double Gaussian2D_pState::K(void) const {
+  return Cp()*viscosity()/pr;
+}
+
+
+
+/********************************************************
  * Gaussian2D_pState::dv -- Momentum.                   *
  ********************************************************/
 inline Vector2D Gaussian2D_pState::dv(void) {
@@ -1208,7 +1299,10 @@ inline double Gaussian2D_pState::burningrate(void) const {
  * Gaussian2D_pState -- Assignment operator.                          *
  **********************************************************************/
 inline Gaussian2D_pState& Gaussian2D_pState::operator =(const Gaussian2D_pState &W) {
-  d = W.d; v = W.v; p = W.p; erot = W.erot; q = W.q;
+  d = W.d; v = W.v; p = W.p; erot = W.erot; 
+#ifdef _GAUSSIAN_HEAT_TRANSFER_
+  q = W.q;
+#endif
   return *this;
 }
 
@@ -1479,7 +1573,10 @@ inline double Gaussian2D_cState::burningrate(void) const {
  * Gaussian2D_cState -- Assignment operator.                          *
  **********************************************************************/
 inline Gaussian2D_cState& Gaussian2D_cState::operator =(const Gaussian2D_cState &U) {
-  d = U.d; dv = U.dv; E = U.E; erot = U.erot; q = U.q;
+  d = U.d; dv = U.dv; E = U.E; erot = U.erot; 
+#ifdef _GAUSSIAN_HEAT_TRANSFER_
+  q = U.q;
+#endif
   return *this;
 }
 
@@ -1797,6 +1894,7 @@ inline Gaussian2D_cState Fn(const Gaussian2D_pState &W) {
 }
 */
 
+#ifdef _GAUSSIAN_HEAT_TRANSFER_
 /********************************************************
  * Gaussian2D_pState::Gx & Gy -- elliptic (heat) flux.  *
  ********************************************************/
@@ -1825,7 +1923,7 @@ inline Gaussian2D_cState Gaussian2D_pState::Gy(const Gaussian2D_pState &dWdy) co
  ********************************************************/
 inline void Gaussian2D_pState::ComputeHeatTerms(const Gaussian2D_pState &dWdx,
 						const Gaussian2D_pState &dWdy,
-						const Vector2D &X,
+						const Vector2D &X,//this variable is added to be consistend with Jai
 						const int &Axisymmetric) {
 
   double tau = pr*tt();
@@ -1854,6 +1952,7 @@ inline void Gaussian2D_pState::ComputeHeatTerms(const Gaussian2D_pState &dWdx,
 
   return;
 }
+#endif
 
 /************************************************************
  * Gaussian2D_pState::lambda -- Eigenvalue(s) (x-direction).*
@@ -2811,6 +2910,32 @@ inline double Gaussian2D_pState::tr() const {
   return 15.0/4.0*bulk_viscosity()/pressure();
 }
 
+/*************************************************************
+ * Gaussian2D_pState -- temperature jump distance            *
+ *                                                           *
+ *      This is used for temperature slip BC.                *
+ *                                                           *
+ * For more details, see "Kinetic Theory of Gases" by        *
+ * Kennard(1938) p.311-314.                                  *
+ *      Available at the UTIAS library.                      *
+ *                                                           *
+ * Kennard simply uses "g", but I don't want it confused     *
+ * with gamma.                                               *
+ *************************************************************/
+inline double Gaussian2D_pState::gt() const {
+  return (2.0-alpha_t)/alpha_t * sqrt(2*PI*R()*T()) * K()/((Gamma()+1.0)*Cv()*pressure());
+}
+
+/*************************************************************
+ * Gaussian2D_pState -- set_temperatur_d                     *
+ *************************************************************/
+inline void Gaussian2D_pState::set_temperature_d(double temperature) {
+  //This uses the "thermodynamic" pressure and does not change
+  //velocities, therefore it implicitly changes Mach numbers.
+  d = pressure()*M/(AVOGADRO*BOLTZMANN*temperature)/THOUSAND;
+  return;
+}
+
 /********************************************************
  * Gaussian2D_cState::Gaussian2D_cState -- Constructor. *
  ********************************************************/
@@ -3045,6 +3170,7 @@ inline void dFndU(DenseMatrix &dFndU, const Gaussian2D_cState &U) {
 }
 */
 
+#ifdef _GAUSSIAN_HEAT_TRANSFER_
 /********************************************************
  * Gaussian2D_cState::Gx & Gy -- elliptic (heat) flux.  *
  ********************************************************/
@@ -3073,7 +3199,7 @@ inline Gaussian2D_cState Gaussian2D_cState::Gy(const Gaussian2D_pState &dWdy) co
  ********************************************************/
 inline void Gaussian2D_cState::ComputeHeatTerms(const Gaussian2D_pState &dWdx,
 						const Gaussian2D_pState &dWdy,
-						const Vector2D &X,
+						const Vector2D &X,//this variable is added to be consistend with Jai
 						const int &Axisymmetric) {  //this is very poorly coded.
                                                                             //fix this later
   Tensor2D pressure = p();
@@ -3103,6 +3229,7 @@ inline void Gaussian2D_cState::ComputeHeatTerms(const Gaussian2D_pState &dWdx,
 
   return;
 }
+#endif
 
 /**********************************************************
  * Gaussian2D_cState::S -- Source terms (axisymmetric flow). *
@@ -3158,9 +3285,10 @@ extern Gaussian2D_pState Reflect(const Gaussian2D_pState &W,
 extern Gaussian2D_pState NoSlip(const Gaussian2D_pState &W,
 	      	                const Vector2D &norm_dir);
 
-extern Gaussian2D_pState Adiabatic_Wall(const Gaussian2D_pState &W,
-					const Gaussian2D_pState &Wo,
-					const Vector2D &norm_dir);
+extern double dTdn(const Gaussian2D_pState &W,
+		   const Gaussian2D_pState &dWdx,
+		   const Gaussian2D_pState &dWdy,
+		   const Vector2D &norm_dir);
 
 extern Gaussian2D_pState Adiabatic_Wall(const Gaussian2D_pState &W,
 					const Gaussian2D_pState &Wo,
@@ -3172,21 +3300,32 @@ extern Gaussian2D_pState Adiabatic_Wall(const Gaussian2D_pState &W,
 					const Vector2D &norm_dir);
 
 extern Gaussian2D_pState Isothermal_Wall(const Gaussian2D_pState &W,
-					 const Gaussian2D_pState &Wo,
-					 const Vector2D &norm_dir);
-
-extern Gaussian2D_pState Isothermal_Wall(const Gaussian2D_pState &W,
 					 const Vector2D &V,
 					 const double &T,
 					 const Vector2D &norm_dir);
 
+extern Gaussian2D_pState Isothermal_Wall_Slip_T(const Gaussian2D_pState &W,
+						const Vector2D &V,
+						const double &T,
+						const Gaussian2D_pState &dWdx,
+						const Gaussian2D_pState &dWdy,
+						const Vector2D &norm_dir);
+
 extern Gaussian2D_pState Knudsen_Layer_Adiabatic(const Gaussian2D_pState &W,
-						 const Gaussian2D_pState &Wo,
+						 const Vector2D &v,
 						 const Vector2D &norm_dir);
 
 extern Gaussian2D_pState Knudsen_Layer_Isothermal(const Gaussian2D_pState &W,
-						  const Gaussian2D_pState &Wo,
+						  const Vector2D &V,
+						  const double &T,
 						  const Vector2D &norm_dir);
+
+extern Gaussian2D_pState Knudsen_Layer_Isothermal_Slip_T(const Gaussian2D_pState &W,
+							 const Vector2D &V,
+							 const double &T,
+							 const Gaussian2D_pState &dWdx,
+							 const Gaussian2D_pState &dWdy,
+							 const Vector2D &norm_dir);
 
 extern Gaussian2D_pState RinglebFlowAverageState(const Gaussian2D_pState &Wdum,
 						 const Vector2D &Y1,

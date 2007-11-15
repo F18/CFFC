@@ -334,7 +334,7 @@ class Euler3D_ThermallyPerfect_pState {
    double kappa(void) const; 
    double hprime(void) const;  
    double hprime(double &Temp) const;
-Vector3D rhov(void) const;      
+   Vector3D rhov(void) const;      
    double T(void) const;         
    //Determine temperature knowing sensible enthalpy 
    double T(double &h_s) const;   
@@ -376,7 +376,13 @@ Vector3D rhov(void) const;
    Euler3D_ThermallyPerfect_pState lambda_x(void) const;
    Euler3D_ThermallyPerfect_cState rc_x(const int &index) const; 
    Euler3D_ThermallyPerfect_pState lp_x(const int &index) const; 
-  
+
+/** @name Flux Jacobians */
+/*        -------------- */
+   //@{
+   void dFIxdU(DenseMatrix &dFxdU);         //!< x-direction Flux Jacobian
+   //@}
+
    /* Index operator */
    double &operator[](int index);
    const double &operator[](int index) const;
@@ -424,8 +430,16 @@ Vector3D rhov(void) const;
    friend Euler3D_ThermallyPerfect_pState HartenFixPos(const Euler3D_ThermallyPerfect_pState  &lambda_a,
                                                        const Euler3D_ThermallyPerfect_pState  &lambda_l,
                                                        const Euler3D_ThermallyPerfect_pState  &lambda_r);
-				  
-   // Boundary Conditions
+
+  //! HLLE wavespeeds in n-direction given 2 primitive states and a direction
+  static Vector2D HLLE_wavespeeds(const Euler3D_ThermallyPerfect_pState &Wl,
+				  const Euler3D_ThermallyPerfect_pState &Wr,
+				  const Vector3D &norm_dir);
+  
+  //! Returns rotated primitive state aligned with norm_dir
+  Euler3D_ThermallyPerfect_pState Rotate(const Vector3D &norm_dir) const;				  
+  
+  // Boundary Conditions
    static Euler3D_ThermallyPerfect_pState Reflect(const Euler3D_ThermallyPerfect_pState &W, 
                                                   const Vector3D &norm_dir);
 
@@ -667,6 +681,8 @@ class Euler3D_ThermallyPerfect_cState {
                                 const Euler3D_ThermallyPerfect_cState &U);
    friend istream& operator >> (istream &in_file,  
                                 Euler3D_ThermallyPerfect_cState &U);
+
+  Euler3D_ThermallyPerfect_cState RotateI(const Vector3D &norm_dir) const;
 
    /* Destructors */
    void Deallocate_static(void) {

@@ -77,8 +77,8 @@ class Grid3D_Hexa_Multi_Block_List{
       // create various multiblock multiblock grid depending on input parameters
       switch(Input.i_Grid) {
         case GRID_CUBE :
-          Create_Grid_Cube(Input);
-          break;
+          Create_Grid_Cube(Input);        // shouldn't this just call Create_Grid to avoid duplication!!!
+          break;                        
         case GRID_CHANNEL_XDIR :
         case GRID_CHANNEL_YDIR:
         case GRID_CHANNEL_ZDIR:
@@ -91,7 +91,7 @@ class Grid3D_Hexa_Multi_Block_List{
           break;
         case GRID_PIPE :
           Create_Grid_Pipe(Input);
-          break;
+          break; 
         case GRID_BLUFF_BODY_BURNER :
           Create_Grid_Bluff_Body_Burner(Input);
           break;
@@ -140,7 +140,7 @@ class Grid3D_Hexa_Multi_Block_List{
     void Create_Grid_Couette(Grid3D_Input_Parameters &Input);
 
     void Create_Grid_Pipe(Grid3D_Input_Parameters &Input);
-
+  
     void Create_Grid_Bluff_Body_Burner(Grid3D_Input_Parameters &Input);
 
     void Find_Neighbours(void);
@@ -192,10 +192,13 @@ class Grid3D_Hexa_Multi_Block{
           break;
         case GRID_PIPE :
           Create_Grid_Pipe(Input);
-          break;
+          break; 
+        case GRID_BUMP_CHANNEL_FLOW :
+	  Create_Grid_Bump_Channel_Flow(Input);
+	  break;
         case GRID_BLUFF_BODY_BURNER :
           Create_Grid_Bluff_Body_Burner(Input);
-          break;
+          break; 
         case GRID_ICEMCFD :
           Create_Grid_ICEMCFD(Input);
           break;
@@ -239,6 +242,8 @@ class Grid3D_Hexa_Multi_Block{
     void Create_Grid_Couette(Grid3D_Input_Parameters &Input);
 
     void Create_Grid_Pipe(Grid3D_Input_Parameters &Input);
+
+    void Create_Grid_Bump_Channel_Flow(Grid3D_Input_Parameters &Input);
 
     void Create_Grid_Bluff_Body_Burner(Grid3D_Input_Parameters &Input);
 

@@ -1,10 +1,9 @@
-/****************** LESPremixed2DInput.cc ************************************
-  Constructors for the LESPremixed2DInput class.
-
-NEW
-
-  associated header file:  LESPremixed2DInput.h
-***********************************************************************/
+/*****************************************************//**
+ * \file LESPremixed2DInput.cc
+ *
+ * Subroutines for the LESPremixed2DInput class.
+ *
+ **********************************************************/
 
 // LESPREMIXED2D Header file
 #ifndef _LESPREMIXED2D_INPUT_INCLUDED

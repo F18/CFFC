@@ -1,8 +1,8 @@
-/**********************************************************************
- * LevelSet2DQuadSolvers.cc                                           *
- *                                                                    *
- * 2D Level Set equation multi-block quadrilateral mesh solvers.      *
- *                                                                    *
+/******************************************************************//**
+ * \file LevelSet2DQuadSolvers.cc                                     
+ *                                                                    
+ * 2D Level Set equation multi-block quadrilateral mesh solvers.      
+ *                                                                    
  **********************************************************************/
 
 // Include 2D LevelSet quadrilateral mesh solution header file.
@@ -11,12 +11,12 @@
 #include "LevelSet2DQuad.h"
 #endif // _LEVELSET2D_QUAD_INCLUDED
 
-/**********************************************************************
- * Routine: LevelSet2DQuadSolver                                      *
- *                                                                    *
- * Computes solutions to 2D LevelSet equations on 2D quadrilateral    *
- * multi-block solution-adaptive mesh.                                *
- *                                                                    *
+/******************************************************************//**
+ * Routine: LevelSet2DQuadSolver                                      
+ *                                                                    
+ * Computes solutions to 2D LevelSet equations on 2D quadrilateral    
+ * multi-block solution-adaptive mesh.                                
+ *                                                                    
  **********************************************************************/
 int LevelSet2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 
@@ -43,6 +43,11 @@ int LevelSet2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
       command_flag, error_flag, line_number, 
       perform_explicit_time_marching, limiter_freezing_off,
       redistance_count;
+
+  double global_error, global_area, weighted_global_error;
+  global_error = ZERO;
+  global_area = ZERO;
+  weighted_global_error = ZERO;
 
   double Time, dTime;
 
@@ -461,7 +466,7 @@ int LevelSet2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
       }
 
       // Determine local and global time steps.
-      dTime = CFL_Hamilton_Jacobi(Local_SolnBlk,List_of_Local_Solution_Blocks);
+      dTime = CFL_Hamilton_Jacobi(Local_SolnBlk,List_of_Local_Solution_Blocks,Input_Parameters);
       // Find global minimum time step for all processors.
       dTime = CFFC_Minimum_MPI(dTime);
       if (Input_Parameters.Time_Accurate) {
@@ -629,25 +634,80 @@ int LevelSet2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
       // Apply boundary conditions before redistancing.
       BCs(Local_SolnBlk,List_of_Local_Solution_Blocks,Input_Parameters);
 
-      if (redistance_count == Input_Parameters.Redistance_Frequency-1) {
-	// Reset redistance count.
-	redistance_count = 0;
-	// Redistance level set function to be a signed distance function.
-	error_flag = Explicit_Eikonal_Equation(Local_SolnBlk,
-					       Input_Parameters,
-					       QuadTree,
-					       List_of_Global_Solution_Blocks,
-					       List_of_Local_Solution_Blocks,
-					       ON);
+      // Reinitialization procedure.
+      if (Input_Parameters.i_Redistance_Criteria == EIKONAL_CRITERIA_THRESHOLD) {
+	// Use a threshold-based reinitilization criteria.
+
+	error_flag = Eikonal_Error(Local_SolnBlk,
+				   Input_Parameters,
+				   List_of_Local_Solution_Blocks,
+				   global_error,
+				   global_area);
 	if (error_flag) {
-	  cout << "\n LevelSet2D ERROR: LevelSet2D error during redistancing on processor "
+	  cout << "\n LevelSet2D ERROR: LevelSet2D error during redistance error-checking on processor "
 	       << List_of_Local_Solution_Blocks.ThisCPU << "." << endl;
 	}
 	error_flag = CFFC_OR_MPI(error_flag);
 	if (error_flag) return error_flag;
+	CFFC_Barrier_MPI();
+
+	// Compile the errors from each processor.
+	global_error = CFFC_Summation_MPI(global_error);
+	global_area = CFFC_Summation_MPI(global_area);
+	weighted_global_error = global_error/global_area;
+	CFFC_Barrier_MPI();      
+
+	// Perform Eikonal redistancing if error exceeds threshold.
+	if (weighted_global_error > Input_Parameters.Eikonal_Threshold) {
+
+	  // Reset.
+	  global_error = ZERO;
+	  global_area = ZERO;
+	  weighted_global_error = ZERO;
+
+	  // Notify the user that the function is being reinitialized.
+	  if (!batch_flag) {
+	    cout << "\n\n  Redistancing to a signed distance function after n = " << number_of_time_steps << " steps (iterations)." << endl;
+	  }
+
+	  // Redistance level set function to be a signed distance function.
+	  error_flag = Explicit_Eikonal_Equation(Local_SolnBlk,
+						 Input_Parameters,
+						 QuadTree,
+						 List_of_Global_Solution_Blocks,
+						 List_of_Local_Solution_Blocks,
+						 ON);
+	  if (error_flag) {
+	    cout << "\n LevelSet2D ERROR: LevelSet2D error during redistancing on processor "
+		 << List_of_Local_Solution_Blocks.ThisCPU << "." << endl;
+	  }
+	  error_flag = CFFC_OR_MPI(error_flag);
+	  if (error_flag) return error_flag;
+
+	}
+
       } else {
-	// Increment redistance count.
-	redistance_count++;
+	// Use a frequency-based reinitialization criteria.
+	if (redistance_count == Input_Parameters.Redistance_Frequency-1) {
+	  // Reset redistance count.
+	  redistance_count = 0;
+	  // Redistance level set function to be a signed distance function.
+	  error_flag = Explicit_Eikonal_Equation(Local_SolnBlk,
+						 Input_Parameters,
+						 QuadTree,
+						 List_of_Global_Solution_Blocks,
+						 List_of_Local_Solution_Blocks,
+						 ON);
+	  if (error_flag) {
+	    cout << "\n LevelSet2D ERROR: LevelSet2D error during redistancing on processor "
+		 << List_of_Local_Solution_Blocks.ThisCPU << "." << endl;
+	  }
+	  error_flag = CFFC_OR_MPI(error_flag);
+	  if (error_flag) return error_flag;
+	} else {
+	  // Increment redistance count.
+	  redistance_count++;
+	}
       }
 
     }
@@ -1113,11 +1173,11 @@ int LevelSet2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
 
 }
 
-/**********************************************************************
- * Routine: Initialize_Level_Set_Solution                             *
- *                                                                    *
- *                                                                    *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Initialize_Level_Set_Solution                             
+ *                                                                    
+ *                                                                    
+ *                                                                    
  **********************************************************************/
 LevelSet2D_Quad_Block* Initialize_Level_Set_Solution(char *Input_File_Name,
 						     const int &batch_flag,
@@ -1372,11 +1432,11 @@ LevelSet2D_Quad_Block* Initialize_Level_Set_Solution(char *Input_File_Name,
 
 }
 
-/**********************************************************************
- * Routine: Restart_Level_Set_Solution                                *
- *                                                                    *
- *                                                                    *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Restart_Level_Set_Solution                                
+ *                                                                    
+ *                                                                    
+ *                                                                    
  **********************************************************************/
 LevelSet2D_Quad_Block* Restart_Level_Set_Solution(char *Input_File_Name,
 						  const int &batch_flag,
@@ -1599,8 +1659,8 @@ LevelSet2D_Quad_Block* Restart_Level_Set_Solution(char *Input_File_Name,
 
 }
 
-/**********************************************************************
- * Routine: Evolve_Level_Set_Solution                                 *
+/******************************************************************//**
+ * Routine: Evolve_Level_Set_Solution                                 
  **********************************************************************/
 int Evolve_Level_Set_Solution(const int &batch_flag,
 			      LevelSet2D_Quad_Block *Local_SolnBlk,
@@ -1616,6 +1676,11 @@ int Evolve_Level_Set_Solution(const int &batch_flag,
   int redistance_count = 0, first_step = 1;
   double dTime;
 
+  double global_error, global_area, weighted_global_error;
+  global_error = ZERO;
+  global_area = ZERO;
+  weighted_global_error = ZERO;
+
 //   char extension[256], output_file_name[256];
 //   char *output_file_name_ptr;
 //   ofstream dout;
@@ -1625,7 +1690,7 @@ int Evolve_Level_Set_Solution(const int &batch_flag,
 //   strcat(output_file_name,extension);
 //   output_file_name_ptr = output_file_name;
 //   dout.open(output_file_name_ptr,ios::out);
-//   if (dout.bad()) return ;
+//   if (dout.fail()) return ;
 
   // Perform required number of iterations (time steps).
   if (Time_Max > Time) {
@@ -1674,7 +1739,9 @@ int Evolve_Level_Set_Solution(const int &batch_flag,
       }
 
       // Determine local and global time steps.
-      dTime = CFL_Hamilton_Jacobi(Local_SolnBlk,List_of_Local_Solution_Blocks);
+      dTime = CFL_Hamilton_Jacobi(Local_SolnBlk,
+				  List_of_Local_Solution_Blocks,
+				  Input_Parameters);
       // Find global minimum time step for all processors.
       dTime = CFFC_Minimum_MPI(dTime);
       if (Time + Input_Parameters.Hamilton_Jacobi_CFL_Number*dTime > Time_Max)
@@ -1735,21 +1802,79 @@ int Evolve_Level_Set_Solution(const int &batch_flag,
       // Apply boundary conditions before redistancing.
       BCs(Local_SolnBlk,List_of_Local_Solution_Blocks,Input_Parameters);
 
-      // Redistance level set function to be a signed distance function.
+      // Samuel: Calculate the error in the Eikonal equation solution.
+      error_flag = Eikonal_Error(Local_SolnBlk,
+				 Input_Parameters,
+				 List_of_Local_Solution_Blocks,
+				 global_error,
+				 global_area);
+      if (error_flag) {
+	cout << "\n LevelSet2D ERROR: LevelSet2D error during redistance error-checking on processor "
+	     << List_of_Local_Solution_Blocks.ThisCPU << "." << endl;
+      }
+      error_flag = CFFC_OR_MPI(error_flag);
+      if (error_flag) return error_flag;
+
+      // MPI barrier to ensure processor synchronization.
+      CFFC_Barrier_MPI();
+
+      global_error = CFFC_Summation_MPI(global_error);
+      global_area = CFFC_Summation_MPI(global_area);
+      weighted_global_error = global_error/global_area;
+
+      // MPI barrier to ensure processor synchronization.
+      CFFC_Barrier_MPI();
+
+      // Print out the weighted global error.
+      if (!batch_flag) {
+	cout << "\n Weighted global error = " << weighted_global_error << endl;
+      }
+
+      // Perform Eikonal redistancing if necessary.
+      //  if (weighted_global_error > Input_Parameters.Eikonal_Threshold) {
       if (redistance_count == Input_Parameters.Redistance_Frequency-1) {
+	
+	// Reset.
 	redistance_count = 0;
+	global_error = ZERO;
+	global_area = ZERO;
+	weighted_global_error = ZERO;
+
+	if (!batch_flag) {
+	  cout << "\n\n  Redistancing to a signed distance function after n = " << number_of_time_steps << " steps (iterations).\n";
+	}
 	error_flag = Explicit_Eikonal_Equation(Local_SolnBlk,
 					       Input_Parameters,
 					       QuadTree,
 					       List_of_Global_Solution_Blocks,
 					       List_of_Local_Solution_Blocks,
 					       ON);
+	if (error_flag) {
+	  cout << "\n LevelSet2D ERROR: LevelSet2D error during redistancing on processor "
+	       << List_of_Local_Solution_Blocks.ThisCPU << "." << endl;
+	}
 	error_flag = CFFC_OR_MPI(error_flag);
 	if (error_flag) return error_flag;
       } else {
 	// Increment redistance count.
 	redistance_count++;
       }
+
+//       // Redistance level set function to be a signed distance function.
+//       if (redistance_count == Input_Parameters.Redistance_Frequency-1) {
+// 	redistance_count = 0;
+// 	error_flag = Explicit_Eikonal_Equation(Local_SolnBlk,
+// 					       Input_Parameters,
+// 					       QuadTree,
+// 					       List_of_Global_Solution_Blocks,
+// 					       List_of_Local_Solution_Blocks,
+// 					       ON);
+// 	error_flag = CFFC_OR_MPI(error_flag);
+// 	if (error_flag) return error_flag;
+//       } else {
+// 	// Increment redistance count.
+// 	redistance_count++;
+//       }
 
     }
 

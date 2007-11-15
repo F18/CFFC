@@ -1,0 +1,15 @@
+#!/bin/tcsh
+#
+#PBS -N curv_circle
+#PBS -q iqmaster
+#PBS -l walltime=1:00:00,nodes=4:ppn=4:itanium-8G,other=night
+#PBS -W group_list=cfd
+
+cd /nfs/fe03/d1/cfd/samuel/CFFC/examples/LevelSet2D/circle_2/curvature/
+mpirun -np 16 --gm-no-shmem --gm-kill 2 /nfs/fe03/d1/cfd/samuel/CFFC/src_2D/levelset2D -f circle.in >& circle.log
+cat circle_cpu*.dat > points.dat
+cat circle_cells_cpu*.dat > cells.dat
+cat circle_nodes_cpu*.dat > nodes.dat
+cat circle_interface_list_cpu*.dat > interface_list.dat
+rm circle_*cpu*.dat
+rm circle.e* circle.o*
