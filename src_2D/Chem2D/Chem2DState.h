@@ -86,7 +86,7 @@ using namespace std;
 
 // If you define this variable, the number of species will be
 // predetermined for faster calculations.., however it is not as general 
-#define STATIC_NUMBER_OF_SPECIES 6 //2 AIR, 6 2STEP_CH4
+#define STATIC_NUMBER_OF_SPECIES 6 //2 AIR, 6 2STEP_CH4, 36 Detailed
 
 /*!
  * Class: Chem2D_pState
