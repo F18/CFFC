@@ -306,18 +306,19 @@ double dTdn(const Gaussian2D_pState &W,
 	    const Gaussian2D_pState &dWdy,
 	    const Vector2D &norm_dir) {
 
+  double temp(AVOGADRO*THOUSAND/W.M*BOLTZMANN);
   Gaussian2D_pState dWdn(norm_dir.x*dWdx+norm_dir.y*dWdy);
 
   switch(W.atoms) {
     case 1 :
 
       return ( 1.0/(3.0*W.d)*(dWdn.p.xx+dWdn.p.yy+dWdn.p.zz) -
-	       1.0/(3.0*W.d*W.d)*(W.p.xx+W.p.yy+W.p.zz)*dWdn.d);
+	       1.0/(3.0*W.d*W.d)*(W.p.xx+W.p.yy+W.p.zz)*dWdn.d)/temp;
 
     case 2 :
 
       return ( 1.0/(5.0*W.d)*(dWdn.p.xx+dWdn.p.yy+dWdn.p.zz+2.0*dWdn.erot) -
-	       1.0/(5.0*W.d*W.d)*(W.p.xx+W.p.yy+W.p.zz+2.0*W.erot)*dWdn.d);
+	       1.0/(5.0*W.d*W.d)*(W.p.xx+W.p.yy+W.p.zz+2.0*W.erot)*dWdn.d)/temp;
 
     default :
       cout << "Error determining dTdn." << endl;
