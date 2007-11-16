@@ -1721,7 +1721,7 @@ extern void Read_Quad_Block(Grid2D_Quad_Block &Grid,
 	                    istream &In_File);
 
 extern void Copy_Quad_Block(Grid2D_Quad_Block &Grid1,
-		            Grid2D_Quad_Block &Grid2);
+		            const Grid2D_Quad_Block &Grid2);
 
 extern void Translate_Quad_Block(Grid2D_Quad_Block &Grid,
 	      	                 const Vector2D &V);

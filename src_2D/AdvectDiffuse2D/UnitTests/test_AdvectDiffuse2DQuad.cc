@@ -9,6 +9,7 @@
 
 /* Include CFFC header files */
 #include "TestData.h"
+#include "../New_AdvectDiffuse2DQuad.h"
 
 namespace tut
 {
@@ -27,7 +28,7 @@ namespace tut
 	 automatically for each individual test. Declare it relative to the /src_2D directory,
 	 otherwise the framework might not find the input and output files. */
       
-      set_test_suite_path("GLOBAL_PATH");
+      set_test_suite_path("AdvectDiffuse2D/UnitTests/");
     }
 
   private:
@@ -79,7 +80,13 @@ namespace tut
   void AdvectDiffuse2D_Quad_Block_object::test<1>()
   {
 
-    set_test_name("Name of the test");
+    set_test_name("Create quad block");
+
+    AdvectDiffuse2D_Quad_Block_New SolnBlk;
+
+    SolnBlk.allocate(5,5,2);
+
+    //    Print_(SolnBlk)
 
   }
 

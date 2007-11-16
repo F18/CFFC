@@ -173,6 +173,7 @@ SRC_ADVECTDIFFUSE = $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DState.cc \
                     $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuad.cc \
                     $(ADVECTDIFFUSE_DIR)New_AdvectDiffuse2DQuad.cc \
 	            $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuadSingleBlock.cc \
+	            $(ADVECTDIFFUSE_DIR)New_AdvectDiffuse2DQuadSingleBlock.cc \
                     $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuadMultiBlock.cc \
                     $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuadGrid.cc \
                     $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuadSolvers.cc \
