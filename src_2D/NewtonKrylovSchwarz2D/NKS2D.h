@@ -136,12 +136,61 @@ int Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
   if (Input_Parameters.NKS_IP.Dual_Time_Stepping) { 
 
     double DTS_dTime(ZERO);
-    double physical_time(Physical_Time);   
     int physical_time_param(TIME_STEPPING_IMPLICIT_EULER);
 
     // Outer Loop (Physical Time)      
     while ( (DTS_Step < Input_Parameters.NKS_IP.Maximum_Number_of_DTS_Steps) &&
-	    (Input_Parameters.Time_Max > physical_time ) ) {
+	    (Input_Parameters.Time_Max > Physical_Time ) ) {
+
+      //CHANGE THIS TO WORK WITH NKS DTS 
+      /***********************************************************************	
+	MESH REFINEMENT: Periodically refine the mesh (AMR). 
+      ************************************************************************/
+      if (Input_Parameters.AMR) {
+	if (DTS_Step != 1ll  &&  (number_of_explicit_time_steps + DTS_Step-1) % Input_Parameters.AMR_Frequency == 0){
+
+	  if (CFFC_Primary_MPI_Processor()){
+	    cout << "\n\n Refining Grid.  Performing adaptive mesh refinement at n = "
+		 <<  number_of_explicit_time_steps + DTS_Step << ".";
+	  }
+	  
+	  Evaluate_Limiters(SolnBlk, List_of_Local_Solution_Blocks);
+// 	  error_flag = AMR(Local_SolnBlk,
+// 			   Input_Parameters,
+// 			   QuadTree,                               //NEED THIS PASSED IN
+// 			   List_of_Global_Solution_Blocks,         //NEED THIS
+// 			   List_of_Local_Solution_Blocks,
+// 			   ON, 
+// 			   ON);
+
+	  if (error_flag) {
+	    cout << "\n Chem2D ERROR: Chem2D AMR error on processor "
+		 << List_of_Local_Solution_Blocks.ThisCPU<< ".\n";   cout.flush();
+	  } 
+	  error_flag = CFFC_OR_MPI(error_flag);
+	  if (error_flag) return (error_flag);
+          
+// 	  if (CFFC_Primary_MPI_Processor()) {
+// 	    cout << "\n New multi-block solution-adaptive quadrilateral mesh statistics: "; 
+// 	    cout << "\n  -> Number of Root Blocks i-direction: "
+// 		 << QuadTree.NRi;
+// 	    cout << "\n  -> Number of Root Blocks j-direction: " 
+// 		 << QuadTree.NRj;
+// 	    cout << "\n  -> Total Number of Used Blocks: " 
+// 		 << QuadTree.countUsedBlocks();
+// 	    cout << "\n  -> Total Number of Computational Cells: " 
+// 		 << QuadTree.countUsedCells();
+// 	    cout << "\n  -> Number of Mesh Refinement Levels: " 
+// 		 << QuadTree.highestRefinementLevel()+1;
+// 	    cout << "\n  -> Refinement Efficiency: " 
+// 		 << QuadTree.efficiencyRefinement() << "\n";
+// 	    cout.flush();
+// 	  } 
+	}
+	//NOW DEALLOCATE & REALLOCATE DTS, GMRES, BLOCKPRECON MEMORY FOR
+	//NEW # OF BLOCKS!
+      }
+      /**************************************************************************/    
 
       /**************************************************************************/    
       // First Step needs to be done with Implicit Euler
@@ -160,8 +209,8 @@ int Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 	DTS_dTime = Input_Parameters.NKS_IP.Physical_Time_CFL_Number*CFFC_Minimum_MPI(DTS_dTime); 
 	
 	//Last Time sized to get Time_Max
-	if( physical_time + DTS_dTime > Input_Parameters.Time_Max){
-	  DTS_dTime = Input_Parameters.Time_Max - physical_time;
+	if( Physical_Time + DTS_dTime > Input_Parameters.Time_Max){
+	  DTS_dTime = Input_Parameters.Time_Max - Physical_Time;
 	}
       }
       /**************************************************************************/
@@ -187,7 +236,7 @@ int Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 							 GMRES_,
 							 Block_precon,
 							 DTS_SolnBlk,
-							 physical_time,
+							 Physical_Time,
 							 DTS_Step);              
       /**************************************************************************/
 
@@ -200,7 +249,7 @@ int Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 
       /**************************************************************************/
       // Update Physical Time
-      physical_time +=  DTS_dTime;
+      Physical_Time +=  DTS_dTime;
       /**************************************************************************/
 
       /**************************************************************************/
@@ -213,10 +262,22 @@ int Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
       //DTS Output
       if (CFFC_Primary_MPI_Processor()) {
 	cout << "\n *** End of DTS Step " << DTS_Step; 
-	cout << " Time Step: " << DTS_dTime << "s  Real Time: " << physical_time << "s **** \n";
+	cout << " Time Step: " << DTS_dTime << "s  Real Time: " << Physical_Time << "s **** \n";
       }
       /**************************************************************************/
 
+      /**************************************************************************/
+      //Ouput Solution Every "n" steps 
+      if (  (number_of_explicit_time_steps + DTS_Step-1) % Input_Parameters.Time_Accurate_Plot_Frequency == 0){
+	if (CFFC_Primary_MPI_Processor()) cout<<"\n Outputting Solution Data \n ";
+	error_flag = Output_Tecplot_Periodic(SolnBlk, 
+					     List_of_Local_Solution_Blocks, 
+					     Input_Parameters,
+					     number_of_explicit_time_steps+DTS_Step-1,
+					     Physical_Time); 
+      }
+      /**************************************************************************/
+      
       // Increment DTS Steps
       DTS_Step++;
       
