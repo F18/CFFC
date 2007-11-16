@@ -106,6 +106,12 @@ SRC_GRID = $(GRID_DIR)Cell1D.cc \
            $(GRID_DIR)Grid3DHexaMultiBlock.cc
 SRC_ICEMCFD = $(ICEMCFD_DIR)ICEMCFD.cc \
 	      $(ICEMCFD_DIR)ICEMCFD_ctype.c
+# Add Grid Testing If Required:
+SRC_GRID_TESTS := test_Grid2DQuadIntegration.cc
+SRC_GRID_TESTS := $(addprefix $(GRID_DIR)UnitTests/,$(SRC_GRID_TESTS))
+ifeq ($(TUT_TESTING),ON) 
+  SRC_GRID += $(SRC_GRID_TESTS)
+endif
 
 # AMR:
 ifeq ($(MPI_VERSION),NoMPI)
@@ -1001,6 +1007,7 @@ clean:
 	rm -f $(MPI_DIR)*.o $(MPI_DIR)*.il $(MPI_DIR)*~
 	rm -f $(GRID_DIR)*.o $(GRID_DIR)*.il $(GRID_DIR)*~
 	rm -f $(ICEMCFD_DIR)*.o $(ICEMCFD_DIR)*.il $(ICEMCFD_DIR)*~ $(ICEMCFD_DIR)*.depend $(ICEMCFD_DIR)*.bak
+	rm -f $(GRID_DIR)UnitTests/*.o $(GRID_DIR)UnitTests/*.il $(GRID_DIR)UnitTests/*~ $(GRID_DIR)UnitTests/*.bak
 	rm -f $(AMR_DIR)*.o $(AMR_DIR)*.il $(AMR_DIR)*~
 	rm -f $(SYSTEM_DIR)*.o $(SYSTEM_DIR)*.il $(SYSTEM_DIR)*~
 	rm -f $(EULER_1D_DIR)*.o $(EULER_1D_DIR)*.il $(EULER_1D_DIR)*~ $(EULER_1D_DIR)*.bak

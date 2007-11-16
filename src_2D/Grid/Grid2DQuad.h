@@ -47,6 +47,8 @@ using namespace std;
 #include "../Math/LinearSystems.h"
 #endif // _LINEARSYSTEMS_INCLUDED
 
+#include "Grid2DQuadIntegration.h" // Include the 2D quadrilateral domain integration class header file.
+
 /* Define the following types of 2D quadrilateral block 
    node initialization procedures. */
 
