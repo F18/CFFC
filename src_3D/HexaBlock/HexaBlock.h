@@ -939,7 +939,7 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Output_Cells_Tecplot(Input_Parameters
    /* Output cell-centred solution data. */
 
    Out_File << setprecision(14);
-
+           
    if (Output_Title) {
       Out_File << "TITLE = \"" << CFFC_Name() << ": 3D Solution, "
                << "Time Step/Iteration Level = " << Number_of_Time_Steps
@@ -988,6 +988,8 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Output_Cells_Tecplot(Input_Parameters
          } /* endfor */
       } /* endfor */
    } /* endfor */
+
+  
    
    Out_File << setprecision(6);
     
@@ -2123,7 +2125,16 @@ int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::WtoU(void) {
    for (int k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) 
       for (int j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) 
          for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
+
+           /*  // if(W[i][j][k].T()>800) { */
+/*                cout<<"\n "<<i<<" "<<j<<" "<<k<<" R= "<<W[i][j][k].Rtot()<<endl; */
+/*                cout<<W[i][j][k]<<endl; */
+               
+/*                 //} */
+            
+            
             U[i][j][k]= W[i][j][k].U();
+          
          }// convert W to U 
    
    return (0);
@@ -3102,15 +3113,16 @@ int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::LoadSendBuffer_Solution(double *buffer
 						         const int k_min,
                                                          const int k_max,
                                                          const int k_inc ) {
-  int i, j, k, t;
-  for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-    for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
+
+   int i, j, k, t;
+   for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
+      for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
      for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
         for ( t = 1 ; t <= NumVar(); ++ t) {
   	   buffer_count = buffer_count + 1;
-	 
 	   if (buffer_count >= buffer_size) return(1);
            buffer[buffer_count] = U[i][j][k][t];
+           
         } /* endfor */
      } /* endfor */
   } /* endfor */
@@ -3165,9 +3177,9 @@ int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::LoadSendBuffer_Solution(double *buffer
             
             for ( int t = 1 ; t <= NumVar(); ++ t) {
                buffer_count = buffer_count + 1;
-           
-               if (buffer_count >= buffer_size) return(1);
+                if (buffer_count >= buffer_size) return(1);
                buffer[buffer_count] = U[i][j][k][t];
+               
             } /* endfor */
          } /* endfor */
       } /* endfor */
@@ -3434,7 +3446,7 @@ int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::UnloadReceiveBuffer_Solution(double *b
            for (int nV = 1 ; nV <=NumVar() ; ++ nV) {
               buffer_count = buffer_count + 1;
               if (buffer_count >= buffer_size) return(1);    
-
+            
               U[i][j][k][nV] = buffer[buffer_count];
            } /* endfor */
            W[i][j][k] = U[i][j][k].W();

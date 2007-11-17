@@ -56,7 +56,7 @@ Mass_Fractions =
 CFL_Number =
 0.1
 Maximum_Number_of_Time_Steps =
-0
+1
 Number_of_Blocks_Per_Processor =
 100
 Output_File_Name = 
@@ -70,7 +70,7 @@ Execute
 #######################
 Write_Output_Cells
 Write_Output_Nodes
-Write_Output
+#Write_Output
 Write_Restart
 #######################
 # Terminate program

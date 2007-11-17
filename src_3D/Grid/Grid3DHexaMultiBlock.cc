@@ -1247,7 +1247,7 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Bluff_Body_Burner(Grid3D_Input_Pa
                                    0.25*Input.Length_Combustor_Tube);
 	   Grid_Blks[iBlk].Set_BCs(BC_NONE,
 		                   BC_NONE,
-                                   BC_REFLECTION,
+                                   BC_WALL_VISCOUS,//BC_REFLECTION,
 		                   BC_NONE,
                                    BC_NONE,
                                    BC_NONE);
@@ -1261,7 +1261,7 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Bluff_Body_Burner(Grid3D_Input_Pa
                                    Input.Length_Combustor_Tube);
 	   Grid_Blks[iBlk].Set_BCs(BC_NONE,
 		                   BC_NONE,
-                                   BC_REFLECTION,
+                                   BC_WALL_VISCOUS,//BC_REFLECTION,
 		                   BC_NONE,
                                    BC_FIXED_PRESSURE,
                                    BC_NONE);
@@ -1275,7 +1275,7 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Bluff_Body_Burner(Grid3D_Input_Pa
                                    ZERO);
 	   Grid_Blks[iBlk].Set_BCs(BC_NONE,
 		                   BC_NONE,
-                                   BC_REFLECTION,
+                                   BC_WALL_VISCOUS,//BC_REFLECTION,
 		                   BC_WALL_VISCOUS,
                                    BC_NONE,
                                    BC_NONE);
@@ -1289,7 +1289,7 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Bluff_Body_Burner(Grid3D_Input_Pa
                                    -0.25*Input.Length_Coflow_Inlet_Pipe);
 	   Grid_Blks[iBlk].Set_BCs(BC_NONE,
 		                   BC_NONE,
-                                   BC_REFLECTION,
+                                   BC_WALL_VISCOUS,//BC_REFLECTION,
 		                   BC_WALL_VISCOUS,
                                    BC_DIRICHLET,
                                    BC_NONE);

@@ -798,13 +798,16 @@ int Hexa_Multi_Block<HEXA_BLOCK>::Output_Cells_Tecplot(Input_Parameters<typename
 
     i_output_title = 1;
     for (nblk = 0; nblk < Local_Adaptive_Block_List.Nblk; ++nblk) {
-       if (Local_Adaptive_Block_List.Block[nblk].used == ADAPTIVEBLOCK3D_USED) {    
+       if (Local_Adaptive_Block_List.Block[nblk].used == ADAPTIVEBLOCK3D_USED) {  
+          
+                
          Soln_Blks[nblk].Output_Cells_Tecplot(Input,
                                               Number_of_Time_Steps, 
                                               Time,
                                               Local_Adaptive_Block_List.Block[nblk].gblknum,
                                               i_output_title,
                                               output_file);
+      
          if (i_output_title) i_output_title = 0;
        } /* endif */
     }  /* endfor */

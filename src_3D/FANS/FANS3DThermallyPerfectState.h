@@ -197,13 +197,13 @@ class FANS3D_ThermallyPerfect_KOmega_pState : public NavierStokes3D_ThermallyPer
       set_initial_values(); Copy(W);
    }
 
-/*    void set_species_data(const int &n, */
-/*                          const string *S, */
-/*                          const char *PATH, */
-/*                          const int &debug,  */
-/*                          const double &Mr,  */
-/*                          const double* Sc, */
-/*                          const int &trans_data); */
+   void set_species_data(const int &n,
+                         const string *S,
+                         const char *PATH,
+                         const int &debug,
+                         const double &Mr,
+                         const double* Sc,
+                         const int &trans_data);
 
    void Vacuum(){
       Euler3D_ThermallyPerfect_pState::Vacuum();
@@ -461,13 +461,13 @@ class FANS3D_ThermallyPerfect_KOmega_cState : public NavierStokes3D_ThermallyPer
    const double &operator[](int index) const;
   
    //Read in ns species data
-/*    void set_species_data(const int &n, */
-/*                          const string *S, */
-/*                          const char *PATH, */
-/*                          const int &debug,  */
-/*                          const double &Mr,  */
-/*                          const double* Sc, */
-/*                          const int &trans_data); */
+   void set_species_data(const int &n,
+                         const string *S,
+                         const char *PATH,
+                         const int &debug,
+                         const double &Mr,
+                         const double* Sc,
+                         const int &trans_data);
 
    /* VACUUM **/
    void Vacuum(void) {

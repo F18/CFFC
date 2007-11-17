@@ -267,40 +267,46 @@ int HexaSolver(char *Input_File_Name_ptr,
 
    /* Send solution information between neighbouring blocks to complete
      prescription of initial data. */
- 
- 
-   i_error = Send_All_Messages<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >(Local_Solution_Blocks.Soln_Blks,
-                                                                Local_Adaptive_Block_List,
-                                                                NUM_COMP_VECTOR3D,
-                                                                ON);
-
-  
-   CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
    
-   if(!i_error)  Send_All_Messages<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >(Local_Solution_Blocks.Soln_Blks,
-                                                                    Local_Adaptive_Block_List,
-                                                                    Local_Solution_Blocks.Soln_Blks[0].NumVar(),
-                                                                    OFF);
+   error_flag = Send_All_Messages<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >(Local_Solution_Blocks.Soln_Blks,
+                                                                         Local_Adaptive_Block_List,
+                                                                         NUM_COMP_VECTOR3D,
+                                                                         ON);
 
-
-/*  Send_All_Messages<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >(Local_Solution_Blocks.Soln_Blks, */
-/*                                                                     Local_Adaptive_Block_List, */
-/*                                                                     Local_Solution_Blocks.Soln_Blks[0].NumVar(), */
-/*                                                                     OFF); */
-   /* Prescribe boundary data consistent with initial data. */
+ 
+  CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization. 
    
+   if(! error_flag )  Send_All_Messages<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >(Local_Solution_Blocks.Soln_Blks,
+                                                                               Local_Adaptive_Block_List,
+                                                                               Local_Solution_Blocks.Soln_Blks[0].NumVar(),
+                                                                               OFF);
+   
+   if (error_flag) {
+      cout << "\n CFFC3D ERROR: Message passing error duringsolution intialization "
+           << "on processor "
+           << CFFC_MPI::This_Processor_Number
+           << ".\n";
+      cout.flush();
+   } /* endif */
+   error_flag = CFFC_OR_MPI(error_flag);
+   if (error_flag) return (error_flag);
+
    Local_Solution_Blocks.BCs(Input);
+   
+/*    cout<<"\n AFTER  BCs "<<endl; */
+   
+/*    Local_Solution_Blocks.WtoU(); */
+   
    
    /********************************************************  
     * Solve IBVP or BVP for conservation form of PDEs      *
     * on multi-block body-fitted AMR hexadedral mesh.      *
     ********************************************************/
-   
   continue_existing_calculation: ;
    CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
    
    /* Open residual file and reset the CPU time. */
-
+   
    first_step = 1;
    limiter_freezing_off = ON;
    
@@ -627,16 +633,20 @@ int HexaSolver(char *Input_File_Name_ptr,
          if (error_flag) return (error_flag);   
          
       } else if (command_flag == WRITE_OUTPUT_CELLS_CODE) {
+      
          // Output solution data.
 	 if (!batch_flag) {
            cout <<"\n Writing cell-centered solution to output data file(s).";
            cout.flush();
          } /* endif */
          
+       
          error_flag = Local_Solution_Blocks.Output_Cells_Tecplot(Input, 
                                                                  Local_Adaptive_Block_List,
                                                                  number_of_time_steps,
                                                                  Time);
+      
+         
          if (error_flag) {
             cout << "\n  ERROR: Unable to open  cell output data file(s) on processor "
                  << CFFC_MPI::This_Processor_Number

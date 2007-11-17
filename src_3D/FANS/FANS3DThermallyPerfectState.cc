@@ -32,82 +32,82 @@ double FANS3D_ThermallyPerfect_KOmega_pState::a(void) const{
    return sqrt(sum);
 }
 
-// void FANS3D_ThermallyPerfect_KOmega_pState::set_species_data(const int &n,
-//                                                              const string *S,
-//                                                              const char *PATH,
-//                                                              const int &debug, 
-//                                                              const double &Mr, 
-//                                                              const double* Sc,
-//                                                              const int &trans_data){ 
+void FANS3D_ThermallyPerfect_KOmega_pState::set_species_data(const int &n,
+                                                             const string *S,
+                                                             const char *PATH,
+                                                             const int &debug, 
+                                                             const double &Mr, 
+                                                             const double* Sc,
+                                                             const int &trans_data){ 
 
-//    //Deallocate_static();
-//    Wo.Deallocate(); //Clean up memory before changing ns
-//    ns = n;
+   //Deallocate_static();
+   Deallocate(); //Clean up memory before changing ns
+   ns = n;
    
-//    num_vars = ns + NUM_EULER3D_VAR_SANS_SPECIES+ NUM_FANS3D_VAR_EXTRA;
+   num_vars = ns + NUM_EULER3D_VAR_SANS_SPECIES+ NUM_FANS3D_VAR_EXTRA;
    
-//    //read in NASA data for each species to be used 
-//    specdata = new NASARP1311data[ns]; 
-//    Schmidt = new double[ns];
+   //read in NASA data for each species to be used 
+   specdata = new NASARP1311data[ns]; 
+   Schmidt = new double[ns];
    
-//    for(int i=0; i<ns; i++){
-//      specdata[i].Getdata(S[i], PATH);  
-//       Schmidt[i] = Sc[i];
-//    } 
+   for(int i=0; i<ns; i++){
+      specdata[i].Getdata(S[i], PATH, trans_data);  
+      Schmidt[i] = Sc[i];
+   } 
 
-//    //set data temperature ranges for mixture
-//    Wo.Temp_low_range(); 
-//    Wo.Temp_high_range(); 
+   //set data temperature ranges for mixture
+   Temp_low_range(); 
+   Temp_high_range(); 
    
-//    //Set Debug Information level
-//    debug_level = debug;
+   //Set Debug Information level
+   debug_level = debug;
    
-//    //setup initial array for mass fractions
+   //setup initial array for mass fractions
 
-//    Wo.spec = new Species[ns];
-//    for(int i=0; i<ns; i++){
-//       Wo.spec[i].c = ONE/ns ; 
-//    }
-// }   
+   spec = new Species[ns];
+   for(int i=0; i<ns; i++){
+      spec[i].c = ONE/ns ; 
+   }
+}   
 
-// void FANS3D_ThermallyPerfect_KOmega_cState::set_species_data(const int &n, 
-//                                                              const string *S, 
-//                                                              const char *PATH,
-//                                                              const int &debug, 
-//                                                              const double &Mr, 
-//                                                              const double* Sc,
-//                                                              const int &trans_data){ 
+void FANS3D_ThermallyPerfect_KOmega_cState::set_species_data(const int &n, 
+                                                             const string *S, 
+                                                             const char *PATH,
+                                                             const int &debug, 
+                                                             const double &Mr, 
+                                                             const double* Sc,
+                                                             const int &trans_data){ 
  
-//    //Deallocate_static();
-//    Uo.Deallocate(); //Clean up memory before changing ns
+   //Deallocate_static();
+   Deallocate(); //Clean up memory before changing ns
  
-//    ns =n; 
-//    num_vars = ns + NUM_EULER3D_VAR_SANS_SPECIES+ NUM_FANS3D_VAR_EXTRA;
+   ns =n; 
+   num_vars = ns + NUM_EULER3D_VAR_SANS_SPECIES+ NUM_FANS3D_VAR_EXTRA;
 
-//    //read in NASA data for each species to be used
-//    specdata = new NASARP1311data[ns];
-//    Schmidt = new double[ns];
+   //read in NASA data for each species to be used
+   specdata = new NASARP1311data[ns];
+   Schmidt = new double[ns];
 
-//    for(int i=0; i<ns; i++){
-//       //overwrite default data  
-//      specdata[i].Getdata(S[i], PATH);
-//       Schmidt[i] = Sc[i];  
-//    }  
+   for(int i=0; i<ns; i++){
+      //overwrite default data  
+     specdata[i].Getdata(S[i], PATH, trans_data);
+      Schmidt[i] = Sc[i];  
+   }  
 
-//    //set data temperature ranges for mixture
-//    Uo.Temp_low_range();
-//    Uo.Temp_high_range();
+   //set data temperature ranges for mixture
+   Temp_low_range();
+   Temp_high_range();
 
-//    //Set Debug Information level
-//    debug_level = debug;
+   //Set Debug Information level
+   debug_level = debug;
 
-//    //setup initial array for mass fractions
-//    Uo.rhospec = new Species[ns];
-//    for(int i=0; i<ns; i++){
-//       Uo.rhospec[i].c = Uo.rho/ns; 
-//    }
+   //setup initial array for mass fractions
+   rhospec = new Species[ns];
+   for(int i=0; i<ns; i++){
+      rhospec[i].c = rho/ns; 
+   }
    
-// }      
+}      
 
 /********************************************************************
  * FANS3D_ThermallyPerfect_KOmega_pState::F -- 

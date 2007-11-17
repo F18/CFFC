@@ -443,9 +443,9 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
    for ( int nb = 0 ; nb <Initial_Mesh.NBlk ; ++nb ){
 
 
-      /*    for ( int iProc = 0; iProc !=  CFFC_MPI::Number_of_Processors; ++iProc ) { */
+     /*     for ( int iProc = 0; iProc !=  CFFC_MPI::Number_of_Processors; ++iProc ) { */
 /*             if (  CFFC_MPI::This_Processor_Number == iProc ) { */
-/*                if(nb==0){ */
+/*                if(nb==41){ */
 /*                   cout<<"\n CFFC_MPI::This_Processor_Number = "<< CFFC_MPI::This_Processor_Number<<endl; */
 /*                   cout<<"\n T blk_num = "<< Octree.Roots[nb].block.infoT[0].blknum <<" B blk_num = "<< Octree.Roots[nb].block.infoB[0].blknum */
 /*                       <<" N blk_num = "<< Octree.Roots[nb].block.infoN[0].blknum<<" S blk_num = "<< Octree.Roots[nb].block.infoS[0].blknum */

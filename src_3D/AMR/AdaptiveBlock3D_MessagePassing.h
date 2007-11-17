@@ -277,7 +277,6 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                     i = Soln_Blks[i_blk].LoadSendBuffer_Solution(Soln_Block_List.message_noreschange_sendbuf[i_blk][i_bound_elem],
                                                         l,buffer_size_neighbour, id_min, id_max, inc, ti);
                      
-                                     
                     if (i != 0) return(2200);
                  } /* endif */
                  // Load ghost cell mesh information as required.
@@ -469,8 +468,8 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                     inc[1] = j_inc;
                     inc[2] = k_inc;
 
-                    i = Soln_Blks[i_blk].LoadSendBuffer_BCs( Soln_Block_List.message_noreschange_sendbuf[i_blk][i_bound_elem],
-                                                             l,buffer_size_neighbour, id_min, id_max, inc, ti, ii, jj, kk);
+/*                     i = Soln_Blks[i_blk].LoadSendBuffer_BCs( Soln_Block_List.message_noreschange_sendbuf[i_blk][i_bound_elem], */
+/*                                                              l,buffer_size_neighbour, id_min, id_max, inc, ti, ii, jj, kk); */
   
  
                  } /* endif */
@@ -868,10 +867,10 @@ int Unload_Receive_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                     k_inc = 1;
                     
                             
-                    i = Soln_Blks[i_blk].UnloadReceiveBuffer_BCs(
-                       Soln_Block_List.message_noreschange_recbuf[i_blk][i_bound_elem],
-                       l,buffer_size, i_min,i_max,i_inc,j_min,j_max,j_inc,
-                       k_min,k_max,k_inc, ii, jj, kk);
+/*                     i = Soln_Blks[i_blk].UnloadReceiveBuffer_BCs( */
+/*                        Soln_Block_List.message_noreschange_recbuf[i_blk][i_bound_elem], */
+/*                        l,buffer_size, i_min,i_max,i_inc,j_min,j_max,j_inc, */
+/*                        k_min,k_max,k_inc, ii, jj, kk); */
                     
         
 
@@ -968,7 +967,7 @@ int Send_All_Messages(Hexa_Soln_Block *Soln_Blks,
 
   
     
-  /*   for ( int iProc = 0; iProc !=  CFFC_MPI::Number_of_Processors; ++iProc ) { */
+/*     for ( int iProc = 0; iProc !=  CFFC_MPI::Number_of_Processors; ++iProc ) { */
 /*        if (  CFFC_MPI::This_Processor_Number == iProc ) { */
 /*           cout<<"\n  after loading buffer function received location "<<endl; */
 /*           cout<<"\n CFFC_MPI::This_Processor_Number = "<< CFFC_MPI::This_Processor_Number<<endl; */
@@ -977,7 +976,7 @@ int Send_All_Messages(Hexa_Soln_Block *Soln_Blks,
 /*           System::sleep(0.1); */
 /*        } */
 /*        MPI::COMM_WORLD.Barrier(); */
-/*     }        */
+/*     } */
 
     /* Exchange message buffers at block interfaces with no cell resolution change. */
 
@@ -991,7 +990,7 @@ int Send_All_Messages(Hexa_Soln_Block *Soln_Blks,
        return(error_flag);
     } /* endif */
 
-  /*   for ( int iProc = 0; iProc !=  CFFC_MPI::Number_of_Processors; ++iProc ) { */
+   /*  for ( int iProc = 0; iProc !=  CFFC_MPI::Number_of_Processors; ++iProc ) { */
 /*        if (  CFFC_MPI::This_Processor_Number == iProc ) { */
 /*           cout<<"\n  after exchange  buffer function received location "<<endl; */
 /*           cout<<"\n CFFC_MPI::This_Processor_Number = "<< CFFC_MPI::This_Processor_Number<<endl; */
@@ -1000,7 +999,7 @@ int Send_All_Messages(Hexa_Soln_Block *Soln_Blks,
 /*           System::sleep(0.1); */
 /*        } */
 /*        MPI::COMM_WORLD.Barrier(); */
-/*     }        */
+/*     } */
     
 /* Unload message buffers at block interfaces with no cell resolution change. */
 
@@ -1015,7 +1014,7 @@ int Send_All_Messages(Hexa_Soln_Block *Soln_Blks,
        return(error_flag);
     } /* endif */
  
-  /*   for ( int iProc = 0; iProc !=  CFFC_MPI::Number_of_Processors; ++iProc ) { */
+ /*    for ( int iProc = 0; iProc !=  CFFC_MPI::Number_of_Processors; ++iProc ) { */
 /*        if (  CFFC_MPI::This_Processor_Number == iProc ) { */
 /*           cout<<"\n  after unloading  buffer function received location "<<endl; */
 /*           cout<<"\n CFFC_MPI::This_Processor_Number = "<< CFFC_MPI::This_Processor_Number<<endl; */
@@ -1024,7 +1023,7 @@ int Send_All_Messages(Hexa_Soln_Block *Soln_Blks,
 /*           System::sleep(0.1); */
 /*        } */
 /*        MPI::COMM_WORLD.Barrier(); */
-/*     }        */
+/*     } */
 
    if (Send_Mesh_Geometry_Only) {
       for (int nb = 0; nb < Soln_Block_List.Nblk; nb++) {

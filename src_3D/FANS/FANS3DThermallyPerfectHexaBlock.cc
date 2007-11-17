@@ -660,6 +660,8 @@ Update_Solution_Multistage_Explicit(const int i_stage,
                 SCALAR_LOCAL_TIME_STEPPING) {
            
                U[i][j][k] = Uo[i][j][k] + omega* dUdt[i][j][k][k_residual];
+               cout<<"\n"<<i<<","<<j<<","<<k<<"  X = "<<Grid.Cell[i][j][k].Xc<<"\n dUdt = "<<dUdt[i][j][k][k_residual]<<endl;
+               
       	   
       	       //N-1 species
                U[i][j][k][num_vars] = U[i][j][k].rho*(ONE - U[i][j][k].sum_species());
@@ -880,6 +882,9 @@ Output_Cells_Tecplot(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
                      <<  W[i][j][k];
             Out_File.setf(ios::scientific);
             Out_File << " " << W[i][j][k].T() << " " << W[i][j][k].Rtot()<< " ";
+            
+            if(W[i][j][k].T()>800) cout<<"\n TCPLOT "<<i<<" "<<j<<" "<<k<<" T= "<<W[i][j][k].T()<<endl;
+           
             Out_File << " " << WallData[i][j][k].ywall << "  " << WallData[i][j][k].yplus
                      << " " << WallData[i][j][k].tauw << "  " << WallData[i][j][k].utau<<"\n ";
             Out_File.unsetf(ios::scientific);
@@ -1002,7 +1007,7 @@ int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState,
       BluffBody_Coflow_Air_Velocity, 
       BluffBody_Coflow_Fuel_Velocity ;
    
-   int BluffBody_Data_Usage = 1;
+   int BluffBody_Data_Usage = 0;
    
    Flow_Type = IPs.i_Flow_Type;
    
@@ -1217,18 +1222,17 @@ int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState,
             for (  i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
                // Apply uniform solution state
                W[i][j][k] = IPs.Wo;
-               W[i][j][k].v.z= BluffBody_Coflow_Air_Velocity;
+               W[i][j][k].v.z= ZERO;
                W[i][j][k].v.x = ZERO;
                W[i][j][k].v.y = ZERO;
-               
        
                W[i][j][k].rho = W[i][j][k].p/( W[i][j][k].Rtot()*300.0);
-              //  tempvalue = W[i][j][k].v.z*(HALF*(IPs.Grid_IP.Radius_Coflow_Inlet_Pipe-IPs.Grid_IP.Radius_Bluff_Body))/
-//                   (W[i][j][k].mu()/W[i][j][k].rho);
-
-//                WallData[i][j][k].tauw = 0.0228*W[i][j][k].rho*max_mean_velocity*max_mean_velocity/pow(tempvalue, 0.25);
-//                WallData[i][j][k].utau = sqrt(WallData[i][j][k].tauw/W[i][j][k].rho);
-               W[i][j][k].k = ONE; //0.5*WallData[i][j][k].utau*WallData[i][j][k].utau/sqrt(W[0][0][0].k_omega_model.beta_star);
+               tempvalue =  BluffBody_Coflow_Air_Velocity*(HALF*(IPs.Grid_IP.Radius_Coflow_Inlet_Pipe-IPs.Grid_IP.Radius_Bluff_Body))/
+                  (W[i][j][k].mu()/W[i][j][k].rho);
+               
+               WallData[i][j][k].tauw = 0.0228*W[i][j][k].rho* BluffBody_Coflow_Air_Velocity* BluffBody_Coflow_Air_Velocity/pow(fabs(tempvalue), 0.25);
+               WallData[i][j][k].utau = sqrt(WallData[i][j][k].tauw/W[i][j][k].rho);
+               W[i][j][k].k = 0.5*WallData[i][j][k].utau*WallData[i][j][k].utau/sqrt(W[0][0][0].k_omega_model.beta_star);
                
                WallData[i][j][k].yplus = WallData[i][j][k].ywall*WallData[i][j][k].utau/(W[i][j][k].mu()/W[i][j][k].rho);
                if(WallData[i][j][k].ywall !=ZERO){
@@ -1241,107 +1245,192 @@ int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState,
                         (pow(W[0][0][0].k_omega_model.beta_star, 0.25)*W[0][0][0].k_omega_model.Karman_const*WallData[i][j][k].ywall);
                   }
                }
-   
-               if(IPs.Species_IP.num_species == 2){// This is the velocity field evaluation case, but the "fuel" is also air. 
-                  //  i.e. the working fluid is air. The experimental data is available for it.
-                  //             Can be used to initalize nonreacting flow field.
-                  
-                  xn = Grid.Cell[i][j][k].Xc.z;
-                  yn = Grid.Cell[i][j][k].Xc.x;
-                  xn =xn/(TWO*IPs.Grid_IP.Radius_Bluff_Body);
-                  yn = yn/(IPs.Grid_IP.Radius_Bluff_Body);
-                  Xt.x = xn;
-                  Xt.y = yn;
-                  
-                  //  // Specifying the velocity profiles in the annular pipe (coflowing air and jet)
-                  if((fabs(Grid.Cell[i][j][k].Xc.x)>IPs.Grid_IP.Radius_Bluff_Body) && 
-                     (fabs(Grid.Cell[i][j][k].Xc.x)<IPs.Grid_IP.Radius_Coflow_Inlet_Pipe)){
-                     if(Grid.Cell[i][j][k].Xc.z <= 0.0){
-                        Rprime = (IPs.Grid_IP.Radius_Coflow_Inlet_Pipe - IPs.Grid_IP.Radius_Bluff_Body)/2.0;
-                        if(fabs(Grid.Cell[i][j][k].Xc.x)<=(IPs.Grid_IP.Radius_Bluff_Body+ Rprime)){
-                           yprime = fabs(Grid.Cell[i][j][k].Xc.x) -  IPs.Grid_IP.Radius_Bluff_Body;
-                           W[i][j][k].v.z =  BluffBody_Coflow_Air_Velocity*pow((yprime/Rprime), 0.143);
+               // Specifying the velocity profiles in the annular pipe (coflowing air and jet)
+               if((fabs(Grid.Cell[i][j][k].Xc.y)>IPs.Grid_IP.Radius_Bluff_Body) && 
+                  (fabs(Grid.Cell[i][j][k].Xc.y)<IPs.Grid_IP.Radius_Coflow_Inlet_Pipe)){
+                  if(Grid.Cell[i][j][k].Xc.z <=  0.5*IPs.Grid_IP.Length_Combustor_Tube){
+                                      
+                     Rprime = (IPs.Grid_IP.Radius_Coflow_Inlet_Pipe - IPs.Grid_IP.Radius_Bluff_Body)/2.0;
+                     if(fabs(Grid.Cell[i][j][k].Xc.y)<=(IPs.Grid_IP.Radius_Bluff_Body+ Rprime)){
+           
+                        yprime = fabs(Grid.Cell[i][j][k].Xc.y) -  IPs.Grid_IP.Radius_Bluff_Body;
+                        if(yprime !=0.0){
+                           W[i][j][k].v.z =  BluffBody_Coflow_Air_Velocity*pow(fabs(yprime/Rprime), 0.143);
                         }else{
-                           yprime = fabs(Grid.Cell[i][j][k].Xc.x) -  IPs.Grid_IP.Radius_Bluff_Body- Rprime;
-                           W[i][j][k].v.z =  BluffBody_Coflow_Air_Velocity*pow((1.0- fabs(yprime)/Rprime), 0.143);
+                           W[i][j][k].v.z =  BluffBody_Coflow_Air_Velocity;
                         }
+                           
                      }else{
-                        W[i][j][k].v.z =   BluffBody_Coflow_Air_Velocity;
-                     }
-                  }//coflowing air "power law" profile at the very begining of coflow inlet
-                  
-                  if(Grid.Cell[i][j][k].Xc.x<=IPs.Grid_IP.Radius_Fuel_Line){
-                     max_mean_velocity = BluffBody_Coflow_Fuel_Velocity;
-                     // Fluid flow Sabersky, Acosta and Hauptmann P261
-                     
-                     W[i][j][k].v.z=max_mean_velocity*pow((1.0- fabs(Grid.Cell[i][j][k].Xc.x)/IPs.Grid_IP.Radius_Fuel_Line), 0.143);
-                     tempvalue = max_mean_velocity*IPs.Grid_IP.Radius_Fuel_Line/(W[i][j][k].mu()/W[i][j][k].rho);
-                     WallData[i][j][k].tauw = 0.0228*W[i][j][k].rho*max_mean_velocity*max_mean_velocity/pow(tempvalue, 0.25);
-                     WallData[i][j][k].utau = sqrt(WallData[i][j][k].tauw/W[i][j][k].rho);
-                     W[i][j][k].k = 0.5*WallData[i][j][k].utau*WallData[i][j][k].utau/sqrt(W[0][0][0].k_omega_model.beta_star);
-                     WallData[i][j][k].yplus = WallData[i][j][k].ywall *WallData[i][j][k].utau/(W[i][j][k].mu()/W[i][j][k].rho);
-                     if (WallData[i][j][k].ywall !=ZERO) {
-                        if(WallData[i][j][k].yplus<=W[0][0][0].k_omega_model.y_sublayer){
-                           W[i][j][k].omega =  6.0*(W[i][j][k].mu()/W[i][j][k].rho)/(W[0][0][0].k_omega_model.beta*WallData[i][j][k].ywall*WallData[i][j][k].ywall);
-                        } else{
-                           W[i][j][k].omega = sqrt(W[i][j][k].k)/
-                              (pow(W[0][0][0].k_omega_model.beta_star, 0.25)*W[0][0][0].k_omega_model.Karman_const*WallData[i][j][k].ywall);
+                        yprime = fabs(Grid.Cell[i][j][k].Xc.y) -  IPs.Grid_IP.Radius_Bluff_Body- Rprime;
+                        if(yprime !=0.0){
+                           W[i][j][k].v.z =  BluffBody_Coflow_Air_Velocity*pow(fabs(1.0- fabs(yprime/Rprime)), 0.143);
+                        }else{
+                           W[i][j][k].v.z =  BluffBody_Coflow_Air_Velocity;
                         }
-                        
                      }
                   }
                }
+               if((fabs(Grid.Cell[i][j][k].Xc.x)>IPs.Grid_IP.Radius_Bluff_Body) && 
+                  (fabs(Grid.Cell[i][j][k].Xc.x)<IPs.Grid_IP.Radius_Coflow_Inlet_Pipe)){
+                  if(Grid.Cell[i][j][k].Xc.z <=  0.5*IPs.Grid_IP.Length_Combustor_Tube){
+                        
+                     Rprime = (IPs.Grid_IP.Radius_Coflow_Inlet_Pipe - IPs.Grid_IP.Radius_Bluff_Body)/2.0;
+                     if(fabs(Grid.Cell[i][j][k].Xc.x)<=(IPs.Grid_IP.Radius_Bluff_Body+ Rprime)){
+                           
+                        yprime = fabs(Grid.Cell[i][j][k].Xc.x) -  IPs.Grid_IP.Radius_Bluff_Body;
+                        if(yprime !=0.0){
+                           W[i][j][k].v.z =  BluffBody_Coflow_Air_Velocity*pow(fabs(yprime/Rprime), 0.143);
+                        }else{
+                           W[i][j][k].v.z =  BluffBody_Coflow_Air_Velocity;
+                        }
+                           
+                     }else{
+                        yprime = fabs(Grid.Cell[i][j][k].Xc.x) -  IPs.Grid_IP.Radius_Bluff_Body- Rprime;
+                        if(yprime !=0.0){
+                           W[i][j][k].v.z =  BluffBody_Coflow_Air_Velocity*pow(fabs(1.0- fabs(yprime/Rprime)), 0.143);
+                        }else{
+                           W[i][j][k].v.z =  BluffBody_Coflow_Air_Velocity;
+                        }
+                     }
+                  }
+               }
+                  
+               if(fabs(Grid.Cell[i][j][k].Xc.y) <= IPs.Grid_IP.Radius_Fuel_Line){
+                     
+                  if(Grid.Cell[i][j][k].Xc.z <=  0.5*IPs.Grid_IP.Length_Combustor_Tube){
+                        
+                     Rprime = IPs.Grid_IP.Radius_Fuel_Line;
+                        
+                     if(Grid.Cell[i][j][k].Xc.y<0.0){
+                        
+                        yprime = fabs(Grid.Cell[i][j][k].Xc.y);
+                        if(yprime !=0.0){
+                           W[i][j][k].v.z =  BluffBody_Coflow_Fuel_Velocity*pow(fabs(yprime/Rprime), 0.143);
+                        }else{
+                           W[i][j][k].v.z =  BluffBody_Coflow_Fuel_Velocity;
+                        }
+                        
+                     }else{
+                        yprime = fabs(Grid.Cell[i][j][k].Xc.y) ;
+                        if(yprime !=0.0){
+                           W[i][j][k].v.z =  BluffBody_Coflow_Fuel_Velocity*pow(fabs(1.0- fabs(yprime/Rprime)), 0.143);
+                        }else{
+                           W[i][j][k].v.z =  BluffBody_Coflow_Fuel_Velocity;
+                        }
+                     }
+                  }
+                     
+               }
+
+               if(fabs(Grid.Cell[i][j][k].Xc.x) <= IPs.Grid_IP.Radius_Fuel_Line){
+                  
+                  if(Grid.Cell[i][j][k].Xc.z <=  0.5*IPs.Grid_IP.Length_Combustor_Tube){
+                     
+                     Rprime = IPs.Grid_IP.Radius_Fuel_Line;
+                     
+                     if(Grid.Cell[i][j][k].Xc.x<0.0){
+                        
+                        yprime = fabs(Grid.Cell[i][j][k].Xc.x);
+                        if(yprime !=0.0){
+                           W[i][j][k].v.z =  BluffBody_Coflow_Fuel_Velocity*pow(fabs(yprime/Rprime), 0.143);
+                        }else{
+                           W[i][j][k].v.z =  BluffBody_Coflow_Fuel_Velocity;
+                        }
+                        
+                     }else{
+                        yprime = fabs(Grid.Cell[i][j][k].Xc.x) ;
+                        if(yprime !=0.0){
+                           W[i][j][k].v.z =  BluffBody_Coflow_Fuel_Velocity*pow(fabs(1.0- fabs(yprime/Rprime)), 0.143);
+                        }else{
+                           W[i][j][k].v.z =  BluffBody_Coflow_Fuel_Velocity;
+                        }
+                     }
+                  }
+               }
+
+
+              //  if(IPs.Species_IP.num_species == 2){// This is the velocity field evaluation case, but the "fuel" is also air. 
+//                   //  i.e. the working fluid is air. The experimental data is available for it.
+//                   //             Can be used to initalize nonreacting flow field.
+                  
+//                   xn = Grid.Cell[i][j][k].Xc.z;
+//                   yn = Grid.Cell[i][j][k].Xc.x;
+//                   xn =xn/(TWO*IPs.Grid_IP.Radius_Bluff_Body);
+//                   yn = yn/(IPs.Grid_IP.Radius_Bluff_Body);
+//                   Xt.x = xn;
+//                   Xt.y = yn;
+
+//                      // Fluid flow Sabersky, Acosta and Hauptmann P261
+                     
+//                      W[i][j][k].v.z=max_mean_velocity*pow((1.0- fabs(Grid.Cell[i][j][k].Xc.x)/IPs.Grid_IP.Radius_Fuel_Line), 0.143);
+//                      tempvalue = max_mean_velocity*IPs.Grid_IP.Radius_Fuel_Line/(W[i][j][k].mu()/W[i][j][k].rho);
+//                      WallData[i][j][k].tauw = 0.0228*W[i][j][k].rho*max_mean_velocity*max_mean_velocity/pow(tempvalue, 0.25);
+//                      WallData[i][j][k].utau = sqrt(WallData[i][j][k].tauw/W[i][j][k].rho);
+//                      W[i][j][k].k = 0.5*WallData[i][j][k].utau*WallData[i][j][k].utau/sqrt(W[0][0][0].k_omega_model.beta_star);
+//                      WallData[i][j][k].yplus = WallData[i][j][k].ywall *WallData[i][j][k].utau/(W[i][j][k].mu()/W[i][j][k].rho);
+//                      if (WallData[i][j][k].ywall !=ZERO) {
+//                         if(WallData[i][j][k].yplus<=W[0][0][0].k_omega_model.y_sublayer){
+//                            W[i][j][k].omega =  6.0*(W[i][j][k].mu()/W[i][j][k].rho)/(W[0][0][0].k_omega_model.beta*WallData[i][j][k].ywall*WallData[i][j][k].ywall);
+//                         } else{
+//                            W[i][j][k].omega = sqrt(W[i][j][k].k)/
+//                               (pow(W[0][0][0].k_omega_model.beta_star, 0.25)*W[0][0][0].k_omega_model.Karman_const*WallData[i][j][k].ywall);
+//                         }
+              
+//                      }
+
+                  // }
              
                if(IPs.Species_IP.num_species == 3){ 
-                  
-              
-
-                  if(!BluffBody_Data_Usage){
-
-                     if(fabs(Grid.Cell[i][j][k].Xc.x)<=IPs.Grid_IP.Radius_Fuel_Line && 
-                        Grid.Cell[i][j][k].Xc.z>=0 && Grid.Cell[i][j][k].Xc.z/IPs.Grid_IP.Radius_Bluff_Body<=ONE){
-                        
-                        W[i][j][k].spec[0] = ONE; //CH4
-                        W[i][j][k].spec[1] = ZERO;//O2
-                        W[i][j][k].spec[IPs.Wo.ns-1] = ZERO; //N2
-                        
-                     }
+                  if(fabs(Grid.Cell[i][j][k].Xc.x)<0.5*IPs.Grid_IP.Radius_Fuel_Line && Grid.Cell[i][j][k].Xc.z>0.0){
                      
-                  }// specifying the methane concentration at fuel orifice
-               
-               
+                     W[i][j][k].spec[0] = 1.0; //CH4
+                     W[i][j][k].spec[1] = 0.0;//O2
+                     W[i][j][k].spec[2] = 0.0; //N2
+                    
+                     
+                  }//
+//                  specifying the methane concentration at fuel orifice
+                     // if(fabs(Grid.Cell[i][j][k].Xc.x)<=IPs.Grid_IP.Radius_Fuel_Line && 
+//                         Grid.Cell[i][j][k].Xc.z>0 && Grid.Cell[i][j][k].Xc.z/IPs.Grid_IP.Radius_Bluff_Body<ONE){
+                        
+//                         W[i][j][k].spec[0] = ONE; //CH4
+//                         W[i][j][k].spec[1] = ZERO;//O2
+//                         W[i][j][k].spec[IPs.Wo.ns-1] = ZERO; //N2
+                        
+//                      }
+//                      if(fabs(Grid.Cell[i][j][k].Xc.y)<=IPs.Grid_IP.Radius_Fuel_Line && 
+//                         Grid.Cell[i][j][k].Xc.z>0 && Grid.Cell[i][j][k].Xc.z/IPs.Grid_IP.Radius_Bluff_Body<ONE){
+                        
+//                         W[i][j][k].spec[0] = ONE; //CH4
+//                         W[i][j][k].spec[1] = ZERO;//O2
+//                         W[i][j][k].spec[IPs.Wo.ns-1] = ZERO; //N2
+                        
+//                      }
+                     
+//                   }// specifying the methane concentration at fuel orifice
+                  
                   // This is nonreacting multispecies mixing evaluation case
                   // the fuel is indicated in the input file
                   // The experimental data is available. 
-                  if(BluffBody_Data_Usage){
-
-                  
-
-                     xn = Grid.Cell[i][j][k].Xc.z;
-                     yn = fabs(Grid.Cell[i][j][k].Xc.x);
-                     Xt.x = xn*1000;
-                     Xt.y = yn*1000; // note: times 100 to convert data from m to mm. 
-                  
-                  
-
-                     if((fabs(Xt.x)<=IPs.Grid_IP.Radius_Bluff_Body*1000)){
-                        fc = NRSF.interpolation(Xt).x;
-                        W[i][j][k].spec[0] = fc; 
-                        // coefficient 1.1 is to "recalibrate" the initial field to be close to the reality.
-                        W[i][j][k].spec[1] = (ONE - fc)*0.235;
-                        W[i][j][k].spec[2] = (ONE - fc)*0.765;
-                        
-                        // In initial condition the sum of total species should not be less than a certain very small number,
-                        //   otherwise the program gives error message such as "temperature out of range". 
-                        
-                     }
-                   
-
-                  }
+                 //  if(BluffBody_Data_Usage){
+                     
+//                      xn = Grid.Cell[i][j][k].Xc.z;
+//                      yn = fabs(Grid.Cell[i][j][k].Xc.x);
+//                      Xt.x = xn*1000;
+//                      Xt.y = yn*1000; // note: times 100 to convert data from m to mm. 
+                     
+//                      if((fabs(Xt.x)<=IPs.Grid_IP.Radius_Bluff_Body*1000)){
+//                         fc = NRSF.interpolation(Xt).x;
+//                         W[i][j][k].spec[0] = fc; 
+//                         // coefficient 1.1 is to "recalibrate" the initial field to be close to the reality.
+//                         W[i][j][k].spec[1] = (ONE - fc)*0.235;
+//                         W[i][j][k].spec[2] = (ONE - fc)*0.765;
+//                         // In initial condition the sum of total species should not be less than a certain very small number,
+//                         //   otherwise the program gives error message such as "temperature out of range". 
+//                      }
+//                   }
                }
                
-              
-
                W[i][j][k].rho = W[i][j][k].p/( W[i][j][k].Rtot()*300.0);
                U[i][j][k] = W[i][j][k].U();
             
