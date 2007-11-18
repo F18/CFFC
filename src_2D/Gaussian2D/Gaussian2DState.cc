@@ -335,13 +335,12 @@ double dTdn(const Gaussian2D_pState &W,
  ********************************************************/
 double Slip_T(const Gaussian2D_pState &W,
 	      const double &T,
-	      const double &old_T,
+	      double &old_T,
 	      const Gaussian2D_pState &dWdx,
 	      const Gaussian2D_pState &dWdy,
 	      const Vector2D &norm_dir) {
   double Tk, _dTdn; //underscore to avoid same name as function dTdn()
-  double T_close, T_far, Tk_damped;
-  double temp1, temp2;
+  double Tk_damped;
 
   //I need the negative sign because this function takes the
   //outward facing normal from the first cell inside the domain.
@@ -350,9 +349,11 @@ double Slip_T(const Gaussian2D_pState &W,
 
   Tk = T + W.gt()*_dTdn;
 
-
   //damping can be required for high-knudsen-number situations.
-  return (1.0-W.T_damping)*Tk + W.T_damping*old_T;
+  Tk_damped = (1.0-W.T_damping)*Tk + W.T_damping*old_T;
+  old_T = Tk_damped;
+
+  return Tk_damped;
 }
 
 /********************************************************
@@ -483,7 +484,7 @@ Gaussian2D_pState Isothermal_Wall(const Gaussian2D_pState &W,
 Gaussian2D_pState Isothermal_Wall_Slip_T(const Gaussian2D_pState &W,
 					 const Vector2D &V,
 					 const double &T,
-					 const double &T_old,
+					 double &T_old,
 					 const Gaussian2D_pState &dWdx,
 					 const Gaussian2D_pState &dWdy,
 					 const Vector2D &norm_dir) {
@@ -632,7 +633,7 @@ Gaussian2D_pState Knudsen_Layer_Isothermal(const Gaussian2D_pState &W,
 Gaussian2D_pState Knudsen_Layer_Isothermal_Slip_T(const Gaussian2D_pState &W,
 						  const Vector2D &V,
 						  const double &T,
-						  const double &T_old,
+						  double &T_old,
 						  const Gaussian2D_pState &dWdx,
 						  const Gaussian2D_pState &dWdy,
 						  const Vector2D &norm_dir) {
