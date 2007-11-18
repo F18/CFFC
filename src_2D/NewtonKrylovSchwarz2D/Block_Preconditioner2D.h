@@ -77,7 +77,7 @@ class Block_Preconditioner {
   void normalize_Preconditioner_dFdU(DenseMatrix &dFdU);
 
   //Destructor / memory cleanup
-  ~Block_Preconditioner(){ deallocate(); deallocate_Precon(); }
+  ~Block_Preconditioner(){ deallocate();  deallocate_Precon(); }   //??ISSUES WITH !=NULL DTS WITH AMR???
   void deallocate_Precon(){
     if (ILUK_Precon != NULL) delete ILUK_Precon; ILUK_Precon=NULL;
     if (Jacobi_Precon != NULL) delete Jacobi_Precon; Jacobi_Precon=NULL;

@@ -1220,12 +1220,14 @@ int Rte2DQuadSolver(char *Input_File_Name_ptr,
      error_flag = Newton_Krylov_Schwarz_Solver<Rte2D_State,
                                                Rte2D_Quad_Block,                                               
                                                Rte2D_Input_Parameters>(processor_cpu_time,//NKS_processor_cpu_time,
-									 residual_file,
-									 number_of_time_steps, // explicit time steps
+								       residual_file,
+								       number_of_time_steps, // explicit time steps
 								       Time,
-									 Local_SolnBlk, 
-									 List_of_Local_Solution_Blocks,
-									 Input_Parameters);
+								       Local_SolnBlk,
+								       QuadTree,
+								       List_of_Global_Solution_Blocks, 
+								       List_of_Local_Solution_Blocks,
+								       Input_Parameters);
      
      processor_cpu_time.update();
      total_cpu_time.cput = CFFC_Summation_MPI(processor_cpu_time.cput);  

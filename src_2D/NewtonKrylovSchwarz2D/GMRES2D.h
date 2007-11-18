@@ -1918,7 +1918,6 @@ private:
   SOLN_BLOCK_TYPE  *Soln_ptr;
   AdaptiveBlock2D_List *List_of_Local_Solution_Blocks;
   INPUT_TYPE *Input_Parameters;
-
   DTS_NKS_Quad_Block<SOLN_BLOCK_TYPE,INPUT_TYPE> *DTS_ptr;
 
   //GMRES LOCAL DYNAMIC DATA
@@ -1944,6 +1943,11 @@ public:
 			       INPUT_TYPE &Input_Parameters, const int &blocksize, 
 			       DTS_NKS_Quad_Block<SOLN_BLOCK_TYPE,INPUT_TYPE> *DTS);
 
+  void Setup(SOLN_BLOCK_TYPE *Soln_ptr, 
+	     AdaptiveBlock2D_List &List_of_Local_Solution_Blocks,
+	     INPUT_TYPE &Input_Parameters, const int &blocksize, 
+	     DTS_NKS_Quad_Block<SOLN_BLOCK_TYPE,INPUT_TYPE> *DTS);
+  
   // Proper functions not built yet.
   // GMRES_RightPrecon_MatrixFree(const &GMRES_RightPrecon_MatrixFree) {}  
   // GMRES_RightPrecon_MatrixFree operator= (const &GMRES_RightPrecon_MatrixFree) {}
@@ -1988,6 +1992,34 @@ GMRES_RightPrecon_MatrixFree(SOLN_BLOCK_TYPE *SolnBlk,
   Number_of_GMRES_Iterations(0),
   relative_residual(0)  
 {
+  //Setup Memory for GMRES_Block's 
+  allocate(); 
+  // Setup GMRES for each Block 
+  for (int  Bcount = 0 ; Bcount < List_of_Local_Solution_Blocks->Nblk; ++Bcount ) {
+    if (List_of_Local_Solution_Blocks->Block[Bcount].used == ADAPTIVEBLOCK2D_USED) {
+      G[Bcount].allocate(Input_Parameters->NKS_IP.GMRES_Restart,
+			 Input_Parameters->NKS_IP.GMRES_Overlap,
+			 Input_Parameters->NKS_IP.Normalization,
+			 Soln_ptr[Bcount],IP,blocksize, DTS_ptr[Bcount]);
+    } 
+  } 
+}
+
+template <typename SOLN_VAR_TYPE,typename SOLN_BLOCK_TYPE, typename INPUT_TYPE>
+inline void GMRES_RightPrecon_MatrixFree<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE>::
+Setup(SOLN_BLOCK_TYPE *SolnBlk, 
+      AdaptiveBlock2D_List &List_of_Local_Blocks,
+      INPUT_TYPE &IP, const int &blocksize, 
+      DTS_NKS_Quad_Block<SOLN_BLOCK_TYPE,INPUT_TYPE> *DTS) 
+{  
+
+  Soln_ptr = SolnBlk;
+  List_of_Local_Solution_Blocks = &List_of_Local_Blocks;
+  Input_Parameters = &IP;
+  DTS_ptr = DTS;
+  Number_of_GMRES_Iterations = 0;
+  relative_residual =0;
+  
   //Setup Memory for GMRES_Block's 
   allocate(); 
   // Setup GMRES for each Block 

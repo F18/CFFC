@@ -1090,12 +1090,14 @@ int LESPremixed2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
      error_flag = Newton_Krylov_Schwarz_Solver<LESPremixed2D_pState,
                                                LESPremixed2D_Quad_Block,                                               
                                                LESPremixed2D_Input_Parameters>(processor_cpu_time,
-									residual_file,
-									number_of_time_steps, // explicit time steps
-									Time,
-									Local_SolnBlk, 
-									List_of_Local_Solution_Blocks,
-									Input_Parameters);
+									       residual_file,
+									       number_of_time_steps, // explicit time steps
+									       Time,
+									       Local_SolnBlk,  
+									       QuadTree,
+									       List_of_Global_Solution_Blocks,
+									       List_of_Local_Solution_Blocks,
+									       Input_Parameters);
      
      processor_cpu_time.update();
      total_cpu_time.cput = CFFC_Summation_MPI(processor_cpu_time.cput);  

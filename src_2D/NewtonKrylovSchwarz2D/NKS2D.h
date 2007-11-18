@@ -15,7 +15,8 @@
  * required to tailor the NKS & GMRES to each specific equation set and are      *
  * listed below.                                                                 *
  *                                                                               *
- *      -> Newton_Update                                                         *
+ *      -> Newton_Update  ( Recommended)                                         *
+ *      -> NKS_DTS_Output ( For DTS Only)                                        *
  *      -> Block_Preconditioner::Preconditioner_dFIdU                            *
  *      -> Block_Preconditioner::Preconditioner_dFVdU                            *
  *      -> Block_Preconditioner::normalize_Preconditioner_dFdU                   *
@@ -60,8 +61,79 @@ double Finite_Time_Step(const INPUT_TYPE &Input_Parameters,
 			const double &L2norm_current_n,				
 			const int &Number_of_Newton_Steps);
 
+template <typename SOLN_BLOCK_TYPE, typename INPUT_TYPE>
+int NKS_DTS_Output(SOLN_BLOCK_TYPE *SolnBlk, 
+		   AdaptiveBlock2D_List List_of_Local_Solution_Blocks, 
+		   INPUT_TYPE & Input_Parameters,
+		   const int &Steps,
+		   const int &Physical_Time) {
+  cout<<"\n SPECIALIZATION OF NKS_DTS_Output REQUIRED TO USE DTS_Time_Accurate_Plot_Frequency \n";
+}
+
 template <typename SOLN_BLOCK_TYPE>
 int set_blocksize(SOLN_BLOCK_TYPE &SolnBlk){ return (SolnBlk.NumVar()); }
+
+
+/***********************************************************************	
+    MESH REFINEMENT: Periodically refine the mesh (AMR). 
+ ************************************************************************/
+template <typename SOLN_VAR_TYPE,typename SOLN_BLOCK_TYPE, typename INPUT_TYPE>
+int NKS_AMR(SOLN_BLOCK_TYPE *SolnBlk,
+	    INPUT_TYPE &Input_Parameters,	    
+	    QuadTreeBlock_DataStructure  &QuadTree,
+	    AdaptiveBlockResourceList    &List_of_Global_Solution_Blocks,      
+	    AdaptiveBlock2D_List &List_of_Local_Solution_Blocks,
+	    GMRES_RightPrecon_MatrixFree<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> &GMRES_,
+	    Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE> *Block_precon,
+	    DTS_NKS_Quad_Block<SOLN_BLOCK_TYPE,INPUT_TYPE> *DTS_SolnBlk,
+	    int number_of_explicit_time_steps,
+	    int DTS_Step){
+  
+  int error_flag;
+  int blocksize = set_blocksize<SOLN_BLOCK_TYPE>(SolnBlk[0]); //Number of equations used for calculation
+  
+  if (CFFC_Primary_MPI_Processor()){
+    cout << "\n\n Refining Grid.  Performing adaptive mesh refinement at n = "
+	 <<  number_of_explicit_time_steps + DTS_Step << ".";
+  }
+  
+  Evaluate_Limiters(SolnBlk, List_of_Local_Solution_Blocks);
+
+  error_flag = AMR(SolnBlk,
+		   Input_Parameters,
+		   QuadTree,                               
+		   List_of_Global_Solution_Blocks,         
+		   List_of_Local_Solution_Blocks,
+		   ON, 
+		   ON);
+  
+  if (error_flag) {
+    cout << "\n Chem2D ERROR: Chem2D AMR error on processor "
+	 << List_of_Local_Solution_Blocks.ThisCPU<< ".\n";   cout.flush();
+  } 
+  error_flag = CFFC_OR_MPI(error_flag);
+  if (error_flag) return (error_flag);
+  
+  if (CFFC_Primary_MPI_Processor()) {
+    cout << "\n New multi-block solution-adaptive quadrilateral mesh statistics: "; 
+    cout << "\n  -> Number of Root Blocks i-direction: "
+	 << QuadTree.NRi;
+    cout << "\n  -> Number of Root Blocks j-direction: " 
+	 << QuadTree.NRj;
+    cout << "\n  -> Total Number of Used Blocks: " 
+	 << QuadTree.countUsedBlocks();
+    cout << "\n  -> Total Number of Computational Cells: " 
+	 << QuadTree.countUsedCells();
+    cout << "\n  -> Number of Mesh Refinement Levels: " 
+	 << QuadTree.highestRefinementLevel()+1;
+    cout << "\n  -> Refinement Efficiency: " 
+	 << QuadTree.efficiencyRefinement() << "\n";
+    cout.flush();
+  } 
+
+  return error_flag;
+}
+
 
 /*! *****************************************************************************************
  *   Routine: Newton_Krylov_Solver
@@ -76,6 +148,8 @@ int Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 		                 int &number_of_explicit_time_steps,
 				 double &Physical_Time,
 		                 SOLN_BLOCK_TYPE *SolnBlk,
+				 QuadTreeBlock_DataStructure  &QuadTree,
+				 AdaptiveBlockResourceList    &List_of_Global_Solution_Blocks, 
 		                 AdaptiveBlock2D_List &List_of_Local_Solution_Blocks,
 		                 INPUT_TYPE &Input_Parameters) {
 
@@ -132,74 +206,75 @@ int Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
   /**************************************************************************/  
   /********* Unsteady Time Accurate, Dual Time Stepping  ********************/
   /**************************************************************************/  
-  int DTS_Step(1);    
+  int DTS_Step(1);   //Restart should change to "number_of_explicit_steps" ???  but may brake function dependencies
   if (Input_Parameters.NKS_IP.Dual_Time_Stepping) { 
 
     double DTS_dTime(ZERO);
     int physical_time_param(TIME_STEPPING_IMPLICIT_EULER);
+    bool IE_Flag = true; //Use Implicit Euler for 1st DTS Step & for AMR 
 
     // Outer Loop (Physical Time)      
-    while ( (DTS_Step < Input_Parameters.NKS_IP.Maximum_Number_of_DTS_Steps) &&
+    while ( (DTS_Step-1 < Input_Parameters.NKS_IP.Maximum_Number_of_DTS_Steps) &&
 	    (Input_Parameters.Time_Max > Physical_Time ) ) {
-
-      //CHANGE THIS TO WORK WITH NKS DTS 
-      /***********************************************************************	
-	MESH REFINEMENT: Periodically refine the mesh (AMR). 
-      ************************************************************************/
+      
+      /***********************************************************************/	
+      // Mesh Refinement: Periodically refine the mesh (AMR). 
       if (Input_Parameters.AMR) {
-	if (DTS_Step != 1ll  &&  (number_of_explicit_time_steps + DTS_Step-1) % Input_Parameters.AMR_Frequency == 0){
+     	if (DTS_Step != 1  &&  (number_of_explicit_time_steps + DTS_Step-1) % Input_Parameters.AMR_Frequency == 0){
+	  error_flag = NKS_AMR(SolnBlk,
+			       Input_Parameters,
+			       QuadTree,     
+			       List_of_Global_Solution_Blocks, 
+			       List_of_Local_Solution_Blocks,
+			       GMRES_,
+			       Block_precon,
+			       DTS_SolnBlk,
+			       number_of_explicit_time_steps,
+			       DTS_Step);  
 
-	  if (CFFC_Primary_MPI_Processor()){
-	    cout << "\n\n Refining Grid.  Performing adaptive mesh refinement at n = "
-		 <<  number_of_explicit_time_steps + DTS_Step << ".";
-	  }
+	  /**************************************************************************/    
+	  //Delete Original Solution Info
+	  delete[] Block_precon;  delete[] DTS_SolnBlk; GMRES_.deallocate();
 	  
-	  Evaluate_Limiters(SolnBlk, List_of_Local_Solution_Blocks);
-// 	  error_flag = AMR(Local_SolnBlk,
-// 			   Input_Parameters,
-// 			   QuadTree,                               //NEED THIS PASSED IN
-// 			   List_of_Global_Solution_Blocks,         //NEED THIS
-// 			   List_of_Local_Solution_Blocks,
-// 			   ON, 
-// 			   ON);
-
-	  if (error_flag) {
-	    cout << "\n Chem2D ERROR: Chem2D AMR error on processor "
-		 << List_of_Local_Solution_Blocks.ThisCPU<< ".\n";   cout.flush();
+	  /**************************************************************************/  
+	  // Reallocate according to new "Refined" Mesh
+	  //DUAL TIME STEPPING 
+	  DTS_SolnBlk = new DTS_NKS_Quad_Block<SOLN_BLOCK_TYPE,INPUT_TYPE>[List_of_Local_Solution_Blocks.Nblk];
+	  if (Input_Parameters.NKS_IP.Dual_Time_Stepping) {          
+	    for ( int Bcount = 0 ; Bcount < List_of_Local_Solution_Blocks.Nblk; ++Bcount ) {  
+	      if (List_of_Local_Solution_Blocks.Block[Bcount].used == ADAPTIVEBLOCK2D_USED) {
+		DTS_SolnBlk[Bcount].allocate(SolnBlk[Bcount].NCi,SolnBlk[Bcount].NCj,blocksize,Input_Parameters);      
+	      }
+	    }
 	  } 
-	  error_flag = CFFC_OR_MPI(error_flag);
-	  if (error_flag) return (error_flag);
-          
-// 	  if (CFFC_Primary_MPI_Processor()) {
-// 	    cout << "\n New multi-block solution-adaptive quadrilateral mesh statistics: "; 
-// 	    cout << "\n  -> Number of Root Blocks i-direction: "
-// 		 << QuadTree.NRi;
-// 	    cout << "\n  -> Number of Root Blocks j-direction: " 
-// 		 << QuadTree.NRj;
-// 	    cout << "\n  -> Total Number of Used Blocks: " 
-// 		 << QuadTree.countUsedBlocks();
-// 	    cout << "\n  -> Total Number of Computational Cells: " 
-// 		 << QuadTree.countUsedCells();
-// 	    cout << "\n  -> Number of Mesh Refinement Levels: " 
-// 		 << QuadTree.highestRefinementLevel()+1;
-// 	    cout << "\n  -> Refinement Efficiency: " 
-// 		 << QuadTree.efficiencyRefinement() << "\n";
-// 	    cout.flush();
-// 	  } 
+	  
+	  //GMRES 
+	  GMRES_.Setup(SolnBlk, List_of_Local_Solution_Blocks,Input_Parameters,blocksize, DTS_SolnBlk);
+	  
+	  // Block Preconditoner
+	  Block_precon = new Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE>[List_of_Local_Solution_Blocks.Nblk];  
+	  for ( int Bcount = 0 ; Bcount < List_of_Local_Solution_Blocks.Nblk; ++Bcount ) {  
+	    if (List_of_Local_Solution_Blocks.Block[Bcount].used == ADAPTIVEBLOCK2D_USED) {
+	      Block_precon[Bcount].Create_Preconditioner(SolnBlk[Bcount],Input_Parameters,blocksize);
+	    }
+	  }  	  
+	  /**************************************************************************/  
+	  
 	}
-	//NOW DEALLOCATE & REALLOCATE DTS, GMRES, BLOCKPRECON MEMORY FOR
-	//NEW # OF BLOCKS!
+	error_flag = CFFC_OR_MPI(error_flag);
+	if (error_flag) { break; } 
+	IE_Flag = true; // Need to use Implicit Euler for 1st step after refinemet ?
       }
       /**************************************************************************/    
 
       /**************************************************************************/    
       // First Step needs to be done with Implicit Euler
-      if (DTS_Step == 1 ) {
+      if (IE_Flag) {
 	physical_time_param = Input_Parameters.NKS_IP.Physical_Time_Integration;
 	Input_Parameters.NKS_IP.Physical_Time_Integration = TIME_STEPPING_IMPLICIT_EULER; 
       }
       /**************************************************************************/
-      
+
       /**************************************************************************/
       // Determine global time step using a "fixed" time step or using a CFL                                                       
       if(Input_Parameters.NKS_IP.Physical_Time_Step > ZERO){
@@ -242,8 +317,9 @@ int Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 
       /**************************************************************************/			
       // After first step, reset to requested Time Integration Method
-      if (DTS_Step == 1) {
+      if (IE_Flag) {
 	Input_Parameters.NKS_IP.Physical_Time_Integration = physical_time_param;       
+	IE_Flag = false;
       }
       /**************************************************************************/
 
@@ -268,13 +344,13 @@ int Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
 
       /**************************************************************************/
       //Ouput Solution Every "n" steps 
-      if (  (number_of_explicit_time_steps + DTS_Step-1) % Input_Parameters.Time_Accurate_Plot_Frequency == 0){
+      if (  (number_of_explicit_time_steps + DTS_Step) % Input_Parameters.NKS_IP.Time_Accurate_Plot_Frequency == 0){
 	if (CFFC_Primary_MPI_Processor()) cout<<"\n Outputting Solution Data \n ";
-	error_flag = Output_Tecplot_Periodic(SolnBlk, 
-					     List_of_Local_Solution_Blocks, 
-					     Input_Parameters,
-					     number_of_explicit_time_steps+DTS_Step-1,
-					     Physical_Time); 
+	error_flag = NKS_DTS_Output<SOLN_BLOCK_TYPE,INPUT_TYPE>(SolnBlk, 
+								List_of_Local_Solution_Blocks, 
+								Input_Parameters,
+								number_of_explicit_time_steps+DTS_Step,
+								Physical_Time); 
       }
       /**************************************************************************/
       

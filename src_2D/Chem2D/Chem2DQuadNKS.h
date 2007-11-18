@@ -28,7 +28,7 @@ int Newton_Update(Chem2D_Quad_Block *SolnBlk,
 		  AdaptiveBlock2D_List &List_of_Local_Solution_Blocks,
 		  Chem2D_Input_Parameters &Input_Parameters,
 		  GMRES_RightPrecon_MatrixFree<Chem2D_pState,Chem2D_Quad_Block,Chem2D_Input_Parameters> &GMRES,
-      double Relaxation_multiplier) {
+		  double Relaxation_multiplier) {
 
   int Num_Var = SolnBlk[0].NumVar();  	
   int error_flag = 0;
@@ -146,6 +146,26 @@ template <> double Finite_Time_Step(const Chem2D_Input_Parameters &Input_Paramet
   return CFL_current;
 
 }
+
+
+/*****************************************************************************
+ * SPECIALIZATION of DTS Solution Output.                                    *
+ *****************************************************************************/ 
+template <>
+int NKS_DTS_Output(Chem2D_Quad_Block *SolnBlk, 
+		   AdaptiveBlock2D_List List_of_Local_Solution_Blocks, 
+		   Chem2D_Input_Parameters &Input_Parameters,
+		   const int &Steps,
+		   const int &Physical_Time) {
+  int error_flag = Output_Tecplot_Periodic(SolnBlk, 
+					   List_of_Local_Solution_Blocks, 
+					   Input_Parameters,
+					   Steps,
+					   Physical_Time);   
+  return error_flag;
+}
+
+
 
 
 /*****************************************************************************
