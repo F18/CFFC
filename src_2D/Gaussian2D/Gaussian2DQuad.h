@@ -187,6 +187,8 @@ class Gaussian2D_Quad_Block{
     int              Freeze_Limiter;  // Limiter freezing indicator.
     Gaussian2D_pState     *WoN,*WoS,  // Boundary condition reference states for
                           *WoE,*WoW;  // north, south, east, & west boundaries.
+    double         *oldT_N, *oldT_S,  // Array to store old temperature
+                   *oldT_E, *oldT_W;  // data for slip_T bc damping
     static int    residual_variable;  // Static integer that indicates which variable is used for residual calculations.
     static int        Heat_Transfer;  // Heat transfer flag
     static int            Flow_Type;  // Static integer identifying the flow type (inviscid?)
@@ -199,6 +201,7 @@ class Gaussian2D_Quad_Block{
        dWdx = NULL; dWdy = NULL; phi = NULL; Uo = NULL;
        FluxN = NULL; FluxS = NULL; FluxE = NULL; FluxW = NULL;
        WoN = NULL; WoS = NULL; WoE = NULL; WoW = NULL;
+       oldT_N = NULL; oldT_S = NULL; oldT_E = NULL; oldT_W = NULL;
        Axisymmetric = 0; Heat_Transfer = 0;
        Freeze_Limiter = OFF;
     }
@@ -210,6 +213,7 @@ class Gaussian2D_Quad_Block{
        dWdx = Soln.dWdx; dWdy = Soln.dWdy; phi = Soln.phi; Uo = Soln.Uo;
        FluxN = Soln.FluxN; FluxS = Soln.FluxS; FluxE = Soln.FluxE; FluxW = Soln.FluxW;
        WoN = Soln.WoN; WoS = Soln.WoS; WoE = Soln.WoE; WoW = Soln.WoW;
+       oldT_N = Soln.oldT_N; oldT_S = Soln.oldT_S; oldT_E = Soln.oldT_E; oldT_W = Soln.oldT_W;
        Axisymmetric = Soln.Axisymmetric; Heat_Transfer = Soln.Heat_Transfer; 
        Freeze_Limiter = Soln.Freeze_Limiter;
     }
@@ -385,6 +389,10 @@ inline void Gaussian2D_Quad_Block::allocate(const int Ni, const int Nj, const in
    WoS = new Gaussian2D_pState[NCi];
    WoE = new Gaussian2D_pState[NCj]; 
    WoW = new Gaussian2D_pState[NCj];
+   oldT_N = new double[NCi]; 
+   oldT_S = new double[NCi];
+   oldT_E = new double[NCj]; 
+   oldT_W = new double[NCj];
    // Set the solution residuals, gradients, limiters, and other values to zero.
    for (j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
       for ( i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
@@ -463,6 +471,14 @@ inline void Gaussian2D_Quad_Block::deallocate(void) {
    WoE = NULL; 
    delete []WoW; 
    WoW = NULL;
+   delete []oldT_N;
+   oldT_N = NULL;
+   delete []oldT_S;
+   oldT_S = NULL;
+   delete []oldT_E;
+   oldT_E = NULL;
+   delete []oldT_W;
+   oldT_W = NULL;
 
    NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0; Nghost = 0;
 }
@@ -644,6 +660,14 @@ inline ostream &operator << (ostream &out_file,
      out_file << SolnBlk.WoS[i] << "\n";
      out_file << SolnBlk.WoN[i] << "\n";
   } /* endfor */
+  for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
+     out_file << SolnBlk.oldT_W[j] << "\n";
+     out_file << SolnBlk.oldT_E[j] << "\n";
+  } /* endfor */
+  for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
+     out_file << SolnBlk.oldT_S[i] << "\n";
+     out_file << SolnBlk.oldT_N[i] << "\n";
+  } /* endfor */
   return (out_file);
 }
 
@@ -685,6 +709,14 @@ inline istream &operator >> (istream &in_file,
   for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
      in_file >> SolnBlk.WoS[i];
      in_file >> SolnBlk.WoN[i];
+  } /* endfor */
+  for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
+     in_file >> SolnBlk.oldT_W[j];
+     in_file >> SolnBlk.oldT_E[j];
+  } /* endfor */
+  for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
+     in_file >> SolnBlk.oldT_S[i];
+     in_file >> SolnBlk.oldT_N[i];
   } /* endfor */
 
   return (in_file);

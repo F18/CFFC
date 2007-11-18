@@ -125,7 +125,7 @@ void Broadcast_Solution_Block(Gaussian2D_Quad_Block &SolnBlk) {
 
     ni = 1;
     nj = (SolnBlk.JCu+SolnBlk.Nghost) - (SolnBlk.JCl-SolnBlk.Nghost) + 1;
-    buffer = new double[16*ni*nj];
+    buffer = new double[18*ni*nj];
 
     if (CFFC_Primary_MPI_Processor()) {
       buffer_size = 0;
@@ -146,11 +146,13 @@ void Broadcast_Solution_Block(Gaussian2D_Quad_Block &SolnBlk) {
 	buffer[buffer_size+13] = SolnBlk.WoE[j].p.yy;
 	buffer[buffer_size+14] = SolnBlk.WoE[j].p.zz;
 	buffer[buffer_size+15] = SolnBlk.WoE[j].erot;
-	buffer_size = buffer_size + 16;
+	buffer[buffer_size+16] = SolnBlk.oldT_W;
+	buffer[buffer_size+17] = SolnBlk.oldT_E;
+	buffer_size = buffer_size + 18;
       } /* endfor */
     } /* endif */
 
-    buffer_size = 16*ni*nj;
+    buffer_size = 18*ni*nj;
     MPI::COMM_WORLD.Bcast(buffer, buffer_size, MPI::DOUBLE, 0);
 
     if (!CFFC_Primary_MPI_Processor()) {
@@ -172,7 +174,9 @@ void Broadcast_Solution_Block(Gaussian2D_Quad_Block &SolnBlk) {
 	SolnBlk.WoE[j].p.yy = buffer[buffer_size+13];
 	SolnBlk.WoE[j].p.zz = buffer[buffer_size+14];
 	SolnBlk.WoE[j].erot = buffer[buffer_size+15];
-	buffer_size = buffer_size + 16;
+	SolnBlk.oldT_W      = buffer[buffer_size+16];
+	SolnBlk.oldT_E      = buffer[buffer_size+17];
+	buffer_size = buffer_size + 18;
       } /* endfor */
     } /* endif */
 
@@ -181,7 +185,7 @@ void Broadcast_Solution_Block(Gaussian2D_Quad_Block &SolnBlk) {
 
     ni = (SolnBlk.ICu+SolnBlk.Nghost) - (SolnBlk.ICl-SolnBlk.Nghost) + 1;
     nj = 1;
-    buffer = new double[16*ni*nj];
+    buffer = new double[18*ni*nj];
 
     if (CFFC_Primary_MPI_Processor()) {
       buffer_size = 0;
@@ -202,11 +206,13 @@ void Broadcast_Solution_Block(Gaussian2D_Quad_Block &SolnBlk) {
 	buffer[buffer_size+13] = SolnBlk.WoN[i].p.yy;
 	buffer[buffer_size+14] = SolnBlk.WoN[i].p.zz;
 	buffer[buffer_size+15] = SolnBlk.WoN[i].erot;
-	buffer_size = buffer_size + 16;
+	buffer[buffer_size+16] = SolnBlk.oldT_S;
+	buffer[buffer_size+17] = SolnBlk.oldT_N;
+	buffer_size = buffer_size + 18;
       } /* endfor */
     } /* endif */
 
-    buffer_size = 16*ni*nj;
+    buffer_size = 18*ni*nj;
     MPI::COMM_WORLD.Bcast(buffer, buffer_size, MPI::DOUBLE, 0);
 
     if (!CFFC_Primary_MPI_Processor()) {
@@ -228,7 +234,9 @@ void Broadcast_Solution_Block(Gaussian2D_Quad_Block &SolnBlk) {
 	SolnBlk.WoN[i].p.yy = buffer[buffer_size+7];
 	SolnBlk.WoN[i].p.zz = buffer[buffer_size+7];
 	SolnBlk.WoN[i].erot = buffer[buffer_size+7];
-	buffer_size = buffer_size + 16;
+	SolnBlk.oldT_S      = buffer[buffer_size+7];
+	SolnBlk.oldT_N      = buffer[buffer_size+7];
+	buffer_size = buffer_size + 18;
       } /* endfor */
     } /* endif */
 
@@ -350,7 +358,7 @@ void Broadcast_Solution_Block(Gaussian2D_Quad_Block &SolnBlk,
 
     ni = 1;
     nj = (SolnBlk.JCu+SolnBlk.Nghost) - (SolnBlk.JCl-SolnBlk.Nghost) + 1;
-    buffer = new double[16*ni*nj];
+    buffer = new double[18*ni*nj];
 
     if (CFFC_MPI::This_Processor_Number == Source_CPU) {
       buffer_size = 0;
@@ -371,11 +379,13 @@ void Broadcast_Solution_Block(Gaussian2D_Quad_Block &SolnBlk,
 	buffer[buffer_size+13] = SolnBlk.WoE[j].p.yy;
 	buffer[buffer_size+14] = SolnBlk.WoE[j].p.zz;
 	buffer[buffer_size+15] = SolnBlk.WoE[j].erot;
-	buffer_size = buffer_size + 16;
+	buffer[buffer_size+14] = SolnBlk.oldT_W;
+	buffer[buffer_size+15] = SolnBlk.oldT_E;
+	buffer_size = buffer_size + 18;
       } /* endfor */
     } /* endif */
 
-    buffer_size = 16*ni*nj;
+    buffer_size = 18*ni*nj;
     Communicator.Bcast(buffer, buffer_size, MPI::DOUBLE, Source_Rank);
 
     if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
@@ -397,7 +407,9 @@ void Broadcast_Solution_Block(Gaussian2D_Quad_Block &SolnBlk,
 	SolnBlk.WoE[j].p.yy = buffer[buffer_size+13];
 	SolnBlk.WoE[j].p.zz = buffer[buffer_size+14];
 	SolnBlk.WoE[j].erot = buffer[buffer_size+15];
-	buffer_size = buffer_size + 16;
+	SolnBlk.oldT_W      = buffer[buffer_size+14];
+	SolnBlk.oldT_E      = buffer[buffer_size+15];
+	buffer_size = buffer_size + 18;
       } /* endfor */
     } /* endif */
 
@@ -406,7 +418,7 @@ void Broadcast_Solution_Block(Gaussian2D_Quad_Block &SolnBlk,
 
     ni = (SolnBlk.ICu+SolnBlk.Nghost) - (SolnBlk.ICl-SolnBlk.Nghost) + 1;
     nj = 1;
-    buffer = new double[16*ni*nj];
+    buffer = new double[18*ni*nj];
 
     if (CFFC_MPI::This_Processor_Number == Source_CPU) {
       buffer_size = 0;
@@ -427,11 +439,13 @@ void Broadcast_Solution_Block(Gaussian2D_Quad_Block &SolnBlk,
 	buffer[buffer_size+13] = SolnBlk.WoN[i].p.yy;
 	buffer[buffer_size+14] = SolnBlk.WoN[i].p.zz;
 	buffer[buffer_size+15] = SolnBlk.WoN[i].erot;
-	buffer_size = buffer_size + 16;
+	buffer[buffer_size+14] = SolnBlk.oldT_S;
+	buffer[buffer_size+15] = SolnBlk.oldT_N;
+	buffer_size = buffer_size + 18;
       } /* endfor */
     } /* endif */
 
-    buffer_size = 16*ni*nj;
+    buffer_size = 18*ni*nj;
     Communicator.Bcast(buffer, buffer_size, MPI::DOUBLE, Source_Rank);
 
     if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
@@ -453,7 +467,9 @@ void Broadcast_Solution_Block(Gaussian2D_Quad_Block &SolnBlk,
 	SolnBlk.WoN[i].p.yy = buffer[buffer_size+13];
 	SolnBlk.WoN[i].p.zz = buffer[buffer_size+14];
 	SolnBlk.WoN[i].erot = buffer[buffer_size+15];
-	buffer_size = buffer_size + 16;
+	SolnBlk.oldT_S      = buffer[buffer_size+14];
+	SolnBlk.oldT_N      = buffer[buffer_size+15];
+	buffer_size = buffer_size + 18;
       } /* endfor */
     } /* endif */
 
@@ -523,6 +539,15 @@ void Copy_Solution_Block(Gaussian2D_Quad_Block &SolnBlk1,
        for ( i = SolnBlk1.ICl-SolnBlk1.Nghost ; i <= SolnBlk1.ICu+SolnBlk1.Nghost ; ++i ) {
            SolnBlk1.WoS[i] = SolnBlk2.WoS[i];
            SolnBlk1.WoN[i] = SolnBlk2.WoN[i];
+       } /* endfor */
+       for (j  = SolnBlk1.JCl-SolnBlk1.Nghost ; j <= SolnBlk1.JCu+SolnBlk1.Nghost ; ++j ) {
+	   SolnBlk1.oldT_W[j] = SolnBlk2.oldT_W[j];
+           SolnBlk1.oldT_E[j] = SolnBlk2.oldT_E[j];
+       } /* endfor */
+
+       for ( i = SolnBlk1.ICl-SolnBlk1.Nghost ; i <= SolnBlk1.ICu+SolnBlk1.Nghost ; ++i ) {
+           SolnBlk1.oldT_S[i] = SolnBlk2.oldT_S[i];
+           SolnBlk1.oldT_N[i] = SolnBlk2.oldT_N[i];
        } /* endfor */
     } /* endif */
 
@@ -686,6 +711,30 @@ int Prolong_Solution_Block(Gaussian2D_Quad_Block &SolnBlk_Fine,
               = SolnBlk_Original.WoN[i];
        } /* endfor */
 
+       for ( j  = j_min-SolnBlk_Original.Nghost/2; j <= j_max+SolnBlk_Original.Nghost/2 ; ++j ) {
+           SolnBlk_Fine.oldT_W[2*(j-j_min)+SolnBlk_Fine.JCl  ]
+              = SolnBlk_Original.oldT_W[j];
+           SolnBlk_Fine.oldT_W[2*(j-j_min)+SolnBlk_Fine.JCl+1]
+              = SolnBlk_Original.oldT_W[j];
+
+           SolnBlk_Fine.oldT_E[2*(j-j_min)+SolnBlk_Fine.JCl  ]
+              = SolnBlk_Original.oldT_E[j];
+           SolnBlk_Fine.oldT_E[2*(j-j_min)+SolnBlk_Fine.JCl+1]
+              = SolnBlk_Original.oldT_E[j];
+       } /* endfor */
+
+       for ( i = i_min-SolnBlk_Original.Nghost/2 ; i <= i_max+SolnBlk_Original.Nghost/2 ; ++i ) {
+           SolnBlk_Fine.oldT_S[2*(i-i_min)+SolnBlk_Fine.ICl  ]
+              = SolnBlk_Original.oldT_S[i];
+           SolnBlk_Fine.oldT_S[2*(i-i_min)+SolnBlk_Fine.ICl+1]
+              = SolnBlk_Original.oldT_S[i];
+
+           SolnBlk_Fine.oldT_N[2*(i-i_min)+SolnBlk_Fine.ICl  ]
+              = SolnBlk_Original.oldT_N[i];
+           SolnBlk_Fine.oldT_N[2*(i-i_min)+SolnBlk_Fine.ICl+1]
+              = SolnBlk_Original.oldT_N[i];
+       } /* endfor */
+
     } /* endif */
 
     return 0;
@@ -788,8 +837,10 @@ int Restrict_Solution_Block(Gaussian2D_Quad_Block &SolnBlk_Coarse,
             j <= SolnBlk_Original_SW.JCu+SolnBlk_Original_SW.Nghost ; j += 2 ) {
       	  j_coarse = (j-SolnBlk_Original_SW.JCl)/2+SolnBlk_Coarse.JCl;
           SolnBlk_Coarse.WoW[j_coarse] = SolnBlk_Original_SW.WoW[j];
+          SolnBlk_Coarse.oldT_W[j_coarse] = SolnBlk_Original_SW.oldT_W[j];
           if (j == SolnBlk_Original_SW.JCl-SolnBlk_Original_SW.Nghost) {
              SolnBlk_Coarse.WoW[j_coarse-1] = SolnBlk_Original_SW.WoW[j];
+             SolnBlk_Coarse.oldT_W[j_coarse-1] = SolnBlk_Original_SW.oldT_W[j];
           } /* endif */
       } /* endfor */
 
@@ -797,8 +848,10 @@ int Restrict_Solution_Block(Gaussian2D_Quad_Block &SolnBlk_Coarse,
             i <= SolnBlk_Original_SW.ICu+SolnBlk_Original_SW.Nghost ; i += 2) {
       	  i_coarse = (i-SolnBlk_Original_SW.ICl)/2+SolnBlk_Coarse.ICl;
           SolnBlk_Coarse.WoS[i_coarse] = SolnBlk_Original_SW.WoS[i];
+          SolnBlk_Coarse.oldT_S[i_coarse] = SolnBlk_Original_SW.oldT_S[i];
           if (i == SolnBlk_Original_SW.ICl-SolnBlk_Original_SW.Nghost) {
              SolnBlk_Coarse.WoS[i_coarse-1] = SolnBlk_Original_SW.WoS[i];
+             SolnBlk_Coarse.oldT_S[i_coarse-1] = SolnBlk_Original_SW.oldT_S[i];
           } /* endif */
       } /* endfor */
 
@@ -830,8 +883,10 @@ int Restrict_Solution_Block(Gaussian2D_Quad_Block &SolnBlk_Coarse,
             j <= SolnBlk_Original_SE.JCu+SolnBlk_Original_SE.Nghost ; j += 2 ) {
       	  j_coarse = (j-SolnBlk_Original_SE.JCl)/2+SolnBlk_Coarse.JCl;
           SolnBlk_Coarse.WoE[j_coarse] = SolnBlk_Original_SE.WoE[j];
+          SolnBlk_Coarse.oldT_E[j_coarse] = SolnBlk_Original_SE.oldT_E[j];
           if (j == SolnBlk_Original_SE.JCl-SolnBlk_Original_SE.Nghost) {
              SolnBlk_Coarse.WoE[j_coarse-1] = SolnBlk_Original_SE.WoE[j];
+             SolnBlk_Coarse.oldT_E[j_coarse-1] = SolnBlk_Original_SE.oldT_E[j];
           } /* endif */
       } /* endfor */
 
@@ -840,8 +895,10 @@ int Restrict_Solution_Block(Gaussian2D_Quad_Block &SolnBlk_Coarse,
      	  i_coarse = (i-SolnBlk_Original_SE.ICl)/2+
                      (SolnBlk_Coarse.ICu-SolnBlk_Coarse.ICl+1)/2+SolnBlk_Coarse.ICl;
           SolnBlk_Coarse.WoS[i_coarse] = SolnBlk_Original_SE.WoS[i];
+          SolnBlk_Coarse.oldT_S[i_coarse] = SolnBlk_Original_SE.oldT_S[i];
           if (i == SolnBlk_Original_SE.ICu+SolnBlk_Original_SE.Nghost) {
              SolnBlk_Coarse.WoS[i_coarse+1] = SolnBlk_Original_SE.WoS[i];
+             SolnBlk_Coarse.oldT_S[i_coarse+1] = SolnBlk_Original_SE.oldT_S[i];
           } /* endif */
       } /* endfor */
 
@@ -874,8 +931,10 @@ int Restrict_Solution_Block(Gaussian2D_Quad_Block &SolnBlk_Coarse,
       	  j_coarse = (j-SolnBlk_Original_NW.JCl)/2+
                      (SolnBlk_Coarse.JCu-SolnBlk_Coarse.JCl+1)/2+SolnBlk_Coarse.JCl;
           SolnBlk_Coarse.WoW[j_coarse] = SolnBlk_Original_NW.WoW[j];
+          SolnBlk_Coarse.oldT_W[j_coarse] = SolnBlk_Original_NW.oldT_W[j];
           if (j == SolnBlk_Original_NW.JCu+SolnBlk_Original_NW.Nghost) {
              SolnBlk_Coarse.WoW[j_coarse+1] = SolnBlk_Original_NW.WoW[j];
+             SolnBlk_Coarse.oldT_W[j_coarse+1] = SolnBlk_Original_NW.oldT_W[j];
           } /* endif */
       } /* endfor */
 
@@ -883,8 +942,10 @@ int Restrict_Solution_Block(Gaussian2D_Quad_Block &SolnBlk_Coarse,
             i <= SolnBlk_Original_NW.ICu+SolnBlk_Original_NW.Nghost ; i += 2) {
       	  i_coarse = (i-SolnBlk_Original_NW.ICl)/2+SolnBlk_Coarse.ICl;
           SolnBlk_Coarse.WoN[i_coarse] = SolnBlk_Original_NW.WoN[i];
+          SolnBlk_Coarse.oldT_N[i_coarse] = SolnBlk_Original_NW.oldT_N[i];
           if (i == SolnBlk_Original_NW.ICl-SolnBlk_Original_NW.Nghost) {
              SolnBlk_Coarse.WoN[i_coarse-1] = SolnBlk_Original_NW.WoN[i];
+             SolnBlk_Coarse.oldT_N[i_coarse-1] = SolnBlk_Original_NW.oldT_N[i];
           } /* endif */
       } /* endfor */
 
@@ -917,8 +978,10 @@ int Restrict_Solution_Block(Gaussian2D_Quad_Block &SolnBlk_Coarse,
       	  j_coarse = (j-SolnBlk_Original_NE.JCl)/2+
                      (SolnBlk_Coarse.JCu-SolnBlk_Coarse.JCl+1)/2+SolnBlk_Coarse.JCl;
           SolnBlk_Coarse.WoE[j_coarse] = SolnBlk_Original_NE.WoE[j];
+          SolnBlk_Coarse.oldT_E[j_coarse] = SolnBlk_Original_NE.oldT_E[j];
           if (j == SolnBlk_Original_NE.JCu+SolnBlk_Original_NE.Nghost) {
              SolnBlk_Coarse.WoE[j_coarse+1] = SolnBlk_Original_NE.WoE[j];
+             SolnBlk_Coarse.oldT_E[j_coarse+1] = SolnBlk_Original_NE.oldT_E[j];
           } /* endif */
       } /* endfor */
 
@@ -927,8 +990,10 @@ int Restrict_Solution_Block(Gaussian2D_Quad_Block &SolnBlk_Coarse,
       	  i_coarse = (i-SolnBlk_Original_NE.ICl)/2+
                      (SolnBlk_Coarse.ICu-SolnBlk_Coarse.ICl+1)/2+SolnBlk_Coarse.ICl;
           SolnBlk_Coarse.WoN[i_coarse] = SolnBlk_Original_NE.WoN[i];
+          SolnBlk_Coarse.oldT_N[i_coarse] = SolnBlk_Original_NE.oldT_N[i];
           if (i == SolnBlk_Original_NE.ICu+SolnBlk_Original_NE.Nghost) {
              SolnBlk_Coarse.WoN[i_coarse+1] = SolnBlk_Original_NE.WoN[i];
+             SolnBlk_Coarse.oldT_N[i_coarse+1] = SolnBlk_Original_NE.oldT_N[i];
           } /* endif */
       } /* endfor */
 
@@ -1488,12 +1553,18 @@ void ICs(Gaussian2D_Quad_Block &SolnBlk,
        if (j >= SolnBlk.JCl && j <= SolnBlk.JCu) {
           SolnBlk.WoW[j] = SolnBlk.W[SolnBlk.ICl][j];
           SolnBlk.WoE[j] = SolnBlk.W[SolnBlk.ICu][j];
+	  SolnBlk.oldT_W[j] = SolnBlk.WoW[j].T();
+	  SolnBlk.oldT_E[j] = SolnBlk.WoE[j].T();
        } else if (j < SolnBlk.JCl) {
           SolnBlk.WoW[j] = SolnBlk.W[SolnBlk.ICl][SolnBlk.JCl];
           SolnBlk.WoE[j] = SolnBlk.W[SolnBlk.ICu][SolnBlk.JCl];
+	  SolnBlk.oldT_W[j] = SolnBlk.WoW[j].T();
+	  SolnBlk.oldT_E[j] = SolnBlk.WoE[j].T();
        } else {
           SolnBlk.WoW[j] = SolnBlk.W[SolnBlk.ICl][SolnBlk.JCu];
           SolnBlk.WoE[j] = SolnBlk.W[SolnBlk.ICu][SolnBlk.JCu];
+	  SolnBlk.oldT_W[j] = SolnBlk.WoW[j].T();
+	  SolnBlk.oldT_E[j] = SolnBlk.WoE[j].T();
        } /* endif */
 
        //Set Wall velocities for Adiabatic walls or viscous isothermal
@@ -1503,6 +1574,7 @@ void ICs(Gaussian2D_Quad_Block &SolnBlk,
 	 SolnBlk.WoW[j].set_temperature_d(Input_Parameters.Temperature_West_BC);
 	 SolnBlk.WoW[j].v.y = 0.0;
 	 SolnBlk.WoW[j].v.x = 0.0;
+	 SolnBlk.oldT_W[j] = SolnBlk.WoW[j].T();
        } /* endif */
        if (SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL ||
 	   SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
@@ -1510,6 +1582,7 @@ void ICs(Gaussian2D_Quad_Block &SolnBlk,
 	 SolnBlk.WoE[j].set_temperature_d(Input_Parameters.Temperature_East_BC);
 	 SolnBlk.WoE[j].v.y = 0.0;
 	 SolnBlk.WoE[j].v.x = 0.0;
+	 SolnBlk.oldT_E[j] = SolnBlk.WoE[j].T();
        } /* endif */
 
        //Set Pressure drop for Pipe
@@ -1524,12 +1597,18 @@ void ICs(Gaussian2D_Quad_Block &SolnBlk,
        if (i >= SolnBlk.ICl && i <= SolnBlk.ICu) {
           SolnBlk.WoS[i] = SolnBlk.W[i][SolnBlk.JCl];
           SolnBlk.WoN[i] = SolnBlk.W[i][SolnBlk.JCu];
+          SolnBlk.oldT_S[i] = SolnBlk.WoS[i].T();
+          SolnBlk.oldT_N[i] = SolnBlk.WoN[i].T();
        } else if (i < SolnBlk.ICl) {
           SolnBlk.WoS[i] = SolnBlk.W[SolnBlk.ICl][SolnBlk.JCl];
           SolnBlk.WoN[i] = SolnBlk.W[SolnBlk.ICl][SolnBlk.JCu];
+          SolnBlk.oldT_S[i] = SolnBlk.WoS[i].T();
+          SolnBlk.oldT_N[i] = SolnBlk.WoN[i].T();
        } else {
           SolnBlk.WoS[i] = SolnBlk.W[SolnBlk.ICu][SolnBlk.JCl];
           SolnBlk.WoN[i] = SolnBlk.W[SolnBlk.ICu][SolnBlk.JCu];
+          SolnBlk.oldT_S[i] = SolnBlk.WoS[i].T();
+          SolnBlk.oldT_N[i] = SolnBlk.WoN[i].T();
        } /* endif */
 
        //Set Wall velocities for Adiabatic walls
@@ -1543,6 +1622,7 @@ void ICs(Gaussian2D_Quad_Block &SolnBlk,
 	 } else {
 	   SolnBlk.WoS[i].v.x = 0.0;
 	 } /* endif */
+	 SolnBlk.oldT_S[i] = SolnBlk.WoS[i].T();
        } /* endif */
        if (SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL ||
 	   SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
@@ -1554,6 +1634,7 @@ void ICs(Gaussian2D_Quad_Block &SolnBlk,
 	 } else {
 	   SolnBlk.WoN[i].v.x = 0.0;
 	 } /* endif */
+	 SolnBlk.oldT_N[i] = SolnBlk.WoN[i].T();
        } /* endif */
     } /* endfor */
 
