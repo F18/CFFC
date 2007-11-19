@@ -509,7 +509,9 @@ class Chem2D_pState {
    ~Chem2D_pState(){ Deallocate(); }
 #endif
  
-
+   /**************** Species Resize ***************************/
+  void resize_species();
+  void resize_species(const int n_old, const string* species_old);
 };
 
 
@@ -806,6 +808,9 @@ class Chem2D_pState {
    ~Chem2D_cState() { Deallocate(); }
 #endif
 
+   /**************** Species Resize ***************************/
+   void resize_species();
+   void resize_species(const int n_old, const string* species_old);
 
  };
 
@@ -837,6 +842,86 @@ class Chem2D_pState {
    spec_memory();
    for(int i=0; i<ns; i++) spec[i] = mfrac[i];
  }
+
+/**************************************************************************
+  Resize the species array, and just set the new array to zero
+**************************************************************************/
+inline void Chem2D_pState::resize_species() {
+
+  // the new number of species
+  int n_new( React.num_species );
+
+  // deallocate first
+#ifdef STATIC_NUMBER_OF_SPECIES
+  if( STATIC_NUMBER_OF_SPECIES < n_new ) { 
+    cerr<<"\n WARNING USING STATIC CHEM2D BUILT WITH "<<STATIC_NUMBER_OF_SPECIES 
+	<<" SPECIES PREDEFINED, HOWEVER ASKING FOR "<<n_new<<endl; 
+    exit(1); 
+  }
+#else 
+  Deallocate();
+#endif  
+  
+  // set the new value
+  ns = n_new;
+  
+  // reallocate species array and set to zero
+  spec_memory();
+  set_initial_values(ZERO);
+  
+}
+
+/**************************************************************************
+  Resize the species array, keeping the values
+**************************************************************************/
+inline void Chem2D_pState::resize_species( const int n_old,           // the old numbre of species
+					   const string* species_old) // the old species names array
+{
+  // temporary storage
+  double* c_old = new double[n_old];
+  int index;
+
+  // the new number of species
+  int n_new( React.num_species );
+
+  // store the old values
+  for (int k=0; k<n_old; k++) c_old[k] = spec[k].c;
+
+  // deallocate
+#ifdef STATIC_NUMBER_OF_SPECIES
+  if( STATIC_NUMBER_OF_SPECIES < n_new ) { 
+    cerr<<"\n WARNING USING STATIC CHEM2D BUILT WITH "<<STATIC_NUMBER_OF_SPECIES 
+	<<" SPECIES PREDEFINED, HOWEVER ASKING FOR "<<n_new<<endl; 
+    exit(1); 
+  }
+#else 
+  Deallocate();
+#endif  
+  
+  // set the new value
+  ns = n_new;
+  
+  // reallocate species array and set to zero
+  spec_memory();
+  set_initial_values(ZERO);
+    
+  // match up the species and set their respective values
+  for (int k=0; k<n_old; k++) {
+    index = React.SpeciesIndex(species_old[k]);
+    if (index>=0) spec[index].c = c_old[k];
+    else {
+      cerr << "\n Chem2D_pState::resize_species() - Species " 
+	   << species_old[k]
+	   << " not found in current reaction mechanism.\n";
+      exit(-1);
+    }
+  }// endfor - species
+  
+  // delete temporary memory
+  delete[] c_old;
+
+}
+
 
  /**********************************************************************
   * Chem2D_pState::set_turbulence_variables -- Set the turbulence      *
@@ -1255,6 +1340,87 @@ inline void Chem2D_cState::set_initial_values( const Species *rhomfrac){
   rhospec_memory();
   for(int i=0; i<ns; i++) rhospec[i] = rhomfrac[i];
 }
+
+/**************************************************************************
+  Resize the species array, setting the new values to zero
+**************************************************************************/
+inline void Chem2D_cState::resize_species() {
+
+  // the new number of species
+  int n_new( Chem2D_pState::React.num_species );
+
+  // deallocate first
+#ifdef STATIC_NUMBER_OF_SPECIES
+  if( STATIC_NUMBER_OF_SPECIES < n_new ) { 
+    cerr<<"\n WARNING USING STATIC CHEM2D BUILT WITH "<<STATIC_NUMBER_OF_SPECIES 
+	<<" SPECIES PREDEFINED, HOWEVER ASKING FOR "<<n_new<<endl; 
+    exit(1); 
+  }
+#else 
+  Deallocate();
+#endif  
+  
+  // set the new value
+  ns = n_new;
+  
+  // reallocate species array and set to zero
+  rhospec_memory();
+  set_initial_values(ZERO);
+     
+}
+
+/**************************************************************************
+  Resize the species array, keeping the values
+**************************************************************************/
+inline void Chem2D_cState::resize_species( const int n_old,           // the old numbre of species
+					   const string* species_old) // the old species names array
+{
+
+  // temporary storage
+  double* c_old = new double[n_old];
+  int index;
+
+  // the new number of species
+  int n_new( Chem2D_pState::React.num_species );
+
+  // store the old values
+  for (int k=0; k<n_old; k++) c_old[k] = rhospec[k].c;
+
+  // deallocate
+#ifdef STATIC_NUMBER_OF_SPECIES
+  if( STATIC_NUMBER_OF_SPECIES < n_new ) { 
+    cerr<<"\n WARNING USING STATIC CHEM2D BUILT WITH "<<STATIC_NUMBER_OF_SPECIES 
+	<<" SPECIES PREDEFINED, HOWEVER ASKING FOR "<<n_new<<endl; 
+    exit(1); 
+  }
+#else 
+  Deallocate();
+#endif  
+  
+  // set the new value
+  ns = n_new;
+  
+  // reallocate species array and set to zero
+  rhospec_memory();
+  set_initial_values(ZERO);
+    
+  // match up the species and set their respective values
+  for (int k=0; k<n_old; k++) {
+    index = Chem2D_pState::React.SpeciesIndex(species_old[k]);
+    if (index>=0) rhospec[index].c = c_old[k];
+    else {
+      cerr << "\n Chem2D_cState::resize_species() - Species " 
+	   << species_old[k]
+	   << " not found in current reaction mechanism.\n";
+      exit(-1);
+    }
+  }// endfor - species
+  
+  // delete temporary memory
+  delete[] c_old;
+
+}
+
 
 /**************** Copy *************************************/
 inline void Chem2D_cState::Copy(const Chem2D_cState &U){

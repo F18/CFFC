@@ -297,10 +297,12 @@ public:
   void ct_parse_mole_string( const string& moleFracStr, 
 			     double* moleFracs);
   // compute equilibrium concetration with cantera
-  void ct_equilibrate() const; // needed cause of DenseMatrix conflicts
+  void ct_equilibrate_HP() const; // needed cause of DenseMatrix conflicts
+  void ct_equilibrate_TP() const; // needed cause of DenseMatrix conflicts
   template<class SOLN_pSTATE>
-  void ct_equilibrium( const SOLN_pSTATE &Wu, 
-		       SOLN_pSTATE &Wb) const;
+  void ct_equilibrium_HP( SOLN_pSTATE &W ) const;
+  template<class SOLN_pSTATE>
+  void ct_equilibrium_TP( SOLN_pSTATE &W ) const;
   // compute composition from equivalence ratio
   void ct_composition( const string& fuel_species, const double &phi,
 		       double* massFracs) const;
@@ -333,6 +335,9 @@ public:
     cc = new cplx[num_react_species];
     rc = new cplx[num_react_species]; 
   }
+
+  // determine species index
+  int SpeciesIndex( const string& name ) const;
 
   //Operator Overloading 
   Reaction_set& operator =(const Reaction_set &W);
@@ -1649,7 +1654,8 @@ void Reaction_set::ct_dSwdU_FiniteDiff( DenseMatrix &dSwdU,
 
 /************************************************************************
   Calculates the equilibrium composition given an unburnt mixture
-  using CANTERA.  This is only for CANTERA reaction types.
+  using CANTERA.  This is only for CANTERA reaction types.  Here
+  we hold enthalpy and pressure fixed.
 
   Wu - unburnt state
   Wb - burnt state
@@ -1657,27 +1663,25 @@ void Reaction_set::ct_dSwdU_FiniteDiff( DenseMatrix &dSwdU,
 ************************************************************************/
 
 template<class SOLN_pSTATE>
-inline void Reaction_set::ct_equilibrium( const SOLN_pSTATE &Wu, 
-					  SOLN_pSTATE &Wb) const {
+inline void Reaction_set::ct_equilibrium_HP( SOLN_pSTATE &W ) const {
 
 #ifdef _CANTERA_VERSION
   
   //copy unburnt mass fractions to an array
-  for(int i=0; i<num_react_species; i++)
-    c[i] = Wu.spec[i].c;
+  for(int i=0; i<num_species; i++)
+    c[i] = W.spec[i].c;
 
   // set state and equilibrate
-  ct_gas->setState_TPY(Wu.T(), Wu.p, c);
-  ct_equilibrate();
+  ct_gas->setState_TPY(W.T(), W.p, c);
+  ct_equilibrate_HP();
 
   //get burnt mass fractions
   ct_gas->getMassFractions(c);
-  for(int i=0; i<num_react_species; i++)
-    Wb.spec[i].c = c[i];
+  for(int i=0; i<num_species; i++)
+    W.spec[i].c = c[i];
 
-  // the pressure and density
-  Wb.p = ct_gas->pressure();   // [pa]
-  Wb.rho = ct_gas->density();  // [kg/m^3]
+  // the density
+  W.rho = W.p / ( W.Rtot()*ct_gas->temperature() );  // [kg/m^3]
   
 #else
   cout<<"\n CODE NOT COMPILED WITH CANTERA!";
@@ -1687,6 +1691,50 @@ inline void Reaction_set::ct_equilibrium( const SOLN_pSTATE &Wu,
 #endif //_CANTERA_VERSION
 
 } // end of ct_equilibrate
+
+
+/************************************************************************
+  Calculates the equilibrium composition given an unburnt mixture
+  using CANTERA.  This is only for CANTERA reaction types.  Here 
+  we hold temperature and pressure fixed.
+
+  Wu - unburnt state
+  Wb - burnt state
+
+************************************************************************/
+template<class SOLN_pSTATE>
+inline void Reaction_set::ct_equilibrium_TP( SOLN_pSTATE &W ) const {
+
+#ifdef _CANTERA_VERSION
+  
+  // get the temperature
+  double T( W.T() );
+
+  //copy unburnt mass fractions to an array
+  for(int i=0; i<num_species; i++)
+    c[i] = W.spec[i].c;
+
+  // set state and equilibrate
+  ct_gas->setState_TPY(T, W.p, c);
+  ct_equilibrate_HP();
+
+  //get burnt mass fractions
+  ct_gas->getMassFractions(c);
+  for(int i=0; i<num_species; i++)
+    W.spec[i].c = c[i];
+
+  // the density
+  W.rho = W.p / ( W.Rtot()*T );  // [kg/m^3]
+  
+#else
+  cout<<"\n CODE NOT COMPILED WITH CANTERA!";
+  cout<<"\n YOU SHOULD NOT BE HERE!";
+  exit(-1);
+
+#endif //_CANTERA_VERSION
+
+} // end of ct_equilibrate
+
 
 
 #endif // _REACTIONS_INCLUDED

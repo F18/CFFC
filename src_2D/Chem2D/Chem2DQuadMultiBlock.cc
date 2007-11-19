@@ -120,6 +120,7 @@ int Read_Restart_Solution(Chem2D_Quad_Block *Soln_ptr,
     ifstream restart_file;
     double time0;
     CPUTime cpu_time0;
+    bool mech_changed = false;
 
     /* Determine prefix of restart file names. */
     
@@ -160,45 +161,68 @@ int Read_Restart_Solution(Chem2D_Quad_Block *Soln_ptr,
     
 	  /********** CHEM2D SPECIFIC ****************************************/
 	  restart_file.getline(line,sizeof(line)); 
-	  // get reaction set name and load the rxn database
+	  // get reaction set name
 	  restart_file >>Input_Parameters.react_name;
-	  if( Input_Parameters.react_name != "CANTERA")
+	  // multispecies but no reactions
+	  restart_file.setf(ios::skipws);
+	  int num_species;
+	  //get number of species
+	  restart_file >> num_species; 
+	  string *species = new string[num_species];
+	  //get species names 
+	  for(int k=0; k<num_species; k++){
+	    restart_file >> species[k];
+	  } 
+	  restart_file.unsetf(ios::skipws);  
+	  // create a temporary pointer for the schmidt array
+	  double* Schmidt = Input_Parameters.Schmidt;
+
+	  //---------------------------------------------------------
+	  // load the rxn database
+	  // We have to make sure that the user is not trying to change the mechanism.
+	  // If they are, then we will have to digest the data properly.
+	  //
+	  // NON-CANTERA CASE
+	  if( Input_Parameters.react_name != "CANTERA") {
 	    Input_Parameters.Wo.React.set_reactions(Input_Parameters.react_name);
-	  else
+
+	  // CANTERA CASE
+	  } else {
 	    Input_Parameters.Wo.React.ct_load_mechanism(Input_Parameters.ct_mech_file, 
 							Input_Parameters.ct_mech_name);
+	  } // endif
 
-	  // multispecies but no reactions
+	  // NO_REACTIONS CASE
 	  if( Input_Parameters.react_name == "NO_REACTIONS"){
-	    restart_file.setf(ios::skipws);
-	    int num_species;
-	    //get number of species
-	    restart_file >> num_species; 
-	    string *species = new string[num_species];
-	    //get species names 
-	    for(int k=0; k<num_species; k++){
-	      restart_file >> species[k];
-	    } 
-	    restart_file.unsetf(ios::skipws);  
 	    Input_Parameters.Wo.React.set_species(species,num_species);
-	    delete[] species; 
 	  }
-	  
+
+	  // If the number of species has changed, them we must be
+	  // trying to change the mechanism. Set a flag and create a temporary
+	  // Schmidt array.
+	  if ( mech_changed = (Input_Parameters.Wo.React.num_species!=num_species)) {
+	    if (CFFC_Primary_MPI_Processor()) cout << "\n Mechanism has changed..." << flush;
+	    Schmidt = new double[num_species];
+	    for (int k=0; k<num_species; k++) Schmidt[k] = 1.0;
+	  }
+	  //---------------------------------------------------------
+
 	  //Set Data Path
 	  Input_Parameters.get_cffc_path();
 
 	  //setup properties 
 	  Input_Parameters.Wo.set_species_data
-	    (Input_Parameters.Wo.React.num_species,Input_Parameters.Wo.React.species,
+	    (num_species,species,
 	     Input_Parameters.CFFC_Path,
-	     Input_Parameters.Mach_Number_Reference,Input_Parameters.Schmidt,
+	     Input_Parameters.Mach_Number_Reference,Schmidt,
 	     Input_Parameters.i_trans_type);   
 	  Input_Parameters.Uo.set_species_data
-	    (Input_Parameters.Wo.React.num_species,Input_Parameters.Wo.React.species,
+	    (num_species,species,
 	     Input_Parameters.CFFC_Path,
-	     Input_Parameters.Mach_Number_Reference,Input_Parameters.Schmidt,
+	     Input_Parameters.Mach_Number_Reference,Schmidt,
 	     Input_Parameters.i_trans_type);    
 	  Input_Parameters.Uo = U(Input_Parameters.Wo);
+
 
 	  /********** END CHEM2D SPECIFIC ****************************************/
 	  
@@ -225,8 +249,38 @@ int Read_Restart_Solution(Chem2D_Quad_Block *Soln_ptr,
 	  Soln_ptr[i].Number_of_Residual_Norms = Input_Parameters.Number_of_Residual_Norms;
 	  /*********************************************************************/
 	  	  
-          // Close restart file.
+	  // Close restart file.
           restart_file.close();
+
+	  /*********************************************************************/
+	  // if the user is requesting a new mechanism, resize the species arrays
+	  // in the solution block  and equilibrate the mixture.
+	  if ( mech_changed ) {
+	    
+	    //re-setup properties 
+	    Input_Parameters.Wo.set_species_data
+	      (Input_Parameters.Wo.React.num_species,Input_Parameters.Wo.React.species,
+	       Input_Parameters.CFFC_Path,
+	       Input_Parameters.Mach_Number_Reference,Input_Parameters.Schmidt,
+	       Input_Parameters.i_trans_type);   
+	    Input_Parameters.Uo.set_species_data
+	      (Input_Parameters.Wo.React.num_species,Input_Parameters.Wo.React.species,
+	       Input_Parameters.CFFC_Path,
+	       Input_Parameters.Mach_Number_Reference,Input_Parameters.Schmidt,
+	       Input_Parameters.i_trans_type);    
+	    Input_Parameters.Uo = U(Input_Parameters.Wo);
+	    
+	    // resize all the species arrays and compute equilibrium solution
+	    Soln_ptr[i].resize_species(num_species, species);
+	    //Set_Equilibrium_State(Soln_ptr[i]);
+	    
+	  } // endif - mech changed
+	  /*********************************************************************/
+	  
+	  // can delete temporary species array now
+	  delete[] species; 
+	  if ( mech_changed ) delete[] Schmidt; 
+	  
        } /* endif */
     }  /* endfor */
 
@@ -294,14 +348,12 @@ int Write_Restart_Solution(Chem2D_Quad_Block *Soln_ptr,
           restart_file.unsetf(ios::scientific);
 	  /********* CHEM2D SPECIFIC ***********************************/
 	  restart_file << Input_Parameters.react_name << "\n";
-	  if(Input_Parameters.react_name == "NO_REACTIONS"){
-	    restart_file << Input_Parameters.Wo.ns <<" ";
-	    for(int k=0; k< Input_Parameters.Wo.ns; k++){ 
-	      restart_file << Input_Parameters.multispecies[k] <<" ";
-	    }
-	    restart_file<<endl;
+	  restart_file << Input_Parameters.Wo.ns <<" ";
+	  for(int k=0; k< Input_Parameters.Wo.ns; k++){ 
+	    restart_file << Input_Parameters.multispecies[k] <<" ";
 	  }
- 
+	  restart_file<<endl;
+
       	  restart_file << setprecision(14) << Soln_ptr[i];
 
     

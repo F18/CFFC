@@ -1896,11 +1896,11 @@ void ICs(Chem2D_Quad_Block &SolnBlk,
 	//
       } else if (Wo[0].React.reactset_flag == CANTERA) {
 
+	// get equilibrium composition
+	Wo[0].React.ct_equilibrium_HP<Chem2D_pState>( Wr );
+
 	// set laminar flame speed
  	Wl.v.x = Input_Parameters.flame_speed;
-
-	// get equilibrium composition
-	Wo[0].React.ct_equilibrium<Chem2D_pState>( /* unburnt */Wl, /* burnt */Wr );
 
 	// set exit mass fractions
  	//for (int k=0; k<Input_Parameters.num_species; k++)

@@ -316,7 +316,10 @@ class Chem2D_Quad_Block{
   /* Deallocate memory for structured quadrilateral solution block. */
   void deallocate(void);
   static void deallocate_static(void);
-  
+
+  // resize the species arrays
+  void resize_species(const int n_old, const string* species_old);
+
   /* Return primitive solution state at specified node. */
   Chem2D_pState Wn(const int &ii, const int &jj);
   
@@ -565,6 +568,88 @@ inline void Chem2D_Quad_Block::deallocate(void) {
  **************************************************************************/
 inline void Chem2D_Quad_Block::deallocate_static(void) {
   if(PlanckMean_data != NULL) { delete PlanckMean_data; PlanckMean_data = NULL; }
+}
+
+
+/**************************************************************************
+ * Chem2D_Quad_Block::resize_species                                      *
+ *                                                                        *
+ * Resize all the species arrays. This function is DISCUSTING!!!!.        *
+ * Because the number of species is static, we have to carefully resize   *
+ * all the species arrays in the solution block.  I hope that there are no*
+ * Chem2D_pState and Chem2D_cState objects allocated anywhere else.       *
+ * If you resize the reaction mechanism and this function is called,      *
+ * and you get a SIGSEGV, you should look for leftover state objects.     *
+ **************************************************************************/
+inline void Chem2D_Quad_Block::resize_species(const int n_old, 
+					      const string* species_old) {
+  
+  // temporary storage
+  double* c_old = new double[n_old];
+  int index;
+
+
+  //
+  // Loop over the grid
+  //
+  for ( int j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
+    for ( int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
+
+      //---------------------------------------------------
+      // CONSERVED STATE
+      U[i][j].resize_species(n_old, species_old); // keep old values
+      //---------------------------------------------------
+      // PRIMITIVE STATE
+      W[i][j].resize_species(); // throw out old values
+      W[i][j] = U[i][j].W();
+      //---------------------------------------------------
+      // REMAINING STATES
+      for ( int k = 0 ; k < NUMBER_OF_RESIDUAL_VECTORS_CHEM2D; ++k ) {
+	dUdt[i][j][k].resize_species(); // throw out old values
+      } // endfor
+      dWdx[i][j].resize_species(); // throw out old values
+      dWdy[i][j].resize_species(); // throw out old values
+      phi[i][j].resize_species(); // throw out old values
+      Uo[i][j].resize_species(); // throw out old values
+      //---------------------------------------------------
+
+    } // endfor
+  } // endfor
+  
+
+  //
+  // resize boundary ref states
+  //
+  for ( int j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
+
+    //---------------------------------------------------
+    // WEST STATE
+    WoW[j].resize_species(n_old, species_old); // keep old values
+    //---------------------------------------------------
+    // EAST STATE
+    WoE[j].resize_species(n_old, species_old); // keep old values
+    //---------------------------------------------------
+
+  } // endfor
+
+
+  //
+  // resize boundary ref states
+  //
+  for ( int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
+
+    //---------------------------------------------------
+    // SOUTH STATE
+    WoS[i].resize_species(n_old, species_old); // keep old values
+    //---------------------------------------------------
+    // NORTH STATE
+    WoN[i].resize_species(n_old, species_old); // keep old values
+    //---------------------------------------------------
+
+  } // endfor
+
+  // delete temporary memory
+  delete[] c_old;
 }
 
 /**************************************************************************
@@ -2666,6 +2751,8 @@ extern void Output_Quasi3D_Tecplot(Chem2D_Quad_Block &SolnBlk,
 				   const int Block_Number,
 				   const int Output_Title,
 				   ostream &Out_File);
+
+int Set_Equilibrium_State(Chem2D_Quad_Block &SolnBlk);
 
 /*************** END CHEM2D ***************************************/
 

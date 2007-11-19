@@ -907,3 +907,42 @@ int Output_Quasi3D_Tecplot(Chem2D_Quad_Block *Soln_ptr,
   return 0;
 
 }
+
+
+/********************************************************
+ * Routine: Set_Equilibrium_State                       *
+ *                                                      *
+ * This routine loops over the solution block and sets  *
+ * the equilibrium mass fractions holding T and P fixed.*
+ * This is only for the CANTERA reaction case right now.*
+ *                                                      *
+ ********************************************************/
+int Set_Equilibrium_State(Chem2D_Quad_Block &SolnBlk) {
+
+  //
+  // Loop over the grid
+  //
+  for ( int j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
+    for ( int i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
+      SolnBlk.W[i][j].React.ct_equilibrium_TP<Chem2D_pState>( SolnBlk.W[i][j] );
+      SolnBlk.U[i][j] = SolnBlk.W[i][j].U();
+    } // endfor
+  } // endfor
+  
+  //
+  // Loop over the east and west bounrdary ref states
+  //
+  for ( int j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
+    SolnBlk.WoW[j].React.ct_equilibrium_TP<Chem2D_pState>( SolnBlk.WoW[j] );
+    SolnBlk.WoE[j].React.ct_equilibrium_TP<Chem2D_pState>( SolnBlk.WoE[j] );
+  } // endfor
+  
+  //
+  // Loop over the north and south bounrdary ref states
+  //
+  for ( int i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
+    SolnBlk.WoS[i].React.ct_equilibrium_TP<Chem2D_pState>( SolnBlk.WoS[i] );
+    SolnBlk.WoN[i].React.ct_equilibrium_TP<Chem2D_pState>( SolnBlk.WoN[i] );
+  } // endfor
+
+}

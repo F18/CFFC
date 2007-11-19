@@ -380,6 +380,18 @@ void Reaction_set::set_species(string *spec, int num){
   }
 }
 
+/**************************************************************
+  Get the index corrensponding to the species name.  
+  If it is not found, return -1;                      
+***************************************************************/
+int Reaction_set::SpeciesIndex( const string& name ) const {
+  int index(-1);
+  for(int k=0; k<num_species; k++) {
+    if (species[k]==name) { index = k; break; }
+  }
+  return index;
+}
+
 /***********************************************************************
   Setup user defined mechanisms.
 
@@ -669,11 +681,37 @@ void Reaction_set::ct_parse_schmidt_string( const string& schmidtStr,
   in the IdealGasMix::ct_gas object.
 
 ***********************************************************************/
-void Reaction_set::ct_equilibrate( ) const {
+void Reaction_set::ct_equilibrate_HP( ) const {
 
 #ifdef _CANTERA_VERSION
 
-  equilibrate( *ct_gas, "HP" );
+  try {
+    equilibrate( *ct_gas, "HP" );
+  }
+  catch (CanteraError) {
+    Cantera::showErrors();
+  }
+
+#else
+  cout<<"\n CODE NOT COMPILED WITH CANTERA!";
+  cout<<"\n YOU SHOULD NOT BE HERE!";
+  exit(-1);
+
+#endif //_CANTERA_VERSION
+
+} // end of ct_parse_mass_string
+
+
+void Reaction_set::ct_equilibrate_TP( ) const {
+
+#ifdef _CANTERA_VERSION
+
+  try {
+    equilibrate( *ct_gas, "TP" );
+  }
+  catch (CanteraError) {
+    Cantera::showErrors();
+  }
 
 #else
   cout<<"\n CODE NOT COMPILED WITH CANTERA!";
