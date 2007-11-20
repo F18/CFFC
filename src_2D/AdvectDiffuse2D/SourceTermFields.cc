@@ -160,3 +160,17 @@ void SourceTermFields::Broadcast(void){
   
 #endif
 }
+
+/*!
+ * Determine the stability limit imposed by the 
+ * non-linear source term
+ */
+double SourceTermFields::getStabilityLimit(const double &x, const double &y, const double &u){
+  // Pass possibly necessary information for determining the stability limit
+
+  if (FieldRequireIntegration()) {
+    return SourcePtr->StabilityLimit(x,y,u);
+  } else {
+    return SourcePtr->StabilityLimit(u);
+  }
+}

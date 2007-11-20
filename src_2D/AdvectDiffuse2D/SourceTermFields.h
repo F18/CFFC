@@ -48,6 +48,9 @@ public:
   //! Specifies if the current field require or not integration
   bool FieldRequireIntegration(void){ return SourcePtr->FieldRequireIntegration();}
 
+  //! Determine the stability limit
+  double getStabilityLimit(const double &x, const double &y, const double &u);
+
   //! @name Functions for input-output and broadcast
   //@{
   void Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP, int & i_command);

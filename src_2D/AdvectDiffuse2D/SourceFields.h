@@ -42,6 +42,12 @@ public:
   /*! Calculate the non-linear field solution based on the average solution value */
   virtual double FieldSoln(const double &SolnAvg) = 0;
 
+  /*! Calculate the stability limit for the non-linear source field */
+  virtual double StabilityLimit(const double &x, const double &y, const double & Soln) = 0;
+
+  /*! Calculate the stability limit for the non-linear source field */
+  virtual double StabilityLimit(const double &SolnAvg) = 0;
+
   /*! This function returns true is the solution needs to be integrated over the cell domain and false if it does not. */
   virtual bool FieldRequireIntegration(void) = 0;
 
@@ -82,6 +88,12 @@ public:
     throw runtime_error("SourceFieldThatRequireIntegration::FieldSoln() ERROR! Wrong number of parameters!");
     return 0.0;
   }
+
+  //! \throw runtime_error if this function gets called for this class
+  double StabilityLimit(const double &SolnAvg){
+    throw runtime_error("SourceFieldThatRequireIntegration::StabilityLimit() ERROR! Wrong number of parameters!");
+    return 0.0;
+  }
 };
 
 /*! 
@@ -104,8 +116,14 @@ public:
   virtual ~SourceFieldThatDoesNotRequireIntegration(void) = 0;
 
   //! \throw runtime_error if this function gets called for this class
-  virtual double FieldSoln(const double &x, const double &y, const double & Soln){
+  double FieldSoln(const double &x, const double &y, const double & Soln){
     throw runtime_error("SourceFieldThatDoesNotRequireIntegration::FieldSoln() ERROR! Wrong number of parameters!");
+    return 0.0;
+  }
+
+  //! \throw runtime_error if this function gets called for this class
+  double StabilityLimit(const double &x, const double &y, const double & Soln){
+    throw runtime_error("SourceFieldThatRequireIntegration::StabilityLimit() ERROR! Wrong number of parameters!");
     return 0.0;
   }
 };
@@ -128,6 +146,9 @@ public:
 
   //! Return ZERO solution (no source)
   double FieldSoln(const double &SolnAvg){return 0.0;}
+
+  //! Return the maximum allowed time step which ensures a stable computation for this field (i.e. stability limit)
+  double StabilityLimit(const double &SolnAvg){ return MILLION;}
 
   //! Parse the input control parameters
   void Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP, int & i_command){};
@@ -156,6 +177,9 @@ public:
 
   //! Return linear solution 
   double FieldSoln(const double &SolnAvg);
+
+  //! Return the maximum allowed time step which ensures a stable computation for this field (i.e. stability limit)
+  double StabilityLimit(const double &SolnAvg){ return HALF*tau;}
 
   //! Parse the input control parameters
   void Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP, int & i_command);
@@ -195,6 +219,9 @@ public:
   //! Return exponential non-linear solution
   double FieldSoln(const double &x, const double &y, const double & Soln);
 
+  //! Return the maximum allowed time step which ensures a stable computation for this field (i.e. stability limit)
+  double StabilityLimit(const double &x, const double &y, const double & Soln);
+
   //! Parse the input control parameters
   void Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP, int & i_command);
 
@@ -213,6 +240,15 @@ private:
  */
 inline double Exponential_SourceField::FieldSoln(const double &x, const double &y, const double & Soln){
   return a*exp(beta*Soln);
+}
+
+/*!
+ * Return the maximum allowed time step which ensures a stable computation for this field (i.e. stability limit)
+ *
+ * \todo Work out the stability limit
+ */
+inline double Exponential_SourceField::StabilityLimit(const double &x, const double &y, const double & Soln){
+  return MILLION;
 }
 
 #endif
