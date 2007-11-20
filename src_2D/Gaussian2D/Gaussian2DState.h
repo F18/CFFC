@@ -167,6 +167,8 @@ class Gaussian2D_pState{
     static double         omega;   // Viscosity exponent
     static double        mu_not;   // Reference viscosity
     static double            pr;   // Prandtl number
+    static double         gamma;   // Gamma
+    static double         g_gm1;   // Gamma / (Gamma - 1)
     static double     T_damping;   // Damping for slip_T boundary condition
                                    // Made public so can access them.
 		      
@@ -301,9 +303,10 @@ class Gaussian2D_pState{
     double sound(void);
     double sound(void) const;
 
+    void compute_gamma(void);
+
     /* Other gas properties */
     double R(void) const;
-    double Gamma(void) const;
     double Cv(void) const;
     double Cp(void) const;
     double K(void) const;
@@ -900,6 +903,7 @@ inline void Gaussian2D_pState::setgas(char *string_ptr) {
   if(atoms == GAUSSIAN_MONATOMIC){
     erot = 0.0;
   }
+  compute_gamma();
 }
 
 /*********************************************************
@@ -1109,17 +1113,21 @@ inline double Gaussian2D_pState::R(void) const {
 }
 
 /********************************************************
- * Gaussian2D_pState::Gamma                             *
+ * Gaussian2D_pState::compute_gamma                     *
  ********************************************************/
-inline double Gaussian2D_pState::Gamma(void) const {
+inline void Gaussian2D_pState::compute_gamma(void) {
   switch(atoms) {
     case 1 :
-      return (5.0/3.0);
+      gamma = (5.0/3.0);
+      g_gm1 = gamma / (gamma-1.0);
+      return;
     case 2 :
-      return 1.4;
+      gamma = 1.4;
+      g_gm1 = gamma / (gamma-1.0);
+      return;
     default :
       cout << "Error determining Gamma." << endl;
-      return -1.0;
+      return;
   };
 }
 
@@ -1127,15 +1135,14 @@ inline double Gaussian2D_pState::Gamma(void) const {
  * Gaussian2D_pState::Cv -- specific heat at constant V.*
  ********************************************************/
 inline double Gaussian2D_pState::Cv(void) const {
-  return R()/(Gamma()-1.0);
+  return R()/(gamma-1.0);
 }
 
 /********************************************************
  * Gaussian2D_pState::Cp -- specific heat at constant P.*
  ********************************************************/
 inline double Gaussian2D_pState::Cp(void) const {
-  double g(Gamma());
-  return R()*g/(g-1.0);
+  return R()*g_gm1;
 }
 
 /********************************************************
@@ -1909,7 +1916,7 @@ inline void Gaussian2D_pState::ComputeHeatTerms(const Gaussian2D_pState &dWdx,
 						const Vector2D &X,//this variable is added to be consistend with Jai
 						const int &Axisymmetric) {
 
-  double tau = tt()/pr * 2.0/5.0 * Gamma() / (Gamma()-1.0);
+  double tau = tt()/pr * 2.0/5.0 * g_gm1;
 
   q.xxx = -tau*3.0*(p.xx*(dWdx.p.xx-p.xx/d*dWdx.d)/d +
 		    p.xy*(dWdy.p.xx-p.xx/d*dWdy.d)/d);
@@ -2904,7 +2911,7 @@ inline double Gaussian2D_pState::tr() const {
  * with gamma.                                               *
  *************************************************************/
 inline double Gaussian2D_pState::gt() const {
-  return (10.0*PI)/16.0 * (2.0-alpha_t)/alpha_t * Gamma()/(Gamma()+1.0) * mfp()/pr;
+  return (10.0*PI)/16.0 * (2.0-alpha_t)/alpha_t * gamma/(gamma+1.0) * mfp()/pr;
 }
 
 /*************************************************************
@@ -3180,7 +3187,7 @@ inline void Gaussian2D_cState::ComputeHeatTerms(const Gaussian2D_pState &dWdx,
                                                                             //fix this later
   Tensor2D pressure = p();
   Gaussian2D_pState W1 = W();
-  double tau = W1.tt()/pr * 2.0/5.0 * W1.Gamma() / (W1.Gamma()-1.0);
+  double tau = W1.tt()/pr * 2.0/5.0 * Gaussian2D_pState::g_gm1;
 
   q.xxx = -tau*3.0*(pressure.xx*(dWdx.p.xx-pressure.xx/d*dWdx.d)/d +
 		    pressure.xy*(dWdy.p.xx-pressure.xx/d*dWdy.d)/d);

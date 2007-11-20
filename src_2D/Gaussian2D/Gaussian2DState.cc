@@ -21,6 +21,8 @@ double Gaussian2D_pState::alpha_t   = ONE;
 double Gaussian2D_pState::omega     = OMEGA_AIR;
 double Gaussian2D_pState::mu_not    = MU_NOT_AIR;
 double Gaussian2D_pState::pr        = 0.6666666666666666667;
+double Gaussian2D_pState::gamma     = 1.6666666666666666667;
+double Gaussian2D_pState::g_gm1     = 2.5;
 double Gaussian2D_pState::T_damping = 0.0;
 /****************************************************************
  * Gaussian2D_cState -- Create storage and assign gas constants.*
