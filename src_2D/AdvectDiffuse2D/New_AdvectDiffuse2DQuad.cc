@@ -30,8 +30,8 @@ FunctionType2D AdvectDiffuse2D_Quad_Block_New::ExactSoln = NULL;
  **********************/
 AdvectDiffuse2D_Quad_Block_New::AdvectDiffuse2D_Quad_Block_New(void) {
   NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0; Nghost = 0;
-  U = NULL; dt = NULL; dudt = NULL; 
-  dudx = NULL; dudy = NULL; phi = NULL; uo = NULL;
+  U = NULL; dt = NULL; dUdt = NULL; 
+  dUdx = NULL; dUdy = NULL; phi = NULL; Uo = NULL;
   FluxN = NULL; FluxS = NULL; FluxE = NULL; FluxW = NULL;
   UoN = NULL; UoS = NULL; UoE = NULL; UoW = NULL;
   Axisymmetric = 0; Freeze_Limiter = OFF;
@@ -43,9 +43,9 @@ AdvectDiffuse2D_Quad_Block_New::AdvectDiffuse2D_Quad_Block_New(void) {
 AdvectDiffuse2D_Quad_Block_New::AdvectDiffuse2D_Quad_Block_New(const AdvectDiffuse2D_Quad_Block_New &Soln) {
   NCi = Soln.NCi; ICl = Soln.ICl; ICu = Soln.ICu; 
   NCj = Soln.NCj; JCl = Soln.JCl; JCu = Soln.JCu; Nghost = Soln.Nghost;
-  Grid = Soln.Grid; U = Soln.U; dt = Soln.dt; dudt = Soln.dudt; 
-  dudx = Soln.dudx; dudy = Soln.dudy; phi = Soln.phi;
-  uo = Soln.uo;
+  Grid = Soln.Grid; U = Soln.U; dt = Soln.dt; dUdt = Soln.dUdt; 
+  dUdx = Soln.dUdx; dUdy = Soln.dUdy; phi = Soln.phi;
+  Uo = Soln.Uo;
   FluxN = Soln.FluxN; FluxS = Soln.FluxS; FluxE = Soln.FluxE; FluxW = Soln.FluxW;
   UoN = Soln.UoN; UoS = Soln.UoS; UoE = Soln.UoE; UoW = Soln.UoW;
   Axisymmetric = Soln.Axisymmetric; Freeze_Limiter = Soln.Freeze_Limiter;
@@ -58,27 +58,32 @@ void AdvectDiffuse2D_Quad_Block_New::allocate(const int Ni, const int Nj, const 
   int i, j, k; assert(Ni > 1 && Nj > 1 && Ng > 1 && Ng > 1); Grid.allocate(Ni, Nj, Ng);
   NCi = Ni+2*Ng; ICl = Ng; ICu = Ni+Ng-1;
   NCj = Nj+2*Ng; JCl = Ng; JCu = Nj+Ng-1; Nghost = Ng;
-  U = new AdvectDiffuse2D_State_New*[NCi]; dt = new double*[NCi]; dudt = new double**[NCi]; 
-  dudx = new double*[NCi]; dudy = new double*[NCi]; 
-  phi = new double*[NCi]; uo = new double*[NCi];
+  U = new AdvectDiffuse2D_State_New*[NCi]; dt = new double*[NCi]; dUdt = new AdvectDiffuse2D_State_New**[NCi]; 
+  dUdx = new AdvectDiffuse2D_State_New*[NCi]; dUdy = new AdvectDiffuse2D_State_New*[NCi]; 
+  phi = new AdvectDiffuse2D_State_New*[NCi]; Uo = new AdvectDiffuse2D_State_New*[NCi];
   for ( i = 0; i <= NCi-1 ; ++i ) {
     U[i] = new AdvectDiffuse2D_State_New[NCj]; 
-    dt[i] = new double[NCj]; dudt[i] = new double*[NCj];
+    dt[i] = new double[NCj]; dUdt[i] = new AdvectDiffuse2D_State_New*[NCj];
     for ( j = 0; j <= NCj-1 ; ++j ) 
-      { dudt[i][j] = new double[NUMBER_OF_RESIDUAL_VECTORS_ADVECTDIFFUSE2D]; }
-    dudx[i] = new double[NCj]; dudy[i] = new double[NCj]; 
-    phi[i] = new double[NCj];
-    uo[i] = new double[NCj];
+      { dUdt[i][j] = new AdvectDiffuse2D_State_New[NUMBER_OF_RESIDUAL_VECTORS_ADVECTDIFFUSE2D]; }
+    dUdx[i] = new AdvectDiffuse2D_State_New[NCj]; dUdy[i] = new AdvectDiffuse2D_State_New[NCj]; 
+    phi[i] = new AdvectDiffuse2D_State_New[NCj];
+    Uo[i] = new AdvectDiffuse2D_State_New[NCj];
   } /* endfor */
-  FluxN = new double[NCi]; FluxS = new double[NCi];
-  FluxE = new double[NCj]; FluxW = new double[NCj];
+  FluxN = new AdvectDiffuse2D_State_New[NCi]; FluxS = new AdvectDiffuse2D_State_New[NCi];
+  FluxE = new AdvectDiffuse2D_State_New[NCj]; FluxW = new AdvectDiffuse2D_State_New[NCj];
   UoN = new AdvectDiffuse2D_State_New[NCi]; UoS = new AdvectDiffuse2D_State_New[NCi];
   UoE = new AdvectDiffuse2D_State_New[NCj]; UoW = new AdvectDiffuse2D_State_New[NCj];
   // Set the solution residuals, gradients, limiters, and other values to zero.
   for (j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
     for ( i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
-      for ( k = 0 ; k <= NUMBER_OF_RESIDUAL_VECTORS_ADVECTDIFFUSE2D-1 ; ++k ) { dudt[i][j][k] = ZERO; }
-      dudx[i][j] = ZERO; dudy[i][j] = ZERO; phi[i][j] = ZERO; uo[i][j] = ZERO; dt[i][j] = ZERO;
+      for ( k = 0 ; k <= NUMBER_OF_RESIDUAL_VECTORS_ADVECTDIFFUSE2D-1 ; ++k ) {
+	dUdt[i][j][k].Vacuum();
+      }
+      dUdx[i][j].Vacuum(); dUdy[i][j].Vacuum();
+      phi[i][j].Vacuum();
+      Uo[i][j].Vacuum();
+      dt[i][j] = ZERO;
     } /* endfor */
   } /* endfor */
 }
@@ -91,14 +96,14 @@ void AdvectDiffuse2D_Quad_Block_New::deallocate(void) {
   for ( i = 0; i <= NCi-1 ; ++i ) {
     delete []U[i]; U[i] = NULL;
     delete []dt[i]; dt[i] = NULL; 
-    for ( j = 0; j <= NCj-1 ; ++j ) { delete []dudt[i][j]; dudt[i][j] = NULL; }
-    delete []dudt[i]; dudt[i] = NULL;
-    delete []dudx[i]; dudx[i] = NULL; delete []dudy[i]; dudy[i] = NULL;
-    delete []phi[i]; phi[i] = NULL; delete []uo[i]; uo[i] = NULL;
+    for ( j = 0; j <= NCj-1 ; ++j ) { delete []dUdt[i][j]; dUdt[i][j] = NULL; }
+    delete []dUdt[i]; dUdt[i] = NULL;
+    delete []dUdx[i]; dUdx[i] = NULL; delete []dUdy[i]; dUdy[i] = NULL;
+    delete []phi[i]; phi[i] = NULL; delete []Uo[i]; Uo[i] = NULL;
   } /* endfor */
-  delete []U; U = NULL; delete []dt; dt = NULL; delete []dudt; dudt = NULL;
-  delete []dudx; dudx = NULL; delete []dudy; dudy = NULL; 
-  delete []phi; phi = NULL; delete []uo; uo = NULL;
+  delete []U; U = NULL; delete []dt; dt = NULL; delete []dUdt; dUdt = NULL;
+  delete []dUdx; dUdx = NULL; delete []dUdy; dUdy = NULL; 
+  delete []phi; phi = NULL; delete []Uo; Uo = NULL;
   delete []FluxN; FluxN = NULL; delete []FluxS; FluxS = NULL;
   delete []FluxE; FluxE = NULL; delete []FluxW; FluxW = NULL;
   delete []UoN; UoN = NULL; delete []UoS; UoS = NULL;
@@ -241,12 +246,12 @@ istream &operator >> (istream &in_file,
     for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
       in_file >> SolnBlk.U[i][j];
       for ( k = 0 ; k <= NUMBER_OF_RESIDUAL_VECTORS_ADVECTDIFFUSE2D-1 ; ++k ) {
-	SolnBlk.dudt[i][j][k] = ZERO;
+	SolnBlk.dUdt[i][j][k] = ZERO;
       } /* endfor */
-      SolnBlk.dudx[i][j] = ZERO;
-      SolnBlk.dudy[i][j] = ZERO;
+      SolnBlk.dUdx[i][j] = ZERO;
+      SolnBlk.dUdy[i][j] = ZERO;
       SolnBlk.phi[i][j] = ZERO;
-      SolnBlk.uo[i][j] = ZERO;
+      SolnBlk.Uo[i][j] = ZERO;
       SolnBlk.dt[i][j] = ZERO;
     } /* endfor */
   } /* endfor */
@@ -282,9 +287,11 @@ int AdvectDiffuse2D_Quad_Block_New::LoadSendBuffer(double *buffer,
   int i, j, k;
   for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
     for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-      buffer_count = buffer_count + NUM_VAR_ADVECTDIFFUSE2D;
-      if (buffer_count >= buffer_size) return(1);
-      buffer[buffer_count] = U[i][j].u;
+      for ( k = 1; k <= NUM_VAR_ADVECTDIFFUSE2D; ++k) {
+	buffer_count++;
+	if (buffer_count >= buffer_size) return(1);
+	buffer[buffer_count] = U[i][j][k];
+      } /* endfor */
     } /* endfor */
   } /* endfor */
   return(0);
@@ -305,20 +312,18 @@ int AdvectDiffuse2D_Quad_Block_New::LoadSendBuffer_F2C(double *buffer,
   int i, j, k;
   for ( j  = j_min ; ((j_inc+2)/4) ? (j < j_max):(j > j_max) ; j += j_inc ) {
     for ( i = i_min ;  ((i_inc+2)/4) ? (i < i_max):(i > i_max) ; i += i_inc ) {
-      buffer_count = buffer_count + NUM_VAR_ADVECTDIFFUSE2D;
-      if (buffer_count >= buffer_size) return(1);
-      buffer[buffer_count] = (Grid.Cell[i  ][j  ].A*U[i  ][j  ].u+
-			      Grid.Cell[i+1][j  ].A*U[i+1][j  ].u+
-			      Grid.Cell[i  ][j+1].A*U[i  ][j+1].u+
-			      Grid.Cell[i+1][j+1].A*U[i+1][j+1].u)/
-	(Grid.Cell[i  ][j  ].A+
-	 Grid.Cell[i+1][j  ].A+
-	 Grid.Cell[i  ][j+1].A+
-	 Grid.Cell[i+1][j+1].A);
-      /*         buffer[buffer_count] = (Grid.Cell[i  ][j  ].A*U[i  ][j  ].u+ */
-      /*                                 Grid.Cell[i+1][j  ].A*U[i+1][j  ].u+ */
-      /*                                 Grid.Cell[i  ][j+1].A*U[i  ][j+1].u+ */
-      /*                                 Grid.Cell[i+1][j+1].A*U[i+1][j+1].u); */
+      for ( k = 1; k <= NUM_VAR_ADVECTDIFFUSE2D; ++k) {
+	buffer_count++;
+	if (buffer_count >= buffer_size) return(1);
+	buffer[buffer_count] = ( (Grid.Cell[i  ][j  ].A*U[i  ][j  ][k]+
+				  Grid.Cell[i+1][j  ].A*U[i+1][j  ][k]+
+				  Grid.Cell[i  ][j+1].A*U[i  ][j+1][k]+
+				  Grid.Cell[i+1][j+1].A*U[i+1][j+1][k])/
+				 (Grid.Cell[i  ][j  ].A+
+				  Grid.Cell[i+1][j  ].A+
+				  Grid.Cell[i  ][j+1].A+
+				  Grid.Cell[i+1][j+1].A) );
+      } /* endfor */
     } /* endfor */
   } /* endfor */
   return(0);
@@ -338,16 +343,18 @@ int AdvectDiffuse2D_Quad_Block_New::LoadSendBuffer_C2F(double *buffer,
 						       const int j_inc,
 						       const int face,
 						       const int sector) {
-  int i, j;
+  int i, j, k;
   Vector2D dX;
   double ufine;
+  AdvectDiffuse2D_State_New Ufine;
+  int Limiter = LIMITER_VENKATAKRISHNAN;
 
   if (j_inc > 0) {
     if (i_inc > 0) {
       for ( j = j_min; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max); j += j_inc) {
 	for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
 	  // Perform limited linear least squares reconstruction in cell (i, j_min).
-	  SubcellReconstruction(i, j, LIMITER_VENKATAKRISHNAN);
+	  SubcellReconstruction(i, j, Limiter);
 	  // Evaluate SW sub (fine) cell values if required.
 	  if (!(face == NORTH && sector == WEST && Nghost%2 && j == j_min) &&
 	      !(face == NORTH && sector == EAST && Nghost%2 && (i == i_min || j == j_min)) &&
@@ -359,11 +366,13 @@ int AdvectDiffuse2D_Quad_Block_New::LoadSendBuffer_C2F(double *buffer,
 	      !(face == NORTH_WEST && Nghost%2 && j == j_min) &&
 	      !(face == SOUTH_EAST && Nghost%2 && i == i_min)) {
 	    dX = Grid.centroidSW(i,j) - Grid.Cell[i][j].Xc;
-	    ufine = U[i][j].u + (phi[i][j]*dudx[i][j])*dX.x +
-	      (phi[i][j]*dudy[i][j])*dX.y;
-	    buffer_count = buffer_count + NUM_VAR_ADVECTDIFFUSE2D;
-	    if (buffer_count >= buffer_size) return(1);
-	    buffer[buffer_count] = ufine;
+	    Ufine = U[i][j] + ( (phi[i][j]^dUdx[i][j])*dX.x +
+				(phi[i][j]^dUdy[i][j])*dX.y );
+	    for (k = 1; k <= NUM_VAR_ADVECTDIFFUSE2D; ++k) {
+	      buffer_count++;
+	      if (buffer_count >= buffer_size) return(1);
+	      buffer[buffer_count] = Ufine[k];
+	    } /* endfor (k) */
 	  } /* endif */
 	  // Evaluate SE sub (fine) cell values if required.
 	  if (!(face == NORTH && sector == WEST && Nghost%2 && (i == i_max || j == j_min)) &&
@@ -376,11 +385,13 @@ int AdvectDiffuse2D_Quad_Block_New::LoadSendBuffer_C2F(double *buffer,
 	      !(face == NORTH_WEST && Nghost%2 && (i == i_max || j == j_min)) &&
 	      !(face == SOUTH_WEST && Nghost%2 && i == i_max)) {
 	    dX = Grid.centroidSE(i,j) - Grid.Cell[i][j].Xc;
-	    ufine = U[i][j].u + (phi[i][j]*dudx[i][j])*dX.x +
-	      (phi[i][j]*dudy[i][j])*dX.y;
-	    buffer_count = buffer_count + NUM_VAR_ADVECTDIFFUSE2D;
-	    if (buffer_count >= buffer_size) return(1);
-	    buffer[buffer_count] = ufine;
+	    Ufine = U[i][j] + ( (phi[i][j]^dUdx[i][j])*dX.x +
+				(phi[i][j]^dUdy[i][j])*dX.y );
+	    for (k = 1; k <= NUM_VAR_ADVECTDIFFUSE2D; ++k) {
+	      buffer_count++;
+	      if (buffer_count >= buffer_size) return(1);
+	      buffer[buffer_count] = Ufine[k];
+	    } /* endfor (k) */
 	  } /* endif */
 	} /* endfor */
 	for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
@@ -395,11 +406,13 @@ int AdvectDiffuse2D_Quad_Block_New::LoadSendBuffer_C2F(double *buffer,
 	      !(face == SOUTH_EAST && Nghost%2 && (i == i_min || j == j_max)) &&
 	      !(face == SOUTH_WEST && Nghost%2 && j == j_max)) {
 	    dX = Grid.centroidNW(i,j) - Grid.Cell[i][j].Xc;
-	    ufine = U[i][j].u + (phi[i][j]*dudx[i][j])*dX.x +
-	      (phi[i][j]*dudy[i][j])*dX.y;
-	    buffer_count = buffer_count + NUM_VAR_ADVECTDIFFUSE2D;
-	    if (buffer_count >= buffer_size) return(1);
-	    buffer[buffer_count] = ufine;
+	    Ufine = U[i][j] + ( (phi[i][j]^dUdx[i][j])*dX.x +
+				(phi[i][j]^dUdy[i][j])*dX.y );
+	    for (k = 1; k <= NUM_VAR_ADVECTDIFFUSE2D; ++k) {
+	      buffer_count++;
+	      if (buffer_count >= buffer_size) return(1);
+	      buffer[buffer_count] = Ufine[k];
+	    } /* endfor (k) */
 	  } /* endif */
 	  // Evaluate NE sub (fine) cell values if required.
 	  if (!(face == NORTH && sector == WEST && Nghost%2 && i == i_max) &&
@@ -412,11 +425,13 @@ int AdvectDiffuse2D_Quad_Block_New::LoadSendBuffer_C2F(double *buffer,
 	      !(face == SOUTH_EAST && Nghost%2 && j == j_max) &&
 	      !(face == SOUTH_WEST && Nghost%2 && (i == i_max || j == j_max))) {
 	    dX = Grid.centroidNE(i,j) - Grid.Cell[i][j].Xc;
-	    ufine = U[i][j].u + (phi[i][j]*dudx[i][j])*dX.x +
-	      (phi[i][j]*dudy[i][j])*dX.y;
-	    buffer_count = buffer_count + NUM_VAR_ADVECTDIFFUSE2D;
-	    if (buffer_count >= buffer_size) return(1);
-	    buffer[buffer_count] = ufine;
+	    Ufine = U[i][j] + ( (phi[i][j]^dUdx[i][j])*dX.x +
+				(phi[i][j]^dUdy[i][j])*dX.y );
+	    for (k = 1; k <= NUM_VAR_ADVECTDIFFUSE2D; ++k) {
+	      buffer_count++;
+	      if (buffer_count >= buffer_size) return(1);
+	      buffer[buffer_count] = Ufine[k];
+	    } /* endfor (k) */
 	  } /* endif */
 	} /* endfor */
       } /* endfor */
@@ -438,143 +453,149 @@ int AdvectDiffuse2D_Quad_Block_New::LoadSendBuffer_C2F(double *buffer,
       } else {
 	for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
 	  // Perform limited linear least squares reconstruction in cell (i, j_min).
-	  SubcellReconstruction(i, j_min, LIMITER_VENKATAKRISHNAN);
+	  SubcellReconstruction(i, j_min, Limiter);
 	  // Evaluate SE sub (fine) cell values.
 	  dX = (HALF*(Grid.Node[i][j_min].X+Grid.Node[i+1][j_min].X)+
 		Grid.Node[i+1][j_min].X+
 		Grid.Cell[i][j_min].Xc+
 		HALF*(Grid.Node[i+1][j_min].X+Grid.Node[i+1][j_min+1].X))/FOUR -
 	    Grid.Cell[i][j_min].Xc;
-	  ufine = U[i][j_min].u +
-	    (phi[i][j_min]*dudx[i][j_min])*dX.x +
-	    (phi[i][j_min]*dudy[i][j_min])*dX.y;
-	  buffer_count = buffer_count + NUM_VAR_ADVECTDIFFUSE2D;
-	  if (buffer_count >= buffer_size) return(1);
-	  buffer[buffer_count] = ufine;
+	  Ufine = U[i][j_min] + ( (phi[i][j_min]^dUdx[i][j_min])*dX.x +
+				  (phi[i][j_min]^dUdy[i][j_min])*dX.y );
+	  for (k = 1; k <= NUM_VAR_ADVECTDIFFUSE2D; ++k) {
+	    buffer_count++;
+	    if (buffer_count >= buffer_size) return(1);
+	    buffer[buffer_count] = Ufine[k];
+	  } /* endfor (k) */
 	  // Evaluate SW sub (fine) cell values.
 	  dX = (Grid.Node[i][j_min].X+
 		HALF*(Grid.Node[i][j_min].X+Grid.Node[i+1][j_min].X)+
 		HALF*(Grid.Node[i][j_min].X+Grid.Node[i][j_min+1].X)+
-		Grid.Cell[i][j_min].Xc)/FOUR -
-	    Grid.Cell[i][j_min].Xc;
-	  ufine = U[i][j_min].u +
-	    (phi[i][j_min]*dudx[i][j_min])*dX.x +
-	    (phi[i][j_min]*dudy[i][j_min])*dX.y;
-	  buffer_count = buffer_count + NUM_VAR_ADVECTDIFFUSE2D;
-	  if (buffer_count >= buffer_size) return(1);
-	  buffer[buffer_count] = ufine;
+		Grid.Cell[i][j_min].Xc)/FOUR - Grid.Cell[i][j_min].Xc;
+	  Ufine = U[i][j_min] + ( (phi[i][j_min]^dUdx[i][j_min])*dX.x +
+				  (phi[i][j_min]^dUdy[i][j_min])*dX.y );
+	  for (k = 1; k <= NUM_VAR_ADVECTDIFFUSE2D; ++k) {
+	    buffer_count++;
+	    if (buffer_count >= buffer_size) return(1);
+	    buffer[buffer_count] = Ufine[k];
+	  } /* endfor (k) */
 	} /* endfor */
 	for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
 	  // Evaluate NE sub (fine) cell values.
 	  dX = (Grid.Cell[i][j_min].Xc+
 		HALF*(Grid.Node[i+1][j_min].X+Grid.Node[i+1][j_min+1].X)+
 		HALF*(Grid.Node[i][j_min+1].X+Grid.Node[i+1][j_min+1].X)+
-		Grid.Node[i+1][j_min+1].X)/FOUR -
-	    Grid.Cell[i][j_min].Xc;
-	  ufine = U[i][j_min].u +
-	    (phi[i][j_min]*dudx[i][j_min])*dX.x +
-	    (phi[i][j_min]*dudy[i][j_min])*dX.y;
-	  buffer_count = buffer_count + NUM_VAR_ADVECTDIFFUSE2D;
-	  if (buffer_count >= buffer_size) return(1);
-	  buffer[buffer_count] = ufine;
+		Grid.Node[i+1][j_min+1].X)/FOUR - Grid.Cell[i][j_min].Xc;
+	  Ufine = U[i][j_min] + ( (phi[i][j_min]^dUdx[i][j_min])*dX.x +
+				  (phi[i][j_min]^dUdy[i][j_min])*dX.y );
+	  for (k = 1; k <= NUM_VAR_ADVECTDIFFUSE2D; ++k) {
+	    buffer_count++;
+	    if (buffer_count >= buffer_size) return(1);
+	    buffer[buffer_count] = Ufine[k];
+	  } /* endfor (k) */
 	  // Evaluate NW sub (fine) cell values.
 	  dX = (HALF*(Grid.Node[i][j_min].X+Grid.Node[i][j_min+1].X)+
 		Grid.Cell[i][j_min].Xc+
 		Grid.Node[i][j_min+1].X+
 		HALF*(Grid.Node[i][j_min+1].X+Grid.Node[i+1][j_min+1].X))/FOUR -
 	    Grid.Cell[i][j_min].Xc;
-	  ufine = U[i][j_min].u +
-	    (phi[i][j_min]*dudx[i][j_min])*dX.x +
-	    (phi[i][j_min]*dudy[i][j_min])*dX.y;
-	  buffer_count = buffer_count + NUM_VAR_ADVECTDIFFUSE2D;
-	  if (buffer_count >= buffer_size) return(1);
-	  buffer[buffer_count] = ufine;
+	  Ufine = U[i][j_min] + ( (phi[i][j_min]^dUdx[i][j_min])*dX.x +
+				  (phi[i][j_min]^dUdy[i][j_min])*dX.y );
+	  for (k = 1; k <= NUM_VAR_ADVECTDIFFUSE2D; ++k) {
+	    buffer_count++;
+	    if (buffer_count >= buffer_size) return(1);
+	    buffer[buffer_count] = Ufine[k];
+	  } /* endfor (k) */
 	} /* endfor */
       } /* endif */
     } else {
       if (i_inc > 0) {
 	for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
 	  // Perform limited linear least squares reconstruction in cell (i, j_min).
-	  SubcellReconstruction(i, j_min, LIMITER_VENKATAKRISHNAN);
+	  SubcellReconstruction(i, j_min, Limiter);
 	  // Evaluate NW sub (fine) cell values.
 	  dX = (HALF*(Grid.Node[i][j_min].X+Grid.Node[i][j_min+1].X)+
 		Grid.Cell[i][j_min].Xc+
 		Grid.Node[i][j_min+1].X+
 		HALF*(Grid.Node[i][j_min+1].X+Grid.Node[i+1][j_min+1].X))/FOUR -
 	    Grid.Cell[i][j_min].Xc;
-	  ufine = U[i][j_min].u +
-	    (phi[i][j_min]*dudx[i][j_min])*dX.x +
-	    (phi[i][j_min]*dudy[i][j_min])*dX.y;
-	  buffer_count = buffer_count + NUM_VAR_ADVECTDIFFUSE2D;
-	  if (buffer_count >= buffer_size) return(1);
-	  buffer[buffer_count] = ufine;
+	  Ufine = U[i][j_min] + ( (phi[i][j_min]^dUdx[i][j_min])*dX.x +
+				  (phi[i][j_min]^dUdy[i][j_min])*dX.y );
+	  for (k = 1; k <= NUM_VAR_ADVECTDIFFUSE2D; ++k) {
+	    buffer_count++;
+	    if (buffer_count >= buffer_size) return(1);
+	    buffer[buffer_count] = Ufine[k];
+	  } /* endfor (k) */
 	  // Evaluate NE sub (fine) cell values.
 	  dX = (Grid.Cell[i][j_min].Xc+
 		HALF*(Grid.Node[i+1][j_min].X+Grid.Node[i+1][j_min+1].X)+
 		HALF*(Grid.Node[i][j_min+1].X+Grid.Node[i+1][j_min+1].X)+
 		Grid.Node[i+1][j_min+1].X)/FOUR -
 	    Grid.Cell[i][j_min].Xc;
-	  ufine = U[i][j_min].u +
-	    (phi[i][j_min]*dudx[i][j_min])*dX.x +
-	    (phi[i][j_min]*dudy[i][j_min])*dX.y;
-	  buffer_count = buffer_count + NUM_VAR_ADVECTDIFFUSE2D;
-	  if (buffer_count >= buffer_size) return(1);
-	  buffer[buffer_count] = ufine;
+	  Ufine = U[i][j_min] + ( (phi[i][j_min]^dUdx[i][j_min])*dX.x +
+				  (phi[i][j_min]^dUdy[i][j_min])*dX.y );
+	  for (k = 1; k <= NUM_VAR_ADVECTDIFFUSE2D; ++k) {
+	    buffer_count++;
+	    if (buffer_count >= buffer_size) return(1);
+	    buffer[buffer_count] = Ufine[k];
+	  } /* endfor (k) */
 	} /* endfor */
 	for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
 	  // Evaluate SW sub (fine) cell values.
 	  dX = (Grid.Node[i][j_min].X+
 		HALF*(Grid.Node[i][j_min].X+Grid.Node[i+1][j_min].X)+
 		HALF*(Grid.Node[i][j_min].X+Grid.Node[i][j_min+1].X)+
-		Grid.Cell[i][j_min].Xc)/FOUR -
-	    Grid.Cell[i][j_min].Xc;
-	  ufine = U[i][j_min].u +
-	    (phi[i][j_min]*dudx[i][j_min])*dX.x +
-	    (phi[i][j_min]*dudy[i][j_min])*dX.y;
-	  buffer_count = buffer_count + NUM_VAR_ADVECTDIFFUSE2D;
-	  if (buffer_count >= buffer_size) return(1);
-	  buffer[buffer_count] = ufine;
+		Grid.Cell[i][j_min].Xc)/FOUR - Grid.Cell[i][j_min].Xc;
+	  Ufine = U[i][j_min] + ( (phi[i][j_min]^dUdx[i][j_min])*dX.x +
+				  (phi[i][j_min]^dUdy[i][j_min])*dX.y );
+	  for (k = 1; k <= NUM_VAR_ADVECTDIFFUSE2D; ++k) {
+	    buffer_count++;
+	    if (buffer_count >= buffer_size) return(1);
+	    buffer[buffer_count] = Ufine[k];
+	  } /* endfor (k) */
 	  // Evaluate SE sub (fine) cell values.
 	  dX = (HALF*(Grid.Node[i][j_min].X+Grid.Node[i+1][j_min].X)+
 		Grid.Node[i+1][j_min].X+
 		Grid.Cell[i][j_min].Xc+
 		HALF*(Grid.Node[i+1][j_min].X+Grid.Node[i+1][j_min+1].X))/FOUR -
 	    Grid.Cell[i][j_min].Xc;
-	  ufine = U[i][j_min].u +
-	    (phi[i][j_min]*dudx[i][j_min])*dX.x +
-	    (phi[i][j_min]*dudy[i][j_min])*dX.y;
-	  buffer_count = buffer_count + NUM_VAR_ADVECTDIFFUSE2D;
-	  if (buffer_count >= buffer_size) return(1);
-	  buffer[buffer_count] = ufine;
+	  Ufine = U[i][j_min] + ( (phi[i][j_min]^dUdx[i][j_min])*dX.x +
+				  (phi[i][j_min]^dUdy[i][j_min])*dX.y );
+	  for (k = 1; k <= NUM_VAR_ADVECTDIFFUSE2D; ++k) {
+	    buffer_count++;
+	    if (buffer_count >= buffer_size) return(1);
+	    buffer[buffer_count] = Ufine[k];
+	  } /* endfor (k) */
 	} /* endfor */
       } else {
 	for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
 	  // Perform limited linear least squares reconstruction in cell (i, j_min).
-	  SubcellReconstruction(i, j_min, LIMITER_VENKATAKRISHNAN);
+	  SubcellReconstruction(i, j_min, Limiter);
 	  // Evaluate NE sub (fine) cell values.
 	  dX = (Grid.Cell[i][j_min].Xc+
 		HALF*(Grid.Node[i+1][j_min].X+Grid.Node[i+1][j_min+1].X)+
 		HALF*(Grid.Node[i][j_min+1].X+Grid.Node[i+1][j_min+1].X)+
-		Grid.Node[i+1][j_min+1].X)/FOUR -
-	    Grid.Cell[i][j_min].Xc;
-	  ufine = U[i][j_min].u +
-	    (phi[i][j_min]*dudx[i][j_min])*dX.x +
-	    (phi[i][j_min]*dudy[i][j_min])*dX.y;
-	  buffer_count = buffer_count + NUM_VAR_ADVECTDIFFUSE2D;
-	  if (buffer_count >= buffer_size) return(1);
-	  buffer[buffer_count] = ufine;
+		Grid.Node[i+1][j_min+1].X)/FOUR - Grid.Cell[i][j_min].Xc;
+	  Ufine = U[i][j_min] + ( (phi[i][j_min]^dUdx[i][j_min])*dX.x +
+				  (phi[i][j_min]^dUdy[i][j_min])*dX.y );
+	  for (k = 1; k <= NUM_VAR_ADVECTDIFFUSE2D; ++k) {
+	    buffer_count++;
+	    if (buffer_count >= buffer_size) return(1);
+	    buffer[buffer_count] = Ufine[k];
+	  } /* endfor (k) */
 	  // Evaluate NW sub (fine) cell values.
 	  dX = (HALF*(Grid.Node[i][j_min].X+Grid.Node[i][j_min+1].X)+
 		Grid.Cell[i][j_min].Xc+
 		Grid.Node[i][j_min+1].X+
 		HALF*(Grid.Node[i][j_min+1].X+Grid.Node[i+1][j_min+1].X))/FOUR -
 	    Grid.Cell[i][j_min].Xc;
-	  ufine = U[i][j_min].u +
-	    (phi[i][j_min]*dudx[i][j_min])*dX.x +
-	    (phi[i][j_min]*dudy[i][j_min])*dX.y;
-	  buffer_count = buffer_count + NUM_VAR_ADVECTDIFFUSE2D;
-	  if (buffer_count >= buffer_size) return(1);
-	  buffer[buffer_count] = ufine;
+	  Ufine = U[i][j_min] + ( (phi[i][j_min]^dUdx[i][j_min])*dX.x +
+				  (phi[i][j_min]^dUdy[i][j_min])*dX.y );
+	  for (k = 1; k <= NUM_VAR_ADVECTDIFFUSE2D; ++k) {
+	    buffer_count++;
+	    if (buffer_count >= buffer_size) return(1);
+	    buffer[buffer_count] = Ufine[k];
+	  } /* endfor (k) */
 	} /* endfor */
 	for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
 	  // Evaluate SE sub (fine) cell values.
@@ -583,24 +604,25 @@ int AdvectDiffuse2D_Quad_Block_New::LoadSendBuffer_C2F(double *buffer,
 		Grid.Cell[i][j_min].Xc+
 		HALF*(Grid.Node[i+1][j_min].X+Grid.Node[i+1][j_min+1].X))/FOUR -
 	    Grid.Cell[i][j_min].Xc;
-	  ufine = U[i][j_min].u +
-	    (phi[i][j_min]*dudx[i][j_min])*dX.x +
-	    (phi[i][j_min]*dudy[i][j_min])*dX.y;
-	  buffer_count = buffer_count + NUM_VAR_ADVECTDIFFUSE2D;
-	  if (buffer_count >= buffer_size) return(1);
-	  buffer[buffer_count] = ufine;
+	  Ufine = U[i][j_min] + ( (phi[i][j_min]^dUdx[i][j_min])*dX.x +
+				  (phi[i][j_min]^dUdy[i][j_min])*dX.y );
+	  for (k = 1; k <= NUM_VAR_ADVECTDIFFUSE2D; ++k) {
+	    buffer_count++;
+	    if (buffer_count >= buffer_size) return(1);
+	    buffer[buffer_count] = Ufine[k];
+	  } /* endfor (k) */
 	  // Evaluate SW sub (fine) cell values.
 	  dX = (Grid.Node[i][j_min].X+
 		HALF*(Grid.Node[i][j_min].X+Grid.Node[i+1][j_min].X)+
 		HALF*(Grid.Node[i][j_min].X+Grid.Node[i][j_min+1].X)+
-		Grid.Cell[i][j_min].Xc)/FOUR -
-	    Grid.Cell[i][j_min].Xc;
-	  ufine = U[i][j_min].u +
-	    (phi[i][j_min]*dudx[i][j_min])*dX.x +
-	    (phi[i][j_min]*dudy[i][j_min])*dX.y;
-	  buffer_count = buffer_count + NUM_VAR_ADVECTDIFFUSE2D;
-	  if (buffer_count >= buffer_size) return(1);
-	  buffer[buffer_count] = ufine;
+		Grid.Cell[i][j_min].Xc)/FOUR - Grid.Cell[i][j_min].Xc;
+	  Ufine = U[i][j_min] + ( (phi[i][j_min]^dUdx[i][j_min])*dX.x +
+				  (phi[i][j_min]^dUdy[i][j_min])*dX.y );
+	  for (k = 1; k <= NUM_VAR_ADVECTDIFFUSE2D; ++k) {
+	    buffer_count++;
+	    if (buffer_count >= buffer_size) return(1);
+	    buffer[buffer_count] = Ufine[k];
+	  } /* endfor (k) */
 	} /* endfor */
       } /* endif */
     } /* endif */
@@ -612,163 +634,169 @@ int AdvectDiffuse2D_Quad_Block_New::LoadSendBuffer_C2F(double *buffer,
       } else {
 	for ( j = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
 	  // Perform limited linear least squares reconstruction in cell (i_min, j).
-	  SubcellReconstruction(i_min, j, LIMITER_VENKATAKRISHNAN);
+	  SubcellReconstruction(i_min, j, Limiter);
 	  // Evaluate SE sub (fine) cell values.
 	  dX = (HALF*(Grid.Node[i_min][j].X+Grid.Node[i_min+1][j].X)+
 		Grid.Node[i_min+1][j].X+
 		Grid.Cell[i_min][j].Xc+
 		HALF*(Grid.Node[i_min+1][j].X+Grid.Node[i_min+1][j+1].X))/FOUR -
 	    Grid.Cell[i_min][j].Xc;
-	  ufine = U[i_min][j].u +
-	    (phi[i_min][j]*dudx[i_min][j])*dX.x +
-	    (phi[i_min][j]*dudy[i_min][j])*dX.y;
-	  buffer_count = buffer_count + NUM_VAR_ADVECTDIFFUSE2D;
-	  if (buffer_count >= buffer_size) return(1);
-	  buffer[buffer_count] = ufine;
+	  Ufine = U[i_min][j] + ( (phi[i_min][j]^dUdx[i_min][j])*dX.x +
+				  (phi[i_min][j]*dUdy[i_min][j])*dX.y );
+	  for (k = 1; k <= NUM_VAR_ADVECTDIFFUSE2D; ++k) {
+	    buffer_count++;
+	    if (buffer_count >= buffer_size) return(1);
+	    buffer[buffer_count] = Ufine[k];
+	  } /* endfor (k) */
 	  // Evaluate SW sub (fine) cell values.
 	  dX = (Grid.Node[i_min][j].X+
 		HALF*(Grid.Node[i_min][j].X+Grid.Node[i_min+1][j].X)+
 		HALF*(Grid.Node[i_min][j].X+Grid.Node[i_min][j+1].X)+
-		Grid.Cell[i_min][j].Xc)/FOUR -
-	    Grid.Cell[i_min][j].Xc;
-	  ufine = U[i_min][j].u +
-	    (phi[i_min][j]*dudx[i_min][j])*dX.x +
-	    (phi[i_min][j]*dudy[i_min][j])*dX.y;
-	  buffer_count = buffer_count + NUM_VAR_ADVECTDIFFUSE2D;
-	  if (buffer_count >= buffer_size) return(1);
-	  buffer[buffer_count] = ufine;
+		Grid.Cell[i_min][j].Xc)/FOUR - Grid.Cell[i_min][j].Xc;
+	  Ufine = U[i_min][j] + ( (phi[i_min][j]^dUdx[i_min][j])*dX.x +
+				  (phi[i_min][j]*dUdy[i_min][j])*dX.y );
+	  for (k = 1; k <= NUM_VAR_ADVECTDIFFUSE2D; ++k) {
+	    buffer_count++;
+	    if (buffer_count >= buffer_size) return(1);
+	    buffer[buffer_count] = Ufine[k];
+	  } /* endfor (k) */
 	  // Evaluate NE sub (fine) cell values.
 	  dX = (Grid.Cell[i_min][j].Xc+
 		HALF*(Grid.Node[i_min+1][j].X+Grid.Node[i_min+1][j+1].X)+
 		HALF*(Grid.Node[i_min][j+1].X+Grid.Node[i_min+1][j+1].X)+
-		Grid.Node[i_min+1][j+1].X)/FOUR -
-	    Grid.Cell[i_min][j].Xc;
-	  ufine = U[i_min][j].u +
-	    (phi[i_min][j]*dudx[i_min][j])*dX.x +
-	    (phi[i_min][j]*dudy[i_min][j])*dX.y;
-	  buffer_count = buffer_count + NUM_VAR_ADVECTDIFFUSE2D;
-	  if (buffer_count >= buffer_size) return(1);
-	  buffer[buffer_count] = ufine;
+		Grid.Node[i_min+1][j+1].X)/FOUR - Grid.Cell[i_min][j].Xc;
+	  Ufine = U[i_min][j] + ( (phi[i_min][j]^dUdx[i_min][j])*dX.x +
+				  (phi[i_min][j]*dUdy[i_min][j])*dX.y );
+	  for (k = 1; k <= NUM_VAR_ADVECTDIFFUSE2D; ++k) {
+	    buffer_count++;
+	    if (buffer_count >= buffer_size) return(1);
+	    buffer[buffer_count] = Ufine[k];
+	  } /* endfor (k) */
 	  // Evaluate NW sub (fine) cell values.
 	  dX = (HALF*(Grid.Node[i_min][j].X+Grid.Node[i_min][j+1].X)+
 		Grid.Cell[i_min][j].Xc+
 		Grid.Node[i_min][j+1].X+
 		HALF*(Grid.Node[i_min][j+1].X+Grid.Node[i_min+1][j+1].X))/FOUR -
 	    Grid.Cell[i_min][j].Xc;
-	  ufine = U[i_min][j].u +
-	    (phi[i_min][j]*dudx[i_min][j])*dX.x +
-	    (phi[i_min][j]*dudy[i_min][j])*dX.y;
-	  buffer_count = buffer_count + NUM_VAR_ADVECTDIFFUSE2D;
-	  if (buffer_count >= buffer_size) return(1);
-	  buffer[buffer_count] = ufine;
+	  Ufine = U[i_min][j] + ( (phi[i_min][j]^dUdx[i_min][j])*dX.x +
+				  (phi[i_min][j]*dUdy[i_min][j])*dX.y );
+	  for (k = 1; k <= NUM_VAR_ADVECTDIFFUSE2D; ++k) {
+	    buffer_count++;
+	    if (buffer_count >= buffer_size) return(1);
+	    buffer[buffer_count] = Ufine[k];
+	  } /* endfor (k) */
 	} /* endfor */
       } /* endif */
     } else {
       if (i_inc > 0) {
 	for ( j = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
 	  // Perform limited linear least squares reconstruction in cell (i_min, j).
-	  SubcellReconstruction(i_min, j, LIMITER_VENKATAKRISHNAN);
+	  SubcellReconstruction(i_min, j, Limiter);
 	  // Evaluate NW sub (fine) cell values.
 	  dX = (HALF*(Grid.Node[i_min][j].X+Grid.Node[i_min][j+1].X)+
 		Grid.Cell[i_min][j].Xc+
 		Grid.Node[i_min][j+1].X+
 		HALF*(Grid.Node[i_min][j+1].X+Grid.Node[i_min+1][j+1].X))/FOUR -
 	    Grid.Cell[i_min][j].Xc;
-	  ufine = U[i_min][j].u +
-	    (phi[i_min][j]*dudx[i_min][j])*dX.x +
-	    (phi[i_min][j]*dudy[i_min][j])*dX.y;
-	  buffer_count = buffer_count + NUM_VAR_ADVECTDIFFUSE2D;
-	  if (buffer_count >= buffer_size) return(1);
-	  buffer[buffer_count] = ufine;
+	  Ufine = U[i_min][j] + ( (phi[i_min][j]^dUdx[i_min][j])*dX.x +
+				  (phi[i_min][j]*dUdy[i_min][j])*dX.y );
+	  for (k = 1; k <= NUM_VAR_ADVECTDIFFUSE2D; ++k) {
+	    buffer_count++;
+	    if (buffer_count >= buffer_size) return(1);
+	    buffer[buffer_count] = Ufine[k];
+	  } /* endfor (k) */
 	  // Evaluate NE sub (fine) cell values.
 	  dX = (Grid.Cell[i_min][j].Xc+
 		HALF*(Grid.Node[i_min+1][j].X+Grid.Node[i_min+1][j+1].X)+
 		HALF*(Grid.Node[i_min][j+1].X+Grid.Node[i_min+1][j+1].X)+
-		Grid.Node[i_min+1][j+1].X)/FOUR -
-	    Grid.Cell[i_min][j].Xc;
-	  ufine = U[i_min][j].u +
-	    (phi[i_min][j]*dudx[i_min][j])*dX.x +
-	    (phi[i_min][j]*dudy[i_min][j])*dX.y;
-	  buffer_count = buffer_count + NUM_VAR_ADVECTDIFFUSE2D;
-	  if (buffer_count >= buffer_size) return(1);
-	  buffer[buffer_count] = ufine;
+		Grid.Node[i_min+1][j+1].X)/FOUR - Grid.Cell[i_min][j].Xc;
+	  Ufine = U[i_min][j] + ( (phi[i_min][j]^dUdx[i_min][j])*dX.x +
+				  (phi[i_min][j]*dUdy[i_min][j])*dX.y );
+	  for (k = 1; k <= NUM_VAR_ADVECTDIFFUSE2D; ++k) {
+	    buffer_count++;
+	    if (buffer_count >= buffer_size) return(1);
+	    buffer[buffer_count] = Ufine[k];
+	  } /* endfor (k) */
 	  // Evaluate SW sub (fine) cell values.
 	  dX = (Grid.Node[i_min][j].X+
 		HALF*(Grid.Node[i_min][j].X+Grid.Node[i_min+1][j].X)+
 		HALF*(Grid.Node[i_min][j].X+Grid.Node[i_min][j+1].X)+
-		Grid.Cell[i_min][j].Xc)/FOUR -
-	    Grid.Cell[i_min][j].Xc;
-	  ufine = U[i_min][j].u +
-	    (phi[i_min][j]*dudx[i_min][j])*dX.x +
-	    (phi[i_min][j]*dudy[i_min][j])*dX.y;
-	  buffer_count = buffer_count + NUM_VAR_ADVECTDIFFUSE2D;
-	  if (buffer_count >= buffer_size) return(1);
-	  buffer[buffer_count] = ufine;
+		Grid.Cell[i_min][j].Xc)/FOUR - Grid.Cell[i_min][j].Xc;
+	  Ufine = U[i_min][j] + ( (phi[i_min][j]^dUdx[i_min][j])*dX.x +
+				  (phi[i_min][j]*dUdy[i_min][j])*dX.y );
+	  for (k = 1; k <= NUM_VAR_ADVECTDIFFUSE2D; ++k) {
+	    buffer_count++;
+	    if (buffer_count >= buffer_size) return(1);
+	    buffer[buffer_count] = Ufine[k];
+	  } /* endfor (k) */
 	  // Evaluate SE sub (fine) cell values.
 	  dX = (HALF*(Grid.Node[i_min][j].X+Grid.Node[i_min+1][j].X)+
 		Grid.Node[i_min+1][j].X+
 		Grid.Cell[i_min][j].Xc+
 		HALF*(Grid.Node[i_min+1][j].X+Grid.Node[i_min+1][j+1].X))/FOUR -
 	    Grid.Cell[i_min][j].Xc;
-	  ufine = U[i_min][j].u +
-	    (phi[i_min][j]*dudx[i_min][j])*dX.x +
-	    (phi[i_min][j]*dudy[i_min][j])*dX.y;
-	  buffer_count = buffer_count + NUM_VAR_ADVECTDIFFUSE2D;
-	  if (buffer_count >= buffer_size) return(1);
-	  buffer[buffer_count] = ufine;
+	  Ufine = U[i_min][j] + ( (phi[i_min][j]^dUdx[i_min][j])*dX.x +
+				  (phi[i_min][j]*dUdy[i_min][j])*dX.y );
+	  for (k = 1; k <= NUM_VAR_ADVECTDIFFUSE2D; ++k) {
+	    buffer_count++;
+	    if (buffer_count >= buffer_size) return(1);
+	    buffer[buffer_count] = Ufine[k];
+	  } /* endfor (k) */
 	} /* endfor */
       } else {
 	for ( j = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
 	  // Perform limited linear least squares reconstruction in cell (i_min, j).
-	  SubcellReconstruction(i_min, j, LIMITER_VENKATAKRISHNAN);
+	  SubcellReconstruction(i_min, j, Limiter);
 	  // Evaluate NE sub (fine) cell values.
 	  dX = (Grid.Cell[i_min][j].Xc+
 		HALF*(Grid.Node[i_min+1][j].X+Grid.Node[i_min+1][j+1].X)+
 		HALF*(Grid.Node[i_min][j+1].X+Grid.Node[i_min+1][j+1].X)+
-		Grid.Node[i_min+1][j+1].X)/FOUR -
-	    Grid.Cell[i_min][j].Xc;
-	  ufine = U[i_min][j].u +
-	    (phi[i_min][j]*dudx[i_min][j])*dX.x +
-	    (phi[i_min][j]*dudy[i_min][j])*dX.y;
-	  buffer_count = buffer_count + NUM_VAR_ADVECTDIFFUSE2D;
-	  if (buffer_count >= buffer_size) return(1);
-	  buffer[buffer_count] = ufine;
+		Grid.Node[i_min+1][j+1].X)/FOUR - Grid.Cell[i_min][j].Xc;
+	  Ufine = U[i_min][j] + ( (phi[i_min][j]^dUdx[i_min][j])*dX.x +
+				  (phi[i_min][j]*dUdy[i_min][j])*dX.y );
+	  for (k = 1; k <= NUM_VAR_ADVECTDIFFUSE2D; ++k) {
+	    buffer_count++;
+	    if (buffer_count >= buffer_size) return(1);
+	    buffer[buffer_count] = Ufine[k];
+	  } /* endfor (k) */
 	  // Evaluate NW sub (fine) cell values.
 	  dX = (HALF*(Grid.Node[i_min][j].X+Grid.Node[i_min][j+1].X)+
 		Grid.Cell[i_min][j].Xc+
 		Grid.Node[i_min][j+1].X+
 		HALF*(Grid.Node[i_min][j+1].X+Grid.Node[i_min+1][j+1].X))/FOUR -
 	    Grid.Cell[i_min][j].Xc;
-	  ufine = U[i_min][j].u +
-	    (phi[i_min][j]*dudx[i_min][j])*dX.x +
-	    (phi[i_min][j]*dudy[i_min][j])*dX.y;
-	  buffer_count = buffer_count + NUM_VAR_ADVECTDIFFUSE2D;
-	  if (buffer_count >= buffer_size) return(1);
-	  buffer[buffer_count] = ufine;
+	  Ufine = U[i_min][j] + ( (phi[i_min][j]^dUdx[i_min][j])*dX.x +
+				  (phi[i_min][j]*dUdy[i_min][j])*dX.y );
+	  for (k = 1; k <= NUM_VAR_ADVECTDIFFUSE2D; ++k) {
+	    buffer_count++;
+	    if (buffer_count >= buffer_size) return(1);
+	    buffer[buffer_count] = Ufine[k];
+	  } /* endfor (k) */
 	  // Evaluate SE sub (fine) cell values.
 	  dX = (HALF*(Grid.Node[i_min][j].X+Grid.Node[i_min+1][j].X)+
 		Grid.Node[i_min+1][j].X+
 		Grid.Cell[i_min][j].Xc+
 		HALF*(Grid.Node[i_min+1][j].X+Grid.Node[i_min+1][j+1].X))/FOUR -
 	    Grid.Cell[i_min][j].Xc;
-	  ufine = U[i_min][j].u +
-	    (phi[i_min][j]*dudx[i_min][j])*dX.x +
-	    (phi[i_min][j]*dudy[i_min][j])*dX.y;
-	  buffer_count = buffer_count + NUM_VAR_ADVECTDIFFUSE2D;
-	  if (buffer_count >= buffer_size) return(1);
-	  buffer[buffer_count] = ufine;
+	  Ufine = U[i_min][j] + ( (phi[i_min][j]^dUdx[i_min][j])*dX.x +
+				  (phi[i_min][j]*dUdy[i_min][j])*dX.y );
+	  for (k = 1; k <= NUM_VAR_ADVECTDIFFUSE2D; ++k) {
+	    buffer_count++;
+	    if (buffer_count >= buffer_size) return(1);
+	    buffer[buffer_count] = Ufine[k];
+	  } /* endfor (k) */
 	  // Evaluate SW sub (fine) cell values.
 	  dX = (Grid.Node[i_min][j].X+
 		HALF*(Grid.Node[i_min][j].X+Grid.Node[i_min+1][j].X)+
 		HALF*(Grid.Node[i_min][j].X+Grid.Node[i_min][j+1].X)+
-		Grid.Cell[i_min][j].Xc)/FOUR -
-	    Grid.Cell[i_min][j].Xc;
-	  ufine = U[i_min][j].u +
-	    (phi[i_min][j]*dudx[i_min][j])*dX.x +
-	    (phi[i_min][j]*dudy[i_min][j])*dX.y;
-	  buffer_count = buffer_count + NUM_VAR_ADVECTDIFFUSE2D;
-	  if (buffer_count >= buffer_size) return(1);
-	  buffer[buffer_count] = ufine;
+		Grid.Cell[i_min][j].Xc)/FOUR - Grid.Cell[i_min][j].Xc;
+	  Ufine = U[i_min][j] + ( (phi[i_min][j]^dUdx[i_min][j])*dX.x +
+				  (phi[i_min][j]*dUdy[i_min][j])*dX.y );
+	  for (k = 1; k <= NUM_VAR_ADVECTDIFFUSE2D; ++k) {
+	    buffer_count++;
+	    if (buffer_count >= buffer_size) return(1);
+	    buffer[buffer_count] = Ufine[k];
+	  } /* endfor (k) */
 	} /* endfor */
       } /* endif */
     } /* endif */
@@ -790,12 +818,14 @@ int AdvectDiffuse2D_Quad_Block_New::UnloadReceiveBuffer(double *buffer,
 							const int j_min, 
 							const int j_max,
 							const int j_inc) {
-  int i, j;
+  int i, j, k;
   for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
     for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-      buffer_count = buffer_count + NUM_VAR_ADVECTDIFFUSE2D;
-      if (buffer_count >= buffer_size) return(1);
-      U[i][j].u = buffer[buffer_count];
+      for ( k = 1; k <= NUM_VAR_ADVECTDIFFUSE2D; ++k) {
+	buffer_count++;
+	if (buffer_count >= buffer_size) return 1;
+	U[i][j][k] = buffer[buffer_count];
+      } /* endfor (k) */
     } /* endfor */
   } /* endfor */
   return(0);
@@ -813,13 +843,14 @@ int AdvectDiffuse2D_Quad_Block_New::UnloadReceiveBuffer_F2C(double *buffer,
 							    const int j_min, 
 							    const int j_max,
 							    const int j_inc) {
-  int i, j;
+  int i, j, k;
   for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
     for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-      buffer_count = buffer_count + NUM_VAR_ADVECTDIFFUSE2D;
-      if (buffer_count >= buffer_size) return(1);
-      U[i][j].u = buffer[buffer_count];
-      /*         U[i][j].u = buffer[buffer_count]/Grid.Cell[i][j].A; */
+      for ( k = 1; k <= NUM_VAR_ADVECTDIFFUSE2D; ++k) {
+	buffer_count++;
+	if (buffer_count >= buffer_size) return 1;
+	U[i][j][k] = buffer[buffer_count];
+      } /* endfor (k) */
     } /* endfor */
   } /* endfor */
   return(0);
@@ -837,12 +868,14 @@ int AdvectDiffuse2D_Quad_Block_New::UnloadReceiveBuffer_C2F(double *buffer,
 							    const int j_min, 
 							    const int j_max,
 							    const int j_inc) {
-  int i, j;
+  int i, j, k;
   for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
     for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-      buffer_count = buffer_count + NUM_VAR_ADVECTDIFFUSE2D;
-      if (buffer_count >= buffer_size) return(1);
-      U[i][j].u = buffer[buffer_count];
+      for ( k = 1; k <= NUM_VAR_ADVECTDIFFUSE2D; ++k) {
+	buffer_count++;
+	if (buffer_count >= buffer_size) return 1;
+	U[i][j][k] = buffer[buffer_count];
+      } /* endfor (k) */
     } /* endfor */
   } /* endfor */
   return(0);
@@ -869,12 +902,10 @@ void AdvectDiffuse2D_Quad_Block_New::SubcellReconstruction(const int i,
   // Determine the number of neighbouring cells to
   // be used in the reconstruction procedure.  Away from
   // boundaries this 8 neighbours will be used.
-  if (i == ICl-Nghost || i == ICu+Nghost ||
-      j == JCl-Nghost || j == JCu+Nghost) {
+  if (i <= ICl-2 || i >= ICu+2 || j <= JCl-2 || j >= JCu+2) {
     n_pts = 0;
-  } else if ((i == ICl-Nghost+1) && 
-             (Grid.BCtypeW[j] != BC_NONE)) {
-    if (j == JCl-Nghost+1 || j == JCu+Nghost-1) {
+  } else if ((i == ICl-1) && (Grid.BCtypeW[j] != BC_NONE)) {
+    if (j == JCl-1 || j == JCu+1) {
       n_pts = 0;
     } else if (Grid.BCtypeW[j] == BC_PERIODIC ||
                Grid.BCtypeW[j] == BC_NEUMANN ||
@@ -924,9 +955,8 @@ void AdvectDiffuse2D_Quad_Block_New::SubcellReconstruction(const int i,
 	i_index[4] = i+1; j_index[4] = j+1;
       } /* endif */
     } /* endif */           
-  } else if ((i == ICu+Nghost-1) && 
-             (Grid.BCtypeE[j] != BC_NONE)) {
-    if (j == JCl-Nghost+1 || j == JCu+Nghost-1) {
+  } else if ((i == ICu+1) && (Grid.BCtypeE[j] != BC_NONE)) {
+    if (j == JCl-1 || j == JCu+1) {
       n_pts = 0;
     } else if (Grid.BCtypeE[j] == BC_PERIODIC ||
                Grid.BCtypeE[j] == BC_NEUMANN ||
@@ -976,9 +1006,8 @@ void AdvectDiffuse2D_Quad_Block_New::SubcellReconstruction(const int i,
 	i_index[4] = i  ; j_index[4] = j+1;
       } /* endif */
     } /* endif */
-  } else if ((j == JCl-Nghost+1) && 
-             (Grid.BCtypeS[i] != BC_NONE)) {
-    if (i == ICl-Nghost+1 || i == ICu+Nghost-1) {
+  } else if ((j == JCl-1) && (Grid.BCtypeS[i] != BC_NONE)) {
+    if (i == ICl-1 || i == ICu+1) {
       n_pts = 0;
     } else if (Grid.BCtypeS[i] == BC_PERIODIC ||
                Grid.BCtypeS[i] == BC_NEUMANN ||
@@ -1028,9 +1057,8 @@ void AdvectDiffuse2D_Quad_Block_New::SubcellReconstruction(const int i,
 	i_index[4] = i+1; j_index[4] = j+1;
       } /* endif */
     } /* endif */
-  } else if ((j == JCu+Nghost-1) && 
-             (Grid.BCtypeN[i] != BC_NONE)) {
-    if (i == ICl-Nghost+1 || i == ICu+Nghost-1) {
+  } else if ((j == JCu+1) && (Grid.BCtypeN[i] != BC_NONE)) {
+    if (i == ICl-1 || i == ICu+1) {
       n_pts = 0;
     } else if (Grid.BCtypeN[i] == BC_PERIODIC ||
                Grid.BCtypeN[i] == BC_NEUMANN ||
@@ -1101,10 +1129,8 @@ void AdvectDiffuse2D_Quad_Block_New::SubcellReconstruction(const int i,
     DyDy_ave = ZERO;
   
     for ( n = 0 ; n <= n_pts-1 ; ++n ) {
-      dX = Grid.Cell[ i_index[n] ][ j_index[n] ].Xc - 
-	Grid.Cell[i][j].Xc;
-      Du = U[ i_index[n] ][ j_index[n] ].u - 
-	U[i][j].u;
+      dX = Grid.Cell[ i_index[n] ][ j_index[n] ].Xc - Grid.Cell[i][j].Xc;
+      Du = U[ i_index[n] ][ j_index[n] ][1] - U[i][j][1];
       DuDx_ave += Du*dX.x;
       DuDy_ave += Du*dX.y;
       DxDx_ave += dX.x*dX.x;
@@ -1117,36 +1143,28 @@ void AdvectDiffuse2D_Quad_Block_New::SubcellReconstruction(const int i,
     DxDx_ave = DxDx_ave/double(n_pts);
     DxDy_ave = DxDy_ave/double(n_pts);
     DyDy_ave = DyDy_ave/double(n_pts);
-    dudx[i][j] = (DuDx_ave*DyDy_ave-DuDy_ave*DxDy_ave)/
-      (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave);
-    dudy[i][j] = (DuDy_ave*DxDx_ave-DuDx_ave*DxDy_ave)/
-      (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave);
+    dUdx[i][j][1] = ( (DuDx_ave*DyDy_ave-DuDy_ave*DxDy_ave)/
+		      (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave) );
+    dUdy[i][j][1] = ( (DuDy_ave*DxDx_ave-DuDx_ave*DxDy_ave)/
+		      (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave) );
   
     // Calculate slope limiter.
     if (!Freeze_Limiter) {
-      u0Min = U[i][j].u;
+      u0Min = U[i][j][1];
       u0Max = u0Min;
       for ( n = 0 ; n <= n_pts-1 ; ++n ) {
-	u0Min = min(u0Min, U[ i_index[n] ][ j_index[n] ].u);
-	u0Max = max(u0Max, U[ i_index[n] ][ j_index[n] ].u);
+	u0Min = min(u0Min, U[ i_index[n] ][ j_index[n] ][1]);
+	u0Max = max(u0Max, U[ i_index[n] ][ j_index[n] ][1]);
       } /* endfor */
   
       dX = Grid.xfaceE(i, j)-Grid.Cell[i][j].Xc;
-      uQuad[0] = U[i][j].u + 
-	dudx[i][j]*dX.x +
-	dudy[i][j]*dX.y ;
+      uQuad[0] = U[i][j][1] + dUdx[i][j][1]*dX.x + dUdy[i][j][1]*dX.y;
       dX = Grid.xfaceW(i, j)-Grid.Cell[i][j].Xc;
-      uQuad[1] = U[i][j].u + 
-	dudx[i][j]*dX.x +
-	dudy[i][j]*dX.y ;
+      uQuad[1] = U[i][j][1] + dUdx[i][j][1]*dX.x + dUdy[i][j][1]*dX.y;
       dX = Grid.xfaceN(i, j)-Grid.Cell[i][j].Xc;
-      uQuad[2] = U[i][j].u + 
-	dudx[i][j]*dX.x +
-	dudy[i][j]*dX.y ;
+      uQuad[2] = U[i][j][1] + dUdx[i][j][1]*dX.x + dUdy[i][j][1]*dX.y ;
       dX = Grid.xfaceS(i, j)-Grid.Cell[i][j].Xc;
-      uQuad[3] = U[i][j].u + 
-	dudx[i][j]*dX.x +
-	dudy[i][j]*dX.y ;
+      uQuad[3] = U[i][j][1] + dUdx[i][j][1]*dX.x + dUdy[i][j][1]*dX.y ;
   
       switch(Limiter) {
       case LIMITER_ONE :
@@ -1156,33 +1174,28 @@ void AdvectDiffuse2D_Quad_Block_New::SubcellReconstruction(const int i,
 	phi_k = ZERO;
 	break;
       case LIMITER_BARTH_JESPERSEN :
-	phi_k = Limiter_BarthJespersen(uQuad, U[i][j].u, 
-				       u0Min, u0Max, 4);
+	phi_k = Limiter_BarthJespersen(uQuad, U[i][j][1], u0Min, u0Max, 4);
 	break;
       case LIMITER_VENKATAKRISHNAN :
-	phi_k = Limiter_Venkatakrishnan(uQuad, U[i][j].u, 
-					u0Min, u0Max, 4);
+	phi_k = Limiter_Venkatakrishnan(uQuad, U[i][j][1], u0Min, u0Max, 4);
 	break;
       case LIMITER_VANLEER :
-	phi_k = Limiter_VanLeer(uQuad, U[i][j].u, 
-				u0Min, u0Max, 4);
+	phi_k = Limiter_VanLeer(uQuad, U[i][j][1], u0Min, u0Max, 4);
 	break;
       case LIMITER_VANALBADA :
-	phi_k = Limiter_VanAlbada(uQuad, U[i][j].u, 
-				  u0Min, u0Max, 4);
+	phi_k = Limiter_VanAlbada(uQuad, U[i][j][1], u0Min, u0Max, 4);
 	break;
       default:
-	phi_k = Limiter_BarthJespersen(uQuad, U[i][j].u, 
-				       u0Min, u0Max, 4);
+	phi_k = Limiter_BarthJespersen(uQuad, U[i][j][1], u0Min, u0Max, 4);
 	break;
       } /* endswitch */
   
-      phi[i][j] = phi_k;
+      phi[i][j][1] = phi_k;
     } /* endif */
   } else {
-    dudx[i][j] = ZERO;
-    dudy[i][j] = ZERO; 
-    phi[i][j]  = ZERO;
+    dUdx[i][j].Vacuum();
+    dUdy[i][j].Vacuum();
+    phi[i][j].Vacuum();
   } /* endif */
 
 }
@@ -1200,34 +1213,38 @@ int AdvectDiffuse2D_Quad_Block_New::LoadSendBuffer_Flux_F2C(double *buffer,
 							    const int j_min, 
 							    const int j_max,
 							    const int j_inc) {
-  int i, j;
+  int i, j, k;
   if (j_min == j_max && j_min == JCl) {
     for ( i = i_min ;  ((i_inc+2)/4) ? (i < i_max):(i > i_max) ; i += i_inc ) {
-      buffer_count = buffer_count + 1;
-      if (buffer_count >= buffer_size) return(1);
-      buffer[buffer_count] = (FluxS[i  ]+
-			      FluxS[i+1]);
+      for ( k = 1; k <= NUM_VAR_ADVECTDIFFUSE2D; ++k) {
+	buffer_count++;
+	if (buffer_count >= buffer_size) return 1;
+	buffer[buffer_count] = (FluxS[i  ][k] + FluxS[i+1][k]);
+      }
     } /* endfor */
   } else if (j_min == j_max && j_min == JCu) {
     for ( i = i_min ;  ((i_inc+2)/4) ? (i < i_max):(i > i_max) ; i += i_inc ) {
-      buffer_count = buffer_count + 1;
-      if (buffer_count >= buffer_size) return(1);
-      buffer[buffer_count] = (FluxN[i  ]+
-			      FluxN[i+1]);
+      for ( k = 1; k <= NUM_VAR_ADVECTDIFFUSE2D; ++k) {
+	buffer_count++;
+	if (buffer_count >= buffer_size) return 1;
+	buffer[buffer_count] = (FluxN[i  ][k] + FluxN[i+1][k]);
+      }
     } /* endfor */
   } else if (i_min == i_max && i_min == ICl) {
     for ( j  = j_min ; ((j_inc+2)/4) ? (j < j_max):(j > j_max) ; j += j_inc ) {
-      buffer_count = buffer_count + 1;
-      if (buffer_count >= buffer_size) return(1);
-      buffer[buffer_count] = (FluxW[j]+
-			      FluxW[j+1]);
+      for ( k = 1; k <= NUM_VAR_ADVECTDIFFUSE2D; ++k) {
+	buffer_count++;
+	if (buffer_count >= buffer_size) return 1;
+	buffer[buffer_count] = (FluxW[j][k] + FluxW[j+1][k]);
+      }
     } /* endfor */
   } else if (i_min == i_max && i_min == ICu) {
     for ( j  = j_min ; ((j_inc+2)/4) ? (j < j_max):(j > j_max) ; j += j_inc ) {
-      buffer_count = buffer_count + 1;
-      if (buffer_count >= buffer_size) return(1);
-      buffer[buffer_count] = (FluxE[j]+
-			      FluxE[j+1]);
+      for ( k = 1; k <= NUM_VAR_ADVECTDIFFUSE2D; ++k) {
+	buffer_count++;
+	if (buffer_count >= buffer_size) return 1;
+	buffer[buffer_count] = (FluxE[j][k] + FluxE[j+1][k]);
+      }
     } /* endfor */
   } /* endif */
   return(0);
@@ -1246,34 +1263,38 @@ int AdvectDiffuse2D_Quad_Block_New::UnloadReceiveBuffer_Flux_F2C(double *buffer,
 								 const int j_min, 
 								 const int j_max,
 								 const int j_inc) {
-  int i, j;
+  int i, j, k;
   if (j_min == j_max && j_min == JCl) {
     for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-      buffer_count = buffer_count + 1;
-      if (buffer_count >= buffer_size) return(1);
-      FluxS[i] = -buffer[buffer_count]
-	-FluxS[i];
+      for ( k = 1; k <= NUM_VAR_ADVECTDIFFUSE2D; ++k) {
+	buffer_count++;
+	if (buffer_count >= buffer_size) return 1;
+	FluxS[i][k] = -buffer[buffer_count] - FluxS[i][k];
+      }
     } /* endfor */
   } else if (j_min == j_max && j_min == JCu) {
     for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-      buffer_count = buffer_count + 1;
-      if (buffer_count >= buffer_size) return(1);
-      FluxN[i] = -buffer[buffer_count]
-	-FluxN[i];
+      for ( k = 1; k <= NUM_VAR_ADVECTDIFFUSE2D; ++k) {
+	buffer_count++;
+	if (buffer_count >= buffer_size) return(1);
+	FluxN[i][k] = -buffer[buffer_count] - FluxN[i][k];
+      }
     } /* endfor */
   } else if (i_min == i_max && i_min == ICl) {
     for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
-      buffer_count = buffer_count + 1;
-      if (buffer_count >= buffer_size) return(1);
-      FluxW[j] = -buffer[buffer_count]
-	-FluxW[j];
+      for ( k = 1; k <= NUM_VAR_ADVECTDIFFUSE2D; ++k) {
+	buffer_count++;
+	if (buffer_count >= buffer_size) return(1);
+	FluxW[j][k] = -buffer[buffer_count] - FluxW[j][k];
+      }
     } /* endfor */
   } else if (i_min == i_max && i_min == ICu) {
     for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
-      buffer_count = buffer_count + 1;
-      if (buffer_count >= buffer_size) return(1);
-      FluxE[j] = -buffer[buffer_count]
-	-FluxE[j];
+      for ( k = 1; k <= NUM_VAR_ADVECTDIFFUSE2D; ++k) {
+	buffer_count++;
+	if (buffer_count >= buffer_size) return(1);
+	FluxE[j][k] = -buffer[buffer_count] - FluxE[j][k];
+      }
     } /* endfor */
   } /* endif */
   return(0);

@@ -377,12 +377,12 @@ void Copy_Solution_Block(AdvectDiffuse2D_Quad_Block_New &SolnBlk1,
       for ( i = SolnBlk1.ICl-SolnBlk1.Nghost ; i <= SolnBlk1.ICu+SolnBlk1.Nghost ; ++i ) {
 	SolnBlk1.U[i][j] = SolnBlk2.U[i][j];
 	for ( k = 0 ; k <= NUMBER_OF_RESIDUAL_VECTORS_ADVECTDIFFUSE2D-1 ; ++k ) {
-	  SolnBlk1.dudt[i][j][k] = SolnBlk2.dudt[i][j][k];
+	  SolnBlk1.dUdt[i][j][k] = SolnBlk2.dUdt[i][j][k];
 	} /* endfor */
-	SolnBlk1.dudx[i][j] = SolnBlk2.dudx[i][j];
-	SolnBlk1.dudy[i][j] = SolnBlk2.dudy[i][j];
+	SolnBlk1.dUdx[i][j] = SolnBlk2.dUdx[i][j];
+	SolnBlk1.dUdy[i][j] = SolnBlk2.dUdy[i][j];
 	SolnBlk1.phi[i][j] = SolnBlk2.phi[i][j];
-	SolnBlk1.uo[i][j] = SolnBlk2.uo[i][j];
+	SolnBlk1.Uo[i][j] = SolnBlk2.Uo[i][j];
 	SolnBlk1.dt[i][j] = SolnBlk2.dt[i][j];
       } /* endfor */
     } /* endfor */
@@ -1503,7 +1503,7 @@ double L1_Norm_Residual(AdvectDiffuse2D_Quad_Block_New &SolnBlk) {
 
   for ( j  = SolnBlk.JCl ; j <= SolnBlk.JCu ; ++j ) {
     for ( i = SolnBlk.ICl ; i <= SolnBlk.ICu ; ++i ) {
-      l1_norm += fabs(SolnBlk.dudt[i][j][0]);
+      l1_norm += fabs(SolnBlk.dUdt[i][j][0][SolnBlk.residual_variable]);
     } /* endfor */
   } /* endfor */
 
@@ -1529,7 +1529,7 @@ double L2_Norm_Residual(AdvectDiffuse2D_Quad_Block_New &SolnBlk) {
 
   for ( j  = SolnBlk.JCl ; j <= SolnBlk.JCu ; ++j ) {
     for ( i = SolnBlk.ICl ; i <= SolnBlk.ICu ; ++i ) {
-      l2_norm += sqr(SolnBlk.dudt[i][j][0]);
+      l2_norm += sqr(SolnBlk.dUdt[i][j][0][SolnBlk.residual_variable]);
     } /* endfor */
   } /* endfor */
 
@@ -1557,7 +1557,7 @@ double Max_Norm_Residual(AdvectDiffuse2D_Quad_Block_New &SolnBlk) {
 
   for ( j  = SolnBlk.JCl ; j <= SolnBlk.JCu ; ++j ) {
     for ( i = SolnBlk.ICl ; i <= SolnBlk.ICu ; ++i ) {
-      max_norm = max(max_norm, fabs(SolnBlk.dudt[i][j][0]));
+      max_norm = max(max_norm, fabs(SolnBlk.dUdt[i][j][0][SolnBlk.residual_variable]));
     } /* endfor */
   } /* endfor */
 
@@ -1596,12 +1596,10 @@ void Linear_Reconstruction_GreenGauss(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
   // Determine the number of neighbouring cells to
   // be used in the reconstruction procedure.  Away from
   // boundaries this 8 neighbours will be used.
-  if (i == SolnBlk.ICl-SolnBlk.Nghost || i == SolnBlk.ICu+SolnBlk.Nghost ||
-      j == SolnBlk.JCl-SolnBlk.Nghost || j == SolnBlk.JCu+SolnBlk.Nghost) {
+  if (i <= SolnBlk.ICl-2 || i >= SolnBlk.ICu+2 || j <= SolnBlk.JCl-2 || j >= SolnBlk.JCu+2) {
     n_pts = 0;
-  } else if ((i == SolnBlk.ICl-SolnBlk.Nghost+1) && 
-	     (SolnBlk.Grid.BCtypeW[j] != BC_NONE)) {
-    if (j == SolnBlk.JCl-SolnBlk.Nghost+1 || j == SolnBlk.JCu+SolnBlk.Nghost-1) {
+  } else if ((i == SolnBlk.ICl-1) && (SolnBlk.Grid.BCtypeW[j] != BC_NONE)) {
+    if (j == SolnBlk.JCl-1 || j == SolnBlk.JCu+1) {
       n_pts = 0;
     } else if (SolnBlk.Grid.BCtypeW[j] == BC_PERIODIC ||
 	       SolnBlk.Grid.BCtypeW[j] == BC_NEUMANN ||
@@ -1651,9 +1649,8 @@ void Linear_Reconstruction_GreenGauss(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 	i_index[4] = i+1; j_index[4] = j+1;
       } /* endif */
     } /* endif */           
-  } else if ((i == SolnBlk.ICu+SolnBlk.Nghost-1) && 
-	     (SolnBlk.Grid.BCtypeE[j] != BC_NONE)) {
-    if (j == SolnBlk.JCl-SolnBlk.Nghost+1 || j == SolnBlk.JCu+SolnBlk.Nghost-1) {
+  } else if ((i == SolnBlk.ICu+1) && (SolnBlk.Grid.BCtypeE[j] != BC_NONE)) {
+    if (j == SolnBlk.JCl-1 || j == SolnBlk.JCu+1) {
       n_pts = 0;
     } else if (SolnBlk.Grid.BCtypeE[j] == BC_PERIODIC ||
 	       SolnBlk.Grid.BCtypeE[j] == BC_NEUMANN ||
@@ -1703,9 +1700,8 @@ void Linear_Reconstruction_GreenGauss(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 	i_index[4] = i  ; j_index[4] = j+1;
       } /* endif */
     } /* endif */
-  } else if ((j == SolnBlk.JCl-SolnBlk.Nghost+1) && 
-	     (SolnBlk.Grid.BCtypeS[i] != BC_NONE)) {
-    if (i == SolnBlk.ICl-SolnBlk.Nghost+1 || i == SolnBlk.ICu+SolnBlk.Nghost-1) {
+  } else if ((j == SolnBlk.JCl-1) && (SolnBlk.Grid.BCtypeS[i] != BC_NONE)) {
+    if (i == SolnBlk.ICl-1 || i == SolnBlk.ICu+1) {
       n_pts = 0;
     } else if (SolnBlk.Grid.BCtypeS[i] == BC_PERIODIC ||
 	       SolnBlk.Grid.BCtypeS[i] == BC_NEUMANN ||
@@ -1755,9 +1751,8 @@ void Linear_Reconstruction_GreenGauss(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 	i_index[4] = i+1; j_index[4] = j+1;
       } /* endif */
     } /* endif */
-  } else if ((j == SolnBlk.JCu+SolnBlk.Nghost-1) && 
-	     (SolnBlk.Grid.BCtypeN[i] != BC_NONE)) {
-    if (i == SolnBlk.ICl-SolnBlk.Nghost+1 || i == SolnBlk.ICu+SolnBlk.Nghost-1) {
+  } else if ((j == SolnBlk.JCu+1) && (SolnBlk.Grid.BCtypeN[i] != BC_NONE)) {
+    if (i == SolnBlk.ICl-1 || i == SolnBlk.ICu+1) {
       n_pts = 0;
     } else if (SolnBlk.Grid.BCtypeN[i] == BC_PERIODIC ||
 	       SolnBlk.Grid.BCtypeN[i] == BC_NEUMANN ||
@@ -1807,50 +1802,6 @@ void Linear_Reconstruction_GreenGauss(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 	i_index[4] = i+1; j_index[4] = j  ;
       } /* endif */
     } /* endif */
-    //     } else if ((i == SolnBlk.ICl && j == SolnBlk.JCl) && 
-    //                (SolnBlk.Grid.BCtypeW[j] != BC_NONE &&
-    //                 SolnBlk.Grid.BCtypeS[i] != BC_NONE)) {
-    //       n_pts = 7;
-    //       i_index[0] = i  ; j_index[0] = j-1;
-    //       i_index[1] = i+1; j_index[1] = j-1;
-    //       i_index[2] = i-1; j_index[2] = j  ;
-    //       i_index[3] = i+1; j_index[3] = j  ;
-    //       i_index[4] = i-1; j_index[4] = j+1;
-    //       i_index[5] = i  ; j_index[5] = j+1;
-    //       i_index[6] = i+1; j_index[6] = j+1;
-    //     } else if ((i == SolnBlk.ICl && j == SolnBlk.JCu) && 
-    //                (SolnBlk.Grid.BCtypeW[j] != BC_NONE &&
-    //                 SolnBlk.Grid.BCtypeN[i] != BC_NONE)) {
-    //       n_pts = 7;
-    //       i_index[0] = i-1; j_index[0] = j-1;
-    //       i_index[1] = i  ; j_index[1] = j-1;
-    //       i_index[2] = i+1; j_index[2] = j-1;
-    //       i_index[3] = i-1; j_index[3] = j  ;
-    //       i_index[4] = i+1; j_index[4] = j  ;
-    //       i_index[5] = i  ; j_index[5] = j+1;
-    //       i_index[6] = i+1; j_index[6] = j+1;
-    //     } else if ((i == SolnBlk.ICu && j == SolnBlk.JCl) && 
-    //                (SolnBlk.Grid.BCtypeE[j] != BC_NONE &&
-    //                 SolnBlk.Grid.BCtypeS[i] != BC_NONE)) {
-    //       n_pts = 7;
-    //       i_index[0] = i-1; j_index[0] = j-1;
-    //       i_index[1] = i  ; j_index[1] = j-1;
-    //       i_index[2] = i-1; j_index[2] = j  ;
-    //       i_index[3] = i+1; j_index[3] = j  ;
-    //       i_index[4] = i-1; j_index[4] = j+1;
-    //       i_index[5] = i  ; j_index[5] = j+1;
-    //       i_index[6] = i+1; j_index[6] = j+1;
-    //     } else if ((i == SolnBlk.ICu && j == SolnBlk.JCu) && 
-    //                (SolnBlk.Grid.BCtypeE[j] != BC_NONE &&
-    //                 SolnBlk.Grid.BCtypeN[i] != BC_NONE)) {
-    //       n_pts = 7;
-    //       i_index[0] = i-1; j_index[0] = j-1;
-    //       i_index[1] = i  ; j_index[1] = j-1;
-    //       i_index[2] = i+1; j_index[2] = j-1;
-    //       i_index[3] = i-1; j_index[3] = j  ;
-    //       i_index[4] = i+1; j_index[4] = j  ;
-    //       i_index[5] = i-1; j_index[5] = j+1;
-    //       i_index[6] = i  ; j_index[6] = j+1;
   } else {
     n_pts = 8;
     i_index[0] = i-1; j_index[0] = j-1;
@@ -1883,24 +1834,24 @@ void Linear_Reconstruction_GreenGauss(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
       n_west = SolnBlk.Grid.nfaceW(i, j);
 
       u_face = HALF*(u_nw+u_ne)*l_north; 
-      SolnBlk.dudx[i][j] = u_face*n_north.x;
-      SolnBlk.dudy[i][j] = u_face*n_north.y;
+      SolnBlk.dUdx[i][j] = u_face*n_north.x;
+      SolnBlk.dUdy[i][j] = u_face*n_north.y;
 
       u_face = HALF*(u_sw+u_se)*l_south; 
-      SolnBlk.dudx[i][j] += u_face*n_south.x;
-      SolnBlk.dudy[i][j] += u_face*n_south.y;
+      SolnBlk.dUdx[i][j] += u_face*n_south.x;
+      SolnBlk.dUdy[i][j] += u_face*n_south.y;
 
       u_face = HALF*(u_ne+u_se)*l_east; 
-      SolnBlk.dudx[i][j] += u_face*n_east.x;
-      SolnBlk.dudy[i][j] += u_face*n_east.y;
+      SolnBlk.dUdx[i][j] += u_face*n_east.x;
+      SolnBlk.dUdy[i][j] += u_face*n_east.y;
 
       u_face = HALF*(u_nw+u_sw)*l_west; 
-      SolnBlk.dudx[i][j] += u_face*n_west.x;
-      SolnBlk.dudy[i][j] += u_face*n_west.y;
+      SolnBlk.dUdx[i][j] += u_face*n_west.x;
+      SolnBlk.dUdy[i][j] += u_face*n_west.y;
 
-      SolnBlk.dudx[i][j] = SolnBlk.dudx[i][j]/
+      SolnBlk.dUdx[i][j] = SolnBlk.dUdx[i][j]/
 	SolnBlk.Grid.Cell[i][j].A;
-      SolnBlk.dudy[i][j] = SolnBlk.dudy[i][j]/
+      SolnBlk.dUdy[i][j] = SolnBlk.dUdy[i][j]/
 	SolnBlk.Grid.Cell[i][j].A;
 
       // If <8 neighbours are used, apply least-squares reconstruction
@@ -1912,10 +1863,8 @@ void Linear_Reconstruction_GreenGauss(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
       DyDy_ave = ZERO;
     
       for ( n = 0 ; n <= n_pts-1 ; ++n ) {
-	dX = SolnBlk.Grid.Cell[ i_index[n] ][ j_index[n] ].Xc - 
-	  SolnBlk.Grid.Cell[i][j].Xc;
-	Du = SolnBlk.U[ i_index[n] ][ j_index[n] ].u - 
-	  SolnBlk.U[i][j].u;
+	dX = SolnBlk.Grid.Cell[ i_index[n] ][ j_index[n] ].Xc - SolnBlk.Grid.Cell[i][j].Xc;
+	Du = SolnBlk.U[ i_index[n] ][ j_index[n] ][1] - SolnBlk.U[i][j][1];
 	DuDx_ave += Du*dX.x;
 	DuDy_ave += Du*dX.y;
 	DxDx_ave += dX.x*dX.x;
@@ -1928,38 +1877,30 @@ void Linear_Reconstruction_GreenGauss(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
       DxDx_ave = DxDx_ave/double(n_pts);
       DxDy_ave = DxDy_ave/double(n_pts);
       DyDy_ave = DyDy_ave/double(n_pts);
-      SolnBlk.dudx[i][j] = (DuDx_ave*DyDy_ave-DuDy_ave*DxDy_ave)/
-	(DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave);
-      SolnBlk.dudy[i][j] = (DuDy_ave*DxDx_ave-DuDx_ave*DxDy_ave)/
-	(DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave);
+      SolnBlk.dUdx[i][j][1] = ( (DuDx_ave*DyDy_ave-DuDy_ave*DxDy_ave)/
+				(DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave) );
+      SolnBlk.dUdy[i][j][1] = ( (DuDy_ave*DxDx_ave-DuDx_ave*DxDy_ave)/
+				(DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave) );
     } /* endif */
     
     // Calculate slope limiter.
     if (!SolnBlk.Freeze_Limiter) {
-      u0Min = SolnBlk.U[i][j].u;
+      u0Min = SolnBlk.U[i][j][1];
       u0Max = u0Min;
       for ( n = 0 ; n <= n_pts-1 ; ++n ) {
-	u0Min = min(u0Min, SolnBlk.U[ i_index[n] ][ j_index[n] ].u);
-	u0Max = max(u0Max, SolnBlk.U[ i_index[n] ][ j_index[n] ].u);
+	u0Min = min(u0Min, SolnBlk.U[ i_index[n] ][ j_index[n] ][1]);
+	u0Max = max(u0Max, SolnBlk.U[ i_index[n] ][ j_index[n] ][1]);
       } /* endfor */
     
       dX = SolnBlk.Grid.xfaceE(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
-      uQuad[0] = SolnBlk.U[i][j].u + 
-	SolnBlk.dudx[i][j]*dX.x +
-	SolnBlk.dudy[i][j]*dX.y ;
+      uQuad[0] = SolnBlk.U[i][j][1] + SolnBlk.dUdx[i][j][1]*dX.x + SolnBlk.dUdy[i][j][1]*dX.y;
       dX = SolnBlk.Grid.xfaceW(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
-      uQuad[1] = SolnBlk.U[i][j].u + 
-	SolnBlk.dudx[i][j]*dX.x +
-	SolnBlk.dudy[i][j]*dX.y ;
+      uQuad[1] = SolnBlk.U[i][j][1] + SolnBlk.dUdx[i][j][1]*dX.x + SolnBlk.dUdy[i][j][1]*dX.y;
       dX = SolnBlk.Grid.xfaceN(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
-      uQuad[2] = SolnBlk.U[i][j].u  + 
-	SolnBlk.dudx[i][j]*dX.x +
-	SolnBlk.dudy[i][j]*dX.y ;
+      uQuad[2] = SolnBlk.U[i][j][1] + SolnBlk.dUdx[i][j][1]*dX.x + SolnBlk.dUdy[i][j][1]*dX.y;
       dX = SolnBlk.Grid.xfaceS(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
-      uQuad[3] = SolnBlk.U[i][j].u + 
-	SolnBlk.dudx[i][j]*dX.x +
-	SolnBlk.dudy[i][j]*dX.y ;
-    
+      uQuad[3] = SolnBlk.U[i][j][1] + SolnBlk.dUdx[i][j][1]*dX.x + SolnBlk.dUdy[i][j][1]*dX.y;
+      
       switch(Limiter) {
       case LIMITER_ONE :
 	phi = ONE;
@@ -1968,568 +1909,33 @@ void Linear_Reconstruction_GreenGauss(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 	phi = ZERO;
 	break;
       case LIMITER_BARTH_JESPERSEN :
-	phi = Limiter_BarthJespersen(uQuad, SolnBlk.U[i][j].u, 
+	phi = Limiter_BarthJespersen(uQuad, SolnBlk.U[i][j][1], 
 				     u0Min, u0Max, 4);
 	break;
       case LIMITER_VENKATAKRISHNAN :
-	phi = Limiter_Venkatakrishnan(uQuad, SolnBlk.U[i][j].u, 
+	phi = Limiter_Venkatakrishnan(uQuad, SolnBlk.U[i][j][1], 
 				      u0Min, u0Max, 4);
 	break;
       case LIMITER_VANLEER :
-	phi = Limiter_VanLeer(uQuad, SolnBlk.U[i][j].u, 
+	phi = Limiter_VanLeer(uQuad, SolnBlk.U[i][j][1], 
 			      u0Min, u0Max, 4);
 	break;
       case LIMITER_VANALBADA :
-	phi = Limiter_VanAlbada(uQuad, SolnBlk.U[i][j].u, 
+	phi = Limiter_VanAlbada(uQuad, SolnBlk.U[i][j][1], 
 				u0Min, u0Max, 4);
 	break;
       default:
-	phi = Limiter_BarthJespersen(uQuad, SolnBlk.U[i][j].u, 
+	phi = Limiter_BarthJespersen(uQuad, SolnBlk.U[i][j][1], 
 				     u0Min, u0Max, 4);
 	break;
       } /* endswitch */
     
-      SolnBlk.phi[i][j] = phi;
+      SolnBlk.phi[i][j][1] = phi;
     } /* endif */
   } else {
-    SolnBlk.dudx[i][j] = ZERO;
-    SolnBlk.dudy[i][j] = ZERO; 
-    SolnBlk.phi[i][j]  = ZERO;
-  } /* endif */
-    
-}
-
-/******************************************************//**
- * Routine: Linear_Reconstruction_GreenGauss2           
- *                                                      
- * Performs the reconstruction of a limited piecewise   
- * linear solution state within a given cell (i,j) of   
- * the computational mesh for the specified             
- * quadrilateral solution block.  A Green-Gauss         
- * approach is used in the evaluation of the unlimited  
- * solution gradients.  Several slope limiters may be   
- * used.                                                
- *                                                      
- ********************************************************/
-void Linear_Reconstruction_GreenGauss2(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
-				       const int i, 
-                                       const int j,
-                                       const int Limiter) {
-
-  int n, n_pts, i_index[8], j_index[8];
-  double u0Min, u0Max, uQuad[4], phi;
-  double DxDx_ave, DxDy_ave, DyDy_ave;
-  double l_north, l_south, l_east, l_west;
-  Vector2D n_north, n_south, n_east, n_west, dX;
-  double u_nw, u_ne, u_sw, u_se, u_face, Du, DuDx_ave, DuDy_ave;
-
-  /* Carry out the limited solution reconstruction in
-     each cell of the computational mesh. */
-
-  // Determine the number of neighbouring cells to
-  // be used in the reconstruction procedure.  Away from
-  // boundaries this 8 neighbours will be used.
-  if (i == SolnBlk.ICl-SolnBlk.Nghost || i == SolnBlk.ICu+SolnBlk.Nghost ||
-      j == SolnBlk.JCl-SolnBlk.Nghost || j == SolnBlk.JCu+SolnBlk.Nghost) {
-    n_pts = 0;
-  } else if ((i == SolnBlk.ICl-SolnBlk.Nghost+1) && 
-	     (SolnBlk.Grid.BCtypeW[j] != BC_NONE)) {
-    if (j == SolnBlk.JCl-SolnBlk.Nghost+1 || j == SolnBlk.JCu+SolnBlk.Nghost-1) {
-      n_pts = 0;
-    } else if (SolnBlk.Grid.BCtypeW[j] == BC_PERIODIC ||
-	       SolnBlk.Grid.BCtypeW[j] == BC_NEUMANN ||
-	       SolnBlk.Grid.BCtypeW[j] == BC_ROBIN) {
-      n_pts = 8;
-      i_index[0] = i-1; j_index[0] = j-1;
-      i_index[1] = i  ; j_index[1] = j-1;
-      i_index[2] = i+1; j_index[2] = j-1;
-      i_index[3] = i-1; j_index[3] = j  ;
-      i_index[4] = i+1; j_index[4] = j  ;
-      i_index[5] = i-1; j_index[5] = j+1;
-      i_index[6] = i  ; j_index[6] = j+1;
-      i_index[7] = i+1; j_index[7] = j+1;
-      //           if (j == SolnBlk.JCl) {
-      //              n_pts = 5;
-      //              i_index[0] = i-1; j_index[0] = j  ;
-      //              i_index[1] = i+1; j_index[1] = j  ;
-      //              i_index[2] = i-1; j_index[2] = j+1;
-      //              i_index[3] = i  ; j_index[3] = j+1;
-      //              i_index[4] = i+1; j_index[4] = j+1;
-      //           } else if (j == SolnBlk.JCu) {
-      //              n_pts = 5;
-      //              i_index[0] = i-1; j_index[0] = j-1;
-      //              i_index[1] = i  ; j_index[1] = j-1;
-      //              i_index[2] = i+1; j_index[2] = j-1;
-      //              i_index[3] = i-1; j_index[3] = j  ;
-      //              i_index[4] = i+1; j_index[4] = j  ;
-      //           } else {
-      //              n_pts = 8;
-      //              i_index[0] = i-1; j_index[0] = j-1;
-      //              i_index[1] = i  ; j_index[1] = j-1;
-      //              i_index[2] = i+1; j_index[2] = j-1;
-      //              i_index[3] = i-1; j_index[3] = j  ;
-      //              i_index[4] = i+1; j_index[4] = j  ;
-      //              i_index[5] = i-1; j_index[5] = j+1;
-      //              i_index[6] = i  ; j_index[6] = j+1;
-      //              i_index[7] = i+1; j_index[7] = j+1;
-      //           } /* endif */
-    } else {
-      n_pts = 8;
-      i_index[0] = i-1; j_index[0] = j-1;
-      i_index[1] = i  ; j_index[1] = j-1;
-      i_index[2] = i+1; j_index[2] = j-1;
-      i_index[3] = i-1; j_index[3] = j  ;
-      i_index[4] = i+1; j_index[4] = j  ;
-      i_index[5] = i-1; j_index[5] = j+1;
-      i_index[6] = i  ; j_index[6] = j+1;
-      i_index[7] = i+1; j_index[7] = j+1;
-      //           if (j == SolnBlk.JCl) {
-      //              n_pts = 3;
-      //              i_index[0] = i+1; j_index[0] = j  ;
-      //              i_index[1] = i  ; j_index[1] = j+1;
-      //              i_index[2] = i+1; j_index[2] = j+1;
-      //           } else if (j == SolnBlk.JCu) {
-      //              n_pts = 3;
-      //              i_index[0] = i  ; j_index[0] = j-1;
-      //              i_index[1] = i+1; j_index[1] = j-1;
-      //              i_index[2] = i+1; j_index[2] = j  ;
-      //           } else {
-      //              n_pts = 5;
-      //              i_index[0] = i  ; j_index[0] = j-1;
-      //              i_index[1] = i+1; j_index[1] = j-1;
-      //              i_index[2] = i+1; j_index[2] = j  ;
-      //              i_index[3] = i  ; j_index[3] = j+1;
-      //              i_index[4] = i+1; j_index[4] = j+1;
-      //           } /* endif */
-    } /* endif */           
-  } else if ((i == SolnBlk.ICu+SolnBlk.Nghost-1) && 
-	     (SolnBlk.Grid.BCtypeE[j] != BC_NONE)) {
-    if (j == SolnBlk.JCl-SolnBlk.Nghost+1 || j == SolnBlk.JCu+SolnBlk.Nghost-1) {
-      n_pts = 0;
-    } else if (SolnBlk.Grid.BCtypeE[j] == BC_PERIODIC ||
-	       SolnBlk.Grid.BCtypeE[j] == BC_NEUMANN ||
-	       SolnBlk.Grid.BCtypeE[j] == BC_ROBIN) {
-      n_pts = 8;
-      i_index[0] = i-1; j_index[0] = j-1;
-      i_index[1] = i  ; j_index[1] = j-1;
-      i_index[2] = i+1; j_index[2] = j-1;
-      i_index[3] = i-1; j_index[3] = j  ;
-      i_index[4] = i+1; j_index[4] = j  ;
-      i_index[5] = i-1; j_index[5] = j+1;
-      i_index[6] = i  ; j_index[6] = j+1;
-      i_index[7] = i+1; j_index[7] = j+1;
-      //           if (j == SolnBlk.JCl) {
-      //              n_pts = 5;
-      //              i_index[0] = i-1; j_index[0] = j  ;
-      //              i_index[1] = i+1; j_index[1] = j  ;
-      //              i_index[2] = i-1; j_index[2] = j+1;
-      //              i_index[3] = i  ; j_index[3] = j+1;
-      //              i_index[4] = i+1; j_index[4] = j+1;
-      //           } else if (j == SolnBlk.JCu) {
-      //              n_pts = 5;
-      //              i_index[0] = i-1; j_index[0] = j-1;
-      //              i_index[1] = i  ; j_index[1] = j-1;
-      //              i_index[2] = i+1; j_index[2] = j-1;
-      //              i_index[3] = i-1; j_index[3] = j  ;
-      //              i_index[4] = i+1; j_index[4] = j  ;
-      //           } else {
-      //              n_pts = 8;
-      //              i_index[0] = i-1; j_index[0] = j-1;
-      //              i_index[1] = i  ; j_index[1] = j-1;
-      //              i_index[2] = i+1; j_index[2] = j-1;
-      //              i_index[3] = i-1; j_index[3] = j  ;
-      //              i_index[4] = i+1; j_index[4] = j  ;
-      //              i_index[5] = i-1; j_index[5] = j+1;
-      //              i_index[6] = i  ; j_index[6] = j+1;
-      //              i_index[7] = i+1; j_index[7] = j+1;
-      //           } /* endif */
-    } else {
-      n_pts = 8;
-      i_index[0] = i-1; j_index[0] = j-1;
-      i_index[1] = i  ; j_index[1] = j-1;
-      i_index[2] = i+1; j_index[2] = j-1;
-      i_index[3] = i-1; j_index[3] = j  ;
-      i_index[4] = i+1; j_index[4] = j  ;
-      i_index[5] = i-1; j_index[5] = j+1;
-      i_index[6] = i  ; j_index[6] = j+1;
-      i_index[7] = i+1; j_index[7] = j+1;
-      //           if (j == SolnBlk.JCl) {
-      //              n_pts = 3;
-      //              i_index[0] = i-1; j_index[0] = j  ;
-      //              i_index[1] = i-1; j_index[1] = j+1;
-      //              i_index[2] = i  ; j_index[2] = j+1;
-      //           } else if (j == SolnBlk.JCu) {
-      //              n_pts = 3;
-      //              i_index[0] = i-1; j_index[0] = j-1;
-      //              i_index[1] = i  ; j_index[1] = j-1;
-      //              i_index[2] = i-1; j_index[2] = j  ;
-      //           } else {
-      //              n_pts = 5;
-      //              i_index[0] = i-1; j_index[0] = j-1;
-      //              i_index[1] = i  ; j_index[1] = j-1;
-      //              i_index[2] = i-1; j_index[2] = j  ;
-      //              i_index[3] = i-1; j_index[3] = j+1;
-      //              i_index[4] = i  ; j_index[4] = j+1;
-      //           } /* endif */
-    } /* endif */
-  } else if ((j == SolnBlk.JCl-SolnBlk.Nghost+1) && 
-	     (SolnBlk.Grid.BCtypeS[i] != BC_NONE)) {
-    if (i == SolnBlk.ICl-SolnBlk.Nghost+1 || i == SolnBlk.ICu+SolnBlk.Nghost-1) {
-      n_pts = 0;
-    } else if (SolnBlk.Grid.BCtypeS[i] == BC_PERIODIC ||
-	       SolnBlk.Grid.BCtypeS[i] == BC_NEUMANN ||
-	       SolnBlk.Grid.BCtypeS[i] == BC_ROBIN) {
-      n_pts = 8;
-      i_index[0] = i-1; j_index[0] = j-1;
-      i_index[1] = i  ; j_index[1] = j-1;
-      i_index[2] = i+1; j_index[2] = j-1;
-      i_index[3] = i-1; j_index[3] = j  ;
-      i_index[4] = i+1; j_index[4] = j  ;
-      i_index[5] = i-1; j_index[5] = j+1;
-      i_index[6] = i  ; j_index[6] = j+1;
-      i_index[7] = i+1; j_index[7] = j+1;
-      //           if (i == SolnBlk.ICl) {
-      //              n_pts = 5;
-      //              i_index[0] = i  ; j_index[0] = j-1;
-      //              i_index[1] = i+1; j_index[1] = j-1;
-      //              i_index[2] = i+1; j_index[2] = j  ;
-      //              i_index[3] = i  ; j_index[3] = j+1;
-      //              i_index[4] = i+1; j_index[4] = j+1;
-      //           } else if (i == SolnBlk.ICu) {
-      //              n_pts = 5;
-      //              i_index[0] = i-1; j_index[0] = j-1;
-      //              i_index[1] = i  ; j_index[1] = j-1;
-      //              i_index[2] = i-1; j_index[2] = j  ;
-      //              i_index[3] = i-1; j_index[3] = j+1;
-      //              i_index[4] = i  ; j_index[4] = j+1;
-      //           } else {
-      //              n_pts = 8;
-      //              i_index[0] = i-1; j_index[0] = j-1;
-      //              i_index[1] = i  ; j_index[1] = j-1;
-      //              i_index[2] = i+1; j_index[2] = j-1;
-      //              i_index[3] = i-1; j_index[3] = j  ;
-      //              i_index[4] = i+1; j_index[4] = j  ;
-      //              i_index[5] = i-1; j_index[5] = j+1;
-      //              i_index[6] = i  ; j_index[6] = j+1;
-      //              i_index[7] = i+1; j_index[7] = j+1;
-      //           } /* endif */
-    } else {
-      n_pts = 8;
-      i_index[0] = i-1; j_index[0] = j-1;
-      i_index[1] = i  ; j_index[1] = j-1;
-      i_index[2] = i+1; j_index[2] = j-1;
-      i_index[3] = i-1; j_index[3] = j  ;
-      i_index[4] = i+1; j_index[4] = j  ;
-      i_index[5] = i-1; j_index[5] = j+1;
-      i_index[6] = i  ; j_index[6] = j+1;
-      i_index[7] = i+1; j_index[7] = j+1;
-      //           if (i == SolnBlk.ICl) {
-      //              n_pts = 3;
-      //              i_index[0] = i+1; j_index[0] = j  ;
-      //              i_index[1] = i  ; j_index[1] = j+1;
-      //              i_index[2] = i+1; j_index[2] = j+1;
-      //           } else if (i == SolnBlk.ICu) {
-      //              n_pts = 3;
-      //              i_index[0] = i-1; j_index[0] = j  ;
-      //              i_index[1] = i-1; j_index[1] = j+1;
-      //              i_index[2] = i  ; j_index[2] = j+1;
-      //           } else {
-      //              n_pts = 5;
-      //              i_index[0] = i-1; j_index[0] = j  ;
-      //              i_index[1] = i+1; j_index[1] = j  ;
-      //              i_index[2] = i-1; j_index[2] = j+1;
-      //              i_index[3] = i  ; j_index[3] = j+1;
-      //              i_index[4] = i+1; j_index[4] = j+1;
-      //           } /* endif */
-    } /* endif */
-  } else if ((j == SolnBlk.JCu+SolnBlk.Nghost-1) && 
-	     (SolnBlk.Grid.BCtypeN[i] != BC_NONE)) {
-    if (i == SolnBlk.ICl-SolnBlk.Nghost+1 || i == SolnBlk.ICu+SolnBlk.Nghost-1) {
-      n_pts = 0;
-    } else if (SolnBlk.Grid.BCtypeN[i] == BC_PERIODIC ||
-	       SolnBlk.Grid.BCtypeN[i] == BC_NEUMANN ||
-	       SolnBlk.Grid.BCtypeN[i] == BC_ROBIN) {
-      n_pts = 8;
-      i_index[0] = i-1; j_index[0] = j-1;
-      i_index[1] = i  ; j_index[1] = j-1;
-      i_index[2] = i+1; j_index[2] = j-1;
-      i_index[3] = i-1; j_index[3] = j  ;
-      i_index[4] = i+1; j_index[4] = j  ;
-      i_index[5] = i-1; j_index[5] = j+1;
-      i_index[6] = i  ; j_index[6] = j+1;
-      i_index[7] = i+1; j_index[7] = j+1;
-      //           if (i == SolnBlk.ICl) {
-      //              n_pts = 5;
-      //              i_index[0] = i  ; j_index[0] = j-1;
-      //              i_index[1] = i+1; j_index[1] = j-1;
-      //              i_index[2] = i+1; j_index[2] = j  ;
-      //              i_index[3] = i  ; j_index[3] = j+1;
-      //              i_index[4] = i+1; j_index[4] = j+1;
-      //           } else if (i == SolnBlk.ICu) {
-      //              n_pts = 5;
-      //              i_index[0] = i-1; j_index[0] = j-1;
-      //              i_index[1] = i  ; j_index[1] = j-1;
-      //              i_index[2] = i-1; j_index[2] = j  ;
-      //              i_index[3] = i-1; j_index[3] = j+1;
-      //              i_index[4] = i  ; j_index[4] = j+1;
-      //           } else {
-      //              n_pts = 8;
-      //              i_index[0] = i-1; j_index[0] = j-1;
-      //              i_index[1] = i  ; j_index[1] = j-1;
-      //              i_index[2] = i+1; j_index[2] = j-1;
-      //              i_index[3] = i-1; j_index[3] = j  ;
-      //              i_index[4] = i+1; j_index[4] = j  ;
-      //              i_index[5] = i-1; j_index[5] = j+1;
-      //              i_index[6] = i  ; j_index[6] = j+1;
-      //              i_index[7] = i+1; j_index[7] = j+1;
-      //           } /* endif */
-    } else {
-      n_pts = 8;
-      i_index[0] = i-1; j_index[0] = j-1;
-      i_index[1] = i  ; j_index[1] = j-1;
-      i_index[2] = i+1; j_index[2] = j-1;
-      i_index[3] = i-1; j_index[3] = j  ;
-      i_index[4] = i+1; j_index[4] = j  ;
-      i_index[5] = i-1; j_index[5] = j+1;
-      i_index[6] = i  ; j_index[6] = j+1;
-      i_index[7] = i+1; j_index[7] = j+1;
-      //           if (i == SolnBlk.ICl) {
-      //              n_pts = 3;
-      //              i_index[0] = i  ; j_index[0] = j-1;
-      //              i_index[1] = i+1; j_index[1] = j-1;
-      //              i_index[2] = i+1; j_index[2] = j  ;
-      //           } else if (i == SolnBlk.ICu) {
-      //              n_pts = 3;
-      //              i_index[0] = i-1; j_index[0] = j-1;
-      //              i_index[1] = i  ; j_index[1] = j-1;
-      //              i_index[2] = i-1; j_index[2] = j  ;
-      //           } else {
-      //              n_pts = 5;
-      //              i_index[0] = i-1; j_index[0] = j-1;
-      //              i_index[1] = i  ; j_index[1] = j-1;
-      //              i_index[2] = i+1; j_index[2] = j-1;
-      //              i_index[3] = i-1; j_index[3] = j  ;
-      //              i_index[4] = i+1; j_index[4] = j  ;
-      //           } /* endif */
-    } /* endif */
-    //     } else if ((i == SolnBlk.ICl && j == SolnBlk.JCl) && 
-    //                (SolnBlk.Grid.BCtypeW[j] != BC_NONE &&
-    //                 SolnBlk.Grid.BCtypeS[i] != BC_NONE)) {
-    //       n_pts = 7;
-    //       i_index[0] = i  ; j_index[0] = j-1;
-    //       i_index[1] = i+1; j_index[1] = j-1;
-    //       i_index[2] = i-1; j_index[2] = j  ;
-    //       i_index[3] = i+1; j_index[3] = j  ;
-    //       i_index[4] = i-1; j_index[4] = j+1;
-    //       i_index[5] = i  ; j_index[5] = j+1;
-    //       i_index[6] = i+1; j_index[6] = j+1;
-    //     } else if ((i == SolnBlk.ICl && j == SolnBlk.JCu) && 
-    //                (SolnBlk.Grid.BCtypeW[j] != BC_NONE &&
-    //                 SolnBlk.Grid.BCtypeN[i] != BC_NONE)) {
-    //       n_pts = 7;
-    //       i_index[0] = i-1; j_index[0] = j-1;
-    //       i_index[1] = i  ; j_index[1] = j-1;
-    //       i_index[2] = i+1; j_index[2] = j-1;
-    //       i_index[3] = i-1; j_index[3] = j  ;
-    //       i_index[4] = i+1; j_index[4] = j  ;
-    //       i_index[5] = i  ; j_index[5] = j+1;
-    //       i_index[6] = i+1; j_index[6] = j+1;
-    //     } else if ((i == SolnBlk.ICu && j == SolnBlk.JCl) && 
-    //                (SolnBlk.Grid.BCtypeE[j] != BC_NONE &&
-    //                 SolnBlk.Grid.BCtypeS[i] != BC_NONE)) {
-    //       n_pts = 7;
-    //       i_index[0] = i-1; j_index[0] = j-1;
-    //       i_index[1] = i  ; j_index[1] = j-1;
-    //       i_index[2] = i-1; j_index[2] = j  ;
-    //       i_index[3] = i+1; j_index[3] = j  ;
-    //       i_index[4] = i-1; j_index[4] = j+1;
-    //       i_index[5] = i  ; j_index[5] = j+1;
-    //       i_index[6] = i+1; j_index[6] = j+1;
-    //     } else if ((i == SolnBlk.ICu && j == SolnBlk.JCu) && 
-    //                (SolnBlk.Grid.BCtypeE[j] != BC_NONE &&
-    //                 SolnBlk.Grid.BCtypeN[i] != BC_NONE)) {
-    //       n_pts = 7;
-    //       i_index[0] = i-1; j_index[0] = j-1;
-    //       i_index[1] = i  ; j_index[1] = j-1;
-    //       i_index[2] = i+1; j_index[2] = j-1;
-    //       i_index[3] = i-1; j_index[3] = j  ;
-    //       i_index[4] = i+1; j_index[4] = j  ;
-    //       i_index[5] = i-1; j_index[5] = j+1;
-    //       i_index[6] = i  ; j_index[6] = j+1;
-  } else {
-    n_pts = 8;
-    i_index[0] = i-1; j_index[0] = j-1;
-    i_index[1] = i  ; j_index[1] = j-1;
-    i_index[2] = i+1; j_index[2] = j-1;
-    i_index[3] = i-1; j_index[3] = j  ;
-    i_index[4] = i+1; j_index[4] = j  ;
-    i_index[5] = i-1; j_index[5] = j+1;
-    i_index[6] = i  ; j_index[6] = j+1;
-    i_index[7] = i+1; j_index[7] = j+1;
-  } /* endif */
-    
-    // Perform reconstruction.  
-  if (n_pts > 0) {
-    // If 8 neighbours are used, apply Green-Gauss reconstruction
-    if (n_pts == 8) {
-
-      // USE NODE AVERAGING. 
-      //             u_nw = SolnBlk.unNW(i, j);
-      //             u_ne = SolnBlk.unNE(i, j);
-      //             u_sw = SolnBlk.unSW(i, j);
-      //             u_se = SolnBlk.unSE(i, j);
-
-      //             l_north = SolnBlk.Grid.lfaceN(i, j);
-      //             l_south = SolnBlk.Grid.lfaceS(i, j);
-      //             l_east = SolnBlk.Grid.lfaceE(i, j);
-      //             l_west = SolnBlk.Grid.lfaceW(i, j);
-
-      //             n_north = SolnBlk.Grid.nfaceN(i, j);
-      //             n_south = SolnBlk.Grid.nfaceS(i, j);
-      //             n_east = SolnBlk.Grid.nfaceE(i, j);
-      //             n_west = SolnBlk.Grid.nfaceW(i, j);
-
-      //             u_face = HALF*(u_nw+u_ne)*l_north; 
-      //             SolnBlk.dudx[i][j] = u_face*n_north.x;
-      //  	   SolnBlk.dudy[i][j] = u_face*n_north.y;
-
-      //             u_face = HALF*(u_sw+u_se)*l_south; 
-      //             SolnBlk.dudx[i][j] += u_face*n_south.x;
-      //  	   SolnBlk.dudy[i][j] += u_face*n_south.y;
-
-      //             u_face = HALF*(u_ne+u_se)*l_east; 
-      //             SolnBlk.dudx[i][j] += u_face*n_east.x;
-      //  	   SolnBlk.dudy[i][j] += u_face*n_east.y;
-
-      //             u_face = HALF*(u_nw+u_sw)*l_west; 
-      //             SolnBlk.dudx[i][j] += u_face*n_west.x;
-      //  	   SolnBlk.dudy[i][j] += u_face*n_west.y;
-
-      // USE CELL AVERAGING. (SAME AS THE ONE DONE ON PAPERS)
-      l_north = SolnBlk.Grid.lfaceN(i, j);
-      l_south = SolnBlk.Grid.lfaceS(i, j);
-      l_east = SolnBlk.Grid.lfaceE(i, j);
-      l_west = SolnBlk.Grid.lfaceW(i, j);
-
-      n_north = SolnBlk.Grid.nfaceN(i, j);
-      n_south = SolnBlk.Grid.nfaceS(i, j);
-      n_east = SolnBlk.Grid.nfaceE(i, j);
-      n_west = SolnBlk.Grid.nfaceW(i, j);
-
-      u_face = HALF*(SolnBlk.U[i][j].u+SolnBlk.U[i][j+1].u)*l_north; 
-      SolnBlk.dudx[i][j] = u_face*n_north.x;
-      SolnBlk.dudy[i][j] = u_face*n_north.y;
-
-      u_face = HALF*(SolnBlk.U[i][j].u+SolnBlk.U[i][j-1].u)*l_south; 
-      SolnBlk.dudx[i][j] += u_face*n_south.x;
-      SolnBlk.dudy[i][j] += u_face*n_south.y;
-
-      u_face = HALF*(SolnBlk.U[i][j].u+SolnBlk.U[i+1][j].u)*l_east; 
-      SolnBlk.dudx[i][j] += u_face*n_east.x;
-      SolnBlk.dudy[i][j] += u_face*n_east.y;
-
-      u_face = HALF*(SolnBlk.U[i][j].u+SolnBlk.U[i-1][j].u)*l_west; 
-      SolnBlk.dudx[i][j] += u_face*n_west.x;
-      SolnBlk.dudy[i][j] += u_face*n_west.y;
-
-      SolnBlk.dudx[i][j] = SolnBlk.dudx[i][j]/
-	SolnBlk.Grid.Cell[i][j].A;
-      SolnBlk.dudy[i][j] = SolnBlk.dudy[i][j]/
-	SolnBlk.Grid.Cell[i][j].A;
-
-      // If <8 neighbours are used, apply least-squares reconstruction
-    } else {
-	  
-      DuDx_ave = ZERO;
-      DuDy_ave = ZERO;
-      DxDx_ave = ZERO;
-      DxDy_ave = ZERO;
-      DyDy_ave = ZERO;
-    
-      for ( n = 0 ; n <= n_pts-1 ; ++n ) {
-	dX = SolnBlk.Grid.Cell[ i_index[n] ][ j_index[n] ].Xc - 
-	  SolnBlk.Grid.Cell[i][j].Xc;
-	Du = SolnBlk.U[ i_index[n] ][ j_index[n] ].u - 
-	  SolnBlk.U[i][j].u;
-	DuDx_ave += Du*dX.x;
-	DuDy_ave += Du*dX.y;
-	DxDx_ave += dX.x*dX.x;
-	DxDy_ave += dX.x*dX.y;
-	DyDy_ave += dX.y*dX.y;
-      } /* endfor */
-    					    
-      DuDx_ave = DuDx_ave/double(n_pts);
-      DuDy_ave = DuDy_ave/double(n_pts);
-      DxDx_ave = DxDx_ave/double(n_pts);
-      DxDy_ave = DxDy_ave/double(n_pts);
-      DyDy_ave = DyDy_ave/double(n_pts);
-      SolnBlk.dudx[i][j] = (DuDx_ave*DyDy_ave-DuDy_ave*DxDy_ave)/
-	(DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave);
-      SolnBlk.dudy[i][j] = (DuDy_ave*DxDx_ave-DuDx_ave*DxDy_ave)/
-	(DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave);
-    } /* endif */
-    
-    // Calculate slope limiter.
-    if (!SolnBlk.Freeze_Limiter) {
-      u0Min = SolnBlk.U[i][j].u;
-      u0Max = u0Min;
-      for ( n = 0 ; n <= n_pts-1 ; ++n ) {
-	u0Min = min(u0Min, SolnBlk.U[ i_index[n] ][ j_index[n] ].u);
-	u0Max = max(u0Max, SolnBlk.U[ i_index[n] ][ j_index[n] ].u);
-      } /* endfor */
-    
-      dX = SolnBlk.Grid.xfaceE(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
-      uQuad[0] = SolnBlk.U[i][j].u + 
-	SolnBlk.dudx[i][j]*dX.x +
-	SolnBlk.dudy[i][j]*dX.y ;
-      dX = SolnBlk.Grid.xfaceW(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
-      uQuad[1] = SolnBlk.U[i][j].u + 
-	SolnBlk.dudx[i][j]*dX.x +
-	SolnBlk.dudy[i][j]*dX.y ;
-      dX = SolnBlk.Grid.xfaceN(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
-      uQuad[2] = SolnBlk.U[i][j].u  + 
-	SolnBlk.dudx[i][j]*dX.x +
-	SolnBlk.dudy[i][j]*dX.y ;
-      dX = SolnBlk.Grid.xfaceS(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
-      uQuad[3] = SolnBlk.U[i][j].u + 
-	SolnBlk.dudx[i][j]*dX.x +
-	SolnBlk.dudy[i][j]*dX.y ;
-    
-      switch(Limiter) {
-      case LIMITER_ONE :
-	phi = ONE;
-	break;
-      case LIMITER_ZERO :
-	phi = ZERO;
-	break;
-      case LIMITER_BARTH_JESPERSEN :
-	phi = Limiter_BarthJespersen(uQuad, SolnBlk.U[i][j].u, 
-				     u0Min, u0Max, 4);
-	break;
-      case LIMITER_VENKATAKRISHNAN :
-	phi = Limiter_Venkatakrishnan(uQuad, SolnBlk.U[i][j].u, 
-				      u0Min, u0Max, 4);
-	break;
-      case LIMITER_VANLEER :
-	phi = Limiter_VanLeer(uQuad, SolnBlk.U[i][j].u, 
-			      u0Min, u0Max, 4);
-	break;
-      case LIMITER_VANALBADA :
-	phi = Limiter_VanAlbada(uQuad, SolnBlk.U[i][j].u, 
-				u0Min, u0Max, 4);
-	break;
-      default:
-	phi = Limiter_BarthJespersen(uQuad, SolnBlk.U[i][j].u, 
-				     u0Min, u0Max, 4);
-	break;
-      } /* endswitch */
-    
-      SolnBlk.phi[i][j] = phi;
-    } /* endif */
-  } else {
-    SolnBlk.dudx[i][j] = ZERO;
-    SolnBlk.dudy[i][j] = ZERO; 
-    SolnBlk.phi[i][j]  = ZERO;
+    SolnBlk.dUdx[i][j].Vacuum();
+    SolnBlk.dUdy[i][j].Vacuum(); 
+    SolnBlk.phi[i][j].Vacuum();
   } /* endif */
     
 }
@@ -2590,12 +1996,10 @@ void Linear_Reconstruction_LeastSquares(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
   // Determine the number of neighbouring cells to
   // be used in the reconstruction procedure.  Away from
   // boundaries this 8 neighbours will be used.
-  if (i == SolnBlk.ICl-SolnBlk.Nghost || i == SolnBlk.ICu+SolnBlk.Nghost ||
-      j == SolnBlk.JCl-SolnBlk.Nghost || j == SolnBlk.JCu+SolnBlk.Nghost) {
+  if (i <= SolnBlk.ICl-2 || i >= SolnBlk.ICu+2 || j <= SolnBlk.JCl-2 || j >= SolnBlk.JCu+2) {
     n_pts = 0;
-  } else if ((i == SolnBlk.ICl-SolnBlk.Nghost+1) && 
-	     (SolnBlk.Grid.BCtypeW[j] != BC_NONE)) {
-    if (j == SolnBlk.JCl-SolnBlk.Nghost+1 || j == SolnBlk.JCu+SolnBlk.Nghost-1) {
+  } else if ((i == SolnBlk.ICl-1) && (SolnBlk.Grid.BCtypeW[j] != BC_NONE)) {
+    if (j == SolnBlk.JCl-1 || j == SolnBlk.JCu+1) {
       n_pts = 0;
     } else if (SolnBlk.Grid.BCtypeW[j] == BC_PERIODIC ||
 	       SolnBlk.Grid.BCtypeW[j] == BC_NEUMANN ||
@@ -2645,9 +2049,8 @@ void Linear_Reconstruction_LeastSquares(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 	i_index[4] = i+1; j_index[4] = j+1;
       } /* endif */
     } /* endif */           
-  } else if ((i == SolnBlk.ICu+SolnBlk.Nghost-1) && 
-	     (SolnBlk.Grid.BCtypeE[j] != BC_NONE)) {
-    if (j == SolnBlk.JCl-SolnBlk.Nghost+1 || j == SolnBlk.JCu+SolnBlk.Nghost-1) {
+  } else if ((i == SolnBlk.ICu+1) && (SolnBlk.Grid.BCtypeE[j] != BC_NONE)) {
+    if (j == SolnBlk.JCl-1 || j == SolnBlk.JCu+1) {
       n_pts = 0;
     } else if (SolnBlk.Grid.BCtypeE[j] == BC_PERIODIC ||
 	       SolnBlk.Grid.BCtypeE[j] == BC_NEUMANN ||
@@ -2697,9 +2100,8 @@ void Linear_Reconstruction_LeastSquares(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 	i_index[4] = i  ; j_index[4] = j+1;
       } /* endif */
     } /* endif */
-  } else if ((j == SolnBlk.JCl-SolnBlk.Nghost+1) && 
-	     (SolnBlk.Grid.BCtypeS[i] != BC_NONE)) {
-    if (i == SolnBlk.ICl-SolnBlk.Nghost+1 || i == SolnBlk.ICu+SolnBlk.Nghost-1) {
+  } else if ((j == SolnBlk.JCl-1) && (SolnBlk.Grid.BCtypeS[i] != BC_NONE)) {
+    if (i == SolnBlk.ICl-1 || i == SolnBlk.ICu+1) {
       n_pts = 0;
     } else if (SolnBlk.Grid.BCtypeS[i] == BC_PERIODIC ||
 	       SolnBlk.Grid.BCtypeS[i] == BC_NEUMANN ||
@@ -2749,9 +2151,8 @@ void Linear_Reconstruction_LeastSquares(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 	i_index[4] = i+1; j_index[4] = j+1;
       } /* endif */
     } /* endif */
-  } else if ((j == SolnBlk.JCu+SolnBlk.Nghost-1) && 
-	     (SolnBlk.Grid.BCtypeN[i] != BC_NONE)) {
-    if (i == SolnBlk.ICl-SolnBlk.Nghost+1 || i == SolnBlk.ICu+SolnBlk.Nghost-1) {
+  } else if ((j == SolnBlk.JCu+1) && (SolnBlk.Grid.BCtypeN[i] != BC_NONE)) {
+    if (i == SolnBlk.ICl-1 || i == SolnBlk.ICu+1) {
       n_pts = 0;
     } else if (SolnBlk.Grid.BCtypeN[i] == BC_PERIODIC ||
 	       SolnBlk.Grid.BCtypeN[i] == BC_NEUMANN ||
@@ -2801,50 +2202,6 @@ void Linear_Reconstruction_LeastSquares(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 	i_index[4] = i+1; j_index[4] = j  ;
       } /* endif */
     } /* endif */
-    //     } else if ((i == SolnBlk.ICl && j == SolnBlk.JCl) && 
-    //                (SolnBlk.Grid.BCtypeW[j] != BC_NONE &&
-    //                 SolnBlk.Grid.BCtypeS[i] != BC_NONE)) {
-    //       n_pts = 7;
-    //       i_index[0] = i  ; j_index[0] = j-1;
-    //       i_index[1] = i+1; j_index[1] = j-1;
-    //       i_index[2] = i-1; j_index[2] = j  ;
-    //       i_index[3] = i+1; j_index[3] = j  ;
-    //       i_index[4] = i-1; j_index[4] = j+1;
-    //       i_index[5] = i  ; j_index[5] = j+1;
-    //       i_index[6] = i+1; j_index[6] = j+1;
-    //     } else if ((i == SolnBlk.ICl && j == SolnBlk.JCu) && 
-    //                (SolnBlk.Grid.BCtypeW[j] != BC_NONE &&
-    //                 SolnBlk.Grid.BCtypeN[i] != BC_NONE)) {
-    //       n_pts = 7;
-    //       i_index[0] = i-1; j_index[0] = j-1;
-    //       i_index[1] = i  ; j_index[1] = j-1;
-    //       i_index[2] = i+1; j_index[2] = j-1;
-    //       i_index[3] = i-1; j_index[3] = j  ;
-    //       i_index[4] = i+1; j_index[4] = j  ;
-    //       i_index[5] = i  ; j_index[5] = j+1;
-    //       i_index[6] = i+1; j_index[6] = j+1;
-    //     } else if ((i == SolnBlk.ICu && j == SolnBlk.JCl) && 
-    //                (SolnBlk.Grid.BCtypeE[j] != BC_NONE &&
-    //                 SolnBlk.Grid.BCtypeS[i] != BC_NONE)) {
-    //       n_pts = 7;
-    //       i_index[0] = i-1; j_index[0] = j-1;
-    //       i_index[1] = i  ; j_index[1] = j-1;
-    //       i_index[2] = i-1; j_index[2] = j  ;
-    //       i_index[3] = i+1; j_index[3] = j  ;
-    //       i_index[4] = i-1; j_index[4] = j+1;
-    //       i_index[5] = i  ; j_index[5] = j+1;
-    //       i_index[6] = i+1; j_index[6] = j+1;
-    //     } else if ((i == SolnBlk.ICu && j == SolnBlk.JCu) && 
-    //                (SolnBlk.Grid.BCtypeE[j] != BC_NONE &&
-    //                 SolnBlk.Grid.BCtypeN[i] != BC_NONE)) {
-    //       n_pts = 7;
-    //       i_index[0] = i-1; j_index[0] = j-1;
-    //       i_index[1] = i  ; j_index[1] = j-1;
-    //       i_index[2] = i+1; j_index[2] = j-1;
-    //       i_index[3] = i-1; j_index[3] = j  ;
-    //       i_index[4] = i+1; j_index[4] = j  ;
-    //       i_index[5] = i-1; j_index[5] = j+1;
-    //       i_index[6] = i  ; j_index[6] = j+1;
   } else {
     n_pts = 8;
     i_index[0] = i-1; j_index[0] = j-1;
@@ -2866,10 +2223,8 @@ void Linear_Reconstruction_LeastSquares(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
     DyDy_ave = ZERO;
     
     for ( n = 0 ; n <= n_pts-1 ; ++n ) {
-      dX = SolnBlk.Grid.Cell[ i_index[n] ][ j_index[n] ].Xc - 
-	SolnBlk.Grid.Cell[i][j].Xc;
-      Du = SolnBlk.U[ i_index[n] ][ j_index[n] ].u - 
-	SolnBlk.U[i][j].u;
+      dX = SolnBlk.Grid.Cell[ i_index[n] ][ j_index[n] ].Xc - SolnBlk.Grid.Cell[i][j].Xc;
+      Du = SolnBlk.U[ i_index[n] ][ j_index[n] ][1] - SolnBlk.U[i][j][1];
       DuDx_ave += Du*dX.x;
       DuDy_ave += Du*dX.y;
       DxDx_ave += dX.x*dX.x;
@@ -2882,36 +2237,28 @@ void Linear_Reconstruction_LeastSquares(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
     DxDx_ave = DxDx_ave/double(n_pts);
     DxDy_ave = DxDy_ave/double(n_pts);
     DyDy_ave = DyDy_ave/double(n_pts);
-    SolnBlk.dudx[i][j] = (DuDx_ave*DyDy_ave-DuDy_ave*DxDy_ave)/
-      (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave);
-    SolnBlk.dudy[i][j] = (DuDy_ave*DxDx_ave-DuDx_ave*DxDy_ave)/
-      (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave);
+    SolnBlk.dUdx[i][j][1] = ( (DuDx_ave*DyDy_ave-DuDy_ave*DxDy_ave)/
+			      (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave) );
+    SolnBlk.dUdy[i][j][1] = ( (DuDy_ave*DxDx_ave-DuDx_ave*DxDy_ave)/
+			      (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave) );
     
     // Calculate slope limiter.
     if (!SolnBlk.Freeze_Limiter) {
-      u0Min = SolnBlk.U[i][j].u;
+      u0Min = SolnBlk.U[i][j][1];
       u0Max = u0Min;
       for ( n = 0 ; n <= n_pts-1 ; ++n ) {
-	u0Min = min(u0Min, SolnBlk.U[ i_index[n] ][ j_index[n] ].u);
-	u0Max = max(u0Max, SolnBlk.U[ i_index[n] ][ j_index[n] ].u);
+	u0Min = min(u0Min, SolnBlk.U[ i_index[n] ][ j_index[n] ][1]);
+	u0Max = max(u0Max, SolnBlk.U[ i_index[n] ][ j_index[n] ][1]);
       } /* endfor */
     
       dX = SolnBlk.Grid.xfaceE(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
-      uQuad[0] = SolnBlk.U[i][j].u + 
-	SolnBlk.dudx[i][j]*dX.x +
-	SolnBlk.dudy[i][j]*dX.y ;
+      uQuad[0] = SolnBlk.U[i][j][1] + SolnBlk.dUdx[i][j][1]*dX.x + SolnBlk.dUdy[i][j][1]*dX.y ;
       dX = SolnBlk.Grid.xfaceW(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
-      uQuad[1] = SolnBlk.U[i][j].u + 
-	SolnBlk.dudx[i][j]*dX.x +
-	SolnBlk.dudy[i][j]*dX.y ;
+      uQuad[1] = SolnBlk.U[i][j][1] + SolnBlk.dUdx[i][j][1]*dX.x + SolnBlk.dUdy[i][j][1]*dX.y ;
       dX = SolnBlk.Grid.xfaceN(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
-      uQuad[2] = SolnBlk.U[i][j].u + 
-	SolnBlk.dudx[i][j]*dX.x +
-	SolnBlk.dudy[i][j]*dX.y ;
+      uQuad[2] = SolnBlk.U[i][j][1] + SolnBlk.dUdx[i][j][1]*dX.x + SolnBlk.dUdy[i][j][1]*dX.y ;
       dX = SolnBlk.Grid.xfaceS(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
-      uQuad[3] = SolnBlk.U[i][j].u + 
-	SolnBlk.dudx[i][j]*dX.x +
-	SolnBlk.dudy[i][j]*dX.y ;
+      uQuad[3] = SolnBlk.U[i][j][1] + SolnBlk.dUdx[i][j][1]*dX.x + SolnBlk.dUdy[i][j][1]*dX.y ;
     
       switch(Limiter) {
       case LIMITER_ONE :
@@ -2921,23 +2268,23 @@ void Linear_Reconstruction_LeastSquares(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 	phi = ZERO;
 	break;
       case LIMITER_BARTH_JESPERSEN :
-	phi = Limiter_BarthJespersen(uQuad, SolnBlk.U[i][j].u, 
+	phi = Limiter_BarthJespersen(uQuad, SolnBlk.U[i][j][1], 
 				     u0Min, u0Max, 4);
 	break;
       case LIMITER_VENKATAKRISHNAN :
-	phi = Limiter_Venkatakrishnan(uQuad, SolnBlk.U[i][j].u, 
+	phi = Limiter_Venkatakrishnan(uQuad, SolnBlk.U[i][j][1], 
 				      u0Min, u0Max, 4);
 	break;
       case LIMITER_VANLEER :
-	phi = Limiter_VanLeer(uQuad, SolnBlk.U[i][j].u, 
+	phi = Limiter_VanLeer(uQuad, SolnBlk.U[i][j][1], 
 			      u0Min, u0Max, 4);
 	break;
       case LIMITER_VANALBADA :
-	phi = Limiter_VanAlbada(uQuad, SolnBlk.U[i][j].u, 
+	phi = Limiter_VanAlbada(uQuad, SolnBlk.U[i][j][1], 
 				u0Min, u0Max, 4);
 	break;
       default:
-	phi = Limiter_BarthJespersen(uQuad, SolnBlk.U[i][j].u, 
+	phi = Limiter_BarthJespersen(uQuad, SolnBlk.U[i][j][1], 
 				     u0Min, u0Max, 4);
 	break;
       } /* endswitch */
@@ -2945,9 +2292,9 @@ void Linear_Reconstruction_LeastSquares(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
       SolnBlk.phi[i][j] = phi;
     } /* endif */
   } else {
-    SolnBlk.dudx[i][j] = ZERO;
-    SolnBlk.dudy[i][j] = ZERO; 
-    SolnBlk.phi[i][j]  = ZERO;
+    SolnBlk.dUdx[i][j].Vacuum();
+    SolnBlk.dUdy[i][j].Vacuum();
+    SolnBlk.phi[i][j].Vacuum();
   } /* endif */
     
 }
@@ -2979,30 +2326,6 @@ void Linear_Reconstruction_LeastSquares(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 
 }
 
-#if 0
-
-
-/******************************************************//**
- * Routine: Diffusive_Flux                              
- *                                                      
- * Evaluates the diffusive flux for each cell of the    
- * computational mesh for the specified quadrilateral   
- * solution block.                                      
- *                                                      
- ********************************************************/
-void Diffusive_Flux(AdvectDiffuse2D_Quad_Block_New &SolnBlk) {
-
-  int i, j;
-
-  for ( j  = SolnBlk.JCl-SolnBlk.Nghost+1; j <= SolnBlk.JCu+SolnBlk.Nghost-1; ++j ) {
-    for ( i = SolnBlk.ICl-SolnBlk.Nghost+1; i <= SolnBlk.ICu+SolnBlk.Nghost-1; ++i ) {
-      SolnBlk.evalDiffusiveFlux(i, j);
-    } /* endfor */
-  } /* endfor */
-
-}
-
-
 /******************************************************//**
  * Routine: Residual_Smoothing                          
  *                                                      
@@ -3021,7 +2344,7 @@ void Residual_Smoothing(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 
   for ( j  = SolnBlk.JCl+1; j <= SolnBlk.JCu-1; ++j ) {
     for ( i = SolnBlk.ICl+1; i <= SolnBlk.ICu-1; ++i ) {
-      SolnBlk.dudt[i][j][k_residual+1] =  SolnBlk.dudt[i][j][k_residual];
+      SolnBlk.dUdt[i][j][k_residual+1] =  SolnBlk.dUdt[i][j][k_residual];
     } /* endfor */
   } /* endfor */
 
@@ -3029,21 +2352,11 @@ void Residual_Smoothing(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 
     for ( j  = SolnBlk.JCl+1; j <= SolnBlk.JCu-1; ++j ) {
       for ( i = SolnBlk.ICl+1; i <= SolnBlk.ICu-1; ++i ) {
-	SolnBlk.dudt[i][j][k_residual+1] = (SolnBlk.dudt[i][j][k_residual]
-					    + epsilon*(SolnBlk.dudt[i  ][j-1][k_residual+1] +
-						       SolnBlk.dudt[i-1][j  ][k_residual+1] +
-						       SolnBlk.dudt[i+1][j  ][k_residual+1] +
-						       SolnBlk.dudt[i  ][j+1][k_residual+1]))/(ONE + FOUR*epsilon);
-
-	//              SolnBlk.dudt[i][j][k_residual+1] = (SolnBlk.dudt[i][j][k_residual]
-	//                 + epsilon*(SolnBlk.dudt[i-1][j-1][k_residual+1] +
-	//                            SolnBlk.dudt[i  ][j-1][k_residual+1] +
-	//                            SolnBlk.dudt[i+1][j-1][k_residual+1] +
-	//                            SolnBlk.dudt[i-1][j  ][k_residual+1] +
-	//                            SolnBlk.dudt[i+1][j  ][k_residual+1] +
-	//                            SolnBlk.dudt[i-1][j+1][k_residual+1] +
-	//                            SolnBlk.dudt[i  ][j+1][k_residual+1] +
-	//                            SolnBlk.dudt[i+1][j+1][k_residual+1]))/(ONE + EIGHT*epsilon);
+	SolnBlk.dUdt[i][j][k_residual+1] = (SolnBlk.dUdt[i][j][k_residual]
+					    + epsilon*(SolnBlk.dUdt[i  ][j-1][k_residual+1] +
+						       SolnBlk.dUdt[i-1][j  ][k_residual+1] +
+						       SolnBlk.dUdt[i+1][j  ][k_residual+1] +
+						       SolnBlk.dUdt[i  ][j+1][k_residual+1]))/(ONE + FOUR*epsilon);
       } /* endfor */
     } /* endfor */
 
@@ -3051,7 +2364,7 @@ void Residual_Smoothing(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 
   for ( j  = SolnBlk.JCl+1; j <= SolnBlk.JCu-1; ++j ) {
     for ( i = SolnBlk.ICl+1; i <= SolnBlk.ICu-1; ++i ) {
-      SolnBlk.dudt[i][j][k_residual] =  SolnBlk.dudt[i][j][k_residual+1];
+      SolnBlk.dUdt[i][j][k_residual] =  SolnBlk.dUdt[i][j][k_residual+1];
     } /* endfor */
   } /* endfor */
 
@@ -3095,8 +2408,8 @@ void Calculate_Refinement_Criteria(double *refinement_criteria,
       if (SolnBlk.Grid.Cell[i][j].A > ZERO) {
 	// Evaluate refinement criteria #1 based on the gradient
 	// of the solution.
-	grad_u_x = SolnBlk.dudx[i][j];
-	grad_u_y = SolnBlk.dudy[i][j];
+	grad_u_x = SolnBlk.dUdx[i][j][1];
+	grad_u_y = SolnBlk.dUdy[i][j][1];
 	grad_u_abs = sqrt(sqr(grad_u_x) + sqr(grad_u_y));
 	grad_u_criteria = sqrt(SolnBlk.Grid.Cell[i][j].A)*grad_u_abs/SolnBlk.U[i][j].u;
 	grad_u_criteria_max = max(grad_u_criteria_max, grad_u_criteria);
@@ -3363,7 +2676,7 @@ void Apply_Boundary_Flux_Corrections(AdvectDiffuse2D_Quad_Block_New SolnBlk,
 
   if (Number_Neighbours_North_Boundary == 2) {
     for ( i = SolnBlk.ICl ; i <= SolnBlk.ICu ; ++i ) {
-      SolnBlk.dudt[i][SolnBlk.JCu][0] -= 
+      SolnBlk.dUdt[i][SolnBlk.JCu][0] -= 
 	SolnBlk.FluxN[i]/SolnBlk.Grid.Cell[i][SolnBlk.JCu].A;
     } /* endfor */
   } /* endif */
@@ -3372,7 +2685,7 @@ void Apply_Boundary_Flux_Corrections(AdvectDiffuse2D_Quad_Block_New SolnBlk,
 
   if (Number_Neighbours_South_Boundary == 2) {
     for ( i = SolnBlk.ICl ; i <= SolnBlk.ICu ; ++i ) {
-      SolnBlk.dudt[i][SolnBlk.JCl][0] -= 
+      SolnBlk.dUdt[i][SolnBlk.JCl][0] -= 
 	SolnBlk.FluxS[i]/SolnBlk.Grid.Cell[i][SolnBlk.JCl].A;
     } /* endfor */
   } /* endif */
@@ -3381,7 +2694,7 @@ void Apply_Boundary_Flux_Corrections(AdvectDiffuse2D_Quad_Block_New SolnBlk,
 
   if (Number_Neighbours_East_Boundary == 2) {
     for ( j= SolnBlk.JCl ; j <= SolnBlk.JCu ; ++j ) {
-      SolnBlk.dudt[SolnBlk.ICu][j][0] -= 
+      SolnBlk.dUdt[SolnBlk.ICu][j][0] -= 
 	SolnBlk.FluxE[j]/SolnBlk.Grid.Cell[SolnBlk.ICu][j].A;
     } /* endfor */
   } /* endif */
@@ -3390,7 +2703,7 @@ void Apply_Boundary_Flux_Corrections(AdvectDiffuse2D_Quad_Block_New SolnBlk,
 
   if (Number_Neighbours_West_Boundary == 2) {
     for ( j= SolnBlk.JCl ; j <= SolnBlk.JCu ; ++j ) {
-      SolnBlk.dudt[SolnBlk.ICl][j][0] -= 
+      SolnBlk.dUdt[SolnBlk.ICl][j][0] -= 
 	SolnBlk.FluxW[j]/SolnBlk.Grid.Cell[SolnBlk.ICl][j].A;
     } /* endfor */
   } /* endif */
@@ -3458,7 +2771,7 @@ void Apply_Boundary_Flux_Corrections_Multistage_Explicit(AdvectDiffuse2D_Quad_Bl
 
   if (Number_Neighbours_North_Boundary == 2) {
     for ( i = SolnBlk.ICl ; i <= SolnBlk.ICu ; ++i ) {
-      SolnBlk.dudt[i][SolnBlk.JCu][k_residual] -= 
+      SolnBlk.dUdt[i][SolnBlk.JCu][k_residual] -= 
 	(CFL_Number*SolnBlk.dt[i][SolnBlk.JCu])*SolnBlk.FluxN[i]/
 	SolnBlk.Grid.Cell[i][SolnBlk.JCu].A;
     } /* endfor */
@@ -3468,7 +2781,7 @@ void Apply_Boundary_Flux_Corrections_Multistage_Explicit(AdvectDiffuse2D_Quad_Bl
 
   if (Number_Neighbours_South_Boundary == 2) {
     for ( i = SolnBlk.ICl ; i <= SolnBlk.ICu ; ++i ) {
-      SolnBlk.dudt[i][SolnBlk.JCl][k_residual] -= 
+      SolnBlk.dUdt[i][SolnBlk.JCl][k_residual] -= 
 	(CFL_Number*SolnBlk.dt[i][SolnBlk.JCl])*SolnBlk.FluxS[i]/
 	SolnBlk.Grid.Cell[i][SolnBlk.JCl].A;
     } /* endfor */
@@ -3478,7 +2791,7 @@ void Apply_Boundary_Flux_Corrections_Multistage_Explicit(AdvectDiffuse2D_Quad_Bl
 
   if (Number_Neighbours_East_Boundary == 2) {
     for ( j= SolnBlk.JCl ; j <= SolnBlk.JCu ; ++j ) {
-      SolnBlk.dudt[SolnBlk.ICu][j][k_residual] -= 
+      SolnBlk.dUdt[SolnBlk.ICu][j][k_residual] -= 
 	(CFL_Number*SolnBlk.dt[SolnBlk.ICu][j])*SolnBlk.FluxE[j]/
 	SolnBlk.Grid.Cell[SolnBlk.ICu][j].A;
     } /* endfor */
@@ -3488,13 +2801,15 @@ void Apply_Boundary_Flux_Corrections_Multistage_Explicit(AdvectDiffuse2D_Quad_Bl
 
   if (Number_Neighbours_West_Boundary == 2) {
     for ( j= SolnBlk.JCl ; j <= SolnBlk.JCu ; ++j ) {
-      SolnBlk.dudt[SolnBlk.ICl][j][k_residual] -= 
+      SolnBlk.dUdt[SolnBlk.ICl][j][k_residual] -= 
 	(CFL_Number*SolnBlk.dt[SolnBlk.ICl][j])*SolnBlk.FluxW[j]/
 	SolnBlk.Grid.Cell[SolnBlk.ICl][j].A;
     } /* endfor */
   } /* endif */
 
 }
+
+#if 0
 
 /******************************************************//**
  * Routine: dUdt_Residual_Evaluation                    
@@ -3533,36 +2848,30 @@ int dUdt_Residual_Evaluation(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
     break;
   } /* endswitch */
 
-    /* Evaluate the diffusive fluxes in each cell
-       of the computational grid for this stage. */
-
-  Diffusive_Flux(SolnBlk);
-
   /* Evaluate the time rate of change of the solution
      (i.e., the solution residuals) using a second-order
      limited upwind finite-volume scheme for the convective 
-     fluxes and a second-order centrally-weighted finite 
-     volume discretization for the diffusive fluxes. */
+     fluxes and a diamond-path gradient reconstruction 
+     for the diffusive fluxes. */
     
   // Add i-direction (zeta-direction) fluxes.
   for ( j  = SolnBlk.JCl-1 ; j <= SolnBlk.JCu+1 ; ++j ) {
-    SolnBlk.dudt[SolnBlk.ICl-1][j][0] = ZERO;
+    SolnBlk.dUdt[SolnBlk.ICl-1][j][0] = ZERO;
           
     for ( i = SolnBlk.ICl-1 ; i <= SolnBlk.ICu ; ++i ) {
-      SolnBlk.dudt[i+1][j][0] = ZERO;
+      SolnBlk.dUdt[i+1][j][0] = ZERO;
 	 
-      if ( j > SolnBlk.JCl-1 && j < SolnBlk.JCu+1 ) {
+      if ( j >= SolnBlk.JCl && j <= SolnBlk.JCu ) {
     
 	/* Evaluate the cell interface i-direction fluxes. */
 	   
 	dX = SolnBlk.Grid.xfaceE(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
-	ul = SolnBlk.U[i][j].u + 
-	  (SolnBlk.phi[i][j]*SolnBlk.dudx[i][j])*dX.x +
-	  (SolnBlk.phi[i][j]*SolnBlk.dudy[i][j])*dX.y;
+	Ul = SolnBlk.U[i][j] + ( (SolnBlk.phi[i][j]^SolnBlk.dUdx[i][j])*dX.x +
+				 (SolnBlk.phi[i][j]^SolnBlk.dUdy[i][j])*dX.y );
 	dX = SolnBlk.Grid.xfaceW(i+1, j)-SolnBlk.Grid.Cell[i+1][j].Xc;
 	ur = SolnBlk.U[i+1][j].u + 
-	  (SolnBlk.phi[i+1][j]*SolnBlk.dudx[i+1][j])*dX.x +
-	  (SolnBlk.phi[i+1][j]*SolnBlk.dudy[i+1][j])*dX.y;
+	  (SolnBlk.phi[i+1][j]*SolnBlk.dUdx[i+1][j])*dX.x +
+	  (SolnBlk.phi[i+1][j]*SolnBlk.dUdy[i+1][j])*dX.y;
 	   
 	Ul = SolnBlk.U[i][j]; 
 	Ul.u = ul;
@@ -3581,21 +2890,21 @@ int dUdt_Residual_Evaluation(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 	   
 	/* Evaluate cell-averaged solution changes. */
 	   
-	SolnBlk.dudt[i][j][0] -= 
+	SolnBlk.dUdt[i][j][0] -= 
 	  flux*SolnBlk.Grid.lfaceE(i, j)/
 	  SolnBlk.Grid.Cell[i][j].A;
-	SolnBlk.dudt[i+1][j][0] +=
+	SolnBlk.dUdt[i+1][j][0] +=
 	  flux*SolnBlk.Grid.lfaceW(i+1, j)/
 	  SolnBlk.Grid.Cell[i+1][j].A;
 	   
 	/* Include regular source terms. */
 
-	SolnBlk.dudt[i][j][0] += s(SolnBlk.U[i][j]);
+	SolnBlk.dUdt[i][j][0] += s(SolnBlk.U[i][j]);
 
 	/* Include axisymmetric source terms as required. */
 
 	if (SolnBlk.Axisymmetric) {
-	  SolnBlk.dudt[i][j][0] += 
+	  SolnBlk.dUdt[i][j][0] += 
 	    s_axi(SolnBlk.U[i][j], SolnBlk.Grid.Cell[i][j].Xc);
 	} /* endif */
 
@@ -3611,8 +2920,8 @@ int dUdt_Residual_Evaluation(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
     } /* endfor */
     
     if ( j > SolnBlk.JCl-1 && j < SolnBlk.JCu+1 ) {
-      SolnBlk.dudt[SolnBlk.ICl-1][j][0] = ZERO;
-      SolnBlk.dudt[SolnBlk.ICu+1][j][0] = ZERO;
+      SolnBlk.dUdt[SolnBlk.ICl-1][j][0] = ZERO;
+      SolnBlk.dUdt[SolnBlk.ICu+1][j][0] = ZERO;
     } /* endif */
   } /* endfor */
     
@@ -3624,12 +2933,12 @@ int dUdt_Residual_Evaluation(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
          
       dX = SolnBlk.Grid.xfaceN(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
       ul = SolnBlk.U[i][j].u + 
-	(SolnBlk.phi[i][j]*SolnBlk.dudx[i][j])*dX.x +
-	(SolnBlk.phi[i][j]*SolnBlk.dudy[i][j])*dX.y;
+	(SolnBlk.phi[i][j]*SolnBlk.dUdx[i][j])*dX.x +
+	(SolnBlk.phi[i][j]*SolnBlk.dUdy[i][j])*dX.y;
       dX = SolnBlk.Grid.xfaceS(i, j+1)-SolnBlk.Grid.Cell[i][j+1].Xc;
       ur = SolnBlk.U[i][j+1].u +
-	(SolnBlk.phi[i][j+1]*SolnBlk.dudx[i][j+1])*dX.x +
-	(SolnBlk.phi[i][j+1]*SolnBlk.dudy[i][j+1])*dX.y;
+	(SolnBlk.phi[i][j+1]*SolnBlk.dUdx[i][j+1])*dX.x +
+	(SolnBlk.phi[i][j+1]*SolnBlk.dUdy[i][j+1])*dX.y;
 
       Ul = SolnBlk.U[i][j]; 
       Ul.u = ul;
@@ -3648,10 +2957,10 @@ int dUdt_Residual_Evaluation(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
     
       /* Evaluate cell-averaged solution changes. */
     
-      SolnBlk.dudt[i][j][0] -=
+      SolnBlk.dUdt[i][j][0] -=
 	flux*SolnBlk.Grid.lfaceN(i, j)/
 	SolnBlk.Grid.Cell[i][j].A;
-      SolnBlk.dudt[i][j+1][0] += 
+      SolnBlk.dUdt[i][j+1][0] += 
 	flux*SolnBlk.Grid.lfaceS(i, j+1)/
 	SolnBlk.Grid.Cell[i][j+1].A;
           
@@ -3665,8 +2974,8 @@ int dUdt_Residual_Evaluation(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 
     } /* endfor */
 
-    SolnBlk.dudt[i][SolnBlk.JCl-1][0] = ZERO;
-    SolnBlk.dudt[i][SolnBlk.JCu+1][0] = ZERO;
+    SolnBlk.dUdt[i][SolnBlk.JCl-1][0] = ZERO;
+    SolnBlk.dUdt[i][SolnBlk.JCu+1][0] = ZERO;
   } /* endfor */
     
     /* residual evaluation successful. */
@@ -3762,39 +3071,39 @@ int dUdt_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
   for ( j  = SolnBlk.JCl-1 ; j <= SolnBlk.JCu+1 ; ++j ) {
     if ( i_stage == 1 ) {
       SolnBlk.uo[SolnBlk.ICl-1][j] = SolnBlk.U[SolnBlk.ICl-1][j].u;
-      SolnBlk.dudt[SolnBlk.ICl-1][j][k_residual] = ZERO;
+      SolnBlk.dUdt[SolnBlk.ICl-1][j][k_residual] = ZERO;
     } else {
-      SolnBlk.dudt[SolnBlk.ICl-1][j][k_residual] = ZERO;
+      SolnBlk.dUdt[SolnBlk.ICl-1][j][k_residual] = ZERO;
     } /* endif */
     
     for ( i = SolnBlk.ICl-1 ; i <= SolnBlk.ICu ; ++i ) {
       if ( i_stage == 1 ) {
 	SolnBlk.uo[i+1][j] = SolnBlk.U[i+1][j].u;
-	SolnBlk.dudt[i+1][j][k_residual] = ZERO;
+	SolnBlk.dUdt[i+1][j][k_residual] = ZERO;
       } else if ( j > SolnBlk.JCl-1 && j < SolnBlk.JCu+1 ) {
 	switch(Input_Parameters.i_Time_Integration) {
 	case TIME_STEPPING_EXPLICIT_PREDICTOR_CORRECTOR :
-	  //SolnBlk.dudt[i+1][j][k_residual] = 
-	  //   SolnBlk.dudt[i+1][j][k_residual];
+	  //SolnBlk.dUdt[i+1][j][k_residual] = 
+	  //   SolnBlk.dUdt[i+1][j][k_residual];
 	  break;
 	case TIME_STEPPING_EXPLICIT_RUNGE_KUTTA :
 	  if (Input_Parameters.N_Stage == 2) {
-	    //SolnBlk.dudt[i+1][j][k_residual] = 
-	    //   SolnBlk.dudt[i+1][j][k_residual];
+	    //SolnBlk.dUdt[i+1][j][k_residual] = 
+	    //   SolnBlk.dUdt[i+1][j][k_residual];
 	  } else if (Input_Parameters.N_Stage == 4 && i_stage == 4) {
-	    SolnBlk.dudt[i+1][j][k_residual] = 
-	      SolnBlk.dudt[i+1][j][0] + 
-	      TWO*SolnBlk.dudt[i+1][j][1] +
-	      TWO*SolnBlk.dudt[i+1][j][2];
+	    SolnBlk.dUdt[i+1][j][k_residual] = 
+	      SolnBlk.dUdt[i+1][j][0] + 
+	      TWO*SolnBlk.dUdt[i+1][j][1] +
+	      TWO*SolnBlk.dUdt[i+1][j][2];
 	  } else {
-	    SolnBlk.dudt[i+1][j][k_residual] = ZERO;
+	    SolnBlk.dUdt[i+1][j][k_residual] = ZERO;
 	  } /* endif */
 	  break;
 	case TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING :
-	  SolnBlk.dudt[i+1][j][k_residual] = ZERO;
+	  SolnBlk.dUdt[i+1][j][k_residual] = ZERO;
 	  break;
 	default:
-	  SolnBlk.dudt[i+1][j][k_residual] = ZERO;
+	  SolnBlk.dUdt[i+1][j][k_residual] = ZERO;
 	  break;
 	} /* endswitch */
       } /* endif */
@@ -3805,12 +3114,12 @@ int dUdt_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
     
 	dX = SolnBlk.Grid.xfaceE(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
 	ul = SolnBlk.U[i][j].u + 
-	  (SolnBlk.phi[i][j]*SolnBlk.dudx[i][j])*dX.x +
-	  (SolnBlk.phi[i][j]*SolnBlk.dudy[i][j])*dX.y;
+	  (SolnBlk.phi[i][j]*SolnBlk.dUdx[i][j])*dX.x +
+	  (SolnBlk.phi[i][j]*SolnBlk.dUdy[i][j])*dX.y;
 	dX = SolnBlk.Grid.xfaceW(i+1, j)-SolnBlk.Grid.Cell[i+1][j].Xc;
 	ur = SolnBlk.U[i+1][j].u + 
-	  (SolnBlk.phi[i+1][j]*SolnBlk.dudx[i+1][j])*dX.x +
-	  (SolnBlk.phi[i+1][j]*SolnBlk.dudy[i+1][j])*dX.y;
+	  (SolnBlk.phi[i+1][j]*SolnBlk.dUdx[i+1][j])*dX.x +
+	  (SolnBlk.phi[i+1][j]*SolnBlk.dUdy[i+1][j])*dX.y;
 
 	Ul = SolnBlk.U[i][j]; 
 	Ul.u = ul;
@@ -3829,24 +3138,24 @@ int dUdt_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
     
 	/* Evaluate cell-averaged solution changes. */
     
-	SolnBlk.dudt[i][j][k_residual] -= 
+	SolnBlk.dUdt[i][j][k_residual] -= 
 	  (Input_Parameters.CFL_Number*SolnBlk.dt[i][j])*
 	  flux*SolnBlk.Grid.lfaceE(i, j)/
 	  SolnBlk.Grid.Cell[i][j].A;
-	SolnBlk.dudt[i+1][j][k_residual] +=
+	SolnBlk.dUdt[i+1][j][k_residual] +=
 	  (Input_Parameters.CFL_Number*SolnBlk.dt[i+1][j])*
 	  flux*SolnBlk.Grid.lfaceW(i+1, j)/
 	  SolnBlk.Grid.Cell[i+1][j].A;
 
 	/* Include regular source terms. */
 
-	SolnBlk.dudt[i][j][k_residual] += 
+	SolnBlk.dUdt[i][j][k_residual] += 
 	  (Input_Parameters.CFL_Number*SolnBlk.dt[i][j])*s(SolnBlk.U[i][j]);
 
 	/* Include axisymmetric source terms as required. */
 
 	if (SolnBlk.Axisymmetric) {
-	  SolnBlk.dudt[i][j][k_residual] += 
+	  SolnBlk.dUdt[i][j][k_residual] += 
 	    (Input_Parameters.CFL_Number*SolnBlk.dt[i][j])*
 	    s_axi(SolnBlk.U[i][j], SolnBlk.Grid.Cell[i][j].Xc);
 	} /* endif */
@@ -3863,8 +3172,8 @@ int dUdt_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
     } /* endfor */
     
     if ( j > SolnBlk.JCl-1 && j < SolnBlk.JCu+1 ) {
-      SolnBlk.dudt[SolnBlk.ICl-1][j][k_residual] = ZERO;
-      SolnBlk.dudt[SolnBlk.ICu+1][j][k_residual] = ZERO;
+      SolnBlk.dUdt[SolnBlk.ICl-1][j][k_residual] = ZERO;
+      SolnBlk.dUdt[SolnBlk.ICu+1][j][k_residual] = ZERO;
     } /* endif */
   } /* endfor */
     
@@ -3876,12 +3185,12 @@ int dUdt_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
          
       dX = SolnBlk.Grid.xfaceN(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
       ul = SolnBlk.U[i][j].u + 
-	(SolnBlk.phi[i][j]*SolnBlk.dudx[i][j])*dX.x +
-	(SolnBlk.phi[i][j]*SolnBlk.dudy[i][j])*dX.y;
+	(SolnBlk.phi[i][j]*SolnBlk.dUdx[i][j])*dX.x +
+	(SolnBlk.phi[i][j]*SolnBlk.dUdy[i][j])*dX.y;
       dX = SolnBlk.Grid.xfaceS(i, j+1)-SolnBlk.Grid.Cell[i][j+1].Xc;
       ur = SolnBlk.U[i][j+1].u +
-	(SolnBlk.phi[i][j+1]*SolnBlk.dudx[i][j+1])*dX.x +
-	(SolnBlk.phi[i][j+1]*SolnBlk.dudy[i][j+1])*dX.y;
+	(SolnBlk.phi[i][j+1]*SolnBlk.dUdx[i][j+1])*dX.x +
+	(SolnBlk.phi[i][j+1]*SolnBlk.dUdy[i][j+1])*dX.y;
 
       Ul = SolnBlk.U[i][j]; 
       Ul.u = ul;
@@ -3900,11 +3209,11 @@ int dUdt_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
     
       /* Evaluate cell-averaged solution changes. */
     
-      SolnBlk.dudt[i][j][k_residual] -=
+      SolnBlk.dUdt[i][j][k_residual] -=
 	(Input_Parameters.CFL_Number*SolnBlk.dt[i][j])*
 	flux*SolnBlk.Grid.lfaceN(i, j)/
 	SolnBlk.Grid.Cell[i][j].A;
-      SolnBlk.dudt[i][j+1][k_residual] += 
+      SolnBlk.dUdt[i][j+1][k_residual] += 
 	(Input_Parameters.CFL_Number*SolnBlk.dt[i][j+1])*
 	flux*SolnBlk.Grid.lfaceS(i, j+1)/
 	SolnBlk.Grid.Cell[i][j+1].A;
@@ -3919,8 +3228,8 @@ int dUdt_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 
     } /* endfor */
 
-    SolnBlk.dudt[i][SolnBlk.JCl-1][k_residual] = ZERO;
-    SolnBlk.dudt[i][SolnBlk.JCu+1][k_residual] = ZERO;
+    SolnBlk.dUdt[i][SolnBlk.JCl-1][k_residual] = ZERO;
+    SolnBlk.dUdt[i][SolnBlk.JCu+1][k_residual] = ZERO;
   } /* endfor */
     
     /* Residual for the stage successfully calculated. */
@@ -3986,7 +3295,7 @@ int Update_Solution_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
   for ( j  = SolnBlk.JCl ; j <= SolnBlk.JCu ; ++j ) {
     for ( i = SolnBlk.ICl ; i <= SolnBlk.ICu ; ++i ) {
       SolnBlk.U[i][j].u = SolnBlk.uo[i][j] + 
-	omega*SolnBlk.dudt[i][j][k_residual];
+	omega*SolnBlk.dUdt[i][j][k_residual];
     } /* endfor */    
   } /* endfor */
 

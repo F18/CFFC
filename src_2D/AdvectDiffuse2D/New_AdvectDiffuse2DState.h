@@ -64,6 +64,7 @@ using namespace std;
  * U -= U;
  * U *= a;
  * U /= a;
+ * U = U ^ U; (a useful product)
  * U == U;
  * U != U;
  * U <= U;
@@ -183,6 +184,7 @@ public:
   AdvectDiffuse2D_State_New operator *(const double &a) const;
   friend AdvectDiffuse2D_State_New operator *(const double &a, const AdvectDiffuse2D_State_New &U){ return U*a;}
   AdvectDiffuse2D_State_New operator /(const double &a){ return *this * (1.0/a); }
+  AdvectDiffuse2D_State_New operator ^(const AdvectDiffuse2D_State_New &U) const;
   //@}
 
   //! @name Unary arithmetic operators.
@@ -469,6 +471,11 @@ inline AdvectDiffuse2D_State_New AdvectDiffuse2D_State_New::operator *(const Adv
 //! multiplication with scalar
 inline AdvectDiffuse2D_State_New AdvectDiffuse2D_State_New::operator *(const double &a) const{
   return AdvectDiffuse2D_State_New(a * u);
+}
+
+//! A useful solution state product operator.
+inline AdvectDiffuse2D_State_New AdvectDiffuse2D_State_New::operator ^(const AdvectDiffuse2D_State_New &U) const{
+  return AdvectDiffuse2D_State_New(u * U.u);
 }
 
 //! unary arithmetic + operator

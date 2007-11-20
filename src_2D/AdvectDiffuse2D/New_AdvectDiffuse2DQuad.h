@@ -147,25 +147,25 @@ public:
 
   //! @name Residual and time-stepping arrays:
   //@{
-  double                  **dt; //!< Local time step.
-  double               ***dudt; //!< Solution residual.
-  double                  **uo; //!< Initial solution.
+  double                         **dt; //!< Local time step.
+  AdvectDiffuse2D_State_New   ***dUdt; //!< Solution residual.
+  AdvectDiffuse2D_State_New      **Uo; //!< Initial solution.
   static int residual_variable; //!< Static integer that indicates which variable is used for residual calculations.
   //@}
 
   //! @name Solution gradient arrays:
   //@{
-  double                **dudx; //!< Unlimited solution gradient (x-direction).
-  double                **dudy; //!< Unlimited solution gradient (y-direction).
-  double                 **phi; //!< Solution slope limiter.
+  AdvectDiffuse2D_State_New    **dUdx; //!< Unlimited solution gradient (x-direction).
+  AdvectDiffuse2D_State_New    **dUdy; //!< Unlimited solution gradient (y-direction).
+  AdvectDiffuse2D_State_New     **phi; //!< Solution slope limiter.
   //@}
 
   //! @name Boundary solution flux arrays:
   //@{
-  double                *FluxN, //!< North boundary solution flux.
-    *FluxS, //!< South boundary solution flux.
-    *FluxE, //!< East boundary solution flux.
-    *FluxW; //!< West boundary solution flux.
+  AdvectDiffuse2D_State_New   *FluxN, //!< North boundary solution flux.
+                              *FluxS, //!< South boundary solution flux.
+                              *FluxE, //!< East boundary solution flux.
+                              *FluxW; //!< West boundary solution flux.
   //@}
 
   //! @name Problem indicator flags:
@@ -178,9 +178,9 @@ public:
   //! @name Boundary condtion reference states:
   //@{
   AdvectDiffuse2D_State_New   *UoN, //!< Boundary condition reference states for north boundary.
-    *UoS, //!< Boundary condition reference states for south boundary.
-    *UoE, //!< Boundary condition reference states for east boundary.
-    *UoW; //!< Boundary condition reference states for west boundary.
+                              *UoS, //!< Boundary condition reference states for south boundary.
+                              *UoE, //!< Boundary condition reference states for east boundary.
+                              *UoW; //!< Boundary condition reference states for west boundary.
   //@}
 
   //! @name Pointers to exact solutions
@@ -483,11 +483,6 @@ extern void Linear_Reconstruction_GreenGauss(AdvectDiffuse2D_Quad_Block_New &Sol
                                              const int j,
 					     const int Limiter);
 
-extern void Linear_Reconstruction_GreenGauss2(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
-                                              const int i,
-                                              const int j,
-					      const int Limiter);
-
 extern void Linear_Reconstruction_GreenGauss(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 					     const int Limiter);
 
@@ -498,9 +493,6 @@ extern void Linear_Reconstruction_LeastSquares(AdvectDiffuse2D_Quad_Block_New &S
 
 extern void Linear_Reconstruction_LeastSquares(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 					       const int Limiter);
-
-#if 0
-extern void Diffusive_Flux(AdvectDiffuse2D_Quad_Block_New &SolnBlk);
 
 extern void Residual_Smoothing(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
                                const int k_residual,
@@ -540,6 +532,8 @@ extern void Apply_Boundary_Flux_Corrections_Multistage_Explicit(AdvectDiffuse2D_
 
 extern int dUdt_Residual_Evaluation(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 				    AdvectDiffuse2D_Input_Parameters &Input_Parameters);
+
+#if 0
 
 extern int dUdt_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
    	                            const int i_stage,
