@@ -230,6 +230,15 @@ public:
   //@{
   //@}
 
+  //! @name Evaluate velocity and diffusion coefficient at the centroid of a specified cell.
+  //@{
+  Vector2D VelocityAtCellCentroid(const int & ii, const int & jj) const;     //!< Calculate velocity at the cell centroid
+  double DiffusionCoeffAtCellCentroid(const int & ii, const int & jj) const; //!< Calculate diffusion coeff. at the cell centroid
+  //@}
+
+  //! Determine the stability limit imposed by the source term
+  double SourceTermStabilityLimit(const int & ii, const int & jj) const;
+
   //! @name Member functions for limiter freezing.
   //@{
   void evaluate_limiters(void);
@@ -430,8 +439,6 @@ extern int Restrict_Solution_Block(AdvectDiffuse2D_Quad_Block_New &SolnBlk_Coars
 
 extern void BCs(AdvectDiffuse2D_Quad_Block_New &SolnBlk);
 
-#if 0
-
 extern void Output_Tecplot(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 			   AdvectDiffuse2D_Input_Parameters &IP,
 		           const int Number_of_Time_Steps,
@@ -458,19 +465,6 @@ extern void Output_Nodes_Tecplot(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 extern void ICs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
  	        const int i_ICtype,
                 AdvectDiffuse2D_State_New *Wo);
-
-extern void Set_Boundary_Ref_State(AdvectDiffuse2D_Quad_Block_New &SolnBlk, 
-				   const int GlobalSolnBlkNum,
-				   const QuadTreeBlock_DataStructure &QuadTree,
-				   const AdvectDiffuse2D_Input_Parameters &Input_Parameters);
-
-extern void Set_Analytical_Solution(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
-				    const AdvectDiffuse2D_Input_Parameters &Input_Parameters);
-
-extern void Set_Advection_Velocity_Field(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
-                                         const int i_Velocity_Field,
-                                         const double &Vx,
-                                         const double &Vy);
 
 extern double CFL(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
                   AdvectDiffuse2D_Input_Parameters &Input_Parameters);
@@ -505,6 +499,7 @@ extern void Linear_Reconstruction_LeastSquares(AdvectDiffuse2D_Quad_Block_New &S
 extern void Linear_Reconstruction_LeastSquares(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 					       const int Limiter);
 
+#if 0
 extern void Diffusive_Flux(AdvectDiffuse2D_Quad_Block_New &SolnBlk);
 
 extern void Residual_Smoothing(AdvectDiffuse2D_Quad_Block_New &SolnBlk,

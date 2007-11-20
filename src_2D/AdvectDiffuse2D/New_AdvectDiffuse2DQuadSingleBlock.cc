@@ -1064,8 +1064,8 @@ void ICs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
     for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
       for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
 	Ul = Uo[0];
-// 	Ul.u = SolnBlk.IntegrateOverTheCell(i,j,Laplace_Solutions::IC_1,
-// 					    14,Ul.u)/SolnBlk.Grid.Cell[i][j].A;
+ 	Ul.u = SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,Laplace_Solutions::IC_1,
+								  14,Ul.u)/SolnBlk.Grid.Cell[i][j].A;
 	SolnBlk.U[i][j] = Ul;
       } /* endfor */
     } /* endfor */
@@ -1074,8 +1074,8 @@ void ICs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
     for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
       for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
 	Ul = Uo[0];
-// 	Ul.u = SolnBlk.IntegrateOverTheCell(i,j,Laplace_Solutions::IC_2,
-// 					    14,Ul.u)/SolnBlk.Grid.Cell[i][j].A;
+ 	Ul.u = SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,Laplace_Solutions::IC_2,
+								  14,Ul.u)/SolnBlk.Grid.Cell[i][j].A;
 	SolnBlk.U[i][j] = Ul;
       } /* endfor */
     } /* endfor */
@@ -1084,8 +1084,8 @@ void ICs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
     for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
       for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
 	Ul = Uo[0];
-// 	Ul.u = SolnBlk.IntegrateOverTheCell(i,j,Laplace_Solutions::IC_3,
-// 					    14,Ul.u)/SolnBlk.Grid.Cell[i][j].A;
+ 	Ul.u = SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,Laplace_Solutions::IC_3,
+								  14,Ul.u)/SolnBlk.Grid.Cell[i][j].A;
 	SolnBlk.U[i][j] = Ul;
       } /* endfor */
     } /* endfor */
@@ -1094,8 +1094,8 @@ void ICs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
     for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
       for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
 	Ul = Uo[0];
-// 	Ul.u = SolnBlk.IntegrateOverTheCell(i,j,Laplace_Solutions::IC_4,
-// 					    14,Ul.u)/SolnBlk.Grid.Cell[i][j].A;
+ 	Ul.u = SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,Laplace_Solutions::IC_4,
+								  14,Ul.u)/SolnBlk.Grid.Cell[i][j].A;
 	SolnBlk.U[i][j] = Ul;
       } /* endfor */
     } /* endfor */
@@ -1104,8 +1104,8 @@ void ICs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
     for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
       for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
 	Ul = Uo[0];
-// 	Ul.u = SolnBlk.IntegrateOverTheCell(i,j,Laplace_Solutions::IC_5,
-// 					    14,Ul.u)/SolnBlk.Grid.Cell[i][j].A;
+ 	Ul.u = SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,Laplace_Solutions::IC_5,
+								  14,Ul.u)/SolnBlk.Grid.Cell[i][j].A;
 	SolnBlk.U[i][j] = Ul;
       } /* endfor */
     } /* endfor */
@@ -1114,8 +1114,8 @@ void ICs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
     for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
       for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
 	Ul = Uo[0];
-// 	Ul.u = SolnBlk.IntegrateOverTheCell(i,j,Poisson_NonlinearSource_Solutions::IC_1,
-// 					    14,Ul.u)/SolnBlk.Grid.Cell[i][j].A;
+ 	Ul.u = SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,Poisson_NonlinearSource_Solutions::IC_1,
+								  14,Ul.u)/SolnBlk.Grid.Cell[i][j].A;
 	SolnBlk.U[i][j] = Ul;
       } /* endfor */
     } /* endfor */
@@ -1124,8 +1124,8 @@ void ICs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
     for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
       for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
 	Ul = Uo[0];
-// 	Ul.u = SolnBlk.IntegrateOverTheCell(i,j,Poisson_NonlinearSource_Solutions::IC_2,
-// 					    14,Ul.u)/SolnBlk.Grid.Cell[i][j].A;
+ 	Ul.u = SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,Poisson_NonlinearSource_Solutions::IC_2,
+								  14,Ul.u)/SolnBlk.Grid.Cell[i][j].A;
 	SolnBlk.U[i][j] = Ul;
       } /* endfor */
     } /* endfor */
@@ -1134,8 +1134,8 @@ void ICs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
     for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
       for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
 	Ul = Uo[0];
-// 	Ul.u = SolnBlk.IntegrateOverTheCell(i,j,Poisson_NonlinearSource_Solutions::IC_3,
-// 					    14,Ul.u)/SolnBlk.Grid.Cell[i][j].A;
+ 	Ul.u = SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,Poisson_NonlinearSource_Solutions::IC_3,
+								  14,Ul.u)/SolnBlk.Grid.Cell[i][j].A;
 	SolnBlk.U[i][j] = Ul;
       } /* endfor */
     } /* endfor */
@@ -1144,8 +1144,8 @@ void ICs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
     for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
       for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
 	Ul = Uo[0];
-// 	Ul.u = SolnBlk.IntegrateOverTheCell(i,j,Poisson_NonlinearSource_Solutions::IC_4,
-// 					    14,Ul.u)/SolnBlk.Grid.Cell[i][j].A;
+ 	Ul.u = SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,Poisson_NonlinearSource_Solutions::IC_4,
+								  14,Ul.u)/SolnBlk.Grid.Cell[i][j].A;
 	SolnBlk.U[i][j] = Ul;
       } /* endfor */
     } /* endfor */
@@ -1154,8 +1154,8 @@ void ICs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
     for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
       for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
 	Ul = Uo[0];
-// 	Ul.u = SolnBlk.IntegrateOverTheCell(i,j,Poisson_NonlinearSource_Solutions::IC_5,
-// 					    14,Ul.u)/SolnBlk.Grid.Cell[i][j].A;
+ 	Ul.u = SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,Poisson_NonlinearSource_Solutions::IC_5,
+								  14,Ul.u)/SolnBlk.Grid.Cell[i][j].A;
 	SolnBlk.U[i][j] = Ul;
       } /* endfor */
     } /* endfor */
@@ -1394,389 +1394,6 @@ void BCs(AdvectDiffuse2D_Quad_Block_New &SolnBlk) {
 
 }
 
-#if 0
-
-/******************************************************//**
- * Routine: Set_Boundary_Ref_State                      
- *                                                      
- * Assigns specific boundary conditions and data to the 
- * solution variables of the specified quadrilateral    
- * solution block.                                      
- *                                                      
- * Note:  Override Default Boundary Conditions here     
- *                                                      
- ********************************************************/
-void Set_Boundary_Ref_State(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
-			    const int GlobalSolnBlkNum,
-			    const QuadTreeBlock_DataStructure &QuadTree,
-			    const AdvectDiffuse2D_Input_Parameters &Input_Parameters){
-  int i, j, k;
-
-  /* Set default values for the boundary condition reference states. */
-
-  for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
-
-    if (j >= SolnBlk.JCl && j <= SolnBlk.JCu) {
-
-      SolnBlk.UoW[j] = SolnBlk.U[SolnBlk.ICl][j];
-      SolnBlk.UoE[j] = SolnBlk.U[SolnBlk.ICu][j];
-    } else if (j < SolnBlk.JCl) {
-      SolnBlk.UoW[j] = SolnBlk.U[SolnBlk.ICl][SolnBlk.JCl];
-      SolnBlk.UoE[j] = SolnBlk.U[SolnBlk.ICu][SolnBlk.JCl];
-    } else {
-      SolnBlk.UoW[j] = SolnBlk.U[SolnBlk.ICl][SolnBlk.JCu];
-      SolnBlk.UoE[j] = SolnBlk.U[SolnBlk.ICu][SolnBlk.JCu];
-    } /* endif */
-  } /* endfor */
-
-  for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
-    if (i >= SolnBlk.ICl && i <= SolnBlk.ICu) {
-      SolnBlk.UoS[i] = SolnBlk.U[i][SolnBlk.JCl];
-      SolnBlk.UoN[i] = SolnBlk.U[i][SolnBlk.JCu];
-    } else if (i < SolnBlk.ICl) {
-      SolnBlk.UoS[i] = SolnBlk.U[SolnBlk.ICl][SolnBlk.JCl];
-      SolnBlk.UoN[i] = SolnBlk.U[SolnBlk.ICl][SolnBlk.JCu];
-    } else {
-      SolnBlk.UoS[i] = SolnBlk.U[SolnBlk.ICu][SolnBlk.JCl];
-      SolnBlk.UoN[i] = SolnBlk.U[SolnBlk.ICu][SolnBlk.JCu];
-    } /* endif */
-  } /* endfor */
-
-    /* Override Default Boundary Conditions Here */
-
-    /* First Ascertain whether Current Solution Block is indeed
-       a Root Block.  If it is, store its indices. */
-  int I = -99;
-  int J = -99;
-  for (i = 0; i < QuadTree.NRi; i++){
-    for (j = 0; j < QuadTree.NRj; j++){
-      if (QuadTree.Roots[i][j].block.gblknum == GlobalSolnBlkNum)
-	{
-	  I = i;
-	  J = j;
-	} /* endif */
-    } /* endfor */
-  } /* endfor */
-
-    /* Set Desired Boundary Conditions if this is indeed a Root Block */
-  if (I != -99 && J != -99)
-    {
-      /* Determine whether problem is Circular Advection or 1D-Diffusion */
-
-      if (Input_Parameters.Kappa != ZERO && 
-	  Input_Parameters.i_Grid == GRID_SQUARE &&
-	  Input_Parameters.i_Velocity_Field == VELOCITY_FIELD_ZERO) // 1D-Diffusion
-	{
-	  /***** X-Direction *****/
-	  if (Input_Parameters.i_ICs == IC_RIEMANN_XDIR ||
-	      Input_Parameters.i_ICs == IC_RIEMANN)
-	    {
-	      /* Set West Boundary if Block is on the Western Edge of Domain
-		 It is assumed that West Boundary Blocks 
-		 have Root Block indices (0,J) */
-		
-	      if (I == 0)
-		{
-		  for (j = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
-		    SolnBlk.UoW[j].u = ZERO;
-		  } /* endfor */
-		}
-
-	      /* Set East Boundary if Block is on the Eastern Edge of Domain
-		 It is assumed that East Boundary Blocks 
-		 have Root Block indices (NRi-1,J) */
-
-	      if (I == QuadTree.NRi-1)
-		{
-		  for (j = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
-		    SolnBlk.UoE[j].u = ONE;
-		  } /* endfor */
-		}
-	    } /* endif */
-	    
-	  /***** Y-Direction *****/
-	  if (Input_Parameters.i_ICs == IC_RIEMANN_YDIR)
-	    {
-	      /* Set South Boundary if Block is on the Southern Edge of 
-		 Domain.  It is assumed that South Boundary Blocks 
-		 have Root Block indices (I,0) */
-		
-	      if (J == 0)
-		{
-		  for (i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
-		    SolnBlk.UoS[i].u = ZERO;
-		  } /* endfor */
-		}
-
-	      /* Set North Boundary if Block is on the Northern Edge of 
-		 Domain.  It is assumed that North Boundary Blocks 
-		 have Root Block indices (I,NRj-1) */
-
-	      if (J == QuadTree.NRj-1)
-		{
-		  for (i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
-		    SolnBlk.UoN[i].u = ONE;
-		  } /* endfor */
-		} /* endif */
-	    } /* endif */ 
-	}
-      else if (Input_Parameters.Kappa == ZERO &&
-	       Input_Parameters.i_Velocity_Field == VELOCITY_FIELD_ROTATING &&
-	       Input_Parameters.i_Grid == GRID_SQUARE) // Circular Advection
-	{
-	  /* Determine if BCs for current root block needs to be set. */
-	  double SW_Cell_x = SolnBlk.Grid.Cell[SolnBlk.ICl][SolnBlk.JCl].Xc.x;
-	  double SW_Cell_y = SolnBlk.Grid.Cell[SolnBlk.ICl][SolnBlk.JCl].Xc.y;
-	  double Blk_y = SolnBlk.Grid.Cell[SolnBlk.ICl][SolnBlk.JCu].Xc.y - SW_Cell_y;
-	  if (SW_Cell_x >= ZERO && SW_Cell_y >= ZERO && SW_Cell_y <= HALF*Blk_y)
-	    {
-	      double x_edge = 0.2;
-	      double r;
-		
-	      for (i  = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
-		r = sqrt(sqr(SolnBlk.Grid.Cell[i][SolnBlk.JCl].Xc.x) + sqr(SolnBlk.Grid.Cell[i][SolnBlk.JCl].Xc.y));
-		if ((r <= x_edge) || (r >= 1-x_edge))
-		  {
-		    SolnBlk.UoS[i].u = ZERO;
-		  }
-		else if ((r > x_edge) && (r < 1-x_edge)) 
-		  {
-		    SolnBlk.UoS[i].u = sqr(sin(PI*(r-x_edge)/(1-2*x_edge)));
-		  } /* endif */
-	      } /* endfor */
-	    } /* endif */
-	} /* end if */
-      else if (Input_Parameters.Kappa == ZERO &&
-	       Input_Parameters.i_Velocity_Field == VELOCITY_FIELD_ROTATING &&
-	       Input_Parameters.i_Grid == GRID_CIRCULAR_CYLINDER) // Circular Advection
-	{
-	  /* Determine if BCs for current root block needs to be set. */
-	  if (I == QuadTree.NRi-1)
-	    {
-	      double x_edge = 0.2;
-	      double r;
-		
-	      for (j = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
-		r = sqrt(sqr(SolnBlk.Grid.Cell[SolnBlk.ICu][j].Xc.x) + sqr(SolnBlk.Grid.Cell[SolnBlk.ICu][j].Xc.y));
-		if ((r <= x_edge) || (r >= 1-x_edge))
-		  {
-		    SolnBlk.UoE[j].u = ZERO;
-		  }
-		else if ((r > x_edge) && (r < 1-x_edge)) 
-		  {
-		    SolnBlk.UoE[j].u = sqr(sin(PI*(r-x_edge)/(1-2*x_edge)));
-		  } /* endif */
-	      } /* endfor */
-	    } /* endif */
-	} /* endif */
-    } /* endif */
-}
-
-/******************************************************//**
- * Routine: Set_Advection_Velocity_Field                
- *                                                      
- * Computes and assigns the advection velocity field    
- * for the specified quadrilateral solution block.      
- *                                                      
- ********************************************************/
-void Set_Advection_Velocity_Field(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
-	                          const int i_Velocity_Field,
-                                  const double &Vx,
-                                  const double &Vy) {
-
-  int i, j;
-  double omega;
-
-  /* Assign values to the components of the advective velocity
-     depending on the velocity field type. */
-
-  switch(i_Velocity_Field) {
-  case VELOCITY_FIELD_ZERO :
-    // Set the advection velocity field to zero.
-    for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
-      for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
-	SolnBlk.U[i][j].V = Vector2D_ZERO;
-      } /* endfor */
-    } /* endfor */
-    break;
-  case VELOCITY_FIELD_UNIFORM :
-    // Set the advection velocity field to uniform or constant.
-    for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
-      for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
-	SolnBlk.U[i][j].V = Vector2D(Vx, Vy);
-      } /* endfor */
-    } /* endfor */
-    break;
-  case VELOCITY_FIELD_ROTATING :
-    // Set the advection velocity field to a pure rotation.
-    omega = Vx;
-    for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
-      for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
-	SolnBlk.U[i][j].V.x = -omega*SolnBlk.Grid.Cell[i][j].Xc.y;
-	SolnBlk.U[i][j].V.y = omega*SolnBlk.Grid.Cell[i][j].Xc.x;
-      } /* endfor */
-    } /* endfor */
-    break;
-  default:
-    // Set the advection velocity field to uniform or constant.
-    for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
-      for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
-	SolnBlk.U[i][j].V = Vector2D(Vx, Vy);
-      } /* endfor */
-    } /* endfor */
-    break;
-  } /* endswitch */
-
-    /* Set the advective velocity for the for the boundary conditions reference states. */
-
-  for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
-    SolnBlk.UoW[j].V = SolnBlk.U[SolnBlk.ICl-1][j].V;
-    SolnBlk.UoE[j].V = SolnBlk.U[SolnBlk.ICu+1][j].V;  
-  } /* endfor */
-
-  for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
-    SolnBlk.UoS[i].V = SolnBlk.U[i][SolnBlk.JCl-1].V;
-    SolnBlk.UoN[i].V = SolnBlk.U[i][SolnBlk.JCu+1].V;
-  } /* endfor */
-
-}
-
-/******************************************************//**
- * Routine: Set_Analytical_Solution                     
- *                                                      
- * Computes and assigns the analytical solution         
- * for the specified quadrilateral solution block.      
- *                                                      
- ********************************************************/
-void Set_Analytical_Solution(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
-			     const AdvectDiffuse2D_Input_Parameters &Input_Parameters) {
-  int i, j;
-
-  /* Determine whether problem is Circular Advection or 1D-Diffusion */
-
-  if (Input_Parameters.Kappa != ZERO && 
-      Input_Parameters.i_Grid == GRID_SQUARE &&
-      Input_Parameters.i_Velocity_Field == VELOCITY_FIELD_ZERO) // 1D-Diffusion
-    {
-      /* Calculate lambda = -1/(kappa*tau) */
-      double lambda = -1/(SolnBlk.U[SolnBlk.ICl][SolnBlk.JCl].k*SolnBlk.U[SolnBlk.ICl][SolnBlk.JCl].T);
-
-      /* Loop through every cell */
-      for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
-	for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
-	  /***** X-Direction *****/
-	  if (Input_Parameters.i_ICs == IC_RIEMANN_XDIR ||
-	      Input_Parameters.i_ICs == IC_RIEMANN)
-	    {
-	      /* BCs are of the form 
-		 u(xa) = ua
-		 u(xb) = ub */
-	      double xa = 1.0;
-	      double ua = 1.0;
-	      double xb = -1.0;
-	      double ub = 0.0;
-		
-	      if (lambda > ZERO)
-		{
-		  double sqld,detA,c1,c2;
-		  sqld = sqrt(lambda);
-		  detA = cos(sqld*xa)*sin(sqld*xb)-cos(sqld*xb)*sin(sqld*xa);
-		  c1 = ( ua*sin(sqld*xb)-ub*sin(sqld*xa))/detA;
-		  c2 = (-ua*cos(sqld*xb)+ub*cos(sqld*xa))/detA;
-		  SolnBlk.ue[i][j] = c1*cos(sqld*SolnBlk.Grid.Cell[i][j].Xc.x)+c2*sin(sqld*SolnBlk.Grid.Cell[i][j].Xc.x);
-		}
-	      else if (lambda < ZERO)
-		{
-		  double sqs,detA,c3,c4;
-		  sqs = sqrt(-lambda);
-		  detA = cosh(sqs*xa)*sinh(sqs*xb)-cosh(sqs*xb)*sinh(sqs*xa);
-		  c3 = ( ua*sinh(sqs*xb)-ub*sinh(sqs*xa))/detA;
-		  c4 = (-ua*cosh(sqs*xb)+ub*cosh(sqs*xa))/detA;
-		  SolnBlk.ue[i][j] = c3*cosh(sqs*SolnBlk.Grid.Cell[i][j].Xc.x)+c4*sinh(sqs*SolnBlk.Grid.Cell[i][j].Xc.x);
-		}
-	      else /* (lambda == ZERO) */
-		{
-		  double detA,c1,c2;
-		  detA = xb-xa;
-		  c1 = (ua*xb-ub*xa)/detA;
-		  c2 = (-ua+ub)/detA;
-		  SolnBlk.ue[i][j] = c1+c2*SolnBlk.Grid.Cell[i][j].Xc.x;
-		} /* endif */
-	    } /* endif */
-	    
-	  /***** Y-Direction *****/
-	  if (Input_Parameters.i_ICs == IC_RIEMANN_YDIR)
-	    {
-	      /* BCs are of the form 
-		 u(ya) = ua
-		 u(yb) = ub */
-	      double ya = 1.0;
-	      double ua = 1.0;
-	      double yb = -1.0;
-	      double ub = 0.0;
-		
-	      if (lambda > ZERO)
-		{
-		  double sqld,detA,c1,c2;
-		  sqld = sqrt(lambda);
-		  detA = cos(sqld*ya)*sin(sqld*yb)-cos(sqld*yb)*sin(sqld*ya);
-		  c1 = (ua*sin(sqld*yb)-ub*sin(sqld*ya))/detA;
-		  c2 = (-ua*cos(sqld*yb)+ub*cos(sqld*ya))/detA;
-		  SolnBlk.ue[i][j] = c1*cos(sqld*SolnBlk.Grid.Cell[i][j].Xc.y)+c2*sin(sqld*SolnBlk.Grid.Cell[i][j].Xc.y);
-		}
-	      else if (lambda < ZERO)
-		{
-		  double sqs,detA,c3,c4;
-		  sqs = sqrt(-lambda);
-		  detA = cosh(sqs*ya)*sinh(sqs*yb)-cosh(sqs*yb)*sinh(sqs*ya);
-		  c3 = (ua*sinh(sqs*yb)-ub*sinh(sqs*ya))/detA;
-		  c4 = (-ua*cosh(sqs*yb)+ub*cosh(sqs*ya))/detA;
-		  SolnBlk.ue[i][j] = c3*cosh(sqs*SolnBlk.Grid.Cell[i][j].Xc.y)+c4*sinh(sqs*SolnBlk.Grid.Cell[i][j].Xc.y);
-		}
-	      else /* (lambda == ZERO) */
-		{
-		  double detA,c1,c2;
-		  detA = yb-ya;
-		  c1 = (ua*yb-ub*ya)/detA;
-		  c2 = (-ua+ub)/detA;
-		  SolnBlk.ue[i][j] = c1+c2*SolnBlk.Grid.Cell[i][j].Xc.y;
-		} /* endif */
-	    } /* endif */
-	} /* endfor */
-      } /* endfor */
-    }
-  else if (Input_Parameters.Kappa == ZERO &&
-	   Input_Parameters.i_Velocity_Field == VELOCITY_FIELD_ROTATING) // Circular Advection
-    {
-      /* This variable controls how narrow the sin^2 IC is, and must be set
-	 to the same as in the function "Set_Boundary_Ref_State" */
-      double x_edge = 0.2;
-      double r;
-      for (j = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
-	for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
-	  r = sqrt(sqr(SolnBlk.Grid.Cell[i][j].Xc.x) + sqr(SolnBlk.Grid.Cell[i][j].Xc.y));
-	  if ((r <= x_edge) || (r >= 1-x_edge))
-	    {
-	      SolnBlk.ue[i][j] = ZERO;
-	    }
-	  else if ((r > x_edge) && (r < 1-x_edge))
-	    {
-	      SolnBlk.ue[i][j] = sqr(sin(PI*(r-x_edge)/(1-2*x_edge)));
-	    } /* endif */
-	} /* endfor */
-      } /* endfor */
-    }
-  else
-    {
-      /* No Analytical Solution - Set **ue to zero */
-      for (j = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
-	for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
-	  SolnBlk.ue[i][j] = ZERO;
-	} /* endfor */
-      } /* endfor */
-    } /* endif */
-}
-
 /******************************************************//**
  * Routine: CFL                                         
  *                                                      
@@ -1807,9 +1424,10 @@ double CFL(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 	d_j = TWO*(SolnBlk.Grid.Cell[i][j].A/
                    (SolnBlk.Grid.lfaceN(i, j)+SolnBlk.Grid.lfaceS(i, j)));
 
-	v_i = HALF*(SolnBlk.U[i][j].V*
+	// Determine stability limit imposed by the advection term
+	v_i = HALF*(SolnBlk.VelocityAtCellCentroid(i,j)*
 		    (SolnBlk.Grid.nfaceE(i, j)-SolnBlk.Grid.nfaceW(i, j)));
-	v_j = HALF*(SolnBlk.U[i][j].V*
+	v_j = HALF*(SolnBlk.VelocityAtCellCentroid(i,j)*
 		    (SolnBlk.Grid.nfaceN(i, j)-SolnBlk.Grid.nfaceS(i, j)));
 
 	if (fabs(v_i) > TOLER) {
@@ -1821,16 +1439,21 @@ double CFL(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 	  dt_cfl = min(dt_cfl, d_j/fabs(v_j));
 	} /* endif */
 
-	if (SolnBlk.U[i][j].k > TOLER) {
-	  dt_diff = HALF*min(sqr(d_i), sqr(d_j))/SolnBlk.U[i][j].k;
+
+	// Determine stability limit imposed by the diffusion term
+	if (SolnBlk.DiffusionCoeffAtCellCentroid(i,j) > TOLER) {
+	  dt_diff = HALF*min(sqr(d_i), sqr(d_j))/SolnBlk.DiffusionCoeffAtCellCentroid(i,j);
 	} else {
 	  dt_diff = MILLION;
 	} /* endif */
 
-	dt_src = HALF*SolnBlk.U[i][j].T;
+	// Determine stability limit imposed by the source term
+	dt_src = SolnBlk.SourceTermStabilityLimit(i,j);
 
+	// Determine the locally allowed time step
 	SolnBlk.dt[i][j] = min(min(dt_cfl, dt_diff), dt_src);
 
+	// Update the global time step
 	dtMin = min(dtMin, SolnBlk.dt[i][j]);
       } /* endif */
     } /* endfor */
@@ -2932,8 +2555,7 @@ void Linear_Reconstruction_GreenGauss(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 
   for ( j  = SolnBlk.JCl-SolnBlk.Nghost+1 ; j <= SolnBlk.JCu+SolnBlk.Nghost-1 ; ++j ) {
     for ( i = SolnBlk.ICl-SolnBlk.Nghost+1 ; i <= SolnBlk.ICu+SolnBlk.Nghost-1 ; ++i ) {
-      //Linear_Reconstruction_GreenGauss(SolnBlk, i, j, Limiter);
-      Linear_Reconstruction_GreenGauss2(SolnBlk, i, j, Limiter);
+      Linear_Reconstruction_GreenGauss(SolnBlk, i, j, Limiter);
     } /* endfor */
   } /* endfor */
 
@@ -3356,6 +2978,9 @@ void Linear_Reconstruction_LeastSquares(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
   } /* endfor */
 
 }
+
+#if 0
+
 
 /******************************************************//**
  * Routine: Diffusive_Flux                              

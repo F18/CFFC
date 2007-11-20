@@ -164,6 +164,33 @@ double AdvectDiffuse2D_Quad_Block_New::un(const int ii, const int jj) {
   return Un(ii,jj)[1];
 }
 
+/***************************************************//**
+ * Calculate velocity at the centroid of cell (ii,jj).
+ ****************************************************/
+Vector2D AdvectDiffuse2D_Quad_Block_New::VelocityAtCellCentroid(const int & ii, const int & jj) const {
+  return U[ii][jj].V(Grid.XCellCentroid(ii,jj), Grid.YCellCentroid(ii,jj));
+}
+
+/**************************************************************//**
+ * Calculate diffusion coefficient at the centroid of cell (ii,jj).
+ * Use the solution stored in the state class as
+ * parameter for the diffusion coefficient field.
+ ******************************************************************/
+double AdvectDiffuse2D_Quad_Block_New::DiffusionCoeffAtCellCentroid(const int & ii, const int & jj) const {
+  return U[ii][jj].k(Grid.XCellCentroid(ii,jj), Grid.YCellCentroid(ii,jj), U[ii][jj].u);
+}
+
+/**************************************************************//**
+ * Determine the stability limit imposed by the source term
+ * Use the solution stored in the state class as the parameter 
+ * at the centroid of cell (ii,jj) for the non-linear source term field
+ ******************************************************************/
+double AdvectDiffuse2D_Quad_Block_New::SourceTermStabilityLimit(const int & ii, const int & jj) const {
+  return U[ii][jj].SourceTerm->getStabilityLimit(Grid.XCellCentroid(ii,jj),
+						 Grid.YCellCentroid(ii,jj),
+						 U[ii][jj].u);
+}
+
 /********************
  * Output operator.
  ********************/
