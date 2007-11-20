@@ -239,6 +239,7 @@ void Output_Cells_Tecplot(Gaussian2D_Quad_Block &SolnBlk,
 		<< "\"Qyzz\" \\ \n"
 		<< "\"qx\" \\ \n"
 		<< "\"qy\" \\ \n"
+		<< "\"K\" \\ \n"
 #endif
                 << "\"drhodx\" \\ \n"
                 << "\"dudx\" \\ \n"
@@ -303,6 +304,7 @@ void Output_Cells_Tecplot(Gaussian2D_Quad_Block &SolnBlk,
 		    << " " << SolnBlk.W[i][j].q
 		    << " " << (SolnBlk.W[i][j].q.xxx+SolnBlk.W[i][j].q.xyy+SolnBlk.W[i][j].q.xzz)/2.0
 		    << " " << (SolnBlk.W[i][j].q.xxy+SolnBlk.W[i][j].q.yyy+SolnBlk.W[i][j].q.yzz)/2.0
+		    << " " << SolnBlk.W[i][j].K()
 #endif
 		    << " " << SolnBlk.dWdx[i][j]
 		    << " " << SolnBlk.dWdy[i][j]
