@@ -10,6 +10,7 @@
 /* Include CFFC header files */
 #include "TestData.h"
 #include "../Grid2DQuad.h"
+#include "../../Math/UnitTests/TestFunctions/TestFunctions_2D.h"
 
 namespace tut
 {
@@ -80,8 +81,114 @@ namespace tut
   void Grid2DQuadIntegration_object::test<1>()
   {
 
-    set_test_name("Create quad block");
+    set_test_name("Constructor");
 
+    Grid2D_Quad_Block Grid;
+    
+    // Create integration object
+    Grid2DQuadIntegration<Grid2D_Quad_Block> Integration(&Grid);
+
+    // == check that the pointer is set correctly
+    ensure_equals("Geometry block", Integration.getGrid(), &Grid);
+  }
+
+  /* Test 2:*/
+  template<>
+  template<>
+  void Grid2DQuadIntegration_object::test<2>()
+  {
+
+    set_test_name("Integrate over square domain");
+
+    Grid2D_Quad_Block **Mesh;
+    
+    int Blocks_Idir, Blocks_Jdir, IdirCells, JdirCells, Nghost;
+    double Box_Width;
+    double Result(18.916666666666667);
+
+    Blocks_Idir = 1; Blocks_Jdir = 1;
+    Box_Width = 10.0;
+    IdirCells = 10; JdirCells = 10;
+    Nghost = 3;
+
+    // Set the square grid
+    Mesh = Grid_Rectangular_Box(Mesh,
+				Blocks_Idir, Blocks_Jdir,
+				Box_Width, Box_Width,
+				IdirCells, JdirCells, Nghost);
+
+    // Create integration object
+    Grid2DQuadIntegration<Grid2D_Quad_Block> Integration(&Mesh[0][0]);
+
+    // == check integration
+    ensure_distance("IntegrateFunctionOverCell()",
+		    Integration.IntegrateFunctionOverCell(5,5,Test_Example1,14,Result), Result,
+		    AcceptedError(Result));
+  }
+
+  /* Test 3:*/
+  template<>
+  template<>
+  void Grid2DQuadIntegration_object::test<3>()
+  {
+
+    set_test_name("Integrate over square domain");
+
+    Grid2D_Quad_Block **Mesh;
+    
+    int Blocks_Idir, Blocks_Jdir, IdirCells, JdirCells, Nghost;
+    double Box_Width;
+    double Result(18.916666666666667);
+
+    Blocks_Idir = 1; Blocks_Jdir = 1;
+    Box_Width = 10.0;
+    IdirCells = 10; JdirCells = 10;
+    Nghost = 3;
+
+    // Set the square grid
+    Mesh = Grid_Rectangular_Box(Mesh,
+				Blocks_Idir, Blocks_Jdir,
+				Box_Width, Box_Width,
+				IdirCells, JdirCells, Nghost);
+
+    // Create integration object
+    Grid2DQuadIntegration<Grid2D_Quad_Block> Integration(&Mesh[0][0]);
+
+    // == check integration
+    ensure_distance("IntegratePolynomialOverCell()",
+		    Integration.IntegratePolynomialOverCell(5,5,Test_Example1,Result), Result,
+		    AcceptedError(Result));
+  }
+
+  /* Test 4:*/
+  template<>
+  template<>
+  void Grid2DQuadIntegration_object::test<4>()
+  {
+
+    set_test_name("Use mesh to integrate over square domain");
+
+    Grid2D_Quad_Block **Mesh;
+    
+    int Blocks_Idir, Blocks_Jdir, IdirCells, JdirCells, Nghost;
+    double Box_Width;
+    double Result(18.916666666666667);
+
+    Blocks_Idir = 1; Blocks_Jdir = 1;
+    Box_Width = 10.0;
+    IdirCells = 10; JdirCells = 10;
+    Nghost = 3;
+
+    // Set the square grid
+    Mesh = Grid_Rectangular_Box(Mesh,
+				Blocks_Idir, Blocks_Jdir,
+				Box_Width, Box_Width,
+				IdirCells, JdirCells, Nghost);
+
+    // == check integration
+    ensure_distance("IntegrateFunctionOverCell()",
+		    Mesh[0][0].Integration.IntegrateFunctionOverCell(5,5,Test_Example1,14,Result), Result,
+		    AcceptedError(Result));
   }
 
 
@@ -90,7 +197,7 @@ namespace tut
 
 
 // Test suite constructor
-tut::Grid2DQuadIntegration_TestSuite Grid2DQuadIntegrationTestSuite("Class:Grid2DQuadIntegration");
+tut::Grid2DQuadIntegration_TestSuite Grid2DQuadIntegrationTestSuite("Template Class:Grid2DQuadIntegration");
 
 /*************************************************************
  Guidelines for naming "Test Suite Name".

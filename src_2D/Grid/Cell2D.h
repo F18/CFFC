@@ -1,4 +1,5 @@
-/* Cell2D.h:  Header file defining 2D cell types. */
+/* \file Cell2D.h
+   \brief Header file defining 2D cell types. */
 
 #ifndef _CELL2D_INCLUDED
 #define _CELL2D_INCLUDED
@@ -227,6 +228,12 @@ class Node2D{
     void setloc(const Node2D &Node);
     void setloc(const Vector2D &V);
     void setloc(const double &xx, const double &yy);
+
+    /* Return the x and y values */
+    double & x(void) { return X.x;}
+    const double & x(void) const { return X.x;}
+    double & y(void) { return X.y;}
+    const double & y(void) const { return X.y;}
 
     /* Assignment operator. */
     // Node2D operator = (const Node2D &Node);

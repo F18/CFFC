@@ -372,7 +372,7 @@ void frenel(double x, double &s, double &c);
  * \param dummy used only to provide the ReturnType
  ****************************************************************************/
 template<class FunctionType, class ReturnType>
-  inline ReturnType qgauss5(FunctionType func, double a, double b, const ReturnType & dummy){
+inline ReturnType qgauss5(FunctionType func, double a, double b, const ReturnType & dummy){
 
   int j;
   long double xr,xm,dx;
@@ -408,8 +408,8 @@ template<class FunctionType, class ReturnType>
  **************************************************************************************************************************/
 // Lucian Ivan, 31/09/2005
 template <class FunctionType, class ReturnType>
-  inline ReturnType adaptlobstp(FunctionType func, double a, double b, const ReturnType & fa, const ReturnType & fb, 
-				const ReturnType & is, int &FunctionEvaluations, int & WriteMessage)
+inline ReturnType adaptlobstp(FunctionType func, double a, double b, const ReturnType & fa, const ReturnType & fb, 
+			      const ReturnType & is, int &FunctionEvaluations, int & WriteMessage)
   throw(TooShortInterval,MaximumIterationsExceeded){
 
   const ReturnType eps(numeric_limits<double>::epsilon());
@@ -642,9 +642,9 @@ inline ReturnType GaussLobattoQuadrature(FunctionType func, double StartPoint, d
  * \param digits number of exact digits (there is a default value already provided!)
  **************************************************************************************************************************/
 template <class FunctionType, class ReturnType>
-  inline ReturnType AdaptiveGaussianQuadrature(FunctionType func, double StartPoint, double EndPoint,
-					       const ReturnType & dummy, int digits = numeric_limits<double>::digits10){
-
+inline ReturnType AdaptiveGaussianQuadrature(FunctionType func, double StartPoint, double EndPoint,
+					     const ReturnType & dummy, int digits = numeric_limits<double>::digits10){
+  
   int WriteMessage = 0; 	/* this flag makes sure that the error message is printed only once */
   return GaussLobattoAdaptiveQuadrature(func,StartPoint,EndPoint,dummy,WriteMessage,digits);
 }
@@ -898,10 +898,10 @@ template<class FunctionType, class SolutionType>
  * \param digits number of exact digits (there is a default value already provided!)
  **************************************************************************************************************************/
 template<class FunctionType, class ReturnType>
-ReturnType AdaptiveGaussianQuadrature(FunctionType func, double StartX, double EndX,
-				      double StartY, double EndY,  
-				      int digits, const ReturnType & dummy){
-
+inline ReturnType AdaptiveGaussianQuadrature(FunctionType func, double StartX, double EndX,
+					     double StartY, double EndY,  
+					     int digits, const ReturnType & dummy){
+  
   int WriteMessage = 0; 	/* this flag makes sure that the error message is written only once */
   
   /* Create the function inner integral  */
@@ -927,13 +927,13 @@ ReturnType AdaptiveGaussianQuadrature(FunctionType func, double StartX, double E
  * \param dummy used only to provide the return type
  **************************************************************************************************************************/
 template <class FunctionType, class ReturnType>
-  inline ReturnType GaussLobattoQuadrature(FunctionType func, double StartX, double EndX,
-					   double StartY, double EndY, 
-					   const ReturnType & dummy){
-
+inline ReturnType GaussLobattoQuadrature(FunctionType func, double StartX, double EndX,
+					 double StartY, double EndY, 
+					 const ReturnType & dummy){
+  
   /* Create the inner integral */
   AntiderivativeGL<FunctionType,ReturnType> PrimitiveY(func,StartY,EndY);
-
+  
   /* Integrate the inner integral with respect to X */
   return GaussLobattoQuadrature(PrimitiveY,StartX,EndX,dummy);
 }
@@ -953,13 +953,13 @@ template <class FunctionType, class ReturnType>
  * \param dummy used only to provide the return type
  **************************************************************************************************************************/
 template <class FunctionType, class ReturnType>
-  inline ReturnType Gauss5PointQuadrature(FunctionType func, double StartX, double EndX,
-					  double StartY, double EndY, 
-					  const ReturnType & dummy){
-
+inline ReturnType Gauss5PointQuadrature(FunctionType func, double StartX, double EndX,
+					double StartY, double EndY, 
+					const ReturnType & dummy){
+  
   /* Create the inner integral */
   AntiderivativeG5<FunctionType,ReturnType> PrimitiveY(func,StartY,EndY);
-
+  
   /* Integrate the inner integral with respect to X */
   return qgauss5(PrimitiveY,StartX,EndX,dummy);
 }
@@ -984,18 +984,18 @@ template <class FunctionType, class ReturnType>
  * \param digits number of exact digits (there is a default value already provided!)
  **************************************************************************************************************************/
 template<class FunctionType, class ReturnType>
-  ReturnType AdaptiveGaussianQuadrature(FunctionType func, const double StartX,const double EndX,
-					const double StartY, const double EndY, const double StartZ,
-					const double EndZ, int digits, const ReturnType & dummy){
-
+inline ReturnType AdaptiveGaussianQuadrature(FunctionType func, const double StartX,const double EndX,
+					     const double StartY, const double EndY, const double StartZ,
+					     const double EndZ, int digits, const ReturnType & dummy){
+  
   int WriteMessage = 0; 	/* this flag makes sure that the error message is written only once */
-
+  
   /* Create the function to be integrated with Y */
   Antiderivative<FunctionType,ReturnType> PrimitiveZ(func,StartZ,EndZ,WriteMessage,digits);
-
+  
   /* Create the function to be integrated with X */
   Antiderivative<Antiderivative<FunctionType,ReturnType>,ReturnType> PrimitiveY(PrimitiveZ,StartY,EndY,WriteMessage,digits);
-
+  
   return GaussLobattoAdaptiveQuadrature(PrimitiveY,StartX,EndX,dummy,WriteMessage,digits);
 };
 
@@ -1085,8 +1085,8 @@ public:
  * \param SE the south-east node of the quadrilateral
  * \param dummy used only to provide the return type
  ****************************************************************************/
-template<class FunctionType, class NodeType, class ReturnType> 
-inline
+template<class FunctionType, class NodeType, class ReturnType>
+inline 
 BilinearTransformFunctionInPlan<FunctionType, NodeType, ReturnType> // returned type
 planar_bilinear_function_transformation(FunctionType func,
 					const NodeType & SW, const NodeType & NW,
@@ -1112,8 +1112,10 @@ planar_bilinear_function_transformation(FunctionType func,
  * \param digits number of exact digits (there is a default value already provided!)
  **************************************************************************************************************************/
 template<class FunctionType, class NodeType, class ReturnType>
-  ReturnType QuadrilateralQuadrature(FunctionType func, const NodeType & SW, const NodeType & NW, const NodeType & NE, 
-				     const NodeType & SE, int digits, const ReturnType & dummy){
+inline ReturnType QuadrilateralQuadrature(FunctionType func,
+					  const NodeType & SW, const NodeType & NW,
+					  const NodeType & NE, const NodeType & SE,
+					  int digits, const ReturnType & dummy){
 
   /* Integrate the new function over the square defined by (0,0) , (0,1) , (1,0) and (1,1) */
   return AdaptiveGaussianQuadrature(planar_bilinear_function_transformation(func,SW,NW,NE,SE,dummy), // tranform the function
@@ -1136,8 +1138,10 @@ template<class FunctionType, class NodeType, class ReturnType>
  * \param dummy used only to provide the return type
  **************************************************************************************************************************/
 template<class FunctionType, class NodeType, class ReturnType>
-  ReturnType GaussLobattoQuadrilateralQuadrature(FunctionType func, NodeType & SW, NodeType & NW, NodeType & NE, 
-						 NodeType & SE, const ReturnType & dummy){
+inline ReturnType GaussLobattoQuadrilateralQuadrature(FunctionType func,
+						      const NodeType & SW, const NodeType & NW,
+						      const NodeType & NE, const NodeType & SE,
+						      const ReturnType & dummy){
 
   /* Integrate the new function over the square defined by (0,0) , (0,1) , (1,0) and (1,1) */
   return GaussLobattoQuadrature(planar_bilinear_function_transformation(func,SW,NW,NE,SE,dummy), // tranform the function
@@ -1159,9 +1163,11 @@ template<class FunctionType, class NodeType, class ReturnType>
  * \param SE the south-east node of the quadrilateral
  * \param dummy used only to provide the return type
  **************************************************************************************************************************/
-template<class FunctionType, class NodeType, class ReturnType>
-  ReturnType Gauss5PointQuadrilateralQuadrature(FunctionType func, NodeType & SW, NodeType & NW, NodeType & NE, 
-						NodeType & SE, const ReturnType & dummy){
+template<class FunctionType, class NodeType, class ReturnType> 
+inline ReturnType Gauss5PointQuadrilateralQuadrature(FunctionType func,
+						     const NodeType & SW, const NodeType & NW,
+						     const NodeType & NE, const NodeType & SE,
+						     const ReturnType & dummy){
 
   /* Integrate the new function over the square defined by (0,0) , (0,1) , (1,0) and (1,1) */
   return Gauss5PointQuadrature(planar_bilinear_function_transformation(func,SW,NW,NE,SE,dummy), // tranform the function
