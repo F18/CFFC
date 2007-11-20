@@ -1909,7 +1909,7 @@ inline void Gaussian2D_pState::ComputeHeatTerms(const Gaussian2D_pState &dWdx,
 						const Vector2D &X,//this variable is added to be consistend with Jai
 						const int &Axisymmetric) {
 
-  double tau = pr*tt();
+  double tau = tt()/pr * 2.0/5.0 * Gamma() / (Gamma()-1.0);
 
   q.xxx = -tau*3.0*(p.xx*(dWdx.p.xx-p.xx/d*dWdx.d)/d +
 		    p.xy*(dWdy.p.xx-p.xx/d*dWdy.d)/d);
@@ -3179,7 +3179,8 @@ inline void Gaussian2D_cState::ComputeHeatTerms(const Gaussian2D_pState &dWdx,
 						const int &Axisymmetric) {  //this is very poorly coded.
                                                                             //fix this later
   Tensor2D pressure = p();
-  double tau = pr*W().tt();
+  Gaussian2D_pState W1 = W();
+  double tau = W1.tt()/pr * 2.0/5.0 * W1.Gamma() / (W1.Gamma()-1.0);
 
   q.xxx = -tau*3.0*(pressure.xx*(dWdx.p.xx-pressure.xx/d*dWdx.d)/d +
 		    pressure.xy*(dWdy.p.xx-pressure.xx/d*dWdy.d)/d);
