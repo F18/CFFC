@@ -1574,43 +1574,35 @@ Chem2D_pState operator -(const Chem2D_pState &W) {
  * Chem2D_pState -- Relational operators.               *
  ********************************************************/
 int operator ==(const Chem2D_pState &W1, const Chem2D_pState &W2) {
-  if(W1.ns == W2.ns){ //check that species are equal
-    bool Temp;
-    for(int i=0; i<W1.ns; i++){
-      if( W1.spec[i] == W2.spec[i] ){
-	Temp = true;
-      } else {
-	Temp = false;
-	break;
-      }  
-      return (W1.rho == W2.rho && W1.v == W2.v && W1.p == W2.p&& W1.k == W2.k && W1.omega == W2.omega
-	      && Temp == true && W1.tau == W2.tau &&
-	      W1.qflux == W2.qflux&& W1.lambda == W2.lambda &&
-	      W1.theta == W2.theta);
+
+  bool Temp;
+  for(int i=0; i<W1.ns; i++){
+    if( W1.spec[i] == W2.spec[i] ){
+      Temp = true;
+    } else {
+      Temp = false;
+      break;
     }
-  } else {
-    cerr<<"\n Mismatch in number of species \n";
-    exit(1);
-  }
+  }  
+  return (W1.rho == W2.rho && W1.v == W2.v && W1.p == W2.p&& W1.k == W2.k && W1.omega == W2.omega
+	  && Temp == true && W1.tau == W2.tau &&
+	  W1.qflux == W2.qflux&& W1.lambda == W2.lambda &&
+	  W1.theta == W2.theta);  
 }
 
 int operator !=(const Chem2D_pState &W1, const Chem2D_pState &W2) {
-   if(W1.ns == W2.ns){ //check that species are equal
-    bool Temp = true;
-    for(int i=0; i<W1.ns; i++){
-      if( W1.spec[i] != W2.spec[i] ){
-	Temp = false;
-	break;
-      } 
-      return (W1.rho != W2.rho || W1.v != W2.v || W1.p != W2.p || W1.k != W2.k || W1.omega != W2.omega
-	      || Temp != true || W1.tau != W2.tau ||
-	      W1.qflux != W2.qflux|| W1.lambda != W2.lambda ||
-	      W1.theta != W2.theta);
+
+  bool Temp(true);
+  for(int i=0; i<W1.ns; i++){
+    if( W1.spec[i] != W2.spec[i] ){
+      Temp = false;
+      break;
     }
-  } else {
-    cerr<<"\n Mismatch in number of species \n";
-    exit(1);
   }
+  return (W1.rho != W2.rho || W1.v != W2.v || W1.p != W2.p || W1.k != W2.k || W1.omega != W2.omega
+	  || Temp != true || W1.tau != W2.tau ||
+	  W1.qflux != W2.qflux|| W1.lambda != W2.lambda ||
+	  W1.theta != W2.theta);  
 }
 
 /********************************************************
@@ -2686,45 +2678,38 @@ Chem2D_cState operator -(const Chem2D_cState &U) {
  * Chem2D_cState -- Relational operators.              *
  ********************************************************/
 int operator ==(const Chem2D_cState &U1, const Chem2D_cState &U2) {
-  if(U1.ns == U2.ns){ //check that species are equal
-    bool Temp;
-    for(int i=0; i<U1.ns; i++){
-      if( U1.rhospec[i] == U2.rhospec[i] ){
-	Temp = true;
-      } else {
-	Temp = false;
-	break;
-      }  
-      return (U1.rho == U2.rho && U1.rhov == U2.rhov && U1.E == U2.E 
-	      && U1.rhok == U2.rhok && U1.rhoomega == U2.rhoomega &&
-	      U1.tau == U2.tau && U1.qflux == U2.qflux&&
-	      U1.lambda == U2.lambda && U1.theta == U2.theta
-	      &&Temp == true);
+
+  bool Temp;
+  for(int i=0; i<U1.ns; i++){
+    if( U1.rhospec[i] == U2.rhospec[i] ){
+      Temp = true;
+    } else {
+      Temp = false;
+      break;
     }
-  } else {
-    cerr<<"\n Mismatch in number of species \n";
-    exit(1);
-  }
+  }  
+  return (U1.rho == U2.rho && U1.rhov == U2.rhov && U1.E == U2.E 
+	  && U1.rhok == U2.rhok && U1.rhoomega == U2.rhoomega &&
+	  U1.tau == U2.tau && U1.qflux == U2.qflux&&
+	  U1.lambda == U2.lambda && U1.theta == U2.theta
+	  &&Temp == true);
 }
 
 int operator !=(const Chem2D_cState &U1, const Chem2D_cState &U2) {
-   if(U1.ns == U2.ns){ //check that species are equal
+
     bool Temp = true;
     for(int i=0; i<U1.ns; i++){
       if( U1.rhospec[i] != U2.rhospec[i] ){
 	Temp = false;
 	break;
       } 
-     return (U1.rho != U2.rho || U1.rhov != U2.rhov || U1.E != U2.E 
-	     ||  U1.rhok != U2.rhok ||  U1.rhoomega != U2.rhoomega ||
-	     U1.tau != U2.tau || U1.qflux != U2.qflux
-	     ||U1.lambda != U2.lambda || U1.theta != U2.theta
-	     || Temp != true);
     }
-  } else {
-    cerr<<"\n Mismatch in number of species \n";
-    exit(1);
-  }
+    return (U1.rho != U2.rho || U1.rhov != U2.rhov || U1.E != U2.E 
+	    ||  U1.rhok != U2.rhok ||  U1.rhoomega != U2.rhoomega ||
+	    U1.tau != U2.tau || U1.qflux != U2.qflux
+	    ||U1.lambda != U2.lambda || U1.theta != U2.theta
+	    || Temp != true);
+    
 }
 
 /********************************************************
@@ -2967,17 +2952,31 @@ Chem2D_pState BC_1DFlame_Outflow(const Chem2D_pState &Wi,       //ICu
  *        - 2DFlame Inflow conditions                   *
  *                                                      *
  ********************************************************/
-Chem2D_pState BC_2DFlame_Inflow(const Chem2D_pState &Wi,
-				const Chem2D_pState &Wo,
-				const Vector2D &norm_dir){ 
-
-  //fixed rho, v, p, and species
+Chem2D_pState BC_2DFlame_Inflow(const Chem2D_pState &Wi,  
+				const Chem2D_pState &Wo,  //WoS 
+				const Vector2D &norm_dir,
+				const double &radius,
+				const double &physical_time){ 
+  
+   //fixed rho, v, p, and species
   Chem2D_pState Wnew(Wo);
-  Wnew.v.x = Wi.v.x;
+  Wnew.v.x = Wi.v.x;//let radial velocity flucuate
+  
+  //Periodic fuel velocity for Unsteady
+  // Vz = fuel_max*( 1 + r^2/R^2)*(1 + alpha*sin(omega*t))
+  // R = 0.002,
+  // fuel_max = 70 cm/s
+  // alpha = 0.5 (amplitude)
+  // omega = 2*pi*freq
+  // freq = 20 (Hz)
+  // t = physical time (s)
+  if (radius <= 0.002 ){  //fuel spacing 0.002m    
+    Wnew.v.y = 0.70 * ( ONE - (radius*radius)/(0.002*0.002))
+      *(ONE + 0.5*sin( 2*PI*20*physical_time));    // physical_time + 0.0375 to go from 35 -> 35         
 
-//   Chem2D_pState Wnew(Wi);  
-//   Wnew.p = Wo.p;         //fix pressure & V velocity
-//   Wnew.v.y = Wo.v.y;
+//     cout<<"\n "<<radius<<" "<<physical_time<<" "<<Wnew.v.y<<" "<<Wo.v.y;
+  }
+
 
   return Wnew;
  

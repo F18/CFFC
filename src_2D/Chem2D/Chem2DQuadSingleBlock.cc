@@ -2441,7 +2441,9 @@ void BCs(Chem2D_Quad_Block &SolnBlk,
 	 SolnBlk.W[SolnBlk.ICl-1][j] = 
 	   BC_2DFlame_Inflow(SolnBlk.W[SolnBlk.ICl][j],
 			     SolnBlk.WoW[j],
-			     SolnBlk.Grid.nfaceW(SolnBlk.ICl,j)); 
+			     SolnBlk.Grid.nfaceW(SolnBlk.ICl,j),
+			     SolnBlk.Grid.Cell[SolnBlk.ICl][j].Xc.x,
+			     IP.NKS_IP.Total_Physical_Time); 
 	 SolnBlk.U[SolnBlk.ICl-1][j] = U(SolnBlk.W[SolnBlk.ICl-1][j]);
 	 for( int ghost = 2; ghost <= SolnBlk.Nghost; ghost++){
 	   SolnBlk.W[SolnBlk.ICl-ghost][j] = SolnBlk.W[SolnBlk.ICl-ghost+1][j];
@@ -2675,7 +2677,9 @@ void BCs(Chem2D_Quad_Block &SolnBlk,
 	 SolnBlk.W[SolnBlk.ICu+1][j] = 
 	   BC_2DFlame_Inflow(SolnBlk.W[SolnBlk.ICu][j],
 			     SolnBlk.WoE[j], 		
-			     SolnBlk.Grid.nfaceE(SolnBlk.ICu,j)); 	
+			     SolnBlk.Grid.nfaceE(SolnBlk.ICu,j),
+			     SolnBlk.Grid.Cell[SolnBlk.ICu][j].Xc.x,
+			     IP.NKS_IP.Total_Physical_Time); 	
 	 SolnBlk.U[SolnBlk.ICu+1][j] = U(SolnBlk.W[SolnBlk.ICu+1][j]);
 	 for( int ghost = 2; ghost <= SolnBlk.Nghost; ghost++){
 	   SolnBlk.W[SolnBlk.ICu+ghost][j] = SolnBlk.W[SolnBlk.ICu+ghost-1][j];
@@ -2837,8 +2841,10 @@ void BCs(Chem2D_Quad_Block &SolnBlk,
      case BC_2DFLAME_INFLOW :       
        SolnBlk.W[i][SolnBlk.JCl-1] = 
 	 BC_2DFlame_Inflow(SolnBlk.W[i][SolnBlk.JCl],
-			 SolnBlk.WoS[i], 
-			 SolnBlk.Grid.nfaceS(i,SolnBlk.JCl)); 
+			   SolnBlk.WoS[i], 
+			   SolnBlk.Grid.nfaceS(i,SolnBlk.JCl),
+			   SolnBlk.Grid.Cell[i][SolnBlk.JCl].Xc.x,
+			   IP.NKS_IP.Total_Physical_Time); 
        SolnBlk.U[i][SolnBlk.JCl-1] = U(SolnBlk.W[i][SolnBlk.JCl-1]);
        for( int ghost = 2; ghost <= SolnBlk.Nghost; ghost++){
 	 SolnBlk.W[i][SolnBlk.JCl-ghost] = SolnBlk.W[i][SolnBlk.JCl-ghost+1];
@@ -6411,7 +6417,9 @@ int dUdt_Residual_Evaluation(Chem2D_Quad_Block &SolnBlk,
 	  } else if (SolnBlk.Grid.BCtypeS[i] == BC_2DFLAME_INFLOW){
 	    Wl = BC_2DFlame_Inflow(Wr, 
 				   SolnBlk.WoS[i], 
-				   SolnBlk.Grid.nfaceS(i, j+1));
+				   SolnBlk.Grid.nfaceS(i, j+1),
+				   SolnBlk.Grid.Cell[i][j+1].Xc.x,
+				   Input_Parameters.NKS_IP.Total_Physical_Time);
 	  } else if (SolnBlk.Grid.BCtypeS[i] == BC_1DFLAME_OUTFLOW){
 	    Wl = BC_1DFlame_Outflow(Wr, 
 				    SolnBlk.WoS[i], 
@@ -7134,7 +7142,9 @@ int dUdt_Multistage_Explicit(Chem2D_Quad_Block &SolnBlk,
 	  } else if (SolnBlk.Grid.BCtypeS[i] == BC_2DFLAME_INFLOW){
 	    Wl = BC_2DFlame_Inflow(Wr, 
 				   SolnBlk.WoS[i], 
-				   SolnBlk.Grid.nfaceS(i, j+1));
+				   SolnBlk.Grid.nfaceS(i, j+1),
+				   SolnBlk.Grid.Cell[i][j+1].Xc.x,
+				   Input_Parameters.NKS_IP.Total_Physical_Time);
 	  } else if (SolnBlk.Grid.BCtypeS[i] == BC_1DFLAME_OUTFLOW){
 	    Wl = BC_1DFlame_Outflow(Wr, 
 				    SolnBlk.WoS[i], 

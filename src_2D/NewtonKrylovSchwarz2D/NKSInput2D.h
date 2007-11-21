@@ -51,6 +51,7 @@ class NKS_Input_Parameters{
   double Physical_Time_Step;
   int Maximum_Number_of_DTS_Steps; 
   int Time_Accurate_Plot_Frequency;
+  double Total_Physical_Time;              //!< Storage HACK for BCs
 
   //int Dual_Time_Preconditioning;  
   //@}
@@ -130,6 +131,7 @@ class NKS_Input_Parameters{
     Physical_Time_Step = 0.0;
     Maximum_Number_of_DTS_Steps = 0;
     Time_Accurate_Plot_Frequency = 1e9;
+    Total_Physical_Time = 0.0;
 
     Finite_Time_Step = true;
     Finite_Time_Step_Initial_CFL = 1.0; 

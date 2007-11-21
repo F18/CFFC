@@ -1544,7 +1544,9 @@ extern Chem2D_pState BC_1DFlame_Inflow(const Chem2D_pState &Wi,
 
 extern Chem2D_pState BC_2DFlame_Inflow(const Chem2D_pState &Wi,
 				       const Chem2D_pState &Wo, 				
-				       const Vector2D &norm_dir);
+				       const Vector2D &norm_dir,
+				       const double &radius,
+				       const double &time);
 
 extern Chem2D_pState BC_1DFlame_Outflow(const Chem2D_pState &Wi,
 					const Chem2D_pState &Wo,

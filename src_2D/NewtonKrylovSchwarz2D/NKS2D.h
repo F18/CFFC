@@ -90,7 +90,6 @@ int NKS_AMR(SOLN_BLOCK_TYPE *SolnBlk,
 	    int DTS_Step){
   
   int error_flag;
-  int blocksize = set_blocksize<SOLN_BLOCK_TYPE>(SolnBlk[0]); //Number of equations used for calculation
   
   if (CFFC_Primary_MPI_Processor()){
     cout << "\n\n Refining Grid.  Performing adaptive mesh refinement at n = "
@@ -212,6 +211,7 @@ int Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
     double DTS_dTime(ZERO);
     int physical_time_param(TIME_STEPPING_IMPLICIT_EULER);
     bool IE_Flag = true; //Use Implicit Euler for 1st DTS Step & for AMR 
+    Input_Parameters.NKS_IP.Total_Physical_Time = Physical_Time; //BC HACK may need to ZERO when starting from steady state...
 
     // Outer Loop (Physical Time)      
     while ( (DTS_Step-1 < Input_Parameters.NKS_IP.Maximum_Number_of_DTS_Steps) &&
@@ -220,7 +220,7 @@ int Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
       /***********************************************************************/	
       // Mesh Refinement: Periodically refine the mesh (AMR). 
       if (Input_Parameters.AMR) {
-     	if (DTS_Step != 1  &&  (number_of_explicit_time_steps + DTS_Step-1) % Input_Parameters.AMR_Frequency == 0){
+     	if (DTS_Step != 1  &&  (number_of_explicit_time_steps + DTS_Step) % Input_Parameters.AMR_Frequency == 0){
 	  error_flag = NKS_AMR(SolnBlk,
 			       Input_Parameters,
 			       QuadTree,     
@@ -326,6 +326,7 @@ int Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
       /**************************************************************************/
       // Update Physical Time
       Physical_Time +=  DTS_dTime;
+      Input_Parameters.NKS_IP.Total_Physical_Time = Physical_Time; //BC HACK may need to ZERO when starting from steady state...
       /**************************************************************************/
 
       /**************************************************************************/
@@ -337,20 +338,22 @@ int Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
       /**************************************************************************/
       //DTS Output
       if (CFFC_Primary_MPI_Processor()) {
-	cout << "\n *** End of DTS Step " << DTS_Step; 
+	cout << "\n *** End of DTS Step " << DTS_Step+number_of_explicit_time_steps; 
 	cout << " Time Step: " << DTS_dTime << "s  Real Time: " << Physical_Time << "s **** \n";
       }
       /**************************************************************************/
 
       /**************************************************************************/
       //Ouput Solution Every "n" steps 
-      if (  (number_of_explicit_time_steps + DTS_Step) % Input_Parameters.NKS_IP.Time_Accurate_Plot_Frequency == 0){
-	if (CFFC_Primary_MPI_Processor()) cout<<"\n Outputting Solution Data \n ";
-	error_flag = NKS_DTS_Output<SOLN_BLOCK_TYPE,INPUT_TYPE>(SolnBlk, 
-								List_of_Local_Solution_Blocks, 
-								Input_Parameters,
-								number_of_explicit_time_steps+DTS_Step,
-								Physical_Time); 
+      if (Input_Parameters.NKS_IP.Time_Accurate_Plot_Frequency != 0){
+	if (  (number_of_explicit_time_steps + DTS_Step) % Input_Parameters.NKS_IP.Time_Accurate_Plot_Frequency == 0){
+	  if (CFFC_Primary_MPI_Processor()) cout<<"\n Outputting Solution Data \n ";
+	  error_flag = NKS_DTS_Output<SOLN_BLOCK_TYPE,INPUT_TYPE>(SolnBlk, 
+								  List_of_Local_Solution_Blocks, 
+								  Input_Parameters,
+								  number_of_explicit_time_steps+DTS_Step,
+								  Physical_Time); 
+	}
       }
       /**************************************************************************/
       
