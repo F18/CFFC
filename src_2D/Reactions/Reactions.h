@@ -1577,8 +1577,8 @@ void Reaction_set::ct_dSwdU_FiniteDiff( DenseMatrix &dSwdU,
   double dSdT, T0;
 
   // some constants
-  double Cv = W.Cv();   // constant volume specific heat [J/(kg*K)]
-  double E = W.E()/rho; // total energy [J/kg]
+  double Cv = W.Cv();    // constant volume specific heat [J/(kg*K)]
+  double E = W.E()/rho;  // total energy [J/kg]
 
   // internal energy species k [J/kg]
   e[num_species-1] = 

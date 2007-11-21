@@ -78,6 +78,7 @@ navierstokes2D
 embeddedboundaries2D
 gaussian2D
 rte2D
+flame2D
 
 # 3D executables
 cffc3D

@@ -27,6 +27,7 @@ ADVECTDIFFUSE_DIR = AdvectDiffuse2D/
 AMR_DIR = AMR/
 CFD_DIR = CFD/
 CHEM_DIR = Chem2D/
+FLAME_DIR = Flame2D/
 DUSTY_DIR = Dusty2D/
 ELECTROSTATIC_DIR = Electrostatic2D/
 EOS_DIR = EquationOfState/
@@ -218,6 +219,18 @@ SRC_CHEM = $(CHEM_DIR)Chem2DState.cc \
 	   $(CHEM_DIR)Chem2DQuadSolvers.cc
 SRC_CHEM_EXE = $(CHEM_DIR)Chem2D.cc  
 
+# Flame2D:
+SRC_FLAME = $(FLAME_DIR)Flame2DState.cc \
+	    $(FLAME_DIR)Flame2DTools.cc \
+	    $(FLAME_DIR)Flame2DInput.cc \
+	    $(FLAME_DIR)Flame2DQuad.cc \
+	    $(FLAME_DIR)Flame2DQuadGrid.cc \
+	    $(FLAME_DIR)Flame2DdRdU.cc \
+	    $(FLAME_DIR)Flame2DQuadMultiBlock.cc \
+	    $(FLAME_DIR)Flame2DQuadSingleBlock.cc \
+	    $(FLAME_DIR)Flame2DQuadSolvers.cc
+SRC_FLAME_EXE = $(FLAME_DIR)Flame2D.cc  
+
 # HighTemp2D:
 SRC_HIGHTEMP = $(HIGHTEMP_DIR)HighTemp2DState.cc \
                $(HIGHTEMP_DIR)HighTemp2DInput.cc  \
@@ -365,7 +378,7 @@ ifeq ($(TUT_TESTING),ON)
 endif
 SRC_CFFC = $(SRC_BASE) \
            $(SRC_CFD1D_INPUT) $(SRC_SCALAR) $(SRC_HEAT) $(SRC_HYPERHEAT) $(SRC_EULER1D) $(SRC_MHD1D) \
-           $(SRC_ADVECTDIFFUSE) $(SRC_EULER) $(SRC_NAVIERSTOKES) $(SRC_CHEM) $(SRC_HIGHTEMP) \
+           $(SRC_ADVECTDIFFUSE) $(SRC_EULER) $(SRC_NAVIERSTOKES) $(SRC_CHEM) $(SRC_FLAME) $(SRC_HIGHTEMP) \
            $(SRC_DUSTY) $(SRC_LESPREMIXED) $(SRC_GAUSSIAN) $(SRC_ION) $(SRC_ELECTROSTATIC) \
            $(SRC_RTE) $(SRC_INTERFACE) $(SRC_LEVELSET) \
            $(SRC_TURBULENT) $(SRC_EOS) $(SRC_NASADATA) $(SRC_REACTIONS) $(SRC_SNBCK) $(SRC_ICEMCFD)
@@ -459,6 +472,10 @@ OBJ_NAVIERSTOKES_EXE = $(SRC_NAVIERSTOKES_EXE:.cc=.o)
 OBJ_CHEM = $(SRC_CHEM:.cc=.o)
 OBJ_CHEM_EXE = $(SRC_CHEM_EXE:.cc=.o)
 
+# Flame2D:
+OBJ_FLAME = $(SRC_FLAME:.cc=.o)
+OBJ_FLAME_EXE = $(SRC_FLAME_EXE:.cc=.o)
+
 # HighTemp2D:
 OBJ_HIGHTEMP = $(SRC_HIGHTEMP:.cc=.o)
 OBJ_HIGHTEMP_EXE = $(SRC_HIGHTEMP_EXE:.cc=.o)
@@ -488,6 +505,9 @@ OBJ_RTE = $(SRC_RTE:.cc=.o)
 OBJ_RTE_EXE = $(SRC_RTE_EXE:.cc=.o)
 ifeq ($(CHEM2D_WITH_RTE),ON)
   OBJ_CHEM += $(OBJ_RTE)
+endif
+ifeq ($(FLAME2D_WITH_RTE),ON)
+  OBJ_FLAME += $(OBJ_RTE)
 endif
 
 # EmbeddedBoundaries2D:
@@ -544,6 +564,7 @@ EXE_ADVECTDIFFUSE2D = advectdiffuse2D
 EXE_EULER2D = euler2D
 EXE_NAVIERSTOKES2D = navierstokes2D
 EXE_CHEM2D = chem2D
+EXE_FLAME2D = flame2D
 EXE_HIGHTEMP2D = hightemp2D
 EXE_DUSTY2D = dusty2D
 EXE_LESPREMIXED2D = lespremixed2D
@@ -580,6 +601,7 @@ help:
 	@echo "|        make euler2D              compile euler2D stand alone program              |"
 	@echo "|        make navierstokes2D       compile navierstokes2D stand alone program       |"
 	@echo "|        make chem2D               compile chem2D stand alone program               |"
+	@echo "|        make flame2D              compile flame2D stand alone program              |"
 	@echo "|        make hightemp2D           compile hightemp2D stand alone program           |"
 	@echo "|        make dusty2D              compile dusty2D stand alone program              |"
 	@echo "|        make lespremixed2D        compile lespremixed2D stand alone program        |"
@@ -621,7 +643,7 @@ help:
 
 all: $(EXE_MAIN) $(EXE_ICEMCFD_UTIL1) $(EXE_ICEMCFD_UTIL2) \
      $(EXE_EULER1D) $(EXE_SOLVERS1D) \
-     $(EXE_ADVECTDIFFUSE2D) $(EXE_EULER2D) $(EXE_NAVIERSTOKES2D) $(EXE_CHEM2D) \
+     $(EXE_ADVECTDIFFUSE2D) $(EXE_EULER2D) $(EXE_NAVIERSTOKES2D) $(EXE_CHEM2D)  $(EXE_FLAME2D) \
      $(EXE_HIGHTEMP2D) $(EXE_DUSTY2D) $(EXE_LESPREMIXED2D) $(EXE_GAUSSIAN2D) \
      $(EXE_ION5MOMENT2D) $(EXE_ELECTROSTATIC2D) $(EXE_RTE2D) $(EXE_LEVELSET2D) \
      $(EXE_EMBEDDEDBOUNDARIES2D)
@@ -777,6 +799,17 @@ $(EXE_CHEM2D): $(OBJ_CHEM_EXE) $(OBJ_BASE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(OB
 	@echo '--------------------------------------------------'
 	@echo ' '
 
+$(EXE_FLAME2D): $(OBJ_FLAME_EXE) $(OBJ_BASE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(OBJ_SNBCK) $(OBJ_FLAME) $(OBJ_ICEMCFD)
+	@echo ' '
+	@echo Building program $(EXE_FLAME2D) for a $(PLATFORM) platform.
+	@echo '----------------------------------------------------------'
+	@echo ' '
+	$(LD) -o $(EXE_FLAME2D) $(OBJ_FLAME_EXE) $(OBJ_BASE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(OBJ_SNBCK) $(OBJ_FLAME) $(OBJ_ICEMCFD) $(LDFLAGS)
+	@echo ' '
+	@echo Program $(EXE_FLAME2D) has been brought up to date.
+	@echo '--------------------------------------------------'
+	@echo ' '
+
 $(EXE_HIGHTEMP2D): $(OBJ_HIGHTEMP_EXE) $(OBJ_BASE) $(OBJ_INTERFACE) $(OBJ_HIGHTEMP) $(OBJ_ICEMCFD) $(OBJ_EOS)
 	@echo ' '
 	@echo Building program $(EXE_HIGHTEMP2D) for a $(PLATFORM) platform.
@@ -910,12 +943,12 @@ install: $(EXE_MAIN)
 	@echo " "
 
 install-all: $(EXE_MAIN) $(EXE_ICEMCFD_UTIL1) $(EXE_ICEMCFD_UTIL2) $(EXE_EULER1D) $(EXE_SOLVERS1D)\
-        $(EXE_ADVECTDIFFUSE2D) $(EXE_EULER2D) $(EXE_NAVIERSTOKES2D) $(EXE_CHEM2D) \
+        $(EXE_ADVECTDIFFUSE2D) $(EXE_EULER2D) $(EXE_NAVIERSTOKES2D) $(EXE_CHEM2D)  $(EXE_FLAME2D)\
         $(EXE_HIGHTEMP2D) $(EXE_DUSTY2D) $(EXE_LESPREMIXED2D) $(EXE_GAUSSIAN2D) \
         $(EXE_ION5MOMENT2D) $(EXE_ELECTROSTATIC2D) $(EXE_RTE2D) $(EXE_LEVELSET2D) \
         $(EXE_EMBEDDEDBOUNDARIES2D) 
 	@for f in $(EXE_MAIN) $(EXE_ICEMCFD_UTIL1) $(EXE_ICEMCFD_UTIL2) $(EXE_EULER1D) $(EXE_SOLVERS1D) \
-        $(EXE_ADVECTDIFFUSE2D) $(EXE_EULER2D) $(EXE_NAVIERSTOKES2D) $(EXE_CHEM2D) \
+        $(EXE_ADVECTDIFFUSE2D) $(EXE_EULER2D) $(EXE_NAVIERSTOKES2D) $(EXE_CHEM2D) $(EXE_FLAME2D) \
         $(EXE_HIGHTEMP2D) $(EXE_DUSTY2D) $(EXE_LESPREMIXED2D) $(EXE_GAUSSIAN2D) \
         $(EXE_ION5MOMENT2D) $(EXE_ELECTROSTATIC2D) $(EXE_RTE2D) $(EXE_LEVELSET2D) \
         $(EXE_EMBEDDEDBOUNDARIES2D); \
@@ -938,7 +971,7 @@ uninstall:
 
 uninstall-all:
 	@for f in $(EXE_MAIN) $(EXE_ICEMCFD_UTIL1) $(EXE_ICEMCFD_UTIL2) $(EXE_EULER1D) $(EXE_SOLVERS1D) \
-        $(EXE_ADVECTDIFFUSE2D) $(EXE_EULER2D) $(EXE_NAVIERSTOKES2D) $(EXE_CHEM2D) \
+        $(EXE_ADVECTDIFFUSE2D) $(EXE_EULER2D) $(EXE_NAVIERSTOKES2D) $(EXE_CHEM2D) $(EXE_FLAME2D) \
         $(EXE_HIGHTEMP2D) $(EXE_DUSTY2D) $(EXE_LESPREMIXED2D) $(EXE_GAUSSIAN2D) \
         $(EXE_ION5MOMENT2D) $(EXE_ELECTROSTATIC2D) $(EXE_RTE2D) $(EXE_LEVELSET2D) \
         $(EXE_EMBEDDEDBOUNDARIES2D); \
@@ -1003,6 +1036,7 @@ clean:
 	rm -f $(EULER_2D_DIR)*.o $(EULER_2D_DIR)*.il $(EULER_2D_DIR)*~ $(EULER_2D_DIR)*.depend $(EULER_2D_DIR)*.bak
 	rm -f $(NAVIERSTOKES_DIR)*.o $(NAVIERSTOKES_DIR)*.il $(NAVIERSTOKES_DIR)*~ $(NAVIERSTOKES_DIR)*.depend $(NAVIERSTOKES_DIR)*.bak
 	rm -f $(CHEM_DIR)*.o $(CHEM_DIR)*.il $(CHEM_DIR)*~ $(CHEM_DIR)*.depend $(CHEM_DIR)*.bak
+	rm -f $(FLAME_DIR)*.o $(FLAME_DIR)*.il $(FLAME_DIR)*~ $(FLAME_DIR)*.depend $(FLAME_DIR)*.bak
 	rm -f $(HIGHTEMP_DIR)*.o $(HIGHTEMP_DIR)*.il $(HIGHTEMP_DIR)*~ $(HIGHTEMP_DIR)*.depend $(HIGHTEMP_DIR)*.bak
 	rm -f $(DUSTY_DIR)*.o $(DUSTY_DIR)*.il $(DUSTY_DIR)*~ $(DUSTY_DIR)*.depend $(DUSTY_DIR)*.bak
 	rm -f $(LESPREMIXED_DIR)*.o $(LESPREMIXED_DIR)*.il $(LESPREMIXED_DIR)*~ $(LESPREMIXED_DIR)*.depend $(LESPREMIXED_DIR)*.bak
@@ -1034,6 +1068,7 @@ clean:
 	rm -f $(EXE_EULER2D)
 	rm -f $(EXE_NAVIERSTOKES2D)
 	rm -f $(EXE_CHEM2D)
+	rm -f $(EXE_FLAME2D)
 	rm -f $(EXE_HIGHTEMP2D)
 	rm -f $(EXE_DUSTY2D)
 	rm -f $(EXE_LESPREMIXED2D)
@@ -1135,6 +1170,7 @@ ifeq ($(strip $(filter $(MAKECMDGOALS), $(NODEP_LIST)) ), )
 	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_EULER_EXE)))
 	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_NAVIERSTOKES_EXE)))
 	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_CHEM_EXE)))
+	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_FLAME_EXE)))
 	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_HIGHTEMP_EXE)))
 	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_DUSTY_EXE)))
 	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_LESPREMIXED_EXE)))
