@@ -21,6 +21,8 @@
   TODO:  - Unphysical_properties & negativespec_check functions need to be  
            worked through
 
+         - add vacuum constant states
+
                    
 ***********************************************************************/
 #ifndef _FLAME2D_STATE_INCLUDED 
@@ -45,9 +47,8 @@ using namespace std;
 #include "../Physics/GasConstants.h"
 
 // FLAME2D Specific headers
-#include "../Physics/Species.h"
 #include "../Physics/NASAData/NASARP1311data.h"
-#include "../Reactions/Reactions.h"
+#include "Reactions.h"
 #include "Mixture.h"
 
 
@@ -113,9 +114,9 @@ public:
   Vector2D         v;   //!< Flow velocity (2D)  
   double           p;   //!< Pressure.
 #ifdef STATIC_NUMBER_OF_SPECIES
-  Species        spec[STATIC_NUMBER_OF_SPECIES];
+  double           c[STATIC_NUMBER_OF_SPECIES];
 #else 
-  Species      *spec;   //!< Species class c[ns]
+  double          *c;   //!< Species mass fractions
 #endif
   Tensor2D       tau;   //!< Shear Stress Tensor
   Vector2D     qflux;   //!< Heat Flux Vector  
@@ -167,19 +168,19 @@ public:
   
   Flame2D_pState(const double &d, const double &vx, 
 		const double &vy, const double &pre, 
-		const Species *mfrac): 
+		const double *mfrac): 
     rho(d), v(vx,vy), p(pre)
   { specnull();  set_initial_values(mfrac); }
   
   Flame2D_pState(const double &d, const Vector2D &V, 
-		const double &pre, const Species *mfrac): 
+		const double &pre, const double *mfrac): 
     rho(d), v(V), p(pre)
   { specnull(); set_initial_values(mfrac); }
   
   //this is needed for the operator overload returns!!!!
   Flame2D_pState(const Flame2D_pState &W): rho(W.rho), v(W.v), p(W.p),
  					 tau(W.tau), qflux(W.qflux)
-  { specnull(); set_initial_values(W.spec); }      
+  { specnull(); set_initial_values(W.c); }      
   //@}
 
    //read in ns species data, call only once as its static
@@ -189,8 +190,7 @@ public:
    //set initial data values predominately used internally !!!
    void set_initial_values();
    void set_initial_values(const double &value);
-   void set_initial_values(double *cfrac);
-   void set_initial_values(const Species *mfrac);
+   void set_initial_values(const double *cfrac);
 
    //Copy construtor, cheaper than = operator
    void Copy(const Flame2D_pState &W);
@@ -200,15 +200,11 @@ public:
 
    /*************** VACUUM OPERATOR *********************/
   void Vacuum(){ rho=ZERO; v.zero(); p=ZERO;
-     for(int i=0; i<ns; i++)  spec[i].Vacuum();
+     set_initial_values(0.0);
      tau.zero(); qflux.zero();
    }
 
    void zero_non_sol(){
-     for(int i=0; i<ns; i++){
-       spec[i].gradc.zero();
-       spec[i].diffusion_coef=ZERO;
-     }
      tau.zero(); qflux.zero();
    }  
  
@@ -246,7 +242,7 @@ public:
    double kappa(void) const;  //mixture thermal conductivity
    double hprime(void) const;  
    double hprime(double &Temp) const;
-   //double Diffusion_coef() const;  //mixture diffusion coefficient 
+   double Diffusion_coef(const int &) const;  //diffusion coefficient 
 
    /***************************************************/
    Vector2D rhov(void) const;      //Momentum
@@ -395,10 +391,6 @@ public:
    //Flame2D_pState operator +(const Flame2D_pState &W);
    friend Flame2D_pState operator -(const Flame2D_pState &W);
 
-   /* Relational operators. */
-   friend int operator ==(const Flame2D_pState &W1, const Flame2D_pState &W2);
-   friend int operator !=(const Flame2D_pState &W1, const Flame2D_pState &W2);
-
    /* Input-output operators. */
    friend ostream& operator << (ostream &out_file, const Flame2D_pState &W);
    friend istream& operator >> (istream &in_file,  Flame2D_pState &W);
@@ -418,8 +410,8 @@ public:
    ~Flame2D_pState(){}
 #else
    void specnull() {spec=NULL;}
-   void spec_memory() { Deallocate(); spec = new Species[ns];}
-   void Deallocate(void){ if(spec != NULL){ delete[] spec;}  specnull();  }
+   void spec_memory() { Deallocate(); c = new double[ns];}
+   void Deallocate(void){ if(c != NULL){ delete[] c;}  specnull();  }
    ~Flame2D_pState(){ Deallocate(); }
 #endif
  
@@ -449,9 +441,9 @@ public:
   Vector2D                   rhov; //!< Momentum (2D)
   double                        E; //!< Total Energy (rho *(e + HALF*v^2))
 #ifdef STATIC_NUMBER_OF_SPECIES
-   Species   rhospec[STATIC_NUMBER_OF_SPECIES];
+   double                    rhoc[STATIC_NUMBER_OF_SPECIES];
 #else 
-  Species                *rhospec; //!< Species class using (rho*c[ns])
+  double                    *rhoc; //!< Species class using (rho*c[ns])
 #endif
    Tensor2D                    tau; //!< Shear Stress Tensor
    Vector2D                  qflux; //!< Heat Flux Vector  
@@ -497,12 +489,12 @@ public:
 
    Flame2D_cState(const double &d, const double &vx, 
 		 const double &vy, const double &En,   
-		 const Species *rhomfrac): 
+		 const double *rhomfrac): 
      rho(d), rhov(vx,vy), E(En)
    { rhospecnull();   set_initial_values(rhomfrac); }
 
    Flame2D_cState(const double d, const Vector2D &V, 
-		 const double &En, const Species *rhomfrac): 
+		 const double &En, const double *rhomfrac): 
      rho(d), rhov(V), E(En)
    { rhospecnull();   set_initial_values(rhomfrac); }
 		 
@@ -511,11 +503,7 @@ public:
 					    E(W.E()),
 					    tau(W.tau), qflux(W.qflux)
    {   
-     for(int i=0; i<W.ns; i++){
-       rhospec[i].c = W.rho*W.spec[i].c;
-       rhospec[i].gradc = W.rho*W.spec[i].gradc;
-       rhospec[i].diffusion_coef = W.rho*W.spec[i].diffusion_coef;
-     }  
+     for(int i=0; i<W.ns; i++) rhoc[i] = W.rho*W.c[i];
    }
 
 
@@ -523,7 +511,7 @@ public:
    //this is needed for the operator overload returns!!!!
    Flame2D_cState(const Flame2D_cState &U): rho(U.rho), rhov(U.rhov), E(U.E),
 					  tau(U.tau), qflux(U.qflux)
-   { rhospecnull(); set_initial_values(U.rhospec); }
+   { rhospecnull(); set_initial_values(U.rhoc); }
 
    //read in ns species data, call only once as its static
    void set_species_data(const int &,const string *,const char *,
@@ -532,23 +520,18 @@ public:
    //set initial data values predominately used internally 
    void set_initial_values();
    void set_initial_values(const double &value);
-   void set_initial_values(double *rhomfrac);
-   void set_initial_values(const Species *rhomfrac);
+   void set_initial_values(const double *rhomfrac);
 
    //Copy construtor, cheaper than = operator
    void Copy(const Flame2D_cState &U);
 
    /***************** VACUUM ************************/
    void Vacuum(){ rho=ZERO; rhov.zero(); E=ZERO;
-     for(int i=0; i<ns; i++) rhospec[i].Vacuum();
+     set_initial_values(0.0);
      tau.zero();  qflux.zero();
    }  
 
    void zero_non_sol(){
-     for(int i=0; i<ns; i++){
-       rhospec[i].gradc.zero();
-       rhospec[i].diffusion_coef=ZERO;
-     }
      tau.zero(); qflux.zero();
    }  
 
@@ -580,6 +563,7 @@ public:
    //double H(void);                   //mixture total enthalpy
    double mu(void) const;              //mixture viscosity
    double kappa(void) const;           //mixture thermal conductivity
+   double Diffusion_coef(const int &) const;  //diffusion coefficient 
 
    /***********************************************************/
    Vector2D v(void) const;    //velocity  
@@ -651,10 +635,6 @@ public:
    //Flame2D_cState operator +(const Flame2D_cState &U);
    friend Flame2D_cState operator -(const Flame2D_cState &U);
 
-   /* Relational operators. */
-   friend int operator ==(const Flame2D_cState &U1, const Flame2D_cState &U2);
-   friend int operator !=(const Flame2D_cState &U1, const Flame2D_cState &U2);
-
    /* Input-output operators. */
    friend ostream& operator << (ostream &out_file, const Flame2D_cState &U);
    friend istream& operator >> (istream &in_file,  Flame2D_cState &U);
@@ -693,24 +673,18 @@ public:
  **************************************************************************/
  inline void Flame2D_pState::set_initial_values(){
    spec_memory();
-   for(int i=0; i<ns; i++) spec[i].c = ONE/ns; 
+   for(int i=0; i<ns; i++) c[i] = ONE/ns; 
  }
 
  inline void  Flame2D_pState::set_initial_values(const double &value){
    spec_memory();
-   for(int i=0; i<ns; i++) spec[i].c = value; 
+   for(int i=0; i<ns; i++) c[i] = value; 
  }
 
  //user specified
- inline void Flame2D_pState::set_initial_values(double *cfrac){
+ inline void Flame2D_pState::set_initial_values(const double *cfrac){
    spec_memory();
-   for(int i=0; i<ns; i++) spec[i].c = cfrac[i];
- }
-
- //another set using species class
- inline void Flame2D_pState::set_initial_values(const Species *mfrac){
-   spec_memory();
-   for(int i=0; i<ns; i++) spec[i] = mfrac[i];
+   for(int i=0; i<ns; i++) c[i] = cfrac[i];
  }
 
 /**************************************************************************
@@ -755,7 +729,7 @@ inline void Flame2D_pState::resize_species( const int n_old,           // the ol
   int n_new( React.num_species );
 
   // store the old values
-  for (int k=0; k<n_old; k++) c_old[k] = spec[k].c;
+  for (int k=0; k<n_old; k++) c_old[k] = c[k];
 
   // deallocate
 #ifdef STATIC_NUMBER_OF_SPECIES
@@ -778,7 +752,7 @@ inline void Flame2D_pState::resize_species( const int n_old,           // the ol
   // match up the species and set their respective values
   for (int k=0; k<n_old; k++) {
     index = React.SpeciesIndex(species_old[k]);
-    if (index>=0) spec[index].c = c_old[k];
+    if (index>=0) c[index] = c_old[k];
     else {
       cerr << "\n Flame2D_pState::resize_species() - Species " 
 	   << species_old[k]
@@ -825,31 +799,13 @@ inline void Flame2D_pState::set_gravity(const double &g) { // [m/s^2]
 
  /********************** Schmidt ****************************/
  inline double Flame2D_pState::Schmidt_No(const int &i) const{
-
-   if(spec[i].diffusion_coef > ZERO){
-     return mu()/(rho*spec[i].diffusion_coef);
-   } else {
-     return Schmidt[i];
-   }
+   return Schmidt[i];
  }
 
  /********************** Lewis *****************************/
  inline double Flame2D_pState::Lewis(const int &i) const{
-
-   if(spec[i].diffusion_coef > ZERO){
-     return kappa()/(rho*Cp()*spec[i].diffusion_coef);
-   }
-   return ZERO;
+   return (kappa()*Schmidt[i])/(Cp()*mu());
  }
-
- /******* Mixture Diffusion Coefficient ********************/
- // inline double Flame2D_pState::Diffusion_coef(void) const{
- //   double sum=ZERO;
- //   for(int i=0; i<ns; i++){
- //     sum += spec[i].c * spec[i].diffusion_coef;
- //   }
- //   return sum;
- // }
 
  /************* Temperature ********************************/
  inline double Flame2D_pState::T(void) const{
@@ -899,92 +855,16 @@ inline void Flame2D_pState::set_gravity(const double &g) { // [m/s^2]
  }
 
 
-
-//  //Check for unphysical properties
-//  /**********************************************************/
-//  /* If unphysical properties and using global timestepping */ 
-//  /* stop simulation                                        */
-//  /**********************************************************/ 
-
-//  inline bool Flame2D_pState::Unphysical_Properties_Check(Flame2D_cState &U, const int Flow_Type, const int n) {
-//    if ((Flow_Type == FLOWTYPE_INVISCID ||
-//         Flow_Type == FLOWTYPE_LAMINAR) &&
-//        (U.rho <= ZERO ||!U.negative_speccheck(n) ||U.es() <= ZERO)) {
-//     cout << "\n " << CFFC_Name() 
-// 	 << " Flame2D ERROR: Negative Density || Energy || mass fractions: \n"
-// 	 << U << "\n";
-//     return false;
-  
-//   }
-//   if ((Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON ||
-//        Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) &&
-//       (U.rho <= ZERO || !U.negative_speccheck(n) ||U.es() <= ZERO ||
-//        U.rhok < ZERO ||U.rhoomega < ZERO)) {
-//     cout << "\n " << CFFC_Name() 
-// 	 << " Flame2D ERROR: Negative Density || Energy || mass fractions || Turbulent kinetic energy || : \n"
-// 	 << " Dissipation rate per unit turbulent kinetic energy || : \n"
-// 	 <<U << "\n";
-//     return false;
-//   }else{
-//     return true;
-//   }  
-// } 
-// /**************************************************************
-//   Check for -ve mass fractions and set small -ve values
-//   to ZERO. Then check that no mass is lost and that 
-//   the mass fractions still sum = 1
-
-//   Return "true" if passes
-//   and "false" if failed
-
-//   Should add "strict" and "anything goes" flags
-//   currently only set to give warnings, but still 
-//   continues.
-
-// ***************************************************************/
-// inline bool Flame2D_pState::negative_speccheck(void) {
-//   double sum(ZERO);
-//   double SPEC_TOLERANCE(SPEC_TOLERANCE);
-
-//   //-------- Negative Check ------------//
-//   for(int i=0; i<ns-1; i++){
-//     if(spec[i].c > ONE){ //check for > 1.0
-//       spec[i].c = ONE;
-//     } else if(spec[i].c < ZERO){  //check for -ve
-//       if(spec[i].c > -SPEC_TOLERANCE){  //check for small -ve and set to ZERO 
-// 	spec[i].c = ZERO;
-//       } else {
-// 	spec[i].c = ZERO;
-// 	//#ifdef _DEBUG
-// 	cout <<"\n pState -ve mass fraction in "<<specdata[i].Speciesname()<<" "<<
-// 	  spec[i].c<<" greater than allowed tolerance of "<<-SPEC_TOLERANCE; 
-// 	//#endif
-//       }      
-//     } 
-//     sum += spec[i].c;
-//   } 
-  
-//   //   spec[ns-1].c = (ONE - sum);  //PUSH error into NS-1
-//   //Spread error across species
-//   spec[ns-1].c = max(ONE- sum, ZERO);
-//   sum += spec[ns-1].c;
-//   for(int i=0; i<ns; i++){
-//     spec[i].c = spec[i].c*(ONE/sum);
-//   }
-
-//   return true;
-//}
-
 /***** Species Concentrations ******************************/
 inline double Flame2D_pState::SpecCon(int i) const{
   //returned in kg/m^3 / kg/mol => mol/m^3
-  return (rho)*spec[i].c/(specdata[i].Mol_mass());
+  return rho*c[i]/(specdata[i].Mol_mass());
 }
 
 /***** Species Mole Fractions ******************************/
 inline double Flame2D_pState::MoleFrac(int i) const{
   //returned in kmol i / kmol mix
-  return spec[i].c*Mass()/(specdata[i].Mol_mass());
+  return c[i]*Mass()/(specdata[i].Mol_mass());
 }
 
 
@@ -1029,7 +909,7 @@ inline void Flame2D_pState::Copy(const Flame2D_pState &W){
   rho = W.rho;
   v = W.v; 
   p = W.p;  
-  for( int i=0; i<ns; i++) spec[i] = W.spec[i];
+  for( int i=0; i<ns; i++) c[i] = W.c[i];
   tau = W.tau;
   qflux = W.qflux;
 }
@@ -1047,7 +927,7 @@ inline double& Flame2D_pState::operator[](int index) {
   case 4:
     return p;
   default :
-    return spec[index-NUM_FLAME2D_VAR_SANS_SPECIES-1].c;
+    return c[index-NUM_FLAME2D_VAR_SANS_SPECIES-1];
   };
 }
 
@@ -1063,7 +943,7 @@ inline const double& Flame2D_pState::operator[](int index) const {
   case 4:
     return p;
   default :
-    return spec[index-NUM_FLAME2D_VAR_SANS_SPECIES-1].c;
+    return c[index-NUM_FLAME2D_VAR_SANS_SPECIES-1];
   };
 
 }
@@ -1098,11 +978,7 @@ inline Flame2D_cState Flame2D_pState::U(const Flame2D_pState &W) const{
     Flame2D_cState Temp;
     Temp.rho = W.rho;
     Temp.rhov = W.rhov();
-    for(int i=0; i<W.ns; i++){
-      Temp.rhospec[i].c = W.rho*W.spec[i].c;
-      Temp.rhospec[i].gradc = W.rho*W.spec[i].gradc;
-      Temp.rhospec[i].diffusion_coef = W.rho*W.spec[i].diffusion_coef;
-    } 
+    for(int i=0; i<W.ns; i++) Temp.rhoc[i] = W.rho*W.c[i];
     Temp.E = W.E();
     Temp.tau = W.tau;
     Temp.qflux = W.qflux; 
@@ -1113,11 +989,7 @@ inline Flame2D_cState U(const Flame2D_pState &W) {
   Flame2D_cState Temp;
   Temp.rho = W.rho;
   Temp.rhov = W.rhov();
-  for(int i=0; i<W.ns; i++){
-    Temp.rhospec[i].c = W.rho*W.spec[i].c;
-    Temp.rhospec[i].gradc = W.rho*W.spec[i].gradc;
-    Temp.rhospec[i].diffusion_coef = W.rho*W.spec[i].diffusion_coef;
-  }  
+  for(int i=0; i<W.ns; i++) Temp.rhoc[i] = W.rho*W.c[i];
   Temp.E = W.E(); 
   Temp.tau = W.tau;
   Temp.qflux = W.qflux; 
@@ -1133,25 +1005,20 @@ inline Flame2D_cState U(const Flame2D_pState &W) {
 ****************************************************************/
 inline void Flame2D_cState::set_initial_values(){
   rhospec_memory();
-  for(int i=0; i<ns; i++) rhospec[i].c = rho/ns; 
+  for(int i=0; i<ns; i++) rhoc[i] = rho/ns; 
 } 
 
 inline void  Flame2D_cState::set_initial_values(const double &value){
   rhospec_memory();
-  for(int i=0; i<ns; i++) rhospec[i].c = value; 
+  for(int i=0; i<ns; i++) rhoc[i] = value; 
 }
 
 //user specified
-inline void Flame2D_cState::set_initial_values(double *rhomfrac){
+inline void Flame2D_cState::set_initial_values(const double *rhomfrac){
   rhospec_memory();
-  for(int i=0; i<ns; i++) rhospec[i].c = rhomfrac[i];
+  for(int i=0; i<ns; i++) rhoc[i] = rhomfrac[i];
 }
 
-//another set using species class
-inline void Flame2D_cState::set_initial_values( const Species *rhomfrac){
-  rhospec_memory();
-  for(int i=0; i<ns; i++) rhospec[i] = rhomfrac[i];
-}
 
 /**************************************************************************
   Resize the species array, setting the new values to zero
@@ -1196,7 +1063,7 @@ inline void Flame2D_cState::resize_species( const int n_old,           // the ol
   int n_new( Flame2D_pState::React.num_species );
 
   // store the old values
-  for (int k=0; k<n_old; k++) c_old[k] = rhospec[k].c;
+  for (int k=0; k<n_old; k++) c_old[k] = rhoc[k];
 
   // deallocate
 #ifdef STATIC_NUMBER_OF_SPECIES
@@ -1219,7 +1086,7 @@ inline void Flame2D_cState::resize_species( const int n_old,           // the ol
   // match up the species and set their respective values
   for (int k=0; k<n_old; k++) {
     index = Flame2D_pState::React.SpeciesIndex(species_old[k]);
-    if (index>=0) rhospec[index].c = c_old[k];
+    if (index>=0) rhoc[index] = c_old[k];
     else {
       cerr << "\n Flame2D_cState::resize_species() - Species " 
 	   << species_old[k]
@@ -1239,10 +1106,7 @@ inline void Flame2D_cState::Copy(const Flame2D_cState &U){
   rho = U.rho;
   rhov = U.rhov; 
   E = U.E; 
-
-  for( int i=0; i<ns; i++){ 
-    rhospec[i] = U.rhospec[i];
-  } 
+  for( int i=0; i<ns; i++) rhoc[i] = U.rhoc[i];
   tau = U.tau;
   qflux = U.qflux; 
 }
@@ -1289,7 +1153,7 @@ inline double& Flame2D_cState::operator[](int index) {
   case 4:
     return (E);
   default :
-    return rhospec[index-NUM_FLAME2D_VAR_SANS_SPECIES-1].c;
+    return rhoc[index-NUM_FLAME2D_VAR_SANS_SPECIES-1];
   };
 }
 
@@ -1305,7 +1169,7 @@ inline const double& Flame2D_cState::operator[](int index) const{
   case 4:
     return (E);
   default :
-    return rhospec[index-NUM_FLAME2D_VAR_SANS_SPECIES-1].c;
+    return rhoc[index-NUM_FLAME2D_VAR_SANS_SPECIES-1];
   };
 }
 
@@ -1328,14 +1192,14 @@ inline bool Flame2D_cState::negative_speccheck(const int &step) {
 
   //-------- Negative Check ------------//     
   for(int i=0; i<ns-1; i++){
-    temp = rhospec[i].c/rho;    
+    temp = rhoc[i]/rho;    
     if(temp > ONE){            //check for > 1.0
-      rhospec[i].c =rho;
+      rhoc[i] =rho;
       temp = ONE; 
 
     } else if(temp < ZERO){   //check for -ve
       if(temp > -SPEC_TOLERANCE){  //check for small -ve and set to ZERO 
-	rhospec[i].c = ZERO;
+	rhoc[i] = ZERO;
 	temp = ZERO;
       } else {
 
@@ -1349,10 +1213,10 @@ inline bool Flame2D_cState::negative_speccheck(const int &step) {
 	} else { 
 
 #ifdef _DEBUG
-	  cout<<"\ncState rhospec["<<i<<"] = "<<rhospec[i].c<<" -ve mass fraction larger than tolerance,"
+	  cout<<"\ncState rhospec["<<i<<"] = "<<rhoc[i]<<" -ve mass fraction larger than tolerance,"
 	      <<" but setting to zero and continuing anyway. ";
 #endif
-	  rhospec[i].c = ZERO;
+	  rhoc[i] = ZERO;
 	  temp = ZERO;	 
 	}
       }
@@ -1362,13 +1226,13 @@ inline bool Flame2D_cState::negative_speccheck(const int &step) {
     sum += temp;
   } 
 
-//   rhospec[ns-1].c = rho*(ONE - sum); //PUSH error into NS-1 species, probably N2
+//   rhoc[ns-1] = rho*(ONE - sum); //PUSH error into NS-1 species, probably N2
 
   temp = max(ONE- sum, ZERO);    //Spread Error across species
   sum += temp;
-  rhospec[ns-1].c = rho*temp;
+  rhoc[ns-1] = rho*temp;
   for(int i=0; i<ns; i++){
-    rhospec[i].c = rhospec[i].c*(ONE/sum);
+    rhoc[i] = rhoc[i]*(ONE/sum);
   } 
   
   return true;
@@ -1404,10 +1268,8 @@ inline bool Flame2D_cState::Unphysical_Properties_Check(const int n){
   Sum N-1 species.
 ***************************************************************/
 inline double Flame2D_cState::sum_species(void) const{
-  double sum=ZERO;
-  for(int i=0; i<ns-1; i++){
-    sum += rhospec[i].c;
-  }
+  double sum(ZERO);
+  for(int i=0; i<ns-1; i++) sum += rhoc[i];
   return sum/rho;
 }
 
@@ -1431,7 +1293,7 @@ inline void Flame2D_cState::Zero_Non_Multigrid_State_Variables(void) {
   Get max and min temperature ranges for data
 ***************************************************************/
 inline void Flame2D_cState::Temp_low_range(void){  
-  double temp = specdata[0].Low_range();
+  double temp( specdata[0].Low_range() );
   for(int i=0; i<ns; i++){
     temp = max(specdata[i].Low_range(),temp);
   } 
@@ -1439,7 +1301,7 @@ inline void Flame2D_cState::Temp_low_range(void){
 }
 
 inline void Flame2D_cState::Temp_high_range(void){
-  double temp = specdata[0].High_range();
+  double temp( specdata[0].High_range() );
   for(int i=0; i<ns; i++){
     temp = min(specdata[i].High_range(),temp);
   } 
@@ -1458,11 +1320,7 @@ inline Flame2D_pState Flame2D_cState::W(const Flame2D_cState &U) const{
     Flame2D_pState Temp;
     Temp.rho = U.rho;
     Temp.v = U.v();  
-    for(int i=0; i<U.ns; i++){
-      Temp.spec[i].c = U.rhospec[i].c/U.rho;
-      Temp.spec[i].gradc = U.rhospec[i].gradc/U.rho;
-      Temp.spec[i].diffusion_coef = U.rhospec[i].diffusion_coef/U.rho;
-    }   
+    for(int i=0; i<U.ns; i++) Temp.c[i] = U.rhoc[i]/U.rho;
     Temp.p = U.p();
     Temp.tau = U.tau;
     Temp.qflux = U.qflux; 
@@ -1474,11 +1332,7 @@ inline Flame2D_pState W(const Flame2D_cState &U) {
   Flame2D_pState Temp;
   Temp.rho = U.rho;
   Temp.v = U.v();
-  for(int i=0; i<U.ns; i++){
-    Temp.spec[i].c = U.rhospec[i].c/U.rho;
-    Temp.spec[i].gradc = U.rhospec[i].gradc/U.rho;
-    Temp.spec[i].diffusion_coef = U.rhospec[i].diffusion_coef/U.rho;
-  } 
+  for(int i=0; i<U.ns; i++) Temp.c[i] = U.rhoc[i]/U.rho;
   Temp.p = U.p();
   Temp.tau = U.tau;
   Temp.qflux = U.qflux;

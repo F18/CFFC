@@ -1179,7 +1179,7 @@ void Output_Cells_Tecplot(Flame2D_Quad_Block &SolnBlk,
 	   // reaction rates
 	   omega = SolnBlk.W[i][j].Sw( SolnBlk.W[0][0].React.reactset_flag );
 	   for(int k =0 ;k<SolnBlk.W[0][0].ns ;k++){	  
- 	       Out_File<<" "<<omega.rhospec[k].c/SolnBlk.W[0][0].specdata[k].Mol_mass();  
+ 	       Out_File<<" "<<omega.rhoc[k]/SolnBlk.W[0][0].specdata[k].Mol_mass();  
 	   }
 	   //Residuals
 	   Out_File << " " << SolnBlk.dUdt[i][j][0];
@@ -1590,10 +1590,10 @@ void ICs(Flame2D_Quad_Block &SolnBlk,
       ignition_temp = 1300.0;    //K
      
       //fuel 65% FUEL & 35% N2
-      Wl.spec[0] = 0.5149;   //CH4
-      Wl.spec[Wl.ns-1] = 0.4851;   //N2
+      Wl.c[0] = 0.5149;   //CH4
+      Wl.c[Wl.ns-1] = 0.4851;   //N2
       for(int q=1; q < Wl.ns-1; q++){
-	Wl.spec[q].c =ZERO;
+	Wl.c[q] =ZERO;
       }
       Wl.rho = Wl.p/(Wl.Rtot()*fuel_temp_inlet);
       Wl.v.y = fuel_velocity;
@@ -1602,10 +1602,10 @@ void ICs(Flame2D_Quad_Block &SolnBlk,
       //air 21% O2 & 79% N2
       for(int q=0; q < Wr.ns; q++){
 	if(q ==1 || q == Wr.ns-1){
-	  Wr.spec[1] = 0.232;
-	  Wr.spec[Wr.ns-1] = 0.768;
+	  Wr.c[1] = 0.232;
+	  Wr.c[Wr.ns-1] = 0.768;
 	} else {
-	  Wr.spec[q] = ZERO;
+	  Wr.c[q] = ZERO;
 	}
       }
       Wr.rho = Wr.p/(Wr.Rtot()*air_temp_inlet);
@@ -1643,40 +1643,40 @@ void ICs(Flame2D_Quad_Block &SolnBlk,
 	Wr.v.x = 3.103; 
 
 // 	//phi = 0.6
-// 	Wr.spec[0] = ZERO;       //CH4
-// 	Wr.spec[1] = 0.0904;     //O2
-// 	Wr.spec[2] = 0.0927;     //CO2
-// 	Wr.spec[3] = 0.0759;     //H2O 
+// 	Wr.c[0] = ZERO;       //CH4
+// 	Wr.c[1] = 0.0904;     //O2
+// 	Wr.c[2] = 0.0927;     //CO2
+// 	Wr.c[3] = 0.0759;     //H2O 
 // 	Wr.rho = Wr.p/(Wr.Rtot()*1650); 
 
 	//phi = 0.8
-// 	Wr.spec[0] = ZERO;       //CH4
-// 	Wr.spec[1] = 0.0452;     //O2
-// 	Wr.spec[2] = 0.1221;     //CO2
-// 	Wr.spec[3] = 0.0999;     //H2O 
+// 	Wr.c[0] = ZERO;       //CH4
+// 	Wr.c[1] = 0.0452;     //O2
+// 	Wr.c[2] = 0.1221;     //CO2
+// 	Wr.c[3] = 0.0999;     //H2O 
 // 	Wr.rho = Wr.p/(Wr.Rtot()*2000); 
 
 	//phi = 1.0
-	Wr.spec[0] = ZERO;       //CH4
-	Wr.spec[1] = 0.0000;     //O2
-	Wr.spec[2] = 0.1511;     //CO2
-	Wr.spec[3] = 0.1242;     //H2O 
+	Wr.c[0] = ZERO;       //CH4
+	Wr.c[1] = 0.0000;     //O2
+	Wr.c[2] = 0.1511;     //CO2
+	Wr.c[3] = 0.1242;     //H2O 
 	Wr.rho = Wr.p/(Wr.Rtot()*2320); //2234
 // 	Wr.rho = Wl.v.x*Wl.rho/Wr.v.x;
 // 	Wr.p = 101323.75; //1.25Pa drop
 
 //  	//phi = 1.2
-// 	Wr.spec[0] = 0.0107;     //CH4
-// 	Wr.spec[1] = ZERO;       //O2
-// 	Wr.spec[2] = 0.1498;     //CO2
-// 	Wr.spec[3] = 0.1227;     //H2O 
+// 	Wr.c[0] = 0.0107;     //CH4
+// 	Wr.c[1] = ZERO;       //O2
+// 	Wr.c[2] = 0.1498;     //CO2
+// 	Wr.c[3] = 0.1227;     //H2O 
 // 	Wr.rho = Wr.p/(Wr.Rtot()*2260);
 
 //   	//phi = 1.5
-// 	Wr.spec[0] = 0.0267;     //CH4
-// 	Wr.spec[1] = ZERO;       //O2
-// 	Wr.spec[2] = 0.1474;     //CO2
-// 	Wr.spec[3] = 0.1207;     //H2O 
+// 	Wr.c[0] = 0.0267;     //CH4
+// 	Wr.c[1] = ZERO;       //O2
+// 	Wr.c[2] = 0.1474;     //CO2
+// 	Wr.c[3] = 0.1207;     //H2O 
 // 	Wr.rho = Wr.p/(Wr.Rtot()*2150);
  
       }	else if (Wo[0].React.reactset_flag == CH4_2STEP){ 
@@ -1686,53 +1686,53 @@ void ICs(Flame2D_Quad_Block &SolnBlk,
 // 	Wr.v.x = 3.125698;
 
 // 	//phi = 0.6
-// 	Wr.spec[0] = ZERO;       //CH4
-// 	Wr.spec[1] = 0.0918;     //O2
-// 	Wr.spec[2] = 0.0887;     //CO2
-// 	Wr.spec[3] = 0.0759;     //H2O  
-// 	Wr.spec[4] = 0.0026;     //CO
+// 	Wr.c[0] = ZERO;       //CH4
+// 	Wr.c[1] = 0.0918;     //O2
+// 	Wr.c[2] = 0.0887;     //CO2
+// 	Wr.c[3] = 0.0759;     //H2O  
+// 	Wr.c[4] = 0.0026;     //CO
 // 	Wr.rho = Wr.p/(Wr.Rtot()*1650); 
 
 // 	//phi = 0.8
-// 	Wr.spec[0] = ZERO;       //CH4
-// 	Wr.spec[1] = 0.0472;     //O2
-// 	Wr.spec[2] = 0.1166;     //CO2
-// 	Wr.spec[3] = 0.0999;     //H2O  
-// 	Wr.spec[4] = 0.0035;     //CO
+// 	Wr.c[0] = ZERO;       //CH4
+// 	Wr.c[1] = 0.0472;     //O2
+// 	Wr.c[2] = 0.1166;     //CO2
+// 	Wr.c[3] = 0.0999;     //H2O  
+// 	Wr.c[4] = 0.0035;     //CO
 // 	Wr.rho = Wr.p/(Wr.Rtot()*2000); 
 
 	//phi = 1.0
- 	Wr.spec[0] = ZERO;       //CH4
- 	Wr.spec[1] = 0.005;      //O2
-	Wr.spec[2] = 0.1378;     //CO2
-	Wr.spec[3] = 0.1237;     //H2O 
-	Wr.spec[4] = 0.0088;     //CO
+ 	Wr.c[0] = ZERO;       //CH4
+ 	Wr.c[1] = 0.005;      //O2
+	Wr.c[2] = 0.1378;     //CO2
+	Wr.c[3] = 0.1237;     //H2O 
+	Wr.c[4] = 0.0088;     //CO
 
  	Wr.rho = Wr.p/(Wr.Rtot()*2250);
 //  	Wr.rho = Wl.v.x*Wl.rho/Wr.v.x;
 // 	Wr.p = 101323.75; //1.25Pa drop
 
 //  	//phi = 1.2
-// 	Wr.spec[0] = 0.007;     //CH4
-// 	Wr.spec[1] = ZERO;       //O2
-// 	Wr.spec[2] = 0.1197;     //CO2
-// 	Wr.spec[3] = 0.1309;     //H2O 
-// 	Wr.spec[4] = 0.0256;     //CO 
+// 	Wr.c[0] = 0.007;     //CH4
+// 	Wr.c[1] = ZERO;       //O2
+// 	Wr.c[2] = 0.1197;     //CO2
+// 	Wr.c[3] = 0.1309;     //H2O 
+// 	Wr.c[4] = 0.0256;     //CO 
 // 	Wr.rho = Wr.p/(Wr.Rtot()*2260);
 
 //   	//phi = 1.5
-// 	Wr.spec[0] = 0.0232;     //CH4
-// 	Wr.spec[1] = ZERO;       //O2
-// 	Wr.spec[2] = 0.1188;     //CO2
-// 	Wr.spec[3] = 0.1285;     //H2O 
-// 	Wr.spec[4] = 0.0243;     //CO 
+// 	Wr.c[0] = 0.0232;     //CH4
+// 	Wr.c[1] = ZERO;       //O2
+// 	Wr.c[2] = 0.1188;     //CO2
+// 	Wr.c[3] = 0.1285;     //H2O 
+// 	Wr.c[4] = 0.0243;     //CO 
 // 	Wr.rho = Wr.p/(Wr.Rtot()*2150);
 
       } else if (Wo[0].React.reactset_flag == H2O2_2STEP) {
-	Wr.spec[0] = ZERO;       //H2
- 	Wr.spec[1] = ZERO;       //O2
-	Wr.spec[2] = 0.0049;     //OH
-	Wr.spec[3] = 0.2499;     //H2O 
+	Wr.c[0] = ZERO;       //H2
+ 	Wr.c[1] = ZERO;       //O2
+	Wr.c[2] = 0.0049;     //OH
+	Wr.c[3] = 0.2499;     //H2O 
 
 	Wl.v.x = 0.79625;
 	Wr.rho = Wr.p/(Wr.Rtot()*3000.0); 
@@ -1743,53 +1743,53 @@ void ICs(Flame2D_Quad_Block &SolnBlk,
 	Wl.v.x = 0.38;
 	//Wr.v.x = 2.86;
      
-	Wr.spec[18] = 1.0;          // N2
+	Wr.c[18] = 1.0;          // N2
 
-	Wr.spec[0]  =  0.29E-3;     // H2
-	Wr.spec[18] -= Wr.spec[0];
+	Wr.c[0]  =  0.29E-3;     // H2
+	Wr.c[18] -= Wr.c[0];
 
-	Wr.spec[1]  =  1.8E-5;      // H              
-	Wr.spec[18] -= Wr.spec[1];
+	Wr.c[1]  =  1.8E-5;      // H              
+	Wr.c[18] -= Wr.c[1];
 
-	Wr.spec[2]  =  6.91E-3;     // O2              
-	Wr.spec[18] -= Wr.spec[2];
+	Wr.c[2]  =  6.91E-3;     // O2              
+	Wr.c[18] -= Wr.c[2];
 
-	Wr.spec[3]  =  2.07E-3;     // OH               
-	Wr.spec[18] -= Wr.spec[3];
+	Wr.c[3]  =  2.07E-3;     // OH               
+	Wr.c[18] -= Wr.c[3];
 
-	Wr.spec[4]  =  0.12102;     // H2O              
-	Wr.spec[18] -= Wr.spec[4];
+	Wr.c[4]  =  0.12102;     // H2O              
+	Wr.c[18] -= Wr.c[4];
 
-	Wr.spec[5]  =  7.9E-7;      // HO2              
-	Wr.spec[18] -= Wr.spec[5];
+	Wr.c[5]  =  7.9E-7;      // HO2              
+	Wr.c[18] -= Wr.c[5];
 
-	Wr.spec[6]  =  6.9E-8;      // H2O2            
-	Wr.spec[18] -= Wr.spec[6];
+	Wr.c[6]  =  6.9E-8;      // H2O2            
+	Wr.c[18] -= Wr.c[6];
 
-	Wr.spec[7]  =  0.0;         // CH3            
-	Wr.spec[8]  =  0.0;         // CH4             
+	Wr.c[7]  =  0.0;         // CH3            
+	Wr.c[8]  =  0.0;         // CH4             
 
-	Wr.spec[9]  =  9.71E-3;     // CO              
-	Wr.spec[18] -= Wr.spec[9];
+	Wr.c[9]  =  9.71E-3;     // CO              
+	Wr.c[18] -= Wr.c[9];
 
-	Wr.spec[10] =  0.1348;      // CO2              
-	Wr.spec[18] -= Wr.spec[10];
+	Wr.c[10] =  0.1348;      // CO2              
+	Wr.c[18] -= Wr.c[10];
 
-	Wr.spec[11] =  1.6E-11;     // CH2O            
-	Wr.spec[18] -= Wr.spec[11];
+	Wr.c[11] =  1.6E-11;     // CH2O            
+	Wr.c[18] -= Wr.c[11];
 
-	Wr.spec[12] =  0.0;         // C2H2            
-	Wr.spec[13] =  0.0;         // C2H4             
-	Wr.spec[14] =  0.0;         // C2H6            
+	Wr.c[12] =  0.0;         // C2H2            
+	Wr.c[13] =  0.0;         // C2H4             
+	Wr.c[14] =  0.0;         // C2H6            
 
-	Wr.spec[15] =  2.7E-10;     // NH3              
-	Wr.spec[18] -= Wr.spec[15];
+	Wr.c[15] =  2.7E-10;     // NH3              
+	Wr.c[18] -= Wr.c[15];
 
-	Wr.spec[16] =  0.11E-3;     // NO               
-	Wr.spec[18] -= Wr.spec[16];
+	Wr.c[16] =  0.11E-3;     // NO               
+	Wr.c[18] -= Wr.c[16];
 
-	Wr.spec[17] =  3.8E-12;     // HCN              
-	Wr.spec[18] -= Wr.spec[17];
+	Wr.c[17] =  3.8E-12;     // HCN              
+	Wr.c[18] -= Wr.c[17];
 
 	// density and velocity
 	Wr.rho = Wr.p/(Wr.Rtot()*2218.0);
@@ -1809,7 +1809,7 @@ void ICs(Flame2D_Quad_Block &SolnBlk,
 
 	// set exit mass fractions
  	//for (int k=0; k<Input_Parameters.num_species; k++)
-	//  Wr.spec[k].c = Input_Parameters.mass_fractions_out[k];
+	//  Wr.c[k].c = Input_Parameters.mass_fractions_out[k];
 
 	// compute flame jump conditions for T and v
 	if ( FlameJumpLowMach_x<Flame2D_pState>( /* unburnt */Wl, 
@@ -1870,10 +1870,10 @@ void ICs(Flame2D_Quad_Block &SolnBlk,
 	Wl = Wo[0];
 	
 	//fuel 65% FUEL & 35% N2
-	Wl.spec[0] = 0.5149;   //CH4
-	Wl.spec[Wl.ns-1] = 0.4851;   //N2
+	Wl.c[0] = 0.5149;   //CH4
+	Wl.c[Wl.ns-1] = 0.4851;   //N2
 	for(int q=1; q < Wl.ns-1; q++){
-	  Wl.spec[q].c =ZERO;
+	  Wl.c[q] =ZERO;
 	}
 	Wl.rho = Wl.p/(Wl.Rtot()*fuel_temp_inlet);
 	Wl.v.zero();
@@ -1881,10 +1881,10 @@ void ICs(Flame2D_Quad_Block &SolnBlk,
 	//air 21% O2 & 79% N2
 	for(int q=0; q < Wr.ns; q++){
 	  if(q ==1 || q == Wr.ns-1){
-	    Wr.spec[1] = 0.232;
-	    Wr.spec[Wr.ns-1] = 0.768;
+	    Wr.c[1] = 0.232;
+	    Wr.c[Wr.ns-1] = 0.768;
 	  } else {
-	    Wr.spec[q] = ZERO;
+	    Wr.c[q] = ZERO;
 	  }
 	}
 	Wr.rho = Wr.p/(Wr.Rtot()*air_temp_inlet);
@@ -1906,10 +1906,10 @@ void ICs(Flame2D_Quad_Block &SolnBlk,
 // 	Wl = Wo[0];
 	
 // 	//fuel 65% FUEL & 35% N2
-// 	Wl.spec[0] = 0.21;   //O2
-// 	Wl.spec[Wl.ns-1] = 0.79;   //N2
+// 	Wl.c[0] = 0.21;   //O2
+// 	Wl.c[Wl.ns-1] = 0.79;   //N2
 // 	for(int q=1; q < Wl.ns-1; q++){
-// 	  Wl.spec[q].c =ZERO;
+// 	  Wl.c[q].c =ZERO;
 // 	}
 
 // 	fuel_velocity = Wl.a()*0.14;      //m/s  //0.70
@@ -1922,10 +1922,10 @@ void ICs(Flame2D_Quad_Block &SolnBlk,
 // 	//air 21% O2 & 79% N2
 // 	for(int q=0; q < Wr.ns; q++){
 // 	  if(q ==1 || q == Wr.ns-1){
-// 	    Wr.spec[1] = 0.232;
-// 	    Wr.spec[Wr.ns-1] = 0.768;
+// 	    Wr.c[1] = 0.232;
+// 	    Wr.c[Wr.ns-1] = 0.768;
 // 	  } else {
-// 	    Wr.spec[q] = ZERO;
+// 	    Wr.c[q] = ZERO;
 // 	  }
 // 	}
 // 	Wr.rho = Wr.p/(Wr.Rtot()*air_temp_inlet);
@@ -2009,10 +2009,10 @@ void ICs(Flame2D_Quad_Block &SolnBlk,
       Wl = Wo[0]; //fuel
 
       //fuel 100% FUEL
-      Wl.spec[0] = 1.0;   //CH4
-      Wl.spec[Wl.ns-1] = 0.0; //  //N2
+      Wl.c[0] = 1.0;   //CH4
+      Wl.c[Wl.ns-1] = 0.0; //  //N2
       for(int q=1; q < Wl.ns-1; q++){
-	Wl.spec[q].c =ZERO;
+	Wl.c[q] =ZERO;
       }
       Wl.rho = Wl.p/(Wl.Rtot()*fuel_temp_inlet);
       Wl.v.y = fuel_velocity;
@@ -2021,10 +2021,10 @@ void ICs(Flame2D_Quad_Block &SolnBlk,
       //air 21% O2 & 79% N2
       for(int q=0; q < Wr.ns; q++){
 	if(q ==1 || q == Wr.ns-1){
-	  Wr.spec[1] = 0.232;
-	  Wr.spec[Wr.ns-1] = 0.768;
+	  Wr.c[1] = 0.232;
+	  Wr.c[Wr.ns-1] = 0.768;
 	} else {
-	  Wr.spec[q] = ZERO;
+	  Wr.c[q] = ZERO;
 	} 
       }
       Wr.rho = Wr.p/(Wr.Rtot()*air_temp_inlet);
@@ -5424,16 +5424,16 @@ void Calculate_Refinement_Criteria(double *refinement_criteria,
 
 // 	     Evaluate refinement criteria #5 based on the gradient
 // 	     based on the gradient of CH4 mass fraction	     	     
-	     grad_CH4_x = SolnBlk.dWdx[i][j].spec[0].c;
-             grad_CH4_y = SolnBlk.dWdy[i][j].spec[0].c;
+	     grad_CH4_x = SolnBlk.dWdx[i][j].c[0];
+             grad_CH4_y = SolnBlk.dWdy[i][j].c[0];
              grad_CH4_abs = sqrt(sqr(grad_CH4_x) + sqr(grad_CH4_y));
 	     grad_CH4_criteria = sqrt(SolnBlk.Grid.Cell[i][j].A)*grad_CH4_abs;
              grad_CH4_criteria_max = max(grad_CH4_criteria_max, grad_CH4_criteria);
 
 // 	     Evaluate refinement criteria #6 based on the gradient
 // 	     based on the gradient of CO2 mass fraction	     	     
-	     grad_CO2_x = SolnBlk.dWdx[i][j].spec[2].c;
-             grad_CO2_y = SolnBlk.dWdy[i][j].spec[2].c;
+	     grad_CO2_x = SolnBlk.dWdx[i][j].c[2];
+             grad_CO2_y = SolnBlk.dWdy[i][j].c[2];
              grad_CO2_abs = sqrt(sqr(grad_CO2_x) + sqr(grad_CO2_y));
 	     grad_CO2_criteria = sqrt(SolnBlk.Grid.Cell[i][j].A)*grad_CO2_abs;
              grad_CO2_criteria_max = max(grad_CO2_criteria_max, grad_CO2_criteria);
@@ -7505,6 +7505,7 @@ int Update_Solution_Multistage_Explicit(Flame2D_Quad_Block &SolnBlk,
  **********************************************************************/
 void Viscous_Calculations(Flame2D_Quad_Block &SolnBlk) {
 
+  // FIXME - MRJC
   double mu, kappa, r, div_v;
   double Temperature, Rmix, Cp;
   Vector2D grad_T;
@@ -7533,10 +7534,10 @@ void Viscous_Calculations(Flame2D_Quad_Block &SolnBlk) {
       for( int k=0; k<SolnBlk.U[i][j].ns; k++){
 	/***************** Diffusion coefficients **********************/
 	// using global Schmidt number relation Sc = mu/rho*Ds
-	SolnBlk.U[i][j].rhospec[k].diffusion_coef = mu/SolnBlk.W[i][j].Schmidt[k];
+// 	SolnBlk.U[i][j].rhospec[k].diffusion_coef = mu/SolnBlk.W[i][j].Schmidt[k];
 	/***************** mass fraction gradients *********************/
-	SolnBlk.U[i][j].rhospec[k].gradc.x = SolnBlk.U[i][j].rho * SolnBlk.dWdx[i][j].spec[k].c;
-	SolnBlk.U[i][j].rhospec[k].gradc.y = SolnBlk.U[i][j].rho * SolnBlk.dWdy[i][j].spec[k].c;
+// 	SolnBlk.U[i][j].rhospec[k].gradc.x = SolnBlk.U[i][j].rho * SolnBlk.dWdx[i][j].spec[k].c;
+// 	SolnBlk.U[i][j].rhospec[k].gradc.y = SolnBlk.U[i][j].rho * SolnBlk.dWdy[i][j].spec[k].c;
       }
       X = SolnBlk.Grid.Cell[i][j].Xc;
       /***************** Molecular (Laminar) Stresses ******************/

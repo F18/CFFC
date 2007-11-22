@@ -135,9 +135,9 @@ void Flame2D_cState::set_species_data(const int &n, const string *S, const char 
 ***************************************************/
 double Flame2D_pState::Mass() const{
   // = 1 / sum(mass fration/mol_mass)
-  double sum = 0.0;
+  double sum(0.0);
   for(int i=0; i<ns; i++){
-    sum += spec[i].c/specdata[i].Mol_mass();
+    sum += c[i]/specdata[i].Mol_mass();
   }
   return 1.0/sum;
 }
@@ -147,18 +147,18 @@ double Flame2D_pState::Mass() const{
 ***************************************************/
 double Flame2D_pState::Rtot(){
   // = sum ( mass fraction * species gas constant)
-  double sum = 0.0;
+  double sum(0.0);
   for(int i=0; i<ns; i++){
-    sum += spec[i].c * specdata[i].Rs();
+    sum += c[i] * specdata[i].Rs();
   }
   return sum;
 }
 
 double Flame2D_pState::Rtot() const{
   // = sum ( mass fraction * species gas constant)
-  double sum = 0.0;
+  double sum(0.0);
   for(int i=0; i<ns; i++){
-    sum += spec[i].c * specdata[i].Rs();
+    sum += c[i] * specdata[i].Rs();
   }
   return sum;
 }
@@ -168,19 +168,19 @@ double Flame2D_pState::Rtot() const{
 ***************************************************/
 double Flame2D_pState::Cp(void) const{
   // = sum ( mass fraction * species Cp) 
-  double Temp = T();
-  double sum = 0.0;
+  double Temp( T() );
+  double sum( 0.0 );
   for(int i=0; i<ns; i++){
-    sum += spec[i].c*specdata[i].HeatCapacity_p(Temp);
+    sum += c[i]*specdata[i].HeatCapacity_p(Temp);
   }
   return sum;
 }
 
 double Flame2D_pState::Cp(const double& TEMP) const{
   // = sum ( mass fraction * species Cp) 
-  double sum = 0.0;
+  double sum( 0.0 );
   for(int i=0; i<ns; i++){
-    sum += spec[i].c*specdata[i].HeatCapacity_p(TEMP);
+    sum += c[i]*specdata[i].HeatCapacity_p(TEMP);
   }
   return sum;
 }
@@ -190,10 +190,10 @@ double Flame2D_pState::Cp(const double& TEMP) const{
 ***************************************************/
 double Flame2D_pState::Cv(void) const{
   // = sum ( mass fraction * species Cv)  
-  double Temp = T();
-  double sum = 0.0;
+  double Temp( T() );
+  double sum( 0.0 );
   for(int i=0; i<ns; i++){
-    sum += spec[i].c*specdata[i].HeatCapacity_v(Temp);
+    sum += c[i]*specdata[i].HeatCapacity_v(Temp);
   }
   return sum;
 }
@@ -212,37 +212,27 @@ double Flame2D_pState::g(void) const{
 // etotal = sensible & chemical
 double Flame2D_pState::e(void) const{
   // = sum (mass fraction * species e) 
-  double sum = 0.0;
-  double Temp = T();
+  double sum( 0.0 );
+  double Temp( T() );
   for(int i=0; i<ns; i++){ //(Enthalpy(Temp) - (R/mol_mass)*Temp)
-    sum += spec[i].c*(specdata[i].Enthalpy(Temp) + specdata[i].Heatofform()
-    		      - specdata[i].Rs()*Temp);
+    sum += c[i]*(specdata[i].Enthalpy(Temp) + 
+		 specdata[i].Heatofform() - 
+		 specdata[i].Rs()*Temp);
   }
   return sum;
 }
 
-// double Flame2D_pState::e(void) const{
-//   // = sum (mass fraction * species e) 
-//   double sum = 0.0;
-//   double cs = 0.0;
-//   double Temp = T();
-//   for(int i=0; i<ns-1; i++){ //(Enthalpy(Temp) - (R/mol_mass)*Temp)
-//     sum += spec[i].c*(specdata[i].Enthalpy(Temp) + specdata[i].Heatofform()
-//     		      - specdata[i].Rs()*Temp);
-//     cs += spec[i].c;
-//   }
-//   sum += (ONE - cs )*(specdata[ns-1].Enthalpy(Temp) + specdata[ns-1].Heatofform() - specdata[ns-1].Rs()*Temp);
-//   return sum;
-// }
 
 // reference internal energy e + heat of formation - offset
 double Flame2D_pState::eref(void)const{
   // = sum (mass fraction * species e) 
-  double sum = 0.0;
-  double Temp = T();
+  double sum( 0.0 );
+  double Temp( T() );
   for(int i=0; i<ns; i++){ //(Enthalpy(Temp) - (R/mol_mass)*Temp)
-    sum += spec[i].c*(specdata[i].Enthalpy(Temp) + specdata[i].Heatofform()
-		      	 - specdata[i].DeltaHref() - specdata[i].Rs()*Temp);
+    sum += c[i]*(specdata[i].Enthalpy(Temp) + 
+		 specdata[i].Heatofform() - 
+		 specdata[i].DeltaHref() - 
+		 specdata[i].Rs()*Temp);
   }
   return sum;
 }
@@ -250,10 +240,11 @@ double Flame2D_pState::eref(void)const{
 // internal energy with no heat of formation included (sensible)
 double Flame2D_pState::es(void) const{
   // = sum (mass fraction * species e) 
-  double sum = 0.0;
-  double Temp = T();
+  double sum( 0.0 );
+  double Temp( T() );
   for(int i=0; i<ns; i++){ //(Enthalpy(Temp) - (R/mol_mass)*Temp)
-    sum += spec[i].c*(specdata[i].Enthalpy(Temp) - specdata[i].Rs()*Temp);
+    sum += c[i]*(specdata[i].Enthalpy(Temp) - 
+		 specdata[i].Rs()*Temp);
   }
   return sum;
 }
@@ -264,19 +255,19 @@ double Flame2D_pState::es(void) const{
 ***************************************************/
 double Flame2D_pState::h(void) const{
   // = sum (mass fraction * species h) 
-  double sum = 0.0;  
-  double Temp = T();
+  double sum( 0.0 );  
+  double Temp( T() );
   for(int i=0; i<ns; i++){
-    sum += spec[i].c*(specdata[i].Enthalpy(Temp) + specdata[i].Heatofform());
+    sum += c[i]*(specdata[i].Enthalpy(Temp) + specdata[i].Heatofform());
   }
   return sum;
 }
 
 double Flame2D_pState::h(const double &Temp) const{
   // = sum (mass fraction * species h) 
-  double sum = 0.0;  
+  double sum( 0.0 );
   for(int i=0; i<ns; i++){
-    sum += spec[i].c*(specdata[i].Enthalpy(Temp) + specdata[i].Heatofform());
+    sum += c[i]*(specdata[i].Enthalpy(Temp) + specdata[i].Heatofform());
   }
   return sum;
 }
@@ -284,30 +275,31 @@ double Flame2D_pState::h(const double &Temp) const{
 
 double Flame2D_pState::href(void)const{
   // = sum (mass fraction * species h) 
-  double sum = 0.0;  
-  double Temp = T();
+  double sum( 0.0 );
+  double Temp( T() );
   for(int i=0; i<ns; i++){ 
-    sum += spec[i].c*(specdata[i].Enthalpy(Temp) + specdata[i].Heatofform()
-		      - specdata[i].DeltaHref() );
+    sum += c[i]*(specdata[i].Enthalpy(Temp) + 
+		 specdata[i].Heatofform() -
+		 specdata[i].DeltaHref() );
   }
   return sum;
 }
 
 double Flame2D_pState::hs(void) const{
   // = sum (mass fraction * species h) 
-  double sum = 0.0;  
-  double Temp = T();
+  double sum( 0.0 );
+  double Temp( T() );
   for(int i=0; i<ns; i++){
-    sum += spec[i].c*(specdata[i].Enthalpy(Temp));
+    sum += c[i]*(specdata[i].Enthalpy(Temp));
   }
   return sum;
 }
 
 double Flame2D_pState::hs(const double &Temp) const{
   // = sum (mass fraction * species h) 
-  double sum = 0.0;  
+  double sum( 0.0 );
   for(int i=0; i<ns; i++){
-    sum += spec[i].c*(specdata[i].Enthalpy(Temp));
+    sum += c[i]*(specdata[i].Enthalpy(Temp));
   }
   return sum;
 }
@@ -317,18 +309,18 @@ double Flame2D_pState::hs(const double &Temp) const{
    actually is just Cp as Cp = (dh/dT)_p
 ***************************************************/
 double Flame2D_pState::hprime() const{
- double sum = 0.0; 
- double Temp = T();
- for(int i=0; i<ns; i++){
-   sum += spec[i].c*specdata[i].Enthalpy_prime(Temp);
- }
- return (sum);
+  double sum( 0.0 );
+  double Temp( T() );
+  for(int i=0; i<ns; i++){
+    sum += c[i]*specdata[i].Enthalpy_prime(Temp);
+  }
+  return (sum);
 }
 
 double Flame2D_pState::hprime(double &Temp) const{
- double sum = 0.0;  
+  double sum( 0.0 );
  for(int i=0; i<ns; i++){
-   sum += spec[i].c*specdata[i].Enthalpy_prime(Temp);
+   sum += c[i]*specdata[i].Enthalpy_prime(Temp);
  }
  return (sum);
 }
@@ -359,19 +351,19 @@ double Flame2D_pState::Hs(void) const{
   using Wilke [1950] formulation
 ***************************************************/
 double Flame2D_pState::mu() const{
-  double sum =0.0; 
-  double Temp = T();
+  double sum( 0.0 );
+  double Temp( T() );
 
   for(int i=0; i<ns; i++){
     double phi = 0.0;
     for (int j=0; j<ns; j++){
       if(i == 0) vis[j] = specdata[j].Viscosity(Temp);
-      phi += (spec[j].c / specdata[j].Mol_mass())*
+      phi += (c[j] / specdata[j].Mol_mass())*
 	pow(ONE + sqrt(vis[i]/vis[j])*
 	    pow(specdata[j].Mol_mass()/specdata[i].Mol_mass(),0.25),2.0)/
 	sqrt(EIGHT*(ONE +specdata[i].Mol_mass()/specdata[j].Mol_mass()));
     }
-    sum += (spec[i].c * vis[i]) / 
+    sum += (c[i] * vis[i]) / 
       (specdata[i].Mol_mass() * phi);
   }  
 
@@ -384,18 +376,18 @@ Molecular viscosity is function of Temperature
 This derivative is needed by Jacobian
  ***********************************************************/
 double Flame2D_pState::dmudT(void) const{
-  double sum =0.0; 
-  double Temp = T();
+  double sum( 0.0 );
+  double Temp( T() );
   for(int i=0; i<ns; i++){
     double phi = 0.0;
     for (int j=0; j<ns; j++){
       if(i == 0) vis[j] = specdata[j].dViscositydT(Temp);
-      phi += (spec[j].c / specdata[j].Mol_mass())*
+      phi += (c[j] / specdata[j].Mol_mass())*
 	pow(1.0 + sqrt(vis[i]/vis[j])*
 	    pow(specdata[j].Mol_mass()/specdata[i].Mol_mass(),0.25),2.0)/
        sqrt(8.0*(1.0 +specdata[i].Mol_mass()/specdata[j].Mol_mass()));
     }
-    sum += (spec[i].c * vis[i] ) / 
+    sum += (c[i] * vis[i] ) / 
       (specdata[i].Mol_mass() * phi);
   }  
   return sum;
@@ -405,51 +397,47 @@ double Flame2D_pState::dmudT(void) const{
   Thermal Conductivity - Mason & Saxena (1958)  W/(m*K)
 ****************************************************/
 double Flame2D_pState::kappa(void) const{
-  double sum = 0.0;  
-  double Temp = T();
+  double sum( 0.0 );
+  double Temp( T() );
 
   for(int i=0; i<ns; i++){
     double phi = 0.0;
     for (int j=0; j<ns; j++){
       if(i == 0) vis[j] = specdata[j].Viscosity(Temp);
       if(i != j){
-	phi += (spec[j].c / specdata[j].Mol_mass())*
+	phi += (c[j] / specdata[j].Mol_mass())*
 	  pow(ONE + sqrt(vis[i]/vis[j])*
 	      pow(specdata[j].Mol_mass()/specdata[i].Mol_mass(),0.25),2.0)/
 	  sqrt(EIGHT*(ONE +specdata[i].Mol_mass()/specdata[j].Mol_mass()));
       }
     }
 
-    sum += (specdata[i].ThermalConduct(Temp)*spec[i].c) / 
-      (spec[i].c + (specdata[i].Mol_mass()) * 1.065 * phi);
+    sum += (specdata[i].ThermalConduct(Temp)*c[i]) / 
+      (c[i] + (specdata[i].Mol_mass()) * 1.065 * phi);
   }  
-
-
-  //or Coffee and Heimerl (1981)
-//   double one =0.0; double two=0.0;
-//   for (int j=0; j<ns; j++){
-//     one += spec[i].c*specdata[i].ThermalConduct(Temp,p);
-//     two += spec[i].c/specdata[i].ThermalConduct(Temp,p);
-//   }
-//   sum = HALF*(one + ONE/two);
-
   return sum;
 
 }
 
+/****************************************************
+  Diffusion coefficient  m^2/s
+****************************************************/
+double Flame2D_pState::Diffusion_coef(const int &i) const{
+  return mu()/Schmidt[i];
+}
 
 /**************************************************
   polytropic heat ratio mixture gamma J/(kg*K)
   assuming T=200K as the temperature.
 ***************************************************/
 double Flame2D_pState::gamma_guess(void) const{  
-  double sum1 = ZERO;     double sum2 = ZERO;
-  double gamma_s = ZERO;  double Temp = 200.0;
+  double sum1(ZERO);     double sum2(ZERO);
+  double gamma_s(ZERO);  double Temp(200.0);
 
   for(int i=0; i<ns; i++){
-    sum1 += spec[i].c*specdata[i].Rs();
+    sum1 += c[i]*specdata[i].Rs();
     gamma_s = ONE/(ONE - specdata[i].Rs()/ specdata[i].HeatCapacity_p(Temp));
-    sum2 += ((spec[i].c*specdata[i].Rs()) / (gamma_s - ONE)); 
+    sum2 += ((c[i]*specdata[i].Rs()) / (gamma_s - ONE)); 
   }
   return (ONE + sum1/sum2);
 }
@@ -574,15 +562,16 @@ double Flame2D_pState::a(void) const{
   sum( hs * Ds * grad cs)
 *******************************************************/
 Vector2D Flame2D_pState::thermal_diffusion(void) const{
-  Vector2D sum;
-  sum.zero();
-  double Temp = T();
-  //problems with Species overloaded operators
-  for(int i=0; i<ns; i++){ 
-    sum  +=  (specdata[i].Enthalpy(Temp) + specdata[i].Heatofform())
-      * spec[i].diffusion_coef * spec[i].gradc;
-  }
-  return sum;
+  // FIXME - MRJC
+//   Vector2D sum;
+//   sum.zero();
+//   double Temp = T();
+//   //problems with Species overloaded operators
+//   for(int i=0; i<ns; i++){ 
+//     sum  +=  (specdata[i].Enthalpy(Temp) + specdata[i].Heatofform())
+//       * Diffusion_coef(i) * spec[i].gradc;
+//   }
+//   return sum;
 }
 
 
@@ -604,19 +593,19 @@ void Flame2D_pState::MoleFracOfRadSpec( double &xCO,  double &xH2O,
 
   //CO
   if (React.iCO > -1) 
-    xCO = spec[React.iCO].c*M_mix/(specdata[React.iCO].Mol_mass());
+    xCO = c[React.iCO]*M_mix/(specdata[React.iCO].Mol_mass());
   
   // H2O
   if (React.iH2O > -1) 
-    xH2O = spec[React.iH2O].c*M_mix/(specdata[React.iH2O].Mol_mass());
+    xH2O = c[React.iH2O]*M_mix/(specdata[React.iH2O].Mol_mass());
 
   //CO2
   if (React.iCO2 > -1) 
-    xCO2 = spec[React.iCO2].c*M_mix/(specdata[React.iCO2].Mol_mass());
+    xCO2 = c[React.iCO2]*M_mix/(specdata[React.iCO2].Mol_mass());
 
   //CO
   if (React.iO2 > -1) 
-    xO2 = spec[React.iO2].c*M_mix/(specdata[React.iO2].Mol_mass());
+    xO2 = c[React.iO2]*M_mix/(specdata[React.iO2].Mol_mass());
 
 }
 
@@ -638,7 +627,7 @@ Flame2D_cState Flame2D_pState::Fx(void) const{
   
   //multispecies transport
   for(int i=0; i<ns; i++){
-    Temp.rhospec[i].c = rho*v.x*spec[i].c;
+    Temp.rhoc[i] = rho*v.x*c[i];
   }
 
   return (Temp);
@@ -656,14 +645,14 @@ void dFIdU(DenseMatrix &dFdU, const Flame2D_pState &W) {
   //cout<<"\n USING DFIDU \n";
   
   //int num_species = dFdU.get_n() - NUM_FLAME2D_VAR_SANS_SPECIES; 
-  int num_species=W.ns-1;
+  int num_species(W.ns-1);
 
-  double Temp = W.T();
-  double Rt = W.Rtot();
-  double C_p = W.Cp();
-  double ht = W.h();
-  double denominator = (C_p/Rt - ONE);
-  double phi = ZERO;
+  double Temp(W.T());
+  double Rt(W.Rtot());
+  double C_p(W.Cp());
+  double ht(W.h());
+  double denominator(C_p/Rt - ONE);
+  double phi(ZERO);
 
 #ifdef _NS_MINUS_ONE
   W.e_k[W.ns-1] = (W.specdata[W.ns-1].Enthalpy(Temp) +
@@ -674,14 +663,14 @@ void dFIdU(DenseMatrix &dFdU, const Flame2D_pState &W) {
 		 W.specdata[i].Heatofform() - 
 		 C_p*Temp*W.specdata[i].Rs()/Rt -
 		 W.e_k[W.ns-1] );
-    phi += W.spec[i].c*W.e_k[i];
+    phi += W.c[i]*W.e_k[i];
   }
 #else
   for(int i=0; i<num_species; i++){ 
     W.e_k[i] = (W.specdata[i].Enthalpy(Temp) + 
 		W.specdata[i].Heatofform() - 
 		C_p*Temp*W.specdata[i].Rs()/Rt);
-    phi += W.spec[i].c*W.e_k[i];
+    phi += W.c[i]*W.e_k[i];
   }
 #endif 
 
@@ -701,8 +690,8 @@ void dFIdU(DenseMatrix &dFdU, const Flame2D_pState &W) {
   for(int i = 0; i<num_species; i++){ 
     dFdU(1,NUM_FLAME2D_VAR_SANS_SPECIES+i) -= W.e_k[i]/denominator; 
     dFdU(3,NUM_FLAME2D_VAR_SANS_SPECIES+i) = W.v.x*dFdU(1,NUM_FLAME2D_VAR_SANS_SPECIES+i);    
-    dFdU(NUM_FLAME2D_VAR_SANS_SPECIES+i, 0) -= W.spec[i].c*W.v.x ;
-    dFdU(NUM_FLAME2D_VAR_SANS_SPECIES+i, 1) += W.spec[i].c ;
+    dFdU(NUM_FLAME2D_VAR_SANS_SPECIES+i, 0) -= W.c[i]*W.v.x ;
+    dFdU(NUM_FLAME2D_VAR_SANS_SPECIES+i, 1) += W.c[i];
     dFdU(NUM_FLAME2D_VAR_SANS_SPECIES+i,NUM_FLAME2D_VAR_SANS_SPECIES+i) += W.v.x ;        
   }
  
@@ -744,12 +733,12 @@ void dFIdU_FD(DenseMatrix &dFdU, const Flame2D_pState &WW) {
 void dFIdW(DenseMatrix &dFdW, const Flame2D_pState &W) {
 
   //int num_species = dFdW.get_n() - NUM_FLAME2D_VAR_SANS_SPECIES; 
-  int num_species=W.ns-1;
+  int num_species(W.ns-1);
 
-  double Temp = W.T();
-  double Rt = W.Rtot();
-  double C_p = W.Cp();
-  double ht = W.h();
+  double Temp(W.T());
+  double Rt(W.Rtot());
+  double C_p(W.Cp());
+  double ht(W.h());
 
   dFdW(0,0) = W.v.x;
   dFdW(0,1) = W.rho;
@@ -777,8 +766,8 @@ void dFIdW(DenseMatrix &dFdW, const Flame2D_pState &W) {
 							 W.specdata[i].Heatofform() - 
 							 C_p*Temp*W.specdata[i].Rs()/Rt - 
 							 eN);    
-     dFdW(NUM_FLAME2D_VAR_SANS_SPECIES+i, 0) = W.spec[i].c*W.v.x ;
-     dFdW(NUM_FLAME2D_VAR_SANS_SPECIES+i, 1) = W.rho*W.spec[i].c ;
+     dFdW(NUM_FLAME2D_VAR_SANS_SPECIES+i, 0) = W.c[i]*W.v.x ;
+     dFdW(NUM_FLAME2D_VAR_SANS_SPECIES+i, 1) = W.rho*W.c[i] ;
      dFdW(NUM_FLAME2D_VAR_SANS_SPECIES+i,NUM_FLAME2D_VAR_SANS_SPECIES+i) =W.rho*W.v.x ;        
   }
   
@@ -841,14 +830,14 @@ void Flame2D_pState::dWdU(DenseMatrix &dWdQ) const{
 	      specdata[i].Heatofform() -
 	      C_p*Temp*specdata[i].Rs()/Rt - 
 	      e_k[ns-1]);
-    phi += spec[i].c*e_k[i];
+    phi += c[i]*e_k[i];
   }
 #else
   for(int i=0; i<num_species; i++){  
     e_k[i] = (specdata[i].Enthalpy(Temp) + 
 	      specdata[i].Heatofform() - 
 	      C_p*Temp*specdata[i].Rs()/Rt);
-    phi += spec[i].c*e_k[i];
+    phi += c[i]*e_k[i];
   }
 #endif
 
@@ -860,7 +849,7 @@ void Flame2D_pState::dWdU(DenseMatrix &dWdQ) const{
   int NUM_VAR = NUM_FLAME2D_VAR_SANS_SPECIES;
   for(int i=0; i<num_species;i++){  
     dWdQ(3, NUM_VAR+i) = - e_k[i]/denominator;
-    dWdQ(NUM_VAR+i, 0) = - spec[i].c/rho;
+    dWdQ(NUM_VAR+i, 0) = - c[i]/rho;
     dWdQ(NUM_VAR+i, NUM_VAR+i) = ONE/rho;
   }
 }
@@ -903,9 +892,9 @@ void Flame2D_pState::dUdW(DenseMatrix &dQdW){
   //int num_species = dQdW.get_n() - NUM_FLAME2D_VAR_SANS_SPECIES; //ns -1 or ns
   int num_species=ns-1;
   
-  double Temp = T();
-  double Rt = Rtot();
-  double C_p = Cp();
+  double Temp(T());
+  double Rt(Rtot());
+  double C_p(Cp());
 
   dQdW(0,0) =  ONE;
   dQdW(1,0) =  v.x;
@@ -932,7 +921,7 @@ void Flame2D_pState::dUdW(DenseMatrix &dQdW){
 			      specdata[i].Heatofform() - 
 			      C_p*Temp*specdata[i].Rs()/Rt - 
 			      eN);
-    dQdW(NUM_VAR+i,0) = spec[i].c;
+    dQdW(NUM_VAR+i,0) = c[i];
     dQdW(NUM_VAR+i,NUM_VAR+i) =  rho;
   }
 }
@@ -975,14 +964,14 @@ void Flame2D_pState::dUdW_FD(DenseMatrix &dUdW){
  * Flame2D_pState::lambda -- Eigenvalue(s) (x-direction).    *
  ************************************************************/
 Flame2D_pState Flame2D_pState::lambda_x(void) const {
-  double c = a();
+  double aa(a());
   Flame2D_pState Temp;
-  Temp.rho = v.x - c;
+  Temp.rho = v.x - aa;
   Temp.v.x = v.x;
   Temp.v.y = v.x;
-  Temp.p = v.x + c;
+  Temp.p = v.x + aa;
   for(int i=0; i<ns; i++){
-    Temp.spec[i].c = v.x;
+    Temp.c[i] = v.x;
   }
   return (Temp);
 }
@@ -996,15 +985,15 @@ Flame2D_pState Flame2D_pState::lambda_preconditioned_x(const double &MR2) const 
 
   Flame2D_pState NEW;
   double uprimed, cprimed;
-  double c = a();
-  u_a_precon(MR2*c*c,uprimed,cprimed);
+  double aa(a());
+  u_a_precon(MR2*aa*aa,uprimed,cprimed);
 
   NEW.rho = uprimed - cprimed;
   NEW.v.x = v.x;
   NEW.v.y = v.x;
   NEW.p = uprimed + cprimed;
   for(int i=0; i<ns; i++){
-    NEW.spec[i].c = v.x;
+    NEW.c[i] = v.x;
   }
   return (NEW);
 }
@@ -1016,27 +1005,27 @@ Flame2D_pState Flame2D_pState::lambda_preconditioned_x(const double &MR2) const 
 Flame2D_cState Flame2D_pState::rc_x(const int &index) const {
 
     if(index == 1){
-      double c = a(); 
-      return (Flame2D_cState(ONE, v.x-c, v.y, H()/rho-v.x*c, spec));
+      double aa(a()); 
+      return (Flame2D_cState(ONE, v.x-aa, v.y, H()/rho-v.x*aa, c));
     } else if(index == 2) {
-      return (Flame2D_cState(ONE, v.x, v.y, H()/rho-Cp()*T(), spec)); 
+      return (Flame2D_cState(ONE, v.x, v.y, H()/rho-Cp()*T(), c)); 
     } else if(index == 3) {
       return (Flame2D_cState(ZERO, ZERO, rho, rho*v.y, ZERO));
     } else if(index == 4) {
-      double c = a(); 
-      return (Flame2D_cState(ONE, v.x+c, v.y, H()/rho+v.x*c, spec));
+      double aa(a());
+      return (Flame2D_cState(ONE, v.x+aa, v.y, H()/rho+v.x*aa, c));
     } else{ 
       Flame2D_cState NEW(ZERO);
-      double RTOT = Rtot();
-      double TEMP = p/(rho*RTOT);    
-      int count = index-(NUM_FLAME2D_VAR_SANS_SPECIES+1);
+      double RTOT(Rtot());
+      double TEMP(p/(rho*RTOT));
+      int count(index-(NUM_FLAME2D_VAR_SANS_SPECIES+1));
 #ifdef _NS_MINUS_ONE
       NEW.E = rho*((specdata[count].Enthalpy(TEMP) + specdata[count].Heatofform() - Cp()*TEMP*specdata[count].Rs()/RTOT) -
 		   (specdata[ns-1].Enthalpy(TEMP)  + specdata[ns-1].Heatofform() - Cp()*TEMP*specdata[ns-1].Rs()/RTOT)); 
 #else
       NEW.E = rho*(specdata[count].Enthalpy(TEMP) + specdata[count].Heatofform() - Cp()*TEMP*specdata[count].Rs()/RTOT);      
 #endif
-      NEW.rhospec[count].c = rho;
+      NEW.rhoc[count] = rho;
       return NEW;
     }
 }
@@ -1045,19 +1034,19 @@ Flame2D_cState Flame2D_pState::rc_x(const int &index) const {
 Flame2D_pState Flame2D_pState::lp_x(const int &index) const {
  
    if(index == 1){
-      double c = a(); 
-      return (Flame2D_pState(ZERO, -HALF*rho/c, ZERO, HALF/(c*c), ZERO));
+     double aa(a());
+      return (Flame2D_pState(ZERO, -HALF*rho/aa, ZERO, HALF/(aa*aa), ZERO));
     } else if(index == 2) {
-      double c = a(); 
-      return (Flame2D_pState(ONE, ZERO, ZERO, -ONE/(c*c), ZERO));
+     double aa(a());
+      return (Flame2D_pState(ONE, ZERO, ZERO, -ONE/(aa*aa), ZERO));
     } else if(index == 3) {
       return  (Flame2D_pState(ZERO, ZERO, ONE, ZERO, ZERO));
     } else if(index == 4) {  
-      double c = a(); 
-      return (Flame2D_pState(ZERO, HALF*rho/c, ZERO, HALF/(c*c), ZERO));
+     double aa(a());
+      return (Flame2D_pState(ZERO, HALF*rho/aa, ZERO, HALF/(aa*aa), ZERO));
     } else{ 
       Flame2D_pState NEW(ZERO);
-      NEW.spec[index-(NUM_FLAME2D_VAR_SANS_SPECIES+1)].c = ONE;
+      NEW.c[index-(NUM_FLAME2D_VAR_SANS_SPECIES+1)] = ONE;
       return NEW;
     } 
 
@@ -1070,36 +1059,36 @@ Flame2D_pState Flame2D_pState::lp_x(const int &index) const {
 Flame2D_cState Flame2D_pState::rc_x_precon(const int &index, const double &MR2) const {
 
   if(index == 1){
-    double c = a(); 
+    double aa(a());
     double uprimed,cprimed;
-    u_a_precon(MR2*c*c,uprimed,cprimed);
+    u_a_precon(MR2*aa*aa,uprimed,cprimed);
     return (Flame2D_cState(ONE, 
 			  (uprimed-cprimed)/MR2,
 			  v.y,			
 			  h()+HALF*(v.sqr()/MR2) - (v.x*cprimed)/MR2,
-			  spec));
+			  c));
    
   } else if(index == 2) {
-    return (Flame2D_cState(ONE, v.x, v.y, (h()-Cp()*T()) + HALF*v.sqr(), spec));
+    return (Flame2D_cState(ONE, v.x, v.y, (h()-Cp()*T()) + HALF*v.sqr(), c));
   
   } else if(index == 3) {
     return (Flame2D_cState(ZERO, ZERO, rho, rho*v.y,ZERO));
    
   } else if(index == 4) { 
-    double c = a(); 
+    double aa(a());
     double uprimed,cprimed;
-    u_a_precon(MR2*c*c,uprimed,cprimed);
+    u_a_precon(MR2*aa*aa,uprimed,cprimed);
     return (Flame2D_cState(ONE,
 			  (uprimed+cprimed)/MR2,
 			  v.y, 
 			  h()+HALF*(v.sqr()/MR2) + (v.x*cprimed)/MR2,
-			  spec));
+			  c));
    
   } else{ 
     Flame2D_cState NEW(ZERO);
-    double RTOT = Rtot();
-    double TEMP = p/(rho*RTOT);    
-    int count = index-(NUM_FLAME2D_VAR_SANS_SPECIES+1);
+    double RTOT(Rtot());
+    double TEMP(p/(rho*RTOT));
+    int count(index-(NUM_FLAME2D_VAR_SANS_SPECIES+1));
 #ifdef _NS_MINUS_ONE
     NEW.E = rho*((specdata[count].Enthalpy(TEMP) + specdata[count].Heatofform() - Cp()*TEMP*specdata[count].Rs()/RTOT) -
  		 (specdata[ns-1].Enthalpy(TEMP)  + specdata[ns-1].Heatofform()  - Cp()*TEMP*specdata[ns-1].Rs()/RTOT)); 
@@ -1107,7 +1096,7 @@ Flame2D_cState Flame2D_pState::rc_x_precon(const int &index, const double &MR2) 
     NEW.E = rho*(specdata[count].Enthalpy(TEMP) + specdata[count].Heatofform() - Cp()*TEMP*specdata[count].Rs()/RTOT);
 #endif
 
-    NEW.rhospec[count].c = rho;
+    NEW.rhoc[count] = rho;
     return NEW;    
    }
 
@@ -1117,31 +1106,31 @@ Flame2D_cState Flame2D_pState::rc_x_precon(const int &index, const double &MR2) 
 Flame2D_pState Flame2D_pState::lp_x_precon(const int &index, const double &MR2) const {
   
   if(index == 1){
-    double c = a();   
+    double aa(a());
     double uprimed,cprimed;
-    u_a_precon(MR2*c*c,uprimed,cprimed);
+    u_a_precon(MR2*aa*aa,uprimed,cprimed);
     return (Flame2D_pState(ZERO, 
 			  -HALF*rho*MR2/cprimed, 
 			  ZERO,
-			  (-uprimed+cprimed + v.x)/(TWO*cprimed*c*c),
+			  (-uprimed+cprimed + v.x)/(TWO*cprimed*aa*aa),
 			  ZERO));
   } else if(index == 2) {
-    double c = a(); 
-    return (Flame2D_pState(ONE, ZERO, ZERO, -ONE/(c*c),ZERO));
+    double aa(a());
+    return (Flame2D_pState(ONE, ZERO, ZERO, -ONE/(aa*aa),ZERO));
   } else if(index == 3) {
     return  (Flame2D_pState(ZERO, ZERO, ONE, ZERO,ZERO));
   } else if(index == 4) {  
-    double c = a(); 
+    double aa(a());
     double uprimed,cprimed;
-    u_a_precon(MR2*c*c,uprimed,cprimed);
+    u_a_precon(MR2*aa*aa,uprimed,cprimed);
     return (Flame2D_pState(ZERO, 
 			  HALF*rho*MR2/cprimed, 
 			  ZERO,
-			  (uprimed+cprimed - v.x)/(TWO*cprimed*c*c),
+			  (uprimed+cprimed - v.x)/(TWO*cprimed*aa*aa),
 			  ZERO));
   } else{ 
     Flame2D_pState NEW(ZERO);
-    NEW.spec[index-(NUM_FLAME2D_VAR_SANS_SPECIES+1)].c = ONE;
+    NEW.c[index-(NUM_FLAME2D_VAR_SANS_SPECIES+1)] = ONE;
     return NEW;
   } 
 }
@@ -1156,9 +1145,9 @@ Flame2D_pState Flame2D_pState::lp_x_precon(const int &index, const double &MR2) 
 double Flame2D_pState::u_plus_aprecon(const double &u, 
 				     const int    &flow_type_flag, 
 				     const double &deltax) const {
-  double Temp = T();
-  double c = a();
-  double UR2 = Mr2(flow_type_flag,deltax)*c*c;
+  double Temp(T());
+  double aa(a());
+  double UR2 = Mr2(flow_type_flag,deltax)*aa*aa;
   double alpha = HALF*( ONE - (ONE/(Rtot()*Temp) - ONE/(Cp()*Temp))*UR2);
   
   // uprime + cprime
@@ -1170,8 +1159,8 @@ double Flame2D_pState::u_plus_aprecon(const double &u,
 // velocity and soundspeed ie. u' and c'
 void Flame2D_pState::u_a_precon(const double &UR2, double &uprimed, double &cprimed) const{
   
-  double Temp = T();
-  double alpha = HALF*( ONE - (ONE/(Rtot()*Temp) - ONE/(Cp()*Temp))*UR2);
+  double Temp(T());
+  double alpha( HALF*( ONE - (ONE/(Rtot()*Temp) - ONE/(Cp()*Temp))*UR2) );
 
   uprimed = v.x*(ONE - alpha);
   cprimed = sqrt(alpha*alpha*v.x*v.x + UR2); 
@@ -1183,12 +1172,12 @@ void Flame2D_pState::u_a_precon(const double &UR2, double &uprimed, double &cpri
 double Flame2D_pState::Mr2(const int    &flow_type_flag, 
                           const double &deltax) const {
   
-  double c = a();
-  double MR2 = min(max((v.sqr()/(c*c)),Mref*Mref),ONE);
+  double aa(a());
+  double MR2 = min(max((v.sqr()/(aa*aa)),Mref*Mref),ONE);
   
   // Need deltax which is based on cell spacing 
   if(flow_type_flag){ 
-    MR2 = pow(max(sqrt(MR2*c*c), mu()/(rho*deltax)),2.0)/(c*c);
+    MR2 = pow(max(sqrt(MR2*aa*aa), mu()/(rho*deltax)),2.0)/(aa*aa);
   }
 
   return (MR2);
@@ -1202,14 +1191,14 @@ void Flame2D_pState::Low_Mach_Number_Preconditioner(DenseMatrix &P,
 						   const int &Viscous_flag, 
 						   const double &deltax ) const{  
   
-  double Temp = T();
-  double Rmix = Rtot();
-  double enthalpy = h();
-  double CP = Cp();
-  double c = a();
-  double theta = (ONE/(Mr2(Viscous_flag,deltax)*c*c) + ONE/(CP*Temp));
+  double Temp(T());
+  double Rmix(Rtot());
+  double enthalpy(h());
+  double CP(Cp());
+  double aa(a());
+  double theta( (ONE/(Mr2(Viscous_flag,deltax)*aa*aa) + ONE/(CP*Temp)) );
  
-  double phi = ZERO;   
+  double phi( ZERO );
 
 #ifdef _NS_MINUS_ONE
   e_k[ns-1] = (specdata[ns-1].Enthalpy(Temp) + 
@@ -1220,22 +1209,22 @@ void Flame2D_pState::Low_Mach_Number_Preconditioner(DenseMatrix &P,
 	      specdata[j].Heatofform() - 
 	      CP*Temp*specdata[j].Rs()/Rmix -    
 	      e_k[ns-1]);
-    phi += spec[j].c*e_k[j];
+    phi += c[j]*e_k[j];
   }		      
 #else
   for(int j=0; j<ns; j++){
     e_k[j] = (specdata[j].Enthalpy(Temp) + 
 		   specdata[j].Heatofform() - 
 		   CP*Temp*specdata[j].Rs()/Rmix);
-    phi += spec[j].c*e_k[j];   
+    phi += c[j]*e_k[j];   
   }		      
 #endif
 
-  double alpha = theta*p/rho;
-  double alpham1 = alpha - ONE;
-  double Omega = (Rmix - CP)*p/(rho*Rmix);
-  double beta = enthalpy - CP*p/(rho*Rmix) - phi;
-  double V = HALF*v.sqr();
+  double alpha( theta*p/rho );
+  double alpham1( alpha - ONE );
+  double Omega( (Rmix - CP)*p/(rho*Rmix) );
+  double beta( enthalpy - CP*p/(rho*Rmix) - phi );
+  double V( HALF*v.sqr() );
   P.zero();  //RESET MATRIX TO ZERO!!!
 
   P(0,0) = (alpha*(beta-V)+V+Rmix*Temp-enthalpy+phi)/Omega;
@@ -1255,7 +1244,7 @@ void Flame2D_pState::Low_Mach_Number_Preconditioner(DenseMatrix &P,
   P(3,2) = v.y*(enthalpy+V)*alpham1/Omega;
   P(3,3) = -(alpha*(enthalpy+V)-V-Rmix*Temp-beta-phi)/Omega;
 
-  int NUM_VAR = NUM_FLAME2D_VAR_SANS_SPECIES;
+  int NUM_VAR( NUM_FLAME2D_VAR_SANS_SPECIES );
 
   //Multispecies
   for(int j=0; j<ns-1; j++){  
@@ -1265,15 +1254,15 @@ void Flame2D_pState::Low_Mach_Number_Preconditioner(DenseMatrix &P,
     P(3,j+NUM_VAR) = e_k[j]*(V+enthalpy)*alpham1/Omega;	
     for(int i=0; i<ns-1; i++){ 
       if(i==j){ 
-	P(i+NUM_VAR,0) = (spec[i].c)*(beta-V)*alpham1/Omega;
-	P(i+NUM_VAR,1) = (spec[i].c)*v.x*alpham1/Omega;
-	P(i+NUM_VAR,2) = (spec[i].c)*v.y*alpham1/Omega;
-	P(i+NUM_VAR,3) = -(spec[i].c)*alpham1/Omega;
+	P(i+NUM_VAR,0) = (c[i])*(beta-V)*alpham1/Omega;
+	P(i+NUM_VAR,1) = (c[i])*v.x*alpham1/Omega;
+	P(i+NUM_VAR,2) = (c[i])*v.y*alpham1/Omega;
+	P(i+NUM_VAR,3) = -(c[i])*alpham1/Omega;
 	//diagonal
-	P(i+NUM_VAR,j+NUM_VAR) = spec[i].c*e_k[j]*alpham1/Omega+ONE;
+	P(i+NUM_VAR,j+NUM_VAR) = c[i]*e_k[j]*alpham1/Omega+ONE;
       }
       else {
-	P(i+NUM_VAR,j+NUM_VAR) = spec[i].c*e_k[j]*alpham1/Omega;
+	P(i+NUM_VAR,j+NUM_VAR) = c[i]*e_k[j]*alpham1/Omega;
       }
     }       
   }
@@ -1289,14 +1278,14 @@ void Flame2D_pState::Low_Mach_Number_Preconditioner(DenseMatrix &P,
 void Flame2D_pState::Low_Mach_Number_Preconditioner_Inverse(DenseMatrix &Pinv,	
 							   const int &Viscous_flag, 
 							   const double &deltax ) const{  
-  double Temp = T();
-  double Rmix = Rtot();
-  double enthalpy = h();
-  double CP = Cp();
-  double c = a();
-  double theta = (ONE/(Mr2(Viscous_flag,deltax)*c*c) + ONE/(CP*Temp));  
+  double Temp(T());
+  double Rmix(Rtot());
+  double enthalpy(h());
+  double CP(Cp());
+  double aa(a());
+  double theta( (ONE/(Mr2(Viscous_flag,deltax)*aa*aa) + ONE/(CP*Temp)) );
 
-  double phi = ZERO;
+  double phi(ZERO);
 
 #ifdef _NS_MINUS_ONE
   e_k[ns-1] = (specdata[ns-1].Enthalpy(Temp) + 
@@ -1307,22 +1296,22 @@ void Flame2D_pState::Low_Mach_Number_Preconditioner_Inverse(DenseMatrix &Pinv,
 	      specdata[j].Heatofform() - 
 	      CP*Temp*specdata[j].Rs()/Rmix -    
 	      e_k[ns-1]);
-    phi += spec[j].c*e_k[j];
+    phi += c[j]*e_k[j];
   }		      
 #else
   for(int j=0; j<ns; j++){
     e_k[j] = (specdata[j].Enthalpy(Temp) + 
 	      specdata[j].Heatofform() - 
 	      CP*Temp*specdata[j].Rs()/Rmix);
-    phi += spec[j].c*e_k[j];   
+    phi += c[j]*e_k[j];   
   }		      
 #endif
 
-  double AA = p*(rho*Rmix-theta*p*CP);
-  double BB = Rmix*rho*(theta*p-rho);
-  double EE = HALF*v.sqr() - enthalpy + phi;
-  double CC = EE + CP*Temp; 
-  double DD = HALF*v.sqr() + enthalpy;
+  double AA( p*(rho*Rmix-theta*p*CP) );
+  double BB( Rmix*rho*(theta*p-rho) );
+  double EE( HALF*v.sqr() - enthalpy + phi );
+  double CC( EE + CP*Temp );
+  double DD( HALF*v.sqr() + enthalpy );
   Pinv.zero();   //RESET MATRIX TO ZERO!!! 
   
   Pinv(0,0) = rho*Rmix/AA*(theta*p*EE-rho*CC+p);
@@ -1342,7 +1331,7 @@ void Flame2D_pState::Low_Mach_Number_Preconditioner_Inverse(DenseMatrix &Pinv,
   Pinv(3,2) = -v.y*DD*BB/AA;
   Pinv(3,3) = rho*Rmix/AA*(theta*p*(DD-CP*Temp)-rho*DD+p);
 
-  int NUM_VAR = NUM_FLAME2D_VAR_SANS_SPECIES;
+  int NUM_VAR( NUM_FLAME2D_VAR_SANS_SPECIES );
   //Multispecies
   for(int j=0; j<ns-1; j++){   
     Pinv(0,j+NUM_VAR) = -e_k[j]*BB/AA;
@@ -1351,15 +1340,15 @@ void Flame2D_pState::Low_Mach_Number_Preconditioner_Inverse(DenseMatrix &Pinv,
     Pinv(3,j+NUM_VAR) = -e_k[j]*BB*DD/AA;
     for(int i=0; i<ns-1; i++){  
       if(i==j){
-	Pinv(i+NUM_VAR,0) = (spec[i].c)*CC*BB/AA;
-	Pinv(i+NUM_VAR,1) = -(spec[i].c)*v.x*BB/AA;
-	Pinv(i+NUM_VAR,2) = -(spec[i].c)*v.y*BB/AA;
-	Pinv(i+NUM_VAR,3) = (spec[i].c)*BB/AA;
+	Pinv(i+NUM_VAR,0) = (c[i])*CC*BB/AA;
+	Pinv(i+NUM_VAR,1) = -(c[i])*v.x*BB/AA;
+	Pinv(i+NUM_VAR,2) = -(c[i])*v.y*BB/AA;
+	Pinv(i+NUM_VAR,3) = (c[i])*BB/AA;
 	//diagonal	
-	Pinv(i+NUM_VAR,j+NUM_VAR) = 1.0 - spec[i].c*e_k[j]*BB/AA ;
+	Pinv(i+NUM_VAR,j+NUM_VAR) = 1.0 - c[i]*e_k[j]*BB/AA ;
       }
       else {
-	Pinv(i+NUM_VAR,j+NUM_VAR) = -spec[i].c*e_k[j]*BB/AA;
+	Pinv(i+NUM_VAR,j+NUM_VAR) = -c[i]*e_k[j]*BB/AA;
       } 
     }   
   }  
@@ -1396,7 +1385,7 @@ Flame2D_pState Flame2D_pState::operator -(const Flame2D_pState &W) const{
 Flame2D_pState Flame2D_pState::operator *(const double &a) const{
   Flame2D_pState Temp(*this);
   Temp.rho = rho*a;  Temp.v = v*a; Temp.p = p*a;
-  for( int i=0; i<ns; i++) Temp.spec[i] = spec[i]*a; 
+  for( int i=0; i<ns; i++) Temp.c[i] = c[i]*a; 
   Temp.tau = tau*a;
   Temp.qflux = qflux*a;
   return(Temp);
@@ -1405,7 +1394,7 @@ Flame2D_pState Flame2D_pState::operator *(const double &a) const{
 Flame2D_pState operator *(const double &a, const Flame2D_pState &W){
   Flame2D_pState Temp;
   Temp.rho = W.rho*a;  Temp.v = W.v*a; Temp.p = W.p*a;
-  for( int i=0; i<W.ns; i++) Temp.spec[i] = W.spec[i]*a;
+  for( int i=0; i<W.ns; i++) Temp.c[i] = W.c[i]*a;
   Temp.tau = W.tau*a;
   Temp.qflux = W.qflux*a;
   return(Temp);
@@ -1415,7 +1404,7 @@ Flame2D_pState operator *(const double &a, const Flame2D_pState &W){
 Flame2D_pState Flame2D_pState::operator /(const double &a) const {
   Flame2D_pState Temp(*this);
   Temp.rho = rho/a; Temp.v = v/a; Temp.p = p/a; 
-  for(int i=0; i<ns; i++) Temp.spec[i] = spec[i]/a;
+  for(int i=0; i<ns; i++) Temp.c[i] = c[i]/a;
   Temp.tau = tau/a;
   Temp.qflux = qflux/a;
   return(Temp);
@@ -1424,7 +1413,7 @@ Flame2D_pState Flame2D_pState::operator /(const double &a) const {
 //----------------- Inner Product ------------------------//
 double Flame2D_pState::operator *(const Flame2D_pState &W) const{
   double sum=0.0;
-  for(int i=0; i<ns; i++) sum += spec[i]*W.spec[i];
+  for(int i=0; i<ns; i++) sum += c[i]*W.c[i];
   return (rho*W.rho + v*W.v + p*W.p + sum);
 }
 
@@ -1435,7 +1424,7 @@ Flame2D_pState Flame2D_pState::operator ^( const Flame2D_pState &W) const {
     Temp.v.x = v.x*W.v.x;
     Temp.v.y = v.y*W.v.y;
     Temp.p = p*W.p;
-    for(int i=0; i<ns; i++) Temp.spec[i] = spec[i]*W.spec[i];
+    for(int i=0; i<ns; i++) Temp.c[i] = c[i]*W.c[i];
     return(Temp);
 }
 
@@ -1455,7 +1444,7 @@ Flame2D_pState& Flame2D_pState::operator +=(const Flame2D_pState &W){
   rho += W.rho;
   v += W.v; 
   p += W.p; 
-  for( int i=0; i<ns; i++)  spec[i].c += W.spec[i].c;
+  for( int i=0; i<ns; i++)  c[i] += W.c[i];
   tau += W.tau;
   qflux += W.qflux;
   return (*this);
@@ -1465,7 +1454,7 @@ Flame2D_pState& Flame2D_pState::operator -=(const Flame2D_pState &W) {
   rho -= W.rho;
   v -= W.v;
   p -= W.p;
-  for(int i=0; i<ns; i++) spec[i].c -= W.spec[i].c;
+  for(int i=0; i<ns; i++) c[i] -= W.c[i];
   tau -= W.tau;
   qflux -= W.qflux;
   return (*this); 
@@ -1474,19 +1463,15 @@ Flame2D_pState& Flame2D_pState::operator -=(const Flame2D_pState &W) {
 /********************************************************
  * Flame2D_pState -- Unary arithmetic operators.         *
  ********************************************************/
-//  Flame2D_pState operator +(const Flame2D_pState &W) {  
-//   return (Flame2D_pState(W.rho,W.v,W.p,W.spec));
-// }
-
 Flame2D_pState operator -(const Flame2D_pState &W) {
 #ifdef STATIC_NUMBER_OF_SPECIES
-  Species spt[STATIC_NUMBER_OF_SPECIES];
+  double spt[STATIC_NUMBER_OF_SPECIES];
 #else
-  Species *spt= new Species[W.ns];
+  double *spt= new double[W.ns];
 #endif
 
-  for(int i=0; i<W.ns; i++)  spt[i] = -W.spec[i]; 
-  Flame2D_pState Temp(-W.rho,-W.v,-W.p, spt);
+  for(int i=0; i<W.ns; i++)  spt[i] = -W.c[i]; 
+  Flame2D_pState Temp(-W.rho,-W.v,-W.p,spt);
   Temp.tau = -W.tau;
   Temp.qflux = -W.qflux;
 
@@ -1497,46 +1482,7 @@ Flame2D_pState operator -(const Flame2D_pState &W) {
   return(Temp);
 }
 
-/********************************************************
- * Flame2D_pState -- Relational operators.               *
- ********************************************************/
-int operator ==(const Flame2D_pState &W1, const Flame2D_pState &W2) {
-  if(W1.ns == W2.ns){ //check that species are equal
-    bool Temp;
-    for(int i=0; i<W1.ns; i++){
-      if( W1.spec[i] == W2.spec[i] ){
-	Temp = true;
-      } else {
-	Temp = false;
-	break;
-      }  
-      return (W1.rho == W2.rho && W1.v == W2.v && W1.p == W2.p &&
-	      Temp == true && W1.tau == W2.tau &&
-	      W1.qflux == W2.qflux);
-    }
-  } else {
-    cerr<<"\n Mismatch in number of species \n";
-    exit(1);
-  }
-}
 
-int operator !=(const Flame2D_pState &W1, const Flame2D_pState &W2) {
-   if(W1.ns == W2.ns){ //check that species are equal
-    bool Temp = true;
-    for(int i=0; i<W1.ns; i++){
-      if( W1.spec[i] != W2.spec[i] ){
-	Temp = false;
-	break;
-      } 
-      return (W1.rho != W2.rho || W1.v != W2.v || W1.p != W2.p || 
-	      Temp != true || W1.tau != W2.tau ||
-	      W1.qflux != W2.qflux);
-    }
-  } else {
-    cerr<<"\n Mismatch in number of species \n";
-    exit(1);
-  }
-}
 
 /********************************************************
  * Flame2D_pState -- Input-output operators.            *
@@ -1546,7 +1492,7 @@ ostream &operator << (ostream &out_file, const Flame2D_pState &W) {
   out_file.setf(ios::scientific);
   out_file << " " << W.rho  << " " << W.v.x << " " << W.v.y << " " << W.p;
   for( int i=0; i<W.ns; i++){
-    out_file<<" "<<W.spec[i];
+    out_file<<" "<<W.c[i];
   }
   //out_file << " " << W.qflux << " " <<W.tau << " " << W.theta << " " << W.lambda;
   out_file.unsetf(ios::scientific);
@@ -1558,7 +1504,7 @@ istream &operator >> (istream &in_file, Flame2D_pState &W) {
   in_file >> W.rho >> W.v.x >> W.v.y >> W.p;
   //W.set_initial_values();
   for( int i=0; i<W.ns; i++){
-    in_file>>W.spec[i];
+    in_file>>W.c[i];
   }
   //in_file >>W.qflux >>W.tau >>W.theta >>W.lambda;
   in_file.unsetf(ios::skipws);
@@ -1588,7 +1534,7 @@ Flame2D_cState Flame2D_pState::Sa_inviscid(const Vector2D &X,
      Temp.E =  -v.x*H()/X.x;
      //species contributions
      for(int i=0; i<ns;i++){
-       Temp.rhospec[i].c = -rho*v.x*spec[i].c/X.x;         //correct for ns-1 ????
+       Temp.rhoc[i] = -rho*v.x*c[i]/X.x;         //correct for ns-1 ????
      }
      //y is radial
   } else if (Axisymmetric == AXISYMMETRIC_Y) {
@@ -1598,7 +1544,7 @@ Flame2D_cState Flame2D_pState::Sa_inviscid(const Vector2D &X,
      Temp.E =  -v.y*H()/X.y;
      //species contributions
      for(int i=0; i<ns;i++){
-       Temp.rhospec[i].c = -rho*v.y*spec[i].c/X.y;
+       Temp.rhoc[i] = -rho*v.y*c[i]/X.y;
      }
   }
 
@@ -1642,11 +1588,11 @@ void Flame2D_pState::dSa_idU_FD(DenseMatrix &dSa_IdU, const Vector2D &X, const i
  ****************************************************************/
 void Flame2D_pState::dSa_idU(DenseMatrix &dSa_IdU, const Vector2D &X, const int Axisymmetric ) const {
 
-  double enthalpy = h();
-  double CP = Cp();
-  double RTOT = Rtot();
-  double phi = ZERO;
-  double Temp = p/(rho*RTOT);
+  double enthalpy(h());
+  double CP(Cp());
+  double RTOT(Rtot());
+  double phi(ZERO);
+  double Temp(p/(rho*RTOT));
 
 #ifdef _NS_MINUS_ONE
   e_k[ns-1] = (specdata[ns-1].Enthalpy(Temp) + 
@@ -1657,14 +1603,14 @@ void Flame2D_pState::dSa_idU(DenseMatrix &dSa_IdU, const Vector2D &X, const int 
 	      specdata[j].Heatofform() - 
 	      CP*Temp*specdata[j].Rs()/RTOT -
 	      e_k[ns-1]);
-    phi += spec[j].c*e_k[j];
+    phi += c[j]*e_k[j];
   } 
 #else
   for(int j=0; j<ns; j++){
     e_k[j] = (specdata[j].Enthalpy(Temp) + 
 	      specdata[j].Heatofform() - 
 	      CP*Temp*specdata[j].Rs()/RTOT);
-    phi += spec[j].c*e_k[j];
+    phi += c[j]*e_k[j];
   } 
 #endif
  
@@ -1697,8 +1643,8 @@ void Flame2D_pState::dSa_idU(DenseMatrix &dSa_IdU, const Vector2D &X, const int 
     int NUM_VAR = NUM_FLAME2D_VAR_SANS_SPECIES;
     for(int i=0; i<(ns-1);i++){
       dSa_IdU(3,i+NUM_VAR) += v.x*e_k[i]/(CP/RTOT - ONE)/X.x; 
-      dSa_IdU(NUM_VAR+i,0) += v.x*spec[i].c/X.x;
-      dSa_IdU(NUM_VAR+i,1) -= spec[i].c/X.x;
+      dSa_IdU(NUM_VAR+i,0) += v.x*c[i]/X.x;
+      dSa_IdU(NUM_VAR+i,1) -= c[i]/X.x;
       dSa_IdU(NUM_VAR+i,NUM_VAR+i) -= v.x/X.x;
     }
     
@@ -1713,15 +1659,10 @@ Flame2D_cState Flame2D_pState::Sa_viscous(const Flame2D_pState &dWdx,
 					const Flame2D_pState &dWdy,
                                         const Vector2D &X,
                                         const int Axisymmetric){
-  double Mu, Temperature, Rmix;
+  double Mu(mu()), Temperature(T()), Rmix(Rtot());
   double rhohsDs;
   Vector2D grad_T;
   Flame2D_cState Temp; Temp.Vacuum();
-
-  //Transport and thermodynamic properties
-  Mu = mu();
-  Temperature = T();
-  Rmix = Rtot();
 
   //Temperature gradient
   //dT/dx = 1/rho*R *( dP/dx - P/rho * drho/dx)
@@ -1737,8 +1678,8 @@ Flame2D_cState Flame2D_pState::Sa_viscous(const Flame2D_pState &dWdx,
   //Thermal diffusion, q -= rho * sum ( hs * Ds *gradcs)
   for(int i=0; i<ns; i++){ 
     rhohsDs = rho*(Mu/(rho*Schmidt[i]))*(specdata[i].Enthalpy(Temperature) + specdata[i].Heatofform());
-    qflux.x -= rhohsDs*dWdx.spec[i].c;
-    qflux.y -= rhohsDs*dWdy.spec[i].c;
+    qflux.x -= rhohsDs*dWdx.c[i];
+    qflux.y -= rhohsDs*dWdy.c[i];
   }
   
 
@@ -1750,7 +1691,7 @@ Flame2D_cState Flame2D_pState::Sa_viscous(const Flame2D_pState &dWdx,
     Temp.rhov.y = tau.xy/X.x;
     Temp.E = (- qflux.x + v.x*tau.xx + v.y*tau.xy)/X.x;
     for(int i=0; i<ns;i++){
-      Temp.rhospec[i].c = rho*(Mu/(rho*Schmidt[i]))*dWdx.spec[i].c/X.x;
+      Temp.rhoc[i] = rho*(Mu/(rho*Schmidt[i]))*dWdx.c[i]/X.x;
     }
     
   } else if (Axisymmetric == AXISYMMETRIC_Y) {
@@ -1758,7 +1699,7 @@ Flame2D_cState Flame2D_pState::Sa_viscous(const Flame2D_pState &dWdx,
     Temp.rhov.y = (tau.xx - tau.zz)/X.y;
     Temp.E = (- qflux.y + v.x*tau.xy + v.y*tau.yy)/X.y;
     for(int i=0; i<ns;i++){
-      Temp.rhospec[i].c = rho*(Mu/(rho*Schmidt[i]))*dWdy.spec[i].c/X.y;
+      Temp.rhoc[i] = rho*(Mu/(rho*Schmidt[i]))*dWdy.c[i]/X.y;
     }
     
   } /* endif */
@@ -1776,14 +1717,14 @@ Flame2D_cState Flame2D_pState::Sa_viscous(const Flame2D_pState &dWdx,
 			     const int Axisymmetric,
 			     const double d_dWdx_dW, const double d_dWdy_dW) const {
 
-  int NUM_VAR = NUM_FLAME2D_VAR_SANS_SPECIES;
-  double Rmix = Rtot();
-  double Temp = T();
-  double Mu = mu();
-  double Kappa = kappa();
+  int NUM_VAR (NUM_FLAME2D_VAR_SANS_SPECIES);
+  double Rmix (Rtot());
+  double Temp (T());
+  double Mu (mu());
+  double Kappa (kappa());
   
   if(Axisymmetric == AXISYMMETRIC_X){   
-    double radius = X.x;
+    double radius(X.x);
 
     dSa_VdW(2,2) += TWO*Mu*(d_dWdx_dW - ONE/radius)/radius;    
     dSa_VdW(2,1) += Mu*d_dWdy_dW/radius;
@@ -1792,8 +1733,8 @@ Flame2D_cState Flame2D_pState::Sa_viscous(const Flame2D_pState &dWdx,
     //energy
     double Sum_q(ZERO), Sum_dq(ZERO), Sum_dhi(ZERO);
     for(int Num = 0; Num<ns; Num++){
-      Sum_q += specdata[Num].Enthalpy_prime(Temp)*Mu*dWdx.spec[Num].c/(Schmidt[Num]*rho*Rmix);      // - ns-1 ???
-      Sum_dq -= specdata[Num].Enthalpy_prime(Temp)*Mu*dWdx.spec[Num].c*Temp/(rho*Schmidt[Num]);
+      Sum_q += specdata[Num].Enthalpy_prime(Temp)*Mu*dWdx.c[Num]/(Schmidt[Num]*rho*Rmix);      // - ns-1 ???
+      Sum_dq -= specdata[Num].Enthalpy_prime(Temp)*Mu*dWdx.c[Num]*Temp/(rho*Schmidt[Num]);
       //Sum_dhi += specdata[Num].Enthalpy_prime(Temp)*Temp*Mu*dWdx.spec[Num].c/(Rmix*Schmidt[Num]); 
     } 
 
@@ -1849,7 +1790,7 @@ void Flame2D_pState::dSwdU_FD(DenseMatrix &dSwdU) const{
 
   Flame2D_cState A,C;
   Flame2D_cState B,D;
-  double perturb = 1e-6; //5e-6;
+  double perturb(1e-6); //5e-6;
   double a;
 
   for(int jcol=0; jcol<NUM_VAR_FLAME2D-1; jcol++){    
@@ -1881,7 +1822,7 @@ double Flame2D_pState::dSwdU_max_diagonal(const int &Preconditioned,
   //as above, but its really easy to setup.
   //should change later to only calculate the diagonal terms!!!!
 
-  double max_diagonal =ONE;
+  double max_diagonal(ONE);
   DenseMatrix dSwdU(NUM_VAR_FLAME2D-1,NUM_VAR_FLAME2D-1,ZERO);
   React.dSwdU<Flame2D_pState,Flame2D_cState>(dSwdU,*this,true,solver_type);
 
@@ -1940,65 +1881,33 @@ double Flame2D_cState::Rtot() const{
   // = sum ( mass fraction * species gas constant)
   double sum = 0.0;
   for(int i=0; i<ns; i++){
-    sum += rhospec[i].c * specdata[i].Rs();
+    sum += rhoc[i] * specdata[i].Rs();
   }
   return (sum/rho);
 }
 
-// /**************************************************
-//   mixture Heat Capacity (const pressure) J/(kg*K)
-// ***************************************************/
-// double Flame2D_cState::Cp(void) const{
-//   // = sum ( mass fraction * species Cp) 
-//   double Temp = T();
-//   double sum = 0.0;
-//   for(int i=0; i<ns; i++){
-//     sum += rhospec[i].c*specdata[i].HeatCapacity_p(Temp);
-//   }
-//   return (sum/rho);
-// }
-
-// /**************************************************
-//   mixture Heat Capacity (const volume) J/(kg*K)
-// ***************************************************/
-// double Flame2D_cState::Cv(void) const{
-//   // = sum ( mass fraction * species Cv)  
-//   double Temp = T();
-//   double sum = 0.0;
-//   for(int i=0; i<ns; i++){
-//     sum += rhospec[i].c*specdata[i].HeatCapacity_v(Temp);
-//   }
-//   return (sum/rho);
-// }
-
-// /**************************************************
-//   mixture Heat Ratio gamma J/(kg*K)
-// ***************************************************/
-// double Flame2D_cState::g(void) const{
-//   // = Cp / Cv  
-//   return Cp()/Cv();
-// }
 
 /**************************************************
   Specific Internal Energy
  ***************************************************/
 double Flame2D_cState::e(void) const{
   // = sum (mass fraction * species e) 
-  double sum = 0.0;
-  double Temp = T();
+  double sum(0.0);
+  double Temp(T());
   for(int i=0; i<ns; i++){ //(Enthalpy(Temp) - (R/mol_mass)*Temp)
-    sum += rhospec[i].c*(specdata[i].Enthalpy(Temp) + specdata[i].Heatofform() 
-			 - specdata[i].Rs()*Temp);
+    sum += rhoc[i]*(specdata[i].Enthalpy(Temp) + 
+		    specdata[i].Heatofform() -
+		    specdata[i].Rs()*Temp);
   }
   return (sum/rho);
 }
 
 double Flame2D_cState::es(void) const{
   // = sum (mass fraction * species e) 
-  double sum = 0.0;
-  double Temp = T();
+  double sum(0.0);
+  double Temp(T());
   for(int i=0; i<ns; i++){ //(Enthalpy(Temp) - (R/mol_mass)*Temp)
-    sum += rhospec[i].c*(specdata[i].Enthalpy(Temp) - specdata[i].Rs()*Temp);
+    sum += rhoc[i]*(specdata[i].Enthalpy(Temp) - specdata[i].Rs()*Temp);
   }
   return (sum/rho);
 }
@@ -2008,20 +1917,20 @@ double Flame2D_cState::es(void) const{
 ***************************************************/
 double Flame2D_cState::h(const double &Temp) const{
   // = sum (mass fraction * species h) 
- double sum = 0.0;  
+  double sum(0.0);
  for(int i=0; i<ns; i++){
-   sum += rhospec[i].c*(specdata[i].Enthalpy(Temp) + specdata[i].Heatofform());
+   sum += rhoc[i]*(specdata[i].Enthalpy(Temp) + specdata[i].Heatofform());
  }
  return (sum/rho);
 }
 
 double Flame2D_cState::hs(const double &Temp) const{
   // = sum (mass fraction * species h) 
- double sum = 0.0;  
- for(int i=0; i<ns; i++){
-   sum += rhospec[i].c*(specdata[i].Enthalpy(Temp));
- }
- return (sum/rho);
+  double sum(0.0);
+  for(int i=0; i<ns; i++){
+    sum += rhoc[i]*(specdata[i].Enthalpy(Temp));
+  }
+  return (sum/rho);
 }
 
 /**************************************************
@@ -2029,18 +1938,18 @@ double Flame2D_cState::hs(const double &Temp) const{
    actually is just Cp as Cp = (dh/dT)_p
 ***************************************************/
 double Flame2D_cState::hprime(const double &Temp) const{
- double sum = 0.0;  
+  double sum(0.0);
  for(int i=0; i<ns; i++){
-   sum += rhospec[i].c*specdata[i].Enthalpy_prime(Temp);
+   sum += rhoc[i]*specdata[i].Enthalpy_prime(Temp);
  }
  return (sum/rho);
 }
 
 /************* Mixture Heats of Formation *********/
 double Flame2D_cState::heatofform(void) const{ 
-  double sum = 0.0;
+  double sum(0.0);
   for(int i=0; i<ns; i++){ 
-    sum += rhospec[i].c*specdata[i].Heatofform();
+    sum += rhoc[i]*specdata[i].Heatofform();
   }
   return (sum);
 }
@@ -2051,12 +1960,12 @@ double Flame2D_cState::heatofform(void) const{
   assuming T=273K as the temperature.
  **************************************************/
 double Flame2D_cState::gamma_guess(void) const{
-  double sum1 = ZERO;     double sum2 = ZERO;
-  double gamma_s = ZERO;  double Temp = 200.0;
+  double sum1(ZERO);     double sum2(ZERO);
+  double gamma_s(ZERO);  double Temp(200.0);
   for(int i=0; i<ns; i++){
-    sum1 += (rhospec[i].c/rho)*specdata[i].Rs();
+    sum1 += (rhoc[i]/rho)*specdata[i].Rs();
     gamma_s = ONE/(ONE - specdata[i].Rs()/ specdata[i].HeatCapacity_p(Temp));
-    sum2 += (((rhospec[i].c/rho)*specdata[i].Rs()) / (gamma_s - ONE)); 
+    sum2 += (((rhoc[i]/rho)*specdata[i].Rs()) / (gamma_s - ONE)); 
   }
 
   return (ONE + sum1/sum2);
@@ -2172,12 +2081,10 @@ double Flame2D_cState::T(void) const{
   from eigenvalue analysis using e =f(p,rho)
 ****************************************************/
 double Flame2D_cState::a(void) const{
-  double sum;
-  double RTOT= Rtot();
-  double Temp= T();
-  sum = RTOT*Temp*(RTOT/( hprime(Temp) - RTOT) + ONE);
+  double RTOT(Rtot());
+  double Temp(T());
   //could also just call sqrt(g()*Rtot()*T());
-  return sqrt(sum);
+  return sqrt(RTOT*Temp*(RTOT/( hprime(Temp) - RTOT) + ONE));
 }
 
 /**************************************************
@@ -2185,19 +2092,20 @@ double Flame2D_cState::a(void) const{
   using Wilke [1950] formulation
 ***************************************************/
 double Flame2D_cState::mu(void) const{
-  double sum =0.0; 
-  double Temp = T();
+  double sum(0.0); 
+  double Temp(T());
+  double phi;
 
   for(int i=0; i<ns; i++){
-    double phi = 0.0;
+    phi = 0.0;
     for (int j=0; j<ns; j++){
       if(i == 0) vis[j] = specdata[j].Viscosity(Temp);
-      phi += ((rhospec[j].c/rho) / specdata[j].Mol_mass())*
+      phi += ((rhoc[j]/rho) / specdata[j].Mol_mass())*
 	pow(1.0 + sqrt(vis[i]/vis[j])*
 	    pow(specdata[j].Mol_mass()/specdata[i].Mol_mass(),0.25),2.0)/
        sqrt(8.0*(1.0 +specdata[i].Mol_mass()/specdata[j].Mol_mass()));
     }
-    sum += ((rhospec[i].c/rho)* vis[i] ) / 
+    sum += ((rhoc[i]/rho)* vis[i] ) / 
       (specdata[i].Mol_mass() * phi);
   }  
 
@@ -2206,19 +2114,20 @@ double Flame2D_cState::mu(void) const{
 
 
 double Flame2D_cState::dmudT(void) const{
-  double sum =0.0; 
-  double Temp = T();
+  double sum(0.0); 
+  double Temp(T());
+  double phi;
 
   for(int i=0; i<ns; i++){
-    double phi = 0.0;
+    phi = 0.0;
     for (int j=0; j<ns; j++){
       if(i == 0) vis[j] = specdata[j].dViscositydT(Temp);
-      phi += (rhospec[j].c/rho / specdata[j].Mol_mass())*
+      phi += (rhoc[j]/rho / specdata[j].Mol_mass())*
 	pow(1.0 + sqrt(vis[i]/vis[j])*
 	    pow(specdata[j].Mol_mass()/specdata[i].Mol_mass(),0.25),2.0)/
        sqrt(8.0*(1.0 +specdata[i].Mol_mass()/specdata[j].Mol_mass()));
     }
-    sum += (rhospec[i].c/rho * vis[i] ) / 
+    sum += (rhoc[i]/rho * vis[i] ) / 
       (specdata[i].Mol_mass() * phi);
   }  
   return sum;
@@ -2227,38 +2136,36 @@ double Flame2D_cState::dmudT(void) const{
   Thermal Conductivity - Mason & Saxena (1958)  W/(m*K)
 ****************************************************/
 double Flame2D_cState::kappa(void) const{
-  double sum = 0.0;  
-  double Temp = T();
+  double sum(0.0);  
+  double Temp(T());
+  double phi;
 
   for(int i=0; i<ns; i++){
-    double phi = 0.0;
+    phi = 0.0;
     for (int j=0; j<ns; j++){
       if(i == 0) vis[j] = specdata[j].Viscosity(Temp);
       if(i != j){
-	phi += ((rhospec[j].c/rho) / specdata[j].Mol_mass())*
+	phi += ((rhoc[j]/rho) / specdata[j].Mol_mass())*
 	  pow(ONE + sqrt(vis[i]/vis[j])*
 	      pow(specdata[j].Mol_mass()/specdata[i].Mol_mass(),0.25),2.0)/
 	  sqrt(EIGHT*(ONE +specdata[i].Mol_mass()/specdata[j].Mol_mass()));
       }
     }
 
-    sum += (specdata[i].ThermalConduct(Temp)*(rhospec[i].c/rho)) / 
-      ((rhospec[i].c/rho) + (specdata[i].Mol_mass()) * 1.065 * phi);
+    sum += (specdata[i].ThermalConduct(Temp)*(rhoc[i]/rho)) / 
+      ((rhoc[i]/rho) + (specdata[i].Mol_mass()) * 1.065 * phi);
   }  
-
-
-  //or Coffee and Heimerl (1981)
-//   double one =0.0; double two=0.0;
-//   for (int j=0; j<ns; j++){
-//     one += (rhospec[i].c/rho)*specdata[i].ThermalConduct(Temp,p);
-//     two += (rhospec[i].c/rho)/specdata[i].ThermalConduct(Temp,p);
-//   }
-//   sum = HALF*(one + ONE/two);
 
   return sum;
 
 }
 
+/****************************************************
+  Diffusion coefficient  m^2/s
+****************************************************/
+double Flame2D_cState::Diffusion_coef(const int &i) const{
+  return mu()/Schmidt[i];
+}
 
 /******************************************************
  Calculating the thermal diffusion component of 
@@ -2267,15 +2174,16 @@ double Flame2D_cState::kappa(void) const{
   sum( hs * Ds * grad cs)
 *******************************************************/
 Vector2D Flame2D_cState::thermal_diffusion(const double &Temp) const{
-  Vector2D sum;
-  sum.zero();
-  //double Temp = T();
-  //problems with Species overloaded operators
-  for(int i=0; i<ns; i++){ 
-    sum  +=   (specdata[i].Enthalpy(Temp) + specdata[i].Heatofform())
-            * rhospec[i].diffusion_coef*rhospec[i].gradc;
-  }
-  return sum/(rho*rho);
+  // FIXME - MRJC
+//   Vector2D sum;
+//   sum.zero();
+//   //double Temp = T();
+//   //problems with Species overloaded operators
+//   for(int i=0; i<ns; i++){ 
+//     sum  +=   (specdata[i].Enthalpy(Temp) + specdata[i].Heatofform())
+//       * Diffusion_coef(i)*rhospec[i].gradc;
+//   }
+//   return sum/(rho*rho);
 }
 
 /*****************************************************************
@@ -2283,36 +2191,38 @@ Vector2D Flame2D_cState::thermal_diffusion(const double &Temp) const{
  * Viscous fluxes  (turbulent flows) are defined in single block * 
  ****************************************************************/
 Flame2D_cState Flame2D_cState::Viscous_Flux_x(const Flame2D_pState &dWdx) const{
+  // FIXME - MRJC
  
-  Flame2D_cState temp;
+//   Flame2D_cState temp;
 
-  temp[1] = ZERO;
-  temp[2] = tau.xx;
-  temp[3] = tau.xy;
-  temp[4] = - qflux.x + v().x*tau.xx + v().y*tau.xy;		
+//   temp[1] = ZERO;
+//   temp[2] = tau.xx;
+//   temp[3] = tau.xy;
+//   temp[4] = - qflux.x + v().x*tau.xx + v().y*tau.xy;		
 
-  //rho * Diffusion_Coef * grad cn 
-  for( int i=0; i<ns; i++){
-    temp.rhospec[i].c = (rhospec[i].diffusion_coef * rhospec[i].gradc.x)/rho; 
-  }
+//   //rho * Diffusion_Coef * grad cn 
+//   for( int i=0; i<ns; i++){
+//     temp.rhoc[i] = (Diffusion_coef(i) * rhospec[i].gradc.x)/rho; 
+//   }
 
  
-  return(temp);  
+//   return(temp);  
 }
 
 Flame2D_cState Flame2D_cState::Viscous_Flux_y(const Flame2D_pState &dWdy) const {
-  Flame2D_cState temp;
+  // FIXME - MRJC
+//   Flame2D_cState temp;
 
-  temp[1] = ZERO;
-  temp[2] = tau.xy; 
-  temp[3] = tau.yy;
-  temp[4] = - qflux.y + v().x*tau.xy + v().y*tau.yy;		
-  //rho * Diffusion_Coef * grad cn 
-  for( int i=0; i<ns; i++){
-    temp.rhospec[i].c = (rhospec[i].diffusion_coef * rhospec[i].gradc.y)/rho;     
-  }
+//   temp[1] = ZERO;
+//   temp[2] = tau.xy; 
+//   temp[3] = tau.yy;
+//   temp[4] = - qflux.y + v().x*tau.xy + v().y*tau.yy;		
+//   //rho * Diffusion_Coef * grad cn 
+//   for( int i=0; i<ns; i++){
+//     temp.rhospec[i].c = (Diffusion_coef(i) * rhospec[i].gradc.y)/rho;     
+//   }
 
-  return(temp);  
+//   return(temp);  
 }
 
 /*********************************************************************
@@ -2337,7 +2247,7 @@ Flame2D_cState Flame2D_cState::operator -(const Flame2D_cState &U) const{
 Flame2D_cState Flame2D_cState::operator *(const double &a) const{
   Flame2D_cState Temp(*this);
   Temp.rho = rho*a;  Temp.rhov = rhov*a; Temp.E = E*a;
-  for( int i=0; i<ns; i++)Temp.rhospec[i] = rhospec[i]*a;
+  for( int i=0; i<ns; i++)Temp.rhoc[i] = rhoc[i]*a;
   Temp.tau = tau*a;
   Temp.qflux = qflux*a;
   return(Temp);
@@ -2346,7 +2256,7 @@ Flame2D_cState Flame2D_cState::operator *(const double &a) const{
 Flame2D_cState operator *(const double &a, const Flame2D_cState &U){
   Flame2D_cState Temp;
   Temp.rho = U.rho*a;  Temp.rhov = U.rhov*a; Temp.E = U.E*a;
-  for( int i=0; i<U.ns; i++) Temp.rhospec[i] = U.rhospec[i]*a;
+  for( int i=0; i<U.ns; i++) Temp.rhoc[i] = U.rhoc[i]*a;
   return(Temp);
 }
 
@@ -2354,7 +2264,7 @@ Flame2D_cState operator *(const double &a, const Flame2D_cState &U){
 Flame2D_cState Flame2D_cState::operator /(const double &a) const {
   Flame2D_cState Temp(*this);
   Temp.rho = rho/a; Temp.rhov = rhov/a; Temp.E = E/a;
-  for(int i=0; i<ns; i++) Temp.rhospec[i] = rhospec[i]/a; 
+  for(int i=0; i<ns; i++) Temp.rhoc[i] = rhoc[i]/a; 
   Temp.tau = tau/a;
   Temp.qflux = qflux/a;
   return(Temp);
@@ -2363,7 +2273,7 @@ Flame2D_cState Flame2D_cState::operator /(const double &a) const {
 //----------------- Inner Product ------------------------//
 double Flame2D_cState::operator *(const Flame2D_cState &U) const{
   double sum=0.0;
-  for(int i=0; i<ns; i++)  sum += rhospec[i]*U.rhospec[i];
+  for(int i=0; i<ns; i++)  sum += rhoc[i]*U.rhoc[i];
   return (rho*U.rho + rhov*U.rhov + E*U.E + sum);
 }
 
@@ -2374,7 +2284,7 @@ Flame2D_cState Flame2D_cState::operator ^( const Flame2D_cState &U) const {
   Temp.rhov.x = rhov.x*U.rhov.x;
   Temp.rhov.y = rhov.y*U.rhov.y;
   Temp.E = E*U.E;
-  for(int i=0; i<ns; i++) Temp.rhospec[i] = rhospec[i]*U.rhospec[i];
+  for(int i=0; i<ns; i++) Temp.rhoc[i] = rhoc[i]*U.rhoc[i];
   return(Temp);
 }
 
@@ -2396,7 +2306,7 @@ Flame2D_cState& Flame2D_cState::operator +=(const Flame2D_cState &U){
   rho += U.rho;
   rhov += U.rhov; 
   E += U.E;
-  for( int i=0; i<ns; i++)  rhospec[i].c += U.rhospec[i].c;
+  for( int i=0; i<ns; i++)  rhoc[i] += U.rhoc[i];
   tau += U.tau;
   qflux += U.qflux; 
   return (*this);
@@ -2406,7 +2316,7 @@ Flame2D_cState& Flame2D_cState::operator -=(const Flame2D_cState &U) {
   rho -= U.rho;
   rhov -= U.rhov;
   E -= U.E;
-  for(int i=0; i<ns; i++)   rhospec[i].c -= U.rhospec[i].c;
+  for(int i=0; i<ns; i++)   rhoc[i] -= U.rhoc[i];
   tau -= U.tau;
   qflux -= U.qflux; 
   return (*this); 
@@ -2417,7 +2327,7 @@ Flame2D_cState& Flame2D_cState::operator *=(const double &a) {
   rhov.x *= a;
   rhov.y *= a;
   E *= a;
-  for (int i = 0; i < ns; i++) rhospec[i] *= a;
+  for (int i = 0; i < ns; i++) rhoc[i] *= a;
   tau *= a;
   qflux *= a;
   return *this;
@@ -2428,7 +2338,7 @@ Flame2D_cState& Flame2D_cState::operator /=(const double &a) {
   rhov.x /= a;
   rhov.y /= a;
   E /= a;
-  for (int i = 0; i < ns; i++) rhospec[i] /= a;
+  for (int i = 0; i < ns; i++) rhoc[i] /= a;
   tau /= a;
   qflux /= a;
   return *this;
@@ -2439,11 +2349,11 @@ Flame2D_cState& Flame2D_cState::operator /=(const double &a) {
  ********************************************************/
 Flame2D_cState operator -(const Flame2D_cState &U) {
 #ifdef STATIC_NUMBER_OF_SPECIES
-  Species spt[STATIC_NUMBER_OF_SPECIES];
+  double spt[STATIC_NUMBER_OF_SPECIES];
 #else
-  Species *spt= new Species[U.ns];
+  double *spt= new double[U.ns];
 #endif
-  for(int i=0; i<U.ns; i++) spt[i] = -U.rhospec[i];
+  for(int i=0; i<U.ns; i++) spt[i] = -U.rhoc[i];
   Flame2D_cState Temp(-U.rho,-U.rhov, -U.E, spt);
   Temp.tau = -U.tau;
   Temp.qflux = -U.qflux;
@@ -2453,46 +2363,7 @@ Flame2D_cState operator -(const Flame2D_cState &U) {
   return(Temp);
 }
 
-/********************************************************
- * Flame2D_cState -- Relational operators.              *
- ********************************************************/
-int operator ==(const Flame2D_cState &U1, const Flame2D_cState &U2) {
-  if(U1.ns == U2.ns){ //check that species are equal
-    bool Temp;
-    for(int i=0; i<U1.ns; i++){
-      if( U1.rhospec[i] == U2.rhospec[i] ){
-	Temp = true;
-      } else {
-	Temp = false;
-	break;
-      }  
-      return (U1.rho == U2.rho && U1.rhov == U2.rhov && U1.E == U2.E && 
-	      U1.tau == U2.tau && U1.qflux == U2.qflux &&
-	      Temp == true);
-    }
-  } else {
-    cerr<<"\n Mismatch in number of species \n";
-    exit(1);
-  }
-}
 
-int operator !=(const Flame2D_cState &U1, const Flame2D_cState &U2) {
-   if(U1.ns == U2.ns){ //check that species are equal
-    bool Temp = true;
-    for(int i=0; i<U1.ns; i++){
-      if( U1.rhospec[i] != U2.rhospec[i] ){
-	Temp = false;
-	break;
-      } 
-     return (U1.rho != U2.rho || U1.rhov != U2.rhov || U1.E != U2.E ||
-	     U1.tau != U2.tau || U1.qflux != U2.qflux || 
-	     Temp != true);
-    }
-  } else {
-    cerr<<"\n Mismatch in number of species \n";
-    exit(1);
-  }
-}
 
 /********************************************************
  * Flame2D_cState -- Input-output operators.            *
@@ -2502,7 +2373,7 @@ ostream &operator << (ostream &out_file, const Flame2D_cState &U) {
   out_file.setf(ios::scientific);
   out_file << " " << U.rho  << " " << U.rhov.x << " " << U.rhov.y << " " << U.E;
   for( int i=0; i<U.ns; i++){
-    out_file<<" "<<U.rhospec[i];
+    out_file<<" "<<U.rhoc[i];
   } 
   // out_file << " " <<U.qflux<< " " <<U.tau << " " <<U.theta<< " " <<U.lambda;
   out_file.unsetf(ios::scientific);
@@ -2514,7 +2385,7 @@ istream &operator >> (istream &in_file, Flame2D_cState &U) {
   in_file >> U.rho >> U.rhov.x >> U.rhov.y >> U.E;
   //U.set_initial_values();
   for( int i=0; i<U.ns; i++){
-    in_file>>U.rhospec[i]; 
+    in_file>>U.rhoc[i]; 
   } 
   //in_file >>U.qflux>>U.tau >>U.theta>>U.lambda;
   in_file.unsetf(ios::skipws);
@@ -2765,29 +2636,6 @@ Flame2D_pState BC_2DFlame_Outflow(const Flame2D_pState &Wi,
     Wnew.v.y = ZERO;
   }
   return Wnew;
-
-//   Flame2D_pState Wi_rotated(Wi), Wo_rotated(Wo), Wnew;
-//   double ab, ub_rotated, vb_rotated;
-//   double cos_angle = norm_dir.x; 
-//   double sin_angle = norm_dir.y;
-
-//   Wi_rotated.v.x = Wi.v.x*cos_angle + Wi.v.y*sin_angle;
-//   Wi_rotated.v.y = - Wi.v.x*sin_angle +  Wi.v.y*cos_angle; 
-//   Wo_rotated.v.x = Wo.v.x*cos_angle + Wo.v.y*sin_angle;
-//   Wo_rotated.v.y = - Wo.v.x*sin_angle + Wo.v.y*cos_angle;
-    
-//   Wnew.Copy(Wi_rotated);
-//   Wnew.p = Wo_rotated.p;
-//   Wnew.rho = Wi_rotated.rho*pow(Wnew.p/Wi_rotated.p, ONE/Wi_rotated.g());
-
-//   ab = Wnew.a();
-//   ub_rotated = Wi_rotated.v.x + TWO*(Wi_rotated.a()-ab)/(Wi_rotated.g() -ONE);
-//   vb_rotated = Wi_rotated.v.y;
-
-//   Wnew.v.x = ub_rotated*cos_angle - vb_rotated*sin_angle;
-//   Wnew.v.y = ub_rotated*sin_angle + vb_rotated*cos_angle;
-
-//   return (Wnew);
 
 }
 
@@ -3122,7 +2970,7 @@ Flame2D_pState RoeAverage(const Flame2D_pState &Wl,
     Temp.v.x = (srhol*Wl.v.x+srhor*Wr.v.x)/(srhol+srhor);
     Temp.v.y = (srhol*Wl.v.y+srhor*Wr.v.y)/(srhol+srhor);
     for(int i=0; i<Wl.ns; i++){
-      Temp.spec[i].c = (srhol*Wl.spec[i].c + srhor*Wr.spec[i].c)/(srhol+srhor);
+      Temp.c[i] = (srhol*Wl.c[i] + srhor*Wr.c[i])/(srhol+srhor);
     }
  
     Ha = (srhol*Hl+srhor*Hr)/(srhol+srhor);
@@ -3561,7 +3409,7 @@ Flame2D_pState HartenFixPos(const Flame2D_pState &lambdas_a,
   NEW.p = HartenFixPos(lambdas_a[4],lambdas_l[4],lambdas_r[4]);
   
   for( int i=(NUM_FLAME2D_VAR_SANS_SPECIES+1); i<=NEW.NUM_VAR_FLAME2D; i++){
-    NEW.spec[i-(NUM_FLAME2D_VAR_SANS_SPECIES+1)].c = HALF*(lambdas_a[i]+fabs(lambdas_a[i]));
+    NEW.c[i-(NUM_FLAME2D_VAR_SANS_SPECIES+1)] = HALF*(lambdas_a[i]+fabs(lambdas_a[i]));
   }
   
   return (NEW);
@@ -3585,7 +3433,7 @@ Flame2D_pState HartenFixNeg(const Flame2D_pState &lambdas_a,
   NEW.p = HartenFixNeg(lambdas_a[4],lambdas_l[4],lambdas_r[4]);
   
   for( int i=(NUM_FLAME2D_VAR_SANS_SPECIES+1); i<=NEW.NUM_VAR_FLAME2D; i++){
-    NEW.spec[i-(NUM_FLAME2D_VAR_SANS_SPECIES+1)].c = HALF*(lambdas_a[i]-fabs(lambdas_a[i]));
+    NEW.c[i-(NUM_FLAME2D_VAR_SANS_SPECIES+1)] = HALF*(lambdas_a[i]-fabs(lambdas_a[i]));
   }
   return (NEW);
 }
@@ -3607,7 +3455,7 @@ Flame2D_pState HartenFixAbs(const Flame2D_pState &lambdas_a,
   NEW.p = HartenFixAbs(lambdas_a[4],lambdas_l[4],lambdas_r[4]);
   
   for( int i=(NUM_FLAME2D_VAR_SANS_SPECIES+1); i<=NEW.NUM_VAR_FLAME2D; i++){
-    NEW.spec[i-(NUM_FLAME2D_VAR_SANS_SPECIES+1)].c = fabs(lambdas_a[i]);
+    NEW.c[i-(NUM_FLAME2D_VAR_SANS_SPECIES+1)] = fabs(lambdas_a[i]);
   }
   return (NEW);
 }
@@ -3687,7 +3535,7 @@ Flame2D_cState FluxRoe_x(const Flame2D_pState &Wl,
       //calculating Mr^2 and passing to save computation,
       //not conceptually nice but saves from recalculating
 
-      double MR2a = Wa.Mr2(flow_type_flag,deltax); 
+      double MR2a( Wa.Mr2(flow_type_flag,deltax) );
       lambdas_l = Wl.lambda_preconditioned_x(Wl.Mr2(flow_type_flag,deltax)); 
       lambdas_r = Wr.lambda_preconditioned_x(Wr.Mr2(flow_type_flag,deltax));
       lambdas_a = Wa.lambda_preconditioned_x(MR2a);
@@ -3822,7 +3670,7 @@ Flame2D_cState FluxAUSMplus_up(const Flame2D_pState &Wl,
 			      const Flame2D_pState &Wr) {
 
   Flame2D_cState Flux, Convected_Quantities;
-  double beta = 0.125, sigma = 1.0, Kp =0.25, Ku = 0.5/*0.75*/;
+  double beta(0.125), sigma(1.0), Kp(0.25), Ku(0.5)/*0.75*/;
   double alpha, rhohalf, mass_flux_half;
   double ahalf, Ml, Mr, Mplus, Mminus, Mhalf, pplus, pminus, phalf;
   //double al, ar, atilde_l, atilde_r;
@@ -3899,7 +3747,7 @@ Flame2D_cState FluxAUSMplus_up(const Flame2D_pState &Wl,
 //     }
 
     for(int i=0; i<Wl.ns; ++i){
-      Convected_Quantities.rhospec[i].c = Wl.spec[i].c;
+      Convected_Quantities.rhoc[i] = Wl.c[i];
     }
     
   } else {
@@ -3915,7 +3763,7 @@ Flame2D_cState FluxAUSMplus_up(const Flame2D_pState &Wl,
 //     }
 
     for(int i=0; i<Wr.ns; ++i){
-      Convected_Quantities.rhospec[i].c = Wr.spec[i].c;
+      Convected_Quantities.rhoc[i] = Wr.c[i];
     }
 
   } //end if
@@ -4045,10 +3893,11 @@ Flame2D_cState Viscous_Flux_n(Flame2D_pState &W,
 			     const Vector2D X,
 			     const Vector2D &norm_dir) {
 
+  // FIXME - MRJC
   Flame2D_cState U;
   double Temperature, Rmix;
   Vector2D grad_T;
-  Vector2D i = Vector2D(1,0), j = Vector2D(0,1);
+  Vector2D i(1,0), j(0,1);
 
   //Molecular transport properties
   Temperature = W.T();
@@ -4059,7 +3908,7 @@ Flame2D_cState Viscous_Flux_n(Flame2D_pState &W,
   U.rhov = W.rhov();
   U.E = W.E();
   for(int i=0; i<W.ns; i++){
-    U.rhospec[i].c = W.rho*W.spec[i].c;
+    U.rhoc[i] = W.rho*W.c[i];
   } 
  
   //Temperature gradient
@@ -4072,10 +3921,10 @@ Flame2D_cState Viscous_Flux_n(Flame2D_pState &W,
   for( int k=0; k<U.ns; k++){
     /***************** Diffusion coefficients **********************/
     // using global Schmidt number relation Scs = mu/rho*Ds
-    U.rhospec[k].diffusion_coef = W.mu()/U.Schmidt[k];
+//     U.rhospec[k].diffusion_coef = W.mu()/U.Schmidt[k];
     /***************** mass fraction gradients *********************/
-    U.rhospec[k].gradc.x = U.rho * dWdx.spec[k].c;
-    U.rhospec[k].gradc.y = U.rho * dWdy.spec[k].c;
+//     U.rhospec[k].gradc.x = U.rho * dWdx.c[k];
+//     U.rhospec[k].gradc.y = U.rho * dWdy.c[k];
   }
   
   //Molecular (laminar) stress tensor
@@ -4113,8 +3962,8 @@ double WallShearStress(const Flame2D_pState &W1,
   W2.Vacuum(); W2.rho = W1.rho; W2.p = W1.p;
   W3.Vacuum(); W3.rho = W1.rho; W3.p = W1.p;
   for(int i=0; i<W1.ns; i++){
-    W2.spec[i].c = W1.spec[i].c;
-    W3.spec[i].c = W1.spec[i].c;
+    W2.c[i] = W1.c[i];
+    W3.c[i] = W1.c[i];
   }
 
   // Determine the lengths and normals of te faces and the 

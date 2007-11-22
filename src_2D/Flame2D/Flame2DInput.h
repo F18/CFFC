@@ -530,7 +530,7 @@ inline ostream &operator << (ostream &out_file,
 	     << "\n  -> Initial mass fractions: ";
     for(int i=0; i<IP.Wo.ns; i++){
       out_file  <<"c["<<IP.multispecies[i]<<"]= ";
-      out_file  << IP.Wo.spec[i].c<<", ";
+      out_file  << IP.Wo.c[i]<<", ";
     } 
     if(IP.FlowType != FLOWTYPE_INVISCID){
       out_file << "\n  -> Schmidt Numbers for Viscous flow: ";

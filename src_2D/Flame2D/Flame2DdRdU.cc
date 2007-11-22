@@ -839,8 +839,8 @@ void dFvdWf_Diamond(DenseMatrix &dFvdWf, DenseMatrix &dGvdWf,
      Temp =  QuadraturePoint_W.T();
      for(int Num = 0; Num<ns_values; Num++){
        h[Num] =  QuadraturePoint_W.specdata[Num].Enthalpy(Temp)+QuadraturePoint_W.specdata[Num].Heatofform();
-       dcdx[Num] = SolnBlk.dWdx_faceN[ii][jj].spec[Num].c;
-       dcdy[Num] = SolnBlk.dWdy_faceN[ii][jj].spec[Num].c;
+       dcdx[Num] = SolnBlk.dWdx_faceN[ii][jj].c[Num];
+       dcdy[Num] = SolnBlk.dWdy_faceN[ii][jj].c[Num];
        dhdT[Num] = QuadraturePoint_W.specdata[Num].Enthalpy_prime(Temp); //HeatCapacity_p(Temp)
      }
      
@@ -866,8 +866,8 @@ void dFvdWf_Diamond(DenseMatrix &dFvdWf, DenseMatrix &dGvdWf,
      Temp =  QuadraturePoint_W.T();   
      for(int Num = 0; Num<ns_values; Num++){
        h[Num] =  QuadraturePoint_W.specdata[Num].Enthalpy(Temp)+QuadraturePoint_W.specdata[Num].Heatofform();
-       dcdx[Num] = SolnBlk.dWdx_faceE[ii][jj].spec[Num].c; 
-       dcdy[Num] = SolnBlk.dWdy_faceE[ii][jj].spec[Num].c;
+       dcdx[Num] = SolnBlk.dWdx_faceE[ii][jj].c[Num]; 
+       dcdy[Num] = SolnBlk.dWdy_faceE[ii][jj].c[Num];
        dhdT[Num] = QuadraturePoint_W.specdata[Num].Enthalpy_prime(Temp);
      } 
      
@@ -893,8 +893,8 @@ void dFvdWf_Diamond(DenseMatrix &dFvdWf, DenseMatrix &dGvdWf,
     Temp =  QuadraturePoint_W.T();     
      for(int Num = 0; Num<ns_values; Num++){
        h[Num] =  QuadraturePoint_W.specdata[Num].Enthalpy(Temp)+QuadraturePoint_W.specdata[Num].Heatofform();
-       dcdx[Num] = SolnBlk.dWdx_faceS[ii][jj].spec[Num].c;  
-       dcdy[Num] = SolnBlk.dWdy_faceS[ii][jj].spec[Num].c;
+       dcdx[Num] = SolnBlk.dWdx_faceS[ii][jj].c[Num];  
+       dcdy[Num] = SolnBlk.dWdy_faceS[ii][jj].c[Num];
        dhdT[Num] = QuadraturePoint_W.specdata[Num].Enthalpy_prime(Temp);
      }
 
@@ -919,8 +919,8 @@ void dFvdWf_Diamond(DenseMatrix &dFvdWf, DenseMatrix &dGvdWf,
      Temp =  QuadraturePoint_W.T();
      for(int Num = 0; Num<ns_values; Num++){
        h[Num] =  QuadraturePoint_W.specdata[Num].Enthalpy(Temp)+QuadraturePoint_W.specdata[Num].Heatofform();
-       dcdx[Num] = SolnBlk.dWdx_faceW[ii][jj].spec[Num].c;
-       dcdy[Num] = SolnBlk.dWdy_faceW[ii][jj].spec[Num].c;
+       dcdx[Num] = SolnBlk.dWdx_faceW[ii][jj].c[Num];
+       dcdy[Num] = SolnBlk.dWdy_faceW[ii][jj].c[Num];
        dhdT[Num] = QuadraturePoint_W.specdata[Num].Enthalpy_prime(Temp);
      } 
     

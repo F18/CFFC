@@ -820,7 +820,7 @@ void Output_Quasi3D_Tecplot(Flame2D_Quad_Block &SolnBlk,
 		 << " " << W_node.p;
 	//Species
 	for(int i =0 ;i<SolnBlk.W[0][0].ns ;i++){
-	  Out_File <<" "<<SolnBlk.W[i][j].spec[i].c;
+	  Out_File <<" "<<SolnBlk.W[i][j].c[i];
 	}  
 	
 	Out_File << " " << W_node.qflux<< " " <<W_node.tau
