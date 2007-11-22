@@ -56,13 +56,12 @@ void SemiImplicitBlockJacobi(DenseMatrix &dSdU,
 			     const int &solver_type,
 			     const int &ii, const int &jj){ 
   
-  if( (SolnBlk.Axisymmetric && SolnBlk.Flow_Type != FLOWTYPE_INVISCID) ||
-      SolnBlk.Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) { 
+  if(SolnBlk.Axisymmetric && SolnBlk.Flow_Type != FLOWTYPE_INVISCID) { 
 
     int NUM_VAR_FLAME2D =  SolnBlk.NumVar()-1; 
     DenseMatrix dRdW(NUM_VAR_FLAME2D,NUM_VAR_FLAME2D,ZERO);  
     
-    // Add Source Jacobians (viscous axisymmetric, turbulence)
+    // Add Source Jacobians (viscous axisymmetric)
     SemiImplicitBlockJacobi_dSdW(dRdW,SolnBlk,EXPLICIT,ii,jj);                          
     
     DenseMatrix dWdU(NUM_VAR_FLAME2D,NUM_VAR_FLAME2D,ZERO);     
@@ -853,10 +852,6 @@ void dFvdWf_Diamond(DenseMatrix &dFvdWf, DenseMatrix &dGvdWf,
      dUdy = SolnBlk.dWdy_faceN[ii][jj].v.x;
      dVdx = SolnBlk.dWdx_faceN[ii][jj].v.y;
      dVdy = SolnBlk.dWdy_faceN[ii][jj].v.y;
-     dkdx = SolnBlk.dWdx_faceN[ii][jj].k;
-     dkdy = SolnBlk.dWdy_faceN[ii][jj].k;
-     domegadx = SolnBlk.dWdx_faceN[ii][jj].omega;
-     domegady = SolnBlk.dWdy_faceN[ii][jj].omega;
 
      if (SolnBlk.Axisymmetric == AXISYMMETRIC_X) {
        radius = (SolnBlk.Grid.xfaceN(ii,jj).x < MICRO) ? MICRO : SolnBlk.Grid.xfaceN(ii,jj).x;     
@@ -884,10 +879,6 @@ void dFvdWf_Diamond(DenseMatrix &dFvdWf, DenseMatrix &dGvdWf,
      dUdy = SolnBlk.dWdy_faceE[ii][jj].v.x;
      dVdx = SolnBlk.dWdx_faceE[ii][jj].v.y;
      dVdy = SolnBlk.dWdy_faceE[ii][jj].v.y;
-     dkdx = SolnBlk.dWdx_faceE[ii][jj].k;
-     dkdy = SolnBlk.dWdy_faceE[ii][jj].k;
-     domegadx = SolnBlk.dWdx_faceE[ii][jj].omega;
-     domegady = SolnBlk.dWdy_faceE[ii][jj].omega;
 
      if (SolnBlk.Axisymmetric == AXISYMMETRIC_X) {
        radius = ( SolnBlk.Grid.xfaceE(ii,jj).x < MICRO) ? MICRO : SolnBlk.Grid.xfaceE(ii,jj).x;     
@@ -915,10 +906,6 @@ void dFvdWf_Diamond(DenseMatrix &dFvdWf, DenseMatrix &dGvdWf,
      dUdy = SolnBlk.dWdy_faceS[ii][jj].v.x;
      dVdx = SolnBlk.dWdx_faceS[ii][jj].v.y;
      dVdy = SolnBlk.dWdy_faceS[ii][jj].v.y;
-     dkdx = SolnBlk.dWdx_faceS[ii][jj].k;
-     dkdy = SolnBlk.dWdy_faceS[ii][jj].k;
-     domegadx = SolnBlk.dWdx_faceS[ii][jj].omega;
-     domegady = SolnBlk.dWdy_faceS[ii][jj].omega;  
      
      if (SolnBlk.Axisymmetric == AXISYMMETRIC_X) {
        radius = (SolnBlk.Grid.xfaceS(ii,jj).x < MICRO) ? MICRO : SolnBlk.Grid.xfaceS(ii,jj).x;     
@@ -945,10 +932,6 @@ void dFvdWf_Diamond(DenseMatrix &dFvdWf, DenseMatrix &dGvdWf,
      dUdy = SolnBlk.dWdy_faceW[ii][jj].v.x;
      dVdx = SolnBlk.dWdx_faceW[ii][jj].v.y;
      dVdy = SolnBlk.dWdy_faceW[ii][jj].v.y;
-     dkdx = SolnBlk.dWdx_faceW[ii][jj].k;
-     dkdy = SolnBlk.dWdy_faceW[ii][jj].k;
-     domegadx = SolnBlk.dWdx_faceW[ii][jj].omega;
-     domegady = SolnBlk.dWdy_faceW[ii][jj].omega;
      
      if (SolnBlk.Axisymmetric == AXISYMMETRIC_X) {
        radius = (SolnBlk.Grid.xfaceW(ii,jj).x < MICRO) ? MICRO : SolnBlk.Grid.xfaceW(ii,jj).x;     

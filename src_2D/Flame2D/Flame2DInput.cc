@@ -154,8 +154,6 @@ void Set_Default_Input_Parameters(Flame2D_Input_Parameters &IP) {
     IP.Wo.v.y =IP.Mach_Number*IP.Wo.a()*sin(TWO*PI*IP.Flow_Angle/360.00);
     IP.Wo.set_initial_values(IP.mass_fractions);
     IP.Uo.set_initial_values(IP.mass_fractions);
-    IP.Wo.k = ZERO;
-    IP.Wo.omega = ZERO;
     IP.Uo = U(IP.Wo);   
     IP.Heat_Source = ZERO;
     

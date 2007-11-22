@@ -338,7 +338,7 @@ double Flame2D_pState::hprime(double &Temp) const{
 ***************************************************/
 double Flame2D_pState::E(void) const{
   // E = rho*(e + velocity^2 +k)  
-  return (rho*(e() + HALF*v.sqr()+ k)); 
+  return (rho*(e() + HALF*v.sqr())); 
 }
 
 /**************************************************
@@ -346,12 +346,12 @@ double Flame2D_pState::E(void) const{
 ***************************************************/
 double Flame2D_pState::H(void) const{
   // H = h + velocity^2 
-  return(rho*(h() + HALF*v.sqr() +k)); 
+  return(rho*(h() + HALF*v.sqr())); 
 }
 
 double Flame2D_pState::Hs(void) const{
   // H = h + velocity^2+k
-  return (rho*(hs() + HALF*v.sqr() + k));
+  return (rho*(hs() + HALF*v.sqr()));
 }
 
 /**************************************************

@@ -221,6 +221,7 @@ SRC_CHEM_EXE = $(CHEM_DIR)Chem2D.cc
 
 # Flame2D:
 SRC_FLAME = $(FLAME_DIR)Flame2DState.cc \
+	    $(FLAME_DIR)Mixture.cc \
 	    $(FLAME_DIR)Flame2DTools.cc \
 	    $(FLAME_DIR)Flame2DInput.cc \
 	    $(FLAME_DIR)Flame2DQuad.cc \

@@ -48,6 +48,7 @@ using namespace std;
 #include "../Physics/Species.h"
 #include "../Physics/NASAData/NASARP1311data.h"
 #include "../Reactions/Reactions.h"
+#include "Mixture.h"
 
 
 //Temperature convergence tolerance in
@@ -116,10 +117,8 @@ public:
 #else 
   Species      *spec;   //!< Species class c[ns]
 #endif
-  double           k;   //!< Turbulent kinetic energy.
-  double       omega;   //!< Turbulent specific dissipation rate.
-  Tensor2D                    tau; //!< Shear Stress Tensor
-  Vector2D                  qflux; //!< Heat Flux Vector  
+  Tensor2D       tau;   //!< Shear Stress Tensor
+  Vector2D     qflux;   //!< Heat Flux Vector  
   
   
   //! Static Variaables 
