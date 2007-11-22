@@ -118,10 +118,6 @@
  * \endverbatim
  */
 class AdvectDiffuse2D_Quad_Block_New{
-private:
-  AdvectDiffuse2D_Quad_Block_New(const AdvectDiffuse2D_Quad_Block_New &Soln); //!< Private copy constructor
-  AdvectDiffuse2D_Quad_Block_New operator = (const AdvectDiffuse2D_Quad_Block_New &Soln);   //!< Private assignment operator
-
 public:
   //! @name Defined datatypes
   //@{
@@ -136,11 +132,11 @@ public:
   //! @name Grid block information:
   //@{
   int                      NCi, //!< Total number of i-direction cells.
-    ICl, //!< First i-direction non-ghost cell counter.
-    ICu; //!< Final i-direction non-ghost cell counter.
+                           ICl, //!< First i-direction non-ghost cell counter.
+                           ICu; //!< Final i-direction non-ghost cell counter.
   int                      NCj, //!< Total number of j-direction cells.
-    JCl, //!< First j-direction non-ghost cell counter.
-    JCu; //!< Final j-direction non-ghost cell counter.
+                           JCl, //!< First j-direction non-ghost cell counter.
+                           JCu; //!< Final j-direction non-ghost cell counter.
   int                   Nghost; //!< Number of ghost cells.
   Grid2D_Quad_Block       Grid; //!< 2D quadrilateral grid geometry.
   //@}
@@ -150,7 +146,7 @@ public:
   double                         **dt; //!< Local time step.
   AdvectDiffuse2D_State_New   ***dUdt; //!< Solution residual.
   AdvectDiffuse2D_State_New      **Uo; //!< Initial solution.
-  static int residual_variable; //!< Static integer that indicates which variable is used for residual calculations.
+  static int residual_variable;        //!< Static integer that indicates which variable is used for residual calculations.
   //@}
 
   //! @name Solution gradient arrays:
@@ -230,19 +226,40 @@ public:
   //@{
   //@}
 
+  //! @name Source term member functions
+  //@{
+  AdvectDiffuse2D_State_New SourceTerm(const int & ii, const int & jj) const;
+  AdvectDiffuse2D_State_New AxisymmetricSourceTerm(const int & ii, const int & jj) const;
+  //! Determine the stability limit imposed by the source term
+  double SourceTermStabilityLimit(const int & ii, const int & jj) const;
+  //@}
+
   //! @name Evaluate velocity and diffusion coefficient at the centroid of a specified cell.
   //@{
   Vector2D VelocityAtCellCentroid(const int & ii, const int & jj) const;     //!< Calculate velocity at the cell centroid
   double DiffusionCoeffAtCellCentroid(const int & ii, const int & jj) const; //!< Calculate diffusion coeff. at the cell centroid
   //@}
 
-  //! Determine the stability limit imposed by the source term
-  double SourceTermStabilityLimit(const int & ii, const int & jj) const;
-
   //! @name Member functions for limiter freezing.
   //@{
   void evaluate_limiters(void);
   void freeze_limiters(void);
+  //@}
+
+  //! @name Member functions to compute the piecewise linear solution at a particular location
+  //@{
+  AdvectDiffuse2D_State_New PiecewiseLinearSolutionForDelta(const int &ii, const int &jj,
+							    const double &DeltaXToCentroid,
+							    const double &DeltaYToCentroid) const;
+  double PiecewiseLinearSolutionForDelta(const int &ii, const int &jj,
+					 const double &DeltaXToCentroid,
+					 const double &DeltaYToCentroid,
+					 const unsigned int &parameter) const;
+  AdvectDiffuse2D_State_New PiecewiseLinearSolutionAtLocation(const int &ii, const int &jj,
+							      const Vector2D &CalculationPoint) const;
+  double PiecewiseLinearSolutionAtLocation(const int &ii, const int &jj,
+					   const Vector2D &CalculationPoint,
+					   const unsigned int &parameter) const;
   //@}
 
   //! @name Input-output operators.
@@ -345,7 +362,53 @@ public:
 				   const int j_inc);
   //@}
 
+private:
+  AdvectDiffuse2D_Quad_Block_New(const AdvectDiffuse2D_Quad_Block_New &Soln); //!< Private copy constructor
+  AdvectDiffuse2D_Quad_Block_New operator = (const AdvectDiffuse2D_Quad_Block_New &Soln);   //!< Private assignment operator
 };
+
+
+/*!
+ * Class: SourceTermFunctionalWithPiecewiseLinear
+ *
+ * @brief Definition of the source term functional
+ *        with piecewise linear reconstruction
+ *
+ * An object of this class calculates the non-linear source 
+ * term at a location specified by the Cartesian coordinates (x,y)
+ * using information from the cell (ii,jj).
+ * The piecewise linear reconstruction of the cell (ii,jj) is used 
+ * for providing the value of the solution at the given location.
+ *
+ */
+class SourceTermFunctionalWithPiecewiseLinear{
+public:
+  /*! Constructor with the cell indexes
+   *  \param _ii_      the i-index of the cell that provides the information
+   *  \param _jj_      the j-index of the cell that provides the information
+   *  \param _SolnBlk_ the pointer to the solution block
+   */
+  SourceTermFunctionalWithPiecewiseLinear(const int &_ii_,
+					  const int& _jj_,
+					  const AdvectDiffuse2D_Quad_Block_New *_SolnBlk_): ii(_ii_),
+											    jj(_jj_),
+											    SolnBlk(_SolnBlk_){ };
+  
+  //! Return the pointwise value of the source term at a specified location (x,y)
+  double operator()(const double &x, const double &y){
+    return SolnBlk->U[ii][jj].s(x,y,SolnBlk->PiecewiseLinearSolutionAtLocation(ii,jj,Vector2D(x,y),1));
+  }
+  
+private:
+  int ii,jj;	  //!< cell indexes
+  const AdvectDiffuse2D_Quad_Block_New * SolnBlk; //!< pointer to the solution block
+  
+  //! private default cstr
+  SourceTermFunctionalWithPiecewiseLinear();
+  //! private assignment operator
+  SourceTermFunctionalWithPiecewiseLinear operator=(const SourceTermFunctionalWithPiecewiseLinear &);
+};
+
 
 /**************************************************************************
  * AdvectDiffuse2D_Quad_Block_New::Un?? -- Get cell node solution states.     *
@@ -385,8 +448,53 @@ inline double AdvectDiffuse2D_Quad_Block_New::unSW(const int ii, const int jj) {
   return (un(ii, jj));
 }
 
+/*********************//**
+ * Node solution value. 
+ ***********************/
+inline double AdvectDiffuse2D_Quad_Block_New::un(const int ii, const int jj) {
+  return Un(ii,jj)[1];
+}
+
+/***************************************************//**
+ * Calculate velocity at the centroid of cell (ii,jj).
+ ****************************************************/
+inline Vector2D AdvectDiffuse2D_Quad_Block_New::VelocityAtCellCentroid(const int & ii, const int & jj) const {
+  return U[ii][jj].V(Grid.XCellCentroid(ii,jj), Grid.YCellCentroid(ii,jj));
+}
+
+/**************************************************************//**
+ * Calculate diffusion coefficient at the centroid of cell (ii,jj).
+ * Use the solution stored in the state class as
+ * parameter for the diffusion coefficient field.
+ ******************************************************************/
+inline double AdvectDiffuse2D_Quad_Block_New::DiffusionCoeffAtCellCentroid(const int & ii, const int & jj) const {
+  return U[ii][jj].k(Grid.XCellCentroid(ii,jj), Grid.YCellCentroid(ii,jj), U[ii][jj].u);
+}
+
+/**************************************************************//**
+ * Determine the stability limit imposed by the source term
+ * Use the solution stored in the state class as the parameter 
+ * at the centroid of cell (ii,jj) for the non-linear source term field
+ ******************************************************************/
+inline double AdvectDiffuse2D_Quad_Block_New::SourceTermStabilityLimit(const int & ii, const int & jj) const {
+  return U[ii][jj].SourceTerm->getStabilityLimit(Grid.XCellCentroid(ii,jj),
+						 Grid.YCellCentroid(ii,jj),
+						 U[ii][jj].u);
+}
+
+/**************************************************************//**
+ * Determine the axisymmetric source term corresponding to cell (ii,jj).
+ * This routine returns actually the integral of the axisymmetric source
+ * term over the domain of cell (ii,jj) divided by the area.
+ ******************************************************************/
+inline AdvectDiffuse2D_State_New AdvectDiffuse2D_Quad_Block_New::AxisymmetricSourceTerm(const int & ii,
+											const int & jj) const{
+  return AdvectDiffuse2D_State_New(U[ii][jj].s_axi(Grid.Cell[ii][jj].Xc));
+}
+
+
 /**********************************************************************************
- * AdvectDiffuse2D_Quad_Block_New::evaluate_limiters -- Set flag to evaluate limiters.*
+ * AdvectDiffuse2D_Quad_Block_New::evaluate_limiters -- Set flag to evaluate limiters.
  **********************************************************************************/
 inline void AdvectDiffuse2D_Quad_Block_New::evaluate_limiters(void) {
   Freeze_Limiter = OFF; 
@@ -406,6 +514,69 @@ inline int AdvectDiffuse2D_Quad_Block_New::NumVar(void) {
   return (int(NUM_VAR_ADVECTDIFFUSE2D));
 }
 
+/*!
+ * Compute the solution provided by the piecewise linear reconstruction
+ * at a location relative to the cell centroid.
+ *
+ * \param ii i-index of the cell
+ * \param jj j-index of the cell
+ * \param DeltaXToCentroid the X-delta between the point of interest and the centroid
+ * \param DeltaYToCentroid the Y-delta between the point of interest and the centroid
+ */
+inline AdvectDiffuse2D_State_New 
+AdvectDiffuse2D_Quad_Block_New::PiecewiseLinearSolutionForDelta(const int &ii, const int &jj,
+								const double &DeltaXToCentroid,
+								const double &DeltaYToCentroid) const{
+  return U[ii][jj] + (phi[ii][jj]^(dUdx[ii][jj]*DeltaXToCentroid + dUdy[ii][jj]*DeltaYToCentroid) );
+}
+
+/*!
+ * Compute the solution provided by the piecewise linear reconstruction
+ * for a particular state parameter at a location relative to the cell centroid.
+ *
+ * \param ii i-index of the cell
+ * \param jj j-index of the cell
+ * \param DeltaXToCentroid the X-delta between the point of interest and the centroid
+ * \param DeltaYToCentroid the Y-delta between the point of interest and the centroid
+ * \param parameter the parameter for which the solution is computed
+ */
+inline double AdvectDiffuse2D_Quad_Block_New::PiecewiseLinearSolutionForDelta(const int &ii, const int &jj,
+									      const double &DeltaXToCentroid,
+									      const double &DeltaYToCentroid,
+									      const unsigned int &parameter) const{
+  return PiecewiseLinearSolutionForDelta(ii,jj,DeltaXToCentroid,DeltaYToCentroid)[parameter];
+}
+
+/*!
+ * Compute the solution provided by the piecewise linear reconstruction
+ * at a particular location.
+ *
+ * \param ii i-index of the cell
+ * \param jj j-index of the cell
+ * \param CalculationPoint the Cartesian coordinates of the point of interest
+ */
+inline AdvectDiffuse2D_State_New 
+AdvectDiffuse2D_Quad_Block_New::PiecewiseLinearSolutionAtLocation(const int &ii, const int &jj,
+								  const Vector2D &CalculationPoint) const{
+  // calculate the distance between the point of interest and the centroid of the cell
+  Vector2D dX(CalculationPoint - Grid.Cell[ii][jj].Xc);	
+  return PiecewiseLinearSolutionForDelta(ii,jj,dX.x,dX.y);
+}
+
+/*!
+ * Compute the solution provided by the piecewise linear reconstruction
+ * for a particular state parameter at a particular location.
+ *
+ * \param ii i-index of the cell
+ * \param jj j-index of the cell
+ * \param CalculationPoint the Cartesian coordinates of the point of interest
+ * \param parameter the parameter for which the solution is computed
+ */
+inline double AdvectDiffuse2D_Quad_Block_New::PiecewiseLinearSolutionAtLocation(const int &ii, const int &jj,
+										const Vector2D &CalculationPoint,
+										const unsigned int &parameter) const{
+  return PiecewiseLinearSolutionAtLocation(ii,jj,CalculationPoint)[parameter];
+}
 
 /**************************************************************************
  * AdvectDiffuse2D_Quad_Block_New -- Single Block External Subroutines.       *

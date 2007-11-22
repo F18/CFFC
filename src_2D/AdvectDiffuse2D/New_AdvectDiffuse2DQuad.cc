@@ -162,38 +162,38 @@ AdvectDiffuse2D_State_New AdvectDiffuse2D_Quad_Block_New::Un(const int ii, const
   return (AdvectDiffuse2D_State_New(As+Bs*zeta+Cs*eta+Ds*zeta*eta));
 }
 
-/***********************
- * Node solution value. 
- ***********************/
-double AdvectDiffuse2D_Quad_Block_New::un(const int ii, const int jj) {
-  return Un(ii,jj)[1];
-}
+/*********************************************//**
+ * Compute the average source term for cell (ii,jj).
+ * 
+ * \todo Add integration with high-order reconstruction!
+ *************************************************/
+AdvectDiffuse2D_State_New AdvectDiffuse2D_Quad_Block_New::SourceTerm(const int & ii, const int & jj) const{
+  
+  double SourceTermIntegral(0.0), _dummy_(0.0);
 
-/***************************************************//**
- * Calculate velocity at the centroid of cell (ii,jj).
- ****************************************************/
-Vector2D AdvectDiffuse2D_Quad_Block_New::VelocityAtCellCentroid(const int & ii, const int & jj) const {
-  return U[ii][jj].V(Grid.XCellCentroid(ii,jj), Grid.YCellCentroid(ii,jj));
-}
+  if (U[ii][jj].SourceTerm->FieldRequireIntegration()){
+    // this source term field requires numerical integration
 
-/**************************************************************//**
- * Calculate diffusion coefficient at the centroid of cell (ii,jj).
- * Use the solution stored in the state class as
- * parameter for the diffusion coefficient field.
- ******************************************************************/
-double AdvectDiffuse2D_Quad_Block_New::DiffusionCoeffAtCellCentroid(const int & ii, const int & jj) const {
-  return U[ii][jj].k(Grid.XCellCentroid(ii,jj), Grid.YCellCentroid(ii,jj), U[ii][jj].u);
-}
+    // Integrate the non-linear source term field with the high-order reconstruction
+    
 
-/**************************************************************//**
- * Determine the stability limit imposed by the source term
- * Use the solution stored in the state class as the parameter 
- * at the centroid of cell (ii,jj) for the non-linear source term field
- ******************************************************************/
-double AdvectDiffuse2D_Quad_Block_New::SourceTermStabilityLimit(const int & ii, const int & jj) const {
-  return U[ii][jj].SourceTerm->getStabilityLimit(Grid.XCellCentroid(ii,jj),
-						 Grid.YCellCentroid(ii,jj),
-						 U[ii][jj].u);
+
+    // Integrate the non-linear source term field with the low-order reconstruction
+
+    // Define a source term functional that uses the piecewise linear reconstruction 
+    // as a closure for the non-linear source variation.
+    SourceTermFunctionalWithPiecewiseLinear NonLinearSourceVariation(ii,jj,this);
+
+    // Integrate the source term functional over the cell (ii,jj) domain
+    SourceTermIntegral = Grid.Integration.IntegrateFunctionOverCell(ii,jj,NonLinearSourceVariation,10,_dummy_);
+
+    // compute average value and cast the result to AdvectDiffuse2D_State_New
+    return AdvectDiffuse2D_State_New(SourceTermIntegral/Grid.Cell[ii][jj].A);
+
+  } else {
+    // this source term field is already integrated numerically and expressed as a function of cell average solution
+    return AdvectDiffuse2D_State_New(U[ii][jj].s());
+  }
 }
 
 /********************

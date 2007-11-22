@@ -2809,8 +2809,6 @@ void Apply_Boundary_Flux_Corrections_Multistage_Explicit(AdvectDiffuse2D_Quad_Bl
 
 }
 
-#if 0
-
 /******************************************************//**
  * Routine: dUdt_Residual_Evaluation                    
  *                                                      
@@ -2827,8 +2825,8 @@ int dUdt_Residual_Evaluation(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 
   int i, j;
   Vector2D dX;
-  double ul, ur, flux;
-  AdvectDiffuse2D_State_New Ul, Ur;
+  //  AdvectDiffuse2D_State_New ul, ur, flux;
+  AdvectDiffuse2D_State_New Ul, Ur, Flux;
 
   /* Perform the linear reconstruction within each cell
      of the computational grid for this stage. */
@@ -2856,72 +2854,49 @@ int dUdt_Residual_Evaluation(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
     
   // Add i-direction (zeta-direction) fluxes.
   for ( j  = SolnBlk.JCl-1 ; j <= SolnBlk.JCu+1 ; ++j ) {
-    SolnBlk.dUdt[SolnBlk.ICl-1][j][0] = ZERO;
+    SolnBlk.dUdt[SolnBlk.ICl-1][j][0].Vacuum();	// set to zero
           
     for ( i = SolnBlk.ICl-1 ; i <= SolnBlk.ICu ; ++i ) {
-      SolnBlk.dUdt[i+1][j][0] = ZERO;
+      SolnBlk.dUdt[i+1][j][0].Vacuum();	// set to zero
 	 
       if ( j >= SolnBlk.JCl && j <= SolnBlk.JCu ) {
     
 	/* Evaluate the cell interface i-direction fluxes. */
-	   
-	dX = SolnBlk.Grid.xfaceE(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
-	Ul = SolnBlk.U[i][j] + ( (SolnBlk.phi[i][j]^SolnBlk.dUdx[i][j])*dX.x +
-				 (SolnBlk.phi[i][j]^SolnBlk.dUdy[i][j])*dX.y );
-	dX = SolnBlk.Grid.xfaceW(i+1, j)-SolnBlk.Grid.Cell[i+1][j].Xc;
-	ur = SolnBlk.U[i+1][j].u + 
-	  (SolnBlk.phi[i+1][j]*SolnBlk.dUdx[i+1][j])*dX.x +
-	  (SolnBlk.phi[i+1][j]*SolnBlk.dUdy[i+1][j])*dX.y;
-	   
-	Ul = SolnBlk.U[i][j]; 
-	Ul.u = ul;
-	Ur = SolnBlk.U[i+1][j]; 
-	Ur.u = ur;
-	   
-	if ((i == SolnBlk.ICl-1) && 
-	    (SolnBlk.Grid.BCtypeW[j] == BC_DIRICHLET)) {
-	  Ul.Fd = Ur.Fd;
-	} else if ((i == SolnBlk.ICu) && 
-		   (SolnBlk.Grid.BCtypeE[j] == BC_DIRICHLET)) {
-	  Ur.Fd = Ul.Fd;
-	} /* endif */
-	   
-	flux = Flux_n(Ul, Ur, SolnBlk.Grid.nfaceE(i, j));
+
+	// Compute left and right interface states at the face midpoint
+	Ul = SolnBlk.PiecewiseLinearSolutionAtLocation(i  , j,SolnBlk.Grid.xfaceE(i  , j));
+	Ur = SolnBlk.PiecewiseLinearSolutionAtLocation(i+1, j,SolnBlk.Grid.xfaceW(i+1, j));
+
+	// Enforce the boundary conditions for the inviscid states
+
+	// Compute the advective flux in the normal direction at the face midpoint 
+	Flux = Fa(Ul, Ur, SolnBlk.Grid.xfaceE(i,j), SolnBlk.Grid.nfaceE(i,j));
 	   
 	/* Evaluate cell-averaged solution changes. */
-	   
-	SolnBlk.dUdt[i][j][0] -= 
-	  flux*SolnBlk.Grid.lfaceE(i, j)/
-	  SolnBlk.Grid.Cell[i][j].A;
-	SolnBlk.dUdt[i+1][j][0] +=
-	  flux*SolnBlk.Grid.lfaceW(i+1, j)/
-	  SolnBlk.Grid.Cell[i+1][j].A;
+	SolnBlk.dUdt[i  ][j][0] -= Flux*SolnBlk.Grid.lfaceE(i  , j)/SolnBlk.Grid.Cell[i  ][j].A;
+	SolnBlk.dUdt[i+1][j][0] += Flux*SolnBlk.Grid.lfaceW(i+1, j)/SolnBlk.Grid.Cell[i+1][j].A;
 	   
 	/* Include regular source terms. */
-
-	SolnBlk.dUdt[i][j][0] += s(SolnBlk.U[i][j]);
+	SolnBlk.dUdt[i][j][0] += SolnBlk.SourceTerm(i,j);
 
 	/* Include axisymmetric source terms as required. */
-
 	if (SolnBlk.Axisymmetric) {
-	  SolnBlk.dUdt[i][j][0] += 
-	    s_axi(SolnBlk.U[i][j], SolnBlk.Grid.Cell[i][j].Xc);
+	  SolnBlk.dUdt[i][j][0] += SolnBlk.AxisymmetricSourceTerm(i,j);
 	} /* endif */
 
 	/* Save west and east face boundary flux. */
-
 	if (i == SolnBlk.ICl-1) {
-	  SolnBlk.FluxW[j] = -flux*SolnBlk.Grid.lfaceW(i+1, j);
+	  SolnBlk.FluxW[j] = -Flux*SolnBlk.Grid.lfaceW(i+1, j);
 	} else if (i == SolnBlk.ICu) {
-	  SolnBlk.FluxE[j] = flux*SolnBlk.Grid.lfaceE(i, j);
+	  SolnBlk.FluxE[j] =  Flux*SolnBlk.Grid.lfaceE(i  , j);
 	} /* endif */
 
       } /* endif */
     } /* endfor */
     
     if ( j > SolnBlk.JCl-1 && j < SolnBlk.JCu+1 ) {
-      SolnBlk.dUdt[SolnBlk.ICl-1][j][0] = ZERO;
-      SolnBlk.dUdt[SolnBlk.ICu+1][j][0] = ZERO;
+      SolnBlk.dUdt[SolnBlk.ICl-1][j][0].Vacuum();	// set to zero
+      SolnBlk.dUdt[SolnBlk.ICu+1][j][0].Vacuum();	// set to zero
     } /* endif */
   } /* endfor */
     
@@ -2930,52 +2905,31 @@ int dUdt_Residual_Evaluation(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
     for ( j  = SolnBlk.JCl-1 ; j <= SolnBlk.JCu ; ++j ) {
     
       /* Evaluate the cell interface j-direction fluxes. */
-         
-      dX = SolnBlk.Grid.xfaceN(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
-      ul = SolnBlk.U[i][j].u + 
-	(SolnBlk.phi[i][j]*SolnBlk.dUdx[i][j])*dX.x +
-	(SolnBlk.phi[i][j]*SolnBlk.dUdy[i][j])*dX.y;
-      dX = SolnBlk.Grid.xfaceS(i, j+1)-SolnBlk.Grid.Cell[i][j+1].Xc;
-      ur = SolnBlk.U[i][j+1].u +
-	(SolnBlk.phi[i][j+1]*SolnBlk.dUdx[i][j+1])*dX.x +
-	(SolnBlk.phi[i][j+1]*SolnBlk.dUdy[i][j+1])*dX.y;
 
-      Ul = SolnBlk.U[i][j]; 
-      Ul.u = ul;
-      Ur = SolnBlk.U[i][j+1]; 
-      Ur.u = ur;
+      // Compute left and right interface states at the face midpoint
+      Ul = SolnBlk.PiecewiseLinearSolutionAtLocation(i ,j  ,SolnBlk.Grid.xfaceN(i ,j  ));
+      Ur = SolnBlk.PiecewiseLinearSolutionAtLocation(i ,j+1,SolnBlk.Grid.xfaceS(i ,j+1));
 
-      if ((j == SolnBlk.JCl-1) && 
-	  (SolnBlk.Grid.BCtypeS[i] == BC_DIRICHLET)) {
-	Ul.Fd = Ur.Fd;
-      } else if ((j == SolnBlk.JCu) && 
-		 (SolnBlk.Grid.BCtypeN[i] == BC_DIRICHLET)) {
-	Ur.Fd = Ul.Fd;
-      } /* endif */
+      // Enforce the boundary conditions for the inviscid states
 
-      flux = Flux_n(Ul, Ur, SolnBlk.Grid.nfaceN(i, j));
+      // Compute the advective flux in the normal direction at the face midpoint 
+      Flux = Fa(Ul, Ur, SolnBlk.Grid.xfaceN(i,j), SolnBlk.Grid.nfaceN(i, j));
     
       /* Evaluate cell-averaged solution changes. */
-    
-      SolnBlk.dUdt[i][j][0] -=
-	flux*SolnBlk.Grid.lfaceN(i, j)/
-	SolnBlk.Grid.Cell[i][j].A;
-      SolnBlk.dUdt[i][j+1][0] += 
-	flux*SolnBlk.Grid.lfaceS(i, j+1)/
-	SolnBlk.Grid.Cell[i][j+1].A;
+      SolnBlk.dUdt[i][j  ][0] -= Flux*SolnBlk.Grid.lfaceN(i, j  )/SolnBlk.Grid.Cell[i][j  ].A;
+      SolnBlk.dUdt[i][j+1][0] += Flux*SolnBlk.Grid.lfaceS(i, j+1)/SolnBlk.Grid.Cell[i][j+1].A;
           
       /* Save south and north face boundary flux. */
-
       if (j == SolnBlk.JCl-1) {
-	SolnBlk.FluxS[i] = -flux*SolnBlk.Grid.lfaceS(i, j+1);
+	SolnBlk.FluxS[i] = -Flux*SolnBlk.Grid.lfaceS(i, j+1);
       } else if (j == SolnBlk.JCu) {
-	SolnBlk.FluxN[i] = flux*SolnBlk.Grid.lfaceN(i, j);
+	SolnBlk.FluxN[i] =  Flux*SolnBlk.Grid.lfaceN(i, j  );
       } /* endif */
 
     } /* endfor */
 
-    SolnBlk.dUdt[i][SolnBlk.JCl-1][0] = ZERO;
-    SolnBlk.dUdt[i][SolnBlk.JCu+1][0] = ZERO;
+    SolnBlk.dUdt[i][SolnBlk.JCl-1][0].Vacuum();	// set to zero
+    SolnBlk.dUdt[i][SolnBlk.JCu+1][0].Vacuum();	// set to zero
   } /* endfor */
     
     /* residual evaluation successful. */
@@ -2983,6 +2937,7 @@ int dUdt_Residual_Evaluation(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
     
 }
 
+#if 0
 /******************************************************//**
  * Routine: dUdt_Multistage_Explicit                    
  *                                                      

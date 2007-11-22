@@ -122,11 +122,15 @@ public:
   //@{
   Vector2D Fa(const double &x, const double &y) const;
   friend Vector2D Fa(const AdvectDiffuse2D_State_New &U, const double &x, const double &y);
-  double Fa(const double &x, const double &y, const Vector2D & norm_dir) const;
-  friend double Fa(const AdvectDiffuse2D_State_New &Ul,
-		   const AdvectDiffuse2D_State_New &Ur,
-		   const double &x, const double &y,
-		   const Vector2D & norm_dir);
+  AdvectDiffuse2D_State_New Fa(const double &x, const double &y, const Vector2D & norm_dir) const;
+  friend AdvectDiffuse2D_State_New Fa(const AdvectDiffuse2D_State_New &Ul,
+				      const AdvectDiffuse2D_State_New &Ur,
+				      const double &x, const double &y,
+				      const Vector2D & norm_dir);
+  friend AdvectDiffuse2D_State_New Fa(const AdvectDiffuse2D_State_New &Ul,
+				      const AdvectDiffuse2D_State_New &Ur,
+				      const Vector2D & ComputationPoint,
+				      const Vector2D & norm_dir);
   //@}
 
   //! @name Diffusive flux.
@@ -141,10 +145,10 @@ public:
   friend Vector2D Fd(const AdvectDiffuse2D_State_New &U,
 		     const double &dudx, const double &dudy,
 		     const double &x, const double &y);
-  friend double Fd(const double &dudx_L, const double &dudy_L,
-		   const double &dudx_R, const double &dudy_R,
-		   const double &x, const double &y,
-		   const Vector2D & norm_dir);
+  friend AdvectDiffuse2D_State_New Fd(const double &dudx_L, const double &dudy_L,
+				      const double &dudx_R, const double &dudy_R,
+				      const double &x, const double &y,
+				      const Vector2D & norm_dir);
   //@}
 
   //! @name Regular source term.
@@ -275,9 +279,9 @@ inline Vector2D Fa(const AdvectDiffuse2D_State_New &U,
  * \return the projection of the advective flux onto 
  * the 'norm-dir' direction at a given location based on the solution state U
  */
-inline double AdvectDiffuse2D_State_New::Fa(const double &x, const double &y,
-					    const Vector2D & norm_dir) const {
-  return (V(x,y)*norm_dir)*u;
+inline AdvectDiffuse2D_State_New AdvectDiffuse2D_State_New::Fa(const double &x, const double &y,
+							       const Vector2D & norm_dir) const {
+  return AdvectDiffuse2D_State_New((V(x,y)*norm_dir)*u);
 }
 
 /*!
@@ -292,13 +296,30 @@ inline double AdvectDiffuse2D_State_New::Fa(const double &x, const double &y,
  * \return the projection of the upwind advective flux onto the 'norm-dir' direction 
  * at a given location based on the solution state chosen by the upwinding process
  */
-inline double Fa(const AdvectDiffuse2D_State_New &Ul,
-		 const AdvectDiffuse2D_State_New &Ur,
-		 const double &x, const double &y,
-		 const Vector2D & norm_dir) {
+inline AdvectDiffuse2D_State_New Fa(const AdvectDiffuse2D_State_New &Ul,
+				    const AdvectDiffuse2D_State_New &Ur,
+				    const double &x, const double &y,
+				    const Vector2D & norm_dir) {
   return (Ul.V(x,y)*norm_dir > 0) ? Ul.Fa(x,y,norm_dir) : Ur.Fa(x,y,norm_dir);
 }
 
+/*!
+ * Compute the upwind advective flux \f$Fa=(\vec{V}(x,y) \cdot \vec{n})\, u\f$ 
+ * at an interface between 2 states.
+ *
+ * \param [in] Ul       the state to the left of the interface
+ * \param [in] Ur       the state to the right of the interface
+ * \param [in] ComputationPoint the Cartesian coordinates of the location where the flux is computed
+ * \param [in] norm_dir         the direction used to project the flux onto
+ * \return the projection of the upwind advective flux onto the 'norm-dir' direction 
+ * at a given location based on the solution state chosen by the upwinding process
+ */
+inline AdvectDiffuse2D_State_New Fa(const AdvectDiffuse2D_State_New &Ul,
+				    const AdvectDiffuse2D_State_New &Ur,
+				    const Vector2D & ComputationPoint,
+				    const Vector2D & norm_dir){
+  return Fa(Ul,Ur,ComputationPoint.x,ComputationPoint.y,norm_dir);
+}
 
 /*!
  * Compute the diffusive flux \f$Fd=-k(x,y,u) \, \nabla u\f$, where 'u' is the solution scalar.
@@ -376,15 +397,16 @@ inline Vector2D Fd(const AdvectDiffuse2D_State_New &U,
  * \return the projection of the diffusive flux onto the 'norm-dir' direction  at a given location 
  * based on the solution gradients at the left and right.
  */
-inline double Fd(const AdvectDiffuse2D_State_New &Ul,
-		 const double &dudx_L, const double &dudy_L,
-		 const AdvectDiffuse2D_State_New &Ur,
-		 const double &dudx_R, const double &dudy_R,
-		 const double &x, const double &y,
-		 const Vector2D & norm_dir){
+inline AdvectDiffuse2D_State_New Fd(const AdvectDiffuse2D_State_New &Ul,
+				    const double &dudx_L, const double &dudy_L,
+				    const AdvectDiffuse2D_State_New &Ur,
+				    const double &dudx_R, const double &dudy_R,
+				    const double &x, const double &y,
+				    const Vector2D & norm_dir){
   
-  return -AdvectDiffuse2D_State_New::k(x,y,0.5*(Ul.u+Ur.u)) * ( 0.5 *( (dudx_L + dudx_R)*norm_dir.x +
-								       (dudy_L + dudy_R)*norm_dir.y ) );
+  return AdvectDiffuse2D_State_New(-AdvectDiffuse2D_State_New::k(x,y,0.5*(Ul.u+Ur.u)) * 
+				   ( 0.5 *( (dudx_L + dudx_R)*norm_dir.x +
+					    (dudy_L + dudy_R)*norm_dir.y ) ) );
 }
 
 /*!

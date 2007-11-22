@@ -649,7 +649,7 @@ namespace tut
     Vector2D Normal(1,0);
     
     // === check advective flux
-    ensure_distance("Fa I", Fa(A,B,8.5,12.5,Normal), -40.0, tol);
+    ensure_distance("Fa I", Fa(A,B,8.5,12.5,Normal), AdvectDiffuse2D_State_New(-40.0), AdvectDiffuse2D_State_New(tol));
   }
 
   /* Test 34:*/
@@ -669,7 +669,7 @@ namespace tut
     Vector2D Normal(0,1);
     
     // === check advective flux
-    ensure_distance("Fa I", Fa(A,B,8.5,12.5,Normal), 72.0, tol);
+    ensure_distance("Fa I", Fa(A,B,8.5,12.5,Normal), AdvectDiffuse2D_State_New(72.0), AdvectDiffuse2D_State_New(tol));
   }
 
   /* Test 35:*/
@@ -692,10 +692,11 @@ namespace tut
     AdvectDiffuse2D_State_New Ul(12.2323), Ur(5.34);
     double dUdx_L(1.5), dUdy_L(3.4), dUdx_R(1.5), dUdy_R(3.4);
     Vector2D Normal(1,0);
-    double Result(-10*1.5);
+    AdvectDiffuse2D_State_New Result(-10*1.5);
 
     // === check diffusive flux
-    ensure_distance("Fd at Point", Fd(Ul,dUdx_L,dUdy_L,Ur,dUdx_R,dUdy_R,8.5,12.5,Normal), Result, tol);
+    ensure_distance("Fd at Point", Fd(Ul,dUdx_L,dUdy_L,Ur,dUdx_R,dUdy_R,8.5,12.5,Normal),
+		    AdvectDiffuse2D_State_New(Result), AdvectDiffuse2D_State_New(tol));
   }
 
   /* Test 36:*/
@@ -718,10 +719,11 @@ namespace tut
     AdvectDiffuse2D_State_New Ul(12.2323), Ur(5.34);
     double dUdx_L(1.5), dUdy_L(6.4), dUdx_R(3.5), dUdy_R(3.4);
     Vector2D Normal(0,1);
-    double Result(-10*0.5*(6.4+3.4));
+    AdvectDiffuse2D_State_New Result(-10*0.5*(6.4+3.4));
 
     // === check diffusive flux
-    ensure_distance("Fd at Point", Fd(Ul,dUdx_L,dUdy_L,Ur,dUdx_R,dUdy_R,8.5,12.5,Normal), Result, tol);
+    ensure_distance("Fd at Point", Fd(Ul,dUdx_L,dUdy_L,Ur,dUdx_R,dUdy_R,8.5,12.5,Normal),
+		    Result, AdvectDiffuse2D_State_New(tol));
   }
 
   /* Test 37:*/
