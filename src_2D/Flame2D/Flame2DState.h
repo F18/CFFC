@@ -1,30 +1,14 @@
-/****************** Flame2DState.h **************************************
-  This class defines the state variables and constructors for the 
-  2D Axisymmertric Navier-Stokes with Multiple Species solution.
-
-  NOTES:  
-         - be careful with set_species_data() and set_initial_values(),
-           due to dynamic memory 
-
-         - if #define STATIC_NUMBER_OF_SPECIES is set dynamic memory
-           is not used so code is faster, however code is not as flexible
-           as only up to STATIC_NUMBER_OF_SPECIES can be used without recompling.
-  
-         - Avoid cState.T() as much as possible as it is $$$ to calculate, pass
-           the temperature from pState if possible as it is cheap (p/rhoR)             
-              
-         - The Static "specdata" has to be deleted outside the class
-           in order to avoid seg faults. In Flame2D it is done by calling
-           the deallocate function from the Input destructor as it is kept
-           until the end of the program.
-
-  TODO:  - Unphysical_properties & negativespec_check functions need to be  
-           worked through
-
-         - add vacuum constant states
-
-                   
-***********************************************************************/
+/////////////////////////////////////////////////////////////////////
+///
+/// \file Flame2DState.h
+/// 
+/// \author Marc R.J. Charest
+/// 
+/// \brief This header file contains the class definition for 
+///        describing the state of the chemically reacting, 
+///        multispecies ideal gas mixture.
+///
+/////////////////////////////////////////////////////////////////////
 #ifndef _FLAME2D_STATE_INCLUDED 
 #define _FLAME2D_STATE_INCLUDED
 
@@ -33,7 +17,6 @@ class Flame2D_cState;
 class Flame2D_pState;
 
 // Required C++ libraries
-
 #include <iostream>
 #include <cstdlib> 
 
@@ -47,8 +30,6 @@ using namespace std;
 #include "../Physics/GasConstants.h"
 
 // FLAME2D Specific headers
-#include "../Physics/NASAData/NASARP1311data.h"
-#include "Reactions.h"
 #include "Mixture.h"
 
 
@@ -61,10 +42,257 @@ using namespace std;
 
 //number of fixed variables in the Flame2D class
 #define NUM_FLAME2D_VAR_SANS_SPECIES 4  //rho, v(2), p
+enum INDICES { RHO_ = 0,
+	       VX_ = 1,
+	       VY_ = 2,
+	       PRESS_ = 3,
+	       SPEC_ = 4 };
 
 // If you define this variable, the number of species will be
 // predetermined for faster calculations.., however it is not as general 
 #define STATIC_NUMBER_OF_SPECIES 36 //2 AIR, 6 2STEP_CH4
+#ifdef STATIC_NUMBER_OF_SPECIES
+#define STATIC_NUM_FLAME2D_VAR   NUM_FLAME2D_VAR_SANS_SPECIES+STATIC_NUMBER_OF_SPECIES
+#endif
+
+//DEBUGGING FLAG FOR FIGUREING OUT proper NS-1 setup.
+#define _NS_MINUS_ONE
+
+/////////////////////////////////////////////////////////////////////
+/// Class Definitions
+/////////////////////////////////////////////////////////////////////
+class Flame2D_State;
+class Flame2D_pState;
+class Flame2D_cState;
+
+
+/**
+ * Class: Flame2D_State
+ *
+ * @brief  Base solution state class definition for an
+ *         inviscid, laminar, or turbulent chemically reacting gas-flow.
+ *
+ */
+class Flame2D_State {
+
+  /**
+   * Public Members
+   */
+public:
+
+  /************** Constructors/Destructors ***********/
+  Flame2D_State() { Allocate();  }
+  Flame2D_State(const double &val) { Allocate(); for (int i=0; i<n; i++) x[i] = val; }
+  Flame2D_State(const Flame2D_State &X) { Allocate(); Copy(X);  }
+  ~Flame2D_State() { Deallocate(); }
+  void Copy( const Flame2D_State &X ) { for (int i=0; i<n; i++) x[i] = X.x[i]; }
+
+
+  /**************** Allocate / Deallocate ********************/
+  void  Allocate();
+  void  Deallocate();
+
+  /**************** Initializers *****************************/
+  void Vacuum() { Zero(); }
+  void Zero() { for (int i=0; i<n; i++) x[i] = 0.0; }
+
+  /*************** Static Functions ********************/
+  // return the number of variables - number of species
+  static int NumVarSansSpecies() { return NUM_FLAME2D_VAR_SANS_SPECIES; }
+
+   // return the number of variables
+  static int NumVar() { return n; }
+
+   // return the number of species
+  static int NumSpecies() { return ns; }
+
+  //! set acceleration due to gravity
+  static void set_gravity(const double &g);
+
+  /**************** Operators Overloading ********************/
+  // Index operator
+  double &operator[](int index);
+  const double &operator[](int index) const;
+
+  // Binary arithmetic operators.
+  Flame2D_State operator +(const Flame2D_State &X) const;
+  Flame2D_State operator -(const Flame2D_State &X) const;
+  Flame2D_State operator *(const double &a) const;
+  friend Flame2D_State operator *(const double &a, const Flame2D_State &X);
+  Flame2D_State operator /(const double &a) const;
+  double operator *(const Flame2D_State &X) const;
+  Flame2D_State operator ^(const Flame2D_State &X) const;
+
+  // Assignment Operator.
+  Flame2D_State& operator =(const Flame2D_State &X); 
+
+  // Shortcut arithmetic operators.
+  Flame2D_State& operator +=(const Flame2D_State &X);
+  Flame2D_State& operator -=(const Flame2D_State &X);
+ 
+  // Unary arithmetic operators.
+  //Flame2D_pState operator +(const Flame2D_pState &W);
+  friend Flame2D_State operator -(const Flame2D_State &X);
+
+  // Input-output operators.
+  friend ostream& operator << (ostream &out_file, const Flame2D_State &X);
+  friend istream& operator >> (istream &in_file,  Flame2D_State &X);
+
+
+  /**
+   * Private Objects
+   */
+protected:
+
+#ifdef STATIC_NUMBER_OF_SPECIES
+  static const int  n = STATIC_NUM_FLAME2D_VAR;
+  static const int ns = STATIC_NUMBER_OF_SPECIES;
+  double            x[n];
+#else
+  static int        n; //!< Total number of vars
+  static int       ns; //!< Number of 
+  double           *x;
+#endif
+  static double        Mref; //!< Mref for Precondtioning (normally set to incoming freestream Mach)
+  static double   gravity_z; //!< m/s^2 acceleration due to gravity  
+
+};
+
+/////////////////////////////////////////////////////////////////////
+/// Member Functinos
+/////////////////////////////////////////////////////////////////////
+
+
+/****************************************************
+ * Allocator/deallocator for object memory.
+ ****************************************************/
+inline void Flame2D_State :: Allocate() {
+#ifndef STATIC_NUMBER_OF_SPECIES
+  Deallocate();
+  if (n>0) { x = new double[n]; }
+#endif
+  };
+
+inline void Flame2D_State :: Deallocate() { 
+#ifndef STATIC_NUMBER_OF_SPECIES
+  if (x!=NULL) { delete[] x; x = NULL; } 
+#endif
+};
+
+/********************************************************
+ * Flame2D_State -- Index operators.                    *
+ ********************************************************/
+inline double& Flame2D_State::operator[](int index) {  
+  return x[index-1];
+}
+
+inline const double& Flame2D_State::operator[](int index) const {  
+  return x[index-1];
+}
+
+/********************************************************
+ * Flame2D_State -- Binary arithmetic operators.        *
+ ********************************************************/
+//----------------- Addition -----------------------------//
+Flame2D_State Flame2D_State::operator +(const Flame2D_State &X) const{    
+  Flame2D_State Temp(*this);
+  Temp += X;
+  return Temp;
+}
+
+//------------------ Subtraction ------------------------//
+Flame2D_State Flame2D_State::operator -(const Flame2D_State &X) const{
+    Flame2D_State Temp(*this);
+    Temp -= X;
+    return Temp;
+}
+
+//---------------- Scalar Multiplication ------------------//
+Flame2D_State Flame2D_State::operator *(const double &a) const{
+  Flame2D_State Temp(*this);
+  for( int i=0; i<n; i++) Temp.x[i] = x[i]*a; 
+  return(Temp);
+}
+
+Flame2D_State operator *(const double &a, const Flame2D_State &X){
+  Flame2D_State Temp;
+  for( int i=0; i<X.n; i++) Temp.x[i] = X.x[i]*a;
+  return(Temp);
+}
+
+//--------------- Scalar Division ------------------------//
+Flame2D_State Flame2D_State::operator /(const double &a) const {
+  Flame2D_State Temp(*this);
+  for(int i=0; i<n; i++) Temp.x[i] = x[i]/a;
+  return(Temp);
+}
+
+//----------------- Inner Product ------------------------//
+double Flame2D_State::operator *(const Flame2D_State &X) const{
+  double sum(0.0);
+  for(int i=0; i<n; i++) sum += x[i]*X.x[i];
+  return (sum);
+}
+
+//----------- solution state product operator ------------//
+Flame2D_State Flame2D_State::operator ^( const Flame2D_State &X) const {
+    Flame2D_State Temp(*this);
+    for(int i=0; i<n; i++) Temp.x[i] = x[i]*X.x[i];
+    return(Temp);
+}
+
+//----------------- Assignment ----------------------------//
+Flame2D_State& Flame2D_State::operator =(const Flame2D_State &X){
+  //self assignment protection
+  if( this != &X){ 
+    Copy(X);
+  }
+  return (*this);
+}
+
+/********************************************************
+ * Flame2D_pState -- Shortcut arithmetic operators.     *
+ ********************************************************/
+Flame2D_State& Flame2D_State::operator +=(const Flame2D_State &X){
+  for( int i=0; i<n; i++)  x[i] += X.x[i];
+  return (*this);
+}
+
+Flame2D_State& Flame2D_State::operator -=(const Flame2D_State &X) {
+  for(int i=0; i<n; i++) x[i] -= X.x[i];
+  return (*this); 
+}
+
+/********************************************************
+ * Flame2D_pState -- Unary arithmetic operators.         *
+ ********************************************************/
+Flame2D_State operator -(const Flame2D_State &X) {
+  Flame2D_State Temp(X);
+  for(int i=0; i<X.n; i++)  Temp.x[i] = -X.x[i]; 
+  return(Temp);
+}
+
+
+
+/********************************************************
+ * Flame2D_pState -- Input-output operators.            *
+ ********************************************************/
+ostream &operator << (ostream &out_file, const Flame2D_State &X) {
+  out_file.precision(10);
+  out_file.setf(ios::scientific);
+  for( int i=0; i<X.n; i++) out_file<<" "<<X.x[i];
+  out_file.unsetf(ios::scientific);
+  return (out_file);
+}
+
+istream &operator >> (istream &in_file, Flame2D_State &X) {
+  in_file.setf(ios::skipws);
+  for( int i=0; i<X.n; i++) in_file>>X.x[i];
+  in_file.unsetf(ios::skipws);
+   return (in_file);
+}
+
+
 
 
 /*!
@@ -98,1458 +326,323 @@ using namespace std;
  * Thermal Conductivity:            k   N/(s*K)  W.(m*K)
  * \endverbatim
  */
-class Flame2D_pState {
+class Flame2D_pState : public Flame2D_State {
 
-private:
-  //@{ @name Temporary storage:
-  static double *vis; // storage for component viscosity
-  static double *e_k; // storage for component energy
-  //@}
-  
-  //all public ....
-protected:
+
+  /**
+   * Public Objects
+   */
 public:
-  //@{ @name Primitive variables and associated constants:
-  double         rho;   //!< Density.
-  Vector2D         v;   //!< Flow velocity (2D)  
-  double           p;   //!< Pressure.
-#ifdef STATIC_NUMBER_OF_SPECIES
-  double           c[STATIC_NUMBER_OF_SPECIES];
-#else 
-  double          *c;   //!< Species mass fractions
-#endif
-  Tensor2D       tau;   //!< Shear Stress Tensor
-  Vector2D     qflux;   //!< Heat Flux Vector  
-  
-  
-  //! Static Variaables 
-  static int                   ns; //!< number of species
-  static NASARP1311data *specdata; //!< Global Species Data
-  static double          *Schmidt; //!< Schmidt Number for each species
-  static Reaction_set       React; //!< Global Reaction Data
-  static double    low_temp_range; //!< Low temp data range
-  static double   high_temp_range; //!< High temp data range
-  static int       NUM_VAR_FLAME2D; //!< Number of Chem2d variables (6+ns)
-  static double              Mref; //!< Mref for Precondtioning (normally set to incoming freestream Mach)
-  static double         gravity_z; //!< m/s^2 acceleration due to gravity  
-  //@}
 
-  //default constructors of many flavours, hopefully one is right 4U   
-  //v.zero(); tau.zero(); qflux.zero(); lambda.zero(); theta.zero();
-  //  ^ Unecessary as Vector2D and Tensor2D defaults are ZERO
-  //@{ @name Creation, copy, and assignment constructors.
- 
-  Flame2D_pState(): rho(DENSITY_STDATM), p(PRESSURE_STDATM)
-  { specnull();  set_initial_values(); }
-  
-  Flame2D_pState(const double &value): rho(value), v(value), p(value)
-  { specnull(); set_initial_values(value); }
-  
-  Flame2D_pState(const double &d, const Vector2D &V, 
-		const double &pre):
-    rho(d), v(V), p(pre)
-  { specnull();  set_initial_values(); }
-  
-  Flame2D_pState(const double &d, const double &vx, 
-		const double &vy, const double &pre):
-    rho(d), v(vx,vy), p(pre)
-  {specnull();  set_initial_values(); }
+
+  /**
+   * Private Objects
+   */
+private:
+  double T;   //!< Temperature
+  Mixture M;  //!< Mixture Object
+
+  /**
+   * Public Members
+   */
+public:
+
+  /************** Constructors/Destructors ***********/
+  Flame2D_pState() : T(0.0) {
+    rho(DENSITY_STDATM); p(PRESSURE_STDATM);
+    vx(0.0); vy(0.0); c(1/ns); T = T();
+  }
 
   Flame2D_pState(const double &d, const Vector2D &V, 
-		const double &pre, const double &value):
-    rho(d), v(V), p(pre)
-  { specnull();  set_initial_values(value); }
+		 const double &pre)
+  { rho(d); p(pre); v(V); c(1/ns); T = T(); }
 
-  Flame2D_pState(const double &d, const double &vx, 
-		const double &vy, const double &pre, 
-		const double &value):
-    rho(d), v(vx,vy), p(pre)
-  { specnull();  set_initial_values(value); }
+  Flame2D_pState(const double &d, const double &vvx, 
+		const double &vvy, const double &pre)
+  { rho(d); p(pre); vx(vvx); vy(vvy); c(1/ns); T = T(); }
   
-  Flame2D_pState(const double &d, const double &vx, 
-		const double &vy, const double &pre, 
-		const double *mfrac): 
-    rho(d), v(vx,vy), p(pre)
-  { specnull();  set_initial_values(mfrac); }
+  Flame2D_pState(const double &d, const double &vvx, 
+		const double &vvy, const double &pre, 
+		const double *mfrac) : T(0.0)
+  { rho(d); p(pre); vx(vvx); vy(vvy); c(mfrac); T = T(); }
   
   Flame2D_pState(const double &d, const Vector2D &V, 
-		const double &pre, const double *mfrac): 
-    rho(d), v(V), p(pre)
-  { specnull(); set_initial_values(mfrac); }
-  
-  //this is needed for the operator overload returns!!!!
-  Flame2D_pState(const Flame2D_pState &W): rho(W.rho), v(W.v), p(W.p),
- 					 tau(W.tau), qflux(W.qflux)
-  { specnull(); set_initial_values(W.c); }      
+		const double &pre, const double *mfrac) : T(0.0)
+  { rho(d); p(pre); v(V); c(mfrac); T = T(); }
+
+  Flame2D_pState(const Flame2D_pState &W) { Copy(W); }
+  Flame2D_pState(const Flame2D_cState &U) { W(U); }
+  Flame2D_pState(const Flame2D_State &X) { Copy(X); }
+  ~Flame2D_pState() { }
+
+  /*************** Accessors ***************************/
+  //@{ @name Primitive variables:
+  //!< Density.
+  double rho(void) const { return x[RHO_]; }
+  void rho(const double &d) { x[RHO_]=d; }
+
+  //!< Flow velocity (2D)
+  double vx(void) const { return x[VX_]; }
+  void vx(const double &vvx) { x[VX_]=vvx; }
+  double vy(void) const { return x[VY_]; }
+  void vy(const double &vvy) { x[VY_]=vvy; }
+  void v(const Vector2D &V) { x[VX_]=V.x; x[VY_]=V.y; };
+  double vsqr(void) const { return x[VX_]*x[VX_] + x[VY_]*x[VY_]; };
+
+  //!< Pressure.
+  double p(void) const { return x[PRESS_]; }
+  void p(const double &pr) { x[PRESS_]=pr; }
+
+  //!< Species mass fractions
+  double c(const int&i) const { return x[SPEC_+i]; }
+  void c(const double *mfrac) { for (int i=0; i<ns; i++) x[SPEC_+i]=mfrac[i]; }
+  void c(const double &val)  { for (int i=0; i<ns; i++) x[SPEC_+i]=val; }
+  void c(const int&i, const double &val)  { x[SPEC_+i]=val; }
   //@}
 
-   //read in ns species data, call only once as its static
-   void set_species_data(const int &,const string *,const char *,
- 			 const double&,const double *, const int &);
+  /********* Primitive / Conserved Transformation ******/
+  //!< conserved to primitive transforation
+  void W(const Flame2D_cState &U);
 
-   //set initial data values predominately used internally !!!
-   void set_initial_values();
-   void set_initial_values(const double &value);
-   void set_initial_values(const double *cfrac);
+  //!< Momentum (2D)
+  double rhovx(void) const { return rho()*vx(); };
+  double rhovy(void) const { return rho()*vy(); };
 
-   //Copy construtor, cheaper than = operator
-   void Copy(const Flame2D_pState &W);
+  //!< Species mass fractions times density
+  double rhoc(const int&i) const { return rho()*c(i); };
 
-   // return the number of variables - number of species
-   int NumVarSansSpecies() const { return NUM_FLAME2D_VAR_SANS_SPECIES; }
+  //!< Total Energy (rho *(e + HALF*v^2))
+  double E(void) const { return (rho()*(e() + 0.5*vsqr())); };
 
-   /*************** VACUUM OPERATOR *********************/
-  void Vacuum(){ rho=ZERO; v.zero(); p=ZERO;
-     set_initial_values(0.0);
-     tau.zero(); qflux.zero();
-   }
+  //!< Total Enthalpy ( H = h + velocity^2 )
+  double H(void) const { return (rho()*(h() + 0.5*vsqr())); };
+  double Hs(void) const { return (rho()*(hs() + 0.5*vsqr())); };
 
-   void zero_non_sol(){
-     tau.zero(); qflux.zero();
-   }  
- 
-  //! set acceleration due to gravity
-  void set_gravity(const double &g);
-  //@}
+  //!< Speed of sound 
+  double a(void) const { return sqrt(g()*Rtot()*T); }
 
-   /******** Set Data Temperature Ranges ***************/
-   void Temp_low_range();     
-   void Temp_high_range(); 
 
-   /***************** Mixing Rules ********************
-    The following constructors return "total" physical
-    parameters based on mixture rules for each.
-   ****************************************************/
-   double Mass(void) const;   //mixture molecular mass
-   double Rtot(void);         //mixture gas constant
-   double Rtot(void) const;   
-   double Cp(void) const;     //mixture heat capacity (Pressure constant)
-   double Cp(const double& TEMP) const;
-   double Cv(void) const;     //mixture heat capacity (Volume constant)
-   double g(void) const;      //mixture heat capacity ratio
-   double e(void) const;      //mixture absolute (sensible+chemical) internal energy
-   double eref(void) const;
-   double es(void) const;     //mixture sensible internal energy  
-   double h(void) const;      //mixture specific enthalpy
-   double h(const double &T) const;
-   double href(void) const;
-   double hs(void) const;
-   double hs(const double &T) const;
-   double E(void) const;      //mixture total internal energy  
-   double H(void) const;      //mixture total enthalpy
-   double Hs(void) const;     //mixture total enthalpy
-   double mu(void) const;     //mixture viscosity
-   double kappa(void) const;  //mixture thermal conductivity
-   double hprime(void) const;  
-   double hprime(double &Temp) const;
-   double Diffusion_coef(const int &) const;  //diffusion coefficient 
+  /************ Mixture Object Wrappers *****************/
 
-   /***************************************************/
-   Vector2D rhov(void) const;      //Momentum
-   double T(void) const;           //Temperature
-   double T(double &h_s) const;    //Determine temperature knowing sensible enthalpy
-   double gamma_guess(void) const; //gamma for iterative schemes
-   double a(void);                 //speed of sound
-   double a(void) const;
-//    bool negative_speccheck(void) ; //-ve mass frac check and sets small -ve c's to ZERO  
-//    bool Unphysical_Properties_Check(Flame2D_cState &U, const int Flow_Type, const int n) ;   
-   double SpecCon(int i) const;     //Species i concentration (rho*c/mol_mass)
-   double MoleFrac(int i) const;    //Species i mole fraction (c*mol_mass_mix/mol_mass)
-   double Gibbs(int species) const; //Gibbs Free Energy (H-TS) for species
+  //!< Gas constant
+  double Rtot(void) const { return M.gasConstant(); };
+  //!< Internal Energy
+  double e(void) const { return M.internalEnergy(T); };
+  double es(void) const { return M.internalEnergySens(T); };
+  //!< enthalpy
+  double h(void) const { return M.enthalpy(); };
+  double hs(void) const { return M.enthalpySens(); };
+  //!< heat capacity
+  double Cp(void) const { return M.heatCapacity_p(); };
+  double Cv(void) const { return M.heatCapacity_v(); };
+  double g(void) const { return M.heatRatio(); };
+  //!< transport
+  double mu(void) const { return M.gasConstant(); };
+  double kappa(void) const { return M.gasConstant(); };
+  double Diffusion_coef(const int &i) const { return M.gasConstant(); };
+  //!< Dimensionaless
+  double Sc(const int &i) const { return M.schmidt(rho(), i); };
+  double Pr(void) const { return M.prandtl(); };
+  double Le(const int &i) const { return M.lewis(rho(), i); };
 
-   /********** radiating species related parameters ***********/
-    void MoleFracOfRadSpec( double &xCO,  double &xH2O, 
-			    double &xCO2, double &xO2 ) const;
 
-   /************* Dimensionless Parameters ********************/
-   double Schmidt_No(const int &) const;
-   double Prandtl() const;
-   double Lewis(const int &) const;
 
-   /************** Temperature Derivatives *******************/
-   double diedip() const;
-   double diedirho() const;
-   double dmudT(void) const;
-   double dkappadT(void) const;
+  /*************** VACUUM OPERATOR *********************/
 
-   /************ Strain rate tensor, laminar stress and Reynolds stress tensors ***********/
-   Tensor2D Strain_Rate(const Flame2D_pState &dWdx,
-			const Flame2D_pState &dWdy,
-			const int Axisymmetric,
-			const Vector2D X);
 
-   void Laminar_Stress(const Flame2D_pState &dWdx,
-		       const Flame2D_pState &dWdy,
-		       const int Axisymmetric,
-		       const Vector2D X);
+  /*************** Static Functions ********************/
 
-   /************ Heat Flux vector thermal Diffusion ***********/
-   Vector2D thermal_diffusion(void) const;
 
-   /*************** Conserved solution state. ****************/
-   Flame2D_cState U(void) const;
-   Flame2D_cState U(const Flame2D_pState &W) const;
-   friend Flame2D_cState U(const Flame2D_pState &W);
-
-   /**************** Fluxes ***********************************/
-   /* Inviscid Solution flux (x-direction). */
-   Flame2D_cState Fx(void) const;
-
-   /*********** Inviscid Flux Jacobian X ***********************/
-   friend void dFIdU(DenseMatrix &dFdU, const Flame2D_pState &W);
-   friend void dFIdU_FD(DenseMatrix &dFdU, const Flame2D_pState &W);
-   friend void dFIdW(DenseMatrix &dFdW, const Flame2D_pState &W);
-   friend void dFIdW_FD(DenseMatrix &dFdW, const Flame2D_pState &W);
-
-   /** Conserved/Primitive  & Primitive/Conservered Jacobians **/
-   void dWdU(DenseMatrix &dWdQ)const;
-   void dWdU_FD(DenseMatrix &dWdQ);
-
-   void dUdW(DenseMatrix &dQdW);
-   void dUdW_FD(DenseMatrix &dUdW);
-
-   /************* Eigenvalues *********************************/
-   /* Eigenvalue(s) (x-direction). */ 
-   Flame2D_pState lambda_x(void) const;
-
-   /************** Precondtioned Eigenvalues ******************/
-   Flame2D_pState lambda_preconditioned_x(const double &MR2) const;
-
-   /**************** Eigenvectors *****************************/  
-   Flame2D_cState rc_x(const int &index) const; // Conserved right (x-direction)
-   Flame2D_pState lp_x(const int &index) const; // Primitive left (x-direction)
-
-   /************** Preconditioned Eigenvectors ****************/
-   Flame2D_cState rc_x_precon(const int &index,const double &MR2) const;  // Conserved right (x-direction)
-   Flame2D_pState lp_x_precon(const int &index,const double &MR2) const;  // Primitive left  (x-direction)
-
-   /*************** Preconditioner ****************************/
-   double u_plus_aprecon(const double &u,const int &flow_type_flag,const double &deltax) const;
-   void u_a_precon(const double &UR,double &uprimed, double &cprimed) const;
-   double Mr2(const int &flow_type_flag, const double &deltax) const;
-   void Low_Mach_Number_Preconditioner(DenseMatrix &P,const int &flow_type_flag, const double &deltax) const; 
-   void Low_Mach_Number_Preconditioner_Inverse(DenseMatrix &Pinv,const int &flow_type_flag, const double &deltax) const; 
-
-   /********** Axisymmetric Source Terms **********************/
-   Flame2D_cState Sa_inviscid(const Vector2D &X,
-                             const int Axisymmetric) const;
-
-   Flame2D_cState Sa_viscous(const Flame2D_pState &dWdx, 
-                            const Flame2D_pState &dWdy, 
-                            const Vector2D &X,
-                            const int Axisymmetric);
-
-   //Due to axisymmetric coordinate system
-  void dSa_idU(DenseMatrix &dSa_idU, const Vector2D &X, const int Axisymmetric) const;  //Inviscid source Jacobian
-  void dSa_idU_FD(DenseMatrix &dSa_idU, const Vector2D &X,const int Axisymmetric) const;
-  void dSa_vdW(DenseMatrix &dSa_VdW, const Flame2D_pState &dWdx,
- 	       const Flame2D_pState &dWdy,const Vector2D &X, 
- 	       const int Axisymmetric, 
- 	       const double d_dWdx_dW, const double d_dWdy_dW) const;  //Viscous source Jacobian
-
-   /****** Source terms associated with finite-rate chemistry ******/
-   Flame2D_cState Sw(int &REACT_SET_FLAG ) const;
-   void dSwdU(DenseMatrix &dSwdU,const int &solver_type) const; //Jacobian
-   void dSwdU_FD(DenseMatrix &dSwdU) const;
-   double dSwdU_max_diagonal(const int &Preconditioned,					 
- 			    const double &delta_n,
- 			    const int &solver_type) const;
-
-   /****** Source terms associated with gravitational forces ******/
-   Flame2D_cState Sg(void) const;
-   void dSgdU(DenseMatrix &dSgdU) const; //Jacobian
-
-  /****** Source terms associated with dual time stepping *******/
-  Flame2D_cState S_dual_time_stepping(const Flame2D_cState &U,
-                                     const Flame2D_cState &Ut,
-                                     const Flame2D_cState &Uold,
-                                     const double &dTime,
-                                     const int &first_step) const;
-
-   /**************** Operators Overloading ********************/
-   /* Index operator */
-   double &operator[](int index);
-   const double &operator[](int index) const;
-
-   /* Binary arithmetic operators. */
-   Flame2D_pState operator +(const Flame2D_pState &W) const;
-   Flame2D_pState operator -(const Flame2D_pState &W) const;
-   Flame2D_pState operator *(const double &a) const;
-   friend Flame2D_pState operator *(const double &a, const Flame2D_pState &W);
-   Flame2D_pState operator /(const double &a) const;
-   double operator *(const Flame2D_pState &W) const;
-   Flame2D_pState operator ^(const Flame2D_pState &W) const;
-
-   /* Assignment Operator. */ 
-   Flame2D_pState& operator =(const Flame2D_pState &W); 
-
-   /* Shortcut arithmetic operators. */
-   Flame2D_pState& operator +=(const Flame2D_pState &W);
-   Flame2D_pState& operator -=(const Flame2D_pState &W);
- 
-   /* Unary arithmetic operators. */
-   //Flame2D_pState operator +(const Flame2D_pState &W);
-   friend Flame2D_pState operator -(const Flame2D_pState &W);
-
-   /* Input-output operators. */
-   friend ostream& operator << (ostream &out_file, const Flame2D_pState &W);
-   friend istream& operator >> (istream &in_file,  Flame2D_pState &W);
-
-   /**************** Destructors ******************************/
-   //for static specdata
-   void Deallocate_static(void){ 
-     if(specdata != NULL) { delete[] specdata; specdata = NULL; }
-     if(Schmidt != NULL) { delete[] Schmidt; Schmidt = NULL; }
-     if(vis != NULL) { delete[] vis; vis = NULL; }
-     if(e_k != NULL) { delete[] e_k; e_k = NULL; }
-   }
-
-#ifdef STATIC_NUMBER_OF_SPECIES    
-   void specnull() {}
-   void spec_memory() {}
-   ~Flame2D_pState(){}
-#else
-   void specnull() {spec=NULL;}
-   void spec_memory() { Deallocate(); c = new double[ns];}
-   void Deallocate(void){ if(c != NULL){ delete[] c;}  specnull();  }
-   ~Flame2D_pState(){ Deallocate(); }
-#endif
- 
-   /**************** Species Resize ***************************/
-  void resize_species();
-  void resize_species(const int n_old, const string* species_old);
 };
 
 
- /**************************************************************************
- ********************* FLAME2D_CSTATE CLASS DEFINTION ***********************
-     The conserved variables edition of FLAME2D_PSTATE... 
- ***************************************************************************
- ***************************************************************************/
- class Flame2D_cState {
-   private: 
-   //@{ @name Temporary storage:
-   static double *vis; // storage for component viscosity
-   static double *e_k; // storage for component energy
-   //@}
+/*!
+ * Class: Flame2D_cState
+ *
+ * @brief  Conserved variable solution state class definition for an
+ *         inviscid, laminar, or turbulent chemically reacting gas-flow.
+ *
+ * Conserved variable solution state class definition for an inviscid, 
+ * laminar, or turbulent chemically reacting gas-flow.
+ *
+ * \verbatim
+ * Density:   rho  kg/m^3
+ * Velocity:  v    m/s
+ * Pressure:  p    Pa (N/m^2)
+ * 
+ * Molecular Mass:          M    kg/mol
+ * Species Gas Constant:    Rs   J/(kg*K)
+ * 
+ * Temperature(Kelvin) Dependent data: f(T) 
+ *  
+ * Heat Capacity (const Pressure):  Cp  J/(kg*K)
+ * Heat Capacity (const Volume):    Cv  J/(kg*K)
+ * Specific Heat Ratio:             g
+ * Specific Enthalpy:               h   J/kg
+ * Specific Internal Energy:        e   J/kg
+ * Total Enthalpy:                  H   J/kg 
+ * Total Internal Energy:           E   J/kg
+ *
+ * Viscosity:                       mu  kg/(m*s) N*s/m^2  
+ * Thermal Conductivity:            k   N/(s*K)  W.(m*K)
+ * \endverbatim
+ */
+class Flame2D_cState : public Flame2D_State {
 
-   //all public .... yes I know ....
-   protected:
-   public:
-   /****** Conservative Vector "U" **************************/
-  double                      rho; //!< Density.
-  Vector2D                   rhov; //!< Momentum (2D)
-  double                        E; //!< Total Energy (rho *(e + HALF*v^2))
-#ifdef STATIC_NUMBER_OF_SPECIES
-   double                    rhoc[STATIC_NUMBER_OF_SPECIES];
-#else 
-  double                    *rhoc; //!< Species class using (rho*c[ns])
-#endif
-   Tensor2D                    tau; //!< Shear Stress Tensor
-   Vector2D                  qflux; //!< Heat Flux Vector  
-
-   static int                   ns; //!< number of species
-   static NASARP1311data *specdata; //!< Global species data 
-   static double          *Schmidt; //!< Schmidt Number for each species
-   static double    low_temp_range; //!< Low temp data range
-   static double   high_temp_range; //!< High temp data range
-   static int       NUM_VAR_FLAME2D; //!< Number of Chem2d variables (4+ns)
-   static double              Mref; //!< Mref for Precondtioning (normally set to incoming freestream Mach)
-   static double         gravity_z; //!< m/s^2 acceleration due to gravity  
-   //@}
- 
-   /*****************************************************/
-   //default constructors of many flavours, hopefully one is right 4U
-   Flame2D_cState(): rho(DENSITY_STDATM), E(PRESSURE_STDATM/(rho*((double)0.4)))
-   {rhospecnull(); set_initial_values(); }   
-
-   Flame2D_cState(const double &value): rho(value), rhov(value), E(value)
-   { rhospecnull();  set_initial_values(value); }   
-
-   Flame2D_cState(const double &d, const Vector2D &V, 
-		 const double &En):
-     rho(d), rhov(V), E(En)
-   { rhospecnull(); set_initial_values(); }
-
-   Flame2D_cState(const double &d, const Vector2D &V, 
-		 const double &En, const double &value):
-     rho(d), rhov(V), E(En)
-   { rhospecnull(); set_initial_values(value); }
-
-   Flame2D_cState(const double &d, const double &vx, 
-		 const double &vy, const double &En):
-     rho(d), rhov(vx,vy), E(En)
-   { rhospecnull(); set_initial_values(); }
-
-   Flame2D_cState(const double &d, const double &vx, 
-		 const double &vy, const double &En, 
-		 const double &value): 
-     rho(d), rhov(vx,vy), E(En)
-   { rhospecnull();  set_initial_values(value); }
-
-   Flame2D_cState(const double &d, const double &vx, 
-		 const double &vy, const double &En,   
-		 const double *rhomfrac): 
-     rho(d), rhov(vx,vy), E(En)
-   { rhospecnull();   set_initial_values(rhomfrac); }
-
-   Flame2D_cState(const double d, const Vector2D &V, 
-		 const double &En, const double *rhomfrac): 
-     rho(d), rhov(V), E(En)
-   { rhospecnull();   set_initial_values(rhomfrac); }
-		 
-   // WARNING - automatic type conversion
-   Flame2D_cState(const Flame2D_pState &W) :  rho(W.rho), rhov(W.rhov()),
-					    E(W.E()),
-					    tau(W.tau), qflux(W.qflux)
-   {   
-     for(int i=0; i<W.ns; i++) rhoc[i] = W.rho*W.c[i];
-   }
+  /**
+   * Public Objects
+   */
+public:
 
 
+  /**
+   * Private Objects
+   */
+private:
 
-   //this is needed for the operator overload returns!!!!
-   Flame2D_cState(const Flame2D_cState &U): rho(U.rho), rhov(U.rhov), E(U.E),
-					  tau(U.tau), qflux(U.qflux)
-   { rhospecnull(); set_initial_values(U.rhoc); }
 
-   //read in ns species data, call only once as its static
-   void set_species_data(const int &,const string *,const char *,
-			 const double&,const double *, const int &);
+  /**
+   * Public Members
+   */
+public:
 
-   //set initial data values predominately used internally 
-   void set_initial_values();
-   void set_initial_values(const double &value);
-   void set_initial_values(const double *rhomfrac);
+  /************** Constructors/Destructors ***********/
+  Flame2D_cState() {
+    rho(DENSITY_STDATM); E(PRESSURE_STDATM/(rho()*0.4));
+    rhovx(0.0); rhovy(0.0); rhoc(0.0);
+  }
 
-   //Copy construtor, cheaper than = operator
-   void Copy(const Flame2D_cState &U);
-
-   /***************** VACUUM ************************/
-   void Vacuum(){ rho=ZERO; rhov.zero(); E=ZERO;
-     set_initial_values(0.0);
-     tau.zero();  qflux.zero();
-   }  
-
-   void zero_non_sol(){
-     tau.zero(); qflux.zero();
-   }  
-
-   //! set acceleration due to gravity
-   void set_gravity(const double &g);
-   //@}
-
-   /******** Set Data Temperature Ranges ***************/
-   void Temp_low_range();     
-   void Temp_high_range(); 
-
-   /***************** Mixing Rules ********************
-    The following constructors return "total" physical
-    parameters based on mixture rules for each.
-   ****************************************************/
-   //double Mass(void);       //mixture molecular mass
-   double Rtot(void) const; 
- //  double Cp(void) const;   //mixture heat capacity (Pressure constant)
- //  double Cv(void) const;   //mixture heat capacity (Volume constant)
- //  double g(void) const;    //specific heat ratio
-   double gamma_guess(void) const;   //mixture specifc heat ratio
-   double e(void) const;             //mixture specific internal energy
-   double es(void) const;            //mixture specific sensible internal energy
-   double h(const double &T) const;  //mixture specific enthalpy
-   double hs(const double &T) const; //mixture specific enthalpy
-   double hprime(const double &T) const; 
-   double heatofform(void) const;      //mixture heat of formations
-   //double E(void) const;             //mixture total internal energy
-   //double H(void);                   //mixture total enthalpy
-   double mu(void) const;              //mixture viscosity
-   double kappa(void) const;           //mixture thermal conductivity
-   double Diffusion_coef(const int &) const;  //diffusion coefficient 
-
-   /***********************************************************/
-   Vector2D v(void) const;    //velocity  
-   double p(void) const;      //pressure
-   double T(void) const;      //temperature
-   double a(void) const;      //speed of sound
-   bool negative_speccheck(const int &step) ; //-ve mass frac check and sets small -ve c's to ZERO
-   bool Unphysical_Properties();
-   bool Unphysical_Properties_Check(const int n);   
-   double sum_species(void) const;
-
-   //@{ @name Functions required for multigrid.
-   //! Copy variables solved by multigrid only.
-   void Copy_Multigrid_State_Variables(const Flame2D_cState &Ufine);
+  Flame2D_cState(const double &value)
+  { rho(value); E(value); rhovx(value); rhovy(value); rhoc(0.0); }
   
-   //! Zero variables not-solved by multigrid.
-   void Zero_Non_Multigrid_State_Variables(void);
-   //@}
+  Flame2D_cState(const double &d, const Vector2D &rhoV, 
+		 const double &en) 
+  { rho(d); E(en); rhov(rhoV); rhoc(0.0); }
+  
+  Flame2D_cState(const double &d, const double &rhovvx, 
+		 const double &rhovvy, const double &en) 
+  { rho(d); E(en); rhovx(rhovvx); rhovy(rhovvy); rhoc(0.0); }
+
+  Flame2D_cState(const double &d, const Vector2D &rhoV, 
+		 const double &en, const double &value) 
+  { rho(d); E(en); rhov(rhoV); rhoc(value); }
+
+  Flame2D_cState(const double &d, const double &rhovvx, 
+		 const double &rhovvy, const double &en, 
+		 const double &value)
+  { rho(d); E(en); rhovx(rhovvx); rhovy(rhovvy); rhoc(value); }
+  
+  Flame2D_cState(const double &d, const double &rhovvx, 
+		 const double &rhovvy, const double &en, 
+		 const double *mfrac) 
+  { rho(d); E(en); rhovx(rhovvx); rhovy(rhovvy); rhoc(mfrac); }
+  
+  Flame2D_cState(const double &d, const Vector2D &rhoV, 
+		 const double &en, const double *mfrac) 
+  { rho(d); E(en); rhov(rhoV); rhoc(mfrac); }
+
+  Flame2D_cState(const Flame2D_cState &U) { Copy(U); }
+  Flame2D_cState(const Flame2D_pState &W) { U(W); }
+  Flame2D_cState(const Flame2D_State &X) { Copy(X); }
+  ~Flame2D_cState() { }
+
+  /*************** Accessors ***************************/
+  //@{ @name Conserved variables:
+  //!< Density.
+  const double& rho(void) const { return x[RHO_]; }
+  void rho(const double &d) { x[RHO_]=d; }
+
+  //!< Momentum (2D)
+  double rhovx(void) const { return x[VX_]; }
+  void rhovx(const double &rhovvx) { x[VX_]=rhovvx; }
+  double rhovy(void) const { return x[VY_]; }
+  void rhovy(const double &rhovvy) { x[VY_]=rhovvy; }
+  void rhov(const Vector2D &rhoV) { x[VX_]=rhoV.x; x[VY_]=rhoV.y; };
+  double vsqr(void) const { return (x[VX_]*x[VX_] + x[VY_]*x[VY_])/(x[RHO_]*x[RHO_]); };
+
+  //!< Total Energy (rho *(e + HALF*v^2))
+  double E(void) const { return x[PRESS_]; }
+  void E(const double &en) { x[PRESS_]=en; }
+
+  //!< Species mass fractions times density
+  double rhoc(const int&i) const { return x[SPEC_+i]; }
+  void rhoc(const double *mfrac) { for (int i=0; i<ns; i++) x[SPEC_+i]=mfrac[i]; }
+  void rhoc(const double &val)  { for (int i=0; i<ns; i++) x[SPEC_+i]=val; }
+  void rhoc(const int&i, const double &val)  { x[SPEC_+i]=val; }
+  //@}
+
+  /********* Primitive / Conserved Transformation ******/
+  //!< primitive to conserved transforation
+  void U(const Flame2D_pState &W);
+
+  //!< Flow velocity (2D)
+  double vx(void) const { return x[VX_]/x[RHO_]; }
+  double vy(void) const { return x[VY_]/x[RHO_]; }
+
+  //!< Pressure.
+  double p(void) const { return (rho()*Rtot()*T()); };
+
+  //!< Species mass fractions
+  double c(const int&i) const { return x[SPEC_+i]/x[RHO_]; }
+
+  //!< Speed of sound 
+  double a(void) const { return sqrt(g()*Rtot()*T()); };
+
+  //!< Temperature 
+  double T(void) const;
+
+  /************ Mixture Object Wrappers *****************/
+
+  //!< Gas constant
+  double Rtot(void) const;
+  //!< Internal Energy
+  double e(void) const;
+  double es(void) const;
+  //!< enthalpy
+  double h(void) const;
+  double hs(void) const;
+  //!< heat capacity
+  double Cp(void) const;
+  double Cv(void) const;
+  double g(void) const;
+  //!< transport
+  double mu(void) const;
+  double kappa(void) const;
+  double Diffusion_coef(const int &i) const;
 
 
-   /************** Temperature Derivatives *******************/
-   double dmudT(void) const;
 
-   // STRAIN RATE, LAMINAR STRESS, REYNOLD STRESS 6 FUNCTIONS\
-   // LIKE PRIMITIVE 
+  /*************** VACUUM OPERATOR *********************/
 
-   /************ Heat Flux vector thermal Diffusion ***********/
-   Vector2D thermal_diffusion(const double &Temp) const;
 
-   /*********** Primitive solution state ***********************/
-   Flame2D_pState W(void) const;
-   Flame2D_pState W(const Flame2D_cState &U) const;
-   friend Flame2D_pState W(const Flame2D_cState &U);
+  /*************** Static Functions ********************/
 
-   /**************** Fluxes ***********************************/
-   //Viscous Flux (laminar+turbulent)
-   Flame2D_cState Viscous_Flux_x(const Flame2D_pState &dWdx) const;
-   Flame2D_cState Viscous_Flux_y(const Flame2D_pState &dWdy) const;
-
-   /*************** Preconditioner ****************************/
-   void Low_Mach_Number_Preconditioner(DenseMatrix &P,const int &flow_type_flag, const double &deltax) const; 
-   void Low_Mach_Number_Preconditioner_Inverse(DenseMatrix &Pinv,const int &flow_type_flag, const double &deltax) const; 
-
-   /***************** Index operators *************************/
-   double &operator[](int index);
-   const double &operator[](int index) const;
-
-   /**************** Operators Overloading ********************/
-   /* Binary arithmetic operators. */
-   Flame2D_cState operator +(const Flame2D_cState &U) const;
-   Flame2D_cState operator -(const Flame2D_cState &U) const;
-   Flame2D_cState operator *(const double &a) const;
-   friend Flame2D_cState operator *(const double &a, const Flame2D_cState &U);
-   Flame2D_cState operator /(const double &a) const;
-
-   double operator *(const Flame2D_cState &U) const;
-   Flame2D_cState operator ^(const Flame2D_cState &U) const;
-
-   /* Assignment Operator. */ 
-   Flame2D_cState& operator =(const Flame2D_cState &U); 
-
-   /* Shortcut arithmetic operators. */
-   Flame2D_cState& operator +=(const Flame2D_cState &U);
-   Flame2D_cState& operator -=(const Flame2D_cState &U);
-   Flame2D_cState& operator *=(const double &a);
-   Flame2D_cState& operator /=(const double &a);
-
-   /* Unary arithmetic operators. */
-   //Flame2D_cState operator +(const Flame2D_cState &U);
-   friend Flame2D_cState operator -(const Flame2D_cState &U);
-
-   /* Input-output operators. */
-   friend ostream& operator << (ostream &out_file, const Flame2D_cState &U);
-   friend istream& operator >> (istream &in_file,  Flame2D_cState &U);
-
-   /**************** Destructors ******************************/
-   void Deallocate_static(void){ 
-     if(specdata != NULL) { delete[] specdata; specdata = NULL; }
-     if(Schmidt != NULL)  { delete[] Schmidt;   Schmidt = NULL; }
-     if(vis != NULL) { delete[] vis; vis = NULL; }
-     if(e_k != NULL) { delete[] e_k; e_k = NULL; }
-   }
-
-#ifdef STATIC_NUMBER_OF_SPECIES  
-   void rhospecnull() {}          
-   void rhospec_memory() {}
-   ~Flame2D_cState() {}
-#else
-   void rhospecnull() {rhospec=NULL;}
-   void rhospec_memory() { Deallocate(); rhospec = new Species[ns];}
-   void Deallocate(void){ if(rhospec != NULL) { delete[] rhospec;} rhospecnull(); }
-   ~Flame2D_cState() { Deallocate(); }
-#endif
-
-   /**************** Species Resize ***************************/
-   void resize_species();
-   void resize_species(const int n_old, const string* species_old);
 
  };
 
- /**************************************************************************
- ********************* FLAME2D_PSTATE CONSTRUCTORS **************************
- ***************************************************************************/
+/////////////////////////////////////////////////////////////////////
+/// LOCAL MEMBER FUNCTIONS
+/////////////////////////////////////////////////////////////////////
 
- /**************************************************************************
-    Set up mass fractions memory and initial values, ie. Species Class  
- **************************************************************************/
- inline void Flame2D_pState::set_initial_values(){
-   spec_memory();
-   for(int i=0; i<ns; i++) c[i] = ONE/ns; 
- }
+/****************************************************
+ * Primitive / conserved transformations.
+ ****************************************************/
 
- inline void  Flame2D_pState::set_initial_values(const double &value){
-   spec_memory();
-   for(int i=0; i<ns; i++) c[i] = value; 
- }
-
- //user specified
- inline void Flame2D_pState::set_initial_values(const double *cfrac){
-   spec_memory();
-   for(int i=0; i<ns; i++) c[i] = cfrac[i];
- }
-
-/**************************************************************************
-  Resize the species array, and just set the new array to zero
-**************************************************************************/
-inline void Flame2D_pState::resize_species() {
-
-  // the new number of species
-  int n_new( React.num_species );
-
-  // deallocate first
-#ifdef STATIC_NUMBER_OF_SPECIES
-  if( STATIC_NUMBER_OF_SPECIES < n_new ) { 
-    cerr<<"\n WARNING USING STATIC FLAME2D BUILT WITH "<<STATIC_NUMBER_OF_SPECIES 
-	<<" SPECIES PREDEFINED, HOWEVER ASKING FOR "<<n_new<<endl; 
-    exit(1); 
-  }
-#else 
-  Deallocate();
-#endif  
-  
-  // set the new value
-  ns = n_new;
-  
-  // reallocate species array and set to zero
-  spec_memory();
-  set_initial_values(ZERO);
-  
+inline void Flame2D_cState::U(const Flame2D_pState &W) {
+  rho(W.rho());
+  rhovx(W.rhovx());
+  rhovy(W.rhovy());
+  E(W.E());
+  for(int i=0; i<W.NumSpecies(); i++) rhoc(i, W.rhoc(i));
 }
 
-/**************************************************************************
-  Resize the species array, keeping the values
-**************************************************************************/
-inline void Flame2D_pState::resize_species( const int n_old,           // the old numbre of species
-					   const string* species_old) // the old species names array
-{
-  // temporary storage
-  double* c_old = new double[n_old];
-  int index;
-
-  // the new number of species
-  int n_new( React.num_species );
-
-  // store the old values
-  for (int k=0; k<n_old; k++) c_old[k] = c[k];
-
-  // deallocate
-#ifdef STATIC_NUMBER_OF_SPECIES
-  if( STATIC_NUMBER_OF_SPECIES < n_new ) { 
-    cerr<<"\n WARNING USING STATIC FLAME2D BUILT WITH "<<STATIC_NUMBER_OF_SPECIES 
-	<<" SPECIES PREDEFINED, HOWEVER ASKING FOR "<<n_new<<endl; 
-    exit(1); 
-  }
-#else 
-  Deallocate();
-#endif  
-  
-  // set the new value
-  ns = n_new;
-  
-  // reallocate species array and set to zero
-  spec_memory();
-  set_initial_values(ZERO);
-    
-  // match up the species and set their respective values
-  for (int k=0; k<n_old; k++) {
-    index = React.SpeciesIndex(species_old[k]);
-    if (index>=0) c[index] = c_old[k];
-    else {
-      cerr << "\n Flame2D_pState::resize_species() - Species " 
-	   << species_old[k]
-	   << " not found in current reaction mechanism.\n";
-      exit(-1);
-    }
-  }// endfor - species
-  
-  // delete temporary memory
-  delete[] c_old;
-
+inline void Flame2D_pState::W(const Flame2D_cState &U) {
+  rho(U.rho());
+  vx(U.vx());
+  p(U.p());
+  for(int i=0; i<U.NumSpecies(); i++) c(i, U.c(i));
 }
 
 
- /**********************************************************************
-  * Flame2D_pState::set_gravity -- Set the acceleration due to gravity  *
-  *                               in m/s^2.  It acts downwards in the  *
-  *                               z-dir (g <= 0)                       *
-  **********************************************************************/
-inline void Flame2D_pState::set_gravity(const double &g) { // [m/s^2]
-
-  // if gravity is acting upwards (wrong way)
-  if (g>0) {
-    cerr<<"\n Flame2D_pState::set_gravity() - Gravity acting upwards!!!! \n";
-    exit(1);
-    
-  // gravity acting downwards (-ve), OK
-  } else {
-    gravity_z = g;
-  }
-}
-
-
- /*****************  Momentum *******************************/
- inline Vector2D Flame2D_pState::rhov(void) const{
-   return rho*v; 
- } 
-
- /********************** Prandtl ****************************/
- inline double Flame2D_pState::Prandtl(void) const{
-   //Pr = Cp*mu/k
-   return Cp()*mu()/kappa();
- }
-
- /********************** Schmidt ****************************/
- inline double Flame2D_pState::Schmidt_No(const int &i) const{
-   return Schmidt[i];
- }
-
- /********************** Lewis *****************************/
- inline double Flame2D_pState::Lewis(const int &i) const{
-   return (kappa()*Schmidt[i])/(Cp()*mu());
- }
-
- /************* Temperature ********************************/
- inline double Flame2D_pState::T(void) const{
-   return p/(rho*Rtot());
- }
-
- /************* Strain rate tensor ***********************************/
- inline Tensor2D Flame2D_pState::Strain_Rate(const Flame2D_pState &dWdx,
- 					   const Flame2D_pState &dWdy,
- 					   const int Axisymmetric,
- 					   const Vector2D X){
-   Tensor2D strain_rate;
-   double radius, div_v;
-
-   /***************** Strain rate (+dilatation) **********************/	
-   div_v = dWdx.v.x + dWdy.v.y;
-   if (Axisymmetric == AXISYMMETRIC_X) {
-     radius = (X.x < MICRO) ? MICRO : X.x;    //fabs(X.x) ??
-     div_v += v.x/radius;
-   } else if (Axisymmetric == AXISYMMETRIC_Y) {    
-     radius = (X.y < MICRO) ? MICRO : X.y;
-     div_v += v.y/radius;
-   } 
-
-   strain_rate.xx = dWdx.v.x-div_v/THREE;
-   strain_rate.xy = HALF*(dWdx.v.y + dWdy.v.x);
-   strain_rate.yy = dWdy.v.y-div_v/THREE;
-
-   if (Axisymmetric == PLANAR) {
-     strain_rate.zz = -(strain_rate.xx + strain_rate.yy); 
-   } else if (Axisymmetric == AXISYMMETRIC_X) {
-     strain_rate.zz = v.x/radius-div_v/THREE;
-   } else if (Axisymmetric == AXISYMMETRIC_Y) {
-     strain_rate.zz = v.y/radius-div_v/THREE;
-   } 
-
-   return strain_rate;  
- }
-
- /***************** Laminar (molecular) fluid stress ***********************/
- inline void Flame2D_pState::Laminar_Stress(const Flame2D_pState &dWdx,
- 					  const Flame2D_pState &dWdy,
- 					  const int Axisymmetric,
- 					  const Vector2D X){
-
-   tau = TWO*mu()*Strain_Rate(dWdx, dWdy, Axisymmetric, X); 
- }
-
-
-/***** Species Concentrations ******************************/
-inline double Flame2D_pState::SpecCon(int i) const{
-  //returned in kg/m^3 / kg/mol => mol/m^3
-  return rho*c[i]/(specdata[i].Mol_mass());
-}
-
-/***** Species Mole Fractions ******************************/
-inline double Flame2D_pState::MoleFrac(int i) const{
-  //returned in kmol i / kmol mix
-  return c[i]*Mass()/(specdata[i].Mol_mass());
-}
-
-
-/******* GIBBS Free Energy ********************************
-  Eqn. (10.84) (10.87) Anderson
-  Gs = Hs - TS
-  Gs(ps=1) = Gs - R_UNIVERSAL*T*ln(ps)  //for data not at 1atm
-  ps = cs(M/Ms)*p
-
-  NEVER USE THIS FUNCTION : If you are looping through the
-  species and computing the Gibbs free energy, you do an
-  EXPENSIVE T() calculation for every species !!!! Even 
-  though T() does not change.
-***********************************************************/
-inline double Flame2D_pState::Gibbs(int species) const{
-  double Temp = T(); 
-//   double ps = spec[species].c*(Mass()/specdata[species].Mol_mass())*p;
-//   if(ps != ZERO){  //check ps as log(0) -> INF
-//     return specdata[species].Enthalpy_mol(Temp)  
-//       - Temp*specdata[species].Entropy_mol(Temp) 
-//       - R_UNIVERSAL*Temp*log(ps);
-//   } 
-//   else{
-    return specdata[species].Enthalpy_mol(Temp)  
-      - Temp*specdata[species].Entropy_mol(Temp);
-    //  }
-}
-
-/************** Temperature Derivatives *******************/
-inline double Flame2D_pState::diedip() const{
-  double Rlocal = Rtot();
-  return (hprime() - Rlocal)/(rho*Rlocal);
-}
-
-inline double Flame2D_pState::diedirho() const{
-  double Rlocal = Rtot();
-  return -p*(hprime() - Rlocal)/(rho*rho*Rlocal);
-}
-
-/**************** Copy *************************************/
-inline void Flame2D_pState::Copy(const Flame2D_pState &W){
-  rho = W.rho;
-  v = W.v; 
-  p = W.p;  
-  for( int i=0; i<ns; i++) c[i] = W.c[i];
-  tau = W.tau;
-  qflux = W.qflux;
-}
-
-//**************** Index Operators *************************/
-inline double& Flame2D_pState::operator[](int index) {  
-  //  assert( index >= 1 && index <= NUM_VAR_FLAME2D );
-  switch(index){  
-  case 1:
-    return rho;    
-  case 2:
-    return v.x;
-  case 3:
-    return v.y;
-  case 4:
-    return p;
-  default :
-    return c[index-NUM_FLAME2D_VAR_SANS_SPECIES-1];
-  };
-}
-
-inline const double& Flame2D_pState::operator[](int index) const {  
-  //   assert( index >= 1 && index <= NUM_VAR_FLAME2D );
-  switch(index){  
-  case 1:
-    return rho;    
-  case 2:
-    return v.x;
-  case 3:
-    return v.y;
-  case 4:
-    return p;
-  default :
-    return c[index-NUM_FLAME2D_VAR_SANS_SPECIES-1];
-  };
-
-}
-/**************************************************************
-  Get max of the min temperature of the lowest region
-  and min of the max temperature of the highest region
-***************************************************************/
-inline void Flame2D_pState::Temp_low_range(void){  
-  double temp = specdata[0].Low_range();
-  for(int i=0; i<ns; i++){
-    temp = max(specdata[i].Low_range(),temp);
-  }
-  low_temp_range = temp;  
-}
-
-inline void Flame2D_pState::Temp_high_range(void){
-  double temp = specdata[0].High_range();
-  for(int i=0; i<ns; i++){
-    temp = min(specdata[i].High_range(),temp);
-  }
-  high_temp_range = temp;  
-}
-
-/********************************************************
- * Flame2D_pState::U -- Conserved solution state.        *
- ********************************************************/
-inline Flame2D_cState Flame2D_pState::U(void) const {
-  return U(*this);
-}
-
-inline Flame2D_cState Flame2D_pState::U(const Flame2D_pState &W) const{
-    Flame2D_cState Temp;
-    Temp.rho = W.rho;
-    Temp.rhov = W.rhov();
-    for(int i=0; i<W.ns; i++) Temp.rhoc[i] = W.rho*W.c[i];
-    Temp.E = W.E();
-    Temp.tau = W.tau;
-    Temp.qflux = W.qflux; 
-    return Temp;
-}
-
-inline Flame2D_cState U(const Flame2D_pState &W) {
-  Flame2D_cState Temp;
-  Temp.rho = W.rho;
-  Temp.rhov = W.rhov();
-  for(int i=0; i<W.ns; i++) Temp.rhoc[i] = W.rho*W.c[i];
-  Temp.E = W.E(); 
-  Temp.tau = W.tau;
-  Temp.qflux = W.qflux; 
-  return Temp;
-}
-
-/**************************************************************************
-********************* FLAME2D_CSTATE CONSTRUCTORS **************************
-***************************************************************************/
-
-/***************************************************************
-  Set up mass fractions memory and initial values, ie. Species Class  
-****************************************************************/
-inline void Flame2D_cState::set_initial_values(){
-  rhospec_memory();
-  for(int i=0; i<ns; i++) rhoc[i] = rho/ns; 
-} 
-
-inline void  Flame2D_cState::set_initial_values(const double &value){
-  rhospec_memory();
-  for(int i=0; i<ns; i++) rhoc[i] = value; 
-}
-
-//user specified
-inline void Flame2D_cState::set_initial_values(const double *rhomfrac){
-  rhospec_memory();
-  for(int i=0; i<ns; i++) rhoc[i] = rhomfrac[i];
-}
-
-
-/**************************************************************************
-  Resize the species array, setting the new values to zero
-**************************************************************************/
-inline void Flame2D_cState::resize_species() {
-
-  // the new number of species
-  int n_new( Flame2D_pState::React.num_species );
-
-  // deallocate first
-#ifdef STATIC_NUMBER_OF_SPECIES
-  if( STATIC_NUMBER_OF_SPECIES < n_new ) { 
-    cerr<<"\n WARNING USING STATIC FLAME2D BUILT WITH "<<STATIC_NUMBER_OF_SPECIES 
-	<<" SPECIES PREDEFINED, HOWEVER ASKING FOR "<<n_new<<endl; 
-    exit(1); 
-  }
-#else 
-  Deallocate();
-#endif  
-  
-  // set the new value
-  ns = n_new;
-  
-  // reallocate species array and set to zero
-  rhospec_memory();
-  set_initial_values(ZERO);
-     
-}
-
-/**************************************************************************
-  Resize the species array, keeping the values
-**************************************************************************/
-inline void Flame2D_cState::resize_species( const int n_old,           // the old numbre of species
-					   const string* species_old) // the old species names array
-{
-
-  // temporary storage
-  double* c_old = new double[n_old];
-  int index;
-
-  // the new number of species
-  int n_new( Flame2D_pState::React.num_species );
-
-  // store the old values
-  for (int k=0; k<n_old; k++) c_old[k] = rhoc[k];
-
-  // deallocate
-#ifdef STATIC_NUMBER_OF_SPECIES
-  if( STATIC_NUMBER_OF_SPECIES < n_new ) { 
-    cerr<<"\n WARNING USING STATIC FLAME2D BUILT WITH "<<STATIC_NUMBER_OF_SPECIES 
-	<<" SPECIES PREDEFINED, HOWEVER ASKING FOR "<<n_new<<endl; 
-    exit(1); 
-  }
-#else 
-  Deallocate();
-#endif  
-  
-  // set the new value
-  ns = n_new;
-  
-  // reallocate species array and set to zero
-  rhospec_memory();
-  set_initial_values(ZERO);
-    
-  // match up the species and set their respective values
-  for (int k=0; k<n_old; k++) {
-    index = Flame2D_pState::React.SpeciesIndex(species_old[k]);
-    if (index>=0) rhoc[index] = c_old[k];
-    else {
-      cerr << "\n Flame2D_cState::resize_species() - Species " 
-	   << species_old[k]
-	   << " not found in current reaction mechanism.\n";
-      exit(-1);
-    }
-  }// endfor - species
-  
-  // delete temporary memory
-  delete[] c_old;
-
-}
-
-
-/**************** Copy *************************************/
-inline void Flame2D_cState::Copy(const Flame2D_cState &U){
-  rho = U.rho;
-  rhov = U.rhov; 
-  E = U.E; 
-  for( int i=0; i<ns; i++) rhoc[i] = U.rhoc[i];
-  tau = U.tau;
-  qflux = U.qflux; 
-}
-
- /**********************************************************************
-  * Flame2D_cState::set_gravity -- Set the acceleration due to gravity  *
-  *                               in m/s^2.  It acts downwards in the  *
-  *                               z-dir (g <= 0)                       *
-  **********************************************************************/
-inline void Flame2D_cState::set_gravity(const double &g) { // [m/s^2]
-
-  // if gravity is acting upwards (wrong way)
-  if (g>0) {
-    cerr<<"\n Flame2D_pState::set_gravity() - Gravity acting upwards!!!! \n";
-    exit(1);
-    
-  // gravity acting downwards (-ve), OK
-  } else {
-    gravity_z = g;
-  }
-}
-
-
-/**************** Velocity *********************************/
-inline Vector2D Flame2D_cState::v() const{
-  return (rhov/rho);
-}
-
-/**************** Pressure *********************************/
-inline double Flame2D_cState::p() const{
-  return (rho*Rtot()*T());
-}
-
-//----------------- Index Operator ---------------------//
-inline double& Flame2D_cState::operator[](int index) {
-  //  assert( index >= 1 && index <= NUM_VAR_FLAME2D );
-  switch(index){  
-  case 1:
-    return rho;    
-  case 2:
-    return (rhov.x);
-  case 3:
-    return (rhov.y);
-  case 4:
-    return (E);
-  default :
-    return rhoc[index-NUM_FLAME2D_VAR_SANS_SPECIES-1];
-  };
-}
-
-inline const double& Flame2D_cState::operator[](int index) const{
-  //  assert( index >= 1 && index <= NUM_VAR_FLAME2D ); 
-  switch(index){  
-  case 1:
-    return rho;    
-  case 2:
-    return (rhov.x);
-  case 3:
-    return (rhov.y);
-  case 4:
-    return (E);
-  default :
-    return rhoc[index-NUM_FLAME2D_VAR_SANS_SPECIES-1];
-  };
-}
-
-/**************************************************************
-  Check for -ve mass fractions and set small -ve values
-  to ZERO. Then check that no mass is lost and that 
-  the mass fractions still sum = 1
-
-  Return "true" if passes
-  and "false" if failed
-
-  Should add "strict" and "anything goes" flags
-  currently only set to give warnings, but still 
-  continues.
-
-***************************************************************/
-inline bool Flame2D_cState::negative_speccheck(const int &step) {
-  double sum(ZERO);
-  double temp(ZERO);
-
-  //-------- Negative Check ------------//     
-  for(int i=0; i<ns-1; i++){
-    temp = rhoc[i]/rho;    
-    if(temp > ONE){            //check for > 1.0
-      rhoc[i] =rho;
-      temp = ONE; 
-
-    } else if(temp < ZERO){   //check for -ve
-      if(temp > -SPEC_TOLERANCE){  //check for small -ve and set to ZERO 
-	rhoc[i] = ZERO;
-	temp = ZERO;
-      } else {
-
-#ifdef _DEBUG
-	cout<<"\ncState -ve mass fraction in "<<specdata[i].Speciesname()<<" "<<
-	  temp<<" greater than allowed tolerance of "<<-SPEC_TOLERANCE; 
-#endif
-
-	if( step < 10){
-	  return false;
-	} else { 
-
-#ifdef _DEBUG
-	  cout<<"\ncState rhospec["<<i<<"] = "<<rhoc[i]<<" -ve mass fraction larger than tolerance,"
-	      <<" but setting to zero and continuing anyway. ";
-#endif
-	  rhoc[i] = ZERO;
-	  temp = ZERO;	 
-	}
-      }
-    } else {
-      // cout<<"\n negative_speccheck else";
-    }
-    sum += temp;
-  } 
-
-//   rhoc[ns-1] = rho*(ONE - sum); //PUSH error into NS-1 species, probably N2
-
-  temp = max(ONE- sum, ZERO);    //Spread Error across species
-  sum += temp;
-  rhoc[ns-1] = rho*temp;
-  for(int i=0; i<ns; i++){
-    rhoc[i] = rhoc[i]*(ONE/sum);
-  } 
-  
-  return true;
-}
-
-// USED IN MULTIGRID
-inline bool Flame2D_cState::Unphysical_Properties(){
-  Flame2D_cState::Unphysical_Properties_Check(10);
-}
-
-/**************************************************************
-  Unphysical_Properties_Check
- ***************************************************************/
-inline bool Flame2D_cState::Unphysical_Properties_Check(const int n){
-
-  // check for nan's, inf's etc.... debugging !!!
-#ifdef _DEBUG
-  for( int i=0; i<NUM_FLAME2D_VAR_SANS_SPECIES+ns; i++){ 
-    if( this[i] != this[i]){ cout<<"\n nan's in solution, variable "<<i<<endl; exit(1); return false; }
-  }
-#endif
-
-  if (rho <= ZERO ||!negative_speccheck(n) ||es() <= ZERO) {
-    cout << "\n " << CFFC_Name() 
-	 << " Flame2D ERROR: Negative Density || Energy || mass fractions: \n" << *this <<endl;
-    return false;
-  }else{
-    return true ;
-  }
-} 
-
-/**************************************************************
-  Sum N-1 species.
-***************************************************************/
-inline double Flame2D_cState::sum_species(void) const{
-  double sum(ZERO);
-  for(int i=0; i<ns-1; i++) sum += rhoc[i];
-  return sum/rho;
-}
-
-/**********************************************************************
- * Flame2D_cState::Copy_Multigrid_State_Variables --                   *
- *                           Copy variables solved by multigrid only. *
- **********************************************************************/
-inline void Flame2D_cState::Copy_Multigrid_State_Variables(const Flame2D_cState &Ufine) {
-  Copy(Ufine);
-  Zero_Non_Multigrid_State_Variables();
-} 
-  
-/**********************************************************************
- * Flame2D_cState::Zero_Non_Multigrid_State_Variables --               *
- *                            Zero variables not-solved by multigrid. *
- **********************************************************************/
-inline void Flame2D_cState::Zero_Non_Multigrid_State_Variables(void) {
-}
-
-/**************************************************************
-  Get max and min temperature ranges for data
-***************************************************************/
-inline void Flame2D_cState::Temp_low_range(void){  
-  double temp( specdata[0].Low_range() );
-  for(int i=0; i<ns; i++){
-    temp = max(specdata[i].Low_range(),temp);
-  } 
-  low_temp_range = temp;  
-}
-
-inline void Flame2D_cState::Temp_high_range(void){
-  double temp( specdata[0].High_range() );
-  for(int i=0; i<ns; i++){
-    temp = min(specdata[i].High_range(),temp);
-  } 
-  high_temp_range = temp;  
-}
-
-
-/********************************************************
- * Flame2D_cState::W -- Primitive solution state.       *
- ********************************************************/
-inline Flame2D_pState Flame2D_cState::W(void) const {
-  return W(*this);
-}
-
-inline Flame2D_pState Flame2D_cState::W(const Flame2D_cState &U) const{
-    Flame2D_pState Temp;
-    Temp.rho = U.rho;
-    Temp.v = U.v();  
-    for(int i=0; i<U.ns; i++) Temp.c[i] = U.rhoc[i]/U.rho;
-    Temp.p = U.p();
-    Temp.tau = U.tau;
-    Temp.qflux = U.qflux; 
-
-    return Temp;
-}
-
-inline Flame2D_pState W(const Flame2D_cState &U) {
-  Flame2D_pState Temp;
-  Temp.rho = U.rho;
-  Temp.v = U.v();
-  for(int i=0; i<U.ns; i++) Temp.c[i] = U.rhoc[i]/U.rho;
-  Temp.p = U.p();
-  Temp.tau = U.tau;
-  Temp.qflux = U.qflux;
-
-  return Temp;
-}
-
-
-/*********************************************************************************
- *********************************************************************************
- *********************************************************************************
- *********************** EXTERNAL FUNCTIONS **************************************
- *********************************************************************************
- *********************************************************************************
- *********************************************************************************/
-
-/********************************************************
- * External Boundary Conditions Functions               *
- ********************************************************/
-extern Flame2D_pState Reflect(const Flame2D_pState &W,
-	      	              const Vector2D &norm_dir);
-
-extern Flame2D_pState Free_Slip(const Flame2D_pState &Win,
-			     const Flame2D_pState &Wout,
-			     const Vector2D &norm_dir,
-			     const int &TEMPERATURE_BC_FLAG);
-
-extern Flame2D_pState No_Slip(const Flame2D_pState &Win,
-			     const Flame2D_pState &Wout,
-			     const Vector2D &norm_dir,
-			     const int &TEMPERATURE_BC_FLAG);
-
-extern Flame2D_pState Moving_Wall(const Flame2D_pState &Win,
-				 const Flame2D_pState &Wout,
-				 const Vector2D &norm_dir,				 
-				 const double &wall_velocity,
-				 const int &TEMPERATURE_BC_FLAG);
-
-extern Flame2D_pState BC_Characteristic_Pressure(const Flame2D_pState &Wi,
-						const Flame2D_pState &Wo,
-						const Vector2D &norm_dir);
-
-extern Flame2D_pState BC_1DFlame_Inflow(const Flame2D_pState &Wi,
-				     const Flame2D_pState &Wo, 
-				     const Flame2D_pState &Woutlet,
-				     const Vector2D &norm_dir);
-
-extern Flame2D_pState BC_2DFlame_Inflow(const Flame2D_pState &Wi,
-				       const Flame2D_pState &Wo, 				
-				       const Vector2D &norm_dir);
-
-extern Flame2D_pState BC_1DFlame_Outflow(const Flame2D_pState &Wi,
-					const Flame2D_pState &Wo,
-					const Flame2D_pState &Winlet,
-					const Vector2D &norm_dir);
-
-extern Flame2D_pState BC_2DFlame_Outflow(const Flame2D_pState &Wi, 
-					const Flame2D_pState &Wo,
-					const Vector2D &norm_dir);
-
-/*******************************************************
- * Exact Test Case Solution Functions                  *
- *******************************************************/
-extern Flame2D_pState RinglebFlow(const Flame2D_pState &Wdum,
-				  const Vector2D X);
-
-extern Flame2D_pState ViscousChannelFlow(const Flame2D_pState &Wdum,
-					const Vector2D X,
-					const double Vwall,
-					const double dp);
-
-extern Flame2D_pState FlatPlate(const Flame2D_pState &Winf,
-			       const Vector2D X,
-			       double &eta,
-			       double &f,
-			       double &fp,
-			       double &fpp);
-
-/*******************************************************
- * External Flux Function Functions                    *
- *******************************************************/
-extern Flame2D_pState RoeAverage(const Flame2D_pState &Wl,
-	      	                 const Flame2D_pState &Wr);
-
-// HLLE
-extern Flame2D_cState FluxHLLE_x(const Flame2D_pState &Wl,
-				const Flame2D_pState &Wr,
-				const int &Preconditioning);
-
-extern Flame2D_cState FluxHLLE_x(const Flame2D_cState &Ul,
-				const Flame2D_cState &Ur,
-				const int &Preconditioning);
-  
-extern Flame2D_cState FluxHLLE_n(const Flame2D_pState &Wl,
-				const Flame2D_pState &Wr,
-				const Vector2D &norm_dir,
-				const int &Preconditioning);
-
-extern Flame2D_cState FluxHLLE_n(const Flame2D_cState &Ul,
-				const Flame2D_cState &Ur,
-				const Vector2D &norm_dir,
-				const int &Preconditioning);
-
-// Linde
-extern Flame2D_cState FluxLinde(const Flame2D_pState &Wl,
-			       const Flame2D_pState &Wr);
-
-extern Flame2D_cState FluxLinde(const Flame2D_cState &Ul,
-			       const Flame2D_cState &Ur);
-
-
-extern Flame2D_cState FluxLinde_n(const Flame2D_pState &Wl,
-				 const Flame2D_pState &Wr,
-				 const Vector2D &norm_dir);
-
-extern Flame2D_cState FluxLinde_n(const Flame2D_cState &Ul,
-				 const Flame2D_cState &Ur,
-				 const Vector2D &norm_dir);
-
-// Roe
-extern Flame2D_pState WaveSpeedPos(const Flame2D_pState &lambda_a,
-				  const Flame2D_pState &lambda_l,
-				  const Flame2D_pState &lambda_r);
-			
-
-extern Flame2D_pState WaveSpeedNeg(const Flame2D_pState &lambda_a,
-				  const Flame2D_pState &lambda_l,
-				  const Flame2D_pState &lambda_r);
-
-extern Flame2D_pState WaveSpeedAbs(const Flame2D_pState &lambda_a,
-				  const Flame2D_pState &lambda_l,
-				  const Flame2D_pState &lambda_r);
- 
-extern Flame2D_pState HartenFixPos(const Flame2D_pState &lambda_a,
-				  const Flame2D_pState &lambda_l,
-				  const Flame2D_pState &lambda_r );
-				
-
-extern Flame2D_pState HartenFixNeg(const Flame2D_pState &lambda_a,
-				  const Flame2D_pState &lambda_l,
-				  const Flame2D_pState &lambda_r);
-				  
-
-extern Flame2D_pState HartenFixAbs(const Flame2D_pState &lambdas_a,
-				  const Flame2D_pState &lambdas_l,
-				  const Flame2D_pState &lambdas_r );
-				
-
-extern Flame2D_cState FluxRoe_x(const Flame2D_pState &Wl,
-			       const Flame2D_pState &Wr,
-			       const int &Preconditioning, 
-			       const int &flow_type_flag,
-			       const double &deltax);
-
-extern Flame2D_cState FluxRoe_x(const Flame2D_cState &Ul,
-			       const Flame2D_cState &Ur,
-			       const int &Preconditioning, 
-			       const int &flow_type_flag,
-			       const double &deltax);
-
-extern Flame2D_cState FluxRoe_n(const Flame2D_pState &Wl,
-			       const Flame2D_pState &Wr,
-			       const Vector2D &norm_dir,
-			       const int &Preconditioning, 
-			       const int &flow_type_flag,
-			       const double &deltax);
-
-extern Flame2D_cState FluxRoe_n(const Flame2D_cState &Ul,
-			       const Flame2D_cState &Ur,
-			       const Vector2D &norm_dir,
-			       const int &Preconditioning, 
-			       const int &flow_type_flag,
-			       const double &deltax);
-
-extern Flame2D_cState FluxAUSMplus_up(const Flame2D_pState &Wl,
-				     const Flame2D_pState &Wr);
-
-extern Flame2D_cState FluxAUSMplus_up(const Flame2D_cState &Wl,
-				     const Flame2D_cState &Wr);
-
-extern Flame2D_cState FluxAUSMplus_up_n(const Flame2D_pState &Wl,
-				       const Flame2D_pState &Wr,
-				       const Vector2D &norm_dir);
-
-extern Flame2D_cState FluxAUSMplus_up_n(const Flame2D_cState &Wl,
-				       const Flame2D_cState &Wr,
-				       const Vector2D &norm_dir);
-
-/* Viscous Solution flux (laminar+turbulent) */
-extern Flame2D_cState Viscous_FluxArithmetic_n(const Flame2D_cState &Ul,
-   			                      const Flame2D_pState &dWdx_l,
-			                      const Flame2D_pState &dWdy_l,
-				              const Flame2D_cState &Ur,
-   			                      const Flame2D_pState &dWdx_r,
-			                      const Flame2D_pState &dWdy_r,
-				              const Vector2D &norm_dir);
-
-extern Flame2D_cState Viscous_Flux_n(Flame2D_pState &W,
-				    const Flame2D_pState &dWdx,
-				    const Flame2D_pState &dWdy,
-				    const int Axisymmetric,
-				    const Vector2D X,			
-				    const Vector2D &norm_dir);
-
-extern double WallShearStress(const Flame2D_pState &W1,
-			      const Vector2D &X1,
-			      const Vector2D &X2,
-			      const Vector2D &X3,
-			      const Vector2D &norm_dir);
-
-/*********************************************************/
-extern Flame2D_pState Rotate(const Flame2D_pState &W,
-	      	             const Vector2D &norm_dir);
-
-
-extern Vector2D HLLE_wavespeeds(const Flame2D_pState &Wl,
-                                const Flame2D_pState &Wr,
-                                const Vector2D &norm_dir); 
 
 #endif //end _FLAME2D_STATE_INCLUDED 

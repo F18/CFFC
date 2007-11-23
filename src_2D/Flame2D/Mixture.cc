@@ -18,8 +18,14 @@ int     Mixture :: ns = 0;
 double  Mixture :: Tmin = 0.0;
 double  Mixture :: Tmax = 0.0;
 double* Mixture :: Sc_ref = NULL;
+double* Mixture :: r = NULL;
+double* Mixture :: r0 = NULL;
+double* Mixture :: e = NULL;
 bool    Mixture :: isConstSchmidt = true;
-NASARP1311data* Mixture :: specdata = NULL;
+string  Mixture :: ct_mech_name = "gri30";
+string  Mixture :: ct_mech_file = "gri30.xml";
+IdealGasMix* Mixture :: ct_gas = NULL;
+Transport*   Mixture :: ct_trans = NULL;
 
 /////////////////////////////////////////////////////////////////////
 /// STATIC MEMBER FUNCTIONS
@@ -36,42 +42,50 @@ NASARP1311data* Mixture :: specdata = NULL;
  * \param trans_data_flag Flag indicating whether NASA of Lennard-Jones data
  * \param constant_schmidt Boolean indicating whether constant schmidt values.
  ****************************************************/
-void Mixture :: setMixture(const int &n, 
-			   const string *names,
-			   const char *PATH,
+void Mixture :: setMixture(const char *PATH,
+			   const string &mech_name,
+			   const string &mech_file,
 			   const double* Schmidt, 
-			   const int &trans_data_flag,
 			   const bool &constant_schmidt) {
   
-  // set new number of species
+  //create a new ideal gas mixture class
+  ct_mech_name = mech_name;
+  ct_mech_file = mech_file;
+  try {
+    ct_gas = new IdealGasMix(ct_mech_file, ct_mech_name);
+    ct_trans = newTransportMgr("Mix", ct_gas);
+  }
+  catch (CanteraError) {
+    Cantera::showErrors();
+  }
+
+  // ascertain the number of species
+  ns = ct_gas->nSpecies();
 #ifdef STATIC_NUMBER_OF_SPECIES
-  if( STATIC_NUMBER_OF_SPECIES < n) {
+  if( STATIC_NUMBER_OF_SPECIES < ns) {
       cerr << "\n ERROR, Mixture::setMixture() - Built using static species with "
 	   << STATIC_NUMBER_OF_SPECIES 
-	   << " species predefined, asking for " << n 
+	   << " species predefined, asking for " << ns
 	   << endl; 
       exit(1); 
     }
 #endif
-  ns = n;
 
   //allocate static memory and load the species data  
   AllocateStatic();
   for(int i=0; i<ns; i++){
-    specdata[i].Getdata(names[i],PATH,trans_data_flag);  
     Sc_ref[i] = Schmidt[i];
   }
 
   // are we using constant schmidt
   isConstSchmidt = constant_schmidt;
-  
+
+
   //set data temperature ranges for mixture
-  Tmin = specdata[0].Low_range();
-  Tmax = specdata[0].High_range();
-  for(int i=1; i<ns; i++){
-    Tmin = max(specdata[i].Low_range(), Tmin);
-    Tmax = min(specdata[i].High_range(), Tmax);
-  }
+  ct_gas->setTemperature(TREF);
+  ct_gas->setPressure(PREF);
+  Tmin = ct_gas->minTemp();
+  Tmax = ct_gas->maxTemp();
   
 }   
 
@@ -79,62 +93,43 @@ void Mixture :: setMixture(const int &n,
  * Mixture molecular mass [kg/mol]
  ****************************************************/
 double Mixture :: molarMass( const double* y ) {
-  double sum( 0.0 );
-  for(int i=0; i<ns; i++) sum += y[i]/specdata[i].Mol_mass();
-  return 1.0/sum;
+  ct_gas->setMassFractions_NoNorm(y);
+  return ct_gas->meanMolecularWeight();
 }
 
 /****************************************************
  * Mixture gas constant [kg/mol]
  ****************************************************/
 double Mixture :: gasConstant( const double* y ){
-  // = sum ( mass fraction * species gas constant)
-  double sum ( 0.0 );
-  for(int i=0; i<ns; i++) sum += y[i] * specdata[i].Rs();
-  return sum;
+  ct_gas->setMassFractions_NoNorm(y);
+  return Cantera::GasConstant/ct_gas->meanMolecularWeight();
 }
 
 /****************************************************
  * Mixture Heat Capacity (const pressure) J/(kg*K)
  ****************************************************/
 double Mixture :: heatCapacity_p( const double &Temp, const double* y ){
-  double sum( 0.0 );
-  for(int i=0; i<ns; i++) sum += y[i]*specdata[i].HeatCapacity_p(Temp);
-  return sum;
+  ct_gas->setMassFractions_NoNorm(y);
+  ct_gas->setTemperature(Temp);
+  return ct_gas->cp_mass();
 }
 
 /****************************************************
  * Mixture Heat Capacity (const volume) J/(kg*K)
  ****************************************************/
 double Mixture :: heatCapacity_v( const double &Temp, const double* y ){
-  double sum( 0.0 );
-  for(int i=0; i<ns; i++) sum += y[i]*specdata[i].HeatCapacity_v(Temp);
-  return sum;
+  ct_gas->setMassFractions_NoNorm(y);
+  ct_gas->setTemperature(Temp);
+  return ct_gas->cv_mass();
 }
 
 /****************************************************
  * Mixture Heat Ratio gamma
  ****************************************************/
 double Mixture :: heatRatio( const double &Temp, const double* y ){
-  // = Cp / Cv  
-  return heatCapacity_p(Temp, y)/heatCapacity_v(Temp, y);
-}
-
-/****************************************************
- * polytropic heat ratio mixture gamma assuming 
- * T=200K as the temperature.
- ****************************************************/
-double Mixture :: heatRatioRef( const double* y ){
-  double sum1(ZERO); 
-  double sum2(ZERO);
-  double gamma_s(ZERO);
-
-  for(int i=0; i<ns; i++){
-    sum1 += y[i]*specdata[i].Rs();
-    gamma_s = ONE/(ONE - specdata[i].Rs()/ specdata[i].HeatCapacity_p(REFERENCE_TEMPERATURE));
-    sum2 += ((y[i]*specdata[i].Rs()) / (gamma_s - ONE)); 
-  }
-  return (ONE + sum1/sum2);
+  ct_gas->setMassFractions_NoNorm(y);
+  ct_gas->setTemperature(Temp);
+  return ct_gas->cp_mole()/ct_gas->cv_mole();
 }
 
 /****************************************************
@@ -142,40 +137,18 @@ double Mixture :: heatRatioRef( const double* y ){
  ****************************************************/
 //! etotal = sensible & chemical
 double Mixture :: internalEnergy( const double &Temp, const double* y ){
-  // = sum (mass fraction * species e) 
-  double sum( 0.0 );
-  for(int i=0; i<ns; i++) {
-    //(Enthalpy(Temp) - (R/mol_mass)*Temp)
-    sum += y[i]*(specdata[i].Enthalpy(Temp) + 
-		 specdata[i].Heatofform() -
-		 specdata[i].Rs()*Temp);
-  }
-  return sum;
-}
-
-//! reference internal energy e + heat of formation - offset
-double Mixture :: internalEnergyRef( const double &Temp, const double* y ){
-  // = sum (mass fraction * species e) 
-  double sum( 0.0 );
-  for(int i=0; i<ns; i++){ 
-    //(Enthalpy(Temp) - (R/mol_mass)*Temp)
-    sum += y[i]*(specdata[i].Enthalpy(Temp) + 
-		 specdata[i].Heatofform() - 
-		 specdata[i].DeltaHref() - 
-		 specdata[i].Rs()*Temp);
-  }
-  return sum;
+  ct_gas->setMassFractions_NoNorm(y);
+  ct_gas->setTemperature(Temp);
+  return ct_gas->intEnergy_mass();
 }
 
 //! internal energy with no heat of formation included (sensible)
 double Mixture :: internalEnergySens( const double &Temp, const double* y ){
-  // = sum (mass fraction * species e) 
-  double sum( 0.0 );
-  for(int i=0; i<ns; i++){ 
-    //(Enthalpy(Temp) - (R/mol_mass)*Temp)
-    sum += y[i]*(specdata[i].Enthalpy(Temp) - specdata[i].Rs()*Temp);
-  }
-  return sum;
+  ct_gas->setMassFractions_NoNorm(y);
+  ct_gas->setTemperature(Temp);
+  double e_(ct_gas->intEnergy_mass());
+  ct_gas->setTemperature( TREF );
+  return (e_-ct_gas->enthalpy_mass());
 }
 
 /****************************************************
@@ -183,33 +156,18 @@ double Mixture :: internalEnergySens( const double &Temp, const double* y ){
  ****************************************************/
 //! htotal = mass fraction * (hsensible + heatofform)
 double Mixture :: enthalpy( const double &Temp, const double* y ){
-  // = sum (mass fraction * species h) 
-  double sum( 0.0 );
-  for(int i=0; i<ns; i++){
-    sum += y[i]*(specdata[i].Enthalpy(Temp) + 
-		 specdata[i].Heatofform());
-  }
-  return sum;
-}
-
-//! reference absolute enthalpy h - offset
-double Mixture :: enthalpyRef( const double &Temp, const double* y ){
-  // = sum (mass fraction * species h) 
-  double sum( 0.0 );
-  for(int i=0; i<ns; i++){ 
-    sum += y[i]*(specdata[i].Enthalpy(Temp) + 
-		 specdata[i].Heatofform() - 
-		 specdata[i].DeltaHref() );
-  }
-  return sum;
+  ct_gas->setMassFractions_NoNorm(y);
+  ct_gas->setTemperature(Temp);
+  return ct_gas->enthalpy_mass();
 }
 
 //! absolute enthalpy with no heat of formation included (sensible)
 double Mixture :: enthalpySens( const double &Temp, const double* y ) {
-  // = sum (mass fraction * species h) 
-  double sum( 0.0 );
-  for(int i=0; i<ns; i++) sum += y[i]*(specdata[i].Enthalpy(Temp));
-  return sum;
+  ct_gas->setMassFractions_NoNorm(y);
+  ct_gas->setTemperature(Temp);
+  double h_(ct_gas->enthalpy_mass());
+  ct_gas->setTemperature( TREF );
+  return (h_-ct_gas->enthalpy_mass());
 }
 
 /****************************************************
@@ -224,106 +182,18 @@ double Mixture :: enthalpyPrime( const double &Temp, const double* y ){
  * Viscosity using Wilke [1950] formulation
  ****************************************************/
 double Mixture :: viscosity(const double &Temp, const double* y) {
-  double sum(0.0);
-  double phi;
-#ifdef STATIC_NUMBER_OF_SPECIES
-  double  vis[ns];
-#else 
-  double* vis = new double[ns];
-#endif
-
-  for(int i=0; i<ns; i++){
-    phi = 0.0;
-    for (int j=0; j<ns; j++){
-      if(i == 0) vis[j] = specdata[j].Viscosity(Temp);
-      phi += (y[j] / specdata[j].Mol_mass())*
-	sqr( ONE + 
-	     sqrt(vis[i]/vis[j])*pow(specdata[j].Mol_mass()/
-				     specdata[i].Mol_mass(),0.25) ) /
-	sqrt(EIGHT*(ONE +specdata[i].Mol_mass()/specdata[j].Mol_mass()));
-    }
-    sum += (y[i] * vis[i]) / (specdata[i].Mol_mass() * phi);
-  }  
-
-#ifndef STATIC_NUMBER_OF_SPECIES
-  delete[] vis;
-#endif
-
-  return sum;
-
-}
-
-/****************************************************
- * Molecular Viscosity using Wilke [1950] formulation
- * as a function of temperature.
- ****************************************************/
-double Mixture :: viscosityPrime(const double &Temp, const double* y) {
-  double sum(0.0);
-  double phi;
-#ifdef STATIC_NUMBER_OF_SPECIES
-  double  vis[ns];
-#else 
-  double* vis = new double[ns];
-#endif
-
-  for(int i=0; i<ns; i++){
-    phi = 0.0;
-    for (int j=0; j<ns; j++){
-      if(i == 0) vis[j] = specdata[j].dViscositydT(Temp);
-      phi += (y[j] / specdata[j].Mol_mass())*
-	sqr(1.0 + 
-	    sqrt(vis[i]/vis[j])*pow(specdata[j].Mol_mass()/
-				    specdata[i].Mol_mass(),0.25) ) /
-	sqrt(8.0*(1.0 +specdata[i].Mol_mass()/specdata[j].Mol_mass()));
-    }
-    sum += (y[i] * vis[i] ) / (specdata[i].Mol_mass() * phi);
-  }  
-
-
-#ifndef STATIC_NUMBER_OF_SPECIES
-  delete[] vis;
-#endif
-
-  return sum;
-
+  ct_gas->setMassFractions_NoNorm(y);
+  ct_gas->setTemperature(Temp);
+  return ct_trans->viscosity();
 }
 
 /****************************************************
  * Thermal Conductivity - Mason & Saxena (1958)  W/(m*K)
  ****************************************************/
 double Mixture :: thermalCond(const double &Temp, const double* y) {
-  double sum(0.0);
-  double phi;
-#ifdef STATIC_NUMBER_OF_SPECIES
-  double  vis[ns];
-#else 
-  double* vis = new double[ns];
-#endif
-
-  for(int i=0; i<ns; i++){
-    phi = 0.0;
-    for (int j=0; j<ns; j++){
-      if(i == 0) vis[j] = specdata[j].Viscosity(Temp);
-      if(i != j){
-	phi += (y[j] / specdata[j].Mol_mass())*
-	  sqr(ONE + 
-	      sqrt(vis[i]/vis[j])*pow(specdata[j].Mol_mass()/
-				      specdata[i].Mol_mass(),0.25)) /
-	  sqrt(EIGHT*(ONE +specdata[i].Mol_mass()/specdata[j].Mol_mass()));
-      }
-    }
-
-    sum += (specdata[i].ThermalConduct(Temp)*y[i]) / 
-      (y[i] + (specdata[i].Mol_mass()) * 1.065 * phi);
-  }  
-
-
-#ifndef STATIC_NUMBER_OF_SPECIES
-  delete[] vis;
-#endif
-
-  return sum;
-
+  ct_gas->setMassFractions_NoNorm(y);
+  ct_gas->setTemperature(Temp);
+  return ct_trans->thermalConductivity();
 }
 
 /****************************************************
@@ -374,198 +244,290 @@ double Mixture :: lewis(const double &Temp,
 }
 
 
-/****************************************************
- * polytropic heat ratio mixture gamma assuming 
- * T=200K as the temperature.
- ****************************************************/
-double Mixture :: gammaGuess(const double* y) {  
-  double sum1(ZERO), sum2(ZERO);
-  double gamma_s(ZERO), Temp(200.0);
 
-  for(int i=0; i<ns; i++){
-    sum1 += y[i]*specdata[i].Rs();
-    gamma_s = ONE/(ONE - specdata[i].Rs()/ specdata[i].HeatCapacity_p(Temp));
-    sum2 += ((y[i]*specdata[i].Rs()) / (gamma_s - ONE)); 
-  }
-  return (ONE + sum1/sum2);
-}
-
-/**************************************************
- * Temperature derived from specific sensible
- * enthalpy
- **************************************************/
-double Mixture :: temperature(double &h_s, const double* y) {
-
-  // declares
-  double RTOT(gasConstant(y));
-
-  // set iteration parameters
-  static const int Nmax = 20;
-
-  // determine limits
-#ifdef TLOWERBOUNDS
-  double T_min(TLOWERBOUNDS);
-#else
-  double T_min(Tmin);
-#endif
-  double T_max(Tmax);
-  //double fmin(hs(T_min) - h_s);
-  //double fmax(hs(T_max) - h_s);
-
-
-  //------------------------------------------------
-  // Initial Guess
-  //------------------------------------------------
-  //using a polytropic gas assumption with gamma@200;
-  double Tguess( (h_s/RTOT)*(ONE/(ONE/(gammaGuess(y) - ONE) +ONE)) );
-
-  //check for start value
-  double Tn;
-  if (Tguess < T_min )
-    Tn=T_min;
-  else if (Tguess > T_max)
-    Tn=T_max;
-  else
-    Tn=Tguess;
-
-  // compute function values
-  double fn( enthalpySens(Tn,y) - h_s );
-  double dfn( enthalpyPrime(Tn,y) );
-  double dTn( fabs(T_max - T_min) );
-  double dT0( dTn );
-
-  // No need to orient search such that f(T_min)<0,
-  // already oriented.
-
-
-  //------------------------------------------------
-  // Newton-Raphson iteration
-  //------------------------------------------------
-  int i;
-  for ( i=1; i<=Nmax; i++){
-
-    // use bisection if Newton out of range or not decreasing 
-    // fast enough
-    if ( (((Tn-T_max)*dfn-fn)*((Tn-T_min)*dfn-fn) >= ZERO) || 
-	 (fabs(TWO*fn) > fabs(dT0*dfn)) ) {
-      dT0 = dTn;
-      dTn = HALF*(T_max-T_min);
-      Tn = T_min + dTn;
-
-    // Newton acceptable 
-    } else {
-      dT0 = dTn;
-      dTn = fn/dfn;
-      Tn -= dTn;
-    }
-
-    // evaluate new guess
-    fn = enthalpySens(Tn,y) - h_s;  
-    dfn = enthalpyPrime(Tn,y); 
-
-    // Convergence test
-    if ( fabs(dTn)<CONV_TOLERANCE || fabs(fn)<CONV_TOLERANCE ) break;
-
-    // change bisection bracket
-    if ( fn < ZERO)  T_min=Tn;
-    else T_max = Tn;
-
-  } // end Newton-Raphson
-
-
-  if (i>Nmax){
-    cout<<"\nTemperature didn't converge in Flame2D_pState::T(double &h_s)";
-    cout<<" with polytopic Tguess "<<Tguess<<" using "<<Tn;
-  }
-
-  //return value
-  return Tn;
-}
-
-/****************************************************
- * GIBBS Free Energy.
- *
- * Eqn. (10.84) (10.87) Anderson
- * Gs = Hs - TS
- * Gs(ps=1) = Gs - R_UNIVERSAL*T*ln(ps)  //for data not at 1atm
- * ps = cs(M/Ms)*p
- ****************************************************/
-double Mixture::speciesGibbsFree(const double &Temp, 
-				 const int &species) {
-  return specdata[species].Enthalpy_mol(Temp) - 
-    Temp*specdata[species].Entropy_mol(Temp);
-}
-
-
-/////////////////////////////////////////////////////////////////////
-/// MEMBER FUNCTIONS
-/////////////////////////////////////////////////////////////////////
-
-
-/****************************************************
- * Set the state of the mixture and update all the properties.
- *
- * \param Temp Mixture temperature [k]
- * \param y Mixture species mass fractions.
- ****************************************************/
-void Mixture :: setState_TY(const double &Temp, const double* y)
-{
-
-  // declares
-  double Cp_ref(0.0);
-  double phi;
-#ifdef STATIC_NUMBER_OF_SPECIES
-  double  vis[ns];
-#else 
-  double* vis = new double[ns];
-#endif
-
-
-  // initialize
-  T = Temp;
-  MW = 0.0;  hs = 0.0;
-  hf = 0.0;  Cp = 0.0;
-  mu = 0.0;  kappa = 0.0;
-  g_ref = 0.0;
+/***********************************************************************
+  Use cantera to parse the input mass fraction string of the form
+      CH4:0.5, O2:0.5
+  All other species will be assumed to have 0 mass fractions.  Cantera
+  also normalizes the mass fractions to sum to unity.  Returns them
+  in an array.
+***********************************************************************/
+void Mixture::parse_mass_string(const string& massFracStr, 
+				double* massFracs) {
 
   //
-  // Main loop over species
+  // for a string of 'space' delimited mass fractions
   //
-  for(int i=0; i<ns; i++){
+  if ( massFracStr.find(":",0) == string::npos ) {
+    
+    // get first position
+    string delimiters = " ";
+    string::size_type lastPos = massFracStr.find_first_not_of(delimiters, 0);
+    string::size_type pos     = massFracStr.find_first_of(delimiters, lastPos);
 
-    // thermodynamic coefficients
-    MW += y[i]/specdata[i].Mol_mass();
-    Cp +=  y[i]*specdata[i].HeatCapacity_p(Temp);
-    hs += y[i]*specdata[i].Enthalpy(Temp);
-    hf += y[i]*specdata[i].Heatofform();
-    Cp_ref +=  y[i]*specdata[i].HeatCapacity_p(REFERENCE_TEMPERATURE);
+    // parse the string and set mass fractions
+    int index = 0;
+    while (string::npos != pos || string::npos != lastPos) {
+      massFracs[index] = atof(massFracStr.substr(lastPos, pos - lastPos).c_str());
+      massFracs[index] = max(massFracs[index], 0.0);
+      lastPos = massFracStr.find_first_not_of(delimiters, pos);
+      pos = massFracStr.find_first_of(delimiters, lastPos);
+      index++;
+    } // endwhile
 
-    // compute mixture rule
-    phi = 0.0;
-    for (int j=0; j<ns; j++){
-      if(i == 0) vis[j] = specdata[j].Viscosity(Temp);
-      phi += (y[j] / specdata[j].Mol_mass())*
-	sqr( ONE + 
-	     sqrt(vis[i]/vis[j])*pow(specdata[j].Mol_mass()/
-				     specdata[i].Mol_mass(),0.25) ) /
-	sqrt(EIGHT*(ONE +specdata[i].Mol_mass()/specdata[j].Mol_mass()));
+    // normalize to unity
+    double sum(0.0);
+    for(int index=0; index<ns; index++) sum += massFracs[index];
+    if (sum>1.e-7) for(int index=0; index<ns; index++) massFracs[index] /= sum;
+
+  //
+  // for a composition map (eg. CH4:0.5, O2:0.5)
+  //
+  } else {
+
+    // set mass fractions and make sure they sum to unity
+    ct_gas->setMassFractionsByName(massFracStr);
+    for(int index =0; index<ns; index++)
+      massFracs[index] = ct_gas->massFraction(index);
+
+  } // endif
+
+} // end of ct_parse_mass_string
+
+/***********************************************************************
+  Use cantera to parse the input mole fraction string of the form
+      CH4:0.5, O2:0.5
+  All other species will be assumed to have 0 mole fractions.  Cantera
+  also normalizes the mole fractions to sum to unity.  Returns them in
+  an array.
+***********************************************************************/
+void Mixture::parse_mole_string(const string& moleFracStr, 
+				double* moleFracs) {
+
+  //
+  // for a string of 'space' delimited mole fractions
+  //
+  if ( moleFracStr.find(":",0) == string::npos ) {
+    
+    // get first position
+    string delimiters = " ";
+    string::size_type lastPos = moleFracStr.find_first_not_of(delimiters, 0);
+    string::size_type pos     = moleFracStr.find_first_of(delimiters, lastPos);
+
+    // parse the string and set molar fractions
+    int index = 0;
+    while (string::npos != pos || string::npos != lastPos) {
+      moleFracs[index] = atof(moleFracStr.substr(lastPos, pos - lastPos).c_str());
+      moleFracs[index] = max(moleFracs[index], 0.0);
+      lastPos = moleFracStr.find_first_not_of(delimiters, pos);
+      pos = moleFracStr.find_first_of(delimiters, lastPos);
+      index++;
+    } // endwhile
+
+    // normalize to unity
+    double sum(0.0);
+    for(int index=0; index<ns; index++) sum += moleFracs[index];
+    if (sum>1.e-7) for(int index=0; index<ns; index++) moleFracs[index] /= sum;
+
+  //
+  // for a composition map (eg. CH4:0.5, O2:0.5)
+  //
+  } else {
+
+    // set mole fractions and make sure they sum to unity
+    ct_gas->setMoleFractionsByName(moleFracStr);
+    for(int index =0; index<ns; index++)
+      moleFracs[index] = ct_gas->moleFraction(index);
+
+  } // endif
+
+} // end of ct_parse_mass_string
+
+
+/***********************************************************************
+  Use cantera to parse the input schmidt number string of the form
+      CH4:0.5, O2:0.5
+  All other species will be assumed to have unity Schmidt number.  
+  Returns them in an array.
+***********************************************************************/
+void Mixture::parse_schmidt_string( const string& schmidtStr, 
+				    double* schmidt) {
+
+  //
+  // for a string of 'space' delimited schmidt numbers
+  //
+  if ( schmidtStr.find(":",0) == string::npos ) {
+    
+    // get first position
+    string delimiters = " ";
+    string::size_type lastPos = schmidtStr.find_first_not_of(delimiters, 0);
+    string::size_type pos     = schmidtStr.find_first_of(delimiters, lastPos);
+
+    // parse the string and set schmidt numbers
+    int index = 0;
+    while (string::npos != pos || string::npos != lastPos) {
+      schmidt[index] = atof(schmidtStr.substr(lastPos, pos - lastPos).c_str());
+      if(schmidt[index]<0.0) schmidt[index] = 1.0;
+      lastPos = schmidtStr.find_first_not_of(delimiters, pos);
+      pos = schmidtStr.find_first_of(delimiters, lastPos);
+      index++;
+    } // endwhile
+
+  //
+  // for a composition map (eg. CH4:0.5, O2:0.5)
+  //
+  } else {
+
+    // declares
+    compositionMap xx;
+    int kk = ct_gas->nSpecies();
+    double s;
+    
+    // build composition map and initialize
+    for (int k = 0; k < kk; k++) xx[ct_gas->speciesName(k)] = -1.0;
+    
+    // parse map
+    parseCompString(schmidtStr, xx);
+    
+    // set schmidt numbers
+    for (int k = 0; k < kk; k++) { 
+      s = xx[ct_gas->speciesName(k)];
+      if (s > 0.0) schmidt[k] = s;
+      else schmidt[k] = 1.0;
     }
+    
+  } // endif
 
-    // transport coeffcieints
-    mu += (y[i] * vis[i]) / (specdata[i].Mol_mass() * phi);
-    kappa += (specdata[i].ThermalConduct(Temp)*y[i]) / 
-      (y[i] + (specdata[i].Mol_mass()) * 1.065 * (phi-1.0));
+} // end of ct_parse_mass_string
 
-  } // endfor - species
+/***********************************************************************
+  Use cantera to return the species index.  Exits in error if an
+  unidentified species is requested.
+***********************************************************************/
+int Mixture::speciesIndex(const string &sp) {
 
-  // finalize
-  MW = 1.0/MW;
-  g_ref = Cp_ref / (Cp_ref - (R_UNIVERSAL/MW));
+  // get index
+  int index = ct_gas->speciesIndex(sp);
+
+  // if index==-1, species not found
+  if (index<0) {
+    cerr<<"\n Reaction_set::ct_get_species_index() - Index of unkown species, "
+	<<sp<<", requested.\n";
+    exit(-1);
+  } // endif
+
+  // return index
+  return index;
+
+
+} // end of ct_get_species_index
+
+
+
+/************************************************************************
+  Calculates the equilibrium composition given an unburnt mixture
+  using CANTERA.  This is only for CANTERA reaction types.  Here
+  we hold enthalpy and pressure fixed.
+
+  Wu - unburnt state
+  Wb - burnt state
+
+************************************************************************/
+
+void Mixture::equilibrate_HP( double &Temp, double &Press, double* y ) {
+
+  // set state and equilibrate
+  ct_gas->setState_TPY(Temp, Press, y);
+  equilibrate( *ct_gas, "HP" );
+
+  //get burnt mass fractions
+  ct_gas->getMassFractions(y);
+
+  // the temperature
+  Temp = ct_gas->temperature();
+  
+} // end of ct_equilibrate
+
+
+/************************************************************************
+  Calculates the equilibrium composition given an unburnt mixture
+  using CANTERA.  This is only for CANTERA reaction types.  Here 
+  we hold temperature and pressure fixed.
+
+  Wu - unburnt state
+  Wb - burnt state
+
+************************************************************************/
+void Mixture::equilibrate_TP( double &Temp, double &Press, double* y ) {
+
+  // set state and equilibrate
+  ct_gas->setState_TPY(Temp, Press, y);
+  equilibrate( *ct_gas, "TP" );
+
+  //get burnt mass fractions
+  ct_gas->getMassFractions(y);
+
+} // end of ct_equilibrate
+
+
+
+/***********************************************************************
+
+  This function computes the composition of a hydrocarbon (CxHy), O2, 
+  and N2 mixture.  Cantera is used to convert molar fraction to mass
+  fraction.
+
+***********************************************************************/
+void Mixture::composition( const string& fuel_species, 
+			   const double &phi,
+			   double* massFracs ) {
+
+  // first, compute the stoichiometric fuel air ratio
+  double C_atoms=ct_gas->nAtoms(ct_gas->speciesIndex(fuel_species), ct_gas->elementIndex("C"));
+  double H_atoms=ct_gas->nAtoms(ct_gas->speciesIndex(fuel_species), ct_gas->elementIndex("H"));
+  double ax=C_atoms+H_atoms/4.0;
+  double fa_stoic=1.0/(4.76*ax);
+
+  // determine the composition
+  int nsp = ct_gas->nSpecies();  
+  double* x = new double[nsp];
+  for(int k=0; k<nsp; k++){
+    if(k==ct_gas->speciesIndex(fuel_species)){ x[k]=phi; }
+    else if(k==ct_gas->speciesIndex("O2")){    x[k]=1.00*ax; }
+    else if(k==ct_gas->speciesIndex("N2")){    x[k]=3.76*ax; }
+    else{ x[k]=0.0; }
+  }
+
+  // compute composition 
+  // -> why do it yourself when you can get someone else to do it
+  ct_gas->setMoleFractions(x);
+  for(int k=0;k<nsp;k++) massFracs[k] = ct_gas->massFraction(k);
 
   // clean up memory
-#ifndef STATIC_NUMBER_OF_SPECIES
-  delete[] vis;
-#endif
+  delete[] x;
 
+} // end of ct_composition
+
+
+/************************************************************************
+  Calculates the concentration time rate of change of species from
+  primitive state W using the general law of mass action.
+  U is the conserved state container for passing back the 
+  source terms. ie. U.rhospec[i].c 
+
+  W.SpecCon:  is the  species mass fractions concentrations
+              of Chem2D_pState. (c_i*rho/M_i)   mol/m^3
+
+  Return units are  kg/m^3*s ie. rho*omega (kg/m^3)*(1/s)
+
+************************************************************************/
+void Mixture :: getRates( const double &Temp, const double &Press, 
+			  const double* y, double* rr ) {
+  ct_gas->setState_TPY(Temp, Press, y);
+  ct_gas->getNetProductionRates(rr);
 }
 
+
+/////////////////////////////////////////////////////////////////////
+/// LOCAL MEMBER FUNCTIONS
+/////////////////////////////////////////////////////////////////////

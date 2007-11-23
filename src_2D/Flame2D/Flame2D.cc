@@ -30,7 +30,7 @@ using namespace std;
 
 // Include CFFC header files.
 
-#include "Flame2DQuad.h"
+// #include "Flame2DQuad.h"
 #include "../MPI/MPI.h"
 #include "../ICEM/ICEMCFD.h"
 #include "../UnitTesting/UnitTesting.h"
@@ -248,8 +248,8 @@ int main(int num_arg, char *arg_ptr[]) {
    * PERFORM REQUIRED CALCULATIONS.                          *
    ***********************************************************/
 
-  error_flag = Flame2DQuadSolver(Input_File_Name_ptr,
-				batch_flag);
+//   error_flag = Flame2DQuadSolver(Input_File_Name_ptr,
+// 				batch_flag);
 
   if (error_flag) {
      CFFC_Finalize_MPI();

@@ -433,7 +433,7 @@ void Reaction_set::ct_load_mechanism(string &mechanism_file_name,
 // _CANTERA_VERSION flag set
 #ifdef _CANTERA_VERSION
  
- // make sure all unused parameters are null
+  // make sure all unused parameters are null
   Deallocate();
 
   //flag for cantera
