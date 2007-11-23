@@ -833,6 +833,7 @@ void Output_Tecplot(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 	     << "\"Vx\" \n"
 	     << "\"Vy\" \n"
 	     << "\"k\" \n"
+	     << "\"s\" \n" 
 	     << "ZONE T =  \"Block Number = " << Block_Number
 	     << "\" \\ \n"
 	     << "I = " << SolnBlk.Grid.INu - SolnBlk.Grid.INl + 1 << " \\ \n"
@@ -852,7 +853,8 @@ void Output_Tecplot(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
       Node = SolnBlk.Grid.Node[i][j].X;
       Out_File << " " << Node << U_node 
 	       << " " << SolnBlk.U[i][j].V(Node.x,Node.y)
-	       << " " << SolnBlk.U[i][j].k(Node.x,Node.y,U_node[1]) << "\n";
+	       << " " << SolnBlk.U[i][j].k(Node.x,Node.y,U_node[1]) 
+	       << " " << source(Node.x,Node.y,U_node) << "\n";
       Out_File.unsetf(ios::scientific);
     } /* endfor */
   } /* endfor */
@@ -1060,10 +1062,17 @@ void ICs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
       } /* endfor */
     } /* endfor */
     break;
+  case IC_CIRCULAR_ADVECTION_DIFFUSION :
+    // Set the solution state to the initial state Uo[0].
+    for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
+      for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
+	SolnBlk.U[i][j] = Uo[0];
+      } /* endfor */
+    } /* endfor */
+    break;
   case IC_LAPLACE_1 :
     for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
       for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
-	Ul = Uo[0];
  	Ul.u = SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,Laplace_Solutions::IC_1,
 								  14,Ul.u)/SolnBlk.Grid.Cell[i][j].A;
 	SolnBlk.U[i][j] = Ul;
@@ -1073,7 +1082,6 @@ void ICs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
   case IC_LAPLACE_2 :
     for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
       for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
-	Ul = Uo[0];
  	Ul.u = SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,Laplace_Solutions::IC_2,
 								  14,Ul.u)/SolnBlk.Grid.Cell[i][j].A;
 	SolnBlk.U[i][j] = Ul;
@@ -1083,7 +1091,6 @@ void ICs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
   case IC_LAPLACE_3 :
     for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
       for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
-	Ul = Uo[0];
  	Ul.u = SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,Laplace_Solutions::IC_3,
 								  14,Ul.u)/SolnBlk.Grid.Cell[i][j].A;
 	SolnBlk.U[i][j] = Ul;
@@ -1093,7 +1100,6 @@ void ICs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
   case IC_LAPLACE_4 :
     for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
       for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
-	Ul = Uo[0];
  	Ul.u = SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,Laplace_Solutions::IC_4,
 								  14,Ul.u)/SolnBlk.Grid.Cell[i][j].A;
 	SolnBlk.U[i][j] = Ul;
@@ -1103,7 +1109,6 @@ void ICs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
   case IC_LAPLACE_5 :
     for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
       for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
-	Ul = Uo[0];
  	Ul.u = SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,Laplace_Solutions::IC_5,
 								  14,Ul.u)/SolnBlk.Grid.Cell[i][j].A;
 	SolnBlk.U[i][j] = Ul;
@@ -1113,7 +1118,6 @@ void ICs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
   case IC_POISSON_1 :
     for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
       for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
-	Ul = Uo[0];
  	Ul.u = SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,Poisson_NonlinearSource_Solutions::IC_1,
 								  14,Ul.u)/SolnBlk.Grid.Cell[i][j].A;
 	SolnBlk.U[i][j] = Ul;
@@ -1123,7 +1127,6 @@ void ICs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
   case IC_POISSON_2 :
     for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
       for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
-	Ul = Uo[0];
  	Ul.u = SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,Poisson_NonlinearSource_Solutions::IC_2,
 								  14,Ul.u)/SolnBlk.Grid.Cell[i][j].A;
 	SolnBlk.U[i][j] = Ul;
@@ -1133,7 +1136,6 @@ void ICs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
   case IC_POISSON_3 :
     for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
       for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
-	Ul = Uo[0];
  	Ul.u = SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,Poisson_NonlinearSource_Solutions::IC_3,
 								  14,Ul.u)/SolnBlk.Grid.Cell[i][j].A;
 	SolnBlk.U[i][j] = Ul;
@@ -1143,7 +1145,6 @@ void ICs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
   case IC_POISSON_4 :
     for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
       for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
-	Ul = Uo[0];
  	Ul.u = SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,Poisson_NonlinearSource_Solutions::IC_4,
 								  14,Ul.u)/SolnBlk.Grid.Cell[i][j].A;
 	SolnBlk.U[i][j] = Ul;
@@ -1153,7 +1154,6 @@ void ICs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
   case IC_POISSON_5 :
     for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
       for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
-	Ul = Uo[0];
  	Ul.u = SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,Poisson_NonlinearSource_Solutions::IC_5,
 								  14,Ul.u)/SolnBlk.Grid.Cell[i][j].A;
 	SolnBlk.U[i][j] = Ul;
@@ -2434,7 +2434,7 @@ void Calculate_Refinement_Criteria(double *refinement_criteria,
  * coarser solution blocks).                            
  *                                                      
  ********************************************************/
-void Fix_Refined_Block_Boundaries(AdvectDiffuse2D_Quad_Block_New SolnBlk,
+void Fix_Refined_Block_Boundaries(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
                                   const int Fix_North_Boundary,
                                   const int Fix_South_Boundary,
                                   const int Fix_East_Boundary,
@@ -2545,7 +2545,7 @@ void Fix_Refined_Block_Boundaries(AdvectDiffuse2D_Quad_Block_New SolnBlk,
  * unmodified positions.                                
  *                                                      
  ********************************************************/
-void Unfix_Refined_Block_Boundaries(AdvectDiffuse2D_Quad_Block_New SolnBlk) {
+void Unfix_Refined_Block_Boundaries(AdvectDiffuse2D_Quad_Block_New &SolnBlk) {
 
   int i, j;
   double sp_l, sp_r, sp_m, ds_ratio, dl, dr;
@@ -2664,7 +2664,7 @@ void Unfix_Refined_Block_Boundaries(AdvectDiffuse2D_Quad_Block_New SolnBlk) {
  * boundaries with mesh resolution changes.                     
  *                                                              
  ****************************************************************/
-void Apply_Boundary_Flux_Corrections(AdvectDiffuse2D_Quad_Block_New SolnBlk,
+void Apply_Boundary_Flux_Corrections(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
                                      const int Number_Neighbours_North_Boundary,
                                      const int Number_Neighbours_South_Boundary,
                                      const int Number_Neighbours_East_Boundary,
@@ -2718,7 +2718,7 @@ void Apply_Boundary_Flux_Corrections(AdvectDiffuse2D_Quad_Block_New SolnBlk,
  * boundaries with mesh resolution changes.                     
  *                                                              
  ****************************************************************/
-void Apply_Boundary_Flux_Corrections_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New SolnBlk,
+void Apply_Boundary_Flux_Corrections_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
                                                          const int i_stage,
                                                          const int n_stage,
 	                                                 const double &CFL_Number,

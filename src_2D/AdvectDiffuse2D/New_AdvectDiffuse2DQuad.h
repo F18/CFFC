@@ -675,21 +675,21 @@ extern void Calculate_Refinement_Criteria(double *refinement_criteria,
                                           int &number_refinement_criteria,
                                           AdvectDiffuse2D_Quad_Block_New &SolnBlk);
 
-extern void Fix_Refined_Block_Boundaries(AdvectDiffuse2D_Quad_Block_New SolnBlk,
+extern void Fix_Refined_Block_Boundaries(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
                                          const int Fix_North_Boundary,
                                          const int Fix_South_Boundary,
                                          const int Fix_East_Boundary,
                                          const int Fix_West_Boundary);
 
-extern void Unfix_Refined_Block_Boundaries(AdvectDiffuse2D_Quad_Block_New SolnBlk);
+extern void Unfix_Refined_Block_Boundaries(AdvectDiffuse2D_Quad_Block_New &SolnBlk);
 
-extern void Apply_Boundary_Flux_Corrections(AdvectDiffuse2D_Quad_Block_New,
+extern void Apply_Boundary_Flux_Corrections(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
                                             const int Number_Neighbours_North_Boundary,
                                             const int Number_Neighbours_South_Boundary,
                                             const int Number_Neighbours_East_Boundary,
                                             const int Number_Neighbours_West_Boundary);
 
-extern void Apply_Boundary_Flux_Corrections_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New SolnBlk,
+extern void Apply_Boundary_Flux_Corrections_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
                                                                 const int i_stage,
                                                                 const int n_stage,
                                                                 const double &CFL_Number,
@@ -713,6 +713,8 @@ extern int dUdt_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 extern int Update_Solution_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
    	                                       const int i_stage,
                                                AdvectDiffuse2D_Input_Parameters &Input_Parameters);
+#endif
+
 
 /**************************************************************************
  * AdvectDiffuse2D_Quad_Block_New -- Multiple Block External Subroutines.     *
@@ -726,16 +728,7 @@ extern AdvectDiffuse2D_Quad_Block_New* Deallocate(AdvectDiffuse2D_Quad_Block_New
 
 extern void ICs(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
 		AdaptiveBlock2D_List &Soln_Block_List,
-		AdvectDiffuse2D_Input_Parameters &Input_Parameters,
-		QuadTreeBlock_DataStructure &QuadTree);
-
-extern void Set_Advection_Velocity_Field(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
-                                         AdaptiveBlock2D_List &Soln_Block_List,
-                                         AdvectDiffuse2D_Input_Parameters &Input_Parameters);
-
-extern void Set_Analytical_Solution(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
-				    const AdaptiveBlock2D_List &Soln_Block_List,
-				    const AdvectDiffuse2D_Input_Parameters &Input_Parameters);
+		AdvectDiffuse2D_Input_Parameters &Input_Parameters);
 
 extern int Read_Restart_Solution(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
                                  AdaptiveBlock2D_List &Soln_Block_List,
@@ -821,6 +814,7 @@ extern void Apply_Boundary_Flux_Corrections_Multistage_Explicit(AdvectDiffuse2D_
                                                                 AdvectDiffuse2D_Input_Parameters &Input_Parameters,
    	                                                        const int I_Stage);
 
+#if 0
 extern int dUdt_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
 				    AdaptiveBlockResourceList &Global_Soln_Block_List,
                                     AdaptiveBlock2D_List &Local_Soln_Block_List,
@@ -849,6 +843,8 @@ extern int Boundary_AMR2(AdvectDiffuse2D_Quad_Block_New       *Soln_ptr,
                          QuadTreeBlock_DataStructure      &QuadTree,
                          AdaptiveBlockResourceList        &GlobalSolnBlockList,
                          AdaptiveBlock2D_List             &LocalSolnBlockList);
+
+#endif
 
 /********************************************************************************
  * AdvectDiffuse2D_Quad_Block_New -- Multiple Block External Subroutines for Mesh.  *
@@ -880,8 +876,6 @@ extern int Output_Nodes_Tecplot(Grid2D_Quad_Block **Grid_ptr,
 
 extern int Output_Cells_Tecplot(Grid2D_Quad_Block **Grid_ptr,
                                 AdvectDiffuse2D_Input_Parameters &Input_Parameters);
-
-#endif
 
 
 #endif /* _ADVECTDIFFUSE2D_QUAD_INCLUDED  */

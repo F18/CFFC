@@ -577,6 +577,7 @@ inline char *Date_And_Time() {
 #define IC_POISSON_3                  131
 #define IC_POISSON_4                  132
 #define IC_POISSON_5                  133
+#define IC_CIRCULAR_ADVECTION_DIFFUSION      134
 
 
 #define IC_ELECTRIC_FIELD_UNIFORM            200

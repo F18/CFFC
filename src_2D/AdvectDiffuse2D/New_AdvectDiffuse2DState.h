@@ -108,6 +108,8 @@ public:
   //@{
   //! Vacuum/zero operator.
   void Vacuum(void) { u = ZERO; }
+  //! Set the pointers to the fields (i.e. velocity, diffusion and source)
+  static void Set_Pointers_To_Fields(void);
   //@}
 
   //! @name Compute upwind state
@@ -158,6 +160,8 @@ public:
   friend double s(const AdvectDiffuse2D_State_New &U);
   //! \brief Evaluate pointwise source field
   double s(const double &x, const double &y, const double &u) const;
+  //! \brief Evaluate the source field at a given location
+  double source(const double &x, const double &y, const AdvectDiffuse2D_State_New &U);
   //@}
 
   //! @name Axisymmetric source term.
@@ -223,12 +227,21 @@ public:
 
 // Default constructor.
 inline AdvectDiffuse2D_State_New::AdvectDiffuse2D_State_New(void): u(0.0){
-  // Get access to the SourceTermField
-  SourceTerm = &SourceTermFields::getInstance();
 }
 
 // Value Constructor
 inline AdvectDiffuse2D_State_New::AdvectDiffuse2D_State_New(const double &uu): u(uu){
+}
+
+
+inline void AdvectDiffuse2D_State_New::Set_Pointers_To_Fields(void){
+  // Set pointer to the velocity field
+  VelocityFields::Connect_Pointer_To_Flow_Field(V);
+
+  // Set pointer to the diffusion field
+  DiffusionFields::Connect_Pointer_To_Diffusion_Field(k);
+
+  // Get access to the SourceTermField
   SourceTerm = &SourceTermFields::getInstance();
 }
 
@@ -420,7 +433,7 @@ inline double AdvectDiffuse2D_State_New::s(void) const{
  * Integral source term (i.e function of the average solution)
  */
 inline double s(const AdvectDiffuse2D_State_New &U){
-  return U.SourceTerm->operator()(U.u);
+  return U.s();
 }
 
 /*!
@@ -428,6 +441,18 @@ inline double s(const AdvectDiffuse2D_State_New &U){
  */
 inline double AdvectDiffuse2D_State_New::s(const double &x, const double &y, const double &u) const{
   return SourceTerm->operator()(x,y,u);
+}
+
+/*!
+ * Return the value of the source field at a given location.
+ * This subroutine checks if the source field is pointwise or integral.
+ */
+inline double source(const double &x, const double &y, const AdvectDiffuse2D_State_New &U) {
+  if (U.SourceTerm->FieldRequireIntegration()){
+    return U.SourceTerm->operator()(x,y,U.u); // compute the pointwise value
+  } else {
+    return U.SourceTerm->operator()(U.u);   // compute the integral value
+  }
 }
 
 /*!

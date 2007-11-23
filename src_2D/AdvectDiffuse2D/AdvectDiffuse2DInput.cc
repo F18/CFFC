@@ -1797,6 +1797,10 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
       IP.i_ICs = IC_CIRCULAR_BOX_IVP;
       IP.ExactSolution = NULL;
       IP.ExactSolution_Flag = -1;
+    } else if (strcmp(IP.ICs_Type, "Circular_Advection_Diffusion") == 0) {
+      IP.i_ICs = IC_CIRCULAR_ADVECTION_DIFFUSION;
+      IP.ExactSolution = NULL;
+      IP.ExactSolution_Flag = -1;
     } else if (strcmp(IP.ICs_Type,"Laplace_1") == 0) {
       IP.i_ICs = IC_LAPLACE_1;
       IP.ExactSolution = Laplace_Solutions::IC_1;
@@ -1859,6 +1863,8 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
       IP.i_Grid = GRID_RECTANGULAR_BOX;
       IP.Box_Width = ONE;
       IP.Box_Height = ONE;
+    } else if (strcmp(IP.Grid_Type, "Periodic_Box") == 0) {
+      IP.i_Grid = GRID_PERIODIC_BOX;
     } else if (strcmp(IP.Grid_Type, "Flat_Plate") == 0) {
       IP.i_Grid = GRID_FLAT_PLATE;
       IP.Plate_Length = ONE;
