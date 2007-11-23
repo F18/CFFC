@@ -339,8 +339,7 @@ public:
    * Private Objects
    */
 private:
-  double T;   //!< Temperature
-  Mixture M;  //!< Mixture Object
+  Mixture Mix;  //!< Mixture Object
 
   /**
    * Public Members
@@ -348,32 +347,37 @@ private:
 public:
 
   /************** Constructors/Destructors ***********/
-  Flame2D_pState() : T(0.0) {
+  Flame2D_pState() {
     rho(DENSITY_STDATM); p(PRESSURE_STDATM);
-    vx(0.0); vy(0.0); c(1/ns); T = T();
+    vx(0.0); vy(0.0); c(1.0/ns); setGas();
   }
 
   Flame2D_pState(const double &d, const Vector2D &V, 
 		 const double &pre)
-  { rho(d); p(pre); v(V); c(1/ns); T = T(); }
+  { rho(d); p(pre); v(V); c(1.0/ns); setGas(); }
 
   Flame2D_pState(const double &d, const double &vvx, 
 		const double &vvy, const double &pre)
-  { rho(d); p(pre); vx(vvx); vy(vvy); c(1/ns); T = T(); }
+  { rho(d); p(pre); vx(vvx); vy(vvy); c(1.0/ns); setGas(); }
   
   Flame2D_pState(const double &d, const double &vvx, 
 		const double &vvy, const double &pre, 
-		const double *mfrac) : T(0.0)
-  { rho(d); p(pre); vx(vvx); vy(vvy); c(mfrac); T = T(); }
+		const double *mfrac)
+  { rho(d); p(pre); vx(vvx); vy(vvy); c(mfrac); setGas(); }
   
   Flame2D_pState(const double &d, const Vector2D &V, 
-		const double &pre, const double *mfrac) : T(0.0)
-  { rho(d); p(pre); v(V); c(mfrac); T = T(); }
+		const double &pre, const double *mfrac)
+  { rho(d); p(pre); v(V); c(mfrac); setGas(); }
 
   Flame2D_pState(const Flame2D_pState &W) { Copy(W); }
-  Flame2D_pState(const Flame2D_cState &U) { W(U); }
-  Flame2D_pState(const Flame2D_State &X) { Copy(X); }
+
   ~Flame2D_pState() { }
+
+  void Copy( const Flame2D_pState &W ) { 
+    for (int i=0; i<n; i++) x[i] = W.x[i];
+    Mix = W.Mix;
+  }
+
 
   /*************** Accessors ***************************/
   //@{ @name Primitive variables:
@@ -394,11 +398,15 @@ public:
   void p(const double &pr) { x[PRESS_]=pr; }
 
   //!< Species mass fractions
+  const double* c(void) const { return &x[SPEC_]; }
   double c(const int&i) const { return x[SPEC_+i]; }
   void c(const double *mfrac) { for (int i=0; i<ns; i++) x[SPEC_+i]=mfrac[i]; }
   void c(const double &val)  { for (int i=0; i<ns; i++) x[SPEC_+i]=val; }
   void c(const int&i, const double &val)  { x[SPEC_+i]=val; }
   //@}
+
+  //!< Set gas state 
+  double setGas(void) { Mix.setState_DPY(rho(), p(), c()); };
 
   /********* Primitive / Conserved Transformation ******/
   //!< conserved to primitive transforation
@@ -419,31 +427,31 @@ public:
   double Hs(void) const { return (rho()*(hs() + 0.5*vsqr())); };
 
   //!< Speed of sound 
-  double a(void) const { return sqrt(g()*Rtot()*T); }
-
+  double a(void) const { return sqrt(g()*Rtot()*T()); }
 
   /************ Mixture Object Wrappers *****************/
-
+  //!< Temperature
+  double T(void) const { return Mix.temperature(); };
   //!< Gas constant
-  double Rtot(void) const { return M.gasConstant(); };
+  double Rtot(void) const { return Mix.gasConstant(); };
   //!< Internal Energy
-  double e(void) const { return M.internalEnergy(T); };
-  double es(void) const { return M.internalEnergySens(T); };
+  double e(void) const { return Mix.internalEnergy(); };
+  double es(void) const { return Mix.internalEnergySens(); };
   //!< enthalpy
-  double h(void) const { return M.enthalpy(); };
-  double hs(void) const { return M.enthalpySens(); };
+  double h(void) const { return Mix.enthalpy(); };
+  double hs(void) const { return Mix.enthalpySens(); };
   //!< heat capacity
-  double Cp(void) const { return M.heatCapacity_p(); };
-  double Cv(void) const { return M.heatCapacity_v(); };
-  double g(void) const { return M.heatRatio(); };
+  double Cp(void) const { return Mix.heatCapacity_p(); };
+  double Cv(void) const { return Mix.heatCapacity_v(); };
+  double g(void) const { return Mix.heatRatio(); };
   //!< transport
-  double mu(void) const { return M.gasConstant(); };
-  double kappa(void) const { return M.gasConstant(); };
-  double Diffusion_coef(const int &i) const { return M.gasConstant(); };
+  double mu(void) const { return Mix.gasConstant(); };
+  double kappa(void) const { return Mix.gasConstant(); };
+  double Diffusion_coef(const int &i) const { return Mix.gasConstant(); };
   //!< Dimensionaless
-  double Sc(const int &i) const { return M.schmidt(rho(), i); };
-  double Pr(void) const { return M.prandtl(); };
-  double Le(const int &i) const { return M.lewis(rho(), i); };
+  double Sc(const int &i) const { return Mix.schmidt(rho(), i); };
+  double Pr(void) const { return Mix.prandtl(); };
+  double Le(const int &i) const { return Mix.lewis(rho(), i); };
 
 
 
@@ -451,6 +459,20 @@ public:
 
 
   /*************** Static Functions ********************/
+
+
+  /**************** Operators Overloading ********************/
+  //----------------- Assignment ----------------------------//
+  Flame2D_pState& Flame2D_State::operator =(const Flame2D_pState &W){
+    if( this != &X) Copy(X);
+    return (*this);
+  }
+  
+  //----------------- Assignment ----------------------------//
+  void Flame2D_pState::operator()(const Flame2D_pState &W) 
+  { if( this != &W) Copy(W); }
+  
+
 
 
 };
@@ -627,21 +649,28 @@ public:
 /****************************************************
  * Primitive / conserved transformations.
  ****************************************************/
+inline void Flame2D_cState::W(const Flame2D_State &W) {
+  Copy(W);
+}
 
-inline void Flame2D_cState::U(const Flame2D_pState &W) {
+inline void Flame2D_pState::U(const Flame2D_State &U) {
+  rho(U.rho());
+  vx(U.rhovx()/U.rho());
+  vx(U.rhovy()/U.rho());
+  for(int i=0; i<U.NumSpecies(); i++) c(i, U.rhoc(i)/U.rho());
+
+  double e( U.E()/U.rho() - U.rhovsqr() );
+  setGas()
+
+  p(U.p());
+}
+
+
   rho(W.rho());
-  rhovx(W.rhovx());
-  rhovy(W.rhovy());
+  rhovx(W.rho());
+  rhovy(W.rho());
   E(W.E());
   for(int i=0; i<W.NumSpecies(); i++) rhoc(i, W.rhoc(i));
-}
-
-inline void Flame2D_pState::W(const Flame2D_cState &U) {
-  rho(U.rho());
-  vx(U.vx());
-  p(U.p());
-  for(int i=0; i<U.NumSpecies(); i++) c(i, U.c(i));
-}
 
 
 

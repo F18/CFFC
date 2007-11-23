@@ -64,11 +64,11 @@ public:
   /************** Constructors/Destructors ***********/
 
   //@{ @name constructors/destructors
-  Mixture() : MW(0.0), Cp(0.0), hs(0.0), 
+  Mixture() : T(0.0), MW(0.0), Cp(0.0), hs(0.0), 
 	      hf(0.0), mu(0.0), kappa(0.0)
   { Allocate(); for (int i=0; i<ns; i++) diff[i] = 0.0; }
   
-  Mixture(const Mixture &M) : 
+  Mixture(const Mixture &M) : T(M.temperature()),
     MW(M.molarMass()), Cp(M.heatCapacity_p()), 
     hs(M.enthalpySens()), hf(M.heatFormation()), mu(M.viscosity()), 
     kappa(M.thermalCond())
@@ -77,6 +77,7 @@ public:
   ~Mixture() { Deallocate(); }
 
   void Copy( const Mixture &M ) {
+    MW = M.temperature();
     MW = M.molarMass();
     Cp = M.heatCapacity_p();
     hs = M.enthalpySens();
@@ -90,6 +91,7 @@ public:
   /************ Accessors ****************************/
 
   //@{ @name Public accessors
+  double temperature(void) const { return T; };
   double molarMass(void) const { return MW; };
   double heatCapacity_p(void) const { return Cp; };
   double enthalpySens(void) const { return hs; };
@@ -133,7 +135,8 @@ public:
 
   //! set the mixture state
   void setState_TPY(const double &T, const double &Press, const double* Y);
- 
+  void setState_DPY(const double &rho, const double &Press, const double* Y);
+
 
   /***************** Mixing Rules ********************
     The following constructors return "total" physical
@@ -148,9 +151,9 @@ public:
   double heatRatio(void) const;
   static double heatRatio( const double &Temp, const double* y );
   static double heatRatioRef( const double* y );
-  double internalEnergy(const double &T) const;
+  double internalEnergy() const;
   static double internalEnergy( const double &Temp, const double* y );
-  double internalEnergySens(const double &T) const;
+  double internalEnergySens() const;
   static double internalEnergySens( const double &Temp, const double* y );
   double enthalpy(void) const;
   static double enthalpy( const double &Temp, const double* y );
@@ -208,6 +211,7 @@ private:
    */
 private:
   
+  double   T;    //!< Temperature [K]
   double  MW;    //!< molecular weight [kg/kmole]
   double  Cp;    //!< Heat Capacity (const Pressure) [J/(kg*K)]
   double  hs;    //!< Sensible enthalpy [J/kg]
@@ -300,6 +304,7 @@ inline void Mixture :: setState_TPY(const double &Temp,
 				    const double &Press, 
 				    const double* y)
 {
+  T = Temp;
 
   ct_gas->setMassFractions_NoNorm(y);
   ct_gas->setPressure(Press);
@@ -317,6 +322,30 @@ inline void Mixture :: setState_TPY(const double &Temp,
 
 
 }
+
+inline void Mixture :: setState_DPY(const double &rho, 
+				    const double &Press, 
+				    const double* y)
+{
+  ct_gas->setMassFractions_NoNorm(y);
+  ct_gas->setPressure(Press);
+  MW = ct_gas->meanMolecularWeight();
+
+  T = Press / (gasConstant()*rho);
+
+  ct_gas->setTemperature(TREF);
+  hf = ct_gas->enthalpy_mass();
+
+  ct_gas->setTemperature(T);
+  hs = ct_gas->enthalpy_mass() - hf;
+  Cp = ct_gas->cp_mass();
+  mu = ct_trans->viscosity();
+  kappa = ct_trans->thermalConductivity();
+  ct_trans->getMixDiffCoeffs(diff);
+
+
+}
+
 
 /************************************************************************
   Calculates the concentration time rate of change of species from
@@ -360,13 +389,13 @@ inline double Mixture :: heatRatio(void) const {
  * Mixture Specific Internal Energy J/(kg)
  ****************************************************/
 //! etotal = sensible & chemical
-inline double Mixture :: internalEnergy(const double &T) const {
+inline double Mixture :: internalEnergy(void) const {
   //(Enthalpy(Temp) - (R/mol_mass)*Temp)
   return (hs + hf - gasConstant()*T);
 }
 
 //! internal energy with no heat of formation included (sensible)
-inline double Mixture :: internalEnergySens(const double &T) const {
+inline double Mixture :: internalEnergySens(void) const {
   //(Enthalpy(Temp) - (R/mol_mass)*Temp)
   return (hs - gasConstant()*T);
 }
