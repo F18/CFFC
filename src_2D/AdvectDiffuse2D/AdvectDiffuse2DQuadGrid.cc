@@ -223,6 +223,7 @@ Grid2D_Quad_Block** Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
 				      Input_Parameters.Number_of_Blocks_Idir,
 				      Input_Parameters.Number_of_Blocks_Jdir,
 				      Input_Parameters.Cylinder_Radius,
+				      Input_Parameters.Cylinder_Radius2,
 				      Input_Parameters.Mesh_Stretching_Type_Idir,
 				      Input_Parameters.Mesh_Stretching_Type_Jdir,
 				      Input_Parameters.Mesh_Stretching_Factor_Idir,
@@ -230,6 +231,22 @@ Grid2D_Quad_Block** Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
 				      Input_Parameters.Number_of_Cells_Idir,
 				      Input_Parameters.Number_of_Cells_Jdir,
 				      Input_Parameters.Number_of_Ghost_Cells);
+    break;
+  case GRID_ANNULUS :
+    Grid_ptr = Grid_Annulus(Grid_ptr,
+			    Input_Parameters.Number_of_Blocks_Idir,
+			    Input_Parameters.Number_of_Blocks_Jdir,
+			    Input_Parameters.Cylinder_Radius,
+			    Input_Parameters.Cylinder_Radius2,
+			    Input_Parameters.Annulus_Theta_Start,
+			    Input_Parameters.Annulus_Theta_End,
+			    Input_Parameters.Mesh_Stretching_Type_Idir,
+			    Input_Parameters.Mesh_Stretching_Type_Jdir,
+			    Input_Parameters.Mesh_Stretching_Factor_Idir,
+			    Input_Parameters.Mesh_Stretching_Factor_Jdir,
+			    Input_Parameters.Number_of_Cells_Idir,
+			    Input_Parameters.Number_of_Cells_Jdir,
+			    Input_Parameters.Number_of_Ghost_Cells);
     break;
   case GRID_ELLIPSE :
     Grid_ptr = Grid_Ellipse(Grid_ptr,

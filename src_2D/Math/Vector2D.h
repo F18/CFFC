@@ -80,7 +80,7 @@ class Vector2D{
        x = ZERO; y = ZERO;
     }
   
-    //! Copy constructor.
+    //! Constructor with single value
     Vector2D(const double &V) {
        x = V; y = V;
     }
@@ -90,11 +90,15 @@ class Vector2D{
        x = V.x; y = V.y;
     }
 
-    //! Copy constructor.
+    //! Constructor with Cartesian coordinates
     Vector2D(const double &xx,
 	     const double &yy) {
        x = xx; y = yy;
     }
+
+    //! Set vector using polar coordinates
+    void setWithPolarCoord(const double &Radius,
+			   const double &Theta);
 
     /* Destructor. */
     // ~Vector2D(void);
@@ -221,6 +225,20 @@ class Vector2D{
     //@}
 
 };
+
+/*******************************************************//**
+ * Vector2D::setWithPolorCoord -- Set vector using the 
+ *                                provided polar coordinates.
+ * \param Theta angle measured in degrees.
+ ********************************************************/
+inline void Vector2D::setWithPolarCoord(const double &Radius,
+					const double &Theta){
+  double ThetaRad(Theta*PI/180); // the angle Theta in radians
+
+  // Calculate the Cartesian coordinates (x,y)
+  x = Radius * cos(ThetaRad);
+  y = Radius * sin(ThetaRad);
+}
 
 /********************************************************
  * Vector2D::zero -- Assign zero vector.                *

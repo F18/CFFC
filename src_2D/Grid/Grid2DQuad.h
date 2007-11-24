@@ -2115,6 +2115,21 @@ extern Grid2D_Quad_Block** Grid_Circular_Cylinder(Grid2D_Quad_Block **Grid_ptr,
 		                                  const int Number_of_Cells_Jdir,
 						  const int Number_of_Ghost_Cells);
 
+extern Grid2D_Quad_Block** Grid_Annulus(Grid2D_Quad_Block **Grid_ptr,
+					int &Number_of_Blocks_Idir,
+					int &Number_of_Blocks_Jdir,
+					const double &Inner_Radius,
+					const double &Outer_Radius,
+					const double &ThetaStart,
+					const double &ThetaEnd,
+					const int Stretching_Type_Idir,
+					const int Stretching_Type_Jdir,
+					const double &Stretching_Factor_Idir,
+					const double &Stretching_Factor_Jdir,
+					const int Number_of_Cells_Idir,
+					const int Number_of_Cells_Jdir,
+					const int Number_of_Ghost_Cells);
+
 extern Grid2D_Quad_Block** Grid_Ellipse(Grid2D_Quad_Block **Grid_ptr,
                                         int &Number_of_Blocks_Idir,
                                         int &Number_of_Blocks_Jdir,

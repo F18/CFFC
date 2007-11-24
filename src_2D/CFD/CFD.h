@@ -228,6 +228,7 @@ inline char *Date_And_Time() {
 #define GRID_RECTANGULAR_ENCLOSURE           28
 #define GRID_CYLINDRICAL_ENCLOSURE           29
 #define GRID_JET_FLOW                        30
+#define GRID_ANNULUS                         31
 
 #define GRID_ICEMCFD                       1000
 #define GRID_READ_FROM_DEFINITION_FILE    10000

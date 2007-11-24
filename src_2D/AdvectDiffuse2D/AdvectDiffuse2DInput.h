@@ -162,7 +162,8 @@ public:
          Chamber_Length, Chamber_Radius, Chamber_To_Throat_Length,
          Nozzle_Length, Nozzle_Radius_Exit, Nozzle_Radius_Throat, Grain_Radius,
          Cylinder_Radius, Cylinder_Radius2, Ellipse_Length_X_Axis, 
-         Ellipse_Length_Y_Axis, Chord_Length, Orifice_Radius;
+         Ellipse_Length_Y_Axis, Chord_Length, Orifice_Radius,
+         Annulus_Theta_Start, Annulus_Theta_End;
   int Nozzle_Type;
   double X_Scale, X_Rotate;
   Vector2D X_Shift;

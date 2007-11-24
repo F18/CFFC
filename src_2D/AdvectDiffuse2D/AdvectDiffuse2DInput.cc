@@ -267,24 +267,12 @@ ostream &operator << (ostream &out_file,
     // ==== Initial condition parameters ====
     out_file << "\n  -> Initial Conditions: " 
              << IP.ICs_Type;
-    out_file << "\n  -> Flow Velocity Field: " 
-             << IP.Velocity_Field_Type; 
-    out_file << "\n  -> Advection velocity x-direction: " 
-             << IP.a;
-    out_file << "\n  -> Advection velocity y-direction: " 
-             << IP.b;
 
     // ====    Velocity field parameters ====
     VelocityFields::Print_Info(out_file);
 
-    out_file << "\n  -> Diffusion Coefficient : " 
-             << IP.Kappa;
-
     // ====    Diffusion field parameters ====
     DiffusionFields::Print_Info(out_file);
-
-    out_file << "\n  -> Relaxation Time : " 
-             << IP.Tau;
 
     // ====    Source field parameters ====
     IP.SourceTerm->Print_Info(out_file);
@@ -395,65 +383,77 @@ ostream &operator << (ostream &out_file,
              << IP.Grid_Type;
     switch(IP.i_Grid) {
       case GRID_SQUARE :
-        out_file << "\n  -> Size of Solution Domain: " 
+        out_file << "\n     -> Size of Solution Domain: " 
                  << IP.Box_Width;
         break;
       case GRID_RECTANGULAR_BOX :
-        out_file << "\n  -> Width of Solution Domain: " 
+        out_file << "\n     -> Width of Solution Domain: " 
                  << IP.Box_Width;
-        out_file << "\n  -> Height of Solution Domain: " 
+        out_file << "\n     -> Height of Solution Domain: " 
                  << IP.Box_Height;
         break;
       case GRID_FLAT_PLATE :
-        out_file << "\n  -> Plate Length: " 
+        out_file << "\n     -> Plate Length: " 
                  << IP.Plate_Length;
         break;
       case GRID_PIPE :
-        out_file << "\n  -> Pipe Length: " 
+        out_file << "\n     -> Pipe Length: " 
                  << IP.Pipe_Length;
-        out_file << "\n  -> Pipe Radius: " 
+        out_file << "\n     -> Pipe Radius: " 
                  << IP.Pipe_Radius;
         break;
       case GRID_BLUNT_BODY :
-        out_file << "\n  -> Cylinder Radius: " 
+        out_file << "\n     -> Cylinder Radius: " 
                  << IP.Blunt_Body_Radius;
         break;
       case GRID_ROCKET_MOTOR :
-	out_file << "\n  -> Length of Chamber (m): "
+	out_file << "\n     -> Length of Chamber (m): "
 		 << IP.Chamber_Length;
-	out_file << "\n  -> Radius of Chamber (m): "
+	out_file << "\n     -> Radius of Chamber (m): "
 		 << IP.Chamber_Radius;
-	out_file << "\n  -> Distance from Chamber to Nozzle Throat (m): "
+	out_file << "\n     -> Distance from Chamber to Nozzle Throat (m): "
 		 << IP.Chamber_To_Throat_Length;
-	out_file << "\n  -> Length of the Nozzle (m): "
+	out_file << "\n     -> Length of the Nozzle (m): "
 		 << IP.Nozzle_Length;
-	out_file << "\n  -> Radius of the Nozzle at Throat (m): "
+	out_file << "\n     -> Radius of the Nozzle at Throat (m): "
 		 << IP.Nozzle_Radius_Throat;
-	out_file << "\n  -> Radius of the Nozzle at Exit(m): "
+	out_file << "\n     -> Radius of the Nozzle at Exit(m): "
 		 << IP.Nozzle_Radius_Exit;
-	out_file << "\n  -> Radius of the Propellant Grain (m): "
+	out_file << "\n     -> Radius of the Propellant Grain (m): "
 		 << IP.Grain_Radius;
-	out_file << "\n  -> Nozzle type: "
+	out_file << "\n     -> Nozzle type: "
 		 << IP.Nozzle_Type;
         break;
       case GRID_CIRCULAR_CYLINDER :
-        out_file << "\n  -> Cylinder Radius: " 
-                 << IP.Cylinder_Radius;
+        out_file << "\n     -> Inner Cylinder Radius (m): " 
+                 << IP.Cylinder_Radius
+		 << "\n     -> Outer Cylinder Radius (m): " 
+                 << IP.Cylinder_Radius2;
+        break;
+      case GRID_ANNULUS :
+        out_file << "\n     -> Inner Cylinder Radius (m): " 
+                 << IP.Cylinder_Radius
+		 << "\n     -> Outer Cylinder Radius (m): " 
+                 << IP.Cylinder_Radius2
+		 << "\n     -> Start Theta (degrees): " 
+		 << IP.Annulus_Theta_Start
+		 << "\n     -> End Theta (degrees): " 
+		 << IP.Annulus_Theta_End;
         break;
       case GRID_ELLIPSE :
-        out_file << "\n  -> Width of Ellipse along x-axis: " 
+        out_file << "\n     -> Width of Ellipse along x-axis: " 
                  << IP.Ellipse_Length_X_Axis;
-        out_file << "\n  -> Height of Ellipse along y-axis: " 
+        out_file << "\n     -> Height of Ellipse along y-axis: " 
                  << IP.Ellipse_Length_Y_Axis;
         break;
       case GRID_NACA_AEROFOIL :
-        out_file << "\n  -> NACA " 
+        out_file << "\n     -> NACA " 
                  << IP.NACA_Aerofoil_Type;
-        out_file << "\n  -> Chord Length: " 
+        out_file << "\n     -> Chord Length: " 
                  << IP.Chord_Length;
         break;
       case GRID_FREE_JET :
-        out_file << "\n  -> Orifice Radius: " 
+        out_file << "\n     -> Orifice Radius: " 
                  << IP.Orifice_Radius;
         break;
       case GRID_ICEMCFD :
@@ -463,33 +463,33 @@ ostream &operator << (ostream &out_file,
       case GRID_READ_FROM_GRID_DATA_FILE :
         break;
       default:
-        out_file << "\n  -> Width of Solution Domain: " 
+        out_file << "\n     -> Width of Solution Domain: " 
                  << IP.Box_Width;
-        out_file << "\n  -> Height of Solution Domain: " 
+        out_file << "\n     -> Height of Solution Domain: " 
                  << IP.Box_Height;
         break;
     } /* endswitch */
-    out_file << "\n  -> Smooth Quad Block: ";
+    out_file << "\n     -> Smooth Quad Block: ";
     if (IP.i_Smooth_Quad_Block){
       out_file << "Yes";
     } else {
       out_file << "No";
     }
     if (IP.IterationsOfInteriorNodesDisturbances > 0){
-      out_file << "\n  -> Disturbed Interior Quad Block Nodes: "
+      out_file << "\n     -> Disturbed Interior Quad Block Nodes: "
 	       << IP.IterationsOfInteriorNodesDisturbances << " iterations.";
     }
-    out_file << "\n  -> Mesh shift, scale, and rotate: " 
+    out_file << "\n     -> Mesh shift, scale, and rotate: " 
              << IP.X_Shift << " " << IP.X_Scale << " " << IP.X_Rotate;
-    out_file << "\n  -> Number of Blocks i-direction: "
+    out_file << "\n     -> Number of Blocks i-direction: "
              << IP.Number_of_Blocks_Idir;
-    out_file << "\n  -> Number of Blocks j-direction: " 
+    out_file << "\n     -> Number of Blocks j-direction: " 
              << IP.Number_of_Blocks_Jdir;
-    out_file << "\n  -> Number of Cells i-direction: "
+    out_file << "\n     -> Number of Cells i-direction: "
              << IP.Number_of_Cells_Idir;
-    out_file << "\n  -> Number of Cells j-direction: " 
+    out_file << "\n     -> Number of Cells j-direction: " 
              << IP.Number_of_Cells_Jdir;
-    out_file << "\n  -> Number of Ghost Cells: "
+    out_file << "\n     -> Number of Ghost Cells: "
 	     << IP.Number_of_Ghost_Cells;
 
     // ==== AMR parameters ====
@@ -676,6 +676,9 @@ void Set_Default_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
     IP.Nozzle_Type = NOZZLE_GOTTLIEB_FUNCTION;
     IP.Grain_Radius = 0.0;
     IP.Cylinder_Radius = ONE;
+    IP.Cylinder_Radius2 = 32.00;
+    IP.Annulus_Theta_Start = 0.0;
+    IP.Annulus_Theta_End = 90.0;
     IP.Ellipse_Length_X_Axis = TWO;
     IP.Ellipse_Length_Y_Axis = HALF;
     IP.Chord_Length = ONE;
@@ -1004,6 +1007,12 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
                           1, 
                           MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&(IP.Cylinder_Radius2), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Annulus_Theta_Start), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Annulus_Theta_End), 
                           1, 
                           MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&(IP.Ellipse_Length_X_Axis), 
@@ -1456,6 +1465,12 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.Cylinder_Radius2), 
 		       1, 
 		       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.Annulus_Theta_Start), 
+		       1, 
+		       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.Annulus_Theta_End), 
+		       1, 
+		       MPI::DOUBLE, Source_Rank);
     Communicator.Bcast(&(IP.Ellipse_Length_X_Axis), 
                        1, 
                        MPI::DOUBLE, Source_Rank);
@@ -1894,12 +1909,15 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
       IP.BC_North = BC_DIRICHLET;
     } else if (strcmp(IP.Grid_Type, "Circular_Cylinder") == 0) {
       IP.i_Grid = GRID_CIRCULAR_CYLINDER;
-      IP.Cylinder_Radius = ONE;
       IP.Mesh_Stretching_Type_Idir = STRETCHING_FCN_MINMAX_CLUSTERING;
       IP.Mesh_Stretching_Type_Jdir = STRETCHING_FCN_MIN_CLUSTERING;
       IP.Mesh_Stretching_Factor_Idir = 1.025;
       IP.Mesh_Stretching_Factor_Jdir = 1.001;
       IP.BC_South = BC_DIRICHLET;
+    } else if (strcmp(IP.Grid_Type, "Annulus") == 0) {
+      IP.i_Grid = GRID_ANNULUS;
+      IP.Mesh_Stretching_Type_Jdir = STRETCHING_FCN_MINMAX_CLUSTERING;
+      IP.Mesh_Stretching_Factor_Jdir = 1.01;
     } else if (strcmp(IP.Grid_Type, "Ellipse") == 0) {
       IP.i_Grid = GRID_ELLIPSE;
       IP.Ellipse_Length_X_Axis = TWO;
@@ -2100,6 +2118,18 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
     if (IP.Cylinder_Radius2 <= ZERO) i_command = INVALID_INPUT_VALUE;
     if (IP.Cylinder_Radius2 <= IP.Cylinder_Radius) i_command = INVALID_INPUT_VALUE;
     
+  } else if (strcmp(IP.Next_Control_Parameter, "Annulus_Start_Angle") == 0) {
+    i_command = 26;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.Annulus_Theta_Start;
+    IP.Input_File.getline(buffer, sizeof(buffer));
+
+  } else if (strcmp(IP.Next_Control_Parameter, "Annulus_End_Angle") == 0) {
+    i_command = 26;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.Annulus_Theta_End;
+    IP.Input_File.getline(buffer, sizeof(buffer));
+
   } else if (strcmp(IP.Next_Control_Parameter, "Ellipse_Length_X_Axis") == 0) {
     i_command = 26;
     IP.Line_Number = IP.Line_Number + 1;
