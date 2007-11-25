@@ -515,23 +515,21 @@ double Euler3D_ThermallyPerfect_pState::T(double &h_s) const{
  * Euler3D_ThermallyPerfect_pState::a -- Return mixture sound speed.                   *
  ***************************************************************************************/
 double Euler3D_ThermallyPerfect_pState::a(void){
-   double a_temp;
-   double RTOT= Rtot();
-   a_temp  =  (g()*(Rtot()*T()));
-   return sqrt(a_temp);
+   double sum  =  (g()*(Rtot()*T()));
+   return sqrt(sum);
+
 }
 
 double Euler3D_ThermallyPerfect_pState::a(void) const{
-   double a_temp;
-   double RTOT= Rtot();
-   a_temp = (g()*(Rtot()*T()));
-   return sqrt(a_temp);
+   double sum =  (g()*(Rtot()*T()));
+   return sqrt(sum);
 }
 
 /***************************************************************************************
  * Euler3D_ThermallyPerfect_pState::M -- Return mixture Mach number.                   *
  ***************************************************************************************/
 double Euler3D_ThermallyPerfect_pState::M(void) const{
+
    return (v.abs() / a());
 }
 
@@ -586,6 +584,9 @@ Euler3D_ThermallyPerfect_cState Euler3D_ThermallyPerfect_pState::U(void) {
       Temp.rhospec[i].diffusion_coef = rho*spec[i].diffusion_coef;
    } /* endfor */
    return Temp;
+=======
+   return v.abs() / a(); 
+>>>>>>> Fixed Residua_Norm flags, Norm calcs, ThermallyPerfect M() mistakes:src_3D/Euler/Euler3DThermallyPerfectState.cc
 }
 
 Euler3D_ThermallyPerfect_cState Euler3D_ThermallyPerfect_pState::U(void) const {
