@@ -116,11 +116,11 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
       
       /***************** NORMS **************************/      
       /* Determine the L1, L2, and max norms of the solution residual. */
-      residual_l1_norm =  Solution_Data.Local_Solution_Blocks.L1_Norm_Residual();
+      residual_l1_norm =  Solution_Data.Local_Solution_Blocks.L1_Norm_Residual(Solution_Data.Input.Residual_Norm);
       residual_l1_norm = CFFC_Summation_MPI(residual_l1_norm); 
-      residual_l2_norm =  Solution_Data.Local_Solution_Blocks.L2_Norm_Residual();
+      residual_l2_norm =  Solution_Data.Local_Solution_Blocks.L2_Norm_Residual(Solution_Data.Input.Residual_Norm);
       residual_l2_norm = CFFC_Summation_MPI(residual_l2_norm); 
-      residual_max_norm =  Solution_Data.Local_Solution_Blocks.Max_Norm_Residual();
+      residual_max_norm =  Solution_Data.Local_Solution_Blocks.Max_Norm_Residual(Solution_Data.Input.Residual_Norm);
       residual_max_norm = CFFC_Maximum_MPI(residual_max_norm);
 
       /* Output progress information for the calculation. */

@@ -195,13 +195,17 @@ class Hexa_Block{
 
    void Set_Global_TimeStep(const double &Dt_min);
 
-   double L1_Norm_Residual(void);
+   double L1_Norm_Residual(const int& var);
 
-   double L2_Norm_Residual(void);
+   double L2_Norm_Residual(const int& var);
 
-   double Max_Norm_Residual(void);
+   double Max_Norm_Residual(const int& var);
 
    int WtoU(void);
+
+   void Evaluate_Limiters(void){ Freeze_Limiter = OFF; }
+
+   void Freeze_Limiters(void) { Freeze_Limiter = ON; }
 
    void Linear_Reconstruction_LeastSquares(const int i, 
                                            const int j, 
@@ -1373,7 +1377,16 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
             W[ICu+2][j][k].p = W[ICu+1][j][k].p;// (WoE[j][k].p)-dpdx*dX.x; 	
             U[ICu+2][j][k] = W[ICu+2][j][k].U();
             break;
-            
+
+// 	 case BC_CHARACTERISTIC :
+//             W[ ICu+1][j][k] = SOLN_pSTATE::Characteristic_Pressure(W[ICu][j][k],
+// 								   Grid.nfaceE(ICu,j,k));
+//             U[ ICu+1][j][k] = W[ ICu+1][j][k].U();
+//             W[ ICu+2][j][k] = SOLN_pSTATE::Characteristic_Pressure(W[ICu-1][j][k],
+// 								   Grid.nfaceE(ICu,j,k));
+//             U[ ICu+2][j][k] = W[ ICu+2][j][k].U();
+//             break;
+
          }//endofeastface
          
       } /* endfor */
@@ -1787,7 +1800,7 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Set_Global_TimeStep(const double &Dt_
  *                                                      *
  ********************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
-double Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::L1_Norm_Residual(void) {
+double Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::L1_Norm_Residual(const int &var) {
    
     double l1_norm;
 
@@ -1795,7 +1808,7 @@ double Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::L1_Norm_Residual(void) {
     for (int k = KCl ; k <= KCu ; ++k ) {
        for (int j = JCl ; j <= JCu ; ++j ) {
           for (int i = ICl ; i <= ICu ; ++i ) {
-	    l1_norm += fabs( abs(dUdt[i][j][k][0].rhov)); //NEEDS TO BE MADE VARIABLE WITH p_Indicator?? 
+	    l1_norm += fabs(dUdt[i][j][k][0][var]); //NEEDS TO BE MADE VARIABLE WITH p_Indicator?? 
           } /* endfor */
        } /* endfor */
     } /* endfor */
@@ -1814,7 +1827,7 @@ double Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::L1_Norm_Residual(void) {
  *                                                      *
  ********************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
-double Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::L2_Norm_Residual(void) {
+double Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::L2_Norm_Residual(const int &var) {
 
    double l2_norm;
    l2_norm = ZERO;
@@ -1822,7 +1835,7 @@ double Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::L2_Norm_Residual(void) {
    for (int k  = KCl ; k <= KCu ; ++k ) {
       for (int j = JCl ; j <= JCu ; ++j ) {
          for (int i = ICl ; i <= ICu ; ++i ) {
-            l2_norm += sqr( abs(dUdt[i][j][k][0].rhov));
+	   l2_norm += sqr(dUdt[i][j][k][0][var]); //rhov
          } /* endfor */
       } /* endfor */
    } /* endfor */
@@ -1843,7 +1856,7 @@ double Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::L2_Norm_Residual(void) {
  *                                                      *
  ********************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
-double Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Max_Norm_Residual(void) {
+double Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Max_Norm_Residual(const int &var) {
 
    double max_norm;
    max_norm = ZERO;
@@ -1851,7 +1864,7 @@ double Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Max_Norm_Residual(void) {
    for (int k  = KCl ; k <= KCu ; ++k ) {
       for (int j = JCl ; j <= JCu ; ++j ) {
          for (int i = ICl ; i <= ICu ; ++i ) {
-            max_norm = max(max_norm, fabs( abs(dUdt[i][j][k][0].rhov)));
+            max_norm = max(max_norm, fabs(dUdt[i][j][k][0][var]));
          } /* endfor */
       } /* endfor */
    } /* endfor */
