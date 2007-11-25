@@ -2937,7 +2937,6 @@ int dUdt_Residual_Evaluation(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
     
 }
 
-#if 0
 /******************************************************//**
  * Routine: dUdt_Multistage_Explicit                    
  *                                                      
@@ -2949,6 +2948,8 @@ int dUdt_Residual_Evaluation(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 int dUdt_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
                              const int i_stage,
                              AdvectDiffuse2D_Input_Parameters &Input_Parameters) {
+
+#if 0
 
   int i, j, k_residual;
   double omega;
@@ -3190,6 +3191,8 @@ int dUdt_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
     /* Residual for the stage successfully calculated. */
 
   return (0);
+
+#endif
     
 }
 
@@ -3204,6 +3207,8 @@ int dUdt_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 int Update_Solution_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
                                         const int i_stage,
                                         AdvectDiffuse2D_Input_Parameters &Input_Parameters) {
+
+#if 0
 
   int i, j, k_residual;
   double omega;
@@ -3257,7 +3262,7 @@ int Update_Solution_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
     /* Solution successfully updated. */
 
   return (0);
-    
-}
 
 #endif
+    
+}

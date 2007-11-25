@@ -9,7 +9,6 @@
 
 /* Include CFFC header files */
 #include "AdvectDiffuse2DInput.h" /* Include 2D advection diffusion equation input parameter header file. */
-#include "../FASMultigrid2D/FASMultigrid2DInput.h"  
 #include "AdvectDiffuse2DQuad.h"  /* Include AdvectDiffuse2D_Quad_Block header file. */
 #include "../HighOrderReconstruction/CENO_ExecutionMode.h" // Include high-order CENO execution mode header file
 #include "../HighOrderReconstruction/CENO_Tolerances.h"	   // Include high-order CENO tolerances header file
@@ -320,10 +319,10 @@ ostream &operator << (ostream &out_file,
              << IP.Time_Max;
     out_file << "\n  -> Maximum Number of Time Steps (Iterations): " 
              << IP.Maximum_Number_of_Time_Steps;
-    out_file << "\n  -> Maximum Number of NKS Iterations: " 
-             << IP.Maximum_Number_of_NKS_Iterations;
-    out_file << "\n  -> Maximum Number of GMRES Iterations: " 
-             << IP.Maximum_Number_of_GMRES_Iterations;
+    if (IP.NKS_IP.Maximum_Number_of_NKS_Iterations > 0) {
+      out_file << "\n  -> Maximum Number of NKS Iterations: " 
+	       << IP.NKS_IP.Maximum_Number_of_NKS_Iterations;
+    }
 
     // ==== Spatial approximation parameters ====
     if (IP.Axisymmetric) { 
@@ -600,8 +599,6 @@ void Set_Default_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
     IP.CFL_Number = 0.5;
     IP.Local_Time_Stepping = SCALAR_LOCAL_TIME_STEPPING;
     IP.Maximum_Number_of_Time_Steps = 100;
-    IP.Maximum_Number_of_NKS_Iterations = 0;
-    IP.Maximum_Number_of_GMRES_Iterations = 0;
     IP.N_Stage = 1;
     IP.Time_Max = ZERO;
 
@@ -824,12 +821,6 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
                           1, 
                           MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&(IP.Maximum_Number_of_Time_Steps), 
-                          1, 
-                          MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.Maximum_Number_of_NKS_Iterations), 
-                          1, 
-                          MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.Maximum_Number_of_GMRES_Iterations), 
                           1, 
                           MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&(IP.N_Stage), 
@@ -1178,6 +1169,9 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
     // Multigrid Related Parameters
     IP.Multigrid_IP.Broadcast_Input_Parameters();
 
+    // NKS Parameters
+    IP.NKS_IP.Broadcast_Input_Parameters();
+
     if (!CFFC_Primary_MPI_Processor()) {
        IP.Number_of_Processors = CFFC_MPI::Number_of_Processors;
     } /* endif */
@@ -1280,12 +1274,6 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP,
                        1, 
                        MPI::INT, Source_Rank);
     Communicator.Bcast(&(IP.Maximum_Number_of_Time_Steps), 
-                       1, 
-                       MPI::INT, Source_Rank);
-    Communicator.Bcast(&(IP.Maximum_Number_of_NKS_Iterations), 
-                       1, 
-                       MPI::INT, Source_Rank);
-    Communicator.Bcast(&(IP.Maximum_Number_of_GMRES_Iterations), 
                        1, 
                        MPI::INT, Source_Rank);
     Communicator.Bcast(&(IP.N_Stage), 
@@ -1632,6 +1620,9 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP,
     // Multigrid Related Parameters
     IP.Multigrid_IP.Broadcast_Input_Parameters(Communicator,
 					       Source_CPU);
+
+    // NKS Parameters
+    IP.NKS_IP.Broadcast_Input_Parameters(Communicator, Source_CPU);
 
     if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
        IP.Number_of_Processors = CFFC_MPI::Number_of_Processors;
@@ -2367,52 +2358,6 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
       IP.i_Velocity_Field = VELOCITY_FIELD_UNIFORM;
     } /* endif */
 
-  } else if (strcmp(IP.Next_Control_Parameter, "Maximum_Number_of_NKS_Iterations") == 0) {
-    i_command = 55;
-    IP.Line_Number = IP.Line_Number + 1;
-    IP.Input_File >> IP.Maximum_Number_of_NKS_Iterations;
-    IP.Input_File.getline(buffer, sizeof(buffer));
-    if (IP.Maximum_Number_of_NKS_Iterations < 0) i_command = INVALID_INPUT_VALUE;
-     
-  } else if (strcmp(IP.Next_Control_Parameter, "Maximum_Number_of_GMRES_Iterations") == 0) {
-    i_command = 56;
-    IP.Line_Number = IP.Line_Number + 1;
-    IP.Input_File >> IP.Maximum_Number_of_GMRES_Iterations;
-    IP.Input_File.getline(buffer, sizeof(buffer));
-    if (IP.Maximum_Number_of_GMRES_Iterations < 0) i_command = INVALID_INPUT_VALUE;
-
-  } else if (strcmp(IP.Next_Control_Parameter, "GMRES_Restart") == 0) {
-    // GMRES restart:
-    i_command = 57;
-    IP.Line_Number = IP.Line_Number + 1;
-    IP.Input_File >> IP.GMRES_Restart;
-    IP.Input_File.getline(buffer, sizeof(buffer));
-    if (IP.GMRES_Restart < 0) i_command = INVALID_INPUT_VALUE;
-
-  } else if (strcmp(IP.Next_Control_Parameter, "GMRES_Overlap") == 0) {
-    // GMRES overlap:
-    i_command = 58;
-    IP.Line_Number = IP.Line_Number + 1;
-    IP.Input_File >> IP.GMRES_Overlap;
-    IP.Input_File.getline(buffer, sizeof(buffer));
-    if (IP.GMRES_Overlap < 0) i_command = INVALID_INPUT_VALUE;
-
-  } else if (strcmp(IP.Next_Control_Parameter, "GMRES_Tolerance") == 0) {
-    // GMRES tolerance:
-    i_command = 59;
-    IP.Line_Number = IP.Line_Number + 1;
-    IP.Input_File >> IP.GMRES_Toler;
-    IP.Input_File.getline(buffer, sizeof(buffer));
-    if (IP.GMRES_Toler <= ZERO) i_command = INVALID_INPUT_VALUE;
-
-  } else if (strcmp(IP.Next_Control_Parameter, "GMRES_P_Switch") == 0) {
-    // GMRES P_Switch:
-    i_command = 60;
-    IP.Line_Number = IP.Line_Number + 1;
-    IP.Input_File >> IP.GMRES_P_Switch;
-    IP.Input_File.getline(buffer, sizeof(buffer));
-    if (IP.GMRES_P_Switch < 0) i_command = INVALID_INPUT_VALUE;
-
   } else if (strcmp(IP.Next_Control_Parameter, "Freeze_Limiter") == 0) {
     // Freeze_Limiter:
     i_command = 61;
@@ -2977,6 +2922,8 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
 
   } /* endif */
 
+  
+
   /* Parse next control parameter with VelocityFields parser */
   VelocityFields::Parse_Next_Input_Control_Parameter(IP,i_command);
 
@@ -2991,6 +2938,18 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
   
   /* Parse next control parameter with CENO_Tolerances parser */
   CENO_Tolerances::Parse_Next_Input_Control_Parameter(IP,i_command);
+
+  if (i_command == INVALID_INPUT_CODE){
+    // that is, we have an input line which:
+    //  - is not a comment (that's COMMENT_CODE), and,
+    //  - is not a valid code with an invalid value (that's INVALID_INPUT_VALUE), 
+    // and so is an unknown option. Maybe it's an NKS option:
+    
+    strcpy(buffer, IP.Next_Control_Parameter);
+    Get_Next_Input_Control_Parameter(IP);
+    i_command = IP.NKS_IP.Parse_Next_Input_Control_Parameter(buffer, 
+							     IP.Next_Control_Parameter);
+  }
 
   /* Return the parser command type indicator. */
 

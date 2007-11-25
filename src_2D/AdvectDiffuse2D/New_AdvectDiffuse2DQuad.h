@@ -12,12 +12,13 @@
 
 /* Include CFFC header files */
 #include "New_AdvectDiffuse2DState.h"  /* Include 2D advection diffusion equation solution state header file */
-#include "../Grid/Cell2D.h"        /* Include 2D cell header file */
-#include "../Grid/Grid2DQuad.h"    /* Include 2D quadrilateral multiblock grid header file */
-#include "../AMR/QuadTree.h"       /* Include quadtree header file */
-#include "../AMR/AMR.h"            /* Include AMR header file */
-#include "AdvectDiffuse2DInput.h"  /* Include 2D advection diffusion equation header file */
-#include "../ICEM/ICEMCFD.h"       /* Include ICEMCFD header file. */
+#include "../Grid/Cell2D.h"            /* Include 2D cell header file */
+#include "../Grid/Grid2DQuad.h"        /* Include 2D quadrilateral multiblock grid header file */
+#include "../AMR/QuadTree.h"           /* Include quadtree header file */
+#include "../AMR/AMR.h"                /* Include AMR header file */
+#include "AdvectDiffuse2DInput.h"      /* Include 2D advection diffusion equation header file */
+#include "../ICEM/ICEMCFD.h"           /* Include ICEMCFD header file. */
+#include "../System/System_Linux.h"    /* Include System Linux header file. */
 
 /* Define the structures and classes. */
 
@@ -127,6 +128,7 @@ public:
   //! @name Solution state arrays:
   //@{
   AdvectDiffuse2D_State_New    **U; //!< Solution state.
+  AdvectDiffuse2D_State_New    **W; //!< Solution state.
   //@}
 
   //! @name Grid block information:
@@ -153,6 +155,8 @@ public:
   //@{
   AdvectDiffuse2D_State_New    **dUdx; //!< Unlimited solution gradient (x-direction).
   AdvectDiffuse2D_State_New    **dUdy; //!< Unlimited solution gradient (y-direction).
+  AdvectDiffuse2D_State_New    **dWdx; //!< Unlimited solution gradient (x-direction).
+  AdvectDiffuse2D_State_New    **dWdy; //!< Unlimited solution gradient (y-direction).
   AdvectDiffuse2D_State_New     **phi; //!< Solution slope limiter.
   //@}
 
@@ -166,9 +170,9 @@ public:
 
   //! @name Problem indicator flags:
   //@{
-  int             Axisymmetric; //!< Axisymmetric geometry indicator.
+  static int      Axisymmetric; //!< Axisymmetric geometry indicator.
   int           Freeze_Limiter; //!< Limiter freezing indicator.
-  static char*   solutionTitle; //!< Solution title info
+  static int         Flow_Type; //!< Flow type flag ( required by AMR ).
   //@}
 
   //! @name Boundary condtion reference states:
@@ -177,6 +181,10 @@ public:
                               *UoS, //!< Boundary condition reference states for south boundary.
                               *UoE, //!< Boundary condition reference states for east boundary.
                               *UoW; //!< Boundary condition reference states for west boundary.
+  AdvectDiffuse2D_State_New   *WoN, //!< Boundary condition reference states for north boundary.
+                              *WoS, //!< Boundary condition reference states for south boundary.
+                              *WoE, //!< Boundary condition reference states for east boundary.
+                              *WoW; //!< Boundary condition reference states for west boundary.
   //@}
 
   //! @name Pointers to exact solutions
@@ -596,7 +604,7 @@ extern void Broadcast_Solution_Block(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 #endif
 
 extern void Copy_Solution_Block(AdvectDiffuse2D_Quad_Block_New &SolnBlk1,
-		                AdvectDiffuse2D_Quad_Block_New &SolnBlk2);
+		                const AdvectDiffuse2D_Quad_Block_New &SolnBlk2);
 
 extern int Prolong_Solution_Block(AdvectDiffuse2D_Quad_Block_New &SolnBlk_Fine,
 				  AdvectDiffuse2D_Quad_Block_New &SolnBlk_Original,
@@ -704,8 +712,6 @@ extern void Apply_Boundary_Flux_Corrections_Multistage_Explicit(AdvectDiffuse2D_
 extern int dUdt_Residual_Evaluation(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 				    AdvectDiffuse2D_Input_Parameters &Input_Parameters);
 
-#if 0
-
 extern int dUdt_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
    	                            const int i_stage,
                                     AdvectDiffuse2D_Input_Parameters &Input_Parameters);
@@ -713,7 +719,6 @@ extern int dUdt_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 extern int Update_Solution_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
    	                                       const int i_stage,
                                                AdvectDiffuse2D_Input_Parameters &Input_Parameters);
-#endif
 
 
 /**************************************************************************
@@ -814,7 +819,6 @@ extern void Apply_Boundary_Flux_Corrections_Multistage_Explicit(AdvectDiffuse2D_
                                                                 AdvectDiffuse2D_Input_Parameters &Input_Parameters,
    	                                                        const int I_Stage);
 
-#if 0
 extern int dUdt_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
 				    AdaptiveBlockResourceList &Global_Soln_Block_List,
                                     AdaptiveBlock2D_List &Local_Soln_Block_List,
@@ -825,26 +829,6 @@ extern int Update_Solution_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New *S
                                                AdaptiveBlock2D_List &Soln_Block_List,
                                                AdvectDiffuse2D_Input_Parameters &Input_Parameters,
    	                                       const int I_Stage);
-
-extern int Initial_AMR2(AdvectDiffuse2D_Quad_Block_New       *Soln_ptr,
-                        AdvectDiffuse2D_Input_Parameters &InputParameters,
-                        QuadTreeBlock_DataStructure      &QuadTree,
-                        AdaptiveBlockResourceList        &GlobalSolnBlockList,
-                        AdaptiveBlock2D_List             &LocalSolnBlockList);
-
-extern int Uniform_AMR2(AdvectDiffuse2D_Quad_Block_New       *Soln_ptr,
-                        AdvectDiffuse2D_Input_Parameters &InputParameters,
-                        QuadTreeBlock_DataStructure      &QuadTree,
-                        AdaptiveBlockResourceList        &GlobalSolnBlockList,
-                        AdaptiveBlock2D_List             &LocalSolnBlockList);
-
-extern int Boundary_AMR2(AdvectDiffuse2D_Quad_Block_New       *Soln_ptr,
-                         AdvectDiffuse2D_Input_Parameters &InputParameters,
-                         QuadTreeBlock_DataStructure      &QuadTree,
-                         AdaptiveBlockResourceList        &GlobalSolnBlockList,
-                         AdaptiveBlock2D_List             &LocalSolnBlockList);
-
-#endif
 
 /********************************************************************************
  * AdvectDiffuse2D_Quad_Block_New -- Multiple Block External Subroutines for Mesh.  *
@@ -877,5 +861,11 @@ extern int Output_Nodes_Tecplot(Grid2D_Quad_Block **Grid_ptr,
 extern int Output_Cells_Tecplot(Grid2D_Quad_Block **Grid_ptr,
                                 AdvectDiffuse2D_Input_Parameters &Input_Parameters);
 
+/**************************************************************************
+ * AdvectDiffuse2D_Quad_Block -- Solvers.                                 *
+ **************************************************************************/
+
+extern int New_AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
+					 int batch_flag);
 
 #endif /* _ADVECTDIFFUSE2D_QUAD_INCLUDED  */

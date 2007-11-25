@@ -20,6 +20,10 @@ int AdvectDiffuse2D_Quad_Block_New::residual_variable = 1;
 AdvectDiffuse2D_Quad_Block_New::Exact_Gradient_Function AdvectDiffuse2D_Quad_Block_New::ExactGrad = NULL;
 // Initialize ExactSoln
 FunctionType2D AdvectDiffuse2D_Quad_Block_New::ExactSoln = NULL;
+// Initialize Flow_Type
+int AdvectDiffuse2D_Quad_Block_New::Flow_Type = FLOWTYPE_INVISCID;
+// Initialize Axisymmetric
+int AdvectDiffuse2D_Quad_Block_New::Axisymmetric = OFF;
 
 
 /*******************************************************************************
@@ -29,12 +33,14 @@ FunctionType2D AdvectDiffuse2D_Quad_Block_New::ExactSoln = NULL;
  * Default constructor.
  **********************/
 AdvectDiffuse2D_Quad_Block_New::AdvectDiffuse2D_Quad_Block_New(void) {
+  Freeze_Limiter = OFF;
+  // Grid size and variables:
   NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0; Nghost = 0;
+  // Solution variables:
   U = NULL; dt = NULL; dUdt = NULL; 
   dUdx = NULL; dUdy = NULL; phi = NULL; Uo = NULL;
   FluxN = NULL; FluxS = NULL; FluxE = NULL; FluxW = NULL;
   UoN = NULL; UoS = NULL; UoE = NULL; UoW = NULL;
-  Axisymmetric = 0; Freeze_Limiter = OFF;
 }
 
 /******************************************
@@ -48,7 +54,7 @@ AdvectDiffuse2D_Quad_Block_New::AdvectDiffuse2D_Quad_Block_New(const AdvectDiffu
   Uo = Soln.Uo;
   FluxN = Soln.FluxN; FluxS = Soln.FluxS; FluxE = Soln.FluxE; FluxW = Soln.FluxW;
   UoN = Soln.UoN; UoS = Soln.UoS; UoE = Soln.UoE; UoW = Soln.UoW;
-  Axisymmetric = Soln.Axisymmetric; Freeze_Limiter = Soln.Freeze_Limiter;
+  Freeze_Limiter = Soln.Freeze_Limiter;
 }
 
 /**********************

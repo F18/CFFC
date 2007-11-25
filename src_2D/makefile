@@ -184,6 +184,7 @@ SRC_ADVECTDIFFUSE = $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DState.cc \
                     $(ADVECTDIFFUSE_DIR)New_AdvectDiffuse2DQuadMultiBlock.cc \
                     $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuadGrid.cc \
                     $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuadSolvers.cc \
+                    $(ADVECTDIFFUSE_DIR)New_AdvectDiffuse2DQuadSolvers.cc \
                     $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuad_NKS.cc \
 		    $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DExactSolutions.cc \
                     $(ADVECTDIFFUSE_DIR)VelocityFields.cc \

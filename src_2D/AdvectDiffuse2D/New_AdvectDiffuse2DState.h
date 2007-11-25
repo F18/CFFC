@@ -106,10 +106,29 @@ public:
 
   //! @name Useful operators.
   //@{
+  //! Return the number of variables.
+  int NumVar(void) { return NUM_VAR_ADVECTDIFFUSE2D; }
+
+  //! Copy operator.
+  void Copy(const AdvectDiffuse2D_State_New &U) { u = U.u; }
+
   //! Vacuum/zero operator.
   void Vacuum(void) { u = ZERO; }
+
   //! Set the pointers to the fields (i.e. velocity, diffusion and source)
   static void Set_Pointers_To_Fields(void);
+  //@}
+
+  //! @name Functions required for multigrid.
+  //@{
+  //! Copy variables solved by multigrid only.
+  void Copy_Multigrid_State_Variables(const AdvectDiffuse2D_State_New &Ufine) { Copy(Ufine); }
+
+  //! Zero variables not-solved by multigrid.
+  void Zero_Non_Multigrid_State_Variables(void){};
+
+  //! Check for unphysical state properties.
+  int Unphysical_Properties(void) const{};
   //@}
 
   //! @name Compute upwind state

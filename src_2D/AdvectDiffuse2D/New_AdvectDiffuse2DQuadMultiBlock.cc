@@ -930,3 +930,85 @@ void Apply_Boundary_Flux_Corrections_Multistage_Explicit(AdvectDiffuse2D_Quad_Bl
   }  /* endfor */
 
 }
+
+/********************************************************
+ * Routine: dUdt_Multistage_Explicit                    *
+ *                                                      *
+ * This routine evaluates the stage solution residual   *
+ * for a 1D array of 2D quadrilateral multi-block       *
+ * solution blocks.  A variety of multistage explicit   *
+ * time integration and a 2nd-ororder limited upwind    *
+ * finite-volume spatial discretization scheme for the  *
+ * convective flux coupled with a centrally-weighted    *
+ * finite-volume discretization for the diffused flux   *
+ * can be used depending on the specified input values. *
+ *                                                      *
+ ********************************************************/
+int dUdt_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+			     AdaptiveBlockResourceList &Global_Soln_Block_List,
+                             AdaptiveBlock2D_List &Local_Soln_Block_List,
+                             AdvectDiffuse2D_Input_Parameters &Input_Parameters,
+   	                     const int I_Stage) {
+
+    int i, error_flag;
+
+    error_flag = 0;
+
+    /* Evaluate the stage solution residual for each solution block. */
+
+    for ( i = 0 ; i <= Local_Soln_Block_List.Nblk-1 ; ++i ) {
+       if (Local_Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
+	
+	 error_flag = dUdt_Multistage_Explicit(Soln_ptr[i],
+					       I_Stage,
+					       Input_Parameters);
+	 if (error_flag) return (error_flag);
+       } /* endif */
+    }  /* endfor */
+
+    /* Residuals for each quadrilateral multi-block solution block
+       successfully calculated.  Return. */
+
+    return(error_flag);
+
+}
+
+/********************************************************
+ * Routine: Update_Solution_Multistage_Explicit         *
+ *                                                      *
+ * This routine updates the solution for a 1D array of  *
+ * 2D quadrilateral multi-block solution blocks.        *
+ * A variety of multistage explicit                     *
+ * time integration and a 2nd-ororder limited upwind    *
+ * finite-volume spatial discretization scheme for the  *
+ * convective flux coupled with a centrally-weighted    *
+ * finite-volume discretization for the diffused flux   *
+ * can be used depending on the specified input values. *
+ *                                                      *
+ ********************************************************/
+int Update_Solution_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+                                        AdaptiveBlock2D_List &Soln_Block_List,
+                                        AdvectDiffuse2D_Input_Parameters &Input_Parameters,
+   	                                const int I_Stage) {
+
+    int i, error_flag;
+
+    error_flag = 0;
+
+    /* Update the solution for each solution block. */
+
+    for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
+       if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
+          error_flag = Update_Solution_Multistage_Explicit(Soln_ptr[i],
+                                                           I_Stage,
+                                                           Input_Parameters);
+          if (error_flag) return (error_flag);
+       } /* endif */
+    }  /* endfor */
+
+    /* Quadrilateral multi-block solution blocks
+       successfully updated.  Return. */
+
+    return(error_flag);
+
+}

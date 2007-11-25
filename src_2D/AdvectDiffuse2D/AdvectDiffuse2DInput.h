@@ -17,6 +17,7 @@
 #include "../ICEM/ICEMCFD.h"      // Include ICEMCFD input header file.
 #include "../Utilities/TypeDefinition.h" // Include TypeDefinition header file.
 #include "AdvectDiffuse2DParameterFields.h" /* Include 2D advection diffusion parameter fields */
+#include "../NewtonKrylovSchwarz2D/NKSInput2D.h" /* Include file for NKS */
 
 /* Define the structures and classes. */
 
@@ -96,6 +97,11 @@ public:
   //! @name Multigrid related input parameters:
   //@{
   Multigrid_Input_Parameters Multigrid_IP;
+  //@}
+
+  //@{ @name Newton-Krylov-Schwarz related input parameters:
+  NKS_Input_Parameters  NKS_IP;
+  int Solver_Type;
   //@}
 
   //! @name Reconstruction type indicator and related input parameters:
