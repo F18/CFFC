@@ -2970,12 +2970,10 @@ Chem2D_pState BC_2DFlame_Inflow(const Chem2D_pState &Wi,
   // omega = 2*pi*freq
   // freq = 20 (Hz)
   // t = physical time (s)
-  if (radius <= 0.002 ){  //fuel spacing 0.002m    
-    Wnew.v.y = 0.70 * ( ONE - (radius*radius)/(0.002*0.002))
-      *(ONE + 0.5*sin( 2*PI*20*physical_time));    // physical_time + 0.0375 to go from 35 -> 35         
-
-//     cout<<"\n "<<radius<<" "<<physical_time<<" "<<Wnew.v.y<<" "<<Wo.v.y;
-  }
+//   if (radius <= 0.002 ){  //fuel spacing 0.002m    
+//     Wnew.v.y = 0.70 * ( ONE - (radius*radius)/(0.002*0.002))
+//       *(ONE + 0.5*sin( 2*PI*20*physical_time));    // physical_time + 0.0375 to go from 35 -> 35         
+//   }
 
 
   return Wnew;

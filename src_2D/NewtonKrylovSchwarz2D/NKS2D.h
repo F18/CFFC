@@ -211,6 +211,10 @@ int Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
     double DTS_dTime(ZERO);
     int physical_time_param(TIME_STEPPING_IMPLICIT_EULER);
     bool IE_Flag = true; //Use Implicit Euler for 1st DTS Step & for AMR 
+
+    //HACK FOUR COUNTERS...
+    //Physical_Time = ZERO; 
+
     Input_Parameters.NKS_IP.Total_Physical_Time = Physical_Time; //BC HACK may need to ZERO when starting from steady state...
 
     // Outer Loop (Physical Time)      
