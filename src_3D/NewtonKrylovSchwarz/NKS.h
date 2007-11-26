@@ -158,9 +158,9 @@ Calculate_Norms(const int &Number_of_Newton_Steps){
   // Calculate 1-, 2-, and max-norms of density residual (dUdt) for all blocks. 
   
   // NEED TO MOD THIS FOR  Number_of_Residual_Norms >1
-  L1norm_current[Solution_Data->Input.p_Norm_Indicator-1] = Solution_Data->Local_Solution_Blocks.L1_Norm_Residual();       
-  L2norm_current[Solution_Data->Input.p_Norm_Indicator-1] = Solution_Data->Local_Solution_Blocks.L2_Norm_Residual();
-  Max_norm_current[Solution_Data->Input.p_Norm_Indicator-1] = Solution_Data->Local_Solution_Blocks.Max_Norm_Residual();
+  L1norm_current[Solution_Data->Input.Residual_Norm-1] = Solution_Data->Local_Solution_Blocks.L1_Norm_Residual(Solution_Data->Input.Residual_Norm);       
+  L2norm_current[Solution_Data->Input.Residual_Norm-1] = Solution_Data->Local_Solution_Blocks.L2_Norm_Residual(Solution_Data->Input.Residual_Norm);
+  Max_norm_current[Solution_Data->Input.Residual_Norm-1] = Solution_Data->Local_Solution_Blocks.Max_Norm_Residual(Solution_Data->Input.Residual_Norm);
   
 //   for(int q=0; q < Solution_Data->Input.Number_of_Residual_Norms; q++){
 //     L1norm_current[q] = CFFC_Summation_MPI(L1norm_current[q]);      // L1 norm for all processors.
@@ -171,20 +171,20 @@ Calculate_Norms(const int &Number_of_Newton_Steps){
   
   //Relative Norms used for CFL scaling during startup
   if (Number_of_Newton_Steps == 1 ) {
-    L2norm_first = L2norm_current[Solution_Data->Input.p_Norm_Indicator-1];
-      //max(L2norm_first,L2norm_current[Solution_Data->Input.p_Norm_Indicator-1]);  //another restart cludge
-    L1norm_first = L1norm_current[Solution_Data->Input.p_Norm_Indicator-1];
-    Max_norm_first = Max_norm_current[Solution_Data->Input.p_Norm_Indicator-1];
+    L2norm_first = L2norm_current[Solution_Data->Input.Residual_Norm-1];
+      //max(L2norm_first,L2norm_current[Solution_Data->Input.Residual_Norm-1]);  //another restart cludge
+    L1norm_first = L1norm_current[Solution_Data->Input.Residual_Norm-1];
+    Max_norm_first = Max_norm_current[Solution_Data->Input.Residual_Norm-1];
   } else {
-    L2norm_first = max(L2norm_first, L2norm_current[Solution_Data->Input.p_Norm_Indicator-1]);
-    L1norm_first = max(L1norm_first, L1norm_current[Solution_Data->Input.p_Norm_Indicator-1]);
-    Max_norm_first = max(Max_norm_first, Max_norm_current[Solution_Data->Input.p_Norm_Indicator-1]);   
+    L2norm_first = max(L2norm_first, L2norm_current[Solution_Data->Input.Residual_Norm-1]);
+    L1norm_first = max(L1norm_first, L1norm_current[Solution_Data->Input.Residual_Norm-1]);
+    Max_norm_first = max(Max_norm_first, Max_norm_current[Solution_Data->Input.Residual_Norm-1]);   
   } 
   
   // Calculate ratio of initial and current 2-norms. 
-  L2norm_current_n   = L2norm_current[Solution_Data->Input.p_Norm_Indicator-1] / L2norm_first; 
-  L1norm_current_n   = L1norm_current[Solution_Data->Input.p_Norm_Indicator-1] / L1norm_first; 
-  Max_norm_current_n = Max_norm_current[Solution_Data->Input.p_Norm_Indicator-1] / Max_norm_first;
+  L2norm_current_n   = L2norm_current[Solution_Data->Input.Residual_Norm-1] / L2norm_first; 
+  L1norm_current_n   = L1norm_current[Solution_Data->Input.Residual_Norm-1] / L1norm_first; 
+  Max_norm_current_n = Max_norm_current[Solution_Data->Input.Residual_Norm-1] / Max_norm_first;
 
   //ADD CHECK FOR NAN's ie. if (L2_norm_current_n != L2_norm_current_n) exit(1);
 
@@ -524,9 +524,9 @@ Steady_Solve(const double &physical_time,const int &DTS_Step){
 			      Data->number_of_explicit_time_steps+real_NKS_Step,  //DTS!!!
 			      physical_time*THOUSAND,
 			      Data->total_cpu_time, 
-			      L1norm_current[Solution_Data->Input.p_Norm_Indicator-1],      //maybe switch to current_n so all scale from 1 ???
-			      L2norm_current[Solution_Data->Input.p_Norm_Indicator-1],
-			      Max_norm_current[Solution_Data->Input.p_Norm_Indicator-1]);  //mod to output "N" norms
+			      L1norm_current[Solution_Data->Input.Residual_Norm-1],      //maybe switch to current_n so all scale from 1 ???
+			      L2norm_current[Solution_Data->Input.Residual_Norm-1],
+			      Max_norm_current[Solution_Data->Input.Residual_Norm-1]);  //mod to output "N" norms
 			      
     }
 
@@ -537,13 +537,13 @@ Steady_Solve(const double &physical_time,const int &DTS_Step){
     /**************************************************************************/
     // Freeze Limiters if Residual less than given value or # of orders of reduction.
     if (Solution_Data->Input.Freeze_Limiter && limiter_check){
-      if (Number_of_Newton_Steps > 1 &&  L2norm_current[Solution_Data->Input.p_Norm_Indicator-1] 
+      if (Number_of_Newton_Steps > 1 &&  L2norm_current[Solution_Data->Input.Residual_Norm-1] 
 	  <= Solution_Data->Input.Freeze_Limiter_Residual_Level)  {    // absolute
 	//if (Number_of_Newton_Steps > 1 &&  L2norm_current_n <= Solution_Data->Input.Freeze_Limiter_Residual_Level)  {  // relative 
 	if (CFFC_Primary_MPI_Processor()) {
 	  cout << "\n\n ********** Apply Limiter Freezing ********** \n";
         } 
-	//Freeze_Limiters(SolnBlk, List_of_Local_Solution_Blocks);	
+	Solution_Data->Local_Solution_Blocks.Freeze_Limiters();
 	limiter_check = false;	
       } 
     } 
@@ -594,7 +594,7 @@ Steady_Solve(const double &physical_time,const int &DTS_Step){
       if (CFFC_Primary_MPI_Processor() && 
 	  (!Solution_Data->Input.NKS_IP.Dual_Time_Stepping || Number_of_Newton_Steps ==1 )) {
 	cout << "\n Newton Step (Outer It.) = " << Number_of_Newton_Steps << " L2norm = "
-	     << L2norm_current[Solution_Data->Input.p_Norm_Indicator-1] << " L2norm_ratio = " << L2norm_current_n 
+	     << L2norm_current[Solution_Data->Input.Residual_Norm-1] << " L2norm_ratio = " << L2norm_current_n 
 	     << " CFL = " << CFL_current <<" min_deltat = "<<CFL_current*dTime;
       } 
       /**************************************************************************/
@@ -651,7 +651,7 @@ Steady_Solve(const double &physical_time,const int &DTS_Step){
 	      L2norm_current_n > Solution_Data->Input.NKS_IP.Min_L2_Norm_Requiring_Jacobian_Update) ) || 
 	   ( Solution_Data->Input.NKS_IP.Dual_Time_Stepping && GMRES_Iters_increaseing) ) {                       
 	
-	cout << "\n Creating/Updating Jacobian Matrix"; cout.flush();
+	if (CFFC_Primary_MPI_Processor() { cout << "\n Creating/Updating Jacobian Matrix"; cout.flush(); }
   
 	//CLOCK
 	clock_t t0 = clock();
@@ -738,7 +738,7 @@ Steady_Solve(const double &physical_time,const int &DTS_Step){
     cout << " " << endl;
     for (int star=0;star<75;star++){cout <<"*";}
     cout << "\nEnd of Newton Steps = " << Number_of_Newton_Steps-1  << " L2norm = "
-	 << L2norm_current[Solution_Data->Input.p_Norm_Indicator-1] << " L2norm_ratio = " << L2norm_current_n << endl;
+	 << L2norm_current[Solution_Data->Input.Residual_Norm-1] << " L2norm_ratio = " << L2norm_current_n << endl;
     for (int star=0;star<75;star++){cout <<"*";}
   } /* endif */
   /**************************************************************************/
