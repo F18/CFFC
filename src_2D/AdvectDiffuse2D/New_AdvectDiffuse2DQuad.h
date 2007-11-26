@@ -35,9 +35,9 @@
  *    Grid      -- Return the solution block quadrilateral grid.
  *      dt      -- Return local time step for the solution block.
  *    dudt      -- Return the solution residuals.
- *    dudx      -- Return the unlimited solution gradients (x-direction)
+ *    dUdx      -- Return the unlimited solution gradients (x-direction)
  *                 for block.
- *    dudy      -- Return the unlimited solution gradients (y-direction)
+ *    dUdy      -- Return the unlimited solution gradients (y-direction)
  *                 for block.
  *     phi      -- Return the solution slope limiter.
  *    FluxN     -- Return array of north boundary solution fluxes.
@@ -128,7 +128,6 @@ public:
   //! @name Solution state arrays:
   //@{
   AdvectDiffuse2D_State_New    **U; //!< Solution state.
-  AdvectDiffuse2D_State_New    **W; //!< Solution state.
   //@}
 
   //! @name Grid block information:
@@ -155,8 +154,6 @@ public:
   //@{
   AdvectDiffuse2D_State_New    **dUdx; //!< Unlimited solution gradient (x-direction).
   AdvectDiffuse2D_State_New    **dUdy; //!< Unlimited solution gradient (y-direction).
-  AdvectDiffuse2D_State_New    **dWdx; //!< Unlimited solution gradient (x-direction).
-  AdvectDiffuse2D_State_New    **dWdy; //!< Unlimited solution gradient (y-direction).
   AdvectDiffuse2D_State_New     **phi; //!< Solution slope limiter.
   //@}
 
@@ -181,10 +178,6 @@ public:
                               *UoS, //!< Boundary condition reference states for south boundary.
                               *UoE, //!< Boundary condition reference states for east boundary.
                               *UoW; //!< Boundary condition reference states for west boundary.
-  AdvectDiffuse2D_State_New   *WoN, //!< Boundary condition reference states for north boundary.
-                              *WoS, //!< Boundary condition reference states for south boundary.
-                              *WoE, //!< Boundary condition reference states for east boundary.
-                              *WoW; //!< Boundary condition reference states for west boundary.
   //@}
 
   //! @name Pointers to exact solutions
