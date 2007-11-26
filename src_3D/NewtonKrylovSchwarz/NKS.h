@@ -651,7 +651,7 @@ Steady_Solve(const double &physical_time,const int &DTS_Step){
 	      L2norm_current_n > Solution_Data->Input.NKS_IP.Min_L2_Norm_Requiring_Jacobian_Update) ) || 
 	   ( Solution_Data->Input.NKS_IP.Dual_Time_Stepping && GMRES_Iters_increaseing) ) {                       
 	
-	cout << "\n Creating/Updating Jacobian Matrix"; cout.flush();
+	if (CFFC_Primary_MPI_Processor() { cout << "\n Creating/Updating Jacobian Matrix"; cout.flush(); }
   
 	//CLOCK
 	clock_t t0 = clock();
