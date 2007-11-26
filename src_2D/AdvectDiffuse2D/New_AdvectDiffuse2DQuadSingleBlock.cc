@@ -817,7 +817,7 @@ void Output_Tecplot(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
   /* Ensure boundary conditions are updated before
      evaluating solution at the nodes. */
     
-  BCs(SolnBlk);
+  BCs(SolnBlk,IP);
 
   /* Output node solution data. */
 
@@ -975,7 +975,7 @@ void Output_Nodes_Tecplot(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
  * \todo Must be revisited!!!
  ********************************************************/
 void ICs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
-	 const int i_ICtype,
+	 const AdvectDiffuse2D_Input_Parameters &IP,
          AdvectDiffuse2D_State_New *Uo) {
 
   int i, j, k;
@@ -985,7 +985,7 @@ void ICs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 
   /* Assign the initial data for the IVP of interest. */
 
-  switch(i_ICtype) {
+  switch(IP.i_ICs) {
   case IC_CONSTANT :
   case IC_UNIFORM :
     // Set the solution state to the initial state Uo[1].
@@ -1179,7 +1179,8 @@ void ICs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
  * 
  * \todo Must be revisited!!!
  ********************************************************/
-void BCs(AdvectDiffuse2D_Quad_Block_New &SolnBlk) {
+void BCs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
+	 const AdvectDiffuse2D_Input_Parameters &IP) {
 
   int i, j;
   double dx_norm, du, dudx;

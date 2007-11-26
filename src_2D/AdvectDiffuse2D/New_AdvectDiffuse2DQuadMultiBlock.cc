@@ -89,7 +89,7 @@ void ICs(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
 
       // Set initial data.
       ICs(Soln_ptr[i], 
-	  Input_Parameters.i_ICs,
+	  Input_Parameters,
 	  Uo);
 
     } /* endif */
@@ -618,7 +618,7 @@ void BCs(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
 
   for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
     if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
-      BCs(Soln_ptr[i]);
+      BCs(Soln_ptr[i], Input_Parameters);
     } /* endif */
   }  /* endfor */
 
@@ -775,6 +775,76 @@ double Max_Norm_Residual(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
   /* Return the maximum norm. */
 
   return (max_norm);
+
+}
+
+/********************************************************
+ * Routine: L1_Norm_Residual                            *
+ *                                                      *
+ * Determines the L1-norm of the solution residual for  *
+ * a 1D array of 2D quadrilateral multi-block solution  *
+ * blocks.  Useful for monitoring convergence of the    *
+ * solution for steady state problems.                  *
+ *                                                      *
+ ********************************************************/
+void L1_Norm_Residual(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+		      AdaptiveBlock2D_List &Soln_Block_List,
+		      double *l1_norm) {
+
+  /* Calculate the L1-norm. Sum the L1-norm for each solution block. */
+  l1_norm[0] = ZERO;
+  for (int i = 0 ; i < Soln_Block_List.Nblk; ++i ) {
+    if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {     
+      l1_norm[0] += L1_Norm_Residual(Soln_ptr[i]);       
+    }
+  }
+
+}
+
+/********************************************************
+ * Routine: L2_Norm_Residual                            *
+ *                                                      *
+ * Determines the L2-norm of the solution residual for  *
+ * a 1D array of 2D quadrilateral multi-block solution  *
+ * blocks.  Useful for monitoring convergence of the    *
+ * solution for steady state problems.                  *
+ *                                                      *
+ ********************************************************/
+void L2_Norm_Residual(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+		      AdaptiveBlock2D_List &Soln_Block_List,
+		      double *l2_norm) {
+
+  /* Sum the square of the L2-norm for each solution block. */
+  l2_norm[0] =ZERO;
+  for (int i = 0 ; i < Soln_Block_List.Nblk; ++i ) {
+    if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
+      l2_norm[0] += sqr(L2_Norm_Residual(Soln_ptr[i]));     
+    } 
+  }  
+  l2_norm[0] = sqrt(l2_norm[0]);
+
+}
+
+/********************************************************
+ * Routine: Max_Norm_Residual                           *
+ *                                                      *
+ * Determines the maximum norm of the solution residual *
+ * for a 1D array of 2D quadrilateral multi-block       *
+ * solution blocks.  Useful for monitoring convergence  *
+ * of the solution for steady state problems.           *
+ *                                                      *
+ ********************************************************/
+void Max_Norm_Residual(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+		       AdaptiveBlock2D_List &Soln_Block_List,
+		       double *max_norm) {
+  
+  /* Find the maximum norm for all solution blocks. */
+  max_norm[0] = ZERO;
+  for (int i = 0 ; i < Soln_Block_List.Nblk ; ++i ) {
+    if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
+      max_norm[0] = max(max_norm[0], Max_Norm_Residual(Soln_ptr[i]));
+    } 
+  } 
 
 }
 

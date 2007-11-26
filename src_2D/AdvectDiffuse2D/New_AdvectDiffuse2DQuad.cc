@@ -24,6 +24,8 @@ FunctionType2D AdvectDiffuse2D_Quad_Block_New::ExactSoln = NULL;
 int AdvectDiffuse2D_Quad_Block_New::Flow_Type = FLOWTYPE_INVISCID;
 // Initialize Axisymmetric
 int AdvectDiffuse2D_Quad_Block_New::Axisymmetric = OFF;
+// Initialize Number_of_Residual_Norms
+int AdvectDiffuse2D_Quad_Block_New::Number_of_Residual_Norms = 1;
 
 
 /*******************************************************************************

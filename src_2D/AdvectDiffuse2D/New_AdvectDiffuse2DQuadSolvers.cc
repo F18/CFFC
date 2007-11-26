@@ -10,7 +10,7 @@
 /* Include CFFC header files */
 #include "New_AdvectDiffuse2DQuad.h" /* Include 2D advection diffusion equation quadrilateral mesh solution header file. */
 #include "AdvectDiffuse2DQuadFASMultigrid.h" /* Include the multigrid header file. */
-#include "../NewtonKrylovSchwarz2D/NKS2D.h"  /* Include 2D Newton-Krylov-Schwarz solver header file. */
+#include "AdvectDiffuse2DQuadNKS.h"          /* Include 2D Newton-Krylov-Schwarz solver header file for advection-diffusion. */
 
 /******************************************************//**
  * Routine: AdvectDiffuse2DQuadSolver                   
@@ -777,7 +777,6 @@ int New_AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
   
   if(!batch_flag) { time(&end_explicit); }
 
-#if 0
 
   /*************************************************************************************************************************/
   /************************ APPLY Newton_Krylov_Schwarz ********************************************************************/
@@ -859,7 +858,7 @@ int New_AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
   /*************************************************************************************************************************/
   /*************************************************************************************************************************/
   /*************************************************************************************************************************/
-#endif
+
   /********************************************************
    * Solution calculations complete.                      *
    * Write 2D advection diffusion solution to output and  *

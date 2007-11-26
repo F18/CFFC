@@ -148,6 +148,7 @@ public:
   AdvectDiffuse2D_State_New   ***dUdt; //!< Solution residual.
   AdvectDiffuse2D_State_New      **Uo; //!< Initial solution.
   static int residual_variable;        //!< Static integer that indicates which variable is used for residual calculations.
+  static int Number_of_Residual_Norms; //!< How many Residual norms to plot?
   //@}
 
   //! @name Solution gradient arrays:
@@ -609,8 +610,6 @@ extern int Restrict_Solution_Block(AdvectDiffuse2D_Quad_Block_New &SolnBlk_Coars
 				   AdvectDiffuse2D_Quad_Block_New &SolnBlk_Original_NW,
 				   AdvectDiffuse2D_Quad_Block_New &SolnBlk_Original_NE);
 
-extern void BCs(AdvectDiffuse2D_Quad_Block_New &SolnBlk);
-
 extern void Output_Tecplot(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 			   AdvectDiffuse2D_Input_Parameters &IP,
 		           const int Number_of_Time_Steps,
@@ -635,8 +634,11 @@ extern void Output_Nodes_Tecplot(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 	                         ostream &Out_File);
 
 extern void ICs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
- 	        const int i_ICtype,
+ 	        const AdvectDiffuse2D_Input_Parameters &IP,
                 AdvectDiffuse2D_State_New *Wo);
+
+extern void BCs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
+		const AdvectDiffuse2D_Input_Parameters &IP);
 
 extern double CFL(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
                   AdvectDiffuse2D_Input_Parameters &Input_Parameters);
@@ -792,6 +794,18 @@ extern double L2_Norm_Residual(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
 
 extern double Max_Norm_Residual(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
                                 AdaptiveBlock2D_List &Soln_Block_List);
+
+extern void L1_Norm_Residual(AdvectDiffuse2D_Quad_Block_New *Soln_ptr, 
+			     AdaptiveBlock2D_List &Soln_Block_List,
+			     double *l1_norm);
+
+extern void L2_Norm_Residual(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+			     AdaptiveBlock2D_List &Soln_Block_List,
+			     double *l2_norm);
+
+extern void Max_Norm_Residual(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+			      AdaptiveBlock2D_List &Soln_Block_List,
+			      double *max_norm);
 
 extern void Evaluate_Limiters(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
                               AdaptiveBlock2D_List &Soln_Block_List);
