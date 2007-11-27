@@ -482,6 +482,8 @@ inline ostream &operator << (ostream &out_file,
       case GRID_CIRCULAR_CYLINDER :
         out_file << "\n  -> Cylinder Radius (m): " 
                  << IP.Cylinder_Radius;
+        out_file << "\n  -> Cylinder Outer Radius (m): " 
+                 << IP.Cylinder_Radius2;
         break;
       case GRID_ELLIPSE :
         out_file << "\n  -> Width of Ellipse along x-axis (m): " 
