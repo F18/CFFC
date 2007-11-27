@@ -1,0 +1,161 @@
+			##############################
+			# AdvectDiffuse2D input file #
+			##############################
+
+			########################
+			# Set solver parameters
+			########################
+
+Time_Integration_Type =
+	#Explicit_Euler
+	Explicit_Predictor_Corrector
+
+Time_Accurate = 
+		0
+
+Flow_Geometry_Type = 
+		Planar
+
+Local_Time_Stepping =
+		0
+
+Reconstruction_Type =
+	#Least_Squares 
+	CENO
+
+Space_Accuracy = 
+	    4
+
+Limiter_Type = 
+	 Barth_Jespersen
+	# Venkatakrishnan
+	# Zero
+
+	#########################
+	# Set initial conditions
+	#########################
+ICs_Type =
+	# Restart 
+	 Riemann_Xdir
+	#Riemann
+Kappa =
+	1
+# Values for DiffusionFields
+Diffusion_Field = 
+	# No_Diffusion
+	Constant
+Diffusion_Coefficient =
+	0.01
+
+a = 
+	0
+b =
+	0
+Tau =
+	1.0e8
+Velocity_Field_Type =
+	Zero
+
+# Values for VelocityFields
+Velocity_Field =
+	#Uniform_Ydir
+	Rotational
+Velocity_Ydir =
+	-150.23
+Flow_Velocity = 
+	150.23
+#Flow_Angle = 
+    #	14.56
+Angular_Velocity = 
+	2.56
+Center_Of_Rotation = 
+	1.5  2.4
+Angular_Velocity_Variation =
+	Constant
+	#Inverse_Proportional_Distance
+
+
+# Values for SourceTermFields
+Source_Field =
+	Exponential_Variation
+
+Source_Exponential_A = 
+		2.3
+Source_Exponential_Beta =
+		-3.4
+
+		################################
+		#  DEFINE BOUNDARY CONDITIONS  #
+		################################
+Boundary_Conditions_Specified =
+		  On
+		# Off
+BC_North =
+	Neumann
+	# Constant_Extrapolation
+BC_South =
+	Neumann
+	# Constant_Extrapolation
+BC_East =
+	Dirichlet
+	# Constant_Extrapolation
+BC_West =
+	Dirichlet
+	# Constant_Extrapolation
+
+Grid_Type =
+	#	Square
+	Rectangular_Box
+
+Box_Width =
+	2.00
+Box_Height =
+	2.00
+Number_of_Cells_Idir = 
+	100
+Number_of_Cells_Jdir =
+	100
+Number_of_Blocks_Idir = 
+	1
+Number_of_Blocks_Jdir =
+	1
+Number_of_Ghost_Cells =
+	2
+Number_of_Blocks_Per_Processor =
+	5
+
+
+	###############################
+	# Set time stepping parameters
+	###############################
+CFL_Number =
+	0.50
+Maximum_Number_of_Time_Steps =
+	1
+Time_Max = 
+	1.00
+Output_File_Name = 
+	riemann
+Restart_Solution_Save_Frequency = 
+	300
+
+	#######################
+	# Execute program
+	#######################
+Execute
+
+#######################
+# Write output
+#######################
+Write_Output
+Write_Output_Cells
+Write_Output_Mesh
+Write_Output_Mesh_Cells
+Write_Output_Mesh_Nodes
+Write_Restart
+#Write_Mesh_Definition
+
+#######################
+# Terminate program
+#######################
+Terminate
