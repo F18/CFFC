@@ -1871,6 +1871,8 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
       IP.Box_Height = ONE;
     } else if (strcmp(IP.Grid_Type, "Periodic_Box") == 0) {
       IP.i_Grid = GRID_PERIODIC_BOX;
+    } else if (strcmp(IP.Grid_Type, "Interior_Inflow_Outflow_Box") == 0) {
+      IP.i_Grid = GRID_INTERIOR_INFLOW_OUTFLOW_BOX;
     } else if (strcmp(IP.Grid_Type, "Flat_Plate") == 0) {
       IP.i_Grid = GRID_FLAT_PLATE;
       IP.Plate_Length = ONE;

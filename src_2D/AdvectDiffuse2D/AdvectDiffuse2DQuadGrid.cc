@@ -22,6 +22,7 @@ Grid2D_Quad_Block** Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
                                      AdvectDiffuse2D_Input_Parameters &Input_Parameters) {
 
   int iBlk, jBlk;
+  int HiBlk, HjBlk;
 
   /* Generate appropriate mesh. */
 
@@ -144,6 +145,54 @@ Grid2D_Quad_Block** Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
       } 
     }  
 
+    break;   
+  case GRID_INTERIOR_INFLOW_OUTFLOW_BOX :
+    // This grid has a "cut" along the positive x axis, starting from (0,0).
+    // Along this cut an inflow BC is specified on the upper edge and an outflow BC
+    // is imposed on the lower edge.
+
+    // Ensure that the grid is generated with an even
+    //  number of blocks in order to obtain symmetry.
+    Input_Parameters.Number_of_Blocks_Idir += Input_Parameters.Number_of_Blocks_Idir % 2;
+    Input_Parameters.Number_of_Blocks_Jdir += Input_Parameters.Number_of_Blocks_Jdir % 2;
+
+    // Generate a rectangular box
+    Grid_ptr = Grid_Rectangular_Box(Grid_ptr,
+				    Input_Parameters.Number_of_Blocks_Idir,
+				    Input_Parameters.Number_of_Blocks_Jdir,
+				    Input_Parameters.Box_Width,
+				    Input_Parameters.Box_Height,
+				    Input_Parameters.i_Mesh_Stretching,
+				    Input_Parameters.Mesh_Stretching_Type_Idir,
+				    Input_Parameters.Mesh_Stretching_Type_Jdir,
+				    Input_Parameters.Mesh_Stretching_Factor_Idir,
+				    Input_Parameters.Mesh_Stretching_Factor_Jdir,
+				    Input_Parameters.Number_of_Cells_Idir,
+				    Input_Parameters.Number_of_Cells_Jdir,
+				    Input_Parameters.Number_of_Ghost_Cells);
+
+    // Impose the proper boundary conditions for the current grid type.
+    HiBlk = Input_Parameters.Number_of_Blocks_Idir/2;
+    HjBlk = Input_Parameters.Number_of_Blocks_Jdir/2;
+
+    for (iBlk = HiBlk; iBlk <= Input_Parameters.Number_of_Blocks_Idir-1; ++iBlk ){
+
+      // Impose the inflow BC on the upper edge of the cut to all affected blocks
+      Grid_ptr[iBlk][HjBlk  ].BndSouthSpline.setBCtype(BC_INFLOW);
+
+      // Update BCs and geometry
+      Set_BCs(Grid_ptr[iBlk][HjBlk ]);
+      Update_Exterior_Nodes(Grid_ptr[iBlk][HjBlk ]);
+      Update_Cells(Grid_ptr[iBlk][HjBlk ]);
+
+      // Impose the outflow BC on the lower edge of the cut to all affected blocks
+      Grid_ptr[iBlk][HjBlk-1].BndNorthSpline.setBCtype(BC_OUTFLOW);
+
+      // Update BCs and geometry
+      Set_BCs(Grid_ptr[iBlk][HjBlk-1]);
+      Update_Exterior_Nodes(Grid_ptr[iBlk][HjBlk-1]);
+      Update_Cells(Grid_ptr[iBlk][HjBlk-1]);
+    }
     break;   
   case GRID_FLAT_PLATE :
     Grid_ptr = Grid_Flat_Plate(Grid_ptr,

@@ -243,6 +243,7 @@ inline char *Date_And_Time() {
 #define GRID_MIXING_LAYER_BOX                56
 #define GRID_2DTURBULENT_PREMIXED_FLAME      57
 #define GRID_VORTEX_BOX                      58
+#define GRID_INTERIOR_INFLOW_OUTFLOW_BOX     59
 
 #define GRID_TEST                         12345
 
