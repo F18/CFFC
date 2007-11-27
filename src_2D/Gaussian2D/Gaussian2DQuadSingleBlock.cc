@@ -3438,642 +3438,642 @@ void Linear_Reconstruction_LeastSquares(Gaussian2D_Quad_Block &SolnBlk,
 
       /////////////left edge//////////////////
 
-    } else if (i == SolnBlk.ICl-SolnBlk.Nghost+1) {
-        //bottom or top left corner (never used to evaluate fluxes, therefore
-        //no reconstruction needed
-      if(j == SolnBlk.JCl-SolnBlk.Nghost+1 || j == SolnBlk.JCu+SolnBlk.Nghost-1){
-	n_pts = 0;
-	//left edge, may need reconstruction
-        //(only for BC_NONE and BC_PERIODIC)???
-      } else if(SolnBlk.Grid.BCtypeW[j] == BC_FIXED ||
-                SolnBlk.Grid.BCtypeW[j] == BC_CHARACTERISTIC ||
-                SolnBlk.Grid.BCtypeW[j] == BC_LINEAR_EXTRAPOLATION ||
-                SolnBlk.Grid.BCtypeW[j] == BC_COUETTE ||
-                SolnBlk.Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
-                SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
-                SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
-                SolnBlk.Grid.BCtypeW[j] == BC_TEMPERATURE_SLIP ||
-                SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL) {
-	n_pts = 0;
-      } else { //BC's are Periodic or "none"
-	  //Bottom left
-	if(j == SolnBlk.JCl-SolnBlk.Nghost+2 &&
-               (SolnBlk.Grid.BCtypeS[i] == BC_FIXED ||
-                SolnBlk.Grid.BCtypeS[i] == BC_CHARACTERISTIC ||
-                SolnBlk.Grid.BCtypeS[i] == BC_LINEAR_EXTRAPOLATION ||
-                SolnBlk.Grid.BCtypeS[i] == BC_COUETTE              ||
-                SolnBlk.Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
-                SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
-                SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
-                SolnBlk.Grid.BCtypeS[i] == BC_TEMPERATURE_SLIP ||
-                SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL)) {
-	  n_pts = 5;
-	  i_index[0] = i-1; j_index[0] = j;
-	  i_index[1] = i-1; j_index[1] = j+1;
-	  i_index[2] = i;   j_index[2] = j+1;
-	  i_index[3] = i+1; j_index[3] = j+1;
-	  i_index[4] = i+1; j_index[4] = j;
-	  //Top Left
-	} else if (j == SolnBlk.JCu+SolnBlk.Nghost-2 &&
-                       (SolnBlk.Grid.BCtypeN[i] == BC_FIXED ||
-                        SolnBlk.Grid.BCtypeN[i] == BC_CHARACTERISTIC ||
-                        SolnBlk.Grid.BCtypeN[i] == BC_LINEAR_EXTRAPOLATION ||
-                        SolnBlk.Grid.BCtypeN[i] == BC_COUETTE ||
-                        SolnBlk.Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
-                        SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
-                        SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
-                        SolnBlk.Grid.BCtypeN[i] == BC_TEMPERATURE_SLIP ||
-                        SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL)) {
-	  n_pts = 5;
-	  i_index[0] = i-1; j_index[0] = j;
-	  i_index[1] = i-1; j_index[1] = j-1;
-	  i_index[2] = i;   j_index[2] = j-1;
-	  i_index[3] = i+1; j_index[3] = j-1;
-	  i_index[4] = i+1; j_index[4] = j;
-	  //middle left
-	} else {
-	  n_pts = 8;
-	  i_index[0] = i-1; j_index[0] = j-1;
-	  i_index[1] = i-1; j_index[1] = j;
-	  i_index[2] = i-1; j_index[2] = j+1;
-	  i_index[3] = i;   j_index[3] = j+1;
-	  i_index[4] = i+1; j_index[4] = j+1;
-	  i_index[5] = i+1; j_index[5] = j;
-	  i_index[6] = i+1; j_index[6] = j-1;
-	  i_index[7] = i;   j_index[7] = j-1;
-	} //endif
-      } //endif
-
-      /////////////Right edge//////////////////
-
-    } else if (i == SolnBlk.ICu+SolnBlk.Nghost-1) {
-        //bottom or top left corner (never used to evaluate fluxes, therefore
-        //no reconstruction needed
-      if(j == SolnBlk.JCl-SolnBlk.Nghost+1 || j == SolnBlk.JCu+SolnBlk.Nghost-1){
-	n_pts = 0;
-	//right edge, may need reconstruction
-        //(only for BC_NONE and BC_PERIODIC)???
-      } else if(SolnBlk.Grid.BCtypeE[j] == BC_FIXED ||
-                SolnBlk.Grid.BCtypeE[j] == BC_CHARACTERISTIC ||
-                SolnBlk.Grid.BCtypeE[j] == BC_LINEAR_EXTRAPOLATION ||
-                SolnBlk.Grid.BCtypeE[j] == BC_COUETTE ||
-                SolnBlk.Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
-                SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
-                SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
-                SolnBlk.Grid.BCtypeE[j] == BC_TEMPERATURE_SLIP ||
-                SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL) {
-	n_pts = 0;
-      } else { //BC's are Periodic or "none"
-	  //Bottom right
-	if(j == SolnBlk.JCl-SolnBlk.Nghost+2 &&
-               (SolnBlk.Grid.BCtypeS[i] == BC_FIXED ||
-                SolnBlk.Grid.BCtypeS[i] == BC_CHARACTERISTIC ||
-                SolnBlk.Grid.BCtypeS[i] == BC_LINEAR_EXTRAPOLATION ||
-                SolnBlk.Grid.BCtypeS[i] == BC_COUETTE ||
-                SolnBlk.Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
-                SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
-                SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
-                SolnBlk.Grid.BCtypeS[i] == BC_TEMPERATURE_SLIP ||
-                SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL)) {
-	  n_pts = 5;
-	  i_index[0] = i-1; j_index[0] = j;
-	  i_index[1] = i-1; j_index[1] = j+1;
-	  i_index[2] = i;   j_index[2] = j+1;
-	  i_index[3] = i+1; j_index[3] = j+1;
-	  i_index[4] = i+1; j_index[4] = j;
-	  //Top right
-	} else if (j == SolnBlk.JCu+SolnBlk.Nghost-2 &&
-                       (SolnBlk.Grid.BCtypeN[i] == BC_FIXED ||
-                        SolnBlk.Grid.BCtypeN[i] == BC_CHARACTERISTIC ||
-                        SolnBlk.Grid.BCtypeN[i] == BC_LINEAR_EXTRAPOLATION ||
-                        SolnBlk.Grid.BCtypeN[i] == BC_COUETTE              ||
-                        SolnBlk.Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
-                        SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
-                        SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
-                        SolnBlk.Grid.BCtypeN[i] == BC_TEMPERATURE_SLIP ||
-                        SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL)) {
-	  n_pts = 5;
-	  i_index[0] = i-1; j_index[0] = j;
-	  i_index[1] = i-1; j_index[1] = j-1;
-	  i_index[2] = i;   j_index[2] = j-1;
-	  i_index[3] = i+1; j_index[3] = j-1;
-	  i_index[4] = i+1; j_index[4] = j;
-	  //middle right or top or bottom with none or priodic bc's
-	} else {
-	  n_pts = 8;
-	  i_index[0] = i-1; j_index[0] = j-1;
-	  i_index[1] = i-1; j_index[1] = j;
-	  i_index[2] = i-1; j_index[2] = j+1;
-	  i_index[3] = i;   j_index[3] = j+1;
-	  i_index[4] = i+1; j_index[4] = j+1;
-	  i_index[5] = i+1; j_index[5] = j;
-	  i_index[6] = i+1; j_index[6] = j-1;
-	  i_index[7] = i;   j_index[7] = j-1;
-	} //endif
-      } //endif
-
-      /////////////bottom edge/////////////
-      // (corners already taken care of) //
-
-    } else if (j == SolnBlk.JCl-SolnBlk.Nghost+1) {
-      if(SolnBlk.Grid.BCtypeS[i] == BC_FIXED ||
-         SolnBlk.Grid.BCtypeS[i] == BC_CHARACTERISTIC ||
-         SolnBlk.Grid.BCtypeS[i] == BC_LINEAR_EXTRAPOLATION ||
-         SolnBlk.Grid.BCtypeS[i] == BC_COUETTE              ||
-         SolnBlk.Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
-         SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
-         SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
-         SolnBlk.Grid.BCtypeS[i] == BC_TEMPERATURE_SLIP ||
-         SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL) {
-	n_pts = 0;
-      } else { //BC's are Periodic or "none"
-	  //Bottom left
-	if(i == SolnBlk.ICl-SolnBlk.Nghost+2 &&
-               (SolnBlk.Grid.BCtypeW[j] == BC_FIXED ||
-                SolnBlk.Grid.BCtypeW[j] == BC_CHARACTERISTIC ||
-                SolnBlk.Grid.BCtypeW[j] == BC_LINEAR_EXTRAPOLATION ||
-                SolnBlk.Grid.BCtypeW[j] == BC_COUETTE              ||
-                SolnBlk.Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
-                SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
-                SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
-                SolnBlk.Grid.BCtypeW[j] == BC_TEMPERATURE_SLIP ||
-                SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL)) {
-	  n_pts = 5;
-	  i_index[0] = i;   j_index[0] = j+1;
-	  i_index[1] = i+1; j_index[1] = j+1;
-	  i_index[2] = i+1; j_index[2] = j;
-	  i_index[3] = i+1; j_index[3] = j-1;
-	  i_index[4] = i;   j_index[4] = j-1;
-	  //Bottom right
-	} else if (i == SolnBlk.ICu+SolnBlk.Nghost-2 &&
-                       (SolnBlk.Grid.BCtypeE[j] == BC_FIXED ||
-                        SolnBlk.Grid.BCtypeE[j] == BC_CHARACTERISTIC ||
-                        SolnBlk.Grid.BCtypeE[j] == BC_LINEAR_EXTRAPOLATION ||
-                        SolnBlk.Grid.BCtypeE[j] == BC_COUETTE ||
-                        SolnBlk.Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
-                        SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
-                        SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
-                        SolnBlk.Grid.BCtypeE[j] == BC_TEMPERATURE_SLIP ||
-                        SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL)) {
-	  n_pts = 5;
-	  i_index[0] = i;   j_index[0] = j+1;
-	  i_index[1] = i-1; j_index[1] = j+1;
-	  i_index[2] = i-1; j_index[2] = j;
-	  i_index[3] = i-1; j_index[3] = j-1;
-	  i_index[4] = i;   j_index[4] = j-1;
-	  //middle bottom or left or right with none or priodic bc's
-	} else {
-	  n_pts = 8;
-	  i_index[0] = i-1; j_index[0] = j-1;
-	  i_index[1] = i-1; j_index[1] = j;
-	  i_index[2] = i-1; j_index[2] = j+1;
-	  i_index[3] = i;   j_index[3] = j+1;
-	  i_index[4] = i+1; j_index[4] = j+1;
-	  i_index[5] = i+1; j_index[5] = j;
-	  i_index[6] = i+1; j_index[6] = j-1;
-	  i_index[7] = i;   j_index[7] = j-1;
-	} //endif
-      } //endif
-
-      /////////////top edge/////////////
-      // (corners already taken care of) //
-
-    } else if (j == SolnBlk.JCu+SolnBlk.Nghost-1) {
-      if(SolnBlk.Grid.BCtypeN[i] == BC_FIXED ||
-         SolnBlk.Grid.BCtypeN[i] == BC_CHARACTERISTIC ||
-         SolnBlk.Grid.BCtypeN[i] == BC_LINEAR_EXTRAPOLATION ||
-         SolnBlk.Grid.BCtypeN[i] == BC_COUETTE ||
-         SolnBlk.Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
-         SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
-         SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
-         SolnBlk.Grid.BCtypeN[i] == BC_TEMPERATURE_SLIP ||
-         SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL) {
-	n_pts = 0;
-      } else { //BC's are Periodic or "none"
-	  //Top left
-	if(i == SolnBlk.ICl-SolnBlk.Nghost+2 &&
-               (SolnBlk.Grid.BCtypeW[j] == BC_FIXED ||
-                SolnBlk.Grid.BCtypeW[j] == BC_CHARACTERISTIC ||
-                SolnBlk.Grid.BCtypeW[j] == BC_LINEAR_EXTRAPOLATION ||
-                SolnBlk.Grid.BCtypeW[j] == BC_COUETTE ||
-                SolnBlk.Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
-                SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
-                SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
-                SolnBlk.Grid.BCtypeW[j] == BC_TEMPERATURE_SLIP ||
-                SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL)) {
-	  n_pts = 5;
-	  i_index[0] = i;   j_index[0] = j+1;
-	  i_index[1] = i+1; j_index[1] = j+1;
-	  i_index[2] = i+1; j_index[2] = j;
-	  i_index[3] = i+1; j_index[3] = j-1;
-	  i_index[4] = i;   j_index[4] = j-1;
-	  //Top right
-	} else if (i == SolnBlk.ICu+SolnBlk.Nghost-2 &&
-                       (SolnBlk.Grid.BCtypeE[j] == BC_FIXED ||
-                        SolnBlk.Grid.BCtypeE[j] == BC_CHARACTERISTIC ||
-                        SolnBlk.Grid.BCtypeE[j] == BC_LINEAR_EXTRAPOLATION ||
-                        SolnBlk.Grid.BCtypeE[j] == BC_COUETTE ||
-                        SolnBlk.Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
-                        SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
-                        SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
-                        SolnBlk.Grid.BCtypeE[j] == BC_TEMPERATURE_SLIP ||
-                        SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL)) {
-	  n_pts = 5;
-	  i_index[0] = i;   j_index[0] = j+1;
-	  i_index[1] = i-1; j_index[1] = j+1;
-	  i_index[2] = i-1; j_index[2] = j;
-	  i_index[3] = i-1; j_index[3] = j-1;
-	  i_index[4] = i;   j_index[4] = j-1;
-	  //top bottom or left or right with none or priodic bc's
-	} else {
-	  n_pts = 8;
-	  i_index[0] = i-1; j_index[0] = j-1;
-	  i_index[1] = i-1; j_index[1] = j;
-	  i_index[2] = i-1; j_index[2] = j+1;
-	  i_index[3] = i;   j_index[3] = j+1;
-	  i_index[4] = i+1; j_index[4] = j+1;
-	  i_index[5] = i+1; j_index[5] = j;
-	  i_index[6] = i+1; j_index[6] = j-1;
-	  i_index[7] = i;   j_index[7] = j-1;
-	} //endif
-      } //endif
-    
-      /////////First Cell Inside Computational Domain////////
-
-      //bottom left
-    } else if (i == SolnBlk.ICl-SolnBlk.Nghost+2 && 
-	       j == SolnBlk.JCl-SolnBlk.Nghost+2) {
-      if((SolnBlk.Grid.BCtypeW[j] == BC_CHARACTERISTIC ||
-          SolnBlk.Grid.BCtypeW[j] == BC_LINEAR_EXTRAPOLATION ||
-          SolnBlk.Grid.BCtypeW[j] == BC_COUETTE ||
-          SolnBlk.Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
-          SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
-          SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
-          SolnBlk.Grid.BCtypeW[j] == BC_TEMPERATURE_SLIP ||
-          SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL)
-                           &&
-         (SolnBlk.Grid.BCtypeS[i] == BC_CHARACTERISTIC ||
-          SolnBlk.Grid.BCtypeS[i] == BC_LINEAR_EXTRAPOLATION ||
-          SolnBlk.Grid.BCtypeS[i] == BC_COUETTE ||
-          SolnBlk.Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
-          SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
-          SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
-          SolnBlk.Grid.BCtypeS[i] == BC_TEMPERATURE_SLIP ||
-          SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL)) {
-	n_pts = 3;
-	i_index[0] = i;   j_index[0] = j+1;
-	i_index[1] = i+1; j_index[1] = j+1;
-	i_index[2] = i+1; j_index[2] = j;
-      } else if (SolnBlk.Grid.BCtypeS[i] == BC_CHARACTERISTIC ||
-                 SolnBlk.Grid.BCtypeS[i] == BC_LINEAR_EXTRAPOLATION ||
-                 SolnBlk.Grid.BCtypeS[i] == BC_COUETTE ||
-                 SolnBlk.Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
-                 SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
-                 SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
-                 SolnBlk.Grid.BCtypeS[i] == BC_TEMPERATURE_SLIP ||
-                 SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL) {
-	n_pts = 5;
-	i_index[0] = i-1; j_index[0] = j;
-	i_index[1] = i-1; j_index[1] = j+1;
-	i_index[2] = i;   j_index[2] = j+1;
-	i_index[3] = i+1; j_index[3] = j+1;
-	i_index[4] = i+1; j_index[4] = j;
-      } else if (SolnBlk.Grid.BCtypeW[j] == BC_CHARACTERISTIC ||
-                 SolnBlk.Grid.BCtypeW[j] == BC_LINEAR_EXTRAPOLATION ||
-                 SolnBlk.Grid.BCtypeW[j] == BC_COUETTE ||
-                 SolnBlk.Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
-                 SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
-                 SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
-                 SolnBlk.Grid.BCtypeW[j] == BC_TEMPERATURE_SLIP ||
-                 SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL) {
-	n_pts = 5;
-	i_index[0] = i;   j_index[0] = j+1;
-	i_index[1] = i+1; j_index[1] = j+1;
-	i_index[2] = i+1; j_index[2] = j;
-	i_index[3] = i+1; j_index[3] = j-1;
-	i_index[4] = i;   j_index[4] = j-1;
-      } else {
-        n_pts = 8;
-	i_index[0] = i-1; j_index[0] = j-1;
-	i_index[1] = i-1; j_index[1] = j;
-	i_index[2] = i-1; j_index[2] = j+1;
-	i_index[3] = i;   j_index[3] = j+1;
-	i_index[4] = i+1; j_index[4] = j+1;
-	i_index[5] = i+1; j_index[5] = j;
-	i_index[6] = i+1; j_index[6] = j-1;
-	i_index[7] = i;   j_index[7] = j-1;
-      } //endif
-
-      //top left
-    } else if (i == SolnBlk.ICl-SolnBlk.Nghost+2 && 
-	       j == SolnBlk.JCu+SolnBlk.Nghost-2) {
-      if((SolnBlk.Grid.BCtypeW[j] == BC_CHARACTERISTIC ||
-          SolnBlk.Grid.BCtypeW[j] == BC_LINEAR_EXTRAPOLATION ||
-          SolnBlk.Grid.BCtypeW[j] == BC_COUETTE ||
-          SolnBlk.Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
-          SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
-          SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
-          SolnBlk.Grid.BCtypeW[j] == BC_TEMPERATURE_SLIP ||
-          SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL)
-                           &&
-         (SolnBlk.Grid.BCtypeN[i] == BC_CHARACTERISTIC ||
-          SolnBlk.Grid.BCtypeN[i] == BC_LINEAR_EXTRAPOLATION ||
-          SolnBlk.Grid.BCtypeN[i] == BC_COUETTE ||
-          SolnBlk.Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
-          SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
-          SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
-          SolnBlk.Grid.BCtypeN[i] == BC_TEMPERATURE_SLIP ||
-          SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL)) {
-	n_pts = 3;
-	i_index[0] = i;   j_index[0] = j-1;
-	i_index[1] = i+1; j_index[1] = j-1;
-	i_index[2] = i+1; j_index[2] = j;
-      } else if (SolnBlk.Grid.BCtypeN[i] == BC_CHARACTERISTIC ||
-                 SolnBlk.Grid.BCtypeN[i] == BC_LINEAR_EXTRAPOLATION ||
-                 SolnBlk.Grid.BCtypeN[i] == BC_COUETTE ||
-                 SolnBlk.Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
-                 SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
-                 SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
-                 SolnBlk.Grid.BCtypeN[i] == BC_TEMPERATURE_SLIP ||
-                 SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL) {
-	n_pts = 5;
-	i_index[0] = i-1; j_index[0] = j;
-	i_index[1] = i-1; j_index[1] = j-1;
-	i_index[2] = i;   j_index[2] = j-1;
-	i_index[3] = i+1; j_index[3] = j-1;
-	i_index[4] = i+1; j_index[4] = j;
-      } else if (SolnBlk.Grid.BCtypeW[j] == BC_CHARACTERISTIC ||
-                 SolnBlk.Grid.BCtypeW[j] == BC_LINEAR_EXTRAPOLATION ||
-                 SolnBlk.Grid.BCtypeW[j] == BC_COUETTE ||
-                 SolnBlk.Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
-                 SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
-                 SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
-                 SolnBlk.Grid.BCtypeW[j] == BC_TEMPERATURE_SLIP ||
-                 SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL) {
-	n_pts = 5;
-	i_index[0] = i;   j_index[0] = j+1;
-	i_index[1] = i+1; j_index[1] = j+1;
-	i_index[2] = i+1; j_index[2] = j;
-	i_index[3] = i+1; j_index[3] = j-1;
-	i_index[4] = i;   j_index[4] = j-1;
-      } else {
-        n_pts = 8;
-	i_index[0] = i-1; j_index[0] = j-1;
-	i_index[1] = i-1; j_index[1] = j;
-	i_index[2] = i-1; j_index[2] = j+1;
-	i_index[3] = i;   j_index[3] = j+1;
-	i_index[4] = i+1; j_index[4] = j+1;
-	i_index[5] = i+1; j_index[5] = j;
-	i_index[6] = i+1; j_index[6] = j-1;
-	i_index[7] = i;   j_index[7] = j-1;
-      } //endif
-
-      //top right
-    } else if (i == SolnBlk.ICu+SolnBlk.Nghost-2 && 
-	       j == SolnBlk.JCu+SolnBlk.Nghost-2) {
-      if((SolnBlk.Grid.BCtypeE[j] == BC_CHARACTERISTIC ||
-          SolnBlk.Grid.BCtypeE[j] == BC_LINEAR_EXTRAPOLATION ||
-          SolnBlk.Grid.BCtypeE[j] == BC_COUETTE ||
-          SolnBlk.Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
-          SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
-          SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
-          SolnBlk.Grid.BCtypeE[j] == BC_TEMPERATURE_SLIP ||
-          SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL)
-                           &&
-         (SolnBlk.Grid.BCtypeN[i] == BC_CHARACTERISTIC ||
-          SolnBlk.Grid.BCtypeN[i] == BC_LINEAR_EXTRAPOLATION ||
-          SolnBlk.Grid.BCtypeN[i] == BC_COUETTE ||
-          SolnBlk.Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
-          SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
-          SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
-          SolnBlk.Grid.BCtypeN[i] == BC_TEMPERATURE_SLIP ||
-          SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL)) {
-	n_pts = 3;
-	i_index[0] = i-1; j_index[0] = j;
-	i_index[1] = i-1; j_index[1] = j-1;
-	i_index[2] = i;   j_index[2] = j-1;
-      } else if (SolnBlk.Grid.BCtypeN[i] == BC_CHARACTERISTIC ||
-                 SolnBlk.Grid.BCtypeN[i] == BC_LINEAR_EXTRAPOLATION ||
-                 SolnBlk.Grid.BCtypeN[i] == BC_COUETTE ||
-                 SolnBlk.Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
-                 SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
-                 SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
-                 SolnBlk.Grid.BCtypeN[i] == BC_TEMPERATURE_SLIP ||
-                 SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL) {
-	n_pts = 5;
-	i_index[0] = i-1; j_index[0] = j;
-	i_index[1] = i-1; j_index[1] = j-1;
-	i_index[2] = i;   j_index[2] = j-1;
-	i_index[3] = i+1; j_index[3] = j-1;
-	i_index[4] = i+1; j_index[4] = j;
-      } else if (SolnBlk.Grid.BCtypeE[j] == BC_CHARACTERISTIC ||
-                 SolnBlk.Grid.BCtypeE[j] == BC_LINEAR_EXTRAPOLATION ||
-                 SolnBlk.Grid.BCtypeE[j] == BC_COUETTE ||
-                 SolnBlk.Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
-                 SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
-                 SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
-                 SolnBlk.Grid.BCtypeE[j] == BC_TEMPERATURE_SLIP ||
-                 SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL) {
-	n_pts = 5;
-	i_index[0] = i;   j_index[0] = j+1;
-	i_index[1] = i-1; j_index[1] = j+1;
-	i_index[2] = i-1; j_index[2] = j;
-	i_index[3] = i-1; j_index[3] = j-1;
-	i_index[4] = i;   j_index[4] = j-1;
-      } else {
-        n_pts = 8;
-	i_index[0] = i-1; j_index[0] = j-1;
-	i_index[1] = i-1; j_index[1] = j;
-	i_index[2] = i-1; j_index[2] = j+1;
-	i_index[3] = i;   j_index[3] = j+1;
-	i_index[4] = i+1; j_index[4] = j+1;
-	i_index[5] = i+1; j_index[5] = j;
-	i_index[6] = i+1; j_index[6] = j-1;
-	i_index[7] = i;   j_index[7] = j-1;
-      } //endif
-
-      //Bottom right
-    } else if (i == SolnBlk.ICu+SolnBlk.Nghost-2 && 
-	       j == SolnBlk.JCl-SolnBlk.Nghost+2) {
-      if((SolnBlk.Grid.BCtypeE[j] == BC_CHARACTERISTIC ||
-          SolnBlk.Grid.BCtypeE[j] == BC_LINEAR_EXTRAPOLATION ||
-          SolnBlk.Grid.BCtypeE[j] == BC_COUETTE ||
-          SolnBlk.Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
-          SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
-	  SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
-	  SolnBlk.Grid.BCtypeE[j] == BC_TEMPERATURE_SLIP ||
-          SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL)
-                           &&
-         (SolnBlk.Grid.BCtypeS[i] == BC_CHARACTERISTIC ||
-          SolnBlk.Grid.BCtypeS[i] == BC_LINEAR_EXTRAPOLATION ||
-          SolnBlk.Grid.BCtypeS[i] == BC_COUETTE ||
-          SolnBlk.Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
-          SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
-          SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
-          SolnBlk.Grid.BCtypeS[i] == BC_TEMPERATURE_SLIP ||
-          SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL)) {
-	n_pts = 3;
-	i_index[0] = i;   j_index[0] = j+1;
-	i_index[1] = i-1; j_index[1] = j+1;
-	i_index[2] = i-1; j_index[2] = j;
-      } else if (SolnBlk.Grid.BCtypeS[i] == BC_CHARACTERISTIC ||
-                 SolnBlk.Grid.BCtypeS[i] == BC_LINEAR_EXTRAPOLATION ||
-                 SolnBlk.Grid.BCtypeS[i] == BC_COUETTE ||
-                 SolnBlk.Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
-                 SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
-                 SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
-                 SolnBlk.Grid.BCtypeS[i] == BC_TEMPERATURE_SLIP ||
-                 SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL) {
-	n_pts = 5;
-	i_index[0] = i-1; j_index[0] = j;
-	i_index[1] = i-1; j_index[1] = j+1;
-	i_index[2] = i;   j_index[2] = j+1;
-	i_index[3] = i+1; j_index[3] = j+1;
-	i_index[4] = i+1; j_index[4] = j;
-      } else if (SolnBlk.Grid.BCtypeE[j] == BC_CHARACTERISTIC ||
-                 SolnBlk.Grid.BCtypeE[j] == BC_LINEAR_EXTRAPOLATION ||
-                 SolnBlk.Grid.BCtypeE[j] == BC_COUETTE ||
-                 SolnBlk.Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
-                 SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
-                 SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
-                 SolnBlk.Grid.BCtypeE[j] == BC_TEMPERATURE_SLIP ||
-                 SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL) {
-	n_pts = 5;
-	i_index[0] = i;   j_index[0] = j+1;
-	i_index[1] = i-1; j_index[1] = j+1;
-	i_index[2] = i-1; j_index[2] = j;
-	i_index[3] = i-1; j_index[3] = j-1;
-	i_index[4] = i;   j_index[4] = j-1;
-      } else {
-        n_pts = 8;
-	i_index[0] = i-1; j_index[0] = j-1;
-	i_index[1] = i-1; j_index[1] = j;
-	i_index[2] = i-1; j_index[2] = j+1;
-	i_index[3] = i;   j_index[3] = j+1;
-	i_index[4] = i+1; j_index[4] = j+1;
-	i_index[5] = i+1; j_index[5] = j;
-	i_index[6] = i+1; j_index[6] = j-1;
-	i_index[7] = i;   j_index[7] = j-1;
-      } //endif
-
-      //left
-    } else if (i == SolnBlk.ICl-SolnBlk.Nghost+2) {
-
-      if(SolnBlk.Grid.BCtypeW[j] == BC_CHARACTERISTIC ||
-         SolnBlk.Grid.BCtypeW[j] == BC_LINEAR_EXTRAPOLATION ||
-         SolnBlk.Grid.BCtypeW[j] == BC_COUETTE ||
-         SolnBlk.Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
-         SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
-	 SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
-	 SolnBlk.Grid.BCtypeW[j] == BC_TEMPERATURE_SLIP ||
-         SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL) {
-	n_pts = 5;
-	i_index[0] = i;   j_index[0] = j+1;
-	i_index[1] = i+1; j_index[1] = j+1;
-	i_index[2] = i+1; j_index[2] = j;
-	i_index[3] = i+1; j_index[3] = j-1;
-	i_index[4] = i;   j_index[4] = j-1;
-      } else {
-        n_pts = 8;
-	i_index[0] = i-1; j_index[0] = j-1;
-	i_index[1] = i-1; j_index[1] = j;
-	i_index[2] = i-1; j_index[2] = j+1;
-	i_index[3] = i;   j_index[3] = j+1;
-	i_index[4] = i+1; j_index[4] = j+1;
-	i_index[5] = i+1; j_index[5] = j;
-	i_index[6] = i+1; j_index[6] = j-1;
-	i_index[7] = i;   j_index[7] = j-1;
-      } //endif
-
-      //top
-    } else if (j == SolnBlk.JCu+SolnBlk.Nghost-2) {
-
-      if(SolnBlk.Grid.BCtypeN[i] == BC_CHARACTERISTIC ||
-         SolnBlk.Grid.BCtypeN[i] == BC_LINEAR_EXTRAPOLATION ||
-         SolnBlk.Grid.BCtypeN[i] == BC_COUETTE ||
-         SolnBlk.Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
-         SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
-         SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
-         SolnBlk.Grid.BCtypeN[i] == BC_TEMPERATURE_SLIP ||
-         SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL) {
-	n_pts = 5;
-	i_index[0] = i-1; j_index[0] = j;
-	i_index[1] = i-1; j_index[1] = j-1;
-	i_index[2] = i;   j_index[2] = j-1;
-	i_index[3] = i+1; j_index[3] = j-1;
-	i_index[4] = i+1; j_index[4] = j;
-      } else {
-        n_pts = 8;
-	i_index[0] = i-1; j_index[0] = j-1;
-	i_index[1] = i-1; j_index[1] = j;
-	i_index[2] = i-1; j_index[2] = j+1;
-	i_index[3] = i;   j_index[3] = j+1;
-	i_index[4] = i+1; j_index[4] = j+1;
-	i_index[5] = i+1; j_index[5] = j;
-	i_index[6] = i+1; j_index[6] = j-1;
-	i_index[7] = i;   j_index[7] = j-1;
-      } //endif
-
-      //Right
-    } else if (i == SolnBlk.ICu+SolnBlk.Nghost-2) {
-
-      if(SolnBlk.Grid.BCtypeE[j] == BC_CHARACTERISTIC ||
-         SolnBlk.Grid.BCtypeE[j] == BC_LINEAR_EXTRAPOLATION ||
-         SolnBlk.Grid.BCtypeE[j] == BC_COUETTE ||
-         SolnBlk.Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
-         SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
-         SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
-         SolnBlk.Grid.BCtypeE[j] == BC_TEMPERATURE_SLIP ||
-         SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL) {
-	n_pts = 5;
-	i_index[0] = i;   j_index[0] = j+1;
-	i_index[1] = i-1; j_index[1] = j+1;
-	i_index[2] = i-1; j_index[2] = j;
-	i_index[3] = i-1; j_index[3] = j-1;
-	i_index[4] = i;   j_index[4] = j-1;
-      } else {
-        n_pts = 8;
-	i_index[0] = i-1; j_index[0] = j-1;
-	i_index[1] = i-1; j_index[1] = j;
-	i_index[2] = i-1; j_index[2] = j+1;
-	i_index[3] = i;   j_index[3] = j+1;
-	i_index[4] = i+1; j_index[4] = j+1;
-	i_index[5] = i+1; j_index[5] = j;
-	i_index[6] = i+1; j_index[6] = j-1;
-	i_index[7] = i;   j_index[7] = j-1;
-      } //endif
-
-      //Bottom
-    } else if (j == SolnBlk.JCl-SolnBlk.Nghost+2) {
-
-      if(SolnBlk.Grid.BCtypeS[i] == BC_CHARACTERISTIC ||
-         SolnBlk.Grid.BCtypeS[i] == BC_LINEAR_EXTRAPOLATION ||
-         SolnBlk.Grid.BCtypeS[i] == BC_COUETTE ||
-         SolnBlk.Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
-         SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
-         SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
-         SolnBlk.Grid.BCtypeS[i] == BC_TEMPERATURE_SLIP ||
-         SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL) {
-	n_pts = 5;
-	i_index[0] = i-1; j_index[0] = j;
-	i_index[1] = i-1; j_index[1] = j+1;
-	i_index[2] = i;   j_index[2] = j+1;
-	i_index[3] = i+1; j_index[3] = j+1;
-	i_index[4] = i+1; j_index[4] = j;
-      } else {
-        n_pts = 8;
-	i_index[0] = i-1; j_index[0] = j-1;
-	i_index[1] = i-1; j_index[1] = j;
-	i_index[2] = i-1; j_index[2] = j+1;
-	i_index[3] = i;   j_index[3] = j+1;
-	i_index[4] = i+1; j_index[4] = j+1;
-	i_index[5] = i+1; j_index[5] = j;
-	i_index[6] = i+1; j_index[6] = j-1;
-	i_index[7] = i;   j_index[7] = j-1;
-      } //endif
-    
-      ///////inside computational domain//////////
-
+//    } else if (i == SolnBlk.ICl-SolnBlk.Nghost+1) {
+//        //bottom or top left corner (never used to evaluate fluxes, therefore
+//        //no reconstruction needed
+//      if(j == SolnBlk.JCl-SolnBlk.Nghost+1 || j == SolnBlk.JCu+SolnBlk.Nghost-1){
+//	n_pts = 0;
+//	//left edge, may need reconstruction
+//        //(only for BC_NONE and BC_PERIODIC)???
+//      } else if(SolnBlk.Grid.BCtypeW[j] == BC_FIXED ||
+//                SolnBlk.Grid.BCtypeW[j] == BC_CHARACTERISTIC ||
+//                SolnBlk.Grid.BCtypeW[j] == BC_LINEAR_EXTRAPOLATION ||
+//                SolnBlk.Grid.BCtypeW[j] == BC_COUETTE ||
+//                SolnBlk.Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
+//                SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
+//                SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+//                SolnBlk.Grid.BCtypeW[j] == BC_TEMPERATURE_SLIP ||
+//                SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL) {
+//	n_pts = 0;
+//      } else { //BC's are Periodic or "none"
+//	  //Bottom left
+//	if(j == SolnBlk.JCl-SolnBlk.Nghost+2 &&
+//               (SolnBlk.Grid.BCtypeS[i] == BC_FIXED ||
+//                SolnBlk.Grid.BCtypeS[i] == BC_CHARACTERISTIC ||
+//                SolnBlk.Grid.BCtypeS[i] == BC_LINEAR_EXTRAPOLATION ||
+//                SolnBlk.Grid.BCtypeS[i] == BC_COUETTE              ||
+//                SolnBlk.Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
+//                SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
+//                SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+//                SolnBlk.Grid.BCtypeS[i] == BC_TEMPERATURE_SLIP ||
+//                SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL)) {
+//	  n_pts = 5;
+//	  i_index[0] = i-1; j_index[0] = j;
+//	  i_index[1] = i-1; j_index[1] = j+1;
+//	  i_index[2] = i;   j_index[2] = j+1;
+//	  i_index[3] = i+1; j_index[3] = j+1;
+//	  i_index[4] = i+1; j_index[4] = j;
+//	  //Top Left
+//	} else if (j == SolnBlk.JCu+SolnBlk.Nghost-2 &&
+//                       (SolnBlk.Grid.BCtypeN[i] == BC_FIXED ||
+//                        SolnBlk.Grid.BCtypeN[i] == BC_CHARACTERISTIC ||
+//                        SolnBlk.Grid.BCtypeN[i] == BC_LINEAR_EXTRAPOLATION ||
+//                        SolnBlk.Grid.BCtypeN[i] == BC_COUETTE ||
+//                        SolnBlk.Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
+//                        SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
+//                        SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+//                        SolnBlk.Grid.BCtypeN[i] == BC_TEMPERATURE_SLIP ||
+//                        SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL)) {
+//	  n_pts = 5;
+//	  i_index[0] = i-1; j_index[0] = j;
+//	  i_index[1] = i-1; j_index[1] = j-1;
+//	  i_index[2] = i;   j_index[2] = j-1;
+//	  i_index[3] = i+1; j_index[3] = j-1;
+//	  i_index[4] = i+1; j_index[4] = j;
+//	  //middle left
+//	} else {
+//	  n_pts = 8;
+//	  i_index[0] = i-1; j_index[0] = j-1;
+//	  i_index[1] = i-1; j_index[1] = j;
+//	  i_index[2] = i-1; j_index[2] = j+1;
+//	  i_index[3] = i;   j_index[3] = j+1;
+//	  i_index[4] = i+1; j_index[4] = j+1;
+//	  i_index[5] = i+1; j_index[5] = j;
+//	  i_index[6] = i+1; j_index[6] = j-1;
+//	  i_index[7] = i;   j_index[7] = j-1;
+//	} //endif
+//      } //endif
+//
+//      /////////////Right edge//////////////////
+//
+//    } else if (i == SolnBlk.ICu+SolnBlk.Nghost-1) {
+//        //bottom or top left corner (never used to evaluate fluxes, therefore
+//        //no reconstruction needed
+//      if(j == SolnBlk.JCl-SolnBlk.Nghost+1 || j == SolnBlk.JCu+SolnBlk.Nghost-1){
+//	n_pts = 0;
+//	//right edge, may need reconstruction
+//        //(only for BC_NONE and BC_PERIODIC)???
+//      } else if(SolnBlk.Grid.BCtypeE[j] == BC_FIXED ||
+//                SolnBlk.Grid.BCtypeE[j] == BC_CHARACTERISTIC ||
+//                SolnBlk.Grid.BCtypeE[j] == BC_LINEAR_EXTRAPOLATION ||
+//                SolnBlk.Grid.BCtypeE[j] == BC_COUETTE ||
+//                SolnBlk.Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
+//                SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
+//                SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+//                SolnBlk.Grid.BCtypeE[j] == BC_TEMPERATURE_SLIP ||
+//                SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL) {
+//	n_pts = 0;
+//      } else { //BC's are Periodic or "none"
+//	  //Bottom right
+//	if(j == SolnBlk.JCl-SolnBlk.Nghost+2 &&
+//               (SolnBlk.Grid.BCtypeS[i] == BC_FIXED ||
+//                SolnBlk.Grid.BCtypeS[i] == BC_CHARACTERISTIC ||
+//                SolnBlk.Grid.BCtypeS[i] == BC_LINEAR_EXTRAPOLATION ||
+//                SolnBlk.Grid.BCtypeS[i] == BC_COUETTE ||
+//                SolnBlk.Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
+//                SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
+//                SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+//                SolnBlk.Grid.BCtypeS[i] == BC_TEMPERATURE_SLIP ||
+//                SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL)) {
+//	  n_pts = 5;
+//	  i_index[0] = i-1; j_index[0] = j;
+//	  i_index[1] = i-1; j_index[1] = j+1;
+//	  i_index[2] = i;   j_index[2] = j+1;
+//	  i_index[3] = i+1; j_index[3] = j+1;
+//	  i_index[4] = i+1; j_index[4] = j;
+//	  //Top right
+//	} else if (j == SolnBlk.JCu+SolnBlk.Nghost-2 &&
+//                       (SolnBlk.Grid.BCtypeN[i] == BC_FIXED ||
+//                        SolnBlk.Grid.BCtypeN[i] == BC_CHARACTERISTIC ||
+//                        SolnBlk.Grid.BCtypeN[i] == BC_LINEAR_EXTRAPOLATION ||
+//                        SolnBlk.Grid.BCtypeN[i] == BC_COUETTE              ||
+//                        SolnBlk.Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
+//                        SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
+//                        SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+//                        SolnBlk.Grid.BCtypeN[i] == BC_TEMPERATURE_SLIP ||
+//                        SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL)) {
+//	  n_pts = 5;
+//	  i_index[0] = i-1; j_index[0] = j;
+//	  i_index[1] = i-1; j_index[1] = j-1;
+//	  i_index[2] = i;   j_index[2] = j-1;
+//	  i_index[3] = i+1; j_index[3] = j-1;
+//	  i_index[4] = i+1; j_index[4] = j;
+//	  //middle right or top or bottom with none or priodic bc's
+//	} else {
+//	  n_pts = 8;
+//	  i_index[0] = i-1; j_index[0] = j-1;
+//	  i_index[1] = i-1; j_index[1] = j;
+//	  i_index[2] = i-1; j_index[2] = j+1;
+//	  i_index[3] = i;   j_index[3] = j+1;
+//	  i_index[4] = i+1; j_index[4] = j+1;
+//	  i_index[5] = i+1; j_index[5] = j;
+//	  i_index[6] = i+1; j_index[6] = j-1;
+//	  i_index[7] = i;   j_index[7] = j-1;
+//	} //endif
+//      } //endif
+//
+//      /////////////bottom edge/////////////
+//      // (corners already taken care of) //
+//
+//    } else if (j == SolnBlk.JCl-SolnBlk.Nghost+1) {
+//      if(SolnBlk.Grid.BCtypeS[i] == BC_FIXED ||
+//         SolnBlk.Grid.BCtypeS[i] == BC_CHARACTERISTIC ||
+//         SolnBlk.Grid.BCtypeS[i] == BC_LINEAR_EXTRAPOLATION ||
+//         SolnBlk.Grid.BCtypeS[i] == BC_COUETTE              ||
+//         SolnBlk.Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
+//         SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
+//         SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+//         SolnBlk.Grid.BCtypeS[i] == BC_TEMPERATURE_SLIP ||
+//         SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL) {
+//	n_pts = 0;
+//      } else { //BC's are Periodic or "none"
+//	  //Bottom left
+//	if(i == SolnBlk.ICl-SolnBlk.Nghost+2 &&
+//               (SolnBlk.Grid.BCtypeW[j] == BC_FIXED ||
+//                SolnBlk.Grid.BCtypeW[j] == BC_CHARACTERISTIC ||
+//                SolnBlk.Grid.BCtypeW[j] == BC_LINEAR_EXTRAPOLATION ||
+//                SolnBlk.Grid.BCtypeW[j] == BC_COUETTE              ||
+//                SolnBlk.Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
+//                SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
+//                SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+//                SolnBlk.Grid.BCtypeW[j] == BC_TEMPERATURE_SLIP ||
+//                SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL)) {
+//	  n_pts = 5;
+//	  i_index[0] = i;   j_index[0] = j+1;
+//	  i_index[1] = i+1; j_index[1] = j+1;
+//	  i_index[2] = i+1; j_index[2] = j;
+//	  i_index[3] = i+1; j_index[3] = j-1;
+//	  i_index[4] = i;   j_index[4] = j-1;
+//	  //Bottom right
+//	} else if (i == SolnBlk.ICu+SolnBlk.Nghost-2 &&
+//                       (SolnBlk.Grid.BCtypeE[j] == BC_FIXED ||
+//                        SolnBlk.Grid.BCtypeE[j] == BC_CHARACTERISTIC ||
+//                        SolnBlk.Grid.BCtypeE[j] == BC_LINEAR_EXTRAPOLATION ||
+//                        SolnBlk.Grid.BCtypeE[j] == BC_COUETTE ||
+//                        SolnBlk.Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
+//                        SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
+//                        SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+//                        SolnBlk.Grid.BCtypeE[j] == BC_TEMPERATURE_SLIP ||
+//                        SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL)) {
+//	  n_pts = 5;
+//	  i_index[0] = i;   j_index[0] = j+1;
+//	  i_index[1] = i-1; j_index[1] = j+1;
+//	  i_index[2] = i-1; j_index[2] = j;
+//	  i_index[3] = i-1; j_index[3] = j-1;
+//	  i_index[4] = i;   j_index[4] = j-1;
+//	  //middle bottom or left or right with none or priodic bc's
+//	} else {
+//	  n_pts = 8;
+//	  i_index[0] = i-1; j_index[0] = j-1;
+//	  i_index[1] = i-1; j_index[1] = j;
+//	  i_index[2] = i-1; j_index[2] = j+1;
+//	  i_index[3] = i;   j_index[3] = j+1;
+//	  i_index[4] = i+1; j_index[4] = j+1;
+//	  i_index[5] = i+1; j_index[5] = j;
+//	  i_index[6] = i+1; j_index[6] = j-1;
+//	  i_index[7] = i;   j_index[7] = j-1;
+//	} //endif
+//      } //endif
+//
+//      /////////////top edge/////////////
+//      // (corners already taken care of) //
+//
+//    } else if (j == SolnBlk.JCu+SolnBlk.Nghost-1) {
+//      if(SolnBlk.Grid.BCtypeN[i] == BC_FIXED ||
+//         SolnBlk.Grid.BCtypeN[i] == BC_CHARACTERISTIC ||
+//         SolnBlk.Grid.BCtypeN[i] == BC_LINEAR_EXTRAPOLATION ||
+//         SolnBlk.Grid.BCtypeN[i] == BC_COUETTE ||
+//         SolnBlk.Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
+//         SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
+//         SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+//         SolnBlk.Grid.BCtypeN[i] == BC_TEMPERATURE_SLIP ||
+//         SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL) {
+//	n_pts = 0;
+//      } else { //BC's are Periodic or "none"
+//	  //Top left
+//	if(i == SolnBlk.ICl-SolnBlk.Nghost+2 &&
+//               (SolnBlk.Grid.BCtypeW[j] == BC_FIXED ||
+//                SolnBlk.Grid.BCtypeW[j] == BC_CHARACTERISTIC ||
+//                SolnBlk.Grid.BCtypeW[j] == BC_LINEAR_EXTRAPOLATION ||
+//                SolnBlk.Grid.BCtypeW[j] == BC_COUETTE ||
+//                SolnBlk.Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
+//                SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
+//                SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+//                SolnBlk.Grid.BCtypeW[j] == BC_TEMPERATURE_SLIP ||
+//                SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL)) {
+//	  n_pts = 5;
+//	  i_index[0] = i;   j_index[0] = j+1;
+//	  i_index[1] = i+1; j_index[1] = j+1;
+//	  i_index[2] = i+1; j_index[2] = j;
+//	  i_index[3] = i+1; j_index[3] = j-1;
+//	  i_index[4] = i;   j_index[4] = j-1;
+//	  //Top right
+//	} else if (i == SolnBlk.ICu+SolnBlk.Nghost-2 &&
+//                       (SolnBlk.Grid.BCtypeE[j] == BC_FIXED ||
+//                        SolnBlk.Grid.BCtypeE[j] == BC_CHARACTERISTIC ||
+//                        SolnBlk.Grid.BCtypeE[j] == BC_LINEAR_EXTRAPOLATION ||
+//                        SolnBlk.Grid.BCtypeE[j] == BC_COUETTE ||
+//                        SolnBlk.Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
+//                        SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
+//                        SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+//                        SolnBlk.Grid.BCtypeE[j] == BC_TEMPERATURE_SLIP ||
+//                        SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL)) {
+//	  n_pts = 5;
+//	  i_index[0] = i;   j_index[0] = j+1;
+//	  i_index[1] = i-1; j_index[1] = j+1;
+//	  i_index[2] = i-1; j_index[2] = j;
+//	  i_index[3] = i-1; j_index[3] = j-1;
+//	  i_index[4] = i;   j_index[4] = j-1;
+//	  //top bottom or left or right with none or priodic bc's
+//	} else {
+//	  n_pts = 8;
+//	  i_index[0] = i-1; j_index[0] = j-1;
+//	  i_index[1] = i-1; j_index[1] = j;
+//	  i_index[2] = i-1; j_index[2] = j+1;
+//	  i_index[3] = i;   j_index[3] = j+1;
+//	  i_index[4] = i+1; j_index[4] = j+1;
+//	  i_index[5] = i+1; j_index[5] = j;
+//	  i_index[6] = i+1; j_index[6] = j-1;
+//	  i_index[7] = i;   j_index[7] = j-1;
+//	} //endif
+//      } //endif
+//    
+//      /////////First Cell Inside Computational Domain////////
+//
+//      //bottom left
+//    } else if (i == SolnBlk.ICl-SolnBlk.Nghost+2 && 
+//	       j == SolnBlk.JCl-SolnBlk.Nghost+2) {
+//      if((SolnBlk.Grid.BCtypeW[j] == BC_CHARACTERISTIC ||
+//          SolnBlk.Grid.BCtypeW[j] == BC_LINEAR_EXTRAPOLATION ||
+//          SolnBlk.Grid.BCtypeW[j] == BC_COUETTE ||
+//          SolnBlk.Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
+//          SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
+//          SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+//          SolnBlk.Grid.BCtypeW[j] == BC_TEMPERATURE_SLIP ||
+//          SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL)
+//                           &&
+//         (SolnBlk.Grid.BCtypeS[i] == BC_CHARACTERISTIC ||
+//          SolnBlk.Grid.BCtypeS[i] == BC_LINEAR_EXTRAPOLATION ||
+//          SolnBlk.Grid.BCtypeS[i] == BC_COUETTE ||
+//          SolnBlk.Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
+//          SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
+//          SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+//          SolnBlk.Grid.BCtypeS[i] == BC_TEMPERATURE_SLIP ||
+//          SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL)) {
+//	n_pts = 3;
+//	i_index[0] = i;   j_index[0] = j+1;
+//	i_index[1] = i+1; j_index[1] = j+1;
+//	i_index[2] = i+1; j_index[2] = j;
+//      } else if (SolnBlk.Grid.BCtypeS[i] == BC_CHARACTERISTIC ||
+//                 SolnBlk.Grid.BCtypeS[i] == BC_LINEAR_EXTRAPOLATION ||
+//                 SolnBlk.Grid.BCtypeS[i] == BC_COUETTE ||
+//                 SolnBlk.Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
+//                 SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
+//                 SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+//                 SolnBlk.Grid.BCtypeS[i] == BC_TEMPERATURE_SLIP ||
+//                 SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL) {
+//	n_pts = 5;
+//	i_index[0] = i-1; j_index[0] = j;
+//	i_index[1] = i-1; j_index[1] = j+1;
+//	i_index[2] = i;   j_index[2] = j+1;
+//	i_index[3] = i+1; j_index[3] = j+1;
+//	i_index[4] = i+1; j_index[4] = j;
+//      } else if (SolnBlk.Grid.BCtypeW[j] == BC_CHARACTERISTIC ||
+//                 SolnBlk.Grid.BCtypeW[j] == BC_LINEAR_EXTRAPOLATION ||
+//                 SolnBlk.Grid.BCtypeW[j] == BC_COUETTE ||
+//                 SolnBlk.Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
+//                 SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
+//                 SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+//                 SolnBlk.Grid.BCtypeW[j] == BC_TEMPERATURE_SLIP ||
+//                 SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL) {
+//	n_pts = 5;
+//	i_index[0] = i;   j_index[0] = j+1;
+//	i_index[1] = i+1; j_index[1] = j+1;
+//	i_index[2] = i+1; j_index[2] = j;
+//	i_index[3] = i+1; j_index[3] = j-1;
+//	i_index[4] = i;   j_index[4] = j-1;
+//      } else {
+//        n_pts = 8;
+//	i_index[0] = i-1; j_index[0] = j-1;
+//	i_index[1] = i-1; j_index[1] = j;
+//	i_index[2] = i-1; j_index[2] = j+1;
+//	i_index[3] = i;   j_index[3] = j+1;
+//	i_index[4] = i+1; j_index[4] = j+1;
+//	i_index[5] = i+1; j_index[5] = j;
+//	i_index[6] = i+1; j_index[6] = j-1;
+//	i_index[7] = i;   j_index[7] = j-1;
+//      } //endif
+//
+//      //top left
+//    } else if (i == SolnBlk.ICl-SolnBlk.Nghost+2 && 
+//	       j == SolnBlk.JCu+SolnBlk.Nghost-2) {
+//      if((SolnBlk.Grid.BCtypeW[j] == BC_CHARACTERISTIC ||
+//          SolnBlk.Grid.BCtypeW[j] == BC_LINEAR_EXTRAPOLATION ||
+//          SolnBlk.Grid.BCtypeW[j] == BC_COUETTE ||
+//          SolnBlk.Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
+//          SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
+//          SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+//          SolnBlk.Grid.BCtypeW[j] == BC_TEMPERATURE_SLIP ||
+//          SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL)
+//                           &&
+//         (SolnBlk.Grid.BCtypeN[i] == BC_CHARACTERISTIC ||
+//          SolnBlk.Grid.BCtypeN[i] == BC_LINEAR_EXTRAPOLATION ||
+//          SolnBlk.Grid.BCtypeN[i] == BC_COUETTE ||
+//          SolnBlk.Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
+//          SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
+//          SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+//          SolnBlk.Grid.BCtypeN[i] == BC_TEMPERATURE_SLIP ||
+//          SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL)) {
+//	n_pts = 3;
+//	i_index[0] = i;   j_index[0] = j-1;
+//	i_index[1] = i+1; j_index[1] = j-1;
+//	i_index[2] = i+1; j_index[2] = j;
+//      } else if (SolnBlk.Grid.BCtypeN[i] == BC_CHARACTERISTIC ||
+//                 SolnBlk.Grid.BCtypeN[i] == BC_LINEAR_EXTRAPOLATION ||
+//                 SolnBlk.Grid.BCtypeN[i] == BC_COUETTE ||
+//                 SolnBlk.Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
+//                 SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
+//                 SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+//                 SolnBlk.Grid.BCtypeN[i] == BC_TEMPERATURE_SLIP ||
+//                 SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL) {
+//	n_pts = 5;
+//	i_index[0] = i-1; j_index[0] = j;
+//	i_index[1] = i-1; j_index[1] = j-1;
+//	i_index[2] = i;   j_index[2] = j-1;
+//	i_index[3] = i+1; j_index[3] = j-1;
+//	i_index[4] = i+1; j_index[4] = j;
+//      } else if (SolnBlk.Grid.BCtypeW[j] == BC_CHARACTERISTIC ||
+//                 SolnBlk.Grid.BCtypeW[j] == BC_LINEAR_EXTRAPOLATION ||
+//                 SolnBlk.Grid.BCtypeW[j] == BC_COUETTE ||
+//                 SolnBlk.Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
+//                 SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
+//                 SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+//                 SolnBlk.Grid.BCtypeW[j] == BC_TEMPERATURE_SLIP ||
+//                 SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL) {
+//	n_pts = 5;
+//	i_index[0] = i;   j_index[0] = j+1;
+//	i_index[1] = i+1; j_index[1] = j+1;
+//	i_index[2] = i+1; j_index[2] = j;
+//	i_index[3] = i+1; j_index[3] = j-1;
+//	i_index[4] = i;   j_index[4] = j-1;
+//      } else {
+//        n_pts = 8;
+//	i_index[0] = i-1; j_index[0] = j-1;
+//	i_index[1] = i-1; j_index[1] = j;
+//	i_index[2] = i-1; j_index[2] = j+1;
+//	i_index[3] = i;   j_index[3] = j+1;
+//	i_index[4] = i+1; j_index[4] = j+1;
+//	i_index[5] = i+1; j_index[5] = j;
+//	i_index[6] = i+1; j_index[6] = j-1;
+//	i_index[7] = i;   j_index[7] = j-1;
+//      } //endif
+//
+//      //top right
+//    } else if (i == SolnBlk.ICu+SolnBlk.Nghost-2 && 
+//	       j == SolnBlk.JCu+SolnBlk.Nghost-2) {
+//      if((SolnBlk.Grid.BCtypeE[j] == BC_CHARACTERISTIC ||
+//          SolnBlk.Grid.BCtypeE[j] == BC_LINEAR_EXTRAPOLATION ||
+//          SolnBlk.Grid.BCtypeE[j] == BC_COUETTE ||
+//          SolnBlk.Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
+//          SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
+//          SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+//          SolnBlk.Grid.BCtypeE[j] == BC_TEMPERATURE_SLIP ||
+//          SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL)
+//                           &&
+//         (SolnBlk.Grid.BCtypeN[i] == BC_CHARACTERISTIC ||
+//          SolnBlk.Grid.BCtypeN[i] == BC_LINEAR_EXTRAPOLATION ||
+//          SolnBlk.Grid.BCtypeN[i] == BC_COUETTE ||
+//          SolnBlk.Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
+//          SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
+//          SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+//          SolnBlk.Grid.BCtypeN[i] == BC_TEMPERATURE_SLIP ||
+//          SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL)) {
+//	n_pts = 3;
+//	i_index[0] = i-1; j_index[0] = j;
+//	i_index[1] = i-1; j_index[1] = j-1;
+//	i_index[2] = i;   j_index[2] = j-1;
+//      } else if (SolnBlk.Grid.BCtypeN[i] == BC_CHARACTERISTIC ||
+//                 SolnBlk.Grid.BCtypeN[i] == BC_LINEAR_EXTRAPOLATION ||
+//                 SolnBlk.Grid.BCtypeN[i] == BC_COUETTE ||
+//                 SolnBlk.Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
+//                 SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
+//                 SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+//                 SolnBlk.Grid.BCtypeN[i] == BC_TEMPERATURE_SLIP ||
+//                 SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL) {
+//	n_pts = 5;
+//	i_index[0] = i-1; j_index[0] = j;
+//	i_index[1] = i-1; j_index[1] = j-1;
+//	i_index[2] = i;   j_index[2] = j-1;
+//	i_index[3] = i+1; j_index[3] = j-1;
+//	i_index[4] = i+1; j_index[4] = j;
+//      } else if (SolnBlk.Grid.BCtypeE[j] == BC_CHARACTERISTIC ||
+//                 SolnBlk.Grid.BCtypeE[j] == BC_LINEAR_EXTRAPOLATION ||
+//                 SolnBlk.Grid.BCtypeE[j] == BC_COUETTE ||
+//                 SolnBlk.Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
+//                 SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
+//                 SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+//                 SolnBlk.Grid.BCtypeE[j] == BC_TEMPERATURE_SLIP ||
+//                 SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL) {
+//	n_pts = 5;
+//	i_index[0] = i;   j_index[0] = j+1;
+//	i_index[1] = i-1; j_index[1] = j+1;
+//	i_index[2] = i-1; j_index[2] = j;
+//	i_index[3] = i-1; j_index[3] = j-1;
+//	i_index[4] = i;   j_index[4] = j-1;
+//      } else {
+//        n_pts = 8;
+//	i_index[0] = i-1; j_index[0] = j-1;
+//	i_index[1] = i-1; j_index[1] = j;
+//	i_index[2] = i-1; j_index[2] = j+1;
+//	i_index[3] = i;   j_index[3] = j+1;
+//	i_index[4] = i+1; j_index[4] = j+1;
+//	i_index[5] = i+1; j_index[5] = j;
+//	i_index[6] = i+1; j_index[6] = j-1;
+//	i_index[7] = i;   j_index[7] = j-1;
+//      } //endif
+//
+//      //Bottom right
+//    } else if (i == SolnBlk.ICu+SolnBlk.Nghost-2 && 
+//	       j == SolnBlk.JCl-SolnBlk.Nghost+2) {
+//      if((SolnBlk.Grid.BCtypeE[j] == BC_CHARACTERISTIC ||
+//          SolnBlk.Grid.BCtypeE[j] == BC_LINEAR_EXTRAPOLATION ||
+//          SolnBlk.Grid.BCtypeE[j] == BC_COUETTE ||
+//          SolnBlk.Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
+//          SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
+//	  SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+//	  SolnBlk.Grid.BCtypeE[j] == BC_TEMPERATURE_SLIP ||
+//          SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL)
+//                           &&
+//         (SolnBlk.Grid.BCtypeS[i] == BC_CHARACTERISTIC ||
+//          SolnBlk.Grid.BCtypeS[i] == BC_LINEAR_EXTRAPOLATION ||
+//          SolnBlk.Grid.BCtypeS[i] == BC_COUETTE ||
+//          SolnBlk.Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
+//          SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
+//          SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+//          SolnBlk.Grid.BCtypeS[i] == BC_TEMPERATURE_SLIP ||
+//          SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL)) {
+//	n_pts = 3;
+//	i_index[0] = i;   j_index[0] = j+1;
+//	i_index[1] = i-1; j_index[1] = j+1;
+//	i_index[2] = i-1; j_index[2] = j;
+//      } else if (SolnBlk.Grid.BCtypeS[i] == BC_CHARACTERISTIC ||
+//                 SolnBlk.Grid.BCtypeS[i] == BC_LINEAR_EXTRAPOLATION ||
+//                 SolnBlk.Grid.BCtypeS[i] == BC_COUETTE ||
+//                 SolnBlk.Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
+//                 SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
+//                 SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+//                 SolnBlk.Grid.BCtypeS[i] == BC_TEMPERATURE_SLIP ||
+//                 SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL) {
+//	n_pts = 5;
+//	i_index[0] = i-1; j_index[0] = j;
+//	i_index[1] = i-1; j_index[1] = j+1;
+//	i_index[2] = i;   j_index[2] = j+1;
+//	i_index[3] = i+1; j_index[3] = j+1;
+//	i_index[4] = i+1; j_index[4] = j;
+//      } else if (SolnBlk.Grid.BCtypeE[j] == BC_CHARACTERISTIC ||
+//                 SolnBlk.Grid.BCtypeE[j] == BC_LINEAR_EXTRAPOLATION ||
+//                 SolnBlk.Grid.BCtypeE[j] == BC_COUETTE ||
+//                 SolnBlk.Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
+//                 SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
+//                 SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+//                 SolnBlk.Grid.BCtypeE[j] == BC_TEMPERATURE_SLIP ||
+//                 SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL) {
+//	n_pts = 5;
+//	i_index[0] = i;   j_index[0] = j+1;
+//	i_index[1] = i-1; j_index[1] = j+1;
+//	i_index[2] = i-1; j_index[2] = j;
+//	i_index[3] = i-1; j_index[3] = j-1;
+//	i_index[4] = i;   j_index[4] = j-1;
+//      } else {
+//        n_pts = 8;
+//	i_index[0] = i-1; j_index[0] = j-1;
+//	i_index[1] = i-1; j_index[1] = j;
+//	i_index[2] = i-1; j_index[2] = j+1;
+//	i_index[3] = i;   j_index[3] = j+1;
+//	i_index[4] = i+1; j_index[4] = j+1;
+//	i_index[5] = i+1; j_index[5] = j;
+//	i_index[6] = i+1; j_index[6] = j-1;
+//	i_index[7] = i;   j_index[7] = j-1;
+//      } //endif
+//
+//      //left
+//    } else if (i == SolnBlk.ICl-SolnBlk.Nghost+2) {
+//
+//      if(SolnBlk.Grid.BCtypeW[j] == BC_CHARACTERISTIC ||
+//         SolnBlk.Grid.BCtypeW[j] == BC_LINEAR_EXTRAPOLATION ||
+//         SolnBlk.Grid.BCtypeW[j] == BC_COUETTE ||
+//         SolnBlk.Grid.BCtypeW[j] == BC_CONSTANT_EXTRAPOLATION ||
+//         SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
+//	 SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+//	 SolnBlk.Grid.BCtypeW[j] == BC_TEMPERATURE_SLIP ||
+//         SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL) {
+//	n_pts = 5;
+//	i_index[0] = i;   j_index[0] = j+1;
+//	i_index[1] = i+1; j_index[1] = j+1;
+//	i_index[2] = i+1; j_index[2] = j;
+//	i_index[3] = i+1; j_index[3] = j-1;
+//	i_index[4] = i;   j_index[4] = j-1;
+//      } else {
+//        n_pts = 8;
+//	i_index[0] = i-1; j_index[0] = j-1;
+//	i_index[1] = i-1; j_index[1] = j;
+//	i_index[2] = i-1; j_index[2] = j+1;
+//	i_index[3] = i;   j_index[3] = j+1;
+//	i_index[4] = i+1; j_index[4] = j+1;
+//	i_index[5] = i+1; j_index[5] = j;
+//	i_index[6] = i+1; j_index[6] = j-1;
+//	i_index[7] = i;   j_index[7] = j-1;
+//      } //endif
+//
+//      //top
+//    } else if (j == SolnBlk.JCu+SolnBlk.Nghost-2) {
+//
+//      if(SolnBlk.Grid.BCtypeN[i] == BC_CHARACTERISTIC ||
+//         SolnBlk.Grid.BCtypeN[i] == BC_LINEAR_EXTRAPOLATION ||
+//         SolnBlk.Grid.BCtypeN[i] == BC_COUETTE ||
+//         SolnBlk.Grid.BCtypeN[i] == BC_CONSTANT_EXTRAPOLATION ||
+//         SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
+//         SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+//         SolnBlk.Grid.BCtypeN[i] == BC_TEMPERATURE_SLIP ||
+//         SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL) {
+//	n_pts = 5;
+//	i_index[0] = i-1; j_index[0] = j;
+//	i_index[1] = i-1; j_index[1] = j-1;
+//	i_index[2] = i;   j_index[2] = j-1;
+//	i_index[3] = i+1; j_index[3] = j-1;
+//	i_index[4] = i+1; j_index[4] = j;
+//      } else {
+//        n_pts = 8;
+//	i_index[0] = i-1; j_index[0] = j-1;
+//	i_index[1] = i-1; j_index[1] = j;
+//	i_index[2] = i-1; j_index[2] = j+1;
+//	i_index[3] = i;   j_index[3] = j+1;
+//	i_index[4] = i+1; j_index[4] = j+1;
+//	i_index[5] = i+1; j_index[5] = j;
+//	i_index[6] = i+1; j_index[6] = j-1;
+//	i_index[7] = i;   j_index[7] = j-1;
+//      } //endif
+//
+//      //Right
+//    } else if (i == SolnBlk.ICu+SolnBlk.Nghost-2) {
+//
+//      if(SolnBlk.Grid.BCtypeE[j] == BC_CHARACTERISTIC ||
+//         SolnBlk.Grid.BCtypeE[j] == BC_LINEAR_EXTRAPOLATION ||
+//         SolnBlk.Grid.BCtypeE[j] == BC_COUETTE ||
+//         SolnBlk.Grid.BCtypeE[j] == BC_CONSTANT_EXTRAPOLATION ||
+//         SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
+//         SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+//         SolnBlk.Grid.BCtypeE[j] == BC_TEMPERATURE_SLIP ||
+//         SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL) {
+//	n_pts = 5;
+//	i_index[0] = i;   j_index[0] = j+1;
+//	i_index[1] = i-1; j_index[1] = j+1;
+//	i_index[2] = i-1; j_index[2] = j;
+//	i_index[3] = i-1; j_index[3] = j-1;
+//	i_index[4] = i;   j_index[4] = j-1;
+//      } else {
+//        n_pts = 8;
+//	i_index[0] = i-1; j_index[0] = j-1;
+//	i_index[1] = i-1; j_index[1] = j;
+//	i_index[2] = i-1; j_index[2] = j+1;
+//	i_index[3] = i;   j_index[3] = j+1;
+//	i_index[4] = i+1; j_index[4] = j+1;
+//	i_index[5] = i+1; j_index[5] = j;
+//	i_index[6] = i+1; j_index[6] = j-1;
+//	i_index[7] = i;   j_index[7] = j-1;
+//      } //endif
+//
+//      //Bottom
+//    } else if (j == SolnBlk.JCl-SolnBlk.Nghost+2) {
+//
+//      if(SolnBlk.Grid.BCtypeS[i] == BC_CHARACTERISTIC ||
+//         SolnBlk.Grid.BCtypeS[i] == BC_LINEAR_EXTRAPOLATION ||
+//         SolnBlk.Grid.BCtypeS[i] == BC_COUETTE ||
+//         SolnBlk.Grid.BCtypeS[i] == BC_CONSTANT_EXTRAPOLATION ||
+//         SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
+//         SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+//         SolnBlk.Grid.BCtypeS[i] == BC_TEMPERATURE_SLIP ||
+//         SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL) {
+//	n_pts = 5;
+//	i_index[0] = i-1; j_index[0] = j;
+//	i_index[1] = i-1; j_index[1] = j+1;
+//	i_index[2] = i;   j_index[2] = j+1;
+//	i_index[3] = i+1; j_index[3] = j+1;
+//	i_index[4] = i+1; j_index[4] = j;
+//      } else {
+//        n_pts = 8;
+//	i_index[0] = i-1; j_index[0] = j-1;
+//	i_index[1] = i-1; j_index[1] = j;
+//	i_index[2] = i-1; j_index[2] = j+1;
+//	i_index[3] = i;   j_index[3] = j+1;
+//	i_index[4] = i+1; j_index[4] = j+1;
+//	i_index[5] = i+1; j_index[5] = j;
+//	i_index[6] = i+1; j_index[6] = j-1;
+//	i_index[7] = i;   j_index[7] = j-1;
+//      } //endif
+//    
+//      ///////inside computational domain//////////
+//
     } else {
       n_pts = 8;
       i_index[0] = i-1; j_index[0] = j-1;
