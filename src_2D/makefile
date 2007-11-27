@@ -221,16 +221,15 @@ SRC_CHEM_EXE = $(CHEM_DIR)Chem2D.cc
 
 # Flame2D:
 SRC_FLAME = $(FLAME_DIR)Flame2DState.cc \
-	    $(FLAME_DIR)Mixture.cc
-# 	    $(FLAME_DIR)Flame2DTools.cc \
-# 	    $(FLAME_DIR)Flame2DInput.cc \
-# 	    $(FLAME_DIR)Flame2DQuad.cc \
-# 	    $(FLAME_DIR)Flame2DQuadGrid.cc \
-# 	    $(FLAME_DIR)Flame2DdRdU.cc \
-# 	    $(FLAME_DIR)Flame2DQuadMultiBlock.cc \
-# 	    $(FLAME_DIR)Flame2DQuadSingleBlock.cc \
-# 	    $(FLAME_DIR)Flame2DQuadSolvers.cc \
-#	    $(FLAME_DIR)Reactions.cc 
+	    $(FLAME_DIR)Mixture.cc \
+	    $(FLAME_DIR)Flame2DTools.cc \
+ 	    $(FLAME_DIR)Flame2DInput.cc \
+	    $(FLAME_DIR)Flame2DQuad.cc \
+	    $(FLAME_DIR)Flame2DQuadGrid.cc \
+	    $(FLAME_DIR)Flame2DdRdU.cc \
+	    $(FLAME_DIR)Flame2DQuadMultiBlock.cc \
+	    $(FLAME_DIR)Flame2DQuadSingleBlock.cc \
+	    $(FLAME_DIR)Flame2DQuadSolvers.cc
 SRC_FLAME_EXE = $(FLAME_DIR)Flame2D.cc  
 
 # HighTemp2D:
@@ -801,12 +800,12 @@ $(EXE_CHEM2D): $(OBJ_CHEM_EXE) $(OBJ_BASE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(OB
 	@echo '--------------------------------------------------'
 	@echo ' '
 
-$(EXE_FLAME2D): $(OBJ_FLAME_EXE) $(OBJ_BASE) $(OBJ_NASADATA) $(OBJ_SNBCK) $(OBJ_FLAME) $(OBJ_ICEMCFD)
+$(EXE_FLAME2D): $(OBJ_FLAME_EXE) $(OBJ_BASE) $(OBJ_NASADATA) $(OBJ_SNBCK) $(OBJ_FLAME)
 	@echo ' '
 	@echo Building program $(EXE_FLAME2D) for a $(PLATFORM) platform.
 	@echo '----------------------------------------------------------'
 	@echo ' '
-	$(LD) -o $(EXE_FLAME2D) $(OBJ_FLAME_EXE) $(OBJ_BASE) $(OBJ_NASADATA) $(OBJ_SNBCK) $(OBJ_FLAME) $(OBJ_ICEMCFD) $(LDFLAGS)
+	$(LD) -o $(EXE_FLAME2D) $(OBJ_FLAME_EXE) $(OBJ_BASE) $(OBJ_NASADATA) $(OBJ_SNBCK) $(OBJ_FLAME)$(LDFLAGS)
 	@echo ' '
 	@echo Program $(EXE_FLAME2D) has been brought up to date.
 	@echo '--------------------------------------------------'

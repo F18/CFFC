@@ -24,7 +24,6 @@ NEW
 
 /* Include 2D Euler state, 2D cell, 2D quadrilateral multiblock 
    grid, and NASA rotor header files. */
-#include "Flame2DState.h"
 #include "../Grid/Cell2D.h"
 #include "../Grid/Grid2DQuad.h"
 
@@ -34,8 +33,7 @@ NEW
 /* Also include NKS  input header file. */
 #include "../NewtonKrylovSchwarz2D/NKSInput2D.h"
 
-// Include ICEMCFD input header file.
-#include "../ICEM/ICEMCFD.h"
+#include "Flame2DState.h"
 
 /* Define the structures and classes. */
 #define	INPUT_PARAMETER_LENGTH_FLAME2D    128
@@ -127,16 +125,9 @@ class Flame2D_Input_Parameters{
   //@}
 
   //@{ @name Chemical reacting flow inpput parameters.
-  string react_name;
-  char React_Name[INPUT_PARAMETER_LENGTH_FLAME2D];
-  char **Multispecies;
-  //! Array of species names
-  string *multispecies;
   //! Array of mass fractions
   double *mass_fractions;
-  int num_species;
   Flame2D_pState Wo;
-  Flame2D_cState Uo;
   //! Fuel species
   char Fuel_Species[INPUT_PARAMETER_LENGTH_FLAME2D];
   //! Fuel species
@@ -226,7 +217,6 @@ class Flame2D_Input_Parameters{
   int Smooth_Bump, Nozzle_Type;
   double X_Scale, X_Rotate;
   Vector2D X_Shift;
-  char **ICEMCFD_FileNames;
   //@}
 
   //@{ @name Mesh stretching factor.
@@ -320,19 +310,13 @@ class Flame2D_Input_Parameters{
   //@{ @name Constructor and destructor.
   //! Default constructor.
   Flame2D_Input_Parameters(){
-    Multispecies = NULL;
-    multispecies = NULL; 
+    Schmidt = NULL; 
     mass_fractions = NULL;
     mass_fractions_out = NULL;
-   ICEMCFD_FileNames = NULL;
   }
 
   //! Default constructor.
   ~Flame2D_Input_Parameters(){
-    for (int i = 0; i < 3; i++) {
-      delete[] ICEMCFD_FileNames[i]; 
-    } /* endfor */
-    delete[] ICEMCFD_FileNames; ICEMCFD_FileNames=NULL;
     //State class memory
     Deallocate(); 
   }
@@ -356,36 +340,17 @@ class Flame2D_Input_Parameters{
  * Flame2D_Input_Parameters -- Memory Management              *
  *************************************************************/
 inline void Flame2D_Input_Parameters::Allocate() {
-  Multispecies = new char*[num_species];
-  for (int i = 0; i < num_species; i++) {
-    Multispecies[i] = new char[INPUT_PARAMETER_LENGTH_FLAME2D];
-  } 
-  multispecies = new string[num_species]; 
-  mass_fractions = new double[num_species];
-  mass_fractions_out = new double[num_species];
-  Schmidt = new double[num_species];
+  mass_fractions = new double[Wo.NumSpecies()];
+  mass_fractions_out = new double[Wo.NumSpecies()];
+  Schmidt = new double[Wo.NumSpecies()];
 }
 
 inline void Flame2D_Input_Parameters::Deallocate() {
-  if(Multispecies != NULL ){
-    for (int i = 0; i < num_species; i++) {
-      delete[] Multispecies[i]; Multispecies[i]=NULL;
-    }
-    delete[] Multispecies; Multispecies=NULL;
-  }
-  
-  if(multispecies != NULL){
-    delete[] multispecies; multispecies=NULL;
-  }
-
-  if (mass_fractions_out != NULL){
-    delete[] mass_fractions_out; mass_fractions_out=NULL;
-  }
   if(mass_fractions != NULL){
     delete[] mass_fractions; mass_fractions=NULL;
+    if (mass_fractions_out != NULL) delete[] mass_fractions_out; mass_fractions_out=NULL;
     if( Schmidt != NULL) delete[] Schmidt; Schmidt = NULL;
-    Wo.Deallocate_static(); 
-    Uo.Deallocate_static();
+    Wo.DeallocateStatic(); 
   }
  
 } 
@@ -519,28 +484,20 @@ inline ostream &operator << (ostream &out_file,
              << IP.Flux_Function_Type;
     /********** FLAME2D ****************************/
     out_file << "\n  -> Reaction Mechanism: " 
-	     << IP.react_name;
-    if (IP.Wo.React.reactset_flag == CANTERA) {
-      out_file << "\n  -> Mechanism Name: "
-               << IP.ct_mech_name
-               << "\n  -> Mechanism File: "
-               << IP.ct_mech_file;
-    }
-    out_file << "\n  -> Species: "<<IP.Wo.ns
+	     << Mixture::mechName();
+    out_file << "\n  -> Species: "<<IP.Wo.NumSpecies()
 	     << "\n  -> Initial mass fractions: ";
-    for(int i=0; i<IP.Wo.ns; i++){
-      out_file  <<"c["<<IP.multispecies[i]<<"]= ";
-      out_file  << IP.Wo.c[i]<<", ";
+    for(int i=0; i<IP.Wo.NumSpecies(); i++){
+      out_file  <<"c["<<Mixture::speciesName(i)<<"]= ";
+      out_file  << IP.Wo.c(i)<<", ";
     } 
     if(IP.FlowType != FLOWTYPE_INVISCID){
       out_file << "\n  -> Schmidt Numbers for Viscous flow: ";
-      for(int i=0; i <IP.Wo.ns; i++){
-	out_file  <<"Sc["<<IP.multispecies[i]<<"]= ";
+      for(int i=0; i <IP.Wo.NumSpecies(); i++){
+	out_file  <<"Sc["<<Mixture::speciesName(i)<<"]= ";
 	out_file << IP.Schmidt[i]<<", ";
       }
     }
-    out_file << "\n  -> Transport Data: "
-             << IP.trans_type;
     /*********************************************/ 
     out_file << "\n  -> Initial Conditions: " 
              << IP.ICs_Type;
@@ -620,8 +577,8 @@ inline ostream &operator << (ostream &out_file,
       break;
     case IC_VISCOUS_FLAT_PLATE :
       out_file << "\n  -> Viscous flat plate free stream Mach number: " << IP.Mach_Number;
-      out_file << "\n  -> Viscous flat plate Reynolds number: "  //<< IP.Reynolds_Number;
-	       <<IP.Wo.rho*IP.Wo.v.abs()*IP.Plate_Length/IP.Wo.mu();
+      out_file << "\n  -> Viscous flat plate Reynolds number: "
+ 	       <<IP.Wo.Re(IP.Plate_Length);
       break;
       /********** FLAME2D *******/
     default:

@@ -9,10 +9,7 @@
 ************************************************************************/
 
 /* Include 2D Euler quadrilateral mesh solution header file. */
-
-#ifndef _FLAME2D_QUAD_INCLUDED
 #include "Flame2DQuad.h"
-#endif // _FLAME2D_QUAD_INCLUDED
 
 /**************************************************************************
  * Flame2D_Quad_Block -- Multiple Block External Subroutines.             *
@@ -120,7 +117,6 @@ int Read_Restart_Solution(Flame2D_Quad_Block *Soln_ptr,
     ifstream restart_file;
     double time0;
     CPUTime cpu_time0;
-    bool mech_changed = false;
 
     /* Determine prefix of restart file names. */
     
@@ -158,74 +154,7 @@ int Read_Restart_Solution(Flame2D_Quad_Block *Soln_ptr,
           restart_file.setf(ios::skipws);
           restart_file >> nsteps >> time0 >> cpu_time0;
           restart_file.unsetf(ios::skipws);
-    
-	  /********** FLAME2D SPECIFIC ****************************************/
-	  restart_file.getline(line,sizeof(line)); 
-	  // get reaction set name
-	  restart_file >>Input_Parameters.react_name;
-	  // multispecies but no reactions
-	  restart_file.setf(ios::skipws);
-	  int num_species;
-	  //get number of species
-	  restart_file >> num_species; 
-	  string *species = new string[num_species];
-	  //get species names 
-	  for(int k=0; k<num_species; k++){
-	    restart_file >> species[k];
-	  } 
-	  restart_file.unsetf(ios::skipws);  
-	  // create a temporary pointer for the schmidt array
-	  double* Schmidt = Input_Parameters.Schmidt;
-
-	  //---------------------------------------------------------
-	  // load the rxn database
-	  // We have to make sure that the user is not trying to change the mechanism.
-	  // If they are, then we will have to digest the data properly.
-	  //
-	  // NON-CANTERA CASE
-	  if( Input_Parameters.react_name != "CANTERA") {
-	    Input_Parameters.Wo.React.set_reactions(Input_Parameters.react_name);
-
-	  // CANTERA CASE
-	  } else {
-	    Input_Parameters.Wo.React.ct_load_mechanism(Input_Parameters.ct_mech_file, 
-							Input_Parameters.ct_mech_name);
-	  } // endif
-
-	  // NO_REACTIONS CASE
-	  if( Input_Parameters.react_name == "NO_REACTIONS"){
-	    Input_Parameters.Wo.React.set_species(species,num_species);
-	  }
-
-	  // If the number of species has changed, them we must be
-	  // trying to change the mechanism. Set a flag and create a temporary
-	  // Schmidt array.
-	  if ( mech_changed = (Input_Parameters.Wo.React.num_species!=num_species)) {
-	    if (CFFC_Primary_MPI_Processor()) cout << "\n Mechanism has changed..." << flush;
-	    Schmidt = new double[num_species];
-	    for (int k=0; k<num_species; k++) Schmidt[k] = 1.0;
-	  }
-	  //---------------------------------------------------------
-
-	  //Set Data Path
-	  Input_Parameters.get_cffc_path();
-
-	  //setup properties 
-	  Input_Parameters.Wo.set_species_data
-	    (num_species,species,
-	     Input_Parameters.CFFC_Path,
-	     Input_Parameters.Mach_Number_Reference,Schmidt,
-	     Input_Parameters.i_trans_type);   
-	  Input_Parameters.Uo.set_species_data
-	    (num_species,species,
-	     Input_Parameters.CFFC_Path,
-	     Input_Parameters.Mach_Number_Reference,Schmidt,
-	     Input_Parameters.i_trans_type);    
-	  Input_Parameters.Uo = U(Input_Parameters.Wo);
-
-
-	  /********** END FLAME2D SPECIFIC ****************************************/
-	  
+    	  
           if (!i_new_time_set) {
              Number_of_Time_Steps = nsteps;
              //Input_Parameters.Maximum_Number_of_Time_Steps += Number_of_Time_Steps;
@@ -251,35 +180,6 @@ int Read_Restart_Solution(Flame2D_Quad_Block *Soln_ptr,
 	  	  
 	  // Close restart file.
           restart_file.close();
-
-	  /*********************************************************************/
-	  // if the user is requesting a new mechanism, resize the species arrays
-	  // in the solution block  and equilibrate the mixture.
-	  if ( mech_changed ) {
-	    
-	    //re-setup properties 
-	    Input_Parameters.Wo.set_species_data
-	      (Input_Parameters.Wo.React.num_species,Input_Parameters.Wo.React.species,
-	       Input_Parameters.CFFC_Path,
-	       Input_Parameters.Mach_Number_Reference,Input_Parameters.Schmidt,
-	       Input_Parameters.i_trans_type);   
-	    Input_Parameters.Uo.set_species_data
-	      (Input_Parameters.Wo.React.num_species,Input_Parameters.Wo.React.species,
-	       Input_Parameters.CFFC_Path,
-	       Input_Parameters.Mach_Number_Reference,Input_Parameters.Schmidt,
-	       Input_Parameters.i_trans_type);    
-	    Input_Parameters.Uo = U(Input_Parameters.Wo);
-	    
-	    // resize all the species arrays and compute equilibrium solution
-	    Soln_ptr[i].resize_species(num_species, species);
-	    //Set_Equilibrium_State(Soln_ptr[i]);
-	    
-	  } // endif - mech changed
-	  /*********************************************************************/
-	  
-	  // can delete temporary species array now
-	  delete[] species; 
-	  if ( mech_changed ) delete[] Schmidt; 
 	  
        } /* endif */
     }  /* endfor */
@@ -346,13 +246,6 @@ int Write_Restart_Solution(Flame2D_Quad_Block *Soln_ptr,
           restart_file << setprecision(14) << Number_of_Time_Steps 
                        << " " << Time << " " << CPU_Time << "\n";
           restart_file.unsetf(ios::scientific);
-	  /********* FLAME2D SPECIFIC ***********************************/
-	  restart_file << Input_Parameters.react_name << "\n";
-	  restart_file << Input_Parameters.Wo.ns <<" ";
-	  for(int k=0; k< Input_Parameters.Wo.ns; k++){ 
-	    restart_file << Input_Parameters.multispecies[k] <<" ";
-	  }
-	  restart_file<<endl;
 
       	  restart_file << setprecision(14) << Soln_ptr[i];
 
@@ -657,158 +550,6 @@ int Output_Mesh_Tecplot(Flame2D_Quad_Block *Soln_ptr,
 
 }
 
-/********************************************************
- * Routine: Output_RHS                                 *
- * For testing Jacobians                                *
- *                                                      *
- *                                                      *
- ********************************************************/
-int Output_RHS(Flame2D_Quad_Block *Soln_ptr,
-                         AdaptiveBlock2D_List &Soln_Block_List,
-                         Flame2D_Input_Parameters &Input_Parameters,
-                         const int Number_of_Time_Steps,
-                         const double &Time) {
-
-  
-    int i, i_output_title;
-    char prefix[256], extension[256], output_file_name[256];
-    char *output_file_name_ptr;
-    ofstream output_file;    
-
-    /* Determine prefix of output data file names. */
-
-    i = 0;
-    while (1) {
-       if (Input_Parameters.Output_File_Name[i] == ' ' ||
-           Input_Parameters.Output_File_Name[i] == '.') break;
-       prefix[i]=Input_Parameters.Output_File_Name[i];
-       i = i + 1;
-       if (i > strlen(Input_Parameters.Output_File_Name) ) break;
-    } /* endwhile */
-    prefix[i] = '\0';
-    strcat(prefix, "_RHS_cpu");
-
-    /* Determine output data file name for this processor. */
-
-    sprintf(extension, "%.6d", Soln_Block_List.ThisCPU);
-    strcat(extension, ".dat");
-    strcpy(output_file_name, prefix);
-    strcat(output_file_name, extension);
-    output_file_name_ptr = output_file_name;
-
-    /* Open the output data file. */
-
-    output_file.open(output_file_name_ptr, ios::out);
-    if (output_file.fail()) return (1);
-
-    /* Write the solution data for each solution block. */
-
-    i_output_title = 1;
-    for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
-       if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
-	 Output_RHS(Soln_ptr[i],
-		    Number_of_Time_Steps, 
-		    Time,
-		    Soln_Block_List.Block[i].gblknum,
-		    i_output_title,
-		    output_file);
-	 if (i_output_title) i_output_title = 0;
-       } /* endif */
-    }  /* endfor */
-
-    /* Close the output data file. */
-
-    output_file.close();
-
-    /* Writing of output data files complete.  Return zero value. */
-
-    return(0);
-
-}
-/********************************************************
- * Routine: Output_PERTURB                              *
- * For testing Jacobians                                *
- *                                                      *
- *                                                      *
- ********************************************************/
-int Output_PERTURB(Flame2D_Quad_Block *Soln_ptr,
-                           AdaptiveBlock2D_List &Soln_Block_List,
-                           Flame2D_Input_Parameters &Input_Parameters,
-                           const int Number_of_Time_Steps,
-                           const double &Time,
-                           const CPUTime &CPU_Time) {
-
-    int i;
-    char prefix[256], extension[256], restart_file_name[256];
-    char *restart_file_name_ptr;
-    ofstream restart_file;
-
-    /* Determine prefix of restart file names. */
-
-    i = 0;
- 
-    while (1) {
-       if (Input_Parameters.Restart_File_Name[i] == ' ' ||
-           Input_Parameters.Restart_File_Name[i] == '.') break;
-       prefix[i]=Input_Parameters.Restart_File_Name[i];
-       i = i + 1;
-       if (i > strlen(Input_Parameters.Restart_File_Name) ) break;
-    } /* endwhile */
-    prefix[i] = '\0';
-    strcat(prefix, "_blk");
-
-
-    /* Write the solution data for each solution block. */
-  
-    for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
-       if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
-	  // Restart file name base on global block number.
-          sprintf(extension, "%.6d", Soln_Block_List.Block[i].gblknum);
-          strcat(extension, ".soln");
-          strcpy(restart_file_name, prefix);
-          strcat(restart_file_name, extension);
-          restart_file_name_ptr = restart_file_name;
-
-          // Open restart file.
-          restart_file.open(restart_file_name_ptr, ios::out);
-          if (restart_file.fail()) return (1);
-
-          // Write solution block data.
-          restart_file.setf(ios::scientific);
-          restart_file << setprecision(14) << Number_of_Time_Steps 
-                       << " " << Time << " " << CPU_Time << "\n";
-          restart_file.unsetf(ios::scientific);
-	  /********* FLAME2D SPECIFIC ***********************************/
-	  restart_file << Input_Parameters.react_name << "\n";
-	  if(Input_Parameters.react_name == "NO_REACTIONS"){
-	    restart_file << Input_Parameters.Wo.ns <<" ";
-	    for(int k=0; k< Input_Parameters.Wo.ns; k++){ 
-	      restart_file << Input_Parameters.multispecies[k] <<" ";
-	    }
-	    restart_file<<endl;
-	  }
-	  /**************************************************************/
-
-	  for(int jj= Soln_ptr[i].JCl; jj<=Soln_ptr[i].JCu; jj++)
-	    for  (int ii= Soln_ptr[i].ICl; ii<=Soln_ptr[i].ICu ; ii++)
-	      {	
-		if((ii==16)&&(jj==4)){
-		  Soln_ptr[i].U[ii][jj][7] =Soln_ptr[i].U[ii][jj][7]*(1.0+1e-8);
-		  
-		}
-	      }
-	  
-	  
-      	  restart_file << setprecision(14) << Soln_ptr[i];
-
-    
-          // Close restart file.
-          restart_file.close();
-       } /* endif */
-    }  /* endfor */
-    /* Writing of restart files complete.  Return zero value. */
-    return(0);
-}
 
 /********************************************************
  * Routine: Output_Mesh_Gnuplot                         *
@@ -1127,23 +868,6 @@ void Freeze_Limiters(Flame2D_Quad_Block *Soln_ptr,
 
     for (int i = 0 ; i < Soln_Block_List.Nblk ; ++i ) {
        if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) Soln_ptr[i].freeze_limiters();
-    }  
-}
-
-/********************************************************
- * Routine: Change Mref                                 *
- *                                                      *
- ********************************************************/
-void Change_Mref(Flame2D_Quad_Block *Soln_ptr,
-		 AdaptiveBlock2D_List &Soln_Block_List,
-		 const double &Mr) {
-
-    for ( int i = 0 ; i < Soln_Block_List.Nblk ; ++i ) {
-      if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED){
-	Soln_ptr[i].W[0][0].Mref = Mr;  //static so only need to change once per block.
-	Soln_ptr[i].U[0][0].Mref = Mr;
-	Soln_ptr[i].Uo[0][0].Mref = Mr;
-      }
     }  
 }
 

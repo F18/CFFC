@@ -14,14 +14,17 @@
 /**
  * Initialization of static variables.
  */
+#ifndef STATIC_NUMBER_OF_SPECIES
 int     Mixture :: ns = 0;
+#endif
 double  Mixture :: Tmin = 0.0;
 double  Mixture :: Tmax = 0.0;
 double* Mixture :: Sc_ref = NULL;
+double* Mixture :: M = NULL;
+string* Mixture :: names = NULL;
 double* Mixture :: r = NULL;
 double* Mixture :: r0 = NULL;
-double* Mixture :: e = NULL;
-bool    Mixture :: isConstSchmidt = true;
+bool    Mixture :: isConstSchmidt = false;
 string  Mixture :: ct_mech_name = "gri30";
 string  Mixture :: ct_mech_file = "gri30.xml";
 IdealGasMix* Mixture :: ct_gas = NULL;
@@ -42,12 +45,12 @@ Transport*   Mixture :: ct_trans = NULL;
  * \param trans_data_flag Flag indicating whether NASA of Lennard-Jones data
  * \param constant_schmidt Boolean indicating whether constant schmidt values.
  ****************************************************/
-void Mixture :: setMixture(const char *PATH,
-			   const string &mech_name,
-			   const string &mech_file,
-			   const double* Schmidt, 
-			   const bool &constant_schmidt) {
+void Mixture :: setMixture(const string &mech_name,
+			   const string &mech_file) {
   
+  // deallocate first
+  DeallocateStatic();
+
   //create a new ideal gas mixture class
   ct_mech_name = mech_name;
   ct_mech_file = mech_file;
@@ -60,49 +63,74 @@ void Mixture :: setMixture(const char *PATH,
   }
 
   // ascertain the number of species
-  ns = ct_gas->nSpecies();
 #ifdef STATIC_NUMBER_OF_SPECIES
-  if( STATIC_NUMBER_OF_SPECIES < ns) {
+  if( STATIC_NUMBER_OF_SPECIES != ns) {
       cerr << "\n ERROR, Mixture::setMixture() - Built using static species with "
 	   << STATIC_NUMBER_OF_SPECIES 
 	   << " species predefined, asking for " << ns
 	   << endl; 
       exit(1); 
     }
+#else
+  ns = ct_gas->nSpecies();
 #endif
-
-  //allocate static memory and load the species data  
-  AllocateStatic();
-  for(int i=0; i<ns; i++){
-    Sc_ref[i] = Schmidt[i];
-  }
-
-  // are we using constant schmidt
-  isConstSchmidt = constant_schmidt;
-
 
   //set data temperature ranges for mixture
   ct_gas->setTemperature(TREF);
   ct_gas->setPressure(PREF);
   Tmin = ct_gas->minTemp();
   Tmax = ct_gas->maxTemp();
+
+  // get non-dimensional heats of formation
+  ct_gas->getEnthalpy_RT( Hform );
+  
+  //allocate static memory and load the species data  
+  AllocateStatic();
+  for(int i=0; i<ns; i++){
+    Sc_ref[i] = 1.0;
+    M[i] = ct_gas->molarMass(i);
+    names[i] = ct_gas->speciesName(i);
+    Hform[i] *= (Cantera::GasConstant/M[i]) * TREF;
+  }
   
 }   
 
 /****************************************************
+ * Set a constant schmidt number
+ ****************************************************/
+void Mixture :: setConstantSchmidt(const double* Sc) {
+  isConstSchmidt = true;
+  for(int i=0; i<ns; i++){
+    Sc_ref[i] = Sc[i];
+  }  
+}
+/****************************************************
  * Mixture molecular mass [kg/mol]
  ****************************************************/
 double Mixture :: molarMass( const double* y ) {
-  ct_gas->setMassFractions_NoNorm(y);
-  return ct_gas->meanMolecularWeight();
+  double sum( 0.0 );
+  for(int i=0; i<ns; i++){
+    sum += y[i]/M[i];
+  }
+  return 1.0/sum;
+}
+
+/****************************************************
+ * Mixture heat of formation [J/kg]
+ ****************************************************/
+double Mixture :: heatFormation( const double* y ) {
+  double sum( 0.0 );
+  for(int i=0; i<ns; i++){
+    sum += y[i]*Hform[i];
+  }
+  return sum;
 }
 
 /****************************************************
  * Mixture gas constant [kg/mol]
  ****************************************************/
 double Mixture :: gasConstant( const double* y ){
-  ct_gas->setMassFractions_NoNorm(y);
-  return Cantera::GasConstant/ct_gas->meanMolecularWeight();
+  return Cantera::GasConstant/molarMass(y);
 }
 
 /****************************************************
@@ -146,9 +174,7 @@ double Mixture :: internalEnergy( const double &Temp, const double* y ){
 double Mixture :: internalEnergySens( const double &Temp, const double* y ){
   ct_gas->setMassFractions_NoNorm(y);
   ct_gas->setTemperature(Temp);
-  double e_(ct_gas->intEnergy_mass());
-  ct_gas->setTemperature( TREF );
-  return (e_-ct_gas->enthalpy_mass());
+  return (ct_gas->intEnergy_mass() - heatFormation(y));
 }
 
 /****************************************************
@@ -165,9 +191,7 @@ double Mixture :: enthalpy( const double &Temp, const double* y ){
 double Mixture :: enthalpySens( const double &Temp, const double* y ) {
   ct_gas->setMassFractions_NoNorm(y);
   ct_gas->setTemperature(Temp);
-  double h_(ct_gas->enthalpy_mass());
-  ct_gas->setTemperature( TREF );
-  return (h_-ct_gas->enthalpy_mass());
+  return (ct_gas->enthalpy_mass() - heatFormation(y));
 }
 
 /****************************************************
@@ -243,6 +267,22 @@ double Mixture :: lewis(const double &Temp,
        ( heatCapacity_p(Temp,y)*rho*speciesDiffCoeff(Temp,y,i) );
 }
 
+
+/****************************************************
+ * Derivative of species h wrt to mass fraction
+ ****************************************************/
+void Mixture :: getDihdDc(const double &Temp, 
+			  const double &Press, 
+			  const double* y, 
+			  double* dh) {
+  ct_gas->setState_TPY(Temp, Press, y);
+  ct_gas->getEnthalpy_RT(dh); // -> h = hs + hf
+  double cp( ct_gas->cp_mass() );
+  double M_mix( molarMass(y) );
+  for(int i=0; i<ns; i++)
+    dh[i] = ( dh[i]*(Cantera::GasConstant/M[i])*Temp -
+	      cp*Temp*M_mix/M[i] );
+}
 
 
 /***********************************************************************

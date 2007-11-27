@@ -120,46 +120,30 @@ void Set_Default_Input_Parameters(Flame2D_Input_Parameters &IP) {
     
     /******************************************/
     /********** FLAME2D SPECIFIC ***************/
-    //define multispecies with no reactions.
-    IP.react_name ="NO_REACTIONS";   
-    //strcpy(IP.React_Name,"NO_REACTIONS"); 
-    //Use air with 79% N2, and 21% 02 by volume.(ie. mol)
-    IP.num_species = 2;
+    // cantera parameters
+    IP.ct_mech_name = "air";
+    IP.ct_mech_file = "air.xml";
+
+    // load the mechanism
+    Flame2D_pState::setMixture(IP.ct_mech_name,
+			       IP.ct_mech_file);
     IP.Allocate();
-    IP.multispecies[0] = "N2"; 
-    IP.multispecies[1] = "O2"; 
-    IP.mass_fractions[0] = 0.765; 
-    IP.mass_fractions[1] = 0.235;
+
+    // set constant schmidt
     IP.Schmidt[0] = IP.Global_Schmidt;
     IP.Schmidt[1] = IP.Global_Schmidt;
-
-    // transport data 
-    string_ptr = "Transport-NASA";
-    strcpy(IP.trans_type, string_ptr);
-    IP.i_trans_type = TRANSPORT_NASA;
-
-    IP.Wo.React.set_reactions(IP.react_name); 
-    IP.Wo.React.set_species(IP.multispecies,IP.num_species);
-   
-    //Get Species parameters and set default initial values
-    IP.Wo.set_species_data(IP.num_species,IP.multispecies,IP.CFFC_Path,
-			   IP.Mach_Number_Reference,IP.Schmidt,IP.i_trans_type); 
-    IP.Uo.set_species_data(IP.num_species,IP.multispecies,IP.CFFC_Path,
-			   IP.Mach_Number_Reference,IP.Schmidt,IP.i_trans_type);
+    Mixture::setConstantSchmidt(IP.Schmidt);
 
     //Air at STD_ATM
-    IP.Pressure = IP.Wo.p;
-    IP.Temperature = IP.Wo.T(); 
-    IP.Wo.v.x =IP.Mach_Number*IP.Wo.a()*cos(TWO*PI*IP.Flow_Angle/360.00);
-    IP.Wo.v.y =IP.Mach_Number*IP.Wo.a()*sin(TWO*PI*IP.Flow_Angle/360.00);
-    IP.Wo.set_initial_values(IP.mass_fractions);
-    IP.Uo.set_initial_values(IP.mass_fractions);
-    IP.Uo = U(IP.Wo);   
+    //Use air with 79% N2, and 21% 02 by volume.(ie. mol)
+    IP.mass_fractions[0] = 0.765; 
+    IP.mass_fractions[1] = 0.235;
+    IP.Pressure = PRESSURE_STDATM;
+    IP.Temperature = TEMPERATURE_STDATM; 
+    IP.Wo.setState_TPY(IP.Temperature, IP.Pressure, IP.mass_fractions);
     IP.Heat_Source = ZERO;
-    
-    // cantera parameters
-    IP.ct_mech_name = "none";
-    IP.ct_mech_file = "none";
+    IP.Wo.setVelocity( IP.Mach_Number*IP.Wo.a()*cos(TWO*PI*IP.Flow_Angle/360.00),
+		       IP.Mach_Number*IP.Wo.a()*sin(TWO*PI*IP.Flow_Angle/360.00) );
 
     // reaction parameters
     IP.equivalence_ratio = 1.0;
@@ -185,7 +169,6 @@ void Set_Default_Input_Parameters(Flame2D_Input_Parameters &IP) {
     // Gravity
     IP.Gravity = 0;  //default sans gravity
     IP.gravity_z = -9.81;  // [m/s] gravitational accel on earh
-    IP.Uo.set_gravity(IP.gravity_z);
     IP.Wo.set_gravity(IP.gravity_z);
 
     IP.BluffBody_Data_Usage = 0; 
@@ -269,9 +252,6 @@ void Set_Default_Input_Parameters(Flame2D_Input_Parameters &IP) {
     IP.Mesh_Stretching_Type_Jdir = STRETCHING_FCN_LINEAR;
     IP.Mesh_Stretching_Factor_Idir = 1.01;
     IP.Mesh_Stretching_Factor_Jdir = 1.01;
-
-    // ICEM:
-    IP.ICEMCFD_FileNames = ICEMCFD_get_filenames();
 
     // AMR:
     IP.AMR = 0;
@@ -586,17 +566,12 @@ void Broadcast_Input_Parameters(Flame2D_Input_Parameters &IP) {
       IP.get_cffc_path();
       IP.Wo.set_species_data(IP.num_species,IP.multispecies,IP.CFFC_Path,
 			     IP.Mach_Number_Reference,IP.Schmidt,IP.i_trans_type); 
-      IP.Uo.set_species_data(IP.num_species,IP.multispecies,IP.CFFC_Path,
-			     IP.Mach_Number_Reference,IP.Schmidt,IP.i_trans_type);
       IP.Wo.set_initial_values(IP.mass_fractions);
-      IP.Uo.set_initial_values(IP.mass_fractions);
    
       //set proper Temp & Pressure instead of defaults
       IP.Wo.rho = IP.Pressure/(IP.Wo.Rtot()*IP.Temperature); 
       IP.Wo.p = IP.Pressure;	
       IP.Wo.v.zero();
-
-      IP.Uo = U(IP.Wo);
     } 
     /*********************************************************
      ******************* FLAME2D END **************************
@@ -824,22 +799,6 @@ void Broadcast_Input_Parameters(Flame2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.BC_West),
 			  1,
 			  MPI::INT,0);
-    // ICEM:
-    if (!CFFC_Primary_MPI_Processor()) {
-      IP.ICEMCFD_FileNames = new char*[3];
-       for (int i = 0; i < 3; i++) {
-          IP.ICEMCFD_FileNames[i] = new char[INPUT_PARAMETER_LENGTH_FLAME2D];
-       } /* endfor */
-    } /* endif */
-    MPI::COMM_WORLD.Bcast(IP.ICEMCFD_FileNames[0], 
-                          INPUT_PARAMETER_LENGTH_FLAME2D, 
-                          MPI::CHAR, 0);
-    MPI::COMM_WORLD.Bcast(IP.ICEMCFD_FileNames[1], 
-                          INPUT_PARAMETER_LENGTH_FLAME2D, 
-                          MPI::CHAR, 0);
-    MPI::COMM_WORLD.Bcast(IP.ICEMCFD_FileNames[2], 
-                          INPUT_PARAMETER_LENGTH_FLAME2D, 
-                          MPI::CHAR, 0);
 
     // AMR & Refinement Parameters
     MPI::COMM_WORLD.Bcast(&(IP.AMR), 
@@ -976,21 +935,8 @@ void Broadcast_Input_Parameters(Flame2D_Input_Parameters &IP) {
                           1, 
                           MPI::DOUBLE, 0);
 
-    // Reset the static variables.
-    IP.Wo.set_turbulence_variables(IP.C_constant,
-				   IP.von_Karman_Constant,
-				   IP.yplus_sublayer,
-				   IP.yplus_buffer_layer,
-				   IP.yplus_outer_layer); 
-    IP.Uo.set_turbulence_variables(IP.C_constant,
-				   IP.von_Karman_Constant,
-				   IP.yplus_sublayer,
-				   IP.yplus_buffer_layer,
-				   IP.yplus_outer_layer);
-
     // set gravity
     IP.Wo.set_gravity(IP.gravity_z);
-    IP.Uo.set_gravity(IP.gravity_z);
 
 #endif
 }
@@ -1245,17 +1191,12 @@ void Broadcast_Input_Parameters(Flame2D_Input_Parameters &IP,
       IP.get_cffc_path();
       IP.Wo.set_species_data(IP.num_species,IP.multispecies,IP.CFFC_Path,
 			     IP.Mach_Number_Reference,IP.Schmidt,IP.i_trans_type); 
-      IP.Uo.set_species_data(IP.num_species,IP.multispecies,IP.CFFC_Path,
-			     IP.Mach_Number_Reference,IP.Schmidt,IP.i_trans_type);
       IP.Wo.set_initial_values(IP.mass_fractions);
-      IP.Uo.set_initial_values(IP.mass_fractions);
 
       //set proper Temp & Pressure instead of defaults
       IP.Wo.rho = IP.Pressure/(IP.Wo.Rtot()*IP.Temperature); 
       IP.Wo.p = IP.Pressure;	
       IP.Wo.v.zero();
-
-      IP.Uo = U(IP.Wo);
     } 
     /*********************************************************
      ******************* FLAME2D END **************************
@@ -1484,22 +1425,6 @@ void Broadcast_Input_Parameters(Flame2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.BC_West),
 		       1,
 		       MPI::INT,Source_Rank);
-    // ICEM:
-    if (!(CFFC_MPI::This_Processor_Number == Source_Rank)) {
-       IP.ICEMCFD_FileNames = new char*[3];
-       for (i = 0; i < 3; i++) {
-          IP.ICEMCFD_FileNames[i] = new char[INPUT_PARAMETER_LENGTH_FLAME2D];
-       } /* endfor */
-    } /* endif */
-    Communicator.Bcast(IP.ICEMCFD_FileNames[0], 
-                       INPUT_PARAMETER_LENGTH_FLAME2D, 
-                       MPI::CHAR, Source_Rank);
-    Communicator.Bcast(IP.ICEMCFD_FileNames[1], 
-                       INPUT_PARAMETER_LENGTH_FLAME2D, 
-                       MPI::CHAR, Source_Rank);
-    Communicator.Bcast(IP.ICEMCFD_FileNames[2], 
-                       INPUT_PARAMETER_LENGTH_FLAME2D, 
-                       MPI::CHAR, Source_Rank);
 
     // AMR & Refinement Parameters
     Communicator.Bcast(&(IP.AMR), 
@@ -1637,21 +1562,8 @@ void Broadcast_Input_Parameters(Flame2D_Input_Parameters &IP,
                        1, 
                        MPI::DOUBLE, Source_Rank);
 
-    // Reset the static variables.
-    IP.Wo.set_turbulence_variables(IP.C_constant,
-				   IP.von_Karman_Constant,
-				   IP.yplus_sublayer,
-				   IP.yplus_buffer_layer,
-				   IP.yplus_outer_layer); 
-    IP.Uo.set_turbulence_variables(IP.C_constant,
-				   IP.von_Karman_Constant,
-				   IP.yplus_sublayer,
-				   IP.yplus_buffer_layer,
-				   IP.yplus_outer_layer);
-
     // set gravity
     IP.Wo.set_gravity(IP.gravity_z);
-    IP.Uo.set_gravity(IP.gravity_z);
 }
 #endif
 
@@ -2395,101 +2307,6 @@ int Parse_Next_Input_Control_Parameter(Flame2D_Input_Parameters &IP) {
 
        
        /*************************************/
-       /**** REACTIONS SET FOR HARDCODED ****/
-       /*************************************/
-    } else if (strcmp(IP.Next_Control_Parameter, "Reaction_Mechanism") == 0) {
-       i_command = 200;
-       Get_Next_Input_Control_Parameter(IP);
-       IP.Deallocate();  //DEALLOCATE BEFORE CHANGING num_species
-       int flag =0;
-
-       //convert IP to string & define setup which Reaction Mechanism
-       IP.react_name = IP.Next_Control_Parameter;
-       IP.Wo.React.set_reactions(IP.react_name);
-   
-       IP.num_species = IP.Wo.React.num_species;      
-       IP.Allocate();
-
-       //Get species and load appropriate data
-       for(int i=0; i<IP.num_species; i++){
-	 IP.multispecies[i] = IP.Wo.React.species[i];
-	 IP.Schmidt[i] = IP.Global_Schmidt;
-       }   
-
-       //Get next line and read in Schmidt numbers else will use defaults
-       Get_Next_Input_Control_Parameter(IP);
-       if (strcmp(IP.Next_Control_Parameter, "Schmidt_Numbers") == 0){
-	 for(int i=0; i<IP.num_species; i++){
-	   IP.Input_File >> IP.Schmidt[i];	 	 
-	 }	 
-	 //fudge the line number and istream counters
-	 IP.Input_File.getline(buffer, sizeof(buffer)); 
-	 IP.Line_Number = IP.Line_Number + 1 ;
-	 flag = 1;
-       } else { //Set to one value ~1
-	 for(int i=0; i<IP.num_species; i++){
-	   IP.Schmidt[i] = IP.Global_Schmidt;	 	 
-	 }
-	 //To fix up line numbers
-	 IP.Line_Number = IP.Line_Number - 1 ;
-       }
-
-       //Set appropriate species data
-       IP.Wo.set_species_data(IP.num_species,IP.multispecies,IP.CFFC_Path,
-			      IP.Mach_Number_Reference,IP.Schmidt,IP.i_trans_type); 
-       IP.Uo.set_species_data(IP.num_species,IP.multispecies,IP.CFFC_Path,
-			      IP.Mach_Number_Reference,IP.Schmidt,IP.i_trans_type);
-  
-       //Get next line and read in mass fractions or set defaults
-       if(flag){
-	 Get_Next_Input_Control_Parameter(IP);
-       }
-       if (strcmp(IP.Next_Control_Parameter, "Mass_Fractions") == 0){
-	 //Get Initial Mass Fractions from user	
-	 double temp=0.0;
-	 for(int i=0; i<IP.num_species; i++){
-	   IP.Input_File >> IP.mass_fractions[i];
-	   temp += IP.mass_fractions[i];
-	 }
-	 //check to make sure it adds to 1
-	 if(temp < ONE-MICRO || temp > ONE+MICRO){ 
-	   cout<<"\n Mass Fractions summed to "<<temp<<". Should sum to 1\n";
-	   i_command = INVALID_INPUT_VALUE;
-	 }
-	 //Set inital Values; 
-	 IP.Wo.set_initial_values(IP.mass_fractions);  
-	 IP.Uo.set_initial_values(IP.mass_fractions);  
-	 
-	 //fudge the line number and istream counters
-	 IP.Input_File.getline(buffer, sizeof(buffer));  
-	 IP.Line_Number = IP.Line_Number + 1; 
-        
-       //Spit out appropriate mass fractions and exit
-       } else if (strcmp(IP.Next_Control_Parameter, "Equivalence_Ratio") == 0){        
-	 double phi;
-	 IP.Input_File >> phi;
-	 Equivalence_Ratio(phi);
-
-	 //If no mass fraction data is set to defaults (all equal to 1/num_species) 
-       } else {
-	 IP.Line_Number = IP.Line_Number - 1 ;
-       }
-         
-       // recalculate density and initialize conserved state
-       IP.Wo.rho = IP.Pressure/(IP.Wo.Rtot()*IP.Temperature); 	
-       IP.Uo = U(IP.Wo);
-
-       
-       /***************************************/
-       /**** REACTIONS FOR USER DEFINED *******/ 
-       /***************************************/
-    } else if (strcmp(IP.Next_Control_Parameter, "User_Reaction_Mechanism") == 0) { 
-      // this will be added but its not quite yet
-      i_command=201;
-      cout<<endl<<IP.Next_Control_Parameter<<"\n not currently available in freeware version :)\n";
-      i_command = INVALID_INPUT_VALUE;   
-      
-       /*************************************/
        /***** REACTIONS SET FOR CANTERA *****/
        /*************************************/
     } else if (strcmp(IP.Next_Control_Parameter, "Cantera_Reaction_Mechanism") == 0) {
@@ -2500,7 +2317,6 @@ int Parse_Next_Input_Control_Parameter(Flame2D_Input_Parameters &IP) {
        int flag =0;
 
        //convert IP to string & define Reaction Mechanism
-       IP.react_name = "CANTERA";
        IP.ct_mech_name = IP.Next_Control_Parameter;
 
        //get the mechanism file name and load the mechanism
@@ -2508,196 +2324,88 @@ int Parse_Next_Input_Control_Parameter(Flame2D_Input_Parameters &IP) {
        if (strcmp(IP.Next_Control_Parameter, "Mechanism_File") == 0){
 	 Get_Next_Input_Control_Parameter(IP);
 	 IP.ct_mech_file = IP.Next_Control_Parameter;
-	 IP.Wo.React.ct_load_mechanism(IP.ct_mech_file, IP.ct_mech_name);
-	 IP.num_species = IP.Wo.React.num_species;      
+	 Flame2D_pState::setMixture(IP.ct_mech_name,
+				    IP.ct_mech_file);
+
+	 // allocate storage
+	 IP.Allocate();
+
+	 //Get species and load appropriate data
+	 for(int i=0; i<IP.Wo.NumSpecies(); i++){
+	   IP.Schmidt[i] = IP.Global_Schmidt;
+	 }   
+
        // if no reaction file was given, return in error
        } else {
-	 IP.num_species = 0;
 	 i_command = INVALID_INPUT_CODE;
        }
 
-       // allocate storage
-       IP.Allocate();
+    } else if (strcmp(IP.Next_Control_Parameter, "Schmidt_Numbers") == 0){
 
-       //Get species and load appropriate data
-       for(int i=0; i<IP.num_species; i++){
-	 IP.multispecies[i] = IP.Wo.React.species[i];
-	 IP.Schmidt[i] = IP.Global_Schmidt;
-       }   
-
-       //
-       //Get next line and read in Schmidt numbers else will use defaults
-       //
-       Get_Next_Input_Control_Parameter(IP);
-       if (strcmp(IP.Next_Control_Parameter, "Schmidt_Numbers") == 0){
-
-	 // Get the schmidt numbers from user 
-	 // Here we use Cantera to parse the string of the form:
-	 //       CH4:0.5, O2:0.5
-	 // All other species will be assumed to have unity schmidt number.  
-	 // Returns them in an array.
-	 IP.Input_File.getline(buffer, sizeof(buffer)); 
-	 IP.Line_Number = IP.Line_Number + 1 ;
-	 IP.Wo.React.ct_parse_schmidt_string(buffer, IP.Schmidt);
-	 flag = 1;
-
-       } else {
-
-	 //Set to one value ~1
-	 for(int i=0; i<IP.num_species; i++)
-	   IP.Schmidt[i] = IP.Global_Schmidt; 
-
-	 //To fix up line numbers
-	 IP.Line_Number = IP.Line_Number - 1 ;
-       }
-
-
-       //
-       //Set appropriate species data
-       //
-       IP.Wo.set_species_data(IP.num_species,IP.multispecies,IP.CFFC_Path,
-			      IP.Mach_Number_Reference,IP.Schmidt,IP.i_trans_type);
-       IP.Uo.set_species_data(IP.num_species,IP.multispecies,IP.CFFC_Path,
-			      IP.Mach_Number_Reference,IP.Schmidt,IP.i_trans_type);
-  
-       //
-       //Get next line and read in mass fractions or set defaults
-       //
-       if(flag){
-	 Get_Next_Input_Control_Parameter(IP);
-       }
-
-       // Get Initial Mass Fractions from user 
-       // Here we use Cantera to parse the string of the form:
-       //       CH4:0.5, O2:0.5
-       // All other species will be assumed to have 0 mass fractions.  
-       // Cantera also normalizes the mass fractions to sum to unity.  
-       // Returns them in an array.
-       if (strcmp(IP.Next_Control_Parameter, "Mass_Fractions") == 0){
-	 IP.Input_File.getline(buffer, sizeof(buffer)); 
-	 IP.Line_Number = IP.Line_Number + 1 ;
-	 IP.Wo.React.ct_parse_mass_string(buffer, IP.mass_fractions);
-
-	 //Set inital Values; 
-	 IP.Wo.set_initial_values(IP.mass_fractions);  
-	 IP.Uo.set_initial_values(IP.mass_fractions);  
-	         
-       // Get Initial Molar Fractions from user
-       // Here we use Cantera to parse the string of the form:
-       //       CH4:0.5, O2:0.5
-       // All other species will be assumed to have 0 molar fractions.
-       // Cantera also normalizes the molar fractions to sum to unity. 
-       // Returns them in an array.
-       } else if (strcmp(IP.Next_Control_Parameter, "Molar_Fractions") == 0){
-	 IP.Input_File.getline(buffer, sizeof(buffer)); 
-	 IP.Line_Number = IP.Line_Number + 1 ;
-	 IP.Wo.React.ct_parse_mole_string(buffer, IP.mass_fractions);
-
-	 // convert molar fractions to mass fractions
-	 double sum(0.0);
-	 for(int i=0; i<IP.num_species; i++) 
-	   sum += IP.mass_fractions[i]*IP.Wo.specdata[i].Mol_mass();
-	 for(int i=0; i<IP.num_species; i++) 
-	   IP.mass_fractions[i] = IP.mass_fractions[i]*IP.Wo.specdata[i].Mol_mass()/sum;
-
-	 //Set inital Values; 
-	 IP.Wo.set_initial_values(IP.mass_fractions);  
-	 IP.Uo.set_initial_values(IP.mass_fractions);  
-	 
-       // Get Initial Equivalence Ratio from user 
-       // Here we use Cantera to compute the equivalent mass fractions:
-       } else if (strcmp(IP.Next_Control_Parameter, "Equivalence_Ratio") == 0){
-	 i_command = 518;
-	 IP.Line_Number = IP.Line_Number + 1;
-	 IP.Input_File >> IP.equivalence_ratio;
-	 IP.Input_File.getline(buffer, sizeof(buffer));
-
-	 //Set inital Values; 
-	 if (IP.equivalence_ratio < 0) {
-	   i_command = INVALID_INPUT_VALUE;
-	 } else {
-	   IP.Wo.React.ct_composition(IP.Fuel_Species, 
-				      IP.equivalence_ratio, 
-				      IP.mass_fractions);
-	   IP.Wo.set_initial_values(IP.mass_fractions);  
-	   IP.Uo.set_initial_values(IP.mass_fractions);  
-	 }
-	 
-       //If no mass fraction data is set to defaults (all equal to 1/num_species) 
-       } else {
-	 IP.Line_Number = IP.Line_Number - 1 ;
-       }
-
-       // recalculate density and initialize conserved state
-       IP.Wo.rho = IP.Pressure/(IP.Wo.Rtot()*IP.Temperature); 	
-       IP.Uo = U(IP.Wo);
-
-
-      /******************************************/
-      /**** NON REACTING, BUT MULTIPLE GASES ****/
-      /******************************************/
-    } else if (strcmp(IP.Next_Control_Parameter, "Species") == 0) { 
-      i_command = 203;
-  
-      IP.Deallocate();  //DEALLOCATE BEFORE CHANGING num_species
- 
-      // Non Reaction case so set NO_REACTIONS flag in reactions class
-      IP.react_name ="NO_REACTIONS";
-      IP.Wo.React.set_reactions(IP.react_name);
-     
-      //read in the number of species (should be first in line) 
-      IP.Input_File>>IP.num_species;     
-      IP.Allocate();
-
-      //read in species names
-      for(int i=0; i<IP.num_species; i++){
-	IP.Input_File >> IP.multispecies[i];
-        IP.Schmidt[i] = IP.Global_Schmidt;
-      }
-
-      //copy names into Reaction class for storage
-      IP.Wo.React.set_species(IP.multispecies,IP.num_species);
-       
-      //Setup State class data and find species thermo and transport properties
-      IP.Wo.set_species_data(IP.num_species,IP.multispecies,IP.CFFC_Path,
-			     IP.Mach_Number_Reference,IP.Schmidt,IP.i_trans_type); 
-      IP.Uo.set_species_data(IP.num_species,IP.multispecies,IP.CFFC_Path,
-			     IP.Mach_Number_Reference,IP.Schmidt,IP.i_trans_type);
-    
-      //More Fudging of lines 
+      // Get the schmidt numbers from user 
+      // Here we use Cantera to parse the string of the form:
+      //       CH4:0.5, O2:0.5
+      // All other species will be assumed to have unity schmidt number.  
+      // Returns them in an array.
+      IP.Input_File.getline(buffer, sizeof(buffer)); 
       IP.Line_Number = IP.Line_Number + 1 ;
-      IP.Input_File.getline(buffer, sizeof(buffer));  
-      
-      //Get next line and read in mass fractions or set defaults
-      Get_Next_Input_Control_Parameter(IP);
-      if (strcmp(IP.Next_Control_Parameter, "Mass_Fractions") == 0){
-	 //Get Initial Mass Fractions from user 
-	 double temp=0.0;
-	 for(int i=0; i<IP.num_species; i++){
-	   IP.Input_File >> IP.mass_fractions[i];
-	   temp += IP.mass_fractions[i];
-	 }
-	 //check to make sure it adds to 1
-	 if(temp < ONE-MICRO || temp > ONE+MICRO){ 
-	   cout<<"\n Mass Fractions summed to "<<temp<<". Should be sum to 1\n";
-	   i_command = INVALID_INPUT_VALUE;
-	 }
-	 //Set inital Values; 
-	 IP.Wo.set_initial_values(IP.mass_fractions);  
-	 IP.Uo.set_initial_values(IP.mass_fractions);
-	 
-	 //fudge the line number and istream counters
-	 IP.Input_File.getline(buffer, sizeof(buffer));  
-	 IP.Line_Number = IP.Line_Number + 1; 
-       } 
-       //If no mass fraction data is set to defaults (all equal to 1/num_species)
-       else{        
-	 IP.Line_Number = IP.Line_Number - 1 ;
-       }
+      Mixture::parse_schmidt_string(buffer, IP.Schmidt);
+      Mixture::setConstantSchmidt(IP.Schmidt);
 
-      // recalculate density and initialize conserved state
-      IP.Wo.rho = IP.Pressure/(IP.Wo.Rtot()*IP.Temperature); 	
-      IP.Uo = U(IP.Wo);
+    } else if (strcmp(IP.Next_Control_Parameter, "Mass_Fractions") == 0){
+      // Get Initial Mass Fractions from user 
+      // Here we use Cantera to parse the string of the form:
+      //       CH4:0.5, O2:0.5
+      // All other species will be assumed to have 0 mass fractions.  
+      // Cantera also normalizes the mass fractions to sum to unity.  
+      // Returns them in an array.
+      IP.Input_File.getline(buffer, sizeof(buffer)); 
+      IP.Line_Number = IP.Line_Number + 1 ;
+      Mixture::parse_mass_string(buffer, IP.mass_fractions);
+
+      //Set inital Values; 
+      IP.Wo.setState_TPY(IP.Temperature, IP.Pressure, IP.mass_fractions);
+	         
+    } else if (strcmp(IP.Next_Control_Parameter, "Molar_Fractions") == 0){
+      // Get Initial Molar Fractions from user
+      // Here we use Cantera to parse the string of the form:
+      //       CH4:0.5, O2:0.5
+      // All other species will be assumed to have 0 molar fractions.
+      // Cantera also normalizes the molar fractions to sum to unity. 
+      // Returns them in an array.
+      IP.Input_File.getline(buffer, sizeof(buffer)); 
+      IP.Line_Number = IP.Line_Number + 1 ;
+      Mixture::parse_mole_string(buffer, IP.mass_fractions);
+      
+      // convert molar fractions to mass fractions
+      double sum(0.0);
+      for(int i=0; i<IP.Wo.NumSpecies(); i++) 
+	sum += IP.mass_fractions[i]*Mixture::molarMass(i);
+      for(int i=0; i<IP.Wo.NumSpecies(); i++) 
+	IP.mass_fractions[i] = IP.mass_fractions[i]*Mixture::molarMass(i)/sum;
+      
+      //Set inital Values; 
+      IP.Wo.setState_TPY(IP.Temperature, IP.Pressure, IP.mass_fractions);
+
+	 
+    } else if (strcmp(IP.Next_Control_Parameter, "Equivalence_Ratio") == 0){
+      // Get Initial Equivalence Ratio from user 
+      // Here we use Cantera to compute the equivalent mass fractions:
+      i_command = 518;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.equivalence_ratio;
+      IP.Input_File.getline(buffer, sizeof(buffer));
+      
+      //Set inital Values; 
+      if (IP.equivalence_ratio < 0) {
+	i_command = INVALID_INPUT_VALUE;
+      } else {
+	Mixture::composition(IP.Fuel_Species, 
+			     IP.equivalence_ratio, 
+			     IP.mass_fractions);
+	IP.Wo.setState_TPY(IP.Temperature, IP.Pressure, IP.mass_fractions);
+      }
+          
     
       /************* TEMPERATURE *************/
     } else if (strcmp(IP.Next_Control_Parameter, "Temperature") == 0) {
@@ -2708,9 +2416,8 @@ int Parse_Next_Input_Control_Parameter(Flame2D_Input_Parameters &IP) {
       if (IP.Temperature <= ZERO) {
 	i_command = INVALID_INPUT_VALUE;
       } else {
-	IP.Wo.rho = IP.Pressure/(IP.Wo.Rtot()*IP.Temperature); 	
+	IP.Wo.setState_TPY(IP.Temperature, IP.Pressure, IP.mass_fractions);
 	//IP.Wo.v.zero();
-	IP.Uo = U(IP.Wo);
      } /* endif */
    
       /************* PRESSURE ****************/
@@ -2723,21 +2430,8 @@ int Parse_Next_Input_Control_Parameter(Flame2D_Input_Parameters &IP) {
        if (IP.Pressure <= ZERO) {
 	 i_command = INVALID_INPUT_VALUE;
        } else {
-	 IP.Wo.rho = IP.Pressure/(IP.Wo.Rtot()*IP.Temperature); 
-	 IP.Wo.p = IP.Pressure;	
-	 //IP.Wo.v.zero();
-	 IP.Uo = U(IP.Wo);
+	 IP.Wo.setState_TPY(IP.Temperature, IP.Pressure, IP.mass_fractions);
        } /* endif */
-
-       /************* HEAT SOURCE ****************/
-    } else if (strcmp(IP.Next_Control_Parameter, "Temperature_Rise") == 0) {
-       i_command = 43;
-       IP.Line_Number = IP.Line_Number + 1;
-       double temp;
-       IP.Input_File >> temp;
-       IP.Heat_Source = IP.Wo.rho*(IP.Wo.h(temp+IP.Temperature) - IP.Wo.Rtot()*IP.Temperature);
-
-       IP.Input_File.getline(buffer, sizeof(buffer));
 
        /********** EXIT MASS FRACTIONS ***********/
     } else if (strcmp(IP.Next_Control_Parameter, "Exit_Mass_Fractions") == 0){
@@ -2745,7 +2439,7 @@ int Parse_Next_Input_Control_Parameter(Flame2D_Input_Parameters &IP) {
 
       // read in mass fractions
       double temp(0.0);
-      for(int i=0; i<IP.num_species; i++) {
+      for(int i=0; i<IP.Wo.NumSpecies(); i++) {
 	IP.Input_File  >> IP.mass_fractions_out[i];
 	temp += IP.mass_fractions_out[i];
       }
@@ -2775,22 +2469,6 @@ int Parse_Next_Input_Control_Parameter(Flame2D_Input_Parameters &IP) {
        strcpy(IP.Fuel_Species, IP.Next_Control_Parameter);
 
 
-       /********* TRANSPORT DATA **********************************************
-       // Transport-Lennard-Jones  - Use Lennard-Jones potentials or 
-       // Transport-NASA - use Nasa curvefits
-       // If not specified, default = NASA
-       ************************************************************************/
-    } else if (strcmp(IP.Next_Control_Parameter, "Transport_Data_Type") == 0) {
-      i_command = 44;
-      Get_Next_Input_Control_Parameter(IP);
-      strcpy(IP.trans_type, 
-	     IP.Next_Control_Parameter);
-      if (strcmp(IP.trans_type, "Transport-NASA") == 0) {
-	IP.i_trans_type = TRANSPORT_NASA;
-      } else if (strcmp(IP.trans_type, "Transport-Lennard-Jones") == 0) {
-	IP.i_trans_type = TRANSPORT_LENNARD_JONES;
-      } // end if
-         
        /***********************************************************************
 	**************** END FLAME2D MODIFICATIONS *****************************
 	***********************************************************************/
@@ -2805,10 +2483,9 @@ int Parse_Next_Input_Control_Parameter(Flame2D_Input_Parameters &IP) {
 	i_command = INVALID_INPUT_VALUE;
       } else {
 	IP.Mach_Number_Reference = IP.Mach_Number;
-	IP.Wo.Mref = IP.Mach_Number;
-	IP.Uo.Mref = IP.Mach_Number;
-	IP.Wo.v.x = IP.Mach_Number*IP.Wo.a()*cos(TWO*PI*IP.Flow_Angle/360.00);
-	IP.Wo.v.y = IP.Mach_Number*IP.Wo.a()*sin(TWO*PI*IP.Flow_Angle/360.00);
+	IP.Wo.set_Mref(IP.Mach_Number_Reference );
+	IP.Wo.setVelocity( IP.Mach_Number*IP.Wo.a()*cos(TWO*PI*IP.Flow_Angle/360.00),
+			   IP.Mach_Number*IP.Wo.a()*sin(TWO*PI*IP.Flow_Angle/360.00) );
       } /* endif */
       
       /********** MACH NUMBER REFERENCE (for Low Mach Number Preconditioning ********/
@@ -2823,8 +2500,7 @@ int Parse_Next_Input_Control_Parameter(Flame2D_Input_Parameters &IP) {
       if (IP.Mach_Number_Reference < ZERO) {
 	i_command = INVALID_INPUT_VALUE;
       } else {
-	IP.Wo.Mref = IP.Mach_Number_Reference;
-	IP.Uo.Mref = IP.Mach_Number_Reference;
+	IP.Wo.set_Mref(IP.Mach_Number_Reference );
       } /* endif */
   
     } else if (strcmp(IP.Next_Control_Parameter, "Flow_Angle") == 0) {
@@ -2832,8 +2508,8 @@ int Parse_Next_Input_Control_Parameter(Flame2D_Input_Parameters &IP) {
        IP.Line_Number = IP.Line_Number + 1;
        IP.Input_File >> IP.Flow_Angle;
        IP.Input_File.getline(buffer, sizeof(buffer));
-       IP.Wo.v.x = IP.Mach_Number*IP.Wo.a()*cos(TWO*PI*IP.Flow_Angle/360.00);
-       IP.Wo.v.y = IP.Mach_Number*IP.Wo.a()*sin(TWO*PI*IP.Flow_Angle/360.00);
+       IP.Wo.setVelocity( IP.Mach_Number*IP.Wo.a()*cos(TWO*PI*IP.Flow_Angle/360.00),
+			  IP.Mach_Number*IP.Wo.a()*sin(TWO*PI*IP.Flow_Angle/360.00) );
        
     } else if (strcmp(IP.Next_Control_Parameter,"Re_lid") == 0) {
       i_command = 42;
@@ -3018,21 +2694,6 @@ int Parse_Next_Input_Control_Parameter(Flame2D_Input_Parameters &IP) {
        i_command = 520;
        IP.BluffBody_Data_Usage = 1;
        
-    } else if (strcmp(IP.Next_Control_Parameter, "ICEMCFD_Topology_File") == 0) {
-       i_command = 52;
-      Get_Next_Input_Control_Parameter(IP);
-      strcpy(IP.ICEMCFD_FileNames[0], IP.Next_Control_Parameter);
-      
-    } else if (strcmp(IP.Next_Control_Parameter, "ICEMCFD_Family_Boco_File") == 0) {
-       i_command = 53;
-       Get_Next_Input_Control_Parameter(IP);
-       strcpy(IP.ICEMCFD_FileNames[1], IP.Next_Control_Parameter);
-
-    } else if (strcmp(IP.Next_Control_Parameter, "ICEMCFD_Family_Topo_File") == 0) {
-       i_command = 54;
-       Get_Next_Input_Control_Parameter(IP);
-       strcpy(IP.ICEMCFD_FileNames[2], IP.Next_Control_Parameter);
-
     } else if (strcmp(IP.Next_Control_Parameter, "X_Shift") == 0) {
        i_command = 55;
        IP.Line_Number = IP.Line_Number + 1;
@@ -3997,20 +3658,11 @@ int Process_Input_Control_Parameter_File(Flame2D_Input_Parameters &Input_Paramet
        Return the error indicator flag. */
    
     //Load the C-Type strings from the C++ strings 
-    strcpy(Input_Parameters.React_Name,Input_Parameters.react_name.c_str());
     strcpy(Input_Parameters.ct_Mech_Name,Input_Parameters.ct_mech_name.c_str());
     strcpy(Input_Parameters.ct_Mech_File,Input_Parameters.ct_mech_file.c_str());
-    
-    for (int i = 0; i < Input_Parameters.num_species; i++) {
-      strcpy(Input_Parameters.Multispecies[i],Input_Parameters.multispecies[i].c_str());
-    }
-
-    // Proper temperature for display
-    Input_Parameters.Temperature = Input_Parameters.Wo.T();
 
     // Reset the static variables.
     Input_Parameters.Wo.set_gravity(Input_Parameters.gravity_z);
-    Input_Parameters.Uo.set_gravity(Input_Parameters.gravity_z);
 
     // Perform consitency checks on the refinement criteria.
     Input_Parameters.Number_of_Refinement_Criteria = 0;
@@ -4024,42 +3676,5 @@ int Process_Input_Control_Parameter_File(Flame2D_Input_Parameters &Input_Paramet
 
     // Initial processing of input control parameters complete.  
     return (error_flag);
-
-}
-
-/********************************************************
- * Routine: Equivalence_Ratio                           *
- * 
- ********************************************************/
-void Equivalence_Ratio(const double &phi){
-
-  // Methane & Air
-  // CH4 + 2(O2 +3.76N2) -> CO2 + 2H2O 
-  double n = 9.52*(1.0 - phi)/(phi +9.52);
-
-  double X_CH4 = ( 1.0 - n)/10.52;
-  double X_O2  = (2.0 + 0.21*n)/10.52;
-  double X_N2  = (7.52 +0.79*n)/10.52;
-
-  double Mtot = X_CH4*(16.0) + X_O2*(32.0) + X_N2*(28.0);
-
-  double c_CH4 =  X_CH4*(16.0)/Mtot;
-  double c_O2  =  X_O2*(32.0)/Mtot;
-  double c_N2  =  X_N2*(28.0)/Mtot;
-
-  cout<<"\n For phi = "<<phi;
-  cout<<"\n c_CH4 "<<c_CH4;
-  cout<<"\n c_O2  "<<c_O2;
-  cout<<"\n c_N2  "<<c_N2;
-  cout<<"\n X_CH4 "<<X_CH4;
-  cout<<"\n X_O2  "<<X_O2;
-  cout<<"\n X_N2  "<<X_N2;
-  cout<<"\n Mtot  "<<Mtot;
-
-  cout<<endl;
-  cout<<"\n Should pass in equation type, and pass back the appropriate mass fractions ";
-  cout<<endl;
-  
-  exit(0); 
 
 }

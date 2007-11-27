@@ -347,13 +347,6 @@ Grid2D_Quad_Block** Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
 					  Input_Parameters.Number_of_Ghost_Cells);
 	break;
 
-      case GRID_ICEMCFD :
-        Grid_ptr = ICEMCFD_Read(Input_Parameters.ICEMCFD_FileNames,
-                                Grid_ptr,
-                                &Input_Parameters.Number_of_Blocks_Idir,
-                                &Input_Parameters.Number_of_Blocks_Jdir);
-        break;
-
       default:
         Grid_ptr = Grid_Rectangular_Box(Grid_ptr,
                                         Input_Parameters.Number_of_Blocks_Idir,

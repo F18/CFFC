@@ -12,21 +12,24 @@
 #ifndef _MIXTURE_INCLUDED 
 #define _MIXTURE_INCLUDED
 
-//! Standard Includes
-#include <math.h>
-#include <iostream>
-using namespace std;
-
 //! Cantera libraries
 #include <cantera/Cantera.h>      // main include
 #include <cantera/IdealGasMix.h>  // reacting, ideal gas mixture class
 #include <cantera/transport.h>
 #include <cantera/equilibrium.h>
 
+//! Standard Includes
+#include <math.h>
+#include <iostream>
+using namespace std;
+
 //Reference temperature for polytropic heat ratio mixture gamma [K]
 #define TREF 298.15
 #define PREF 101325.0
 
+// If you define this variable, the number of species will be
+// predetermined for faster calculations.., however it is not as general 
+#define STATIC_NUMBER_OF_SPECIES 5 //2 AIR, 6 2STEP_CH4
 
 /////////////////////////////////////////////////////////////////////
 /// FUNCTION ROTOTYPES
@@ -66,13 +69,13 @@ public:
   //@{ @name constructors/destructors
   Mixture() : T(0.0), MW(0.0), Cp(0.0), hs(0.0), 
 	      hf(0.0), mu(0.0), kappa(0.0)
-  { Allocate(); for (int i=0; i<ns; i++) diff[i] = 0.0; }
+  { Nullify(); Allocate(); for (int i=0; i<ns; i++) diff[i] = 0.0; }
   
   Mixture(const Mixture &M) : T(M.temperature()),
     MW(M.molarMass()), Cp(M.heatCapacity_p()), 
     hs(M.enthalpySens()), hf(M.heatFormation()), mu(M.viscosity()), 
     kappa(M.thermalCond())
-  { Allocate(); M.getDiffCoefs(diff); }
+  { Nullify(); Allocate(); M.getDiffCoefs(diff); }
 
   ~Mixture() { Deallocate(); }
 
@@ -107,6 +110,8 @@ public:
 
   //@{ @name Static accessors
   static int nSpecies(void) {return ns;};
+  static double molarMass(const int&i) {return M[i];};
+  static double heatFormation(const int&i) {return Hform[i];};
   static double LowTempRange(void) {return Tmin;};
   static double HighTempRange(void) {return Tmax;};
   //@}
@@ -115,11 +120,9 @@ public:
   /************ Setup Functions **********************/
 
   //! Static setup function
-  static void setMixture(const char *PATH,
-			 const string &mech_name,
-			 const string &mech_file,
-			 const double* Sc, 
-			 const bool &constant_schmidt);
+  static void setMixture(const string &mech_name,
+			 const string &mech_file);
+  static void setConstantSchmidt(const double* Sc);
 
   //! static cantera setup functions
   static void parse_mass_string( const string& massFracStr, 
@@ -129,20 +132,27 @@ public:
   static void parse_mole_string( const string& moleFracStr, 
 				    double* moleFracs);
   static int speciesIndex(const string &sp);
+  static string speciesName(const int &i) { return names[i]; };
   static void composition( const string& fuel_species, 
 			   const double &phi,
 			   double* massFracs);
+  static string mechName(void) { return ct_mech_name; };
 
   //! set the mixture state
   void setState_TPY(const double &T, const double &Press, const double* Y);
   void setState_DPY(const double &rho, const double &Press, const double* Y);
-
-
+  void setState_DEY(const double &rho, const double &e, const double* Y);
+  void setState_DHY(const double &rho, const double &h, const double* y);
+private:
+  void setState_DH(const double &rho, const double& h, const double tol = 1.e-4);
+  
+public:
   /***************** Mixing Rules ********************
     The following constructors return "total" physical
     parameters based on mixture rules for each.
   ****************************************************/
   static double molarMass( const double* Y );
+  static double heatFormation( const double* Y );
   double gasConstant(void) const;   
   static double gasConstant( const double* Y );   
   static double heatCapacity_p( const double &Temp, const double* y );
@@ -150,7 +160,6 @@ public:
   static double heatCapacity_v( const double &Temp, const double* y );
   double heatRatio(void) const;
   static double heatRatio( const double &Temp, const double* y );
-  static double heatRatioRef( const double* y );
   double internalEnergy() const;
   static double internalEnergy( const double &Temp, const double* y );
   double internalEnergySens() const;
@@ -173,23 +182,37 @@ public:
 
   static double temperature(const double& Press, const double* y);
 
+  void getDihdDc( const double &Press, 
+		  const double* y, 
+		  double* dh ) const;
+  static void getDihdDc(const double &Temp, 
+			const double &Press, 
+			const double* y, 
+			double* dh);
+
   /***************** Reaction Rates ******************
     The following functions use CANTERA to compute    
     chemical reaction rates and equilibrium states.
   ****************************************************/
   static void equilibrate_HP( double &Temp, double &Press, double* y );
   static void equilibrate_TP( double &Temp, double &Press, double* y );
-//   void dSwdU(DenseMatrix &dSwdU, 
-// 		const SOLN_pSTATE &W,
-// 		const double& Temp, 
-// 		const double& Press) const;
-  //void getRates( double* rr ) const;
+  void getRates( const double &Press, 
+		 const double* y, 
+		 double* rr ) const;
   static void getRates( const double &Temp, 
 			const double &Press, 
 			const double* y, 
 			double* rr );
 
+  /**************** Output Functions *************************/
+  void output (ostream &out) const;
 
+  /**************** Operators Overloading ********************/
+  // Input-output operators.
+  friend ostream& operator << (ostream &out_file, const Mixture &Mix) {
+    Mix.output(out_file);
+    return out_file;
+  }
 
   /**
    * Private members
@@ -199,6 +222,7 @@ private:
   //! allocate / deallocate for objects
   void Allocate();
   void Deallocate();
+  void Nullify();
 
   //! allocate / deallocate for static memory
   static void AllocateStatic();
@@ -227,10 +251,17 @@ private:
 #endif
 
   //@{ @name Static Variaables
-  static int ns;                   //!< number of species
+#ifdef STATIC_NUMBER_OF_SPECIES
+  static const int ns = STATIC_NUMBER_OF_SPECIES;
+#else
+  static int       ns; //!< Number of species
+#endif
   static double Tmin;              //!< min temperature [k]
   static double Tmax;              //!< max temperature [k]
   static double* Sc_ref;           //!< reference species schmidt numbers
+  static double* M;                //!< species molar masses [kg/kmole]
+  static double* Hform;            //!< species heats of formation [J/kg]
+  static string* names;            //!< species names
   static bool isConstSchmidt;      //!< flag indicating whether constant schmidt
 
   //! Cantera objects
@@ -240,7 +271,7 @@ private:
   static Transport* ct_trans;     //!< the Cantera transport object
 
   //! Static storage
-  static double *r, *r0, *e; 
+  static double *r, *r0; 
   //@}
 
 
@@ -267,27 +298,52 @@ inline void Mixture :: Deallocate() {
 #endif
 };
 
+inline void Mixture :: Nullify() { 
+#ifndef STATIC_NUMBER_OF_SPECIES
+  diff = NULL;
+#endif
+};
+
 /****************************************************
  * Allocator/deallocator for static memory.
  ****************************************************/
 inline void Mixture :: AllocateStatic() {
-  DeallocateStatic();
   if (ns>0) { 
     Sc_ref = new double[ns]; 
+    names = new string[ns]; 
+    M = new double[ns]; 
+    Hform = new double[ns]; 
     r = new double[ns]; 
     r0 = new double[ns]; 
-    e = new double[ns]; 
   }
 };
 
 inline void Mixture :: DeallocateStatic() { 
-  if (ct_gas!=NULL) { delete[] ct_gas; ct_gas = NULL; } 
+  if (ct_gas!=NULL) { delete ct_gas; ct_gas = NULL; } 
+  if (ct_trans!=NULL) { delete ct_trans; ct_trans = NULL; } 
   if (Sc_ref!=NULL) { delete[] Sc_ref; Sc_ref = NULL; } 
+  if (names!=NULL) { delete[] names; names = NULL; } 
+  if (M!=NULL) { delete[] M; M = NULL; } 
+  if (Hform!=NULL) { delete[] Hform; Hform = NULL; } 
   if (r!=NULL) { delete[] r; r = NULL; } 
   if (r0!=NULL) { delete[] r0; r0 = NULL; } 
-  if (e!=NULL) { delete[] e; e = NULL; } 
-  if (ct_trans!=NULL) { delete[] ct_trans; ct_trans = NULL; } 
 };
+
+/****************************************************
+ * Output functions.
+ ****************************************************/
+inline void Mixture :: output (ostream &out) const {
+  out << "Temperature = " << T << endl;
+  out << "molecular weight = " << MW << endl;
+  out << "Heat Capacity = " << Cp << endl;
+  out << "Sensible enthalpy = " << hs << endl;
+  out << "heat of formation = " << hf << endl;
+  out << "Viscosity = " << mu << endl;
+  out << "Thermal Conductivity = " << kappa << endl;
+  out << "Diffusivities:" << endl;
+  for (int i=0; i<ns; i++)
+    out << speciesName(i) << " = " << diff[i] << endl;
+}
 
 
 /////////////////////////////////////////////////////////////////////
@@ -305,20 +361,22 @@ inline void Mixture :: setState_TPY(const double &Temp,
 				    const double* y)
 {
   T = Temp;
+  hf = heatFormation(y);
 
   ct_gas->setMassFractions_NoNorm(y);
   ct_gas->setPressure(Press);
-
-  ct_gas->setTemperature(TREF);
-  hf = ct_gas->enthalpy_mass();
-
   ct_gas->setTemperature(Temp);
   MW = ct_gas->meanMolecularWeight();
   hs = ct_gas->enthalpy_mass() - hf;
   Cp = ct_gas->cp_mass();
   mu = ct_trans->viscosity();
   kappa = ct_trans->thermalConductivity();
-  ct_trans->getMixDiffCoeffs(diff);
+  if(isConstSchmidt){
+    double rho( Press / (gasConstant()*T) );
+    for (int i=0; i<ns; i++) diff[i] = mu/(rho*Sc_ref[i]);
+  } else {
+    ct_trans->getMixDiffCoeffs(diff);
+  }
 
 
 }
@@ -327,25 +385,92 @@ inline void Mixture :: setState_DPY(const double &rho,
 				    const double &Press, 
 				    const double* y)
 {
-  ct_gas->setMassFractions_NoNorm(y);
-  ct_gas->setPressure(Press);
-  MW = ct_gas->meanMolecularWeight();
+  MW = molarMass(y);
+  hf = heatFormation(y);
 
   T = Press / (gasConstant()*rho);
 
-  ct_gas->setTemperature(TREF);
-  hf = ct_gas->enthalpy_mass();
-
+  ct_gas->setMassFractions_NoNorm(y);
+  ct_gas->setPressure(Press);
   ct_gas->setTemperature(T);
   hs = ct_gas->enthalpy_mass() - hf;
   Cp = ct_gas->cp_mass();
   mu = ct_trans->viscosity();
   kappa = ct_trans->thermalConductivity();
-  ct_trans->getMixDiffCoeffs(diff);
+  if(isConstSchmidt){
+    for (int i=0; i<ns; i++) diff[i] = mu/(rho*Sc_ref[i]);
+  } else {
+    ct_trans->getMixDiffCoeffs(diff);
+  }
 
 
 }
 
+inline void Mixture :: setState_DEY(const double &rho, const double &e, 
+				    const double* y)
+{
+  hf = heatFormation(y);
+
+  ct_gas->setMassFractions_NoNorm(y);
+  ct_gas->setState_UV(e, 1.0/rho);
+  T = ct_gas->temperature();
+  MW = ct_gas->meanMolecularWeight();
+  hs = ct_gas->enthalpy_mass() - hf;
+  Cp = ct_gas->cp_mass();
+  mu = ct_trans->viscosity();
+  kappa = ct_trans->thermalConductivity();
+  if(isConstSchmidt){
+    for (int i=0; i<ns; i++) diff[i] = mu/(rho*Sc_ref[i]);
+  } else {
+    ct_trans->getMixDiffCoeffs(diff);
+  }
+
+
+}
+
+
+inline void Mixture :: setState_DHY(const double &rho, const double &h, 
+				    const double* y)
+{
+  hf = heatFormation(y);
+
+  ct_gas->setMassFractions_NoNorm(y);
+  setState_DH(rho, h);
+  T = ct_gas->temperature();
+  MW = ct_gas->meanMolecularWeight();
+  hs = ct_gas->enthalpy_mass() - hf;
+  Cp = ct_gas->cp_mass();
+  mu = ct_trans->viscosity();
+  kappa = ct_trans->thermalConductivity();
+  if(isConstSchmidt){
+    for (int i=0; i<ns; i++) diff[i] = mu/(rho*Sc_ref[i]);
+  } else {
+    ct_trans->getMixDiffCoeffs(diff);
+  }
+
+
+}
+
+
+inline void Mixture :: setState_DH(const double &rho, const double& h, 
+				   const double tol) {
+  double dt, h0;
+  ct_gas->setDensity(rho);
+  
+  // Newton iteration
+  for (int n = 0; n < 500; n++) {
+    h0 = ct_gas->enthalpy_mass();
+    dt = (h - h0)/ct_gas->cp_mass();
+    // limit step size to 100 K
+    if (dt > 100.0) dt = 100.0;
+    else if (dt < -100.0) dt = -100.0; 
+    ct_gas->setTemperature(temperature() + dt);
+    if (fabs(dt) < tol) {
+      return;
+    }
+  }
+  cerr << endl << "Mixture::setState_DH() - No convergence. dt = " << dt << endl;
+}
 
 /************************************************************************
   Calculates the concentration time rate of change of species from
@@ -359,10 +484,27 @@ inline void Mixture :: setState_DPY(const double &rho,
   Return units are  kg/m^3*s ie. rho*omega (kg/m^3)*(1/s)
 
 ************************************************************************/
-// inline void Mixture :: getRates( double* rr ) const {
-//   ct_gas->getNetProductionRates(rr);
-// }
+inline void Mixture :: getRates( const double &Press, 
+				 const double* y, double* rr ) const {
+  ct_gas->setState_TPY(T, Press, y);
+  ct_gas->getNetProductionRates(rr);
+  for (int i=0; i<ns; i++){
+    rr[i] = rr[i]*M[i];
+  }
+}
 
+/****************************************************
+ * Derivative of species h wrt to mass fraction
+ ****************************************************/
+void Mixture :: getDihdDc(const double &Press, 
+			  const double* y, 
+			  double* dh) const {
+  ct_gas->setState_TPY(T, Press, y);
+  ct_gas->getEnthalpy_RT(dh); // -> h = hs + hf
+  for(int i=0; i<ns; i++)
+    dh[i] = ( dh[i]*(Cantera::GasConstant/M[i])*T -
+	      Cp*T*MW/M[i] );
+}
 
 /****************************************************
  * Mixture gas constant [kg/mol]

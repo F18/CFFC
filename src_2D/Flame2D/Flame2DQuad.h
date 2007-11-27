@@ -172,41 +172,40 @@ class Flame2D_Quad_Block{
   /***************** CLASS DATA *****************************************************/
   //@{ @name Solution state arrays:
   Flame2D_pState             **W;   //!< Primitive solution state.
-  Flame2D_cState             **U;   //!< Conserved solution state. 
-//   Mixture                   **M;   //!< Thermodynamic and transport mixture properties
+  Flame2D_State             **U;    //!< Conserved solution state. 
   //@} 
   
-  Flame2D_cState            **Uo;   //!< Initial solution state.
+  Flame2D_State            **Uo;    //!< Initial solution state.
  
-  double                   **dt;   //!< Local time step.  
-  Flame2D_cState         ***dUdt;   //!< Solution residual.
+  double                   **dt;    //!< Local time step.  
+  Flame2D_State         ***dUdt;    //!< Solution residual.
 
 
   //@{ @name Boundary solution flux arrays:
-  Flame2D_cState   *FluxN,*FluxS,   //!< Boundary solution fluxes.
+  Flame2D_State   *FluxN,*FluxS,   //!< Boundary solution fluxes.
                   *FluxE,*FluxW; 
   //@}  
 
   //@{ @name Boundary condtion reference states:
-  Flame2D_pState       *WoN,*WoS,   //!< Boundary condition reference states for
+  Flame2D_State       *WoN,*WoS,   //!< Boundary condition reference states for
                       *WoE,*WoW;   //!< north, south, east, & west boundaries.
   //@}  
 
   //@{ @name Solution gradient arrays:
-  Flame2D_pState        **dWdx;     //!< (x-direction).
-  Flame2D_pState        **dWdy;     //!< (y-direction).
-  Flame2D_pState         **phi;     //!< Solution slope limiter.
+  Flame2D_State        **dWdx;     //!< (x-direction).
+  Flame2D_State        **dWdy;     //!< (y-direction).
+  Flame2D_State         **phi;     //!< Solution slope limiter.
   //@}  
 
   //Store face gradients for Diamond Path & Jacobian formation
-  Flame2D_pState       **dWdx_faceN;   //!< north cell face(x-direction).
-  Flame2D_pState       **dWdx_faceE;   //!< east  cell face(x-direction).
-  Flame2D_pState       **dWdx_faceS;   //!< south cell face(x-direction).
-  Flame2D_pState       **dWdx_faceW;   //!< west  cell face(x-direction).
-  Flame2D_pState       **dWdy_faceN;   //!< north cell face(y-direction).
-  Flame2D_pState       **dWdy_faceE;   //!< east  cell face(y-direction).
-  Flame2D_pState       **dWdy_faceS;   //!< south cell face(y-direction).
-  Flame2D_pState       **dWdy_faceW;   //!< west  cell face(y-direction).
+  Flame2D_State       **dWdx_faceN;   //!< north cell face(x-direction).
+  Flame2D_State       **dWdx_faceE;   //!< east  cell face(x-direction).
+  Flame2D_State       **dWdx_faceS;   //!< south cell face(x-direction).
+  Flame2D_State       **dWdx_faceW;   //!< west  cell face(x-direction).
+  Flame2D_State       **dWdy_faceN;   //!< north cell face(y-direction).
+  Flame2D_State       **dWdy_faceE;   //!< east  cell face(y-direction).
+  Flame2D_State       **dWdy_faceS;   //!< south cell face(y-direction).
+  Flame2D_State       **dWdy_faceW;   //!< west  cell face(y-direction).
   //@}  
 
   //@{ @name Grid block information:
@@ -261,35 +260,32 @@ class Flame2D_Quad_Block{
   void deallocate(void);
   static void deallocate_static(void);
 
-  // resize the species arrays
-  void resize_species(const int n_old, const string* species_old);
-
   /* Return primitive solution state at specified node. */
-  Flame2D_pState Wn(const int &ii, const int &jj);
+  Flame2D_State Wn(const int &ii, const int &jj);
   
   /* Return conserverd solution state at specified node. */
-  Flame2D_cState Un(const int &ii, const int &jj);
+  Flame2D_State Un(const int &ii, const int &jj);
 
   /* Return conserverd solution state at specified node. */
-  Flame2D_cState Uno(const int &ii, const int &jj);
+  Flame2D_State Uno(const int &ii, const int &jj);
 
   /* Return primitive solution state at cell nodes. */
-  Flame2D_pState WnNW(const int &ii, const int &jj);
-  Flame2D_pState WnNE(const int &ii, const int &jj);
-  Flame2D_pState WnSE(const int &ii, const int &jj);
-  Flame2D_pState WnSW(const int &ii, const int &jj);
+  Flame2D_State WnNW(const int &ii, const int &jj);
+  Flame2D_State WnNE(const int &ii, const int &jj);
+  Flame2D_State WnSE(const int &ii, const int &jj);
+  Flame2D_State WnSW(const int &ii, const int &jj);
   
   /* Return conserved solution state at cell nodes. */
-  Flame2D_cState UnNW(const int &ii, const int &jj);
-  Flame2D_cState UnNE(const int &ii, const int &jj);
-  Flame2D_cState UnSE(const int &ii, const int &jj);
-  Flame2D_cState UnSW(const int &ii, const int &jj);
+  Flame2D_State UnNW(const int &ii, const int &jj);
+  Flame2D_State UnNE(const int &ii, const int &jj);
+  Flame2D_State UnSE(const int &ii, const int &jj);
+  Flame2D_State UnSW(const int &ii, const int &jj);
 
   /* Return conserved solution state at cell nodes. */
-  Flame2D_cState UnoNW(const int &ii, const int &jj);
-  Flame2D_cState UnoNE(const int &ii, const int &jj);
-  Flame2D_cState UnoSE(const int &ii, const int &jj);
-  Flame2D_cState UnoSW(const int &ii, const int &jj);
+  Flame2D_State UnoNW(const int &ii, const int &jj);
+  Flame2D_State UnoNE(const int &ii, const int &jj);
+  Flame2D_State UnoSE(const int &ii, const int &jj);
+  Flame2D_State UnoSW(const int &ii, const int &jj);
 
   int BiLinearInterpolationCoefficients(double &eta, double &zeta, const int &ii, const int &jj);
   
@@ -407,35 +403,35 @@ inline void Flame2D_Quad_Block::allocate(const int Ni, const int Nj, const int N
   assert(Ni > 1 && Nj > 1); Grid.allocate(Ni, Nj, Ng);
    NCi = Ni+2*Ng; ICl = Ng; ICu = Ni+Ng-1;
    NCj = Nj+2*Ng; JCl = Ng; JCu = Nj+Ng-1; Nghost = Ng;
-   W = new Flame2D_pState*[NCi]; U = new Flame2D_cState*[NCi];
+   W = new Flame2D_pState*[NCi]; U = new Flame2D_State*[NCi];
    dt = new double*[NCi];
-   dUdt = new Flame2D_cState**[NCi];
-   dWdx = new Flame2D_pState*[NCi]; dWdy = new Flame2D_pState*[NCi];
-   dWdx_faceN = new Flame2D_pState*[NCi]; dWdy_faceN = new Flame2D_pState*[NCi];
-   dWdx_faceE = new Flame2D_pState*[NCi]; dWdy_faceE = new Flame2D_pState*[NCi];
-   dWdx_faceW = new Flame2D_pState*[NCi]; dWdy_faceW = new Flame2D_pState*[NCi];
-   dWdx_faceS = new Flame2D_pState*[NCi]; dWdy_faceS = new Flame2D_pState*[NCi];
-   phi = new Flame2D_pState*[NCi]; Uo = new Flame2D_cState*[NCi];
+   dUdt = new Flame2D_State**[NCi];
+   dWdx = new Flame2D_State*[NCi]; dWdy = new Flame2D_State*[NCi];
+   dWdx_faceN = new Flame2D_State*[NCi]; dWdy_faceN = new Flame2D_State*[NCi];
+   dWdx_faceE = new Flame2D_State*[NCi]; dWdy_faceE = new Flame2D_State*[NCi];
+   dWdx_faceW = new Flame2D_State*[NCi]; dWdy_faceW = new Flame2D_State*[NCi];
+   dWdx_faceS = new Flame2D_State*[NCi]; dWdy_faceS = new Flame2D_State*[NCi];
+   phi = new Flame2D_State*[NCi]; Uo = new Flame2D_State*[NCi];
    Srad = new double*[NCi];
    
    for (int i = 0; i <= NCi-1 ; ++i ) {
-      W[i] = new Flame2D_pState[NCj]; U[i] = new Flame2D_cState[NCj];
-      dt[i] = new double[NCj]; dUdt[i] = new Flame2D_cState*[NCj];
+      W[i] = new Flame2D_pState[NCj]; U[i] = new Flame2D_State[NCj];
+      dt[i] = new double[NCj]; dUdt[i] = new Flame2D_State*[NCj];
       for (int j = 0; j <= NCj-1 ; ++j ){
-	dUdt[i][j] = new Flame2D_cState[NUMBER_OF_RESIDUAL_VECTORS_FLAME2D];
+	dUdt[i][j] = new Flame2D_State[NUMBER_OF_RESIDUAL_VECTORS_FLAME2D];
       }
-      dWdx[i] = new Flame2D_pState[NCj]; dWdy[i] = new Flame2D_pState[NCj];
-      dWdx_faceN[i] = new Flame2D_pState[NCj]; dWdy_faceN[i] = new Flame2D_pState[NCj];
-      dWdx_faceE[i] = new Flame2D_pState[NCj]; dWdy_faceE[i] = new Flame2D_pState[NCj];
-      dWdx_faceW[i] = new Flame2D_pState[NCj]; dWdy_faceW[i] = new Flame2D_pState[NCj];
-      dWdx_faceS[i] = new Flame2D_pState[NCj]; dWdy_faceS[i] = new Flame2D_pState[NCj];
-      phi[i] = new Flame2D_pState[NCj]; Uo[i] = new Flame2D_cState[NCj];
+      dWdx[i] = new Flame2D_State[NCj]; dWdy[i] = new Flame2D_State[NCj];
+      dWdx_faceN[i] = new Flame2D_State[NCj]; dWdy_faceN[i] = new Flame2D_State[NCj];
+      dWdx_faceE[i] = new Flame2D_State[NCj]; dWdy_faceE[i] = new Flame2D_State[NCj];
+      dWdx_faceW[i] = new Flame2D_State[NCj]; dWdy_faceW[i] = new Flame2D_State[NCj];
+      dWdx_faceS[i] = new Flame2D_State[NCj]; dWdy_faceS[i] = new Flame2D_State[NCj];
+      phi[i] = new Flame2D_State[NCj]; Uo[i] = new Flame2D_State[NCj];
       Srad[i] = new double[NCj];
    } /* endfor */
-   FluxN = new Flame2D_cState[NCi]; FluxS = new Flame2D_cState[NCi];
-   FluxE = new Flame2D_cState[NCj]; FluxW = new Flame2D_cState[NCj];
-   WoN = new Flame2D_pState[NCi]; WoS = new Flame2D_pState[NCi];
-   WoE = new Flame2D_pState[NCj]; WoW = new Flame2D_pState[NCj];
+   FluxN = new Flame2D_State[NCi]; FluxS = new Flame2D_State[NCi];
+   FluxE = new Flame2D_State[NCj]; FluxW = new Flame2D_State[NCj];
+   WoN = new Flame2D_State[NCi]; WoS = new Flame2D_State[NCi];
+   WoE = new Flame2D_State[NCj]; WoW = new Flame2D_State[NCj];
 
   // Set the solution residuals, gradients, limiters, and other values to zero.
    for (int j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
@@ -494,87 +490,6 @@ inline void Flame2D_Quad_Block::deallocate_static(void) {
   if(PlanckMean_data != NULL) { delete PlanckMean_data; PlanckMean_data = NULL; }
 }
 
-
-/**************************************************************************
- * Flame2D_Quad_Block::resize_species                                      *
- *                                                                        *
- * Resize all the species arrays. This function is DISCUSTING!!!!.        *
- * Because the number of species is static, we have to carefully resize   *
- * all the species arrays in the solution block.  I hope that there are no*
- * Flame2D_pState and Flame2D_cState objects allocated anywhere else.       *
- * If you resize the reaction mechanism and this function is called,      *
- * and you get a SIGSEGV, you should look for leftover state objects.     *
- **************************************************************************/
-inline void Flame2D_Quad_Block::resize_species(const int n_old, 
-					      const string* species_old) {
-  
-  // temporary storage
-  double* c_old = new double[n_old];
-  int index;
-
-
-  //
-  // Loop over the grid
-  //
-  for ( int j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
-    for ( int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
-
-      //---------------------------------------------------
-      // CONSERVED STATE
-      U[i][j].resize_species(n_old, species_old); // keep old values
-      //---------------------------------------------------
-      // PRIMITIVE STATE
-      W[i][j].resize_species(); // throw out old values
-      W[i][j] = U[i][j].W();
-      //---------------------------------------------------
-      // REMAINING STATES
-      for ( int k = 0 ; k < NUMBER_OF_RESIDUAL_VECTORS_FLAME2D; ++k ) {
-	dUdt[i][j][k].resize_species(); // throw out old values
-      } // endfor
-      dWdx[i][j].resize_species(); // throw out old values
-      dWdy[i][j].resize_species(); // throw out old values
-      phi[i][j].resize_species(); // throw out old values
-      Uo[i][j].resize_species(); // throw out old values
-      //---------------------------------------------------
-
-    } // endfor
-  } // endfor
-  
-
-  //
-  // resize boundary ref states
-  //
-  for ( int j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
-
-    //---------------------------------------------------
-    // WEST STATE
-    WoW[j].resize_species(n_old, species_old); // keep old values
-    //---------------------------------------------------
-    // EAST STATE
-    WoE[j].resize_species(n_old, species_old); // keep old values
-    //---------------------------------------------------
-
-  } // endfor
-
-
-  //
-  // resize boundary ref states
-  //
-  for ( int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
-
-    //---------------------------------------------------
-    // SOUTH STATE
-    WoS[i].resize_species(n_old, species_old); // keep old values
-    //---------------------------------------------------
-    // NORTH STATE
-    WoN[i].resize_species(n_old, species_old); // keep old values
-    //---------------------------------------------------
-
-  } // endfor
-
-  // delete temporary memory
-  delete[] c_old;
-}
 
 /**************************************************************************
  * Flame2D_Quad_Block:BiLinearInterpolationCoefficients --                 *
@@ -661,7 +576,7 @@ inline double Flame2D_Quad_Block::dWn_dWc(const int &i, const int &j, const int 
 /**************************************************************************
  * Flame2D_Quad_Block::Wn -- Node primitive solution.                     *
  **************************************************************************/
-inline Flame2D_pState Flame2D_Quad_Block::Wn(const int &ii, const int &jj) {
+inline Flame2D_State Flame2D_Quad_Block::Wn(const int &ii, const int &jj) {
   double ax, bx, cx, dx, ay, by, cy, dy, aa, bb, cc, x, y,
     eta1, zeta1, eta2, zeta2, eta, zeta;
   
@@ -712,26 +627,26 @@ inline Flame2D_pState Flame2D_Quad_Block::Wn(const int &ii, const int &jj) {
 /**************************************************************************
  * Flame2D_Quad_Block::Wn?? -- Get cell node primitive solution states.   *
  **************************************************************************/
-inline Flame2D_pState Flame2D_Quad_Block::WnNW(const int &ii, const int &jj) {
+inline Flame2D_State Flame2D_Quad_Block::WnNW(const int &ii, const int &jj) {
   return (Wn(ii, jj+1));
 }
 
-inline Flame2D_pState Flame2D_Quad_Block::WnNE(const int &ii, const int &jj) {
+inline Flame2D_State Flame2D_Quad_Block::WnNE(const int &ii, const int &jj) {
   return (Wn(ii+1, jj+1));
 }
 
-inline Flame2D_pState Flame2D_Quad_Block::WnSE(const int &ii, const int &jj) {
+inline Flame2D_State Flame2D_Quad_Block::WnSE(const int &ii, const int &jj) {
   return (Wn(ii+1, jj));
 }
 
-inline Flame2D_pState Flame2D_Quad_Block::WnSW(const int &ii, const int &jj) {
+inline Flame2D_State Flame2D_Quad_Block::WnSW(const int &ii, const int &jj) {
   return (Wn(ii, jj));
 }
 
 /**************************************************************************
  * Flame2D_Quad_Block::Un -- Node conservative solution.                     *
  **************************************************************************/
-inline Flame2D_cState Flame2D_Quad_Block::Un(const int &ii, const int &jj) {
+inline Flame2D_State Flame2D_Quad_Block::Un(const int &ii, const int &jj) {
  
   double ax, bx, cx, dx, ay, by, cy, dy, aa, bb, cc, x, y,
     eta1, zeta1, eta2, zeta2, eta, zeta;
@@ -782,26 +697,26 @@ inline Flame2D_cState Flame2D_Quad_Block::Un(const int &ii, const int &jj) {
 /**************************************************************************
  * Flame2D_Quad_Block::Un -- Get cell node conserved solution states.    *
  **************************************************************************/
-inline Flame2D_cState Flame2D_Quad_Block::UnNW(const int &ii, const int &jj) {
+inline Flame2D_State Flame2D_Quad_Block::UnNW(const int &ii, const int &jj) {
   return (Un(ii, jj+1));
 }
 
-inline Flame2D_cState Flame2D_Quad_Block::UnNE(const int &ii, const int &jj) {
+inline Flame2D_State Flame2D_Quad_Block::UnNE(const int &ii, const int &jj) {
   return (Un(ii+1, jj+1));
 }
 
-inline Flame2D_cState Flame2D_Quad_Block::UnSE(const int &ii, const int &jj) {
+inline Flame2D_State Flame2D_Quad_Block::UnSE(const int &ii, const int &jj) {
   return (Un(ii+1, jj));
 }
 
-inline Flame2D_cState Flame2D_Quad_Block::UnSW(const int &ii, const int &jj) {
+inline Flame2D_State Flame2D_Quad_Block::UnSW(const int &ii, const int &jj) {
   return (Un(ii, jj));
 }
 
 /**************************************************************************
  * Flame2D_Quad_Block::Un -- Node conservative solution.                     *
  **************************************************************************/
-inline Flame2D_cState Flame2D_Quad_Block::Uno(const int &ii, const int &jj) {
+inline Flame2D_State Flame2D_Quad_Block::Uno(const int &ii, const int &jj) {
  
   double ax, bx, cx, dx, ay, by, cy, dy, aa, bb, cc, x, y,
     eta1, zeta1, eta2, zeta2, eta, zeta;
@@ -851,19 +766,19 @@ inline Flame2D_cState Flame2D_Quad_Block::Uno(const int &ii, const int &jj) {
 /**************************************************************************
  * Flame2D_Quad_Block::Un -- Get cell node conserved solution states.    *
  **************************************************************************/
-inline Flame2D_cState Flame2D_Quad_Block::UnoNW(const int &ii, const int &jj) {
+inline Flame2D_State Flame2D_Quad_Block::UnoNW(const int &ii, const int &jj) {
   return (Uno(ii, jj+1));
 }
 
-inline Flame2D_cState Flame2D_Quad_Block::UnoNE(const int &ii, const int &jj) {
+inline Flame2D_State Flame2D_Quad_Block::UnoNE(const int &ii, const int &jj) {
   return (Uno(ii+1, jj+1));
 }
 
-inline Flame2D_cState Flame2D_Quad_Block::UnoSE(const int &ii, const int &jj) {
+inline Flame2D_State Flame2D_Quad_Block::UnoSE(const int &ii, const int &jj) {
   return (Uno(ii+1, jj));
 }
 
-inline Flame2D_cState Flame2D_Quad_Block::UnoSW(const int &ii, const int &jj) {
+inline Flame2D_State Flame2D_Quad_Block::UnoSW(const int &ii, const int &jj) {
   return (Uno(ii, jj));
 }
 
@@ -886,7 +801,7 @@ inline ostream &operator << (ostream &out_file,
   if (SolnBlk.NCi == 0 || SolnBlk.NCj == 0) return(out_file);
   for ( j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
      for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
-         out_file << SolnBlk.U[i][j] << "\n";
+         out_file << SolnBlk.W[i][j] << "\n";
      } /* endfor */
   } /* endfor */
   for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
@@ -904,8 +819,7 @@ inline istream &operator >> (istream &in_file,
 			     Flame2D_Quad_Block &SolnBlk) {
 
   int i, j, k, ni, il, iu, nj, jl, ju, ng;
-  Flame2D_pState Flame2D_W_VACUUM; Flame2D_W_VACUUM.Vacuum();
-  Flame2D_cState Flame2D_U_VACUUM; Flame2D_U_VACUUM.Vacuum();
+  Flame2D_State Flame2D_VACUUM(0.0);
   Grid2D_Quad_Block New_Grid; in_file >> New_Grid;
   in_file.setf(ios::skipws);
   in_file >> ni >> il >> iu >> ng; in_file >> nj >> jl >> ju;
@@ -926,23 +840,23 @@ inline istream &operator >> (istream &in_file,
   Copy_Quad_Block(SolnBlk.Grid, New_Grid); New_Grid.deallocate();
   for ( j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
      for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
-         in_file >> SolnBlk.U[i][j];
-         SolnBlk.W[i][j] = W(SolnBlk.U[i][j]);
+         in_file >> SolnBlk.W[i][j];
+         SolnBlk.W[i][j].getU(SolnBlk.U[i][j]);
          for ( k = 0 ; k <= NUMBER_OF_RESIDUAL_VECTORS_FLAME2D-1 ; ++k ) {
-	     SolnBlk.dUdt[i][j][k] = Flame2D_U_VACUUM;
+	     SolnBlk.dUdt[i][j][k] = Flame2D_VACUUM;
          } /* endfor */
-	 SolnBlk.dWdx[i][j] = Flame2D_W_VACUUM;
-	 SolnBlk.dWdy[i][j] = Flame2D_W_VACUUM;
-	 SolnBlk.dWdx_faceN[i][j] = Flame2D_W_VACUUM;
-	 SolnBlk.dWdy_faceN[i][j] = Flame2D_W_VACUUM;
-	 SolnBlk.dWdx_faceE[i][j] = Flame2D_W_VACUUM;
-	 SolnBlk.dWdy_faceE[i][j] = Flame2D_W_VACUUM;
-	 SolnBlk.dWdx_faceW[i][j] = Flame2D_W_VACUUM;
-	 SolnBlk.dWdy_faceW[i][j] = Flame2D_W_VACUUM;
-	 SolnBlk.dWdx_faceS[i][j] = Flame2D_W_VACUUM;
-	 SolnBlk.dWdy_faceS[i][j] = Flame2D_W_VACUUM;
-	 SolnBlk.phi[i][j] = Flame2D_W_VACUUM;
-	 SolnBlk.Uo[i][j] = Flame2D_U_VACUUM;
+	 SolnBlk.dWdx[i][j] = Flame2D_VACUUM;
+	 SolnBlk.dWdy[i][j] = Flame2D_VACUUM;
+	 SolnBlk.dWdx_faceN[i][j] = Flame2D_VACUUM;
+	 SolnBlk.dWdy_faceN[i][j] = Flame2D_VACUUM;
+	 SolnBlk.dWdx_faceE[i][j] = Flame2D_VACUUM;
+	 SolnBlk.dWdy_faceE[i][j] = Flame2D_VACUUM;
+	 SolnBlk.dWdx_faceW[i][j] = Flame2D_VACUUM;
+	 SolnBlk.dWdy_faceW[i][j] = Flame2D_VACUUM;
+	 SolnBlk.dWdx_faceS[i][j] = Flame2D_VACUUM;
+	 SolnBlk.dWdy_faceS[i][j] = Flame2D_VACUUM;
+	 SolnBlk.phi[i][j] = Flame2D_VACUUM;
+	 SolnBlk.Uo[i][j] = Flame2D_VACUUM;
 	 SolnBlk.dt[i][j] = ZERO;
 	 SolnBlk.Srad[i][j] = ZERO;
      } /* endfor */
@@ -968,7 +882,7 @@ inline istream &operator >> (istream &in_file,
  * Flame2D_Quad_Block::NumVar -- Returns number of state variables.            *
  *******************************************************************************/
 inline int Flame2D_Quad_Block::NumVar(void) {
-  return (int(W[0][0].NUM_VAR_FLAME2D));    
+  return (Flame2D_State::NumVar());    
 }
 
 /*******************************************************************************
@@ -990,7 +904,7 @@ inline int Flame2D_Quad_Block::LoadSendBuffer(double *buffer,
         for ( k = 1 ; k <= NUM_VAR_FLAME2D; ++ k) {
   	   buffer_count = buffer_count + 1;
            if (buffer_count >= buffer_size) return(1);
-           buffer[buffer_count] = U[i][j][k];
+           buffer[buffer_count] = W[i][j][k];
         } /* endfor */
      } /* endfor */
   } /* endfor */
@@ -1018,10 +932,10 @@ inline int Flame2D_Quad_Block::LoadSendBuffer_F2C(double *buffer,
         for ( k = 1 ; k <= NUM_VAR_FLAME2D; ++ k) {
   	   buffer_count = buffer_count + 1;
            if (buffer_count >= buffer_size) return(1);
-           buffer[buffer_count] = (Grid.Cell[i  ][j  ].A*U[i  ][j  ][k]+
-                                   Grid.Cell[i+1][j  ].A*U[i+1][j  ][k]+
-                                   Grid.Cell[i  ][j+1].A*U[i  ][j+1][k]+
-                                   Grid.Cell[i+1][j+1].A*U[i+1][j+1][k])/
+           buffer[buffer_count] = (Grid.Cell[i  ][j  ].A*W[i  ][j  ][k]+
+                                   Grid.Cell[i+1][j  ].A*W[i+1][j  ][k]+
+                                   Grid.Cell[i  ][j+1].A*W[i  ][j+1][k]+
+                                   Grid.Cell[i+1][j+1].A*W[i+1][j+1][k])/
                                   (Grid.Cell[i  ][j  ].A+
                                    Grid.Cell[i+1][j  ].A+
                                    Grid.Cell[i  ][j+1].A+
@@ -1055,8 +969,7 @@ inline int Flame2D_Quad_Block::LoadSendBuffer_C2F(double *buffer,
   int NUM_VAR_FLAME2D = NumVar();
   int i, j, k;
   Vector2D dX;
-  Flame2D_pState Wfine;
-  Flame2D_cState Ufine;
+  Flame2D_State Wfine;
 
   if (j_min == j_max) { // North or south boundary.
      // Four different orderings to consider depending on the value of i_inc & j_inc.
@@ -1074,11 +987,10 @@ inline int Flame2D_Quad_Block::LoadSendBuffer_C2F(double *buffer,
               Wfine = W[i][j_min] +
                       (phi[i][j_min]^dWdx[i][j_min])*dX.x +
                       (phi[i][j_min]^dWdy[i][j_min])*dX.y;
-              Ufine = Wfine.U();
               for ( k = 1 ; k <= NUM_VAR_FLAME2D; ++ k) {
   	         buffer_count = buffer_count + 1;
                  if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Ufine[k];
+                 buffer[buffer_count] = Wfine[k];
               } /* endfor */
               // Evaluate SE sub (fine) cell values.
               dX = (HALF*(Grid.Node[i][j_min].X+Grid.Node[i+1][j_min].X)+
@@ -1089,11 +1001,10 @@ inline int Flame2D_Quad_Block::LoadSendBuffer_C2F(double *buffer,
               Wfine = W[i][j_min] +
                       (phi[i][j_min]^dWdx[i][j_min])*dX.x +
                       (phi[i][j_min]^dWdy[i][j_min])*dX.y;
-              Ufine = Wfine.U();
               for ( k = 1 ; k <= NUM_VAR_FLAME2D; ++ k) {
   	         buffer_count = buffer_count + 1;
                  if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Ufine[k];
+                 buffer[buffer_count] = Wfine[k];
               } /* endfor */
            } /* endfor */
            for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
@@ -1106,11 +1017,10 @@ inline int Flame2D_Quad_Block::LoadSendBuffer_C2F(double *buffer,
               Wfine = W[i][j_min] +
                       (phi[i][j_min]^dWdx[i][j_min])*dX.x +
                       (phi[i][j_min]^dWdy[i][j_min])*dX.y;
-              Ufine = Wfine.U();
               for ( k = 1 ; k <= NUM_VAR_FLAME2D; ++ k) { 
                  buffer_count = buffer_count + 1;
                  if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Ufine[k];
+                 buffer[buffer_count] = Wfine[k];
               } /* endfor */
               // Evaluate NE sub (fine) cell values.
               dX = (Grid.Cell[i][j_min].Xc+
@@ -1121,11 +1031,10 @@ inline int Flame2D_Quad_Block::LoadSendBuffer_C2F(double *buffer,
               Wfine = W[i][j_min] +
                       (phi[i][j_min]^dWdx[i][j_min])*dX.x +
                       (phi[i][j_min]^dWdy[i][j_min])*dX.y;
-              Ufine = Wfine.U();
               for ( k = 1 ; k <= NUM_VAR_FLAME2D; ++ k) {
   	         buffer_count = buffer_count + 1;
                  if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Ufine[k];
+                 buffer[buffer_count] = Wfine[k];
               } /* endfor */
            } /* endfor */
         } else {
@@ -1141,11 +1050,10 @@ inline int Flame2D_Quad_Block::LoadSendBuffer_C2F(double *buffer,
               Wfine = W[i][j_min] +
                       (phi[i][j_min]^dWdx[i][j_min])*dX.x +
                       (phi[i][j_min]^dWdy[i][j_min])*dX.y;
-              Ufine = Wfine.U();
               for ( k = 1 ; k <= NUM_VAR_FLAME2D; ++ k) {
   	         buffer_count = buffer_count + 1;
                  if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Ufine[k];
+                 buffer[buffer_count] = Wfine[k];
               } /* endfor */
               // Evaluate SW sub (fine) cell values.
               dX = (Grid.Node[i][j_min].X+
@@ -1156,11 +1064,10 @@ inline int Flame2D_Quad_Block::LoadSendBuffer_C2F(double *buffer,
               Wfine = W[i][j_min] +
                       (phi[i][j_min]^dWdx[i][j_min])*dX.x +
                       (phi[i][j_min]^dWdy[i][j_min])*dX.y;
-              Ufine = Wfine.U();
               for ( k = 1 ; k <= NUM_VAR_FLAME2D; ++ k) {
   	         buffer_count = buffer_count + 1;
                  if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Ufine[k];
+                 buffer[buffer_count] = Wfine[k];
               } /* endfor */
            } /* endfor */
            for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
@@ -1173,11 +1080,10 @@ inline int Flame2D_Quad_Block::LoadSendBuffer_C2F(double *buffer,
               Wfine = W[i][j_min] +
                       (phi[i][j_min]^dWdx[i][j_min])*dX.x +
                       (phi[i][j_min]^dWdy[i][j_min])*dX.y;
-              Ufine = Wfine.U();
               for ( k = 1 ; k <= NUM_VAR_FLAME2D; ++ k) {
   	         buffer_count = buffer_count + 1;
                  if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Ufine[k];
+                 buffer[buffer_count] = Wfine[k];
               } /* endfor */
               // Evaluate NW sub (fine) cell values.
               dX = (HALF*(Grid.Node[i][j_min].X+Grid.Node[i][j_min+1].X)+
@@ -1188,11 +1094,10 @@ inline int Flame2D_Quad_Block::LoadSendBuffer_C2F(double *buffer,
               Wfine = W[i][j_min] +
                       (phi[i][j_min]^dWdx[i][j_min])*dX.x +
                       (phi[i][j_min]^dWdy[i][j_min])*dX.y;
-              Ufine = Wfine.U();
               for ( k = 1 ; k <= NUM_VAR_FLAME2D; ++ k) { 
                  buffer_count = buffer_count + 1;
                  if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Ufine[k];
+                 buffer[buffer_count] = Wfine[k];
               } /* endfor */
            } /* endfor */
         } /* endif */
@@ -1210,11 +1115,10 @@ inline int Flame2D_Quad_Block::LoadSendBuffer_C2F(double *buffer,
               Wfine = W[i][j_min] +
                       (phi[i][j_min]^dWdx[i][j_min])*dX.x +
                       (phi[i][j_min]^dWdy[i][j_min])*dX.y;
-              Ufine = Wfine.U();
               for ( k = 1 ; k <= NUM_VAR_FLAME2D; ++ k) { 
                  buffer_count = buffer_count + 1;
                  if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Ufine[k];
+                 buffer[buffer_count] = Wfine[k];
               } /* endfor */
               // Evaluate NE sub (fine) cell values.
               dX = (Grid.Cell[i][j_min].Xc+
@@ -1225,11 +1129,10 @@ inline int Flame2D_Quad_Block::LoadSendBuffer_C2F(double *buffer,
               Wfine = W[i][j_min] +
                       (phi[i][j_min]^dWdx[i][j_min])*dX.x +
                       (phi[i][j_min]^dWdy[i][j_min])*dX.y;
-              Ufine = Wfine.U();
               for ( k = 1 ; k <= NUM_VAR_FLAME2D; ++ k) {
   	         buffer_count = buffer_count + 1;
                  if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Ufine[k];
+                 buffer[buffer_count] = Wfine[k];
               } /* endfor */
            } /* endfor */
            for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
@@ -1242,11 +1145,10 @@ inline int Flame2D_Quad_Block::LoadSendBuffer_C2F(double *buffer,
               Wfine = W[i][j_min] +
                       (phi[i][j_min]^dWdx[i][j_min])*dX.x +
                       (phi[i][j_min]^dWdy[i][j_min])*dX.y;
-              Ufine = Wfine.U();
               for ( k = 1 ; k <= NUM_VAR_FLAME2D; ++ k) {
   	         buffer_count = buffer_count + 1;
                  if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Ufine[k];
+                 buffer[buffer_count] = Wfine[k];
               } /* endfor */
               // Evaluate SE sub (fine) cell values.
               dX = (HALF*(Grid.Node[i][j_min].X+Grid.Node[i+1][j_min].X)+
@@ -1257,11 +1159,10 @@ inline int Flame2D_Quad_Block::LoadSendBuffer_C2F(double *buffer,
               Wfine = W[i][j_min] +
                       (phi[i][j_min]^dWdx[i][j_min])*dX.x +
                       (phi[i][j_min]^dWdy[i][j_min])*dX.y;
-              Ufine = Wfine.U();
               for ( k = 1 ; k <= NUM_VAR_FLAME2D; ++ k) {
   	         buffer_count = buffer_count + 1;
                  if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Ufine[k];
+                 buffer[buffer_count] = Wfine[k];
               } /* endfor */
            } /* endfor */
         } else {
@@ -1277,11 +1178,10 @@ inline int Flame2D_Quad_Block::LoadSendBuffer_C2F(double *buffer,
               Wfine = W[i][j_min] +
                       (phi[i][j_min]^dWdx[i][j_min])*dX.x +
                       (phi[i][j_min]^dWdy[i][j_min])*dX.y;
-              Ufine = Wfine.U();
               for ( k = 1 ; k <= NUM_VAR_FLAME2D; ++ k) {
   	         buffer_count = buffer_count + 1;
                  if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Ufine[k];
+                 buffer[buffer_count] = Wfine[k];
               } /* endfor */
               // Evaluate NW sub (fine) cell values.
               dX = (HALF*(Grid.Node[i][j_min].X+Grid.Node[i][j_min+1].X)+
@@ -1292,11 +1192,10 @@ inline int Flame2D_Quad_Block::LoadSendBuffer_C2F(double *buffer,
               Wfine = W[i][j_min] +
                       (phi[i][j_min]^dWdx[i][j_min])*dX.x +
                       (phi[i][j_min]^dWdy[i][j_min])*dX.y;
-              Ufine = Wfine.U();
               for ( k = 1 ; k <= NUM_VAR_FLAME2D; ++ k) { 
                  buffer_count = buffer_count + 1;
                  if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Ufine[k];
+                 buffer[buffer_count] = Wfine[k];
               } /* endfor */
            } /* endfor */
            for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
@@ -1309,11 +1208,10 @@ inline int Flame2D_Quad_Block::LoadSendBuffer_C2F(double *buffer,
               Wfine = W[i][j_min] +
                       (phi[i][j_min]^dWdx[i][j_min])*dX.x +
                       (phi[i][j_min]^dWdy[i][j_min])*dX.y;
-              Ufine = Wfine.U();
               for ( k = 1 ; k <= NUM_VAR_FLAME2D; ++ k) {
   	         buffer_count = buffer_count + 1;
                  if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Ufine[k];
+                 buffer[buffer_count] = Wfine[k];
               } /* endfor */
               // Evaluate SW sub (fine) cell values.
               dX = (Grid.Node[i][j_min].X+
@@ -1324,11 +1222,10 @@ inline int Flame2D_Quad_Block::LoadSendBuffer_C2F(double *buffer,
               Wfine = W[i][j_min] +
                       (phi[i][j_min]^dWdx[i][j_min])*dX.x +
                       (phi[i][j_min]^dWdy[i][j_min])*dX.y;
-              Ufine = Wfine.U();
               for ( k = 1 ; k <= NUM_VAR_FLAME2D; ++ k) {
   	         buffer_count = buffer_count + 1;
                  if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Ufine[k];
+                 buffer[buffer_count] = Wfine[k];
               } /* endfor */
            } /* endfor */
         } /* endif */
@@ -1349,11 +1246,10 @@ inline int Flame2D_Quad_Block::LoadSendBuffer_C2F(double *buffer,
               Wfine = W[i_min][j] +
                       (phi[i_min][j]^dWdx[i_min][j])*dX.x +
                       (phi[i_min][j]^dWdy[i_min][j])*dX.y;
-              Ufine = Wfine.U();
               for ( k = 1 ; k <= NUM_VAR_FLAME2D; ++ k) {
   	         buffer_count = buffer_count + 1;
                  if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Ufine[k];
+                 buffer[buffer_count] = Wfine[k];
               } /* endfor */
               // Evaluate SE sub (fine) cell values.
               dX = (HALF*(Grid.Node[i_min][j].X+Grid.Node[i_min+1][j].X)+
@@ -1364,11 +1260,10 @@ inline int Flame2D_Quad_Block::LoadSendBuffer_C2F(double *buffer,
               Wfine = W[i_min][j] +
                       (phi[i_min][j]^dWdx[i_min][j])*dX.x +
                       (phi[i_min][j]^dWdy[i_min][j])*dX.y;
-              Ufine = Wfine.U();
               for ( k = 1 ; k <= NUM_VAR_FLAME2D; ++ k) {
   	         buffer_count = buffer_count + 1;
                  if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Ufine[k];
+                 buffer[buffer_count] = Wfine[k];
               } /* endfor */
               // Evaluate NW sub (fine) cell values.
               dX = (HALF*(Grid.Node[i_min][j].X+Grid.Node[i_min][j+1].X)+
@@ -1379,11 +1274,10 @@ inline int Flame2D_Quad_Block::LoadSendBuffer_C2F(double *buffer,
               Wfine = W[i_min][j] +
                       (phi[i_min][j]^dWdx[i_min][j])*dX.x +
                       (phi[i_min][j]^dWdy[i_min][j])*dX.y;
-              Ufine = Wfine.U();
               for ( k = 1 ; k <= NUM_VAR_FLAME2D; ++ k) { 
                  buffer_count = buffer_count + 1;
                  if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Ufine[k];
+                 buffer[buffer_count] = Wfine[k];
               } /* endfor */
               // Evaluate NE sub (fine) cell values.
               dX = (Grid.Cell[i_min][j].Xc+
@@ -1394,11 +1288,10 @@ inline int Flame2D_Quad_Block::LoadSendBuffer_C2F(double *buffer,
               Wfine = W[i_min][j] +
                       (phi[i_min][j]^dWdx[i_min][j])*dX.x +
                       (phi[i_min][j]^dWdy[i_min][j])*dX.y;
-              Ufine = Wfine.U();
               for ( k = 1 ; k <= NUM_VAR_FLAME2D; ++ k) {
                  buffer_count = buffer_count + 1;
                  if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Ufine[k];
+                 buffer[buffer_count] = Wfine[k];
               } /* endfor */
            } /* endfor */
         } else {
@@ -1414,11 +1307,10 @@ inline int Flame2D_Quad_Block::LoadSendBuffer_C2F(double *buffer,
               Wfine = W[i_min][j] +
                       (phi[i_min][j]^dWdx[i_min][j])*dX.x +
                       (phi[i_min][j]^dWdy[i_min][j])*dX.y;
-              Ufine = Wfine.U();
               for ( k = 1 ; k <= NUM_VAR_FLAME2D; ++ k) {
   	         buffer_count = buffer_count + 1;
                  if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Ufine[k];
+                 buffer[buffer_count] = Wfine[k];
               } /* endfor */
               // Evaluate SW sub (fine) cell values.
               dX = (Grid.Node[i_min][j].X+
@@ -1429,11 +1321,10 @@ inline int Flame2D_Quad_Block::LoadSendBuffer_C2F(double *buffer,
               Wfine = W[i_min][j] +
                       (phi[i_min][j]^dWdx[i_min][j])*dX.x +
                       (phi[i_min][j]^dWdy[i_min][j])*dX.y;
-              Ufine = Wfine.U();
               for ( k = 1 ; k <= NUM_VAR_FLAME2D; ++ k) {
   	         buffer_count = buffer_count + 1;
                  if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Ufine[k];
+                 buffer[buffer_count] = Wfine[k];
               } /* endfor */
               // Evaluate NE sub (fine) cell values.
              dX = (Grid.Cell[i_min][j].Xc+
@@ -1444,11 +1335,10 @@ inline int Flame2D_Quad_Block::LoadSendBuffer_C2F(double *buffer,
               Wfine = W[i_min][j] +
                       (phi[i_min][j]^dWdx[i_min][j])*dX.x +
                       (phi[i_min][j]^dWdy[i_min][j])*dX.y;
-              Ufine = Wfine.U();
               for ( k = 1 ; k <= NUM_VAR_FLAME2D; ++ k) {
                  buffer_count = buffer_count + 1;
                  if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Ufine[k];
+                 buffer[buffer_count] = Wfine[k];
               } /* endfor */
               // Evaluate NW sub (fine) cell values.
               dX = (HALF*(Grid.Node[i_min][j].X+Grid.Node[i_min][j+1].X)+
@@ -1459,11 +1349,10 @@ inline int Flame2D_Quad_Block::LoadSendBuffer_C2F(double *buffer,
               Wfine = W[i_min][j] +
                       (phi[i_min][j]^dWdx[i_min][j])*dX.x +
                       (phi[i_min][j]^dWdy[i_min][j])*dX.y;
-              Ufine = Wfine.U();
               for ( k = 1 ; k <= NUM_VAR_FLAME2D; ++ k) { 
                  buffer_count = buffer_count + 1;
                  if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Ufine[k];
+                 buffer[buffer_count] = Wfine[k];
               } /* endfor */
            } /* endfor */
         } /* endif */
@@ -1481,11 +1370,10 @@ inline int Flame2D_Quad_Block::LoadSendBuffer_C2F(double *buffer,
               Wfine = W[i_min][j] +
                       (phi[i_min][j]^dWdx[i_min][j])*dX.x +
                       (phi[i_min][j]^dWdy[i_min][j])*dX.y;
-              Ufine = Wfine.U();
               for ( k = 1 ; k <= NUM_VAR_FLAME2D; ++ k) { 
                  buffer_count = buffer_count + 1;
                  if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Ufine[k];
+                 buffer[buffer_count] = Wfine[k];
               } /* endfor */
               // Evaluate NE sub (fine) cell values.
               dX = (Grid.Cell[i_min][j].Xc+
@@ -1496,11 +1384,10 @@ inline int Flame2D_Quad_Block::LoadSendBuffer_C2F(double *buffer,
               Wfine = W[i_min][j] +
                       (phi[i_min][j]^dWdx[i_min][j])*dX.x +
                       (phi[i_min][j]^dWdy[i_min][j])*dX.y;
-              Ufine = Wfine.U();
               for ( k = 1 ; k <= NUM_VAR_FLAME2D; ++ k) {
                  buffer_count = buffer_count + 1;
                  if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Ufine[k];
+                 buffer[buffer_count] = Wfine[k];
               } /* endfor */
               // Evaluate SW sub (fine) cell values.
               dX = (Grid.Node[i_min][j].X+
@@ -1511,11 +1398,10 @@ inline int Flame2D_Quad_Block::LoadSendBuffer_C2F(double *buffer,
               Wfine = W[i_min][j] +
                       (phi[i_min][j]^dWdx[i_min][j])*dX.x +
                       (phi[i_min][j]^dWdy[i_min][j])*dX.y;
-              Ufine = Wfine.U();
               for ( k = 1 ; k <= NUM_VAR_FLAME2D; ++ k) {
   	         buffer_count = buffer_count + 1;
                  if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Ufine[k];
+                 buffer[buffer_count] = Wfine[k];
               } /* endfor */
               // Evaluate SE sub (fine) cell values.
               dX = (HALF*(Grid.Node[i_min][j].X+Grid.Node[i_min+1][j].X)+
@@ -1526,11 +1412,10 @@ inline int Flame2D_Quad_Block::LoadSendBuffer_C2F(double *buffer,
               Wfine = W[i_min][j] +
                       (phi[i_min][j]^dWdx[i_min][j])*dX.x +
                       (phi[i_min][j]^dWdy[i_min][j])*dX.y;
-              Ufine = Wfine.U();
               for ( k = 1 ; k <= NUM_VAR_FLAME2D; ++ k) {
   	         buffer_count = buffer_count + 1;
                  if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Ufine[k];
+                 buffer[buffer_count] = Wfine[k];
               } /* endfor */
            } /* endfor */
         } else {
@@ -1546,11 +1431,10 @@ inline int Flame2D_Quad_Block::LoadSendBuffer_C2F(double *buffer,
               Wfine = W[i_min][j] +
                       (phi[i_min][j]^dWdx[i_min][j])*dX.x +
                       (phi[i_min][j]^dWdy[i_min][j])*dX.y;
-              Ufine = Wfine.U();
               for ( k = 1 ; k <= NUM_VAR_FLAME2D; ++ k) {
                  buffer_count = buffer_count + 1;
                  if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Ufine[k];
+                 buffer[buffer_count] = Wfine[k];
               } /* endfor */
               // Evaluate NW sub (fine) cell values.
               dX = (HALF*(Grid.Node[i_min][j].X+Grid.Node[i_min][j+1].X)+
@@ -1561,11 +1445,10 @@ inline int Flame2D_Quad_Block::LoadSendBuffer_C2F(double *buffer,
               Wfine = W[i_min][j] +
                       (phi[i_min][j]^dWdx[i_min][j])*dX.x +
                       (phi[i_min][j]^dWdy[i_min][j])*dX.y;
-              Ufine = Wfine.U();
               for ( k = 1 ; k <= NUM_VAR_FLAME2D; ++ k) { 
                  buffer_count = buffer_count + 1;
                  if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Ufine[k];
+                 buffer[buffer_count] = Wfine[k];
               } /* endfor */
               // Evaluate SE sub (fine) cell values.
               dX = (HALF*(Grid.Node[i_min][j].X+Grid.Node[i_min+1][j].X)+
@@ -1576,11 +1459,10 @@ inline int Flame2D_Quad_Block::LoadSendBuffer_C2F(double *buffer,
               Wfine = W[i_min][j] +
                       (phi[i_min][j]^dWdx[i_min][j])*dX.x +
                       (phi[i_min][j]^dWdy[i_min][j])*dX.y;
-              Ufine = Wfine.U();
               for ( k = 1 ; k <= NUM_VAR_FLAME2D; ++ k) {
   	         buffer_count = buffer_count + 1;
                  if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Ufine[k];
+                 buffer[buffer_count] = Wfine[k];
               } /* endfor */
               // Evaluate SW sub (fine) cell values.
               dX = (Grid.Node[i_min][j].X+
@@ -1591,11 +1473,10 @@ inline int Flame2D_Quad_Block::LoadSendBuffer_C2F(double *buffer,
               Wfine = W[i_min][j] +
                       (phi[i_min][j]^dWdx[i_min][j])*dX.x +
                       (phi[i_min][j]^dWdy[i_min][j])*dX.y;
-              Ufine = Wfine.U();
               for ( k = 1 ; k <= NUM_VAR_FLAME2D; ++ k) {
   	         buffer_count = buffer_count + 1;
                  if (buffer_count >= buffer_size) return(1);
-                 buffer[buffer_count] = Ufine[k];
+                 buffer[buffer_count] = Wfine[k];
               } /* endfor */
            } /* endfor */
         } /* endif */
@@ -1624,9 +1505,8 @@ inline int Flame2D_Quad_Block::UnloadReceiveBuffer(double *buffer,
       for ( int k = 1 ; k <= NUM_VAR_FLAME2D; ++ k) {
 	buffer_count = buffer_count + 1;
 	if (buffer_count >= buffer_size) return(1);    
-	U[i][j][k] = buffer[buffer_count];
+	W[i][j][k] = buffer[buffer_count];
       }
-      W[i][j] = U[i][j].W();
     } /* endfor */
   } /* endfor */
   return(0);
@@ -1654,10 +1534,9 @@ inline int Flame2D_Quad_Block::UnloadReceiveBuffer_F2C(double *buffer,
        for ( int k = 1 ; k <= NUM_VAR_FLAME2D; ++ k) {
 	 buffer_count = buffer_count + 1;
 	 if (buffer_count >= buffer_size) return(1);    
-	 U[i][j][k] = buffer[buffer_count];
+	 W[i][j][k] = buffer[buffer_count];
 /* 	 U[i][j][k] = buffer[buffer_count]/Grid.Cell[i][j].A; */
        }
-       W[i][j] = U[i][j].W();
      } /* endfor */
   } /* endfor */
   return(0);
@@ -1685,9 +1564,8 @@ inline int Flame2D_Quad_Block::UnloadReceiveBuffer_C2F(double *buffer,
        for ( int k = 1 ; k <= NUM_VAR_FLAME2D; ++ k) {
 	 buffer_count = buffer_count + 1;
 	 if (buffer_count >= buffer_size) return(1);    
-	 U[i][j][k] = buffer[buffer_count];
+	 W[i][j][k] = buffer[buffer_count];
        }
-       W[i][j] = U[i][j].W();
      } /* endfor */
   } /* endfor */
   return(0);
@@ -1707,13 +1585,12 @@ inline void Flame2D_Quad_Block::SubcellReconstruction(const int i,
   double u0Min, u0Max, uQuad[4], phi_n;
   double DxDx_ave, DxDy_ave, DyDy_ave;
   Vector2D dX;
-  Flame2D_pState DU, DUDx_ave, DUDy_ave;
+  Flame2D_State DU, DUDx_ave, DUDy_ave;
 
-  Flame2D_pState Flame2D_W_VACUUM;
-  Flame2D_W_VACUUM.Vacuum();
- 
+  Flame2D_State Flame2D_VACUUM(0.0);
+
   int NUM_VAR_FLAME2D = NumVar(); 
- 
+
   /* Carry out the limited solution reconstruction in
      each cell of the computational mesh. */
 
@@ -1943,14 +1820,14 @@ inline void Flame2D_Quad_Block::SubcellReconstruction(const int i,
     i_index[6] = i  ; j_index[6] = j+1;
     i_index[7] = i+1; j_index[7] = j+1;
   } /* endif */
-  
+
   if (n_pts > 0) {
-      DUDx_ave = Flame2D_W_VACUUM;
-      DUDy_ave = Flame2D_W_VACUUM;
+      DUDx_ave = Flame2D_VACUUM;
+      DUDy_ave = Flame2D_VACUUM;
       DxDx_ave = ZERO;
       DxDy_ave = ZERO;
       DyDy_ave = ZERO;
-  
+
       for ( n2 = 0 ; n2 <= n_pts-1 ; ++n2 ) {
           dX = Grid.Cell[ i_index[n2] ][ j_index[n2] ].Xc - 
                Grid.Cell[i][j].Xc;
@@ -1962,7 +1839,7 @@ inline void Flame2D_Quad_Block::SubcellReconstruction(const int i,
           DxDy_ave += dX.x*dX.y;
           DyDy_ave += dX.y*dX.y;
       } /* endfor */
-  					    
+					    
       DUDx_ave = DUDx_ave/double(n_pts);
       DUDy_ave = DUDy_ave/double(n_pts);
       DxDx_ave = DxDx_ave/double(n_pts);
@@ -2028,14 +1905,14 @@ inline void Flame2D_Quad_Block::SubcellReconstruction(const int i,
                                             u0Min, u0Max, 4);
              break;
          } /* endswitch */
-  
+
          phi[i][j][n] = phi_n;
 	} /* endfor */
       } // end limiter if
   } else {
-      dWdx[i][j] = Flame2D_W_VACUUM;
-      dWdy[i][j] = Flame2D_W_VACUUM; 
-      phi[i][j]  = Flame2D_W_VACUUM;
+      dWdx[i][j] = Flame2D_VACUUM;
+      dWdy[i][j] = Flame2D_VACUUM; 
+      phi[i][j]  = Flame2D_VACUUM;
   } /* endif */
     
 }
