@@ -6354,51 +6354,51 @@ void Ramp_up_Reference_Mach_Number(Gaussian2D_Quad_Block &SolnBlk,
     ((double)(Number_of_Time_Steps+1)/(double)Input_Parameters.Number_of_Time_Steps_to_Ramp)*
     Wo_Ramped.sound()*sin(TWO*PI*Input_Parameters.Flow_Angle/360.0);
 
-  for (j = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
-    if (j >= SolnBlk.JCl && j <= SolnBlk.JCu) {
-      SolnBlk.WoW[j] = Wo_Ramped;
-      SolnBlk.WoE[j] = Wo_Ramped;
-    } else if (j < SolnBlk.JCl) {
-      SolnBlk.WoW[j] = Wo_Ramped;
-      SolnBlk.WoE[j] = Wo_Ramped;
-    } else {
-      SolnBlk.WoW[j] = Wo_Ramped;
-      SolnBlk.WoE[j] = Wo_Ramped;
-    } /* endif */
-
-    //Set Wall velocities for Adiabatic walls
-    if (SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL){
-      SolnBlk.WoW[j].v.y = 0.0;
-      SolnBlk.WoW[j].v.x = 0.0;
-    } /* endif */
-    if (SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL){
-      SolnBlk.WoE[j].v.y = 0.0;
-      SolnBlk.WoE[j].v.x = 0.0;
-    } /* endif */
-  } /* endfor */
+//  for (j = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
+//    if (j >= SolnBlk.JCl && j <= SolnBlk.JCu) {
+//      SolnBlk.WoW[j] = Wo_Ramped;
+//      SolnBlk.WoE[j] = Wo_Ramped;
+//    } else if (j < SolnBlk.JCl) {
+//      SolnBlk.WoW[j] = Wo_Ramped;
+//      SolnBlk.WoE[j] = Wo_Ramped;
+//    } else {
+//      SolnBlk.WoW[j] = Wo_Ramped;
+//      SolnBlk.WoE[j] = Wo_Ramped;
+//    } /* endif */
+//
+//    //Set Wall velocities for Adiabatic walls
+//    if (SolnBlk.Grid.BCtypeW[j] == BC_ADIABATIC_WALL){
+//      SolnBlk.WoW[j].v.y = 0.0;
+//      SolnBlk.WoW[j].v.x = 0.0;
+//    } /* endif */
+//    if (SolnBlk.Grid.BCtypeE[j] == BC_ADIABATIC_WALL){
+//      SolnBlk.WoE[j].v.y = 0.0;
+//      SolnBlk.WoE[j].v.x = 0.0;
+//    } /* endif */
+//  } /* endfor */
 
 
   for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
     if (i >= SolnBlk.ICl && i <= SolnBlk.ICu) {
-      SolnBlk.WoS[i] = Wo_Ramped;
+      //SolnBlk.WoS[i] = Wo_Ramped;
       SolnBlk.WoN[i] = Wo_Ramped;
     } else if (i < SolnBlk.ICl) {
-      SolnBlk.WoS[i] = Wo_Ramped;
+      //SolnBlk.WoS[i] = Wo_Ramped;
       SolnBlk.WoN[i] = Wo_Ramped;
     } else {
-      SolnBlk.WoS[i] = Wo_Ramped;
+      //SolnBlk.WoS[i] = Wo_Ramped;
       SolnBlk.WoN[i] = Wo_Ramped;
     } /* endif */
     
-    //Set Wall velocities for Adiabatic walls
-    if (SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL){
-      SolnBlk.WoS[i].v.y = 0.0;
-      if (Input_Parameters.i_Grid == GRID_ADIABATIC_COUETTE) {
-	SolnBlk.WoS[i].v.x =  - Input_Parameters.Couette_Plate_Velocity;
-      } else {
-	SolnBlk.WoS[i].v.x = 0.0;
-      } /* endif */
-    } /* endif */
+//    //Set Wall velocities for Adiabatic walls
+//    if (SolnBlk.Grid.BCtypeS[i] == BC_ADIABATIC_WALL){
+//      SolnBlk.WoS[i].v.y = 0.0;
+//      if (Input_Parameters.i_Grid == GRID_ADIABATIC_COUETTE) {
+//	SolnBlk.WoS[i].v.x =  - Input_Parameters.Couette_Plate_Velocity;
+//      } else {
+//	SolnBlk.WoS[i].v.x = 0.0;
+//      } /* endif */
+//    } /* endif */
     if (SolnBlk.Grid.BCtypeN[i] == BC_ADIABATIC_WALL){
       SolnBlk.WoN[i].v.y = 0.0;
       if (Input_Parameters.i_Grid == GRID_ADIABATIC_COUETTE) {
