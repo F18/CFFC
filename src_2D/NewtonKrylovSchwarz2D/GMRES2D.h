@@ -790,7 +790,7 @@ LoadSendBuffer_C2F(double *buffer,
 	    (SolnBlk->phi[i][j_min]^SolnBlk->dWdy[i][j_min])*dX.y;
 
 	  for (k = 0 ; k < blocksize; ++ k) {
-	    buffer_count = buffer_count + 1;
+	    buffer_count++;
 	    if (buffer_count >= buffer_size) return(1);
 	    buffer[buffer_count] = Wfine[k+1];
 	  } 
@@ -1305,7 +1305,7 @@ LoadSendBuffer_C2F(double *buffer,
                  if (buffer_count >= buffer_size) return(1);
                  buffer[buffer_count] = Wfine[k+1];
               } /* endfor */
-           } /* endfor */\
+           } /* endfor */
 
 	   /******************************* CASE #8 ***************************************/
         } else {

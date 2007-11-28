@@ -867,7 +867,7 @@ void CFD_Input_Parameters::Broadcast(void) {
     MPI::COMM_WORLD.Bcast(&(Time_Max),
                           1,
                           MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(p_Norm_Indicator),
+    MPI::COMM_WORLD.Bcast(&(Residual_Norm),
                           1,
                           MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&(Number_of_Residual_Norms),

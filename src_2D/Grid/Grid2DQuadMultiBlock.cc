@@ -1935,7 +1935,7 @@ Grid2D_Quad_Block** Grid_1D_Flame(Grid2D_Quad_Block **Grid_ptr,
  	  }
 	  
  	  if (jBlk == 0 && iBlk == Number_of_Blocks_Gap + Number_of_Blocks_Fuel - 1 && Number_of_Blocks_Gap!=0) {
- 	    Bnd_Spline_South.setBCtype(BC_WALL_VISCOUS_HEATFLUX);      //Gap wall
+ 	    Bnd_Spline_South.setBCtype(BC_WALL_VISCOUS_HEATFLUX);      //Gap wall //FIXED???
  	    Bnd_Spline_North.setBCtype(BC_NONE);
  	  } else if (jBlk == 0 && iBlk < Number_of_Blocks_Gap + Number_of_Blocks_Fuel + Number_of_Blocks_Air ) {
  	    Bnd_Spline_South.setBCtype(BC_2DFLAME_INFLOW);     //BC_FIXED);        //Bottom Inflow Left

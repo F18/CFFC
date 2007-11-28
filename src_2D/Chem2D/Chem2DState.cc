@@ -614,14 +614,17 @@ double Chem2D_pState::a(void) const{
  the heat flux vector (qflux)
   sum( hs * Ds * grad cs)
 *******************************************************/
-Vector2D Chem2D_pState::thermal_diffusion(void) const{
+Vector2D Chem2D_pState::thermal_diffusion(const Chem2D_pState &dWdx,
+					  const Chem2D_pState &dWdy) const{
   Vector2D sum;
   sum.zero();
   double Temp = T();
   //problems with Species overloaded operators
   for(int i=0; i<ns; i++){ 
-    sum  +=  (specdata[i].Enthalpy(Temp) + specdata[i].Heatofform())
-      * spec[i].diffusion_coef * spec[i].gradc;
+    sum.x  +=  (specdata[i].Enthalpy(Temp) + specdata[i].Heatofform())
+      * spec[i].diffusion_coef * dWdx.spec[i].c; 
+    sum.y  +=  (specdata[i].Enthalpy(Temp) + specdata[i].Heatofform())
+      * spec[i].diffusion_coef * dWdy.spec[i].c;       
   }
   return sum;
 }
@@ -2428,16 +2431,18 @@ double Chem2D_cState::dmudT(void) const{
 
   sum( hs * Ds * grad cs)
 *******************************************************/
-Vector2D Chem2D_cState::thermal_diffusion(const double &Temp) const{
-  Vector2D sum;
-  sum.zero();
-  //double Temp = T();
+Vector2D Chem2D_cState::thermal_diffusion(const double &Temp,
+					  const Chem2D_pState &dWdx,
+					  const Chem2D_pState &dWdy) const{
+  Vector2D sum(ZERO);
   //problems with Species overloaded operators
   for(int i=0; i<ns; i++){ 
-    sum  +=   (specdata[i].Enthalpy(Temp) + specdata[i].Heatofform())
-            * rhospec[i].diffusion_coef*rhospec[i].gradc;
+    sum.x  +=   (specdata[i].Enthalpy(Temp) + specdata[i].Heatofform())
+      * rhospec[i].diffusion_coef*dWdx.spec[i].c;
+    sum.y  +=   (specdata[i].Enthalpy(Temp) + specdata[i].Heatofform())
+      * rhospec[i].diffusion_coef*dWdy.spec[i].c;        
   }
-  return sum/(rho*rho);
+  return sum/(rho);
 }
 
 /*****************************************************************
@@ -2456,7 +2461,7 @@ Chem2D_cState Chem2D_cState::Viscous_Flux_x(const Chem2D_pState &dWdx,
 
   //rho * Diffusion_Coef * grad cn 
   for( int i=0; i<ns; i++){
-    temp.rhospec[i].c = (rhospec[i].diffusion_coef * rhospec[i].gradc.x)/rho; 
+    temp.rhospec[i].c = (rhospec[i].diffusion_coef * dWdx.spec[i].c);
   }
 
   if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
@@ -2472,7 +2477,7 @@ Chem2D_cState Chem2D_cState::Viscous_Flux_x(const Chem2D_pState &dWdx,
     
     double Dm_t = Dm_turb();
     for( int i=0; i<ns; i++){
-      temp.rhospec[i].c += Dm_t*rhospec[i].gradc.x; 
+      temp.rhospec[i].c += Dm_t*rho*dWdx.spec[i].c; 
     }
   }
  
@@ -2489,7 +2494,7 @@ Chem2D_cState Chem2D_cState::Viscous_Flux_y(const Chem2D_pState &dWdy,
   temp[4] = - qflux.y + v().x*tau.xy + v().y*tau.yy;		
   //rho * Diffusion_Coef * grad cn 
   for( int i=0; i<ns; i++){
-    temp.rhospec[i].c = (rhospec[i].diffusion_coef * rhospec[i].gradc.y)/rho;     
+    temp.rhospec[i].c = (rhospec[i].diffusion_coef * dWdy.spec[i].c);     
   }
 
   if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
@@ -2502,7 +2507,7 @@ Chem2D_cState Chem2D_cState::Viscous_Flux_y(const Chem2D_pState &dWdy,
      temp[6] = (mu()+eddy_viscosity()*sigma_star)*dWdy.omega;
      double Dm_t = Dm_turb();
      for( int i=0; i<ns; i++){
-        temp.rhospec[i].c += Dm_t*rhospec[i].gradc.y; 
+        temp.rhospec[i].c += Dm_t*rho*dWdy.spec[i].c;  
      }
   }
 
@@ -2839,7 +2844,7 @@ Chem2D_pState No_Slip(const Chem2D_pState &Win,
 		      const Vector2D &norm_dir,
 		      const int &TEMPERATURE_BC_FLAG) {  
   
-  return(Moving_Wall(Win,Wout,norm_dir,ZERO,TEMPERATURE_BC_FLAG));
+  return(Moving_Wall(Win,Wout,norm_dir,ZERO,TEMPERATURE_BC_FLAG));        //USED FOR GAP, CORRECT ??
 
 }
 
@@ -2970,10 +2975,10 @@ Chem2D_pState BC_2DFlame_Inflow(const Chem2D_pState &Wi,
   // omega = 2*pi*freq
   // freq = 20 (Hz)
   // t = physical time (s)
-//   if (radius <= 0.002 ){  //fuel spacing 0.002m    
-//     Wnew.v.y = 0.70 * ( ONE - (radius*radius)/(0.002*0.002))
-//       *(ONE + 0.5*sin( 2*PI*20*physical_time));    // physical_time + 0.0375 to go from 35 -> 35         
-//   }
+  if (radius <= 0.002 ){  //fuel spacing 0.002m    
+    Wnew.v.y = 0.70 * ( ONE - (radius*radius)/(0.002*0.002))
+      *(ONE + 0.5*sin( 2*PI*20*physical_time));    // physical_time + 0.0375 to go from 35 -> 35         
+  }
 
 
   return Wnew;
@@ -4301,6 +4306,7 @@ Chem2D_cState Viscous_Flux_n(Chem2D_pState &W,
   double Temperature, Rmix;
   Vector2D grad_T;
   Vector2D i = Vector2D(1,0), j = Vector2D(0,1);
+  double mu = W.mu();
 
   //Molecular transport properties
   Temperature = W.T();
@@ -4326,10 +4332,10 @@ Chem2D_cState Viscous_Flux_n(Chem2D_pState &W,
   for( int k=0; k<U.ns; k++){
     /***************** Diffusion coefficients **********************/
     // using global Schmidt number relation Scs = mu/rho*Ds
-    U.rhospec[k].diffusion_coef = W.mu()/U.Schmidt[k];
+    U.rhospec[k].diffusion_coef = mu/U.Schmidt[k];
     /***************** mass fraction gradients *********************/
-    U.rhospec[k].gradc.x = U.rho * dWdx.spec[k].c;
-    U.rhospec[k].gradc.y = U.rho * dWdy.spec[k].c;
+//     U.rhospec[k].gradc.x = U.rho * dWdx.spec[k].c;
+//     U.rhospec[k].gradc.y = U.rho * dWdy.spec[k].c;
   }
   
   //Molecular (laminar) stress tensor
@@ -4340,7 +4346,7 @@ Chem2D_cState Viscous_Flux_n(Chem2D_pState &W,
   //Thermal conduction, q = - kappa * grad(T)
   U.qflux = - W.kappa()*grad_T;
   //Thermal diffusion, q -= rho * sum ( hs * Ds *gradcs)
-  U.qflux -= U.rho*U.thermal_diffusion(Temperature);  
+  U.qflux -= U.rho*U.thermal_diffusion(Temperature,dWdx,dWdy);  
   
   //Turbulent heat flux
   //Thermal conduction, q = - kappa * grad(T)
@@ -4350,7 +4356,7 @@ Chem2D_cState Viscous_Flux_n(Chem2D_pState &W,
     U.theta = - W.eddy_viscosity()*W.Cp()/W.Pr_turb()*grad_T;
     //Thermal Diffusion, q -= rho * sum ( hs * Ds *gradcs)   
     for (int k=0; k<U.ns; k++) {
-      U.theta -= W.Dm_turb()*U.rhospec[k].gradc*
+      U.theta -= W.Dm_turb()*U.rho * Vector2D(dWdx.spec[k].c,dWdy.spec[k].c)*
 	(U.specdata[k].Enthalpy(Temperature)+U.specdata[k].Heatofform());
     }
     // NOTE: WASTEFUL AS "Strain_Rate" is called in Laminar_Stress as well,

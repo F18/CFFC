@@ -7735,7 +7735,6 @@ int Update_Dual_Solution_States(Chem2D_Quad_Block &SolnBlk) {
  *       -> U.qflux                                                   *
  *	 -> U.tau                                                     *
  *	 -> U.rhospec[i].diffusion                                    *
- *	 -> U.rhospec[i].gradc                                        *
  *	 -> local grad Temperature                                    *
  *                                                                    *
  **********************************************************************/
@@ -7779,9 +7778,9 @@ void Viscous_Calculations(Chem2D_Quad_Block &SolnBlk) {
 	/***************** Diffusion coefficients **********************/
 	// using global Schmidt number relation Sc = mu/rho*Ds
 	SolnBlk.U[i][j].rhospec[k].diffusion_coef = mu/SolnBlk.W[i][j].Schmidt[k];
-	/***************** mass fraction gradients *********************/
-	SolnBlk.U[i][j].rhospec[k].gradc.x = SolnBlk.U[i][j].rho * SolnBlk.dWdx[i][j].spec[k].c;
-	SolnBlk.U[i][j].rhospec[k].gradc.y = SolnBlk.U[i][j].rho * SolnBlk.dWdy[i][j].spec[k].c;
+// 	/***************** mass fraction gradients *********************/
+// 	SolnBlk.U[i][j].rhospec[k].gradc.x = SolnBlk.U[i][j].rho * SolnBlk.dWdx[i][j].spec[k].c;
+// 	SolnBlk.U[i][j].rhospec[k].gradc.y = SolnBlk.U[i][j].rho * SolnBlk.dWdy[i][j].spec[k].c;
       }
       X = SolnBlk.Grid.Cell[i][j].Xc;
       /***************** Molecular (Laminar) Stresses ******************/
@@ -7803,7 +7802,9 @@ void Viscous_Calculations(Chem2D_Quad_Block &SolnBlk) {
       SolnBlk.U[i][j].qflux = - kappa*grad_T;
       /****************** Thermal Diffusion ****************************/
       // q -= rho * sum ( hs * Ds *gradcs)  
-      SolnBlk.U[i][j].qflux -= SolnBlk.U[i][j].rho*SolnBlk.U[i][j].thermal_diffusion(Temperature);  
+      SolnBlk.U[i][j].qflux -= SolnBlk.U[i][j].rho*SolnBlk.U[i][j].thermal_diffusion(Temperature,
+										     SolnBlk.dWdx[i][j], 
+										     SolnBlk.dWdy[i][j]);  
       
       /**************** Turbulent Heat flux Vector *********************/
       /****************** Thermal Conduction ***************************
@@ -7814,12 +7815,9 @@ void Viscous_Calculations(Chem2D_Quad_Block &SolnBlk) {
       /****************** Thermal Diffusion ****************************/
       // q -= rho * sum ( hs * Ds *gradcs)   
 	for( int k=0; k<SolnBlk.U[i][j].ns; k++){
-	  SolnBlk.U[i][j].theta -= Dm_t*SolnBlk.U[i][j].rhospec[k].gradc*
-	    (SolnBlk.U[i][j].specdata[k].Enthalpy(Temperature)+
-	     SolnBlk.U[i][j].specdata[k].Heatofform());
-	  
-
-         }
+	  SolnBlk.U[i][j].theta -= Dm_t*Vector2D(SolnBlk.dWdx[i][j].spec[k].c,SolnBlk.dWdy[i][j].spec[k].c)*
+	    (SolnBlk.U[i][j].specdata[k].Enthalpy(Temperature)+ SolnBlk.U[i][j].specdata[k].Heatofform());
+        }
       } /* endif */
       /****** Set Primitive *******/
       SolnBlk.W[i][j] = W(SolnBlk.U[i][j]);

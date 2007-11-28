@@ -249,7 +249,6 @@ class Chem2D_pState {
 
    void zero_non_sol(){
      for(int i=0; i<ns; i++){
-       spec[i].gradc.zero();
        spec[i].diffusion_coef=ZERO;
      }
      tau.zero(); qflux.zero(); lambda.zero(); theta.zero(); 
@@ -346,7 +345,8 @@ class Chem2D_pState {
 			const Vector2D X);
 
    /************ Heat Flux vector thermal Diffusion ***********/
-   Vector2D thermal_diffusion(void) const;
+   Vector2D thermal_diffusion(const Chem2D_pState &dWdx,
+			      const Chem2D_pState &dWdy) const;
 
    /*************** Conserved solution state. ****************/
    Chem2D_cState U(void) const;
@@ -601,7 +601,6 @@ class Chem2D_pState {
    {   
      for(int i=0; i<W.ns; i++){
        rhospec[i].c = W.rho*W.spec[i].c;
-       rhospec[i].gradc = W.rho*W.spec[i].gradc;
        rhospec[i].diffusion_coef = W.rho*W.spec[i].diffusion_coef;
      }  
    }
@@ -634,7 +633,6 @@ class Chem2D_pState {
 
    void zero_non_sol(){
      for(int i=0; i<ns; i++){
-       rhospec[i].gradc.zero();
        rhospec[i].diffusion_coef=ZERO;
      }
      tau.zero(); qflux.zero(); lambda.zero(); theta.zero();  
@@ -701,7 +699,9 @@ class Chem2D_pState {
    // LIKE PRIMITIVE 
 
    /************ Heat Flux vector thermal Diffusion ***********/
-   Vector2D thermal_diffusion(const double &Temp) const;
+     Vector2D thermal_diffusion(const double &Temp,
+				const Chem2D_pState &dWdx,
+				const Chem2D_pState &dWdy) const;
 
    /*********** Primitive solution state ***********************/
    Chem2D_pState W(void) const;
@@ -1142,7 +1142,6 @@ inline Chem2D_cState Chem2D_pState::U(const Chem2D_pState &W) const{
     Temp.rhov = W.rhov();
     for(int i=0; i<W.ns; i++){
       Temp.rhospec[i].c = W.rho*W.spec[i].c;
-      Temp.rhospec[i].gradc = W.rho*W.spec[i].gradc;
       Temp.rhospec[i].diffusion_coef = W.rho*W.spec[i].diffusion_coef;
     } 
     Temp.E = W.E();
@@ -1161,7 +1160,6 @@ inline Chem2D_cState U(const Chem2D_pState &W) {
   Temp.rhov = W.rhov();
   for(int i=0; i<W.ns; i++){
     Temp.rhospec[i].c = W.rho*W.spec[i].c;
-    Temp.rhospec[i].gradc = W.rho*W.spec[i].gradc;
     Temp.rhospec[i].diffusion_coef = W.rho*W.spec[i].diffusion_coef;
   }  
   Temp.E = W.E(); 
@@ -1468,7 +1466,6 @@ inline Chem2D_pState Chem2D_cState::W(const Chem2D_cState &U) const{
     Temp.v = U.v();  
     for(int i=0; i<U.ns; i++){
       Temp.spec[i].c = U.rhospec[i].c/U.rho;
-      Temp.spec[i].gradc = U.rhospec[i].gradc/U.rho;
       Temp.spec[i].diffusion_coef = U.rhospec[i].diffusion_coef/U.rho;
     }   
     Temp.p = U.p();
@@ -1488,7 +1485,6 @@ inline Chem2D_pState W(const Chem2D_cState &U) {
   Temp.v = U.v();
   for(int i=0; i<U.ns; i++){
     Temp.spec[i].c = U.rhospec[i].c/U.rho;
-    Temp.spec[i].gradc = U.rhospec[i].gradc/U.rho;
     Temp.spec[i].diffusion_coef = U.rhospec[i].diffusion_coef/U.rho;
   } 
   Temp.p = U.p();
