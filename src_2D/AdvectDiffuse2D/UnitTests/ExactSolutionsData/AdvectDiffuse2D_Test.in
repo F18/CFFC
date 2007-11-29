@@ -2,6 +2,26 @@
 			# AdvectDiffuse2D input file #
 			##############################
 
+# Exact solution parameters
+Exact_Solution = 
+	    Heat_Diffusion_With_Linear_Source
+
+lambda_Coeff = 
+    4.0
+
+CoordA_Coeff =
+    1.0
+SolnA_Coeff =
+    3.0
+CoordB_Coeff =
+    -1.0
+SolnB_Coeff =
+    4.0
+Direction_Of_Variation =
+                   y-axis
+Base_Accuracy_Measurement_On =
+			Gradient
+
 			########################
 			# Set solver parameters
 			########################

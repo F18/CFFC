@@ -833,8 +833,12 @@ void Output_Tecplot(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 	     << "\"Vx\" \n"
 	     << "\"Vy\" \n"
 	     << "\"k\" \n"
-	     << "\"s\" \n" 
-	     << "ZONE T =  \"Block Number = " << Block_Number
+	     << "\"s\" \n";
+    if (SolnBlk.ExactSoln->IsExactSolutionSet()){
+      Out_File << "\"ExactSoln\" \n";
+    }
+ 
+    Out_File << "ZONE T =  \"Block Number = " << Block_Number
 	     << "\" \\ \n"
 	     << "I = " << SolnBlk.Grid.INu - SolnBlk.Grid.INl + 1 << " \\ \n"
 	     << "J = " << SolnBlk.Grid.JNu - SolnBlk.Grid.JNl + 1 << " \\ \n"
@@ -854,7 +858,11 @@ void Output_Tecplot(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
       Out_File << " " << Node << U_node 
 	       << " " << SolnBlk.U[i][j].V(Node.x,Node.y)
 	       << " " << SolnBlk.U[i][j].k(Node.x,Node.y,U_node[1]) 
-	       << " " << source(Node.x,Node.y,U_node) << "\n";
+	       << " " << source(Node.x,Node.y,U_node);
+      if (SolnBlk.ExactSoln->IsExactSolutionSet()){
+	Out_File << " " << SolnBlk.ExactSoln->Solution(Node.x,Node.y);
+      }
+      Out_File << "\n";
       Out_File.unsetf(ios::scientific);
     } /* endfor */
   } /* endfor */
@@ -894,7 +902,11 @@ void Output_Cells_Tecplot(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 	     << "\"Vx\" \\ \n"
 	     << "\"Vy\" \\ \n"
 	     << "\"k\" \n"
-	     << "ZONE T =  \"Block Number = " << Block_Number
+	     << "\"s\" \n";
+    if (SolnBlk.ExactSoln->IsExactSolutionSet()){
+      Out_File << "\"ExactSoln\" \n";
+    }
+    Out_File << "ZONE T =  \"Block Number = " << Block_Number
 	     << "\" \\ \n"
 	     << "I = " << SolnBlk.Grid.ICu - SolnBlk.Grid.ICl + 2*SolnBlk.Nghost + 1 << " \\ \n"
 	     << "J = " << SolnBlk.Grid.JCu - SolnBlk.Grid.JCl + 2*SolnBlk.Nghost + 1 << " \\ \n"
@@ -910,11 +922,14 @@ void Output_Cells_Tecplot(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
   for ( j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
     for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
       Node = SolnBlk.Grid.Cell[i][j].Xc;
-      Out_File << " " 
-	       << SolnBlk.Grid.Cell[i][j].Xc
-	       << SolnBlk.U[i][j] << " " 
-	       << SolnBlk.U[i][j].V(Node.x,Node.y)
-	       << SolnBlk.U[i][j].k(Node.x,Node.y,SolnBlk.U[i][j][1]) << "\n";
+      Out_File << " " << SolnBlk.Grid.Cell[i][j].Xc << SolnBlk.U[i][j]
+	       << " " << SolnBlk.U[i][j].V(Node.x,Node.y)
+	       << " " << SolnBlk.U[i][j].k(Node.x,Node.y,SolnBlk.U[i][j][1])
+	       << " " << source(Node.x,Node.y,SolnBlk.U[i][j][1]);
+      if (SolnBlk.ExactSoln->IsExactSolutionSet()){
+	Out_File << " " << SolnBlk.ExactSoln->Solution(Node.x,Node.y);
+      }
+      Out_File << "\n";
     } /* endfor */
   } /* endfor */
   Out_File << setprecision(6);
@@ -972,7 +987,6 @@ void Output_Nodes_Tecplot(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
  * solution variables of the specified quadrilateral    
  * solution block.                                      
  *                                                      
- * \todo Must be revisited!!!
  ********************************************************/
 void ICs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 	 const AdvectDiffuse2D_Input_Parameters &IP,
@@ -1062,103 +1076,25 @@ void ICs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
       } /* endfor */
     } /* endfor */
     break;
-  case IC_CIRCULAR_ADVECTION_DIFFUSION :
-    // Set the solution state to the initial state Uo[0].
-    for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
-      for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
-	SolnBlk.U[i][j] = Uo[0];
+  case IC_EXACT_SOLUTION :
+    // Set the solution state by calculating the cell average values with integration of the exact solution
+    // Use the ExactSoln pointer to access the exact solution
+    if (IP.ExactSoln->IsExactSolutionSet()) {
+      for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
+ 	for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
+	  Ul.u = 
+	    SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,
+							       wrapped_member_function(IP.ExactSoln,
+										       &AdvectDiffuse2D_ExactSolutions::Solution,
+										       Ul.u),
+							       12,Ul.u)/SolnBlk.Grid.Cell[i][j].A;
+	  SolnBlk.U[i][j] = Ul;
+	} /* endfor */
       } /* endfor */
-    } /* endfor */
-    break;
-  case IC_LAPLACE_1 :
-    for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
-      for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
- 	Ul.u = SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,Laplace_Solutions::IC_1,
-								  14,Ul.u)/SolnBlk.Grid.Cell[i][j].A;
-	SolnBlk.U[i][j] = Ul;
-      } /* endfor */
-    } /* endfor */
-    break;
-  case IC_LAPLACE_2 :
-    for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
-      for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
- 	Ul.u = SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,Laplace_Solutions::IC_2,
-								  14,Ul.u)/SolnBlk.Grid.Cell[i][j].A;
-	SolnBlk.U[i][j] = Ul;
-      } /* endfor */
-    } /* endfor */
-    break;
-  case IC_LAPLACE_3 :
-    for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
-      for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
- 	Ul.u = SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,Laplace_Solutions::IC_3,
-								  14,Ul.u)/SolnBlk.Grid.Cell[i][j].A;
-	SolnBlk.U[i][j] = Ul;
-      } /* endfor */
-    } /* endfor */
-    break;
-  case IC_LAPLACE_4 :
-    for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
-      for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
- 	Ul.u = SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,Laplace_Solutions::IC_4,
-								  14,Ul.u)/SolnBlk.Grid.Cell[i][j].A;
-	SolnBlk.U[i][j] = Ul;
-      } /* endfor */
-    } /* endfor */
-    break;
-  case IC_LAPLACE_5 :
-    for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
-      for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
- 	Ul.u = SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,Laplace_Solutions::IC_5,
-								  14,Ul.u)/SolnBlk.Grid.Cell[i][j].A;
-	SolnBlk.U[i][j] = Ul;
-      } /* endfor */
-    } /* endfor */
-    break;
-  case IC_POISSON_1 :
-    for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
-      for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
- 	Ul.u = SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,Poisson_NonlinearSource_Solutions::IC_1,
-								  14,Ul.u)/SolnBlk.Grid.Cell[i][j].A;
-	SolnBlk.U[i][j] = Ul;
-      } /* endfor */
-    } /* endfor */
-    break;
-  case IC_POISSON_2 :
-    for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
-      for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
- 	Ul.u = SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,Poisson_NonlinearSource_Solutions::IC_2,
-								  14,Ul.u)/SolnBlk.Grid.Cell[i][j].A;
-	SolnBlk.U[i][j] = Ul;
-      } /* endfor */
-    } /* endfor */
-    break;
-  case IC_POISSON_3 :
-    for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
-      for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
- 	Ul.u = SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,Poisson_NonlinearSource_Solutions::IC_3,
-								  14,Ul.u)/SolnBlk.Grid.Cell[i][j].A;
-	SolnBlk.U[i][j] = Ul;
-      } /* endfor */
-    } /* endfor */
-    break;
-  case IC_POISSON_4 :
-    for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
-      for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
- 	Ul.u = SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,Poisson_NonlinearSource_Solutions::IC_4,
-								  14,Ul.u)/SolnBlk.Grid.Cell[i][j].A;
-	SolnBlk.U[i][j] = Ul;
-      } /* endfor */
-    } /* endfor */
-    break;
-  case IC_POISSON_5 :
-    for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
-      for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
- 	Ul.u = SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,Poisson_NonlinearSource_Solutions::IC_5,
-								  14,Ul.u)/SolnBlk.Grid.Cell[i][j].A;
-	SolnBlk.U[i][j] = Ul;
-      } /* endfor */
-    } /* endfor */
+    } else {
+      // There is no exact solution set for this problem
+      throw runtime_error("ICs() ERROR! No exact solution has been set!");
+    }
     break;
   default:
     // Set the solution state to the initial state Uo[0].

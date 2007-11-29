@@ -140,117 +140,6 @@ void AdvectDiffuse2D_Input_Parameters::Get_Next_Input_Control_Parameter(void){
   }//endwhile
 }
 
-/******************************************************//**
- * Routine: SetExactSolutionPointer                     
- *                                                      
- * Sets the value of the ExactSolution pointer.         
- * For initial conditions which have exact solutions,   
- * the function pointer points to the exact solution    
- * function, otherwise it points to NULL.               
- *                                                      
- ********************************************************/
-void AdvectDiffuse2D_Input_Parameters::SetExactSolutionPointer(void){
-
-  // parsing the value of the ExactSolution_Flag
-
-  switch (ExactSolution_Flag){
-
-  case IC_LAPLACE_1:
-    ExactSolution = Laplace_Solutions::IC_1;
-    AdvectDiffuse2D_Quad_Block::ExactSoln = Laplace_Solutions::IC_1;
-    AdvectDiffuse2D_Quad_Block::ExactGrad = Laplace_Solutions::Grad_IC_1;
-    break;
-  case IC_LAPLACE_2:
-    ExactSolution = Laplace_Solutions::IC_2;
-    AdvectDiffuse2D_Quad_Block::ExactSoln = Laplace_Solutions::IC_2;
-    AdvectDiffuse2D_Quad_Block::ExactGrad = Laplace_Solutions::Grad_IC_2;
-    break;
-  case IC_LAPLACE_3:
-    ExactSolution = Laplace_Solutions::IC_3;
-    AdvectDiffuse2D_Quad_Block::ExactSoln = Laplace_Solutions::IC_3;
-    AdvectDiffuse2D_Quad_Block::ExactGrad = Laplace_Solutions::Grad_IC_3;
-    break;
-  case IC_LAPLACE_4:
-    ExactSolution = Laplace_Solutions::IC_4;
-    AdvectDiffuse2D_Quad_Block::ExactSoln = Laplace_Solutions::IC_4;
-    AdvectDiffuse2D_Quad_Block::ExactGrad = Laplace_Solutions::Grad_IC_4;
-    break;
-  case IC_LAPLACE_5:
-    ExactSolution = Laplace_Solutions::IC_5;
-    AdvectDiffuse2D_Quad_Block::ExactSoln = Laplace_Solutions::IC_5;
-    AdvectDiffuse2D_Quad_Block::ExactGrad = Laplace_Solutions::Grad_IC_5;
-    break;
-  case IC_POISSON_1:
-    Poisson_NonlinearSource_Solutions::AnalyticSoln = Poisson_NonlinearSource_Solutions::IC_1;
-    ExactSolution = Poisson_NonlinearSource_Solutions::IC_1;
-    AdvectDiffuse2D_Quad_Block::ExactSoln = Poisson_NonlinearSource_Solutions::IC_1;
-    AdvectDiffuse2D_Quad_Block::ExactGrad = NULL;
-    break;
-  case IC_POISSON_2:
-    Poisson_NonlinearSource_Solutions::AnalyticSoln = Poisson_NonlinearSource_Solutions::IC_2;
-    ExactSolution = Poisson_NonlinearSource_Solutions::IC_2;
-    AdvectDiffuse2D_Quad_Block::ExactSoln = Poisson_NonlinearSource_Solutions::IC_2;
-    AdvectDiffuse2D_Quad_Block::ExactGrad = NULL;
-    break;
-  case IC_POISSON_3:
-    Poisson_NonlinearSource_Solutions::AnalyticSoln = Poisson_NonlinearSource_Solutions::IC_3;
-    // Requirement: a * beta < 0 
-    Poisson_NonlinearSource_Solutions::beta = 0.35;
-    Poisson_NonlinearSource_Solutions::a = -2.45;
-    ExactSolution = Poisson_NonlinearSource_Solutions::IC_3;
-    AdvectDiffuse2D_Quad_Block::ExactSoln = Poisson_NonlinearSource_Solutions::IC_3;
-    AdvectDiffuse2D_Quad_Block::ExactGrad = NULL;
-    break;
-  case IC_POISSON_4:
-    Poisson_NonlinearSource_Solutions::AnalyticSoln = Poisson_NonlinearSource_Solutions::IC_4;
-    ExactSolution = Poisson_NonlinearSource_Solutions::IC_4;
-    AdvectDiffuse2D_Quad_Block::ExactSoln = Poisson_NonlinearSource_Solutions::IC_4;
-    AdvectDiffuse2D_Quad_Block::ExactGrad = NULL;
-    break;
-  case IC_POISSON_5:
-    Poisson_NonlinearSource_Solutions::AnalyticSoln = Poisson_NonlinearSource_Solutions::IC_5;
-    ExactSolution = Poisson_NonlinearSource_Solutions::IC_5;
-    AdvectDiffuse2D_Quad_Block::ExactSoln = Poisson_NonlinearSource_Solutions::IC_5;
-    AdvectDiffuse2D_Quad_Block::ExactGrad = NULL;
-    break;
-
-  case IC_RIEMANN_XDIR:
-    DiffusionEqn_NonlinearSource_Solutions::lambda = -1.0/(Kappa*Tau);
-    // set boundary conditions for the exact solution
-    DiffusionEqn_NonlinearSource_Solutions::CoordA = -0.5;
-    DiffusionEqn_NonlinearSource_Solutions::CoordB = 0.5;
-    DiffusionEqn_NonlinearSource_Solutions::SolnA = 0.0;
-    DiffusionEqn_NonlinearSource_Solutions::SolnB = 1.0;
-    // set the constants for the particular solution
-    DiffusionEqn_NonlinearSource_Solutions::Set_ParticularSolution_Parameters();
-
-    ExactSolution = DiffusionEqn_NonlinearSource_Solutions::X_Diffusion;
-    AdvectDiffuse2D_Quad_Block::ExactSoln = DiffusionEqn_NonlinearSource_Solutions::X_Diffusion;
-    AdvectDiffuse2D_Quad_Block::ExactGrad = DiffusionEqn_NonlinearSource_Solutions::Grad_X_Diffusion;
-    break;
-
-  case IC_RIEMANN_YDIR:
-    DiffusionEqn_NonlinearSource_Solutions::lambda = -1.0/(Kappa*Tau);
-    // set boundary conditions for the exact solution
-    DiffusionEqn_NonlinearSource_Solutions::CoordA = -0.5;
-    DiffusionEqn_NonlinearSource_Solutions::CoordB = 0.5;
-    DiffusionEqn_NonlinearSource_Solutions::SolnA = 0.0;
-    DiffusionEqn_NonlinearSource_Solutions::SolnB = 1.0;
-    // set the constants for the particular solution
-    DiffusionEqn_NonlinearSource_Solutions::Set_ParticularSolution_Parameters();
-
-    ExactSolution = DiffusionEqn_NonlinearSource_Solutions::Y_Diffusion;
-    AdvectDiffuse2D_Quad_Block::ExactSoln = DiffusionEqn_NonlinearSource_Solutions::Y_Diffusion;
-    AdvectDiffuse2D_Quad_Block::ExactGrad = DiffusionEqn_NonlinearSource_Solutions::Grad_Y_Diffusion;
-    break;
-
-  default:
-    ExactSolution = NULL;
-    AdvectDiffuse2D_Quad_Block::ExactGrad = NULL;
-    
-  }
-}
-
 /***************************************************************
  * AdvectDiffuse2D_Input_Parameters -- Input-output operators. *
  ***************************************************************/
@@ -284,6 +173,9 @@ ostream &operator << (ostream &out_file,
 	       << "\n     -> BC_East = " << IP.BC_East_Type
 	       << "\n     -> BC_West = " << IP.BC_West_Type;
     }
+
+    // ====    Exact solution parameters ====
+    IP.ExactSoln->Print_Info(out_file);
 
     // ==== Time marching scheme parameters ====
     if (IP.Time_Accurate) { 
@@ -1211,11 +1103,6 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
                           1, 
                           MPI::DOUBLE, 0);
 
-    // ExactSolution_Flag -> Used for setting the pointer to the exact solution function
-    MPI::COMM_WORLD.Bcast(&(IP.ExactSolution_Flag),
-			  1,
-			  MPI::INT, 0);
-
     // CENO_Execution_Mode variables
     CENO_Execution_Mode::Broadcast();
     
@@ -1230,6 +1117,9 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
 
     // SourceTermFields variables
     IP.SourceTerm->Broadcast();
+
+    // Exact solution variables
+    IP.ExactSoln->Broadcast();
 
 #endif
 
@@ -1663,11 +1553,6 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.Freeze_Limiter_Residual_Level), 
                        1, 
                        MPI::DOUBLE, Source_Rank);
-
-    // ExactSolution_Flag -> Used for setting the pointer to the exact solution function
-    Communicator.Bcast(&(IP.ExactSolution_Flag),
-		       1,
-		       MPI::INT, Source_Rank);
 }
 #endif
 
@@ -1774,83 +1659,22 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
 	   IP.Next_Control_Parameter);
     if (strcmp(IP.ICs_Type, "Constant") == 0) {
       IP.i_ICs = IC_CONSTANT;
-      IP.ExactSolution = NULL;
-      IP.ExactSolution_Flag = -1;
     } else if (strcmp(IP.ICs_Type, "Uniform") == 0) {
       IP.i_ICs = IC_UNIFORM;
-      IP.ExactSolution = NULL;
-      IP.ExactSolution_Flag = -1;
     } else if (strcmp(IP.ICs_Type, "Riemann") == 0) {
       IP.i_ICs = IC_RIEMANN;
-      DiffusionEqn_NonlinearSource_Solutions::lambda = -1.0/(IP.Kappa*IP.Tau);
-      IP.ExactSolution = DiffusionEqn_NonlinearSource_Solutions::X_Diffusion;
-      IP.ExactSolution_Flag = IC_RIEMANN;
     } else if (strcmp(IP.ICs_Type, "Riemann_Xdir") == 0) {
       IP.i_ICs = IC_RIEMANN_XDIR;
-      DiffusionEqn_NonlinearSource_Solutions::lambda = -1.0/(IP.Kappa*IP.Tau);
-      IP.ExactSolution = DiffusionEqn_NonlinearSource_Solutions::X_Diffusion;
-      IP.ExactSolution_Flag = IC_RIEMANN_XDIR;
     } else if (strcmp(IP.ICs_Type, "Riemann_Ydir") == 0) {
       IP.i_ICs = IC_RIEMANN_YDIR;
-      DiffusionEqn_NonlinearSource_Solutions::lambda = -1.0/(IP.Kappa*IP.Tau);
-      IP.ExactSolution = DiffusionEqn_NonlinearSource_Solutions::Y_Diffusion;
-      IP.ExactSolution_Flag = IC_RIEMANN_YDIR;
     } else if (strcmp(IP.ICs_Type, "Square_Box_IVP") == 0) {
       IP.i_ICs = IC_SQUARE_BOX_IVP;
-      IP.ExactSolution = NULL;
-      IP.ExactSolution_Flag = -1;
     } else if (strcmp(IP.ICs_Type, "Circular_Box_IVP") == 0) {
       IP.i_ICs = IC_CIRCULAR_BOX_IVP;
-      IP.ExactSolution = NULL;
-      IP.ExactSolution_Flag = -1;
-    } else if (strcmp(IP.ICs_Type, "Circular_Advection_Diffusion") == 0) {
-      IP.i_ICs = IC_CIRCULAR_ADVECTION_DIFFUSION;
-      IP.ExactSolution = NULL;
-      IP.ExactSolution_Flag = -1;
-    } else if (strcmp(IP.ICs_Type,"Laplace_1") == 0) {
-      IP.i_ICs = IC_LAPLACE_1;
-      IP.ExactSolution = Laplace_Solutions::IC_1;
-      IP.ExactSolution_Flag = IC_LAPLACE_1;
-    } else if (strcmp(IP.ICs_Type,"Laplace_2") == 0) {
-      IP.i_ICs = IC_LAPLACE_2;
-      IP.ExactSolution = Laplace_Solutions::IC_2;
-      IP.ExactSolution_Flag = IC_LAPLACE_2;
-    } else if (strcmp(IP.ICs_Type,"Laplace_3") == 0) {
-      IP.i_ICs = IC_LAPLACE_3;
-      IP.ExactSolution = Laplace_Solutions::IC_3;
-      IP.ExactSolution_Flag = IC_LAPLACE_3;
-    } else if (strcmp(IP.ICs_Type,"Laplace_4") == 0) {
-      IP.i_ICs = IC_LAPLACE_4;
-      IP.ExactSolution = Laplace_Solutions::IC_4;
-      IP.ExactSolution_Flag = IC_LAPLACE_4;
-    } else if (strcmp(IP.ICs_Type,"Laplace_5") == 0) {
-      IP.i_ICs = IC_LAPLACE_5;
-      IP.ExactSolution = Laplace_Solutions::IC_5;
-      IP.ExactSolution_Flag = IC_LAPLACE_5;
-    } else if (strcmp(IP.ICs_Type,"Poisson_1") == 0) {
-      IP.i_ICs = IC_POISSON_1;
-      IP.ExactSolution = Poisson_NonlinearSource_Solutions::IC_1;
-      IP.ExactSolution_Flag = IC_POISSON_1;
-    } else if (strcmp(IP.ICs_Type,"Poisson_2") == 0) {
-      IP.i_ICs = IC_POISSON_2;
-      IP.ExactSolution = Poisson_NonlinearSource_Solutions::IC_2;
-      IP.ExactSolution_Flag = IC_POISSON_2;
-    } else if (strcmp(IP.ICs_Type,"Poisson_3") == 0) {
-      IP.i_ICs = IC_POISSON_3;
-      IP.ExactSolution = Poisson_NonlinearSource_Solutions::IC_3;
-      IP.ExactSolution_Flag = IC_POISSON_3;
-    } else if (strcmp(IP.ICs_Type,"Poisson_4") == 0) {
-      IP.i_ICs = IC_POISSON_4;
-      IP.ExactSolution = Poisson_NonlinearSource_Solutions::IC_4;
-      IP.ExactSolution_Flag = IC_POISSON_4;
-    } else if (strcmp(IP.ICs_Type,"Poisson_5") == 0) {
-      IP.i_ICs = IC_POISSON_5;
-      IP.ExactSolution = Poisson_NonlinearSource_Solutions::IC_5;
-      IP.ExactSolution_Flag = IC_POISSON_5;
+    } else if (strcmp(IP.ICs_Type,"Exact_Solution") == 0) {
+      IP.i_ICs = IC_EXACT_SOLUTION;
     } else if (strcmp(IP.ICs_Type, "Restart") == 0) {
       IP.i_ICs = IC_RESTART;
-      IP.ExactSolution = NULL;
-      IP.ExactSolution_Flag = -1;
     } else {
       std::cout << "\n ==> Unknown initial condition!";
       i_command = INVALID_INPUT_VALUE;
@@ -2934,6 +2758,9 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
 
   /* Parse next control parameter with SourceTerm parser */
   IP.SourceTerm->Parse_Next_Input_Control_Parameter(IP,i_command);
+
+  /* Parse next control parameter with ExactSoln parser */
+  IP.ExactSoln->Parse_Next_Input_Control_Parameter(IP,i_command);
 
   /* Parse next control parameter with CENO_Execution_Mode parser */
   CENO_Execution_Mode::Parse_Next_Input_Control_Parameter(IP,i_command);

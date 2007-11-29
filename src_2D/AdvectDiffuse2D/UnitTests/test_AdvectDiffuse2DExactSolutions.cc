@@ -86,7 +86,7 @@ namespace tut
 
     AdvectDiffuse2D_Input_Parameters IP;
 
-    IP.Verbose() = ON;
+    IP.Verbose() = OFF;
     Set_Default_Input_Parameters(IP);
 
     // Set input file name
@@ -95,7 +95,8 @@ namespace tut
     // Parse the input file
     IP.Parse_Input_File(input_file_name);
 
-
+    // === check value
+    ensure_distance("Value", IP.ExactSoln->Solution(0.5,0.1), 1.094837581924854, AcceptedError(1.094837581924854));
   }
 
 }

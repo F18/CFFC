@@ -16,10 +16,8 @@
 
 // Initialize residual_variable
 int AdvectDiffuse2D_Quad_Block_New::residual_variable = 1;
-// Initialize ExactGrad
-AdvectDiffuse2D_Quad_Block_New::Exact_Gradient_Function AdvectDiffuse2D_Quad_Block_New::ExactGrad = NULL;
 // Initialize ExactSoln
-FunctionType2D AdvectDiffuse2D_Quad_Block_New::ExactSoln = NULL;
+AdvectDiffuse2D_ExactSolutions *AdvectDiffuse2D_Quad_Block_New::ExactSoln = NULL;
 // Initialize Flow_Type
 int AdvectDiffuse2D_Quad_Block_New::Flow_Type = FLOWTYPE_INVISCID;
 // Initialize Axisymmetric
@@ -43,6 +41,9 @@ AdvectDiffuse2D_Quad_Block_New::AdvectDiffuse2D_Quad_Block_New(void) {
   dUdx = NULL; dUdy = NULL; phi = NULL; Uo = NULL;
   FluxN = NULL; FluxS = NULL; FluxE = NULL; FluxW = NULL;
   UoN = NULL; UoS = NULL; UoE = NULL; UoW = NULL;
+
+  // Get access to the AdvectDiffuse2D_ExactSolutions object
+  ExactSoln = &AdvectDiffuse2D_ExactSolutions::getInstance();
 }
 
 /******************************************

@@ -131,8 +131,7 @@ public:
   char ICs_Type[INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
   int i_ICs;
   AdvectDiffuse2D_State Uo, U1, U2;
-  FunctionType2D ExactSolution;
-  int ExactSolution_Flag; 	        /*!< Flag used by MPI and RESTART to set the ExactSolution pointer. */
+  AdvectDiffuse2D_ExactSolutions *ExactSoln; /*!< Pointer to the exact solution */
   AdvectDiffuse2D_State RefU;		/*!< Reference state, used by CENO to normalize the
 					   variables in the computation of the smoothness indicator. */
   //@}
@@ -292,7 +291,6 @@ public:
   //@{
   int Parse_Input_File(char *Input_File_Name_ptr); //!< \brief Parse input file
   void Get_Next_Input_Control_Parameter(void);    //!< \brief Read the next input control parameter
-  void SetExactSolutionPointer(void); //!< \brief set the pointer to the exact solution if it exists
   //@}
 
   //! @name Input-output operators:
@@ -314,6 +312,9 @@ inline AdvectDiffuse2D_Input_Parameters::AdvectDiffuse2D_Input_Parameters(void){
 
   // Get access to the SourceTermField
   SourceTerm = &SourceTermFields::getInstance();
+
+  // Get access to the AdvectDiffuse2D_ExactSolutions object
+  ExactSoln = &AdvectDiffuse2D_ExactSolutions::getInstance();
 }
 
 /************************************************************************

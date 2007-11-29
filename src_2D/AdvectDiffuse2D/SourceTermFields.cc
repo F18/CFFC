@@ -49,22 +49,22 @@ void SourceTermFields::SetSourceField(const short &FieldIndex){
   switch (FieldIndex){
   case SOURCE_FIELD_ZERO:
     SourcePtr = new ZERO_SourceField;
-    i_Source_Field_Type = SOURCE_FIELD_ZERO;
     break;
     
   case SOURCE_FIELD_LINEAR_VARIATION:
     SourcePtr = new Linear_SourceField;
-    i_Source_Field_Type = SOURCE_FIELD_LINEAR_VARIATION;
     break;
     
   case SOURCE_FIELD_EXPONENTIAL_VARIATION:
     SourcePtr = new Exponential_SourceField;
-    i_Source_Field_Type = SOURCE_FIELD_EXPONENTIAL_VARIATION;
     break;
 
   default:
     throw runtime_error("SourceTermFields::SetSourceField() ERROR! Unknown source term field type.");
   }
+
+  // Store the field type
+  i_Source_Field_Type = FieldIndex;
 }
 
 /*!

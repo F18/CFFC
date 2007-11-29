@@ -120,10 +120,6 @@
  */
 class AdvectDiffuse2D_Quad_Block_New{
 public:
-  //! @name Defined datatypes
-  //@{
-  typedef Vector2D (* Exact_Gradient_Function) (const double, const double);
-  //@}
 
   //! @name Solution state arrays:
   //@{
@@ -181,10 +177,9 @@ public:
                               *UoW; //!< Boundary condition reference states for west boundary.
   //@}
 
-  //! @name Pointers to exact solutions
+  //! @name Pointer to exact solution
   //@{
-  static Exact_Gradient_Function ExactGrad; //!< Exact gradient for equations with analytic solution
-  static FunctionType2D ExactSoln;          //!< Exact solution for equations with analytic solution
+  static AdvectDiffuse2D_ExactSolutions *ExactSoln;          //!< Pointer to the exact solution
   //@}
 	      
   //! @name Creation, copy, and assignment constructors.

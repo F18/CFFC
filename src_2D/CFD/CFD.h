@@ -325,6 +325,7 @@ inline char *Date_And_Time() {
 #define BC_ROBIN                        10999   //      | CFFC
 #define BC_DIRICHLET                    11000   // Core | CGNS
 #define BC_FIXED                 BC_DIRICHLET   //      | Duplicate
+#define BC_EXACT_SOLUTION               11001   //      | CFFC
 
 //--Wall
 //  Speciality wall
@@ -569,18 +570,7 @@ inline char *Date_And_Time() {
 #define IC_PERIODIC_COMPLEX_MULTIWAVE 121
 #define IC_POLYNOMIAL_FUNCTION        122
 #define IC_HYPER_TANGENT              123
-#define IC_LAPLACE_1                  124
-#define IC_LAPLACE_2                  125
-#define IC_LAPLACE_3                  126
-#define IC_LAPLACE_4                  127
-#define IC_LAPLACE_5                  128
-#define IC_POISSON_1                  129
-#define IC_POISSON_2                  130
-#define IC_POISSON_3                  131
-#define IC_POISSON_4                  132
-#define IC_POISSON_5                  133
-#define IC_CIRCULAR_ADVECTION_DIFFUSION      134
-
+#define IC_EXACT_SOLUTION             124
 
 #define IC_ELECTRIC_FIELD_UNIFORM            200
 #define IC_ELECTRIC_FIELD_QUADRUPOLE         201

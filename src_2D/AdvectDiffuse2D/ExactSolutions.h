@@ -17,232 +17,630 @@
 #include "../Math/NumericalLibrary.h"
 #include "../Utilities/TypeDefinition.h"
 #include "../Utilities/Utilities.h"
-
-/* Laplace_Solutions: this class defines solutions to the Laplace eqn: "(nabla)^2 w(x,y) = 0.0" */
-class Laplace_Solutions{
-
- public:
-
-  enum Accuracy_Measurement_Type {Soln=1, Grad=2 };
-  static Accuracy_Measurement_Type Accuracy_Parameter;
-
-  static double A,B,C,D, miu;
+#include "../CFD/CFD.h"
 
 
-
-  // ============ INITIAL CONDITIONS ===============
-  static double IC_1(double x, double y);
-  static Vector2D Grad_IC_1(double x, double y);
-
-  static double IC_2(double x, double y);
-  static Vector2D Grad_IC_2(double x, double y);
-
-  static double IC_3(double x, double y);
-  static Vector2D Grad_IC_3(double x, double y);
-
-  static double IC_4(double x, double y);
-  static Vector2D Grad_IC_4(double x, double y);
-
-  static double IC_5(double x, double y);
-  static Vector2D Grad_IC_5(double x, double y);
-
-  static double Result(double x,double y);
-
- private:
-  Laplace_Solutions(){ };
-
-};
-
-// Definitions of member functions of Laplace_Solutions
-inline double Laplace_Solutions::IC_1(double x, double y){
-  return A*x + B*y + C;
-}
-
-inline Vector2D Laplace_Solutions::Grad_IC_1(double x, double y){
-  return Vector2D(A,B);
-}
-
-inline double Laplace_Solutions::IC_2(double x, double y){
-  return A*(x*x - y*y) + B*x*y;
-}
-
-inline Vector2D Laplace_Solutions::Grad_IC_2(double x, double y){
-  return Vector2D(2.0*A*x + B*y, -2.0*A*y + B*x);
-}
-
-inline double Laplace_Solutions::IC_3(double x, double y){
-  return A*(x*x*x - 3.0*x*y*y) + B*(3*x*x*y - y*y*y);
-}
-
-inline Vector2D Laplace_Solutions::Grad_IC_3(double x, double y){
-  return Vector2D(3.0*A*(x*x - y*y) + 6.0*B*x*y , -6.0*A*x*y + 3.0*B*(x*x - y*y) ) ;
-}
-
-inline double Laplace_Solutions::IC_4(double x, double y){
-  return exp(miu*x)*(A*cos(miu*y) + B*sin(miu*y));
-}
-
-inline Vector2D Laplace_Solutions::Grad_IC_4(double x, double y){
-  return (miu*exp(miu*x))*Vector2D( A*cos(miu*y) + B*sin(miu*y), -A*sin(miu*y) + B*cos(miu*y));
-}
-
-inline double Laplace_Solutions::IC_5(double x, double y){
-  return ( A*sinh(miu*x) + B*cosh(miu*x)) * (C*cos(miu*y) + D*sin(miu*y));
-}
-
-inline Vector2D Laplace_Solutions::Grad_IC_5(double x, double y){
-  return miu*Vector2D( (A*cosh(miu*x) + B*sinh(miu*x)) * (C*cos(miu*y) + D*sin(miu*y)),
-		       (A*sinh(miu*x) + B*cosh(miu*x)) *(-C*sin(miu*y) + D*cos(miu*y)) );
-}
-
-inline double Laplace_Solutions::Result(double x,double y){
-  return 0.0;
-}
-
-/* Poisson_NonlinearSource_Solutions: this class defines solutions to the Poisson eqn with non-linear source term:
-   "(nabla)^2 w(x,y) = f(w)", "f(w) = a*exp(beta*w)" */
-class Poisson_NonlinearSource_Solutions{
-
- public:
-
-  enum Accuracy_Measurement_Type {Soln=1, Grad=2 };
-  static Accuracy_Measurement_Type Accuracy_Parameter;
-
-  static double a, beta;
-  static double A,B,C;
-
-  /* pointer to the analytic solution: used for estimating the RHS of the eqn. */
-  static FunctionType2D AnalyticSoln;
+/*******************************************************************
+ *                                                                 *
+ *      Advection-diffusion Exact Solution Type Indexes            *
+ *                                                                 *
+ *******************************************************************/
+// ========== PARTICULAR SOLUTIONS FOR LAPLACE EQUATION ===========
+#define AD2D_EXACT_SOLUTION_LAPLACE_I        0
+#define AD2D_EXACT_SOLUTION_LAPLACE_II       1
+#define AD2D_EXACT_SOLUTION_LAPLACE_III      2
+#define AD2D_EXACT_SOLUTION_LAPLACE_IV       3
+#define AD2D_EXACT_SOLUTION_LAPLACE_V        4
+// ========== PARTICULAR SOLUTIONS FOR POISSON EQUATION ===========
+#define AD2D_EXACT_SOLUTION_POISSON_I        5
+#define AD2D_EXACT_SOLUTION_POISSON_II       6
+#define AD2D_EXACT_SOLUTION_POISSON_III      7
+#define AD2D_EXACT_SOLUTION_POISSON_IV       8
+#define AD2D_EXACT_SOLUTION_POISSON_V        9
+// ========== PARTICULAR SOLUTIONS FOR PURE ADVECTION ===========
+#define AD2D_EXACT_SOLUTION_PURE_CIRCULAR_ADVECTION_AT_CONSTANT_SPIN  10
+// ========== PARTICULAR SOLUTIONS FOR ADVECTION-DIFFUSION ===========
+#define AD2D_EXACT_SOLUTION_ADVECTION_DIFFUSION_IN_ANNULUS  11
+// ========== PARTICULAR SOLUTIONS FOR STATIONARY HEAT TRANSFER EQUATION WITH SOURCE ===========
+#define AD2D_EXACT_SOLUTION_STATIONARY_HEAT_TRANSFER_WITH_LINEAR_SOURCE   12
 
 
-  // ============ INITIAL CONDITIONS ===============
-  static double IC_1(double x, double y);
-  static double IC_2(double x, double y);
-  static double IC_3(double x, double y);
-  static double IC_4(double x, double y);
-  static double IC_5(double x, double y);
-  static double GradX_IC_5(double x, double y);
-  static double GradY_IC_5(double x, double y);
-  static double Result(double x,double y);
 
- private:
-  Poisson_NonlinearSource_Solutions(){ };
+
+// Declare the input parameters class
+class AdvectDiffuse2D_Input_Parameters;
+
+/*! 
+ * \class ExactSolutionBasicType
+ *
+ * \brief Basic data type for any exact solution type.
+ *
+ * This is an abstract data type (ADT).
+ */
+class ExactSolutionBasicType{
+public:
+
+  //! @name Public types
+  //@{
+  enum Accuracy_Measurement_Type {Soln=1, Grad=2 }; // Solution or gradient
+  //@}
+
+  //! Default ctor
+  ExactSolutionBasicType(void);
+
+  //! @name Virtual member functions
+  //@{
+  //! Declare a pure virtual destructor
+  virtual ~ExactSolutionBasicType(void) = 0;
+
+  /*! Calculate the exact solution based on the location of interest */
+  virtual double EvaluateSolutionAt(const double &x, const double &y) const = 0;
+
+  /*! Calculate the exact solution gradient based on the location of interest */
+  virtual Vector2D EvaluateGradientAt(const double &x, const double &y) const {
+    throw runtime_error("EvaluateGradientAt() ERROR! The current exact solution doesn't have the gradient defined");
+  }
+
+  /*! Calculate the right hand side (RHS) of the partial differential equation (PDE) at the location of interest */
+  virtual double PDE_RighHandSide(const double &x, const double &y) const  = 0;
+
+  //! Update internal variables
+  virtual void Set_ParticularSolution_Parameters(void){ };
+
+  //! @name Functions for input-output and broadcast
+  //@{
+  virtual void Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP, int & i_command) = 0;
+  virtual void Print_Info(std::ostream & out_file) = 0;
+  virtual void Broadcast(void) = 0;
+  //@}
+  //@}
+
+  const string & whatExactSolution(void) const { return ExactSolutionName; }   //!< Get the name of the exact solution type
+
+protected:
+  string ExactSolutionName;		//!< storage for the name of the source field type
+  Accuracy_Measurement_Type Accuracy_Parameter;	//!< indicator for the parameter used to estimate the accuracy
+                                                // (e.g solution or gradient)
 
 };
 
-// Definitions of member functions of Poisson_NonlinearSource_Solutions
-inline double Poisson_NonlinearSource_Solutions::IC_1(double x, double y){
-  return log( (2.0*(A*A + B*B) )/( a*beta*(A*x + B*y + C)*(A*x + B*y + C) ) )/beta;
-}
 
-inline double Poisson_NonlinearSource_Solutions::IC_2(double x, double y){
-  return log( (2.0*(A*A + B*B) )/( a*beta* sinh(A*x + B*y + C)* sinh(A*x + B*y + C) ) )/beta;
-}
+/*! 
+ * \class Laplace_I_ExactSolution
+ * 
+ * \brief Implements a particular exact solution to the Laplace equation: 
+ *        \f$ \frac{\partial^2 w}{\partial x^2} + \frac{\partial^2 w}{\partial y^2} = 0 \f$
+ *
+ * The solution has the expression: \f$ w(x,y) = A*x + B*y + C \f$
+ */
+class Laplace_I_ExactSolution: public ExactSolutionBasicType{
+public:
 
-inline double Poisson_NonlinearSource_Solutions::IC_3(double x, double y){
-  return log( (-2.0*(A*A + B*B) )/( a*beta* cosh(A*x + B*y + C)* cosh(A*x + B*y + C) ) )/beta;
-}
+  //! Basic Constructor
+  Laplace_I_ExactSolution(void): A(0.0), B(0.0), C(0.0){ 
+    ExactSolutionName = "Laplace 1, w(x,y) = A*x + B*y + C";	// Name the exact solution
+  }
 
-inline double Poisson_NonlinearSource_Solutions::IC_4(double x, double y){
-  return log( (2.0*(A*A + B*B) )/( a*beta* cos(A*x + B*y + C)* cos(A*x + B*y + C) ) )/beta;
-}
+  //! Return exact solution
+  double EvaluateSolutionAt(const double &x, const double &y) const {return A*x + B*y + C;}
 
-inline double Poisson_NonlinearSource_Solutions::IC_5(double x, double y){
-  return (log(8.0*C/a/beta) - 2.0*log(fabs( (x+A)*(x+A) + (y+B)*(y+B) - C )) )/beta;
-}
+  //! Return the exact solution gradient
+  Vector2D EvaluateGradientAt(const double &x, const double &y) const {return Vector2D(A,B); }
 
-inline double Poisson_NonlinearSource_Solutions::Result(double x,double y){
-  return a*exp(beta* AnalyticSoln(x,y) );
-}
+  //! Calculate the PDE RHS
+  double PDE_RighHandSide(const double &x, const double &y) const {return 0.0; }
 
+  //! Parse the input control parameters
+  void Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP, int & i_command);
 
-inline double Poisson_NonlinearSource_Solutions::GradX_IC_5(double x, double y){
+  //! Print relevant parameters
+  void Print_Info(std::ostream & out_file);
 
-  double expression ((x+A)*(x+A) + (y+B)*(y+B) - C);
+  //! Broadcast relevant parameters
+  void Broadcast(void);
 
-  return -2.0*(sign(expression) * 2.0 * (x + A) )/ beta / fabs(expression);
-
-}
- 
-inline double Poisson_NonlinearSource_Solutions::GradY_IC_5(double x, double y){
-
-  double expression ((x+A)*(x+A) + (y+B)*(y+B) - C);
-
-  return -2.0*(sign(expression) * 2.0 * (y + B) )/ beta / fabs(expression);
-}
-
-
-/* Solutions to Diffusion Eqn.: this class defines solutions to the diffusion eqn with non-linear source term:
-   "(nabla)^2 u(x,y) = f(u)", "f(u) = -lambda*u" */
-class DiffusionEqn_NonlinearSource_Solutions{
-
- public:
-
-  static double lambda, lambda_sqrt; 	/* lambda = -1/(kappa*tau) */
-  static double CoordA, CoordB, SolnA, SolnB;	/* parameters for imposing BCs */
-  static double C1, C2; 	/* particular solution constants, defined by the boundary conditions */
-
-  // ============ SOLUTION FOR DIFFUSION IN 1D  ===============
-  /* Assume Dirichlet BCs, having the form:
-     u(CoordA) = SolnA  , the coordinate in the other direction is free
-     u(CoordB) = SolnB  , 
-  */
-
-  /* X-DIRECTION */
-  static double X_Diffusion(double x, double y);
-  static Vector2D Grad_X_Diffusion(double x, double y);
-
-  /* Y-DIRECTION */
-  static double Y_Diffusion(double x, double y);
-  static Vector2D Grad_Y_Diffusion(double x, double y);
-
-  /* 1D-Solution (based on what existed in the old code) */
-  static double Diffusion_Old(double Var1D);
-
-  /* 1D-Solution derived by L. Ivan */
-  static double Diffusion(double Var1D);
-  
-  /* Set particular solution constants */
-  static void Set_ParticularSolution_Parameters(void);
-
-
- private:
-  DiffusionEqn_NonlinearSource_Solutions(){ };
-
+private:
+  double A, B, C;		//!< coefficients of the exact solution
 };
 
-inline double DiffusionEqn_NonlinearSource_Solutions::X_Diffusion(double x, double y){
-  return Diffusion(x);
-}
 
-inline double DiffusionEqn_NonlinearSource_Solutions::Y_Diffusion(double x, double y){
-  return Diffusion(y);
-}
+/*! 
+ * \class Laplace_II_ExactSolution
+ * 
+ * \brief Implements a particular exact solution to the Laplace equation: 
+ *        \f$ \frac{\partial^2 w}{\partial x^2} + \frac{\partial^2 w}{\partial y^2} = 0 \f$
+ *
+ * The solution has the expression: \f$ w(x,y) = A*(x*x - y*y) + B*x*y \f$
+ */
+class Laplace_II_ExactSolution: public ExactSolutionBasicType{
+public:
 
-inline double DiffusionEqn_NonlinearSource_Solutions::Diffusion_Old(double Var1D){
-  double C1, C2;		/* integration constants */
-  double sqld, detA;
+  //! Basic Constructor
+  Laplace_II_ExactSolution(void): A(0.0), B(0.0), C(0.0) {
+    ExactSolutionName = "Laplace 2, w(x,y) = A*(x*x - y*y) + B*x*y";	// Name the exact solution
+  }
 
-  if (lambda > ZERO) {
-    sqld = sqrt(lambda);
-    detA = cos(sqld*CoordA)*sin(sqld*CoordB)-cos(sqld*CoordB)*sin(sqld*CoordA);
-    C1 = ( SolnA*sin(sqld*CoordB)-SolnB*sin(sqld*CoordA))/detA;
-    C2 = (-SolnA*cos(sqld*CoordB)+SolnB*cos(sqld*CoordA))/detA;
-    return C1*cos(sqld * Var1D) + C2*sin(sqld * Var1D);
+  //! Return exact solution 
+  double EvaluateSolutionAt(const double &x, const double &y) const {return A*(x*x - y*y) + B*x*y;}
 
-  } else if (lambda < ZERO) {
-    sqld = sqrt(-lambda);
-    detA = cosh(sqld*CoordA)*sinh(sqld*CoordB)-cosh(sqld*CoordB)*sinh(sqld*CoordA);
-    C1 = ( SolnA*sinh(sqld*CoordB)-SolnB*sinh(sqld*CoordA))/detA;
-    C2 = (-SolnA*cosh(sqld*CoordB)+SolnB*cosh(sqld*CoordA))/detA;
-    return C1*cosh(sqld * Var1D)+C2*sinh(sqld * Var1D);
+  //! Return the exact solution gradient
+  Vector2D EvaluateGradientAt(const double &x, const double &y) const {return Vector2D(2.0*A*x + B*y, -2.0*A*y + B*x); }
 
-  } else { /* (lambda == ZERO) */ 
+  //! Calculate the PDE RHS
+  double PDE_RighHandSide(const double &x, const double &y) const {return 0.0; }
+
+  //! Parse the input control parameters
+  void Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP, int & i_command);
+
+  //! Print relevant parameters
+  void Print_Info(std::ostream & out_file);
+
+  //! Broadcast relevant parameters
+  void Broadcast(void);
+
+private:
+  double A, B, C;		//!< coefficients of the exact solution
+};
+
+
+/*! 
+ * \class Laplace_III_ExactSolution
+ * 
+ * \brief Implements a particular exact solution to the Laplace equation: 
+ *        \f$ \frac{\partial^2 w}{\partial x^2} + \frac{\partial^2 w}{\partial y^2} = 0 \f$
+ *
+ * The solution has the expression: \f$ w(x,y) = A*(x*x*x - 3.0*x*y*y) + B*(3*x*x*y - y*y*y) \f$
+ */
+class Laplace_III_ExactSolution: public ExactSolutionBasicType{
+public:
+
+  //! Basic Constructor
+  Laplace_III_ExactSolution(void): A(0.0), B(0.0), C(0.0) {
+    ExactSolutionName = "Laplace 3, w(x,y) = A*(x*x*x - 3.0*x*y*y) + B*(3*x*x*y - y*y*y)";	// Name the exact solution
+  }
+
+  //! Return exact solution 
+  double EvaluateSolutionAt(const double &x, const double &y) const {return A*(x*x*x - 3.0*x*y*y) + B*(3*x*x*y - y*y*y);}
+
+  //! Return the exact solution gradient
+  Vector2D EvaluateGradientAt(const double &x, const double &y) const {
+    return Vector2D(3.0*A*(x*x - y*y) + 6.0*B*x*y , -6.0*A*x*y + 3.0*B*(x*x - y*y) ) ;
+ }
+
+  //! Calculate the PDE RHS
+  double PDE_RighHandSide(const double &x, const double &y) const {return 0.0; }
+
+  //! Parse the input control parameters
+  void Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP, int & i_command);
+
+  //! Print relevant parameters
+  void Print_Info(std::ostream & out_file);
+
+  //! Broadcast relevant parameters
+  void Broadcast(void);
+
+private:
+  double A, B, C;		//!< coefficients of the exact solution
+};
+
+
+/*! 
+ * \class Laplace_IV_ExactSolution
+ * 
+ * \brief Implements a particular exact solution to the Laplace equation: 
+ *        \f$ \frac{\partial^2 w}{\partial x^2} + \frac{\partial^2 w}{\partial y^2} = 0 \f$
+ *
+ * The solution has the expression: \f$ w(x,y) = e^{(\mu \, x)}\, (A \, \cos(\mu \, y) + B\, \sin(\mu \, y)) \f$
+ */
+class Laplace_IV_ExactSolution: public ExactSolutionBasicType{
+public:
+
+  //! Basic Constructor
+  Laplace_IV_ExactSolution(void): A(0.0), B(0.0), C(0.0), mu(0.0) {
+    ExactSolutionName = "Laplace 4, w(x,y) = exp(mu*x)*(A*cos(mu*y) + B*sin(mu*y))";	// Name the exact solution
+  }
+
+  //! Return exact solution 
+  double EvaluateSolutionAt(const double &x, const double &y) const {return exp(mu*x)*(A*cos(mu*y) + B*sin(mu*y));}
+
+  //! Return the exact solution gradient
+  Vector2D EvaluateGradientAt(const double &x, const double &y) const {
+    return (mu*exp(mu*x))*Vector2D( A*cos(mu*y) + B*sin(mu*y), -A*sin(mu*y) + B*cos(mu*y));
+  }
+
+  //! Calculate the PDE RHS
+  double PDE_RighHandSide(const double &x, const double &y) const {return 0.0; }
+
+  //! Parse the input control parameters
+  void Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP, int & i_command);
+
+  //! Print relevant parameters
+  void Print_Info(std::ostream & out_file);
+
+  //! Broadcast relevant parameters
+  void Broadcast(void);
+
+private:
+  double A, B, C, mu;		//!< coefficients of the exact solution
+};
+
+
+/*! 
+ * \class Laplace_V_ExactSolution
+ * 
+ * \brief Implements a particular exact solution to the Laplace equation: 
+ *        \f$ \frac{\partial^2 w}{\partial x^2} + \frac{\partial^2 w}{\partial y^2} = 0 \f$
+ *
+ * The solution has the expression: 
+ *  \f$ w(x,y) = A \, \sinh(\mu \, x) + B \, \cosh(\mu \, x))  \,  (C \, \cos(\mu \, y) + D \, \sin(\mu \, y) \f$
+ */
+class Laplace_V_ExactSolution: public ExactSolutionBasicType{
+public:
+
+  //! Basic Constructor
+  Laplace_V_ExactSolution(void): A(0.0), B(0.0), C(0.0), D(0.0), mu(0.0) {
+    // Name the exact solution
+    ExactSolutionName = "Laplace 5, w(x,y) = A*sinh(mu*x) + B*cosh(mu*x)) * (C*cos(mu*y) + D*sin(mu*y)";
+  }
+
+  //! Return exact solution 
+  double EvaluateSolutionAt(const double &x, const double &y) const {
+    return ( A*sinh(mu*x) + B*cosh(mu*x)) * (C*cos(mu*y) + D*sin(mu*y));
+  }
+
+  //! Return the exact solution gradient
+  Vector2D EvaluateGradientAt(const double &x, const double &y) const {
+    return mu*Vector2D( (A*cosh(mu*x) + B*sinh(mu*x)) * (C*cos(mu*y) + D*sin(mu*y)),
+			 (A*sinh(mu*x) + B*cosh(mu*x)) *(-C*sin(mu*y) + D*cos(mu*y)) );
+  }
+
+  //! Calculate the PDE RHS
+  double PDE_RighHandSide(const double &x, const double &y) const {return 0.0; }
+
+  //! Parse the input control parameters
+  void Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP, int & i_command);
+
+  //! Print relevant parameters
+  void Print_Info(std::ostream & out_file);
+
+  //! Broadcast relevant parameters
+  void Broadcast(void);
+
+private:
+  double A, B, C, D, mu;		//!< coefficients of the exact solution
+};
+
+
+/*! 
+ * \class Poisson_I_ExactSolution
+ * 
+ * \brief Implements a particular exact solution to the non-linear Poisson equation: 
+ *        \f$ \frac{\partial^2 w}{\partial x^2} + \frac{\partial^2 w}{\partial y^2} = a\,e^{\beta \, w} \f$
+ *
+ * The solution has the expression: 
+ * \f$ w(x,y) = \frac{1}{\beta} \, \ln \left[ \frac{2(A^2 + B^2)}{ a \beta (Ax + By + C)^2 } \right], \,\, a\beta>0  \f$
+ */
+class Poisson_I_ExactSolution: public ExactSolutionBasicType{
+public:
+
+  //! Basic Constructor
+  Poisson_I_ExactSolution(void): A(0.0), B(0.0), C(0.0), a(0.0), beta(0.0){ 
+    // Name the exact solution
+    ExactSolutionName = "Poisson 1, w(x,y) = log( (2.0*(A*A + B*B) )/( a*beta*(A*x + B*y + C)*(A*x + B*y + C) ) )/beta";
+  }
+
+  //! Return exact solution
+  double EvaluateSolutionAt(const double &x, const double &y) const {
+    double Temp(A*x + B*y + C);
+    return log( (2.0*(A*A + B*B) )/( a*beta*Temp*Temp ) )/beta;
+  }
+
+  //! Calculate the PDE RHS
+  double PDE_RighHandSide(const double &x, const double &y) const {return a*exp( beta * EvaluateSolutionAt(x,y) ); }
+
+  //! Parse the input control parameters
+  void Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP, int & i_command);
+
+  //! Print relevant parameters
+  void Print_Info(std::ostream & out_file);
+
+  //! Broadcast relevant parameters
+  void Broadcast(void);
+
+private:
+  double A, B, C, a, beta;		//!< coefficients of the exact solution
+};
+
+
+/*! 
+ * \class Poisson_II_ExactSolution
+ * 
+ * \brief Implements a particular exact solution to the non-linear Poisson equation: 
+ *        \f$ \frac{\partial^2 w}{\partial x^2} + \frac{\partial^2 w}{\partial y^2} = a\,e^{\beta \, w} \f$
+ *
+ * The solution has the expression: 
+ *  \f$ w(x,y) = \frac{1}{\beta} \, \ln \left[ \frac{2(A^2 + B^2)}{ a \beta \sinh^2(Ax + By + C) } \right], \,\, a\beta>0  \f$
+ */
+class Poisson_II_ExactSolution: public ExactSolutionBasicType{
+public:
+
+  //! Basic Constructor
+  Poisson_II_ExactSolution(void): A(0.0), B(0.0), C(0.0), a(0.0), beta(0.0) {
+    // Name the exact solution
+    ExactSolutionName = "Poisson 2, w(x,y) = log( (2.0*(A*A + B*B) )/( a*beta* sinh^2(A*x + B*y + C) ) )/beta";
+  }
+
+  //! Return exact solution 
+  double EvaluateSolutionAt(const double &x, const double &y) const {
+    double Temp(sinh(A*x + B*y + C));
+    return log( (2.0*(A*A + B*B) )/( a*beta* Temp* Temp ) )/beta;
+  }
+
+  //! Calculate the PDE RHS
+  double PDE_RighHandSide(const double &x, const double &y) const {return a*exp( beta * EvaluateSolutionAt(x,y) ); }
+
+  //! Parse the input control parameters
+  void Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP, int & i_command);
+
+  //! Print relevant parameters
+  void Print_Info(std::ostream & out_file);
+
+  //! Broadcast relevant parameters
+  void Broadcast(void);
+
+private:
+  double A, B, C, a, beta;		//!< coefficients of the exact solution
+};
+
+
+/*! 
+ * \class Poisson_III_ExactSolution
+ * 
+ * \brief Implements a particular exact solution to the non-linear Poisson equation: 
+ *        \f$ \frac{\partial^2 w}{\partial x^2} + \frac{\partial^2 w}{\partial y^2} = a\,e^{\beta \, w} \f$
+ *
+ * The solution has the expression:
+ * \f$ w(x,y) = \frac{1}{\beta} \, \ln \left[ \frac{-2(A^2 + B^2)}{ a \beta \cosh^2(Ax + By + C) } \right], \,\, a\beta<0  \f$
+ */
+class Poisson_III_ExactSolution: public ExactSolutionBasicType{
+public:
+
+  //! Basic Constructor
+  Poisson_III_ExactSolution(void): A(0.0), B(0.0), C(0.0), a(0.0), beta(0.0) {
+    // Name the exact solution
+    ExactSolutionName = "Poisson 3, w(x,y) = log( (-2.0*(A*A + B*B) )/( a*beta* cosh^2(A*x + B*y + C) ) )/beta";
+  }
+
+  //! Return exact solution 
+  double EvaluateSolutionAt(const double &x, const double &y) const {
+    double Temp(cosh(A*x + B*y + C));
+    return log( (-2.0*(A*A + B*B) )/( a*beta* Temp* Temp ) )/beta;
+  }
+
+  //! Calculate the PDE RHS
+  double PDE_RighHandSide(const double &x, const double &y) const {return a*exp( beta * EvaluateSolutionAt(x,y) ); }
+
+  //! Parse the input control parameters
+  void Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP, int & i_command);
+
+  //! Print relevant parameters
+  void Print_Info(std::ostream & out_file);
+
+  //! Broadcast relevant parameters
+  void Broadcast(void);
+
+private:
+  double A, B, C, a, beta;		//!< coefficients of the exact solution
+};
+
+
+/*! 
+ * \class Poisson_IV_ExactSolution
+ * 
+ * \brief Implements a particular exact solution to the non-linear Poisson equation: 
+ *        \f$ \frac{\partial^2 w}{\partial x^2} + \frac{\partial^2 w}{\partial y^2} = a\,e^{\beta \, w} \f$
+ *
+ * The solution has the expression:
+ *   \f$ w(x,y) = \frac{1}{\beta} \, \ln \left[ \frac{2(A^2 + B^2)}{ a \beta \cos^2(Ax + By + C) } \right], \,\, a\beta>0  \f$
+ */
+class Poisson_IV_ExactSolution: public ExactSolutionBasicType{
+public:
+
+  //! Basic Constructor
+  Poisson_IV_ExactSolution(void): A(0.0), B(0.0), C(0.0), a(0.0), beta(0.0) {
+    // Name the exact solution
+    ExactSolutionName = "Poisson 4, w(x,y) = log( (2.0*(A*A + B*B) )/( a*beta* cos^2(A*x + B*y + C) ) )/beta";
+  }
+
+  //! Return exact solution 
+  double EvaluateSolutionAt(const double &x, const double &y) const {
+    double Temp(cos(A*x + B*y + C));
+    return log( (2.0*(A*A + B*B) )/( a*beta* Temp* Temp ) )/beta;
+  }
+
+  //! Calculate the PDE RHS
+  double PDE_RighHandSide(const double &x, const double &y) const {return a*exp( beta * EvaluateSolutionAt(x,y) ); }
+
+  //! Parse the input control parameters
+  void Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP, int & i_command);
+
+  //! Print relevant parameters
+  void Print_Info(std::ostream & out_file);
+
+  //! Broadcast relevant parameters
+  void Broadcast(void);
+
+private:
+  double A, B, C, a, beta;		//!< coefficients of the exact solution
+};
+
+
+/*! 
+ * \class Poisson_V_ExactSolution
+ * 
+ * \brief Implements a particular exact solution to the non-linear Poisson equation: 
+ *        \f$ \frac{\partial^2 w}{\partial x^2} + \frac{\partial^2 w}{\partial y^2} = a\,e^{\beta \, w} \f$
+ *
+ * The solution has the expression:
+ *  \f$ w(x,y) = \frac{1}{\beta}\left[\ln \left(\frac{8C}{a\beta} \right) - 2\ln | (x+A)^2 + (y+B)^2 -C | \right] \f$
+ */
+class Poisson_V_ExactSolution: public ExactSolutionBasicType{
+public:
+
+  //! Basic Constructor
+  Poisson_V_ExactSolution(void): A(0.0), B(0.0), C(0.0), a(0.0), beta(0.0) {
+    // Name the exact solution
+    ExactSolutionName = "Poisson 5, w(x,y) = (log(8.0*C/a/beta) - 2.0*log(fabs( (x+A)*(x+A) + (y+B)*(y+B) - C )) )/beta";
+  };
+
+  //! Return exact solution 
+  double EvaluateSolutionAt(const double &x, const double &y) const {
+    return (log(8.0*C/a/beta) - 2.0*log(fabs( (x+A)*(x+A) + (y+B)*(y+B) - C )) )/beta;
+  }
+
+  //! Return the exact solution gradient
+  Vector2D EvaluateGradientAt(const double &x, const double &y) const {
+    double Temp((x+A)*(x+A) + (y+B)*(y+B) - C);
+    double SignTemp(sign(Temp));
+    return Vector2D( -4.0*(SignTemp*(x+A)) /beta /fabs(Temp),
+		     -4.0*(SignTemp*(y+B)) /beta /fabs(Temp) );
+  }
+
+  //! Calculate the PDE RHS
+  double PDE_RighHandSide(const double &x, const double &y) const {return a*exp( beta * EvaluateSolutionAt(x,y) ); }
+
+  //! Parse the input control parameters
+  void Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP, int & i_command);
+
+  //! Print relevant parameters
+  void Print_Info(std::ostream & out_file);
+
+  //! Broadcast relevant parameters
+  void Broadcast(void);
+
+private:
+  double A, B, C, a, beta;		//!< coefficients of the exact solution
+};
+
+
+/*! 
+ * \class StationaryHeatEqnWithLinearSource_ExactSolution
+ * 
+ * \brief Implements a particular exact solution to the stationary heat equation with linear source: 
+ *   \f$ \frac{\partial^2 w}{\partial x^2} + \frac{\partial^2 w}{\partial y^2} = \lambda w \f$
+ *
+ * The solution is written for a rectangular domain on which the following boundary conditions have been imposed:
+ *        -> Dirichlet BC on oposite edges (Edge I: w(CoordA) = SolnA; Edge II:  w(CoordB) = SolnB)
+ *        -> Neumann BC on oposite faces
+ */
+class StationaryHeatEqnWithLinearSource_ExactSolution: public ExactSolutionBasicType{
+public:
+
+  //! Basic Constructor
+  StationaryHeatEqnWithLinearSource_ExactSolution(void): lambda(1.0), lambda_sqrt(1.0),
+							 CoordA(1.0), SolnA(1.0),
+							 CoordB(1.0), SolnB(1.0),
+							 C1(1.0), C2(1.0), detA(1.0),
+							 Direction_Of_Variation(X_DIRECTION) {
+    // Name the exact solution
+    ExactSolutionName = "Stationary heat equation with linear source";
+  };
+
+  //! Return exact solution 
+  double EvaluateSolutionAt(const double &x, const double &y) const;
+
+  //! Calculate the one directional variation
+  double Helper_EvaluateSolutionAt(const double &Var1D) const;
+
+  //! Return the exact solution gradient
+  Vector2D EvaluateGradientAt(const double &x, const double &y) const ;
+
+  //! Calculate the PDE RHS
+  double PDE_RighHandSide(const double &x, const double &y) const {return lambda*EvaluateSolutionAt(x,y); }
+
+  //! Update internal variables
+  void Set_ParticularSolution_Parameters(void);
+
+  //! Parse the input control parameters
+  void Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP, int & i_command);
+
+  //! Print relevant parameters
+  void Print_Info(std::ostream & out_file);
+
+  //! Broadcast relevant parameters
+  void Broadcast(void);
+
+private:
+  short Direction_Of_Variation;	        //!< parameter that defines the direction on which Dirichlet BC are imposed (x-axis = 0)
+  double lambda, lambda_sqrt;		//!< the coefficient of the source term
+  double CoordA, CoordB, SolnA, SolnB;	//!< parameters related to the imposed BCs
+  double C1, C2; 	                //!< particular integration constants, defined by the boundary conditions
+  double detA;			        //!< internal variable 
+};
+
+//! Update internal variables
+inline void StationaryHeatEqnWithLinearSource_ExactSolution::
+Set_ParticularSolution_Parameters(void){
+
+  if (lambda > ZERO){
+    lambda_sqrt = sqrt(lambda);
+    detA = cos(lambda_sqrt*CoordA)*sin(lambda_sqrt*CoordB)-cos(lambda_sqrt*CoordB)*sin(lambda_sqrt*CoordA);
+    C1 = ( SolnA*sin(lambda_sqrt*CoordB)-SolnB*sin(lambda_sqrt*CoordA))/detA;
+    C2 = (-SolnA*cos(lambda_sqrt*CoordB)+SolnB*cos(lambda_sqrt*CoordA))/detA;
+  } else if (lambda < ZERO){
+    lambda_sqrt = sqrt(-lambda);
+    detA = cosh(lambda_sqrt*CoordA)*sinh(lambda_sqrt*CoordB)-cosh(lambda_sqrt*CoordB)*sinh(lambda_sqrt*CoordA);
+    C1 = ( SolnA*sinh(lambda_sqrt*CoordB)-SolnB*sinh(lambda_sqrt*CoordA))/detA;
+    C2 = (-SolnA*cosh(lambda_sqrt*CoordB)+SolnB*cosh(lambda_sqrt*CoordA))/detA;
+  } else {
     detA = CoordB-CoordA;
     C1 = (SolnA*CoordB-SolnB*CoordA)/detA;
     C2 = (-SolnA+SolnB)/detA;
+  }
+
+}
+
+//! Return exact solution 
+inline double StationaryHeatEqnWithLinearSource_ExactSolution::
+EvaluateSolutionAt(const double &x, const double &y) const {
+
+  if (Direction_Of_Variation == X_DIRECTION){
+    // the solution is build using x-axis
+    return Helper_EvaluateSolutionAt(x);
+  } else {
+    // the solution is build using y-axis
+    return Helper_EvaluateSolutionAt(y);
+  }
+}
+
+//! Calculate the one directional variation
+inline double StationaryHeatEqnWithLinearSource_ExactSolution::
+Helper_EvaluateSolutionAt(const double &Var1D) const{
+
+  if (lambda > ZERO) {
+    return C1*cos(lambda_sqrt * Var1D) + C2*sin(lambda_sqrt * Var1D);
+
+  } else if (lambda < ZERO) {
+    return C1*cosh(lambda_sqrt * Var1D)+C2*sinh(lambda_sqrt * Var1D);
+
+  } else { /* (lambda == ZERO) */ 
     return C1 + C2 * Var1D;
   } /* endif */
+}
+
+//! Return the exact solution gradient
+inline Vector2D StationaryHeatEqnWithLinearSource_ExactSolution::
+EvaluateGradientAt(const double &x, const double &y) const {
+
+  if (Direction_Of_Variation == X_DIRECTION){
+    // return the gradient based on the x coordinate
+    return Vector2D(lambda_sqrt*(C1*exp(lambda_sqrt*x) - C2*exp(-lambda_sqrt*x)),
+		    0.0);
+  } else {
+    // return the gradient based on the y coordinate
+    return Vector2D(0.0,
+		    lambda_sqrt*(C1*exp(lambda_sqrt*y) - C2*exp(-lambda_sqrt*y)) ); 
+  }
 }
 
 
