@@ -87,28 +87,47 @@ inline Levermore1D_Vector& Levermore1D_Vector::operator=(const Levermore1D_Vecto
 
 inline Levermore1D_Vector Levermore1D_Vector::operator+(const Levermore1D_Vector &L) const {
   Levermore1D_Vector temp;
+  for(int i=0;i<length;++i) {
+    temp.m_values[i] = m_values[i] + L.m_values[i];
+  }
   return temp;
 }
 
 inline Levermore1D_Vector& Levermore1D_Vector::operator+=(const Levermore1D_Vector &L) {
+  for(int i=0;i<length;++i) {
+    m_values[i] += L.m_values[i];
+  }
   return (*this);
 }
 
 inline Levermore1D_Vector Levermore1D_Vector::operator-(const Levermore1D_Vector &L) const{
   Levermore1D_Vector temp;
+  for(int i=0;i<length;++i) {
+    temp.m_values[i] = m_values[i] - L.m_values[i];
+  }
   return temp;
 }
 
 inline Levermore1D_Vector& Levermore1D_Vector::operator-=(const Levermore1D_Vector &L) {
+  for(int i=0;i<length;++i) {
+    m_values[i] -= L.m_values[i];
+  }
   return (*this);
 }
 
 inline double Levermore1D_Vector::operator*(const Levermore1D_Vector &L) const{
-  return 0.0;
+  double temp(0.0);
+  for(int i=0;i<length;++i) {
+    temp += m_values[i] * L.m_values[i];
+  }
+  return temp;
 }
 
 inline Levermore1D_Vector Levermore1D_Vector::operator^(const Levermore1D_Vector &L) const{
   Levermore1D_Vector temp;
+  for(int i=0;i<length;++i) {
+    temp.m_values[i] = m_values[i] * L.m_values[i];
+  }
   return temp;
 }
 
@@ -116,9 +135,15 @@ inline Levermore1D_Vector Levermore1D_Vector::operator^(const Levermore1D_Vector
  *                  Functions                           *
  ********************************************************/
 inline void Levermore1D_Vector::copy_from(const Levermore1D_Vector &L) {
+  for(int i=0;i<length;++i) {
+    m_values[i] = L.m_values[i];
+  }
 }
 
 inline void Levermore1D_Vector::set_all(double in) {
+  for(int i=0;i<length;++i) {
+    m_values[i] = in;
+  }
 }
 
 inline void Levermore1D_Vector::output(ostream &out) const{
