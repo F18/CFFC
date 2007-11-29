@@ -20,114 +20,98 @@ using namespace std;
 #include "Levermore1DVector.h"
 #endif //_LEVERMORE1D_VECTOR_INCLUDED
 
-#ifndef _LEVERMORE1D_TEMPLATED_METAPROGRAMMING
-#include "Levermore1D_Templated_Metaprogramming.h"
-#endif //_LEVERMORE1D_TEMPLATED_METAPROGRAMMING
-
 /* Define the classes. */
-template<int N_moments>
 class Levermore1D_cState;
-
-template<int N_moments>
 class Levermore1D_weights;
 
 /********************************************************
  * Class: Levermore1D_pState                            *
  ********************************************************/
-template<int N_moments>
-class Levermore1D_pState : public Levermore1D_Vector<N_moments>{
+class Levermore1D_pState : public Levermore1D_Vector{
 
-  friend class Levermore1D_cState<N_moments>;
-  friend class Levermore1D_weights<N_moments>;
+  friend class Levermore1D_cState;
+  friend class Levermore1D_weights;
 
  protected:
  public:
 
   Levermore1D_pState(void){}
-  Levermore1D_pState(const Levermore1D_pState &W) {copy_from(W);}
-  Levermore1D_pState(const Levermore1D_cState<N_moments> &U) {set_from_U(U);}
-  Levermore1D_pState(const Levermore1D_weights<N_moments> &A) {set_from_A(A);}
+  Levermore1D_pState(const Levermore1D_pState &W) : Levermore1D_Vector(W) {}
+  Levermore1D_pState(const Levermore1D_cState &U) {set_from_U(U);}
+  Levermore1D_pState(const Levermore1D_weights &A) {set_from_A(A);}
 
   /* Functions. */
-  void Vacuum() {Levermore1D_Vector<N_moments>::zero();}
-  void set_from_U(const Levermore1D_cState<N_moments> &U);
-  void set_from_A(const Levermore1D_weights<N_moments> &A);
+  void Vacuum() {Levermore1D_Vector::zero();}
+  void set_from_U(const Levermore1D_cState &U);
+  void set_from_A(const Levermore1D_weights &A);
 
 };
 
 /********************************************************
  * Class: Levermore1D_cState                            *
  ********************************************************/
-template<int N_moments>
-class Levermore1D_cState : public Levermore1D_Vector<N_moments>{
+class Levermore1D_cState : public Levermore1D_Vector{
 
-  friend class Levermore1D_pState<N_moments>;
-  friend class Levermore1D_weights<N_moments>;
+  friend class Levermore1D_pState;
+  friend class Levermore1D_weights;
 
   protected:
   public:
 
   Levermore1D_cState(void){}
-  Levermore1D_cState(const Levermore1D_cState &U) {copy_from(U);}
-  Levermore1D_cState(const Levermore1D_pState<N_moments> &W) {set_from_W(W);}
-  Levermore1D_cState(const Levermore1D_weights<N_moments> &A) {set_from_A(A);}
+  Levermore1D_cState(const Levermore1D_cState &U) : Levermore1D_Vector(U) {}
+  Levermore1D_cState(const Levermore1D_pState &W) {set_from_W(W);}
+  Levermore1D_cState(const Levermore1D_weights &A) {set_from_A(A);}
 
   /* Functions. */
-  void Vacuum() {Levermore1D_Vector<N_moments>::zero();}
-  void set_from_W(const Levermore1D_pState<N_moments> &W);
-  void set_from_A(const Levermore1D_weights<N_moments> &A);
+  void Vacuum() {Levermore1D_Vector::zero();}
+  void set_from_W(const Levermore1D_pState &W);
+  void set_from_A(const Levermore1D_weights &A);
 
 };
 
 /********************************************************
  * Class: Levermore1D_weights                           *
  ********************************************************/
-template<int N_moments>
-class Levermore1D_weights : public Levermore1D_Vector<N_moments>{
+class Levermore1D_weights : public Levermore1D_Vector{
 
-  friend class Levermore1D_pState<N_moments>;
-  friend class Levermore1D_cState<N_moments>;
+  friend class Levermore1D_pState;
+  friend class Levermore1D_cState;
 
   protected:
   public:
 
   Levermore1D_weights(void){}
-  Levermore1D_weights(const Levermore1D_weights &A) {copy_from(A);}
-  Levermore1D_weights(const Levermore1D_pState<N_moments> &W) {set_from_W(W);}
-  Levermore1D_weights(const Levermore1D_cState<N_moments> &U) {set_from_U(U);}
+  Levermore1D_weights(const Levermore1D_weights &A) : Levermore1D_Vector(A) {}
+  Levermore1D_weights(const Levermore1D_pState &W) {set_from_W(W);}
+  Levermore1D_weights(const Levermore1D_cState &U) {set_from_U(U);}
 
   /* Functions. */
-  void Vacuum() {Levermore1D_Vector<N_moments>::zero();}
-  void set_from_W(const Levermore1D_pState<N_moments> &W);
-  void set_from_U(const Levermore1D_cState<N_moments> &U);
+  void Vacuum() {Levermore1D_Vector::zero();}
+  void set_from_W(const Levermore1D_pState &W);
+  void set_from_U(const Levermore1D_cState &U);
 
 };
 
 /********************************************************
  * Class: Levermore1D_pState: Inline functions          *
  ********************************************************/
-template<int N_moments>
-inline void Levermore1D_pState<N_moments>::set_from_U(const Levermore1D_cState<N_moments> &U) {
-  templated_metaprogramming::Levermore1D_convert_U_to_W<N_moments-1>(Levermore1D_Vector<N_moments>::m_values, U.m_values);
+inline void Levermore1D_pState::set_from_U(const Levermore1D_cState &U) {
   return;
 }
-
-template<int N_moments>
-inline void Levermore1D_pState<N_moments>::set_from_A(const Levermore1D_weights<N_moments> &A) {
+ 
+inline void Levermore1D_pState::set_from_A(const Levermore1D_weights &A) {
   return;
 }
 
 /********************************************************
  * Class: Levermore1D_cState: Inline functions          *
  ********************************************************/
-template<int N_moments>
-inline void Levermore1D_cState<N_moments>::set_from_W(const Levermore1D_pState<N_moments> &W) {
-  templated_metaprogramming::Levermore1D_convert_W_to_U<N_moments-1>(Levermore1D_Vector<N_moments>::m_values, W.m_values);
+inline void Levermore1D_cState::set_from_W(const Levermore1D_pState &W) {
   return;
 }
 
-template<int N_moments>
-inline void Levermore1D_cState<N_moments>::set_from_A(const Levermore1D_weights<N_moments> &A) {
+inline void Levermore1D_cState::set_from_A(const Levermore1D_weights &A) {
   return;
 }
 
@@ -135,13 +119,11 @@ inline void Levermore1D_cState<N_moments>::set_from_A(const Levermore1D_weights<
 /********************************************************
  * Class: Levermore1D_weights: Inline functions         *
  ********************************************************/
-template<int N_moments>
-inline void Levermore1D_weights<N_moments>::set_from_W(const Levermore1D_pState<N_moments> &W) {
+inline void Levermore1D_weights::set_from_W(const Levermore1D_pState &W) {
   return;
 }
 
-template<int N_moments>
-inline void Levermore1D_weights<N_moments>::set_from_U(const Levermore1D_cState<N_moments> &U) {
+inline void Levermore1D_weights::set_from_U(const Levermore1D_cState &U) {
   return;
 }
 

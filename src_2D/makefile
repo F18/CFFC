@@ -218,7 +218,7 @@ SRC_SOLVERS1D_EXE = $(SOLVERS1D_DIR)Solvers1D.cc
 SRC_SOLVERS1D_SOLVER = $(SRC_SOLVERS1D_EXE) $(SRC_SOLVERS1D)
 
 # Levermore 1D:
-SRC_LEVERMORE1D = #none yet
+SRC_LEVERMORE1D = Levermore1DVector.cc
 SRC_LEVERMORE1D := $(addprefix $(LEVERMORE_1D_DIR), $(SRC_LEVERMORE1D))
 
 # Add Levermore 1D Testing If Required:
@@ -229,6 +229,14 @@ ifeq ($(TUT_TESTING),ON)
 endif
 
 SRC_LEVERMORE1D_EXE = $(LEVERMORE_1D_DIR)Levermore1DMain.cc
+
+# Levermore 1D:
+SRC_LEVERMORE1D_SOLVER = $(SRC_MATH) $(SRC_CFD) $(SRC_GRID_1D) \
+                         $(SRC_SYSTEM) $(SRC_LEVERMORE1D) $(SRC_LEVERMORE1D_EXE)
+# Add Unit Testing to Levermore 1D:
+ifeq ($(TUT_TESTING),ON)
+  SRC_LEVERMORE1D_SOLVER += $(SRC_TUT)
+endif
 
 # Advectdiffuse2D:
 SRC_ADVECTDIFFUSE = $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DState.cc \
@@ -462,7 +470,7 @@ SRC_CFFC = $(SRC_BASE) \
            $(SRC_CFD1D_INPUT) $(SRC_SCALAR) $(SRC_HEAT) $(SRC_HYPERHEAT) $(SRC_EULER1D) $(SRC_MHD1D) \
            $(SRC_ADVECTDIFFUSE) $(SRC_EULER) $(SRC_NAVIERSTOKES) $(SRC_CHEM) $(SRC_HIGHTEMP) \
            $(SRC_DUSTY) $(SRC_LESPREMIXED) $(SRC_GAUSSIAN) $(SRC_ION) $(SRC_ELECTROSTATIC) \
-           $(SRC_RTE) $(SRC_INTERFACE) $(SRC_LEVELSET) \
+           $(SRC_RTE) $(SRC_INTERFACE) $(SRC_LEVELSET) $(SRC_LEVERMORE1D)\
            $(SRC_TURBULENT) $(SRC_EOS) $(SRC_NASADATA) $(SRC_REACTIONS) $(SRC_SNBCK) $(SRC_ICEMCFD) \
            $(SRC_HIGH_ORDER_RECONSTRUCTION_1D)
 
@@ -470,15 +478,6 @@ SRC_CFFC = $(SRC_BASE) \
 SRC_MAIN = cffc2D.cc
 SRC_ICEMCFD_UTIL1 = $(ICEMCFD_DIR)icemcfd2tecplot.cc 
 SRC_ICEMCFD_UTIL2 = $(ICEMCFD_DIR)icemcfd2grid2dquad.cc
-
-# Levermore 1D:
-SRC_LEVERMORE1D_SOLVER = $(SRC_MATH) $(SRC_CFD) $(SRC_GRID_1D) \
-                         $(SRC_SYSTEM) $(SRC_LEVERMORE1D) $(SRC_LEVERMORE1D_EXE)
-
-# Add Unit Testing to Levermore 1D:
-ifeq ($(TUT_TESTING),ON)
-  SRC_LEVERMORE1D_SOLVER += $(SRC_TUT)
-endif
 
 #################################################################################
 # Compiled object code files (automatically generated with pattern substitution)

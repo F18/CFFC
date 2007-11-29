@@ -12,7 +12,7 @@
 #include "../Levermore1DState.h"
 
 /* define useful constants for tests */
-#define LEVERMORE1D_VECTOR_LENGTH    5
+#define LEVERMORE1D_VECTOR_LENGTH    50
 
 namespace tut
 {
@@ -25,7 +25,10 @@ namespace tut
   public:
 
     // Constructor
-    Data_Levermore1D_pState(){ }
+    Data_Levermore1D_pState(){
+      if(!Levermore1D_Vector::length_is_set())
+	Levermore1D_Vector::set_length(LEVERMORE1D_VECTOR_LENGTH);
+    }
 
   private:
     
@@ -74,18 +77,17 @@ namespace tut
   template<>
   void Levermore1D_pState_object::test<1>()
   {
-    set_test_name("Constructors");
+    set_test_name("Copy Constructors");
 
     int i(0);
-    Levermore1D_pState<LEVERMORE1D_VECTOR_LENGTH> P1;
+    Levermore1D_pState P1;
     
     for(i=1;i<=LEVERMORE1D_VECTOR_LENGTH;++i) {
-      ensure_distance("Default Constructor, set it to zero.",P1[i],0.0,tol);
       //set to a value for copy constructor test
-      P1[i] = pow((double)i,1.23456) / 98.765;
+      P1[i] = pow((double)i,6.54321) / 98.765;
     }
 
-    Levermore1D_pState<LEVERMORE1D_VECTOR_LENGTH> P2(P1);
+    Levermore1D_pState P2(P1);
 
     for(i=1;i<=LEVERMORE1D_VECTOR_LENGTH;++i) {
       ensure_distance("P2=P1",P2[i],P1[i],fabs(P1[i])*tol);
@@ -100,7 +102,7 @@ namespace tut
 
 
 // Test suite constructor
-tut::Levermore1D_pState_TestSuite Levermore1D_pStateTestSuite("Template Class:Levermore1D_pState");
+tut::Levermore1D_pState_TestSuite Levermore1D_pStateTestSuite("Levermore1D_pState");
 
 /*************************************************************
  Guidelines for naming "Test Suite Name".

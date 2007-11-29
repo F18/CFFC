@@ -25,7 +25,10 @@ namespace tut
   public:
 
     // Constructor
-    Data_Levermore1DVector(){ }
+    Data_Levermore1DVector(){
+      if(!Levermore1D_Vector::length_is_set())
+	Levermore1D_Vector::set_length(LEVERMORE1D_VECTOR_LENGTH);
+    }
 
   private:
     
@@ -74,18 +77,17 @@ namespace tut
   template<>
   void Levermore1DVector_object::test<1>()
   {
-    set_test_name("Constructors");
+    set_test_name("Copy Constructor");
 
     int i(0);
-    Levermore1D_Vector<LEVERMORE1D_VECTOR_LENGTH> V1;
+    Levermore1D_Vector V1;
     
     for(i=1;i<=LEVERMORE1D_VECTOR_LENGTH;++i) {
-      ensure_distance("Default Constructor, set it to zero.",V1[i],0.0,tol);
       //set to a value for copy constructor test
       V1[i] = pow((double)i,1.23456) / 98.765;
     }
 
-    Levermore1D_Vector<LEVERMORE1D_VECTOR_LENGTH> V2(V1);
+    Levermore1D_Vector V2(V1);
 
     for(i=1;i<=LEVERMORE1D_VECTOR_LENGTH;++i) {
       ensure_distance("V2=V1",V2[i],V1[i],fabs(V1[i])*tol);
@@ -101,7 +103,7 @@ namespace tut
     set_test_name("Assignment Operator");
 
     int i(0);
-    Levermore1D_Vector<LEVERMORE1D_VECTOR_LENGTH> V1, V2, V3;
+    Levermore1D_Vector V1, V2, V3;
     
     for(i=1;i<=LEVERMORE1D_VECTOR_LENGTH;++i) {
       V1[i] = pow((double)i,1.23456) / 98.765;
@@ -124,7 +126,7 @@ namespace tut
 
     int i(0);
     double a(0.0), b(0.0);
-    Levermore1D_Vector<LEVERMORE1D_VECTOR_LENGTH> V1, V2, V3;
+    Levermore1D_Vector V1, V2, V3;
     
     for(i=1;i<=LEVERMORE1D_VECTOR_LENGTH;++i) {
       a = pow((double)i,1.23456) / 98.765;
@@ -151,7 +153,7 @@ namespace tut
 
     int i(0);
     double a(0.0), b(0.0);
-    Levermore1D_Vector<LEVERMORE1D_VECTOR_LENGTH> V1, V2, V3;
+    Levermore1D_Vector V1, V2, V3;
     
     for(i=1;i<=LEVERMORE1D_VECTOR_LENGTH;++i) {
       a = pow((double)i,1.23456) / 98.765;
@@ -180,7 +182,7 @@ namespace tut
 
     int i(0);
     double a(0.0), b(0.0);
-    Levermore1D_Vector<LEVERMORE1D_VECTOR_LENGTH> V1, V2, V3;
+    Levermore1D_Vector V1, V2, V3;
     
     for(i=1;i<=LEVERMORE1D_VECTOR_LENGTH;++i) {
       a = pow((double)i,1.23456) / 98.765;
@@ -207,7 +209,7 @@ namespace tut
 
     int i(0);
     double a(0.0), b(0.0);
-    Levermore1D_Vector<LEVERMORE1D_VECTOR_LENGTH> V1, V2, V3;
+    Levermore1D_Vector V1, V2, V3;
     
     for(i=1;i<=LEVERMORE1D_VECTOR_LENGTH;++i) {
       a = pow((double)i,1.23456) / 98.765;
@@ -236,7 +238,7 @@ namespace tut
 
     int i(0);
     double a(0.0), b(0.0), dot(0.0), dot_levermore(0.0);
-    Levermore1D_Vector<LEVERMORE1D_VECTOR_LENGTH> V1, V2;
+    Levermore1D_Vector V1, V2;
     
     for(i=1;i<=LEVERMORE1D_VECTOR_LENGTH;++i) {
       a = pow((double)i,1.23456) / 98.765;
@@ -262,7 +264,7 @@ namespace tut
 
     int i(0);
     double a(0.0), b(0.0);
-    Levermore1D_Vector<LEVERMORE1D_VECTOR_LENGTH> V1, V2, V3;
+    Levermore1D_Vector V1, V2, V3;
     
     for(i=1;i<=LEVERMORE1D_VECTOR_LENGTH;++i) {
       a = pow((double)i,1.23456) / 98.765;
@@ -293,7 +295,7 @@ namespace tut
   {
     set_test_name("copy_form Function");
     int i(0);
-    Levermore1D_Vector<LEVERMORE1D_VECTOR_LENGTH> V1, V2;
+    Levermore1D_Vector V1, V2;
     
     for(i=1;i<=LEVERMORE1D_VECTOR_LENGTH;++i) {
       V1[i] = pow((double)i,1.23456) / 98.765;
@@ -313,7 +315,7 @@ namespace tut
   {
     set_test_name("zero, one, and set_all Function");
     int i(0);
-    Levermore1D_Vector<LEVERMORE1D_VECTOR_LENGTH> V1, V2, V3;
+    Levermore1D_Vector V1, V2, V3;
 
     for(i=1;i<=LEVERMORE1D_VECTOR_LENGTH;++i) {
       V1[i] = pow((double)i,1.23456) / 98.765;
@@ -341,7 +343,7 @@ namespace tut
 
 
 // Test suite constructor
-tut::Levermore1DVector_TestSuite Levermore1DVectorTestSuite("Template Class:Levermore1D_Vector");
+tut::Levermore1DVector_TestSuite Levermore1DVectorTestSuite("Levermore1D_Vector");
 
 /*************************************************************
  Guidelines for naming "Test Suite Name".
