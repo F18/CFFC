@@ -2962,26 +2962,26 @@ Chem2D_pState BC_2DFlame_Inflow(const Chem2D_pState &Wi,
 				const Vector2D &norm_dir,
 				const double &radius,
 				const double &physical_time){ 
+  return Wo;
   
-   //fixed rho, v, p, and species
-  Chem2D_pState Wnew(Wo);
-  Wnew.v.x = Wi.v.x;//let radial velocity flucuate
+//    //fixed rho, v, p, and species
+//   Chem2D_pState Wnew(Wo);
+//   //Wnew.v.x = Wi.v.x;//let radial velocity flucuate
   
-  //Periodic fuel velocity for Unsteady
-  // Vz = fuel_max*( 1 + r^2/R^2)*(1 + alpha*sin(omega*t))
-  // R = 0.002,
-  // fuel_max = 70 cm/s
-  // alpha = 0.5 (amplitude)
-  // omega = 2*pi*freq
-  // freq = 20 (Hz)
-  // t = physical time (s)
-  if (radius <= 0.002 ){  //fuel spacing 0.002m    
-    Wnew.v.y = 0.70 * ( ONE - (radius*radius)/(0.002*0.002))
-      *(ONE + 0.5*sin( 2*PI*20*physical_time));    // physical_time + 0.0375 to go from 35 -> 35         
-  }
+//   //Periodic fuel velocity for Unsteady
+//   // Vz = fuel_max*( 1 + r^2/R^2)*(1 + alpha*sin(omega*t))
+//   // R = 0.002,
+//   // fuel_max = 70 cm/s
+//   // alpha = 0.5 (amplitude)
+//   // omega = 2*pi*freq
+//   // freq = 20 (Hz)
+//   // t = physical time (s)
+//   if (radius <= 0.002 ){  //fuel spacing 0.002m    
+//     Wnew.v.y = 0.70 * ( ONE - (radius*radius)/(0.002*0.002))
+//       *(ONE + 0.5*sin( 2*PI*20*physical_time));    // physical_time + 0.0375 to go from 35 -> 35         
+//   }
 
-
-  return Wnew;
+//  return Wnew;
  
 }
 
