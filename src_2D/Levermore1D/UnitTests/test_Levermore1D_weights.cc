@@ -78,18 +78,42 @@ namespace tut
     set_test_name("Copy Constructors");
 
     int i(0);
-    Levermore1D_weights U1;
+    Levermore1D_weights alpha1;
     
     for(i=1;i<=Levermore1D_Vector::get_length();++i) {
       //set to a value for copy constructor test
-      U1[i] = pow((double)i,3.54321) / 18.765;
+      alpha1[i] = pow((double)i,3.54321) / 18.765;
     }
 
-    Levermore1D_weights U2(U1);
+    Levermore1D_weights alpha2(alpha1);
 
     for(i=1;i<=Levermore1D_Vector::get_length();++i) {
-      ensure_distance("U2=U1",U2[i],U1[i],fabs(U1[i])*tol);
+      ensure_distance("alpha2=alpha1",alpha2[i],alpha1[i],fabs(alpha1[i])*tol);
     }
+
+  }
+
+  /* Test 2:*/
+  template<>
+  template<>
+  void Levermore1D_weights_object::test<2>()
+  {
+    set_test_name("value_at");
+
+    Levermore1D_weights alpha;
+    double expected;
+    double a1(1.223), a2(0.552), a3(0.456);
+    double v(1.3);
+
+    alpha.zero();
+
+    alpha[1] = a1;
+    alpha[2] = a2;
+    alpha[3] = a3;
+
+    expected = exp(a1 + a2*v + a3*v*v);
+
+    ensure_distance("value_at",expected,alpha.value_at(v),fabs(expected)*tol);
 
   }
 
