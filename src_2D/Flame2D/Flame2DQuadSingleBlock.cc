@@ -2183,10 +2183,10 @@ void Linear_Reconstruction_GreenGauss(Flame2D_Quad_Block &SolnBlk,
     double DxDx_ave, DxDy_ave, DyDy_ave;
     double l_north, l_south, l_east, l_west;
     static Vector2D n_north, n_south, n_east, n_west;
-    static Vector2D dX, dXe, dXw, dXn, dXs;
+    static Vector2D dXe, dXw, dXn, dXs;
     double W_face;
     
-    int NUM_VAR_FLAME2D = SolnBlk.NumVar();
+    const int NUM_VAR_FLAME2D = SolnBlk.NumVar();
   
    /* Carry out the limited solution reconstruction in
        the specified cell of the computational mesh. */
@@ -2360,22 +2360,11 @@ void Linear_Reconstruction_LeastSquares(Flame2D_Quad_Block &SolnBlk,
 
     int n, n2, n_pts, i_index[8], j_index[8];
     double u0Min, u0Max, uQuad[4], phi;
-    double DxDx_ave, DxDy_ave, DyDy_ave;
+    double DxDx_ave, DxDy_ave, DyDy_ave, DU;
     static Vector2D dX, dXe, dXw, dXn, dXs;
-    static Flame2D_State DU, DUDx_ave, DUDy_ave;
+    static Flame2D_State DUDx_ave, DUDy_ave;
     
-    //For the derivatives of gradients purpose
-    // i_index_neigbor [8][1]  1 -- North , 8 -- its 8 sorrounding cells
-    // i_index_neigbor [8][2]  2 -- South , 8 -- its 8 sorrounding cells
-    // i_index_neigbor [8][3]  3 -- South , 8 -- its 8 sorrounding cells
-    // i_index_neigbor [8][4]  4 -- South , 8 -- its 8 sorrounding cells
-
-    int i_index_neigbor[8][5], j_index_neigbor[8][5];
-    double dxdx_neigbor, dxdy_neigbor, dydy_neigbor;
-    Vector2D dX_neigbor;
-
-    int num=0;
-    static const int NUM_VAR_FLAME2D(SolnBlk.NumVar());
+    const int NUM_VAR_FLAME2D(SolnBlk.NumVar());
 
     /* Carry out the limited solution reconstruction in
        each cell of the computational mesh. */
@@ -2408,13 +2397,14 @@ void Linear_Reconstruction_LeastSquares(Flame2D_Quad_Block &SolnBlk,
       for ( n2 = 0 ; n2 <= n_pts-1 ; ++n2 ) {
 	dX = SolnBlk.Grid.Cell[ i_index[n2] ][ j_index[n2] ].Xc;
 	dX -= SolnBlk.Grid.Cell[i][j].Xc;
-	DU = SolnBlk.W[ i_index[n2] ][ j_index[n2] ];
-	DU -= SolnBlk.W[i][j];
-	DUDx_ave.add( DU, dX.x );
-	DUDy_ave.add( DU, dX.y );
 	DxDx_ave += dX.x*dX.x;
 	DxDy_ave += dX.x*dX.y;
 	DyDy_ave += dX.y*dX.y;
+	for (int k=1; k<=NUM_VAR_FLAME2D; k++) {
+	  DU = SolnBlk.W[ i_index[n2] ][ j_index[n2] ][k] - SolnBlk.W[i][j][k];
+	  DUDx_ave[k] += DU*dX.x;
+	  DUDy_ave[k] += DU*dX.y;
+	}
       } /* endfor */
       
       // don't need to do this, it will cancel out
@@ -2546,12 +2536,11 @@ void Linear_Reconstruction_LeastSquares_2(Flame2D_Quad_Block &SolnBlk,
 
     int n, n2, n_pts, i_index[8], j_index[8];
     double u0Min, u0Max, uQuad[4], phi;
-    double DxDx_ave, DxDy_ave, DyDy_ave;
+    double DU, DxDx_ave, DxDy_ave, DyDy_ave;
     static Vector2D dX, dXe, dXw, dXn, dXs;
-    static Flame2D_State DU, DUDx_ave, DUDy_ave;
+    static Flame2D_State DUDx_ave, DUDy_ave;
    
-    int num=0;
-    static const int NUM_VAR_FLAME2D(SolnBlk.NumVar());
+    const int NUM_VAR_FLAME2D(SolnBlk.NumVar());
 
     /* Carry out the limited solution reconstruction in
        each cell of the computational mesh. */
@@ -2814,13 +2803,14 @@ void Linear_Reconstruction_LeastSquares_2(Flame2D_Quad_Block &SolnBlk,
         for ( n2 = 0 ; n2 <= n_pts-1 ; ++n2 ) {
 	  dX = SolnBlk.Grid.Cell[ i_index[n2] ][ j_index[n2] ].Xc;
 	  dX -= SolnBlk.Grid.Cell[i][j].Xc;
-	  DU = SolnBlk.W[ i_index[n2] ][ j_index[n2] ];
-	  DU -= SolnBlk.W[i][j];
-	  DUDx_ave.add( DU, dX.x );
-	  DUDy_ave.add( DU, dX.y );
 	  DxDx_ave += dX.x*dX.x;
 	  DxDy_ave += dX.x*dX.y;
 	  DyDy_ave += dX.y*dX.y;
+	  for (int k=1; k<=NUM_VAR_FLAME2D; k++) {
+	    DU = SolnBlk.W[ i_index[n2] ][ j_index[n2] ][k] - SolnBlk.W[i][j][k];
+	    DUDx_ave[k] += DU*dX.x;
+	    DUDy_ave[k] += DU*dX.y;
+	  }
         } /* endfor */
     					    
       // don't need to do this, it will cancel out
@@ -2945,27 +2935,15 @@ void Linear_Reconstruction_LeastSquares_Diamond(Flame2D_Quad_Block &SolnBlk,
   double DxDx_ave, DxDy_ave, DyDy_ave;
   double area[4];
 
-  Vector2D deltaX, dX[8];  
-  Flame2D_State DU[8], DUDx_ave, DUDy_ave;
-  Flame2D_State QuadraturePoint_N, QuadraturePoint_E, 
-    QuadraturePoint_S, QuadraturePoint_W;  
-  Flame2D_State TopVertex, BottomVertex; 
+  static Vector2D dXe, dXw, dXn, dXs, dX[4];  
+  static Flame2D_State DU[4], DUDx_ave, DUDy_ave;
+  double QuadraturePoint_N, 
+    QuadraturePoint_E, 
+    QuadraturePoint_S, 
+    QuadraturePoint_W;  
+  const Flame2D_State *TopVertex, *BottomVertex;
   
-  Flame2D_State Temp;
-  //For the derivatives of gradients purpose
-  // i_index_neigbor [8][1]  1 -- North , 8 -- its 8 sorrounding cells
-  // i_index_neigbor [8][2]  2 -- South , 8 -- its 8 sorrounding cells
-  // i_index_neigbor [8][3]  3 -- South , 8 -- its 8 sorrounding cells
-  // i_index_neigbor [8][4]  4 -- South , 8 -- its 8 sorrounding cells
-  
-  int i_index_neigbor [8][5], j_index_neigbor[8][5];
-  double dxdx_neigbor, dxdy_neigbor, dydy_neigbor;
-  Vector2D dX_neigbor;
-  Flame2D_State DW, DWDx_ave, DWDy_ave;
-  Flame2D_State W_node;
-  
-  int num=0;
-  int NUM_VAR_FLAME2D = SolnBlk.NumVar();
+  const int NUM_VAR_FLAME2D = SolnBlk.NumVar();
   
   /****************************************************************/
   //  * A least squares       *
@@ -2993,28 +2971,13 @@ void Linear_Reconstruction_LeastSquares_Diamond(Flame2D_Quad_Block &SolnBlk,
      i_index[6] = i  ; j_index[6] = j+1;
      i_index[7] = i+1; j_index[7] = j+1;
 
-    }    
-   
-  n_neigbour = 4;
-  QuadraturePoint_N.Vacuum();
-  QuadraturePoint_E.Vacuum();
-  QuadraturePoint_S.Vacuum();
-  QuadraturePoint_W.Vacuum(); 
-//   // Derivatives of Gradients ...
-//   double dWnNWdWc = ZERO;
-//   double dWnNEdWc = ZERO;
-//   double dWnSWdWc = ZERO;
-//   double dWnSEdWc = ZERO;
-//   double dQPdWc = ZERO;
+  }    
   
-
-//   dWnNWdWc = SolnBlk.dWn_dWc(i, j+1, NW);    //THEST ARE REQUIRED FOR JACOBIANS ONLY, NOT REQUIRED FOR
-//   dWnNEdWc = SolnBlk.dWn_dWc(i+1, j+1, NE);    //dWdx and dWdy , however they appear to be pretty cheap
-//   dWnSWdWc = SolnBlk.dWn_dWc(i, j, SW);    //affecting performance <0.1%  - SHOULD RECHECK 
-//   dWnSEdWc = SolnBlk.dWn_dWc(i+1, j, SE);
+  n_neigbour = 4;
      
   if (n_pts > 0) {
     
+    /*************** NORTH ****************************/
     /*Formulate the gradients of primitive parameters on the north face of cell (i, j)*/
     DUDx_ave.Vacuum();
     DUDy_ave.Vacuum();
@@ -3023,63 +2986,55 @@ void Linear_Reconstruction_LeastSquares_Diamond(Flame2D_Quad_Block &SolnBlk,
     DyDy_ave = ZERO;
     
    
-    TopVertex = SolnBlk.Wn(i,j+1);
-    BottomVertex =  SolnBlk.Wn(i+1,j+1);
-    QuadraturePoint_N = HALF*( TopVertex + BottomVertex);
-//     dQPdWc = HALF*(dWnNWdWc + dWnNEdWc); // derivative of quadraturepoint w.r.t Wc
-    
-    //Left state cell (i,j)
-    dX[0] = SolnBlk.Grid.Cell[i][j].Xc - SolnBlk.Grid.xfaceN(i,j);
-    DU[0] = SolnBlk.W[i][j] - QuadraturePoint_N;
-    //rigth state cell (i, j+1)
-    dX[1] = SolnBlk.Grid.Cell[i][j+1].Xc - SolnBlk.Grid.xfaceN(i,j);
-    DU[1] = SolnBlk.W[i][j+1] - QuadraturePoint_N;
-    //top vertex  (i, j+1)
-    dX[2] = SolnBlk.Grid.Node[i][j+1].X -  SolnBlk.Grid.xfaceN(i,j);
-    DU[2] = TopVertex - QuadraturePoint_N;
-    //bottom vertex (i+1,j+1) 
-    dX[3] = SolnBlk.Grid.Node[i+1][j+1].X -  SolnBlk.Grid.xfaceN(i,j);
-    DU[3] = BottomVertex - QuadraturePoint_N;
+    TopVertex = &SolnBlk.Wn(i,j+1);
+    BottomVertex =  &SolnBlk.Wn(i+1,j+1);
 
+    dX[0] = SolnBlk.Grid.Cell[i][j].Xc - SolnBlk.Grid.xfaceN(i,j);
+    dX[1] = SolnBlk.Grid.Cell[i][j+1].Xc - SolnBlk.Grid.xfaceN(i,j);
+    dX[2] = SolnBlk.Grid.Node[i][j+1].X -  SolnBlk.Grid.xfaceN(i,j);
+    dX[3] = SolnBlk.Grid.Node[i+1][j+1].X -  SolnBlk.Grid.xfaceN(i,j);
     //The calculation of this area is used to weight the gradient at the cell center      
     area[0] = HALF*(SolnBlk.Grid.Node[i+1][j+1].X - SolnBlk.Grid.Node[i][j+1].X )^
       (SolnBlk.Grid.xfaceN(i,j)- SolnBlk.Grid.Cell[i][j].Xc);
-    
-    
+     
+    for (int k=1; k<=NUM_VAR_FLAME2D; k++) {
+      QuadraturePoint_N = HALF*( (*TopVertex)[k] + (*BottomVertex)[k]);
+      //Left state cell (i,j)
+      DU[0][k] = SolnBlk.W[i][j][k] - QuadraturePoint_N;
+      //rigth state cell (i, j+1)
+      DU[1][k] = SolnBlk.W[i][j+1][k] - QuadraturePoint_N;
+      //top vertex  (i, j+1)
+      DU[2][k] = (*TopVertex)[k] - QuadraturePoint_N;
+      //bottom vertex (i+1,j+1) 
+      DU[3][k] = (*BottomVertex)[k] - QuadraturePoint_N;
+    }
+
     
     for ( n2 = 0 ; n2 <= n_neigbour -1 ; ++n2 ) {
-      DUDx_ave += DU[n2]*dX[n2].x;
-      DUDy_ave += DU[n2]*dX[n2].y;
       DxDx_ave += dX[n2].x*dX[n2].x;
       DxDy_ave += dX[n2].x*dX[n2].y;
       DyDy_ave += dX[n2].y*dX[n2].y;
-      
+      for (int k=1; k<=NUM_VAR_FLAME2D; k++) {
+	DUDx_ave[k] += DU[n2][k]*dX[n2].x;
+	DUDy_ave[k] += DU[n2][k]*dX[n2].y;
+      }
     } /* endfor */
     
-    DUDx_ave = DUDx_ave/double(n_neigbour);
-    DUDy_ave = DUDy_ave/double(n_neigbour);
-    DxDx_ave = DxDx_ave/double(n_neigbour);
-    DxDy_ave = DxDy_ave/double(n_neigbour);
-    DyDy_ave = DyDy_ave/double(n_neigbour);
+    // don't need to do this, it will cancel out
+    // DUDx_ave = DUDx_ave/double(n_neigbour);
+    // DUDy_ave = DUDy_ave/double(n_neigbour);
+    // DxDx_ave = DxDx_ave/double(n_neigbour);
+    // DxDy_ave = DxDy_ave/double(n_neigbour);
+    // DyDy_ave = DyDy_ave/double(n_neigbour);
     
-    SolnBlk.dWdx_faceN[i][j] = (DUDx_ave*DyDy_ave-DUDy_ave*DxDy_ave)/
-      (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave);
-    SolnBlk.dWdy_faceN[i][j] = (DUDy_ave*DxDx_ave-DUDx_ave*DxDy_ave)/
-      (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave);
-
-    
-//     SolnBlk.d_dWdx_dW[i][j][NORTH] =((dX[0].x*(ONE-dQPdWc) - dX[1].x*dQPdWc+ dX[2].x*(dWnNWdWc -dQPdWc ) 
-//                                                            + dX[3].x*(dWnNEdWc-dQPdWc) )/double( n_neigbour)*DyDy_ave 
-// 				                              - (dX[0].y*(ONE-dQPdWc)- dX[1].y*dQPdWc+dX[2].y*(dWnNWdWc -dQPdWc) 
-//                                                            + dX[3].y*(dWnNEdWc-dQPdWc) )/double(n_neigbour)*DxDy_ave)
-//                                                             /(DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave) ;
+    for (int k=1; k<=NUM_VAR_FLAME2D; k++) {
+      SolnBlk.dWdx_faceN[i][j][k] = ( (DUDx_ave[k]*DyDy_ave-DUDy_ave[k]*DxDy_ave)/
+				      (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave) );
+      SolnBlk.dWdy_faceN[i][j][k] = ( (DUDy_ave[k]*DxDx_ave-DUDx_ave[k]*DxDy_ave)/
+				      (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave) );
+    }
         
-//     SolnBlk.d_dWdy_dW[i][j][NORTH] =((dX[0].y*(ONE-dQPdWc)-dX[1].y*dQPdWc + dX[2].y*(dWnNWdWc -dQPdWc) 
-//                                                                           + dX[3].y*(dWnNEdWc-dQPdWc) )/double(n_neigbour)*DxDx_ave
-//                                              			     - (dX[0].x*(ONE-dQPdWc)-dX[1].x*dQPdWc+ dX[2].x*(dWnNWdWc -dQPdWc) 
-//                                                                           + dX[3].x*(dWnNEdWc-dQPdWc) )/double(n_neigbour) *DxDy_ave)
-//                                                                             /(DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave);
-    
+    /*************** EAST *****************************/
     /*Formulate the gradients of primitive parameters on the east face of cell (i, j)*/
     DUDx_ave.Vacuum();
     DUDy_ave.Vacuum();
@@ -3088,48 +3043,53 @@ void Linear_Reconstruction_LeastSquares_Diamond(Flame2D_Quad_Block &SolnBlk,
     DyDy_ave = ZERO;
       
     //needs to assign topvertex and bottomvertex information
-    TopVertex = SolnBlk.Wn(i+1,j+1);
-    BottomVertex =  SolnBlk.Wn(i+1,j);
-    QuadraturePoint_E = HALF*( TopVertex + BottomVertex);
-//     dQPdWc = HALF*(dWnNEdWc+dWnSEdWc);
-    //Left state cell (i,j)
+    TopVertex = &SolnBlk.Wn(i+1,j+1);
+    BottomVertex =  &SolnBlk.Wn(i+1,j);
+
     dX[0] = SolnBlk.Grid.Cell[i][j].Xc - SolnBlk.Grid.xfaceE(i, j);
-    DU[0] = SolnBlk.W[i][ j] - QuadraturePoint_E;
-    //rigth state cell (i+1, j)
     dX[1] = SolnBlk.Grid.Cell[i+1][j].Xc - SolnBlk.Grid.xfaceE(i,j);
-    DU[1] = SolnBlk.W[i+1][ j] - QuadraturePoint_E;
-    //top vertex  (i+1, j+1)
     dX[2] = SolnBlk.Grid.Node[i+1][j+1].X - SolnBlk.Grid.xfaceE(i,j);
-    DU[2] = TopVertex - QuadraturePoint_E;
-    //bottom vertex (i+1,j) 
     dX[3] = SolnBlk.Grid.Node[i+1][j].X - SolnBlk.Grid.xfaceE(i,j);
-    DU[3] = BottomVertex - QuadraturePoint_E;
-    
-      //The calculation of this area is used to weight the gradient at the cell center      
+    //The calculation of this area is used to weight the gradient at the cell center      
     area[1] = HALF*(SolnBlk.Grid.Node[i+1][j+1].X - SolnBlk.Grid.Node[i+1][j].X )^
       (SolnBlk.Grid.Cell[i][j].Xc - SolnBlk.Grid.xfaceE(i,j));
+
+    for (int k=1; k<=NUM_VAR_FLAME2D; k++) {
+      QuadraturePoint_E = HALF*( (*TopVertex)[k] + (*BottomVertex)[k]);
+      //Left state cell (i,j)
+      DU[0][k] = SolnBlk.W[i][ j][k] - QuadraturePoint_E;
+      //rigth state cell (i+1, j)
+      DU[1][k] = SolnBlk.W[i+1][ j][k] - QuadraturePoint_E;
+      //top vertex  (i+1, j+1)
+      DU[2][k] = (*TopVertex)[k] - QuadraturePoint_E;
+      //bottom vertex (i+1,j) 
+      DU[3][k] = (*BottomVertex)[k] - QuadraturePoint_E;
+    }
     
     for ( n2 = 0 ; n2 <=  n_neigbour-1 ; ++n2 ) {
-      DUDx_ave += DU[n2]*dX[n2].x;
-      DUDy_ave += DU[n2]*dX[n2].y;
       DxDx_ave += dX[n2].x*dX[n2].x;
       DxDy_ave += dX[n2].x*dX[n2].y;
       DyDy_ave += dX[n2].y*dX[n2].y;
-      
+      for (int k=1; k<=NUM_VAR_FLAME2D; k++) {
+	DUDx_ave[k] += DU[n2][k]*dX[n2].x;
+	DUDy_ave[k] += DU[n2][k]*dX[n2].y;
+      }      
     } /* endfor */
     
-    DUDx_ave = DUDx_ave/double(n_neigbour);
-    DUDy_ave = DUDy_ave/double(n_neigbour);
-    DxDx_ave = DxDx_ave/double(n_neigbour);
-    DxDy_ave = DxDy_ave/double(n_neigbour);
-    DyDy_ave = DyDy_ave/double(n_neigbour);
-    
-    SolnBlk.dWdx_faceE[i][j] = (DUDx_ave*DyDy_ave-DUDy_ave*DxDy_ave)/
-      (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave);
-    SolnBlk.dWdy_faceE[i][j] = (DUDy_ave*DxDx_ave-DUDx_ave*DxDy_ave)/
-      (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave);
-    
+    // don't need to do this, it will cancel out
+    // DUDx_ave = DUDx_ave/double(n_neigbour);
+    // DUDy_ave = DUDy_ave/double(n_neigbour);
+    // DxDx_ave = DxDx_ave/double(n_neigbour);
+    // DxDy_ave = DxDy_ave/double(n_neigbour);
+    // DyDy_ave = DyDy_ave/double(n_neigbour);
+    for (int k=1; k<=NUM_VAR_FLAME2D; k++) {
+      SolnBlk.dWdx_faceE[i][j][k] = ( (DUDx_ave[k]*DyDy_ave-DUDy_ave[k]*DxDy_ave)/
+				      (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave) );
+      SolnBlk.dWdy_faceE[i][j][k] = ( (DUDy_ave[k]*DxDx_ave-DUDx_ave[k]*DxDy_ave)/
+				      (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave) );
+    }
         
+    /*************** WEST *****************************/
     /*Formulate the gradients of primitive parameters on the west face of cell (i, j)*/
     DUDx_ave.Vacuum();
     DUDy_ave.Vacuum();
@@ -3137,112 +3097,130 @@ void Linear_Reconstruction_LeastSquares_Diamond(Flame2D_Quad_Block &SolnBlk,
     DxDy_ave = ZERO;
     DyDy_ave = ZERO;
   
-    TopVertex = SolnBlk.Wn(i,j);
-    BottomVertex =  SolnBlk.Wn(i,j+1);
-    QuadraturePoint_W = HALF*( TopVertex + BottomVertex);
-//     dQPdWc = HALF*(dWnSWdWc + dWnNWdWc);
-    
-    //Left state cell (i,j)
+    TopVertex = &SolnBlk.Wn(i,j);
+    BottomVertex =  &SolnBlk.Wn(i,j+1);
+
     dX[0] = SolnBlk.Grid.Cell[i][j].Xc - SolnBlk.Grid.xfaceW(i,j);
-    DU[0] = SolnBlk.W[i][ j] - QuadraturePoint_W;
-    //rigth state cell (i-1, j)
     dX[1] = SolnBlk.Grid.Cell[i-1][j].Xc - SolnBlk.Grid.xfaceW(i,j);
-    DU[1] = SolnBlk.W[i-1][j] - QuadraturePoint_W;
-    //top vertex  (i, j)
     dX[2] = SolnBlk.Grid.Node[i][j].X - SolnBlk.Grid.xfaceW(i,j);
-    DU[2] = TopVertex - QuadraturePoint_W;
-    //bottom vertex (i,j+1) 
     dX[3] = SolnBlk.Grid.Node[i][j+1].X - SolnBlk.Grid.xfaceW(i,j);
-    DU[3] = BottomVertex - QuadraturePoint_W;
-      
     //The calculation of this area is used to weight the gradient at the cell center      
     area[2] = HALF*(SolnBlk.Grid.Node[i][j+1].X - SolnBlk.Grid.Node[i][j].X )^
       ( SolnBlk.Grid.xfaceW(i, j) - SolnBlk.Grid.Cell[i][j].Xc );
-    
+
+    for (int k=1; k<=NUM_VAR_FLAME2D; k++) {
+      QuadraturePoint_W = HALF*( (*TopVertex)[k] + (*BottomVertex)[k]);
+      //Left state cell (i,j)
+      DU[0][k] = SolnBlk.W[i][ j][k] - QuadraturePoint_W;
+      //rigth state cell (i-1, j)
+      DU[1][k] = SolnBlk.W[i-1][j][k] - QuadraturePoint_W;
+      //top vertex  (i, j)
+      DU[2][k] = (*TopVertex)[k] - QuadraturePoint_W;
+      //bottom vertex (i,j+1) 
+      DU[3][k] = (*BottomVertex)[k] - QuadraturePoint_W;
+    }
+
     for ( n2 = 0 ; n2 <=  n_neigbour-1 ; ++n2 ) {
-      DUDx_ave += DU[n2]*dX[n2].x;
-      DUDy_ave += DU[n2]*dX[n2].y;
       DxDx_ave += dX[n2].x*dX[n2].x;
       DxDy_ave += dX[n2].x*dX[n2].y;
       DyDy_ave += dX[n2].y*dX[n2].y;
-      
+      for (int k=1; k<=NUM_VAR_FLAME2D; k++) {      
+	DUDx_ave[k] += DU[n2][k]*dX[n2].x;
+	DUDy_ave[k] += DU[n2][k]*dX[n2].y;
+      }
     } /* endfor */
     
-    DUDx_ave = DUDx_ave/double(n_neigbour);
-    DUDy_ave = DUDy_ave/double(n_neigbour);
-    DxDx_ave = DxDx_ave/double(n_neigbour);
-    DxDy_ave = DxDy_ave/double(n_neigbour);
-    DyDy_ave = DyDy_ave/double(n_neigbour);
-    
-    SolnBlk.dWdx_faceW[i][j] = (DUDx_ave*DyDy_ave-DUDy_ave*DxDy_ave)/
-      (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave);
-    SolnBlk.dWdy_faceW[i][j] = (DUDy_ave*DxDx_ave-DUDx_ave*DxDy_ave)/
-      (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave);
-        
+     // don't need to do this, it will cancel out
+    // DUDx_ave = DUDx_ave/double(n_neigbour);
+    // DUDy_ave = DUDy_ave/double(n_neigbour);
+    // DxDx_ave = DxDx_ave/double(n_neigbour);
+    // DxDy_ave = DxDy_ave/double(n_neigbour);
+    // DyDy_ave = DyDy_ave/double(n_neigbour);
+    for (int k=1; k<=NUM_VAR_FLAME2D; k++) {
+      SolnBlk.dWdx_faceW[i][j][k] = ( (DUDx_ave[k]*DyDy_ave-DUDy_ave[k]*DxDy_ave)/
+				      (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave) );
+      SolnBlk.dWdy_faceW[i][j][k] = ( (DUDy_ave[k]*DxDx_ave-DUDx_ave[k]*DxDy_ave)/
+				      (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave) );
+    }
+
+    /*************** SOUTH ****************************/
     /*Formulate the gradients of primitive parameters on the south face of cell (i, j)*/
     DUDx_ave.Vacuum();
     DUDy_ave.Vacuum();
     DxDx_ave = ZERO;
     DxDy_ave = ZERO;
     DyDy_ave = ZERO;
-    //needs to assign topvertex and bottomvertex information
-    //   TopVertex = SolnBlk.WnSE(i,j);
-    //       BottomVertex =  SolnBlk.WnSW(i,j);
-    TopVertex = SolnBlk.Wn(i+1,j);
-    BottomVertex =  SolnBlk.Wn(i,j);
-    QuadraturePoint_S = HALF*(TopVertex + BottomVertex);
- //    dQPdWc = HALF*(dWnSEdWc + dWnSWdWc);
-    
-    //Left state cell (i,j)
+
+    TopVertex = &SolnBlk.Wn(i+1,j);
+    BottomVertex =  &SolnBlk.Wn(i,j);
+
     dX[0] = SolnBlk.Grid.Cell[i][j].Xc - SolnBlk.Grid.xfaceS(i, j);
-    DU[0] = SolnBlk.W[i][j] - QuadraturePoint_S;
-    //rigth state cell (i, j-1)
     dX[1] = SolnBlk.Grid.Cell[i][j-1].Xc - SolnBlk.Grid.xfaceS(i, j);
-    DU[1] = SolnBlk.W[i][j-1] - QuadraturePoint_S;
-    //top vertex  (i+1, j)
     dX[2] = SolnBlk.Grid.Node[i+1][j].X - SolnBlk.Grid.xfaceS(i, j);
-    DU[2] = TopVertex - QuadraturePoint_S;
-    //bottom vertex (i,j) 
     dX[3] = SolnBlk.Grid.Node[i][j].X - SolnBlk.Grid.xfaceS(i, j);
-    DU[3] = BottomVertex - QuadraturePoint_S;
-    
     //The calculation of this area is used to weight the gradient at the cell center      
     area[3] = HALF*(SolnBlk.Grid.Node[i+1][j].X - SolnBlk.Grid.Node[i][j].X )^
       (SolnBlk.Grid.Cell[i][j].Xc - SolnBlk.Grid.xfaceS(i,j) );
-    
+
+    for (int k=1; k<=NUM_VAR_FLAME2D; k++) {
+      QuadraturePoint_S = HALF*((*TopVertex)[k] + (*BottomVertex)[k]);
+      //Left state cell (i,j)
+      DU[0][k] = SolnBlk.W[i][j][k] - QuadraturePoint_S;
+      //rigth state cell (i, j-1)
+      DU[1][k] = SolnBlk.W[i][j-1][k] - QuadraturePoint_S;
+      //top vertex  (i+1, j)
+      DU[2][k] = (*TopVertex)[k] - QuadraturePoint_S;
+      //bottom vertex (i,j) 
+      DU[3][k] = (*BottomVertex)[k] - QuadraturePoint_S;
+    }
+
     for ( n2 = 0 ; n2 <=  n_neigbour-1 ; ++n2 ) {
-      DUDx_ave += DU[n2]*dX[n2].x;
-      DUDy_ave += DU[n2]*dX[n2].y;
       DxDx_ave += dX[n2].x*dX[n2].x;
       DxDy_ave += dX[n2].x*dX[n2].y;
       DyDy_ave += dX[n2].y*dX[n2].y;
-      
+      for (int k=1; k<=NUM_VAR_FLAME2D; k++) {
+	DUDx_ave[k] += DU[n2][k]*dX[n2].x;
+	DUDy_ave[k] += DU[n2][k]*dX[n2].y;
+      }      
     } /* endfor */
     
-    DUDx_ave = DUDx_ave/double(n_neigbour);
-    DUDy_ave = DUDy_ave/double(n_neigbour);
-    DxDx_ave = DxDx_ave/double(n_neigbour);
-    DxDy_ave = DxDy_ave/double(n_neigbour);
-    DyDy_ave = DyDy_ave/double(n_neigbour);
-    
-    SolnBlk.dWdx_faceS[i][j] = (DUDx_ave*DyDy_ave-DUDy_ave*DxDy_ave)/
-      (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave);
-    SolnBlk.dWdy_faceS[i][j] = (DUDy_ave*DxDx_ave-DUDx_ave*DxDy_ave)/
-      (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave);      
+    // don't need to do this, it will cancel out
+    // DUDx_ave = DUDx_ave/double(n_neigbour);
+    // DUDy_ave = DUDy_ave/double(n_neigbour);
+    // DxDx_ave = DxDx_ave/double(n_neigbour);
+    // DxDy_ave = DxDy_ave/double(n_neigbour);
+    // DyDy_ave = DyDy_ave/double(n_neigbour);
+    for (int k=1; k<=NUM_VAR_FLAME2D; k++) {
+      SolnBlk.dWdx_faceS[i][j][k] = ( (DUDx_ave[k]*DyDy_ave-DUDy_ave[k]*DxDy_ave)/
+				      (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave) );
+      SolnBlk.dWdy_faceS[i][j][k] = ( (DUDy_ave[k]*DxDx_ave-DUDx_ave[k]*DxDy_ave)/
+				      (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave) );
+    }
 
+    /**************************************************/
     //Area weighted gradients at cell centers
-    SolnBlk.dWdx[i][j] = SolnBlk.dWdx_faceN[i][j]*area[0]+SolnBlk.dWdx_faceE[i][j]*area[1] +
-      SolnBlk.dWdx_faceW[i][j]*area[2] + SolnBlk.dWdx_faceS[i][j]*area[3]; 
-    
-    SolnBlk.dWdx[i][j] = SolnBlk.dWdx[i][j]/SolnBlk.Grid.Cell[i][j].A; 
-    
-    SolnBlk.dWdy[i][j] = SolnBlk.dWdy_faceN[i][j]*area[0]+ SolnBlk.dWdy_faceE[i][j]*area[1] +
-      SolnBlk.dWdy_faceW[i][j]*area[2] + SolnBlk.dWdy_faceS[i][j]*area[3]; 
-    
-    SolnBlk.dWdy[i][j] = SolnBlk.dWdy[i][j]/SolnBlk.Grid.Cell[i][j].A;
+    for (int k=1; k<=NUM_VAR_FLAME2D; k++) {
+      SolnBlk.dWdx[i][j][k] = ( SolnBlk.dWdx_faceN[i][j][k]*area[0] + 
+				SolnBlk.dWdx_faceE[i][j][k]*area[1] +
+				SolnBlk.dWdx_faceW[i][j][k]*area[2] + 
+				SolnBlk.dWdx_faceS[i][j][k]*area[3] ); 
+      SolnBlk.dWdx[i][j][k] /= SolnBlk.Grid.Cell[i][j].A; 
       
-    
+      SolnBlk.dWdy[i][j][k] = ( SolnBlk.dWdy_faceN[i][j][k]*area[0] + 
+				SolnBlk.dWdy_faceE[i][j][k]*area[1] +
+				SolnBlk.dWdy_faceW[i][j][k]*area[2] + 
+				SolnBlk.dWdy_faceS[i][j][k]*area[3] ); 
+      SolnBlk.dWdy[i][j][k] /= SolnBlk.Grid.Cell[i][j].A;
+    }
+    /**************************************************/
+      
     if (!SolnBlk.Freeze_Limiter) {
+
+      dXe = SolnBlk.Grid.xfaceE(i, j) - SolnBlk.Grid.Cell[i][j].Xc;
+      dXw = SolnBlk.Grid.xfaceW(i, j) - SolnBlk.Grid.Cell[i][j].Xc;
+      dXn = SolnBlk.Grid.xfaceN(i, j) - SolnBlk.Grid.Cell[i][j].Xc;
+      dXs = SolnBlk.Grid.xfaceS(i, j) - SolnBlk.Grid.Cell[i][j].Xc;
+      
       for ( n = 1 ; n <= NUM_VAR_FLAME2D ; ++n ) {
 	u0Min = SolnBlk.W[i][j][n];
 	u0Max = u0Min;
@@ -3251,22 +3229,18 @@ void Linear_Reconstruction_LeastSquares_Diamond(Flame2D_Quad_Block &SolnBlk,
            u0Max = max(u0Max, SolnBlk.W[ i_index[n2] ][ j_index[n2] ][n]); 
 	  
 	}	
-	deltaX = SolnBlk.Grid.xfaceE(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
 	uQuad[0] = SolnBlk.W[i][j][n] + 
-	  SolnBlk.dWdx[i][j][n]*deltaX.x +
-	  SolnBlk.dWdy[i][j][n]*deltaX.y ;
-	deltaX = SolnBlk.Grid.xfaceW(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
+	  SolnBlk.dWdx[i][j][n]*dXe.x +
+	  SolnBlk.dWdy[i][j][n]*dXe.y ;
 	uQuad[1] = SolnBlk.W[i][j][n] + 
-	  SolnBlk.dWdx[i][j][n]*deltaX.x +
-	  SolnBlk.dWdy[i][j][n]*deltaX.y ;
-	deltaX = SolnBlk.Grid.xfaceN(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
+	  SolnBlk.dWdx[i][j][n]*dXw.x +
+	  SolnBlk.dWdy[i][j][n]*dXw.y ;
 	uQuad[2] = SolnBlk.W[i][j][n] + 
-	  SolnBlk.dWdx[i][j][n]*deltaX.x +
-	  SolnBlk.dWdy[i][j][n]*deltaX.y ;
-	deltaX = SolnBlk.Grid.xfaceS(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
+	  SolnBlk.dWdx[i][j][n]*dXn.x +
+	  SolnBlk.dWdy[i][j][n]*dXn.y ;
 	uQuad[3] = SolnBlk.W[i][j][n] + 
-	  SolnBlk.dWdx[i][j][n]*deltaX.x +
-	  SolnBlk.dWdy[i][j][n]*deltaX.y ;
+	  SolnBlk.dWdx[i][j][n]*dXs.x +
+	  SolnBlk.dWdy[i][j][n]*dXs.y ;
 	  
 	switch(Limiter) {
 	case LIMITER_ONE :
@@ -3329,9 +3303,10 @@ void Linear_Reconstruction_GreenGauss_Diamond(Flame2D_Quad_Block &SolnBlk,
 
   int n_pts, i_index[8], j_index[8];
   double area[4], AREA;
-  Flame2D_State W_SW, W_SE, W_NW, W_NE, W_average[4];
-  Vector2D norm[4]; 
-     
+  double W_average[4];
+  static Vector2D norm[4]; 
+  const int NUM_VAR_FLAME2D = SolnBlk.NumVar();
+
   if (i == SolnBlk.ICl-SolnBlk.Nghost || i == SolnBlk.ICu+SolnBlk.Nghost ||
       j == SolnBlk.JCl-SolnBlk.Nghost || j == SolnBlk.JCu+SolnBlk.Nghost) {
     n_pts = 0;
@@ -3349,20 +3324,14 @@ void Linear_Reconstruction_GreenGauss_Diamond(Flame2D_Quad_Block &SolnBlk,
   
   if (n_pts > 0) {
     
-    W_NE = SolnBlk.Wn(i+1,j+1);
-    W_NW = SolnBlk.Wn(i,j+1);
-    W_SW = SolnBlk.Wn(i,j);
-    W_SE = SolnBlk.Wn(i+1,j);
+    const Flame2D_State &W_NE = SolnBlk.Wn(i+1,j+1);
+    const Flame2D_State &W_NW = SolnBlk.Wn(i,j+1);
+    const Flame2D_State &W_SW = SolnBlk.Wn(i,j);
+    const Flame2D_State &W_SE = SolnBlk.Wn(i+1,j);
     
     /*************** NORTH ****************************/
     
     /*Formulate the gradients of primitive parameters on the north face of cell (i, j)*/
-    // counterclockwise, starting from the cell center (i,j), nodeNE (i, j), 
-    // top cell center (i, j+1), NodeNW (i, j);
-    W_average[0] = HALF*(SolnBlk.W[i][j]   + W_NE);
-    W_average[1] = HALF*(SolnBlk.W[i][j+1] + W_NE);
-    W_average[2] = HALF*(SolnBlk.W[i][j+1] + W_NW);
-    W_average[3] = HALF*(SolnBlk.W[i][j]   + W_NW);
     
     //  normal vector of the SE side of a diamond 
     norm[0].x = SolnBlk.Grid.nodeNE(i,j).X.y - SolnBlk.Grid.Cell[i][j].Xc.y;
@@ -3382,18 +3351,26 @@ void Linear_Reconstruction_GreenGauss_Diamond(Flame2D_Quad_Block &SolnBlk,
 		  fabs((SolnBlk.Grid.nodeNW(i,j).X-SolnBlk.Grid.Cell[i][j+1].Xc)^
 		       (SolnBlk.Grid.nodeNE(i,j).X-SolnBlk.Grid.Cell[i][j+1].Xc)));
     
-    SolnBlk.dWdx_faceN[i][j] = ( W_average[0]* norm[0].x +W_average[1]* norm[1].x+ W_average[2]* norm[2].x+W_average[3]* norm[3].x)/AREA;
-    SolnBlk.dWdy_faceN[i][j] = ( W_average[0]* norm[0].y +W_average[1]* norm[1].y+ W_average[2]* norm[2].y+W_average[3]* norm[3].y)/AREA;  
-    
+    for (int k=1; k<=NUM_VAR_FLAME2D; k++) {
+      // counterclockwise, starting from the cell center (i,j), nodeNE (i, j), 
+      // top cell center (i, j+1), NodeNW (i, j);
+      W_average[0] = HALF*(SolnBlk.W[i][j][k]   + W_NE[k]);
+      W_average[1] = HALF*(SolnBlk.W[i][j+1][k] + W_NE[k]);
+      W_average[2] = HALF*(SolnBlk.W[i][j+1][k] + W_NW[k]);
+      W_average[3] = HALF*(SolnBlk.W[i][j][k]   + W_NW[k]);
+      
+      SolnBlk.dWdx_faceN[i][j][k] = ( W_average[0]* norm[0].x +
+				      W_average[1]* norm[1].x + 
+				      W_average[2]* norm[2].x +
+				      W_average[3]* norm[3].x)/AREA;
+      SolnBlk.dWdy_faceN[i][j][k] = ( W_average[0]* norm[0].y +
+				      W_average[1]* norm[1].y + 
+				      W_average[2]* norm[2].y +
+				      W_average[3]* norm[3].y)/AREA;  
+    }
     /*************** EAST ****************************/
     
     /*Formulate the gradients of primitive parameters on the east face of cell (i, j)*/
-    // counterclockwise, starting from  nodeSE(i,j), cell (i+1, j), 
-    // nodeNE(i,j), cell center (i, j+1)     
-    W_average[2] = W_average[0];
-    W_average[0] = HALF*(SolnBlk.W[i+1][j]  + W_SE);      
-    W_average[1] = HALF*(SolnBlk.W[i+1][j]  + W_NE);     
-    W_average[3] = HALF*(SolnBlk.W[i][j]    + W_SE);
     
     //  normal vector of the NW side of a diamond  = - SE of previous
     norm[2] = - norm[0];
@@ -3412,18 +3389,26 @@ void Linear_Reconstruction_GreenGauss_Diamond(Flame2D_Quad_Block &SolnBlk,
 		  fabs((SolnBlk.Grid.nodeSE(i,j).X-SolnBlk.Grid.Cell[i][j].Xc)^
 		       (SolnBlk.Grid.nodeNE(i,j).X-SolnBlk.Grid.Cell[i][j].Xc)));
     
-    SolnBlk.dWdx_faceE[i][j] = ( W_average[0]* norm[0].x +W_average[1]* norm[1].x+ W_average[2]* norm[2].x+W_average[3]* norm[3].x)/AREA;
-    SolnBlk.dWdy_faceE[i][j] = ( W_average[0]* norm[0].y +W_average[1]* norm[1].y+ W_average[2]* norm[2].y+W_average[3]* norm[3].y)/AREA;  
-    
+    for (int k=1; k<=NUM_VAR_FLAME2D; k++) {
+      // counterclockwise, starting from  nodeSE(i,j), cell (i+1, j), 
+      // nodeNE(i,j), cell center (i, j+1)     
+      W_average[2] = HALF*(SolnBlk.W[i][j][k]    + W_NE[k]);
+      W_average[0] = HALF*(SolnBlk.W[i+1][j][k]  + W_SE[k]);      
+      W_average[1] = HALF*(SolnBlk.W[i+1][j][k]  + W_NE[k]);     
+      W_average[3] = HALF*(SolnBlk.W[i][j][k]    + W_SE[k]);
+      
+      SolnBlk.dWdx_faceE[i][j][k] = ( W_average[0]* norm[0].x +
+				      W_average[1]* norm[1].x + 
+				      W_average[2]* norm[2].x + 
+				      W_average[3]* norm[3].x)/AREA;
+      SolnBlk.dWdy_faceE[i][j][k] = ( W_average[0]* norm[0].y +
+				      W_average[1]* norm[1].y + 
+				      W_average[2]* norm[2].y + 
+				      W_average[3]* norm[3].y)/AREA;  
+    }
     /*************** SOUTH ****************************/
     
     /*Formulate the gradients of primitive parameters on the south face of cell (i, j)*/
-    // counterclockwise, starting from  cell (i, j-1), nodeSE(i,j) 
-    // cell(i,j), nodeSW(i,j)     
-    W_average[1] = W_average[3];
-    W_average[0] = HALF*(W_SE + SolnBlk.W[i][j-1]);
-    W_average[2] = HALF*(SolnBlk.W[i][j]  + W_SW);
-    W_average[3] = HALF*(SolnBlk.W[i][j-1] + W_SW);
     
     //  normal vector of the NE side of a diamond = -SW of previous
     norm[1] = -norm[3];
@@ -3441,18 +3426,26 @@ void Linear_Reconstruction_GreenGauss_Diamond(Flame2D_Quad_Block &SolnBlk,
 		       (SolnBlk.Grid.nodeSW(i,j).X-SolnBlk.Grid.Cell[i][j-1].Xc)) +
 		  fabs((SolnBlk.Grid.nodeSE(i,j).X-SolnBlk.Grid.Cell[i][j].Xc)^
 		       (SolnBlk.Grid.nodeSW(i,j).X-SolnBlk.Grid.Cell[i][j].Xc)));
-    
-    SolnBlk.dWdx_faceS[i][j] = ( W_average[0]* norm[0].x +W_average[1]* norm[1].x+ W_average[2]* norm[2].x+W_average[3]* norm[3].x)/AREA;
-    SolnBlk.dWdy_faceS[i][j] = ( W_average[0]* norm[0].y +W_average[1]* norm[1].y+ W_average[2]* norm[2].y+W_average[3]* norm[3].y)/AREA;  
-    
+
+    for (int k=1; k<=NUM_VAR_FLAME2D; k++) {
+      // counterclockwise, starting from  cell (i, j-1), nodeSE(i,j) 
+      // cell(i,j), nodeSW(i,j)     
+      W_average[1] = HALF*(SolnBlk.W[i][j][k]    + W_SE[k]);
+      W_average[0] = HALF*(SolnBlk.W[i][j-1][k]  + W_SE[k]);
+      W_average[2] = HALF*(SolnBlk.W[i][j][k]    + W_SW[k]);
+      W_average[3] = HALF*(SolnBlk.W[i][j-1][k]  + W_SW[k]);
+      
+      SolnBlk.dWdx_faceS[i][j][k] = ( W_average[0]* norm[0].x +
+				      W_average[1]* norm[1].x + 
+				      W_average[2]* norm[2].x + 
+				      W_average[3]* norm[3].x)/AREA;
+      SolnBlk.dWdy_faceS[i][j][k] = ( W_average[0]* norm[0].y +
+				      W_average[1]* norm[1].y + 
+				      W_average[2]* norm[2].y + 
+				      W_average[3]* norm[3].y)/AREA;  
+    }
     /*************** WEST ****************************/    
     /*Formulate the gradients of primitive parameters on the west face of cell (i, j ) */
-    // counterclockwise, starting from  NodeSW(i,j) 
-    // cell(i,j), nodeNW(i,j), cell (i-1, j)     
-    W_average[0] = W_average[2];
-    W_average[1] = HALF*(SolnBlk.W[i][j]   + W_NW);
-    W_average[2] = HALF*(SolnBlk.W[i-1][j] + W_NW);
-    W_average[3] = HALF*(SolnBlk.W[i-1][j] + W_SW);
     
     //  normal vector of the SE side of a diamond = - NW of previous
     norm[0] = - norm[2];
@@ -3471,9 +3464,23 @@ void Linear_Reconstruction_GreenGauss_Diamond(Flame2D_Quad_Block &SolnBlk,
 		  fabs((SolnBlk.Grid.nodeNW(i,j).X-SolnBlk.Grid.Cell[i-1][j].Xc)^
 		       (SolnBlk.Grid.nodeSW(i,j).X-SolnBlk.Grid.Cell[i-1][j].Xc)));
         
-    SolnBlk.dWdx_faceW[i][j] = ( W_average[0]* norm[0].x +W_average[1]* norm[1].x+ W_average[2]* norm[2].x+W_average[3]* norm[3].x)/AREA;
-    SolnBlk.dWdy_faceW[i][j] = ( W_average[0]* norm[0].y +W_average[1]* norm[1].y+ W_average[2]* norm[2].y+W_average[3]* norm[3].y)/AREA;  
-    
+    for (int k=1; k<=NUM_VAR_FLAME2D; k++) {
+      // counterclockwise, starting from  NodeSW(i,j) 
+      // cell(i,j), nodeNW(i,j), cell (i-1, j)     
+      W_average[0] = HALF*(SolnBlk.W[i][j][k]    + W_SW[k]);
+      W_average[1] = HALF*(SolnBlk.W[i][j][k]    + W_NW[k]);
+      W_average[2] = HALF*(SolnBlk.W[i-1][j][k]  + W_NW[k]);
+      W_average[3] = HALF*(SolnBlk.W[i-1][j][k]  + W_SW[k]);
+      
+      SolnBlk.dWdx_faceW[i][j][k] = ( W_average[0]* norm[0].x +
+				      W_average[1]* norm[1].x + 
+				      W_average[2]* norm[2].x + 
+				      W_average[3]* norm[3].x)/AREA;
+      SolnBlk.dWdy_faceW[i][j][k] = ( W_average[0]* norm[0].y +
+				      W_average[1]* norm[1].y + 
+				      W_average[2]* norm[2].y + 
+				      W_average[3]* norm[3].y)/AREA;  
+    }
     /*************** CENTER ****************************/
     
     // area weighted gradients at cell centers, 4 inside triangles
@@ -3487,22 +3494,33 @@ void Linear_Reconstruction_GreenGauss_Diamond(Flame2D_Quad_Block &SolnBlk,
       (SolnBlk.Grid.Cell[i][j].Xc - SolnBlk.Grid.xfaceS(i,j) );
         
     //Reconstructed cell center gradients
-    SolnBlk.dWdx[i][j] = SolnBlk.dWdx_faceN[i][j]*area[0]+SolnBlk.dWdx_faceE[i][j]*area[1] +
-      SolnBlk.dWdx_faceW[i][j]*area[2] + SolnBlk.dWdx_faceS[i][j]*area[3];       
-    SolnBlk.dWdx[i][j] = SolnBlk.dWdx[i][j]/SolnBlk.Grid.Cell[i][j].A; 
-    
-    SolnBlk.dWdy[i][j] = SolnBlk.dWdy_faceN[i][j]*area[0]+ SolnBlk.dWdy_faceE[i][j]*area[1] +
-      SolnBlk.dWdy_faceW[i][j]*area[2] + SolnBlk.dWdy_faceS[i][j]*area[3];     
-    SolnBlk.dWdy[i][j] = SolnBlk.dWdy[i][j]/SolnBlk.Grid.Cell[i][j].A; 
-    
+    for (int k=1; k<=NUM_VAR_FLAME2D; k++) {
+      SolnBlk.dWdx[i][j][k] = ( SolnBlk.dWdx_faceN[i][j][k]*area[0] + 
+				SolnBlk.dWdx_faceE[i][j][k]*area[1] +
+				SolnBlk.dWdx_faceW[i][j][k]*area[2] + 
+				SolnBlk.dWdx_faceS[i][j][k]*area[3] );
+      SolnBlk.dWdx[i][j][k] /= SolnBlk.Grid.Cell[i][j].A; 
+      
+      SolnBlk.dWdy[i][j][k] = ( SolnBlk.dWdy_faceN[i][j][k]*area[0] + 
+				SolnBlk.dWdy_faceE[i][j][k]*area[1] +
+				SolnBlk.dWdy_faceW[i][j][k]*area[2] + 
+				SolnBlk.dWdy_faceS[i][j][k]*area[3] );
+      SolnBlk.dWdy[i][j][k] /= SolnBlk.Grid.Cell[i][j].A; 
+    }
     /****************************************************/
         
     double u0Min, u0Max, uQuad[4], phi;
     double DxDx_ave, DxDy_ave, DyDy_ave;
-    Vector2D deltaX; 
+    static Vector2D dXe, dXw, dXn, dXs;
     
     // Calculate slope limiters.  
     if (!SolnBlk.Freeze_Limiter) {
+
+      dXe = SolnBlk.Grid.xfaceE(i, j) - SolnBlk.Grid.Cell[i][j].Xc;
+      dXw = SolnBlk.Grid.xfaceW(i, j) - SolnBlk.Grid.Cell[i][j].Xc;
+      dXn = SolnBlk.Grid.xfaceN(i, j) - SolnBlk.Grid.Cell[i][j].Xc;
+      dXs = SolnBlk.Grid.xfaceS(i, j) - SolnBlk.Grid.Cell[i][j].Xc;
+
       for ( int n=1 ; n <= SolnBlk.NumVar(); n++ ) {
 	u0Min = SolnBlk.W[i][j][n];
 	u0Max = u0Min;
@@ -3511,22 +3529,18 @@ void Linear_Reconstruction_GreenGauss_Diamond(Flame2D_Quad_Block &SolnBlk,
 	  u0Max = max(u0Max, SolnBlk.W[ i_index[n2] ][ j_index[n2] ][n]); 
 	}
 	
-	deltaX = SolnBlk.Grid.xfaceE(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
 	uQuad[0] = SolnBlk.W[i][j][n] + 
-	  SolnBlk.dWdx[i][j][n]*deltaX.x +
-	  SolnBlk.dWdy[i][j][n]*deltaX.y ;
-	deltaX = SolnBlk.Grid.xfaceW(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
+	  SolnBlk.dWdx[i][j][n]*dXe.x +
+	  SolnBlk.dWdy[i][j][n]*dXe.y ;
 	uQuad[1] = SolnBlk.W[i][j][n] + 
-	  SolnBlk.dWdx[i][j][n]*deltaX.x +
-	  SolnBlk.dWdy[i][j][n]*deltaX.y ;
-	deltaX = SolnBlk.Grid.xfaceN(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
+	  SolnBlk.dWdx[i][j][n]*dXw.x +
+	  SolnBlk.dWdy[i][j][n]*dXw.y ;
 	uQuad[2] = SolnBlk.W[i][j][n] + 
-	  SolnBlk.dWdx[i][j][n]*deltaX.x +
-	  SolnBlk.dWdy[i][j][n]*deltaX.y ;
-	deltaX = SolnBlk.Grid.xfaceS(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
+	  SolnBlk.dWdx[i][j][n]*dXn.x +
+	  SolnBlk.dWdy[i][j][n]*dXn.y ;
 	uQuad[3] = SolnBlk.W[i][j][n] + 
-	  SolnBlk.dWdx[i][j][n]*deltaX.x +
-	  SolnBlk.dWdy[i][j][n]*deltaX.y ;
+	  SolnBlk.dWdx[i][j][n]*dXs.x +
+	  SolnBlk.dWdy[i][j][n]*dXs.y ;
 	  
 	switch(Limiter) {
 	case LIMITER_ONE :
@@ -4192,7 +4206,7 @@ int dUdt_Residual_Evaluation(Flame2D_Quad_Block &SolnBlk,
 			     Flame2D_Input_Parameters &Input_Parameters) {
 
 
-  Vector2D dX;
+  static Vector2D dX;
   static Flame2D_pState Wl, Wr;
   static Flame2D_State Flux;
   int NUM_VAR_FLAME2D = SolnBlk.NumVar();
@@ -4211,6 +4225,13 @@ int dUdt_Residual_Evaluation(Flame2D_Quad_Block &SolnBlk,
     if (SolnBlk.Grid.BCtypeN[SolnBlk.ICu] == BC_NONE)  JCu_overlap = Input_Parameters.NKS_IP.GMRES_Overlap;
     if (SolnBlk.Grid.BCtypeE[SolnBlk.JCu] == BC_NONE)  ICu_overlap = Input_Parameters.NKS_IP.GMRES_Overlap;
     if (SolnBlk.Grid.BCtypeW[SolnBlk.JCl] == BC_NONE)  ICl_overlap = Input_Parameters.NKS_IP.GMRES_Overlap;    
+  }
+
+  /* Compute and store the primitive state at the nodes.  This is required
+     for Grean gauss reconstruction and viscous reconstruction. */  
+  if ( Input_Parameters.i_Reconstruction == RECONSTRUCTION_GREEN_GAUSS ||
+       SolnBlk.Flow_Type != FLOWTYPE_INVISCID ) {
+    SolnBlk.Update_Nodal_Values();
   }
 
   /* Perform the linear reconstruction within each cell of the computational grid. */  
@@ -4662,7 +4683,7 @@ int dUdt_Multistage_Explicit(Flame2D_Quad_Block &SolnBlk,
 
     int i, j, k_residual;
     double omega;
-    Vector2D dX;
+    static Vector2D dX;
     static Flame2D_pState Wl, Wr;
     static Flame2D_State Flux;
     int NUM_VAR_FLAME2D = SolnBlk.NumVar();
@@ -4705,6 +4726,13 @@ int dUdt_Multistage_Explicit(Flame2D_Quad_Block &SolnBlk,
         break;
     } /* endswitch */
     
+    /* Compute and store the primitive state at the nodes.  This is required
+       for Grean gauss reconstruction and viscous reconstruction. */  
+    if ( Input_Parameters.i_Reconstruction == RECONSTRUCTION_GREEN_GAUSS ||
+	 SolnBlk.Flow_Type != FLOWTYPE_INVISCID ) {
+      SolnBlk.Update_Nodal_Values();
+    }
+
     /* Perform the linear reconstruction within each cell
        of the computational grid for this stage. */
     

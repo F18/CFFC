@@ -477,10 +477,7 @@ inline void Flame2D_Quad_Block::deallocate(void) {
    delete []WoE; WoE = NULL; delete []WoW; WoW = NULL;
 
    // nodal values
-   Wnd = new Flame2D_State*[NCi+1]; 
-   for (i = 0; i < NCi+1 ; ++i ) {
-     delete []Wnd[i]; Wnd[i] = NULL;
-   }
+   for (i = 0; i < NCi+1 ; ++i ) { delete []Wnd[i]; Wnd[i] = NULL; }
    delete []Wnd; Wnd = NULL;
 
    NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0; Nghost = 0;
