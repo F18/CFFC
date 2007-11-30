@@ -93,6 +93,46 @@ namespace tut
 
   }
 
+  /* Test 2:*/
+  template<>
+  template<>
+  void Levermore1D_pState_object::test<2>()
+  {
+    set_test_name("Constructor from cState");
+
+    int i(0);
+    Levermore1D_cState U;
+
+    double rho(1.225), u(20.1), p(101325.0), q(123456.2), r(5.4321e8),
+      rm5(2.333e9), rm6(7.89e12);
+
+    U[1] = rho;
+    U[2] = rho*u;
+    U[3] = rho*u*u + p;
+    if(Levermore1D_Vector::get_length() > 3) {
+      U[4] = rho*u*u*u + 3.0*u*p + q;
+      U[5] = rho*u*u*u*u + 6.0*u*u*p + 4.0*u*q + r;
+    }
+    if(Levermore1D_Vector::get_length() > 5) {
+      U[6] = rho*u*u*u*u*u + 10.0*u*u*u*p + 10.0*u*u*q + 5.0*u*r + rm5;
+      U[7] = rho*u*u*u*u*u*u + 15.0*u*u*u*u*p + 20.0*u*u*u*q + 15.0*u*u*r + 6.0*u*rm5 + rm6;
+    }
+
+    Levermore1D_pState W(U);
+
+    ensure_distance("rho=rho",rho,W[1],fabs(rho)*tol);
+    ensure_distance("u=u",u,W[2],fabs(u)*tol);
+    ensure_distance("p=p",p,W[3],fabs(p)*tol);
+    if(Levermore1D_Vector::get_length() > 3) {
+      ensure_distance("q=q",q,W[4],fabs(q)*tol);
+      ensure_distance("r=r",r,W[5],fabs(r)*tol);
+    }
+    if(Levermore1D_Vector::get_length() > 5) {
+      ensure_distance("rm5=rm5",rm5,W[6],fabs(rm5)*tol);
+      ensure_distance("rm6=rm6",rm6,W[7],fabs(rm6)*tol);
+    }
+  }
+
 
   //end tests
 }
@@ -100,7 +140,7 @@ namespace tut
 
 
 // Test suite constructor
-tut::Levermore1D_pState_TestSuite Levermore1D_pStateTestSuite("Levermore1D_pState");
+tut::Levermore1D_pState_TestSuite Levermore1D_pStateTestSuite("Class:Levermore1D_pState");
 
 /*************************************************************
  Guidelines for naming "Test Suite Name".

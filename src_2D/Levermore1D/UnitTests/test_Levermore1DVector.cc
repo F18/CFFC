@@ -341,7 +341,7 @@ namespace tut
 
 
 // Test suite constructor
-tut::Levermore1DVector_TestSuite Levermore1DVectorTestSuite("Levermore1D_Vector");
+tut::Levermore1DVector_TestSuite Levermore1DVectorTestSuite("Class:Levermore1D_Vector");
 
 /*************************************************************
  Guidelines for naming "Test Suite Name".

@@ -29,7 +29,6 @@ class Levermore1D_weights;
  ********************************************************/
 class Levermore1D_pState : public Levermore1D_Vector{
 
- protected:
  public:
 
   Levermore1D_pState(void){}
@@ -41,6 +40,10 @@ class Levermore1D_pState : public Levermore1D_Vector{
   void Vacuum() {Levermore1D_Vector::zero();}
   void set_from_U(const Levermore1D_cState &U);
   void set_from_A(const Levermore1D_weights &A);
+  double conserved_extras(int i) const;
+
+ protected:
+  double conserved_extras_recursive(int i, int &pf, int pf_num, int pf_den) const;
 
 };
 
