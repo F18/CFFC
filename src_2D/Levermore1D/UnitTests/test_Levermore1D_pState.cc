@@ -10,9 +10,7 @@
 /* Include CFFC header files */
 #include "TestData.h"
 #include "../Levermore1DState.h"
-
-/* define useful constants for tests */
-#define LEVERMORE1D_VECTOR_LENGTH    50
+#include "test_Levermore1D_defines.h"
 
 namespace tut
 {
@@ -82,14 +80,14 @@ namespace tut
     int i(0);
     Levermore1D_pState P1;
     
-    for(i=1;i<=LEVERMORE1D_VECTOR_LENGTH;++i) {
+    for(i=1;i<=Levermore1D_Vector::get_length();++i) {
       //set to a value for copy constructor test
       P1[i] = pow((double)i,6.54321) / 98.765;
     }
 
     Levermore1D_pState P2(P1);
 
-    for(i=1;i<=LEVERMORE1D_VECTOR_LENGTH;++i) {
+    for(i=1;i<=Levermore1D_Vector::get_length();++i) {
       ensure_distance("P2=P1",P2[i],P1[i],fabs(P1[i])*tol);
     }
 

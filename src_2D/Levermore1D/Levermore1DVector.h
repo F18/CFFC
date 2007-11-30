@@ -63,6 +63,8 @@ class Levermore1D_Vector {
     length_set = 1;
   }
 
+  static int get_length() {return length;}
+
   static int length_is_set() {
     return length_set;
   }
