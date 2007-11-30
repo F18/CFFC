@@ -29,9 +29,6 @@ class Levermore1D_weights;
  ********************************************************/
 class Levermore1D_pState : public Levermore1D_Vector{
 
-  friend class Levermore1D_cState;
-  friend class Levermore1D_weights;
-
  protected:
  public:
 
@@ -52,9 +49,6 @@ class Levermore1D_pState : public Levermore1D_Vector{
  ********************************************************/
 class Levermore1D_cState : public Levermore1D_Vector{
 
-  friend class Levermore1D_pState;
-  friend class Levermore1D_weights;
-
   protected:
   public:
 
@@ -74,9 +68,6 @@ class Levermore1D_cState : public Levermore1D_Vector{
  * Class: Levermore1D_weights                           *
  ********************************************************/
 class Levermore1D_weights : public Levermore1D_Vector{
-
-  friend class Levermore1D_pState;
-  friend class Levermore1D_cState;
 
   protected:
   public:
