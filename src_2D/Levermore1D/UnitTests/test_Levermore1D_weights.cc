@@ -101,8 +101,8 @@ namespace tut
     set_test_name("value_at");
 
     Levermore1D_weights alpha;
-    double expected;
-    double a1(1.223), a2(0.552), a3(0.456);
+    double exponent, expected;
+    double a1(1.223), a2(0.552), a3(0.456), a4(-0.223), a5(0.003);
     double v(1.3);
 
     alpha.zero();
@@ -110,8 +110,16 @@ namespace tut
     alpha[1] = a1;
     alpha[2] = a2;
     alpha[3] = a3;
+    if(Levermore1D_Vector::get_length() > 3) {
+      alpha[4] = a4;
+      alpha[5] = a5;
+    }
 
-    expected = exp(a1 + a2*v + a3*v*v);
+    exponent = a1 + a2*v + a3*v*v;
+    if(Levermore1D_Vector::get_length() > 3) {
+      exponent += a4*v*v*v + a5*v*v*v*v;
+    }
+    expected = exp(exponent);
 
     ensure_distance("value_at",expected,alpha.value_at(v),fabs(expected)*tol);
 
