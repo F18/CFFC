@@ -13,6 +13,8 @@
 #include "NavierStokes3DThermallyPerfectState.h"
 #endif // NAVIERSTOKES3D_THERMALLYPERFECT_STATE_INCLUDED   
 
+
+
 // void NavierStokes3D_ThermallyPerfect_pState::set_species_data(const int &n,
 //                                                               const string *S,
 //                                                               const char *PATH,
@@ -22,7 +24,7 @@
 //                                                               const int &trans_data){ 
 
 //    //Deallocate_static();
-//    Wo.Deallocate(); //Clean up memory before changing ns
+//   Deallocate(); //Clean up memory before changing ns
    
 //    ns = n;
 //    num_vars = ns + NUM_EULER3D_VAR_SANS_SPECIES;
@@ -33,21 +35,21 @@
 //    // cout<<"\n Get by thse two "<<endl;
    
 //    for(int i=0; i<ns; i++){
-//      specdata[i].Getdata(S[i], PATH);  
+//      specdata[i].Getdata(S[i], PATH, trans_data);  
 //       Schmidt[i] = Sc[i];
 //    } 
 
 //    //set data temperature ranges for mixture
-//    Wo.Temp_low_range(); 
-//    Wo.Temp_high_range(); 
+//    Temp_low_range(); 
+//    Temp_high_range(); 
    
 //    //Set Debug Information level
 //    debug_level = debug;
    
 //    // set initial values for the species
-//    Wo.spec = new Species[ns];
+//    spec = new Species[ns];
 //    for(int i=0; i<ns; i++){
-//       Wo.spec[i].c = ONE/ns ; 
+//       spec[i].c = ONE/ns ; 
 //    }
    
 // }   
@@ -61,7 +63,7 @@
 //                                                               const int &trans_data) { 
 
 //    // Deallocate_static();
-//    Uo.Deallocate(); //Clean up memory before changing ns
+//    Deallocate(); //Clean up memory before changing ns
   
 //    ns =n; 
    
@@ -73,25 +75,44 @@
 
 //    for(int i=0; i<ns; i++){
 //       //overwrite default data  
-//      specdata[i].Getdata(S[i], PATH);
+//      specdata[i].Getdata(S[i], PATH, trans_data);
 //       Schmidt[i] = Sc[i];  
 //    }  
 
 //    //set data temperature ranges for mixture
-//    Uo.Temp_low_range();
-//    Uo.Temp_high_range();
+//    Temp_low_range();
+//    Temp_high_range();
 
 //    //Set Debug Information level
 //    debug_level = debug;
    
 //    //setup initial array for mass fractions
-//    Uo.rhospec = new Species[ns];
+//    rhospec = new Species[ns];
 //    for(int i=0; i<ns; i++){
-//       Uo.rhospec[i].c = Uo.rho/ns; 
+//       rhospec[i].c = rho/ns; 
 //    }
    
 // }      
 
+/*****************************************************************
+ *****************************************************************
+ ** _pState::Sw -- Chemical Reaction Rate Source Terms.     **
+ **                                                             **
+ ** Using the Reaction class to get the source terms for the    ** 
+ ** specific "Reaction_set".                                    ** 
+ *****************************************************************
+ *****************************************************************/
+NavierStokes3D_ThermallyPerfect_cState NavierStokes3D_ThermallyPerfect_pState::Sw(
+   int &REACT_SET_FLAG, int flow_type) const {
+   NavierStokes3D_ThermallyPerfect_cState NEW;     
+   NEW.Vacuum();
+   bool test = negative_speccheck();
+   //Adds concentration rate of change for species 1->N
+   if( REACT_SET_FLAG != NO_REACTIONS){
+      React.omega(NEW,*this,flow_type, ZERO, ZERO);  
+   }
+   return NEW;
+}
 /********************************************************************
  * NavierStokes3D_ThermallyPerfect_pState::F -- 
 Inviscid flux (x-direction).   *

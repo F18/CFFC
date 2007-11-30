@@ -442,7 +442,7 @@ class Euler3D_ThermallyPerfect_pState {
                                                   const int &TEMPERATURE_BC_FLAG);
 
    /****** Source terms associated with finite-rate chemistry ******/
-   Euler3D_ThermallyPerfect_cState Sw(int &REACT_SET_FLAG) const;
+   Euler3D_ThermallyPerfect_cState Sw(int &REACT_SET_FLAG, const int flow_type) const;
    void dSwdU(DenseMatrix &dSwdU) const; //Jacobian
    double dSwdU_max_diagonal(void) const;
    //@}

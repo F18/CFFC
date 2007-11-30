@@ -16,6 +16,9 @@
 #include "FANS3DThermallyPerfectState.h"
 #endif // _FANS3D_THERMALLYPERFECT_STATE_INCLUDED   
 
+#ifndef _REACTIONS_INCLUDED
+#include "../Reactions/Reactions.h"
+#endif // _REACTIONS_INCLUDED
 // Member function specilizations:
 
 template<>
@@ -93,7 +96,6 @@ int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState,
                FANS3D_ThermallyPerfect_KOmega_cState>::
 Update_Solution_Multistage_Explicit(const int i_stage,
                                     Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
-                                                     FANS3D_ThermallyPerfect_KOmega_cState> &IPs);
-
+                                                    FANS3D_ThermallyPerfect_KOmega_cState> &IPs);
 
 #endif // _FANS3D_THERMALLYPERFECT_HEXA_BLOCK_INCLUDED

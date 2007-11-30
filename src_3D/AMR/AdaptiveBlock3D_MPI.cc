@@ -33,8 +33,8 @@ int  AdaptiveBlock3D_List::Exchange_Messages_NoResChange(AdaptiveBlock3D_List &B
       buffer_size, buffer_size_neighbour, l;
    
    int i_bound_elem; // index for boundary element, face edge or vertex
-   int n_bound_elem[27];
-   AdaptiveBlock3D_Info info_bound_elem[27];
+   int n_bound_elem[MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK];
+   AdaptiveBlock3D_Info info_bound_elem[MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK];
 
    int tag_base_neigh, tag_base;
    
@@ -54,7 +54,7 @@ int  AdaptiveBlock3D_List::Exchange_Messages_NoResChange(AdaptiveBlock3D_List &B
    send_requests = new MPI::Request[8*Blk_List.Nblk];
    number_receive_requests = 0;
    number_send_requests = 0;
-   tag_base = 27;
+   tag_base = MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK;
    
    /* Perform message passing for the block faces and corners of each 
       solution block having no mesh resolution change. */
@@ -338,3 +338,6 @@ int  AdaptiveBlock3D_List::Exchange_Messages_ResChange_CoarseToFine(AdaptiveBloc
 
 
 }
+
+
+

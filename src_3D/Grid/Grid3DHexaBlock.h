@@ -375,6 +375,8 @@ class Grid3D_Hexa_Block{
     void Update_Cells(void);
 
     void Update_Ghost_Cells(void);
+    
+    void Correct_Exterior_Nodes(const int i_elem, const int j_elem, const int k_elem, const int *be);
 
     void Set_BCs_Xdir(const int BCtype_east_boundary,
                       const int BCtype_west_boundary);

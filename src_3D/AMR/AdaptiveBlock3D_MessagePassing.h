@@ -49,11 +49,11 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
    Vector3D x_ref;
  
    int i_bound_elem; // index for boundary element, face edge or vertex
-   int n_bound_elem[27];
+   int n_bound_elem[MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK];
    int n_imin, n_imax, n_jmin, n_jmax, n_kmin, n_kmax;
    int i_temp;
    
-   AdaptiveBlock3D_Info info_bound_elem[27];
+   AdaptiveBlock3D_Info info_bound_elem[MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK];
    int compact_trans_matrix[3]; // orientation of the block that receives message.
    int ti[3]; // ti[0] -i, ti[1] -j, ti[2] - k; computational orientation of the block that receives message.
    int ts[3]; // sign of the computational orientation of the block that receives message.
@@ -560,8 +560,8 @@ int Unload_Receive_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
     Vector3D x_ref;
 
     int i_bound_elem; // index for boundary element, face edge or vertex
-    int n_bound_elem[27];
-    AdaptiveBlock3D_Info info_bound_elem[27];
+    int n_bound_elem[MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK];
+    AdaptiveBlock3D_Info info_bound_elem[MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK];
     int n_imin, n_imax, n_jmin, n_jmax, n_kmin, n_kmax;
     int recv_bound_elem, recv_blknum;
     
@@ -1025,10 +1025,21 @@ int Send_All_Messages(Hexa_Soln_Block *Soln_Blks,
 /*        MPI::COMM_WORLD.Barrier(); */
 /*     } */
 
-   if (Send_Mesh_Geometry_Only) {
-      for (int nb = 0; nb < Soln_Block_List.Nblk; nb++) {
-        if (Soln_Block_List.Block[nb].used == ADAPTIVEBLOCK3D_USED) Soln_Blks[nb].Grid.Update_Ghost_Cells();
-      } /* endfor */
+    if (Send_Mesh_Geometry_Only) {
+       
+       error_flag = Correct_Boundary_Exterior_Nodes(Soln_Blks, Soln_Block_List);
+       
+       if (error_flag) {
+          cout << "\n " << CFFC_Version()
+               << " Exterior Nodes Correction Error: Correct_Boundary_Exterior_Nodes , "
+               << "flag = " << error_flag << ".\n";
+          return(error_flag);
+       }
+       
+       
+       for (int nb = 0; nb < Soln_Block_List.Nblk; nb++) {
+          if (Soln_Block_List.Block[nb].used == ADAPTIVEBLOCK3D_USED) Soln_Blks[nb].Grid.Update_Ghost_Cells();
+       } /* endfor */
     } /* endif */
 
  
@@ -1095,5 +1106,49 @@ int Send_Conservative_Flux_Corrections(Hexa_Soln_Block *Soln_Blks,
     return(error_flag);
 
 }
+
+
+
+/**********************************************************
+ * Routine: Correct_Boundary_Extreior_Nodes               *
+ *                                                        *
+ *                                                        *
+ *                                                        *
+ **********************************************************/
+template <class Hexa_Soln_Block>
+int  Correct_Boundary_Exterior_Nodes(Hexa_Soln_Block *Soln_Blks,
+                                     AdaptiveBlock3D_List &Blk_List){
+   
+   
+      int i_bound_elem; // index for boundary element, face edge or vertex
+      
+      for ( int i_blk = 0 ; i_blk <= Blk_List.Nblk-1 ; ++i_blk ) {
+         if (Blk_List.Block[i_blk].used ){
+            
+            for (int ii = -1; ii<2; ii++){
+               for (int jj = -1; jj<2; jj++){
+                  for (int kk = -1; kk<2; kk++){
+                     
+                     i_bound_elem = 9*(ii+1) + 3*(jj+1) + (kk+1);
+                     if (Blk_List.Block[i_blk].info.be_on_domain_extent.boundary_element_on_domain_extent[i_bound_elem]) {
+                        //cout<<"\n i_bound_elem =  "<<i_bound_elem<<"  "<<ii<<"  "<<jj<<"  "<<kk<<endl;
+                        
+                        Soln_Blks[i_blk].Grid.Correct_Exterior_Nodes(
+                           ii, jj, kk, 
+                           Blk_List.Block[i_blk].info.be_on_domain_extent.boundary_element_on_domain_extent);
+                        
+                     }/* endif */
+                     
+                  }/* end for k */
+               }/* end for j */
+            }/* end for i */
+         }/* endif */
+      }  /* endfor */
+      
+      
+   return(0);
+   
+}
+
 
 #endif // _ADAPTIVEBLOCK3D_MESSAGEPASSING_INCLUDED

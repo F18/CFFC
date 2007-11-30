@@ -7,6 +7,7 @@
 #ifndef  _SYSTEM_LINUX_INCLUDED
 #include "../System/System_Linux.h"
 #endif //_SYSTEM_LINUX_INCLUDED
+
 ostream &operator << (ostream &out_file, 
                       const Block_Orientation_Info &BlkIO) {
    out_file.precision(10);
@@ -171,6 +172,67 @@ void Block_Orientation_Info::broadcast(void){
 
    
 
+ostream &operator << (ostream &out_file, 
+                      const Block_Boundary_Elements_on_Domain_Extent &be_on_domain_extent)
+{
+   
+   out_file.precision(10);
+   out_file.setf(ios::scientific);
+   for( int i=0; i<27; i++){
+      out_file<<" "<<be_on_domain_extent.boundary_element_on_domain_extent[i];
+   }// output ctm and offsets
+   
+   out_file.unsetf(ios::scientific);
+   return (out_file);
+}
 
 
 
+istream &operator >> (istream &in_file, 
+                      Block_Boundary_Elements_on_Domain_Extent &be_on_domain_extent) {
+   in_file.precision(10);
+   in_file.setf(ios::scientific);
+   for( int i=0; i<27; i++){
+      in_file>>be_on_domain_extent.boundary_element_on_domain_extent[i];
+   }// output ctm and offsets
+  
+   in_file.unsetf(ios::scientific);
+   return (in_file);
+}
+
+
+void  Block_Boundary_Elements_on_Domain_Extent::broadcast(void){
+#ifdef _MPI_VERSION
+   MPI::COMM_WORLD.Bcast(& boundary_element_on_domain_extent[0], 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(& boundary_element_on_domain_extent[1], 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(& boundary_element_on_domain_extent[2], 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(& boundary_element_on_domain_extent[3], 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(& boundary_element_on_domain_extent[4], 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(& boundary_element_on_domain_extent[5], 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(& boundary_element_on_domain_extent[6], 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(& boundary_element_on_domain_extent[7], 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(& boundary_element_on_domain_extent[8], 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(& boundary_element_on_domain_extent[9], 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(& boundary_element_on_domain_extent[10], 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(& boundary_element_on_domain_extent[11], 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(& boundary_element_on_domain_extent[12], 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(& boundary_element_on_domain_extent[13], 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(& boundary_element_on_domain_extent[14], 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(& boundary_element_on_domain_extent[15], 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(& boundary_element_on_domain_extent[16], 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(& boundary_element_on_domain_extent[17], 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(& boundary_element_on_domain_extent[18], 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(& boundary_element_on_domain_extent[19], 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(& boundary_element_on_domain_extent[20], 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(& boundary_element_on_domain_extent[21], 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(& boundary_element_on_domain_extent[22], 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(& boundary_element_on_domain_extent[23], 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(& boundary_element_on_domain_extent[24], 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(& boundary_element_on_domain_extent[25], 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(& boundary_element_on_domain_extent[26], 1, MPI::INT, 0);
+
+#endif    
+
+}
+
+   

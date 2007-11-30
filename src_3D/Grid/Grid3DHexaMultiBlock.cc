@@ -116,7 +116,7 @@ void Grid3D_Hexa_Multi_Block_Connectivity::Deallocate(void) {
        delete []neighBNE;
        delete []neighBSE;
 
-
+    
        delete []neighNW_info; 
        delete []neighNE_info; 
        delete []neighSE_info;
@@ -229,6 +229,8 @@ void Grid3D_Hexa_Multi_Block_Connectivity::Broadcast(void) {
   neighS_info.broadcast();
   neighE_info.broadcast();
   neighW_info.broadcast();
+  
+  n_be_on_domain_extent.broadcast();
   
   for(int i_nb = 0; i_nb < BLOCK_ORIENTATION_MAX_NEIGHBOUR; ++i_nb){
      
@@ -1458,13 +1460,20 @@ void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Inpu
          Connectivity[iblk].neighT_info.set_block_orientation_info(
             blkConn, iblk, BlkC::IAll, BlkC::JAll, BlkC::KMax, 
             Connectivity[iblk].neighT);
-
+         
+         if(blkConn.at_domain_extent(iblk, BlkC::IAll, BlkC::JAll, BlkC::KMax)){
+            Connectivity[iblk].n_be_on_domain_extent.boundary_element_on_domain_extent[BE::T] = 1;
+         }
+         
          Connectivity[iblk].num_neighB = blkConn.num_neighbour_block(
             iblk,  BlkC::IAll, BlkC::JAll, BlkC::KMin);
          // information of neighbour block of the bottom face
          Connectivity[iblk].neighB_info.set_block_orientation_info(
             blkConn, iblk,  BlkC::IAll, BlkC::JAll, BlkC::KMin, 
             Connectivity[iblk].neighB);
+         if(blkConn.at_domain_extent(iblk, BlkC::IAll, BlkC::JAll, BlkC::KMin)){
+            Connectivity[iblk].n_be_on_domain_extent.boundary_element_on_domain_extent[BE::B] = 1;
+         }
 
          Connectivity[iblk].num_neighN = blkConn.num_neighbour_block(
             iblk,  BlkC::IAll, BlkC::JMax, BlkC::KAll);
@@ -1472,6 +1481,9 @@ void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Inpu
          Connectivity[iblk].neighN_info.set_block_orientation_info(
             blkConn, iblk,  BlkC::IAll, BlkC::JMax, BlkC::KAll, 
             Connectivity[iblk].neighN);
+         if(blkConn.at_domain_extent(iblk, BlkC::IAll, BlkC::JMax, BlkC::KAll)){
+            Connectivity[iblk].n_be_on_domain_extent.boundary_element_on_domain_extent[BE::N] = 1;
+         }     
 
          Connectivity[iblk].num_neighS = blkConn.num_neighbour_block(
             iblk,   BlkC::IAll, BlkC::JMin, BlkC::KAll);
@@ -1479,6 +1491,9 @@ void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Inpu
          Connectivity[iblk].neighS_info.set_block_orientation_info(
             blkConn, iblk,   BlkC::IAll, BlkC::JMin, BlkC::KAll, 
             Connectivity[iblk].neighS);
+         if(blkConn.at_domain_extent(iblk, BlkC::IAll, BlkC::JMin, BlkC::KAll)){
+            Connectivity[iblk].n_be_on_domain_extent.boundary_element_on_domain_extent[BE::S] = 1;
+         }
 
          Connectivity[iblk].num_neighE = blkConn.num_neighbour_block(
             iblk, BlkC::IMax, BlkC::JAll, BlkC::KAll);
@@ -1486,6 +1501,9 @@ void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Inpu
          Connectivity[iblk].neighE_info.set_block_orientation_info(
             blkConn, iblk, BlkC::IMax, BlkC::JAll, BlkC::KAll, 
             Connectivity[iblk].neighE);
+         if(blkConn.at_domain_extent(iblk, BlkC::IMax, BlkC::JAll, BlkC::KAll)){
+            Connectivity[iblk].n_be_on_domain_extent.boundary_element_on_domain_extent[BE::E] = 1;
+         }
          
          Connectivity[iblk].num_neighW = blkConn.num_neighbour_block(
             iblk,  BlkC::IMin, BlkC::JAll, BlkC::KAll);
@@ -1493,7 +1511,9 @@ void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Inpu
          Connectivity[iblk].neighW_info.set_block_orientation_info(
             blkConn, iblk,  BlkC::IMin, BlkC::JAll, BlkC::KAll, 
             Connectivity[iblk].neighW);
-          
+         if(blkConn.at_domain_extent(iblk, BlkC::IMin, BlkC::JAll, BlkC::KAll)){
+            Connectivity[iblk].n_be_on_domain_extent.boundary_element_on_domain_extent[BE::W] = 1;
+         } 
 
          Connectivity[iblk].num_neighTN = blkConn.num_neighbour_block(
             iblk, BlkC::IAll, BlkC::JMax, BlkC::KMax);
@@ -1501,6 +1521,9 @@ void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Inpu
          Connectivity[iblk].neighTN_info[0].set_block_orientation_info(
             blkConn, iblk, BlkC::IAll, BlkC::JMax, BlkC::KMax, 
             Connectivity[iblk].neighTN[0]);
+         if(blkConn.at_domain_extent(iblk,BlkC::IAll, BlkC::JMax, BlkC::KMax)){
+            Connectivity[iblk].n_be_on_domain_extent.boundary_element_on_domain_extent[BE::TN] = 1;
+         } 
 
          Connectivity[iblk].num_neighTS = blkConn.num_neighbour_block(
             iblk, BlkC::IAll, BlkC::JMin, BlkC::KMax);
@@ -1508,13 +1531,19 @@ void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Inpu
          Connectivity[iblk].neighTS_info[0].set_block_orientation_info(
             blkConn, iblk,  BlkC::IAll, BlkC::JMin, BlkC::KMax, 
             Connectivity[iblk].neighTS[0]);
-         
+         if(blkConn.at_domain_extent(iblk, BlkC::IAll, BlkC::JMin, BlkC::KMax)){
+            Connectivity[iblk].n_be_on_domain_extent.boundary_element_on_domain_extent[BE::TS] = 1;
+         } 
+
          Connectivity[iblk].num_neighTW = blkConn.num_neighbour_block(
             iblk,  BlkC::IMin, BlkC::JAll, BlkC::KMax);
          // information of neighbour block of the topwest edge
          Connectivity[iblk].neighTW_info[0].set_block_orientation_info(
             blkConn, iblk,  BlkC::IMin, BlkC::JAll, BlkC::KMax, 
             Connectivity[iblk].neighTW[0]);
+         if(blkConn.at_domain_extent(iblk, BlkC::IMin, BlkC::JAll, BlkC::KMax)){
+            Connectivity[iblk].n_be_on_domain_extent.boundary_element_on_domain_extent[BE::TW] = 1;
+         } 
 
          Connectivity[iblk].num_neighTE = blkConn.num_neighbour_block(
             iblk,  BlkC::IMax, BlkC::JAll, BlkC::KMax);
@@ -1522,6 +1551,9 @@ void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Inpu
          Connectivity[iblk].neighTE_info[0].set_block_orientation_info(
             blkConn, iblk,  BlkC::IMax, BlkC::JAll, BlkC::KMax, 
             Connectivity[iblk].neighTE[0]);
+         if(blkConn.at_domain_extent(iblk, BlkC::IMax, BlkC::JAll, BlkC::KMax)){
+            Connectivity[iblk].n_be_on_domain_extent.boundary_element_on_domain_extent[BE::TE] = 1;
+         } 
 
          Connectivity[iblk].num_neighBN = blkConn.num_neighbour_block(
             iblk,   BlkC::IAll, BlkC::JMax, BlkC::KMin);
@@ -1529,6 +1561,9 @@ void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Inpu
          Connectivity[iblk].neighBN_info[0].set_block_orientation_info(
             blkConn, iblk,  BlkC::IAll, BlkC::JMax, BlkC::KMin, 
             Connectivity[iblk].neighBN[0]);
+         if(blkConn.at_domain_extent(iblk,  BlkC::IAll, BlkC::JMax, BlkC::KMin)){
+            Connectivity[iblk].n_be_on_domain_extent.boundary_element_on_domain_extent[BE::BN] = 1;
+         } 
          
          Connectivity[iblk].num_neighBS = blkConn.num_neighbour_block(
             iblk,   BlkC::IAll, BlkC::JMin, BlkC::KMin);
@@ -1536,6 +1571,9 @@ void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Inpu
          Connectivity[iblk].neighBS_info[0].set_block_orientation_info(
             blkConn, iblk,  BlkC::IAll, BlkC::JMin, BlkC::KMin, 
             Connectivity[iblk].neighBS[0]);
+         if(blkConn.at_domain_extent(iblk, BlkC::IAll, BlkC::JMin, BlkC::KMin)){
+            Connectivity[iblk].n_be_on_domain_extent.boundary_element_on_domain_extent[BE::BS] = 1;
+         } 
 
          Connectivity[iblk].num_neighBW = blkConn.num_neighbour_block(
             iblk,   BlkC::IMin, BlkC::JAll, BlkC::KMin);
@@ -1543,6 +1581,9 @@ void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Inpu
          Connectivity[iblk].neighBW_info[0].set_block_orientation_info(
             blkConn, iblk,   BlkC::IMin, BlkC::JAll, BlkC::KMin, 
             Connectivity[iblk].neighBW[0]);
+         if(blkConn.at_domain_extent(iblk,  BlkC::IMin, BlkC::JAll, BlkC::KMin)){
+            Connectivity[iblk].n_be_on_domain_extent.boundary_element_on_domain_extent[BE::BW] = 1;
+         } 
 
          Connectivity[iblk].num_neighBE = blkConn.num_neighbour_block(
             iblk,  BlkC::IMax, BlkC::JAll, BlkC::KMin);
@@ -1550,6 +1591,10 @@ void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Inpu
          Connectivity[iblk].neighBE_info[0].set_block_orientation_info(
             blkConn, iblk,  BlkC::IMax, BlkC::JAll, BlkC::KMin, 
             Connectivity[iblk].neighBE[0]);
+         if(blkConn.at_domain_extent(iblk,  BlkC::IMax, BlkC::JAll, BlkC::KMin)){
+            Connectivity[iblk].n_be_on_domain_extent.boundary_element_on_domain_extent[BE::BE] = 1;
+         } 
+
          
          Connectivity[iblk].num_neighNW = blkConn.num_neighbour_block(
             iblk, BlkC::IMin, BlkC::JMax, BlkC::KAll);
@@ -1557,6 +1602,9 @@ void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Inpu
          Connectivity[iblk].neighNW_info[0].set_block_orientation_info(
             blkConn, iblk, BlkC::IMin, BlkC::JMax, BlkC::KAll, 
             Connectivity[iblk].neighNW[0]);
+         if(blkConn.at_domain_extent(iblk, BlkC::IMin, BlkC::JMax, BlkC::KAll)){
+            Connectivity[iblk].n_be_on_domain_extent.boundary_element_on_domain_extent[BE::NW] = 1;
+         } 
          
          Connectivity[iblk].num_neighNE = blkConn.num_neighbour_block(
             iblk,  BlkC::IMax, BlkC::JMax, BlkC::KAll);
@@ -1564,6 +1612,9 @@ void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Inpu
          Connectivity[iblk].neighNE_info[0].set_block_orientation_info(
             blkConn, iblk, BlkC::IMax, BlkC::JMax, BlkC::KAll, 
             Connectivity[iblk].neighNE[0]);
+         if(blkConn.at_domain_extent(iblk, BlkC::IMax, BlkC::JMax, BlkC::KAll)){
+            Connectivity[iblk].n_be_on_domain_extent.boundary_element_on_domain_extent[BE::NE] = 1;
+         } 
 
          Connectivity[iblk].num_neighSE = blkConn.num_neighbour_block(
             iblk,  BlkC::IMax, BlkC::JMin, BlkC::KAll);
@@ -1571,6 +1622,9 @@ void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Inpu
          Connectivity[iblk].neighSE_info[0].set_block_orientation_info(
             blkConn, iblk,  BlkC::IMax, BlkC::JMin, BlkC::KAll, 
             Connectivity[iblk].neighSE[0]);
+            if(blkConn.at_domain_extent(iblk, BlkC::IMax, BlkC::JMin, BlkC::KAll)){
+            Connectivity[iblk].n_be_on_domain_extent.boundary_element_on_domain_extent[BE::SE] = 1;
+         } 
                 
          Connectivity[iblk].num_neighSW = blkConn.num_neighbour_block(
             iblk,   BlkC::IMin, BlkC::JMin, BlkC::KAll);
@@ -1578,6 +1632,9 @@ void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Inpu
          Connectivity[iblk].neighSW_info[0].set_block_orientation_info(
             blkConn, iblk,  BlkC::IMin, BlkC::JMin, BlkC::KAll, 
             Connectivity[iblk].neighSW[0]);
+         if(blkConn.at_domain_extent(iblk,  BlkC::IMin, BlkC::JMin, BlkC::KAll)){
+            Connectivity[iblk].n_be_on_domain_extent.boundary_element_on_domain_extent[BE::SW] = 1;
+         } 
 
          Connectivity[iblk].num_neighTNW = blkConn.num_neighbour_block(
             iblk,  BlkC::IMin, BlkC::JMax, BlkC::KMax);
@@ -1585,6 +1642,9 @@ void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Inpu
          Connectivity[iblk].neighTNW_info[0].set_block_orientation_info(
             blkConn, iblk,  BlkC::IMin, BlkC::JMax, BlkC::KMax, 
             Connectivity[iblk].neighTNW[0]);
+         if(blkConn.at_domain_extent(iblk,  BlkC::IMin, BlkC::JMax, BlkC::KMax)){
+            Connectivity[iblk].n_be_on_domain_extent.boundary_element_on_domain_extent[BE::TNW] = 1;
+         } 
 
          Connectivity[iblk].num_neighTSW = blkConn.num_neighbour_block(
             iblk, BlkC::IMin, BlkC::JMin, BlkC::KMax);
@@ -1592,6 +1652,9 @@ void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Inpu
          Connectivity[iblk].neighTSW_info[0].set_block_orientation_info(
             blkConn, iblk,  BlkC::IMin, BlkC::JMin, BlkC::KMax, 
             Connectivity[iblk].neighTSW[0]);
+         if(blkConn.at_domain_extent(iblk,  BlkC::IMin, BlkC::JMin, BlkC::KMax)){
+            Connectivity[iblk].n_be_on_domain_extent.boundary_element_on_domain_extent[BE::TSW] = 1;
+         } 
          
          Connectivity[iblk].num_neighTNE = blkConn.num_neighbour_block(
             iblk,  BlkC::IMax, BlkC::JMax, BlkC::KMax);
@@ -1599,6 +1662,9 @@ void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Inpu
          Connectivity[iblk].neighTNE_info[0].set_block_orientation_info(
             blkConn, iblk,  BlkC::IMax, BlkC::JMax, BlkC::KMax, 
             Connectivity[iblk].neighTNE[0]);
+         if(blkConn.at_domain_extent(iblk,  BlkC::IMax, BlkC::JMax, BlkC::KMax)){
+            Connectivity[iblk].n_be_on_domain_extent.boundary_element_on_domain_extent[BE::TNE] = 1;
+         } 
 
          Connectivity[iblk].num_neighTSE = blkConn.num_neighbour_block(
             iblk, BlkC::IMax, BlkC::JMin, BlkC::KMax);
@@ -1606,6 +1672,9 @@ void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Inpu
          Connectivity[iblk].neighTSE_info[0].set_block_orientation_info(
             blkConn, iblk, BlkC::IMax, BlkC::JMin, BlkC::KMax, 
             Connectivity[iblk].neighTSE[0]);
+         if(blkConn.at_domain_extent(iblk,   BlkC::IMax, BlkC::JMin, BlkC::KMax)){
+            Connectivity[iblk].n_be_on_domain_extent.boundary_element_on_domain_extent[BE::TSE] = 1;
+         } 
 
         Connectivity[iblk].num_neighBNW = blkConn.num_neighbour_block(
             iblk,  BlkC::IMin, BlkC::JMax, BlkC::KMin);
@@ -1613,6 +1682,9 @@ void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Inpu
          Connectivity[iblk].neighBNW_info[0].set_block_orientation_info(
             blkConn, iblk,  BlkC::IMin, BlkC::JMax, BlkC::KMin, 
             Connectivity[iblk].neighBNW[0]);
+         if(blkConn.at_domain_extent(iblk,   BlkC::IMin, BlkC::JMax, BlkC::KMin)){
+            Connectivity[iblk].n_be_on_domain_extent.boundary_element_on_domain_extent[BE::BNW] = 1;
+         } 
 
          Connectivity[iblk].num_neighBSW = blkConn.num_neighbour_block(
             iblk,  BlkC::IMin, BlkC::JMin, BlkC::KMin);
@@ -1620,6 +1692,9 @@ void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Inpu
          Connectivity[iblk].neighBSW_info[0].set_block_orientation_info(
             blkConn, iblk,  BlkC::IMin, BlkC::JMin, BlkC::KMin, 
             Connectivity[iblk].neighBSW[0]);
+         if(blkConn.at_domain_extent(iblk,   BlkC::IMin, BlkC::JMin, BlkC::KMin)){
+            Connectivity[iblk].n_be_on_domain_extent.boundary_element_on_domain_extent[BE::BSW] = 1;
+         } 
 
          Connectivity[iblk].num_neighBNE = blkConn.num_neighbour_block(
             iblk,  BlkC::IMax, BlkC::JMax, BlkC::KMin);
@@ -1627,6 +1702,10 @@ void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Inpu
          Connectivity[iblk].neighBNE_info[0].set_block_orientation_info(
             blkConn, iblk,  BlkC::IMax, BlkC::JMax, BlkC::KMin, 
             Connectivity[iblk].neighBNE[0]);
+         if(blkConn.at_domain_extent(iblk,   BlkC::IMax, BlkC::JMax, BlkC::KMin)){
+            Connectivity[iblk].n_be_on_domain_extent.boundary_element_on_domain_extent[BE::BNE] = 1;
+         } 
+
 
          Connectivity[iblk].num_neighBSE = blkConn.num_neighbour_block(
             iblk,  BlkC::IMax, BlkC::JMin, BlkC::KMin);
@@ -1634,16 +1713,9 @@ void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Inpu
          Connectivity[iblk].neighBSE_info[0].set_block_orientation_info(
             blkConn, iblk, BlkC::IMax, BlkC::JMin, BlkC::KMin, 
             Connectivity[iblk].neighBSE[0]);
-
-       //   for ( int iProc = 0; iProc !=  CFFC_MPI::Number_of_Processors; ++iProc ) {
-//             if (  CFFC_MPI::This_Processor_Number == iProc ) {
-//                cout<<"\n In Grid3DHexaBlock : "<<endl;
-//                cout<<"\n CFFC_MPI::This_Processor_Number = "<< CFFC_MPI::This_Processor_Number;
-//                cout<<"  i_blk = "<<iblk<<"  Connectivity[iblk].num_neighBSE = "<< Connectivity[iblk].num_neighBSE;
-//                System::sleep(0.1);
-//             }
-//             MPI::COMM_WORLD.Barrier();
-//          }
+         if(blkConn.at_domain_extent(iblk,  BlkC::IMax, BlkC::JMin, BlkC::KMin)){
+            Connectivity[iblk].n_be_on_domain_extent.boundary_element_on_domain_extent[BE::BSE] = 1;
+         } 
 
          // for roots only 
          if(Connectivity[iblk].num_neighT>ONE || Connectivity[iblk].num_neighB>ONE ||

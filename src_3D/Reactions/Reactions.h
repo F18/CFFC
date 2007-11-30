@@ -317,7 +317,10 @@ public:
   // Time rate change of the species concentration 
   template<class SOLN_pSTATE, class SOLN_cSTATE>
   void omega(SOLN_cSTATE &U, 
-             const SOLN_pSTATE &W) const;
+             const SOLN_pSTATE &W,
+             const int flow_type, 
+             const double beta_star,
+             const double dissipation_rate) const;
 
   //Jacobian determined analytically ( flag true for cfl calc)
   template<class SOLN_pSTATE, class SOLN_cSTATE>
@@ -424,15 +427,21 @@ inline ostream &operator << (ostream &out_file, const Reaction_set &W) {
 
 ************************************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
-inline void Reaction_set::omega(SOLN_cSTATE &U, 
-                                const SOLN_pSTATE &W) const{
+                inline void Reaction_set::omega(SOLN_cSTATE &U, 
+                                                const SOLN_pSTATE &W,
+                                                const int flow_type, 
+                                                const double beta_star,
+                                                const double dissipation_rate) const{
  
   double Temp = W.T();  //K
   double Press= W.p;    // [Pa]
   double PressDyne = W.p*TEN; // N/m^2 -> dyne/cm^2
   double rho= W.rho/THOUSAND; //kg/m^3 -> g/cm^3 
   double a,b, ans(ZERO);
-
+ 
+  double model_constant = 4.0;
+  double tau_c, tau_t, s ;
+  
   for(int i=0; i<num_react_species; i++){
     M[i] = W.specdata[i].Mol_mass()*THOUSAND;  //kg/mol -> g/mol
     c[i] = W.spec[i].c;                        //unitless
@@ -455,29 +464,97 @@ inline void Reaction_set::omega(SOLN_cSTATE &U,
   //--------- ONE STEP CH4 ----------//
   //---------------------------------//
   case CH4_1STEP: 
-    a=1.0;//   a = 0.2; 
-    b=1.0;//     b = 1.3;
-    kf[0] = reactions[0].kf(Temp)*pow((W.SpecCon(0))/MILLION,a)*pow((W.SpecCon(1)/MILLION),b);        
-    for(int index =0; index<num_react_species; index++){
-      switch(index) {
-      case 0 : //CH4
-	ans = - kf[0];
-	break;
-      case 1 : //O2
-	ans = - TWO*kf[0];
-	break;
-      case 2 : //CO2
-	ans = kf[0];
-	break;
-      case 3 : //H2O
-	ans = TWO*kf[0];
-	break;
-      };
-      //ans in kg/m^3*s   g/mol *(mol/cm^3*s)*1e3      
-      U.rhospec[index].c = M[index]*ans*THOUSAND;  
-    }
-    break;
-    
+
+// Law of mass action 
+     a=1.0;//   a = 0.2;
+     b=1.0;//     b = 1.3;
+     kf[0] = reactions[0].kf(Temp)*pow((W.SpecCon(0))/MILLION,a)*pow((W.SpecCon(1)/MILLION),b);
+     for(int index =0; index<num_react_species; index++){
+        switch(index) {
+        case 0 : //CH4
+           ans = - kf[0];
+           break;
+        case 1 : //O2
+           ans = - TWO*kf[0];
+           break;
+        case 2 : //CO2
+           ans = kf[0];
+           break;
+        case 3 : //H2O
+           ans = TWO*kf[0];
+           break;
+        };
+        //ans in kg/m^3*s   g/mol *(mol/cm^3*s)*1e3
+        U.rhospec[index].c = M[index]*ans*THOUSAND;
+     }
+
+ 
+     if (flow_type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
+         flow_type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
+
+        s = TWO* M[1]/M[0];
+        if(W.spec[0].c >ZERO && W.spec[1].c>ZERO){
+           // tau_t --- s/(mol/cm^3)
+           tau_t = M[0]/(beta_star*max(TOLER, dissipation_rate))/(model_constant*rho*min(W.spec[0].c, W.spec[1].c/s) );
+         //cout<<"\n laminar--rate "<<tau_c<<"  turbulent--rate  "<<tau_t<<"   ratio="<< tau_c/tau_t<<"   1/w "<<ONE/max(TOLER, W.omega)<<endl;
+         tau_c +=tau_t;
+      }
+      // compare two time scales
+      //   if(kf[0]!=ZERO){
+      //     tau_l =(W.rho*W.spec[0].c)/(M[0]*kf[0]*THOUSAND);
+      //     tau_t = ONE/(W.beta_star*max(TOLER, W.omega)*cm1);
+      //     cout<<"\n t_l = "<<tau_l<<"  t_t "<<tau_t<<endl;
+      //     }
+      if(tau_c>ZERO){
+         for(int index =0; index<num_react_species; index++){
+            switch(index) {
+            case 0 : //CH4
+               ans = -ONE/tau_c;
+               break;
+            case 1 : //O2
+               ans = - TWO/tau_c;
+               break;
+            case 2 : //CO2
+               ans = ONE/tau_c;
+               break;
+            case 3 : //H2O
+               ans = TWO/tau_c;
+               break;
+            };
+            
+            // "ans" in mol/(cm^3*s)
+            // U.rhospec[].c should be in (kg/(m^3*s))
+            // conversion :  g/mol * mol/(cm^3*s) = g/(10^(-6)m^3s) = 1000* kg/(m^3*s)
+            U.rhospec[index].c = M[index]*ans*THOUSAND;
+            // cout<<"\n "<<index<<"       "<< M[index]*ans*THOUSAND<<endl;
+            
+         }
+      }else{
+         for(int index =0; index<num_react_species; index++){
+            switch(index) {
+            case 0 : //CH4
+               ans = ZERO;
+               break;
+            case 1 : //O2
+               ans = ZERO;
+               break;
+            case 2 : //CO2
+               ans = ZERO;
+               break;
+            case 3 : //H2O
+               ans = ZERO;
+               break;
+            };
+            
+            //ans in kg/m^3*s   g/mol *(mol/cm^3*s)*1e3
+            U.rhospec[index].c = M[index]*ans*THOUSAND;
+         }
+      }
+        
+     }
+     
+
+     break;
   //---------------------------------//
   //--------- TWO STEP CH4 ----------//
   //---------------------------------//
@@ -694,6 +771,7 @@ inline void Reaction_set::omega(SOLN_cSTATE &U,
   };
 
 } //end omega()
+
 
 /************************************************************************
   Calculates the Jacobian of the chemical source terms with respect

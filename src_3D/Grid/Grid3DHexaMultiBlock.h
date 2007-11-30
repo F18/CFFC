@@ -23,6 +23,7 @@
 
 
 #define	GRID3D_NO_NEIGHBOUR             -1
+#define	INTERIOR_BOUNDARY_ELEMENT        0   
 
 
 /* Define the 3D hexahedral grid multiblock classes. */
@@ -37,7 +38,7 @@ class Grid3D_Hexa_Multi_Block_Connectivity{
    int      num_neighTNW,num_neighTSW,num_neighTNE,num_neighTSE;
    int      num_neighBN,num_neighBS,num_neighBE,num_neighBW;
    int      num_neighBNW,num_neighBSW,num_neighBNE,num_neighBSE;
-   
+
 
    int      neighT,neighB,neighN; // Possible 26 neighbouring grid blocks in each direction
    int      neighS,neighE,neighW; // for each of the block in the multi-block grid
@@ -66,7 +67,8 @@ class Grid3D_Hexa_Multi_Block_Connectivity{
    Block_Orientation_Info  neighBNW_info[BLOCK_ORIENTATION_MAX_NEIGHBOUR],neighBSW_info[BLOCK_ORIENTATION_MAX_NEIGHBOUR],
                            neighBNE_info[BLOCK_ORIENTATION_MAX_NEIGHBOUR],neighBSE_info[BLOCK_ORIENTATION_MAX_NEIGHBOUR];
 
-
+   Block_Boundary_Elements_on_Domain_Extent n_be_on_domain_extent;
+   
   //Creation constructors.
    Grid3D_Hexa_Multi_Block_Connectivity(void):
       num_neighT(0), num_neighB(0),
@@ -98,8 +100,8 @@ class Grid3D_Hexa_Multi_Block_Connectivity{
          neighBNW[nN] = GRID3D_NO_NEIGHBOUR;  neighBSW[nN] = GRID3D_NO_NEIGHBOUR; 
          neighBNE[nN] = GRID3D_NO_NEIGHBOUR;  neighBSE[nN] = GRID3D_NO_NEIGHBOUR; 
       }
-         
       
+     
    }
 
       

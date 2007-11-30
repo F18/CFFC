@@ -58,6 +58,11 @@ void AdaptiveBlock3D_Info::Broadcast_Adaptive_Block_Info(AdaptiveBlock3D_Info &B
   MPI::COMM_WORLD.Bcast(&(Blk_Info.dimen.ghost), 1, MPI::INT, 0);
   MPI::COMM_WORLD.Bcast(&(Blk_Info.sector), 1, MPI::INT, 0);
   MPI::COMM_WORLD.Bcast(&(Blk_Info.level), 1, MPI::INT, 0);
+ 
+  Blk_Info.blkorient.broadcast();
+  Blk_Info.be_on_domain_extent.broadcast();
+  
+
 #endif
 
 }
@@ -219,12 +224,12 @@ void  AdaptiveBlock3D_List::Allocate_Message_Buffers_NoResChange(AdaptiveBlock3D
                                           const int Number_of_Solution_Variables) {
    int i_blk, buffer_size, buffer_size_neighbour, l;
    int i_bound_elem; // index for boundary element, face edge or vertex
-   int n_bound_elem[27];
+   int n_bound_elem[MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK];
    int j_neigh;
    int buffer_size_soln, buffer_size_geometry, buffer_size_bcs;
    
    
-   AdaptiveBlock3D_Info info_bound_elem[27];
+   AdaptiveBlock3D_Info info_bound_elem[MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK];
 
    /* Ensure that memory for the block index of the send and receive buffers
       has been allocated. */
@@ -233,8 +238,8 @@ void  AdaptiveBlock3D_List::Allocate_Message_Buffers_NoResChange(AdaptiveBlock3D
        Blk_List.message_noreschange_sendbuf == NULL) {
       Blk_List.message_noreschange_sendbuf = new double**[Blk_List.Nblk];
       for ( i_blk = 0; i_blk <= Blk_List.Nblk-1 ; ++i_blk ) {
-         Blk_List.message_noreschange_sendbuf[i_blk] = new double*[27];
-         for (j_neigh = 0; j_neigh < 27 ; ++j_neigh) {
+         Blk_List.message_noreschange_sendbuf[i_blk] = new double*[MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK];
+         for (j_neigh = 0; j_neigh < MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK ; ++j_neigh) {
             Blk_List.message_noreschange_sendbuf[i_blk][j_neigh] = new double[1];
             Blk_List.message_noreschange_sendbuf[i_blk][j_neigh][0] = ZERO;
          } /* endfor */
@@ -244,8 +249,8 @@ void  AdaptiveBlock3D_List::Allocate_Message_Buffers_NoResChange(AdaptiveBlock3D
        Blk_List.message_noreschange_recbuf == NULL) {
       Blk_List.message_noreschange_recbuf = new double**[Blk_List.Nblk];
       for ( i_blk = 0; i_blk <= Blk_List.Nblk-1 ; ++i_blk ) {
-         Blk_List.message_noreschange_recbuf[i_blk] = new double*[27];
-         for (j_neigh = 0; j_neigh < 27 ; ++j_neigh) {
+         Blk_List.message_noreschange_recbuf[i_blk] = new double*[MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK];
+         for (j_neigh = 0; j_neigh < MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK ; ++j_neigh) {
             Blk_List.message_noreschange_recbuf[i_blk][j_neigh] = new double[1];
             Blk_List.message_noreschange_recbuf[i_blk][j_neigh][0] = ZERO;
          } /* endfor */
@@ -336,13 +341,13 @@ void  AdaptiveBlock3D_List::Allocate_Message_Buffers_NoResChange(AdaptiveBlock3D
       
       // Reallocate memory for send and receive buffers.
       if (Blk_List.message_noreschange_sendbuf[i_blk] != NULL) {
-         for (j_neigh = 0; j_neigh < 27 ; ++j_neigh) {
+         for (j_neigh = 0; j_neigh < MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK ; ++j_neigh) {
             delete []Blk_List.message_noreschange_sendbuf[i_blk][j_neigh];
             Blk_List.message_noreschange_sendbuf[i_blk][j_neigh] = NULL;
          } /* endfor */
       } /* endif */
       if (Blk_List.message_noreschange_recbuf[i_blk] != NULL) {
-         for (j_neigh = 0; j_neigh < 27 ; ++j_neigh) {
+         for (j_neigh = 0; j_neigh < MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK ; ++j_neigh) {
             delete []Blk_List.message_noreschange_recbuf[i_blk][j_neigh];
             Blk_List.message_noreschange_recbuf[i_blk][j_neigh] = NULL;
          } /* endfor */
@@ -449,7 +454,7 @@ void  AdaptiveBlock3D_List::Deallocate_Message_Buffers_NoResChange(AdaptiveBlock
    // Deallocate memory for send and receive buffers.
    if (Blk_List.message_noreschange_sendbuf != NULL) {
       for ( i_blk = 0; i_blk <= Blk_List.Nblk-1; ++i_blk ) {
-         for (j_neigh = 0; j_neigh < 27 ; ++j_neigh) {
+         for (j_neigh = 0; j_neigh < MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK ; ++j_neigh) {
             delete []Blk_List.message_noreschange_sendbuf[i_blk][j_neigh];
             Blk_List.message_noreschange_sendbuf[i_blk][j_neigh] = NULL;
          } /* endfor */
@@ -461,7 +466,7 @@ void  AdaptiveBlock3D_List::Deallocate_Message_Buffers_NoResChange(AdaptiveBlock
    } /* endif */
    if (Blk_List.message_noreschange_recbuf != NULL) {
       for ( i_blk = 0; i_blk <= Blk_List.Nblk-1; ++i_blk ) {
-         for (j_neigh = 0; j_neigh < 27 ; ++j_neigh) {
+         for (j_neigh = 0; j_neigh < MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK ; ++j_neigh) {
             delete []Blk_List.message_noreschange_recbuf[i_blk][j_neigh];
             Blk_List.message_noreschange_recbuf[i_blk][j_neigh] = NULL;
          } /* endfor */

@@ -109,6 +109,8 @@ int HexaSolver(char *Input_File_Name_ptr,
       } /* endif */
    } /* endif */
 
+   // MPI::COMM_WORLD.Abort(1);
+   
    CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
    CFFC_Broadcast_MPI(&error_flag, 1); // Broadcast mesh creation error flag.
    if (error_flag) return (error_flag);
@@ -472,12 +474,19 @@ int HexaSolver(char *Input_File_Name_ptr,
             time stepping scheme. */
          for ( i_stage  = 1 ; i_stage <= Input.N_Stage ; ++i_stage ) {
        
-            // 1. Send/Copy the information between blocks...
+            // 1. Exchange solution information between neighbouring blocks.
             Send_All_Messages<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >(Local_Solution_Blocks.Soln_Blks,
                                                                      Local_Adaptive_Block_List,
                                                                      Local_Solution_Blocks.Soln_Blks[0].NumVar(),
                                                                      OFF);
-          
+
+            if (error_flag) {
+               cout << "\n CFFC ERROR: Message passing error on processor "
+                    << CFFC_MPI::This_Processor_Number<< ".\n";
+               cout.flush();
+            } /* endif */
+            error_flag = CFFC_OR_MPI(error_flag);
+            if (error_flag) return (error_flag);
             // 2. Apply boundary conditions for stage.
             Local_Solution_Blocks.BCs(Input);
 

@@ -235,7 +235,17 @@ int Hexa_Block<NavierStokes3D_ThermallyPerfect_pState,
                    Flux* Grid.AfaceW(i+1, j, k)/
                     Grid.volume(i+1, j ,k);
                 
-                            
+                       
+               /* Include source terms associated with the finite-rate chemistry and
+                  turbulence/chemistry interactions */
+               
+                 if (W[i][j][k].React.reactset_flag != NO_REACTIONS) {
+                    
+                    dUdt[i][j][k][k_residual] += IPs.CFL_Number*dt[i][j][k]*W[i][j][k].Sw(
+                       W[i][j][k].React.reactset_flag, IPs.i_Flow_Type);
+                    
+                 } /* endif */
+                        
                 /* Save west and east face boundary flux. */
                 
                 //    if (i ==  ICl-1) {

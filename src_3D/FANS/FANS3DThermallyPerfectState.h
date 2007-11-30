@@ -29,6 +29,11 @@ using namespace std;
 #include "../TurbulenceModelling/TurbulenceModelling.h"
 #endif  //TURBULENCE_MODELLING_INCLUDED
 
+#ifndef _REACTIONS_INCLUDED
+#include "../Reactions/Reactions.h"
+#endif // _REACTIONS_INCLUDED
+
+
 #define NUM_FANS3D_VAR_EXTRA 2  //rho, v(3), p
 
 /********************************************************
@@ -371,7 +376,9 @@ class FANS3D_ThermallyPerfect_KOmega_pState : public NavierStokes3D_ThermallyPer
       const FANS3D_ThermallyPerfect_KOmega_pState &dWdx,
       const FANS3D_ThermallyPerfect_KOmega_pState &dWdy,
       const FANS3D_ThermallyPerfect_KOmega_pState &dWdz);
-   
+
+   /****** Source terms associated with finite-rate chemistry ******/
+   FANS3D_ThermallyPerfect_KOmega_cState Sw(int &REACT_SET_FLAG, const int flow_type) const;
    /* Index operators */
    double &operator[](int index);
    const double &operator[](int index) const;

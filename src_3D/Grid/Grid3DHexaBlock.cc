@@ -645,7 +645,7 @@ void  Grid3D_Hexa_Block::Output_Gnuplot(const int Block_Number,
  * Update the exterior nodes for the hexahedral mesh block.   *
  *                                                            *
  **************************************************************/
-void Grid3D_Hexa_Block::Update_Exterior_Nodes(){
+void Grid3D_Hexa_Block::Update_Exterior_Nodes(void){
 
   Vector3D norm_dir, X_norm, X_tan;
   Vector3D norm_dir1,X_norm1,X_tan1;
@@ -913,7 +913,7 @@ void Grid3D_Hexa_Block::Update_Exterior_Nodes(){
  * Update the exterior nodes for the hexahedral mesh block.   *
  *                                                            *
  **************************************************************/
-void Grid3D_Hexa_Block::Update_Exterior_Nodes_Zdir(){
+void Grid3D_Hexa_Block::Update_Exterior_Nodes_Zdir(void){
 
   Vector3D norm_dir, X_norm, X_tan;
 
@@ -994,7 +994,8 @@ void Grid3D_Hexa_Block::Update_Exterior_Nodes_Zdir(){
 /*****************************************************************
  * Routine: Update Ghost Cells                                   *
  *                                                               *
- * Updates the cell information for the hexahedral mesh block.   *
+ * Updates the ghost cells information                           * 
+ *  for the hexahedral mesh block.                               *
  *                                                               *
  *****************************************************************/
 void Grid3D_Hexa_Block::Update_Ghost_Cells(void) {
@@ -1036,6 +1037,754 @@ void Grid3D_Hexa_Block::Update_Cells(void) {
     } /* endfor */
   } /* endfor */
 
+}
+
+/**************************************************************
+ * Routine: Correct_Exterior_Nodes                            *
+ *                                                            *
+ * Correct the exterior nodes for the hexahedral mesh block.  *
+ *                                                            *
+ **************************************************************/
+void Grid3D_Hexa_Block::Correct_Exterior_Nodes(const int ii, const int jj, const int kk, const int *be){
+
+   int igs, ige, igd, jgs, jge, jgd, kgs, kge, kgd;
+   int im, jm, km;
+   int face_not_boundary = 0;
+   int i_be, j_be, k_be;
+   
+   im = 0;
+   jm = 0;
+   km = 0;
+   
+   if(ii){
+      if(ii>0){
+         igs = INu +1;
+         ige = INu +Nghost;
+         igd = 1;
+      }else{
+         igs = INl-1;
+         ige = INl-Nghost;
+         igd = -1;
+      }
+      
+      i_be = 9*(ii+1) + 3 +1;
+      if(be[i_be]){
+         im =   -ii;
+      }else{
+      
+         ++face_not_boundary;
+         
+      }
+      
+   }else{
+      igs = INl;
+      ige = INu;
+      igd = 1;
+   }
+
+   if(jj){
+      if(jj>0){
+         jgs = JNu +1;
+         jge = JNu +Nghost;
+         jgd = 1;
+      }else{
+         jgs = JNl-1;
+         jge = JNl-Nghost;
+         jgd = -1;
+      }
+      j_be = 9 + 3*(jj+1) +1;
+      if(be[j_be]){
+         jm = -jj;
+      }else{
+         
+         ++face_not_boundary;
+         
+      }
+   }else{
+      jgs = JNl;
+      jge = JNu;
+      jgd = 1;
+   }
+
+
+   
+   if(kk){
+      if(kk>0){
+         kgs = KNu +1;
+         kge = KNu +Nghost;
+         kgd = 1;
+      }else{
+         kgs = KNl - 1;
+         kge = KNl - Nghost;
+         kgd = -1;
+      }
+      k_be = 9 + 3 +(kk+1);
+      if(be[k_be]){
+         km =   -kk;
+      }else{
+         ++face_not_boundary;
+      }
+   }else{
+      kgs = KNl;
+      kge = KNu;
+      kgd = 1;
+   }
+
+   
+   if(face_not_boundary == abs(ii) + abs(jj) + abs(kk)){
+      im = -ii;
+      jm = -jj;
+      km = -kk;
+           
+   }
+   
+ 
+   for(int i = igs; (i-igs)*(i-ige)<=0; i+= igd)
+      for(int j = jgs; (j-jgs)*(j-jge)<=0; j+= jgd)
+         for(int k = kgs; (k-kgs)*(k-kge)<=0; k+= kgd){
+            Node[i][j][k].X = 2*Node[i+im*(abs(i-igs)+1)][j+jm*(abs(j-jgs)+1)][k+km*(abs(k-kgs)+1)].X 
+               - Node[i+2*im*((abs(i-igs))+1)][j+2*jm*((abs(j-jgs))+1)][k+2*km*((abs(k-kgs))+1)].X;
+                      
+         }
+   
+//    // this part of code takes care of the faces
+//    if(abs(i_elem) + abs(j_elem) + abs(k_elem) == 1){
+      
+//       for (int k =(!k_elem)* KNl; k <= (!k_elem)*KNu; ++k){
+//          for (int j = (!j_elem)*JNl; j <= (!j_elem)*JNu; ++j){
+//             for (int i = (!i_elem)*INl; i <= (!i_elem)*INu; ++i){
+//                for (int z = 1; z <= Nghost; z++) {
+//                   //Correct ghost cells on east and west faces
+//                   if(i_elem == 1 || j_elem == 1 || k_elem == 1){
+                     
+//                      Node[(i_elem)*(INu+z) + (!i_elem)*i ][(j_elem)*(JNu+z)+ (!j_elem)*j][(k_elem)*(KNu+z) + (!k_elem)*k].X = 
+//                         (Node[(i_elem)*INu + (!i_elem)*i][(j_elem)*JNu + (!j_elem)*j][(k_elem)*KNu + (!k_elem)*k].X +
+//                          (Node[(i_elem)*INu + (!i_elem)*i][(j_elem)*JNu+ (!j_elem)*j][(k_elem)*KNu + (!k_elem)*k].X - 
+//                           Node[(i_elem)*(INu-z) +(!i_elem)*i][(j_elem)*(JNu-z)+(!j_elem)*j][(k_elem)*(KNu-z)+(!k_elem)*k].X));
+//                   }
+//                   if(i_elem == -1 || j_elem == -1 || k_elem == -1){
+//                      Node[abs(i_elem)*(INl-z) + (!i_elem)*i ][abs(j_elem)*(JNl-z)+ (!j_elem)*j][abs(k_elem)*(KNl-z) + (!k_elem)*k].X = 
+//                         (Node[abs(i_elem)*INl + (!i_elem)*i][abs(j_elem)*JNl + (!j_elem)*j][abs(k_elem)*KNl + (!k_elem)*k].X +
+//                          (Node[abs(i_elem)*INl + (!i_elem)*i][abs(j_elem)*JNl+ (!j_elem)*j][abs(k_elem)*KNl + (!k_elem)*k].X - 
+//                           Node[abs(i_elem)*(INl+z) +(!i_elem)*i][abs(j_elem)*(JNl+z)+(!j_elem)*j][abs(k_elem)*(KNl+z)+(!k_elem)*k].X));
+//                   }
+//                }// two layer ghost cells
+//             }//endofi
+            
+//          }//endofj
+//       } //endofk 
+//    }
+
+//   //the following code deals with correcting ghost cells at the edges
+//    if(abs(i_elem) + abs(j_elem) + abs(k_elem) == 2){ 
+   
+//       // only need to check the first interior cell
+//       if(!i_elem){
+//          for (int i = INl; i <= INu; ++i){
+//             for (int z = 1; z <= Nghost; z++) {  
+//                // case 1:   
+//                if(j_elem == 1 && k_elem == 1){
+//                   if (BCtypeN[ICl][KCl] != BC_NONE && BCtypeT[ICl][JCl] == BC_NONE){
+//                      Node[i][JNu+z][KNu+1].X = Node[i][JNu][KNu+1].X + (Node[i][JNu][KNu+1].X - Node[i][JNu-z][KNu+1].X);
+//                      Node[i][JNu+z][KNu+2].X = Node[i][JNu][KNu+2].X + (Node[i][JNu][KNu+2].X - Node[i][JNu-z][KNu+2].X);
+
+//                   } else if(BCtypeN[ICl][KCl] == BC_NONE && BCtypeT[ICl][JCl] != BC_NONE){
+//                      Node[i][JNu+1][KNu+z].X = Node[i][JNu+1][KNu].X + (Node[i][JNu+1][KNu].X - Node[i][JNu+1][KNu-z].X); 
+//                      Node[i][JNu+2][KNu+z].X = Node[i][JNu+2][KNu].X + (Node[i][JNu+2][KNu].X - Node[i][JNu+2][KNu-z].X);
+
+//                   } else{
+//                      Node[i][JNu+1][KNu+z].X = Node[i][JNu][KNu].X + (Node[i][JNu][KNu].X - Node[i][JNu-1][KNu-z].X);
+//                      Node[i][JNu+2][KNu+z].X = Node[i][JNu][KNu].X + (Node[i][JNu][KNu].X - Node[i][JNu-2][KNu-z].X);
+
+//                   }
+                  
+//                } else if(j_elem == -1 && k_elem == -1){
+//                   if (BCtypeS[ICl][KCl] != BC_NONE && BCtypeB[ICl][JCl] == BC_NONE){
+
+//                      Node[i][JNl-z][KNl-1].X = Node[i][JNl][KNl-1].X + (Node[i][JNl][KNl-1].X - Node[i][JNl+z][KNl-1].X);
+//                      Node[i][JNl-z][KNl-2].X = Node[i][JNl][KNl-2].X + (Node[i][JNl][KNl-2].X - Node[i][JNl+z][KNl-2].X);
+
+//                   }else if(BCtypeS[ICl][KCl] == BC_NONE && BCtypeB[ICl][JCl] != BC_NONE){
+//                      Node[i][JNl-1][KNl-z].X = Node[i][JNl][KNl-1].X + (Node[i][JNl-1][KNl].X - Node[i][JNl-1][KNl+z].X);
+//                      Node[i][JNl-2][KNl-z].X = Node[i][JNl][KNl-2].X + (Node[i][JNl-2][KNl].X - Node[i][JNl-2][KNl+z].X);
+
+//                   }else{
+//                      Node[i][JNl-1][KNl-z].X = Node[i][JNl][KNl].X + (Node[i][JNl][KNl].X - Node[i][JNl+1][KNl+z].X);
+//                      Node[i][JNl-2][KNl-z].X = Node[i][JNl][KNl].X + (Node[i][JNl][KNl].X - Node[i][JNl+2][KNl+z].X);
+
+//                   }
+//                } else if(j_elem == -1 && k_elem == 1){
+//                   if (BCtypeS[ICl][KCl] != BC_NONE && BCtypeT[ICl][JCl] == BC_NONE){
+//                      Node[i][JNl-z][KNu+1].X = Node[i][JNl][KNu+1].X + (Node[i][JNl][KNu+1].X - Node[i][JNl+z][KNu+1].X);
+//                      Node[i][JNl-z][KNu+2].X = Node[i][JNl][KNu+2].X + (Node[i][JNl][KNu+2].X - Node[i][JNl+z][KNu+2].X);
+
+//                   } else if (BCtypeS[ICl][KCl] == BC_NONE && BCtypeT[ICl][JCl] != BC_NONE){
+//                      Node[i][JNl-1][KNu+z].X = Node[i][JNl-1][KNu].X + (Node[i][JNl-1][KNu].X - Node[i][JNl-1][KNu-z].X);
+//                      Node[i][JNl-2][KNu+z].X = Node[i][JNl-2][KNu].X + (Node[i][JNl-2][KNu].X - Node[i][JNl-2][KNu-z].X);
+
+//                   }else{
+//                      Node[i][JNl-z][KNu+1].X = Node[i][JNl][KNu].X + (Node[i][JNl][KNu].X - Node[i][JNl+z][KNu-1].X);
+//                      Node[i][JNl-z][KNu+2].X = Node[i][JNl][KNu].X + (Node[i][JNl][KNu].X - Node[i][JNl+z][KNu-2].X);
+
+//                   }
+//                }else{
+//                   if (BCtypeN[ICl][KCl] != BC_NONE && BCtypeB[ICl][JCl] == BC_NONE){
+//                      Node[i][JNu+z][KNl-1].X = Node[i][JNu][KNl-1].X + (Node[i][JNu][KNl-1].X - Node[i][JNu-z][KNl-1].X);
+//                      Node[i][JNu+z][KNl-2].X = Node[i][JNu][KNl-2].X + (Node[i][JNu][KNl-2].X - Node[i][JNu-z][KNl-2].X);
+                     
+//                   }else if (BCtypeN[ICl][KCl] == BC_NONE && BCtypeB[ICl][JCl] != BC_NONE){
+//                      Node[i][JNu+1][KNl-z].X = Node[i][JNu+1][KNl].X + (Node[i][JNu+1][KNl].X - Node[i][JNu+1][KNl+z].X);
+//                      Node[i][JNu+2][KNl-z].X = Node[i][JNu+2][KNl].X + (Node[i][JNu+2][KNl].X - Node[i][JNu+2][KNl+z].X); 
+//                   }else{
+//                      Node[i][JNu+z][KNl-1].X = Node[i][JNu][KNl].X + (Node[i][JNu][KNl].X - Node[i][JNu-z][KNl+1].X); 
+//                      Node[i][JNu+z][KNl-2].X = Node[i][JNu][KNl].X + (Node[i][JNu][KNl].X - Node[i][JNu-z][KNl+2].X); 
+//                   }
+//                }
+               
+//             }//endofz
+//          }//endofi
+         
+//       }// endifi
+      
+//       if(!j_elem){
+//          for (int j = JNl; j <= JNu; ++j){
+//             for (int z = 1; z <= Nghost; z++) {  
+//                // case 1:   
+//                if(i_elem == 1 || k_elem == 1){
+//                   if (BCtypeE[ICl][KCl] != BC_NONE && BCtypeT[ICl][JCl] == BC_NONE){
+//                      Node[INu+z][j][KNu+1].X = Node[INu][j][KNu+1].X + (Node[INu][j][KNu+1].X - Node[INu-z][j][KNu+1].X);
+//                      Node[INu+z][j][KNu+2].X = Node[INu][j][KNu+2].X + (Node[INu][j][KNu+2].X - Node[INu-z][j][KNu+2].X);
+
+//                   }else if (BCtypeE[ICl][KCl] == BC_NONE && BCtypeT[ICl][JCl] != BC_NONE){
+//                      Node[INu+1][j][KNu+z].X = Node[INu+1][j][KNu].X + (Node[INu+1][j][KNu].X - Node[INu+1][j][KNu-z].X);
+//                      Node[INu+2][j][KNu+z].X = Node[INu+2][j][KNu].X + (Node[INu+2][j][KNu].X - Node[INu+2][j][KNu-z].X);
+//                   }else{
+//                      Node[INu+z][j][KNu+1].X = Node[INu][j][KNu].X + (Node[INu][j][KNu].X - Node[INu-z][j][KNu-1].X);
+//                      Node[INu+z][j][KNu+2].X = Node[INu][j][KNu].X + (Node[INu][j][KNu].X - Node[INu-z][j][KNu-2].X);
+//                   }
+                  
+//                } else if(i_elem == -1 || k_elem == -1){
+//                   if (BCtypeW[ICl][KCl] != BC_NONE && BCtypeB[ICl][JCl] == BC_NONE){
+//                      Node[INl-z][j][KNl-1].X = Node[INl][j][KNl-1].X + (Node[INl][j][KNl-1].X - Node[INl+z][j][KNl-1].X);
+//                      Node[INl-z][j][KNl-2].X = Node[INl][j][KNl-2].X + (Node[INl][j][KNl-2].X - Node[INl+z][j][KNl-2].X);
+
+//                   }else if (BCtypeW[ICl][KCl] == BC_NONE && BCtypeB[ICl][JCl] != BC_NONE){
+//                      Node[INl-1][j][KNl-z].X = Node[INl-1][j][KNl].X + (Node[INl-1][j][KNl].X - Node[INl-1][j][KNl+z].X);
+//                      Node[INl-2][j][KNl-z].X = Node[INl-2][j][KNl].X + (Node[INl-2][j][KNl].X - Node[INl-2][j][KNl+z].X);
+
+//                   }else{
+//                      Node[INl-z][j][KNl-1].X = Node[INl][j][KNl].X + (Node[INl][j][KNl].X - Node[INl+z][j][KNl+1].X);
+//                      Node[INl-z][j][KNl-2].X = Node[INl][j][KNl].X + (Node[INl][j][KNl].X - Node[INl+z][j][KNl+2].X);
+//                   }
+//                } else if(i_elem == -1 || k_elem == 1){
+//                   if (BCtypeW[ICl][KCl] != BC_NONE && BCtypeT[ICl][JCl] == BC_NONE){
+//                      Node[INl-z][j][KNu+1].X = Node[INl][j][KNu+1].X + (Node[INl][j][KNu+1].X - Node[INl+z][j][KNu+1].X);
+//                      Node[INl-z][j][KNu+2].X = Node[INl][j][KNu+2].X + (Node[INl][j][KNu+2].X - Node[INl+z][j][KNu+2].X);
+
+//                   }else if (BCtypeW[ICl][KCl] == BC_NONE && BCtypeT[ICl][JCl] != BC_NONE){
+//                      Node[INl-1][j][KNu+z].X = Node[INl-1][j][KNu].X + (Node[INl-1][j][KNu].X - Node[INl-1][j][KNu-z].X);
+//                      Node[INl-2][j][KNu+z].X = Node[INl-2][j][KNu].X + (Node[INl-2][j][KNu].X - Node[INl-2][j][KNu-z].X);
+//                   }else{
+//                      Node[INl-z][j][KNu+1].X = Node[INl][j][KNu].X + (Node[INl][j][KNu].X - Node[INl+z][j][KNu-1].X);
+//                      Node[INl-z][j][KNu+2].X = Node[INl][j][KNu].X + (Node[INl][j][KNu].X - Node[INl+z][j][KNu-2].X);
+//                   }
+                  
+//                }else{
+//                   if (BCtypeE[ICl][KCl] != BC_NONE && BCtypeB[ICl][JCl] == BC_NONE){
+//                      Node[INu+z][j][KNl-1].X = Node[INu][j][KNl-1].X + (Node[INu][j][KNl-1].X - Node[INu-z][j][KNl-1].X); 
+//                      Node[INu+z][j][KNl-2].X = Node[INu][j][KNl-2].X + (Node[INu][j][KNl-2].X - Node[INu-z][j][KNl-2].X); 
+
+//                   }else if (BCtypeE[ICl][KCl] == BC_NONE && BCtypeB[ICl][JCl] != BC_NONE){
+//                      Node[INu+1][j][KNl-z].X = Node[INu+1][j][KNl].X + (Node[INu+1][j][KNl].X - Node[INu+1][j][KNl+z].X); 
+//                      Node[INu+2][j][KNl-z].X = Node[INu+2][j][KNl].X + (Node[INu+2][j][KNl].X - Node[INu+2][j][KNl+z].X); 
+
+//                   }else{
+//                      Node[INu+z][j][KNl-1].X = Node[INu][j][KNl].X + (Node[INu][j][KNl].X - Node[INu-z][j][KNl+1].X);
+//                      Node[INu+z][j][KNl-2].X = Node[INu][j][KNl].X + (Node[INu][j][KNl].X - Node[INu-z][j][KNl+2].X); 
+//                   }
+//                }
+               
+//             }//endofz
+//          }//endofj
+//       }// end if j
+
+//       if(!k_elem){
+          
+//          for (int k = KNl; k <= KNu; ++k){
+//             for (int z = 1; z <= Nghost; z++) {  
+//                // case 1:   
+//                if(i_elem == 1 || j_elem == 1){
+//                   if (BCtypeE[ICl][KCl] != BC_NONE && BCtypeN[ICl][JCl] == BC_NONE){
+//                      Node[INu+z][JNu+1][k].X = Node[INu][JNu+1][k].X + (Node[INu][JNu+1][k].X - Node[INu-z][JNu+1][k].X);
+//                      Node[INu+z][JNu+2][k].X = Node[INu][JNu+2][k].X + (Node[INu][JNu+2][k].X - Node[INu-z][JNu+2][k].X);
+
+//                   }else if (BCtypeE[ICl][KCl] == BC_NONE && BCtypeN[ICl][JCl] != BC_NONE){
+//                      Node[INu+1][JNu+z][k].X = Node[INu+1][JNu][k].X + (Node[INu+1][JNu][k].X - Node[INu+1][JNu-z][k].X);
+//                      Node[INu+2][JNu+z][k].X = Node[INu+2][JNu][k].X + (Node[INu+2][JNu][k].X - Node[INu+2][JNu-z][k].X);
+
+//                   }else{
+//                      Node[INu+z][JNu+1][k].X = Node[INu][JNu][k].X + (Node[INu][JNu][k].X - Node[INu-z][JNu-1][k].X);
+//                      Node[INu+z][JNu+2][k].X = Node[INu][JNu][k].X + (Node[INu][JNu][k].X - Node[INu-z][JNu-2][k].X);
+//                   }
+                  
+//                } else if(i_elem == -1 || j_elem == -1){
+//                   if (BCtypeW[ICl][KCl] != BC_NONE && BCtypeS[ICl][JCl] == BC_NONE){
+//                      Node[INl-z][JNl-1][k].X = Node[INl][JNl-1][k].X + (Node[INl][JNl-1][k].X - Node[INl+z][JNl-1][k].X);
+//                      Node[INl-z][JNl-2][k].X = Node[INl][JNl-2][k].X + (Node[INl][JNl-2][k].X - Node[INl+z][JNl-2][k].X);
+
+//                   }else if (BCtypeW[ICl][KCl] == BC_NONE && BCtypeS[ICl][JCl] != BC_NONE){
+//                      Node[INl-1][JNl-z][k].X = Node[INl-1][JNl][k].X + (Node[INl-1][JNl][k].X - Node[INl-1][JNl+z][k].X);
+//                      Node[INl-2][JNl-z][k].X = Node[INl-2][JNl][k].X + (Node[INl-2][JNl][k].X - Node[INl-2][JNl+z][k].X);
+
+//                   }else{
+//                      Node[INl-z][JNl-1][k].X = Node[INl][JNl][k].X + (Node[INl][JNl][k].X - Node[INl+z][JNl+1][k].X);
+//                      Node[INl-z][JNl-2][k].X = Node[INl][JNl][k].X + (Node[INl][JNl][k].X - Node[INl+z][JNl+2][k].X);
+//                   }
+//                } else if(i_elem == -1 || j_elem == 1){
+//                   if (BCtypeW[ICl][KCl] != BC_NONE && BCtypeN[ICl][JCl] == BC_NONE){
+//                      Node[INl-z][JNu+1][k].X = Node[INl][JNu+1][k].X + (Node[INl][JNu+1][k].X - Node[INl+z][JNu+1][k].X);
+//                      Node[INl-z][JNu+2][k].X = Node[INl][JNu+2][k].X + (Node[INl][JNu+2][k].X - Node[INl+z][JNu+2][k].X);
+
+//                   }else if (BCtypeW[ICl][KCl] == BC_NONE && BCtypeN[ICl][JCl] != BC_NONE){
+//                      Node[INl-1][JNu+z][k].X = Node[INl-1][JNu][k].X + (Node[INl-1][JNu][k].X - Node[INl-1][JNu-z][k].X);
+//                      Node[INl-2][JNu+z][k].X = Node[INl-2][JNu][k].X + (Node[INl-2][JNu][k].X - Node[INl-2][JNu-z][k].X);
+
+//                   }else{
+//                      Node[INl-z][JNu+1][k].X = Node[INl][JNu][k].X + (Node[INl][JNu][k].X - Node[INl+z][JNu-1][k].X);
+//                      Node[INl-z][JNu+2][k].X = Node[INl][JNu][k].X + (Node[INl][JNu][k].X - Node[INl+z][JNu-2][k].X);
+//                   }
+//                }else{
+//                   if (BCtypeE[ICl][KCl] != BC_NONE && BCtypeS[ICl][JCl] == BC_NONE){
+//                      Node[INu+z][JNl-1][k].X = Node[INu][JNl-1][k].X + (Node[INu][JNl-1][k].X - Node[INu-z][JNl-1][k].X); 
+//                      Node[INu+z][JNl-2][k].X = Node[INu][JNl-2][k].X + (Node[INu][JNl-2][k].X - Node[INu-z][JNl-2][k].X); 
+
+//                   }else if (BCtypeE[ICl][KCl] == BC_NONE && BCtypeS[ICl][JCl] != BC_NONE){
+//                      Node[INu+1][JNl-z][k].X = Node[INu+1][JNl][k].X + (Node[INu+1][JNl][k].X - Node[INu+1][JNl+z][k].X); 
+//                      Node[INu+2][JNl-z][k].X = Node[INu+2][JNl][k].X + (Node[INu+2][JNl][k].X - Node[INu+2][JNl+z][k].X); 
+
+//                   }else{
+//                      Node[INu+z][JNl-1][k].X = Node[INu][JNl][k].X + (Node[INu][JNl][k].X - Node[INu-z][JNl+1][k].X);
+//                      Node[INu+z][JNl-2][k].X = Node[INu][JNl][k].X + (Node[INu][JNl][k].X - Node[INu-z][JNl+2][k].X); 
+//                   }
+//                }
+//             }
+//          }//endofk
+//       }// endifk
+      
+//    }
+   
+//    if(abs(i_elem) + abs(j_elem) + abs(k_elem) == 3){
+//       if(j_elem == -1 && k_elem == -1){
+//          for (int z = 1; z <= Nghost; ++z){
+//             if (BCtypeW[ICl][KCl] != BC_NONE && BCtypeS[ICl][JCl] != BC_NONE && BCtypeB[ICl][JCl] == BC_NONE){
+              
+//                for (int k = KNl-Nghost; k <= KNl-1; ++k){
+//                   Node[INl-z][JNl-1][k] = (Node[INl][JNl][k].X + (Node[INl][JNl][k].X - Node[INl+z][JNl+1][k].X));
+//                   Node[INl-z][JNl-2][k] = (Node[INl][JNl][k].X + (Node[INl][JNl][k].X - Node[INl+z][JNl+2][k].X));
+//                }
+               
+//             }else if(BCtypeW[ICl][KCl] != BC_NONE && BCtypeS[ICl][JCl] == BC_NONE && BCtypeB[ICl][JCl] != BC_NONE){
+//                for (int j = JNl-Nghost; j <= JNl-1; ++j){
+//                   Node[INl-z][j][KNl-1] = (Node[INl][j][KNl].X + (Node[INl][j][KNl].X - Node[INl+z][j][KNl+1].X));
+//                   Node[INl-z][j][KNl-2] = (Node[INl][j][KNl].X + (Node[INl][j][KNl].X - Node[INl+z][j][KNl+2].X));
+                  
+//                }
+//             }else if(BCtypeW[ICl][KCl] != BC_NONE && BCtypeS[ICl][JCl] == BC_NONE && BCtypeB[ICl][JCl] == BC_NONE){
+//                for (int j = JNl-Nghost; j <= JNl-1; ++j)
+//                   for (int k = KNl-Nghost; k <= KNl-1; ++k){
+//                      Node[INl-z][j][k] = (Node[INl][j][k].X + (Node[INl][j][k].X - Node[INl+z][j][k].X));
+//                   }
+//             }else if(BCtypeW[ICl][KCl] == BC_NONE && BCtypeS[ICl][JCl] != BC_NONE && BCtypeB[ICl][JCl] != BC_NONE){
+//                for (int i = INl-Nghost; i <= INl-1; ++i){
+//                   Node[i][JNl-z][KNl-1] = (Node[i][JNl][KNl].X + (Node[i][JNl][KNl].X - Node[i][JNl+z][KNl+1].X));
+//                   Node[i][JNl-z][KNl-2] = (Node[i][JNl][KNl].X + (Node[i][JNl][KNl].X - Node[i][JNl+z][KNl+2].X));
+//                }
+               
+//             }else if(BCtypeW[ICl][KCl] == BC_NONE && BCtypeS[ICl][JCl] != BC_NONE && BCtypeB[ICl][JCl] == BC_NONE){
+//                for (int i = INl-Nghost; i <= INl-1; ++i)
+//                   for (int k = KNl-Nghost; k <= KNl-1; ++k){
+//                      Node[i][JNl-z][k] = (Node[i][JNl][k].X + (Node[i][JNl][k].X - Node[i][JNl+z][k].X));
+//                   }
+//             }else if(BCtypeW[ICl][KCl] == BC_NONE && BCtypeS[ICl][JCl] == BC_NONE && BCtypeB[ICl][JCl] != BC_NONE){
+               
+//                for (int i = INl-Nghost; i <= INl-1; ++i)
+//                   for (int j = JNl-Nghost; j <= JNl-1; ++j){
+//                      Node[i][j][KNl-z] = (Node[i][j][KNl].X + (Node[i][j][KNl].X - Node[i][j][KNl+z].X));
+//                   }
+               
+//             }else{
+//                for(int jz = 1; jz<= Nghost; jz++)
+//                   for(int kz = 1; kz<= Nghost; kz++){
+//                      Node[INl-z][JNl-jz][KNl-kz] = (Node[INl][JNl][KNl].X + (Node[INl][JNl][KNl].X - Node[INl+z][JNl+jz][KNl+kz].X));
+//                   }
+               
+//             }
+            
+//          } // two layer ghost cells
+//       }
+
+
+//       if(j_elem == 1 && k_elem == -1){
+//          for (int z = 1; z <= Nghost; ++z){
+//             if (BCtypeW[ICl][KCl] != BC_NONE && BCtypeN[ICl][JCl] != BC_NONE && BCtypeB[ICl][JCl] == BC_NONE){
+               
+//                for (int k = KNl-Nghost; k <= KNl-1; ++k){
+//                   Node[INl-z][JNu+1][k] = (Node[INl][JNu][k].X + (Node[INl][JNu][k].X - Node[INl+z][JNu-1][k].X));
+//                   Node[INl-z][JNu+2][k] = (Node[INl][JNu][k].X + (Node[INl][JNu][k].X - Node[INl+z][JNu-2][k].X));
+//                }
+               
+//             }else if(BCtypeW[ICl][KCl] != BC_NONE && BCtypeN[ICl][JCl] == BC_NONE && BCtypeB[ICl][JCl] != BC_NONE){
+//                for (int j = JNu+1; j <= JNu+Nghost; ++j){
+//                   Node[INl-z][j][KNl-1] = (Node[INl][j][KNl].X + (Node[INl][j][KNl].X - Node[INl+z][j][KNl+1].X));
+//                   Node[INl-z][j][KNl-2] = (Node[INl][j][KNl].X + (Node[INl][j][KNl].X - Node[INl+z][j][KNl+2].X));
+                  
+//                }
+//             }else if(BCtypeW[ICl][KCl] != BC_NONE && BCtypeN[ICl][JCl] == BC_NONE && BCtypeB[ICl][JCl] == BC_NONE){
+//                for (int j = JNu+1; j <= JNu+Nghost; ++j)
+//                   for (int k = KNl-Nghost; k <= KNl-1; ++k){
+//                      Node[INl-z][j][k] = (Node[INl][j][k].X + (Node[INl][j][k].X - Node[INl+z][j][k].X));
+//                   }
+//             }else if(BCtypeW[ICl][KCl] == BC_NONE && BCtypeN[ICl][JCl] != BC_NONE && BCtypeB[ICl][JCl] != BC_NONE){
+//                for (int i = INl-Nghost; i <= INl-1; ++i){
+//                   Node[i][JNu+z][KNl-1] = (Node[i][JNu][KNl].X + (Node[i][JNu][KNl].X - Node[i][JNu-z][KNl+1].X));
+//                   Node[i][JNu+z][KNl-2] = (Node[i][JNu][KNl].X + (Node[i][JNu][KNl].X - Node[i][JNu-z][KNl+2].X));
+                  
+//                }
+               
+//             }else if(BCtypeW[ICl][KCl] == BC_NONE && BCtypeN[ICl][JCl] != BC_NONE && BCtypeB[ICl][JCl] == BC_NONE){
+//                for (int i = INl-Nghost; i <= INl-1; ++i)
+//                   for (int k = KNl-Nghost; k <= KNl-1; ++k){
+//                      Node[i][JNu+z][k] = (Node[i][JNu][k].X + (Node[i][JNu][k].X - Node[i][JNu-z][k].X));
+//                   }
+//             }else if(BCtypeW[ICl][KCl] == BC_NONE && BCtypeN[ICl][JCl] == BC_NONE && BCtypeB[ICl][JCl] != BC_NONE){
+               
+//                for (int i = INl-Nghost; i <= INl-1; ++i)
+//                   for (int j = JNu+1; j <= JNu+Nghost; ++j){
+//                      Node[i][j][KNl-z] = (Node[i][j][KNl].X + (Node[i][j][KNl].X - Node[i][j][KNl+z].X));
+//                   }
+               
+//             }else{
+//                for(int jz = 1; jz<= Nghost; jz++)
+//                   for(int kz = 1; kz<= Nghost; kz++){
+//                      Node[INl-z][JNu+jz][KNl-jz] = (Node[INl][JNu][KNl].X + (Node[INl][JNu][KNl].X - Node[INl+z][JNu-jz][KNl+jz].X));
+//                   }
+               
+//             }
+            
+//          } // two layer ghost cells
+//       }
+
+
+
+//       if(j_elem == -1 && k_elem == 1){
+//          for (int z = 1; z <= Nghost; ++z){
+//             if (BCtypeW[ICl][KCl] != BC_NONE && BCtypeS[ICl][JCl] != BC_NONE && BCtypeT[ICl][JCl] == BC_NONE){
+               
+//                for (int k = KNu+1; k <= KNu+Nghost; ++k){
+//                   Node[INl-z][JNl-1][k] = (Node[INl][JNl][k].X + (Node[INl][JNl][k].X - Node[INl+z][JNl+1][k].X));
+//                   Node[INl-z][JNl-2][k] = (Node[INl][JNl][k].X + (Node[INl][JNl][k].X - Node[INl+z][JNl+2][k].X));
+//                }
+               
+//             }else if(BCtypeW[ICl][KCl] != BC_NONE && BCtypeS[ICl][JCl] == BC_NONE && BCtypeT[ICl][JCl] != BC_NONE){
+//                for (int j = JNl-Nghost; j <= JNl-1; ++j){
+//                   Node[INl-z][j][KNu+1] = (Node[INl][j][KNu].X + (Node[INl][j][KNu].X - Node[INl+z][j][KNu-1].X));
+//                   Node[INl-z][j][KNu+2] = (Node[INl][j][KNu].X + (Node[INl][j][KNu].X - Node[INl+z][j][KNu-2].X));
+                  
+//                }
+//             }else if(BCtypeW[ICl][KCl] != BC_NONE && BCtypeS[ICl][JCl] == BC_NONE && BCtypeT[ICl][JCl] == BC_NONE){
+//                for (int j = JNl-Nghost; j <= JNl-1; ++j)
+//                   for (int k = KNu+1; k <= KNu+Nghost; ++k){
+//                      Node[INl-z][j][k] = (Node[INl][j][k].X + (Node[INl][j][k].X - Node[INl+z][j][k].X));
+//                   }
+//             }else if(BCtypeW[ICl][KCl] == BC_NONE && BCtypeS[ICl][JCl] != BC_NONE && BCtypeT[ICl][JCl] != BC_NONE){
+//                for (int i = INl-Nghost; i <= INl-1; ++i){
+//                   Node[i][JNl-z][KNu+1] = (Node[i][JNl][KNu].X + (Node[i][JNl][KNu].X - Node[i][JNl+z][KNu-1].X));
+//                   Node[i][JNl-z][KNu+2] = (Node[i][JNl][KNu].X + (Node[i][JNl][KNu].X - Node[i][JNl+z][KNu-2].X));
+//                }
+               
+//             }else if(BCtypeW[ICl][KCl] == BC_NONE && BCtypeS[ICl][JCl] != BC_NONE && BCtypeT[ICl][JCl] == BC_NONE){
+//                for (int i = INl-Nghost; i <= INl-1; ++i)
+//                   for (int k = KNu+1; k <= KNu+Nghost; ++k){
+//                      Node[i][JNl-z][k] = (Node[i][JNl][k].X + (Node[i][JNl][k].X - Node[i][JNl+z][k].X));
+//                   }
+//             }else if(BCtypeW[ICl][KCl] == BC_NONE && BCtypeS[ICl][JCl] == BC_NONE && BCtypeT[ICl][JCl] != BC_NONE){
+               
+//                for (int i = INl-Nghost; i <= INl-1; ++i)
+//                   for (int j = JNl-Nghost; j <= JNl-1; ++j){
+//                      Node[i][j][KNu+z] = (Node[i][j][KNu].X + (Node[i][j][KNu].X - Node[i][j][KNu-z].X));
+//                   }
+               
+//             }else{
+//                for(int jz = 1; jz<= Nghost; jz++)
+//                   for(int kz = 1; kz<= Nghost; kz++){
+//                      Node[INl-z][JNl-jz][KNu+kz] = (Node[INl][JNl][KNu].X + (Node[INl][JNl][KNu].X - Node[INl+z][JNl+jz][KNu-kz].X));
+//                   }
+               
+//             }
+            
+//          } // two layer ghost cells
+//       }
+
+
+   
+//       if(j_elem == 1 && k_elem == 1){
+//          for (int z = 1; z <= Nghost; ++z){
+//             if (BCtypeW[ICl][KCl] != BC_NONE && BCtypeN[ICl][JCl] != BC_NONE && BCtypeT[ICl][JCl] == BC_NONE){
+               
+//                for (int k = KNu+1; k <= KNu+Nghost; ++k){
+//                   Node[INl-z][JNu+1][k] = (Node[INl][JNu][k].X + (Node[INl][JNu][k].X - Node[INl+z][JNu-1][k].X));
+//                   Node[INl-z][JNu+2][k] = (Node[INl][JNu][k].X + (Node[INl][JNu][k].X - Node[INl+z][JNu-2][k].X));
+//                }
+               
+//             }else if(BCtypeW[ICl][KCl] != BC_NONE && BCtypeN[ICl][JCl] == BC_NONE && BCtypeT[ICl][JCl] != BC_NONE){
+//                for (int j = JNu+1; j <= JNu+Nghost; ++j){
+//                   Node[INl-z][j][KNu+1] = (Node[INl][j][KNu].X + (Node[INl][j][KNu].X - Node[INl+z][j][KNu-1].X));
+//                   Node[INl-z][j][KNu+2] = (Node[INl][j][KNu].X + (Node[INl][j][KNu].X - Node[INl+z][j][KNu-2].X));
+                  
+//                }
+//             }else if(BCtypeW[ICl][KCl] != BC_NONE && BCtypeN[ICl][JCl] == BC_NONE && BCtypeT[ICl][JCl] == BC_NONE){
+//                for (int j = JNu+1; j <= JNu+Nghost; ++j)
+//                   for (int k = KNu+1; k <= KNu+Nghost; ++k){
+//                      Node[INl-z][j][k] = (Node[INl][j][k].X + (Node[INl][j][k].X - Node[INl+z][j][k].X));
+//                   }
+//             }else if(BCtypeW[ICl][KCl] == BC_NONE && BCtypeN[ICl][JCl] != BC_NONE && BCtypeT[ICl][JCl] != BC_NONE){
+//                for (int i = INl-Nghost; i <= INl-1; ++i){
+//                   Node[i][JNu+z][KNu+1] = (Node[i][JNu][KNu].X + (Node[i][JNu][KNu].X - Node[i][JNu-z][KNu-1].X));
+//                   Node[i][JNu+z][KNu+2] = (Node[i][JNu][KNu].X + (Node[i][JNu][KNu].X - Node[i][JNu-z][KNu-2].X));
+//                }
+               
+//             }else if(BCtypeW[ICl][KCl] == BC_NONE && BCtypeN[ICl][JCl] != BC_NONE && BCtypeT[ICl][JCl] == BC_NONE){
+//                for (int i = INl-Nghost; i <= INl-1; ++i)
+//                   for (int k = KNu+1; k <= KNu+Nghost; ++k){
+//                      Node[i][JNu+z][k] = (Node[i][JNu][k].X + (Node[i][JNu][k].X - Node[i][JNu-z][k].X));
+//                   }
+//             }else if(BCtypeW[ICl][KCl] == BC_NONE && BCtypeN[ICl][JCl] == BC_NONE && BCtypeT[ICl][JCl] != BC_NONE){
+               
+//                for (int i = INl-Nghost; i <= INl-1; ++i)
+//                   for (int j = JNu+1; j <= JNu+Nghost; ++j){
+//                      Node[i][j][KNu+z] = (Node[i][j][KNu].X + (Node[i][j][KNu].X - Node[i][j][KNu-z].X));
+//                   }
+               
+//             }else{
+//                for(int jz = 1; jz<= Nghost; jz++)
+//                   for(int kz = 1; kz<= Nghost; kz++){
+//                      Node[INl-z][JNu+jz][KNu+kz] = (Node[INl][JNu][KNu].X + (Node[INl][JNu][KNu].X - Node[INl+z][JNu-jz][KNu-kz].X));
+//                   }
+               
+//             }
+            
+//          } // two layer ghost cells
+//       }
+
+
+//       if(j_elem == -1 && k_elem == -1){
+//          for (int z = 1; z <= Nghost; ++z){
+//             if (BCtypeE[ICl][KCl] != BC_NONE && BCtypeS[ICl][JCl] != BC_NONE && BCtypeB[ICl][JCl] == BC_NONE){
+              
+//                for (int k = KNl-Nghost; k <= KNl-1; ++k){
+//                   Node[INu+z][JNl-1][k] = (Node[INu][JNl][k].X + (Node[INu][JNl][k].X - Node[INu-z][JNl+1][k].X));
+//                   Node[INu+z][JNl-2][k] = (Node[INu][JNl][k].X + (Node[INu][JNl][k].X - Node[INu-z][JNl+2][k].X));
+//                }
+               
+//             }else if(BCtypeE[ICl][KCl] != BC_NONE && BCtypeS[ICl][JCl] == BC_NONE && BCtypeB[ICl][JCl] != BC_NONE){
+//                for (int j = JNl-Nghost; j <= JNl-1; ++j){
+//                   Node[INu+z][j][KNl-1] = (Node[INu][j][KNl].X + (Node[INu][j][KNl].X - Node[INu-z][j][KNl+1].X));
+//                   Node[INu+z][j][KNl-2] = (Node[INu][j][KNl].X + (Node[INu][j][KNl].X - Node[INu-z][j][KNl+2].X));
+                  
+//                }
+//             }else if(BCtypeE[ICl][KCl] != BC_NONE && BCtypeS[ICl][JCl] == BC_NONE && BCtypeB[ICl][JCl] == BC_NONE){
+//                for (int j = JNl-Nghost; j <= JNl-1; ++j)
+//                   for (int k = KNl-Nghost; k <= KNl-1; ++k){
+//                      Node[INu+z][j][k] = (Node[INu][j][k].X + (Node[INu][j][k].X - Node[INu-z][j][k].X));
+//                   }
+//             }else if(BCtypeE[ICl][KCl] == BC_NONE && BCtypeS[ICl][JCl] != BC_NONE && BCtypeB[ICl][JCl] != BC_NONE){
+//                for (int i = INu+1; i <= INu+Nghost; ++i){
+//                   Node[i][JNl-z][KNl-1] = (Node[i][JNl][KNl].X + (Node[i][JNl][KNl].X - Node[i][JNl+z][KNl+1].X));
+//                   Node[i][JNl-z][KNl-2] = (Node[i][JNl][KNl].X + (Node[i][JNl][KNl].X - Node[i][JNl+z][KNl+2].X));
+//                }
+               
+//             }else if(BCtypeE[ICl][KCl] == BC_NONE && BCtypeS[ICl][JCl] != BC_NONE && BCtypeB[ICl][JCl] == BC_NONE){
+//                for (int i = INu+1; i <= INu+Nghost; ++i)
+//                   for (int k = KNl-Nghost; k <= KNl-1; ++k){
+//                      Node[i][JNl-z][k] = (Node[i][JNl][k].X + (Node[i][JNl][k].X - Node[i][JNl+z][k].X));
+//                   }
+//             }else if(BCtypeE[ICl][KCl] == BC_NONE && BCtypeS[ICl][JCl] == BC_NONE && BCtypeB[ICl][JCl] != BC_NONE){
+               
+//                for (int i = INu+1; i <= INu+Nghost; ++i)
+//                   for (int j = JNl-Nghost; j <= JNl-1; ++j){
+//                      Node[i][j][KNl-z] = (Node[i][j][KNl].X + (Node[i][j][KNl].X - Node[i][j][KNl+z].X));
+//                   }
+               
+//             }else{
+//                for(int jz = 1; jz<= Nghost; jz++)
+//                   for(int kz = 1; kz<= Nghost; kz++){
+//                      Node[INu+z][JNl-jz][KNl-kz] = (Node[INu][JNl][KNl].X + (Node[INu][JNl][KNl].X - Node[INu-z][JNl+jz][KNl+kz].X));
+//                   }
+//             }
+            
+            
+//          } // two layer ghost cells
+//       }
+
+
+//       if(j_elem == 1 && k_elem == -1){
+//          for (int z = 1; z <= Nghost; ++z){
+//             if (BCtypeE[ICl][KCl] != BC_NONE && BCtypeN[ICl][JCl] != BC_NONE && BCtypeB[ICl][JCl] == BC_NONE){
+               
+//                for (int k = KNl-Nghost; k <= KNl-1; ++k){
+//                   Node[INu+z][JNu+1][k] = (Node[INu][JNu][k].X + (Node[INu][JNu][k].X - Node[INu-z][JNu-1][k].X));
+//                   Node[INu+z][JNu+2][k] = (Node[INu][JNu][k].X + (Node[INu][JNu][k].X - Node[INu-z][JNu-2][k].X));
+//                }
+               
+//             }else if(BCtypeE[ICl][KCl] != BC_NONE && BCtypeN[ICl][JCl] == BC_NONE && BCtypeB[ICl][JCl] != BC_NONE){
+//                for (int j = JNu+1; j <= JNu+Nghost; ++j){
+//                   Node[INu+z][j][KNl-1] = (Node[INu][j][KNl].X + (Node[INu][j][KNl].X - Node[INu-z][j][KNl+1].X));
+//                   Node[INu+z][j][KNl-2] = (Node[INu][j][KNl].X + (Node[INu][j][KNl].X - Node[INu-z][j][KNl+2].X));
+                  
+//                }
+//             }else if(BCtypeE[ICl][KCl] != BC_NONE && BCtypeN[ICl][JCl] == BC_NONE && BCtypeB[ICl][JCl] == BC_NONE){
+//                for (int j = JNu+1; j <= JNu+Nghost; ++j)
+//                   for (int k = KNl-Nghost; k <= KNl-1; ++k){
+//                      Node[INu+z][j][k] = (Node[INu][j][k].X + (Node[INu][j][k].X - Node[INu-z][j][k].X));
+//                   }
+//             }else if(BCtypeE[ICl][KCl] == BC_NONE && BCtypeN[ICl][JCl] != BC_NONE && BCtypeB[ICl][JCl] != BC_NONE){
+//                for (int i = INu+1; i <= INu+Nghost; ++i){
+//                   Node[i][JNu+z][KNl-1] = (Node[i][JNu][KNl].X + (Node[i][JNu][KNl].X - Node[i][JNu-z][KNl+1].X));
+//                   Node[i][JNu+z][KNl-2] = (Node[i][JNu][KNl].X + (Node[i][JNu][KNl].X - Node[i][JNu-z][KNl+2].X));
+//                }
+               
+//             }else if(BCtypeE[ICl][KCl] == BC_NONE && BCtypeN[ICl][JCl] != BC_NONE && BCtypeB[ICl][JCl] == BC_NONE){
+//                for (int i = INu+1; i <= INu+Nghost; ++i)
+//                   for (int k = KNl-Nghost; k <= KNl-1; ++k){
+//                      Node[i][JNu+z][k] = (Node[i][JNu][k].X + (Node[i][JNu][k].X - Node[i][JNu-z][k].X));
+//                   }
+//             }else if(BCtypeE[ICl][KCl] == BC_NONE && BCtypeN[ICl][JCl] == BC_NONE && BCtypeB[ICl][JCl] != BC_NONE){
+               
+//                for (int i = INu+1; i <= INu+Nghost; ++i)
+//                   for (int j = JNu+1; j <= JNu+Nghost; ++j){
+//                      Node[i][j][KNl-z] = (Node[i][j][KNl].X + (Node[i][j][KNl].X - Node[i][j][KNl+z].X));
+//                   }
+               
+//             }else{
+//                for(int jz = 1; jz<= Nghost; jz++)
+//                   for(int kz = 1; kz<= Nghost; kz++){
+//                      Node[INu+z][JNu+jz][KNl-kz] = (Node[INu][JNu][KNl].X + (Node[INu][JNu][KNl].X - Node[INu-z][JNu-jz][KNl+kz].X));
+//                   }
+               
+//             }
+            
+//          } // two layer ghost cells
+//       }
+
+
+
+//       if(j_elem == -1 && k_elem == 1){
+//          for (int z = 1; z <= Nghost; ++z){
+//             if (BCtypeE[ICl][KCl] != BC_NONE && BCtypeS[ICl][JCl] != BC_NONE && BCtypeT[ICl][JCl] == BC_NONE){
+               
+//                for (int k = KNu+1; k <= KNu+Nghost; ++k){
+//                   Node[INu+z][JNl-1][k] = (Node[INu][JNl][k].X + (Node[INu][JNl][k].X - Node[INu-z][JNl+1][k].X));
+//                   Node[INu+z][JNl-2][k] = (Node[INu][JNl][k].X + (Node[INu][JNl][k].X - Node[INu-z][JNl+2][k].X));
+//                }
+               
+//             }else if(BCtypeE[ICl][KCl] != BC_NONE && BCtypeS[ICl][JCl] == BC_NONE && BCtypeT[ICl][JCl] != BC_NONE){
+//                for (int j = JNl-Nghost; j <= JNl-1; ++j){
+//                   Node[INu+z][j][KNu+1] = (Node[INu][j][KNu].X + (Node[INu][j][KNu].X - Node[INu-z][j][KNu-1].X));
+//                   Node[INu+z][j][KNu+2] = (Node[INu][j][KNu].X + (Node[INu][j][KNu].X - Node[INu-z][j][KNu-2].X));
+                  
+//                }
+//             }else if(BCtypeE[ICl][KCl] != BC_NONE && BCtypeS[ICl][JCl] == BC_NONE && BCtypeT[ICl][JCl] == BC_NONE){
+//                for (int j = JNl-Nghost; j <= JNl-1; ++j)
+//                   for (int k = KNu+1; k <= KNu+Nghost; ++k){
+//                      Node[INu+z][j][k] = (Node[INu][j][k].X + (Node[INu][j][k].X - Node[INu-z][j][k].X));
+//                   }
+//             }else if(BCtypeE[ICl][KCl] == BC_NONE && BCtypeS[ICl][JCl] != BC_NONE && BCtypeT[ICl][JCl] != BC_NONE){
+//                for (int i = INu+1; i <= INu+Nghost; ++i){
+//                   Node[i][JNl-z][KNu+1] = (Node[i][JNl][KNu].X + (Node[i][JNl][KNu].X - Node[i][JNl+z][KNu-1].X));
+//                   Node[i][JNl-z][KNu+2] = (Node[i][JNl][KNu].X + (Node[i][JNl][KNu].X - Node[i][JNl+z][KNu-2].X));
+//                }
+               
+//             }else if(BCtypeE[ICl][KCl] == BC_NONE && BCtypeS[ICl][JCl] != BC_NONE && BCtypeT[ICl][JCl] == BC_NONE){
+//                for (int i = INu+1; i <= INu+Nghost; ++i)
+//                   for (int k = KNu+1; k <= KNu+Nghost; ++k){
+//                      Node[i][JNl-z][k] = (Node[i][JNl][k].X + (Node[i][JNl][k].X - Node[i][JNl+z][k].X));
+//                   }
+//             }else if(BCtypeE[ICl][KCl] == BC_NONE && BCtypeS[ICl][JCl] == BC_NONE && BCtypeT[ICl][JCl] != BC_NONE){
+               
+//                for (int i = INu+1; i <= INu+Nghost; ++i)
+//                   for (int j = JNl-Nghost; j <= JNl-1; ++j){
+//                      Node[i][j][KNu+z] = (Node[i][j][KNu].X + (Node[i][j][KNu].X - Node[i][j][KNu-z].X));
+//                   }
+               
+//             }else{
+//                for(int jz = 1; jz<= Nghost; jz++)
+//                   for(int kz = 1; kz<= Nghost; kz++){
+//                      Node[INu+z][JNl-jz][KNu+kz] = (Node[INu][JNl][KNu].X + (Node[INu][JNl][KNu].X - Node[INu-z][JNl+jz][KNu-kz].X));
+//                   }
+               
+//             }
+            
+//          } // two layer ghost cells
+//       }
+
+
+   
+//       if(j_elem == 1 && k_elem == 1){
+//          for (int z = 1; z <= Nghost; ++z){
+//             if (BCtypeE[ICl][KCl] != BC_NONE && BCtypeN[ICl][JCl] != BC_NONE && BCtypeT[ICl][JCl] == BC_NONE){
+               
+//                for (int k = KNu+1; k <= KNu+Nghost; ++k){
+//                   Node[INu+z][JNu+1][k] = (Node[INu][JNu][k].X + (Node[INu][JNu][k].X - Node[INu-z][JNu-1][k].X));
+//                   Node[INu+z][JNu+2][k] = (Node[INu][JNu][k].X + (Node[INu][JNu][k].X - Node[INu-z][JNu-2][k].X));
+//                }
+               
+//             }else if(BCtypeE[ICl][KCl] != BC_NONE && BCtypeN[ICl][JCl] == BC_NONE && BCtypeT[ICl][JCl] != BC_NONE){
+//                for (int j = JNu+1; j <= JNu+Nghost; ++j){
+//                   Node[INu+z][j][KNu+1] = (Node[INu][j][KNu].X + (Node[INu][j][KNu].X - Node[INu-z][j][KNu-1].X));
+//                   Node[INu+z][j][KNu+2] = (Node[INu][j][KNu].X + (Node[INu][j][KNu].X - Node[INu-z][j][KNu-2].X));
+                  
+//                }
+//             }else if(BCtypeE[ICl][KCl] != BC_NONE && BCtypeN[ICl][JCl] == BC_NONE && BCtypeT[ICl][JCl] == BC_NONE){
+//                for (int j = JNu+1; j <= JNu+Nghost; ++j)
+//                   for (int k = KNu+1; k <= KNu+Nghost; ++k){
+//                      Node[INu+z][j][k] = (Node[INu][j][k].X + (Node[INu][j][k].X - Node[INu-z][j][k].X));
+//                   }
+//             }else if(BCtypeE[ICl][KCl] == BC_NONE && BCtypeN[ICl][JCl] != BC_NONE && BCtypeT[ICl][JCl] != BC_NONE){
+//                for (int i = INu+1; i <= INu+Nghost; ++i){
+//                   Node[i][JNu+z][KNu+1] = (Node[i][JNu][KNu].X + (Node[i][JNu][KNu].X - Node[i][JNu-z][KNu-1].X));
+//                   Node[i][JNu+z][KNu+2] = (Node[i][JNu][KNu].X + (Node[i][JNu][KNu].X - Node[i][JNu-z][KNu-2].X));
+//                }
+               
+//             }else if(BCtypeE[ICl][KCl] == BC_NONE && BCtypeN[ICl][JCl] != BC_NONE && BCtypeT[ICl][JCl] == BC_NONE){
+//                for (int i = INu+1; i <= INu+Nghost; ++i)
+//                   for (int k = KNu+1; k <= KNu+Nghost; ++k){
+//                      Node[i][JNu+z][k] = (Node[i][JNu][k].X + (Node[i][JNu][k].X - Node[i][JNu-z][k].X));
+//                   }
+//             }else if(BCtypeE[ICl][KCl] == BC_NONE && BCtypeN[ICl][JCl] == BC_NONE && BCtypeT[ICl][JCl] != BC_NONE){
+               
+//                for (int i = INu+1; i <= INu+Nghost; ++i)
+//                   for (int j = JNu+1; j <= JNu+Nghost; ++j){
+//                      Node[i][j][KNu+z] = (Node[i][j][KNu].X + (Node[i][j][KNu].X - Node[i][j][KNu-z].X));
+//                   }
+               
+//             }else{
+//                for(int jz = 1; jz<= Nghost; jz++)
+//                   for(int kz = 1; kz<= Nghost; kz++){
+//                      Node[INu+z][JNu+jz][KNu+kz] = (Node[INu][JNu][KNu].X + (Node[INu][JNu][KNu].X - Node[INu-z][JNu-jz][KNu-kz].X));
+//                   }
+               
+//             }
+            
+//          } // two layer ghost cells
+//       }
+
+
+      
+//     }
+ 
+
+ 
+ 
 }
 
 /********************************************************

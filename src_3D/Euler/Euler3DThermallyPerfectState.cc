@@ -102,13 +102,14 @@ void Euler3D_ThermallyPerfect_pState::set_species_data(const int &n,
  ** specific "Reaction_set".                                    ** 
  *****************************************************************
  *****************************************************************/
-Euler3D_ThermallyPerfect_cState Euler3D_ThermallyPerfect_pState::Sw(int &REACT_SET_FLAG) const {
+Euler3D_ThermallyPerfect_cState Euler3D_ThermallyPerfect_pState::Sw(
+   int &REACT_SET_FLAG, const int flow_type) const {
    Euler3D_ThermallyPerfect_cState NEW;     
    NEW.Vacuum();
    bool test = negative_speccheck();
    //Adds concentration rate of change for species 1->N
    if( REACT_SET_FLAG != NO_REACTIONS){
-      React.omega(NEW,*this);  
+      React.omega(NEW,*this, flow_type, ZERO, ZERO);  
    }
    return NEW;
 }

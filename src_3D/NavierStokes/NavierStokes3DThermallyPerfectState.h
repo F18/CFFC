@@ -23,7 +23,11 @@ using namespace std;
 
 #ifndef _EULER3D_THERMALLYPERFECT_STATE_INCLUDED
 #include "../Euler/Euler3DThermallyPerfectState.h"
-#endif  //EULER3D_THERMALLYPERFECT_STATE_INCLUDED
+#endif  //EULER3D_THERMALLYPERFECT_STATE_INCLUDE
+
+#ifndef _REACTIONS_INCLUDED
+#include "../Reactions/Reactions.h"
+#endif // _REACTIONS_INCLUDED
 
 /********************************************************
  * Class: NavierStokes3D_ThermallyPerfect_pState        *
@@ -310,6 +314,10 @@ class NavierStokes3D_ThermallyPerfect_pState : public Euler3D_ThermallyPerfect_p
    Vector3D thermal_diffusion(void) const;
    /* Input-output operators. */
  
+
+   /****** Source terms associated with finite-rate chemistry ******/
+   NavierStokes3D_ThermallyPerfect_cState Sw(int &REACT_SET_FLAG, const int flow_type) const;
+   
    friend ostream& operator << (ostream &out_file,
                                 const NavierStokes3D_ThermallyPerfect_pState &W);
    friend istream& operator >> (istream &in_file,

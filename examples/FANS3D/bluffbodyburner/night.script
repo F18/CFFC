@@ -1,11 +1,11 @@
 #!/bin/tcsh
 #PBS -N bluffbodycoflow
 #PBS -q qmaster
-#PBS -l walltime=4:00:00,nodes=1:ppn=4:parallel-2G,other=night
+#PBS -l walltime=4:00:00,nodes=4:ppn=4:parallel-2G,other=night
 #PBS -W group_list=xinfeng
 
 cd /nfs/fe03/d1/cfd/xinfeng/CFFC/examples/FANS3D/bluffbodyburner/
-mpirun -np 1 --gm-no-shmem --gm-kill 2 /nfs/fe03/d1/cfd/xinfeng/CFFC/src_3D/cffc3D -f bluffbodyburner.in -pde FANS3DThermallyPerfect >& out.log 
+mpirun -np 16 --gm-no-shmem --gm-kill 2 /nfs/fe03/d1/cfd/xinfeng/CFFC/src_3D/cffc3D -f bluffbodyburner.in -pde FANS3DThermallyPerfect >& out.log 
 cat turbulent_channel_cells_cpu*.dat>turbulent_channel_cells.dat
 cat turbulent_channel_nodes_cpu*.dat>turbulent_channel_nodes.dat
 #rm turbulent_channel_cells_cpu*.dat

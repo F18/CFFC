@@ -77,45 +77,6 @@ using namespace std;
 
 
 
-
-/*******************************************************************************
- *
- * Special types
- *
- ******************************************************************************/
-namespace BE
-{
-   enum Boundary_Elements{
-      
-      BSW = 0,
-      SW = 1,
-      TSW = 2,
-      BW = 3,
-      W =4,
-      TW = 5,
-      BNW = 6,
-      NW = 7,
-      TNW = 8,
-      BS = 9,
-      S = 10,
-      TS = 11,
-      B = 12,
-      T = 14,
-      BN = 15,
-      N = 16,
-      TN = 17,
-      BSE = 18,
-      SE = 19,
-      TSE = 20,
-      BE = 21,
-      E = 22,
-      TE = 23,
-      BNE = 24,
-      NE = 25,
-      TNE = 26
-   
-   };
-}
 /********************************************************
  * Class:MeshBLKs_to_LocalBLKs                          *
  *                                                      *
@@ -461,6 +422,8 @@ class AdaptiveBlock3D_Info{
     int                         sector; // Adaptive block sector number.
     int                          level; // Adaptive block refinement level.
     Block_Orientation_Info       blkorient; // block orientation information
+
+    Block_Boundary_Elements_on_Domain_Extent be_on_domain_extent;
     
 	                                // Made public so can access them.
     
@@ -473,7 +436,9 @@ class AdaptiveBlock3D_Info{
     AdaptiveBlock3D_Info(const AdaptiveBlock3D_Info &Blk_Info) {
        cpu = Blk_Info.cpu; blknum = Blk_Info.blknum;
        dimen = Blk_Info.dimen; sector = Blk_Info.sector; level = Blk_Info.level;
-       blkorient = Blk_Info.blkorient;
+       blkorient = Blk_Info.blkorient; 
+       be_on_domain_extent = Blk_Info.be_on_domain_extent;
+       
        
     }
 
@@ -485,10 +450,13 @@ class AdaptiveBlock3D_Info{
                          const int ghost_dimen,
                          const int i_sector,
 	                 const int i_level,
-                         const Block_Orientation_Info i_blkorient) {
+                         const Block_Orientation_Info i_blkorient,
+                         const Block_Boundary_Elements_on_Domain_Extent i_be_on_domain_extent) {
        cpu = i_processor; blknum = i_block;
        dimen.i = i_dimen; dimen.j = j_dimen;dimen.k = k_dimen;  dimen.ghost = ghost_dimen;
        sector = i_sector; level = i_level; blkorient = i_blkorient;
+       be_on_domain_extent = i_be_on_domain_extent;
+       
        
     }
 
@@ -536,6 +504,7 @@ inline ostream &operator << (ostream &out_file,
            << " " << Blk_Info.sector
            << " " << Blk_Info.level;
   out_file << " " << Blk_Info.blkorient;
+  out_file << " " << Blk_Info.be_on_domain_extent;
   
   return (out_file);
 }
@@ -551,6 +520,7 @@ inline istream &operator >> (istream &in_file,
   in_file.unsetf(ios::skipws);
   in_file.setf(ios::skipws);
   in_file >> Blk_Info.blkorient;
+  in_file >> Blk_Info.be_on_domain_extent;
   return (in_file);
 }
 
@@ -1179,6 +1149,7 @@ class AdaptiveBlock3D_List{
     
     static  void Copy_Refinement_Flags(AdaptiveBlock3D_List &Blk_List_1,
                                        AdaptiveBlock3D_List &Blk_List_2);
+     
     /* Input-output operators. */
     friend ostream &operator << (ostream &out_file,
 				 const AdaptiveBlock3D_List &Blk_List);

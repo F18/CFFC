@@ -2620,7 +2620,7 @@ int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::dUdt_Multistage_Explicit(const int i_s
                if (W[i][j][k].React.reactset_flag != NO_REACTIONS) {
                   
                   dUdt[i][j][k][k_residual] += IPs.CFL_Number*dt[i][j][k]*W[i][j][k].Sw(
-                     W[i][j][k].React.reactset_flag);
+                     W[i][j][k].React.reactset_flag, IPs.i_Flow_Type);
                   
                } /* endif */
               

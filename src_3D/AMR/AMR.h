@@ -190,7 +190,9 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
          Octree.Roots[nb].block.info.dimen.ghost = 2;
          Octree.Roots[nb].block.info.sector = ADAPTIVEBLOCK3D_SECTOR_NONE;
          Octree.Roots[nb].block.info.level = 0;
-              
+         
+         Octree.Roots[nb].block.info.be_on_domain_extent = Initial_Mesh.Connectivity[nb].n_be_on_domain_extent;
+         
          // block number of the neighbouring blocks in each direction
          // for each of the block in the roots
          if(Initial_Mesh.Connectivity[nb].neighT>=0){
@@ -470,6 +472,7 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
 /*             MPI::COMM_WORLD.Barrier(); */
 /*          } */
 
+      
       if(Octree.Roots[nb].block.infoT[0].blknum>=0){
          Octree.Roots[nb].block.infoT[0].dimen =  Octree.Roots[Octree.Roots[nb].block.infoT[0].blknum].block.info.dimen;
          Octree.Roots[nb].block.infoT[0].sector =  Octree.Roots[Octree.Roots[nb].block.infoT[0].blknum].block.info.sector;
@@ -758,6 +761,11 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
          Local_Adaptive_Block_List.Block[ blknumber_convt[nb].blknum].infoBSW[0] = Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoBSW[0]; 
          Local_Adaptive_Block_List.Block[ blknumber_convt[nb].blknum].infoBNE[0] = Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoBNE[0]; 
          Local_Adaptive_Block_List.Block[ blknumber_convt[nb].blknum].infoBSE[0] = Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.infoBSE[0]; 
+
+         // boundary elements at domain extent info
+         Local_Adaptive_Block_List.Block[ blknumber_convt[nb].blknum].info.be_on_domain_extent =
+            Octree.Blocks[blknumber_convt[nb].cpu][blknumber_convt[nb].blknum]->block.info.be_on_domain_extent;
+         
       }
    }
    
@@ -786,7 +794,6 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
 
     delete []blknumber_convt;
     
-
     return(0);
 
 }

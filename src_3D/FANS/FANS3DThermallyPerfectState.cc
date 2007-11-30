@@ -1695,6 +1695,27 @@ FANS3D_ThermallyPerfect_KOmega_cState  FANS3D_ThermallyPerfect_KOmega_pState::Sr
    return (Temp);
 } 
 
+
+
+/*****************************************************************
+ ** _pState::Sw -- Chemical Reaction Rate Source Terms.     **
+ **                                                             **
+ ** Using the Reaction class to get the source terms for the    ** 
+ ** specific "Reaction_set".                                    ** 
+ *****************************************************************
+ *****************************************************************/
+FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_pState::Sw(
+   int &REACT_SET_FLAG, const int flow_type) const {
+   FANS3D_ThermallyPerfect_KOmega_cState NEW;     
+   NEW.Vacuum();
+   bool test = negative_speccheck();
+   //Adds concentration rate of change for species 1->N
+   if( REACT_SET_FLAG != NO_REACTIONS){
+      React.omega(NEW,*this, flow_type, k_omega_model.beta_star, omega);  
+   }
+   return NEW;
+}
+
 int FANS3D_ThermallyPerfect_KOmega_cState::Unphysical_Properties_Check(
    FANS3D_ThermallyPerfect_KOmega_cState &Uw,
    FANS3D_ThermallyPerfect_KOmega_cState &Ue,
@@ -1788,3 +1809,4 @@ int FANS3D_ThermallyPerfect_KOmega_cState::Unphysical_Properties_Check(
       
 //    }
 } 
+ 
