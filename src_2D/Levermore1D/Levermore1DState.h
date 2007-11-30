@@ -12,6 +12,7 @@
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
+#include <cmath>
 
 using namespace std;
 
@@ -72,7 +73,6 @@ class Levermore1D_cState : public Levermore1D_Vector{
  ********************************************************/
 class Levermore1D_weights : public Levermore1D_Vector{
 
-  protected:
   public:
 
   Levermore1D_weights(void){}
@@ -84,6 +84,17 @@ class Levermore1D_weights : public Levermore1D_Vector{
   void Vacuum() {Levermore1D_Vector::zero();}
   void set_from_W(const Levermore1D_pState &W);
   void set_from_U(const Levermore1D_cState &U);
+  double value_at(double v) {return exp(exponent_value_recursive(v,0));}
+
+  protected:
+
+  double exponent_value_recursive(double v, int i) {
+    if(i<length) {
+      return m_values[i] + v*exponent_value_recursive(v,i+1);
+    } else { 
+      return 1.0;
+    }
+  }
 
 };
 
