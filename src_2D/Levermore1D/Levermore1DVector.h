@@ -59,7 +59,11 @@ class Levermore1D_Vector {
 
   /* Static Functions */
   static void set_length(int l){
+    //ensure length has not previously been set
     assert(length_set == 0 || l == length);
+    //ensure this is a valid length
+    assert(l > 2 && l%2 ==1);
+
     length = l;
     length_set = 1;
   }
