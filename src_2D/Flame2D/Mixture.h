@@ -29,7 +29,7 @@ using namespace std;
 
 // If you define this variable, the number of species will be
 // predetermined for faster calculations.., however it is not as general 
-#define STATIC_NUMBER_OF_SPECIES 5 //2 AIR, 6 2STEP_CH4
+#define STATIC_NUMBER_OF_SPECIES 2 //2 AIR, 6 2STEP_CH4
 
 /////////////////////////////////////////////////////////////////////
 /// FUNCTION ROTOTYPES
@@ -118,6 +118,9 @@ public:
 
 
   /************ Setup Functions **********************/
+  //! allocate / deallocate for static memory
+  static void AllocateStatic();
+  static void DeallocateStatic();
 
   //! Static setup function
   static void setMixture(const string &mech_name,
@@ -223,11 +226,6 @@ private:
   void Allocate();
   void Deallocate();
   void Nullify();
-
-  //! allocate / deallocate for static memory
-  static void AllocateStatic();
-  static void DeallocateStatic();
-
 
 
   /**
@@ -385,8 +383,14 @@ inline void Mixture :: setState_DPY(const double &rho,
 				    const double &Press, 
 				    const double* y)
 {
-  MW = molarMass(y);
-  hf = heatFormation(y);
+  MW = 0.0; hf = 0.0;
+  for(int i=0; i<ns; i++){
+    MW += y[i]/M[i];
+    hf += y[i]*Hform[i];
+  }
+  MW = 1.0/MW;
+  // MW = molarMass(y);
+  // hf = heatFormation(y);
 
   T = Press / (gasConstant()*rho);
 
@@ -458,18 +462,23 @@ inline void Mixture :: setState_DH(const double &rho, const double& h,
   ct_gas->setDensity(rho);
   
   // Newton iteration
-  for (int n = 0; n < 500; n++) {
+  int n;
+  for (n = 0; n < 500; n++) {
     h0 = ct_gas->enthalpy_mass();
     dt = (h - h0)/ct_gas->cp_mass();
     // limit step size to 100 K
     if (dt > 100.0) dt = 100.0;
     else if (dt < -100.0) dt = -100.0; 
-    ct_gas->setTemperature(temperature() + dt);
+    ct_gas->setTemperature(ct_gas->temperature() + dt);
     if (fabs(dt) < tol) {
       return;
     }
   }
-  cerr << endl << "Mixture::setState_DH() - No convergence. dt = " << dt << endl;
+  cerr << endl 
+       << "Mixture::setState_DH() - No convergence. dt = " << dt 
+       << ". H = " << h 
+       << ". n = " << n 
+       << endl;
 }
 
 /************************************************************************
@@ -496,9 +505,9 @@ inline void Mixture :: getRates( const double &Press,
 /****************************************************
  * Derivative of species h wrt to mass fraction
  ****************************************************/
-void Mixture :: getDihdDc(const double &Press, 
-			  const double* y, 
-			  double* dh) const {
+inline void Mixture :: getDihdDc(const double &Press, 
+				 const double* y, 
+				 double* dh) const {
   ct_gas->setState_TPY(T, Press, y);
   ct_gas->getEnthalpy_RT(dh); // -> h = hs + hf
   for(int i=0; i<ns; i++)

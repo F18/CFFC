@@ -14,8 +14,8 @@
 /********************************************************
  * Required includes                                    *
  ********************************************************/
-#include "../Rte2D/Rte2DQuadSolvers.h"
 #include "Flame2DQuad.h"
+#include "../Rte2D/Rte2DQuadSolvers.h"
 
 /****************************************************************/
 /****** RTE REQUIRED SPECIALIZATIONS & FUNCTIONS ****************/

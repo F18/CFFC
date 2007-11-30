@@ -18,8 +18,10 @@
 int Flame2D_State :: n = 0;
 int Flame2D_State :: ns = 0;
 #endif
+bool Flame2D_State::reacting = false;
 double Flame2D_State::Mref = 0.5;
 double Flame2D_State::gravity_z = -9.81;
+double* Flame2D_State::y = NULL;
 double* Flame2D_pState::r = NULL;
 double* Flame2D_pState::dihdic = NULL;
 
@@ -43,6 +45,25 @@ void Flame2D_pState::setMixture(const string &mech_name,
   AllocateStatic();
 
 }
+
+/**********************************************************************
+ * Flame2D_State::set_gravity -- Set the acceleration due to gravity  *
+ *                               in m/s^2.  It acts downwards in the  *
+ *                               z-dir (g <= 0)                       *
+ **********************************************************************/
+void Flame2D_State::set_gravity(const double &g) { // [m/s^2]
+
+  // if gravity is acting upwards (wrong way)
+  if (g>0) {
+    cerr<<"\n Flame2D_pState::set_gravity() - Gravity acting upwards!!!! \n";
+    exit(1);
+    
+  // gravity acting downwards (-ve), OK
+  } else {
+    gravity_z = g;
+  }
+}
+
 
 /****************************************************
  * X-Dir Conserved Flux
@@ -451,6 +472,13 @@ void Flame2D_pState::Low_Mach_Number_Preconditioner_Inverse(::DenseMatrix &Pinv,
 }
 
 
+/*******************************************************************
+ *******************************************************************
+ *  Source Terms                                                   *
+ *                                                                 *
+ *******************************************************************
+ *******************************************************************/
+
 /****************************************************
  * Axisymmetric Source Terms
  ****************************************************/  
@@ -563,7 +591,7 @@ void Flame2D_pState::Free_Slip(const Flame2D_pState &Win,
  
   //Fixed Temperature
   if(TEMPERATURE_BC_FLAG == FIXED_TEMPERATURE_WALL){
-    setGas_T(Wout.T());
+    setTemperature(Wout.T());
   }
 }
 
@@ -659,17 +687,14 @@ void Flame2D_pState::BC_1DFlame_Outflow(const Flame2D_pState &Wi,     //ICu
   //and Wo.p == Winput.p (constant pressure initial condition)
   double sum( Wi.rho()*Wi.vx()*(Wi.vx() - Winlet.vx()) );
   if( sum < ZERO){
-    p() = Wo.p();
+    setPressure( Wo.p() );
   } else {
     //no relaxation
-    p() = Wo.p() - sum;
+    setPressure( Wo.p() - sum );
 
     // relaxation
     //Wnew.p = Wi.p + 0.5*( (Wo.p-sum) - Wi.p);
   }
-
-  // set the new mixture state
-  setGas();
 
  
 }
@@ -703,13 +728,12 @@ void Flame2D_pState::BC_2DFlame_Outflow(const Flame2D_pState &Wi,
 					const Vector2D &norm_dir){
   //2D Coreflame OUTFLOW hold pressure
   Copy(Wi);  
-  p() = Wo.p();
   if(vy() < ZERO){ 
     vy() = ZERO;
   }
 
   // set the new mixture state
-  setGas();
+  setPressure( Wo.p() );
 
 }
 
@@ -915,20 +939,8 @@ void Flame2D_pState :: RoeAverage(const Flame2D_pState &Wl,
 
     //double TEMP = Temp.T(ha);
     // set pressure
-    setGas_H(ha);
+    setEnthalpy(ha);
   
-}
-
-/*********************************************************
- * Routine: HLLEAverage Average Harten-Lax-van Leer flux *
- *********************************************************/
-void Flame2D_State :: HLLEAverage( const double& wavespeed_r, const double& wavespeed_l, 
-				   const Flame2D_State& Fr, const Flame2D_State& Fl, 
-				   const Flame2D_State& dUrl ) {
-  double a(wavespeed_l*wavespeed_r), b(wavespeed_r-wavespeed_l);
-  for (int i=0; i<n; i++) {
-    x[i] = ( (wavespeed_r*Fl.x[i]-wavespeed_l*Fr.x[i]) + a*dUrl[i] ) / b;
-  }
 }
 
 /*********************************************************
@@ -975,9 +987,14 @@ void Flame2D_State :: FluxHLLE_x(const Flame2D_pState &Wl,
     } else if (wavespeed_r <= ZERO) {
       Wr.Fx(*this);
     } else { 
-      static Flame2D_State dUrl;
+      static Flame2D_State dUrl, Fl, Fr;
       dUrl.Delta( Wr.U(), Wl.U() ); // Evaluate the jumps in the conserved solution states.
-      HLLEAverage( wavespeed_r, wavespeed_l, Wr.Fx(), Wl.Fx(), dUrl );
+      Wr.Fx(Fr);
+      Wl.Fx(Fl);
+      double a(wavespeed_l*wavespeed_r), b(wavespeed_r-wavespeed_l);
+      for (int i=0; i<n; i++) {
+	x[i] = ( (wavespeed_r*Fl.x[i]-wavespeed_l*Fr.x[i]) + a*dUrl.x[i] ) / b;
+      }
     } /* endif */
 
 }
@@ -1039,20 +1056,6 @@ void Flame2D_State :: FluxHLLE_n(const Flame2D_pState &Wl,
 }
 
 /*********************************************************
- * Routine: LindeAverage Average Timur Linde's flux      *
- *********************************************************/
-void Flame2D_State :: LindeAverage( const double& wavespeed_r, const double& wavespeed_l, 
-				    const double& wavespeed_m, const double& alpha,
-				    const Flame2D_State& Fr, const Flame2D_State& Fl, 
-				    const Flame2D_State& dUrl ) {
-  double a(wavespeed_l*wavespeed_r), b(wavespeed_r-wavespeed_l),
-         c(ONE-(ONE-max(wavespeed_m/wavespeed_r, wavespeed_m/wavespeed_l))*alpha);
-  for (int i=0; i<n; i++) {
-    x[i] =( (wavespeed_r*Fl.x[i]-wavespeed_l*Fr.x[i]) + a*c*dUrl.x[i]) / b;
-  }
-}
-
-/*********************************************************
  * Routine: FluxLinde (Timur Linde's flux function,      *
  *                     x-direction)                      *
  *                                                       *
@@ -1098,7 +1101,7 @@ void Flame2D_State :: FluxLinde(const Flame2D_pState &Wl,
     Wr.Fx(Fr);  Wl.Fx(Fl);
 
     dUrl.Delta( Wr.U(), Wl.U() );
-    dFrl.Delta( Wr.Fx(), Wl.Fx() );
+    dFrl.Delta( Fr, Fl );
 
     double wavespeed_m( Waa.vx() );
     double rhoa( Waa.rho() );
@@ -1121,7 +1124,13 @@ void Flame2D_State :: FluxLinde(const Flame2D_pState &Wl,
       
     } /* endif */
     
-    LindeAverage( wavespeed_r, wavespeed_l, wavespeed_m, alpha, Fr, Fl, dUrl );
+    // compute the flux
+    double a(wavespeed_l*wavespeed_r), 
+           b(wavespeed_r-wavespeed_l),
+           c(ONE-(ONE-max(wavespeed_m/wavespeed_r, wavespeed_m/wavespeed_l))*alpha);
+    for (int i=0; i<n; i++) {
+      x[i] =( (wavespeed_r*Fl.x[i]-wavespeed_l*Fr.x[i]) + a*c*dUrl.x[i]) / b;
+    }
 
   } /* endif */
   
@@ -1227,7 +1236,7 @@ void Flame2D_State :: FluxRoe_x(const Flame2D_pState &Wl,
       
       for (int i=0 ; i < n-NSm1; i++) {
 	if (wavespeeds[i+1] < ZERO) {
-	  *this += wavespeeds[i+1]*(Waa.lp_x(i+1)*dWrl)*Waa.rc_x(i+1);
+	  *this += wavespeeds[i+1]*((Waa.lp_x(i+1)*dWrl)*Waa.rc_x(i+1));
 	}
       } 
     } else {
@@ -1237,7 +1246,7 @@ void Flame2D_State :: FluxRoe_x(const Flame2D_pState &Wl,
 			       lambdas_r);
       for (int i=0; i < n-NSm1; i++) {
 	if (wavespeeds[i+1] > ZERO) {
-	  *this -= wavespeeds[i+1]*(Waa.lp_x(i+1)*dWrl)*Waa.rc_x(i+1);
+	  *this -= wavespeeds[i+1]*((Waa.lp_x(i+1)*dWrl)*Waa.rc_x(i+1));
 	}
       } 
     } 
@@ -1266,14 +1275,15 @@ void Flame2D_State :: FluxRoe_x(const Flame2D_pState &Wl,
       
       Waa.Low_Mach_Number_Preconditioner(P,flow_type_flag,deltax);
       
-      /* Determine the intermediate state flux. */                                                
+      /* Determine the intermediate state flux. */
+      (*this).Vacuum();
       Wl.addFx(*this, HALF);
       Wr.addFx(*this, HALF);
       static Flame2D_State Flux_dissipation;
       Flux_dissipation.Vacuum();
       
       for ( int i = 0 ; i < n-NSm1 ; i++ ) {
-	Flux_dissipation -= HALF*wavespeeds[i+1]*(Waa.lp_x_precon(i+1,MR2a)*dWrl)*Waa.rc_x_precon(i+1,MR2a);
+	Flux_dissipation -= (HALF*wavespeeds[i+1])*((Waa.lp_x_precon(i+1,MR2a)*dWrl)*Waa.rc_x_precon(i+1,MR2a));
       }
       
       for ( int i = 0 ; i < n-NSm1 ; i++ ) {
@@ -1343,6 +1353,159 @@ void Flame2D_State :: FluxRoe_n(const Flame2D_pState &Wl,
   
 }
 
+/**********************************************************************
+ * Routine: FluxAUSMplus_up (Liou's updated Advection Upstream        * 
+ *                           Splitting Method flux function for all   *
+ *                           speeds,  x-direction)                    *
+ *                                                                    *
+ * This function returns the intermediate state solution flux for the *
+ * x-direction given left and right solution states by using the      *
+ * AUSM+-up (updated AUSM scheme) approximation for the fluxes.  See  *
+ * M.-S. Liou (J. Comp. Physics 2006).                                *
+ *                                                                    *
+ **********************************************************************/
+void Flame2D_State::FluxAUSMplus_up(const Flame2D_pState &Wl,
+				    const Flame2D_pState &Wr) {
+
+  double beta(0.125), sigma(1.0), Kp(0.25), Ku(0.5)/*0.75*/;
+  //double al, ar, atilde_l, atilde_r;
+
+  // Determine the intermediate state sound speed and density:
+  // al = sqrt(Wl.H()/Wl.rho)*sqrt(TWO*(Wl.g() - ONE)/(Wl.g() + ONE));
+  // ar = sqrt(Wr.H()/Wr.rho)*sqrt(TWO*(Wr.g() - ONE)/(Wr.g() + ONE));
+  // atilde_l = sqr(al)/max(al, Wl.v.x);    
+  // atilde_r = sqr(ar)/max(ar, -Wr.v.x);
+  // ahalf = min(atilde_l, atilde_r);
+  double ahalf( HALF*(Wl.a() + Wr.a()) );
+  double rhohalf( HALF*(Wl.rho() + Wr.rho()) ); 
+  
+
+  // Determine the left and right state Mach numbers based on the
+  // intermediate state sound speed:
+  double Ml( Wl.vx()/ahalf );
+  double Mr( Wr.vx()/ahalf );
+
+  // Determine the reference Mach number, scaling function and coefficient
+  double M2_bar( (Wl.vx()*Wl.vx() + Wr.vx()*Wr.vx())/(TWO*ahalf*ahalf) );
+  double M2_ref( min(ONE, max(M2_bar, Wl.Mref*Wl.Mref)) );
+  if (M2_ref > ONE || M2_ref < 0.0) cout << "\nM2_ref out of range";
+  //fa = sqrt(M2_ref)*(TWO - sqrt(M2_ref));
+  double fa( sqrt(sqr(ONE - M2_ref)*M2_bar + FOUR*M2_ref)/(ONE + M2_ref) );
+  if (fa > ONE || fa <= ZERO) cout << "\nfa out of range";
+  double alpha( (3.0/16.0)*(-4.0 + 5.0*fa*fa) );
+  if (alpha < (-3.0/4.0)  ||  alpha > (3.0/16.0)) cout << "\nalpha out of range";
+
+
+  // Determine the left state split Mach number:
+  double Mplus, pplus;
+  if (fabs(Ml) >= ONE) {
+    Mplus = Mplus_1(Ml);
+    pplus = Mplus_1(Ml)/Ml;
+  } else {
+    Mplus = Mplus_2(Ml) * (1.0 - 16.0*beta*Mminus_2(Ml));
+    pplus = Mplus_2(Ml) * ((2.0 - Ml) - 16.0*alpha*Ml*Mminus_2(Ml));
+  }
+
+
+  // Determine the right state split Mach number:
+  double Mminus, pminus;
+  if (fabs(Mr) >= ONE) {
+    Mminus = Mminus_1(Mr);
+    pminus = Mminus_1(Mr)/Mr;        
+  } else {
+    Mminus = Mminus_2(Mr) * (1.0 + 16.0*beta*Mplus_2(Mr));
+    pminus = Mminus_2(Mr) * ((-2.0 - Mr) + 16.0*alpha*Mr*Mplus_2(Mr));
+  } 
+
+
+  // Determine the intermediate state Mach number, pressure and mass flux:
+  double Mhalf( Mplus + Mminus - 
+		(Kp/fa)*max((ONE - sigma*M2_bar), ZERO)*(Wr.p() - Wl.p())/(rhohalf*ahalf*ahalf) );
+
+  double phalf( pplus*Wl.p() + pminus*Wr.p() - 
+		Ku*pplus*pminus*TWO*rhohalf*(fa*ahalf)*(Wr.vx() - Wl.vx()) );
+
+  double mass_flux_half( (Mhalf > ZERO) ? ahalf*Mhalf*Wl.rho() : ahalf*Mhalf*Wr.rho() );
+
+
+  // Determine the intermediate state convective solution flux:
+  if (mass_flux_half  > ZERO) {
+    rho() = ONE;
+    rhovx() = Wl.vx(); 
+    rhovy() = Wl.vy(); 
+    E() = Wl.H()/Wl.rho();
+    for(int i=0; i<ns; ++i){
+      rhoc(i) = Wl.c(i);
+    }
+    
+  } else {
+    rho() = ONE;
+    rhovx() = Wr.vx(); 
+    rhovy() = Wr.vy(); 
+    E() = Wr.H()/Wr.rho();
+    for(int i=0; i<ns; ++i){
+      rhoc(i) = Wr.c(i);
+    }
+
+  } //end if
+
+  // scale the flux
+  for(int i=0; i<n; ++i) x[i] *= mass_flux_half;
+
+  // Add the pressure contribution to the intermediate state solution flux:
+  rhovx() += phalf;
+
+}
+
+/**********************************************************************
+ * Routine: FluxAUSMplus_up_n (M.-S. Liou's Advection Upstream        *
+ *                             Splitting Method flux function for     *
+ *                             all speeds, n-direction)               *
+ *                                                                    *
+ * This function returns the intermediate state solution flux for an  *
+ * arbitrary direction defined by a unit normal vector in the         *
+ * direction of interest, given left and right solution states.  The  *
+ * problem is solved by first applying a frame rotation to rotate the *
+ * problem to a local frame aligned with the unit normal vector and   *
+ * then by using the AUSM+-up approximation to specify the            * 
+ * intermediate  state in terms of the rotated solution states.       *
+ * See M.-S. Liou (J. Comp. Physics 2006).                            *
+ **********************************************************************/
+void Flame2D_State::FluxAUSMplus_up_n(const Flame2D_pState &Wl,
+				      const Flame2D_pState &Wr,
+				      const Vector2D &norm_dir) {
+
+
+  static Flame2D_pState Wl_rotated, Wr_rotated;
+  Wl_rotated.Copy(Wl);  Wr_rotated.Copy(Wr);
+
+  /* Determine the direction cosine's for the frame rotation. */
+
+  double cos_angle( norm_dir.x ), sin_angle( norm_dir.y );
+
+  /* Apply the frame rotation and evaluate left and right
+     solution states in the local rotated frame defined
+     by the unit normal vector. */
+  
+  Wl_rotated.setVelocity( Wl.vx()*cos_angle +  Wl.vy()*sin_angle,
+			  - Wl.vx()*sin_angle + Wl.vy()*cos_angle );
+  
+  Wr_rotated.setVelocity( Wr.vx()*cos_angle + Wr.vy()*sin_angle,
+			  - Wr.vx()*sin_angle + Wr.vy()*cos_angle );
+  
+  /* Evaluate the intermediate state solution 
+     flux in the rotated frame. */
+  
+  FluxAUSMplus_up(Wl_rotated, Wr_rotated);
+  double ur(rhovx()), vr(rhovy());
+  
+  /* Rotate back to the original Cartesian reference
+     frame and return the solution flux. */
+  
+  rhovx() = ur*cos_angle - vr*sin_angle;
+  rhovy() = rhovx()*sin_angle + rhovy()*cos_angle;
+
+}
 
 
 /************************************************************************

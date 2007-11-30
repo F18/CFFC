@@ -1085,88 +1085,20 @@ void Output_Cells_Tecplot(Chem2D_Quad_Block &SolnBlk,
        for(int i =0 ;i<SolnBlk.W[0][0].ns ;i++){
 	 Out_File <<"\"c"<<SolnBlk.W[0][0].specdata[i].Speciesname()<<"\" \\ \n";
        }
-       //Viscous Terms 
-       Out_File << "\"qflux_x\" \\ \n"  
-		<< "\"qflux_y\" \\ \n"   
-		<< "\"Srad\" \\ \n"   
-		<< "\"Tau_xx\" \\ \n"  //rr -axisymmetric
-		<< "\"Tau_xy\" \\ \n"  //rz
-		<< "\"Tau_yy\" \\ \n"  //zz
-		<< "\"Tau_zz\" \\ \n"  //thetatheta
-		<< "\"theta_x\" \\ \n"  
-		<< "\"theta_y\" \\ \n"   
-		<< "\"lambda_xx\" \\ \n"   //rr -axisymmetric
-		<< "\"lambda_xy\" \\ \n"   //rz
-		<< "\"lambda_yy\" \\ \n"   //zz
-		<< "\"lambda_zz\" \\ \n";  //thetatheta
         //Calculated values
        Out_File << "\"T\" \\ \n"
 	        << "\"M\" \\ \n"
                 << "\"R\" \\ \n"
 	        << "\"viscosity\" \\ \n"
 	        << "\"thermal conduct\" \\ \n"
-	        << "\"Prandtl\" \\ \n";
-       //Prandtl, Schmidt, Lewis
-       for(int i =0 ;i<SolnBlk.W[0][0].ns;i++){
-	 Out_File<<"\"Sc_"<<SolnBlk.W[0][0].specdata[i].Speciesname()<<"\" \\ \n"
-		 <<"\"Le_"<<SolnBlk.W[0][0].specdata[i].Speciesname()<<"\" \\ \n"; 
-       } 
+	        << "\"Prandtl\" \\ \n"
+		<< "\"rho*H\"  \\ \n"  
+		<<"\"h\" \\ \n"
+		<<"\"h_s\" \\ \n"
+		<<"\"rho*E\" \\ \n"
+		<< "\"e\" \\  \n" 
+		<< "\"e_s\" \\ \n";
        
-       // reaction rates
-       for(int i =0 ;i<SolnBlk.W[0][0].ns;i++){
-	 Out_File<<"\"omega_"<<SolnBlk.W[0][0].specdata[i].Speciesname()<<"\" \\ \n";
-       } 
-       //Residuals
-       Out_File << "\"dUdt_rho\" \\ \n"
-                << "\"dUdt_rhou\" \\ \n"
-                << "\"dUdt_rhov\" \\ \n"
-		<< "\"dUdt_e\" \\ \n"
-		<< "\"dUdt_rhok\" \\ \n"
-		<< "\"dUdt_rhoomega\" \\ \n";
-       //n species mass fractions names
-       for(int i =0 ;i<SolnBlk.W[0][0].ns ;i++){
-	 Out_File <<"\"dUdt_rhoc"<<SolnBlk.W[0][0].specdata[i].Speciesname()<<"\" \\ \n";
-       }
-                   
-//        //Limiters 
-//        for(int i =1 ;i<= SolnBlk.NumVar();i++){
-// 	    Out_File<<"\"phi_"<<i<<"\" \\ \n";
-//        }       
-//        //other stored cell-center data
-//        for(int i =0 ;i<SolnBlk.W[0][0].ns;i++){
-// 	    Out_File<<"\"gradc.x_"<<SolnBlk.W[0][0].specdata[i].Speciesname()<<"\" \\ \n"
-// 		  <<"\"gradc.y_"<<SolnBlk.W[0][0].specdata[i].Speciesname()<<"\" \\ \n"
-// 		  <<"\"Dif_coef_"<<SolnBlk.W[0][0].specdata[i].Speciesname()<<"\" \\ \n"; 
-//        }       
-//        //gradients
-//        Out_File<< "\"dx_rho\" \\ \n"
-// 	       << "\"dx_u\" \\ \n"
-// 	       << "\"dx_v\" \\ \n"
-// 	       << "\"dx_p\" \\ \n";
-//        //n species mass fractions names
-//        for(int i =0 ;i<SolnBlk.W[0][0].ns ;i++){
-// 	     Out_File <<"\"dx_c"<<SolnBlk.W[0][0].specdata[i].Speciesname()<<"\" \\ \n";
-//        }  
-//        Out_File<< "\"dx_q_x\" \n"  
-// 	       << "\"dx_q_y\" \n"  
-// 	       << "\"dx_Tau_xx\" \n"  //rr -axisymmetric
-// 	       << "\"dx_Tau_xy\" \n"  //rz
-// 	       << "\"dx_Tau_yy\" \n"  //zz
-// 	       << "\"dx_Tau_zz\" \n"; //thetatheta       
-//        Out_File<< "\"dy_rho\" \\ \n"
-// 	       << "\"dy_u\" \\ \n"
-// 	       << "\"dy_v\" \\ \n"
-// 	       << "\"dy_p\" \\ \n";
-//        //n species mass fractions names
-//        for(int i =0 ;i<SolnBlk.W[0][0].ns ;i++){
-//  	     Out_File <<"\"dy_c"<<SolnBlk.W[0][0].specdata[i].Speciesname()<<"\" \\ \n";
-//        }  
-//        Out_File<< "\"dy_q_x\" \n"  
-// 	       << "\"dy_q_y\" \n"   
-// 	       << "\"dy_Tau_xx\" \n"  //rr -axisymmetric
-// 	       << "\"dy_Tau_xy\" \n"  //rz
-// 	       << "\"dy_Tau_yy\" \n"  //zz
-// 	       << "\"dy_Tau_zz\" \n"; //thetatheta
 
        // Zone details
        Out_File<< "ZONE T =  \"Block Number = " << Block_Number
@@ -1188,43 +1120,18 @@ void Output_Cells_Tecplot(Chem2D_Quad_Block &SolnBlk,
                     << SolnBlk.W[i][j];
            Out_File.setf(ios::scientific);
 	   //Temperature
-	   Out_File << " " << SolnBlk.W[i][j].qflux
-		    << " " << SolnBlk.Srad[i][j]
-		    << " " << SolnBlk.W[i][j].tau
-		    << " " << SolnBlk.W[i][j].theta
-		    << " " << SolnBlk.W[i][j].lambda
-		    << " " << SolnBlk.W[i][j].T()
+	   Out_File << " " << SolnBlk.W[i][j].T()
 		    << " " << SolnBlk.W[i][j].v.abs()/SolnBlk.W[i][j].a() 
 		    << " " << SolnBlk.W[i][j].Rtot()
 		    << " " << SolnBlk.W[i][j].mu()
 		    << " " << SolnBlk.W[i][j].kappa()
-		    << " " << SolnBlk.W[i][j].Prandtl(); 
-	   //Prandtl, Schmidt, Lewis   
-	   for(int k =0 ;k<SolnBlk.W[0][0].ns ;k++){	  
- 	       Out_File<<" "<<SolnBlk.W[i][j].Schmidt_No(k) 
-		       <<" "<<SolnBlk.W[i][j].Lewis(k);  
-	   }
-	   // reaction rates
-	   omega = SolnBlk.W[i][j].Sw( SolnBlk.W[0][0].React.reactset_flag,
-				       SolnBlk.Flow_Type );
-	   for(int k =0 ;k<SolnBlk.W[0][0].ns ;k++){	  
- 	       Out_File<<" "<<omega.rhospec[k].c/SolnBlk.W[0][0].specdata[k].Mol_mass();  
-	   }
-	   //Residuals
-	   Out_File << " " << SolnBlk.dUdt[i][j][0];
-	 
-//	   //limiters
-// 	   for(int k =1; k<=SolnBlk.NumVar(); k++){
-// 	     Out_File <<" "<<SolnBlk.phi[i][j][k];
-// 	   }
-// 	   //coef..
-// 	   for(int k =0 ;k<SolnBlk.W[0][0].ns ;k++){
-// 	     Out_File <<SolnBlk.W[i][j].spec[k].gradc<<" "
-// 		      <<SolnBlk.W[i][j].spec[k].diffusion_coef;
-// 	   }
-// 	   //gradients
-// 	   Out_File <<SolnBlk.dWdx[i][j]
-// 		    <<SolnBlk.dWdy[i][j];
+		    << " " << SolnBlk.W[i][j].Prandtl()
+		    << " " << SolnBlk.W[i][j].H() 
+		    << " " << SolnBlk.W[i][j].h() 
+		    << " " << SolnBlk.W[i][j].hs()
+		    << " " << SolnBlk.W[i][j].E() 
+		    << " " << SolnBlk.W[i][j].e() 
+		    << " " << SolnBlk.W[i][j].es()<<endl;
 	   Out_File<< "\n";
            Out_File.unsetf(ios::scientific);
        } /* endfor */

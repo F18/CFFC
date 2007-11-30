@@ -172,7 +172,8 @@ class Flame2D_Quad_Block{
   /***************** CLASS DATA *****************************************************/
   //@{ @name Solution state arrays:
   Flame2D_pState             **W;   //!< Primitive solution state.
-  Flame2D_State             **U;    //!< Conserved solution state. 
+  Flame2D_State              **U;   //!< Conserved solution state. 
+  Flame2D_State            **Wnd;   //!< Primitive solution state at nodes.
   //@} 
   
   Flame2D_State            **Uo;    //!< Initial solution state.
@@ -238,7 +239,7 @@ class Flame2D_Quad_Block{
   /* Creation, copy, and assignment constructors. */
   Flame2D_Quad_Block(void) {
     NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0; Nghost = 0;
-    W = NULL; U = NULL; dt = NULL; dUdt = NULL;
+    W = NULL; U = NULL; dt = NULL; dUdt = NULL; Wnd = NULL;
     dWdx = NULL; dWdy = NULL; dWdx_faceN = NULL; dWdy_faceN = NULL;
     dWdx_faceE = NULL; dWdy_faceE = NULL;
     dWdx_faceW = NULL; dWdy_faceW = NULL;
@@ -260,32 +261,18 @@ class Flame2D_Quad_Block{
   void deallocate(void);
   static void deallocate_static(void);
 
-  /* Return primitive solution state at specified node. */
-  Flame2D_State Wn(const int &ii, const int &jj);
-  
-  /* Return conserverd solution state at specified node. */
-  Flame2D_State Un(const int &ii, const int &jj);
+  /* Update all the nodal values for Wnd */
+  void Update_Wn(const int &ii, const int &jj);
+  void Update_Nodal_Values(void);
 
-  /* Return conserverd solution state at specified node. */
-  Flame2D_State Uno(const int &ii, const int &jj);
+  /* Return primitive solution state at specified node. */
+  const Flame2D_State& Wn(const int &ii, const int &jj) const;
 
   /* Return primitive solution state at cell nodes. */
-  Flame2D_State WnNW(const int &ii, const int &jj);
-  Flame2D_State WnNE(const int &ii, const int &jj);
-  Flame2D_State WnSE(const int &ii, const int &jj);
-  Flame2D_State WnSW(const int &ii, const int &jj);
-  
-  /* Return conserved solution state at cell nodes. */
-  Flame2D_State UnNW(const int &ii, const int &jj);
-  Flame2D_State UnNE(const int &ii, const int &jj);
-  Flame2D_State UnSE(const int &ii, const int &jj);
-  Flame2D_State UnSW(const int &ii, const int &jj);
-
-  /* Return conserved solution state at cell nodes. */
-  Flame2D_State UnoNW(const int &ii, const int &jj);
-  Flame2D_State UnoNE(const int &ii, const int &jj);
-  Flame2D_State UnoSE(const int &ii, const int &jj);
-  Flame2D_State UnoSW(const int &ii, const int &jj);
+  const Flame2D_State& WnNW(const int &ii, const int &jj) const;
+  const Flame2D_State& WnNE(const int &ii, const int &jj) const;
+  const Flame2D_State& WnSE(const int &ii, const int &jj) const;
+  const Flame2D_State& WnSW(const int &ii, const int &jj) const;
 
   int BiLinearInterpolationCoefficients(double &eta, double &zeta, const int &ii, const int &jj);
   
@@ -433,6 +420,13 @@ inline void Flame2D_Quad_Block::allocate(const int Ni, const int Nj, const int N
    WoN = new Flame2D_State[NCi]; WoS = new Flame2D_State[NCi];
    WoE = new Flame2D_State[NCj]; WoW = new Flame2D_State[NCj];
 
+   // nodal values
+   Wnd = new Flame2D_State*[NCi+1]; 
+   for (int i = 0; i < NCi+1 ; ++i ) {
+     Wnd[i] = new Flame2D_State[NCj+1];
+     for (int j = 0; j < NCj+1; ++j ) Wnd[i][j].Vacuum();
+   }
+
   // Set the solution residuals, gradients, limiters, and other values to zero.
    for (int j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
       for ( int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
@@ -455,7 +449,8 @@ inline void Flame2D_Quad_Block::deallocate(void) {
    for ( i = 0; i <= NCi-1 ; ++i ) {
       delete []W[i]; W[i] = NULL; delete []U[i]; U[i] = NULL;
       delete []dt[i]; dt[i] = NULL;
-      for ( j = 0; j <= NCj-1 ; ++j ) { delete []dUdt[i][j]; dUdt[i][j] = NULL;
+      for ( j = 0; j <= NCj-1 ; ++j ) { 
+	delete []dUdt[i][j]; dUdt[i][j] = NULL;
       }
       delete []dUdt[i]; dUdt[i] = NULL;
       delete []dWdx[i]; dWdx[i] = NULL; delete []dWdy[i]; dWdy[i] = NULL;
@@ -480,6 +475,14 @@ inline void Flame2D_Quad_Block::deallocate(void) {
    delete []FluxE; FluxE = NULL; delete []FluxW; FluxW = NULL;
    delete []WoN; WoN = NULL; delete []WoS; WoS = NULL;
    delete []WoE; WoE = NULL; delete []WoW; WoW = NULL;
+
+   // nodal values
+   Wnd = new Flame2D_State*[NCi+1]; 
+   for (i = 0; i < NCi+1 ; ++i ) {
+     delete []Wnd[i]; Wnd[i] = NULL;
+   }
+   delete []Wnd; Wnd = NULL;
+
    NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0; Nghost = 0;
 }
 
@@ -576,7 +579,37 @@ inline double Flame2D_Quad_Block::dWn_dWc(const int &i, const int &j, const int 
 /**************************************************************************
  * Flame2D_Quad_Block::Wn -- Node primitive solution.                     *
  **************************************************************************/
-inline Flame2D_State Flame2D_Quad_Block::Wn(const int &ii, const int &jj) {
+inline const Flame2D_State& Flame2D_Quad_Block::Wn(const int &ii, const int &jj) const {
+  return Wnd[ii][jj];
+}
+inline const Flame2D_State& Flame2D_Quad_Block::WnNW(const int &ii, const int &jj) const {
+  return (Wnd[ii][jj+1]);
+}
+
+inline const Flame2D_State& Flame2D_Quad_Block::WnNE(const int &ii, const int &jj) const {
+  return (Wnd[ii+1][jj+1]);
+}
+
+inline const Flame2D_State& Flame2D_Quad_Block::WnSE(const int &ii, const int &jj) const {
+  return (Wnd[ii+1][jj]);
+}
+
+inline const Flame2D_State& Flame2D_Quad_Block::WnSW(const int &ii, const int &jj) const {
+  return (Wnd[ii][jj]);
+}
+
+
+/**************************************************************************
+ * Flame2D_Quad_Block::Update_Wnd -- Update temporayr Node primitive      *
+ *                                   solution storage.                    *
+ **************************************************************************/
+inline void Flame2D_Quad_Block::Update_Nodal_Values(void) {
+  for (int i = ICl; i <= ICu+1 ; ++i )
+    for (int j = JCl; j <= JCu+1; ++j ) 
+      Update_Wn(i,j);
+}
+
+inline void Flame2D_Quad_Block::Update_Wn(const int &ii, const int &jj) {
   double ax, bx, cx, dx, ay, by, cy, dy, aa, bb, cc, x, y,
     eta1, zeta1, eta2, zeta2, eta, zeta;
   
@@ -616,171 +649,17 @@ inline Flame2D_State Flame2D_Quad_Block::Wn(const int &ii, const int &jj) {
   } else {
     zeta=HALF; eta=HALF;
   } /* endif */
-   
-  return (W[ii-1][jj-1] +(W[ii-1][jj]-W[ii-1][jj-1])*zeta+  
-	  (W[ii][jj-1]-W[ii-1][jj-1])*eta + 
-	  (W[ii][jj]+W[ii-1][jj-1]-W[ii-1][jj]-W[ii][jj-1])*zeta*eta);  
-
-}
-
-/**************************************************************************
-/**************************************************************************
- * Flame2D_Quad_Block::Wn?? -- Get cell node primitive solution states.   *
- **************************************************************************/
-inline Flame2D_State Flame2D_Quad_Block::WnNW(const int &ii, const int &jj) {
-  return (Wn(ii, jj+1));
-}
-
-inline Flame2D_State Flame2D_Quad_Block::WnNE(const int &ii, const int &jj) {
-  return (Wn(ii+1, jj+1));
-}
-
-inline Flame2D_State Flame2D_Quad_Block::WnSE(const int &ii, const int &jj) {
-  return (Wn(ii+1, jj));
-}
-
-inline Flame2D_State Flame2D_Quad_Block::WnSW(const int &ii, const int &jj) {
-  return (Wn(ii, jj));
-}
-
-/**************************************************************************
- * Flame2D_Quad_Block::Un -- Node conservative solution.                     *
- **************************************************************************/
-inline Flame2D_State Flame2D_Quad_Block::Un(const int &ii, const int &jj) {
- 
-  double ax, bx, cx, dx, ay, by, cy, dy, aa, bb, cc, x, y,
-    eta1, zeta1, eta2, zeta2, eta, zeta;
- 
-  x=Grid.Node[ii][jj].X.x; y=Grid.Node[ii][jj].X.y;
-  ax=Grid.Cell[ii-1][jj-1].Xc.x;
-  bx=Grid.Cell[ii-1][jj].Xc.x-Grid.Cell[ii-1][jj-1].Xc.x;
-  cx=Grid.Cell[ii][jj-1].Xc.x-Grid.Cell[ii-1][jj-1].Xc.x;
-  dx=Grid.Cell[ii][jj].Xc.x+Grid.Cell[ii-1][jj-1].Xc.x-
-    Grid.Cell[ii-1][jj].Xc.x-Grid.Cell[ii][jj-1].Xc.x;
-  ay=Grid.Cell[ii-1][jj-1].Xc.y;
-  by=Grid.Cell[ii-1][jj].Xc.y-Grid.Cell[ii-1][jj-1].Xc.y;
-  cy=Grid.Cell[ii][jj-1].Xc.y-Grid.Cell[ii-1][jj-1].Xc.y;
-  dy=Grid.Cell[ii][jj].Xc.y+Grid.Cell[ii-1][jj-1].Xc.y-
-    Grid.Cell[ii-1][jj].Xc.y-Grid.Cell[ii][jj-1].Xc.y;
-  aa=bx*dy-dx*by; bb=dy*(ax-x)+bx*cy-cx*by+dx*(y-ay); cc=cy*(ax-x)+cx*(y-ay);
-  if (fabs(aa) < TOLER*TOLER) {
-    if (fabs(bb) >= TOLER*TOLER) { zeta1=-cc/bb; }
-    else { zeta1 = -cc/sgn(bb)*(TOLER*TOLER); }
-    if (fabs(cy+dy*zeta1) >= TOLER*TOLER) { eta1=(y-ay-by*zeta1)/(cy+dy*zeta1); }
-    else { eta1 = HALF; } zeta2=zeta1; eta2=eta1;
-  } else {
-    if (bb*bb-FOUR*aa*cc >= TOLER*TOLER) { zeta1=HALF*(-bb+sqrt(bb*bb-FOUR*aa*cc))/aa; }
-    else { zeta1 = -HALF*bb/aa; }
-    if (fabs(cy+dy*zeta1) < TOLER*TOLER) { eta1=-ONE; }
-    else { eta1=(y-ay-by*zeta1)/(cy+dy*zeta1); }
-    if (bb*bb-FOUR*aa*cc >= TOLER*TOLER) { zeta2=HALF*(-bb-sqrt(bb*bb-FOUR*aa*cc))/aa; }
-    else { zeta2 = -HALF*bb/aa; }
-    if (fabs(cy+dy*zeta2) < TOLER*TOLER) { eta2=-ONE; }
-    else { eta2=(y-ay-by*zeta2)/(cy+dy*zeta2); }
-  } /* end if */
-  if (zeta1 > -TOLER && zeta1 < ONE + TOLER &&
-      eta1  > -TOLER && eta1  < ONE + TOLER) {
-    zeta=zeta1; eta=eta1;
-  } else if (zeta2 > -TOLER && zeta2 < ONE + TOLER &&
-	     eta2  > -TOLER && eta2  < ONE + TOLER) {
-    zeta=zeta2; eta=eta2;
-  } else {
-    zeta=HALF; eta=HALF;
-  } /* endif */
   
-  return (U[ii-1][jj-1] +(U[ii-1][jj]-U[ii-1][jj-1])*zeta+  
-	  (U[ii][jj-1]-U[ii-1][jj-1])*eta + 
-	  (U[ii][jj]+U[ii-1][jj-1]-U[ii-1][jj]-U[ii][jj-1])*zeta*eta);
-  
+  static const int NUM_VAR(NumVar());
+  static Flame2D_State tmp;
+  for (int k=1; k<=NUM_VAR; k++) {
+    Wnd[ii][jj][k] = (W[ii-1][jj-1][k] +(W[ii-1][jj][k]-W[ii-1][jj-1][k])*zeta+  
+		      (W[ii][jj-1][k]-W[ii-1][jj-1][k])*eta + 
+		      (W[ii][jj][k]+W[ii-1][jj-1][k]-W[ii-1][jj][k]-W[ii][jj-1][k])*zeta*eta);
+  }
+
 }
 
-/**************************************************************************
- * Flame2D_Quad_Block::Un -- Get cell node conserved solution states.    *
- **************************************************************************/
-inline Flame2D_State Flame2D_Quad_Block::UnNW(const int &ii, const int &jj) {
-  return (Un(ii, jj+1));
-}
-
-inline Flame2D_State Flame2D_Quad_Block::UnNE(const int &ii, const int &jj) {
-  return (Un(ii+1, jj+1));
-}
-
-inline Flame2D_State Flame2D_Quad_Block::UnSE(const int &ii, const int &jj) {
-  return (Un(ii+1, jj));
-}
-
-inline Flame2D_State Flame2D_Quad_Block::UnSW(const int &ii, const int &jj) {
-  return (Un(ii, jj));
-}
-
-/**************************************************************************
- * Flame2D_Quad_Block::Un -- Node conservative solution.                     *
- **************************************************************************/
-inline Flame2D_State Flame2D_Quad_Block::Uno(const int &ii, const int &jj) {
- 
-  double ax, bx, cx, dx, ay, by, cy, dy, aa, bb, cc, x, y,
-    eta1, zeta1, eta2, zeta2, eta, zeta;
- 
-  x=Grid.Node[ii][jj].X.x; y=Grid.Node[ii][jj].X.y;
-  ax=Grid.Cell[ii-1][jj-1].Xc.x;
-  bx=Grid.Cell[ii-1][jj].Xc.x-Grid.Cell[ii-1][jj-1].Xc.x;
-  cx=Grid.Cell[ii][jj-1].Xc.x-Grid.Cell[ii-1][jj-1].Xc.x;
-  dx=Grid.Cell[ii][jj].Xc.x+Grid.Cell[ii-1][jj-1].Xc.x-
-    Grid.Cell[ii-1][jj].Xc.x-Grid.Cell[ii][jj-1].Xc.x;
-  ay=Grid.Cell[ii-1][jj-1].Xc.y;
-  by=Grid.Cell[ii-1][jj].Xc.y-Grid.Cell[ii-1][jj-1].Xc.y;
-  cy=Grid.Cell[ii][jj-1].Xc.y-Grid.Cell[ii-1][jj-1].Xc.y;
-  dy=Grid.Cell[ii][jj].Xc.y+Grid.Cell[ii-1][jj-1].Xc.y-
-    Grid.Cell[ii-1][jj].Xc.y-Grid.Cell[ii][jj-1].Xc.y;
-  aa=bx*dy-dx*by; bb=dy*(ax-x)+bx*cy-cx*by+dx*(y-ay); cc=cy*(ax-x)+cx*(y-ay);
-  if (fabs(aa) < TOLER*TOLER) {
-    if (fabs(bb) >= TOLER*TOLER) { zeta1=-cc/bb; }
-    else { zeta1 = -cc/sgn(bb)*(TOLER*TOLER); }
-    if (fabs(cy+dy*zeta1) >= TOLER*TOLER) { eta1=(y-ay-by*zeta1)/(cy+dy*zeta1); }
-    else { eta1 = HALF; } zeta2=zeta1; eta2=eta1;
-  } else {
-    if (bb*bb-FOUR*aa*cc >= TOLER*TOLER) { zeta1=HALF*(-bb+sqrt(bb*bb-FOUR*aa*cc))/aa; }
-    else { zeta1 = -HALF*bb/aa; }
-    if (fabs(cy+dy*zeta1) < TOLER*TOLER) { eta1=-ONE; }
-    else { eta1=(y-ay-by*zeta1)/(cy+dy*zeta1); }
-    if (bb*bb-FOUR*aa*cc >= TOLER*TOLER) { zeta2=HALF*(-bb-sqrt(bb*bb-FOUR*aa*cc))/aa; }
-    else { zeta2 = -HALF*bb/aa; }
-    if (fabs(cy+dy*zeta2) < TOLER*TOLER) { eta2=-ONE; }
-    else { eta2=(y-ay-by*zeta2)/(cy+dy*zeta2); }
-  } /* end if */
-  if (zeta1 > -TOLER && zeta1 < ONE + TOLER &&
-      eta1  > -TOLER && eta1  < ONE + TOLER) {
-    zeta=zeta1; eta=eta1;
-  } else if (zeta2 > -TOLER && zeta2 < ONE + TOLER &&
-	     eta2  > -TOLER && eta2  < ONE + TOLER) {
-    zeta=zeta2; eta=eta2;
-  } else {
-    zeta=HALF; eta=HALF;
-  } /* endif */
-  
-  return (Uo[ii-1][jj-1] +(Uo[ii-1][jj]-Uo[ii-1][jj-1])*zeta+  
-	  (Uo[ii][jj-1]-Uo[ii-1][jj-1])*eta + 
-	  (Uo[ii][jj]+Uo[ii-1][jj-1]-Uo[ii-1][jj]-Uo[ii][jj-1])*zeta*eta);
-}
-
-/**************************************************************************
- * Flame2D_Quad_Block::Un -- Get cell node conserved solution states.    *
- **************************************************************************/
-inline Flame2D_State Flame2D_Quad_Block::UnoNW(const int &ii, const int &jj) {
-  return (Uno(ii, jj+1));
-}
-
-inline Flame2D_State Flame2D_Quad_Block::UnoNE(const int &ii, const int &jj) {
-  return (Uno(ii+1, jj+1));
-}
-
-inline Flame2D_State Flame2D_Quad_Block::UnoSE(const int &ii, const int &jj) {
-  return (Uno(ii+1, jj));
-}
-
-inline Flame2D_State Flame2D_Quad_Block::UnoSW(const int &ii, const int &jj) {
-  return (Uno(ii, jj));
-}
 
 
 /**************************************************************************
@@ -820,6 +699,7 @@ inline istream &operator >> (istream &in_file,
 
   int i, j, k, ni, il, iu, nj, jl, ju, ng;
   Flame2D_State Flame2D_VACUUM(0.0);
+  Flame2D_State Wtmp;
   Grid2D_Quad_Block New_Grid; in_file >> New_Grid;
   in_file.setf(ios::skipws);
   in_file >> ni >> il >> iu >> ng; in_file >> nj >> jl >> ju;
@@ -840,7 +720,8 @@ inline istream &operator >> (istream &in_file,
   Copy_Quad_Block(SolnBlk.Grid, New_Grid); New_Grid.deallocate();
   for ( j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
      for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
-         in_file >> SolnBlk.W[i][j];
+         in_file >> Wtmp;
+         SolnBlk.W[i][j].setW(Wtmp);
          SolnBlk.W[i][j].getU(SolnBlk.U[i][j]);
          for ( k = 0 ; k <= NUMBER_OF_RESIDUAL_VECTORS_FLAME2D-1 ; ++k ) {
 	     SolnBlk.dUdt[i][j][k] = Flame2D_VACUUM;
@@ -869,6 +750,12 @@ inline istream &operator >> (istream &in_file,
      in_file >> SolnBlk.WoS[i];
      in_file >> SolnBlk.WoN[i];
   } /* endfor */
+
+  // some nodal values
+  for (i = 0; i < SolnBlk.NCi+1 ; ++i )
+    for (j = 0; j < SolnBlk.NCj+1; ++j ) 
+      SolnBlk.Wnd[i][j].Vacuum();
+
   return (in_file);
 }
 
@@ -2091,7 +1978,8 @@ extern void Output_RHS(Flame2D_Quad_Block &SolnBlk,
 
 extern void ICs(Flame2D_Quad_Block &SolnBlk,
  	        const int i_ICtype,
-                Flame2D_pState *Wo, Flame2D_Input_Parameters &Input_Parameters);
+                const Flame2D_pState *Wo, 
+		const Flame2D_Input_Parameters &Input_Parameters);
 
 extern void Reset_Wo(Flame2D_Quad_Block &SolnBlk );
 

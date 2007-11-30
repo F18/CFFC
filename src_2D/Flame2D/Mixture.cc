@@ -21,6 +21,7 @@ double  Mixture :: Tmin = 0.0;
 double  Mixture :: Tmax = 0.0;
 double* Mixture :: Sc_ref = NULL;
 double* Mixture :: M = NULL;
+double* Mixture :: Hform = NULL;
 string* Mixture :: names = NULL;
 double* Mixture :: r = NULL;
 double* Mixture :: r0 = NULL;
@@ -64,12 +65,12 @@ void Mixture :: setMixture(const string &mech_name,
 
   // ascertain the number of species
 #ifdef STATIC_NUMBER_OF_SPECIES
-  if( STATIC_NUMBER_OF_SPECIES != ns) {
+  if( STATIC_NUMBER_OF_SPECIES != ct_gas->nSpecies()) {
       cerr << "\n ERROR, Mixture::setMixture() - Built using static species with "
 	   << STATIC_NUMBER_OF_SPECIES 
 	   << " species predefined, asking for " << ns
 	   << endl; 
-      exit(1); 
+      exit(-1); 
     }
 #else
   ns = ct_gas->nSpecies();
@@ -80,12 +81,14 @@ void Mixture :: setMixture(const string &mech_name,
   ct_gas->setPressure(PREF);
   Tmin = ct_gas->minTemp();
   Tmax = ct_gas->maxTemp();
+  
+  //allocate static memory  
+  AllocateStatic();
 
   // get non-dimensional heats of formation
   ct_gas->getEnthalpy_RT( Hform );
-  
-  //allocate static memory and load the species data  
-  AllocateStatic();
+
+  // load the species data
   for(int i=0; i<ns; i++){
     Sc_ref[i] = 1.0;
     M[i] = ct_gas->molarMass(i);

@@ -2340,6 +2340,17 @@ int Parse_Next_Input_Control_Parameter(Flame2D_Input_Parameters &IP) {
 	 i_command = INVALID_INPUT_CODE;
        }
 
+    } else if (strcmp(IP.Next_Control_Parameter, "Global_Schmidt") == 0){
+      i_command = 101;
+      Get_Next_Input_Control_Parameter(IP);
+      if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
+	Mixture::setConstantSchmidt(IP.Schmidt);
+      } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
+	// do nothing
+      } else {
+	i_command = INVALID_INPUT_VALUE;
+      }
+
     } else if (strcmp(IP.Next_Control_Parameter, "Schmidt_Numbers") == 0){
 
       // Get the schmidt numbers from user 

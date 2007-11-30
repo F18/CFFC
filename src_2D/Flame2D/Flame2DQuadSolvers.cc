@@ -9,20 +9,11 @@
 #include "Flame2DQuad.h"
 #endif // _FLAME2D_QUAD_INCLUDED
 
-/* Include FLAME2D Multigrid Specializations header file. */
-#ifndef _CHEM_QUAD_MULTIGRID_INCLUDED
-#include "Flame2DQuadMultigrid.h"
-#endif //_CHEM_QUAD_MULTIGRID_INCLUDED
-
 /* Include FLAME2D NKS Specializations header file. */
-#ifndef _FLAME2D_NKS_INCLUDED 
-#include "Flame2DQuadNKS.h"
-#endif // _FLAME2D_NKS_INCLUDED 
+//#include "Flame2DQuadNKS.h"
 
 /* Include Rte2D solver Sepcialization header file. */
-#ifdef _FLAME2D_WITH_RTE
-#include "Flame2DQuadRte.h"
-#endif
+//#include "Flame2DQuadRte.h"
 
 
 /********************************************************
@@ -49,12 +40,7 @@ int Flame2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
   AdaptiveBlockResourceList    List_of_Global_Solution_Blocks;
   AdaptiveBlock2D_List         List_of_Local_Solution_Blocks;
   Flame2D_Quad_Block           *Local_SolnBlk;
-  
-  //Multigrid instantiation
-  FAS_Multigrid2D_Solver<Flame2D_cState, 
-                         Flame2D_Quad_Block, 
-                         Flame2D_Input_Parameters> MGSolver;
-  
+    
   // Radiation solver object pointer and parameters
 #ifdef _FLAME2D_WITH_RTE
   Rte2DSolver *RteSolver(NULL);     // object pointer
@@ -116,11 +102,7 @@ int Flame2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
   Broadcast_Input_Parameters(Input_Parameters);
  
   /* Common Use Variables */
-  const Flame2D_pState Flame2D_W_STDATM;
-  const Flame2D_pState Flame2D_W_VACUUM(ZERO, Vector2D_ZERO, ZERO, ZERO);
-  const Flame2D_cState Flame2D_U_STDATM; //default
-  const Flame2D_cState Flame2D_U_VACUUM(ZERO, Vector2D_ZERO, ZERO, ZERO);
-  const int NUM_VAR_FLAME2D = Input_Parameters.Wo.NUM_VAR_FLAME2D;
+  const int NUM_VAR_FLAME2D = Input_Parameters.Wo.NumVar();
   
   /*************************************************************************
    ******************** INITIAL GRID & SOLUTION SPACE **********************
@@ -487,28 +469,8 @@ int Flame2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
   }
 
 
-  /******************* MULTIGRID SETUP ****************************************/
-  if (Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID) {
- 
-    MGSolver.allocate(Local_SolnBlk,
-		      &QuadTree,
-		      &List_of_Global_Solution_Blocks,
-		      &List_of_Local_Solution_Blocks,
-		      &Input_Parameters); 
-
-    if(!batch_flag) time(&start_explicit);
-
-    error_flag = MGSolver.Execute(batch_flag,
-				  number_of_time_steps,
-				  Time,
-				  processor_cpu_time,
-				  total_cpu_time,
-				  residual_file);
-
-    if(!batch_flag) time(&end_explicit);
-    
   /*********************** NON-MULTIGRID EXPLICT ***********************************/
-  } else if(Input_Parameters.Maximum_Number_of_Time_Steps > 0){ 
+  if(Input_Parameters.Maximum_Number_of_Time_Steps > 0){ 
     double *residual_l1_norm = new double[Local_SolnBlk[0].Number_of_Residual_Norms]; 
     double *residual_l2_norm = new double[Local_SolnBlk[0].Number_of_Residual_Norms]; 
     double *residual_max_norm = new double[Local_SolnBlk[0].Number_of_Residual_Norms];  
@@ -526,13 +488,6 @@ int Flame2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 				      number_of_time_steps,
 				      Local_SolnBlk[0].residual_variable,
 				      Local_SolnBlk[0].Number_of_Residual_Norms);
-      //for unsteady plotting
-      if( Input_Parameters.Time_Accurate_Plot_Frequency != 0){
-	error_flag = Open_Time_Accurate_File(time_accurate_data_file,
-					     Input_Parameters.Output_File_Name,
-					     number_of_time_steps,
-					     Local_SolnBlk[0].W[2][2]);
-      }
       if (error_flag) {
         cout << "\n Flame2D ERROR: Unable to open residual file for Flame2D calculation.\n";
         cout.flush();
@@ -779,15 +734,6 @@ int Flame2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 				      Local_SolnBlk[0].Number_of_Residual_Norms);
 	    }
 	    
-	    //time vs mass frac (time accurate) for debugging
-	    //chemical solutions with no flow ie. just nonequilibrium chemistry
-	    if (Input_Parameters.Time_Accurate && Input_Parameters.Time_Accurate_Plot_Frequency != 0){
-	      if ( (number_of_time_steps%Input_Parameters.Time_Accurate_Plot_Frequency) == 0 ){ 
-		Output_to_Time_Accurate_File(time_accurate_data_file,
-					     Time,
-					     Local_SolnBlk[0].W[2][2]);
-	      }
-	    }
 	  }
 	  /******************* CALCULATION CHECK ************************************
            Check to see if calculations are complete and if so jump of out of 
@@ -982,7 +928,6 @@ int Flame2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
     
     if (CFFC_Primary_MPI_Processor()) {
       error_flag = Close_Progress_File(residual_file);
-      error_flag = Close_Time_Accurate_File(time_accurate_data_file);
     } /* endif */
       
     //housecleaning
@@ -993,82 +938,7 @@ int Flame2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
   /*************************************************************************************************************************/
   /************************ APPLY Newton_Krylov_Schwarz ********************************************************************/
   /*************************************************************************************************************************/
-  if (Input_Parameters.NKS_IP.Maximum_Number_of_NKS_Iterations > 0) {
-     time_t start_NKS, end_NKS;
-
-     if (CFFC_Primary_MPI_Processor()) {
-        error_flag = Open_Progress_File(residual_file,
-	  			        Input_Parameters.Output_File_Name,
-				        number_of_time_steps,
-					Local_SolnBlk[0].residual_variable,
-					Local_SolnBlk[0].Number_of_Residual_Norms);
-        if (error_flag) {
-           cout << "\n Flame2D ERROR: Unable to open residual file for Flame2D calculation.\n";
-           cout.flush();
-        } /* endif */
-     } /* endif */
-
-     CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
-     CFFC_Broadcast_MPI(&error_flag, 1);
-     if (error_flag) return (error_flag);
-
-     //Turn Limiter Freezing OFF for startup
-     Evaluate_Limiters(Local_SolnBlk, List_of_Local_Solution_Blocks);
-
-     if (!batch_flag){ cout << "\n\n Beginning Flame2D NKS computations on " << Date_And_Time() << ".\n\n"; time(&start_NKS); }
-
-     //Store Explicit times for output
-     CPUTime Explicit_processor_cpu_time = processor_cpu_time;
-     CPUTime Explicit_total_cpu_time =  total_cpu_time;
-    
-     //Perform NKS Iterations 
-     error_flag = Newton_Krylov_Schwarz_Solver<Flame2D_pState,
-                                               Flame2D_Quad_Block,                                               
-                                               Flame2D_Input_Parameters>(processor_cpu_time,
-									residual_file,
-									number_of_time_steps, // explicit time steps
-									Time,							
-									Local_SolnBlk, 
-									List_of_Local_Solution_Blocks,
-									Input_Parameters);
-     
-     processor_cpu_time.update();
-     total_cpu_time.cput = CFFC_Summation_MPI(processor_cpu_time.cput);  
-    
-     if (error_flag) {
-        if (CFFC_Primary_MPI_Processor()) { 
-   	   cout << "\n Flame2D_NKS ERROR: Flame2D solution error on processor " 
-                << List_of_Local_Solution_Blocks.ThisCPU << ".\n";
-   	   cout.flush();
-   	} /* endif */
-     } /* endif */
-
-     CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
-     CFFC_Broadcast_MPI(&error_flag, 1);
-     if (error_flag) return (error_flag);
-    
-     /***********************************************************************/
-     if (!batch_flag) { cout << "\n\n Flame2D NKS computations complete on " << Date_And_Time() << ".\n"; time(&end_NKS); }
-
-     if (!batch_flag) {
-       cout<<"\n ----------------------------------------------------------------";
-       cout<<"\n -------- Solution Computations Summary in minutes --------------";
-       cout<<"\n ----------------------------------------------------------------";
-       cout<<"\n Total Startup CPU Time\t\t = "<<Explicit_total_cpu_time.min();
-       cout<<"\n Total NKS CPU Time \t\t = "<<total_cpu_time.min()-Explicit_total_cpu_time.min();
-       cout<<"\n Total CPU Time \t\t = "<<total_cpu_time.min(); 
-       cout<<"\n Total Startup Clock Time\t = "<<difftime(end_explicit,start_explicit)/60.0;
-       cout<<"\n Total NKS Clock Time\t\t = "<<difftime(end_NKS,start_NKS)/60.0;
-       cout<<"\n Total Clock Time\t\t = "<<difftime(end_NKS,start_explicit)/60.0;    //if no explicit start_eplicit not defined...
-       cout<<"\n ----------------------------------------------------------------";
-       cout<<"\n ----------------------------------------------------------------";
-       cout<<"\n ----------------------------------------------------------------\n";
-     } 
-     //Also want to output total GMRES & NKS Iterations, and maybe max memory usage possibly??
-
-     if (CFFC_Primary_MPI_Processor()) error_flag = Close_Progress_File(residual_file); 
-     
-  } 
+  // FIXME - MRJC
   /*************************************************************************************************************************/
   /*************************************************************************************************************************/
   /*************************************************************************************************************************/
@@ -1158,9 +1028,6 @@ int Flame2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
     if (command_flag == EXECUTE_CODE) {
       // Deallocate memory for 2D Chem equation solution.
       if (!batch_flag) cout << "\n Deallocating Flame2D solution variables."; 
-      if (Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID) {
-	MGSolver.deallocate();
-      }
       Local_SolnBlk = Deallocate(Local_SolnBlk, 
 				 Input_Parameters);
       //Deallocate_Message_Buffers(List_of_Local_Solution_Blocks); // Not necessary here!
@@ -1190,9 +1057,6 @@ int Flame2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
     else if (command_flag == TERMINATE_CODE) {
       // Deallocate memory for 2D Chem equation solution.
       if (!batch_flag) cout << "\n Deallocating Flame2D solution variables."; 
-      if (Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID) {
-	MGSolver.deallocate();
-      }
       Local_SolnBlk = Deallocate(Local_SolnBlk, 
 				 Input_Parameters);
 
@@ -1372,52 +1236,6 @@ int Flame2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
       if (error_flag) return (error_flag);
       
     }
-    /************************************************************************
-     ********************* WRITE OUTPUT RightHandSide ***********************
-     *************************************************************************/
-    else if (command_flag == WRITE_OUTPUT_RHS_CODE) {
-      // Output the RHS
-      if (!batch_flag) cout << "\n Writing right hand side to output data file(s).";
-      
-      error_flag = Output_RHS(Local_SolnBlk, 
-				  List_of_Local_Solution_Blocks, 
-				  Input_Parameters,
-				  number_of_time_steps,
-				  Time);
-      if (error_flag) {
-	cout << "\n Flame2D ERROR: Unable to open Flame2D output data file(s) "
-	     << "on processor "
-	     << List_of_Local_Solution_Blocks.ThisCPU
-	     << ".\n";
-	cout.flush();
-      } /* endif */
-      error_flag = CFFC_OR_MPI(error_flag);
-      if (error_flag) return (error_flag);
-    }
-    /************************************************************************
-     ********************* WRITE OUTPUT RightHandSide after Perturbation******
-     *************************************************************************/
-    else if (command_flag == WRITE_OUTPUT_PERTURB_CODE) {
-      // Output the RHS
-      if (!batch_flag) cout << "\n Writing right hand side to output data file(s).";
-      
-      error_flag = Output_PERTURB(Local_SolnBlk, 
-					  List_of_Local_Solution_Blocks, 
-					  Input_Parameters,
-					  number_of_time_steps,
-					  Time,
-					  processor_cpu_time);
- 
-      if (error_flag) {
-	cout << "\n Flame2D ERROR: Unable to open Flame2D output data file(s) "
-	     << "on processor "
-	     << List_of_Local_Solution_Blocks.ThisCPU
-	     << ".\n";
-	cout.flush();
-      } /* endif */
-      error_flag = CFFC_OR_MPI(error_flag);
-      if (error_flag) return (error_flag);
-    }
     /*************************************************************************
      ******************** WRITE RESTART FILE *********************************
      *************************************************************************/
@@ -1524,122 +1342,6 @@ int Flame2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
       CFFC_Broadcast_MPI(&error_flag, 1);
       if (error_flag) return (error_flag);
     }
-    /*************************************************************************
-     **************** WRITE RINGLEB ******************************************
-     *************************************************************************/
-    else if (command_flag == WRITE_OUTPUT_RINGLEB_CODE) {
-      if (!batch_flag) cout << endl << " Writing exact solution and error norms for Ringleb's flow.";
-      error_flag = Output_Ringleb(Local_SolnBlk,
-				  List_of_Local_Solution_Blocks,
-				  Input_Parameters);
-      if (error_flag) {
-	cout << endl << "\n Flame2D ERROR: Unable to open Flame2D Ringleb's flow output file." << endl;
-	cout.flush();
-      }
-      CFFC_Broadcast_MPI(&error_flag,1);
-      if (error_flag) return error_flag;
-    }
-    /*************************************************************************
-    **************** WRITE VICOUS CHANNEL ***********************************
-    *************************************************************************/ 
-    else if (command_flag == WRITE_OUTPUT_VISCOUS_CHANNEL_CODE) {
-      if (!batch_flag) cout << endl << " Writing exact solution and error norms for the viscous channel flow.";
-      error_flag = Output_Viscous_Channel(Local_SolnBlk,
-					  List_of_Local_Solution_Blocks,
-					  Input_Parameters);
-      if (error_flag) {
-	cout << endl << "\n Flame2D ERROR: Unable to open Flame2D viscous channel flow output file." << endl;
-	cout.flush();
-      }
-      CFFC_Broadcast_MPI(&error_flag,1);
-      if (error_flag) return error_flag;
-    }
-    /*************************************************************************
-     **************** WRITE FLAT PLATE ***************************************
-     *************************************************************************/ 
-    else if (command_flag == WRITE_OUTPUT_FLAT_PLATE_CODE) {
-      if (!batch_flag) cout << endl << " Writing exact solution and error norms for the flat plate flow (Blasius solution).";
-      error_flag = Output_Flat_Plate(Local_SolnBlk,
-				     List_of_Local_Solution_Blocks,
-				     Input_Parameters);
-      if (error_flag) {
-	cout << endl << "\n Flame2D ERROR: Unable to open Flame2D flat plate output file." << endl;
-	cout.flush();
-      }
-      CFFC_Broadcast_MPI(&error_flag,1);
-      if (error_flag) return error_flag;
-    } 
-    /*************************************************************************
-     **************** WRITE CAVITY DRIVEN FLOW *******************************
-     *************************************************************************/ 
-    else if (command_flag == WRITE_OUTPUT_DRIVEN_CAVITY_FLOW_CODE) {
-      if (!batch_flag) cout << endl << " Writing the driven cavity flow output file.";
-      error_flag = Output_Driven_Cavity_Flow(Local_SolnBlk,
-					     List_of_Local_Solution_Blocks,
-					     Input_Parameters);
-      if (error_flag) {
-	cout << endl << "\n Flame2D ERROR: Unable to open Flame2D driven cavity flow." << endl;
-	cout.flush();
-      }
-      CFFC_Broadcast_MPI(&error_flag,1);
-      if (error_flag) return error_flag;
-      
-    } 
-
-    /*************************************************************************
-     **************** WRITE QUASI 3D for AXISYMMETRIC ************************
-     *************************************************************************/ 
-    else if (command_flag == WRITE_OUTPUT_QUASI3D_CODE) {
-      // Output solution data.
-      if (!batch_flag) cout << "\n Writing Flame2D quasi3D solution to output data file(s).";
-      error_flag = Output_Quasi3D_Tecplot(Local_SolnBlk,
-					  List_of_Local_Solution_Blocks,
-					  Input_Parameters,
-					  number_of_time_steps,
-					  Time);
-      if (error_flag) {
-	cout << "\n NavierStokes2D ERROR: Unable to open NavierStokes2D quasi3D output data file(s) "
-	     << "on processor "
-	     << List_of_Local_Solution_Blocks.ThisCPU
-	     << "." << endl;
-      }
-      error_flag = CFFC_OR_MPI(error_flag);
-      if (error_flag) return error_flag;
- 
-    }
-    /*************************************************************************
-     **************** SWITCH BCs TO FIXED  ***********************************
-     *************************************************************************/ 
-    else if (command_flag == SWITCH_BCS_TO_FIXED) {      
-      if (!batch_flag) cout << endl << " Setting EAST & WEST BC's Fixed. -> WARNING: ONLY VALID FOR 1D FLAME CASE!!!! \n";
-
-      //Should be calling a quadmultiblock function that would do this per block,
-      //but since the 1D FLAME case only has one block this should work, even though it is a hack.
-      
-      Local_SolnBlk[0].Grid.set_BCs(WEST,BC_CONSTANT_EXTRAPOLATION);      
-      Local_SolnBlk[0].Grid.set_BCs(EAST,BC_CONSTANT_EXTRAPOLATION); 
-      
-      //SET all V-velocity to ZERO
-      Local_SolnBlk[0].set_v_zero();  //????
-
-      //Switch to const_extrap then run BCS to set ghost cell W values to internal values
-      BCs(Local_SolnBlk, List_of_Local_Solution_Blocks,Input_Parameters);
-
-      //Copy adjusted ghost cell values to overwrite previous WoS, WoN, etc..
-      Reset_Wo(Local_SolnBlk[0]);
-
-      //Swich to Fixed and now BCs will use updated WoS, WoN, etc...
-      Local_SolnBlk[0].Grid.set_BCs(WEST,BC_FIXED);      
-      Local_SolnBlk[0].Grid.set_BCs(EAST,BC_FIXED); 
-
-      if (error_flag) {
-	cout << endl << "\n Flame2D ERROR: Problem in Flame2D SWITCH_BCS_TO_FIXED. " << endl;
-	cout.flush();
-      }
-      CFFC_Broadcast_MPI(&error_flag,1);
-      if (error_flag) return error_flag;      
-    }
-
 
     /*************************************************************************
      **************** POSTPROCESS RADIATION CODE *****************************

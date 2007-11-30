@@ -168,10 +168,22 @@ public:
    // return the number of species
   static int NumSpecies() { return ns; }
 
+   // return the number of species
+  static bool isReacting() { return reacting; }
+
   //! set static variables
   static void set_gravity(const double &g);
   static void set_Mref(const double &Ma) { Mref = Ma; };
-    
+  static void set_reacting(const bool &react) { reacting = react; };
+
+  /***************** Helper Functions *******************/
+  void add( const Flame2D_State &U, const double &mult=1.0) {
+    for (int i=0; i<n; i++) x[i] += mult*U.x[i];
+  };
+  void set( const Flame2D_State &U, const double &mult=1.0) {
+    for (int i=0; i<n; i++) x[i] = mult*U.x[i];
+  };
+
   /******************* Fluxes ***************************/
   void Delta(const Flame2D_State& Ur, const Flame2D_State& Ul) {
     for (int i=0; i<n; i++) x[i] = Ur.x[i] - Ul.x[i];
@@ -182,17 +194,10 @@ public:
 		     const Flame2D_State &lambdas_r);
   void HartenFix_Abs(const Flame2D_State &lambdas_a, const Flame2D_State &lambdas_l,
 		     const Flame2D_State &lambdas_r);
-  void HLLEAverage( const double& wavespeed_r, const double& wavespeed_l, 
-		    const Flame2D_State& Fr, const Flame2D_State& Fl, 
-		    const Flame2D_State& dUrl );
   void FluxHLLE_x(const Flame2D_pState &Wl, const Flame2D_pState &Wr,
 		  const int &Preconditioning);
   void FluxHLLE_n(const Flame2D_pState &Wl, const Flame2D_pState &Wr,
 		  const Vector2D &norm_dir, const int &Preconditioning);
-  void LindeAverage( const double& wavespeed_r, const double& wavespeed_l, 
-		     const double& wavespeed_m, const double& alpha,
-		     const Flame2D_State& Fr, const Flame2D_State& Fl, 
-		     const Flame2D_State& dUrl );
   void FluxLinde(const Flame2D_pState &Wl, const Flame2D_pState &Wr);
   void FluxLinde_n(const Flame2D_pState &Wl, const Flame2D_pState &Wr,
 		   const Vector2D &norm_dir);
@@ -207,6 +212,15 @@ public:
 		 const int &Preconditioning,
 		 const int &flow_type_flag,
 		 const double &delta_n );
+  void FluxAUSMplus_up(const Flame2D_pState &Wl,
+		       const Flame2D_pState &Wr);
+  void FluxAUSMplus_up_n(const Flame2D_pState &Wl,
+			 const Flame2D_pState &Wr,
+			 const Vector2D &norm_dir);
+
+  /***************** Checking ***************************/
+  bool isPhysical(const int &harshness);
+  bool speciesOK(const int &harshness);
 
   /**************** Operators Overloading ********************/
   // Index operator
@@ -241,6 +255,14 @@ public:
   /**
    * Private Objects
    */
+public:
+
+#ifdef _NS_MINUS_ONE
+  static const int  NSm1 = 1;
+#else
+  static const int  NSm1 = 0;
+#endif
+
 protected:
 
 #ifdef STATIC_NUMBER_OF_SPECIES
@@ -252,13 +274,10 @@ protected:
   static int       ns; //!< Number of species
   double           *x;
 #endif
-#ifdef _NS_MINUS_ONE
-  static const int  NSm1 = 1;
-#else
-  static const int  NSm1 = 0;
-#endif
+  static bool      reacting; //!< boolean indicating whether gas is reacting
   static double        Mref; //!< Mref for Precondtioning (normally set to incoming freestream Mach)
   static double   gravity_z; //!< m/s^2 acceleration due to gravity  
+  static double*          y; //!< temporary storage for mass fractions
 
 };
 
@@ -391,7 +410,126 @@ inline istream &operator >> (istream &in_file, Flame2D_State &X) {
    return (in_file);
 }
 
+/**************************************************************
+  Check for -ve mass fractions and set small -ve values
+  to ZERO. Then check that no mass is lost and that 
+  the mass fractions still sum = 1
 
+  Return "true" if passes
+  and "false" if failed
+
+  Should add "strict" and "anything goes" flags
+  currently only set to give warnings, but still 
+  continues.
+
+  * This is meant for a conserved state only
+
+***************************************************************/
+inline bool Flame2D_State::speciesOK(const int &harshness) {
+  double yi;
+  double sum(ZERO);
+
+  //-------- Negative Check ------------//     
+  for(int i=0; i<ns-NSm1; i++){
+    yi = rhoc(i)/rho();
+
+    //
+    //  -> check for > 1.0
+    //
+    if(yi > ONE){
+      rhoc(i) = rho();
+      yi = ONE; 
+
+    //
+    //  -> check for -ve
+    //
+    } else if(yi < ZERO){
+
+      //check for small -ve and set to ZERO 
+      if(yi > -SPEC_TOLERANCE){
+	rhoc(i) = ZERO;
+	yi = ZERO;
+
+      // else, report error depending upon harshness 
+      } else {
+	
+#ifdef _DEBUG
+	cout<<"\ncState -ve mass fraction in "<<speciesName(i)<<" "<<temp
+	    <<" greater than allowed tolerance of "<<-SPEC_TOLERANCE; 
+#endif
+
+	if( harshness < 10){
+	  return false;
+	} else { 
+
+#ifdef _DEBUG
+	  cout<<"\ncState rhospec["<<i<<"] = "<<rhoc(i)<<" -ve mass fraction larger than tolerance,"
+	      <<" but setting to zero and continuing anyway. ";
+#endif
+
+	  rhoc(i) = ZERO;
+	  yi = ZERO;
+
+	}
+      }
+
+
+    } // endif - y<0
+
+    // add the contribution to the sum
+    sum += yi;
+
+  } // enfor - species
+
+  // Distribute error according to number of species
+  // equations solved.
+#ifdef _NS_MINUS_ONE
+  yi = max(ONE - sum, ZERO);
+  sum += yi;
+  rhoc(ns-1) = rho()*yi;
+  for(int i=0; i<ns; i++){
+    rhoc(i) = rhoc(i)*(ONE/sum);
+  } 
+#else
+  for(int i=0; i<ns; i++){
+    rhoc(i) = rhoc(i)*(ONE/sum);
+  } 
+#endif
+  return true;
+}
+
+
+
+/****************************************************
+ * Check if the properties seam physical
+ * This is meant for a conserved state only
+ ****************************************************/
+inline bool Flame2D_State::isPhysical(const int &harshness) {
+  
+  // check for nan's, inf's etc.... debugging !!!
+#ifdef _DEBUG
+  for( int i=0; i<n; i++){ 
+    if( x[i] != x[i]){ cout<<"\n nan's in solution, variable "<<i<<endl; exit(1); return false; }
+  }
+#endif
+
+  // Get sensible internal energy
+  // E = rho*(e + HALF*v.sqr()); 
+  double e_sens(ZERO);
+  if (rho()>ZERO) {
+    for (int i=0; i<ns; i++) y[i] = rhoc(i)/rho();
+    e_sens = (E()/rho() - HALF*rhovsqr()/rho()/rho()) -  Mixture::heatFormation(y);
+  }
+
+  // check properties
+  if (rho() <= ZERO || !speciesOK(harshness) /*|| e_sens <= ZERO*/) {
+    cout << "\n " << CFFC_Name() 
+	 << " Flame2D ERROR: Negative Density || Energy || mass fractions: \n" << *this <<endl;
+    return false;
+  }
+  return true;
+
+}
 
 
 /*!
@@ -550,9 +688,27 @@ public:
     Mix.setState_TPY(Temp, Press, y); 
     rho() = p() / (Mix.gasConstant()*Temp);
   };
+  void setPressure(const double &Press) {    
+    p() = Press;
+    setGas(); 
+  };
   void setVelocity(const double &vvx, const double &vvy) {    
     vx() = vvx;
     vy() = vvy;
+  };
+  void setVelocityX(const double &vvx) { vx() = vvx; };
+  void setVelocityY(const double &vvy) { vy() = vvy; };
+  void setTemperature(const double &Temp) {
+    Mix.setState_TPY(Temp, p(), c());
+    rho() = p() / (Mix.gasConstant()*Temp);
+  };
+  void setEnergy(const double &en) { 
+    Mix.setState_DEY(rho(), en, c()); 
+    p() = rho()*Mix.gasConstant()*Mix.temperature();
+  };
+  void setEnthalpy(const double &h) { 
+    Mix.setState_DHY(rho(), h, c()); 
+    p() = rho()*Mix.gasConstant()*Mix.temperature();
   };
   double load_dihdic(void) const {
     Mix.getDihdDc( p(), c(), dihdic );
@@ -563,18 +719,6 @@ public:
 
 private:
   void setGas(void) { Mix.setState_DPY(rho(), p(), c()); };
-  void setGas_T(const double&Temp) { 
-    Mix.setState_TPY(Temp, p(), c());
-    rho() = p() / (Mix.gasConstant()*Temp);
-  };
-  void setGas_E(const double &en) { 
-    Mix.setState_DEY(rho(), en, c()); 
-    p() = rho()*Mix.gasConstant()*Mix.temperature();
-  };
-  void setGas_H(const double &h) { 
-    Mix.setState_DHY(rho(), h, c()); 
-    p() = rho()*Mix.gasConstant()*Mix.temperature();
-  };
 
 public:
  /********* Primitive / Conserved Transformation ******/
@@ -585,7 +729,7 @@ public:
     vy() = U.rhovy()/U.rho();
     for(int i=0; i<ns; i++) c(i) = U.rhoc(i)/U.rho();
     double e( U.E()/U.rho() - 0.5*U.rhovsqr()/(U.rho()*U.rho()) );
-    setGas_E(e);
+    setEnergy(e);
   }
   void setW(const Flame2D_pState &W){ if( this != &W)  Copy(W); }
   void setW(const Flame2D_State &W){
@@ -638,9 +782,9 @@ public:
   double Cv(void) const { return Mix.heatCapacity_v(); };
   double g(void) const { return Mix.heatRatio(); };
   //!< transport
-  double mu(void) const { return Mix.gasConstant(); };
-  double kappa(void) const { return Mix.gasConstant(); };
-  double Diffusion_coef(const int &i) const { return Mix.gasConstant(); };
+  double mu(void) const { return Mix.viscosity(); };
+  double kappa(void) const { return Mix.thermalCond(); };
+  double Diffusion_coef(const int &i) const { return Mix.speciesDiffCoef(i); };
   //!< Dimensionaless
   double Sc(const int &i) const { return Mix.schmidt(rho(), i); };
   double Pr(void) const { return Mix.prandtl(); };
@@ -649,6 +793,15 @@ public:
   //!< Derivatives
   double diedip() const { return (hprime() - Rtot())/(rho()*Rtot()); };
   double diedirho() const { return -p()*(hprime() - Rtot())/(rho()*rho()*Rtot()); };
+
+  /***************** Helper Functions *******************/
+  void Reconstruct( const Flame2D_pState &Wc, const Flame2D_State &phi, 
+		    const Flame2D_State &dWdx, const Flame2D_State &dWdy,
+		    const Vector2D &dX, const double &mult=1.0) {
+    for (int i=0; i<n; i++)
+      x[i] = Wc.x[i] + mult*(phi[i+1]*dWdx[i+1]*dX.x + phi[i+1]*dWdy[i+1]*dX.y);
+    setGas();
+  };
 
   /************* Eigenvalues / Eigenvectors *************/
   void lambda_x(Flame2D_State &lambdas) const;
@@ -661,7 +814,7 @@ public:
   /******************* Fluxes ***************************/
   void Fx(Flame2D_State &FluxX) const;
   Flame2D_State Fx(void) const;
-  void addFx(Flame2D_State &FluxX, const double& mult) const;
+  void addFx(Flame2D_State &FluxX, const double& mult=1.0) const;
   void RoeAverage(const Flame2D_pState &Wl, const Flame2D_pState &Wr);
 
   /********** Axisymmetric Source Terms *****************/
@@ -719,16 +872,22 @@ public:
   void BC_Characteristic_Pressure(const Flame2D_pState &Wi,
 				  const Flame2D_pState &Wo,
 				  const Vector2D &norm_dir);
+
+  /***************** Checking ***************************/
+private:
+  // overload so can't be used
+  bool isPhysical(const int &harshness)  {assert(1);};
+  bool speciesOK(const int &harshness) {assert(1);};
     
+public:
   /************* Operators Overloading ******************/
   // Assignment Operator.
   Flame2D_pState& operator =(const Flame2D_pState &W); 
- 
+  Flame2D_pState& operator =(const Flame2D_State &W); 
+
   // Input-output operators.
   friend ostream& operator << (ostream &out_file, const Flame2D_pState &X);
   friend istream& operator >> (istream &in_file,  Flame2D_pState &X);
-
-
 
 };
 
@@ -745,12 +904,15 @@ inline void Flame2D_pState :: AllocateStatic() {
   if (ns>0) { 
     r = new double[ns];
     dihdic = new double[ns];
+    y = new double[ns];
   }
 };
 
 inline void Flame2D_pState :: DeallocateStatic() { 
   if (r!=NULL) { delete[] r; r = NULL; } 
   if (dihdic!=NULL) { delete[] dihdic; dihdic = NULL; } 
+  if (y!=NULL) { delete[] y; y = NULL; } 
+  Mixture::DeallocateStatic();
 };
 
 
@@ -762,6 +924,11 @@ inline Flame2D_pState& Flame2D_pState::operator =(const Flame2D_pState &W){
   if( this != &W) Copy(W);
   return (*this);
 }
+inline Flame2D_pState& Flame2D_pState::operator =(const Flame2D_State &W){
+  Copy(W);
+  setGas();
+  return (*this);
+}
 
 /********************************************************
  * Flame2D_pState -- Input-output operators.            *
@@ -770,7 +937,6 @@ inline ostream &operator << (ostream &out_file, const Flame2D_pState &W) {
   out_file.precision(10);
   out_file.setf(ios::scientific);
   for( int i=0; i<W.NumVar(); i++) out_file<<" "<<W[i+1];
-  out_file << endl << W.Mix;
   out_file.unsetf(ios::scientific);
   return (out_file);
 }
