@@ -218,7 +218,8 @@ SRC_SOLVERS1D_EXE = $(SOLVERS1D_DIR)Solvers1D.cc
 SRC_SOLVERS1D_SOLVER = $(SRC_SOLVERS1D_EXE) $(SRC_SOLVERS1D)
 
 # Levermore 1D:
-SRC_LEVERMORE1D = Levermore1DVector.cc
+SRC_LEVERMORE1D = Levermore1DVector.cc \
+                  Levermore1DState.cc
 SRC_LEVERMORE1D := $(addprefix $(LEVERMORE_1D_DIR), $(SRC_LEVERMORE1D))
 
 # Add Levermore 1D Testing If Required:

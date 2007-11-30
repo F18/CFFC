@@ -93,38 +93,4 @@ class Levermore1D_weights : public Levermore1D_Vector{
 
 };
 
-/********************************************************
- * Class: Levermore1D_pState: Inline functions          *
- ********************************************************/
-inline void Levermore1D_pState::set_from_U(const Levermore1D_cState &U) {
-  return;
-}
- 
-inline void Levermore1D_pState::set_from_A(const Levermore1D_weights &A) {
-  return;
-}
-
-/********************************************************
- * Class: Levermore1D_cState: Inline functions          *
- ********************************************************/
-inline void Levermore1D_cState::set_from_W(const Levermore1D_pState &W) {
-  return;
-}
-
-inline void Levermore1D_cState::set_from_A(const Levermore1D_weights &A) {
-  return;
-}
-
-
-/********************************************************
- * Class: Levermore1D_weights: Inline functions         *
- ********************************************************/
-inline void Levermore1D_weights::set_from_W(const Levermore1D_pState &W) {
-  return;
-}
-
-inline void Levermore1D_weights::set_from_U(const Levermore1D_cState &U) {
-  return;
-}
-
 #endif
