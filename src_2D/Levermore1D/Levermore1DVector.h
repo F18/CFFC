@@ -41,6 +41,7 @@ class Levermore1D_Vector {
 
   /* Operators */
   double& operator[](int index);
+  const double& operator[](int index) const;
   Levermore1D_Vector& operator=(const Levermore1D_Vector &L);
   Levermore1D_Vector operator+(const Levermore1D_Vector &L) const;
   Levermore1D_Vector& operator+=(const Levermore1D_Vector &L);
@@ -75,6 +76,13 @@ class Levermore1D_Vector {
  *                  Operators                           *
  ********************************************************/
 inline double& Levermore1D_Vector::operator[](int index) {
+  //I will start the index at (shudder) one to be consistent
+  //with the rest of the code
+  assert( index >= 1 && index <= length );
+  return m_values[index-1];
+}
+
+inline const double& Levermore1D_Vector::operator[](int index) const {
   //I will start the index at (shudder) one to be consistent
   //with the rest of the code
   assert( index >= 1 && index <= length );
