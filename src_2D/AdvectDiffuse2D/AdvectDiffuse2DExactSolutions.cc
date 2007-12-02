@@ -21,11 +21,11 @@ short AdvectDiffuse2D_ExactSolutions::i_Exact_Solution_Type = -1;          //!< 
 /*! Default constructor is used to create the unique object of this class */
 AdvectDiffuse2D_ExactSolutions::AdvectDiffuse2D_ExactSolutions(void){ }
 
-/*! Destroy the source field object */
+/*! Destroy the exact solution object */
 void AdvectDiffuse2D_ExactSolutions::DestroyExactSolutionObject(void){
   delete ExactSoln;
-  ExactSoln = NULL;		// set to no associated source field
-  i_Exact_Solution_Type = -1;	// set to value for no associated source field
+  ExactSoln = NULL;		// set to no associated exact solution
+  i_Exact_Solution_Type = -1;	// set to value for no associated exact solution
 }
 
 /*!
@@ -40,10 +40,10 @@ AdvectDiffuse2D_ExactSolutions& AdvectDiffuse2D_ExactSolutions::getInstance(void
 }
 
 /*!
- * Set the source field based on the required field type
+ * Set the exact solution based on the required solution index
  */
 void AdvectDiffuse2D_ExactSolutions::SetExactSolution(const short &SolutionIndex){
-  // deallocate the source term
+  // deallocate the exact solution
   DestroyExactSolutionObject();
 
   // create the proper exact solution and set the index accordingly
@@ -92,6 +92,14 @@ void AdvectDiffuse2D_ExactSolutions::SetExactSolution(const short &SolutionIndex
     ExactSoln = new StationaryHeatEqnWithLinearSource_ExactSolution;
     break;
 
+  case AD2D_EXACT_SOLUTION_PURE_CIRCULAR_ADVECTION_AT_CONSTANT_SPIN:
+    ExactSoln = new PureCircularAdvectionAtConstantSpin_ExactSolution;
+    break;
+
+  case AD2D_EXACT_SOLUTION_ADVECTION_DIFFUSION_IN_RECTANGULAR_CHANNEL:
+    ExactSoln = new AdvectionDiffusionInRectangularChannel_ExactSolution;
+    break;
+  
   default:
     throw runtime_error("AdvectDiffuse2D_ExactSolutions::SetExactSolution() ERROR! Unknown exact solution type index.");
   }
@@ -142,6 +150,10 @@ void AdvectDiffuse2D_ExactSolutions::Parse_Next_Input_Control_Parameter(AdvectDi
       SetExactSolution(AD2D_EXACT_SOLUTION_POISSON_V);
     } else if ( strcmp(IP.Next_Control_Parameter, "Heat_Diffusion_With_Linear_Source") == 0 ) {
       SetExactSolution(AD2D_EXACT_SOLUTION_STATIONARY_HEAT_TRANSFER_WITH_LINEAR_SOURCE);
+    } else if ( strcmp(IP.Next_Control_Parameter, "Pure_Circular_Advection") == 0 ) {
+      SetExactSolution(AD2D_EXACT_SOLUTION_PURE_CIRCULAR_ADVECTION_AT_CONSTANT_SPIN);
+    } else if ( strcmp(IP.Next_Control_Parameter, "Advection_Diffusion_In_Rectangular_Channel") == 0 ) {
+      SetExactSolution(AD2D_EXACT_SOLUTION_ADVECTION_DIFFUSION_IN_RECTANGULAR_CHANNEL);
     } else {
       i_command = INVALID_INPUT_CODE;
       return;
@@ -149,7 +161,7 @@ void AdvectDiffuse2D_ExactSolutions::Parse_Next_Input_Control_Parameter(AdvectDi
     i_command = 0;
 
   } else {
-    // Continue parsing with the parser of the current source field
+    // Continue parsing with the parser of the current exact solution
     if (ExactSoln != NULL){
       ExactSoln->Parse_Next_Input_Control_Parameter(IP,i_command);
     }
@@ -159,7 +171,7 @@ void AdvectDiffuse2D_ExactSolutions::Parse_Next_Input_Control_Parameter(AdvectDi
 
 /*!
  * Print the relevant parameters of the AdvectDiffuse2D_ExactSolutions class for the 
- * selected source field type to the provided output stream.
+ * selected exact solution to the provided output stream.
  */
 void AdvectDiffuse2D_ExactSolutions::Print_Info(std::ostream & out_file){
 
@@ -193,7 +205,7 @@ void AdvectDiffuse2D_ExactSolutions::Broadcast(void){
     i_Exact_Solution_Type_Copy = i_Exact_Solution_Type;
   }
 
-  // Broadcast the type of the source field
+  // Broadcast the type of the exact solution
   MPI::COMM_WORLD.Bcast(&i_Exact_Solution_Type_Copy,
 			1, 
 			MPI::SHORT, 0);

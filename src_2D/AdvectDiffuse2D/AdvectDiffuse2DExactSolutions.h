@@ -1,5 +1,5 @@
 /*!\file AdvectDiffuse2DExactSolutions.h
-  \brief Header file defining 2D the singleton advection-diffusion exact solution class. */
+  \brief Header file defining the singleton advection-diffusion exact solution class. */
 
 #ifndef _ADVECTDIFFUSE2D_EXACTSOLUTION_SINGLETON_INCLUDED
 #define _ADVECTDIFFUSE2D_EXACTSOLUTION_SINGLETON_INCLUDED
@@ -42,6 +42,11 @@ public:
   Vector2D Gradient(const double &x, const double &y) const;
   //@}
 
+  //! Update the internal variables of the exact solution
+  void Set_ParticularSolution_Parameters(void) const { 
+    if ( IsExactSolutionSet() ){ ExactSoln->Set_ParticularSolution_Parameters();}
+  }
+
   //! @name Functions for input-output and broadcast
   //@{
   void Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP, int & i_command);
@@ -49,7 +54,7 @@ public:
   void Broadcast(void);
   //@}
 
-  //! 
+  //! Indicate whether the exact solution has been set or not
   bool IsExactSolutionSet(void) const { return (ExactSoln != NULL)? true: false; }
 
 protected:

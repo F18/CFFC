@@ -18,6 +18,7 @@
 #include "../Utilities/TypeDefinition.h"
 #include "../Utilities/Utilities.h"
 #include "../CFD/CFD.h"
+#include "AdvectDiffuse2DInflowField.h"
 
 
 /*******************************************************************
@@ -32,17 +33,18 @@
 #define AD2D_EXACT_SOLUTION_LAPLACE_IV       3
 #define AD2D_EXACT_SOLUTION_LAPLACE_V        4
 // ========== PARTICULAR SOLUTIONS FOR POISSON EQUATION ===========
-#define AD2D_EXACT_SOLUTION_POISSON_I        5
-#define AD2D_EXACT_SOLUTION_POISSON_II       6
-#define AD2D_EXACT_SOLUTION_POISSON_III      7
-#define AD2D_EXACT_SOLUTION_POISSON_IV       8
-#define AD2D_EXACT_SOLUTION_POISSON_V        9
+#define AD2D_EXACT_SOLUTION_POISSON_I        10
+#define AD2D_EXACT_SOLUTION_POISSON_II       11
+#define AD2D_EXACT_SOLUTION_POISSON_III      12
+#define AD2D_EXACT_SOLUTION_POISSON_IV       13
+#define AD2D_EXACT_SOLUTION_POISSON_V        14
 // ========== PARTICULAR SOLUTIONS FOR PURE ADVECTION ===========
-#define AD2D_EXACT_SOLUTION_PURE_CIRCULAR_ADVECTION_AT_CONSTANT_SPIN  10
+#define AD2D_EXACT_SOLUTION_PURE_CIRCULAR_ADVECTION_AT_CONSTANT_SPIN  20
 // ========== PARTICULAR SOLUTIONS FOR ADVECTION-DIFFUSION ===========
-#define AD2D_EXACT_SOLUTION_ADVECTION_DIFFUSION_IN_ANNULUS  11
+#define AD2D_EXACT_SOLUTION_ADVECTION_DIFFUSION_IN_ANNULUS  30
+#define AD2D_EXACT_SOLUTION_ADVECTION_DIFFUSION_IN_RECTANGULAR_CHANNEL  31
 // ========== PARTICULAR SOLUTIONS FOR STATIONARY HEAT TRANSFER EQUATION WITH SOURCE ===========
-#define AD2D_EXACT_SOLUTION_STATIONARY_HEAT_TRANSFER_WITH_LINEAR_SOURCE   12
+#define AD2D_EXACT_SOLUTION_STATIONARY_HEAT_TRANSFER_WITH_LINEAR_SOURCE   40
 
 
 
@@ -529,8 +531,8 @@ private:
  * \brief Implements a particular exact solution to the stationary heat equation with linear source: 
  *   \f$ \frac{\partial^2 w}{\partial x^2} + \frac{\partial^2 w}{\partial y^2} = \lambda w \f$
  *
- * The solution is written for a rectangular domain on which the following boundary conditions have been imposed:
- *        -> Dirichlet BC on oposite edges (Edge I: w(CoordA) = SolnA; Edge II:  w(CoordB) = SolnB)
+ * The solution is written for a rectangular domain on which the following boundary conditions have been imposed: \n
+ *        -> Dirichlet BC on oposite edges (Edge I: w(CoordA) = SolnA; Edge II:  w(CoordB) = SolnB) \n
  *        -> Neumann BC on oposite faces
  */
 class StationaryHeatEqnWithLinearSource_ExactSolution: public ExactSolutionBasicType{
@@ -641,6 +643,125 @@ EvaluateGradientAt(const double &x, const double &y) const {
     return Vector2D(0.0,
 		    lambda_sqrt*(C1*exp(lambda_sqrt*y) - C2*exp(-lambda_sqrt*y)) ); 
   }
+}
+
+/*! 
+ * \class PureCircularAdvectionAtConstantSpin_ExactSolution
+ * 
+ * \brief Implements the exact solution for a circular advection problem:
+ *   \f$ \frac{\partial u}{\partial t} + \nabla \cdot (\vec{V} \, u)  = 0 \f$
+ * 
+ * The solution accepts different inflow conditions and considers them 
+ * implemented along the x-axis.
+ */
+class PureCircularAdvectionAtConstantSpin_ExactSolution: public ExactSolutionBasicType{
+public:
+
+  //! Basic Constructor
+  PureCircularAdvectionAtConstantSpin_ExactSolution(void): CenterOfRotation(0.0) {
+    // Name the exact solution
+    ExactSolutionName = "Pure circular advection at constant spin";
+
+    // Get access to the AdvectDiffuse2D_InflowField object
+    Inflow = &AdvectDiffuse2D_InflowField::getInstance();
+  };
+
+  //! Return exact solution 
+  double EvaluateSolutionAt(const double &x, const double &y) const;
+
+  //! Calculate the PDE RHS
+  double PDE_RighHandSide(const double &x, const double &y) const {return 0.0; }
+
+  //! Update internal variables
+  void Set_ParticularSolution_Parameters(void){ };
+
+  //! Parse the input control parameters
+  void Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP, int & i_command);
+
+  //! Print relevant parameters
+  void Print_Info(std::ostream & out_file);
+
+  //! Broadcast relevant parameters
+  void Broadcast(void);
+
+private:
+  Vector2D CenterOfRotation;	//!< location of the center of rotation
+  AdvectDiffuse2D_InflowField *Inflow;		//!< pointer to the inflow field
+};
+
+//! Return exact solution 
+inline double PureCircularAdvectionAtConstantSpin_ExactSolution::
+EvaluateSolutionAt(const double &x, const double &y) const {
+  double R;
+
+  // Calculate the distance R relative to the center of rotation
+  R = abs(Vector2D(x,y) - CenterOfRotation);
+
+  if (Inflow->IsInflowFieldSet()){
+    return Inflow->Solution(CenterOfRotation.x + R, CenterOfRotation.y);
+  } else {
+    throw runtime_error("PureCircularAdvectionAtConstantSpin_ExactSolution::EvaluateSolutionAt() ERROR! Inflow field not set.");
+  }
+}
+
+/*! 
+ * \class AdvectionDiffusionInRectangularChannel_ExactSolution
+ * 
+ * \brief Implements the exact solution for an advection-diffusion problem of constant velocity V(uo,0):
+ *   \f$ \frac{\partial u}{\partial t} + \nabla \cdot (\vec{V} u) = \nabla \cdot (k \, \nabla u) \f$
+ * 
+ * The inflow condition is considered to be \f$ \sin(\pi \, y) \f$ and diffusion coefficient constant.
+ * The velocity is along the x-axis.
+ * The solution is written for a rectangular domain on which the following boundary conditions have been imposed: \n
+ * \f$ T(x,0) = T(x,1) = 0.0 \f$ ; \f$ T(0,y) = sin(\pi \, y) \f$ ; \f$ \frac{\partial T(L,y)}{\partial x} = 0 \f$
+ *
+ * This test case is presented by C. Ollivier-Gooch and M.Van Altena in JCP 181, 729-752 (2002).
+ */
+class AdvectionDiffusionInRectangularChannel_ExactSolution: public ExactSolutionBasicType{
+public:
+
+  //! Basic Constructor
+  AdvectionDiffusionInRectangularChannel_ExactSolution(void): XVelocity(1.0),
+							      k(0.01),
+							      L(3.0){
+    // Name the exact solution
+    ExactSolutionName = "Advection diffusion in a rectangular channel along x-axis";
+  };
+
+  //! Return exact solution 
+  double EvaluateSolutionAt(const double &x, const double &y) const;
+
+  //! Calculate the PDE RHS
+  double PDE_RighHandSide(const double &x, const double &y) const {return 0.0; }
+
+  //! Update internal variables
+  void Set_ParticularSolution_Parameters(void){ };
+
+  //! Parse the input control parameters
+  void Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP, int & i_command);
+
+  //! Print relevant parameters
+  void Print_Info(std::ostream & out_file);
+
+  //! Broadcast relevant parameters
+  void Broadcast(void);
+
+private:
+  double XVelocity;	//!< velocity in the x-direction
+  double k;		//!< diffusion coefficient
+  double L;             //!< channel length
+};
+
+//! Return exact solution 
+inline double AdvectionDiffusionInRectangularChannel_ExactSolution::
+EvaluateSolutionAt(const double &x, const double &y) const {
+  double Temp(HALF*XVelocity/k);
+  double r1, r2;
+  
+  r1 = Temp + sqrt(sqr(Temp) + sqr(PI));
+  r2 = Temp - sqrt(sqr(Temp) + sqr(PI));
+
+  return sin(PI*y)*( (r2*exp(r1*x + r2*L) - r1*exp(r1*L+r2*x)) / (r2*exp(r2*L) - r1*exp(r1*L)) );
 }
 
 

@@ -196,6 +196,7 @@ public:
   char BC_East_Type[INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
   char BC_West_Type[INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
   int BC_North, BC_South, BC_East, BC_West;
+  AdvectDiffuse2D_InflowField *Inflow;    /*!< Pointer to the inflow field */
   //@}
 
   //! @name AMR input parameters:
@@ -307,7 +308,7 @@ public:
  * AdvectDiffuse2D_Input_Parameters::AdvectDiffuse2D_Input_Parameters() *
  * -->  Default Constructor                                             *
  ***********************************************************************/
-inline AdvectDiffuse2D_Input_Parameters::AdvectDiffuse2D_Input_Parameters(void){
+inline AdvectDiffuse2D_Input_Parameters::AdvectDiffuse2D_Input_Parameters(void): verbose_flag(OFF){
   ICEMCFD_FileNames = NULL;
 
   // Get access to the SourceTermField
@@ -315,6 +316,9 @@ inline AdvectDiffuse2D_Input_Parameters::AdvectDiffuse2D_Input_Parameters(void){
 
   // Get access to the AdvectDiffuse2D_ExactSolutions object
   ExactSoln = &AdvectDiffuse2D_ExactSolutions::getInstance();
+
+  // Get access to the AdvectDiffuse2D_InflowField object
+  Inflow = &AdvectDiffuse2D_InflowField::getInstance();
 }
 
 /************************************************************************

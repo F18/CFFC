@@ -95,8 +95,10 @@ namespace tut
     // Parse the input file
     IP.Parse_Input_File(input_file_name);
 
-    // === check value
-    ensure_distance("Value", IP.ExactSoln->Solution(0.5,0.1), 1.094837581924854, AcceptedError(1.094837581924854));
+    if (IP.ExactSoln->IsExactSolutionSet()){
+      // === check value
+      ensure_distance("Value", IP.ExactSoln->Solution(0.5,0.1), -8.352086276353658, AcceptedError(-8.352086276353658));
+    }
   }
 
 }

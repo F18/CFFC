@@ -14,5 +14,6 @@
 #include "VelocityFields.h"
 #include "DiffusionFields.h"
 #include "SourceTermFields.h"
+#include "AdvectDiffuse2DInflowField.h"
 
 #endif

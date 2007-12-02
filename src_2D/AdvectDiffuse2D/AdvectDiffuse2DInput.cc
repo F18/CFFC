@@ -87,6 +87,12 @@ int AdvectDiffuse2D_Input_Parameters::Parse_Input_File(char *Input_File_Name_ptr
       throw runtime_error(msg.str());
     } /* endif */
   } /* endwhile */
+
+  // Perform update of the internal variables of the exact solution
+  ExactSoln->Set_ParticularSolution_Parameters();
+
+  // Perform update of the internal variables of the inflow field
+  Inflow->Set_InflowField_Parameters();
 }
 
 /******************************************************//**
@@ -165,7 +171,7 @@ ostream &operator << (ostream &out_file,
     // ====    Source field parameters ====
     IP.SourceTerm->Print_Info(out_file);
 
-    // ==== Boundary conditions ====
+    // ====    Boundary conditions ====
     if (IP.BCs_Specified) {
       out_file << "\n  -> Boundary conditions specified as: "
 	       << "\n     -> BC_North = " << IP.BC_North_Type
@@ -173,6 +179,9 @@ ostream &operator << (ostream &out_file,
 	       << "\n     -> BC_East = " << IP.BC_East_Type
 	       << "\n     -> BC_West = " << IP.BC_West_Type;
     }
+
+    // ====    Inflow field ====
+    IP.Inflow->Print_Info(out_file);
 
     // ====    Exact solution parameters ====
     IP.ExactSoln->Print_Info(out_file);
@@ -1120,6 +1129,9 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
 
     // Exact solution variables
     IP.ExactSoln->Broadcast();
+
+    // Inflow field variables
+    IP.Inflow->Broadcast();
 
 #endif
 
@@ -2762,6 +2774,9 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
   /* Parse next control parameter with ExactSoln parser */
   IP.ExactSoln->Parse_Next_Input_Control_Parameter(IP,i_command);
 
+  /* Parse next control parameter with Inflow parser */
+  IP.Inflow->Parse_Next_Input_Control_Parameter(IP,i_command);
+
   /* Parse next control parameter with CENO_Execution_Mode parser */
   CENO_Execution_Mode::Parse_Next_Input_Control_Parameter(IP,i_command);
   
@@ -2851,6 +2866,12 @@ int Process_Input_Control_Parameter_File(AdvectDiffuse2D_Input_Parameters &Input
 	return (error_flag);
       }
     }
+
+    // Perform update of the internal variables of the exact solution
+    Input_Parameters.ExactSoln->Set_ParticularSolution_Parameters();
+
+    // Perform update of the internal variables of the inflow field
+    Input_Parameters.Inflow->Set_InflowField_Parameters();
 
     // Set reference states
     // Uo state

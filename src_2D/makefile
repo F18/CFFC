@@ -192,6 +192,8 @@ SRC_ADVECTDIFFUSE = $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DState.cc \
                     $(ADVECTDIFFUSE_DIR)DiffusionFields.cc \
                     $(ADVECTDIFFUSE_DIR)SourceTermFields.cc \
                     $(ADVECTDIFFUSE_DIR)SourceFields.cc \
+                    $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DInflowField.cc \
+                    $(ADVECTDIFFUSE_DIR)InflowFields.cc \
 		    $(ADVECTDIFFUSE_DIR)New_AdvectDiffuse2DState.cc
 SRC_ADVECTDIFFUSE_EXE = $(ADVECTDIFFUSE_DIR)AdvectDiffuse2D.cc
 

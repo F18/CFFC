@@ -1,5 +1,5 @@
-/*!\file SourceFields.cc
-  \brief Source file initializing/implementing member variables/functions that belong to classes defined in SourceFields.h */
+/*!\file ExactSolutions.cc
+  \brief Source file initializing/implementing member variables/functions that belong to classes defined in ExactSolutions.h */
 
 /* Include required C++ libraries. */
 // None
@@ -10,7 +10,7 @@
 /* Include CFFC header files */
 #include "../MPI/MPI.h"
 #include "AdvectDiffuse2DInput.h"
-#include "AdvectDiffuse2DExactSolutions.h"
+#include "ExactSolutions.h"
 
 
 ExactSolutionBasicType::ExactSolutionBasicType(void): ExactSolutionName("Not named"), Accuracy_Parameter(Soln) {  };
@@ -1125,6 +1125,174 @@ Broadcast(void){
 			1, 
 			MPI::DOUBLE, 0);
   MPI::COMM_WORLD.Bcast(&SolnB,
+			1, 
+			MPI::DOUBLE, 0);
+
+  // Update all parameters on processors different than
+  // the main one
+  if (!CFFC_Primary_MPI_Processor()){
+    Set_ParticularSolution_Parameters();
+  }
+ 
+#endif
+}
+
+
+/**************************************************************
+ * PureCircularAdvectionAtConstantSpin_ExactSolution Members  *
+ *************************************************************/
+
+/*! 
+ * Parse next input control parameter
+ */
+void PureCircularAdvectionAtConstantSpin_ExactSolution::
+Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP,
+				   int & i_command){
+
+  // Call the parser from the base class
+  ExactSolutionBasicType::Parse_Next_Input_Control_Parameter(IP,i_command);
+
+  // Check if the next control parameter has already been identified
+  if (i_command != INVALID_INPUT_CODE){
+    return;
+  }
+  
+  char buffer[256];
+
+  // Try to match the next control parameter
+  if (strcmp(IP.Next_Control_Parameter, "Center_Of_Rotation") == 0) {
+    i_command = 0;
+    ++IP.Line_Number;
+    IP.Input_File >> CenterOfRotation;
+    IP.Input_File.setf(ios::skipws);
+    IP.Input_File.getline(buffer, sizeof(buffer));
+
+  } else {
+    i_command = INVALID_INPUT_CODE;
+    return;
+  } // endif
+
+}
+
+/*! 
+ * Print relevant parameters
+ */
+void PureCircularAdvectionAtConstantSpin_ExactSolution::
+Print_Info(std::ostream & out_file){
+  
+  out_file << "\n     -> Center of rotation : " << CenterOfRotation;
+
+  // call the base Print_Info
+  ExactSolutionBasicType::Print_Info(out_file);
+}
+
+/*!
+ * Broadcast the PureCircularAdvectionAtConstantSpin_ExactSolution
+ * variables to all processors associated with the specified 
+ * communicator from the specified processor using the MPI broadcast 
+ * routine.
+ */
+void PureCircularAdvectionAtConstantSpin_ExactSolution::
+Broadcast(void){
+
+#ifdef _MPI_VERSION
+
+  MPI::COMM_WORLD.Bcast(&CenterOfRotation.x,
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&CenterOfRotation.y,
+			1, 
+			MPI::DOUBLE, 0);
+
+  // Update all parameters on processors different than
+  // the main one
+  if (!CFFC_Primary_MPI_Processor()){
+    Set_ParticularSolution_Parameters();
+  }
+ 
+#endif
+}
+
+
+/*****************************************************************
+ * AdvectionDiffusionInRectangularChannel_ExactSolution Members  *
+ ****************************************************************/
+
+/*! 
+ * Parse next input control parameter
+ */
+void AdvectionDiffusionInRectangularChannel_ExactSolution::
+Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP,
+				   int & i_command){
+
+  // Call the parser from the base class
+  ExactSolutionBasicType::Parse_Next_Input_Control_Parameter(IP,i_command);
+
+  // Check if the next control parameter has already been identified
+  if (i_command != INVALID_INPUT_CODE){
+    return;
+  }
+  
+  char buffer[256];
+
+  // Try to match the next control parameter
+  if (strcmp(IP.Next_Control_Parameter, "XVelocity_Coeff") == 0) {
+    i_command = 0;
+    ++IP.Line_Number;
+    IP.Input_File >> XVelocity;
+    IP.Input_File.getline(buffer, sizeof(buffer));
+
+  } else if (strcmp(IP.Next_Control_Parameter, "Diffusion_Coeff") == 0) {
+    i_command = 0;
+    ++IP.Line_Number;
+    IP.Input_File >> k;
+    IP.Input_File.getline(buffer, sizeof(buffer));
+
+  } else if (strcmp(IP.Next_Control_Parameter, "Channel_Length_Coeff") == 0) {
+    i_command = 0;
+    ++IP.Line_Number;
+    IP.Input_File >> L;
+    IP.Input_File.getline(buffer, sizeof(buffer));
+
+  } else {
+    i_command = INVALID_INPUT_CODE;
+    return;
+  } // endif
+
+}
+
+/*! 
+ * Print relevant parameters
+ */
+void AdvectionDiffusionInRectangularChannel_ExactSolution::
+Print_Info(std::ostream & out_file){
+  
+  out_file << "\n     -> Channel Length : " << L
+	   << "\n     -> Velocity x-axis : " << XVelocity
+	   << "\n     -> Diffusion Coeff : " << k;
+
+  // call the base Print_Info
+  ExactSolutionBasicType::Print_Info(out_file);
+}
+
+/*!
+ * Broadcast the AdvectionDiffusionInRectangularChannel_ExactSolution
+ * variables to all processors associated with the specified 
+ * communicator from the specified processor using the MPI broadcast 
+ * routine.
+ */
+void AdvectionDiffusionInRectangularChannel_ExactSolution::
+Broadcast(void){
+
+#ifdef _MPI_VERSION
+
+  MPI::COMM_WORLD.Bcast(&XVelocity,
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&k,
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&L,
 			1, 
 			MPI::DOUBLE, 0);
 
