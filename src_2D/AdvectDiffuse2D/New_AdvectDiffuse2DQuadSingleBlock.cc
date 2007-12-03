@@ -1113,220 +1113,242 @@ void ICs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
  * Apply boundary conditions at boundaries of the       
  * specified quadrilateral solution block.              
  * 
- * \todo Must be revisited!!!
  ********************************************************/
 void BCs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 	 const AdvectDiffuse2D_Input_Parameters &IP) {
 
   int i, j;
-  double dx_norm, du, dudx;
-  Vector2D dX;
+  int ghost;
 
   for ( j = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
-    if ( (j >= SolnBlk.JCl && j <= SolnBlk.JCu) ||
-	 (j < SolnBlk.JCl && 
-	  (SolnBlk.Grid.BCtypeS[SolnBlk.ICl-1] == BC_NONE ||
-	   SolnBlk.Grid.BCtypeS[SolnBlk.ICl-1] == BC_PERIODIC ||
-	   SolnBlk.Grid.BCtypeS[SolnBlk.ICl-1] == BC_DIRICHLET ||
-	   SolnBlk.Grid.BCtypeS[SolnBlk.ICl-1] == BC_NEUMANN ||
-	   SolnBlk.Grid.BCtypeS[SolnBlk.ICl-1] == BC_ROBIN) ) ||
-	 (j > SolnBlk.JCu && 
-	  (SolnBlk.Grid.BCtypeN[SolnBlk.ICl-1] == BC_NONE ||
-	   SolnBlk.Grid.BCtypeN[SolnBlk.ICl-1] == BC_PERIODIC ||
-	   SolnBlk.Grid.BCtypeN[SolnBlk.ICl-1] == BC_DIRICHLET ||
-	   SolnBlk.Grid.BCtypeN[SolnBlk.ICl-1] == BC_NEUMANN ||
-	   SolnBlk.Grid.BCtypeN[SolnBlk.ICl-1] == BC_ROBIN) ) ) {
-      switch(SolnBlk.Grid.BCtypeW[j]) {
-      case BC_NONE :
-	break;
-      case BC_DIRICHLET :
-	SolnBlk.U[SolnBlk.ICl-1][j] = SolnBlk.UoW[j];
-	SolnBlk.U[SolnBlk.ICl-2][j] = SolnBlk.UoW[j];
-	dX = SolnBlk.Grid.xfaceW(SolnBlk.ICl, j)-
-	  SolnBlk.Grid.Cell[SolnBlk.ICl][j].Xc;
-	dx_norm = dX*SolnBlk.Grid.nfaceW(SolnBlk.ICl, j);
-	du = SolnBlk.UoW[j].u-SolnBlk.U[SolnBlk.ICl][j].u;
-	dudx = du/dx_norm;
-	dX = SolnBlk.Grid.Cell[SolnBlk.ICl-1][j].Xc -
-	  SolnBlk.Grid.Cell[SolnBlk.ICl][j].Xc;
-	dx_norm = dX*SolnBlk.Grid.nfaceW(SolnBlk.ICl, j);
-	SolnBlk.U[SolnBlk.ICl-1][j].u = SolnBlk.U[SolnBlk.ICl][j].u + dudx*dx_norm;
-	dX = SolnBlk.Grid.Cell[SolnBlk.ICl-2][j].Xc -
-	  SolnBlk.Grid.Cell[SolnBlk.ICl][j].Xc;
-	dx_norm = dX*SolnBlk.Grid.nfaceW(SolnBlk.ICl, j);
-	SolnBlk.U[SolnBlk.ICl-2][j].u = SolnBlk.U[SolnBlk.ICl][j].u + dudx*dx_norm;
-	break;
-      case BC_NEUMANN :
-	SolnBlk.U[SolnBlk.ICl-1][j] = SolnBlk.U[SolnBlk.ICl][j];
-	SolnBlk.U[SolnBlk.ICl-2][j] = SolnBlk.U[SolnBlk.ICl][j];
-	break;
-      case BC_ROBIN :
+    // Prescribe West boundary conditions.
+    if ( (j >= SolnBlk.JCl && j <= SolnBlk.JCu) ||                                  // <-- affects W boundary cells
+	 (j < SolnBlk.JCl && (SolnBlk.Grid.BCtypeS[SolnBlk.ICl-1] == BC_NONE ) ) || // <-- affects SW corner cells
+	 (j > SolnBlk.JCu && (SolnBlk.Grid.BCtypeN[SolnBlk.ICl-1] == BC_NONE ) ) )  // <-- affects NW corner cells 
+      {														     
+	switch(SolnBlk.Grid.BCtypeW[j]) {									   
+	case BC_NONE :
+	  break;
 
-	break;
-      case BC_PERIODIC :
-	SolnBlk.U[SolnBlk.ICl-1][j] = SolnBlk.U[SolnBlk.ICu-1][j];
-	SolnBlk.U[SolnBlk.ICl-2][j] = SolnBlk.U[SolnBlk.ICu-2][j];
-	break;
-      default:
-	SolnBlk.U[SolnBlk.ICl-1][j] = SolnBlk.UoW[j];
-	SolnBlk.U[SolnBlk.ICl-2][j] = SolnBlk.UoW[j];
-	break;
-      } /* endswitch */
-    } /* endif */
+	case BC_PERIODIC :
+	  for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	    SolnBlk.U[SolnBlk.ICl-ghost][j] = SolnBlk.U[SolnBlk.ICu-ghost+1][j];
+	  }
+	  break;
 
-    if ( (j >= SolnBlk.JCl && j <= SolnBlk.JCu) ||
-	 (j < SolnBlk.JCl && 
-	  (SolnBlk.Grid.BCtypeS[SolnBlk.ICu+1] == BC_NONE ||
-	   SolnBlk.Grid.BCtypeS[SolnBlk.ICu+1] == BC_PERIODIC ||
-	   SolnBlk.Grid.BCtypeS[SolnBlk.ICu+1] == BC_DIRICHLET ||
-	   SolnBlk.Grid.BCtypeS[SolnBlk.ICu+1] == BC_NEUMANN ||
-	   SolnBlk.Grid.BCtypeS[SolnBlk.ICu+1] == BC_ROBIN) ) ||
-	 (j > SolnBlk.JCu && 
-	  (SolnBlk.Grid.BCtypeN[SolnBlk.ICu+1] == BC_NONE ||
-	   SolnBlk.Grid.BCtypeN[SolnBlk.ICu+1] == BC_PERIODIC ||
-	   SolnBlk.Grid.BCtypeN[SolnBlk.ICu+1] == BC_DIRICHLET ||
-	   SolnBlk.Grid.BCtypeN[SolnBlk.ICu+1] == BC_NEUMANN ||
-	   SolnBlk.Grid.BCtypeN[SolnBlk.ICu+1] == BC_ROBIN) ) ) {
-      switch(SolnBlk.Grid.BCtypeE[j]) {
-      case BC_NONE :
-	break;
-      case BC_DIRICHLET :
-	SolnBlk.U[SolnBlk.ICu+1][j] = SolnBlk.UoE[j];
-	SolnBlk.U[SolnBlk.ICu+2][j] = SolnBlk.UoE[j];
-	dX = SolnBlk.Grid.xfaceE(SolnBlk.ICu, j)-
-	  SolnBlk.Grid.Cell[SolnBlk.ICu][j].Xc;
-	dx_norm = dX*SolnBlk.Grid.nfaceE(SolnBlk.ICu, j);
-	du = SolnBlk.UoE[j].u-SolnBlk.U[SolnBlk.ICu][j].u;
-	dudx = du/dx_norm;
-	dX = SolnBlk.Grid.Cell[SolnBlk.ICu+1][j].Xc -
-	  SolnBlk.Grid.Cell[SolnBlk.ICu][j].Xc;
-	dx_norm = dX*SolnBlk.Grid.nfaceE(SolnBlk.ICu, j);
-	SolnBlk.U[SolnBlk.ICu+1][j].u = SolnBlk.U[SolnBlk.ICu][j].u + dudx*dx_norm;
-	dX = SolnBlk.Grid.Cell[SolnBlk.ICu+2][j].Xc -
-	  SolnBlk.Grid.Cell[SolnBlk.ICu][j].Xc;
-	dx_norm = dX*SolnBlk.Grid.nfaceE(SolnBlk.ICu, j);
-	SolnBlk.U[SolnBlk.ICu+2][j].u = SolnBlk.U[SolnBlk.ICu][j].u + dudx*dx_norm;
-	break;
-      case BC_NEUMANN :
-	SolnBlk.U[SolnBlk.ICu+1][j] = SolnBlk.U[SolnBlk.ICu][j];
-	SolnBlk.U[SolnBlk.ICu+2][j] = SolnBlk.U[SolnBlk.ICu][j];
-	break;
-      case BC_ROBIN :
+	case BC_DIRICHLET :	// Use UoW as reference value
+	  for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	    SolnBlk.U[SolnBlk.ICl-ghost][j] = SolnBlk.UoW[j];
+	  }
+	  break;
 
-	break;
-      case BC_PERIODIC :
-	SolnBlk.U[SolnBlk.ICu+1][j] = SolnBlk.U[SolnBlk.ICl+1][j];
-	SolnBlk.U[SolnBlk.ICu+2][j] = SolnBlk.U[SolnBlk.ICl+2][j];
-	break;
-      default:
-	SolnBlk.U[SolnBlk.ICu+1][j] = SolnBlk.UoE[j];
-	SolnBlk.U[SolnBlk.ICu+2][j] = SolnBlk.UoE[j];
-	break;
-      } /* endswitch */
+	case BC_NEUMANN :       
+	  throw runtime_error("BCs() ERROR! Neumann BC hasn't been implemented yet!");
+	  break;
+
+	case BC_OUTFLOW :
+	  throw runtime_error("BCs() ERROR! Outflow BC hasn't been implemented yet!");
+	  break;
+
+	case BC_INFLOW :
+	  throw runtime_error("BCs() ERROR! Inflow BC hasn't been implemented yet!");
+	  break;
+
+	case BC_FARFIELD :
+	  throw runtime_error("BCs() ERROR! Farfield BC hasn't been implemented yet!");
+	  break;
+
+	case BC_SYMMETRY_PLANE :
+	  throw runtime_error("BCs() ERROR! Symmetry plane BC hasn't been implemented yet!");
+	  break;
+
+	case BC_EXTRAPOLATE :
+	case BC_LINEAR_EXTRAPOLATION :
+	  throw runtime_error("BCs() ERROR! Linear extrapolation BC hasn't been implemented yet!");
+	  break;
+
+	case BC_CONSTANT_EXTRAPOLATION :
+	default:		
+	  // Impose constant extrapolation
+	  for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	    SolnBlk.U[SolnBlk.ICl-ghost][j] = SolnBlk.U[SolnBlk.ICl][j];
+	  }
+	  break;
+	} /* endswitch */
+      } /* endif */
+
+
+    // Prescribe East boundary conditions.
+    if ( (j >= SolnBlk.JCl && j <= SolnBlk.JCu) ||                                   // <-- affects E boundary cells
+	 (j < SolnBlk.JCl && (SolnBlk.Grid.BCtypeS[SolnBlk.ICu+1] == BC_NONE ) ) ||  // <-- affects SE corner cells
+	 (j > SolnBlk.JCu && (SolnBlk.Grid.BCtypeN[SolnBlk.ICu+1] == BC_NONE ) ) )   // <-- affects NE corner cells
+      {
+	switch(SolnBlk.Grid.BCtypeE[j]) {
+	case BC_NONE :
+	  break;
+	  
+	case BC_PERIODIC :
+	  for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	    SolnBlk.U[SolnBlk.ICu+ghost][j] = SolnBlk.U[SolnBlk.ICl+ghost-1][j];
+	  }
+	  break;
+	  
+	case BC_DIRICHLET :	// Use UoE as reference value
+	  for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	    SolnBlk.U[SolnBlk.ICu+ghost][j] = SolnBlk.UoE[j];
+	  }
+	  break;
+	  
+	case BC_NEUMANN :
+	  throw runtime_error("BCs() ERROR! Neumann BC hasn't been implemented yet!");
+	  break;
+
+	case BC_OUTFLOW :
+	  throw runtime_error("BCs() ERROR! Outflow BC hasn't been implemented yet!");
+	  break;
+
+	case BC_INFLOW :
+	  throw runtime_error("BCs() ERROR! Inflow BC hasn't been implemented yet!");
+	  break;
+
+	case BC_FARFIELD :
+	  throw runtime_error("BCs() ERROR! Farfield BC hasn't been implemented yet!");
+	  break;
+
+	case BC_SYMMETRY_PLANE :
+	  throw runtime_error("BCs() ERROR! Symmetry plane BC hasn't been implemented yet!");
+	  break;
+
+	case BC_EXTRAPOLATE :
+	case BC_LINEAR_EXTRAPOLATION :
+	  throw runtime_error("BCs() ERROR! Linear extrapolation BC hasn't been implemented yet!");
+	  break;
+
+	case BC_CONSTANT_EXTRAPOLATION :
+	default:		
+	  // Impose constant extrapolation
+	  for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	    SolnBlk.U[SolnBlk.ICu+ghost][j] = SolnBlk.U[SolnBlk.ICu][j];
+	  }
+	  break;
+	} /* endswitch */
     } /* endif */
   } /* endfor */
 
+
   for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
-    if ( (i >= SolnBlk.ICl && i <= SolnBlk.ICu) ||
-	 (i < SolnBlk.ICl && 
-	  (SolnBlk.Grid.BCtypeW[SolnBlk.JCl-1] == BC_NONE ||
-	   SolnBlk.Grid.BCtypeW[SolnBlk.JCl-1] == BC_PERIODIC ||
-	   SolnBlk.Grid.BCtypeW[SolnBlk.JCl-1] == BC_NEUMANN ||
-	   SolnBlk.Grid.BCtypeW[SolnBlk.JCl-1] == BC_DIRICHLET||
-	   SolnBlk.Grid.BCtypeW[SolnBlk.JCl-1] == BC_ROBIN) ) ||
-	 (i > SolnBlk.ICu && 
-	  (SolnBlk.Grid.BCtypeE[SolnBlk.JCl-1] == BC_NONE ||
-	   SolnBlk.Grid.BCtypeE[SolnBlk.JCl-1] == BC_PERIODIC ||
-	   SolnBlk.Grid.BCtypeE[SolnBlk.JCl-1] == BC_DIRICHLET ||
-	   SolnBlk.Grid.BCtypeE[SolnBlk.JCl-1] == BC_NEUMANN ||
-	   SolnBlk.Grid.BCtypeE[SolnBlk.JCl-1] == BC_ROBIN) ) ) {
-      switch(SolnBlk.Grid.BCtypeS[i]) {
-      case BC_NONE :
-	break;
-      case BC_DIRICHLET :
-	SolnBlk.U[i][SolnBlk.JCl-1] = SolnBlk.UoS[i];
-	SolnBlk.U[i][SolnBlk.JCl-2] = SolnBlk.UoS[i];
-	dX = SolnBlk.Grid.xfaceS(i, SolnBlk.JCl)-
-	  SolnBlk.Grid.Cell[i][SolnBlk.JCl].Xc;
-	dx_norm = dX*SolnBlk.Grid.nfaceS(i, SolnBlk.JCl);
-	du = SolnBlk.UoS[i].u-SolnBlk.U[i][SolnBlk.JCl].u;
-	dudx = du/dx_norm;
-	dX = SolnBlk.Grid.Cell[i][SolnBlk.JCl-1].Xc -
-	  SolnBlk.Grid.Cell[i][SolnBlk.JCl].Xc;
-	dx_norm = dX*SolnBlk.Grid.nfaceS(i, SolnBlk.JCl);
-	SolnBlk.U[i][SolnBlk.JCl-1].u = SolnBlk.U[i][SolnBlk.JCl].u + dudx*dx_norm;
-	dX = SolnBlk.Grid.Cell[i][SolnBlk.JCl-2].Xc -
-	  SolnBlk.Grid.Cell[i][SolnBlk.JCl].Xc;
-	dx_norm = dX*SolnBlk.Grid.nfaceS(i, SolnBlk.JCl);
-	SolnBlk.U[i][SolnBlk.JCl-2].u = SolnBlk.U[i][SolnBlk.JCl].u + dudx*dx_norm;
-	break;
-      case BC_NEUMANN :
-	SolnBlk.U[i][SolnBlk.JCl-1] = SolnBlk.U[i][SolnBlk.JCl];
-	SolnBlk.U[i][SolnBlk.JCl-2] = SolnBlk.U[i][SolnBlk.JCl];
-	break;
-      case BC_ROBIN :
+    // Prescribe South boundary conditions.
+    if ( (i >= SolnBlk.ICl && i <= SolnBlk.ICu) ||                                  // <-- affects S boundary cells
+	 (i < SolnBlk.ICl && (SolnBlk.Grid.BCtypeW[SolnBlk.JCl-1] == BC_NONE ) ) || // <-- affects SW corner cells
+	 (i > SolnBlk.ICu && (SolnBlk.Grid.BCtypeE[SolnBlk.JCl-1] == BC_NONE ) ) )  // <-- affects SE corner cells 
+      {
+	switch(SolnBlk.Grid.BCtypeS[i]) {
+	case BC_NONE :
+	  break;
 
-	break;
-      case BC_PERIODIC :
-	SolnBlk.U[i][SolnBlk.JCl-1] = SolnBlk.U[i][SolnBlk.JCu-1];
-	SolnBlk.U[i][SolnBlk.JCl-2] = SolnBlk.U[i][SolnBlk.JCu-2];
-	break;
-      default:
-	SolnBlk.U[i][SolnBlk.JCl-1] = SolnBlk.UoS[i];
-	SolnBlk.U[i][SolnBlk.JCl-2] = SolnBlk.UoS[i];
-	break;
-      } /* endswitch */
-    } /* endif */
+	case BC_PERIODIC :
+	  for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	    SolnBlk.U[i][SolnBlk.JCl-ghost] = SolnBlk.U[i][SolnBlk.JCu-ghost+1];
+	  }
+	  break;
+	  
+	case BC_DIRICHLET :	// Use UoS as reference value
+	  for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	    SolnBlk.U[i][SolnBlk.JCl-ghost] = SolnBlk.UoS[i];
+	  }
+	  break;
 
+	case BC_NEUMANN :
+	  throw runtime_error("BCs() ERROR! Neumann BC hasn't been implemented yet!");
+	  break;
+
+	case BC_OUTFLOW :
+	  throw runtime_error("BCs() ERROR! Outflow BC hasn't been implemented yet!");
+	  break;
+
+	case BC_INFLOW :
+	  throw runtime_error("BCs() ERROR! Inflow BC hasn't been implemented yet!");
+	  break;
+
+	case BC_FARFIELD :
+	  throw runtime_error("BCs() ERROR! Farfield BC hasn't been implemented yet!");
+	  break;
+
+	case BC_SYMMETRY_PLANE :
+	  throw runtime_error("BCs() ERROR! Symmetry plane BC hasn't been implemented yet!");
+	  break;
+
+	case BC_EXTRAPOLATE :
+	case BC_LINEAR_EXTRAPOLATION :
+	  throw runtime_error("BCs() ERROR! Linear extrapolation BC hasn't been implemented yet!");
+	  break;
+
+	case BC_CONSTANT_EXTRAPOLATION :
+	default:		
+	  // Impose constant extrapolation
+	  for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	    SolnBlk.U[i][SolnBlk.JCl-ghost] = SolnBlk.U[i][SolnBlk.JCl];
+	  }
+	  break;
+	} /* endswitch */
+      } /* endif */
+
+
+    // Prescribe North boundary conditions.
     if ( (i >= SolnBlk.ICl && i <= SolnBlk.ICu) ||
-	 (i < SolnBlk.ICl && 
-	  (SolnBlk.Grid.BCtypeW[SolnBlk.JCu+1] == BC_NONE ||
-	   SolnBlk.Grid.BCtypeW[SolnBlk.JCu+1] == BC_PERIODIC ||
-	   SolnBlk.Grid.BCtypeW[SolnBlk.JCu+1] == BC_NEUMANN ||
-	   SolnBlk.Grid.BCtypeW[SolnBlk.JCu+1] == BC_DIRICHLET||
-	   SolnBlk.Grid.BCtypeW[SolnBlk.JCu+1] == BC_ROBIN) ) ||
-	 (i > SolnBlk.ICu && 
-	  (SolnBlk.Grid.BCtypeE[SolnBlk.JCu+1] == BC_NONE ||
-	   SolnBlk.Grid.BCtypeE[SolnBlk.JCu+1] == BC_PERIODIC ||
-	   SolnBlk.Grid.BCtypeE[SolnBlk.JCu+1] == BC_DIRICHLET ||
-	   SolnBlk.Grid.BCtypeE[SolnBlk.JCu+1] == BC_NEUMANN ||
-	   SolnBlk.Grid.BCtypeE[SolnBlk.JCu+1] == BC_ROBIN) ) ) {
-      switch(SolnBlk.Grid.BCtypeN[i]) {
-      case BC_NONE :
-	break;
-      case BC_DIRICHLET :
-	SolnBlk.U[i][SolnBlk.JCu+1] = SolnBlk.UoN[i];
-	SolnBlk.U[i][SolnBlk.JCu+2] = SolnBlk.UoN[i];
-	dX = SolnBlk.Grid.xfaceN(i, SolnBlk.JCu)-
-	  SolnBlk.Grid.Cell[i][SolnBlk.JCu].Xc;
-	dx_norm = dX*SolnBlk.Grid.nfaceN(i, SolnBlk.JCu);
-	du = SolnBlk.UoN[i].u-SolnBlk.U[i][SolnBlk.JCu].u;
-	dudx = du/dx_norm;
-	dX = SolnBlk.Grid.Cell[i][SolnBlk.JCu+1].Xc -
-	  SolnBlk.Grid.Cell[i][SolnBlk.JCu].Xc;
-	dx_norm = dX*SolnBlk.Grid.nfaceN(i, SolnBlk.JCu);
-	SolnBlk.U[i][SolnBlk.JCu+1].u = SolnBlk.U[i][SolnBlk.JCu].u + dudx*dx_norm;
-	dX = SolnBlk.Grid.Cell[i][SolnBlk.JCu+2].Xc -
-	  SolnBlk.Grid.Cell[i][SolnBlk.JCu].Xc;
-	dx_norm = dX*SolnBlk.Grid.nfaceN(i, SolnBlk.JCu);
-	SolnBlk.U[i][SolnBlk.JCu+2].u = SolnBlk.U[i][SolnBlk.JCu].u + dudx*dx_norm;
-	break;
-      case BC_NEUMANN :
-	SolnBlk.U[i][SolnBlk.JCu+1] = SolnBlk.U[i][SolnBlk.JCu];
-	SolnBlk.U[i][SolnBlk.JCu+2] = SolnBlk.U[i][SolnBlk.JCu];
-	break;
-      case BC_ROBIN :
-	break;
-      case BC_PERIODIC :
-	SolnBlk.U[i][SolnBlk.JCu+1] = SolnBlk.U[i][SolnBlk.JCl+1];
-	SolnBlk.U[i][SolnBlk.JCu+2] = SolnBlk.U[i][SolnBlk.JCl+2];
-	break;
-      default:
-	SolnBlk.U[i][SolnBlk.JCu+1] = SolnBlk.UoN[i];
-	SolnBlk.U[i][SolnBlk.JCu+2] = SolnBlk.UoN[i];
-	break;
-      } /* endswitch */
-    } /* endif */
+	 (i < SolnBlk.ICl && (SolnBlk.Grid.BCtypeW[SolnBlk.JCu+1] == BC_NONE ) ) ||
+	 (i > SolnBlk.ICu && (SolnBlk.Grid.BCtypeE[SolnBlk.JCu+1] == BC_NONE ) ) )
+      {
+	switch(SolnBlk.Grid.BCtypeN[i]) {
+	case BC_NONE :
+	  break;
+
+	case BC_PERIODIC :
+	  for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	    SolnBlk.U[i][SolnBlk.JCu+ghost] = SolnBlk.U[i][SolnBlk.JCl+ghost-1];
+	  }
+	  break;
+	  
+	case BC_DIRICHLET :	// Use UoN as reference value
+	  for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	    SolnBlk.U[i][SolnBlk.JCu+ghost] = SolnBlk.UoN[i];
+	  }
+	  break;
+
+	case BC_NEUMANN :
+	  throw runtime_error("BCs() ERROR! Neumann BC hasn't been implemented yet!");
+	  break;
+
+	case BC_OUTFLOW :
+	  throw runtime_error("BCs() ERROR! Outflow BC hasn't been implemented yet!");
+	  break;
+
+	case BC_INFLOW :
+	  throw runtime_error("BCs() ERROR! Inflow BC hasn't been implemented yet!");
+	  break;
+
+	case BC_FARFIELD :
+	  throw runtime_error("BCs() ERROR! Farfield BC hasn't been implemented yet!");
+	  break;
+
+	case BC_SYMMETRY_PLANE :
+	  throw runtime_error("BCs() ERROR! Symmetry plane BC hasn't been implemented yet!");
+	  break;
+
+	case BC_EXTRAPOLATE :
+	case BC_LINEAR_EXTRAPOLATION :
+	  throw runtime_error("BCs() ERROR! Linear extrapolation BC hasn't been implemented yet!");
+	  break;
+
+	case BC_CONSTANT_EXTRAPOLATION :
+	default:		
+	  // Impose constant extrapolation
+	  for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	    SolnBlk.U[i][SolnBlk.JCu+ghost] = SolnBlk.U[i][SolnBlk.JCu];
+	  }
+	  break;
+	} /* endswitch */
+      } /* endif */
   } /* endfor */
 
 }

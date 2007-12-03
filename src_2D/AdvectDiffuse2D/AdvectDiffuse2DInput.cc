@@ -2545,10 +2545,10 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
       IP.BC_North = BC_NEUMANN;
     } else if (strcmp(IP.BC_North_Type,"Robin") == 0) {
       IP.BC_North = BC_ROBIN;
-    } else if (strcmp(IP.BC_North_Type,"Inflow_Subsonic") == 0) {
-      IP.BC_North = BC_INFLOW_SUBSONIC;
-    } else if (strcmp(IP.BC_North_Type,"Outflow_Subsonic") == 0) {
-      IP.BC_North = BC_OUTFLOW_SUBSONIC;
+    } else if (strcmp(IP.BC_North_Type,"Inflow") == 0) {
+      IP.BC_North = BC_INFLOW;
+    } else if (strcmp(IP.BC_North_Type,"Outflow") == 0) {
+      IP.BC_North = BC_OUTFLOW;
     } else if (strcmp(IP.BC_North_Type,"Fixed_Pressure") == 0) {
       IP.BC_North = BC_FIXED_PRESSURE;
     } else if (strcmp(IP.BC_North_Type,"Constant_Extrapolation") == 0) {
@@ -2587,10 +2587,10 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
       IP.BC_South = BC_NEUMANN;
     } else if (strcmp(IP.BC_South_Type,"Robin") == 0) {
       IP.BC_South = BC_ROBIN;
-    } else if (strcmp(IP.BC_South_Type,"Inflow_Subsonic") == 0) {
-      IP.BC_South = BC_INFLOW_SUBSONIC;
-    } else if (strcmp(IP.BC_South_Type,"Outflow_Subsonic") == 0) {
-      IP.BC_South = BC_OUTFLOW_SUBSONIC;
+    } else if (strcmp(IP.BC_South_Type,"Inflow") == 0) {
+      IP.BC_South = BC_INFLOW;
+    } else if (strcmp(IP.BC_South_Type,"Outflow") == 0) {
+      IP.BC_South = BC_OUTFLOW;
     } else if (strcmp(IP.BC_South_Type,"Fixed_Pressure") == 0) {
       IP.BC_South = BC_FIXED_PRESSURE;
     } else if (strcmp(IP.BC_South_Type,"Constant_Extrapolation") == 0) {
@@ -2629,10 +2629,10 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
       IP.BC_East = BC_NEUMANN;
     } else if (strcmp(IP.BC_East_Type,"Robin") == 0) {
       IP.BC_East = BC_ROBIN;
-    } else if (strcmp(IP.BC_East_Type,"Inflow_Subsonic") == 0) {
-      IP.BC_East = BC_INFLOW_SUBSONIC;
-    } else if (strcmp(IP.BC_East_Type,"Outflow_Subsonic") == 0) {
-      IP.BC_East = BC_OUTFLOW_SUBSONIC;
+    } else if (strcmp(IP.BC_East_Type,"Inflow") == 0) {
+      IP.BC_East = BC_INFLOW;
+    } else if (strcmp(IP.BC_East_Type,"Outflow") == 0) {
+      IP.BC_East = BC_OUTFLOW;
     } else if (strcmp(IP.BC_East_Type,"Fixed_Pressure") == 0) {
       IP.BC_East = BC_FIXED_PRESSURE;
     } else if (strcmp(IP.BC_East_Type,"Constant_Extrapolation") == 0) {
@@ -2671,10 +2671,10 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
       IP.BC_West = BC_NEUMANN;
     } else if (strcmp(IP.BC_West_Type,"Robin") == 0) {
       IP.BC_West = BC_ROBIN;
-    } else if (strcmp(IP.BC_West_Type,"Inflow_Subsonic") == 0) {
-      IP.BC_West = BC_INFLOW_SUBSONIC;
-    } else if (strcmp(IP.BC_West_Type,"Outflow_Subsonic") == 0) {
-      IP.BC_West = BC_OUTFLOW_SUBSONIC;
+    } else if (strcmp(IP.BC_West_Type,"Inflow") == 0) {
+      IP.BC_West = BC_INFLOW;
+    } else if (strcmp(IP.BC_West_Type,"Outflow") == 0) {
+      IP.BC_West = BC_OUTFLOW;
     } else if (strcmp(IP.BC_West_Type,"Fixed_Pressure") == 0) {
       IP.BC_West = BC_FIXED_PRESSURE;
     } else if (strcmp(IP.BC_West_Type,"Constant_Extrapolation") == 0) {
