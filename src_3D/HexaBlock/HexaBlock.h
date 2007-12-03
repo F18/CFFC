@@ -2211,12 +2211,12 @@ dUdt_Residual_Evaluation(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
 		Wl =  SOLN_pSTATE::Reflect(Wr,  Grid.nfaceW(i+1, j, k));
 	      }
 	      if ( Grid.BCtypeW[j][k] == BC_NO_SLIP) {
-		Wl =  SOLN_pSTATE::No_Slip(Wr, WoW[j][k], Grid.nfaceW(i+1, j, k),
+		Wl =  SOLN_pSTATE::NoSlip(Wr, WoW[j][k], Grid.nfaceW(i+1, j, k),
 					   IPs.Pressure_Gradient,
 					   FIXED_TEMPERATURE_WALL);
 	      }
 	      if ( Grid.BCtypeW[j][k] == BC_MOVING_WALL) {
-		Wl =  SOLN_pSTATE::Moving_Wall(Wr, WoW[j][k], Grid.nfaceW(i+1, j, k),
+		Wl =  SOLN_pSTATE::MovingWall(Wr, WoW[j][k], Grid.nfaceW(i+1, j, k),
 					       IPs.Moving_Wall_Velocity,
 					       IPs.Pressure_Gradient,
 					       FIXED_TEMPERATURE_WALL);
@@ -2235,12 +2235,12 @@ dUdt_Residual_Evaluation(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
 		Wr =  SOLN_pSTATE::Reflect(Wl,  Grid.nfaceE(i, j, k));
 	      }
 	      if ( Grid.BCtypeE[j][k] == BC_NO_SLIP) {
-		Wr =  SOLN_pSTATE::No_Slip(Wl, WoE[j][k], Grid.nfaceE(i, j, k),
+		Wr =  SOLN_pSTATE::NoSlip(Wl, WoE[j][k], Grid.nfaceE(i, j, k),
 					   IPs.Pressure_Gradient,
 					   FIXED_TEMPERATURE_WALL);
 	      }
 	      if ( Grid.BCtypeE[j][k] == BC_MOVING_WALL) {
-		Wr =  SOLN_pSTATE::Moving_Wall(Wl, WoE[j][k], Grid.nfaceE(i, j, k),
+		Wr =  SOLN_pSTATE::MovingWall(Wl, WoE[j][k], Grid.nfaceE(i, j, k),
 					       IPs.Moving_Wall_Velocity,
 					       IPs.Pressure_Gradient,
 					       FIXED_TEMPERATURE_WALL);
@@ -2317,12 +2317,12 @@ dUdt_Residual_Evaluation(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
                   Wl =  SOLN_pSTATE::Reflect(Wr,  Grid.nfaceS(i, j+1, k));
                }
                if ( Grid.BCtypeS[i][k] == BC_NO_SLIP) {
-                  Wl =  SOLN_pSTATE::No_Slip(Wr, WoS[i][k], Grid.nfaceS(i, j+1, k),
+                  Wl =  SOLN_pSTATE::NoSlip(Wr, WoS[i][k], Grid.nfaceS(i, j+1, k),
                                              IPs.Pressure_Gradient,
                                              FIXED_TEMPERATURE_WALL);
                }
                if ( Grid.BCtypeS[i][k] == BC_MOVING_WALL) {
-                  Wl =  SOLN_pSTATE::Moving_Wall(Wr, WoS[i][k], Grid.nfaceS(i, j+1, k),
+                  Wl =  SOLN_pSTATE::MovingWall(Wr, WoS[i][k], Grid.nfaceS(i, j+1, k),
                                                  IPs.Moving_Wall_Velocity,
                                                  IPs.Pressure_Gradient,
                                                  FIXED_TEMPERATURE_WALL);
@@ -2341,12 +2341,12 @@ dUdt_Residual_Evaluation(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
                   Wr =  SOLN_pSTATE::Reflect(Wl,  Grid.nfaceN(i, j, k));
                }
                if ( Grid.BCtypeN[i][k] == BC_NO_SLIP) {
-                  Wr =  SOLN_pSTATE::No_Slip(Wl, WoN[i][k], Grid.nfaceN(i, j, k),
+                  Wr =  SOLN_pSTATE::NoSlip(Wl, WoN[i][k], Grid.nfaceN(i, j, k),
                                              IPs.Pressure_Gradient,
                                              FIXED_TEMPERATURE_WALL );
                }
                if ( Grid.BCtypeN[i][k] == BC_MOVING_WALL) {
-                  Wr =  SOLN_pSTATE::Moving_Wall(Wl, WoN[i][k], Grid.nfaceN(i, j, k),
+                  Wr =  SOLN_pSTATE::MovingWall(Wl, WoN[i][k], Grid.nfaceN(i, j, k),
                                                  IPs.Moving_Wall_Velocity,
                                                  IPs.Pressure_Gradient,
                                                  FIXED_TEMPERATURE_WALL );
@@ -2424,12 +2424,12 @@ dUdt_Residual_Evaluation(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
                   Wl =  SOLN_pSTATE::Reflect(Wr,  Grid.nfaceBot(i, j, k+1));
                }
                if ( Grid.BCtypeB[i][j] == BC_NO_SLIP) {
-                  Wl =  SOLN_pSTATE::No_Slip(Wr, WoB[i][j], Grid.nfaceBot(i, j, k+1),
+                  Wl =  SOLN_pSTATE::NoSlip(Wr, WoB[i][j], Grid.nfaceBot(i, j, k+1),
                                              IPs.Pressure_Gradient,
                                              FIXED_TEMPERATURE_WALL);
                }
                if ( Grid.BCtypeB[i][j] == BC_MOVING_WALL) {
-                  Wl =  SOLN_pSTATE::Moving_Wall(Wr, WoB[i][j], Grid.nfaceBot(i, j, k+1),
+                  Wl =  SOLN_pSTATE::MovingWall(Wr, WoB[i][j], Grid.nfaceBot(i, j, k+1),
                                                  IPs.Moving_Wall_Velocity,
                                                  IPs.Pressure_Gradient,
                                                  FIXED_TEMPERATURE_WALL);
@@ -2450,12 +2450,12 @@ dUdt_Residual_Evaluation(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
                   Wr =  SOLN_pSTATE::Reflect(Wl,  Grid.nfaceTop(i, j, k));
                }
                if ( Grid.BCtypeT[i][j] == BC_NO_SLIP) {
-                  Wr =  SOLN_pSTATE::No_Slip(Wl, WoT[i][j], Grid.nfaceTop(i, j, k),
+                  Wr =  SOLN_pSTATE::NoSlip(Wl, WoT[i][j], Grid.nfaceTop(i, j, k),
                                              IPs.Pressure_Gradient,
                                              FIXED_TEMPERATURE_WALL );
                }
                if ( Grid.BCtypeT[i][j] == BC_MOVING_WALL) {
-                  Wr =  SOLN_pSTATE::Moving_Wall(Wl, WoT[i][j], Grid.nfaceTop(i, j, k),
+                  Wr =  SOLN_pSTATE::MovingWall(Wl, WoT[i][j], Grid.nfaceTop(i, j, k),
                                                  IPs.Moving_Wall_Velocity,
                                                  IPs.Pressure_Gradient,
                                                  FIXED_TEMPERATURE_WALL );

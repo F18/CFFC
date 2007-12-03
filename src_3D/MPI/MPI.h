@@ -90,7 +90,13 @@ inline string CFFC_Version_MPI() {
 #else
 #ifdef _MPI_VERSION2
   MPI::Get_version(version, subversion);
+  strcpy(string1, "MPI Version, Built using Version ");
+  sprintf(string2, "%d.%d", version, subversion);
+  strcat(string2, " of Message-Passing Interface (MPI) Standard.");
+  strcat(string1, string2);
   return (string(string1));
+#else
+  return ("MPI Version, Built using Version 1.xx of Message-Passing Interface (MPI) Standard.");
 #endif
 #endif
 #endif

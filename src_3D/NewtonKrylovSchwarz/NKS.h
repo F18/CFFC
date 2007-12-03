@@ -162,12 +162,12 @@ Calculate_Norms(const int &Number_of_Newton_Steps){
   L2norm_current[Solution_Data->Input.Residual_Norm-1] = Solution_Data->Local_Solution_Blocks.L2_Norm_Residual(Solution_Data->Input.Residual_Norm);
   Max_norm_current[Solution_Data->Input.Residual_Norm-1] = Solution_Data->Local_Solution_Blocks.Max_Norm_Residual(Solution_Data->Input.Residual_Norm);
   
-//   for(int q=0; q < Solution_Data->Input.Number_of_Residual_Norms; q++){
-//     L1norm_current[q] = CFFC_Summation_MPI(L1norm_current[q]);      // L1 norm for all processors.
-//     L2norm_current[q] = sqr(L2norm_current[q]);
-//     L2norm_current[q] = sqrt(CFFC_Summation_MPI(L2norm_current[q])); // L2 norm for all processors.
-//     Max_norm_current[q] = CFFC_Maximum_MPI(Max_norm_current[q]);     // Max norm for all processors.
-//   }
+  for(int q=0; q < Solution_Data->Input.Number_of_Residual_Norms; q++){
+    L1norm_current[q] = CFFC_Summation_MPI(L1norm_current[q]);      // L1 norm for all processors.
+    L2norm_current[q] = sqr(L2norm_current[q]);
+    L2norm_current[q] = sqrt(CFFC_Summation_MPI(L2norm_current[q])); // L2 norm for all processors.
+    Max_norm_current[q] = CFFC_Maximum_MPI(Max_norm_current[q]);     // Max norm for all processors.
+  }
   
   //Relative Norms used for CFL scaling during startup
   if (Number_of_Newton_Steps == 1 ) {
@@ -651,7 +651,7 @@ Steady_Solve(const double &physical_time,const int &DTS_Step){
 	      L2norm_current_n > Solution_Data->Input.NKS_IP.Min_L2_Norm_Requiring_Jacobian_Update) ) || 
 	   ( Solution_Data->Input.NKS_IP.Dual_Time_Stepping && GMRES_Iters_increaseing) ) {                       
 	
-	if (CFFC_Primary_MPI_Processor() { cout << "\n Creating/Updating Jacobian Matrix"; cout.flush(); }
+	if (CFFC_Primary_MPI_Processor()) { cout << "\n Creating/Updating Jacobian Matrix"; cout.flush(); }
   
 	//CLOCK
 	clock_t t0 = clock();
