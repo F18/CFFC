@@ -857,11 +857,11 @@ BCs(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
             break;
 
          case BC_NO_SLIP :
-            W[ICl-1][j][k] = FANS3D_ThermallyPerfect_KOmega_pState::No_Slip(W[ICl][j][k],WoW[j][k], Grid.nfaceW(ICl,j,k),
+            W[ICl-1][j][k] = FANS3D_ThermallyPerfect_KOmega_pState::NoSlip(W[ICl][j][k],WoW[j][k], Grid.nfaceW(ICl,j,k),
                                                                             IPs.Pressure_Gradient,
                                                                             FIXED_TEMPERATURE_WALL);
             U[ICl-1][j][k] = W[ICl-1][j][k].U();
-            W[ICl-2][j][k] = FANS3D_ThermallyPerfect_KOmega_pState::No_Slip(W[ICl+1][j][k], WoW[j][k], Grid.nfaceW(ICl,j,k),
+            W[ICl-2][j][k] = FANS3D_ThermallyPerfect_KOmega_pState::NoSlip(W[ICl+1][j][k], WoW[j][k], Grid.nfaceW(ICl,j,k),
                                                                             IPs.Pressure_Gradient,
                                                                             FIXED_TEMPERATURE_WALL);
             U[ICl-2][j][k] = W[ICl-2][j][k].U();
@@ -870,13 +870,13 @@ BCs(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
             break;
 
          case BC_MOVING_WALL :
-            W[ICl-1][j][k] = FANS3D_ThermallyPerfect_KOmega_pState::Moving_Wall(W[ICl][j][k],WoW[j][k],
+            W[ICl-1][j][k] = FANS3D_ThermallyPerfect_KOmega_pState::MovingWall(W[ICl][j][k],WoW[j][k],
                                                                                 Grid.nfaceW(ICl,j,k),
                                                                                 MOVING_WALL_VELOCITY,
                                                                                 IPs.Pressure_Gradient,
                                                                                 FIXED_TEMPERATURE_WALL);
             U[ICl-1][j][k] = W[ICl-1][j][k].U();
-            W[ICl-2][j][k] = FANS3D_ThermallyPerfect_KOmega_pState::Moving_Wall(W[ICl+1][j][k], WoW[j][k], 
+            W[ICl-2][j][k] = FANS3D_ThermallyPerfect_KOmega_pState::MovingWall(W[ICl+1][j][k], WoW[j][k], 
                                                                                 Grid.nfaceW(ICl,j,k),
                                                                                 MOVING_WALL_VELOCITY, 
                                                                                 IPs.Pressure_Gradient,
@@ -953,11 +953,11 @@ BCs(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
             break;
 
          case BC_NO_SLIP :
-            W[ICu+1][j][k] = FANS3D_ThermallyPerfect_KOmega_pState::No_Slip(W[ICu][j][k], WoE[j][k], Grid.nfaceE(ICu,j,k),
+            W[ICu+1][j][k] = FANS3D_ThermallyPerfect_KOmega_pState::NoSlip(W[ICu][j][k], WoE[j][k], Grid.nfaceE(ICu,j,k),
                                                                             IPs.Pressure_Gradient,
                                                                             FIXED_TEMPERATURE_WALL);
             U[ICu+1][j][k] = W[ICu+1][j][k].U( );
-            W[ICu+2][j][k] = FANS3D_ThermallyPerfect_KOmega_pState::No_Slip(W[ICu-1][j][k], WoE[j][k], 
+            W[ICu+2][j][k] = FANS3D_ThermallyPerfect_KOmega_pState::NoSlip(W[ICu-1][j][k], WoE[j][k], 
                                      Grid.nfaceE(ICu,j,k),
                                                                             IPs.Pressure_Gradient,
                                                                             FIXED_TEMPERATURE_WALL);
@@ -966,10 +966,10 @@ BCs(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
             break;
             
          case BC_MOVING_WALL :
-            W[ICu+1][j][k] = FANS3D_ThermallyPerfect_KOmega_pState::Moving_Wall(W[ICu][j][k], WoE[j][k], Grid.nfaceE(ICu,j,k),
+            W[ICu+1][j][k] = FANS3D_ThermallyPerfect_KOmega_pState::MovingWall(W[ICu][j][k], WoE[j][k], Grid.nfaceE(ICu,j,k),
                                      MOVING_WALL_VELOCITY,    IPs.Pressure_Gradient,FIXED_TEMPERATURE_WALL);
             U[ICu+1][j][k] = W[ICu+1][j][k].U( );
-            W[ICu+2][j][k] = FANS3D_ThermallyPerfect_KOmega_pState::Moving_Wall(W[ICu-1][j][k], WoE[j][k], 
+            W[ICu+2][j][k] = FANS3D_ThermallyPerfect_KOmega_pState::MovingWall(W[ICu-1][j][k], WoE[j][k], 
                                      Grid.nfaceE(ICu,j,k),
                                      MOVING_WALL_VELOCITY,   IPs.Pressure_Gradient,
                                      FIXED_TEMPERATURE_WALL);
@@ -1053,12 +1053,12 @@ BCs(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
             break;
 
          case BC_NO_SLIP :
-            W[i][JCu+1][k] = FANS3D_ThermallyPerfect_KOmega_pState::No_Slip(W[i][JCu][k], WoN[i][k],
+            W[i][JCu+1][k] = FANS3D_ThermallyPerfect_KOmega_pState::NoSlip(W[i][JCu][k], WoN[i][k],
                                                                             Grid.nfaceN(i, JCu, k),
                                                                             IPs.Pressure_Gradient,
                                                                             FIXED_TEMPERATURE_WALL);
             U[i][JCu+1][k] = W[i][JCu+1][k].U( );
-            W[i][JCu+2][k] = FANS3D_ThermallyPerfect_KOmega_pState::No_Slip(W[i][JCu-1][k], WoN[i][k],
+            W[i][JCu+2][k] = FANS3D_ThermallyPerfect_KOmega_pState::NoSlip(W[i][JCu-1][k], WoN[i][k],
                                                                             Grid.nfaceN(i, JCu, k),
                                                                             IPs.Pressure_Gradient,
                                                                             FIXED_TEMPERATURE_WALL);
@@ -1068,13 +1068,13 @@ BCs(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
             break;
             
          case BC_MOVING_WALL :
-            W[i][JCu+1][k] = FANS3D_ThermallyPerfect_KOmega_pState::Moving_Wall(W[i][JCu][k], WoN[i][k],
+            W[i][JCu+1][k] = FANS3D_ThermallyPerfect_KOmega_pState::MovingWall(W[i][JCu][k], WoN[i][k],
                                                                                 Grid.nfaceN(i, JCu, k),
                                                                                 MOVING_WALL_VELOCITY,
                                                                                 IPs.Pressure_Gradient,
                                                                                 FIXED_TEMPERATURE_WALL);
             U[i][JCu+1][k] = W[i][JCu+1][k].U( );
-            W[i][JCu+2][k] = FANS3D_ThermallyPerfect_KOmega_pState::Moving_Wall(W[i][JCu-1][k], WoN[i][k],
+            W[i][JCu+2][k] = FANS3D_ThermallyPerfect_KOmega_pState::MovingWall(W[i][JCu-1][k], WoN[i][k],
                                                                                 Grid.nfaceN(i, JCu, k),
                                                                                 MOVING_WALL_VELOCITY,
                                                                                 IPs.Pressure_Gradient,
@@ -1147,12 +1147,12 @@ BCs(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
      
 
          case BC_NO_SLIP :
-            W[i][JCl-1][k] = FANS3D_ThermallyPerfect_KOmega_pState::No_Slip(W[i][JCl][k], WoS[i][k], 
+            W[i][JCl-1][k] = FANS3D_ThermallyPerfect_KOmega_pState::NoSlip(W[i][JCl][k], WoS[i][k], 
                                                                             Grid.nfaceS(i, JCl,k),
                                                                             IPs.Pressure_Gradient,
                                                                             FIXED_TEMPERATURE_WALL);
             U[i][JCl-1][k] =  W[i][JCl-1][k].U( );
-            W[i][JCl-2][k] = FANS3D_ThermallyPerfect_KOmega_pState::No_Slip(W[i][JCl+1][k], WoS[i][k],
+            W[i][JCl-2][k] = FANS3D_ThermallyPerfect_KOmega_pState::NoSlip(W[i][JCl+1][k], WoS[i][k],
                                                                             Grid.nfaceS(i, JCl,k),   
                                                                             IPs.Pressure_Gradient,
                                                                             FIXED_TEMPERATURE_WALL);
@@ -1162,13 +1162,13 @@ BCs(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
 
             break;
          case BC_MOVING_WALL :
-            W[i][JCl-1][k] = FANS3D_ThermallyPerfect_KOmega_pState::Moving_Wall(W[i][JCl][k], WoS[i][k], 
+            W[i][JCl-1][k] = FANS3D_ThermallyPerfect_KOmega_pState::MovingWall(W[i][JCl][k], WoS[i][k], 
                                                                                 Grid.nfaceS(i, JCl,k),
                                                                                 MOVING_WALL_VELOCITY,
                                                                                 IPs.Pressure_Gradient, 
                                                                                 FIXED_TEMPERATURE_WALL);
             U[i][JCl-1][k] =  W[i][JCl-1][k].U( );
-            W[i][JCl-2][k] = FANS3D_ThermallyPerfect_KOmega_pState::Moving_Wall(W[i][JCl+1][k], WoS[i][k],
+            W[i][JCl-2][k] = FANS3D_ThermallyPerfect_KOmega_pState::MovingWall(W[i][JCl+1][k], WoS[i][k],
                                                                                 Grid.nfaceS(i, JCl,k),
                                                                                 MOVING_WALL_VELOCITY, 
                                                                                 IPs.Pressure_Gradient,
@@ -1268,13 +1268,13 @@ BCs(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
          case BC_NO_SLIP :
 
             
-            W[i][j][KCl-1] = FANS3D_ThermallyPerfect_KOmega_pState::No_Slip(W[i][j][KCl], WoB[i][j],
+            W[i][j][KCl-1] = FANS3D_ThermallyPerfect_KOmega_pState::NoSlip(W[i][j][KCl], WoB[i][j],
                                                                             Grid.nfaceBot(i, j, KCl),
                                                                             IPs.Pressure_Gradient,
                                                                             FIXED_TEMPERATURE_WALL);
             U[i][j][KCl-1] =  W[i][j][KCl-1].U( ); 
             
-            W[i][j][KCl-2] =  FANS3D_ThermallyPerfect_KOmega_pState::No_Slip(W[i][j][KCl+1], WoB[i][j],
+            W[i][j][KCl-2] =  FANS3D_ThermallyPerfect_KOmega_pState::NoSlip(W[i][j][KCl+1], WoB[i][j],
                                                                              Grid.nfaceBot(i, j, KCl),
                                                                              IPs.Pressure_Gradient,
                                                                              FIXED_TEMPERATURE_WALL);
@@ -1285,13 +1285,13 @@ BCs(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
             
             
          case BC_MOVING_WALL :
-            W[i][j][KCl-1] =  FANS3D_ThermallyPerfect_KOmega_pState::Moving_Wall(W[i][j][KCl], WoB[i][j],
+            W[i][j][KCl-1] =  FANS3D_ThermallyPerfect_KOmega_pState::MovingWall(W[i][j][KCl], WoB[i][j],
                                                                                  Grid.nfaceBot(i, j,KCl),
                                                                                  MOVING_WALL_VELOCITY,
                                                                                  IPs.Pressure_Gradient,
                                                                                  FIXED_TEMPERATURE_WALL);
             U[i][j][KCl-1] =  W[i][j][KCl-1].U( );
-            W[i][j][KCl-2] =  FANS3D_ThermallyPerfect_KOmega_pState::Moving_Wall(W[i][j][KCl+1], WoB[i][j],
+            W[i][j][KCl-2] =  FANS3D_ThermallyPerfect_KOmega_pState::MovingWall(W[i][j][KCl+1], WoB[i][j],
                                                                                  Grid.nfaceBot(i, j ,KCl),
                                                                                  MOVING_WALL_VELOCITY,
                                                                                  IPs.Pressure_Gradient,
@@ -1367,12 +1367,12 @@ BCs(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
             break;
 
          case BC_NO_SLIP :
-            W[i][j][KCu +1] =  FANS3D_ThermallyPerfect_KOmega_pState::No_Slip(W[i][j][KCu], WoT[i][j],
+            W[i][j][KCu +1] =  FANS3D_ThermallyPerfect_KOmega_pState::NoSlip(W[i][j][KCu], WoT[i][j],
                                                                               Grid.nfaceTop(i, j , KCu),
                                                                               IPs.Pressure_Gradient,
                                                                               FIXED_TEMPERATURE_WALL);
             U[i][j][KCu +1] =  W[i][j][KCu+1].U( );
-            W[i][j][KCu +2] =  FANS3D_ThermallyPerfect_KOmega_pState::No_Slip(W[i][j][KCu -1], WoT[i][j],
+            W[i][j][KCu +2] =  FANS3D_ThermallyPerfect_KOmega_pState::NoSlip(W[i][j][KCu -1], WoT[i][j],
                                                                               Grid.nfaceTop(i, j , KCu),
                                                                               IPs.Pressure_Gradient,
                                                                               FIXED_TEMPERATURE_WALL);
@@ -1383,7 +1383,7 @@ BCs(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
             
             
          case BC_MOVING_WALL :
-            W[i][j][KCu +1] =  FANS3D_ThermallyPerfect_KOmega_pState::Moving_Wall(W[i][j][KCu], WoT[i][j],
+            W[i][j][KCu +1] =  FANS3D_ThermallyPerfect_KOmega_pState::MovingWall(W[i][j][KCu], WoT[i][j],
                                                                                   Grid.nfaceTop(i, j , KCu),
                                                                                   MOVING_WALL_VELOCITY,
                                                                                   IPs.Pressure_Gradient,
@@ -1391,7 +1391,7 @@ BCs(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
             
             U[i][j][KCu +1] =  W[i][j][KCu+1].U( );
 
-            W[i][j][KCu +2] =  FANS3D_ThermallyPerfect_KOmega_pState::Moving_Wall(W[i][j][KCu -1], WoT[i][j],
+            W[i][j][KCu +2] =  FANS3D_ThermallyPerfect_KOmega_pState::MovingWall(W[i][j][KCu -1], WoT[i][j],
                                                                                   Grid.nfaceTop(i, j , KCu),
                                                                                   MOVING_WALL_VELOCITY,
                                                                                   IPs.Pressure_Gradient,
@@ -1460,7 +1460,7 @@ CFL(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
                   nv = W[i][j][k].mu()/W[i][j][k].rho;
                   if (IPs.i_Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
                       IPs.i_Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
-                     nv_t = W[i][j][k].eddy_viscosity()/W[i][j][k].rho; 
+                     nv_t = W[i][j][k].mu_t()/W[i][j][k].rho; 
                      nv = max(nv, nv_t);
                   } /* endif */
                   dt_vis = min(min((d_i*d_i)/(3.0*nv), 
@@ -1645,12 +1645,12 @@ dUdt_Multistage_Explicit(const int i_stage,
                      Wl =  FANS3D_ThermallyPerfect_KOmega_pState::Reflect(Wr,  Grid.nfaceW(i+1, j, k));
                   }
                   if ( Grid.BCtypeW[j][k] == BC_NO_SLIP) {
-                     Wl =  FANS3D_ThermallyPerfect_KOmega_pState::No_Slip(Wr, WoW[j][k], Grid.nfaceW(i+1, j, k), 
+                     Wl =  FANS3D_ThermallyPerfect_KOmega_pState::NoSlip(Wr, WoW[j][k], Grid.nfaceW(i+1, j, k), 
                                                                           IPs.Pressure_Gradient,
                                                                           FIXED_TEMPERATURE_WALL);
                   }
                   if ( Grid.BCtypeW[j][k] == BC_MOVING_WALL) {
-                     Wl =  FANS3D_ThermallyPerfect_KOmega_pState::Moving_Wall(Wr, WoW[j][k], Grid.nfaceW(i+1, j, k),
+                     Wl =  FANS3D_ThermallyPerfect_KOmega_pState::MovingWall(Wr, WoW[j][k], Grid.nfaceW(i+1, j, k),
                                                                               IPs.Moving_Wall_Velocity,
                                                                               IPs.Pressure_Gradient,
                                                                               FIXED_TEMPERATURE_WALL);
@@ -1671,13 +1671,13 @@ dUdt_Multistage_Explicit(const int i_stage,
                      
                   } 
                   if ( Grid.BCtypeE[j][k] == BC_NO_SLIP) {
-                     Wr =  FANS3D_ThermallyPerfect_KOmega_pState::No_Slip(Wl, WoE[j][k], Grid.nfaceE(i, j, k), 
+                     Wr =  FANS3D_ThermallyPerfect_KOmega_pState::NoSlip(Wl, WoE[j][k], Grid.nfaceE(i, j, k), 
                                                                           IPs.Pressure_Gradient, 
                                                                           FIXED_TEMPERATURE_WALL);
                      
                   } 
                   if ( Grid.BCtypeE[j][k] == BC_MOVING_WALL) {
-                     Wr =  FANS3D_ThermallyPerfect_KOmega_pState::Moving_Wall(Wl, WoE[j][k], Grid.nfaceE(i, j, k),  
+                     Wr =  FANS3D_ThermallyPerfect_KOmega_pState::MovingWall(Wl, WoE[j][k], Grid.nfaceE(i, j, k),  
                                                                               IPs.Moving_Wall_Velocity,
                                                                               IPs.Pressure_Gradient,
                                                                               FIXED_TEMPERATURE_WALL);
@@ -1728,8 +1728,10 @@ dUdt_Multistage_Explicit(const int i_stage,
                                  
                /* Include source terms associated with turbulence model */
                dUdt[i][j][k][k_residual] += (IPs.CFL_Number* dt[i][j][k])*
-                  FANS3D_ThermallyPerfect_KOmega_pState::Src_t(W[i][j][k], dWdx[i][j][k], 
-                                                               dWdy[i][j][k], dWdz[i][j][k]);
+                  FANS3D_ThermallyPerfect_KOmega_pState::Sturbulence(W[i][j][k], 
+                                                                     dWdx[i][j][k], 
+                                                                     dWdy[i][j][k], 
+                                                                     dWdz[i][j][k]);
      
 	   /* Save west and east face boundary flux. */
                
@@ -1771,12 +1773,12 @@ dUdt_Multistage_Explicit(const int i_stage,
                   Wl =  FANS3D_ThermallyPerfect_KOmega_pState::Reflect(Wr,  Grid.nfaceS(i, j+1, k));
                 }
                 if ( Grid.BCtypeS[i][k] == BC_NO_SLIP) {
-                   Wl =  FANS3D_ThermallyPerfect_KOmega_pState::No_Slip(Wr, WoS[i][k], Grid.nfaceS(i, j+1, k),
+                   Wl =  FANS3D_ThermallyPerfect_KOmega_pState::NoSlip(Wr, WoS[i][k], Grid.nfaceS(i, j+1, k),
                                                                         IPs.Pressure_Gradient,
                                 FIXED_TEMPERATURE_WALL);
                 }
                 if ( Grid.BCtypeS[i][k] == BC_MOVING_WALL) {
-                   Wl =  FANS3D_ThermallyPerfect_KOmega_pState::Moving_Wall(Wr, WoS[i][k], Grid.nfaceS(i, j+1, k),
+                   Wl =  FANS3D_ThermallyPerfect_KOmega_pState::MovingWall(Wr, WoS[i][k], Grid.nfaceS(i, j+1, k),
                                                                             IPs.Moving_Wall_Velocity,
                                                                             IPs.Pressure_Gradient,
                                                                             FIXED_TEMPERATURE_WALL);
@@ -1796,12 +1798,12 @@ dUdt_Multistage_Explicit(const int i_stage,
                    Wr =  FANS3D_ThermallyPerfect_KOmega_pState::Reflect(Wl,  Grid.nfaceN(i, j, k));
                 }
                 if ( Grid.BCtypeN[i][k] == BC_NO_SLIP) {
-                   Wr =  FANS3D_ThermallyPerfect_KOmega_pState::No_Slip(Wl, WoN[i][k], Grid.nfaceN(i, j, k),
+                   Wr =  FANS3D_ThermallyPerfect_KOmega_pState::NoSlip(Wl, WoN[i][k], Grid.nfaceN(i, j, k),
                                                                         IPs.Pressure_Gradient,
                                                                         FIXED_TEMPERATURE_WALL );
                 }
                 if ( Grid.BCtypeN[i][k] == BC_MOVING_WALL) {
-                   Wr =  FANS3D_ThermallyPerfect_KOmega_pState::Moving_Wall(Wl, WoN[i][k], Grid.nfaceN(i, j, k),
+                   Wr =  FANS3D_ThermallyPerfect_KOmega_pState::MovingWall(Wl, WoN[i][k], Grid.nfaceN(i, j, k),
                                                                             IPs.Moving_Wall_Velocity,
                                                                             IPs.Pressure_Gradient,
                                                                             FIXED_TEMPERATURE_WALL );
@@ -1885,12 +1887,12 @@ dUdt_Multistage_Explicit(const int i_stage,
                   Wl =  FANS3D_ThermallyPerfect_KOmega_pState::Reflect(Wr,  Grid.nfaceBot(i, j, k+1));
                }
                if ( Grid.BCtypeB[i][j] == BC_NO_SLIP) {
-                  Wl =  FANS3D_ThermallyPerfect_KOmega_pState::No_Slip(Wr, WoB[i][j], Grid.nfaceBot(i, j, k+1), 
+                  Wl =  FANS3D_ThermallyPerfect_KOmega_pState::NoSlip(Wr, WoB[i][j], Grid.nfaceBot(i, j, k+1), 
                                                                        IPs.Pressure_Gradient,
                                                                        FIXED_TEMPERATURE_WALL);
                }
                if ( Grid.BCtypeB[i][j] == BC_MOVING_WALL) {
-                  Wl =  FANS3D_ThermallyPerfect_KOmega_pState::Moving_Wall(Wr, WoB[i][j], Grid.nfaceBot(i, j, k+1),
+                  Wl =  FANS3D_ThermallyPerfect_KOmega_pState::MovingWall(Wr, WoB[i][j], Grid.nfaceBot(i, j, k+1),
                                                                            IPs.Moving_Wall_Velocity,
                                                                            IPs.Pressure_Gradient,
                                                                            FIXED_TEMPERATURE_WALL);
@@ -1911,12 +1913,12 @@ dUdt_Multistage_Explicit(const int i_stage,
                    Wr =  FANS3D_ThermallyPerfect_KOmega_pState::Reflect(Wl,  Grid.nfaceTop(i, j, k));
                 }
                 if ( Grid.BCtypeT[i][j] == BC_NO_SLIP) {
-                   Wr =  FANS3D_ThermallyPerfect_KOmega_pState::No_Slip(Wl, WoT[i][j], Grid.nfaceTop(i, j, k), 
-                                                                        IPs.Pressure_Gradient,
+                   Wr =  FANS3D_ThermallyPerfect_KOmega_pState::NoSlip(Wl, WoT[i][j], Grid.nfaceTop(i, j, k), 
+                                                                       IPs.Pressure_Gradient,
                                                                         FIXED_TEMPERATURE_WALL );
                 }
                 if ( Grid.BCtypeT[i][j] == BC_MOVING_WALL) {
-                   Wr =  FANS3D_ThermallyPerfect_KOmega_pState::Moving_Wall(Wl, WoT[i][j], Grid.nfaceTop(i, j, k),
+                   Wr =  FANS3D_ThermallyPerfect_KOmega_pState::MovingWall(Wl, WoT[i][j], Grid.nfaceTop(i, j, k),
                                                                             IPs.Moving_Wall_Velocity,
                                                                             IPs.Pressure_Gradient, 
                                                                             FIXED_TEMPERATURE_WALL );
@@ -2110,15 +2112,31 @@ Update_Solution_Multistage_Explicit(const int i_stage,
                                                       U[i][j][k].rhoomega); 
             } /* endif */
             
-            if (IPs.Local_Time_Stepping == GLOBAL_TIME_STEPPING){
-               // always ensure the positive k and omega
-               U[i][j][k].Unphysical_Properties_Check(Uo[i-1][j][k], 
-                                                      Uo[i+1][j][k], 
-                                                      Uo[i][j][k+1], 
-                                                      Uo[i][j][k-1], 
-                                                      Uo[i][j+1][k], 
-                                                      Uo[i][j-1][k], 
-                                                      10);
+            // Check physical validity of update solution state
+            if (IPs.Local_Time_Stepping == GLOBAL_TIME_STEPPING) {
+	      if (!U[i][j][k].Realizable_Solution_Check()) {
+                cout << "\n " << CFFC_Name() 
+                     << " ERROR: Negative Density, Mass Fractions, Kinetic Energy, and/or Sensible Energy: \n"
+                     << " cell = (" << i << ", " << j <<", "<< k << ") " 
+                     << " X = " <<  Grid.Cell[i][j][k].Xc 
+                     << "\n U = " <<  U[i][j][k] 
+                     << "\n dUdt = " << dUdt[i][j][k][k_residual] 
+                     << " omega = " << omega << "\n";
+		return (1);
+              } /* endif */
+
+            } else {
+	      if (!U[i][j][k].Realizable_Solution_Check()) {
+                cout << "\n " << CFFC_Name() 
+                     << " ERROR: Negative Density, Mass Fractions, Kinetic Energy, and/or Sensible Energy: \n"
+                     << " cell = (" << i << ", " << j <<", "<< k << ") " 
+                     << " X = " <<  Grid.Cell[i][j][k].Xc 
+                     << "\n U = " <<  U[i][j][k] 
+                     << "\n dUdt = " << dUdt[i][j][k][k_residual] 
+                     << " omega = " << omega << "\n";
+		return (1);
+              } /* endif */
+
             } /* endif */
             
             W[i][j][k] = U[i][j][k].W();

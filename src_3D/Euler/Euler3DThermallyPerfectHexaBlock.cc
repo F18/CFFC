@@ -334,19 +334,31 @@ Update_Solution_Multistage_Explicit(const int i_stage,
                U[i][j][k][num_vars] = U[i][j][k].rho*(ONE - U[i][j][k].sum_species());
             } /* endif */
             
-            Uo[i][j][k].negative_speccheck(Uo[i][j][k], W[i][j][k].React.reactset_flag);
+            // Check physical validity of update solution state
+            if (IPs.Local_Time_Stepping == GLOBAL_TIME_STEPPING) {
+	      if (!U[i][j][k].Realizable_Solution_Check()) {
+		return (1);
+                cout << "\n " << CFFC_Name() 
+                     << " ERROR: Negative Density, Mass Fractions, and/or Sensible Energy: \n"
+                     << " cell = (" << i << ", " << j <<", "<< k << ") " 
+                     << " X = " <<  Grid.Cell[i][j][k].Xc 
+                     << "\n U = " <<  U[i][j][k] 
+                     << "\n dUdt = " << dUdt[i][j][k][k_residual] 
+                     << " omega = " << omega << "\n";
+              } /* endif */
 
-            if (IPs.Local_Time_Stepping == GLOBAL_TIME_STEPPING && 
-                (U[i][j][k].rho  <= ZERO ||  
-                 U[i][j][k].es() <= ZERO)) {
-               cout << "\n " << CFFC_Name() 
-                    << " ERROR: Negative Density, Mass Fractions, and/or Sensible Energy: \n"
-                    << " cell = (" << i << ", " << j <<", "<< k << ") " 
-                    << " X = " <<  Grid.Cell[i][j][k].Xc 
-                    << "\n U = " <<  U[i][j][k] 
-                    << "\n dUdt = " << dUdt[i][j][k][k_residual] 
-                    << " omega = " << omega << "\n";
-               return (i);
+            } else {
+	      if (!U[i][j][k].Realizable_Solution_Check()) {
+		return (1);
+                cout << "\n " << CFFC_Name() 
+                     << " ERROR: Negative Density, Mass Fractions, and/or Sensible Energy: \n"
+                     << " cell = (" << i << ", " << j <<", "<< k << ") " 
+                     << " X = " <<  Grid.Cell[i][j][k].Xc 
+                     << "\n U = " <<  U[i][j][k] 
+                     << "\n dUdt = " << dUdt[i][j][k][k_residual] 
+                     << " omega = " << omega << "\n";
+              } /* endif */
+
             } /* endif */
                           
             W[i][j][k] = U[i][j][k].W();

@@ -6,20 +6,19 @@
 #ifndef _TURBULENCE_MODELLING_INCLUDED 
 #define _TURBULENCE_MODELLING_INCLUDED
 
-
 /* Include required CFFC header files. */
 
 #ifndef _MATH_MACROS_INCLUDED
 #include "../Math/Math.h"
-#endif //MATH_MACROS_INCLUDED
+#endif // _MATH_MACROS_INCLUDED
 
 #ifndef _TENSOR3D_INCLUDED
 #include "../Math/Tensor3D.h"
-#endif //_TENSOR3D_INCLUDED
+#endif // _TENSOR3D_INCLUDED
 
 #ifndef _CFD_INCLUDED
 #include "../CFD/CFD.h"
-#endif //CFD_INCLUDED
+#endif // _CFD_INCLUDED
 
 #ifndef _INPUT_INCLUDED
 #include "../CFD/Input.h"
@@ -39,7 +38,7 @@
 
 #ifndef _FFTW_INCLUDED
 #include "fftw3.h"
-#endif //_FFTW_INCLUDED
+#endif // _FFTW_INCLUDED
 
 // Constants
 const complex<double>  I(0.0, 1.0);      // sqrt(-1.0)

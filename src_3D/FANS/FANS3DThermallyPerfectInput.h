@@ -92,23 +92,27 @@ void Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
     strcpy(Species_IP.Cantera_Mech_Name, Species_IP.cantera_mech_name.c_str());
     strcpy(Species_IP.Cantera_Mech_File, Species_IP.cantera_mech_file.c_str());
        
-    // Read in species data.
+    // Set skipping of white spaces.       
     restart_file.setf(ios::skipws);
+
     // Read the number of species.
     Species_IP.Deallocate();
     restart_file >> Species_IP.num_species; 
     Species_IP.Allocate(Species_IP.num_species);
     
+    // Read in species data.
     for (int i = 0; i < Species_IP.num_species; i++) {
        restart_file >> Species_IP.multispecies[i];
        strcpy(Species_IP.Multispecies[i], Species_IP.multispecies[i].c_str());
     } /* endfor */ 
-    restart_file.unsetf(ios::skipws);
 
     // Read species initial mass fractions and Schmidt numbers.
     for (int i = 0; i < Species_IP.num_species; i++) {
        restart_file >> Species_IP.mass_fractions[i] >> Species_IP.Schmidt[i];
     } /* endfor */
+
+    // Stop skipping white spaces.
+    restart_file.unsetf(ios::skipws);
 
     // Set reference solution states.
     Set_Reference_Solution_States();

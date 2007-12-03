@@ -56,7 +56,7 @@ inline string CFFC_Name() {
 
 // Version.
 inline string CFFC_Version() {
-  return ("CFFC, Version 0.00, UTIAS CFD & Propulsion Group, 1999-2007.");
+  return ("CFFC, Version 0.01, UTIAS CFD & Propulsion Group, 1999-2007.");
 }
 
 // Cantera Version.

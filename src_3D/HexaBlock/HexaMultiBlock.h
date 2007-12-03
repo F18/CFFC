@@ -275,7 +275,6 @@ double Hexa_Multi_Block<HEXA_BLOCK>::L1_Norm_Residual(void) {
  ********************************************************/
 template<class HEXA_BLOCK>
 double Hexa_Multi_Block<HEXA_BLOCK>::L2_Norm_Residual(void) {
-
    
    double l2_norm;
 
@@ -285,7 +284,7 @@ double Hexa_Multi_Block<HEXA_BLOCK>::L2_Norm_Residual(void) {
       
    for (int nblk = 0; nblk < Number_of_Soln_Blks; ++nblk) {
       if (Block_Used[nblk]) {
-         l2_norm += Soln_Blks[nblk].L2_Norm_Residual();
+	 l2_norm += sqr(Soln_Blks[nblk].L2_Norm_Residual());
       } /* endif */
    }  /* endfor */
    

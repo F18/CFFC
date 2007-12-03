@@ -24,7 +24,6 @@ using namespace std;
   DATA:
    -> c                   mass fraction of species
    -> diffusion_coef      diffusion coefficient
-   -> gradc               gradients of mass fraction (Vector)
 
   CONSTRUCTORS, etc.. :
    -> operator overloads
@@ -37,18 +36,17 @@ class Species {
   //mass fraction
   double c;
   double diffusion_coef;
-  Vector3D gradc;
  
   /*************** DEFAULT CONSTRUCTORS *****************/
   Species()
-     {c=ONE; diffusion_coef=ZERO; gradc.x=ZERO; gradc.y=ZERO;}
+     {c=ONE; diffusion_coef=ZERO;}
   Species(const double &frac)
-     {c=frac; diffusion_coef=ZERO; gradc.x=ZERO; gradc.y=ZERO;}
-  Species(const double &frac, const double &dcoef, const Vector3D &gc)
-     {c=frac; diffusion_coef=dcoef; gradc=gc; }
+     {c=frac; diffusion_coef=ZERO;}
+  Species(const double &frac, const double &dcoef)
+     {c=frac; diffusion_coef=dcoef;}
   
   /*************** VACUUM OPERATOR *********************/
-  void Vacuum(){c=ZERO; diffusion_coef=ZERO; gradc.zero();}
+  void Vacuum(){c=ZERO; diffusion_coef=ZERO;}
 
   /****************** Operator Overloading **************************/
   Species operator +(const Species &A) const;
@@ -67,8 +65,8 @@ class Species {
   Species &operator =(const Species &A); 
 
   /* Shortcut arithmetic operators. */
-  Species &operator +=(Species &A);
-  Species &operator -=(Species &A);
+  Species &operator +=(const Species &A);
+  Species &operator -=(const Species &A);
   Species &operator *=(const double &a);
   Species &operator /=(const double &a);
   
@@ -90,73 +88,56 @@ class Species {
 //----------------- Addition -----------------------------//
 inline Species Species::operator +(const Species &A) const{
   return(Species(A.c+c));
-// 		 A.diffusion_coef+diffusion_coef,
-// 		 A.gradc+gradc));
 }
 
 //------------------ Subtraction -------------------------//
 inline Species Species::operator -(const Species &A) const{
     return(Species(c-A.c));
-// 		 diffusion_coef-A.diffusion_coef,
-// 		 gradc-A.gradc));
 }
 
 //----------------- Inner Product ------------------------//
 inline double Species::operator *(const Species &A) const{
       return(c*A.c); 
-// 	 diffusion_coef*A.diffusion_coef +
-// 	 gradc*A.gradc); 
 }
 
 //---------------- Scalar Multiplication -----------------//
 inline Species Species::operator *(const double &a) const{
   return(Species(a*c));
-// 		 a*diffusion_coef,
-// 		 a*gradc));
 }
 
 inline Species operator *(const double &a, const Species &A){
   return(Species(a*A.c));
-  // 		 a*A.diffusion_coef,
-  // 		 a*A.gradc));
 }
  
 //--------------- Scalar Division ------------------------//
 inline Species Species::operator /(const double &a) const{
   return(Species(c/a));
-  // 		 diffusion_coef/a,
-  // 		 gradc/a));
 }
  
 //------------- Unary arithmetic operators ----------------//
 inline Species Species::operator +(void) const{
-  return(Species(c)); //,diffusion_coef,gradc));
+  return(Species(c));
 }
  
 inline Species Species::operator -(void) const{
-  return(Species(-c)); //,-diffusion_coef,-gradc));
+  return(Species(-c));
 }
  
 //----------------- Assignment ----------------------------//
 inline Species &Species::operator =(const Species &A){
   c = A.c; 
   diffusion_coef= A.diffusion_coef;
-  gradc = A.gradc; 
   return(*this);
 }
 
 //----------- Shortcut arithmetic operators ---------------//
-inline Species &Species::operator +=(Species &A){
+inline Species &Species::operator +=(const Species &A){
   c += A.c;
-//   diffusion_coef += A.diffusion_coef;
-//   gradc += A.gradc; 
   return(*this);
 }
 
-inline Species &Species::operator -=(Species &A){
+inline Species &Species::operator -=(const Species &A){
   c -= A.c;
-//   diffusion_coef -= A.diffusion_coef;
-//   gradc -= A.gradc; 
   return(*this);
 }
 
@@ -172,25 +153,25 @@ inline Species& Species::operator /=(const double &a) {
 
 //----------------- Relational operators ------------------// 
 inline int Species::operator ==(const Species &A) const{
-  return (c == A.c && diffusion_coef == A.diffusion_coef && gradc == A.gradc);
+  return (c == A.c && diffusion_coef == A.diffusion_coef);
 }
 
 inline int Species::operator !=(const Species &A) const{
-   return (c != A.c || diffusion_coef != A.diffusion_coef || gradc != A.gradc);
+   return (c != A.c || diffusion_coef != A.diffusion_coef);
 }
 
 
 //------------------ Input-output operators ---------------// 
 inline ostream &operator << (ostream &out_file, const Species &B){
   out_file.setf(ios::scientific);
-  out_file<<" "<<B.c; //<<" "<<B.gradc<<" "<<B.diffusion_coef;
+  out_file<<" "<<B.c; 
   out_file.unsetf(ios::scientific);
   return (out_file);
 }
 
 inline istream &operator >> (istream &in_file,  Species &B){
   in_file.setf(ios::skipws);
-  in_file>>B.c; //>>B.gradc>>B.diffusion_coef;
+  in_file>>B.c;
   in_file.unsetf(ios::skipws);
   return (in_file);
 }

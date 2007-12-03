@@ -1,7 +1,10 @@
-/*******************************************************************
+/*! \mainpage
+
+\verbatim
+ *******************************************************************
  *******************************************************************
  **********                                               **********
- ******                 CFFC3D Version 1.00                  *******
+ ******                 CFFC3D Version 0.01                  *******
  ****                       (07/19/07)                          ****
  ****                                                           ****
  ****  Computational Framework for Fluids and Combustion (CFFC) ****
@@ -12,7 +15,23 @@
  *******************************************************************
  ******************************************************************* 
  
- Include the header files defining various variable types and data
+\endverbatim
+*/
+
+/*! \file cffc3D.cc
+
+    \brief Main executable for CFFC3D framework.
+
+ This computer program can be used to solve a selected
+ set of linear and non-linear partial differential equations (PDEs)
+ on  three-dimensional spatial domains using a
+ variety of solution techniques appropriate for the problem.
+
+ The program is built using the CFFC library.
+
+ */
+
+/* Include the header files defining various variable types and data
    structures, classes, functions, operators, global variables,
    etc.. */
 
