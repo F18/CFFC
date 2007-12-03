@@ -1798,6 +1798,18 @@ Grid2D_Quad_Block** Grid_1D_Flame(Grid2D_Quad_Block **Grid_ptr,
        Number_of_Blocks_Air = 0;
        Number_of_Blocks_Free = 0;
 
+       //PREMIXED GRID
+     } else if( (Flame_Type_Flag == IC_RESTART || Flame_Type_Flag == IC_CHEM_PREMIXED_FLAME) && Number_of_Blocks_Idir == 3 ){
+    
+       fuel_spacing = 0.01;                   //m 
+       tube_spacing = fuel_spacing;            //m 
+       air_spacing = 0.04 - tube_spacing;     //m 
+
+       Number_of_Blocks_Fuel = 1;
+       Number_of_Blocks_Gap  = 0;
+       Number_of_Blocks_Air = 2;
+       Number_of_Blocks_Free = 0; 
+
      } else if( Flame_Type_Flag == IC_CHEM_INVERSE_FLAME && Number_of_Blocks_Idir == 8){
   
      /******************************************************/

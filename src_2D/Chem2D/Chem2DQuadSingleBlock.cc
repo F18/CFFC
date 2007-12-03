@@ -2134,6 +2134,96 @@ void ICs(Chem2D_Quad_Block &SolnBlk,
 	} 
       } 
       break;
+   
+      /**************************************************************************
+       The Premixed Flame Initial Conditions sets up a premixed 
+       flame in the axisymmetric coordinate system, with the axis of symmetry
+       being the left or west boundary y-axis.
+      **************************************************************************/
+
+    case IC_CHEM_PREMIXED_FLAME :           
+
+      if(Wo[0].React.reactset_flag == CH4_2STEP || Wo[0].React.reactset_flag == CH4_1STEP){
+	fuel_spacing = 0.01;      //m
+	fuel_velocity = 1.10;     //m/s  //0.70
+	fuel_temp_inlet = 298.0;  //K 
+	tube_thickness =  0.0;    //m delta	 //no tube 
+
+	air_spacing = 0.030;       //m   //0.025
+	air_velocity = 0.0;        //m/s  0.35
+	air_temp_inlet = 298.0;    //K
+	ignition_temp = 1300.0;    //K
+	
+	Wr = Wo[0];
+	Wl = Wo[0];
+	
+	//Premixed FUEL phi=1.05 CH4 & O2
+	Wl.spec[0] = 0.3446;   //CH4
+	Wl.spec[1] = 0.6554;   //O2
+	for(int q=2; q < Wl.ns; q++){
+	  Wl.spec[q].c =ZERO;
+	}
+	Wl.rho = Wl.p/(Wl.Rtot()*fuel_temp_inlet);
+	Wl.v.zero();
+
+	//air 21% O2 & 79% N2
+	for(int q=0; q < Wr.ns; q++){
+	  if(q ==1 || q == Wr.ns-1){
+	    Wr.spec[1] = 0.232;
+	    Wr.spec[Wr.ns-1] = 0.768;
+	  } else {
+	    Wr.spec[q] = ZERO;
+	  }
+	}
+	Wr.rho = Wr.p/(Wr.Rtot()*air_temp_inlet);
+	Wr.v.zero();
+      }
+
+
+      for (int j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
+	for ( int i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
+  	  //region for injected fuel 
+ 	  if (SolnBlk.Grid.Cell[i][j].Xc.x <= fuel_spacing ){ 
+    	    if (SolnBlk.Grid.Cell[i][j].Xc.y <0.006 ){
+	      SolnBlk.W[i][j] = Wl;
+	      SolnBlk.W[i][j].rho = Wl.p/(Wl.Rtot()*fuel_temp_inlet);  //set BC value to proper inlet temp
+	      SolnBlk.W[i][j].v.y = fuel_velocity;
+ 	      SolnBlk.W[i][j].v.x = ZERO;
+	    } else {
+	      SolnBlk.W[i][j] = Wr;
+	      SolnBlk.W[i][j].rho = Wr.p/(Wr.Rtot()*air_temp_inlet);
+	      SolnBlk.W[i][j].v.y = fuel_velocity;
+	      SolnBlk.W[i][j].v.x = ZERO;
+	    }
+	    //region for injected air 
+	  } else if (SolnBlk.Grid.Cell[i][j].Xc.x > fuel_spacing+tube_thickness && 
+		     SolnBlk.Grid.Cell[i][j].Xc.x <= air_spacing ){	
+	      SolnBlk.W[i][j] = Wr;
+	      SolnBlk.W[i][j].rho = Wr.p/(Wr.Rtot()*air_temp_inlet);
+	      SolnBlk.W[i][j].v.y = air_velocity;	  
+	      SolnBlk.W[i][j].v.x = ZERO;
+ 	    //region for quiesent air
+	  } else {
+	    SolnBlk.W[i][j] = Wr;	    	  	    	  
+	    SolnBlk.W[i][j].v.zero(); 	   	    
+ 	  } 
+
+	  //IGNITOR across fuel and air inlets   //0.006  & 0.003
+	  if( SolnBlk.Grid.Cell[i][j].Xc.y < 0.006 && SolnBlk.Grid.Cell[i][j].Xc.y > 0.003){   	   
+	    if ( SolnBlk.Grid.Cell[i][j].Xc.x <= 0.75*fuel_spacing && SolnBlk.Grid.Cell[i][j].Xc.x > fuel_spacing*0.25){ 
+	      SolnBlk.W[i][j].rho = Wl.p/(Wl.Rtot()*ignition_temp);
+	    } else if (SolnBlk.Grid.Cell[i][j].Xc.x <= fuel_spacing){
+	      SolnBlk.W[i][j].rho = Wr.p/(Wr.Rtot()*ignition_temp);
+// 	    } else if (SolnBlk.Grid.Cell[i][j].Xc.x <= air_spacing*0.5){
+// 	      SolnBlk.W[i][j].rho = Wr.p/(Wr.Rtot()*ignition_temp);
+	    } else {
+	      //left at air
+	    }
+	  }
+	  SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
+	} 
+      } 
+      break;
 
       /******************** DEFAULT *******************/
     default:

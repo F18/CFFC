@@ -162,12 +162,12 @@ Calculate_Norms(const int &Number_of_Newton_Steps){
   L2norm_current[Solution_Data->Input.Residual_Norm-1] = Solution_Data->Local_Solution_Blocks.L2_Norm_Residual(Solution_Data->Input.Residual_Norm);
   Max_norm_current[Solution_Data->Input.Residual_Norm-1] = Solution_Data->Local_Solution_Blocks.Max_Norm_Residual(Solution_Data->Input.Residual_Norm);
   
-//   for(int q=0; q < Solution_Data->Input.Number_of_Residual_Norms; q++){
-//     L1norm_current[q] = CFFC_Summation_MPI(L1norm_current[q]);      // L1 norm for all processors.
-//     L2norm_current[q] = sqr(L2norm_current[q]);
-//     L2norm_current[q] = sqrt(CFFC_Summation_MPI(L2norm_current[q])); // L2 norm for all processors.
-//     Max_norm_current[q] = CFFC_Maximum_MPI(Max_norm_current[q]);     // Max norm for all processors.
-//   }
+  for(int q=0; q < Solution_Data->Input.Number_of_Residual_Norms; q++){
+    L1norm_current[q] = CFFC_Summation_MPI(L1norm_current[q]);      // L1 norm for all processors.
+    L2norm_current[q] = sqr(L2norm_current[q]);
+    L2norm_current[q] = sqrt(CFFC_Summation_MPI(L2norm_current[q])); // L2 norm for all processors.
+    Max_norm_current[q] = CFFC_Maximum_MPI(Max_norm_current[q]);     // Max norm for all processors.
+  }
   
   //Relative Norms used for CFL scaling during startup
   if (Number_of_Newton_Steps == 1 ) {
@@ -308,6 +308,10 @@ Solve(){
 
   int error_flag = 0;
 
+  CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+  CFFC_Broadcast_MPI(&error_flag, 1);
+  if (error_flag) return (error_flag);
+
   /**************************************************************************/  
   // NKS Specific Output 
   if (CFFC_Primary_MPI_Processor() && !Data->batch_flag){ 
@@ -346,6 +350,8 @@ Solve(){
 	DTS_dTime = Solution_Data->Local_Solution_Blocks.CFL(Solution_Data->Input); 
 	DTS_dTime = Solution_Data->Input.NKS_IP.Physical_Time_CFL_Number*CFFC_Minimum_MPI(DTS_dTime); 
 	
+	//cout<<"\n DTS_dTime "<<DTS_dTime; cout.flush();
+
 	//Last Time sized to get Time_Max
 	if( physical_time + DTS_dTime > Solution_Data->Input.Time_Max){
 	  DTS_dTime = Solution_Data->Input.Time_Max - physical_time;
@@ -364,9 +370,8 @@ Solve(){
       /**************************************************************************/
 
       /**************************************************************************/
-      // Solve using NKS 
-      error_flag = Steady_Solve(physical_time, DTS_Step);
-             
+      // Solve using NKS
+      error_flag = Steady_Solve(physical_time, DTS_Step); 
       /**************************************************************************/
       
       /**************************************************************************/			
@@ -384,7 +389,7 @@ Solve(){
       /**************************************************************************/
       // Error Checking 
       error_flag = CFFC_OR_MPI(error_flag);
-      if (error_flag) { break; } 
+      if (error_flag) { cerr<<"CFFC MPI ERROR"; cout.flush(); break; } 
       /**************************************************************************/
 
       /**************************************************************************/
@@ -408,15 +413,16 @@ Solve(){
     /********* Steady State non-time accurate  ********************************/
     /**************************************************************************/  
   } else { 
-    error_flag = Steady_Solve(Data->Time, DTS_Step);
+    error_flag = Steady_Solve(Data->Time, DTS_Step); 
   }
  
-  if (!Data->batch_flag){
+  if (CFFC_Primary_MPI_Processor() && !Data->batch_flag){
     cout << "\n\n NKS computations complete on " << Date_And_Time() << ".\n"; cout.flush();
   }
 
+  error_flag = CFFC_OR_MPI(error_flag); 
   /**************************************************************************/  
-  return CFFC_OR_MPI(error_flag); 
+  return error_flag; 
 }
 
 
@@ -651,7 +657,7 @@ Steady_Solve(const double &physical_time,const int &DTS_Step){
 	      L2norm_current_n > Solution_Data->Input.NKS_IP.Min_L2_Norm_Requiring_Jacobian_Update) ) || 
 	   ( Solution_Data->Input.NKS_IP.Dual_Time_Stepping && GMRES_Iters_increaseing) ) {                       
 	
-	//if (CFFC_Primary_MPI_Processor()) { cout << "\n Creating/Updating Jacobian Matrix"; cout.flush(); }
+	if (CFFC_Primary_MPI_Processor()) { cout << "\n Creating/Updating Jacobian Matrix"; cout.flush(); }
   
 	//CLOCK
 	clock_t t0 = clock();
@@ -668,23 +674,29 @@ Steady_Solve(const double &physical_time,const int &DTS_Step){
 
       }
       /**************************************************************************/
-
       
+
       /**************************************************************************/
       /************* LINEAR SYSTEM SOLVE WITH GMRES  ****************************/      
       /**************************************************************************/
       /* Solve system with right-preconditioned matrix free GMRES */  
-      error_flag = GMRES.solve(Block_precon);
-      if (CFFC_Primary_MPI_Processor() && error_flag) cout << "\n NKS2D: Error in GMRES \n";
+      error_flag = GMRES.solve(Block_precon);      
+      
+      error_flag = CFFC_OR_MPI(error_flag);
+      if (CFFC_Primary_MPI_Processor() && error_flag){ cout << "\n NKS2D: Error in GMRES \n";}
+      if (error_flag) return (error_flag);
 
       GMRES_All_Iters[Number_of_Newton_Steps-1] = GMRES.GMRES_Iterations();
       /**************************************************************************/      
- 
+
 
       /**************************************************************************/      
       // Solution Update U = Uo + GMRES.deltaU
       error_flag = Newton_Update();      
-      if (CFFC_Primary_MPI_Processor() && error_flag) cout <<  "\n NKS2D: Error in Solution Update \n";
+      error_flag = CFFC_OR_MPI(error_flag);
+      if (CFFC_Primary_MPI_Processor() && error_flag) { cout <<  "\n NKS2D: Error in Solution Update \n"; }      
+      if (error_flag) return (error_flag);
+
       /**************************************************************************/
       
 

@@ -1802,6 +1802,8 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
 	 IP.i_ICs = IC_CHEM_CORE_FLAME;
        } else if (strcmp(IP.ICs_Type, "Inverse_Flame") == 0 ){
 	 IP.i_ICs = IC_CHEM_INVERSE_FLAME ; 
+       } else if (strcmp(IP.ICs_Type, "Premixed_Core_Flame") == 0 ){
+	 IP.i_ICs = IC_CHEM_PREMIXED_FLAME;
        } else if (strcmp(IP.ICs_Type, "Pressure_Gradient_x") == 0 ){
 	 IP.i_ICs = IC_PRESSURE_GRADIENT_X;
        } else if (strcmp(IP.ICs_Type, "Pressure_Gradient_y") == 0 ){
