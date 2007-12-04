@@ -2549,14 +2549,12 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
       IP.BC_North = BC_INFLOW;
     } else if (strcmp(IP.BC_North_Type,"Outflow") == 0) {
       IP.BC_North = BC_OUTFLOW;
-    } else if (strcmp(IP.BC_North_Type,"Fixed_Pressure") == 0) {
-      IP.BC_North = BC_FIXED_PRESSURE;
+    } else if (strcmp(IP.BC_North_Type,"Farfield") == 0) {
+      IP.BC_North = BC_FARFIELD;
     } else if (strcmp(IP.BC_North_Type,"Constant_Extrapolation") == 0) {
       IP.BC_North = BC_CONSTANT_EXTRAPOLATION;
     } else if (strcmp(IP.BC_North_Type,"Linear_Extrapolation") == 0) {
       IP.BC_North = BC_LINEAR_EXTRAPOLATION;
-    } else if (strcmp(IP.BC_North_Type,"Characteristic") == 0) {
-      IP.BC_North = BC_CHARACTERISTIC;
     } else if (strcmp(IP.BC_North_Type,"None") == 0) {
       IP.BC_North = BC_NONE;
     } else {
@@ -2591,14 +2589,12 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
       IP.BC_South = BC_INFLOW;
     } else if (strcmp(IP.BC_South_Type,"Outflow") == 0) {
       IP.BC_South = BC_OUTFLOW;
-    } else if (strcmp(IP.BC_South_Type,"Fixed_Pressure") == 0) {
-      IP.BC_South = BC_FIXED_PRESSURE;
+    } else if (strcmp(IP.BC_South_Type,"Farfield") == 0) {
+      IP.BC_South = BC_FARFIELD;
     } else if (strcmp(IP.BC_South_Type,"Constant_Extrapolation") == 0) {
       IP.BC_South = BC_CONSTANT_EXTRAPOLATION;
     } else if (strcmp(IP.BC_South_Type,"Linear_Extrapolation") == 0) {
       IP.BC_South = BC_LINEAR_EXTRAPOLATION;
-    } else if (strcmp(IP.BC_South_Type,"Characteristic") == 0) {
-      IP.BC_South = BC_CHARACTERISTIC;
     } else if (strcmp(IP.BC_South_Type,"None") == 0) {
       IP.BC_South = BC_NONE;
     } else {
@@ -2633,14 +2629,12 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
       IP.BC_East = BC_INFLOW;
     } else if (strcmp(IP.BC_East_Type,"Outflow") == 0) {
       IP.BC_East = BC_OUTFLOW;
-    } else if (strcmp(IP.BC_East_Type,"Fixed_Pressure") == 0) {
-      IP.BC_East = BC_FIXED_PRESSURE;
+    } else if (strcmp(IP.BC_East_Type,"Farfield") == 0) {
+      IP.BC_East = BC_FARFIELD;
     } else if (strcmp(IP.BC_East_Type,"Constant_Extrapolation") == 0) {
       IP.BC_East = BC_CONSTANT_EXTRAPOLATION;
     } else if (strcmp(IP.BC_East_Type,"Linear_Extrapolation") == 0) {
       IP.BC_East = BC_LINEAR_EXTRAPOLATION;
-    } else if (strcmp(IP.BC_East_Type,"Characteristic") == 0) {
-      IP.BC_East = BC_CHARACTERISTIC;
     } else if (strcmp(IP.BC_East_Type,"None") == 0) {
       IP.BC_East = BC_NONE;
     } else {
@@ -2675,14 +2669,12 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
       IP.BC_West = BC_INFLOW;
     } else if (strcmp(IP.BC_West_Type,"Outflow") == 0) {
       IP.BC_West = BC_OUTFLOW;
-    } else if (strcmp(IP.BC_West_Type,"Fixed_Pressure") == 0) {
-      IP.BC_West = BC_FIXED_PRESSURE;
+    } else if (strcmp(IP.BC_West_Type,"Farfield") == 0) {
+      IP.BC_West = BC_FARFIELD;
     } else if (strcmp(IP.BC_West_Type,"Constant_Extrapolation") == 0) {
       IP.BC_West = BC_CONSTANT_EXTRAPOLATION;
     } else if (strcmp(IP.BC_West_Type,"Linear_Extrapolation") == 0) {
       IP.BC_West = BC_LINEAR_EXTRAPOLATION;
-    } else if (strcmp(IP.BC_West_Type,"Characteristic") == 0) {
-      IP.BC_West = BC_CHARACTERISTIC;
     } else if (strcmp(IP.BC_West_Type,"None") == 0) {
       IP.BC_West = BC_NONE;
     } else {

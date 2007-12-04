@@ -231,9 +231,10 @@ public:
   double SourceTermStabilityLimit(const int & ii, const int & jj) const;
   //@}
 
-  //! @name Evaluate velocity and diffusion coefficient at the centroid of a specified cell.
+  //! @name Evaluate velocity and diffusion coefficient at different locations
   //@{
-  Vector2D VelocityAtCellCentroid(const int & ii, const int & jj) const;     //!< Calculate velocity at the cell centroid
+  Vector2D VelocityAtLocation(const Vector2D &PointOfInterest) const;        //!< Evaluate velocity at the PointOfInterest location
+  Vector2D VelocityAtCellCentroid(const int & ii, const int & jj) const;     //!< Calculate velocity at the cell centroid (ii,jj)
   double DiffusionCoeffAtCellCentroid(const int & ii, const int & jj) const; //!< Calculate diffusion coeff. at the cell centroid
   //@}
 
@@ -257,6 +258,14 @@ public:
   double PiecewiseLinearSolutionAtLocation(const int &ii, const int &jj,
 					   const Vector2D &CalculationPoint,
 					   const unsigned int &parameter) const;
+  //@}
+
+  //! @name Member functions to compute the inviscid flux state at a boundary interface
+  //@{
+  void InviscidFluxStateAtBoundaryInterface(const int &BOUNDARY,
+					    const int &ii, const int &jj,
+					    AdvectDiffuse2D_State_New &Ul,
+					    AdvectDiffuse2D_State_New &Ur);
   //@}
 
   //! @name Input-output operators.
@@ -450,6 +459,13 @@ inline double AdvectDiffuse2D_Quad_Block_New::unSW(const int ii, const int jj) {
  ***********************/
 inline double AdvectDiffuse2D_Quad_Block_New::un(const int ii, const int jj) {
   return Un(ii,jj)[1];
+}
+
+/***************************************************//**
+ * Calculate velocity at the PointOfInterest location
+ ****************************************************/
+inline Vector2D AdvectDiffuse2D_Quad_Block_New::VelocityAtLocation(const Vector2D &PointOfInterest) const {
+  return (*U)->V(PointOfInterest.x,PointOfInterest.y);
 }
 
 /***************************************************//**

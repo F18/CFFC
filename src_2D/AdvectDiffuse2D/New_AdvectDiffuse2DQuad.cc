@@ -209,6 +209,266 @@ AdvectDiffuse2D_State_New AdvectDiffuse2D_Quad_Block_New::SourceTerm(const int &
   }
 }
 
+/*********************************************//**
+ * Compute the inviscid-flux ghost-cell state at a 
+ * boundary interface. 
+ * This state depends on the boundary conditions that 
+ * need to be enforced.
+ * 
+ * \param BOUNDARY boundary position specifier (i.e. WEST, EAST, SOUTH or NORTH)
+ * \param ii i-index of the cell in which the calculation is done
+ * \param ii j-index of the cell in which the calculation is done
+ * \param Ul the left interface state
+ * \param Ur the right interface state
+ *************************************************/
+void AdvectDiffuse2D_Quad_Block_New::InviscidFluxStateAtBoundaryInterface(const int &BOUNDARY,
+									  const int &ii, const int &jj,
+									  AdvectDiffuse2D_State_New &Ul,
+									  AdvectDiffuse2D_State_New &Ur){
+  double Vn;
+
+  switch(BOUNDARY){
+
+    // *******************************
+    // === WEST boundary interface ===
+    // *******************************
+  case WEST :			
+    // Compute left interface state based on reconstruction or the particular boundary condition
+    switch (Grid.BCtypeW[jj]){
+      // Category I
+    case BC_NONE :
+    case BC_PERIODIC :
+      // Calculate Ul based on the reconstruction in the ghost cell
+      Ul = PiecewiseLinearSolutionAtLocation(ii  , jj,Grid.xfaceE(ii  , jj));
+      break;
+      
+      // Category II
+    case BC_INFLOW :
+    case BC_DIRICHLET :
+      Ul = UoW[jj];
+      break;
+      
+      // Category III
+    case BC_NEUMANN : 
+    case BC_SYMMETRY_PLANE :
+    case BC_EXTRAPOLATE :
+    case BC_LINEAR_EXTRAPOLATION :
+    case BC_OUTFLOW :
+    case BC_CONSTANT_EXTRAPOLATION :
+      Ul = Ur;
+      break;
+      
+      // Category IV
+    case BC_FARFIELD :
+      /* Farfield BC is implemented differently for flows that 
+	 enter the domain than for flows that leave the domain.
+	 Whether the flow enters or leaves the domain is decided based on
+	 the normal component of the velocity at the face midpoint.
+	 --> If the flow enters the domain then the reference data is used.
+	 --> If the flow leaves the domain then the interior value is used. */
+
+      // Compute the normal velocity
+      Vn = dot(VelocityAtLocation(Grid.xfaceW(ICl,jj)),
+	       Grid.nfaceW(ICl,jj));
+	  
+      if (Vn <= ZERO){
+	// The flow enters the domain
+	// Use the boundary condition value
+	Ul = UoW[jj];
+      } else {
+	// The flow leaves the domain
+	// Use the interior domain value
+	Ul = Ur;
+      }
+      break;
+
+    default:
+      Print_(Grid.BCtypeW[jj])
+      throw runtime_error("AdvectDiffuse2D_Quad_Block_New::InviscidFluxStateAtBoundaryInterface() ERROR! No such West BCtype!");
+    }// endswitch (Grid.BCtypeW[jj])
+    break;
+
+
+    // *******************************
+    // === EAST boundary interface ===
+    // *******************************
+  case EAST :
+    // Compute right interface state based on reconstruction or the particular boundary condition
+    switch (Grid.BCtypeE[jj]){
+      // Category I
+    case BC_NONE :
+    case BC_PERIODIC :
+      // Calculate Ur based on the reconstruction in the ghost cell
+      Ur = PiecewiseLinearSolutionAtLocation(ii+1, jj,Grid.xfaceW(ii+1, jj));
+      break;
+      
+      // Category II
+    case BC_INFLOW :
+    case BC_DIRICHLET :
+      Ur = UoE[jj];
+      break;
+      
+      // Category III
+    case BC_NEUMANN : 
+    case BC_SYMMETRY_PLANE :
+    case BC_EXTRAPOLATE :
+    case BC_LINEAR_EXTRAPOLATION :
+    case BC_OUTFLOW :
+    case BC_CONSTANT_EXTRAPOLATION :
+      Ur = Ul;
+      break;
+      
+      // Category IV
+    case BC_FARFIELD :
+      /* Farfield BC is implemented differently for flows that 
+	 enter the domain than for flows that leave the domain.
+	 Whether the flow enters or leaves the domain is decided based on
+	 the normal component of the velocity at the face midpoint.
+	 --> If the flow enters the domain then the reference data is used.
+	 --> If the flow leaves the domain then the interior value is used. */
+
+      // Compute the normal velocity
+      Vn = dot(VelocityAtLocation(Grid.xfaceE(ICu,jj)),
+	       Grid.nfaceE(ICu,jj));
+	  
+      if (Vn <= ZERO){
+	// The flow enters the domain
+	// Use the boundary condition value
+	Ur = UoE[jj];
+      } else {
+	// The flow leaves the domain
+	// Use the interior domain value
+	Ur = Ul;
+      }
+      break;
+
+    default:
+      throw runtime_error("AdvectDiffuse2D_Quad_Block_New::InviscidFluxStateAtBoundaryInterface() ERROR! No such East BCtype!");
+    }// endswitch (Grid.BCtypeE[jj])
+    break;
+
+    // ********************************
+    // === SOUTH boundary interface ===
+    // ********************************
+  case SOUTH :
+    // Compute left interface state based on reconstruction or the particular boundary condition
+    switch (Grid.BCtypeS[ii]){
+      // Category I
+    case BC_NONE :
+    case BC_PERIODIC :
+      // Calculate Ul based on the reconstruction in the ghost cell
+      Ul = PiecewiseLinearSolutionAtLocation(ii ,jj  ,Grid.xfaceN(ii ,jj  ));
+      break;
+      
+      // Category II
+    case BC_INFLOW :
+    case BC_DIRICHLET :
+      Ul = UoS[ii];
+      break;
+      
+      // Category III
+    case BC_NEUMANN : 
+    case BC_SYMMETRY_PLANE :
+    case BC_EXTRAPOLATE :
+    case BC_LINEAR_EXTRAPOLATION :
+    case BC_OUTFLOW :
+    case BC_CONSTANT_EXTRAPOLATION :
+      Ul = Ur;
+      break;
+      
+      // Category IV
+    case BC_FARFIELD :
+      /* Farfield BC is implemented differently for flows that 
+	 enter the domain than for flows that leave the domain.
+	 Whether the flow enters or leaves the domain is decided based on
+	 the normal component of the velocity at the face midpoint.
+	 --> If the flow enters the domain then the reference data is used.
+	 --> If the flow leaves the domain then the interior value is used. */
+
+      // Compute the normal velocity
+      Vn = dot(VelocityAtLocation(Grid.xfaceS(ii,JCl)),
+	       Grid.nfaceS(ii,JCl));
+	  
+      if (Vn <= ZERO){
+	// The flow enters the domain
+	// Use the boundary condition value
+	Ul = UoS[ii];
+      } else {
+	// The flow leaves the domain
+	// Use the interior domain value
+	Ul = Ur;
+      }
+      break;
+
+    default:
+      throw runtime_error("AdvectDiffuse2D_Quad_Block_New::InviscidFluxStateAtBoundaryInterface() ERROR! No such South BCtype!");
+    }// endswitch (Grid.BCtypeS[ii])
+    break;
+
+    // ********************************
+    // === NORTH boundary interface ===
+    // ********************************
+  case NORTH :
+    // Compute right interface state based on reconstruction or the particular boundary condition
+    switch (Grid.BCtypeN[ii]){
+      // Category I
+    case BC_NONE :
+    case BC_PERIODIC :
+      // Calculate Ur based on the reconstruction in the ghost cell
+      Ur = PiecewiseLinearSolutionAtLocation(ii ,jj+1,Grid.xfaceS(ii ,jj+1));
+      break;
+      
+      // Category II
+    case BC_INFLOW :
+    case BC_DIRICHLET :
+      Ur = UoN[ii];
+      break;
+      
+      // Category III
+    case BC_NEUMANN : 
+    case BC_SYMMETRY_PLANE :
+    case BC_EXTRAPOLATE :
+    case BC_LINEAR_EXTRAPOLATION :
+    case BC_OUTFLOW :
+    case BC_CONSTANT_EXTRAPOLATION :
+      Ur = Ul;
+      break;
+      
+      // Category IV
+    case BC_FARFIELD :
+      /* Farfield BC is implemented differently for flows that 
+	 enter the domain than for flows that leave the domain.
+	 Whether the flow enters or leaves the domain is decided based on
+	 the normal component of the velocity at the face midpoint.
+	 --> If the flow enters the domain then the reference data is used.
+	 --> If the flow leaves the domain then the interior value is used. */
+      
+      // Compute the normal velocity
+      Vn = dot(VelocityAtLocation(Grid.xfaceN(ii,JCu)),
+	       Grid.nfaceN(ii,JCu));
+	  
+      if (Vn <= ZERO){
+	// The flow enters the domain
+	// Use the boundary condition value
+	Ur = UoN[ii];
+      } else {
+	// The flow leaves the domain
+	// Use the interior domain value
+	Ur = Ul;
+      }
+      break;
+
+    default:
+      throw runtime_error("AdvectDiffuse2D_Quad_Block_New::InviscidFluxStateAtBoundaryInterface() ERROR! No such North BCtype!");
+    }// endswitch (Grid.BCtypeN[ii])
+    break;
+
+  default:
+    throw runtime_error("AdvectDiffuse2D_Quad_Block_New::InviscidFluxStateAtBoundaryInterface() ERROR! No such boundary!");
+  }
+
+}
+
 /********************
  * Output operator.
  ********************/

@@ -1151,7 +1151,8 @@ void Set_Boundary_Reference_State(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
       break;
 
     case BC_FARFIELD :
-
+      // Reference data represents the solution value
+      SolnBlk.UoW[j] = 0.0;
       break;
 
     default:
@@ -1183,7 +1184,8 @@ void Set_Boundary_Reference_State(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
       break;
 
     case BC_FARFIELD :
-
+      // Reference data represents the solution value
+      SolnBlk.UoE[j] = 0.0;
       break;
 
     default:
@@ -1218,7 +1220,8 @@ void Set_Boundary_Reference_State(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
       break;
 
     case BC_FARFIELD :
-
+      // Reference data represents the solution value
+      SolnBlk.UoS[i] = 0.0;
       break;
 
     default:
@@ -1250,7 +1253,8 @@ void Set_Boundary_Reference_State(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
       break;
 
     case BC_FARFIELD :
-
+      // Reference data represents the solution value
+      SolnBlk.UoN[i] = 0.0;
       break;
 
     default:
@@ -1275,6 +1279,8 @@ void BCs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 
   int i(0), j(0);
   int ghost;
+  double Vn;
+  
 
   for ( j = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
     // Prescribe West boundary conditions.
@@ -1304,7 +1310,31 @@ void BCs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 	  break;
 
 	case BC_FARFIELD :
-	  throw runtime_error("BCs() ERROR! Farfield BC hasn't been implemented yet!");
+	  /* Farfield BC is implemented differently for flows that 
+	     enter the domain than for flows that leave the domain.
+	     Whether the flow enters of leaves the domain is decided based on
+	     the normal component of the velocity at the face midpoint.
+	     --> If the flow enters the domain then the reference data is used.
+	     --> If the flow leaves the domain then an interior extrapolated value is used. */
+
+	  // Compute the normal velocity
+	  Vn = dot(SolnBlk.VelocityAtLocation(SolnBlk.Grid.xfaceW(SolnBlk.ICl,j)),
+		   SolnBlk.Grid.nfaceW(SolnBlk.ICl,j));
+	  
+	  if (Vn <= ZERO){
+	    // The flow enters the domain
+	    // Use UoW as reference value
+	    for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	      SolnBlk.U[SolnBlk.ICl-ghost][j] = SolnBlk.UoW[j];
+	    }
+
+	  } else {
+	    // The flow leaves the domain
+	    // Impose constant extrapolation
+	    for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	      SolnBlk.U[SolnBlk.ICl-ghost][j] = SolnBlk.U[SolnBlk.ICl][j];
+	    }
+	  }
 	  break;
 
 	case BC_SYMMETRY_PLANE :
@@ -1357,7 +1387,31 @@ void BCs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 	  break;
 
 	case BC_FARFIELD :
-	  throw runtime_error("BCs() ERROR! Farfield BC hasn't been implemented yet!");
+	  /* Farfield BC is implemented differently for flows that 
+	     enter the domain than for flows that leave the domain.
+	     Whether the flow enters of leaves the domain is decided based on
+	     the normal component of the velocity at the face midpoint.
+	     --> If the flow enters the domain then the reference data is used.
+	     --> If the flow leaves the domain then an interior extrapolated value is used. */
+
+	  // Compute the normal velocity
+	  Vn = dot(SolnBlk.VelocityAtLocation(SolnBlk.Grid.xfaceE(SolnBlk.ICu,j)),
+		   SolnBlk.Grid.nfaceE(SolnBlk.ICu,j));
+	  
+	  if (Vn <= ZERO){
+	    // The flow enters the domain
+	    // Use UoE as reference value
+	    for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	      SolnBlk.U[SolnBlk.ICu+ghost][j] = SolnBlk.UoE[j];
+	    }
+
+	  } else {
+	    // The flow leaves the domain
+	    // Impose constant extrapolation
+	    for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	      SolnBlk.U[SolnBlk.ICu+ghost][j] = SolnBlk.U[SolnBlk.ICu][j];
+	    }
+	  }
 	  break;
 
 	case BC_SYMMETRY_PLANE :
@@ -1410,7 +1464,31 @@ void BCs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
       break;
       
     case BC_FARFIELD :
-      throw runtime_error("BCs() ERROR! Farfield BC hasn't been implemented yet!");
+      /* Farfield BC is implemented differently for flows that 
+	 enter the domain than for flows that leave the domain.
+	 Whether the flow enters of leaves the domain is decided based on
+	 the normal component of the velocity at the face midpoint.
+	 --> If the flow enters the domain then the reference data is used.
+	 --> If the flow leaves the domain then an interior extrapolated value is used. */
+
+      // Compute the normal velocity
+      Vn = dot(SolnBlk.VelocityAtLocation(SolnBlk.Grid.xfaceS(i,SolnBlk.JCl)),
+	       SolnBlk.Grid.nfaceS(i,SolnBlk.JCl));
+	  
+      if (Vn <= ZERO){
+	// The flow enters the domain
+	// Use UoS as reference value
+	for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	  SolnBlk.U[i][SolnBlk.JCl-ghost] = SolnBlk.UoS[i];
+	}
+
+      } else {
+	// The flow leaves the domain
+	// Impose constant extrapolation
+	for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	  SolnBlk.U[i][SolnBlk.JCl-ghost] = SolnBlk.U[i][SolnBlk.JCl];
+	}
+      }
       break;
       
     case BC_SYMMETRY_PLANE :
@@ -1458,7 +1536,31 @@ void BCs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
       break;
       
     case BC_FARFIELD :
-      throw runtime_error("BCs() ERROR! Farfield BC hasn't been implemented yet!");
+      /* Farfield BC is implemented differently for flows that 
+	 enter the domain than for flows that leave the domain.
+	 Whether the flow enters of leaves the domain is decided based on
+	 the normal component of the velocity at the face midpoint.
+	 --> If the flow enters the domain then the reference data is used.
+	 --> If the flow leaves the domain then an interior extrapolated value is used. */
+
+      // Compute the normal velocity
+      Vn = dot(SolnBlk.VelocityAtLocation(SolnBlk.Grid.xfaceN(i,SolnBlk.JCu)),
+	       SolnBlk.Grid.nfaceN(i,SolnBlk.JCu));
+	  
+      if (Vn <= ZERO){
+	// The flow enters the domain
+	// Use UoN as reference value
+	for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	  SolnBlk.U[i][SolnBlk.JCu+ghost] = SolnBlk.UoN[i];
+	}
+
+      } else {
+	// The flow leaves the domain
+	// Impose constant extrapolation
+	for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	  SolnBlk.U[i][SolnBlk.JCu+ghost] = SolnBlk.U[i][SolnBlk.JCu];
+	}
+      }
       break;
       
     case BC_SYMMETRY_PLANE :
@@ -2967,11 +3069,28 @@ int dUdt_Residual_Evaluation(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
     
 	/* Evaluate the cell interface i-direction fluxes. */
 
-	// Compute left and right interface states at the face midpoint
-	Ul = SolnBlk.PiecewiseLinearSolutionAtLocation(i  , j,SolnBlk.Grid.xfaceE(i  , j));
-	Ur = SolnBlk.PiecewiseLinearSolutionAtLocation(i+1, j,SolnBlk.Grid.xfaceW(i+1, j));
+	if (i == SolnBlk.ICl-1){ // This is a WEST boundary interface
+	  // Compute the right interface state based on reconstruction
+	  Ur = SolnBlk.PiecewiseLinearSolutionAtLocation(i+1, j,SolnBlk.Grid.xfaceW(i+1, j));
 
-	// Enforce the boundary conditions for the inviscid states
+	  // Compute the left interface state for inviscid flux
+	  // calculation such that to satisfy the WEST boundary condition
+	  SolnBlk.InviscidFluxStateAtBoundaryInterface(WEST,i,j,Ul,Ur);
+	  
+	} else if (i == SolnBlk.ICu){ // This is a EAST boundary interface
+	  // Compute the left interface state based on reconstruction
+	  Ul = SolnBlk.PiecewiseLinearSolutionAtLocation(i  , j,SolnBlk.Grid.xfaceE(i  , j));
+	  
+	  // Compute the right interface state for inviscid flux
+	  // calculation such that to satisfy the EAST boundary condition
+	  SolnBlk.InviscidFluxStateAtBoundaryInterface(EAST,i,j,Ul,Ur);
+	  
+	} else {		// This is an interior interface
+	  // Compute left and right interface states at 
+	  // the face midpoint based on reconstruction
+	  Ul = SolnBlk.PiecewiseLinearSolutionAtLocation(i  , j,SolnBlk.Grid.xfaceE(i  , j));
+	  Ur = SolnBlk.PiecewiseLinearSolutionAtLocation(i+1, j,SolnBlk.Grid.xfaceW(i+1, j));
+	}
 
 	// Compute the advective flux in the normal direction at the face midpoint 
 	Flux = Fa(Ul, Ur, SolnBlk.Grid.xfaceE(i,j), SolnBlk.Grid.nfaceE(i,j));
@@ -3010,11 +3129,28 @@ int dUdt_Residual_Evaluation(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
     
       /* Evaluate the cell interface j-direction fluxes. */
 
-      // Compute left and right interface states at the face midpoint
-      Ul = SolnBlk.PiecewiseLinearSolutionAtLocation(i ,j  ,SolnBlk.Grid.xfaceN(i ,j  ));
-      Ur = SolnBlk.PiecewiseLinearSolutionAtLocation(i ,j+1,SolnBlk.Grid.xfaceS(i ,j+1));
-
-      // Enforce the boundary conditions for the inviscid states
+      if (j == SolnBlk.JCl-1){ // This is a SOUTH boundary interface
+	// Compute the right interface state based on reconstruction
+	Ur = SolnBlk.PiecewiseLinearSolutionAtLocation(i ,j+1,SolnBlk.Grid.xfaceS(i ,j+1));
+	
+	// Compute the left interface state for inviscid flux
+	// calculation such that to satisfy the SOUTH boundary condition
+	SolnBlk.InviscidFluxStateAtBoundaryInterface(SOUTH,i,j,Ul,Ur);
+	  
+      } else if (j == SolnBlk.JCu){ // This is a NORTH boundary interface
+	// Compute the left interface state based on reconstruction
+	Ul = SolnBlk.PiecewiseLinearSolutionAtLocation(i ,j  ,SolnBlk.Grid.xfaceN(i ,j  ));
+	  
+	// Compute the right interface state for inviscid flux
+	// calculation such that to satisfy the NORTH boundary condition
+	SolnBlk.InviscidFluxStateAtBoundaryInterface(NORTH,i,j,Ul,Ur);
+	  
+      } else {		// This is an interior interface
+	// Compute left and right interface states at 
+	// the face midpoint based on reconstruction
+	Ul = SolnBlk.PiecewiseLinearSolutionAtLocation(i ,j  ,SolnBlk.Grid.xfaceN(i ,j  ));
+	Ur = SolnBlk.PiecewiseLinearSolutionAtLocation(i ,j+1,SolnBlk.Grid.xfaceS(i ,j+1));
+      }
 
       // Compute the advective flux in the normal direction at the face midpoint 
       Flux = Fa(Ul, Ur, SolnBlk.Grid.xfaceN(i,j), SolnBlk.Grid.nfaceN(i, j));
@@ -3163,12 +3299,29 @@ int dUdt_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
     
 	/* Evaluate the cell interface i-direction fluxes. */
 
-	// Compute left and right interface states at the face midpoint
-	Ul = SolnBlk.PiecewiseLinearSolutionAtLocation(i  , j,SolnBlk.Grid.xfaceE(i  , j));
-	Ur = SolnBlk.PiecewiseLinearSolutionAtLocation(i+1, j,SolnBlk.Grid.xfaceW(i+1, j));
+	if (i == SolnBlk.ICl-1){ // This is a WEST boundary interface
+	  // Compute the right interface state based on reconstruction
+	  Ur = SolnBlk.PiecewiseLinearSolutionAtLocation(i+1, j,SolnBlk.Grid.xfaceW(i+1, j));
 
-	// Enforce the boundary conditions for the inviscid states
-
+	  // Compute the left interface state for inviscid flux
+	  // calculation such that to satisfy the WEST boundary condition
+	  SolnBlk.InviscidFluxStateAtBoundaryInterface(WEST,i,j,Ul,Ur);
+	  
+	} else if (i == SolnBlk.ICu){ // This is a EAST boundary interface
+	  // Compute the left interface state based on reconstruction
+	  Ul = SolnBlk.PiecewiseLinearSolutionAtLocation(i  , j,SolnBlk.Grid.xfaceE(i  , j));
+	  
+	  // Compute the right interface state for inviscid flux
+	  // calculation such that to satisfy the EAST boundary condition
+	  SolnBlk.InviscidFluxStateAtBoundaryInterface(EAST,i,j,Ul,Ur);
+	  
+	} else {		// This is an interior interface
+	  // Compute left and right interface states at 
+	  // the face midpoint based on reconstruction
+	  Ul = SolnBlk.PiecewiseLinearSolutionAtLocation(i  , j,SolnBlk.Grid.xfaceE(i  , j));
+	  Ur = SolnBlk.PiecewiseLinearSolutionAtLocation(i+1, j,SolnBlk.Grid.xfaceW(i+1, j));
+	}
+	
 	// Compute the advective flux in the normal direction at the face midpoint 
 	Flux = Fa(Ul, Ur, SolnBlk.Grid.xfaceE(i,j), SolnBlk.Grid.nfaceE(i,j));
 
@@ -3211,11 +3364,28 @@ int dUdt_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
     
       /* Evaluate the cell interface j-direction fluxes. */
 
-      // Compute left and right interface states at the face midpoint
-      Ul = SolnBlk.PiecewiseLinearSolutionAtLocation(i ,j  ,SolnBlk.Grid.xfaceN(i ,j  ));
-      Ur = SolnBlk.PiecewiseLinearSolutionAtLocation(i ,j+1,SolnBlk.Grid.xfaceS(i ,j+1));
-
-      // Enforce the boundary conditions for the inviscid states
+      if (j == SolnBlk.JCl-1){ // This is a SOUTH boundary interface
+	// Compute the right interface state based on reconstruction
+	Ur = SolnBlk.PiecewiseLinearSolutionAtLocation(i ,j+1,SolnBlk.Grid.xfaceS(i ,j+1));
+	
+	// Compute the left interface state for inviscid flux
+	// calculation such that to satisfy the SOUTH boundary condition
+	SolnBlk.InviscidFluxStateAtBoundaryInterface(SOUTH,i,j,Ul,Ur);
+	  
+      } else if (j == SolnBlk.JCu){ // This is a NORTH boundary interface
+	// Compute the left interface state based on reconstruction
+	Ul = SolnBlk.PiecewiseLinearSolutionAtLocation(i ,j  ,SolnBlk.Grid.xfaceN(i ,j  ));
+	  
+	// Compute the right interface state for inviscid flux
+	// calculation such that to satisfy the NORTH boundary condition
+	SolnBlk.InviscidFluxStateAtBoundaryInterface(NORTH,i,j,Ul,Ur);
+	  
+      } else {		// This is an interior interface
+	// Compute left and right interface states at 
+	// the face midpoint based on reconstruction
+	Ul = SolnBlk.PiecewiseLinearSolutionAtLocation(i ,j  ,SolnBlk.Grid.xfaceN(i ,j  ));
+	Ur = SolnBlk.PiecewiseLinearSolutionAtLocation(i ,j+1,SolnBlk.Grid.xfaceS(i ,j+1));
+      }
 
       // Compute the advective flux in the normal direction at the face midpoint 
       Flux = Fa(Ul, Ur, SolnBlk.Grid.xfaceN(i,j), SolnBlk.Grid.nfaceN(i, j));
