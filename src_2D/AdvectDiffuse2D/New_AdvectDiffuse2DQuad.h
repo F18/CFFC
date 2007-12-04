@@ -632,6 +632,9 @@ extern void ICs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
  	        const AdvectDiffuse2D_Input_Parameters &IP,
                 AdvectDiffuse2D_State_New *Wo);
 
+extern void Set_Boundary_Reference_State(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
+					 const AdvectDiffuse2D_Input_Parameters &IP);
+
 extern void BCs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 		const AdvectDiffuse2D_Input_Parameters &IP);
 

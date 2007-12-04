@@ -1105,7 +1105,163 @@ void ICs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
     } /* endfor */
     break;
   } /* endswitch */
+
+  
+  /* Assign the reference state data for the Boundary Conditions of interest. */
+  Set_Boundary_Reference_State(SolnBlk,IP);
+
 }
+
+/***************************************************//**
+ * Routine: Set_Boundary_Reference_State
+ *
+ * Assigns boundary condition reference data based on
+ * the boundary type for the specified quadrilateral 
+ * solution block.
+ * 
+ ********************************************************/
+void Set_Boundary_Reference_State(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
+				  const AdvectDiffuse2D_Input_Parameters &IP){
+
+  int i,j;
+  Vector2D PointOfInterest;
+
+  for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
+    // === Set reference data for UoW ===
+    switch(SolnBlk.Grid.BCtypeW[j]) { 				   
+
+    case BC_INFLOW :
+      // Use the inflow field to set up the reference states for this boundary type
+      if (IP.Inflow->IsInflowFieldSet()){
+	PointOfInterest = SolnBlk.Grid.xfaceW(SolnBlk.ICl,j);
+	SolnBlk.UoW[j] = IP.Inflow->Solution(PointOfInterest.x,PointOfInterest.y);
+      } else {
+	throw runtime_error("Set_Boundary_Reference_State() ERROR! There is no inflow field set for the Inflow BC.");
+      }
+      break;
+
+    case BC_DIRICHLET :
+      // Reference data represents the solution value
+      SolnBlk.UoW[j] = 0.0;
+      break;
+
+    case BC_NEUMANN :
+      // Reference data represents the value of the solution gradient
+      SolnBlk.UoW[j] = 0.0;
+      break;
+
+    case BC_FARFIELD :
+
+      break;
+
+    default:
+      // Set default values for the boundary condition reference states.
+      SolnBlk.UoW[j] = SolnBlk.U[SolnBlk.ICl][j];
+    }
+
+    // === Set reference data for UoE ===
+    switch(SolnBlk.Grid.BCtypeE[j]) {									   
+
+    case BC_INFLOW :
+      // Use the inflow field to set up the reference states for this boundary type
+      if (IP.Inflow->IsInflowFieldSet()){
+	PointOfInterest = SolnBlk.Grid.xfaceE(SolnBlk.ICu,j);
+	SolnBlk.UoE[j] = IP.Inflow->Solution(PointOfInterest.x,PointOfInterest.y);
+      } else {
+	throw runtime_error("Set_Boundary_Reference_State() ERROR! There is no inflow field set for the Inflow BC.");
+      }
+      break;
+
+    case BC_DIRICHLET :
+      // Reference data represents the solution value
+      SolnBlk.UoE[j] = 0.0;
+      break;
+
+    case BC_NEUMANN :
+      // Reference data represents the value of the solution gradient
+      SolnBlk.UoE[j] = 0.0;
+      break;
+
+    case BC_FARFIELD :
+
+      break;
+
+    default:
+      // Set default values for the boundary condition reference states.
+      SolnBlk.UoE[j] = SolnBlk.U[SolnBlk.ICu][j];
+    } // endswitch
+  } // endfor(j)
+
+
+  for (i = SolnBlk.ICl-SolnBlk.Nghost ; i<= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
+    // === Set reference data for UoS ===
+    switch(SolnBlk.Grid.BCtypeS[i]) {
+
+    case BC_INFLOW :
+      // Use the inflow field to set up the reference states for this boundary type
+      if (IP.Inflow->IsInflowFieldSet()){
+	PointOfInterest = SolnBlk.Grid.xfaceS(i,SolnBlk.JCl);
+	SolnBlk.UoS[i] = IP.Inflow->Solution(PointOfInterest.x,PointOfInterest.y);
+      } else {
+	throw runtime_error("Set_Boundary_Reference_State() ERROR! There is no inflow field set for the Inflow BC.");
+      }
+      break;
+
+    case BC_DIRICHLET :
+      // Reference data represents the solution value
+      SolnBlk.UoS[i] = 0.0;
+      break;
+
+    case BC_NEUMANN :
+      // Reference data represents the value of the solution gradient
+      SolnBlk.UoS[i] = 0.0;
+      break;
+
+    case BC_FARFIELD :
+
+      break;
+
+    default:
+      // Set default values for the boundary condition reference states.
+      SolnBlk.UoS[i] = SolnBlk.U[i][SolnBlk.JCl];
+    }
+
+    // === Set reference data for UoN ===
+    switch(SolnBlk.Grid.BCtypeN[i]) {
+
+    case BC_INFLOW :
+      // Use the inflow field to set up the reference states for this boundary type
+      if (IP.Inflow->IsInflowFieldSet()){
+	PointOfInterest = SolnBlk.Grid.xfaceN(i,SolnBlk.JCu);
+	SolnBlk.UoN[i] = IP.Inflow->Solution(PointOfInterest.x,PointOfInterest.y);
+      } else {
+	throw runtime_error("Set_Boundary_Reference_State() ERROR! There is no inflow field set for the Inflow BC.");
+      }
+      break;
+
+    case BC_DIRICHLET :
+      // Reference data represents the solution value
+      SolnBlk.UoN[i] = 0.0;
+      break;
+
+    case BC_NEUMANN :
+      // Reference data represents the value of the solution gradient
+      SolnBlk.UoN[i] = 0.0;
+      break;
+
+    case BC_FARFIELD :
+
+      break;
+
+    default:
+      // Set default values for the boundary condition reference states.
+      SolnBlk.UoN[i] = SolnBlk.U[i][SolnBlk.JCu];
+    } // endswitch
+  } // enfor(i)
+
+
+}
+
 
 /******************************************************//**
  * Routine: BCs                                         
@@ -1117,7 +1273,7 @@ void ICs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 void BCs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 	 const AdvectDiffuse2D_Input_Parameters &IP) {
 
-  int i, j;
+  int i(0), j(0);
   int ghost;
 
   for ( j = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
@@ -1136,6 +1292,7 @@ void BCs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 	  }
 	  break;
 
+	case BC_INFLOW :	// Inflow BC is treated as a Dirichlet BC. Make sure that UoW has the right inflow data!
 	case BC_DIRICHLET :	// Use UoW as reference value
 	  for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
 	    SolnBlk.U[SolnBlk.ICl-ghost][j] = SolnBlk.UoW[j];
@@ -1144,14 +1301,6 @@ void BCs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 
 	case BC_NEUMANN :       
 	  throw runtime_error("BCs() ERROR! Neumann BC hasn't been implemented yet!");
-	  break;
-
-	case BC_OUTFLOW :
-	  throw runtime_error("BCs() ERROR! Outflow BC hasn't been implemented yet!");
-	  break;
-
-	case BC_INFLOW :
-	  throw runtime_error("BCs() ERROR! Inflow BC hasn't been implemented yet!");
 	  break;
 
 	case BC_FARFIELD :
@@ -1167,6 +1316,9 @@ void BCs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 	  throw runtime_error("BCs() ERROR! Linear extrapolation BC hasn't been implemented yet!");
 	  break;
 
+	case BC_OUTFLOW :
+	  // Impose zero derivative in the i-direction at the boundary
+	  // This is equivalent with a constant extrapolation
 	case BC_CONSTANT_EXTRAPOLATION :
 	default:		
 	  // Impose constant extrapolation
@@ -1193,6 +1345,7 @@ void BCs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 	  }
 	  break;
 	  
+	case BC_INFLOW :	// Inflow BC is treated as a Dirichlet BC. Make sure that UoE has the right inflow data!
 	case BC_DIRICHLET :	// Use UoE as reference value
 	  for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
 	    SolnBlk.U[SolnBlk.ICu+ghost][j] = SolnBlk.UoE[j];
@@ -1201,14 +1354,6 @@ void BCs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 	  
 	case BC_NEUMANN :
 	  throw runtime_error("BCs() ERROR! Neumann BC hasn't been implemented yet!");
-	  break;
-
-	case BC_OUTFLOW :
-	  throw runtime_error("BCs() ERROR! Outflow BC hasn't been implemented yet!");
-	  break;
-
-	case BC_INFLOW :
-	  throw runtime_error("BCs() ERROR! Inflow BC hasn't been implemented yet!");
 	  break;
 
 	case BC_FARFIELD :
@@ -1224,6 +1369,9 @@ void BCs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 	  throw runtime_error("BCs() ERROR! Linear extrapolation BC hasn't been implemented yet!");
 	  break;
 
+	case BC_OUTFLOW :
+	  // Impose zero derivative in the i-direction at the boundary
+	  // This is equivalent with a constant extrapolation
 	case BC_CONSTANT_EXTRAPOLATION :
 	default:		
 	  // Impose constant extrapolation
@@ -1237,118 +1385,102 @@ void BCs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 
 
   for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
+    // Use the South and North BCs for the corner ghost cells
+
     // Prescribe South boundary conditions.
-    if ( (i >= SolnBlk.ICl && i <= SolnBlk.ICu) ||                                  // <-- affects S boundary cells
-	 (i < SolnBlk.ICl && (SolnBlk.Grid.BCtypeW[SolnBlk.JCl-1] == BC_NONE ) ) || // <-- affects SW corner cells
-	 (i > SolnBlk.ICu && (SolnBlk.Grid.BCtypeE[SolnBlk.JCl-1] == BC_NONE ) ) )  // <-- affects SE corner cells 
-      {
-	switch(SolnBlk.Grid.BCtypeS[i]) {
-	case BC_NONE :
-	  break;
+    switch(SolnBlk.Grid.BCtypeS[i]) {
+    case BC_NONE :
+      break;
+      
+    case BC_PERIODIC :
+      for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	SolnBlk.U[i][SolnBlk.JCl-ghost] = SolnBlk.U[i][SolnBlk.JCu-ghost+1];
+      }
+      break;
+      
+    case BC_INFLOW :	// Inflow BC is treated as a Dirichlet BC. Make sure that UoS has the right inflow data!
+    case BC_DIRICHLET :	// Use UoS as reference value
+      for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	SolnBlk.U[i][SolnBlk.JCl-ghost] = SolnBlk.UoS[i];
+      }
+      break;
+      
+    case BC_NEUMANN :
+      throw runtime_error("BCs() ERROR! Neumann BC hasn't been implemented yet!");
+      break;
+      
+    case BC_FARFIELD :
+      throw runtime_error("BCs() ERROR! Farfield BC hasn't been implemented yet!");
+      break;
+      
+    case BC_SYMMETRY_PLANE :
+      throw runtime_error("BCs() ERROR! Symmetry plane BC hasn't been implemented yet!");
+      break;
+      
+    case BC_EXTRAPOLATE :
+    case BC_LINEAR_EXTRAPOLATION :
+      throw runtime_error("BCs() ERROR! Linear extrapolation BC hasn't been implemented yet!");
+      break;
+      
+    case BC_OUTFLOW :
+      // Impose zero derivative in the j-direction at the boundary
+      // This is equivalent with a constant extrapolation
+    case BC_CONSTANT_EXTRAPOLATION :
+    default:		
+      // Impose constant extrapolation
+      for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	SolnBlk.U[i][SolnBlk.JCl-ghost] = SolnBlk.U[i][SolnBlk.JCl];
+      }
+      break;
+    } /* endswitch */
 
-	case BC_PERIODIC :
-	  for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
-	    SolnBlk.U[i][SolnBlk.JCl-ghost] = SolnBlk.U[i][SolnBlk.JCu-ghost+1];
-	  }
-	  break;
-	  
-	case BC_DIRICHLET :	// Use UoS as reference value
-	  for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
-	    SolnBlk.U[i][SolnBlk.JCl-ghost] = SolnBlk.UoS[i];
-	  }
-	  break;
-
-	case BC_NEUMANN :
-	  throw runtime_error("BCs() ERROR! Neumann BC hasn't been implemented yet!");
-	  break;
-
-	case BC_OUTFLOW :
-	  throw runtime_error("BCs() ERROR! Outflow BC hasn't been implemented yet!");
-	  break;
-
-	case BC_INFLOW :
-	  throw runtime_error("BCs() ERROR! Inflow BC hasn't been implemented yet!");
-	  break;
-
-	case BC_FARFIELD :
-	  throw runtime_error("BCs() ERROR! Farfield BC hasn't been implemented yet!");
-	  break;
-
-	case BC_SYMMETRY_PLANE :
-	  throw runtime_error("BCs() ERROR! Symmetry plane BC hasn't been implemented yet!");
-	  break;
-
-	case BC_EXTRAPOLATE :
-	case BC_LINEAR_EXTRAPOLATION :
-	  throw runtime_error("BCs() ERROR! Linear extrapolation BC hasn't been implemented yet!");
-	  break;
-
-	case BC_CONSTANT_EXTRAPOLATION :
-	default:		
-	  // Impose constant extrapolation
-	  for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
-	    SolnBlk.U[i][SolnBlk.JCl-ghost] = SolnBlk.U[i][SolnBlk.JCl];
-	  }
-	  break;
-	} /* endswitch */
-      } /* endif */
-
-
+    
     // Prescribe North boundary conditions.
-    if ( (i >= SolnBlk.ICl && i <= SolnBlk.ICu) ||
-	 (i < SolnBlk.ICl && (SolnBlk.Grid.BCtypeW[SolnBlk.JCu+1] == BC_NONE ) ) ||
-	 (i > SolnBlk.ICu && (SolnBlk.Grid.BCtypeE[SolnBlk.JCu+1] == BC_NONE ) ) )
-      {
-	switch(SolnBlk.Grid.BCtypeN[i]) {
-	case BC_NONE :
-	  break;
-
-	case BC_PERIODIC :
-	  for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
-	    SolnBlk.U[i][SolnBlk.JCu+ghost] = SolnBlk.U[i][SolnBlk.JCl+ghost-1];
-	  }
-	  break;
-	  
-	case BC_DIRICHLET :	// Use UoN as reference value
-	  for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
-	    SolnBlk.U[i][SolnBlk.JCu+ghost] = SolnBlk.UoN[i];
-	  }
-	  break;
-
-	case BC_NEUMANN :
-	  throw runtime_error("BCs() ERROR! Neumann BC hasn't been implemented yet!");
-	  break;
-
-	case BC_OUTFLOW :
-	  throw runtime_error("BCs() ERROR! Outflow BC hasn't been implemented yet!");
-	  break;
-
-	case BC_INFLOW :
-	  throw runtime_error("BCs() ERROR! Inflow BC hasn't been implemented yet!");
-	  break;
-
-	case BC_FARFIELD :
-	  throw runtime_error("BCs() ERROR! Farfield BC hasn't been implemented yet!");
-	  break;
-
-	case BC_SYMMETRY_PLANE :
-	  throw runtime_error("BCs() ERROR! Symmetry plane BC hasn't been implemented yet!");
-	  break;
-
-	case BC_EXTRAPOLATE :
-	case BC_LINEAR_EXTRAPOLATION :
-	  throw runtime_error("BCs() ERROR! Linear extrapolation BC hasn't been implemented yet!");
-	  break;
-
-	case BC_CONSTANT_EXTRAPOLATION :
-	default:		
-	  // Impose constant extrapolation
-	  for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
-	    SolnBlk.U[i][SolnBlk.JCu+ghost] = SolnBlk.U[i][SolnBlk.JCu];
-	  }
-	  break;
-	} /* endswitch */
-      } /* endif */
+    switch(SolnBlk.Grid.BCtypeN[i]) {
+    case BC_NONE :
+      break;
+      
+    case BC_PERIODIC :
+      for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	SolnBlk.U[i][SolnBlk.JCu+ghost] = SolnBlk.U[i][SolnBlk.JCl+ghost-1];
+      }
+      break;
+      
+    case BC_INFLOW :	// Inflow BC is treated as a Dirichlet BC. Make sure that UoN has the right inflow data!
+    case BC_DIRICHLET :	// Use UoN as reference value
+      for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	SolnBlk.U[i][SolnBlk.JCu+ghost] = SolnBlk.UoN[i];
+      }
+      break;
+      
+    case BC_NEUMANN :
+      throw runtime_error("BCs() ERROR! Neumann BC hasn't been implemented yet!");
+      break;
+      
+    case BC_FARFIELD :
+      throw runtime_error("BCs() ERROR! Farfield BC hasn't been implemented yet!");
+      break;
+      
+    case BC_SYMMETRY_PLANE :
+      throw runtime_error("BCs() ERROR! Symmetry plane BC hasn't been implemented yet!");
+      break;
+      
+    case BC_EXTRAPOLATE :
+    case BC_LINEAR_EXTRAPOLATION :
+      throw runtime_error("BCs() ERROR! Linear extrapolation BC hasn't been implemented yet!");
+      break;
+      
+    case BC_OUTFLOW :
+      // Impose zero derivative in the j-direction at the boundary
+      // This is equivalent with a constant extrapolation
+    case BC_CONSTANT_EXTRAPOLATION :
+    default:		
+      // Impose constant extrapolation
+      for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	SolnBlk.U[i][SolnBlk.JCu+ghost] = SolnBlk.U[i][SolnBlk.JCu];
+      }
+      break;
+    } /* endswitch */
   } /* endfor */
 
 }

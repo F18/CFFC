@@ -42,6 +42,10 @@ AdvectDiffuse2D_Quad_Block_New::AdvectDiffuse2D_Quad_Block_New(void) {
   FluxN = NULL; FluxS = NULL; FluxE = NULL; FluxW = NULL;
   UoN = NULL; UoS = NULL; UoE = NULL; UoW = NULL;
 
+  // Set the pointers in the solution state to the velocity, diffusion and source term fields.
+  // These pointes are static variables in the state class.
+  (*U)->Set_Pointers_To_Fields();
+
   // Get access to the AdvectDiffuse2D_ExactSolutions object
   ExactSoln = &AdvectDiffuse2D_ExactSolutions::getInstance();
 }
