@@ -157,41 +157,42 @@ public:
   static double molarMass( const double* Y );
   static double heatFormation( const double* Y );
   double gasConstant(void) const;   
-  static double gasConstant( const double* Y );   
-  static double heatCapacity_p( const double &Temp, const double* y );
+//   static double gasConstant( const double* Y );   
+//   static double heatCapacity_p( const double &Temp, const double* y );
   double heatCapacity_v(void) const;
-  static double heatCapacity_v( const double &Temp, const double* y );
+//   static double heatCapacity_v( const double &Temp, const double* y );
   double heatRatio(void) const;
-  static double heatRatio( const double &Temp, const double* y );
+//   static double heatRatio( const double &Temp, const double* y );
   double internalEnergy() const;
-  static double internalEnergy( const double &Temp, const double* y );
+//   static double internalEnergy( const double &Temp, const double* y );
   double internalEnergySens() const;
-  static double internalEnergySens( const double &Temp, const double* y );
+//   static double internalEnergySens( const double &Temp, const double* y );
   double enthalpy(void) const;
-  static double enthalpy( const double &Temp, const double* y );
-  static double enthalpySens( const double &Temp, const double* y );
+//   static double enthalpy( const double &Temp, const double* y );
+//   static double enthalpySens( const double &Temp, const double* y );
   double enthalpyPrime(void) const;
-  static double enthalpyPrime( const double &Temp, const double* y );
-  static double viscosity(const double &Temp, const double* y);
-  static double thermalCond(const double &Temp, const double* y);
-  static double speciesGibbsFree(const double &Temp, const int &species);
-  static double speciesDiffCoeff(const double &Temp, const double* y, const int &i);
+  void getEnthalpySens( const double &Press, const double* y, double*h ) const;
+//   static double enthalpyPrime( const double &Temp, const double* y );
+//   static double viscosity(const double &Temp, const double* y);
+//   static double thermalCond(const double &Temp, const double* y);
+//   static double speciesGibbsFree(const double &Temp, const int &species);
+//   static double speciesDiffCoeff(const double &Temp, const double* y, const int &i);
   double schmidt(const double &rho, const int &i) const;
-  static double schmidt(const double &Temp, const double &rho, const double* y, const int &i);
+//   static double schmidt(const double &Temp, const double &rho, const double* y, const int &i);
   double prandtl(void) const;
-  static double prandtl(const double &Temp, const double* y);
+//   static double prandtl(const double &Temp, const double* y);
   double lewis(const double &rho, const int &i) const;
-  static double lewis(const double &Temp, const double &rho, const double* y, const int &i);
+//   static double lewis(const double &Temp, const double &rho, const double* y, const int &i);
 
-  static double temperature(const double& Press, const double* y);
+//   static double temperature(const double& Press, const double* y);
 
   void getDihdDc( const double &Press, 
 		  const double* y, 
 		  double* dh ) const;
-  static void getDihdDc(const double &Temp, 
-			const double &Press, 
-			const double* y, 
-			double* dh);
+//   static void getDihdDc(const double &Temp, 
+// 			const double &Press, 
+// 			const double* y, 
+// 			double* dh);
 
   /***************** Reaction Rates ******************
     The following functions use CANTERA to compute    
@@ -202,10 +203,10 @@ public:
   void getRates( const double &Press, 
 		 const double* y, 
 		 double* rr ) const;
-  static void getRates( const double &Temp, 
-			const double &Press, 
-			const double* y, 
-			double* rr );
+//   static void getRates( const double &Temp, 
+// 			const double &Press, 
+// 			const double* y, 
+// 			double* rr );
 
   /**************** Output Functions *************************/
   void output (ostream &out) const;
@@ -566,6 +567,18 @@ inline double Mixture :: enthalpy(void) const {
 inline double Mixture :: enthalpyPrime(void) const {
   return Cp;
 }
+
+/****************************************************
+ * Individual Species sensible enthalpy
+ ****************************************************/
+inline void Mixture :: getEnthalpySens( const double &Press, 
+					const double* y, 
+					double*h ) const {
+  ct_gas->setState_TPY(T, Press, y);
+  ct_gas->getEnthalpy_RT(h); // -> h = hs + hf
+  for(int i=0; i<ns; i++) h[i] = ( h[i]*(Cantera::GasConstant/M[i])*T );
+}
+
 
 /****************************************************
  * Schmidt

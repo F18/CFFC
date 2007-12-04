@@ -24,6 +24,7 @@ double Flame2D_State::gravity_z = -9.81;
 double* Flame2D_State::y = NULL;
 double* Flame2D_pState::r = NULL;
 double* Flame2D_pState::dihdic = NULL;
+double* Flame2D_pState::hs_i = NULL;
 
 
 /****************************************************
@@ -106,6 +107,44 @@ Flame2D_State Flame2D_pState::Fx(void) const {
 
   return FluxX;
 }
+/*****************************************************************
+ * Viscous fluxes  (laminar flow)                                * 
+ * Viscous fluxes  (turbulent flows) are defined in single block * 
+ ****************************************************************/
+void Flame2D_pState::Viscous_Flux_x(const Flame2D_State &dWdx,
+				    const Vector2D &qflux,
+				    const Tensor2D &tau,
+				    Flame2D_State &Flux,
+				    const double& mult) const{
+ 
+  //Flux.rho() += mult * ZERO;
+  Flux.rhovx() += mult * tau.xx;
+  Flux.rhovy() += mult * tau.xy;
+  Flux.E() += mult * ( -qflux.x + vx()*tau.xx + vy()*tau.xy );
+  //rho * Diffusion_Coef * grad cn 
+  for( int i=0; i<ns; i++){
+    Flux.rhoc(i) += mult * (Diffusion_coef(i) * dWdx.c(i)); 
+  }
+
+}
+
+void Flame2D_pState::Viscous_Flux_y(const Flame2D_State &dWdy,
+				    const Vector2D &qflux,
+				    const Tensor2D &tau, 
+				    Flame2D_State &Flux,
+				    const double& mult) const {
+
+  //Flux.rho() += mult * ZERO;
+  Flux.rhovx() += mult * tau.xy; 
+  Flux.rhovy() += mult * tau.yy;
+  Flux.E() += mult * ( -qflux.y + vx()*tau.xy + vy()*tau.yy );
+  //rho * Diffusion_Coef * grad cn 
+  for( int i=0; i<ns; i++){
+    Flux.rhoc(i) += mult * (Diffusion_coef(i) * dWdy.c(i));     
+  }
+
+}
+
 
 /*******************************************************************
  ***************** EIGENVALUES *************************************
@@ -510,6 +549,42 @@ void Flame2D_pState::Sa_inviscid(Flame2D_State &S,
   }
 
 
+}
+/***************************************************************
+ * Axisymmetric flow source terms (Viscous)                    *  
+ ***************************************************************/
+void Flame2D_pState::Sa_viscous(Flame2D_State &S, 
+				const Flame2D_State &dWdx,
+				const Flame2D_State &dWdy,
+				const Vector2D &X, 
+				const int Axisymmetric, 
+				const double& mult) const {
+  
+  // compute laminar stresses and heat flux vector
+  static Vector2D qflux;
+  static Tensor2D tau;
+  Viscous_Quantities(dWdx, dWdy, Axisymmetric, X, qflux, tau);
+
+
+  // Determine axisymmetric source terms
+  if (Axisymmetric == AXISYMMETRIC_X) {
+    S.rhovx() += mult * (tau.xx - tau.zz)/X.x;
+    S.rhovy() += mult * tau.xy/X.x;
+    S.E() += mult * (-qflux.x + vx()*tau.xx + vy()*tau.xy)/X.x;
+    for(int i=0; i<ns;i++){
+      S.rhoc(i) += mult * rho()*Diffusion_coef(i)*dWdx.c(i)/X.x;
+    }
+    
+  } else if (Axisymmetric == AXISYMMETRIC_Y) {
+    S.rhovx() += mult * tau.xy/X.y;
+    S.rhovy() += mult * (tau.xx - tau.zz)/X.y;
+    S.E() += mult * (-qflux.y + vx()*tau.xy + vy()*tau.yy)/X.y;
+    for(int i=0; i<ns;i++){
+      S.rhoc(i) += mult * rho()*Diffusion_coef(i)*dWdy.c(i)/X.y;
+    }
+    
+  } /* endif */
+  
 }
 
 /****************************************************
@@ -1504,6 +1579,155 @@ void Flame2D_State::FluxAUSMplus_up_n(const Flame2D_pState &Wl,
   
   rhovx() = ur*cos_angle - vr*sin_angle;
   rhovy() = rhovx()*sin_angle + rhovy()*cos_angle;
+
+}
+
+/************************************************************************
+ ************** Viscous Reconstruction Functions     ********************     
+ ************************************************************************/
+/**********************************************************************
+ * Routine: ViscousFluxArithmetic_n                                   *
+ *                                                                    *
+ * This function returns the intermediate state solution viscous flux *
+ * calculated by the arithmetic mean of the cell-centred flux terms   *
+ * of the neighbouring cells.                                         *
+ *                                                                    *
+ **********************************************************************/
+void Flame2D_State::Viscous_FluxArithmetic_n(const Flame2D_pState &Wl,
+					     const Flame2D_State &dWdx_l,
+					     const Flame2D_State &dWdy_l,
+					     const Vector2D &qflux_l,
+					     const Tensor2D &tau_l,
+					     const Flame2D_pState &Wr,
+					     const Flame2D_State &dWdx_r,
+					     const Flame2D_State &dWdy_r,
+					     const Vector2D &qflux_r,
+					     const Tensor2D &tau_r,
+					     const Vector2D &norm_dir,
+					     const double &mult) {
+  // the cosines
+  static const Vector2D i(1,0), j(0,1);
+  double nx( dot(i,norm_dir) ), ny( dot(j,norm_dir) );
+
+  // Fx = 0.5 * ( Wl.Viscous_Flux_x + Wr.Viscous_Flux_x)
+  // Fy = 0.5 * ( Wl.Viscous_Flux_y + Wr.Viscous_Flux_y)
+  // Fn = (Fx*dot(i,norm_dir) + Fy*dot(j,norm_dir))
+
+  // Fx Constribution
+  if (fabs(nx)>TOLER) {
+    Wl.Viscous_Flux_x(dWdx_l, qflux_l, tau_l, *this, mult*HALF*nx);
+    Wr.Viscous_Flux_x(dWdx_r, qflux_r, tau_r, *this, mult*HALF*nx);
+  }
+  // Fy contribution
+  if (fabs(ny)>TOLER) {
+    Wl.Viscous_Flux_y(dWdy_l, qflux_l, tau_l, *this, mult*HALF*ny);
+    Wr.Viscous_Flux_y(dWdy_r, qflux_r, tau_r, *this, mult*HALF*ny);
+  }
+
+}
+
+/**********************************************************************
+ * Routine: Viscous_Flux_n                                            *
+ *                                                                    *
+ * This function returns the intermediate state solution viscous flux *
+ * given the primitive variable solution state and the gradients of   *
+ * the primitive variables.                                           *
+ *                                                                    *
+ **********************************************************************/
+void Flame2D_State::Viscous_Flux_n(const Flame2D_pState &W,
+				   const Flame2D_pState &dWdx,
+				   const Flame2D_pState &dWdy,
+				   const int Axisymmetric,
+				   const Vector2D X,
+				   const Vector2D &norm_dir,
+				   const double &mult) {
+
+  static Vector2D qflux;
+  static Tensor2D tau;
+
+  // the cosines
+  static const Vector2D i(1,0), j(0,1);
+  double nx( dot(i,norm_dir) ), ny( dot(j,norm_dir) );
+
+  // compute the stress tensor and heat flux vector
+  W.Viscous_Quantities( dWdx, dWdy, Axisymmetric, X, qflux, tau );
+  
+  // Fn = (Fx*dot(i,norm_dir) + Fy*dot(j,norm_dir))
+
+  // Fx Constribution
+  if (fabs(nx)>TOLER) {
+    W.Viscous_Flux_x(dWdx, qflux, tau, *this, mult*nx);
+  }
+  // Fy contribution
+  if (fabs(ny)>TOLER) {
+    W.Viscous_Flux_y(dWdy, qflux, tau, *this, mult*ny);
+  }
+
+}
+
+/**********************************************************************
+ * Routine: ViscousFluxHybrid_n                                       *
+ *                                                                    *
+ * This function returns the intermediate state solution viscous flux *
+ * calculated by the arithmetic mean of the cell-centred flux terms   *
+ * of the neighbouring cells.                                         *
+ * Also returns the face gradients in dWd[xy] (passed by reference)   *
+ *                                                                    *
+ **********************************************************************/
+void Flame2D_State::Viscous_FluxHybrid_n(const Flame2D_pState &W,
+					Flame2D_State &dWdx, 
+					Flame2D_State &dWdy,
+					const Vector2D &X,
+					const Flame2D_pState &Wl,
+					const Flame2D_State &dWdx_l,
+					const Flame2D_State &dWdy_l,
+					const Vector2D &Xl,
+					const Flame2D_pState &Wr,
+					const Flame2D_State &dWdx_r,
+					const Flame2D_State &dWdy_r,
+					const Vector2D &Xr,
+					const int &Axisymmetric,
+					const Vector2D &norm_dir,
+					const double &mult) {
+
+  static Vector2D qflux;
+  static Tensor2D tau;
+
+  // the cosines
+  static const Vector2D i(1,0), j(0,1);
+  double nx( dot(i,norm_dir) ), ny( dot(j,norm_dir) );
+
+  // compute the distances
+  Vector2D dX( Xr-Xl );
+  double ds( dX.abs() );
+  dX /= ds;
+
+  // the dot product
+  double dotp( dot(norm_dir,dX) );
+
+  // Compute the Cartesian components of the intermediate state
+  // solution viscous flux.
+  double dWdx_ave, dWdy_ave, dWds;
+  for (int k=0; k<n; k++) {
+    dWdx_ave = HALF*(dWdx_l.x[k] + dWdx_r.x[k]);
+    dWdy_ave = HALF*(dWdy_l.x[k] + dWdy_r.x[k]);
+    dWds = (Wr.x[k]-Wl.x[k])/ds;
+    dWdx.x[k] = dWdx_ave + (dWds - dWdx_ave*dX.x)*norm_dir.x/dotp;
+    dWdy.x[k] = dWdy_ave + (dWds - dWdy_ave*dX.y)*norm_dir.y/dotp;
+  }
+
+  // compute the stress tensor and heat flux vector
+  W.Viscous_Quantities( dWdx, dWdy, Axisymmetric, X, qflux, tau );
+  
+  // Fn = (Fx*dot(i,norm_dir) + Fy*dot(j,norm_dir))
+  // Fx Constribution
+  if (fabs(nx)>TOLER) {
+    W.Viscous_Flux_x(dWdx, qflux, tau, *this, mult*nx);
+  }
+  // Fy contribution
+  if (fabs(ny)>TOLER) {
+    W.Viscous_Flux_y(dWdy, qflux, tau, *this, mult*ny);
+  }
 
 }
 

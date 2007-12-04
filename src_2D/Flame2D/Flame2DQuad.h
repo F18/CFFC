@@ -216,7 +216,6 @@ class Flame2D_Quad_Block{
   int                   Nghost;   //!< Number of ghost cells.
   //@}
 
-
   //@{ @name Radiation source term and static data:
   double                       **Srad; //!< radiant source term (divergence of rad. heat flux)
   static PlanckMean  *PlanckMean_data; //!< planck mean data object
@@ -400,7 +399,7 @@ inline void Flame2D_Quad_Block::allocate(const int Ni, const int Nj, const int N
    dWdx_faceS = new Flame2D_State*[NCi]; dWdy_faceS = new Flame2D_State*[NCi];
    phi = new Flame2D_State*[NCi]; Uo = new Flame2D_State*[NCi];
    Srad = new double*[NCi];
-   
+
    for (int i = 0; i <= NCi-1 ; ++i ) {
       W[i] = new Flame2D_pState[NCj]; U[i] = new Flame2D_State[NCj];
       dt[i] = new double[NCj]; dUdt[i] = new Flame2D_State*[NCj];
@@ -2084,8 +2083,6 @@ extern int dUdt_Multistage_Explicit(Flame2D_Quad_Block &SolnBlk,
 extern int Update_Solution_Multistage_Explicit(Flame2D_Quad_Block &SolnBlk,
    	                                       const int i_stage,
                                                Flame2D_Input_Parameters &Input_Parameters);
-
-extern void Viscous_Calculations(Flame2D_Quad_Block &SolnBlk);
 
 // optically thin radiation source term evaluation
 extern void Radiation_Source_Eval( Flame2D_Quad_Block &SolnBlk,

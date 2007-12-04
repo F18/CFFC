@@ -183,7 +183,9 @@ public:
   void set( const Flame2D_State &U, const double &mult=1.0) {
     for (int i=0; i<n; i++) x[i] = mult*U.x[i];
   };
-
+  void Average( const Flame2D_State &U1, const Flame2D_State &U2 ) {
+    for (int i=0; i<n; i++) x[i] = 0.5*(U1.x[i]+U2.x[i]);
+  };
   /******************* Fluxes ***************************/
   void Delta(const Flame2D_State& Ur, const Flame2D_State& Ul) {
     for (int i=0; i<n; i++) x[i] = Ur.x[i] - Ul.x[i];
@@ -217,7 +219,41 @@ public:
   void FluxAUSMplus_up_n(const Flame2D_pState &Wl,
 			 const Flame2D_pState &Wr,
 			 const Vector2D &norm_dir);
-
+  void Viscous_FluxArithmetic_n(const Flame2D_pState &Wl,
+				const Flame2D_State &dWdx_l,
+				const Flame2D_State &dWdy_l,
+				const Vector2D &qflux_l,
+				const Tensor2D &tau_l,
+				const Flame2D_pState &Wr,
+				const Flame2D_State &dWdx_r,
+				const Flame2D_State &dWdy_r,
+				const Vector2D &qflux_r,
+				const Tensor2D &tau_r,
+				const Vector2D &norm_dir,
+				const double &mult=1.0);
+  void Viscous_Flux_n(const Flame2D_pState &W,
+		      const Flame2D_pState &dWdx,
+		      const Flame2D_pState &dWdy,
+		      const int Axisymmetric,
+		      const Vector2D X,
+		      const Vector2D &norm_dir, 
+		      const double &mult=1.0);
+  void Viscous_FluxHybrid_n(const Flame2D_pState &W,
+			   Flame2D_State &dWdx, 
+			   Flame2D_State &dWdy,
+			   const Vector2D &X,
+			   const Flame2D_pState &Wl,
+			   const Flame2D_State &dWdx_l,
+			   const Flame2D_State &dWdy_l,
+			   const Vector2D &Xl,
+			   const Flame2D_pState &Wr,
+			   const Flame2D_State &dWdx_r,
+			   const Flame2D_State &dWdy_r,
+			   const Vector2D &Xr,
+			   const int &Axisymmetric,
+			   const Vector2D &norm_dir,
+			   const double &mult=1.0);
+    
   /***************** Checking ***************************/
   bool isPhysical(const int &harshness);
   bool speciesOK(const int &harshness);
@@ -571,6 +607,7 @@ private:
   Mixture Mix;       //!< Mixture Object
   static double* r;  //!< Temporary storage for reaction rates
   static double* dihdic;  //!< Temporary storage for dihdic
+  static double* hs_i; //!< Temporary storage for hs(i)
 
 public:
   /************** Constructors/Destructors ***********/
@@ -598,7 +635,7 @@ public:
 
   Flame2D_pState(const Flame2D_pState &W) { Copy(W); }
 
-  Flame2D_pState(const Flame2D_State &W) { Copy(W);  setGas(); }
+  Flame2D_pState(const Flame2D_State &W) { Copy(W);  }
 
   ~Flame2D_pState() { }
 
@@ -606,9 +643,13 @@ public:
     for (int i=0; i<n; i++) x[i] = W.x[i];
     Mix = W.Mix;
   }
-
+  void Copy( const Flame2D_State &W ) { 
+    for(int i=0; i<n; i++) x[i] = W[i+1];
+    setGas();
+  }
   /*************** VACUUM OPERATOR *********************/
 
+public:
   /*************** Static Functions ********************/
   //! initial mixture setup function
   static void setMixture(const string &mech_name,
@@ -710,12 +751,6 @@ public:
     Mix.setState_DHY(rho(), h, c()); 
     p() = rho()*Mix.gasConstant()*Mix.temperature();
   };
-  double load_dihdic(void) const {
-    Mix.getDihdDc( p(), c(), dihdic );
-#ifdef _NS_MINUS_ONE
-    for (int i=0; i<ns; i++) dihdic[i] -= dihdic[ns-1];
-#endif
-  };
 
 private:
   void setGas(void) { Mix.setState_DPY(rho(), p(), c()); };
@@ -732,14 +767,7 @@ public:
     setEnergy(e);
   }
   void setW(const Flame2D_pState &W){ if( this != &W)  Copy(W); }
-  void setW(const Flame2D_State &W){
-    rho() = W.rho();
-    vx() = W.vx();
-    vy() = W.vy();
-    p() = W.p();
-    for(int i=0; i<ns; i++) c(i) = W.c(i);
-    setGas();
-  }
+  void setW(const Flame2D_State &W){ Copy(W); }
   void getU(Flame2D_State &U) const {
     U.rho() = rho();
     U.rhovx() = rhovx();
@@ -752,7 +780,6 @@ public:
     getU(U);
     return U;
   }
-
 
   /************ Misc Quantities of Interest *************/
   //!< Total Energy (rho *(e + HALF*v^2))
@@ -776,6 +803,7 @@ public:
   //!< enthalpy
   double h(void) const { return Mix.enthalpy(); };
   double hs(void) const { return Mix.enthalpySens(); };
+  void hs(double*hi) const { Mix.getEnthalpySens(p(), c(), hi); };
   double hprime(void) const { return Mix.enthalpyPrime(); };
   //!< heat capacity
   double Cp(void) const { return Mix.heatCapacity_p(); };
@@ -793,6 +821,30 @@ public:
   //!< Derivatives
   double diedip() const { return (hprime() - Rtot())/(rho()*Rtot()); };
   double diedirho() const { return -p()*(hprime() - Rtot())/(rho()*rho()*Rtot()); };
+  double load_dihdic(void) const {
+    Mix.getDihdDc( p(), c(), dihdic );
+#ifdef _NS_MINUS_ONE
+    for (int i=0; i<ns; i++) dihdic[i] -= dihdic[ns-1];
+#endif
+  };
+
+  /************ Strain rate tensor, laminar stress tensor ***********/
+  void Strain_Rate(const Flame2D_State &dWdx,
+		   const Flame2D_State &dWdy,
+		   const int Axisymmetric,
+		   const Vector2D &X,
+		   Tensor2D &strain_rate) const;
+  void Laminar_Stress(const Flame2D_State &dWdx,
+		      const Flame2D_State &dWdy,
+		      const int Axisymmetric,
+		      const Vector2D &X,
+		      Tensor2D &laminar_stress) const;
+  void Viscous_Quantities(const Flame2D_State &dWdx,
+			  const Flame2D_State &dWdy,
+			  const int Axisymmetric,
+			  const Vector2D &X,
+			  Vector2D &qflux,
+			  Tensor2D &tau) const;
 
   /***************** Helper Functions *******************/
   void Reconstruct( const Flame2D_pState &Wc, const Flame2D_State &phi, 
@@ -800,6 +852,14 @@ public:
 		    const Vector2D &dX, const double &mult=1.0) {
     for (int i=0; i<n; i++)
       x[i] = Wc.x[i] + mult*(phi[i+1]*dWdx[i+1]*dX.x + phi[i+1]*dWdy[i+1]*dX.y);
+    setGas();
+  };
+  void Average( const Flame2D_State &W1, const Flame2D_State &W2 ) {
+    for (int i=0; i<n; i++) x[i] = 0.5*(W1[i+1]+W2[i+1]);
+    setGas();
+  };
+  void Average( const Flame2D_pState &W1, const Flame2D_pState &W2 ) {
+    for (int i=0; i<n; i++) x[i] = 0.5*(W1.x[i]+W2.x[i]);
     setGas();
   };
 
@@ -816,11 +876,27 @@ public:
   Flame2D_State Fx(void) const;
   void addFx(Flame2D_State &FluxX, const double& mult=1.0) const;
   void RoeAverage(const Flame2D_pState &Wl, const Flame2D_pState &Wr);
+  void Viscous_Flux_x(const Flame2D_State &dWdx,
+		      const Vector2D &qflux,
+		      const Tensor2D &tau,
+		      Flame2D_State &Flux, 
+		      const double& mult=1.0) const;
+  void Viscous_Flux_y(const Flame2D_State &dWdy,
+		      const Vector2D &qflux,
+		      const Tensor2D &tau, 
+		      Flame2D_State &Flux, 
+		      const double& mult=1.0) const;
 
   /********** Axisymmetric Source Terms *****************/
   void Sa_inviscid(Flame2D_State &S, const Vector2D &X, 
 		   const int Axisymmetric, const double& mult=1.0) const;
-
+  void Sa_viscous(Flame2D_State &S, 
+		  const Flame2D_State &dWdx,
+		  const Flame2D_State &dWdy,
+		  const Vector2D &X, 
+		  const int Axisymmetric, 
+		  const double& mult=1.0) const;
+    
   /* Source terms associated with finite-rate chemistry */
   void Sw(Flame2D_State &S, const double& mult=1.0) const;
 
@@ -904,6 +980,7 @@ inline void Flame2D_pState :: AllocateStatic() {
   if (ns>0) { 
     r = new double[ns];
     dihdic = new double[ns];
+    hs_i = new double[ns];
     y = new double[ns];
   }
 };
@@ -911,6 +988,7 @@ inline void Flame2D_pState :: AllocateStatic() {
 inline void Flame2D_pState :: DeallocateStatic() { 
   if (r!=NULL) { delete[] r; r = NULL; } 
   if (dihdic!=NULL) { delete[] dihdic; dihdic = NULL; } 
+  if (hs_i!=NULL) { delete[] hs_i; hs_i = NULL; } 
   if (y!=NULL) { delete[] y; y = NULL; } 
   Mixture::DeallocateStatic();
 };
@@ -926,7 +1004,6 @@ inline Flame2D_pState& Flame2D_pState::operator =(const Flame2D_pState &W){
 }
 inline Flame2D_pState& Flame2D_pState::operator =(const Flame2D_State &W){
   Copy(W);
-  setGas();
   return (*this);
 }
 
@@ -949,6 +1026,90 @@ inline istream &operator >> (istream &in_file, Flame2D_pState &W) {
   return (in_file);
 }
 
+
+/************* Strain rate tensor ***********************************/
+inline void Flame2D_pState::Strain_Rate(const Flame2D_State &dWdx,
+					const Flame2D_State &dWdy,
+					const int Axisymmetric,
+					const Vector2D &X,
+					Tensor2D &strain_rate) const {
+  double radius;
+
+  /***************** Strain rate (+dilatation) **********************/	
+  double div_v( dWdx.vx() + dWdy.vy() );
+  if (Axisymmetric == AXISYMMETRIC_X) {
+    radius = (X.x < MICRO) ? MICRO : X.x;    //fabs(X.x) ??
+    div_v += vx()/radius;
+  } else if (Axisymmetric == AXISYMMETRIC_Y) {    
+    radius = (X.y < MICRO) ? MICRO : X.y;
+    div_v += vy()/radius;
+  } 
+
+  strain_rate.xx = dWdx.vx()-div_v/THREE;
+  strain_rate.xy = HALF*(dWdx.vy() + dWdy.vx());
+  strain_rate.yy = dWdy.vy()-div_v/THREE;
+
+  if (Axisymmetric == PLANAR) {
+    strain_rate.zz = -(strain_rate.xx + strain_rate.yy); 
+  } else if (Axisymmetric == AXISYMMETRIC_X) {
+    strain_rate.zz = vx()/radius-div_v/THREE;
+  } else if (Axisymmetric == AXISYMMETRIC_Y) {
+    strain_rate.zz = vy()/radius-div_v/THREE;
+  } 
+ }
+
+/***************** Laminar (molecular) fluid stress ***********************/
+inline void Flame2D_pState::Laminar_Stress(const Flame2D_State &dWdx,
+					   const Flame2D_State &dWdy,
+					   const int Axisymmetric,
+					   const Vector2D &X,
+					   Tensor2D &laminar_stress) const {
+  
+   Strain_Rate(dWdx, dWdy, Axisymmetric, X, laminar_stress);
+   laminar_stress *= TWO*mu();
+ }
+
+
+
+/******************************************************
+ Compute viscous heat flux and stresses
+*******************************************************/
+inline void Flame2D_pState::Viscous_Quantities(const Flame2D_State &dWdx,
+					       const Flame2D_State &dWdy,
+					       const int Axisymmetric,
+					       const Vector2D &X,
+					       Vector2D &qflux,
+					       Tensor2D &tau) const {
+
+  static Vector2D grad_T;
+
+  /**************** Temperature gradient ***************************/
+  /* Temperature gradients from using the chain rule 
+     with the ideal gas law (P=rho*R*T) 
+     dT/dx = 1/rho*R *( dP/dx - P/rho * drho/dx) */
+  grad_T.x = (dWdx.p() - (p()/rho())*dWdx.rho());
+  grad_T.y = (dWdy.p() - (p()/rho())*dWdy.rho());
+  grad_T *= ONE/(rho()*Rtot());
+  
+  /***************** Molecular (Laminar) Stresses ******************/
+  Laminar_Stress(dWdx, dWdy, Axisymmetric, X, tau);
+  
+  /************* Molecular (Laminar) Heat flux Vector **************/
+  /****************** Thermal Conduction ***************************
+     q = - kappa * grad(T)                                         */
+  qflux = grad_T;
+  qflux *= - kappa();
+  /****************** Thermal Diffusion ****************************/
+  // q -= rho * sum ( hs * Ds *gradcs)  
+  hs(hs_i); // <- individual species enthalpies
+  double tmp;
+  for(int i=0; i<ns; i++){ 
+    tmp = rho() * hs_i[i] * Diffusion_coef(i);
+    qflux.x -= tmp * dWdx.c(i);
+    qflux.y -= tmp * dWdy.c(i);
+  }
+
+}
 
 /*********************************************************************************
  *********************************************************************************

@@ -129,163 +129,163 @@ double Mixture :: heatFormation( const double* y ) {
   return sum;
 }
 
-/****************************************************
- * Mixture gas constant [kg/mol]
- ****************************************************/
-double Mixture :: gasConstant( const double* y ){
-  return Cantera::GasConstant/molarMass(y);
-}
+// /****************************************************
+//  * Mixture gas constant [kg/mol]
+//  ****************************************************/
+// double Mixture :: gasConstant( const double* y ){
+//   return Cantera::GasConstant/molarMass(y);
+// }
 
-/****************************************************
- * Mixture Heat Capacity (const pressure) J/(kg*K)
- ****************************************************/
-double Mixture :: heatCapacity_p( const double &Temp, const double* y ){
-  ct_gas->setMassFractions_NoNorm(y);
-  ct_gas->setTemperature(Temp);
-  return ct_gas->cp_mass();
-}
+// /****************************************************
+//  * Mixture Heat Capacity (const pressure) J/(kg*K)
+//  ****************************************************/
+// double Mixture :: heatCapacity_p( const double &Temp, const double* y ){
+//   ct_gas->setMassFractions_NoNorm(y);
+//   ct_gas->setTemperature(Temp);
+//   return ct_gas->cp_mass();
+// }
 
-/****************************************************
- * Mixture Heat Capacity (const volume) J/(kg*K)
- ****************************************************/
-double Mixture :: heatCapacity_v( const double &Temp, const double* y ){
-  ct_gas->setMassFractions_NoNorm(y);
-  ct_gas->setTemperature(Temp);
-  return ct_gas->cv_mass();
-}
+// /****************************************************
+//  * Mixture Heat Capacity (const volume) J/(kg*K)
+//  ****************************************************/
+// double Mixture :: heatCapacity_v( const double &Temp, const double* y ){
+//   ct_gas->setMassFractions_NoNorm(y);
+//   ct_gas->setTemperature(Temp);
+//   return ct_gas->cv_mass();
+// }
 
-/****************************************************
- * Mixture Heat Ratio gamma
- ****************************************************/
-double Mixture :: heatRatio( const double &Temp, const double* y ){
-  ct_gas->setMassFractions_NoNorm(y);
-  ct_gas->setTemperature(Temp);
-  return ct_gas->cp_mole()/ct_gas->cv_mole();
-}
+// /****************************************************
+//  * Mixture Heat Ratio gamma
+//  ****************************************************/
+// double Mixture :: heatRatio( const double &Temp, const double* y ){
+//   ct_gas->setMassFractions_NoNorm(y);
+//   ct_gas->setTemperature(Temp);
+//   return ct_gas->cp_mole()/ct_gas->cv_mole();
+// }
 
-/****************************************************
- * Mixture Specific Internal Energy J/(kg)
- ****************************************************/
-//! etotal = sensible & chemical
-double Mixture :: internalEnergy( const double &Temp, const double* y ){
-  ct_gas->setMassFractions_NoNorm(y);
-  ct_gas->setTemperature(Temp);
-  return ct_gas->intEnergy_mass();
-}
+// /****************************************************
+//  * Mixture Specific Internal Energy J/(kg)
+//  ****************************************************/
+// //! etotal = sensible & chemical
+// double Mixture :: internalEnergy( const double &Temp, const double* y ){
+//   ct_gas->setMassFractions_NoNorm(y);
+//   ct_gas->setTemperature(Temp);
+//   return ct_gas->intEnergy_mass();
+// }
 
-//! internal energy with no heat of formation included (sensible)
-double Mixture :: internalEnergySens( const double &Temp, const double* y ){
-  ct_gas->setMassFractions_NoNorm(y);
-  ct_gas->setTemperature(Temp);
-  return (ct_gas->intEnergy_mass() - heatFormation(y));
-}
+// //! internal energy with no heat of formation included (sensible)
+// double Mixture :: internalEnergySens( const double &Temp, const double* y ){
+//   ct_gas->setMassFractions_NoNorm(y);
+//   ct_gas->setTemperature(Temp);
+//   return (ct_gas->intEnergy_mass() - heatFormation(y));
+// }
 
-/****************************************************
- * Specific absolute enthalpy J/(kg)
- ****************************************************/
-//! htotal = mass fraction * (hsensible + heatofform)
-double Mixture :: enthalpy( const double &Temp, const double* y ){
-  ct_gas->setMassFractions_NoNorm(y);
-  ct_gas->setTemperature(Temp);
-  return ct_gas->enthalpy_mass();
-}
+// /****************************************************
+//  * Specific absolute enthalpy J/(kg)
+//  ****************************************************/
+// //! htotal = mass fraction * (hsensible + heatofform)
+// double Mixture :: enthalpy( const double &Temp, const double* y ){
+//   ct_gas->setMassFractions_NoNorm(y);
+//   ct_gas->setTemperature(Temp);
+//   return ct_gas->enthalpy_mass();
+// }
 
-//! absolute enthalpy with no heat of formation included (sensible)
-double Mixture :: enthalpySens( const double &Temp, const double* y ) {
-  ct_gas->setMassFractions_NoNorm(y);
-  ct_gas->setTemperature(Temp);
-  return (ct_gas->enthalpy_mass() - heatFormation(y));
-}
+// //! absolute enthalpy with no heat of formation included (sensible)
+// double Mixture :: enthalpySens( const double &Temp, const double* y ) {
+//   ct_gas->setMassFractions_NoNorm(y);
+//   ct_gas->setTemperature(Temp);
+//   return (ct_gas->enthalpy_mass() - heatFormation(y));
+// }
 
-/****************************************************
- * Derivative of specific enthalpy dh/dT
- * actually is just Cp as Cp = (dh/dT)_p
- ****************************************************/
-double Mixture :: enthalpyPrime( const double &Temp, const double* y ){
-  return heatCapacity_p( Temp, y );
-}
+// /****************************************************
+//  * Derivative of specific enthalpy dh/dT
+//  * actually is just Cp as Cp = (dh/dT)_p
+//  ****************************************************/
+// double Mixture :: enthalpyPrime( const double &Temp, const double* y ){
+//   return heatCapacity_p( Temp, y );
+// }
 
-/****************************************************
- * Viscosity using Wilke [1950] formulation
- ****************************************************/
-double Mixture :: viscosity(const double &Temp, const double* y) {
-  ct_gas->setMassFractions_NoNorm(y);
-  ct_gas->setTemperature(Temp);
-  return ct_trans->viscosity();
-}
+// /****************************************************
+//  * Viscosity using Wilke [1950] formulation
+//  ****************************************************/
+// double Mixture :: viscosity(const double &Temp, const double* y) {
+//   ct_gas->setMassFractions_NoNorm(y);
+//   ct_gas->setTemperature(Temp);
+//   return ct_trans->viscosity();
+// }
 
-/****************************************************
- * Thermal Conductivity - Mason & Saxena (1958)  W/(m*K)
- ****************************************************/
-double Mixture :: thermalCond(const double &Temp, const double* y) {
-  ct_gas->setMassFractions_NoNorm(y);
-  ct_gas->setTemperature(Temp);
-  return ct_trans->thermalConductivity();
-}
+// /****************************************************
+//  * Thermal Conductivity - Mason & Saxena (1958)  W/(m*K)
+//  ****************************************************/
+// double Mixture :: thermalCond(const double &Temp, const double* y) {
+//   ct_gas->setMassFractions_NoNorm(y);
+//   ct_gas->setTemperature(Temp);
+//   return ct_trans->thermalConductivity();
+// }
 
-/****************************************************
- * Sepcies mixture diffusion coefficient (not implemented)
- ****************************************************/
-double Mixture :: speciesDiffCoeff(const double &Temp, 
-				   const double* y, 
-				   const int &i){
-  cerr << "Mixture::speciesDiffCoeff() - Not implemented yet.";
-  exit(-1);
-}
+// /****************************************************
+//  * Sepcies mixture diffusion coefficient (not implemented)
+//  ****************************************************/
+// double Mixture :: speciesDiffCoeff(const double &Temp, 
+// 				   const double* y, 
+// 				   const int &i){
+//   cerr << "Mixture::speciesDiffCoeff() - Not implemented yet.";
+//   exit(-1);
+// }
 
-/****************************************************
- * Schmidt
- ****************************************************/
-double Mixture :: schmidt(const double &Temp, 
-			  const double &rho,
-			  const double* y, 
-			  const int &i) {
-  if(isConstSchmidt){
-    return Sc_ref[i];
-  } else {
-    return viscosity(Temp, y)/(rho*speciesDiffCoeff(Temp,y,i));
-  }
-}
+// /****************************************************
+//  * Schmidt
+//  ****************************************************/
+// double Mixture :: schmidt(const double &Temp, 
+// 			  const double &rho,
+// 			  const double* y, 
+// 			  const int &i) {
+//   if(isConstSchmidt){
+//     return Sc_ref[i];
+//   } else {
+//     return viscosity(Temp, y)/(rho*speciesDiffCoeff(Temp,y,i));
+//   }
+// }
 
-/****************************************************
- * Prandtl
- ****************************************************/
-double Mixture :: prandtl(const double &Temp, const double* y) {
-  //Pr = Cp*mu/k
-  return heatCapacity_p(Temp,y)*viscosity(Temp,y)/thermalCond(Temp,y);
-}
+// /****************************************************
+//  * Prandtl
+//  ****************************************************/
+// double Mixture :: prandtl(const double &Temp, const double* y) {
+//   //Pr = Cp*mu/k
+//   return heatCapacity_p(Temp,y)*viscosity(Temp,y)/thermalCond(Temp,y);
+// }
 
-/****************************************************
- * Lewis
- ****************************************************/
-double Mixture :: lewis(const double &Temp, 
-			const double &rho,
-			const double* y,
-			const int &i) {
-   if(isConstSchmidt)
-     return (thermalCond(Temp,y)*Sc_ref[i])/
-       ( heatCapacity_p(Temp,y)*viscosity(Temp,y) );
-   else
-     return thermalCond(Temp,y) / 
-       ( heatCapacity_p(Temp,y)*rho*speciesDiffCoeff(Temp,y,i) );
-}
+// /****************************************************
+//  * Lewis
+//  ****************************************************/
+// double Mixture :: lewis(const double &Temp, 
+// 			const double &rho,
+// 			const double* y,
+// 			const int &i) {
+//    if(isConstSchmidt)
+//      return (thermalCond(Temp,y)*Sc_ref[i])/
+//        ( heatCapacity_p(Temp,y)*viscosity(Temp,y) );
+//    else
+//      return thermalCond(Temp,y) / 
+//        ( heatCapacity_p(Temp,y)*rho*speciesDiffCoeff(Temp,y,i) );
+// }
 
 
-/****************************************************
- * Derivative of species h wrt to mass fraction
- ****************************************************/
-void Mixture :: getDihdDc(const double &Temp, 
-			  const double &Press, 
-			  const double* y, 
-			  double* dh) {
-  ct_gas->setState_TPY(Temp, Press, y);
-  ct_gas->getEnthalpy_RT(dh); // -> h = hs + hf
-  double cp( ct_gas->cp_mass() );
-  double M_mix( molarMass(y) );
-  for(int i=0; i<ns; i++)
-    dh[i] = ( dh[i]*(Cantera::GasConstant/M[i])*Temp -
-	      cp*Temp*M_mix/M[i] );
-}
+// /****************************************************
+//  * Derivative of species h wrt to mass fraction
+//  ****************************************************/
+// void Mixture :: getDihdDc(const double &Temp, 
+// 			  const double &Press, 
+// 			  const double* y, 
+// 			  double* dh) {
+//   ct_gas->setState_TPY(Temp, Press, y);
+//   ct_gas->getEnthalpy_RT(dh); // -> h = hs + hf
+//   double cp( ct_gas->cp_mass() );
+//   double M_mix( molarMass(y) );
+//   for(int i=0; i<ns; i++)
+//     dh[i] = ( dh[i]*(Cantera::GasConstant/M[i])*Temp -
+// 	      cp*Temp*M_mix/M[i] );
+// }
 
 
 /***********************************************************************
@@ -552,23 +552,23 @@ void Mixture::composition( const string& fuel_species,
 } // end of ct_composition
 
 
-/************************************************************************
-  Calculates the concentration time rate of change of species from
-  primitive state W using the general law of mass action.
-  U is the conserved state container for passing back the 
-  source terms. ie. U.rhospec[i].c 
+// /************************************************************************
+//   Calculates the concentration time rate of change of species from
+//   primitive state W using the general law of mass action.
+//   U is the conserved state container for passing back the 
+//   source terms. ie. U.rhospec[i].c 
 
-  W.SpecCon:  is the  species mass fractions concentrations
-              of Chem2D_pState. (c_i*rho/M_i)   mol/m^3
+//   W.SpecCon:  is the  species mass fractions concentrations
+//               of Chem2D_pState. (c_i*rho/M_i)   mol/m^3
 
-  Return units are  kg/m^3*s ie. rho*omega (kg/m^3)*(1/s)
+//   Return units are  kg/m^3*s ie. rho*omega (kg/m^3)*(1/s)
 
-************************************************************************/
-void Mixture :: getRates( const double &Temp, const double &Press, 
-			  const double* y, double* rr ) {
-  ct_gas->setState_TPY(Temp, Press, y);
-  ct_gas->getNetProductionRates(rr);
-}
+// ************************************************************************/
+// void Mixture :: getRates( const double &Temp, const double &Press, 
+// 			  const double* y, double* rr ) {
+//   ct_gas->setState_TPY(Temp, Press, y);
+//   ct_gas->getNetProductionRates(rr);
+// }
 
 
 /////////////////////////////////////////////////////////////////////
