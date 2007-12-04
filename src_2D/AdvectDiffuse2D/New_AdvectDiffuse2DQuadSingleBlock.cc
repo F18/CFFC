@@ -1506,10 +1506,13 @@ double CFL(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 
   for ( j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
     for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
-      if (i < SolnBlk.ICl || i > SolnBlk.ICu ||
-	  j < SolnBlk.JCl || j > SolnBlk.JCu) {
+      if (i < SolnBlk.ICl || i > SolnBlk.ICu || j < SolnBlk.JCl || j > SolnBlk.JCu) {
+	// Set dt to ZERO in all ghost cells
 	SolnBlk.dt[i][j] = ZERO;
       } else {
+	/* Use different stability criteria to determine
+	   the local time step for all interior cells */
+
 	d_i = TWO*(SolnBlk.Grid.Cell[i][j].A/
                    (SolnBlk.Grid.lfaceE(i, j)+SolnBlk.Grid.lfaceW(i, j)));
 	d_j = TWO*(SolnBlk.Grid.Cell[i][j].A/
@@ -1550,7 +1553,17 @@ double CFL(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
     } /* endfor */
   } /* endfor */
 
-    /* Return the global time step. */
+
+  /* Set the global time step in all ghost cells. */
+  for ( j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; ++j) {
+    for ( i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; ++i) {
+      if (i < SolnBlk.ICl || i > SolnBlk.ICu || j < SolnBlk.JCl || j > SolnBlk.JCu) {
+	SolnBlk.dt[i][j] = dtMin;
+      } /* endif */
+    } /* endfor */
+  } /* endfor */
+
+  /* Return the global time step. */
 
   return (dtMin);
 
@@ -1568,8 +1581,8 @@ void Set_Global_TimeStep(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 
   int i, j;
 
-  for ( j  = SolnBlk.JCl ; j <= SolnBlk.JCu ; ++j ) {
-    for ( i = SolnBlk.ICl ; i <= SolnBlk.ICu ; ++i ) {
+  for ( j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
+    for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
       SolnBlk.dt[i][j] = Dt_min;
     } /* endfor */
   } /* endfor */
@@ -2912,7 +2925,7 @@ void Apply_Boundary_Flux_Corrections_Multistage_Explicit(AdvectDiffuse2D_Quad_Bl
  *                                                      
  ********************************************************/
 int dUdt_Residual_Evaluation(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
-			     AdvectDiffuse2D_Input_Parameters &Input_Parameters) {
+			     AdvectDiffuse2D_Input_Parameters &IP) {
 
   int i, j;
   Vector2D dX;
@@ -2922,18 +2935,18 @@ int dUdt_Residual_Evaluation(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
   /* Perform the linear reconstruction within each cell
      of the computational grid for this stage. */
     
-  switch(Input_Parameters.i_Reconstruction) {
+  switch(IP.i_Reconstruction) {
   case RECONSTRUCTION_GREEN_GAUSS :
     Linear_Reconstruction_GreenGauss(SolnBlk,
-				     Input_Parameters.i_Limiter);    
+				     IP.i_Limiter);    
     break;
   case RECONSTRUCTION_LEAST_SQUARES :
     Linear_Reconstruction_LeastSquares(SolnBlk,
-				       Input_Parameters.i_Limiter);
+				       IP.i_Limiter);
     break;
   default:
     Linear_Reconstruction_LeastSquares(SolnBlk,
-				       Input_Parameters.i_Limiter);
+				       IP.i_Limiter);
     break;
   } /* endswitch */
 
@@ -2985,7 +2998,7 @@ int dUdt_Residual_Evaluation(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
       } /* endif */
     } /* endfor */
     
-    if ( j > SolnBlk.JCl-1 && j < SolnBlk.JCu+1 ) {
+    if ( j >= SolnBlk.JCl && j <= SolnBlk.JCu ) {
       SolnBlk.dUdt[SolnBlk.ICl-1][j][0].Vacuum();	// set to zero
       SolnBlk.dUdt[SolnBlk.ICu+1][j][0].Vacuum();	// set to zero
     } /* endif */
@@ -3038,34 +3051,31 @@ int dUdt_Residual_Evaluation(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
  ********************************************************/
 int dUdt_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
                              const int i_stage,
-                             AdvectDiffuse2D_Input_Parameters &Input_Parameters) {
-
-#if 0
+                             AdvectDiffuse2D_Input_Parameters &IP) {
 
   int i, j, k_residual;
   double omega;
   Vector2D dX;
-  double ul, ur, flux;
-  AdvectDiffuse2D_State_New Ul, Ur;
+  AdvectDiffuse2D_State_New Ul, Ur, Flux;
 
   /* Evaluate the solution residual for stage 
      i_stage of an N stage scheme. */
 
   /* Evaluate the time step fraction and residual storage location for the stage. */
     
-  switch(Input_Parameters.i_Time_Integration) {
+  switch(IP.i_Time_Integration) {
   case TIME_STEPPING_EXPLICIT_EULER :
-    omega = Runge_Kutta(i_stage, Input_Parameters.N_Stage);
+    omega = Runge_Kutta(i_stage, IP.N_Stage);
     k_residual = 0;
     break;
   case TIME_STEPPING_EXPLICIT_PREDICTOR_CORRECTOR :
-    omega = Runge_Kutta(i_stage, Input_Parameters.N_Stage);
+    omega = Runge_Kutta(i_stage, IP.N_Stage);
     k_residual = 0;
     break;
   case TIME_STEPPING_EXPLICIT_RUNGE_KUTTA :
-    omega = Runge_Kutta(i_stage, Input_Parameters.N_Stage);
+    omega = Runge_Kutta(i_stage, IP.N_Stage);
     k_residual = 0;
-    if (Input_Parameters.N_Stage == 4) {
+    if (IP.N_Stage == 4) {
       if (i_stage == 4) {
 	k_residual = 0;
       } else {
@@ -3075,152 +3085,123 @@ int dUdt_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
     break;
   case TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING :
     omega = MultiStage_Optimally_Smoothing(i_stage, 
-					   Input_Parameters.N_Stage,
-					   Input_Parameters.i_Limiter);
+					   IP.N_Stage,
+					   IP.i_Limiter);
     k_residual = 0;
     break;
   default:
-    omega = Runge_Kutta(i_stage, Input_Parameters.N_Stage);
+    omega = Runge_Kutta(i_stage, IP.N_Stage);
     k_residual = 0;
     break;
   } /* endswitch */
     
-    /* Perform the linear reconstruction within each cell
-       of the computational grid for this stage. */
+  /* Perform the linear reconstruction within each cell
+     of the computational grid for this stage. */
     
-  switch(Input_Parameters.i_Reconstruction) {
+  switch(IP.i_Reconstruction) {
   case RECONSTRUCTION_GREEN_GAUSS :
     Linear_Reconstruction_GreenGauss(SolnBlk,
-				     Input_Parameters.i_Limiter);    
+				     IP.i_Limiter);    
     break;
   case RECONSTRUCTION_LEAST_SQUARES :
     Linear_Reconstruction_LeastSquares(SolnBlk,
-				       Input_Parameters.i_Limiter);
+				       IP.i_Limiter);
     break;
   default:
     Linear_Reconstruction_LeastSquares(SolnBlk,
-				       Input_Parameters.i_Limiter);
+				       IP.i_Limiter);
     break;
   } /* endswitch */
-
-    /* Evaluate the diffusive fluxes in each cell
-       of the computational grid for this stage. */
-
-  Diffusive_Flux(SolnBlk);
 
   /* Evaluate the time rate of change of the solution
      (i.e., the solution residuals) using a second-order
      limited upwind finite-volume scheme for the convective 
-     fluxes and a second-order centrally-weighted finite 
-     volume discretization for the diffusive fluxes. */
+     fluxes and a diamond-path gradient reconstruction 
+     for the diffusive fluxes. */
     
   // Add i-direction (zeta-direction) fluxes.
   for ( j  = SolnBlk.JCl-1 ; j <= SolnBlk.JCu+1 ; ++j ) {
+
+    // Set Uo for cell (ICl-1,j)
     if ( i_stage == 1 ) {
-      SolnBlk.uo[SolnBlk.ICl-1][j] = SolnBlk.U[SolnBlk.ICl-1][j].u;
-      SolnBlk.dUdt[SolnBlk.ICl-1][j][k_residual] = ZERO;
-    } else {
-      SolnBlk.dUdt[SolnBlk.ICl-1][j][k_residual] = ZERO;
+      SolnBlk.Uo[SolnBlk.ICl-1][j] = SolnBlk.U[SolnBlk.ICl-1][j];
     } /* endif */
-    
+
+    // Reset dUdt of cell (ICl-1,j) for the current stage
+    SolnBlk.dUdt[SolnBlk.ICl-1][j][k_residual].Vacuum();
+
     for ( i = SolnBlk.ICl-1 ; i <= SolnBlk.ICu ; ++i ) {
       if ( i_stage == 1 ) {
-	SolnBlk.uo[i+1][j] = SolnBlk.U[i+1][j].u;
-	SolnBlk.dUdt[i+1][j][k_residual] = ZERO;
-      } else if ( j > SolnBlk.JCl-1 && j < SolnBlk.JCu+1 ) {
-	switch(Input_Parameters.i_Time_Integration) {
+	SolnBlk.Uo[i+1][j] = SolnBlk.U[i+1][j];
+	SolnBlk.dUdt[i+1][j][k_residual].Vacuum(); // set to zero
+      } else if ( j >= SolnBlk.JCl && j <= SolnBlk.JCu ) {
+	switch(IP.i_Time_Integration) {
 	case TIME_STEPPING_EXPLICIT_PREDICTOR_CORRECTOR :
-	  //SolnBlk.dUdt[i+1][j][k_residual] = 
-	  //   SolnBlk.dUdt[i+1][j][k_residual];
+	  // 
 	  break;
 	case TIME_STEPPING_EXPLICIT_RUNGE_KUTTA :
-	  if (Input_Parameters.N_Stage == 2) {
-	    //SolnBlk.dUdt[i+1][j][k_residual] = 
-	    //   SolnBlk.dUdt[i+1][j][k_residual];
-	  } else if (Input_Parameters.N_Stage == 4 && i_stage == 4) {
-	    SolnBlk.dUdt[i+1][j][k_residual] = 
-	      SolnBlk.dUdt[i+1][j][0] + 
-	      TWO*SolnBlk.dUdt[i+1][j][1] +
-	      TWO*SolnBlk.dUdt[i+1][j][2];
+	  if (IP.N_Stage == 2) {
+	    // 
+	  } else if (IP.N_Stage == 4 && i_stage == 4) {
+	    SolnBlk.dUdt[i+1][j][k_residual] = ( SolnBlk.dUdt[i+1][j][0] + 
+						 TWO*SolnBlk.dUdt[i+1][j][1] +
+						 TWO*SolnBlk.dUdt[i+1][j][2] );
 	  } else {
-	    SolnBlk.dUdt[i+1][j][k_residual] = ZERO;
+	    SolnBlk.dUdt[i+1][j][k_residual].Vacuum(); // set to zero
 	  } /* endif */
 	  break;
 	case TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING :
-	  SolnBlk.dUdt[i+1][j][k_residual] = ZERO;
+	  SolnBlk.dUdt[i+1][j][k_residual].Vacuum(); // set to zero
 	  break;
 	default:
-	  SolnBlk.dUdt[i+1][j][k_residual] = ZERO;
+	  SolnBlk.dUdt[i+1][j][k_residual].Vacuum(); // set to zero
 	  break;
 	} /* endswitch */
       } /* endif */
     
-      if ( j > SolnBlk.JCl-1 && j < SolnBlk.JCu+1 ) {
+      if ( j >= SolnBlk.JCl && j <= SolnBlk.JCu ) {
     
 	/* Evaluate the cell interface i-direction fluxes. */
-    
-	dX = SolnBlk.Grid.xfaceE(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
-	ul = SolnBlk.U[i][j].u + 
-	  (SolnBlk.phi[i][j]*SolnBlk.dUdx[i][j])*dX.x +
-	  (SolnBlk.phi[i][j]*SolnBlk.dUdy[i][j])*dX.y;
-	dX = SolnBlk.Grid.xfaceW(i+1, j)-SolnBlk.Grid.Cell[i+1][j].Xc;
-	ur = SolnBlk.U[i+1][j].u + 
-	  (SolnBlk.phi[i+1][j]*SolnBlk.dUdx[i+1][j])*dX.x +
-	  (SolnBlk.phi[i+1][j]*SolnBlk.dUdy[i+1][j])*dX.y;
 
-	Ul = SolnBlk.U[i][j]; 
-	Ul.u = ul;
-	Ur = SolnBlk.U[i+1][j]; 
-	Ur.u = ur;
+	// Compute left and right interface states at the face midpoint
+	Ul = SolnBlk.PiecewiseLinearSolutionAtLocation(i  , j,SolnBlk.Grid.xfaceE(i  , j));
+	Ur = SolnBlk.PiecewiseLinearSolutionAtLocation(i+1, j,SolnBlk.Grid.xfaceW(i+1, j));
 
-	if ((i == SolnBlk.ICl-1) && 
-	    (SolnBlk.Grid.BCtypeW[j] == BC_DIRICHLET)) {
-	  Ul.Fd = Ur.Fd;
-	} else if ((i == SolnBlk.ICu) && 
-		   (SolnBlk.Grid.BCtypeE[j] == BC_DIRICHLET)) {
-	  Ur.Fd = Ul.Fd;
-	} /* endif */
+	// Enforce the boundary conditions for the inviscid states
 
-	flux = Flux_n(Ul, Ur, SolnBlk.Grid.nfaceE(i, j));
-    
+	// Compute the advective flux in the normal direction at the face midpoint 
+	Flux = Fa(Ul, Ur, SolnBlk.Grid.xfaceE(i,j), SolnBlk.Grid.nfaceE(i,j));
+
 	/* Evaluate cell-averaged solution changes. */
-    
-	SolnBlk.dUdt[i][j][k_residual] -= 
-	  (Input_Parameters.CFL_Number*SolnBlk.dt[i][j])*
-	  flux*SolnBlk.Grid.lfaceE(i, j)/
-	  SolnBlk.Grid.Cell[i][j].A;
-	SolnBlk.dUdt[i+1][j][k_residual] +=
-	  (Input_Parameters.CFL_Number*SolnBlk.dt[i+1][j])*
-	  flux*SolnBlk.Grid.lfaceW(i+1, j)/
-	  SolnBlk.Grid.Cell[i+1][j].A;
+	SolnBlk.dUdt[i  ][j][k_residual] -= ( (IP.CFL_Number*SolnBlk.dt[i][j])* 
+					      Flux*SolnBlk.Grid.lfaceE(i  , j)/SolnBlk.Grid.Cell[i  ][j].A );
 
+	SolnBlk.dUdt[i+1][j][k_residual] += ( (IP.CFL_Number*SolnBlk.dt[i][j])* 
+					      Flux*SolnBlk.Grid.lfaceW(i+1, j)/SolnBlk.Grid.Cell[i+1][j].A );
+	   
 	/* Include regular source terms. */
-
-	SolnBlk.dUdt[i][j][k_residual] += 
-	  (Input_Parameters.CFL_Number*SolnBlk.dt[i][j])*s(SolnBlk.U[i][j]);
+	SolnBlk.dUdt[i][j][k_residual] += (IP.CFL_Number*SolnBlk.dt[i][j])*SolnBlk.SourceTerm(i,j);
 
 	/* Include axisymmetric source terms as required. */
-
 	if (SolnBlk.Axisymmetric) {
-	  SolnBlk.dUdt[i][j][k_residual] += 
-	    (Input_Parameters.CFL_Number*SolnBlk.dt[i][j])*
-	    s_axi(SolnBlk.U[i][j], SolnBlk.Grid.Cell[i][j].Xc);
+	  SolnBlk.dUdt[i][j][k_residual] += ( (IP.CFL_Number*SolnBlk.dt[i][j])*
+					      SolnBlk.AxisymmetricSourceTerm(i,j) );
 	} /* endif */
 
-	/* Save west and east face boundary flux. */
 
+	/* Save west and east face boundary flux. */
 	if (i == SolnBlk.ICl-1) {
-	  SolnBlk.FluxW[j] = -flux*SolnBlk.Grid.lfaceW(i+1, j);
+	  SolnBlk.FluxW[j] = -Flux*SolnBlk.Grid.lfaceW(i+1, j);
 	} else if (i == SolnBlk.ICu) {
-	  SolnBlk.FluxE[j] = flux*SolnBlk.Grid.lfaceE(i, j);
+	  SolnBlk.FluxE[j] =  Flux*SolnBlk.Grid.lfaceE(i  , j);
 	} /* endif */
 
       } /* endif */
     } /* endfor */
     
-    if ( j > SolnBlk.JCl-1 && j < SolnBlk.JCu+1 ) {
-      SolnBlk.dUdt[SolnBlk.ICl-1][j][k_residual] = ZERO;
-      SolnBlk.dUdt[SolnBlk.ICu+1][j][k_residual] = ZERO;
+    if ( j >= SolnBlk.JCl && j <= SolnBlk.JCu ) {
+      SolnBlk.dUdt[SolnBlk.ICl-1][j][k_residual].Vacuum();
+      SolnBlk.dUdt[SolnBlk.ICu+1][j][k_residual].Vacuum();
     } /* endif */
   } /* endfor */
     
@@ -3229,62 +3210,39 @@ int dUdt_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
     for ( j  = SolnBlk.JCl-1 ; j <= SolnBlk.JCu ; ++j ) {
     
       /* Evaluate the cell interface j-direction fluxes. */
-         
-      dX = SolnBlk.Grid.xfaceN(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
-      ul = SolnBlk.U[i][j].u + 
-	(SolnBlk.phi[i][j]*SolnBlk.dUdx[i][j])*dX.x +
-	(SolnBlk.phi[i][j]*SolnBlk.dUdy[i][j])*dX.y;
-      dX = SolnBlk.Grid.xfaceS(i, j+1)-SolnBlk.Grid.Cell[i][j+1].Xc;
-      ur = SolnBlk.U[i][j+1].u +
-	(SolnBlk.phi[i][j+1]*SolnBlk.dUdx[i][j+1])*dX.x +
-	(SolnBlk.phi[i][j+1]*SolnBlk.dUdy[i][j+1])*dX.y;
 
-      Ul = SolnBlk.U[i][j]; 
-      Ul.u = ul;
-      Ur = SolnBlk.U[i][j+1]; 
-      Ur.u = ur;
+      // Compute left and right interface states at the face midpoint
+      Ul = SolnBlk.PiecewiseLinearSolutionAtLocation(i ,j  ,SolnBlk.Grid.xfaceN(i ,j  ));
+      Ur = SolnBlk.PiecewiseLinearSolutionAtLocation(i ,j+1,SolnBlk.Grid.xfaceS(i ,j+1));
 
-      if ((j == SolnBlk.JCl-1) && 
-	  (SolnBlk.Grid.BCtypeS[i] == BC_DIRICHLET)) {
-	Ul.Fd = Ur.Fd;
-      } else if ((j == SolnBlk.JCu) && 
-		 (SolnBlk.Grid.BCtypeN[i] == BC_DIRICHLET)) {
-	Ur.Fd = Ul.Fd;
-      } /* endif */
+      // Enforce the boundary conditions for the inviscid states
 
-      flux = Flux_n(Ul, Ur, SolnBlk.Grid.nfaceN(i, j));
+      // Compute the advective flux in the normal direction at the face midpoint 
+      Flux = Fa(Ul, Ur, SolnBlk.Grid.xfaceN(i,j), SolnBlk.Grid.nfaceN(i, j));
     
       /* Evaluate cell-averaged solution changes. */
-    
-      SolnBlk.dUdt[i][j][k_residual] -=
-	(Input_Parameters.CFL_Number*SolnBlk.dt[i][j])*
-	flux*SolnBlk.Grid.lfaceN(i, j)/
-	SolnBlk.Grid.Cell[i][j].A;
-      SolnBlk.dUdt[i][j+1][k_residual] += 
-	(Input_Parameters.CFL_Number*SolnBlk.dt[i][j+1])*
-	flux*SolnBlk.Grid.lfaceS(i, j+1)/
-	SolnBlk.Grid.Cell[i][j+1].A;
+      SolnBlk.dUdt[i][j  ][k_residual] -= ( (IP.CFL_Number*SolnBlk.dt[i][j])*
+					    Flux*SolnBlk.Grid.lfaceN(i, j  )/SolnBlk.Grid.Cell[i][j  ].A );
+      SolnBlk.dUdt[i][j+1][k_residual] += ( (IP.CFL_Number*SolnBlk.dt[i][j])*
+					    Flux*SolnBlk.Grid.lfaceS(i, j+1)/SolnBlk.Grid.Cell[i][j+1].A );
           
       /* Save south and north face boundary flux. */
-
       if (j == SolnBlk.JCl-1) {
-	SolnBlk.FluxS[i] = -flux*SolnBlk.Grid.lfaceS(i, j+1);
+	SolnBlk.FluxS[i] = -Flux*SolnBlk.Grid.lfaceS(i, j+1);
       } else if (j == SolnBlk.JCu) {
-	SolnBlk.FluxN[i] = flux*SolnBlk.Grid.lfaceN(i, j);
+	SolnBlk.FluxN[i] =  Flux*SolnBlk.Grid.lfaceN(i, j  );
       } /* endif */
 
     } /* endfor */
 
-    SolnBlk.dUdt[i][SolnBlk.JCl-1][k_residual] = ZERO;
-    SolnBlk.dUdt[i][SolnBlk.JCu+1][k_residual] = ZERO;
+    SolnBlk.dUdt[i][SolnBlk.JCl-1][k_residual].Vacuum(); // set to zero
+    SolnBlk.dUdt[i][SolnBlk.JCu+1][k_residual].Vacuum(); // set to zero
   } /* endfor */
     
     /* Residual for the stage successfully calculated. */
 
   return (0);
 
-#endif
-    
 }
 
 /******************************************************//**
@@ -3297,9 +3255,7 @@ int dUdt_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
  ********************************************************/
 int Update_Solution_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
                                         const int i_stage,
-                                        AdvectDiffuse2D_Input_Parameters &Input_Parameters) {
-
-#if 0
+                                        AdvectDiffuse2D_Input_Parameters &IP) {
 
   int i, j, k_residual;
   double omega;
@@ -3309,19 +3265,19 @@ int Update_Solution_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 
   /* Evaluate the time step fraction and residual storage location for the stage. */
     
-  switch(Input_Parameters.i_Time_Integration) {
+  switch(IP.i_Time_Integration) {
   case TIME_STEPPING_EXPLICIT_EULER :
-    omega = Runge_Kutta(i_stage, Input_Parameters.N_Stage);
+    omega = Runge_Kutta(i_stage, IP.N_Stage);
     k_residual = 0;
     break;
   case TIME_STEPPING_EXPLICIT_PREDICTOR_CORRECTOR :
-    omega = Runge_Kutta(i_stage, Input_Parameters.N_Stage);
+    omega = Runge_Kutta(i_stage, IP.N_Stage);
     k_residual = 0;
     break;
   case TIME_STEPPING_EXPLICIT_RUNGE_KUTTA :
-    omega = Runge_Kutta(i_stage, Input_Parameters.N_Stage);
+    omega = Runge_Kutta(i_stage, IP.N_Stage);
     k_residual = 0;
-    if (Input_Parameters.N_Stage == 4) {
+    if (IP.N_Stage == 4) {
       if (i_stage == 4) {
 	k_residual = 0;
       } else {
@@ -3331,22 +3287,23 @@ int Update_Solution_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
     break;
   case TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING :
     omega = MultiStage_Optimally_Smoothing(i_stage, 
-					   Input_Parameters.N_Stage,
-					   Input_Parameters.i_Limiter);
+					   IP.N_Stage,
+					   IP.i_Limiter);
     k_residual = 0;
     break;
   default:
-    omega = Runge_Kutta(i_stage, Input_Parameters.N_Stage);
+    omega = Runge_Kutta(i_stage, IP.N_Stage);
     k_residual = 0;
     break;
   } /* endswitch */
     
-    /* Update solution variables for this stage. */
-    
+  /* Update solution variables for this stage. */
   for ( j  = SolnBlk.JCl ; j <= SolnBlk.JCu ; ++j ) {
     for ( i = SolnBlk.ICl ; i <= SolnBlk.ICu ; ++i ) {
-      SolnBlk.U[i][j].u = SolnBlk.uo[i][j] + 
-	omega*SolnBlk.dUdt[i][j][k_residual];
+
+      // Explicit update.
+      SolnBlk.U[i][j] = SolnBlk.Uo[i][j] + omega*SolnBlk.dUdt[i][j][k_residual];
+
     } /* endfor */    
   } /* endfor */
 
@@ -3354,6 +3311,4 @@ int Update_Solution_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 
   return (0);
 
-#endif
-    
 }
