@@ -20,33 +20,6 @@ Time_Accurate =
 0
 Local_Time_Stepping =
 1
-############################
-# NKS PARAMETERS
-############################
-GMRES_Overlap =
-0
-GMRES_Tolerance =
-2.0e-1
-NKS_Overall_Tolerance =
-1.0e-10
-GMRES_Block_Preconditioner = 
-ILUK
-#( ILUK, Diagonal)
-GMRES_ILUK_Level_of_Fill = 
-4
-# Implict Euler Startup
-NKS_Finite_Time_Step =
-ON
-NKS_Finite_Time_Step_Initial_CFL =
-1e12
-GMRES_Normalization = 
-ON
-GMRES_Check=
-ON
-GMRES_Frechet_Derivative_Order=
-Second_Order
-Jacobian_Order =
-Second_Order_Diamond_Path_with_Roe
 ###############################
 # 
 ###############################
@@ -122,16 +95,9 @@ CFL_Number=
 0.5 
 ####### Explicit ###############
 Maximum_Number_of_Time_Steps =
-0
+100
 Full_Multigrid =
 0
-####### Implicit ###############
-Maximum_Number_of_NKS_Iterations =
-15
-Maximum_Number_of_GMRES_Iterations =
-100
-GMRES_Restart =
-100
 ################################
 # 
 ################################

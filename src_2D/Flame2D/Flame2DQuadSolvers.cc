@@ -1344,6 +1344,53 @@ int Flame2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
     }
 
     /*************************************************************************
+    **************** WRITE VICOUS CHANNEL ***********************************
+    *************************************************************************/ 
+    else if (command_flag == WRITE_OUTPUT_VISCOUS_CHANNEL_CODE) {
+      if (!batch_flag) cout << endl << " Writing exact solution and error norms for the viscous channel flow.";
+      error_flag = Output_Viscous_Channel(Local_SolnBlk,
+					  List_of_Local_Solution_Blocks,
+					  Input_Parameters);
+      if (error_flag) {
+	cout << endl << "\n Chem2D ERROR: Unable to open Chem2D viscous channel flow output file." << endl;
+	cout.flush();
+      }
+      CFFC_Broadcast_MPI(&error_flag,1);
+      if (error_flag) return error_flag;
+    }
+    /*************************************************************************
+     **************** WRITE FLAT PLATE ***************************************
+     *************************************************************************/ 
+    else if (command_flag == WRITE_OUTPUT_FLAT_PLATE_CODE) {
+      if (!batch_flag) cout << endl << " Writing exact solution and error norms for the flat plate flow (Blasius solution).";
+      error_flag = Output_Flat_Plate(Local_SolnBlk,
+				     List_of_Local_Solution_Blocks,
+				     Input_Parameters);
+      if (error_flag) {
+	cout << endl << "\n Chem2D ERROR: Unable to open Chem2D flat plate output file." << endl;
+	cout.flush();
+      }
+      CFFC_Broadcast_MPI(&error_flag,1);
+      if (error_flag) return error_flag;
+    } 
+    /*************************************************************************
+     **************** WRITE CAVITY DRIVEN FLOW *******************************
+     *************************************************************************/ 
+    else if (command_flag == WRITE_OUTPUT_DRIVEN_CAVITY_FLOW_CODE) {
+      if (!batch_flag) cout << endl << " Writing the driven cavity flow output file.";
+      error_flag = Output_Driven_Cavity_Flow(Local_SolnBlk,
+					     List_of_Local_Solution_Blocks,
+					     Input_Parameters);
+      if (error_flag) {
+	cout << endl << "\n Chem2D ERROR: Unable to open Chem2D driven cavity flow." << endl;
+	cout.flush();
+      }
+      CFFC_Broadcast_MPI(&error_flag,1);
+      if (error_flag) return error_flag;
+      
+    } 
+
+    /*************************************************************************
      **************** POSTPROCESS RADIATION CODE *****************************
      *************************************************************************/ 
     else if (command_flag == POSTPROCESS_RADIATION_CODE) {

@@ -28,13 +28,8 @@ using namespace std;
 // FLAME2D Specific headers
 #include "Mixture.h"
 
-
-//Temperature convergence tolerance in
-//Flame2D_cState::T(void)
-// these should be moved to CFD.h or Math.h
-#define CONV_TOLERANCE  1e-8   //Tolerance used for temperature convergence
-#define SPEC_TOLERANCE  1e-8   //Used in negative_speccheck for species round off (was MICRO)
-#define TLOWERBOUNDS   200.0   //Uncoment this fix a lower bounds in T calculation
+//Used in negative_speccheck for species round off (was MICRO)
+#define SPEC_TOLERANCE  1e-8
 
 //number of fixed variables in the Flame2D class
 #define NUM_FLAME2D_VAR_SANS_SPECIES 4  //rho, v(2), p
@@ -196,10 +191,9 @@ public:
 		     const Flame2D_State &lambdas_r);
   void HartenFix_Abs(const Flame2D_State &lambdas_a, const Flame2D_State &lambdas_l,
 		     const Flame2D_State &lambdas_r);
-  void FluxHLLE_x(const Flame2D_pState &Wl, const Flame2D_pState &Wr,
-		  const int &Preconditioning);
+  void FluxHLLE_x(const Flame2D_pState &Wl, const Flame2D_pState &Wr);
   void FluxHLLE_n(const Flame2D_pState &Wl, const Flame2D_pState &Wr,
-		  const Vector2D &norm_dir, const int &Preconditioning);
+		  const Vector2D &norm_dir);
   void FluxLinde(const Flame2D_pState &Wl, const Flame2D_pState &Wr);
   void FluxLinde_n(const Flame2D_pState &Wl, const Flame2D_pState &Wr,
 		   const Vector2D &norm_dir);
@@ -845,6 +839,10 @@ public:
 			  const Vector2D &X,
 			  Vector2D &qflux,
 			  Tensor2D &tau) const;
+  double WallShearStress(const Vector2D &X1,
+			 const Vector2D &X2,
+			 const Vector2D &X3,
+			 const Vector2D &norm_dir) const;
 
   /***************** Helper Functions *******************/
   void Reconstruct( const Flame2D_pState &Wc, const Flame2D_State &phi, 
@@ -948,6 +946,17 @@ public:
   void BC_Characteristic_Pressure(const Flame2D_pState &Wi,
 				  const Flame2D_pState &Wo,
 				  const Vector2D &norm_dir);
+
+  /************** Exact Solutions ***********************/
+  void RinglebFlow(const Vector2D X);
+  void ViscousChannelFlow(const Vector2D X,
+			  const double Vwall,
+			  const double dp);
+  void FlatPlate(const Vector2D X,
+		 double &eta,
+		 double &f,
+		 double &fp,
+		 double &fpp);
 
   /***************** Checking ***************************/
 private:

@@ -25,17 +25,18 @@ CFL_Number =
 Time_Max = 
 1.0
 Maximum_Number_of_Time_Steps =
-0
+100
 #################################
 # FLUX PARAMETERS:
 #################################
 Reconstruction_Type =
-Least_Squares
+Green_Gauss
+#Least_Squares
 Limiter_Type = 
 Barth_Jespersen
 #Venkatakrishnan
 Flux_Function_Type =
-HLLE
+Roe
 # 1 density
 Residual_Variable =
 1
@@ -44,6 +45,8 @@ Residual_Variable =
 #################################
 ICs_Type = 
 ShockBox
+Temperature =
+300
 #################################
 # GRID PARAMETERS:
 #################################
@@ -56,10 +59,10 @@ Number_of_Cells_Jdir =
 32
 #64
 Number_of_Blocks_Idir = 
-1
+4
 #4
 Number_of_Blocks_Jdir =
-1
+4
 #4
 #Boundary_Conditions_Specified =
 #ON
@@ -73,19 +76,6 @@ Number_of_Blocks_Jdir =
 #Reflection
 Number_of_Blocks_Per_Processor =
 64
-##################################
-# Chem2D Parameters
-##################################
-Cantera_Reaction_Mechanism=
-air
-Mechanism_File=
-air.xml
-Molar_Fractions=
-O2:0.21, N2:0.79
-# Temperature=
-# 300.0
-# Pressure=
-# 101.325
 ####################################
 # I/O PARAMETERS:
 ####################################

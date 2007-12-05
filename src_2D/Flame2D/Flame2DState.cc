@@ -27,6 +27,10 @@ double* Flame2D_pState::dihdic = NULL;
 double* Flame2D_pState::hs_i = NULL;
 
 
+/////////////////////////////////////////////////////////////////////
+/// Static Setup Functions
+/////////////////////////////////////////////////////////////////////
+
 /****************************************************
  * Mixture molecular mass [kg/mol]
  ****************************************************/
@@ -65,6 +69,9 @@ void Flame2D_State::set_gravity(const double &g) { // [m/s^2]
   }
 }
 
+/////////////////////////////////////////////////////////////////////
+/// Flux Functions
+/////////////////////////////////////////////////////////////////////
 
 /****************************************************
  * X-Dir Conserved Flux
@@ -107,6 +114,7 @@ Flame2D_State Flame2D_pState::Fx(void) const {
 
   return FluxX;
 }
+
 /*****************************************************************
  * Viscous fluxes  (laminar flow)                                * 
  * Viscous fluxes  (turbulent flows) are defined in single block * 
@@ -146,9 +154,9 @@ void Flame2D_pState::Viscous_Flux_y(const Flame2D_State &dWdy,
 }
 
 
-/*******************************************************************
- ***************** EIGENVALUES *************************************
- *******************************************************************/
+/////////////////////////////////////////////////////////////////////
+/// EIGENVALUES
+/////////////////////////////////////////////////////////////////////
 
 /************************************************************
  * Flame2D_pState::lambda -- Eigenvalue(s) (x-direction).    *
@@ -183,9 +191,11 @@ void Flame2D_pState::lambda_preconditioned_x(Flame2D_State &lambdas,
   }
 }
 
-/*******************************************************************
- ***************** EIGENVECTORS ************************************
- *******************************************************************/
+
+/////////////////////////////////////////////////////////////////////
+/// EIGENVECTORS
+/////////////////////////////////////////////////////////////////////
+
 // Conserved Right Eigenvector -- (x-direction)
 Flame2D_State Flame2D_pState::rc_x(const int &index) const {
 
@@ -232,9 +242,11 @@ Flame2D_State Flame2D_pState::lp_x(const int &index) const {
   
 }
 
-/************************************************************
- ************** PRECONDITIONED EIGENVECTORS *****************
- ************************************************************/
+
+/////////////////////////////////////////////////////////////////////
+/// Low Mach Number Preconditioner Based on Weiss & Smith (1995)
+/////////////////////////////////////////////////////////////////////
+
 // Conserved Right Eigenvector -- (x-direction)
 Flame2D_State Flame2D_pState::rc_x_precon(const int &index, const double &MR2) const {
   
@@ -309,13 +321,6 @@ Flame2D_State Flame2D_pState::lp_x_precon(const int &index, const double &MR2) c
   } 
 }
 
-/*******************************************************************
- *******************************************************************
- *  Low Mach Number Preconditioner Based on Weiss & Smith (1995)   *
- *                                                                 *
- *******************************************************************
- *******************************************************************/
-
 /****************************************************
  * For CFL calculation
  ****************************************************/
@@ -362,10 +367,11 @@ double Flame2D_pState::Mr2(const int    &flow_type_flag,
   return (MR2);
 }
 
-/************************************************************/
-/************ ORIGINAL LAMINAR ONLY *************************/
-/* (will be replaced by version commented out below when corrected) */
-/************************************************************/
+/************************************************************
+ * ORIGINAL LAMINAR ONLY
+ * (will be replaced by version commented out below 
+ *  when corrected)
+ ************************************************************/
 void Flame2D_pState::Low_Mach_Number_Preconditioner(::DenseMatrix &P,
 						    const int &Viscous_flag, 
 						    const double &deltax ) const{  
@@ -511,12 +517,10 @@ void Flame2D_pState::Low_Mach_Number_Preconditioner_Inverse(::DenseMatrix &Pinv,
 }
 
 
-/*******************************************************************
- *******************************************************************
- *  Source Terms                                                   *
- *                                                                 *
- *******************************************************************
- *******************************************************************/
+/////////////////////////////////////////////////////////////////////
+/// Source Terms
+/////////////////////////////////////////////////////////////////////
+
 
 /****************************************************
  * Axisymmetric Source Terms
@@ -611,9 +615,10 @@ void Flame2D_pState::Sg(Flame2D_State &S,
   S.E() += mult*rho()*gravity_z*vy();
 }
 
-/************************************************************************
- ******************** Boundary Conditions *******************************     
- ************************************************************************/
+
+/////////////////////////////////////////////////////////////////////
+/// Boundary Conditions
+/////////////////////////////////////////////////////////////////////
 
 
 /********************************************************
@@ -670,7 +675,9 @@ void Flame2D_pState::Free_Slip(const Flame2D_pState &Win,
   }
 }
 
-/*********** NO SLIP - ************************************/
+/********************************************************
+ * Routine: NO SLIP                                     *
+ ********************************************************/
 void Flame2D_pState::No_Slip(const Flame2D_pState &Win,
 			     const Flame2D_pState &Wout,
 			     const Vector2D &norm_dir,
@@ -680,7 +687,9 @@ void Flame2D_pState::No_Slip(const Flame2D_pState &Win,
 
 }
 
-/************ Moving_Wall **********************************/
+/********************************************************
+ * Routine: Moving_Wall
+ ********************************************************/
 void Flame2D_pState::Moving_Wall(const Flame2D_pState &Win,
 				 const Flame2D_pState &Wout,
 				 const Vector2D &norm_dir, 
@@ -910,9 +919,9 @@ void Flame2D_pState::BC_Characteristic_Pressure(const Flame2D_pState &Wi,
 
 }
 
-/************************************************************************
- ************** External Flux Function Functions     ********************     
- ************************************************************************/
+/////////////////////////////////////////////////////////////////////
+/// External Flux Function Functions
+/////////////////////////////////////////////////////////////////////
 
 
 /********************************************************
@@ -1030,8 +1039,7 @@ void Flame2D_pState :: RoeAverage(const Flame2D_pState &Wl,
  *                                                       *
  *********************************************************/
 void Flame2D_State :: FluxHLLE_x(const Flame2D_pState &Wl,
-				 const Flame2D_pState &Wr,
-				 const int &Preconditioning) {
+				 const Flame2D_pState &Wr) {
 
     double wavespeed_l, wavespeed_r;
     static Flame2D_pState Wa;
@@ -1093,8 +1101,7 @@ void Flame2D_State :: FluxHLLE_x(const Flame2D_pState &Wl,
  *********************************************************/
 void Flame2D_State :: FluxHLLE_n(const Flame2D_pState &Wl,
 				 const Flame2D_pState &Wr,
-				 const Vector2D &norm_dir,
-				 const int &Preconditioning) {
+				 const Vector2D &norm_dir) {
 
   static Flame2D_pState Wl_rotated, Wr_rotated;
   Wl_rotated.Copy(Wl), Wr_rotated.Copy(Wr);
@@ -1120,7 +1127,7 @@ void Flame2D_State :: FluxHLLE_n(const Flame2D_pState &Wl,
   /* Evaluate the intermediate state solution 
      flux in the rotated frame. */
   
-  FluxHLLE_x(Wl_rotated, Wr_rotated, Preconditioning);
+  FluxHLLE_x(Wl_rotated, Wr_rotated);
   double ur(rhovx()), vr(rhovy());
   
   /* Rotate back to the original Cartesian reference
@@ -1262,7 +1269,7 @@ void Flame2D_State :: FluxLinde_n(const Flame2D_pState &Wl,
      frame and return the solution flux. */
   
   rhovx() = ur*cos_angle - vr*sin_angle;
-  rhovy() = rhovx()*sin_angle + rhovy()*cos_angle;
+  rhovy() = ur*sin_angle + vr*cos_angle;
 
 }
 
@@ -1424,8 +1431,8 @@ void Flame2D_State :: FluxRoe_n(const Flame2D_pState &Wl,
      frame and return the solution flux. */
   
   rhovx() = ur*cos_angle - vr*sin_angle;
-  rhovy() = rhovx()*sin_angle + rhovy()*cos_angle;
-  
+  rhovy() = ur*sin_angle + vr*cos_angle;
+
 }
 
 /**********************************************************************
@@ -1578,13 +1585,15 @@ void Flame2D_State::FluxAUSMplus_up_n(const Flame2D_pState &Wl,
      frame and return the solution flux. */
   
   rhovx() = ur*cos_angle - vr*sin_angle;
-  rhovy() = rhovx()*sin_angle + rhovy()*cos_angle;
+  rhovy() = ur*sin_angle + vr*cos_angle;
 
 }
 
-/************************************************************************
- ************** Viscous Reconstruction Functions     ********************     
- ************************************************************************/
+
+/////////////////////////////////////////////////////////////////////
+/// Viscous Reconstruction Functions
+/////////////////////////////////////////////////////////////////////
+
 /**********************************************************************
  * Routine: ViscousFluxArithmetic_n                                   *
  *                                                                    *
@@ -1732,8 +1741,223 @@ void Flame2D_State::Viscous_FluxHybrid_n(const Flame2D_pState &W,
 }
 
 
-/************************************************************************
- ************************************************************************
- ************** Exact Test Case Solution Functions **********************     
- ************************************************************************
- ************************************************************************/
+/////////////////////////////////////////////////////////////////////
+/// Exact Test Case Solution Functions
+/////////////////////////////////////////////////////////////////////
+
+/**********************************************************************
+ * Routine: RinglebFlow                                               *
+ *                                                                    *
+ * This function returns the exact solution to Ringleb's flow for the *
+ * location X.                                                        *
+ *                                                                    *
+ **********************************************************************/
+void Flame2D_pState::RinglebFlow(const Vector2D X) {
+
+//   Chem2D_pState W;
+//   double sin_theta, cos_theta, theta;
+//   double f_a, f_ab;
+//   double J, J_a, J_ab;
+//   double rho_a, rho_ab;
+//   double q, q_a, q_ab, k;
+//   double c, c_a = 0.70, c_b = 0.99, c_ab;
+//   double g = GAMMA_AIR, po = PRESSURE_STDATM, rhoo = DENSITY_STDATM;
+
+//   // Use bisection method to solve for the sound speed, c.
+//   while (fabs(c_a - c_b) > NANO) {
+//     // Determine f_a.
+//     rho_a = pow(c_a,TWO/(g-ONE));
+//     J_a = ONE/c_a + ONE/(THREE*c_a*c_a*c_a) + ONE/(FIVE*c_a*c_a*c_a*c_a*c_a) - HALF*log((ONE+c_a)/(ONE-c_a));
+//     q_a = sqrt((TWO/(g-ONE))*(ONE-c_a*c_a));
+//     f_a = (X.x + HALF*J_a)*(X.x + HALF*J_a) + X.y*X.y - ONE/(FOUR*rho_a*rho_a*q_a*q_a*q_a*q_a);
+//     // Determine f_ab.
+//     c_ab = HALF*(c_a + c_b);
+//     rho_ab = pow(c_ab,TWO/(g-ONE));
+//     J_ab = ONE/c_ab + ONE/(THREE*c_ab*c_ab*c_ab) + ONE/(FIVE*c_ab*c_ab*c_ab*c_ab*c_ab) - HALF*log((ONE+c_ab)/(ONE-c_ab));
+//     q_ab = sqrt((TWO/(g-ONE))*(ONE-c_ab*c_ab));
+//     f_ab = (X.x + HALF*J_ab)*(X.x + HALF*J_ab) + X.y*X.y - ONE/(FOUR*rho_ab*rho_ab*q_ab*q_ab*q_ab*q_ab);
+//     if (f_a*f_ab <= ZERO) {
+//       c_b = HALF*(c_a + c_b);
+//     } else {
+//       c_a = HALF*(c_a + c_b);
+//     }
+//   }
+
+//   // Final sound speed, density, and total velocity (speed).
+//   c = HALF*(c_a + c_b);
+//   q = sqrt((TWO/(g-ONE))*(ONE-c*c));
+//   W.rho = pow(c,TWO/(g-ONE));
+//   J = ONE/c + ONE/(THREE*c*c*c) + ONE/(FIVE*c*c*c*c*c) - HALF*log((ONE+c)/(ONE-c));
+//   k = sqrt(TWO/(TWO*W.rho*(X.x+HALF*J)+ONE/(q*q)));
+//   //if (k > 5.0/3.0) cout << "k = " << k << " > 5/3 @ " << X << endl;
+//   sin_theta = max(ZERO,min(ONE,q/k));
+//   theta = TWO*PI-asin(sin_theta);
+//   sin_theta = sin(theta);
+//   cos_theta = cos(theta);
+
+//   W.rho = rhoo*W.rho;
+//   W.v.x = sqrt(g*po/rhoo)*q*cos_theta;
+//   if (X.y < ZERO) W.v.x = -ONE*W.v.x;
+//   W.v.y = sqrt(g*po/rhoo)*q*sin_theta;
+//   W.p   = po*(W.rho/rhoo)*c*c;
+  
+//   W.g   = g;
+
+//   // Return W state.
+//   return W;
+
+}
+
+/**********************************************************************
+ * Routine: ViscousChannelFlow                                        *
+ *                                                                    *
+ * This function will return the exact viscous channel flow solution  *
+ * (Couette or Poiseuille flows) given an (x,y)-coordinate where x =  *
+ * [0,0.2] and y = [0,0.02], an upper wall speed, and the imposed     *
+ * pressure gradient.                                                 *
+ *                                                                    *
+ **********************************************************************/
+void Flame2D_pState::ViscousChannelFlow(const Vector2D X,
+					const double Vwall,
+					const double dp) {
+  vx()  = ( (HALF/mu())*(-dp/0.2)*
+	    (pow(X.y,TWO) - (0.001*0.001/4.0)) + 
+	    Vwall*(X.y/0.001 + 0.5) );
+  vy()  = ZERO; 
+  rho() = DENSITY_STDATM;
+  p()   = PRESSURE_STDATM + dp*(ONE - X.x/0.20);
+  setGas();
+}
+
+/**********************************************************************
+ * Routine: FlatPlate                                                 *
+ *                                                                    *
+ * This function returns the exact solution for the flow over a flat  *
+ * (adiabatic) plate (Blasius solution) at a given the position and   *
+ * the freestream flow velocity.                                      *
+ *                                                                    *
+ **********************************************************************/
+void Flame2D_pState::FlatPlate(const Vector2D X,
+			       double &eta,
+			       double &f,
+			       double &fp,
+			       double &fpp) {
+  
+  // initialize
+  double fo = ZERO; 
+  double sign = ONE;
+  double dn = 0.000005;
+  eta = ZERO;
+  f = ZERO; fp = ZERO; fpp = 0.33206;
+
+  // Return upstream conditions before flat plate.
+  if (X.x < ZERO) return;
+
+  // Return upstream conditions with zero velocity at the leading edge
+  // of the plate.
+  if (X.x < TOLER) {
+    vx() = 0.0;
+    vy() = 0.0;
+    return;
+  }
+
+  // Determine the dimensionless similarity coordinate, eta:
+  eta = X.y*sqrt(vx()/(X.x*mu()/rho()));
+
+  // If eta is greater than 8.4, for the sake of expediency, use linear
+  // extrapolation to determine the value of f (fp = ONE and fpp = ZERO)
+  // given the tabulated value at 8.4 (note, the analytic solution is 
+  // linear in this region).
+  if (eta > 8.4) {
+    fp = ONE; fpp = ZERO; f = 6.67923 + fp*(eta - 8.4);
+    vx() = fp*vx();
+    vy() = HALF*(eta*fp-f);
+    return;
+  }
+
+  // Compute the Blasius solution using a fourth-order Runge-Kutta method.
+  double k1, k2, k3, k4;
+  for (double n = ZERO; n < eta; n += dn) {
+
+    fo = f;
+
+    // Increment f:
+    k1 = dn*fp;
+    k2 = dn*(fp+k1/2.0);
+    k3 = dn*(fp+k2/2.0);
+    k4 = dn*(fp+k3);
+    f = f + k1/6.0 + k2/3.0 + k3/3.0 + k4/6.0;
+ 
+    // Increment fp:
+    k1 = dn*fpp;
+    k2 = dn*(fpp+k1/2.0);
+    k3 = dn*(fpp+k2/2.0);
+    k4 = dn*(fpp+k3);
+    fp = fp + k1/6.0 + k2/3.0 + k3/3.0 + k4/6.0;
+
+    // Increment fpp:
+    k1 = -dn*fo*fpp/2.0;
+    k2 = -dn*(fo+dn/2.0)*(fpp+k1/2.0)/2.0;
+    k3 = -dn*(fo+dn/2.0)*(fpp+k2/2.0)/2.0;
+    k4 = -dn*(fo+dn)*(fpp+k3)/2.0;
+    fpp = fpp + k1/6.0 + k2/3.0 + k3/3.0 + k4/6.0;
+
+  }
+
+  // Compute the velocity vector at point X.
+  vx() = fp*vx();
+  //W.v.y = HALF*(eta*fp-f);
+
+  //if (eta <= 8.8) cout << eta << " " << f << " " << fp << " " << fpp << endl;
+  return;
+}
+
+
+/**********************************************************************
+ * Routine: WallShearStress                                           *
+ *                                                                    *
+ * This routine computes and returns the shear stress at a wall.      *
+ *                                                                    *
+ **********************************************************************/
+double Flame2D_pState::WallShearStress(const Vector2D &X1,
+				       const Vector2D &X2,
+				       const Vector2D &X3,
+				       const Vector2D &norm_dir) const {
+
+  double l21, l32, l13, A, dWdn;
+  Vector2D n21, n32, n13;
+  Flame2D_State W2, W3, W_face, dWdx, dWdy;
+
+  // Initialze W2 and W3.
+  W2.Vacuum(); W2.rho() = rho(); W2.p() = p();
+  W3.Vacuum(); W3.rho() = rho(); W3.p() = p();
+  for(int i=0; i<ns; i++){
+    W2.c(i) = c(i);
+    W3.c(i) = c(i);
+  }
+
+  // Determine the lengths and normals of te faces and the 
+  // areas of the regions of Green-Gauss integration.
+  l21 = abs(X2-X1); n21 = Vector2D((X2.y-X1.y),-(X2.x-X1.x))/l21;
+  l32 = abs(X3-X2); n32 = Vector2D((X3.y-X2.y),-(X3.x-X2.x))/l32;
+  l13 = abs(X1-X3); n13 = Vector2D((X1.y-X3.y),-(X1.x-X3.x))/l13;
+  A = HALF*((X2-X1)^(X3-X1));
+  // Compute Green-Gauss integration on left triangle.
+  W_face = HALF*(W2+*this)*l21;
+  dWdx = W_face*n21.x;
+  dWdy = W_face*n21.y;
+  W_face = HALF*(W3+W2)*l32;
+  dWdx += W_face*n32.x;
+  dWdy += W_face*n32.y;
+  W_face = HALF*(*this+W3)*l13;
+  dWdx += W_face*n13.x;
+  dWdy += W_face*n13.y;
+  dWdx = dWdx/A;
+  dWdy = dWdy/A;
+  // Determine the normal gradient.
+  dWdn = dWdy.vx();//dot(Vector2D(dWdx.v.x,dWdy.v.y),norm_dir);
+
+  // Return the wall shear stress.
+  return mu()*dWdn;
+
+}

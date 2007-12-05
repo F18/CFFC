@@ -103,19 +103,6 @@ Number_of_Blocks_Per_Processor =
 16
 Output_File_Name = 
 blunt_body_1x1
-##################################
-# Chem2D Parameters
-##################################
-Cantera_Reaction_Mechanism=
-air
-Mechanism_File=
-air.xml
-Molar_Fractions=
-O2:0.21, N2:0.79
-# Temperature=
-# 300.0
-# Pressure=
-# 101.325
 #######################
 # Execute program
 #######################

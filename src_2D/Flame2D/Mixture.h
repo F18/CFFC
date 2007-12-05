@@ -27,6 +27,9 @@ using namespace std;
 #define TREF 298.15
 #define PREF 101325.0
 
+//Temperature convergence tolerance
+#define CONV_TOLERANCE  1e-8
+
 // If you define this variable, the number of species will be
 // predetermined for faster calculations.., however it is not as general 
 #define STATIC_NUMBER_OF_SPECIES 2 //2 AIR, 6 2STEP_CH4
@@ -417,7 +420,7 @@ inline void Mixture :: setState_DEY(const double &rho, const double &e,
   hf = heatFormation(y);
 
   ct_gas->setMassFractions_NoNorm(y);
-  ct_gas->setState_UV(e, 1.0/rho);
+  ct_gas->setState_UV(e, 1.0/rho, CONV_TOLERANCE);
   T = ct_gas->temperature();
   MW = ct_gas->meanMolecularWeight();
   hs = ct_gas->enthalpy_mass() - hf;
@@ -440,7 +443,7 @@ inline void Mixture :: setState_DHY(const double &rho, const double &h,
   hf = heatFormation(y);
 
   ct_gas->setMassFractions_NoNorm(y);
-  setState_DH(rho, h);
+  setState_DH(rho, h, CONV_TOLERANCE);
   T = ct_gas->temperature();
   MW = ct_gas->meanMolecularWeight();
   hs = ct_gas->enthalpy_mass() - hf;

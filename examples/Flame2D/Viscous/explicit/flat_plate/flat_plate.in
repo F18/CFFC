@@ -25,31 +25,6 @@ Time_Accurate =
 # 0, 1, 3,4,5
 Local_Time_Stepping =
 1
-############################
-# NKS PARAMETERS
-############################
-GMRES_Overlap =
-0
-GMRES_Tolerance =
-0.1
-NKS_Overall_Tolerance =
-1.0e-12
-GMRES_Block_Preconditioner = 
-ILUK
-#( ILUK, Diagonal)
-GMRES_ILUK_Level_of_Fill = 
-4
-# Implict Euler Startup
-NKS_Finite_Time_Step =
-ON
-NKS_Finite_Time_Step_Initial_CFL =
-10000.0
-GMRES_Normalization = 
-ON
-GMRES_Check=
-ON
-Jacobian_Order=
-Second_Order_Diamond_Path_with_Roe
 ###############################
 # 
 ###############################
@@ -111,7 +86,7 @@ Mesh_Stretching_Factor_Jdir =
 # AMR PARAMETERS
 #############################
 AMR =
-0
+OFF
 #AMR_Frequency =
 #0
 Number_of_Initial_Mesh_Refinements =
@@ -145,13 +120,6 @@ Maximum_Number_of_Time_Steps =
 20
 Full_Multigrid =
 0
-####### Implicit ###############
-Maximum_Number_of_NKS_Iterations =
-50
-Maximum_Number_of_GMRES_Iterations =
-80
-GMRES_Restart =
-80
 ################################
 # 
 ################################
@@ -181,24 +149,6 @@ Execute
 #######################
 # Terminate program
 #######################
-Refine_Grid
-Maximum_Number_of_Time_Steps =
-0
-#Maximum_Number_of_NKS_Iterations =
-#50
-Output_File_Name=
-flatplate2
-Continue
-#
-Refine_Grid
-Maximum_Number_of_Time_Steps =
-0
-#Maximum_Number_of_NKS_Iterations =
-#50
-Output_File_Name=
-flatplate3
-Continue
-##########
 Write_Output
 Write_Output_Cells
 Write_Output_Flat_Plate

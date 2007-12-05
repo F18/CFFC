@@ -25,7 +25,8 @@ Reconstruction_Type=
 Green_Gauss 
 #Least_Squares
 Limiter_Type=
-Venkatakrishnan
+Zero
+#Venkatakrishnan
 #Barth_Jespersen
 #Zero
 Flux_Function_Type=
@@ -47,6 +48,8 @@ ICs_Type=
 Uniform
 Mach_Number= 
 1.4
+Temperature =
+300.0
 ########################
 # Set mesh info
 ########################
@@ -91,7 +94,7 @@ Threshold_for_Coarsening=
 CFL_Number=
 0.5
 Maximum_Number_of_Time_Steps=
-300
+0
 Full_Multigrid=
 0
 ################
@@ -99,19 +102,6 @@ Number_of_Blocks_Per_Processor=
 100
 Output_File_Name= 
 bump_flow
-##################################
-# Chem2D Parameters
-##################################
-Cantera_Reaction_Mechanism=
-air
-Mechanism_File=
-air.xml
-Molar_Fractions=
-O2:0.21, N2:0.79
-# Temperature=
-# 300.0
-# Pressure=
-# 101.325
 #######################
 # Execute program
 #######################
@@ -133,19 +123,19 @@ Execute
 # AMR & Continue
 #
 ######################
-Refine_Grid
-Freeze_Limiter_Residual_Level=
-20.0e00
-Maximum_Number_of_Time_Steps=
-100
-Continue
+# Refine_Grid
+# Freeze_Limiter_Residual_Level=
+# 20.0e00
+# Maximum_Number_of_Time_Steps=
+# 100
+# Continue
 ###############
-Refine_Grid
-Freeze_Limiter_Residual_Level=
-100.0e00
-Maximum_Number_of_Time_Steps=
-300
-Continue
+# Refine_Grid
+# Freeze_Limiter_Residual_Level=
+# 100.0e00
+# Maximum_Number_of_Time_Steps=
+# 300
+# Continue
 ###############
 Write_Output
 Write_Output_Cells

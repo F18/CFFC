@@ -136,8 +136,8 @@ void Set_Default_Input_Parameters(Flame2D_Input_Parameters &IP) {
 
     //Air at STD_ATM
     //Use air with 79% N2, and 21% 02 by volume.(ie. mol)
-    IP.mass_fractions[0] = 0.765; 
-    IP.mass_fractions[1] = 0.235;
+    IP.mass_fractions[0] = 0.235;
+    IP.mass_fractions[1] = 0.765; 
     IP.Pressure = PRESSURE_STDATM;
     IP.Temperature = TEMPERATURE_STDATM; 
     IP.Wo.setState_TPY(IP.Temperature, IP.Pressure, IP.mass_fractions);
@@ -1757,6 +1757,8 @@ int Parse_Next_Input_Control_Parameter(Flame2D_Input_Parameters &IP) {
 	 IP.BC_South = BC_WALL_VISCOUS_HEATFLUX;
        } else if (strcmp(IP.ICs_Type, "Couette") == 0 ){
 	 IP.i_ICs = IC_VISCOUS_COUETTE; 
+       } else if (strcmp(IP.ICs_Type, "Couette_DeltaP") == 0 ){
+	 IP.i_ICs = IC_VISCOUS_COUETTE_PRESSURE_GRADIENT; 
       /****************** CHEMD2D ******************************/
        } else if (strcmp(IP.ICs_Type, "Mix") == 0) {
 	 IP.i_ICs = IC_GAS_MIX;
@@ -2633,12 +2635,8 @@ int Parse_Next_Input_Control_Parameter(Flame2D_Input_Parameters &IP) {
       i_command = 510; 
       Get_Next_Input_Control_Parameter(IP);
       strcpy(IP.Viscous_Flux_Evaluation_Type,IP.Next_Control_Parameter);
-      if (strcmp(IP.Viscous_Flux_Evaluation_Type, "Arithmetic_Mean") == 0) {
-	IP.i_Viscous_Flux_Evaluation = VISCOUS_RECONSTRUCTION_ARITHMETIC; 
-      } else if (strcmp(IP.Viscous_Flux_Evaluation_Type, "Mean_Gradient") == 0) {
-	IP.i_Viscous_Flux_Evaluation = VISCOUS_RECONSTRUCTION_MEAN_GRADIENT;
-      } else if (strcmp(IP.Viscous_Flux_Evaluation_Type, "Cartesian") == 0) {
-	IP.i_Viscous_Flux_Evaluation = VISCOUS_RECONSTRUCTION_CARTESIAN; 
+      if (strcmp(IP.Viscous_Flux_Evaluation_Type, "Hybrid") == 0) {
+	IP.i_Viscous_Flux_Evaluation = VISCOUS_RECONSTRUCTION_HYBRID; 
       } else if (strcmp(IP.Viscous_Flux_Evaluation_Type,"Diamond_Path_Least_Squares") == 0) {
 	IP.i_Viscous_Flux_Evaluation = VISCOUS_RECONSTRUCTION_DIAMONDPATH_LEAST_SQUARES;
 	//Must have regular reconstruction set to least squares as well.
