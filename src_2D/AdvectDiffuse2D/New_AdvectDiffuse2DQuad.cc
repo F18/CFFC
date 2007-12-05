@@ -476,9 +476,9 @@ ostream &operator << (ostream &out_file,
 		      const AdvectDiffuse2D_Quad_Block_New &SolnBlk) {
   int i, j; 
   out_file << SolnBlk.Grid;
-  out_file << SolnBlk.NCi << " " << SolnBlk.ICl << " " 
-           << SolnBlk.ICu << " " << SolnBlk.Nghost << "\n";
+  out_file << SolnBlk.NCi << " " << SolnBlk.ICl << " " << SolnBlk.ICu << "\n";
   out_file << SolnBlk.NCj << " " << SolnBlk.JCl << " " << SolnBlk.JCu << "\n";
+  out_file << SolnBlk.Nghost << "\n";
   out_file << SolnBlk.Axisymmetric << "\n";
   if (SolnBlk.NCi == 0 || SolnBlk.NCj == 0) return(out_file);
   for ( j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
@@ -503,11 +503,15 @@ ostream &operator << (ostream &out_file,
 istream &operator >> (istream &in_file,
 		      AdvectDiffuse2D_Quad_Block_New &SolnBlk) {
   int i, j, k, ni, il, iu, nj, jl, ju, ng;
-  in_file >> SolnBlk.Grid; 
+  Grid2D_Quad_Block New_Grid;
+  in_file >> New_Grid;
   in_file.setf(ios::skipws);
-  in_file >> ni >> il >> iu >> ng; in_file >> nj >> jl >> ju;
+  in_file >> ni >> il >> iu;
+  in_file >> nj >> jl >> ju;
+  in_file >> ng;
   in_file >> SolnBlk.Axisymmetric;
   in_file.unsetf(ios::skipws);
+
   if (ni == 0 || nj == 0) {
     SolnBlk.deallocate(); return(in_file);
   } /* endif */
@@ -515,19 +519,25 @@ istream &operator >> (istream &in_file,
     if (SolnBlk.U != NULL) SolnBlk.deallocate(); 
     SolnBlk.allocate(ni - 2*ng, nj - 2*ng, ng);
   } /* endif */
+
+  // Copy the temporary mesh into the grid of the current solution block
+  Copy_Quad_Block(SolnBlk.Grid,New_Grid); New_Grid.deallocate();
+
+  // Read the solution & Initialize some data structures
   for ( j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
     for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
       in_file >> SolnBlk.U[i][j];
       for ( k = 0 ; k <= NUMBER_OF_RESIDUAL_VECTORS_ADVECTDIFFUSE2D-1 ; ++k ) {
 	SolnBlk.dUdt[i][j][k] = ZERO;
       } /* endfor */
-      SolnBlk.dUdx[i][j] = ZERO;
-      SolnBlk.dUdy[i][j] = ZERO;
-      SolnBlk.phi[i][j] = ZERO;
-      SolnBlk.Uo[i][j] = ZERO;
+      SolnBlk.dUdx[i][j].Vacuum();
+      SolnBlk.dUdy[i][j].Vacuum();
+      SolnBlk.phi[i][j].Vacuum();
+      SolnBlk.Uo[i][j].Vacuum();
       SolnBlk.dt[i][j] = ZERO;
     } /* endfor */
   } /* endfor */
+
   for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
     in_file >> SolnBlk.UoW[j];
     in_file >> SolnBlk.UoE[j];
@@ -536,6 +546,8 @@ istream &operator >> (istream &in_file,
     in_file >> SolnBlk.UoS[i];
     in_file >> SolnBlk.UoN[i];
   } /* endfor */
+
+  in_file.setf(ios::skipws);
   return (in_file);
 }
 
