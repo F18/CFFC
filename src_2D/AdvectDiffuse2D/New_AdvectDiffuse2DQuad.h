@@ -19,6 +19,7 @@
 #include "AdvectDiffuse2DInput.h"      /* Include 2D advection diffusion equation header file */
 #include "../ICEM/ICEMCFD.h"           /* Include ICEMCFD header file. */
 #include "../System/System_Linux.h"    /* Include System Linux header file. */
+#include "../HighOrderReconstruction/AccuracyAssessment2D.h" /* Include 2D accuracy assessment header file. */
 
 /* Define the structures and classes. */
 
@@ -177,9 +178,12 @@ public:
                               *UoW; //!< Boundary condition reference states for west boundary.
   //@}
 
-  //! @name Pointer to exact solution
+  //! @name Accuracy assessment data:
   //@{
   static AdvectDiffuse2D_ExactSolutions *ExactSoln;          //!< Pointer to the exact solution
+
+  /*! Variable that provides access to accuracy assessment subroutines */
+  AccuracyAssessment2D<AdvectDiffuse2D_Quad_Block_New> AssessAccuracy;
   //@}
 	      
   //! @name Creation, copy, and assignment constructors.

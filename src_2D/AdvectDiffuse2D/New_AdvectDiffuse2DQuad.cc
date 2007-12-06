@@ -32,7 +32,7 @@ int AdvectDiffuse2D_Quad_Block_New::Number_of_Residual_Norms = 1;
 /**********************
  * Default constructor.
  **********************/
-AdvectDiffuse2D_Quad_Block_New::AdvectDiffuse2D_Quad_Block_New(void) {
+AdvectDiffuse2D_Quad_Block_New::AdvectDiffuse2D_Quad_Block_New(void): AssessAccuracy(this) {
   Freeze_Limiter = OFF;
   // Grid size and variables:
   NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0; Nghost = 0;
@@ -53,7 +53,9 @@ AdvectDiffuse2D_Quad_Block_New::AdvectDiffuse2D_Quad_Block_New(void) {
 /******************************************
  * Private copy constructor. (shallow copy)
  *****************************************/
-AdvectDiffuse2D_Quad_Block_New::AdvectDiffuse2D_Quad_Block_New(const AdvectDiffuse2D_Quad_Block_New &Soln) {
+AdvectDiffuse2D_Quad_Block_New::AdvectDiffuse2D_Quad_Block_New(const AdvectDiffuse2D_Quad_Block_New &Soln):
+  AssessAccuracy(this)
+{
   NCi = Soln.NCi; ICl = Soln.ICl; ICu = Soln.ICu; 
   NCj = Soln.NCj; JCl = Soln.JCl; JCu = Soln.JCu; Nghost = Soln.Nghost;
   Grid = Soln.Grid; U = Soln.U; dt = Soln.dt; dUdt = Soln.dUdt; 

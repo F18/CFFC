@@ -1606,62 +1606,47 @@ double CFL(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 
   dtMin = MILLION;
 
-  for ( j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
-    for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
-      if (i < SolnBlk.ICl || i > SolnBlk.ICu || j < SolnBlk.JCl || j > SolnBlk.JCu) {
-	// Set dt to ZERO in all ghost cells
-	SolnBlk.dt[i][j] = ZERO;
+  for ( j  = SolnBlk.JCl ; j <= SolnBlk.JCu ; ++j ) {
+    for ( i = SolnBlk.ICl ; i <= SolnBlk.ICu ; ++i ) {
+      /* Use different stability criteria to determine
+	 the local time step for all interior cells */
+
+      d_i = TWO*(SolnBlk.Grid.Cell[i][j].A/
+		 (SolnBlk.Grid.lfaceE(i, j)+SolnBlk.Grid.lfaceW(i, j)));
+      d_j = TWO*(SolnBlk.Grid.Cell[i][j].A/
+		 (SolnBlk.Grid.lfaceN(i, j)+SolnBlk.Grid.lfaceS(i, j)));
+
+      // Determine stability limit imposed by the advection term
+      v_i = HALF*(SolnBlk.VelocityAtCellCentroid(i,j)*
+		  (SolnBlk.Grid.nfaceE(i, j)-SolnBlk.Grid.nfaceW(i, j)));
+      v_j = HALF*(SolnBlk.VelocityAtCellCentroid(i,j)*
+		  (SolnBlk.Grid.nfaceN(i, j)-SolnBlk.Grid.nfaceS(i, j)));
+
+      if (fabs(v_i) > TOLER) {
+	dt_cfl = d_i/fabs(v_i);
       } else {
-	/* Use different stability criteria to determine
-	   the local time step for all interior cells */
-
-	d_i = TWO*(SolnBlk.Grid.Cell[i][j].A/
-                   (SolnBlk.Grid.lfaceE(i, j)+SolnBlk.Grid.lfaceW(i, j)));
-	d_j = TWO*(SolnBlk.Grid.Cell[i][j].A/
-                   (SolnBlk.Grid.lfaceN(i, j)+SolnBlk.Grid.lfaceS(i, j)));
-
-	// Determine stability limit imposed by the advection term
-	v_i = HALF*(SolnBlk.VelocityAtCellCentroid(i,j)*
-		    (SolnBlk.Grid.nfaceE(i, j)-SolnBlk.Grid.nfaceW(i, j)));
-	v_j = HALF*(SolnBlk.VelocityAtCellCentroid(i,j)*
-		    (SolnBlk.Grid.nfaceN(i, j)-SolnBlk.Grid.nfaceS(i, j)));
-
-	if (fabs(v_i) > TOLER) {
-	  dt_cfl = d_i/fabs(v_i);
-	} else {
-	  dt_cfl = MILLION;
-	} /* endif */
-	if (fabs(v_j) > TOLER) {
-	  dt_cfl = min(dt_cfl, d_j/fabs(v_j));
-	} /* endif */
+	dt_cfl = MILLION;
+      } /* endif */
+      if (fabs(v_j) > TOLER) {
+	dt_cfl = min(dt_cfl, d_j/fabs(v_j));
+      } /* endif */
 
 
 	// Determine stability limit imposed by the diffusion term
-	if (SolnBlk.DiffusionCoeffAtCellCentroid(i,j) > TOLER) {
-	  dt_diff = HALF*min(sqr(d_i), sqr(d_j))/SolnBlk.DiffusionCoeffAtCellCentroid(i,j);
-	} else {
-	  dt_diff = MILLION;
-	} /* endif */
+      if (SolnBlk.DiffusionCoeffAtCellCentroid(i,j) > TOLER) {
+	dt_diff = HALF*min(sqr(d_i), sqr(d_j))/SolnBlk.DiffusionCoeffAtCellCentroid(i,j);
+      } else {
+	dt_diff = MILLION;
+      } /* endif */
 
 	// Determine stability limit imposed by the source term
-	dt_src = SolnBlk.SourceTermStabilityLimit(i,j);
+      dt_src = SolnBlk.SourceTermStabilityLimit(i,j);
 
-	// Determine the locally allowed time step
-	SolnBlk.dt[i][j] = min(min(dt_cfl, dt_diff), dt_src);
+      // Determine the locally allowed time step
+      SolnBlk.dt[i][j] = min(min(dt_cfl, dt_diff), dt_src);
 
-	// Update the global time step
-	dtMin = min(dtMin, SolnBlk.dt[i][j]);
-      } /* endif */
-    } /* endfor */
-  } /* endfor */
-
-
-  /* Set the global time step in all ghost cells. */
-  for ( j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; ++j) {
-    for ( i = SolnBlk.ICl-SolnBlk.Nghost; i <= SolnBlk.ICu+SolnBlk.Nghost; ++i) {
-      if (i < SolnBlk.ICl || i > SolnBlk.ICu || j < SolnBlk.JCl || j > SolnBlk.JCu) {
-	SolnBlk.dt[i][j] = dtMin;
-      } /* endif */
+      // Update the global time step
+      dtMin = min(dtMin, SolnBlk.dt[i][j]);
     } /* endfor */
   } /* endfor */
 
@@ -1683,8 +1668,8 @@ void Set_Global_TimeStep(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 
   int i, j;
 
-  for ( j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
-    for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
+  for ( j  = SolnBlk.JCl ; j <= SolnBlk.JCu ; ++j ) {
+    for ( i = SolnBlk.ICl ; i <= SolnBlk.ICu ; ++i ) {
       SolnBlk.dt[i][j] = Dt_min;
     } /* endfor */
   } /* endfor */
@@ -3326,10 +3311,10 @@ int dUdt_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 	Flux = Fa(Ul, Ur, SolnBlk.Grid.xfaceE(i,j), SolnBlk.Grid.nfaceE(i,j));
 
 	/* Evaluate cell-averaged solution changes. */
-	SolnBlk.dUdt[i  ][j][k_residual] -= ( (IP.CFL_Number*SolnBlk.dt[i][j])* 
+	SolnBlk.dUdt[i  ][j][k_residual] -= ( (IP.CFL_Number*SolnBlk.dt[i  ][j])* 
 					      Flux*SolnBlk.Grid.lfaceE(i  , j)/SolnBlk.Grid.Cell[i  ][j].A );
 
-	SolnBlk.dUdt[i+1][j][k_residual] += ( (IP.CFL_Number*SolnBlk.dt[i][j])* 
+	SolnBlk.dUdt[i+1][j][k_residual] += ( (IP.CFL_Number*SolnBlk.dt[i+1][j])* 
 					      Flux*SolnBlk.Grid.lfaceW(i+1, j)/SolnBlk.Grid.Cell[i+1][j].A );
 	   
 	/* Include regular source terms. */
@@ -3391,9 +3376,9 @@ int dUdt_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
       Flux = Fa(Ul, Ur, SolnBlk.Grid.xfaceN(i,j), SolnBlk.Grid.nfaceN(i, j));
     
       /* Evaluate cell-averaged solution changes. */
-      SolnBlk.dUdt[i][j  ][k_residual] -= ( (IP.CFL_Number*SolnBlk.dt[i][j])*
+      SolnBlk.dUdt[i][j  ][k_residual] -= ( (IP.CFL_Number*SolnBlk.dt[i][j  ])*
 					    Flux*SolnBlk.Grid.lfaceN(i, j  )/SolnBlk.Grid.Cell[i][j  ].A );
-      SolnBlk.dUdt[i][j+1][k_residual] += ( (IP.CFL_Number*SolnBlk.dt[i][j])*
+      SolnBlk.dUdt[i][j+1][k_residual] += ( (IP.CFL_Number*SolnBlk.dt[i][j+1])*
 					    Flux*SolnBlk.Grid.lfaceS(i, j+1)/SolnBlk.Grid.Cell[i][j+1].A );
           
       /* Save south and north face boundary flux. */
