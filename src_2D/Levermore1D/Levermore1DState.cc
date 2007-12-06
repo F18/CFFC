@@ -3,6 +3,11 @@
 #include "Levermore1DState.h"
 
 /********************************************************
+ * Static member variables                              *
+ ********************************************************/
+double Levermore1D_weights::particle_mass = 1.0e-20; //something small?
+
+/********************************************************
  * Function: Levermore1D_pState::set_from_U             *
  *                                                      *
  * Convert a converved vector into a primitive one.     *
@@ -72,4 +77,91 @@ double Levermore1D_pState::conserved_extras_recursive(int i, int &pf, int pf_num
     pf = (pf*pf_num)/pf_den;
     return (double)pf * m_values[i]  + m_values[1] * conserved_extras_recursive(i-1,pf,pf_num-1,pf_den+1);
   }
+}
+
+/********************************************************
+ * Function: Levermore1D_cState::set_from_A             *
+ *                                                      *
+ * Convert a weigths vector into a conserved one.       *
+ *                                                      *
+ ********************************************************/
+void Levermore1D_cState::set_from_A(const Levermore1D_weights &A) {
+  for(int i=0; i<length; ++i) {
+    m_values[i] = A.integrate_conserved_moment(i);
+  }
+  return;
+}
+
+/********************************************************
+ * Function: Levermore1D_pState::set_from_A             *
+ *                                                      *
+ * Convert a weigths vector into a primitive one.       *
+ *                                                      *
+ ********************************************************/
+void Levermore1D_pState::set_from_A(const Levermore1D_weights &A) {
+
+
+  m_values[0] = A.integrate_conserved_moment(0);
+  m_values[1] = A.integrate_conserved_moment(1)/m_values[0];
+
+  for(int i=2; i<length; ++i) {
+    m_values[i] = A.integrate_random_moment(i,m_values[1]);
+  }
+  return;
+}
+
+/********************************************************
+ * Function: Levermore1D_weights::                      *
+ *                integrate_conserved_moment            *
+ *                                                      *
+ * Integrate ith conserved moment                       *
+ *                                                      *
+ ********************************************************/
+double Levermore1D_weights::integrate_conserved_moment(int i) const {
+  double temp(0.0), sum(0.0), pos(0.0), v(0.0);
+  double dx = 0.1;
+  v = -dx/2.0;
+
+  do{
+    v += dx;
+    temp = velocity_weighted_value_at(v, i)*dx;
+    sum += temp;
+  } while(fabs(temp) > 1e-14*dx);
+
+  v = dx/2.0;
+  do{
+    v -= dx;
+    temp = velocity_weighted_value_at(v, i)*dx;
+    sum += temp;
+  } while(fabs(temp) > 1e-14*dx);
+
+  return sum;
+}
+
+/********************************************************
+ * Function: Levermore1D_weights::                      *
+ *                integrate_random_moment               *
+ *                                                      *
+ * Integrate ith random moment                          *
+ *                                                      *
+ ********************************************************/
+double Levermore1D_weights::integrate_random_moment(int i, double u) const {
+  double temp(0.0), sum(0.0), pos(0.0), v(0.0);
+  double dx = 0.1;
+  v = -dx/2.0;
+
+  do{
+    v += dx;
+    temp = random_velocity_weighted_value_at(v, u, i)*dx;
+    sum += temp;
+  } while(fabs(temp) > 1e-14*dx);
+
+  v = dx/2.0;
+  do{
+    v -= dx;
+    temp = random_velocity_weighted_value_at(v, u, i)*dx;
+    sum += temp;
+  } while(fabs(temp) > 1e-14*dx);
+
+  return sum;
 }

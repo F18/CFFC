@@ -84,11 +84,28 @@ class Levermore1D_weights : public Levermore1D_Vector{
   void Vacuum() {Levermore1D_Vector::zero();}
   void set_from_W(const Levermore1D_pState &W);
   void set_from_U(const Levermore1D_cState &U);
-  double value_at(double v) {return exp(exponent_value_recursive(v,0));}
+  double integrate_conserved_moment(int i) const;
+  double integrate_random_moment(int i, double u) const;
+
+  /* Inline Functions. */
+  double value_at(double v) const {return exp(exponent_value_recursive(v,0));}
+  double velocity_weighted_value_at(double v, int i) const {
+    return pow(v,(double)i)*particle_mass*exp(exponent_value_recursive(v,0));
+  }
+  double random_velocity_weighted_value_at(double v, double u, int i) const {
+    return pow(v-u,(double)i)*particle_mass*exp(exponent_value_recursive(v,0));
+  }
+
+  /* Static Functions. */
+  static double m() {return particle_mass;}
+  static void set_particle_mass(double m) {particle_mass=m;}
 
   protected:
 
-  double exponent_value_recursive(double v, int i) {
+  static double particle_mass;
+
+  /* Inline Functions */
+  double exponent_value_recursive(double v, int i) const {
     if(i<length-1) {
       return m_values[i] + v*exponent_value_recursive(v,i+1);
     } else { 

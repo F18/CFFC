@@ -143,6 +143,40 @@ namespace tut
     }
   }
 
+  /* Test 3:*/
+  template<>
+  template<>
+  void Levermore1D_cState_object::test<3>()
+  {
+    set_test_name("Constructor from weights");
+
+    double rho(1.225);
+    double u(132.22);
+    double p(101325.0);
+
+    double momentum(rho*u);
+    double e(p+rho*u*u);
+
+    double m = Levermore1D_weights::m();
+    double n(rho/m); //number density
+
+    double B(rho/(2.0*p));
+
+    Levermore1D_weights A;
+    A.zero();
+
+    A[1] = -B*u*u+log(n*sqrt(B/PI));
+    A[2] = 2.0*B*u;
+    A[3] = -B;
+
+    Levermore1D_cState U(A);
+
+    ensure_distance("density is equal", rho, U[1], fabs(rho)*1e-6+1e-6);
+    ensure_distance("momentum is equal", momentum, U[2], fabs(momentum)*1e-6+1e-6);
+    ensure_distance("energy is equal", e, U[3], fabs(e)*1e-6+1e-6);
+
+  }
+
 
   //end tests
 }
