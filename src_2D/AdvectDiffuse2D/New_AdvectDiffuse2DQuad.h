@@ -122,6 +122,13 @@
 class AdvectDiffuse2D_Quad_Block_New{
 public:
 
+  //! @name Defined public types:
+  //@{
+  typedef AdvectDiffuse2D_ExactSolutions Exact_Solution_Type;
+  typedef AccuracyAssessment2D<AdvectDiffuse2D_Quad_Block_New> Accuracy_Assessment_Type;
+  //@}
+
+
   //! @name Solution state arrays:
   //@{
   AdvectDiffuse2D_State_New    **U; //!< Solution state.
@@ -180,10 +187,9 @@ public:
 
   //! @name Accuracy assessment data:
   //@{
-  static AdvectDiffuse2D_ExactSolutions *ExactSoln;          //!< Pointer to the exact solution
-
-  /*! Variable that provides access to accuracy assessment subroutines */
-  AccuracyAssessment2D<AdvectDiffuse2D_Quad_Block_New> AssessAccuracy;
+  static Exact_Solution_Type *ExactSoln;          //!< Pointer to the exact solution
+  static Exact_Solution_Type *ExactSolution(void){ return ExactSoln;} //!< Return the exact solution pointer
+  Accuracy_Assessment_Type AssessAccuracy;   //!< Variable to provide access to accuracy assessment subroutines
   //@}
 	      
   //! @name Creation, copy, and assignment constructors.

@@ -36,15 +36,15 @@ public:
   //! Access to the solution block
   Quad_Soln_Block *getGrid(void) const { return SolnBlk; }
 
-  template<class Input_Parameters_Type>
+  template<typename Input_Parameters_Type>
   void PrintErrorNorms(const Input_Parameters_Type & IP,
 		       ostream & os);
   
-  template<class Input_Parameters_Type>
+  template<typename Input_Parameters_Type>
   void OutputErrorNormsTecplot(const Input_Parameters_Type & IP);
   
 
-  //   template<class Input_Parameters_Type>
+  //   template<typename Input_Parameters_Type>
   //   void AssessSolutionAccuracy(const Input_Parameters_Type & IP,
   // 			      typename Quad_Soln_Block::HighOrderType & 
   // 			      (Quad_Soln_Block::*AccessToHighOrderVar)(void) = 
@@ -54,7 +54,7 @@ public:
   // 									   const unsigned int &) const = 
   // 			      &Quad_Soln_Block::PiecewiseLinearSolutionAtLocation);
   
-  //   template<class Quad_Soln_Block, class Function_Object_Type>
+  //   template<typename Quad_Soln_Block, typename Function_Object_Type>
   //   static void ComputeSolutionErrorsHighOrder(Quad_Soln_Block * SolnBlk,
   // 					     Function_Object_Type FuncObj,
   // 					     const unsigned parameter,
@@ -66,21 +66,33 @@ public:
 			     double (Quad_Soln_Block::*ComputeSolutionAt)(const int &, const int &,
 									  const Vector2D &,
 									  const unsigned int &) const =
-			     &Quad_Soln_Block::PiecewiseLinearSolutionAtLocation);
-  //     LNorms[0] = fabs(SolnBlk->ExactSoln->Solution(0.0,0.0) - 
-  // 		     (SolnBlk->*ComputeLowOrderSolutionAt)(0,0,Vector2D(0.0,0.0),parameter));
+			     &Quad_Soln_Block::PiecewiseLinearSolutionAtLocation) throw(ArgumentNullException);
   
-  void ComputeSolutionErrors(double (*FuncObj)(const double &, const double &),
+  template<typename Function_Object_Type>
+  void ComputeSolutionErrors(Function_Object_Type FuncObj,
 			     const unsigned int &parameter,
 			     double (Quad_Soln_Block::*ComputeSolutionAt)(const int &, const int &,
 									  const Vector2D &,
 									  const unsigned int &) const =
-			     &Quad_Soln_Block::PiecewiseLinearSolutionAtLocation){ };
-  
+			     &Quad_Soln_Block::PiecewiseLinearSolutionAtLocation);
+
+  //! @name Access to the error data:
+  //@{
   double & L1(void) {return LNorms[0]; }     //!< return the L1 component of the error-norm vector
+  const double & L1(void) const {return LNorms[0]; }     //!< return the L1 component of the error-norm vector
   double & L2(void) {return LNorms[1]; }     //!< return the L2 component of the error-norm vector
-  double & LMax(void) {return LNorms[2]; }   //!< returns the LMax component of the error-norm vector
-  
+  const double & L2(void) const {return LNorms[1]; }     //!< return the L2 component of the error-norm vector
+  double & LMax(void) {return LNorms[2]; }   //!< return the LMax component of the error-norm vector
+  const double & LMax(void) const {return LNorms[2]; }   //!< return the LMax component of the error-norm vector
+  double & BlockArea(void) {return TotalBlockArea; } //!< return the total area of the block
+  const double & BlockArea(void) const {return TotalBlockArea; } //!< return the total area of the block
+
+  double BlockL1Norm(void) { return LNorms[0]/TotalBlockArea; }	//!< return the L1 error norm for the block
+  double BlockL2Norm(void) { return sqrt(LNorms[1]/TotalBlockArea); } //!< return the L2 error norm for the block
+  double BlockLMaxNorm(void) { return LNorms[2]; } //!< return the LMax error norm for the block
+  //@}
+
+  //! Prepare object for a new calculation
   void ResetForNewCalculation(void){ AccuracyAssessed_Flag = false; }
 
 private:
@@ -89,31 +101,33 @@ private:
   AccuracyAssessment2D(void);	//!< Private default constructor  
 
   vector<double> LNorms;	//!< vector of errors/error norms
-  double TotalBlockAria;	//!< the total area of the block
+  double TotalBlockArea;	//!< the total area of the block
   bool AccuracyAssessed_Flag;   //!< internal flag used to avoid re-assessment of an already determined error
   bool Title_Error_Norms;       //!< internal flag used to ensure that the output of the Tecplot title is done only once
   bool Verbose;		        //!< internal flag controlling the screen output stream
   
   // Operating functions
   /*! @brief Compute errors for L1 norm calculation using the ComputeSolutionAt solution block member function */
+  template<typename Function_Object_Type>
   double ComputeSolutionErrorL1(const int &iCell, const int &jCell,
-				double (*FuncObj)(const double &, const double &),
+				Function_Object_Type FuncObj,
  				const unsigned int &parameter,
  				double (Quad_Soln_Block::*ComputeSolutionAt)(const int &, const int &,
 									     const Vector2D &,
  									     const unsigned int &) const = 
- 				&Quad_Soln_Block::PiecewiseLinearSolutionAtLocation){ };
+ 				&Quad_Soln_Block::PiecewiseLinearSolutionAtLocation);
 
   /*! @brief Compute errors for L2 norm calculation using the ComputeSolutionAt solution block member function */
+  template<typename Function_Object_Type>
   double ComputeSolutionErrorL2(const int &iCell, const int &jCell,
-				double (*FuncObj)(const double &, const double &),
+				Function_Object_Type FuncObj,
  				const unsigned int &parameter,
  				double (Quad_Soln_Block::*ComputeSolutionAt)(const int &, const int &,
 									     const Vector2D &,
  									     const unsigned int &) const = 
- 				&Quad_Soln_Block::PiecewiseLinearSolutionAtLocation){ };
+ 				&Quad_Soln_Block::PiecewiseLinearSolutionAtLocation);
   
-  template<class Input_Parameters_Type>
+  template<typename Input_Parameters_Type>
   void SetVerboseFlag(const Input_Parameters_Type & IP);
 
   void OutputProgress(const int & i);
@@ -125,10 +139,11 @@ private:
  */
 template<typename Quad_Soln_Block> inline 
 AccuracyAssessment2D<Quad_Soln_Block>::AccuracyAssessment2D(Quad_Soln_Block * AssociatedSolnBlock):
-  AccuracyAssessed_Flag(false), Title_Error_Norms(true), Verbose(false) 
+  SolnBlk(AssociatedSolnBlock),
+  AccuracyAssessed_Flag(false), Title_Error_Norms(true), Verbose(false),
+  LNorms(vector<double>(3,0.0)),  TotalBlockArea(ZERO)
 {
-  LNorms = vector<double>(3,0.0);
-  SolnBlk = AssociatedSolnBlock;
+  // 
 }
 
 /*!
@@ -196,22 +211,187 @@ void AccuracyAssessment2D<Quad_Soln_Block>::OutputErrorNormsTecplot(const Input_
 }
 
 /*!
- * Compute solution errors relative to the exact solution 
+ * Compute solution errors relative to the exact solution
  * set in the Quad_Soln_Block.
  *
  * \param parameter the state variable which is used for computing the errors
  * \param ComputeSolutionAt Quad_Soln_Block member function which returns the solution 
  *                          at a given location (PointOfInterest) using the reconstruction 
  *                          of cell (i,j) for a specified parameter.
+ * \throw ArgumentNullException when the exact solution pointer is NULL
+ *
+ * \todo Add proper treatment of curved boundaries!!!
  */
-template<typename Quad_Soln_Block>
+template<typename Quad_Soln_Block> inline
 void AccuracyAssessment2D<Quad_Soln_Block>::
 ComputeSolutionErrors(const unsigned int &parameter,
 		      double (Quad_Soln_Block::*ComputeSolutionAt)(const int &, const int &,
 								   const Vector2D &,
-								   const unsigned int &) const ){
+								   const unsigned int &) const )
+  throw(ArgumentNullException)
+{
+
+  // Set the type of the returned value
+  double _dummy_param(0.0);
   
+  if (SolnBlk->ExactSolution()->IsExactSolutionSet()){  // exact solution is set
+    ComputeSolutionErrors(wrapped_member_function(SolnBlk->ExactSolution(),
+						  &Quad_Soln_Block::Exact_Solution_Type::Solution,
+						  _dummy_param),
+			  parameter,
+			  ComputeSolutionAt);
+  } else {
+    // exact solution is not set
+    throw ArgumentNullException("AccuracyAssessment2D::ComputeSolutionErrors() ERROR! There is no exact solution set!");
+  }
   
 }
+
+/*!
+ * Compute solution errors relative to the provided exact solution.
+ * It is assumed that the piecewise solution representation
+ * in the computational cells has been already calculated and
+ * that the edges of the cells near boundaries are straight lines.
+ *
+ * \param FuncObj The exact solution function.
+ *                It is assumed that the exact solution can take two arguments
+ *                (x & y position) and returns a double.
+ * \param parameter the state variable which is used for computing the errors
+ * \param ComputeSolutionAt Quad_Soln_Block member function which returns the solution 
+ *                          at a given location (PointOfInterest) using the reconstruction 
+ *                          of cell (i,j) for a specified parameter.
+ */
+template<typename Quad_Soln_Block>
+template<typename Function_Object_Type>
+void AccuracyAssessment2D<Quad_Soln_Block>::
+ComputeSolutionErrors(Function_Object_Type FuncObj,
+		      const unsigned int &parameter,
+		      double (Quad_Soln_Block::*ComputeSolutionAt)(const int &, const int &,
+								   const Vector2D &,
+								   const unsigned int &) const ){
+
+  double CellError(0.0); // individual cell error for L1 and LMax norms
+  int i,j;
+  int StartI(SolnBlk->ICl),  EndI(SolnBlk->ICu),  StartJ(SolnBlk->JCl),  EndJ(SolnBlk->JCu);
+
+  // reset errors values
+  L1() = ZERO; L2() = ZERO; LMax() = ZERO;
+  TotalBlockArea = ZERO;
+
+  // Assess the accuracy
+  for (j = StartJ; j <= EndJ; ++j) {
+    for (i = StartI; i <= EndI; ++i) {
+
+      // Calculate the error in cell i,j for the given parameter and reconstruction
+      CellError = ComputeSolutionErrorL1(i,j,
+					 FuncObj,
+					 parameter,
+					 ComputeSolutionAt);
+
+      // Add current cell error contribution to L1 error norm
+      L1() += CellError;
+
+      // Add current cell error contribution to L2 error norm
+      L2() += ComputeSolutionErrorL2(i,j,
+				     FuncObj,
+				     parameter,
+				     ComputeSolutionAt);
+
+      // Compute block LMax Norm
+      LMax() = max(LMax(),CellError/SolnBlk->Grid.Cell[i][j].A);
+
+      // Compute the total area of the block
+      TotalBlockArea += SolnBlk->Grid.Cell[i][j].A;
+
+    }
+  }
+
+}
+
+
+/*!
+ * Compute the solution error used for calculation of L1 and LMax norms
+ * based on the provided exact solution and the piecewise solution 
+ * representation in the computational cell (iCell,jCell).
+ * The edges of the quadrilateral cell (iCell,jCell) are treated as straight lines.
+ * 
+ * \param FuncObj The exact solution function.
+ *                It is assumed that the exact solution can take two arguments
+ *                (x & y position) and returns a double.
+ * \param parameter the state variable which is used for computing the errors
+ * \param ComputeSolutionAt Quad_Soln_Block member function which returns the numerical 
+ *                          solution at a given location (PointOfInterest) for cell (iCell,jCell).
+ */
+template<typename Quad_Soln_Block>
+template<typename Function_Object_Type>
+double AccuracyAssessment2D<Quad_Soln_Block>::
+ComputeSolutionErrorL1(const int &iCell, const int &jCell,
+		       Function_Object_Type FuncObj,
+		       const unsigned int &parameter,
+		       double (Quad_Soln_Block::*ComputeSolutionAt)(const int &, const int &,
+								    const Vector2D &,
+								    const unsigned int &) const ){
+  // Set the type of the returned value
+  double _dummy_param(0.0);
+  Vector2D _dummy_Position(0.0);
+
+  // Call the integration function
+  return ( SolnBlk->Grid.
+	   Integration.IntegrateFunctionOverCell(iCell,jCell,
+						 error_function(FuncObj,
+								wrapped_member_function_one_parameter(SolnBlk,
+												      ComputeSolutionAt,
+												      _dummy_Position,
+												      iCell, jCell,
+												      parameter,
+												      _dummy_param),
+								_dummy_param),
+						 10,_dummy_param) );
+  
+}
+
+
+/*!
+ * Compute the solution error used for calculation of L2 norm
+ * based on the provided exact solution and the piecewise solution 
+ * representation in the computational cell (iCell,jCell).
+ * The edges of the quadrilateral cell (iCell,jCell) are treated as straight lines.
+ * 
+ * \param FuncObj The exact solution function.
+ *                It is assumed that the exact solution can take two arguments
+ *                (x & y position) and returns a double.
+ * \param parameter the state variable which is used for computing the errors
+ * \param ComputeSolutionAt Quad_Soln_Block member function which returns the numerical 
+ *                          solution at a given location (PointOfInterest) for cell (iCell,jCell).
+ */
+template<typename Quad_Soln_Block>
+template<typename Function_Object_Type>
+double AccuracyAssessment2D<Quad_Soln_Block>::
+ComputeSolutionErrorL2(const int &iCell, const int &jCell,
+		       Function_Object_Type FuncObj,
+		       const unsigned int &parameter,
+		       double (Quad_Soln_Block::*ComputeSolutionAt)(const int &, const int &,
+								    const Vector2D &,
+								    const unsigned int &) const ){
+
+  // Set the type of the returned value
+  double _dummy_param(0.0);
+  Vector2D _dummy_Position(0.0);
+
+  // Call the integration function
+  return ( SolnBlk->Grid.
+	   Integration.IntegrateFunctionOverCell(iCell,jCell,
+						 square_error_function(FuncObj,
+								       wrapped_member_function_one_parameter(SolnBlk,
+													     ComputeSolutionAt,
+													     _dummy_Position,
+													     iCell, jCell,
+													     parameter,
+													     _dummy_param),
+								       _dummy_param),
+						 10,_dummy_param) );
+}
+
+
 
 #endif

@@ -259,36 +259,36 @@ wrapped_member_function(ObjectType *object, Member_Pointer mem_func, SolutionTyp
  * take ordinary functions (e.g. numerical integration subroutines)
  ****************************************************************************/
 template<class ObjectType, class Member_Pointer, class SolutionType>
-  class _Member_Function_Wrapper_One_Parameter_{
+class _Member_Function_Wrapper_One_Parameter_{
   
- public:
+public:
   
   /* constructor */
   _Member_Function_Wrapper_One_Parameter_(ObjectType *object,
 					  Member_Pointer mem_func,
 					  const unsigned param): Obj(object), Ptr(mem_func), parameter(param){ }
+  
+  // "member function evaluation" with three parameters
+  SolutionType operator() (double val1, double val2, double val3){
+    return (Obj->*Ptr)(val1,val2,val3,parameter);
+  }
     
-    // "member function evaluation" with three parameters
-    SolutionType operator() (double val1, double val2, double val3){
-      return (Obj->*Ptr)(val1,val2,val3,parameter);
-    }
+  // "member function evaluation" with two parameters
+  SolutionType operator() (double val1, double val2){
+    return (Obj->*Ptr)(val1,val2,parameter);
+  }
     
-    // "member function evaluation" with two parameters
-    SolutionType operator() (double val1, double val2){
-      return (Obj->*Ptr)(val1,val2,parameter);
-    }
+  // "member function evaluation" with one parameter
+  SolutionType operator() (double val1){
+    return (Obj->*Ptr)(val1,parameter);
+  }
     
-    // "member function evaluation" with one parameter
-    SolutionType operator() (double val1){
-      return (Obj->*Ptr)(val1,parameter);
-    }
-    
-  private:
-    _Member_Function_Wrapper_One_Parameter_();	/* make default constructor private */
-    ObjectType *Obj;		/*!< pointer to the object */
-    Member_Pointer Ptr;		/*!< pointer to the class member function */
-    unsigned parameter;         /*!< variable to store the function parameter value */
-  };
+private:
+  _Member_Function_Wrapper_One_Parameter_();	/* make default constructor private */
+  ObjectType *Obj;		/*!< pointer to the object */
+  Member_Pointer Ptr;		/*!< pointer to the class member function */
+  unsigned parameter;         /*!< variable to store the function parameter value */
+};
 
 
 /************************************************************************//**
@@ -307,6 +307,107 @@ inline _Member_Function_Wrapper_One_Parameter_<ObjectType,Member_Pointer,Solutio
 wrapped_member_function_one_parameter(ObjectType *object, Member_Pointer mem_func,
 				      unsigned parameter, SolutionType dummy){
   return _Member_Function_Wrapper_One_Parameter_<ObjectType,Member_Pointer,SolutionType> (object,mem_func,parameter);
+}
+
+
+/************************************************************************//**
+ * \class _Soln_Block_Member_Function_Wrapper_One_Parameter_
+ * \brief Adaptor for member functions of a solution block
+ *
+ * This adaptor is design to make a member function of a structured solution 
+ * block that takes as arguments iCell,jCell, PositionVector and  one (unsigned)
+ * parameter look like a function only of 'x' and 'y' Cartesian coordinates. \n
+ * This wrapper is useful for passing member functions to subroutines that 
+ * take ordinary functions (e.g. numerical integration subroutines)
+ ****************************************************************************/
+template<class ObjectType, class Member_Pointer, class SolutionType, class PositionVectorType>
+class _Soln_Block_Member_Function_Wrapper_One_Parameter_{
+  
+public:
+  
+  /* Constructors */
+  //  == 1D ==
+  _Soln_Block_Member_Function_Wrapper_One_Parameter_(ObjectType *object,
+						     Member_Pointer mem_func,
+						     const int & _iCell_,
+						     const unsigned & param): Obj(object), Ptr(mem_func),
+									      iCell(_iCell_), jCell(0), kCell(0),
+									      parameter(param){ };
+
+  // == 2D ==
+  _Soln_Block_Member_Function_Wrapper_One_Parameter_(ObjectType *object,
+						     Member_Pointer mem_func,
+						     const int & _iCell_,
+						     const int & _jCell_,
+						     const unsigned & param): Obj(object), Ptr(mem_func),
+									      iCell(_iCell_), jCell(_jCell_), kCell(0),
+									      parameter(param){ };
+
+  // == 3D ==
+  _Soln_Block_Member_Function_Wrapper_One_Parameter_(ObjectType *object,
+						     Member_Pointer mem_func,
+						     const int & _iCell_,
+						     const int & _jCell_,
+						     const int & _kCell_,
+						     const unsigned & param): Obj(object), Ptr(mem_func),
+									      iCell(_iCell_), jCell(_jCell_), kCell(_kCell_),
+									      parameter(param){ };
+    
+  // "member function evaluation" with three parameters (x,y,z)
+  SolutionType operator() (double val1, double val2, double val3){
+    return (Obj->*Ptr)(iCell,jCell,kCell,
+		       PositionVectorType(val1,val2,val3),
+		       parameter);
+  }
+    
+  // "member function evaluation" with two parameters (x,y)
+  SolutionType operator() (double val1, double val2){
+    return (Obj->*Ptr)(iCell,jCell,
+		       PositionVectorType(val1,val2),
+		       parameter);
+  }
+    
+  // "member function evaluation" with one parameter (x)
+  SolutionType operator() (double val1){
+    return (Obj->*Ptr)(iCell,
+		       PositionVectorType(val1),
+		       parameter);
+  }
+    
+private:
+  /*! Private default constructor*/
+  _Soln_Block_Member_Function_Wrapper_One_Parameter_();
+
+  // Local variables
+  ObjectType *Obj;		/*!< pointer to the object */
+  Member_Pointer Ptr;		/*!< pointer to the class member function */
+  int iCell, jCell, kCell;	//!< the cell indexes in the structured solution block
+  unsigned parameter;           /*!< variable to store the function parameter value */
+};
+
+
+/************************************************************************//**
+ * \fn _Soln_Block_Member_Function_Wrapper_One_Parameter<ObjectType,Member_Pointer,SolutionType,PositionVectorType> 
+ wrapped_member_function_one_parameter(ObjectType *object, Member_Pointer mem_func, PositionVectorType _dummy_Pos,
+                                       int iCell, int jCell,
+                                       SolutionType dummy)
+ * \brief Adaptor for member functions of a 2D solution block
+ *
+ * \param object the object used to access the member function
+ * \param mem_func the member function object
+ * \param iCell,jCell the cell indexes in the structured solution block
+ * \param _dummy_Pos  used only to provide the type of the position vector (e.g. Vector2D, Node2D etc.)
+ * \param param the value of the parameter used to evaluate the function
+ * \param dummy used only to provide the solution type
+ ****************************************************************************/
+template<typename ObjectType, typename Member_Pointer, typename SolutionType, typename PositionVectorType>
+inline _Soln_Block_Member_Function_Wrapper_One_Parameter_<ObjectType,Member_Pointer,SolutionType,PositionVectorType> 
+wrapped_member_function_one_parameter(ObjectType *object, Member_Pointer mem_func,
+				      const PositionVectorType & ,
+				      const int & iCell, const int & jCell,
+				      unsigned parameter, SolutionType dummy){
+  return ( _Soln_Block_Member_Function_Wrapper_One_Parameter_<ObjectType,Member_Pointer,
+	   SolutionType,PositionVectorType> (object,mem_func,iCell,jCell,parameter) );
 }
 
 

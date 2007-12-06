@@ -398,6 +398,9 @@ void Copy_Solution_Block(AdvectDiffuse2D_Quad_Block_New &SolnBlk1,
     } /* endfor */
   } /* endif */
 
+  // Reset accuracy assessment flag
+  SolnBlk1.AssessAccuracy.ResetForNewCalculation();
+
 }
 
 /******************************************************//**
