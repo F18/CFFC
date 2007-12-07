@@ -205,6 +205,22 @@ Grid2D_Quad_Block** Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
 		                      Input_Parameters.Number_of_Cells_Jdir,
 				      Input_Parameters.Number_of_Ghost_Cells);
         break;
+      case GRID_NACA_AEROFOIL_OGRID :
+        Grid_ptr = Grid_NACA_Aerofoil_Ogrid(Grid_ptr,
+					    Input_Parameters.Number_of_Blocks_Idir,
+					    Input_Parameters.Number_of_Blocks_Jdir,
+					    Input_Parameters.NACA_Aerofoil_Type,
+					    Input_Parameters.Chord_Length,
+					    Input_Parameters.Cylinder_Radius2,
+					    Input_Parameters.Mesh_Stretching_Type_Idir,
+					    Input_Parameters.Mesh_Stretching_Type_Jdir,
+					    Input_Parameters.Mesh_Stretching_Factor_Idir,
+					    Input_Parameters.Mesh_Stretching_Factor_Jdir,
+					    Input_Parameters.Number_of_Cells_Idir,
+					    Input_Parameters.Number_of_Cells_Jdir,
+					    Input_Parameters.Number_of_Ghost_Cells);
+
+        break;
       case GRID_FREE_JET :
         Grid_ptr = Grid_Free_Jet(Grid_ptr,
                                  Input_Parameters.Number_of_Blocks_Idir,
