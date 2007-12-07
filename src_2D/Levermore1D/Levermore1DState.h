@@ -38,6 +38,7 @@ class Levermore1D_pState : public Levermore1D_Vector{
   explicit Levermore1D_pState(const Levermore1D_weights &A) {set_from_A(A);}
 
   /* Functions. */
+  Levermore1D_Vector& operator=(const Levermore1D_Vector &V) {return Levermore1D_Vector::operator=(V);}
   void Vacuum() {Levermore1D_Vector::zero();}
   void set_from_U(const Levermore1D_cState &U);
   void set_from_A(const Levermore1D_weights &A);
@@ -62,6 +63,7 @@ class Levermore1D_cState : public Levermore1D_Vector{
   explicit Levermore1D_cState(const Levermore1D_weights &A) {set_from_A(A);}
 
   /* Functions. */
+  Levermore1D_Vector& operator=(const Levermore1D_Vector &V) {return Levermore1D_Vector::operator=(V);}
   void Vacuum() {Levermore1D_Vector::zero();}
   void set_from_W(const Levermore1D_pState &W);
   void set_from_A(const Levermore1D_weights &A);
@@ -81,6 +83,7 @@ class Levermore1D_weights : public Levermore1D_Vector{
   explicit Levermore1D_weights(const Levermore1D_cState &U) {set_from_U(U);}
 
   /* Functions. */
+  Levermore1D_Vector& operator=(const Levermore1D_Vector &V) {return Levermore1D_Vector::operator=(V);}
   void Vacuum() {Levermore1D_Vector::zero();}
   void set_from_W(const Levermore1D_pState &W);
   void set_from_U(const Levermore1D_cState &U);
