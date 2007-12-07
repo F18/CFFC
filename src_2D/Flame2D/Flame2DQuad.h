@@ -265,13 +265,14 @@ class Flame2D_Quad_Block{
   void Update_Nodal_Values(void);
 
   /* Return primitive solution state at specified node. */
-  const Flame2D_State& Wn(const int &ii, const int &jj) const;
+  Flame2D_State Wn(const int &ii, const int &jj);
+  void Wn(const int &ii, const int &jj, Flame2D_State &Wnode);
 
   /* Return primitive solution state at cell nodes. */
-  const Flame2D_State& WnNW(const int &ii, const int &jj) const;
-  const Flame2D_State& WnNE(const int &ii, const int &jj) const;
-  const Flame2D_State& WnSE(const int &ii, const int &jj) const;
-  const Flame2D_State& WnSW(const int &ii, const int &jj) const;
+  Flame2D_State WnNW(const int &ii, const int &jj);
+  Flame2D_State WnNE(const int &ii, const int &jj);
+  Flame2D_State WnSE(const int &ii, const int &jj);
+  Flame2D_State WnSW(const int &ii, const int &jj);
 
   int BiLinearInterpolationCoefficients(double &eta, double &zeta, const int &ii, const int &jj);
   
@@ -599,37 +600,31 @@ inline double Flame2D_Quad_Block::dWn_dWc(const int &i, const int &j, const int 
 /**************************************************************************
  * Flame2D_Quad_Block::Wn -- Node primitive solution.                     *
  **************************************************************************/
-inline const Flame2D_State& Flame2D_Quad_Block::Wn(const int &ii, const int &jj) const {
-  return Wnd[ii][jj];
-}
-inline const Flame2D_State& Flame2D_Quad_Block::WnNW(const int &ii, const int &jj) const {
-  return (Wnd[ii][jj+1]);
-}
-
-inline const Flame2D_State& Flame2D_Quad_Block::WnNE(const int &ii, const int &jj) const {
-  return (Wnd[ii+1][jj+1]);
+inline Flame2D_State Flame2D_Quad_Block::WnNW(const int &ii, const int &jj) {
+  static Flame2D_State tmp;
+  Wn(ii, jj+1, tmp);
+  return tmp;
 }
 
-inline const Flame2D_State& Flame2D_Quad_Block::WnSE(const int &ii, const int &jj) const {
-  return (Wnd[ii+1][jj]);
+inline Flame2D_State Flame2D_Quad_Block::WnNE(const int &ii, const int &jj) {
+  static Flame2D_State tmp;
+  Wn(ii+1, jj+1, tmp);
+  return tmp;
 }
 
-inline const Flame2D_State& Flame2D_Quad_Block::WnSW(const int &ii, const int &jj) const {
-  return (Wnd[ii][jj]);
+inline Flame2D_State Flame2D_Quad_Block::WnSE(const int &ii, const int &jj) {
+  static Flame2D_State tmp;
+  Wn(ii+1, jj, tmp);
+  return tmp;
 }
 
-
-/**************************************************************************
- * Flame2D_Quad_Block::Update_Wnd -- Update temporayr Node primitive      *
- *                                   solution storage.                    *
- **************************************************************************/
-inline void Flame2D_Quad_Block::Update_Nodal_Values(void) {
-  for (int i = ICl; i <= ICu+1 ; ++i )
-    for (int j = JCl; j <= JCu+1; ++j ) 
-      Update_Wn(i,j);
+inline Flame2D_State Flame2D_Quad_Block::WnSW(const int &ii, const int &jj) {
+  static Flame2D_State tmp;
+  Wn(ii, jj, tmp);
+  return tmp;
 }
 
-inline void Flame2D_Quad_Block::Update_Wn(const int &ii, const int &jj) {
+inline void Flame2D_Quad_Block::Wn(const int &ii, const int &jj, Flame2D_State &Wnode) {
   double ax, bx, cx, dx, ay, by, cy, dy, aa, bb, cc, x, y,
     eta1, zeta1, eta2, zeta2, eta, zeta;
   
@@ -670,16 +665,29 @@ inline void Flame2D_Quad_Block::Update_Wn(const int &ii, const int &jj) {
     zeta=HALF; eta=HALF;
   } /* endif */
   
-  static const int NUM_VAR(NumVar());
-  static Flame2D_State tmp;
+  const int NUM_VAR(NumVar());
   for (int k=1; k<=NUM_VAR; k++) {
-    Wnd[ii][jj][k] = (W[ii-1][jj-1][k] +(W[ii-1][jj][k]-W[ii-1][jj-1][k])*zeta+  
-		      (W[ii][jj-1][k]-W[ii-1][jj-1][k])*eta + 
-		      (W[ii][jj][k]+W[ii-1][jj-1][k]-W[ii-1][jj][k]-W[ii][jj-1][k])*zeta*eta);
+    Wnode[k] = (W[ii-1][jj-1][k] +(W[ii-1][jj][k]-W[ii-1][jj-1][k])*zeta+  
+		(W[ii][jj-1][k]-W[ii-1][jj-1][k])*eta + 
+		(W[ii][jj][k]+W[ii-1][jj-1][k]-W[ii-1][jj][k]-W[ii][jj-1][k])*zeta*eta);
   }
-
 }
 
+inline Flame2D_State Flame2D_Quad_Block::Wn(const int &ii, const int &jj) {
+  static Flame2D_State tmp;
+  Wn(ii,jj, tmp);
+  return tmp;
+}
+
+/**************************************************************************
+ * Flame2D_Quad_Block::Update_Wnd -- Update temporayr Node primitive      *
+ *                                   solution storage.                    *
+ **************************************************************************/
+inline void Flame2D_Quad_Block::Update_Nodal_Values(void) {
+  for (int i = 1; i < NCi; ++i )
+    for (int j = 1; j < NCj; ++j ) 
+      Wn(i,j, Wnd[i][j]);
+}
 
 
 /**************************************************************************
@@ -718,7 +726,7 @@ inline istream &operator >> (istream &in_file,
 			     Flame2D_Quad_Block &SolnBlk) {
 
   int i, j, k, ni, il, iu, nj, jl, ju, ng;
-  Flame2D_State Flame2D_VACUUM(0.0);
+  Flame2D_State Flame2D_VACUUM;  Flame2D_VACUUM.Vacuum();
   Flame2D_State Wtmp;
   Grid2D_Quad_Block New_Grid; in_file >> New_Grid;
   in_file.setf(ios::skipws);

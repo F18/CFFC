@@ -1,6 +1,8 @@
 #
 # Blunt body test case
 #
+Debug_Level=
+1
 ########################
 # Set solver parameters
 ########################
@@ -38,6 +40,8 @@ Residual_Variable =
 #########################
 ICs_Type = 
 Uniform
+Temperature=
+300
 Mach_Number = 
 4.0
 #2.0
@@ -93,7 +97,7 @@ CFL_Number =
 0.75
 # 1000,300
 Maximum_Number_of_Time_Steps =
-500
+300
 Full_Multigrid =
 0
 Restart_Solution_Save_Frequency=

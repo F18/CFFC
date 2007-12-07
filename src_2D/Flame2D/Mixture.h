@@ -29,6 +29,7 @@ using namespace std;
 
 //Temperature convergence tolerance
 #define CONV_TOLERANCE  1e-8
+#define NUM_ITERATIONS  20
 
 // If you define this variable, the number of species will be
 // predetermined for faster calculations.., however it is not as general 
@@ -70,7 +71,7 @@ public:
   /************** Constructors/Destructors ***********/
 
   //@{ @name constructors/destructors
-  Mixture() : T(0.0), MW(0.0), Cp(0.0), hs(0.0), 
+  Mixture() : T(TREF), MW(0.0), Cp(0.0), hs(0.0), 
 	      hf(0.0), mu(0.0), kappa(0.0)
   { Nullify(); Allocate(); for (int i=0; i<ns; i++) diff[i] = 0.0; }
   
@@ -151,7 +152,8 @@ public:
   void setState_DHY(const double &rho, const double &h, const double* y);
 private:
   void setState_DH(const double &rho, const double& h, const double tol = 1.e-4);
-  
+  void setState_DE(const double &rho, const double& e, const double tol = 1.e-4);
+
 public:
   /***************** Mixing Rules ********************
     The following constructors return "total" physical
@@ -362,17 +364,23 @@ inline void Mixture :: setState_TPY(const double &Temp,
 				    const double &Press, 
 				    const double* y)
 {
+  // initialize
   T = Temp;
   hf = heatFormation(y);
-
+  
+  // set cantera state
   ct_gas->setMassFractions_NoNorm(y);
-  ct_gas->setPressure(Press);
   ct_gas->setTemperature(Temp);
+  ct_gas->setPressure(Press);
+
+  // compute thermo / transport properties
   MW = ct_gas->meanMolecularWeight();
   hs = ct_gas->enthalpy_mass() - hf;
   Cp = ct_gas->cp_mass();
   mu = ct_trans->viscosity();
   kappa = ct_trans->thermalConductivity();
+
+  // compute diffusion coefficient
   if(isConstSchmidt){
     double rho( Press / (gasConstant()*T) );
     for (int i=0; i<ns; i++) diff[i] = mu/(rho*Sc_ref[i]);
@@ -387,24 +395,29 @@ inline void Mixture :: setState_DPY(const double &rho,
 				    const double &Press, 
 				    const double* y)
 {
+  // compute mixture molecular weight and heat of formation
   MW = 0.0; hf = 0.0;
   for(int i=0; i<ns; i++){
     MW += y[i]/M[i];
     hf += y[i]*Hform[i];
   }
   MW = 1.0/MW;
-  // MW = molarMass(y);
-  // hf = heatFormation(y);
 
+  // compute the temperature
   T = Press / (gasConstant()*rho);
 
+  // set the cantera gas state
   ct_gas->setMassFractions_NoNorm(y);
-  ct_gas->setPressure(Press);
   ct_gas->setTemperature(T);
+  ct_gas->setPressure(Press);
+
+  // compute thermo / trans properties
   hs = ct_gas->enthalpy_mass() - hf;
   Cp = ct_gas->cp_mass();
   mu = ct_trans->viscosity();
   kappa = ct_trans->thermalConductivity();
+
+  // compute diffusion coefficient
   if(isConstSchmidt){
     for (int i=0; i<ns; i++) diff[i] = mu/(rho*Sc_ref[i]);
   } else {
@@ -417,16 +430,22 @@ inline void Mixture :: setState_DPY(const double &rho,
 inline void Mixture :: setState_DEY(const double &rho, const double &e, 
 				    const double* y)
 {
+  // compute heat of formation
   hf = heatFormation(y);
 
+  // set the cantera gas state
   ct_gas->setMassFractions_NoNorm(y);
-  ct_gas->setState_UV(e, 1.0/rho, CONV_TOLERANCE);
+  setState_DE(rho, e, CONV_TOLERANCE);
+
+  // compute the thermo / trans properties
   T = ct_gas->temperature();
   MW = ct_gas->meanMolecularWeight();
   hs = ct_gas->enthalpy_mass() - hf;
   Cp = ct_gas->cp_mass();
   mu = ct_trans->viscosity();
   kappa = ct_trans->thermalConductivity();
+
+  // compute diffusion coefficient
   if(isConstSchmidt){
     for (int i=0; i<ns; i++) diff[i] = mu/(rho*Sc_ref[i]);
   } else {
@@ -440,16 +459,22 @@ inline void Mixture :: setState_DEY(const double &rho, const double &e,
 inline void Mixture :: setState_DHY(const double &rho, const double &h, 
 				    const double* y)
 {
+  // compute heat of formation
   hf = heatFormation(y);
 
+  // set the cantera gas state
   ct_gas->setMassFractions_NoNorm(y);
   setState_DH(rho, h, CONV_TOLERANCE);
+
+  // compute the thermo / trans properties
   T = ct_gas->temperature();
   MW = ct_gas->meanMolecularWeight();
   hs = ct_gas->enthalpy_mass() - hf;
   Cp = ct_gas->cp_mass();
   mu = ct_trans->viscosity();
   kappa = ct_trans->thermalConductivity();
+
+  // compute diffusion coefficient
   if(isConstSchmidt){
     for (int i=0; i<ns; i++) diff[i] = mu/(rho*Sc_ref[i]);
   } else {
@@ -462,25 +487,52 @@ inline void Mixture :: setState_DHY(const double &rho, const double &h,
 
 inline void Mixture :: setState_DH(const double &rho, const double& h, 
 				   const double tol) {
-  double dt, h0;
+  double dt;
   ct_gas->setDensity(rho);
-  
+  ct_gas->setTemperature(T);
+
   // Newton iteration
   int n;
-  for (n = 0; n < 500; n++) {
-    h0 = ct_gas->enthalpy_mass();
-    dt = (h - h0)/ct_gas->cp_mass();
+  for (n = 0; n < NUM_ITERATIONS; n++) {
+    // time step
+    dt = (h - ct_gas->enthalpy_mass())/ct_gas->cp_mass();
     // limit step size to 100 K
-    if (dt > 100.0) dt = 100.0;
-    else if (dt < -100.0) dt = -100.0; 
+    // if (dt > 100.0) dt = 100.0;
+    // else if (dt < -100.0) dt = -100.0;
+    // increment T
     ct_gas->setTemperature(ct_gas->temperature() + dt);
-    if (fabs(dt) < tol) {
-      return;
-    }
+    //check convergence
+    if (fabs(dt) < tol) return;
   }
   cerr << endl 
        << "Mixture::setState_DH() - No convergence. dt = " << dt 
        << ". H = " << h 
+       << ". n = " << n 
+       << endl;
+}
+
+inline void Mixture :: setState_DE(const double &rho, const double& e, 
+				   const double tol) {
+  double dt;
+  ct_gas->setDensity(rho);
+  ct_gas->setTemperature(T);
+
+  // Newton iteration
+  int n;
+  for (n = 0; n < NUM_ITERATIONS; n++) {
+    // time step
+    dt = (e - ct_gas->intEnergy_mass())/ct_gas->cp_mass();
+    // limit step size to 100 K
+    // if (dt > 100.0) dt = 100.0;
+    // else if (dt < -100.0) dt = -100.0;
+    // increment T
+    ct_gas->setTemperature(ct_gas->temperature() + dt);
+    //check convergence
+    if (fabs(dt) < tol) return;
+  }
+  cerr << endl 
+       << "Mixture::setState_DE() - No convergence. dt = " << dt 
+       << ". E = " << e
        << ". n = " << n 
        << endl;
 }
@@ -499,7 +551,9 @@ inline void Mixture :: setState_DH(const double &rho, const double& h,
 ************************************************************************/
 inline void Mixture :: getRates( const double &Press, 
 				 const double* y, double* rr ) const {
-  ct_gas->setState_TPY(T, Press, y);
+  ct_gas->setMassFractions_NoNorm(y);
+  ct_gas->setTemperature(T);
+  ct_gas->setPressure(Press);
   ct_gas->getNetProductionRates(rr);
   for (int i=0; i<ns; i++){
     rr[i] = rr[i]*M[i];
@@ -512,7 +566,9 @@ inline void Mixture :: getRates( const double &Press,
 inline void Mixture :: getDihdDc(const double &Press, 
 				 const double* y, 
 				 double* dh) const {
-  ct_gas->setState_TPY(T, Press, y);
+  ct_gas->setMassFractions_NoNorm(y);
+  ct_gas->setTemperature(T);
+  ct_gas->setPressure(Press);
   ct_gas->getEnthalpy_RT(dh); // -> h = hs + hf
   for(int i=0; i<ns; i++)
     dh[i] = ( dh[i]*(Cantera::GasConstant/M[i])*T -
@@ -577,7 +633,9 @@ inline double Mixture :: enthalpyPrime(void) const {
 inline void Mixture :: getEnthalpySens( const double &Press, 
 					const double* y, 
 					double*h ) const {
-  ct_gas->setState_TPY(T, Press, y);
+  ct_gas->setMassFractions_NoNorm(y);
+  ct_gas->setTemperature(T);
+  ct_gas->setPressure(Press);
   ct_gas->getEnthalpy_RT(h); // -> h = hs + hf
   for(int i=0; i<ns; i++) h[i] = ( h[i]*(Cantera::GasConstant/M[i])*T );
 }

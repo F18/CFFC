@@ -80,44 +80,42 @@ void Flame2D_Quad_Block::Linear_Reconstruction_GreenGauss(const int i,
     if (n_pts > 0) {
         // If 8 neighbours are used, apply Green-Gauss reconstruction
       if (n_pts == 8) {
-           const Flame2D_State &W_nw = WnNW(i, j);
-           const Flame2D_State &W_ne = WnNE(i, j);
-           const Flame2D_State &W_sw = WnSW(i, j);
-           const Flame2D_State &W_se = WnSE(i, j);
-
-           l_north = Grid.lfaceN(i, j);
-           l_south = Grid.lfaceS(i, j);
-           l_east = Grid.lfaceE(i, j);
-           l_west = Grid.lfaceW(i, j);
-
-           n_north = Grid.nfaceN(i, j);
-           n_south = Grid.nfaceS(i, j);
-           n_east = Grid.nfaceE(i, j);
-           n_west = Grid.nfaceW(i, j);
-
-	   for (int k=1; k<=NUM_VAR_FLAME2D; k++) {
-	     W_face = HALF*(W_nw[k]+W_ne[k])*l_north; 
-	     dWdx[i][j][k] = W_face*n_north.x;
-	     dWdy[i][j][k] = W_face*n_north.y;
-	     
-	     W_face = HALF*(W_sw[k]+W_se[k])*l_south; 
-	     dWdx[i][j][k] += W_face*n_south.x;
-	     dWdy[i][j][k] += W_face*n_south.y;
-	     
-	     W_face = HALF*(W_ne[k]+W_se[k])*l_east; 
-	     dWdx[i][j][k] += W_face*n_east.x;
-	     dWdy[i][j][k] += W_face*n_east.y;
-	     
-	     W_face = HALF*(W_nw[k]+W_sw[k])*l_west; 
-	     dWdx[i][j][k] += W_face*n_west.x;
-	     dWdy[i][j][k] += W_face*n_west.y;
-	     
-	     dWdx[i][j] = dWdx[i][j][k]/
-	       Grid.Cell[i][j].A;
-	     dWdy[i][j] = dWdy[i][j][k]/
-	       Grid.Cell[i][j].A;
-	   }
-	   
+	const Flame2D_State &W_nw = Wnd[i  ][j+1];//WnNW(i, j);
+	const Flame2D_State &W_ne = Wnd[i+1][j+1];//WnNE(i, j);
+	const Flame2D_State &W_sw = Wnd[i  ][j  ];//WnSW(i, j);
+	const Flame2D_State &W_se = Wnd[i+1][j  ];//WnSE(i, j);
+	
+	l_north = Grid.lfaceN(i, j);
+	l_south = Grid.lfaceS(i, j);
+	l_east = Grid.lfaceE(i, j);
+	l_west = Grid.lfaceW(i, j);
+	
+	n_north = Grid.nfaceN(i, j);
+	n_south = Grid.nfaceS(i, j);
+	n_east = Grid.nfaceE(i, j);
+	n_west = Grid.nfaceW(i, j);
+	
+	for (int k=1; k<=NUM_VAR_FLAME2D; k++) {
+	  W_face = HALF*(W_nw[k]+W_ne[k])*l_north; 
+	  dWdx[i][j][k] = W_face*n_north.x;
+	  dWdy[i][j][k] = W_face*n_north.y;
+	  
+	  W_face = HALF*(W_sw[k]+W_se[k])*l_south; 
+	  dWdx[i][j][k] += W_face*n_south.x;
+	  dWdy[i][j][k] += W_face*n_south.y;
+	  
+	  W_face = HALF*(W_ne[k]+W_se[k])*l_east; 
+	  dWdx[i][j][k] += W_face*n_east.x;
+	  dWdy[i][j][k] += W_face*n_east.y;
+	  
+	  W_face = HALF*(W_nw[k]+W_sw[k])*l_west; 
+	  dWdx[i][j][k] += W_face*n_west.x;
+	  dWdy[i][j][k] += W_face*n_west.y;
+	  
+	  dWdx[i][j][k] /= Grid.Cell[i][j].A;
+	  dWdy[i][j][k] /= Grid.Cell[i][j].A;
+	}
+	
       } /* endif */
 	   
 	// Calculate slope limiters.    
@@ -136,18 +134,10 @@ void Flame2D_Quad_Block::Linear_Reconstruction_GreenGauss(const int i,
 	    u0Max = max(u0Max, W[ i_index[n2] ][ j_index[n2] ][n]);
 	  } /* endfor */
 
-	  uQuad[0] = W[i][j][n] + 
-	    dWdx[i][j][n]*dXe.x +
-	    dWdy[i][j][n]*dXe.y ;
-	  uQuad[1] = W[i][j][n] + 
-	    dWdx[i][j][n]*dXw.x +
-	    dWdy[i][j][n]*dXw.y ;
-	  uQuad[2] = W[i][j][n] + 
-	    dWdx[i][j][n]*dXn.x +
-	    dWdy[i][j][n]*dXn.y ;
-	  uQuad[3] = W[i][j][n] + 
-	    dWdx[i][j][n]*dXs.x +
-	    dWdy[i][j][n]*dXs.y ;
+	  uQuad[0] = W[i][j][n] + dWdx[i][j][n]*dXe.x + dWdy[i][j][n]*dXe.y ;
+	  uQuad[1] = W[i][j][n] + dWdx[i][j][n]*dXw.x + dWdy[i][j][n]*dXw.y ;
+	  uQuad[2] = W[i][j][n] + dWdx[i][j][n]*dXn.x + dWdy[i][j][n]*dXn.y ;
+	  uQuad[3] = W[i][j][n] + dWdx[i][j][n]*dXs.x + dWdy[i][j][n]*dXs.y ;
 	    
 	  switch(Limiter) {
 	  case LIMITER_ONE :
@@ -854,8 +844,8 @@ void Flame2D_Quad_Block::Linear_Reconstruction_LeastSquares_Diamond(const int i,
     DyDy_ave = ZERO;
     
    
-    TopVertex = &Wn(i,j+1);
-    BottomVertex =  &Wn(i+1,j+1);
+    TopVertex = &Wnd[i][j+1];
+    BottomVertex = &Wnd[i+1][j+1];
 
     dX[0] = Grid.Cell[i][j].Xc - Grid.xfaceN(i,j);
     dX[1] = Grid.Cell[i][j+1].Xc - Grid.xfaceN(i,j);
@@ -911,8 +901,8 @@ void Flame2D_Quad_Block::Linear_Reconstruction_LeastSquares_Diamond(const int i,
     DyDy_ave = ZERO;
       
     //needs to assign topvertex and bottomvertex information
-    TopVertex = &Wn(i+1,j+1);
-    BottomVertex =  &Wn(i+1,j);
+    TopVertex = &Wnd[i+1][j+1];
+    BottomVertex =  &Wnd[i+1][j];
 
     dX[0] = Grid.Cell[i][j].Xc - Grid.xfaceE(i, j);
     dX[1] = Grid.Cell[i+1][j].Xc - Grid.xfaceE(i,j);
@@ -965,8 +955,8 @@ void Flame2D_Quad_Block::Linear_Reconstruction_LeastSquares_Diamond(const int i,
     DxDy_ave = ZERO;
     DyDy_ave = ZERO;
   
-    TopVertex = &Wn(i,j);
-    BottomVertex =  &Wn(i,j+1);
+    TopVertex = &Wnd[i][j];
+    BottomVertex =  &Wnd[i][j+1];
 
     dX[0] = Grid.Cell[i][j].Xc - Grid.xfaceW(i,j);
     dX[1] = Grid.Cell[i-1][j].Xc - Grid.xfaceW(i,j);
@@ -1019,8 +1009,8 @@ void Flame2D_Quad_Block::Linear_Reconstruction_LeastSquares_Diamond(const int i,
     DxDy_ave = ZERO;
     DyDy_ave = ZERO;
 
-    TopVertex = &Wn(i+1,j);
-    BottomVertex =  &Wn(i,j);
+    TopVertex = &Wnd[i+1][j];
+    BottomVertex =  &Wnd[i][j];
 
     dX[0] = Grid.Cell[i][j].Xc - Grid.xfaceS(i, j);
     dX[1] = Grid.Cell[i][j-1].Xc - Grid.xfaceS(i, j);
@@ -1194,10 +1184,10 @@ void Flame2D_Quad_Block::Linear_Reconstruction_GreenGauss_Diamond(const int i,
   
   if (n_pts > 0) {
     
-    const Flame2D_State &W_NE = Wn(i+1,j+1);
-    const Flame2D_State &W_NW = Wn(i,j+1);
-    const Flame2D_State &W_SW = Wn(i,j);
-    const Flame2D_State &W_SE = Wn(i+1,j);
+    const Flame2D_State &W_NE = Wnd[i+1][j+1];
+    const Flame2D_State &W_NW = Wnd[i][j+1];
+    const Flame2D_State &W_SW = Wnd[i][j];
+    const Flame2D_State &W_SE = Wnd[i+1][j];
     
     /*************** NORTH ****************************/
     

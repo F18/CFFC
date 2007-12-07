@@ -598,267 +598,235 @@ int Flame2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	n_inner_temp = n_inner;
         n_inner = 0;
 
-	do{
-	  /********************** TIME STEPS **************************************
+	/********************** TIME STEPS **************************************
            Determine local and global time steps. 
-	  *************************************************************************/
+	*************************************************************************/
 
-	  dTime = CFL(Local_SolnBlk, List_of_Local_Solution_Blocks, Input_Parameters);
-	  if (!Input_Parameters.Dual_Time_Stepping) {
-	    // Find global minimum time step for all processors.
-	    dTime = CFFC_Minimum_MPI(dTime);
-	  } else {
-            // Assign physical time step for dual time stepping.
-            if (n_inner == 0) { 
-	      dTime = Input_Parameters.Physical_CFL_Number*CFFC_Minimum_MPI(dTime);
-              Input_Parameters.dTime = dTime;              
-	    }
-            dTime = Input_Parameters.dTime;
-	  }
-
-	  if (Input_Parameters.Time_Accurate) {
-	    if ((Input_Parameters.i_Time_Integration != 
-		 TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING) &&
-		(Time + Input_Parameters.CFL_Number*dTime > Input_Parameters.Time_Max)) {
-	      dTime = (Input_Parameters.Time_Max-Time)/Input_Parameters.CFL_Number;
-	      last_step = 1;
+	// Find global minimum time step for all processors.
+	dTime = CFL(Local_SolnBlk, List_of_Local_Solution_Blocks, Input_Parameters);
+	dTime = CFFC_Minimum_MPI(dTime);
+	    
+	if (Input_Parameters.Time_Accurate) {
+	  if ((Input_Parameters.i_Time_Integration != 
+	       TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING) &&
+	      (Time + Input_Parameters.CFL_Number*dTime > Input_Parameters.Time_Max)) {
+	    dTime = (Input_Parameters.Time_Max-Time)/Input_Parameters.CFL_Number;
+	    last_step = 1;
 	       
-	    } else if (Time + Input_Parameters.CFL_Number*dTime*
-		       MultiStage_Optimally_Smoothing(Input_Parameters.N_Stage, 
-						      Input_Parameters.N_Stage,
-						      Input_Parameters.i_Limiter) > 
-		       Input_Parameters.Time_Max && (!Input_Parameters.Dual_Time_Stepping)) {
+	  } else if (Time + Input_Parameters.CFL_Number*dTime*
+		     MultiStage_Optimally_Smoothing(Input_Parameters.N_Stage, 
+						    Input_Parameters.N_Stage,
+						    Input_Parameters.i_Limiter) > Input_Parameters.Time_Max) {
 	      
-	      dTime = (Input_Parameters.Time_Max-Time)/
-		(Input_Parameters.CFL_Number*
-		 MultiStage_Optimally_Smoothing(Input_Parameters.N_Stage, 
-						Input_Parameters.N_Stage,
-						Input_Parameters.i_Limiter)); 
-	      last_step = 1;
-	   
-	    } else if (Time + dTime > Input_Parameters.Time_Max && Input_Parameters.Dual_Time_Stepping) {
-	      dTime = Input_Parameters.Time_Max - Time;
-              Input_Parameters.dTime = dTime;
-              last_step = 1;
-            } 
-	  } 	 
+	    dTime = (Input_Parameters.Time_Max-Time)/
+	      (Input_Parameters.CFL_Number*
+	       MultiStage_Optimally_Smoothing(Input_Parameters.N_Stage, 
+					      Input_Parameters.N_Stage,
+					      Input_Parameters.i_Limiter)); 
+	    last_step = 1;
+	  }
+	} 	 
 	  
-	  if (!Input_Parameters.Local_Time_Stepping) { 
-	    // Set global time step.	
-	    Set_Global_TimeStep(Local_SolnBlk, List_of_Local_Solution_Blocks,dTime);
-	  } 
+	if (!Input_Parameters.Local_Time_Stepping) { 
+	  // Set global time step.	
+	  Set_Global_TimeStep(Local_SolnBlk, List_of_Local_Solution_Blocks,dTime);
+	} 
 
-	  /************************ NORMS *****************************************
+	/************************ NORMS *****************************************
            Determine the L1, L2, and max norms of the solution residual. 
-	  *************************************************************************/
-	  L1_Norm_Residual(Local_SolnBlk, List_of_Local_Solution_Blocks,residual_l1_norm);	  
-	  L2_Norm_Residual(Local_SolnBlk, List_of_Local_Solution_Blocks,residual_l2_norm);       	  
-	  Max_Norm_Residual(Local_SolnBlk, List_of_Local_Solution_Blocks,residual_max_norm);
+	*************************************************************************/
+	L1_Norm_Residual(Local_SolnBlk, List_of_Local_Solution_Blocks,residual_l1_norm);	  
+	L2_Norm_Residual(Local_SolnBlk, List_of_Local_Solution_Blocks,residual_l2_norm);       	  
+	Max_Norm_Residual(Local_SolnBlk, List_of_Local_Solution_Blocks,residual_max_norm);
 	  
-	  for(int q=0; q < Local_SolnBlk[0].Number_of_Residual_Norms; q++){
-	    residual_l1_norm[q] = CFFC_Summation_MPI(residual_l1_norm[q]); // L1 norm for all processors.
-	    residual_l2_norm[q] =residual_l2_norm[q]*residual_l2_norm[q];
-	    residual_l2_norm[q] = sqrt(CFFC_Summation_MPI(residual_l2_norm[q])); // L2 norm for all processors.
-	    residual_max_norm[q] = CFFC_Maximum_MPI(residual_max_norm[q]); // Max norm for all processors.
-	  }
-	  if (n_inner == 1) initial_residual_l2_norm = residual_l2_norm[Local_SolnBlk[0].residual_variable-1];
+	for(int q=0; q < Local_SolnBlk[0].Number_of_Residual_Norms; q++){
+	  residual_l1_norm[q] = CFFC_Summation_MPI(residual_l1_norm[q]); // L1 norm for all processors.
+	  residual_l2_norm[q] =residual_l2_norm[q]*residual_l2_norm[q];
+	  residual_l2_norm[q] = sqrt(CFFC_Summation_MPI(residual_l2_norm[q])); // L2 norm for all processors.
+	  residual_max_norm[q] = CFFC_Maximum_MPI(residual_max_norm[q]); // Max norm for all processors.
+	}
+	if (n_inner == 1) initial_residual_l2_norm = residual_l2_norm[Local_SolnBlk[0].residual_variable-1];
 	  
-	  /* Update CPU time used for the calculation so far. */
-	  processor_cpu_time.update();
-	  // Total CPU time for all processors.
-	  total_cpu_time.cput = CFFC_Summation_MPI(processor_cpu_time.cput); 
-	  /************************ RESTART *****************************************
+	/* Update CPU time used for the calculation so far. */
+	processor_cpu_time.update();
+	// Total CPU time for all processors.
+	total_cpu_time.cput = CFFC_Summation_MPI(processor_cpu_time.cput); 
+	/************************ RESTART *****************************************
           Periodically save restart solution files. 
-	  ***************************************************************************/ 
-	  if (!Input_Parameters.Dual_Time_Stepping  ||  
-	      (Input_Parameters.Dual_Time_Stepping && n_inner == 0)) {
+	***************************************************************************/ 
 	    
-	    if (!first_step &&
-		number_of_time_steps%Input_Parameters.Restart_Solution_Save_Frequency == 0 ) {
-	      if (!batch_flag){
-		cout << "\n\n  Saving Flame2D solution to restart data file(s) after"
-		     << " n = " << number_of_time_steps << " steps (iterations).";
-	      }
-	      if (!batch_flag) cout << "\n  Writing Flame2D solution to restart data file(s). \n";
-	      error_flag = Write_QuadTree(QuadTree,
-					  Input_Parameters);
-	      if (error_flag) {
-		cout << "\n Flame2D ERROR: Unable to open Flame2D quadtree data file "
-		     << "on processor "
-		     << List_of_Local_Solution_Blocks.ThisCPU
-		     << ".\n";
-		cout.flush();
-	      } 
-	      error_flag = Write_Restart_Solution(Local_SolnBlk, 
-						  List_of_Local_Solution_Blocks, 
-						  Input_Parameters,
-						  number_of_time_steps,
-						  Time,
-						  processor_cpu_time);
-	      if (error_flag) {
-		cout << "\n Flame2D ERROR: Unable to open Flame2D restart output data file(s) "
-		     << "on processor "
-		     << List_of_Local_Solution_Blocks.ThisCPU
-		     << ".\n";
-		cout.flush();
-	      } 
-	      error_flag = CFFC_OR_MPI(error_flag);
-	      if (error_flag) return (error_flag);
-	      cout.flush();
-	    } 
+	if (!first_step &&
+	    number_of_time_steps%Input_Parameters.Restart_Solution_Save_Frequency == 0 ) {
+	  if (!batch_flag){
+	    cout << "\n\n  Saving Flame2D solution to restart data file(s) after"
+		 << " n = " << number_of_time_steps << " steps (iterations).";
 	  }
+	  if (!batch_flag) cout << "\n  Writing Flame2D solution to restart data file(s). \n";
+	  error_flag = Write_QuadTree(QuadTree,
+				      Input_Parameters);
+	  if (error_flag) {
+	    cout << "\n Flame2D ERROR: Unable to open Flame2D quadtree data file "
+		 << "on processor "
+		 << List_of_Local_Solution_Blocks.ThisCPU
+		 << ".\n";
+	    cout.flush();
+	  } 
+	  error_flag = Write_Restart_Solution(Local_SolnBlk, 
+					      List_of_Local_Solution_Blocks, 
+					      Input_Parameters,
+					      number_of_time_steps,
+					      Time,
+					      processor_cpu_time);
+	  if (error_flag) {
+	    cout << "\n Flame2D ERROR: Unable to open Flame2D restart output data file(s) "
+		 << "on processor "
+		 << List_of_Local_Solution_Blocks.ThisCPU
+		 << ".\n";
+	    cout.flush();
+	  } 
+	  error_flag = CFFC_OR_MPI(error_flag);
+	  if (error_flag) return (error_flag);
+	  cout.flush();
+	} 
 	  
-	  /************************ PROGRESS *****************************************
+	/************************ PROGRESS *****************************************
            Output progress information for the calculation. 
-	  ***************************************************************************/
-	  //screen 
-	  if (!Input_Parameters.Dual_Time_Stepping || 
-	      (Input_Parameters.Dual_Time_Stepping && n_inner == 0)) {
+	***************************************************************************/
+	//screen 	    
+	if (!batch_flag) Output_Progress_L2norm(number_of_time_steps,
+						Time*THOUSAND, //time in ms
+						total_cpu_time,
+						residual_l2_norm[Local_SolnBlk[0].residual_variable-1],
+						first_step,
+						50);
+	//residual to file
+	if (CFFC_Primary_MPI_Processor() && !first_step) {
+	  Output_Progress_to_File(residual_file,
+				  number_of_time_steps,
+				  Time*THOUSAND,
+				  total_cpu_time,
+				  residual_l1_norm,
+				  residual_l2_norm,
+				  residual_max_norm,
+				  Local_SolnBlk[0].residual_variable,
+				  Local_SolnBlk[0].Number_of_Residual_Norms);
+	}
 	    
-	    if (!batch_flag) Output_Progress_L2norm(number_of_time_steps,
-						    Time*THOUSAND, //time in ms
-						    total_cpu_time,
-						    residual_l2_norm[Local_SolnBlk[0].residual_variable-1],
-						    first_step,
-						    50);
-	    //residual to file
-	    if (CFFC_Primary_MPI_Processor() && !first_step) {
-	      Output_Progress_to_File(residual_file,
-				      number_of_time_steps,
-				      Time*THOUSAND,
-				      total_cpu_time,
-				      residual_l1_norm,
-				      residual_l2_norm,
-				      residual_max_norm,
-				      Local_SolnBlk[0].residual_variable,
-				      Local_SolnBlk[0].Number_of_Residual_Norms);
-	    }
-	    
-	  }
-	  /******************* CALCULATION CHECK ************************************
+	/******************* CALCULATION CHECK ************************************
            Check to see if calculations are complete and if so jump of out of 
            this infinite loop.   
 
            Possibly replace while(1) so that these if's are the conditions 
            used or some sort of resonable facisimile.
-	  ***************************************************************************/
+	***************************************************************************/
  
 	if (!Input_Parameters.Time_Accurate &&
  	    number_explicit_steps >= 
  	    Input_Parameters.Maximum_Number_of_Time_Steps) break;
  	if (Input_Parameters.Time_Accurate && 
  	    Time >= Input_Parameters.Time_Max) break;
-	if (Input_Parameters.Dual_Time_Stepping && 
-	    (n_inner == Input_Parameters.Max_Inner_Steps ||
-	     (n_inner > 0  && (residual_l2_norm[Local_SolnBlk[0].residual_variable-1] < dual_eps  || 
-			       residual_l2_norm[Local_SolnBlk[0].residual_variable-1]/
-			       initial_residual_l2_norm < dual_eps)))) break;
 
-// 	/******************* LIMITER FREEZE ***************************************	
-// 	 Freeze limiters as necessary
-// 	***************************************************************************/
-//         if (!first_step &&
-//             Input_Parameters.Freeze_Limiter &&
-//             limiter_freezing_off &&           
-//             residual_l2_norm[Local_SolnBlk[0].residual_variable-1] <= Input_Parameters.Freeze_Limiter_Residual_Level) {
-//   	   Freeze_Limiters(Local_SolnBlk, 
-// 			   List_of_Local_Solution_Blocks);
-// 	   limiter_freezing_off = ON;	
-//         } 
+	// 	/******************* LIMITER FREEZE ***************************************	
+	// 	 Freeze limiters as necessary
+	// 	***************************************************************************/
+	//         if (!first_step &&
+	//             Input_Parameters.Freeze_Limiter &&
+	//             limiter_freezing_off &&           
+	//             residual_l2_norm[Local_SolnBlk[0].residual_variable-1] <= Input_Parameters.Freeze_Limiter_Residual_Level) {
+	//   	   Freeze_Limiters(Local_SolnBlk, 
+	// 			   List_of_Local_Solution_Blocks);
+	// 	   limiter_freezing_off = ON;	
+	//         } 
 
-	  /******************* BLOCK SOLUTION UPDATE ********************************
+	/******************* BLOCK SOLUTION UPDATE ********************************
             Update solution for next time step using a multistage
             time stepping scheme. 
-	  ***************************************************************************/
-	  for ( i_stage  = 1 ; i_stage <= Input_Parameters.N_Stage ; ++i_stage ) {
-	    // 1. Exchange solution information between neighbouring blocks.
-	    error_flag = Send_All_Messages(Local_SolnBlk, 
-					   List_of_Local_Solution_Blocks,
-					   NUM_VAR_FLAME2D, 
-					   OFF);
-	    if (error_flag) {
-	      cout << "\n Flame2D ERROR: Flame2D message passing error on processor "
-		   << List_of_Local_Solution_Blocks.ThisCPU
-		   << ".\n";
-	      cout.flush();
-	    } /* endif */
+	***************************************************************************/
+	for ( i_stage  = 1 ; i_stage <= Input_Parameters.N_Stage ; ++i_stage ) {
+	  // 1. Exchange solution information between neighbouring blocks.
+	  error_flag = Send_All_Messages(Local_SolnBlk, 
+					 List_of_Local_Solution_Blocks,
+					 NUM_VAR_FLAME2D, 
+					 OFF);
+	  if (error_flag) {
+	    cout << "\n Flame2D ERROR: Flame2D message passing error on processor "
+		 << List_of_Local_Solution_Blocks.ThisCPU
+		 << ".\n";
+	    cout.flush();
+	  } /* endif */
 	    
 	    // Reduce message passing error flag to other MPI processors.
-	    error_flag = CFFC_OR_MPI(error_flag);
-	    if (error_flag) return (error_flag);
+	  error_flag = CFFC_OR_MPI(error_flag);
+	  if (error_flag) return (error_flag);
 	    
 	    
-	    /************* BOUNDARY CONDITIONS *********************************/
-	    // 2. Apply boundary conditions for stage.
-	    BCs(Local_SolnBlk, List_of_Local_Solution_Blocks,Input_Parameters);
+	  /************* BOUNDARY CONDITIONS *********************************/
+	  // 2. Apply boundary conditions for stage.
+	  BCs(Local_SolnBlk, List_of_Local_Solution_Blocks,Input_Parameters);
 	    
-	    /*************** UPDATE SOLUTION ************************************/
-	    // 3. Determine solution residuals for stage.
+	  /*************** UPDATE SOLUTION ************************************/
+	  // 3. Determine solution residuals for stage.
 	    
-	    error_flag = dUdt_Multistage_Explicit(Local_SolnBlk,
-						  List_of_Global_Solution_Blocks,
-						  List_of_Local_Solution_Blocks,
-						  Input_Parameters,
-						  i_stage);
-	    if (error_flag) {
-	      cout << "\n Flame2D ERROR: Flame2D solution residual error on processor "
-		   << List_of_Local_Solution_Blocks.ThisCPU
-		   << ".\n";
-	      cout.flush();
-	    } /* endif */
+	  error_flag = dUdt_Multistage_Explicit(Local_SolnBlk,
+						List_of_Global_Solution_Blocks,
+						List_of_Local_Solution_Blocks,
+						Input_Parameters,
+						i_stage);
+	  if (error_flag) {
+	    cout << "\n Flame2D ERROR: Flame2D solution residual error on processor "
+		 << List_of_Local_Solution_Blocks.ThisCPU
+		 << ".\n";
+	    cout.flush();
+	  } /* endif */
 	    
-	    error_flag = CFFC_OR_MPI(error_flag);
-	    if (error_flag) return (error_flag);
+	  error_flag = CFFC_OR_MPI(error_flag);
+	  if (error_flag) return (error_flag);
 	    
-	    // 4. Send boundary flux corrections at block interfaces with resolution changes.
-	    error_flag = Send_Conservative_Flux_Corrections(Local_SolnBlk, 
-							    List_of_Local_Solution_Blocks,
-							    NUM_VAR_FLAME2D);
-	    if (error_flag) {
-	      cout << "\n Flame2D ERROR: Flame2D flux correction message passing error on processor "
-		   << List_of_Local_Solution_Blocks.ThisCPU
-		   << ".\n";
-	      cout.flush();
-	    } /* endif */
-	    error_flag = CFFC_OR_MPI(error_flag);
-	    if (error_flag) return (error_flag);
+	  // 4. Send boundary flux corrections at block interfaces with resolution changes.
+	  error_flag = Send_Conservative_Flux_Corrections(Local_SolnBlk, 
+							  List_of_Local_Solution_Blocks,
+							  NUM_VAR_FLAME2D);
+	  if (error_flag) {
+	    cout << "\n Flame2D ERROR: Flame2D flux correction message passing error on processor "
+		 << List_of_Local_Solution_Blocks.ThisCPU
+		 << ".\n";
+	    cout.flush();
+	  } /* endif */
+	  error_flag = CFFC_OR_MPI(error_flag);
+	  if (error_flag) return (error_flag);
 	    
 	
-	    // 5. Apply boundary flux corrections to ensure that method is conservative.
-	    Apply_Boundary_Flux_Corrections_Multistage_Explicit(Local_SolnBlk, 
-								List_of_Local_Solution_Blocks,
-								Input_Parameters,
-								i_stage);
+	  // 5. Apply boundary flux corrections to ensure that method is conservative.
+	  Apply_Boundary_Flux_Corrections_Multistage_Explicit(Local_SolnBlk, 
+							      List_of_Local_Solution_Blocks,
+							      Input_Parameters,
+							      i_stage);
 	 
-	    // 6. Smooth the solution residual using implicit residual smoothing. */
-	    if (Input_Parameters.Residual_Smoothing) {
-              Residual_Smoothing(Local_SolnBlk,
-                                 List_of_Local_Solution_Blocks,
-                                 Input_Parameters,
-                                 i_stage);
-	    } 
+	  // 6. Smooth the solution residual using implicit residual smoothing. */
+	  if (Input_Parameters.Residual_Smoothing) {
+	    Residual_Smoothing(Local_SolnBlk,
+			       List_of_Local_Solution_Blocks,
+			       Input_Parameters,
+			       i_stage);
+	  } 
 	    
-	    // 7. Update solution for stage.
-	    error_flag = Update_Solution_Multistage_Explicit(Local_SolnBlk, 
-							     List_of_Local_Solution_Blocks,
-							     Input_Parameters,
-							     i_stage);
+	  // 7. Update solution for stage.
+	  error_flag = Update_Solution_Multistage_Explicit(Local_SolnBlk, 
+							   List_of_Local_Solution_Blocks,
+							   Input_Parameters,
+							   i_stage);
 	    
-	    if (error_flag) {
-	      cout << "\n Flame2D ERROR: Flame2D solution update error on processor "
-		   << List_of_Local_Solution_Blocks.ThisCPU
-		   << ".\n";
-	      cout.flush();
-	    } 
+	  if (error_flag) {
+	    cout << "\n Flame2D ERROR: Flame2D solution update error on processor "
+		 << List_of_Local_Solution_Blocks.ThisCPU
+		 << ".\n";
+	    cout.flush();
+	  } 
 	    
-	    error_flag = CFFC_OR_MPI(error_flag);
-	    if (error_flag) return (error_flag);
+	  error_flag = CFFC_OR_MPI(error_flag);
+	  if (error_flag) return (error_flag);
 	    
-	  } /* endfor */
-
-	  n_inner++;
-	} while (Input_Parameters.Dual_Time_Stepping && 
-                 (n_inner < Input_Parameters.Max_Inner_Steps+1  || first_step)); 
+	} /* endfor */
 	
 	/******************* UPDATE TIMER & COUNTER *******************************
           Update time and time step counter. 
@@ -878,19 +846,15 @@ int Flame2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	}
 		
 	if (Input_Parameters.i_Time_Integration != 
-	  TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING  &&
-          !Input_Parameters.Dual_Time_Stepping) {
+	    TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING) {
 	  Time = Time + Input_Parameters.CFL_Number*dTime;
  
 	} else if (Input_Parameters.i_Time_Integration == 
-	  TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING  &&
-	  !Input_Parameters.Dual_Time_Stepping) {
+		   TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING) {
 	  Time = Time + Input_Parameters.CFL_Number*dTime*
 	    MultiStage_Optimally_Smoothing(Input_Parameters.N_Stage, 
 					   Input_Parameters.N_Stage,
 					   Input_Parameters.i_Limiter);
-	} else if (Input_Parameters.Dual_Time_Stepping) {
-          Time = Time + dTime;
 	} /* endif */
         
 	i++; // is this necessary???

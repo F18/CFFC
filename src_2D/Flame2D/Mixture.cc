@@ -77,8 +77,6 @@ void Mixture :: setMixture(const string &mech_name,
 #endif
 
   //set data temperature ranges for mixture
-  ct_gas->setTemperature(TREF);
-  ct_gas->setPressure(PREF);
   Tmin = ct_gas->minTemp();
   Tmax = ct_gas->maxTemp();
   
@@ -86,6 +84,8 @@ void Mixture :: setMixture(const string &mech_name,
   AllocateStatic();
 
   // get non-dimensional heats of formation
+  ct_gas->setTemperature(TREF);
+  ct_gas->setPressure(PREF);
   ct_gas->getEnthalpy_RT( Hform );
 
   // load the species data

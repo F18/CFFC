@@ -1081,15 +1081,16 @@ void Output_Cells_Tecplot(Flame2D_Quad_Block &SolnBlk,
 	   Out_File << " " << SolnBlk.W[i][j].T()
 		    << " " << SolnBlk.W[i][j].vabs()/SolnBlk.W[i][j].a() 
 		    << " " << SolnBlk.W[i][j].Rtot()
-		    << " " << ((const Flame2D_pState&)SolnBlk.W[i][j]).p()/(SolnBlk.W[i][j].Rtot()*SolnBlk.W[i][j].T())   //SolnBlk.W[i][j].mu()
+		    << " " << SolnBlk.W[i][j].mu()
 		    << " " << SolnBlk.W[i][j].kappa()
 		    << " " << SolnBlk.W[i][j].Pr()
 		    << " " << SolnBlk.W[i][j].H() 
 		    << " " << SolnBlk.W[i][j].h() 
 		    << " " << SolnBlk.W[i][j].hs()
 		    << " " << ((const Flame2D_pState&)SolnBlk.W[i][j]).E() 
-		    << " " << SolnBlk.W[i][j].e() 
-		    << " " << SolnBlk.W[i][j].es();
+		    << " " << SolnBlk.W[i][j].e()
+		    << " " << ( SolnBlk.U[i][j].E()/SolnBlk.U[i][j].rho() - 0.5*SolnBlk.U[i][j].rhovsqr()/(SolnBlk.U[i][j].rho()*SolnBlk.U[i][j].rho()) );
+//SolnBlk.W[i][j].es();
 	   // Gradients
 	   Out_File << SolnBlk.dUdt[i][j][0];
 	   Out_File << endl;
@@ -2253,8 +2254,8 @@ double CFL(Flame2D_Quad_Block &SolnBlk,
 void Set_Global_TimeStep(Flame2D_Quad_Block &SolnBlk,
                          const double &Dt_min) {
 
-    for (int j = SolnBlk.JCl ; j <= SolnBlk.JCu ; ++j ) {
-       for (int i = SolnBlk.ICl ; i <= SolnBlk.ICu ; ++i ) {
+    for (int j = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
+       for (int i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
           SolnBlk.dt[i][j] = Dt_min;
        } 
     } 
@@ -3172,7 +3173,8 @@ int dUdt_Residual_Evaluation(Flame2D_Quad_Block &SolnBlk,
 	  switch(Input_Parameters.i_Viscous_Flux_Evaluation){
 	  case VISCOUS_RECONSTRUCTION_DIAMONDPATH_LEAST_SQUARES :	      
 	  case VISCOUS_RECONSTRUCTION_DIAMONDPATH_GREEN_GAUSS :
-	    W_face.Average(SolnBlk.Wn(i+1,j+1), SolnBlk.Wn(i+1,j)); // IS this right in general ??( Wn_NE + Wn_SE ) 
+	    // Wn temporarily stored in Wnd -> calculated in reconstruction
+	    W_face.Average(SolnBlk.Wnd[i+1][j+1], SolnBlk.Wnd[i+1][j]); // IS this right in general ??( Wn_NE + Wn_SE ) 
 	    Flux.Viscous_Flux_n(W_face,
 				SolnBlk.dWdx_faceE[i][j],
 				SolnBlk.dWdy_faceE[i][j],
@@ -3446,7 +3448,8 @@ int dUdt_Residual_Evaluation(Flame2D_Quad_Block &SolnBlk,
 	switch(Input_Parameters.i_Viscous_Flux_Evaluation){	    
 	case VISCOUS_RECONSTRUCTION_DIAMONDPATH_LEAST_SQUARES :	      
 	case VISCOUS_RECONSTRUCTION_DIAMONDPATH_GREEN_GAUSS :	  	  
-	  W_face.Average(SolnBlk.Wn(i,j+1), SolnBlk.Wn(i+1,j+1));
+	  // Wn temporarily stored in Wnd -> calculated in reconstruction
+	  W_face.Average(SolnBlk.Wnd[i][j+1], SolnBlk.Wnd[i+1][j+1]);
 	  Flux.Viscous_Flux_n(W_face,
 			      SolnBlk.dWdx_faceN[i][j],
 			      SolnBlk.dWdy_faceN[i][j],
@@ -3820,7 +3823,8 @@ int dUdt_Multistage_Explicit(Flame2D_Quad_Block &SolnBlk,
 	  switch(Input_Parameters.i_Viscous_Flux_Evaluation){
 	  case VISCOUS_RECONSTRUCTION_DIAMONDPATH_LEAST_SQUARES :	      
 	  case VISCOUS_RECONSTRUCTION_DIAMONDPATH_GREEN_GAUSS :
-	    W_face.Average(SolnBlk.Wn(i+1,j+1), SolnBlk.Wn(i+1,j)); // IS this right in general ??( Wn_NE + Wn_SE ) 
+	    // Wn temporarily stored in Wnd -> calculated in reconstruction
+	    W_face.Average(SolnBlk.Wnd[i+1][j+1], SolnBlk.Wnd[i+1][j]); // IS this right in general ??( Wn_NE + Wn_SE ) 
 	    Flux.Viscous_Flux_n(W_face,
 				SolnBlk.dWdx_faceE[i][j],
 				SolnBlk.dWdy_faceE[i][j],
@@ -4109,7 +4113,8 @@ int dUdt_Multistage_Explicit(Flame2D_Quad_Block &SolnBlk,
 	switch(Input_Parameters.i_Viscous_Flux_Evaluation){	    
 	case VISCOUS_RECONSTRUCTION_DIAMONDPATH_LEAST_SQUARES :	      
 	case VISCOUS_RECONSTRUCTION_DIAMONDPATH_GREEN_GAUSS :	  	  
-	  W_face.Average(SolnBlk.Wn(i,j+1), SolnBlk.Wn(i+1,j+1));
+	  // Wn temporarily stored in Wnd -> calculated in reconstruction
+	  W_face.Average(SolnBlk.Wnd[i][j+1], SolnBlk.Wnd[i+1][j+1]);
 	  Flux.Viscous_Flux_n(W_face,
 			      SolnBlk.dWdx_faceN[i][j],
 			      SolnBlk.dWdy_faceN[i][j],
@@ -4193,6 +4198,8 @@ int Update_Solution_Multistage_Explicit(Flame2D_Quad_Block &SolnBlk,
   double omega, delta_n;
   const int NUM_VAR_FLAME2D( SolnBlk.NumVar() );
   const int NSm1(Flame2D_State::NSm1);
+  static Flame2D_pState Wo;
+  bool isGoodState;
 
   // Memory for linear system solver. 
   DenseSystemLinEqs LinSys;
@@ -4242,67 +4249,73 @@ int Update_Solution_Multistage_Explicit(Flame2D_Quad_Block &SolnBlk,
  
   for (int j  = SolnBlk.JCl ; j <= SolnBlk.JCu ; ++j ) {
     for (int i = SolnBlk.ICl ; i <= SolnBlk.ICu ; ++i ) {
-      
+
+
+//       cout << endl << "Updating cell i=" << setw(6) << i << ", j=" << setw(6) << j << flush;
+
       /******************************************************/
       /********** Fully Explicit ****************************/
       /******************************************************/
       if (Input_Parameters.Local_Time_Stepping == GLOBAL_TIME_STEPPING || 
 	  Input_Parameters.Local_Time_Stepping == SCALAR_LOCAL_TIME_STEPPING ) {
+
 	//Update
 	SolnBlk.U[i][j] = SolnBlk.Uo[i][j];
 	SolnBlk.U[i][j].add( SolnBlk.dUdt[i][j][k_residual], omega );
-      }
-      
-      //Check for unphysical properties  
-      /**********************************************************/
-      /* If unphysical properties and using global timestepping */ 
-      /* stop simulation                                        */
-      /**********************************************************/   
-      if (Input_Parameters.Local_Time_Stepping == GLOBAL_TIME_STEPPING) {
-	if(!SolnBlk.U[i][j].isPhysical(10)) return (i);
-
-      /*********************************************************/
-      /* If unphysical properties and using local timestepping */ 
-      /* try reducing step size                                */
-      /*********************************************************/    
-      } else if (Input_Parameters.Local_Time_Stepping == SCALAR_LOCAL_TIME_STEPPING) {
-	if( !SolnBlk.U[i][j].isPhysical(10)) {  
+	
+	//Check for unphysical properties  
+	/**********************************************************/
+	/* If unphysical properties and using global timestepping */ 
+	/* stop simulation                                        */
+	/**********************************************************/   
+	if (Input_Parameters.Local_Time_Stepping == GLOBAL_TIME_STEPPING) {
+	  if(!SolnBlk.U[i][j].isPhysical(10)) return (i);
 	  
-	  if (SolnBlk.debug_level) {
-	    cout<<"\n Using local time stepping step reduction in Update_Solution_Multistage_Explicit\n";
-	  }
+	/*********************************************************/
+	/* If unphysical properties and using local timestepping */ 
+	/* try reducing step size                                */
+	/*********************************************************/    
+	} else if (Input_Parameters.Local_Time_Stepping == SCALAR_LOCAL_TIME_STEPPING) {
 	  
-	  double residual_reduction_factor(ONE);
-	  for (int n_residual_reduction = 1; n_residual_reduction <= 10; ++n_residual_reduction) {
-	    if(SolnBlk.debug_level) {
-	      cout<<".."<<n_residual_reduction<<"..";
+	  isGoodState = SolnBlk.U[i][j].isPhysical(10);
+	  if( !isGoodState ) {  
+	    
+	    if (SolnBlk.debug_level) {
+	      cout<<"\n Using local time stepping step reduction in Update_Solution_Multistage_Explicit\n";
 	    }
-	    residual_reduction_factor = HALF*residual_reduction_factor;
-	    SolnBlk.dt[i][j] = residual_reduction_factor*SolnBlk.dt[i][j];
-	    SolnBlk.dUdt[i][j][k_residual].set( SolnBlk.dUdt[i][j][k_residual], residual_reduction_factor );
 	    
-	    //Update
-	    SolnBlk.U[i][j] = SolnBlk.Uo[i][j];
-	    SolnBlk.U[i][j].add( SolnBlk.dUdt[i][j][k_residual], omega );
-	    
-	    if(SolnBlk.U[i][j].isPhysical(n_residual_reduction))  break;
-	  } /* endfor */  
-	  if (!SolnBlk.U[i][j].isPhysical(10)) return(i);
-	}
-      } /* endif */
-      
+	    double residual_reduction_factor(ONE);
+	    for (int n_residual_reduction = 1; n_residual_reduction <= 10; ++n_residual_reduction) {
+	      if(SolnBlk.debug_level) {
+		cout<<".."<<n_residual_reduction<<"..";
+	      }
+	      residual_reduction_factor = HALF*residual_reduction_factor;
+	      SolnBlk.dt[i][j] = residual_reduction_factor*SolnBlk.dt[i][j];
+	      SolnBlk.dUdt[i][j][k_residual].set( SolnBlk.dUdt[i][j][k_residual], residual_reduction_factor );
+	      
+	      //Update
+	      SolnBlk.U[i][j] = SolnBlk.Uo[i][j];
+	      SolnBlk.U[i][j].add( SolnBlk.dUdt[i][j][k_residual], omega );
+	      
+	      isGoodState = SolnBlk.U[i][j].isPhysical(n_residual_reduction);
+	      if(isGoodState)  break;
+	    } /* endfor */  
+	    if (!isGoodState) return(i);
+	  }
+	} /* endif */
+	
       /**************************************************************/
       /************ SEMI-IMPLICIT AND/OR PRECONDITIONING ************/
       /**************************************************************/
-//       if (Input_Parameters.Local_Time_Stepping == SEMI_IMPLICIT_LOCAL_TIME_STEPPING || 
-// 	  Input_Parameters.Local_Time_Stepping == LOW_MACH_NUMBER_WEISS_SMITH_PRECONDITIONER || 
-// 	  Input_Parameters.Local_Time_Stepping == SEMI_IMPLICIT_LOW_MACH_NUMBER_PRECONDITIONER) {
+      } else if (Input_Parameters.Local_Time_Stepping == SEMI_IMPLICIT_LOCAL_TIME_STEPPING || 
+		 Input_Parameters.Local_Time_Stepping == LOW_MACH_NUMBER_WEISS_SMITH_PRECONDITIONER || 
+		 Input_Parameters.Local_Time_Stepping == SEMI_IMPLICIT_LOW_MACH_NUMBER_PRECONDITIONER) {
 	
 // 	dSdU.zero();
 // 	dRdU.zero();
 
 // 	/************ FORM LHS FOR SEMI-IMPLICIT METHOD *****************/
-// 	if (Input_Parameters.Local_Time_Stepping == SEMI_IMPLICIT_LOCAL_TIME_STEPPING){
+ 	if (Input_Parameters.Local_Time_Stepping == SEMI_IMPLICIT_LOCAL_TIME_STEPPING){
 
 // 	  /* Semi implicit formulation: set up system of equations 
 // 	     and include source Jacobian in the LHS matrix. */	  
@@ -4323,19 +4336,18 @@ int Update_Solution_Multistage_Explicit(Flame2D_Quad_Block &SolnBlk,
 // 			      (SolnBlk.Grid.lfaceE(i, j)+SolnBlk.Grid.lfaceW(i, j))),
 // 			 TWO*(SolnBlk.Grid.Cell[i][j].A/
 // 			      (SolnBlk.Grid.lfaceN(i, j)+SolnBlk.Grid.lfaceS(i, j))));
-// 	}
 	
-// 	/************ FORM LHS FOR LOW MACH NUMBER PRECONDITIONING ***************/
-// 	if (Input_Parameters.Local_Time_Stepping == LOW_MACH_NUMBER_WEISS_SMITH_PRECONDITIONER ){	   
+	/************ FORM LHS FOR LOW MACH NUMBER PRECONDITIONING ***************/
+	} else if (Input_Parameters.Local_Time_Stepping == LOW_MACH_NUMBER_WEISS_SMITH_PRECONDITIONER ){
+	  
+	  Wo.setU( SolnBlk.Uo[i][j] );
+	  Wo.load_dihdic();
+	  LinSys.A.zero();
+	  Wo.Low_Mach_Number_Preconditioner(LinSys.A,
+					    SolnBlk.Flow_Type,
+					    delta_n);
+	  // not Multiplied by omega*CFL_Number*SolnBlk.dt[i][j] as dimensionless
 
-// 	  SolnBlk.Uo[i][j].Low_Mach_Number_Preconditioner(Precon,
-// 							  SolnBlk.Flow_Type,
-// 							  delta_n);
-// 	  LinSys.A.zero();
-// 	  // not Multiplied by omega*CFL_Number*SolnBlk.dt[i][j] as dimensionless
-// 	  LinSys.A = Precon;
-
-// 	} 
 
 // 	/******* FORM LHS FOR SEMI-IMPLICIT METHOD WITH PRECONDITIONING ********/
 // 	//LHS = P*( I- Pinv*(dt*(dS/dU)))	     
@@ -4370,93 +4382,76 @@ int Update_Solution_Multistage_Explicit(Flame2D_Quad_Block &SolnBlk,
 // 	  LinSys.A = Precon*LinSys.A;	    
 
  
-// 	}//end SEMI_IMPLICIT_LOW_MACH_NUMBER_PRECONDITIONER
+ 	}//end SEMI_IMPLICIT_LOW_MACH_NUMBER_PRECONDITIONER
 	
-// 	/******************************************************************
-// 	 ******************* EVALUATE RHS *********************************
-// 	 ******************************************************************/
-// 	// omega*(dt*RHS)
-// 	for (int k = 0; k < NUM_VAR_FLAME2D - 1; k++) {
-// 	  LinSys.b(k) = omega*SolnBlk.dUdt[i][j][k_residual][k+1];
-// 	}
-// 	/* Solve system of equations using LU decomposition Gaussian elimination procedure. */
-// 	LinSys.solve(LU_DECOMPOSITION);
+	/******************************************************************
+	 ******************* EVALUATE RHS *********************************
+	 ******************************************************************/
+	// omega*(dt*RHS)
+	for (int k = 0; k < NUM_VAR_FLAME2D - NSm1; k++) {
+	  LinSys.b(k) = omega*SolnBlk.dUdt[i][j][k_residual][k+1];
+	}
+	/* Solve system of equations using LU decomposition Gaussian elimination procedure. */
+	LinSys.solve(LU_DECOMPOSITION);
 	
-// 	/* Update the conserved solution variables. */
-// 	for (int k = 0; k < NUM_VAR_FLAME2D - 1; k++) {
-// 	  SolnBlk.U[i][j][k+1] = SolnBlk.Uo[i][j][k+1] + LinSys.x(k);
-// 	} 
+	/* Update the conserved solution variables. */
+	for (int k = 0; k < NUM_VAR_FLAME2D - NSm1; k++) {
+	  SolnBlk.U[i][j][k+1] = SolnBlk.Uo[i][j][k+1] + LinSys.x(k);
+	} 
 
-// 	/*********************************************************
-// 	     Using N-1 species equations so need to update 
-//              last species using:
-// 	     c_n = 1- sum(1 to N-1) cs
-// 	*********************************************************/
-// 	SolnBlk.U[i][j][NUM_VAR_FLAME2D] = SolnBlk.U[i][j].rho*(ONE - SolnBlk.U[i][j].sum_species());
 
-// 	/*********************************************************/
-// 	/* If unphysical properties and using local timestepping */ 
-// 	/* try reducing step size                                */
-// 	/*********************************************************/
+	/*********************************************************/
+	/* If unphysical properties and using local timestepping */ 
+	/* try reducing step size                                */
+	/*********************************************************/
 	
-// 	if(!SolnBlk.U[i][j].Unphysical_Properties_Check(10)){
+	isGoodState = SolnBlk.U[i][j].isPhysical(10);
+	if(!isGoodState){
 	  
-// 	  if (SolnBlk.debug_level) {
-// 	    cout<<"\n Using local time stepping step reduction in Update_Solution_Multistage_Explicit\n";
-// 	  }
+	  if (SolnBlk.debug_level) {
+	    cout<<"\n Using local time stepping step reduction in Update_Solution_Multistage_Explicit\n";
+	  }
 	  
-// 	  double residual_reduction_factor = ONE;
-// 	  for (int n_residual_reduction = 1; n_residual_reduction <= 10; ++n_residual_reduction) {
-// 	    if (SolnBlk.debug_level) {
-// 	      cout<<".."<<n_residual_reduction<<"..";
-// 	    }
-// 	    residual_reduction_factor = HALF*residual_reduction_factor;
-// 	    SolnBlk.dt[i][j] = residual_reduction_factor*SolnBlk.dt[i][j];
-// 	    SolnBlk.dUdt[i][j][k_residual] = residual_reduction_factor*SolnBlk.dUdt[i][j][k_residual];
+	  double residual_reduction_factor = ONE;
+	  for (int n_residual_reduction = 1; n_residual_reduction <= 10; ++n_residual_reduction) {
+	    if (SolnBlk.debug_level) {
+	      cout<<".."<<n_residual_reduction<<"..";
+	    }
+	    residual_reduction_factor = HALF*residual_reduction_factor;
+	    SolnBlk.dt[i][j] = residual_reduction_factor*SolnBlk.dt[i][j];
+	    SolnBlk.dUdt[i][j][k_residual].set( SolnBlk.dUdt[i][j][k_residual], residual_reduction_factor );
 	    
-// 	    if (Input_Parameters.Local_Time_Stepping == SEMI_IMPLICIT_LOCAL_TIME_STEPPING ){
-// 	      LinSys.A.identity();
-// 	      LinSys.A -= (omega*Input_Parameters.CFL_Number*SolnBlk.dt[i][j])*dSdU;
-// 	    }
+	    if (Input_Parameters.Local_Time_Stepping == SEMI_IMPLICIT_LOCAL_TIME_STEPPING ){
+	      LinSys.A.identity();
+	      LinSys.A -= (omega*Input_Parameters.CFL_Number*SolnBlk.dt[i][j])*dSdU;
+
+	    } else if (Input_Parameters.Local_Time_Stepping == SEMI_IMPLICIT_LOW_MACH_NUMBER_PRECONDITIONER){
+	      LinSys.A.identity();		 
+	      LinSys.A -= Precon_Inv*((residual_reduction_factor*omega*Input_Parameters.CFL_Number*SolnBlk.dt[i][j])*dSdU);
+	      //LHS = P*( I - Pinv*(dt*(dS/dU)))	     
+	      LinSys.A = Precon*LinSys.A;	     
+	    }
+
+	    for (int k = 0; k < NUM_VAR_FLAME2D-NSm1; k++) {
+	      LinSys.b(k) = omega*SolnBlk.dUdt[i][j][k_residual][k+1];
+	    } 
 	    
-// 	    if (Input_Parameters.Local_Time_Stepping == SEMI_IMPLICIT_LOW_MACH_NUMBER_PRECONDITIONER){		 
-// 	      LinSys.A.identity();		 
-// 	      LinSys.A -= Precon_Inv*((residual_reduction_factor*omega*Input_Parameters.CFL_Number*SolnBlk.dt[i][j])*dSdU);
-// 	      //LHS = P*( I - Pinv*(dt*(dS/dU)))	     
-// 	      LinSys.A = Precon*LinSys.A;	     
-// 	    }
+	    LinSys.solve(LU_DECOMPOSITION);
 	    
-// 	    if (Input_Parameters.Local_Time_Stepping == MATRIX_LOCAL_TIME_STEPPING) {
-// 	      PointImplicitBlockJacobi(dRdU,SolnBlk,Input_Parameters,i, j);
-// 	      //  LinSys.A = -(1.00*SolnBlk.dt[i][j])*dRdU;//Markthis
-// 	      //Talk to Prof. Groth about ... 
-// 	      // Same thing as before the follwoing formula works, but not "theoretically" correct ...
-// 	      LinSys.A.identity();
-// 	      LinSys.A -=(omega*Input_Parameters.CFL_Number*SolnBlk.dt[i][j])*dRdU; 
-	      
-// 	    }
-	    
-// 	    for (int k = 0; k < NUM_VAR_FLAME2D-1; k++) {
-// 	      LinSys.b(k) = omega*SolnBlk.dUdt[i][j][k_residual][k+1];
-// 	    } 
-	    
-// 	    LinSys.solve(LU_DECOMPOSITION);
-	    
-// 	    /* Update the conserved Solution */
-// 	    for (int k = 0; k < NUM_VAR_FLAME2D-1; k++) {
-// 	      SolnBlk.U[i][j][k+1] = SolnBlk.Uo[i][j][k+1] + LinSys.x(k);
-// 	    } 
-	    
-// 	    SolnBlk.U[i][j][NUM_VAR_FLAME2D] = SolnBlk.U[i][j].rho*(ONE - SolnBlk.U[i][j].sum_species());
-	    
-// 	    if(SolnBlk.U[i][j].Unphysical_Properties_Check(n_residual_reduction))  break;
-// 	  }
-// 	} 
-// 	/*********************************************************/
-// 	//Check for unphysical properties
-// 	if(!SolnBlk.U[i][j].Unphysical_Properties_Check(10)) return (i);
+	    /* Update the conserved Solution */
+	    for (int k = 0; k < NUM_VAR_FLAME2D-NSm1; k++) {
+	      SolnBlk.U[i][j][k+1] = SolnBlk.Uo[i][j][k+1] + LinSys.x(k);
+	    } 
+	    	    
+	    isGoodState = SolnBlk.U[i][j].isPhysical(n_residual_reduction);
+	    if(isGoodState)  break;
+	  }
+	} 
+	/*********************************************************/
+	//Check for unphysical properties
+	if(!isGoodState) return (i);
 	
-//       } //end implicit and/or preconditioned formulations 
+      } //end implicit and/or preconditioned formulations 
     
       //Calculate Primitive values from updated conserved solution      
       SolnBlk.W[i][j].setU(SolnBlk.U[i][j]);

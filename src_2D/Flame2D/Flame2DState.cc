@@ -236,12 +236,12 @@ Flame2D_State Flame2D_pState::lp_x(const int &index) const {
   } else{ 
     static Flame2D_State tmp;
     tmp.Vacuum();
-    tmp.c(index-(NUM_FLAME2D_VAR_SANS_SPECIES+1)) = ONE;
+    int k( (index-1)-NUM_FLAME2D_VAR_SANS_SPECIES );
+    tmp.rhoc(k) = ONE;
     return tmp;
   } 
   
 }
-
 
 /////////////////////////////////////////////////////////////////////
 /// Low Mach Number Preconditioner Based on Weiss & Smith (1995)
@@ -319,6 +319,107 @@ Flame2D_State Flame2D_pState::lp_x_precon(const int &index, const double &MR2) c
     tmp.c(index-(NUM_FLAME2D_VAR_SANS_SPECIES+1)) = ONE;
     return tmp;
   } 
+}
+
+void Flame2D_pState::Flux_Dissipation_precon(const double &MR2, 
+					     const Flame2D_State &dWrl, 
+					     const Flame2D_State &wavespeeds, 
+					     Flame2D_State &Flux_dissipation) const {
+
+  //declares
+  static Flame2D_State lp;
+  static Flame2D_State rc;
+  double aa(a());
+  double uprimed,cprimed;
+  double tmp, dv;
+
+  // compute preconditioned velocity and soundspeed
+  u_a_precon(MR2*aa*aa,uprimed,cprimed);
+
+  //
+  // Loop over all the waves, and compute the flux dissipation
+  //
+  Flux_dissipation.Vacuum();
+  for ( int i = 1 ; i <= n ; i++ ) {
+
+    // Compute the left primitive eigenvector
+    if(i == 1){
+      lp.rho() = ZERO;
+      lp.vx() = -HALF*rho()*MR2/cprimed;
+      lp.vy() = ZERO;
+      lp.p() = (-uprimed+cprimed + vx())/(TWO*cprimed*aa*aa);
+      lp.c(ZERO);
+    } else if(i == 2) {
+      lp.rho() = ONE;
+      lp.vx() = ZERO;
+      lp.vy() = ZERO;
+      lp.p() = -ONE/(aa*aa);
+      lp.c(ZERO);
+    } else if(i == 3) {
+      lp.rho() = ZERO;
+      lp.vx() = ZERO;
+      lp.vy() = ONE;
+      lp.p() = ZERO;
+      lp.c(ZERO);
+    } else if(i == 4) {  
+      lp.rho() = ZERO;
+      lp.vx() = HALF*rho()*MR2/cprimed;
+      lp.vy() = ZERO;
+      lp.p() = (uprimed+cprimed - vx())/(TWO*cprimed*aa*aa);
+      lp.c(ZERO);
+    } else{ 
+      lp.rho() = ZERO;
+      lp.vx() = ZERO;
+      lp.vy() = ZERO;
+      lp.p() = ZERO;
+      lp.c(ZERO);
+      lp.c(i-NUM_FLAME2D_VAR_SANS_SPECIES-1) = ONE;
+    } 
+    
+    // Compute the right conserved eigenvector, and store it in-place
+    // 
+    if(i == 1){
+      rc.rho() = ONE;
+      rc.rhovx() = (uprimed-cprimed)/MR2;
+      rc.rhovy() = vy();
+      rc.E() = h()+HALF*(vsqr()/MR2) - (vx()*cprimed)/MR2;
+      rc.rhoc(c());
+    } else if(i == 2) {
+      rc.rho() = ONE;
+      rc.rhovx() = vx();
+      rc.rhovy() = vy();
+      rc.E() = (h()-Cp()*T()) + HALF*vsqr();
+      rc.rhoc(c());
+    } else if(i == 3) {
+      rc.rho() = ZERO;
+      rc.rhovx() = ZERO;
+      rc.rhovy() = rho();
+      rc.E() = rho()*vy();
+      rc.rhoc(ZERO);
+    } else if(i == 4) {  
+      rc.rho() = ONE;
+      rc.rhovx() = (uprimed+cprimed)/MR2;
+      rc.rhovy() = vy();
+      rc.E() = h()+HALF*(vsqr()/MR2) + (vx()*cprimed)/MR2;
+      rc.rhoc(c());
+    } else{ 
+      rc.rho() = ZERO;
+      rc.rhovx() = ZERO;
+      rc.rhovy() = ZERO;
+      rc.E() = rho()*dihdic[i-NUM_FLAME2D_VAR_SANS_SPECIES-1];
+      rc.rhoc(ZERO);
+      rc.rhoc(i-NUM_FLAME2D_VAR_SANS_SPECIES-1) = rho();
+    } 
+
+    // Compute the wavestrengh
+    dv = lp * dWrl;
+
+    // compute the flux dissipation
+    tmp = HALF*wavespeeds[i]*dv;
+    for ( int k = 1 ; k <= n ; k++ ) Flux_dissipation[k] -= tmp*rc[k];
+
+  } // endfor
+
 }
 
 /****************************************************
@@ -411,10 +512,6 @@ void Flame2D_pState::Low_Mach_Number_Preconditioner(::DenseMatrix &P,
   P(3,2) = vy()*(enthalpy+V)*alpham1/Omega;
   P(3,3) = -(alpha*(enthalpy+V)-V-Rmix*Temp-beta-phi)/Omega;
 
-  //fixes so it can work without Turbulence !!!
-  P(4,4) = ONE;
-  P(5,5) = ONE;
-
   int NUM_VAR = NUM_FLAME2D_VAR_SANS_SPECIES;
 
   //Multispecies
@@ -440,7 +537,6 @@ void Flame2D_pState::Low_Mach_Number_Preconditioner(::DenseMatrix &P,
   }
 
 //   cout<<"\n Pin with Mref \n"<<Mref<<endl<<P;
-
   //P.zero(); P.identity(); //SET TO Mref=1.0;
 
 
@@ -1336,44 +1432,40 @@ void Flame2D_State :: FluxRoe_x(const Flame2D_pState &Wl,
     /******* LOW MACH NUMBER PRECONDITIONING ********************/
     /* Evaluate the left, right, and average state eigenvalues. */
   } else if(Preconditioning){
-	
+
     //calculating Mr^2 and passing to save computation,
     //not conceptually nice but saves from recalculating
+    double MR2a( Waa.Mr2(flow_type_flag,deltax) );
+    Wl.lambda_preconditioned_x(lambdas_l, Wl.Mr2(flow_type_flag,deltax)); 
+    Wr.lambda_preconditioned_x(lambdas_r, Wr.Mr2(flow_type_flag,deltax));
+    Waa.lambda_preconditioned_x(lambdas_a, MR2a);
     
-      double MR2a( Waa.Mr2(flow_type_flag,deltax) );
-      Wl.lambda_preconditioned_x(lambdas_l, Wl.Mr2(flow_type_flag,deltax)); 
-      Wr.lambda_preconditioned_x(lambdas_r, Wr.Mr2(flow_type_flag,deltax));
-      Waa.lambda_preconditioned_x(lambdas_a, MR2a);
-      
-      /* Evaluate the jumps in the primitive solution states. */
-      wavespeeds.HartenFix_Abs(lambdas_a,
-			       lambdas_l,
-			       lambdas_r);
-      
-      static ::DenseMatrix P(n-NSm1,n-NSm1);     //COULD BE STORED IN CLASS AS STATIC AND REUSED REDUCING OVERHEAD???
-      P.zero();  //RESET MATRIX TO ZERO!!!
-
-      /* Evaluate the low-Mach-number local preconditioner for the Roe-averaged state. */  
-      
-      Waa.Low_Mach_Number_Preconditioner(P,flow_type_flag,deltax);
-      
-      /* Determine the intermediate state flux. */
-      (*this).Vacuum();
-      Wl.addFx(*this, HALF);
-      Wr.addFx(*this, HALF);
-      static Flame2D_State Flux_dissipation;
-      Flux_dissipation.Vacuum();
-      
-      for ( int i = 0 ; i < n-NSm1 ; i++ ) {
-	Flux_dissipation -= (HALF*wavespeeds[i+1])*((Waa.lp_x_precon(i+1,MR2a)*dWrl)*Waa.rc_x_precon(i+1,MR2a));
-      }
-      
-      for ( int i = 0 ; i < n-NSm1 ; i++ ) {
-	for ( int j = 0 ; j < n-NSm1 ; j++ ) {
-	  this[i+1] += P(i,j)*Flux_dissipation[j+1]; // Add preconditioned upwind dissipation flux.
-	} 
+    // Evaluate the jumps in the primitive solution states.
+    wavespeeds.HartenFix_Abs(lambdas_a,
+			     lambdas_l,
+			     lambdas_r);
+     
+    // Evaluate the low-Mach-number local preconditioner for the Roe-averaged state.
+    static ::DenseMatrix P(n-NSm1,n-NSm1);
+    P.zero();  //RESET MATRIX TO ZERO!!!
+    Waa.Low_Mach_Number_Preconditioner(P,flow_type_flag,deltax);
+    
+    // Determine the intermediate state flux.
+    (*this).Vacuum();
+    Wl.addFx(*this, HALF);
+    Wr.addFx(*this, HALF);
+    
+    // compute dissipation flux
+    static Flame2D_State Flux_dissipation;
+    Waa.Flux_Dissipation_precon( MR2a, dWrl, wavespeeds, Flux_dissipation);
+    
+    // Add preconditioned upwind dissipation flux.
+    for ( int i = 0 ; i < n-NSm1 ; i++ ) {
+      for ( int j = 0 ; j < n-NSm1 ; j++ ) {
+	(*this)[i+1] += P(i,j)*Flux_dissipation[j+1];
       } 
-      
+    } 
+     
   } else {
     cerr<<"\n Not a valid Preconditioner "<<Preconditioning;
     exit(1);

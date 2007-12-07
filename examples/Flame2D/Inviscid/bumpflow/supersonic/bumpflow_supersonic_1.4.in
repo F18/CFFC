@@ -22,11 +22,11 @@ Local_Time_Stepping=
 1
 #########################
 Reconstruction_Type=
-Green_Gauss 
+Least_Squares
+#Green_Gauss 
 #Least_Squares
 Limiter_Type=
-Zero
-#Venkatakrishnan
+Venkatakrishnan
 #Barth_Jespersen
 #Zero
 Flux_Function_Type=
@@ -46,10 +46,10 @@ Number_of_Ghost_Cells=
 #########################
 ICs_Type= 
 Uniform
-Mach_Number= 
-1.4
 Temperature =
 300.0
+Mach_Number= 
+1.4
 ########################
 # Set mesh info
 ########################
@@ -94,7 +94,7 @@ Threshold_for_Coarsening=
 CFL_Number=
 0.5
 Maximum_Number_of_Time_Steps=
-0
+1000
 Full_Multigrid=
 0
 ################

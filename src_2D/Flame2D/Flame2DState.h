@@ -70,7 +70,6 @@ public:
   
   /************** Constructors/Destructors ***********/
   Flame2D_State() { Nullify(); Allocate();  }
-  Flame2D_State(const double &val) { Nullify(); Allocate(); for (int i=0; i<n; i++) x[i] = val; }
   Flame2D_State(const double &d, const double &vvx, const double &vvy,
 		const double &pre, const double &val) { 
     Nullify(); Allocate(); 
@@ -87,7 +86,7 @@ public:
     x[VX_] = vvx;
     x[VY_] = vvy;
     x[PRESS_] = pre;
-    for (int i=0; i<ns; i++) x[SPEC_+1] = val[i]; 
+    for (int i=0; i<ns; i++) x[SPEC_+i] = val[i]; 
   }
   Flame2D_State(const Flame2D_State &X) { Nullify(); Allocate(); Copy(X);  }
   ~Flame2D_State() { Deallocate(); }
@@ -545,11 +544,11 @@ inline bool Flame2D_State::isPhysical(const int &harshness) {
 
   // Get sensible internal energy
   // E = rho*(e + HALF*v.sqr()); 
-  double e_sens(ZERO);
-  if (rho()>ZERO) {
-    for (int i=0; i<ns; i++) y[i] = rhoc(i)/rho();
-    e_sens = (E()/rho() - HALF*rhovsqr()/rho()/rho()) -  Mixture::heatFormation(y);
-  }
+//   double e_sens(ZERO);
+//   if (rho()>ZERO) {
+//     for (int i=0; i<ns; i++) y[i] = rhoc(i)/rho();
+//     e_sens = (E()/rho() - HALF*rhovsqr()/rho()/rho()) -  Mixture::heatFormation(y);
+//   }
 
   // check properties
   if (rho() <= ZERO || !speciesOK(harshness) /*|| e_sens <= ZERO*/) {
@@ -757,7 +756,7 @@ public:
     vx() = U.rhovx()/U.rho();
     vy() = U.rhovy()/U.rho();
     for(int i=0; i<ns; i++) c(i) = U.rhoc(i)/U.rho();
-    double e( U.E()/U.rho() - 0.5*U.rhovsqr()/(U.rho()*U.rho()) );
+    double e( U.E()/U.rho() - 0.5*vsqr() );
     setEnergy(e);
   }
   void setW(const Flame2D_pState &W){ if( this != &W)  Copy(W); }
@@ -868,6 +867,10 @@ public:
   void lambda_preconditioned_x(Flame2D_State &lambdas, const double &MR2) const;
   Flame2D_State rc_x_precon(const int &index, const double &MR2) const;
   Flame2D_State lp_x_precon(const int &index, const double &MR2) const;
+  void Flux_Dissipation_precon(const double &MR2, 
+			       const Flame2D_State &dWrl, 
+			       const Flame2D_State &wavespeeds, 
+			       Flame2D_State &Flux_dissipation) const;
 
   /******************* Fluxes ***************************/
   void Fx(Flame2D_State &FluxX) const;

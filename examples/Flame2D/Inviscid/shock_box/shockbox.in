@@ -59,10 +59,10 @@ Number_of_Cells_Jdir =
 32
 #64
 Number_of_Blocks_Idir = 
-4
+1
 #4
 Number_of_Blocks_Jdir =
-4
+1
 #4
 #Boundary_Conditions_Specified =
 #ON
