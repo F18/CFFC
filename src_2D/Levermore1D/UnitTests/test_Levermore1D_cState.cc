@@ -171,9 +171,9 @@ namespace tut
 
     Levermore1D_cState U(A);
 
-    ensure_distance("density is equal", rho, U[1], fabs(rho)*1e-6+1e-6);
-    ensure_distance("momentum is equal", momentum, U[2], fabs(momentum)*1e-6+1e-6);
-    ensure_distance("energy is equal", e, U[3], fabs(e)*1e-6+1e-6);
+    ensure_distance("density is equal", rho, U[1], fabs(rho)*1e-12+1e-12);
+    ensure_distance("momentum is equal", momentum, U[2], fabs(momentum)*1e-12+1e-12);
+    ensure_distance("energy is equal", e, U[3], fabs(e)*1e-12+1e-12);
 
   }
 

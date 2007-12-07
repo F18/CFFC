@@ -158,9 +158,9 @@ namespace tut
 
     Levermore1D_pState W(A);
 
-    ensure_distance("density is equal", rho, W[1], fabs(rho)*1e-6+1e-6);
-    ensure_distance("velocity is equal", u, W[2], fabs(u)*1e-6+1e-6);
-    ensure_distance("pressure is equal", p, W[3], fabs(p)*1e-6+1e-6);
+    ensure_distance("density is equal", rho, W[1], fabs(rho)*1e-12+1e-12);
+    ensure_distance("velocity is equal", u, W[2], fabs(u)*1e-12+1e-12);
+    ensure_distance("pressure is equal", p, W[3], fabs(p)*1e-12+1e-12);
 
   }
 
