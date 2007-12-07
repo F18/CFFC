@@ -10,12 +10,12 @@
  * AdvectDiffuse2D_Quad_Block -- Multiple Block External Subroutines.     *
  **************************************************************************/
 
-/********************************************************
- * Routine: Allocate                                    *
- *                                                      *
- * Allocate memory for 1D array of 2D quadrilateral     *
- * multi-block solution blocks.                         *
- *                                                      *
+/******************************************************//**
+ * Routine: Allocate                                    
+ *                                                      
+ * Allocate memory for 1D array of 2D quadrilateral     
+ * multi-block solution blocks.                         
+ *                                                      
  ********************************************************/
 AdvectDiffuse2D_Quad_Block_New* Allocate(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
 					 AdvectDiffuse2D_Input_Parameters &Input_Parameters) {
@@ -30,12 +30,12 @@ AdvectDiffuse2D_Quad_Block_New* Allocate(AdvectDiffuse2D_Quad_Block_New *Soln_pt
 
 }
 
-/********************************************************
- * Routine: Deallocate                                  *
- *                                                      *
- * Deallocate memory for 1D array of 2D quadrilateral   *
- * multi-block solution blocks.                         *
- *                                                      *
+/******************************************************//**
+ * Routine: Deallocate                                  
+ *                                                      
+ * Deallocate memory for 1D array of 2D quadrilateral   
+ * multi-block solution blocks.                         
+ *                                                      
  ********************************************************/
 AdvectDiffuse2D_Quad_Block_New* Deallocate(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
 					   AdvectDiffuse2D_Input_Parameters &Input_Parameters) {
@@ -56,13 +56,13 @@ AdvectDiffuse2D_Quad_Block_New* Deallocate(AdvectDiffuse2D_Quad_Block_New *Soln_
 
 }
 
-/********************************************************
- * Routine: ICs                                         *
- *                                                      *
- * Assigns initial conditions and data to the           *
- * solution variables of a 1D array of 2D quadrilateral *
- * multi-block solution blocks.                         *
- *                                                      *
+/******************************************************//**
+ * Routine: ICs                                         
+ *                                                      
+ * Assigns initial conditions and data to the           
+ * solution variables of a 1D array of 2D quadrilateral 
+ * multi-block solution blocks.                         
+ *                                                      
  ********************************************************/
 void ICs(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
          AdaptiveBlock2D_List &Soln_Block_List,
@@ -96,15 +96,15 @@ void ICs(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
   }  /* endfor */
 }
 
-/********************************************************
- * Routine: Read_Restart_Solution                       *
- *                                                      *
- * Reads restart solution file(s) and assigns values to *
- * the solution variables of a 1D array of 2D           *
- * quadrilateral multi-block solution blocks.           *
- * Returns a non-zero value if cannot read any of the   *
- * restart solution files.                              *
- *                                                      *
+/******************************************************//**
+ * Routine: Read_Restart_Solution                       
+ *                                                      
+ * Reads restart solution file(s) and assigns values to 
+ * the solution variables of a 1D array of 2D           
+ * quadrilateral multi-block solution blocks.           
+ * Returns a non-zero value if cannot read any of the   
+ * restart solution files.                              
+ *                                                      
  ********************************************************/
 int Read_Restart_Solution(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
                           AdaptiveBlock2D_List &Soln_Block_List,
@@ -173,14 +173,14 @@ int Read_Restart_Solution(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
 
 }
 
-/********************************************************
- * Routine: Write_Restart_Solution                      *
- *                                                      *
- * Writes restart solution file(s) for a 1D array of 2D *
- * quadrilateral multi-block solution blocks.           *
- * Returns a non-zero value if cannot write any of the  *
- * restart solution files.                              *
- *                                                      *
+/******************************************************//**
+ * Routine: Write_Restart_Solution                      
+ *                                                      
+ * Writes restart solution file(s) for a 1D array of 2D 
+ * quadrilateral multi-block solution blocks.           
+ * Returns a non-zero value if cannot write any of the  
+ * restart solution files.                              
+ *                                                      
  ********************************************************/
 int Write_Restart_Solution(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
                            AdaptiveBlock2D_List &Soln_Block_List,
@@ -240,16 +240,16 @@ int Write_Restart_Solution(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
 
 }
 
-/********************************************************
- * Routine: Output_Tecplot                              *
- *                                                      *
- * Writes the solution values at the nodes for a 1D     *
- * array of 2D quadrilateral multi-block solution       *
- * blocks to the specified output data file(s) in a     *
- * format suitable for plotting with TECPLOT.           *
- * Returns a non-zero value if cannot write any of the  *
- * TECPLOT solution files.                              *
- *                                                      *
+/******************************************************//**
+ * Routine: Output_Tecplot                              
+ *                                                      
+ * Writes the solution values at the nodes for a 1D     
+ * array of 2D quadrilateral multi-block solution       
+ * blocks to the specified output data file(s) in a     
+ * format suitable for plotting with TECPLOT.           
+ * Returns a non-zero value if cannot write any of the  
+ * TECPLOT solution files.                              
+ *                                                      
  ********************************************************/
 int Output_Tecplot(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
                    AdaptiveBlock2D_List &Soln_Block_List,
@@ -314,16 +314,16 @@ int Output_Tecplot(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
 
 }
 
-/********************************************************
- * Routine: Output_Cells_Tecplot                        *
- *                                                      *
- * Writes the cell centred solution values for a 1D     *
- * array of 2D quadrilateral multi-block solution       *
- * blocks to the specified output data file(s) in a     *
- * format suitable for plotting with TECPLOT.           *
- * Returns a non-zero value if cannot write any of the  *
- * TECPLOT solution files.                              *
- *                                                      *
+/******************************************************//**
+ * Routine: Output_Cells_Tecplot                        
+ *                                                      
+ * Writes the cell centred solution values for a 1D     
+ * array of 2D quadrilateral multi-block solution       
+ * blocks to the specified output data file(s) in a     
+ * format suitable for plotting with TECPLOT.           
+ * Returns a non-zero value if cannot write any of the  
+ * TECPLOT solution files.                              
+ *                                                      
  ********************************************************/
 int Output_Cells_Tecplot(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
                          AdaptiveBlock2D_List &Soln_Block_List,
@@ -388,15 +388,15 @@ int Output_Cells_Tecplot(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
 
 }
 
-/********************************************************
- * Routine: Output_Nodes_Tecplot                        *
- *                                                      *
- * Writes the node values for a 1D array of 2D          *
- * quadrilateral multi-block solution blocks to the     *
- * specified output data file(s) in a format suitable   *
- * for plotting with TECPLOT.  Returns a non-zero value *
- * if cannot write any of the TECPLOT solution files.   *
- *                                                      *
+/******************************************************//**
+ * Routine: Output_Nodes_Tecplot                        
+ *                                                      
+ * Writes the node values for a 1D array of 2D          
+ * quadrilateral multi-block solution blocks to the     
+ * specified output data file(s) in a format suitable   
+ * for plotting with TECPLOT.  Returns a non-zero value 
+ * if cannot write any of the TECPLOT solution files.   
+ *                                                      
  ********************************************************/
 int Output_Nodes_Tecplot(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
                          AdaptiveBlock2D_List &Soln_Block_List,
@@ -460,15 +460,15 @@ int Output_Nodes_Tecplot(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
 
 }
 
-/********************************************************
- * Routine: Output_Mesh_Tecplot                         *
- *                                                      *
- * Writes the nodes of the mesh for a 1D array of 2D    *
- * quadrilateral multi-block solution blocks to the     *
- * specified output data file(s) in a format suitable   *
- * for plotting with TECPLOT. Returns a non-zero value  *
- * if cannot write any of the TECPLOT solution files.   *
- *                                                      *
+/******************************************************//**
+ * Routine: Output_Mesh_Tecplot                         
+ *                                                      
+ * Writes the nodes of the mesh for a 1D array of 2D    
+ * quadrilateral multi-block solution blocks to the     
+ * specified output data file(s) in a format suitable   
+ * for plotting with TECPLOT. Returns a non-zero value  
+ * if cannot write any of the TECPLOT solution files.   
+ *                                                      
  ********************************************************/
 int Output_Mesh_Tecplot(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
                         AdaptiveBlock2D_List &Soln_Block_List,
@@ -530,15 +530,15 @@ int Output_Mesh_Tecplot(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
 
 }
 
-/********************************************************
- * Routine: Output_Mesh_Gnuplot                         *
- *                                                      *
- * Writes the nodes of the mesh for a 1D array of 2D    *
- * quadrilateral multi-block solution blocks to the     *
- * specified output data file(s) in a format suitable   *
- * for plotting with GNUPLOT. Returns a non-zero value  *
- * if cannot write any of the GNUPLOT solution files.   *
- *                                                      *
+/******************************************************//**
+ * Routine: Output_Mesh_Gnuplot                         
+ *                                                      
+ * Writes the nodes of the mesh for a 1D array of 2D    
+ * quadrilateral multi-block solution blocks to the     
+ * specified output data file(s) in a format suitable   
+ * for plotting with GNUPLOT. Returns a non-zero value  
+ * if cannot write any of the GNUPLOT solution files.   
+ *                                                      
  ********************************************************/
 int Output_Mesh_Gnuplot(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
                         AdaptiveBlock2D_List &Soln_Block_List,
@@ -600,13 +600,38 @@ int Output_Mesh_Gnuplot(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
 
 }
 
-/********************************************************
- * Routine: BCs                                         *
- *                                                      *
- * Apply boundary conditions at boundaries of a 1D      *
- * array of 2D quadrilateral multi-block solution       *
- * blocks.                                              *
- *                                                      *
+/******************************************************//**
+ * Routine: Linear_Reconstruction
+ *                                                      
+ * Perform piecewise limited linear reconstruct for 
+ * the solution of a 1D array of 2D quadrilateral multi-block 
+ * solution blocks.
+ ********************************************************/
+extern void Linear_Reconstruction(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+				  AdaptiveBlock2D_List &Soln_Block_List,
+				  AdvectDiffuse2D_Input_Parameters &Input_Parameters){
+
+  int i;
+
+  /* Prescribe boundary data for each solution block. */
+
+  for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
+    if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
+      Linear_Reconstruction(Soln_ptr[i],
+			    Input_Parameters.i_Reconstruction,
+			    Input_Parameters.i_Limiter);
+    } /* endif */
+  }  /* endfor */
+}
+
+
+/******************************************************//**
+ * Routine: BCs                                         
+ *                                                      
+ * Apply boundary conditions at boundaries of a 1D      
+ * array of 2D quadrilateral multi-block solution       
+ * blocks.                                              
+ *                                                      
  ********************************************************/
 void BCs(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
          AdaptiveBlock2D_List &Soln_Block_List,
@@ -624,16 +649,16 @@ void BCs(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
 
 }
 
-/********************************************************
- * Routine: CFL                                         *
- *                                                      *
- * Determines the allowable global and local time steps *
- * (for explicit Euler time stepping scheme) for a 1D   *
- * array of 2D quadrilateral multi-block solution       *
- * blocks according to the Courant-Friedrichs-Lewy      *
- * condition for the advection terms a semi-impirical   *
- * criteria for the diffusion and source terms.         *
- *                                                      *
+/******************************************************//**
+ * Routine: CFL                                         
+ *                                                      
+ * Determines the allowable global and local time steps 
+ * (for explicit Euler time stepping scheme) for a 1D   
+ * array of 2D quadrilateral multi-block solution       
+ * blocks according to the Courant-Friedrichs-Lewy      
+ * condition for the advection terms a semi-impirical   
+ * criteria for the diffusion and source terms.         
+ *                                                      
  ********************************************************/
 double CFL(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
            AdaptiveBlock2D_List &Soln_Block_List,
@@ -658,13 +683,13 @@ double CFL(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
 
 }
 
-/********************************************************
- * Routine: Set_Global_TimeStep                         *
- *                                                      *
- * Assigns global time step to a 1D array of 2D         *
- * quadrilateral multi-block solution blocks for        *
- * time-accurate calculations.                          *
- *                                                      *
+/******************************************************//**
+ * Routine: Set_Global_TimeStep                         
+ *                                                      
+ * Assigns global time step to a 1D array of 2D         
+ * quadrilateral multi-block solution blocks for        
+ * time-accurate calculations.                          
+ *                                                      
  ********************************************************/
 void Set_Global_TimeStep(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
                          AdaptiveBlock2D_List &Soln_Block_List,
@@ -680,14 +705,14 @@ void Set_Global_TimeStep(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
 
 }
 
-/********************************************************
- * Routine: L1_Norm_Residual                            *
- *                                                      *
- * Determines the L1-norm of the solution residual for  *
- * a 1D array of 2D quadrilateral multi-block solution  *
- * blocks.  Useful for monitoring convergence of the    *
- * solution for steady state problems.                  *
- *                                                      *
+/******************************************************//**
+ * Routine: L1_Norm_Residual                            
+ *                                                      
+ * Determines the L1-norm of the solution residual for  
+ * a 1D array of 2D quadrilateral multi-block solution  
+ * blocks.  Useful for monitoring convergence of the    
+ * solution for steady state problems.                  
+ *                                                      
  ********************************************************/
 double L1_Norm_Residual(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
                         AdaptiveBlock2D_List &Soln_Block_List) {
@@ -712,14 +737,14 @@ double L1_Norm_Residual(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
 
 }
 
-/********************************************************
- * Routine: L2_Norm_Residual                            *
- *                                                      *
- * Determines the L2-norm of the solution residual for  *
- * a 1D array of 2D quadrilateral multi-block solution  *
- * blocks.  Useful for monitoring convergence of the    *
- * solution for steady state problems.                  *
- *                                                      *
+/******************************************************//**
+ * Routine: L2_Norm_Residual                            
+ *                                                      
+ * Determines the L2-norm of the solution residual for  
+ * a 1D array of 2D quadrilateral multi-block solution  
+ * blocks.  Useful for monitoring convergence of the    
+ * solution for steady state problems.                  
+ *                                                      
  ********************************************************/
 double L2_Norm_Residual(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
                         AdaptiveBlock2D_List &Soln_Block_List) {
@@ -747,14 +772,14 @@ double L2_Norm_Residual(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
 
 }
 
-/********************************************************
- * Routine: Max_Norm_Residual                           *
- *                                                      *
- * Determines the maximum norm of the solution residual *
- * for a 1D array of 2D quadrilateral multi-block       *
- * solution blocks.  Useful for monitoring convergence  *
- * of the solution for steady state problems.           *
- *                                                      *
+/******************************************************//**
+ * Routine: Max_Norm_Residual                           
+ *                                                      
+ * Determines the maximum norm of the solution residual 
+ * for a 1D array of 2D quadrilateral multi-block       
+ * solution blocks.  Useful for monitoring convergence  
+ * of the solution for steady state problems.           
+ *                                                      
  ********************************************************/
 double Max_Norm_Residual(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
                          AdaptiveBlock2D_List &Soln_Block_List) {
@@ -778,14 +803,14 @@ double Max_Norm_Residual(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
 
 }
 
-/********************************************************
- * Routine: L1_Norm_Residual                            *
- *                                                      *
- * Determines the L1-norm of the solution residual for  *
- * a 1D array of 2D quadrilateral multi-block solution  *
- * blocks.  Useful for monitoring convergence of the    *
- * solution for steady state problems.                  *
- *                                                      *
+/******************************************************//**
+ * Routine: L1_Norm_Residual                            
+ *                                                      
+ * Determines the L1-norm of the solution residual for  
+ * a 1D array of 2D quadrilateral multi-block solution  
+ * blocks.  Useful for monitoring convergence of the    
+ * solution for steady state problems.                  
+ *                                                      
  ********************************************************/
 void L1_Norm_Residual(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
 		      AdaptiveBlock2D_List &Soln_Block_List,
@@ -801,14 +826,14 @@ void L1_Norm_Residual(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
 
 }
 
-/********************************************************
- * Routine: L2_Norm_Residual                            *
- *                                                      *
- * Determines the L2-norm of the solution residual for  *
- * a 1D array of 2D quadrilateral multi-block solution  *
- * blocks.  Useful for monitoring convergence of the    *
- * solution for steady state problems.                  *
- *                                                      *
+/******************************************************//**
+ * Routine: L2_Norm_Residual                            
+ *                                                      
+ * Determines the L2-norm of the solution residual for  
+ * a 1D array of 2D quadrilateral multi-block solution  
+ * blocks.  Useful for monitoring convergence of the    
+ * solution for steady state problems.                  
+ *                                                      
  ********************************************************/
 void L2_Norm_Residual(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
 		      AdaptiveBlock2D_List &Soln_Block_List,
@@ -825,14 +850,14 @@ void L2_Norm_Residual(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
 
 }
 
-/********************************************************
- * Routine: Max_Norm_Residual                           *
- *                                                      *
- * Determines the maximum norm of the solution residual *
- * for a 1D array of 2D quadrilateral multi-block       *
- * solution blocks.  Useful for monitoring convergence  *
- * of the solution for steady state problems.           *
- *                                                      *
+/******************************************************//**
+ * Routine: Max_Norm_Residual                           
+ *                                                      
+ * Determines the maximum norm of the solution residual 
+ * for a 1D array of 2D quadrilateral multi-block       
+ * solution blocks.  Useful for monitoring convergence  
+ * of the solution for steady state problems.           
+ *                                                      
  ********************************************************/
 void Max_Norm_Residual(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
 		       AdaptiveBlock2D_List &Soln_Block_List,
@@ -848,13 +873,13 @@ void Max_Norm_Residual(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
 
 }
 
-/********************************************************
- * Routine: Evaluate_Limiters                           *
- *                                                      *
- * Set conditions to evaluate the limiters for a        *
- * 1D array of 2D quadrilateral multi-block solution    *
- * blocks.                                              *
- *                                                      *
+/******************************************************//**
+ * Routine: Evaluate_Limiters                           
+ *                                                      
+ * Set conditions to evaluate the limiters for a        
+ * 1D array of 2D quadrilateral multi-block solution    
+ * blocks.                                              
+ *                                                      
  ********************************************************/
 void Evaluate_Limiters(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
                        AdaptiveBlock2D_List &Soln_Block_List) {
@@ -867,13 +892,13 @@ void Evaluate_Limiters(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
 
 }
 
-/********************************************************
- * Routine: Freeze_Limiters                             *
- *                                                      *
- * Set conditions to freeze the limiters for a          *
- * 1D array of 2D quadrilateral multi-block solution    *
- * blocks.                                              *
- *                                                      *
+/******************************************************//**
+ * Routine: Freeze_Limiters                             
+ *                                                      
+ * Set conditions to freeze the limiters for a          
+ * 1D array of 2D quadrilateral multi-block solution    
+ * blocks.                                              
+ *                                                      
  ********************************************************/
 void Freeze_Limiters(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
                      AdaptiveBlock2D_List &Soln_Block_List) {
@@ -887,12 +912,12 @@ void Freeze_Limiters(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
 }
 
 
-/********************************************************
- * Routine:  Residual_Smoothing                         *
- *                                                      *
- * Applies implicit residual smoothing to a 1D array of *
- * 2D quadrilateral multi-block  solution blocks.       *
- *                                                      *
+/******************************************************//**
+ * Routine:  Residual_Smoothing                         
+ *                                                      
+ * Applies implicit residual smoothing to a 1D array of 
+ * 2D quadrilateral multi-block  solution blocks.       
+ *                                                      
  ********************************************************/
 void Residual_Smoothing(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
                         AdaptiveBlock2D_List &Soln_Block_List,
@@ -937,14 +962,14 @@ void Residual_Smoothing(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
 
 }
 
-/****************************************************************
- * Routine: Apply_Boundary_Flux_Correction                      *
- *                                                              *
- * Apply flux corrections at boundaries of a 1D array           *
- * of 2D quadrilateral multi-block solution blocks to           *
- * ensure that the scheme is conservative at boundaries         *
- * with resolution mesh changes.                                *
- *                                                              *
+/**************************************************************//**
+ * Routine: Apply_Boundary_Flux_Correction                      
+ *                                                              
+ * Apply flux corrections at boundaries of a 1D array           
+ * of 2D quadrilateral multi-block solution blocks to           
+ * ensure that the scheme is conservative at boundaries         
+ * with resolution mesh changes.                                
+ *                                                              
  ****************************************************************/
 void Apply_Boundary_Flux_Corrections(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
                                      AdaptiveBlock2D_List &Soln_Block_List) {
@@ -965,14 +990,14 @@ void Apply_Boundary_Flux_Corrections(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
 
 }
 
-/****************************************************************
- * Routine: Apply_Boundary_Flux_Corrections_Multistage_Explicit *
- *                                                              *
- * Apply flux corrections at boundaries of a 1D array           *
- * of 2D quadrilateral multi-block solution blocks to           *
- * ensure that the scheme is conservative at boundaries         *
- * with resolution mesh changes.                                *
- *                                                              *
+/**************************************************************//**
+ * Routine: Apply_Boundary_Flux_Corrections_Multistage_Explicit 
+ *                                                              
+ * Apply flux corrections at boundaries of a 1D array           
+ * of 2D quadrilateral multi-block solution blocks to           
+ * ensure that the scheme is conservative at boundaries         
+ * with resolution mesh changes.                                
+ *                                                              
  ****************************************************************/
 void Apply_Boundary_Flux_Corrections_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
                                                          AdaptiveBlock2D_List &Soln_Block_List,
@@ -1001,18 +1026,18 @@ void Apply_Boundary_Flux_Corrections_Multistage_Explicit(AdvectDiffuse2D_Quad_Bl
 
 }
 
-/********************************************************
- * Routine: dUdt_Multistage_Explicit                    *
- *                                                      *
- * This routine evaluates the stage solution residual   *
- * for a 1D array of 2D quadrilateral multi-block       *
- * solution blocks.  A variety of multistage explicit   *
- * time integration and a 2nd-ororder limited upwind    *
- * finite-volume spatial discretization scheme for the  *
- * convective flux coupled with a centrally-weighted    *
- * finite-volume discretization for the diffused flux   *
- * can be used depending on the specified input values. *
- *                                                      *
+/******************************************************//**
+ * Routine: dUdt_Multistage_Explicit                    
+ *                                                      
+ * This routine evaluates the stage solution residual   
+ * for a 1D array of 2D quadrilateral multi-block       
+ * solution blocks.  A variety of multistage explicit   
+ * time integration and a 2nd-order limited upwind    
+ * finite-volume spatial discretization scheme for the  
+ * convective flux coupled with a diamond path gradient    
+ * reconstruction for the diffused flux can be used 
+ * depending on the specified input values. 
+ *                                                      
  ********************************************************/
 int dUdt_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
 			     AdaptiveBlockResourceList &Global_Soln_Block_List,
@@ -1043,18 +1068,18 @@ int dUdt_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
 
 }
 
-/********************************************************
- * Routine: Update_Solution_Multistage_Explicit         *
- *                                                      *
- * This routine updates the solution for a 1D array of  *
- * 2D quadrilateral multi-block solution blocks.        *
- * A variety of multistage explicit                     *
- * time integration and a 2nd-ororder limited upwind    *
- * finite-volume spatial discretization scheme for the  *
- * convective flux coupled with a centrally-weighted    *
- * finite-volume discretization for the diffused flux   *
- * can be used depending on the specified input values. *
- *                                                      *
+/******************************************************//**
+ * Routine: Update_Solution_Multistage_Explicit         
+ *                                                      
+ * This routine updates the solution for a 1D array of  
+ * 2D quadrilateral multi-block solution blocks.        
+ * A variety of multistage explicit                     
+ * time integration and a 2nd-ororder limited upwind    
+ * finite-volume spatial discretization scheme for the  
+ * convective flux coupled with a diamond path gradient
+ * reconstruction for the diffused flux can be used 
+ * depending on the specified input values. 
+ *                                                      
  ********************************************************/
 int Update_Solution_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
                                         AdaptiveBlock2D_List &Soln_Block_List,

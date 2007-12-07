@@ -685,6 +685,10 @@ void Set_Default_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
     // Number of control points on the 2D spline (used for some grids)
     IP.Num_Of_Spline_Control_Points = 361;
 
+    // Accuracy assessment parameters:
+    IP.Accuracy_Assessment_Mode = ACCURACY_ASSESSMENT_BASED_ON_EXACT_SOLUTION;
+    IP.Accuracy_Assessment_Exact_Digits = 10;
+    IP.Accuracy_Assessment_Parameter = 1;
 }
 
 /******************************************************//**
@@ -1111,6 +1115,17 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.Freeze_Limiter_Residual_Level),
                           1, 
                           MPI::DOUBLE, 0);
+
+    // Accuracy assessment parameters:
+    MPI::COMM_WORLD.Bcast(&(IP.Accuracy_Assessment_Mode), 
+			  1, 
+			  MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Accuracy_Assessment_Exact_Digits), 
+			  1, 
+			  MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Accuracy_Assessment_Parameter), 
+			  1, 
+			  MPI::INT, 0);
 
     // CENO_Execution_Mode variables
     CENO_Execution_Mode::Broadcast();
@@ -1565,6 +1580,16 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.Freeze_Limiter_Residual_Level), 
                        1, 
                        MPI::DOUBLE, Source_Rank);
+    // Accuracy assessment parameters:
+    Communicator.Bcast(&(Accuracy_Assessment_Mode), 
+                       1, 
+                       MPI::INT, Source_Rank);
+    Communicator.Bcast(&(Accuracy_Assessment_Exact_Digits), 
+                       1, 
+                       MPI::INT, Source_Rank);
+    Communicator.Bcast(&(Accuracy_Assessment_Parameter), 
+                       1, 
+                       MPI::INT, Source_Rank);
 }
 #endif
 
@@ -2702,6 +2727,14 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
     } else {
       i_command = INVALID_INPUT_VALUE;
     }
+
+  } else if (strcmp(IP.Next_Control_Parameter, "Accuracy_Assessment_Exact_Digits") == 0) {
+    i_command = 0;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.Accuracy_Assessment_Exact_Digits;
+    IP.Input_File.getline(buffer, sizeof(buffer));
+    if (IP.Accuracy_Assessment_Exact_Digits < 0) i_command = INVALID_INPUT_VALUE;
+
   } else if (strcmp(IP.Next_Control_Parameter, "Execute") == 0) {
     i_command = EXECUTE_CODE;
 
@@ -2736,10 +2769,7 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
     i_command = WRITE_OUTPUT_GRID_CELLS_CODE;
 
   } else if (strcmp(IP.Next_Control_Parameter,"Print_Accuracy") == 0) {
-    i_command = WRITE_NORM_ON_SCREEN;
-
-  } else if (strcmp(IP.Next_Control_Parameter,"Write_Output_Exact_Soln") == 0) {
-    i_command = WRITE_OUTPUT_EXACT_SOLUTION;
+    i_command = WRITE_ERROR_NORMS_TO_SCREEN;
 
   } else if (strcmp(IP.Next_Control_Parameter, "Refine_Grid") == 0) {
     i_command = REFINE_GRID_CODE;

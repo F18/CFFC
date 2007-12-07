@@ -450,7 +450,7 @@ int Euler1DSolver(char *Input_File_Name_ptr,
        // Output error norms to tecplot file
        AccuracyAssessment1D::OutputErrorNormsTecplot(Soln_ptr,Input_Parameters);
 
-    } else if (command_flag == WRITE_NORM_ON_SCREEN) {
+    } else if (command_flag == WRITE_ERROR_NORMS_TO_SCREEN) {
        // Print solution
        AccuracyAssessment1D::PrintErrorNorms(Soln_ptr,Input_Parameters,cout);
 

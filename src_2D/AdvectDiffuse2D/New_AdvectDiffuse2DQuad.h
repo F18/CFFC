@@ -692,6 +692,10 @@ extern void Linear_Reconstruction_LeastSquares(AdvectDiffuse2D_Quad_Block_New &S
 extern void Linear_Reconstruction_LeastSquares(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 					       const int Limiter);
 
+extern void Linear_Reconstruction(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
+				  const int & Reconstruction_Type,
+				  const int & Limiter);
+
 extern void Residual_Smoothing(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
                                const int k_residual,
 			       double &epsilon, 
@@ -797,6 +801,10 @@ extern int Output_Mesh_Gnuplot(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
                                AdvectDiffuse2D_Input_Parameters &Input_Parameters,
 		               const int Number_of_Time_Steps,
                                const double &Time);
+
+extern void Linear_Reconstruction(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+				  AdaptiveBlock2D_List &Soln_Block_List,
+				  AdvectDiffuse2D_Input_Parameters &Input_Parameters);
 
 extern void BCs(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
                 AdaptiveBlock2D_List &Soln_Block_List,

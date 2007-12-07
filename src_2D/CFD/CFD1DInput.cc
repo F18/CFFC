@@ -696,7 +696,7 @@ int Parse_Next_Input_Control_Parameter(CFD1D_Input_Parameters &IP) {
       i_command = WRITE_OUTPUT_ACCURACY_CODE;
       
     } else if (strcmp(IP.Next_Control_Parameter, "Print_Norms") == 0) {
-      i_command = WRITE_NORM_ON_SCREEN;
+      i_command = WRITE_ERROR_NORMS_TO_SCREEN;
 
     } else if (strcmp(IP.Next_Control_Parameter, "Write_Restart") == 0) {
        i_command = WRITE_RESTART_CODE;

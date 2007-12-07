@@ -286,6 +286,14 @@ public:
   //@{
   short & Verbose(void) {return verbose_flag;}
   const short & Verbose(void) const {return verbose_flag;}
+  void Verbose(const int & batch_flag){ (batch_flag != 0) ? verbose_flag=OFF: verbose_flag=ON; }
+  //@}
+
+  //! @name Accuracy assessment parameters:
+  //@{
+  unsigned int Accuracy_Assessment_Mode;
+  unsigned int Accuracy_Assessment_Exact_Digits;
+  unsigned int Accuracy_Assessment_Parameter;
   //@}
 
   //! @name Operating functions:

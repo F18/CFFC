@@ -11,7 +11,9 @@
 // None
 
 /* Include CFFC header files */
-// None
+#include "../Math/Vector2D.h"
+#include "../Utilities/TypeDefinition.h"
+#include "../Utilities/Utilities.h"
 
 
 /*!
@@ -29,7 +31,7 @@ public:
 
   //! Destructor
   ~AccuracyAssessment2D(void){ };
-
+ 
   //! Re-associate solution block pointer
   void AssociateSolutionBlock(Quad_Soln_Block * AssociatedSolnBlock){ SolnBlk = AssociatedSolnBlock; }
 
@@ -63,6 +65,7 @@ public:
   // 					     &Quad_Soln_Block::CellHighOrder);
 
   void ComputeSolutionErrors(const unsigned int &parameter,
+			     const unsigned int &accuracy_digits,
 			     double (Quad_Soln_Block::*ComputeSolutionAt)(const int &, const int &,
 									  const Vector2D &,
 									  const unsigned int &) const =
@@ -71,6 +74,7 @@ public:
   template<typename Function_Object_Type>
   void ComputeSolutionErrors(Function_Object_Type FuncObj,
 			     const unsigned int &parameter,
+			     const unsigned int &accuracy_digits,
 			     double (Quad_Soln_Block::*ComputeSolutionAt)(const int &, const int &,
 									  const Vector2D &,
 									  const unsigned int &) const =
@@ -90,6 +94,8 @@ public:
   double BlockL1Norm(void) { return LNorms[0]/TotalBlockArea; }	//!< return the L1 error norm for the block
   double BlockL2Norm(void) { return sqrt(LNorms[1]/TotalBlockArea); } //!< return the L2 error norm for the block
   double BlockLMaxNorm(void) { return LNorms[2]; } //!< return the LMax error norm for the block
+
+  const unsigned int & UsedCells(void) const {return CellsUsed;}  //!< return the number of used cells for error calculation
   //@}
 
   //! Prepare object for a new calculation
@@ -106,12 +112,16 @@ private:
   bool Title_Error_Norms;       //!< internal flag used to ensure that the output of the Tecplot title is done only once
   bool Verbose;		        //!< internal flag controlling the screen output stream
   
+  unsigned int _parameter;	//!< the state class parameter which is used for accuracy assessment
+  unsigned int digits;		//!< the number of accurate digits with which the errors are evaluated
+
+  unsigned int CellsUsed;	//!< the number of cells used for accuracy assessment
+
   // Operating functions
   /*! @brief Compute errors for L1 norm calculation using the ComputeSolutionAt solution block member function */
   template<typename Function_Object_Type>
   double ComputeSolutionErrorL1(const int &iCell, const int &jCell,
 				Function_Object_Type FuncObj,
- 				const unsigned int &parameter,
  				double (Quad_Soln_Block::*ComputeSolutionAt)(const int &, const int &,
 									     const Vector2D &,
  									     const unsigned int &) const = 
@@ -121,7 +131,6 @@ private:
   template<typename Function_Object_Type>
   double ComputeSolutionErrorL2(const int &iCell, const int &jCell,
 				Function_Object_Type FuncObj,
- 				const unsigned int &parameter,
  				double (Quad_Soln_Block::*ComputeSolutionAt)(const int &, const int &,
 									     const Vector2D &,
  									     const unsigned int &) const = 
@@ -130,7 +139,6 @@ private:
   template<typename Input_Parameters_Type>
   void SetVerboseFlag(const Input_Parameters_Type & IP);
 
-  void OutputProgress(const int & i);
 };
 
 
@@ -141,7 +149,8 @@ template<typename Quad_Soln_Block> inline
 AccuracyAssessment2D<Quad_Soln_Block>::AccuracyAssessment2D(Quad_Soln_Block * AssociatedSolnBlock):
   SolnBlk(AssociatedSolnBlock),
   AccuracyAssessed_Flag(false), Title_Error_Norms(true), Verbose(false),
-  LNorms(vector<double>(3,0.0)),  TotalBlockArea(ZERO)
+  LNorms(3,0.0),  TotalBlockArea(ZERO), _parameter(1), digits(10),
+  CellsUsed(0)
 {
   // 
 }
@@ -156,21 +165,6 @@ void AccuracyAssessment2D<Quad_Soln_Block>::SetVerboseFlag(const Input_Parameter
     Verbose = true;
   } else {
     Verbose = false;
-  }
-}
-
-/*!
- * Mark the finish of the error computation in a cell by printing a 
- * dot on the screen.
- */
-template<typename Quad_Soln_Block> inline 
-void AccuracyAssessment2D<Quad_Soln_Block>::OutputProgress(const int & i){
-  if (Verbose) {
-    if (i - 55*(i/55) == 0 ){
-      cout << "\n ." ;
-    } else {
-      cout << "." ;
-    }
   }
 }
 
@@ -207,7 +201,7 @@ void AccuracyAssessment2D<Quad_Soln_Block>::PrintErrorNorms(const Input_Paramete
 template<typename Quad_Soln_Block>
 template<typename Input_Parameters_Type>
 void AccuracyAssessment2D<Quad_Soln_Block>::OutputErrorNormsTecplot(const Input_Parameters_Type & IP){
-
+  // To be implemented
 }
 
 /*!
@@ -225,6 +219,7 @@ void AccuracyAssessment2D<Quad_Soln_Block>::OutputErrorNormsTecplot(const Input_
 template<typename Quad_Soln_Block> inline
 void AccuracyAssessment2D<Quad_Soln_Block>::
 ComputeSolutionErrors(const unsigned int &parameter,
+		      const unsigned int &accuracy_digits,
 		      double (Quad_Soln_Block::*ComputeSolutionAt)(const int &, const int &,
 								   const Vector2D &,
 								   const unsigned int &) const )
@@ -239,6 +234,7 @@ ComputeSolutionErrors(const unsigned int &parameter,
 						  &Quad_Soln_Block::Exact_Solution_Type::Solution,
 						  _dummy_param),
 			  parameter,
+			  accuracy_digits,
 			  ComputeSolutionAt);
   } else {
     // exact solution is not set
@@ -266,9 +262,14 @@ template<typename Function_Object_Type>
 void AccuracyAssessment2D<Quad_Soln_Block>::
 ComputeSolutionErrors(Function_Object_Type FuncObj,
 		      const unsigned int &parameter,
+		      const unsigned int &accuracy_digits,
 		      double (Quad_Soln_Block::*ComputeSolutionAt)(const int &, const int &,
 								   const Vector2D &,
 								   const unsigned int &) const ){
+
+  // Set the required 'parameter' and the number of accurate digits
+  _parameter = parameter;
+  digits = accuracy_digits;
 
   double CellError(0.0); // individual cell error for L1 and LMax norms
   int i,j;
@@ -278,6 +279,9 @@ ComputeSolutionErrors(Function_Object_Type FuncObj,
   L1() = ZERO; L2() = ZERO; LMax() = ZERO;
   TotalBlockArea = ZERO;
 
+  // Update CellsUsed
+  CellsUsed = (EndI - StartI + 1)*(EndJ - StartJ + 1);
+
   // Assess the accuracy
   for (j = StartJ; j <= EndJ; ++j) {
     for (i = StartI; i <= EndI; ++i) {
@@ -285,7 +289,6 @@ ComputeSolutionErrors(Function_Object_Type FuncObj,
       // Calculate the error in cell i,j for the given parameter and reconstruction
       CellError = ComputeSolutionErrorL1(i,j,
 					 FuncObj,
-					 parameter,
 					 ComputeSolutionAt);
 
       // Add current cell error contribution to L1 error norm
@@ -294,7 +297,6 @@ ComputeSolutionErrors(Function_Object_Type FuncObj,
       // Add current cell error contribution to L2 error norm
       L2() += ComputeSolutionErrorL2(i,j,
 				     FuncObj,
-				     parameter,
 				     ComputeSolutionAt);
 
       // Compute block LMax Norm
@@ -327,7 +329,6 @@ template<typename Function_Object_Type>
 double AccuracyAssessment2D<Quad_Soln_Block>::
 ComputeSolutionErrorL1(const int &iCell, const int &jCell,
 		       Function_Object_Type FuncObj,
-		       const unsigned int &parameter,
 		       double (Quad_Soln_Block::*ComputeSolutionAt)(const int &, const int &,
 								    const Vector2D &,
 								    const unsigned int &) const ){
@@ -343,10 +344,10 @@ ComputeSolutionErrorL1(const int &iCell, const int &jCell,
 												      ComputeSolutionAt,
 												      _dummy_Position,
 												      iCell, jCell,
-												      parameter,
+												      _parameter,
 												      _dummy_param),
 								_dummy_param),
-						 10,_dummy_param) );
+						 digits,_dummy_param) );
   
 }
 
@@ -369,7 +370,6 @@ template<typename Function_Object_Type>
 double AccuracyAssessment2D<Quad_Soln_Block>::
 ComputeSolutionErrorL2(const int &iCell, const int &jCell,
 		       Function_Object_Type FuncObj,
-		       const unsigned int &parameter,
 		       double (Quad_Soln_Block::*ComputeSolutionAt)(const int &, const int &,
 								    const Vector2D &,
 								    const unsigned int &) const ){
@@ -386,10 +386,10 @@ ComputeSolutionErrorL2(const int &iCell, const int &jCell,
 													     ComputeSolutionAt,
 													     _dummy_Position,
 													     iCell, jCell,
-													     parameter,
+													     _parameter,
 													     _dummy_param),
 								       _dummy_param),
-						 10,_dummy_param) );
+						 digits,_dummy_param) );
 }
 
 

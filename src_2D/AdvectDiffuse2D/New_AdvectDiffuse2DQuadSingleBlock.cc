@@ -2521,6 +2521,35 @@ void Linear_Reconstruction_LeastSquares(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 }
 
 /******************************************************//**
+ * Routine: Linear_Reconstruction
+ *                                                      
+ * Performs the reconstruction of a limited piecewise   
+ * linear solution state within each cell of the        
+ * computational mesh of the specified quadrilateral    
+ * solution block.
+ ********************************************************/
+void Linear_Reconstruction(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
+			   const int &Reconstruction_Type,
+			   const int &Limiter) {
+
+  switch(Reconstruction_Type) {
+  case RECONSTRUCTION_GREEN_GAUSS :
+    Linear_Reconstruction_GreenGauss(SolnBlk,
+				     Limiter);    
+    break;
+  case RECONSTRUCTION_LEAST_SQUARES :
+    Linear_Reconstruction_LeastSquares(SolnBlk,
+				       Limiter);
+    break;
+  default:
+    Linear_Reconstruction_LeastSquares(SolnBlk,
+				       Limiter);
+    break;
+  } /* endswitch */
+}
+
+
+/******************************************************//**
  * Routine: Residual_Smoothing                          
  *                                                      
  * Applies implicit residual smoothing to solution      

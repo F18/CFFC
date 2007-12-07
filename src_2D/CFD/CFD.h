@@ -162,7 +162,7 @@ inline char *Date_And_Time() {
 
 #define WRITE_OUTPUT_BLACK_ENCLOSURE_CODE                10100
 
-#define WRITE_NORM_ON_SCREEN                             10105
+#define WRITE_ERROR_NORMS_TO_SCREEN                      10105
 #define WRITE_OUTPUT_EXACT_SOLUTION                      10106
 #define WRITE_OUTPUT_ACCURACY_CODE                       10107
 
@@ -860,6 +860,15 @@ inline char *Date_And_Time() {
  ********************************************************/
 #define EXPLICIT                          0
 #define IMPLICIT                          1
+
+
+/********************************************************
+ * CFD -- Accuracy Assessment Modes                     *
+ ********************************************************/
+#define ACCURACY_ASSESSMENT_BASED_ON_EXACT_SOLUTION        0
+#define ACCURACY_ASSESSMENT_BASES_ON_ENTROPY_PRODUCTION    1
+#define ACCURACY_ASSESSMENT_BASES_ON_DRAG_COEFFICIENT      2
+
 
 /*************************************************************************
  *                                                                       *
