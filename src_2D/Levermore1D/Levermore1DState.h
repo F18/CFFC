@@ -111,7 +111,7 @@ class Levermore1D_weights : public Levermore1D_Vector{
   double exponent_value_recursive(double v, int i) const {
     if(i<length-1) {
       return m_values[i] + v*exponent_value_recursive(v,i+1);
-    } else { 
+    } else {
       return m_values[i];
     }
   }

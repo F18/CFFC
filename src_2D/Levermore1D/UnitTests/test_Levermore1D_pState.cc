@@ -15,7 +15,7 @@
 namespace tut
 {
 
-  /* Define the test-specific data class and add data members 
+  /* Define the test-specific data class and add data members
      when tests have complex or repeating creation phase. */
   class Data_Levermore1D_pState : public TestData {
 
@@ -29,7 +29,7 @@ namespace tut
     }
 
   private:
-    
+
   };
 
   /**
@@ -79,7 +79,7 @@ namespace tut
 
     int i(0);
     Levermore1D_pState P1;
-    
+
     for(i=1;i<=Levermore1D_Vector::get_length();++i) {
       //set to a value for copy constructor test
       P1[i] = pow((double)i,6.54321) / 98.765;
@@ -162,6 +162,252 @@ namespace tut
     ensure_distance("velocity is equal", u, W[2], fabs(u)*1e-6+1e-6);
     ensure_distance("pressure is equal", p, W[3], fabs(p)*1e-6+1e-6);
 
+  }
+
+  /* Test 4:*/
+  template<>
+  template<>
+  void Levermore1D_pState_object::test<4>()
+  {
+    set_test_name("Assignment Operator");
+
+    int i(0);
+    Levermore1D_pState W1, W2, W3;
+
+    for(i=1;i<=Levermore1D_pState::get_length();++i) {
+      W1[i] = pow((double)i,1.23456) / 98.765;
+    }
+
+    W3 = W2 = W1;
+
+    for(i=1;i<=Levermore1D_pState::get_length();++i) {
+      ensure_distance("W2=W1",W2[i],W1[i],fabs(W1[i])*tol);
+      ensure_distance("W3=W1",W3[i],W1[i],fabs(W1[i])*tol);
+    }
+  }
+
+  /* Test 5:*/
+  template<>
+  template<>
+  void Levermore1D_pState_object::test<5>()
+  {
+    set_test_name("Addition Operator");
+
+    int i(0);
+    double a(0.0), b(0.0);
+    Levermore1D_pState W1, W2, W3;
+
+    for(i=1;i<=Levermore1D_pState::get_length();++i) {
+      a = pow((double)i,1.23456) / 98.765;
+      b = sqrt((double)i) * exp (i);
+      W1[i] = a;
+      W2[i] = b;
+    }
+
+    W3 = W1 + W2;
+
+    for(i=1;i<=Levermore1D_pState::get_length();++i) {
+      a = pow((double)i,1.23456) / 98.765;
+      b = sqrt((double)i) * exp (i);
+      ensure_distance("W3 = W1 + W2", W3[i], a+b, fabs(a+b)*tol);
+    }
+  }
+
+  /* Test 6:*/
+  template<>
+  template<>
+  void Levermore1D_pState_object::test<6>()
+  {
+    set_test_name("Addition and Assignment Operator");
+
+    int i(0);
+    double a(0.0), b(0.0);
+    Levermore1D_pState W1, W2, W3;
+
+    for(i=1;i<=Levermore1D_pState::get_length();++i) {
+      a = pow((double)i,1.23456) / 98.765;
+      b = sqrt((double)i) * exp (i);
+      W1[i] = a;
+      W2[i] = b;
+    }
+
+    W3 = (W2 += W1);
+
+    for(i=1;i<=Levermore1D_pState::get_length();++i) {
+      a = pow((double)i,1.23456) / 98.765;
+      b = sqrt((double)i) * exp (i);
+
+      ensure_distance("W2 += W1",W2[i],a+b,fabs(a+b)*tol);
+      ensure_distance("W3 = (W2+=W1)",W3[i],a+b,fabs(a+b)*tol);
+    }
+  }
+
+  /* Test 7:*/
+  template<>
+  template<>
+  void Levermore1D_pState_object::test<7>()
+  {
+    set_test_name("Subtraction Operator");
+
+    int i(0);
+    double a(0.0), b(0.0);
+    Levermore1D_pState W1, W2, W3;
+
+    for(i=1;i<=Levermore1D_pState::get_length();++i) {
+      a = pow((double)i,1.23456) / 98.765;
+      b = sqrt((double)i) * exp (i);
+      W1[i] = a;
+      W2[i] = b;
+    }
+
+    W3 = W1 - W2;
+
+    for(i=1;i<=Levermore1D_pState::get_length();++i) {
+      a = pow((double)i,1.23456) / 98.765;
+      b = sqrt((double)i) * exp (i);
+      ensure_distance("W3 = W1 - W2", W3[i], a-b, fabs(a-b)*tol);
+    }
+  }
+
+  /* Test 8:*/
+  template<>
+  template<>
+  void Levermore1D_pState_object::test<8>()
+  {
+    set_test_name("Subtraction and Assignment Operator");
+
+    int i(0);
+    double a(0.0), b(0.0);
+    Levermore1D_pState W1, W2, W3;
+
+    for(i=1;i<=Levermore1D_pState::get_length();++i) {
+      a = pow((double)i,1.23456) / 98.765;
+      b = sqrt((double)i) * exp (i);
+      W1[i] = a;
+      W2[i] = b;
+    }
+
+    W3 = (W2 -= W1);
+
+    for(i=1;i<=Levermore1D_pState::get_length();++i) {
+      a = pow((double)i,1.23456) / 98.765;
+      b = sqrt((double)i) * exp (i);
+
+      ensure_distance("W2 -= W1",W2[i],b-a,fabs(b-a)*tol);
+      ensure_distance("W3 = (W2-=W1)",W3[i],b-a,fabs(b-a)*tol);
+    }
+  }
+
+  /* Test 9:*/
+  template<>
+  template<>
+  void Levermore1D_pState_object::test<10>()
+  {
+    set_test_name("Dot Product Operator");
+
+    int i(0);
+    double a(0.0), b(0.0), dot(0.0), dot_levermore(0.0);
+    Levermore1D_pState W1, W2;
+
+    for(i=1;i<=Levermore1D_pState::get_length();++i) {
+      a = pow((double)i,1.23456) / 98.765;
+      b = sqrt((double)i) * exp (i);
+      dot += (a*b);
+      W1[i] = a;
+      W2[i] = b;
+    }
+
+    dot_levermore = W1 * W2;
+    ensure_distance("dot_prod = W1*W2)", dot_levermore, dot, fabs(dot)*tol);
+    dot_levermore = W2 * W1;
+    ensure_distance("dot_prod = W2*W1)", dot_levermore, dot, fabs(dot)*tol);
+
+  }
+
+  /* Test 11:*/
+  template<>
+  template<>
+  void Levermore1D_pState_object::test<11>()
+  {
+    set_test_name("Term-wise Product Operator");
+
+    int i(0);
+    double a(0.0), b(0.0);
+    Levermore1D_pState W1, W2, W3;
+
+    for(i=1;i<=Levermore1D_pState::get_length();++i) {
+      a = pow((double)i,1.23456) / 98.765;
+      b = sqrt((double)i) * exp (i);
+      W1[i] = a;
+      W2[i] = b;
+    }
+
+    W3 = W1 ^ W2;
+    for(i=1;i<=Levermore1D_pState::get_length();++i) {
+      a = pow((double)i,1.23456) / 98.765;
+      b = sqrt((double)i) * exp (i);
+      ensure_distance("W3 = W1^W2)", W3[i], a*b, fabs(a*b)*tol);
+    }
+
+    W3 = W2 ^ W1;
+    for(i=1;i<=Levermore1D_pState::get_length();++i) {
+      a = pow((double)i,1.23456) / 98.765;
+      b = sqrt((double)i) * exp (i);
+      ensure_distance("W3 = W1^W2)", W3[i], a*b, fabs(a*b)*tol);
+    }
+  }
+
+  /* Test 12:*/
+  template<>
+  template<>
+  void Levermore1D_pState_object::test<12>()
+  {
+    set_test_name("copy_form Function");
+    int i(0);
+    Levermore1D_pState W1, W2;
+
+    for(i=1;i<=Levermore1D_pState::get_length();++i) {
+      W1[i] = pow((double)i,1.23456) / 98.765;
+    }
+
+    W2.copy_from(W1);
+
+    for(i=1;i<=Levermore1D_pState::get_length();++i) {
+      ensure_distance("W2=W1",W2[i],W1[i],fabs(W1[i])*tol);
+    }
+  }
+
+  /* Test 13:*/
+  template<>
+  template<>
+  void Levermore1D_pState_object::test<13>()
+  {
+    set_test_name("vacuum, zero, one, and set_all Function");
+    int i(0);
+    Levermore1D_pState W1, W2, W3, W4;
+
+    for(i=1;i<=Levermore1D_pState::get_length();++i) {
+      W1[i] = pow((double)i,1.23456) / 98.765;
+      W2[i] = pow((double)i,1.23456) / 98.765;
+      W3[i] = pow((double)i,1.23456) / 98.765;
+      W4[i] = pow((double)i,1.23456) / 98.765;
+      ensure("W1!=0.0", W1[i] != 0.0);
+      ensure("W2!=1.0", W2[i] != 1.0);
+      ensure("W3!=2.0", W3[i] != 2.0);
+      ensure("W4!=2.0", W4[i] != 0.0);
+    }
+
+    W1.zero();
+    W2.one();
+    W3.set_all(2.0);
+    W4.Vacuum();
+
+    for(i=1;i<=Levermore1D_pState::get_length();++i) {
+      ensure_distance("W1 = 0.0",W1[i],0.0,tol);
+      ensure_distance("W2 = 1.0",W2[i],1.0,tol);
+      ensure_distance("W3 = 2.0",W3[i],2.0,tol);
+      ensure_distance("W4 = 0.0",W4[i],0.0,tol);
+    }
   }
 
   //end tests

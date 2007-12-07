@@ -15,7 +15,7 @@
 namespace tut
 {
 
-  /* Define the test-specific data class and add data members 
+  /* Define the test-specific data class and add data members
      when tests have complex or repeating creation phase. */
   class Data_Levermore1D_weights : public TestData {
 
@@ -29,7 +29,7 @@ namespace tut
     }
 
   private:
-    
+
   };
 
   /**
@@ -79,7 +79,7 @@ namespace tut
 
     int i(0);
     Levermore1D_weights alpha1;
-    
+
     for(i=1;i<=Levermore1D_Vector::get_length();++i) {
       //set to a value for copy constructor test
       alpha1[i] = pow((double)i,3.54321) / 18.765;

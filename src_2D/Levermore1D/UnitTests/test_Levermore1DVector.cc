@@ -15,7 +15,7 @@
 namespace tut
 {
 
-  /* Define the test-specific data class and add data members 
+  /* Define the test-specific data class and add data members
      when tests have complex or repeating creation phase. */
   class Data_Levermore1DVector : public TestData {
 
@@ -29,7 +29,7 @@ namespace tut
     }
 
   private:
-    
+
   };
 
   /**
@@ -79,7 +79,7 @@ namespace tut
 
     int i(0);
     Levermore1D_Vector V1;
-    
+
     for(i=1;i<=Levermore1D_Vector::get_length();++i) {
       //set to a value for copy constructor test
       V1[i] = pow((double)i,1.23456) / 98.765;
@@ -102,7 +102,7 @@ namespace tut
 
     int i(0);
     Levermore1D_Vector V1, V2, V3;
-    
+
     for(i=1;i<=Levermore1D_Vector::get_length();++i) {
       V1[i] = pow((double)i,1.23456) / 98.765;
     }
@@ -125,7 +125,7 @@ namespace tut
     int i(0);
     double a(0.0), b(0.0);
     Levermore1D_Vector V1, V2, V3;
-    
+
     for(i=1;i<=Levermore1D_Vector::get_length();++i) {
       a = pow((double)i,1.23456) / 98.765;
       b = sqrt((double)i) * exp (i);
@@ -152,7 +152,7 @@ namespace tut
     int i(0);
     double a(0.0), b(0.0);
     Levermore1D_Vector V1, V2, V3;
-    
+
     for(i=1;i<=Levermore1D_Vector::get_length();++i) {
       a = pow((double)i,1.23456) / 98.765;
       b = sqrt((double)i) * exp (i);
@@ -181,7 +181,7 @@ namespace tut
     int i(0);
     double a(0.0), b(0.0);
     Levermore1D_Vector V1, V2, V3;
-    
+
     for(i=1;i<=Levermore1D_Vector::get_length();++i) {
       a = pow((double)i,1.23456) / 98.765;
       b = sqrt((double)i) * exp (i);
@@ -208,7 +208,7 @@ namespace tut
     int i(0);
     double a(0.0), b(0.0);
     Levermore1D_Vector V1, V2, V3;
-    
+
     for(i=1;i<=Levermore1D_Vector::get_length();++i) {
       a = pow((double)i,1.23456) / 98.765;
       b = sqrt((double)i) * exp (i);
@@ -237,7 +237,7 @@ namespace tut
     int i(0);
     double a(0.0), b(0.0), dot(0.0), dot_levermore(0.0);
     Levermore1D_Vector V1, V2;
-    
+
     for(i=1;i<=Levermore1D_Vector::get_length();++i) {
       a = pow((double)i,1.23456) / 98.765;
       b = sqrt((double)i) * exp (i);
@@ -263,7 +263,7 @@ namespace tut
     int i(0);
     double a(0.0), b(0.0);
     Levermore1D_Vector V1, V2, V3;
-    
+
     for(i=1;i<=Levermore1D_Vector::get_length();++i) {
       a = pow((double)i,1.23456) / 98.765;
       b = sqrt((double)i) * exp (i);
@@ -294,7 +294,7 @@ namespace tut
     set_test_name("copy_form Function");
     int i(0);
     Levermore1D_Vector V1, V2;
-    
+
     for(i=1;i<=Levermore1D_Vector::get_length();++i) {
       V1[i] = pow((double)i,1.23456) / 98.765;
     }
@@ -320,8 +320,8 @@ namespace tut
       V2[i] = pow((double)i,1.23456) / 98.765;
       V3[i] = pow((double)i,1.23456) / 98.765;
       ensure("V1!=0.0", V1[i] != 0.0);
-      ensure("V2!=1.0", V1[i] != 1.0);
-      ensure("V3!=2.0", V1[i] != 2.0);
+      ensure("V2!=1.0", V2[i] != 1.0);
+      ensure("V3!=2.0", V3[i] != 2.0);
     }
 
     V1.zero();
