@@ -84,7 +84,6 @@ class Levermore1D_weights : public Levermore1D_Vector{
 
   /* Functions. */
   Levermore1D_Vector& operator=(const Levermore1D_Vector &V) {return Levermore1D_Vector::operator=(V);}
-  void Vacuum() {Levermore1D_Vector::zero();}
   void set_from_W(const Levermore1D_pState &W);
   void set_from_U(const Levermore1D_cState &U);
   double integrate_conserved_moment(int i) const;
