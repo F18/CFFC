@@ -98,6 +98,265 @@ namespace tut
   template<>
   void Levermore1D_weights_object::test<2>()
   {
+    set_test_name("Constructor from pState");
+
+  }
+
+  /* Test 3:*/
+  template<>
+  template<>
+  void Levermore1D_weights_object::test<3>()
+  {
+    set_test_name("Constructor from cState");
+  }
+
+  /* Test 4:*/
+  template<>
+  template<>
+  void Levermore1D_weights_object::test<4>()
+  {
+    set_test_name("Assignment Operator");
+
+    int i(0);
+    Levermore1D_weights A1, A2, A3;
+
+    for(i=1;i<=Levermore1D_weights::get_length();++i) {
+      A1[i] = pow((double)i,1.23456) / 98.765;
+    }
+
+    A3 = A2 = A1;
+
+    for(i=1;i<=Levermore1D_weights::get_length();++i) {
+      ensure_distance("A2=A1",A2[i],A1[i],fabs(A1[i])*tol);
+      ensure_distance("A3=A1",A3[i],A1[i],fabs(A1[i])*tol);
+    }
+  }
+
+  /* Test 5:*/
+  template<>
+  template<>
+  void Levermore1D_weights_object::test<5>()
+  {
+    set_test_name("Addition Operator");
+
+    int i(0);
+    double a(0.0), b(0.0);
+    Levermore1D_weights A1, A2, A3;
+
+    for(i=1;i<=Levermore1D_weights::get_length();++i) {
+      a = pow((double)i,1.23456) / 98.765;
+      b = sqrt((double)i) * exp (i);
+      A1[i] = a;
+      A2[i] = b;
+    }
+
+    A3 = A1 + A2;
+
+    for(i=1;i<=Levermore1D_weights::get_length();++i) {
+      a = pow((double)i,1.23456) / 98.765;
+      b = sqrt((double)i) * exp (i);
+      ensure_distance("A3 = A1 + A2", A3[i], a+b, fabs(a+b)*tol);
+    }
+  }
+
+  /* Test 6:*/
+  template<>
+  template<>
+  void Levermore1D_weights_object::test<6>()
+  {
+    set_test_name("Addition and Assignment Operator");
+
+    int i(0);
+    double a(0.0), b(0.0);
+    Levermore1D_weights A1, A2, A3;
+
+    for(i=1;i<=Levermore1D_weights::get_length();++i) {
+      a = pow((double)i,1.23456) / 98.765;
+      b = sqrt((double)i) * exp (i);
+      A1[i] = a;
+      A2[i] = b;
+    }
+
+    A3 = (A2 += A1);
+
+    for(i=1;i<=Levermore1D_weights::get_length();++i) {
+      a = pow((double)i,1.23456) / 98.765;
+      b = sqrt((double)i) * exp (i);
+
+      ensure_distance("A2 += A1",A2[i],a+b,fabs(a+b)*tol);
+      ensure_distance("A3 = (A2+=A1)",A3[i],a+b,fabs(a+b)*tol);
+    }
+  }
+
+  /* Test 7:*/
+  template<>
+  template<>
+  void Levermore1D_weights_object::test<7>()
+  {
+    set_test_name("Subtraction Operator");
+
+    int i(0);
+    double a(0.0), b(0.0);
+    Levermore1D_weights A1, A2, A3;
+
+    for(i=1;i<=Levermore1D_weights::get_length();++i) {
+      a = pow((double)i,1.23456) / 98.765;
+      b = sqrt((double)i) * exp (i);
+      A1[i] = a;
+      A2[i] = b;
+    }
+
+    A3 = A1 - A2;
+
+    for(i=1;i<=Levermore1D_weights::get_length();++i) {
+      a = pow((double)i,1.23456) / 98.765;
+      b = sqrt((double)i) * exp (i);
+      ensure_distance("A3 = A1 - A2", A3[i], a-b, fabs(a-b)*tol);
+    }
+  }
+
+  /* Test 8:*/
+  template<>
+  template<>
+  void Levermore1D_weights_object::test<8>()
+  {
+    set_test_name("Subtraction and Assignment Operator");
+
+    int i(0);
+    double a(0.0), b(0.0);
+    Levermore1D_weights A1, A2, A3;
+
+    for(i=1;i<=Levermore1D_weights::get_length();++i) {
+      a = pow((double)i,1.23456) / 98.765;
+      b = sqrt((double)i) * exp (i);
+      A1[i] = a;
+      A2[i] = b;
+    }
+
+    A3 = (A2 -= A1);
+
+    for(i=1;i<=Levermore1D_weights::get_length();++i) {
+      a = pow((double)i,1.23456) / 98.765;
+      b = sqrt((double)i) * exp (i);
+
+      ensure_distance("A2 -= A1",A2[i],b-a,fabs(b-a)*tol);
+      ensure_distance("A3 = (A2-=A1)",A3[i],b-a,fabs(b-a)*tol);
+    }
+  }
+
+  /* Test 9:*/
+  template<>
+  template<>
+  void Levermore1D_weights_object::test<9>()
+  {
+    set_test_name("Dot Product Operator");
+
+    int i(0);
+    double a(0.0), b(0.0), dot(0.0), dot_levermore(0.0);
+    Levermore1D_weights A1, A2;
+
+    for(i=1;i<=Levermore1D_weights::get_length();++i) {
+      a = pow((double)i,1.23456) / 98.765;
+      b = sqrt((double)i) * exp (i);
+      dot += (a*b);
+      A1[i] = a;
+      A2[i] = b;
+    }
+
+    dot_levermore = A1 * A2;
+    ensure_distance("dot_prod = A1*A2)", dot_levermore, dot, fabs(dot)*tol);
+    dot_levermore = A2 * A1;
+    ensure_distance("dot_prod = A2*A1)", dot_levermore, dot, fabs(dot)*tol);
+
+  }
+
+  /* Test 10:*/
+  template<>
+  template<>
+  void Levermore1D_weights_object::test<10>()
+  {
+    set_test_name("Term-wise Product Operator");
+
+    int i(0);
+    double a(0.0), b(0.0);
+    Levermore1D_weights A1, A2, A3;
+
+    for(i=1;i<=Levermore1D_weights::get_length();++i) {
+      a = pow((double)i,1.23456) / 98.765;
+      b = sqrt((double)i) * exp (i);
+      A1[i] = a;
+      A2[i] = b;
+    }
+
+    A3 = A1 ^ A2;
+    for(i=1;i<=Levermore1D_weights::get_length();++i) {
+      a = pow((double)i,1.23456) / 98.765;
+      b = sqrt((double)i) * exp (i);
+      ensure_distance("A3 = A1^A2)", A3[i], a*b, fabs(a*b)*tol);
+    }
+
+    A3 = A2 ^ A1;
+    for(i=1;i<=Levermore1D_weights::get_length();++i) {
+      a = pow((double)i,1.23456) / 98.765;
+      b = sqrt((double)i) * exp (i);
+      ensure_distance("A3 = A1^A2)", A3[i], a*b, fabs(a*b)*tol);
+    }
+  }
+
+  /* Test 11:*/
+  template<>
+  template<>
+  void Levermore1D_weights_object::test<11>()
+  {
+    set_test_name("copy_form Function");
+    int i(0);
+    Levermore1D_weights A1, A2;
+
+    for(i=1;i<=Levermore1D_weights::get_length();++i) {
+      A1[i] = pow((double)i,1.23456) / 98.765;
+    }
+
+    A2.copy_from(A1);
+
+    for(i=1;i<=Levermore1D_weights::get_length();++i) {
+      ensure_distance("A2=A1",A2[i],A1[i],fabs(A1[i])*tol);
+    }
+  }
+
+  /* Test 12:*/
+  template<>
+  template<>
+  void Levermore1D_weights_object::test<12>()
+  {
+    set_test_name("zero, one, and set_all Function");
+    int i(0);
+    Levermore1D_weights A1, A2, A3;
+
+    for(i=1;i<=Levermore1D_weights::get_length();++i) {
+      A1[i] = pow((double)i,1.23456) / 98.765;
+      A2[i] = pow((double)i,1.23456) / 98.765;
+      A3[i] = pow((double)i,1.23456) / 98.765;
+      ensure("A1!=0.0", A1[i] != 0.0);
+      ensure("A2!=1.0", A2[i] != 1.0);
+      ensure("A3!=2.0", A3[i] != 2.0);
+    }
+
+    A1.zero();
+    A2.one();
+    A3.set_all(2.0);
+
+    for(i=1;i<=Levermore1D_weights::get_length();++i) {
+      ensure_distance("A1 = 0.0",A1[i],0.0,tol);
+      ensure_distance("A2 = 1.0",A2[i],1.0,tol);
+      ensure_distance("A3 = 2.0",A3[i],2.0,tol);
+    }
+  }
+
+  /* Test 13:*/
+  template<>
+  template<>
+  void Levermore1D_weights_object::test<13>()
+  {
     set_test_name("value_at");
 
     Levermore1D_weights alpha;
