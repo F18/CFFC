@@ -2358,6 +2358,20 @@ extern Grid2D_Quad_Block** Grid_NACA_Aerofoil(Grid2D_Quad_Block **Grid_ptr,
 		                              const int Number_of_Cells_Jdir,
 					      const int Number_of_Ghost_Cells);
 
+extern Grid2D_Quad_Block** Grid_NACA_Aerofoil_Ogrid(Grid2D_Quad_Block **Grid_ptr,
+						    int &Number_of_Blocks_Idir,
+						    int &Number_of_Blocks_Jdir,
+						    char *NACA_Aerofoil_Type_ptr,
+						    const double &Chord_Length,
+						    const double &Outer_Radius,
+						    const int Stretching_Type_Idir,
+						    const int Stretching_Type_Jdir,
+						    const double &Stretching_Factor_Idir,
+						    const double &Stretching_Factor_Jdir,
+						    const int Number_of_Cells_Idir,
+						    const int Number_of_Cells_Jdir,
+						    const int Number_of_Ghost_Cells);
+
 extern Grid2D_Quad_Block** Grid_Free_Jet(Grid2D_Quad_Block **Grid_ptr,
                                          int &Number_of_Blocks_Idir,
                                          int &Number_of_Blocks_Jdir,
