@@ -6,10 +6,17 @@
 
 //=====Included Files=====//
 
+#define _POSIX_C_SOURCE 199309
+
 //-----Standard Library-----//
 
 #include <cstdlib>
 #include <string>
+#include <cmath>
+
+//-----System-----//
+
+#include <time.h>
 
 //-----Internal-----//
 
@@ -258,5 +265,34 @@ void System::Get_Current_Path(char * buffer) throw(std::runtime_error)
   if (Result == NULL){
     throw std::runtime_error("Get_Current_Path() ERROR: failed to identify the current directory.");
   }
+
+}
+
+/*==============================================================================
+ *
+ * Routine: sleep
+ *
+ * Purpose
+ * =======
+ *
+ *   Let the process sleep for a while
+ *
+ * I/O
+ * ===
+ *
+ *   s                  - (I) Time to sleep in seconds
+ *   returns            -  0: successful sleep
+ *                        -1: interupted
+ *
+ *============================================================================*/
+
+int System::sleep(const double s)
+{
+
+   const unsigned int sec = static_cast<unsigned int>(fabs(s));
+   timespec req, rem;
+   req.tv_sec = sec;
+   req.tv_nsec = static_cast<long>((fabs(s) - sec)*1.E9);
+   return nanosleep(&req, &rem);
 
 }

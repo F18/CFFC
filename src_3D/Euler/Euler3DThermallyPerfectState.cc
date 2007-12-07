@@ -532,7 +532,7 @@ double Euler3D_ThermallyPerfect_pState::a(void) const{
  * Euler3D_ThermallyPerfect_pState::M -- Return mixture Mach number.                   *
  ***************************************************************************************/
 double Euler3D_ThermallyPerfect_pState::M(void) const{
-   return (v.abs() / a());
+   return (v.abs()/a());
 }
 
 /***************************************************************************************
@@ -2097,22 +2097,18 @@ double Euler3D_ThermallyPerfect_cState::p(void) const {
  * Euler3D_ThermallyPerfect_cState::a -- Return mixture sound speed.                   *
  ***************************************************************************************/
 double Euler3D_ThermallyPerfect_cState::a(void) const {
-  double sum;
+  double a_temp;
   double RTOT= Rtot();
   double Temp= T();
-  //  one way to obtain the speed of sound 
-  //sum = RTOT*Temp*(RTOT/( hprime(Temp) - RTOT) + ONE);
-  sum  =  (g()*(Rtot()*T()));
-  return sqrt(sum);
+  a_temp = (g()*(Rtot()*T()));
+  return sqrt(a_temp);
 }
 
 /***************************************************************************************
  * Euler3D_ThermallyPerfect_cState::M -- Return mixture Mach number.                   *
  ***************************************************************************************/
 double Euler3D_ThermallyPerfect_cState::M(void) const {
-   double mach_number;
-   mach_number = rhov.abs() / (rho*a());
-   return mach_number;
+   return (rhov.abs()/(rho*a()));
 }
 
 /***************************************************************************************

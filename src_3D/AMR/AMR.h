@@ -45,24 +45,25 @@
  *                                                                *
  ******************************************************************/
 template<typename SOLN_pSTATE, typename SOLN_cSTATE>
-int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block                                 &Initial_Mesh,
+int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                            &Initial_Mesh,
                                    Hexa_Multi_Block<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> > &Local_Solution_Blocks,
                                    Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>              &Input,
                                    Octree_DataStructure                                    &Octree,
                                    AdaptiveBlock3D_ResourceList                            &Global_Adaptive_Block_List,
                                    AdaptiveBlock3D_List                                    &Local_Adaptive_Block_List) {
    
-   int n_cpu, n_blk;
-
-   /* Create (allocate) octree data structure. */
+   int n_cpu, n_blk; 
+   int *gridblk_cpu_number, *gridblk_blk_number;
    
+   /* Create (allocate) octree data structure. */
+
    Octree_DataStructure::Create_Octree_Data_Structure(Octree,
                                                       Input.Grid_IP.NBlk_Idir,
                                                       Input.Grid_IP.NBlk_Jdir,
                                                       Input.Grid_IP.NBlk_Kdir,
                                                       Input.AMR_IP.Number_of_Processors,
                                                       Input.AMR_IP.Number_of_Blocks_Per_Processor);
-
+   
    Octree.MaximumRefinementLevel = Input.AMR_IP.Maximum_Refinement_Level-1;
    Octree.MinimumRefinementLevel = Input.AMR_IP.Minimum_Refinement_Level-1;
    
@@ -71,7 +72,7 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block                      
    Octree.RefineThreshold = Input.AMR_IP.Threshold_for_Refinement;
    Octree.CoarsenThreshold = Input.AMR_IP.Threshold_for_Coarsening;
    
-   /* Create (allocate) array of local 3D hexarilateral solution blocks. */
+   /* Create (allocate) array of local 3D hexahedral solution blocks. */
    
    Local_Solution_Blocks.Allocate(Input.AMR_IP.Number_of_Blocks_Per_Processor);
 
@@ -81,101 +82,528 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block                      
    Local_Adaptive_Block_List.allocate(Input.AMR_IP.Number_of_Blocks_Per_Processor);
    Local_Adaptive_Block_List.ThisCPU = Global_Adaptive_Block_List.ThisCPU;
    
-   /* Loop over all initial mesh blocks and assign Octree root blocks and 
-      local solution block information as required. */
+   /* Loop over all initial mesh blocks and determine the CPU and local block numbers for
+      each grid block. */
 
-   int nused=0;
+   gridblk_cpu_number = new int[Initial_Mesh.NBlk];
+   gridblk_blk_number = new int[Initial_Mesh.NBlk];
 
-   for ( int k_blk = 0 ; k_blk <= Initial_Mesh.NBlk_Kdir-1 ; ++k_blk ) {
-      for ( int j_blk = 0 ; j_blk <= Initial_Mesh.NBlk_Jdir-1 ; ++j_blk ) {
-         for ( int i_blk = 0 ; i_blk <= Initial_Mesh.NBlk_Idir-1 ; ++i_blk ) {
-            if (Initial_Mesh.Grid_Blks[i_blk][j_blk][k_blk].Allocated) { // Mesh block is used!!!!
-	       // Get next free solution block from list of available
-	       // solution blocks.
-               
-               if (Global_Adaptive_Block_List.Nfree > 0) {
-                  n_cpu = Global_Adaptive_Block_List.nextCPU();
-                  n_blk = Global_Adaptive_Block_List.nextBlock();
-                  Global_Adaptive_Block_List.update_next();
-               } else {
-                  cout << "\n" 
-                       << " AMR Error: Create_Initial_Solution_Blocks, Insufficient number of hexahedrial solution blocks.\n";
-                  return (1);
-               } /* endif */
-	        
-               // Assign block information to appropriate Octree root solution block.
-               Octree.Roots[i_blk][j_blk][k_blk].block.used = ADAPTIVEBLOCK3D_USED;
-               Octree.Roots[i_blk][j_blk][k_blk].block.gblknum =
-	          Global_Adaptive_Block_List.Nused-1;
-               Octree.Roots[i_blk][j_blk][k_blk].block.info.cpu = n_cpu;
-               Octree.Roots[i_blk][j_blk][k_blk].block.info.blknum = n_blk;
-               Octree.Roots[i_blk][j_blk][k_blk].block.info.dimen.i =
-                   Initial_Mesh.Grid_Blks[i_blk][j_blk][k_blk].NCi -  
-                   2*Initial_Mesh.Grid_Blks[i_blk][j_blk][k_blk].Nghost;
-               Octree.Roots[i_blk][j_blk][k_blk].block.info.dimen.j =
-                   Initial_Mesh.Grid_Blks[i_blk][j_blk][k_blk].NCj - 
-                   2*Initial_Mesh.Grid_Blks[i_blk][j_blk][k_blk].Nghost;
-               Octree.Roots[i_blk][j_blk][k_blk].block.info.dimen.k =
-                   Initial_Mesh.Grid_Blks[i_blk][j_blk][k_blk].NCk - 
-                   2*Initial_Mesh.Grid_Blks[i_blk][j_blk][k_blk].Nghost;
-               Octree.Roots[i_blk][j_blk][k_blk].block.info.dimen.ghost = 2;
-               Octree.Roots[i_blk][j_blk][k_blk].block.info.sector = ADAPTIVEBLOCK3D_SECTOR_NONE;
-               Octree.Roots[i_blk][j_blk][k_blk].block.info.level = 0;
-               Octree.Roots[i_blk][j_blk][k_blk].parent_ptr = NULL;
-               Octree.Roots[i_blk][j_blk][k_blk].childTNW_ptr = NULL;
-               Octree.Roots[i_blk][j_blk][k_blk].childTNE_ptr = NULL;
-               Octree.Roots[i_blk][j_blk][k_blk].childTSE_ptr = NULL;
-               Octree.Roots[i_blk][j_blk][k_blk].childTSW_ptr = NULL;
-               Octree.Roots[i_blk][j_blk][k_blk].childBNW_ptr = NULL;
-               Octree.Roots[i_blk][j_blk][k_blk].childBNE_ptr = NULL;
-               Octree.Roots[i_blk][j_blk][k_blk].childBSE_ptr = NULL;
-               Octree.Roots[i_blk][j_blk][k_blk].childBSW_ptr = NULL;
-               Octree.Blocks[n_cpu][n_blk] = &(Octree.Roots[i_blk][j_blk][k_blk]);
-               
-               // For solution blocks on this processor (or processor
-               // element), add block to local list, create the solution
-               // block, and copy the appropriate block of the
-               // initial hexarilateral mesh to the solution block mesh.
-               if (Global_Adaptive_Block_List.ThisCPU == n_cpu) {
-                  Local_Adaptive_Block_List.Block[n_blk] = Octree.Roots[i_blk][j_blk][k_blk].block;
-                  Local_Solution_Blocks.Soln_Blks[n_blk].Create_Block(Initial_Mesh.Grid_Blks[i_blk][j_blk][k_blk]);
-                  Local_Solution_Blocks.Soln_Blks[n_blk].Flow_Type = Input.i_Flow_Type;
-                  Local_Solution_Blocks.Block_Used[n_blk] = HEXA_BLOCK_USED;
-               } /* endif */
-            } else{
- 	       Octree.Roots[i_blk][j_blk][k_blk].block.used = 0;
-	       nused++;
-	    } /* endif */
-        } /* endfor */
-      } /* endfor */
-    } /* endfor */
+   for (int nb = 0 ; nb < Initial_Mesh.NBlk ; ++nb) {
+      if (Initial_Mesh.Grid_Blks[nb].Allocated) { // Mesh block is used!!!!
+         // Get next free solution block from list of available
+         // solution blocks.
+         if (Global_Adaptive_Block_List.Nfree > 0) {
+            n_cpu = Global_Adaptive_Block_List.nextCPU();
+            n_blk = Global_Adaptive_Block_List.nextBlock();
+            Global_Adaptive_Block_List.update_next();
+            gridblk_cpu_number[nb] = n_cpu;
+            gridblk_blk_number[nb] = n_blk;
+         } else {
+            cout << "\n"
+                 << " AMR Error: Create_Initial_Solution_Blocks, "
+                 << "Insufficient number of hexahedrial solution blocks.\n";
+            return (1);
+         } /* endif */
+      } /* endif */
+   } /* endfor */
    
-    /* Renumber all solution blocks, assigning a unique global block number. */
+   /* Loop over all initial mesh or grid blocks and assign octree root blocks. */
 
-    Octree_DataStructure::Renumber_Solution_Blocks(Octree,
-                                                   Local_Adaptive_Block_List);
+   for (int nb = 0 ; nb < Initial_Mesh.NBlk ; ++nb) {
+      if (Initial_Mesh.Grid_Blks[nb].Allocated) { // Mesh block is used!!!!
+	 // Obtain CPU and block number.
+         n_cpu = gridblk_cpu_number[nb];
+         n_blk = gridblk_blk_number[nb];
 
-    /* Find the neighbours of all of the newly assigned root blocks. */
+         // Assign block information to appropriate octree root solution block.
+         Octree.Roots[nb].block.used = ADAPTIVEBLOCK3D_USED;
+         Octree.Roots[nb].block.gblknum = Global_Adaptive_Block_List.Nused-1;
+         Octree.Roots[nb].block.info.cpu = n_cpu;
+         Octree.Roots[nb].block.info.blknum = n_blk;
+         Octree.Roots[nb].block.info.dimen.i = Initial_Mesh.Grid_Blks[nb].NCi -
+                                               2*Initial_Mesh.Grid_Blks[nb].Nghost;
+         Octree.Roots[nb].block.info.dimen.j = Initial_Mesh.Grid_Blks[nb].NCj -
+                                               2*Initial_Mesh.Grid_Blks[nb].Nghost;
+         Octree.Roots[nb].block.info.dimen.k = Initial_Mesh.Grid_Blks[nb].NCk -
+                                               2*Initial_Mesh.Grid_Blks[nb].Nghost;
+         Octree.Roots[nb].block.info.dimen.ghost = 2;
+         Octree.Roots[nb].block.info.sector = ADAPTIVEBLOCK3D_SECTOR_NONE;
+         Octree.Roots[nb].block.info.level = 0;
+         Octree.Roots[nb].parent_ptr = NULL;
+         Octree.Roots[nb].childTNW_ptr = NULL;
+         Octree.Roots[nb].childTNE_ptr = NULL;
+         Octree.Roots[nb].childTSE_ptr = NULL;
+         Octree.Roots[nb].childTSW_ptr = NULL;
+         Octree.Roots[nb].childBNW_ptr = NULL;
+         Octree.Roots[nb].childBNE_ptr = NULL;
+         Octree.Roots[nb].childBSE_ptr = NULL;
+         Octree.Roots[nb].childBSW_ptr = NULL;
+
+         // Assign the number of neighbouring grid blocks in each direction
+         // for each of the block in the octree roots.
+         Octree.Roots[nb].block.nT = Initial_Mesh.Connectivity[nb].num_neighT;
+         Octree.Roots[nb].block.nB = Initial_Mesh.Connectivity[nb].num_neighB;
+         Octree.Roots[nb].block.nN = Initial_Mesh.Connectivity[nb].num_neighN;
+         Octree.Roots[nb].block.nS = Initial_Mesh.Connectivity[nb].num_neighS;
+         Octree.Roots[nb].block.nE = Initial_Mesh.Connectivity[nb].num_neighE;
+         Octree.Roots[nb].block.nW = Initial_Mesh.Connectivity[nb].num_neighW;
+         Octree.Roots[nb].block.nNW = Initial_Mesh.Connectivity[nb].num_neighNW;
+         Octree.Roots[nb].block.nNE = Initial_Mesh.Connectivity[nb].num_neighNE;
+         Octree.Roots[nb].block.nSE = Initial_Mesh.Connectivity[nb].num_neighSE;
+         Octree.Roots[nb].block.nSW = Initial_Mesh.Connectivity[nb].num_neighSW;
+         Octree.Roots[nb].block.nTN = Initial_Mesh.Connectivity[nb].num_neighTN;
+         Octree.Roots[nb].block.nTS = Initial_Mesh.Connectivity[nb].num_neighTS;
+         Octree.Roots[nb].block.nTE = Initial_Mesh.Connectivity[nb].num_neighTE;
+         Octree.Roots[nb].block.nTW = Initial_Mesh.Connectivity[nb].num_neighTW;
+         Octree.Roots[nb].block.nBN = Initial_Mesh.Connectivity[nb].num_neighBN;
+         Octree.Roots[nb].block.nBS = Initial_Mesh.Connectivity[nb].num_neighBS;
+         Octree.Roots[nb].block.nBE = Initial_Mesh.Connectivity[nb].num_neighBE;
+         Octree.Roots[nb].block.nBW = Initial_Mesh.Connectivity[nb].num_neighBW;
+         Octree.Roots[nb].block.nTNW  = Initial_Mesh.Connectivity[nb].num_neighTNW;
+         Octree.Roots[nb].block.nTSW = Initial_Mesh.Connectivity[nb].num_neighTSW;
+         Octree.Roots[nb].block.nTNE = Initial_Mesh.Connectivity[nb].num_neighTNE;
+         Octree.Roots[nb].block.nTSE = Initial_Mesh.Connectivity[nb].num_neighTSE;
+         Octree.Roots[nb].block.nBSE  = Initial_Mesh.Connectivity[nb].num_neighBSE;
+         Octree.Roots[nb].block.nBSW = Initial_Mesh.Connectivity[nb].num_neighBSW;
+         Octree.Roots[nb].block.nBNE = Initial_Mesh.Connectivity[nb].num_neighBNE;
+         Octree.Roots[nb].block.nBNW = Initial_Mesh.Connectivity[nb].num_neighBNW;
+
+         // Assign the block boundary element "on grid boundaries" info for each root block.
+         Octree.Roots[nb].block.info.be_on_grid_boundary = 
+            Initial_Mesh.Connectivity[nb].boundary_element_on_grid_boundary;
+         
+         // Assign block number and CPU number of the neighbouring blocks in each direction
+         // for each of the block in the octree roots.  Also assign block orientation information 
+         // for each of the neighbouring blocks.
+         if (Initial_Mesh.Connectivity[nb].neighT >= 0) {
+            Octree.Roots[nb].block.infoT[0].blknum = gridblk_blk_number[Initial_Mesh.Connectivity[nb].neighT];
+            Octree.Roots[nb].block.infoT[0].cpu = gridblk_cpu_number[Initial_Mesh.Connectivity[nb].neighT];
+            Octree.Roots[nb].block.infoT[0].blkorient = Initial_Mesh.Connectivity[nb].neighT_info;
+         } /* endif */
+
+         if (Initial_Mesh.Connectivity[nb].neighB >= 0) {
+            Octree.Roots[nb].block.infoB[0].blknum = gridblk_blk_number[Initial_Mesh.Connectivity[nb].neighB];
+            Octree.Roots[nb].block.infoB[0].cpu = gridblk_cpu_number[Initial_Mesh.Connectivity[nb].neighB];
+            Octree.Roots[nb].block.infoB[0].blkorient = Initial_Mesh.Connectivity[nb].neighB_info;
+         } /* endif */
+         
+         if (Initial_Mesh.Connectivity[nb].neighN >= 0) {
+            Octree.Roots[nb].block.infoN[0].blknum = gridblk_blk_number[Initial_Mesh.Connectivity[nb].neighN];
+            Octree.Roots[nb].block.infoN[0].cpu = gridblk_cpu_number[Initial_Mesh.Connectivity[nb].neighN];
+            Octree.Roots[nb].block.infoN[0].blkorient = Initial_Mesh.Connectivity[nb].neighN_info;
+         } /* endif */
+         
+         if (Initial_Mesh.Connectivity[nb].neighS >= 0) {
+            Octree.Roots[nb].block.infoS[0].blknum = gridblk_blk_number[Initial_Mesh.Connectivity[nb].neighS];
+            Octree.Roots[nb].block.infoS[0].cpu = gridblk_cpu_number[Initial_Mesh.Connectivity[nb].neighS];
+            Octree.Roots[nb].block.infoS[0].blkorient = Initial_Mesh.Connectivity[nb].neighS_info;
+         } /* endif */
  
-    Octree_DataStructure::Find_Neighbours_of_Root_Solution_Blocks(Octree,
-                                                                  Local_Adaptive_Block_List);
+         if (Initial_Mesh.Connectivity[nb].neighE >= 0) {
+            Octree.Roots[nb].block.infoE[0].blknum = gridblk_blk_number[Initial_Mesh.Connectivity[nb].neighE];
+            Octree.Roots[nb].block.infoE[0].cpu = gridblk_cpu_number[Initial_Mesh.Connectivity[nb].neighE];
+            Octree.Roots[nb].block.infoE[0].blkorient = Initial_Mesh.Connectivity[nb].neighE_info;
+         } /* endif */
 
-    /* Modify block neighbours for grid geometries with periodic boundaries, etc. */
+         if(Initial_Mesh.Connectivity[nb].neighW >= 0) {
+            Octree.Roots[nb].block.infoW[0].blknum = gridblk_blk_number[Initial_Mesh.Connectivity[nb].neighW];
+            Octree.Roots[nb].block.infoW[0].cpu = gridblk_cpu_number[Initial_Mesh.Connectivity[nb].neighW];
+            Octree.Roots[nb].block.infoW[0].blkorient = Initial_Mesh.Connectivity[nb].neighW_info;
+         } /* endif */
+            
+         if (Initial_Mesh.Connectivity[nb].neighNW >= 0) {
+            Octree.Roots[nb].block.infoNW[0].blknum = gridblk_blk_number[Initial_Mesh.Connectivity[nb].neighNW[0]];
+            Octree.Roots[nb].block.infoNW[0].cpu = gridblk_cpu_number[Initial_Mesh.Connectivity[nb].neighNW[0]];
+            Octree.Roots[nb].block.infoNW[0].blkorient = Initial_Mesh.Connectivity[nb].neighNW_info[0];
+         } /* endif */
 
-    Octree_DataStructure::Modify_Neighbours_of_Root_Solution_Blocks(Octree,
-                                                                    Local_Adaptive_Block_List,
-                                                                    Input.Grid_IP.i_Grid);
+         if (Initial_Mesh.Connectivity[nb].neighNE >= 0) {
+            Octree.Roots[nb].block.infoNE[0].blknum = gridblk_blk_number[Initial_Mesh.Connectivity[nb].neighNE[0]];
+            Octree.Roots[nb].block.infoNE[0].cpu = gridblk_cpu_number[Initial_Mesh.Connectivity[nb].neighNE[0]];
+            Octree.Roots[nb].block.infoNE[0].blkorient = Initial_Mesh.Connectivity[nb].neighNE_info[0];
+         } /* endif */
+         
+         if (Initial_Mesh.Connectivity[nb].neighSE >= 0) {
+            Octree.Roots[nb].block.infoSE[0].blknum = gridblk_blk_number[Initial_Mesh.Connectivity[nb].neighSE[0]];
+            Octree.Roots[nb].block.infoSE[0].cpu = gridblk_cpu_number[Initial_Mesh.Connectivity[nb].neighSE[0]];
+            Octree.Roots[nb].block.infoSE[0].blkorient = Initial_Mesh.Connectivity[nb].neighSE_info[0];
+         } /* endif */
 
-    /* Allocates memory for all message passing buffers used to send 
-       solution information between neighbouring solution blocks. */
+         if (Initial_Mesh.Connectivity[nb].neighSW >= 0) {
+            Octree.Roots[nb].block.infoSW[0].blknum = gridblk_blk_number[Initial_Mesh.Connectivity[nb].neighSW[0]];
+            Octree.Roots[nb].block.infoSW[0].cpu = gridblk_cpu_number[Initial_Mesh.Connectivity[nb].neighSW[0]];
+            Octree.Roots[nb].block.infoSW[0].blkorient = Initial_Mesh.Connectivity[nb].neighSW_info[0];
+         } /* endif */
 
-    AdaptiveBlock3D_List::Allocate_Message_Buffers(Local_Adaptive_Block_List,
-                                                   Local_Solution_Blocks.Soln_Blks[0].NumVar()+NUM_COMP_VECTOR3D);
+         if (Initial_Mesh.Connectivity[nb].neighTN >= 0) {
+            Octree.Roots[nb].block.infoTN[0].blknum = gridblk_blk_number[Initial_Mesh.Connectivity[nb].neighTN[0]];
+            Octree.Roots[nb].block.infoTN[0].cpu = gridblk_cpu_number[Initial_Mesh.Connectivity[nb].neighTN[0]];
+            Octree.Roots[nb].block.infoTN[0].blkorient = Initial_Mesh.Connectivity[nb].neighTN_info[0];
+         } /* endif */
+
+         if (Initial_Mesh.Connectivity[nb].neighTS >= 0) {
+            Octree.Roots[nb].block.infoTS[0].blknum = gridblk_blk_number[Initial_Mesh.Connectivity[nb].neighTS[0]];
+            Octree.Roots[nb].block.infoTS[0].cpu = gridblk_cpu_number[Initial_Mesh.Connectivity[nb].neighTS[0]];
+            Octree.Roots[nb].block.infoTS[0].blkorient = Initial_Mesh.Connectivity[nb].neighTS_info[0];
+         } /* endif */
+         
+         if (Initial_Mesh.Connectivity[nb].neighTE >= 0) {
+	    Octree.Roots[nb].block.infoTE[0].blknum = gridblk_blk_number[Initial_Mesh.Connectivity[nb].neighTE[0]];
+            Octree.Roots[nb].block.infoTE[0].cpu = gridblk_cpu_number[Initial_Mesh.Connectivity[nb].neighTE[0]];
+            Octree.Roots[nb].block.infoTE[0].blkorient = Initial_Mesh.Connectivity[nb].neighTE_info[0];
+         } /* endif */
+
+         if (Initial_Mesh.Connectivity[nb].neighTW >= 0) {
+            Octree.Roots[nb].block.infoTW[0].blknum = gridblk_blk_number[Initial_Mesh.Connectivity[nb].neighTW[0]];
+            Octree.Roots[nb].block.infoTW[0].cpu = gridblk_cpu_number[Initial_Mesh.Connectivity[nb].neighTW[0]];
+            Octree.Roots[nb].block.infoTW[0].blkorient = Initial_Mesh.Connectivity[nb].neighTW_info[0];
+         } /* endif */
+
+         if (Initial_Mesh.Connectivity[nb].neighBN >= 0) {
+            Octree.Roots[nb].block.infoBN[0].blknum = gridblk_blk_number[Initial_Mesh.Connectivity[nb].neighBN[0]];
+            Octree.Roots[nb].block.infoBN[0].cpu = gridblk_cpu_number[Initial_Mesh.Connectivity[nb].neighBN[0]];
+            Octree.Roots[nb].block.infoBN[0].blkorient = Initial_Mesh.Connectivity[nb].neighBN_info[0];
+         } /* endif */
+
+         if (Initial_Mesh.Connectivity[nb].neighBS >= 0) {
+            Octree.Roots[nb].block.infoBS[0].blknum = gridblk_blk_number[Initial_Mesh.Connectivity[nb].neighBS[0]];
+            Octree.Roots[nb].block.infoBS[0].cpu = gridblk_cpu_number[Initial_Mesh.Connectivity[nb].neighBS[0]];
+            Octree.Roots[nb].block.infoBS[0].blkorient = Initial_Mesh.Connectivity[nb].neighBS_info[0];
+         } /* endif */
+
+         if (Initial_Mesh.Connectivity[nb].neighBE >= 0) {
+            Octree.Roots[nb].block.infoBE[0].blknum = gridblk_blk_number[Initial_Mesh.Connectivity[nb].neighBE[0]];
+            Octree.Roots[nb].block.infoBE[0].cpu = gridblk_cpu_number[Initial_Mesh.Connectivity[nb].neighBE[0]];
+            Octree.Roots[nb].block.infoBE[0].blkorient = Initial_Mesh.Connectivity[nb].neighBE_info[0];
+         } /* endif */
+
+         if (Initial_Mesh.Connectivity[nb].neighBW >= 0) {
+            Octree.Roots[nb].block.infoBW[0].blknum = gridblk_blk_number[Initial_Mesh.Connectivity[nb].neighBW[0]];
+            Octree.Roots[nb].block.infoBW[0].cpu = gridblk_cpu_number[Initial_Mesh.Connectivity[nb].neighBW[0]];
+            Octree.Roots[nb].block.infoBW[0].blkorient = Initial_Mesh.Connectivity[nb].neighBW_info[0];
+         } /* endif */
+
+         if (Initial_Mesh.Connectivity[nb].neighTNW >= 0) {
+            Octree.Roots[nb].block.infoTNW[0].blknum = gridblk_blk_number[Initial_Mesh.Connectivity[nb].neighTNW[0]];
+            Octree.Roots[nb].block.infoTNW[0].cpu = gridblk_cpu_number[Initial_Mesh.Connectivity[nb].neighTNW[0]];
+            Octree.Roots[nb].block.infoTNW[0].blkorient = Initial_Mesh.Connectivity[nb].neighTNW_info[0];
+         } /* endif */
+
+         if (Initial_Mesh.Connectivity[nb].neighTSW >= 0) {
+            Octree.Roots[nb].block.infoTSW[0].blknum = gridblk_blk_number[Initial_Mesh.Connectivity[nb].neighTSW[0]];
+            Octree.Roots[nb].block.infoTSW[0].cpu = gridblk_cpu_number[Initial_Mesh.Connectivity[nb].neighTSW[0]];
+            Octree.Roots[nb].block.infoTSW[0].blkorient = Initial_Mesh.Connectivity[nb].neighTSW_info[0];
+         } /* endif */
+
+         if (Initial_Mesh.Connectivity[nb].neighTNE >= 0) {
+            Octree.Roots[nb].block.infoTNE[0].blknum = gridblk_blk_number[Initial_Mesh.Connectivity[nb].neighTNE[0]];
+            Octree.Roots[nb].block.infoTNE[0].cpu = gridblk_cpu_number[Initial_Mesh.Connectivity[nb].neighTNE[0]];
+            Octree.Roots[nb].block.infoTNE[0].blkorient = Initial_Mesh.Connectivity[nb].neighTNE_info[0];
+         } /* endif */
+
+         if (Initial_Mesh.Connectivity[nb].neighTSE >= 0) {
+            Octree.Roots[nb].block.infoTSE[0].blknum = gridblk_blk_number[Initial_Mesh.Connectivity[nb].neighTSE[0]];
+            Octree.Roots[nb].block.infoTSE[0].cpu = gridblk_cpu_number[Initial_Mesh.Connectivity[nb].neighTSE[0]];
+            Octree.Roots[nb].block.infoTSE[0].blkorient = Initial_Mesh.Connectivity[nb].neighTSE_info[0];
+         } /* endif */
+
+         if (Initial_Mesh.Connectivity[nb].neighBNW >= 0) {
+            Octree.Roots[nb].block.infoBNW[0].blknum = gridblk_blk_number[Initial_Mesh.Connectivity[nb].neighBNW[0]];
+            Octree.Roots[nb].block.infoBNW[0].cpu = gridblk_cpu_number[Initial_Mesh.Connectivity[nb].neighBNW[0]];
+            Octree.Roots[nb].block.infoBNW[0].blkorient = Initial_Mesh.Connectivity[nb].neighBNW_info[0];
+         } /* endif */
+
+         if (Initial_Mesh.Connectivity[nb].neighBSW >= 0) {
+            Octree.Roots[nb].block.infoBSW[0].blknum = gridblk_blk_number[Initial_Mesh.Connectivity[nb].neighBSW[0]];
+            Octree.Roots[nb].block.infoBSW[0].cpu = gridblk_cpu_number[Initial_Mesh.Connectivity[nb].neighBSW[0]];
+            Octree.Roots[nb].block.infoBSW[0].blkorient = Initial_Mesh.Connectivity[nb].neighBSW_info[0];
+         } /* endif */
+
+         if (Initial_Mesh.Connectivity[nb].neighBNE >= 0) {
+            Octree.Roots[nb].block.infoBNE[0].blknum = gridblk_blk_number[Initial_Mesh.Connectivity[nb].neighBNE[0]];
+            Octree.Roots[nb].block.infoBNE[0].cpu = gridblk_cpu_number[Initial_Mesh.Connectivity[nb].neighBNE[0]];
+            Octree.Roots[nb].block.infoBNE[0].blkorient = Initial_Mesh.Connectivity[nb].neighBNE_info[0];
+         } /* endif */
+
+         if (Initial_Mesh.Connectivity[nb].neighBSE >= 0) {
+            Octree.Roots[nb].block.infoBSE[0].blknum = gridblk_blk_number[Initial_Mesh.Connectivity[nb].neighBSE[0]];
+            Octree.Roots[nb].block.infoBSE[0].cpu = gridblk_cpu_number[Initial_Mesh.Connectivity[nb].neighBSE[0]];
+            Octree.Roots[nb].block.infoBSE[0].blkorient = Initial_Mesh.Connectivity[nb].neighBSE_info[0];
+         } /* endif */
+      } else{
+         Octree.Roots[nb].block.used = 0;
+      } /* endif */
+      
+   } /* endfor */
+
+   /* Assign missing neighbour block information for octree root blocls: 
+      dimensions, sector, level assignment, "on grid boundary" info. */
+
+   for (int nb = 0 ; nb < Initial_Mesh.NBlk ; ++nb) {
+      if (Initial_Mesh.Grid_Blks[nb].Allocated) { // Mesh block is used!!!!
+	 // Obtain CPU and block number.
+         n_cpu = gridblk_cpu_number[nb];
+         n_blk = gridblk_blk_number[nb];
+
+         if (Octree.Roots[nb].block.infoT[0].blknum >= 0) {
+            Octree.Roots[nb].block.infoT[0].dimen = Octree.Roots[Octree.Roots[nb].block.infoT[0].blknum].block.info.dimen;
+            Octree.Roots[nb].block.infoT[0].sector = Octree.Roots[Octree.Roots[nb].block.infoT[0].blknum].block.info.sector;
+            Octree.Roots[nb].block.infoT[0].level = Octree.Roots[Octree.Roots[nb].block.infoT[0].blknum].block.info.level;
+            Octree.Roots[nb].block.infoT[0].be_on_grid_boundary = 
+               Octree.Roots[Octree.Roots[nb].block.infoT[0].blknum].block.info.be_on_grid_boundary;
+         } /* endif */
+      
+         if (Octree.Roots[nb].block.infoB[0].blknum >= 0) {
+            Octree.Roots[nb].block.infoB[0].dimen = Octree.Roots[Octree.Roots[nb].block.infoB[0].blknum].block.info.dimen;
+            Octree.Roots[nb].block.infoB[0].sector = Octree.Roots[Octree.Roots[nb].block.infoB[0].blknum].block.info.sector;
+            Octree.Roots[nb].block.infoB[0].level = Octree.Roots[Octree.Roots[nb].block.infoB[0].blknum].block.info.level;
+            Octree.Roots[nb].block.infoB[0].be_on_grid_boundary = 
+               Octree.Roots[Octree.Roots[nb].block.infoB[0].blknum].block.info.be_on_grid_boundary;
+         } /* endif */
+      
+         if (Octree.Roots[nb].block.infoN[0].blknum >= 0) {
+            Octree.Roots[nb].block.infoN[0].dimen = Octree.Roots[Octree.Roots[nb].block.infoN[0].blknum].block.info.dimen;
+            Octree.Roots[nb].block.infoN[0].sector = Octree.Roots[Octree.Roots[nb].block.infoN[0].blknum].block.info.sector;
+            Octree.Roots[nb].block.infoN[0].level = Octree.Roots[Octree.Roots[nb].block.infoN[0].blknum].block.info.level;
+            Octree.Roots[nb].block.infoN[0].be_on_grid_boundary = 
+               Octree.Roots[Octree.Roots[nb].block.infoN[0].blknum].block.info.be_on_grid_boundary;
+         } /* endif */
+      
+         if (Octree.Roots[nb].block.infoS[0].blknum >= 0) {
+            Octree.Roots[nb].block.infoS[0].dimen = Octree.Roots[Octree.Roots[nb].block.infoS[0].blknum].block.info.dimen;
+            Octree.Roots[nb].block.infoS[0].sector = Octree.Roots[Octree.Roots[nb].block.infoS[0].blknum].block.info.sector;
+            Octree.Roots[nb].block.infoS[0].level = Octree.Roots[Octree.Roots[nb].block.infoS[0].blknum].block.info.level;
+            Octree.Roots[nb].block.infoS[0].be_on_grid_boundary = 
+               Octree.Roots[Octree.Roots[nb].block.infoS[0].blknum].block.info.be_on_grid_boundary;
+         } /* endif */
+      
+         if (Octree.Roots[nb].block.infoE[0].blknum >= 0) {
+            Octree.Roots[nb].block.infoE[0].dimen = Octree.Roots[Octree.Roots[nb].block.infoE[0].blknum].block.info.dimen;
+            Octree.Roots[nb].block.infoE[0].sector = Octree.Roots[Octree.Roots[nb].block.infoE[0].blknum].block.info.sector;
+            Octree.Roots[nb].block.infoE[0].level = Octree.Roots[Octree.Roots[nb].block.infoE[0].blknum].block.info.level;
+            Octree.Roots[nb].block.infoE[0].be_on_grid_boundary = 
+               Octree.Roots[Octree.Roots[nb].block.infoE[0].blknum].block.info.be_on_grid_boundary;
+         } /* endif */
+      
+         if (Octree.Roots[nb].block.infoW[0].blknum >= 0) {
+            Octree.Roots[nb].block.infoW[0].dimen = Octree.Roots[Octree.Roots[nb].block.infoW[0].blknum].block.info.dimen;
+            Octree.Roots[nb].block.infoW[0].sector = Octree.Roots[Octree.Roots[nb].block.infoW[0].blknum].block.info.sector;
+            Octree.Roots[nb].block.infoW[0].level = Octree.Roots[Octree.Roots[nb].block.infoW[0].blknum].block.info.level;
+            Octree.Roots[nb].block.infoW[0].be_on_grid_boundary = 
+               Octree.Roots[Octree.Roots[nb].block.infoW[0].blknum].block.info.be_on_grid_boundary;
+         } /* endif */
+      
+         if (Octree.Roots[nb].block.infoNW[0].blknum >= 0) {
+            Octree.Roots[nb].block.infoNW[0].dimen =  Octree.Roots[Octree.Roots[nb].block.infoNW[0].blknum].block.info.dimen;
+            Octree.Roots[nb].block.infoNW[0].sector =  Octree.Roots[Octree.Roots[nb].block.infoNW[0].blknum].block.info.sector;
+            Octree.Roots[nb].block.infoNW[0].level =  Octree.Roots[Octree.Roots[nb].block.infoNW[0].blknum].block.info.level;
+            Octree.Roots[nb].block.infoNW[0].be_on_grid_boundary = 
+               Octree.Roots[Octree.Roots[nb].block.infoNW[0].blknum].block.info.be_on_grid_boundary;
+         } /* endif */
+       
+         if (Octree.Roots[nb].block.infoNE[0].blknum >= 0) {
+            Octree.Roots[nb].block.infoNE[0].dimen =  Octree.Roots[Octree.Roots[nb].block.infoNE[0].blknum].block.info.dimen;
+            Octree.Roots[nb].block.infoNE[0].sector =  Octree.Roots[Octree.Roots[nb].block.infoNE[0].blknum].block.info.sector;
+            Octree.Roots[nb].block.infoNE[0].level =  Octree.Roots[Octree.Roots[nb].block.infoNE[0].blknum].block.info.level;
+            Octree.Roots[nb].block.infoNE[0].be_on_grid_boundary = 
+               Octree.Roots[Octree.Roots[nb].block.infoNE[0].blknum].block.info.be_on_grid_boundary;
+         } /* endif */
+      
+         if (Octree.Roots[nb].block.infoSE[0].blknum >= 0) {
+            Octree.Roots[nb].block.infoSE[0].dimen = Octree.Roots[Octree.Roots[nb].block.infoSE[0].blknum].block.info.dimen;
+            Octree.Roots[nb].block.infoSE[0].sector = Octree.Roots[Octree.Roots[nb].block.infoSE[0].blknum].block.info.sector;
+            Octree.Roots[nb].block.infoSE[0].level = Octree.Roots[Octree.Roots[nb].block.infoSE[0].blknum].block.info.level;
+            Octree.Roots[nb].block.infoSE[0].be_on_grid_boundary = 
+               Octree.Roots[Octree.Roots[nb].block.infoSE[0].blknum].block.info.be_on_grid_boundary;
+         } /* endif */
+      
+         if (Octree.Roots[nb].block.infoSW[0].blknum >= 0) {
+            Octree.Roots[nb].block.infoSW[0].dimen = Octree.Roots[Octree.Roots[nb].block.infoSW[0].blknum].block.info.dimen;
+            Octree.Roots[nb].block.infoSW[0].sector = Octree.Roots[Octree.Roots[nb].block.infoSW[0].blknum].block.info.sector;
+            Octree.Roots[nb].block.infoSW[0].level = Octree.Roots[Octree.Roots[nb].block.infoSW[0].blknum].block.info.level;
+            Octree.Roots[nb].block.infoSW[0].be_on_grid_boundary = 
+               Octree.Roots[Octree.Roots[nb].block.infoSW[0].blknum].block.info.be_on_grid_boundary;
+         } /* endif */
+      
+         if (Octree.Roots[nb].block.infoTN[0].blknum >= 0) {
+            Octree.Roots[nb].block.infoTN[0].dimen = Octree.Roots[Octree.Roots[nb].block.infoTN[0].blknum].block.info.dimen;
+            Octree.Roots[nb].block.infoTN[0].sector = Octree.Roots[Octree.Roots[nb].block.infoTN[0].blknum].block.info.sector;
+            Octree.Roots[nb].block.infoTN[0].level = Octree.Roots[Octree.Roots[nb].block.infoTN[0].blknum].block.info.level;
+            Octree.Roots[nb].block.infoTN[0].be_on_grid_boundary = 
+               Octree.Roots[Octree.Roots[nb].block.infoTN[0].blknum].block.info.be_on_grid_boundary;
+         } /* endif */
+      
+         if (Octree.Roots[nb].block.infoTS[0].blknum >= 0) {
+            Octree.Roots[nb].block.infoTS[0].dimen = Octree.Roots[Octree.Roots[nb].block.infoTS[0].blknum].block.info.dimen;
+            Octree.Roots[nb].block.infoTS[0].sector = Octree.Roots[Octree.Roots[nb].block.infoTS[0].blknum].block.info.sector;
+            Octree.Roots[nb].block.infoTS[0].level = Octree.Roots[Octree.Roots[nb].block.infoTS[0].blknum].block.info.level;
+            Octree.Roots[nb].block.infoTS[0].be_on_grid_boundary = 
+               Octree.Roots[Octree.Roots[nb].block.infoTS[0].blknum].block.info.be_on_grid_boundary;
+         } /* endif */
+      
+         if (Octree.Roots[nb].block.infoTE[0].blknum >= 0) {
+            Octree.Roots[nb].block.infoTE[0].dimen = Octree.Roots[Octree.Roots[nb].block.infoTE[0].blknum].block.info.dimen;
+            Octree.Roots[nb].block.infoTE[0].sector = Octree.Roots[Octree.Roots[nb].block.infoTE[0].blknum].block.info.sector;
+            Octree.Roots[nb].block.infoTE[0].level = Octree.Roots[Octree.Roots[nb].block.infoTE[0].blknum].block.info.level;
+            Octree.Roots[nb].block.infoTE[0].be_on_grid_boundary = 
+               Octree.Roots[Octree.Roots[nb].block.infoTE[0].blknum].block.info.be_on_grid_boundary;
+         } /* endif */
+      
+         if (Octree.Roots[nb].block.infoTW[0].blknum >= 0) {
+            Octree.Roots[nb].block.infoTW[0].dimen = Octree.Roots[Octree.Roots[nb].block.infoTW[0].blknum].block.info.dimen;
+            Octree.Roots[nb].block.infoTW[0].sector = Octree.Roots[Octree.Roots[nb].block.infoTW[0].blknum].block.info.sector;
+            Octree.Roots[nb].block.infoTW[0].level = Octree.Roots[Octree.Roots[nb].block.infoTW[0].blknum].block.info.level;
+            Octree.Roots[nb].block.infoTW[0].be_on_grid_boundary = 
+               Octree.Roots[Octree.Roots[nb].block.infoTW[0].blknum].block.info.be_on_grid_boundary;
+         } /* endif */
+      
+         if (Octree.Roots[nb].block.infoBN[0].blknum >= 0) {
+            Octree.Roots[nb].block.infoBN[0].dimen = Octree.Roots[Octree.Roots[nb].block.infoBN[0].blknum].block.info.dimen;
+            Octree.Roots[nb].block.infoBN[0].sector = Octree.Roots[Octree.Roots[nb].block.infoBN[0].blknum].block.info.sector;
+            Octree.Roots[nb].block.infoBN[0].level = Octree.Roots[Octree.Roots[nb].block.infoBN[0].blknum].block.info.level;
+            Octree.Roots[nb].block.infoBN[0].be_on_grid_boundary = 
+               Octree.Roots[Octree.Roots[nb].block.infoBN[0].blknum].block.info.be_on_grid_boundary;
+         } /* endif */
+      
+         if (Octree.Roots[nb].block.infoBS[0].blknum >= 0) {
+            Octree.Roots[nb].block.infoBS[0].dimen = Octree.Roots[Octree.Roots[nb].block.infoBS[0].blknum].block.info.dimen;
+            Octree.Roots[nb].block.infoBS[0].sector = Octree.Roots[Octree.Roots[nb].block.infoBS[0].blknum].block.info.sector;
+            Octree.Roots[nb].block.infoBS[0].level = Octree.Roots[Octree.Roots[nb].block.infoBS[0].blknum].block.info.level;
+            Octree.Roots[nb].block.infoBS[0].be_on_grid_boundary = 
+               Octree.Roots[Octree.Roots[nb].block.infoBS[0].blknum].block.info.be_on_grid_boundary;
+         } /* endif */
+      
+         if (Octree.Roots[nb].block.infoBE[0].blknum >= 0) {
+            Octree.Roots[nb].block.infoBE[0].dimen =  Octree.Roots[Octree.Roots[nb].block.infoBE[0].blknum].block.info.dimen;
+            Octree.Roots[nb].block.infoBE[0].sector =  Octree.Roots[Octree.Roots[nb].block.infoBE[0].blknum].block.info.sector;
+            Octree.Roots[nb].block.infoBE[0].level =  Octree.Roots[Octree.Roots[nb].block.infoBE[0].blknum].block.info.level;
+            Octree.Roots[nb].block.infoBE[0].be_on_grid_boundary = 
+               Octree.Roots[Octree.Roots[nb].block.infoBE[0].blknum].block.info.be_on_grid_boundary;
+         } /* endif */
+      
+         if (Octree.Roots[nb].block.infoBW[0].blknum >= 0) {
+            Octree.Roots[nb].block.infoBW[0].dimen = Octree.Roots[Octree.Roots[nb].block.infoBW[0].blknum].block.info.dimen;
+            Octree.Roots[nb].block.infoBW[0].sector = Octree.Roots[Octree.Roots[nb].block.infoBW[0].blknum].block.info.sector;
+            Octree.Roots[nb].block.infoBW[0].level = Octree.Roots[Octree.Roots[nb].block.infoBW[0].blknum].block.info.level;
+            Octree.Roots[nb].block.infoBW[0].be_on_grid_boundary = 
+               Octree.Roots[Octree.Roots[nb].block.infoBW[0].blknum].block.info.be_on_grid_boundary;
+         } /* endif */
+      
+         if (Octree.Roots[nb].block.infoTNW[0].blknum >= 0) {
+            Octree.Roots[nb].block.infoTNW[0].dimen = Octree.Roots[Octree.Roots[nb].block.infoTNW[0].blknum].block.info.dimen;   
+            Octree.Roots[nb].block.infoTNW[0].sector = Octree.Roots[Octree.Roots[nb].block.infoTNW[0].blknum].block.info.sector;
+            Octree.Roots[nb].block.infoTNW[0].level = Octree.Roots[Octree.Roots[nb].block.infoTNW[0].blknum].block.info.level;
+            Octree.Roots[nb].block.infoTNW[0].be_on_grid_boundary = 
+               Octree.Roots[Octree.Roots[nb].block.infoTNW[0].blknum].block.info.be_on_grid_boundary;
+         } /* endif */
+      
+         if (Octree.Roots[nb].block.infoTSW[0].blknum >= 0) {
+            Octree.Roots[nb].block.infoTSW[0].dimen = Octree.Roots[Octree.Roots[nb].block.infoTSW[0].blknum].block.info.dimen;
+            Octree.Roots[nb].block.infoTSW[0].sector = Octree.Roots[Octree.Roots[nb].block.infoTSW[0].blknum].block.info.sector;
+            Octree.Roots[nb].block.infoTSW[0].level = Octree.Roots[Octree.Roots[nb].block.infoTSW[0].blknum].block.info.level;
+            Octree.Roots[nb].block.infoTSW[0].be_on_grid_boundary = 
+               Octree.Roots[Octree.Roots[nb].block.infoTSW[0].blknum].block.info.be_on_grid_boundary;
+         } /* endif */
+      
+         if (Octree.Roots[nb].block.infoTNE[0].blknum >= 0) {
+            Octree.Roots[nb].block.infoTNE[0].dimen =  Octree.Roots[Octree.Roots[nb].block.infoTNE[0].blknum].block.info.dimen;
+            Octree.Roots[nb].block.infoTNE[0].sector =  Octree.Roots[Octree.Roots[nb].block.infoTNE[0].blknum].block.info.sector;
+            Octree.Roots[nb].block.infoTNE[0].level =  Octree.Roots[Octree.Roots[nb].block.infoTNE[0].blknum].block.info.level;
+            Octree.Roots[nb].block.infoTNE[0].be_on_grid_boundary = 
+               Octree.Roots[Octree.Roots[nb].block.infoTNE[0].blknum].block.info.be_on_grid_boundary;
+         } /* endif */
+      
+         if (Octree.Roots[nb].block.infoTSE[0].blknum >= 0) {
+            Octree.Roots[nb].block.infoTSE[0].dimen = Octree.Roots[Octree.Roots[nb].block.infoTSE[0].blknum].block.info.dimen;
+            Octree.Roots[nb].block.infoTSE[0].sector = Octree.Roots[Octree.Roots[nb].block.infoTSE[0].blknum].block.info.sector;
+            Octree.Roots[nb].block.infoTSE[0].level = Octree.Roots[Octree.Roots[nb].block.infoTSE[0].blknum].block.info.level;
+            Octree.Roots[nb].block.infoTSE[0].be_on_grid_boundary = 
+               Octree.Roots[Octree.Roots[nb].block.infoTSE[0].blknum].block.info.be_on_grid_boundary;
+         } /* endif */
+      
+         if (Octree.Roots[nb].block.infoBNW[0].blknum >= 0) {
+            Octree.Roots[nb].block.infoBNW[0].dimen = Octree.Roots[Octree.Roots[nb].block.infoBNW[0].blknum].block.info.dimen;
+            Octree.Roots[nb].block.infoBNW[0].sector = Octree.Roots[Octree.Roots[nb].block.infoBNW[0].blknum].block.info.sector;
+            Octree.Roots[nb].block.infoBNW[0].level = Octree.Roots[Octree.Roots[nb].block.infoBNW[0].blknum].block.info.level;  
+            Octree.Roots[nb].block.infoBNW[0].be_on_grid_boundary = 
+               Octree.Roots[Octree.Roots[nb].block.infoBNW[0].blknum].block.info.be_on_grid_boundary;
+         } /* endif */
+      
+         if (Octree.Roots[nb].block.infoBSW[0].blknum >= 0) {
+            Octree.Roots[nb].block.infoBSW[0].dimen = Octree.Roots[Octree.Roots[nb].block.infoBSW[0].blknum].block.info.dimen;
+            Octree.Roots[nb].block.infoBSW[0].sector = Octree.Roots[Octree.Roots[nb].block.infoBSW[0].blknum].block.info.sector;
+            Octree.Roots[nb].block.infoBSW[0].level = Octree.Roots[Octree.Roots[nb].block.infoBSW[0].blknum].block.info.level;
+            Octree.Roots[nb].block.infoBSW[0].be_on_grid_boundary = 
+               Octree.Roots[Octree.Roots[nb].block.infoBSW[0].blknum].block.info.be_on_grid_boundary;
+         } /* endif */
+      
+         if (Octree.Roots[nb].block.infoBNE[0].blknum >= 0) {
+            Octree.Roots[nb].block.infoBNE[0].dimen = Octree.Roots[Octree.Roots[nb].block.infoBNE[0].blknum].block.info.dimen;
+            Octree.Roots[nb].block.infoBNE[0].sector = Octree.Roots[Octree.Roots[nb].block.infoBNE[0].blknum].block.info.sector;
+            Octree.Roots[nb].block.infoBNE[0].level = Octree.Roots[Octree.Roots[nb].block.infoBNE[0].blknum].block.info.level;
+            Octree.Roots[nb].block.infoBNE[0].be_on_grid_boundary = 
+               Octree.Roots[Octree.Roots[nb].block.infoBNE[0].blknum].block.info.be_on_grid_boundary;
+         } /* endif */
+      
+         if (Octree.Roots[nb].block.infoBSE[0].blknum >= 0) {
+            Octree.Roots[nb].block.infoBSE[0].dimen = Octree.Roots[Octree.Roots[nb].block.infoBSE[0].blknum].block.info.dimen;
+            Octree.Roots[nb].block.infoBSE[0].sector = Octree.Roots[Octree.Roots[nb].block.infoBSE[0].blknum].block.info.sector;
+            Octree.Roots[nb].block.infoBSE[0].level = Octree.Roots[Octree.Roots[nb].block.infoBSE[0].blknum].block.info.level;
+            Octree.Roots[nb].block.infoBSE[0].be_on_grid_boundary = 
+               Octree.Roots[Octree.Roots[nb].block.infoBSE[0].blknum].block.info.be_on_grid_boundary;
+         } /* endif */
+      } /* endif */
+   } /* endfor */
+   
+   /* Finally loop over all initial mesh blocks and assign local solution block information 
+      and create local solution blocks as required. */
+
+   for (int nb = 0 ; nb <Initial_Mesh.NBlk ; ++nb) {
+     if (Initial_Mesh.Grid_Blks[nb].Allocated) { // Mesh block is used!!!!
+	 // Obtain CPU and block number.
+         n_cpu = gridblk_cpu_number[nb];
+         n_blk = gridblk_blk_number[nb];
+
+         // Assign appropriate octree block pointer to octree root solution block.                    
+         Octree.Blocks[n_cpu][n_blk] = &(Octree.Roots[nb]); 
+
+         // For solution blocks on this processor (or processor
+         // element), add block to local list, create the solution
+         // block, and copy the appropriate block of the
+         // initial hexarilateral mesh to the solution block mesh.
+         if (Global_Adaptive_Block_List.ThisCPU == n_cpu) {
+            Local_Adaptive_Block_List.Block[n_blk] = Octree.Roots[nb].block;
+            Local_Solution_Blocks.Soln_Blks[n_blk].Create_Block(Initial_Mesh.Grid_Blks[nb]);
+            Local_Solution_Blocks.Soln_Blks[n_blk].Flow_Type = Input.i_Flow_Type;
+            Local_Solution_Blocks.Block_Used[n_blk] = HEXA_BLOCK_USED;
+         } /* endif */
+     } /* endif */
+   } /* endfor */
+   
+   delete []gridblk_cpu_number;
+   delete []gridblk_blk_number;
+
+   /* Renumber all solution blocks, assigning a unique global block number. */
+
+   Octree_DataStructure::Renumber_Solution_Blocks(Octree,
+                                                  Local_Adaptive_Block_List);
+
+   /* Modify block neighbours for grid geometries with periodic boundaries, etc. */
+
+   Octree_DataStructure::Modify_Neighbours_of_Root_Solution_Blocks(Octree,
+                                                                   Local_Adaptive_Block_List,
+                                                                   Input.Grid_IP.i_Grid);
+
+   /* Allocates memory for all message passing buffers used to send
+      solution information between neighbouring solution blocks. */
+
+   AdaptiveBlock3D_List::Allocate_Message_Buffers(Local_Adaptive_Block_List,
+                                                  Local_Solution_Blocks.Soln_Blks[0].NumVar()+NUM_COMP_VECTOR3D);
  
-    /* Solution block allocation and assignment complete.
-       Return pointer to local solution blocks. */
+   /* Solution block allocation and assignment complete.
+      Return pointer to local solution blocks. */
 
-    return(0);
+   return(0);
 
 }
 
@@ -186,10 +614,10 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block                      
  *                                                      *
  ********************************************************/
 template<typename SOLN_pSTATE, typename SOLN_cSTATE>
-int Read_Octree(Octree_DataStructure                         &Octree,
-                AdaptiveBlock3D_ResourceList                 &Global_Adaptive_Block_List,
-                AdaptiveBlock3D_List                         &Local_Adaptive_Block_List,
-                Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>   &Input) {
+int Read_Octree(Octree_DataStructure                       &Octree,
+                AdaptiveBlock3D_ResourceList               &Global_Adaptive_Block_List,
+                AdaptiveBlock3D_List                       &Local_Adaptive_Block_List,
+                Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &Input) {
 
     int i, nri, nrj, nrk, ncpu, nblk;
     int iBLK, jBLK, kBLK, iCPU;
@@ -250,8 +678,8 @@ int Read_Octree(Octree_DataStructure                         &Octree,
        for ( kBLK = 0 ; kBLK <= Octree.NRk-1 ; ++kBLK ) {
 	 for ( jBLK = 0 ; jBLK <= Octree.NRj-1 ; ++jBLK ) {
            for ( iBLK = 0 ; iBLK <= Octree.NRi-1 ; ++iBLK ) {
-	      Octree.Roots[iBLK][jBLK][kBLK].read(Octree_file,
-                                                  Global_Adaptive_Block_List);
+	      Octree.Roots[iBLK*jBLK*kBLK].read(Octree_file,
+                                                Global_Adaptive_Block_List);
            } /* endfor */
            } /* endfor */
        } /* endfor */
@@ -284,7 +712,7 @@ int Read_Octree(Octree_DataStructure                         &Octree,
 
     /* Find the neighbours of the root blocks. */
 
-     Octree_DataStructure::Find_Neighbours_of_Root_Solution_Blocks(Octree);
+    //Octree_DataStructure::Find_Neighbours_of_Root_Solution_Blocks(Octree);
 
     /* Modify block neighbours for grid geometries with 
        periodic boundaries, etc. */
@@ -372,10 +800,10 @@ int Write_Octree(Octree_DataStructure                        &Octree,
  *                                                        *
  **********************************************************/
 template<typename SOLN_pSTATE, typename SOLN_cSTATE>
-void Flag_Blocks_For_Refinement(Hexa_Multi_Block<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >  &Local_Solution_Blocks,
-                                Octree_DataStructure                                     &Octree,
-                                AdaptiveBlock3D_ResourceList                             &Global_Adaptive_Block_List,
-                                AdaptiveBlock3D_List                                     &Local_Adaptive_Block_List) {
+void Flag_Blocks_For_Refinement(Hexa_Multi_Block<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> > &Local_Solution_Blocks,
+                                Octree_DataStructure                                    &Octree,
+                                AdaptiveBlock3D_ResourceList                            &Global_Adaptive_Block_List,
+                                AdaptiveBlock3D_List                                    &Local_Adaptive_Block_List) {
 
   cout<<"\nError Flag_Blocks_For_Refinement is not written for 3D";
 
@@ -390,10 +818,10 @@ void Flag_Blocks_For_Refinement(Hexa_Multi_Block<Hexa_Block<SOLN_pSTATE, SOLN_cS
  *                                                        *
  **********************************************************/
 template<typename SOLN_pSTATE, typename SOLN_cSTATE>
-int Refine_Grid(Hexa_Multi_Block<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >    &Local_Solution_Blocks,
-                Octree_DataStructure                                       &Octree,
-                AdaptiveBlock3D_ResourceList                               &Global_Adaptive_Block_List,
-                AdaptiveBlock3D_List                                       &Local_Adaptive_Block_List) {
+int Refine_Grid(Hexa_Multi_Block<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> > &Local_Solution_Blocks,
+                Octree_DataStructure                                    &Octree,
+                AdaptiveBlock3D_ResourceList                            &Global_Adaptive_Block_List,
+                AdaptiveBlock3D_List                                    &Local_Adaptive_Block_List) {
 
     cout<<"\nError Refine_Grid is not written for 3D";
     return(0);
@@ -409,10 +837,10 @@ int Refine_Grid(Hexa_Multi_Block<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >    &Loca
  *                                                        *
  **********************************************************/
 template<typename SOLN_pSTATE, typename SOLN_cSTATE>
-int Coarsen_Grid(Hexa_Multi_Block<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >  &Local_Solution_Blocks,
-                 Octree_DataStructure                                     &Octree,
-                 AdaptiveBlock3D_ResourceList                             &Global_Adaptive_Block_List,
-                 AdaptiveBlock3D_List                                     &Local_Adaptive_Block_List) {
+int Coarsen_Grid(Hexa_Multi_Block<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> > &Local_Solution_Blocks,
+                 Octree_DataStructure                                    &Octree,
+                 AdaptiveBlock3D_ResourceList                            &Global_Adaptive_Block_List,
+                 AdaptiveBlock3D_List                                    &Local_Adaptive_Block_List) {
   
     cout<<"\nError Coarsen_Grid is not written for 3D";
     return(0);
@@ -430,8 +858,8 @@ int Coarsen_Grid(Hexa_Multi_Block<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >  &Local
  *                                                      *
  ********************************************************/
 template<typename SOLN_pSTATE, typename SOLN_cSTATE>
-void Fix_Refined_Block_Boundaries(Hexa_Multi_Block<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >  &Local_Solution_Blocks,
-                                  AdaptiveBlock3D_List                                     &Soln_Block_List) {
+void Fix_Refined_Block_Boundaries(Hexa_Multi_Block<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> > &Local_Solution_Blocks,
+                                  AdaptiveBlock3D_List                                    &Soln_Block_List) {
 
   cout<<"\nError Fix_Refined_Block_Boundaries is not written for 3D";
  
@@ -446,8 +874,8 @@ void Fix_Refined_Block_Boundaries(Hexa_Multi_Block<Hexa_Block<SOLN_pSTATE, SOLN_
  *                                                      *
  ********************************************************/
 template<typename SOLN_pSTATE, typename SOLN_cSTATE>
-void Unfix_Refined_Block_Boundaries(Hexa_Multi_Block<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >  &Local_Solution_Blocks,
-                                    AdaptiveBlock3D_List                                     &Soln_Block_List) {
+void Unfix_Refined_Block_Boundaries(Hexa_Multi_Block<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> > &Local_Solution_Blocks,
+                                    AdaptiveBlock3D_List                                    &Soln_Block_List) {
 
   cout<<"\nError Unfix_Refined_Block_Boundaries is not written for 3D";
  
@@ -462,11 +890,11 @@ void Unfix_Refined_Block_Boundaries(Hexa_Multi_Block<Hexa_Block<SOLN_pSTATE, SOL
  *                                                        *
  **********************************************************/
 template<typename SOLN_pSTATE, typename SOLN_cSTATE>
-int AMR(Hexa_Multi_Block<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >  &Local_Solution_Blocks,
-        Octree_DataStructure                                     &Octree,
-        AdaptiveBlock3D_ResourceList                             &Global_Adaptive_Block_List,
-        AdaptiveBlock3D_List                                     &Local_Adaptive_Block_List,
-        const int                                                Set_New_Refinement_Flags) {
+int AMR(Hexa_Multi_Block<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> > &Local_Solution_Blocks,
+        Octree_DataStructure                                    &Octree,
+        AdaptiveBlock3D_ResourceList                            &Global_Adaptive_Block_List,
+        AdaptiveBlock3D_List                                    &Local_Adaptive_Block_List,
+        const int                                               Set_New_Refinement_Flags) {
 
     cout<<"\nError AMR( is not written for 3D";
     return(0);
@@ -482,11 +910,11 @@ int AMR(Hexa_Multi_Block<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >  &Local_Solution
  *                                                        *
  **********************************************************/
 template<typename SOLN_pSTATE, typename SOLN_cSTATE>
-int Initial_AMR(Hexa_Multi_Block<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >  &Local_Solution_Blocks,
-                Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>               &Input,
-                Octree_DataStructure                                     &Octree,
-                AdaptiveBlock3D_ResourceList                             &Global_Adaptive_Block_List,
-                AdaptiveBlock3D_List                                     &Local_Adaptive_Block_List) {
+int Initial_AMR(Hexa_Multi_Block<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> > &Local_Solution_Blocks,
+                Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>              &Input,
+                Octree_DataStructure                                    &Octree,
+                AdaptiveBlock3D_ResourceList                            &Global_Adaptive_Block_List,
+                AdaptiveBlock3D_List                                    &Local_Adaptive_Block_List) {
 
      cout<<"\nError Initial_AMR is not written for 3D";
      return(0);
@@ -502,11 +930,11 @@ int Initial_AMR(Hexa_Multi_Block<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >  &Local_
  *                                                        *
  **********************************************************/
 template<typename SOLN_pSTATE, typename SOLN_cSTATE>
-int Uniform_AMR(Hexa_Multi_Block<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >  &Local_Solution_Blocks,
-                Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>               &Input,
-                Octree_DataStructure                                     &Octree,
-                AdaptiveBlock3D_ResourceList                             &Global_Adaptive_Block_List,
-                AdaptiveBlock3D_List                                     &Local_Adaptive_Block_List) {
+int Uniform_AMR(Hexa_Multi_Block<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> > &Local_Solution_Blocks,
+                Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>              &Input,
+                Octree_DataStructure                                    &Octree,
+                AdaptiveBlock3D_ResourceList                            &Global_Adaptive_Block_List,
+                AdaptiveBlock3D_List                                    &Local_Adaptive_Block_List) {
 
     cout<<"\nError Uniform_AMR is not written for 3D";
     return(0);
@@ -523,11 +951,11 @@ int Uniform_AMR(Hexa_Multi_Block<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >  &Local_
  *                                                        *
  **********************************************************/
 template<typename SOLN_pSTATE, typename SOLN_cSTATE>
-int Boundary_AMR(Hexa_Multi_Block<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >  &Local_Solution_Blocks,
-		 Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>               &Input,
-		 Octree_DataStructure                                     &Octree,
-		 AdaptiveBlock3D_ResourceList                             &Global_Adaptive_Block_List,
-		 AdaptiveBlock3D_List                                     &Local_Adaptive_Block_List) {
+int Boundary_AMR(Hexa_Multi_Block<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> > &Local_Solution_Blocks,
+		 Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>              &Input,
+		 Octree_DataStructure                                    &Octree,
+		 AdaptiveBlock3D_ResourceList                            &Global_Adaptive_Block_List,
+		 AdaptiveBlock3D_List                                    &Local_Adaptive_Block_List) {
 
     cout<<"\nError Boundary_AMR is not written for 3D";
     return(0);

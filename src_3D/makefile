@@ -100,12 +100,14 @@ ifeq ($(MPI_VERSION),NoMPI)
   SRC_AMR = $(AMR_DIR)AMRInput.cc \
             $(AMR_DIR)AdaptiveBlock3D.cc \
 	    $(AMR_DIR)AdaptiveBlock3D_NoMPI.cc \
-            $(AMR_DIR)Octree.cc
+            $(AMR_DIR)Octree.cc \
+            $(AMR_DIR)BlockOrientationInfo.cc
 else
   SRC_AMR = $(AMR_DIR)AMRInput.cc \
             $(AMR_DIR)AdaptiveBlock3D.cc \
 	    $(AMR_DIR)AdaptiveBlock3D_MPI.cc \
-            $(AMR_DIR)Octree.cc
+            $(AMR_DIR)Octree.cc \
+            $(AMR_DIR)BlockOrientationInfo.cc
 endif
 
 # Multigrid:
@@ -145,7 +147,8 @@ SRC_NAVIERSTOKES_THERMPERFECT_EXE = $(NAVIERSTOKES_DIR)NavierStokes3DThermallyPe
 # FANS3D:
 SRC_FANS_POLYTROPIC =
 SRC_FANS_THERMPERFECT = $(FANS_DIR)FANS3DThermallyPerfectState.cc \
-                        $(FANS_DIR)FANS3DThermallyPerfectHexaBlock.cc
+                        $(FANS_DIR)FANS3DThermallyPerfectHexaBlock.cc \
+                        $(FANS_DIR)BluffBodyBurner.cc
 
 SRC_FANS = $(SRC_FANS_POLYTROPIC) $(SRC_FANS_THERMPERFECT)
 

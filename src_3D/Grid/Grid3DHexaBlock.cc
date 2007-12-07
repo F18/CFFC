@@ -314,6 +314,7 @@ void Grid3D_Hexa_Block::Broadcast(void) {
           } /* endif */
 
           allocate(ni-2*ng, nj-2*ng, nk-2*ng, ng);
+
        } /* endif */
     } /* endif */
 
@@ -525,23 +526,23 @@ void  Grid3D_Hexa_Block::Output_Nodes_Tecplot(const int Block_Number,
 		<< "\"z\" \n"
                 << "ZONE T =  \"Block Number = " << Block_Number
                 << "\" \\ \n"
-                << "I = " << INu - INl + 1 + 4 << " \\ \n"
-                << "J = " << JNu - JNl + 1 + 4 << " \\ \n"
-		<< "K = " << KNu - KNl + 1 + 4 << " \\ \n"
+                << "I = " << INu - INl + 1 + 2*Nghost << " \\ \n"
+                << "J = " << JNu - JNl + 1 + 2*Nghost << " \\ \n"
+		<< "K = " << KNu - KNl + 1 + 2*Nghost << " \\ \n"
                 << "F = POINT \n";
 
     } else {
        Out_File << "ZONE T =  \"Block Number = " << Block_Number
                 << "\" \\ \n"
-                << "I = " << INu - INl + 1 + 4 << " \\ \n"
-                << "J = " << JNu - JNl + 1 + 4 << " \\ \n"
-		<< "K = " << KNu - KNl + 1 + 4 << " \\ \n" 
+                << "I = " << INu - INl + 1 + 2*Nghost << " \\ \n"
+                << "J = " << JNu - JNl + 1 + 2*Nghost << " \\ \n"
+		<< "K = " << KNu - KNl + 1 + 2*Nghost << " \\ \n" 
                 << "F = POINT \n";
     } /* endif */
     
-    for(int k = KNl-2 ; k <= KNu+2 ; ++k) {
-      for (int j  = JNl-2 ; j <= JNu+2 ; ++j ) {
-	for (int i = INl-2 ; i <= INu+2 ; ++i ) {
+    for(int k = KNl-Nghost ; k <= KNu+Nghost ; ++k) {
+      for (int j  = JNl-Nghost ; j <= JNu+Nghost ; ++j ) {
+	for (int i = INl-Nghost ; i <= INu+Nghost ; ++i ) {
 	  Out_File << " " << Node[i][j][k].X << "\n";
 	} /* endfor */
       } /* endfor */
@@ -572,23 +573,23 @@ void  Grid3D_Hexa_Block::Output_Cells_Tecplot(const int Block_Number,
 		<< "\"z\" \n"
                 << "ZONE T =  \"Block Number = " << Block_Number
                 << "\" \\ \n"
-                << "I = " << ICu - ICl + 1 << " \\ \n"
-                << "J = " << JCu - JCl + 1 << " \\ \n"
-		<< "K = " << KCu - KCl + 1 << " \\ \n"
+                << "I = " << ICu - ICl + 1 + 2*Nghost << " \\ \n"
+                << "J = " << JCu - JCl + 1 + 2*Nghost << " \\ \n"
+		<< "K = " << KCu - KCl + 1 + 2*Nghost << " \\ \n"
                 << "F = POINT \n";
 
     } else {
        Out_File << "ZONE T =  \"Block Number = " << Block_Number
                 << "\" \\ \n"
-                << "I = " << ICu - ICl + 1 << " \\ \n"
-                << "J = " << JCu - JCl + 1 << " \\ \n"
-		<< "K = " << KCu - KCl + 1 << " \\ \n"
+                << "I = " << ICu - ICl + 1 + 2*Nghost << " \\ \n"
+                << "J = " << JCu - JCl + 1 + 2*Nghost << " \\ \n"
+		<< "K = " << KCu - KCl + 1 + 2*Nghost << " \\ \n"
                 << "F = POINT \n";
     } /* endif */
 
-    for (int k = KCl ; k <= KCu ; ++k) {
-      for (int j  = JCl ; j <= JCu ; ++j ) {
-	for (int i = ICl ; i <= ICu ; ++i ) {
+    for (int k = KCl-Nghost ; k <= KCu+Nghost ; ++k) {
+      for (int j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
+	for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
 	  Out_File << " " << Cell[i][j][k].Xc << "\n";
 	} /* endfor */
       } /* endfor */
@@ -645,7 +646,7 @@ void  Grid3D_Hexa_Block::Output_Gnuplot(const int Block_Number,
  * Update the exterior nodes for the hexahedral mesh block.   *
  *                                                            *
  **************************************************************/
-void Grid3D_Hexa_Block::Update_Exterior_Nodes(){
+void Grid3D_Hexa_Block::Update_Exterior_Nodes(void) {
 
   Vector3D norm_dir, X_norm, X_tan;
   Vector3D norm_dir1,X_norm1,X_tan1;
@@ -913,7 +914,7 @@ void Grid3D_Hexa_Block::Update_Exterior_Nodes(){
  * Update the exterior nodes for the hexahedral mesh block.   *
  *                                                            *
  **************************************************************/
-void Grid3D_Hexa_Block::Update_Exterior_Nodes_Zdir(){
+void Grid3D_Hexa_Block::Update_Exterior_Nodes_Zdir(void) {
 
   Vector3D norm_dir, X_norm, X_tan;
 
@@ -1000,8 +1001,8 @@ void Grid3D_Hexa_Block::Update_Exterior_Nodes_Zdir(){
 void Grid3D_Hexa_Block::Update_Cells(void) {
 
   for(int k = KCl-Nghost; k <=KCu+Nghost ; ++k){ 
-    for( int j = JCl-Nghost ; j <= JCu+Nghost; ++j) {
-      for ( int i = ICl-Nghost ; i <= ICu+Nghost; ++i) {
+    for(int j = JCl-Nghost ; j <= JCu+Nghost; ++j) {
+      for (int i = ICl-Nghost ; i <= ICu+Nghost; ++i) {
 	Cell[i][j][k].I = i ;
 	Cell[i][j][k].J = j ;
 	Cell[i][j][k].K = k ;
@@ -1011,6 +1012,137 @@ void Grid3D_Hexa_Block::Update_Cells(void) {
     } /* endfor */
   } /* endfor */
 
+}
+
+/*****************************************************************
+ * Routine: Update Ghost Cells                                   *
+ *                                                               *
+ * Updates the ghost cells information of the hexahedral mesh    *
+ * block.                                                        *
+ *                                                               *
+ *****************************************************************/
+void Grid3D_Hexa_Block::Update_Ghost_Cells(void) {
+
+  for(int k = KCl-Nghost; k <=KCu+Nghost ; ++k){ 
+    for(int j = JCl-Nghost ; j <= JCu+Nghost; ++j) {
+      for (int i = ICl-Nghost ; i <= ICu+Nghost; ++i) {
+         if (k < KCl || k > KCu || j < JCl || j > JCu || i < ICl || i > ICu) {
+            Cell[i][j][k].I = i ;
+            Cell[i][j][k].J = j ;
+            Cell[i][j][k].K = k ;
+            Cell[i][j][k].Xc = centroid(i, j, k);
+            Cell[i][j][k].V = volume(Cell[i][j][k]);
+         } /* endif */
+      } /* endfor */
+    } /* endfor */
+  } /* endfor */
+
+}
+
+/**************************************************************
+ * Routine: Correct_Exterior_Nodes                            *
+ *                                                            *
+ * Correct the exterior nodes of the hexahedral mesh block.   *
+ *                                                            *
+ **************************************************************/
+void Grid3D_Hexa_Block::Correct_Exterior_Nodes(const int ii, 
+                                               const int jj, 
+                                               const int kk, 
+                                               const int *be) {
+
+   int igs, ige, igd, jgs, jge, jgd, kgs, kge, kgd;
+   int im, jm, km;
+   int face_not_boundary = 0;
+   int i_be, j_be, k_be;
+   
+   im = 0;
+   jm = 0;
+   km = 0;
+   
+   if (ii) {
+      if (ii>0) {
+         igs = INu +1;
+         ige = INu +Nghost;
+         igd = 1;
+      } else {
+         igs = INl-1;
+         ige = INl-Nghost;
+         igd = -1;
+      }
+      i_be = 9*(ii+1) + 3 +1;
+      if (be[i_be]) {
+         im = -ii;
+      } else {
+         ++face_not_boundary;
+      }
+   }else{
+      igs = INl;
+      ige = INu;
+      igd = 1;
+   } /* endif */
+
+   if (jj) {
+      if (jj>0){
+         jgs = JNu +1;
+         jge = JNu +Nghost;
+         jgd = 1;
+      } else {
+         jgs = JNl-1;
+         jge = JNl-Nghost;
+         jgd = -1;
+      }
+      j_be = 9 + 3*(jj+1) +1;
+      if (be[j_be]) {
+         jm = -jj;
+      } else {
+         ++face_not_boundary;
+      }
+   } else {
+      jgs = JNl;
+      jge = JNu;
+      jgd = 1;
+   } /* endif */
+   
+   if (kk) {
+      if (kk>0) {
+         kgs = KNu +1;
+         kge = KNu +Nghost;
+         kgd = 1;
+      } else {
+         kgs = KNl - 1;
+         kge = KNl - Nghost;
+         kgd = -1;
+      }
+      k_be = 9 + 3 +(kk+1);
+      if (be[k_be]) {
+         km =   -kk;
+      } else {
+         ++face_not_boundary;
+      }
+   } else {
+      kgs = KNl;
+      kge = KNu;
+      kgd = 1;
+   } /* endif */
+
+   // A special case of those edges whose two faces are interior, but the edge is 
+   // at the domain extent. 
+   if (face_not_boundary == abs(ii) + abs(jj) + abs(kk)) {
+      im = -ii;
+      jm = -jj;
+      km = -kk;
+   } /* endif */
+   
+   for (int i = igs; (i-igs)*(i-ige)<=0; i+= igd) {
+      for (int j = jgs; (j-jgs)*(j-jge)<=0; j+= jgd) {
+         for (int k = kgs; (k-kgs)*(k-kge)<=0; k+= kgd){
+            Node[i][j][k].X = 2*Node[i+im*(abs(i-igs)+1)][j+jm*(abs(j-jgs)+1)][k+km*(abs(k-kgs)+1)].X -
+                              Node[i+2*im*((abs(i-igs))+1)][j+2*jm*((abs(j-jgs))+1)][k+2*km*((abs(k-kgs))+1)].X;
+                      
+         } /* endfor */
+      } /* endfor */
+   } /* endfor */
+   
 }
 
 /********************************************************

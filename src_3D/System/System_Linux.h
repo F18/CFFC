@@ -54,6 +54,8 @@ namespace System
   // Get current path
   void Get_Current_Path(char * buffer) throw(std::runtime_error);
 
+  // Let the process sleep for a while
+  int sleep(const double s);
 
 }  // End of namespace System
 

@@ -1,4 +1,4 @@
-/* Grid3DHexaBlock.h: xsHeader file defining 3D hexahedral block grid type. */
+/* Grid3DHexaBlock.h: Header file defining 3D hexahedral block grid type. */
 
 #ifndef _GRID3D_HEXA_BLOCK_INCLUDED
 #define _GRID3D_HEXA_BLOCK_INCLUDED
@@ -374,6 +374,13 @@ class Grid3D_Hexa_Block{
 
     void Update_Cells(void);
 
+    void Update_Ghost_Cells(void);
+    
+    void Correct_Exterior_Nodes(const int i_elem, 
+                                const int j_elem, 
+                                const int k_elem, 
+                                const int *be);
+
     void Set_BCs_Xdir(const int BCtype_east_boundary,
                       const int BCtype_west_boundary);
 
@@ -517,6 +524,7 @@ inline Vector3D Grid3D_Hexa_Block::centroid(const int ii, const int jj, const in
            Node[ii][jj][kk].X+Node[ii][jj+1][kk+1].X+Node[ii+1][jj+1][kk+1].X+
            Node[ii+1][jj][kk+1].X+Node[ii][jj][kk+1].X)/8);
 }
+
 /*************************************************************************
  * Grid3D_Hexa_Block::centroid -- Cell Volume.                           *
  *************************************************************************/
@@ -610,12 +618,9 @@ inline double  Grid3D_Hexa_Block::delta_ot (const int ii, const int jj, const in
    return (vector.abs());
 }
 
-
-
 /*************************************************************************
  * Grid3D_Hexa_Block::node?? -- Get cell nodes.                          *
  *************************************************************************/
-
 inline Node3D Grid3D_Hexa_Block::nodeNWBot(const Cell3D &Cell) { 
   return (Node[Cell.I][Cell.J+1][Cell.K]); 
 }
@@ -742,6 +747,7 @@ inline Vector3D Grid3D_Hexa_Block::xfaceBot(const int ii, const int jj, const in
   return ((Node[ii][jj][kk].X+Node[ii+1][jj][kk].X+
 	   Node[ii+1][jj+1][kk].X+Node[ii][jj+1][kk].X)/FOUR);
 }
+
 /********************************************************
  * Grid3D_Hexa_Block -- Get normal vectors to faces     *
  ********************************************************/
@@ -803,7 +809,6 @@ inline Vector3D Grid3D_Hexa_Block::nfaceN(const int ii, const int jj, const int 
     normeq=normeq/abs(normeq);
   return normeq;
 }
-
 
 inline Vector3D Grid3D_Hexa_Block::nfaceS(const Cell3D &Cell) {
  Vector3D n1, n2, n3, n4;

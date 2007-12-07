@@ -28,7 +28,6 @@ int Initialize_Solution_Blocks(HexaSolver_Data &Data,
   } 
 
   CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
-
   //Broadcast the mesh to other MPI processors.
   Data.Initial_Mesh.Broadcast();                    
   
@@ -119,7 +118,6 @@ int Initial_Conditions(HexaSolver_Data &Data,
    
   // Generate initial solution data to begin calculation. 
   } else {    
-
     error_flag = Wall_Distance(Solution_Data.Local_Solution_Blocks.Soln_Blks,  // Turbulence function in GENERIC TYPE????
 			       Data.Octree, 
 			       Data.Local_Adaptive_Block_List);
