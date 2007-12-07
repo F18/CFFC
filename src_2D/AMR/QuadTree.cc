@@ -280,6 +280,7 @@ void Modify_Neighbours_of_Root_Solution_Blocks(QuadTreeBlock_DataStructure
         break;
       case GRID_CIRCULAR_CYLINDER :
       case GRID_ELLIPSE :
+      case GRID_NACA_AEROFOIL_OGRID :
         QuadTree.Roots[0][0].block.nW = 1;
         QuadTree.Roots[0][0].block.infoW[0] = QuadTree.Roots[1][0].block.info;
 
@@ -620,6 +621,7 @@ void Modify_Neighbours_of_Root_Solution_Blocks(QuadTreeBlock_DataStructure
         break;
       case GRID_CIRCULAR_CYLINDER :
       case GRID_ELLIPSE :
+      case GRID_NACA_AEROFOIL_OGRID :
         if (LocalSolnBlockList.ThisCPU == QuadTree.Roots[0][0].block.info.cpu) {
            LocalSolnBlockList.Block[QuadTree.Roots[0][0].block.info.blknum] = 
               QuadTree.Roots[0][0].block;
