@@ -1581,13 +1581,13 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP,
                        1, 
                        MPI::DOUBLE, Source_Rank);
     // Accuracy assessment parameters:
-    Communicator.Bcast(&(Accuracy_Assessment_Mode), 
+    Communicator.Bcast(&(IP.Accuracy_Assessment_Mode), 
                        1, 
                        MPI::INT, Source_Rank);
-    Communicator.Bcast(&(Accuracy_Assessment_Exact_Digits), 
+    Communicator.Bcast(&(IP.Accuracy_Assessment_Exact_Digits), 
                        1, 
                        MPI::INT, Source_Rank);
-    Communicator.Bcast(&(Accuracy_Assessment_Parameter), 
+    Communicator.Bcast(&(IP.Accuracy_Assessment_Parameter), 
                        1, 
                        MPI::INT, Source_Rank);
 }

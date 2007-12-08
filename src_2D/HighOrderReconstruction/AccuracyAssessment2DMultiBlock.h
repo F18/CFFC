@@ -223,6 +223,7 @@ template<typename Quad_Soln_Block, typename Input_Parameters_Type>
 int AccuracyAssessment2D_MultiBlock::AssessSolutionAccuracyBasedOnExactSolution(Quad_Soln_Block *SolnBlk,
 										const AdaptiveBlock2D_List &Soln_Block_List,
 										const Input_Parameters_Type &IP){
+  double TotalCells_MPI;
 
   try {
 
@@ -261,7 +262,9 @@ int AccuracyAssessment2D_MultiBlock::AssessSolutionAccuracyBasedOnExactSolution(
     TotalDomainArea = CFFC_Summation_MPI(TotalDomainArea);
 
     /* Total number of used cells for accuracy assessment */
-    TotalCells = CFFC_Summation_MPI(TotalCells);
+    TotalCells_MPI = TotalCells;
+    TotalCells_MPI = CFFC_Summation_MPI(TotalCells_MPI);
+    TotalCells = (int)TotalCells_MPI;
 
     // === Final L1 error norm ===
     L1() /= TotalDomainArea;
