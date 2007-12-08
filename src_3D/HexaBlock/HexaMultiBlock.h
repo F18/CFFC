@@ -17,8 +17,8 @@
 #include "../AMR/AdaptiveBlock3D.h"
 #endif //_ADAPTIVEBLOCK3D_INCLUDED
 
-// a list of solution blocks on a processor
-template<class HEXA_BLOCK> class Hexa_Multi_Block{
+// A local list of solution blocks on a given processor.
+template<class HEXA_BLOCK> class Hexa_Multi_Block {
    
   private:
   public:
@@ -139,7 +139,6 @@ template<class HEXA_BLOCK> class Hexa_Multi_Block{
    int Update_Solution_Multistage_Explicit(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
                                                             typename HEXA_BLOCK::Soln_cState> &Input, 
                                            const int I_Stage);
-
 };
 
 /********************************************************
@@ -253,11 +252,13 @@ double Hexa_Multi_Block<HEXA_BLOCK>::L1_Norm_Residual(const int &var) {
   double l1_norm(ZERO);
   
   /* Calculate the L1-norm. Sum the L1-norm for each solution block. */   
+
   for (int nblk = 0; nblk < Number_of_Soln_Blks; ++nblk) {
     if (Block_Used[nblk]) {
       l1_norm += Soln_Blks[nblk].L1_Norm_Residual(var);
     } 
   }  
+
   return (l1_norm);
    
 }
@@ -277,12 +278,15 @@ double Hexa_Multi_Block<HEXA_BLOCK>::L2_Norm_Residual(const int &var) {
   double l2_norm(ZERO);
    
   /* Sum the square of the L2-norm for each solution block. */  
+
   for (int nblk = 0; nblk < Number_of_Soln_Blks; ++nblk) {
     if (Block_Used[nblk]) {
       l2_norm += sqr(Soln_Blks[nblk].L2_Norm_Residual(var));
     } 
   }  
+
   /* Calculate the L2-norm for all blocks. */  
+
   l2_norm = sqrt(l2_norm);
   
   return (l2_norm);  
@@ -304,12 +308,15 @@ double Hexa_Multi_Block<HEXA_BLOCK>::Max_Norm_Residual(const int &var) {
   double max_norm(ZERO);
    
   /* Find the maximum norm for all solution blocks. */   
+
   for (int nblk = 0; nblk < Number_of_Soln_Blks; ++nblk) {
     if(Block_Used[nblk]){
       max_norm = max(max_norm, (Soln_Blks[nblk].Max_Norm_Residual(var)));
     } 
   }        
+
   return (max_norm);  
+
 }
 
 /********************************************************
@@ -322,11 +329,13 @@ double Hexa_Multi_Block<HEXA_BLOCK>::Max_Norm_Residual(const int &var) {
  ********************************************************/
 template<class HEXA_BLOCK>
 void Hexa_Multi_Block<HEXA_BLOCK>::Evaluate_Limiters(void) {
+
   for (int nblk = 0; nblk < Number_of_Soln_Blks; ++nblk) {
     if(Block_Used[nblk]){
       Soln_Blks[nblk].Evaluate_Limiters();  
     } 
   }  
+
 }
 
 /********************************************************
@@ -339,11 +348,13 @@ void Hexa_Multi_Block<HEXA_BLOCK>::Evaluate_Limiters(void) {
  ********************************************************/
 template<class HEXA_BLOCK>
 void Hexa_Multi_Block<HEXA_BLOCK>::Freeze_Limiters(void) {
+
   for (int nblk = 0; nblk < Number_of_Soln_Blks; ++nblk) {
     if(Block_Used[nblk]){
       Soln_Blks[nblk].Freeze_Limiters();  
     } 
   }    
+
 }
 
 /********************************************************

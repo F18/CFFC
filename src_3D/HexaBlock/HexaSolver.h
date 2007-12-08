@@ -91,7 +91,7 @@ int HexaSolver(char *Input_File_Name_ptr,int batch_flag){
       solution-adaptive quadrilateral mesh.                                  
     ****************************************************************************/    
     CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.    
-       
+    
     // Open Progress File 
     if (CFFC_Primary_MPI_Processor()) {    
       error_flag = Open_Progress_File(Data.residual_file,
@@ -100,8 +100,8 @@ int HexaSolver(char *Input_File_Name_ptr,int batch_flag){
       if (error_flag) {
 	cout << "\n ERROR: Unable to open residual file for the calculation.\n";
 	cout.flush(); return (error_flag);
-      } 
-    } 
+      } /* endif */
+    } /* endif */
 
     /********************** EXPLICIT **********************************/  
     if ( (Data.number_of_explicit_time_steps < Solution_Data.Input.Maximum_Number_of_Time_Steps) ||

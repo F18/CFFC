@@ -104,16 +104,22 @@ class Hexa_Block{
       WoT = NULL; WoB = NULL; WallData = NULL;
    }
 
-   Hexa_Block(const int Ni, const int Nj, const int Nk, 
+   Hexa_Block(const int Ni, 
+              const int Nj, 
+              const int Nk, 
               const int Ng) {
       allocate(Ni, Nj, Nk, Ng);
    }
 
-   Hexa_Block(const int Ni, const int Nj, const int Nk, 
-              const int Ng, const int flow_type,  
+   Hexa_Block(const int Ni, 
+              const int Nj, 
+              const int Nk, 
+              const int Ng, 
+              const int flow_type,  
               Grid3D_Hexa_Block &Grid2) {       
       allocate(Ni, Nj, Nk, Ng);
       Grid.Copy(Grid2);
+      Flow_Type = flow_type;
    }
    
    /* Destructors. */
@@ -231,18 +237,33 @@ class Hexa_Block{
    /* MEMBER FUNCTIONS REQUIRED FOR MESSAGE PASSING. */
 
    /* Load send message passing buffer. */
-   int LoadSendBuffer(double *buffer,
-                      int &buffer_count,
-                      const int buffer_size,
-                      const int i_min,
-                      const int i_max,
-                      const int i_inc,
-                      const int j_min,
-                      const int j_max,
-                      const int j_inc,
-                      const int k_min,
-                      const int k_max,
-                      const int k_inc);
+
+   int LoadSendBuffer_Solution(double *buffer,
+                               int &buffer_count,
+                               const int buffer_size,
+                               const int *id_start,
+                               const int *id_end,
+                               const int *inc,
+                               const int *neigh_orient);
+
+   int LoadSendBuffer_Geometry(double *buffer,
+                               int &buffer_count,
+                               const int buffer_size,
+                               const int *id_start,
+                               const int *id_end,
+                               const int *inc,
+                               const int *neigh_orient);
+
+   int LoadSendBuffer_BCs(double *buffer,
+                          int &buffer_count,
+                          const int buffer_size,
+                          const int *id_start,
+                          const int *id_end,
+                          const int *inc,
+                          const int *neigh_orient,
+                          const int bc_elem_i,
+                          const int bc_elem_j,
+                          const int bc_elem_k);
 
    int LoadSendBuffer_F2C(double *buffer,
                           int &buffer_count,
@@ -272,18 +293,47 @@ class Hexa_Block{
 
    /* Unload receive message passing buffer. */
 
-   int UnloadReceiveBuffer(double *buffer,
-                           int &buffer_count,
-                           const int buffer_size,
-                           const int i_min,
-                           const int i_max,
-                           const int i_inc,
-                           const int j_min,
-                           const int j_max,
-			   const int j_inc,
-			   const int k_min,
-			   const int k_max,
-			   const int k_inc);
+   int UnloadReceiveBuffer_Solution(double *buffer,
+                                    int &buffer_count,
+                                    const int buffer_size,
+                                    const int i_min,
+                                    const int i_max,
+                                    const int i_inc,
+                                    const int j_min,
+                                    const int j_max,
+                                    const int j_inc,
+                                    const int k_min,
+                                    const int k_max,
+                                    const int k_inc);
+
+   int UnloadReceiveBuffer_Geometry(double *buffer,
+                                    int &buffer_count,
+                                    const int buffer_size,
+                                    const int i_min,
+                                    const int i_max,
+                                    const int i_inc,
+                                    const int j_min,
+                                    const int j_max, 
+                                    const int j_inc,
+                                    const int k_min,
+                                    const int k_max,
+                                    const int k_inc);
+
+   int UnloadReceiveBuffer_BCs(double *buffer,
+                               int &buffer_count,
+                               const int buffer_size,
+                               const int i_min,
+                               const int i_max,
+                               const int i_inc,
+                               const int j_min,
+                               const int j_max,
+                               const int j_inc,
+                               const int k_min,
+                               const int k_max,
+                               const int k_inc,
+                               const int bc_elem_i,
+                               const int bc_elem_j,
+                               const int bc_elem_k);
 
    int UnloadReceiveBuffer_F2C(double *buffer,
                                int &buffer_count,
@@ -1202,7 +1252,6 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
       for ( j =  JCl- Nghost ; j <=  JCu+ Nghost ; ++j ) {
          // Prescribe West boundary conditions.
          switch( Grid.BCtypeW[j][k]) {
-            
 	 case BC_FIXED :
             W[ ICl-1][j][k] = WoW[j][k];
             U[ ICl-1][j][k] = W[ICl-1][j][k].U();
@@ -1292,7 +1341,6 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
          
          // Prescribe East boundary conditions.
          switch( Grid.BCtypeE[j][k]) {
-
 	 case BC_FIXED :
 	    W[ ICu+1][j][k] = WoE[j][k];
             U[ ICu+1][j][k] = W[ICu+1][j][k].U();
@@ -1319,7 +1367,7 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
             break;
 
          case BC_CONSTANT_EXTRAPOLATION :
-	   W[ ICu+1][j][k] = W[ICu][j][k];                
+            W[ ICu+1][j][k] = W[ICu][j][k];
             U[ ICu+1][j][k] = W[ICu+1][j][k].U();
             W[ ICu+2][j][k] = W[ICu][j][k];
             U[ ICu+2][j][k] = W[ICu+2][j][k].U();
@@ -1377,7 +1425,7 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
             W[ICu+2][j][k].p = W[ICu+1][j][k].p;// (WoE[j][k].p)-dpdx*dX.x; 	
             U[ICu+2][j][k] = W[ICu+2][j][k].U();
             break;
-
+            
 // 	 case BC_CHARACTERISTIC :
 //             W[ ICu+1][j][k] = SOLN_pSTATE::Characteristic_Pressure(W[ICu][j][k],
 // 								   Grid.nfaceE(ICu,j,k));
@@ -1466,19 +1514,18 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
                                                       FIXED_TEMPERATURE_WALL);
             U[i][JCl-2][k] =  W[i][JCl-2][k].U();
             break;
-            
          } /* endswitch */
           
          // Prescribe North boundary conditions.
-         switch( Grid.BCtypeN[i][k]) {	
+         switch( Grid.BCtypeN[i][k]) {
 	 case BC_FIXED :
 	    W[i][JCu+1][k] = WoN[i][k];
             U[i][JCu+1][k] = W[i][JCu+1][k].U();
             W[i][JCu+2][k] = WoN[i][k];
             U[i][JCu+2][k] = W[i][JCu+1][k].U();
 	    break;
-         
-	 case BC_REFLECTION :
+
+         case BC_REFLECTION :
             W[i][ JCu+1][k] = SOLN_pSTATE::Reflect(W[i][ JCu][k],
                                                    Grid.nfaceN(i,JCu,k));
             U[i][ JCu+1][k] = W[i][ JCu+1][k].U();
@@ -1624,16 +1671,15 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
          } /* endswitch */
          
          // Prescribe Top boundary conditions.
-         switch( Grid.BCtypeT[i][j]) {	
-
+         switch( Grid.BCtypeT[i][j]) {
 	 case BC_FIXED :
 	    W[i][j][KCu+1] = WoT[i][j];
             U[i][j][KCu+1] = W[i][j][KCu+1].U();
             W[i][j][KCu+2] = WoT[i][j];
             U[i][j][KCu+2] = W[i][j][KCu+2].U();
 	    break;
-         
-	 case BC_REFLECTION :
+
+         case BC_REFLECTION :
             W[i][j][ KCu+1] = SOLN_pSTATE::Reflect(W[i][j][ KCu],
                                                    Grid.nfaceTop(i,j,KCu));
             U[i][j][ KCu+1] = W[i][j][ KCu+1].U();
@@ -1802,9 +1848,8 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Set_Global_TimeStep(const double &Dt_
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 double Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::L1_Norm_Residual(const int &var) {
    
-    double l1_norm;
+    double l1_norm(ZERO);
 
-    l1_norm = ZERO;
     for (int k = KCl ; k <= KCu ; ++k ) {
        for (int j = JCl ; j <= JCu ; ++j ) {
           for (int i = ICl ; i <= ICu ; ++i ) {
@@ -1829,8 +1874,7 @@ double Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::L1_Norm_Residual(const int &var) {
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 double Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::L2_Norm_Residual(const int &var) {
 
-   double l2_norm;
-   l2_norm = ZERO;
+   double l2_norm(ZERO);
    
    for (int k  = KCl ; k <= KCu ; ++k ) {
       for (int j = JCl ; j <= JCu ; ++j ) {
@@ -1858,8 +1902,7 @@ double Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::L2_Norm_Residual(const int &var) {
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 double Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Max_Norm_Residual(const int &var) {
 
-   double max_norm;
-   max_norm = ZERO;
+   double max_norm(ZERO);
 
    for (int k  = KCl ; k <= KCu ; ++k ) {
       for (int j = JCl ; j <= JCu ; ++j ) {
@@ -2145,6 +2188,7 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Linear_Reconstruction_LeastSquares(co
    } /* endif */
     
 }
+
 /********************************************************
  * Routine: dUdt_Residual_Evaluation                    *
  *                                                      *
@@ -3178,6 +3222,9 @@ istream &operator >> (istream &in_file,
    return (in_file);
 }
 
+/**************************************************************************
+ * Hexa_Block::Wall_Shear -- Calculate wall shear stress.                 *
+ **************************************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Wall_Shear(void) {
 
@@ -3188,36 +3235,230 @@ int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Wall_Shear(void) {
 }
 
 /*******************************************************************************
- * Hexa_Block::LoadSendBuffer -- Loads send message buffer.                    *
+ * Hexa_Block::LoadSendBuffer_Solution -- Loads send message buffer with       *
+ *                                        solution data.                       *
  *******************************************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
-int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::LoadSendBuffer(double *buffer,
-                                                         int &buffer_count,
-                                                         const int buffer_size,
-                                                         const int i_min, 
-                                                         const int i_max,
-                                                         const int i_inc,
-                                                         const int j_min, 
-                                                         const int j_max,
-                                                         const int j_inc,
-						         const int k_min, 
-                                                         const int k_max,
-                                                         const int k_inc) {
-  int i, j, k,t;
-  for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc ) 
-    for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
-     for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-        for ( t = 1 ; t <= NumVar(); ++ t) {
-  	   buffer_count = buffer_count + 1;
-	 
-	   if (buffer_count >= buffer_size) return(1);
-           buffer[buffer_count] = U[i][j][k][t];
-        } /* endfor */
-     } /* endfor */
-  } /* endfor */
+int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::
+LoadSendBuffer_Solution(double *buffer,
+                        int &buffer_count,
+                        const int buffer_size,
+                        const int *id_start, 
+                        const int *id_end,
+                        const int *inc,
+                        const int *neigh_orient) {
 
-  return(0);
+   int indices[3];
+   
+   int &i = indices[0];
+   int &j = indices[1];
+   int &k = indices[2];
+   
+   int &rcv_i = indices[neigh_orient[0]];
+   int &rcv_j = indices[neigh_orient[1]];
+   int &rcv_k = indices[neigh_orient[2]];
 
+   int rcv_i_s = id_start[neigh_orient[0]];
+   int rcv_j_s = id_start[neigh_orient[1]];
+   int rcv_k_s = id_start[neigh_orient[2]];
+
+   int rcv_i_e = id_end[neigh_orient[0]];
+   int rcv_j_e = id_end[neigh_orient[1]];
+   int rcv_k_e = id_end[neigh_orient[2]];
+
+   int rcv_i_c = inc[neigh_orient[0]];
+   int rcv_j_c = inc[neigh_orient[1]];
+   int rcv_k_c = inc[neigh_orient[2]];
+
+   for (rcv_k = rcv_k_s ; (rcv_k - rcv_k_s)*(rcv_k - rcv_k_e)<=0 ; rcv_k+= rcv_k_c) {
+      for (rcv_j = rcv_j_s ; (rcv_j - rcv_j_s)*(rcv_j - rcv_j_e)<=0 ; rcv_j+= rcv_j_c) {
+         for (rcv_i = rcv_i_s ; (rcv_i - rcv_i_s)*(rcv_i - rcv_i_e)<=0 ; rcv_i+= rcv_i_c) {
+            for (int t = 1 ; t <= NumVar(); ++ t) {
+               buffer_count = buffer_count + 1;
+               if (buffer_count >= buffer_size) return(1);
+               buffer[buffer_count] = U[i][j][k][t];
+            } /* endfor */
+         } /* endfor */
+      } /* endfor */
+   } /* endfor */
+   
+   return(0);
+  
+}
+
+/*******************************************************************************
+ * Hexa_Block::LoadSendBuffer_Geometry -- Loads send message buffer with       *
+ *                                        mesh geometry data.                  *
+ *******************************************************************************/
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::
+LoadSendBuffer_Geometry(double *buffer,
+                        int &buffer_count,
+                        const int buffer_size,
+                        const int *id_start, 
+                        const int *id_end,
+                        const int *inc,
+                        const int *neigh_orient) {
+
+   int indices[3];
+   
+   int &i = indices[0];
+   int &j = indices[1];
+   int &k = indices[2];
+   
+   int &rcv_i = indices[neigh_orient[0]];
+   int &rcv_j = indices[neigh_orient[1]];
+   int &rcv_k = indices[neigh_orient[2]];
+
+   int rcv_i_s = id_start[neigh_orient[0]];
+   int rcv_j_s = id_start[neigh_orient[1]];
+   int rcv_k_s = id_start[neigh_orient[2]];
+
+   int rcv_i_e = id_end[neigh_orient[0]];
+   int rcv_j_e = id_end[neigh_orient[1]];
+   int rcv_k_e = id_end[neigh_orient[2]];
+
+   int rcv_i_c = inc[neigh_orient[0]];
+   int rcv_j_c = inc[neigh_orient[1]];
+   int rcv_k_c = inc[neigh_orient[2]];
+
+   for (rcv_k = rcv_k_s ; (rcv_k - rcv_k_s)*(rcv_k - rcv_k_e)<=0 ; rcv_k+= rcv_k_c) {
+      for (rcv_j = rcv_j_s ; (rcv_j - rcv_j_s)*(rcv_j - rcv_j_e)<=0 ; rcv_j+= rcv_j_c) {
+         for (rcv_i = rcv_i_s ; (rcv_i - rcv_i_s)*(rcv_i - rcv_i_e)<=0 ; rcv_i+= rcv_i_c) {
+            for (int m = 1 ; m <= NUM_COMP_VECTOR3D; ++ m) {
+               buffer_count = buffer_count + 1;
+               if (buffer_count >= buffer_size) return(1);
+               buffer[buffer_count] = Grid.Node[i][j][k].X[m];
+            } /* endfor */
+         } /* endfor */
+      } /* endfor */
+   } /* endfor */
+   
+   return(0);
+  
+}
+
+/*******************************************************************************
+ * Hexa_Block::LoadSendBuffer_BCs -- Loads send message buffer with BC data    *
+ *******************************************************************************/
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::
+LoadSendBuffer_BCs(double *buffer,
+                   int &buffer_count,
+                   const int buffer_size,
+                   const int *id_start, 
+                   const int *id_end,
+                   const int *inc,
+                   const int *neigh_orient,
+                   const int bc_elem_i,
+                   const int bc_elem_j,
+                   const int bc_elem_k) {
+
+   int indices[3];
+   
+   int &i = indices[0];
+   int &j = indices[1];
+   int &k = indices[2];
+   
+   int &rcv_i = indices[neigh_orient[0]];
+   int &rcv_j = indices[neigh_orient[1]];
+   int &rcv_k = indices[neigh_orient[2]];
+
+   int rcv_i_s = id_start[neigh_orient[0]];
+   int rcv_j_s = id_start[neigh_orient[1]];
+   int rcv_k_s = id_start[neigh_orient[2]];
+
+   int rcv_i_e = id_end[neigh_orient[0]];
+   int rcv_j_e = id_end[neigh_orient[1]];
+   int rcv_k_e = id_end[neigh_orient[2]];
+
+   int rcv_i_c = inc[neigh_orient[0]];
+   int rcv_j_c = inc[neigh_orient[1]];
+   int rcv_k_c = inc[neigh_orient[2]];
+
+   if (!bc_elem_j && !bc_elem_k) {
+      int do_i = 1;
+      int do_j = 1;
+      int do_k = 1;
+   
+      if(neigh_orient[0] == 0) do_i = 0;
+      if(neigh_orient[1] == 0) do_j = 0;
+      if(neigh_orient[2] == 0) do_k = 0;
+      
+      for (rcv_k = do_k*rcv_k_s ; do_k*(rcv_k - rcv_k_s)*(rcv_k - rcv_k_e)<=0 ; rcv_k+= rcv_k_c) {
+         for (rcv_j = do_j*rcv_j_s ; do_j*(rcv_j - rcv_j_s)*(rcv_j - rcv_j_e)<=0 ; rcv_j+= rcv_j_c) {
+            for (rcv_i = do_i*rcv_i_s ; do_i*(rcv_i - rcv_i_s)*(rcv_i - rcv_i_e)<=0 ; rcv_i+= rcv_i_c) {
+               if(bc_elem_i == -1){
+                  buffer_count = buffer_count + 1;
+                  if (buffer_count >= buffer_size) return(1);
+                  buffer[buffer_count] = double(Grid.BCtypeW[j][k]);
+               }
+               if(bc_elem_i == 1){
+                  buffer_count = buffer_count + 1;
+                  if (buffer_count >= buffer_size) return(1);
+                  buffer[buffer_count] = double(Grid.BCtypeE[j][k]);
+               }
+            } /* endfor */
+         } /* endfor */
+      } /* endfor */
+   } /* endif */
+
+   if (!bc_elem_i && !bc_elem_k) {
+      int do_i = 1;
+      int do_j = 1;
+      int do_k = 1;
+      
+      if(neigh_orient[0] == 1) do_i = 0;
+      if(neigh_orient[1] == 1) do_j = 0;
+      if(neigh_orient[2] == 1) do_k = 0;
+       
+      for (rcv_k = do_k*rcv_k_s ; do_k*(rcv_k - rcv_k_s)*(rcv_k - rcv_k_e)<=0 ; rcv_k+= rcv_k_c) {
+         for (rcv_j = do_j*rcv_j_s ; do_j*(rcv_j - rcv_j_s)*(rcv_j - rcv_j_e)<=0 ; rcv_j+= rcv_j_c) {
+            for (rcv_i = do_i*rcv_i_s ; do_i*(rcv_i - rcv_i_s)*(rcv_i - rcv_i_e)<=0 ; rcv_i+= rcv_i_c) {
+               if(bc_elem_j == 1){
+                  buffer_count = buffer_count + 1;
+                  if (buffer_count >= buffer_size) return(1);
+                  buffer[buffer_count] = double(Grid.BCtypeN[i][k]);
+               }
+               if(bc_elem_j == -1){
+                  buffer_count = buffer_count + 1;
+                  if (buffer_count >= buffer_size) return(1);
+                  buffer[buffer_count] = double(Grid.BCtypeS[i][k]);
+               }
+            } /* endfor */
+         } /* endfor */
+      } /* endfor */
+   } /* endif */
+    
+   if (!bc_elem_i && !bc_elem_j) {
+      int do_i = 1;
+      int do_j = 1;
+      int do_k = 1;
+      
+      if(neigh_orient[0] == 2) do_i = 0;
+      if(neigh_orient[1] == 2) do_j = 0;
+      if(neigh_orient[2] == 2) do_k = 0;
+      
+      for (rcv_k = do_k*rcv_k_s ; do_k*(rcv_k - rcv_k_s)*(rcv_k - rcv_k_e)<=0 ; rcv_k+= rcv_k_c) {
+         for (rcv_j = do_j*rcv_j_s ; do_j*(rcv_j - rcv_j_s)*(rcv_j - rcv_j_e)<=0 ; rcv_j+= rcv_j_c) {
+            for (rcv_i = do_i*rcv_i_s ; do_i*(rcv_i - rcv_i_s)*(rcv_i - rcv_i_e)<=0 ; rcv_i+= rcv_i_c) {
+               if(bc_elem_k == 1){
+                  buffer_count = buffer_count + 1;
+                  if (buffer_count >= buffer_size) return(1);
+                  buffer[buffer_count] = double(Grid.BCtypeT[i][j]);
+               }
+               if(bc_elem_k == -1){
+                  buffer_count = buffer_count + 1;
+                  if (buffer_count >= buffer_size) return(1);
+                  buffer[buffer_count] = double(Grid.BCtypeB[i][j]);
+               }
+            } /* endfor */
+         } /* endfor */
+      } /* endfor */
+   } /* endif */
+    
+   return(0);
+  
 }
 
 /*******************************************************************************
@@ -3225,18 +3466,19 @@ int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::LoadSendBuffer(double *buffer,
  *                                   fine to coarse block message passing.     *
  *******************************************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
-int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::LoadSendBuffer_F2C(double *buffer,
-                                                             int &buffer_count,
-                                                             const int buffer_size,
-                                                             const int i_min, 
-                                                             const int i_max,
-                                                             const int i_inc,
-                                                             const int j_min, 
-                                                             const int j_max,
-                                                             const int j_inc,
-					               	     const int k_min, 
-                                                             const int k_max,
-                                                             const int k_inc) {
+int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::
+LoadSendBuffer_F2C(double *buffer,
+                   int &buffer_count,
+                   const int buffer_size,
+                   const int i_min, 
+                   const int i_max,
+                   const int i_inc,
+                   const int j_min, 
+                   const int j_max,
+                   const int j_inc,
+		   const int k_min, 
+                   const int k_max,
+                   const int k_inc) {
 
    cout << "\nError: LoadSendBuffer_F2C() is not written for Hexa"; cout.flush();
 
@@ -3249,18 +3491,19 @@ int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::LoadSendBuffer_F2C(double *buffer,
  *                                   coarse to fine block message passing.     *
  *******************************************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
-int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::LoadSendBuffer_C2F(double *buffer,
-                                                             int &buffer_count,
-                                                             const int buffer_size,
-                                                             const int i_min, 
-                                                             const int i_max,
-                                                             const int i_inc,
-                                                             const int j_min, 
-                                                             const int j_max,
-                                                             const int j_inc,
-						             const int k_min, 
-                                                             const int k_max,
-                                                             const int k_inc) {
+int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::
+LoadSendBuffer_C2F(double *buffer,
+                   int &buffer_count,
+                   const int buffer_size,
+                   const int i_min, 
+                   const int i_max,
+                   const int i_inc,
+                   const int j_min, 
+                   const int j_max,
+                   const int j_inc,
+		   const int k_min, 
+                   const int k_max,
+                   const int k_inc) {
 
    cout << "\nError: LoadSendBuffer_C2F() is not written for Hexa"; cout.flush();
 
@@ -3269,38 +3512,149 @@ int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::LoadSendBuffer_C2F(double *buffer,
 }
 
 /*******************************************************************************
- * Hexa_Block::UnloadReceiveBuffer -- Unloads receive message buffer.          *
+ * Hexa_Block::UnloadReceiveBuffer_Solution -- Unloads solution data from the  *
+ *                                             receive message buffer.         *
  *******************************************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
-int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::UnloadReceiveBuffer(double *buffer,
-                                                   int &buffer_count,
-                                                   const int buffer_size,
-                                                   const int i_min, 
-                                                   const int i_max,
-                                                   const int i_inc,
-                                                   const int j_min, 
-                                                   const int j_max,
-                                                       const int j_inc,
-						       const int k_min, 
-                                                       const int k_max,
-                                                       const int k_inc) {
+int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::
+UnloadReceiveBuffer_Solution(double *buffer,
+                             int &buffer_count,
+                             const int buffer_size,
+                             const int i_min, 
+                             const int i_max,
+                             const int i_inc,
+                             const int j_min, 
+                             const int j_max,
+                             const int j_inc,
+			     const int k_min, 
+                             const int k_max,
+                             const int k_inc) {
 
-  int i, j,k;
-  for (k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc) {
-     for (j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc) {
-        for (i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc) {
-           for (int nV = 1 ; nV <=NumVar() ; ++ nV) {
-              buffer_count = buffer_count + 1;
-              if (buffer_count >= buffer_size) return(1);    
-              U[i][j][k][nV] = buffer[buffer_count];
-           } /* endfor */
-           W[i][j][k] = U[i][j][k].W();
-        } /* endfor */
-     } /* endfor */
-  } /* endfor */ 
+   int i, j, k;
+   for (k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc) {
+      for (j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc) {
+         for (i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc) {
+            for (int nV = 1 ; nV <=NumVar() ; ++ nV) {
+               buffer_count = buffer_count + 1;
+               if (buffer_count >= buffer_size) return(1);    
+               U[i][j][k][nV] = buffer[buffer_count];
+            } /* endfor */
+            W[i][j][k] = U[i][j][k].W();
+         } /* endfor */
+      } /* endfor */
+   } /* endfor */ 
 
-  return(0);
+   return(0);
 
+}
+
+/*******************************************************************************
+ * Hexa_Block::UnloadReceiveBuffer_Geometry -- Unloads mesh geometry data from *
+ *                                             the receive message buffer.     *
+ *******************************************************************************/
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::
+UnloadReceiveBuffer_Geometry(double *buffer,
+                             int &buffer_count,
+                             const int buffer_size,
+                             const int i_min, 
+                             const int i_max,
+                             const int i_inc,
+                             const int j_min, 
+                             const int j_max,
+                             const int j_inc,
+			     const int k_min, 
+                             const int k_max,
+                             const int k_inc) {
+
+   int i, j, k;
+   for (k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc) {
+      for (j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc) {
+         for (i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc) {
+            buffer_count = buffer_count +  NUM_COMP_VECTOR3D;
+            if (buffer_count >= buffer_size) return(1);    
+            Grid.Node[i][j][k].X = Vector3D(buffer[buffer_count-2],
+                                            buffer[buffer_count-1],
+                                            buffer[buffer_count]);
+         } /* endfor */
+      } /* endfor */
+   } /* endfor */
+      
+   return(0);
+
+}
+
+/*******************************************************************************
+ * Hexa_Block::UnloadReceiveBuffer_BCs -- Unloads BC data from the receive     *
+ *                                        message buffer.                      *
+ *******************************************************************************/
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::
+UnloadReceiveBuffer_BCs(double *buffer,
+                        int &buffer_count,
+                        const int buffer_size,
+                        const int i_min,
+                        const int i_max,
+                        const int i_inc,
+                        const int j_min,
+                        const int j_max,
+                        const int j_inc,
+                        const int k_min,
+                        const int k_max,
+                        const int k_inc,
+                        const int bc_elem_i,
+                        const int bc_elem_j,
+                        const int bc_elem_k) {
+
+   int i, j, k;
+
+   for (k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc) {
+      for (j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc) {
+         if(bc_elem_i == -1){
+            buffer_count = buffer_count + 1;
+            if (buffer_count >= buffer_size) return(1);
+            Grid.BCtypeW[j][k] = int( buffer[buffer_count]);
+         }
+         if(bc_elem_i == 1){
+            buffer_count = buffer_count + 1;
+            if (buffer_count >= buffer_size) return(1);
+            Grid.BCtypeE[j][k] = int( buffer[buffer_count]);
+         }
+      } /* endfor */
+   } /* endfor */
+  
+   for (k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc) {
+      for (i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc) {
+         if(bc_elem_j == 1){
+            buffer_count = buffer_count + 1;
+            if (buffer_count >= buffer_size) return(1);
+            Grid.BCtypeN[i][k] = int( buffer[buffer_count]);
+         }
+         if(bc_elem_j == -1){
+            buffer_count = buffer_count + 1;
+            if (buffer_count >= buffer_size) return(1);
+            Grid.BCtypeS[i][k] = int( buffer[buffer_count]);
+         }
+      } /* endfor */
+   } /* endfor */
+
+   for (j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc) {
+      for (i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc) {
+         if(bc_elem_k == 1){
+            buffer_count = buffer_count + 1;
+            if (buffer_count >= buffer_size) return(1);
+            Grid.BCtypeT[i][j] = int( buffer[buffer_count]);
+         }
+         if(bc_elem_k == -1){
+            buffer_count = buffer_count + 1;
+            if (buffer_count >= buffer_size) return(1);
+            Grid.BCtypeB[i][j] = int( buffer[buffer_count]);
+         }
+      } /* endfor */
+   } /* endfor */
+ 
+   return(0);
+  
 }
 
 /*******************************************************************************
@@ -3308,18 +3662,19 @@ int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::UnloadReceiveBuffer(double *buffer,
  *                                        fine to coarse block message passing.*
  *******************************************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
-int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::UnloadReceiveBuffer_F2C(double *buffer,
-                                                                  int &buffer_count,
-                                                                  const int buffer_size,
-                                                                  const int i_min, 
-                                                                  const int i_max,
-                                                                  const int i_inc,
-                                                                  const int j_min, 
-                                                                  const int j_max,
-                                                                  const int j_inc,
-						                  const int k_min, 
-                                                                  const int k_max,
-                                                                  const int k_inc) {
+int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::
+UnloadReceiveBuffer_F2C(double *buffer,
+                        int &buffer_count,
+                        const int buffer_size,
+                        const int i_min, 
+                        const int i_max,
+                        const int i_inc,
+                        const int j_min, 
+                        const int j_max,
+                        const int j_inc,
+			const int k_min, 
+                        const int k_max,
+                        const int k_inc) {
 
    cout << "\nError: UnloadReceiveBuffer_F2C() is not written for Hexa"; cout.flush();
 
@@ -3332,18 +3687,19 @@ int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::UnloadReceiveBuffer_F2C(double *buffer
  *                                        coarse to fine block message passing.*
  *******************************************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
-int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::UnloadReceiveBuffer_C2F(double *buffer,
-                                                                  int &buffer_count,
-                                                                  const int buffer_size,
-                                                                  const int i_min, 
-                                                                  const int i_max,
-                                                                  const int i_inc,
-                                                                  const int j_min, 
-                                                                  const int j_max,
-                                                                  const int j_inc,
-						                  const int k_min, 
-                                                                  const int k_max,
-                                                                  const int k_inc) {
+int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::
+UnloadReceiveBuffer_C2F(double *buffer,
+                        int &buffer_count,
+                        const int buffer_size,
+                        const int i_min, 
+                        const int i_max,
+                        const int i_inc,
+                        const int j_min, 
+                        const int j_max,
+                        const int j_inc,
+			const int k_min, 
+                        const int k_max,
+                        const int k_inc) {
 
    cout << "\nError: UnloadReceiveBuffer_C2F() is not written for Hexa"; cout.flush();
 
@@ -3358,15 +3714,14 @@ int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::UnloadReceiveBuffer_C2F(double *buffer
  *             the specified hexahedral solution block.                   *
  **************************************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
-void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::SubcellReconstruction(const int i, 
-                                                                 const int j,
-                                                                 const int k,
-                                                                 const int Limiter) {
+void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::
+SubcellReconstruction(const int i, 
+                      const int j,
+                      const int k,
+                      const int Limiter) {
 
   cout << "\nError: SubcellReconstruction() is not written for Hexa"; cout.flush();
 
-  return;
-    
 }
 
 /*******************************************************************************
@@ -3375,23 +3730,23 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::SubcellReconstruction(const int i,
  *                                        of conservative solution fluxes.     *
  *******************************************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
-int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::LoadSendBuffer_Flux_F2C(double *buffer,
-                                                                  int &buffer_count,
-                                                                  const int buffer_size,
-                                                                  const int i_min, 
-                                                                  const int i_max,
-                                                                  const int i_inc,
-                                                                  const int j_min, 
-                                                                  const int j_max,
-                                                                  const int j_inc,
-	       					                  const int k_min, 
-                                                                  const int k_max,
-                                                                  const int k_inc) {
+int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::
+LoadSendBuffer_Flux_F2C(double *buffer,
+                        int &buffer_count,
+                        const int buffer_size,
+                        const int i_min, 
+                        const int i_max,
+                        const int i_inc,
+                        const int j_min, 
+                        const int j_max,
+                        const int j_inc,
+	       		const int k_min, 
+                        const int k_max,
+                        const int k_inc) {
 
    cout << "\nError: LoadSendBuffer_Flux_F2C() is not written for Hexa"; cout.flush();
 
    return(2);
-
 
 }
 
@@ -3402,18 +3757,19 @@ int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::LoadSendBuffer_Flux_F2C(double *buffer
  *                                                conservative solution fluxes.*
  *******************************************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
-int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::UnloadReceiveBuffer_Flux_F2C(double *buffer,
-                                                                       int &buffer_count,
-                                                                       const int buffer_size,
-                                                                       const int i_min, 
-                                                                       const int i_max,
-                                                                       const int i_inc,
-                                                                       const int j_min, 
-                                                                       const int j_max,
-                                                                       const int j_inc,
-						                       const int k_min, 
-                                                                       const int k_max,
-                                                                       const int k_inc) {
+int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::
+UnloadReceiveBuffer_Flux_F2C(double *buffer,
+                             int &buffer_count,
+                             const int buffer_size,
+                             const int i_min, 
+                             const int i_max,
+                             const int i_inc,
+                             const int j_min, 
+                             const int j_max,
+                             const int j_inc,
+			     const int k_min, 
+                             const int k_max,
+                             const int k_inc) {
 
    cout << "\nError: UnloadReceiveBuffer_Flux_F2C() is not written for Hexa"; cout.flush();
 

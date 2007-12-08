@@ -21,7 +21,7 @@ class HexaSolver_Data {
   protected: 
   public:
 
-  Grid3D_Hexa_Multi_Block             Initial_Mesh;  
+  Grid3D_Hexa_Multi_Block_List        Initial_Mesh;  
   AdaptiveBlock3D_List                Local_Adaptive_Block_List; 
   AdaptiveBlock3D_ResourceList        Global_Adaptive_Block_List;
   Octree_DataStructure                Octree;
@@ -35,13 +35,15 @@ class HexaSolver_Data {
 
   // Physical Time for Unsteady Calculations
   double Time;
+
   // Batch mode flag, deactivates STDOUT ie. cout
   int batch_flag;
+
   // Residaul File Output Stream
   ofstream residual_file;
 
   int total_number_of_time_steps() { return (number_of_explicit_time_steps+number_of_implicit_time_steps); }
-
+ 
   /*********************************/
   //default constructor(s)
   HexaSolver_Data(void){}
@@ -77,7 +79,7 @@ class HexaSolver_Solution_Data {
 
   // Control Flag 
   int command_flag;
-
+ 
   // Constructor
   HexaSolver_Solution_Data(void) {} 
   // Destructor
@@ -121,7 +123,4 @@ Get_Input_Parameters(char *Input_File_Name,int batch_flag){
   return error_flag;
 }
 
-
-
 #endif //_HEXA_SOLVER_CLASSES_INCLUDED
-
