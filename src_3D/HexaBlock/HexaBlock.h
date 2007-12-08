@@ -3273,10 +3273,10 @@ LoadSendBuffer_Solution(double *buffer,
    for (rcv_k = rcv_k_s ; (rcv_k - rcv_k_s)*(rcv_k - rcv_k_e)<=0 ; rcv_k+= rcv_k_c) {
       for (rcv_j = rcv_j_s ; (rcv_j - rcv_j_s)*(rcv_j - rcv_j_e)<=0 ; rcv_j+= rcv_j_c) {
          for (rcv_i = rcv_i_s ; (rcv_i - rcv_i_s)*(rcv_i - rcv_i_e)<=0 ; rcv_i+= rcv_i_c) {
-            for (int t = 1 ; t <= NumVar(); ++ t) {
-               buffer_count = buffer_count + 1;
+            for (int nV = 1 ; nV <= NumVar(); ++nV) {
+               buffer_count++;
                if (buffer_count >= buffer_size) return(1);
-               buffer[buffer_count] = U[i][j][k][t];
+               buffer[buffer_count] = U[i][j][k][nV];
             } /* endfor */
          } /* endfor */
       } /* endfor */
@@ -3325,10 +3325,10 @@ LoadSendBuffer_Geometry(double *buffer,
    for (rcv_k = rcv_k_s ; (rcv_k - rcv_k_s)*(rcv_k - rcv_k_e)<=0 ; rcv_k+= rcv_k_c) {
       for (rcv_j = rcv_j_s ; (rcv_j - rcv_j_s)*(rcv_j - rcv_j_e)<=0 ; rcv_j+= rcv_j_c) {
          for (rcv_i = rcv_i_s ; (rcv_i - rcv_i_s)*(rcv_i - rcv_i_e)<=0 ; rcv_i+= rcv_i_c) {
-            for (int m = 1 ; m <= NUM_COMP_VECTOR3D; ++ m) {
-               buffer_count = buffer_count + 1;
+            for (int nV = 1 ; nV <= NUM_COMP_VECTOR3D; ++nV) {
+               buffer_count++;
                if (buffer_count >= buffer_size) return(1);
-               buffer[buffer_count] = Grid.Node[i][j][k].X[m];
+               buffer[buffer_count] = Grid.Node[i][j][k].X[nV];
             } /* endfor */
          } /* endfor */
       } /* endfor */
@@ -3385,19 +3385,19 @@ LoadSendBuffer_BCs(double *buffer,
       if(neigh_orient[1] == 0) do_j = 0;
       if(neigh_orient[2] == 0) do_k = 0;
       
-      for (rcv_k = do_k*rcv_k_s ; do_k*(rcv_k - rcv_k_s)*(rcv_k - rcv_k_e)<=0 ; rcv_k+= rcv_k_c) {
+      for (rcv_k = do_k*rcv_k_s ; do_k*(rcv_k - rcv_k_s)*(rcv_k - rcv_k_e)<=0; rcv_k+= rcv_k_c) {
          for (rcv_j = do_j*rcv_j_s ; do_j*(rcv_j - rcv_j_s)*(rcv_j - rcv_j_e)<=0 ; rcv_j+= rcv_j_c) {
             for (rcv_i = do_i*rcv_i_s ; do_i*(rcv_i - rcv_i_s)*(rcv_i - rcv_i_e)<=0 ; rcv_i+= rcv_i_c) {
-               if(bc_elem_i == -1){
+               if (bc_elem_i == -1) {
                   buffer_count = buffer_count + 1;
                   if (buffer_count >= buffer_size) return(1);
                   buffer[buffer_count] = double(Grid.BCtypeW[j][k]);
-               }
-               if(bc_elem_i == 1){
+               } /* endif */
+               if (bc_elem_i == 1) {
                   buffer_count = buffer_count + 1;
                   if (buffer_count >= buffer_size) return(1);
                   buffer[buffer_count] = double(Grid.BCtypeE[j][k]);
-               }
+               } /* endif */
             } /* endfor */
          } /* endfor */
       } /* endfor */
@@ -3415,16 +3415,16 @@ LoadSendBuffer_BCs(double *buffer,
       for (rcv_k = do_k*rcv_k_s ; do_k*(rcv_k - rcv_k_s)*(rcv_k - rcv_k_e)<=0 ; rcv_k+= rcv_k_c) {
          for (rcv_j = do_j*rcv_j_s ; do_j*(rcv_j - rcv_j_s)*(rcv_j - rcv_j_e)<=0 ; rcv_j+= rcv_j_c) {
             for (rcv_i = do_i*rcv_i_s ; do_i*(rcv_i - rcv_i_s)*(rcv_i - rcv_i_e)<=0 ; rcv_i+= rcv_i_c) {
-               if(bc_elem_j == 1){
+               if (bc_elem_j == 1) {
                   buffer_count = buffer_count + 1;
                   if (buffer_count >= buffer_size) return(1);
                   buffer[buffer_count] = double(Grid.BCtypeN[i][k]);
-               }
-               if(bc_elem_j == -1){
+               } /* endif */
+               if (bc_elem_j == -1) {
                   buffer_count = buffer_count + 1;
                   if (buffer_count >= buffer_size) return(1);
                   buffer[buffer_count] = double(Grid.BCtypeS[i][k]);
-               }
+               } /* endif */
             } /* endfor */
          } /* endfor */
       } /* endfor */
@@ -3442,16 +3442,16 @@ LoadSendBuffer_BCs(double *buffer,
       for (rcv_k = do_k*rcv_k_s ; do_k*(rcv_k - rcv_k_s)*(rcv_k - rcv_k_e)<=0 ; rcv_k+= rcv_k_c) {
          for (rcv_j = do_j*rcv_j_s ; do_j*(rcv_j - rcv_j_s)*(rcv_j - rcv_j_e)<=0 ; rcv_j+= rcv_j_c) {
             for (rcv_i = do_i*rcv_i_s ; do_i*(rcv_i - rcv_i_s)*(rcv_i - rcv_i_e)<=0 ; rcv_i+= rcv_i_c) {
-               if(bc_elem_k == 1){
+               if (bc_elem_k == 1) {
                   buffer_count = buffer_count + 1;
                   if (buffer_count >= buffer_size) return(1);
                   buffer[buffer_count] = double(Grid.BCtypeT[i][j]);
-               }
-               if(bc_elem_k == -1){
+               } /* endif */
+               if (bc_elem_k == -1) {
                   buffer_count = buffer_count + 1;
                   if (buffer_count >= buffer_size) return(1);
                   buffer[buffer_count] = double(Grid.BCtypeB[i][j]);
-               }
+               } /* endif */
             } /* endfor */
          } /* endfor */
       } /* endfor */
@@ -3535,7 +3535,7 @@ UnloadReceiveBuffer_Solution(double *buffer,
       for (j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc) {
          for (i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc) {
             for (int nV = 1 ; nV <=NumVar() ; ++ nV) {
-               buffer_count = buffer_count + 1;
+               buffer_count++;
                if (buffer_count >= buffer_size) return(1);    
                U[i][j][k][nV] = buffer[buffer_count];
             } /* endfor */
@@ -3610,46 +3610,46 @@ UnloadReceiveBuffer_BCs(double *buffer,
 
    for (k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc) {
       for (j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc) {
-         if(bc_elem_i == -1){
+         if (bc_elem_i == -1) {
             buffer_count = buffer_count + 1;
             if (buffer_count >= buffer_size) return(1);
             Grid.BCtypeW[j][k] = int( buffer[buffer_count]);
-         }
-         if(bc_elem_i == 1){
+         } /* endif */
+         if (bc_elem_i == 1) {
             buffer_count = buffer_count + 1;
             if (buffer_count >= buffer_size) return(1);
             Grid.BCtypeE[j][k] = int( buffer[buffer_count]);
-         }
+         } /* endif */
       } /* endfor */
    } /* endfor */
   
    for (k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc) {
       for (i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc) {
-         if(bc_elem_j == 1){
+         if (bc_elem_j == 1) {
             buffer_count = buffer_count + 1;
             if (buffer_count >= buffer_size) return(1);
             Grid.BCtypeN[i][k] = int( buffer[buffer_count]);
-         }
-         if(bc_elem_j == -1){
+         } /* endif */
+         if (bc_elem_j == -1) {
             buffer_count = buffer_count + 1;
             if (buffer_count >= buffer_size) return(1);
             Grid.BCtypeS[i][k] = int( buffer[buffer_count]);
-         }
+         } /* endif */
       } /* endfor */
    } /* endfor */
 
    for (j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc) {
       for (i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc) {
-         if(bc_elem_k == 1){
+         if (bc_elem_k == 1) {
             buffer_count = buffer_count + 1;
             if (buffer_count >= buffer_size) return(1);
             Grid.BCtypeT[i][j] = int( buffer[buffer_count]);
-         }
-         if(bc_elem_k == -1){
+         } /* endif */
+         if (bc_elem_k == -1) {
             buffer_count = buffer_count + 1;
             if (buffer_count >= buffer_size) return(1);
             Grid.BCtypeB[i][j] = int( buffer[buffer_count]);
-         }
+         } /* endif */
       } /* endfor */
    } /* endfor */
  

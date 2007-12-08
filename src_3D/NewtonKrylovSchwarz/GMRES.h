@@ -172,35 +172,78 @@ public:
   int NumVar(void);
 
   /* Load send message passing buffer. */
-  int LoadSendBuffer(double *buffer,
-                     int &buffer_count,
-                     const int buffer_size,
-                     const int i_min, 
-                     const int i_max,
-                     const int i_inc,
-                     const int j_min, 
-                     const int j_max,
-                     const int j_inc,
-		     const int k_min, 
-                     const int k_max,
-                     const int k_inc);
+  int LoadSendBuffer_Solution(double *buffer,
+                              int &buffer_count,
+                              const int buffer_size,
+                              const int *id_start,
+                              const int *id_end,
+                              const int *inc,
+                              const int *neigh_orient);
+
+  int LoadSendBuffer_Geometry(double *buffer,
+                              int &buffer_count,
+                              const int buffer_size,
+                              const int *id_start,
+                              const int *id_end,
+                              const int *inc,
+                              const int *neigh_orient);
+
+  int LoadSendBuffer_BCs(double *buffer,
+                         int &buffer_count,
+                         const int buffer_size,
+                         const int *id_start,
+                         const int *id_end,
+                         const int *inc,
+                         const int *neigh_orient,
+                         const int bc_elem_i,
+                         const int bc_elem_j,
+                         const int bc_elem_k);
 
 //   int LoadSendBuffer_F2C(.........
 //   int LoadSendBuffer_C2F(.........
 
   /* Unload receive message passing buffer. */
-  int UnloadReceiveBuffer(double *buffer,
-                          int &buffer_count,
-                          const int buffer_size,
-                          const int i_min, 
-                          const int i_max,
-                          const int i_inc,
-                          const int j_min, 
-                          const int j_max,
-                          const int j_inc,
-			  const int k_min, 
-			  const int k_max,
-			  const int k_inc);
+  int UnloadReceiveBuffer_Solution(double *buffer,
+                                   int &buffer_count,
+                                   const int buffer_size,
+                                   const int i_min,
+                                   const int i_max,
+                                   const int i_inc,
+                                   const int j_min,
+                                   const int j_max,
+                                   const int j_inc,
+                                   const int k_min,
+                                   const int k_max,
+                                   const int k_inc);
+
+  int UnloadReceiveBuffer_Geometry(double *buffer,
+                                   int &buffer_count,
+                                   const int buffer_size,
+                                   const int i_min,
+                                   const int i_max,
+                                   const int i_inc,
+                                   const int j_min,
+                                   const int j_max, 
+                                   const int j_inc,
+                                   const int k_min,
+                                   const int k_max,
+                                   const int k_inc);
+
+  int UnloadReceiveBuffer_BCs(double *buffer,
+                              int &buffer_count,
+                              const int buffer_size,
+                              const int i_min,
+                              const int i_max,
+                              const int i_inc,
+                              const int j_min,
+                              const int j_max,
+                              const int j_inc,
+                              const int k_min,
+                              const int k_max,
+                              const int k_inc,
+                              const int bc_elem_i,
+                              const int bc_elem_j,
+                              const int bc_elem_k);
 
 //   int UnloadReceiveBuffer_F2C(.........
 //   int UnloadReceiveBuffer_C2F(.........
@@ -545,89 +588,200 @@ Dotproduct(const double *v1, const double *v2) {
 /*******************************************************************************
  * GMRES_Block::NumVar -- Returns number of state variables.                   *
  *******************************************************************************/
-template <typename SOLN_pSTATE,typename SOLN_cSTATE> 
-inline int GMRES_Block<SOLN_pSTATE,SOLN_cSTATE>::
+template <typename SOLN_pSTATE, typename SOLN_cSTATE> 
+inline int GMRES_Block<SOLN_pSTATE, SOLN_cSTATE>::
 NumVar(void) {
-  return (blocksize);             
+
+   return (blocksize);
+
 }
 
 /*******************************************************************************
- * GMRES_Block::LoadSendBuffer -- Loads send message buffer.                   *
+ * GMRES_Block::LoadSendBuffer_Solution -- Loads send message buffer with      *
+ *                                         solution data.                      *
  *******************************************************************************/
-template <typename SOLN_pSTATE,typename SOLN_cSTATE> 
-inline int GMRES_Block<SOLN_pSTATE,SOLN_cSTATE>::
-LoadSendBuffer(double *buffer,
-	       int &buffer_count,
-	       const int buffer_size,
-	       const int i_min, 
-	       const int i_max,
-	       const int i_inc,
-	       const int j_min, 
-	       const int j_max,
-	       const int j_inc,
-	       const int k_min, 
-	       const int k_max,
-	       const int k_inc) {
+template <typename SOLN_pSTATE, typename SOLN_cSTATE> 
+inline int GMRES_Block<SOLN_pSTATE, SOLN_cSTATE>::
+LoadSendBuffer_Solution(double *buffer,
+                        int &buffer_count,
+                        const int buffer_size,
+                        const int *id_start, 
+                        const int *id_end,
+                        const int *inc,
+                        const int *neigh_orient) {
+
+   int indices[3];
+   
+   int &i = indices[0];
+   int &j = indices[1];
+   int &k = indices[2];
+   
+   int &rcv_i = indices[neigh_orient[0]];
+   int &rcv_j = indices[neigh_orient[1]];
+   int &rcv_k = indices[neigh_orient[2]];
+
+   int rcv_i_s = id_start[neigh_orient[0]];
+   int rcv_j_s = id_start[neigh_orient[1]];
+   int rcv_k_s = id_start[neigh_orient[2]];
+
+   int rcv_i_e = id_end[neigh_orient[0]];
+   int rcv_j_e = id_end[neigh_orient[1]];
+   int rcv_k_e = id_end[neigh_orient[2]];
+
+   int rcv_i_c = inc[neigh_orient[0]];
+   int rcv_j_c = inc[neigh_orient[1]];
+   int rcv_k_c = inc[neigh_orient[2]];
+
+   for (rcv_k = rcv_k_s ; (rcv_k - rcv_k_s)*(rcv_k - rcv_k_e)<=0 ; rcv_k+= rcv_k_c) {
+      for (rcv_j = rcv_j_s ; (rcv_j - rcv_j_s)*(rcv_j - rcv_j_e)<=0 ; rcv_j+= rcv_j_c) {
+         for (rcv_i = rcv_i_s ; (rcv_i - rcv_i_s)*(rcv_i - rcv_i_e)<=0 ; rcv_i+= rcv_i_c) {
+            for (int nV = 0 ; nV < blocksize; nV++) {
+               buffer_count++;
+               if (buffer_count >= buffer_size) return(1);
+               if (vector_switch) {
+                  buffer[buffer_count] = W[(search_directions)*scalar_dim + index(i,j,k,nV)];
+               } else {
+                  buffer[buffer_count] = x[index(i,j,k,nV)];
+               } /* endif */
+            } /* endfor */
+         } /* endfor */
+      } /* endfor */
+   } /* endfor */
+   
+   return(0);
   
-  for (int k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc ) {
-    for (int j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
-      for (int i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-        for (int nV = 0 ; nV < blocksize; nV++) {
-	  buffer_count++;
-	  if (buffer_count >= buffer_size) return(1);
-	  
-	  if (vector_switch) {
-	    buffer[buffer_count] = W[(search_directions)*scalar_dim + index(i,j,k,nV)];
-	  } else {
-	    buffer[buffer_count] = x[index(i,j,k,nV)];
-	  }	  
-        }
-      }
-    } 
-  }
- 
-  return(0);
-} 
-
-
-/*******************************************************************************
- * GMRES_Block::UnloadReceiveBuffer -- Unloads receive message buffer.         *
- *******************************************************************************/
-template <typename SOLN_pSTATE,typename SOLN_cSTATE> 
-inline int GMRES_Block<SOLN_pSTATE,SOLN_cSTATE>::
-UnloadReceiveBuffer(double *buffer,
-		    int &buffer_count,
-		    const int buffer_size,
-		    const int i_min, 
-		    const int i_max,
-		    const int i_inc,
-		    const int j_min, 
-		    const int j_max,
-		    const int j_inc,
-		    const int k_min, 
-		    const int k_max,
-		    const int k_inc) {
-
-  for (int k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc) {
-    for (int j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc) {
-      for (int i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc) {
-	for (int nV = 0 ; nV < blocksize ; nV++) {          
-	  buffer_count++;
-	  if (buffer_count >= buffer_size) return(1);
-	  if (vector_switch) {
-	    W[(search_directions)*scalar_dim + index(i,j,k,nV)] = buffer[buffer_count];  
-	  } else {
-	    x[index(i,j,k,nV)] = buffer[buffer_count];
-	  }
-	}
-      }
-    }
-  }
-  
-  return(0);
 }
 
+/*******************************************************************************
+ * GMRES_Block::LoadSendBuffer_Geometry -- Loads send message buffer with      *
+ *                                         geometry data (place holder, not    *
+ *                                         needed here).                       *
+ *******************************************************************************/
+template <typename SOLN_pSTATE, typename SOLN_cSTATE> 
+inline int GMRES_Block<SOLN_pSTATE, SOLN_cSTATE>::
+LoadSendBuffer_Geometry(double *buffer,
+                        int &buffer_count,
+                        const int buffer_size,
+                        const int *id_start, 
+                        const int *id_end,
+                        const int *inc,
+                        const int *neigh_orient) {
 
+   return(0);
+
+}
+
+/*******************************************************************************
+ * GMRES_Block::LoadSendBuffer_BCs -- Loads send message buffer with BCs       *
+ *                                    data (place holder, not needed here).    *
+ *******************************************************************************/
+template <typename SOLN_pSTATE, typename SOLN_cSTATE> 
+inline int GMRES_Block<SOLN_pSTATE, SOLN_cSTATE>::
+LoadSendBuffer_BCs(double *buffer,
+                   int &buffer_count,
+                   const int buffer_size,
+                   const int *id_start, 
+                   const int *id_end,
+                   const int *inc,
+                   const int *neigh_orient,
+                   const int bc_elem_i,
+                   const int bc_elem_j,
+                   const int bc_elem_k) {
+
+   return(0);
+
+}
+
+/********************************************************************************
+ * GMRES_Block::UnloadReceiveBuffer_Solution -- Unloads solution data from the  *
+ *                                              receive message buffer.         *
+ ********************************************************************************/
+template <typename SOLN_pSTATE, typename SOLN_cSTATE> 
+inline int GMRES_Block<SOLN_pSTATE, SOLN_cSTATE>::
+UnloadReceiveBuffer_Solution(double *buffer,
+                             int &buffer_count,
+                             const int buffer_size,
+                             const int i_min, 
+                             const int i_max,
+                             const int i_inc,
+                             const int j_min, 
+                             const int j_max,
+                             const int j_inc,
+			     const int k_min, 
+                             const int k_max,
+                             const int k_inc) {
+
+   int i, j, k;
+   for (k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc) {
+      for (j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc) {
+         for (i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc) {
+ 	    for (int nV = 0 ; nV < blocksize ; nV++) {  
+               buffer_count++;
+               if (buffer_count >= buffer_size) return(1);    
+               if (vector_switch) {
+                  W[(search_directions)*scalar_dim + index(i,j,k,nV)] = buffer[buffer_count];  
+	       } else {
+                  x[index(i,j,k,nV)] = buffer[buffer_count];
+               } /* endif */
+            } /* endfor */
+         } /* endfor */
+      } /* endfor */
+   } /* endfor */ 
+
+   return(0);
+
+}
+
+/********************************************************************************
+ * GMRES_Block::UnloadReceiveBuffer_Geometry -- Unloads geometry data from the  *
+ *                                              receive message buffer (place   *
+ *                                              holder, not needed here).       *
+ ********************************************************************************/
+template <typename SOLN_pSTATE, typename SOLN_cSTATE> 
+inline int GMRES_Block<SOLN_pSTATE, SOLN_cSTATE>::
+UnloadReceiveBuffer_Geometry(double *buffer,
+                             int &buffer_count,
+                             const int buffer_size,
+                             const int i_min, 
+                             const int i_max,
+                             const int i_inc,
+                             const int j_min, 
+                             const int j_max,
+                             const int j_inc,
+			     const int k_min, 
+                             const int k_max,
+                             const int k_inc) {
+
+   return(0);
+
+}
+
+/********************************************************************************
+ * GMRES_Block::UnloadReceiveBuffer_BCs --      Unloads BCs data from the       *
+ *                                              receive message buffer (place   *
+ *                                              holder, not needed here).       *
+ ********************************************************************************/
+template <typename SOLN_pSTATE, typename SOLN_cSTATE> 
+inline int GMRES_Block<SOLN_pSTATE, SOLN_cSTATE>::
+UnloadReceiveBuffer_BCs(double *buffer,
+                        int &buffer_count,
+                        const int buffer_size,
+                        const int i_min,
+                        const int i_max,
+                        const int i_inc,
+                        const int j_min,
+                        const int j_max,
+                        const int j_inc,
+                        const int k_min,
+                        const int k_max,
+                        const int k_inc,
+                        const int bc_elem_i,
+                        const int bc_elem_j,
+                        const int bc_elem_k) {
+
+   return(0);
+
+}
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////
