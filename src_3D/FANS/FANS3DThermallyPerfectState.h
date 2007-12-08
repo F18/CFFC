@@ -541,6 +541,17 @@ class FANS3D_ThermallyPerfect_KOmega_pState : public NavierStokes3D_ThermallyPer
    FANS3D_ThermallyPerfect_KOmega_pState lambda_plus(const FANS3D_ThermallyPerfect_KOmega_pState &lambda_a,
                                                      const FANS3D_ThermallyPerfect_KOmega_pState &lambda_l,
                                                      const FANS3D_ThermallyPerfect_KOmega_pState &lambda_r);
+
+   //! HLLE wavespeeds in n-direction given 2 primitive states and a direction
+   static Vector2D HLLE_wavespeeds(const FANS3D_ThermallyPerfect_KOmega_pState &Wl,
+                                   const FANS3D_ThermallyPerfect_KOmega_pState &Wr,
+                                   const Vector3D &norm_dir);
+  
+   //! Returns rotated primitive state aligned with local x-axis in the norm_dir
+   FANS3D_ThermallyPerfect_KOmega_pState Rotate(const Vector3D &norm_dir) const;				  
+  
+   //! Returns un-rotated primitive state aligned with x-axis of global problem
+   FANS3D_ThermallyPerfect_KOmega_pState RotateBack(const Vector3D &norm_dir) const;
 //@}
 
 /** @name Numerical Evaluation of Viscous Fluxes */
@@ -865,6 +876,16 @@ class FANS3D_ThermallyPerfect_KOmega_cState : public NavierStokes3D_ThermallyPer
    FANS3D_ThermallyPerfect_KOmega_pState W(void) const;
    //! Returns primitive solution state
    FANS3D_ThermallyPerfect_KOmega_pState W(const FANS3D_ThermallyPerfect_KOmega_cState &U) const;
+//@}
+
+/** @name Numerical Flux Functions */
+/*        ------------------------ */
+//@{
+   //! Returns rotated conserved state aligned with x-axis in the norm_dir
+   FANS3D_ThermallyPerfect_KOmega_cState Rotate(const Vector3D &norm_dir) const;
+
+   //! Returns un-rotated conserved state aligned with x-axis of the global problem
+   FANS3D_ThermallyPerfect_KOmega_cState RotateBack(const Vector3D &norm_dir) const;
 //@}
 
 /** @name Operators */

@@ -209,9 +209,11 @@ class Grid3D_Hexa_Multi_Block_List {
 
     void Create_Grid_Bluff_Body_Burner(Grid3D_Input_Parameters &Input);
 
-    void Find_Neighbours(Grid3D_Input_Parameters &Input);
+    void Create_Grid_Bump_Channel_Flow(Grid3D_Input_Parameters &Input);
 
     void Create_Grid_ICEMCFD(Grid3D_Input_Parameters &Input);
+
+    void Find_Neighbours(Grid3D_Input_Parameters &Input);
 
   private:
     //copy and assignment are not permitted
@@ -273,6 +275,8 @@ class Grid3D_Hexa_Multi_Block {
     void Create_Grid_Couette(Grid3D_Input_Parameters &Input);
 
     void Create_Grid_Pipe(Grid3D_Input_Parameters &Input);
+
+    void Create_Grid_Bump_Channel_Flow(Grid3D_Input_Parameters &Input);
 
     void Create_Grid_Bluff_Body_Burner(Grid3D_Input_Parameters &Input);
 

@@ -230,8 +230,8 @@ Vector3D Euler3D_Polytropic_pState::rhov(void) {
 
 Vector3D Euler3D_Polytropic_pState::rhov(void) const {
     return (rho*v);
-    
 }
+
 /*!
  * \f$ \rho (\boldmath{\bar{v}}\: \boldmath{\bar{n}}) \f$
  */
@@ -1749,74 +1749,14 @@ Euler3D_Polytropic_cState Euler3D_Polytropic_pState::FluxHLLE_n(const Euler3D_Po
                                                                 const Euler3D_Polytropic_pState &Wr, 
                                                                 const Vector3D &norm_dir) {
 
-    double Wl_ur_norm, Wl_ur_tang;
-    double Wr_ur_norm, Wr_ur_tang ;
-    double Wr_ur_tang_z;
-    Vector3D Flux_rotated_x, Flux_rotated_tang_y, Flux_rotated_tang_z ;
-    Vector3D Wl_ur_tang_vector, Wr_ur_tang_vector;
-    Vector3D Wl_ur_tang_unit_vector, Wr_ur_tang_unit_vector;
-    Vector3D Wr_ur_tang_z_vector, Wr_ur_tang_z_unit_vector;
+  Euler3D_Polytropic_pState Wl_rot(Wl.Rotate(norm_dir));
+  Euler3D_Polytropic_pState Wr_rot(Wr.Rotate(norm_dir));
+  
+  //Evaluate the intermediate state solution flux in the rotated frame.
+  Euler3D_Polytropic_cState Flux_rot = FluxHLLE_x(Wl_rot, Wr_rot);
+  
+  return (Flux_rot.RotateBack(norm_dir));
 
-    Euler3D_Polytropic_pState Wl_rotated, Wr_rotated;
-    Euler3D_Polytropic_cState Flux, Flux_rotated;
-
-    /* Apply the frame rotation and evaluate left and right
-        solution states in the local rotated frame defined
-        by the unit normal vector. */
-    Wl_rotated.Copy(Wl);
-    Wr_rotated.Copy(Wr);
-
-    // Left state velocity in rotated frame
-    Wl_ur_norm = dot(Wl.v, norm_dir);
-    Wl_ur_tang = abs(Wl.v - Wl_ur_norm*norm_dir);
-    Wl_ur_tang_vector = (Wl.v - Wl_ur_norm*norm_dir);
-    if(Wl_ur_tang != ZERO){
-        Wl_ur_tang_unit_vector =  Wl_ur_tang_vector/Wl_ur_tang;
-    }else{
-        Wl_ur_tang_unit_vector= Vector3D_ZERO;
-    }
-    Wl_rotated.rho = Wl.rho;
-    Wl_rotated.v.x = Wl_ur_norm ;
-    Wl_rotated.v.y = Wl_ur_tang;
-    Wl_rotated.v.z = ZERO;
-    Wl_rotated.p = Wl.p;
-
-    // Right state velocity in rotated frame
-    Wr_ur_norm = dot(Wr.v, norm_dir);
-    Wr_ur_tang_vector = Wr.v - Wr_ur_norm*norm_dir;
-    Wr_ur_tang = abs(Wr.v - Wr_ur_norm*norm_dir);
-    if( Wr_ur_tang != ZERO){
-        Wr_ur_tang_unit_vector =  Wr_ur_tang_vector/Wr_ur_tang ;
-    }else{
-        Wr_ur_tang_unit_vector= Vector3D_ZERO;  
-    }
-    Wr_rotated.rho = Wr.rho;
-    Wr_rotated.v.x = Wr_ur_norm;
-    Wr_rotated.v.y = dot( Wr_ur_tang_vector, Wl_ur_tang_unit_vector);
-    Wr_rotated.v.z = abs( Wr_ur_tang_vector -Wr_rotated.v.y* Wl_ur_tang_unit_vector);
-    Wr_rotated.p = Wr.p;
-
-    Wr_ur_tang_z = abs(Wr_ur_tang_vector-Wr_rotated.v.y* Wl_ur_tang_unit_vector);
-    Wr_ur_tang_z_vector = Wr_ur_tang_vector -Wr_rotated.v.y* Wl_ur_tang_unit_vector;
-    if(Wr_ur_tang_z !=ZERO){
-        Wr_ur_tang_z_unit_vector = Wr_ur_tang_z_vector /Wr_ur_tang_z ;
-    }else{
-        Wr_ur_tang_z_unit_vector = Vector3D_ZERO;
-    }
-
-
-    /* Evaluate the intermediate state solution flux in the rotated frame. */
-    Flux_rotated = FluxHLLE_x(Wl_rotated, Wr_rotated);
-
-    /* Rotate back to the original Cartesian reference frame and return the solution flux. */
-    Flux.Copy(Flux_rotated);
-
-    Flux_rotated_x = Flux.rhov.x*norm_dir;
-    Flux_rotated_tang_y = Flux.rhov.y* Wl_ur_tang_unit_vector ;
-    Flux_rotated_tang_z = Flux.rhov.z* Wr_ur_tang_z_unit_vector;
-
-    Flux.rhov =  Flux_rotated_x + Flux_rotated_tang_y + Flux_rotated_tang_z;
-    return (Flux);
 }
 
 Euler3D_Polytropic_cState Euler3D_Polytropic_pState::FluxHLLE_n(const Euler3D_Polytropic_cState &Ul,
@@ -2038,76 +1978,14 @@ Euler3D_Polytropic_cState Euler3D_Polytropic_pState::FluxRoe_n(const Euler3D_Pol
                                                                const Euler3D_Polytropic_pState &Wr,
                                                                const Vector3D &norm_dir) {
 
-    double Wl_ur_norm, Wl_ur_tang;
-    double Wr_ur_norm, Wr_ur_tang ;
-    double Wr_ur_tang_z;
-    Vector3D Flux_rotated_x, Flux_rotated_tang_y, Flux_rotated_tang_z ;
-    Vector3D Wl_ur_tang_vector, Wr_ur_tang_vector;
-    Vector3D Wl_ur_tang_unit_vector, Wr_ur_tang_unit_vector;
-    Vector3D Wr_ur_tang_z_vector, Wr_ur_tang_z_unit_vector;
-    Euler3D_Polytropic_pState Wl_rotated, Wr_rotated;
-    Euler3D_Polytropic_cState Flux, Flux_rotated;
+  Euler3D_Polytropic_pState Wl_rot(Wl.Rotate(norm_dir));
+  Euler3D_Polytropic_pState Wr_rot(Wr.Rotate(norm_dir));
+  
+  //Evaluate the intermediate state solution flux in the rotated frame.
+  Euler3D_Polytropic_cState Flux_rot = FluxRoe_x(Wl_rot, Wr_rot);
+  
+  return (Flux_rot.RotateBack(norm_dir));
 
-    /* Apply the frame rotation and evaluate left and right
-        solution states in the local rotated frame defined
-        by the unit normal vector. */
-    Wl_rotated.Copy(Wl);
-    Wr_rotated.Copy(Wr);
-
-    // Left state velocity in rotated frame
-    Wl_ur_norm = dot(Wl.v, norm_dir);
-    Wl_ur_tang = abs(Wl.v - Wl_ur_norm*norm_dir);
-    Wl_ur_tang_vector = (Wl.v - Wl_ur_norm*norm_dir);
-    if(Wl_ur_tang != ZERO){
-        Wl_ur_tang_unit_vector =  Wl_ur_tang_vector/Wl_ur_tang;
-    }else{
-        Wl_ur_tang_unit_vector= Vector3D_ZERO;
-    }
-    Wl_rotated.rho = Wl.rho;
-    Wl_rotated.v.x = Wl_ur_norm ;
-    Wl_rotated.v.y = Wl_ur_tang;
-    Wl_rotated.v.z = ZERO;
-    Wl_rotated.p = Wl.p;
-
-    // Right state velocity in rotated frame
-    Wr_ur_norm = dot(Wr.v, norm_dir);
-    Wr_ur_tang_vector = Wr.v - Wr_ur_norm*norm_dir;
-    Wr_ur_tang = abs(Wr.v - Wr_ur_norm*norm_dir);
-    if( Wr_ur_tang != ZERO){
-        Wr_ur_tang_unit_vector =  Wr_ur_tang_vector/Wr_ur_tang ;
-    }else{
-        Wr_ur_tang_unit_vector= Vector3D_ZERO;  
-    }
-
-    Wr_rotated.rho = Wr.rho;
-    Wr_rotated.v.x = Wr_ur_norm;
-    Wr_rotated.v.y = dot( Wr_ur_tang_vector, Wl_ur_tang_unit_vector);
-    Wr_rotated.v.z = abs( Wr_ur_tang_vector -Wr_rotated.v.y* Wl_ur_tang_unit_vector);
-    Wr_rotated.p = Wr.p;
-
-    Wr_ur_tang_z = abs(Wr_ur_tang_vector-Wr_rotated.v.y* Wl_ur_tang_unit_vector);
-    Wr_ur_tang_z_vector = Wr_ur_tang_vector -Wr_rotated.v.y* Wl_ur_tang_unit_vector;
-    if(Wr_ur_tang_z !=ZERO){
-        Wr_ur_tang_z_unit_vector = Wr_ur_tang_z_vector /Wr_ur_tang_z ;
-    }else{
-        Wr_ur_tang_z_unit_vector = Vector3D_ZERO;
-    }
-
-    /* Evaluate the intermediate state solution 
-        flux in the rotated frame. */
-    Flux_rotated = FluxRoe_x(Wl_rotated, Wr_rotated);
-
-    /* Rotate back to the original Cartesian reference
-        frame and return the solution flux. */
-    Flux.Copy(Flux_rotated);
-
-    Flux_rotated_x = Flux.rhov.x*norm_dir;
-    Flux_rotated_tang_y = Flux.rhov.y* Wl_ur_tang_unit_vector ;
-    Flux_rotated_tang_z = Flux.rhov.z* Wr_ur_tang_z_unit_vector;
-
-    Flux.rhov =  Flux_rotated_x + Flux_rotated_tang_y+ Flux_rotated_tang_z;
-
-    return (Flux);
 }
 
 Euler3D_Polytropic_cState Euler3D_Polytropic_pState::FluxRoe_n(const Euler3D_Polytropic_cState &Ul,  
@@ -2160,6 +2038,86 @@ lambda_minus(const Euler3D_Polytropic_pState &lambdas_a,
     NEW.p = HartenFixNeg(lambdas_a[5],lambdas_l[5],lambdas_r[5]);
     return (NEW);
 
+}
+
+/*!
+* Routine: HLLE wavespeeds 
+*                                                      
+* This function returns the lambda plus and lambda minus   
+* for rotated Riemann problem aligned with norm_dir     
+* given unroated solution states Wl and Wr.             
+* Note: wavespeed.x = wavespeed_l = lambda minus.       
+*       wavespeed.y = wavespeed_r = lambda plus.        
+*                                                      
+*/ 
+Vector2D Euler3D_Polytropic_pState::HLLE_wavespeeds(const Euler3D_Polytropic_pState &Wl,
+						    const Euler3D_Polytropic_pState &Wr,
+						    const Vector3D &norm_dir){
+
+    Vector2D wavespeed;
+    Euler3D_Polytropic_pState Wa_n, lambdas_l, lambdas_r, lambdas_a;  
+    Euler3D_Polytropic_pState Wl_rotated(Wl.Rotate(norm_dir));
+    Euler3D_Polytropic_pState Wr_rotated(Wr.Rotate(norm_dir));
+
+    /* Evaluate the Roe-average primitive solution state. */                           
+    Wa_n = Wa_n.RoeAverage(Wl_rotated, Wr_rotated);
+    
+    /* Evaluate the left, right, and average state eigenvalues. */
+    lambdas_l = Wl_rotated.lambda_x();
+    lambdas_r = Wr_rotated.lambda_x();
+    lambdas_a = Wa_n.lambda_x();
+
+    /* Determine the intermediate state flux. */
+    wavespeed.x = min(lambdas_l[1],
+                      lambdas_a[1]);
+    wavespeed.y = max(lambdas_r[NUM_VAR_EULER3D],
+                      lambdas_a[NUM_VAR_EULER3D]);
+ 
+    wavespeed.x = min(wavespeed.x, ZERO); //lambda minus
+    wavespeed.y = max(wavespeed.y, ZERO); //lambda plus 
+
+    return (wavespeed);
+}
+
+/*!
+* Routine: Rotate
+*                                                      
+* This function returns the primitive state aligned with the local x-axis in the norm_dir.
+*                                                      
+*/ 
+Euler3D_Polytropic_pState Euler3D_Polytropic_pState::Rotate(const Vector3D &norm_dir) const {
+
+  // for a 3D unit normal rotated to align with the x-axis
+  double Ct = norm_dir.x;  //cos_angle
+  double St = sqrt( norm_dir.y*norm_dir.y + norm_dir.z*norm_dir.z); //sin_angle
+  Vector3D rt(0,norm_dir.z,-norm_dir.y);  //rotation axis  
+
+  return Euler3D_Polytropic_pState(rho,
+				   v.x*Ct - v.y*rt.z*St + v.z*rt.y*St,
+				   v.x*rt.z*St + v.y*(rt.y*rt.y*(ONE-Ct)+Ct) + v.z*(rt.y*rt.z*(ONE-Ct)),
+				   -v.x*rt.y*St +  v.y*(rt.y*rt.z*(ONE-Ct)) + v.z*(rt.z*rt.z*(ONE-Ct)+Ct),
+				   p);
+}
+
+/*!
+* Routine: RotateBack
+*                                                      
+* This function returns the unrotated primitive state re-alinged from the x-axis
+* for the global problem.
+*                                                      
+*/ 
+Euler3D_Polytropic_pState Euler3D_Polytropic_pState::RotateBack(const Vector3D &norm_dir) const {
+
+  // for a 3D unit normal rotated to align with the x-axis
+  double Ct = norm_dir.x;  //cos_angle
+  double St = sqrt( norm_dir.y*norm_dir.y + norm_dir.z*norm_dir.z); //sin_angle
+  Vector3D rt(0,norm_dir.z,-norm_dir.y);  //rotation axis  
+
+  return Euler3D_Polytropic_pState(rho,
+				   v.x*Ct + v.y*rt.z*St - v.z*rt.y*St,
+				   -v.x*rt.z*St + v.y*(rt.y*rt.y*(ONE-Ct)+Ct) + v.z*(rt.y*rt.z*(ONE-Ct)),
+				   + v.x*rt.y*St +  v.y*(rt.y*rt.z*(ONE-Ct)) + v.z*(rt.z*rt.z*(ONE-Ct)+Ct),
+				   p);
 }
 
 /*!
@@ -2644,4 +2602,45 @@ void Euler3D_Polytropic_cState::dWdU(DenseMatrix &dWdU) const {
 
 void Euler3D_Polytropic_cState::dWdU(DenseMatrix &dWdU, const Euler3D_Polytropic_cState &U) {
     U.W().dWdU(dWdU);
+}
+
+/*!
+* Routine: Rotate
+*                                                      
+* This function returns the conserved state aligned with the local x-axis in the norm_dir.
+*                                                      
+*/ 
+Euler3D_Polytropic_cState Euler3D_Polytropic_cState::Rotate(const Vector3D &norm_dir) const {
+
+  // for a 3D unit normal rotated to align with the x-axis
+  double Ct = norm_dir.x;  //cos_angle
+  double St = sqrt( norm_dir.y*norm_dir.y + norm_dir.z*norm_dir.z); //sin_angle
+  Vector3D rt(0,norm_dir.z,-norm_dir.y);  //rotation axis  
+
+  return Euler3D_Polytropic_cState(rho,
+				   rhov.x*Ct - rhov.y*rt.z*St + rhov.z*rt.y*St,
+				   rhov.x*rt.z*St + rhov.y*(rt.y*rt.y*(ONE-Ct)+Ct) + rhov.z*(rt.y*rt.z*(ONE-Ct)),
+				   -rhov.x*rt.y*St +  rhov.y*(rt.y*rt.z*(ONE-Ct)) + rhov.z*(rt.z*rt.z*(ONE-Ct)+Ct),
+				   E);
+}
+
+/*!
+* Routine: RotateBack
+*                                                      
+* This function returns the un-rotated conservative state re-alinged from the x-axis
+* for the global problem.
+*                                                      
+*/ 
+Euler3D_Polytropic_cState Euler3D_Polytropic_cState::RotateBack(const Vector3D &norm_dir) const {
+
+  // for a 3D unit normal rotated to align with the x-axis
+  double Ct = norm_dir.x;  //cos_angle
+  double St = sqrt( norm_dir.y*norm_dir.y + norm_dir.z*norm_dir.z); //sin_angle
+  Vector3D rt(0,norm_dir.z,-norm_dir.y);  //rotation axis  
+
+  return Euler3D_Polytropic_cState(rho,
+				   rhov.x*Ct + rhov.y*rt.z*St - rhov.z*rt.y*St,
+				   -rhov.x*rt.z*St + rhov.y*(rt.y*rt.y*(ONE-Ct)+Ct) + rhov.z*(rt.y*rt.z*(ONE-Ct)),
+				   + rhov.x*rt.y*St +  rhov.y*(rt.y*rt.z*(ONE-Ct)) + rhov.z*(rt.z*rt.z*(ONE-Ct)+Ct),
+				   E);
 }

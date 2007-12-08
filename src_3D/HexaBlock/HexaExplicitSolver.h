@@ -18,21 +18,6 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
   int first_step(1);
   int limiter_freezing_off(ON);
   
-  /*! ***************** Residual Plots  **********************
-   * Open residual file and reset the CPU time.             *
-   **********************************************************/  
-  ofstream residual_file;   
-  if (CFFC_Primary_MPI_Processor()) {    
-    error_flag = Open_Progress_File(residual_file,
-				    Solution_Data.Input.Output_File_Name,
-				    Data.number_of_explicit_time_steps);
-    if (error_flag) {
-      cout << "\n ERROR: Unable to open residual file for the"
-	"calculation.\n";
-      cout.flush();
-    } 
-  }
-  
   CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
   CFFC_Broadcast_MPI(&error_flag, 1);
   if (error_flag) return (error_flag);
@@ -131,11 +116,11 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
       
       /***************** NORMS **************************/      
       /* Determine the L1, L2, and max norms of the solution residual. */
-      residual_l1_norm =  Solution_Data.Local_Solution_Blocks.L1_Norm_Residual();
+      residual_l1_norm =  Solution_Data.Local_Solution_Blocks.L1_Norm_Residual(Solution_Data.Input.Residual_Norm);
       residual_l1_norm = CFFC_Summation_MPI(residual_l1_norm); 
-      residual_l2_norm =  Solution_Data.Local_Solution_Blocks.L2_Norm_Residual();
+      residual_l2_norm =  Solution_Data.Local_Solution_Blocks.L2_Norm_Residual(Solution_Data.Input.Residual_Norm);
       residual_l2_norm = CFFC_Summation_MPI(residual_l2_norm); 
-      residual_max_norm =  Solution_Data.Local_Solution_Blocks.Max_Norm_Residual();
+      residual_max_norm =  Solution_Data.Local_Solution_Blocks.Max_Norm_Residual(Solution_Data.Input.Residual_Norm);
       residual_max_norm = CFFC_Maximum_MPI(residual_max_norm);
 
       /* Output progress information for the calculation. */
@@ -146,7 +131,7 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
 						   first_step,
 						   50);
       if (CFFC_Primary_MPI_Processor() && !first_step) {
-	Output_Progress_to_File(residual_file,
+	Output_Progress_to_File(Data.residual_file,
 				Data.number_of_explicit_time_steps,
 				Data.Time*THOUSAND,
 				Data.total_cpu_time,
@@ -267,9 +252,6 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
 							   OFF);
   Solution_Data.Local_Solution_Blocks.BCs(Solution_Data.Input);
 
-  /* Close residual file. */  
-  if (CFFC_Primary_MPI_Processor()) error_flag = Close_Progress_File(residual_file);
-  
   
   return error_flag;
 }

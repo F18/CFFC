@@ -514,11 +514,11 @@ public:
     static Euler3D_Polytropic_cState FluxRoe_n(const Euler3D_Polytropic_cState &Ul,
                                                const Euler3D_Polytropic_cState &Ur,
                                                const Vector3D &norm_dir);
-//@}
 
     //! Roe Average given 2 primitive states
     static Euler3D_Polytropic_pState RoeAverage(const Euler3D_Polytropic_pState &Wl,
                                                 const Euler3D_Polytropic_pState &Wr);
+
     //! Roe Average given 2 conservative states
     static Euler3D_Polytropic_pState RoeAverage(const Euler3D_Polytropic_cState &Ul,
                                                 const Euler3D_Polytropic_cState &Ur);
@@ -532,6 +532,18 @@ public:
     static Euler3D_Polytropic_pState lambda_plus(const Euler3D_Polytropic_pState  &lambda_a,
                                                  const Euler3D_Polytropic_pState  &lambda_l,
                                                  const Euler3D_Polytropic_pState  &lambda_r);
+
+    //! HLLE wavespeeds in n-direction given 2 primitive states and a direction
+    static Vector2D HLLE_wavespeeds(const Euler3D_Polytropic_pState &Wl,
+				    const Euler3D_Polytropic_pState &Wr,
+				    const Vector3D &norm_dir);
+
+    //! Returns rotated primitive state aligned with a local x-direction
+    Euler3D_Polytropic_pState Rotate(const Vector3D &norm_dir) const;
+
+    //! Returns un-rotated primitive state aligned with x-direction for global problem
+    Euler3D_Polytropic_pState RotateBack(const Vector3D &norm_dir) const;
+//@}
         
 /** @name Boundary Conditions */
 /*        ------------------- */
@@ -790,6 +802,17 @@ public:
     void dWdU(DenseMatrix &dWdU) const;
     static void dWdU(DenseMatrix &dWdU, const Euler3D_Polytropic_cState &U);
 
+/** @name Numerical Flux Functions */
+/*        ------------------------ */
+//@{
+//@{
+    //! Returns rotated conserved state aligned with a local x-direction
+    Euler3D_Polytropic_cState Rotate(const Vector3D &norm_dir) const;
+
+    //! Returns un-rotated conserved state aligned with x-direction for global problem
+    Euler3D_Polytropic_cState RotateBack(const Vector3D &norm_dir) const;
+//@}
+
 /** @name Operators. */
 /*        ---------- */
 //@{
@@ -804,7 +827,7 @@ public:
     //! U = U - U
     friend Euler3D_Polytropic_cState operator -(const Euler3D_Polytropic_cState &U1, const Euler3D_Polytropic_cState &U2);
     //! c = U * U (inner product)
-    friend double operator					   *(const Euler3D_Polytropic_cState &U1, const Euler3D_Polytropic_cState &U2);
+    friend double operator *(const Euler3D_Polytropic_cState &U1, const Euler3D_Polytropic_cState &U2);
     //! U = U * c
     friend Euler3D_Polytropic_cState operator *(const Euler3D_Polytropic_cState &U, const double &a);
     //! U = c * U

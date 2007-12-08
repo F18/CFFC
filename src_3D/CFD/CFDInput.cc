@@ -382,10 +382,15 @@ int CFD_Input_Parameters::Parse_Next_Input_Control_Parameter(void) {
        Time_Max = Time_Max/THOUSAND;
        if (Time_Max < ZERO) i_command = INVALID_INPUT_VALUE;
 
-    } else if (strcmp(code, "p_norms") == 0) {
+    } else if (strcmp(code, "Residual_Norm") == 0) {
        i_command = 47;
-       value_stream >> p_Norm_Indicator;
-       if (p_Norm_Indicator < 0) i_command = INVALID_INPUT_VALUE;
+       value_stream >> Residual_Norm;
+       if (Residual_Norm < 1) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(code, "Number_of_Residual_Norms") == 0) {
+       i_command = 48;
+       value_stream >> Number_of_Residual_Norms;
+       if (Number_of_Residual_Norms < 0) i_command = INVALID_INPUT_VALUE;
 
     //
     // Reconstruction type indicator and related input parameters:
@@ -862,10 +867,12 @@ void CFD_Input_Parameters::Broadcast(void) {
     MPI::COMM_WORLD.Bcast(&(Time_Max),
                           1,
                           MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(p_Norm_Indicator),
+    MPI::COMM_WORLD.Bcast(&(Residual_Norm),
                           1,
                           MPI::INT, 0);
-
+    MPI::COMM_WORLD.Bcast(&(Number_of_Residual_Norms),
+                          1,
+                          MPI::INT, 0);
     // Reconstruction type indicator and related input parameters:
     MPI::COMM_WORLD.Bcast(Reconstruction_Type,
                           INPUT_PARAMETER_LENGTH,
@@ -1154,6 +1161,8 @@ void CFD_Input_Parameters::Output_Solver_Type(ostream &out_file) const {
       out_file << "\n  -> Gauss_Seidel_Iterations: " 
                << Residual_Smoothing_Gauss_Seidel_Iterations;
    } /* endif */
+
+   out_file << "\n  -> Residual_Norm : " << Residual_Norm;
 
 }
 
