@@ -79,7 +79,7 @@ template<> inline void Block_Preconditioner<Euler3D_ThermallyPerfect_pState,
 					    Euler3D_ThermallyPerfect_cState>::
 Preconditioner_dFIdU(DenseMatrix &_dFdU, Euler3D_ThermallyPerfect_pState W)
 {
-  W.dFIxdU(_dFdU);
+  W.dFxdU(_dFdU);
 }
 
 

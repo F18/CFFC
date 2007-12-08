@@ -230,8 +230,8 @@ Vector3D Euler3D_Polytropic_pState::rhov(void) {
 
 Vector3D Euler3D_Polytropic_pState::rhov(void) const {
     return (rho*v);
-    
 }
+
 /*!
  * \f$ \rho (\boldmath{\bar{v}}\: \boldmath{\bar{n}}) \f$
  */
@@ -1759,88 +1759,6 @@ Euler3D_Polytropic_cState Euler3D_Polytropic_pState::FluxHLLE_n(const Euler3D_Po
 
 }
 
-/*!
-* Routine: HLLE wavespeeds 
-*                                                      
-* This function returns the lambda plus and lambda minus   
-* for rotated Riemann problem aligned with norm_dir     
-* given unroated solution states Wl and Wr.             
-* Note: wavespeed.x = wavespeed_l = lambda minus.       
-*       wavespeed.y = wavespeed_r = lambda plus.        
-*                                                      
-*/ 
-Vector2D Euler3D_Polytropic_pState::HLLE_wavespeeds(const Euler3D_Polytropic_pState &Wl,
-						    const Euler3D_Polytropic_pState &Wr,
-						    const Vector3D &norm_dir){
-
-    Vector2D wavespeed;
-    Euler3D_Polytropic_pState Wa_n, lambdas_l, lambdas_r, lambdas_a;  
-    Euler3D_Polytropic_pState Wl_rotated(Wl.Rotate(norm_dir));
-    Euler3D_Polytropic_pState Wr_rotated(Wr.Rotate(norm_dir));
-
-    /* Evaluate the Roe-average primitive solution state. */                           
-    Wa_n = Wa_n.RoeAverage(Wl_rotated, Wr_rotated);
-    
-    /* Evaluate the left, right, and average state eigenvalues. */
-    lambdas_l = Wl_rotated.lambda_x();
-    lambdas_r = Wr_rotated.lambda_x();
-    lambdas_a = Wa_n.lambda_x();
-
-    /* Determine the intermediate state flux. */
-    wavespeed.x = min(lambdas_l[1],
-                      lambdas_a[1]);
-    wavespeed.y = max(lambdas_r[NUM_VAR_EULER3D],
-                      lambdas_a[NUM_VAR_EULER3D]);
- 
-    wavespeed.x = min(wavespeed.x, ZERO); //lambda minus
-    wavespeed.y = max(wavespeed.y, ZERO); //lambda plus 
-
-    return (wavespeed);
-}
-
-/*!
-* Routine: Rotate
-*                                                      
-* This function returns the primitive state aligned with x-axis
-* with norm_dir.
-*                                                      
-*/ 
-Euler3D_Polytropic_pState Euler3D_Polytropic_pState::Rotate(const Vector3D &norm_dir) const {
-
-  // for a 3D unit normal rotated to align with the x-axis
-  double Ct = norm_dir.x;  //cos_angle
-  double St = sqrt( norm_dir.y*norm_dir.y + norm_dir.z*norm_dir.z); //sin_angle
-  Vector3D rt(0,norm_dir.z,-norm_dir.y);  //rotation axis  
-
-  return Euler3D_Polytropic_pState(rho,
-				   v.x*Ct - v.y*rt.z*St + v.z*rt.y*St,
-				   v.x*rt.z*St + v.y*(rt.y*rt.y*(ONE-Ct)+Ct) + v.z*(rt.y*rt.z*(ONE-Ct)),
-				   -v.x*rt.y*St +  v.y*(rt.y*rt.z*(ONE-Ct)) + v.z*(rt.z*rt.z*(ONE-Ct)+Ct),
-				   p);
-}
-
-/*!
-* Routine: RotateBack
-*                                                      
-* This function returns the conservative state re-alinged from the x-axis
-* to the face normal, norm_dir.
-*                                                      
-*/ 
-Euler3D_Polytropic_cState Euler3D_Polytropic_cState::RotateBack(const Vector3D &norm_dir) const {
-
-  // for a 3D unit normal rotated to align with the x-axis
-  double Ct = norm_dir.x;  //cos_angle
-  double St = sqrt( norm_dir.y*norm_dir.y + norm_dir.z*norm_dir.z); //sin_angle
-  Vector3D rt(0,norm_dir.z,-norm_dir.y);  //rotation axis  
-
-  return Euler3D_Polytropic_cState(rho,
-				   rhov.x*Ct + rhov.y*rt.z*St - rhov.z*rt.y*St,
-				   -rhov.x*rt.z*St + rhov.y*(rt.y*rt.y*(ONE-Ct)+Ct) + rhov.z*(rt.y*rt.z*(ONE-Ct)),
-				   + rhov.x*rt.y*St +  rhov.y*(rt.y*rt.z*(ONE-Ct)) + rhov.z*(rt.z*rt.z*(ONE-Ct)+Ct),
-				   E);
-}
-
-
 Euler3D_Polytropic_cState Euler3D_Polytropic_pState::FluxHLLE_n(const Euler3D_Polytropic_cState &Ul,
                                                                 const Euler3D_Polytropic_cState &Ur, 
                                                                 const Vector3D &norm_dir) {
@@ -2120,6 +2038,86 @@ lambda_minus(const Euler3D_Polytropic_pState &lambdas_a,
     NEW.p = HartenFixNeg(lambdas_a[5],lambdas_l[5],lambdas_r[5]);
     return (NEW);
 
+}
+
+/*!
+* Routine: HLLE wavespeeds 
+*                                                      
+* This function returns the lambda plus and lambda minus   
+* for rotated Riemann problem aligned with norm_dir     
+* given unroated solution states Wl and Wr.             
+* Note: wavespeed.x = wavespeed_l = lambda minus.       
+*       wavespeed.y = wavespeed_r = lambda plus.        
+*                                                      
+*/ 
+Vector2D Euler3D_Polytropic_pState::HLLE_wavespeeds(const Euler3D_Polytropic_pState &Wl,
+						    const Euler3D_Polytropic_pState &Wr,
+						    const Vector3D &norm_dir){
+
+    Vector2D wavespeed;
+    Euler3D_Polytropic_pState Wa_n, lambdas_l, lambdas_r, lambdas_a;  
+    Euler3D_Polytropic_pState Wl_rotated(Wl.Rotate(norm_dir));
+    Euler3D_Polytropic_pState Wr_rotated(Wr.Rotate(norm_dir));
+
+    /* Evaluate the Roe-average primitive solution state. */                           
+    Wa_n = Wa_n.RoeAverage(Wl_rotated, Wr_rotated);
+    
+    /* Evaluate the left, right, and average state eigenvalues. */
+    lambdas_l = Wl_rotated.lambda_x();
+    lambdas_r = Wr_rotated.lambda_x();
+    lambdas_a = Wa_n.lambda_x();
+
+    /* Determine the intermediate state flux. */
+    wavespeed.x = min(lambdas_l[1],
+                      lambdas_a[1]);
+    wavespeed.y = max(lambdas_r[NUM_VAR_EULER3D],
+                      lambdas_a[NUM_VAR_EULER3D]);
+ 
+    wavespeed.x = min(wavespeed.x, ZERO); //lambda minus
+    wavespeed.y = max(wavespeed.y, ZERO); //lambda plus 
+
+    return (wavespeed);
+}
+
+/*!
+* Routine: Rotate
+*                                                      
+* This function returns the primitive state aligned with the local x-axis in the norm_dir.
+*                                                      
+*/ 
+Euler3D_Polytropic_pState Euler3D_Polytropic_pState::Rotate(const Vector3D &norm_dir) const {
+
+  // for a 3D unit normal rotated to align with the x-axis
+  double Ct = norm_dir.x;  //cos_angle
+  double St = sqrt( norm_dir.y*norm_dir.y + norm_dir.z*norm_dir.z); //sin_angle
+  Vector3D rt(0,norm_dir.z,-norm_dir.y);  //rotation axis  
+
+  return Euler3D_Polytropic_pState(rho,
+				   v.x*Ct - v.y*rt.z*St + v.z*rt.y*St,
+				   v.x*rt.z*St + v.y*(rt.y*rt.y*(ONE-Ct)+Ct) + v.z*(rt.y*rt.z*(ONE-Ct)),
+				   -v.x*rt.y*St +  v.y*(rt.y*rt.z*(ONE-Ct)) + v.z*(rt.z*rt.z*(ONE-Ct)+Ct),
+				   p);
+}
+
+/*!
+* Routine: RotateBack
+*                                                      
+* This function returns the unrotated primitive state re-alinged from the x-axis
+* for the global problem.
+*                                                      
+*/ 
+Euler3D_Polytropic_pState Euler3D_Polytropic_pState::RotateBack(const Vector3D &norm_dir) const {
+
+  // for a 3D unit normal rotated to align with the x-axis
+  double Ct = norm_dir.x;  //cos_angle
+  double St = sqrt( norm_dir.y*norm_dir.y + norm_dir.z*norm_dir.z); //sin_angle
+  Vector3D rt(0,norm_dir.z,-norm_dir.y);  //rotation axis  
+
+  return Euler3D_Polytropic_pState(rho,
+				   v.x*Ct + v.y*rt.z*St - v.z*rt.y*St,
+				   -v.x*rt.z*St + v.y*(rt.y*rt.y*(ONE-Ct)+Ct) + v.z*(rt.y*rt.z*(ONE-Ct)),
+				   + v.x*rt.y*St +  v.y*(rt.y*rt.z*(ONE-Ct)) + v.z*(rt.z*rt.z*(ONE-Ct)+Ct),
+				   p);
 }
 
 /*!
@@ -2604,4 +2602,45 @@ void Euler3D_Polytropic_cState::dWdU(DenseMatrix &dWdU) const {
 
 void Euler3D_Polytropic_cState::dWdU(DenseMatrix &dWdU, const Euler3D_Polytropic_cState &U) {
     U.W().dWdU(dWdU);
+}
+
+/*!
+* Routine: Rotate
+*                                                      
+* This function returns the conserved state aligned with the local x-axis in the norm_dir.
+*                                                      
+*/ 
+Euler3D_Polytropic_cState Euler3D_Polytropic_cState::Rotate(const Vector3D &norm_dir) const {
+
+  // for a 3D unit normal rotated to align with the x-axis
+  double Ct = norm_dir.x;  //cos_angle
+  double St = sqrt( norm_dir.y*norm_dir.y + norm_dir.z*norm_dir.z); //sin_angle
+  Vector3D rt(0,norm_dir.z,-norm_dir.y);  //rotation axis  
+
+  return Euler3D_Polytropic_cState(rho,
+				   rhov.x*Ct - rhov.y*rt.z*St + rhov.z*rt.y*St,
+				   rhov.x*rt.z*St + rhov.y*(rt.y*rt.y*(ONE-Ct)+Ct) + rhov.z*(rt.y*rt.z*(ONE-Ct)),
+				   -rhov.x*rt.y*St +  rhov.y*(rt.y*rt.z*(ONE-Ct)) + rhov.z*(rt.z*rt.z*(ONE-Ct)+Ct),
+				   E);
+}
+
+/*!
+* Routine: RotateBack
+*                                                      
+* This function returns the un-rotated conservative state re-alinged from the x-axis
+* for the global problem.
+*                                                      
+*/ 
+Euler3D_Polytropic_cState Euler3D_Polytropic_cState::RotateBack(const Vector3D &norm_dir) const {
+
+  // for a 3D unit normal rotated to align with the x-axis
+  double Ct = norm_dir.x;  //cos_angle
+  double St = sqrt( norm_dir.y*norm_dir.y + norm_dir.z*norm_dir.z); //sin_angle
+  Vector3D rt(0,norm_dir.z,-norm_dir.y);  //rotation axis  
+
+  return Euler3D_Polytropic_cState(rho,
+				   rhov.x*Ct + rhov.y*rt.z*St - rhov.z*rt.y*St,
+				   -rhov.x*rt.z*St + rhov.y*(rt.y*rt.y*(ONE-Ct)+Ct) + rhov.z*(rt.y*rt.z*(ONE-Ct)),
+				   + rhov.x*rt.y*St +  rhov.y*(rt.y*rt.z*(ONE-Ct)) + rhov.z*(rt.z*rt.z*(ONE-Ct)+Ct),
+				   E);
 }

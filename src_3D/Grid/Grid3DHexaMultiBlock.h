@@ -16,13 +16,135 @@
 #include "Grid3DHexaBlock.h"
 #endif // _GRID3D_HEXA_BLOCK_INCLUDED
 
-#define	GRID3D_NO_NEIGHBOUR             -1
+/* Include adaptive block orientation information header file. */
 
-#define Mesh_Orientation_Matrix int
+#ifndef _BLOCK_ORIENTATION_INFO_INCLUDED
+#include "../AMR/BlockOrientationInfo.h"
+#endif // _BLOCK_ORIENTATION_INFO_INCLUDED
+
+//! Maximum number of grid block neighbours in each direction
+#define	GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS  2
+
+//! No grid block neighbour block  
+#define	GRID3D_HEXA_MULTI_BLOCK_NO_NEIGHBOUR   -1
 
 /* Define the 3D hexahedral grid multiblock classes. */
 
-class Grid3D_Hexa_Multi_Block_List{
+class Grid3D_Hexa_Multi_Block_Connectivity {
+  public:
+   //! Number of neigbouring grid blocks in each of the 26 directions
+   //! Number of neighbouring grid blocks sharing each of the six (6) faces of the block 
+   int      num_neighT,num_neighB,num_neighN,num_neighS,num_neighE,num_neighW;
+
+   // ! Number of neighbouring grid blocks sharing each of the twelve (12) edges of the block
+   int      num_neighNW,num_neighNE,num_neighSE,num_neighSW,
+            num_neighTN,num_neighTS,num_neighTE,num_neighTW,
+            num_neighBN,num_neighBS,num_neighBE,num_neighBW;
+
+   // ! Number of neighbouring grid blocks sharing each of the eight (8) corners of the block
+   int      num_neighTNW,num_neighTSW,num_neighTNE,num_neighTSE,
+            num_neighBNW,num_neighBSW,num_neighBNE,num_neighBSE;
+
+   //! Grid block numbers for each of the neigbouring grid blocks in each of the 26 directions
+   //! Grid block numbers for neighbouring grid blocks sharing each of the six (6) faces of the block
+   int      neighT,neighB,neighN,neighS,neighE,neighW;
+
+   // ! Grid block numbers for neighbouring grid blocks sharing each of the twelve (12) edges of the block
+   int      neighNW[GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS],
+            neighNE[GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS],
+            neighSE[GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS],
+            neighSW[GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS],
+            neighTN[GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS],
+            neighTS[GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS],
+            neighTE[GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS],
+            neighTW[GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS],
+            neighBN[GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS],
+            neighBS[GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS],
+            neighBE[GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS],
+            neighBW[GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS];
+
+   // ! Grid block numbers for grid blocks sharing each of the eight (8) corners of the block
+   int      neighTNW[GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS],
+            neighTSW[GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS],
+            neighTNE[GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS],
+            neighTSE[GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS],
+            neighBNW[GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS],
+            neighBSW[GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS],
+            neighBNE[GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS],
+            neighBSE[GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS];
+   
+   //! Compact transformation matrix for each of the neigbouring grid blocks in each of the 26 directions
+   //! Compact transformation matrix for neighbouring grid blocks sharing each of the six (6) faces of the block
+   Block_Orientation_Info  neighT_info,neighB_info,neighN_info,neighS_info,neighE_info,neighW_info; 
+
+   //! Compact transformation matrix for neighbouring grid blocks sharing each of the twelve (12) edges of the block
+   Block_Orientation_Info  neighNW_info[GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS],
+                           neighNE_info[GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS],
+                           neighSE_info[GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS],
+                           neighSW_info[GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS], 
+                           neighTN_info[GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS],
+                           neighTS_info[GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS],
+                           neighTE_info[GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS],
+                           neighTW_info[GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS],
+                           neighBN_info[GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS],
+                           neighBS_info[GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS],
+                           neighBE_info[GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS],
+                           neighBW_info[GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS];
+
+   //! Compact transformation matrix for grid blocks sharing each of the eight (8) corners of the block
+   Block_Orientation_Info  neighTNW_info[GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS],
+                           neighTSW_info[GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS],
+                           neighTNE_info[GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS],
+                           neighTSE_info[GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS],
+                           neighBNW_info[GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS],
+                           neighBSW_info[GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS],
+                           neighBNE_info[GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS],
+                           neighBSE_info[GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS];
+
+   //! Compact transformation matrix for grid blocks sharing each of the eight (8) corners of the block
+   Block_Boundary_Elements_on_Domain_Extent boundary_element_on_grid_boundary;
+   
+   //! Creation constructor
+   Grid3D_Hexa_Multi_Block_Connectivity(void) :
+      num_neighT(0), num_neighB(0), num_neighN(0), num_neighS(0), num_neighE(0), num_neighW(0),
+      num_neighNE(0), num_neighNW(0), num_neighSE(0), num_neighSW(0),
+      num_neighTN(0), num_neighTS(0), num_neighTE(0), num_neighTW(0),
+      num_neighBN(0), num_neighBS(0), num_neighBE(0), num_neighBW(0),
+      num_neighTNW(0), num_neighTSW(0), num_neighTNE(0), num_neighTSE(0),
+      num_neighBNW(0), num_neighBSW(0), num_neighBNE(0), num_neighBSE(0),
+      neighT(GRID3D_HEXA_MULTI_BLOCK_NO_NEIGHBOUR), neighB(GRID3D_HEXA_MULTI_BLOCK_NO_NEIGHBOUR),
+      neighN(GRID3D_HEXA_MULTI_BLOCK_NO_NEIGHBOUR), neighS(GRID3D_HEXA_MULTI_BLOCK_NO_NEIGHBOUR),
+      neighE(GRID3D_HEXA_MULTI_BLOCK_NO_NEIGHBOUR), neighW(GRID3D_HEXA_MULTI_BLOCK_NO_NEIGHBOUR) {
+      for (int i_neigh = 0; i_neigh < GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS; i_neigh++) {
+         neighNW[i_neigh] = GRID3D_HEXA_MULTI_BLOCK_NO_NEIGHBOUR; 
+         neighNE[i_neigh] = GRID3D_HEXA_MULTI_BLOCK_NO_NEIGHBOUR; 
+         neighSE[i_neigh] = GRID3D_HEXA_MULTI_BLOCK_NO_NEIGHBOUR;
+         neighSW[i_neigh] = GRID3D_HEXA_MULTI_BLOCK_NO_NEIGHBOUR; 
+         neighTN[i_neigh] = GRID3D_HEXA_MULTI_BLOCK_NO_NEIGHBOUR;
+         neighTS[i_neigh] = GRID3D_HEXA_MULTI_BLOCK_NO_NEIGHBOUR; 
+         neighTE[i_neigh] = GRID3D_HEXA_MULTI_BLOCK_NO_NEIGHBOUR;
+         neighTW[i_neigh] = GRID3D_HEXA_MULTI_BLOCK_NO_NEIGHBOUR; 
+         neighBN[i_neigh] = GRID3D_HEXA_MULTI_BLOCK_NO_NEIGHBOUR;
+         neighBS[i_neigh] = GRID3D_HEXA_MULTI_BLOCK_NO_NEIGHBOUR; 
+         neighBE[i_neigh] = GRID3D_HEXA_MULTI_BLOCK_NO_NEIGHBOUR;
+         neighBW[i_neigh] = GRID3D_HEXA_MULTI_BLOCK_NO_NEIGHBOUR; 
+         neighTNW[i_neigh] = GRID3D_HEXA_MULTI_BLOCK_NO_NEIGHBOUR;
+         neighTSW[i_neigh] = GRID3D_HEXA_MULTI_BLOCK_NO_NEIGHBOUR; 
+         neighTNE[i_neigh] = GRID3D_HEXA_MULTI_BLOCK_NO_NEIGHBOUR;
+         neighTSE[i_neigh] = GRID3D_HEXA_MULTI_BLOCK_NO_NEIGHBOUR;
+         neighBNW[i_neigh] = GRID3D_HEXA_MULTI_BLOCK_NO_NEIGHBOUR;
+         neighBSW[i_neigh] = GRID3D_HEXA_MULTI_BLOCK_NO_NEIGHBOUR; 
+         neighBNE[i_neigh] = GRID3D_HEXA_MULTI_BLOCK_NO_NEIGHBOUR;
+         neighBSE[i_neigh] = GRID3D_HEXA_MULTI_BLOCK_NO_NEIGHBOUR; 
+      } /* endfor */
+   }
+
+   //! Broadcast
+   void Broadcast(void);
+};
+
+
+class Grid3D_Hexa_Multi_Block_List {
   public:
     Grid3D_Hexa_Block     *Grid_Blks; // one dimensional array of grid block.
     int                    NBlk;
@@ -30,38 +152,13 @@ class Grid3D_Hexa_Multi_Block_List{
                            NBlk_Jdir, 
                            NBlk_Kdir; // Number of blocks in i, j and k directions.
     int                    Allocated; // Indicates if the grid blocks have been allocated or not.
-    int      *neighT,*neighB,*neighN; // Possible 26 neighbouring grid blocks in each direction
-    int      *neighS,*neighE,*neighW; // for each of the block in the multi-block grid 
-    int      *neighNW,*neighNE,*neighSE,*neighSW; 
-    int      *neighTN,*neighTS,*neighTE,*neighTW;  
-    int      *neighTNW,*neighTSW,*neighTNE,*neighTSE;  
-    int      *neighBN,*neighBS,*neighBE,*neighBW;  
-    int      *neighBNW,*neighBSW,*neighBNE,*neighBSE;
    
-    Mesh_Orientation_Matrix  *neighT_ctm,*neighB_ctm,*neighN_ctm; // Compact transformation matrix for each of the
-    Mesh_Orientation_Matrix  *neighS_ctm,*neighE_ctm,*neighW_ctm; // possible 26 neighbouring grid blocks in each direction
-    Mesh_Orientation_Matrix  *neighNW_ctm,*neighNE_ctm,*neighSE_ctm,*neighSW_ctm; // for each of the block in the multi-block grid
-    Mesh_Orientation_Matrix  *neighTN_ctm,*neighTS_ctm,*neighTE_ctm,*neighTW_ctm; 
-    Mesh_Orientation_Matrix  *neighTNW_ctm,*neighTSW_ctm,*neighTNE_ctm,*neighTSE_ctm;  
-    Mesh_Orientation_Matrix  *neighBN_ctm,*neighBS_ctm,*neighBE_ctm,*neighBW_ctm;  
-    Mesh_Orientation_Matrix  *neighBNW_ctm,*neighBSW_ctm,*neighBNE_ctm,*neighBSE_ctm;
-
+    Grid3D_Hexa_Multi_Block_Connectivity  *Connectivity; 
+   
     /* Creation constructors. */
-    Grid3D_Hexa_Multi_Block_List(void): 
-      NBlk(0), NBlk_Idir(0), NBlk_Jdir(0), NBlk_Kdir(0), Grid_Blks(NULL), Allocated(0),
-      neighT(NULL), neighB(NULL), neighN(NULL), neighS(NULL), neighE(NULL), neighW(NULL),
-      neighNW(NULL), neighNE(NULL), neighSE(NULL), neighSW(NULL), 
-      neighTN(NULL), neighTS(NULL), neighTE(NULL), neighTW(NULL),   
-      neighTNW(NULL), neighTSW(NULL), neighTNE(NULL), neighTSE(NULL),   
-      neighBN(NULL), neighBS(NULL), neighBE(NULL), neighBW(NULL),   
-      neighBNW(NULL), neighBSW(NULL), neighBNE(NULL), neighBSE(NULL),
-      neighT_ctm(NULL), neighB_ctm(NULL), neighN_ctm(NULL), neighS_ctm(NULL), neighE_ctm(NULL), neighW_ctm(NULL),
-      neighNW_ctm(NULL), neighNE_ctm(NULL), neighSE_ctm(NULL), neighSW_ctm(NULL), 
-      neighTN_ctm(NULL), neighTS_ctm(NULL), neighTE_ctm(NULL), neighTW_ctm(NULL),   
-      neighTNW_ctm(NULL), neighTSW_ctm(NULL), neighTNE_ctm(NULL), neighTSE_ctm(NULL),   
-      neighBN_ctm(NULL), neighBS_ctm(NULL), neighBE_ctm(NULL), neighBW_ctm(NULL),   
-      neighBNW_ctm(NULL), neighBSW_ctm(NULL), neighBNE_ctm(NULL), neighBSE_ctm(NULL) { 
-    }
+    Grid3D_Hexa_Multi_Block_List(void) : 
+       NBlk(0), NBlk_Idir(0), NBlk_Jdir(0), NBlk_Kdir(0), Grid_Blks(NULL), 
+       Connectivity(NULL), Allocated(0) { }
 
     Grid3D_Hexa_Multi_Block_List(const int N) {
        Allocate(N);
@@ -73,37 +170,6 @@ class Grid3D_Hexa_Multi_Block_List{
        Allocate(Ni, Nj, Nk);
     }
 
-    Grid3D_Hexa_Multi_Block_List(Grid3D_Input_Parameters &Input){
-      // create various multiblock multiblock grid depending on input parameters
-      switch(Input.i_Grid) {
-        case GRID_CUBE :
-          Create_Grid_Cube(Input);        // shouldn't this just call Create_Grid to avoid duplication!!!
-          break;                        
-        case GRID_CHANNEL_XDIR :
-        case GRID_CHANNEL_YDIR:
-        case GRID_CHANNEL_ZDIR:
-          Create_Grid_Channel(Input);
-          break;
-        case GRID_COUETTE_XDIR :
-        case GRID_COUETTE_YDIR:
-        case GRID_COUETTE_ZDIR:
-          Create_Grid_Couette(Input);
-          break;
-        case GRID_PIPE :
-          Create_Grid_Pipe(Input);
-          break; 
-        case GRID_BLUFF_BODY_BURNER :
-          Create_Grid_Bluff_Body_Burner(Input);
-          break;
-        case GRID_ICEMCFD :
-          //Create_Grid_ICEMCFD(Input);
-          break;
-        default:
-          Create_Grid_Cube(Input);
-          break;
-      } /* endswitch */
-    } 
-   
     /* Destructor. */
     ~Grid3D_Hexa_Multi_Block_List(void) {
         Deallocate();
@@ -140,21 +206,22 @@ class Grid3D_Hexa_Multi_Block_List{
     void Create_Grid_Couette(Grid3D_Input_Parameters &Input);
 
     void Create_Grid_Pipe(Grid3D_Input_Parameters &Input);
-  
+
     void Create_Grid_Bluff_Body_Burner(Grid3D_Input_Parameters &Input);
 
-    void Find_Neighbours(void);
+    void Create_Grid_Bump_Channel_Flow(Grid3D_Input_Parameters &Input);
 
-    //void Create_Grid_ICEMCFD(Grid3D_Input_Parameters &Input);
+    void Create_Grid_ICEMCFD(Grid3D_Input_Parameters &Input);
+
+    void Find_Neighbours(Grid3D_Input_Parameters &Input);
 
   private:
     //copy and assignment are not permitted
     Grid3D_Hexa_Multi_Block_List(const Grid3D_Hexa_Multi_Block_List &G);
     Grid3D_Hexa_Multi_Block_List &operator = (const Grid3D_Hexa_Multi_Block_List &G);
-   
 };
 
-class Grid3D_Hexa_Multi_Block{
+class Grid3D_Hexa_Multi_Block {
   public:
     Grid3D_Hexa_Block   ***Grid_Blks; // 3 dimensional array of grid block.
     int                    NBlk_Idir, 
@@ -174,40 +241,6 @@ class Grid3D_Hexa_Multi_Block{
        Allocate(Ni, Nj, Nk);
     }
 
-    Grid3D_Hexa_Multi_Block(Grid3D_Input_Parameters &Input){
-      // create various multiblock multiblock grid depending on input parameters
-      switch(Input.i_Grid) {
-        case GRID_CUBE :
-          Create_Grid_Cube(Input);
-          break;
-        case GRID_CHANNEL_XDIR :
-        case GRID_CHANNEL_YDIR:
-        case GRID_CHANNEL_ZDIR:
-          Create_Grid_Channel(Input);
-          break;
-        case GRID_COUETTE_XDIR :
-        case GRID_COUETTE_YDIR:
-        case GRID_COUETTE_ZDIR:
-          Create_Grid_Couette(Input);
-          break;
-        case GRID_PIPE :
-          Create_Grid_Pipe(Input);
-          break; 
-        case GRID_BUMP_CHANNEL_FLOW :
-	  Create_Grid_Bump_Channel_Flow(Input);
-	  break;
-        case GRID_BLUFF_BODY_BURNER :
-          Create_Grid_Bluff_Body_Burner(Input);
-          break; 
-        case GRID_ICEMCFD :
-          Create_Grid_ICEMCFD(Input);
-          break;
-        default:
-          Create_Grid_Cube(Input);
-          break;
-      } /* endswitch */
-    } 
-   
     /* Destructor. */
     ~Grid3D_Hexa_Multi_Block(void) {
         Deallocate();
@@ -253,7 +286,6 @@ class Grid3D_Hexa_Multi_Block{
     //copy and assignment are not permitted
     Grid3D_Hexa_Multi_Block(const Grid3D_Hexa_Multi_Block &G);
     Grid3D_Hexa_Multi_Block &operator = (const Grid3D_Hexa_Multi_Block &G);
-   
 };
 
 #endif // _GRID3D_HEXA_MULTIBLOCK_INCLUDED

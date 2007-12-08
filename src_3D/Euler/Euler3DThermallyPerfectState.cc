@@ -532,7 +532,7 @@ double Euler3D_ThermallyPerfect_pState::a(void) const{
  * Euler3D_ThermallyPerfect_pState::M -- Return mixture Mach number.                   *
  ***************************************************************************************/
 double Euler3D_ThermallyPerfect_pState::M(void) const{
-   return (v.abs() / a());
+   return (v.abs()/a());
 }
 
 /***************************************************************************************
@@ -731,6 +731,71 @@ Euler3D_ThermallyPerfect_cState Euler3D_ThermallyPerfect_pState::Fz(void) const 
      Temp.rhospec[i].c = rho*v.z*spec[i].c;
   } /*endfor */
   return (Temp);
+}
+
+/*******************************************************************
+ ***************** INVISCID FLUX JACOBIANS *************************
+ *******************************************************************/
+
+/***********************************************************************************
+ * Euler3D_ThermallyPerfect_pState::dFxdU -- Invisicd flux Jacobian (x-direction). *     
+ ***********************************************************************************/
+void Euler3D_ThermallyPerfect_pState::dFxdU(DenseMatrix &dFdU){
+
+  // SHOULD DOUBLE CHECK THIS !!!
+  double Temp = T();
+  double Rt = Rtot();
+  double C_p = Cp();
+  double ht = h();
+  double denominator = (C_p/Rt - ONE);
+  double phi = ZERO; 
+
+  for(int i=0; i<ns-1; i++){ 
+    phi += spec[i].c*(specdata[i].Enthalpy(Temp) + 
+                      specdata[i].Heatofform() - 
+                      C_p*Temp*specdata[i].Rs()/Rt -
+                      (specdata[ns-1].Enthalpy(Temp)+specdata[ns-1].Heatofform() -
+                      C_p*Temp*specdata[ns-1].Rs()/Rt));   
+  }
+  dFdU(0,1) += ONE;
+
+  dFdU(1,0) += ( (C_p/Rt)*( - v.x*v.x) + HALF*(THREE*v.x*v.x + v.y+v.y) - 
+               ht + C_p*Temp + phi )/denominator;
+  dFdU(1,1) += v.x*(TWO*C_p/Rt-THREE)/denominator; 
+  dFdU(1,2) -= v.y/denominator;
+  dFdU(1,3) -= v.z/denominator;  
+  dFdU(1,4) += ONE/denominator;
+
+  dFdU(2,0) -= v.x*v.y;
+  dFdU(2,1) += v.y;
+  dFdU(2,2) += v.x;
+
+  dFdU(3,0) -= v.x*v.y;
+  dFdU(3,1) += v.z;
+  dFdU(3,3) += v.x;
+
+  dFdU(4,0) += v.x*( v.x*v.x + v.y+v.y +v.z*v.z + C_p*Temp - 
+               (C_p/Rt)*( HALF*(v.x*v.x + v.y+v.y + v.z*v.z) + ht) + phi)/denominator;
+
+  dFdU(4,1) += ht + HALF*(v.x*v.x + v.y*v.y) - v.x*v.x/denominator;
+  dFdU(4,2) -= v.x*v.y/denominator;
+  dFdU(4,3) -= v.x*v.z/denominator;
+  dFdU(4,4) += v.x*C_p/denominator/Rt;
+
+  //Species
+  int nv_san_spec = NumVarSansSpecies();
+
+  for(int i = 0; i<ns-1; i++){ 
+    dFdU(1,nv_san_spec+i) -= (specdata[i].Enthalpy(Temp) + specdata[i].Heatofform() - 
+                              C_p*Temp*specdata[i].Rs()/Rt -
+			      (specdata[ns-1].Enthalpy(Temp)+specdata[ns-1].Heatofform() - 
+                              C_p*Temp*specdata[ns-1].Rs()/Rt))/denominator; 
+    dFdU(3,nv_san_spec+i) = v.x*dFdU(1,nv_san_spec+i);    
+    dFdU(nv_san_spec+i, 0) -= spec[i].c*v.x ;
+    dFdU(nv_san_spec+i, 1) += spec[i].c ;
+    dFdU(nv_san_spec+i,nv_san_spec+i) += v.x ;        
+  }
+
 }
 
 /*******************************************************************
@@ -1267,15 +1332,16 @@ FluxHLLE_n(const Euler3D_ThermallyPerfect_pState &Wl,
            const Euler3D_ThermallyPerfect_pState &Wr,
            const Vector3D &norm_dir) {
 
- Euler3D_ThermallyPerfect_pState Wl_rot(Wl.Rotate(norm_dir));
- Euler3D_ThermallyPerfect_pState Wr_rot(Wr.Rotate(norm_dir));
+   // Determine the left and right solution states in the rotate frame.
+   Euler3D_ThermallyPerfect_pState Wl_rot(Wl.Rotate(norm_dir));
+   Euler3D_ThermallyPerfect_pState Wr_rot(Wr.Rotate(norm_dir));
     
- //Evaluate the intermediate state solution flux in the rotated frame.
- Euler3D_ThermallyPerfect_cState Flux_rot = FluxHLLE_x(Wl_rot, Wr_rot);
- Flux_rot.zero_non_sol();
+   // Evaluate the intermediate state solution flux in the rotated frame.
+   Euler3D_ThermallyPerfect_cState Flux_rot = FluxHLLE_x(Wl_rot, Wr_rot);
  
- return (Flux_rot.RotateBack(norm_dir));
- 
+   // Return numerical flux in un-rotated frame.
+   return (Flux_rot.RotateBack(norm_dir));
+
 }
 
 Euler3D_ThermallyPerfect_cState Euler3D_ThermallyPerfect_pState::
@@ -1283,89 +1349,6 @@ FluxHLLE_n(const Euler3D_ThermallyPerfect_cState &Ul,
            const Euler3D_ThermallyPerfect_cState &Ur,
            const Vector3D &norm_dir) {
    return (FluxHLLE_n(Ul.W(), Ur.W(), norm_dir));
-}
-
-/*
-* Routine: HLLE wavespeeds 
-*                                                      
-* This function returns the lambda plus and lambda minus   
-* for rotated Riemann problem aligned with norm_dir     
-* given unroated solution states Wl and Wr.             
-* Note: wavespeed.x = wavespeed_l = lambda minus.       
-*       wavespeed.y = wavespeed_r = lambda plus.        
-*                                                      
-*/ 
-Vector2D Euler3D_ThermallyPerfect_pState::HLLE_wavespeeds(const Euler3D_ThermallyPerfect_pState &Wl,
-							  const Euler3D_ThermallyPerfect_pState &Wr,
-							  const Vector3D &norm_dir){
-
-    Vector2D wavespeed;
-    Euler3D_ThermallyPerfect_pState Wa_n, lambdas_l, lambdas_r, lambdas_a;  //Lots of TEMPS
-    Euler3D_ThermallyPerfect_pState Wl_rotated(Wl.Rotate(norm_dir));
-    Euler3D_ThermallyPerfect_pState Wr_rotated(Wr.Rotate(norm_dir));
-
-    /* Evaluate the Roe-average primitive solution state. */                           
-    Wa_n = Wa_n.RoeAverage(Wl_rotated, Wr_rotated);
-    
-    /* Evaluate the left, right, and average state eigenvalues. */
-    lambdas_l = Wl_rotated.lambda_x();
-    lambdas_r = Wr_rotated.lambda_x();
-    lambdas_a = Wa_n.lambda_x();
-
-    /* Determine the intermediate state flux. */
-    wavespeed.x = min(lambdas_l[1],
-                      lambdas_a[1]);
-    wavespeed.y = max(lambdas_r[lambdas_r.NumVarSansSpecies()],
-                      lambdas_a[lambdas_a.NumVarSansSpecies()]);
- 
-    wavespeed.x = min(wavespeed.x, ZERO); //lambda minus
-    wavespeed.y = max(wavespeed.y, ZERO); //lambda plus 
-
-    return (wavespeed);
-}
-
-/*!
-* Routine: Rotate
-*                                                      
-* This function returns the primitive state aligned with x-axis
-* with norm_dir.
-*                                                      
-*/ 
-Euler3D_ThermallyPerfect_pState Euler3D_ThermallyPerfect_pState::Rotate(const Vector3D &norm_dir) const {
-
-  // for a 3D unit normal rotated to align with the x-axis
-  double Ct = norm_dir.x;  //cos_angle
-  double St = sqrt( norm_dir.y*norm_dir.y + norm_dir.z*norm_dir.z); //sin_angle
-  Vector3D rt(0,norm_dir.z,-norm_dir.y);  //rotation axis  
-
-  return Euler3D_ThermallyPerfect_pState(rho,
-					 v.x*Ct - v.y*rt.z*St + v.z*rt.y*St,
-					 v.x*rt.z*St + v.y*(rt.y*rt.y*(ONE-Ct)+Ct) + v.z*(rt.y*rt.z*(ONE-Ct)),
-					 -v.x*rt.y*St +  v.y*(rt.y*rt.z*(ONE-Ct)) + v.z*(rt.z*rt.z*(ONE-Ct)+Ct),
-					 p,
-					 spec);
-}
-
-/*!
-* Routine: RotateBack
-*                                                      
-* This function returns the conservative state re-alinged from the x-axis
-* to the face normal, norm_dir.
-*                                                      
-*/ 
-Euler3D_ThermallyPerfect_cState Euler3D_ThermallyPerfect_cState::RotateBack(const Vector3D &norm_dir) const {
-
-  // for a 3D unit normal rotated to align with the x-axis
-  double Ct = norm_dir.x;  //cos_angle
-  double St = sqrt( norm_dir.y*norm_dir.y + norm_dir.z*norm_dir.z); //sin_angle
-  Vector3D rt(0,norm_dir.z,-norm_dir.y);  //rotation axis  
-
-  return Euler3D_ThermallyPerfect_cState(rho,
-					 rhov.x*Ct + rhov.y*rt.z*St - rhov.z*rt.y*St,
-					 -rhov.x*rt.z*St + rhov.y*(rt.y*rt.y*(ONE-Ct)+Ct) + rhov.z*(rt.y*rt.z*(ONE-Ct)),
-					 + rhov.x*rt.y*St +  rhov.y*(rt.y*rt.z*(ONE-Ct)) + rhov.z*(rt.z*rt.z*(ONE-Ct)+Ct),
-					 E,
-					 rhospec);
 }
 
 /******************************************************************************************
@@ -1434,15 +1417,16 @@ FluxRoe_n(const Euler3D_ThermallyPerfect_pState &Wl,
           const Euler3D_ThermallyPerfect_pState &Wr,
           const Vector3D &norm_dir) {
 
- Euler3D_ThermallyPerfect_pState Wl_rot(Wl.Rotate(norm_dir));
- Euler3D_ThermallyPerfect_pState Wr_rot(Wr.Rotate(norm_dir));
+   // Determine the left and right solution states in the rotate frame.
+   Euler3D_ThermallyPerfect_pState Wl_rot(Wl.Rotate(norm_dir));
+   Euler3D_ThermallyPerfect_pState Wr_rot(Wr.Rotate(norm_dir));
     
- //Evaluate the intermediate state solution flux in the rotated frame.
- Euler3D_ThermallyPerfect_cState Flux_rot = FluxRoe_x(Wl_rot, Wr_rot);
- Flux_rot.zero_non_sol();
+   // Evaluate the intermediate state solution flux in the rotated frame.
+   Euler3D_ThermallyPerfect_cState Flux_rot = FluxRoe_x(Wl_rot, Wr_rot);
  
- return (Flux_rot.RotateBack(norm_dir));
- 
+   // Return numerical flux in un-rotated frame.
+   return (Flux_rot.RotateBack(norm_dir));
+
 }
 
 /******************************************************************************************
@@ -1494,6 +1478,82 @@ lambda_plus(const Euler3D_ThermallyPerfect_pState &lambdas_a,
    } /* endif */
 
    return (W_temp);
+
+}
+
+/******************************************************************************************
+ * Euler3D_ThermallyPerfect_pState::HLLE_wavespeeds -- Returns the lambda plus and lambda *
+ *                    minus wave speeds for rotated Riemann problem aligned with norm_dir *    
+ *                    given unroated solution states Wl and Wr.                           *
+ ******************************************************************************************/
+Vector2D Euler3D_ThermallyPerfect_pState::HLLE_wavespeeds(const Euler3D_ThermallyPerfect_pState &Wl,
+							  const Euler3D_ThermallyPerfect_pState &Wr,
+							  const Vector3D &norm_dir) {
+
+    Vector2D wavespeed;
+    Euler3D_ThermallyPerfect_pState Wa_n, lambdas_l, lambdas_r, lambdas_a;  //Lots of TEMPS
+    Euler3D_ThermallyPerfect_pState Wl_rotated(Wl.Rotate(norm_dir));
+    Euler3D_ThermallyPerfect_pState Wr_rotated(Wr.Rotate(norm_dir));
+
+    /* Evaluate the Roe-average primitive solution state. */                           
+    Wa_n = Wa_n.RoeAverage(Wl_rotated, Wr_rotated);
+    
+    /* Evaluate the left, right, and average state eigenvalues. */
+    lambdas_l = Wl_rotated.lambda_x();
+    lambdas_r = Wr_rotated.lambda_x();
+    lambdas_a = Wa_n.lambda_x();
+
+    /* Determine the intermediate state flux. */
+    wavespeed.x = min(lambdas_l[1],
+                      lambdas_a[1]);
+    wavespeed.y = max(lambdas_r[lambdas_r.NumVarSansSpecies()],
+                      lambdas_a[lambdas_a.NumVarSansSpecies()]);
+ 
+    wavespeed.x = min(wavespeed.x, ZERO); //lambda minus
+    wavespeed.y = max(wavespeed.y, ZERO); //lambda plus 
+
+    return (wavespeed);
+
+}
+
+/******************************************************************************************
+ * Euler3D_ThermallyPerfect_pState::Rotate -- Returns a rotated primitive state aligned   *
+ *                                            with a local x-axis in the norm_dir.        *
+ ******************************************************************************************/
+Euler3D_ThermallyPerfect_pState Euler3D_ThermallyPerfect_pState::Rotate(const Vector3D &norm_dir) const {
+
+  // for a 3D unit normal rotated to align with the x-axis
+  double Ct = norm_dir.x;  //cos_angle
+  double St = sqrt( norm_dir.y*norm_dir.y + norm_dir.z*norm_dir.z); //sin_angle
+  Vector3D rt(0,norm_dir.z,-norm_dir.y);  //rotation axis  
+
+  return Euler3D_ThermallyPerfect_pState(rho,
+					 v.x*Ct - v.y*rt.z*St + v.z*rt.y*St,
+					 v.x*rt.z*St + v.y*(rt.y*rt.y*(ONE-Ct)+Ct) + v.z*(rt.y*rt.z*(ONE-Ct)),
+					 -v.x*rt.y*St +  v.y*(rt.y*rt.z*(ONE-Ct)) + v.z*(rt.z*rt.z*(ONE-Ct)+Ct),
+					 p,
+					 spec);
+
+}
+
+/******************************************************************************************
+ * Euler3D_ThermallyPerfect_pState::Rotate -- Returns an un-rotated primitive state       *
+ *                                            re-alinged from the x-axis of the global    *
+ *                                            problem.                                    *
+ ******************************************************************************************/
+Euler3D_ThermallyPerfect_pState Euler3D_ThermallyPerfect_pState::RotateBack(const Vector3D &norm_dir) const {
+
+  // for a 3D unit normal rotated to align with the x-axis
+  double Ct = norm_dir.x;  //cos_angle
+  double St = sqrt( norm_dir.y*norm_dir.y + norm_dir.z*norm_dir.z); //sin_angle
+  Vector3D rt(0,norm_dir.z,-norm_dir.y);  //rotation axis  
+
+  return Euler3D_ThermallyPerfect_pState(rho,
+					 v.x*Ct + v.y*rt.z*St - v.z*rt.y*St,
+					 -v.x*rt.z*St + v.y*(rt.y*rt.y*(ONE-Ct)+Ct) + v.z*(rt.y*rt.z*(ONE-Ct)),
+					 + v.x*rt.y*St +  v.y*(rt.y*rt.z*(ONE-Ct)) + v.z*(rt.z*rt.z*(ONE-Ct)+Ct),
+					 p,
+					 spec);
 
 }
 
@@ -2041,22 +2101,18 @@ double Euler3D_ThermallyPerfect_cState::p(void) const {
  * Euler3D_ThermallyPerfect_cState::a -- Return mixture sound speed.                   *
  ***************************************************************************************/
 double Euler3D_ThermallyPerfect_cState::a(void) const {
-  double sum;
+  double a_temp;
   double RTOT= Rtot();
   double Temp= T();
-  //  one way to obtain the speed of sound 
-  //sum = RTOT*Temp*(RTOT/( hprime(Temp) - RTOT) + ONE);
-  sum  =  (g()*(Rtot()*T()));
-  return sqrt(sum);
+  a_temp = (g()*(Rtot()*T()));
+  return sqrt(a_temp);
 }
 
 /***************************************************************************************
  * Euler3D_ThermallyPerfect_cState::M -- Return mixture Mach number.                   *
  ***************************************************************************************/
 double Euler3D_ThermallyPerfect_cState::M(void) const {
-   double mach_number;
-   mach_number = rhov.abs() / (rho*a());
-   return mach_number;
+   return (rhov.abs()/(rho*a()));
 }
 
 /***************************************************************************************
@@ -2110,59 +2166,43 @@ W(const Euler3D_ThermallyPerfect_cState &U) const {
   return Temp;
 }
 
-/********************************************************
- * Euler3D_ThermallyPerfect_pState::dFIxdU -- Invisicd Flux Jacobian (x-direction)      
- ********************************************************/
-void Euler3D_ThermallyPerfect_pState::dFIxdU(DenseMatrix &dFdU){
-  
-  // SHOULD DOUBLE CHECK THIS !!!
+/******************************************************************************************
+ * Euler3D_ThermallyPerfect_cState::Rotate -- Returns a rotated primitive state aligned   *
+ *                                            with a local x-axis in the norm_dir.        *
+ ******************************************************************************************/
+Euler3D_ThermallyPerfect_cState Euler3D_ThermallyPerfect_cState::Rotate(const Vector3D &norm_dir) const {
 
-  double Temp = T();
-  double Rt = Rtot();
-  double C_p = Cp();
-  double ht = h();
-  double denominator = (C_p/Rt - ONE);
-  double phi = ZERO; 
-  
-  for(int i=0; i<ns-1; i++){ 
-    phi += spec[i].c*(specdata[i].Enthalpy(Temp) + specdata[i].Heatofform() - C_p*Temp*specdata[i].Rs()/Rt
-			-(specdata[ns-1].Enthalpy(Temp)+specdata[ns-1].Heatofform()  -C_p*Temp*specdata[ns-1].Rs()/Rt));   
-  }
-  dFdU(0,1) += ONE;
+  // for a 3D unit normal rotated to align with the x-axis
+  double Ct = norm_dir.x;  //cos_angle
+  double St = sqrt( norm_dir.y*norm_dir.y + norm_dir.z*norm_dir.z); //sin_angle
+  Vector3D rt(0,norm_dir.z,-norm_dir.y);  //rotation axis  
 
-  dFdU(1,0) += ( (C_p/Rt)*( - v.x*v.x) + HALF*(THREE*v.x*v.x + v.y+v.y) - ht + C_p*Temp + phi )/denominator;
-  dFdU(1,1) += v.x*(TWO*C_p/Rt-THREE)/denominator; 
-  dFdU(1,2) -= v.y/denominator;
-  dFdU(1,3) -= v.z/denominator;  
-  dFdU(1,4) += ONE/denominator;
+  return Euler3D_ThermallyPerfect_cState(rho,
+					 rhov.x*Ct - rhov.y*rt.z*St + rhov.z*rt.y*St,
+					 rhov.x*rt.z*St + rhov.y*(rt.y*rt.y*(ONE-Ct)+Ct) + rhov.z*(rt.y*rt.z*(ONE-Ct)),
+					 -rhov.x*rt.y*St +  rhov.y*(rt.y*rt.z*(ONE-Ct)) + rhov.z*(rt.z*rt.z*(ONE-Ct)+Ct),
+					 E,
+					 rhospec);
 
-  dFdU(2,0) -= v.x*v.y;
-  dFdU(2,1) += v.y;
-  dFdU(2,2) += v.x;
+}
 
-  dFdU(3,0) -= v.x*v.y;
-  dFdU(3,1) += v.z;
-  dFdU(3,3) += v.x;
+/******************************************************************************************
+ * Euler3D_ThermallyPerfect_cState::Rotate -- Returns an un-rotated primitive state       *
+ *                                            re-alinged from the x-axis of the global    *
+ *                                            problem.                                    *
+ ******************************************************************************************/
+Euler3D_ThermallyPerfect_cState Euler3D_ThermallyPerfect_cState::RotateBack(const Vector3D &norm_dir) const {
 
-  dFdU(4,0) += v.x*( v.x*v.x + v.y+v.y +v.z*v.z + C_p*Temp - (C_p/Rt)*( HALF*(v.x*v.x + v.y+v.y + v.z*v.z) + ht) + phi)/denominator;
+  // for a 3D unit normal rotated to align with the x-axis
+  double Ct = norm_dir.x;  //cos_angle
+  double St = sqrt( norm_dir.y*norm_dir.y + norm_dir.z*norm_dir.z); //sin_angle
+  Vector3D rt(0,norm_dir.z,-norm_dir.y);  //rotation axis  
 
-  dFdU(4,1) += ht + HALF*(v.x*v.x + v.y*v.y) - v.x*v.x/denominator;
-  dFdU(4,2) -= v.x*v.y/denominator;
-  dFdU(4,3) -= v.x*v.z/denominator;
-  dFdU(4,4) += v.x*C_p/denominator/Rt;
-
-  //Species
-  int nv_san_spec = NumVarSansSpecies();
-
-  for(int i = 0; i<ns-1; i++){ 
-
-    dFdU(1,nv_san_spec+i) -= (specdata[i].Enthalpy(Temp) + specdata[i].Heatofform() - C_p*Temp*specdata[i].Rs()/Rt
-			      -(specdata[ns-1].Enthalpy(Temp)+specdata[ns-1].Heatofform() - C_p*Temp*specdata[ns-1].Rs()/Rt))/denominator; 
-
-    dFdU(3,nv_san_spec+i) = v.x*dFdU(1,nv_san_spec+i);    
-    dFdU(nv_san_spec+i, 0) -= spec[i].c*v.x ;
-    dFdU(nv_san_spec+i, 1) += spec[i].c ;
-    dFdU(nv_san_spec+i,nv_san_spec+i) += v.x ;        
-  }
+  return Euler3D_ThermallyPerfect_cState(rho,
+					 rhov.x*Ct + rhov.y*rt.z*St - rhov.z*rt.y*St,
+					 -rhov.x*rt.z*St + rhov.y*(rt.y*rt.y*(ONE-Ct)+Ct) + rhov.z*(rt.y*rt.z*(ONE-Ct)),
+					 + rhov.x*rt.y*St +  rhov.y*(rt.y*rt.z*(ONE-Ct)) + rhov.z*(rt.z*rt.z*(ONE-Ct)+Ct),
+					 E,
+					 rhospec);
 
 }

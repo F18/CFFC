@@ -96,7 +96,7 @@
  ****************************************************************/
 template<> inline void Block_Preconditioner<Euler3D_Polytropic_pState, 
 					    Euler3D_Polytropic_cState>::
-Preconditioner_dFIdU(DenseMatrix &_dFdU,Euler3D_Polytropic_pState W)
+Preconditioner_dFIdU(DenseMatrix &_dFdU, Euler3D_Polytropic_pState W)
 {
   W.dFxdU(_dFdU);
 }

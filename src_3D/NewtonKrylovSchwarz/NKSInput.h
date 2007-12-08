@@ -76,6 +76,7 @@ class NKS_Input_Parameters{
   double Physical_Time_CFL_Number;
   double Physical_Time_Step;
   int Maximum_Number_of_DTS_Steps; 
+  //@}
   
   //@{ @name Allistar flags
   //! True/false flag for application of convergence stall detection algorithm

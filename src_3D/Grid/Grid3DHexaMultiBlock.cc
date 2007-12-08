@@ -8,6 +8,109 @@
 #endif //_GRID3D_HEXA_MULTIBLOCK_INCLUDED
 
 /********************************************************
+ * Routine: Broadcast                                   *
+ *                                                      *
+ * Broadcast block connectivity info.                   *
+ *                                                      *
+ ********************************************************/
+void Grid3D_Hexa_Multi_Block_Connectivity::Broadcast(void) {
+
+#ifdef _MPI_VERSION
+   MPI::COMM_WORLD.Bcast(&num_neighT, 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(&num_neighB, 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(&num_neighS, 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(&num_neighW, 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(&num_neighE, 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(&num_neighN, 1, MPI::INT, 0);
+
+   MPI::COMM_WORLD.Bcast(&num_neighTN, 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(&num_neighTS, 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(&num_neighTW, 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(&num_neighTE, 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(&num_neighBN, 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(&num_neighBS, 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(&num_neighBE, 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(&num_neighBW, 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(&num_neighSW, 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(&num_neighSE, 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(&num_neighNW, 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(&num_neighNE, 1, MPI::INT, 0);
+
+   MPI::COMM_WORLD.Bcast(&num_neighTNW, 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(&num_neighTNE, 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(&num_neighTSW, 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(&num_neighTSE, 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(&num_neighBNW, 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(&num_neighBNE, 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(&num_neighBSW, 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(&num_neighBSE, 1, MPI::INT, 0);
+  
+   MPI::COMM_WORLD.Bcast(&neighT, 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(&neighB, 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(&neighS, 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(&neighW, 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(&neighE, 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(&neighN, 1, MPI::INT, 0);
+
+   MPI::COMM_WORLD.Bcast(neighTN, GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(neighTS, GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(neighTW, GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(neighTE, GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(neighBN, GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(neighBS, GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(neighBE, GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(neighBW, GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(neighSW, GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(neighSE, GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(neighNW, GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(neighNE, GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS, MPI::INT, 0);
+
+   MPI::COMM_WORLD.Bcast(neighTNW, GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(neighTNE, GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(neighTSW, GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(neighTSE, GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(neighBNW, GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(neighBNE, GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(neighBSW, GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(neighBSE, GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS, MPI::INT, 0);
+
+   neighT_info.broadcast();
+   neighB_info.broadcast();
+   neighN_info.broadcast();
+   neighS_info.broadcast();
+   neighE_info.broadcast();
+   neighW_info.broadcast();
+    
+   for (int i_neigh = 0; i_neigh < GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS; ++i_neigh) {
+      neighNW_info[i_neigh].broadcast();
+      neighNE_info[i_neigh].broadcast();
+      neighSW_info[i_neigh].broadcast();
+      neighSE_info[i_neigh].broadcast();
+      neighTN_info[i_neigh].broadcast();
+      neighTE_info[i_neigh].broadcast();
+      neighTW_info[i_neigh].broadcast();
+      neighTS_info[i_neigh].broadcast();
+      neighBN_info[i_neigh].broadcast();
+      neighBE_info[i_neigh].broadcast();
+      neighBW_info[i_neigh].broadcast();
+      neighBS_info[i_neigh].broadcast();
+
+      neighTNW_info[i_neigh].broadcast();
+      neighTNE_info[i_neigh].broadcast();
+      neighTSW_info[i_neigh].broadcast();
+      neighTSE_info[i_neigh].broadcast();
+      neighBNW_info[i_neigh].broadcast();
+      neighBNE_info[i_neigh].broadcast();
+      neighBSW_info[i_neigh].broadcast();
+      neighBSE_info[i_neigh].broadcast();
+   } /* endfor */
+
+   boundary_element_on_grid_boundary.broadcast();
+#endif  
+
+}
+
+/********************************************************
  * Routine: Allocate                                    *
  *                                                      *
  * Allocate memory for a 1D array of 3D hexahedral      *
@@ -25,93 +128,11 @@ void Grid3D_Hexa_Multi_Block_List::Allocate(const int Ni,
       NBlk = Ni*Nj*Nk;
 
       Grid_Blks = new Grid3D_Hexa_Block[NBlk];
-
-      neighT = new int[NBlk];
-      neighB = new int[NBlk];
-      neighN = new int[NBlk];
-      neighS = new int[NBlk];
-      neighE = new int[NBlk];
-      neighW = new int[NBlk]; 
-      neighNW = new int[NBlk];
-      neighNE = new int[NBlk];
-      neighSE = new int[NBlk];
-      neighSW = new int[NBlk];
-      neighTN = new int[NBlk];
-      neighTS = new int[NBlk];
-      neighTE = new int[NBlk];
-      neighTW = new int[NBlk];  
-      neighTNW = new int[NBlk];
-      neighTSW = new int[NBlk];
-      neighTNE = new int[NBlk];
-      neighTSE = new int[NBlk];  
-      neighBN = new int[NBlk];
-      neighBS = new int[NBlk];
-      neighBE = new int[NBlk];
-      neighBW = new int[NBlk];  
-      neighBNW = new int[NBlk];
-      neighBSW = new int[NBlk];
-      neighBNE = new int[NBlk];
-      neighBSE = new int[NBlk];
-
-      neighT_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighB_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighN_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighS_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighE_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighW_ctm = new Mesh_Orientation_Matrix[NBlk]; 
-      neighNW_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighNE_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighSE_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighSW_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighTN_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighTS_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighTE_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighTW_ctm = new Mesh_Orientation_Matrix[NBlk];  
-      neighTNW_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighTSW_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighTNE_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighTSE_ctm = new Mesh_Orientation_Matrix[NBlk];  
-      neighBN_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighBS_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighBE_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighBW_ctm = new Mesh_Orientation_Matrix[NBlk];  
-      neighBNW_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighBSW_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighBNE_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighBSE_ctm = new Mesh_Orientation_Matrix[NBlk];
-
+      Connectivity = new Grid3D_Hexa_Multi_Block_Connectivity[NBlk];
       Allocated = 1;
-
-      for (int  i = 0 ; i < NBlk ; ++i ) {
-         neighT[i] = GRID3D_NO_NEIGHBOUR;
-         neighB[i] = GRID3D_NO_NEIGHBOUR;
-         neighN[i] = GRID3D_NO_NEIGHBOUR;
-         neighS[i] = GRID3D_NO_NEIGHBOUR;
-         neighE[i] = GRID3D_NO_NEIGHBOUR;
-         neighW[i] = GRID3D_NO_NEIGHBOUR; 
-         neighNW[i] = GRID3D_NO_NEIGHBOUR;
-         neighNE[i] = GRID3D_NO_NEIGHBOUR;
-         neighSE[i] = GRID3D_NO_NEIGHBOUR;
-         neighSW[i] = GRID3D_NO_NEIGHBOUR;
-         neighTN[i] = GRID3D_NO_NEIGHBOUR;
-         neighTS[i] = GRID3D_NO_NEIGHBOUR;
-         neighTE[i] = GRID3D_NO_NEIGHBOUR;
-         neighTW[i] = GRID3D_NO_NEIGHBOUR;  
-         neighTNW[i] = GRID3D_NO_NEIGHBOUR;
-         neighTSW[i] = GRID3D_NO_NEIGHBOUR;
-         neighTNE[i] = GRID3D_NO_NEIGHBOUR;
-         neighTSE[i] = GRID3D_NO_NEIGHBOUR;  
-         neighBN[i] = GRID3D_NO_NEIGHBOUR;
-         neighBS[i] = GRID3D_NO_NEIGHBOUR;
-         neighBE[i] = GRID3D_NO_NEIGHBOUR;
-         neighBW[i] = GRID3D_NO_NEIGHBOUR;  
-         neighBNW[i] = GRID3D_NO_NEIGHBOUR;
-         neighBSW[i] = GRID3D_NO_NEIGHBOUR;
-         neighBNE[i] = GRID3D_NO_NEIGHBOUR;
-         neighBSE[i] = GRID3D_NO_NEIGHBOUR;
-      } /* endfor */
+         
    } /* endif */
-
+ 
 }
 
 /********************************************************
@@ -130,91 +151,9 @@ void Grid3D_Hexa_Multi_Block_List::Allocate(const int N) {
       NBlk = N;
 
       Grid_Blks = new Grid3D_Hexa_Block[NBlk];
-
-      neighT = new int[NBlk];
-      neighB = new int[NBlk];
-      neighN = new int[NBlk];
-      neighS = new int[NBlk];
-      neighE = new int[NBlk];
-      neighW = new int[NBlk]; 
-      neighNW = new int[NBlk];
-      neighNE = new int[NBlk];
-      neighSE = new int[NBlk];
-      neighSW = new int[NBlk];
-      neighTN = new int[NBlk];
-      neighTS = new int[NBlk];
-      neighTE = new int[NBlk];
-      neighTW = new int[NBlk];  
-      neighTNW = new int[NBlk];
-      neighTSW = new int[NBlk];
-      neighTNE = new int[NBlk];
-      neighTSE = new int[NBlk];  
-      neighBN = new int[NBlk];
-      neighBS = new int[NBlk];
-      neighBE = new int[NBlk];
-      neighBW = new int[NBlk];  
-      neighBNW = new int[NBlk];
-      neighBSW = new int[NBlk];
-      neighBNE = new int[NBlk];
-      neighBSE = new int[NBlk];
-
-      neighT_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighB_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighN_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighS_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighE_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighW_ctm = new Mesh_Orientation_Matrix[NBlk]; 
-      neighNW_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighNE_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighSE_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighSW_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighTN_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighTS_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighTE_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighTW_ctm = new Mesh_Orientation_Matrix[NBlk];  
-      neighTNW_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighTSW_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighTNE_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighTSE_ctm = new Mesh_Orientation_Matrix[NBlk];  
-      neighBN_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighBS_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighBE_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighBW_ctm = new Mesh_Orientation_Matrix[NBlk];  
-      neighBNW_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighBSW_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighBNE_ctm = new Mesh_Orientation_Matrix[NBlk];
-      neighBSE_ctm = new Mesh_Orientation_Matrix[NBlk];
+      Connectivity = new Grid3D_Hexa_Multi_Block_Connectivity[NBlk];
 
       Allocated = 1;
-
-      for (int  i = 0 ; i < NBlk ; ++i ) {
-         neighT[i] = GRID3D_NO_NEIGHBOUR;
-         neighB[i] = GRID3D_NO_NEIGHBOUR;
-         neighN[i] = GRID3D_NO_NEIGHBOUR;
-         neighS[i] = GRID3D_NO_NEIGHBOUR;
-         neighE[i] = GRID3D_NO_NEIGHBOUR;
-         neighW[i] = GRID3D_NO_NEIGHBOUR; 
-         neighNW[i] = GRID3D_NO_NEIGHBOUR;
-         neighNE[i] = GRID3D_NO_NEIGHBOUR;
-         neighSE[i] = GRID3D_NO_NEIGHBOUR;
-         neighSW[i] = GRID3D_NO_NEIGHBOUR;
-         neighTN[i] = GRID3D_NO_NEIGHBOUR;
-         neighTS[i] = GRID3D_NO_NEIGHBOUR;
-         neighTE[i] = GRID3D_NO_NEIGHBOUR;
-         neighTW[i] = GRID3D_NO_NEIGHBOUR;  
-         neighTNW[i] = GRID3D_NO_NEIGHBOUR;
-         neighTSW[i] = GRID3D_NO_NEIGHBOUR;
-         neighTNE[i] = GRID3D_NO_NEIGHBOUR;
-         neighTSE[i] = GRID3D_NO_NEIGHBOUR;  
-         neighBN[i] = GRID3D_NO_NEIGHBOUR;
-         neighBS[i] = GRID3D_NO_NEIGHBOUR;
-         neighBE[i] = GRID3D_NO_NEIGHBOUR;
-         neighBW[i] = GRID3D_NO_NEIGHBOUR;  
-         neighBNW[i] = GRID3D_NO_NEIGHBOUR;
-         neighBSW[i] = GRID3D_NO_NEIGHBOUR;
-         neighBNE[i] = GRID3D_NO_NEIGHBOUR;
-         neighBSE[i] = GRID3D_NO_NEIGHBOUR;
-      } /* endfor */
    } /* endif */
 
 }
@@ -232,112 +171,9 @@ void Grid3D_Hexa_Multi_Block_List::Deallocate(void) {
        delete []Grid_Blks;
        Grid_Blks = NULL;
 
-       delete []neighT;
-       delete []neighB;
-       delete []neighN;
-       delete []neighS;
-       delete []neighE;
-       delete []neighW; 
-       delete []neighNW;
-       delete []neighNE;
-       delete []neighSE;
-       delete []neighSW;
-       delete []neighTN;
-       delete []neighTS;
-       delete []neighTE;
-       delete []neighTW;  
-       delete []neighTNW;
-       delete []neighTSW;
-       delete []neighTNE;
-       delete []neighTSE;  
-       delete []neighBN;
-       delete []neighBS;
-       delete []neighBE;
-       delete []neighBW;  
-       delete []neighBNW;
-       delete []neighBSW;
-       delete []neighBNE;
-       delete []neighBSE;
-       neighT = NULL;
-       neighB = NULL;
-       neighN = NULL;
-       neighS = NULL;
-       neighE = NULL;
-       neighW = NULL; 
-       neighNW = NULL;
-       neighNE = NULL;
-       neighSE = NULL;
-       neighSW = NULL;
-       neighTN = NULL;
-       neighTS = NULL;
-       neighTE = NULL;
-       neighTW = NULL;  
-       neighTNW = NULL;
-       neighTSW = NULL;
-       neighTNE = NULL;
-       neighTSE = NULL;  
-       neighBN = NULL;
-       neighBS = NULL;
-       neighBE = NULL;
-       neighBW = NULL;  
-       neighBNW = NULL;
-       neighBSW = NULL;
-       neighBNE = NULL;
-       neighBSE = NULL;
-
-       delete []neighT_ctm;
-       delete []neighB_ctm;
-       delete []neighN_ctm;
-       delete []neighS_ctm;
-       delete []neighE_ctm;
-       delete []neighW_ctm; 
-       delete []neighNW_ctm;
-       delete []neighNE_ctm;
-       delete []neighSE_ctm;
-       delete []neighSW_ctm;
-       delete []neighTN_ctm;
-       delete []neighTS_ctm;
-       delete []neighTE_ctm;
-       delete []neighTW_ctm;  
-       delete []neighTNW_ctm;
-       delete []neighTSW_ctm;
-       delete []neighTNE_ctm;
-       delete []neighTSE_ctm;  
-       delete []neighBN_ctm;
-       delete []neighBS_ctm;
-       delete []neighBE_ctm;
-       delete []neighBW_ctm;  
-       delete []neighBNW_ctm;
-       delete []neighBSW_ctm;
-       delete []neighBNE_ctm;
-       delete []neighBSE_ctm;
-       neighT_ctm = NULL;
-       neighB_ctm = NULL;
-       neighN_ctm = NULL;
-       neighS_ctm = NULL;
-       neighE_ctm = NULL;
-       neighW_ctm = NULL; 
-       neighNW_ctm = NULL;
-       neighNE_ctm = NULL;
-       neighSE_ctm = NULL;
-       neighSW_ctm = NULL;
-       neighTN_ctm = NULL;
-       neighTS_ctm = NULL;
-       neighTE_ctm = NULL;
-       neighTW_ctm = NULL;  
-       neighTNW_ctm = NULL;
-       neighTSW_ctm = NULL;
-       neighTNE_ctm = NULL;
-       neighTSE_ctm = NULL;  
-       neighBN_ctm = NULL;
-       neighBS_ctm = NULL;
-       neighBE_ctm = NULL;
-       neighBW_ctm = NULL;  
-       neighBNW_ctm = NULL;
-       neighBSW_ctm = NULL;
-       neighBNE_ctm = NULL;
-       neighBSE_ctm = NULL;
-
+       delete []Connectivity;
+       Connectivity = NULL;
+  
        NBlk_Idir = 0; 
        NBlk_Jdir = 0; 
        NBlk_Kdir = 0;
@@ -356,28 +192,28 @@ void Grid3D_Hexa_Multi_Block_List::Deallocate(void) {
  ********************************************************/
 void Grid3D_Hexa_Multi_Block_List::Copy(Grid3D_Hexa_Multi_Block_List &Grid2) {
 
-  if (Grid2.Allocated) {
+   if (Grid2.Allocated) {
 
-    /* Ensure multiblock grid arrays have same dimensions. */
+     /* Ensure multiblock grid arrays have same dimensions. */
 
-    if (Allocated && (NBlk      != Grid2.NBlk      ||
-                      NBlk_Idir != Grid2.NBlk_Idir ||
-                      NBlk_Jdir != Grid2.NBlk_Jdir ||
-                      NBlk_Kdir != Grid2.NBlk_Kdir) ) {
-      Deallocate();
-      Allocate(Grid2.NBlk_Idir, Grid2.NBlk_Jdir, Grid2.NBlk_Kdir);
-    } else if (!Allocated) {
-      Allocate(Grid2.NBlk_Idir, Grid2.NBlk_Jdir, Grid2.NBlk_Kdir);
-    } /* endif */
+     if (Allocated && (NBlk      != Grid2.NBlk      ||
+                       NBlk_Idir != Grid2.NBlk_Idir ||
+                       NBlk_Jdir != Grid2.NBlk_Jdir ||
+                       NBlk_Kdir != Grid2.NBlk_Kdir) ) {
+       Deallocate();
+       Allocate(Grid2.NBlk_Idir, Grid2.NBlk_Jdir, Grid2.NBlk_Kdir);
+     } else if (!Allocated) {
+       Allocate(Grid2.NBlk_Idir, Grid2.NBlk_Jdir, Grid2.NBlk_Kdir);
+     } /* endif */
 
-    /* Copy each grid block. */
+     /* Copy each grid block. */
 
-    for (int  i = 0 ; i < NBlk ; ++i ) {
-       if (Grid2.Grid_Blks[i].Allocated) 
-          Grid_Blks[i].Copy(Grid2.Grid_Blks[i]);
-    } /* endfor */
+     for (int  i = 0 ; i < NBlk ; ++i ) {
+        if (Grid2.Grid_Blks[i].Allocated) 
+           Grid_Blks[i].Copy(Grid2.Grid_Blks[i]);
+     } /* endfor */
 
-  } /* endif */
+   } /* endif */
 
 }
 
@@ -390,47 +226,50 @@ void Grid3D_Hexa_Multi_Block_List::Copy(Grid3D_Hexa_Multi_Block_List &Grid2) {
 void Grid3D_Hexa_Multi_Block_List::Broadcast(void) {
 
 #ifdef _MPI_VERSION
-  int n, ni, nj, nk, grid_allocated;
+   int n, ni, nj, nk, grid_allocated;
 
-  /* Broadcast the number of grid blocks. */
+   /* Broadcast the number of grid blocks. */
 
-  if (CFFC_Primary_MPI_Processor()) {
-     n = NBlk;
-     ni = NBlk_Idir;
-     nj = NBlk_Jdir;
-     nk = NBlk_Kdir;
-     grid_allocated = Allocated;
-  } /* endif */
+   if (CFFC_Primary_MPI_Processor()) {
+      n = NBlk;
+      ni = NBlk_Idir;
+      nj = NBlk_Jdir;
+      nk = NBlk_Kdir;
+      grid_allocated = Allocated;
+   } /* endif */
 
-  MPI::COMM_WORLD.Bcast(&n, 1, MPI::INT, 0);
-  MPI::COMM_WORLD.Bcast(&ni, 1, MPI::INT, 0);
-  MPI::COMM_WORLD.Bcast(&nj, 1, MPI::INT, 0);
-  MPI::COMM_WORLD.Bcast(&nk, 1, MPI::INT, 0);
-  MPI::COMM_WORLD.Bcast(&grid_allocated, 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(&n, 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(&ni, 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(&nj, 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(&nk, 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(&grid_allocated, 1, MPI::INT, 0);
 
-  /* On non-primary MPI processors, allocate (re-allocate) 
-     memory for the grid blocks as necessary. */
+   /* On non-primary MPI processors, allocate (re-allocate) 
+      memory for the grid blocks as necessary. */
 
-  if (!CFFC_Primary_MPI_Processor()) {
-     if (grid_allocated && 
-         (NBlk != n ||
-          NBlk_Idir != ni || 
-          NBlk_Jdir != nj || 
-          NBlk_Kdir != nk) ) { 
-        if (Allocated) { 
-          Deallocate();
-        } /* endif */
-        Allocate(ni, nj, nk);
-     } /* endif */
-  } /* endif */
-
-  /* Broadcast each of the blocks in the multiblock mesh. */
-
-  if (Allocated) {
-    for (int  i = 0 ; i < NBlk ; ++i ) {
-       Grid_Blks[i].Broadcast();
-    } /* endfor */
-  } /* endif */
+   if (!CFFC_Primary_MPI_Processor()) {
+      if (grid_allocated && 
+          (NBlk != n ||
+           NBlk_Idir != ni || 
+           NBlk_Jdir != nj || 
+           NBlk_Kdir != nk) ) { 
+         if (Allocated) { 
+            Deallocate();
+         } /* endif */
+         Allocate(ni, nj, nk);
+      } else {
+         Deallocate();
+      } /* endif */
+   } /* endif */
+  
+   /* Broadcast each of the blocks in the multiblock mesh. */
+   /* Broadcast block connectivity info in the multiblock mesh. */
+   if (Allocated) {
+     for (int  i = 0 ; i < NBlk ; ++i ) {
+        Grid_Blks[i].Broadcast();
+        Connectivity[i].Broadcast();
+     } /* endfor */
+   } /* endif */
 #endif
 
 }
@@ -445,16 +284,16 @@ void Grid3D_Hexa_Multi_Block_List::Broadcast(void) {
  ********************************************************/
 void Grid3D_Hexa_Multi_Block_List::Output(ostream &Out_File) {
    
-  Out_File << NBlk << " "
-           << NBlk_Idir << " "
-           << NBlk_Jdir << " "
-           << NBlk_Kdir << "\n";
+   Out_File << NBlk << " "
+            << NBlk_Idir << " "
+            << NBlk_Jdir << " "
+            << NBlk_Kdir << "\n";
   
-  for (int  i = 0 ; i < NBlk ; ++i ) {
-     if (Grid_Blks[i].Allocated) {
-        Out_File << setprecision(14) << Grid_Blks[i] << setprecision(6);
-     } /* endif */
-  } /* endfor */
+   for (int  i = 0 ; i < NBlk ; ++i ) {
+      if (Grid_Blks[i].Allocated) {
+         Out_File << setprecision(14) << Grid_Blks[i] << setprecision(6);
+      } /* endif */
+   } /* endfor */
 
 }
 
@@ -469,17 +308,17 @@ void Grid3D_Hexa_Multi_Block_List::Output(ostream &Out_File) {
  ********************************************************/
 void Grid3D_Hexa_Multi_Block_List::Output_Tecplot(ostream &Out_File) {
 
-    int i_output_title;
-    i_output_title = 1;
+   int i_output_title;
+   i_output_title = 1;
     
-    for (int i = 0 ; i < NBlk ; ++i ) {
-       if (Grid_Blks[i].Allocated) {
-          Grid_Blks[i].Output_Tecplot(i,
-                                      i_output_title,
-                                      Out_File);
-          if (i_output_title) i_output_title = 0;
-       } /* endif */
-    } /* endfor */
+   for (int i = 0 ; i < NBlk ; ++i ) {
+      if (Grid_Blks[i].Allocated) {
+         Grid_Blks[i].Output_Tecplot(i,
+                                     i_output_title,
+                                     Out_File);
+         if (i_output_title) i_output_title = 0;
+      } /* endif */
+   } /* endfor */
 
 }
 
@@ -494,17 +333,17 @@ void Grid3D_Hexa_Multi_Block_List::Output_Tecplot(ostream &Out_File) {
  ********************************************************/
 void Grid3D_Hexa_Multi_Block_List::Output_Nodes_Tecplot(ostream &Out_File) {
 
-    int i_output_title;
-    i_output_title = 1;
+   int i_output_title;
+   i_output_title = 1;
   
-    for (int i = 0 ; i < NBlk ; ++i ) {
-       if (Grid_Blks[i].Allocated) {
-          Grid_Blks[i].Output_Nodes_Tecplot(i,
-                                            i_output_title,
-                                            Out_File);
-          if (i_output_title) i_output_title = 0;
-       } /* endif */
-    } /* endfor */ 
+   for (int i = 0 ; i < NBlk ; ++i ) {
+      if (Grid_Blks[i].Allocated) {
+         Grid_Blks[i].Output_Nodes_Tecplot(i,
+                                           i_output_title,
+                                           Out_File);
+         if (i_output_title) i_output_title = 0;
+      } /* endif */
+   } /* endfor */ 
 
 }
 
@@ -519,17 +358,17 @@ void Grid3D_Hexa_Multi_Block_List::Output_Nodes_Tecplot(ostream &Out_File) {
  ********************************************************/
 void Grid3D_Hexa_Multi_Block_List::Output_Cells_Tecplot(ostream &Out_File) {
 
-    int i_output_title;
-    i_output_title = 1;
+   int i_output_title;
+   i_output_title = 1;
 
-    for (int i = 0 ; i < NBlk ; ++i ) {
-       if (Grid_Blks[i].Allocated) {
-           Grid_Blks[i].Output_Cells_Tecplot(i,
-                                             i_output_title,
-                                             Out_File);
-           if (i_output_title) i_output_title = 0;
-	} /* endif */
-    }/* endfor */ 
+   for (int i = 0 ; i < NBlk ; ++i ) {
+      if (Grid_Blks[i].Allocated) {
+          Grid_Blks[i].Output_Cells_Tecplot(i,
+                                            i_output_title,
+                                            Out_File);
+          if (i_output_title) i_output_title = 0;
+      } /* endif */
+   }/* endfor */ 
 
 }
 
@@ -544,17 +383,17 @@ void Grid3D_Hexa_Multi_Block_List::Output_Cells_Tecplot(ostream &Out_File) {
  ********************************************************/
 void Grid3D_Hexa_Multi_Block_List::Output_Gnuplot(ostream &Out_File) {
   
-    int i_output_title;
-    i_output_title = 1;
+   int i_output_title;
+   i_output_title = 1;
     
-    for (int i =0 ; i < NBlk ; ++i ) {
-       if (Grid_Blks[i].Allocated) {
-	 Grid_Blks[i].Output_Gnuplot(i,
+   for (int i =0 ; i < NBlk ; ++i ) {
+      if (Grid_Blks[i].Allocated) {
+         Grid_Blks[i].Output_Gnuplot(i,
                                      i_output_title,
-		                     Out_File);
-          if (i_output_title) i_output_title = 0;
-       } /* endif */
-    } /* endfor */
+                                     Out_File);
+         if (i_output_title) i_output_title = 0;
+      } /* endif */
+   } /* endfor */
     
 }
 
@@ -567,40 +406,45 @@ void Grid3D_Hexa_Multi_Block_List::Output_Gnuplot(ostream &Out_File) {
  ********************************************************/
 void Grid3D_Hexa_Multi_Block_List::Create_Grid(Grid3D_Input_Parameters &Input) {
 
-    switch(Input.i_Grid) {
-      case GRID_CUBE :
-        Create_Grid_Cube(Input);
-        break;
+   // Create various multiblock multiblock grid depending on input parameters
+   switch(Input.i_Grid) {
+     case GRID_CUBE :
+       Create_Grid_Cube(Input);
+       break;
 
-      case GRID_CHANNEL_XDIR :
-      case GRID_CHANNEL_YDIR:
-      case GRID_CHANNEL_ZDIR:
-        Create_Grid_Channel(Input);
-        break;
+     case GRID_CHANNEL_XDIR :
+     case GRID_CHANNEL_YDIR:
+     case GRID_CHANNEL_ZDIR:
+       Create_Grid_Channel(Input);
+       break;
 
-      case GRID_COUETTE_XDIR :
-      case GRID_COUETTE_YDIR:
-      case GRID_COUETTE_ZDIR:
-        Create_Grid_Couette(Input);
-        break;
+     case GRID_COUETTE_XDIR :
+     case GRID_COUETTE_YDIR:
+     case GRID_COUETTE_ZDIR:
+       Create_Grid_Couette(Input);
+       break;
 
-      case GRID_PIPE :
-        Create_Grid_Pipe(Input);
-        break;
- 
-      case GRID_BLUFF_BODY_BURNER :
-        Create_Grid_Bluff_Body_Burner(Input);
-        break;
+     case GRID_PIPE :
+       Create_Grid_Pipe(Input);
+       break;
 
-      case GRID_ICEMCFD :
-	cout<<"\n NO ICEM IN 3D... YET ... ";
-        //Create_Grid_ICEMCFD(Input);
-        break;
+     case GRID_BLUFF_BODY_BURNER :
+       Create_Grid_Bluff_Body_Burner(Input);
+       break;
 
-      default:
-        Create_Grid_Cube(Input);
-        break;
-    } /* endswitch */
+     case GRID_ICEMCFD :
+       Create_Grid_ICEMCFD(Input);
+       break;
+
+     default:
+       Create_Grid_Cube(Input);
+       break;
+   } /* endswitch */
+
+   /* Call the function Find_Neighbours to obtain the neighbour block information
+      and assign values to data members in  grid block connectivity data structure. */
+    
+   Find_Neighbours(Input);
 
 }
 
@@ -612,81 +456,81 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid(Grid3D_Input_Parameters &Input) {
  ********************************************************/
 void Grid3D_Hexa_Multi_Block_List::Create_Grid_Cube(Grid3D_Input_Parameters &Input) {
 
-    int count_blocks;
-    int BC_top, BC_bottom;
-    Grid2D_Quad_Block **Grid2D_Box_XYplane;
+   int count_blocks;
+   int BC_top, BC_bottom;
+   Grid2D_Quad_Block **Grid2D_Box_XYplane;
 
-    /* Allocate required memory. */
+   /* Allocate required memory. */
 
-    Allocate(Input.NBlk_Idir, Input.NBlk_Jdir, Input.NBlk_Kdir);
+   Allocate(Input.NBlk_Idir, Input.NBlk_Jdir, Input.NBlk_Kdir);
 
-    /* Creat 2D cross-section grids from which the 3D grid
-       will be extruded. */
+   /* Creat 2D cross-section grids from which the 3D grid
+      will be extruded. */
     
-    Grid2D_Box_XYplane = Grid_Rectangular_Box(Grid2D_Box_XYplane,
-                                              Input.NBlk_Idir, 
-                                              Input.NBlk_Jdir,
-                                              Input.Box_Width,
-                                              Input.Box_Height,
-					      ON,
-					      Input.Stretching_Type_Idir,
-					      Input.Stretching_Type_Jdir,
-					      Input.Stretching_Factor_Idir,
-					      Input.Stretching_Factor_Jdir,
-                                              Input.NCells_Idir,
-                                              Input.NCells_Jdir,
-					      Input.Nghost);
+   Grid2D_Box_XYplane = Grid_Rectangular_Box(Grid2D_Box_XYplane,
+                                             Input.NBlk_Idir, 
+                                             Input.NBlk_Jdir,
+                                             Input.Box_Width,
+                                             Input.Box_Height,
+                                             ON,
+					     Input.Stretching_Type_Idir,
+					     Input.Stretching_Type_Jdir,
+					     Input.Stretching_Factor_Idir,
+					     Input.Stretching_Factor_Jdir,
+                                             Input.NCells_Idir,
+                                             Input.NCells_Jdir,
+					     Input.Nghost);
 
 
-    /* Create the mesh for each block representing
-       the complete grid. */
+   /* Create the mesh for each block representing
+      the complete grid. */
 
-    count_blocks = 0;
+   count_blocks = 0;
 
-    for (int kBlk = 0; kBlk <= Input.NBlk_Kdir-1; ++kBlk) {
-       for (int jBlk = 0; jBlk <= Input.NBlk_Jdir-1; ++jBlk) {
-          for (int iBlk = 0; iBlk <= Input.NBlk_Idir-1; ++iBlk) {
+   for (int kBlk = 0; kBlk <= Input.NBlk_Kdir-1; ++kBlk) {
+      for (int jBlk = 0; jBlk <= Input.NBlk_Jdir-1; ++jBlk) {
+         for (int iBlk = 0; iBlk <= Input.NBlk_Idir-1; ++iBlk) {
 
-             /* Extrude each of the grid blocks from the
-                appropriate 2D grid in XY-plane. */
+            /* Extrude each of the grid blocks from the
+               appropriate 2D grid in XY-plane. */
 
-             Grid_Blks[count_blocks].Extrude(Grid2D_Box_XYplane[iBlk][jBlk],
-                                             Input.NCells_Kdir,
-			                     Input.Stretching_Type_Kdir,
-				             Input.Stretching_Factor_Kdir,
-                                             -HALF*Input.Box_Length+
-                                             (double(kBlk)/double(Input.NBlk_Kdir))*Input.Box_Length,
-                                             -HALF*Input.Box_Length+
-                                             (double(kBlk+1)/double(Input.NBlk_Kdir))*Input.Box_Length);
+            Grid_Blks[count_blocks].Extrude(Grid2D_Box_XYplane[iBlk][jBlk],
+                                            Input.NCells_Kdir,
+           	                            Input.Stretching_Type_Kdir,
+				            Input.Stretching_Factor_Kdir,
+                                            -HALF*Input.Box_Length+
+                                            (double(kBlk)/double(Input.NBlk_Kdir))*Input.Box_Length,
+                                            -HALF*Input.Box_Length+
+                                            (double(kBlk+1)/double(Input.NBlk_Kdir))*Input.Box_Length);
 
-             /* Assign top and bottom boundary conditions. */
+            /* Assign top and bottom boundary conditions. */
 
-	     if (kBlk == Input.NBlk_Kdir-1) {
-                BC_top = BC_REFLECTION;
-             } else {
-                BC_top = BC_NONE;
-             } /* endif */
-             if (kBlk == 0) {
-                BC_bottom = BC_REFLECTION;
-             } else {
-                BC_bottom = BC_NONE;
-             } /* endif */
+            if (kBlk == Input.NBlk_Kdir-1) {
+               BC_top = BC_REFLECTION;
+            } else {
+               BC_top = BC_NONE;
+            } /* endif */
+            if (kBlk == 0) {
+               BC_bottom = BC_REFLECTION;
+            } else {
+               BC_bottom = BC_NONE;
+            } /* endif */
 
-             Grid_Blks[count_blocks].Set_BCs_Zdir(BC_top, BC_bottom);
+            Grid_Blks[count_blocks].Set_BCs_Zdir(BC_top, BC_bottom);
 
-             /* Update block counter. */
+            /* Update block counter. */
 
-             count_blocks ++;
+            count_blocks ++;
 
-	  } /* endfor */
-       } /* endfor */
-    } /* endfor */
+         } /* endfor */
+      } /* endfor */
+   } /* endfor */
 
-    /* Deallocate 2D grid. */
+   /* Deallocate 2D grid. */
 
-    Grid2D_Box_XYplane = Deallocate_Multi_Block_Grid(Grid2D_Box_XYplane,
-                                                     Input.NBlk_Idir, 
-                                                     Input.NBlk_Jdir);
+   Grid2D_Box_XYplane = Deallocate_Multi_Block_Grid(Grid2D_Box_XYplane,
+                                                    Input.NBlk_Idir, 
+                                                    Input.NBlk_Jdir);
 
 }
 
@@ -1132,6 +976,93 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Pipe(Grid3D_Input_Parameters &Inp
 
 }
 
+/**********************************************************************
+ * Routine: Grid_Bump_Channel_Flow                                    *
+ *                                                                    *
+ * Generates a single block quadilateral mesh with clustering for     *
+ * predicting supersonic flow around a cirucular cylinder blunt body. *
+ *                                                                    *
+ **********************************************************************/
+void Grid3D_Hexa_Multi_Block_List::Create_Grid_Bump_Channel_Flow(Grid3D_Input_Parameters &Input) {
+
+  int count_blocks;
+
+  Grid2D_Quad_Block **Grid2D_XYplane;
+  int BC_top, BC_bottom;
+
+  //Fixed at 8 blocks (4x2)
+  int Number_of_Blocks_Idir, Number_of_Blocks_Jdir;
+  int Smooth_Bump = 0; //don't use smooth bump.
+  
+  /* Allocate required memory. */
+
+  Input.NBlk_Idir = 4;
+  Input.NBlk_Jdir = 2;
+  Input.NBlk_Kdir = 1;
+
+  Allocate(Input.NBlk_Idir, Input.NBlk_Jdir, Input.NBlk_Kdir);
+
+  /* Creat 2D cross-section grids from which the 3D grid
+     will be extruded. */
+
+  Grid2D_XYplane = Grid_Bump_Channel_Flow(Grid2D_XYplane,
+					  Number_of_Blocks_Idir,
+					  Number_of_Blocks_Jdir,
+					  Smooth_Bump,
+					  Input.NCells_Idir,
+					  Input.NCells_Jdir,
+					  Input.Nghost);
+				
+  /* Create the mesh for each block representing
+     the complete grid. */
+  
+  count_blocks = 0;
+
+  for (int kBlk = 0; kBlk <= Input.NBlk_Kdir-1; ++kBlk) {
+    for (int jBlk = 0; jBlk <= Input.NBlk_Jdir-1; ++jBlk) {
+      for (int iBlk = 0; iBlk <= Input.NBlk_Idir-1; ++iBlk) {
+	
+	/* Extrude each of the grid blocks from the
+	   appropriate 2D grid in XY-plane. */
+	
+	Grid_Blks[count_blocks].Extrude(Grid2D_XYplane[iBlk][jBlk],
+				        Input.NCells_Kdir,
+					Input.Stretching_Type_Kdir,
+					Input.Stretching_Factor_Kdir,			       
+					(double(kBlk)/double(Input.NBlk_Kdir))*Input.Box_Length,
+					(double(kBlk+1)/double(Input.NBlk_Kdir))*Input.Box_Length);
+
+	/* Assign top and bottom boundary conditions. */
+	
+	if (kBlk == Input.NBlk_Kdir-1) {
+	  BC_top = BC_REFLECTION;//BC_CONSTANT_EXTRAPOLATION;
+	} else {
+	  BC_top = BC_NONE;
+	} /* endif */
+	if (kBlk == 0) {
+	  BC_bottom =BC_REFLECTION;// BC_CONSTANT_EXTRAPOLATION;
+	} else {
+	  BC_bottom = BC_NONE;
+	} /* endif */
+	
+	Grid_Blks[count_blocks].Set_BCs_Zdir(BC_top, BC_bottom);
+	
+       /* Update block counter. */
+
+        count_blocks ++;
+
+      } 
+    } 
+  } 
+  
+  /* Deallocate 2D grid. */
+
+  Grid2D_XYplane = Deallocate_Multi_Block_Grid(Grid2D_XYplane,
+					       Number_of_Blocks_Idir,
+					       Number_of_Blocks_Jdir);
+
+}
+
 /********************************************************
  * Routine: Create_Grid_Bluff_Body_Burner               *
  *                                                      *
@@ -1326,7 +1257,7 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Bluff_Body_Burner(Grid3D_Input_Pa
                                    0.25*Input.Length_Combustor_Tube);
 	   Grid_Blks[iBlk].Set_BCs(BC_NONE,
 		                   BC_NONE,
-                                   BC_REFLECTION,
+                                   BC_WALL_VISCOUS,//BC_REFLECTION,
 		                   BC_NONE,
                                    BC_NONE,
                                    BC_NONE);
@@ -1340,7 +1271,7 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Bluff_Body_Burner(Grid3D_Input_Pa
                                    Input.Length_Combustor_Tube);
 	   Grid_Blks[iBlk].Set_BCs(BC_NONE,
 		                   BC_NONE,
-                                   BC_REFLECTION,
+                                   BC_WALL_VISCOUS,//BC_REFLECTION,
 		                   BC_NONE,
                                    BC_FIXED_PRESSURE,
                                    BC_NONE);
@@ -1354,7 +1285,7 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Bluff_Body_Burner(Grid3D_Input_Pa
                                    ZERO);
 	   Grid_Blks[iBlk].Set_BCs(BC_NONE,
 		                   BC_NONE,
-                                   BC_REFLECTION,
+                                   BC_WALL_VISCOUS,//BC_REFLECTION,
 		                   BC_WALL_VISCOUS,
                                    BC_NONE,
                                    BC_NONE);
@@ -1368,7 +1299,7 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Bluff_Body_Burner(Grid3D_Input_Pa
                                    -0.25*Input.Length_Coflow_Inlet_Pipe);
 	   Grid_Blks[iBlk].Set_BCs(BC_NONE,
 		                   BC_NONE,
-                                   BC_REFLECTION,
+                                   BC_WALL_VISCOUS,//BC_REFLECTION,
 		                   BC_WALL_VISCOUS,
                                    BC_DIRICHLET,
                                    BC_NONE);
@@ -1407,38 +1338,15 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Bluff_Body_Burner(Grid3D_Input_Pa
  * Read ICEMCFD Mesh                                    *
  *                                                      *
  ********************************************************/
-// void Grid3D_Hexa_Multi_Block_List::Create_Grid_ICEMCFD(Grid3D_Input_Parameters &Input) {
+void Grid3D_Hexa_Multi_Block_List::Create_Grid_ICEMCFD(Grid3D_Input_Parameters &Input) {
     
-//    if (Allocated) Deallocate();
+   if (Allocated) Deallocate();
 
-//    Grid_Blks = Grid_ICEMCFD(Grid_Blks, 
-//                             Input.ICEMCFD_FileNames, 
-//                             NBlk_Idir, 
-//                             NBlk_Jdir, 
-//                             NBlk_Kdir);
+   assert(NBlk_Idir >= 1 && NBlk_Jdir >= 1 && NBlk_Kdir >= 1); 
+   Allocated = 1;
 
-//    int found = 0;
-//    for (int kBlk = 0; kBlk <= NBlk_Kdir-1 && !found; ++kBlk) {
-//       for (int jBlk = 0; jBlk <= NBlk_Jdir-1 && !found; ++jBlk) {
-//          for (int iBlk = 0; iBlk <= NBlk_Idir-1 && !found; ++iBlk) {
-//               if (Grid_Blks[iBlk][jBlk][kBlk].Allocated){
-//                   Input.NCells_Idir = Grid_Blks[iBlk][jBlk][kBlk].NCi-2*Grid_Blks[iBlk][jBlk][kBlk].Nghost;
-//                   Input.NCells_Jdir = Grid_Blks[iBlk][jBlk][kBlk].NCj-2*Grid_Blks[iBlk][jBlk][kBlk].Nghost;
-//                   Input.NCells_Kdir = Grid_Blks[iBlk][jBlk][kBlk].NCk-2*Grid_Blks[iBlk][jBlk][kBlk].Nghost;
-//                   found = 1;
-//               }/* endif */   
-//          } /* endfor */
-//       } /* endfor */
-//    } /* endfor */
+}
 
-//    Input.NBlk_Idir = NBlk_Idir; 
-//    Input.NBlk_Jdir = NBlk_Jdir; 
-//    Input.NBlk_Kdir = NBlk_Kdir;
-
-//    assert(NBlk_Idir >= 1 && NBlk_Jdir >= 1 && NBlk_Kdir >= 1); 
-//    Allocated = 1;
-
-// }
 
 /********************************************************
  * Routine: Find_Neighbours                             *
@@ -1448,13 +1356,644 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Bluff_Body_Burner(Grid3D_Input_Pa
  * to each block in the multi-block list.               *
  *                                                      *
  ********************************************************/
-void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(void) {
-
+void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Input) {
+   
    if (Allocated) {
 
+      /* Add all the blocks in the database in order to compute the
+         connectivity between blocks. */
+
+      BlkC::BlockConnectivity blkConn(NBlk, 
+                                      BlkC::CellCenter,
+                                      Input.Nghost, 6);
+      
+      BlkC::VertexPack vp;
+      int id,jd,kd;
+      int id_n, jd_n, kd_n;
+      Vector3D dX_i, dX_j, dX_k;
+
+      for (int iblk = 0 ; iblk < NBlk ; ++iblk) {
+         // A vertex pack (8 vertices and 24 vectors) for each block
+	 for (int i = 0; i != 2; ++i ) {
+	    for (int j = 0; j != 2; ++j ) {
+               for (int k = 0; k != 2; ++k ) {
+                  BlkC::ILoc_t iloc = ( i ) ? BlkC::IMax : BlkC::IMin;
+                  BlkC::JLoc_t jloc = ( j ) ? BlkC::JMax : BlkC::JMin;
+                  BlkC::KLoc_t kloc = ( k ) ? BlkC::KMax : BlkC::KMin;
+                  
+                  if(iloc == BlkC::IMin){
+                     id = Input.Nghost;
+                  }else{
+                     id = Input.NCells_Idir + Input.Nghost;
+                  }
+                  if(jloc == BlkC::JMin){
+                     jd =  Input.Nghost;
+                  }else{
+                     jd = Input.NCells_Jdir + Input.Nghost;
+                  }
+                  if(kloc == BlkC::KMin){
+                     kd =  Input.Nghost;
+                  }else{
+                     kd = Input.NCells_Kdir + Input.Nghost;
+                  }
+                  
+                  // Set coordinate of vertex
+                  vp.set_coord(iloc, jloc, kloc, 
+                               Grid_Blks[iblk].Node[id][jd][kd].X.x,
+                               Grid_Blks[iblk].Node[id][jd][kd].X.y,  
+                               Grid_Blks[iblk].Node[id][jd][kd].X.z);
+                  
+                  // Set vectors along each edge
+                  if (id == Input.Nghost){
+                     id_n = id +1;
+                  }else{
+                     id_n = id - 1;
+                  }
+                  if (jd == Input.Nghost){
+                     jd_n = jd +1;
+                  }else{
+                     jd_n = jd - 1;
+                  }
+                  if (kd == Input.Nghost){
+                     kd_n = kd +1;
+                  }else{
+                     kd_n = kd - 1;
+                  }
+                  dX_i = Grid_Blks[iblk].Node[id_n][jd][kd].X - Grid_Blks[iblk].Node[id][jd][kd].X;
+                  dX_j = Grid_Blks[iblk].Node[id][jd_n][kd].X - Grid_Blks[iblk].Node[id][jd][kd].X;
+                  dX_k = Grid_Blks[iblk].Node[id][jd][kd_n].X - Grid_Blks[iblk].Node[id][jd][kd].X;
+                                
+                  vp.set_vector(iloc, jloc, kloc, 'i', dX_i.x, dX_i.y, dX_i.z);
+                  vp.set_vector(iloc, jloc, kloc, 'j', dX_j.x, dX_j.y, dX_j.z);
+                  vp.set_vector(iloc, jloc, kloc, 'k', dX_k.x, dX_k.y, dX_k.z);
+               } /* endfor */
+	    } /* endfor */
+	 } /* endfor */
+               
+         blkConn.add_block(iblk, 
+                           Input.NCells_Idir, 
+                           Input.NCells_Jdir, 
+                           Input.NCells_Kdir, 
+                           vp);
+      } /* endfor */
+      
+      /* Get the number of blocks on each element (total 26 elements) for each block
+         and the neighbour information. */
+
+      for (int iblk = 0 ; iblk <NBlk ; ++iblk) {
+	 /* Top neigbour */ 
+         // Number of blocks on the top face
+         Connectivity[iblk].num_neighT = blkConn.num_neighbour_block(iblk, 
+                                                                     BlkC::IAll, 
+                                                                     BlkC::JAll, 
+                                                                     BlkC::KMax);
+
+         // Information of neighbour block of the top face
+         if (Connectivity[iblk].num_neighT > 0) {
+            Connectivity[iblk].neighT_info.set_block_orientation_info(blkConn, 
+                                                                      iblk,
+                                                                      0,
+                                                                      BlkC::IAll, 
+                                                                      BlkC::JAll, 
+                                                                      BlkC::KMax, 
+                                                                      Connectivity[iblk].neighT);
+         } /* endif */
+         if (blkConn.at_domain_extent(iblk, BlkC::IAll, BlkC::JAll, BlkC::KMax)) {
+            Connectivity[iblk].boundary_element_on_grid_boundary.boundary_element_on_domain_extent[BE::T] = 1;
+         } /* endif */
+         
+	 /* Bottom neigbour */ 
+         // Number of blocks on the bottom face
+         Connectivity[iblk].num_neighB = blkConn.num_neighbour_block(iblk,  
+                                                                     BlkC::IAll, 
+                                                                     BlkC::JAll, 
+                                                                     BlkC::KMin);
+         // Information of neighbour block of the bottom face
+         if (Connectivity[iblk].num_neighB > 0) {
+            Connectivity[iblk].neighB_info.set_block_orientation_info(blkConn, 
+                                                                      iblk,
+                                                                      0,
+                                                                      BlkC::IAll, 
+                                                                      BlkC::JAll, 
+                                                                      BlkC::KMin, 
+                                                                      Connectivity[iblk].neighB);
+	 } /* endif */
+         if (blkConn.at_domain_extent(iblk, BlkC::IAll, BlkC::JAll, BlkC::KMin)) {
+            Connectivity[iblk].boundary_element_on_grid_boundary.boundary_element_on_domain_extent[BE::B] = 1;
+         } /* endif */
+
+	 /* North neigbour */ 
+         // Number of blocks on the north face
+         Connectivity[iblk].num_neighN = blkConn.num_neighbour_block(iblk,
+                                                                     BlkC::IAll, 
+                                                                     BlkC::JMax, 
+                                                                     BlkC::KAll);
+         // Information of neighbour block of the north face
+         if (Connectivity[iblk].num_neighN > 0) {
+            Connectivity[iblk].neighN_info.set_block_orientation_info(blkConn, 
+                                                                      iblk,
+                                                                      0,  
+                                                                      BlkC::IAll, 
+                                                                      BlkC::JMax, 
+                                                                      BlkC::KAll, 
+                                                                      Connectivity[iblk].neighN);
+	 } /* endif */
+         if (blkConn.at_domain_extent(iblk, BlkC::IAll, BlkC::JMax, BlkC::KAll)) {
+            Connectivity[iblk].boundary_element_on_grid_boundary.boundary_element_on_domain_extent[BE::N] = 1;
+         } /* endif */
+
+	 /* South neigbour */ 
+         // Number of blocks on the south face
+         Connectivity[iblk].num_neighS = blkConn.num_neighbour_block(iblk,
+                                                                     BlkC::IAll, 
+                                                                     BlkC::JMin, 
+                                                                     BlkC::KAll);
+         // Information of neighbour block of the south face
+         if (Connectivity[iblk].num_neighS > 0) {
+            Connectivity[iblk].neighS_info.set_block_orientation_info(blkConn, 
+                                                                      iblk,
+                                                                      0,   
+                                                                      BlkC::IAll, 
+                                                                      BlkC::JMin, 
+                                                                      BlkC::KAll, 
+                                                                      Connectivity[iblk].neighS);
+         } /* endif */
+         if (blkConn.at_domain_extent(iblk, BlkC::IAll, BlkC::JMin, BlkC::KAll)) {
+            Connectivity[iblk].boundary_element_on_grid_boundary.boundary_element_on_domain_extent[BE::S] = 1;
+         } /* endif */
+
+	 /* East neigbour */ 
+         // Number of blocks on the east face
+         Connectivity[iblk].num_neighE = blkConn.num_neighbour_block(iblk, 
+                                                                     BlkC::IMax, 
+                                                                     BlkC::JAll, 
+                                                                     BlkC::KAll);
+         // Information of neighbour block of the east face
+         if (Connectivity[iblk].num_neighE > 0) {
+            Connectivity[iblk].neighE_info.set_block_orientation_info(blkConn, 
+                                                                      iblk,
+                                                                      0, 
+                                                                      BlkC::IMax, 
+                                                                      BlkC::JAll, 
+                                                                      BlkC::KAll, 
+                                                                      Connectivity[iblk].neighE);
+	 } /* endif */
+         if (blkConn.at_domain_extent(iblk, BlkC::IMax, BlkC::JAll, BlkC::KAll)) {
+            Connectivity[iblk].boundary_element_on_grid_boundary.boundary_element_on_domain_extent[BE::E] = 1;
+         } /* endif */
+         
+	 /* West neigbour */ 
+         // Number of blocks on the west face
+         Connectivity[iblk].num_neighW = blkConn.num_neighbour_block(iblk,  
+                                                                     BlkC::IMin, 
+                                                                     BlkC::JAll, 
+                                                                     BlkC::KAll);
+         // Information of neighbour block of the west face
+         if (Connectivity[iblk].num_neighW > 0) {
+            Connectivity[iblk].neighW_info.set_block_orientation_info(blkConn, 
+                                                                      iblk,
+                                                                      0,  
+                                                                      BlkC::IMin, 
+                                                                      BlkC::JAll, 
+                                                                      BlkC::KAll, 
+                                                                      Connectivity[iblk].neighW);
+         } /* endif */
+         if (blkConn.at_domain_extent(iblk, BlkC::IMin, BlkC::JAll, BlkC::KAll)) {
+            Connectivity[iblk].boundary_element_on_grid_boundary.boundary_element_on_domain_extent[BE::W] = 1;
+         } /* endif */
+
+	 /* Top-North neighbour */ 
+         // Number of blocks on the top-north edge
+         Connectivity[iblk].num_neighTN = blkConn.num_neighbour_block(iblk, 
+                                                                      BlkC::IAll, 
+                                                                      BlkC::JMax, 
+                                                                      BlkC::KMax);
+         // Information of neighbour block of the top-north edge
+         for (int i_neigh = 0 ; i_neigh < Connectivity[iblk].num_neighTN ; ++i_neigh) {
+            Connectivity[iblk].neighTN_info[i_neigh].set_block_orientation_info(blkConn, 
+                                                                                iblk,
+                                                                                i_neigh, 
+                                                                                BlkC::IAll, 
+                                                                                BlkC::JMax, 
+                                                                                BlkC::KMax, 
+                                                                                Connectivity[iblk].neighTN[i_neigh]);
+         } /* endfor */
+         if (blkConn.at_domain_extent(iblk,BlkC::IAll, BlkC::JMax, BlkC::KMax)) {
+            Connectivity[iblk].boundary_element_on_grid_boundary.boundary_element_on_domain_extent[BE::TN] = 1;
+         } /* endif */
+
+	 /* Top-South neighbour */ 
+         // Number of blocks on the top-south edge
+         Connectivity[iblk].num_neighTS = blkConn.num_neighbour_block(iblk, 
+                                                                      BlkC::IAll, 
+                                                                      BlkC::JMin, 
+                                                                      BlkC::KMax);
+         // Information of neighbour block of the top-south edge
+         for (int i_neigh = 0 ; i_neigh < Connectivity[iblk].num_neighTS ; ++i_neigh) {
+            Connectivity[iblk].neighTS_info[i_neigh].set_block_orientation_info(blkConn, 
+                                                                                iblk,
+                                                                                i_neigh,
+                                                                                BlkC::IAll, 
+                                                                                BlkC::JMin, 
+                                                                                BlkC::KMax, 
+                                                                                Connectivity[iblk].neighTS[i_neigh]);
+         } /* endfor */
+         if (blkConn.at_domain_extent(iblk, BlkC::IAll, BlkC::JMin, BlkC::KMax)) {
+            Connectivity[iblk].boundary_element_on_grid_boundary.boundary_element_on_domain_extent[BE::TS] = 1;
+         } /* endif */
+
+	 /* Top-West neighbour */ 
+         // Number of blocks on the top-west edge
+         Connectivity[iblk].num_neighTW = blkConn.num_neighbour_block(iblk,  
+                                                                      BlkC::IMin, 
+                                                                      BlkC::JAll, 
+                                                                      BlkC::KMax);
+         // Information of neighbour block of the top-west edge
+         for (int i_neigh = 0 ; i_neigh < Connectivity[iblk].num_neighTW ; ++i_neigh) {
+            Connectivity[iblk].neighTW_info[i_neigh].set_block_orientation_info(blkConn, 
+                                                                                iblk,
+                                                                                i_neigh,  
+                                                                                BlkC::IMin, 
+                                                                                BlkC::JAll, 
+                                                                                BlkC::KMax, 
+                                                                                Connectivity[iblk].neighTW[i_neigh]);
+         } /* endfor */
+         if (blkConn.at_domain_extent(iblk, BlkC::IMin, BlkC::JAll, BlkC::KMax)) {
+            Connectivity[iblk].boundary_element_on_grid_boundary.boundary_element_on_domain_extent[BE::TW] = 1;
+         } /* endif */
+
+	 /* Top-East neighbour */ 
+         // Number of blocks on the top-east edge
+         Connectivity[iblk].num_neighTE = blkConn.num_neighbour_block(iblk,  
+                                                                      BlkC::IMax, 
+                                                                      BlkC::JAll, 
+                                                                      BlkC::KMax);
+         // Information of neighbour block of the top-east edge
+         for (int i_neigh = 0 ; i_neigh < Connectivity[iblk].num_neighTE ; ++i_neigh) {
+            Connectivity[iblk].neighTE_info[i_neigh].set_block_orientation_info(blkConn, 
+                                                                                iblk,
+                                                                                i_neigh,  
+                                                                                BlkC::IMax, 
+                                                                                BlkC::JAll, 
+                                                                                BlkC::KMax, 
+                                                                                Connectivity[iblk].neighTE[i_neigh]);
+         } /* endfor */
+         if (blkConn.at_domain_extent(iblk, BlkC::IMax, BlkC::JAll, BlkC::KMax)) {
+            Connectivity[iblk].boundary_element_on_grid_boundary.boundary_element_on_domain_extent[BE::TE] = 1;
+         } /* endif */
+
+	 /* Bottom-North neighbour */ 
+         // Number of blocks on the bottom-north edge
+         Connectivity[iblk].num_neighBN = blkConn.num_neighbour_block(iblk,
+                                                                      BlkC::IAll, 
+                                                                      BlkC::JMax, 
+                                                                      BlkC::KMin);
+         // Information of neighbour block of the bottom-north edge 
+         for (int i_neigh = 0 ; i_neigh < Connectivity[iblk].num_neighBN ; ++i_neigh) {
+            Connectivity[iblk].neighBN_info[i_neigh].set_block_orientation_info(blkConn, 
+                                                                                iblk,
+                                                                                i_neigh,  
+                                                                                BlkC::IAll, 
+                                                                                BlkC::JMax, 
+                                                                                BlkC::KMin, 
+                                                                                Connectivity[iblk].neighBN[i_neigh]);
+         } /* endfor */
+         if (blkConn.at_domain_extent(iblk,  BlkC::IAll, BlkC::JMax, BlkC::KMin)) {
+            Connectivity[iblk].boundary_element_on_grid_boundary.boundary_element_on_domain_extent[BE::BN] = 1;
+         } /* endif */
+         
+	 /* Bottom-South neighbour */ 
+         // Number of blocks on the bottom-south edge
+         Connectivity[iblk].num_neighBS = blkConn.num_neighbour_block(iblk,
+                                                                      BlkC::IAll, 
+                                                                      BlkC::JMin, 
+                                                                      BlkC::KMin);
+         // Information of neighbour block of the bottom-south edge 
+         for (int i_neigh = 0 ; i_neigh < Connectivity[iblk].num_neighBS ; ++i_neigh) {
+            Connectivity[iblk].neighBS_info[i_neigh].set_block_orientation_info(blkConn, 
+                                                                                iblk,
+                                                                                i_neigh,  
+                                                                                BlkC::IAll, 
+                                                                                BlkC::JMin, 
+                                                                                BlkC::KMin, 
+                                                                                Connectivity[iblk].neighBS[i_neigh]);
+         } /* endfor */
+         if (blkConn.at_domain_extent(iblk, BlkC::IAll, BlkC::JMin, BlkC::KMin)) {
+            Connectivity[iblk].boundary_element_on_grid_boundary.boundary_element_on_domain_extent[BE::BS] = 1;
+         } /* endif */
+
+	 /* Bottom-West neighbour */ 
+         // Number of blocks on the bottom-west edge
+         Connectivity[iblk].num_neighBW = blkConn.num_neighbour_block(iblk,
+                                                                      BlkC::IMin, 
+                                                                      BlkC::JAll, 
+                                                                      BlkC::KMin);
+         // Information of neighbour block of the bottom-west edge  
+         for (int i_neigh = 0 ; i_neigh < Connectivity[iblk].num_neighBW ; ++i_neigh) {
+            Connectivity[iblk].neighBW_info[i_neigh].set_block_orientation_info(blkConn, 
+                                                                                iblk,
+                                                                                i_neigh,   
+                                                                                BlkC::IMin, 
+                                                                                BlkC::JAll, 
+                                                                                BlkC::KMin, 
+                                                                                Connectivity[iblk].neighBW[i_neigh]);
+         } /* endfor */
+         if (blkConn.at_domain_extent(iblk,  BlkC::IMin, BlkC::JAll, BlkC::KMin)) {
+            Connectivity[iblk].boundary_element_on_grid_boundary.boundary_element_on_domain_extent[BE::BW] = 1;
+         } /* endif */
+
+	 /* Bottom-East neighbour */ 
+         // Number of blocks on the bottom-east edge
+         Connectivity[iblk].num_neighBE = blkConn.num_neighbour_block(iblk,  
+                                                                      BlkC::IMax, 
+                                                                      BlkC::JAll, 
+                                                                      BlkC::KMin);
+         // Information of neighbour block of the bottomeast edge
+         for (int i_neigh = 0 ; i_neigh < Connectivity[iblk].num_neighBE ; ++i_neigh) {
+            Connectivity[iblk].neighBE_info[i_neigh].set_block_orientation_info(blkConn, 
+                                                                                iblk,
+                                                                                i_neigh,  
+                                                                                BlkC::IMax, 
+                                                                                BlkC::JAll, 
+                                                                                BlkC::KMin, 
+                                                                                Connectivity[iblk].neighBE[i_neigh]);
+         } /* endfor */
+         if (blkConn.at_domain_extent(iblk,  BlkC::IMax, BlkC::JAll, BlkC::KMin)) {
+            Connectivity[iblk].boundary_element_on_grid_boundary.boundary_element_on_domain_extent[BE::BE] = 1;
+         } /* endif */
+
+	 /* North-West neighbour */ 
+         // Number of blocks on the north-west edge         
+         Connectivity[iblk].num_neighNW = blkConn.num_neighbour_block(iblk, 
+                                                                      BlkC::IMin, 
+                                                                      BlkC::JMax, 
+                                                                      BlkC::KAll);
+         // Information of neighbour block of the north-west edge
+         for (int i_neigh = 0 ; i_neigh < Connectivity[iblk].num_neighNW ; ++i_neigh) {
+            Connectivity[iblk].neighNW_info[i_neigh].set_block_orientation_info(blkConn, 
+                                                                                iblk,
+                                                                                i_neigh, 
+                                                                                BlkC::IMin, 
+                                                                                BlkC::JMax, 
+                                                                                BlkC::KAll, 
+                                                                                Connectivity[iblk].neighNW[i_neigh]);
+         } /* endfor */
+         if (blkConn.at_domain_extent(iblk, BlkC::IMin, BlkC::JMax, BlkC::KAll)) {
+            Connectivity[iblk].boundary_element_on_grid_boundary.boundary_element_on_domain_extent[BE::NW] = 1;
+         } /* endif */
+         
+	 /* North-East neighbour */ 
+         // Number of blocks on the north-east edge 
+         Connectivity[iblk].num_neighNE = blkConn.num_neighbour_block(iblk,  
+                                                                      BlkC::IMax, 
+                                                                      BlkC::JMax, 
+                                                                      BlkC::KAll);
+         // Information of neighbour block of the north-east edge
+         for (int i_neigh = 0 ; i_neigh < Connectivity[iblk].num_neighNE ; ++i_neigh) {
+            Connectivity[iblk].neighNE_info[i_neigh].set_block_orientation_info(blkConn, 
+                                                                                iblk,
+                                                                                i_neigh,
+                                                                                BlkC::IMax, 
+                                                                                BlkC::JMax, 
+                                                                                BlkC::KAll, 
+                                                                                Connectivity[iblk].neighNE[i_neigh]);
+         } /* endfor */
+         if (blkConn.at_domain_extent(iblk, BlkC::IMax, BlkC::JMax, BlkC::KAll)) {
+            Connectivity[iblk].boundary_element_on_grid_boundary.boundary_element_on_domain_extent[BE::NE] = 1;
+         } /* endif */
+
+
+	 /* South-East neighbour */ 
+         // Number of blocks on the south-east edge 
+         Connectivity[iblk].num_neighSE = blkConn.num_neighbour_block(iblk,  
+                                                                      BlkC::IMax, 
+                                                                      BlkC::JMin, 
+                                                                      BlkC::KAll);
+         // Information of neighbour block of the south-east edge 
+         for (int i_neigh = 0 ; i_neigh < Connectivity[iblk].num_neighSE ; ++i_neigh) {
+            Connectivity[iblk].neighSE_info[i_neigh].set_block_orientation_info(blkConn, 
+                                                                                iblk,
+                                                                                i_neigh,  
+                                                                                BlkC::IMax, 
+                                                                                BlkC::JMin, 
+                                                                                BlkC::KAll, 
+                                                                                Connectivity[iblk].neighSE[i_neigh]);
+         } /* endfor */
+         if (blkConn.at_domain_extent(iblk, BlkC::IMax, BlkC::JMin, BlkC::KAll)) {
+            Connectivity[iblk].boundary_element_on_grid_boundary.boundary_element_on_domain_extent[BE::SE] = 1;
+         } /* endif */
+
+	 /* South-West neighbour */ 
+         // Number of blocks on the south-west edge                
+         Connectivity[iblk].num_neighSW = blkConn.num_neighbour_block(iblk,
+                                                                      BlkC::IMin,
+                                                                      BlkC::JMin,
+                                                                      BlkC::KAll);
+         // Information of neighbour block of the south-west edge 
+         for (int i_neigh = 0 ; i_neigh < Connectivity[iblk].num_neighSW ; ++i_neigh) {
+            Connectivity[iblk].neighSW_info[i_neigh].set_block_orientation_info(blkConn,
+                                                                                iblk,
+                                                                                i_neigh,
+                                                                                BlkC::IMin,
+                                                                                BlkC::JMin,
+                                                                                BlkC::KAll, 
+                                                                                Connectivity[iblk].neighSW[i_neigh]);
+         } /* endfor */
+         if (blkConn.at_domain_extent(iblk,  BlkC::IMin, BlkC::JMin, BlkC::KAll)) {
+            Connectivity[iblk].boundary_element_on_grid_boundary.boundary_element_on_domain_extent[BE::SW] = 1;
+         } /* endif */
+
+	 /* Top-North-West neighbour */ 
+         // Number of blocks on the top-north-west vertex
+         Connectivity[iblk].num_neighTNW = blkConn.num_neighbour_block(iblk,
+                                                                       BlkC::IMin,
+                                                                       BlkC::JMax,
+                                                                       BlkC::KMax);
+         // Information of neighbour block of the top-north-west vertex
+         for (int i_neigh = 0 ; i_neigh < Connectivity[iblk].num_neighTNW ; ++i_neigh) {
+            Connectivity[iblk].neighTNW_info[i_neigh].set_block_orientation_info(blkConn,
+                                                                                 iblk,
+                                                                                 i_neigh,
+                                                                                 BlkC::IMin,
+                                                                                 BlkC::JMax,
+                                                                                 BlkC::KMax, 
+                                                                                 Connectivity[iblk].neighTNW[i_neigh]);
+         } /* endfor */
+         if (blkConn.at_domain_extent(iblk,  BlkC::IMin, BlkC::JMax, BlkC::KMax)) {
+            Connectivity[iblk].boundary_element_on_grid_boundary.boundary_element_on_domain_extent[BE::TNW] = 1;
+         } /* endif */
+
+	 /* Top-South-West neighbour */
+         // Number of blocks on the top-south-west vertex
+         Connectivity[iblk].num_neighTSW = blkConn.num_neighbour_block(iblk, 
+                                                                       BlkC::IMin, 
+                                                                       BlkC::JMin, 
+                                                                       BlkC::KMax);
+         // Information of neighbour block of the top-south-west vertex
+         for (int i_neigh = 0 ; i_neigh < Connectivity[iblk].num_neighTSW ; ++i_neigh) {
+            Connectivity[iblk].neighTSW_info[i_neigh].set_block_orientation_info(blkConn, 
+                                                                                 iblk,
+                                                                                 i_neigh,
+                                                                                 BlkC::IMin,
+                                                                                 BlkC::JMin,
+                                                                                 BlkC::KMax, 
+                                                                                 Connectivity[iblk].neighTSW[i_neigh]);
+         } /* endfor */
+         if (blkConn.at_domain_extent(iblk,  BlkC::IMin, BlkC::JMin, BlkC::KMax)) {
+            Connectivity[iblk].boundary_element_on_grid_boundary.boundary_element_on_domain_extent[BE::TSW] = 1;
+         } /* endif */
+         
+	 /* Top-North-East neighbour */
+         // Number of blocks on the top-north-east vertex
+         Connectivity[iblk].num_neighTNE = blkConn.num_neighbour_block(iblk,  
+                                                                       BlkC::IMax, 
+                                                                       BlkC::JMax, 
+                                                                       BlkC::KMax);
+         // Information of neighbour block of the top-north-east vertex
+         for (int i_neigh = 0 ; i_neigh < Connectivity[iblk].num_neighTNE ; ++i_neigh) {
+            Connectivity[iblk].neighTNE_info[i_neigh].set_block_orientation_info(blkConn, 
+                                                                                 iblk,
+                                                                                 i_neigh,  
+                                                                                 BlkC::IMax, 
+                                                                                 BlkC::JMax, 
+                                                                                 BlkC::KMax, 
+                                                                                 Connectivity[iblk].neighTNE[i_neigh]);
+         } /* endfor */
+         if (blkConn.at_domain_extent(iblk,  BlkC::IMax, BlkC::JMax, BlkC::KMax)) {
+            Connectivity[iblk].boundary_element_on_grid_boundary.boundary_element_on_domain_extent[BE::TNE] = 1;
+         } /* endif */
+
+	 /* Top-South-East neighbour */
+         // Number of blocks on the top-south-east vertex
+         Connectivity[iblk].num_neighTSE = blkConn.num_neighbour_block(iblk, 
+                                                                       BlkC::IMax, 
+                                                                       BlkC::JMin, 
+                                                                       BlkC::KMax);
+         // Information of neighbour block of the top-south-east vertex
+         for (int i_neigh = 0 ; i_neigh < Connectivity[iblk].num_neighTSE ; ++i_neigh) {
+            Connectivity[iblk].neighTSE_info[i_neigh].set_block_orientation_info(blkConn,
+                                                                                 iblk,
+                                                                                 i_neigh,
+                                                                                 BlkC::IMax,
+                                                                                 BlkC::JMin,
+                                                                                 BlkC::KMax, 
+                                                                                 Connectivity[iblk].neighTSE[i_neigh]);
+         } /* endfor */
+         if (blkConn.at_domain_extent(iblk,   BlkC::IMax, BlkC::JMin, BlkC::KMax)) {
+            Connectivity[iblk].boundary_element_on_grid_boundary.boundary_element_on_domain_extent[BE::TSE] = 1;
+         } /* endif */
+
+	 /* Bottom-North-West neighbour */
+         // Number of blocks on the bottom-north-west vertex
+        Connectivity[iblk].num_neighBNW = blkConn.num_neighbour_block(iblk,
+                                                                      BlkC::IMin,
+                                                                      BlkC::JMax,
+                                                                      BlkC::KMin);
+         // Information of neighbour block of the bottom-north-west vertex
+         for (int i_neigh = 0 ; i_neigh < Connectivity[iblk].num_neighBNW ; ++i_neigh) {
+            Connectivity[iblk].neighBNW_info[i_neigh].set_block_orientation_info(blkConn,
+                                                                                 iblk,
+                                                                                 i_neigh,
+                                                                                 BlkC::IMin,
+                                                                                 BlkC::JMax,
+                                                                                 BlkC::KMin, 
+                                                                                 Connectivity[iblk].neighBNW[i_neigh]);
+         } /* endfor */
+         if (blkConn.at_domain_extent(iblk,   BlkC::IMin, BlkC::JMax, BlkC::KMin)) {
+            Connectivity[iblk].boundary_element_on_grid_boundary.boundary_element_on_domain_extent[BE::BNW] = 1;
+         } /* endif */
+
+	 /* Bottom-South-West neighbour */
+         // Number of blocks on the bottom-south-west vertex
+         Connectivity[iblk].num_neighBSW = blkConn.num_neighbour_block(iblk,
+                                                                       BlkC::IMin, 
+                                                                       BlkC::JMin, 
+                                                                       BlkC::KMin);
+         // Information of neighbour block of the bottom-south-west vertex
+         for (int i_neigh = 0 ; i_neigh < Connectivity[iblk].num_neighBSW ; ++i_neigh) {
+            Connectivity[iblk].neighBSW_info[i_neigh].set_block_orientation_info(blkConn, 
+                                                                                 iblk,
+                                                                                 i_neigh,  
+                                                                                 BlkC::IMin, 
+                                                                                 BlkC::JMin, 
+                                                                                 BlkC::KMin, 
+                                                                                 Connectivity[iblk].neighBSW[i_neigh]);
+         } /* endfor */
+         if (blkConn.at_domain_extent(iblk,   BlkC::IMin, BlkC::JMin, BlkC::KMin)) {
+            Connectivity[iblk].boundary_element_on_grid_boundary.boundary_element_on_domain_extent[BE::BSW] = 1;
+         } /* endif */
+
+	 /* Bottom-North-East neighbour */
+         // Number of blocks on the bottom-north-east vertex
+         Connectivity[iblk].num_neighBNE = blkConn.num_neighbour_block(iblk,  
+                                                                       BlkC::IMax, 
+                                                                       BlkC::JMax, 
+                                                                       BlkC::KMin);
+         // Information of neighbour block of the bottom-north-east vertex
+         for (int i_neigh = 0 ; i_neigh < Connectivity[iblk].num_neighBNE ; ++i_neigh) {
+            Connectivity[iblk].neighBNE_info[i_neigh].set_block_orientation_info(blkConn, 
+                                                                                 iblk,
+                                                                                 i_neigh,  
+                                                                                 BlkC::IMax, 
+                                                                                 BlkC::JMax, 
+                                                                                 BlkC::KMin, 
+                                                                                 Connectivity[iblk].neighBNE[i_neigh]);
+         } /* endfor */
+         if (blkConn.at_domain_extent(iblk,   BlkC::IMax, BlkC::JMax, BlkC::KMin)) {
+            Connectivity[iblk].boundary_element_on_grid_boundary.boundary_element_on_domain_extent[BE::BNE] = 1;
+         } /* endif */
+
+	 /* Bottom-South-East neighbour */
+         // Number of blocks on the bottom-south-east vertex
+         Connectivity[iblk].num_neighBSE = blkConn.num_neighbour_block(iblk,  
+                                                                       BlkC::IMax, 
+                                                                       BlkC::JMin, 
+                                                                       BlkC::KMin);
+         // Information of neighbour block of the bottom-south-east vertex
+         for (int i_neigh = 0 ; i_neigh < Connectivity[iblk].num_neighBSE ; ++i_neigh) {
+            Connectivity[iblk].neighBSE_info[i_neigh].set_block_orientation_info(blkConn, 
+                                                                                 iblk,
+                                                                                 i_neigh, 
+                                                                                 BlkC::IMax, 
+                                                                                 BlkC::JMin, 
+                                                                                 BlkC::KMin, 
+                                                                                 Connectivity[iblk].neighBSE[i_neigh]);
+         } /* endfor */
+         if (blkConn.at_domain_extent(iblk,  BlkC::IMax, BlkC::JMin, BlkC::KMin)) {
+            Connectivity[iblk].boundary_element_on_grid_boundary.boundary_element_on_domain_extent[BE::BSE] = 1;
+         } /* endif */
+
+         if (Connectivity[iblk].num_neighT > 1 ||
+             Connectivity[iblk].num_neighB > 1 ||
+             Connectivity[iblk].num_neighN > 1 || 
+             Connectivity[iblk].num_neighS > 1 ||
+             Connectivity[iblk].num_neighE > 1 || 
+             Connectivity[iblk].num_neighW > 1 || 
+             Connectivity[iblk].num_neighTN > GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS ||
+             Connectivity[iblk].num_neighTS > GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS ||
+             Connectivity[iblk].num_neighTE > GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS ||
+             Connectivity[iblk].num_neighTW > GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS ||
+             Connectivity[iblk].num_neighBN > GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS ||
+             Connectivity[iblk].num_neighBS > GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS ||
+             Connectivity[iblk].num_neighBE > GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS ||
+             Connectivity[iblk].num_neighBW > GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS ||
+             Connectivity[iblk].num_neighTNW > GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS ||
+             Connectivity[iblk].num_neighTNE > GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS ||
+             Connectivity[iblk].num_neighTSW > GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS ||
+             Connectivity[iblk].num_neighTSE > GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS ||
+             Connectivity[iblk].num_neighBNW > GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS ||
+             Connectivity[iblk].num_neighBNE > GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS ||
+             Connectivity[iblk].num_neighBSW > GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS ||
+             Connectivity[iblk].num_neighBSE > GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS) {
+            cerr<<"\n Number of neighbour blocks on some boudnary elements is out of bounds. \n";
+            exit(1);
+         } /* endif */
+      } /* endfor */
+  
    } /* endif */
 
 }
+
 
 /********************************************************
  * Routine: Allocate                                    *
@@ -1593,6 +2132,8 @@ void Grid3D_Hexa_Multi_Block::Broadcast(void) {
           Deallocate();
         } /* endif */
         Allocate(ni, nj, nk);
+     } else {
+        Deallocate();
      } /* endif */
   } /* endif */
 
@@ -1769,10 +2310,12 @@ void Grid3D_Hexa_Multi_Block::Output_Gnuplot(ostream &Out_File) {
  ********************************************************/
 void Grid3D_Hexa_Multi_Block::Create_Grid(Grid3D_Input_Parameters &Input) {
 
+    // Create various multiblock multiblock grid depending on input parameters
     switch(Input.i_Grid) {
       case GRID_CUBE :
         Create_Grid_Cube(Input);
-        break;      
+        break;
+
       case GRID_CHANNEL_XDIR :
       case GRID_CHANNEL_YDIR:
       case GRID_CHANNEL_ZDIR:
@@ -1788,10 +2331,6 @@ void Grid3D_Hexa_Multi_Block::Create_Grid(Grid3D_Input_Parameters &Input) {
       case GRID_PIPE :
         Create_Grid_Pipe(Input);
         break;
-         
-      case GRID_BUMP_CHANNEL_FLOW :
-	Create_Grid_Bump_Channel_Flow(Input);
-	break;
 
       case GRID_BLUFF_BODY_BURNER :
         Create_Grid_Bluff_Body_Burner(Input);
@@ -1988,12 +2527,12 @@ void Grid3D_Hexa_Multi_Block::Create_Grid_Channel(Grid3D_Input_Parameters &Input
                 } /* endif */
 
 	        if (jBlk == Input.NBlk_Jdir-1) {
-		   BC_north = BC_CONSTANT_EXTRAPOLATION;//BC_WALL_VISCOUS;
+                   BC_north = BC_WALL_VISCOUS;
                 } else {
                    BC_north = BC_NONE;
                 } /* endif */
                 if (jBlk == 0) {
-		   BC_south = BC_CONSTANT_EXTRAPOLATION;//BC_WALL_VISCOUS;
+                   BC_south = BC_WALL_VISCOUS;
                 } else {
                    BC_south = BC_NONE;
                 } /* endif */
@@ -2315,7 +2854,6 @@ void Grid3D_Hexa_Multi_Block::Create_Grid_Pipe(Grid3D_Input_Parameters &Input) {
 
 }
 
-
 /**********************************************************************
  * Routine: Grid_Bump_Channel_Flow                                    *
  *                                                                    *
@@ -2342,13 +2880,14 @@ void Grid3D_Hexa_Multi_Block::Create_Grid_Bump_Channel_Flow(Grid3D_Input_Paramet
 
   /* Creat 2D cross-section grids from which the 3D grid
      will be extruded. */
-  Grid2D_XYplane = Grid_Bump_Channel_Flow( Grid2D_XYplane,
-					   Number_of_Blocks_Idir,
-					   Number_of_Blocks_Jdir,
-					   Smooth_Bump,
-					   Input.NCells_Idir,
-					   Input.NCells_Jdir,
-					   Input.Nghost);
+
+  Grid2D_XYplane = Grid_Bump_Channel_Flow(Grid2D_XYplane,
+					  Number_of_Blocks_Idir,
+					  Number_of_Blocks_Jdir,
+					  Smooth_Bump,
+					  Input.NCells_Idir,
+					  Input.NCells_Jdir,
+					  Input.Nghost);
 				
   /* Create the mesh for each block representing
      the complete grid. */
@@ -2364,7 +2903,7 @@ void Grid3D_Hexa_Multi_Block::Create_Grid_Bump_Channel_Flow(Grid3D_Input_Paramet
 					    Input.NCells_Kdir,
 					    Input.Stretching_Type_Kdir,
 					    Input.Stretching_Factor_Kdir,			       
-					    (double(kBlk)/double(Input.NBlk_Kdir))*Input.Box_Length,					    
+					    (double(kBlk)/double(Input.NBlk_Kdir))*Input.Box_Length,
 					    (double(kBlk+1)/double(Input.NBlk_Kdir))*Input.Box_Length);
 
 	/* Assign top and bottom boundary conditions. */
@@ -2388,8 +2927,8 @@ void Grid3D_Hexa_Multi_Block::Create_Grid_Bump_Channel_Flow(Grid3D_Input_Paramet
   
   /* Deallocate 2D grid. */
   Grid2D_XYplane = Deallocate_Multi_Block_Grid(Grid2D_XYplane,
-						    Number_of_Blocks_Idir,
-						    Number_of_Blocks_Jdir);
+					       Number_of_Blocks_Idir,
+					       Number_of_Blocks_Jdir);
 
 }
 
@@ -2692,7 +3231,7 @@ void Grid3D_Hexa_Multi_Block::Create_Grid_ICEMCFD(Grid3D_Input_Parameters &Input
    for (int kBlk = 0; kBlk <= NBlk_Kdir-1 && !found; ++kBlk) {
       for (int jBlk = 0; jBlk <= NBlk_Jdir-1 && !found; ++jBlk) {
          for (int iBlk = 0; iBlk <= NBlk_Idir-1 && !found; ++iBlk) {
-              if (Grid_Blks[iBlk][jBlk][kBlk].Allocated){
+              if (Grid_Blks[iBlk][jBlk][kBlk].Allocated) {
                   Input.NCells_Idir = Grid_Blks[iBlk][jBlk][kBlk].NCi-2*Grid_Blks[iBlk][jBlk][kBlk].Nghost;
                   Input.NCells_Jdir = Grid_Blks[iBlk][jBlk][kBlk].NCj-2*Grid_Blks[iBlk][jBlk][kBlk].Nghost;
                   Input.NCells_Kdir = Grid_Blks[iBlk][jBlk][kBlk].NCk-2*Grid_Blks[iBlk][jBlk][kBlk].Nghost;

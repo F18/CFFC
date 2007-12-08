@@ -551,6 +551,13 @@ class Euler3D_ThermallyPerfect_pState {
    Euler3D_ThermallyPerfect_cState Fz(void) const;
 //@}
 
+/** @name Flux Jacobians */
+/*        -------------- */
+//@{
+   //!< x-direction inviscid flux Jacobian
+   void dFxdU(DenseMatrix &dFxdU);
+//@}
+
 /** @name Eigenvalue(s) and eigenvector(s) (x-direction) */
 /*        ---------------------------------------------- */
 //@{
@@ -629,14 +636,16 @@ class Euler3D_ThermallyPerfect_pState {
                                                       const Euler3D_ThermallyPerfect_pState  &lambda_l,
                                                       const Euler3D_ThermallyPerfect_pState  &lambda_r); 
 
-  //! HLLE wavespeeds in n-direction given 2 primitive states and a direction
-  static Vector2D HLLE_wavespeeds(const Euler3D_ThermallyPerfect_pState &Wl,
-				  const Euler3D_ThermallyPerfect_pState &Wr,
-				  const Vector3D &norm_dir);
+   //! HLLE wavespeeds in n-direction given 2 primitive states and a direction
+   static Vector2D HLLE_wavespeeds(const Euler3D_ThermallyPerfect_pState &Wl,
+                                   const Euler3D_ThermallyPerfect_pState &Wr,
+                                   const Vector3D &norm_dir);
   
-  //! Returns rotated primitive state aligned with norm_dir
-  Euler3D_ThermallyPerfect_pState Rotate(const Vector3D &norm_dir) const;				  
+   //! Returns rotated primitive state aligned with local x-axis in the norm_dir
+   Euler3D_ThermallyPerfect_pState Rotate(const Vector3D &norm_dir) const;				  
   
+   //! Returns un-rotated primitive state aligned with x-axis of global problem
+   Euler3D_ThermallyPerfect_pState RotateBack(const Vector3D &norm_dir) const;
 //@}
 				  
 /** @name Boundary Conditions */
@@ -674,12 +683,6 @@ class Euler3D_ThermallyPerfect_pState {
    //! Returns maximum absolute value of diagonal entry of Jacobian of source vector
    double dSchemistrydU_max_diagonal(void) const;
 //@}  
-
-/** @name Flux Jacobians */
-/*        -------------- */
-   //@{
-   void dFIxdU(DenseMatrix &dFxdU);         //!< x-direction Flux Jacobian
-   //@}
 
 /** @name Operators */
 /*        --------- */
@@ -1108,6 +1111,16 @@ class Euler3D_ThermallyPerfect_cState {
    Euler3D_ThermallyPerfect_pState W(const Euler3D_ThermallyPerfect_cState &U) const;
 //@}
  
+/** @name Numerical Flux Functions */
+/*        ------------------------ */
+//@{
+   //! Returns rotated conserved state aligned with x-axis in the norm_dir
+   Euler3D_ThermallyPerfect_cState Rotate(const Vector3D &norm_dir) const;
+
+   //! Returns un-rotated conserved state aligned with x-axis of the global problem
+   Euler3D_ThermallyPerfect_cState RotateBack(const Vector3D &norm_dir) const;
+//@}
+
 /** @name Operators */
 /*        --------- */
 //@{
@@ -1166,10 +1179,6 @@ class Euler3D_ThermallyPerfect_cState {
    friend istream& operator >> (istream &in_file,  
                                 Euler3D_ThermallyPerfect_cState &U);
 //@}   
-
-  //! Returns rotated conserved state aligned with norm_dir
-  Euler3D_ThermallyPerfect_cState RotateBack(const Vector3D &norm_dir) const;
-
 };
 
 /***************************************************************************************
