@@ -18,6 +18,8 @@
 int AdvectDiffuse2D_Quad_Block_New::residual_variable = 1;
 // Initialize ExactSoln
 AdvectDiffuse2D_ExactSolutions *AdvectDiffuse2D_Quad_Block_New::ExactSoln = NULL;
+// Initialize Inflow
+AdvectDiffuse2D_InflowField *AdvectDiffuse2D_Quad_Block_New::Inflow = NULL;
 // Initialize Flow_Type
 int AdvectDiffuse2D_Quad_Block_New::Flow_Type = FLOWTYPE_INVISCID;
 // Initialize Axisymmetric
@@ -48,6 +50,9 @@ AdvectDiffuse2D_Quad_Block_New::AdvectDiffuse2D_Quad_Block_New(void): AssessAccu
 
   // Get access to the AdvectDiffuse2D_ExactSolutions object
   ExactSoln = &AdvectDiffuse2D_ExactSolutions::getInstance();
+
+  // Get access to the AdvectDiffuse2D_InflowField object
+  Inflow = &AdvectDiffuse2D_InflowField::getInstance();
 }
 
 /******************************************
@@ -470,6 +475,153 @@ void AdvectDiffuse2D_Quad_Block_New::InviscidFluxStateAtBoundaryInterface(const 
   }
 
 }
+
+/***************************************************//**
+ * Assigns boundary condition reference data based on
+ * the boundary type for the specified quadrilateral 
+ * solution block. 
+ * 
+ ********************************************************/
+void AdvectDiffuse2D_Quad_Block_New::Set_Boundary_Reference_States(void){
+
+  int i,j;
+  Vector2D PointOfInterest;
+
+  for (j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
+    // === Set reference data for UoW ===
+    switch(Grid.BCtypeW[j]) { 				   
+
+    case BC_INFLOW :
+      // Use the inflow field to set up the reference states for this boundary type
+      if (Inflow->IsInflowFieldSet()){
+	PointOfInterest = Grid.xfaceW(ICl,j);
+	UoW[j] = Inflow->Solution(PointOfInterest.x,PointOfInterest.y);
+      } else {
+	throw runtime_error("Set_Boundary_Reference_State() ERROR! There is no inflow field set for the Inflow BC.");
+      }
+      break;
+
+    case BC_DIRICHLET :
+      // Reference data represents the solution value
+      UoW[j] = 0.0;
+      break;
+
+    case BC_NEUMANN :
+      // Reference data represents the value of the solution gradient
+      UoW[j] = 0.0;
+      break;
+
+    case BC_FARFIELD :
+      // Reference data represents the solution value
+      UoW[j] = 0.0;
+      break;
+
+    default:
+      // Leave the values unchanged
+    }
+
+    // === Set reference data for UoE ===
+    switch(Grid.BCtypeE[j]) {									   
+
+    case BC_INFLOW :
+      // Use the inflow field to set up the reference states for this boundary type
+      if (Inflow->IsInflowFieldSet()){
+	PointOfInterest = Grid.xfaceE(ICu,j);
+	UoE[j] = Inflow->Solution(PointOfInterest.x,PointOfInterest.y);
+      } else {
+	throw runtime_error("Set_Boundary_Reference_State() ERROR! There is no inflow field set for the Inflow BC.");
+      }
+      break;
+
+    case BC_DIRICHLET :
+      // Reference data represents the solution value
+      UoE[j] = 0.0;
+      break;
+
+    case BC_NEUMANN :
+      // Reference data represents the value of the solution gradient
+      UoE[j] = 0.0;
+      break;
+
+    case BC_FARFIELD :
+      // Reference data represents the solution value
+      UoE[j] = 0.0;
+      break;
+
+    default:
+      // Leave the values unchanged
+    } // endswitch
+  } // endfor(j)
+
+
+  for (i = ICl-Nghost ; i<= ICu+Nghost ; ++i ) {
+    // === Set reference data for UoS ===
+    switch(Grid.BCtypeS[i]) {
+
+    case BC_INFLOW :
+      // Use the inflow field to set up the reference states for this boundary type
+      if (Inflow->IsInflowFieldSet()){
+	PointOfInterest = Grid.xfaceS(i,JCl);
+	UoS[i] = Inflow->Solution(PointOfInterest.x,PointOfInterest.y);
+      } else {
+	throw runtime_error("Set_Boundary_Reference_State() ERROR! There is no inflow field set for the Inflow BC.");
+      }
+      break;
+
+    case BC_DIRICHLET :
+      // Reference data represents the solution value
+      UoS[i] = 0.0;
+      break;
+
+    case BC_NEUMANN :
+      // Reference data represents the value of the solution gradient
+      UoS[i] = 0.0;
+      break;
+
+    case BC_FARFIELD :
+      // Reference data represents the solution value
+      UoS[i] = 0.0;
+      break;
+
+    default:
+      // Leave the values unchanged
+    }
+
+    // === Set reference data for UoN ===
+    switch(Grid.BCtypeN[i]) {
+
+    case BC_INFLOW :
+      // Use the inflow field to set up the reference states for this boundary type
+      if (Inflow->IsInflowFieldSet()){
+	PointOfInterest = Grid.xfaceN(i,JCu);
+	UoN[i] = Inflow->Solution(PointOfInterest.x,PointOfInterest.y);
+      } else {
+	throw runtime_error("Set_Boundary_Reference_State() ERROR! There is no inflow field set for the Inflow BC.");
+      }
+      break;
+
+    case BC_DIRICHLET :
+      // Reference data represents the solution value
+      UoN[i] = 0.0;
+      break;
+
+    case BC_NEUMANN :
+      // Reference data represents the value of the solution gradient
+      UoN[i] = 0.0;
+      break;
+
+    case BC_FARFIELD :
+      // Reference data represents the solution value
+      UoN[i] = 0.0;
+      break;
+
+    default:
+      // Leave the values unchanged
+    } // endswitch
+  } // enfor(i)
+
+}
+
 
 /********************
  * Output operator.
@@ -1585,4 +1737,197 @@ int AdvectDiffuse2D_Quad_Block_New::UnloadReceiveBuffer_Flux_F2C(double *buffer,
     } /* endfor */
   } /* endif */
   return(0);
+}
+
+
+/***********************************************************
+ * Writes the solution values at the nodes of the       
+ * specified quadrilateral solution block to the        
+ * specified output stream suitable for plotting with   
+ * TECPLOT.                                         
+ * This subroutine is used only for debugging!
+ ***********************************************************/
+void AdvectDiffuse2D_Quad_Block_New::Output_Tecplot_Debug_Mode(AdaptiveBlock2D_List &Soln_Block_List,
+							       const AdvectDiffuse2D_Input_Parameters &IP,
+							       const int &Block_Number){
+ 
+  int i, j, i_output_title;
+  char prefix[256], extension[256], extension2[20], output_file_name[256];
+  char *output_file_name_ptr;
+  ofstream output_file;    
+  
+  /* Determine prefix of output data file names. */
+  i = 0;
+  while (1) {
+    if (IP.Output_File_Name[i] == ' ' ||
+	IP.Output_File_Name[i] == '.') break;
+    prefix[i]=IP.Output_File_Name[i];
+    i = i + 1;
+    if (i > strlen(IP.Output_File_Name) ) break;
+  } /* endwhile */
+  prefix[i] = '\0';
+  strcat(prefix, "_cpu");
+  
+  /* Determine output data file name for this processor. */
+
+  sprintf(extension, "%.6d", Soln_Block_List.ThisCPU);
+  strcat(extension, "_block");
+  sprintf(extension2, "%03u", Block_Number);
+  strcat(extension,extension2);
+  strcat(extension, ".dat");
+  strcpy(output_file_name, prefix);
+  strcat(output_file_name, extension);
+  output_file_name_ptr = output_file_name;
+  
+  /* Open the output data file. */
+  
+  output_file.open(output_file_name_ptr, ios::out);
+  if (output_file.fail()) { throw runtime_error("Output_Tecplot() ERROR! Fail to open the output file!"); }
+  
+  /* Write the solution data for the solution block. */
+  AdvectDiffuse2D_State_New U_node;
+  Vector2D Node;
+
+  /* Ensure boundary conditions are updated before
+     evaluating solution at the nodes. */
+    
+  BCs(*this,IP);
+
+  /* Output node solution data. */
+
+  output_file << setprecision(14);
+  output_file << "TITLE = \"" << CFFC_Name() << ": 2D Advection Diffusion Equation Solution, "
+	      << "Time Step/Iteration Level = " << 0
+	      << ", Time = " << 0.0
+	      << "\"" << "\n"
+	      << "VARIABLES = \"x\" \\ \n"
+	      << "\"y\" \\ \n"
+	      << "\"u\" \\ \n"
+	      << "\"Vx\" \n"
+	      << "\"Vy\" \n"
+	      << "\"k\" \n"
+	      << "\"s\" \n";
+  if (ExactSoln->IsExactSolutionSet()){
+    output_file << "\"ExactSoln\" \n";
+  }
+  
+  output_file << "ZONE T =  \"Block Number = " << Block_Number
+	      << "\" \\ \n"
+	      << "I = " << Grid.INu - Grid.INl + 1 << " \\ \n"
+	      << "J = " << Grid.JNu - Grid.JNl + 1 << " \\ \n"
+	      << "F = POINT \n";
+  
+  for ( j  = Grid.JNl ; j <= Grid.JNu ; ++j ) {
+    for ( i = Grid.INl ; i <= Grid.INu ; ++i ) {
+      U_node = Un(i, j);
+      Node = Grid.Node[i][j].X;
+      output_file << " " << Node << U_node 
+	       << " " << U[i][j].V(Node.x,Node.y)
+	       << " " << U[i][j].k(Node.x,Node.y,U_node[1]) 
+	       << " " << source(Node.x,Node.y,U_node);
+      if (ExactSoln->IsExactSolutionSet()){
+	output_file << " " << ExactSoln->Solution(Node.x,Node.y);
+      }
+      output_file << "\n";
+      output_file.unsetf(ios::scientific);
+    } /* endfor */
+  } /* endfor */
+  output_file << setprecision(6);
+
+  /* Close the output data file. */
+  
+  output_file.close();
+  
+  /* Writing of output data files complete. */
+}
+
+
+/***********************************************************
+ * Writes the cell centred solution valuess of the 
+ * specified quadrilateral solution block to the        
+ * specified output stream suitable for plotting with   
+ * TECPLOT.                                         
+ * This subroutine is used only for debugging!
+ ***********************************************************/
+void AdvectDiffuse2D_Quad_Block_New::Output_Cells_Tecplot_Debug_Mode(AdaptiveBlock2D_List &Soln_Block_List,
+								     const AdvectDiffuse2D_Input_Parameters &IP,
+								     const int &Block_Number){
+
+  int i, j, i_output_title;
+  char prefix[256], extension[256], extension2[20], output_file_name[256];
+  char *output_file_name_ptr;
+  ofstream output_file;    
+  
+  /* Determine prefix of output data file names. */
+  i = 0;
+  while (1) {
+    if (IP.Output_File_Name[i] == ' ' ||
+	IP.Output_File_Name[i] == '.') break;
+    prefix[i]=IP.Output_File_Name[i];
+    i = i + 1;
+    if (i > strlen(IP.Output_File_Name) ) break;
+  } /* endwhile */
+  prefix[i] = '\0';
+  strcat(prefix, "_cells_cpu");
+  
+  /* Determine output data file name for this processor. */
+
+  sprintf(extension, "%.6d", Soln_Block_List.ThisCPU);
+  strcat(extension, "_block");
+  sprintf(extension2, "%03u", Block_Number);
+  strcat(extension,extension2);
+  strcat(extension, ".dat");
+  strcpy(output_file_name, prefix);
+  strcat(output_file_name, extension);
+  output_file_name_ptr = output_file_name;
+  
+  /* Open the output data file. */
+  
+  output_file.open(output_file_name_ptr, ios::out);
+  if (output_file.fail()) { throw runtime_error("Output_Tecplot() ERROR! Fail to open the output file!"); }
+
+  Vector2D Node;
+
+  output_file << setprecision(14);
+  output_file << "TITLE = \"" << CFFC_Name() << ": 2D Advection Diffusion Equation Solution, "
+	      << "Time Step/Iteration Level = " << 0
+	      << ", Time = " << 0.0
+	      << "\"" << "\n"
+	      << "VARIABLES = \"x\" \\ \n"
+	      << "\"y\" \\ \n"
+	      << "\"u\" \\ \n"
+	      << "\"Vx\" \\ \n"
+	      << "\"Vy\" \\ \n"
+	      << "\"k\" \n"
+	      << "\"s\" \n";
+  if (ExactSoln->IsExactSolutionSet()){
+    output_file << "\"ExactSoln\" \n";
+  }
+  output_file << "ZONE T =  \"Block Number = " << Block_Number
+	      << "\" \\ \n"
+	      << "I = " << Grid.ICu - Grid.ICl + 2*Nghost + 1 << " \\ \n"
+	      << "J = " << Grid.JCu - Grid.JCl + 2*Nghost + 1 << " \\ \n"
+	      << "F = POINT \n";
+
+  for ( j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
+    for ( i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
+      Node = Grid.Cell[i][j].Xc;
+      output_file << " " << Grid.Cell[i][j].Xc << U[i][j]
+		  << " " << U[i][j].V(Node.x,Node.y)
+		  << " " << U[i][j].k(Node.x,Node.y,U[i][j][1])
+		  << " " << source(Node.x,Node.y,U[i][j][1]);
+      if (ExactSoln->IsExactSolutionSet()){
+	output_file << " " << ExactSoln->Solution(Node.x,Node.y);
+      }
+      output_file << "\n";
+    } /* endfor */
+  } /* endfor */
+  output_file << setprecision(6);
+  
+
+  /* Close the output data file. */
+  
+  output_file.close();
+  
+  /* Writing of output data files complete. */
 }

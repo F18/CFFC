@@ -524,30 +524,28 @@ int Prolong_Solution_Block(AdvectDiffuse2D_Quad_Block_New &SolnBlk_Fine,
     } /* endfor */
 
     for ( j  = j_min-SolnBlk_Original.Nghost/2; j <= j_max+SolnBlk_Original.Nghost/2 ; ++j ) {
-      SolnBlk_Fine.UoW[2*(j-j_min)+SolnBlk_Fine.JCl  ]
-	= SolnBlk_Original.UoW[j];
-      SolnBlk_Fine.UoW[2*(j-j_min)+SolnBlk_Fine.JCl+1]
-	= SolnBlk_Original.UoW[j];
+      
+      SolnBlk_Fine.UoW[2*(j-j_min)+SolnBlk_Fine.JCl  ] 	= SolnBlk_Original.UoW[j];
+      SolnBlk_Fine.UoW[2*(j-j_min)+SolnBlk_Fine.JCl+1]	= SolnBlk_Original.UoW[j];
 
-      SolnBlk_Fine.UoE[2*(j-j_min)+SolnBlk_Fine.JCl  ]
-	= SolnBlk_Original.UoE[j];
-      SolnBlk_Fine.UoE[2*(j-j_min)+SolnBlk_Fine.JCl+1]
-	= SolnBlk_Original.UoE[j];
+      SolnBlk_Fine.UoE[2*(j-j_min)+SolnBlk_Fine.JCl  ]	= SolnBlk_Original.UoE[j];
+      SolnBlk_Fine.UoE[2*(j-j_min)+SolnBlk_Fine.JCl+1]	= SolnBlk_Original.UoE[j];
     } /* endfor */
 
     for ( i = i_min-SolnBlk_Original.Nghost/2 ; i <= i_max+SolnBlk_Original.Nghost/2 ; ++i ) {
-      SolnBlk_Fine.UoS[2*(i-i_min)+SolnBlk_Fine.ICl  ]
-	= SolnBlk_Original.UoS[i];
-      SolnBlk_Fine.UoS[2*(i-i_min)+SolnBlk_Fine.ICl+1]
-	= SolnBlk_Original.UoS[i];
+      SolnBlk_Fine.UoS[2*(i-i_min)+SolnBlk_Fine.ICl  ]	= SolnBlk_Original.UoS[i];
+      SolnBlk_Fine.UoS[2*(i-i_min)+SolnBlk_Fine.ICl+1]	= SolnBlk_Original.UoS[i];
 
-      SolnBlk_Fine.UoN[2*(i-i_min)+SolnBlk_Fine.ICl  ]
-	= SolnBlk_Original.UoN[i];
-      SolnBlk_Fine.UoN[2*(i-i_min)+SolnBlk_Fine.ICl+1]
-	= SolnBlk_Original.UoN[i];
+      SolnBlk_Fine.UoN[2*(i-i_min)+SolnBlk_Fine.ICl  ]	= SolnBlk_Original.UoN[i];
+      SolnBlk_Fine.UoN[2*(i-i_min)+SolnBlk_Fine.ICl+1]	= SolnBlk_Original.UoN[i];
     } /* endfor */
+
+    // Enforce analytic values for the boundary reference states if defined
+    SolnBlk_Fine.Set_Boundary_Reference_States();
     
   } /* endif */
+  
+  
   
     // Prolongation of solution block was successful.
   return 0;
@@ -788,6 +786,9 @@ int Restrict_Solution_Block(AdvectDiffuse2D_Quad_Block_New &SolnBlk_Coarse,
 	SolnBlk_Coarse.UoN[i_coarse+1] = SolnBlk_Original_NE.UoN[i];
       } /* endif */
     } /* endfor */
+
+    // Enforce analytic values for the boundary reference states if defined
+    SolnBlk_Coarse.Set_Boundary_Reference_States();
 
   } /* endif */
 
@@ -1265,7 +1266,6 @@ void Set_Boundary_Reference_State(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
       SolnBlk.UoN[i] = SolnBlk.U[i][SolnBlk.JCu];
     } // endswitch
   } // enfor(i)
-
 
 }
 
@@ -2634,7 +2634,8 @@ void Calculate_Refinement_Criteria(double *refinement_criteria,
 	grad_u_x = SolnBlk.dUdx[i][j][1];
 	grad_u_y = SolnBlk.dUdy[i][j][1];
 	grad_u_abs = sqrt(sqr(grad_u_x) + sqr(grad_u_y));
-	grad_u_criteria = sqrt(SolnBlk.Grid.Cell[i][j].A)*grad_u_abs/SolnBlk.U[i][j].u;
+	// Calculate the grad_u_criteria as DeltaU/(1+fabs(U))
+	grad_u_criteria = sqrt(SolnBlk.Grid.Cell[i][j].A)*grad_u_abs/(1.0 + fabs(SolnBlk.U[i][j].u));
 	grad_u_criteria_max = max(grad_u_criteria_max, grad_u_criteria);
       } /* endif */
 
@@ -2955,7 +2956,7 @@ void Apply_Boundary_Flux_Corrections_Multistage_Explicit(AdvectDiffuse2D_Quad_Bl
 
   int i, j, k_residual;
   double omega;
- 
+
   /* Evaluate the time step fraction and residual storage location for the stage. */
     
   switch(Time_Integration_Type) {
@@ -2994,9 +2995,13 @@ void Apply_Boundary_Flux_Corrections_Multistage_Explicit(AdvectDiffuse2D_Quad_Bl
 
   if (Number_Neighbours_North_Boundary == 2) {
     for ( i = SolnBlk.ICl ; i <= SolnBlk.ICu ; ++i ) {
-      SolnBlk.dUdt[i][SolnBlk.JCu][k_residual] -= 
-	(CFL_Number*SolnBlk.dt[i][SolnBlk.JCu])*SolnBlk.FluxN[i]/
-	SolnBlk.Grid.Cell[i][SolnBlk.JCu].A;
+      //       if ( (SolnBlk.Grid.BCtypeN[i] != BC_INFLOW) && 
+      // 	   (SolnBlk.Grid.BCtypeN[i] != BC_DIRICHLET) &&
+      // 	   (SolnBlk.Grid.BCtypeN[i] != BC_OUTFLOW)){
+      
+	SolnBlk.dUdt[i][SolnBlk.JCu][k_residual] -= ( (CFL_Number*SolnBlk.dt[i][SolnBlk.JCu])*SolnBlk.FluxN[i]/
+						      SolnBlk.Grid.Cell[i][SolnBlk.JCu].A );
+	//      }	/* endif */
     } /* endfor */
   } /* endif */
 
@@ -3004,9 +3009,13 @@ void Apply_Boundary_Flux_Corrections_Multistage_Explicit(AdvectDiffuse2D_Quad_Bl
 
   if (Number_Neighbours_South_Boundary == 2) {
     for ( i = SolnBlk.ICl ; i <= SolnBlk.ICu ; ++i ) {
-      SolnBlk.dUdt[i][SolnBlk.JCl][k_residual] -= 
-	(CFL_Number*SolnBlk.dt[i][SolnBlk.JCl])*SolnBlk.FluxS[i]/
-	SolnBlk.Grid.Cell[i][SolnBlk.JCl].A;
+      //       if ( (SolnBlk.Grid.BCtypeS[i] != BC_INFLOW) && 
+      // 	   (SolnBlk.Grid.BCtypeS[i] != BC_DIRICHLET) &&
+      // 	   (SolnBlk.Grid.BCtypeS[i] != BC_OUTFLOW)){
+      
+	SolnBlk.dUdt[i][SolnBlk.JCl][k_residual] -= ( (CFL_Number*SolnBlk.dt[i][SolnBlk.JCl])*SolnBlk.FluxS[i]/
+						      SolnBlk.Grid.Cell[i][SolnBlk.JCl].A );
+	//      }	/* endif */
     } /* endfor */
   } /* endif */
 
@@ -3014,9 +3023,13 @@ void Apply_Boundary_Flux_Corrections_Multistage_Explicit(AdvectDiffuse2D_Quad_Bl
 
   if (Number_Neighbours_East_Boundary == 2) {
     for ( j= SolnBlk.JCl ; j <= SolnBlk.JCu ; ++j ) {
-      SolnBlk.dUdt[SolnBlk.ICu][j][k_residual] -= 
-	(CFL_Number*SolnBlk.dt[SolnBlk.ICu][j])*SolnBlk.FluxE[j]/
-	SolnBlk.Grid.Cell[SolnBlk.ICu][j].A;
+      //       if ( (SolnBlk.Grid.BCtypeE[j] != BC_INFLOW) &&
+      // 	   (SolnBlk.Grid.BCtypeE[j] != BC_DIRICHLET) &&
+      // 	   (SolnBlk.Grid.BCtypeE[j] != BC_OUTFLOW)){
+      
+	SolnBlk.dUdt[SolnBlk.ICu][j][k_residual] -= ( (CFL_Number*SolnBlk.dt[SolnBlk.ICu][j])*SolnBlk.FluxE[j]/
+						      SolnBlk.Grid.Cell[SolnBlk.ICu][j].A );
+	//      }	/* endif */
     } /* endfor */
   } /* endif */
 
@@ -3024,9 +3037,13 @@ void Apply_Boundary_Flux_Corrections_Multistage_Explicit(AdvectDiffuse2D_Quad_Bl
 
   if (Number_Neighbours_West_Boundary == 2) {
     for ( j= SolnBlk.JCl ; j <= SolnBlk.JCu ; ++j ) {
-      SolnBlk.dUdt[SolnBlk.ICl][j][k_residual] -= 
-	(CFL_Number*SolnBlk.dt[SolnBlk.ICl][j])*SolnBlk.FluxW[j]/
-	SolnBlk.Grid.Cell[SolnBlk.ICl][j].A;
+      //       if ( (SolnBlk.Grid.BCtypeW[j] != BC_INFLOW) &&
+      // 	   (SolnBlk.Grid.BCtypeW[j] != BC_DIRICHLET) &&
+      // 	   (SolnBlk.Grid.BCtypeW[j] != BC_OUTFLOW)){
+      
+	SolnBlk.dUdt[SolnBlk.ICl][j][k_residual] -= ( (CFL_Number*SolnBlk.dt[SolnBlk.ICl][j])*SolnBlk.FluxW[j]/
+						      SolnBlk.Grid.Cell[SolnBlk.ICl][j].A );
+	//      }	/* endif */
     } /* endfor */
   } /* endif */
 

@@ -192,6 +192,11 @@ public:
   Accuracy_Assessment_Type AssessAccuracy;   //!< Variable to provide access to accuracy assessment subroutines
   //@}
 	      
+  //! @name Analytically defined boundary conditions:
+  //@{
+  static AdvectDiffuse2D_InflowField *Inflow;    /*!< Pointer to the inflow field */
+  //@}
+
   //! @name Creation, copy, and assignment constructors.
   //@{
   //! Default constructor.
@@ -277,6 +282,9 @@ public:
 					    AdvectDiffuse2D_State_New &Ul,
 					    AdvectDiffuse2D_State_New &Ur);
   //@}
+
+  //! Set boundary reference states
+  void Set_Boundary_Reference_States(void);
 
   //! @name Input-output operators.
   //@{
@@ -376,6 +384,19 @@ public:
 				   const int j_min, 
 				   const int j_max,
 				   const int j_inc);
+  //@}
+
+
+  //! @name Member functions used for plotting.
+  //@{
+  void Output_Tecplot_Debug_Mode(AdaptiveBlock2D_List &Soln_Block_List,
+				 const AdvectDiffuse2D_Input_Parameters &P,
+				 const int &Block_Number);
+
+  void Output_Cells_Tecplot_Debug_Mode(AdaptiveBlock2D_List &Soln_Block_List,
+				       const AdvectDiffuse2D_Input_Parameters &IP,
+				       const int &Block_Number);
+
   //@}
 
 private:
