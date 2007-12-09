@@ -26,9 +26,9 @@
 #define _MV_BLAS1_COMPLEX_H_
 
 
-MV_Vector_COMPLEX& operator*=(MV_Vector_COMPLEX &x, const COMPLEX &a);
-MV_Vector_COMPLEX operator*(const COMPLEX &a, const MV_Vector_COMPLEX &x);
-MV_Vector_COMPLEX operator*(const MV_Vector_COMPLEX &x, const COMPLEX &a);
+MV_Vector_COMPLEX& operator*=(MV_Vector_COMPLEX &x, const MVPP_COMPLEX &a);
+MV_Vector_COMPLEX operator*(const MVPP_COMPLEX &a, const MV_Vector_COMPLEX &x);
+MV_Vector_COMPLEX operator*(const MV_Vector_COMPLEX &x, const MVPP_COMPLEX &a);
 MV_Vector_COMPLEX operator+(const MV_Vector_COMPLEX &x, 
     const MV_Vector_COMPLEX &y);
 MV_Vector_COMPLEX operator-(const MV_Vector_COMPLEX &x, 
@@ -36,8 +36,8 @@ MV_Vector_COMPLEX operator-(const MV_Vector_COMPLEX &x,
 MV_Vector_COMPLEX& operator+=(MV_Vector_COMPLEX &x, const MV_Vector_COMPLEX &y);
 MV_Vector_COMPLEX& operator-=(MV_Vector_COMPLEX &x, const MV_Vector_COMPLEX &y);
 
-COMPLEX dot(const MV_Vector_COMPLEX &x, const MV_Vector_COMPLEX &y);
-COMPLEX norm(const MV_Vector_COMPLEX &x);
+MVPP_COMPLEX dot(const MV_Vector_COMPLEX &x, const MV_Vector_COMPLEX &y);
+MVPP_COMPLEX norm(const MV_Vector_COMPLEX &x);
 
 #endif
 

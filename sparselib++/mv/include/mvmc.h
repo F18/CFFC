@@ -61,20 +61,20 @@ class MV_ColMat_COMPLEX
             MV_ColMat_COMPLEX(unsigned int, unsigned int); 
 
     // some compilers have difficulty with inlined 'for' statements.
-    MV_ColMat_COMPLEX(unsigned int, unsigned int, const COMPLEX&);   
+    MV_ColMat_COMPLEX(unsigned int, unsigned int, const MVPP_COMPLEX&);   
 
     // usual copy by value
     // (can't use default parameter lda=m, because m is not a constant...)
     //
-    MV_ColMat_COMPLEX(COMPLEX*, unsigned int m, unsigned int n);
-    MV_ColMat_COMPLEX(COMPLEX*, unsigned int m, unsigned int n, unsigned int lda);
+    MV_ColMat_COMPLEX(MVPP_COMPLEX*, unsigned int m, unsigned int n);
+    MV_ColMat_COMPLEX(MVPP_COMPLEX*, unsigned int m, unsigned int n, unsigned int lda);
 
     // the "reference" versions
     //
     //
     MV_ColMat_COMPLEX(MV_ColMat_COMPLEX &A, MV_Matrix_::ref_type i);
-    MV_ColMat_COMPLEX(COMPLEX*, unsigned int m, unsigned int n, MV_Matrix_::ref_type i);
-    MV_ColMat_COMPLEX(COMPLEX*, unsigned int m, unsigned int n, unsigned int lda,
+    MV_ColMat_COMPLEX(MVPP_COMPLEX*, unsigned int m, unsigned int n, MV_Matrix_::ref_type i);
+    MV_ColMat_COMPLEX(MVPP_COMPLEX*, unsigned int m, unsigned int n, unsigned int lda,
                 MV_Matrix_::ref_type i);
 
     MV_ColMat_COMPLEX(const MV_ColMat_COMPLEX&); 
@@ -84,8 +84,8 @@ class MV_ColMat_COMPLEX
         /*  Indices and access operations */                           
         /*::::::::::::::::::::::::::::::::*/                           
                                                                        
-    inline COMPLEX&       operator()(unsigned int, unsigned int); 
-    inline const COMPLEX& operator()(unsigned int, unsigned int) const; 
+    inline MVPP_COMPLEX&       operator()(unsigned int, unsigned int); 
+    inline const MVPP_COMPLEX& operator()(unsigned int, unsigned int) const; 
     MV_ColMat_COMPLEX operator()(const MV_VecIndex &I, const MV_VecIndex &J) ;
     const MV_ColMat_COMPLEX operator()(const MV_VecIndex &I, const MV_VecIndex &J) const;
     unsigned int            dim(int i) const; 
@@ -99,14 +99,14 @@ class MV_ColMat_COMPLEX
         /*::::::::::::::*/                                             
                                                                        
     MV_ColMat_COMPLEX & operator=(const MV_ColMat_COMPLEX&);
-    MV_ColMat_COMPLEX & operator=(const COMPLEX&);
+    MV_ColMat_COMPLEX & operator=(const MVPP_COMPLEX&);
 
 
     friend ostream& operator<<(ostream &s, const MV_ColMat_COMPLEX &A);
 
 };                                                                     
 
-inline COMPLEX& MV_ColMat_COMPLEX::operator()(unsigned int i, unsigned int j)
+inline MVPP_COMPLEX& MV_ColMat_COMPLEX::operator()(unsigned int i, unsigned int j)
 {
 #ifdef MV_MATRIX_BOUNDS_CHECK
     assert(0<=i && i<dim(0));
@@ -116,7 +116,7 @@ inline COMPLEX& MV_ColMat_COMPLEX::operator()(unsigned int i, unsigned int j)
                                 // instead...
 }
 
-inline const COMPLEX& MV_ColMat_COMPLEX::operator()
+inline const MVPP_COMPLEX& MV_ColMat_COMPLEX::operator()
                     (unsigned int i, unsigned int j) const
 {
 #ifdef MV_MATRIX_BOUNDS_CHECK
@@ -126,7 +126,7 @@ inline const COMPLEX& MV_ColMat_COMPLEX::operator()
     return v_(j*lda_ + i);
 }
 
-inline MV_ColMat_COMPLEX::MV_ColMat_COMPLEX(COMPLEX* d, unsigned int m, 
+inline MV_ColMat_COMPLEX::MV_ColMat_COMPLEX(MVPP_COMPLEX* d, unsigned int m, 
         unsigned int n, MV_Matrix_::ref_type i ):
             v_(d,m*n, MV_Vector_::ref), dim0_(m), dim1_(n), lda_(m), ref_(i) {}
 
@@ -135,7 +135,7 @@ inline MV_ColMat_COMPLEX::MV_ColMat_COMPLEX( MV_ColMat_COMPLEX &A,
                 v_(&A(0,0), A.dim(0)*A.dim(1), MV_Vector_::ref), 
                 dim0_(A.dim(0)), dim1_(A.dim(1)), lda_(A.lda()), ref_(i) {}
 
-inline MV_ColMat_COMPLEX::MV_ColMat_COMPLEX(COMPLEX* d, unsigned int m, unsigned int n,
+inline MV_ColMat_COMPLEX::MV_ColMat_COMPLEX(MVPP_COMPLEX* d, unsigned int m, unsigned int n,
             unsigned int lda, MV_Matrix_::ref_type i) :
             v_(d, lda*n, MV_Vector_::ref), dim0_(m), dim1_(n), lda_(lda),
             ref_(i) {}

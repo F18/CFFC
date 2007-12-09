@@ -84,47 +84,48 @@ class Euler3D_ThermallyPerfect_pState;
  *        combusting mixtures.
  *
  * Member functions
- *  - rho          -- Return density (kg/m^3)
- *  - v            -- Return flow velocity (m/s)
- *  - p            -- Return pressure (Pa, N/m^2)
- *  - spec         -- Return array of species mass fraction data
- *  - Mass         -- Return mixture molecular mass (kg/mol)
- *  - Rtot         -- Return mixture gas constant (J/(kg*K))
- *  - Cp           -- Return specific heat at constant pressure for mixture (J/(kg*K))
- *  - Cv           -- Return specific heat at constant volume for mixture (J/(kg*K))
- *  - g            -- Return specific heat ratio for mixture
- *  - e            -- Return mixture absolute internal energy (J/kg)
- *  - es           -- Return mixture sensible internal energy (J/kg)
- *  - h            -- Return mixture absolute specific enthalpy (J/kg)
- *  - hs           -- Return mixture sensible specific enthalpy (J/kg)
- *  - E            -- Return total mixture energy (J/kg)
- *  - H            -- Return total mixture enthalpy (J/kg)
- *  - rhov         -- Return momentum of mixture (kg/(m^2*s))
- *  - T            -- Return mixture temperature (K)
- *  - a            -- Return sound speed of mixture (m/s)
- *  - M            -- Return Mach number for mixture
- *  - Gibbs        -- Return species Gibbs free energy
- *  - U            -- Return conserved solution state
- *  - F, Fx        -- Return x-direction inviscid solution flux
- *  - Fy           -- Return y-direction inviscid solution flux
- *  - Fz           -- Return z-direction inviscid solution flux
- *  - Schem        -- Return source terms associated with finite-rate chemistry
- *  - lambda       -- Return x-direction eigenvalue
- *  - rc           -- Return x-direction conserved right eigenvector
- *  - lp           -- Return x-direction primitive left eigenvector
- *  - lambda_x     -- Return x-direction eigenvalue
- *  - rc_x         -- Return x-direction conserved right eigenvector
- *  - lp_x         -- Return x-direction primitive left eigenvector
- *  - RoeAverage   -- Return Roe-average solution state vector
- *  - FluxHLLE_x   -- Return HLLE numerical solution flux in x-direction
- *  - FluxHLLE_n   -- Return HLLE numerical solution flux in n-direction
- *  - FluxRoe_x    -- Return Roe numerical solution flux in x-direction
- *  - FluxRoe_n    -- Return Roe numerical solution flux in n-direction
- *  - lambda_minus -- Return negative eigenvalues, applying Harten entropy fix
- *  - lambda_plus  -- Return positive eigenvalues, applying Harten entropy fix
- *  - Reflect      -- Return reflected solution state after application of reflection BC
- *  - MovingWall   -- Return wall solution state after application of moving wall BC
- *  - NoSlip       -- Return wall solution state after application of no-slip BC
+ *  - rho             -- Return density (kg/m^3)
+ *  - v               -- Return flow velocity (m/s)
+ *  - p               -- Return pressure (Pa, N/m^2)
+ *  - spec            -- Return array of species mass fraction data
+ *  - Mass            -- Return mixture molecular mass (kg/mol)
+ *  - Rtot            -- Return mixture gas constant (J/(kg*K))
+ *  - HeatofFormation -- Return heat of formation for the mixture
+ *  - Cp              -- Return specific heat at constant pressure for mixture (J/(kg*K))
+ *  - Cv              -- Return specific heat at constant volume for mixture (J/(kg*K))
+ *  - g               -- Return specific heat ratio for mixture
+ *  - e               -- Return mixture absolute internal energy (J/kg)
+ *  - es              -- Return mixture sensible internal energy (J/kg)
+ *  - h               -- Return mixture absolute specific enthalpy (J/kg)
+ *  - hs              -- Return mixture sensible specific enthalpy (J/kg)
+ *  - E               -- Return total mixture energy (J/kg)
+ *  - H               -- Return total mixture enthalpy (J/kg)
+ *  - rhov            -- Return momentum of mixture (kg/(m^2*s))
+ *  - T               -- Return mixture temperature (K)
+ *  - a               -- Return sound speed of mixture (m/s)
+ *  - M               -- Return Mach number for mixture
+ *  - Gibbs           -- Return species Gibbs free energy
+ *  - U               -- Return conserved solution state
+ *  - F, Fx           -- Return x-direction inviscid solution flux
+ *  - Fy              -- Return y-direction inviscid solution flux
+ *  - Fz              -- Return z-direction inviscid solution flux
+ *  - Schem           -- Return source terms associated with finite-rate chemistry
+ *  - lambda          -- Return x-direction eigenvalue
+ *  - rc              -- Return x-direction conserved right eigenvector
+ *  - lp              -- Return x-direction primitive left eigenvector
+ *  - lambda_x        -- Return x-direction eigenvalue
+ *  - rc_x            -- Return x-direction conserved right eigenvector
+ *  - lp_x            -- Return x-direction primitive left eigenvector
+ *  - RoeAverage      -- Return Roe-average solution state vector
+ *  - FluxHLLE_x      -- Return HLLE numerical solution flux in x-direction
+ *  - FluxHLLE_n      -- Return HLLE numerical solution flux in n-direction
+ *  - FluxRoe_x       -- Return Roe numerical solution flux in x-direction
+ *  - FluxRoe_n       -- Return Roe numerical solution flux in n-direction
+ *  - lambda_minus    -- Return negative eigenvalues, applying Harten entropy fix
+ *  - lambda_plus     -- Return positive eigenvalues, applying Harten entropy fix
+ *  - Reflect         -- Return reflected solution state after application of reflection BC
+ *  - MovingWall      -- Return wall solution state after application of moving wall BC
+ *  - NoSlip          -- Return wall solution state after application of no-slip BC
  *
  * Member operators \n
  *      W -- a primitive solution state \n
@@ -154,6 +155,7 @@ class Euler3D_ThermallyPerfect_pState;
 class Euler3D_ThermallyPerfect_pState {
   protected:
    static double             *_temp_values;  //!< Temporary static values for species calculations
+   static double              *_diff_coeff;  //!< Temporary static values for species diffusion calculations
 
   public:
    double                              rho;  //!< Mixture density (kg/m^3)
@@ -327,6 +329,11 @@ class Euler3D_ThermallyPerfect_pState {
          _temp_values = NULL;
       } /* endif */
       _temp_values = new double[ns];
+      if (_diff_coeff != NULL) {
+         delete[] _diff_coeff;
+         _diff_coeff = NULL;
+      } /* endif */
+      _diff_coeff = new double[ns];
       if (specdata != NULL) {
          delete[] specdata;
          specdata = NULL;
@@ -341,12 +348,17 @@ class Euler3D_ThermallyPerfect_pState {
 
    //! Allocate static memory for species data
    void Allocate_static(const int &n) {
+      ns = n;
       if (_temp_values != NULL) {
          delete[] _temp_values;
          _temp_values = NULL;
       } /* endif */
-      ns = n;
       _temp_values = new double[ns];
+      if (_diff_coeff != NULL) {
+         delete[] _diff_coeff;
+         _diff_coeff = NULL;
+      } /* endif */
+      _diff_coeff = new double[ns];
       if (specdata != NULL) {
          delete[] specdata;
          specdata = NULL;
@@ -363,6 +375,8 @@ class Euler3D_ThermallyPerfect_pState {
    void Deallocate_static(void) {
       if (_temp_values != NULL) delete[] _temp_values;
       _temp_values = NULL;
+      if (_diff_coeff != NULL) delete[] _diff_coeff;
+      _diff_coeff = NULL;
       if (specdata != NULL) delete[] specdata;
       specdata = NULL;
       if (Schmidt != NULL) delete[] Schmidt; 
@@ -408,13 +422,6 @@ class Euler3D_ThermallyPerfect_pState {
      } /* endfor */
    }
   
-   //! Zeros species specific solution data
-   void zero_non_sol(void){
-     for (int i = 0; i < ns; i++) {
-           spec[i].diffusion_coef=ZERO;
-     } /* endfor */
-   }  
-
    //! Set the lower bound for valid temperature ranges for thermodynamic data 
    void Temp_low_range(void);     
    //! Set the upper bound for valid temperature ranges for thermodynamic data 
@@ -438,6 +445,11 @@ class Euler3D_ThermallyPerfect_pState {
    //! Mixture gas constant
    double Rtot(void) const;   
 
+   //! Mixture heat of formation
+   double HeatofFormation(void);        
+   //! Mixture heat of formation
+   double HeatofFormation(void) const;
+
    //! Mixture specific heat at constant pressure
    double Cp(void) const;    
    //! Mixture specific heat at constant pressure
@@ -454,24 +466,24 @@ class Euler3D_ThermallyPerfect_pState {
    //! Mixture absolute (sensible+chemical) internal energy
    double e(void) const;     
 
-   //! Reference internal energy (sensible + heat of formation - offset)
-   double eref(void) const;
-
    //! Mixture sensible internal energy  
    double es(void) const; 
+
+   //! Reference internal energy (sensible + heat of formation - offset)
+   double eref(void) const;
 
    //! Mixture absolute specific enthalpy   
    double h(void) const;      
    //! Mixture absolute specific enthalpy
    double h(const double &T) const;
 
-   //! Reference internal enthalpy (sensible + heat of formation - offset)
-   double href(void) const;
-
    //! Mixture sensible specific enthalpy
    double hs(void) const;
    //! Mixture sensible specific enthalpy
    double hs(const double &T) const;
+
+   //! Reference internal enthalpy (sensible + heat of formation - offset)
+   double href(void) const;
 
    //! Total energy of mixture
    double E(void) const;      
@@ -784,7 +796,8 @@ class Euler3D_ThermallyPerfect_pState {
  */
 class Euler3D_ThermallyPerfect_cState {
   protected:
-   static double             *_temp_values;  //!< Temporary static values for species calculations
+   static double                *_temp_values;  //!< Temporary static values for species calculations
+   static double                 *_diff_coeff;  //!< Temporary static values for species diffusion calculations
 
   public:
    double                                 rho;  //!< Mixture density (kg/m^3) 
@@ -948,6 +961,11 @@ class Euler3D_ThermallyPerfect_cState {
          _temp_values = NULL;
       } /* endif */
       _temp_values = new double[ns];
+      if (_diff_coeff != NULL) {
+         delete[] _diff_coeff;
+         _diff_coeff = NULL;
+      } /* endif */
+      _diff_coeff = new double[ns];
       if (specdata != NULL) {
          delete[] specdata;
          specdata = NULL;
@@ -962,12 +980,17 @@ class Euler3D_ThermallyPerfect_cState {
 
    //! Allocate static memory for species data
    void Allocate_static(const int &n) {
+      ns = n;
       if (_temp_values != NULL) {
          delete[] _temp_values;
          _temp_values = NULL;
       } /* endif */
-      ns = n;
       _temp_values = new double[ns];
+      if (_diff_coeff != NULL) {
+         delete[] _diff_coeff;
+         _diff_coeff = NULL;
+      } /* endif */
+      _diff_coeff = new double[ns];
       if (specdata != NULL) {
          delete[] specdata;
          specdata = NULL;
@@ -984,6 +1007,8 @@ class Euler3D_ThermallyPerfect_cState {
    void Deallocate_static(void) {
       if (_temp_values != NULL) delete[] _temp_values;
       _temp_values = NULL;
+      if (_diff_coeff != NULL) delete[] _diff_coeff;
+      _diff_coeff = NULL;
       if (specdata != NULL) delete[] specdata;
       specdata = NULL;
       if (Schmidt != NULL)  delete[] Schmidt;
@@ -1026,13 +1051,6 @@ class Euler3D_ThermallyPerfect_cState {
       } /* endfor */
    }  
 
-   //! Zeros species specific solution data
-   void zero_non_sol(void){
-     for (int i=0; i < ns; i++) {
-       rhospec[i].diffusion_coef=ZERO;
-     } /* endfor */
-   }
-
    //! Set the lower bound for valid temperature ranges for thermodynamic data
    void Temp_low_range(void);     
    //! Set the upper bound for valid temperature ranges for thermodynamic data 
@@ -1050,6 +1068,9 @@ class Euler3D_ThermallyPerfect_cState {
 //@{
    //! Mixture gas constant
    double Rtot(void) const; 
+
+   //! Mixture heat of formation
+   double HeatofFormation(void) const;
 
    //! Mixture specific heat at constant pressure
    double Cp(void) const;  
@@ -1070,13 +1091,14 @@ class Euler3D_ThermallyPerfect_cState {
    double es(void) const;           
 
    //! Mixture absolute specific enthalpy  
+   double h(void) const; 
+   //! Mixture absolute specific enthalpy  
    double h(const double &T) const;  
 
    //! Mixture sensible specific enthalpy
+   double hs(void) const;
+   //! Mixture sensible specific enthalpy
    double hs(const double &T) const; 
-
-   //! Heat of formation for mixture
-   double heatofform(void) const;      
 
    //! Derivative of specific enthalpy wrt temperature, dh/dT
    double hprime(const double &T) const; 

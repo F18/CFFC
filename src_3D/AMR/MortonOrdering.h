@@ -277,21 +277,33 @@ int Morton_ReOrdering_of_Solution_Blocks(Octree_DataStructure                   
     /* Send solution information between neighbouring blocks to complete
        prescription of initial data. */
     
-/*     CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization. */
+/*     CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.  */
+/*     // First send mesh and geometry information. */
 /*     error_flag = Send_Messages_Mesh_Geometry_Only<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> > */
-/*                     (Local_Solution_Blocks, */
-/* 		     Local_Adaptive_Block_List); */
+/*                     (Local_Solution_Blocks,  */
+/*                      Local_Adaptive_Block_List); */
+/*     if (error_flag) { */
+/*         cout << "\n ERROR: Message passing error during geometry intialization " */
+/*              << "on processor " */
+/*              << Local_Adaptive_Block_List.ThisCPU */
+/*              << ".\n"; */
+/*         cout.flush(); */
+/*     } /\* endif *\/ */
 /*     error_flag = CFFC_OR_MPI(error_flag); */
-/*     if (!error_flag) error_flag = Send_Messages<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> > */
-/*                                      (Local_Solution_Blocks, */
-/* 				      Local_Adaptive_Block_List); */
+/*     if (error_flag) return (error_flag); */
+/*     // Correct exterior nodes to match with message passed geometry information. */
+/*     Solution_Data.Local_Solution_Blocks.Correct_Grid_Exterior_Nodes(Data.Local_Adaptive_Block_List);\ */
+/*     // Now send solution information and data. */
+/*     error_flag = Send_Messages<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> > */
+/*                     (Local_Solution_Blocks,  */
+/*                      Local_Adaptive_Block_List); */
 /*     if (error_flag) { */
 /*        cout << "\n ERROR: Message passing error during solution intialization " */
-/* 	    << "on processor " */
-/* 	    << Local_Adaptive_Block_List.ThisCPU */
-/* 	    << ".\n"; */
+/*             << "on processor " */
+/*             << Local_Adaptive_Block_List.ThisCPU */
+/*             << ".\n"; */
 /*        cout.flush(); */
-/*     } // endif  */
+/*     } /\* endif *\/ */
 /*     error_flag = CFFC_OR_MPI(error_flag); */
 /*     if (error_flag) return (error_flag); */
 

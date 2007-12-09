@@ -87,21 +87,14 @@ double NavierStokes3D_ThermallyPerfect_pState::Pr(void) {
  * NavierStokes3D_ThermallyPerfect_pState::Sc -- Return species Schmidt number.             *
  ********************************************************************************************/
 double NavierStokes3D_ThermallyPerfect_pState::Sc(const int &i) {
-  if( spec[i].diffusion_coef != ZERO) {
-     return mu()/(rho*spec[i].diffusion_coef);
-  } else {
-     return Schmidt[i];
-  } /* endif */
+  return Schmidt[i];
 }
 
 /********************************************************************************************
  * NavierStokes3D_ThermallyPerfect_pState::Le -- Return species Lewis number.               *
  ********************************************************************************************/
 double NavierStokes3D_ThermallyPerfect_pState::Le(const int &i) {
-  if (spec[i].diffusion_coef != ZERO) {
-     return kappa()/(rho*Cp()*spec[i].diffusion_coef);
-  } /* endif */
-  return ZERO;
+  return kappa()/(rho*Cp()*Ds(i));
 }
 
 /********************************************************************************************
@@ -121,12 +114,11 @@ thermal_diffusion(const NavierStokes3D_ThermallyPerfect_pState &dWdx,
 
    sum.zero();
 
-   for (int i = 0; i < ns; i++) {
-      gradc.x = dWdx.spec[i].c;
-      gradc.y = dWdy.spec[i].c;
-      gradc.z = dWdz.spec[i].c;
-      sum += (specdata[i].Enthalpy(Temp) + specdata[i].Heatofform())*
-             spec[i].diffusion_coef*gradc;
+   for (int index = 0; index < ns; index++) {
+      gradc.x = dWdx.spec[index].c;
+      gradc.y = dWdy.spec[index].c;
+      gradc.z = dWdz.spec[index].c;
+      sum += (specdata[index].Enthalpy(Temp) + specdata[index].Heatofform())*_diff_coeff[index]*gradc;
    } /* endfor */
 
    return sum;
@@ -149,10 +141,9 @@ thermal_diffusion_x(const NavierStokes3D_ThermallyPerfect_pState &dWdx,
 
    sum.zero();
 
-   for (int i = 0; i < ns; i++) {
-      gradc.x = dWdx.spec[i].c;
-      sum.x += (specdata[i].Enthalpy(Temp) + specdata[i].Heatofform())*
-               spec[i].diffusion_coef*gradc.x;
+   for (int index = 0; index < ns; index++) {
+      gradc.x = dWdx.spec[index].c;
+      sum.x += (specdata[index].Enthalpy(Temp) + specdata[index].Heatofform())*_diff_coeff[index]*gradc.x;
    } /* endfor */
 
    return sum;
@@ -175,10 +166,9 @@ thermal_diffusion_y(const NavierStokes3D_ThermallyPerfect_pState &dWdx,
 
    sum.zero();
 
-   for (int i = 0; i < ns; i++) {
-      gradc.y = dWdy.spec[i].c;
-      sum.y += (specdata[i].Enthalpy(Temp) + specdata[i].Heatofform())*
-               spec[i].diffusion_coef*gradc.y;
+   for (int index = 0; index < ns; index++) {
+      gradc.y = dWdy.spec[index].c;
+      sum.y += (specdata[index].Enthalpy(Temp) + specdata[index].Heatofform())*_diff_coeff[index]*gradc.y;
    } /* endfor */
 
    return sum;
@@ -201,10 +191,9 @@ thermal_diffusion_z(const NavierStokes3D_ThermallyPerfect_pState &dWdx,
 
    sum.zero();
 
-   for (int i = 0; i < ns; i++) {
-      gradc.z = dWdz.spec[i].c;
-      sum.z += (specdata[i].Enthalpy(Temp) + specdata[i].Heatofform())*
-               spec[i].diffusion_coef*gradc.z;
+   for (int index = 0; index < ns; index++) {
+      gradc.z = dWdz.spec[index].c;
+      sum.z += (specdata[index].Enthalpy(Temp) + specdata[index].Heatofform())*_diff_coeff[index]*gradc.z;
    } /* endfor */
 
    return sum;
@@ -563,8 +552,8 @@ Fv(const NavierStokes3D_ThermallyPerfect_pState &dWdx,
    molecular_stress = tau_x(mu_temp, dWdx, dWdy, dWdz);
    heat_flux = q_x(kappa_temp, dWdx, dWdy, dWdz);
    
-   for (int k = 0; k < ns; ++k) {
-      spec[k].diffusion_coef = Ds(k, mu_temp);
+   for (int index = 0; index < ns; ++index) {
+      _diff_coeff[index] = Ds(index, mu_temp);
    } /* endfor */
 
    // q -= rho * sum ( hs * Ds *gradcs)   
@@ -577,8 +566,8 @@ Fv(const NavierStokes3D_ThermallyPerfect_pState &dWdx,
    Temp.E = v.x*molecular_stress.xx + v.y*molecular_stress.xy +
             v.z*molecular_stress.xz - heat_flux.x;
    
-   for (int k = 0; k < ns; ++k) {
-      Temp.rhospec[k] = rho*spec[k].diffusion_coef*dWdx.spec[k].c;
+   for (int index = 0; index < ns; ++index) {
+      Temp.rhospec[index] = rho*_diff_coeff[index]*dWdx.spec[index].c;
    } /* endfor */
    
    return (Temp);
@@ -604,8 +593,8 @@ Fvx(const NavierStokes3D_ThermallyPerfect_pState &dWdx,
    molecular_stress = tau_x(mu_temp, dWdx, dWdy, dWdz);
    heat_flux = q_x(kappa_temp, dWdx, dWdy, dWdz);
    
-   for (int k = 0; k < ns; ++k) {
-      spec[k].diffusion_coef = Ds(k, mu_temp);
+   for (int index = 0; index < ns; ++index) {
+      _diff_coeff[index] = Ds(index, mu_temp);
    } /* endfor */
 
    // q -= rho * sum ( hs * Ds *gradcs)   
@@ -618,8 +607,8 @@ Fvx(const NavierStokes3D_ThermallyPerfect_pState &dWdx,
    Temp.E = v.x*molecular_stress.xx + v.y*molecular_stress.xy +
             v.z*molecular_stress.xz - heat_flux.x;
    
-   for (int k = 0; k < ns; ++k) {
-      Temp.rhospec[k] = rho*spec[k].diffusion_coef*dWdx.spec[k].c;
+   for (int index = 0; index < ns; ++index) {
+      Temp.rhospec[index] = rho*_diff_coeff[index]*dWdx.spec[index].c;
    } /* endfor */
    
    return (Temp);
@@ -645,8 +634,8 @@ Fvy(const NavierStokes3D_ThermallyPerfect_pState &dWdx,
    molecular_stress = tau_y(mu_temp, dWdx, dWdy, dWdz);
    heat_flux = q_y(kappa_temp, dWdx, dWdy, dWdz);
    
-   for (int k = 0; k < ns; ++k) {
-      spec[k].diffusion_coef = Ds(k, mu_temp);
+   for (int index = 0; index < ns; ++index) {
+      _diff_coeff[index] = Ds(index, mu_temp);
    } /* endfor */
 
    // q -= rho * sum ( hs * Ds *gradcs)   
@@ -659,8 +648,8 @@ Fvy(const NavierStokes3D_ThermallyPerfect_pState &dWdx,
    Temp.E = v.x*molecular_stress.xy+ v.y*molecular_stress.yy +
             v.z*molecular_stress.yz - heat_flux.y;
    
-   for (int k = 0; k < ns; ++k) {
-      Temp.rhospec[k] = rho*spec[k].diffusion_coef*dWdy.spec[k].c;
+   for (int index = 0; index < ns; ++index) {
+      Temp.rhospec[index] = rho*_diff_coeff[index]*dWdy.spec[index].c;
    } /* endfor */
    
    return (Temp);
@@ -685,8 +674,8 @@ Fvz(const NavierStokes3D_ThermallyPerfect_pState &dWdx,
    molecular_stress = tau_z(mu_temp, dWdx, dWdy, dWdz);
    heat_flux = q_z(kappa_temp, dWdx, dWdy, dWdz);
    
-   for (int k = 0; k < ns; ++k) {
-      spec[k].diffusion_coef = Ds(k, mu_temp);
+   for (int index = 0; index < ns; ++index) {
+      _diff_coeff[index] = Ds(index, mu_temp);
    } /* endfor */
 
    // q -= rho * sum ( hs * Ds *gradcs)   
@@ -699,8 +688,8 @@ Fvz(const NavierStokes3D_ThermallyPerfect_pState &dWdx,
    Temp.E = v.x*molecular_stress.xz+ v.y*molecular_stress.yz +
             v.z*molecular_stress.zz - heat_flux.z;
    
-   for (int k = 0; k < ns; ++k) {
-      Temp.rhospec[k] = rho*spec[k].diffusion_coef*dWdz.spec[k].c;
+   for (int index = 0; index < ns; ++index) {
+      Temp.rhospec[index] = rho*_diff_coeff[index]*dWdz.spec[index].c;
    } /* endfor */
 
    return (Temp);

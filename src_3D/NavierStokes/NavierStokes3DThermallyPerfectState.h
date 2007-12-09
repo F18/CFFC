@@ -26,65 +26,66 @@ class NavierStokes3D_ThermallyPerfect_cState;
  *        combusting mixtures.
  *
  * Member functions
- *  - rho           -- Return density (kg/m^3)
- *  - v             -- Return flow velocity (m/s)
- *  - p             -- Return pressure (Pa, N/m^2)
- *  - spec          -- Return array of species mass fraction data
- *  - Mass          -- Return mixture molecular mass (kg/mol)
- *  - Rtot          -- Return mixture gas constant (J/(kg*K))
- *  - Cp            -- Return specific heat at constant pressure for mixture (J/(kg*K))
- *  - Cv            -- Return specific heat at constant volume for mixture (J/(kg*K))
- *  - g             -- Return specific heat ratio for mixture
- *  - e             -- Return mixture absolute internal energy (J/kg)
- *  - es            -- Return mixture sensible internal energy (J/kg)
- *  - h             -- Return mixture absolute specific enthalpy (J/kg)
- *  - hs            -- Return mixture sensible specific enthalpy (J/kg)
- *  - E             -- Return total mixture energy (J/kg)
- *  - H             -- Return total mixture enthalpy (J/kg)
- *  - rhov          -- Return momentum of mixture (kg/(m^2*s))
- *  - T             -- Return mixture temperature (K)
- *  - a             -- Return sound speed of mixture (m/s)
- *  - M             -- Return Mach number for mixture
- *  - Gibbs         -- Return species Gibbs free energy
- *  - mu            -- Return mixture dynamic viscosity
- *  - kappa         -- Return mixture coefficient of thermal conductivity
- *  - Ds            -- Return species mass diffusion coefficient
- *  - Pr            -- Return mixture Prandtl number
- *  - Sc            -- Return species Schmidt number
- *  - Le            -- Return species Lewis number
- *  - tau           -- Return (molecular) fluid stress tensor
- *  - tau_x         -- Return components of (molecular) fluid stress tensor in x-direction
- *  - tau_y         -- Return components of (molecular) fluid stress tensor in y-direction
- *  - tau_z         -- Return components of (molecular) fluid stress tensor in z-direction
- *  - q             -- Return (molecular) heat flux vector
- *  - q_x           -- Return component of (molecular) heat flux vector in x-direction
- *  - q_y           -- Return component of (molecular) heat flux vector in y-direction
- *  - q_z           -- Return component of (molecular) heat flux vector in z-direction
- *  - U             -- Return conserved solution state
- *  - F, Fx         -- Return x-direction inviscid solution flux
- *  - Fy            -- Return y-direction inviscid solution flux
- *  - Fz            -- Return z-direction inviscid solution flux
- *  - Fv, Fvx       -- Return x-direction viscous solution flux
- *  - Fvy           -- Return y-direction viscous solution flux
- *  - Fvz           -- Return z-direction viscous solution flux
- *  - Schemistry    -- Return source terms associated with finite-rate chemistry
- *  - lambda        -- Return x-direction eigenvalue
- *  - rc            -- Return x-direction conserved right eigenvector
- *  - lp            -- Return x-direction primitive left eigenvector
- *  - lambda_x      -- Return x-direction eigenvalue
- *  - rc_x          -- Return x-direction conserved right eigenvector
- *  - lp_x          -- Return x-direction primitive left eigenvector
- *  - RoeAverage    -- Return Roe-average solution state vector
- *  - FluxHLLE_x    -- Return HLLE numerical solution flux in x-direction
- *  - FluxHLLE_n    -- Return HLLE numerical solution flux in n-direction
- *  - FluxRoe_x     -- Return Roe numerical solution flux in x-direction
- *  - FluxRoe_n     -- Return Roe numerical solution flux in n-direction
- *  - lambda_minus  -- Return negative eigenvalues, applying Harten entropy fix
- *  - lambda_plus   -- Return positive eigenvalues, applying Harten entropy fix
- *  - Reflect       -- Return reflected solution state after application of reflection BC
- *  - MovingWall    -- Return wall solution state after application of moving wall BC
- *  - NoSlip        -- Return wall solution state after application of no-slip BC
- *  - FluxViscous_n -- Returns viscous flux in n-direction
+ *  - rho              -- Return density (kg/m^3)
+ *  - v                -- Return flow velocity (m/s)
+ *  - p                -- Return pressure (Pa, N/m^2)
+ *  - spec             -- Return array of species mass fraction data
+ *  - Mass             -- Return mixture molecular mass (kg/mol)
+ *  - Rtot             -- Return mixture gas constant (J/(kg*K))
+ *  - HeatofFormation  -- Return heat of formation for the mixture
+ *  - Cp               -- Return specific heat at constant pressure for mixture (J/(kg*K))
+ *  - Cv               -- Return specific heat at constant volume for mixture (J/(kg*K))
+ *  - g                -- Return specific heat ratio for mixture
+ *  - e                -- Return mixture absolute internal energy (J/kg)
+ *  - es               -- Return mixture sensible internal energy (J/kg)
+ *  - h                -- Return mixture absolute specific enthalpy (J/kg)
+ *  - hs               -- Return mixture sensible specific enthalpy (J/kg)
+ *  - E                -- Return total mixture energy (J/kg)
+ *  - H                -- Return total mixture enthalpy (J/kg)
+ *  - rhov             -- Return momentum of mixture (kg/(m^2*s))
+ *  - T                -- Return mixture temperature (K)
+ *  - a                -- Return sound speed of mixture (m/s)
+ *  - M                -- Return Mach number for mixture
+ *  - Gibbs            -- Return species Gibbs free energy
+ *  - mu               -- Return mixture dynamic viscosity
+ *  - kappa            -- Return mixture coefficient of thermal conductivity
+ *  - Ds               -- Return species mass diffusion coefficient
+ *  - Pr               -- Return mixture Prandtl number
+ *  - Sc               -- Return species Schmidt number
+ *  - Le               -- Return species Lewis number
+ *  - tau              -- Return (molecular) fluid stress tensor
+ *  - tau_x            -- Return components of (molecular) fluid stress tensor in x-direction
+ *  - tau_y            -- Return components of (molecular) fluid stress tensor in y-direction
+ *  - tau_z            -- Return components of (molecular) fluid stress tensor in z-direction
+ *  - q                -- Return (molecular) heat flux vector
+ *  - q_x              -- Return component of (molecular) heat flux vector in x-direction
+ *  - q_y              -- Return component of (molecular) heat flux vector in y-direction
+ *  - q_z              -- Return component of (molecular) heat flux vector in z-direction
+ *  - U                -- Return conserved solution state
+ *  - F, Fx            -- Return x-direction inviscid solution flux
+ *  - Fy               -- Return y-direction inviscid solution flux
+ *  - Fz               -- Return z-direction inviscid solution flux
+ *  - Fv, Fvx          -- Return x-direction viscous solution flux
+ *  - Fvy              -- Return y-direction viscous solution flux
+ *  - Fvz              -- Return z-direction viscous solution flux
+ *  - Schemistry       -- Return source terms associated with finite-rate chemistry
+ *  - lambda           -- Return x-direction eigenvalue
+ *  - rc               -- Return x-direction conserved right eigenvector
+ *  - lp               -- Return x-direction primitive left eigenvector
+ *  - lambda_x         -- Return x-direction eigenvalue
+ *  - rc_x             -- Return x-direction conserved right eigenvector
+ *  - lp_x             -- Return x-direction primitive left eigenvector
+ *  - RoeAverage       -- Return Roe-average solution state vector
+ *  - FluxHLLE_x       -- Return HLLE numerical solution flux in x-direction
+ *  - FluxHLLE_n       -- Return HLLE numerical solution flux in n-direction
+ *  - FluxRoe_x        -- Return Roe numerical solution flux in x-direction
+ *  - FluxRoe_n        -- Return Roe numerical solution flux in n-direction
+ *  - lambda_minus     -- Return negative eigenvalues, applying Harten entropy fix
+ *  - lambda_plus      -- Return positive eigenvalues, applying Harten entropy fix
+ *  - Reflect          -- Return reflected solution state after application of reflection BC
+ *  - MovingWall       -- Return wall solution state after application of moving wall BC
+ *  - NoSlip           -- Return wall solution state after application of no-slip BC
+ *  - FluxViscous_n    -- Returns viscous flux in n-direction
  *
  * Member operators \n
  *      W -- a primitive solution state \n

@@ -51,7 +51,7 @@ MV_ColMat_COMPLEX::MV_ColMat_COMPLEX()  : v_(), dim0_(0), dim1_(0) , lda_(0), re
 MV_ColMat_COMPLEX::MV_ColMat_COMPLEX(unsigned int m, unsigned int n) : v_(m*n),
         dim0_(m), dim1_(n), lda_(m), ref_(0) {}
 
-MV_ColMat_COMPLEX::MV_ColMat_COMPLEX(unsigned int m, unsigned int n, const COMPLEX &s) : v_(m*n),
+MV_ColMat_COMPLEX::MV_ColMat_COMPLEX(unsigned int m, unsigned int n, const MVPP_COMPLEX &s) : v_(m*n),
         dim0_(m), dim1_(n), lda_(m), ref_(0) 
 {
     operator=(s);
@@ -64,7 +64,7 @@ MV_ColMat_COMPLEX::MV_ColMat_COMPLEX(unsigned int m, unsigned int n, const COMPL
 
 
 
-MV_ColMat_COMPLEX& MV_ColMat_COMPLEX::operator=(const COMPLEX & s) 
+MV_ColMat_COMPLEX& MV_ColMat_COMPLEX::operator=(const MVPP_COMPLEX & s) 
 {
     int M = dim(0);
     int N = dim(1);
@@ -178,7 +178,7 @@ MV_ColMat_COMPLEX::MV_ColMat_COMPLEX(const MV_ColMat_COMPLEX & m) :
 
 
 
-MV_ColMat_COMPLEX::MV_ColMat_COMPLEX(COMPLEX* d, unsigned int m, unsigned int n) :
+MV_ColMat_COMPLEX::MV_ColMat_COMPLEX(MVPP_COMPLEX* d, unsigned int m, unsigned int n) :
     v_(m*n), dim0_(m), dim1_(n), lda_(m), ref_(0)
 {
     int mn = m*n;
@@ -189,7 +189,7 @@ MV_ColMat_COMPLEX::MV_ColMat_COMPLEX(COMPLEX* d, unsigned int m, unsigned int n)
 }
 
 
-MV_ColMat_COMPLEX::MV_ColMat_COMPLEX(COMPLEX* d, unsigned int m, unsigned int n, 
+MV_ColMat_COMPLEX::MV_ColMat_COMPLEX(MVPP_COMPLEX* d, unsigned int m, unsigned int n, 
         unsigned int lda) :
     v_(m*n), dim0_(m), dim1_(n), lda_(lda), ref_(0)
 {

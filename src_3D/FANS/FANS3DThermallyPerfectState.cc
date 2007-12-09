@@ -416,7 +416,6 @@ FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_pState::U(v
    Temp.rhoomega = rho*omega;
    for (int i = 0; i < ns; i++) {
       Temp.rhospec[i] = rho*spec[i];
-      Temp.rhospec[i].diffusion_coef = rho*spec[i].diffusion_coef;
    } /* endfor */
    return Temp;
 }
@@ -430,7 +429,6 @@ FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_pState::U(v
    Temp.rhoomega = rho*omega;
    for (int i = 0; i < ns; i++) {
       Temp.rhospec[i] = rho*spec[i];
-      Temp.rhospec[i].diffusion_coef = rho*spec[i].diffusion_coef;
    } /* endfor */
    return Temp;
 }
@@ -445,7 +443,6 @@ U(const FANS3D_ThermallyPerfect_KOmega_pState &W) {
    Temp.rhoomega = W.rho*W.omega;
    for (int i = 0; i < W.ns; i++) {
       Temp.rhospec[i] = W.rho*W.spec[i];
-      Temp.rhospec[i].diffusion_coef = W.rho*W.spec[i].diffusion_coef;
    } /* endfor */
    return Temp;
 }
@@ -612,7 +609,7 @@ Fv(const FANS3D_ThermallyPerfect_KOmega_pState &dWdx,
    heat_flux = q_t_x(kappa_temp + kappa_t_temp, dWdx, dWdy, dWdz);
    
    for (int index = 0; index < ns; ++index) {
-      spec[index].diffusion_coef = Ds(index, mu_temp)+Ds_t(index, mu_t_temp);
+      _diff_coeff[index] = Ds(index, mu_temp)+Ds_t(index, mu_t_temp);
    } /* endfor */
    
    // q -= rho * sum ( hs * Ds *gradcs)   
@@ -631,7 +628,7 @@ Fv(const FANS3D_ThermallyPerfect_KOmega_pState &dWdx,
    Temp.rhoomega = (mu_temp + mu_t_temp*k_omega_model.sigma)*dWdx.omega;
    
    for (int index = 0; index < ns; ++index) {
-      Temp.rhospec[index] = rho*spec[index].diffusion_coef*dWdx.spec[index].c;
+      Temp.rhospec[index] = rho*_diff_coeff[index]*dWdx.spec[index].c;
    } /* endfor */
 
    return (Temp);
@@ -660,7 +657,7 @@ Fvx(const FANS3D_ThermallyPerfect_KOmega_pState &dWdx,
    heat_flux = q_t_x(kappa_temp + kappa_t_temp, dWdx, dWdy, dWdz);
    
    for (int index = 0; index < ns; ++index) {
-      spec[index].diffusion_coef = Ds(index, mu_temp)+Ds_t(index, mu_t_temp);
+      _diff_coeff[index] = Ds(index, mu_temp)+Ds_t(index, mu_t_temp);
    } /* endfor */
    
    // q -= rho * sum ( hs * Ds *gradcs)   
@@ -679,7 +676,7 @@ Fvx(const FANS3D_ThermallyPerfect_KOmega_pState &dWdx,
    Temp.rhoomega = (mu_temp + mu_t_temp*k_omega_model.sigma)*dWdx.omega;
    
    for (int index = 0; index < ns; ++index) {
-      Temp.rhospec[index] = rho*spec[index].diffusion_coef*dWdx.spec[index].c;
+      Temp.rhospec[index] = rho*_diff_coeff[index]*dWdx.spec[index].c;
    } /* endfor */
 
    return (Temp);
@@ -708,7 +705,7 @@ Fvy(const FANS3D_ThermallyPerfect_KOmega_pState &dWdx,
    heat_flux = q_t_y(kappa_temp + kappa_t_temp, dWdx, dWdy, dWdz);
    
    for (int index = 0; index < ns; ++index) {
-      spec[index].diffusion_coef = Ds(index, mu_temp)+Ds_t(index, mu_t_temp);
+      _diff_coeff[index] = Ds(index, mu_temp)+Ds_t(index, mu_t_temp);
    } /* endfor */
    
    // q -= rho * sum ( hs * Ds *gradcs)   
@@ -727,7 +724,7 @@ Fvy(const FANS3D_ThermallyPerfect_KOmega_pState &dWdx,
    Temp.rhoomega = (mu_temp + mu_t_temp*k_omega_model.sigma)*dWdy.omega;
    
    for (int index = 0; index<ns; ++index) {
-      Temp.rhospec[index] = rho*spec[index].diffusion_coef*dWdy.spec[index].c;
+      Temp.rhospec[index] = rho*_diff_coeff[index]*dWdy.spec[index].c;
    } /* endif */
 
    return (Temp);
@@ -756,7 +753,7 @@ Fvz(const FANS3D_ThermallyPerfect_KOmega_pState &dWdx,
    heat_flux = q_t_z(kappa_temp + kappa_t_temp, dWdx, dWdy, dWdz);
 
    for (int index = 0; index < ns; ++index) {
-      spec[index].diffusion_coef = Ds(index, mu_temp)+Ds_t(index, mu_t_temp);
+      _diff_coeff[index] = Ds(index, mu_temp)+Ds_t(index, mu_t_temp);
    } /* endfor */
    
    // q -= rho * sum ( hs * Ds *gradcs)   
@@ -775,7 +772,7 @@ Fvz(const FANS3D_ThermallyPerfect_KOmega_pState &dWdx,
    Temp.rhoomega = (mu_temp + mu_t_temp*k_omega_model.sigma)*dWdz.omega;
    
    for (int index = 0; index<ns; ++index) {
-      Temp.rhospec[index] = rho*spec[index].diffusion_coef*dWdz.spec[index].c;
+      Temp.rhospec[index] = rho*_diff_coeff[index]*dWdz.spec[index].c;
    } /* endfor */
 
    return (Temp);
@@ -1882,11 +1879,40 @@ bool FANS3D_ThermallyPerfect_KOmega_cState::Realizable_Solution_Check(void) {
    } /* endif */
 } 
 
-/*****************************************************************************************
- * FANS3D_ThermallyPerfect_KOmega_cState::p -- Return mixture pressure.                  *
- *****************************************************************************************/
-double FANS3D_ThermallyPerfect_KOmega_cState::p() const {
-   return (rho*Rtot()*T());
+/**************************************************************************************************
+ * FANS3D_ThermallyPerfect_KOmega_cState::e -- Return mixture absolute internal energy.           *
+ **************************************************************************************************/
+double FANS3D_ThermallyPerfect_KOmega_cState::e(void) const {
+  return ((E - HALF*rhov.sqr()/rho-rhok)/rho);
+}
+
+/**************************************************************************************************
+ * FANS3D_ThermallyPerfect_KOmega_cState::es -- Return sensible internal energy.                  *
+ **************************************************************************************************/
+double FANS3D_ThermallyPerfect_KOmega_cState::es(void) const {
+  return ((E - HALF*rhov.sqr()/rho-rhok)/rho-HeatofFormation());
+}
+
+/**************************************************************************************************
+ * FANS3D_ThermallyPerfect_KOmega_cState::h -- Return mixture absolute internal enthalpy.         *
+ **************************************************************************************************/
+double FANS3D_ThermallyPerfect_KOmega_cState::h(void) const {
+  return (e()+p()/rho);
+}
+
+double FANS3D_ThermallyPerfect_KOmega_cState::h(const double &Temp) const {
+  return (Euler3D_ThermallyPerfect_cState::h(Temp));
+}
+
+/**************************************************************************************************
+ * FANS3D_ThermallyPerfect_KOmega_cState::hs -- Return sensible internal enthalpy.                *
+ **************************************************************************************************/
+double FANS3D_ThermallyPerfect_KOmega_cState::hs(void) const {
+  return (es()+p()/rho);
+}
+
+double FANS3D_ThermallyPerfect_KOmega_cState::hs(const double &Temp) const {
+  return (Euler3D_ThermallyPerfect_cState::hs());
 }
 
 /*****************************************************************************************
@@ -2055,7 +2081,6 @@ FANS3D_ThermallyPerfect_KOmega_pState FANS3D_ThermallyPerfect_KOmega_cState::W(v
    Temp.omega = omega();
    for (int i = 0; i < ns; i++) {
       Temp.spec[i] = rhospec[i]/rho;
-      Temp.spec[i].diffusion_coef = rhospec[i].diffusion_coef/rho;
    } /* endfor */
    return Temp;
 }
@@ -2069,7 +2094,6 @@ FANS3D_ThermallyPerfect_KOmega_pState FANS3D_ThermallyPerfect_KOmega_cState::W(v
    Temp.omega = omega();
    for (int i=0; i<ns; i++) {
       Temp.spec[i] = rhospec[i]/rho;
-      Temp.spec[i].diffusion_coef = rhospec[i].diffusion_coef/rho;
    } /* endfor */
    return Temp;
 }
@@ -2084,7 +2108,6 @@ W(const FANS3D_ThermallyPerfect_KOmega_cState &U) const {
    Temp.omega = U.omega();
    for (int i = 0; i < U.ns; i++) {
       Temp.spec[i] = U.rhospec[i]/U.rho;
-      Temp.spec[i].diffusion_coef = U.rhospec[i].diffusion_coef/U.rho;
    } /* endfor */
    return Temp;
 }

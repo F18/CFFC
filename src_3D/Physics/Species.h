@@ -23,7 +23,6 @@ using namespace std;
  ******************** SPECIES CLASS DEFINITION ***************************
   DATA:
    -> c                   mass fraction of species
-   -> diffusion_coef      diffusion coefficient
 
   CONSTRUCTORS, etc.. :
    -> operator overloads
@@ -35,18 +34,13 @@ class Species {
  public: 
   //mass fraction
   double c;
-  double diffusion_coef;
  
   /*************** DEFAULT CONSTRUCTORS *****************/
-  Species()
-     {c=ONE; diffusion_coef=ZERO;}
-  Species(const double &frac)
-     {c=frac; diffusion_coef=ZERO;}
-  Species(const double &frac, const double &dcoef)
-     {c=frac; diffusion_coef=dcoef;}
+  Species(void): c(ONE) { }
+  Species(const double &frac) : c(frac) { }
   
   /*************** VACUUM OPERATOR *********************/
-  void Vacuum(){c=ZERO; diffusion_coef=ZERO;}
+  void Vacuum(){c=ZERO;}
 
   /****************** Operator Overloading **************************/
   Species operator +(const Species &A) const;
@@ -126,7 +120,6 @@ inline Species Species::operator -(void) const{
 //----------------- Assignment ----------------------------//
 inline Species &Species::operator =(const Species &A){
   c = A.c; 
-  diffusion_coef= A.diffusion_coef;
   return(*this);
 }
 
@@ -153,25 +146,25 @@ inline Species& Species::operator /=(const double &a) {
 
 //----------------- Relational operators ------------------// 
 inline int Species::operator ==(const Species &A) const{
-  return (c == A.c && diffusion_coef == A.diffusion_coef);
+  return (c == A.c);
 }
 
 inline int Species::operator !=(const Species &A) const{
-   return (c != A.c || diffusion_coef != A.diffusion_coef);
+   return (c != A.c);
 }
 
 
 //------------------ Input-output operators ---------------// 
 inline ostream &operator << (ostream &out_file, const Species &B){
   out_file.setf(ios::scientific);
-  out_file<<" "<<B.c; 
+  out_file << " " << B.c; 
   out_file.unsetf(ios::scientific);
   return (out_file);
 }
 
 inline istream &operator >> (istream &in_file,  Species &B){
   in_file.setf(ios::skipws);
-  in_file>>B.c;
+  in_file >> B.c;
   in_file.unsetf(ios::skipws);
   return (in_file);
 }
