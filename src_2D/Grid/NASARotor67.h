@@ -679,11 +679,11 @@ inline void NASARotor67::initializeHubShroud (void) {
   strcat(fname, R67_HUB_SHROUD_GEOMETRY_FILE);
   rotorGeom.open(fname, ios::in);
     
-  if(rotorGeom.bad()) {
+  if(rotorGeom.fail()) {
     cout << "\n ERROR: Unable to open hub/shroud data for NASA rotor 67.\n";
     cout.flush();
   } /* endif */
-  assert(!rotorGeom.bad());
+  assert(!rotorGeom.fail());
 
   rotorGeom.setf(ios::skipws);
 
@@ -761,11 +761,11 @@ inline void NASARotor67::initializeBoundaryFlowConditions(int mflow) {
   strcpy(fname, datafile_path);
   strcat(fname, UPSTREAM_DOWNSTREAM_FLOW_DATA_FILE);
   flowData.open(fname, ios::in);
-  if(flowData.bad()) {
+  if(flowData.fail()) {
     cout << "\n ERROR: Upstream flow data file for NASA rotor 67 not found.";
     cout.flush();
   } /* endif */
-  assert(!flowData.bad());
+  assert(!flowData.fail());
 
   if (mflow != 1 && mflow != 2) {
     cout << "ERROR: Incorrect flow type for NASA rotor 67.";
@@ -907,11 +907,11 @@ inline void NASARotor67::initializeBoundaryFlowConditions(int mflow) {
 
   flowData.close();
   flowData.open(fname, ios::in);
-  if(flowData.bad()) {
+  if(flowData.fail()) {
     cout << "\n ERROR: Downstream flow data file for NASA rotor 67 not found.";
     cout.flush();
   } /* endif */
-  assert(!flowData.bad());
+  assert(!flowData.fail());
 
   //number of data pts
   nPts = DOWNSTREAM_FLOW_DATA_POINTS_R67;
@@ -1049,11 +1049,11 @@ inline void NASARotor67::initializeBladeGeom(void) {
   strcpy(fname, datafile_path);
   strcat(fname, R67_BLADE_GEOMETRY_FILE);
   bladeDataFile.open(fname, ios::in);
-  if(bladeDataFile.bad()) {
+  if(bladeDataFile.fail()) {
     cout << "\n ERROR: Blade geometry data file for NASA rotor 67 not found.";
     cout.flush();
   } /* endif */
-  assert(!bladeDataFile.bad());
+  assert(!bladeDataFile.fail());
     
   //skip
   skipL(72, bladeDataFile);
@@ -1121,7 +1121,7 @@ inline void NASARotor67::outputTP_UpstreamFlowConditions(char fname[256]) {
   ofstream outf;
 
   outf.open(fname, ios::out);
-  assert(!outf.bad());
+  assert(!outf.fail());
 
   outf.precision(15);
   outf << "TITLE = \"DATA FOR ROTOR 67 @ UPSTREAM STATION\"\n"
@@ -1179,7 +1179,7 @@ inline void NASARotor67::outputTP_DownstreamFlowConditions(char fname[256]) {
   ofstream outf;
 
   outf.open(fname, ios::out);
-  assert(!outf.bad());
+  assert(!outf.fail());
 
   outf.precision(15);
   outf << "TITLE = \"DATA FOR ROTOR 67 @ DOWNSTREAM STATION\"\n"
@@ -1252,7 +1252,7 @@ inline void NASARotor67::outputTP_FlowField2D_All(char filename[]) {
   ofstream of;
 
   of.open(filename, ios::out);
-  assert(!of.bad());
+  assert(!of.fail());
 
   of << "TITLE = \"FLOW DATA FOR NASA ROTOR 67\"\n"
      << "VARIABLES = \"z\"\n"
@@ -1295,7 +1295,7 @@ inline void NASARotor67::outputTP_FlowField2D_All(char filename[]) {
     strcat(tfname, "_scan_table.dat");
     strcat(dfname, "_scan_data.dat");
     scanTable.open(tfname, ios::in);
-    assert(!scanTable.bad());
+    assert(!scanTable.fail());
 
     //check how many entries
     scanTable >> count;
@@ -1320,7 +1320,7 @@ inline void NASARotor67::outputTP_FlowField2D_All(char filename[]) {
     theta_shift=lead.t1-cs.Xp[iLead].y/lead.r;
 
     scanData.open(dfname, ios::in);		 
-    assert(!scanData.bad());
+    assert(!scanData.fail());
 
     scanTable.setf(ios::skipws);
     scanData.setf(ios::skipws);
@@ -1425,7 +1425,7 @@ inline void NASARotor67::outputTP_FlowField2D(double pspan, char filename[]) {
   ofstream of;
 
   of.open(filename, ios::out);
-  assert(!of.bad());
+  assert(!of.fail());
 
   pimmersion = HUNDRED-pspan;
   //find closest available data for span of interest
@@ -1459,7 +1459,7 @@ inline void NASARotor67::outputTP_FlowField2D(double pspan, char filename[]) {
   strcat(tfname, "_scan_table.dat");
   strcat(dfname, "_scan_data.dat");
   scanTable.open(tfname, ios::in);
-  assert(!scanTable.bad());
+  assert(!scanTable.fail());
 
   //check how many entries
   scanTable >> count;
@@ -1484,7 +1484,7 @@ inline void NASARotor67::outputTP_FlowField2D(double pspan, char filename[]) {
   theta_shift=lead.t1-cs.Xp[iLead].y/lead.r;//findRadius(pspan_actual,cs.Xp[iLead].x);
 
   scanData.open(dfname, ios::in);		 
-  assert(!scanData.bad());
+  assert(!scanData.fail());
 
   scanTable.setf(ios::skipws);
   scanData.setf(ios::skipws);
@@ -1960,7 +1960,7 @@ inline void NASARotor67::outputTP_Geometry(char filename[]) {
   ofstream TPfile;
 
   TPfile.open(filename, ios::out);
-  assert(!TPfile.bad());
+  assert(!TPfile.fail());
  
   nS=21; //number of cross-sections  per blade = every 5% span
   nP=R67GEOM_NUMPTS*2-2; //number of points per surface
@@ -3819,8 +3819,8 @@ inline void NASARotor67::outputTP_Mesh3D(int Number_of_Cells_Idir, int Number_of
   out_file_top.open(fnameTop, ios::out);
   out_file_bot.open(fnameBot, ios::out);
 
-  assert(!out_file_top.bad());
-  assert(!out_file_bot.bad());
+  assert(!out_file_top.fail());
+  assert(!out_file_bot.fail());
 
   cout << "\n NASA Rotor 67 3D structured mesh generation.";
 
@@ -3959,7 +3959,7 @@ inline void NASARotor67::output_Tetin(char fname[], int layers) {
   ofstream out_file;
 
   out_file.open(fname, ios::out);
-  assert(!out_file.bad());
+  assert(!out_file.fail());
 
   leadI = new int[layers];
   trailI = new int[layers];

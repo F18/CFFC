@@ -183,7 +183,7 @@ int Read_Restart_Solution(Euler2D_Quad_Block *Soln_ptr,
 
           // Open restart file.
           restart_file.open(restart_file_name_ptr, ios::in);
-          if (restart_file.bad()) return (1);
+          if (restart_file.fail()) return (1);
 
           // Read solution block data.
           restart_file.setf(ios::skipws);
@@ -266,7 +266,7 @@ int Write_Restart_Solution(Euler2D_Quad_Block *Soln_ptr,
 
           // Open restart file.
           restart_file.open(restart_file_name_ptr, ios::out);
-          if (restart_file.bad()) return (1);
+          if (restart_file.fail()) return (1);
 
           // Write solution block data.
           restart_file.setf(ios::scientific);
@@ -333,7 +333,7 @@ int Output_Tecplot(Euler2D_Quad_Block *Soln_ptr,
     /* Open the output data file. */
 
     output_file.open(output_file_name_ptr, ios::out);
-    if (output_file.bad()) return (1);
+    if (output_file.fail()) return (1);
 
     /* Write the solution data for each solution block. */
 
@@ -407,7 +407,7 @@ int Output_Cells_Tecplot(Euler2D_Quad_Block *Soln_ptr,
     /* Open the output data file. */
 
     output_file.open(output_file_name_ptr, ios::out);
-    if (output_file.bad()) return (1);
+    if (output_file.fail()) return (1);
 
     /* Write the solution data for each solution block. */
 
@@ -480,7 +480,7 @@ int Output_Nodes_Tecplot(Euler2D_Quad_Block *Soln_ptr,
     /* Open the output data file. */
 
     output_file.open(output_file_name_ptr, ios::out);
-    if (output_file.bad()) return (1);
+    if (output_file.fail()) return (1);
 
     /* Write the solution data for each solution block. */
 
@@ -552,7 +552,7 @@ int Output_Gradients_Tecplot(Euler2D_Quad_Block *Soln_ptr,
   
   // Open the output data file.
   output_file.open(output_file_name_ptr,ios::out);
-  if (output_file.bad()) return 1;
+  if (output_file.fail()) return 1;
 
   // Write the solution data for each solution block.
   i_output_title = 1;
@@ -618,7 +618,7 @@ int Output_Tecplot_Quasi3D(Euler2D_Quad_Block       *Soln_ptr,
   
   // Open the output data file.
   output_file.open(output_file_name_ptr,ios::out);
-  if (output_file.bad()) return 1;
+  if (output_file.fail()) return 1;
   
   // Write the solution data for each solution block.
   i_output_title = 1;
@@ -688,7 +688,7 @@ int Output_Mesh_Tecplot(Euler2D_Quad_Block *Soln_ptr,
     /* Open the output data file. */
 
     output_file.open(output_file_name_ptr, ios::out);
-    if (output_file.bad()) return (1);
+    if (output_file.fail()) return (1);
 
     /* Write the solution data for each solution block. */
 
@@ -762,7 +762,7 @@ int Output_Mesh_Gnuplot(Euler2D_Quad_Block *Soln_ptr,
     /* Open the output data file. */
 
     output_file.open(output_file_name_ptr, ios::out);
-    if (output_file.bad()) return (1);
+    if (output_file.fail()) return (1);
 
     /* Write the solution data for each solution block. */
 
@@ -822,7 +822,7 @@ int Output_Ringleb_Flow(Euler2D_Quad_Block *Soln_ptr,
   
   // Open the output data file.
   output_file.open(output_file_name_ptr,ios::out);
-  if (output_file.bad()) return 1;
+  if (output_file.fail()) return 1;
   
   // Write the solution data for each solution block.
   i_output_title = 1;
@@ -1443,7 +1443,7 @@ int Determine_Mach_Stem_Height(Euler2D_Quad_Block *Soln_ptr,
   /* Open the output data file. */
 
   output_file.open(output_file_name_ptr, ios::out);
-  if (output_file.bad()) return (1);
+  if (output_file.fail()) return (1);
 
   /* Write the solution data for each solution block. */
 
@@ -1511,7 +1511,7 @@ int Output_Wedge_Solution_Distribution_Tecplot(Euler2D_Quad_Block *Soln_ptr,
   /* Open the output data file. */
 
   output_file.open(output_file_name_ptr, ios::out);
-  if (output_file.bad()) return (1);
+  if (output_file.fail()) return (1);
 
   /* Write the solution data for each solution block. */
 

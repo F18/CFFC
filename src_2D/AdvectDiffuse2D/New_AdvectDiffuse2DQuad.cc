@@ -518,6 +518,7 @@ void AdvectDiffuse2D_Quad_Block_New::Set_Boundary_Reference_States(void){
 
     default:
       // Leave the values unchanged
+      UoW[j];
     }
 
     // === Set reference data for UoE ===
@@ -550,6 +551,7 @@ void AdvectDiffuse2D_Quad_Block_New::Set_Boundary_Reference_States(void){
 
     default:
       // Leave the values unchanged
+      UoE[j];
     } // endswitch
   } // endfor(j)
 
@@ -585,6 +587,7 @@ void AdvectDiffuse2D_Quad_Block_New::Set_Boundary_Reference_States(void){
 
     default:
       // Leave the values unchanged
+      UoS[i];
     }
 
     // === Set reference data for UoN ===
@@ -617,6 +620,7 @@ void AdvectDiffuse2D_Quad_Block_New::Set_Boundary_Reference_States(void){
 
     default:
       // Leave the values unchanged
+      UoN[i];
     } // endswitch
   } // enfor(i)
 

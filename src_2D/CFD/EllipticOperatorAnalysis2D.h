@@ -175,7 +175,7 @@ int Elliptic_Operator_Analysis_Average_Gradient_Linear_Least_Squares(Quad_Soln_B
 
   // Open the output data file.
   out.open(output_file_name_ptr,ios::out);
-  if (out.bad()) return 1;
+  if (out.fail()) return 1;
 
   /////////////////////////////////////////////////////////////////
   // Compute the reconstruction coefficients for all of the used //
@@ -480,7 +480,7 @@ int Elliptic_Operator_Analysis_Directional_Derivative(Quad_Soln_Block *Local_Sol
 
   // Open the output data file.
   out.open(output_file_name_ptr,ios::out);
-  if (out.bad()) return 1;
+  if (out.fail()) return 1;
 
   /////////////////////////////////////////////////////////////////
   // Compute the reconstruction coefficients for all of the used //
@@ -674,7 +674,7 @@ int Elliptic_Operator_Analysis_Diamond_Path(Quad_Soln_Block *Local_SolnBlk,
 
   // Open the output data file.
   out.open(output_file_name_ptr,ios::out);
-  if (out.bad()) return 1;
+  if (out.fail()) return 1;
 
   /////////////////////////////////////////////////////////////////
   // Compute the reconstruction coefficients for all of the used //

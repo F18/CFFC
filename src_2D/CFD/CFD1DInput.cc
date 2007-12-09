@@ -166,7 +166,7 @@ void CFD1D_Input_Parameters::Get_Next_Input_Control_Parameter(void){
 void Open_Input_File(CFD1D_Input_Parameters &IP) {
 
     IP.Input_File.open(IP.Input_File_Name, ios::in);
-    if (! IP.Input_File.bad()) {
+    if (! IP.Input_File.fail()) {
        IP.Line_Number = 0;
        IP.Input_File.setf(ios::skipws);
     } /* endif */

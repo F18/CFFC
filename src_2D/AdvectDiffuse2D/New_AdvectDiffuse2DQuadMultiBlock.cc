@@ -147,7 +147,7 @@ int Read_Restart_Solution(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
 
       // Open restart file.
       restart_file.open(restart_file_name_ptr, ios::in);
-      if (restart_file.bad()) return (1);
+      if (restart_file.fail()) return (1);
 
       // Read solution block data.
       restart_file.setf(ios::skipws);
@@ -220,7 +220,7 @@ int Write_Restart_Solution(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
 
       // Open restart file.
       restart_file.open(restart_file_name_ptr, ios::out);
-      if (restart_file.bad()) return (1);
+      if (restart_file.fail()) return (1);
 
       // Write solution block data.
       restart_file.setf(ios::scientific);
@@ -286,7 +286,7 @@ int Output_Tecplot(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
   /* Open the output data file. */
 
   output_file.open(output_file_name_ptr, ios::out);
-  if (output_file.bad()) return (1);
+  if (output_file.fail()) return (1);
 
   /* Write the solution data for each solution block. */
 
@@ -360,7 +360,7 @@ int Output_Cells_Tecplot(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
   /* Open the output data file. */
 
   output_file.open(output_file_name_ptr, ios::out);
-  if (output_file.bad()) return (1);
+  if (output_file.fail()) return (1);
 
   /* Write the solution data for each solution block. */
 
@@ -433,7 +433,7 @@ int Output_Nodes_Tecplot(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
   /* Open the output data file. */
 
   output_file.open(output_file_name_ptr, ios::out);
-  if (output_file.bad()) return (1);
+  if (output_file.fail()) return (1);
 
   /* Write the solution data for each solution block. */
 
@@ -505,7 +505,7 @@ int Output_Mesh_Tecplot(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
   /* Open the output data file. */
 
   output_file.open(output_file_name_ptr, ios::out);
-  if (output_file.bad()) return (1);
+  if (output_file.fail()) return (1);
 
   /* Write the solution data for each solution block. */
 
@@ -575,7 +575,7 @@ int Output_Mesh_Gnuplot(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
   /* Open the output data file. */
 
   output_file.open(output_file_name_ptr, ios::out);
-  if (output_file.bad()) return (1);
+  if (output_file.fail()) return (1);
 
   /* Write the solution data for each solution block. */
 

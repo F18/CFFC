@@ -195,7 +195,7 @@ int Read_QuadTree(QuadTreeBlock_DataStructure &QuadTree,
 
     if (CFFC_Primary_MPI_Processor()) {
        quadtree_file.open(quadtree_file_name_ptr, ios::in);
-       if (quadtree_file.bad()) return (1);
+       if (quadtree_file.fail()) return (1);
     } /* endif */
 
     /* On primary processor, read in the data structure size parameters and 
@@ -319,7 +319,7 @@ int Write_QuadTree(QuadTreeBlock_DataStructure &QuadTree,
 
     if (CFFC_Primary_MPI_Processor()) {
        quadtree_file.open(quadtree_file_name_ptr, ios::out);
-       if (quadtree_file.bad()) return (1);
+       if (quadtree_file.fail()) return (1);
     } /* endif */
 
     /* On primary processor, write the quadtree data to the file. */
