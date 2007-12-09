@@ -24,8 +24,8 @@ int Initialize_Solution_Blocks(HexaSolver_Data &Data,
     if (!Data.batch_flag) {
       cout << Solution_Data.Input << "\n";
       cout.flush(); 
-    }
-  } 
+    } /* endif */
+  } /* endif */
 
   CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
   //Broadcast the mesh to other MPI processors.
@@ -36,7 +36,7 @@ int Initialize_Solution_Blocks(HexaSolver_Data &Data,
     cout << "\n Creating multi-block octree data structure and assigning"
 	 << "\n  solution blocks corresponding to initial mesh.";
     cout.flush();
-  } 
+  } /* endif */
   
   // FROM AMR 
   Create_Initial_Solution_Blocks<SOLN_pSTATE, SOLN_cSTATE>(Data.Initial_Mesh,
@@ -73,14 +73,14 @@ int Initial_Conditions(HexaSolver_Data &Data,
   /* Initialize the conserved and primitive state solution variables. */         
   if (!Data.batch_flag) {
     cout << "\n Prescribing initial data.";  cout.flush();
-  } 
+  } /* endif */
   
   // Read solution from restart data files.
   if (Solution_Data.Input.i_ICs == IC_RESTART) {
     if (!Data.batch_flag){ 
       cout << "\n Reading solution from restart data files."; 
       cout.flush();
-    }
+    } /* endif */
 
     // Read Restart Octree
     // error_flag = Read_Octree(Octree,Input);
@@ -88,7 +88,7 @@ int Initial_Conditions(HexaSolver_Data &Data,
       cout << "\n ERROR: Unable to open Octree data file on processor "
 	   << Data.Local_Adaptive_Block_List.ThisCPU<< ".\n";
          cout.flush();
-    } 
+    } /* endif */
     error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return (error_flag);
     
@@ -99,11 +99,10 @@ int Initial_Conditions(HexaSolver_Data &Data,
 									   Data.Time,
 									   Data.processor_cpu_time);
     if (!Data.batch_flag && error_flag) {
-      cout << "\n  ERROR: Unable to open restart input data file(s) "
+      cout << "\n ERROR: Unable to open restart input data file(s) "
 	   << "on processor "<< CFFC_MPI::This_Processor_Number<< ".\n";
       cout.flush();
-    } 
-    
+    } /* endif */ 
     error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return (error_flag);
     
@@ -122,17 +121,15 @@ int Initial_Conditions(HexaSolver_Data &Data,
 			       Data.Octree, 
 			       Data.Local_Adaptive_Block_List);
     if (!Data.batch_flag && error_flag) {
-      cout << "\n  ERROR: Difficulty determining the wall distance "
+      cout << "\n ERROR: Difficulty determining the wall distance "
 	   << "on processor "<< CFFC_MPI::This_Processor_Number
 	   << ".\n";
       cout.flush();
-    } 
-    
+    } /* endif */
     error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return (error_flag);
     
     Solution_Data.Local_Solution_Blocks.ICs(Solution_Data.Input);
-
   } /* endif */
 
   error_flag = Hexa_Pre_Processing_Specializations(Data,
@@ -140,11 +137,37 @@ int Initial_Conditions(HexaSolver_Data &Data,
   if (error_flag) return (error_flag);  
 
   /* Send solution information between neighbouring blocks to complete
-      prescription of initial data. */   
-  Send_All_Messages<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >(Solution_Data.Local_Solution_Blocks.Soln_Blks,
-							   Data.Local_Adaptive_Block_List,
-							   Solution_Data.Local_Solution_Blocks.Soln_Blks[0].NumVar(),
-							   OFF);
+     prescription of initial data. */
+
+  CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization. 
+  // First send mesh and geometry information.
+  error_flag = Send_Messages_Mesh_Geometry_Only<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >
+                  (Solution_Data.Local_Solution_Blocks.Soln_Blks, 
+                   Data.Local_Adaptive_Block_List);
+  if (!Data.batch_flag && error_flag) {
+      cout << "\n ERROR: Message passing error during geometry intialization "
+           << "on processor "
+           << CFFC_MPI::This_Processor_Number
+           << ".\n";
+      cout.flush();
+   } /* endif */
+  error_flag = CFFC_OR_MPI(error_flag);
+  if (error_flag) return (error_flag);
+  // Correct exterior nodes to match with message passed geometry information.
+  Solution_Data.Local_Solution_Blocks.Correct_Grid_Exterior_Nodes(Data.Local_Adaptive_Block_List);\
+  // Now send solution information and data.
+  error_flag = Send_Messages<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >
+                  (Solution_Data.Local_Solution_Blocks.Soln_Blks, 
+                   Data.Local_Adaptive_Block_List);
+  if (!Data.batch_flag && error_flag) {
+      cout << "\n ERROR: Message passing error during solution intialization "
+           << "on processor "
+           << CFFC_MPI::This_Processor_Number
+           << ".\n";
+      cout.flush();
+   } /* endif */
+   error_flag = CFFC_OR_MPI(error_flag);
+   if (error_flag) return (error_flag);
   
   /* Prescribe boundary data consistent with initial data. */
   Solution_Data.Local_Solution_Blocks.BCs(Solution_Data.Input);

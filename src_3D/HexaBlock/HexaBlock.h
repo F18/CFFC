@@ -48,7 +48,6 @@ class Hexa_Block{
   protected:
  
   public:
-
    typedef SOLN_pSTATE Soln_pState;
    typedef SOLN_cSTATE Soln_cState;
 
@@ -170,6 +169,32 @@ class Hexa_Block{
 #ifdef _MPI_VERSION
    void Broadcast(MPI::Intracomm &Communicator);
 #endif
+
+   void Update_Grid_Exterior_Nodes(void);
+
+   void Update_Grid_Cells(void);
+
+   void Update_Grid_Ghost_Cells(void);
+    
+   void Set_Grid_BCs_Xdir(const int BCtype_east_boundary,
+                          const int BCtype_west_boundary);
+
+   void Set_Grid_BCs_Ydir(const int BCtype_north_boundary,
+                          const int BCtype_south_boundary);
+
+   void Set_Grid_BCs_Zdir(const int BCtype_top_boundary,
+                          const int BCtype_bottom_boundary);
+
+   void Set_Grid_BCs(const int BCtype_east_boundary,
+                     const int BCtype_west_boundary,
+                     const int BCtype_north_boundary,
+                     const int BCtype_south_boundary,
+                     const int BCtype_top_boundary,
+                     const int BCtype_bottom_boundary);
+
+   void Rotate_Grid(const double &Angle, 
+                    const double &Angle1, 
+                    const double &Angle2);
 
    void Output_Tecplot(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs,
                        const int Number_of_Time_Steps,
@@ -602,12 +627,7 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::deallocate(void) {
 
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::NumVar(void) {
-   
-   int num=0;
-   int num_vars = W[num][num][num].num_vars;    
-
-   return (int(num_vars));
-
+   return (W[0][0][0].num_vars);
 }
 
 /* Return primitive solution state at specified node. */
@@ -779,6 +799,138 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Broadcast(MPI::Intracomm &Communicato
 
 }
 #endif
+
+/********************************************************
+ * Routine: Update_Grid_Exterior_Nodes                  *
+ *                                                      *
+ * Updates the exterior nodes of the grid for           * 
+ * hexahedral solution block.                           *
+ *                                                      *
+ ********************************************************/
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Update_Grid_Exterior_Nodes(void) {
+
+   Grid.Update_Exterior_Nodes();
+
+}
+
+/********************************************************
+ * Routine: Update_Grid_Cells                           *
+ *                                                      *
+ * Updates the computational cells of the grid for      * 
+ * hexahedral solution block.                           *
+ *                                                      *
+ ********************************************************/
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Update_Grid_Cells(void) {
+
+   Grid.Update_Cells();
+
+}
+
+/********************************************************
+ * Routine: Update_Grid_Ghost_Cells                     *
+ *                                                      *
+ * Updates the ghost cells of the grid for              * 
+ * hexahedral solution block.                           *
+ *                                                      *
+ ********************************************************/
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Update_Grid_Ghost_Cells(void) {
+
+   Grid.Update_Ghost_Cells();
+
+}
+
+/********************************************************
+ * Routine: Set_Grid_BCs_Xdir                           *
+ *                                                      *
+ * Sets the x-direction boundary conditions for the     * 
+ * hexahedral solution block.                           *
+ *                                                      *
+ ********************************************************/
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Set_Grid_BCs_Xdir(const int BCtype_east_boundary,
+                                                             const int BCtype_west_boundary) {
+
+   Grid.Set_BCs_Xdir(BCtype_east_boundary,
+                     BCtype_west_boundary);
+
+}
+
+/********************************************************
+ * Routine: Set_Grid_BCs_Ydir                           *
+ *                                                      *
+ * Sets the y-direction boundary conditions for the     * 
+ * hexahedral solution block.                           *
+ *                                                      *
+ ********************************************************/
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Set_Grid_BCs_Ydir(const int BCtype_north_boundary,
+                                                             const int BCtype_south_boundary) {
+
+   Grid.Set_BCs_Ydir(BCtype_north_boundary,
+                     BCtype_south_boundary);
+
+}
+
+/********************************************************
+ * Routine: Set_Grid_BCs_Zdir                           *
+ *                                                      *
+ * Sets the z-direction boundary conditions for the     * 
+ * hexahedral solution block.                           *
+ *                                                      *
+ ********************************************************/
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Set_Grid_BCs_Zdir(const int BCtype_top_boundary,
+                                                             const int BCtype_bottom_boundary) {
+
+   Grid.Set_BCs_Zdir(BCtype_top_boundary,
+                     BCtype_bottom_boundary);
+
+}
+
+/********************************************************
+ * Routine: Set_Grid_BCs                                *
+ *                                                      *
+ * Sets the boundary conditions for the hexahedral      *
+ * solution block.                                      *
+ *                                                      *
+ ********************************************************/
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Set_Grid_BCs(const int BCtype_east_boundary,
+                                                        const int BCtype_west_boundary,
+                                                        const int BCtype_north_boundary,
+                                                        const int BCtype_south_boundary,
+                                                        const int BCtype_top_boundary,
+                                                        const int BCtype_bottom_boundary) {
+
+   Grid.Set_BCs(BCtype_east_boundary,
+		BCtype_west_boundary,
+                BCtype_north_boundary,
+		BCtype_south_boundary,
+                BCtype_top_boundary,
+		BCtype_bottom_boundary);
+
+}
+
+/********************************************************
+ * Routine: Rotate_Grid                                 *
+ *                                                      *
+ * Applies a rotation to the grid of the hexahedral     *
+ * solution block.                                      *
+ *                                                      *
+ ********************************************************/
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Rotate_Grid(const double &Angle, 
+                                                       const double &Angle1, 
+                                                       const double &Angle2) {
+
+   Grid.Rotate(Angle, 
+               Angle1, 
+               Angle2);
+
+}
 
 /********************************************************
  * Routine: Output_Tecplot                              *
@@ -3282,7 +3434,7 @@ LoadSendBuffer_Solution(double *buffer,
       } /* endfor */
    } /* endfor */
    
-   return(0);
+   return (0);
   
 }
 
@@ -3334,7 +3486,7 @@ LoadSendBuffer_Geometry(double *buffer,
       } /* endfor */
    } /* endfor */
    
-   return(0);
+   return (0);
   
 }
 
@@ -3457,7 +3609,7 @@ LoadSendBuffer_BCs(double *buffer,
       } /* endfor */
    } /* endif */
     
-   return(0);
+   return (0);
   
 }
 
@@ -3481,8 +3633,7 @@ LoadSendBuffer_F2C(double *buffer,
                    const int k_inc) {
 
    cout << "\nError: LoadSendBuffer_F2C() is not written for Hexa"; cout.flush();
-
-   return(2); 
+   return (2); 
 
 }
 
@@ -3506,8 +3657,7 @@ LoadSendBuffer_C2F(double *buffer,
                    const int k_inc) {
 
    cout << "\nError: LoadSendBuffer_C2F() is not written for Hexa"; cout.flush();
-
-   return(2); 
+   return (2); 
 
 }
 
@@ -3544,7 +3694,7 @@ UnloadReceiveBuffer_Solution(double *buffer,
       } /* endfor */
    } /* endfor */ 
 
-   return(0);
+   return (0);
 
 }
 
@@ -3580,7 +3730,7 @@ UnloadReceiveBuffer_Geometry(double *buffer,
       } /* endfor */
    } /* endfor */
       
-   return(0);
+   return (0);
 
 }
 
@@ -3653,7 +3803,7 @@ UnloadReceiveBuffer_BCs(double *buffer,
       } /* endfor */
    } /* endfor */
  
-   return(0);
+   return (0);
   
 }
 
@@ -3677,8 +3827,7 @@ UnloadReceiveBuffer_F2C(double *buffer,
                         const int k_inc) {
 
    cout << "\nError: UnloadReceiveBuffer_F2C() is not written for Hexa"; cout.flush();
-
-   return(2); 
+   return (2); 
 
 }
 
@@ -3702,8 +3851,7 @@ UnloadReceiveBuffer_C2F(double *buffer,
                         const int k_inc) {
 
    cout << "\nError: UnloadReceiveBuffer_C2F() is not written for Hexa"; cout.flush();
-
-   return(2);
+   return (2);
 
 }
 
@@ -3745,8 +3893,7 @@ LoadSendBuffer_Flux_F2C(double *buffer,
                         const int k_inc) {
 
    cout << "\nError: LoadSendBuffer_Flux_F2C() is not written for Hexa"; cout.flush();
-
-   return(2);
+   return (2);
 
 }
 
@@ -3772,8 +3919,7 @@ UnloadReceiveBuffer_Flux_F2C(double *buffer,
                              const int k_inc) {
 
    cout << "\nError: UnloadReceiveBuffer_Flux_F2C() is not written for Hexa"; cout.flush();
-
-   return(2);
+   return (2);
 
 }
 

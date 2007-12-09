@@ -1,5 +1,6 @@
 #ifndef _NKS_INCLUDED
 #define _NKS_INCLUDED
+
 /*! ********************** NKS.h *************************************************
  *          3D Newton-Krylov-Schwarz Parallel Implicit Solver                    *  
  *                                                                               *
@@ -690,10 +691,8 @@ Steady_Solve(const double &physical_time,const int &DTS_Step){
 
       /**************************************************************************/
       /* Exchange solution information between neighbouring blocks. */    
-      error_flag = Send_All_Messages( Solution_Data->Local_Solution_Blocks.Soln_Blks,
-				      Data->Local_Adaptive_Block_List,
-				      Solution_Data->Local_Solution_Blocks.Soln_Blks[0].NumVar(), 
-				      OFF);
+      error_flag = Send_Messages(Solution_Data->Local_Solution_Blocks.Soln_Blks,
+			         Data->Local_Adaptive_Block_List);
       if (error_flag) {
          cout << "\n 3D_NKS ERROR: 3D message passing error on processor "
 	      << CFFC_MPI::This_Processor_Number
@@ -755,8 +754,5 @@ Steady_Solve(const double &physical_time,const int &DTS_Step){
 
   return error_flag;
 } // End of Steady Newton_Krylov_Schwarz_Solver.
-
-
-
 
 #endif  /* _NKS_INCLUDED */

@@ -292,8 +292,18 @@ ICs(const int i_ICtype,
    double dpdx, dpdy, dpdz, delta_pres, delta_pres_x, delta_pres_y, delta_pres_z;
    double zd, zz, di, Um, U_axi;
    
-   FANS3D_ThermallyPerfect_KOmega_pState Wl, Wr;
+   double Rprime, yprime, xn, yn, fc, tempvalue;
+   Vector2D Xt;
+   ReactiveScalarField_Fuel_CH4H2 RSF;
+   NonreactiveScalarField NRSF;
+   double tc[10], max_mean_velocity, 
+      BluffBody_Coflow_Air_Velocity = 125, 
+      BluffBody_Coflow_Fuel_Velocity = 25;
    
+   int BluffBody_Data_Usage = 0;
+
+   FANS3D_ThermallyPerfect_KOmega_pState Wl, Wr;
+
    switch(i_ICtype) {
       case IC_VISCOUS_COUETTE :
       case IC_VISCOUS_COUETTE_PRESSURE_GRADIENT_X :
@@ -645,6 +655,282 @@ ICs(const int i_ICtype,
                   U[i][j][k] = W[i][j][k].U();
                } /* endfor */
             } /* endfor */
+         } /* endfor */
+         break;
+
+      case IC_TURBULENT_COFLOW:
+         for (int k  = KCl-Nghost ; k <= KCu+Nghost ; ++k) {
+            for (int j  = JCl-Nghost ; j <= JCu+Nghost ; ++j) {
+               for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i) {
+                  // Apply uniform solution state
+                  W[i][j][k] = IPs.Wo;
+                  W[i][j][k].v.z= ZERO;
+                  W[i][j][k].v.x = ZERO;
+                  W[i][j][k].v.y = ZERO;
+       
+                  W[i][j][k].rho = W[i][j][k].p/( W[i][j][k].Rtot()*300.0);
+                  tempvalue =  BluffBody_Coflow_Air_Velocity*(HALF*(IPs.Grid_IP.Radius_Coflow_Inlet_Pipe-
+                               IPs.Grid_IP.Radius_Bluff_Body))/(W[i][j][k].mu()/W[i][j][k].rho);
+                  WallData[i][j][k].tauw = 0.0228*W[i][j][k].rho* BluffBody_Coflow_Air_Velocity*
+                                           BluffBody_Coflow_Air_Velocity/pow(fabs(tempvalue), 0.25);
+                  WallData[i][j][k].utau = sqrt(WallData[i][j][k].tauw/W[i][j][k].rho);
+                  W[i][j][k].k = 0.5*WallData[i][j][k].utau*WallData[i][j][k].utau/
+                                 sqrt(W[0][0][0].k_omega_model.beta_star);
+                  WallData[i][j][k].yplus = WallData[i][j][k].ywall*WallData[i][j][k].utau/
+                                            (W[i][j][k].mu()/W[i][j][k].rho);
+                  if (WallData[i][j][k].ywall !=ZERO) {
+                     if (WallData[i][j][k].yplus<=W[0][0][0].k_omega_model.y_sublayer) {
+                        W[i][j][k].omega = 6.0*(W[i][j][k].mu()/W[i][j][k].rho)/
+                                           (W[0][0][0].k_omega_model.beta*WallData[i][j][k].ywall*WallData[i][j][k].ywall);
+		     } else {
+                        W[i][j][k].omega = sqrt(W[i][j][k].k)/(pow(W[0][0][0].k_omega_model.beta_star, 0.25)*
+                                           W[0][0][0].k_omega_model.Karman_const*WallData[i][j][k].ywall);
+		     }
+		  }
+                  // Specifying the velocity profiles in the annular pipe (coflowing air and jet)
+                  if ((fabs(Grid.Cell[i][j][k].Xc.y)>IPs.Grid_IP.Radius_Bluff_Body) && 
+                      (fabs(Grid.Cell[i][j][k].Xc.y)<IPs.Grid_IP.Radius_Coflow_Inlet_Pipe)) {
+                     if (Grid.Cell[i][j][k].Xc.z <=  0.5*IPs.Grid_IP.Length_Combustor_Tube) {
+                        Rprime = (IPs.Grid_IP.Radius_Coflow_Inlet_Pipe - IPs.Grid_IP.Radius_Bluff_Body)/2.0;
+                        if (fabs(Grid.Cell[i][j][k].Xc.y)<=(IPs.Grid_IP.Radius_Bluff_Body+ Rprime)) {
+                           yprime = fabs(Grid.Cell[i][j][k].Xc.y) -  IPs.Grid_IP.Radius_Bluff_Body;
+                           if (yprime !=0.0) {
+                              W[i][j][k].v.z =  BluffBody_Coflow_Air_Velocity*pow(fabs(yprime/Rprime), 0.143);
+                           } else {
+                              W[i][j][k].v.z =  BluffBody_Coflow_Air_Velocity;
+                           }
+                        } else {
+                           yprime = fabs(Grid.Cell[i][j][k].Xc.y) -  IPs.Grid_IP.Radius_Bluff_Body- Rprime;
+                           if (yprime !=0.0) {
+                              W[i][j][k].v.z =  BluffBody_Coflow_Air_Velocity*pow(fabs(1.0- fabs(yprime/Rprime)), 0.143);
+                           } else {
+                              W[i][j][k].v.z =  BluffBody_Coflow_Air_Velocity;
+                           }
+			}
+		     }
+		  }
+                  if ((fabs(Grid.Cell[i][j][k].Xc.x)>IPs.Grid_IP.Radius_Bluff_Body) && 
+                      (fabs(Grid.Cell[i][j][k].Xc.x)<IPs.Grid_IP.Radius_Coflow_Inlet_Pipe)) {
+                     if (Grid.Cell[i][j][k].Xc.z <=  0.5*IPs.Grid_IP.Length_Combustor_Tube) {
+                        Rprime = (IPs.Grid_IP.Radius_Coflow_Inlet_Pipe - IPs.Grid_IP.Radius_Bluff_Body)/2.0;
+                        if (fabs(Grid.Cell[i][j][k].Xc.x)<=(IPs.Grid_IP.Radius_Bluff_Body+ Rprime)) {
+                           yprime = fabs(Grid.Cell[i][j][k].Xc.x) -  IPs.Grid_IP.Radius_Bluff_Body;
+                           if (yprime !=0.0) {
+                              W[i][j][k].v.z =  BluffBody_Coflow_Air_Velocity*pow(fabs(yprime/Rprime), 0.143);
+                           } else {
+                              W[i][j][k].v.z =  BluffBody_Coflow_Air_Velocity;
+			   }
+			} else {
+                           yprime = fabs(Grid.Cell[i][j][k].Xc.x) -  IPs.Grid_IP.Radius_Bluff_Body- Rprime;
+                           if (yprime !=0.0) {
+                              W[i][j][k].v.z =  BluffBody_Coflow_Air_Velocity*pow(fabs(1.0- fabs(yprime/Rprime)), 0.143);
+                           } else {
+                              W[i][j][k].v.z =  BluffBody_Coflow_Air_Velocity;
+			   }
+			}
+		     }
+		  }
+                  if (fabs(Grid.Cell[i][j][k].Xc.y) <= IPs.Grid_IP.Radius_Fuel_Line) {
+                     if (Grid.Cell[i][j][k].Xc.z <=  0.5*IPs.Grid_IP.Length_Combustor_Tube) {
+                        Rprime = IPs.Grid_IP.Radius_Fuel_Line;
+                        if (Grid.Cell[i][j][k].Xc.y<0.0) {
+                           yprime = fabs(Grid.Cell[i][j][k].Xc.y);
+                           if (yprime !=0.0) {
+                              W[i][j][k].v.z =  BluffBody_Coflow_Fuel_Velocity*pow(fabs(yprime/Rprime), 0.143);
+                           } else {
+                              W[i][j][k].v.z =  BluffBody_Coflow_Fuel_Velocity;
+                           }
+                        } else {
+                           yprime = fabs(Grid.Cell[i][j][k].Xc.y) ;
+                           if (yprime !=0.0) {
+                              W[i][j][k].v.z =  BluffBody_Coflow_Fuel_Velocity*pow(fabs(1.0- fabs(yprime/Rprime)), 0.143);
+                           } else {
+                              W[i][j][k].v.z =  BluffBody_Coflow_Fuel_Velocity;
+                           }
+                        }
+                     }
+		  }
+                  if (fabs(Grid.Cell[i][j][k].Xc.x) <= IPs.Grid_IP.Radius_Fuel_Line) {
+                     if (Grid.Cell[i][j][k].Xc.z <=  0.5*IPs.Grid_IP.Length_Combustor_Tube) { 
+                        Rprime = IPs.Grid_IP.Radius_Fuel_Line;
+                        if (Grid.Cell[i][j][k].Xc.x<0.0) {
+                           yprime = fabs(Grid.Cell[i][j][k].Xc.x);
+                           if (yprime !=0.0) {
+                              W[i][j][k].v.z =  BluffBody_Coflow_Fuel_Velocity*pow(fabs(yprime/Rprime), 0.143);
+                           } else {
+                              W[i][j][k].v.z =  BluffBody_Coflow_Fuel_Velocity;
+                           }
+                        } else {
+                           yprime = fabs(Grid.Cell[i][j][k].Xc.x) ;
+                           if (yprime !=0.0) {
+                              W[i][j][k].v.z =  BluffBody_Coflow_Fuel_Velocity*pow(fabs(1.0- fabs(yprime/Rprime)), 0.143);
+                           } else {
+                              W[i][j][k].v.z =  BluffBody_Coflow_Fuel_Velocity;
+                           }
+                        }
+		     }
+		  }
+                  if (IPs.Species_IP.num_species == 3) { 
+                     if (fabs(Grid.Cell[i][j][k].Xc.x)<0.5*IPs.Grid_IP.Radius_Fuel_Line && 
+                         Grid.Cell[i][j][k].Xc.z>0.0 && 
+                         Grid.Cell[i][j][k].Xc.z<0.1*IPs.Grid_IP.Length_Combustor_Tube) {
+                        W[i][j][k].spec[0] = 1.0; //CH4
+                        W[i][j][k].spec[1] = 0.0;//O2
+                        W[i][j][k].spec[2] = 0.0; //N2
+                     }
+                     if (fabs(Grid.Cell[i][j][k].Xc.y)<0.5*IPs.Grid_IP.Radius_Fuel_Line && 
+                         Grid.Cell[i][j][k].Xc.z>0.0 && 
+                         Grid.Cell[i][j][k].Xc.z<0.1*IPs.Grid_IP.Length_Combustor_Tube) {
+                        W[i][j][k].spec[0] = 1.0; //CH4
+                        W[i][j][k].spec[1] = 0.0;//O2
+                        W[i][j][k].spec[2] = 0.0; //N2
+                     }
+		  }
+                  W[i][j][k].rho = W[i][j][k].p/( W[i][j][k].Rtot()*300.0);
+                  U[i][j][k] = W[i][j][k].U();
+	       } /* endfor */
+	    } /* endfor */
+         } /* endfor */
+         break;
+
+      case IC_TURBULENT_DIFFUSION_FLAME :  
+         for (int k  = KCl-Nghost ; k <= KCu+Nghost ; ++k) {
+            for (int j  = JCl-Nghost ; j <= JCu+Nghost ; ++j) {
+               for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i) {
+                  // Apply uniform solution state
+                  W[i][j][k] = IPs.Wo;
+                  W[i][j][k].v.z= ZERO;
+                  W[i][j][k].v.x = ZERO;
+                  W[i][j][k].v.y = ZERO;
+                  W[i][j][k].rho = W[i][j][k].p/( W[i][j][k].Rtot()*300.0);
+                  tempvalue =  BluffBody_Coflow_Air_Velocity*(HALF*(IPs.Grid_IP.Radius_Coflow_Inlet_Pipe-
+                               IPs.Grid_IP.Radius_Bluff_Body))/(W[i][j][k].mu()/W[i][j][k].rho);
+                  WallData[i][j][k].tauw = 0.0228*W[i][j][k].rho* BluffBody_Coflow_Air_Velocity*
+                                           BluffBody_Coflow_Air_Velocity/pow(fabs(tempvalue), 0.25);
+                  WallData[i][j][k].utau = sqrt(WallData[i][j][k].tauw/W[i][j][k].rho);
+                  W[i][j][k].k = 0.5*WallData[i][j][k].utau*WallData[i][j][k].utau/sqrt(W[0][0][0].k_omega_model.beta_star);
+                  WallData[i][j][k].yplus = WallData[i][j][k].ywall*WallData[i][j][k].utau/
+                                            (W[i][j][k].mu()/W[i][j][k].rho);
+                  if (WallData[i][j][k].ywall !=ZERO) {
+                     if (WallData[i][j][k].yplus<=W[0][0][0].k_omega_model.y_sublayer) {
+                        W[i][j][k].omega = 6.0*(W[i][j][k].mu()/W[i][j][k].rho)/
+                                           (W[0][0][0].k_omega_model.beta*WallData[i][j][k].ywall*WallData[i][j][k].ywall);
+                     } else {
+                        W[i][j][k].omega = sqrt(W[i][j][k].k)/(pow(W[0][0][0].k_omega_model.beta_star, 0.25)*
+                                           W[0][0][0].k_omega_model.Karman_const*WallData[i][j][k].ywall);
+                     }
+                  }
+                  // Specifying the velocity profiles in the annular pipe (coflowing air and jet)
+                  if ((fabs(Grid.Cell[i][j][k].Xc.y)>IPs.Grid_IP.Radius_Bluff_Body) && 
+                      (fabs(Grid.Cell[i][j][k].Xc.y)<IPs.Grid_IP.Radius_Coflow_Inlet_Pipe)) {
+                     if (Grid.Cell[i][j][k].Xc.z <=  0.5*IPs.Grid_IP.Length_Combustor_Tube) {
+                        Rprime = (IPs.Grid_IP.Radius_Coflow_Inlet_Pipe - IPs.Grid_IP.Radius_Bluff_Body)/2.0;
+                        if (fabs(Grid.Cell[i][j][k].Xc.y)<=(IPs.Grid_IP.Radius_Bluff_Body+ Rprime)){
+                           yprime = fabs(Grid.Cell[i][j][k].Xc.y) -  IPs.Grid_IP.Radius_Bluff_Body;
+                           if (yprime !=0.0) {
+                              W[i][j][k].v.z = BluffBody_Coflow_Air_Velocity*pow(fabs(yprime/Rprime), 0.143);
+                           } else {
+                              W[i][j][k].v.z = BluffBody_Coflow_Air_Velocity;
+                           }
+                        } else {
+                           yprime = fabs(Grid.Cell[i][j][k].Xc.y) -  IPs.Grid_IP.Radius_Bluff_Body- Rprime;
+                           if (yprime !=0.0) {
+                              W[i][j][k].v.z = BluffBody_Coflow_Air_Velocity*pow(fabs(1.0- fabs(yprime/Rprime)), 0.143);
+                           } else {
+                              W[i][j][k].v.z = BluffBody_Coflow_Air_Velocity;
+                           }
+                        }
+                     }
+                  }
+                  if ((fabs(Grid.Cell[i][j][k].Xc.x)>IPs.Grid_IP.Radius_Bluff_Body) && 
+                      (fabs(Grid.Cell[i][j][k].Xc.x)<IPs.Grid_IP.Radius_Coflow_Inlet_Pipe)) {
+                     if (Grid.Cell[i][j][k].Xc.z <=  0.5*IPs.Grid_IP.Length_Combustor_Tube) {
+                        Rprime = (IPs.Grid_IP.Radius_Coflow_Inlet_Pipe - IPs.Grid_IP.Radius_Bluff_Body)/2.0;
+                        if (fabs(Grid.Cell[i][j][k].Xc.x)<=(IPs.Grid_IP.Radius_Bluff_Body+ Rprime)) {
+                           yprime = fabs(Grid.Cell[i][j][k].Xc.x) -  IPs.Grid_IP.Radius_Bluff_Body;
+                           if (yprime !=0.0) {
+                              W[i][j][k].v.z = BluffBody_Coflow_Air_Velocity*pow(fabs(yprime/Rprime), 0.143);
+                           } else {
+                              W[i][j][k].v.z = BluffBody_Coflow_Air_Velocity;
+                           }
+                        } else {
+                           yprime = fabs(Grid.Cell[i][j][k].Xc.x) -  IPs.Grid_IP.Radius_Bluff_Body- Rprime;
+                           if (yprime !=0.0) {
+                              W[i][j][k].v.z = BluffBody_Coflow_Air_Velocity*pow(fabs(1.0- fabs(yprime/Rprime)), 0.143);
+                           } else {
+                              W[i][j][k].v.z = BluffBody_Coflow_Air_Velocity;
+                           }
+                        }
+                     }
+                  }
+                  if (fabs(Grid.Cell[i][j][k].Xc.y) <= IPs.Grid_IP.Radius_Fuel_Line) {
+                     if (Grid.Cell[i][j][k].Xc.z <=  0.5*IPs.Grid_IP.Length_Combustor_Tube) {
+                        Rprime = IPs.Grid_IP.Radius_Fuel_Line;
+                        if (Grid.Cell[i][j][k].Xc.y<0.0) {
+                           yprime = fabs(Grid.Cell[i][j][k].Xc.y);
+                           if (yprime !=0.0) {
+                              W[i][j][k].v.z = BluffBody_Coflow_Fuel_Velocity*pow(fabs(yprime/Rprime), 0.143);
+                           } else {
+                              W[i][j][k].v.z = BluffBody_Coflow_Fuel_Velocity;
+                           }
+                        } else {
+                           yprime = fabs(Grid.Cell[i][j][k].Xc.y) ;
+                           if (yprime !=0.0) {
+                              W[i][j][k].v.z = BluffBody_Coflow_Fuel_Velocity*pow(fabs(1.0- fabs(yprime/Rprime)), 0.143);
+                           } else {
+                              W[i][j][k].v.z = BluffBody_Coflow_Fuel_Velocity;
+                           }
+                        }
+                     }
+                  }
+                  if (fabs(Grid.Cell[i][j][k].Xc.x) <= IPs.Grid_IP.Radius_Fuel_Line) {
+                     if (Grid.Cell[i][j][k].Xc.z <=  0.5*IPs.Grid_IP.Length_Combustor_Tube) {
+                        Rprime = IPs.Grid_IP.Radius_Fuel_Line;
+                        if (Grid.Cell[i][j][k].Xc.x<0.0) {
+                           yprime = fabs(Grid.Cell[i][j][k].Xc.x);
+                           if (yprime !=0.0) {
+                              W[i][j][k].v.z =  BluffBody_Coflow_Fuel_Velocity*pow(fabs(yprime/Rprime), 0.143);
+                           } else {
+                              W[i][j][k].v.z =  BluffBody_Coflow_Fuel_Velocity;
+                           }
+                        } else {
+                           yprime = fabs(Grid.Cell[i][j][k].Xc.x) ;
+                           if (yprime !=0.0) {
+                              W[i][j][k].v.z =  BluffBody_Coflow_Fuel_Velocity*pow(fabs(1.0- fabs(yprime/Rprime)), 0.143);
+                          } else {
+                              W[i][j][k].v.z =  BluffBody_Coflow_Fuel_Velocity;
+                          }
+			}
+                     }
+                  }
+                  if (IPs.Wo.React.reactset_flag == CH4_1STEP) {
+                     if (fabs(Grid.Cell[i][j][k].Xc.x)<0.5*IPs.Grid_IP.Radius_Fuel_Line && 
+                         Grid.Cell[i][j][k].Xc.z>0.0 && 
+                         Grid.Cell[i][j][k].Xc.z<0.1*IPs.Grid_IP.Length_Combustor_Tube) {
+                        double profile = 0.996;
+                        W[i][j][k].spec[0] = profile;
+                        W[i][j][k].spec[1] = (ONE-profile)*0.235;
+                        W[i][j][k].spec[2] = ZERO; //CO2
+                        W[i][j][k].spec[3] = ZERO ; //H2O
+                        W[i][j][k].spec[ IPs.Wo.ns-1] =(ONE-profile)*0.765;//N2
+                        W[i][j][k].rho = W[i][j][k].p/( W[i][j][k].Rtot()*300);
+                     }
+                     if (fabs(Grid.Cell[i][j][k].Xc.y)<0.5*IPs.Grid_IP.Radius_Fuel_Line && 
+                         Grid.Cell[i][j][k].Xc.z>0.0 && 
+                         Grid.Cell[i][j][k].Xc.z<0.1*IPs.Grid_IP.Length_Combustor_Tube) {
+                        double profile = 0.996;// ONE*pow((1.0-abs(Grid.Cell[i][j][k].Xc.y)/IPs.Grid_IP.Radius_Fuel_Line), 0.143);
+                        W[i][j][k].spec[0] = profile;
+                        W[i][j][k].spec[1] = (ONE-profile)*0.235;
+                        W[i][j][k].spec[2] = ZERO; //CO2
+                        W[i][j][k].spec[3] = ZERO ; //H2O
+                        W[i][j][k].spec[ IPs.Wo.ns-1] =(ONE-profile)*0.765;//N2
+                        W[i][j][k].rho = W[i][j][k].p/( W[i][j][k].Rtot()*300);
+                     }
+                  }// mass fraction distribution for CH4 bluff body burner at the fuel inlet
+                  W[i][j][k].rho = W[i][j][k].p/( W[i][j][k].Rtot()*300.0);
+                  U[i][j][k] = W[i][j][k].U();
+               } /* endfor */
+	    } /* endfor */
          } /* endfor */
          break;
 
@@ -1356,11 +1642,13 @@ CFL(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
                
                if (IPs.i_Flow_Type != FLOWTYPE_INVISCID) {  
                   nv = W[i][j][k].mu()/W[i][j][k].rho;
+         
                   if (IPs.i_Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
                       IPs.i_Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
                      nv_t = W[i][j][k].mu_t()/W[i][j][k].rho; 
                      nv = max(nv, nv_t);
                   } /* endif */
+        
                   dt_vis = min(min((d_i*d_i)/(3.0*nv), 
                                    (d_j*d_j)/(3.0*nv)), 
                                    (d_k*d_k)/(3.0*nv)); 

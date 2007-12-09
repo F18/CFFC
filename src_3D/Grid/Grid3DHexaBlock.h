@@ -144,7 +144,7 @@ using namespace std;
  * cin  >> G; (input function)                          *
  *                                                      *
  ********************************************************/
-class Grid3D_Hexa_Block{
+class Grid3D_Hexa_Block {
   public:
     int           NNi,INl,INu; // i-direction node counters
     int           NNj,JNl,JNu; // j-direction node counters
@@ -372,15 +372,15 @@ class Grid3D_Hexa_Block{
 
     void Update_Exterior_Nodes_Zdir(void);
 
-    void Update_Cells(void);
-
-    void Update_Ghost_Cells(void);
-    
     void Correct_Exterior_Nodes(const int i_elem, 
                                 const int j_elem, 
                                 const int k_elem, 
                                 const int *be);
 
+    void Update_Cells(void);
+
+    void Update_Ghost_Cells(void);
+    
     void Set_BCs_Xdir(const int BCtype_east_boundary,
                       const int BCtype_west_boundary);
 
@@ -528,7 +528,7 @@ inline Vector3D Grid3D_Hexa_Block::centroid(const int ii, const int jj, const in
 /*************************************************************************
  * Grid3D_Hexa_Block::centroid -- Cell Volume.                           *
  *************************************************************************/
-inline double Grid3D_Hexa_Block::volume(const Cell3D &Cell){
+inline double Grid3D_Hexa_Block::volume(const Cell3D &Cell) {
   return (tetvolume(centroid(Cell), nodeNWBot(Cell), nodeNEBot(Cell), xfaceBot(Cell))+
 	  tetvolume(centroid(Cell), nodeNWBot(Cell), nodeSWBot(Cell), xfaceBot(Cell))+
 	  tetvolume(centroid(Cell), nodeSWBot(Cell), nodeSEBot(Cell), xfaceBot(Cell))+
@@ -1231,7 +1231,7 @@ inline Grid3D_Hexa_Block operator +(Grid3D_Hexa_Block &G, const Vector3D &V) {
 }
 
 inline Grid3D_Hexa_Block operator -(Grid3D_Hexa_Block &G, const Vector3D &V) {
-  for(int k = G.KNl-G.Nghost; k<=G.KNu+G.Nghost; ++k){
+  for(int k = G.KNl-G.Nghost; k <= G.KNu+G.Nghost; ++k){
     for (int  j = G.JNl-G.Nghost; j <= G.JNu+G.Nghost; ++j ) {
       for (int i = G.INl-G.Nghost ; i <= G.INu+G.Nghost; ++i ) {
 	G.Node[i][j][k].X -= V;
@@ -1239,7 +1239,7 @@ inline Grid3D_Hexa_Block operator -(Grid3D_Hexa_Block &G, const Vector3D &V) {
     } /* endfor */
   }/*endfor */
   
-  for(int k = G.KCl - G.Nghost; k<= G.KCu + G.Nghost; ++k){
+  for(int k = G.KCl - G.Nghost; k <= G.KCu + G.Nghost; ++k){
     for (int j = G.JCl-G.Nghost ; j <= G.JCu+G.Nghost ; ++j) {
       for (int i = G.ICl-G.Nghost ; i <= G.ICu+G.Nghost ; ++i) {
 	G.Cell[i][j][k].Xc = G.centroid(i, j, k);
@@ -1252,7 +1252,7 @@ inline Grid3D_Hexa_Block operator -(Grid3D_Hexa_Block &G, const Vector3D &V) {
 
 // Scaling operators.
 inline Grid3D_Hexa_Block operator *(Grid3D_Hexa_Block &G, const double &a) {
-  for(int k = G.KNl-G.Nghost; k<=G.KNu+G.Nghost; ++k){
+  for(int k = G.KNl-G.Nghost; k <= G.KNu+G.Nghost; ++k){
     for (int  j = G.JNl-G.Nghost; j <= G.JNu+G.Nghost; ++j ) {
       for (int i = G.INl-G.Nghost ; i <= G.INu+G.Nghost; ++i ) {
 	G.Node[i][j][k].X = G.Node[i][j][k].X*a;
@@ -1260,7 +1260,7 @@ inline Grid3D_Hexa_Block operator *(Grid3D_Hexa_Block &G, const double &a) {
     } /* endfor */
   }/*endfor */
   
-  for(int k = G.KCl - G.Nghost; k<= G.KCu + G.Nghost; ++k){
+  for(int k = G.KCl - G.Nghost; k <= G.KCu + G.Nghost; ++k){
     for (int j = G.JCl-G.Nghost ; j <= G.JCu+G.Nghost ; ++j) {
       for (int i = G.ICl-G.Nghost ; i <= G.ICu+G.Nghost ; ++i) {
 	G.Cell[i][j][k].Xc = G.centroid(i, j, k);
@@ -1272,7 +1272,7 @@ inline Grid3D_Hexa_Block operator *(Grid3D_Hexa_Block &G, const double &a) {
 }
 
 inline Grid3D_Hexa_Block operator *(const double &a, Grid3D_Hexa_Block &G) {
- for(int k = G.KNl-G.Nghost; k<=G.KNu+G.Nghost; ++k) {
+ for(int k = G.KNl-G.Nghost; k <= G.KNu+G.Nghost; ++k) {
     for (int  j = G.JNl-G.Nghost; j <= G.JNu+G.Nghost; ++j ) {
       for (int i = G.INl-G.Nghost ; i <= G.INu+G.Nghost; ++i ) {
 	G.Node[i][j][k].X = G.Node[i][j][k].X*a;
@@ -1292,7 +1292,7 @@ inline Grid3D_Hexa_Block operator *(const double &a, Grid3D_Hexa_Block &G) {
 }
 
 inline Grid3D_Hexa_Block operator /(Grid3D_Hexa_Block &G, const double &a) {
-  for(int k = G.KNl-G.Nghost; k<=G.KNu+G.Nghost; ++k) {
+  for(int k = G.KNl-G.Nghost; k <= G.KNu+G.Nghost; ++k) {
     for (int  j = G.JNl-G.Nghost; j <= G.JNu+G.Nghost; ++j ) {
       for (int i = G.INl-G.Nghost ; i <= G.INu+G.Nghost; ++i ) {
 	G.Node[i][j][k].X = G.Node[i][j][k].X/a;
@@ -1300,7 +1300,7 @@ inline Grid3D_Hexa_Block operator /(Grid3D_Hexa_Block &G, const double &a) {
     } /* endfor */
   }/*endfor */
   
-  for(int k = G.KCl - G.Nghost; k<= G.KCu + G.Nghost; ++k) {
+  for(int k = G.KCl - G.Nghost; k <= G.KCu + G.Nghost; ++k) {
     for (int j = G.JCl-G.Nghost ; j <= G.JCu+G.Nghost ; ++j) {
       for (int i = G.ICl-G.Nghost ; i <= G.ICu+G.Nghost ; ++i) {
 	G.Cell[i][j][k].Xc = G.centroid(i, j, k);
@@ -1332,7 +1332,7 @@ inline Grid3D_Hexa_Block operator ^(Grid3D_Hexa_Block &G, const double &a) {
       } /* endfor */
     } /* endfor */
   } /*endfor*/ 
-  for( int k = G.KCl-G.Nghost; k<= G.KCu + G.Nghost; ++k) {
+  for( int k = G.KCl-G.Nghost; k <= G.KCu + G.Nghost; ++k) {
     for (int j = G.JCl-G.Nghost ; j <= G.JCu+G.Nghost ; ++j) {
       for (int i = G.ICl-G.Nghost ; i <= G.ICu+G.Nghost ; ++i) {
 	G.Cell[i][j][k].Xc = G.centroid(i, j, k);
@@ -1345,7 +1345,7 @@ inline Grid3D_Hexa_Block operator ^(Grid3D_Hexa_Block &G, const double &a) {
 
 inline Grid3D_Hexa_Block operator &(Grid3D_Hexa_Block &G, const double &a) {  
   Vector3D X;
-  double cos_angle=cos(a);double sin_angle= sin(a);
+  double cos_angle=cos(a); double sin_angle= sin(a);
   //rotation about the X-axis
   for(int k = G.KNl - G.Nghost; k <= G.KNu + G.Nghost; ++k) {
     for (int j = G.JNl-G.Nghost ; j <= G.JNu+G.Nghost; ++j ) {
@@ -1377,7 +1377,7 @@ inline Grid3D_Hexa_Block operator &(Grid3D_Hexa_Block &G, const double &a) {
 
 inline Grid3D_Hexa_Block operator %(Grid3D_Hexa_Block &G, const double &a) {   
   Vector3D X;
-  double cos_angle=cos(a);double  sin_angle= sin(a);
+  double cos_angle=cos(a); double sin_angle= sin(a);
   //rotation about the Y-axis
   for(int k = G.KNl - G.Nghost; k <= G.KNu + G.Nghost; ++k) {
     for (int j = G.JNl-G.Nghost ; j <= G.JNu+G.Nghost; ++j ) {

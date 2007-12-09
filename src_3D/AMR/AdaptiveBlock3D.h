@@ -1266,14 +1266,11 @@ class AdaptiveBlock3D_List {
     
     static void Deallocate_Message_Buffers_ResChange(AdaptiveBlock3D_List &Blk_List);
     
-    static int Exchange_Messages(AdaptiveBlock3D_List &Blk_List,
-                                 const int Number_of_Solution_Variables,
-                                 const int Send_Mesh_Geometry_Only);
-    
     static int Exchange_Messages_NoResChange(AdaptiveBlock3D_List &Blk_List,
-                                             const int Number_of_Solution_Variables,
-                                             const int Send_Mesh_Geometry_Only);
+                                             const int Number_of_Solution_Variables);
     
+   static int Exchange_Messages_NoResChange_Mesh_Geometry_Only(AdaptiveBlock3D_List &Blk_List);
+
     static int Exchange_Messages_ResChange_FineToCoarse(AdaptiveBlock3D_List &Blk_List,
                                                         const int Number_of_Solution_Variables);
     

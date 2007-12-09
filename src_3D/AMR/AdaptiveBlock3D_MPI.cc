@@ -18,201 +18,172 @@
  *                                                        *
  **********************************************************/
 int AdaptiveBlock3D_List::Exchange_Messages_NoResChange(AdaptiveBlock3D_List &Blk_List,
-                                                        const int Number_of_Solution_Variables,
-                                                        const int Send_Mesh_Geometry_Only) {
+                                                        const int Number_of_Solution_Variables) {
 
-   int i_cpu, i_blk, neighbour_cpu, neighbour_blk, 
-        buffer_size, buffer_size_neighbour, l;
-   
-   int tag_base_neigh, tag_base;
+   int i_blk, neighbour_cpu, neighbour_blk, buffer_size, neighbour_buffer_size;
 
-   int i_bound_elem; // index for boundary element, face edge or vertex
-   int num_bound_elem[MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK];
-   AdaptiveBlock3D_Info info_bound_elem[MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK];
+   int number_receive_requests, number_send_requests;
 
-   int number_receive_requests, 
-       number_send_requests, 
-       tag_receive, tag_send;
-   
-   MPI::Request *receive_requests, 
-                *send_requests, 
-                request;
+   int tag_receive, tag_send, tag_base= 100000, tag_modifier = 100;
+
+   int i_bound_elem, neighbour_bound_elem; // index for boundary element, face edge or vertex
+
+   int number_neighbours[MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK];
+   AdaptiveBlock3D_Info neighbour_info[MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK];
+
+   MPI::Request *receive_requests, *send_requests, request;
    
    /* Allocate memory for message passing requests. */
    
-   receive_requests = new MPI::Request[8*Blk_List.Nblk];
-   send_requests = new MPI::Request[8*Blk_List.Nblk];
+   receive_requests = new MPI::Request[MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK*Blk_List.Nblk];
+   send_requests = new MPI::Request[MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK*Blk_List.Nblk];
    number_receive_requests = 0;
    number_send_requests = 0;
-   tag_base = MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK;
    
    /* Perform message passing for the block faces and corners of each 
       solution block having no mesh resolution change. */
    
-   i_cpu = Blk_List.ThisCPU;
-   
-   for ( i_blk = 0 ; i_blk <= Blk_List.Nblk-1 ; ++i_blk ) {
+   for (i_blk = 0 ; i_blk <= Blk_List.Nblk-1 ; ++i_blk) {
       if (Blk_List.Block[i_blk].used) {
          // Assign the boundary element information
-         num_bound_elem[BE::BSW] = Blk_List.Block[i_blk].nBSW;
-         info_bound_elem[BE::BSW] =  Blk_List.Block[i_blk].infoBSW[0];
+         number_neighbours[BE::BSW] = Blk_List.Block[i_blk].nBSW;
+         neighbour_info[BE::BSW] = Blk_List.Block[i_blk].infoBSW[0];
          
-         num_bound_elem[BE::SW] = Blk_List.Block[i_blk].nSW;
-         info_bound_elem[BE::SW] =  Blk_List.Block[i_blk].infoSW[0];
+         number_neighbours[BE::SW] = Blk_List.Block[i_blk].nSW;
+         neighbour_info[BE::SW] = Blk_List.Block[i_blk].infoSW[0];
          
-         num_bound_elem[BE::TSW] = Blk_List.Block[i_blk].nTSW;
-         info_bound_elem[BE::TSW] =  Blk_List.Block[i_blk].infoTSW[0];
+         number_neighbours[BE::TSW] = Blk_List.Block[i_blk].nTSW;
+         neighbour_info[BE::TSW] = Blk_List.Block[i_blk].infoTSW[0];
          
-         num_bound_elem[BE::BW] = Blk_List.Block[i_blk].nBW;
-         info_bound_elem[BE::BW] =  Blk_List.Block[i_blk].infoBW[0];
+         number_neighbours[BE::BW] = Blk_List.Block[i_blk].nBW;
+         neighbour_info[BE::BW] = Blk_List.Block[i_blk].infoBW[0];
          
-         num_bound_elem[BE::W] = Blk_List.Block[i_blk].nW;
-         info_bound_elem[BE::W] =  Blk_List.Block[i_blk].infoW[0];
+         number_neighbours[BE::W] = Blk_List.Block[i_blk].nW;
+         neighbour_info[BE::W] = Blk_List.Block[i_blk].infoW[0];
  
-         num_bound_elem[BE::TW] = Blk_List.Block[i_blk].nTW;
-         info_bound_elem[BE::TW] =  Blk_List.Block[i_blk].infoTW[0];
+         number_neighbours[BE::TW] = Blk_List.Block[i_blk].nTW;
+         neighbour_info[BE::TW] = Blk_List.Block[i_blk].infoTW[0];
          
-         num_bound_elem[BE::BNW] = Blk_List.Block[i_blk].nBNW;
-         info_bound_elem[BE::BNW] =  Blk_List.Block[i_blk].infoBNW[0];
+         number_neighbours[BE::BNW] = Blk_List.Block[i_blk].nBNW;
+         neighbour_info[BE::BNW] = Blk_List.Block[i_blk].infoBNW[0];
          
-         num_bound_elem[BE::NW] = Blk_List.Block[i_blk].nNW;
-         info_bound_elem[BE::NW] =  Blk_List.Block[i_blk].infoNW[0];
+         number_neighbours[BE::NW] = Blk_List.Block[i_blk].nNW;
+         neighbour_info[BE::NW] = Blk_List.Block[i_blk].infoNW[0];
          
-         num_bound_elem[BE::TNW] = Blk_List.Block[i_blk].nTNW;
-         info_bound_elem[BE::TNW] =  Blk_List.Block[i_blk].infoTNW[0];
+         number_neighbours[BE::TNW] = Blk_List.Block[i_blk].nTNW;
+         neighbour_info[BE::TNW] = Blk_List.Block[i_blk].infoTNW[0];
          
-         num_bound_elem[BE::BS] = Blk_List.Block[i_blk].nBS;
-         info_bound_elem[BE::BS] =  Blk_List.Block[i_blk].infoBS[0];
+         number_neighbours[BE::BS] = Blk_List.Block[i_blk].nBS;
+         neighbour_info[BE::BS] = Blk_List.Block[i_blk].infoBS[0];
          
-         num_bound_elem[BE::S] = Blk_List.Block[i_blk].nS;
-         info_bound_elem[BE::S] =  Blk_List.Block[i_blk].infoS[0];
+         number_neighbours[BE::S] = Blk_List.Block[i_blk].nS;
+         neighbour_info[BE::S] = Blk_List.Block[i_blk].infoS[0];
          
-         num_bound_elem[BE::TS] = Blk_List.Block[i_blk].nTS;
-         info_bound_elem[BE::TS] =  Blk_List.Block[i_blk].infoTS[0];
+         number_neighbours[BE::TS] = Blk_List.Block[i_blk].nTS;
+         neighbour_info[BE::TS] = Blk_List.Block[i_blk].infoTS[0];
          
-         num_bound_elem[BE::B] = Blk_List.Block[i_blk].nB;
-         info_bound_elem[BE::B] =  Blk_List.Block[i_blk].infoB[0];
+         number_neighbours[BE::B] = Blk_List.Block[i_blk].nB;
+         neighbour_info[BE::B] = Blk_List.Block[i_blk].infoB[0];
          
-         num_bound_elem[BE::T] = Blk_List.Block[i_blk].nT;
-         info_bound_elem[BE::T] =  Blk_List.Block[i_blk].infoT[0];
+         number_neighbours[BE::T] = Blk_List.Block[i_blk].nT;
+         neighbour_info[BE::T] = Blk_List.Block[i_blk].infoT[0];
          
-         num_bound_elem[BE::BN] = Blk_List.Block[i_blk].nBN;
-         info_bound_elem[BE::BN] =  Blk_List.Block[i_blk].infoBN[0];
+         number_neighbours[BE::BN] = Blk_List.Block[i_blk].nBN;
+         neighbour_info[BE::BN] = Blk_List.Block[i_blk].infoBN[0];
          
-         num_bound_elem[BE::N] = Blk_List.Block[i_blk].nN;
-         info_bound_elem[BE::N] =  Blk_List.Block[i_blk].infoN[0];
+         number_neighbours[BE::N] = Blk_List.Block[i_blk].nN;
+         neighbour_info[BE::N] = Blk_List.Block[i_blk].infoN[0];
          
-         num_bound_elem[BE::TN] = Blk_List.Block[i_blk].nTN;
-         info_bound_elem[BE::TN] =  Blk_List.Block[i_blk].infoTN[0];
+         number_neighbours[BE::TN] = Blk_List.Block[i_blk].nTN;
+         neighbour_info[BE::TN] = Blk_List.Block[i_blk].infoTN[0];
          
-         num_bound_elem[BE::BSE] = Blk_List.Block[i_blk].nBSE;
-         info_bound_elem[BE::BSE] =  Blk_List.Block[i_blk].infoBSE[0];
+         number_neighbours[BE::BSE] = Blk_List.Block[i_blk].nBSE;
+         neighbour_info[BE::BSE] = Blk_List.Block[i_blk].infoBSE[0];
          
-         num_bound_elem[BE::SE] = Blk_List.Block[i_blk].nSE;
-         info_bound_elem[BE::SE] =  Blk_List.Block[i_blk].infoSE[0];
+         number_neighbours[BE::SE] = Blk_List.Block[i_blk].nSE;
+         neighbour_info[BE::SE] = Blk_List.Block[i_blk].infoSE[0];
          
-         num_bound_elem[BE::TSE] = Blk_List.Block[i_blk].nTSE;
-         info_bound_elem[BE::TSE] =  Blk_List.Block[i_blk].infoTSE[0];
+         number_neighbours[BE::TSE] = Blk_List.Block[i_blk].nTSE;
+         neighbour_info[BE::TSE] = Blk_List.Block[i_blk].infoTSE[0];
          
-         num_bound_elem[BE::BE] = Blk_List.Block[i_blk].nBE;
-         info_bound_elem[BE::BE] =  Blk_List.Block[i_blk].infoBE[0];
+         number_neighbours[BE::BE] = Blk_List.Block[i_blk].nBE;
+         neighbour_info[BE::BE] = Blk_List.Block[i_blk].infoBE[0];
          
-         num_bound_elem[BE::E] = Blk_List.Block[i_blk].nE;
-         info_bound_elem[BE::E] =  Blk_List.Block[i_blk].infoE[0];
+         number_neighbours[BE::E] = Blk_List.Block[i_blk].nE;
+         neighbour_info[BE::E] = Blk_List.Block[i_blk].infoE[0];
          
-         num_bound_elem[BE::TE] = Blk_List.Block[i_blk].nTE;
-         info_bound_elem[BE::TE] =  Blk_List.Block[i_blk].infoTE[0]; 
+         number_neighbours[BE::TE] = Blk_List.Block[i_blk].nTE;
+         neighbour_info[BE::TE] = Blk_List.Block[i_blk].infoTE[0]; 
          
-         num_bound_elem[BE::BNE] = Blk_List.Block[i_blk].nBNE;
-         info_bound_elem[BE::BNE] =  Blk_List.Block[i_blk].infoBNE[0]; 
+         number_neighbours[BE::BNE] = Blk_List.Block[i_blk].nBNE;
+         neighbour_info[BE::BNE] = Blk_List.Block[i_blk].infoBNE[0]; 
          
-         num_bound_elem[BE::NE] = Blk_List.Block[i_blk].nNE;
-         info_bound_elem[BE::NE] =  Blk_List.Block[i_blk].infoNE[0];  
+         number_neighbours[BE::NE] = Blk_List.Block[i_blk].nNE;
+         neighbour_info[BE::NE] = Blk_List.Block[i_blk].infoNE[0];  
          
-         num_bound_elem[BE::TNE] = Blk_List.Block[i_blk].nTNE;
-         info_bound_elem[BE::TNE] =  Blk_List.Block[i_blk].infoTNE[0]; 
+         number_neighbours[BE::TNE] = Blk_List.Block[i_blk].nTNE;
+         neighbour_info[BE::TNE] = Blk_List.Block[i_blk].infoTNE[0]; 
            
          // Perform message passing to all neighbouring blocks.
-         for (int ii = -1; ii<2; ii++){
-            for (int jj = -1; jj<2; jj++){
-               for (int kk = -1; kk<2; kk++){
+         for (int ii = -1; ii <= 1; ii++) {
+            for (int jj = -1; jj <= 1; jj++) {
+               for (int kk = -1; kk <= 1; kk++) {
                   i_bound_elem = 9*(ii+1) + 3*(jj+1) + (kk+1);
                   
-                  if ((num_bound_elem[i_bound_elem] == 1) && 
+                  if ((number_neighbours[i_bound_elem] == 1) && 
                       (i_bound_elem != BE::ME) &&
-                      (Blk_List.Block[i_blk].info.level == info_bound_elem[i_bound_elem].level)) {
+                      (Blk_List.Block[i_blk].info.level == neighbour_info[i_bound_elem].level)) {
                      
-                     neighbour_cpu = info_bound_elem[i_bound_elem].cpu;
-                     neighbour_blk = info_bound_elem[i_bound_elem].blknum;
+                     neighbour_cpu = neighbour_info[i_bound_elem].cpu;
+                     neighbour_blk = neighbour_info[i_bound_elem].blknum;
                      
-                     if (!Send_Mesh_Geometry_Only) {
-                        buffer_size = ((abs(ii)*Blk_List.Block[i_blk].info.dimen.ghost) + 
-                                      ((!ii)*abs(Blk_List.Block[i_blk].info.dimen.i)))*
-                                      ((abs(jj)*Blk_List.Block[i_blk].info.dimen.ghost) + 
-                                      ((!jj)*abs(Blk_List.Block[i_blk].info.dimen.j)))*
-                                      ((abs(kk)*Blk_List.Block[i_blk].info.dimen.ghost) + 
-                                      ((!kk)*abs(Blk_List.Block[i_blk].info.dimen.k)))*
-                                      (Number_of_Solution_Variables);
-                        if (Number_of_Solution_Variables > Number_of_Solution_Variables) {
-                           buffer_size = buffer_size_neighbour +
-                                         ((abs(ii)*Blk_List.Block[i_blk].info.dimen.ghost)+ 
-                                         ((!ii)*abs(Blk_List.Block[i_blk].info.dimen.i)+1))*
-                                         ((abs(jj)*Blk_List.Block[i_blk].info.dimen.ghost) + 
-                                         ((!jj)*abs(Blk_List.Block[i_blk].info.dimen.j)+1))*
-                                         ((abs(kk)*Blk_List.Block[i_blk].info.dimen.ghost) + 
-                                         ((!kk)*abs(Blk_List.Block[i_blk].info.dimen.k)+1))*
-                                         (NUM_COMP_VECTOR3D);
-			} /* endif */
-                     } else {
-                        buffer_size = ((abs(ii)*Blk_List.Block[i_blk].info.dimen.ghost) + 
-                                      ((!ii)*abs(Blk_List.Block[i_blk].info.dimen.i)+1))*
-                                      ((abs(jj)*Blk_List.Block[i_blk].info.dimen.ghost) + 
-                                      ((!jj)*abs(Blk_List.Block[i_blk].info.dimen.j) +1))*
-                                      ((abs(kk)*Blk_List.Block[i_blk].info.dimen.ghost) + 
-                                      ((!kk)*abs(Blk_List.Block[i_blk].info.dimen.k)+1))*
-                                      (NUM_COMP_VECTOR3D)+
-                                      (((!ii)*abs(Blk_List.Block[i_blk].info.dimen.i)))*
-                                      (((!jj)*abs(Blk_List.Block[i_blk].info.dimen.j)))*
-                                      (((!kk)*abs(Blk_List.Block[i_blk].info.dimen.k)));
-                        
-                     } /* endif */
+                     buffer_size = ((abs(ii)*Blk_List.Block[i_blk].info.dimen.ghost) + 
+                                   ((!ii)*abs(Blk_List.Block[i_blk].info.dimen.i)))*
+                                   ((abs(jj)*Blk_List.Block[i_blk].info.dimen.ghost) + 
+                                   ((!jj)*abs(Blk_List.Block[i_blk].info.dimen.j)))*
+                                   ((abs(kk)*Blk_List.Block[i_blk].info.dimen.ghost) + 
+                                   ((!kk)*abs(Blk_List.Block[i_blk].info.dimen.k)))*
+                                   (Number_of_Solution_Variables);
   
-                     if (neighbour_cpu != i_cpu) {
-                        tag_base_neigh = info_bound_elem[i_bound_elem].blkorient.compute_message_tag(
-                           info_bound_elem[i_bound_elem].blkorient.direction_neighbour_to_me[0],
-                           info_bound_elem[i_bound_elem].blkorient.direction_neighbour_to_me[1], 
-                           info_bound_elem[i_bound_elem].blkorient.direction_neighbour_to_me[2]);
-                        tag_receive = neighbour_blk*tag_base +  tag_base_neigh;
-                        tag_send = i_blk*tag_base + i_bound_elem;
+                     if (neighbour_cpu != Blk_List.ThisCPU) {
+                        neighbour_bound_elem = 
+                           neighbour_info[i_bound_elem].blkorient.compute_message_tag(
+                              neighbour_info[i_bound_elem].blkorient.direction_neighbour_to_me[0],
+                              neighbour_info[i_bound_elem].blkorient.direction_neighbour_to_me[1], 
+                              neighbour_info[i_bound_elem].blkorient.direction_neighbour_to_me[2]);
+                        tag_receive = neighbour_blk*tag_base + neighbour_bound_elem*tag_modifier + 0;
+                        tag_send = i_blk*tag_base + i_bound_elem*tag_modifier + 0;
 
+                        // Post receive request.
                         request = MPI::COMM_WORLD.Irecv(Blk_List.message_noreschange_recbuf[i_blk][i_bound_elem],
                                                         buffer_size,
                                                         MPI::DOUBLE,
                                                         neighbour_cpu,
                                                         tag_receive);
-                        
                         number_receive_requests = number_receive_requests + 1;
                         receive_requests[number_receive_requests-1] = request;
                         
+                        // Post send request.
                         request = MPI::COMM_WORLD.Isend(Blk_List.message_noreschange_sendbuf[i_blk][i_bound_elem],
                                                         buffer_size,
                                                         MPI::DOUBLE,
                                                         neighbour_cpu,
                                                         tag_send);
-
                         number_send_requests = number_send_requests + 1;
                         send_requests[number_send_requests-1] = request;
                      } else {
-                        if (!Blk_List.Block[neighbour_blk].used) return(2401); 
-                        buffer_size_neighbour = buffer_size;
-                        
-                        tag_base_neigh = info_bound_elem[i_bound_elem].blkorient.compute_message_tag(
-                           info_bound_elem[i_bound_elem].blkorient.direction_neighbour_to_me[0],
-                           info_bound_elem[i_bound_elem].blkorient.direction_neighbour_to_me[1], 
-                           info_bound_elem[i_bound_elem].blkorient.direction_neighbour_to_me[2]);
+                        if (!Blk_List.Block[neighbour_blk].used) return (3001);
+                        neighbour_buffer_size = buffer_size;
+                        if (buffer_size != neighbour_buffer_size) return (3002);
+                        neighbour_bound_elem = 
+                           neighbour_info[i_bound_elem].blkorient.compute_message_tag(
+                              neighbour_info[i_bound_elem].blkorient.direction_neighbour_to_me[0],
+                              neighbour_info[i_bound_elem].blkorient.direction_neighbour_to_me[1], 
+                              neighbour_info[i_bound_elem].blkorient.direction_neighbour_to_me[2]);
 
-                        for (l = 0; l <= buffer_size-1; ++l) {
-                           Blk_List.message_noreschange_recbuf[neighbour_blk][tag_base_neigh][l] =
+                        // Perform direct message copies for blocks on the same processor.
+                        for (int l = 0; l <= buffer_size-1; ++l) {
+                           Blk_List.message_noreschange_recbuf[neighbour_blk][neighbour_bound_elem][l] =
                               Blk_List.message_noreschange_sendbuf[i_blk][i_bound_elem][l];
                         } /* endfor */
                      } /* endif */
@@ -246,7 +217,222 @@ int AdaptiveBlock3D_List::Exchange_Messages_NoResChange(AdaptiveBlock3D_List &Bl
   
    /* Message passing complete.  Return zero value. */
    
-   return(0);
+   return (0);
+
+}
+
+/**************************************************************
+ * Routine: Exchange_Messages_NoResChange_Mesh_Geometry_Only  *
+ *                                                            *
+ * Sends and receives mesh and geometry information contained *
+ * in the preloaded message passing buffers between           *
+ * neighbouring adaptive blocks with no mesh resolution       *
+ * changes.                                                   *
+ *                                                            *
+ **************************************************************/
+int AdaptiveBlock3D_List::Exchange_Messages_NoResChange_Mesh_Geometry_Only(AdaptiveBlock3D_List &Blk_List) {
+
+   int i_blk, neighbour_cpu, neighbour_blk, buffer_size, neighbour_buffer_size;
+
+   int number_receive_requests, number_send_requests;
+
+   int tag_receive, tag_send, tag_base= 100000, tag_modifier = 100;
+
+   int i_bound_elem, neighbour_bound_elem; // index for boundary element, face edge or vertex
+
+   int number_neighbours[MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK];
+   AdaptiveBlock3D_Info neighbour_info[MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK];
+
+   MPI::Request *receive_requests, *send_requests, request;
+   
+   /* Allocate memory for message passing requests. */
+   
+   receive_requests = new MPI::Request[MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK*Blk_List.Nblk];
+   send_requests = new MPI::Request[MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK*Blk_List.Nblk];
+   number_receive_requests = 0;
+   number_send_requests = 0;
+   
+   /* Perform message passing for the block faces and corners of each 
+      solution block having no mesh resolution change. */
+   
+   for (i_blk = 0 ; i_blk <= Blk_List.Nblk-1 ; ++i_blk) {
+      if (Blk_List.Block[i_blk].used) {
+         // Assign the boundary element information
+         number_neighbours[BE::BSW] = Blk_List.Block[i_blk].nBSW;
+         neighbour_info[BE::BSW] = Blk_List.Block[i_blk].infoBSW[0];
+         
+         number_neighbours[BE::SW] = Blk_List.Block[i_blk].nSW;
+         neighbour_info[BE::SW] = Blk_List.Block[i_blk].infoSW[0];
+         
+         number_neighbours[BE::TSW] = Blk_List.Block[i_blk].nTSW;
+         neighbour_info[BE::TSW] = Blk_List.Block[i_blk].infoTSW[0];
+         
+         number_neighbours[BE::BW] = Blk_List.Block[i_blk].nBW;
+         neighbour_info[BE::BW] = Blk_List.Block[i_blk].infoBW[0];
+         
+         number_neighbours[BE::W] = Blk_List.Block[i_blk].nW;
+         neighbour_info[BE::W] = Blk_List.Block[i_blk].infoW[0];
+ 
+         number_neighbours[BE::TW] = Blk_List.Block[i_blk].nTW;
+         neighbour_info[BE::TW] = Blk_List.Block[i_blk].infoTW[0];
+         
+         number_neighbours[BE::BNW] = Blk_List.Block[i_blk].nBNW;
+         neighbour_info[BE::BNW] = Blk_List.Block[i_blk].infoBNW[0];
+         
+         number_neighbours[BE::NW] = Blk_List.Block[i_blk].nNW;
+         neighbour_info[BE::NW] = Blk_List.Block[i_blk].infoNW[0];
+         
+         number_neighbours[BE::TNW] = Blk_List.Block[i_blk].nTNW;
+         neighbour_info[BE::TNW] = Blk_List.Block[i_blk].infoTNW[0];
+         
+         number_neighbours[BE::BS] = Blk_List.Block[i_blk].nBS;
+         neighbour_info[BE::BS] = Blk_List.Block[i_blk].infoBS[0];
+         
+         number_neighbours[BE::S] = Blk_List.Block[i_blk].nS;
+         neighbour_info[BE::S] = Blk_List.Block[i_blk].infoS[0];
+         
+         number_neighbours[BE::TS] = Blk_List.Block[i_blk].nTS;
+         neighbour_info[BE::TS] = Blk_List.Block[i_blk].infoTS[0];
+         
+         number_neighbours[BE::B] = Blk_List.Block[i_blk].nB;
+         neighbour_info[BE::B] = Blk_List.Block[i_blk].infoB[0];
+         
+         number_neighbours[BE::T] = Blk_List.Block[i_blk].nT;
+         neighbour_info[BE::T] = Blk_List.Block[i_blk].infoT[0];
+         
+         number_neighbours[BE::BN] = Blk_List.Block[i_blk].nBN;
+         neighbour_info[BE::BN] = Blk_List.Block[i_blk].infoBN[0];
+         
+         number_neighbours[BE::N] = Blk_List.Block[i_blk].nN;
+         neighbour_info[BE::N] = Blk_List.Block[i_blk].infoN[0];
+         
+         number_neighbours[BE::TN] = Blk_List.Block[i_blk].nTN;
+         neighbour_info[BE::TN] = Blk_List.Block[i_blk].infoTN[0];
+         
+         number_neighbours[BE::BSE] = Blk_List.Block[i_blk].nBSE;
+         neighbour_info[BE::BSE] = Blk_List.Block[i_blk].infoBSE[0];
+         
+         number_neighbours[BE::SE] = Blk_List.Block[i_blk].nSE;
+         neighbour_info[BE::SE] = Blk_List.Block[i_blk].infoSE[0];
+         
+         number_neighbours[BE::TSE] = Blk_List.Block[i_blk].nTSE;
+         neighbour_info[BE::TSE] = Blk_List.Block[i_blk].infoTSE[0];
+         
+         number_neighbours[BE::BE] = Blk_List.Block[i_blk].nBE;
+         neighbour_info[BE::BE] = Blk_List.Block[i_blk].infoBE[0];
+         
+         number_neighbours[BE::E] = Blk_List.Block[i_blk].nE;
+         neighbour_info[BE::E] = Blk_List.Block[i_blk].infoE[0];
+         
+         number_neighbours[BE::TE] = Blk_List.Block[i_blk].nTE;
+         neighbour_info[BE::TE] = Blk_List.Block[i_blk].infoTE[0]; 
+         
+         number_neighbours[BE::BNE] = Blk_List.Block[i_blk].nBNE;
+         neighbour_info[BE::BNE] = Blk_List.Block[i_blk].infoBNE[0]; 
+         
+         number_neighbours[BE::NE] = Blk_List.Block[i_blk].nNE;
+         neighbour_info[BE::NE] = Blk_List.Block[i_blk].infoNE[0];  
+         
+         number_neighbours[BE::TNE] = Blk_List.Block[i_blk].nTNE;
+         neighbour_info[BE::TNE] = Blk_List.Block[i_blk].infoTNE[0]; 
+           
+         // Perform message passing to all neighbouring blocks.
+         for (int ii = -1; ii <= 1; ii++) {
+            for (int jj = -1; jj <= 1; jj++) {
+               for (int kk = -1; kk <= 1; kk++) {
+                  i_bound_elem = 9*(ii+1) + 3*(jj+1) + (kk+1);
+                  
+                  if ((number_neighbours[i_bound_elem] == 1) && 
+                      (i_bound_elem != BE::ME) &&
+                      (Blk_List.Block[i_blk].info.level == neighbour_info[i_bound_elem].level)) {
+                     
+                     neighbour_cpu = neighbour_info[i_bound_elem].cpu;
+                     neighbour_blk = neighbour_info[i_bound_elem].blknum;
+                     
+                     buffer_size = ((abs(ii)*Blk_List.Block[i_blk].info.dimen.ghost) + 
+                                   ((!ii)*abs(Blk_List.Block[i_blk].info.dimen.i)+1))*
+                                   ((abs(jj)*Blk_List.Block[i_blk].info.dimen.ghost) + 
+                                   ((!jj)*abs(Blk_List.Block[i_blk].info.dimen.j)+1))*
+                                   ((abs(kk)*Blk_List.Block[i_blk].info.dimen.ghost) + 
+                                   ((!kk)*abs(Blk_List.Block[i_blk].info.dimen.k)+1))*
+                                   (NUM_COMP_VECTOR3D) +
+                                   (((!ii)*abs(Blk_List.Block[i_blk].info.dimen.i)))*
+                                   (((!jj)*abs(Blk_List.Block[i_blk].info.dimen.j)))*
+                                   (((!kk)*abs(Blk_List.Block[i_blk].info.dimen.k)));
+  
+                     if (neighbour_cpu != Blk_List.ThisCPU) {
+                        neighbour_bound_elem = 
+                           neighbour_info[i_bound_elem].blkorient.compute_message_tag(
+                              neighbour_info[i_bound_elem].blkorient.direction_neighbour_to_me[0],
+                              neighbour_info[i_bound_elem].blkorient.direction_neighbour_to_me[1], 
+                              neighbour_info[i_bound_elem].blkorient.direction_neighbour_to_me[2]);
+                        tag_receive = neighbour_blk*tag_base + neighbour_bound_elem*tag_modifier + 0;
+                        tag_send = i_blk*tag_base + i_bound_elem*tag_modifier + 0;
+
+                        // Post receive request.
+                        request = MPI::COMM_WORLD.Irecv(Blk_List.message_noreschange_recbuf[i_blk][i_bound_elem],
+                                                        buffer_size,
+                                                        MPI::DOUBLE,
+                                                        neighbour_cpu,
+                                                        tag_receive);
+                        number_receive_requests = number_receive_requests + 1;
+                        receive_requests[number_receive_requests-1] = request;
+                        
+                        // Post send request.
+                        request = MPI::COMM_WORLD.Isend(Blk_List.message_noreschange_sendbuf[i_blk][i_bound_elem],
+                                                        buffer_size,
+                                                        MPI::DOUBLE,
+                                                        neighbour_cpu,
+                                                        tag_send);
+                        number_send_requests = number_send_requests + 1;
+                        send_requests[number_send_requests-1] = request;
+                     } else {
+                        if (!Blk_List.Block[neighbour_blk].used) return (3001);
+                        neighbour_buffer_size = buffer_size;
+                        if (buffer_size != neighbour_buffer_size) return (3002);
+                        neighbour_bound_elem = 
+                           neighbour_info[i_bound_elem].blkorient.compute_message_tag(
+                              neighbour_info[i_bound_elem].blkorient.direction_neighbour_to_me[0],
+                              neighbour_info[i_bound_elem].blkorient.direction_neighbour_to_me[1], 
+                              neighbour_info[i_bound_elem].blkorient.direction_neighbour_to_me[2]);
+
+                        // Perform direct message copies for blocks on the same processor.
+                        for (int l = 0; l <= buffer_size-1; ++l) {
+                           Blk_List.message_noreschange_recbuf[neighbour_blk][neighbour_bound_elem][l] =
+                              Blk_List.message_noreschange_sendbuf[i_blk][i_bound_elem][l];
+                        } /* endfor */
+                     } /* endif */
+                  } /* endif */
+                  
+               }/* end for k */
+            }/* end for j */
+         }/* end for i */
+
+      }/* endif */
+   }  /* endfor */
+
+   /* Explicitly release send buffers memory */
+
+   for(int i=0; i < number_send_requests; i++){
+      send_requests[i].Free(); 
+   }
+
+   /* Wait for all messages to be received. */
+   
+   if (number_receive_requests > 0) {
+      MPI::Request::Waitall(number_receive_requests, receive_requests);
+   } /* endif */
+
+   /* Deallocate memory for message passing requests. */
+   
+   delete []receive_requests;
+   receive_requests = NULL;
+   delete []send_requests;
+   send_requests = NULL;
+  
+   /* Message passing complete.  Return zero value. */
+   
+   return (0);
 
 }
 

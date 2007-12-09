@@ -277,35 +277,29 @@ int Morton_ReOrdering_of_Solution_Blocks(Octree_DataStructure                   
     /* Send solution information between neighbouring blocks to complete
        prescription of initial data. */
     
-    CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
-   
-   
-/*    cout <<" \n MO- Send_All_Messages() ON ";cout.flush();
-      error_flag = Send_All_Messages(Local_SolnBlk, 
-				   Local_Adaptive_Block_List,
-				   NUM_COMP_VECTOR3D,
-				   ON);
-     cout<<"\n MO- Send_All_Messages() OFF ";cout.flush();
-   if (!error_flag) error_flag = Send_All_Messages(Local_SolnBlk, 
-						    Local_Adaptive_Block_List,
-						    Local_SolnBlk[0].NumVar(),
-						    OFF);
-   if (error_flag) {
-      cout << "\n  ERROR: Message passing error during  solution intialization "
-	   << "on processor "
-	   << Local_Adaptive_Block_List.ThisCPU
-	   << ".\n";
-      cout.flush();
-    } // endif 
-  
-    error_flag = CFFC_OR_MPI(error_flag);
-    if (error_flag) return (error_flag);
-*/    
+/*     CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization. */
+/*     error_flag = Send_Messages_Mesh_Geometry_Only<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> > */
+/*                     (Local_Solution_Blocks, */
+/* 		     Local_Adaptive_Block_List); */
+/*     error_flag = CFFC_OR_MPI(error_flag); */
+/*     if (!error_flag) error_flag = Send_Messages<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> > */
+/*                                      (Local_Solution_Blocks, */
+/* 				      Local_Adaptive_Block_List); */
+/*     if (error_flag) { */
+/*        cout << "\n ERROR: Message passing error during solution intialization " */
+/* 	    << "on processor " */
+/* 	    << Local_Adaptive_Block_List.ThisCPU */
+/* 	    << ".\n"; */
+/*        cout.flush(); */
+/*     } // endif  */
+/*     error_flag = CFFC_OR_MPI(error_flag); */
+/*     if (error_flag) return (error_flag); */
 
     /* Prescribe boundary data consistent with initial data. */
     Local_Solution_Blocks.BCs(IPs);
 
     return (0);
+
 }
 
 /******************************************************************************************

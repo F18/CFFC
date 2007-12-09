@@ -58,7 +58,7 @@ void AdaptiveBlock3D_Info::Broadcast_Adaptive_Block_Info(AdaptiveBlock3D_Info &B
   MPI::COMM_WORLD.Bcast(&(Blk_Info.sector), 1, MPI::INT, 0);
   MPI::COMM_WORLD.Bcast(&(Blk_Info.level), 1, MPI::INT, 0);
   Blk_Info.blkorient.broadcast();
-  Blk_Info.be_on_domain_extent.broadcast();
+  Blk_Info.be_on_grid_boundary.broadcast();
 #endif
 
 }
@@ -195,7 +195,7 @@ void AdaptiveBlock3D::Broadcast_Adaptive_Block(AdaptiveBlock3D &Blk) {
  *                                                        *
  **********************************************************/
 void AdaptiveBlock3D_List::Allocate_Message_Buffers(AdaptiveBlock3D_List &Blk_List,
-                              const int Number_of_Solution_Variables) {
+                                                    const int Number_of_Solution_Variables) {
 
    AdaptiveBlock3D_List::Allocate_Message_Buffers_NoResChange(Blk_List,
                                                               Number_of_Solution_Variables);
@@ -215,13 +215,12 @@ void AdaptiveBlock3D_List::Allocate_Message_Buffers(AdaptiveBlock3D_List &Blk_Li
 void AdaptiveBlock3D_List::Allocate_Message_Buffers_NoResChange(AdaptiveBlock3D_List &Blk_List,
                                                                 const int Number_of_Solution_Variables) {
 
-   int i_blk, buffer_size, buffer_size_neighbour, l;
-   int j_neigh;
+   int buffer_size, neighbour_buffer_size;
    int buffer_size_soln, buffer_size_geometry, buffer_size_bcs;
    
    int i_bound_elem; // index for boundary element, face edge or vertex
-   int num_bound_elem[MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK];
-   AdaptiveBlock3D_Info info_bound_elem[MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK];
+   int number_neighbours[MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK];
+   AdaptiveBlock3D_Info neighbour_info[MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK];
 
    /* Ensure that memory for the block index of the send and receive buffers
       has been allocated. */
@@ -229,9 +228,9 @@ void AdaptiveBlock3D_List::Allocate_Message_Buffers_NoResChange(AdaptiveBlock3D_
    if (Blk_List.Nblk > 0 &&
        Blk_List.message_noreschange_sendbuf == NULL) {
       Blk_List.message_noreschange_sendbuf = new double**[Blk_List.Nblk];
-      for ( i_blk = 0; i_blk <= Blk_List.Nblk-1 ; ++i_blk ) {
+      for (int i_blk = 0; i_blk <= Blk_List.Nblk-1 ; ++i_blk ) {
          Blk_List.message_noreschange_sendbuf[i_blk] = new double*[MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK];
-         for (j_neigh = 0; j_neigh < MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK ; ++j_neigh) {
+         for (int j_neigh = 0; j_neigh < MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK ; ++j_neigh) {
             Blk_List.message_noreschange_sendbuf[i_blk][j_neigh] = new double[1];
             Blk_List.message_noreschange_sendbuf[i_blk][j_neigh][0] = ZERO;
          } /* endfor */
@@ -241,9 +240,9 @@ void AdaptiveBlock3D_List::Allocate_Message_Buffers_NoResChange(AdaptiveBlock3D_
    if (Blk_List.Nblk > 0 &&
        Blk_List.message_noreschange_recbuf == NULL) {
       Blk_List.message_noreschange_recbuf = new double**[Blk_List.Nblk];
-      for ( i_blk = 0; i_blk <= Blk_List.Nblk-1 ; ++i_blk ) {
+      for (int i_blk = 0; i_blk <= Blk_List.Nblk-1 ; ++i_blk ) {
          Blk_List.message_noreschange_recbuf[i_blk] = new double*[MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK];
-         for (j_neigh = 0; j_neigh < MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK ; ++j_neigh) {
+         for (int j_neigh = 0; j_neigh < MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK ; ++j_neigh) {
             Blk_List.message_noreschange_recbuf[i_blk][j_neigh] = new double[1];
             Blk_List.message_noreschange_recbuf[i_blk][j_neigh][0] = ZERO;
          } /* endfor */
@@ -252,100 +251,100 @@ void AdaptiveBlock3D_List::Allocate_Message_Buffers_NoResChange(AdaptiveBlock3D_
   
    /* For each local adaptive block, create require send and receive message buffers. */
 
-   for ( i_blk = 0; i_blk <= Blk_List.Nblk-1; ++i_blk ) {
+   for (int i_blk = 0; i_blk <= Blk_List.Nblk-1; ++i_blk) {
       if (Blk_List.Block[i_blk].used) { // Consider used blocks only
 
          /* Assign the boundary element information. */
 
-         num_bound_elem[BE::BSW] = Blk_List.Block[i_blk].nBSW;
-         info_bound_elem[BE::BSW] =  Blk_List.Block[i_blk].infoBSW[0];
+         number_neighbours[BE::BSW] = Blk_List.Block[i_blk].nBSW;
+         neighbour_info[BE::BSW] =  Blk_List.Block[i_blk].infoBSW[0];
       
-         num_bound_elem[BE::SW] = Blk_List.Block[i_blk].nSW;
-         info_bound_elem[BE::SW] =  Blk_List.Block[i_blk].infoSW[0];
+         number_neighbours[BE::SW] = Blk_List.Block[i_blk].nSW;
+         neighbour_info[BE::SW] =  Blk_List.Block[i_blk].infoSW[0];
       
-         num_bound_elem[BE::TSW] = Blk_List.Block[i_blk].nTSW;
-         info_bound_elem[BE::TSW] =  Blk_List.Block[i_blk].infoTSW[0];
+         number_neighbours[BE::TSW] = Blk_List.Block[i_blk].nTSW;
+         neighbour_info[BE::TSW] =  Blk_List.Block[i_blk].infoTSW[0];
       
-         num_bound_elem[BE::BW] = Blk_List.Block[i_blk].nBW;
-         info_bound_elem[BE::BW] =  Blk_List.Block[i_blk].infoBW[0];
+         number_neighbours[BE::BW] = Blk_List.Block[i_blk].nBW;
+         neighbour_info[BE::BW] =  Blk_List.Block[i_blk].infoBW[0];
       
-         num_bound_elem[BE::W] = Blk_List.Block[i_blk].nW;
-         info_bound_elem[BE::W] =  Blk_List.Block[i_blk].infoW[0];
+         number_neighbours[BE::W] = Blk_List.Block[i_blk].nW;
+         neighbour_info[BE::W] =  Blk_List.Block[i_blk].infoW[0];
       
-         num_bound_elem[BE::TW] = Blk_List.Block[i_blk].nTW;
-         info_bound_elem[BE::TW] =  Blk_List.Block[i_blk].infoTW[0];
+         number_neighbours[BE::TW] = Blk_List.Block[i_blk].nTW;
+         neighbour_info[BE::TW] =  Blk_List.Block[i_blk].infoTW[0];
       
-         num_bound_elem[BE::BNW] = Blk_List.Block[i_blk].nBNW;
-         info_bound_elem[BE::BNW] =  Blk_List.Block[i_blk].infoBNW[0];
+         number_neighbours[BE::BNW] = Blk_List.Block[i_blk].nBNW;
+         neighbour_info[BE::BNW] =  Blk_List.Block[i_blk].infoBNW[0];
       
-         num_bound_elem[BE::NW] = Blk_List.Block[i_blk].nNW;
-         info_bound_elem[BE::NW] =  Blk_List.Block[i_blk].infoNW[0];
+         number_neighbours[BE::NW] = Blk_List.Block[i_blk].nNW;
+         neighbour_info[BE::NW] =  Blk_List.Block[i_blk].infoNW[0];
          
-         num_bound_elem[BE::TNW] = Blk_List.Block[i_blk].nTNW;
-         info_bound_elem[BE::TNW] =  Blk_List.Block[i_blk].infoTNW[0];
+         number_neighbours[BE::TNW] = Blk_List.Block[i_blk].nTNW;
+         neighbour_info[BE::TNW] =  Blk_List.Block[i_blk].infoTNW[0];
       
-         num_bound_elem[BE::BS] = Blk_List.Block[i_blk].nBS;
-         info_bound_elem[BE::BS] =  Blk_List.Block[i_blk].infoBS[0];
+         number_neighbours[BE::BS] = Blk_List.Block[i_blk].nBS;
+         neighbour_info[BE::BS] =  Blk_List.Block[i_blk].infoBS[0];
       
-         num_bound_elem[BE::S] = Blk_List.Block[i_blk].nS;
-         info_bound_elem[BE::S] =  Blk_List.Block[i_blk].infoS[0];
+         number_neighbours[BE::S] = Blk_List.Block[i_blk].nS;
+         neighbour_info[BE::S] =  Blk_List.Block[i_blk].infoS[0];
       
-         num_bound_elem[BE::TS] = Blk_List.Block[i_blk].nTS;
-         info_bound_elem[BE::TS] =  Blk_List.Block[i_blk].infoTS[0];
+         number_neighbours[BE::TS] = Blk_List.Block[i_blk].nTS;
+         neighbour_info[BE::TS] =  Blk_List.Block[i_blk].infoTS[0];
       
-         num_bound_elem[BE::B] = Blk_List.Block[i_blk].nB;
-         info_bound_elem[BE::B] =  Blk_List.Block[i_blk].infoB[0];
+         number_neighbours[BE::B] = Blk_List.Block[i_blk].nB;
+         neighbour_info[BE::B] =  Blk_List.Block[i_blk].infoB[0];
       
-         num_bound_elem[BE::T] = Blk_List.Block[i_blk].nT;
-         info_bound_elem[BE::T] =  Blk_List.Block[i_blk].infoT[0];
+         number_neighbours[BE::T] = Blk_List.Block[i_blk].nT;
+         neighbour_info[BE::T] =  Blk_List.Block[i_blk].infoT[0];
       
-         num_bound_elem[BE::BN] = Blk_List.Block[i_blk].nBN;
-         info_bound_elem[BE::BN] =  Blk_List.Block[i_blk].infoBN[0];
+         number_neighbours[BE::BN] = Blk_List.Block[i_blk].nBN;
+         neighbour_info[BE::BN] =  Blk_List.Block[i_blk].infoBN[0];
       
-         num_bound_elem[BE::N] = Blk_List.Block[i_blk].nN;
-         info_bound_elem[BE::N] =  Blk_List.Block[i_blk].infoN[0];
+         number_neighbours[BE::N] = Blk_List.Block[i_blk].nN;
+         neighbour_info[BE::N] =  Blk_List.Block[i_blk].infoN[0];
       
-         num_bound_elem[BE::TN] = Blk_List.Block[i_blk].nTN;
-         info_bound_elem[BE::TN] =  Blk_List.Block[i_blk].infoTN[0];
+         number_neighbours[BE::TN] = Blk_List.Block[i_blk].nTN;
+         neighbour_info[BE::TN] =  Blk_List.Block[i_blk].infoTN[0];
       
-         num_bound_elem[BE::BSE] = Blk_List.Block[i_blk].nBSE;
-         info_bound_elem[BE::BSE] =  Blk_List.Block[i_blk].infoBSE[0];
+         number_neighbours[BE::BSE] = Blk_List.Block[i_blk].nBSE;
+         neighbour_info[BE::BSE] =  Blk_List.Block[i_blk].infoBSE[0];
       
-         num_bound_elem[BE::SE] = Blk_List.Block[i_blk].nSE;
-         info_bound_elem[BE::SE] =  Blk_List.Block[i_blk].infoSE[0];
+         number_neighbours[BE::SE] = Blk_List.Block[i_blk].nSE;
+         neighbour_info[BE::SE] =  Blk_List.Block[i_blk].infoSE[0];
       
-         num_bound_elem[BE::TSE] = Blk_List.Block[i_blk].nTSE;
-         info_bound_elem[BE::TSE] =  Blk_List.Block[i_blk].infoTSE[0];
+         number_neighbours[BE::TSE] = Blk_List.Block[i_blk].nTSE;
+         neighbour_info[BE::TSE] =  Blk_List.Block[i_blk].infoTSE[0];
       
-         num_bound_elem[BE::BE] = Blk_List.Block[i_blk].nBE;
-         info_bound_elem[BE::BE] =  Blk_List.Block[i_blk].infoBE[0];
+         number_neighbours[BE::BE] = Blk_List.Block[i_blk].nBE;
+         neighbour_info[BE::BE] =  Blk_List.Block[i_blk].infoBE[0];
       
-         num_bound_elem[BE::E] = Blk_List.Block[i_blk].nE;
-         info_bound_elem[BE::E] =  Blk_List.Block[i_blk].infoE[0];
+         number_neighbours[BE::E] = Blk_List.Block[i_blk].nE;
+         neighbour_info[BE::E] =  Blk_List.Block[i_blk].infoE[0];
       
-         num_bound_elem[BE::TE] = Blk_List.Block[i_blk].nTE;
-         info_bound_elem[BE::TE] =  Blk_List.Block[i_blk].infoTE[0]; 
+         number_neighbours[BE::TE] = Blk_List.Block[i_blk].nTE;
+         neighbour_info[BE::TE] =  Blk_List.Block[i_blk].infoTE[0]; 
       
-         num_bound_elem[BE::BNE] = Blk_List.Block[i_blk].nBNE;
-         info_bound_elem[BE::BNE] =  Blk_List.Block[i_blk].infoBNE[0]; 
+         number_neighbours[BE::BNE] = Blk_List.Block[i_blk].nBNE;
+         neighbour_info[BE::BNE] =  Blk_List.Block[i_blk].infoBNE[0]; 
       
-         num_bound_elem[BE::NE] = Blk_List.Block[i_blk].nNE;
-         info_bound_elem[BE::NE] =  Blk_List.Block[i_blk].infoNE[0];  
+         number_neighbours[BE::NE] = Blk_List.Block[i_blk].nNE;
+         neighbour_info[BE::NE] =  Blk_List.Block[i_blk].infoNE[0];  
       
-         num_bound_elem[BE::TNE] = Blk_List.Block[i_blk].nTNE;
-         info_bound_elem[BE::TNE] =  Blk_List.Block[i_blk].infoTNE[0]; 
+         number_neighbours[BE::TNE] = Blk_List.Block[i_blk].nTNE;
+         neighbour_info[BE::TNE] =  Blk_List.Block[i_blk].infoTNE[0]; 
       
          /* Deallocate existing memory for send and receive buffers. */
    
          if (Blk_List.message_noreschange_sendbuf[i_blk] != NULL) {
-            for (j_neigh = 0; j_neigh < MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK ; ++j_neigh) {
+            for (int j_neigh = 0; j_neigh < MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK ; ++j_neigh) {
                delete []Blk_List.message_noreschange_sendbuf[i_blk][j_neigh];
                Blk_List.message_noreschange_sendbuf[i_blk][j_neigh] = NULL;
             } /* endfor */
          } /* endif */
 
          if (Blk_List.message_noreschange_recbuf[i_blk] != NULL) {
-            for (j_neigh = 0; j_neigh < MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK ; ++j_neigh) {
+            for (int j_neigh = 0; j_neigh < MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK ; ++j_neigh) {
                delete []Blk_List.message_noreschange_recbuf[i_blk][j_neigh];
                Blk_List.message_noreschange_recbuf[i_blk][j_neigh] = NULL;
             } /* endfor */
@@ -358,9 +357,9 @@ void AdaptiveBlock3D_List::Allocate_Message_Buffers_NoResChange(AdaptiveBlock3D_
                for (int kk = -1; kk<2; ++kk){
                   i_bound_elem = 9*(ii+1) + 3*(jj+1) + (kk+1);
 
-                  if ((num_bound_elem[i_bound_elem] == 1) && 
+                  if ((number_neighbours[i_bound_elem] == 1) && 
                       (i_bound_elem != BE::ME) &&
-                      (Blk_List.Block[i_blk].info.level == info_bound_elem[i_bound_elem].level)) {
+                      (Blk_List.Block[i_blk].info.level == neighbour_info[i_bound_elem].level)) {
                      buffer_size_soln = ((abs(ii)*Blk_List.Block[i_blk].info.dimen.ghost) + 
                                         ((!ii)*abs(Blk_List.Block[i_blk].info.dimen.i)))*
                                         ((abs(jj)*Blk_List.Block[i_blk].info.dimen.ghost) + 
@@ -375,27 +374,22 @@ void AdaptiveBlock3D_List::Allocate_Message_Buffers_NoResChange(AdaptiveBlock3D_
                                             ((abs(kk)*Blk_List.Block[i_blk].info.dimen.ghost) + 
                                             ((!kk)*abs(Blk_List.Block[i_blk].info.dimen.k)+1))*
                                             (NUM_COMP_VECTOR3D);
-                     buffer_size_bcs = ((abs(ii)*Blk_List.Block[i_blk].info.dimen.ghost) + 
-                                       ((!ii)*abs(Blk_List.Block[i_blk].info.dimen.i)+1))*
-                                       ((abs(jj)*Blk_List.Block[i_blk].info.dimen.ghost) + 
-                                       ((!jj)*abs(Blk_List.Block[i_blk].info.dimen.j) +1))*
-                                       ((abs(kk)*Blk_List.Block[i_blk].info.dimen.ghost) + 
-                                       ((!kk)*abs(Blk_List.Block[i_blk].info.dimen.k)+1))*
-                                       (NUM_COMP_VECTOR3D) +
-                                       (((!ii)*abs(Blk_List.Block[i_blk].info.dimen.i)))*
+                     buffer_size_bcs = (((!ii)*abs(Blk_List.Block[i_blk].info.dimen.i)))*
                                        (((!jj)*abs(Blk_List.Block[i_blk].info.dimen.j)))*
                                        (((!kk)*abs(Blk_List.Block[i_blk].info.dimen.k)));
 
-                     buffer_size = max(max(buffer_size_soln, buffer_size_geometry), buffer_size_bcs);
-                     buffer_size_neighbour = buffer_size;
+                     buffer_size = max(buffer_size_soln, buffer_size_geometry + buffer_size_bcs);
+                     neighbour_buffer_size = buffer_size;
 
-                     Blk_List.message_noreschange_sendbuf[i_blk][i_bound_elem] = new double[buffer_size_neighbour];
-                     for (l = 0; l <= buffer_size_neighbour-1; ++l) {
+                     Blk_List.message_noreschange_sendbuf[i_blk][i_bound_elem] = 
+                        new double[neighbour_buffer_size];
+                     for (int l = 0; l <= neighbour_buffer_size-1; ++l) {
                         Blk_List.message_noreschange_sendbuf[i_blk][i_bound_elem][l] = ZERO;
                      } /* endfor */
                   
-                     Blk_List.message_noreschange_recbuf[i_blk][i_bound_elem] = new double[buffer_size];
-                     for (l = 0; l <= buffer_size-1; ++l) {
+                     Blk_List.message_noreschange_recbuf[i_blk][i_bound_elem] = 
+                        new double[buffer_size];
+                     for (int l = 0; l <= buffer_size-1; ++l) {
                         Blk_List.message_noreschange_recbuf[i_blk][i_bound_elem][l] = ZERO;
                      } /* endfor */
 
@@ -453,12 +447,10 @@ void AdaptiveBlock3D_List::Deallocate_Message_Buffers(AdaptiveBlock3D_List &Blk_
  **********************************************************/
 void AdaptiveBlock3D_List::Deallocate_Message_Buffers_NoResChange(AdaptiveBlock3D_List &Blk_List) {
    
-   int i_blk, j_neigh;
-   
    // Deallocate memory for send and receive buffers.
    if (Blk_List.message_noreschange_sendbuf != NULL) {
-      for ( i_blk = 0; i_blk <= Blk_List.Nblk-1; ++i_blk ) {
-         for (j_neigh = 0; j_neigh < MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK ; ++j_neigh) {
+      for (int i_blk = 0; i_blk <= Blk_List.Nblk-1; ++i_blk ) {
+         for (int j_neigh = 0; j_neigh < MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK ; ++j_neigh) {
             delete []Blk_List.message_noreschange_sendbuf[i_blk][j_neigh];
             Blk_List.message_noreschange_sendbuf[i_blk][j_neigh] = NULL;
          } /* endfor */
@@ -470,8 +462,8 @@ void AdaptiveBlock3D_List::Deallocate_Message_Buffers_NoResChange(AdaptiveBlock3
    } /* endif */
 
    if (Blk_List.message_noreschange_recbuf != NULL) {
-      for ( i_blk = 0; i_blk <= Blk_List.Nblk-1; ++i_blk ) {
-         for (j_neigh = 0; j_neigh < MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK ; ++j_neigh) {
+      for (int i_blk = 0; i_blk <= Blk_List.Nblk-1; ++i_blk ) {
+         for (int j_neigh = 0; j_neigh < MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK ; ++j_neigh) {
             delete []Blk_List.message_noreschange_recbuf[i_blk][j_neigh];
             Blk_List.message_noreschange_recbuf[i_blk][j_neigh] = NULL;
          } /* endfor */
@@ -497,44 +489,6 @@ void AdaptiveBlock3D_List::Deallocate_Message_Buffers_ResChange(AdaptiveBlock3D_
 }
 
 /**********************************************************
- * Routine: Exchange_Messages                             *
- *                                                        *
- * Sends and receives solution information contained in   *
- * the preloaded message passing buffers between          *
- * neighbouring adaptive blocks.                          *
- *                                                        *
- **********************************************************/
-int AdaptiveBlock3D_List::Exchange_Messages(AdaptiveBlock3D_List &Blk_List,
-                                            const int Number_of_Solution_Variables,
-                                            const int Send_Mesh_Geometry_Only) {
-
-    int error_flag;
-
-    /* Exchange message buffers at block interfaces 
-       with no cell resolution change. */
-
-    error_flag = Exchange_Messages_NoResChange(Blk_List,
-                                               Number_of_Solution_Variables,
-                                               Send_Mesh_Geometry_Only);
-    if (error_flag) return(error_flag);
-
-    /* Exchange message buffers at block interfaces, 
-       sending messages from fine to coarse blocks. */
-
-    error_flag = Exchange_Messages_ResChange_FineToCoarse(Blk_List,
-                                                          Number_of_Solution_Variables);
-    if (error_flag) return(error_flag);
-
-    /* Exchange message buffers at block interfaces, 
-       sending messages from coarse to fine blocks. */
-
-    error_flag = Exchange_Messages_ResChange_CoarseToFine(Blk_List,
-                                                          Number_of_Solution_Variables);
-    return(error_flag);
-
-}
-
-/**********************************************************
  * Routine: Copy_Refinement_Flags                         *
  *                                                        *
  * Copies the refinement flags from adaptive block list 1 *
@@ -544,11 +498,9 @@ int AdaptiveBlock3D_List::Exchange_Messages(AdaptiveBlock3D_List &Blk_List,
 void AdaptiveBlock3D_List::Copy_Refinement_Flags(AdaptiveBlock3D_List &Blk_List_1,
                                                  AdaptiveBlock3D_List &Blk_List_2) {
  
-    int i_blk;
-
     if (Blk_List_1.Nblk > 0 &&
         Blk_List_1.Nblk == Blk_List_2.Nblk) {
-       for ( i_blk = 0; i_blk <= Blk_List_1.Nblk-1 ; ++i_blk ) {
+       for (int i_blk = 0; i_blk <= Blk_List_1.Nblk-1 ; ++i_blk ) {
           Blk_List_1.RefineFlag[i_blk] = Blk_List_2.RefineFlag[i_blk];
        } /* endfor */
     } /* endif */

@@ -992,53 +992,6 @@ void Grid3D_Hexa_Block::Update_Exterior_Nodes_Zdir(void) {
   
 }
 
-/*****************************************************************
- * Routine: Update Cells                                         *
- *                                                               *
- * Updates the cell information for the hexahedral mesh block.   *
- *                                                               *
- *****************************************************************/
-void Grid3D_Hexa_Block::Update_Cells(void) {
-
-  for(int k = KCl-Nghost; k <=KCu+Nghost ; ++k){ 
-    for(int j = JCl-Nghost ; j <= JCu+Nghost; ++j) {
-      for (int i = ICl-Nghost ; i <= ICu+Nghost; ++i) {
-	Cell[i][j][k].I = i ;
-	Cell[i][j][k].J = j ;
-	Cell[i][j][k].K = k ;
-	Cell[i][j][k].Xc = centroid(i, j, k);
-        Cell[i][j][k].V = volume(Cell[i][j][k]);
-      } /* endfor */
-    } /* endfor */
-  } /* endfor */
-
-}
-
-/*****************************************************************
- * Routine: Update Ghost Cells                                   *
- *                                                               *
- * Updates the ghost cells information of the hexahedral mesh    *
- * block.                                                        *
- *                                                               *
- *****************************************************************/
-void Grid3D_Hexa_Block::Update_Ghost_Cells(void) {
-
-  for(int k = KCl-Nghost; k <=KCu+Nghost ; ++k){ 
-    for(int j = JCl-Nghost ; j <= JCu+Nghost; ++j) {
-      for (int i = ICl-Nghost ; i <= ICu+Nghost; ++i) {
-         if (k < KCl || k > KCu || j < JCl || j > JCu || i < ICl || i > ICu) {
-            Cell[i][j][k].I = i ;
-            Cell[i][j][k].J = j ;
-            Cell[i][j][k].K = k ;
-            Cell[i][j][k].Xc = centroid(i, j, k);
-            Cell[i][j][k].V = volume(Cell[i][j][k]);
-         } /* endif */
-      } /* endfor */
-    } /* endfor */
-  } /* endfor */
-
-}
-
 /**************************************************************
  * Routine: Correct_Exterior_Nodes                            *
  *                                                            *
@@ -1075,7 +1028,7 @@ void Grid3D_Hexa_Block::Correct_Exterior_Nodes(const int ii,
       } else {
          ++face_not_boundary;
       }
-   }else{
+   } else {
       igs = INl;
       ige = INu;
       igd = 1;
@@ -1143,6 +1096,53 @@ void Grid3D_Hexa_Block::Correct_Exterior_Nodes(const int ii,
       } /* endfor */
    } /* endfor */
    
+}
+
+/*****************************************************************
+ * Routine: Update Cells                                         *
+ *                                                               *
+ * Updates the cell information for the hexahedral mesh block.   *
+ *                                                               *
+ *****************************************************************/
+void Grid3D_Hexa_Block::Update_Cells(void) {
+
+  for(int k = KCl-Nghost; k <=KCu+Nghost ; ++k){ 
+    for(int j = JCl-Nghost ; j <= JCu+Nghost; ++j) {
+      for (int i = ICl-Nghost ; i <= ICu+Nghost; ++i) {
+	Cell[i][j][k].I = i ;
+	Cell[i][j][k].J = j ;
+	Cell[i][j][k].K = k ;
+	Cell[i][j][k].Xc = centroid(i, j, k);
+        Cell[i][j][k].V = volume(Cell[i][j][k]);
+      } /* endfor */
+    } /* endfor */
+  } /* endfor */
+
+}
+
+/*****************************************************************
+ * Routine: Update Ghost Cells                                   *
+ *                                                               *
+ * Updates the ghost cells information of the hexahedral mesh    *
+ * block.                                                        *
+ *                                                               *
+ *****************************************************************/
+void Grid3D_Hexa_Block::Update_Ghost_Cells(void) {
+
+  for(int k = KCl-Nghost; k <=KCu+Nghost ; ++k){ 
+    for(int j = JCl-Nghost ; j <= JCu+Nghost; ++j) {
+      for (int i = ICl-Nghost ; i <= ICu+Nghost; ++i) {
+         if (k < KCl || k > KCu || j < JCl || j > JCu || i < ICl || i > ICu) {
+            Cell[i][j][k].I = i ;
+            Cell[i][j][k].J = j ;
+            Cell[i][j][k].K = k ;
+            Cell[i][j][k].Xc = centroid(i, j, k);
+            Cell[i][j][k].V = volume(Cell[i][j][k]);
+         } /* endif */
+      } /* endfor */
+    } /* endfor */
+  } /* endfor */
+
 }
 
 /********************************************************

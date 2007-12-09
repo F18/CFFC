@@ -180,25 +180,6 @@ public:
                               const int *inc,
                               const int *neigh_orient);
 
-  int LoadSendBuffer_Geometry(double *buffer,
-                              int &buffer_count,
-                              const int buffer_size,
-                              const int *id_start,
-                              const int *id_end,
-                              const int *inc,
-                              const int *neigh_orient);
-
-  int LoadSendBuffer_BCs(double *buffer,
-                         int &buffer_count,
-                         const int buffer_size,
-                         const int *id_start,
-                         const int *id_end,
-                         const int *inc,
-                         const int *neigh_orient,
-                         const int bc_elem_i,
-                         const int bc_elem_j,
-                         const int bc_elem_k);
-
 //   int LoadSendBuffer_F2C(.........
 //   int LoadSendBuffer_C2F(.........
 
@@ -215,35 +196,6 @@ public:
                                    const int k_min,
                                    const int k_max,
                                    const int k_inc);
-
-  int UnloadReceiveBuffer_Geometry(double *buffer,
-                                   int &buffer_count,
-                                   const int buffer_size,
-                                   const int i_min,
-                                   const int i_max,
-                                   const int i_inc,
-                                   const int j_min,
-                                   const int j_max, 
-                                   const int j_inc,
-                                   const int k_min,
-                                   const int k_max,
-                                   const int k_inc);
-
-  int UnloadReceiveBuffer_BCs(double *buffer,
-                              int &buffer_count,
-                              const int buffer_size,
-                              const int i_min,
-                              const int i_max,
-                              const int i_inc,
-                              const int j_min,
-                              const int j_max,
-                              const int j_inc,
-                              const int k_min,
-                              const int k_max,
-                              const int k_inc,
-                              const int bc_elem_i,
-                              const int bc_elem_j,
-                              const int bc_elem_k);
 
 //   int UnloadReceiveBuffer_F2C(.........
 //   int UnloadReceiveBuffer_C2F(.........
@@ -652,46 +604,6 @@ LoadSendBuffer_Solution(double *buffer,
   
 }
 
-/*******************************************************************************
- * GMRES_Block::LoadSendBuffer_Geometry -- Loads send message buffer with      *
- *                                         geometry data (place holder, not    *
- *                                         needed here).                       *
- *******************************************************************************/
-template <typename SOLN_pSTATE, typename SOLN_cSTATE> 
-inline int GMRES_Block<SOLN_pSTATE, SOLN_cSTATE>::
-LoadSendBuffer_Geometry(double *buffer,
-                        int &buffer_count,
-                        const int buffer_size,
-                        const int *id_start, 
-                        const int *id_end,
-                        const int *inc,
-                        const int *neigh_orient) {
-
-   return(0);
-
-}
-
-/*******************************************************************************
- * GMRES_Block::LoadSendBuffer_BCs -- Loads send message buffer with BCs       *
- *                                    data (place holder, not needed here).    *
- *******************************************************************************/
-template <typename SOLN_pSTATE, typename SOLN_cSTATE> 
-inline int GMRES_Block<SOLN_pSTATE, SOLN_cSTATE>::
-LoadSendBuffer_BCs(double *buffer,
-                   int &buffer_count,
-                   const int buffer_size,
-                   const int *id_start, 
-                   const int *id_end,
-                   const int *inc,
-                   const int *neigh_orient,
-                   const int bc_elem_i,
-                   const int bc_elem_j,
-                   const int bc_elem_k) {
-
-   return(0);
-
-}
-
 /********************************************************************************
  * GMRES_Block::UnloadReceiveBuffer_Solution -- Unloads solution data from the  *
  *                                              receive message buffer.         *
@@ -727,57 +639,6 @@ UnloadReceiveBuffer_Solution(double *buffer,
          } /* endfor */
       } /* endfor */
    } /* endfor */ 
-
-   return(0);
-
-}
-
-/********************************************************************************
- * GMRES_Block::UnloadReceiveBuffer_Geometry -- Unloads geometry data from the  *
- *                                              receive message buffer (place   *
- *                                              holder, not needed here).       *
- ********************************************************************************/
-template <typename SOLN_pSTATE, typename SOLN_cSTATE> 
-inline int GMRES_Block<SOLN_pSTATE, SOLN_cSTATE>::
-UnloadReceiveBuffer_Geometry(double *buffer,
-                             int &buffer_count,
-                             const int buffer_size,
-                             const int i_min, 
-                             const int i_max,
-                             const int i_inc,
-                             const int j_min, 
-                             const int j_max,
-                             const int j_inc,
-			     const int k_min, 
-                             const int k_max,
-                             const int k_inc) {
-
-   return(0);
-
-}
-
-/********************************************************************************
- * GMRES_Block::UnloadReceiveBuffer_BCs --      Unloads BCs data from the       *
- *                                              receive message buffer (place   *
- *                                              holder, not needed here).       *
- ********************************************************************************/
-template <typename SOLN_pSTATE, typename SOLN_cSTATE> 
-inline int GMRES_Block<SOLN_pSTATE, SOLN_cSTATE>::
-UnloadReceiveBuffer_BCs(double *buffer,
-                        int &buffer_count,
-                        const int buffer_size,
-                        const int i_min,
-                        const int i_max,
-                        const int i_inc,
-                        const int j_min,
-                        const int j_max,
-                        const int j_inc,
-                        const int k_min,
-                        const int k_max,
-                        const int k_inc,
-                        const int bc_elem_i,
-                        const int bc_elem_j,
-                        const int bc_elem_k) {
 
    return(0);
 
@@ -977,10 +838,8 @@ solve(Block_Preconditioner<SOLN_pSTATE,SOLN_cSTATE> *Block_precon) {
       CFFC_Barrier_MPI();  
       
       /* Send "x" solution information between neighbouring blocks.*/          
-      error_flag = Send_All_Messages(G, 				    
-				     Data->Local_Adaptive_Block_List,
-				     G[0].NumVar(), 
-				     OFF);
+      error_flag = Send_Messages(G, 				    
+				 Data->Local_Adaptive_Block_List);
 				   
       if (error_flag) {
 	cout << "\n GMRES ERROR: GMRES message passing error on processor "
@@ -1173,10 +1032,8 @@ solve(Block_Preconditioner<SOLN_pSTATE,SOLN_cSTATE> *Block_precon) {
       
       /* Send solution information between neighbouring blocks.*/
       /* Passes "W = Minv * V(i) = z"  information in ghost cells */       
-      error_flag = Send_All_Messages(G, 				    
-				     Data->Local_Adaptive_Block_List,
-				     G[0].NumVar(), 
-				     OFF);				   
+      error_flag = Send_Messages(G, 				    
+			         Data->Local_Adaptive_Block_List);				   
       if (error_flag) {
 	cout << "\n GMRES ERROR: GMRES message passing error on processor "
 	     <<  CFFC_MPI::This_Processor_Number

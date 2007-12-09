@@ -104,22 +104,21 @@ int HexaSolver(char *Input_File_Name_ptr,int batch_flag){
     } /* endif */
 
     /********************** EXPLICIT **********************************/  
-    if ( (Data.number_of_explicit_time_steps < Solution_Data.Input.Maximum_Number_of_Time_Steps) ||
-	(Solution_Data.Input.Time_Accurate && Solution_Data.Input.Time_Max > Data.Time) ) {    
-      
-      if(Solution_Data.Input.i_Time_Integration == TIME_STEPPING_MULTIGRID){
-	cerr<< "\n MULTIGRID would be here, but not yet. \n"; return error_flag;
+    if ((Data.number_of_explicit_time_steps < Solution_Data.Input.Maximum_Number_of_Time_Steps) ||
+	(Solution_Data.Input.Time_Accurate && Solution_Data.Input.Time_Max > Data.Time)) {    
+      if (Solution_Data.Input.i_Time_Integration == TIME_STEPPING_MULTIGRID) {
+	cerr << "\n MULTIGRID would be here, but not yet. \n"; return error_flag;
       } else {
-	error_flag = Hexa_MultiStage_Explicit_Solver<SOLN_pSTATE, SOLN_cSTATE>
-	  (Data,Solution_Data);
+	error_flag = Hexa_MultiStage_Explicit_Solver<SOLN_pSTATE, SOLN_cSTATE>(Data,
+                                                                               Solution_Data);
       } /* endif */
     } /* endif */
 
     /********************** IMPLICIT **********************************/  
-    if(Data.number_of_implicit_time_steps < Solution_Data.Input.NKS_IP.Maximum_Number_of_NKS_Iterations){
-      Hexa_Newton_Krylov_Schwarz_Solver<SOLN_pSTATE, SOLN_cSTATE> NKS(Data,Solution_Data);
+    if (Data.number_of_implicit_time_steps < Solution_Data.Input.NKS_IP.Maximum_Number_of_NKS_Iterations) {
+      Hexa_Newton_Krylov_Schwarz_Solver<SOLN_pSTATE, SOLN_cSTATE> NKS(Data, Solution_Data);
       error_flag = NKS.Solve();
-    }
+    } /* endif */
     
     // Close Progress File 
     if (CFFC_Primary_MPI_Processor()) error_flag = Close_Progress_File(Data.residual_file);
