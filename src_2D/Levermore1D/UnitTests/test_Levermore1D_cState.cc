@@ -450,12 +450,14 @@ namespace tut
 
     Levermore1D_cState U(A);
     double momentU, momentA;
+    char testname[256];
 
     //check series of moments
     for(int i=0;i<15;++i) {
+      sprintf(testname, "Integrate moment %d.", i);
       momentU = U.moment(i,A);
       momentA = A.integrate_conserved_moment(i);
-      ensure_distance("test", momentU, momentA, fabs(momentU)*1e-10+1e-10);
+      ensure_distance(testname, momentU, momentA, fabs(momentU)*1e-10+1e-10);
     }
 
   }
