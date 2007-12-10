@@ -1398,20 +1398,21 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
    Vector3D MOVING_WALL_VELOCITY = IPs.Moving_Wall_Velocity, dX;
    double dpdx;
      
-   //BC_NONE is default due to switch fall through.
-
-   for ( k =  KCl- Nghost ; k <=  KCu+ Nghost ; ++k) {
-      for ( j =  JCl- Nghost ; j <=  JCu+ Nghost ; ++j ) {
+   for ( k = KCl-Nghost ; k <= KCu+Nghost ; ++k) {
+      for ( j = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
          // Prescribe West boundary conditions.
-         switch( Grid.BCtypeW[j][k]) {
-	 case BC_FIXED :
+         switch(Grid.BCtypeW[j][k]) {
+          case BC_NONE :
+            break;
+
+          case BC_FIXED :
             W[ ICl-1][j][k] = WoW[j][k];
             U[ ICl-1][j][k] = W[ICl-1][j][k].U();
             W[ ICl-2][j][k] = WoW[j][k];
             U[ ICl-2][j][k] = W[ICl-2][j][k].U();
 	    break;
 
-         case BC_REFLECTION :
+          case BC_REFLECTION :
             W[ ICl-1][j][k] = SOLN_pSTATE::Reflect(W[ICl][j][k],
                                                    Grid.nfaceW( ICl,j,k));
             U[ ICl-1][j][k] = W[ICl-1][j][k].U();
@@ -1420,7 +1421,7 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
             U[ ICl-2][j][k] = W[ICl-2][j][k].U();
             break;
 
-         case BC_FIXED_PRESSURE :
+          case BC_FIXED_PRESSURE :
             W[ ICl-1][j][k] = W[ICl][j][k];
             W[ ICl-1][j][k].p = WoW[j][k].p;
             U[ ICl-1][j][k] = W[ICl-1][j][k].U();
@@ -1429,21 +1430,21 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
             U[ ICl-2][j][k] = W[ICl-2][j][k].U();
             break;
 
-         case BC_CONSTANT_EXTRAPOLATION :
+          case BC_CONSTANT_EXTRAPOLATION :
             W[ ICl-1][j][k] = W[ICl][j][k];
             U[ ICl-1][j][k] = W[ICl-1][j][k].U();
             W[ ICl-2][j][k] = W[ICl][j][k] ;
             U[ ICl-2][j][k] = W[ICl-2][j][k].U();
             break;
             
-         case BC_PERIODIC :  
+          case BC_PERIODIC :  
             W[ICl-1][j][k] = W[ICu-1][j][k];
             U[ICl-1][j][k] = U[ICu-1][j][k];
             W[ICl-2][j][k] = W[ICu-2][j][k];
             U[ICl-2][j][k] = U[ICu-2][j][k];
             break;
 
-         case BC_NO_SLIP :
+          case BC_NO_SLIP :
             W[ICl-1][j][k] = SOLN_pSTATE::NoSlip(W[ICl][j][k],WoW[j][k], 
                                                   Grid.nfaceW(ICl,j,k),
                                                   IPs.Pressure_Gradient,
@@ -1457,7 +1458,7 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
             U[ICl-2][j][k] = W[ICl-2][j][k].U();
             break;
 
-         case BC_MOVING_WALL :
+          case BC_MOVING_WALL :
             W[ICl-1][j][k] = SOLN_pSTATE::MovingWall(W[ICl][j][k],WoW[j][k],
                                          Grid.nfaceW(ICl,j,k),
                                          MOVING_WALL_VELOCITY,
@@ -1471,8 +1472,8 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
                                          FIXED_TEMPERATURE_WALL);
             U[ICl-2][j][k] = W[ICl-2][j][k].U();
             break;
-          
-         case BC_CHANNEL_INFLOW:
+           
+          case BC_CHANNEL_INFLOW:
             dpdx = IPs.Pressure_Gradient.x; 
             //for turbulent channel flow
             // p linearly varys based on constant pressure gradient 
@@ -1492,15 +1493,18 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
          } /* endswitch */
          
          // Prescribe East boundary conditions.
-         switch( Grid.BCtypeE[j][k]) {
-	 case BC_FIXED :
+         switch(Grid.BCtypeE[j][k]) {
+          case BC_NONE :
+            break;
+
+          case BC_FIXED :
 	    W[ ICu+1][j][k] = WoE[j][k];
             U[ ICu+1][j][k] = W[ICu+1][j][k].U();
             W[ ICu+2][j][k] = WoE[j][k];
             U[ ICu+2][j][k] = W[ICl+2][j][k].U();
 	    break;
 
-         case BC_REFLECTION :
+          case BC_REFLECTION :
             W[ ICu+1][j][k] = SOLN_pSTATE::Reflect(W[ICu][j][k],
                                                    Grid.nfaceE(ICu,j,k));
             U[ ICu+1][j][k] = W[ ICu+1][j][k].U();
@@ -1509,7 +1513,7 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
             U[ ICu+2][j][k] = W[ ICu+2][j][k].U();
             break;
 
-         case BC_FIXED_PRESSURE :
+          case BC_FIXED_PRESSURE :
             W[ ICu+1][j][k] = W[ICu][j][k];
             W[ ICu+1][j][k].p = WoE[j][k].p;
             U[ ICu+1][j][k] = W[ICu+1][j][k].U();
@@ -1518,21 +1522,21 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
             U[ ICu+2][j][k] = W[ICu+2][j][k].U();
             break;
 
-         case BC_CONSTANT_EXTRAPOLATION :
+          case BC_CONSTANT_EXTRAPOLATION :
             W[ ICu+1][j][k] = W[ICu][j][k];
             U[ ICu+1][j][k] = W[ICu+1][j][k].U();
             W[ ICu+2][j][k] = W[ICu][j][k];
             U[ ICu+2][j][k] = W[ICu+2][j][k].U();
             break;
 
-         case BC_PERIODIC :
+          case BC_PERIODIC :
             W[ICu+1][j][k] = W[ICl+1][j][k];
             U[ICu+1][j][k] = U[ICl+1][j][k];
             W[ICu+2][j][k] = W[ICl+2][j][k];
             U[ICu+2][j][k] = U[ICl+2][j][k];
             break;
 
-         case BC_NO_SLIP :
+          case BC_NO_SLIP :
             W[ICu+1][j][k] = SOLN_pSTATE::NoSlip(W[ICu][j][k], 
                                                   WoE[j][k], 
                                                   Grid.nfaceE(ICu,j,k),
@@ -1547,7 +1551,7 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
             U[ICu+2][j][k] = W[ICu+2][j][k].U();
             break;
             
-         case BC_MOVING_WALL :
+          case BC_MOVING_WALL :
             W[ICu+1][j][k] = SOLN_pSTATE::MovingWall(W[ICu][j][k], 
                                                       WoE[j][k], 
                                                       Grid.nfaceE(ICu,j,k),
@@ -1564,7 +1568,7 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
             U[ICu+2][j][k] = W[ICu+2][j][k].U();
             break;
 
-         case BC_CHANNEL_OUTFLOW:
+          case BC_CHANNEL_OUTFLOW:
             dpdx = IPs.Pressure_Gradient.x; 
             // all constant extrapolation except pressure specified 
             // which linearly varys if there is pressure gradient
@@ -1592,18 +1596,21 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
       } /* endfor */
    } /* endfor */
    
-   for ( k =  KCl- Nghost ; k <=  KCu+ Nghost ; ++k ) {
-      for ( i =  ICl- Nghost ; i <=  ICu+ Nghost ; ++i ) {
+   for ( k = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
+      for ( i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
          // Prescribe South boundary conditions.
-         switch( Grid.BCtypeS[i][k]) {
-	 case BC_FIXED :
+         switch(Grid.BCtypeS[i][k]) {
+          case BC_NONE :
+            break;
+
+          case BC_FIXED :
 	    W[i][JCl-1][k] = WoS[i][k];
             U[i][JCl-1][k] = W[i][JCl-1][k].U();
             W[i][JCl-2][k] = WoS[i][k];
             U[i][JCl-2][k] = W[i][JCl-1][k].U();
 	    break;
 
-         case BC_REFLECTION :
+          case BC_REFLECTION :
             W[i][ JCl-1][k] = SOLN_pSTATE::Reflect(W[i][JCl][k],
                                                    Grid.nfaceS(i,JCl,k));
             U[i][ JCl-1][k] = W[i][ JCl-1][k].U();
@@ -1612,7 +1619,7 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
             U[i][ JCl-2][k] = W[i][ JCl-2][k].U();
             break;
          
-         case BC_FIXED_PRESSURE :
+          case BC_FIXED_PRESSURE :
             W[i][ JCl-1][k] = W[i][JCl][k];
             W[i][ JCl-1][k].p = WoS[i][k].p;
             U[i][ JCl-1][k] = W[i][JCl-1][k].U();
@@ -1621,21 +1628,21 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
             U[i][ JCl-2][k] = W[i][JCl-2][k].U();
 	    break;
 
-         case BC_CONSTANT_EXTRAPOLATION :
+          case BC_CONSTANT_EXTRAPOLATION :
             W[i][ JCl-1][k] = W[i][ JCl][k];
             U[i][ JCl-1][k] =  W[i][ JCl-1][k].U();
             W[i][ JCl-2][k] = W[i][ JCl][k];
             U[i][ JCl-2][k] =  W[i][ JCl-2][k].U();
 	    break;
 
-         case BC_PERIODIC :
+          case BC_PERIODIC :
             W[i][JCl-1][k] = W[i][JCu-1][k];
             U[i][JCl-1][k] = U[i][JCu-1][k];
             W[i][JCl-2][k] = W[i][JCu-2][k];
             U[i][JCl-2][k] = U[i][JCu-2][k];
             break;
 
-         case BC_NO_SLIP :
+          case BC_NO_SLIP :
             W[i][JCl-1][k] = SOLN_pSTATE::NoSlip(W[i][JCl][k], 
                                                   WoS[i][k], 
                                                   Grid.nfaceS(i,JCl,k),
@@ -1650,7 +1657,7 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
             U[i][JCl-2][k] = W[i][JCl-2][k].U();
             break;
 
-         case BC_MOVING_WALL :
+          case BC_MOVING_WALL :
             W[i][JCl-1][k] = SOLN_pSTATE::MovingWall(W[i][JCl][k], 
                                                       WoS[i][k], 
                                                       Grid.nfaceS(i, JCl,k),
@@ -1669,15 +1676,18 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
          } /* endswitch */
           
          // Prescribe North boundary conditions.
-         switch( Grid.BCtypeN[i][k]) {
-	 case BC_FIXED :
+         switch(Grid.BCtypeN[i][k]) {
+          case BC_NONE :
+            break;
+
+          case BC_FIXED :
 	    W[i][JCu+1][k] = WoN[i][k];
             U[i][JCu+1][k] = W[i][JCu+1][k].U();
             W[i][JCu+2][k] = WoN[i][k];
             U[i][JCu+2][k] = W[i][JCu+1][k].U();
 	    break;
 
-         case BC_REFLECTION :
+          case BC_REFLECTION :
             W[i][ JCu+1][k] = SOLN_pSTATE::Reflect(W[i][ JCu][k],
                                                    Grid.nfaceN(i,JCu,k));
             U[i][ JCu+1][k] = W[i][ JCu+1][k].U();
@@ -1686,7 +1696,7 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
             U[i][ JCu+2][k] = W[i][ JCu+2][k].U();
             break;
             
-         case BC_FIXED_PRESSURE :
+          case BC_FIXED_PRESSURE :
             W[i][ JCu+1][k] = W[i][ JCu][k];
             W[i][ JCu+1][k].p = WoN[i][k].p;
             U[i][ JCu+1][k] = W[i][ JCu+1][k].U();
@@ -1695,21 +1705,21 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
             U[i][ JCu+2][k] = W[i][ JCu+2][k].U();
             break;
             
-         case BC_CONSTANT_EXTRAPOLATION :
+          case BC_CONSTANT_EXTRAPOLATION :
             W[i][ JCu+1][k] = W[i][ JCu][k];
             U[i][ JCu+1][k] =  W[i][ JCu+1][k].U();
             W[i][ JCu+2][k] =  W[i][ JCu][k];
             U[i][ JCu+2][k] =  W[i][ JCu+2][k].U();
             break;
 
-         case BC_PERIODIC :
+          case BC_PERIODIC :
             W[i][JCu+1][k] = W[i][JCl+1][k];
             U[i][JCu+1][k] = U[i][JCl+1][k];
             W[i][JCu+2][k] = W[i][JCl+2][k];
             U[i][JCu+2][k] = U[i][JCl+2][k];
             break;
 
-         case BC_NO_SLIP :
+          case BC_NO_SLIP :
             W[i][JCu+1][k] = SOLN_pSTATE::NoSlip(W[i][JCu][k], 
                                                   WoN[i][k],
                                                   Grid.nfaceN(i,JCu,k),
@@ -1724,7 +1734,7 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
             U[i][JCu+2][k] = W[i][JCu+2][k].U();
             break;
 
-         case BC_MOVING_WALL :
+          case BC_MOVING_WALL :
             W[i][JCu+1][k] = SOLN_pSTATE::MovingWall(W[i][JCu][k], 
                                                       WoN[i][k],
                                                       Grid.nfaceN(i,JCu,k),
@@ -1745,18 +1755,21 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
       } /* endfor */
    } /* endfor */
    
-   for ( j =  JCl- Nghost ; j <=  JCu+ Nghost ; ++j ) {
-      for ( i =  ICl- Nghost ; i <=  ICu+ Nghost ; ++i ) {
+   for ( j = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
+      for ( i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
          // Prescribe Bottom boundary conditions.
-         switch( Grid.BCtypeB[i][j]) {
-	 case BC_FIXED :
+         switch(Grid.BCtypeB[i][j]) {
+          case BC_NONE :
+            break;
+
+          case BC_FIXED :
 	    W[i][j][KCl-1] = WoB[i][j];
             U[i][j][KCl-1] = W[i][j][KCl-1].U();
             W[i][j][KCl-2] = WoB[i][j];
             U[i][j][KCl-2] = W[i][j][KCl-2].U();
 	    break;
 
-         case BC_REFLECTION :
+          case BC_REFLECTION :
             W[i][j][ KCl-1 ] = SOLN_pSTATE::Reflect(W[i][j][ KCl],
                                                     Grid.nfaceBot(i,j, KCl));
             U[i][j][ KCl-1] =  W[i][j][ KCl-1].U();
@@ -1765,7 +1778,7 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
             U[i][j][ KCl-2] = W[i][j][ KCl-2].U();
             break;
             
-         case BC_FIXED_PRESSURE :
+          case BC_FIXED_PRESSURE :
             W[i][j][ KCl-1 ] = W[i][j][ KCl];
             W[i][j][ KCl-1 ].p = WoB[i][j].p;
             U[i][j][ KCl-1] = W[i][j][ KCl-1].U();
@@ -1774,21 +1787,21 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
             U[i][j][ KCl-2] = W[i][j][ KCl-2].U();
             break;
 
-         case BC_CONSTANT_EXTRAPOLATION :
+          case BC_CONSTANT_EXTRAPOLATION :
             W[i][j][ KCl-1 ] = W[i][j][ KCl];
             U[i][j][ KCl-1] = W[i][j][ KCl-1].U();
             W[i][j][ KCl-2] = W[i][j][ KCl];
             U[i][j][ KCl-2] = W[i][j][ KCl-2].U();
             break;
 
-         case BC_PERIODIC :
+          case BC_PERIODIC :
             W[i][j][KCl- 1] = W[i][j][KCu -1];
             U[i][j][KCl- 1] = U[i][j][KCu -1];
             W[i][j][KCl- 2] = W[i][j][KCu -2];
             U[i][j][KCl -2] = U[i][j][KCu -2];
             break;
 
-         case BC_NO_SLIP :
+          case BC_NO_SLIP :
             W[i][j][KCl-1] = SOLN_pSTATE::NoSlip(W[i][j][KCl], 
                                                   WoB[i][j],
                                                   Grid.nfaceBot(i,j,KCl),
@@ -1803,7 +1816,7 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
             U[i][j][KCl-2] = W[i][j][KCl-2].U();
             break;
             
-         case BC_MOVING_WALL :
+          case BC_MOVING_WALL :
             W[i][j][KCl-1] = SOLN_pSTATE::MovingWall(W[i][j][KCl], 
                                                       WoB[i][j],
                                                       Grid.nfaceBot(i,j,KCl),
@@ -1823,15 +1836,18 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
          } /* endswitch */
          
          // Prescribe Top boundary conditions.
-         switch( Grid.BCtypeT[i][j]) {
-	 case BC_FIXED :
+         switch(Grid.BCtypeT[i][j]) {
+          case BC_NONE :
+            break;
+
+          case BC_FIXED :
 	    W[i][j][KCu+1] = WoT[i][j];
             U[i][j][KCu+1] = W[i][j][KCu+1].U();
             W[i][j][KCu+2] = WoT[i][j];
             U[i][j][KCu+2] = W[i][j][KCu+2].U();
 	    break;
 
-         case BC_REFLECTION :
+          case BC_REFLECTION :
             W[i][j][ KCu+1] = SOLN_pSTATE::Reflect(W[i][j][ KCu],
                                                    Grid.nfaceTop(i,j,KCu));
             U[i][j][ KCu+1] = W[i][j][ KCu+1].U();
@@ -1840,7 +1856,7 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
             U[i][j][ KCu+2] =  W[i][j][ KCu+2].U();
             break;
 
-         case BC_FIXED_PRESSURE :
+          case BC_FIXED_PRESSURE :
             W[i][j][ KCu+1] = W[i][j][ KCu];
             W[i][j][ KCu+1].p = WoT[i][j].p;
             U[i][j][ KCu+1] = W[i][j][ KCu+1].U();
@@ -1849,21 +1865,21 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
             U[i][j][ KCu+2] = W[i][j][ KCu+2].U();
             break;
 
-         case BC_CONSTANT_EXTRAPOLATION :
+          case BC_CONSTANT_EXTRAPOLATION :
             W[i][j][ KCu+1] = W[i][j][ KCu];
             U[i][j][ KCu+1] = W[i][j][ KCu+1].U();
             W[i][j][ KCu+2] = W[i][j][ KCu];
             U[i][j][ KCu+2] = W[i][j][ KCu+2].U();
             break;
 
-         case BC_PERIODIC :
+          case BC_PERIODIC :
             W[i][j][KCu + 1] = W[i][j][KCl +1];
             U[i][j][KCu + 1] = U[i][j][KCl +1];
             W[i][j][KCu + 2] = W[i][j][KCl +2];
             U[i][j][KCu + 2] = U[i][j][KCl +2];
             break;
 
-         case BC_NO_SLIP :
+          case BC_NO_SLIP :
             W[i][j][KCu +1] = SOLN_pSTATE::NoSlip(W[i][j][KCu], 
                                                    WoT[i][j],
                                                    Grid.nfaceTop(i,j,KCu),
@@ -1878,7 +1894,7 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
             U[i][j][KCu +2] = W[i][j][KCu +2].U();
             break;
             
-         case BC_MOVING_WALL :
+          case BC_MOVING_WALL :
             W[i][j][KCu +1] = SOLN_pSTATE::MovingWall(W[i][j][KCu], 
                                                        WoT[i][j],
                                                        Grid.nfaceTop(i,j,KCu),
@@ -3680,11 +3696,10 @@ UnloadReceiveBuffer_Solution(double *buffer,
                              const int k_max,
                              const int k_inc) {
 
-   int i, j, k;
-   for (k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc) {
-      for (j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc) {
-         for (i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc) {
-            for (int nV = 1 ; nV <=NumVar() ; ++ nV) {
+   for (int k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc) {
+      for (int j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc) {
+         for (int i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc) {
+            for (int nV = 1; nV <=NumVar(); ++ nV) {
                buffer_count++;
                if (buffer_count >= buffer_size) return(1);    
                U[i][j][k][nV] = buffer[buffer_count];

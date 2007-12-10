@@ -352,27 +352,27 @@ void AdaptiveBlock3D_List::Allocate_Message_Buffers_NoResChange(AdaptiveBlock3D_
 
          /* Reallocate the send and receive message buffers based on the boundary element types. */
 
-         for (int ii = -1; ii<2; ++ii){
-            for (int jj = -1; jj<2; ++jj){
-               for (int kk = -1; kk<2; ++kk){
+         for (int ii = -1; ii <= 1; ++ii){
+            for (int jj = -1; jj <= 1; ++jj){
+               for (int kk = -1; kk <= 1; ++kk){
                   i_bound_elem = 9*(ii+1) + 3*(jj+1) + (kk+1);
 
                   if ((number_neighbours[i_bound_elem] == 1) && 
                       (i_bound_elem != BE::ME) &&
                       (Blk_List.Block[i_blk].info.level == neighbour_info[i_bound_elem].level)) {
                      buffer_size_soln = ((abs(ii)*Blk_List.Block[i_blk].info.dimen.ghost) + 
-                                        ((!ii)*abs(Blk_List.Block[i_blk].info.dimen.i)))*
+					 ((!ii)*abs(Blk_List.Block[i_blk].info.dimen.i)))*
                                         ((abs(jj)*Blk_List.Block[i_blk].info.dimen.ghost) + 
-                                        ((!jj)*abs(Blk_List.Block[i_blk].info.dimen.j)))*
+					 ((!jj)*abs(Blk_List.Block[i_blk].info.dimen.j)))*
                                         ((abs(kk)*Blk_List.Block[i_blk].info.dimen.ghost) + 
-                                        ((!kk)*abs(Blk_List.Block[i_blk].info.dimen.k)))*
+					 ((!kk)*abs(Blk_List.Block[i_blk].info.dimen.k)))*
                                         (Number_of_Solution_Variables);
                      buffer_size_geometry = ((abs(ii)*Blk_List.Block[i_blk].info.dimen.ghost)+
-                                            ((!ii)*abs(Blk_List.Block[i_blk].info.dimen.i)+1))*
+					     ((!ii)*abs(Blk_List.Block[i_blk].info.dimen.i)+1))*
                                             ((abs(jj)*Blk_List.Block[i_blk].info.dimen.ghost) + 
-                                            ((!jj)*abs(Blk_List.Block[i_blk].info.dimen.j)+1))*
+					     ((!jj)*abs(Blk_List.Block[i_blk].info.dimen.j)+1))*
                                             ((abs(kk)*Blk_List.Block[i_blk].info.dimen.ghost) + 
-                                            ((!kk)*abs(Blk_List.Block[i_blk].info.dimen.k)+1))*
+					     ((!kk)*abs(Blk_List.Block[i_blk].info.dimen.k)+1))*
                                             (NUM_COMP_VECTOR3D);
                      buffer_size_bcs = (((!ii)*abs(Blk_List.Block[i_blk].info.dimen.i)))*
                                        (((!jj)*abs(Blk_List.Block[i_blk].info.dimen.j)))*

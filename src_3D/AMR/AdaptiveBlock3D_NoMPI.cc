@@ -124,11 +124,11 @@ int AdaptiveBlock3D_List::Exchange_Messages_NoResChange(AdaptiveBlock3D_List &Bl
                      neighbour_blk = neighbour_info[i_bound_elem].blknum;
                      
                      buffer_size = ((abs(ii)*Blk_List.Block[i_blk].info.dimen.ghost) + 
-                                   ((!ii)*abs(Blk_List.Block[i_blk].info.dimen.i)))*
+				    ((!ii)*abs(Blk_List.Block[i_blk].info.dimen.i)))*
                                    ((abs(jj)*Blk_List.Block[i_blk].info.dimen.ghost) + 
-                                   ((!jj)*abs(Blk_List.Block[i_blk].info.dimen.j)))*
+				    ((!jj)*abs(Blk_List.Block[i_blk].info.dimen.j)))*
                                    ((abs(kk)*Blk_List.Block[i_blk].info.dimen.ghost) + 
-                                   ((!kk)*abs(Blk_List.Block[i_blk].info.dimen.k)))*
+				    ((!kk)*abs(Blk_List.Block[i_blk].info.dimen.k)))*
                                    (Number_of_Solution_Variables);
 
                      if (!Blk_List.Block[neighbour_blk].used) return (2001);
@@ -276,11 +276,11 @@ int AdaptiveBlock3D_List::Exchange_Messages_NoResChange_Mesh_Geometry_Only(Adapt
                      neighbour_blk = neighbour_info[i_bound_elem].blknum;
                      
                      buffer_size = ((abs(ii)*Blk_List.Block[i_blk].info.dimen.ghost) + 
-                                   ((!ii)*abs(Blk_List.Block[i_blk].info.dimen.i)+1))*
+				    ((!ii)*abs(Blk_List.Block[i_blk].info.dimen.i)+1))*
                                    ((abs(jj)*Blk_List.Block[i_blk].info.dimen.ghost) + 
-                                   ((!jj)*abs(Blk_List.Block[i_blk].info.dimen.j)+1))*
+				    ((!jj)*abs(Blk_List.Block[i_blk].info.dimen.j)+1))*
                                    ((abs(kk)*Blk_List.Block[i_blk].info.dimen.ghost) + 
-                                   ((!kk)*abs(Blk_List.Block[i_blk].info.dimen.k)+1))*
+				    ((!kk)*abs(Blk_List.Block[i_blk].info.dimen.k)+1))*
                                    (NUM_COMP_VECTOR3D) +
                                    (((!ii)*abs(Blk_List.Block[i_blk].info.dimen.i)))*
                                    (((!jj)*abs(Blk_List.Block[i_blk].info.dimen.j)))*

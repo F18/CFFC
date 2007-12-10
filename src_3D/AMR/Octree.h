@@ -744,6 +744,7 @@ inline istream &operator >> (istream &in_file,
 class Octree_DataStructure{
   private:
   public:
+    int                     NR; // Total number of root blocks.
     int                    NRi; // Number of roots in i-direction.
     int                    NRj; // Number of roots in j-direction.
     int                    NRk; // Number of roots in k-direction.
@@ -758,18 +759,17 @@ class Octree_DataStructure{
     int MaximumRefinementLevel; // Maximum allowable refinement level.
     int MinimumRefinementLevel; // Maximum allowable refinement level.
                                 // for blocks in data structures.
-	                        // Made public so can access them.
 
     /* Creation, copy, and assignment constructors. */
     Octree_DataStructure(void) {
-       NRi = 0; NRj = 0; NRk = 0; Roots = NULL;
+       NR = 0; NRi = 0; NRj = 0; NRk = 0; Roots = NULL;
        Ncpu = 0; Nblk = 0; Blocks = NULL; RefineFlags = NULL;
        MaximumRefinementLevel = 99; MinimumRefinementLevel = 0;
        RefineThreshold = 0.50; CoarsenThreshold = 0.10;
     }
 
     Octree_DataStructure(const Octree_DataStructure &QT) {
-       NRi = QT.NRi; NRj = QT.NRj; NRk = QT.NRk;
+       NR = QT.NR; NRi = QT.NRi; NRj = QT.NRj; NRk = QT.NRk;
        Roots = QT.Roots; 
        Ncpu = QT.Ncpu; Nblk = QT.Nblk; Blocks = QT.Blocks;
        RefineFlags = QT.RefineFlags;
@@ -788,6 +788,7 @@ class Octree_DataStructure{
     // Use automatically generated assignment operator.
 
     /* Allocate memory for octree data structure. */
+    void allocate(const int n, const int ncpu, const int nblk);
     void allocate(const int ni, const int nj, const int nk, 
                   const int ncpu, const int nblk);
 
@@ -795,6 +796,7 @@ class Octree_DataStructure{
     void deallocate(void);
 
     /* Allocate memory for octree data structure roots. */
+    void allocateRoots(const int n);
     void allocateRoots(const int ni, const int nj, const int nk);
 
     /* Deallocate memory for octree data structure roots. */
@@ -890,45 +892,64 @@ class Octree_DataStructure{
 /*********************************************************************
  * Octree_DataStructure::allocate -- Allocate memory.                *
  *********************************************************************/
+inline void Octree_DataStructure::allocate(const int n, 
+                                           const int ncpu, 
+                                           const int nblk) {
+   assert( n > 0 && ncpu > 0 && nblk > 0 ); 
+   NR = n; NRi = n; NRj = 1; NRk = 1; Ncpu = ncpu; Nblk = nblk;
+   Roots = new OctreeBlock[NR];
+   Blocks = new OctreeBlock**[Ncpu];
+   for (int i = 0; i <= Ncpu-1 ; ++i) {
+      Blocks[i] = new OctreeBlock*[Nblk];
+      for (int j = 0; j <= Nblk-1; ++j) Blocks[i][j] = NULL; 
+   } /* endfor */
+   RefineFlags = new int*[Ncpu];
+   for (int i = 0; i <= Ncpu-1 ; ++i ) RefineFlags[i] = new int[Nblk];
+   nochangeAll();
+}
+
 inline void Octree_DataStructure::allocate(const int ni, 
                                            const int nj, 
                                            const int nk, 
                                            const int ncpu, 
                                            const int nblk) {
-   int i, j, k, ntotblks ; 
    assert( ni > 0 && nj > 0 && nk > 0 && ncpu > 0 && nblk > 0 );
-   NRi = ni; NRj = nj; NRk = nk; Ncpu = ncpu; Nblk = nblk;
-   ntotblks = NRi*NRj*NRk;
-   Roots = new OctreeBlock[ntotblks];
+   NR = ni*nj*nk; NRi = ni; NRj = nj; NRk = nk; Ncpu = ncpu; Nblk = nblk;
+   Roots = new OctreeBlock[NR];
    Blocks = new OctreeBlock**[Ncpu];
-   for ( i = 0; i <= Ncpu-1 ; ++i ) {
+   for (int i = 0; i <= Ncpu-1 ; ++i) {
       Blocks[i] = new OctreeBlock*[Nblk];
-      for ( j = 0; j <= Nblk-1; ++j) Blocks[i][j] = NULL; 
+      for (int j = 0; j <= Nblk-1; ++j) Blocks[i][j] = NULL; 
    } /* endfor */
    RefineFlags = new int*[Ncpu];
-   for ( i = 0; i <= Ncpu-1 ; ++i ) RefineFlags[i] = new int[Nblk];
+   for (int i = 0; i <= Ncpu-1 ; ++i) RefineFlags[i] = new int[Nblk];
    nochangeAll();
+}
+
+inline void Octree_DataStructure::allocateRoots(const int n) {
+   assert( n > 0 );
+   NR = n; NRi = n; NRj = 1; NRk = 1;
+   Roots = new OctreeBlock[NR];
 }
 
 inline void Octree_DataStructure::allocateRoots(const int ni, 
 						const int nk,
                                                 const int nj) {
-   int i,j; assert( ni > 0 && nj > 0 && nk > 0 );
-   NRi = ni; NRj = nj; NRk = nk;
-   Roots = new OctreeBlock[NRi*NRj*NRk];
-   
+   assert( ni > 0 && nj > 0 && nk > 0 );
+   NR = ni*nj*nk; NRi = ni; NRj = nj; NRk = nk;
+   Roots = new OctreeBlock[NR];
 }
 
 inline void Octree_DataStructure::allocateBlocks(const int ncpu, 
                                                  const int nblk) {
-   int i, j; assert( ncpu > 0 && nblk > 0 );
+   assert( ncpu > 0 && nblk > 0 );
    Ncpu = ncpu; Nblk = nblk; Blocks = new OctreeBlock**[Ncpu];
-   for ( i = 0; i <= Ncpu-1 ; ++i ) {
+   for (int i = 0; i <= Ncpu-1 ; ++i) {
       Blocks[i] = new OctreeBlock*[Nblk];
-      for ( j = 0; j <= Nblk-1; ++j) Blocks[i][j] = NULL; 
+      for (int j = 0; j <= Nblk-1; ++j) Blocks[i][j] = NULL; 
    } /* endfor */
    RefineFlags = new int*[Ncpu];
-   for ( i = 0; i <= Ncpu-1 ; ++i ) RefineFlags[i] = new int[Nblk];
+   for (int i = 0; i <= Ncpu-1 ; ++i) RefineFlags[i] = new int[Nblk];
    nochangeAll();
 }
 
@@ -936,15 +957,13 @@ inline void Octree_DataStructure::allocateBlocks(const int ncpu,
  * Octree_DataStructure::deallocate -- Deallocate memory.            *
  *********************************************************************/
 inline void Octree_DataStructure::deallocate(void) {
-   int i, j;
-   
    delete []Roots; Roots = NULL;
-   NRi = 0; NRj = 0; NRk = 0;
-   for ( i = 0; i <= Ncpu-1 ; ++i ) {
+   NR = 0; NRi = 0; NRj = 0; NRk = 0;
+   for (int i = 0; i <= Ncpu-1 ; ++i) {
       delete []Blocks[i]; Blocks[i] = NULL;
    } /* endfor */
    delete []Blocks; Blocks = NULL;
-   for ( i = 0; i <= Ncpu-1 ; ++i ) {
+   for (int i = 0; i <= Ncpu-1 ; ++i) {
       delete []RefineFlags[i]; RefineFlags[i] = NULL;
    } /* endfor */
    delete []RefineFlags; RefineFlags = NULL;
@@ -952,18 +971,16 @@ inline void Octree_DataStructure::deallocate(void) {
 }
 
 inline void Octree_DataStructure::deallocateRoots(void) {
-  
   delete []Roots; Roots = NULL;
-  NRi = 0; NRj = 0; NRk = 0;
+  NR = 0; NRi = 0; NRj = 0; NRk = 0;
 }
 
 inline void Octree_DataStructure::deallocateBlocks(void) {
-   int i;
-   for ( i = 0; i <= Ncpu-1 ; ++i ) {
+   for (int i = 0; i <= Ncpu-1 ; ++i) {
       delete []Blocks[i]; Blocks[i] = NULL;
    } /* endfor */
    delete []Blocks; Blocks = NULL;
-   for ( i = 0; i <= Ncpu-1 ; ++i ) {
+   for (int i = 0; i <= Ncpu-1 ; ++i) {
       delete []RefineFlags[i]; RefineFlags[i] = NULL;
    } /* endfor */
    delete []RefineFlags; RefineFlags = NULL;
@@ -1002,15 +1019,13 @@ inline void Octree_DataStructure::assign_block_ptr(OctreeBlock *Block_Ptr) {
 }
 
 inline void Octree_DataStructure::assign_block_pointers(void) {
-   int iBLK, jBLK,kBLK, ntotalblks;
-   for ( jBLK = 0; jBLK <= Nblk-1; ++jBLK) 
-     for ( iBLK = 0; iBLK <= Ncpu-1 ; ++iBLK ) {
+   for (int jBLK = 0; jBLK <= Nblk-1; ++jBLK) {
+     for (int iBLK = 0; iBLK <= Ncpu-1; ++iBLK) {
          Blocks[iBLK][jBLK] = NULL;
        } /* endfor */
-   
-   ntotalblks = NRk*NRj*NRi;
-   for ( iBLK = 0 ; iBLK <= ntotalblks-1 ; ++iBLK ) {
- 	 assign_block_ptr(&(Roots[iBLK]));
+   } /* endfor */
+   for (int iBLK = 0 ; iBLK <= NR-1; ++iBLK ) {
+      assign_block_ptr(&(Roots[iBLK]));
    } /* endfor */
 }
 
@@ -1018,15 +1033,13 @@ inline void Octree_DataStructure::assign_block_pointers(void) {
  * Octree_DataStructure::renumber -- Renumber octree blocks.                *
  ****************************************************************************/
 inline void Octree_DataStructure::renumber(void) {
-   int iCPU, nBLK, global_block_number;
-   global_block_number = 0;
-   for ( nBLK = 0 ; nBLK <= Nblk-1 ; ++nBLK ) {
-      for ( iCPU = 0 ; iCPU <= Ncpu-1 ; ++iCPU ) {
+   int global_block_number(0);
+   for (int nBLK = 0 ; nBLK <= Nblk-1 ; ++nBLK) {
+      for (int iCPU = 0 ; iCPU <= Ncpu-1 ; ++iCPU) {
          if (Blocks[iCPU][nBLK] != NULL) {
             if (Blocks[iCPU][nBLK]->block.used) {
                Blocks[iCPU][nBLK]->block.gblknum = global_block_number;
                ++global_block_number;
-             
             } /* endif */
          } /* endif */
       } /* endfor */
@@ -1037,10 +1050,9 @@ inline void Octree_DataStructure::renumber(void) {
  * Octree_DataStructure::countUsedBlocks -- Number of used blocks.          *
  ****************************************************************************/
 inline int Octree_DataStructure::countUsedBlocks(void) {
-  int iCPU, nBLK, number_of_used_blocks;
-  number_of_used_blocks = 0;
-  for ( nBLK = 0 ; nBLK <= Nblk-1 ; ++nBLK ) {
-      for ( iCPU = 0 ; iCPU <= Ncpu-1 ; ++iCPU ) {
+  int number_of_used_blocks(0);
+  for (int nBLK = 0 ; nBLK <= Nblk-1 ; ++nBLK ) {
+      for (int iCPU = 0 ; iCPU <= Ncpu-1 ; ++iCPU ) {
          if (Blocks[iCPU][nBLK] != NULL) {
             if (Blocks[iCPU][nBLK]->block.used) {
                ++number_of_used_blocks;
@@ -1055,10 +1067,9 @@ inline int Octree_DataStructure::countUsedBlocks(void) {
  * Octree_DataStructure::countUsedCells -- Number of used cells.            *
  ****************************************************************************/
 inline int Octree_DataStructure::countUsedCells(void) {
-  int iCPU, nBLK, number_of_used_cells;
-  number_of_used_cells = 0;
-  for ( nBLK = 0 ; nBLK <= Nblk-1 ; ++nBLK ) {
-      for ( iCPU = 0 ; iCPU <= Ncpu-1 ; ++iCPU ) {
+  int number_of_used_cells(0);
+  for (int nBLK = 0 ; nBLK <= Nblk-1 ; ++nBLK) {
+      for (int iCPU = 0 ; iCPU <= Ncpu-1 ; ++iCPU) {
          if (Blocks[iCPU][nBLK] != NULL) {
             if (Blocks[iCPU][nBLK]->block.used) {
                number_of_used_cells += Blocks[iCPU][nBLK]->block.info.dimen.i*
@@ -1075,11 +1086,10 @@ inline int Octree_DataStructure::countUsedCells(void) {
  * Octree_DataStructure::efficiencyRefinement -- Refinment efficiency.        *
  ******************************************************************************/
 inline double Octree_DataStructure::efficiencyRefinement(void) {
-  int iCPU, nBLK, number_of_used_cells, number_of_cells_with_uniform_mesh, max_level;
-  number_of_used_cells = 0; number_of_cells_with_uniform_mesh = 0;
+  int number_of_used_cells(0), number_of_cells_with_uniform_mesh(0), max_level;
   max_level = highestRefinementLevel();
-  for ( nBLK = 0 ; nBLK <= Nblk-1 ; ++nBLK ) {
-      for ( iCPU = 0 ; iCPU <= Ncpu-1 ; ++iCPU ) {
+  for (int nBLK = 0 ; nBLK <= Nblk-1 ; ++nBLK) {
+      for (int iCPU = 0 ; iCPU <= Ncpu-1 ; ++iCPU) {
          if (Blocks[iCPU][nBLK] != NULL) {
             if (Blocks[iCPU][nBLK]->block.used) {
                number_of_used_cells += Blocks[iCPU][nBLK]->block.info.dimen.i*
@@ -1101,14 +1111,15 @@ inline double Octree_DataStructure::efficiencyRefinement(void) {
  * Octree_DataStructure::getRoot -- Get root indices.                       *
  ****************************************************************************/
 inline AdaptiveBlock3D_Dimensions Octree_DataStructure::getRoot(OctreeBlock *Block_Ptr) {
-  int iBLK, jBLK, kBLK;
-  for ( kBLK = 0 ; kBLK <= NRk-1 ; ++kBLK ) 
-    for ( jBLK = 0 ; jBLK <= NRj-1 ; ++jBLK ) 
-      for ( iBLK = 0 ; iBLK <= NRi-1 ; ++iBLK ) {
-         if (Block_Ptr == &(Roots[iBLK*jBLK*kBLK])) {
-            return (AdaptiveBlock3D_Dimensions(iBLK, jBLK, kBLK, 0));
-         } /* endif */
-      } /* endfor */
+  for (int kBLK = 0 ; kBLK <= NRk-1 ; ++kBLK) {
+    for (int jBLK = 0 ; jBLK <= NRj-1 ; ++jBLK) {
+       for (int iBLK = 0 ; iBLK <= NRi-1 ; ++iBLK) {
+          if (Block_Ptr == &(Roots[iBLK*jBLK*kBLK])) {
+             return (AdaptiveBlock3D_Dimensions(iBLK, jBLK, kBLK, 0));
+          } /* endif */
+       } /* endfor */
+    } /* endfor */
+  } /* endfor */
   return (AdaptiveBlock3D_Dimensions(-1, -1, -1, 0));
 }
 
@@ -1117,10 +1128,8 @@ inline AdaptiveBlock3D_Dimensions Octree_DataStructure::getRoot(OctreeBlock *Blo
  ****************************************************************************/
 inline OctreeBlock *Octree_DataStructure::getNeighbour(OctreeBlock *Block_Ptr,
                                                        const int Search_Dir_Mask) {
-  int iBLK, jBLK, kBLK;
   assert(Block_Ptr!=NULL);//used for debugging
-  OctreeBlock *neighbour_block_ptr; AdaptiveBlock3D_Dimensions index; 
-  AdaptiveBlock3D_Dimensions search_direction;
+  OctreeBlock *neighbour_block_ptr;
   return (neighbour_block_ptr);
 }
 
@@ -1129,641 +1138,9 @@ inline OctreeBlock *Octree_DataStructure::getNeighbour(OctreeBlock *Block_Ptr,
  * Octree_DataStructure::findNeighbours -- Find block neighbours.           *
  ****************************************************************************/
 inline void Octree_DataStructure::findNeighbours(void) {
-  int i_blk, j_blk; 
-  OctreeBlock *neighbour_block_ptr;
-  for ( j_blk = 0 ; j_blk <= Nblk-1 ; ++j_blk ) {
-    for ( i_blk = 0 ; i_blk <= Ncpu-1 ; ++i_blk ) {
-      if (Blocks[i_blk][j_blk] != NULL) {
-	   if (Blocks[i_blk][j_blk]->block.used) {
-	      // Find neighbours to the top. 
-	     neighbour_block_ptr = getNeighbour(Blocks[i_blk][j_blk], 
-                                                 OCTREE_DIRECTION_MASK_TOP);
-              if (neighbour_block_ptr != NULL) {
-                 if (neighbour_block_ptr->block.used) {
-                    Blocks[i_blk][j_blk]->block.nT = 1;
-                    Blocks[i_blk][j_blk]->block.infoT[0] = neighbour_block_ptr->block.info;
-                    if (neighbour_block_ptr->block.info.level > 
-                        Blocks[i_blk][j_blk]->block.info.level) {
-                       Blocks[i_blk][j_blk]->block.nT += 3;
-                       Blocks[i_blk][j_blk]->block.infoT[1] = 
-			 getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_EAST)->block.info;
-                       Blocks[i_blk][j_blk]->block.infoT[2] = 
-			 getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_NORTH)->block.info;
-                       Blocks[i_blk][j_blk]->block.infoT[3] = 
-			 getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_NORTHEAST)->block.info;
-                    } /* endif */
-		 } else {
-                    Blocks[i_blk][j_blk]->block.nT = 0;
-                 } /* endif */
-              } else {
-                 Blocks[i_blk][j_blk]->block.nT = 0;
-              } /* endif */ 
-	      // Find neighbours to the bottom. 
-	      
-	      neighbour_block_ptr = getNeighbour(Blocks[i_blk][j_blk], 
-                                                 OCTREE_DIRECTION_MASK_BOTTOM);
-              if (neighbour_block_ptr != NULL) {
-                 if (neighbour_block_ptr->block.used) {
-                    Blocks[i_blk][j_blk]->block.nB = 1;
-                    Blocks[i_blk][j_blk]->block.infoB[0] = neighbour_block_ptr->block.info;
-                    if (neighbour_block_ptr->block.info.level > 
-                        Blocks[i_blk][j_blk]->block.info.level) {
-                       Blocks[i_blk][j_blk]->block.nB += 3;
-                       Blocks[i_blk][j_blk]->block.infoB[1] = 
-			 getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_EAST)->block.info;
-                       Blocks[i_blk][j_blk]->block.infoB[2] = 
-			 getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_NORTH)->block.info;
-                       Blocks[i_blk][j_blk]->block.infoB[3] = 
-			 getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_NORTHEAST)->block.info;
-                    } /* endif */
-		 } else {
-                    Blocks[i_blk][j_blk]->block.nB = 0;
-                 } /* endif */
-              } else {
-                 Blocks[i_blk][j_blk]->block.nB = 0;
-              } /* endif */              
 
-	      // Find neighbours to the north. 
-	      neighbour_block_ptr = getNeighbour(Blocks[i_blk][j_blk], 
-                                                 OCTREE_DIRECTION_MASK_NORTH);
-              if (neighbour_block_ptr != NULL) {
-                 if (neighbour_block_ptr->block.used) {
-                    Blocks[i_blk][j_blk]->block.nN = 1;
-                    Blocks[i_blk][j_blk]->block.infoN[0] = neighbour_block_ptr->block.info;
-                    if (neighbour_block_ptr->block.info.level > 
-                        Blocks[i_blk][j_blk]->block.info.level) {
-                       Blocks[i_blk][j_blk]->block.nN += 3;
-                       Blocks[i_blk][j_blk]->block.infoN[1] = 
-			 getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_EAST)->block.info;
-                       Blocks[i_blk][j_blk]->block.infoN[2] = 
-			 getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_TOP)->block.info;
-                       Blocks[i_blk][j_blk]->block.infoN[3] = 
-			 getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_TOPEAST)->block.info;
-                    } /* endif */
-		 } else {
-                    Blocks[i_blk][j_blk]->block.nN = 0;
-                 } /* endif */
-              } else {
-                 Blocks[i_blk][j_blk]->block.nN = 0;
-              } /* endif */
+  cout << "\nOctree_DataStructure::findNeighbours() NOT YET IMPLEMENTED\n";
 
-	      // Find neighbours to the south. 
-              neighbour_block_ptr = getNeighbour(Blocks[i_blk][j_blk], 
-                                                 OCTREE_DIRECTION_MASK_SOUTH);
-              if (neighbour_block_ptr != NULL) {
-                 if (neighbour_block_ptr->block.used) {
-                    Blocks[i_blk][j_blk]->block.nS = 1;
-                    Blocks[i_blk][j_blk]->block.infoS[0] = neighbour_block_ptr->block.info;
-                    if (neighbour_block_ptr->block.info.level > 
-                        Blocks[i_blk][j_blk]->block.info.level) {
-                       Blocks[i_blk][j_blk]->block.nS += 3;
-                       Blocks[i_blk][j_blk]->block.infoS[1] =
-                          getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_EAST)->block.info;
-                       Blocks[i_blk][j_blk]->block.infoS[2] =
-                          getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_TOP)->block.info;
-                      Blocks[i_blk][j_blk]->block.infoS[3] =
-                          getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_TOPEAST)->block.info;
-                    } /* endif */
-		 } else {
-                    Blocks[i_blk][j_blk]->block.nS = 0;
-                 } /* endif */
-              } else {
-                 Blocks[i_blk][j_blk]->block.nS = 0;
-              } /* endif */
-
-	      // Find neighbours to the east. 
-              neighbour_block_ptr = getNeighbour(Blocks[i_blk][j_blk], 
-                                                 OCTREE_DIRECTION_MASK_EAST);
-              if (neighbour_block_ptr != NULL) {
-                 if (neighbour_block_ptr->block.used) {
-                    Blocks[i_blk][j_blk]->block.nE = 1;
-                    Blocks[i_blk][j_blk]->block.infoE[0] = neighbour_block_ptr->block.info;
-                    if (neighbour_block_ptr->block.info.level > 
-                        Blocks[i_blk][j_blk]->block.info.level) {
-                       Blocks[i_blk][j_blk]->block.nE += 3;
-                       Blocks[i_blk][j_blk]->block.infoE[1] =
-                          getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_NORTH)->block.info;
-                       Blocks[i_blk][j_blk]->block.infoE[2] =
-                          getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_TOP)->block.info;
-                       Blocks[i_blk][j_blk]->block.infoE[3] =
-                          getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_TOPNORTH)->block.info;
-                    } /* endif */
-		 } else {
-                    Blocks[i_blk][j_blk]->block.nE = 0;
-                 } /* endif */
-              } else {
-                 Blocks[i_blk][j_blk]->block.nE = 0;
-              } /* endif */
-
-	      // Find neighbours to the west. 
-              neighbour_block_ptr = getNeighbour(Blocks[i_blk][j_blk], 
-                                                 OCTREE_DIRECTION_MASK_WEST);
-              if (neighbour_block_ptr != NULL) {
-                 if (neighbour_block_ptr->block.used) {
-                    Blocks[i_blk][j_blk]->block.nW = 1;
-                    Blocks[i_blk][j_blk]->block.infoW[0] = neighbour_block_ptr->block.info;
-                    if (neighbour_block_ptr->block.info.level > 
-                        Blocks[i_blk][j_blk]->block.info.level) {
-                       Blocks[i_blk][j_blk]->block.nW += 3;
-                       Blocks[i_blk][j_blk]->block.infoW[1] =
-                          getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_NORTH)->block.info;
-                       Blocks[i_blk][j_blk]->block.infoW[2] =
-                          getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_TOP)->block.info;
-                       Blocks[i_blk][j_blk]->block.infoW[3] =
-                          getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_TOPNORTH)->block.info;
-                    } /* endif */
-		 } else {
-                    Blocks[i_blk][j_blk]->block.nW = 0;
-                 } /* endif */
-              } else {
-                 Blocks[i_blk][j_blk]->block.nW = 0;
-              } /* endif */
-
-	      // Find neighbours to the north west. 
-	      neighbour_block_ptr = getNeighbour(Blocks[i_blk][j_blk], 
-                                                 OCTREE_DIRECTION_MASK_NORTHWEST);
-              if (neighbour_block_ptr != NULL) {
-                 if (neighbour_block_ptr->block.used) {
-                    Blocks[i_blk][j_blk]->block.nNW = 1;
-                    Blocks[i_blk][j_blk]->block.infoNW[0] = neighbour_block_ptr->block.info;
-                    if (neighbour_block_ptr->block.info.level > 
-                        Blocks[i_blk][j_blk]->block.info.level) {
-                       Blocks[i_blk][j_blk]->block.nNW += 1;
-                       Blocks[i_blk][j_blk]->block.infoNW[1] = 
-			 getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_TOP)->block.info;
-                    } /* endif */
-		 } else {
-                    Blocks[i_blk][j_blk]->block.nNW = 0;
-                 } /* endif */
-              } else {
-                 Blocks[i_blk][j_blk]->block.nNW = 0;
-              } /* endif */
-
-	      // Find neighbours to the north east. 
-	      neighbour_block_ptr = getNeighbour(Blocks[i_blk][j_blk], 
-                                                 OCTREE_DIRECTION_MASK_NORTHEAST);
-              if (neighbour_block_ptr != NULL) {
-                 if (neighbour_block_ptr->block.used) {
-                    Blocks[i_blk][j_blk]->block.nNE = 1;
-                    Blocks[i_blk][j_blk]->block.infoNE[0] = neighbour_block_ptr->block.info;
-                    if (neighbour_block_ptr->block.info.level > 
-                        Blocks[i_blk][j_blk]->block.info.level) {
-                       Blocks[i_blk][j_blk]->block.nNE += 1;
-                       Blocks[i_blk][j_blk]->block.infoNE[1] = 
-			 getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_TOP)->block.info;
-                    } /* endif */
-		 } else {
-                    Blocks[i_blk][j_blk]->block.nNE = 0;
-                 } /* endif */
-              } else {
-                 Blocks[i_blk][j_blk]->block.nNE = 0;
-              } /* endif */
-
-	      // Find neighbours to the south west. 
-	      neighbour_block_ptr = getNeighbour(Blocks[i_blk][j_blk], 
-                                                 OCTREE_DIRECTION_MASK_SOUTHWEST);
-              if (neighbour_block_ptr != NULL) {
-                 if (neighbour_block_ptr->block.used) {
-                    Blocks[i_blk][j_blk]->block.nSW = 1;
-                    Blocks[i_blk][j_blk]->block.infoSW[0] = neighbour_block_ptr->block.info;
-                    if (neighbour_block_ptr->block.info.level > 
-                        Blocks[i_blk][j_blk]->block.info.level) {
-                       Blocks[i_blk][j_blk]->block.nSW += 1;
-                       Blocks[i_blk][j_blk]->block.infoSW[1] = 
-			 getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_TOP)->block.info;
-                    } /* endif */
-		 } else {
-                    Blocks[i_blk][j_blk]->block.nSW = 0;
-                 } /* endif */
-              } else {
-                 Blocks[i_blk][j_blk]->block.nSW = 0;
-              } /* endif */
-
-	      // Find neighbours to the south east. 
-	      neighbour_block_ptr = getNeighbour(Blocks[i_blk][j_blk], 
-                                                 OCTREE_DIRECTION_MASK_SOUTHEAST);
-              if (neighbour_block_ptr != NULL) {
-                 if (neighbour_block_ptr->block.used) {
-                    Blocks[i_blk][j_blk]->block.nSE = 1;
-                    Blocks[i_blk][j_blk]->block.infoSE[0] = neighbour_block_ptr->block.info;
-                    if (neighbour_block_ptr->block.info.level > 
-                        Blocks[i_blk][j_blk]->block.info.level) {
-                       Blocks[i_blk][j_blk]->block.nSE += 1;
-                       Blocks[i_blk][j_blk]->block.infoSE[1] = 
-			 getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_TOP)->block.info;
-                    } /* endif */
-		 } else {
-                    Blocks[i_blk][j_blk]->block.nSE = 0;
-                 } /* endif */
-              } else {
-                 Blocks[i_blk][j_blk]->block.nSE = 0;
-              } /* endif */
-
-
-	      // Find neighbours to the top north. 
-	      neighbour_block_ptr = getNeighbour(Blocks[i_blk][j_blk], 
-                                                 OCTREE_DIRECTION_MASK_TOPNORTH);
-              if (neighbour_block_ptr != NULL) {
-                 if (neighbour_block_ptr->block.used) {
-                    Blocks[i_blk][j_blk]->block.nTN = 1;
-                    Blocks[i_blk][j_blk]->block.infoTN[0] = neighbour_block_ptr->block.info;
-                    if (neighbour_block_ptr->block.info.level > 
-                        Blocks[i_blk][j_blk]->block.info.level) {
-                       Blocks[i_blk][j_blk]->block.nTN += 1;
-                       Blocks[i_blk][j_blk]->block.infoTN[1] = 
-			 getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_EAST)->block.info;
-                    } /* endif */
-		 } else {
-                    Blocks[i_blk][j_blk]->block.nTN = 0;
-                 } /* endif */
-              } else {
-                 Blocks[i_blk][j_blk]->block.nTN = 0;
-              } /* endif */
-
-	      // Find neighbours to the top south. 
-	      neighbour_block_ptr = getNeighbour(Blocks[i_blk][j_blk], 
-                                                 OCTREE_DIRECTION_MASK_TOPSOUTH);
-              if (neighbour_block_ptr != NULL) {
-                 if (neighbour_block_ptr->block.used) {
-                    Blocks[i_blk][j_blk]->block.nTS = 1;
-                    Blocks[i_blk][j_blk]->block.infoTS[0] = neighbour_block_ptr->block.info;
-                    if (neighbour_block_ptr->block.info.level > 
-                        Blocks[i_blk][j_blk]->block.info.level) {
-                       Blocks[i_blk][j_blk]->block.nTS += 1;
-                       Blocks[i_blk][j_blk]->block.infoTS[1] = 
-			 getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_EAST)->block.info;
-                    } /* endif */
-		 } else {
-                    Blocks[i_blk][j_blk]->block.nTS = 0;
-                 } /* endif */
-              } else {
-                 Blocks[i_blk][j_blk]->block.nTS = 0;
-              } /* endif */
-
-	      // Find neighbours to the top west. 
-	      neighbour_block_ptr = getNeighbour(Blocks[i_blk][j_blk], 
-                                                 OCTREE_DIRECTION_MASK_TOPWEST);
-              if (neighbour_block_ptr != NULL) {
-                 if (neighbour_block_ptr->block.used) {
-                    Blocks[i_blk][j_blk]->block.nTW = 1;
-                    Blocks[i_blk][j_blk]->block.infoTW[0] = neighbour_block_ptr->block.info;
-                    if (neighbour_block_ptr->block.info.level > 
-                        Blocks[i_blk][j_blk]->block.info.level) {
-                       Blocks[i_blk][j_blk]->block.nTW += 1;
-                       Blocks[i_blk][j_blk]->block.infoTW[1] = 
-			 getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_NORTH)->block.info;
-                    } /* endif */
-		 } else {
-                    Blocks[i_blk][j_blk]->block.nTW = 0;
-                 } /* endif */
-              } else {
-                 Blocks[i_blk][j_blk]->block.nTW = 0;
-              } /* endif */
-
-	      // Find neighbours to the top east. 
-	      neighbour_block_ptr = getNeighbour(Blocks[i_blk][j_blk], 
-                                                 OCTREE_DIRECTION_MASK_TOPEAST);
-              if (neighbour_block_ptr != NULL) {
-                 if (neighbour_block_ptr->block.used) {
-                    Blocks[i_blk][j_blk]->block.nTE = 1;
-                    Blocks[i_blk][j_blk]->block.infoTE[0] = neighbour_block_ptr->block.info;
-                    if (neighbour_block_ptr->block.info.level > 
-                        Blocks[i_blk][j_blk]->block.info.level) {
-                       Blocks[i_blk][j_blk]->block.nTE += 1;
-                       Blocks[i_blk][j_blk]->block.infoTE[1] = 
-			 getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_NORTH)->block.info;
-                    } /* endif */
-		 } else {
-                    Blocks[i_blk][j_blk]->block.nTE = 0;
-                 } /* endif */
-              } else {
-                 Blocks[i_blk][j_blk]->block.nTE = 0;
-              } /* endif */
-
-	      // Find neighbours to the bottom north. 
-	      neighbour_block_ptr = getNeighbour(Blocks[i_blk][j_blk], 
-                                                 OCTREE_DIRECTION_MASK_BOTTOMNORTH);
-              if (neighbour_block_ptr != NULL) {
-                 if (neighbour_block_ptr->block.used) {
-                    Blocks[i_blk][j_blk]->block.nBN = 1;
-                    Blocks[i_blk][j_blk]->block.infoBN[0] = neighbour_block_ptr->block.info;
-                    if (neighbour_block_ptr->block.info.level > 
-                        Blocks[i_blk][j_blk]->block.info.level) {
-                       Blocks[i_blk][j_blk]->block.nBN += 1;
-                       Blocks[i_blk][j_blk]->block.infoBN[1] = 
-			 getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_EAST)->block.info;
-                    } /* endif */
-		 } else {
-                    Blocks[i_blk][j_blk]->block.nBN = 0;
-                 } /* endif */
-              } else {
-                 Blocks[i_blk][j_blk]->block.nBN = 0;
-              } /* endif */
-
-	      // Find neighbours to the bottom south. 
-	      neighbour_block_ptr = getNeighbour(Blocks[i_blk][j_blk], 
-                                                 OCTREE_DIRECTION_MASK_BOTTOMSOUTH);
-              if (neighbour_block_ptr != NULL) {
-                 if (neighbour_block_ptr->block.used) {
-                    Blocks[i_blk][j_blk]->block.nBS = 1;
-                    Blocks[i_blk][j_blk]->block.infoBS[0] = neighbour_block_ptr->block.info;
-                    if (neighbour_block_ptr->block.info.level > 
-                        Blocks[i_blk][j_blk]->block.info.level) {
-                       Blocks[i_blk][j_blk]->block.nBS += 1;
-                       Blocks[i_blk][j_blk]->block.infoBS[1] = 
-			 getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_EAST)->block.info;
-                    } /* endif */
-		 } else {
-                    Blocks[i_blk][j_blk]->block.nBS = 0;
-                 } /* endif */
-              } else {
-                 Blocks[i_blk][j_blk]->block.nBS = 0;
-              } /* endif */
-
-	      // Find neighbours to the bottom west. 
-	      neighbour_block_ptr = getNeighbour(Blocks[i_blk][j_blk], 
-                                                 OCTREE_DIRECTION_MASK_BOTTOMWEST);
-              if (neighbour_block_ptr != NULL) {
-                 if (neighbour_block_ptr->block.used) {
-                    Blocks[i_blk][j_blk]->block.nBW = 1;
-                    Blocks[i_blk][j_blk]->block.infoBW[0] = neighbour_block_ptr->block.info;
-                    if (neighbour_block_ptr->block.info.level > 
-                        Blocks[i_blk][j_blk]->block.info.level) {
-                       Blocks[i_blk][j_blk]->block.nBW += 1;
-                       Blocks[i_blk][j_blk]->block.infoBW[1] = 
-			 getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_NORTH)->block.info;
-                    } /* endif */
-		 } else {
-                    Blocks[i_blk][j_blk]->block.nBW = 0;
-                 } /* endif */
-              } else {
-                 Blocks[i_blk][j_blk]->block.nBW = 0;
-              } /* endif */
-
-	      // Find neighbours to the bottom east. 
-	      neighbour_block_ptr = getNeighbour(Blocks[i_blk][j_blk], 
-                                                 OCTREE_DIRECTION_MASK_BOTTOMEAST);
-              if (neighbour_block_ptr != NULL) {
-                 if (neighbour_block_ptr->block.used) {
-                    Blocks[i_blk][j_blk]->block.nBE = 1;
-                    Blocks[i_blk][j_blk]->block.infoBE[0] = neighbour_block_ptr->block.info;
-                    if (neighbour_block_ptr->block.info.level > 
-                        Blocks[i_blk][j_blk]->block.info.level) {
-                       Blocks[i_blk][j_blk]->block.nBE += 1;
-                       Blocks[i_blk][j_blk]->block.infoBE[1] = 
-			 getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_NORTH)->block.info;
-                    } /* endif */
-		 } else {
-                    Blocks[i_blk][j_blk]->block.nBE = 0;
-                 } /* endif */
-              } else {
-                 Blocks[i_blk][j_blk]->block.nBE = 0;
-              } /* endif */
-
-	      // Find neighbours to the top north west corner. 
-              neighbour_block_ptr = getNeighbour(Blocks[i_blk][j_blk], 
-                                                 OCTREE_DIRECTION_MASK_TOPNORTHWEST);
-              if (neighbour_block_ptr != NULL) {
-                 if (neighbour_block_ptr->block.used) {
-                    if (neighbour_block_ptr->block.info.level >= 
-                        Blocks[i_blk][j_blk]->block.info.level) {
-                       Blocks[i_blk][j_blk]->block.nTNW = 1;
-                       Blocks[i_blk][j_blk]->block.infoTNW[0] = neighbour_block_ptr->block.info;
-                    } else if ((neighbour_block_ptr != 
-                                getNeighbour(Blocks[i_blk][j_blk]->parent_ptr, 
-                                             OCTREE_DIRECTION_MASK_TOP)) &&
-			       (neighbour_block_ptr != 
-                                getNeighbour(Blocks[i_blk][j_blk]->parent_ptr, 
-                                             OCTREE_DIRECTION_MASK_NORTH)) &&
-                               (neighbour_block_ptr != 
-                                getNeighbour(Blocks[i_blk][j_blk]->parent_ptr, 
-                                             OCTREE_DIRECTION_MASK_WEST))) {
-                       Blocks[i_blk][j_blk]->block.nTNW = 1;
-                       Blocks[i_blk][j_blk]->block.infoTNW[0] = neighbour_block_ptr->block.info;
-                    } else {
-                       Blocks[i_blk][j_blk]->block.nTNW = 0;
-                    } /* endif */
-		 } else {
-                    Blocks[i_blk][j_blk]->block.nTNW = 0;
-                 } /* endif */
-              } else {
-                 Blocks[i_blk][j_blk]->block.nTNW = 0;
-              } /* endif */
-
-	      // Find neighbours to the top north east. 
-              neighbour_block_ptr = getNeighbour(Blocks[i_blk][j_blk], 
-                                                 OCTREE_DIRECTION_MASK_TOPNORTHEAST);
-              if (neighbour_block_ptr != NULL) {
-                 if (neighbour_block_ptr->block.used) {
-                    if (neighbour_block_ptr->block.info.level >= 
-                        Blocks[i_blk][j_blk]->block.info.level) {
-                       Blocks[i_blk][j_blk]->block.nTNE = 1;
-                       Blocks[i_blk][j_blk]->block.infoTNE[0] = neighbour_block_ptr->block.info;
-                    } else if ((neighbour_block_ptr != 
-                                getNeighbour(Blocks[i_blk][j_blk]->parent_ptr, 
-                                             OCTREE_DIRECTION_MASK_TOP)) &&
-			       (neighbour_block_ptr != 
-                                getNeighbour(Blocks[i_blk][j_blk]->parent_ptr, 
-                                             OCTREE_DIRECTION_MASK_NORTH)) &&
-                               (neighbour_block_ptr != 
-                                getNeighbour(Blocks[i_blk][j_blk]->parent_ptr, 
-                                             OCTREE_DIRECTION_MASK_EAST))) {
-                       Blocks[i_blk][j_blk]->block.nTNE = 1;
-                       Blocks[i_blk][j_blk]->block.infoTNE[0] = neighbour_block_ptr->block.info;
-                    } else {
-                       Blocks[i_blk][j_blk]->block.nTNE = 0;
-                    } /* endif */
-		 } else {
-                    Blocks[i_blk][j_blk]->block.nTNE = 0;
-                 } /* endif */
-              } else {
-                 Blocks[i_blk][j_blk]->block.nTNE = 0;
-              } /* endif */
-
-	      // Find neighbours to the top south east. 
-              neighbour_block_ptr = getNeighbour(Blocks[i_blk][j_blk], 
-                                                 OCTREE_DIRECTION_MASK_TOPSOUTHEAST);
-              if (neighbour_block_ptr != NULL) {
-                 if (neighbour_block_ptr->block.used) {
-                    if (neighbour_block_ptr->block.info.level >= 
-                        Blocks[i_blk][j_blk]->block.info.level) {
-                       Blocks[i_blk][j_blk]->block.nTSE = 1;
-                       Blocks[i_blk][j_blk]->block.infoTSE[0] = neighbour_block_ptr->block.info;
-                    } else if ((neighbour_block_ptr != 
-                                getNeighbour(Blocks[i_blk][j_blk]->parent_ptr, 
-                                             OCTREE_DIRECTION_MASK_TOP)) &&
-			       (neighbour_block_ptr != 
-                                getNeighbour(Blocks[i_blk][j_blk]->parent_ptr, 
-                                             OCTREE_DIRECTION_MASK_SOUTH)) &&
-                               (neighbour_block_ptr != 
-                                getNeighbour(Blocks[i_blk][j_blk]->parent_ptr, 
-                                             OCTREE_DIRECTION_MASK_EAST))) {
-                       Blocks[i_blk][j_blk]->block.nTSE = 1;
-                       Blocks[i_blk][j_blk]->block.infoTSE[0] = neighbour_block_ptr->block.info;
-                    } else {
-                       Blocks[i_blk][j_blk]->block.nTSE = 0;
-                    } /* endif */
-		 } else {
-                    Blocks[i_blk][j_blk]->block.nTSE = 0;
-                 } /* endif */
-              } else {
-                 Blocks[i_blk][j_blk]->block.nTSE = 0;
-              } /* endif */
-
-	      // Find neighbours to the top south west. 
-              neighbour_block_ptr = getNeighbour(Blocks[i_blk][j_blk], 
-                                                 OCTREE_DIRECTION_MASK_TOPSOUTHWEST);
-              if (neighbour_block_ptr != NULL) {
-                 if (neighbour_block_ptr->block.used) {
-                    if (neighbour_block_ptr->block.info.level >= 
-                        Blocks[i_blk][j_blk]->block.info.level) {
-                       Blocks[i_blk][j_blk]->block.nTSW = 1;
-                       Blocks[i_blk][j_blk]->block.infoTSW[0] = neighbour_block_ptr->block.info;
-		    } else if ((neighbour_block_ptr != 
-                                getNeighbour(Blocks[i_blk][j_blk]->parent_ptr, 
-                                             OCTREE_DIRECTION_MASK_TOP)) &&
-			       (neighbour_block_ptr != 
-                                getNeighbour(Blocks[i_blk][j_blk]->parent_ptr, 
-                                             OCTREE_DIRECTION_MASK_SOUTH)) &&
-                               (neighbour_block_ptr != 
-                                getNeighbour(Blocks[i_blk][j_blk]->parent_ptr, 
-                                             OCTREE_DIRECTION_MASK_WEST))) {
-                       Blocks[i_blk][j_blk]->block.nTSW = 1;
-                       Blocks[i_blk][j_blk]->block.infoTSW[0] = neighbour_block_ptr->block.info;
-                    } else {
-                       Blocks[i_blk][j_blk]->block.nTSW = 0;
-                    } /* endif */
-		 } else {
-                    Blocks[i_blk][j_blk]->block.nTSW = 0;
-                 } /* endif */
-              } else {
-                 Blocks[i_blk][j_blk]->block.nTSW = 0;
-              } /* endif */
-
-	      // Find neighbours to the bottom north west corner. 
-              neighbour_block_ptr = getNeighbour(Blocks[i_blk][j_blk], 
-                                                 OCTREE_DIRECTION_MASK_BOTTOMNORTHWEST);
-              if (neighbour_block_ptr != NULL) {
-                 if (neighbour_block_ptr->block.used) {
-                    if (neighbour_block_ptr->block.info.level >= 
-                        Blocks[i_blk][j_blk]->block.info.level) {
-                       Blocks[i_blk][j_blk]->block.nBNW = 1;
-                       Blocks[i_blk][j_blk]->block.infoBNW[0] = neighbour_block_ptr->block.info;
-                    } else if ((neighbour_block_ptr != 
-                                getNeighbour(Blocks[i_blk][j_blk]->parent_ptr, 
-                                             OCTREE_DIRECTION_MASK_BOTTOM)) &&
-			       (neighbour_block_ptr != 
-                                getNeighbour(Blocks[i_blk][j_blk]->parent_ptr, 
-                                             OCTREE_DIRECTION_MASK_NORTH)) &&
-                               (neighbour_block_ptr != 
-                                getNeighbour(Blocks[i_blk][j_blk]->parent_ptr, 
-                                             OCTREE_DIRECTION_MASK_WEST))) {
-                       Blocks[i_blk][j_blk]->block.nBNW = 1;
-                       Blocks[i_blk][j_blk]->block.infoBNW[0] = neighbour_block_ptr->block.info;
-                    } else {
-                       Blocks[i_blk][j_blk]->block.nBNW = 0;
-                    } /* endif */
-		 } else {
-                    Blocks[i_blk][j_blk]->block.nBNW = 0;
-                 } /* endif */
-              } else {
-                 Blocks[i_blk][j_blk]->block.nBNW = 0;
-              } /* endif */
-
-	      // Find neighbours to the bottom north east. 
-              neighbour_block_ptr = getNeighbour(Blocks[i_blk][j_blk], 
-                                                 OCTREE_DIRECTION_MASK_BOTTOMNORTHEAST);
-              if (neighbour_block_ptr != NULL) {
-                 if (neighbour_block_ptr->block.used) {
-                    if (neighbour_block_ptr->block.info.level >= 
-                        Blocks[i_blk][j_blk]->block.info.level) {
-                       Blocks[i_blk][j_blk]->block.nBNE = 1;
-                       Blocks[i_blk][j_blk]->block.infoBNE[0] = neighbour_block_ptr->block.info;
-                    } else if ((neighbour_block_ptr != 
-                                getNeighbour(Blocks[i_blk][j_blk]->parent_ptr, 
-                                             OCTREE_DIRECTION_MASK_BOTTOM)) &&
-			       (neighbour_block_ptr != 
-                                getNeighbour(Blocks[i_blk][j_blk]->parent_ptr, 
-                                             OCTREE_DIRECTION_MASK_NORTH)) &&
-                               (neighbour_block_ptr != 
-                                getNeighbour(Blocks[i_blk][j_blk]->parent_ptr, 
-                                             OCTREE_DIRECTION_MASK_EAST))) {
-                       Blocks[i_blk][j_blk]->block.nBNE = 1;
-                       Blocks[i_blk][j_blk]->block.infoBNE[0] = neighbour_block_ptr->block.info;
-                    } else {
-                       Blocks[i_blk][j_blk]->block.nBNE = 0;
-                    } /* endif */
-		 } else {
-                    Blocks[i_blk][j_blk]->block.nBNE = 0;
-                 } /* endif */
-              } else {
-                 Blocks[i_blk][j_blk]->block.nBNE = 0;
-              } /* endif */
-
-	      // Find neighbours to the bottom south east. 
-              neighbour_block_ptr = getNeighbour(Blocks[i_blk][j_blk], 
-                                                 OCTREE_DIRECTION_MASK_BOTTOMSOUTHEAST);
-              if (neighbour_block_ptr != NULL) {
-                 if (neighbour_block_ptr->block.used) {
-                    if (neighbour_block_ptr->block.info.level >= 
-                        Blocks[i_blk][j_blk]->block.info.level) {
-                       Blocks[i_blk][j_blk]->block.nBSE = 1;
-                       Blocks[i_blk][j_blk]->block.infoBSE[0] = neighbour_block_ptr->block.info;
-                    } else if ((neighbour_block_ptr != 
-                                getNeighbour(Blocks[i_blk][j_blk]->parent_ptr, 
-                                             OCTREE_DIRECTION_MASK_BOTTOM)) &&
-			       (neighbour_block_ptr != 
-                                getNeighbour(Blocks[i_blk][j_blk]->parent_ptr, 
-                                             OCTREE_DIRECTION_MASK_SOUTH)) &&
-                               (neighbour_block_ptr != 
-                                getNeighbour(Blocks[i_blk][j_blk]->parent_ptr, 
-                                             OCTREE_DIRECTION_MASK_EAST))) {
-                       Blocks[i_blk][j_blk]->block.nBSE = 1;
-                       Blocks[i_blk][j_blk]->block.infoBSE[0] = neighbour_block_ptr->block.info;
-                    } else {
-                       Blocks[i_blk][j_blk]->block.nBSE = 0;
-                    } /* endif */
-		 } else {
-                    Blocks[i_blk][j_blk]->block.nBSE = 0;
-                 } /* endif */
-              } else {
-                 Blocks[i_blk][j_blk]->block.nBSE = 0;
-              } /* endif */
-
-	      // Find neighbours to the bottom south west. 
-              neighbour_block_ptr = getNeighbour(Blocks[i_blk][j_blk], 
-                                                 OCTREE_DIRECTION_MASK_BOTTOMSOUTHWEST);
-              if (neighbour_block_ptr != NULL) {
-                 if (neighbour_block_ptr->block.used) {
-                    if (neighbour_block_ptr->block.info.level >= 
-                        Blocks[i_blk][j_blk]->block.info.level) {
-                       Blocks[i_blk][j_blk]->block.nBSW = 1;
-                       Blocks[i_blk][j_blk]->block.infoBSW[0] = neighbour_block_ptr->block.info;
-		    } else if ((neighbour_block_ptr != 
-                                getNeighbour(Blocks[i_blk][j_blk]->parent_ptr, 
-                                             OCTREE_DIRECTION_MASK_BOTTOM)) &&
-			       (neighbour_block_ptr != 
-                                getNeighbour(Blocks[i_blk][j_blk]->parent_ptr, 
-                                             OCTREE_DIRECTION_MASK_SOUTH)) &&
-                               (neighbour_block_ptr != 
-                                getNeighbour(Blocks[i_blk][j_blk]->parent_ptr, 
-                                             OCTREE_DIRECTION_MASK_WEST))) {
-                       Blocks[i_blk][j_blk]->block.nBSW = 1;
-                       Blocks[i_blk][j_blk]->block.infoBSW[0] = neighbour_block_ptr->block.info;
-                    } else {
-                       Blocks[i_blk][j_blk]->block.nBSW = 0;
-                    } /* endif */
-		 } else {
-                    Blocks[i_blk][j_blk]->block.nBSW = 0;
-                 } /* endif */
-              } else {
-                 Blocks[i_blk][j_blk]->block.nBSW = 0;
-              } /* endif */
-
-           } /* endif */
-        } /* endif */
-     } /* endfor */
-  } /* endfor */
 }
  
 /****************************************************************************
@@ -1774,7 +1151,6 @@ inline void Octree_DataStructure::refineBlock(int *new_blocks_CPU,
                                               int *new_blocks_SECTOR) {
 
   cout << "\nOctree_DataStructure::refineBlock() NOT YET IMPLEMENTED\n";
-  assert(1==2);
 
 }
 
@@ -1786,7 +1162,6 @@ inline void Octree_DataStructure::coarsenBlocks(int *old_blocks_CPU,
                                                 int *old_blocks_SECTOR) {
 
   cout << "\nOctree_DataStructure::coarsenBlock() NOT YET IMPLEMENTED\n";
-  assert(1==2);
 
 }
 
@@ -1794,9 +1169,8 @@ inline void Octree_DataStructure::coarsenBlocks(int *old_blocks_CPU,
  * Octree_DataStructure::nochangeAll -- Set no refinement flags.            *
  ****************************************************************************/
 inline void Octree_DataStructure::nochangeAll(void) {
-   int i, j; 
-   for ( i = 0; i <= Ncpu-1 ; ++i ) {
-      for ( j = 0; j <= Nblk-1 ; ++j ) {
+   for (int i = 0; i <= Ncpu-1 ; ++i) {
+      for (int j = 0; j <= Nblk-1 ; ++j) {
          RefineFlags[i][j] = ADAPTIVEBLOCK3D_NOCHANGE;
       } /* endfor */
    } /* endfor */
@@ -1806,9 +1180,8 @@ inline void Octree_DataStructure::nochangeAll(void) {
  * Octree_DataStructure::refineAll -- Set refinement flags.                 *
  ****************************************************************************/
 inline void Octree_DataStructure::refineAll(void) {
-   int i, j; 
-   for ( i = 0; i <= Ncpu-1 ; ++i ) {
-      for ( j = 0; j <= Nblk-1 ; ++j ) {
+   for (int i = 0; i <= Ncpu-1 ; ++i) {
+      for (int j = 0; j <= Nblk-1 ; ++j) {
          if (Blocks[i][j] != NULL) {
             if (Blocks[i][j]->block.used) {
                RefineFlags[i][j] = ADAPTIVEBLOCK3D_REFINE;
@@ -1822,9 +1195,8 @@ inline void Octree_DataStructure::refineAll(void) {
  * Octree_DataStructure::coarsenAll -- Set coarsening flags.                *
  ****************************************************************************/
 inline void Octree_DataStructure::coarsenAll(void) {
-   int i, j; 
-   for ( i = 0; i <= Ncpu-1 ; ++i ) {
-      for ( j = 0; j <= Nblk-1 ; ++j ) {
+   for (int i = 0; i <= Ncpu-1 ; ++i) {
+      for (int j = 0; j <= Nblk-1 ; ++j) {
          if (Blocks[i][j] != NULL) {
             if (Blocks[i][j]->block.used) {
                RefineFlags[i][j] = ADAPTIVEBLOCK3D_COARSEN;
@@ -1838,9 +1210,8 @@ inline void Octree_DataStructure::coarsenAll(void) {
  * Octree_DataStructure::setRefineAll -- Set refinement flags.              *
  ****************************************************************************/
 inline void Octree_DataStructure::setRefineAll(const int Flag) {
-   int i, j; 
-   for ( i = 0; i <= Ncpu-1 ; ++i ) {
-      for ( j = 0; j <= Nblk-1 ; ++j ) {
+   for (int i = 0; i <= Ncpu-1 ; ++i) {
+      for (int j = 0; j <= Nblk-1 ; ++j) {
          if (Blocks[i][j] != NULL) {
             if (Blocks[i][j]->block.used) {
                RefineFlags[i][j] = Flag;
@@ -1855,9 +1226,9 @@ inline void Octree_DataStructure::setRefineAll(const int Flag) {
  *                                 refinement level of all solution blocks. *
  ****************************************************************************/
 inline int Octree_DataStructure::highestRefinementLevel(void) {
-   int i, j, level = 0;
-   for ( i = 0; i <= Ncpu-1 ; ++i ) {
-      for ( j = 0; j <= Nblk-1 ; ++j ) {
+  int level(0);
+   for (int i = 0; i <= Ncpu-1 ; ++i) {
+      for (int j = 0; j <= Nblk-1 ; ++j) {
          if (Blocks[i][j] != NULL) {
             if (Blocks[i][j]->block.used) {
                level = max(level, Blocks[i][j]->block.info.level);
@@ -1869,16 +1240,14 @@ inline int Octree_DataStructure::highestRefinementLevel(void) {
 }
 
 inline int Octree_DataStructure::highestRefinementLevel(const int use_tree) {
-   int i, j,k, level = 0;
-   int n, ntotalblks = NRk*NRj*NRi;
-   
+   int level(0);
    if (use_tree) {
-      for ( n = 0 ; n <= ntotalblks-1 ; ++n ) {
+      for (int n = 0 ; n <= NR-1 ; ++n) {
          level = Roots[n].maxRefinementLevel(level);
       } /* endfor */
    } else {
-      for ( i = 0; i <= Ncpu-1 ; ++i ) {
-         for ( j = 0; j <= Nblk-1 ; ++j ) {
+      for (int i = 0; i <= Ncpu-1 ; ++i) {
+         for (int j = 0; j <= Nblk-1 ; ++j) {
             if (Blocks[i][j] != NULL) {
 	       if (Blocks[i][j]->block.used) {
                   level = max(level, Blocks[i][j]->block.info.level);
@@ -1895,9 +1264,9 @@ inline int Octree_DataStructure::highestRefinementLevel(const int use_tree) {
  *                                    octree solution blocks to be refined. *
  ****************************************************************************/
 inline int Octree_DataStructure::numberToBeRefined(void) {
-   int i, j, number_to_be_refined = 0;
-   for ( i = 0; i <= Ncpu-1 ; ++i ) {
-      for ( j = 0; j <= Nblk-1 ; ++j ) {
+   int number_to_be_refined(0);
+   for (int i = 0; i <= Ncpu-1 ; ++i) {
+      for (int j = 0; j <= Nblk-1 ; ++j) {
          if (Blocks[i][j] != NULL) {
    	    if (Blocks[i][j]->block.used) {
                if (RefineFlags[i][j] == ADAPTIVEBLOCK3D_REFINE) {
@@ -1915,9 +1284,9 @@ inline int Octree_DataStructure::numberToBeRefined(void) {
  *                                  octree solution blocks to be coarsened. *
  ****************************************************************************/
 inline int Octree_DataStructure::numberToBeCoarsened(void) {
-   int i, j, number_to_be_coarsened = 0;
-   for ( i = 0; i <= Ncpu-1 ; ++i ) {
-      for ( j = 0; j <= Nblk-1 ; ++j ) {
+   int number_to_be_coarsened(0);
+   for (int i = 0; i <= Ncpu-1 ; ++i ) {
+      for (int j = 0; j <= Nblk-1 ; ++j ) {
          if (Blocks[i][j] != NULL) {
    	    if (Blocks[i][j]->block.used) {
                if (RefineFlags[i][j] == ADAPTIVEBLOCK3D_COARSEN) {
@@ -1935,12 +1304,13 @@ inline int Octree_DataStructure::numberToBeCoarsened(void) {
  ****************************************************************************/
 inline ostream &operator << (ostream &out_file,
 			     const Octree_DataStructure &QT) {
-   int iBLK, jBLK, kBLK, n, ntotalblks;
-   
-   ntotalblks = QT.NRk*QT.NRj*QT.NRi;
-   
-   out_file << QT.NRi << " " << QT.NRj << " " << QT.NRk << " " << QT.Ncpu << " " << QT.Nblk << "\n";
-   for ( n = 0 ; n <= ntotalblks-1 ; ++n ) {
+   out_file << QT.NR << " " 
+            << QT.NRi << " " 
+            << QT.NRj << " " 
+            << QT.NRk << " " 
+            << QT.Ncpu << " " 
+            << QT.Nblk << "\n";
+   for (int n = 0 ; n <= QT.NR-1 ; ++n) {
       QT.Roots[n].write(out_file);
    } /* endfor */
    return (out_file);
@@ -1948,7 +1318,7 @@ inline ostream &operator << (ostream &out_file,
 
 inline istream &operator >> (istream &in_file,
 			     Octree_DataStructure &QT) {
-   int iBLK, jBLK, kBLK, nri, nrj,nrk, ncpu, nblk;
+   int nr, nri, nrj, nrk, ncpu, nblk;
    if (QT.Roots != NULL && QT.Blocks != NULL) {
      QT.deallocate();
    } else if (QT.Roots != NULL) {
@@ -1957,12 +1327,10 @@ inline istream &operator >> (istream &in_file,
       QT.deallocateBlocks();
    } /* endif */
    in_file.setf(ios::skipws);
-   in_file >> nri >> nrj >> nrk >> ncpu >> nblk;
+   in_file >> nr >> nri >> nrj >> nrk >> ncpu >> nblk;
    in_file.setf(ios::skipws);
    QT.allocate(nri, nrj, nrk, ncpu, nblk);
-
-   int ntotalblks = QT.NRk*QT.NRj*QT.NRi;
-   for ( int n = 0 ; n <= ntotalblks-1 ; ++n ) {
+   for (int n = 0 ; n <= QT.NR-1 ; ++n) {
       QT.Roots[n].read(in_file);
    } /* endfor */
    return (in_file);

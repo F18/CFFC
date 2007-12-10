@@ -154,7 +154,7 @@ int Initial_Conditions(HexaSolver_Data &Data,
   error_flag = CFFC_OR_MPI(error_flag);
   if (error_flag) return (error_flag);
   // Correct exterior nodes to match with message passed geometry information.
-  Solution_Data.Local_Solution_Blocks.Correct_Grid_Exterior_Nodes(Data.Local_Adaptive_Block_List);\
+  Solution_Data.Local_Solution_Blocks.Correct_Grid_Exterior_Nodes(Data.Local_Adaptive_Block_List);
   // Now send solution information and data.
   error_flag = Send_Messages<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >
                   (Solution_Data.Local_Solution_Blocks.Soln_Blks, 

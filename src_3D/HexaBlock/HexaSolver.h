@@ -91,6 +91,7 @@ int HexaSolver(char *Input_File_Name_ptr,int batch_flag){
       solution-adaptive quadrilateral mesh.                                  
     ****************************************************************************/    
     CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.    
+    if (!Data.batch_flag) cout << "\n\n Initialization of mesh and solution data complete on " << Date_And_Time() << ".";
     
     // Open Progress File 
     if (CFFC_Primary_MPI_Processor()) {    
@@ -130,6 +131,7 @@ int HexaSolver(char *Input_File_Name_ptr,int batch_flag){
       by input parameters.        
     *******************************************************************************/     
     CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.    
+    if (!Data.batch_flag) cout << "\n";
 
     error_flag = Hexa_Post_Processing(Data,Solution_Data);   
     error_flag = CFFC_OR_MPI(error_flag);

@@ -31,7 +31,7 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
       (Solution_Data.Input.Time_Accurate && 
        Solution_Data.Input.Time_Max > Data.Time)) {
     
-    if (!Data.batch_flag) cout << "\n\n Beginning computations on " << Date_And_Time() << ".\n\n";
+    if (!Data.batch_flag) cout << "\n\n Beginning explicit time-marching computations on " << Date_And_Time() << ".\n\n";
     
     while (1){ // Data.number_of_time_steps <= Solution_Data.Input.Maximum_Number_of_Time_Steps) {  // instead of while(1) ??
       
@@ -236,7 +236,8 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
        
     } // END WHILE(1) LOOP 
       
-    if (!Data.batch_flag) cout << "\n\n Computations complete on " << Date_And_Time() << ".\n"; cout.flush();
+    if (!Data.batch_flag) cout << "\n\n Explicit time-marching computations complete on " 
+                               << Date_And_Time() << "."; cout.flush();
     
   } // END ( Time or Steps) IF
 

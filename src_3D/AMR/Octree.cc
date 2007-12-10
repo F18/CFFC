@@ -39,10 +39,10 @@ void Octree_DataStructure::Create_Octree_Data_Structure(Octree_DataStructure &Oc
     } /* endif */
 
     Octree.allocate(Number_of_Roots_Idir, 
-                      Number_of_Roots_Jdir,
-                      Number_of_Roots_Kdir,
-                      Number_of_Processors,
-                      Number_of_Blocks_per_Processor);
+                    Number_of_Roots_Jdir,
+                    Number_of_Roots_Kdir,
+                    Number_of_Processors,
+                    Number_of_Blocks_per_Processor);
 
 }
 
@@ -58,13 +58,13 @@ void Octree_DataStructure::Broadcast_Octree_Data_Structure(Octree_DataStructure 
                                                            AdaptiveBlock3D_ResourceList &List_of_Available_Blocks) {
 
 #ifdef _MPI_VERSION
-    int nri, nrj, nrk, ncpu, nblk, iBLK, jBLK, kBLK;
-    int n, ntotalblks;
+    int nr, nri, nrj, nrk, ncpu, nblk, iBLK, jBLK, kBLK;
     
     /* Broadcast the number of roots, the number of CPUs, and
        the number of local solution blocks. */
 
     if (CFFC_Primary_MPI_Processor()) {
+       nr = Octree.NR;
        nri = Octree.NRi;
        nrj = Octree.NRj;
        nrk = Octree.NRk;
@@ -72,6 +72,7 @@ void Octree_DataStructure::Broadcast_Octree_Data_Structure(Octree_DataStructure 
        nblk = Octree.Nblk;
     } /* endif */
 
+    MPI::COMM_WORLD.Bcast(&nr, 1, MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&nri, 1, MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&nrj, 1, MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&nrk, 1, MPI::INT, 0);
@@ -82,26 +83,25 @@ void Octree_DataStructure::Broadcast_Octree_Data_Structure(Octree_DataStructure 
        memory for the octree data structure as necessary. */
 
     if (!CFFC_Primary_MPI_Processor()) {
-       if (Octree.NRi != nri ||
+       if (Octree.NR != nr ||
+           Octree.NRi != nri ||
            Octree.NRj != nrj ||
            Octree.NRk != nrk ||
            Octree.Ncpu != ncpu ||
            Octree.Nblk != nblk) {
           Create_Octree_Data_Structure(Octree,
-                                         nri,
-  	                                 nrj,
-  	                                 nrk,
-                                         ncpu,
-                                         nblk);
+                                       nri,
+  	                               nrj,
+  	                               nrk,
+                                       ncpu,
+                                       nblk);
        } /* endif */
     } /* endif */
 
     /* Broadcast the octree data structure, descending each of the
        roots in a recursive fashion. */
     
-    ntotalblks =  Octree.NRk* Octree.NRj* Octree.NRi;
-    
-    for (n = 0 ; n <= ntotalblks-1 ; ++n) {
+    for (int n = 0 ; n <= Octree.NR-1 ; ++n) {
        Octree.Roots[n].broadcast(List_of_Available_Blocks);
     } /* endfor */
 #endif
@@ -133,12 +133,12 @@ void Octree_DataStructure::Renumber_Solution_Blocks(Octree_DataStructure &Octree
 void Octree_DataStructure::Renumber_Solution_Blocks(Octree_DataStructure &Octree,
                                                     AdaptiveBlock3D_List &LocalSolnBlockList) {
 
-    int iCPU, iBLK, global_block_number;
+    int iCPU;
 
     Octree.renumber();
-   
     iCPU = LocalSolnBlockList.ThisCPU;
-    for ( iBLK = 0 ; iBLK <= LocalSolnBlockList.Nblk-1 ; ++iBLK ) {
+
+    for (int iBLK = 0 ; iBLK <= LocalSolnBlockList.Nblk-1 ; ++iBLK ) {
        if (Octree.Blocks[iCPU][iBLK] != NULL) {
           if (Octree.Blocks[iCPU][iBLK]->block.used) {
              LocalSolnBlockList.Block[iBLK].gblknum = 
@@ -224,12 +224,12 @@ void Octree_DataStructure::Find_Neighbours(Octree_DataStructure &Octree) {
 void Octree_DataStructure::Find_Neighbours(Octree_DataStructure &Octree,
                                            AdaptiveBlock3D_List &LocalSolnBlockList) {
 
-    int iCPU, iBLK, global_block_number;
+    int iCPU;
 
     Octree.findNeighbours();
-   
     iCPU = LocalSolnBlockList.ThisCPU;
-    for ( iBLK = 0 ; iBLK <= LocalSolnBlockList.Nblk-1 ; ++iBLK ) {
+
+    for (int iBLK = 0 ; iBLK <= LocalSolnBlockList.Nblk-1 ; ++iBLK ) {
        if (Octree.Blocks[iCPU][iBLK] != NULL) {
           if (Octree.Blocks[iCPU][iBLK]->block.used) {
              LocalSolnBlockList.Block[iBLK] = 

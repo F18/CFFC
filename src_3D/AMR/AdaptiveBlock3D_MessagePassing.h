@@ -143,11 +143,11 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                      (i_bound_elem != BE::ME) &&
                      (Soln_Block_List.Block[i_blk].info.level == neighbour_info[i_bound_elem].level)) {
                     buffer_size = ((abs(ii)*Soln_Block_List.Block[i_blk].info.dimen.ghost) + 
-                                  ((!ii)*abs(Soln_Block_List.Block[i_blk].info.dimen.i)))*
+				   ((!ii)*abs(Soln_Block_List.Block[i_blk].info.dimen.i)))*
                                   ((abs(jj)*Soln_Block_List.Block[i_blk].info.dimen.ghost) + 
-                                  ((!jj)*abs(Soln_Block_List.Block[i_blk].info.dimen.j)))*
+				   ((!jj)*abs(Soln_Block_List.Block[i_blk].info.dimen.j)))*
                                   ((abs(kk)*Soln_Block_List.Block[i_blk].info.dimen.ghost) + 
-                                  ((!kk)*abs(Soln_Block_List.Block[i_blk].info.dimen.k)))*
+				   ((!kk)*abs(Soln_Block_List.Block[i_blk].info.dimen.k)))*
                                   (Soln_Blks[i_blk].NumVar());
                     l = -1;
                  
@@ -206,7 +206,7 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                     ti[1] = abs(compact_trans_matrix[1]) -1;
                     ti[2] = abs(compact_trans_matrix[2]) -1;
 
-                    if (ts[0] <0 ) {
+                    if (ts[0] <0) {
                        i_inc = -1;
                        i_temp = i_min;
                        i_min = i_max;
@@ -378,11 +378,11 @@ int Load_Send_Message_Buffers_NoResChange_Mesh_Geometry_Only(Hexa_Soln_Block *So
                      (i_bound_elem != BE::ME) &&
                      (Soln_Block_List.Block[i_blk].info.level == neighbour_info[i_bound_elem].level)) {
                     buffer_size = ((abs(ii)*Soln_Block_List.Block[i_blk].info.dimen.ghost) + 
-                                  ((!ii)*abs(Soln_Block_List.Block[i_blk].info.dimen.i)+1))*
+				   ((!ii)*abs(Soln_Block_List.Block[i_blk].info.dimen.i)+1))*
                                   ((abs(jj)*Soln_Block_List.Block[i_blk].info.dimen.ghost) + 
-                                  ((!jj)*abs(Soln_Block_List.Block[i_blk].info.dimen.j) +1))*
+				   ((!jj)*abs(Soln_Block_List.Block[i_blk].info.dimen.j)+1))*
                                   ((abs(kk)*Soln_Block_List.Block[i_blk].info.dimen.ghost) + 
-                                  ((!kk)*abs(Soln_Block_List.Block[i_blk].info.dimen.k)+1))*
+				   ((!kk)*abs(Soln_Block_List.Block[i_blk].info.dimen.k)+1))*
                                   (NUM_COMP_VECTOR3D) +
                                   (((!ii)*abs(Soln_Block_List.Block[i_blk].info.dimen.i)))*
                                   (((!jj)*abs(Soln_Block_List.Block[i_blk].info.dimen.j)))*
@@ -560,10 +560,10 @@ int Load_Send_Message_Buffers_NoResChange_Mesh_Geometry_Only(Hexa_Soln_Block *So
                     inc[1] = j_inc;
                     inc[2] = k_inc;
 
-                    i = Soln_Blks[i_blk].LoadSendBuffer_BCs(Soln_Block_List.message_noreschange_sendbuf[i_blk][i_bound_elem],
-                                                            l, buffer_size, 
-                                                            id_min, id_max, inc, ti, ii, jj, kk);
-                    if (i != 0) return (4003);
+/*                     i = Soln_Blks[i_blk].LoadSendBuffer_BCs(Soln_Block_List.message_noreschange_sendbuf[i_blk][i_bound_elem], */
+/*                                                             l, buffer_size,  */
+/*                                                             id_min, id_max, inc, ti, ii, jj, kk); */
+/*                     if (i != 0) return (4003); */
 		 } /* endif */
 
 	      } /* end of for k*/
@@ -739,11 +739,11 @@ int Unload_Receive_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                        (i_bound_elem != BE::ME) &&
                        (Soln_Block_List.Block[i_blk].info.level == neighbour_info[i_bound_elem].level)) {
                       buffer_size = ((abs(ii)*Soln_Block_List.Block[i_blk].info.dimen.ghost) + 
-                                    ((!ii)*abs(Soln_Block_List.Block[i_blk].info.dimen.i)))*
+				     ((!ii)*abs(Soln_Block_List.Block[i_blk].info.dimen.i)))*
                                     ((abs(jj)*Soln_Block_List.Block[i_blk].info.dimen.ghost) + 
-                                    ((!jj)*abs(Soln_Block_List.Block[i_blk].info.dimen.j)))*
+				     ((!jj)*abs(Soln_Block_List.Block[i_blk].info.dimen.j)))*
                                     ((abs(kk)*Soln_Block_List.Block[i_blk].info.dimen.ghost) + 
-                                    ((!kk)*abs(Soln_Block_List.Block[i_blk].info.dimen.k)))*
+				     ((!kk)*abs(Soln_Block_List.Block[i_blk].info.dimen.k)))*
                                     (Soln_Blks[i_blk].NumVar());
                       l = -1;
                    
@@ -926,11 +926,11 @@ int Unload_Receive_Message_Buffers_NoResChange_Mesh_Geometry_Only(Hexa_Soln_Bloc
                        (i_bound_elem != BE::ME) &&
                        (Soln_Block_List.Block[i_blk].info.level == neighbour_info[i_bound_elem].level)) {
                       buffer_size = ((abs(ii)*Soln_Block_List.Block[i_blk].info.dimen.ghost) + 
-                                    ((!ii)*abs(Soln_Block_List.Block[i_blk].info.dimen.i)+1))*
+				     ((!ii)*abs(Soln_Block_List.Block[i_blk].info.dimen.i)+1))*
                                     ((abs(jj)*Soln_Block_List.Block[i_blk].info.dimen.ghost) + 
-                                    ((!jj)*abs(Soln_Block_List.Block[i_blk].info.dimen.j)+1))*
+				     ((!jj)*abs(Soln_Block_List.Block[i_blk].info.dimen.j)+1))*
                                     ((abs(kk)*Soln_Block_List.Block[i_blk].info.dimen.ghost) + 
-                                    ((!kk)*abs(Soln_Block_List.Block[i_blk].info.dimen.k) +1))*
+				     ((!kk)*abs(Soln_Block_List.Block[i_blk].info.dimen.k)+1))*
                                     (NUM_COMP_VECTOR3D) +
                                     (((!ii)*abs(Soln_Block_List.Block[i_blk].info.dimen.i)))*
                                     (((!jj)*abs(Soln_Block_List.Block[i_blk].info.dimen.j)))*
@@ -1025,11 +1025,11 @@ int Unload_Receive_Message_Buffers_NoResChange_Mesh_Geometry_Only(Hexa_Soln_Bloc
                       k_max = (!kk)*Soln_Blks[i_blk].KCu + n_kmax;
                       k_inc = 1;
                     
-                      i = Soln_Blks[i_blk].UnloadReceiveBuffer_BCs(Soln_Block_List.message_noreschange_recbuf[i_blk][i_bound_elem],
-                                                                   l, buffer_size, 
-                                                                   i_min, i_max, i_inc, j_min, j_max, j_inc, k_min, k_max, k_inc,
-                                                                 ii, jj, kk);
-                      if (i != 0) return (6003);
+/*                       i = Soln_Blks[i_blk].UnloadReceiveBuffer_BCs(Soln_Block_List.message_noreschange_recbuf[i_blk][i_bound_elem], */
+/*                                                                    l, buffer_size,  */
+/*                                                                    i_min, i_max, i_inc, j_min, j_max, j_inc, k_min, k_max, k_inc, */
+/*                                                                    ii, jj, kk); */
+/*                       if (i != 0) return (6003); */
 		   } /* endif */
 
 		} /* end of for k*/
