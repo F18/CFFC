@@ -777,6 +777,8 @@ class DenseMatrix: public MV_ColMat_double{
        MV_ColMat_double(x, m, n, lda, i) { /* ... */ }
     DenseMatrix(const MV_ColMat_double &A) :
        MV_ColMat_double(A) { /* ... */ }
+    DenseMatrix(DenseMatrix &A, const double &x) :
+       MV_ColMat_double(A.get_m(),A.get_n(),x) { /* ... */ }
 
     DenseMatrix(DenseMatrix &A, MV_Matrix_::ref_type i) : MV_ColMat_double(A, i) { /* ... */ }
 
@@ -868,8 +870,12 @@ class DenseMatrix: public MV_ColMat_double{
     friend DenseMatrix &operator *=(DenseMatrix &M1, double c);
     
     /* Relational operators. */
-    friend int operator ==(const DenseMatrix &M1, const DenseMatrix &M2);
-    friend int operator !=(const DenseMatrix &M1, const DenseMatrix &M2);
+    friend bool operator ==(const DenseMatrix &M1, const DenseMatrix &M2);
+    friend bool operator !=(const DenseMatrix &M1, const DenseMatrix &M2);
+    friend bool operator <=(const DenseMatrix &M1, const DenseMatrix &M2);
+    friend bool operator >=(const DenseMatrix &M1, const DenseMatrix &M2);
+    friend bool operator <(const DenseMatrix &M1, const DenseMatrix &M2);
+    friend bool operator >(const DenseMatrix &M1, const DenseMatrix &M2);
     
     /* Input-output operators. */
     friend ostream &operator << (ostream &out_file, const DenseMatrix &M);
@@ -1153,7 +1159,7 @@ inline DenseMatrix &operator *=(DenseMatrix &M1, double c) {
 /********************************************************
  * DenseMatrix -- Relational operators.                 *
  ********************************************************/
-inline int operator ==(const DenseMatrix &M1, const DenseMatrix &M2) {
+inline bool operator ==(const DenseMatrix &M1, const DenseMatrix &M2) {
    if (M1.dim0_ != M2.dim0_ || M1.dim1_ != M2.dim1_) return(0);
    int i , j, equal; equal = 1;
    for ( i = 0; i <= M1.dim0_-1; ++i ) {
@@ -1168,7 +1174,7 @@ inline int operator ==(const DenseMatrix &M1, const DenseMatrix &M2) {
    return (equal);
 }
 
-inline int operator !=(const DenseMatrix &M1, const DenseMatrix &M2) {
+inline bool operator !=(const DenseMatrix &M1, const DenseMatrix &M2) {
    if (M1.dim0_ != M2.dim0_ || M1.dim1_ != M2.dim1_) return(1);
    int i , j, not_equal; not_equal = 1;
    for ( i = 0; i <= M1.dim0_-1; ++i ) {
@@ -1181,6 +1187,66 @@ inline int operator !=(const DenseMatrix &M1, const DenseMatrix &M2) {
       if (!not_equal) break;
    } /* endfor */
    return (not_equal);
+}
+
+inline bool operator <=(const DenseMatrix &M1, const DenseMatrix &M2) {
+    if (M1.dim0_ != M2.dim0_ || M1.dim1_ != M2.dim1_) return(0);
+    int i , j, lessequal; lessequal = 1;
+    for ( i = 0; i <= M1.dim0_-1; ++i ) {
+        for ( j = 0 ; j <= M1.dim1_-1; ++j ) {
+            if (M1(i,j) > M2(i,j)) {
+                lessequal = 0;
+                break;
+            } /* endif */
+        } /* endfor */
+        if (!lessequal) break;
+    } /* endfor */
+    return (lessequal);
+}
+
+inline bool operator >=(const DenseMatrix &M1, const DenseMatrix &M2) {
+    if (M1.dim0_ != M2.dim0_ || M1.dim1_ != M2.dim1_) return(0);
+    int i , j, greatequal; greatequal = 1;
+    for ( i = 0; i <= M1.dim0_-1; ++i ) {
+        for ( j = 0 ; j <= M1.dim1_-1; ++j ) {
+            if (M1(i,j) < M2(i,j)) {
+                greatequal = 0;
+                break;
+            } /* endif */
+        } /* endfor */
+        if (!greatequal) break;
+    } /* endfor */
+    return (greatequal);
+}
+
+inline bool operator <(const DenseMatrix &M1, const DenseMatrix &M2) {
+    if (M1.dim0_ != M2.dim0_ || M1.dim1_ != M2.dim1_) return(0);
+    int i , j, less; less = 1;
+    for ( i = 0; i <= M1.dim0_-1; ++i ) {
+        for ( j = 0 ; j <= M1.dim1_-1; ++j ) {
+            if (M1(i,j) >= M2(i,j)) {
+                less = 0;
+                break;
+            } /* endif */
+        } /* endfor */
+        if (!less) break;
+    } /* endfor */
+    return (less);
+}
+
+inline bool operator >(const DenseMatrix &M1, const DenseMatrix &M2) {
+    if (M1.dim0_ != M2.dim0_ || M1.dim1_ != M2.dim1_) return(0);
+    int i , j, great; great = 1;
+    for ( i = 0; i <= M1.dim0_-1; ++i ) {
+        for ( j = 0 ; j <= M1.dim1_-1; ++j ) {
+            if (M1(i,j) <= M2(i,j)) {
+                great = 0;
+                break;
+            } /* endif */
+        } /* endfor */
+        if (!great) break;
+    } /* endfor */
+    return (great);
 }
 
 /********************************************************

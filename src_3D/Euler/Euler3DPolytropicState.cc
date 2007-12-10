@@ -1247,7 +1247,7 @@ Euler3D_Polytropic_pState Euler3D_Polytropic_pState::lp_y(const int &index) {
         case 2:
             return (Euler3D_Polytropic_pState(ONE, ZERO, ZERO, ZERO, -ONE/a2())); 
         case 3:
-            return (Euler3D_Polytropic_pState(ZERO, ZERO, ONE, ZERO, ZERO));
+            return (Euler3D_Polytropic_pState(ZERO, ONE, ZERO, ZERO, ZERO));
         case 4: 
             return (Euler3D_Polytropic_pState(ZERO, ZERO, ZERO, ONE, ZERO));
         case 5: 
@@ -1262,7 +1262,7 @@ Euler3D_Polytropic_pState Euler3D_Polytropic_pState::lp_y(const int &index) cons
         case 2:
             return (Euler3D_Polytropic_pState(ONE, ZERO, ZERO, ZERO, -ONE/a2())); 
         case 3:
-            return (Euler3D_Polytropic_pState(ZERO, ZERO, ONE, ZERO, ZERO));
+            return (Euler3D_Polytropic_pState(ZERO, ONE, ZERO, ZERO, ZERO));
         case 4: 
             return (Euler3D_Polytropic_pState(ZERO, ZERO, ZERO, ONE, ZERO));
         case 5: 

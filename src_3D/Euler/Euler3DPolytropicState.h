@@ -137,6 +137,10 @@ class Euler3D_Polytropic_cState;
  *  - W /= W;
  *  - W == W;
  *  - W != W;
+ *  - W <= W;
+ *  - W >= W;
+ *  - W < W;
+ *  - W > W;
  *  - cout << W; (output function)
  *  - cin  >> W; (input function)
  *  \nosubgrouping
@@ -182,6 +186,12 @@ public:
                               const double &pre):
       rho(d), p(pre) {
       v.x=vx; v.y=vy; v.z = vz;
+    }
+    
+    //! Assignment constructor 
+    Euler3D_Polytropic_pState(const double &value):
+    rho(value), p(value) {
+        v.x=value; v.y=value; v.z=value;
     }
 
     //! Assignment constructor 
@@ -446,10 +456,18 @@ public:
 
 // Relational operators. 
     //! W == W
-    friend int operator ==(const Euler3D_Polytropic_pState &W1, const Euler3D_Polytropic_pState &W2);
+    friend bool operator ==(const Euler3D_Polytropic_pState &W1, const Euler3D_Polytropic_pState &W2);
     //! W != W
-    friend int operator !=(const Euler3D_Polytropic_pState &W1, const Euler3D_Polytropic_pState &W2);
-
+    friend bool operator !=(const Euler3D_Polytropic_pState &W1, const Euler3D_Polytropic_pState &W2);
+    //! W <= W
+    friend bool operator <=(const Euler3D_Polytropic_pState &W1, const Euler3D_Polytropic_pState &W2);
+    //! W >= W
+    friend bool operator >=(const Euler3D_Polytropic_pState &W1, const Euler3D_Polytropic_pState &W2);
+    //! W < W
+    friend bool operator <(const Euler3D_Polytropic_pState &W1, const Euler3D_Polytropic_pState &W2);
+    //! W > W
+    friend bool operator >(const Euler3D_Polytropic_pState &W1, const Euler3D_Polytropic_pState &W2);
+    
 // Input-output operators. 
     //! ostream << W
     friend ostream& operator << (ostream &out_file, const Euler3D_Polytropic_pState &W);
@@ -617,6 +635,10 @@ public:
  *  - U /= U;
  *  - U == U;
  *  - U != U;
+ *  - U <= U;
+ *  - U >= U;
+ *  - U < U;
+ *  - U > U;
  *  - cout << U; (output function)
  *  - cin  >> U; (input function)
  */
@@ -660,6 +682,12 @@ public:
                               const double &Etotal):
       rho(d), E(Etotal) {
       rhov.x = dvx; rhov.y = dvy; rhov.z = dvz;
+    }
+    
+    //! Assignment constructor
+    Euler3D_Polytropic_cState(const double &value):
+    rho(value), E(value) {
+        rhov.x = value; rhov.y = value; rhov.z = value;
     }
 
     //! Assignment constructor
@@ -853,10 +881,18 @@ public:
 
 // Relational operators.
     //! U == U
-    friend int operator ==(const Euler3D_Polytropic_cState &U1, const Euler3D_Polytropic_cState &U2);
+    friend bool operator ==(const Euler3D_Polytropic_cState &U1, const Euler3D_Polytropic_cState &U2);
     //! U != U
-    friend int operator !=(const Euler3D_Polytropic_cState &U1, const Euler3D_Polytropic_cState &U2);
-
+    friend bool operator !=(const Euler3D_Polytropic_cState &U1, const Euler3D_Polytropic_cState &U2);
+    //! U <= U
+    friend bool operator <=(const Euler3D_Polytropic_cState &U1, const Euler3D_Polytropic_cState &U2);
+    //! U >= U
+    friend bool operator >=(const Euler3D_Polytropic_cState &U1, const Euler3D_Polytropic_cState &U2);
+    //! U < U
+    friend bool operator <(const Euler3D_Polytropic_cState &U1, const Euler3D_Polytropic_cState &U2);
+    //! U > U
+    friend bool operator >(const Euler3D_Polytropic_cState &U1, const Euler3D_Polytropic_cState &U2);
+    
 // Input-output operators.
     //! ostream << U
     friend ostream& operator << (ostream &out_file, const Euler3D_Polytropic_cState &U);
@@ -999,16 +1035,35 @@ inline Euler3D_Polytropic_pState operator -(const Euler3D_Polytropic_pState &W) 
 /***************************************************************************************
  * Euler3D_Polytropic_pState -- Relational operators.                                  *
  ***************************************************************************************/
-inline int operator ==(const Euler3D_Polytropic_pState &W1, 
+inline bool operator ==(const Euler3D_Polytropic_pState &W1, 
                        const Euler3D_Polytropic_pState &W2) {
-    return (W1.rho == W2.rho && W1.v.x == W2.v.x && W1.v.y == W2.v.y && W1.v.z == W2.v.z && W1.p == W2.p);
+    return (W1.rho == W2.rho && W1.v == W2.v && W1.p == W2.p);
 }
 
-inline int operator !=(const Euler3D_Polytropic_pState &W1, 
+inline bool operator !=(const Euler3D_Polytropic_pState &W1, 
                        const Euler3D_Polytropic_pState &W2) {
-    return (W1.rho != W2.rho || W1.v.x != W2.v.x || W1.v.y != W2.v.y || W1.v.z != W2.v.z || W1.p != W2.p);
+    return (W1.rho != W2.rho || W1.v != W2.v || W1.p != W2.p);
 }
 
+inline bool operator <=(const Euler3D_Polytropic_pState &W1, 
+                       const Euler3D_Polytropic_pState &W2) {
+    return (W1.rho <= W2.rho && W1.v <= W2.v && W1.p <= W2.p);
+}
+
+inline bool operator >=(const Euler3D_Polytropic_pState &W1, 
+                       const Euler3D_Polytropic_pState &W2) {
+    return (W1.rho >= W2.rho && W1.v >= W2.v && W1.p >= W2.p);
+}
+
+inline bool operator <(const Euler3D_Polytropic_pState &W1, 
+                       const Euler3D_Polytropic_pState &W2) {
+    return (W1.rho < W2.rho && W1.v < W2.v && W1.p < W2.p);
+}
+
+inline bool operator >(const Euler3D_Polytropic_pState &W1, 
+                       const Euler3D_Polytropic_pState &W2) {
+    return (W1.rho > W2.rho && W1.v > W2.v && W1.p > W2.p);
+}
 /***************************************************************************************
  * Euler3D_Polytropic_pState -- Input-output operators.                                *
  ***************************************************************************************/
@@ -1156,16 +1211,35 @@ inline Euler3D_Polytropic_cState operator -(const Euler3D_Polytropic_cState &U) 
 /***************************************************************************************
  * Euler3D_Polytropic_cState -- Relational operators.                                  *
  ***************************************************************************************/
-inline int operator ==(const Euler3D_Polytropic_cState &U1, 
+inline bool operator ==(const Euler3D_Polytropic_cState &U1, 
                        const Euler3D_Polytropic_cState &U2) {
     return (U1.rho == U2.rho && U1.rhov == U2.rhov && U1.E == U2.E);
 }
 
-inline int operator !=(const Euler3D_Polytropic_cState &U1, 
+inline bool operator !=(const Euler3D_Polytropic_cState &U1, 
                        const Euler3D_Polytropic_cState &U2) {
     return (U1.rho != U2.rho || U1.rhov != U2.rhov || U1.E != U2.E);
 }
 
+inline bool operator <=(const Euler3D_Polytropic_cState &U1, 
+                       const Euler3D_Polytropic_cState &U2) {
+    return (U1.rho <= U2.rho && U1.rhov <= U2.rhov && U1.E <= U2.E);
+}
+
+inline bool operator >=(const Euler3D_Polytropic_cState &U1, 
+                       const Euler3D_Polytropic_cState &U2) {
+    return (U1.rho >= U2.rho && U1.rhov >= U2.rhov && U1.E >= U2.E);
+}
+
+inline bool operator <(const Euler3D_Polytropic_cState &U1, 
+                       const Euler3D_Polytropic_cState &U2) {
+    return (U1.rho < U2.rho && U1.rhov < U2.rhov && U1.E < U2.E);
+}
+
+inline bool operator >(const Euler3D_Polytropic_cState &U1, 
+                       const Euler3D_Polytropic_cState &U2) {
+    return (U1.rho > U2.rho && U1.rhov > U2.rhov && U1.E > U2.E);
+}
 /***************************************************************************************
  * Euler3D_Polytropic_cState -- Input-output operators.                                *
  ***************************************************************************************/
