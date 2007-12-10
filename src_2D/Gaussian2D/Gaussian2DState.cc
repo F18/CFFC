@@ -41,8 +41,8 @@ void Gaussian2D_pState::set_state_from_ips(Gaussian2D_Input_Parameters &IP) {
   setgas(IP.Gas_Type);
   p.xx = IP.Pressure;
   p.xy = 0.0;
-  p.xx = IP.Pressure;
-  p.xx = IP.Pressure;
+  p.yy = IP.Pressure;
+  p.zz = IP.Pressure;
   if(atoms == 2)  erot = IP.Pressure;
   set_temperature_d(IP.Temperature);
   v.x = IP.Mach_Number*sound()*cos(TWO*PI*IP.Flow_Angle/360.00);
