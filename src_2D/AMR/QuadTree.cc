@@ -268,6 +268,7 @@ void Find_Neighbours_of_Root_Solution_Blocks(QuadTreeBlock_DataStructure
 void Modify_Neighbours_of_Root_Solution_Blocks(QuadTreeBlock_DataStructure 
                                                &QuadTree,
                                                const int Grid_Type) {
+  int HiBlk, HjBlk;
 
     switch(Grid_Type) {
       case GRID_SQUARE :
@@ -574,6 +575,23 @@ void Modify_Neighbours_of_Root_Solution_Blocks(QuadTreeBlock_DataStructure
 	} /* end if */
 	break;
 
+    case GRID_INTERIOR_INFLOW_OUTFLOW_BOX :
+      if (QuadTree.NRi>1  &&  QuadTree.NRj>1) { 
+	HiBlk = QuadTree.NRi/2;
+	HjBlk = QuadTree.NRj/2;
+
+	for (int iBlk = HiBlk; iBlk <= QuadTree.NRi-1; ++iBlk ){
+	  // Impose no connectivity to south for all blocks with inflow BC (i.e. the upper edge of the cut )
+	  QuadTree.Roots[iBlk][HjBlk ].block.nS = 0;
+	  QuadTree.Roots[iBlk][HjBlk ].block.infoS[0].reset();
+
+	  // Impose no connectivity to north for all blocks with outflow BC (i.e. the lower edge of the cut )
+	  QuadTree.Roots[iBlk][HjBlk-1].block.nN = 0;
+	  QuadTree.Roots[iBlk][HjBlk-1].block.infoN[0].reset();
+	} /*end for*/
+      } /* end if */
+      break;
+
     } /* endswitch */
 
 }
@@ -591,6 +609,8 @@ void Modify_Neighbours_of_Root_Solution_Blocks(QuadTreeBlock_DataStructure
                                                AdaptiveBlock2D_List 
                                                &LocalSolnBlockList,
                                                const int Grid_Type) {
+
+  int HiBlk, HjBlk;
 
     Modify_Neighbours_of_Root_Solution_Blocks(QuadTree, Grid_Type);
 
@@ -685,6 +705,23 @@ void Modify_Neighbours_of_Root_Solution_Blocks(QuadTreeBlock_DataStructure
 	  } /*end for*/
 	} /*end for*/
 	break;
+
+    case GRID_INTERIOR_INFLOW_OUTFLOW_BOX :
+      HiBlk = QuadTree.NRi/2;
+      HjBlk = QuadTree.NRj/2;
+
+      for (int iBlk = HiBlk; iBlk <= QuadTree.NRi-1; ++iBlk ){
+	if (LocalSolnBlockList.ThisCPU == QuadTree.Roots[iBlk][HjBlk].block.info.cpu) {
+	  LocalSolnBlockList.Block[QuadTree.Roots[iBlk][HjBlk].block.info.blknum] = 
+	    QuadTree.Roots[iBlk][HjBlk].block;
+	}
+
+	if (LocalSolnBlockList.ThisCPU == QuadTree.Roots[iBlk][HjBlk-1].block.info.cpu) {
+	  LocalSolnBlockList.Block[QuadTree.Roots[iBlk][HjBlk-1].block.info.blknum] = 
+	    QuadTree.Roots[iBlk][HjBlk-1].block;
+	}
+      } /*end for*/
+      break;
 
     } /* endswitch */
 
