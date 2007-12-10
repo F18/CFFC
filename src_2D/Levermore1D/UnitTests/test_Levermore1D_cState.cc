@@ -452,7 +452,7 @@ namespace tut
     double momentU, momentA;
 
     //check series of moments
-    for(int i=0;i<9;++i) {
+    for(int i=0;i<15;++i) {
       momentU = U.moment(i,A);
       momentA = A.integrate_conserved_moment(i);
       ensure_distance("test", momentU, momentA, fabs(momentU)*1e-10+1e-10);

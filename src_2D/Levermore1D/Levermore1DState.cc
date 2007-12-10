@@ -147,14 +147,14 @@ double Levermore1D_weights::integrate_conserved_moment(int i) const {
     v += dx;
     temp = velocity_weighted_value_at(v, i)*dx;
     sum += temp;
-  } while(fabs(temp) > 1e-14*dx);
+  } while(value_at(v) > 1e-14*dx);
 
   v = dx/2.0;
   do{
     v -= dx;
     temp = velocity_weighted_value_at(v, i)*dx;
     sum += temp;
-  } while(fabs(temp) > 1e-14*dx);
+  } while(value_at(v) > 1e-14*dx);
 
   return sum;
 }
@@ -175,14 +175,14 @@ double Levermore1D_weights::integrate_random_moment(int i, double u) const {
     v += dx;
     temp = random_velocity_weighted_value_at(v, u, i)*dx;
     sum += temp;
-  } while(fabs(temp) > 1e-14*dx);
+  } while(value_at(v) > 1e-14*dx);
 
   v = dx/2.0;
   do{
     v -= dx;
     temp = random_velocity_weighted_value_at(v, u, i)*dx;
     sum += temp;
-  } while(fabs(temp) > 1e-14*dx);
+  } while(value_at(v) > 1e-14*dx);
 
   return sum;
 }
