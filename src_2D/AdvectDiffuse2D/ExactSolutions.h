@@ -40,6 +40,13 @@
 #define AD2D_EXACT_SOLUTION_POISSON_V        14
 // ========== PARTICULAR SOLUTIONS FOR PURE ADVECTION ===========
 #define AD2D_EXACT_SOLUTION_PURE_CIRCULAR_ADVECTION_AT_CONSTANT_SPIN  20
+#define AD2D_EXACT_SOLUTION_SINUSOIDAL_WAVE                           21
+#define AD2D_EXACT_SOLUTION_ABGRAL_FUNCTION                           22
+#define AD2D_EXACT_SOLUTION_SINUSOIDAL_EXPONENTIAL_WAVE               23
+#define AD2D_EXACT_SOLUTION_SINUSOIDAL_EXPONENTIAL_ROTATED_WAVE       24
+#define AD2D_EXACT_SOLUTION_COSINE_HILL                               25
+#define AD2D_EXACT_SOLUTION_HYPER_TANGENT                             26
+#define AD2D_EXACT_SOLUTION_MODULATED_SINUSOIDAL_WAVE                 27
 // ========== PARTICULAR SOLUTIONS FOR ADVECTION-DIFFUSION ===========
 #define AD2D_EXACT_SOLUTION_ADVECTION_DIFFUSION_IN_ANNULUS  30
 #define AD2D_EXACT_SOLUTION_ADVECTION_DIFFUSION_IN_RECTANGULAR_CHANNEL  31
@@ -764,5 +771,146 @@ EvaluateSolutionAt(const double &x, const double &y) const {
   return sin(PI*y)*( (r2*exp(r1*x + r2*L) - r1*exp(r1*L+r2*x)) / (r2*exp(r2*L) - r1*exp(r1*L)) );
 }
 
+
+/*! 
+ * \class SinusoidalVariation_ExactSolution
+ * 
+ * \brief Implements a sinusoidal wave exact solution. 
+ * 
+ * This variation can represent an exact solution to an unsteady periodic problem, \n
+ * which has as initial condition the variation:
+ *   \f$ u(x,y) = \sin(\pi \, \phi(Var)) \f$, where \f$ \phi(Var) \f$ represents the mapping of Var into the domain [-1:1] \n
+ * Var is either x or y, depending on the chosen direction. \n
+ */
+class SinusoidalVariation_ExactSolution: public ExactSolutionBasicType{
+public:
+
+  //! Basic Constructor
+  SinusoidalVariation_ExactSolution(void): MinCoord(-1.0),
+					   MaxCoord( 1.0),
+					   Direction(X_DIRECTION){
+    // Name the exact solution
+    ExactSolutionName = "Sinusoidal wave, w(x,y) = sin(PI*Var), Var in [Min Var-Coordinate,Max Var-Coordinate]";
+  };
+
+  //! Return exact solution 
+  double EvaluateSolutionAt(const double &x, const double &y) const;
+
+  //! Return the one dimensional solution
+  double EvaluateSolutionAt_OneVariable(const double &Var) const;
+
+  //! Calculate the PDE RHS
+  double PDE_RighHandSide(const double &x, const double &y) const {return 0.0; }
+
+  //! Update internal variables
+  void Set_ParticularSolution_Parameters(void){ };
+
+  //! Parse the input control parameters
+  void Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP, int & i_command);
+
+  //! Print relevant parameters
+  void Print_Info(std::ostream & out_file);
+
+  //! Broadcast relevant parameters
+  void Broadcast(void);
+
+private:
+  double MinCoord;      //!< minimum coordinate
+  double MaxCoord;	//!< maximum coordinate
+  short Direction;	//!< the direction of interest ('x' or 'y')
+};
+
+//! Return exact solution 
+inline double SinusoidalVariation_ExactSolution::
+EvaluateSolutionAt(const double &x, const double &y) const {
+  if (Direction == X_DIRECTION) {
+    return EvaluateSolutionAt_OneVariable(x);
+  } else {
+    return EvaluateSolutionAt_OneVariable(y);
+  }
+}
+
+//! Return the one dimensional solution
+inline double SinusoidalVariation_ExactSolution::
+EvaluateSolutionAt_OneVariable(const double &Var) const {
+  if (Var<MinCoord || Var>MaxCoord){
+    return 0.0;
+  } else {
+    return sin((ConvertDomainToMinusOneOne(MinCoord,MaxCoord,Var))*PI);
+  }
+}
+
+
+/*! 
+ * \class ModulatedSinusoidalVariation_ExactSolution
+ * 
+ * \brief Implements a modulated sinusoidal wave exact solution. 
+ * 
+ * This variation can represent an exact solution to an unsteady periodic problem, \n
+ * which has as initial condition the variation:
+ *   \f$ u(x,y) = A \, \cos(B\,\phi(Var)) \sin(C \,\pi \, \phi(Var)) \f$,
+ * where \f$ \phi(Var) \f$ represents the mapping of Var into the domain [-1:1] \n
+ * Var is either x or y, depending on the chosen direction. \n
+ */
+class ModulatedSinusoidalVariation_ExactSolution: public ExactSolutionBasicType{
+public:
+
+  //! Basic Constructor
+  ModulatedSinusoidalVariation_ExactSolution(void): MinCoord(-1.0),
+						    MaxCoord( 1.0),
+						    Direction(X_DIRECTION),
+						    A(1.0), B(3.0), C(5.0){
+    // Name the exact solution
+    ExactSolutionName = "Modulated sinusoidal wave, w(x,y) = A*cos(B*Var)*sin(C*PI*Var), Var in [Min Var,Max Var]";
+  };
+
+  //! Return exact solution 
+  double EvaluateSolutionAt(const double &x, const double &y) const;
+
+  //! Return the one dimensional solution
+  double EvaluateSolutionAt_OneVariable(const double &Var) const;
+
+  //! Calculate the PDE RHS
+  double PDE_RighHandSide(const double &x, const double &y) const {return 0.0; }
+
+  //! Update internal variables
+  void Set_ParticularSolution_Parameters(void){ };
+
+  //! Parse the input control parameters
+  void Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP, int & i_command);
+
+  //! Print relevant parameters
+  void Print_Info(std::ostream & out_file);
+
+  //! Broadcast relevant parameters
+  void Broadcast(void);
+
+private:
+  double MinCoord;      //!< minimum coordinate
+  double MaxCoord;	//!< maximum coordinate
+  short Direction;	//!< the direction of interest ('x' or 'y')
+  double A, B, C;       //!< variation parameters
+};
+
+//! Return exact solution 
+inline double ModulatedSinusoidalVariation_ExactSolution::
+EvaluateSolutionAt(const double &x, const double &y) const {
+  if (Direction == X_DIRECTION) {
+    return EvaluateSolutionAt_OneVariable(x);
+  } else {
+    return EvaluateSolutionAt_OneVariable(y);
+  }
+}
+
+//! Return the one dimensional solution
+inline double ModulatedSinusoidalVariation_ExactSolution::
+EvaluateSolutionAt_OneVariable(const double &Var) const {
+  if (Var<MinCoord || Var>MaxCoord){
+    return 0.0;
+  } else {
+    return ( A * cos(B * (ConvertDomainToMinusOneOne(MinCoord,MaxCoord,Var))) *
+	     sin(C * (ConvertDomainToMinusOneOne(MinCoord,MaxCoord,Var))*PI) );
+  }
+}
 
 #endif

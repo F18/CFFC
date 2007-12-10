@@ -100,6 +100,14 @@ void AdvectDiffuse2D_ExactSolutions::SetExactSolution(const short &SolutionIndex
     ExactSoln = new AdvectionDiffusionInRectangularChannel_ExactSolution;
     break;
   
+  case AD2D_EXACT_SOLUTION_SINUSOIDAL_WAVE :
+    ExactSoln = new SinusoidalVariation_ExactSolution;
+    break;
+
+  case AD2D_EXACT_SOLUTION_MODULATED_SINUSOIDAL_WAVE:
+    ExactSoln = new ModulatedSinusoidalVariation_ExactSolution;
+    break;
+
   default:
     throw runtime_error("AdvectDiffuse2D_ExactSolutions::SetExactSolution() ERROR! Unknown exact solution type index.");
   }
@@ -154,6 +162,20 @@ void AdvectDiffuse2D_ExactSolutions::Parse_Next_Input_Control_Parameter(AdvectDi
       SetExactSolution(AD2D_EXACT_SOLUTION_PURE_CIRCULAR_ADVECTION_AT_CONSTANT_SPIN);
     } else if ( strcmp(IP.Next_Control_Parameter, "Advection_Diffusion_In_Rectangular_Channel") == 0 ) {
       SetExactSolution(AD2D_EXACT_SOLUTION_ADVECTION_DIFFUSION_IN_RECTANGULAR_CHANNEL);
+    } else if ( strcmp(IP.Next_Control_Parameter, "Sinusoidal_Wave") == 0 ) {
+      SetExactSolution(AD2D_EXACT_SOLUTION_SINUSOIDAL_WAVE);
+    } else if ( strcmp(IP.Next_Control_Parameter, "Abgral_Function") == 0 ) {
+      SetExactSolution(AD2D_EXACT_SOLUTION_ABGRAL_FUNCTION);
+    } else if ( strcmp(IP.Next_Control_Parameter, "Sinusoidal_Exponential_Wave") == 0 ) {
+      SetExactSolution(AD2D_EXACT_SOLUTION_SINUSOIDAL_EXPONENTIAL_WAVE);
+    } else if ( strcmp(IP.Next_Control_Parameter, "Sinusoidal_Exponential_Rotated_Wave") == 0 ) {
+      SetExactSolution(AD2D_EXACT_SOLUTION_SINUSOIDAL_EXPONENTIAL_ROTATED_WAVE);
+    } else if ( strcmp(IP.Next_Control_Parameter, "Cosine_Hill") == 0 ) {
+      SetExactSolution(AD2D_EXACT_SOLUTION_COSINE_HILL);
+    } else if ( strcmp(IP.Next_Control_Parameter, "Hyper_Tangent") == 0 ) {
+      SetExactSolution(AD2D_EXACT_SOLUTION_HYPER_TANGENT);
+    } else if ( strcmp(IP.Next_Control_Parameter, "Modulated_Sinusoidal_Wave") == 0 ) {
+      SetExactSolution(AD2D_EXACT_SOLUTION_MODULATED_SINUSOIDAL_WAVE);
     } else {
       i_command = INVALID_INPUT_CODE;
       return;

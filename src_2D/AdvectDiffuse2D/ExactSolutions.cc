@@ -1304,3 +1304,252 @@ Broadcast(void){
  
 #endif
 }
+
+
+/**********************************************
+ * SinusoidalVariation_ExactSolution Members  *
+ *********************************************/
+
+/*! 
+ * Parse next input control parameter
+ */
+void SinusoidalVariation_ExactSolution::
+Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP,
+				   int & i_command){
+
+  // Call the parser from the base class
+  ExactSolutionBasicType::Parse_Next_Input_Control_Parameter(IP,i_command);
+
+  // Check if the next control parameter has already been identified
+  if (i_command != INVALID_INPUT_CODE){
+    return;
+  }
+  
+  char buffer[256];
+
+  // Try to match the next control parameter
+  if (strcmp(IP.Next_Control_Parameter, "Direction_of_Variation") == 0) {
+    IP.Get_Next_Input_Control_Parameter();
+    if ( strcmp(IP.Next_Control_Parameter, "X-direction") == 0 ){
+      Direction = X_DIRECTION;
+      
+      // Name the exact solution
+      ExactSolutionName = "Sinusoidal wave, w(x,y) = sin(PI*x), x between [Min X-Coordinate,Max X-Coordinate]";
+    } else if ( strcmp(IP.Next_Control_Parameter, "Y-direction") == 0 ) {
+      Direction = Y_DIRECTION;
+
+      // Name the exact solution
+      ExactSolutionName = "Sinusoidal wave, w(x,y) = sin(PI*y), y between [Min Y-Coordinate,Min Y-Coordinate]";
+    } else {
+      i_command = INVALID_INPUT_CODE;
+      return;
+    }
+    i_command = 0;
+
+  } else if (strcmp(IP.Next_Control_Parameter, "MinCoord_Coeff") == 0) {
+    i_command = 0;
+    ++IP.Line_Number;
+    IP.Input_File >> MinCoord;
+    IP.Input_File.getline(buffer, sizeof(buffer));
+
+  } else if (strcmp(IP.Next_Control_Parameter, "MaxCoord_Coeff") == 0) {
+    i_command = 0;
+    ++IP.Line_Number;
+    IP.Input_File >> MaxCoord;
+    IP.Input_File.getline(buffer, sizeof(buffer));
+
+  } else {
+    i_command = INVALID_INPUT_CODE;
+    return;
+  } // endif
+
+}
+
+/*! 
+ * Print relevant parameters
+ */
+void SinusoidalVariation_ExactSolution::
+Print_Info(std::ostream & out_file){
+  
+  if (Direction == X_DIRECTION) {
+    out_file << "\n     -> Min X-Coordinate : " << MinCoord
+	     << "\n     -> Max X-Coordinate : " << MaxCoord;
+  } else {
+    out_file << "\n     -> Min Y-Coordinate : " << MinCoord
+	     << "\n     -> Max Y-Coordinate : " << MaxCoord;
+  }
+
+  // call the base Print_Info
+  ExactSolutionBasicType::Print_Info(out_file);
+}
+
+/*!
+ * Broadcast the SinusoidalVariation_ExactSolution
+ * variables to all processors associated with the specified 
+ * communicator from the specified processor using the MPI broadcast 
+ * routine.
+ */
+void SinusoidalVariation_ExactSolution::
+Broadcast(void){
+
+#ifdef _MPI_VERSION
+
+  MPI::COMM_WORLD.Bcast(&Direction,
+			1, 
+			MPI::SHORT, 0);
+  MPI::COMM_WORLD.Bcast(&MinCoord,
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&MaxCoord,
+			1, 
+			MPI::DOUBLE, 0);
+
+  // Update all parameters on processors different than
+  // the main one
+  if (!CFFC_Primary_MPI_Processor()){
+    Set_ParticularSolution_Parameters();
+  }
+ 
+#endif
+}
+
+
+/*******************************************************
+ * ModulatedSinusoidalVariation_ExactSolution Members  *
+ ******************************************************/
+
+/*! 
+ * Parse next input control parameter
+ */
+void ModulatedSinusoidalVariation_ExactSolution::
+Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP,
+				   int & i_command){
+
+  // Call the parser from the base class
+  ExactSolutionBasicType::Parse_Next_Input_Control_Parameter(IP,i_command);
+
+  // Check if the next control parameter has already been identified
+  if (i_command != INVALID_INPUT_CODE){
+    return;
+  }
+  
+  char buffer[256];
+
+  // Try to match the next control parameter
+  if (strcmp(IP.Next_Control_Parameter, "Direction_of_Variation") == 0) {
+    IP.Get_Next_Input_Control_Parameter();
+    if ( strcmp(IP.Next_Control_Parameter, "X-direction") == 0 ){
+      Direction = X_DIRECTION;
+      
+      // Name the exact solution
+      ExactSolutionName = "Modulated sinusoidal wave, w(x,y) = A*cos(B*x)*sin(C*PI*x), x between [Min X,Max X]";
+    } else if ( strcmp(IP.Next_Control_Parameter, "Y-direction") == 0 ) {
+      Direction = Y_DIRECTION;
+
+      // Name the exact solution
+      ExactSolutionName = "Modulated sinusoidal wave, w(x,y) = A*cos(B*y)*sin(C*PI*y), y between [Min Y,Min Y]";
+    } else {
+      i_command = INVALID_INPUT_CODE;
+      return;
+    }
+    i_command = 0;
+
+  } else if (strcmp(IP.Next_Control_Parameter, "MinCoord_Coeff") == 0) {
+    i_command = 0;
+    ++IP.Line_Number;
+    IP.Input_File >> MinCoord;
+    IP.Input_File.getline(buffer, sizeof(buffer));
+
+  } else if (strcmp(IP.Next_Control_Parameter, "MaxCoord_Coeff") == 0) {
+    i_command = 0;
+    ++IP.Line_Number;
+    IP.Input_File >> MaxCoord;
+    IP.Input_File.getline(buffer, sizeof(buffer));
+
+  } else if (strcmp(IP.Next_Control_Parameter, "A_Coeff") == 0) {
+    i_command = 0;
+    ++IP.Line_Number;
+    IP.Input_File >> A;
+    IP.Input_File.getline(buffer, sizeof(buffer));
+
+  } else if (strcmp(IP.Next_Control_Parameter, "B_Coeff") == 0) {
+    i_command = 0;
+    ++IP.Line_Number;
+    IP.Input_File >> B;
+    IP.Input_File.getline(buffer, sizeof(buffer));
+
+  } else if (strcmp(IP.Next_Control_Parameter, "C_Coeff") == 0) {
+    i_command = 0;
+    ++IP.Line_Number;
+    IP.Input_File >> C;
+    IP.Input_File.getline(buffer, sizeof(buffer));
+
+  } else {
+    i_command = INVALID_INPUT_CODE;
+    return;
+  } // endif
+
+}
+
+/*! 
+ * Print relevant parameters
+ */
+void ModulatedSinusoidalVariation_ExactSolution::
+Print_Info(std::ostream & out_file){
+  
+  out_file << "\n     -> A : " << A
+	   << "\n     -> B : " << B
+	   << "\n     -> C : " << C;
+  
+
+  if (Direction == X_DIRECTION) {
+    out_file << "\n     -> Min X-Coordinate : " << MinCoord
+	     << "\n     -> Max X-Coordinate : " << MaxCoord;
+  } else {
+    out_file << "\n     -> Min Y-Coordinate : " << MinCoord
+	     << "\n     -> Max Y-Coordinate : " << MaxCoord;
+  }
+
+  // call the base Print_Info
+  ExactSolutionBasicType::Print_Info(out_file);
+}
+
+/*!
+ * Broadcast the SinusoidalVariation_ExactSolution
+ * variables to all processors associated with the specified 
+ * communicator from the specified processor using the MPI broadcast 
+ * routine.
+ */
+void ModulatedSinusoidalVariation_ExactSolution::
+Broadcast(void){
+
+#ifdef _MPI_VERSION
+
+  MPI::COMM_WORLD.Bcast(&Direction,
+			1, 
+			MPI::SHORT, 0);
+  MPI::COMM_WORLD.Bcast(&MinCoord,
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&MaxCoord,
+			1, 
+			MPI::DOUBLE, 0);
+
+  MPI::COMM_WORLD.Bcast(&A,
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&B,
+			1, 
+			MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&C,
+			1, 
+			MPI::DOUBLE, 0);
+
+  // Update all parameters on processors different than
+  // the main one
+  if (!CFFC_Primary_MPI_Processor()){
+    Set_ParticularSolution_Parameters();
+  }
+ 
+#endif
+}

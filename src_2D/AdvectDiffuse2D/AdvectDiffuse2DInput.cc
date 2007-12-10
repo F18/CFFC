@@ -181,7 +181,9 @@ ostream &operator << (ostream &out_file,
     }
 
     // ====    Inflow field ====
-    IP.Inflow->Print_Info(out_file);
+    if (IP.Inflow->IsInflowFieldSet()){
+      IP.Inflow->Print_Info(out_file);
+    }
 
     // ====    Exact solution parameters ====
     IP.ExactSoln->Print_Info(out_file);
