@@ -2208,21 +2208,6 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
     IP.Input_File >> IP.X_Rotate;
     IP.Input_File.getline(buffer, sizeof(buffer));
 
-  } else if (strcmp(IP.Next_Control_Parameter, "Velocity_Field_Type") == 0) {
-    i_command = 54;
-    Get_Next_Input_Control_Parameter(IP);
-    strcpy(IP.Velocity_Field_Type, 
-	   IP.Next_Control_Parameter);
-    if (strcmp(IP.Velocity_Field_Type, "Zero") == 0) {
-      IP.i_Velocity_Field = VELOCITY_FIELD_ZERO;
-    } else if (strcmp(IP.Velocity_Field_Type, "Uniform") == 0) {
-      IP.i_Velocity_Field = VELOCITY_FIELD_UNIFORM;
-    } else if (strcmp(IP.Velocity_Field_Type, "Rotating") == 0) {
-      IP.i_Velocity_Field = VELOCITY_FIELD_ROTATING;
-    } else {
-      IP.i_Velocity_Field = VELOCITY_FIELD_UNIFORM;
-    } /* endif */
-
   } else if (strcmp(IP.Next_Control_Parameter, "Freeze_Limiter") == 0) {
     // Freeze_Limiter:
     i_command = 61;

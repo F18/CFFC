@@ -116,7 +116,7 @@ void CENO_Execution_Mode::Parse_Next_Input_Control_Parameter(Input_Parameters_Ty
     } else if ( strcmp(IP.Next_Control_Parameter, "Memory_Efficient") == 0 ) {
       CENO_SPEED_EFFICIENT = OFF;
     } else {
-      i_command = INVALID_INPUT_CODE;
+      i_command = INVALID_INPUT_VALUE;
       return;
     }
     i_command = 0;

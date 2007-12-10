@@ -42,7 +42,7 @@ int VelocityFields::Set_Velocity_Field_Type(const char * FieldType){
   } else if ( strcmp(FieldType, "Rotational_Uniform") == 0 ) {
     i_Velocity_Field_Type = VELOCITY_FIELD_UNIFORM_ROTATIONAL_WRT_ARBITRATY_POINT;
   } else {
-    return INVALID_INPUT_CODE;
+    return INVALID_INPUT_VALUE;
   }
   return 0;
 }
@@ -60,7 +60,7 @@ int VelocityFields::Set_Angular_Velocity_Variation(const char * VariationType){
     RotationalIntensity = InverseVariationAngularVelocity;
     i_RotationalIntensity = ANGULAR_VELOCITY_INVERSE_PROPORTIONAL;
   } else {
-    return INVALID_INPUT_CODE;
+    return INVALID_INPUT_VALUE;
   }
   return 0;
 }

@@ -28,7 +28,7 @@ int DiffusionFields::Set_Diffusion_Field_Type(const char * FieldType){
   } else if ( strcmp(FieldType, "Constant") == 0 ) {
     i_Diffusion_Field_Type = DIFFUSION_FIELD_CONSTANT;
   } else {
-    return INVALID_INPUT_CODE;
+    return INVALID_INPUT_VALUE;
   }
   return 0;
 }

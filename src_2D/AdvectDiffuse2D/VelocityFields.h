@@ -13,6 +13,7 @@
 /* Include CFFC header files */
 #include "../Math/Vector2D.h"
 #include "../CFD/CFD.h"
+#include "../Utilities/Utilities.h"
 
 /*!
  * \class VelocityFields

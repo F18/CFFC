@@ -41,7 +41,7 @@ void ExactSolutionBasicType::Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_
     } else if ( strcmp(IP.Next_Control_Parameter, "Gradient") == 0 ) {
       Accuracy_Parameter = Grad;
     } else {
-      i_command = INVALID_INPUT_CODE;
+      i_command = INVALID_INPUT_VALUE;
       return;
     }
     i_command = 0;
@@ -1065,7 +1065,7 @@ Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP,
     } else if ( strcmp(IP.Next_Control_Parameter, "y-axis") == 0 ) {
       Direction_Of_Variation = Y_DIRECTION;
     } else {
-      i_command = INVALID_INPUT_CODE;
+      i_command = INVALID_INPUT_VALUE;
       return;
     }
     i_command = 0;
@@ -1341,7 +1341,7 @@ Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP,
       // Name the exact solution
       ExactSolutionName = "Sinusoidal wave, w(x,y) = sin(PI*y), y between [Min Y-Coordinate,Min Y-Coordinate]";
     } else {
-      i_command = INVALID_INPUT_CODE;
+      i_command = INVALID_INPUT_VALUE;
       return;
     }
     i_command = 0;
@@ -1449,7 +1449,7 @@ Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP,
       // Name the exact solution
       ExactSolutionName = "Modulated sinusoidal wave, w(x,y) = A*cos(B*y)*sin(C*PI*y), y between [Min Y,Min Y]";
     } else {
-      i_command = INVALID_INPUT_CODE;
+      i_command = INVALID_INPUT_VALUE;
       return;
     }
     i_command = 0;

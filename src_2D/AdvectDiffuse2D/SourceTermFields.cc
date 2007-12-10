@@ -94,7 +94,7 @@ void SourceTermFields::Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_
     } else if ( strcmp(IP.Next_Control_Parameter, "Exponential_Variation") == 0 ) {
       SetSourceField(SOURCE_FIELD_EXPONENTIAL_VARIATION);
     } else {
-      i_command = INVALID_INPUT_CODE;
+      i_command = INVALID_INPUT_VALUE;
       return;
     }
     i_command = 0;
