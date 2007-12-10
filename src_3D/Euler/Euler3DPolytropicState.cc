@@ -248,11 +248,11 @@ double Euler3D_Polytropic_pState::rhov(const Vector3D &n) const {
  * \f$ T0 = \frac{p}{\rho R} \left(1 + \frac{1}{2} \boldmath{\bar{v}}^2 \frac{(\gamma-1) \rho}{\gamma p}\right)   \f$
  */
 double Euler3D_Polytropic_pState::To(void) {
-    return ((p/(rho*R))*(ONE+HALF*gm1*sqr(uo())/(g*p/rho)));
+    return ((p/(rho*R))*(ONE+HALF*gm1*v.sqr()/(g*p/rho)));
 }
 
 double Euler3D_Polytropic_pState::To(void) const {
-    return ((p/(rho*R))*(ONE+HALF*gm1*sqr(uo())/(g*p/rho)));
+    return ((p/(rho*R))*(ONE+HALF*gm1*v.sqr()/(g*p/rho)));
 }
 
 // Stagnation pressure. 
@@ -260,11 +260,11 @@ double Euler3D_Polytropic_pState::To(void) const {
  * \f$ p0 = p (1 + \frac{1}{2} \boldmath{\bar{v}}^2 \frac{(\gamma-1) \rho}{\gamma p})^{(\frac{\gamma}{\gamma-1})}   \f$
  */
 double Euler3D_Polytropic_pState::po(void) {
-    return (p*pow(ONE+HALF*gm1*sqr(uo())/(g*p/rho), g*gm1i));
+    return (p*pow(ONE+HALF*gm1*v.sqr()/(g*p/rho), g*gm1i));
 }
 
 double Euler3D_Polytropic_pState::po(void) const {
-    return (p*pow(ONE+HALF*gm1*sqr(uo())/(g*p/rho), g*gm1i));
+    return (p*pow(ONE+HALF*gm1*v.sqr()/(g*p/rho), g*gm1i));
 }
 
 // Stagnation sound speed. 
@@ -272,11 +272,11 @@ double Euler3D_Polytropic_pState::po(void) const {
  * \f$ a0 = \sqrt{\frac{\gamma p}{\rho} \left(1 + \frac{1}{2} \boldmath{\bar{v}}^2 \frac{(\gamma-1) \rho}{\gamma p}\right)}  \f$
  */
 double Euler3D_Polytropic_pState::ao(void) {
-    return (sqrt((g*p/rho)*(ONE+HALF*gm1*sqr(uo())/(g*p/rho))));
+    return (sqrt((g*p/rho)*(ONE+HALF*gm1*v.sqr()/(g*p/rho))));
 }
 
 double Euler3D_Polytropic_pState::ao(void) const {
-    return (sqrt((g*p/rho)*(ONE+HALF*gm1*sqr(uo())/(g*p/rho))));
+    return (sqrt((g*p/rho)*(ONE+HALF*gm1*v.sqr()/(g*p/rho))));
 }
 
 // Stagnation enthalpy.
@@ -284,13 +284,13 @@ double Euler3D_Polytropic_pState::ao(void) const {
  * \f$ h0 = \left(\frac{\gamma p}{\rho (\gamma-1)}+\frac{1}{2}\boldmath{\bar{v}}^2\right) \left(1 + \frac{1}{2} \boldmath{\bar{v}}^2 \frac{(\gamma-1) \rho}{\gamma p}\right)  \f$
  */
 double Euler3D_Polytropic_pState::ho(void) {
-    return ((g*p/(gm1*rho) + HALF*sqr(uo()))*
-            (ONE+HALF*gm1*sqr(uo())/(g*p/rho)));
+    return ((g*p/(gm1*rho) + HALF*v.sqr())
+            *(ONE+HALF*gm1*v.sqr()/(g*p/rho)));
 }
 
-double Euler3D_Polytropic_pState::ho(void) const {
-    return ((g*p/(gm1*rho) + HALF*sqr(uo()))
-            *(ONE+HALF*gm1*sqr(uo())/(g*p/rho)));
+double Euler3D_Polytropic_pState::ho(void) const { 
+    return ((g*p/(gm1*rho) + HALF*v.sqr())
+            *(ONE+HALF*gm1*v.sqr()/(g*p/rho)));
 }
 
 /* 
@@ -990,9 +990,11 @@ double Euler3D_Polytropic_pState::lambda_z(int index) const {
     \return right conservative eigenvector with given index
 */
 Euler3D_Polytropic_cState Euler3D_Polytropic_pState::rc_x(const int &index){
+    double c;
     switch(index){
         case 1: 
-            return (Euler3D_Polytropic_cState(ONE, v.x-a(), v.y, v.z, h()-v.x*a()));
+            c = a();
+            return (Euler3D_Polytropic_cState(ONE, v.x-c, v.y, v.z, h()-v.x*c));
         case 2:
             return (Euler3D_Polytropic_cState(ONE, v.x, v.y, v.z, HALF*v.sqr())); 
         case 3:
@@ -1000,14 +1002,17 @@ Euler3D_Polytropic_cState Euler3D_Polytropic_pState::rc_x(const int &index){
         case 4: 
             return (Euler3D_Polytropic_cState(ZERO, ZERO, ZERO, rho, rho*v.z));
         case 5: 
-            return (Euler3D_Polytropic_cState(ONE, v.x+a(), v.y, v.z, h()+v.x*a()));
+            c = a();
+            return (Euler3D_Polytropic_cState(ONE, v.x+c, v.y, v.z, h()+v.x*c));
     }		
 }
 
 Euler3D_Polytropic_cState Euler3D_Polytropic_pState::rc_x(const int &index) const{
+    double c;
     switch(index){
         case 1: 
-            return (Euler3D_Polytropic_cState(ONE, v.x-a(), v.y, v.z, h()-v.x*a()));
+            c = a();
+            return (Euler3D_Polytropic_cState(ONE, v.x-c, v.y, v.z, h()-v.x*c));
         case 2:
             return (Euler3D_Polytropic_cState(ONE, v.x, v.y, v.z, HALF*v.sqr())); 
         case 3:
@@ -1015,14 +1020,17 @@ Euler3D_Polytropic_cState Euler3D_Polytropic_pState::rc_x(const int &index) cons
         case 4: 
             return (Euler3D_Polytropic_cState(ZERO, ZERO, ZERO, rho, rho*v.z));
         case 5: 
-            return (Euler3D_Polytropic_cState(ONE, v.x+a(), v.y, v.z, h()+v.x*a()));
+            c = a();
+            return (Euler3D_Polytropic_cState(ONE, v.x+c, v.y, v.z, h()+v.x*c));
     }		
 }
 
 Euler3D_Polytropic_cState Euler3D_Polytropic_pState::rc(const int &index){
+    double c;
     switch(index){
         case 1: 
-            return (Euler3D_Polytropic_cState(ONE, v.x-a(), v.y, v.z, h()-v.x*a()));
+            c = a();
+            return (Euler3D_Polytropic_cState(ONE, v.x-c, v.y, v.z, h()-v.x*c));
         case 2:
             return (Euler3D_Polytropic_cState(ONE, v.x, v.y, v.z, HALF*v.sqr())); 
         case 3:
@@ -1030,14 +1038,17 @@ Euler3D_Polytropic_cState Euler3D_Polytropic_pState::rc(const int &index){
         case 4: 
             return (Euler3D_Polytropic_cState(ZERO, ZERO, ZERO, rho, rho*v.z));
         case 5: 
-            return (Euler3D_Polytropic_cState(ONE, v.x+a(), v.y, v.z, h()+v.x*a()));
+            c = a();
+            return (Euler3D_Polytropic_cState(ONE, v.x+c, v.y, v.z, h()+v.x*c));
     }		
 }
 
 Euler3D_Polytropic_cState Euler3D_Polytropic_pState::rc(const int &index) const{
+    double c;
     switch(index){
         case 1: 
-            return (Euler3D_Polytropic_cState(ONE, v.x-a(), v.y, v.z, h()-v.x*a()));
+            c = a();
+            return (Euler3D_Polytropic_cState(ONE, v.x-c, v.y, v.z, h()-v.x*c));
         case 2:
             return (Euler3D_Polytropic_cState(ONE, v.x, v.y, v.z, HALF*v.sqr())); 
         case 3:
@@ -1045,7 +1056,8 @@ Euler3D_Polytropic_cState Euler3D_Polytropic_pState::rc(const int &index) const{
         case 4: 
             return (Euler3D_Polytropic_cState(ZERO, ZERO, ZERO, rho, rho*v.z));
         case 5: 
-            return (Euler3D_Polytropic_cState(ONE, v.x+a(), v.y, v.z, h()+v.x*a()));
+            c = a();
+            return (Euler3D_Polytropic_cState(ONE, v.x+c, v.y, v.z, h()+v.x*c));
     }		
 }
 
@@ -1067,9 +1079,11 @@ Euler3D_Polytropic_cState Euler3D_Polytropic_pState::rc(const int &index) const{
     \return right conservative eigenvector with given index
 */
 Euler3D_Polytropic_cState Euler3D_Polytropic_pState::rc_y(const int &index) {
+    double c;
     switch(index){
         case 1: 
-            return (Euler3D_Polytropic_cState(ONE, v.x, v.y-a(), v.z, h()-v.y*a()));
+            c = a();
+            return (Euler3D_Polytropic_cState(ONE, v.x, v.y-c, v.z, h()-v.y*c));
         case 2:
             return (Euler3D_Polytropic_cState(ONE, v.x, v.y, v.z, HALF*v.sqr()));
         case 3:
@@ -1077,14 +1091,17 @@ Euler3D_Polytropic_cState Euler3D_Polytropic_pState::rc_y(const int &index) {
         case 4: 
             return (Euler3D_Polytropic_cState(ZERO, ZERO, ZERO, rho, rho*v.z));
         case 5: 
-            return (Euler3D_Polytropic_cState(ONE, v.x, v.y+a(), v.z, h()+v.y*a()));
+            c = a();
+            return (Euler3D_Polytropic_cState(ONE, v.x, v.y+c, v.z, h()+v.y*c));
     }		
 }
 
 Euler3D_Polytropic_cState Euler3D_Polytropic_pState::rc_y(const int &index) const {
+    double c;
     switch(index){
         case 1: 
-            return (Euler3D_Polytropic_cState(ONE, v.x, v.y-a(), v.z, h()-v.y*a()));
+            c = a();
+            return (Euler3D_Polytropic_cState(ONE, v.x, v.y-c, v.z, h()-v.y*c));
         case 2:
             return (Euler3D_Polytropic_cState(ONE, v.x, v.y, v.z, HALF*v.sqr()));
         case 3:
@@ -1092,7 +1109,8 @@ Euler3D_Polytropic_cState Euler3D_Polytropic_pState::rc_y(const int &index) cons
         case 4: 
             return (Euler3D_Polytropic_cState(ZERO, ZERO, ZERO, rho, rho*v.z));
         case 5: 
-            return (Euler3D_Polytropic_cState(ONE, v.x, v.y+a(), v.z, h()+v.y*a()));
+            c = a();
+            return (Euler3D_Polytropic_cState(ONE, v.x, v.y+c, v.z, h()+v.y*c));
     }		
 }
 
@@ -1114,9 +1132,11 @@ Euler3D_Polytropic_cState Euler3D_Polytropic_pState::rc_y(const int &index) cons
     \return right conservative eigenvector with given index
 */
 Euler3D_Polytropic_cState Euler3D_Polytropic_pState::rc_z(const int &index) {
+    double c;
     switch(index){
         case 1: 
-            return (Euler3D_Polytropic_cState(ONE, v.x, v.y, v.z-a(), h()-v.z*a()));
+            c = a();
+            return (Euler3D_Polytropic_cState(ONE, v.x, v.y, v.z-c, h()-v.z*c));
         case 2:
             return (Euler3D_Polytropic_cState(ONE, v.x, v.y, v.z, HALF*v.sqr()));
         case 3:
@@ -1124,14 +1144,17 @@ Euler3D_Polytropic_cState Euler3D_Polytropic_pState::rc_z(const int &index) {
         case 4: 
             return (Euler3D_Polytropic_cState(ZERO, ZERO, rho, ZERO, rho*v.y));
         case 5: 
-            return (Euler3D_Polytropic_cState(ONE, v.x, v.y, v.z+a(), h()+v.z*a()));
+            c = a();
+            return (Euler3D_Polytropic_cState(ONE, v.x, v.y, v.z+c, h()+v.z*c));
     }		
 }
 
 Euler3D_Polytropic_cState Euler3D_Polytropic_pState::rc_z(const int &index) const {
+    double c;
     switch(index){
         case 1: 
-            return (Euler3D_Polytropic_cState(ONE, v.x, v.y, v.z-a(), h()-v.z*a()));
+            c = a();
+            return (Euler3D_Polytropic_cState(ONE, v.x, v.y, v.z-c, h()-v.z*c));
         case 2:
             return (Euler3D_Polytropic_cState(ONE, v.x, v.y, v.z, HALF*v.sqr()));
         case 3:
@@ -1139,7 +1162,8 @@ Euler3D_Polytropic_cState Euler3D_Polytropic_pState::rc_z(const int &index) cons
         case 4: 
             return (Euler3D_Polytropic_cState(ZERO, ZERO, rho, ZERO, rho*v.y));
         case 5: 
-            return (Euler3D_Polytropic_cState(ONE, v.x, v.y, v.z+a(), h()+v.z*a()));
+            c = a();
+            return (Euler3D_Polytropic_cState(ONE, v.x, v.y, v.z+c, h()+v.z*c));
     }		
 }
 
@@ -1165,9 +1189,11 @@ Euler3D_Polytropic_cState Euler3D_Polytropic_pState::rc_z(const int &index) cons
     \return left primitive eigenvector with given index
 */
 Euler3D_Polytropic_pState Euler3D_Polytropic_pState::lp_x(const int &index) {
+    double c;
     switch(index){
         case 1: 
-            return (Euler3D_Polytropic_pState(ZERO, -rho/(TWO*a()), ZERO, ZERO, HALF/a2()));
+            c = a();
+            return (Euler3D_Polytropic_pState(ZERO, -rho/(TWO*c), ZERO, ZERO, HALF/sqr(c)));
         case 2:
             return (Euler3D_Polytropic_pState(ONE, ZERO, ZERO, ZERO, -ONE/a2())); 
         case 3:
@@ -1175,14 +1201,17 @@ Euler3D_Polytropic_pState Euler3D_Polytropic_pState::lp_x(const int &index) {
         case 4: 
             return (Euler3D_Polytropic_pState(ZERO, ZERO, ZERO, ONE, ZERO));
         case 5: 
-            return (Euler3D_Polytropic_pState(ZERO, rho/(TWO*a()), ZERO, ZERO, HALF/a2()));
+            c = a();
+            return (Euler3D_Polytropic_pState(ZERO, rho/(TWO*c), ZERO, ZERO, HALF/sqr(c)));
     }		
 }
 
 Euler3D_Polytropic_pState Euler3D_Polytropic_pState::lp_x(const int &index) const {
+    double c;
     switch(index){
         case 1: 
-            return (Euler3D_Polytropic_pState(ZERO, -rho/(TWO*a()), ZERO, ZERO, HALF/a2()));
+            c = a();
+            return (Euler3D_Polytropic_pState(ZERO, -rho/(TWO*c), ZERO, ZERO, HALF/sqr(c)));
         case 2:
             return (Euler3D_Polytropic_pState(ONE, ZERO, ZERO, ZERO, -ONE/a2())); 
         case 3:
@@ -1190,14 +1219,17 @@ Euler3D_Polytropic_pState Euler3D_Polytropic_pState::lp_x(const int &index) cons
         case 4: 
             return (Euler3D_Polytropic_pState(ZERO, ZERO, ZERO, ONE, ZERO));
         case 5: 
-            return (Euler3D_Polytropic_pState(ZERO, rho/(TWO*a()), ZERO, ZERO, HALF/a2()));
-    }		
+            c = a();
+            return (Euler3D_Polytropic_pState(ZERO, rho/(TWO*c), ZERO, ZERO, HALF/sqr(c)));
+    }	
 }
 
 Euler3D_Polytropic_pState Euler3D_Polytropic_pState::lp(const int &index) {
+    double c;
     switch(index){
         case 1: 
-            return (Euler3D_Polytropic_pState(ZERO, -rho/(TWO*a()), ZERO, ZERO, HALF/a2()));
+            c = a();
+            return (Euler3D_Polytropic_pState(ZERO, -rho/(TWO*c), ZERO, ZERO, HALF/sqr(c)));
         case 2:
             return (Euler3D_Polytropic_pState(ONE, ZERO, ZERO, ZERO, -ONE/a2())); 
         case 3:
@@ -1205,14 +1237,17 @@ Euler3D_Polytropic_pState Euler3D_Polytropic_pState::lp(const int &index) {
         case 4: 
             return (Euler3D_Polytropic_pState(ZERO, ZERO, ZERO, ONE, ZERO));
         case 5: 
-            return (Euler3D_Polytropic_pState(ZERO, rho/(TWO*a()), ZERO, ZERO, HALF/a2()));
+            c = a();
+            return (Euler3D_Polytropic_pState(ZERO, rho/(TWO*c), ZERO, ZERO, HALF/sqr(c)));
     }		
 }
 
 Euler3D_Polytropic_pState Euler3D_Polytropic_pState::lp(const int &index) const {
+    double c;
     switch(index){
         case 1: 
-            return (Euler3D_Polytropic_pState(ZERO, -rho/(TWO*a()), ZERO, ZERO, HALF/a2()));
+            c = a();
+            return (Euler3D_Polytropic_pState(ZERO, -rho/(TWO*c), ZERO, ZERO, HALF/sqr(c)));
         case 2:
             return (Euler3D_Polytropic_pState(ONE, ZERO, ZERO, ZERO, -ONE/a2())); 
         case 3:
@@ -1220,8 +1255,9 @@ Euler3D_Polytropic_pState Euler3D_Polytropic_pState::lp(const int &index) const 
         case 4: 
             return (Euler3D_Polytropic_pState(ZERO, ZERO, ZERO, ONE, ZERO));
         case 5: 
-            return (Euler3D_Polytropic_pState(ZERO, rho/(TWO*a()), ZERO, ZERO, HALF/a2()));
-    }		
+            c = a();
+            return (Euler3D_Polytropic_pState(ZERO, rho/(TWO*c), ZERO, ZERO, HALF/sqr(c)));
+    }	
 }
 
 // y-direction
@@ -1241,9 +1277,11 @@ Euler3D_Polytropic_pState Euler3D_Polytropic_pState::lp(const int &index) const 
     \return left primitive eigenvector with given index
 */
 Euler3D_Polytropic_pState Euler3D_Polytropic_pState::lp_y(const int &index) {
+    double c;
     switch(index){
         case 1: 
-            return (Euler3D_Polytropic_pState(ZERO, ZERO, -rho/(TWO*a()), ZERO, HALF/a2()));
+            c = a();
+            return (Euler3D_Polytropic_pState(ZERO, ZERO, -rho/(TWO*c), ZERO, HALF/sqr(c)));
         case 2:
             return (Euler3D_Polytropic_pState(ONE, ZERO, ZERO, ZERO, -ONE/a2())); 
         case 3:
@@ -1251,14 +1289,17 @@ Euler3D_Polytropic_pState Euler3D_Polytropic_pState::lp_y(const int &index) {
         case 4: 
             return (Euler3D_Polytropic_pState(ZERO, ZERO, ZERO, ONE, ZERO));
         case 5: 
-            return (Euler3D_Polytropic_pState(ZERO, ZERO, rho/(TWO*a()), ZERO, HALF/a2()));
+            c = a();
+            return (Euler3D_Polytropic_pState(ZERO, ZERO, rho/(TWO*c), ZERO, HALF/sqr(c)));
     }		
 }
 
 Euler3D_Polytropic_pState Euler3D_Polytropic_pState::lp_y(const int &index) const {
+    double c;
     switch(index){
         case 1: 
-            return (Euler3D_Polytropic_pState(ZERO, ZERO, -rho/(TWO*a()), ZERO, HALF/a2()));
+            c = a();
+            return (Euler3D_Polytropic_pState(ZERO, ZERO, -rho/(TWO*c), ZERO, HALF/sqr(c)));
         case 2:
             return (Euler3D_Polytropic_pState(ONE, ZERO, ZERO, ZERO, -ONE/a2())); 
         case 3:
@@ -1266,8 +1307,9 @@ Euler3D_Polytropic_pState Euler3D_Polytropic_pState::lp_y(const int &index) cons
         case 4: 
             return (Euler3D_Polytropic_pState(ZERO, ZERO, ZERO, ONE, ZERO));
         case 5: 
-            return (Euler3D_Polytropic_pState(ZERO, ZERO, rho/(TWO*a()), ZERO, HALF/a2()));
-    }		
+            c = a();
+            return (Euler3D_Polytropic_pState(ZERO, ZERO, rho/(TWO*c), ZERO, HALF/sqr(c)));
+    }	
 }
 
 // z-direction
@@ -1287,9 +1329,11 @@ Euler3D_Polytropic_pState Euler3D_Polytropic_pState::lp_y(const int &index) cons
     \return left primitive eigenvector with given index
 */
 Euler3D_Polytropic_pState Euler3D_Polytropic_pState::lp_z(const int &index) {
+    double c;
     switch(index){
         case 1: 
-            return (Euler3D_Polytropic_pState(ZERO, ZERO, ZERO, -rho/(TWO*a()), HALF/a2()));
+            c = a();
+            return (Euler3D_Polytropic_pState(ZERO, ZERO, ZERO, -rho/(TWO*c), HALF/sqr(c)));
         case 2:
             return (Euler3D_Polytropic_pState(ONE, ZERO, ZERO, ZERO, -ONE/a2())); 
         case 3:
@@ -1297,14 +1341,17 @@ Euler3D_Polytropic_pState Euler3D_Polytropic_pState::lp_z(const int &index) {
         case 4: 
             return (Euler3D_Polytropic_pState(ZERO, ZERO, ONE, ZERO, ZERO));
         case 5: 
-            return (Euler3D_Polytropic_pState(ZERO, ZERO, ZERO, rho/(TWO*a()), HALF/a2()));
+            c = a();
+            return (Euler3D_Polytropic_pState(ZERO, ZERO, ZERO, rho/(TWO*c), HALF/sqr(c)));
    }		
 }
 
 Euler3D_Polytropic_pState Euler3D_Polytropic_pState::lp_z(const int &index) const {
+    double c;
     switch(index){
         case 1: 
-            return (Euler3D_Polytropic_pState(ZERO, ZERO, ZERO, -rho/(TWO*a()), HALF/a2()));
+            c = a();
+            return (Euler3D_Polytropic_pState(ZERO, ZERO, ZERO, -rho/(TWO*c), HALF/sqr(c)));
         case 2:
             return (Euler3D_Polytropic_pState(ONE, ZERO, ZERO, ZERO, -ONE/a2())); 
         case 3:
@@ -1312,7 +1359,8 @@ Euler3D_Polytropic_pState Euler3D_Polytropic_pState::lp_z(const int &index) cons
         case 4: 
             return (Euler3D_Polytropic_pState(ZERO, ZERO, ONE, ZERO, ZERO));
         case 5: 
-            return (Euler3D_Polytropic_pState(ZERO, ZERO, ZERO, rho/(TWO*a()), HALF/a2()));	
+            c = a();
+            return (Euler3D_Polytropic_pState(ZERO, ZERO, ZERO, rho/(TWO*c), HALF/sqr(c)));
     }
 }
 
@@ -1338,9 +1386,11 @@ Euler3D_Polytropic_pState Euler3D_Polytropic_pState::lp_z(const int &index) cons
 \return right primitive eigenvector with given index
 */
 Euler3D_Polytropic_pState Euler3D_Polytropic_pState::rp_x(const int &index) {
+    double c;
     switch(index) {
         case 1: 
-            return (Euler3D_Polytropic_pState(ONE, -a()/rho, ZERO, ZERO, sqr(a())));
+            c = a();
+            return (Euler3D_Polytropic_pState(ONE, -c/rho, ZERO, ZERO, sqr(c)));
         case 2:
             return (Euler3D_Polytropic_pState(ONE, ZERO, ZERO, ZERO, ZERO)); 
         case 3:
@@ -1348,14 +1398,17 @@ Euler3D_Polytropic_pState Euler3D_Polytropic_pState::rp_x(const int &index) {
         case 4: 
             return (Euler3D_Polytropic_pState(ZERO, ZERO, ZERO, ONE, ZERO));
         case 5: 
-            return (Euler3D_Polytropic_pState(ONE, a()/rho, ZERO, ZERO, sqr(a())));
+            c = a();
+            return (Euler3D_Polytropic_pState(ONE, c/rho, ZERO, ZERO, sqr(c)));
     }		
 }
 
 Euler3D_Polytropic_pState Euler3D_Polytropic_pState::rp_x(const int &index) const {
+    double c;
     switch(index) {
         case 1: 
-            return (Euler3D_Polytropic_pState(ONE, -a()/rho, ZERO, ZERO, sqr(a())));
+            c = a();
+            return (Euler3D_Polytropic_pState(ONE, -c/rho, ZERO, ZERO, sqr(c)));
         case 2:
             return (Euler3D_Polytropic_pState(ONE, ZERO, ZERO, ZERO, ZERO)); 
         case 3:
@@ -1363,14 +1416,17 @@ Euler3D_Polytropic_pState Euler3D_Polytropic_pState::rp_x(const int &index) cons
         case 4: 
             return (Euler3D_Polytropic_pState(ZERO, ZERO, ZERO, ONE, ZERO));
         case 5: 
-            return (Euler3D_Polytropic_pState(ONE, a()/rho, ZERO, ZERO, sqr(a())));
+            c = a();
+            return (Euler3D_Polytropic_pState(ONE, c/rho, ZERO, ZERO, sqr(c)));
     }		
 }
 
 Euler3D_Polytropic_pState Euler3D_Polytropic_pState::rp(const int &index) {
+    double c;
     switch(index) {
         case 1: 
-            return (Euler3D_Polytropic_pState(ONE, -a()/rho, ZERO, ZERO, sqr(a())));
+            c = a();
+            return (Euler3D_Polytropic_pState(ONE, -c/rho, ZERO, ZERO, sqr(c)));
         case 2:
             return (Euler3D_Polytropic_pState(ONE, ZERO, ZERO, ZERO, ZERO)); 
         case 3:
@@ -1378,14 +1434,17 @@ Euler3D_Polytropic_pState Euler3D_Polytropic_pState::rp(const int &index) {
         case 4: 
             return (Euler3D_Polytropic_pState(ZERO, ZERO, ZERO, ONE, ZERO));
         case 5: 
-            return (Euler3D_Polytropic_pState(ONE, a()/rho, ZERO, ZERO, sqr(a())));
+            c = a();
+            return (Euler3D_Polytropic_pState(ONE, c/rho, ZERO, ZERO, sqr(c)));
     }		
 }
 
 Euler3D_Polytropic_pState Euler3D_Polytropic_pState::rp(const int &index) const {
+    double c;
     switch(index) {
         case 1: 
-            return (Euler3D_Polytropic_pState(ONE, -a()/rho, ZERO, ZERO, sqr(a())));
+            c = a();
+            return (Euler3D_Polytropic_pState(ONE, -c/rho, ZERO, ZERO, sqr(c)));
         case 2:
             return (Euler3D_Polytropic_pState(ONE, ZERO, ZERO, ZERO, ZERO)); 
         case 3:
@@ -1393,8 +1452,9 @@ Euler3D_Polytropic_pState Euler3D_Polytropic_pState::rp(const int &index) const 
         case 4: 
             return (Euler3D_Polytropic_pState(ZERO, ZERO, ZERO, ONE, ZERO));
         case 5: 
-            return (Euler3D_Polytropic_pState(ONE, a()/rho, ZERO, ZERO, sqr(a())));
-    }		
+            c = a();
+            return (Euler3D_Polytropic_pState(ONE, c/rho, ZERO, ZERO, sqr(c)));
+    }	
 }
 
 // y-direction
@@ -1414,9 +1474,11 @@ Euler3D_Polytropic_pState Euler3D_Polytropic_pState::rp(const int &index) const 
 \return right primitive eigenvector with given index
 */
 Euler3D_Polytropic_pState Euler3D_Polytropic_pState::rp_y(const int &index) {
+    double c;
     switch(index) {
         case 1: 
-            return (Euler3D_Polytropic_pState(ONE, ZERO, -a()/rho, ZERO, sqr(a())));
+            c = a();
+            return (Euler3D_Polytropic_pState(ONE, ZERO, -c/rho, ZERO, sqr(c)));
         case 2:
             return (Euler3D_Polytropic_pState(ONE, ZERO, ZERO, ZERO, ZERO)); 
         case 3:
@@ -1424,14 +1486,17 @@ Euler3D_Polytropic_pState Euler3D_Polytropic_pState::rp_y(const int &index) {
         case 4: 
             return (Euler3D_Polytropic_pState(ZERO, ZERO, ZERO, ONE, ZERO));
         case 5: 
-            return (Euler3D_Polytropic_pState(ONE, ZERO, a()/rho, ZERO, sqr(a())));
+            c = a();
+            return (Euler3D_Polytropic_pState(ONE, ZERO, c/rho, ZERO, sqr(c)));
     }		
 }
 
 Euler3D_Polytropic_pState Euler3D_Polytropic_pState::rp_y(const int &index) const {
+    double c;
     switch(index) {
         case 1: 
-            return (Euler3D_Polytropic_pState(ONE, ZERO, -a()/rho, ZERO, sqr(a())));
+            c = a();
+            return (Euler3D_Polytropic_pState(ONE, ZERO, -c/rho, ZERO, sqr(c)));
         case 2:
             return (Euler3D_Polytropic_pState(ONE, ZERO, ZERO, ZERO, ZERO)); 
         case 3:
@@ -1439,7 +1504,8 @@ Euler3D_Polytropic_pState Euler3D_Polytropic_pState::rp_y(const int &index) cons
         case 4: 
             return (Euler3D_Polytropic_pState(ZERO, ZERO, ZERO, ONE, ZERO));
         case 5: 
-            return (Euler3D_Polytropic_pState(ONE, ZERO, a()/rho, ZERO, sqr(a())));
+            c = a();
+            return (Euler3D_Polytropic_pState(ONE, ZERO, c/rho, ZERO, sqr(c)));
     }		
 }
 
@@ -1461,9 +1527,11 @@ Euler3D_Polytropic_pState Euler3D_Polytropic_pState::rp_y(const int &index) cons
 \return right primitive eigenvector with given index
 */
 Euler3D_Polytropic_pState Euler3D_Polytropic_pState::rp_z(const int &index) {
+    double c;
     switch(index) {
         case 1: 
-            return (Euler3D_Polytropic_pState(ONE, ZERO, ZERO, -a()/rho, sqr(a())));
+            c = a();
+            return (Euler3D_Polytropic_pState(ONE, ZERO, ZERO, -c/rho, sqr(c)));
         case 2:
             return (Euler3D_Polytropic_pState(ONE, ZERO, ZERO, ZERO, ZERO)); 
         case 3:
@@ -1471,14 +1539,17 @@ Euler3D_Polytropic_pState Euler3D_Polytropic_pState::rp_z(const int &index) {
         case 4: 
             return (Euler3D_Polytropic_pState(ZERO, ZERO, ONE, ZERO, ZERO));
         case 5: 
-            return (Euler3D_Polytropic_pState(ONE, ZERO, ZERO, a()/rho, sqr(a())));
+            c = a();
+            return (Euler3D_Polytropic_pState(ONE, ZERO, ZERO, c/rho, sqr(c)));
     }		
 }
 
 Euler3D_Polytropic_pState Euler3D_Polytropic_pState::rp_z(const int &index) const{
+    double c;
     switch(index) {
         case 1: 
-            return (Euler3D_Polytropic_pState(ONE, ZERO, ZERO, -a()/rho, sqr(a())));
+            c = a();
+            return (Euler3D_Polytropic_pState(ONE, ZERO, ZERO, -c/rho, sqr(c)));
         case 2:
             return (Euler3D_Polytropic_pState(ONE, ZERO, ZERO, ZERO, ZERO)); 
         case 3:
@@ -1486,8 +1557,9 @@ Euler3D_Polytropic_pState Euler3D_Polytropic_pState::rp_z(const int &index) cons
         case 4: 
             return (Euler3D_Polytropic_pState(ZERO, ZERO, ONE, ZERO, ZERO));
         case 5: 
-            return (Euler3D_Polytropic_pState(ONE, ZERO, ZERO, a()/rho, sqr(a())));
-    }		
+            c = a();
+            return (Euler3D_Polytropic_pState(ONE, ZERO, ZERO, c/rho, sqr(c)));
+    }	
 }
 
 /*
@@ -1508,7 +1580,7 @@ Euler3D_Polytropic_pState Euler3D_Polytropic_pState::RoeAverage(const Euler3D_Po
                                                                 const Euler3D_Polytropic_pState &Wr) {
 
     double hl, hr, sqrt_rhol, sqrt_rhor;
-    double da, ua, va,wa, pa, aa2, ha, ga, gam1;
+    double da, ua, va, wa, pa, aa2, ha, ga, gam1;
 
     /* Determine the left and right state specific enthalpies
        and square roots of the density. */
@@ -1999,9 +2071,9 @@ Euler3D_Polytropic_cState Euler3D_Polytropic_pState::FluxRoe_n(const Euler3D_Pol
  *                                           Harten entropy fix.                          *
  ******************************************************************************************/
 /*!
-* Routine: lambda_plus (positive wave speeds determined using Harten entropy fix)
-*                                                      
-*/
+ * Routine: lambda_plus (positive wave speeds determined using Harten entropy fix)
+ *                                                      
+ */
 Euler3D_Polytropic_pState Euler3D_Polytropic_pState::
 lambda_plus(const Euler3D_Polytropic_pState &lambdas_a,
             const Euler3D_Polytropic_pState &lambdas_l,
@@ -2022,9 +2094,9 @@ lambda_plus(const Euler3D_Polytropic_pState &lambdas_a,
  *                                            Harten entropy fix.                         *
  ******************************************************************************************/
 /*!
-* Routine: lambda_minus (negative wave speeds determined using Harten entropy fix) 
-*                                                      
-*/
+ * Routine: lambda_minus (negative wave speeds determined using Harten entropy fix) 
+ *                                                      
+ */
 Euler3D_Polytropic_pState Euler3D_Polytropic_pState::
 lambda_minus(const Euler3D_Polytropic_pState &lambdas_a,
              const Euler3D_Polytropic_pState &lambdas_l,
@@ -2041,15 +2113,15 @@ lambda_minus(const Euler3D_Polytropic_pState &lambdas_a,
 }
 
 /*!
-* Routine: HLLE wavespeeds 
-*                                                      
-* This function returns the lambda plus and lambda minus   
-* for rotated Riemann problem aligned with norm_dir     
-* given unroated solution states Wl and Wr.             
-* Note: wavespeed.x = wavespeed_l = lambda minus.       
-*       wavespeed.y = wavespeed_r = lambda plus.        
-*                                                      
-*/ 
+ * Routine: HLLE wavespeeds 
+ *                                                      
+ * This function returns the lambda plus and lambda minus   
+ * for rotated Riemann problem aligned with norm_dir     
+ * given unroated solution states Wl and Wr.             
+ * Note: wavespeed.x = wavespeed_l = lambda minus.       
+ *       wavespeed.y = wavespeed_r = lambda plus.        
+ *                                                      
+ */ 
 Vector2D Euler3D_Polytropic_pState::HLLE_wavespeeds(const Euler3D_Polytropic_pState &Wl,
 						    const Euler3D_Polytropic_pState &Wr,
 						    const Vector3D &norm_dir){
@@ -2080,11 +2152,11 @@ Vector2D Euler3D_Polytropic_pState::HLLE_wavespeeds(const Euler3D_Polytropic_pSt
 }
 
 /*!
-* Routine: Rotate
-*                                                      
-* This function returns the primitive state aligned with the local x-axis in the norm_dir.
-*                                                      
-*/ 
+ * Routine: Rotate
+ *                                                      
+ * This function returns the primitive state aligned with the local x-axis in the norm_dir.
+ *                                                      
+ */ 
 Euler3D_Polytropic_pState Euler3D_Polytropic_pState::Rotate(const Vector3D &norm_dir) const {
 
   // for a 3D unit normal rotated to align with the x-axis
@@ -2100,12 +2172,12 @@ Euler3D_Polytropic_pState Euler3D_Polytropic_pState::Rotate(const Vector3D &norm
 }
 
 /*!
-* Routine: RotateBack
-*                                                      
-* This function returns the unrotated primitive state re-alinged from the x-axis
-* for the global problem.
-*                                                      
-*/ 
+ * Routine: RotateBack
+ *                                                      
+ * This function returns the unrotated primitive state re-alinged from the x-axis
+ * for the global problem.
+ *                                                      
+ */ 
 Euler3D_Polytropic_pState Euler3D_Polytropic_pState::RotateBack(const Vector3D &norm_dir) const {
 
   // for a 3D unit normal rotated to align with the x-axis
@@ -2208,7 +2280,7 @@ return (MovingWall(Win,
 }
 
 /*------------------------------------------------------------------------------------*
- *				 Euler3D_Polytropic_cState subroutines	              *
+ *                    Euler3D_Polytropic_cState subroutines                           *
  *------------------------------------------------------------------------------------*/
 
 /*
@@ -2456,9 +2528,9 @@ return ((g*E/rho - gm1*HALF*rhov.sqr()/sqr(rho))*
 
 
 /*
-* Primitive solution state. 
-* -------------------------
-*/
+ * Primitive solution state. 
+ * -------------------------
+ */
 /*! Compute the primitive solution state from the conservative solution state */
 Euler3D_Polytropic_pState Euler3D_Polytropic_cState::W(void) {
     return (Euler3D_Polytropic_pState(rho, v(), p()));
@@ -2474,9 +2546,9 @@ Euler3D_Polytropic_pState Euler3D_Polytropic_cState::W(const Euler3D_Polytropic_
 
 
 /* 
-* Fluxes and Jacobians
-* --------------------
-*/
+ * Fluxes and Jacobians
+ * --------------------
+ */
 
 // x-direction
 /*! see Euler3D_Polytropic_pState::Fx(void) */
@@ -2572,9 +2644,9 @@ void Euler3D_Polytropic_cState::dFzdU(DenseMatrix &dFzdU, const Euler3D_Polytrop
 }
 
 /*
-* Solution variable Jacobian.
-* ---------------------------
-*/
+ * Solution variable Jacobian.
+ * ---------------------------
+ */
 
 // dU/dW
 /*! see Euler3D_Polytropic_pState::dUdW(DenseMatrix &dUdW) */
@@ -2605,11 +2677,11 @@ void Euler3D_Polytropic_cState::dWdU(DenseMatrix &dWdU, const Euler3D_Polytropic
 }
 
 /*!
-* Routine: Rotate
-*                                                      
-* This function returns the conserved state aligned with the local x-axis in the norm_dir.
-*                                                      
-*/ 
+ * Routine: Rotate
+ *                                                      
+ * This function returns the conserved state aligned with the local x-axis in the norm_dir.
+ *                                                      
+ */ 
 Euler3D_Polytropic_cState Euler3D_Polytropic_cState::Rotate(const Vector3D &norm_dir) const {
 
   // for a 3D unit normal rotated to align with the x-axis
@@ -2625,12 +2697,12 @@ Euler3D_Polytropic_cState Euler3D_Polytropic_cState::Rotate(const Vector3D &norm
 }
 
 /*!
-* Routine: RotateBack
-*                                                      
-* This function returns the un-rotated conservative state re-alinged from the x-axis
-* for the global problem.
-*                                                      
-*/ 
+ * Routine: RotateBack
+ *                                                      
+ * This function returns the un-rotated conservative state re-alinged from the x-axis
+ * for the global problem.
+ *                                                      
+ */ 
 Euler3D_Polytropic_cState Euler3D_Polytropic_cState::RotateBack(const Vector3D &norm_dir) const {
 
   // for a 3D unit normal rotated to align with the x-axis
