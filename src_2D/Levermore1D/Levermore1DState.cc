@@ -120,14 +120,17 @@ double Levermore1D_cState::moment(int n, const Levermore1D_weights &A) const {
   if(n<length) return m_values[n];
 
   double _moment(0.0); //underscore to differentiate from function name
+  int L(length);
 
-  _moment += (double)(n-length+2)*moment(n-length+1,A);
+  while(fabs(A[L])<1e-6) {L -=2;}  //There must be something better than this.
 
-  for(int i=1; i<length-1; ++i) {
-    _moment += (double)(i) * A[i+1]*moment(n-length+i+1,A);
+  _moment += (double)(n-L+2)*moment(n-L+1,A);
+
+  for(int i=1; i<L-1; ++i) {
+    _moment += (double)(i) * A[i+1]*moment(n-L+i+1,A);
   }
 
-  _moment /= -(double)(length-1)*A[length];
+  _moment /= -(double)(L-1)*A[L];
   return _moment;
 }
 
