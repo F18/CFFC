@@ -423,6 +423,43 @@ namespace tut
     }
   }
 
+  /* Test 13:*/
+  template<>
+  template<>
+  void Levermore1D_cState_object::test<13>()
+  {
+    set_test_name("calculate moments");
+    double rho(1.225);
+    double u(132.22);
+    double p(101325.0);
+
+    double momentum(rho*u);
+    double e(p+rho*u*u);
+
+    double m = Levermore1D_weights::m();
+    double n(rho/m); //number density
+
+    double B(rho/(2.0*p));
+
+    Levermore1D_weights A;
+    A.zero();
+
+    A[1] = -B*u*u+log(n*sqrt(B/PI));
+    A[2] = 2.0*B*u;
+    A[3] = -B;
+
+    Levermore1D_cState U(A);
+    double momentU, momentA;
+
+    //check series of moments
+    for(int i=0;i<9;++i) {
+      momentU = U.moment(i,A);
+      momentA = A.integrate_conserved_moment(i);
+      ensure_distance("test", momentU, momentA, fabs(momentU)*1e-10+1e-10);
+    }
+
+  }
+
 
   //end tests
 }

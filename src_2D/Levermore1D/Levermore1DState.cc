@@ -111,6 +111,27 @@ void Levermore1D_pState::set_from_A(const Levermore1D_weights &A) {
 }
 
 /********************************************************
+ * Function: Levermore1D_cState::moment                 *
+ *                                                      *
+ * Return value of velocity moment              .       *
+ *                                                      *
+ ********************************************************/
+double Levermore1D_cState::moment(int n, const Levermore1D_weights &A) const {
+  if(n<length) return m_values[n];
+
+  double _moment(0.0); //underscore to differentiate from function name
+
+  _moment += (double)(n-length+2)*moment(n-length+1,A);
+
+  for(int i=1; i<length-1; ++i) {
+    _moment += (double)(i) * A[i+1]*moment(n-length+i+1,A);
+  }
+
+  _moment /= -(double)(length-1)*A[length];
+  return _moment;
+}
+
+/********************************************************
  * Function: Levermore1D_weights::                      *
  *                integrate_conserved_moment            *
  *                                                      *

@@ -67,6 +67,7 @@ class Levermore1D_cState : public Levermore1D_Vector{
   void Vacuum() {Levermore1D_Vector::zero();}
   void set_from_W(const Levermore1D_pState &W);
   void set_from_A(const Levermore1D_weights &A);
+  double moment(int n, const Levermore1D_weights &A) const;
 
 };
 
