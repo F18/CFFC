@@ -26,6 +26,12 @@ int AdvectDiffuse2D_Quad_Block_New::Flow_Type = FLOWTYPE_INVISCID;
 int AdvectDiffuse2D_Quad_Block_New::Axisymmetric = OFF;
 // Initialize Number_of_Residual_Norms
 int AdvectDiffuse2D_Quad_Block_New::Number_of_Residual_Norms = 1;
+// Initialize U_Node
+AdvectDiffuse2D_State_New **AdvectDiffuse2D_Quad_Block_New::U_Nodes = NULL;
+// Initialize NNi
+int AdvectDiffuse2D_Quad_Block_New::NNi = 0;
+// Initialize NNj
+int AdvectDiffuse2D_Quad_Block_New::NNj = 0;
 
 
 /*******************************************************************************
@@ -74,67 +80,120 @@ AdvectDiffuse2D_Quad_Block_New::AdvectDiffuse2D_Quad_Block_New(const AdvectDiffu
 /**********************
  * Allocate memory.            
  **********************/
-void AdvectDiffuse2D_Quad_Block_New::allocate(const int Ni, const int Nj, const int Ng) {
-  int i, j, k; assert(Ni > 1 && Nj > 1 && Ng > 1 && Ng > 1); Grid.allocate(Ni, Nj, Ng);
-  NCi = Ni+2*Ng; ICl = Ng; ICu = Ni+Ng-1;
-  NCj = Nj+2*Ng; JCl = Ng; JCu = Nj+Ng-1; Nghost = Ng;
-  U = new AdvectDiffuse2D_State_New*[NCi]; dt = new double*[NCi]; dUdt = new AdvectDiffuse2D_State_New**[NCi]; 
-  dUdx = new AdvectDiffuse2D_State_New*[NCi]; dUdy = new AdvectDiffuse2D_State_New*[NCi]; 
-  phi = new AdvectDiffuse2D_State_New*[NCi]; Uo = new AdvectDiffuse2D_State_New*[NCi];
-  for ( i = 0; i <= NCi-1 ; ++i ) {
-    U[i] = new AdvectDiffuse2D_State_New[NCj]; 
-    dt[i] = new double[NCj]; dUdt[i] = new AdvectDiffuse2D_State_New*[NCj];
-    for ( j = 0; j <= NCj-1 ; ++j ) 
-      { dUdt[i][j] = new AdvectDiffuse2D_State_New[NUMBER_OF_RESIDUAL_VECTORS_ADVECTDIFFUSE2D]; }
-    dUdx[i] = new AdvectDiffuse2D_State_New[NCj]; dUdy[i] = new AdvectDiffuse2D_State_New[NCj]; 
-    phi[i] = new AdvectDiffuse2D_State_New[NCj];
-    Uo[i] = new AdvectDiffuse2D_State_New[NCj];
-  } /* endfor */
-  FluxN = new AdvectDiffuse2D_State_New[NCi]; FluxS = new AdvectDiffuse2D_State_New[NCi];
-  FluxE = new AdvectDiffuse2D_State_New[NCj]; FluxW = new AdvectDiffuse2D_State_New[NCj];
-  UoN = new AdvectDiffuse2D_State_New[NCi]; UoS = new AdvectDiffuse2D_State_New[NCi];
-  UoE = new AdvectDiffuse2D_State_New[NCj]; UoW = new AdvectDiffuse2D_State_New[NCj];
-  // Set the solution residuals, gradients, limiters, and other values to zero.
-  for (j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
-    for ( i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
-      for ( k = 0 ; k <= NUMBER_OF_RESIDUAL_VECTORS_ADVECTDIFFUSE2D-1 ; ++k ) {
-	dUdt[i][j][k].Vacuum();
-      }
-      dUdx[i][j].Vacuum(); dUdy[i][j].Vacuum();
-      phi[i][j].Vacuum();
-      Uo[i][j].Vacuum();
-      dt[i][j] = ZERO;
+void AdvectDiffuse2D_Quad_Block_New::allocate(const int &Ni, const int &Nj, const int &Ng) {
+  int i, j, k;
+  assert(Ni > 1 && Nj > 1 && Ng > 1 && Ng > 1);
+
+  // Check to see if the current block dimensions differ from the required ones.
+  if ( (Nghost != Ng) || (NCi != Ni+2*Ng) || (NCj != Nj+2*Ng) ){ 
+
+    // free the memory if there is memory allocated
+    deallocate();
+
+    // allocate new memory
+    Grid.allocate(Ni, Nj, Ng);
+    NCi = Ni+2*Ng; ICl = Ng; ICu = Ni+Ng-1;
+    NCj = Nj+2*Ng; JCl = Ng; JCu = Nj+Ng-1; Nghost = Ng;
+    U = new AdvectDiffuse2D_State_New*[NCi]; dt = new double*[NCi]; dUdt = new AdvectDiffuse2D_State_New**[NCi]; 
+    dUdx = new AdvectDiffuse2D_State_New*[NCi]; dUdy = new AdvectDiffuse2D_State_New*[NCi]; 
+    phi = new AdvectDiffuse2D_State_New*[NCi]; Uo = new AdvectDiffuse2D_State_New*[NCi];
+    for ( i = 0; i <= NCi-1 ; ++i ) {
+      U[i] = new AdvectDiffuse2D_State_New[NCj]; 
+      dt[i] = new double[NCj]; dUdt[i] = new AdvectDiffuse2D_State_New*[NCj];
+      for ( j = 0; j <= NCj-1 ; ++j )
+	{ dUdt[i][j] = new AdvectDiffuse2D_State_New[NUMBER_OF_RESIDUAL_VECTORS_ADVECTDIFFUSE2D]; }
+      dUdx[i] = new AdvectDiffuse2D_State_New[NCj]; dUdy[i] = new AdvectDiffuse2D_State_New[NCj]; 
+      phi[i] = new AdvectDiffuse2D_State_New[NCj];
+      Uo[i] = new AdvectDiffuse2D_State_New[NCj];
     } /* endfor */
-  } /* endfor */
+    FluxN = new AdvectDiffuse2D_State_New[NCi]; FluxS = new AdvectDiffuse2D_State_New[NCi];
+    FluxE = new AdvectDiffuse2D_State_New[NCj]; FluxW = new AdvectDiffuse2D_State_New[NCj];
+    UoN = new AdvectDiffuse2D_State_New[NCi]; UoS = new AdvectDiffuse2D_State_New[NCi];
+    UoE = new AdvectDiffuse2D_State_New[NCj]; UoW = new AdvectDiffuse2D_State_New[NCj];
+    // Set the solution residuals, gradients, limiters, and other values to zero.
+    for (j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
+      for ( i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
+	for ( k = 0 ; k <= NUMBER_OF_RESIDUAL_VECTORS_ADVECTDIFFUSE2D-1 ; ++k ) {
+	  dUdt[i][j][k].Vacuum();
+	}
+	dUdx[i][j].Vacuum(); dUdy[i][j].Vacuum();
+	phi[i][j].Vacuum();
+	Uo[i][j].Vacuum();
+	dt[i][j] = ZERO;
+      } /* endfor */
+    } /* endfor */
+
+    // allocate the static memory pool U_Nodes if not enough memory is allocated
+    allocate_U_Nodes(NCi+1,NCj+1);
+
+  }/* endif */
 }
 
 /***********************
  * Deallocate memory.   
  ***********************/
 void AdvectDiffuse2D_Quad_Block_New::deallocate(void) {
-  int i, j; Grid.deallocate();
-  for ( i = 0; i <= NCi-1 ; ++i ) {
-    delete []U[i]; U[i] = NULL;
-    delete []dt[i]; dt[i] = NULL; 
-    for ( j = 0; j <= NCj-1 ; ++j ) { delete []dUdt[i][j]; dUdt[i][j] = NULL; }
-    delete []dUdt[i]; dUdt[i] = NULL;
-    delete []dUdx[i]; dUdx[i] = NULL; delete []dUdy[i]; dUdy[i] = NULL;
-    delete []phi[i]; phi[i] = NULL; delete []Uo[i]; Uo[i] = NULL;
-  } /* endfor */
-  delete []U; U = NULL; delete []dt; dt = NULL; delete []dUdt; dUdt = NULL;
-  delete []dUdx; dUdx = NULL; delete []dUdy; dUdy = NULL; 
-  delete []phi; phi = NULL; delete []Uo; Uo = NULL;
-  delete []FluxN; FluxN = NULL; delete []FluxS; FluxS = NULL;
-  delete []FluxE; FluxE = NULL; delete []FluxW; FluxW = NULL;
-  delete []UoN; UoN = NULL; delete []UoS; UoS = NULL;
-  delete []UoE; UoE = NULL; delete []UoW; UoW = NULL;
-  NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0; Nghost = 0;
+  if (U != NULL){
+    /* free the memory if there is memory allocated */
+    int i, j; Grid.deallocate();
+    for ( i = 0; i <= NCi-1 ; ++i ) {
+      delete []U[i]; U[i] = NULL;
+      delete []dt[i]; dt[i] = NULL; 
+      for ( j = 0; j <= NCj-1 ; ++j ) { delete []dUdt[i][j]; dUdt[i][j] = NULL; }
+      delete []dUdt[i]; dUdt[i] = NULL;
+      delete []dUdx[i]; dUdx[i] = NULL; delete []dUdy[i]; dUdy[i] = NULL;
+      delete []phi[i]; phi[i] = NULL; delete []Uo[i]; Uo[i] = NULL;
+    } /* endfor */
+    delete []U; U = NULL; delete []dt; dt = NULL; delete []dUdt; dUdt = NULL;
+    delete []dUdx; dUdx = NULL; delete []dUdy; dUdy = NULL; 
+    delete []phi; phi = NULL; delete []Uo; Uo = NULL;
+    delete []FluxN; FluxN = NULL; delete []FluxS; FluxS = NULL;
+    delete []FluxE; FluxE = NULL; delete []FluxW; FluxW = NULL;
+    delete []UoN; UoN = NULL; delete []UoS; UoS = NULL;
+    delete []UoE; UoE = NULL; delete []UoW; UoW = NULL;
+    NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0; Nghost = 0;
+  }
+}
+
+/***********************\\**
+ * Allocate memory U_Node
+ *************************/
+void AdvectDiffuse2D_Quad_Block_New::allocate_U_Nodes(const int &_NNi, const int &_NNj) {
+  if (NNi != _NNi || NNj != _NNj){ // memory must be reallocated
+    
+    // free the memory if there is memory allocated
+    deallocate_U_Nodes();
+
+    // allocate new memory
+    NNi = _NNi; NNj = _NNj;
+    U_Nodes = new AdvectDiffuse2D_State_New*[NNi];
+    for (int i=0; i<=NNi-1; ++i){
+      U_Nodes[i] = new AdvectDiffuse2D_State_New[NNj];
+    }
+
+    // Schedule the static memory pool to be deallocated at exit
+    std::atexit(deallocate_U_Nodes);
+  }
+}
+
+/***********************\\**
+ * Deallocate memory U_Node
+ *************************/
+void AdvectDiffuse2D_Quad_Block_New::deallocate_U_Nodes(void){
+  if (U_Nodes != NULL){
+    for (int i=0; i<=NNi-1; ++i){
+      delete [] U_Nodes[i]; U_Nodes[i] = NULL;
+    }
+
+    delete [] U_Nodes; U_Nodes = NULL;
+    NNi = 0; NNj = 0;
+  }
 }
 
 /***********************
  * Node solution state. 
  ***********************/
-AdvectDiffuse2D_State_New AdvectDiffuse2D_Quad_Block_New::Un(const int ii, const int jj) {
+AdvectDiffuse2D_State_New AdvectDiffuse2D_Quad_Block_New::Un(const int &ii, const int &jj) {
   double ax, bx, cx, dx, ay, by, cy, dy, aa, bb, cc, x, y, 
     eta1, zeta1, eta2, zeta2, eta, zeta;
   double As, Bs, Cs, Ds;
@@ -180,6 +239,24 @@ AdvectDiffuse2D_State_New AdvectDiffuse2D_Quad_Block_New::Un(const int ii, const
   Ds=U[ii][jj].u+U[ii-1][jj-1].u-U[ii-1][jj].u-U[ii][jj-1].u;
 
   return (AdvectDiffuse2D_State_New(As+Bs*zeta+Cs*eta+Ds*zeta*eta));
+}
+
+/**************************************************//**
+ * Calculate the node solution states at the interior and 
+ * boundary nodes of the quadrilateral solution block.
+ * A bilinear interpolation is used to evaluate the 
+ * nodal solutions, which are stored in the common
+ * memory pool U_Nodes.
+ *************************************************/
+void AdvectDiffuse2D_Quad_Block_New::Calculate_Nodal_Solutions(void){
+  int i,j;
+
+  for (j = JCl ; j<= JCu+1 ; ++j){
+    for (i = ICl ; i<= ICu+1 ; ++i){
+      U_Nodes[i][j] = Un(i,j);
+    } // endfor
+  } // endfor
+
 }
 
 /*********************************************//**

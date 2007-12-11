@@ -132,6 +132,9 @@ public:
   //! @name Solution state arrays:
   //@{
   AdvectDiffuse2D_State_New    **U; //!< Solution state.
+
+  /*! Storage for the solution states at the grid nodes in the calculation of diffusive fluxes */
+  static AdvectDiffuse2D_State_New    **U_Nodes;
   //@}
 
   //! @name Grid block information:
@@ -209,33 +212,45 @@ public:
   //! @name Allocate and deallocate functions.
   //@{
   //! Allocate memory for structured quadrilateral solution block.
-  void allocate(const int Ni, const int Nj, const int Ng);
+  void allocate(const int &Ni, const int &Nj, const int &Ng);
 
   //! Deallocate memory for structured quadrilateral solution block.
   void deallocate(void);
+
+  //! Allocate memory for the static memory pool U_Nodes
+  void allocate_U_Nodes(const int &_NNi, const int &_NNj);
+
+  //! Deallocate the static memory pool U_Nodes
+  static void deallocate_U_Nodes(void);
   //@}
 
   //! @name Bilinear interplation (Zingg & Yarrow).
   //@{
   //! Return solution state at specified node.
-  AdvectDiffuse2D_State_New Un(const int ii, const int jj);
+  AdvectDiffuse2D_State_New Un(const int &ii, const int &jj);
 
-  AdvectDiffuse2D_State_New UnNW(const int ii, const int jj); //!< Return solution state at cell NW node.
-  AdvectDiffuse2D_State_New UnNE(const int ii, const int jj); //!< Return solution state at cell NE node.
-  AdvectDiffuse2D_State_New UnSE(const int ii, const int jj); //!< Return solution state at cell SE node.
-  AdvectDiffuse2D_State_New UnSW(const int ii, const int jj); //!< Return solution state at cell SW node.
+  AdvectDiffuse2D_State_New UnNW(const int &ii, const int &jj); //!< Return solution state at cell NW node.
+  AdvectDiffuse2D_State_New UnNE(const int &ii, const int &jj); //!< Return solution state at cell NE node.
+  AdvectDiffuse2D_State_New UnSE(const int &ii, const int &jj); //!< Return solution state at cell SE node.
+  AdvectDiffuse2D_State_New UnSW(const int &ii, const int &jj); //!< Return solution state at cell SW node.
 
   //! Return solution state at specified node.
-  double un(const int ii, const int jj);
+  double un(const int &ii, const int &jj);
 
-  double unNW(const int ii, const int jj); //!< Return solution state at cell NW node.
-  double unNE(const int ii, const int jj); //!< Return solution state at cell NE node.
-  double unSE(const int ii, const int jj); //!< Return solution state at cell SE node.
-  double unSW(const int ii, const int jj); //!< Return solution state at cell SW node.
+  double unNW(const int &ii, const int &jj); //!< Return solution state at cell NW node.
+  double unNE(const int &ii, const int &jj); //!< Return solution state at cell NE node.
+  double unSE(const int &ii, const int &jj); //!< Return solution state at cell SE node.
+  double unSW(const int &ii, const int &jj); //!< Return solution state at cell SW node.
   //@}
 
-  //! @name Evaluate diffusive flux for the cell.
+  //! @name Field access
   //@{
+  AdvectDiffuse2D_State_New U_Node(const int &ii, const int &jj){ return U_Nodes[ii][jj]; }
+  //@}
+
+  //! @name Evaluate diffusive fluxes.
+  //@{
+  void Calculate_Nodal_Solutions(void); //!< Calculate the solution at mesh nodes
   //@}
 
   //! @name Source term member functions
@@ -402,6 +417,9 @@ public:
 private:
   AdvectDiffuse2D_Quad_Block_New(const AdvectDiffuse2D_Quad_Block_New &Soln); //!< Private copy constructor
   AdvectDiffuse2D_Quad_Block_New operator = (const AdvectDiffuse2D_Quad_Block_New &Soln);   //!< Private assignment operator
+
+  static int NNi, NNj;		//!< number of nodes in i-direction and j-direction.
+
 };
 
 
@@ -450,45 +468,45 @@ private:
 /**************************************************************************
  * AdvectDiffuse2D_Quad_Block_New::Un?? -- Get cell node solution states.     *
  **************************************************************************/
-inline AdvectDiffuse2D_State_New AdvectDiffuse2D_Quad_Block_New::UnNW(const int ii, const int jj) {
+inline AdvectDiffuse2D_State_New AdvectDiffuse2D_Quad_Block_New::UnNW(const int &ii, const int &jj) {
   return (Un(ii, jj+1));
 }
 
-inline AdvectDiffuse2D_State_New AdvectDiffuse2D_Quad_Block_New::UnNE(const int ii, const int jj) {
+inline AdvectDiffuse2D_State_New AdvectDiffuse2D_Quad_Block_New::UnNE(const int &ii, const int &jj) {
   return (Un(ii+1, jj+1));
 }
 
-inline AdvectDiffuse2D_State_New AdvectDiffuse2D_Quad_Block_New::UnSE(const int ii, const int jj) {
+inline AdvectDiffuse2D_State_New AdvectDiffuse2D_Quad_Block_New::UnSE(const int &ii, const int &jj) {
   return (Un(ii+1, jj));
 }
 
-inline AdvectDiffuse2D_State_New AdvectDiffuse2D_Quad_Block_New::UnSW(const int ii, const int jj) {
+inline AdvectDiffuse2D_State_New AdvectDiffuse2D_Quad_Block_New::UnSW(const int &ii, const int &jj) {
   return (Un(ii, jj));
 }
 
 /**************************************************************************
  * AdvectDiffuse2D_Quad_Block_New::un?? -- Get cell node solution values.     *
  **************************************************************************/
-inline double AdvectDiffuse2D_Quad_Block_New::unNW(const int ii, const int jj) {
+inline double AdvectDiffuse2D_Quad_Block_New::unNW(const int &ii, const int &jj) {
   return (un(ii, jj+1));
 }
 
-inline double AdvectDiffuse2D_Quad_Block_New::unNE(const int ii, const int jj) {
+inline double AdvectDiffuse2D_Quad_Block_New::unNE(const int &ii, const int &jj) {
   return (un(ii+1, jj+1));
 }
 
-inline double AdvectDiffuse2D_Quad_Block_New::unSE(const int ii, const int jj) {
+inline double AdvectDiffuse2D_Quad_Block_New::unSE(const int &ii, const int &jj) {
   return (un(ii+1, jj));
 }
 
-inline double AdvectDiffuse2D_Quad_Block_New::unSW(const int ii, const int jj) {
+inline double AdvectDiffuse2D_Quad_Block_New::unSW(const int &ii, const int &jj) {
   return (un(ii, jj));
 }
 
 /*********************//**
  * Node solution value. 
  ***********************/
-inline double AdvectDiffuse2D_Quad_Block_New::un(const int ii, const int jj) {
+inline double AdvectDiffuse2D_Quad_Block_New::un(const int &ii, const int &jj) {
   return Un(ii,jj)[1];
 }
 
