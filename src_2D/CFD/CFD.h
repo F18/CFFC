@@ -326,6 +326,7 @@ inline char *Date_And_Time() {
 #define BC_DIRICHLET                    11000   // Core | CGNS
 #define BC_FIXED                 BC_DIRICHLET   //      | Duplicate
 #define BC_EXACT_SOLUTION               11001   //      | CFFC
+#define BC_FROZEN                       11002   //      | CFFC
 
 //--Wall
 //  Speciality wall
@@ -571,6 +572,7 @@ inline char *Date_And_Time() {
 #define IC_POLYNOMIAL_FUNCTION        122
 #define IC_HYPER_TANGENT              123
 #define IC_EXACT_SOLUTION             124
+#define IC_INTERIOR_UNIFORM_GHOSTCELLS_EXACT 125
 
 #define IC_ELECTRIC_FIELD_UNIFORM            200
 #define IC_ELECTRIC_FIELD_QUADRUPOLE         201

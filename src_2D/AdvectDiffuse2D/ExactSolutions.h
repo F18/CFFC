@@ -165,7 +165,7 @@ class Laplace_II_ExactSolution: public ExactSolutionBasicType{
 public:
 
   //! Basic Constructor
-  Laplace_II_ExactSolution(void): A(0.0), B(0.0), C(0.0) {
+  Laplace_II_ExactSolution(void): A(0.0), B(0.0) {
     ExactSolutionName = "Laplace 2, w(x,y) = A*(x*x - y*y) + B*x*y";	// Name the exact solution
   }
 
@@ -188,7 +188,7 @@ public:
   void Broadcast(void);
 
 private:
-  double A, B, C;		//!< coefficients of the exact solution
+  double A, B;		//!< coefficients of the exact solution
 };
 
 
@@ -204,7 +204,7 @@ class Laplace_III_ExactSolution: public ExactSolutionBasicType{
 public:
 
   //! Basic Constructor
-  Laplace_III_ExactSolution(void): A(0.0), B(0.0), C(0.0) {
+  Laplace_III_ExactSolution(void): A(0.0), B(0.0) {
     ExactSolutionName = "Laplace 3, w(x,y) = A*(x*x*x - 3.0*x*y*y) + B*(3*x*x*y - y*y*y)";	// Name the exact solution
   }
 
@@ -229,7 +229,7 @@ public:
   void Broadcast(void);
 
 private:
-  double A, B, C;		//!< coefficients of the exact solution
+  double A, B;		//!< coefficients of the exact solution
 };
 
 
@@ -245,7 +245,7 @@ class Laplace_IV_ExactSolution: public ExactSolutionBasicType{
 public:
 
   //! Basic Constructor
-  Laplace_IV_ExactSolution(void): A(0.0), B(0.0), C(0.0), mu(0.0) {
+  Laplace_IV_ExactSolution(void): A(0.0), B(0.0), mu(0.0) {
     ExactSolutionName = "Laplace 4, w(x,y) = exp(mu*x)*(A*cos(mu*y) + B*sin(mu*y))";	// Name the exact solution
   }
 
@@ -270,7 +270,7 @@ public:
   void Broadcast(void);
 
 private:
-  double A, B, C, mu;		//!< coefficients of the exact solution
+  double A, B, mu;		//!< coefficients of the exact solution
 };
 
 

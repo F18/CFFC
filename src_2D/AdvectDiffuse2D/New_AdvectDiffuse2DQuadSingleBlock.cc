@@ -1100,6 +1100,33 @@ void ICs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
       throw runtime_error("ICs() ERROR! No exact solution has been set!");
     }
     break;
+  case IC_INTERIOR_UNIFORM_GHOSTCELLS_EXACT :
+    if (IP.ExactSoln->IsExactSolutionSet()) {
+      for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
+	for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
+	  if (i<SolnBlk.ICl || i>SolnBlk.ICu || j<SolnBlk.JCl || j>SolnBlk.JCu) {
+	    // Set the solution state of the ghost cells to average values calculated with
+	    // integration of the exact solution
+	    Ul.u = 
+	      SolnBlk.Grid.Integration.IntegrateFunctionOverCell(i,j,
+								 wrapped_member_function(IP.ExactSoln,
+											 &AdvectDiffuse2D_ExactSolutions::Solution,
+											 Ul.u),
+								 12,Ul.u)/SolnBlk.Grid.Cell[i][j].A;
+	    SolnBlk.U[i][j] = Ul;
+	  } else {
+	    // Set the solution state of the interior cells to the initial state Uo[0].
+	    SolnBlk.U[i][j] = Uo[1];
+	  }
+	} /* endfor */
+      } /* endfor */
+
+    } else {
+      // There is no exact solution set for this problem
+      throw runtime_error("ICs() ERROR! No exact solution has been set!");
+    }
+    break;
+
   default:
     // Set the solution state to the initial state Uo[0].
     for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
@@ -1159,6 +1186,16 @@ void Set_Boundary_Reference_State(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
       SolnBlk.UoW[j] = 0.0;
       break;
 
+    case BC_EXACT_SOLUTION :
+      // Use the exact solution to set up the reference states for this boundary type
+      if (IP.ExactSoln->IsExactSolutionSet()){
+	PointOfInterest = SolnBlk.Grid.xfaceW(SolnBlk.ICl,j);
+	SolnBlk.UoW[j] = IP.ExactSoln->Solution(PointOfInterest.x,PointOfInterest.y);
+      } else {
+	throw runtime_error("Set_Boundary_Reference_State() ERROR! There is no exact solution set for the Exact_Solution BC.");
+      }
+      break;
+
     default:
       // Set default values for the boundary condition reference states.
       SolnBlk.UoW[j] = SolnBlk.U[SolnBlk.ICl][j];
@@ -1190,6 +1227,16 @@ void Set_Boundary_Reference_State(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
     case BC_FARFIELD :
       // Reference data represents the solution value
       SolnBlk.UoE[j] = 0.0;
+      break;
+
+    case BC_EXACT_SOLUTION :
+      // Use the exact solution to set up the reference states for this boundary type
+      if (IP.ExactSoln->IsExactSolutionSet()){
+	PointOfInterest = SolnBlk.Grid.xfaceE(SolnBlk.ICu,j);
+	SolnBlk.UoE[j] = IP.ExactSoln->Solution(PointOfInterest.x,PointOfInterest.y);
+      } else {
+	throw runtime_error("Set_Boundary_Reference_State() ERROR! There is no exact solution set for the Exact_Solution BC.");
+      }
       break;
 
     default:
@@ -1228,6 +1275,16 @@ void Set_Boundary_Reference_State(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
       SolnBlk.UoS[i] = 0.0;
       break;
 
+    case BC_EXACT_SOLUTION :
+      // Use the exact solution to set up the reference states for this boundary type
+      if (IP.ExactSoln->IsExactSolutionSet()){
+	PointOfInterest = SolnBlk.Grid.xfaceS(i,SolnBlk.JCl);
+	SolnBlk.UoS[i] = IP.ExactSoln->Solution(PointOfInterest.x,PointOfInterest.y);
+      } else {
+	throw runtime_error("Set_Boundary_Reference_State() ERROR! There is no exact solution set for the Exact_Solution BC.");
+      }
+      break;
+
     default:
       // Set default values for the boundary condition reference states.
       SolnBlk.UoS[i] = SolnBlk.U[i][SolnBlk.JCl];
@@ -1261,6 +1318,16 @@ void Set_Boundary_Reference_State(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
       SolnBlk.UoN[i] = 0.0;
       break;
 
+    case BC_EXACT_SOLUTION :
+      // Use the exact solution to set up the reference states for this boundary type
+      if (IP.ExactSoln->IsExactSolutionSet()){
+	PointOfInterest = SolnBlk.Grid.xfaceN(i,SolnBlk.JCu);
+	SolnBlk.UoN[i] = IP.ExactSoln->Solution(PointOfInterest.x,PointOfInterest.y);
+      } else {
+	throw runtime_error("Set_Boundary_Reference_State() ERROR! There is no exact solution set for the Exact_Solution BC.");
+      }
+      break;
+
     default:
       // Set default values for the boundary condition reference states.
       SolnBlk.UoN[i] = SolnBlk.U[i][SolnBlk.JCu];
@@ -1291,7 +1358,12 @@ void BCs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 	 (j < SolnBlk.JCl && (SolnBlk.Grid.BCtypeS[SolnBlk.ICl-1] == BC_NONE ) ) || // <-- affects SW corner cells
 	 (j > SolnBlk.JCu && (SolnBlk.Grid.BCtypeN[SolnBlk.ICl-1] == BC_NONE ) ) )  // <-- affects NW corner cells 
       {														     
-	switch(SolnBlk.Grid.BCtypeW[j]) {									   
+	switch(SolnBlk.Grid.BCtypeW[j]) {	
+	case BC_FROZEN :
+	  // Equivalent to BC_NONE in the sense that it leaves 
+	  // the ghost cell values unchanged and 
+	  // uses the ghost cell reconstruction to 
+	  // compute the inter-cellular state.
 	case BC_NONE :
 	  break;
 
@@ -1353,6 +1425,15 @@ void BCs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 	  // Impose zero derivative in the i-direction at the boundary
 	  // This is equivalent with a constant extrapolation
 	case BC_CONSTANT_EXTRAPOLATION :
+	  for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	    SolnBlk.U[SolnBlk.ICl-ghost][j] = SolnBlk.U[SolnBlk.ICl][j];
+	  }
+	  break;
+
+	case BC_EXACT_SOLUTION :
+	  // Leave the ghost cell values unchanged.
+	  break;
+
 	default:		
 	  // Impose constant extrapolation
 	  for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
@@ -1369,6 +1450,11 @@ void BCs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 	 (j > SolnBlk.JCu && (SolnBlk.Grid.BCtypeN[SolnBlk.ICu+1] == BC_NONE ) ) )   // <-- affects NE corner cells
       {
 	switch(SolnBlk.Grid.BCtypeE[j]) {
+	case BC_FROZEN :
+	  // Equivalent to BC_NONE in the sense that it leaves 
+	  // the ghost cell values unchanged and 
+	  // uses the ghost cell reconstruction to 
+	  // compute the inter-cellular state.
 	case BC_NONE :
 	  break;
 	  
@@ -1430,6 +1516,15 @@ void BCs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 	  // Impose zero derivative in the i-direction at the boundary
 	  // This is equivalent with a constant extrapolation
 	case BC_CONSTANT_EXTRAPOLATION :
+	  for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	    SolnBlk.U[SolnBlk.ICu+ghost][j] = SolnBlk.U[SolnBlk.ICu][j];
+	  }
+	  break;
+
+	case BC_EXACT_SOLUTION :
+	  // Leave the ghost cell values unchanged.
+	  break;
+
 	default:		
 	  // Impose constant extrapolation
 	  for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
@@ -1446,6 +1541,11 @@ void BCs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 
     // Prescribe South boundary conditions.
     switch(SolnBlk.Grid.BCtypeS[i]) {
+    case BC_FROZEN :
+      // Equivalent to BC_NONE in the sense that it leaves 
+      // the ghost cell values unchanged and 
+      // uses the ghost cell reconstruction to 
+      // compute the inter-cellular state.
     case BC_NONE :
       break;
       
@@ -1507,6 +1607,15 @@ void BCs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
       // Impose zero derivative in the j-direction at the boundary
       // This is equivalent with a constant extrapolation
     case BC_CONSTANT_EXTRAPOLATION :
+      for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	SolnBlk.U[i][SolnBlk.JCl-ghost] = SolnBlk.U[i][SolnBlk.JCl];
+      }
+      break;
+
+    case BC_EXACT_SOLUTION :
+      // Leave the ghost cell values unchanged.
+      break;
+
     default:		
       // Impose constant extrapolation
       for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
@@ -1518,6 +1627,11 @@ void BCs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
     
     // Prescribe North boundary conditions.
     switch(SolnBlk.Grid.BCtypeN[i]) {
+    case BC_FROZEN :
+      // Equivalent to BC_NONE in the sense that it leaves 
+      // the ghost cell values unchanged and 
+      // uses the ghost cell reconstruction to 
+      // compute the inter-cellular state.    
     case BC_NONE :
       break;
       
@@ -1579,6 +1693,15 @@ void BCs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
       // Impose zero derivative in the j-direction at the boundary
       // This is equivalent with a constant extrapolation
     case BC_CONSTANT_EXTRAPOLATION :
+      for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	SolnBlk.U[i][SolnBlk.JCu+ghost] = SolnBlk.U[i][SolnBlk.JCu];
+      }
+      break;
+
+    case BC_EXACT_SOLUTION :
+      // Leave the ghost cell values unchanged.
+      break;
+
     default:		
       // Impose constant extrapolation
       for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
@@ -2995,13 +3118,8 @@ void Apply_Boundary_Flux_Corrections_Multistage_Explicit(AdvectDiffuse2D_Quad_Bl
 
   if (Number_Neighbours_North_Boundary == 2) {
     for ( i = SolnBlk.ICl ; i <= SolnBlk.ICu ; ++i ) {
-      //       if ( (SolnBlk.Grid.BCtypeN[i] != BC_INFLOW) && 
-      // 	   (SolnBlk.Grid.BCtypeN[i] != BC_DIRICHLET) &&
-      // 	   (SolnBlk.Grid.BCtypeN[i] != BC_OUTFLOW)){
-      
 	SolnBlk.dUdt[i][SolnBlk.JCu][k_residual] -= ( (CFL_Number*SolnBlk.dt[i][SolnBlk.JCu])*SolnBlk.FluxN[i]/
 						      SolnBlk.Grid.Cell[i][SolnBlk.JCu].A );
-	//      }	/* endif */
     } /* endfor */
   } /* endif */
 
@@ -3009,13 +3127,8 @@ void Apply_Boundary_Flux_Corrections_Multistage_Explicit(AdvectDiffuse2D_Quad_Bl
 
   if (Number_Neighbours_South_Boundary == 2) {
     for ( i = SolnBlk.ICl ; i <= SolnBlk.ICu ; ++i ) {
-      //       if ( (SolnBlk.Grid.BCtypeS[i] != BC_INFLOW) && 
-      // 	   (SolnBlk.Grid.BCtypeS[i] != BC_DIRICHLET) &&
-      // 	   (SolnBlk.Grid.BCtypeS[i] != BC_OUTFLOW)){
-      
 	SolnBlk.dUdt[i][SolnBlk.JCl][k_residual] -= ( (CFL_Number*SolnBlk.dt[i][SolnBlk.JCl])*SolnBlk.FluxS[i]/
 						      SolnBlk.Grid.Cell[i][SolnBlk.JCl].A );
-	//      }	/* endif */
     } /* endfor */
   } /* endif */
 
@@ -3023,13 +3136,8 @@ void Apply_Boundary_Flux_Corrections_Multistage_Explicit(AdvectDiffuse2D_Quad_Bl
 
   if (Number_Neighbours_East_Boundary == 2) {
     for ( j= SolnBlk.JCl ; j <= SolnBlk.JCu ; ++j ) {
-      //       if ( (SolnBlk.Grid.BCtypeE[j] != BC_INFLOW) &&
-      // 	   (SolnBlk.Grid.BCtypeE[j] != BC_DIRICHLET) &&
-      // 	   (SolnBlk.Grid.BCtypeE[j] != BC_OUTFLOW)){
-      
 	SolnBlk.dUdt[SolnBlk.ICu][j][k_residual] -= ( (CFL_Number*SolnBlk.dt[SolnBlk.ICu][j])*SolnBlk.FluxE[j]/
 						      SolnBlk.Grid.Cell[SolnBlk.ICu][j].A );
-	//      }	/* endif */
     } /* endfor */
   } /* endif */
 
@@ -3037,13 +3145,8 @@ void Apply_Boundary_Flux_Corrections_Multistage_Explicit(AdvectDiffuse2D_Quad_Bl
 
   if (Number_Neighbours_West_Boundary == 2) {
     for ( j= SolnBlk.JCl ; j <= SolnBlk.JCu ; ++j ) {
-      //       if ( (SolnBlk.Grid.BCtypeW[j] != BC_INFLOW) &&
-      // 	   (SolnBlk.Grid.BCtypeW[j] != BC_DIRICHLET) &&
-      // 	   (SolnBlk.Grid.BCtypeW[j] != BC_OUTFLOW)){
-      
 	SolnBlk.dUdt[SolnBlk.ICl][j][k_residual] -= ( (CFL_Number*SolnBlk.dt[SolnBlk.ICl][j])*SolnBlk.FluxW[j]/
 						      SolnBlk.Grid.Cell[SolnBlk.ICl][j].A );
-	//      }	/* endif */
     } /* endfor */
   } /* endif */
 

@@ -245,6 +245,7 @@ void AdvectDiffuse2D_Quad_Block_New::InviscidFluxStateAtBoundaryInterface(const 
       // Category I
     case BC_NONE :
     case BC_PERIODIC :
+    case BC_FROZEN :
       // Calculate Ul based on the reconstruction in the ghost cell
       Ul = PiecewiseLinearSolutionAtLocation(ii  , jj,Grid.xfaceE(ii  , jj));
       break;
@@ -252,6 +253,7 @@ void AdvectDiffuse2D_Quad_Block_New::InviscidFluxStateAtBoundaryInterface(const 
       // Category II
     case BC_INFLOW :
     case BC_DIRICHLET :
+    case BC_EXACT_SOLUTION :
       Ul = UoW[jj];
       break;
       
@@ -290,7 +292,6 @@ void AdvectDiffuse2D_Quad_Block_New::InviscidFluxStateAtBoundaryInterface(const 
       break;
 
     default:
-      Print_(Grid.BCtypeW[jj])
       throw runtime_error("AdvectDiffuse2D_Quad_Block_New::InviscidFluxStateAtBoundaryInterface() ERROR! No such West BCtype!");
     }// endswitch (Grid.BCtypeW[jj])
     break;
@@ -305,6 +306,7 @@ void AdvectDiffuse2D_Quad_Block_New::InviscidFluxStateAtBoundaryInterface(const 
       // Category I
     case BC_NONE :
     case BC_PERIODIC :
+    case BC_FROZEN :
       // Calculate Ur based on the reconstruction in the ghost cell
       Ur = PiecewiseLinearSolutionAtLocation(ii+1, jj,Grid.xfaceW(ii+1, jj));
       break;
@@ -312,6 +314,7 @@ void AdvectDiffuse2D_Quad_Block_New::InviscidFluxStateAtBoundaryInterface(const 
       // Category II
     case BC_INFLOW :
     case BC_DIRICHLET :
+    case BC_EXACT_SOLUTION :
       Ur = UoE[jj];
       break;
       
@@ -363,6 +366,7 @@ void AdvectDiffuse2D_Quad_Block_New::InviscidFluxStateAtBoundaryInterface(const 
       // Category I
     case BC_NONE :
     case BC_PERIODIC :
+    case BC_FROZEN :
       // Calculate Ul based on the reconstruction in the ghost cell
       Ul = PiecewiseLinearSolutionAtLocation(ii ,jj  ,Grid.xfaceN(ii ,jj  ));
       break;
@@ -370,6 +374,7 @@ void AdvectDiffuse2D_Quad_Block_New::InviscidFluxStateAtBoundaryInterface(const 
       // Category II
     case BC_INFLOW :
     case BC_DIRICHLET :
+    case BC_EXACT_SOLUTION :
       Ul = UoS[ii];
       break;
       
@@ -421,6 +426,7 @@ void AdvectDiffuse2D_Quad_Block_New::InviscidFluxStateAtBoundaryInterface(const 
       // Category I
     case BC_NONE :
     case BC_PERIODIC :
+    case BC_FROZEN :
       // Calculate Ur based on the reconstruction in the ghost cell
       Ur = PiecewiseLinearSolutionAtLocation(ii ,jj+1,Grid.xfaceS(ii ,jj+1));
       break;
@@ -428,6 +434,7 @@ void AdvectDiffuse2D_Quad_Block_New::InviscidFluxStateAtBoundaryInterface(const 
       // Category II
     case BC_INFLOW :
     case BC_DIRICHLET :
+    case BC_EXACT_SOLUTION :
       Ur = UoN[ii];
       break;
       
@@ -497,7 +504,7 @@ void AdvectDiffuse2D_Quad_Block_New::Set_Boundary_Reference_States(void){
 	PointOfInterest = Grid.xfaceW(ICl,j);
 	UoW[j] = Inflow->Solution(PointOfInterest.x,PointOfInterest.y);
       } else {
-	throw runtime_error("Set_Boundary_Reference_State() ERROR! There is no inflow field set for the Inflow BC.");
+	throw runtime_error("Set_Boundary_Reference_States() ERROR! There is no inflow field set for the Inflow BC.");
       }
       break;
 
@@ -514,6 +521,16 @@ void AdvectDiffuse2D_Quad_Block_New::Set_Boundary_Reference_States(void){
     case BC_FARFIELD :
       // Reference data represents the solution value
       UoW[j] = 0.0;
+      break;
+
+    case BC_EXACT_SOLUTION :
+      // Use the exact solution to set up the reference states for this boundary type
+      if (ExactSoln->IsExactSolutionSet()){
+	PointOfInterest = Grid.xfaceW(ICl,j);
+	UoW[j] = ExactSoln->Solution(PointOfInterest.x,PointOfInterest.y);
+      } else {
+	throw runtime_error("Set_Boundary_Reference_States() ERROR! There is no exact solution set for the Exact_Solution BC.");
+      }
       break;
 
     default:
@@ -530,7 +547,7 @@ void AdvectDiffuse2D_Quad_Block_New::Set_Boundary_Reference_States(void){
 	PointOfInterest = Grid.xfaceE(ICu,j);
 	UoE[j] = Inflow->Solution(PointOfInterest.x,PointOfInterest.y);
       } else {
-	throw runtime_error("Set_Boundary_Reference_State() ERROR! There is no inflow field set for the Inflow BC.");
+	throw runtime_error("Set_Boundary_Reference_States() ERROR! There is no inflow field set for the Inflow BC.");
       }
       break;
 
@@ -547,6 +564,16 @@ void AdvectDiffuse2D_Quad_Block_New::Set_Boundary_Reference_States(void){
     case BC_FARFIELD :
       // Reference data represents the solution value
       UoE[j] = 0.0;
+      break;
+
+    case BC_EXACT_SOLUTION :
+      // Use the exact solution to set up the reference states for this boundary type
+      if (ExactSoln->IsExactSolutionSet()){
+	PointOfInterest = Grid.xfaceE(ICu,j);
+	UoE[j] = ExactSoln->Solution(PointOfInterest.x,PointOfInterest.y);
+      } else {
+	throw runtime_error("Set_Boundary_Reference_States() ERROR! There is no exact solution set for the Exact_Solution BC.");
+      }
       break;
 
     default:
@@ -566,7 +593,7 @@ void AdvectDiffuse2D_Quad_Block_New::Set_Boundary_Reference_States(void){
 	PointOfInterest = Grid.xfaceS(i,JCl);
 	UoS[i] = Inflow->Solution(PointOfInterest.x,PointOfInterest.y);
       } else {
-	throw runtime_error("Set_Boundary_Reference_State() ERROR! There is no inflow field set for the Inflow BC.");
+	throw runtime_error("Set_Boundary_Reference_States() ERROR! There is no inflow field set for the Inflow BC.");
       }
       break;
 
@@ -583,6 +610,16 @@ void AdvectDiffuse2D_Quad_Block_New::Set_Boundary_Reference_States(void){
     case BC_FARFIELD :
       // Reference data represents the solution value
       UoS[i] = 0.0;
+      break;
+
+    case BC_EXACT_SOLUTION :
+      // Use the exact solution to set up the reference states for this boundary type
+      if (ExactSoln->IsExactSolutionSet()){
+	PointOfInterest = Grid.xfaceS(i,JCl);
+	UoS[i] = ExactSoln->Solution(PointOfInterest.x,PointOfInterest.y);
+      } else {
+	throw runtime_error("Set_Boundary_Reference_States() ERROR! There is no exact solution set for the Exact_Solution BC.");
+      }
       break;
 
     default:
@@ -599,7 +636,7 @@ void AdvectDiffuse2D_Quad_Block_New::Set_Boundary_Reference_States(void){
 	PointOfInterest = Grid.xfaceN(i,JCu);
 	UoN[i] = Inflow->Solution(PointOfInterest.x,PointOfInterest.y);
       } else {
-	throw runtime_error("Set_Boundary_Reference_State() ERROR! There is no inflow field set for the Inflow BC.");
+	throw runtime_error("Set_Boundary_Reference_States() ERROR! There is no inflow field set for the Inflow BC.");
       }
       break;
 
@@ -616,6 +653,16 @@ void AdvectDiffuse2D_Quad_Block_New::Set_Boundary_Reference_States(void){
     case BC_FARFIELD :
       // Reference data represents the solution value
       UoN[i] = 0.0;
+      break;
+
+    case BC_EXACT_SOLUTION :
+      // Use the exact solution to set up the reference states for this boundary type
+      if (ExactSoln->IsExactSolutionSet()){
+	PointOfInterest = Grid.xfaceN(i,JCu);
+	UoN[i] = ExactSoln->Solution(PointOfInterest.x,PointOfInterest.y);
+      } else {
+	throw runtime_error("Set_Boundary_Reference_State() ERROR! There is no exact solution set for the Exact_Solution BC.");
+      }
       break;
 
     default:

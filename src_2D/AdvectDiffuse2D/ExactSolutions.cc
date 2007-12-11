@@ -191,12 +191,6 @@ void Laplace_II_ExactSolution::Parse_Next_Input_Control_Parameter(AdvectDiffuse2
     IP.Input_File >> B;
     IP.Input_File.getline(buffer, sizeof(buffer));
 
-  } else if (strcmp(IP.Next_Control_Parameter, "C_Coeff") == 0) {
-    i_command = 0;
-    ++IP.Line_Number;
-    IP.Input_File >> C;
-    IP.Input_File.getline(buffer, sizeof(buffer));
-
   } else {
     i_command = INVALID_INPUT_CODE;
     return;
@@ -208,8 +202,7 @@ void Laplace_II_ExactSolution::Parse_Next_Input_Control_Parameter(AdvectDiffuse2
  */
 void Laplace_II_ExactSolution::Print_Info(std::ostream & out_file){
   out_file << "\n     -> A : " << A
-	   << "\n     -> B : " << B
-	   << "\n     -> C : " << C;
+	   << "\n     -> B : " << B;
 
   // call the base Print_Info
   ExactSolutionBasicType::Print_Info(out_file);
@@ -228,9 +221,6 @@ void Laplace_II_ExactSolution::Broadcast(void){
 			1, 
 			MPI::DOUBLE, 0);
   MPI::COMM_WORLD.Bcast(&B,
-			1, 
-			MPI::DOUBLE, 0);
-  MPI::COMM_WORLD.Bcast(&C,
 			1, 
 			MPI::DOUBLE, 0);
   
@@ -270,12 +260,6 @@ void Laplace_III_ExactSolution::Parse_Next_Input_Control_Parameter(AdvectDiffuse
     IP.Input_File >> B;
     IP.Input_File.getline(buffer, sizeof(buffer));
 
-  } else if (strcmp(IP.Next_Control_Parameter, "C_Coeff") == 0) {
-    i_command = 0;
-    ++IP.Line_Number;
-    IP.Input_File >> C;
-    IP.Input_File.getline(buffer, sizeof(buffer));
-
   } else {
     i_command = INVALID_INPUT_CODE;
     return;
@@ -288,8 +272,7 @@ void Laplace_III_ExactSolution::Parse_Next_Input_Control_Parameter(AdvectDiffuse
  */
 void Laplace_III_ExactSolution::Print_Info(std::ostream & out_file){
   out_file << "\n     -> A : " << A
-	   << "\n     -> B : " << B
-	   << "\n     -> C : " << C;
+	   << "\n     -> B : " << B;
 
   // call the base Print_Info
   ExactSolutionBasicType::Print_Info(out_file);
@@ -310,10 +293,7 @@ void Laplace_III_ExactSolution::Broadcast(void){
   MPI::COMM_WORLD.Bcast(&B,
 			1, 
 			MPI::DOUBLE, 0);
-  MPI::COMM_WORLD.Bcast(&C,
-			1, 
-			MPI::DOUBLE, 0);
-  
+
 #endif
 }
 
@@ -350,12 +330,6 @@ void Laplace_IV_ExactSolution::Parse_Next_Input_Control_Parameter(AdvectDiffuse2
     IP.Input_File >> B;
     IP.Input_File.getline(buffer, sizeof(buffer));
 
-  } else if (strcmp(IP.Next_Control_Parameter, "C_Coeff") == 0) {
-    i_command = 0;
-    ++IP.Line_Number;
-    IP.Input_File >> C;
-    IP.Input_File.getline(buffer, sizeof(buffer));
-
   } else if (strcmp(IP.Next_Control_Parameter, "mu_Coeff") == 0) {
     i_command = 0;
     ++IP.Line_Number;
@@ -375,7 +349,6 @@ void Laplace_IV_ExactSolution::Parse_Next_Input_Control_Parameter(AdvectDiffuse2
 void Laplace_IV_ExactSolution::Print_Info(std::ostream & out_file){
   out_file << "\n     -> A : " << A
 	   << "\n     -> B : " << B
-	   << "\n     -> C : " << C
 	   << "\n     -> mu : " << mu;
 
   // call the base Print_Info
@@ -395,9 +368,6 @@ void Laplace_IV_ExactSolution::Broadcast(void){
 			1, 
 			MPI::DOUBLE, 0);
   MPI::COMM_WORLD.Bcast(&B,
-			1, 
-			MPI::DOUBLE, 0);
-  MPI::COMM_WORLD.Bcast(&C,
 			1, 
 			MPI::DOUBLE, 0);
   MPI::COMM_WORLD.Bcast(&mu,

@@ -1712,6 +1712,8 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
       IP.i_ICs = IC_CIRCULAR_BOX_IVP;
     } else if (strcmp(IP.ICs_Type,"Exact_Solution") == 0) {
       IP.i_ICs = IC_EXACT_SOLUTION;
+    } else if (strcmp(IP.ICs_Type,"Uniform_Interior_Exact_Ghost_Cells") == 0) {
+      IP.i_ICs = IC_INTERIOR_UNIFORM_GHOSTCELLS_EXACT;
     } else if (strcmp(IP.ICs_Type, "Restart") == 0) {
       IP.i_ICs = IC_RESTART;
     } else {
@@ -2567,6 +2569,10 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
       IP.BC_North = BC_CONSTANT_EXTRAPOLATION;
     } else if (strcmp(IP.BC_North_Type,"Linear_Extrapolation") == 0) {
       IP.BC_North = BC_LINEAR_EXTRAPOLATION;
+    } else if (strcmp(IP.BC_North_Type,"Frozen") == 0) {
+      IP.BC_North = BC_FROZEN;
+    } else if (strcmp(IP.BC_North_Type,"Exact_Solution") == 0) {
+      IP.BC_North = BC_EXACT_SOLUTION;
     } else if (strcmp(IP.BC_North_Type,"None") == 0) {
       IP.BC_North = BC_NONE;
     } else {
@@ -2607,6 +2613,10 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
       IP.BC_South = BC_CONSTANT_EXTRAPOLATION;
     } else if (strcmp(IP.BC_South_Type,"Linear_Extrapolation") == 0) {
       IP.BC_South = BC_LINEAR_EXTRAPOLATION;
+    } else if (strcmp(IP.BC_South_Type,"Frozen") == 0) {
+      IP.BC_South = BC_FROZEN;
+    } else if (strcmp(IP.BC_South_Type,"Exact_Solution") == 0) {
+      IP.BC_South = BC_EXACT_SOLUTION;
     } else if (strcmp(IP.BC_South_Type,"None") == 0) {
       IP.BC_South = BC_NONE;
     } else {
@@ -2647,6 +2657,10 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
       IP.BC_East = BC_CONSTANT_EXTRAPOLATION;
     } else if (strcmp(IP.BC_East_Type,"Linear_Extrapolation") == 0) {
       IP.BC_East = BC_LINEAR_EXTRAPOLATION;
+    } else if (strcmp(IP.BC_East_Type,"Frozen") == 0) {
+      IP.BC_East = BC_FROZEN;
+    } else if (strcmp(IP.BC_East_Type,"Exact_Solution") == 0) {
+      IP.BC_East = BC_EXACT_SOLUTION;
     } else if (strcmp(IP.BC_East_Type,"None") == 0) {
       IP.BC_East = BC_NONE;
     } else {
@@ -2687,6 +2701,10 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
       IP.BC_West = BC_CONSTANT_EXTRAPOLATION;
     } else if (strcmp(IP.BC_West_Type,"Linear_Extrapolation") == 0) {
       IP.BC_West = BC_LINEAR_EXTRAPOLATION;
+    } else if (strcmp(IP.BC_West_Type,"Frozen") == 0) {
+      IP.BC_West = BC_FROZEN;
+    } else if (strcmp(IP.BC_West_Type,"Exact_Solution") == 0) {
+      IP.BC_West = BC_EXACT_SOLUTION;
     } else if (strcmp(IP.BC_West_Type,"None") == 0) {
       IP.BC_West = BC_NONE;
     } else {
