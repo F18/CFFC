@@ -47,18 +47,8 @@ Diffusion_Field =
 Diffusion_Coefficient =
 	0.01
 
-a = 
-	0
-b =
-	0
-Tau =
-	1.0e8
-Velocity_Field_Type =
-	Zero
-
 # Values for VelocityFields
 Velocity_Field =
-	#Uniform_Ydir
 	Rotational
 Velocity_Ydir =
 	-150.23

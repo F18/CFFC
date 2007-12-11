@@ -691,12 +691,15 @@ namespace tut
     // Set initial data
     AdvectDiffuse2D_State_New Ul(12.2323), Ur(5.34);
     double dUdx_L(1.5), dUdy_L(3.4), dUdx_R(1.5), dUdy_R(3.4);
+    // Calculate GradU as average between the Left and Right gradients
+    Vector2D GradU = 0.5*(Vector2D(dUdx_L,dUdy_L) + Vector2D(dUdx_R,dUdy_R));
+
     Vector2D Normal(1,0);
     AdvectDiffuse2D_State_New Result(-10*1.5);
 
     // === check diffusive flux
-    ensure_distance("Fd at Point", Fd(Ul,dUdx_L,dUdy_L,Ur,dUdx_R,dUdy_R,8.5,12.5,Normal),
-		    AdvectDiffuse2D_State_New(Result), AdvectDiffuse2D_State_New(tol));
+    ensure_distance("Fd at Point I", Fd(Ul,Ur,GradU,8.5,12.5,Normal), Result, AdvectDiffuse2D_State_New(tol));
+    ensure_distance("Fd at Point II", Fd(Ul,Ur,GradU.x,GradU.y,8.5,12.5,Normal), Result, AdvectDiffuse2D_State_New(tol));
   }
 
   /* Test 36:*/
@@ -718,12 +721,16 @@ namespace tut
     // Set initial data
     AdvectDiffuse2D_State_New Ul(12.2323), Ur(5.34);
     double dUdx_L(1.5), dUdy_L(6.4), dUdx_R(3.5), dUdy_R(3.4);
+    // Calculate GradU as average between the Left and Right gradients
+    Vector2D GradU = 0.5*(Vector2D(dUdx_L,dUdy_L) + Vector2D(dUdx_R,dUdy_R));
+
     Vector2D Normal(0,1);
     AdvectDiffuse2D_State_New Result(-10*0.5*(6.4+3.4));
 
     // === check diffusive flux
-    ensure_distance("Fd at Point", Fd(Ul,dUdx_L,dUdy_L,Ur,dUdx_R,dUdy_R,8.5,12.5,Normal),
-		    Result, AdvectDiffuse2D_State_New(tol));
+    ensure_distance("Fd at Point I", Fd(Ul,Ur,GradU,8.5,12.5,Normal), Result, AdvectDiffuse2D_State_New(tol));
+    ensure_distance("Fd at Point II", Fd(Ul,Ur,GradU.x,GradU.y,8.5,12.5,Normal), Result, AdvectDiffuse2D_State_New(tol));
+
   }
 
   /* Test 37:*/
@@ -751,6 +758,59 @@ namespace tut
     // == check integral field
     Result = 12.2323;
     ensure_distance("Integral field", U.s(), 12.2323, AcceptedError(Result) );
+  }
+
+  /* Test 38:*/
+  template<>
+  template<>
+  void AdvectDiffuse2DState_object::test<38>()
+  {
+
+    set_test_name("Linear diffusive field");
+
+    // Set velocity field
+    VelocityFields::Set_RotationalFlow_Parameters(10.0, "Inverse_Proportional_Distance", Vector2D(2.5,4.5));
+    VelocityFields::Connect_Pointer_To_Flow_Field(AdvectDiffuse2D_State_New::V);
+
+    // Set diffusion field
+    Vector2D RefPoint(1.0,2.0);
+    DiffusionFields::Set_LinearDiffusionField(0.1, 0.5, 0.4, RefPoint);
+    DiffusionFields::Connect_Pointer_To_Diffusion_Field(AdvectDiffuse2D_State_New::k);
+
+    // Set initial data
+    AdvectDiffuse2D_State_New U(12.2323);
+    double Result = 0.1*(3.5-RefPoint.x) + 0.5*(-1.2 - RefPoint.y) + 0.4*12.2323;
+
+    // === check diffusive field
+    ensure_distance("k(x,y,u) at location", U.k(3.5,-1.2,U[1]) , Result, AcceptedError(Result));
+  }
+
+  /* Test 39:*/
+  template<>
+  template<>
+  void AdvectDiffuse2DState_object::test<39>()
+  {
+
+    set_test_name("Diffusive flux at interface");
+
+    // Set velocity field
+    VelocityFields::Set_RotationalFlow_Parameters(10.0, "Inverse_Proportional_Distance", Vector2D(2.5,4.5));
+    VelocityFields::Connect_Pointer_To_Flow_Field(AdvectDiffuse2D_State_New::V);
+
+    // Set diffusion field
+    DiffusionFields::Set_LinearDiffusionField(0.1, 0.5, 0.4);
+    DiffusionFields::Connect_Pointer_To_Diffusion_Field(AdvectDiffuse2D_State_New::k);
+
+    // Set initial data
+    AdvectDiffuse2D_State_New Ul(12.2323), Ur(5.34);
+    Vector2D GradU(1.5,5.6);
+    Vector2D Normal(0.4,0.916515139);
+    AdvectDiffuse2D_State_New Result(-(0.1*8.5 + 0.5*(-12.5) + 0.4*0.5*(Ul.u + Ur.u))*(GradU.x*Normal.x + GradU.y*Normal.y));
+
+    // === check diffusive flux
+    ensure_distance("Fd at Point I", Fd(Ul,Ur,GradU,8.5,-12.5,Normal), Result, AcceptedError(Result));
+    ensure_distance("Fd at Point II", Fd(Ul,Ur,GradU.x,GradU.y,8.5,-12.5,Normal), Result, AcceptedError(Result));
+    ensure_distance("Fd at Point III", Fd(Ul,Ur,GradU,Vector2D(8.5,-12.5),Normal), Result, AcceptedError(Result));
   }
 
 }

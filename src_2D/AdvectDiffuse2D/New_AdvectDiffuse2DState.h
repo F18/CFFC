@@ -154,21 +154,66 @@ public:
 				      const Vector2D & norm_dir);
   //@}
 
-  //! @name Diffusive flux.
+  //! @name Computation of diffusive flux.
   //@{
-  Vector2D Fd(const Vector2D &GradU,
-	      const double &x, const double &y) const;
-  friend Vector2D Fd(const AdvectDiffuse2D_State_New &U,
-		     const Vector2D &GradU,
-		     const double &x, const double &y);
+  //! Calculate flux based on the position (x,y) and the gradient of the scalar
   Vector2D Fd(const double &dudx, const double &dudy,
 	      const double &x, const double &y) const;
   friend Vector2D Fd(const AdvectDiffuse2D_State_New &U,
 		     const double &dudx, const double &dudy,
 		     const double &x, const double &y);
-  friend AdvectDiffuse2D_State_New Fd(const double &dudx_L, const double &dudy_L,
-				      const double &dudx_R, const double &dudy_R,
+  Vector2D Fd(const Vector2D &GradU, 
+	      const double &x, const double &y) const;
+  friend Vector2D Fd(const AdvectDiffuse2D_State_New &U, 
+		     const Vector2D &GradU,
+		     const double &x, const double &y);
+
+  //! Calculate flux in the normal direction norm_dir
+  AdvectDiffuse2D_State_New Fd(const double &dudx, const double &dudy,
+			       const double &x, const double &y,
+			       const Vector2D & norm_dir) const{
+    return AdvectDiffuse2D_State_New(Fd(dudx,dudy,x,y)*norm_dir);
+  }
+
+  friend AdvectDiffuse2D_State_New Fd(const AdvectDiffuse2D_State_New &U,
+				      const double &dudx, const double &dudy,
 				      const double &x, const double &y,
+				      const Vector2D & norm_dir){
+    return U.Fd(dudx,dudy,x,y,norm_dir);
+  }
+
+  //! Calculate the interface flux in the normal direction norm_dir and use the mean average to estimate k(x,y,u)
+  friend AdvectDiffuse2D_State_New Fd(const AdvectDiffuse2D_State_New &Ul,
+				      const AdvectDiffuse2D_State_New &Ur,
+				      const double &dudx, const double &dudy,
+				      const double &x, const double &y,
+				      const Vector2D & norm_dir) {
+    return (0.5*(Ul+Ur)).Fd(dudx,dudy,x,y,norm_dir);
+  }
+
+  //! Calculate flux using the projection of the gradient on the normal direction \f$GradU_n = \nabla u \cdot \vec{n} \f$
+  AdvectDiffuse2D_State_New Fd(const double &GradU_n,
+			       const double &x, const double &y) const;
+
+  //! Calculate flux using a provided state, the normal gradient projection and the position of interest.
+  friend AdvectDiffuse2D_State_New Fd(const AdvectDiffuse2D_State_New &U,
+				      const double &GradU_n,
+				      const double &x, const double &y){
+    return U.Fd(GradU_n,x,y);
+  }
+
+  //! Calculate the interface flux at the position of interest in the normal direction,
+  //  based on the interface states and the scalar gradient
+  friend AdvectDiffuse2D_State_New Fd(const AdvectDiffuse2D_State_New &Ul,
+				      const AdvectDiffuse2D_State_New &Ur,
+				      const Vector2D & GradU,
+				      const double &x, const double &y,
+				      const Vector2D & norm_dir);
+
+  friend AdvectDiffuse2D_State_New Fd(const AdvectDiffuse2D_State_New &Ul,
+				      const AdvectDiffuse2D_State_New &Ur,
+				      const Vector2D & GradU,
+				      const Vector2D & ComputationPoint,
 				      const Vector2D & norm_dir);
   //@}
 
@@ -412,33 +457,60 @@ inline Vector2D Fd(const AdvectDiffuse2D_State_New &U,
 }
 
 /*!
+ * Compute the diffusive flux \f$Fd=-k(x,y,u) ( \nabla u \cdot \vec{n})\f$, where 'u' is the solution scalar.
+ * 
+ * \param [in] x        x-coordinate location
+ * \param [in] y        y-coordinate location
+ * \param [in] GradU_n  the projection of the solution gradient onto the normal direction
+ *
+ * \return diffusive flux at a given location which has the diffusion coefficient estimated based on the state scalar
+ */
+inline AdvectDiffuse2D_State_New AdvectDiffuse2D_State_New::Fd(const double &GradU_n,
+							       const double &x, const double &y) const {
+  return AdvectDiffuse2D_State_New(-k(x,y,u)*GradU_n);
+}
+
+/*!
  * Compute the diffusive flux \f$Fd=-k(x,y,u) ( \nabla u \cdot \vec{n})\f$ at the interface between 2 states. \n
  * 
- * \f$ \nabla u = \frac{1}{2}(\nabla u_L + \nabla u_R)  \f$ \n
  * The diffusion coefficient is estimated based on the average of the two interface-solution states. 
  *
- * \param [in] Ul            the state to the left of the interface
- * \param [in] dudx_L left   solution gradient with respect to x-dir
- * \param [in] dudy_L left   solution gradient with respect to y-dir
- * \param [in] Ur            the state to the right of the interface
- * \param [in] dudx_R right  solution gradient with respect to x-dir
- * \param [in] dudy_R right  solution gradient with respect to y-dir
- * \param [in] x             x-coordinate location
- * \param [in] y             y-coordinate location
- * \param [in] norm_dir      the direction used to project the flux onto
+ * \param [in] Ul         the state to the left of the interface
+ * \param [in] Ur         the state to the right of the interface
+ * \param [in] GradU      solution gradient vector
+ * \param [in] x          x-coordinate location
+ * \param [in] y          y-coordinate location
+ * \param [in] norm_dir   the direction used to project the flux onto
+ *
  * \return the projection of the diffusive flux onto the 'norm-dir' direction  at a given location 
- * based on the solution gradients at the left and right.
+ *         based on the solution gradient and the mean average state at the interface.
  */
 inline AdvectDiffuse2D_State_New Fd(const AdvectDiffuse2D_State_New &Ul,
-				    const double &dudx_L, const double &dudy_L,
 				    const AdvectDiffuse2D_State_New &Ur,
-				    const double &dudx_R, const double &dudy_R,
+				    const Vector2D & GradU,
 				    const double &x, const double &y,
 				    const Vector2D & norm_dir){
-  
-  return AdvectDiffuse2D_State_New(-AdvectDiffuse2D_State_New::k(x,y,0.5*(Ul.u+Ur.u)) * 
-				   ( 0.5 *( (dudx_L + dudx_R)*norm_dir.x +
-					    (dudy_L + dudy_R)*norm_dir.y ) ) );
+  return Fd(0.5*(Ul+Ur), GradU*norm_dir, x, y);  
+}
+
+/*!
+ * Compute the diffusive flux \f$Fd=-k(x,y,u) ( \nabla u \cdot \vec{n})\f$ at the interface between 2 states. \n
+ * 
+ * \param [in] Ul         the state to the left of the interface
+ * \param [in] Ur         the state to the right of the interface
+ * \param [in] GradU      solution gradient vector
+ * \param [in] ComputationPoint the Cartesian coordinates of the location where the flux is computed
+ * \param [in] norm_dir   the direction used to project the flux onto
+ *
+ * \return the projection of the diffusive flux onto the 'norm-dir' direction  at a given location 
+ *         based on the solution gradient and the mean average state at the interface.
+ */
+inline AdvectDiffuse2D_State_New Fd(const AdvectDiffuse2D_State_New &Ul,
+				    const AdvectDiffuse2D_State_New &Ur,
+				    const Vector2D & GradU,
+				    const Vector2D & ComputationPoint,
+				    const Vector2D & norm_dir){
+  return Fd(Ul,Ur,GradU,ComputationPoint.x,ComputationPoint.y,norm_dir);  
 }
 
 /*!
