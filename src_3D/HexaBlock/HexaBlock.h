@@ -231,6 +231,9 @@ class Hexa_Block{
                                  const int j, 
                                  const int k);
 
+   double vorticity(const int &i,const int &j,const int &k);
+   double enstrophy(const int &i,const int &j,const int &k);        
+
    int dUdt_Multistage_Explicit(const int i_stage, 
                                 Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs);
 
@@ -2137,7 +2140,7 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Linear_Reconstruction_LeastSquares(co
       dWdx[i][j][k] = D1/D;
       dWdy[i][j][k] = D2/D;
       dWdz[i][j][k] = D3/D;
-      
+
 	Sum_dx =Sum_dx/double(n_pts);
 	Sum_dy =Sum_dy/double(n_pts);
 	Sum_dz =Sum_dz/double(n_pts);
@@ -2971,6 +2974,32 @@ int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Wall_Shear(void) {
    // do nothing
    return (0);
    
+}
+
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+double Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::vorticity(const int &i,const int &j,const int &k) {
+  double dudy, dudz, dvdx, dvdz, dwdx, dwdy, vort;
+  dudy = dWdy[i][j][k].v.x;
+  dudz = dWdz[i][j][k].v.x;
+  dvdx = dWdx[i][j][k].v.y;
+  dvdz = dWdz[i][j][k].v.y;
+  dwdx = dWdx[i][j][k].v.z;
+  dwdy = dWdy[i][j][k].v.z;
+  vort = dwdy-dvdz + dudz-dwdx + dvdx-dudy;
+ 
+  if(fabs(vort) < TOLER){
+    return ZERO;
+  } else {
+    return vort;
+  }  
+}
+
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+double Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::enstrophy(const int &i,const int &j,const int &k) {
+  double w;
+  w = vorticity(i, j, k);
+
+  return (0.5*w*w);
 }
 
 /*******************************************************************************

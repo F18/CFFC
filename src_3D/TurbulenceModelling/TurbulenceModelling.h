@@ -586,14 +586,13 @@ class RandomFieldRogallo{
     double Energy_Spectrum_Value(const double &abs_wave_num) const;
 
     int Generate_Velocity_Fluctuations(Grid3D_Hexa_Multi_Block &InitMeshBlks,
-				       Grid3D_Input_Parameters/*<SOLN_pSTATE, SOLN_cSTATE>*/ &IPs) const;
+				       Grid3D_Input_Parameters &IPs) const;
 
     void Write_Initial_Turbulent_Fluctuations(Grid3D_Hexa_Multi_Block &InitMeshBlks,
-					      Grid3D_Input_Parameters/*<SOLN_pSTATE, SOLN_cSTATE>*/ &IPs,
+					      Grid3D_Input_Parameters &IPs,
 					      double *u, double *v, double *w) const;
        
 };
-
 
 //-----------------------------------------------------//
 //         Members of RandomFieldRogallo class         //
@@ -610,7 +609,6 @@ alpha(const double &abs_wave_num, const double &theta1, const double &phi) const
   return (k == 0.0)  ?  0.0 : sqrt(E/(4.0*PI*k*k)) * exp(I*theta1) * cos(phi);
 }
 
-
 // beta
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 complex<double> RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>::
@@ -621,7 +619,6 @@ beta(const double &abs_wave_num, const double &theta2, const double &phi) const 
 
   return (k == 0.0)  ?  0.0 : sqrt(E/(4.0*PI*k*k)) * exp(I*theta2) * sin(phi);
 }
-
 
 // Prescribed energy spectrum
 template<class SOLN_pSTATE, class SOLN_cSTATE>
@@ -662,7 +659,7 @@ Energy_Spectrum_Value(const double &abs_wave_num) const {
     /*****  Haworth and Poinsot paper  *****/
   case HAWORTH_POINSOT :
     //double EE, kp, 
-    u = 10.5;  Lp = TWO*PI/8.0;  // kp=4.0, u=2.5  kp=8
+    u = 4.5;  Lp = TWO*PI/4.0;  // kp=4.0, u=2.5  kp=8
     kp = TWO*PI/Lp;
     EE = (32.0/3.0) * sqrt(2.0/PI)* (u*u/kp) * pow(k/kp, 4.0) * exp(-2.0*(k/kp)*(k/kp));
     break;
@@ -691,7 +688,6 @@ Energy_Spectrum_Value(const double &abs_wave_num) const {
     EE /= pow(1.0+(k/kp)*(k/kp), 17.0/6.0);
     break;
 
-
     /*****   von Karman-Pao   *****/
   default :
     A = 1.5;    alpha = 1.5;
@@ -704,20 +700,16 @@ Energy_Spectrum_Value(const double &abs_wave_num) const {
     break;    
 
   }  // end switch
-  
 
   return (k == 0.0)  ?  0.0 : EE;
  
 }
-
  
 // Generate_Velocity_Fluctuations
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 int RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>::
 Generate_Velocity_Fluctuations(Grid3D_Hexa_Multi_Block &InitMeshBlks,
 			       Grid3D_Input_Parameters/*<SOLN_pSTATE, SOLN_cSTATE>*/ &IPs) const {
-
-
 
   double L1, L2, L3;
   L1 = IPs./*IP_Grid.*/Box_Length;
@@ -734,7 +726,6 @@ Generate_Velocity_Fluctuations(Grid3D_Hexa_Multi_Block &InitMeshBlks,
   double        *u, *v, *w;        // Arrays to store the velocity fluctuations in physical space
   fftw_complex  *uu, *vv, *ww;     // Arrays to store the velocity fluctuations in Fourier space
   fftw_plan      physical;
-    
 
   int nz = Nz/2+1;
 
@@ -746,10 +737,8 @@ Generate_Velocity_Fluctuations(Grid3D_Hexa_Multi_Block &InitMeshBlks,
   uu = (fftw_complex *) fftw_malloc(Nx*Ny*nz * sizeof(fftw_complex));
   vv = (fftw_complex *) fftw_malloc(Nx*Ny*nz * sizeof(fftw_complex));
   ww = (fftw_complex *) fftw_malloc(Nx*Ny*nz * sizeof(fftw_complex));
-
-
   
-  int seed = 5; 
+  int seed = 1; 
   //int seed = time(NULL);   // assigns the current time to the seed
   srand48(seed);             // changes the seed for drand48()
   int iconj, jconj;          // Position of the conjugate complex for the i index
@@ -758,7 +747,6 @@ Generate_Velocity_Fluctuations(Grid3D_Hexa_Multi_Block &InitMeshBlks,
   double theta1, theta2, phi;
   complex<double> aa, bb;
   double deno;
-  
 
   for (int i=0; i<Nx; ++i) {
     iconj = (i==0  ?  0 : Nx-i);
@@ -849,7 +837,6 @@ Generate_Velocity_Fluctuations(Grid3D_Hexa_Multi_Block &InitMeshBlks,
 
 	} // end if
 
-
 	// real values at 8 corners
 // 	if ( (i==0 || i==Nx/2)  &&  (j==0 || j==Ny/2) ) {
 	    
@@ -859,11 +846,6 @@ Generate_Velocity_Fluctuations(Grid3D_Hexa_Multi_Block &InitMeshBlks,
 
 // 	}
 
-
-
-
-
-
 // 	cout << "\n (" << uu[i][j][l].re << "," << uu[i][j][l].im <<") \t"
 // 	     << "(" << vv[i][j][l].re << "," << vv[i][j][l].im <<") \t"
 // 	     << "(" << ww[i][j][l].re << "," << ww[i][j][l].im <<")";
@@ -871,7 +853,6 @@ Generate_Velocity_Fluctuations(Grid3D_Hexa_Multi_Block &InitMeshBlks,
         // cout <<"("<< k1*uu[i][j][l].re + k2*vv[i][j][l].re + k3*ww[i][j][l].re <<","
 // 	     << k1*uu[i][j][l].im + k2*vv[i][j][l].im + k3*ww[i][j][l].im <<") \t";
       
-        
       } // end for
       
       //cout << endl;
@@ -882,23 +863,17 @@ Generate_Velocity_Fluctuations(Grid3D_Hexa_Multi_Block &InitMeshBlks,
 
   } // end for
   
-
-  
   physical = fftw_plan_dft_c2r_3d(Nx, Ny, Nz, uu, u, /*FFTW_BACKWARD,*/ FFTW_ESTIMATE);
   fftw_execute(physical); 
   fftw_destroy_plan(physical);
-
-  
+ 
   physical = fftw_plan_dft_c2r_3d(Nx, Ny, Nz, vv, v, /*FFTW_BACKWARD,*/ FFTW_ESTIMATE);
   fftw_execute(physical); 
   fftw_destroy_plan(physical);
-
   
   physical = fftw_plan_dft_c2r_3d(Nx, Ny, Nz, ww, w, /*FFTW_BACKWARD,*/ FFTW_ESTIMATE);
   fftw_execute(physical); 
   fftw_destroy_plan(physical);
-
-
   
   for (int i=0; i<Nx; ++i) {
     for (int j=0; j<Ny; ++j) {
@@ -907,15 +882,11 @@ Generate_Velocity_Fluctuations(Grid3D_Hexa_Multi_Block &InitMeshBlks,
 	u[index] =  u[index] /*scaling_factor*/;
 	v[index] =  v[index] /*scaling_factor*/;
 	w[index] =  w[index] /*scaling_factor*/;
-
-
       }
     }
   }
 
-
   Write_Initial_Turbulent_Fluctuations(InitMeshBlks, IPs, u, v, w);
-
 
   // Deallocations   
   fftw_free(u);
@@ -929,15 +900,12 @@ Generate_Velocity_Fluctuations(Grid3D_Hexa_Multi_Block &InitMeshBlks,
 
 }
 
-
 // Write_Initial_Turbulent_Fluctuations
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 void RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>::
 Write_Initial_Turbulent_Fluctuations(Grid3D_Hexa_Multi_Block &InitMeshBlks,
 				     Grid3D_Input_Parameters/*<SOLN_pSTATE, SOLN_cSTATE>*/ &IPs,
 				     double *u, double *v, double *w) const {
-
-
 
   int ii, jj, kk;
   int Nblks_i, Nblks_j, Nblks_k;
@@ -949,7 +917,6 @@ Write_Initial_Turbulent_Fluctuations(Grid3D_Hexa_Multi_Block &InitMeshBlks,
 
 /*   cout << "\n\n Nblks_i: " << Nblks_i << "\t Nblks_j: "  */
 /*        << Nblks_j << "\t Nblks_k: " << Nblks_k; */
-
   ICblk = IPs./*IP_Grid.ICells*/NCells_Idir; //  /Nblks_i;  // Cells per block in the I direction
   JCblk = IPs./*IP_Grid.JCells*/NCells_Jdir; //  /Nblks_j;  // Cells per block in the J direction
   KCblk = IPs./*IP_Grid.KCells*/NCells_Kdir; //  /Nblks_k;  // Cells per block in the J direction
@@ -957,14 +924,12 @@ Write_Initial_Turbulent_Fluctuations(Grid3D_Hexa_Multi_Block &InitMeshBlks,
 /*   cout << "\n ICblk: " << ICblk << "\t JCblk: "  */
 /*        << JCblk << "\t KCblk: " << KCblk; */
 
-
   int Nx, Ny, Nz;
   Nx = IPs./*IP_Grid.ICells*/NCells_Idir * Nblks_i;
   Ny = IPs./*IP_Grid.JCells*/NCells_Jdir * Nblks_j;
   Nz = IPs./*IP_Grid.KCells*/NCells_Kdir * Nblks_k;
 /*   cout << "\n Nx: " << Nx << "\t Ny: " */
 /*        << Ny << "\t Nz: " << Nz; */
-  
 
   ofstream out_file;
   out_file.open("Initial_Turbulence_Fluctuations.dat", ios::out);
@@ -1007,15 +972,466 @@ Write_Initial_Turbulent_Fluctuations(Grid3D_Hexa_Multi_Block &InitMeshBlks,
 	}
 
 	out_file << endl;
-
 	
       }
     }
   }
 
   out_file.close();   
-  
 
+}
+
+/* template<class SOLN_pState, class SOLN_cState, class HEXA_BLOCK> */
+/* void TurbStatistics<SOLN_pState, SOLN_cState, HEXA_BLOCK>:: */
+template<class HEXA_BLOCK>
+void Average_V(HEXA_BLOCK *Solution_Block,
+               AdaptiveBlock3D_List &LocalSolnBlockList,
+               Grid3D_Input_Parameters &IPs,
+               double &u_average,
+               double &v_average,
+               double &w_average) {
+  double local_vol, Volume = ZERO;
+  double Yfuel_conditional = ZERO;
+  Vector3D vel;  vel.zero();
+  //Conditional average on fresh gas
+/*   if (IPs.react_name != "NO_REACTIONS") { */
+  Yfuel_conditional = 0.95*0.05518;//IPs.Fresh_Fuel_Mass_Fraction;
+/*   } */
+  for (int p = 0 ; p <= LocalSolnBlockList.Nblk-1 ; p++ ) {
+    if (LocalSolnBlockList.Block[p].used == ADAPTIVEBLOCK3D_USED) {
+      for (int i = Solution_Block[p].ICl ; i <= Solution_Block[p].ICu ; i++) {
+        for (int j = Solution_Block[p].JCl ; j <= Solution_Block[p].JCu ; j++) {
+           for (int k = Solution_Block[p].KCl ; k <= Solution_Block[p].KCu ; k++) {
+          if (Solution_Block[p].W[i][j][k].spec[0].c >= Yfuel_conditional) {
+	    local_vol = Solution_Block[p].Grid.volume(i,j,k);
+	    vel += Solution_Block[p].W[i][j][k].v * local_vol;
+            Volume += Solution_Block[p].Grid.volume(i,j,k);//Total_Block_Volume(Solution_Block[p]);
+	  }
+        }
+      }
+     }
+/*       Volume += Total_Block_Volume(Solution_Block[p]); */
+   }
+ }
+  Volume = CFFC_Summation_MPI(Volume);
+  vel.x = CFFC_Summation_MPI(vel.x);
+  vel.y = CFFC_Summation_MPI(vel.y);
+  vel.z = CFFC_Summation_MPI(vel.z);
+  u_average = vel.x/Volume;
+  v_average = vel.y/Volume;
+  w_average = vel.z/Volume;
+ }
+
+/* template<class SOLN_pState, class SOLN_cState, class HEXA_BLOCK> */
+/* double TurbStatistics<SOLN_pState, SOLN_cState, HEXA_BLOCK>:: */
+template <class HEXA_BLOCK>
+double Turbulent_Burning_Rate(HEXA_BLOCK *Solution_Block,
+                              AdaptiveBlock3D_List &LocalSolnBlockList,
+                              Grid3D_Input_Parameters &IPs){
+  double local_vol, Yf_u, rho_u, Ly, Lz, burning_rate = ZERO;
+  Yf_u = 0.05518;//IPs.Fresh_Fuel_Mass_Fraction;
+  rho_u = 1.13;//IPs.Fresh_Density;
+  Ly = IPs.Box_Width;
+  Lz = IPs.Box_Height;
+  for (int p = 0 ; p <= LocalSolnBlockList.Nblk-1 ; p++ ) {
+    if (LocalSolnBlockList.Block[p].used == ADAPTIVEBLOCK3D_USED) {
+      for (int i = Solution_Block[p].ICl ; i <= Solution_Block[p].ICu ; i++) {
+        for (int j = Solution_Block[p].JCl ; j <= Solution_Block[p].JCu ; j++) {
+           for (int k = Solution_Block[p].KCl ; k <= Solution_Block[p].KCu ; k++) {
+	    local_vol = Solution_Block[p].Grid.volume(i,j,k);
+	    burning_rate +=  Solution_Block[p].W[i][j][k].Fsd*local_vol*Solution_Block[p].W[i][j][k].rho;
+        }
+      }
+    }
+  }
+}
+  burning_rate = CFFC_Summation_MPI(burning_rate);
+  burning_rate = burning_rate*0.3837/(Ly*Lz);//IPs.laminar_flame_speed/Ly;//(rho_u*Ly);  //(rho_u*Yf_u*Ly);
+  cout << "\n Turbulent Burning Rate = "<< burning_rate << endl;
+  return burning_rate;
+}
+
+/* template<class SOLN_pState, class SOLN_cState, class HEXA_BLOCK> */
+/* void TurbStatistics<SOLN_pState, SOLN_cState, HEXA_BLOCK>:: */
+template<class HEXA_BLOCK>
+void Average(HEXA_BLOCK *Solution_Block,
+             AdaptiveBlock3D_List &LocalSolnBlockList,
+             Grid3D_Input_Parameters &IPs,
+             const double &u_average, 
+             const double &v_average,
+             const double &w_average,
+             double &sqr_u){
+  double vis, u_ave, v_ave, w_ave, local_vol, total_vol = ZERO, vis_ave = ZERO;
+  double u_p=ZERO, v_p=ZERO, w_p=ZERO, ens=ZERO, eps_w=ZERO, eps_ss=ZERO;
+  double Yfuel_conditional = ZERO;
+  LES3DFsd_pState dWdx, dWdy, dWdz;
+  
+  //Conditional average on fresh gas
+  //  if (IPs.react_name != "NO_REACTIONS") {
+  Yfuel_conditional = 0.95*0.05518;//IPs.Fresh_Fuel_Mass_Fraction;
+  //  }
+  u_ave = u_average;
+  v_ave = v_average;  
+  w_ave = w_average;  
+    
+  for (int p = 0; p < LocalSolnBlockList.Nblk; p++) {
+    if (LocalSolnBlockList.Block[p].used == ADAPTIVEBLOCK3D_USED) {
+      //      int q = p; 
+      for (int i = Solution_Block[p].ICl; i <= Solution_Block[p].ICu; ++i) {
+        for (int j  = Solution_Block[p].JCl; j <= Solution_Block[p].JCu; ++j) {
+           for (int k  = Solution_Block[p].KCl; k <= Solution_Block[p].KCu; ++k) {
+          if (Solution_Block[p].W[i][j][k].spec[0].c >= Yfuel_conditional) {
+            vis = Solution_Block[p].W[i][j][k].mu()/(Solution_Block[p].W[i][j][k].rho);
+	    // Rescale viscosity dividing by the thickening factor and the wrinkling
+            // factor,i.e. calculate the real viscosity.
+            local_vol = Solution_Block[p].Grid.volume(i,j,k);
+            total_vol += local_vol;
+            vis_ave += vis*local_vol;
+            u_p += sqr(Solution_Block[p].W[i][j][k].v.x - u_ave) * local_vol;
+            v_p += sqr(Solution_Block[p].W[i][j][k].v.y - v_ave) * local_vol;
+            w_p += sqr(Solution_Block[p].W[i][j][k].v.z - w_ave) * local_vol;
+            ens += Solution_Block[p].enstrophy(i,j,k) * local_vol;
+            eps_w += 2.0*vis*Solution_Block[p].enstrophy(i,j,k) * local_vol;
+            dWdx = Solution_Block[p].dWdx[i][j][k];
+            dWdy = Solution_Block[p].dWdy[i][j][k];
+            dWdz = Solution_Block[p].dWdz[i][j][k];
+            eps_ss += 2.0*vis*(sqr(Solution_Block[p].W[i][j][k].abs_strain_rate(dWdx, dWdy, dWdz))/2.0) * local_vol;
+	  }
+	}
+      }
+    }
+  }
+}
+  total_vol = CFFC_Summation_MPI(total_vol);
+  vis_ave = CFFC_Summation_MPI(vis_ave);
+  u_p = CFFC_Summation_MPI(u_p);
+  v_p = CFFC_Summation_MPI(v_p);
+  w_p = CFFC_Summation_MPI(w_p);
+  ens = CFFC_Summation_MPI(ens);
+  eps_w = CFFC_Summation_MPI(eps_w);
+  eps_ss = CFFC_Summation_MPI(eps_ss);
+
+  sqr_u = u_p/total_vol;
+  vis_ave = vis_ave/total_vol;
+  u_p = u_p/total_vol;
+  v_p = v_p/total_vol;
+  w_p = w_p/total_vol;
+  ens = ens/total_vol;
+  eps_w = eps_w/total_vol;
+  eps_ss = eps_ss/total_vol;
+  
+  double u_rms = sqrt((u_p + v_p + w_p)/3.0);
+  double Taylor_scale, Kolmogorov_scale, Re_Taylor, L11; 
+  double l_1, l_2;
+
+  if (ens == ZERO) {
+    Taylor_scale = ZERO;
+  } else {
+    Taylor_scale = sqrt(TWO*u_rms*u_rms/(TWO*ens));//sqrt(10.0*vis_ave*1.5*u_rms*u_rms/eps_w);//sqrt(TWO*u_rms*u_rms/(TWO*ens));//?????????
+  }
+
+  Re_Taylor =  u_rms*Taylor_scale/vis_ave;//???????????
+  Kolmogorov_scale = pow(pow(vis_ave, THREE)/eps_w, 0.25);//????????
+  L11= 0.09*pow(1.5*u_rms*u_rms, 1.5)/eps_w;//ens;
+
+  if (eps_w > 0.0) {
+    l_1 = 0.42*pow(u_rms, 3.0)/eps_w;
+  } else {
+    l_1 = 0.0;
+  }
+  if (eps_ss > 0.0) {
+    l_2 = 0.42*pow(u_rms, 3.0)/eps_ss;
+  } else {
+    l_2 = 0.0;
+  }
+
+  if (CFFC_Primary_MPI_Processor()) {
+    // Output
+    cout << "\n\n ==========================================================================\n"; 
+    cout << " In physical space:\n";
+    cout << "\n <u^2> = "<< u_p <<"  "<< "<v^2> = "<< v_p <<"  "<< "<v^2> = "<< w_p <<"  "
+	 << "u_rms  = " << u_rms <<"  "
+	 << "\n <u> = " << u_ave <<"  "<< "<v> = " << v_ave <<"  "<< "<w> = " << w_ave <<"  "
+	 << "ens = "<< ens <<"  " 
+	 << "\n eps_w = "<< eps_w <<"  "<< "eps_ss = "<< eps_ss <<"  "
+	 << "l_1 = "<< l_1 <<"  "<< "l_2 = " << l_2 <<"  "
+	 << "\n vis = "<< vis_ave << "  Re_Taylor = " << Re_Taylor <<"  "
+	 << "\n Taylor_scale = " << Taylor_scale <<"  " 
+	 << "Kolmogorov_scale = " << Kolmogorov_scale <<" "
+         << "\n L11 = " << L11 <<  endl;
+    cout << " ==========================================================================" << endl;
+  } 
+}
+
+/* template<class SOLN_pState, class SOLN_cState, class HEXA_BLOCK> */
+/* int TurbStatistics<SOLN_pState, SOLN_cState, HEXA_BLOCK>:: */
+template <class HEXA_BLOCK>
+int Longitudinal_Correlation(Octree_DataStructure &OcTree,
+                             AdaptiveBlock3D_ResourceList &Global_Soln_Block_List,
+			     AdaptiveBlock3D_List &LocalSolnBlockList,
+			     HEXA_BLOCK *Solution_Block,
+			     Grid3D_Input_Parameters &IPs,
+			     const double &u_ave, 
+                             const double &sqr_u){
+  ofstream Out_Corr_Function;
+  int error_flag = 0;
+  int Nblks = Global_Soln_Block_List.Nused;
+  double xref, yref, zref, uref, ucorr;
+  double Yfuel_conditional = ZERO;
+ 
+  int gblknum;
+  double r, dr, max_r, fr, Lx, volume, local_vol, total_vol, R11, L11;
+  Lx = IPs.Box_Width;
+  dr = MILLION;
+
+  //Conditional longitudinal correlation on fresh gas
+  //  if (IPs.react_name != "NO_REACTIONS") {
+  Yfuel_conditional = 0.95*0.05518;//IPs.Fresh_Fuel_Mass_Fraction;
+    //  }
+
+  for (int k = 0; k < LocalSolnBlockList.Nblk; ++k) {
+    if (LocalSolnBlockList.Block[k].used == ADAPTIVEBLOCK3D_USED) {
+      for (int ii = Solution_Block[k].ICl; ii <= Solution_Block[k].ICu; ++ii) {
+        for (int jj = Solution_Block[k].JCl; jj <= Solution_Block[k].JCu; ++jj) {
+           for (int kk = Solution_Block[k].KCl; kk <= Solution_Block[k].KCu; ++kk) {
+	  if (Solution_Block[k].W[ii][jj][kk].spec[0].c >= Yfuel_conditional) {
+	    dr = min(Solution_Block[k].Grid.Cell[ii][jj][kk].Xc.x - Solution_Block[k].Grid.Cell[ii-1][jj][kk].Xc.x, dr);
+	  }
+	}
+      }
+    }
+   }
+  }
+  dr = CFFC_Minimum_MPI(dr);
+
+  if (CFFC_Primary_MPI_Processor()) {
+    Out_Corr_Function.open("Correlation_Function.dat", ios::out);
+    if(Out_Corr_Function.fail()){
+      cerr<<"\nError opening file: Correlation_Function.dat to write" << endl;
+      exit(1);
+    }
+  }
+  
+  int *new_blocks_CPU, *CPUs_in_new_blocks;
+  int my_rank, undefined_rank, new_blocks_BLK;
+  CPUs_in_new_blocks = new int[Global_Soln_Block_List.Ncpu];
+  new_blocks_CPU = new int[Global_Soln_Block_List.Ncpu];
+  
+#ifdef _MPI_VERSION
+    MPI::Intracomm new_comm;
+    MPI::Group     big_group = MPI::COMM_WORLD.Get_group();
+    MPI::Group     new_group;
+    undefined_rank = MPI::UNDEFINED;
+#else
+    undefined_rank = -1;
+#endif
+  
+  HEXA_BLOCK  SolnBlk_duplicated;
+  OctreeBlock *octree_block_duplicated_ptr;
+  int SolnBlk_duplicated_info_level;
+
+  Vector3D Vcorr, Xcorr;
+  Vcorr.zero();  Xcorr.zero();
+  bool correlated_flag, flag = false;
+  int count = 0, count1 = 0;
+  r = ZERO;
+  L11 = ZERO;
+
+/*   if (IPs.i_Grid == GRID_TURBULENT_PREMIXED_FLAME && */
+/*       IPs.react_name == "NO_REACTIONS") { */
+/*     max_r = HALF*(Lx-dr); */
+/*   } else  { */
+    max_r = Lx-dr;
+/*   } */
+  
+  CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+ 
+  while( r <= max_r) {
+    total_vol = ZERO;
+    R11 = ZERO;
+    correlated_flag = false;
+    CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+
+    for (int iCPU = 0; iCPU <= OcTree.Ncpu-1; ++iCPU ) { // Loop over available processors.
+      for (int iBLK = 0; iBLK <= OcTree.Nblk-1; ++iBLK ) { // Loop over available blocks.
+        if (OcTree.Blocks[iCPU][iBLK] != NULL) {
+          if (OcTree.Blocks[iCPU][iBLK]->block.used) { // Check if the solution block is used.
+        
+            octree_block_duplicated_ptr = OcTree.Blocks[iCPU][iBLK];
+            new_blocks_CPU[0] = octree_block_duplicated_ptr->block.info.cpu;
+            new_blocks_BLK = octree_block_duplicated_ptr->block.info.blknum;
+            CPUs_in_new_blocks[0] = new_blocks_CPU[0];
+
+	    if (Global_Soln_Block_List.Ncpu > 1) {
+	      for (int iNEW = 1 ; iNEW < Global_Soln_Block_List.Ncpu; ++iNEW ) {
+		if (iNEW != new_blocks_CPU[0]) {
+		  new_blocks_CPU[iNEW] = iNEW;
+		} else {
+		  new_blocks_CPU[iNEW] = 0;
+		}
+		CPUs_in_new_blocks[iNEW] = new_blocks_CPU[iNEW];
+	      }
+	    }
+  
+#ifdef _MPI_VERSION
+	    new_group = big_group.Incl(Global_Soln_Block_List.Ncpu, CPUs_in_new_blocks);
+	    new_comm = MPI::COMM_WORLD.Create(new_group);
+#endif
+/* 	    if (LocalSolnBlockList.ThisCPU == new_blocks_CPU[0]) { */
+/* 	      Copy_Solution_Block(SolnBlk_duplicated, Solution_Block[new_blocks_BLK]); */
+/* 	      SolnBlk_duplicated_info_level = LocalSolnBlockList.Block[new_blocks_BLK].info.level; */
+/* 	    } */
+/* #ifdef _MPI_VERSION */
+/* 	    if (my_rank != undefined_rank) { */
+/* 	      Broadcast_Solution_Block(SolnBlk_duplicated, new_comm, new_blocks_CPU[0]); */
+/* 	      new_comm.Bcast(&SolnBlk_duplicated_info_level, 1, MPI::INT, 0); */
+/* 	    } */
+/* #endif */
+
+#ifdef _MPI_VERSION
+	    if (new_comm != MPI::COMM_NULL) new_comm.Free();
+	    new_group.Free();
+#endif
+	    for (int i_ref = SolnBlk_duplicated.ICl; i_ref <= SolnBlk_duplicated.ICu; ++i_ref) {
+	      for (int j_ref = SolnBlk_duplicated.JCl; j_ref <= SolnBlk_duplicated.JCu; ++j_ref) {
+  	         for (int k_ref = SolnBlk_duplicated.KCl; k_ref <= SolnBlk_duplicated.KCu; ++k_ref) {
+/*                 if (SolnBlk_duplicated.W[i_ref][j_ref][k_ref].spec[0].c >= Yfuel_conditional) { */
+/* 		  xref = SolnBlk_duplicated.Grid.Cell[i_ref][j_ref][k_ref].Xc.x; */
+/* 		  yref = SolnBlk_duplicated.Grid.Cell[i_ref][j_ref][k_ref].Xc.y; */
+/* 		  zref = SolnBlk_duplicated.Grid.Cell[i_ref][j_ref][k_ref].Xc.z; */
+/* 		  uref = SolnBlk_duplicated.W[i_ref][j_ref][k_ref].v.x; */
+/* 		  flag = false; */
+/* 		} else { */
+/*                   continue; */
+/* 		} */
+	       
+		for (int q = 0; q < LocalSolnBlockList.Nblk; ++q) {
+		  if (LocalSolnBlockList.Block[q].used == ADAPTIVEBLOCK3D_USED) {
+		    for (int i = Solution_Block[q].ICl; i <= Solution_Block[q].ICu; ++i) {
+		      for (int j = Solution_Block[q].JCl; j <= Solution_Block[q].JCu; ++j) {
+		         for (int k = Solution_Block[q].KCl; k <= Solution_Block[q].KCu; ++k) {
+
+			if ((Solution_Block[q].W[i][j][k].spec[0].c >= Yfuel_conditional) &&
+                            (Solution_Block[q].Grid.xfaceW(i,j,k).x < (xref + r) &&
+			     Solution_Block[q].Grid.xfaceE(i,j,k).x > (xref + r))) {
+
+			  // Finer reference block than local block
+			  if (SolnBlk_duplicated_info_level >= LocalSolnBlockList.Block[q].info.level  &&
+			      (Solution_Block[q].Grid.xfaceS(i,j,k).y < yref  &&  Solution_Block[q].Grid.xfaceN(i,j,k).y > yref)) {
+
+			    if (Solution_Block[q].Grid.Cell[i][j][k].Xc.y == yref &&
+				Solution_Block[q].Grid.Cell[i][j][k].Xc.x == (xref + r)) {
+			      Vcorr.x = Solution_Block[q].W[i][j][k].v.x;
+			    } else {
+			      Vector2D dX;
+			      dX.x = (xref + r) - Solution_Block[q].Grid.Cell[i][j][k].Xc.x;
+			      dX.y = yref - Solution_Block[q].Grid.Cell[i][j][k].Xc.y;
+			      Vcorr.x = Solution_Block[q].W[i][j][k].v.x + Solution_Block[q].phi[i][j][k].v.x
+				* (Solution_Block[q].dWdx[i][j][k].v.x * dX.x + Solution_Block[q].dWdy[i][j][k].v.x * dX.y);
+			    }
+			    // correlated u
+			    ucorr = Vcorr.x;
+			    local_vol = Solution_Block[q].Grid.volume(i,j,k);
+			    count1 ++;
+			    flag = true;
+
+			  // Coarser reference block than local block
+			  } else if (SolnBlk_duplicated_info_level < LocalSolnBlockList.Block[q].info.level  &&
+				     (Solution_Block[q].Grid.Cell[i][j][k].Xc.y < yref  &&  Solution_Block[q].Grid.Cell[i][j+1][k].Xc.y > yref)) {
+			    Xcorr.x = xref + r;
+			    Xcorr.y = yref;
+                            Trilinear_Interpolation(Solution_Block[q].Grid.Cell[i-1][j][k].Xc, Solution_Block[q].W[i-1][j][k],
+                                                    Solution_Block[q].Grid.Cell[i][j][k].Xc, Solution_Block[q].W[i][j][k],
+                                                    Solution_Block[q].Grid.Cell[i][j-1][k].Xc, Solution_Block[q].W[i][j-1][k],
+                                                    Solution_Block[q].Grid.Cell[i-1][j-1][k].Xc, Solution_Block[q].W[i-1][j-1][k],
+                                                    Solution_Block[q].Grid.Cell[i-1][j][k-1].Xc, Solution_Block[q].W[i-1][j][k-1],
+                                                    Solution_Block[q].Grid.Cell[i][j][k-1].Xc, Solution_Block[q].W[i][j][k-1],
+                                                    Solution_Block[q].Grid.Cell[i][j-1][k-1].Xc, Solution_Block[q].W[i][j-1][k-1],
+                                                    Solution_Block[q].Grid.Cell[i-1][j-1][k-1].Xc, Solution_Block[q].W[i-1][j-1][k-1],
+                                                    Solution_Block[q].Grid.Node[i][j][k].X);
+/* 			    Bilinear_Interpolation(Solution_Block[q].W[i][j][k].v, Solution_Block[q].Grid.Cell[i][j][k].Xc, */
+/* 						   Solution_Block[q].W[i][j+1][k].v, Solution_Block[q].Grid.Cell[i][j+1][k].Xc, */
+/* 						   Solution_Block[q].W[i+1][j+1][k].v, Solution_Block[q].Grid.Cell[i+1][j+1][k].Xc, */
+/* 						   Solution_Block[q].W[i+1][j][k].v, Solution_Block[q].Grid.Cell[i+1][j][k].Xc, */
+/* 						   Xcorr, Vcorr); */
+			    // correlated u
+			    ucorr = Vcorr.x;
+			    local_vol = Solution_Block[q].Grid.volume(i,j,k);
+			    count1 ++;
+			    flag = true;
+			  } // end if
+                                                                                          
+// 			  if (Soln_ptr[q].Grid.Cell[i][j].Xc.y == yref &&
+// 			      Soln_ptr[q].Grid.Cell[i][j].Xc.x == (xref + r)) {
+// 			    Vcorr.x = Soln_ptr[q].W[i][j].v.x;
+// 			  } else {
+// 			    Xcorr.x = xref + r;
+// 			    Xcorr.y = yref;
+// 			    // Bilinear_Interpolation(Soln_ptr[q].WnNW(i,j).v, Soln_ptr[q].Grid.nodeNW(i,j).X,
+// 			    // 						 Soln_ptr[q].WnNE(i,j).v, Soln_ptr[q].Grid.nodeNE(i,j).X,
+// 			    // 						 Soln_ptr[q].WnSE(i,j).v, Soln_ptr[q].Grid.nodeSE(i,j).X,
+// 			    // 						 Soln_ptr[q].WnSW(i,j).v, Soln_ptr[q].Grid.nodeSW(i,j).X,
+// 			    // 						 Xcorr, Vcorr);
+// 			    Bilinear_Interpolation(Soln_ptr[q].W[i-1][j].v, Soln_ptr[q].Grid.Cell[i-1][j].Xc,
+// 						   Soln_ptr[q].W[i][j+1].v, Soln_ptr[q].Grid.Cell[i][j+1].Xc,
+// 						   Soln_ptr[q].W[i+1][j].v, Soln_ptr[q].Grid.Cell[i+1][j].Xc,
+// 						   Soln_ptr[q].W[i][j-1].v, Soln_ptr[q].Grid.Cell[i][j-1].Xc,
+// 						   Xcorr, Vcorr);
+// 			  }
+		  
+			} // end if
+		      }
+		    }
+		  } //end if
+		  if (flag) break;
+		} // end for
+        
+		if (flag) {
+		  volume = SolnBlk_duplicated.Grid.volume(i_ref,j_ref,k_ref) + local_vol;
+		  total_vol += volume;
+		  R11 += (ucorr - u_ave)*(uref - u_ave)*volume;
+		  correlated_flag = true;
+		  count++;
+		}
+           
+		} // end for
+		 } // end for
+	      }
+	    }
+	  }
+	}
+      }
+    }
+    if (CFFC_OR_MPI(correlated_flag)) {
+      total_vol = CFFC_Summation_MPI(total_vol);
+      R11 = CFFC_Summation_MPI(R11);
+       
+      R11 = R11/total_vol;     // Area-averaged two-point correlation
+      fr = R11/sqr_u;        // Longitudinal autocorrelation function
+      L11 += fr*dr;          // Integrate the above funtion to obtain L11
+      if (CFFC_Primary_MPI_Processor()) {
+        Out_Corr_Function << r << "  " << fr << endl;
+      }
+    }
+       
+    //cout << "\n->" << r;
+    r += dr;
+  } // end while
+  
+  count = CFFC_Summation_MPI(count);
+  count1 = CFFC_Summation_MPI(count1);
+    
+  if (CFFC_Primary_MPI_Processor()) {
+    Out_Corr_Function.close();
+    cout << "\n\n *** L11 = " << L11 << " ***" << endl;
+  }
+
+  delete[] CPUs_in_new_blocks;   CPUs_in_new_blocks = NULL;
+  delete[] new_blocks_CPU;       new_blocks_CPU = NULL;
+  
+  if (CPUs_in_new_blocks != NULL || new_blocks_CPU != NULL) error_flag = 1;
+       
+  return (error_flag);
 }
 
 #endif // _TURBULENCE_MODELLING_INCLUDED 

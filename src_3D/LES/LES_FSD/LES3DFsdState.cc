@@ -1,139 +1,626 @@
-/********************** LES3DFsdState.cc **********************
-  Constructors for LES3Dstate which handles all the physical
-  variables and mixture rules associated with multi-species
-  chemically reacting flows.
+/*! \file  LES3DFsdState.cc
+\brief  Definition of member functions for 3D Favre-averaged Navier-Stokes solution classes
+        associated with solution of compressible turbulent flows of a thermally 
+        perfect non-reactive or combusting mixture.
+*/
 
-   assosicated files:
-           LES3DFsdState.h    
-
-***************************************************************/
+/* Include LES3DFsdState header file. */
 
 #ifndef _LES3DFSD_STATE_INCLUDED
 #include "LES3DFsdState.h"
 #endif // LES3DFSD_STATE_INCLUDED   
 
-/************* set_species_data ***************************/
-
+/***************************************************************************************
+ * LES3DFsd_pState -- Create storage and assign various static values.                 *
+ ***************************************************************************************/
 double LES3DFsd_pState::Mref = 0.1;
+double LES3DFsd_pState::_fuel_equivalence_ratio=1.0;
+double LES3DFsd_pState::_unburnt_fuel_mass_fraction=0.05518;
+double LES3DFsd_pState::_laminar_flame_speed=0.3738;
+double LES3DFsd_pState::_laminar_flame_thickness=4.4E-04;
+double LES3DFsd_pState::_adiabatic_flame_temperature=2218.0;
+
+/***************************************************************************************
+ * LES3DFsd_cState -- Create storage and assign various static values.                 *
+ ***************************************************************************************/
 double LES3DFsd_cState::Mref = 0.1;
+double LES3DFsd_cState::_fuel_equivalence_ratio=1.0;
+double LES3DFsd_cState::_unburnt_fuel_mass_fraction=0.05518;
+double LES3DFsd_cState::_laminar_flame_speed=0.3738;
+double LES3DFsd_cState::_laminar_flame_thickness=4.4E-04;
+double LES3DFsd_cState::_adiabatic_flame_temperature=2218.0;
 
-/****************************************************
-  Speed of sound using 
-  a^2 = dip/dirho + p/rho^2( die/dip)^-1
-  from eigenvalue analysis using e =f(p,rho)
-****************************************************/
+/*****************************************************************************************
+ * LESS3DFsd_pState member functions                                                     *
+ *****************************************************************************************/
 
-double LES3DFsd_pState::a(void){
-   double sum;
-   sum = sqr(Euler3D_ThermallyPerfect_pState::a());
-   sum += 2.0/3.0*k*Euler3D_ThermallyPerfect_pState::g();
-   return sqrt(sum);
+/*********************************************************************************************
+ * LES3DFsd_pState::Realizable_Solution_Check -- Check physical validity of solution state.  *
+ *********************************************************************************************/
+bool LES3DFsd_pState::Realizable_Solution_Check(void) {
+   if (rho <= ZERO || p <= ZERO || C <= ZERO || Fsd <= ZERO || k <= ZERO ) {    
+      cout << "\n " << CFFC_Name() 
+           << " ERROR: Primitive solution state has a negative density, pressure, progress variable,"
+           << " FSD, and/or turbulent kinetic energy.\n";
+      return false;
+   } else {
+      return true;
+   } /* endif */
+} 
+
+/*****************************************************************************************
+ * LES3DFsd_pState::E -- Return total energy of the mixture.                             *
+ *****************************************************************************************/
+double LES3DFsd_pState::E(void) const {   
+   return ( rho*(e()+HALF*v.sqr()+k) );   
 }
 
-double LES3DFsd_pState::a(void) const{
-   double sum;
-   sum = sqr(Euler3D_ThermallyPerfect_pState::a());
-   sum += 2.0/3.0*k*Euler3D_ThermallyPerfect_pState::g();
-   return sqrt(sum);
+/*****************************************************************************************
+ * LES3DFsd_pState::H -- Return total enthalpy of the mixture.                           *
+ *****************************************************************************************/
+double LES3DFsd_pState::H(void) const{
+   return ( rho*(h()+HALF*v.sqr()+FIVE*k/THREE) );   
 }
 
-void LES3DFsd_pState::set_species_data(const int &n,
-                                       const string *S,
-                                       const char *PATH,
-                                       const int &debug, 
-                                       const double &Mr, 
-                                       const double* Sc,
-                                       const int &trans_data) { 
-   ns = n;
-   num_vars = NUM_EULER3D_VAR_SANS_SPECIES + NUM_LES3D_VAR_EXTRA;
-   //read in NASA data for each species to be used 
-   Deallocate_static();
-   specdata = new NASARP1311data[ns]; 
-   Schmidt = new double[ns];
-   // Create memory for species data.
-   Deallocate();
-   spec = new Species[ns];
-   // Read in and assign appropriate NASA data for each species to be used.
-   for (int i = 0; i < ns; i++) {
-     //overwrite default data  
-     specdata[i].Getdata(S[i], PATH, trans_data);  
-     Schmidt[i] = Sc[i];
-   } /* endfor */
-   // Set initial values for the species.
-   for (int i=0; i < ns; i++) {
-      spec[i].c = ONE/ns; 
-   } /* endfor */
-    Mref = Mr;
-   // Set data temperature ranges for mixture calculations.
-   Temp_low_range(); 
-   Temp_high_range(); 
-   // Set debug information level.
-   debug_level = debug;
-}   
+/*****************************************************************************************
+ * LES3DFsd_pState::Hs -- Return total mixture sensible enthalpy.                        *
+ *****************************************************************************************/
+double LES3DFsd_pState::Hs(void) const{
+   return ( rho*(hs()+HALF*v.sqr()+FIVE*k/THREE) );   
+}
 
-void LES3DFsd_cState::set_species_data(const int &n, 
-                                       const string *S, 
-                                       const char *PATH,
-                                       const int &debug, 
-                                       const double &Mr, 
-                                       const double* Sc,
-                                       const int &trans_data) { 
-   ns = n;
-   num_vars = NUM_EULER3D_VAR_SANS_SPECIES + NUM_LES3D_VAR_EXTRA;
-   // Create static memory for NASA data.
-   Deallocate_static();
-   specdata = new NASARP1311data[ns];
-   Schmidt = new double[ns];
-   // Create memory for species data.
-   Deallocate();
-   rhospec = new Species[ns];
-   // Read in and assign appropriate NASA data for each species to be used.
-   for (int i = 0; i < ns; i++){
-      //overwrite default data  
-      specdata[i].Getdata(S[i], PATH, trans_data);
-      Schmidt[i] = Sc[i];  
-   } /* endfor */
-   // Set initial values for the species.
-   for (int i = 0; i < ns; i++){
-      rhospec[i].c = rho/ns; 
-   } /* endfor */
-   Mref = Mr;
-   // Set data temperature ranges for mixture calculations.
-   Temp_low_range();
-   Temp_high_range();
-   // Set debug information level.
-   debug_level = debug;
-}      
+/*****************************************************************************************
+ * LES3DFsd_pState::pt -- Return turbulence modified pressure.                           *
+ *****************************************************************************************/
+double LES3DFsd_pState::pt(void) const { 
+   return ( p + 2.0*rho*k/3.0 );
+}
 
-/**********************************************************
-     LES3DFsd_pState::F -- Inviscid flux (x-direction).   
-***********************************************************/
+/********************************************************************************************
+ * LES3DFsd_pState::a_t -- Return mixture sound speed (including turbulent kinetic energy). *
+ ********************************************************************************************/
+double LES3DFsd_pState::a_t(void) {
+   double aa = sqr(a());
+   aa += (TWO/THREE)*k*g();
+   return sqrt(aa);
+}
+
+double LES3DFsd_pState::a_t(void) const {
+   double aa = sqr(a());
+   aa += (TWO/THREE)*k*g();
+   return sqrt(aa);
+}
+
+/*******************************************************************
+ * LES3DFsd_pState::mu_t -- Return eddy (turbulent) viscosity.     *
+ *******************************************************************/
+double LES3DFsd_pState::mu_t(const LES3DFsd_pState &dWdx,
+ 			     const LES3DFsd_pState &dWdy,
+			     const LES3DFsd_pState &dWdz,
+                             const int &Flow_Type, 
+                             const double &Volume) const{
+    double filter = filter_width(Volume);
+  if (Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY) {
+    double Cs = 0.18;
+    return(rho*Cs*sqr(filter)*abs_strain_rate(dWdx,dWdy,dWdz));
+  }else if(Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K) {
+    double Cv = 0.086;
+    return(rho*Cv*sqrt(k)*filter);
+  }
+}
+
+/**************************************************************************
+ * LES3DFsd_pState::kappa_t -- Return turbulent thermal conductivity.     *
+ **************************************************************************/
+double LES3DFsd_pState::kappa_t(const LES3DFsd_pState &dWdx,
+ 			        const LES3DFsd_pState &dWdy,
+			        const LES3DFsd_pState &dWdz,
+                                const int &Flow_Type, 
+                                const double &Volume) const{
+  return (mu_t(dWdx,dWdy,dWdz,Flow_Type,Volume)*Cp()/Pr_t()); 
+}
+
+/********************************************************************************
+ * LES3DFsd_pState::Ds_t -- Return species turbulent diffusion coefficient.     *
+ ********************************************************************************/
+double LES3DFsd_pState::Ds_t(const int &i,
+                             const LES3DFsd_pState &dWdx,
+ 			     const LES3DFsd_pState &dWdy,
+			     const LES3DFsd_pState &dWdz,
+                             const int &Flow_Type, 
+                             const double &Volume) const{
+  return (mu_t(dWdx,dWdy,dWdz,Flow_Type,Volume)/(rho*Sc_t())); 
+}
+
+double LES3DFsd_pState::Ds_t(const int &i,
+                             const double &mu_t_temp) const{
+  return (mu_t_temp/(rho*Sc_t())); 
+}
+
+/*******************************************************************
+ * LES3DFsd_pState::Pr_t -- Return turbulent Prandtl number.       *
+ *******************************************************************/
+double LES3DFsd_pState::Pr_t(void) {
+   return (0.9); 
+}
+
+/*******************************************************************
+ * LES3DFsd_pState::Sc_t -- Return turbulent Schmidt number.       *
+ *******************************************************************/
+double LES3DFsd_pState::Sc_t(void) {
+   return (1.0);
+}
+
+/*******************************************************************
+ * LES3DFsd_pState::Le_t -- Return turbulent Lewis number.         *
+ *******************************************************************/
+double LES3DFsd_pState::Le_t(void) {
+  return (Sc_t()/Pr_t());
+}
+
+/*******************************************************************************
+ * LES3DFsd_pState::tau_t -- Return subfilter scale (turbulent) stress tensor. *
+ *******************************************************************************/
+Tensor3D LES3DFsd_pState::tau_t(const LES3DFsd_pState &dWdx, 
+                                const LES3DFsd_pState &dWdy,
+                                const LES3DFsd_pState &dWdz,
+                                const int &Flow_Type, 
+                                const double &Volume) {
+   
+   Tensor3D SFS_stress;
+   double mu_t_temp = mu_t(dWdx,dWdy,dWdz,Flow_Type,Volume);
+
+   SFS_stress.xx = mu_t_temp*(FOUR*dWdx.v.x - TWO*dWdy.v.y - TWO*dWdz.v.z)/THREE - (TWO/THREE)*rho*k;
+   SFS_stress.xy = mu_t_temp*(dWdx.v.y + dWdy.v.x);
+   SFS_stress.xz = mu_t_temp*(dWdx.v.z + dWdz.v.x);
+   SFS_stress.yy = mu_t_temp*(FOUR*dWdy.v.y - TWO*dWdx.v.x - TWO*dWdz.v.z)/THREE - (TWO/THREE)*rho*k;
+   SFS_stress.yz = mu_t_temp*(dWdy.v.z + dWdz.v.y);
+   SFS_stress.zz = mu_t_temp*(FOUR*dWdz.v.z - TWO*dWdx.v.x - TWO*dWdy.v.y)/THREE - (TWO/THREE)*rho*k;
+
+   return (SFS_stress);
+
+}
+
+Tensor3D LES3DFsd_pState::tau_t(const double &mu_t_temp,
+                                const LES3DFsd_pState &dWdx, 
+                                const LES3DFsd_pState &dWdy,
+                                const LES3DFsd_pState &dWdz,
+                                const int &Flow_Type, 
+                                const double &Volume) {
+   
+   Tensor3D SFS_stress;
+
+   SFS_stress.xx = mu_t_temp*(FOUR*dWdx.v.x - TWO*dWdy.v.y - TWO*dWdz.v.z)/THREE - (TWO/THREE)*rho*k;
+   SFS_stress.xy = mu_t_temp*(dWdx.v.y + dWdy.v.x);
+   SFS_stress.xz = mu_t_temp*(dWdx.v.z + dWdz.v.x);
+   SFS_stress.yy = mu_t_temp*(FOUR*dWdy.v.y - TWO*dWdx.v.x - TWO*dWdz.v.z)/THREE - (TWO/THREE)*rho*k;
+   SFS_stress.yz = mu_t_temp*(dWdy.v.z + dWdz.v.y);
+   SFS_stress.zz = mu_t_temp*(FOUR*dWdz.v.z - TWO*dWdx.v.x - TWO*dWdy.v.y)/THREE - (TWO/THREE)*rho*k;
+
+   return (SFS_stress);
+
+}
+
+/**********************************************************************************************
+ * LES3DFsd_pState::tau_t_x -- Return components of subfilter scale (turbulent)               *
+ *                             stress tensor in the x-direction.                              *
+ **********************************************************************************************/
+Tensor3D LES3DFsd_pState::tau_t_x(const LES3DFsd_pState &dWdx, 
+                                  const LES3DFsd_pState &dWdy,
+                                  const LES3DFsd_pState &dWdz,
+                                  const int &Flow_Type, 
+                                  const double &Volume) {
+   Tensor3D SFS_stress;
+   double mu_t_temp = mu_t(dWdx,dWdy,dWdz,Flow_Type,Volume);
+
+   SFS_stress.xx = mu_t_temp*(FOUR*dWdx.v.x - TWO*dWdy.v.y - TWO*dWdz.v.z)/THREE - (TWO/THREE)*rho*k;
+   SFS_stress.xy = mu_t_temp*(dWdx.v.y + dWdy.v.x);
+   SFS_stress.xz = mu_t_temp*(dWdx.v.z + dWdz.v.x);
+
+   return (SFS_stress);
+
+}
+
+Tensor3D LES3DFsd_pState::tau_t_x(const double &mu_t_temp,
+                                  const LES3DFsd_pState &dWdx, 
+                                  const LES3DFsd_pState &dWdy,
+                                  const LES3DFsd_pState &dWdz,
+                                  const int &Flow_Type, 
+                                  const double &Volume) {
+   Tensor3D SFS_stress;
+
+   SFS_stress.xx = mu_t_temp*(FOUR*dWdx.v.x - TWO*dWdy.v.y - TWO*dWdz.v.z)/THREE - (TWO/THREE)*rho*k;
+   SFS_stress.xy = mu_t_temp*(dWdx.v.y + dWdy.v.x);
+   SFS_stress.xz = mu_t_temp*(dWdx.v.z + dWdz.v.x);
+
+   return (SFS_stress);
+
+}
+
+/**********************************************************************************************
+ * LES3DFsd_pState::tau_t_y -- Return components of subfilter scale (turbulent)               *
+ *                             stress tensor in the y-direction.                              *
+ **********************************************************************************************/
+Tensor3D LES3DFsd_pState::tau_t_y(const LES3DFsd_pState &dWdx, 
+                                  const LES3DFsd_pState &dWdy,
+                                  const LES3DFsd_pState &dWdz,
+                                  const int &Flow_Type, 
+                                  const double &Volume) {
+   Tensor3D SFS_stress;
+   double mu_t_temp = mu_t(dWdx,dWdy,dWdz,Flow_Type,Volume);
+
+   SFS_stress.xy = mu_t_temp*(dWdx.v.y + dWdy.v.x);
+   SFS_stress.yy = mu_t_temp*(FOUR*dWdy.v.y - TWO*dWdx.v.x - TWO*dWdz.v.z)/THREE - (TWO/THREE)*rho*k;
+   SFS_stress.yz = mu_t_temp*(dWdy.v.z + dWdz.v.y);
+
+   return (SFS_stress);
+
+}
+
+Tensor3D LES3DFsd_pState::tau_t_y(const double &mu_t_temp,
+                                  const LES3DFsd_pState &dWdx, 
+                                  const LES3DFsd_pState &dWdy,
+                                  const LES3DFsd_pState &dWdz,
+                                  const int &Flow_Type, 
+                                  const double &Volume) {
+   Tensor3D SFS_stress;
+
+   SFS_stress.xy = mu_t_temp*(dWdx.v.y + dWdy.v.x);
+   SFS_stress.yy = mu_t_temp*(FOUR*dWdy.v.y - TWO*dWdx.v.x - TWO*dWdz.v.z)/THREE - (TWO/THREE)*rho*k;
+   SFS_stress.yz = mu_t_temp*(dWdy.v.z + dWdz.v.y);
+
+   return (SFS_stress);
+
+}
+
+/**********************************************************************************************
+ * LES3DFsd_pState::tau_t_z -- Return components of subfilter scale (turbulent)               *
+ *                             stress tensor in the z-direction.                              *
+ **********************************************************************************************/
+Tensor3D LES3DFsd_pState::tau_t_z(const LES3DFsd_pState &dWdx, 
+                                  const LES3DFsd_pState &dWdy,
+                                  const LES3DFsd_pState &dWdz,
+                                  const int &Flow_Type, 
+                                  const double &Volume) {
+   Tensor3D SFS_stress;
+   double mu_t_temp = mu_t(dWdx,dWdy,dWdz,Flow_Type,Volume);
+
+   SFS_stress.xz = mu_t_temp*(dWdx.v.z + dWdz.v.x);
+   SFS_stress.yz = mu_t_temp*(dWdy.v.z + dWdz.v.y);
+   SFS_stress.zz = mu_t_temp*(FOUR*dWdz.v.z - TWO*dWdx.v.x - TWO*dWdy.v.y)/THREE - (TWO/THREE)*rho*k;
+
+   return (SFS_stress);
+
+}
+
+Tensor3D LES3DFsd_pState::tau_t_z(const double &mu_t_temp,
+                                  const LES3DFsd_pState &dWdx, 
+                                  const LES3DFsd_pState &dWdy,
+                                  const LES3DFsd_pState &dWdz,
+                                  const int &Flow_Type, 
+                                  const double &Volume) {
+   Tensor3D SFS_stress;
+
+   SFS_stress.xz = mu_t_temp*(dWdx.v.z + dWdz.v.x);
+   SFS_stress.yz = mu_t_temp*(dWdy.v.z + dWdz.v.y);
+   SFS_stress.zz = mu_t_temp*(FOUR*dWdz.v.z - TWO*dWdx.v.x - TWO*dWdy.v.y)/THREE - (TWO/THREE)*rho*k;
+
+   return (SFS_stress);
+
+}
+
+/************************************************************************
+ * LES3DFsd_pState::q_t -- Return turbulent heat flux vector.           *
+ ************************************************************************/
+Vector3D LES3DFsd_pState::q_t(const LES3DFsd_pState &dWdx, 
+                              const LES3DFsd_pState &dWdy,
+                              const LES3DFsd_pState &dWdz,
+                              const int &Flow_Type, 
+                              const double &Volume) {
+  
+    double Rmix = Rtot();
+    double kappa_t_temp = kappa_t(dWdx,dWdy,dWdz,Flow_Type,Volume);
+    Vector3D heat_flux;
+     
+    heat_flux.x = -kappa_t_temp*(1.0/(rho*Rmix)) * (dWdx.p -(p/rho)*dWdx.rho);
+    heat_flux.y = -kappa_t_temp*(1.0/(rho*Rmix)) * (dWdy.p -(p/rho)*dWdy.rho);
+    heat_flux.z = -kappa_t_temp*(1.0/(rho*Rmix)) * (dWdz.p -(p/rho)*dWdz.rho);
+        
+    return (heat_flux);
+
+}
+
+Vector3D LES3DFsd_pState::q_t(const double &kappa_t_temp,
+                              const LES3DFsd_pState &dWdx, 
+                              const LES3DFsd_pState &dWdy,
+                              const LES3DFsd_pState &dWdz,
+                              const int &Flow_Type, 
+                              const double &Volume) {
+  
+    double Rmix = Rtot();
+    Vector3D heat_flux;
+     
+    heat_flux.x = -kappa_t_temp*(1.0/(rho*Rmix)) * (dWdx.p -(p/rho)*dWdx.rho);
+    heat_flux.y = -kappa_t_temp*(1.0/(rho*Rmix)) * (dWdy.p -(p/rho)*dWdy.rho);
+    heat_flux.z = -kappa_t_temp*(1.0/(rho*Rmix)) * (dWdz.p -(p/rho)*dWdz.rho);
+        
+    return (heat_flux);
+
+}
+
+/************************************************************************
+ * LES3DFsd_pState::q_t_x -- Return component of turbulent heat flux    *
+ *                           vector in the x-direction.                 *
+ ************************************************************************/
+Vector3D LES3DFsd_pState::q_t_x(const LES3DFsd_pState &dWdx, 
+                                const LES3DFsd_pState &dWdy,
+                                const LES3DFsd_pState &dWdz,
+                                const int &Flow_Type, 
+                                const double &Volume) {
+  
+    double Rmix = Rtot();
+    double kappa_t_temp = kappa_t(dWdx,dWdy,dWdz,Flow_Type,Volume);
+    Vector3D heat_flux;
+     
+    heat_flux.x = -kappa_t_temp*(1.0/(rho*Rmix)) * (dWdx.p -(p/rho)*dWdx.rho);
+    return (heat_flux);
+
+}
+
+Vector3D LES3DFsd_pState::q_t_x(const double &kappa_t_temp,
+                                const LES3DFsd_pState &dWdx, 
+                                const LES3DFsd_pState &dWdy,
+                                const LES3DFsd_pState &dWdz,
+                                const int &Flow_Type, 
+                                const double &Volume) {
+  
+    double Rmix = Rtot();
+    Vector3D heat_flux;
+     
+    heat_flux.x = -kappa_t_temp*(1.0/(rho*Rmix)) * (dWdx.p -(p/rho)*dWdx.rho);
+    return (heat_flux);
+
+}
+
+/************************************************************************
+ * LES3DFsd_pState::q_t_y -- Return component of turbulent heat flux    *
+ *                           vector in the y-direction.                 *
+ ************************************************************************/
+Vector3D LES3DFsd_pState::q_t_y(const LES3DFsd_pState &dWdx, 
+                                const LES3DFsd_pState &dWdy,
+                                const LES3DFsd_pState &dWdz,
+                                const int &Flow_Type, 
+                                const double &Volume) {
+  
+    double Rmix = Rtot();
+    double kappa_t_temp = kappa_t(dWdx,dWdy,dWdz,Flow_Type,Volume);
+    Vector3D heat_flux;
+     
+    heat_flux.y = -kappa_t_temp*(1.0/(rho*Rmix)) * (dWdy.p -(p/rho)*dWdy.rho);
+    return (heat_flux);
+
+}
+
+Vector3D LES3DFsd_pState::q_t_y(const double &kappa_t_temp,
+                                const LES3DFsd_pState &dWdx, 
+                                const LES3DFsd_pState &dWdy,
+                                const LES3DFsd_pState &dWdz,
+                                const int &Flow_Type, 
+                                const double &Volume) {
+  
+    double Rmix = Rtot();
+    Vector3D heat_flux;
+     
+    heat_flux.y = -kappa_t_temp*(1.0/(rho*Rmix)) * (dWdy.p -(p/rho)*dWdy.rho);
+    return (heat_flux);
+
+}
+
+/************************************************************************
+ * LES3DFsd_pState::q_t_z -- Return component of turbulent heat flux    *
+ *                           vector in the z-direction.                 *
+ ************************************************************************/
+Vector3D LES3DFsd_pState::q_t_z(const LES3DFsd_pState &dWdx, 
+                                const LES3DFsd_pState &dWdy,
+                                const LES3DFsd_pState &dWdz,
+                                const int &Flow_Type, 
+                                const double &Volume) {
+  
+    double Rmix = Rtot();
+    double kappa_t_temp = kappa_t(dWdx,dWdy,dWdz,Flow_Type,Volume);
+    Vector3D heat_flux;
+     
+    heat_flux.z = -kappa_t_temp*(1.0/(rho*Rmix)) * (dWdz.p -(p/rho)*dWdz.rho);
+    return (heat_flux);
+
+}
+
+Vector3D LES3DFsd_pState::q_t_z(const double &kappa_t_temp,
+                                const LES3DFsd_pState &dWdx, 
+                                const LES3DFsd_pState &dWdy,
+                                const LES3DFsd_pState &dWdz,
+                                const int &Flow_Type, 
+                                const double &Volume) {
+  
+    double Rmix = Rtot();
+    Vector3D heat_flux;
+     
+    heat_flux.z = -kappa_t_temp*(1.0/(rho*Rmix)) * (dWdz.p -(p/rho)*dWdz.rho);
+    return (heat_flux);
+
+}
+
+/*******************************************************************
+ * LES3DFsd_pState::U -- Return conserved solution state vector.   *
+ *******************************************************************/
+LES3DFsd_cState LES3DFsd_pState::U(void){
+   LES3DFsd_cState Temp;
+   Temp.rho = rho;
+   Temp.rhov = rhov();
+   Temp.E = E();
+   Temp.rhoC = rho*C;
+   Temp.rhoFsd = rho*Fsd;
+   Temp.rhok = rho*k;
+   for(int i=0; i<ns; i++){
+      Temp.rhospec[i] = rho*spec[i];
+   } /* endfor */
+   return Temp;
+}
+
+LES3DFsd_cState LES3DFsd_pState::U(void)const{
+   LES3DFsd_cState Temp;
+   Temp.rho = rho;
+   Temp.rhov = rhov();
+   Temp.E = E();
+   Temp.rhoC = rho*C;
+   Temp.rhoFsd = rho*Fsd;
+   Temp.rhok = rho*k;
+   for(int i=0; i<ns; i++){
+      Temp.rhospec[i] = rho*spec[i];
+   } /* endfor */
+   return Temp;
+}
+
+LES3DFsd_cState LES3DFsd_pState::U(const LES3DFsd_pState &W){
+    LES3DFsd_cState Temp;
+    Temp.rho = W.rho;
+    Temp.rhov = W.rhov();
+    Temp.E = W.E();
+    Temp.rhoC = W.rho*W.C;
+    Temp.rhoFsd = W.rho*W.Fsd;
+    Temp.rhok = W.rho*W.k;
+    for(int i=0; i<W.ns; i++){
+      Temp.rhospec[i] = W.rho*W.spec[i];
+    } /* endfor */
+    return Temp;
+}
+
+/***********************************************************************
+ ***************** INVISCID FLUX VECTORS *******************************
+ ***********************************************************************/
+
+/***********************************************************
+ *    LES3DFsd_pState::F -- Inviscid flux (x-direction).   *
+ ***********************************************************/
 LES3DFsd_cState LES3DFsd_pState::F(void) {
-   // call the inviscid flux calculation in Euler3D_ThermallyPerfect_pState class  
-   Euler3D_ThermallyPerfect_cState Temp;
-   Temp = Euler3D_ThermallyPerfect_pState::F();
-   Temp.rhov.x += 2.0/3.0*rho*k;
-   Temp.E += v.x*(2.0/3.0*rho*k);
-   double Temp_rhoC = rho*v.x*C;
-   double Temp_rhoFsd = rho*v.x*Fsd;
-   double Temp_rhok = rho*v.x*k;
-   return (LES3DFsd_cState(Temp.rho, Temp.rhov, Temp.E, Temp_rhoC, Temp_rhoFsd, Temp_rhok ));//,Temp.rhospec ));
+   LES3DFsd_cState Temp;
+   Temp.rho = rho*v.x;
+   Temp.rhov.x = rho*sqr(v.x) + p + (TWO/THREE)*rho*k;
+   Temp.rhov.y = rho*v.x*v.y;
+   Temp.rhov.z = rho*v.x*v.z;
+   Temp.E = v.x*(H() + (TWO/THREE)*rho*k);
+   Temp.rhoC = rho*v.x*C;
+   Temp.rhoFsd = rho*v.x*Fsd;
+   Temp.rhok = rho*v.x*k;
+   return (Temp);
 }
 
 LES3DFsd_cState LES3DFsd_pState::F(void) const {
-   // call the inviscid flux calculation in Euler3D_ThermallyPerfect_pState class  
-   Euler3D_ThermallyPerfect_cState Temp;
-   Temp = Euler3D_ThermallyPerfect_pState::F();
-   Temp.rhov.x += 2.0/3.0*rho*k;
-   Temp.E += v.x*(2.0/3.0*rho*k);
-   double Temp_rhoC = rho*v.x*C;
-   double Temp_rhoFsd = rho*v.x*Fsd;
-   double Temp_rhok = rho*v.x*k;
-   return (LES3DFsd_cState(Temp.rho, Temp.rhov, Temp.E, Temp_rhoC, Temp_rhoFsd, Temp_rhok ));//,Temp.rhospec ));
+   LES3DFsd_cState Temp;
+   Temp.rho = rho*v.x;
+   Temp.rhov.x = rho*sqr(v.x) + p + (TWO/THREE)*rho*k;
+   Temp.rhov.y = rho*v.x*v.y;
+   Temp.rhov.z = rho*v.x*v.z;
+   Temp.E = v.x*(H() + (TWO/THREE)*rho*k);
+   Temp.rhoC = rho*v.x*C;
+   Temp.rhoFsd = rho*v.x*Fsd;
+   Temp.rhok = rho*v.x*k;
+   return (Temp);
 }
 
+/************************************************************
+ *    LES3DFsd_pState::Fx -- Inviscid flux (x-direction).   *
+ ************************************************************/
+LES3DFsd_cState LES3DFsd_pState::Fx(void) {
+   LES3DFsd_cState Temp;
+   Temp.rho = rho*v.x;
+   Temp.rhov.x = rho*sqr(v.x) + p + (TWO/THREE)*rho*k;
+   Temp.rhov.y = rho*v.x*v.y;
+   Temp.rhov.z = rho*v.x*v.z;
+   Temp.E = v.x*(H() + (TWO/THREE)*rho*k);
+   Temp.rhoC = rho*v.x*C;
+   Temp.rhoFsd = rho*v.x*Fsd;
+   Temp.rhok = rho*v.x*k;
+   return (Temp);
+}
+
+LES3DFsd_cState LES3DFsd_pState::Fx(void) const {
+   LES3DFsd_cState Temp;
+   Temp.rho = rho*v.x;
+   Temp.rhov.x = rho*sqr(v.x) + p + (TWO/THREE)*rho*k;
+   Temp.rhov.y = rho*v.x*v.y;
+   Temp.rhov.z = rho*v.x*v.z;
+   Temp.E = v.x*(H() + (TWO/THREE)*rho*k);
+   Temp.rhoC = rho*v.x*C;
+   Temp.rhoFsd = rho*v.x*Fsd;
+   Temp.rhok = rho*v.x*k;
+   return (Temp);
+}
+
+/************************************************************
+ *    LES3DFsd_pState::Fy -- Inviscid flux (y-direction).   *
+ ************************************************************/
+LES3DFsd_cState LES3DFsd_pState::Fy(void) {
+   LES3DFsd_cState Temp;
+   Temp.rho = rho*v.y;
+   Temp.rhov.x = rho*v.x*v.y;
+   Temp.rhov.y = rho*sqr(v.y) + p + (TWO/THREE)*rho*k;
+   Temp.rhov.z = rho*v.y*v.z;
+   Temp.E = v.y*(H() + (TWO/THREE)*rho*k);
+   Temp.rhoC = rho*v.y*C;
+   Temp.rhoFsd = rho*v.y*Fsd;
+   Temp.rhok = rho*v.y*k;
+   return (Temp);
+}
+
+LES3DFsd_cState LES3DFsd_pState::Fy(void) const {
+   LES3DFsd_cState Temp;
+   Temp.rho = rho*v.y;
+   Temp.rhov.x = rho*v.x*v.y;
+   Temp.rhov.y = rho*sqr(v.y) + p + (TWO/THREE)*rho*k;
+   Temp.rhov.z = rho*v.y*v.z;
+   Temp.E = v.y*(H() + (TWO/THREE)*rho*k);
+   Temp.rhoC = rho*v.y*C;
+   Temp.rhoFsd = rho*v.y*Fsd;
+   Temp.rhok = rho*v.y*k;
+   return (Temp);
+}
+
+/************************************************************
+ *    LES3DFsd_pState::Fz -- Inviscid flux (z-direction).   *
+ ************************************************************/
+LES3DFsd_cState LES3DFsd_pState::Fz(void) {
+   LES3DFsd_cState Temp;
+   Temp.rho = rho*v.z;
+   Temp.rhov.x = rho*v.x*v.z;
+   Temp.rhov.y = rho*v.y*v.z;
+   Temp.rhov.z = rho*sqr(v.z) + p + (TWO/THREE)*rho*k;
+   Temp.E = v.z*(H() + (TWO/THREE)*rho*k);
+   Temp.rhoC = rho*v.z*C;
+   Temp.rhoFsd = rho*v.z*Fsd;
+   Temp.rhok = rho*v.z*k;
+   return (Temp);
+}
+
+LES3DFsd_cState LES3DFsd_pState::Fz(void) const {
+   LES3DFsd_cState Temp;
+   Temp.rho = rho*v.z;
+   Temp.rhov.x = rho*v.x*v.z;
+   Temp.rhov.y = rho*v.y*v.z;
+   Temp.rhov.z = rho*sqr(v.z) + p + (TWO/THREE)*rho*k;
+   Temp.E = v.z*(H() + (TWO/THREE)*rho*k);
+   Temp.rhoC = rho*v.z*C;
+   Temp.rhoFsd = rho*v.z*Fsd;
+   Temp.rhok = rho*v.z*k;
+   return (Temp);
+}
+
+/**********************************************************************
+ ***************** VISCOUS FLUX VECTORS *******************************
+ **********************************************************************/
+
 /********************************************************
-   LES3DFsd_pState::Fv -- Viscous flux (x-direction).   
+ *  LES3DFsd_pState::Fv -- Viscous flux (x-direction).  * 
  ********************************************************/
 LES3DFsd_cState LES3DFsd_pState::Fv(const LES3DFsd_pState &dWdx,
                                     const LES3DFsd_pState &dWdy,
@@ -141,550 +628,311 @@ LES3DFsd_cState LES3DFsd_pState::Fv(const LES3DFsd_pState &dWdx,
                                     const int &Flow_Type,
                                     const double &Volume) const{
    LES3DFsd_cState Temp;
-   Temp.Vacuum();
-   double Temperature = T();
-   double mu_t = eddy_viscosity(dWdx,dWdy,dWdz,Flow_Type,Volume);
-   Tensor3D molecular_stress, subfilter_stress;
-   Vector3D heat_flux;
-   molecular_stress = tau(dWdx,dWdy,dWdz);
-   subfilter_stress = lambda(dWdx,dWdy,dWdz,Flow_Type,Volume);
-   /*----------------- Thermal Diffusion ---------------------------*/
-   heat_flux.x = qflux(dWdx,dWdy,dWdz).x+qflux_t(dWdx,dWdy,dWdz,Flow_Type,Volume).x;
-   // q -= rho * sum ( hs * Ds *gradcs)   
-   heat_flux.x -= rho*thermal_diffusion().x;
-   // SFS thermal diffusion
-   heat_flux.x -= rho*thermal_diffusion_t(dWdx,dWdy,dWdx,Flow_Type,Volume).x;
 
-   Temp.rhov.x = molecular_stress.xx + subfilter_stress.xx + 2.0/3.0*rho*k;
-   Temp.rhov.y = molecular_stress.xy + subfilter_stress.xy;
-   Temp.rhov.z = molecular_stress.xz + subfilter_stress.xz;
-   Temp.E = v.x*(molecular_stress.xx + subfilter_stress.xx + 2.0/3.0*rho*k) +
-            v.y*(molecular_stress.xy + subfilter_stress.xy) + 
-            v.z*(molecular_stress.xz + subfilter_stress.xz) - heat_flux.x; 
+   double mu_temp = mu();
+   double mu_t_temp = mu_t(dWdx,dWdy,dWdz,Flow_Type,Volume);
+   double kappa_temp = kappa();
+   double kappa_t_temp = kappa_t(dWdx,dWdy,dWdz,Flow_Type,Volume);
+
+   Tensor3D fluid_stress;
+   Vector3D heat_flux;
+   
+   fluid_stress = tau_t_x(mu_temp + mu_t_temp, dWdx, dWdy, dWdz, Flow_Type, Volume);
+   heat_flux = q_t_x(kappa_temp + kappa_t_temp, dWdx, dWdy, dWdz, Flow_Type, Volume);
+   
+   for (int index = 0; index < ns; ++index) {
+      _diff_coeff[index] = Ds(index, mu_temp)+Ds_t(index, mu_t_temp);
+   } /* endfor */
+
+   // q -= rho * sum ( hs * Ds *gradcs)   
+   heat_flux -= rho*thermal_diffusion_x(dWdx, dWdy, dWdz);
+   
+   Temp.rho= ZERO;
+   Temp.rhov.x = fluid_stress.xx + (TWO/THREE)*rho*k;
+   Temp.rhov.y = fluid_stress.xy;
+   Temp.rhov.z = fluid_stress.xz;
+   Temp.E = v.x*(fluid_stress.xx + (TWO/THREE)*rho*k) +
+            v.y*fluid_stress.xy  + 
+            v.z*fluid_stress.xz - 
+            heat_flux.x;
    Temp.rhoC = mu_t*dWdx.C/Sc_t();
    Temp.rhoFsd = mu_t*dWdx.Fsd/Sc_t();
    Temp.rhok = (mu()+mu_t/0.25/*Pr_t()*/)*dWdx.k;
    return (Temp);
 }
 
-LES3DFsd_cState LES3DFsd_pState::Gv(const LES3DFsd_pState &dWdx,
-                                    const LES3DFsd_pState &dWdy,
-                                    const LES3DFsd_pState &dWdz,
-                                    const int &Flow_Type,
-                                    const double &Volume) const{
+/*********************************************************
+ *  LES3DFsd_pState::Fvx -- Viscous flux (x-direction).  * 
+ *********************************************************/
+LES3DFsd_cState LES3DFsd_pState::Fvx(const LES3DFsd_pState &dWdx,
+                                     const LES3DFsd_pState &dWdy,
+                                     const LES3DFsd_pState &dWdz,
+                                     const int &Flow_Type,
+                                     const double &Volume) const{
    LES3DFsd_cState Temp;
-   Temp.Vacuum();
-   double Temperature = T();
-   double mu_t = eddy_viscosity(dWdx,dWdy,dWdz,Flow_Type,Volume);
-   Tensor3D molecular_stress, subfilter_stress;
-   Vector3D heat_flux;
-   molecular_stress = tau(dWdx,dWdy,dWdz);
-   subfilter_stress = lambda(dWdx,dWdy,dWdz,Flow_Type,Volume);
-   /*----------------- Thermal Diffusion ---------------------------*/
-   heat_flux.y = qflux(dWdx,dWdy,dWdz).y+qflux_t(dWdx,dWdy,dWdz,Flow_Type,Volume).y;
-   // q -= rho * sum ( hs * Ds *gradcs)   
-   heat_flux.y -= rho*thermal_diffusion().y;
-   // SFS thermal diffusion
-   heat_flux.y -= rho*thermal_diffusion_t(dWdx,dWdy,dWdz,Flow_Type,Volume).y;
 
-   Temp.rhov.x = molecular_stress.xy + subfilter_stress.xy;
-   Temp.rhov.y = molecular_stress.yy + subfilter_stress.yy + 2.0/3.0*rho*k ;
-   Temp.rhov.z = molecular_stress.yz + subfilter_stress.yz;
-   Temp.E = v.x*(molecular_stress.xy + subfilter_stress.xy) +
-            v.y*(molecular_stress.yy + subfilter_stress.yy + 2.0/3.0*rho*k) + 
-            v.z*(molecular_stress.yz + subfilter_stress.yz) - heat_flux.y; 
+   double mu_temp = mu();
+   double mu_t_temp = mu_t(dWdx,dWdy,dWdz,Flow_Type,Volume);
+   double kappa_temp = kappa();
+   double kappa_t_temp = kappa_t(dWdx,dWdy,dWdz,Flow_Type,Volume);
+
+   Tensor3D fluid_stress;
+   Vector3D heat_flux;
+   
+   fluid_stress = tau_t_x(mu_temp + mu_t_temp, dWdx, dWdy, dWdz, Flow_Type, Volume);
+   heat_flux = q_t_x(kappa_temp + kappa_t_temp, dWdx, dWdy, dWdz, Flow_Type, Volume);
+   
+   for (int index = 0; index < ns; ++index) {
+      _diff_coeff[index] = Ds(index, mu_temp)+Ds_t(index, mu_t_temp);
+   } /* endfor */
+
+   // q -= rho * sum ( hs * Ds *gradcs)   
+   heat_flux -= rho*thermal_diffusion_x(dWdx, dWdy, dWdz);
+   
+   Temp.rho= ZERO;
+   Temp.rhov.x = fluid_stress.xx + (TWO/THREE)*rho*k;
+   Temp.rhov.y = fluid_stress.xy;
+   Temp.rhov.z = fluid_stress.xz;
+   Temp.E = v.x*(fluid_stress.xx + (TWO/THREE)*rho*k) +
+            v.y*fluid_stress.xy  + 
+            v.z*fluid_stress.xz - 
+            heat_flux.x;
+   Temp.rhoC = mu_t*dWdx.C/Sc_t();
+   Temp.rhoFsd = mu_t*dWdx.Fsd/Sc_t();
+   Temp.rhok = (mu()+mu_t/0.25/*Pr_t()*/)*dWdx.k;
+   return (Temp);
+}
+
+/*********************************************************
+ *  LES3DFsd_pState::Fvy -- Viscous flux (y-direction).  * 
+ *********************************************************/
+LES3DFsd_cState LES3DFsd_pState::Fvy(const LES3DFsd_pState &dWdx,
+                                     const LES3DFsd_pState &dWdy,
+                                     const LES3DFsd_pState &dWdz,
+                                     const int &Flow_Type,
+                                     const double &Volume) const{
+   LES3DFsd_cState Temp;
+
+   double mu_temp = mu();
+   double mu_t_temp = mu_t(dWdx,dWdy,dWdz,Flow_Type,Volume);
+   double kappa_temp = kappa();
+   double kappa_t_temp = kappa_t(dWdx,dWdy,dWdz,Flow_Type,Volume);
+
+   Tensor3D fluid_stress;
+   Vector3D heat_flux;
+   
+   fluid_stress = tau_t_y(mu_temp + mu_t_temp, dWdx, dWdy, dWdz, Flow_Type, Volume);
+   heat_flux = q_t_y(kappa_temp + kappa_t_temp, dWdx, dWdy, dWdz, Flow_Type, Volume);
+   
+   for (int index = 0; index < ns; ++index) {
+      _diff_coeff[index] = Ds(index, mu_temp)+Ds_t(index, mu_t_temp);
+   } /* endfor */
+
+   // q -= rho * sum ( hs * Ds *gradcs)   
+   heat_flux -= rho*thermal_diffusion_x(dWdx, dWdy, dWdz);
+   
+   Temp.rho= ZERO;
+   Temp.rhov.x = fluid_stress.xy;
+   Temp.rhov.y = fluid_stress.yy + (TWO/THREE)*rho*k ;
+   Temp.rhov.z = fluid_stress.yz;
+   Temp.E = v.x*fluid_stress.xy +
+            v.y*(fluid_stress.yy + (TWO/THREE)*rho*k) +
+            v.z*fluid_stress.yz - 
+            heat_flux.y;
    Temp.rhoC = mu_t*dWdy.C/Sc_t();
    Temp.rhoFsd = mu_t*dWdy.Fsd/Sc_t();
    Temp.rhok = (mu()+mu_t/0.25/*Pr_t()*/)*dWdy.k;
    return (Temp);
 }
 
-LES3DFsd_cState LES3DFsd_pState::Hv(const LES3DFsd_pState &dWdx,
-                                    const LES3DFsd_pState &dWdy,
-                                    const LES3DFsd_pState &dWdz,
-                                    const int &Flow_Type,
-                                    const double &Volume) const{
+/*********************************************************
+ *  LES3DFsd_pState::Fvz -- Viscous flux (z-direction).  * 
+ *********************************************************/
+LES3DFsd_cState LES3DFsd_pState::Fvz(const LES3DFsd_pState &dWdx,
+                                     const LES3DFsd_pState &dWdy,
+                                     const LES3DFsd_pState &dWdz,
+                                     const int &Flow_Type,
+                                     const double &Volume) const{
    LES3DFsd_cState Temp;
-   Temp.Vacuum();
-   double Temperature = T();
-   double mu_t = eddy_viscosity(dWdx,dWdy,dWdz,Flow_Type,Volume);
-   Tensor3D molecular_stress, subfilter_stress;
-   Vector3D heat_flux;
-   molecular_stress = tau(dWdx,dWdy,dWdz);
-   subfilter_stress = lambda(dWdx,dWdy,dWdz,Flow_Type,Volume);
-   /*----------------- Thermal Diffusion ---------------------------*/
-   heat_flux.z = qflux(dWdx,dWdy,dWdz).z+qflux_t(dWdx,dWdy,dWdz,Flow_Type,Volume).z;
-   // q -= rho * sum ( hs * Ds *gradcs)   
-   heat_flux.z -= rho*thermal_diffusion().z;
-   // SFS thermal diffusion
-   heat_flux.z -= rho*thermal_diffusion_t(dWdx,dWdy,dWdz,Flow_Type,Volume).z;
 
-   Temp.rhov.x = molecular_stress.xz + subfilter_stress.xz;
-   Temp.rhov.y = molecular_stress.yz + subfilter_stress.yz;
-   Temp.rhov.z = molecular_stress.zz + subfilter_stress.zz + 2.0/3.0*rho*k;
-   Temp.E = v.x*(molecular_stress.xz + subfilter_stress.xz) +
-            v.y*(molecular_stress.yz + subfilter_stress.yz) + 
-            v.z*(molecular_stress.zz + subfilter_stress.zz + 2.0/3.0*rho*k) - heat_flux.z ;
+   double mu_temp = mu();
+   double mu_t_temp = mu_t(dWdx,dWdy,dWdz,Flow_Type,Volume);
+   double kappa_temp = kappa();
+   double kappa_t_temp = kappa_t(dWdx,dWdy,dWdz,Flow_Type,Volume);
+
+   Tensor3D fluid_stress;
+   Vector3D heat_flux;
+   
+   fluid_stress = tau_t_z(mu_temp + mu_t_temp, dWdx, dWdy, dWdz, Flow_Type, Volume);
+   heat_flux = q_t_z(kappa_temp + kappa_t_temp, dWdx, dWdy, dWdz, Flow_Type, Volume);
+   
+   for (int index = 0; index < ns; ++index) {
+      _diff_coeff[index] = Ds(index, mu_temp)+Ds_t(index, mu_t_temp);
+   } /* endfor */
+
+   // q -= rho * sum ( hs * Ds *gradcs)   
+   heat_flux -= rho*thermal_diffusion_x(dWdx, dWdy, dWdz);
+   
+   Temp.rho= ZERO;
+   Temp.rhov.x = fluid_stress.xz;
+   Temp.rhov.y = fluid_stress.yz;
+   Temp.rhov.z = fluid_stress.zz + (TWO/THREE)*rho*k;
+   Temp.E = v.x*fluid_stress.xz +
+            v.y*fluid_stress.yz +
+            v.z*(fluid_stress.zz + (TWO/THREE)*rho*k) - 
+            heat_flux.z;
    Temp.rhoC = mu_t*dWdz.C/Sc_t();
    Temp.rhoFsd = mu_t*dWdz.Fsd/Sc_t();
    Temp.rhok = (mu()+mu_t/0.25/*Pr_t()*/)*dWdz.k;
    return (Temp);
 }
 
-Tensor3D LES3DFsd_pState::rotation_tensor(const LES3DFsd_pState &dWdx, 
-                                          const LES3DFsd_pState &dWdy, 
-                                          const LES3DFsd_pState &dWdz) const{
-   Tensor3D rotation;
-   rotation.zero();
-   rotation.xy = -1.0/2.0*(dWdx.v.y - dWdy.v.x);
-   rotation.xz = 1.0/2.0*(dWdz.v.x - dWdx.v.z);
-   rotation.yz = -1.0/2.0*(dWdy.v.z - dWdz.v.y);
-   return (rotation);
+/************************************************************************
+ ********************** EIGENVALUES *************************************
+ ************************************************************************/
+
+/**************************************************************
+ * LES3DFsd_pState::lambda -- Eigenvalue(s) (x-direction).    *
+ **************************************************************/
+LES3DFsd_pState LES3DFsd_pState::lambda(void){
+  double cc = a_t();
+  LES3DFsd_pState Temp;
+  Temp.rho = v.x - cc;
+  Temp.v.x = v.x;
+  Temp.v.y = v.x;
+  Temp.v.z = v.x;
+  Temp.p = v.x + cc;
+  Temp.C = v.x;
+  Temp.Fsd = v.x;
+  Temp.k = v.x;
+  return (Temp);
 }
 
-double LES3DFsd_cState::a(void) const{
-   double sum;
-   sum = sqr(Euler3D_ThermallyPerfect_cState::a());
-   sum += 2.0/3.0*rhok/rho*Euler3D_ThermallyPerfect_cState::g();
-   return sqrt(sum);
+LES3DFsd_pState LES3DFsd_pState::lambda(void) const {
+  double cc = a_t();
+  LES3DFsd_pState Temp;
+  Temp.rho = v.x - cc;
+  Temp.v.x = v.x;
+  Temp.v.y = v.x;
+  Temp.v.z = v.x;
+  Temp.p = v.x + cc;
+  Temp.C = v.x;
+  Temp.Fsd = v.x;
+  Temp.k = v.x;
+  return (Temp);
 }
 
-/***************************************************************
-     LES3DFsd_pState::lambda -- Eigenvalue(s) (x-direction).    
- ***************************************************************/
+/**************************************************************
+ * LES3DFsd_pState::lambda_x -- Eigenvalue(s) (x-direction).  *
+ **************************************************************/
 LES3DFsd_pState LES3DFsd_pState::lambda_x(void){
-   double c = a();
-   return (LES3DFsd_pState(v.x-c, v.x, v.x, v.x, v.x+c, v.x, v.x, v.x));
+  double cc = a_t();
+  LES3DFsd_pState Temp;
+  Temp.rho = v.x - cc;
+  Temp.v.x = v.x;
+  Temp.v.y = v.x;
+  Temp.v.z = v.x;
+  Temp.p = v.x + cc;
+  Temp.C = v.x;
+  Temp.Fsd = v.x;
+  Temp.k = v.x;
+  return (Temp);
 }
 
 LES3DFsd_pState LES3DFsd_pState::lambda_x(void) const {
-   double c = a();
-   return (LES3DFsd_pState(v.x-c, v.x, v.x, v.x, v.x+c, v.x, v.x, v.x));
+  double cc = a_t();
+  LES3DFsd_pState Temp;
+  Temp.rho = v.x - cc;
+  Temp.v.x = v.x;
+  Temp.v.y = v.x;
+  Temp.v.z = v.x;
+  Temp.p = v.x + cc;
+  Temp.C = v.x;
+  Temp.Fsd = v.x;
+  Temp.k = v.x;
+  return (Temp);
 }
 
-/*********************************************************************
-              LES3DFsd_pState -- Binary arithmetic operators.        
- *********************************************************************/
-LES3DFsd_pState LES3DFsd_pState::operator +(const LES3DFsd_pState &W) const{ 
-   LES3DFsd_pState Temp;
-   Temp.Copy(*this);
-   Temp += W;
-   return Temp;
-}
+/************************************************************************
+ ********************* EIGENVECTORS *************************************
+ ************************************************************************/
 
-//------------------ Subtraction ------------------------//
-LES3DFsd_pState LES3DFsd_pState::operator -(const LES3DFsd_pState &W) const{
-   LES3DFsd_pState Temp;
-   Temp.Copy(*this);
-   Temp -= W;
-   return Temp;
-}
-
-//---------------- Scalar Multiplication ------------------//
-LES3DFsd_pState LES3DFsd_pState::operator *(const double &a) const{
-   LES3DFsd_pState Temp;
-   Temp.Copy(*this);
-   Temp.rho = rho*a;  Temp.v = v*a; Temp.p = p*a;
-   Temp.C = C*a; Temp.Fsd = Fsd*a; Temp.k = k*a; 
-   for( int i=0; i<ns; i++){
-      Temp.spec[i] = spec[i]*a;
-   } 
-   return(Temp);
-}
-
-LES3DFsd_pState operator *(const double &a, 
-                           const LES3DFsd_pState &W){
-   LES3DFsd_pState Temp;
-   //Temp.Copy(W);
-   Temp.rho = W.rho*a;  Temp.v = W.v*a; Temp.p = W.p*a;
-   Temp.C = W.C*a; Temp.Fsd = W.Fsd*a; Temp.k = W.k*a; 
-   for( int i=0; i<W.ns; i++){
-      Temp.spec[i] = W.spec[i]*a;
-   } 
-   return(Temp);
-}
-
-//--------------- Scalar Division ------------------------//
-LES3DFsd_pState LES3DFsd_pState::operator /(const double &a) const {
-  LES3DFsd_pState Temp(rho,v,p,C,Fsd,k);
-   Temp.Copy(*this);
-   Temp.rho = rho/a; Temp.v = v/a; Temp.p = p/a; 
-   Temp.C = C/a; Temp.Fsd = Fsd/a; Temp.k = k/a; 
-   for(int i=0; i<ns; i++){
-      Temp.spec[i] = spec[i]/a; 
-   } 
-   return(Temp);
-}
-
-//----------------- Inner Product ------------------------//
-double LES3DFsd_pState::operator *(const LES3DFsd_pState &W) const{
-   double sum=0.0;
-   for(int i=0; i<ns; i++){
-      sum += spec[i]*W.spec[i];
-   }  
-   return (rho*W.rho + v*W.v + p*W.p + C*W.C + Fsd*W.Fsd + k*W.k + sum);
-}
-
-//----------- solution state product operator ------------//
-LES3DFsd_pState LES3DFsd_pState::operator ^(const LES3DFsd_pState &W) const{
-  LES3DFsd_pState Temp(rho,v,p,C,Fsd,k);
-   Temp.Copy(*this);
-   Temp.rho = rho*W.rho;
-   Temp.v.x = v.x*W.v.x;
-   Temp.v.y = v.y*W.v.y;
-   Temp.v.z = v.z*W.v.z;
-   Temp.p = p*W.p;
-   Temp.C = C*W.C;
-   Temp.Fsd = Fsd*W.Fsd;
-   Temp.k = k*W.k;
-   for(int i=0; i<ns; i++){
-      Temp.spec[i] = spec[i]*W.spec[i];
-   }  
-   return(Temp);
-}
-
-//----------------- Assignment ----------------------------//
-LES3DFsd_pState& LES3DFsd_pState::operator =(const LES3DFsd_pState &W){
-   //self assignment protection
-   if( this != &W){   
-      //copy assignment
-      rho = W.rho;
-      v = W.v; 
-      p = W.p; 
-      C = W.C;
-      Fsd = W.Fsd;
-      k = W.k;
-      if ( ns == W.ns){
-         for(int i=0; i<ns; i++){
-            spec[i] = W.spec[i];
-         }   
-      }   
-      else {
-         cerr<<"\n Mismatch in number of species \n ";
-      }  
-   }
-   return (*this);
-}
-
-/**********************************************************************
-            LES3DFsd_pState -- Shortcut arithmetic operators.           
- **********************************************************************/
-LES3DFsd_pState& LES3DFsd_pState::operator +=(const LES3DFsd_pState &W){
-   rho += W.rho;
-   v += W.v; 
-   p += W.p; 
-   C += W.C;
-   Fsd += W.Fsd;
-   k += W.k;
-   for( int i=0; i<ns; i++){
-      spec[i] += W.spec[i];
-   } 
-   return (*this);
-}
-
-LES3DFsd_pState& LES3DFsd_pState::operator -=(const LES3DFsd_pState &W) {
-   rho -= W.rho;
-   v -= W.v;
-   p -= W.p;
-   C -= W.C;
-   Fsd -= W.Fsd;
-   k -= W.k;
-   for(int i=0; i<ns; i++){
-      spec[i] -= W.spec[i];
-   }  
-   return (*this); 
-}
-
-/****************************************************************
-              LES3DFsd_pState -- Relational operators.          
- ****************************************************************/
-int operator ==(const LES3DFsd_pState &W1, 
-                const LES3DFsd_pState &W2) {
-   if(W1.ns == W2.ns){ //check that species are equal
-      bool Temp;
-      for(int i=0; i<W1.ns; i++){
-         if( W1.spec[i] == W2.spec[i] ){
-            Temp = true;
-         } else {
-            Temp = false;
-            break;
-         }  
-         return (W1.rho == W2.rho && W1.v == W2.v && W1.p == W2.p &&
-                 W1.C == W2.C && W1.Fsd == W2.Fsd && W1.k == W2.k &&
-                 Temp == true);
-      }
-   } else {
-      cerr<<"\n Mismatch in number of species \n";
-      exit(1);
-   }
-}
-
-int operator !=(const LES3DFsd_pState &W1, 
-                const LES3DFsd_pState &W2) {
-   if(W1.ns == W2.ns){ //check that species are equal
-      bool Temp = true;
-      for(int i=0; i<W1.ns; i++){
-         if( W1.spec[i] != W2.spec[i] ){
-            Temp = false;
-            break;
-         } 
-         return (W1.rho != W2.rho || W1.v != W2.v || W1.p != W2.p ||
-                 W1.C != W2.C || W1.Fsd != W2.Fsd || W1.k != W2.k ||  
-                 Temp != true);
-      }
-   } else {
-      cerr<<"\n Mismatch in number of species \n";
-      exit(1);
-   }
-}
-
-/* LES3DFsd_pState -- Input-output operators.*/
-ostream &operator << (ostream &out_file, 
-                      const LES3DFsd_pState &W) {
-   out_file.precision(10);
-   out_file.setf(ios::scientific);
-   out_file <<" "<<W.rho<<" "<<W.v.x<<" "<<W.v.y<<" "<< W.v.z
-            <<" "<<W.p<<" "<<W.C<<" "<<W.Fsd<<" "<<W.k;
-   for(int i=0; i<W.ns; i++){
-      out_file<<" "<<W.spec[i];
-   }
-   out_file.unsetf(ios::scientific);
-   return (out_file);
-}
-
-istream &operator >> (istream &in_file, LES3DFsd_pState &W) {
-   in_file.setf(ios::skipws);
-   in_file >> W.rho >> W.v.x >> W.v.y >> W.v.z >> W.p >> W.C >> W.Fsd >> W.k;
-   //W.set_initial_values();
-   for( int i=0; i<W.ns; i++){
-      in_file>>W.spec[i];
-   }
-   in_file.unsetf(ios::skipws);
-   return (in_file);
-}
-
-
-//----------------- Addition ----------------------------//
-LES3DFsd_cState LES3DFsd_cState::operator +(const LES3DFsd_cState &U) const{ 
-   LES3DFsd_cState Temp;
-   Temp.Copy(*this);
-   Temp += U;
-   return Temp;
-}
-
-//------------------ Subtraction ------------------------//
-LES3DFsd_cState LES3DFsd_cState::operator -(const LES3DFsd_cState &U) const{
-   LES3DFsd_cState Temp;
-   Temp.Copy(*this);
-   Temp -= U;
-   return Temp;
-}
-
-//---------------- Scalar Multiplication ------------------//
-LES3DFsd_cState LES3DFsd_cState::operator *(const double &a) const{
-   LES3DFsd_cState Temp;
-   Temp.Copy(*this);
-   Temp.rho = rho*a; Temp.rhov = rhov*a; Temp.E = E*a;
-   Temp.rhoC = rhoC*a; Temp.rhoFsd = rhoFsd*a; Temp.rhok = rhok*a;
-   for( int i=0; i<ns; i++){
-      Temp.rhospec[i] = rhospec[i]*a;
-   } 
-   return(Temp);
-}
-
-LES3DFsd_cState operator *(const double &a, const LES3DFsd_cState &U){
-   LES3DFsd_cState Temp;
-   Temp.rho = U.rho*a;  Temp.rhov = U.rhov*a; Temp.E = U.E*a;
-   Temp.rhoC = U.rhoC*a; Temp.rhoFsd = U.rhoFsd*a; Temp.rhok = U.rhok*a;
-   for( int i=0; i<U.ns; i++){
-      Temp.rhospec[i] = U.rhospec[i]*a;
-   } 
-   return(Temp);
-}
-//--------------- Scalar Division ------------------------//
-LES3DFsd_cState LES3DFsd_cState::operator /(const double &a) const {
-   LES3DFsd_cState Temp;
-   Temp.Copy(*this);
-   Temp.rho = rho/a; Temp.rhov = rhov/a; Temp.E = E/a;
-   Temp.rhoC = rhoC/a; Temp.rhoFsd = rhoFsd/a; Temp.rhok = rhok/a;
-   for(int i=0; i<ns; i++){
-      Temp.rhospec[i] = rhospec[i]/a; 
-   } 
-   return(Temp);
-}
-
-//----------------- Inner Product ------------------------//
-double LES3DFsd_cState::operator *(const LES3DFsd_cState &U) const{
-   double sum=0.0;
-   for(int i=0; i<ns; i++){
-      sum += rhospec[i]*U.rhospec[i];
-   }  
-   return (rho*U.rho+rhov*U.rhov+E*U.E+rhoC*U.rhoC+rhoFsd*U.rhoFsd+rhok*U.rhok+sum);
-}
-
-//----------- solution state product operator ------------//
-LES3DFsd_cState LES3DFsd_cState::operator ^(const LES3DFsd_cState &U) const {
-   LES3DFsd_cState Temp;
-   Temp.Copy(*this);
-   Temp.rho = rho*U.rho;
-   Temp.rhov.x = rhov.x*U.rhov.x;
-   Temp.rhov.y = rhov.y*U.rhov.y;
-   Temp.rhov.z = rhov.z*U.rhov.z;
-   Temp.E = E*U.E;
-   Temp.rhoC = rhoC*U.rhoC;
-   Temp.rhoFsd = rhoFsd*U.rhoFsd;
-   Temp.rhok = rhok*U.rhok;
-   for(int i=0; i<ns; i++){
-      Temp.rhospec[i] = rhospec[i]*U.rhospec[i];
-   }  
-   return(Temp);
-}
-
-//----------------- Assignment ----------------------------//
-LES3DFsd_cState& LES3DFsd_cState::operator =(const LES3DFsd_cState &U){
-   //self assignment protection
-   if( this != &U){   
-      //copy assignment
-      rho = U.rho;
-      rhov = U.rhov; 
-      E = U.E; 
-      rhoC = U.rhoC;
-      rhoFsd = U.rhoFsd;
-      rhok = U.rhok;
-      if ( ns == U.ns){
-         for(int i=0; i<ns; i++){
-            rhospec[i] = U.rhospec[i];
-         }
-      } else {
-         cerr<<"\n Mismatch in number of species \n ";
-      }  
-   }
-   return (*this);
-}
-
-/*******************************************************************
-         LES3DFsd_cState -- Shortcut arithmetic operators.          
- *******************************************************************/
-LES3DFsd_cState& LES3DFsd_cState::operator +=(const LES3DFsd_cState &U){
-   rho += U.rho;
-   rhov += U.rhov; 
-   E += U.E;
-   rhoC += U.rhoC;
-   rhoFsd += U.rhoFsd;
-   rhok += U.rhok;
-   for( int i=0; i<ns; i++){
-      rhospec[i] += U.rhospec[i];
-   } 
-   return (*this);
-}
-
-LES3DFsd_cState& LES3DFsd_cState::operator -=(const LES3DFsd_cState &U) {
-   rho -= U.rho;
-   rhov -= U.rhov;
-   E -= U.E;
-   rhoC -= U.rhoC;
-   rhoFsd -= U.rhoFsd;
-   rhok -= U.rhok;
-  for(int i=0; i<ns; i++){
-    rhospec[i] -= U.rhospec[i];
-  }  
-  return (*this); 
-}
-
-/********************************************************************
-           LES3DFsd_cState -- Unary arithmetic operators.            
- ********************************************************************/
-LES3DFsd_cState operator -(const LES3DFsd_cState &U) {
-   Species *spt= new Species[U.ns];
-   for(int i=0; i<U.ns; i++){
-      spt[i] = -U.rhospec[i]; 
-   }  
-   LES3DFsd_cState Temp(-U.rho,-U.rhov,-U.E,-U.rhoC,-U.rhoFsd,-U.rhok,spt);
-  delete[] spt;
-  return(Temp);
-}
-
-/****************************************************************
-            LES3DFsd_cState -- Relational operators.            
- ****************************************************************/
-int operator ==(const LES3DFsd_cState &U1, 
-                const LES3DFsd_cState &U2) {
-   if(U1.ns == U2.ns){ //check that species are equal
-      bool Temp;
-      for(int i=0; i<U1.ns; i++){
-         if( U1.rhospec[i] == U2.rhospec[i] ){
-            Temp = true;
-         } else {
-            Temp = false;
-            break;
-         }  
-         return (U1.rho == U2.rho && U1.rhov == U2.rhov && U1.E == U2.E &&
-                 U1.rhoC == U2.rhoC && U1.rhoFsd == U2.rhoFsd && U1.rhok == U2.rhok && 
-                 Temp == true);
-      }
-   } else {
-      cerr<<"\n Mismatch in number of species \n";
-      exit(1);
-   }
-}
-
-int operator !=(const LES3DFsd_cState &U1, 
-                const LES3DFsd_cState &U2) {
-   if(U1.ns == U2.ns){ //check that species are equal
-      bool Temp = true;
-      for(int i=0; i<U1.ns; i++){
-         if( U1.rhospec[i] != U2.rhospec[i] ){
-            Temp = false;
-            break;
-         } 
-         return (U1.rho != U2.rho || U1.rhov != U2.rhov || U1.E != U2.E ||
-                 U1.rhoC != U2.rhoC || U1.rhoFsd !=U2.rhoFsd || U1.rhok != U2.rhok || 
-                 Temp != true);
-      }
-   } else {
-      cerr<<"\n Mismatch in number of species \n";
-      exit(1);
-   }
-}
-
-/******************************************************************
-              LES3DFsd_cState -- Input-output operators.         
- ******************************************************************/
-ostream &operator << (ostream &out_file, const LES3DFsd_cState &U) {
-  out_file.setf(ios::scientific);
-  out_file <<" "<<U.rho<<" "<<U.rhov.x<<" "<<U.rhov.y<<" "<<U.rhov.z
-           <<" "<<U.E<<" "<<U.rhoC<<" "<<U.rhoFsd<<" "<<U.rhok;
-  for( int i=0; i<U.ns; i++){
-     out_file<<" "<<U.rhospec[i];
-  } 
-  out_file.unsetf(ios::scientific);
-  return (out_file);
-}
-
-istream &operator >> (istream &in_file, LES3DFsd_cState &U) {
-   in_file.setf(ios::skipws);
-   in_file >>U.rho>>U.rhov.x>>U.rhov.y>>U.rhov.z>>U.E>>U.rhoC>>U.rhoFsd>>U.rhok;
-  for( int i=0; i<U.ns; i++){
-    in_file>>U.rhospec[i]; 
-  } 
-  in_file.unsetf(ios::skipws);
-  return (in_file);
-}
-
-LES3DFsd_cState LES3DFsd_pState::rc_x(const int &index) const {
-   double eta_fsd = Progvar_Species_Grad();  
+/***********************************************************************
+ * LES3DFsd_pState::rc -- Conserved right eigenvector (x-direction).   *
+ ***********************************************************************/
+LES3DFsd_cState LES3DFsd_pState::rc(const int &index) {
+   double cc, eta_fsd;  
    switch(index){  
    case 1:
-     return (LES3DFsd_cState(ONE, v.x-a(), v.y, v.z, H()/rho-v.x*a(), C, Fsd, k));
+     cc = a_t();
+     return (LES3DFsd_cState(ONE, v.x-cc, v.y, v.z, H()/rho-v.x*cc, C, Fsd, k));
    case 2:
-     return (LES3DFsd_cState(ONE, v.x, v.y, v.z, H()/rho-a()*a()/(g()-1.0), C, Fsd, k)); 
+     cc = a_t();
+     return (LES3DFsd_cState(ONE, v.x, v.y, v.z, H()/rho-cc*cc/(g()-1.0), C, Fsd, k)); 
    case 3:
      return (LES3DFsd_cState(ZERO, ZERO, rho, ZERO, rho*v.y, ZERO, ZERO, ZERO));
    case 4:
      return (LES3DFsd_cState(ZERO, ZERO, ZERO, rho, rho*v.z, ZERO, ZERO, ZERO));
    case 5:
-     return (LES3DFsd_cState(ONE, v.x+a(), v.y, v.z, H()/rho+v.x*a(), C, Fsd, k));
+     cc = a_t();
+     return (LES3DFsd_cState(ONE, v.x+cc, v.y, v.z, H()/rho+v.x*cc, C, Fsd, k));
    case 6:
+     eta_fsd = Progvar_Species_Grad();
+     return (LES3DFsd_cState(ZERO, ZERO, ZERO, ZERO, rho*eta_fsd, rho, ZERO, ZERO));
+   case 7:
+     return (LES3DFsd_cState(ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, rho, ZERO));
+   case 8:
+     return (LES3DFsd_cState(ZERO, ZERO, ZERO, ZERO, 5.0*rho/3.0, ZERO, ZERO, rho));
+    };
+}
+
+LES3DFsd_cState LES3DFsd_pState::rc(const int &index) const {
+   double cc, eta_fsd;  
+   switch(index){  
+   case 1:
+     cc = a_t();
+     return (LES3DFsd_cState(ONE, v.x-cc, v.y, v.z, H()/rho-v.x*cc, C, Fsd, k));
+   case 2:
+     cc = a_t();
+     return (LES3DFsd_cState(ONE, v.x, v.y, v.z, H()/rho-cc*cc/(g()-1.0), C, Fsd, k)); 
+   case 3:
+     return (LES3DFsd_cState(ZERO, ZERO, rho, ZERO, rho*v.y, ZERO, ZERO, ZERO));
+   case 4:
+     return (LES3DFsd_cState(ZERO, ZERO, ZERO, rho, rho*v.z, ZERO, ZERO, ZERO));
+   case 5:
+     cc = a_t();
+     return (LES3DFsd_cState(ONE, v.x+cc, v.y, v.z, H()/rho+v.x*cc, C, Fsd, k));
+   case 6:
+     eta_fsd = Progvar_Species_Grad();
+     return (LES3DFsd_cState(ZERO, ZERO, ZERO, ZERO, rho*eta_fsd, rho, ZERO, ZERO));
+   case 7:
+     return (LES3DFsd_cState(ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, rho, ZERO));
+   case 8:
+     return (LES3DFsd_cState(ZERO, ZERO, ZERO, ZERO, 5.0*rho/3.0, ZERO, ZERO, rho));
+    };
+}
+
+/*************************************************************************
+ * LES3DFsd_pState::rc_x -- Conserved right eigenvector (x-direction).   *
+ *************************************************************************/
+LES3DFsd_cState LES3DFsd_pState::rc_x(const int &index) const {
+   double cc, eta_fsd;  
+   switch(index){  
+   case 1:
+     cc = a_t();
+     return (LES3DFsd_cState(ONE, v.x-cc, v.y, v.z, H()/rho-v.x*cc, C, Fsd, k));
+   case 2:
+     cc = a_t();
+     return (LES3DFsd_cState(ONE, v.x, v.y, v.z, H()/rho-cc*cc/(g()-1.0), C, Fsd, k)); 
+   case 3:
+     return (LES3DFsd_cState(ZERO, ZERO, rho, ZERO, rho*v.y, ZERO, ZERO, ZERO));
+   case 4:
+     return (LES3DFsd_cState(ZERO, ZERO, ZERO, rho, rho*v.z, ZERO, ZERO, ZERO));
+   case 5:
+     cc = a_t();
+     return (LES3DFsd_cState(ONE, v.x+cc, v.y, v.z, H()/rho+v.x*cc, C, Fsd, k));
+   case 6:
+     eta_fsd = Progvar_Species_Grad();
      return (LES3DFsd_cState(ZERO, ZERO, ZERO, ZERO, rho*eta_fsd, rho, ZERO, ZERO));
    case 7:
      return (LES3DFsd_cState(ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, rho, ZERO));
@@ -694,41 +942,50 @@ LES3DFsd_cState LES3DFsd_pState::rc_x(const int &index) const {
 }
 
 LES3DFsd_cState LES3DFsd_pState::rc_x(const int &index) {
-   double eta_fsd = Progvar_Species_Grad();  
+   double cc, eta_fsd;  
    switch(index){  
    case 1:
-     return (LES3DFsd_cState(ONE, v.x-a(), v.y, v.z, H()/rho-v.x*a(), C, Fsd, k));
+     cc = a_t();
+     return (LES3DFsd_cState(ONE, v.x-cc, v.y, v.z, H()/rho-v.x*cc, C, Fsd, k));
    case 2:
-     return (LES3DFsd_cState(ONE, v.x, v.y, v.z, H()/rho-a()*a()/(g()-1.0), C, Fsd, k)); 
+     cc = a_t();
+     return (LES3DFsd_cState(ONE, v.x, v.y, v.z, H()/rho-cc*cc/(g()-1.0), C, Fsd, k)); 
    case 3:
      return (LES3DFsd_cState(ZERO, ZERO, rho, ZERO, rho*v.y, ZERO, ZERO, ZERO));
    case 4:
      return (LES3DFsd_cState(ZERO, ZERO, ZERO, rho, rho*v.z, ZERO, ZERO, ZERO));
    case 5:
-     return (LES3DFsd_cState(ONE, v.x+a(), v.y, v.z, H()/rho+v.x*a(), C, Fsd, k));
+     cc = a_t();
+     return (LES3DFsd_cState(ONE, v.x+cc, v.y, v.z, H()/rho+v.x*cc, C, Fsd, k));
    case 6:
+     eta_fsd = Progvar_Species_Grad();
      return (LES3DFsd_cState(ZERO, ZERO, ZERO, ZERO, rho*eta_fsd, rho, ZERO, ZERO));
    case 7:
      return (LES3DFsd_cState(ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, rho, ZERO));
    case 8:
      return (LES3DFsd_cState(ZERO, ZERO, ZERO, ZERO, 5.0*rho/3.0, ZERO, ZERO, rho));
-   };
+    };
 }
 
-// Primitive Left Eigenvector -- (x-direction)
-LES3DFsd_pState LES3DFsd_pState::lp_x(const int &index) const {
-   double eta_fsd = Progvar_Species_Grad();  
+/***********************************************************************
+ * LES3DFsd_pState::lp -- Primitive left eigenvector (x-direction).    *
+ ***********************************************************************/
+LES3DFsd_pState LES3DFsd_pState::lp(const int &index) {
+   double cc;  
    switch(index){  
    case 1:
-      return (LES3DFsd_pState(ZERO, -HALF*rho/a(), ZERO, ZERO, HALF/(a()*a()), ZERO, ZERO, ZERO));
+      cc = a_t();
+      return (LES3DFsd_pState(ZERO, -HALF*rho/cc, ZERO, ZERO, HALF/(cc*cc), ZERO, ZERO, ZERO));
    case 2:
-      return (LES3DFsd_pState(ONE, ZERO, ZERO, ZERO, -ONE/(a()*a()), ZERO, ZERO, ZERO));
+      cc = a_t();      
+      return (LES3DFsd_pState(ONE, ZERO, ZERO, ZERO, -ONE/(cc*cc), ZERO, ZERO, ZERO));
    case 3 :
       return (LES3DFsd_pState(ZERO, ZERO, ONE, ZERO, ZERO, ZERO, ZERO, ZERO));
    case 4 :
       return (LES3DFsd_pState(ZERO, ZERO, ZERO, ONE, ZERO, ZERO, ZERO, ZERO));
    case 5 :
-      return (LES3DFsd_pState(ZERO, HALF*rho/a(), ZERO, ZERO, HALF/(a()*a()), ZERO, ZERO, ZERO));
+      cc = a_t();
+      return (LES3DFsd_pState(ZERO, HALF*rho/cc, ZERO, ZERO, HALF/(cc*cc), ZERO, ZERO, ZERO));
    case 6 :
      return (LES3DFsd_pState(ZERO, ZERO, ZERO, ZERO, ZERO, ONE, ZERO, ZERO));
    case 7 :
@@ -738,19 +995,50 @@ LES3DFsd_pState LES3DFsd_pState::lp_x(const int &index) const {
    };
 }
 
+LES3DFsd_pState LES3DFsd_pState::lp(const int &index) const {
+   double cc;  
+   switch(index){  
+   case 1:
+      cc = a_t();
+      return (LES3DFsd_pState(ZERO, -HALF*rho/cc, ZERO, ZERO, HALF/(cc*cc), ZERO, ZERO, ZERO));
+   case 2:
+      cc = a_t();      
+      return (LES3DFsd_pState(ONE, ZERO, ZERO, ZERO, -ONE/(cc*cc), ZERO, ZERO, ZERO));
+   case 3 :
+      return (LES3DFsd_pState(ZERO, ZERO, ONE, ZERO, ZERO, ZERO, ZERO, ZERO));
+   case 4 :
+      return (LES3DFsd_pState(ZERO, ZERO, ZERO, ONE, ZERO, ZERO, ZERO, ZERO));
+   case 5 :
+      cc = a_t();
+      return (LES3DFsd_pState(ZERO, HALF*rho/cc, ZERO, ZERO, HALF/(cc*cc), ZERO, ZERO, ZERO));
+   case 6 :
+     return (LES3DFsd_pState(ZERO, ZERO, ZERO, ZERO, ZERO, ONE, ZERO, ZERO));
+   case 7 :
+     return (LES3DFsd_pState(ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ONE, ZERO));
+   case 8 :
+     return (LES3DFsd_pState(ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ONE));
+   };
+}
+
+/*************************************************************************
+ * LES3DFsd_pState::lp_x -- Primitive left eigenvector (x-direction).    *
+ *************************************************************************/
 LES3DFsd_pState LES3DFsd_pState::lp_x(const int &index) {
-   double eta_fsd = Progvar_Species_Grad();  
+   double cc;  
    switch(index){  
    case 1:
-      return (LES3DFsd_pState(ZERO, -HALF*rho/a(), ZERO, ZERO, HALF/(a()*a()), ZERO, ZERO, ZERO));
+      cc = a_t();
+      return (LES3DFsd_pState(ZERO, -HALF*rho/cc, ZERO, ZERO, HALF/(cc*cc), ZERO, ZERO, ZERO));
    case 2:
-      return (LES3DFsd_pState(ONE, ZERO, ZERO, ZERO, -ONE/(a()*a()), ZERO, ZERO, ZERO));
+      cc = a_t();      
+      return (LES3DFsd_pState(ONE, ZERO, ZERO, ZERO, -ONE/(cc*cc), ZERO, ZERO, ZERO));
    case 3 :
       return (LES3DFsd_pState(ZERO, ZERO, ONE, ZERO, ZERO, ZERO, ZERO, ZERO));
    case 4 :
       return (LES3DFsd_pState(ZERO, ZERO, ZERO, ONE, ZERO, ZERO, ZERO, ZERO));
    case 5 :
-       return (LES3DFsd_pState(ZERO, HALF*rho/a(), ZERO, ZERO, HALF/(a()*a()), ZERO, ZERO, ZERO));
+      cc = a_t();
+      return (LES3DFsd_pState(ZERO, HALF*rho/cc, ZERO, ZERO, HALF/(cc*cc), ZERO, ZERO, ZERO));
    case 6 :
      return (LES3DFsd_pState(ZERO, ZERO, ZERO, ZERO, ZERO, ONE, ZERO, ZERO));
    case 7 :
@@ -760,11 +1048,37 @@ LES3DFsd_pState LES3DFsd_pState::lp_x(const int &index) {
    };
 }
 
-// as defined by E.Turkel (1999)
+LES3DFsd_pState LES3DFsd_pState::lp_x(const int &index) const {
+   double cc;  
+   switch(index){  
+   case 1:
+      cc = a_t();
+      return (LES3DFsd_pState(ZERO, -HALF*rho/cc, ZERO, ZERO, HALF/(cc*cc), ZERO, ZERO, ZERO));
+   case 2:
+      cc = a_t();      
+      return (LES3DFsd_pState(ONE, ZERO, ZERO, ZERO, -ONE/(cc*cc), ZERO, ZERO, ZERO));
+   case 3 :
+      return (LES3DFsd_pState(ZERO, ZERO, ONE, ZERO, ZERO, ZERO, ZERO, ZERO));
+   case 4 :
+      return (LES3DFsd_pState(ZERO, ZERO, ZERO, ONE, ZERO, ZERO, ZERO, ZERO));
+   case 5 :
+      cc = a_t();
+      return (LES3DFsd_pState(ZERO, HALF*rho/cc, ZERO, ZERO, HALF/(cc*cc), ZERO, ZERO, ZERO));
+   case 6 :
+     return (LES3DFsd_pState(ZERO, ZERO, ZERO, ZERO, ZERO, ONE, ZERO, ZERO));
+   case 7 :
+     return (LES3DFsd_pState(ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ONE, ZERO));
+   case 8 :
+     return (LES3DFsd_pState(ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ONE));
+   };
+}
+
+/***********************************************************
+ * LES3DFsd_pState::Mr2 -- Square of Mach number            *
+ ***********************************************************/
 double LES3DFsd_pState::Mr2(const double &deltax, const double &lengthx, const double &dTime) const {
-  double c = a();
-  double MR2 = min(max((v.sqr()/(c*c)),Mref*Mref),ONE);
-  // Need deltax which is based on cell spacing 
+    double c = a();
+    double MR2 = min(max((v.sqr()/(c*c)),Mref*Mref),ONE);
     MR2 = pow(max(sqrt(MR2*c*c), mu()/(rho*deltax)),2.0)/(c*c);
     double MR_uns = (lengthx/(PI*dTime))/c;  // ZERO;
 // double MR_vis;
@@ -776,32 +1090,22 @@ double LES3DFsd_pState::Mr2(const double &deltax, const double &lengthx, const d
    //  MR2 = max(MR_inv*MR_inv, MR_vis*MR_vis);
     MR2 = max(MR2, MR_uns*MR_uns);
     MR2 = min(max(MR2, Mref*Mref), ONE);
-    //cout << "L = " << lengthx <<" dTime = " << dTime << endl;
-    //cout << "PI = " << PI <<" MR_uns = "<< MR_uns <<" MR2 = " << MR2 << endl;
   return (MR2);
 }
-/*******************************************************************
-    Low Mach Number Preconditioner Based on Weiss & Smith (1995)   
- *******************************************************************/
-// For CFL Calculation
-double LES3DFsd_pState::u_plus_aprecon(const double &u, double &deltax, const double &lengthx, const double &dTime) const {
-  double Temp = T();
-  double c = a();
-  double UR2 = Mr2(deltax, lengthx, dTime)*c*c;
-  double alpha = HALF*( ONE - (ONE/(Rtot()*Temp) - ONE/(Cp()*Temp))*UR2);
-  // uprime + cprime
-  return ( u*(ONE - alpha) + sqrt(alpha*alpha*u*u + UR2) );
-}
 
-// For eigenvalues and eigenvectors return preconditioned velocity and soundspeed ie. u' and c'
+/***********************************************************************************
+ * LES3DFsd_pState::u_a_precon -- Preconditioned velocity and soundspeed           *
+ ***********************************************************************************/
 void LES3DFsd_pState::u_a_precon(const double &UR2, double &uprimed, double &cprimed) const{
-//   double Temp = T();
-//   double alpha = HALF*( ONE - (ONE/(Rtot()*Temp) - ONE/(Cp()*Temp))*UR2);
   double alpha = HALF*(ONE - ONE/(a()*a())*UR2);
   uprimed = v.x*(ONE - alpha);
   cprimed = sqrt(alpha*alpha*v.x*v.x + UR2); 
 }
 
+/******************************************************************************
+ * LES3DFsd_pState::rc_x_precon -- Conserved right eigenvector (x-direction)  * 
+ *                                 for low Mach number preconditioner.        *
+ ******************************************************************************/
 LES3DFsd_cState LES3DFsd_pState::rc_x_precon(const int &index, const double &MR2) const {
     double uprimed,cprimed;
     double c = a();
@@ -827,6 +1131,10 @@ LES3DFsd_cState LES3DFsd_pState::rc_x_precon(const int &index, const double &MR2
    };
 }
 
+/******************************************************************************
+ * LES3DFsd_pState::lp_x_precon -- Primitive left eigenvector (x-direction)   * 
+ *                                 for low Mach number preconditioner.        *
+ ******************************************************************************/
 LES3DFsd_pState LES3DFsd_pState::lp_x_precon(const int &index,const double &MR2) const {
     double uprimed,cprimed;
     double c = a();
@@ -851,8 +1159,11 @@ LES3DFsd_pState LES3DFsd_pState::lp_x_precon(const int &index,const double &MR2)
    };
 }
 
+/******************************************************************************
+ * LES3DFsd_pState::Low_Mach_Number_Preconditioner -- Preconditoner matrix    * 
+ ******************************************************************************/
 void LES3DFsd_pState::Low_Mach_Number_Preconditioner(DenseMatrix &P, const double &deltax, 
-                                                  const double &lengthx,const double &dTime) const{  
+                                                     const double &lengthx,const double &dTime) const{  
   double Temp = T();
   double Rmix = Rtot();
   double enthalpy = h();
@@ -928,6 +1239,9 @@ void LES3DFsd_pState::Low_Mach_Number_Preconditioner(DenseMatrix &P, const doubl
   P(7,7) = 5.0*k*alpham1/(3.0*Omega);
 }
 
+/*********************************************************************************************
+ * LES3DFsd_pState::Low_Mach_Number_Preconditioner_Inverse -- Preconditoner matrix inverse   * 
+ *********************************************************************************************/
 void LES3DFsd_pState::Low_Mach_Number_Preconditioner_Inverse(DenseMatrix &Pinv, const double &deltax, 
                                                              const double &lengthx,const double &dTime) const{  
   double Temp = T();
@@ -1006,6 +1320,9 @@ void LES3DFsd_pState::Low_Mach_Number_Preconditioner_Inverse(DenseMatrix &Pinv, 
   Pinv(7,7) = ONE-5.0*k/(3.0*AA);
 }
 
+/*********************************************************************************************
+ * LES3DFsd_pState::dWdU -- Transform Jacobin for primitive state to conservetive state      * 
+ *********************************************************************************************/
 void LES3DFsd_pState::dWdU(DenseMatrix &dWdU){
   dWdU.zero();
   double alpha = Rtot()/(Cp()-Rtot());
@@ -1033,6 +1350,9 @@ void LES3DFsd_pState::dWdU(DenseMatrix &dWdU){
   dWdU(7,7) = ONE/rho;
 }
 
+/*********************************************************************************************************
+ * LES3DFsd_pState::SemiImplicitSourceJacobi -- Source term Jacobin for Semi-Implicit time marching      * 
+ *********************************************************************************************************/
 void LES3DFsd_pState::SemiImplicitSourceJacobi(const LES3DFsd_pState &dWdx, 
                                                const LES3DFsd_pState &dWdy,
                                                const LES3DFsd_pState &dWdz,
@@ -1045,7 +1365,7 @@ void LES3DFsd_pState::SemiImplicitSourceJacobi(const LES3DFsd_pState &dWdx,
 
      dStdW.zero();
      double filter = filter_width(Volume);
-     double Laminar_Flame_Speed = 0.3837;
+     double _laminar_flame_speed = 0.3837;
      double Reactants_Density = 1.13;
      double k_fsd = SFS_Kinetic_Energy_Fsd(dWdx,dWdy,dWdz,Flow_Type,Volume); 
      double kappa_fsd = Efficiency_Function_Fsd(dWdx,dWdy,dWdz,Flow_Type,Volume);   
@@ -1089,7 +1409,7 @@ void LES3DFsd_pState::SemiImplicitSourceJacobi(const LES3DFsd_pState &dWdx,
      double t390,t394,t398; 
      double t403;
 
-     t1 = Reactants_Density*Laminar_Flame_Speed;
+     t1 = Reactants_Density*_laminar_flame_speed;
      t4 = dWdx.C;//cx(c);
       t5 = t4*t4;
       t6 = dWdy.C;//cy(c);
@@ -1157,7 +1477,7 @@ void LES3DFsd_pState::SemiImplicitSourceJacobi(const LES3DFsd_pState &dWdx,
       t81 = sqrt(k_fsd);
       t82 = kappa_fsd*t81;
       t83 = 1/filter;
-      t86 = beta_fsd*Laminar_Flame_Speed;
+      t86 = beta_fsd*_laminar_flame_speed;
       t87 = Fsd*Fsd;
       t89 = 1.0-C;
       t90 = 1/t89;
@@ -1232,16 +1552,16 @@ t39*t139-t30*t137*t38-t135*t11*t45+2.0*t6*t132*t45*t139-t41*t137*t44;
       }
       dStdW(5,0) = t1*Fsd;
       dStdW(5,6) = t1*rho;
-      dStdW(6,0) = t47*Fsd-Laminar_Flame_Speed*(t50*(-t53*(t54+Fsd*t55)-t59*(t60+Fsd
+      dStdW(6,0) = t47*Fsd-_laminar_flame_speed*(t50*(-t53*(t54+Fsd*t55)-t59*(t60+Fsd
 *t61)-t65*(t66+Fsd*t67))+t73*t77)+t82*Fsd*t83-2.0*t86*t87*rho*t90;
       dStdW(6,1) = (t18*t95-t30*t6*t97-t30*t8*t100)*Fsd*rho;
       dStdW(6,2) = (t23*t106-t30*t6*t108-t41*t8*t111)*Fsd*rho;
       dStdW(6,3) = (t27*t117-t30*t8*t119-t41*t8*t122)*Fsd*rho;
-      dStdW(6,5) = t184*Fsd*rho-Laminar_Flame_Speed*(tau_fsd*(-t53*t190-t59*t195-t65
+      dStdW(6,5) = t184*Fsd*rho-_laminar_flame_speed*(tau_fsd*(-t53*t190-t59*t195-t65
 *t200)+t50*(-t128*t52*t190+t4*t207*t190*t139-t135*t52*t195+t6*t207*t195*t139-
 t137*t52*t200+t8*t207*t200*t139)+t73*rho*(-2.0*t53*t128+t5*t207*t139-2.0*t59*
 t135+t7*t207*t139-2.0*t65*t137+t9*t207*t139))-t86*t87*t246/t248;
-      dStdW(6,6) = t47*rho-Laminar_Flame_Speed*(t50*(-t53*(rho*t254+t188)-t59*(rho*
+      dStdW(6,6) = t47*rho-_laminar_flame_speed*(t50*(-t53*(rho*t254+t188)-t59*(rho*
 t258+t193)-t65*(rho*t262+t198))+tau_fsd*rho*t77)+t82*rho*t83-2.0*t86*Fsd*t246*
 t90;
       if (Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K){
@@ -1263,169 +1583,13 @@ filter*t394+0.1E1*t376*filter*t398-0.15E1*Cs*rho*t403*t83;
       }
 }
 
-double LES3DFsd_cState::T(void) const{
+/************************************************************************
+ *************** NUMERICAL FLUX FUNCTIONS *******************************
+ ************************************************************************/
 
-   double T = ZERO;
-   double RTOT = Rtot();  
-   //--------- Initial Guess ------------------------------//
-   //using a polytropic gas assumption with gamma@200;
-   double Tguess = (gamma_guess() - ONE)*(E - HALF*rhov.sqr()/rho-rhok)/(rho*RTOT);
-   //--------- global newtons method to get T ---------------//
-   double A = (E - HALF*rhov*rhov/rho -rhok)/rho;
- 
-   int numit =0;
-   double Tmin = low_temp_range;
-   double Tmax = high_temp_range;
-   
-   //check for start value
-   if(Tguess > Tmin && Tguess < Tmax){
-      T=Tguess;
-   } else {
-      T=Tmin;
-   }
-   
-   double fa = h(Tmin) - Tmin*RTOT - A;
-   double fn = h(T) - T*RTOT - A;
-   double dfn = hprime(T) - RTOT;
-   while( fabs(Tmax-Tmin) > CONV_TOLERANCE && fabs(fn) > CONV_TOLERANCE && numit<20 && T >= low_temp_range){    
-      // Newton 
-      if(T >= Tmin && T <= Tmax){
-         T = T - fn/dfn;
-         if(T >= Tmax) T = HALF*(Tmax - Tmin);	
-         //Bisection
-      } else {
-         T = HALF*(Tmax - Tmin);
-      } 
-      //evaluate function and derivative
-      fn = h(T) - T*RTOT - A;
-      dfn = hprime(T) - RTOT;  
-      //change bisection range
-      if ( fa*fn <=ZERO){
-         Tmax = T;
-      } else {
-         Tmin = T;
-         fa = fn;
-      }
-      numit++;
-   }  
-   if (numit>=19 || T <= low_temp_range){
-      T = max(Tguess,low_temp_range); 	
-      if(debug_level){ 
-         cout<<"\nTemperature didn't converge in LES3DFsd_cState::T(void)";
-         cout<<" with polytopic Tguess "<<Tguess<<", or lower than Tmin "<<low_temp_range<<" using "<<T;
-      }   
-   }
-   return T;
-} 
-
-double LES3DFsd_pState::E(void) const {   
-   return ( rho*(e()+HALF*v.sqr()+k) );   
-}
-
-double LES3DFsd_pState::H(void) const{
-   return ( rho*(h()+HALF*v.sqr()+FIVE*k/THREE) );   
-}
-
-double LES3DFsd_pState::Hs(void) const{
-   return ( rho*(hs()+HALF*v.sqr()+FIVE*k/THREE) );   
-}
-
-/************* Turbulence modified pressure **************/
-double LES3DFsd_pState::pmodified(void) const { 
-   return ( p + 2.0*rho*k/3.0 );
-}
-
-/*********** Characteristic filter width ************/ 
-double LES3DFsd_pState::filter_width(const double &Volume) const{
-  return pow(Volume,1.0/3.0); 
-}
-
-double LES3DFsd_pState::abs_strain_rate(const LES3DFsd_pState &dWdx, 
-                                        const LES3DFsd_pState &dWdy, 
-                                        const LES3DFsd_pState &dWdz) const{
-   Tensor3D strain_rate; 
-   strain_rate.zero();
-   strain_rate.xx = dWdx.v.x;
-   strain_rate.yy = dWdy.v.y;
-   strain_rate.zz = dWdz.v.z;
-   strain_rate.xy = 0.5*(dWdy.v.x + dWdx.v.y);
-   strain_rate.yz = 0.5*(dWdz.v.y + dWdy.v.z);
-   strain_rate.xz = 0.5*(dWdx.v.z + dWdz.v.x);
-  // S[i,j]*S[i,j]
-  double SS = sqr(strain_rate.xx) + sqr(strain_rate.yy) + sqr(strain_rate.zz)
-            + 2.0*(sqr(strain_rate.xy) + sqr(strain_rate.yz) + sqr(strain_rate.xz));
-  // sqrt(2*S*S)
-  return sqrt(2.0*SS);
-}
-
-double LES3DFsd_pState::eddy_viscosity(const LES3DFsd_pState &dWdx,
- 				       const LES3DFsd_pState &dWdy,
-				       const LES3DFsd_pState &dWdz,
-                                       const int &Flow_Type, 
-                                       const double &Volume) const{
-    double filter = filter_width(Volume);
-  if (Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY) {
-    double Cs = 0.18;
-    return(rho*sqr(Cs*filter)*abs_strain_rate(dWdx,dWdy,dWdz));
-  }else if(Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K) {
-    double Cv = 0.086;
-    return(rho*Cv*sqrt(k)*filter);
-  }
-}
-
-/******************************************************
-  Calculating the thermal diffusion component of 
-  the heat flux vector (qflux)
-   sum( hs * Ds * grad cs)
- *******************************************************/
-Vector3D LES3DFsd_pState::thermal_diffusion_t(const LES3DFsd_pState &dWdx,
-   	                                      const LES3DFsd_pState &dWdy,
-				              const LES3DFsd_pState &dWdz,
-                                              const int &Flow_Type, 
-                                              const double &Volume) const{
-   Vector3D sum;
-   sum.zero();
-   double Temp = T();
-   double Dm_t = eddy_viscosity(dWdx,dWdy,dWdz,Flow_Type,Volume)/(rho*Sc_t());
-   for(int i=0; i<ns; i++){
-     sum +=(/*specdata[i].Enthalpy(Temp) +*/ specdata[i].Heatofform())*Dm_t*spec[i].gradc;
-   }
-   return sum;
-}
-
-
-double LES3DFsd_pState::Pr_t(void) const{
-   return (0.9); 
-}
-
-double LES3DFsd_pState::Sc_t(void) const{
-   return (1.0);
-}
-
-double LES3DFsd_cState::p() const{
-   return (rho*Rtot()*T());
-}
-
-double LES3DFsd_cState::k() const{
-   return (rhok/rho);
-}
-
-double LES3DFsd_cState::C() const{
-   return (rhoC/rho);
-}
-
-double LES3DFsd_cState::Fsd() const{
-   return (rhoFsd/rho);
-}
-
-/********************************************************
- * Routine: RoeAverage (Roe Averages)                   *
- *                                                      *
- * This function returns the Roe-averaged primitive     *
- * solution state given left and right primitive        *
- * solution variables.  See Roe (1981).                 *
- *                                                      *
- ********************************************************/
+/**************************************************************************
+ * LES3DFsd_pState::RoeAverage -- Roe-averaged primitive solution state.  *
+ **************************************************************************/
 LES3DFsd_pState LES3DFsd_pState::RoeAverage(const LES3DFsd_pState &Wl,
                                             const LES3DFsd_pState &Wr) {
 
@@ -1451,79 +1615,61 @@ LES3DFsd_pState LES3DFsd_pState::RoeAverage(const LES3DFsd_pState &Wl,
 
    for(int i=0; i<Wl.ns; i++){
       Temp.spec[i].c = (srhol*Wl.spec[i].c + srhor*Wr.spec[i].c)/(srhol+srhor);
-   }
+   } /* endfor */
 
-   //Temp.p = (srhol*Wl.p + srhor*Wr.p)/(srhol+srhor);
    Ha = (srhol*Hl+srhor*Hr)/(srhol+srhor);
    ha = Ha - HALF*(sqr(Temp.v.x)+sqr(Temp.v.y)+sqr(Temp.v.z)) - FIVE*Temp.k/THREE;
-   
-   double TEMP = Temp.T(ha);
-   Temp.p = Temp.rho*TEMP*Temp.Rtot();
+   Temp.p = Temp.rho*Temp.T(ha)*Temp.Rtot();
    
    /* Return the Roe-averged state. */
    return (Temp);     
 }
 
-/*********************************************************
- * Routine: FluxHLLE_x (Harten-Lax-van Leer flux         *
- *                      function, x-direction)           *
- *                                                       *
- * This function returns the intermediate state solution *
- * flux for the x-direction given left and right         *
- * solution states by using the so-called Harten-Lax-    *
- * van Leer approximation for the fluxes.  See Harten,   *
- * Lax, van Leer (1983).                                 *
- *                                                       *
- *********************************************************/
+/**************************************************************************
+ * LES3DFsd_pState::FluxHLLE_x -- HLLE flux function, x-direction flux.   *
+ **************************************************************************/
 LES3DFsd_cState  LES3DFsd_pState::FluxHLLE_x(const LES3DFsd_pState &Wl,
                                              const LES3DFsd_pState &Wr) {
    
    double wavespeed_l, wavespeed_r;
  
-    /* solnvec in  Wa (lambdas_l, lambdas_r, lambdas_a) 
-       is allocated using new  */ 
    LES3DFsd_pState Wa, lambdas_l, lambdas_r, lambdas_a;
    LES3DFsd_cState Flux, dUrl;
+
    int NUM_VAR_3D = Wl.num_vars;
    
    /* Evaluate the Roe-average primitive solution state. */
-   
    Wa = RoeAverage(Wl, Wr);
    
    /* Evaluate the jumps in the conserved solution states. */
- 
    dUrl = Wr.U() - Wl.U();
  
    /* Evaluate the left, right, and average state eigenvalues. */
-    
    lambdas_l = Wl.lambda_x();
    lambdas_r = Wr.lambda_x();
    lambdas_a = Wa.lambda_x();
 
    /* Determine the intermediate state flux. */
-   
    wavespeed_l = min(lambdas_l[1],
                      lambdas_a[1]);
    wavespeed_r = max(lambdas_r[NUM_VAR_3D-NUM_LES3D_VAR_EXTRA-lambdas_r.ns],
                      lambdas_a[NUM_VAR_3D-NUM_LES3D_VAR_EXTRA-lambdas_a.ns]);
    
-    wavespeed_l = min(wavespeed_l, ZERO);
-    wavespeed_r = max(wavespeed_r, ZERO); 
+   wavespeed_l = min(wavespeed_l, ZERO);
+   wavespeed_r = max(wavespeed_r, ZERO); 
+
    if (wavespeed_l >= ZERO) {
       Flux = Wl.F();
    } else if (wavespeed_r <= ZERO) {
       Flux = Wr.F();
    } else {
-      
-      Flux =   ( (wavespeed_r*Wl.F()-wavespeed_l*Wr.F())
-                 +(wavespeed_l*wavespeed_r)*dUrl)/
-         (wavespeed_r-wavespeed_l);
+      Flux = ((wavespeed_r*Wl.F()-wavespeed_l*Wr.F())
+             +(wavespeed_l*wavespeed_r)*dUrl)/
+              (wavespeed_r-wavespeed_l);
    } /* endif */
    
    /* Return solution flux. */
-   
    return (Flux);
-   
 }
 
 LES3DFsd_cState  LES3DFsd_pState::FluxHLLE_x(const LES3DFsd_cState &Ul,
@@ -1531,106 +1677,22 @@ LES3DFsd_cState  LES3DFsd_pState::FluxHLLE_x(const LES3DFsd_cState &Ul,
    return (FluxHLLE_x(Ul.W(), Ur.W()));
 }
 
-
-/*********************************************************
- * Routine: FluxHLLE_n (Harten-Lax-van Leer flux         *
- *                      function, n-direction)           *
- *                                                       *
- * This function returns the intermediate state solution *
- * flux for an arbitrary direction defined by a unit     *
- * normal vector in the direction of interest, given     *
- * left and right solution states.  The problem is       *
- * solved by first applying a frame rotation to rotate   *
- * the problem to a local frame aligned with the unit    *
- * normal vector and then by using the so-called         *
- * Harten-Lax-van Leer approximation to specify the      *
- * intermediate state fluxes in terms of the rotated     *
- * solution states.  See Harten, Lax, van Leer (1983).   *
- *                                                       *
- *********************************************************/
+/**************************************************************************
+ * LES3DFsd_pState::FluxHLLE_n -- HLLE flux function, n-direction flux.   *
+ **************************************************************************/
 LES3DFsd_cState  LES3DFsd_pState::FluxHLLE_n(const LES3DFsd_pState &Wl,
                                              const LES3DFsd_pState &Wr,
                                              const Vector3D &norm_dir) {
 
-   double Wl_ur_norm, Wl_ur_tang;
-   double Wr_ur_norm, Wr_ur_tang ;
-   double Wr_ur_tang_z;
-   
-   Vector3D Flux_rotated_x, Flux_rotated_tang_y, Flux_rotated_tang_z ;
-   Vector3D Wl_ur_tang_vector, Wr_ur_tang_vector;
-   Vector3D Wl_ur_tang_unit_vector, Wr_ur_tang_unit_vector;
-   Vector3D Wr_ur_tang_z_vector, Wr_ur_tang_z_unit_vector;
-   
-   //solnvec in  Wl_rotated (Wr_rotated) is allocated using new 
-   LES3DFsd_pState Wl_rotated, Wr_rotated;
-   LES3DFsd_cState Flux, Flux_rotated;
-   
-   
-   /* Apply the frame rotation and evaluate left and right
-      solution states in the local rotated frame defined
-      by the unit normal vector. */
-   Wl_rotated.Copy(Wl);
-   Wr_rotated.Copy(Wr);
+   // Determine the left and right solution states in the rotate frame.
+   LES3DFsd_pState Wl_rot(Wl.Rotate(norm_dir));
+   LES3DFsd_pState Wr_rot(Wr.Rotate(norm_dir));
+    
+   // Evaluate the intermediate state solution flux in the rotated frame.
+   LES3DFsd_cState Flux_rot = FluxHLLE_x(Wl_rot, Wr_rot);
  
- // Left state velocity in rotated frame
-   Wl_ur_norm = dot(Wl.v, norm_dir);
-   Wl_ur_tang = abs(Wl.v - Wl_ur_norm*norm_dir);
-   Wl_ur_tang_vector = (Wl.v - Wl_ur_norm*norm_dir);
-   if(Wl_ur_tang != ZERO){
-      Wl_ur_tang_unit_vector =  Wl_ur_tang_vector/Wl_ur_tang;
-   }else{
-      Wl_ur_tang_unit_vector= Vector3D_ZERO;
-   }
-   
-   Wl_rotated.rho = Wl.rho;
-   Wl_rotated.v.x = Wl_ur_norm ;
-   Wl_rotated.v.y = Wl_ur_tang;
-   Wl_rotated.v.z = ZERO;
-   Wl_rotated.p = Wl.p;
-   // Right state velocity in rotated frame
-   Wr_ur_norm = dot(Wr.v, norm_dir);
-   Wr_ur_tang_vector = Wr.v - Wr_ur_norm*norm_dir;
-   Wr_ur_tang = abs(Wr.v - Wr_ur_norm*norm_dir);
-   if( Wr_ur_tang != ZERO){
-      Wr_ur_tang_unit_vector =  Wr_ur_tang_vector/Wr_ur_tang ;
-   }else{
-      Wr_ur_tang_unit_vector= Vector3D_ZERO;  
-   }
-   
-   Wr_rotated.rho = Wr.rho;
-   Wr_rotated.v.x = Wr_ur_norm;
-   Wr_rotated.v.y = dot( Wr_ur_tang_vector, Wl_ur_tang_unit_vector);
-   Wr_rotated.v.z = abs( Wr_ur_tang_vector -Wr_rotated.v.y* Wl_ur_tang_unit_vector);
-   Wr_rotated.p = Wr.p;
-   
-   Wr_ur_tang_z = abs(Wr_ur_tang_vector-Wr_rotated.v.y* Wl_ur_tang_unit_vector);
-   Wr_ur_tang_z_vector = Wr_ur_tang_vector -Wr_rotated.v.y* Wl_ur_tang_unit_vector;
-   if(Wr_ur_tang_z !=ZERO){
-      Wr_ur_tang_z_unit_vector = Wr_ur_tang_z_vector /Wr_ur_tang_z ;
-   }else{
-      Wr_ur_tang_z_unit_vector = Vector3D_ZERO;
-      
-   }
-
-   /* Evaluate the intermediate state solution 
-      flux in the rotated frame. */
-   
-   Flux_rotated = FluxHLLE_x(Wl_rotated, Wr_rotated);
-   
-   /* Rotate back to the original Cartesian reference
-      frame and return the solution flux. */
-   
-   Flux.Copy(Flux_rotated);
-   
-   Flux_rotated_x = Flux.rhov.x*norm_dir;
-   Flux_rotated_tang_y = Flux.rhov.y* Wl_ur_tang_unit_vector ;
-   Flux_rotated_tang_z = Flux.rhov.z* Wr_ur_tang_z_unit_vector;
-   
-   Flux.rhov =  Flux_rotated_x + Flux_rotated_tang_y+ Flux_rotated_tang_z;
-   
-   Flux.zero_non_sol();
-   
-   return (Flux);
+   // Return numerical flux in un-rotated frame.
+   return (Flux_rot.RotateBack(norm_dir));
 
 }
 
@@ -1640,72 +1702,13 @@ LES3DFsd_cState  LES3DFsd_pState::FluxHLLE_n(const LES3DFsd_cState &Ul,
     return (FluxHLLE_n(Ul.W(), Ur.W(), norm_dir));
 }
 
-/********************************************************
- * Routine: HartenFixPos (Harten Entropy Fix)           *
- *                                                      *
- * This function returns the positive parts of the      *
- * corrected elemental wave speeds or eigenvalues       *
- * according to the entropy fix of Harten (1983).       *
- *                                                      *
- ********************************************************/
-LES3DFsd_pState HartenFixPos(const LES3DFsd_pState &lambdas_a,
-                             const LES3DFsd_pState &lambdas_l,
-                             const LES3DFsd_pState &lambdas_r) {
-   
-   LES3DFsd_pState NEW;
-   NEW.rho = HartenFixPos(lambdas_a[1],lambdas_l[1],lambdas_r[1]);
-   NEW.v.x = HALF*(lambdas_a[2]+fabs(lambdas_a[2]));
-   NEW.v.y = HALF*(lambdas_a[3]+fabs(lambdas_a[3]));
-   NEW.v.z = HALF*(lambdas_a[4]+fabs(lambdas_a[4]));
-   NEW.p = HartenFixPos(lambdas_a[5],lambdas_l[5],lambdas_r[5]);
-   NEW.C = HALF*(lambdas_a[6] + fabs(lambdas_a[6]));
-   NEW.Fsd = HALF*(lambdas_a[7] +fabs(lambdas_a[7]));
-   NEW.k = HALF*(lambdas_a[8] + fabs(lambdas_a[8]));
-
-   for( int i=(NUM_EULER3D_VAR_SANS_SPECIES + NUM_LES3D_VAR_EXTRA +1); i<=NEW.num_vars; i++){
-      NEW.spec[i-(NUM_EULER3D_VAR_SANS_SPECIES + NUM_LES3D_VAR_EXTRA+1)].c = 
-         HALF*(lambdas_a[i]+fabs(lambdas_a[i]));
-   }
-
-   return (NEW);
-}
-/********************************************************
- * Routine: HartenFixNeg (Harten Entropy Fix)           *
- *                                                      *
- * This function returns the negative parts of the      *
- * corrected elemental wave speeds or eigenvalues       *
- * according to the entropy fix of Harten (1983).       *
- *                                                      *
- ********************************************************/
-LES3DFsd_pState HartenFixNeg(const LES3DFsd_pState &lambdas_a,
-                             const LES3DFsd_pState &lambdas_l,
-                             const LES3DFsd_pState &lambdas_r) {
-
-   LES3DFsd_pState NEW;
-   NEW.rho = HartenFixNeg(lambdas_a[1],lambdas_l[1],lambdas_r[1]);
-   NEW.v.x = HALF*(lambdas_a[2]-fabs(lambdas_a[2]));
-   NEW.v.y = HALF*(lambdas_a[3]-fabs(lambdas_a[3]));
-   NEW.v.z = HALF*(lambdas_a[4]-fabs(lambdas_a[4]));
-   NEW.p = HartenFixNeg(lambdas_a[5],lambdas_l[5],lambdas_r[5]);
-   NEW.C = HALF*(lambdas_a[6] -fabs(lambdas_a[6]));
-   NEW.Fsd = HALF*(lambdas_a[7] - fabs(lambdas_a[7]));
-   NEW.k = HALF*(lambdas_a[8] -fabs(lambdas_a[8]));
-   
-   for( int i = (NUM_EULER3D_VAR_SANS_SPECIES  + NUM_LES3D_VAR_EXTRA+1); i<=NEW.num_vars; i++){
-      NEW.spec[i-(NUM_EULER3D_VAR_SANS_SPECIES + NUM_LES3D_VAR_EXTRA+1)].c = 
-         HALF*(lambdas_a[i]-fabs(lambdas_a[i]));
-   }
-
-   return (NEW);
-}
-
-
-// Flux Roe -- based on Harten fix 
+/**************************************************************************
+ * LES3DFsd_pState::FluxRoe_x -- Roe flux function, x-direction flux.     *
+ **************************************************************************/
 LES3DFsd_cState  LES3DFsd_pState::FluxRoe_x(const  LES3DFsd_pState &Wl,  
                                             const  LES3DFsd_pState &Wr){
    
-   LES3DFsd_pState Wa, dWrl, wavespeeds, 
-      lambdas_l, lambdas_r, lambdas_a;
+   LES3DFsd_pState Wa, dWrl, wavespeeds, lambdas_l, lambdas_r, lambdas_a;
    LES3DFsd_cState Flux;
 
    /* Evaluate the Roe-average primitive solution state. */    
@@ -1725,11 +1728,11 @@ LES3DFsd_cState  LES3DFsd_pState::FluxRoe_x(const  LES3DFsd_pState &Wl,
       wavespeeds = HartenFixNeg(lambdas_a,
                                 lambdas_l,
                                 lambdas_r);
-      for (int i=1 ; i < Wl.num_vars; i++) {
+      for (int i=1; i < Wl.num_vars; i++) {
          if (wavespeeds[i] < ZERO) {
             Flux += wavespeeds[i]*(Wa.lp_x(i)*dWrl)*Wa.rc_x(i);
-          }
-      }
+         } /* endif */
+      } /* endfor */
     } else {
       Flux = Wr.F();
       wavespeeds = HartenFixPos(lambdas_a,
@@ -1738,112 +1741,36 @@ LES3DFsd_cState  LES3DFsd_pState::FluxRoe_x(const  LES3DFsd_pState &Wl,
       for (int i=1; i < Wl.num_vars; i++) {
          if (wavespeeds[i] > ZERO) {
             Flux -= wavespeeds[i]*(Wa.lp_x(i)*dWrl)*Wa.rc_x(i); 
-  //          cout<<"\n Wa.lp_x(i) = "<<Wa.lp_x(i)<<" wavespeeds[i]= "<<wavespeeds[i]<<endl;
-         }
-      }
-   } 
+         } /* endif */
+      } /* endfor */
+   } /* endif */
     
    /* Return solution flux. */    
    return (Flux);    
-    
-   
-}
-   
-LES3DFsd_cState  LES3DFsd_pState::FluxRoe_n(const LES3DFsd_pState &Wl,
-                                            const LES3DFsd_pState &Wr,
-                                            const Vector3D &norm_dir){
-   
-   double Wl_ur_norm, Wl_ur_tang;
-   double Wr_ur_norm, Wr_ur_tang ;
-   double Wr_ur_tang_z;
-   
-   Vector3D Flux_rotated_x, Flux_rotated_tang_y, Flux_rotated_tang_z ;
-   Vector3D Wl_ur_tang_vector, Wr_ur_tang_vector;
-   Vector3D Wl_ur_tang_unit_vector, Wr_ur_tang_unit_vector;
-   Vector3D Wr_ur_tang_z_vector, Wr_ur_tang_z_unit_vector;
-   
-   //solnvec in  Wl_rotated (Wr_rotated) is allocated using new 
-   LES3DFsd_pState Wl_rotated, Wr_rotated;
-   LES3DFsd_cState Flux, Flux_rotated;
-   
-   /* Apply the frame rotation and evaluate left and right
-      solution states in the local rotated frame defined
-      by the unit normal vector. */
-   Wl_rotated.Copy(Wl);
-   Wr_rotated.Copy(Wr);
-   
-   // Left state velocity in rotated frame
-   Wl_ur_norm = dot(Wl.v, norm_dir);
-   Wl_ur_tang = abs(Wl.v - Wl_ur_norm*norm_dir);
-   Wl_ur_tang_vector = (Wl.v - Wl_ur_norm*norm_dir);
-   if(Wl_ur_tang != ZERO){
-      Wl_ur_tang_unit_vector =  Wl_ur_tang_vector/Wl_ur_tang;
-   }else{
-      Wl_ur_tang_unit_vector= Vector3D_ZERO;
-   }
-   
-   Wl_rotated.rho = Wl.rho;
-   Wl_rotated.v.x = Wl_ur_norm ;
-   Wl_rotated.v.y = Wl_ur_tang;
-   Wl_rotated.v.z = ZERO;
-   Wl_rotated.p = Wl.p;
-   // Right state velocity in rotated frame
-   Wr_ur_norm = dot(Wr.v, norm_dir);
-   Wr_ur_tang_vector = Wr.v - Wr_ur_norm*norm_dir;
-   Wr_ur_tang = abs(Wr.v - Wr_ur_norm*norm_dir);
-   if( Wr_ur_tang != ZERO){
-      Wr_ur_tang_unit_vector =  Wr_ur_tang_vector/Wr_ur_tang ;
-   }else{
-      Wr_ur_tang_unit_vector= Vector3D_ZERO;  
-   }
-   
-   Wr_rotated.rho = Wr.rho;
-   Wr_rotated.v.x = Wr_ur_norm;
-   Wr_rotated.v.y = dot( Wr_ur_tang_vector, Wl_ur_tang_unit_vector);
-   Wr_rotated.v.z = abs( Wr_ur_tang_vector -Wr_rotated.v.y* Wl_ur_tang_unit_vector);
-   Wr_rotated.p = Wr.p;
-   
-   Wr_ur_tang_z = abs(Wr_ur_tang_vector-Wr_rotated.v.y* Wl_ur_tang_unit_vector);
-   Wr_ur_tang_z_vector = Wr_ur_tang_vector -Wr_rotated.v.y* Wl_ur_tang_unit_vector;
-   if(Wr_ur_tang_z !=ZERO){
-      Wr_ur_tang_z_unit_vector = Wr_ur_tang_z_vector /Wr_ur_tang_z ;
-   }else{
-      Wr_ur_tang_z_unit_vector = Vector3D_ZERO;
-      
-   }
-  
-   /* Evaluate the intermediate state solution 
-      flux in the rotated frame. */
-   
-   Flux_rotated = FluxRoe_x(Wl_rotated, Wr_rotated);
-   
-   /* Rotate back to the original Cartesian reference
-      frame and return the solution flux. */
-   
-   Flux.Copy(Flux_rotated);
-   
-   Flux_rotated_x = Flux.rhov.x*norm_dir;
-   Flux_rotated_tang_y = Flux.rhov.y* Wl_ur_tang_unit_vector ;
-   Flux_rotated_tang_z = Flux.rhov.z* Wr_ur_tang_z_unit_vector;
-   
-   Flux.rhov =  Flux_rotated_x + Flux_rotated_tang_y+ Flux_rotated_tang_z;
-   
-   Flux.zero_non_sol();
-   
-   return (Flux);
 }
 
-/**********************************************************************
- * Routine: FluxAUSMplus_up (Liou's updated Advection Upstream        * 
- *                           Splitting Method flux function for all   *
- *                           speeds,  x-direction)                    *
- *                                                                    *
- * This function returns the intermediate state solution flux for the *
- * x-direction given left and right solution states by using the      *
- * AUSM+-up (updated AUSM scheme) approximation for the fluxes.  See  *
- * M.-S. Liou (J. Comp. Physics 2006).                                *
- *                                                                    *
- **********************************************************************/
+/**************************************************************************
+ * LES3DFsd_pState::FluxRoe_n -- Roe flux function, n-direction flux.     *
+ **************************************************************************/
+LES3DFsd_cState LES3DFsd_pState::FluxRoe_n(const LES3DFsd_pState &Wl,
+                                           const LES3DFsd_pState &Wr,
+                                           const Vector3D &norm_dir) {
+   
+   // Determine the left and right solution states in the rotate frame.
+   LES3DFsd_pState Wl_rot(Wl.Rotate(norm_dir));
+   LES3DFsd_pState Wr_rot(Wr.Rotate(norm_dir));
+    
+   // Evaluate the intermediate state solution flux in the rotated frame.
+   LES3DFsd_cState Flux_rot = FluxRoe_x(Wl_rot, Wr_rot);
+ 
+   // Return numerical flux in un-rotated frame.
+   return (Flux_rot.RotateBack(norm_dir));
+
+}
+
+/**************************************************************************************
+ * LES3DFsd_pState::AUSMplus_up_x -- AUSMplus_up flux function, x-direction flux.     *
+ **************************************************************************************/
 LES3DFsd_cState LES3DFsd_pState::FluxAUSMplus_up_x(const LES3DFsd_pState &Wl,
                                                    const LES3DFsd_pState &Wr) {
  
@@ -1854,7 +1781,7 @@ LES3DFsd_cState LES3DFsd_pState::FluxAUSMplus_up_x(const LES3DFsd_pState &Wl,
   //double al, ar, atilde_l, atilde_r;
  
   // Determine the intermediate state sound speed and density:
-  // al = sqrt(Wl.H()/Wl.rho)*sqrt(TWO*(Wl.g() - ONE)/(Wl.g() + ONE));
+  //   al = sqrt(Wl.H()/Wl.rho)*sqrt(TWO*(Wl.g() - ONE)/(Wl.g() + ONE));
   //   ar = sqrt(Wr.H()/Wr.rho)*sqrt(TWO*(Wr.g() - ONE)/(Wr.g() + ONE));
   //   atilde_l = sqr(al)/max(al, Wl.v.x);    
   //   atilde_r = sqr(ar)/max(ar, -Wr.v.x);
@@ -1888,7 +1815,7 @@ LES3DFsd_cState LES3DFsd_pState::FluxAUSMplus_up_x(const LES3DFsd_pState &Wl,
   } else {
     Mplus = 0.25*sqr(Ml+1.0) * (1.0 - 16.0*beta*(-0.25*sqr(Ml-1.0)));
     pplus = 0.25*sqr(Ml+1.0) * ((2.0 - Ml) - 16.0*alpha*Ml*(-0.25*sqr(Ml-1.0)));
-  }
+  } /* endif */
   
   // Determine the right state split Mach number:
   if (fabs(Mr) >= ONE) {
@@ -1897,7 +1824,7 @@ LES3DFsd_cState LES3DFsd_pState::FluxAUSMplus_up_x(const LES3DFsd_pState &Wl,
   } else {
     Mminus = -0.25*sqr(Mr-1.0) * (1.0 + 16.0*beta*0.25*sqr(Mr+1.0));
     pminus = -0.25*sqr(Mr-1.0) * ((-2.0 - Mr) + 16.0*alpha*Mr*0.25*sqr(Mr+1.0));
-  } 
+  } /* endif */
 
   // Determine the left state split Mach number:
 //   if (fabs(Ml) >= ONE) {
@@ -1935,12 +1862,6 @@ LES3DFsd_cState LES3DFsd_pState::FluxAUSMplus_up_x(const LES3DFsd_pState &Wl,
     Flux.rhoC = Wl.C;
     Flux.rhoFsd = Wl.Fsd;
     Flux.rhok = Wl.k;
-
-//     if(Wl.nscal > 0){
-//       for(int i=0; i<Wl.nscal; ++i){
-// 	Flux.rhoscalar[i] = Wl.scalar[i];
-//       }
-//     }
 //     for(int i=0; i<Wl.ns; ++i){
 //       Flux.rhospec[i].c = Wl.spec[i].c;
 //     }
@@ -1952,16 +1873,10 @@ LES3DFsd_cState LES3DFsd_pState::FluxAUSMplus_up_x(const LES3DFsd_pState &Wl,
     Flux.rhoC = Wr.C;
     Flux.rhoFsd = Wr.Fsd;
     Flux.rhok = Wr.k;
-
-//     if(Wr.nscal > 0){
-//       for(int i=0; i<Wr.nscal; ++i){
-// 	Flux.rhoscalar[i] = Wr.scalar[i];
-//       }
-//     }
 //     for(int i=0; i<Wr.ns; ++i){
 //       Flux.rhospec[i].c = Wr.spec[i].c;
 //     }
-  } //end if
+  } /* endif */
 
   Flux = mass_flux_half*Flux;
  
@@ -1973,304 +1888,168 @@ LES3DFsd_cState LES3DFsd_pState::FluxAUSMplus_up_x(const LES3DFsd_pState &Wl,
 
 }
 
-// LES3DFsd_cState FluxAUSMplus_up_x(const LES3DFsd_cState &Ul,
-//                                   const LES3DFsd_cState &Ur) {
-//   return FluxAUSMplus_up_x(Ul.W(),Ur.W());
-// }
- 
-/**********************************************************************
- * Routine: FluxAUSMplus_up_n (M.-S. Liou's Advection Upstream        *
- *                             Splitting Method flux function for     *
- *                             all speeds, n-direction)               *
- *                                                                    *
- * This function returns the intermediate state solution flux for an  *
- * arbitrary direction defined by a unit normal vector in the         *
- * direction of interest, given left and right solution states.  The  *
- * problem is solved by first applying a frame rotation to rotate the *
- * problem to a local frame aligned with the unit normal vector and   *
- * then by using the AUSM+-up approximation to specify the            * 
- * intermediate  state in terms of the rotated solution states.       *
- * See M.-S. Liou (J. Comp. Physics 2006).                            *
- **********************************************************************/
+LES3DFsd_cState FluxAUSMplus_up_x(const LES3DFsd_cState &Ul,
+                                  const LES3DFsd_cState &Ur) {
+  return FluxAUSMplus_up_x(Ul.W(),Ur.W());
+}
+
+/******************************************************************************************
+ * LES3DFsd_pState::FluxAUSMplus_up_n -- AUSMplus_up flux function, n-direction flux.     *
+ ******************************************************************************************/
 LES3DFsd_cState LES3DFsd_pState::FluxAUSMplus_up_n(const LES3DFsd_pState &Wl,
                                                    const LES3DFsd_pState &Wr,
                                                    const Vector3D &norm_dir) {
- 
-
-   double Wl_ur_norm, Wl_ur_tang;
-   double Wr_ur_norm, Wr_ur_tang ;
-   double Wr_ur_tang_z;
    
-   Vector3D Flux_rotated_x, Flux_rotated_tang_y, Flux_rotated_tang_z ;
-   Vector3D Wl_ur_tang_vector, Wr_ur_tang_vector;
-   Vector3D Wl_ur_tang_unit_vector, Wr_ur_tang_unit_vector;
-   Vector3D Wr_ur_tang_z_vector, Wr_ur_tang_z_unit_vector;
-   
-   //solnvec in  Wl_rotated (Wr_rotated) is allocated using new 
-   LES3DFsd_pState Wl_rotated, Wr_rotated;
-   LES3DFsd_cState Flux, Flux_rotated;
-   
-   /* Apply the frame rotation and evaluate left and right
-      solution states in the local rotated frame defined
-      by the unit normal vector. */
-   Wl_rotated.Copy(Wl);
-   Wr_rotated.Copy(Wr);
-   
-   // Left state velocity in rotated frame
-   Wl_ur_norm = dot(Wl.v, norm_dir);
-   Wl_ur_tang = abs(Wl.v - Wl_ur_norm*norm_dir);
-   Wl_ur_tang_vector = (Wl.v - Wl_ur_norm*norm_dir);
-   if(Wl_ur_tang != ZERO){
-      Wl_ur_tang_unit_vector =  Wl_ur_tang_vector/Wl_ur_tang;
-   }else{
-      Wl_ur_tang_unit_vector= Vector3D_ZERO;
-   }
-   
-   Wl_rotated.rho = Wl.rho;
-   Wl_rotated.v.x = Wl_ur_norm ;
-   Wl_rotated.v.y = Wl_ur_tang;
-   Wl_rotated.v.z = ZERO;
-   Wl_rotated.p = Wl.p;
-   // Right state velocity in rotated frame
-   Wr_ur_norm = dot(Wr.v, norm_dir);
-   Wr_ur_tang_vector = Wr.v - Wr_ur_norm*norm_dir;
-   Wr_ur_tang = abs(Wr.v - Wr_ur_norm*norm_dir);
-   if( Wr_ur_tang != ZERO){
-      Wr_ur_tang_unit_vector =  Wr_ur_tang_vector/Wr_ur_tang ;
-   }else{
-      Wr_ur_tang_unit_vector= Vector3D_ZERO;  
-   }
-   
-   Wr_rotated.rho = Wr.rho;
-   Wr_rotated.v.x = Wr_ur_norm;
-   Wr_rotated.v.y = dot( Wr_ur_tang_vector, Wl_ur_tang_unit_vector);
-   Wr_rotated.v.z = abs( Wr_ur_tang_vector -Wr_rotated.v.y* Wl_ur_tang_unit_vector);
-   Wr_rotated.p = Wr.p;
-   
-   Wr_ur_tang_z = abs(Wr_ur_tang_vector-Wr_rotated.v.y* Wl_ur_tang_unit_vector);
-   Wr_ur_tang_z_vector = Wr_ur_tang_vector -Wr_rotated.v.y* Wl_ur_tang_unit_vector;
-   if(Wr_ur_tang_z !=ZERO){
-      Wr_ur_tang_z_unit_vector = Wr_ur_tang_z_vector /Wr_ur_tang_z ;
-   }else{
-      Wr_ur_tang_z_unit_vector = Vector3D_ZERO;
-      
-   }
-  
-   /* Evaluate the intermediate state solution 
-      flux in the rotated frame. */
-   
-   Flux_rotated = FluxRoe_x(Wl_rotated, Wr_rotated);
-   
-   /* Rotate back to the original Cartesian reference
-      frame and return the solution flux. */
-   
-   Flux.Copy(Flux_rotated);
-   
-   Flux_rotated_x = Flux.rhov.x*norm_dir;
-   Flux_rotated_tang_y = Flux.rhov.y* Wl_ur_tang_unit_vector ;
-   Flux_rotated_tang_z = Flux.rhov.z* Wr_ur_tang_z_unit_vector;
-   
-   Flux.rhov =  Flux_rotated_x + Flux_rotated_tang_y+ Flux_rotated_tang_z;
-   
-   Flux.zero_non_sol();
-
-//   double cos_angle, sin_angle;
-//   LES3DFsd_pState Wl_rotated, Wr_rotated;
-//   LES3DFsd_cState Flux, Flux_rotated;
- 
-//   /* Determine the direction cosine's for the frame
-//      rotation. */
- 
-//   cos_angle = norm_dir.x; 
-//   sin_angle = norm_dir.y;
-
-//   /* Apply the frame rotation and evaluate left and right
-//      solution states in the local rotated frame defined
-//      by the unit normal vector. */
-//   Wl_rotated.Copy(Wl);
-//   Wr_rotated.Copy(Wr);
-   
-//   Wl_rotated.v.x = Wl.v.x*cos_angle + Wl.v.y*sin_angle;
-//   Wl_rotated.v.y = - Wl.v.x*sin_angle + Wl.v.y*cos_angle;
- 
-//   Wr_rotated.v.x = Wr.v.x*cos_angle + Wr.v.y*sin_angle;
-//   Wr_rotated.v.y = - Wr.v.x*sin_angle + Wr.v.y*cos_angle;
- 
-   
-//   // Evaluate the intermediate state solution flux in the rotated frame.
-//   Flux_rotated = FluxAUSMplus_up(Wl_rotated,Wr_rotated);
-  
- 
-//   // Rotate back to the original Cartesian reference frame and return
-//   // the solution flux.
-//   Flux.Copy(Flux_rotated);
- 
-//   Flux.rhov.x = Flux_rotated.rhov.x*cos_angle - Flux_rotated.rhov.y*sin_angle;
-//   Flux.rhov.y = Flux_rotated.rhov.x*sin_angle + Flux_rotated.rhov.y*cos_angle;
- 
-//   Flux.zero_non_sol();
-
-  // Return the solution flux.  
-  return Flux;
- 
-}
-
-/********************************************************
- * Routine: Reflect                                     *
- *                                                      *
- * This function returns the reflected solution state   *
- * in a given direction given the primitive solution    *
- * variables and the unit normal vector in the          *
- * direction of interest.                               *
- *                                                      *
- ********************************************************/
-LES3DFsd_pState LES3DFsd_pState::Reflect(const LES3DFsd_pState &W,
-                                         const Vector3D &norm_dir) {
-   Vector3D ur_norm, ur_tang, vr_tot;
-   
-   LES3DFsd_pState Temp;
-   Temp = W;
-   
-   ur_norm = dot(W.v, norm_dir)*norm_dir;
-   ur_tang = W.v - ur_norm;
-   
-   ur_norm = -ur_norm;
-   vr_tot = ur_norm + ur_tang;
-   
-   Temp.v = vr_tot;
-   
-   return (Temp);
-}
-
-LES3DFsd_pState LES3DFsd_pState::MovingWall(const LES3DFsd_pState &Win,
-                                            const LES3DFsd_pState &Wout,
-                                            const Vector3D &norm_dir, 
-                                            const Vector3D &wall_velocity,
-                                            const Vector3D &pressure_gradient,
-                                            const int &TEMPERATURE_BC_FLAG) {
-   LES3DFsd_pState Temp;
-   Temp = Win;
-   
-   if(wall_velocity == Vector3D_ZERO){
-     Temp.v = -Win.v;
-   }else{
-     double  Wall_velocity_tang ;
-     Vector3D ur_norm, ur_tang, vr_tot, uw_tang;
-     ur_norm = dot(Win.v, norm_dir)*norm_dir;
-     ur_tang = Win.v - ur_norm;
-     
-     uw_tang = wall_velocity - dot(norm_dir,wall_velocity)*norm_dir;
-     
-     ur_norm = -ur_norm;
-     ur_tang = 2.0*uw_tang - ur_tang;
-     vr_tot = ur_norm + ur_tang;
-     
-     Temp.v = vr_tot;
-  }
-  
-  Temp.k = ZERO; 
-  /* Fixed Wall Temperature or constant extrapolation for Adiabatic */
-  if(TEMPERATURE_BC_FLAG == FIXED_TEMPERATURE_WALL){
-     if (pressure_gradient != Vector3D_ZERO){
-        Temp.rho = Wout.p/(Temp.Rtot()*Wout.T());
-     }else{
-        Temp.rho = Temp.p/(Temp.Rtot()*Wout.T());
-     }
-  }
-  return (Temp);
-}
-
-LES3DFsd_pState  LES3DFsd_pState::NoSlip(const LES3DFsd_pState &Win,
-                                         const LES3DFsd_pState &Wout,
-                                         const Vector3D &norm_dir,
-                                         const Vector3D &pressure_gradient,
-                                         const int &TEMPERATURE_BC_FLAG) {
-   return (MovingWall(Win, Wout, norm_dir, Vector3D_ZERO, pressure_gradient, TEMPERATURE_BC_FLAG));
-}
-
-// molecular stress tensor
-Tensor3D LES3DFsd_pState::lambda(const LES3DFsd_pState &dWdx, 
-                                 const LES3DFsd_pState &dWdy,
-                                 const LES3DFsd_pState &dWdz,
-                                 const int &Flow_Type,
-                                 const double &Volume){
-
-   
-   Tensor3D subfilter_stress;
-   double mu_t = eddy_viscosity(dWdx,dWdy,dWdz,Flow_Type,filter_width(Volume));
-   
-   subfilter_stress.xx = 1.0/3.0*mu_t*(4.0*dWdx.v.x - 2.0*dWdy.v.y - 2.0*dWdz.v.z) - 2.0/3.0*rho*k;
-   subfilter_stress.xy = mu_t*(dWdx.v.y + dWdy.v.x);
-   subfilter_stress.xz = mu_t*(dWdx.v.z + dWdz.v.x);
-   subfilter_stress.yy = 1.0/3.0*mu_t*(4.0*dWdy.v.y - 2.0*dWdx.v.x - 2.0*dWdz.v.z) - 2.0/3.0*rho*k;
-   subfilter_stress.yz = mu_t*(dWdy.v.z + dWdz.v.y);
-   subfilter_stress.zz = 1.0/3.0*mu_t*(4.0*dWdz.v.z - 2.0*dWdx.v.x - 2.0*dWdy.v.y) - 2.0/3.0*rho*k;
-   
-   return (subfilter_stress);
- 
-}
-
-Tensor3D LES3DFsd_pState::lambda(const LES3DFsd_pState &dWdx, 
-                                 const LES3DFsd_pState &dWdy,
-                                 const LES3DFsd_pState &dWdz,
-                                 const int &Flow_Type,
-                                 const double &Volume) const {
-
-   Tensor3D subfilter_stress;
-   double mu_t = eddy_viscosity(dWdx,dWdy,dWdz,Flow_Type,filter_width(Volume));
-   
-   subfilter_stress.xx = 1.0/3.0*mu_t*(4.0*dWdx.v.x - 2.0*dWdy.v.y - 2.0*dWdz.v.z) - 2.0/3.0*rho*k;
-   subfilter_stress.xy = mu_t*(dWdx.v.y + dWdy.v.x);
-   subfilter_stress.xz = mu_t*(dWdx.v.z + dWdz.v.x); 
-   subfilter_stress.yy = 1.0/3.0*mu_t*(4.0*dWdy.v.y - 2.0*dWdx.v.x - 2.0*dWdz.v.z) - 2.0/3.0*rho*k;
-   subfilter_stress.yz = mu_t*(dWdy.v.z + dWdz.v.y);
-   subfilter_stress.zz = 1.0/3.0*mu_t*(4.0*dWdz.v.z - 2.0*dWdx.v.x - 2.0*dWdy.v.y) - 2.0/3.0*rho*k;
- 
-   return (subfilter_stress);
-   
-}
-
-// heat flux: Fourier's law of heat conduction
-
- Vector3D LES3DFsd_pState::qflux_t(const LES3DFsd_pState &dWdx, 
-                                   const LES3DFsd_pState &dWdy,
-                                   const LES3DFsd_pState &dWdz,
-                                   const int &Flow_Type,
-                                   const double &Volume){
-    double Rmix = Rtot();
-    double kappa_t=eddy_viscosity(dWdx,dWdy,dWdz,Flow_Type,filter_width(Volume))*Cp()/Pr_t();
-    Vector3D heat_flux, gradient_T;
-  /* Temperature gradients from using the chain rule with the ideal gas law (P=rho*R*T) 
-     dT/dx = 1/(rho*R) *( dP/dx - P/rho * drho/dx) */
-    gradient_T.x = (1.0/(rho*Rmix)) * (dWdx.p -(p/rho)*dWdx.rho);
-    gradient_T.y = (1.0/(rho*Rmix)) * (dWdy.p -(p/rho)*dWdy.rho);
-    gradient_T.z = (1.0/(rho*Rmix)) * (dWdz.p -(p/rho)*dWdz.rho);
+   // Determine the left and right solution states in the rotate frame.
+   LES3DFsd_pState Wl_rot(Wl.Rotate(norm_dir));
+   LES3DFsd_pState Wr_rot(Wr.Rotate(norm_dir));
     
-    heat_flux = -kappa_t*gradient_T;
-    return (heat_flux);
- }
+   // Evaluate the intermediate state solution flux in the rotated frame.
+   LES3DFsd_cState Flux_rot = FluxAUSMplus_up_x(Wl_rot, Wr_rot);
+ 
+   // Return numerical flux in un-rotated frame.
+   return (Flux_rot.RotateBack(norm_dir));
 
- Vector3D LES3DFsd_pState::qflux_t(const LES3DFsd_pState &dWdx, 
-                                   const LES3DFsd_pState &dWdy,
-                                   const LES3DFsd_pState &dWdz,
-                                   const int &Flow_Type,
-                                   const double &Volume) const{
-  
-    double Rmix = Rtot();
-    double kappa_t=eddy_viscosity(dWdx,dWdy,dWdz,Flow_Type,filter_width(Volume))*Cp()/Pr_t();
-    Vector3D heat_flux, gradient_T;
-  /* Temperature gradients from using the chain rule with the ideal gas law (P=rho*R*T) 
-     dT/dx = 1/(rho*R) *( dP/dx - P/rho * drho/dx) */
-    gradient_T.x = (1.0/(rho*Rmix)) * (dWdx.p -(p/rho)*dWdx.rho);
-    gradient_T.y = (1.0/(rho*Rmix)) * (dWdy.p -(p/rho)*dWdy.rho);
-    gradient_T.z = (1.0/(rho*Rmix)) * (dWdz.p -(p/rho)*dWdz.rho);
+}
 
-    heat_flux = -kappa_t*gradient_T;
+/**************************************************************************
+ * LES3DFsd_pState::lambda_minus -- Negative wave speeds determined using *
+ *                                  Harten entropy fix.                   *
+ **************************************************************************/
+LES3DFsd_pState lambda_minus(const LES3DFsd_pState &lambdas_a,
+                             const LES3DFsd_pState &lambdas_l,
+                             const LES3DFsd_pState &lambdas_r) {
 
-    return (heat_flux);
- }
+   LES3DFsd_pState W_temp;
+   W_temp.rho = HartenFixNeg(lambdas_a[1],lambdas_l[1],lambdas_r[1]);
+   W_temp.v.x = HALF*(lambdas_a[2]-fabs(lambdas_a[2]));
+   W_temp.v.y = HALF*(lambdas_a[3]-fabs(lambdas_a[3]));
+   W_temp.v.z = HALF*(lambdas_a[4]-fabs(lambdas_a[4]));
+   W_temp.p = HartenFixNeg(lambdas_a[5],lambdas_l[5],lambdas_r[5]);
+   W_temp.C = HALF*(lambdas_a[6] -fabs(lambdas_a[6]));
+   W_temp.Fsd = HALF*(lambdas_a[7] - fabs(lambdas_a[7]));
+   W_temp.k = HALF*(lambdas_a[8] -fabs(lambdas_a[8]));
+   
+   for( int i = (NUM_EULER3D_VAR_SANS_SPECIES  + NUM_LES3D_VAR_EXTRA+1); i<=W_temp.num_vars; i++){
+      W_temp.spec[i-(NUM_EULER3D_VAR_SANS_SPECIES + NUM_LES3D_VAR_EXTRA+1)].c = 
+         HALF*(lambdas_a[i]-fabs(lambdas_a[i]));
+   } /* endfor */
 
-// viscous flux
+   return (W_temp);
+}
+
+/**************************************************************************
+ * LES3DFsd_pState::lambda_plus -- Positive wave speeds determined using  *
+ *                                 Harten entropy fix.                    *
+ **************************************************************************/
+LES3DFsd_pState lambda_plus(const LES3DFsd_pState &lambdas_a,
+                            const LES3DFsd_pState &lambdas_l,
+                            const LES3DFsd_pState &lambdas_r) {
+   
+   LES3DFsd_pState W_temp;
+   W_temp.rho = HartenFixPos(lambdas_a[1],lambdas_l[1],lambdas_r[1]);
+   W_temp.v.x = HALF*(lambdas_a[2]+fabs(lambdas_a[2]));
+   W_temp.v.y = HALF*(lambdas_a[3]+fabs(lambdas_a[3]));
+   W_temp.v.z = HALF*(lambdas_a[4]+fabs(lambdas_a[4]));
+   W_temp.p = HartenFixPos(lambdas_a[5],lambdas_l[5],lambdas_r[5]);
+   W_temp.C = HALF*(lambdas_a[6] + fabs(lambdas_a[6]));
+   W_temp.Fsd = HALF*(lambdas_a[7] +fabs(lambdas_a[7]));
+   W_temp.k = HALF*(lambdas_a[8] + fabs(lambdas_a[8]));
+
+   for( int i=(NUM_EULER3D_VAR_SANS_SPECIES + NUM_LES3D_VAR_EXTRA +1); i<=W_temp.num_vars; i++){
+      W_temp.spec[i-(NUM_EULER3D_VAR_SANS_SPECIES + NUM_LES3D_VAR_EXTRA+1)].c = 
+         HALF*(lambdas_a[i]+fabs(lambdas_a[i]));
+   } /* endfor */
+
+   return (W_temp);
+}
+
+/*************************************************************************************************
+ * LES3DFsd_pState::HLLE_wavespeeds -- Returns the lambda plus and lambda minus wave speeds for  *
+ *                                     rotated Riemann problem aligned with norm_dir given       * 
+ *                                     unroated solution states Wl and Wr.                       *
+ ************************************************************************************************/
+Vector2D LES3DFsd_pState::HLLE_wavespeeds(const LES3DFsd_pState &Wl,
+                                          const LES3DFsd_pState &Wr,
+                                          const Vector3D &norm_dir) {
+
+    Vector2D wavespeed;
+    LES3DFsd_pState Wa_n, lambdas_l, lambdas_r, lambdas_a;  //Lots of TEMPS
+    LES3DFsd_pState Wl_rotated(Wl.Rotate(norm_dir));
+    LES3DFsd_pState Wr_rotated(Wr.Rotate(norm_dir));
+
+    /* Evaluate the Roe-average primitive solution state. */                           
+    Wa_n = Wa_n.RoeAverage(Wl_rotated, Wr_rotated);
+    
+    /* Evaluate the left, right, and average state eigenvalues. */
+    lambdas_l = Wl_rotated.lambda_x();
+    lambdas_r = Wr_rotated.lambda_x();
+    lambdas_a = Wa_n.lambda_x();
+
+    /* Determine the intermediate state flux. */
+    wavespeed.x = min(lambdas_l[1],
+                      lambdas_a[1]);
+    wavespeed.y = max(lambdas_r[lambdas_r.NumVarSansSpecies()],
+                      lambdas_a[lambdas_a.NumVarSansSpecies()]);
+ 
+    wavespeed.x = min(wavespeed.x, ZERO); //lambda minus
+    wavespeed.y = max(wavespeed.y, ZERO); //lambda plus 
+
+    return (wavespeed);
+
+}
+
+/**************************************************************************
+ * LES3DFsd_pState::Rotate -- Returns a rotated primitive state aligned   *
+ *                            with a local x-axis in the norm_dir.        *
+ **************************************************************************/
+LES3DFsd_pState LES3DFsd_pState::Rotate(const Vector3D &norm_dir) const {
+
+  // for a 3D unit normal rotated to align with the x-axis
+  double Ct = norm_dir.x;  //cos_angle
+  double St = sqrt( norm_dir.y*norm_dir.y + norm_dir.z*norm_dir.z); //sin_angle
+  Vector3D rt(0,norm_dir.z,-norm_dir.y);  //rotation axis  
+
+  return LES3DFsd_pState(rho,
+                         v.x*Ct - v.y*rt.z*St + v.z*rt.y*St,
+                         v.x*rt.z*St + v.y*(rt.y*rt.y*(ONE-Ct)+Ct) + v.z*(rt.y*rt.z*(ONE-Ct)),
+                         - v.x*rt.y*St +  v.y*(rt.y*rt.z*(ONE-Ct)) + v.z*(rt.z*rt.z*(ONE-Ct)+Ct),
+                         p,
+                         C,
+                         Fsd,  
+                         k);
+
+}
+
+/**************************************************************************
+ * LES3DFsd_pState::Rotate -- Returns an un-rotated primitive state       *
+ *                            re-alinged from the x-axis of the global    *
+ *                            problem.                                    *
+ **************************************************************************/
+LES3DFsd_pState LES3DFsd_pState::RotateBack(const Vector3D &norm_dir) const {
+
+  // for a 3D unit normal rotated to align with the x-axis
+  double Ct = norm_dir.x;  //cos_angle
+  double St = sqrt( norm_dir.y*norm_dir.y + norm_dir.z*norm_dir.z); //sin_angle
+  Vector3D rt(0,norm_dir.z,-norm_dir.y);  //rotation axis  
+
+  return LES3DFsd_pState(rho,
+                         v.x*Ct + v.y*rt.z*St - v.z*rt.y*St,
+                         - v.x*rt.z*St + v.y*(rt.y*rt.y*(ONE-Ct)+Ct) + v.z*(rt.y*rt.z*(ONE-Ct)),
+                         + v.x*rt.y*St +  v.y*(rt.y*rt.z*(ONE-Ct)) + v.z*(rt.z*rt.z*(ONE-Ct)+Ct),
+                         p,
+                         C,
+                         Fsd,  
+                         k);
+}
+
+/************************************************************************
+ *************** NUMERICAL EVALUATION OF VISCOUS FLUXES *****************
+ ************************************************************************/
+
+/**********************************************************************
+ * LES3DFsd_pState::FluxViscous_n -- Viscous flux (n-direction).      *
+/**********************************************************************/
 LES3DFsd_cState  LES3DFsd_pState::FluxViscous_n(const LES3DFsd_pState &Wl,
                                                 const LES3DFsd_pState &Wr,
                                                 const LES3DFsd_pState &Wc,
@@ -2302,24 +2081,294 @@ LES3DFsd_cState  LES3DFsd_pState::FluxViscous_n(const LES3DFsd_pState &Wl,
    dWdy_Weighted = alpha*dWdy + (1.0 - alpha)*dWdy_Neigbor;
    dWdz_Weighted = alpha*dWdz + (1.0 - alpha)*dWdz_Neigbor;
 
-   dWdx_face = dWdx_Weighted ;
-   dWdy_face = dWdy_Weighted ;
-   dWdz_face = dWdz_Weighted ; 
+//    dWdx_face = dWdx_Weighted ;
+//    dWdy_face = dWdy_Weighted ;
+//    dWdz_face = dWdz_Weighted ; 
    
-  // W_face = HALF*(Wl + Wr);
-   W_face = HALF*(Wc + Wc_Neigbor);
+   // a weighted term  
+   Grad_middle_term = dWdx_Weighted*ts.x + dWdy_Weighted*ts.y + dWdz_Weighted*ts.z;
+      
+   // gradients of primitive variables on the face
+   dWdx_face = (Wc_Neigbor - Wc)/deltad *norm.x/dot(norm, ts) + 
+               (dWdx_Weighted -  Grad_middle_term*norm.x/dot(norm, ts));
+   dWdy_face = (Wc_Neigbor - Wc)/deltad *norm.y/dot(norm, ts) + 
+               (dWdy_Weighted -  Grad_middle_term*norm.y/dot(norm, ts));
+   dWdz_face = (Wc_Neigbor - Wc)/deltad *norm.z/dot(norm, ts) + 
+               (dWdz_Weighted -  Grad_middle_term*norm.z/dot(norm, ts));
+   
+   W_face = HALF*(Wl + Wr);
+   //W_face = HALF*(Wc + Wc_Neigbor);
 
-   return (W_face.Fv(dWdx_face, dWdy_face, dWdz_face, Flow_Type, Volume)*norm.x +
-	   W_face.Gv(dWdx_face, dWdy_face, dWdz_face, Flow_Type, Volume)*norm.y +
-	   W_face.Hv(dWdx_face, dWdy_face, dWdz_face, Flow_Type, Volume)*norm.z);
+   if (fabs(norm.y) < TOLER && fabs(norm.z) < TOLER) {
+      return (W_face.Fvx(dWdx_face, dWdy_face, dWdz_face)*norm.x);
+
+   } else if (fabs(norm.x) < TOLER && fabs(norm.z) < TOLER) {
+      return (W_face.Fvy(dWdx_face, dWdy_face, dWdz_face)*norm.y);
+
+   } else if (fabs(norm.x) < TOLER && fabs(norm.y) < TOLER) {
+      return (W_face.Fvz(dWdx_face, dWdy_face, dWdz_face)*norm.z);
+
+   } else {
+      return (W_face.Fvx(dWdx_face, dWdy_face, dWdz_face)*norm.x +
+              W_face.Fvy(dWdx_face, dWdy_face, dWdz_face)*norm.y +
+              W_face.Fvz(dWdx_face, dWdy_face, dWdz_face)*norm.z);
+
+   } /* endif */
+}
+
+/************************************************************************
+ ******************** BOUNDARY CONDITIONS *******************************
+ ************************************************************************/
+
+/**************************************************************************
+ * LES3DFsd_pState::Reflect -- Return reflected solution state.           *
+ **************************************************************************/
+LES3DFsd_pState LES3DFsd_pState::
+Reflect(const LES3DFsd_pState &W,
+        const Vector3D &norm_dir) {
+   
+   Vector3D ur_norm, ur_tang, vr_tot;
+   LES3DFsd_pState Temp; Temp.Copy(W);
+
+   ur_norm = dot(W.v, norm_dir)*norm_dir;
+   ur_tang = W.v - ur_norm;
+
+   ur_norm = -ur_norm;
+   vr_tot = ur_norm + ur_tang;
+
+   Temp.v = vr_tot;
+   
+   return (Temp);
+       
+}
+
+/**************************************************************************
+ * LES3DFsd_pState::MovingWall -- Return moving wall boundary state.      *
+ **************************************************************************/
+LES3DFsd_pState LES3DFsd_pState::
+MovingWall(const LES3DFsd_pState &Win,
+           const LES3DFsd_pState &Wout,
+           const Vector3D &norm_dir, 
+           const Vector3D &wall_velocity,
+           const Vector3D &pressure_gradient,
+           const int &TEMPERATURE_BC_FLAG) {
+   
+   LES3DFsd_pState Temp; Temp.Copy(Win);
+   
+   if (wall_velocity == Vector3D_ZERO) {
+     Temp.v = -Win.v;
+
+   } else {
+     double  Wall_velocity_tang ;
+     Vector3D ur_norm, ur_tang, vr_tot, uw_tang;
+     ur_norm = dot(Win.v, norm_dir)*norm_dir;
+     ur_tang = Win.v - ur_norm;
+     
+     uw_tang = wall_velocity - dot(norm_dir,wall_velocity)*norm_dir;
+     
+     ur_norm = -ur_norm;
+     ur_tang = 2.0*uw_tang - ur_tang;
+     vr_tot = ur_norm + ur_tang;
+     
+     Temp.v = vr_tot;
+   } /* endif */
+  
+  Temp.k = ZERO; 
+
+  /* Fixed Wall Temperature or constant extrapolation for Adiabatic */
+
+  if (TEMPERATURE_BC_FLAG == FIXED_TEMPERATURE_WALL) {
+     if (pressure_gradient != Vector3D_ZERO) {
+        Temp.rho = Wout.p/(Temp.Rtot()*Wout.T());
+     } else {
+        Temp.rho = Temp.p/(Temp.Rtot()*Wout.T());
+     } /* endif */
+  } /* endif */
+
+  return (Temp);
+
+}
+
+/**************************************************************************
+ * LES3DFsd_pState::NoSlip -- Return no-slip wall boundary state.         *
+ **************************************************************************/
+LES3DFsd_pState LES3DFsd_pState::
+NoSlip(const LES3DFsd_pState &Win,
+       const LES3DFsd_pState &Wout,
+       const Vector3D &norm_dir,
+       const Vector3D &pressure_gradient,
+       const int &TEMPERATURE_BC_FLAG) {
+   
+   return (MovingWall(Win, 
+                      Wout, 
+                      norm_dir, 
+                      Vector3D_ZERO, 
+                      pressure_gradient, 
+                      TEMPERATURE_BC_FLAG));
    
 }
 
+/************************************************************************
+ *************************** SOURCE TERMS *******************************
+ ************************************************************************/
+
+/*************************************************************************
+ * LES3DFsd_pState::filter_width -- LES characteristic filter width      *
+ *************************************************************************/
+double LES3DFsd_pState::filter_width(const double &Volume) const{
+  return (0.0366/60.0);//pow(Volume,1.0/3.0); 
+}
+
+/**********************************************************************************************
+ * LES3DFsd_pState::premixed_mfrac -- Species mass fractions for one-step reaction mechanism  *
+ **********************************************************************************************/
+void LES3DFsd_pState::premixed_mfrac(void) {
+  double burnt_fuel_c, burnt_oxygen_c, stoich_ratio;
+  double c_products, products_ratio;
+  
+  // Check realizability of progress variable.
+  Realizable_C_Check();  
+
+  // Determine stoichiometric ratio
+  if (React.reactset_flag == CH4_1STEP) {
+    stoich_ratio = 2.0*specdata[1].Mol_mass()/
+                   specdata[0].Mol_mass();     // stoichiometric O2/CH4 mass ratio
+  } else if (React.reactset_flag == C3H8_1STEP) {
+    stoich_ratio = 5.0*specdata[1].Mol_mass()/
+                   specdata[0].Mol_mass();     // stoichiometric O2/C3H8 mass ratio
+  } else if (React.reactset_flag == H2O2_1STEP){
+    stoich_ratio = specdata[1].Mol_mass()/
+                   2.0/specdata[0].Mol_mass(); // stoichiometric O2/H2 mass ratio
+  }
+
+  // Calculate fuel mass fraction
+  spec[0].c = (ONE - C)*_unburnt_fuel_mass_fraction;
+  if (spec[0].c < tol) {
+      spec[0].c = ZERO;
+  } /* endif */
+
+  // Calculate oxygen mass fraction
+  // Lean mixture(_fuel_equivalence_ratio < 1) => excessive O2
+  if (_fuel_equivalence_ratio < ONE) {  
+    burnt_fuel_c = ZERO;
+    burnt_oxygen_c = (ONE/_fuel_equivalence_ratio - ONE)*_unburnt_fuel_mass_fraction*stoich_ratio;
+    if (spec[0].c == ZERO) {
+      spec[1].c = burnt_oxygen_c;      
+    } else {
+      spec[1].c = spec[0].c*stoich_ratio + burnt_oxygen_c;
+    }  
+
+  // Rich mixture(_fuel_equivalence_ratio > 1) => excessive CH4
+  } else if (_fuel_equivalence_ratio > ONE) {  
+    burnt_oxygen_c = ZERO;
+    burnt_fuel_c = (ONE - ONE/_fuel_equivalence_ratio)*_unburnt_fuel_mass_fraction;
+    spec[0].c = C*(burnt_fuel_c - _unburnt_fuel_mass_fraction) + _unburnt_fuel_mass_fraction;
+    if (spec[0].c <= burnt_fuel_c) {
+      spec[1].c = burnt_oxygen_c;
+    } else {
+      spec[1].c = (spec[0].c - burnt_fuel_c)*stoich_ratio;
+    }
+
+  // Stoichiometric mixture(_fuel_equivalence_ratio = 1)
+  } else { 
+    burnt_fuel_c = ZERO;
+    burnt_oxygen_c = ZERO;
+    spec[1].c = spec[0].c*stoich_ratio; 
+
+  } /* endif */
+
+  // Determine mass fractions of products
+  if (React.reactset_flag == CH4_1STEP ||
+      React.reactset_flag == C3H8_1STEP) {
+    // mass fractions of products
+    c_products = ONE - (spec[0].c + spec[1].c + spec[4].c);
+    if (React.reactset_flag == CH4_1STEP) {
+       products_ratio = specdata[2].Mol_mass()/(specdata[2].Mol_mass()+2.0*specdata[3].Mol_mass());
+    } else if (React.reactset_flag == C3H8_1STEP) {
+       products_ratio = 3.0*specdata[2].Mol_mass()/(3.0*specdata[2].Mol_mass()+4.0*specdata[3].Mol_mass());
+    } /* endif */ 
+    spec[2].c = products_ratio*c_products; // CO2 mass fraction
+    spec[3].c = c_products-spec[2].c;  // H2O mass fraction   
+    spec[1].c = (ONE - c_products - spec[0].c - spec[4].c) ;  // O2 mass fraction
+  } else if (React.reactset_flag == H2O2_1STEP) {
+       spec[2].c = ONE - spec[0].c - spec[1].c - spec[3].c; // H2O mass fraction 
+  }
+
+  // Check for realizability of each species mass fraction
+  for (int i=0; i<ns; i++){
+    if (spec[i].c < ZERO) spec[i].c = ZERO;
+  } /* endfor */
+
+  double suma = ZERO;
+  for (int i=0; i < ns; i++) {
+    suma = suma + spec[i].c;
+  } /* endfor */
+  for (int i=0; i < ns; i++) {
+    spec[i].c = spec[i].c*(ONE/suma);
+  } /* endfor */
+
+}
+
+/*********************************************************************************
+ * LES3DFsd_pState::abs_strain_rate -- Absolute value of strain rate tensor      *
+ *********************************************************************************/
+double LES3DFsd_pState::abs_strain_rate(const LES3DFsd_pState &dWdx, 
+                                        const LES3DFsd_pState &dWdy, 
+                                        const LES3DFsd_pState &dWdz) const{
+   Tensor3D strain_rate; 
+   strain_rate.zero();
+   strain_rate.xx = dWdx.v.x;
+   strain_rate.yy = dWdy.v.y;
+   strain_rate.zz = dWdz.v.z;
+   strain_rate.xy = 0.5*(dWdy.v.x + dWdx.v.y);
+   strain_rate.yz = 0.5*(dWdz.v.y + dWdy.v.z);
+   strain_rate.xz = 0.5*(dWdx.v.z + dWdz.v.x);
+  // S[i,j]*S[i,j]
+  double SS = sqr(strain_rate.xx) + sqr(strain_rate.yy) + sqr(strain_rate.zz)
+            + 2.0*(sqr(strain_rate.xy) + sqr(strain_rate.yz) + sqr(strain_rate.xz));
+  // sqrt(2*S*S)
+  return sqrt(2.0*SS);
+}
+
+/*********************************************************************************
+ * LES3DFsd_pState::grad_abs_strain_rate -- gradient of strain rate tensor       *
+ *********************************************************************************/
+Vector3D LES3DFsd_pState::grad_abs_strain_rate(const LES3DFsd_pState &dWdx, 
+                                               const LES3DFsd_pState &dWdy, 
+                                               const LES3DFsd_pState &dWdz,
+                                               const LES3DFsd_pState &d_dWdx_dx,
+                                               const LES3DFsd_pState &d_dWdy_dy,
+                                               const LES3DFsd_pState &d_dWdz_dz,
+                                               const LES3DFsd_pState &d_dWdx_dy,
+                                               const LES3DFsd_pState &d_dWdx_dz,
+			  	               const LES3DFsd_pState &d_dWdy_dz) const{
+  Vector3D grad_abs_strain_rate;
+  grad_abs_strain_rate.zero();
+  grad_abs_strain_rate.x = dWdx.v.x*d_dWdx_dx.v.x+dWdy.v.y*d_dWdx_dy.v.y+dWdz.v.z*d_dWdx_dz.v.z
+                          +(dWdy.v.x+dWdx.v.y)*(d_dWdx_dy.v.x+d_dWdx_dx.v.y)
+                          +(dWdz.v.y+dWdy.v.z)*(d_dWdx_dz.v.y+d_dWdx_dy.v.z) 
+                          +(dWdx.v.z+dWdz.v.x)*(d_dWdx_dx.v.z+d_dWdx_dz.v.x);
+  grad_abs_strain_rate.y = dWdx.v.x*d_dWdx_dy.v.x+dWdy.v.y*d_dWdy_dy.v.y+dWdz.v.z*d_dWdy_dz.v.z
+                          +(dWdy.v.x+dWdx.v.y)*(d_dWdy_dy.v.x+d_dWdx_dy.v.y)
+                          +(dWdz.v.y+dWdy.v.z)*(d_dWdy_dz.v.y+d_dWdy_dy.v.z) 
+                          +(dWdx.v.z+dWdz.v.x)*(d_dWdx_dy.v.z+d_dWdy_dz.v.x);
+  grad_abs_strain_rate.z = dWdx.v.x*d_dWdx_dz.v.x+dWdy.v.y*d_dWdy_dz.v.y+dWdz.v.z*d_dWdz_dz.v.z
+                          +(dWdy.v.x+dWdx.v.y)*(d_dWdy_dz.v.x+d_dWdx_dz.v.y)
+                          +(dWdz.v.y+dWdy.v.z)*(d_dWdz_dz.v.y+d_dWdy_dz.v.z) 
+                          +(dWdx.v.z+dWdz.v.x)*(d_dWdx_dz.v.z+d_dWdz_dz.v.x);
+}
+
+/*********************************************************************************
+ * LES3DFsd_pState::HeatRelease_Parameter -- Heat release parameter              *
+ *********************************************************************************/
 double LES3DFsd_pState::HeatRelease_Parameter(void) const {
-  double Adiabatic_Temperature = 2218.0;
-  return (Adiabatic_Temperature/298.0-1.0);
+  double _adiabatic_flame_temperature = 2218.0;
+  return (_adiabatic_flame_temperature/298.0-1.0);
 }
 
+/*********************************************************************************
+ * LES3DFsd_pState::SFS_Kinetic_Energy_Fsd -- Subfilter scale kinetic energy     *
+ *********************************************************************************/
 double LES3DFsd_pState::SFS_Kinetic_Energy_Fsd(const LES3DFsd_pState &dWdx,
                                                const LES3DFsd_pState &dWdy,
                                                const LES3DFsd_pState &dWdz,
@@ -2327,29 +2376,35 @@ double LES3DFsd_pState::SFS_Kinetic_Energy_Fsd(const LES3DFsd_pState &dWdx,
                                                const double &Volume) const {
   if ( Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ) {
     double CI = 0.005;
-    return (0.0);//CI*sqr(filter_width(Volume)*abs_strain_rate(dWdx,dWdy,dWdz)));
+    return (CI*sqr(filter_width(Volume)*abs_strain_rate(dWdx,dWdy,dWdz)));
   } else if ( Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ) {
     return (k);
   }
 }
 
+/**************************************************************************************************
+ * LES3DFsd_pState::Efficiency_Function_Fsd -- Efficiency function for subfilter scale strain     *
+ **************************************************************************************************/
 double LES3DFsd_pState::Efficiency_Function_Fsd(const LES3DFsd_pState &dWdx,
                                                 const LES3DFsd_pState &dWdy,
                                                 const LES3DFsd_pState &dWdz,
                                                 const int &Flow_Type,
                                                 const double &Volume) const {
   double filter, kappa_fsd, k_fsd;
-  double Laminar_Flame_Speed = 0.3837;
-  double Laminar_Flame_Thickness = 4.4E-04;
+  double _laminar_flame_speed = 0.3837;
+  double _laminar_flame_thickness = 4.4E-04;
   k_fsd = SFS_Kinetic_Energy_Fsd(dWdx,dWdy,dWdz,Flow_Type,Volume);
   filter = filter_width(Volume);
-  kappa_fsd = 0.75*exp(-1.2/pow(sqrt(k_fsd)/Laminar_Flame_Speed,0.3))*pow(filter/Laminar_Flame_Thickness,2.0/3.0);
+  kappa_fsd = 0.75*exp(-1.2/pow(sqrt(k_fsd)/_laminar_flame_speed,0.3))*pow(filter/_laminar_flame_thickness,2.0/3.0);
   return(kappa_fsd);
 }
 
+/********************************************************************************************************
+ * LES3DFsd_pState::Progvar_Species_Grad -- Gradient of progress variable to species mass fractions     *
+ ********************************************************************************************************/
 double LES3DFsd_pState::Progvar_Species_Grad(void) const {
   double Temp, stoich, ratio, f_ub, eta_fsd;
-  double Equivalence_Ratio = 1.0;
+  double _fuel_equivalence_ratio = 1.0;
   Temp = p/(rho*Rtot());
   if ( React.reactset_flag == CH4_1STEP ||
        React.reactset_flag == C3H8_1STEP ) {
@@ -2363,33 +2418,38 @@ double LES3DFsd_pState::Progvar_Species_Grad(void) const {
     f_ub = specdata[0].Mol_mass()/(specdata[0].Mol_mass()+5.0*specdata[1].Mol_mass()+18.8*specdata[4].Mol_mass());
   }
     eta_fsd = (specdata[0].Enthalpy(Temp)+specdata[0].Heatofform()-Cp(Temp)*Temp*specdata[0].Rs()/Rtot())*(-f_ub)
-             +(specdata[1].Enthalpy(Temp)+specdata[1].Heatofform()-Cp(Temp)*Temp*specdata[1].Rs()/Rtot())*(-stoich*f_ub/Equivalence_Ratio)
-	     +(specdata[2].Enthalpy(Temp)+specdata[2].Heatofform()-Cp(Temp)*Temp*specdata[2].Rs()/Rtot())*((1.0+stoich/Equivalence_Ratio)*f_ub*ratio)
-	     +(specdata[3].Enthalpy(Temp)+specdata[3].Heatofform()-Cp(Temp)*Temp*specdata[3].Rs()/Rtot())*((1.0+stoich/Equivalence_Ratio)*f_ub*(1.0-ratio));
+             +(specdata[1].Enthalpy(Temp)+specdata[1].Heatofform()-Cp(Temp)*Temp*specdata[1].Rs()/Rtot())*(-stoich*f_ub/_fuel_equivalence_ratio)
+	     +(specdata[2].Enthalpy(Temp)+specdata[2].Heatofform()-Cp(Temp)*Temp*specdata[2].Rs()/Rtot())*((1.0+stoich/_fuel_equivalence_ratio)*f_ub*ratio)
+	     +(specdata[3].Enthalpy(Temp)+specdata[3].Heatofform()-Cp(Temp)*Temp*specdata[3].Rs()/Rtot())*((1.0+stoich/_fuel_equivalence_ratio)*f_ub*(1.0-ratio));
   }else if ( React.reactset_flag == H2O2_1STEP ){
     stoich = specdata[1].Mol_mass()/2.0/specdata[0].Mol_mass();
     f_ub = 2.0*specdata[0].Mol_mass()/(2.0*specdata[0].Mol_mass()+specdata[1].Mol_mass()+3.76*specdata[3].Mol_mass());
     eta_fsd = (specdata[0].Enthalpy(Temp)+specdata[0].Heatofform()-Cp(Temp)*Temp*specdata[0].Rs()/Rtot())*(-f_ub)
-             +(specdata[1].Enthalpy(Temp)+specdata[1].Heatofform()-Cp(Temp)*Temp*specdata[1].Rs()/Rtot())*(-stoich*f_ub/Equivalence_Ratio)
-             +(specdata[2].Enthalpy(Temp)+specdata[2].Heatofform()-Cp(Temp)*Temp*specdata[2].Rs()/Rtot())*((1.0+stoich/Equivalence_Ratio)*f_ub);
+             +(specdata[1].Enthalpy(Temp)+specdata[1].Heatofform()-Cp(Temp)*Temp*specdata[1].Rs()/Rtot())*(-stoich*f_ub/_fuel_equivalence_ratio)
+             +(specdata[2].Enthalpy(Temp)+specdata[2].Heatofform()-Cp(Temp)*Temp*specdata[2].Rs()/Rtot())*((1.0+stoich/_fuel_equivalence_ratio)*f_ub);
   }
   return (eta_fsd);
 }
 
+/***********************************************************
+ * LES3DFsd_pState::Reaction_Rate_Fsd -- Reaction rate     *
+ ***********************************************************/
 double LES3DFsd_pState::Reaction_Rate_Fsd(const LES3DFsd_pState &dWdx,
                                           const LES3DFsd_pState &dWdy,
                                           const LES3DFsd_pState &dWdz) const {
      double tau_fsd = HeatRelease_Parameter();
-     double Laminar_Flame_Speed = 0.3837;
+     double _laminar_flame_speed = 0.3837;
      double Reactants_Density = 1.13;
      if ( C < 0.999 && C > 0.001 && dWdx.C != ZERO ){//&& dWdy.C != ZERO && dWdz.C != ZERO ) {
-     //       cout<<"reac=    "<<Reactants_Density*Laminar_Flame_Speed*Fsd*rho<<endl; 
-       return ( Reactants_Density*Laminar_Flame_Speed*Fsd*rho );//-tau_fsd*Laminar_Flame_Speed*(rho*(1-2*C)*(dWdx.C+dWdy.C+dWdz.C)+C*(1-C)*(dWdx.rho+dWdy.rho+dWdz.rho)) );
+       return ( Reactants_Density*_laminar_flame_speed*Fsd*rho );//-tau_fsd*_laminar_flame_speed*(rho*(1-2*C)*(dWdx.C+dWdy.C+dWdz.C)+C*(1-C)*(dWdx.rho+dWdy.rho+dWdz.rho)) );
     }else{
      return ( 0.0 );
     }
 }
 
+/********************************************************************
+ * LES3DFsd_pState::M_x -- x-direction surface averaged normal      *
+ ********************************************************************/
 double LES3DFsd_pState::M_x(const LES3DFsd_pState &dWdx,
                             const LES3DFsd_pState &dWdy,
                             const LES3DFsd_pState &dWdz) const {
@@ -2408,6 +2468,9 @@ double LES3DFsd_pState::M_x(const LES3DFsd_pState &dWdx,
     }
 }
 
+/********************************************************************
+ * LES3DFsd_pState::M_y -- y-direction surface averaged normal      *
+ ********************************************************************/
 double LES3DFsd_pState::M_y(const LES3DFsd_pState &dWdx,
                             const LES3DFsd_pState &dWdy,
                             const LES3DFsd_pState &dWdz) const {
@@ -2425,6 +2488,9 @@ double LES3DFsd_pState::M_y(const LES3DFsd_pState &dWdx,
    }
 }
 
+/********************************************************************
+ * LES3DFsd_pState::M_z -- z-direction surface averaged normal      *
+ ********************************************************************/
 double LES3DFsd_pState::M_z(const LES3DFsd_pState &dWdx,
                             const LES3DFsd_pState &dWdy,
                             const LES3DFsd_pState &dWdz) const {
@@ -2443,6 +2509,9 @@ double LES3DFsd_pState::M_z(const LES3DFsd_pState &dWdx,
    }
 }
 
+/***************************************************************
+ * LES3DFsd_pState::Resolved_Strain -- Resolved strain term    *
+ ***************************************************************/
 double LES3DFsd_pState::Resolved_Strain(const LES3DFsd_pState &dWdx,
                                         const LES3DFsd_pState &dWdy,
                                         const LES3DFsd_pState &dWdz) const {
@@ -2472,25 +2541,32 @@ double LES3DFsd_pState::Resolved_Strain(const LES3DFsd_pState &dWdx,
     return (0.0);
    }
 }
+
+/**************************************************************************************************
+ * LES3DFsd_pState::Resolved_Propagation_Curvature -- Resolved propagation and curvature term     *
+ **************************************************************************************************/
 double LES3DFsd_pState::Resolved_Propagation_Curvature(const LES3DFsd_pState &dWdx,
                                                        const LES3DFsd_pState &dWdy,
                                                        const LES3DFsd_pState &dWdz) const {
   double tau_fsd, Mx, My, Mz, resolved_propagation_curvature_x, resolved_propagation_curvature_y, resolved_propagation_curvature_z;
     tau_fsd = HeatRelease_Parameter();
-    double Laminar_Flame_Speed = 0.3837;
+    double _laminar_flame_speed = 0.3837;
     Mx = M_x(dWdx,dWdy,dWdz);
     My = M_y(dWdx,dWdy,dWdz);
     Mz = M_z(dWdx,dWdy,dWdz);
     if ( C < 0.999 && C > 0.001 && dWdx.C != ZERO ) {//&& dWdy.C != ZERO && dWdz.C != ZERO ) {
-    resolved_propagation_curvature_x = -Laminar_Flame_Speed*(ONE+tau_fsd*C)*Mx*(rho*dWdx.Fsd+Fsd*dWdx.rho)-Laminar_Flame_Speed*tau_fsd*Fsd*rho*Mx*dWdx.C;
-    resolved_propagation_curvature_y = -Laminar_Flame_Speed*(ONE+tau_fsd*C)*My*(rho*dWdy.Fsd+Fsd*dWdy.rho)-Laminar_Flame_Speed*tau_fsd*Fsd*rho*My*dWdy.C;
-    resolved_propagation_curvature_z = -Laminar_Flame_Speed*(ONE+tau_fsd*C)*Mz*(rho*dWdz.Fsd+Fsd*dWdz.rho)-Laminar_Flame_Speed*tau_fsd*Fsd*rho*Mz*dWdz.C;
+    resolved_propagation_curvature_x = -_laminar_flame_speed*(ONE+tau_fsd*C)*Mx*(rho*dWdx.Fsd+Fsd*dWdx.rho)-_laminar_flame_speed*tau_fsd*Fsd*rho*Mx*dWdx.C;
+    resolved_propagation_curvature_y = -_laminar_flame_speed*(ONE+tau_fsd*C)*My*(rho*dWdy.Fsd+Fsd*dWdy.rho)-_laminar_flame_speed*tau_fsd*Fsd*rho*My*dWdy.C;
+    resolved_propagation_curvature_z = -_laminar_flame_speed*(ONE+tau_fsd*C)*Mz*(rho*dWdz.Fsd+Fsd*dWdz.rho)-_laminar_flame_speed*tau_fsd*Fsd*rho*Mz*dWdz.C;
     return ( resolved_propagation_curvature_x + resolved_propagation_curvature_y + resolved_propagation_curvature_z );
     }else{
     return (0.0);
    }
 }
 
+/******************************************************************
+ * LES3DFsd_pState::SFS_Strain -- Subfilter scale strain term     *
+ ******************************************************************/
 double LES3DFsd_pState::SFS_Strain(const LES3DFsd_pState &dWdx,
                                    const LES3DFsd_pState &dWdy,
                                    const LES3DFsd_pState &dWdz,
@@ -2507,29 +2583,35 @@ double LES3DFsd_pState::SFS_Strain(const LES3DFsd_pState &dWdx,
    }
 }
 
+/***********************************************************************
+ * LES3DFsd_pState::SFS_Curvature -- Subfilter scale curvature term    *
+ ***********************************************************************/
 double LES3DFsd_pState::SFS_Curvature(const LES3DFsd_pState &dWdx,
                                       const LES3DFsd_pState &dWdy,
                                       const LES3DFsd_pState &dWdz) const {
 
     double Mx, My, Mz, alpha_fsd, beta_fsd;
-    double Laminar_Flame_Speed = 0.3837;
+    double _laminar_flame_speed = 0.3837;
     beta_fsd = 1.0;
     Mx = M_x(dWdx,dWdy,dWdz);
     My = M_y(dWdx,dWdy,dWdz);
     Mz = M_z(dWdx,dWdy,dWdz);
     alpha_fsd = ONE - sqr(Mx) - sqr(My) - sqr(Mz);
     if ( C < 0.999 && C > 0.001 && dWdx.C != ZERO ) {//&& dWdy.C != ZERO && dWdz.C != ZERO && Fsd != ZERO) {
-    return ( -beta_fsd*Laminar_Flame_Speed*sqr(Fsd*rho)/(ONE-C) );
+    return ( -beta_fsd*_laminar_flame_speed*sqr(Fsd*rho)/(ONE-C) );
 
 //     if ( Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_CHARLETTE ){
 //     double tau_fsd = HeatRelease_Parameter();
 //     double c_bar = (1.0+tau_fsd)*C/(1.0+tau_fsd*C);
-//     return(-beta_fsd*Laminar_Flame_Speed*(Fsd-(1+tau_fsd)*sqrt(sqr(dWdx.C)+sqr(dWdy.C))/sqr(1+tau_fsd*C))*Fsd/c_bar/(1-c_bar));
+//     return(-beta_fsd*_laminar_flame_speed*(Fsd-(1+tau_fsd)*sqrt(sqr(dWdx.C)+sqr(dWdy.C))/sqr(1+tau_fsd*C))*Fsd/c_bar/(1-c_bar));
    }else{
     return (0.0);
    }
 }
 
+/*****************************************************************
+ * LES3DFsd_pState::M_xx -- Gradient of surface averaged normal  *
+ *****************************************************************/
 double LES3DFsd_pState::M_xx(const LES3DFsd_pState &dWdx,
                              const LES3DFsd_pState &dWdy,
                              const LES3DFsd_pState &dWdz,
@@ -2538,7 +2620,6 @@ double LES3DFsd_pState::M_xx(const LES3DFsd_pState &dWdx,
                              const LES3DFsd_pState &d_dWdx_dz) const {
     double Mxx, magnitude_C;
     magnitude_C = sqrt(sqr(dWdx.C)+sqr(dWdy.C)+sqr(dWdz.C));
-    //    cout<<"d_dwdx_dx.c=   "<<d_dWdx_dx.C<<"  dwdx.c=   "<<dWdx.C<<endl;
     if ( C < 0.999 && C > 0.001 && dWdx.C != ZERO ) {//&& dWdy.C != ZERO && dWdz.C != ZERO ) { 
       Mxx = d_dWdx_dx.C/magnitude_C-dWdx.C*(dWdx.C*d_dWdx_dx.C+dWdy.C*d_dWdx_dy.C+dWdz.C*d_dWdx_dz.C)/pow(magnitude_C,3.0);
     return ( Mxx );
@@ -2547,6 +2628,9 @@ double LES3DFsd_pState::M_xx(const LES3DFsd_pState &dWdx,
    }
 }
 
+/******************************************************************
+ * LES3DFsd_pState::M_yy -- Gradient of surface averaged normal   *
+ ******************************************************************/
 double LES3DFsd_pState::M_yy(const LES3DFsd_pState &dWdx,
                              const LES3DFsd_pState &dWdy,
                              const LES3DFsd_pState &dWdz,
@@ -2563,6 +2647,9 @@ double LES3DFsd_pState::M_yy(const LES3DFsd_pState &dWdx,
    }
 }
 
+/*******************************************************************
+ * LES3DFsd_pState::M_zz -- Gradient of surface averaged normal    *
+ *******************************************************************/
 double LES3DFsd_pState::M_zz(const LES3DFsd_pState &dWdx,
                              const LES3DFsd_pState &dWdy,
                              const LES3DFsd_pState &dWdz,
@@ -2579,6 +2666,9 @@ double LES3DFsd_pState::M_zz(const LES3DFsd_pState &dWdx,
    }
 }
 
+/*******************************************************************
+ * LES3DFsd_pState::M_xy -- Gradient of surface averaged normal    *
+ *******************************************************************/
 double LES3DFsd_pState::M_xy(const LES3DFsd_pState &dWdx,
                              const LES3DFsd_pState &dWdy,
                              const LES3DFsd_pState &dWdz,
@@ -2595,6 +2685,9 @@ double LES3DFsd_pState::M_xy(const LES3DFsd_pState &dWdx,
    }
 }
 
+/*******************************************************************
+ * LES3DFsd_pState::M_xz -- Gradient of surface averaged normal    *
+ *******************************************************************/
 double LES3DFsd_pState::M_xz(const LES3DFsd_pState &dWdx,
                              const LES3DFsd_pState &dWdy,
                              const LES3DFsd_pState &dWdz,
@@ -2611,6 +2704,9 @@ double LES3DFsd_pState::M_xz(const LES3DFsd_pState &dWdx,
    }
 }
 
+/*******************************************************************
+ * LES3DFsd_pState::M_yz -- Gradient of surface averaged normal    *
+ *******************************************************************/
 double LES3DFsd_pState::M_yz(const LES3DFsd_pState &dWdx,
                              const LES3DFsd_pState &dWdy,
                              const LES3DFsd_pState &dWdz,
@@ -2627,6 +2723,9 @@ double LES3DFsd_pState::M_yz(const LES3DFsd_pState &dWdx,
    }
 }
 
+/*******************************************************************
+ * LES3DFsd_pState::Resolved_Curvature -- Resolved curvature term  *
+ *******************************************************************/
 double LES3DFsd_pState::Resolved_Curvature(const LES3DFsd_pState &dWdx,
                                            const LES3DFsd_pState &dWdy,
                                            const LES3DFsd_pState &dWdz,
@@ -2638,21 +2737,24 @@ double LES3DFsd_pState::Resolved_Curvature(const LES3DFsd_pState &dWdx,
                                            const LES3DFsd_pState &d_dWdy_dz) const {
   double tau_fsd, Mxx, Myy, Mzz, resolved_curvature_xx, resolved_curvature_yy, resolved_curvature_zz;
    tau_fsd = HeatRelease_Parameter();
-   double Laminar_Flame_Speed = 0.3837;
+   double _laminar_flame_speed = 0.3837;
    Mxx = M_xx(dWdx,dWdy,dWdz,d_dWdx_dx,d_dWdx_dy,d_dWdx_dz);
    Myy = M_yy(dWdx,dWdy,dWdz,d_dWdy_dy,d_dWdx_dy,d_dWdy_dz);
    Mzz = M_zz(dWdx,dWdy,dWdz,d_dWdz_dz,d_dWdx_dz,d_dWdy_dz);
 
    if ( C < 0.999 && C > 0.001 && dWdx.C != ZERO ) {//&& dWdy.C!= ZERO && dWdz.C != ZERO ) {
-   resolved_curvature_xx = Laminar_Flame_Speed*(1.0+tau_fsd*C)*Fsd*rho*Mxx;
-   resolved_curvature_yy = Laminar_Flame_Speed*(1.0+tau_fsd*C)*Fsd*rho*Myy;
-   resolved_curvature_zz = Laminar_Flame_Speed*(1.0+tau_fsd*C)*Fsd*rho*Mzz;
+   resolved_curvature_xx = _laminar_flame_speed*(1.0+tau_fsd*C)*Fsd*rho*Mxx;
+   resolved_curvature_yy = _laminar_flame_speed*(1.0+tau_fsd*C)*Fsd*rho*Myy;
+   resolved_curvature_zz = _laminar_flame_speed*(1.0+tau_fsd*C)*Fsd*rho*Mzz;
    return ( resolved_curvature_xx + resolved_curvature_yy + resolved_curvature_zz);
   }else{
    return (0.0);
   }
 }
 
+/***********************************************************************
+ * LES3DFsd_pState::Resolved_Propagation -- Resolved propagation term  *
+ ***********************************************************************/
 double LES3DFsd_pState::Resolved_Propagation(const LES3DFsd_pState &dWdx,
                                              const LES3DFsd_pState &dWdy,
                                              const LES3DFsd_pState &dWdz,
@@ -2671,6 +2773,9 @@ double LES3DFsd_pState::Resolved_Propagation(const LES3DFsd_pState &dWdx,
   }
 }
 
+/***************************************************************************************************
+ * LES3DFsd_pState::Resolved_Convection_Progvar -- Resolved convection term for progress variable  *
+ ***************************************************************************************************/
 double LES3DFsd_pState::Resolved_Convection_Progvar (const LES3DFsd_pState &dWdx,
                                                      const LES3DFsd_pState &dWdy,
                                                      const LES3DFsd_pState &dWdz) const {
@@ -2686,6 +2791,9 @@ double LES3DFsd_pState::Resolved_Convection_Progvar (const LES3DFsd_pState &dWdx
    }
 }
 
+/***************************************************************************************************
+ * LES3DFsd_pState::Resolved_Convection_Fsd -- Resolved convection term for flame surface density  *
+ ***************************************************************************************************/
 double LES3DFsd_pState::Resolved_Convection_Fsd (const LES3DFsd_pState &dWdx,
                                                  const LES3DFsd_pState &dWdy,
                                                  const LES3DFsd_pState &dWdz) const {
@@ -2701,24 +2809,30 @@ double LES3DFsd_pState::Resolved_Convection_Fsd (const LES3DFsd_pState &dWdx,
    }
 }
 
+/****************************************************************************
+ * LES3DFsd_pState::NGT_Progvar -- Non-gradient term for progress variable  *
+ ****************************************************************************/
 double LES3DFsd_pState::NGT_Progvar (const LES3DFsd_pState &dWdx,
                                      const LES3DFsd_pState &dWdy,
                                      const LES3DFsd_pState &dWdz) const {
 
     double tau_fsd, NGT_progvar_x, NGT_progvar_y, NGT_progvar_z;
     tau_fsd = HeatRelease_Parameter();
-    double Laminar_Flame_Speed = 0.3837;
+    double _laminar_flame_speed = 0.3837;
 
     if ( C < 0.999 && C > 0.001 && dWdx.C != ZERO ) {//&& dWdy.C!= ZERO && dWdz.C != ZERO ) {
-    NGT_progvar_x = -tau_fsd*Laminar_Flame_Speed*(rho*(1-2*C)*dWdx.C+C*(1-C)*dWdx.rho);
-    NGT_progvar_y = -tau_fsd*Laminar_Flame_Speed*(rho*(1-2*C)*dWdy.C+C*(1-C)*dWdy.rho);
-    NGT_progvar_z = -tau_fsd*Laminar_Flame_Speed*(rho*(1-2*C)*dWdz.C+C*(1-C)*dWdz.rho);
+    NGT_progvar_x = -tau_fsd*_laminar_flame_speed*(rho*(1-2*C)*dWdx.C+C*(1-C)*dWdx.rho);
+    NGT_progvar_y = -tau_fsd*_laminar_flame_speed*(rho*(1-2*C)*dWdy.C+C*(1-C)*dWdy.rho);
+    NGT_progvar_z = -tau_fsd*_laminar_flame_speed*(rho*(1-2*C)*dWdz.C+C*(1-C)*dWdz.rho);
     return ( NGT_progvar_x+NGT_progvar_y+NGT_progvar_z );
    }else{
     return (0.0);
    }
 }
 
+/****************************************************************************
+ * LES3DFsd_pState::NGT_Fsd -- Non-gradient term for flame surface density  *
+ ****************************************************************************/
 double LES3DFsd_pState::NGT_Fsd (const LES3DFsd_pState &dWdx,
                                  const LES3DFsd_pState &dWdy,
                                  const LES3DFsd_pState &dWdz,
@@ -2731,7 +2845,7 @@ double LES3DFsd_pState::NGT_Fsd (const LES3DFsd_pState &dWdx,
 
     double tau_fsd, Mx, My, Mz, Mxx, Myy, Mzz, NGT_fsd_x, NGT_fsd_y, NGT_fsd_z;
     tau_fsd = HeatRelease_Parameter();
-    double Laminar_Flame_Speed = 0.3837;
+    double _laminar_flame_speed = 0.3837;
     Mx = M_x(dWdx,dWdy,dWdz);
     My = M_y(dWdx,dWdy,dWdz);
     Mz = M_z(dWdx,dWdy,dWdz);
@@ -2739,15 +2853,18 @@ double LES3DFsd_pState::NGT_Fsd (const LES3DFsd_pState &dWdx,
     Myy = M_yy(dWdx,dWdy,dWdz,d_dWdy_dy,d_dWdx_dy,d_dWdy_dz);
     Mzz = M_zz(dWdx,dWdy,dWdz,d_dWdz_dz,d_dWdx_dz,d_dWdy_dz);
     if ( C < 0.999 && C > 0.001 && dWdx.C != ZERO ) {//&& dWdy.C!= ZERO && dWdz.C != ZERO ) {
-    NGT_fsd_x = -tau_fsd*Laminar_Flame_Speed*((0.5-C)*(Fsd*Mx*dWdx.rho+rho*Mx*dWdx.Fsd+rho*Fsd*Mxx)-rho*Fsd*Mx*dWdx.C);
-    NGT_fsd_y = -tau_fsd*Laminar_Flame_Speed*((0.5-C)*(Fsd*My*dWdy.rho+rho*My*dWdy.Fsd+rho*Fsd*Myy)-rho*Fsd*My*dWdy.C);
-    NGT_fsd_z = -tau_fsd*Laminar_Flame_Speed*((0.5-C)*(Fsd*Mz*dWdz.rho+rho*Mz*dWdz.Fsd+rho*Fsd*Mzz)-rho*Fsd*Mz*dWdz.C);
+    NGT_fsd_x = -tau_fsd*_laminar_flame_speed*((0.5-C)*(Fsd*Mx*dWdx.rho+rho*Mx*dWdx.Fsd+rho*Fsd*Mxx)-rho*Fsd*Mx*dWdx.C);
+    NGT_fsd_y = -tau_fsd*_laminar_flame_speed*((0.5-C)*(Fsd*My*dWdy.rho+rho*My*dWdy.Fsd+rho*Fsd*Myy)-rho*Fsd*My*dWdy.C);
+    NGT_fsd_z = -tau_fsd*_laminar_flame_speed*((0.5-C)*(Fsd*Mz*dWdz.rho+rho*Mz*dWdz.Fsd+rho*Fsd*Mzz)-rho*Fsd*Mz*dWdz.C);
     return ( NGT_fsd_x+NGT_fsd_y+NGT_fsd_z );
    }else{
     return (0.0);
    } 
 }
 
+/***************************************************************************************************
+ * LES3DFsd_pState::SFS_Diffusion_Progvar -- Subfilter scale diffusion term for progress variable  *
+ ***************************************************************************************************/
 double LES3DFsd_pState::SFS_Diffusion_Progvar (const LES3DFsd_pState &dWdx,
                                                const LES3DFsd_pState &dWdy,
                                                const LES3DFsd_pState &dWdz,
@@ -2760,20 +2877,31 @@ double LES3DFsd_pState::SFS_Diffusion_Progvar (const LES3DFsd_pState &dWdx,
                                                const int &Flow_Type,
                                                const double &Volume) const {
   double grad_eddyviscosity_x, grad_eddyviscosity_y, grad_eddyviscosity_z, sfs_diffusion_progvar_x, sfs_diffusion_progvar_y, sfs_diffusion_progvar_z;
-    double Cv = 0.0184, Schmidt_sfs = 1.0;
+  double Cv = 0.0184, Cs = 0.086, Schmidt_sfs = 1.0;
+    if (Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY) {
+      double SS = abs_strain_rate(dWdx,dWdy,dWdz);
+      Vector3D grad_rate = grad_abs_strain_rate(dWdx,dWdy,dWdz,d_dWdx_dx,d_dWdy_dy,d_dWdz_dz,d_dWdx_dy,d_dWdx_dz,d_dWdy_dz);
+      grad_eddyviscosity_x = sqr(Cs*filter_width(Volume))*TWO*grad_rate.x/SS;
+      grad_eddyviscosity_y = sqr(Cs*filter_width(Volume))*TWO*grad_rate.y/SS;
+      grad_eddyviscosity_z = sqr(Cs*filter_width(Volume))*TWO*grad_rate.z/SS;
+    }else if (Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K) {
     grad_eddyviscosity_x = HALF*Cv*filter_width(Volume)*dWdx.k/sqrt(k);
     grad_eddyviscosity_y = HALF*Cv*filter_width(Volume)*dWdy.k/sqrt(k);
     grad_eddyviscosity_z = HALF*Cv*filter_width(Volume)*dWdz.k/sqrt(k);
+    }
     if ( C < 0.999 && C > 0.001 && dWdx.C != ZERO ) {//&& dWdy.C!= ZERO && dWdz.C != ZERO ) {
-    sfs_diffusion_progvar_x = (eddy_viscosity(dWdx,dWdy,dWdz,Flow_Type,Volume)*dWdx.C*dWdx.rho+rho*dWdx.C*grad_eddyviscosity_x+rho*eddy_viscosity(dWdx,dWdy,dWdz,Flow_Type,Volume)*d_dWdx_dx.C)/Schmidt_sfs;
-    sfs_diffusion_progvar_y = (eddy_viscosity(dWdx,dWdy,dWdz,Flow_Type,Volume)*dWdy.C*dWdy.rho+rho*dWdy.C*grad_eddyviscosity_y+rho*eddy_viscosity(dWdx,dWdy,dWdz,Flow_Type,Volume)*d_dWdy_dy.C)/Schmidt_sfs;
-    sfs_diffusion_progvar_z = (eddy_viscosity(dWdx,dWdy,dWdz,Flow_Type,Volume)*dWdz.C*dWdz.rho+rho*dWdz.C*grad_eddyviscosity_z+rho*eddy_viscosity(dWdx,dWdy,dWdz,Flow_Type,Volume)*d_dWdz_dz.C)/Schmidt_sfs;
+    sfs_diffusion_progvar_x = (eddy_viscosity(dWdx,dWdy,dWdz,Flow_Type,Volume)*dWdx.C*dWdx.rho+rho*dWdx.C*grad_eddyviscosity_x+eddy_viscosity(dWdx,dWdy,dWdz,Flow_Type,Volume)*d_dWdx_dx.C)/Schmidt_sfs;
+    sfs_diffusion_progvar_y = (eddy_viscosity(dWdx,dWdy,dWdz,Flow_Type,Volume)*dWdy.C*dWdy.rho+rho*dWdy.C*grad_eddyviscosity_y+eddy_viscosity(dWdx,dWdy,dWdz,Flow_Type,Volume)*d_dWdy_dy.C)/Schmidt_sfs;
+    sfs_diffusion_progvar_z = (eddy_viscosity(dWdx,dWdy,dWdz,Flow_Type,Volume)*dWdz.C*dWdz.rho+rho*dWdz.C*grad_eddyviscosity_z+eddy_viscosity(dWdx,dWdy,dWdz,Flow_Type,Volume)*d_dWdz_dz.C)/Schmidt_sfs;
     return ( sfs_diffusion_progvar_x+sfs_diffusion_progvar_y+sfs_diffusion_progvar_z );
    }else{
     return (0.0);
    }
  }
 
+/***************************************************************************************************
+ * LES3DFsd_pState::SFS_Diffusion_Fsd -- Subfilter scale diffusion term for flame surface density  *
+ ***************************************************************************************************/
 double LES3DFsd_pState::SFS_Diffusion_Fsd (const LES3DFsd_pState &dWdx,
                                            const LES3DFsd_pState &dWdy,
                                            const LES3DFsd_pState &dWdz,
@@ -2786,20 +2914,31 @@ double LES3DFsd_pState::SFS_Diffusion_Fsd (const LES3DFsd_pState &dWdx,
                                            const int &Flow_Type,
                                            const double &Volume) const {
      double grad_eddyviscosity_x, grad_eddyviscosity_y, grad_eddyviscosity_z, sfs_diffusion_fsd_x, sfs_diffusion_fsd_y, sfs_diffusion_fsd_z;
-     double Cv = 0.0184, Schmidt_sfs = 1.0;
+     double Cv = 0.0184, Cs = 0.086, Schmidt_sfs = 1.0;
+    if (Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY) {
+      double SS = abs_strain_rate(dWdx,dWdy,dWdz);
+      Vector3D grad_rate = grad_abs_strain_rate(dWdx,dWdy,dWdz,d_dWdx_dx,d_dWdy_dy,d_dWdz_dz,d_dWdx_dy,d_dWdx_dz,d_dWdy_dz);
+      grad_eddyviscosity_x = sqr(Cs*filter_width(Volume))*TWO*grad_rate.x/SS;
+      grad_eddyviscosity_y = sqr(Cs*filter_width(Volume))*TWO*grad_rate.y/SS;
+      grad_eddyviscosity_z = sqr(Cs*filter_width(Volume))*TWO*grad_rate.z/SS;
+    }else if (Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K) {
     grad_eddyviscosity_x = HALF*Cv*filter_width(Volume)*dWdx.k/sqrt(k);
     grad_eddyviscosity_y = HALF*Cv*filter_width(Volume)*dWdy.k/sqrt(k);
     grad_eddyviscosity_z = HALF*Cv*filter_width(Volume)*dWdz.k/sqrt(k);
+    }
     if ( C < 0.999 && C > 0.001 && dWdx.C != ZERO ) {//&& dWdy.C!= ZERO && dWdz.C != ZERO ) {
-     sfs_diffusion_fsd_x = (eddy_viscosity(dWdx,dWdy,dWdz,Flow_Type,Volume)*dWdx.Fsd*dWdx.rho+rho*dWdx.Fsd*grad_eddyviscosity_x+rho*eddy_viscosity(dWdx,dWdy,dWdz,Flow_Type,Volume)*d_dWdx_dx.Fsd)/Schmidt_sfs;
-     sfs_diffusion_fsd_y = (eddy_viscosity(dWdx,dWdy,dWdz,Flow_Type,Volume)*dWdy.Fsd*dWdy.rho+rho*dWdy.Fsd*grad_eddyviscosity_y+rho*eddy_viscosity(dWdx,dWdy,dWdz,Flow_Type,Volume)*d_dWdy_dy.Fsd)/Schmidt_sfs;
-     sfs_diffusion_fsd_z = (eddy_viscosity(dWdx,dWdy,dWdz,Flow_Type,Volume)*dWdx.Fsd*dWdx.rho+rho*dWdx.Fsd*grad_eddyviscosity_x+rho*eddy_viscosity(dWdx,dWdy,dWdz,Flow_Type,Volume)*d_dWdx_dx.Fsd)/Schmidt_sfs;
+     sfs_diffusion_fsd_x = (eddy_viscosity(dWdx,dWdy,dWdz,Flow_Type,Volume)*dWdx.Fsd*dWdx.rho+rho*dWdx.Fsd*grad_eddyviscosity_x+eddy_viscosity(dWdx,dWdy,dWdz,Flow_Type,Volume)*d_dWdx_dx.Fsd)/Schmidt_sfs;
+     sfs_diffusion_fsd_y = (eddy_viscosity(dWdx,dWdy,dWdz,Flow_Type,Volume)*dWdy.Fsd*dWdy.rho+rho*dWdy.Fsd*grad_eddyviscosity_y+eddy_viscosity(dWdx,dWdy,dWdz,Flow_Type,Volume)*d_dWdy_dy.Fsd)/Schmidt_sfs;
+     sfs_diffusion_fsd_z = (eddy_viscosity(dWdx,dWdy,dWdz,Flow_Type,Volume)*dWdx.Fsd*dWdx.rho+rho*dWdx.Fsd*grad_eddyviscosity_x+eddy_viscosity(dWdx,dWdy,dWdz,Flow_Type,Volume)*d_dWdx_dx.Fsd)/Schmidt_sfs;
      return ( sfs_diffusion_fsd_x+sfs_diffusion_fsd_y+sfs_diffusion_fsd_z );
     }else{
      return (0.0);
     }
  }
 
+/*********************************************************************
+ * LES3DFsd_pState::Heat_Release_Strain -- Heat release strain term  *
+ *********************************************************************/
 double LES3DFsd_pState::Heat_Release_Strain (const LES3DFsd_pState &dWdx,
                                              const LES3DFsd_pState &dWdy,
                                              const LES3DFsd_pState &dWdz,
@@ -2811,20 +2950,23 @@ double LES3DFsd_pState::Heat_Release_Strain (const LES3DFsd_pState &dWdx,
  	                                     const LES3DFsd_pState &d_dWdy_dz) const {
      double tau_fsd, Mxx, Myy, Mzz, heat_release_strain_xx, heat_release_strain_yy, heat_release_strain_zz;
      tau_fsd = HeatRelease_Parameter();
-     double Laminar_Flame_Speed = 0.3837;
+     double _laminar_flame_speed = 0.3837;
      Mxx = M_xx(dWdx,dWdy,dWdz,d_dWdx_dx,d_dWdx_dy,d_dWdx_dz);
      Myy = M_yy(dWdx,dWdy,dWdz,d_dWdy_dy,d_dWdx_dy,d_dWdy_dz);
      Mzz = M_zz(dWdx,dWdy,dWdz,d_dWdz_dz,d_dWdx_dz,d_dWdy_dz);
      if ( C < 0.999 && C > 0.001 && dWdx.C != ZERO ) {//&& dWdy.C!= ZERO && dWdz.C != ZERO ) {
-     heat_release_strain_xx = (0.5-C)*tau_fsd*Laminar_Flame_Speed*Fsd*rho*Mxx;
-     heat_release_strain_yy = (0.5-C)*tau_fsd*Laminar_Flame_Speed*Fsd*rho*Myy;
-     heat_release_strain_zz = (0.5-C)*tau_fsd*Laminar_Flame_Speed*Fsd*rho*Mzz;
+     heat_release_strain_xx = (0.5-C)*tau_fsd*_laminar_flame_speed*Fsd*rho*Mxx;
+     heat_release_strain_yy = (0.5-C)*tau_fsd*_laminar_flame_speed*Fsd*rho*Myy;
+     heat_release_strain_zz = (0.5-C)*tau_fsd*_laminar_flame_speed*Fsd*rho*Mzz;
      return ( heat_release_strain_xx + heat_release_strain_yy + heat_release_strain_zz );
     }else{
      return (0.0);
     }
 }
 
+/**************************************************************************************
+ * LES3DFsd_pState::Net_Rate_Change_Progvar -- Net rate change for progress variable  *
+ **************************************************************************************/
 double LES3DFsd_pState::Net_Rate_Change_Progvar (const LES3DFsd_pState &dWdx,
                                                  const LES3DFsd_pState &dWdy,
                                                  const LES3DFsd_pState &dWdz,
@@ -2840,8 +2982,10 @@ double LES3DFsd_pState::Net_Rate_Change_Progvar (const LES3DFsd_pState &dWdx,
 	   +SFS_Diffusion_Progvar(dWdx,dWdy,dWdz,d_dWdx_dx,d_dWdy_dy,d_dWdz_dz,d_dWdx_dy,d_dWdx_dz,d_dWdy_dz,Flow_Type,Volume)
 	   +Reaction_Rate_Fsd(dWdx,dWdy,dWdz) );
 }
-           
 
+/**************************************************************************************
+ * LES3DFsd_pState::Net_Rate_Change_Fsd -- Net rate change for flame surface density  *
+ **************************************************************************************/
 double LES3DFsd_pState::Net_Rate_Change_Fsd (const LES3DFsd_pState &dWdx,
                                              const LES3DFsd_pState &dWdy,
                                              const LES3DFsd_pState &dWdz,
@@ -2860,19 +3004,10 @@ double LES3DFsd_pState::Net_Rate_Change_Fsd (const LES3DFsd_pState &dWdx,
 	  +SFS_Strain(dWdx,dWdy,dWdz,Flow_Type,Volume)
 	  +SFS_Curvature(dWdx,dWdy,dWdz) );
 }
-/*
-double LES3DFsd_pState::KPP_Tur_Speed(const LES3DFsd_pState &dWdx,
-                                    const LES3DFsd_pState &dWdy,
-                                    const int &Flow_Type,
-                                    const double &Volume) const {
-    double Mx = M_x(dWdx,dWdy);
-    if ( C < 0.99 && C > 0.01 && dWdx.C != ZERO && dWdy.C != ZERO && dWdz.C != ZERO ) {
-    return (-Mx*Laminar_Flame_Speed+2.0*sqrt(SFS_Strain(dWdx,dWdy,Flow_Type,Volume)*eddy_viscosity(dWdx,dWdy,Volume,Flow_Type)));
-   }else{
-    return(0.0);
-   }
-}
-*/
+
+/*****************************************************************
+ * LES3DFsd_pState::K_equ_sources -- Source term for k-equation  *
+ *****************************************************************/
 double LES3DFsd_pState::K_equ_sources(const LES3DFsd_pState &dWdx,
                                       const LES3DFsd_pState &dWdy,
                                       const LES3DFsd_pState &dWdz,
@@ -2903,22 +3038,22 @@ double LES3DFsd_pState::K_equ_sources(const LES3DFsd_pState &dWdx,
     }
 }
 
-/* Turbulence model source term */  
-LES3DFsd_cState  LES3DFsd_pState::Src_t(const LES3DFsd_pState &Wc,
-                                        const LES3DFsd_pState &dWdx,
-                                        const LES3DFsd_pState &dWdy,
-                                        const LES3DFsd_pState &dWdz,
-                                        const int &Flow_Type,
-                                        const double &Volume) {
+/*****************************************************************
+ * LES3DFsd_pState::Sturbulene -- Turbulence model source terms. *
+ *****************************************************************/
+LES3DFsd_cState  LES3DFsd_pState::Sturbulence(const LES3DFsd_pState &Wc,
+                                              const LES3DFsd_pState &dWdx,
+                                              const LES3DFsd_pState &dWdy,
+                                              const LES3DFsd_pState &dWdz,
+                                              const int &Flow_Type,
+                                              const double &Volume) {
    
   double  resolved_strain, resolved_propagation_curvature, sfs_strain, sfs_curvature;
-  LES3DFsd_cState Temp; Temp.Vacuum();
+  LES3DFsd_cState Temp;
 
   if ( Wc.C < 0.999 && Wc.C > 0.001 && dWdx.C != ZERO ) {//&& dWdy.C != ZERO && dWdz.C != ZERO ) {
-
     // Reaction Rate for Progress Variable Equation --- Source term
       Temp.rhoC = Wc.Reaction_Rate_Fsd(dWdx,dWdy,dWdz);
-      //      cout<<"rhoc=   "<<Wc.Fsd*Wc.rho<<endl;
     // FSD Equation Source Term
       resolved_strain = Wc.Resolved_Strain(dWdx,dWdy,dWdz);
 
@@ -2931,344 +3066,427 @@ LES3DFsd_cState  LES3DFsd_pState::Src_t(const LES3DFsd_pState &Wc,
       Temp.rhoFsd = resolved_strain + resolved_propagation_curvature + sfs_strain + sfs_curvature ;
       if (Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K) {
     // k-equation Source Term
-    Temp.rhok = Wc.K_equ_sources(dWdx,dWdy,dWdz,Flow_Type,Volume);
-      }
-
-    }
+      Temp.rhok = Wc.K_equ_sources(dWdx,dWdy,dWdz,Flow_Type,Volume);
+      } /* endif */
+  } /* endif */
   return (Temp);
-
-
 } 
 
-/*************************************************
-         Premixed combustion
-*************************************************/
+/*****************************************************************************************
+ * LESS3DFsd_cState member functions                                                     *
+ *****************************************************************************************/
 
-/***** Mass fractions for CH4 one step *****/
+/*********************************************************************************************
+ * LES3DFsd_cState::Realizable_Solution_Check -- Check physical validity of solution state.  *
+ *********************************************************************************************/
+bool LES3DFsd_cState::Realizable_Solution_Check(void) {
+  if (rho <= ZERO || es() <= ZERO || rhoC <= ZERO || rhoFsd <= ZERO || rhok <= ZERO ) {    
+      cout << "\n " << CFFC_Name() 
+           << " ERROR: Conservative solution state has a negative density, energy, progress variable,"
+           << " FSD, and/or turbulent kinetic energy.\n";
+      return false;
+   } else {
+      return true;
+   } /* endif */
+} 
 
-LES3DFsd_pState LES3DFsd_pState::premixed_mfrac(const LES3DFsd_pState &Wo,const LES3DFsd_pState &W){
-
-       LES3DFsd_pState temp;
-       temp.Copy (*this);       
-
-      
-  double unburnt_fuel_c, burnt_fuel_c, tol;
-  double burnt_oxygen_c, stoich_ratio, phi;
-  double c_products, products_ratio;    // c_prod = c_CO2 + c_H2O
-  
-  tol = MICRO;          // local tolerance
-  if ( React.reactset_flag == CH4_1STEP ){
-  stoich_ratio = 2.0*temp.specdata[1].Mol_mass()/temp.specdata[0].Mol_mass();  //      4.0;   // stoichiometric O2/CH4 mass ratio
-  temp.spec[4].c = Wo.spec[4].c;
-  }else if ( React.reactset_flag == C3H8_1STEP ){
-  stoich_ratio = 5.0*temp.specdata[1].Mol_mass()/temp.specdata[0].Mol_mass();  //      3.6;   // stoichiometric O2/C3H8 mass ratio
-  temp.spec[4].c = Wo.spec[4].c;
-  }else if ( React.reactset_flag == H2O2_1STEP ){
-  stoich_ratio = temp.specdata[1].Mol_mass()/2.0/temp.specdata[0].Mol_mass();  //      8.0;   // stoichiometric O2/H2 mass ratio
-  temp.spec[3].c = Wo.spec[3].c;
-  }
-  //  cout<<"c=   "<<W.C<<endl;
-    if ( temp.C >= ONE ) {
-      temp.C = ONE;
-    }
-    if ( temp.C <= ZERO ) {
-      temp.C = ZERO;
-    }
-    temp.spec[0].c = ( ONE - temp.C )*Wo.spec[0].c;
-    //    cout<<"C=   "<<temp.C<<"   CH4=  "<<temp.spec[0].c<<endl;  
-  // equivalence ratio
-    phi = 1.0;//Equivalence_Ratio;//stoich_ratio/(Wo.spec[1].c / Wo.spec[0].c);
-
-  if(fabs(phi-ONE)<1.0E-2){//  || (phi-ONE)<-1.0E-3){
-     phi = ONE;
-   }
-
-  // check for negative or small fuel mass fraction
-  if(temp.spec[0].c < tol){
-    temp.spec[0].c = ZERO; }
-  
-  // lean mixture(phi < 1) => excessive O2
-  if(phi < ONE){  
-    unburnt_fuel_c = Wo.spec[0].c; // initial fuel mass fraction
-    burnt_fuel_c = ZERO;
-    burnt_oxygen_c = (ONE/phi - ONE)*unburnt_fuel_c*stoich_ratio;
-    if(temp.spec[0].c == ZERO){
-      temp.spec[1].c = burnt_oxygen_c;      
-    }else{
-      temp.spec[1].c = temp.spec[0].c * stoich_ratio + burnt_oxygen_c;///phi;
-    }  
-
-  // rich mixture(phi > 1) => excessive CH4
-  }else if(phi > ONE){  
-    unburnt_fuel_c = Wo.spec[0].c;  // initial fuel mass fraction
-    burnt_oxygen_c = ZERO;
-    burnt_fuel_c = (ONE - ONE/phi)*unburnt_fuel_c;///stoich_ratio;
-    temp.spec[0].c = temp.C*(burnt_fuel_c - unburnt_fuel_c) + unburnt_fuel_c;
-    if(temp.spec[0].c <= burnt_fuel_c){
-      temp.spec[1].c = burnt_oxygen_c;
-    }else{
-      temp.spec[1].c = (temp.spec[0].c - burnt_fuel_c) * stoich_ratio;///phi;
-    }
-
-  // stoichiometric mixture(phi = 1)
-  }else{ 
-    burnt_fuel_c = ZERO;
-    burnt_oxygen_c = ZERO;
-    temp.spec[1].c = temp.spec[0].c * stoich_ratio; 
-   }
-
-  if ( React.reactset_flag == CH4_1STEP ||
-       React.reactset_flag == C3H8_1STEP ){
-    // mass fractions of products
-       c_products = ONE - (temp.spec[0].c + temp.spec[1].c + temp.spec[4].c);
-  if ( React.reactset_flag == CH4_1STEP ){
-       products_ratio = temp.specdata[2].Mol_mass()/(temp.specdata[2].Mol_mass()+2.0*temp.specdata[3].Mol_mass());
-  }else if ( React.reactset_flag == C3H8_1STEP ){
-       products_ratio = 3.0*temp.specdata[2].Mol_mass()/(3.0*temp.specdata[2].Mol_mass()+4.0*temp.specdata[3].Mol_mass());
-  }
-       temp.spec[2].c = products_ratio*c_products; // CO2 mass fraction
-       temp.spec[3].c = c_products-temp.spec[2].c;  // H2O mass fraction   
-       temp.spec[1].c = ONE-c_products - temp.spec[0].c - temp.spec[4].c ;      // O2 mass fraction
-  //  temp.spec[4].c = ONE-temp.spec[0].c-temp.spec[1].c-temp.spec[2].c-temp.spec[3].c;
-  }else if ( React.reactset_flag == H2O2_1STEP ){
-       temp.spec[2].c = ONE - temp.spec[0].c - temp.spec[1].c - temp.spec[3].c;// H2O mass fraction 
-  }
-
- /*
-double mu_f = 1.0;
-double mu_O2 = 2.0;
-double mu_N2 = 2.0*3.76;
-double mu_CO2 = 1.0;
-double mu_H2O = 2.0;
-double phi = 1.0;
-double stoich_ratio, mf_ub, mO2_ub, mN2, yf_ub,  yO2_ub, yN2, mf_b, mO2_b, mCO2_b, mH2O_b,
-       yf_b, yO2_b, yCO2_b, yH2O_b;
-double sum_ub, sum_b, sum_y_ub, sum_y_b;
-	
-stoich_ratio = mu_O2*temp.specdata[1].Mol_mass()/(mu_f*temp.specdata[0].Mol_mass());
-
-mf_ub = 1.0;
-mO2_ub = stoich_ratio/phi;
-mN2 = (mu_N2*temp.specdata[4].Mol_mass())/(mu_f*temp.specdata[0].Mol_mass())/phi;
-sum_ub = mf_ub + mO2_ub + mN2;
-yf_ub = mf_ub/sum_ub;
-yO2_ub = stoich_ratio/phi*yf_ub;
-yN2 = mN2/sum_ub;
-sum_y_ub = yf_ub + yO2_ub + yN2;
-mf_b = max(0.0, mf_ub-mO2_ub/stoich_ratio);
-mO2_b = max(0.0, mO2_ub-mf_ub*stoich_ratio);
-mCO2_b = (mf_ub-mf_b)*(mu_CO2*temp.specdata[2].Mol_mass())/(mu_f*temp.specdata[0].Mol_mass());
-mH2O_b = (mf_ub-mf_b)*(mu_H2O*temp.specdata[3].Mol_mass())/(mu_f*temp.specdata[0].Mol_mass());
-sum_b = mf_b + mO2_b + mCO2_b + mH2O_b + mN2;
-yf_b = mf_b/sum_b;
-yO2_b = mO2_b/sum_b;
-yCO2_b = mCO2_b/sum_b;
-yH2O_b = mH2O_b/sum_b;
-sum_y_b = yf_b + yO2_b + yCO2_b + yH2O_b + yN2;
-
-temp.spec[0].c =  yf_ub + ( yf_b - yf_ub ) * temp.C;
-temp.spec[1].c = (stoich_ratio/phi)*temp.spec[0].c;
-temp.spec[2].c = (1.0-temp.spec[0].c-temp.spec[1].c-yN2)
-	            *(mu_CO2*temp.specdata[2].Mol_mass())/(mu_CO2*temp.specdata[2].Mol_mass()+mu_H2O*temp.specdata[3].Mol_mass());
-temp.spec[3].c = (1.0-temp.spec[0].c-temp.spec[1].c-yN2)
-	            *(mu_H2O*temp.specdata[3].Mol_mass())/(mu_CO2*temp.specdata[2].Mol_mass()+mu_H2O*temp.specdata[3].Mol_mass());
-temp.spec[4].c = yN2; 
- */	    
-
-  double suma;
-  suma = 0.0;
-  for(int i=0; i<ns; i++){
-    suma = suma + temp.spec[i].c;
-  }
-  for(int i=0; i<ns; i++){
-      temp.spec[i].c = temp.spec[i].c*(ONE/suma);
-  }
-
- for (int i=0; i<ns; i++){
-   if ( temp.spec[i].c< ZERO ){
-     temp.spec[i].c = ZERO;
-   }
- }
-
- return(temp);
+/*************************************************************************
+ * LES3DFsd_cState::e -- Return mixture absolute internal energy.        *
+ *************************************************************************/
+double LES3DFsd_cState::e(void) const {
+  return ((E - HALF*rhov.sqr()/rho-rhok)/rho);
 }
 
-/*************************************************
-         Premixed combustion
-*************************************************/
+/**************************************************************************
+ * LES3DFsd_cState::es -- Return sensible internal energy.                *
+ **************************************************************************/
+double LES3DFsd_cState::es(void) const {
+  return ((E - HALF*rhov.sqr()/rho-rhok)/rho-HeatofFormation());
+}
 
+/**************************************************************************
+ * LES3DFsd_cState::h -- Return mixture absolute internal enthalpy.       *
+ **************************************************************************/
+double LES3DFsd_cState::h(void) const {
+  return (e()+p()/rho);
+}
 
-/***** Mass fractions for CH4 one step *****/
+double LES3DFsd_cState::h(const double &Temp) const {
+  return (Euler3D_ThermallyPerfect_cState::h(Temp));
+}
 
-LES3DFsd_cState  LES3DFsd_cState::premixed_mfrac(const LES3DFsd_pState &Wo){
+/**************************************************************************
+ * LES3DFsd_cState::hs -- Return sensible internal enthalpy.              *
+ **************************************************************************/
+double LES3DFsd_cState::hs(void) const {
+  return (es()+p()/rho);
+}
+
+double LES3DFsd_cState::hs(const double &Temp) const {
+  return (Euler3D_ThermallyPerfect_cState::hs());
+}
+
+/*******************************************************************
+ * LES3DFsd_cState::T -- Return mixture temperature.               *
+ *******************************************************************/
+/********************* Temperature ***********************************
+ This gets complicated when trying to obtain the primitive variables 
+  from the conserved as E is a function of Temperature taken from 
+  a nonlinear equation (ie. a polynomial).   Thus is can't be rearranged
+  to find T and p, so a iterative newtons method has to used. Simple 
+  enough, but can be extremely expensive in terms of computation time.
+  Oh well ce la vie...
+
+  Also note the "E" is actually rho*E is. E = (rho *(e + HALF*v^2+k))
+  in the conserved state.
+
+  If more that 20 iterations are taken than the look jumps out 
+  and gives a warning but will continue.  On average it almost always 
+  converges in less than 5 iterations with "tolerance" which is defined
+  in the header.
+**********************************************************************/
+double LES3DFsd_cState::T(void) const {
+
+   double T = ZERO;
+   double RTOT = Rtot();  
+   //--------- Initial Guess ------------------------------//
+   //using a polytropic gas assumption with gamma@200;
+   double Tguess = (gamma_guess() - ONE)*(E - HALF*rhov.sqr()/rho-rhok)/(rho*RTOT);
+   //--------- global newtons method to get T ---------------//
+   double A = (E - HALF*rhov*rhov/rho -rhok)/rho;
  
-  LES3DFsd_cState temp;
-  temp.Copy(*this);
+   int numit =0;
+   double Tmin = low_temp_range;
+   double Tmax = high_temp_range;
+   
+   //check for start value
+   if (Tguess > Tmin && Tguess < Tmax) {
+      T=Tguess;
+   } else {
+      T=Tmin;
+   } /* endif */
+   
+   double fa = h(Tmin) - Tmin*RTOT - A;
+   double fn = h(T) - T*RTOT - A;
+   double dfn = hprime(T) - RTOT;
+   while (fabs(Tmax-Tmin) > CONV_TOLERANCE && 
+          fabs(fn) > CONV_TOLERANCE && 
+          numit < 20 && 
+          T >= low_temp_range) {    
+      // Newton 
+      if (T >= Tmin && T <= Tmax) {
+         T = T - fn/dfn;
+         if(T >= Tmax) T = HALF*(Tmax - Tmin);	
+         //Bisection
+      } else {
+         T = HALF*(Tmax - Tmin);
+      } /* endif */
+      //evaluate function and derivative
+      fn = h(T) - T*RTOT - A;
+      dfn = hprime(T) - RTOT;  
+      //change bisection range
+      if ( fa*fn <=ZERO) {
+         Tmax = T;
+      } else {
+         Tmin = T;
+         fa = fn;
+      } /* endif */
+      numit++;
+   } /* endwhile */
 
+   if (numit>=19 || T <= low_temp_range) {
+      T = max(Tguess,low_temp_range); 	
+      if (debug_level) { 
+         cout << "\nTemperature didn't converge in LES3DFsd_cState::T(void)";
+         cout << " with polytopic Tguess " << Tguess << ", or lower than Tmin " 
+              << low_temp_range << " using " << T;
+      } /* endif */
+   } /* endif */
+
+   return T;
+} 
+
+/*******************************************************************
+ * LES3DFsd_cState::pt -- Return turbulence modified pressure.     *
+ *******************************************************************/
+double LES3DFsd_cState::pt(void) const { 
+   return ( p + 2.0*rho*k/3.0 );
+}
+
+/*******************************************************************
+ * LES3DFsd_cState::a_t -- Return mixture sound speed (including   *
+ *                         turbulent kinetic energy).              *
+ *******************************************************************/
+double LES3DFsd_cState::a_t(void) const {
+   double aa = sqr(a());
+   aa += (TWO/THREE)*(rhok/rho)*g();
+   return sqrt(aa);
+}
+
+/*******************************************************************
+ * LES3DFsd_cState::C -- Return progress variable.                 *
+ *******************************************************************/
+double LES3DFsd_cState::C() const {
+   return (rhoC/rho);
+}
+
+/*******************************************************************
+ * LES3DFsd_cState::Fsd -- Return flame surface density.           *
+ *******************************************************************/
+double LES3DFsd_cState::Fsd() const {
+   return (rhoFsd/rho);
+}
+
+/*******************************************************************
+ * LES3DFsd_cState::k -- Return turbulent kinetic energy.          *
+ *******************************************************************/
+double LES3DFsd_cState::k() const {
+   return (rhok/rho);
+}
+
+/**********************************************************************************************
+ * LES3DFsd_cState::premixed_mfrac -- Species mass fractions for one-step reaction mechanism  *
+ **********************************************************************************************/
+void LES3DFsd_cState::premixed_mfrac(void) {
+  double burnt_fuel_c, burnt_oxygen_c, stoich_ratio;
+  double c_products, products_ratio;
   
-  double unburnt_fuel_c, burnt_fuel_c, tol, sum;
-  double burnt_oxygen_c, stoich_ratio, phi;
-  double c_products, products_ratio;    // c_prod = c_CO2 + c_H2O
+  // Check realizability of progress variable.
+  Realizable_C_Check();  
 
-  tol = MICRO;          // local tolerance
-  if ( Wo.React.reactset_flag == CH4_1STEP ){
-  stoich_ratio = 2.0*temp.specdata[1].Mol_mass()/temp.specdata[0].Mol_mass();  //      4.0;   // stoichiometric O2/CH4 mass ratio
-  temp.rhospec[4].c = temp.rho*Wo.spec[4].c;
-  }else if ( Wo.React.reactset_flag == C3H8_1STEP ){
-  stoich_ratio = 5.0*temp.specdata[1].Mol_mass()/temp.specdata[0].Mol_mass();  //      4.0;   // stoichiometric O2/C3H8 mass ratio
-  temp.rhospec[4].c = temp.rho*Wo.spec[4].c;
-  }else if ( Wo.React.reactset_flag == H2O2_1STEP ){
-  stoich_ratio = temp.specdata[1].Mol_mass()/2.0/temp.specdata[0].Mol_mass();  //      8.0;   // stoichiometric O2/H2 mass ratio
-  temp.rhospec[3].c = temp.rho*Wo.spec[3].c;
+  // Determine stoichiometric ratio
+  if (React.reactset_flag == CH4_1STEP) {
+    stoich_ratio = 2.0*specdata[1].Mol_mass()/
+                   specdata[0].Mol_mass();     // stoichiometric O2/CH4 mass ratio
+  } else if (React.reactset_flag == C3H8_1STEP) {
+    stoich_ratio = 5.0*specdata[1].Mol_mass()/
+                   specdata[0].Mol_mass();     // stoichiometric O2/C3H8 mass ratio
+  } else if (React.reactset_flag == H2O2_1STEP){
+    stoich_ratio = specdata[1].Mol_mass()/
+                   2.0/specdata[0].Mol_mass(); // stoichiometric O2/H2 mass ratio
   }
 
-  if ( temp.rhoC >= temp.rho ) {
-      temp.rhoC = temp.rho;
-    }
-    if ( temp.rhoC <= ZERO ) {
-      temp.rhoC = ZERO;
-    }
-    temp.rhospec[0].c = ( ONE - temp.rhoC/temp.rho )*Wo.spec[0].c*temp.rho;
-  // equivalence ratio
-    phi = 1.0;//Equivalence_Ratio;//stoich_ratio/(Wo.spec[1].c / Wo.spec[0].c);
+  // Calculate fuel mass fraction
+  rhospec[0].c = (ONE - rhoC/rho)*rho*_unburnt_fuel_mass_fraction;
+  if (rhospec[0].c < tol) {
+      rhospec[0].c = ZERO;
+  } /* endif */
 
-  if(fabs(phi-ONE)<1.0E-2){//  || (phi-ONE)<-1.0E-3){
-     phi = ONE;
-   }
-
-  // check for negative or small fuel mass fraction
-  if(temp.rho < ZERO){
-    cout << "Negative density: " << temp.rho << endl;
-  }
-  
-  if(temp.rhospec[0].c/temp.rho < ZERO )
-    { temp.rhospec[0].c = ZERO; }
-  if(temp.rhospec[0].c/temp.rho > Wo.spec[0].c)
-    { temp.rhospec[0].c = Wo.spec[0].c * temp.rho; }
-  
-  // lean mixture(phi < 1) => excessive O2
-  if(phi < ONE){  
-     unburnt_fuel_c = Wo.spec[0].c; // initial fuel mass fraction
-     burnt_fuel_c = ZERO;
-     burnt_oxygen_c = (ONE/phi - ONE)*unburnt_fuel_c*stoich_ratio;
-  if(temp.rhospec[0].c < tol){
-     temp.rhospec[0].c = ZERO;
-     temp.rhospec[1].c = temp.rho*burnt_oxygen_c;      
-  }else{
-     temp.rhospec[1].c = temp.rhospec[0].c * stoich_ratio + temp.rho * burnt_oxygen_c;///phi;
+  // Calculate oxygen mass fraction
+  // Lean mixture(_fuel_equivalence_ratio < 1) => excessive O2
+  if (_fuel_equivalence_ratio < ONE) {  
+    burnt_fuel_c = ZERO;
+    burnt_oxygen_c = (ONE/_fuel_equivalence_ratio - ONE)*rho*_unburnt_fuel_mass_fraction*stoich_ratio;
+    if (rhospec[0].c == ZERO) {
+      rhospec[1].c = burnt_oxygen_c;      
+    } else {
+      rhospec[1].c = rhospec[0].c*stoich_ratio + burnt_oxygen_c;
     }  
 
-  // rich mixture(phi > 1) => excessive CH4
-  }else if(phi > ONE){  
-    unburnt_fuel_c = Wo.spec[0].c;  // initial fuel mass fraction
+  // Rich mixture(_fuel_equivalence_ratio > 1) => excessive CH4
+  } else if (_fuel_equivalence_ratio > ONE) {  
     burnt_oxygen_c = ZERO;
-    burnt_fuel_c = (ONE - ONE/phi)*unburnt_fuel_c;///stoich_ratio;
-    temp.rhospec[0].c = temp.rhoC*(burnt_fuel_c - unburnt_fuel_c) + unburnt_fuel_c*temp.rho;
- if(temp.rhospec[0].c <= temp.rho*burnt_fuel_c){
-    temp.rhospec[1].c = temp.rho*burnt_oxygen_c;
-  }else{
-    temp.rhospec[1].c = (temp.rhospec[0].c - burnt_fuel_c*temp.rho)* stoich_ratio;///phi;
+    burnt_fuel_c = (ONE - ONE/_fuel_equivalence_ratio)*rho*_unburnt_fuel_mass_fraction;
+    rhospec[0].c = rhoC*(burnt_fuel_c - _unburnt_fuel_mass_fraction) + rho*_unburnt_fuel_mass_fraction;
+    if (rhospec[0].c <= burnt_fuel_c) {
+      rhospec[1].c = burnt_oxygen_c;
+    } else {
+      rhospec[1].c = (rhospec[0].c - burnt_fuel_c)*stoich_ratio;
     }
-  // stoichiometric mixture(phi = 1)
-  }else{
-    burnt_fuel_c = 0.0;
-    burnt_oxygen_c = 0.0;
-    temp.rhospec[1].c = temp.rhospec[0].c * stoich_ratio;
- }
 
-  if ( Wo.React.reactset_flag == CH4_1STEP ||
-       Wo.React.reactset_flag == C3H8_1STEP ){
-  // mass fractions of products
-       c_products = ONE - (temp.rhospec[0].c + temp.rhospec[1].c + temp.rhospec[4].c)/temp.rho;
-  if ( Wo.React.reactset_flag == CH4_1STEP ){
-       products_ratio = temp.specdata[2].Mol_mass()/(temp.specdata[2].Mol_mass()+2.0*temp.specdata[3].Mol_mass());   
-  }else if ( Wo.React.reactset_flag == C3H8_1STEP ){
-       products_ratio = 3.0*temp.specdata[2].Mol_mass()/(3.0*temp.specdata[2].Mol_mass()+4.0*temp.specdata[3].Mol_mass());
-    }   
-    temp.rhospec[2].c = products_ratio*c_products*temp.rho; // CO2 mass fraction
-    temp.rhospec[3].c = temp.rho*c_products - temp.rhospec[2].c;      // H2O mass fraction
-    temp.rhospec[1].c = temp.rho*(ONE-c_products - (temp.rhospec[0].c+temp.rhospec[4].c)/temp.rho);      // O2 mass fraction
-    //    temp.rhospec[4].c = temp.rho - temp.rhospec[0].c - temp.rhospec[1].c - temp.rhospec[2].c - temp.rhospec[3].c; 
-  }else if ( Wo.React.reactset_flag == CH4_1STEP ){
-    temp.rhospec[2].c = c_products*temp.rho; // H2O mass fraction  
-  }
-  //    }  
-    /*       
-double mu_f = 1.0;
-double mu_O2 = 2.0;
-double mu_N2 = 2.0*3.76;
-double mu_CO2 = 1.0;
-double mu_H2O = 2.0;
-double stoich_ratio, mf_ub, mO2_ub, mN2, yf_ub,  yO2_ub, yN2, mf_b, mO2_b, mCO2_b, mH2O_b,
-       yf_b, yO2_b, yCO2_b, yH2O_b;
-double sum_ub, sum_b, sum_y_ub, sum_y_b;
-	
-stoich_ratio = mu_O2*temp.specdata[1].Mol_mass()/(mu_f*temp.specdata[0].Mol_mass());
- double phi = 1.0;
-//double  phi = stoich_ratio/(Wo.spec[1].c / Wo.spec[0].c);
+  // Stoichiometric mixture(_fuel_equivalence_ratio = 1)
+  } else { 
+    burnt_fuel_c = ZERO;
+    burnt_oxygen_c = ZERO;
+    rhospec[1].c = rhospec[0].c*stoich_ratio; 
 
-//  if((phi-ONE)<1.0E-3  || (phi-ONE)<-1.0E-3){
-//    phi = ONE;
-//  }
+  } /* endif */
 
-  // check for negative or small fuel mass fraction
-  if(temp.rho < ZERO){
-    cout << "Negative density: " << temp.rho << endl;
-  }
-  
-mf_ub = 1.0;
-mO2_ub = stoich_ratio/phi;
-mN2 = (mu_N2*temp.specdata[4].Mol_mass())/(mu_f*temp.specdata[0].Mol_mass())/phi;
-sum_ub = mf_ub + mO2_ub + mN2;
-yf_ub = mf_ub/sum_ub;
-yO2_ub = stoich_ratio/phi*yf_ub;
-yN2 = mN2/sum_ub;
-sum_y_ub = yf_ub + yO2_ub + yN2;
-mf_b = max(0.0, mf_ub-mO2_ub/stoich_ratio);
-mO2_b = max(0.0, mO2_ub-mf_ub*stoich_ratio);
-mCO2_b = (mf_ub-mf_b)*(mu_CO2*temp.specdata[2].Mol_mass())/(mu_f*temp.specdata[0].Mol_mass());
-mH2O_b = (mf_ub-mf_b)*(mu_H2O*temp.specdata[3].Mol_mass())/(mu_f*temp.specdata[0].Mol_mass());
-sum_b = mf_b + mO2_b + mCO2_b + mH2O_b + mN2;
-yf_b = mf_b/sum_b;
-yO2_b = mO2_b/sum_b;
-yCO2_b = mCO2_b/sum_b;
-yH2O_b = mH2O_b/sum_b;
-sum_y_b = yf_b + yO2_b + yCO2_b + yH2O_b + yN2;
-double ratio1 = (mu_CO2*temp.specdata[2].Mol_mass())/(mu_CO2*temp.specdata[2].Mol_mass()+mu_H2O*temp.specdata[3].Mol_mass());
-double ratio2 = (mu_H2O*temp.specdata[3].Mol_mass())/(mu_CO2*temp.specdata[2].Mol_mass()+mu_H2O*temp.specdata[3].Mol_mass());
- temp.rhospec[0].c = (yf_ub + ( yf_b - yf_ub ) * temp.rhoC/temp.rho)*temp.rho; 		    
- temp.rhospec[1].c = (stoich_ratio/phi)*temp.rhospec[0].c; 		    
- temp.rhospec[2].c = (temp.rho-temp.rhospec[0].c-temp.rhospec[1].c-yN2*temp.rho)*ratio1; 		    
- temp.rhospec[3].c = (temp.rho-temp.rhospec[0].c-temp.rhospec[1].c-yN2*temp.rho-temp.rhospec[2].c);//*ratio2; 		    
- // temp.rhospec[4].c = yN2*temp.rho;
- */
-
-  double suma;
-  suma = 0.0;
-  for(int i=0; i<ns; i++){
-    suma = suma + temp.rhospec[i].c/temp.rho;
-  }
-  for(int i=0; i<ns; i++){
-      temp.rhospec[i].c = temp.rhospec[i].c*(ONE/suma);
+  // Determine mass fractions of products
+  if (React.reactset_flag == CH4_1STEP ||
+      React.reactset_flag == C3H8_1STEP) {
+    // mass fractions of products
+    c_products = ONE - (rhospec[0].c + rhospec[1].c + rhospec[4].c)/rho;
+    if (React.reactset_flag == CH4_1STEP) {
+       products_ratio = specdata[2].Mol_mass()/(specdata[2].Mol_mass()+2.0*specdata[3].Mol_mass());
+    } else if (React.reactset_flag == C3H8_1STEP) {
+       products_ratio = 3.0*specdata[2].Mol_mass()/(3.0*specdata[2].Mol_mass()+4.0*specdata[3].Mol_mass());
+    } /* endif */ 
+    rhospec[2].c = products_ratio*c_products*rho; // CO2 mass fraction
+    rhospec[3].c = c_products-rhospec[2].c;  // H2O mass fraction   
+    rhospec[1].c = rho*(ONE - c_products - (rhospec[0].c + rhospec[4].c)/rho) ;  // O2 mass fraction
+  } else if (React.reactset_flag == H2O2_1STEP) {
+    rhospec[2].c = (ONE - (rhospec[0].c + rhospec[1].c + rhospec[3].c)/rho)*rho; // H2O mass fraction 
   }
 
-//    if ( Flow_Type == FLOWTYPE_LAMINAR_C || 
-//         Flow_Type == FLOWTYPE_LAMINAR_C_FSD ||
-//         Flow_Type == FLOWTYPE_TURBULENT_LES_C ||
-//         Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD ||
-//         Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ||
-//         Flow_Type == FLOWTYPE_FROZEN_TURBULENT_LES_C_FSD)  {
-//         temp.rhoC = min(temp.rho, max(ZERO, temp.rho*(Wo.spec[0].c-temp.rhospec[0].c/temp.rho)/Wo.spec[0].c));
-
-//    }
-  
+  // Check for realizability of each species mass fraction
   for (int i=0; i<ns; i++){
-    if (temp.rhospec[i].c/temp.rho < ZERO){
-      temp.rhospec[i].c = ZERO;
-    }
+    if (rhospec[i].c < ZERO) rhospec[i].c = ZERO;
+  } /* endfor */
+
+  double suma = ZERO;
+  for (int i=0; i < ns; i++) {
+    suma = suma + rhospec[i].c;
+  } /* endfor */
+  for (int i=0; i < ns; i++) {
+    rhospec[i].c = rhospec[i].c*(ONE/suma);
+  } /* endfor */
+
+}
+
+/*******************************************************************
+ * LES3DFsd_cState::mu_t -- Return eddy (turbulent) viscosity.     *
+ *******************************************************************/
+double LES3DFsd_cState::mu_t(const LES3DFsd_pState &dWdx,
+ 			     const LES3DFsd_pState &dWdy,
+			     const LES3DFsd_pState &dWdz,
+                             const int &Flow_Type, 
+                             const double &Volume) const{
+    double filter = filter_width(Volume);
+  if (Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY) {
+    double Cs = 0.18;
+    return(rho*Cs*sqr(filter)*abs_strain_rate(dWdx,dWdy,dWdz));
+  }else if(Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K) {
+    double Cv = 0.086;
+    return(rho*Cv*sqrt(k)*filter);
   }
+}
 
-  return temp;
+/**************************************************************************
+ * LES3DFsd_cState::kappa_t -- Return turbulent thermal conductivity.     *
+ **************************************************************************/
+double LES3DFsd_cState::kappa_t(const LES3DFsd_pState &dWdx,
+ 			        const LES3DFsd_pState &dWdy,
+			        const LES3DFsd_pState &dWdz,
+                                const int &Flow_Type, 
+                                const double &Volume) const{
+  return (mu_t(dWdx,dWdy,dWdz,Flow_Type,Volume)*Cp()/Pr_t()); 
+}
 
+/********************************************************************************
+ * LES3DFsd_cState::Ds_t -- Return species turbulent diffusion coefficient.     *
+ ********************************************************************************/
+double LES3DFsd_cState::Ds_t(const int &i,
+                             const LES3DFsd_pState &dWdx,
+ 			     const LES3DFsd_pState &dWdy,
+			     const LES3DFsd_pState &dWdz,
+                             const int &Flow_Type, 
+                             const double &Volume) const{
+  return (mu_t(dWdx,dWdy,dWdz,Flow_Type,Volume)/(rho*Sc_t())); 
+}
+
+double LES3DFsd_cState::Ds_t(const int &i,
+                             const double &mu_t_temp) const{
+  return (mu_t_temp/(rho*Sc_t())); 
+}
+
+/*******************************************************************
+ * LES3DFsd_cState::Pr_t -- Return turbulent Prandtl number.       *
+ *******************************************************************/
+double LES3DFsd_cState::Pr_t(void) {
+   return (0.9); 
+}
+
+/*******************************************************************
+ * LES3DFsd_cState::Sc_t -- Return turbulent Schmidt number.       *
+ *******************************************************************/
+double LES3DFsd_cState::Sc_t(void) {
+   return (1.0);
+}
+
+/*******************************************************************
+ * LES3DFsd_cState::Le_t -- Return turbulent Lewis number.         *
+ *******************************************************************/
+double LES3DFsd_cState::Le_t(void) {
+  return (Sc_t()/Pr_t());
+}
+
+/*******************************************************************
+ * LES3DFsd_cState::W -- Return primitive solution state vector.   *
+ *******************************************************************/
+LES3DFsd_pState LES3DFsd_cState::W(void)const{
+   LES3DFsd_pState Temp;
+   Temp.rho = rho;
+   Temp.v = v();  
+   Temp.p = p();
+   Temp.C = C();  
+   Temp.Fsd = Fsd();
+   Temp.k = k();  
+   for(int i=0; i<ns; i++){
+      Temp.spec[i] = rhospec[i]/rho;
+   } /* endfor */
+   return Temp;
+}
+
+LES3DFsd_pState LES3DFsd_cState::W(const LES3DFsd_cState &U) const{
+    LES3DFsd_pState Temp;
+    Temp.rho = U.rho;
+    Temp.v = U.v();  
+    Temp.p = U.p();
+    Temp.C = U.C();  
+    Temp.Fsd = U.Fsd();
+    Temp.k = U.k();  
+    for(int i=0; i<U.ns; i++){
+      Temp.spec[i] = U.rhospec[i]/U.rho;
+    } /* endfor */
+    return Temp;
+}
+
+LES3DFsd_pState W(const LES3DFsd_cState &U) {
+  LES3DFsd_pState Temp;
+  Temp.rho = U.rho;
+  Temp.v = U.v();
+  Temp.p = U.p();
+  Temp.C = U.C();  
+  Temp.Fsd = U.Fsd();
+  Temp.k = U.k();
+  for(int i=0; i<U.ns; i++){
+    Temp.spec[i] = U.rhospec[i]/U.rho;
+  } /* endfor */
+  return Temp;
+}
+
+
+/**************************************************************************
+ * LES3DFsd_cState::Rotate -- Returns a rotated primitive state aligned   *
+ *                            with a local x-axis in the norm_dir.        *
+ **************************************************************************/
+LES3DFsd_cState LES3DFsd_cState::Rotate(const Vector3D &norm_dir) const {
+
+  // for a 3D unit normal rotated to align with the x-axis
+  double Ct = norm_dir.x;  //cos_angle
+  double St = sqrt( norm_dir.y*norm_dir.y + norm_dir.z*norm_dir.z); //sin_angle
+  Vector3D rt(0,norm_dir.z,-norm_dir.y);  //rotation axis  
+
+  return LES3DFsd_cState(rho,
+                         rhov.x*Ct - rhov.y*rt.z*St + rhov.z*rt.y*St,
+                         rhov.x*rt.z*St + rhov.y*(rt.y*rt.y*(ONE-Ct)+Ct) + rhov.z*(rt.y*rt.z*(ONE-Ct)),
+                         -rhov.x*rt.y*St +  rhov.y*(rt.y*rt.z*(ONE-Ct)) + rhov.z*(rt.z*rt.z*(ONE-Ct)+Ct),
+                         E,
+                         rhoC,
+                         rhoFsd,
+			 rhok);
+}
+
+/**************************************************************************
+ * LES3DFsd_cState::Rotate -- Returns an un-rotated primitive state       *
+ *                            re-alinged from the x-axis of the global    *
+ *                            problem.                                    *
+ **************************************************************************/
+LES3DFsd_cState LES3DFsd_cState::RotateBack(const Vector3D &norm_dir) const {
+
+  // for a 3D unit normal rotated to align with the x-axis
+  double Ct = norm_dir.x;  //cos_angle
+  double St = sqrt( norm_dir.y*norm_dir.y + norm_dir.z*norm_dir.z); //sin_angle
+  Vector3D rt(0,norm_dir.z,-norm_dir.y);  //rotation axis  
+
+  return LES3DFsd_cState(rho,
+                         rhov.x*Ct + rhov.y*rt.z*St - rhov.z*rt.y*St,
+                         -rhov.x*rt.z*St + rhov.y*(rt.y*rt.y*(ONE-Ct)+Ct) + rhov.z*(rt.y*rt.z*(ONE-Ct)),
+                         + rhov.x*rt.y*St +  rhov.y*(rt.y*rt.z*(ONE-Ct)) + rhov.z*(rt.z*rt.z*(ONE-Ct)+Ct),
+                         E,
+                         rhoC,
+                         rhoFsd,
+			 rhok);
 }
 

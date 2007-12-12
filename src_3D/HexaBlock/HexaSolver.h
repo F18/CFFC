@@ -273,6 +273,28 @@ int HexaSolver(char *Input_File_Name_ptr,int batch_flag){
     CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.    
 
     error_flag = Hexa_Post_Processing(Data,Solution_Data);   
+
+     if (Solution_Data.Input.i_Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
+         Solution_Data.Input.i_Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ){ 
+       double u_average, v_average, w_average, sqr_u; 
+       Average_V(Solution_Data.Local_Solution_Blocks.Soln_Blks,  
+	         Data.Local_Adaptive_Block_List,
+                 Solution_Data.Input.Grid_IP,
+                 u_average, v_average, w_average);
+       Average(Solution_Data.Local_Solution_Blocks.Soln_Blks,  
+	       Data.Local_Adaptive_Block_List,
+               Solution_Data.Input.Grid_IP,
+               u_average, v_average, w_average, sqr_u);
+       Turbulent_Burning_Rate(Solution_Data.Local_Solution_Blocks.Soln_Blks,  
+			      Data.Local_Adaptive_Block_List,
+			      Solution_Data.Input.Grid_IP);
+/*        Longitudinal_Correlation(Data.Octree, */
+/*                                 Data.Global_Adaptive_Block_List, */
+/* 			        Data.Local_Adaptive_Block_List, */
+/*                                 Solution_Data.Local_Solution_Blocks.Soln_Blks,   */
+/* 			        Solution_Data.Input.Grid_IP, */
+/*                                 u_average, sqr_u); */
+     } 
     error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return (error_flag);
 

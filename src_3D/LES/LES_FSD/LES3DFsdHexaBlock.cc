@@ -62,25 +62,26 @@ Output_Tecplot(Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs,
       
       Out_File <<"\"T\" \\ \n"
                <<"\"FSD\" \\ \n"
+               <<"\"Vorticity\" \\ \n"
                <<"\"Mx\" \\ \n"
                <<"\"My\" \\ \n"  
                <<"\"Mz\" \\ \n"  
                <<"\"Reaction_Rate_Fsd\" \\ \n"  
                <<"\"Resolved_Strain\" \\ \n"  
                <<"\"Resolved_Propagation_Curvature\" \\ \n"  
-//                <<"\"Resolved_Curvature\" \\ \n"  
-//                <<"\"Resolved_Propagation\" \\ \n"  
+               <<"\"Resolved_Curvature\" \\ \n"  
+               <<"\"Resolved_Propagation\" \\ \n"  
                <<"\"SFS_Strain\" \\ \n"  
                <<"\"SFS_Curvature\" \\ \n"
                <<"\"Resolved_Convection_Progvar\" \\ \n"  
-	       <<"\"Resolved_Convection_Fsd\" \\ \n";  
-//                <<"\"NGT_Progvar\" \\ \n"  
-//                <<"\"NGT_Fsd\" \\ \n"  
-//                <<"\"SFS_Diffusion_Progvar\" \\ \n"  
-//                <<"\"SFS_Diffusion_Fsd\" \\ \n"  
-//                <<"\"Heat_Release_Strain\" \\ \n"  
-//                <<"\"Net_Rate_Change_Progvar\" \\ \n"  
-//                <<"\"Net_Rate_Change_Fsd\" \\ \n";
+	       <<"\"Resolved_Convection_Fsd\" \\ \n"  
+               <<"\"NGT_Progvar\" \\ \n"  
+               <<"\"NGT_Fsd\" \\ \n"  
+               <<"\"SFS_Diffusion_Progvar\" \\ \n"  
+               <<"\"SFS_Diffusion_Fsd\" \\ \n"  
+               <<"\"Heat_Release_Strain\" \\ \n"  
+               <<"\"Net_Rate_Change_Progvar\" \\ \n"  
+               <<"\"Net_Rate_Change_Fsd\" \\ \n";
 
       
       Out_File<< "ZONE T =  \"Block Number = " << Block_Number
@@ -108,45 +109,46 @@ Output_Tecplot(Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs,
             Out_File.setf(ios::scientific);
             Out_File << " " << W_node.T() 
                      << " " << W_node.Fsd*W_node.rho
+                     << " " << vorticity(i,j,k)
                      << " " << W_node.M_x(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k])
                      << " " << W_node.M_y(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k]) 
                      << " " << W_node.M_z(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k]) 
                      << " " << W_node.Reaction_Rate_Fsd(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k]) 
                      << " " << W_node.Resolved_Strain(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k]) 
                      << " " << W_node.Resolved_Propagation_Curvature(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k]) 
-//                      << " " << W_node.Resolved_Curvature(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k],
-//                                                          d_dWdx_dx[i][j][k],d_dWdy_dy[i][j][k],d_dWdz_dz[i][j][k],
-//                                                          d_dWdx_dy[i][j][k],d_dWdx_dz[i][j][k],d_dWdy_dz[i][j][k]) 
-//                      << " " << W_node.Resolved_Propagation(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k],
-//                                                          d_dWdx_dx[i][j][k],d_dWdy_dy[i][j][k],d_dWdz_dz[i][j][k],
-//                                                          d_dWdx_dy[i][j][k],d_dWdx_dz[i][j][k],d_dWdy_dz[i][j][k])
+                     << " " << W_node.Resolved_Curvature(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k],
+                                                         d_dWdx_dx[i][j][k],d_dWdy_dy[i][j][k],d_dWdz_dz[i][j][k],
+                                                         d_dWdx_dy[i][j][k],d_dWdx_dz[i][j][k],d_dWdy_dz[i][j][k]) 
+                     << " " << W_node.Resolved_Propagation(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k],
+                                                         d_dWdx_dx[i][j][k],d_dWdy_dy[i][j][k],d_dWdz_dz[i][j][k],
+                                                         d_dWdx_dy[i][j][k],d_dWdx_dz[i][j][k],d_dWdy_dz[i][j][k])
                      << " " << W_node.SFS_Strain(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k],Flow_Type,Grid.volume(i,j,k)) 
                      << " " << W_node.SFS_Curvature(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k]) 
                      << " " << W_node.Resolved_Convection_Progvar(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k]) 
-                     << " " << W_node.Resolved_Convection_Fsd(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k])<< "\n"; 
-//                      << " " << W_node.NGT_Progvar(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k]) 
-//                      << " " << W_node.NGT_Fsd(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k],
-//                                               d_dWdx_dx[i][j][k],d_dWdy_dy[i][j][k],d_dWdz_dz[i][j][k],
-//                                               d_dWdx_dy[i][j][k],d_dWdx_dz[i][j][k],d_dWdy_dz[i][j][k]) 
-//                      << " " << W_node.SFS_Diffusion_Progvar(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k],
-//                                                             d_dWdx_dx[i][j][k],d_dWdy_dy[i][j][k],d_dWdz_dz[i][j][k],
-//                                                             d_dWdx_dy[i][j][k],d_dWdx_dz[i][j][k],d_dWdy_dz[i][j][k],
-//                                                             Flow_Type,Grid.volume(i,j,k)) 
-//                      << " " << W_node.SFS_Diffusion_Fsd(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k],
-//                                                         d_dWdx_dx[i][j][k],d_dWdy_dy[i][j][k],d_dWdz_dz[i][j][k],
-//                                                         d_dWdx_dy[i][j][k],d_dWdx_dz[i][j][k],d_dWdy_dz[i][j][k],
-//                                                         Flow_Type,Grid.volume(i,j,k)) 
-//                      << " " << W_node.Heat_Release_Strain(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k],
-//                                                           d_dWdx_dx[i][j][k],d_dWdy_dy[i][j][k],d_dWdz_dz[i][j][k],
-//                                                           d_dWdx_dy[i][j][k],d_dWdx_dz[i][j][k],d_dWdy_dz[i][j][k]) 
-//                      << " " << W_node.Net_Rate_Change_Progvar(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k],
-//                                                               d_dWdx_dx[i][j][k],d_dWdy_dy[i][j][k],d_dWdz_dz[i][j][k],
-//                                                               d_dWdx_dy[i][j][k],d_dWdx_dz[i][j][k],d_dWdy_dz[i][j][k],
-//                                                               Flow_Type,Grid.volume(i,j,k)) 
-//                      << " " << W_node.Net_Rate_Change_Fsd(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k],
-//                                                           d_dWdx_dx[i][j][k],d_dWdy_dy[i][j][k],d_dWdz_dz[i][j][k],
-//                                                           d_dWdx_dy[i][j][k],d_dWdx_dz[i][j][k],d_dWdy_dz[i][j][k],
-//                                                           Flow_Type,Grid.volume(i,j,k))<< "\n"; 
+                     << " " << W_node.Resolved_Convection_Fsd(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k]) 
+                     << " " << W_node.NGT_Progvar(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k]) 
+                     << " " << W_node.NGT_Fsd(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k],
+                                              d_dWdx_dx[i][j][k],d_dWdy_dy[i][j][k],d_dWdz_dz[i][j][k],
+                                              d_dWdx_dy[i][j][k],d_dWdx_dz[i][j][k],d_dWdy_dz[i][j][k]) 
+                     << " " << W_node.SFS_Diffusion_Progvar(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k],
+                                                            d_dWdx_dx[i][j][k],d_dWdy_dy[i][j][k],d_dWdz_dz[i][j][k],
+                                                            d_dWdx_dy[i][j][k],d_dWdx_dz[i][j][k],d_dWdy_dz[i][j][k],
+                                                            Flow_Type,Grid.volume(i,j,k)) 
+                     << " " << W_node.SFS_Diffusion_Fsd(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k],
+                                                        d_dWdx_dx[i][j][k],d_dWdy_dy[i][j][k],d_dWdz_dz[i][j][k],
+                                                        d_dWdx_dy[i][j][k],d_dWdx_dz[i][j][k],d_dWdy_dz[i][j][k],
+                                                        Flow_Type,Grid.volume(i,j,k)) 
+                     << " " << W_node.Heat_Release_Strain(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k],
+                                                          d_dWdx_dx[i][j][k],d_dWdy_dy[i][j][k],d_dWdz_dz[i][j][k],
+                                                          d_dWdx_dy[i][j][k],d_dWdx_dz[i][j][k],d_dWdy_dz[i][j][k]) 
+                     << " " << W_node.Net_Rate_Change_Progvar(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k],
+                                                              d_dWdx_dx[i][j][k],d_dWdy_dy[i][j][k],d_dWdz_dz[i][j][k],
+                                                              d_dWdx_dy[i][j][k],d_dWdx_dz[i][j][k],d_dWdy_dz[i][j][k],
+                                                              Flow_Type,Grid.volume(i,j,k)) 
+                     << " " << W_node.Net_Rate_Change_Fsd(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k],
+                                                          d_dWdx_dx[i][j][k],d_dWdy_dy[i][j][k],d_dWdz_dz[i][j][k],
+                                                          d_dWdx_dy[i][j][k],d_dWdx_dz[i][j][k],d_dWdy_dz[i][j][k],
+                                                          Flow_Type,Grid.volume(i,j,k))<< "\n"; 
 
             Out_File.unsetf(ios::scientific);
          } /* endfor */
@@ -228,17 +230,17 @@ Output_Cells_Tecplot(Input_Parameters<LES3DFsd_pState,
                 << "\"Resolved_Propagation_Curvature\" \\ \n"
                 << "\"SFS_Strain\" \\ \n"
                 << "\"SFS_Curvature\" \\ \n"
-//                 << "\"Resolved_Curvature\" \\ \n"
-//                 << "\"Resolved_Propagation\" \\ \n"
+                << "\"Resolved_Curvature\" \\ \n"
+                << "\"Resolved_Propagation\" \\ \n"
                 << "\"Resolved_Convection_Progvar\" \\ \n"
-                << "\"Resolved_Convection_Fsd\" \\ \n";
-//                 << "\"NGT_Progvar\" \\ \n"
-//                 << "\"NGT_Fsd\" \\ \n"
-//                 << "\"SFS_Diffusion_Progvar\" \\ \n"
-//                 << "\"SFS_Diffusion_Fsd\" \\ \n"
-//                 << "\"Heat_Release_Strain\" \\ \n"
-//                 << "\"Net_Rate_Change_Progvar\" \\ \n"
-//                 << "\"Net_Rate_Change_Fsd\" \\ \n";
+                << "\"Resolved_Convection_Fsd\" \\ \n"
+                << "\"NGT_Progvar\" \\ \n"
+                << "\"NGT_Fsd\" \\ \n"
+                << "\"SFS_Diffusion_Progvar\" \\ \n"
+                << "\"SFS_Diffusion_Fsd\" \\ \n"
+                << "\"Heat_Release_Strain\" \\ \n"
+                << "\"Net_Rate_Change_Progvar\" \\ \n"
+                << "\"Net_Rate_Change_Fsd\" \\ \n";
 
       Out_File << "ZONE T =  \"Block Number = " << Block_Number
                << "\" \\ \n"
@@ -298,95 +300,95 @@ Output_Cells_Tecplot(Input_Parameters<LES3DFsd_pState,
                      << " " <<W[i][j][k].SFS_Curvature(dWdx[i][j][k],
                                                        dWdy[i][j][k],
                                                        dWdz[i][j][k])
-//                      << " " <<W[i][j][k].Resolved_Curvature(dWdx[i][j][k],
-//                                                             dWdy[i][j][k],
-//                                                             dWdz[i][j][k],
-//                                                             d_dWdx_dx[i][j][k],
-//                                                             d_dWdy_dy[i][j][k],
-//                                                             d_dWdz_dz[i][j][k],
-//                                                             d_dWdx_dy[i][j][k],
-//                                                             d_dWdx_dz[i][j][k],
-//                                                             d_dWdy_dz[i][j][k])
-//                      << " " <<W[i][j][k].Resolved_Propagation(dWdx[i][j][k],
-//                                                               dWdy[i][j][k],
-//                                                               dWdz[i][j][k],
-//                                                               d_dWdx_dx[i][j][k],
-//                                                               d_dWdy_dy[i][j][k],
-//                                                               d_dWdz_dz[i][j][k],
-//                                                               d_dWdx_dy[i][j][k],
-//                                                               d_dWdx_dz[i][j][k],
-//                                                               d_dWdy_dz[i][j][k])
+                     << " " <<W[i][j][k].Resolved_Curvature(dWdx[i][j][k],
+                                                            dWdy[i][j][k],
+                                                            dWdz[i][j][k],
+                                                            d_dWdx_dx[i][j][k],
+                                                            d_dWdy_dy[i][j][k],
+                                                            d_dWdz_dz[i][j][k],
+                                                            d_dWdx_dy[i][j][k],
+                                                            d_dWdx_dz[i][j][k],
+                                                            d_dWdy_dz[i][j][k])
+                     << " " <<W[i][j][k].Resolved_Propagation(dWdx[i][j][k],
+                                                              dWdy[i][j][k],
+                                                              dWdz[i][j][k],
+                                                              d_dWdx_dx[i][j][k],
+                                                              d_dWdy_dy[i][j][k],
+                                                              d_dWdz_dz[i][j][k],
+                                                              d_dWdx_dy[i][j][k],
+                                                              d_dWdx_dz[i][j][k],
+                                                              d_dWdy_dz[i][j][k])
                      << " " <<W[i][j][k].Resolved_Convection_Progvar(dWdx[i][j][k],
                                                                      dWdy[i][j][k],
                                                                      dWdz[i][j][k])
                      << " " <<W[i][j][k].Resolved_Convection_Fsd(dWdx[i][j][k],
                                                                  dWdy[i][j][k],
-                                                                 dWdz[i][j][k]);
-//                      << " " <<W[i][j][k].NGT_Progvar(dWdx[i][j][k],
-//                                                      dWdy[i][j][k],
-//                                                      dWdz[i][j][k])
-//                      << " " <<W[i][j][k].NGT_Fsd(dWdx[i][j][k],
-//                                                  dWdy[i][j][k],
-//                                                  dWdz[i][j][k],
-//                                                  d_dWdx_dx[i][j][k],
-//                                                  d_dWdy_dy[i][j][k],
-//                                                  d_dWdz_dz[i][j][k],
-//                                                  d_dWdx_dy[i][j][k],
-//                                                  d_dWdx_dz[i][j][k],
-//                                                  d_dWdy_dz[i][j][k])
-//                      << " " <<W[i][j][k].SFS_Diffusion_Progvar(dWdx[i][j][k],
-//                                                                dWdy[i][j][k],
-//                                                                dWdz[i][j][k],
-//                                                                d_dWdx_dx[i][j][k],
-//                                                                d_dWdy_dy[i][j][k],
-//                                                                d_dWdz_dz[i][j][k],
-//                                                                d_dWdx_dy[i][j][k],
-//                                                                d_dWdx_dz[i][j][k],
-//                                                                d_dWdy_dz[i][j][k],
-//                                                                Flow_Type,
-//                                                                Grid.volume(i,j,k))
-//                      << " " <<W[i][j][k].SFS_Diffusion_Fsd(dWdx[i][j][k],
-//                                                            dWdy[i][j][k],
-//                                                            dWdz[i][j][k],
-//                                                            d_dWdx_dx[i][j][k],
-//                                                            d_dWdy_dy[i][j][k],
-//                                                            d_dWdz_dz[i][j][k],
-//                                                            d_dWdx_dy[i][j][k],
-//                                                            d_dWdx_dz[i][j][k],
-//                                                            d_dWdy_dz[i][j][k],
-//                                                            Flow_Type,
-//                                                            Grid.volume(i,j,k))
-//                      << " " <<W[i][j][k].Heat_Release_Strain(dWdx[i][j][k],
-//                                                              dWdy[i][j][k],
-//                                                              dWdz[i][j][k],
-//                                                              d_dWdx_dx[i][j][k],
-//                                                              d_dWdy_dy[i][j][k],
-//                                                              d_dWdz_dz[i][j][k],
-//                                                              d_dWdx_dy[i][j][k],
-//                                                              d_dWdx_dz[i][j][k],
-//                                                              d_dWdy_dz[i][j][k])
-//                      << " " <<W[i][j][k].Net_Rate_Change_Progvar(dWdx[i][j][k],
-//                                                                  dWdy[i][j][k],
-//                                                                  dWdz[i][j][k],
-//                                                                  d_dWdx_dx[i][j][k],
-//                                                                  d_dWdy_dy[i][j][k],
-//                                                                  d_dWdz_dz[i][j][k],
-//                                                                  d_dWdx_dy[i][j][k],
-//                                                                  d_dWdx_dz[i][j][k],
-//                                                                  d_dWdy_dz[i][j][k],
-//                                                                  Flow_Type,
-//                                                                  Grid.volume(i,j,k))
-//                      << " " <<W[i][j][k].Net_Rate_Change_Fsd(dWdx[i][j][k],
-//                                                              dWdy[i][j][k],
-//                                                              dWdz[i][j][k],
-//                                                              d_dWdx_dx[i][j][k],
-//                                                              d_dWdy_dy[i][j][k],
-//                                                              d_dWdz_dz[i][j][k],
-//                                                              d_dWdx_dy[i][j][k],
-//                                                              d_dWdx_dz[i][j][k],
-//                                                              d_dWdy_dz[i][j][k],
-//                                                              Flow_Type,
-//                                                              Grid.volume(i,j,k));
+                                                                 dWdz[i][j][k])
+                     << " " <<W[i][j][k].NGT_Progvar(dWdx[i][j][k],
+                                                     dWdy[i][j][k],
+                                                     dWdz[i][j][k])
+                     << " " <<W[i][j][k].NGT_Fsd(dWdx[i][j][k],
+                                                 dWdy[i][j][k],
+                                                 dWdz[i][j][k],
+                                                 d_dWdx_dx[i][j][k],
+                                                 d_dWdy_dy[i][j][k],
+                                                 d_dWdz_dz[i][j][k],
+                                                 d_dWdx_dy[i][j][k],
+                                                 d_dWdx_dz[i][j][k],
+                                                 d_dWdy_dz[i][j][k])
+                     << " " <<W[i][j][k].SFS_Diffusion_Progvar(dWdx[i][j][k],
+                                                               dWdy[i][j][k],
+                                                               dWdz[i][j][k],
+                                                               d_dWdx_dx[i][j][k],
+                                                               d_dWdy_dy[i][j][k],
+                                                               d_dWdz_dz[i][j][k],
+                                                               d_dWdx_dy[i][j][k],
+                                                               d_dWdx_dz[i][j][k],
+                                                               d_dWdy_dz[i][j][k],
+                                                               Flow_Type,
+                                                               Grid.volume(i,j,k))
+                     << " " <<W[i][j][k].SFS_Diffusion_Fsd(dWdx[i][j][k],
+                                                           dWdy[i][j][k],
+                                                           dWdz[i][j][k],
+                                                           d_dWdx_dx[i][j][k],
+                                                           d_dWdy_dy[i][j][k],
+                                                           d_dWdz_dz[i][j][k],
+                                                           d_dWdx_dy[i][j][k],
+                                                           d_dWdx_dz[i][j][k],
+                                                           d_dWdy_dz[i][j][k],
+                                                           Flow_Type,
+                                                           Grid.volume(i,j,k))
+                     << " " <<W[i][j][k].Heat_Release_Strain(dWdx[i][j][k],
+                                                             dWdy[i][j][k],
+                                                             dWdz[i][j][k],
+                                                             d_dWdx_dx[i][j][k],
+                                                             d_dWdy_dy[i][j][k],
+                                                             d_dWdz_dz[i][j][k],
+                                                             d_dWdx_dy[i][j][k],
+                                                             d_dWdx_dz[i][j][k],
+                                                             d_dWdy_dz[i][j][k])
+                     << " " <<W[i][j][k].Net_Rate_Change_Progvar(dWdx[i][j][k],
+                                                                 dWdy[i][j][k],
+                                                                 dWdz[i][j][k],
+                                                                 d_dWdx_dx[i][j][k],
+                                                                 d_dWdy_dy[i][j][k],
+                                                                 d_dWdz_dz[i][j][k],
+                                                                 d_dWdx_dy[i][j][k],
+                                                                 d_dWdx_dz[i][j][k],
+                                                                 d_dWdy_dz[i][j][k],
+                                                                 Flow_Type,
+                                                                 Grid.volume(i,j,k))
+                     << " " <<W[i][j][k].Net_Rate_Change_Fsd(dWdx[i][j][k],
+                                                             dWdy[i][j][k],
+                                                             dWdz[i][j][k],
+                                                             d_dWdx_dx[i][j][k],
+                                                             d_dWdy_dy[i][j][k],
+                                                             d_dWdz_dz[i][j][k],
+                                                             d_dWdx_dy[i][j][k],
+                                                             d_dWdx_dz[i][j][k],
+                                                             d_dWdy_dz[i][j][k],
+                                                             Flow_Type,
+                                                             Grid.volume(i,j,k));
      Out_File.unsetf(ios::scientific);
          } /* endfor */
       } /* endfor */
@@ -462,19 +464,19 @@ Output_Nodes_Tecplot(Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs,
                <<"\"Reaction_Rate_Fsd\" \\ \n"  
                <<"\"Resolved_Strain\" \\ \n"  
                <<"\"Resolved_Propagation_Curvature\" \\ \n"  
-//                <<"\"Resolved_Curvature\" \\ \n"  
-//                <<"\"Resolved_Propagation\" \\ \n"  
+               <<"\"Resolved_Curvature\" \\ \n"  
+               <<"\"Resolved_Propagation\" \\ \n"  
                <<"\"SFS_Strain\" \\ \n"  
                <<"\"SFS_Curvature\" \\ \n"  
                <<"\"Resolved_Convection_Progvar\" \\ \n"  
-               <<"\"Resolved_Convection_Fsd\" \\ \n";  
-//                <<"\"NGT_Progvar\" \\ \n"  
-//                <<"\"NGT_Fsd\" \\ \n"  
-//                <<"\"SFS_Diffusion_Progvar\" \\ \n"  
-//                <<"\"SFS_Diffusion_Fsd\" \\ \n"  
-//                <<"\"Heat_Release_Strain\" \\ \n"  
-//                <<"\"Net_Rate_Change_Progvar\" \\ \n"  
-//                <<"\"Net_Rate_Change_Fsd\" \\ \n";
+               <<"\"Resolved_Convection_Fsd\" \\ \n"  
+               <<"\"NGT_Progvar\" \\ \n"  
+               <<"\"NGT_Fsd\" \\ \n"  
+               <<"\"SFS_Diffusion_Progvar\" \\ \n"  
+               <<"\"SFS_Diffusion_Fsd\" \\ \n"  
+               <<"\"Heat_Release_Strain\" \\ \n"  
+               <<"\"Net_Rate_Change_Progvar\" \\ \n"  
+               <<"\"Net_Rate_Change_Fsd\" \\ \n";
 
       
       Out_File<< "ZONE T =  \"Block Number = " << Block_Number
@@ -508,39 +510,39 @@ Output_Nodes_Tecplot(Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs,
                      << " " << W_node.Reaction_Rate_Fsd(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k]) 
                      << " " << W_node.Resolved_Strain(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k]) 
                      << " " << W_node.Resolved_Propagation_Curvature(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k]) 
-//                      << " " << W_node.Resolved_Curvature(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k],
-//                                                          d_dWdx_dx[i][j][k],d_dWdy_dy[i][j][k],d_dWdz_dz[i][j][k],
-//                                                          d_dWdx_dy[i][j][k],d_dWdx_dz[i][j][k],d_dWdy_dz[i][j][k]) 
-//                      << " " << W_node.Resolved_Propagation(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k],
-//                                                          d_dWdx_dx[i][j][k],d_dWdy_dy[i][j][k],d_dWdz_dz[i][j][k],
-//                                                          d_dWdx_dy[i][j][k],d_dWdx_dz[i][j][k],d_dWdy_dz[i][j][k])
+                     << " " << W_node.Resolved_Curvature(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k],
+                                                         d_dWdx_dx[i][j][k],d_dWdy_dy[i][j][k],d_dWdz_dz[i][j][k],
+                                                         d_dWdx_dy[i][j][k],d_dWdx_dz[i][j][k],d_dWdy_dz[i][j][k]) 
+                     << " " << W_node.Resolved_Propagation(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k],
+                                                         d_dWdx_dx[i][j][k],d_dWdy_dy[i][j][k],d_dWdz_dz[i][j][k],
+                                                         d_dWdx_dy[i][j][k],d_dWdx_dz[i][j][k],d_dWdy_dz[i][j][k])
                      << " " << W_node.SFS_Strain(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k],Flow_Type,Grid.volume(i,j,k)) 
                      << " " << W_node.SFS_Curvature(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k]) 
                      << " " << W_node.Resolved_Convection_Progvar(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k]) 
-                     << " " << W_node.Resolved_Convection_Fsd(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k]); 
-//                      << " " << W_node.NGT_Progvar(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k]) 
-//                      << " " << W_node.NGT_Fsd(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k],
-//                                               d_dWdx_dx[i][j][k],d_dWdy_dy[i][j][k],d_dWdz_dz[i][j][k],
-//                                               d_dWdx_dy[i][j][k],d_dWdx_dz[i][j][k],d_dWdy_dz[i][j][k]) 
-//                      << " " << W_node.SFS_Diffusion_Progvar(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k],
-//                                                             d_dWdx_dx[i][j][k],d_dWdy_dy[i][j][k],d_dWdz_dz[i][j][k],
-//                                                             d_dWdx_dy[i][j][k],d_dWdx_dz[i][j][k],d_dWdy_dz[i][j][k],
-//                                                             Flow_Type,Grid.volume(i,j,k)) 
-//                      << " " << W_node.SFS_Diffusion_Fsd(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k],
-//                                                         d_dWdx_dx[i][j][k],d_dWdy_dy[i][j][k],d_dWdz_dz[i][j][k],
-//                                                         d_dWdx_dy[i][j][k],d_dWdx_dz[i][j][k],d_dWdy_dz[i][j][k],
-//                                                         Flow_Type,Grid.volume(i,j,k)) 
-//                      << " " << W_node.Heat_Release_Strain(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k],
-//                                                           d_dWdx_dx[i][j][k],d_dWdy_dy[i][j][k],d_dWdz_dz[i][j][k],
-//                                                           d_dWdx_dy[i][j][k],d_dWdx_dz[i][j][k],d_dWdy_dz[i][j][k]) 
-//                      << " " << W_node.Net_Rate_Change_Progvar(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k],
-//                                                               d_dWdx_dx[i][j][k],d_dWdy_dy[i][j][k],d_dWdz_dz[i][j][k],
-//                                                               d_dWdx_dy[i][j][k],d_dWdx_dz[i][j][k],d_dWdy_dz[i][j][k],
-//                                                               Flow_Type,Grid.volume(i,j,k)) 
-//                      << " " << W_node.Net_Rate_Change_Fsd(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k],
-//                                                           d_dWdx_dx[i][j][k],d_dWdy_dy[i][j][k],d_dWdz_dz[i][j][k],
-//                                                           d_dWdx_dy[i][j][k],d_dWdx_dz[i][j][k],d_dWdy_dz[i][j][k],
-//                                                           Flow_Type,Grid.volume(i,j,k))<< "\n"; 
+                     << " " << W_node.Resolved_Convection_Fsd(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k]) 
+                     << " " << W_node.NGT_Progvar(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k]) 
+                     << " " << W_node.NGT_Fsd(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k],
+                                              d_dWdx_dx[i][j][k],d_dWdy_dy[i][j][k],d_dWdz_dz[i][j][k],
+                                              d_dWdx_dy[i][j][k],d_dWdx_dz[i][j][k],d_dWdy_dz[i][j][k]) 
+                     << " " << W_node.SFS_Diffusion_Progvar(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k],
+                                                            d_dWdx_dx[i][j][k],d_dWdy_dy[i][j][k],d_dWdz_dz[i][j][k],
+                                                            d_dWdx_dy[i][j][k],d_dWdx_dz[i][j][k],d_dWdy_dz[i][j][k],
+                                                            Flow_Type,Grid.volume(i,j,k)) 
+                     << " " << W_node.SFS_Diffusion_Fsd(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k],
+                                                        d_dWdx_dx[i][j][k],d_dWdy_dy[i][j][k],d_dWdz_dz[i][j][k],
+                                                        d_dWdx_dy[i][j][k],d_dWdx_dz[i][j][k],d_dWdy_dz[i][j][k],
+                                                        Flow_Type,Grid.volume(i,j,k)) 
+                     << " " << W_node.Heat_Release_Strain(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k],
+                                                          d_dWdx_dx[i][j][k],d_dWdy_dy[i][j][k],d_dWdz_dz[i][j][k],
+                                                          d_dWdx_dy[i][j][k],d_dWdx_dz[i][j][k],d_dWdy_dz[i][j][k]) 
+                     << " " << W_node.Net_Rate_Change_Progvar(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k],
+                                                              d_dWdx_dx[i][j][k],d_dWdy_dy[i][j][k],d_dWdz_dz[i][j][k],
+                                                              d_dWdx_dy[i][j][k],d_dWdx_dz[i][j][k],d_dWdy_dz[i][j][k],
+                                                              Flow_Type,Grid.volume(i,j,k)) 
+                     << " " << W_node.Net_Rate_Change_Fsd(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k],
+                                                          d_dWdx_dx[i][j][k],d_dWdy_dy[i][j][k],d_dWdz_dz[i][j][k],
+                                                          d_dWdx_dy[i][j][k],d_dWdx_dz[i][j][k],d_dWdy_dz[i][j][k],
+                                                          Flow_Type,Grid.volume(i,j,k))<< "\n"; 
 
             Out_File.unsetf(ios::scientific);
          } /* endfor */
@@ -599,13 +601,8 @@ ICs(const int i_ICtype,
 	      W[i][j][k] = W[i][j][k].premixed_mfrac(IPs.Wo,W[i][j][k]);
        	      W[i][j][k].rho = 1.13*W[ICu][j][k].Rtot()/W[i][j][k].Rtot()/(1.0+tau_fsd*W[i][j][k].C);
               W[i][j][k].v.x = 1.13*0.3837/W[i][j][k].rho;
-       	      W[i][j][k].Fsd = 4000.0*exp(-sqr(xx*4000.0))/sqrt(3.1415926)/W[i][j][k].rho;
-	      //	      if (Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY){
-		W[i][j][k].k = 0.0;
-// 	      }else if (Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K){
-//                 Linear_Reconstruction_LeastSquares(IPs.i_Limiter);
-// 		W[i][j][k].k = 0.005*sqr(W[i][j][k].filter_width(Grid.volume(i,j,k))*W[i][j][k].abs_strain_rate(dWdx[i][j][i][j],dWdy[i][j][k],dWdz[i][j][k]));
-// 	      }
+       	      W[i][j][k].Fsd = 3000.0*exp(-sqr(xx*4000.0))/sqrt(3.1415926)/W[i][j][k].rho;
+	      W[i][j][k].k = 0.0;
               U[i][j][k] = W[i][j][k].U();
 
             } /* endfor */
@@ -665,16 +662,22 @@ ICs(const int i_ICtype,
 //  	    } 
 	   
 	 }
-            if (Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K){
-                Linear_Reconstruction_LeastSquares(IPs.i_Limiter);
-		W[i][j][k].k = 0.005*sqr(W[i][j][k].filter_width(Grid.volume(i,j,k))*W[i][j][k].abs_strain_rate(dWdx[i][j][i][j],dWdy[i][j][k],dWdz[i][j][k]));
-	      }
-
 	    U[i][j][k] = W[i][j][k].U();
-	   }
+    }
 
       InFile.unsetf(ios::skipws);
       InFile.close();
+
+   if (Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K){ 
+     Linear_Reconstruction_LeastSquares(IPs.i_Limiter);
+     for (k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) 
+         for ( j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) 
+            for ( i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
+	      //       	      W[i][j][k].Fsd = 200.0*W[i][j][k].Fsd;
+ 		W[i][j][k].k = 0.005*sqr(W[i][j][k].filter_width(Grid.volume(i,j,k))*W[i][j][k].abs_strain_rate(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k]));
+  	        U[i][j][k] = W[i][j][k].U();
+ 	      }
+   }
 
      break;  
       

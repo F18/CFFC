@@ -1,7 +1,5 @@
-/* LES3DFsdInput.h:  Header file defining various 
-                     specializations for 
-                     LES3DFsd 
-                     solution input parameter class. */
+/* LES3DFsdInput.h:  Header file defining various specializations for 
+                     LES3DFsd solution input parameter class. */
 
 #ifndef _LES3DFSD_INPUT_INCLUDED
 #define _LES3DFSD_INPUT_INCLUDED
@@ -61,14 +59,13 @@ void Input_Parameters<LES3DFsd_pState,
     Uo.set_initial_values(Species_IP.mass_fractions);
 
     // Set reference solution states.
-    Wo.rho = 1.13;//Pressure/(Wo.Rtot()*Temperature); 
+    Wo.rho = 1.13; 
     Wo.p = Pressure;	
     Wo.v.zero();
-    Wo.v.x = 0.3837;//Mach_Number*Wo.a()*cos(TWO*PI*Flow_Angle/360.00);
+    Wo.v.x = 0.3837;
     Wo.k = 0.0;
     Wo.C = 0.0;
     Wo.Fsd = 0.0;
-    //    Wo.v.y = Mach_Number*Wo.a()*sin(TWO*PI*Flow_Angle/360.00);
     Uo = Wo.U();
 
 }

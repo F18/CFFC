@@ -366,7 +366,10 @@ ifeq ($(PLATFORM),Linux_ia64)
     CFLAGS = -w0 -O2 -mp -ftz 
     LDFLAGS = $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS)  $(BLKCLIB_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) $(CANTERA_LD_FLAGS) -limf
     ifeq ($(PROFILING),ON)
-      CXXFLAGS = -w0 -mp -ftz -g -p
+      FFLAGS   += -qp
+      CFLAGS   += -qp
+      CXXFLAGS += -qp
+      LDFLAGS  += -qp
     endif
     LD = $(CXX)
     DEPENDSFLAGS =
