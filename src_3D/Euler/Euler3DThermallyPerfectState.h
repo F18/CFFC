@@ -269,7 +269,7 @@ class Euler3D_ThermallyPerfect_pState {
    }
      
    //! Default destructor
-   ~Euler3D_ThermallyPerfect_pState() {
+   ~Euler3D_ThermallyPerfect_pState(void) {
       Deallocate(); 
    }
 //@}
@@ -901,7 +901,7 @@ class Euler3D_ThermallyPerfect_cState {
    }  
 
    //! Default destructor
-   ~Euler3D_ThermallyPerfect_cState(){ 
+   ~Euler3D_ThermallyPerfect_cState(void){ 
      Deallocate();
    }
 //@}

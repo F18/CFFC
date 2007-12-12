@@ -105,7 +105,7 @@ void Grid3D_Hexa_Multi_Block_Connectivity::Broadcast(void) {
       neighBSE_info[i_neigh].broadcast();
    } /* endfor */
 
-   boundary_element_on_grid_boundary.broadcast();
+   be.broadcast();
 #endif  
 
 }
@@ -412,6 +412,11 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid(Grid3D_Input_Parameters &Input) {
        Create_Grid_Cube(Input);
        break;
 
+     case GRID_PERIODIC_BOX :
+     case GRID_PERIODIC_BOX_WITH_INFLOW :
+       Create_Grid_Periodic_Box(Input);
+       break;
+
      case GRID_CHANNEL_XDIR :
      case GRID_CHANNEL_YDIR:
      case GRID_CHANNEL_ZDIR:
@@ -442,7 +447,7 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid(Grid3D_Input_Parameters &Input) {
    } /* endswitch */
 
    /* Call the function Find_Neighbours to obtain the neighbour block information
-      and assign values to data members in  grid block connectivity data structure. */
+      and assign values to data members in the grid block connectivity data structure. */
     
    Find_Neighbours(Input);
 
@@ -480,7 +485,6 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Cube(Grid3D_Input_Parameters &Inp
                                              Input.NCells_Idir,
                                              Input.NCells_Jdir,
 					     Input.Nghost);
-
 
    /* Create the mesh for each block representing
       the complete grid. */
@@ -531,6 +535,161 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Cube(Grid3D_Input_Parameters &Inp
    Grid2D_Box_XYplane = Deallocate_Multi_Block_Grid(Grid2D_Box_XYplane,
                                                     Input.NBlk_Idir, 
                                                     Input.NBlk_Jdir);
+
+}
+
+/********************************************************
+ * Routine: Create_Grid_Periodic_Box                    *
+ *                                                      *
+ * Generates a 3D Cartesian multiblock mesh for a box   *
+ * with periodic boundaries on all six boundaries.      *
+ *                                                      *
+ ********************************************************/
+void Grid3D_Hexa_Multi_Block_List::Create_Grid_Periodic_Box(Grid3D_Input_Parameters &Input) {
+
+   int nBlk;
+   int BC_top, BC_bottom;
+   Grid2D_Quad_Block **Grid2D_Box_XYplane;
+
+   /* Allocate required memory. */
+
+   Allocate(Input.NBlk_Idir, Input.NBlk_Jdir, Input.NBlk_Kdir);
+
+   /* Creat 2D cross-section grids from which the 3D grid
+      will be extruded. */
+    
+   Grid2D_Box_XYplane = Grid_Periodic_Box(Grid2D_Box_XYplane,
+                                          Input.NBlk_Idir, 
+                                          Input.NBlk_Jdir,
+                                          Input.Box_Width,
+                                          Input.Box_Height,
+                                          ON,
+					  Input.Stretching_Type_Idir,
+					  Input.Stretching_Type_Jdir,
+					  Input.Stretching_Factor_Idir,
+					  Input.Stretching_Factor_Jdir,
+                                          Input.NCells_Idir,
+                                          Input.NCells_Jdir,
+					  Input.Nghost);
+
+   /* Create the mesh for each block representing
+      the complete grid. */
+
+   for (int kBlk = 0; kBlk <= Input.NBlk_Kdir-1; ++kBlk) {
+      for (int jBlk = 0; jBlk <= Input.NBlk_Jdir-1; ++jBlk) {
+         for (int iBlk = 0; iBlk <= Input.NBlk_Idir-1; ++iBlk) {
+
+ 	    /* Determine grid block number */
+
+	   nBlk = iBlk + 
+                  jBlk*Input.NBlk_Idir + 
+                  kBlk*Input.NBlk_Idir*Input.NBlk_Jdir;
+
+            /* Extrude each of the grid blocks from the
+               appropriate 2D grid in XY-plane. */
+
+            Grid_Blks[nBlk].Extrude(Grid2D_Box_XYplane[iBlk][jBlk],
+                                    Input.NCells_Kdir,
+           	                    Input.Stretching_Type_Kdir,
+				    Input.Stretching_Factor_Kdir,
+                                    -HALF*Input.Box_Length+
+                                    (double(kBlk)/double(Input.NBlk_Kdir))*Input.Box_Length,
+                                    -HALF*Input.Box_Length+
+                                    (double(kBlk+1)/double(Input.NBlk_Kdir))*Input.Box_Length);
+
+            /* Assign top and bottom boundary conditions. */
+
+            if (kBlk == Input.NBlk_Kdir-1) {
+ 	       BC_top = BC_NONE;
+            } else {
+               BC_top = BC_NONE;
+            } /* endif */
+            if (kBlk == 0) {
+               BC_bottom = BC_NONE;
+            } else {
+               BC_bottom = BC_NONE;
+            } /* endif */
+
+            Grid_Blks[nBlk].Set_BCs_Zdir(BC_top, BC_bottom);
+
+	 } /* endfor */
+      } /* endfor */
+   } /* endfor */
+
+   /* Fix boundary conditions for case of inflow. */
+
+   if (Input.i_Grid == GRID_PERIODIC_BOX_WITH_INFLOW) {
+      for (int kBlk = 0; kBlk <= Input.NBlk_Kdir-1; ++kBlk) {
+         for (int jBlk = 0; jBlk <= Input.NBlk_Jdir-1; ++jBlk) {
+            for (int iBlk = 0; iBlk <= Input.NBlk_Idir-1; ++iBlk) {
+	       nBlk = iBlk + 
+                      jBlk*Input.NBlk_Idir + 
+                      kBlk*Input.NBlk_Idir*Input.NBlk_Jdir;
+               if (iBlk == 0 && iBlk == Input.NBlk_Idir-1) {
+                  Grid_Blks[nBlk].Set_BCs_Xdir(BC_OUTFLOW_SUBSONIC,
+                                               BC_INFLOW_SUBSONIC);
+               } else if (iBlk == 0) {
+                  Grid_Blks[nBlk].Set_BCs_Xdir(BC_NONE,
+                                               BC_INFLOW_SUBSONIC);
+               } else if (iBlk == Input.NBlk_Idir-1) {
+                  Grid_Blks[nBlk].Set_BCs_Xdir(BC_OUTFLOW_SUBSONIC,
+                                               BC_NONE);
+               } /* endif */
+	    } /* endfor */
+         } /* endfor */
+      } /* endfor */
+   } /* endif */
+
+   /* Deallocate 2D grid. */
+
+   Grid2D_Box_XYplane = Deallocate_Multi_Block_Grid(Grid2D_Box_XYplane,
+                                                    Input.NBlk_Idir, 
+                                                    Input.NBlk_Jdir);
+
+   /* Call the function Find_Neighbours to obtain the neighbour block information
+      and assign values to data members in the grid block connectivity data structure. */
+    
+   Find_Neighbours(Input);
+
+   /* At periodic boundaries, add additional grid block neighbour information. */
+
+   for (int kBlk = 0; kBlk <= Input.NBlk_Kdir-1; ++kBlk) {
+      for (int jBlk = 0; jBlk <= Input.NBlk_Jdir-1; ++jBlk) {
+         for (int iBlk = 0; iBlk <= Input.NBlk_Idir-1; ++iBlk) {
+
+ //                  Connectivity[nBLK].num_neighT = 
+//                   Connectivity[nBLK].neighT_info = 
+//                   Connectivity[nBLK].be.on_grid_boundary[BE::T] = 0;
+
+	    nBlk = iBlk + 
+                   jBlk*Input.NBlk_Idir + 
+                   kBlk*Input.NBlk_Idir*Input.NBlk_Jdir;
+
+            if (iBlk == 0) {
+
+            } /* endif */
+
+            if (iBlk == Input.NBlk_Idir-1) {
+
+            } /* endif */
+
+            if (jBlk == 0 && jBlk == Input.NBlk_Jdir-1) {
+
+   	    } else if (jBlk == 0) {
+
+            } else if (jBlk == Input.NBlk_Jdir-1) {
+
+            } /* endif */
+            if (kBlk == 0 && kBlk == Input.NBlk_Kdir-1) {
+
+   	    } else if (kBlk == 0) {
+
+            } else if (kBlk == Input.NBlk_Kdir-1) {
+
+            } /* endif */
+         } /* endfor */
+      } /* endfor */
+   } /* endfor */
 
 }
 
@@ -1459,7 +1618,7 @@ void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Inpu
                                                                       Connectivity[iblk].neighT);
          } /* endif */
          if (blkConn.at_domain_extent(iblk, BlkC::IAll, BlkC::JAll, BlkC::KMax)) {
-            Connectivity[iblk].boundary_element_on_grid_boundary.boundary_element_on_domain_extent[BE::T] = 1;
+            Connectivity[iblk].be.on_grid_boundary[BE::T] = 1;
          } /* endif */
          
 	 /* Bottom neigbour */ 
@@ -1479,7 +1638,7 @@ void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Inpu
                                                                       Connectivity[iblk].neighB);
 	 } /* endif */
          if (blkConn.at_domain_extent(iblk, BlkC::IAll, BlkC::JAll, BlkC::KMin)) {
-            Connectivity[iblk].boundary_element_on_grid_boundary.boundary_element_on_domain_extent[BE::B] = 1;
+            Connectivity[iblk].be.on_grid_boundary[BE::B] = 1;
          } /* endif */
 
 	 /* North neigbour */ 
@@ -1499,7 +1658,7 @@ void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Inpu
                                                                       Connectivity[iblk].neighN);
 	 } /* endif */
          if (blkConn.at_domain_extent(iblk, BlkC::IAll, BlkC::JMax, BlkC::KAll)) {
-            Connectivity[iblk].boundary_element_on_grid_boundary.boundary_element_on_domain_extent[BE::N] = 1;
+            Connectivity[iblk].be.on_grid_boundary[BE::N] = 1;
          } /* endif */
 
 	 /* South neigbour */ 
@@ -1519,7 +1678,7 @@ void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Inpu
                                                                       Connectivity[iblk].neighS);
          } /* endif */
          if (blkConn.at_domain_extent(iblk, BlkC::IAll, BlkC::JMin, BlkC::KAll)) {
-            Connectivity[iblk].boundary_element_on_grid_boundary.boundary_element_on_domain_extent[BE::S] = 1;
+            Connectivity[iblk].be.on_grid_boundary[BE::S] = 1;
          } /* endif */
 
 	 /* East neigbour */ 
@@ -1539,7 +1698,7 @@ void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Inpu
                                                                       Connectivity[iblk].neighE);
 	 } /* endif */
          if (blkConn.at_domain_extent(iblk, BlkC::IMax, BlkC::JAll, BlkC::KAll)) {
-            Connectivity[iblk].boundary_element_on_grid_boundary.boundary_element_on_domain_extent[BE::E] = 1;
+            Connectivity[iblk].be.on_grid_boundary[BE::E] = 1;
          } /* endif */
          
 	 /* West neigbour */ 
@@ -1559,7 +1718,7 @@ void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Inpu
                                                                       Connectivity[iblk].neighW);
          } /* endif */
          if (blkConn.at_domain_extent(iblk, BlkC::IMin, BlkC::JAll, BlkC::KAll)) {
-            Connectivity[iblk].boundary_element_on_grid_boundary.boundary_element_on_domain_extent[BE::W] = 1;
+            Connectivity[iblk].be.on_grid_boundary[BE::W] = 1;
          } /* endif */
 
 	 /* Top-North neighbour */ 
@@ -1579,7 +1738,7 @@ void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Inpu
                                                                                 Connectivity[iblk].neighTN[i_neigh]);
          } /* endfor */
          if (blkConn.at_domain_extent(iblk,BlkC::IAll, BlkC::JMax, BlkC::KMax)) {
-            Connectivity[iblk].boundary_element_on_grid_boundary.boundary_element_on_domain_extent[BE::TN] = 1;
+            Connectivity[iblk].be.on_grid_boundary[BE::TN] = 1;
          } /* endif */
 
 	 /* Top-South neighbour */ 
@@ -1599,7 +1758,7 @@ void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Inpu
                                                                                 Connectivity[iblk].neighTS[i_neigh]);
          } /* endfor */
          if (blkConn.at_domain_extent(iblk, BlkC::IAll, BlkC::JMin, BlkC::KMax)) {
-            Connectivity[iblk].boundary_element_on_grid_boundary.boundary_element_on_domain_extent[BE::TS] = 1;
+            Connectivity[iblk].be.on_grid_boundary[BE::TS] = 1;
          } /* endif */
 
 	 /* Top-West neighbour */ 
@@ -1619,7 +1778,7 @@ void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Inpu
                                                                                 Connectivity[iblk].neighTW[i_neigh]);
          } /* endfor */
          if (blkConn.at_domain_extent(iblk, BlkC::IMin, BlkC::JAll, BlkC::KMax)) {
-            Connectivity[iblk].boundary_element_on_grid_boundary.boundary_element_on_domain_extent[BE::TW] = 1;
+            Connectivity[iblk].be.on_grid_boundary[BE::TW] = 1;
          } /* endif */
 
 	 /* Top-East neighbour */ 
@@ -1639,7 +1798,7 @@ void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Inpu
                                                                                 Connectivity[iblk].neighTE[i_neigh]);
          } /* endfor */
          if (blkConn.at_domain_extent(iblk, BlkC::IMax, BlkC::JAll, BlkC::KMax)) {
-            Connectivity[iblk].boundary_element_on_grid_boundary.boundary_element_on_domain_extent[BE::TE] = 1;
+            Connectivity[iblk].be.on_grid_boundary[BE::TE] = 1;
          } /* endif */
 
 	 /* Bottom-North neighbour */ 
@@ -1659,7 +1818,7 @@ void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Inpu
                                                                                 Connectivity[iblk].neighBN[i_neigh]);
          } /* endfor */
          if (blkConn.at_domain_extent(iblk,  BlkC::IAll, BlkC::JMax, BlkC::KMin)) {
-            Connectivity[iblk].boundary_element_on_grid_boundary.boundary_element_on_domain_extent[BE::BN] = 1;
+            Connectivity[iblk].be.on_grid_boundary[BE::BN] = 1;
          } /* endif */
          
 	 /* Bottom-South neighbour */ 
@@ -1679,7 +1838,7 @@ void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Inpu
                                                                                 Connectivity[iblk].neighBS[i_neigh]);
          } /* endfor */
          if (blkConn.at_domain_extent(iblk, BlkC::IAll, BlkC::JMin, BlkC::KMin)) {
-            Connectivity[iblk].boundary_element_on_grid_boundary.boundary_element_on_domain_extent[BE::BS] = 1;
+            Connectivity[iblk].be.on_grid_boundary[BE::BS] = 1;
          } /* endif */
 
 	 /* Bottom-West neighbour */ 
@@ -1699,7 +1858,7 @@ void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Inpu
                                                                                 Connectivity[iblk].neighBW[i_neigh]);
          } /* endfor */
          if (blkConn.at_domain_extent(iblk,  BlkC::IMin, BlkC::JAll, BlkC::KMin)) {
-            Connectivity[iblk].boundary_element_on_grid_boundary.boundary_element_on_domain_extent[BE::BW] = 1;
+            Connectivity[iblk].be.on_grid_boundary[BE::BW] = 1;
          } /* endif */
 
 	 /* Bottom-East neighbour */ 
@@ -1719,7 +1878,7 @@ void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Inpu
                                                                                 Connectivity[iblk].neighBE[i_neigh]);
          } /* endfor */
          if (blkConn.at_domain_extent(iblk,  BlkC::IMax, BlkC::JAll, BlkC::KMin)) {
-            Connectivity[iblk].boundary_element_on_grid_boundary.boundary_element_on_domain_extent[BE::BE] = 1;
+            Connectivity[iblk].be.on_grid_boundary[BE::BE] = 1;
          } /* endif */
 
 	 /* North-West neighbour */ 
@@ -1739,7 +1898,7 @@ void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Inpu
                                                                                 Connectivity[iblk].neighNW[i_neigh]);
          } /* endfor */
          if (blkConn.at_domain_extent(iblk, BlkC::IMin, BlkC::JMax, BlkC::KAll)) {
-            Connectivity[iblk].boundary_element_on_grid_boundary.boundary_element_on_domain_extent[BE::NW] = 1;
+            Connectivity[iblk].be.on_grid_boundary[BE::NW] = 1;
          } /* endif */
          
 	 /* North-East neighbour */ 
@@ -1759,7 +1918,7 @@ void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Inpu
                                                                                 Connectivity[iblk].neighNE[i_neigh]);
          } /* endfor */
          if (blkConn.at_domain_extent(iblk, BlkC::IMax, BlkC::JMax, BlkC::KAll)) {
-            Connectivity[iblk].boundary_element_on_grid_boundary.boundary_element_on_domain_extent[BE::NE] = 1;
+            Connectivity[iblk].be.on_grid_boundary[BE::NE] = 1;
          } /* endif */
 
 
@@ -1780,7 +1939,7 @@ void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Inpu
                                                                                 Connectivity[iblk].neighSE[i_neigh]);
          } /* endfor */
          if (blkConn.at_domain_extent(iblk, BlkC::IMax, BlkC::JMin, BlkC::KAll)) {
-            Connectivity[iblk].boundary_element_on_grid_boundary.boundary_element_on_domain_extent[BE::SE] = 1;
+            Connectivity[iblk].be.on_grid_boundary[BE::SE] = 1;
          } /* endif */
 
 	 /* South-West neighbour */ 
@@ -1800,7 +1959,7 @@ void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Inpu
                                                                                 Connectivity[iblk].neighSW[i_neigh]);
          } /* endfor */
          if (blkConn.at_domain_extent(iblk,  BlkC::IMin, BlkC::JMin, BlkC::KAll)) {
-            Connectivity[iblk].boundary_element_on_grid_boundary.boundary_element_on_domain_extent[BE::SW] = 1;
+            Connectivity[iblk].be.on_grid_boundary[BE::SW] = 1;
          } /* endif */
 
 	 /* Top-North-West neighbour */ 
@@ -1820,7 +1979,7 @@ void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Inpu
                                                                                  Connectivity[iblk].neighTNW[i_neigh]);
          } /* endfor */
          if (blkConn.at_domain_extent(iblk,  BlkC::IMin, BlkC::JMax, BlkC::KMax)) {
-            Connectivity[iblk].boundary_element_on_grid_boundary.boundary_element_on_domain_extent[BE::TNW] = 1;
+            Connectivity[iblk].be.on_grid_boundary[BE::TNW] = 1;
          } /* endif */
 
 	 /* Top-South-West neighbour */
@@ -1840,7 +1999,7 @@ void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Inpu
                                                                                  Connectivity[iblk].neighTSW[i_neigh]);
          } /* endfor */
          if (blkConn.at_domain_extent(iblk,  BlkC::IMin, BlkC::JMin, BlkC::KMax)) {
-            Connectivity[iblk].boundary_element_on_grid_boundary.boundary_element_on_domain_extent[BE::TSW] = 1;
+            Connectivity[iblk].be.on_grid_boundary[BE::TSW] = 1;
          } /* endif */
          
 	 /* Top-North-East neighbour */
@@ -1860,7 +2019,7 @@ void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Inpu
                                                                                  Connectivity[iblk].neighTNE[i_neigh]);
          } /* endfor */
          if (blkConn.at_domain_extent(iblk,  BlkC::IMax, BlkC::JMax, BlkC::KMax)) {
-            Connectivity[iblk].boundary_element_on_grid_boundary.boundary_element_on_domain_extent[BE::TNE] = 1;
+            Connectivity[iblk].be.on_grid_boundary[BE::TNE] = 1;
          } /* endif */
 
 	 /* Top-South-East neighbour */
@@ -1880,7 +2039,7 @@ void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Inpu
                                                                                  Connectivity[iblk].neighTSE[i_neigh]);
          } /* endfor */
          if (blkConn.at_domain_extent(iblk,   BlkC::IMax, BlkC::JMin, BlkC::KMax)) {
-            Connectivity[iblk].boundary_element_on_grid_boundary.boundary_element_on_domain_extent[BE::TSE] = 1;
+            Connectivity[iblk].be.on_grid_boundary[BE::TSE] = 1;
          } /* endif */
 
 	 /* Bottom-North-West neighbour */
@@ -1900,7 +2059,7 @@ void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Inpu
                                                                                  Connectivity[iblk].neighBNW[i_neigh]);
          } /* endfor */
          if (blkConn.at_domain_extent(iblk,   BlkC::IMin, BlkC::JMax, BlkC::KMin)) {
-            Connectivity[iblk].boundary_element_on_grid_boundary.boundary_element_on_domain_extent[BE::BNW] = 1;
+            Connectivity[iblk].be.on_grid_boundary[BE::BNW] = 1;
          } /* endif */
 
 	 /* Bottom-South-West neighbour */
@@ -1920,7 +2079,7 @@ void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Inpu
                                                                                  Connectivity[iblk].neighBSW[i_neigh]);
          } /* endfor */
          if (blkConn.at_domain_extent(iblk,   BlkC::IMin, BlkC::JMin, BlkC::KMin)) {
-            Connectivity[iblk].boundary_element_on_grid_boundary.boundary_element_on_domain_extent[BE::BSW] = 1;
+            Connectivity[iblk].be.on_grid_boundary[BE::BSW] = 1;
          } /* endif */
 
 	 /* Bottom-North-East neighbour */
@@ -1940,7 +2099,7 @@ void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Inpu
                                                                                  Connectivity[iblk].neighBNE[i_neigh]);
          } /* endfor */
          if (blkConn.at_domain_extent(iblk,   BlkC::IMax, BlkC::JMax, BlkC::KMin)) {
-            Connectivity[iblk].boundary_element_on_grid_boundary.boundary_element_on_domain_extent[BE::BNE] = 1;
+            Connectivity[iblk].be.on_grid_boundary[BE::BNE] = 1;
          } /* endif */
 
 	 /* Bottom-South-East neighbour */
@@ -1960,7 +2119,7 @@ void Grid3D_Hexa_Multi_Block_List::Find_Neighbours(Grid3D_Input_Parameters &Inpu
                                                                                  Connectivity[iblk].neighBSE[i_neigh]);
          } /* endfor */
          if (blkConn.at_domain_extent(iblk,  BlkC::IMax, BlkC::JMin, BlkC::KMin)) {
-            Connectivity[iblk].boundary_element_on_grid_boundary.boundary_element_on_domain_extent[BE::BSE] = 1;
+            Connectivity[iblk].be.on_grid_boundary[BE::BSE] = 1;
          } /* endif */
 
          if (Connectivity[iblk].num_neighT > 1 ||

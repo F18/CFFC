@@ -216,6 +216,8 @@ inline char *Date_And_Time() {
 #define GRID_COUETTE_XDIR                    28
 #define GRID_COUETTE_YDIR                    29
 #define GRID_BLUFF_BODY_BURNER               30
+#define GRID_PERIODIC_BOX                    31
+#define GRID_PERIODIC_BOX_WITH_INFLOW        32
 
 #define GRID_ICEMCFD                       1000
 #define GRID_READ_FROM_DEFINITION_FILE    10000

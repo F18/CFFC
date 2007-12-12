@@ -102,7 +102,7 @@ class Grid3D_Hexa_Multi_Block_Connectivity {
                            neighBSE_info[GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS];
 
    //! Compact transformation matrix for grid blocks sharing each of the eight (8) corners of the block
-   Block_Boundary_Elements_on_Domain_Extent boundary_element_on_grid_boundary;
+   Block_Boundary_Elements_on_Domain_Extent be;
    
    //! Creation constructor
    Grid3D_Hexa_Multi_Block_Connectivity(void) :
@@ -200,6 +200,8 @@ class Grid3D_Hexa_Multi_Block_List {
     void Create_Grid(Grid3D_Input_Parameters &Input);
 
     void Create_Grid_Cube(Grid3D_Input_Parameters &Input);
+
+    void Create_Grid_Periodic_Box(Grid3D_Input_Parameters &Input);
 
     void Create_Grid_Channel(Grid3D_Input_Parameters &Input);
 

@@ -555,30 +555,30 @@ FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_pState::Fy(
  ***************************************************************************************/
 FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_pState::Fz(void) {
    FANS3D_ThermallyPerfect_KOmega_cState Temp;
-   Temp.rho = rho*v.y;
-   Temp.rhov.x = rho*v.x*v.y;
-   Temp.rhov.y = rho*sqr(v.y) + p + (TWO/THREE)*rho*k;
-   Temp.rhov.z = rho*v.y*v.z;
-   Temp.E = v.y*(H() + (TWO/THREE)*rho*k);
-   Temp.rhok = rho*v.y*k;
-   Temp.rhoomega = rho*v.y*omega;
+   Temp.rho = rho*v.z;
+   Temp.rhov.x = rho*v.x*v.z;
+   Temp.rhov.y = rho*v.y*v.z;
+   Temp.rhov.z = rho*sqr(v.z) + p + (TWO/THREE)*rho*k;;
+   Temp.E = v.z*(H() + (TWO/THREE)*rho*k);
+   Temp.rhok = rho*v.z*k;
+   Temp.rhoomega = rho*v.z*omega;
    for (int i = 0; i < ns; i++) {
-      Temp.rhospec[i].c = rho*v.y*spec[i].c;
+      Temp.rhospec[i].c = rho*v.z*spec[i].c;
    } /* endfor */
    return (Temp);
 }
 
 FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_pState::Fz(void) const {
    FANS3D_ThermallyPerfect_KOmega_cState Temp;
-   Temp.rho = rho*v.y;
-   Temp.rhov.x = rho*v.x*v.y;
-   Temp.rhov.y = rho*sqr(v.y) + p + (TWO/THREE)*rho*k;
-   Temp.rhov.z = rho*v.y*v.z;
-   Temp.E = v.y*(H() + (TWO/THREE)*rho*k);
-   Temp.rhok = rho*v.y*k;
-   Temp.rhoomega = rho*v.y*omega;
+   Temp.rho = rho*v.z;
+   Temp.rhov.x = rho*v.x*v.z;
+   Temp.rhov.y = rho*v.y*v.z;
+   Temp.rhov.z = rho*sqr(v.z) + p + (TWO/THREE)*rho*k;;
+   Temp.E = v.z*(H() + (TWO/THREE)*rho*k);
+   Temp.rhok = rho*v.z*k;
+   Temp.rhoomega = rho*v.z*omega;
    for (int i = 0; i < ns; i++) {
-      Temp.rhospec[i].c = rho*v.y*spec[i].c;
+      Temp.rhospec[i].c = rho*v.z*spec[i].c;
    } /* endfor */
    return (Temp);
 }

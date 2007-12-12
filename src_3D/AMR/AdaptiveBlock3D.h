@@ -431,9 +431,9 @@ class AdaptiveBlock3D_Info {
     AdaptiveBlock3D_Dimensions                              dimen; // Adaptive block dimensions. 
     int                                                    sector; // Adaptive block sector number.
     int                                                     level; // Adaptive block refinement level.
-    Block_Orientation_Info                              blkorient; // Block orientation information
-    Block_Boundary_Elements_on_Domain_Extent  be_on_grid_boundary; // 
-       	                                                           // Made public so can access them.
+    Block_Orientation_Info                              blkorient; // Block orientation information.
+    Block_Boundary_Elements_on_Domain_Extent                   be; // Block boundary element on grid
+       	                                                           // boundary indicator.
     
     /* Creation, copy, and assignment constructors. */
     AdaptiveBlock3D_Info(void) {
@@ -444,7 +444,7 @@ class AdaptiveBlock3D_Info {
     AdaptiveBlock3D_Info(const AdaptiveBlock3D_Info &Blk_Info) {
        cpu = Blk_Info.cpu; blknum = Blk_Info.blknum;
        dimen = Blk_Info.dimen; sector = Blk_Info.sector; level = Blk_Info.level;
-       blkorient = Blk_Info.blkorient; be_on_grid_boundary = Blk_Info.be_on_grid_boundary;
+       blkorient = Blk_Info.blkorient; be = Blk_Info.be;
     }
 
     AdaptiveBlock3D_Info(const int i_processor,
@@ -456,11 +456,11 @@ class AdaptiveBlock3D_Info {
                          const int i_sector,
 	                 const int i_level,
                          const Block_Orientation_Info i_blkorient,
-                         const Block_Boundary_Elements_on_Domain_Extent i_on_grid_boundary) {
+                         const Block_Boundary_Elements_on_Domain_Extent i_be) {
        cpu = i_processor; blknum = i_block;
        dimen.i = i_dimen; dimen.j = j_dimen;dimen.k = k_dimen; dimen.ghost = ghost_dimen;
        sector = i_sector; level = i_level; 
-       blkorient = i_blkorient; be_on_grid_boundary = i_on_grid_boundary;
+       blkorient = i_blkorient; be = i_be;
     }
 
     /* Destructor. */
@@ -504,7 +504,7 @@ inline AdaptiveBlock3D_Info &AdaptiveBlock3D_Info::
 operator =(const AdaptiveBlock3D_Info &Blk_Info) {
   cpu = Blk_Info.cpu; blknum = Blk_Info.blknum;
   dimen = Blk_Info.dimen; sector = Blk_Info.sector; level = Blk_Info.level;
-  blkorient = Blk_Info.blkorient; be_on_grid_boundary = Blk_Info.be_on_grid_boundary;  
+  blkorient = Blk_Info.blkorient; be = Blk_Info.be;  
 }
 
 /*************************************************************
@@ -517,7 +517,7 @@ inline ostream &operator << (ostream &out_file,
            << " " << Blk_Info.sector
            << " " << Blk_Info.level;
   out_file << " " << Blk_Info.blkorient;
-  out_file << " " << Blk_Info.be_on_grid_boundary;
+  out_file << " " << Blk_Info.be;
   return (out_file);
 }
 
@@ -532,7 +532,7 @@ inline istream &operator >> (istream &in_file,
   in_file.unsetf(ios::skipws);
   in_file.setf(ios::skipws);
   in_file >> Blk_Info.blkorient;
-  in_file >> Blk_Info.be_on_grid_boundary;
+  in_file >> Blk_Info.be;
   return (in_file);
 }
 

@@ -249,7 +249,7 @@ class FANS3D_ThermallyPerfect_KOmega_pState : public NavierStokes3D_ThermallyPer
    }
 
    //! Default destructor
-   ~FANS3D_ThermallyPerfect_KOmega_pState() {
+   ~FANS3D_ThermallyPerfect_KOmega_pState(void) {
       Deallocate();
    }
 //@}
@@ -295,7 +295,7 @@ class FANS3D_ThermallyPerfect_KOmega_pState : public NavierStokes3D_ThermallyPer
    //! Eddy (turbulent) viscosity
    double mu_t(void);      
 
-   //! Turbulent) thermal conductivity
+   //! Turbulent thermal conductivity
    double kappa_t(void);      
 
    //! Species turbulent diffusion coefficient
@@ -669,7 +669,7 @@ class FANS3D_ThermallyPerfect_KOmega_pState : public NavierStokes3D_ThermallyPer
 };
 
 /*!
- * Class: FANS3D_ThermallyPerfect_KOmega_pState
+ * Class: FANS3D_ThermallyPerfect_KOmega_cState
  *
  * \brief Conserved state solution class for 3D Favre-average Navier-Stokes
  *        equations with k-omega turbulence model governing flows of thermally 
@@ -802,7 +802,7 @@ class FANS3D_ThermallyPerfect_KOmega_cState : public NavierStokes3D_ThermallyPer
    }
    
    //! Default destructor
-   ~FANS3D_ThermallyPerfect_KOmega_cState() {
+   ~FANS3D_ThermallyPerfect_KOmega_cState(void) {
       Deallocate();
    }
 //@}

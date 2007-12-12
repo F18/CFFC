@@ -35,8 +35,12 @@ class  Block_Orientation_Info {
     
     // constructor
     Block_Orientation_Info(void){
-       ctm_offsets[0] = 1 ; ctm_offsets[1] = 1 ;  ctm_offsets[2] = 1 ;
-       ctm_offsets[3] = 0 ; ctm_offsets[4] = 0 ;  ctm_offsets[5] = 0  ;  
+       ctm_offsets[0] = 1 ; 
+       ctm_offsets[1] = 1 ;  
+       ctm_offsets[2] = 1 ;
+       ctm_offsets[3] = 0 ; 
+       ctm_offsets[4] = 0 ;  
+       ctm_offsets[5] = 0  ;  
        direction_me_to_neighbour[0] = 0 ; 
        direction_me_to_neighbour[1] = 0 ;
        direction_me_to_neighbour[2] = 0 ; 
@@ -120,7 +124,6 @@ inline ostream &operator << (ostream &out_file,
    for(int i = 0; i<3; i++) {
       out_file << " " << BlkIO.direction_neighbour_to_me[i];
    } // output directions
-   
    out_file.unsetf(ios::scientific);
    return (out_file);
 }
@@ -144,12 +147,12 @@ inline istream &operator >> (istream &in_file,
 
 class  Block_Boundary_Elements_on_Domain_Extent {
   public:
-    int  boundary_element_on_domain_extent[MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK]; 
+    int on_grid_boundary[MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK]; 
    
     // constructor
     Block_Boundary_Elements_on_Domain_Extent(void) {
       for (int elem = 0; elem < MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK; elem++) {
-         boundary_element_on_domain_extent[elem] = 0;
+         on_grid_boundary[elem] = 0;
          // 0 means this boundary element is not on the domain extent.
       } /* endfor */
     }
@@ -159,26 +162,25 @@ class  Block_Boundary_Elements_on_Domain_Extent {
     void broadcast(void);
    
     // assignment operator 
-    Block_Boundary_Elements_on_Domain_Extent &operator =(const Block_Boundary_Elements_on_Domain_Extent  
-                                                         &be_on_domain_extent); 
+    Block_Boundary_Elements_on_Domain_Extent &operator =(const Block_Boundary_Elements_on_Domain_Extent &BEs); 
    
     /* Input-output operators. */
 
     friend ostream& operator << (ostream &out_file, 
-                                 const  Block_Boundary_Elements_on_Domain_Extent &be_on_grid_boundary);
+                                 const Block_Boundary_Elements_on_Domain_Extent &BEs);
    
     friend istream& operator >> (istream &in_file,  
-                                 const Block_Boundary_Elements_on_Domain_Extent &be_on_grid_boundary);
+                                 const Block_Boundary_Elements_on_Domain_Extent &BEs);
 };
 
 //----------------- Assignment ----------------------------//
 inline Block_Boundary_Elements_on_Domain_Extent &Block_Boundary_Elements_on_Domain_Extent::
-operator =(const Block_Boundary_Elements_on_Domain_Extent &be_on_grid_boundary) {
+operator =(const Block_Boundary_Elements_on_Domain_Extent &BEs) {
    //self assignment protection
-   if (this != &be_on_grid_boundary) {   
+   if (this != &BEs) {   
       //copy assignment
       for (int i = 0; i < MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK; i++) {
-         boundary_element_on_domain_extent[i] = be_on_grid_boundary.boundary_element_on_domain_extent[i];
+         on_grid_boundary[i] = BEs.on_grid_boundary[i];
       } // endfor boundary elements on domain extent   
    } /* endif */
    return (*this);
@@ -188,23 +190,23 @@ operator =(const Block_Boundary_Elements_on_Domain_Extent &be_on_grid_boundary) 
  * Block_Boundary_Elements_on_Domain_Extent -- Input-output operators.            *
  **********************************************************************************/
 inline ostream &operator << (ostream &out_file, 
-                             const Block_Boundary_Elements_on_Domain_Extent &be_on_grid_boundary) {
+                             const Block_Boundary_Elements_on_Domain_Extent &BEs) {
    out_file.precision(10);
    out_file.setf(ios::scientific);
    for (int i = 0; i < MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK; i++) {
-      out_file << " " << be_on_grid_boundary.boundary_element_on_domain_extent[i];
-   } // output ctm and offsets
+      out_file << " " << BEs.on_grid_boundary[i];
+   } /* endfor */
    out_file.unsetf(ios::scientific);
    return (out_file);
 }
 
 inline istream &operator >> (istream &in_file, 
-                             Block_Boundary_Elements_on_Domain_Extent &be_on_grid_boundary) {
+                             Block_Boundary_Elements_on_Domain_Extent &BEs) {
    in_file.precision(10);
    in_file.setf(ios::scientific);
    for (int i = 0; i < MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK; i++) {
-      in_file >> be_on_grid_boundary.boundary_element_on_domain_extent[i];
-   } // output ctm and offsets
+      in_file >> BEs.on_grid_boundary[i];
+   } /* endfor */
    in_file.unsetf(ios::scientific);
    return (in_file);
 }
