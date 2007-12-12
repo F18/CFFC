@@ -1074,10 +1074,10 @@ LES3DFsd_pState LES3DFsd_pState::lp_x(const int &index) const {
 }
 
 /***********************************************************
- * LES3DFsd_pState::Mr2 -- Square of Mach number            *
+ * LES3DFsd_pState::Mr2 -- Square of Mach number           *
  ***********************************************************/
 double LES3DFsd_pState::Mr2(const double &deltax, const double &lengthx, const double &dTime) const {
-    double c = a();
+    double c = a_t();
     double MR2 = min(max((v.sqr()/(c*c)),Mref*Mref),ONE);
     MR2 = pow(max(sqrt(MR2*c*c), mu()/(rho*deltax)),2.0)/(c*c);
     double MR_uns = (lengthx/(PI*dTime))/c;  // ZERO;
@@ -1097,7 +1097,7 @@ double LES3DFsd_pState::Mr2(const double &deltax, const double &lengthx, const d
  * LES3DFsd_pState::u_a_precon -- Preconditioned velocity and soundspeed           *
  ***********************************************************************************/
 void LES3DFsd_pState::u_a_precon(const double &UR2, double &uprimed, double &cprimed) const{
-  double alpha = HALF*(ONE - ONE/(a()*a())*UR2);
+  double alpha = HALF*(ONE - ONE/(a_t()*a_t())*UR2);
   uprimed = v.x*(ONE - alpha);
   cprimed = sqrt(alpha*alpha*v.x*v.x + UR2); 
 }
@@ -1108,9 +1108,9 @@ void LES3DFsd_pState::u_a_precon(const double &UR2, double &uprimed, double &cpr
  ******************************************************************************/
 LES3DFsd_cState LES3DFsd_pState::rc_x_precon(const int &index, const double &MR2) const {
     double uprimed,cprimed;
-    double c = a();
+    double c = a_t();
     double eta_fsd = Progvar_Species_Grad();
-    u_a_precon(MR2*a()*a(),uprimed,cprimed);
+    u_a_precon(MR2*c*c,uprimed,cprimed);
    switch(index){  
    case 1:
      return (LES3DFsd_cState(ONE, (uprimed-cprimed)/MR2, v.y, v.z, h()+(v.sqr()/MR2)/TWO+FIVE*k/THREE-(v.x*cprimed)/MR2, C, Fsd, k));
@@ -1137,8 +1137,8 @@ LES3DFsd_cState LES3DFsd_pState::rc_x_precon(const int &index, const double &MR2
  ******************************************************************************/
 LES3DFsd_pState LES3DFsd_pState::lp_x_precon(const int &index,const double &MR2) const {
     double uprimed,cprimed;
-    double c = a();
-    u_a_precon(MR2*a()*a(),uprimed,cprimed);
+    double c = a_t();
+    u_a_precon(MR2*c*c,uprimed,cprimed);
    switch(index){  
    case 1:
       return (LES3DFsd_pState(ZERO, -HALF*rho*MR2/cprimed, ZERO, ZERO, (-uprimed+cprimed+v.x)/(TWO*cprimed*c*c), ZERO, ZERO, ZERO));
@@ -1168,7 +1168,7 @@ void LES3DFsd_pState::Low_Mach_Number_Preconditioner(DenseMatrix &P, const doubl
   double Rmix = Rtot();
   double enthalpy = h();
   double CP = Cp();
-  double c = a();
+  double c = a_t();
   double pt = pmodified();
   double theta = (ONE/(Mr2(deltax,lengthx,dTime)*c*c) + (g()-ONE)/(c*c));// + ONE/(CP*Temp));
   double eta_fsd = Progvar_Species_Grad();
@@ -1248,7 +1248,7 @@ void LES3DFsd_pState::Low_Mach_Number_Preconditioner_Inverse(DenseMatrix &Pinv, 
   double Rmix = Rtot();
   double enthalpy = h();
   double CP = Cp();
-  double c = a();
+  double c = a_t();
   double pt = pmodified();
   double theta = (ONE/(Mr2(deltax,lengthx,dTime)*c*c) + (g()-ONE)/(c*c));// + ONE/(CP*Temp));  
 
@@ -1787,7 +1787,7 @@ LES3DFsd_cState LES3DFsd_pState::FluxAUSMplus_up_x(const LES3DFsd_pState &Wl,
   //   atilde_r = sqr(ar)/max(ar, -Wr.v.x);
   //   ahalf = min(atilde_l, atilde_r);
  
-  ahalf = HALF*(Wl.a() + Wr.a());
+  ahalf = HALF*(Wl.a_t() + Wr.a_t());
   rhohalf = HALF*(Wl.rho + Wr.rho); 
    
  
@@ -3276,22 +3276,22 @@ void LES3DFsd_cState::premixed_mfrac(void) {
   // Lean mixture(_fuel_equivalence_ratio < 1) => excessive O2
   if (_fuel_equivalence_ratio < ONE) {  
     burnt_fuel_c = ZERO;
-    burnt_oxygen_c = (ONE/_fuel_equivalence_ratio - ONE)*rho*_unburnt_fuel_mass_fraction*stoich_ratio;
+    burnt_oxygen_c = (ONE/_fuel_equivalence_ratio - ONE)*_unburnt_fuel_mass_fraction*stoich_ratio;
     if (rhospec[0].c == ZERO) {
-      rhospec[1].c = burnt_oxygen_c;      
+      rhospec[1].c = rho*burnt_oxygen_c;      
     } else {
-      rhospec[1].c = rhospec[0].c*stoich_ratio + burnt_oxygen_c;
+      rhospec[1].c = rhospec[0].c*stoich_ratio + rho*burnt_oxygen_c;
     }  
 
   // Rich mixture(_fuel_equivalence_ratio > 1) => excessive CH4
   } else if (_fuel_equivalence_ratio > ONE) {  
     burnt_oxygen_c = ZERO;
-    burnt_fuel_c = (ONE - ONE/_fuel_equivalence_ratio)*rho*_unburnt_fuel_mass_fraction;
+    burnt_fuel_c = (ONE - ONE/_fuel_equivalence_ratio)*_unburnt_fuel_mass_fraction;
     rhospec[0].c = rhoC*(burnt_fuel_c - _unburnt_fuel_mass_fraction) + rho*_unburnt_fuel_mass_fraction;
-    if (rhospec[0].c <= burnt_fuel_c) {
-      rhospec[1].c = burnt_oxygen_c;
+    if (rhospec[0].c <= rho*burnt_fuel_c) {
+      rhospec[1].c = rho*burnt_oxygen_c;
     } else {
-      rhospec[1].c = (rhospec[0].c - burnt_fuel_c)*stoich_ratio;
+      rhospec[1].c = (rhospec[0].c - rho*burnt_fuel_c)*stoich_ratio;
     }
 
   // Stoichiometric mixture(_fuel_equivalence_ratio = 1)
@@ -3313,10 +3313,10 @@ void LES3DFsd_cState::premixed_mfrac(void) {
        products_ratio = 3.0*specdata[2].Mol_mass()/(3.0*specdata[2].Mol_mass()+4.0*specdata[3].Mol_mass());
     } /* endif */ 
     rhospec[2].c = products_ratio*c_products*rho; // CO2 mass fraction
-    rhospec[3].c = c_products-rhospec[2].c;  // H2O mass fraction   
+    rhospec[3].c = rho*c_products-rhospec[2].c;  // H2O mass fraction   
     rhospec[1].c = rho*(ONE - c_products - (rhospec[0].c + rhospec[4].c)/rho) ;  // O2 mass fraction
   } else if (React.reactset_flag == H2O2_1STEP) {
-    rhospec[2].c = (ONE - (rhospec[0].c + rhospec[1].c + rhospec[3].c)/rho)*rho; // H2O mass fraction 
+    rhospec[2].c = c_products*rho; // H2O mass fraction 
   }
 
   // Check for realizability of each species mass fraction
@@ -3326,7 +3326,7 @@ void LES3DFsd_cState::premixed_mfrac(void) {
 
   double suma = ZERO;
   for (int i=0; i < ns; i++) {
-    suma = suma + rhospec[i].c;
+    suma = suma + rhospec[i].c/rho;
   } /* endfor */
   for (int i=0; i < ns; i++) {
     rhospec[i].c = rhospec[i].c*(ONE/suma);
