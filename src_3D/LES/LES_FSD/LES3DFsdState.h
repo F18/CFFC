@@ -147,6 +147,7 @@ class LES3DFsd_pState : public NavierStokes3D_ThermallyPerfect_pState {
   protected:
    static double        _fuel_equivalence_ratio;  //!< Fuel equivalence ratio
    static double    _unburnt_fuel_mass_fraction;  //!< Mass fraction of unburnt fuel (premixed flame)
+   static double             _reactants_density;  //!< Reactants Density
    static double           _laminar_flame_speed;  //!< Propagation speed of laminar premixed flame
    static double       _laminar_flame_thickness;  //!< Thickness of laminar premixed flame
    static double   _adiabatic_flame_temperature;  //!< Adiabitc flame temperature
@@ -990,6 +991,7 @@ class LES3DFsd_cState : public NavierStokes3D_ThermallyPerfect_cState {
   protected:
    static double        _fuel_equivalence_ratio;  //!< Fuel equivalence ratio
    static double    _unburnt_fuel_mass_fraction;  //!< Mass fraction of unburnt fuel (premixed flame)
+   static double             _reactants_density;  //!< Reactants Density
    static double           _laminar_flame_speed;  //!< Propagation speed of laminar premixed flame
    static double       _laminar_flame_thickness;  //!< Thickness of laminar premixed flame
    static double   _adiabatic_flame_temperature;  //!< Adiabitc flame temperature

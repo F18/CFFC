@@ -16,6 +16,7 @@
 double LES3DFsd_pState::Mref = 0.1;
 double LES3DFsd_pState::_fuel_equivalence_ratio=1.0;
 double LES3DFsd_pState::_unburnt_fuel_mass_fraction=0.05518;
+double LES3DFsd_pState::_reactants_density=1.13;
 double LES3DFsd_pState::_laminar_flame_speed=0.3738;
 double LES3DFsd_pState::_laminar_flame_thickness=4.4E-04;
 double LES3DFsd_pState::_adiabatic_flame_temperature=2218.0;
@@ -26,6 +27,7 @@ double LES3DFsd_pState::_adiabatic_flame_temperature=2218.0;
 double LES3DFsd_cState::Mref = 0.1;
 double LES3DFsd_cState::_fuel_equivalence_ratio=1.0;
 double LES3DFsd_cState::_unburnt_fuel_mass_fraction=0.05518;
+double LES3DFsd_cState::_reactants_density=1.13;
 double LES3DFsd_cState::_laminar_flame_speed=0.3738;
 double LES3DFsd_cState::_laminar_flame_thickness=4.4E-04;
 double LES3DFsd_cState::_adiabatic_flame_temperature=2218.0;
@@ -655,9 +657,9 @@ LES3DFsd_cState LES3DFsd_pState::Fv(const LES3DFsd_pState &dWdx,
             v.y*fluid_stress.xy  + 
             v.z*fluid_stress.xz - 
             heat_flux.x;
-   Temp.rhoC = mu_t*dWdx.C/Sc_t();
-   Temp.rhoFsd = mu_t*dWdx.Fsd/Sc_t();
-   Temp.rhok = (mu()+mu_t/0.25/*Pr_t()*/)*dWdx.k;
+   Temp.rhoC = mu_t_temp*dWdx.C/Sc_t();
+   Temp.rhoFsd = mu_t_temp*dWdx.Fsd/Sc_t();
+   Temp.rhok = (mu_temp+mu_t_temp/0.25/*Pr_t()*/)*dWdx.k;
    return (Temp);
 }
 
@@ -697,9 +699,9 @@ LES3DFsd_cState LES3DFsd_pState::Fvx(const LES3DFsd_pState &dWdx,
             v.y*fluid_stress.xy  + 
             v.z*fluid_stress.xz - 
             heat_flux.x;
-   Temp.rhoC = mu_t*dWdx.C/Sc_t();
-   Temp.rhoFsd = mu_t*dWdx.Fsd/Sc_t();
-   Temp.rhok = (mu()+mu_t/0.25/*Pr_t()*/)*dWdx.k;
+   Temp.rhoC = mu_t_temp*dWdx.C/Sc_t();
+   Temp.rhoFsd = mu_t_temp*dWdx.Fsd/Sc_t();
+   Temp.rhok = (mu_t+mu_t_temp/0.25/*Pr_t()*/)*dWdx.k;
    return (Temp);
 }
 
@@ -739,9 +741,9 @@ LES3DFsd_cState LES3DFsd_pState::Fvy(const LES3DFsd_pState &dWdx,
             v.y*(fluid_stress.yy + (TWO/THREE)*rho*k) +
             v.z*fluid_stress.yz - 
             heat_flux.y;
-   Temp.rhoC = mu_t*dWdy.C/Sc_t();
-   Temp.rhoFsd = mu_t*dWdy.Fsd/Sc_t();
-   Temp.rhok = (mu()+mu_t/0.25/*Pr_t()*/)*dWdy.k;
+   Temp.rhoC = mu_t_temp*dWdy.C/Sc_t();
+   Temp.rhoFsd = mu_t_temp*dWdy.Fsd/Sc_t();
+   Temp.rhok = (mu_t+mu_t_temp/0.25/*Pr_t()*/)*dWdy.k;
    return (Temp);
 }
 
@@ -781,9 +783,9 @@ LES3DFsd_cState LES3DFsd_pState::Fvz(const LES3DFsd_pState &dWdx,
             v.y*fluid_stress.yz +
             v.z*(fluid_stress.zz + (TWO/THREE)*rho*k) - 
             heat_flux.z;
-   Temp.rhoC = mu_t*dWdz.C/Sc_t();
-   Temp.rhoFsd = mu_t*dWdz.Fsd/Sc_t();
-   Temp.rhok = (mu()+mu_t/0.25/*Pr_t()*/)*dWdz.k;
+   Temp.rhoC = mu_t_temp*dWdz.C/Sc_t();
+   Temp.rhoFsd = mu_t_temp*dWdz.Fsd/Sc_t();
+   Temp.rhok = (mu_t+mu_t_temp/0.25/*Pr_t()*/)*dWdz.k;
    return (Temp);
 }
 
@@ -1077,10 +1079,10 @@ LES3DFsd_pState LES3DFsd_pState::lp_x(const int &index) const {
  * LES3DFsd_pState::Mr2 -- Square of Mach number           *
  ***********************************************************/
 double LES3DFsd_pState::Mr2(const double &deltax, const double &lengthx, const double &dTime) const {
-    double c = a_t();
-    double MR2 = min(max((v.sqr()/(c*c)),Mref*Mref),ONE);
-    MR2 = pow(max(sqrt(MR2*c*c), mu()/(rho*deltax)),2.0)/(c*c);
-    double MR_uns = (lengthx/(PI*dTime))/c;  // ZERO;
+    double cc = a_t();
+    double MR2 = min(max((v.sqr()/(cc*cc)),Mref*Mref),ONE);
+    MR2 = pow(max(sqrt(MR2*cc*cc), mu()/(rho*deltax)),2.0)/(cc*cc);
+    double MR_uns = (lengthx/(PI*dTime))/cc;  // ZERO;
 // double MR_vis;
 //     if (flow_type_flag == FLOWTYPE_INVISCID) {
 //       MR_vis = ZERO;
@@ -1108,14 +1110,14 @@ void LES3DFsd_pState::u_a_precon(const double &UR2, double &uprimed, double &cpr
  ******************************************************************************/
 LES3DFsd_cState LES3DFsd_pState::rc_x_precon(const int &index, const double &MR2) const {
     double uprimed,cprimed;
-    double c = a_t();
+    double cc = a_t();
     double eta_fsd = Progvar_Species_Grad();
-    u_a_precon(MR2*c*c,uprimed,cprimed);
+    u_a_precon(MR2*cc*cc,uprimed,cprimed);
    switch(index){  
    case 1:
      return (LES3DFsd_cState(ONE, (uprimed-cprimed)/MR2, v.y, v.z, h()+(v.sqr()/MR2)/TWO+FIVE*k/THREE-(v.x*cprimed)/MR2, C, Fsd, k));
    case 2:
-     return (LES3DFsd_cState(ONE, v.x, v.y, v.z, (H()/rho-c*c/(g()-ONE)), C, Fsd, k)); 
+     return (LES3DFsd_cState(ONE, v.x, v.y, v.z, (H()/rho-cc*cc/(g()-ONE)), C, Fsd, k)); 
    case 3:
      return (LES3DFsd_cState(ZERO, ZERO, rho, ZERO, rho*v.y, ZERO, ZERO, ZERO));
    case 4:
@@ -1137,19 +1139,19 @@ LES3DFsd_cState LES3DFsd_pState::rc_x_precon(const int &index, const double &MR2
  ******************************************************************************/
 LES3DFsd_pState LES3DFsd_pState::lp_x_precon(const int &index,const double &MR2) const {
     double uprimed,cprimed;
-    double c = a_t();
-    u_a_precon(MR2*c*c,uprimed,cprimed);
+    double cc = a_t();
+    u_a_precon(MR2*cc*cc,uprimed,cprimed);
    switch(index){  
    case 1:
-      return (LES3DFsd_pState(ZERO, -HALF*rho*MR2/cprimed, ZERO, ZERO, (-uprimed+cprimed+v.x)/(TWO*cprimed*c*c), ZERO, ZERO, ZERO));
+      return (LES3DFsd_pState(ZERO, -HALF*rho*MR2/cprimed, ZERO, ZERO, (-uprimed+cprimed+v.x)/(TWO*cprimed*cc*cc), ZERO, ZERO, ZERO));
    case 2:
-      return (LES3DFsd_pState(ONE, ZERO, ZERO, ZERO, -ONE/(c*c), ZERO, ZERO, ZERO));
+      return (LES3DFsd_pState(ONE, ZERO, ZERO, ZERO, -ONE/(cc*cc), ZERO, ZERO, ZERO));
    case 3 :
       return (LES3DFsd_pState(ZERO, ZERO, ONE, ZERO, ZERO, ZERO, ZERO, ZERO));
    case 4 :
       return (LES3DFsd_pState(ZERO, ZERO, ZERO, ONE, ZERO, ZERO, ZERO, ZERO));
    case 5 :
-      return (LES3DFsd_pState(ZERO, HALF*rho*MR2/cprimed, ZERO, ZERO, (uprimed+cprimed-v.x)/(TWO*cprimed*c*c), ZERO, ZERO, ZERO));
+      return (LES3DFsd_pState(ZERO, HALF*rho*MR2/cprimed, ZERO, ZERO, (uprimed+cprimed-v.x)/(TWO*cprimed*cc*cc), ZERO, ZERO, ZERO));
    case 6 :
       return (LES3DFsd_pState(ZERO, ZERO, ZERO, ZERO, ZERO, ONE, ZERO, ZERO));
    case 7 :
@@ -1168,9 +1170,9 @@ void LES3DFsd_pState::Low_Mach_Number_Preconditioner(DenseMatrix &P, const doubl
   double Rmix = Rtot();
   double enthalpy = h();
   double CP = Cp();
-  double c = a_t();
+  double cc = a_t();
   double pt = pmodified();
-  double theta = (ONE/(Mr2(deltax,lengthx,dTime)*c*c) + (g()-ONE)/(c*c));// + ONE/(CP*Temp));
+  double theta = (ONE/(Mr2(deltax,lengthx,dTime)*cc*cc) + (g()-ONE)/(cc*cc));// + ONE/(CP*Temp));
   double eta_fsd = Progvar_Species_Grad();
   double phi = C*eta_fsd;
   double alpha = theta*pt/rho;
@@ -1248,9 +1250,9 @@ void LES3DFsd_pState::Low_Mach_Number_Preconditioner_Inverse(DenseMatrix &Pinv, 
   double Rmix = Rtot();
   double enthalpy = h();
   double CP = Cp();
-  double c = a_t();
+  double cc = a_t();
   double pt = pmodified();
-  double theta = (ONE/(Mr2(deltax,lengthx,dTime)*c*c) + (g()-ONE)/(c*c));// + ONE/(CP*Temp));  
+  double theta = (ONE/(Mr2(deltax,lengthx,dTime)*cc*cc) + (g()-ONE)/(cc*cc));// + ONE/(CP*Temp));  
 
   double eta_fsd = Progvar_Species_Grad();
   double phi = C*eta_fsd;
@@ -1365,8 +1367,6 @@ void LES3DFsd_pState::SemiImplicitSourceJacobi(const LES3DFsd_pState &dWdx,
 
      dStdW.zero();
      double filter = filter_width(Volume);
-     double _laminar_flame_speed = 0.3837;
-     double Reactants_Density = 1.13;
      double k_fsd = SFS_Kinetic_Energy_Fsd(dWdx,dWdy,dWdz,Flow_Type,Volume); 
      double kappa_fsd = Efficiency_Function_Fsd(dWdx,dWdy,dWdz,Flow_Type,Volume);   
      double tau_fsd = HeatRelease_Parameter();
@@ -1409,8 +1409,8 @@ void LES3DFsd_pState::SemiImplicitSourceJacobi(const LES3DFsd_pState &dWdx,
      double t390,t394,t398; 
      double t403;
 
-     t1 = Reactants_Density*_laminar_flame_speed;
-     t4 = dWdx.C;//cx(c);
+      t1 = _reactants_density*_laminar_flame_speed;
+      t4 = dWdx.C;//cx(c);
       t5 = t4*t4;
       t6 = dWdy.C;//cy(c);
       t7 = t6*t6;
@@ -2362,7 +2362,6 @@ Vector3D LES3DFsd_pState::grad_abs_strain_rate(const LES3DFsd_pState &dWdx,
  * LES3DFsd_pState::HeatRelease_Parameter -- Heat release parameter              *
  *********************************************************************************/
 double LES3DFsd_pState::HeatRelease_Parameter(void) const {
-  double _adiabatic_flame_temperature = 2218.0;
   return (_adiabatic_flame_temperature/298.0-1.0);
 }
 
@@ -2391,8 +2390,6 @@ double LES3DFsd_pState::Efficiency_Function_Fsd(const LES3DFsd_pState &dWdx,
                                                 const int &Flow_Type,
                                                 const double &Volume) const {
   double filter, kappa_fsd, k_fsd;
-  double _laminar_flame_speed = 0.3837;
-  double _laminar_flame_thickness = 4.4E-04;
   k_fsd = SFS_Kinetic_Energy_Fsd(dWdx,dWdy,dWdz,Flow_Type,Volume);
   filter = filter_width(Volume);
   kappa_fsd = 0.75*exp(-1.2/pow(sqrt(k_fsd)/_laminar_flame_speed,0.3))*pow(filter/_laminar_flame_thickness,2.0/3.0);
@@ -2404,7 +2401,6 @@ double LES3DFsd_pState::Efficiency_Function_Fsd(const LES3DFsd_pState &dWdx,
  ********************************************************************************************************/
 double LES3DFsd_pState::Progvar_Species_Grad(void) const {
   double Temp, stoich, ratio, f_ub, eta_fsd;
-  double _fuel_equivalence_ratio = 1.0;
   Temp = p/(rho*Rtot());
   if ( React.reactset_flag == CH4_1STEP ||
        React.reactset_flag == C3H8_1STEP ) {
@@ -2438,10 +2434,8 @@ double LES3DFsd_pState::Reaction_Rate_Fsd(const LES3DFsd_pState &dWdx,
                                           const LES3DFsd_pState &dWdy,
                                           const LES3DFsd_pState &dWdz) const {
      double tau_fsd = HeatRelease_Parameter();
-     double _laminar_flame_speed = 0.3837;
-     double Reactants_Density = 1.13;
      if ( C < 0.999 && C > 0.001 && dWdx.C != ZERO ){//&& dWdy.C != ZERO && dWdz.C != ZERO ) {
-       return ( Reactants_Density*_laminar_flame_speed*Fsd*rho );//-tau_fsd*_laminar_flame_speed*(rho*(1-2*C)*(dWdx.C+dWdy.C+dWdz.C)+C*(1-C)*(dWdx.rho+dWdy.rho+dWdz.rho)) );
+       return ( _reactants_density*_laminar_flame_speed*Fsd*rho );//-tau_fsd*_laminar_flame_speed*(rho*(1-2*C)*(dWdx.C+dWdy.C+dWdz.C)+C*(1-C)*(dWdx.rho+dWdy.rho+dWdz.rho)) );
     }else{
      return ( 0.0 );
     }
@@ -2550,7 +2544,6 @@ double LES3DFsd_pState::Resolved_Propagation_Curvature(const LES3DFsd_pState &dW
                                                        const LES3DFsd_pState &dWdz) const {
   double tau_fsd, Mx, My, Mz, resolved_propagation_curvature_x, resolved_propagation_curvature_y, resolved_propagation_curvature_z;
     tau_fsd = HeatRelease_Parameter();
-    double _laminar_flame_speed = 0.3837;
     Mx = M_x(dWdx,dWdy,dWdz);
     My = M_y(dWdx,dWdy,dWdz);
     Mz = M_z(dWdx,dWdy,dWdz);
@@ -2591,7 +2584,6 @@ double LES3DFsd_pState::SFS_Curvature(const LES3DFsd_pState &dWdx,
                                       const LES3DFsd_pState &dWdz) const {
 
     double Mx, My, Mz, alpha_fsd, beta_fsd;
-    double _laminar_flame_speed = 0.3837;
     beta_fsd = 1.0;
     Mx = M_x(dWdx,dWdy,dWdz);
     My = M_y(dWdx,dWdy,dWdz);
@@ -2737,7 +2729,6 @@ double LES3DFsd_pState::Resolved_Curvature(const LES3DFsd_pState &dWdx,
                                            const LES3DFsd_pState &d_dWdy_dz) const {
   double tau_fsd, Mxx, Myy, Mzz, resolved_curvature_xx, resolved_curvature_yy, resolved_curvature_zz;
    tau_fsd = HeatRelease_Parameter();
-   double _laminar_flame_speed = 0.3837;
    Mxx = M_xx(dWdx,dWdy,dWdz,d_dWdx_dx,d_dWdx_dy,d_dWdx_dz);
    Myy = M_yy(dWdx,dWdy,dWdz,d_dWdy_dy,d_dWdx_dy,d_dWdy_dz);
    Mzz = M_zz(dWdx,dWdy,dWdz,d_dWdz_dz,d_dWdx_dz,d_dWdy_dz);
@@ -2818,7 +2809,6 @@ double LES3DFsd_pState::NGT_Progvar (const LES3DFsd_pState &dWdx,
 
     double tau_fsd, NGT_progvar_x, NGT_progvar_y, NGT_progvar_z;
     tau_fsd = HeatRelease_Parameter();
-    double _laminar_flame_speed = 0.3837;
 
     if ( C < 0.999 && C > 0.001 && dWdx.C != ZERO ) {//&& dWdy.C!= ZERO && dWdz.C != ZERO ) {
     NGT_progvar_x = -tau_fsd*_laminar_flame_speed*(rho*(1-2*C)*dWdx.C+C*(1-C)*dWdx.rho);
@@ -2845,7 +2835,6 @@ double LES3DFsd_pState::NGT_Fsd (const LES3DFsd_pState &dWdx,
 
     double tau_fsd, Mx, My, Mz, Mxx, Myy, Mzz, NGT_fsd_x, NGT_fsd_y, NGT_fsd_z;
     tau_fsd = HeatRelease_Parameter();
-    double _laminar_flame_speed = 0.3837;
     Mx = M_x(dWdx,dWdy,dWdz);
     My = M_y(dWdx,dWdy,dWdz);
     Mz = M_z(dWdx,dWdy,dWdz);
@@ -2950,7 +2939,6 @@ double LES3DFsd_pState::Heat_Release_Strain (const LES3DFsd_pState &dWdx,
  	                                     const LES3DFsd_pState &d_dWdy_dz) const {
      double tau_fsd, Mxx, Myy, Mzz, heat_release_strain_xx, heat_release_strain_yy, heat_release_strain_zz;
      tau_fsd = HeatRelease_Parameter();
-     double _laminar_flame_speed = 0.3837;
      Mxx = M_xx(dWdx,dWdy,dWdz,d_dWdx_dx,d_dWdx_dy,d_dWdx_dz);
      Myy = M_yy(dWdx,dWdy,dWdz,d_dWdy_dy,d_dWdx_dy,d_dWdy_dz);
      Mzz = M_zz(dWdx,dWdy,dWdz,d_dWdz_dz,d_dWdx_dz,d_dWdy_dz);
