@@ -1091,7 +1091,7 @@ void ICs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 							       wrapped_member_function(IP.ExactSoln,
 										       &AdvectDiffuse2D_ExactSolutions::Solution,
 										       Ul.u),
-							       12,Ul.u)/SolnBlk.Grid.Cell[i][j].A;
+							       IP.Exact_Integration_Digits,Ul.u)/SolnBlk.Grid.Cell[i][j].A;
 	  SolnBlk.U[i][j] = Ul;
 	} /* endfor */
       } /* endfor */
@@ -1112,7 +1112,7 @@ void ICs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 								 wrapped_member_function(IP.ExactSoln,
 											 &AdvectDiffuse2D_ExactSolutions::Solution,
 											 Ul.u),
-								 12,Ul.u)/SolnBlk.Grid.Cell[i][j].A;
+								 IP.Exact_Integration_Digits,Ul.u)/SolnBlk.Grid.Cell[i][j].A;
 	    SolnBlk.U[i][j] = Ul;
 	  } else {
 	    // Set the solution state of the interior cells to the initial state Uo[0].
@@ -3168,8 +3168,8 @@ int dUdt_Residual_Evaluation(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 
   int i, j;
   Vector2D dX;
-  //  AdvectDiffuse2D_State_New ul, ur, flux;
   AdvectDiffuse2D_State_New Ul, Ur, Flux;
+  Vector2D GradU_face;		// Solution gradient at the inter-cellular face
 
   /* Perform the linear reconstruction within each cell
      of the computational grid for this stage. */
@@ -3188,6 +3188,12 @@ int dUdt_Residual_Evaluation(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 				       IP.i_Limiter);
     break;
   } /* endswitch */
+
+
+  /* Calculate the solution values at the mesh nodes
+     using a bilinear interpolation procedure . */
+  SolnBlk.Calculate_Nodal_Solutions();
+
 
   /* Evaluate the time rate of change of the solution
      (i.e., the solution residuals) using a second-order
@@ -3229,9 +3235,15 @@ int dUdt_Residual_Evaluation(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 	  Ur = SolnBlk.PiecewiseLinearSolutionAtLocation(i+1, j,SolnBlk.Grid.xfaceW(i+1, j));
 	}
 
-	// Compute the advective flux in the normal direction at the face midpoint 
+	// Compute the advective flux 'Fa' in the normal direction at the face midpoint 
 	Flux = Fa(Ul, Ur, SolnBlk.Grid.xfaceE(i,j), SolnBlk.Grid.nfaceE(i,j));
-	   
+	
+
+
+   
+	// Add the viscous (diffusive) flux 'Fd' in the normal direction at the face midpoint to the face total flux
+	Flux += Fd(Ul, Ur, GradU_face, SolnBlk.Grid.xfaceE(i,j), SolnBlk.Grid.nfaceE(i,j));
+
 	/* Evaluate cell-averaged solution changes. */
 	SolnBlk.dUdt[i  ][j][0] -= Flux*SolnBlk.Grid.lfaceE(i  , j)/SolnBlk.Grid.Cell[i  ][j].A;
 	SolnBlk.dUdt[i+1][j][0] += Flux*SolnBlk.Grid.lfaceW(i+1, j)/SolnBlk.Grid.Cell[i+1][j].A;

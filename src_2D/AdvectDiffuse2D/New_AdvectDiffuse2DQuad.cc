@@ -259,6 +259,158 @@ void AdvectDiffuse2D_Quad_Block_New::Calculate_Nodal_Solutions(void){
 
 }
 
+/**************************************************//**
+ * Calculate the gradient of the solution at the 
+ * specified inter-cellular face using different 
+ * methods. This solution gradient is used to 
+ * calculate the viscous (diffusive) flux through
+ * the interface between the left cell (ii_L,jj_L)
+ * and the right cell (ii_R,jj_R).
+ *************************************************/
+Vector2D AdvectDiffuse2D_Quad_Block_New::InterfaceSolutionGradient(const int & ii_L, const int & jj_L,
+								   const int & ii_R, const int & jj_R,
+								   const int &Gradient_Reconstruction_Type){
+  
+  require( ( ii_L == ii_R || jj_L == jj_R) &&
+	   ( ii_L == ii_R || ii_L == (ii_R - 1) ) && 
+	   ( jj_L == jj_R || jj_L == (jj_R - 1) ),
+	   "AdvectDiffuse2D_Quad_Block_New::InterfaceSolutionGradient() ERROR! Inconsistent cell indexes!");
+
+  switch(Gradient_Reconstruction_Type){
+  case VISCOUS_RECONSTRUCTION_DIAMOND_PATH :
+
+    if (jj_L == jj_R){
+      // i-direction interface
+      return DiamondPathGradientReconstruction(Grid.CellCentroid(ii_L,jj_L), U[ii_L][jj_L],
+					       Grid.Node[ii_R][jj_R].X, U_Node(ii_R,jj_R),
+					       Grid.CellCentroid(ii_R,jj_R), U[ii_R][jj_R],
+					       Grid.Node[ii_R][jj_R+1].X, U_Node(ii_R,jj_R+1),
+					       DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
+    } else {
+      // j-direction interface
+      return DiamondPathGradientReconstruction(Grid.CellCentroid(ii_L,jj_L), U[ii_L][jj_L],
+					       Grid.Node[ii_R+1][jj_R].X, U_Node(ii_R+1,jj_R),
+					       Grid.CellCentroid(ii_R,jj_R), U[ii_R][jj_R],
+					       Grid.Node[ii_R][jj_R].X, U_Node(ii_R,jj_R),
+					       DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
+    }
+    break;
+
+  default :
+    // Use the diamond path reconstruction
+    ii_L;
+  }
+}
+
+/**************************************************//**
+ * Calculate the gradient of the solution based on 
+ * a diamond path reconstruction. 
+ * The path is formed by the specified points (Xl,Xd,Xr,Xu),
+ * which form the reconstruction stencil.
+ * Along the lines connecting the points, it is 
+ * assumed a linear variation of the solution.
+ * Thus, applying Gauss' theorem over the 
+ * domain enclosed by the points, the average solution 
+ * gradient is expressed only as a function of the 
+ * solution states at those points. 
+ *************************************************/
+Vector2D AdvectDiffuse2D_Quad_Block_New::
+DiamondPathGradientReconstruction(const Vector2D &Xl, const AdvectDiffuse2D_State_New &Ul,
+				  const Vector2D &Xd, const AdvectDiffuse2D_State_New &Ud,
+				  const Vector2D &Xr, const AdvectDiffuse2D_State_New &Ur,
+				  const Vector2D &Xu, const AdvectDiffuse2D_State_New &Uu,
+				  const int &stencil_flag){
+
+  if (stencil_flag == DIAMONDPATH_NONE) return Vector2D(0.0);
+
+  AdvectDiffuse2D_State_New U_face, dUdxl, dUdyl, dUdxr, dUdyr;
+  double A, Al, Ar;
+  Vector2D ndl, nud, nlu, nrd, nur, ndu;
+  int error_flag;
+
+  // Compute Green-Gauss integration on 'left' triangle:
+  if (stencil_flag == DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION ||
+      stencil_flag == DIAMONDPATH_LEFT_TRIANGLE) {
+    ndl = Vector2D((Xd.y-Xl.y),-(Xd.x-Xl.x));
+    nud = Vector2D((Xu.y-Xd.y),-(Xu.x-Xd.x));
+    nlu = Vector2D((Xl.y-Xu.y),-(Xl.x-Xu.x));
+    Al = HALF*((Xd-Xl)^(Xu-Xl));
+
+    // edge between Xl and Xd
+    U_face = Ud+Ul;		    /* it should be HALF*(Ud+Ul), but it's more
+				       efficient to multiply by HALF at the end */
+    dUdxl = U_face*ndl.x;
+    dUdyl = U_face*ndl.y;
+
+    // edge between Xd and Xu
+    U_face = Uu+Ud;
+    dUdxl += U_face*nud.x;
+    dUdyl += U_face*nud.y;
+
+    // edge between Xu and Xl
+    U_face = Ul+Uu;
+    dUdxl += U_face*nlu.x;
+    dUdyl += U_face*nlu.y;
+
+    // multiply with HALF from U_face
+    dUdxl *= HALF;
+    dUdyl *= HALF;
+
+    // devide by the area (i.e. it comes from the fact that this is an average gradient)
+    dUdxl /= Al;
+    dUdyl /= Al;
+  }
+
+  // Compute Green-Gauss integration on 'right' triangle:
+  if (stencil_flag == DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION ||
+      stencil_flag == DIAMONDPATH_RIGHT_TRIANGLE) {
+    nrd = Vector2D((Xr.y-Xd.y),-(Xr.x-Xd.x));
+    nur = Vector2D((Xu.y-Xr.y),-(Xu.x-Xr.x));
+    ndu = Vector2D((Xd.y-Xu.y),-(Xd.x-Xu.x));
+    Ar = HALF*((Xr-Xu)^(Xr-Xd));
+
+    // edge between Xd and Xr
+    U_face = Ur+Ud;
+    dUdxr = U_face*nrd.x;
+    dUdyr = U_face*nrd.y;
+
+    // edge between Xr and Xu
+    U_face = Uu+Ur;
+    dUdxr += U_face*nur.x;
+    dUdyr += U_face*nur.y;
+
+    // edge between Xu and Xd
+    U_face = Ud+Uu;
+    dUdxr += U_face*ndu.x;
+    dUdyr += U_face*ndu.y;
+
+    // multiply with HALF from U_face
+    dUdxr *= HALF;
+    dUdyr *= HALF;
+
+    // devide by the area (i.e. it comes from the fact that this is an average gradient)
+    dUdxr /= Ar;
+    dUdyr /= Ar;
+  }
+
+  // Return the final solution gradient
+  if (stencil_flag == DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION) {
+    // Determine the total area.
+    A = Al + Ar;
+    // Return the area-averaged gradients
+    return Vector2D( ((Al*dUdxl + Ar*dUdxr)/A).u,  ((Al*dUdyl + Ar*dUdyr)/A).u);
+
+  } else if (stencil_flag == DIAMONDPATH_LEFT_TRIANGLE){
+    // Return the left gradient
+    return Vector2D(dUdxl.u,dUdyl.u);
+
+  } else if (stencil_flag == DIAMONDPATH_RIGHT_TRIANGLE) {
+    // Return the right gradient
+    return Vector2D(dUdxr.u,dUdyr.u);
+  }
+}
+
+
 /*********************************************//**
  * Compute the average source term for cell (ii,jj).
  * 

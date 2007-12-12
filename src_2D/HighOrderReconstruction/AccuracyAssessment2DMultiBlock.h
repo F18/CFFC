@@ -57,6 +57,7 @@ public:
   static double & L2(void) {return LNorms[1]; }                 //!< return the L2 component of the error-norm vector
   static double & LMax(void) {return LNorms[2]; }               //!< return the LMax component of the error-norm vector
   static double & TotalArea(void) {return TotalDomainArea; }    //!< return the total area of the block
+  static unsigned int & TotalNumberOfCells(void) {return TotalCells; }  //!< return the total number of cells 
   //@}
 
   //! Prepare class for an accuracy reassessment

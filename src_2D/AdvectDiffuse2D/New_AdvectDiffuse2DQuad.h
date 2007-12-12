@@ -245,12 +245,24 @@ public:
 
   //! @name Field access
   //@{
-  AdvectDiffuse2D_State_New U_Node(const int &ii, const int &jj){ return U_Nodes[ii][jj]; }
+  const AdvectDiffuse2D_State_New& U_Node(const int &ii, const int &jj)const { return U_Nodes[ii][jj]; }
   //@}
 
   //! @name Evaluate diffusive fluxes.
   //@{
   void Calculate_Nodal_Solutions(void); //!< Calculate the solution at mesh nodes
+
+  //! Calculate the solution gradient at the specified interface
+  Vector2D InterfaceSolutionGradient(const int & ii_L, const int & jj_L,
+				     const int & ii_R, const int & jj_R,
+				     const int &Gradient_Reconstruction_Type);
+
+  //! Calculate the solution gradient based on a diamond path reconstruction
+  Vector2D DiamondPathGradientReconstruction(const Vector2D &Xl, const AdvectDiffuse2D_State_New &Ul,
+					     const Vector2D &Xd, const AdvectDiffuse2D_State_New &Ud,
+					     const Vector2D &Xr, const AdvectDiffuse2D_State_New &Ur,
+					     const Vector2D &Xu, const AdvectDiffuse2D_State_New &Uu,
+					     const int &stencil_flag);
   //@}
 
   //! @name Source term member functions

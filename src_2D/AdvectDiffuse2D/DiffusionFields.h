@@ -139,6 +139,7 @@ void DiffusionFields::Parse_Next_Input_Control_Parameter(Input_Parameters_Type &
     i_command = 0;
     ++IP.Line_Number;
     IP.Input_File >> ReferencePoint;
+    IP.Input_File.setf(ios::skipws);
     IP.Input_File.getline(buffer, sizeof(buffer));
   } else {
     i_command = INVALID_INPUT_CODE;

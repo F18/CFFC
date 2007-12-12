@@ -161,6 +161,9 @@ ostream &operator << (ostream &out_file,
     // ==== Initial condition parameters ====
     out_file << "\n  -> Initial Conditions: " 
              << IP.ICs_Type;
+    if (IP.i_ICs == IC_EXACT_SOLUTION || IP.i_ICs == IC_INTERIOR_UNIFORM_GHOSTCELLS_EXACT){
+      out_file << "\n     -> Exact integration digits = " << IP.Exact_Integration_Digits;
+    }
 
     // ====    Velocity field parameters ====
     VelocityFields::Print_Info(out_file);
@@ -546,6 +549,7 @@ void Set_Default_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
     IP.U1 = IP.Uo; IP.U1.u = ZERO;
     IP.U2 = IP.Uo; IP.U2.u = -ONE;
     IP.RefU = IP.Uo;
+    IP.Exact_Integration_Digits = 9;
 
     string_ptr = "Planar";
     strcpy(IP.Flow_Geometry_Type, string_ptr);
@@ -817,6 +821,9 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
                           1, 
                           MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&(IP.RefU.Fd.y), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Exact_Integration_Digits), 
                           1, 
                           MPI::DOUBLE, 0);
 
@@ -1284,6 +1291,9 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.RefU.Fd.y), 
 		       1, 
 		       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.Exact_Integration_Digits), 
+		       1, 
+		       MPI::DOUBLE, Source_Rank);
 
     Communicator.Bcast(IP.Velocity_Field_Type, 
                        INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D, 
@@ -1720,6 +1730,13 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
       std::cout << "\n ==> Unknown initial condition!";
       i_command = INVALID_INPUT_VALUE;
     } /* endif */
+
+  } else if (strcmp(IP.Next_Control_Parameter, "Exact_Integration_Digits") == 0) {
+    i_command = 0;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.Exact_Integration_Digits;
+    IP.Input_File.getline(buffer, sizeof(buffer));
+    if (IP.Exact_Integration_Digits < 0) i_command = INVALID_INPUT_VALUE;
 
   } else if (strcmp(IP.Next_Control_Parameter, "Grid_Type") == 0) {
     i_command = 5;

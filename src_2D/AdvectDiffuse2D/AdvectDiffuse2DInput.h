@@ -134,6 +134,7 @@ public:
   AdvectDiffuse2D_ExactSolutions *ExactSoln; /*!< Pointer to the exact solution */
   AdvectDiffuse2D_State RefU;		/*!< Reference state, used by CENO to normalize the
 					   variables in the computation of the smoothness indicator. */
+  unsigned int Exact_Integration_Digits;    //!< Number of exact digits with which the some integrations are carried out
   //@}
 
   //! @name Diffusion coefficient, advection speeds, and relaxation time:
