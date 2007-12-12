@@ -1819,12 +1819,12 @@ dUdt_Multistage_Explicit(const int i_stage,
                dUdt[i][j][k][k_residual] -= (IPs.CFL_Number*dt[i][j][k])*Flux*Grid.AfaceE(i,j,k)/Grid.volume(i,j,k);
                dUdt[i+1][j][k][k_residual] += (IPs.CFL_Number*dt[i+1][j][k])*Flux*Grid.AfaceW(i+1,j,k)/Grid.volume(i+1,j,k);
                /* Include source terms associated with turbulence model */
-                dUdt[i][j][k][k_residual] += (IPs.CFL_Number*dt[i][j][k])*LES3DFsd_pState::Src_t(W[i][j][k],
-                                                                                                 dWdx[i][j][k],
-                                                                                                 dWdy[i][j][k], 
-                                                                                                 dWdz[i][j][k],
-                                                                                                 Flow_Type,
-                                                                                                 Grid.volume(i,j,k));
+                dUdt[i][j][k][k_residual] += (IPs.CFL_Number*dt[i][j][k])*LES3DFsd_pState::Sturbulence(W[i][j][k],
+                                                                                                       dWdx[i][j][k],
+                                                                                                       dWdy[i][j][k], 
+                                                                                                       dWdz[i][j][k],
+                                                                                                       Flow_Type,
+                                                                                                       Grid.volume(i,j,k));
           /* Include physical time derivative for dual time stepping */
 //           if (IPs.Dual_Time_Stepping) {
 //             //cout << "Source[k] dual time" << endl;
