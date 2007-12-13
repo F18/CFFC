@@ -553,14 +553,14 @@ int Wall_Distance(HEXA_BLOCK *Solution_Block,
  *
  */
 template<class SOLN_pSTATE, class SOLN_cSTATE>
-class RandomFieldRogallo{
+class RandomFieldRogallo {
   private:
     int spectrum_flag;  //!< Turbulence kinetic energy spectrum flag.
 
   public:
 
     //! Default constructor.
-    RandomFieldRogallo() : spectrum_flag(VON_KARMAN_PAO) { }
+    RandomFieldRogallo() : spectrum_flag(SPECTRUM_VON_KARMAN_PAO) { }
 
     //! Another constructor.
     RandomFieldRogallo(const int &SPECTRUM) : spectrum_flag(SPECTRUM) { }  
@@ -634,20 +634,20 @@ Energy_Spectrum_Value(const double &abs_wave_num) const {
   
   switch (spectrum_flag) {
     /*****  Lee and Reynolds  *****/
-  case LEE_REYNOLDS :
+  case SPECTRUM_LEE_REYNOLDS :
     C = 20.0;  kp = 80.0;   
     EE = (k <= kp)  ?  C*k*k : C*kp*kp*pow(k/kp, -5.0/3.0);
     break;
 
     /*****  Laval and Nazarenko paper  *****/
-  case LAVAL_NAZARENKO :
+  case SPECTRUM_LAVAL_NAZARENKO :
     //double EE, kp, C;
     C = 1.0;  kp = 4.0;
     EE = C*k*exp(-pow(k/kp, 2.0));
     break;
 
     /*****   von Karman-Pao   *****/
-  case VON_KARMAN_PAO :
+  case SPECTRUM_VON_KARMAN_PAO :
     A = 1.5;    alpha = 1.5;
     //Lp = TWO*PI/ONE;
     kp =1.0;   kd = 300.0 /*362.0*/;
@@ -658,7 +658,7 @@ Energy_Spectrum_Value(const double &abs_wave_num) const {
     break;
 
     /*****  Haworth and Poinsot paper  *****/
-  case HAWORTH_POINSOT :
+  case SPECTRUM_HAWORTH_POINSOT :
     //double EE, kp, 
     u = 4.5;  Lp = TWO*PI/4.0;  // kp=4.0, u=2.5  kp=8
     kp = TWO*PI/Lp;
@@ -666,7 +666,7 @@ Energy_Spectrum_Value(const double &abs_wave_num) const {
     break;
 
     /*****  Chasnov paper 1996  *****/
-  case CHASNOV :  
+  case SPECTRUM_CHASNOV :  
     //double a_s, EE, kp = 4.0 /*8.0 20.0 4.0*/, u = 0.095; /*0.1 28.3 21.21  0.001*/  
     //int s = 3;
     s = 3;
@@ -682,7 +682,7 @@ Energy_Spectrum_Value(const double &abs_wave_num) const {
     break;
 
     /*****   Bell & Day report   *****/
-  case BELL_DAY :
+  case SPECTRUM_BELL_DAY :
     //  kd = 1/(2*dx)
     kp = 3.0;   kd = ONE/0.576E-3;
     EE = pow(k/kp, 4.0) * exp(-9.0*pow(k/kd, 4.0/3.0)/4.0);
@@ -982,15 +982,14 @@ Write_Initial_Turbulent_Fluctuations(Grid3D_Hexa_Multi_Block &InitMeshBlks,
 
 }
 
-/* template<class SOLN_pState, class SOLN_cState, class HEXA_BLOCK> */
-/* void TurbStatistics<SOLN_pState, SOLN_cState, HEXA_BLOCK>:: */
 template<class HEXA_BLOCK>
-void Average_V(HEXA_BLOCK *Solution_Block,
-               AdaptiveBlock3D_List &LocalSolnBlockList,
-               Grid3D_Input_Parameters &IPs,
-               double &u_average,
-               double &v_average,
-               double &w_average) {
+void Time_Averaging_of_Velocity_Field(HEXA_BLOCK *Solution_Block,
+                                      AdaptiveBlock3D_List &LocalSolnBlockList,
+                                      Grid3D_Input_Parameters &IPs,
+                                      double &u_average,
+                                      double &v_average,
+                                      double &w_average) {
+
   double local_vol, Volume = ZERO;
   double Yfuel_conditional = ZERO;
   Vector3D vel;  vel.zero();
@@ -1021,14 +1020,13 @@ void Average_V(HEXA_BLOCK *Solution_Block,
   u_average = vel.x/Volume;
   v_average = vel.y/Volume;
   w_average = vel.z/Volume;
- }
+}
 
-/* template<class SOLN_pState, class SOLN_cState, class HEXA_BLOCK> */
-/* double TurbStatistics<SOLN_pState, SOLN_cState, HEXA_BLOCK>:: */
 template <class HEXA_BLOCK>
-double Turbulent_Burning_Rate(HEXA_BLOCK *Solution_Block,
-                              AdaptiveBlock3D_List &LocalSolnBlockList,
-                              Grid3D_Input_Parameters &IPs){
+double Time_Averaging_of_Turbulent_Burning_Rate(HEXA_BLOCK *Solution_Block,
+                                                AdaptiveBlock3D_List &LocalSolnBlockList,
+                                                Grid3D_Input_Parameters &IPs){
+
   double local_vol, Yf_u, rho_u, Ly, Lz, burning_rate = ZERO;
   Yf_u = 0.05518;//IPs.Fresh_Fuel_Mass_Fraction;
   rho_u = 1.13;//IPs.Fresh_Density;
@@ -1052,20 +1050,19 @@ double Turbulent_Burning_Rate(HEXA_BLOCK *Solution_Block,
   return burning_rate;
 }
 
-/* template<class SOLN_pState, class SOLN_cState, class HEXA_BLOCK> */
-/* void TurbStatistics<SOLN_pState, SOLN_cState, HEXA_BLOCK>:: */
-template<class HEXA_BLOCK>
-void Average(HEXA_BLOCK *Solution_Block,
-             AdaptiveBlock3D_List &LocalSolnBlockList,
-             Grid3D_Input_Parameters &IPs,
-             const double &u_average, 
-             const double &v_average,
-             const double &w_average,
-             double &sqr_u){
+template<class SOLN_pState, class SOLN_cState, class HEXA_BLOCK>
+void Time_Averaging_of_Solution(HEXA_BLOCK *Solution_Block,
+                                AdaptiveBlock3D_List &LocalSolnBlockList,
+                                Grid3D_Input_Parameters &IPs,
+                                const double &u_average, 
+                                const double &v_average,
+                                const double &w_average,
+                                double &sqr_u) {
+
   double vis, u_ave, v_ave, w_ave, local_vol, total_vol = ZERO, vis_ave = ZERO;
   double u_p=ZERO, v_p=ZERO, w_p=ZERO, ens=ZERO, eps_w=ZERO, eps_ss=ZERO;
   double Yfuel_conditional = ZERO;
-  LES3DFsd_pState dWdx, dWdy, dWdz;
+  SOLN_pState dWdx, dWdy, dWdz;
   
   //Conditional average on fresh gas
   //  if (IPs.react_name != "NO_REACTIONS") {
@@ -1164,8 +1161,6 @@ void Average(HEXA_BLOCK *Solution_Block,
   } 
 }
 
-/* template<class SOLN_pState, class SOLN_cState, class HEXA_BLOCK> */
-/* int TurbStatistics<SOLN_pState, SOLN_cState, HEXA_BLOCK>:: */
 template <class HEXA_BLOCK>
 int Longitudinal_Correlation(Octree_DataStructure &OcTree,
                              AdaptiveBlock3D_ResourceList &Global_Soln_Block_List,
@@ -1173,7 +1168,8 @@ int Longitudinal_Correlation(Octree_DataStructure &OcTree,
 			     HEXA_BLOCK *Solution_Block,
 			     Grid3D_Input_Parameters &IPs,
 			     const double &u_ave, 
-                             const double &sqr_u){
+                             const double &sqr_u) {
+
   ofstream Out_Corr_Function;
   int error_flag = 0;
   int Nblks = Global_Soln_Block_List.Nused;

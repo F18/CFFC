@@ -350,6 +350,12 @@ ifeq ($(PLATFORM),Linux_alpha)
     CXXFLAGS = -arch host -tune host -fast -w -std gnu
     LD = $(CXX)
     LDFLAGS = $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS)  $(BLKCLIB_LD_FLAGS) $(FFTW_LD_FLAGS) $(CANTERA_LD_FLAGS) -lm
+    ifeq ($(PROFILING),ON)
+      FFLAGS   += -pg
+      CFLAGS   += -pg
+      CXXFLAGS += -pg
+      LDFLAGS  += -pg
+    endif
     DEPENDSFLAGS = -I/usr/local/mpi/include/mpi2c++
   endif
 endif
@@ -406,6 +412,12 @@ ifeq ($(PLATFORM),Linux_ia64)
     CFLAGS = -w0 -O2 -mp -ftz 
     LD = $(CXX)
     LDFLAGS =  $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS)  $(BLKCLIB_LD_FLAGS) $(FFTW_LD_FLAGS) $(CANTERA_LD_FLAGS) -limf
+    ifeq ($(PROFILING),ON)
+      FFLAGS   += -qp
+      CFLAGS   += -qp
+      CXXFLAGS += -qp
+      LDFLAGS  += -qp
+    endif
     DEPENDSFLAGS = 
   endif
 endif

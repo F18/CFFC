@@ -86,11 +86,11 @@ double FANS3D_ThermallyPerfect_KOmega_pState::kappa_t(void) {
  * FANS3D_ThermallyPerfect_KOmega_pState::Ds_t -- Return species turbulent diffusion     *
  *                                                coefficient.                           *
  *****************************************************************************************/
-double FANS3D_ThermallyPerfect_KOmega_pState::Ds_t(const int &i) {
+double FANS3D_ThermallyPerfect_KOmega_pState::Ds_t(const int i) {
    return (mu_t()/(rho*Sc_t()));
 }
 
-double FANS3D_ThermallyPerfect_KOmega_pState::Ds_t(const int &i,
+double FANS3D_ThermallyPerfect_KOmega_pState::Ds_t(const int i,
                                                    const double &mu_t_temp) {
    return (mu_t_temp/(rho*Sc_t()));
 }
@@ -2039,11 +2039,11 @@ double FANS3D_ThermallyPerfect_KOmega_cState::kappa_t(void) {
  * FANS3D_ThermallyPerfect_KOmega_cState::Ds_t -- Return species turbulent diffusion     *
  *                                                coefficient.                           *
  *****************************************************************************************/
-double FANS3D_ThermallyPerfect_KOmega_cState::Ds_t(const int &i) {
+double FANS3D_ThermallyPerfect_KOmega_cState::Ds_t(const int i) {
    return (mu_t()/(rho*Sc_t()));
 }
 
-double FANS3D_ThermallyPerfect_KOmega_cState::Ds_t(const int &i,
+double FANS3D_ThermallyPerfect_KOmega_cState::Ds_t(const int i,
                                                    const double &mu_t_temp) {
    return (mu_t_temp/(rho*Sc_t()));
 }

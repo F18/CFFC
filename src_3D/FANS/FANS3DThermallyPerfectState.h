@@ -299,9 +299,9 @@ class FANS3D_ThermallyPerfect_KOmega_pState : public NavierStokes3D_ThermallyPer
    double kappa_t(void);      
 
    //! Species turbulent diffusion coefficient
-   double Ds_t(const int &i);
+   double Ds_t(const int i);
    //! Species turbulent diffusion coefficient
-   double Ds_t(const int &i,
+   double Ds_t(const int i,
                const double &mu_t_temp);
 
    //! Turbulent Prandtl number
@@ -866,9 +866,9 @@ class FANS3D_ThermallyPerfect_KOmega_cState : public NavierStokes3D_ThermallyPer
    double kappa_t(void);     
 
    //! Species turbulent diffusion coefficient
-   double Ds_t(const int &i);
+   double Ds_t(const int i);
    //! Species turbulent diffusion coefficient
-   double Ds_t(const int &i,
+   double Ds_t(const int i,
                const double &mu_t_temp);
 
    //! Turbulent Prandtl number

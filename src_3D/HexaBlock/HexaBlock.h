@@ -2281,7 +2281,7 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Linear_Reconstruction_LeastSquares(co
    int n, n2, n_pts, i_index[26], j_index[26], k_index[26];
    double u0Min, u0Max, uHexa[6], PHI;
    double DxDx_ave, DxDy_ave, DyDy_ave, DxDz_ave, DyDz_ave, DzDz_ave;
-   double D;;
+   double D;
    Vector3D dX;
    
    /* solnvec in  DU (DUDx_ave, DUDy_ave, DUDz_ave, D1, D2, D3) 

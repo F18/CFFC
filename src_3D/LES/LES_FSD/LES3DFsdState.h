@@ -40,7 +40,7 @@ class LES3DFsd_pState;
  *  - rho              -- Return density (kg/m^3)
  *  - v                -- Return flow velocity (m/s)
  *  - p                -- Return pressure (Pa, N/m^2)
- *  - pt               -- Return turbulence modified pressure (Pa, N/m^2)
+ *  - p_t               -- Return turbulence modified pressure (Pa, N/m^2)
  *  - k                -- Return subfilter scale turbulent kinetic energy (m^2/s^2)
  *  - C                -- Return reaction rate progress variable (0 <= C <= 1)
  *  - Fsd              -- Return premixed flame surface density
@@ -163,19 +163,19 @@ class LES3DFsd_pState : public NavierStokes3D_ThermallyPerfect_pState {
 /*        ---------------------------- */
 //@{
    //! Default creation constructor (assign default values)
-   LES3DFsd_pState(void) : NavierStokes3D_ThermallyPerfect_pState(), C(ONE), Fsd(MILLON), k(ZERO) {
+   LES3DFsd_pState(void) : NavierStokes3D_ThermallyPerfect_pState(), C(ONE), Fsd(MILLION), k(ZERO) {
                            premixed_mfrac(); }
    
    //! Constructor from base class (allows return of derived type)
    LES3DFsd_pState(const NavierStokes3D_ThermallyPerfect_pState &W1) : 
-     NavierStokes3D_ThermallyPerfect_pState(W1), C(ONE), Fsd(MILLON), k(ZERO) { }
+     NavierStokes3D_ThermallyPerfect_pState(W1), C(ONE), Fsd(MILLION), k(ZERO) { }
 
    //! Constructor from base class
    LES3DFsd_pState(const NavierStokes3D_ThermallyPerfect_pState &W1,
                    const double &cc,
                    const double &ff, 
                    const double &kk) : 
-     NavierStokes3D_ThermallyPerfect_pState(W1), C(cc), Fsd(ff), k(kk), { 
+     NavierStokes3D_ThermallyPerfect_pState(W1), C(cc), Fsd(ff), k(kk) { 
      premixed_mfrac(); }
 
    //! Assignment constructor
@@ -274,7 +274,7 @@ class LES3DFsd_pState : public NavierStokes3D_ThermallyPerfect_pState {
    double Hs(void) const;
 
    //! Modified pressure
-   double pt(void) const;
+   double p_t(void) const;
 
    //! Mixture sound speed including turbulent kinetic energy
    double a_t(void);
@@ -282,6 +282,8 @@ class LES3DFsd_pState : public NavierStokes3D_ThermallyPerfect_pState {
    //! Mixture sound speed including turbulent kinetic energy 
    double a_t(void) const;
 
+   //! Species mass fractions
+   void premixed_mfrac(void);
 //@}
   
 /** @name Turbulent transport coefficients */
@@ -292,34 +294,38 @@ class LES3DFsd_pState : public NavierStokes3D_ThermallyPerfect_pState {
                const LES3DFsd_pState &dWdy, 
                const LES3DFsd_pState &dWdz,
                const int Flow_Type, 
-               const double &Volume) const;
+               const double &Volume);
 
    //! Turbulent thermal conductivity
    double kappa_t(const LES3DFsd_pState &dWdx, 
                   const LES3DFsd_pState &dWdy, 
                   const LES3DFsd_pState &dWdz,
                   const int Flow_Type, 
-                  const double &Volume) const;      
+                  const double &Volume);      
 
    //! Species turbulent diffusion coefficient
-   double Ds_t(const LES3DFsd_pState &dWdx, 
+   double Ds_t(const int i,
+               const LES3DFsd_pState &dWdx, 
                const LES3DFsd_pState &dWdy, 
                const LES3DFsd_pState &dWdz,
                const int Flow_Type, 
-               const double &Volume) const;
+               const double &Volume);
 
    //! Species turbulent diffusion coefficient
-   double Ds_t(const int &i,
+   double Ds_t(const int i,
                const double &mu_t_temp);
 
    //! Turbulent Prandtl number
-   double Pr_t(void) const;
+   double Pr_t(void);
 
    //! Turbulent Schmidt number
    double Sc_t(void);      
 
    //! Turbulent Lewis number
    double Le_t(void); 
+
+   //! LES filter width
+   double filter_width(const double &Volume) const;
 //@}
 
 /** @name Subfilter scale turbulent stress tensor and heat flux vector */
@@ -328,90 +334,122 @@ class LES3DFsd_pState : public NavierStokes3D_ThermallyPerfect_pState {
    //! Returns subfilter scale turbulent stress tensor 
    Tensor3D tau_t(const LES3DFsd_pState &dWdx, 
                   const LES3DFsd_pState &dWdy,
-                  const LES3DFsd_pState &dWdz);
+                  const LES3DFsd_pState &dWdz,
+                  const int Flow_Type, 
+                  const double &Volume);
 
    //! Returns subfilter scale turbulent stress tensor 
    Tensor3D tau_t(const double &mu_t_temp, 
                   const LES3DFsd_pState &dWdx, 
                   const LES3DFsd_pState &dWdy,
-                  const LES3DFsd_pState &dWdz);
+                  const LES3DFsd_pState &dWdz,
+                  const int Flow_Type, 
+                  const double &Volume);
 
    //! Returns components of subfilter scale turbulent stress tensor in x-direction 
    Tensor3D tau_t_x(const LES3DFsd_pState &dWdx, 
                     const LES3DFsd_pState &dWdy,
-                    const LES3DFsd_pState &dWdz);
+                    const LES3DFsd_pState &dWdz,
+                    const int Flow_Type, 
+                    const double &Volume);
 
    //! Returns components of subfilter scale turbulent stress tensor in x-direction
    Tensor3D tau_t_x(const double &mu_t_temp, 
                     const LES3DFsd_pState &dWdx, 
                     const LES3DFsd_pState &dWdy,
-                    const LES3DFsd_pState &dWdz);
+                    const LES3DFsd_pState &dWdz,
+                    const int Flow_Type, 
+                    const double &Volume);
 
    //! Returns components of subfilter scale turbulent stress tensor in y-direction 
    Tensor3D tau_t_y(const LES3DFsd_pState &dWdx, 
                     const LES3DFsd_pState &dWdy,
-                    const LES3DFsd_pState &dWdz);
+                    const LES3DFsd_pState &dWdz,
+                    const int Flow_Type, 
+                    const double &Volume);
 
    //! Returns components of subfilter scale turbulent stress tensor in y-direction
    Tensor3D tau_t_y(const double &mu_t_temp, 
                     const LES3DFsd_pState &dWdx, 
                     const LES3DFsd_pState &dWdy,
-                    const LES3DFsd_pState &dWdz);
+                    const LES3DFsd_pState &dWdz,
+                    const int Flow_Type, 
+                    const double &Volume);
 
    //! Returns components of subfilter scale turbulent stress tensor in z-direction 
    Tensor3D tau_t_z(const LES3DFsd_pState &dWdx, 
                     const LES3DFsd_pState &dWdy,
-                    const LES3DFsd_pState &dWdz);
+                    const LES3DFsd_pState &dWdz,
+                    const int Flow_Type, 
+                    const double &Volume);
 
    //! Returns components of subfilter scale turbulent stress tensor in z-direction
    Tensor3D tau_t_z(const double &mu_t_temp, 
                     const LES3DFsd_pState &dWdx, 
                     const LES3DFsd_pState &dWdy,
-                    const LES3DFsd_pState &dWdz);
+                    const LES3DFsd_pState &dWdz,
+                    const int Flow_Type, 
+                    const double &Volume);
 
    //! Returns subfilter scale turbulent heat flux vector 
    Vector3D q_t(const LES3DFsd_pState &dWdx, 
                 const LES3DFsd_pState &dWdy,
-                const LES3DFsd_pState &dWdz);
+                const LES3DFsd_pState &dWdz,
+                const int Flow_Type, 
+                const double &Volume);
 
    //! Returns subfilter scale turbulent heat flux vector 
    Vector3D q_t(const double &kappa_t_temp,
                 const LES3DFsd_pState &dWdx, 
                 const LES3DFsd_pState &dWdy,
-                const LES3DFsd_pState &dWdz);
+                const LES3DFsd_pState &dWdz,
+                const int Flow_Type, 
+                const double &Volume);
 
    //! Returns component of subfilter scale turbulent heat flux vector in x-direction
    Vector3D q_t_x(const LES3DFsd_pState &dWdx, 
                   const LES3DFsd_pState &dWdy,
-                  const LES3DFsd_pState &dWdz);
+                  const LES3DFsd_pState &dWdz,
+                  const int Flow_Type, 
+                  const double &Volume);
 
    //! Returns component of subfilter scale turbulent heat flux vector in x-direction
    Vector3D q_t_x(const double &kappa_t_temp,
                   const LES3DFsd_pState &dWdx, 
                   const LES3DFsd_pState &dWdy,
-                  const LES3DFsd_pState &dWdz);
+                  const LES3DFsd_pState &dWdz,
+                  const int Flow_Type, 
+                  const double &Volume);
 
    //! Returns component of subfilter scale turbulent heat flux vector in y-direction
    Vector3D q_t_y(const LES3DFsd_pState &dWdx, 
                   const LES3DFsd_pState &dWdy,
-                  const LES3DFsd_pState &dWdz);
+                  const LES3DFsd_pState &dWdz,
+                  const int Flow_Type, 
+                  const double &Volume);
 
    //! Returns component of subfilter scale turbulent heat flux vector in y-direction
    Vector3D q_t_y(const double &kappa_t_temp,
                   const LES3DFsd_pState &dWdx, 
                   const LES3DFsd_pState &dWdy,
-                  const LES3DFsd_pState &dWdz);
+                  const LES3DFsd_pState &dWdz,
+                  const int Flow_Type, 
+                  const double &Volume);
 
    //! Returns component of subfilter scale turbulent heat flux vector in z-direction
    Vector3D q_t_z(const LES3DFsd_pState &dWdx, 
                   const LES3DFsd_pState &dWdy,
-                  const LES3DFsd_pState &dWdz);
+                  const LES3DFsd_pState &dWdz,
+                  const int Flow_Type, 
+                  const double &Volume);
 
    //! Returns component of subfilter scale turbulent heat flux vector in z-direction
    Vector3D q_t_z(const double &kappa_t_temp,
                   const LES3DFsd_pState &dWdx, 
                   const LES3DFsd_pState &dWdy,
-                  const LES3DFsd_pState &dWdz);
+                  const LES3DFsd_pState &dWdz,
+                  const int Flow_Type, 
+                  const double &Volume);
 //@}
 
 /** @name Conserved solution state */ 
@@ -456,26 +494,28 @@ class LES3DFsd_pState : public NavierStokes3D_ThermallyPerfect_pState {
    LES3DFsd_cState Fv(const LES3DFsd_pState &dWdx,
                       const LES3DFsd_pState &dWdy,
                       const LES3DFsd_pState &dWdz,
-                      const int &Flow_Type,
-                      const double &Volume) const;
+                      const int Flow_Type,
+                      const double &Volume);
    //! x-direction viscous solution flux
    LES3DFsd_cState Fvx(const LES3DFsd_pState &dWdx,
                        const LES3DFsd_pState &dWdy,
                        const LES3DFsd_pState &dWdz,
-                       const int &Flow_Type,
-                       const double &Volume) const;
+                       const int Flow_Type,
+                       const double &Volume);
+
    //! y-direction viscous solution flux
    LES3DFsd_cState Fvy(const LES3DFsd_pState &dWdx,
                        const LES3DFsd_pState &dWdy,
                        const LES3DFsd_pState &dWdz,
-                       const int &Flow_Type,
-                       const double &Volume) const;
+                       const int Flow_Type,
+                       const double &Volume);
+
    //! z-direction viscous solution flux
    LES3DFsd_cState Fvz(const LES3DFsd_pState &dWdx,
                        const LES3DFsd_pState &dWdy,
                        const LES3DFsd_pState &dWdz,
-                       const int &Flow_Type,
-                       const double &Volume) const;
+                       const int Flow_Type,
+                       const double &Volume);
 //@}
 
 /** @name Eigenvalue(s) and eigenvector(s) (x-direction) */
@@ -516,7 +556,7 @@ class LES3DFsd_pState : public NavierStokes3D_ThermallyPerfect_pState {
 /*        ---------------------------------------------- */
 //@{
    //! Return the square value of Mach number
-   double Mr2(const double &deltax, const double &lengthx, const double &dTime) const;
+   double Mr2(const double &deltax, const double &lengthx, const double &dTime);
 
    //! Preconditioned velocity and sound speed
    void u_a_precon(const double &UR,double &uprimed, double &cprimed) const;
@@ -525,13 +565,13 @@ class LES3DFsd_pState : public NavierStokes3D_ThermallyPerfect_pState {
    LES3DFsd_cState rc_x_precon(const int &index, const double &MR2) const; 
 
    //! x-direction primitive eigenvectors
-   LES3DFsd_pState lp_x_precon(const int &index,const double &MR2) const; 
+   LES3DFsd_pState lp_x_precon(const int &index, const double &MR2) const; 
 
    //! Preconditioner matrix
-   void Low_Mach_Number_Preconditioner(DenseMatrix &P, const double &deltax, const double &lengthx, const double &dTime) const; 
+   void Low_Mach_Number_Preconditioner(DenseMatrix &P, const double &deltax, const double &lengthx, const double &dTime); 
 
    //! Preconditioner matrix inverse
-   void Low_Mach_Number_Preconditioner_Inverse(DenseMatrix &Pinv, const double &deltax, const double &lengthx, const double &dTime) const; 
+   void Low_Mach_Number_Preconditioner_Inverse(DenseMatrix &Pinv, const double &deltax, const double &lengthx, const double &dTime); 
   //@}
 
 /** @name  SemiImpilicit source term Jacobian */
@@ -539,7 +579,7 @@ class LES3DFsd_pState : public NavierStokes3D_ThermallyPerfect_pState {
 //@{
 
    //! Transform Jacobian for primitive to conservative
-   void dWdU(DenseMatrix &dWdU)
+   void dWdU(DenseMatrix &dWdU);
 
    //! Return the source term Jacobian for SemiImplicit time marching
    void SemiImplicitSourceJacobi(const LES3DFsd_pState &dWdx, 
@@ -549,8 +589,8 @@ class LES3DFsd_pState : public NavierStokes3D_ThermallyPerfect_pState {
                                  const double &d_dWdy_dW,
                                  const double &d_dWdz_dW,
                                  DenseMatrix &dStdW,
-                                 const int &Flow_Type,
-                                 const double &Volume)const;
+                                 const int Flow_Type,
+                                 const double &Volume);
   //@}
 
 /** @name Numerical Flux Functions */
@@ -589,6 +629,10 @@ class LES3DFsd_pState : public NavierStokes3D_ThermallyPerfect_pState {
    //! Returns AUSMplus_up flux x-direction flux
    static LES3DFsd_cState FluxAUSMplus_up_x(const LES3DFsd_pState &Wl,
                                             const LES3DFsd_pState &Wr);
+
+   //! Returns AUSMplus_up flux x-direction flux
+   static LES3DFsd_cState FluxAUSMplus_up_x(const LES3DFsd_cState &Ul,
+                                            const LES3DFsd_cState &Ur);
 
    //! Returns AUSMplus_up flux in n-direction
    static LES3DFsd_cState FluxAUSMplus_up_n(const LES3DFsd_pState &Wl,
@@ -631,9 +675,12 @@ class LES3DFsd_pState : public NavierStokes3D_ThermallyPerfect_pState {
                                         const LES3DFsd_pState &dWdx2,
                                         const LES3DFsd_pState &dWdy2,
                                         const LES3DFsd_pState &dWdz2,
-                                        const Vector3D &norm, const Vector3D &ts, 
-                                        const double &deltad, const double &Volume, 
-                                        const double &Volume_Neigbor, const int &Flow_Type);
+                                        const Vector3D &norm, 
+                                        const Vector3D &ts, 
+                                        const double &deltad, 
+                                        const double &Volume, 
+                                        const double &Volume_Neigbor, 
+                                        const int Flow_Type);
 //@}
 
 /** @name Boundary Conditions */
@@ -662,17 +709,11 @@ class LES3DFsd_pState : public NavierStokes3D_ThermallyPerfect_pState {
 /** @name Turbulence Model Source Terms */
 /*        ----------------------------- */
 //@{
-
-   //! LES filter width
-   double filter_width(const double &Volume) const;
-
-   //! Species mass fractions
-   void premixed_mfrac(void);
-
    //! Absolute value of strain rate
    double abs_strain_rate(const LES3DFsd_pState &dWdx, 
                           const LES3DFsd_pState &dWdy, 
                           const LES3DFsd_pState &dWdz) const;
+
    //! Gradient of strain rate
    Vector3D grad_abs_strain_rate(const LES3DFsd_pState &dWdx, 
                                  const LES3DFsd_pState &dWdy, 
@@ -685,24 +726,29 @@ class LES3DFsd_pState : public NavierStokes3D_ThermallyPerfect_pState {
 		                 const LES3DFsd_pState &d_dWdy_dz) const;
    //! Heat release parameter
    double HeatRelease_Parameter(void) const;
+
    //! Subfilter scale kinetic energy
    double SFS_Kinetic_Energy_Fsd(const LES3DFsd_pState &dWdx,
                                  const LES3DFsd_pState &dWdy,
                                  const LES3DFsd_pState &dWdz,
-                                 const int &Flow_Type,
-                                 const double &Volume) const;
+                                 const int Flow_Type,
+                                 const double &Volume);
+
    //! Efficiency function for subfilter scale strain term
    double Efficiency_Function_Fsd(const LES3DFsd_pState &dWdx,
                                   const LES3DFsd_pState &dWdy,
                                   const LES3DFsd_pState &dWdz,
-                                  const int &Flow_Type,
-                                  const double &Volume) const; 
+                                  const int Flow_Type,
+                                  const double &Volume);
+ 
    //! Gradients of progress variable to species mass fractions
    double Progvar_Species_Grad(void) const;
+
    //! Reaction rate
    double Reaction_Rate_Fsd(const LES3DFsd_pState &dWdx,
                             const LES3DFsd_pState &dWdy,
-                            const LES3DFsd_pState &dWdz) const;
+                            const LES3DFsd_pState &dWdz);
+
    //! x-direction surface averaged normal 
    double M_x(const LES3DFsd_pState &dWdx,
               const LES3DFsd_pState &dWdy,
@@ -727,8 +773,8 @@ class LES3DFsd_pState : public NavierStokes3D_ThermallyPerfect_pState {
    double SFS_Strain(const LES3DFsd_pState &dWdx,
                      const LES3DFsd_pState &dWdy,
                      const LES3DFsd_pState &dWdz,
-                     const int &Flow_Type,
-                     const double &Volume) const;
+                     const int Flow_Type,
+                     const double &Volume);
    //! Subfilter scale curvature term
    double SFS_Curvature(const LES3DFsd_pState &dWdx,
                         const LES3DFsd_pState &dWdy,
@@ -827,8 +873,9 @@ class LES3DFsd_pState : public NavierStokes3D_ThermallyPerfect_pState {
                                 const LES3DFsd_pState &d_dWdx_dy,
                                 const LES3DFsd_pState &d_dWdx_dz,
                                 const LES3DFsd_pState &d_dWdy_dz,
-                                const int &Flow_Type,
-                                const double &Volume) const;
+                                const int Flow_Type,
+                                const double &Volume);
+
    //! Subfilter scale term for flame surface density
    double SFS_Diffusion_Fsd(const LES3DFsd_pState &dWdx,
                             const LES3DFsd_pState &dWdy,
@@ -839,8 +886,9 @@ class LES3DFsd_pState : public NavierStokes3D_ThermallyPerfect_pState {
                             const LES3DFsd_pState &d_dWdx_dy,
                             const LES3DFsd_pState &d_dWdx_dz,
              	            const LES3DFsd_pState &d_dWdy_dz,
-                            const int &Flow_Type,
-                            const double &Volume) const; 
+                            const int Flow_Type,
+                            const double &Volume); 
+
    //! Heat release strain term
    double Heat_Release_Strain(const LES3DFsd_pState &dWdx,
                               const LES3DFsd_pState &dWdy,
@@ -850,7 +898,8 @@ class LES3DFsd_pState : public NavierStokes3D_ThermallyPerfect_pState {
                               const LES3DFsd_pState &d_dWdz_dz,
                               const LES3DFsd_pState &d_dWdx_dy,
                               const LES3DFsd_pState &d_dWdx_dz,
-                              const LES3DFsd_pState &d_dWdy_dz) const;
+                              const LES3DFsd_pState &d_dWdy_dz);
+
    //! Net rate change for progress variable
    double Net_Rate_Change_Progvar(const LES3DFsd_pState &dWdx,
                                   const LES3DFsd_pState &dWdy,
@@ -861,8 +910,8 @@ class LES3DFsd_pState : public NavierStokes3D_ThermallyPerfect_pState {
                                   const LES3DFsd_pState &d_dWdx_dy,
                                   const LES3DFsd_pState &d_dWdx_dz,
 		                  const LES3DFsd_pState &d_dWdy_dz,
-                                  const int &Flow_Type,
-                                  const double &Volume) const;
+                                  const int Flow_Type,
+                                  const double &Volume);
    //! Net rate change for flame surface density
    double Net_Rate_Change_Fsd (const LES3DFsd_pState &dWdx,
                                const LES3DFsd_pState &dWdy,
@@ -873,20 +922,22 @@ class LES3DFsd_pState : public NavierStokes3D_ThermallyPerfect_pState {
                                const LES3DFsd_pState &d_dWdx_dy,
                                const LES3DFsd_pState &d_dWdx_dz,
 		               const LES3DFsd_pState &d_dWdy_dz,
-                               const int &Flow_Type,
-                               const double &Volume) const;
+                               const int Flow_Type,
+                               const double &Volume);
+
    //! Soure term for k-equation
    double K_equ_sources(const LES3DFsd_pState &dWdx,
                         const LES3DFsd_pState &dWdy,
                         const LES3DFsd_pState &dWdz,
-                        const int &Flow_Type,
-                        const double &Volume) const;
+                        const int Flow_Type,
+                        const double &Volume);
+
    //! Source terms for C-Fsd-k model
-   static LES3DFsd_cState Sturbulence(const LES3DFsd_pState &Wc,
+   static LES3DFsd_cState Sturbulence(LES3DFsd_pState &Wc,
                                       const LES3DFsd_pState &dWdx,
                                       const LES3DFsd_pState &dWdy,
                                       const LES3DFsd_pState &dWdz,
-                                      const int &Flow_Type,
+                                      const int Flow_Type,
                                       const double &Volume);
 //@}
 
@@ -1007,12 +1058,12 @@ class LES3DFsd_cState : public NavierStokes3D_ThermallyPerfect_cState {
 /*        ---------------------------- */
 //@{
    //! Default creation constructor (assign default values)
-   LES3DFsd_cState(): NavierStokes3D_ThermallyPerfect_cState(), rhoC(rho*ONE), rhoFsd(MILLON), rhok(ZERO) {
+   LES3DFsd_cState(): NavierStokes3D_ThermallyPerfect_cState(), rhoC(rho*ONE), rhoFsd(MILLION), rhok(ZERO) {
                       premixed_mfrac(); }
    
    //! Constructor from base class (allows return of derived type)
-   LES3DFsd_cState(const NavierStokes3D_ThermallyPerfect_cState &W1) : 
-     NavierStokes3D_ThermallyPerfect_cState(U1), rhoC(rho*ONE), rhoFsd(MILLON), rhok(ZERO) { }
+   LES3DFsd_cState(const NavierStokes3D_ThermallyPerfect_cState &U1) : 
+     NavierStokes3D_ThermallyPerfect_cState(U1), rhoC(rho*ONE), rhoFsd(MILLION), rhok(ZERO) { }
 
    //! Constructor from base class
    LES3DFsd_cState(const NavierStokes3D_ThermallyPerfect_cState &U1,
@@ -1078,7 +1129,7 @@ class LES3DFsd_cState : public NavierStokes3D_ThermallyPerfect_cState {
    //! Check for physical validity of the progress variable
    void Realizable_Mass_Fraction_Check(void) {
       if (rhoC/rho > ONE) {
-        rhoC/rho = ONE;
+        rhoC = ONE*rho;
         premixed_mfrac();
       } else if (rhoC < ZERO) {
         rhoC = ZERO;
@@ -1123,7 +1174,7 @@ class LES3DFsd_cState : public NavierStokes3D_ThermallyPerfect_cState {
    double T(void) const;
 
    //! Turbulence modified pressure
-   double pt(void) const;
+   double p_t(void) const;
 
    //! Mixture sound speed including turbulent kinetic energy
    double a_t(void) const;
@@ -1145,15 +1196,28 @@ class LES3DFsd_cState : public NavierStokes3D_ThermallyPerfect_cState {
 /*        -------------------------------- */
 //@{
    //! Eddy (turbulent) viscosity
-   double mu_t(void);
+   double mu_t(const LES3DFsd_pState &dWdx, 
+               const LES3DFsd_pState &dWdy, 
+               const LES3DFsd_pState &dWdz,
+               const int Flow_Type, 
+               const double &Volume);
 
    //! Turbulent) thermal conductivity
-   double kappa_t(void);     
+   double kappa_t(const LES3DFsd_pState &dWdx, 
+                  const LES3DFsd_pState &dWdy, 
+                  const LES3DFsd_pState &dWdz,
+                  const int Flow_Type, 
+                  const double &Volume);     
 
    //! Species turbulent diffusion coefficient
-   double Ds_t(const int &i);
+   double Ds_t(const int i,
+               const LES3DFsd_pState &dWdx, 
+               const LES3DFsd_pState &dWdy, 
+               const LES3DFsd_pState &dWdz,
+               const int Flow_Type, 
+               const double &Volume);
    //! Species turbulent diffusion coefficient
-   double Ds_t(const int &i,
+   double Ds_t(const int i,
                const double &mu_t_temp);
 
    //! Turbulent Prandtl number
@@ -1164,6 +1228,14 @@ class LES3DFsd_cState : public NavierStokes3D_ThermallyPerfect_cState {
 
    //! Turbulent Lewis number
    double Le_t(void);
+ 
+   //! LES filter width
+   double filter_width(const double &Volume) const;
+
+   //! Absolute value of strain rate
+   double abs_strain_rate(const LES3DFsd_pState &dWdx, 
+                          const LES3DFsd_pState &dWdy, 
+                          const LES3DFsd_pState &dWdz) const;
 //@}
 
 /** @name Primitive solution state */ 
@@ -1439,12 +1511,7 @@ inline LES3DFsd_pState& LES3DFsd_pState::operator -=(const LES3DFsd_pState &W) {
  * LES3DFsd_pState -- Unary arithmetic operators.    *
  *****************************************************/
 inline LES3DFsd_pState operator -(const LES3DFsd_pState &W) {
-   Species *spt= new Species[W.ns];
-   for (int i = 0; i < W.ns; i++) {
-      spt[i] = -W.spec[i]; 
-   } /* endfor */ 
-   LES3DFsd_pState Temp(-W.rho, -W.v, -W.p, -W.C, -W.Fsd, -W.k, spt);
-   delete[] spt;
+   LES3DFsd_pState Temp(-W.rho, -W.v, -W.p, -W.C, -W.Fsd, -W.k);
    return(Temp);
 }
 
@@ -1708,12 +1775,7 @@ inline LES3DFsd_cState& LES3DFsd_cState::operator -=(const LES3DFsd_cState &U) {
  * LES3DFsd_cState -- Unary arithmetic operators.  *          
  ***************************************************/
 inline LES3DFsd_cState operator -(const LES3DFsd_cState &U) {
-   Species *spt= new Species[U.ns];
-   for(int i=0; i<U.ns; i++){
-      spt[i] = -U.rhospec[i]; 
-   } /* endfor */ 
-   LES3DFsd_cState Temp(-U.rho,-U.rhov,-U.E,-U.rhoC,-U.rhoFsd,-U.rhok,spt);
-  delete[] spt;
+   LES3DFsd_cState Temp(-U.rho,-U.rhov,-U.E,-U.rhoC,-U.rhoFsd,-U.rhok);
   return(Temp);
 }
 

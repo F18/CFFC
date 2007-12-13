@@ -72,9 +72,9 @@ double LES3DFsd_pState::Hs(void) const{
 }
 
 /*****************************************************************************************
- * LES3DFsd_pState::pt -- Return turbulence modified pressure.                           *
+ * LES3DFsd_pState::p_t -- Return turbulence modified pressure.                           *
  *****************************************************************************************/
-double LES3DFsd_pState::pt(void) const { 
+double LES3DFsd_pState::p_t(void) const { 
    return ( p + 2.0*rho*k/3.0 );
 }
 
@@ -93,19 +93,109 @@ double LES3DFsd_pState::a_t(void) const {
    return sqrt(aa);
 }
 
+/**********************************************************************************************
+ * LES3DFsd_pState::premixed_mfrac -- Species mass fractions for one-step reaction mechanism  *
+ **********************************************************************************************/
+void LES3DFsd_pState::premixed_mfrac(void) {
+  double burnt_fuel_c, burnt_oxygen_c, stoich_ratio;
+  double c_products, products_ratio;
+  
+  // Check realizability of progress variable.
+  Realizable_C_Check();  
+
+  // Determine stoichiometric ratio
+  if (React.reactset_flag == CH4_1STEP) {
+    stoich_ratio = 2.0*specdata[1].Mol_mass()/
+                   specdata[0].Mol_mass();     // stoichiometric O2/CH4 mass ratio
+  } else if (React.reactset_flag == C3H8_1STEP) {
+    stoich_ratio = 5.0*specdata[1].Mol_mass()/
+                   specdata[0].Mol_mass();     // stoichiometric O2/C3H8 mass ratio
+  } else if (React.reactset_flag == H2O2_1STEP){
+    stoich_ratio = specdata[1].Mol_mass()/
+                   2.0/specdata[0].Mol_mass(); // stoichiometric O2/H2 mass ratio
+  }
+
+  // Calculate fuel mass fraction
+  spec[0].c = (ONE - C)*_unburnt_fuel_mass_fraction;
+  if (spec[0].c < MICRO) {
+      spec[0].c = ZERO;
+  } /* endif */
+
+  // Calculate oxygen mass fraction
+  // Lean mixture(_fuel_equivalence_ratio < 1) => excessive O2
+  if (_fuel_equivalence_ratio < ONE) {  
+    burnt_fuel_c = ZERO;
+    burnt_oxygen_c = (ONE/_fuel_equivalence_ratio - ONE)*_unburnt_fuel_mass_fraction*stoich_ratio;
+    if (spec[0].c == ZERO) {
+      spec[1].c = burnt_oxygen_c;      
+    } else {
+      spec[1].c = spec[0].c*stoich_ratio + burnt_oxygen_c;
+    }  
+
+  // Rich mixture(_fuel_equivalence_ratio > 1) => excessive CH4
+  } else if (_fuel_equivalence_ratio > ONE) {  
+    burnt_oxygen_c = ZERO;
+    burnt_fuel_c = (ONE - ONE/_fuel_equivalence_ratio)*_unburnt_fuel_mass_fraction;
+    spec[0].c = C*(burnt_fuel_c - _unburnt_fuel_mass_fraction) + _unburnt_fuel_mass_fraction;
+    if (spec[0].c <= burnt_fuel_c) {
+      spec[1].c = burnt_oxygen_c;
+    } else {
+      spec[1].c = (spec[0].c - burnt_fuel_c)*stoich_ratio;
+    }
+
+  // Stoichiometric mixture(_fuel_equivalence_ratio = 1)
+  } else { 
+    burnt_fuel_c = ZERO;
+    burnt_oxygen_c = ZERO;
+    spec[1].c = spec[0].c*stoich_ratio; 
+
+  } /* endif */
+
+  // Determine mass fractions of products
+  if (React.reactset_flag == CH4_1STEP ||
+      React.reactset_flag == C3H8_1STEP) {
+    // mass fractions of products
+    c_products = ONE - (spec[0].c + spec[1].c + spec[4].c);
+    if (React.reactset_flag == CH4_1STEP) {
+       products_ratio = specdata[2].Mol_mass()/(specdata[2].Mol_mass()+2.0*specdata[3].Mol_mass());
+    } else if (React.reactset_flag == C3H8_1STEP) {
+       products_ratio = 3.0*specdata[2].Mol_mass()/(3.0*specdata[2].Mol_mass()+4.0*specdata[3].Mol_mass());
+    } /* endif */ 
+    spec[2].c = products_ratio*c_products; // CO2 mass fraction
+    spec[3].c = c_products-spec[2].c;  // H2O mass fraction   
+    spec[1].c = (ONE - c_products - spec[0].c - spec[4].c) ;  // O2 mass fraction
+  } else if (React.reactset_flag == H2O2_1STEP) {
+       spec[2].c = ONE - spec[0].c - spec[1].c - spec[3].c; // H2O mass fraction 
+  }
+
+  // Check for realizability of each species mass fraction
+  for (int i=0; i<ns; i++){
+    if (spec[i].c < ZERO) spec[i].c = ZERO;
+  } /* endfor */
+
+  double suma = ZERO;
+  for (int i=0; i < ns; i++) {
+    suma = suma + spec[i].c;
+  } /* endfor */
+  for (int i=0; i < ns; i++) {
+    spec[i].c = spec[i].c*(ONE/suma);
+  } /* endfor */
+
+}
+
 /*******************************************************************
  * LES3DFsd_pState::mu_t -- Return eddy (turbulent) viscosity.     *
  *******************************************************************/
 double LES3DFsd_pState::mu_t(const LES3DFsd_pState &dWdx,
  			     const LES3DFsd_pState &dWdy,
 			     const LES3DFsd_pState &dWdz,
-                             const int &Flow_Type, 
-                             const double &Volume) const{
-    double filter = filter_width(Volume);
+                             const int Flow_Type, 
+                             const double &Volume) {
+  double filter = filter_width(Volume);
   if (Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY) {
     double Cs = 0.18;
     return(rho*Cs*sqr(filter)*abs_strain_rate(dWdx,dWdy,dWdz));
-  }else if(Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K) {
+  } else if(Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K) {
     double Cv = 0.086;
     return(rho*Cv*sqrt(k)*filter);
   }
@@ -117,25 +207,25 @@ double LES3DFsd_pState::mu_t(const LES3DFsd_pState &dWdx,
 double LES3DFsd_pState::kappa_t(const LES3DFsd_pState &dWdx,
  			        const LES3DFsd_pState &dWdy,
 			        const LES3DFsd_pState &dWdz,
-                                const int &Flow_Type, 
-                                const double &Volume) const{
+                                const int Flow_Type, 
+                                const double &Volume) {
   return (mu_t(dWdx,dWdy,dWdz,Flow_Type,Volume)*Cp()/Pr_t()); 
 }
 
 /********************************************************************************
  * LES3DFsd_pState::Ds_t -- Return species turbulent diffusion coefficient.     *
  ********************************************************************************/
-double LES3DFsd_pState::Ds_t(const int &i,
+double LES3DFsd_pState::Ds_t(const int i,
                              const LES3DFsd_pState &dWdx,
  			     const LES3DFsd_pState &dWdy,
 			     const LES3DFsd_pState &dWdz,
-                             const int &Flow_Type, 
-                             const double &Volume) const{
+                             const int Flow_Type, 
+                             const double &Volume) {
   return (mu_t(dWdx,dWdy,dWdz,Flow_Type,Volume)/(rho*Sc_t())); 
 }
 
-double LES3DFsd_pState::Ds_t(const int &i,
-                             const double &mu_t_temp) const{
+double LES3DFsd_pState::Ds_t(const int i,
+                             const double &mu_t_temp) {
   return (mu_t_temp/(rho*Sc_t())); 
 }
 
@@ -160,13 +250,20 @@ double LES3DFsd_pState::Le_t(void) {
   return (Sc_t()/Pr_t());
 }
 
+/*************************************************************************
+ * LES3DFsd_pState::filter_width -- LES characteristic filter width      *
+ *************************************************************************/
+double LES3DFsd_pState::filter_width(const double &Volume) const {
+  return (0.0366/60.0);//pow(Volume,1.0/3.0); 
+}
+
 /*******************************************************************************
  * LES3DFsd_pState::tau_t -- Return subfilter scale (turbulent) stress tensor. *
  *******************************************************************************/
 Tensor3D LES3DFsd_pState::tau_t(const LES3DFsd_pState &dWdx, 
                                 const LES3DFsd_pState &dWdy,
                                 const LES3DFsd_pState &dWdz,
-                                const int &Flow_Type, 
+                                const int Flow_Type, 
                                 const double &Volume) {
    
    Tensor3D SFS_stress;
@@ -187,7 +284,7 @@ Tensor3D LES3DFsd_pState::tau_t(const double &mu_t_temp,
                                 const LES3DFsd_pState &dWdx, 
                                 const LES3DFsd_pState &dWdy,
                                 const LES3DFsd_pState &dWdz,
-                                const int &Flow_Type, 
+                                const int Flow_Type, 
                                 const double &Volume) {
    
    Tensor3D SFS_stress;
@@ -210,7 +307,7 @@ Tensor3D LES3DFsd_pState::tau_t(const double &mu_t_temp,
 Tensor3D LES3DFsd_pState::tau_t_x(const LES3DFsd_pState &dWdx, 
                                   const LES3DFsd_pState &dWdy,
                                   const LES3DFsd_pState &dWdz,
-                                  const int &Flow_Type, 
+                                  const int Flow_Type, 
                                   const double &Volume) {
    Tensor3D SFS_stress;
    double mu_t_temp = mu_t(dWdx,dWdy,dWdz,Flow_Type,Volume);
@@ -227,7 +324,7 @@ Tensor3D LES3DFsd_pState::tau_t_x(const double &mu_t_temp,
                                   const LES3DFsd_pState &dWdx, 
                                   const LES3DFsd_pState &dWdy,
                                   const LES3DFsd_pState &dWdz,
-                                  const int &Flow_Type, 
+                                  const int Flow_Type, 
                                   const double &Volume) {
    Tensor3D SFS_stress;
 
@@ -246,7 +343,7 @@ Tensor3D LES3DFsd_pState::tau_t_x(const double &mu_t_temp,
 Tensor3D LES3DFsd_pState::tau_t_y(const LES3DFsd_pState &dWdx, 
                                   const LES3DFsd_pState &dWdy,
                                   const LES3DFsd_pState &dWdz,
-                                  const int &Flow_Type, 
+                                  const int Flow_Type, 
                                   const double &Volume) {
    Tensor3D SFS_stress;
    double mu_t_temp = mu_t(dWdx,dWdy,dWdz,Flow_Type,Volume);
@@ -263,7 +360,7 @@ Tensor3D LES3DFsd_pState::tau_t_y(const double &mu_t_temp,
                                   const LES3DFsd_pState &dWdx, 
                                   const LES3DFsd_pState &dWdy,
                                   const LES3DFsd_pState &dWdz,
-                                  const int &Flow_Type, 
+                                  const int Flow_Type, 
                                   const double &Volume) {
    Tensor3D SFS_stress;
 
@@ -282,7 +379,7 @@ Tensor3D LES3DFsd_pState::tau_t_y(const double &mu_t_temp,
 Tensor3D LES3DFsd_pState::tau_t_z(const LES3DFsd_pState &dWdx, 
                                   const LES3DFsd_pState &dWdy,
                                   const LES3DFsd_pState &dWdz,
-                                  const int &Flow_Type, 
+                                  const int Flow_Type, 
                                   const double &Volume) {
    Tensor3D SFS_stress;
    double mu_t_temp = mu_t(dWdx,dWdy,dWdz,Flow_Type,Volume);
@@ -299,7 +396,7 @@ Tensor3D LES3DFsd_pState::tau_t_z(const double &mu_t_temp,
                                   const LES3DFsd_pState &dWdx, 
                                   const LES3DFsd_pState &dWdy,
                                   const LES3DFsd_pState &dWdz,
-                                  const int &Flow_Type, 
+                                  const int Flow_Type, 
                                   const double &Volume) {
    Tensor3D SFS_stress;
 
@@ -317,7 +414,7 @@ Tensor3D LES3DFsd_pState::tau_t_z(const double &mu_t_temp,
 Vector3D LES3DFsd_pState::q_t(const LES3DFsd_pState &dWdx, 
                               const LES3DFsd_pState &dWdy,
                               const LES3DFsd_pState &dWdz,
-                              const int &Flow_Type, 
+                              const int Flow_Type, 
                               const double &Volume) {
   
     double Rmix = Rtot();
@@ -336,7 +433,7 @@ Vector3D LES3DFsd_pState::q_t(const double &kappa_t_temp,
                               const LES3DFsd_pState &dWdx, 
                               const LES3DFsd_pState &dWdy,
                               const LES3DFsd_pState &dWdz,
-                              const int &Flow_Type, 
+                              const int Flow_Type, 
                               const double &Volume) {
   
     double Rmix = Rtot();
@@ -357,7 +454,7 @@ Vector3D LES3DFsd_pState::q_t(const double &kappa_t_temp,
 Vector3D LES3DFsd_pState::q_t_x(const LES3DFsd_pState &dWdx, 
                                 const LES3DFsd_pState &dWdy,
                                 const LES3DFsd_pState &dWdz,
-                                const int &Flow_Type, 
+                                const int Flow_Type, 
                                 const double &Volume) {
   
     double Rmix = Rtot();
@@ -373,7 +470,7 @@ Vector3D LES3DFsd_pState::q_t_x(const double &kappa_t_temp,
                                 const LES3DFsd_pState &dWdx, 
                                 const LES3DFsd_pState &dWdy,
                                 const LES3DFsd_pState &dWdz,
-                                const int &Flow_Type, 
+                                const int Flow_Type, 
                                 const double &Volume) {
   
     double Rmix = Rtot();
@@ -391,7 +488,7 @@ Vector3D LES3DFsd_pState::q_t_x(const double &kappa_t_temp,
 Vector3D LES3DFsd_pState::q_t_y(const LES3DFsd_pState &dWdx, 
                                 const LES3DFsd_pState &dWdy,
                                 const LES3DFsd_pState &dWdz,
-                                const int &Flow_Type, 
+                                const int Flow_Type, 
                                 const double &Volume) {
   
     double Rmix = Rtot();
@@ -407,7 +504,7 @@ Vector3D LES3DFsd_pState::q_t_y(const double &kappa_t_temp,
                                 const LES3DFsd_pState &dWdx, 
                                 const LES3DFsd_pState &dWdy,
                                 const LES3DFsd_pState &dWdz,
-                                const int &Flow_Type, 
+                                const int Flow_Type, 
                                 const double &Volume) {
   
     double Rmix = Rtot();
@@ -425,7 +522,7 @@ Vector3D LES3DFsd_pState::q_t_y(const double &kappa_t_temp,
 Vector3D LES3DFsd_pState::q_t_z(const LES3DFsd_pState &dWdx, 
                                 const LES3DFsd_pState &dWdy,
                                 const LES3DFsd_pState &dWdz,
-                                const int &Flow_Type, 
+                                const int Flow_Type, 
                                 const double &Volume) {
   
     double Rmix = Rtot();
@@ -441,7 +538,7 @@ Vector3D LES3DFsd_pState::q_t_z(const double &kappa_t_temp,
                                 const LES3DFsd_pState &dWdx, 
                                 const LES3DFsd_pState &dWdy,
                                 const LES3DFsd_pState &dWdz,
-                                const int &Flow_Type, 
+                                const int Flow_Type, 
                                 const double &Volume) {
   
     double Rmix = Rtot();
@@ -627,8 +724,9 @@ LES3DFsd_cState LES3DFsd_pState::Fz(void) const {
 LES3DFsd_cState LES3DFsd_pState::Fv(const LES3DFsd_pState &dWdx,
                                     const LES3DFsd_pState &dWdy,
                                     const LES3DFsd_pState &dWdz,
-                                    const int &Flow_Type,
-                                    const double &Volume) const{
+                                    const int Flow_Type,
+                                    const double &Volume) {
+
    LES3DFsd_cState Temp;
 
    double mu_temp = mu();
@@ -659,8 +757,10 @@ LES3DFsd_cState LES3DFsd_pState::Fv(const LES3DFsd_pState &dWdx,
             heat_flux.x;
    Temp.rhoC = mu_t_temp*dWdx.C/Sc_t();
    Temp.rhoFsd = mu_t_temp*dWdx.Fsd/Sc_t();
-   Temp.rhok = (mu_temp+mu_t_temp/0.25/*Pr_t()*/)*dWdx.k;
+   Temp.rhok = (mu_temp+mu_t_temp/0.25)*dWdx.k;
+
    return (Temp);
+
 }
 
 /*********************************************************
@@ -669,8 +769,9 @@ LES3DFsd_cState LES3DFsd_pState::Fv(const LES3DFsd_pState &dWdx,
 LES3DFsd_cState LES3DFsd_pState::Fvx(const LES3DFsd_pState &dWdx,
                                      const LES3DFsd_pState &dWdy,
                                      const LES3DFsd_pState &dWdz,
-                                     const int &Flow_Type,
-                                     const double &Volume) const{
+                                     const int Flow_Type,
+                                     const double &Volume) {
+
    LES3DFsd_cState Temp;
 
    double mu_temp = mu();
@@ -701,8 +802,10 @@ LES3DFsd_cState LES3DFsd_pState::Fvx(const LES3DFsd_pState &dWdx,
             heat_flux.x;
    Temp.rhoC = mu_t_temp*dWdx.C/Sc_t();
    Temp.rhoFsd = mu_t_temp*dWdx.Fsd/Sc_t();
-   Temp.rhok = (mu_t+mu_t_temp/0.25/*Pr_t()*/)*dWdx.k;
+   Temp.rhok = (mu_temp+mu_t_temp/0.25)*dWdx.k;
+
    return (Temp);
+
 }
 
 /*********************************************************
@@ -711,8 +814,9 @@ LES3DFsd_cState LES3DFsd_pState::Fvx(const LES3DFsd_pState &dWdx,
 LES3DFsd_cState LES3DFsd_pState::Fvy(const LES3DFsd_pState &dWdx,
                                      const LES3DFsd_pState &dWdy,
                                      const LES3DFsd_pState &dWdz,
-                                     const int &Flow_Type,
-                                     const double &Volume) const{
+                                     const int Flow_Type,
+                                     const double &Volume) {
+
    LES3DFsd_cState Temp;
 
    double mu_temp = mu();
@@ -743,8 +847,10 @@ LES3DFsd_cState LES3DFsd_pState::Fvy(const LES3DFsd_pState &dWdx,
             heat_flux.y;
    Temp.rhoC = mu_t_temp*dWdy.C/Sc_t();
    Temp.rhoFsd = mu_t_temp*dWdy.Fsd/Sc_t();
-   Temp.rhok = (mu_t+mu_t_temp/0.25/*Pr_t()*/)*dWdy.k;
+   Temp.rhok = (mu_temp+mu_t_temp/0.25)*dWdy.k;
+
    return (Temp);
+
 }
 
 /*********************************************************
@@ -753,8 +859,9 @@ LES3DFsd_cState LES3DFsd_pState::Fvy(const LES3DFsd_pState &dWdx,
 LES3DFsd_cState LES3DFsd_pState::Fvz(const LES3DFsd_pState &dWdx,
                                      const LES3DFsd_pState &dWdy,
                                      const LES3DFsd_pState &dWdz,
-                                     const int &Flow_Type,
-                                     const double &Volume) const{
+                                     const int Flow_Type,
+                                     const double &Volume) {
+
    LES3DFsd_cState Temp;
 
    double mu_temp = mu();
@@ -785,8 +892,9 @@ LES3DFsd_cState LES3DFsd_pState::Fvz(const LES3DFsd_pState &dWdx,
             heat_flux.z;
    Temp.rhoC = mu_t_temp*dWdz.C/Sc_t();
    Temp.rhoFsd = mu_t_temp*dWdz.Fsd/Sc_t();
-   Temp.rhok = (mu_t+mu_t_temp/0.25/*Pr_t()*/)*dWdz.k;
+   Temp.rhok = (mu_temp+mu_t_temp/0.25)*dWdz.k;
    return (Temp);
+
 }
 
 /************************************************************************
@@ -882,7 +990,7 @@ LES3DFsd_cState LES3DFsd_pState::rc(const int &index) {
      eta_fsd = Progvar_Species_Grad();
      return (LES3DFsd_cState(ZERO, ZERO, ZERO, ZERO, rho*eta_fsd, rho, ZERO, ZERO));
    case 7:
-     return (LES3DFsd_cState(ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, rho, ZERO));
+     return (LES3DFsd_cState(ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, rho, ZERO));
    case 8:
      return (LES3DFsd_cState(ZERO, ZERO, ZERO, ZERO, 5.0*rho/3.0, ZERO, ZERO, rho));
     };
@@ -908,7 +1016,7 @@ LES3DFsd_cState LES3DFsd_pState::rc(const int &index) const {
      eta_fsd = Progvar_Species_Grad();
      return (LES3DFsd_cState(ZERO, ZERO, ZERO, ZERO, rho*eta_fsd, rho, ZERO, ZERO));
    case 7:
-     return (LES3DFsd_cState(ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, rho, ZERO));
+     return (LES3DFsd_cState(ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, rho, ZERO));
    case 8:
      return (LES3DFsd_cState(ZERO, ZERO, ZERO, ZERO, 5.0*rho/3.0, ZERO, ZERO, rho));
     };
@@ -937,7 +1045,7 @@ LES3DFsd_cState LES3DFsd_pState::rc_x(const int &index) const {
      eta_fsd = Progvar_Species_Grad();
      return (LES3DFsd_cState(ZERO, ZERO, ZERO, ZERO, rho*eta_fsd, rho, ZERO, ZERO));
    case 7:
-     return (LES3DFsd_cState(ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, rho, ZERO));
+     return (LES3DFsd_cState(ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, rho, ZERO));
    case 8:
      return (LES3DFsd_cState(ZERO, ZERO, ZERO, ZERO, 5.0*rho/3.0, ZERO, ZERO, rho));
     };
@@ -963,7 +1071,7 @@ LES3DFsd_cState LES3DFsd_pState::rc_x(const int &index) {
      eta_fsd = Progvar_Species_Grad();
      return (LES3DFsd_cState(ZERO, ZERO, ZERO, ZERO, rho*eta_fsd, rho, ZERO, ZERO));
    case 7:
-     return (LES3DFsd_cState(ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, rho, ZERO));
+     return (LES3DFsd_cState(ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, rho, ZERO));
    case 8:
      return (LES3DFsd_cState(ZERO, ZERO, ZERO, ZERO, 5.0*rho/3.0, ZERO, ZERO, rho));
     };
@@ -1078,7 +1186,9 @@ LES3DFsd_pState LES3DFsd_pState::lp_x(const int &index) const {
 /***********************************************************
  * LES3DFsd_pState::Mr2 -- Square of Mach number           *
  ***********************************************************/
-double LES3DFsd_pState::Mr2(const double &deltax, const double &lengthx, const double &dTime) const {
+double LES3DFsd_pState::Mr2(const double &deltax, 
+                            const double &lengthx, 
+                            const double &dTime) {
     double cc = a_t();
     double MR2 = min(max((v.sqr()/(cc*cc)),Mref*Mref),ONE);
     MR2 = pow(max(sqrt(MR2*cc*cc), mu()/(rho*deltax)),2.0)/(cc*cc);
@@ -1098,7 +1208,9 @@ double LES3DFsd_pState::Mr2(const double &deltax, const double &lengthx, const d
 /***********************************************************************************
  * LES3DFsd_pState::u_a_precon -- Preconditioned velocity and soundspeed           *
  ***********************************************************************************/
-void LES3DFsd_pState::u_a_precon(const double &UR2, double &uprimed, double &cprimed) const{
+void LES3DFsd_pState::u_a_precon(const double &UR2, 
+                                 double &uprimed, 
+                                 double &cprimed) const{
   double alpha = HALF*(ONE - ONE/(a_t()*a_t())*UR2);
   uprimed = v.x*(ONE - alpha);
   cprimed = sqrt(alpha*alpha*v.x*v.x + UR2); 
@@ -1115,7 +1227,10 @@ LES3DFsd_cState LES3DFsd_pState::rc_x_precon(const int &index, const double &MR2
     u_a_precon(MR2*cc*cc,uprimed,cprimed);
    switch(index){  
    case 1:
-     return (LES3DFsd_cState(ONE, (uprimed-cprimed)/MR2, v.y, v.z, h()+(v.sqr()/MR2)/TWO+FIVE*k/THREE-(v.x*cprimed)/MR2, C, Fsd, k));
+     return (LES3DFsd_cState(ONE, 
+                             (uprimed-cprimed)/MR2, v.y, v.z, 
+                             h()+(v.sqr()/MR2)/TWO+(FIVE*k)/THREE-(v.x*cprimed)/MR2, 
+                             C, Fsd, k));
    case 2:
      return (LES3DFsd_cState(ONE, v.x, v.y, v.z, (H()/rho-cc*cc/(g()-ONE)), C, Fsd, k)); 
    case 3:
@@ -1123,11 +1238,14 @@ LES3DFsd_cState LES3DFsd_pState::rc_x_precon(const int &index, const double &MR2
    case 4:
      return (LES3DFsd_cState(ZERO, ZERO, ZERO, rho, rho*v.z, ZERO, ZERO, ZERO));
    case 5:
-     return (LES3DFsd_cState(ONE, (uprimed+cprimed)/MR2, v.y, v.z, h()+(v.sqr()/MR2)/TWO+FIVE*k/THREE+(v.x*cprimed)/MR2, C, Fsd, k));
+     return (LES3DFsd_cState(ONE, 
+                             (uprimed+cprimed)/MR2, v.y, v.z, 
+                             h()+(v.sqr()/MR2)/TWO+(FIVE*k)/THREE+(v.x*cprimed)/MR2, 
+                             C, Fsd, k));
    case 6:
      return (LES3DFsd_cState(ZERO, ZERO, ZERO, ZERO, rho*eta_fsd, rho, ZERO, ZERO));
    case 7:
-     return (LES3DFsd_cState(ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, rho, ZERO));
+     return (LES3DFsd_cState(ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, rho, ZERO));
    case 8:
      return (LES3DFsd_cState(ZERO, ZERO, ZERO, ZERO, FIVE*rho/THREE, ZERO, ZERO, rho));
    };
@@ -1143,7 +1261,9 @@ LES3DFsd_pState LES3DFsd_pState::lp_x_precon(const int &index,const double &MR2)
     u_a_precon(MR2*cc*cc,uprimed,cprimed);
    switch(index){  
    case 1:
-      return (LES3DFsd_pState(ZERO, -HALF*rho*MR2/cprimed, ZERO, ZERO, (-uprimed+cprimed+v.x)/(TWO*cprimed*cc*cc), ZERO, ZERO, ZERO));
+      return (LES3DFsd_pState(ZERO, -HALF*rho*MR2/cprimed, ZERO, ZERO, 
+                             (-uprimed+cprimed+v.x)/(TWO*cprimed*cc*cc), 
+                              ZERO, ZERO, ZERO));
    case 2:
       return (LES3DFsd_pState(ONE, ZERO, ZERO, ZERO, -ONE/(cc*cc), ZERO, ZERO, ZERO));
    case 3 :
@@ -1151,7 +1271,9 @@ LES3DFsd_pState LES3DFsd_pState::lp_x_precon(const int &index,const double &MR2)
    case 4 :
       return (LES3DFsd_pState(ZERO, ZERO, ZERO, ONE, ZERO, ZERO, ZERO, ZERO));
    case 5 :
-      return (LES3DFsd_pState(ZERO, HALF*rho*MR2/cprimed, ZERO, ZERO, (uprimed+cprimed-v.x)/(TWO*cprimed*cc*cc), ZERO, ZERO, ZERO));
+      return (LES3DFsd_pState(ZERO, HALF*rho*MR2/cprimed, ZERO, ZERO, (
+                              uprimed+cprimed-v.x)/(TWO*cprimed*cc*cc), 
+                              ZERO, ZERO, ZERO));
    case 6 :
       return (LES3DFsd_pState(ZERO, ZERO, ZERO, ZERO, ZERO, ONE, ZERO, ZERO));
    case 7 :
@@ -1164,14 +1286,16 @@ LES3DFsd_pState LES3DFsd_pState::lp_x_precon(const int &index,const double &MR2)
 /******************************************************************************
  * LES3DFsd_pState::Low_Mach_Number_Preconditioner -- Preconditoner matrix    * 
  ******************************************************************************/
-void LES3DFsd_pState::Low_Mach_Number_Preconditioner(DenseMatrix &P, const double &deltax, 
-                                                     const double &lengthx,const double &dTime) const{  
+void LES3DFsd_pState::Low_Mach_Number_Preconditioner(DenseMatrix &P, 
+                                                     const double &deltax, 
+                                                     const double &lengthx,
+                                                     const double &dTime) {  
   double Temp = T();
   double Rmix = Rtot();
   double enthalpy = h();
   double CP = Cp();
   double cc = a_t();
-  double pt = pmodified();
+  double pt = p_t();
   double theta = (ONE/(Mr2(deltax,lengthx,dTime)*cc*cc) + (g()-ONE)/(cc*cc));// + ONE/(CP*Temp));
   double eta_fsd = Progvar_Species_Grad();
   double phi = C*eta_fsd;
@@ -1244,14 +1368,17 @@ void LES3DFsd_pState::Low_Mach_Number_Preconditioner(DenseMatrix &P, const doubl
 /*********************************************************************************************
  * LES3DFsd_pState::Low_Mach_Number_Preconditioner_Inverse -- Preconditoner matrix inverse   * 
  *********************************************************************************************/
-void LES3DFsd_pState::Low_Mach_Number_Preconditioner_Inverse(DenseMatrix &Pinv, const double &deltax, 
-                                                             const double &lengthx,const double &dTime) const{  
+void LES3DFsd_pState::Low_Mach_Number_Preconditioner_Inverse(DenseMatrix &Pinv, 
+                                                             const double &deltax, 
+                                                             const double &lengthx,
+                                                             const double &dTime) {
+
   double Temp = T();
   double Rmix = Rtot();
   double enthalpy = h();
   double CP = Cp();
   double cc = a_t();
-  double pt = pmodified();
+  double pt = p_t();
   double theta = (ONE/(Mr2(deltax,lengthx,dTime)*cc*cc) + (g()-ONE)/(cc*cc));// + ONE/(CP*Temp));  
 
   double eta_fsd = Progvar_Species_Grad();
@@ -1362,8 +1489,8 @@ void LES3DFsd_pState::SemiImplicitSourceJacobi(const LES3DFsd_pState &dWdx,
                                                const double &d_dWdy_dW,
                                                const double &d_dWdz_dW,
                                                DenseMatrix &dStdW,
-                                               const int &Flow_Type,
-                                               const double &Volume)const{
+                                               const int Flow_Type,
+                                               const double &Volume) {
 
      dStdW.zero();
      double filter = filter_width(Volume);
@@ -1672,8 +1799,8 @@ LES3DFsd_cState  LES3DFsd_pState::FluxHLLE_x(const LES3DFsd_pState &Wl,
    return (Flux);
 }
 
-LES3DFsd_cState  LES3DFsd_pState::FluxHLLE_x(const LES3DFsd_cState &Ul,
-                                             const LES3DFsd_cState &Ur) {
+LES3DFsd_cState LES3DFsd_pState::FluxHLLE_x(const LES3DFsd_cState &Ul,
+                                            const LES3DFsd_cState &Ur) {
    return (FluxHLLE_x(Ul.W(), Ur.W()));
 }
 
@@ -1888,9 +2015,9 @@ LES3DFsd_cState LES3DFsd_pState::FluxAUSMplus_up_x(const LES3DFsd_pState &Wl,
 
 }
 
-LES3DFsd_cState FluxAUSMplus_up_x(const LES3DFsd_cState &Ul,
-                                  const LES3DFsd_cState &Ur) {
-  return FluxAUSMplus_up_x(Ul.W(),Ur.W());
+LES3DFsd_cState LES3DFsd_pState::FluxAUSMplus_up_x(const LES3DFsd_cState &Ul,
+                                                   const LES3DFsd_cState &Ur) {
+   return (FluxAUSMplus_up_x(Ul.W(), Ur.W()));
 }
 
 /******************************************************************************************
@@ -2050,19 +2177,22 @@ LES3DFsd_pState LES3DFsd_pState::RotateBack(const Vector3D &norm_dir) const {
 /**********************************************************************
  * LES3DFsd_pState::FluxViscous_n -- Viscous flux (n-direction).      *
 /**********************************************************************/
-LES3DFsd_cState  LES3DFsd_pState::FluxViscous_n(const LES3DFsd_pState &Wl,
-                                                const LES3DFsd_pState &Wr,
-                                                const LES3DFsd_pState &Wc,
-                                                const LES3DFsd_pState &Wc_Neigbor,
-                                                const LES3DFsd_pState &dWdx,
-                                                const LES3DFsd_pState &dWdy,
-                                                const LES3DFsd_pState &dWdz,
-                                                const LES3DFsd_pState &dWdx_Neigbor,
-                                                const LES3DFsd_pState &dWdy_Neigbor,
-                                                const LES3DFsd_pState &dWdz_Neigbor,
-                                                const Vector3D &norm, const Vector3D &ts, 
-                                                const double &deltad, const double &Volume, 
-                                                const double &Volume_Neigbor, const int &Flow_Type){
+LES3DFsd_cState LES3DFsd_pState::FluxViscous_n(const LES3DFsd_pState &Wl,
+                                               const LES3DFsd_pState &Wr,
+                                               const LES3DFsd_pState &Wc,
+                                               const LES3DFsd_pState &Wc_Neigbor,
+                                               const LES3DFsd_pState &dWdx,
+                                               const LES3DFsd_pState &dWdy,
+                                               const LES3DFsd_pState &dWdz,
+                                               const LES3DFsd_pState &dWdx_Neigbor,
+                                               const LES3DFsd_pState &dWdy_Neigbor,
+                                               const LES3DFsd_pState &dWdz_Neigbor,
+                                               const Vector3D &norm,
+                                               const Vector3D &ts, 
+                                               const double &deltad, 
+                                               const double &Volume, 
+                                               const double &Volume_Neigbor, 
+                                               const int Flow_Type) {
    
    // construct the gradients on the cell interface (surface) 
    // based on Hybrid Average Gradient-Diamond-Path Approach
@@ -2100,18 +2230,18 @@ LES3DFsd_cState  LES3DFsd_pState::FluxViscous_n(const LES3DFsd_pState &Wl,
    //W_face = HALF*(Wc + Wc_Neigbor);
 
    if (fabs(norm.y) < TOLER && fabs(norm.z) < TOLER) {
-      return (W_face.Fvx(dWdx_face, dWdy_face, dWdz_face)*norm.x);
+      return (W_face.Fvx(dWdx_face, dWdy_face, dWdz_face, Flow_Type, Volume_Neigbor)*norm.x);
 
    } else if (fabs(norm.x) < TOLER && fabs(norm.z) < TOLER) {
-      return (W_face.Fvy(dWdx_face, dWdy_face, dWdz_face)*norm.y);
+      return (W_face.Fvy(dWdx_face, dWdy_face, dWdz_face, Flow_Type, Volume_Neigbor)*norm.y);
 
    } else if (fabs(norm.x) < TOLER && fabs(norm.y) < TOLER) {
-      return (W_face.Fvz(dWdx_face, dWdy_face, dWdz_face)*norm.z);
+      return (W_face.Fvz(dWdx_face, dWdy_face, dWdz_face, Flow_Type, Volume_Neigbor)*norm.z);
 
    } else {
-      return (W_face.Fvx(dWdx_face, dWdy_face, dWdz_face)*norm.x +
-              W_face.Fvy(dWdx_face, dWdy_face, dWdz_face)*norm.y +
-              W_face.Fvz(dWdx_face, dWdy_face, dWdz_face)*norm.z);
+     return (W_face.Fvx(dWdx_face, dWdy_face, dWdz_face, Flow_Type, Volume_Neigbor)*norm.x +
+              W_face.Fvy(dWdx_face, dWdy_face, dWdz_face, Flow_Type, Volume_Neigbor)*norm.y +
+              W_face.Fvz(dWdx_face, dWdy_face, dWdz_face, Flow_Type, Volume_Neigbor)*norm.z);
 
    } /* endif */
 }
@@ -2212,103 +2342,6 @@ NoSlip(const LES3DFsd_pState &Win,
  *************************** SOURCE TERMS *******************************
  ************************************************************************/
 
-/*************************************************************************
- * LES3DFsd_pState::filter_width -- LES characteristic filter width      *
- *************************************************************************/
-double LES3DFsd_pState::filter_width(const double &Volume) const{
-  return (0.0366/60.0);//pow(Volume,1.0/3.0); 
-}
-
-/**********************************************************************************************
- * LES3DFsd_pState::premixed_mfrac -- Species mass fractions for one-step reaction mechanism  *
- **********************************************************************************************/
-void LES3DFsd_pState::premixed_mfrac(void) {
-  double burnt_fuel_c, burnt_oxygen_c, stoich_ratio;
-  double c_products, products_ratio;
-  
-  // Check realizability of progress variable.
-  Realizable_C_Check();  
-
-  // Determine stoichiometric ratio
-  if (React.reactset_flag == CH4_1STEP) {
-    stoich_ratio = 2.0*specdata[1].Mol_mass()/
-                   specdata[0].Mol_mass();     // stoichiometric O2/CH4 mass ratio
-  } else if (React.reactset_flag == C3H8_1STEP) {
-    stoich_ratio = 5.0*specdata[1].Mol_mass()/
-                   specdata[0].Mol_mass();     // stoichiometric O2/C3H8 mass ratio
-  } else if (React.reactset_flag == H2O2_1STEP){
-    stoich_ratio = specdata[1].Mol_mass()/
-                   2.0/specdata[0].Mol_mass(); // stoichiometric O2/H2 mass ratio
-  }
-
-  // Calculate fuel mass fraction
-  spec[0].c = (ONE - C)*_unburnt_fuel_mass_fraction;
-  if (spec[0].c < tol) {
-      spec[0].c = ZERO;
-  } /* endif */
-
-  // Calculate oxygen mass fraction
-  // Lean mixture(_fuel_equivalence_ratio < 1) => excessive O2
-  if (_fuel_equivalence_ratio < ONE) {  
-    burnt_fuel_c = ZERO;
-    burnt_oxygen_c = (ONE/_fuel_equivalence_ratio - ONE)*_unburnt_fuel_mass_fraction*stoich_ratio;
-    if (spec[0].c == ZERO) {
-      spec[1].c = burnt_oxygen_c;      
-    } else {
-      spec[1].c = spec[0].c*stoich_ratio + burnt_oxygen_c;
-    }  
-
-  // Rich mixture(_fuel_equivalence_ratio > 1) => excessive CH4
-  } else if (_fuel_equivalence_ratio > ONE) {  
-    burnt_oxygen_c = ZERO;
-    burnt_fuel_c = (ONE - ONE/_fuel_equivalence_ratio)*_unburnt_fuel_mass_fraction;
-    spec[0].c = C*(burnt_fuel_c - _unburnt_fuel_mass_fraction) + _unburnt_fuel_mass_fraction;
-    if (spec[0].c <= burnt_fuel_c) {
-      spec[1].c = burnt_oxygen_c;
-    } else {
-      spec[1].c = (spec[0].c - burnt_fuel_c)*stoich_ratio;
-    }
-
-  // Stoichiometric mixture(_fuel_equivalence_ratio = 1)
-  } else { 
-    burnt_fuel_c = ZERO;
-    burnt_oxygen_c = ZERO;
-    spec[1].c = spec[0].c*stoich_ratio; 
-
-  } /* endif */
-
-  // Determine mass fractions of products
-  if (React.reactset_flag == CH4_1STEP ||
-      React.reactset_flag == C3H8_1STEP) {
-    // mass fractions of products
-    c_products = ONE - (spec[0].c + spec[1].c + spec[4].c);
-    if (React.reactset_flag == CH4_1STEP) {
-       products_ratio = specdata[2].Mol_mass()/(specdata[2].Mol_mass()+2.0*specdata[3].Mol_mass());
-    } else if (React.reactset_flag == C3H8_1STEP) {
-       products_ratio = 3.0*specdata[2].Mol_mass()/(3.0*specdata[2].Mol_mass()+4.0*specdata[3].Mol_mass());
-    } /* endif */ 
-    spec[2].c = products_ratio*c_products; // CO2 mass fraction
-    spec[3].c = c_products-spec[2].c;  // H2O mass fraction   
-    spec[1].c = (ONE - c_products - spec[0].c - spec[4].c) ;  // O2 mass fraction
-  } else if (React.reactset_flag == H2O2_1STEP) {
-       spec[2].c = ONE - spec[0].c - spec[1].c - spec[3].c; // H2O mass fraction 
-  }
-
-  // Check for realizability of each species mass fraction
-  for (int i=0; i<ns; i++){
-    if (spec[i].c < ZERO) spec[i].c = ZERO;
-  } /* endfor */
-
-  double suma = ZERO;
-  for (int i=0; i < ns; i++) {
-    suma = suma + spec[i].c;
-  } /* endfor */
-  for (int i=0; i < ns; i++) {
-    spec[i].c = spec[i].c*(ONE/suma);
-  } /* endfor */
-
-}
-
 /*********************************************************************************
  * LES3DFsd_pState::abs_strain_rate -- Absolute value of strain rate tensor      *
  *********************************************************************************/
@@ -2342,20 +2375,20 @@ Vector3D LES3DFsd_pState::grad_abs_strain_rate(const LES3DFsd_pState &dWdx,
                                                const LES3DFsd_pState &d_dWdx_dy,
                                                const LES3DFsd_pState &d_dWdx_dz,
 			  	               const LES3DFsd_pState &d_dWdy_dz) const{
-  Vector3D grad_abs_strain_rate;
-  grad_abs_strain_rate.zero();
-  grad_abs_strain_rate.x = dWdx.v.x*d_dWdx_dx.v.x+dWdy.v.y*d_dWdx_dy.v.y+dWdz.v.z*d_dWdx_dz.v.z
-                          +(dWdy.v.x+dWdx.v.y)*(d_dWdx_dy.v.x+d_dWdx_dx.v.y)
-                          +(dWdz.v.y+dWdy.v.z)*(d_dWdx_dz.v.y+d_dWdx_dy.v.z) 
-                          +(dWdx.v.z+dWdz.v.x)*(d_dWdx_dx.v.z+d_dWdx_dz.v.x);
-  grad_abs_strain_rate.y = dWdx.v.x*d_dWdx_dy.v.x+dWdy.v.y*d_dWdy_dy.v.y+dWdz.v.z*d_dWdy_dz.v.z
-                          +(dWdy.v.x+dWdx.v.y)*(d_dWdy_dy.v.x+d_dWdx_dy.v.y)
-                          +(dWdz.v.y+dWdy.v.z)*(d_dWdy_dz.v.y+d_dWdy_dy.v.z) 
-                          +(dWdx.v.z+dWdz.v.x)*(d_dWdx_dy.v.z+d_dWdy_dz.v.x);
-  grad_abs_strain_rate.z = dWdx.v.x*d_dWdx_dz.v.x+dWdy.v.y*d_dWdy_dz.v.y+dWdz.v.z*d_dWdz_dz.v.z
-                          +(dWdy.v.x+dWdx.v.y)*(d_dWdy_dz.v.x+d_dWdx_dz.v.y)
-                          +(dWdz.v.y+dWdy.v.z)*(d_dWdz_dz.v.y+d_dWdy_dz.v.z) 
-                          +(dWdx.v.z+dWdz.v.x)*(d_dWdx_dz.v.z+d_dWdz_dz.v.x);
+  Vector3D temp;
+  temp.zero();
+  temp.x = dWdx.v.x*d_dWdx_dx.v.x+dWdy.v.y*d_dWdx_dy.v.y+dWdz.v.z*d_dWdx_dz.v.z
+            +(dWdy.v.x+dWdx.v.y)*(d_dWdx_dy.v.x+d_dWdx_dx.v.y)
+            +(dWdz.v.y+dWdy.v.z)*(d_dWdx_dz.v.y+d_dWdx_dy.v.z) 
+            +(dWdx.v.z+dWdz.v.x)*(d_dWdx_dx.v.z+d_dWdx_dz.v.x);
+  temp.y = dWdx.v.x*d_dWdx_dy.v.x+dWdy.v.y*d_dWdy_dy.v.y+dWdz.v.z*d_dWdy_dz.v.z
+            +(dWdy.v.x+dWdx.v.y)*(d_dWdy_dy.v.x+d_dWdx_dy.v.y)
+            +(dWdz.v.y+dWdy.v.z)*(d_dWdy_dz.v.y+d_dWdy_dy.v.z) 
+            +(dWdx.v.z+dWdz.v.x)*(d_dWdx_dy.v.z+d_dWdy_dz.v.x);
+  temp.z = dWdx.v.x*d_dWdx_dz.v.x+dWdy.v.y*d_dWdy_dz.v.y+dWdz.v.z*d_dWdz_dz.v.z
+            +(dWdy.v.x+dWdx.v.y)*(d_dWdy_dz.v.x+d_dWdx_dz.v.y)
+            +(dWdz.v.y+dWdy.v.z)*(d_dWdz_dz.v.y+d_dWdy_dz.v.z) 
+            +(dWdx.v.z+dWdz.v.x)*(d_dWdx_dz.v.z+d_dWdz_dz.v.x);
 }
 
 /*********************************************************************************
@@ -2371,8 +2404,8 @@ double LES3DFsd_pState::HeatRelease_Parameter(void) const {
 double LES3DFsd_pState::SFS_Kinetic_Energy_Fsd(const LES3DFsd_pState &dWdx,
                                                const LES3DFsd_pState &dWdy,
                                                const LES3DFsd_pState &dWdz,
-                                               const int &Flow_Type,
-                                               const double &Volume) const {
+                                               const int Flow_Type,
+                                               const double &Volume) {
   if ( Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ) {
     double CI = 0.005;
     return (CI*sqr(filter_width(Volume)*abs_strain_rate(dWdx,dWdy,dWdz)));
@@ -2387,8 +2420,8 @@ double LES3DFsd_pState::SFS_Kinetic_Energy_Fsd(const LES3DFsd_pState &dWdx,
 double LES3DFsd_pState::Efficiency_Function_Fsd(const LES3DFsd_pState &dWdx,
                                                 const LES3DFsd_pState &dWdy,
                                                 const LES3DFsd_pState &dWdz,
-                                                const int &Flow_Type,
-                                                const double &Volume) const {
+                                                const int Flow_Type,
+                                                const double &Volume) {
   double filter, kappa_fsd, k_fsd;
   k_fsd = SFS_Kinetic_Energy_Fsd(dWdx,dWdy,dWdz,Flow_Type,Volume);
   filter = filter_width(Volume);
@@ -2400,8 +2433,11 @@ double LES3DFsd_pState::Efficiency_Function_Fsd(const LES3DFsd_pState &dWdx,
  * LES3DFsd_pState::Progvar_Species_Grad -- Gradient of progress variable to species mass fractions     *
  ********************************************************************************************************/
 double LES3DFsd_pState::Progvar_Species_Grad(void) const {
+
   double Temp, stoich, ratio, f_ub, eta_fsd;
+
   Temp = p/(rho*Rtot());
+
   if ( React.reactset_flag == CH4_1STEP ||
        React.reactset_flag == C3H8_1STEP ) {
      if ( React.reactset_flag == CH4_1STEP ){
@@ -2424,7 +2460,9 @@ double LES3DFsd_pState::Progvar_Species_Grad(void) const {
              +(specdata[1].Enthalpy(Temp)+specdata[1].Heatofform()-Cp(Temp)*Temp*specdata[1].Rs()/Rtot())*(-stoich*f_ub/_fuel_equivalence_ratio)
              +(specdata[2].Enthalpy(Temp)+specdata[2].Heatofform()-Cp(Temp)*Temp*specdata[2].Rs()/Rtot())*((1.0+stoich/_fuel_equivalence_ratio)*f_ub);
   } /* endif */
+
   return (eta_fsd);
+
 }
 
 /***********************************************************
@@ -2432,13 +2470,15 @@ double LES3DFsd_pState::Progvar_Species_Grad(void) const {
  ***********************************************************/
 double LES3DFsd_pState::Reaction_Rate_Fsd(const LES3DFsd_pState &dWdx,
                                           const LES3DFsd_pState &dWdy,
-                                          const LES3DFsd_pState &dWdz) const {
+                                          const LES3DFsd_pState &dWdz) {
+
      double tau_fsd = HeatRelease_Parameter();
-     if ( C < 0.999 && C > 0.001 && dWdx.C != ZERO ){//&& dWdy.C != ZERO && dWdz.C != ZERO ) {
-       return ( _reactants_density*_laminar_flame_speed*Fsd*rho );//-tau_fsd*_laminar_flame_speed*(rho*(1-2*C)*(dWdx.C+dWdy.C+dWdz.C)+C*(1-C)*(dWdx.rho+dWdy.rho+dWdz.rho)) );
-    }else{
-       return ( 0.0 );
-    } /* endif */
+     if ( C < 0.999 && C > 0.001 && dWdx.C != ZERO ) {//&& dWdy.C != ZERO && dWdz.C != ZERO ) {
+       return ( _reactants_density*_laminar_flame_speed*Fsd*rho ); //-tau_fsd*_laminar_flame_speed*(rho*(1-2*C)*(dWdx.C+dWdy.C+dWdz.C)+C*(1-C)*(dWdx.rho+dWdy.rho+dWdz.rho)) );
+     } else {
+       return (ZERO);
+     } /* endif */
+
 }
 
 /********************************************************************
@@ -2529,10 +2569,11 @@ double LES3DFsd_pState::Resolved_Strain(const LES3DFsd_pState &dWdx,
       resolved_strain_xy = -n_xy*(dWdx.v.y + dWdy.v.x)*Fsd*rho;
       resolved_strain_xz = -n_xz*(dWdx.v.z + dWdz.v.x)*Fsd*rho;
       resolved_strain_yz = -n_yz*(dWdz.v.y + dWdy.v.y)*Fsd*rho;
-      return (resolved_strain_xx + resolved_strain_yy + resolved_strain_zz + resolved_strain_xy + resolved_strain_xz + resolved_strain_yz);
-    }else{
-      return (0.0);
-   } /* endif */
+      return (resolved_strain_xx + resolved_strain_yy + resolved_strain_zz + 
+              resolved_strain_xy + resolved_strain_xz + resolved_strain_yz);
+    } else {
+      return (ZERO);
+    } /* endif */
 }
 
 /**************************************************************************************************
@@ -2541,19 +2582,23 @@ double LES3DFsd_pState::Resolved_Strain(const LES3DFsd_pState &dWdx,
 double LES3DFsd_pState::Resolved_Propagation_Curvature(const LES3DFsd_pState &dWdx,
                                                        const LES3DFsd_pState &dWdy,
                                                        const LES3DFsd_pState &dWdz) const {
-    double tau_fsd, Mx, My, Mz, resolved_propagation_curvature_x, resolved_propagation_curvature_y, resolved_propagation_curvature_z;
+    double tau_fsd, Mx, My, Mz, 
+           resolved_propagation_curvature_x, resolved_propagation_curvature_y, resolved_propagation_curvature_z;
     tau_fsd = HeatRelease_Parameter();
     Mx = M_x(dWdx,dWdy,dWdz);
     My = M_y(dWdx,dWdy,dWdz);
     Mz = M_z(dWdx,dWdy,dWdz);
     if ( C < 0.999 && C > 0.001 && dWdx.C != ZERO ) {//&& dWdy.C != ZERO && dWdz.C != ZERO ) {
-      resolved_propagation_curvature_x = -_laminar_flame_speed*(ONE+tau_fsd*C)*Mx*(rho*dWdx.Fsd+Fsd*dWdx.rho)-_laminar_flame_speed*tau_fsd*Fsd*rho*Mx*dWdx.C;
-      resolved_propagation_curvature_y = -_laminar_flame_speed*(ONE+tau_fsd*C)*My*(rho*dWdy.Fsd+Fsd*dWdy.rho)-_laminar_flame_speed*tau_fsd*Fsd*rho*My*dWdy.C;
-      resolved_propagation_curvature_z = -_laminar_flame_speed*(ONE+tau_fsd*C)*Mz*(rho*dWdz.Fsd+Fsd*dWdz.rho)-_laminar_flame_speed*tau_fsd*Fsd*rho*Mz*dWdz.C;
+      resolved_propagation_curvature_x = -_laminar_flame_speed*(ONE+tau_fsd*C)*Mx*(rho*dWdx.Fsd+Fsd*dWdx.rho)-
+                                          _laminar_flame_speed*tau_fsd*Fsd*rho*Mx*dWdx.C;
+      resolved_propagation_curvature_y = -_laminar_flame_speed*(ONE+tau_fsd*C)*My*(rho*dWdy.Fsd+Fsd*dWdy.rho)-
+                                          _laminar_flame_speed*tau_fsd*Fsd*rho*My*dWdy.C;
+      resolved_propagation_curvature_z = -_laminar_flame_speed*(ONE+tau_fsd*C)*Mz*(rho*dWdz.Fsd+Fsd*dWdz.rho)-
+                                          _laminar_flame_speed*tau_fsd*Fsd*rho*Mz*dWdz.C;
       return ( resolved_propagation_curvature_x + resolved_propagation_curvature_y + resolved_propagation_curvature_z );
-    }else{
-      return (0.0);
-   } /* endif */
+    } else {
+      return (ZERO);
+    } /* endif */
 }
 
 /******************************************************************
@@ -2562,8 +2607,8 @@ double LES3DFsd_pState::Resolved_Propagation_Curvature(const LES3DFsd_pState &dW
 double LES3DFsd_pState::SFS_Strain(const LES3DFsd_pState &dWdx,
                                    const LES3DFsd_pState &dWdy,
                                    const LES3DFsd_pState &dWdz,
-                                   const int &Flow_Type,
-                                   const double &Volume) const {
+                                   const int Flow_Type,
+                                   const double &Volume) {
     double filter, kappa_fsd, k_fsd;
     filter = filter_width(Volume);
     k_fsd = SFS_Kinetic_Energy_Fsd(dWdx,dWdy,dWdz,Flow_Type,Volume); 
@@ -2633,9 +2678,9 @@ double LES3DFsd_pState::M_yy(const LES3DFsd_pState &dWdx,
     if ( C < 0.999 && C > 0.001 && dWdx.C != ZERO ) {//&& dWdy.C != ZERO && dWdz.C != ZERO ) { 
       Myy = -d_dWdy_dy.C/magnitude_C+dWdy.C*(dWdx.C*d_dWdx_dy.C+dWdy.C*d_dWdy_dy.C+dWdz.C*d_dWdy_dz.C)/pow(magnitude_C,3.0);
       return ( Myy );
-   }else{
-      return (0.0);
-   } /* endif */
+    } else {
+      return (ZERO);
+    } /* endif */
 }
 
 /*******************************************************************
@@ -2652,9 +2697,9 @@ double LES3DFsd_pState::M_zz(const LES3DFsd_pState &dWdx,
     if ( C < 0.999 && C > 0.001 && dWdx.C != ZERO ) {//&& dWdy.C != ZERO && dWdz.C != ZERO ) { 
       Mzz = -d_dWdz_dz.C/magnitude_C+dWdz.C*(dWdx.C*d_dWdx_dz.C+dWdy.C*d_dWdy_dz.C+dWdz.C*d_dWdz_dz.C)/pow(magnitude_C,3.0);
       return ( Mzz );
-   }else{
-      return (0.0);
-   } /* endif */
+    } else {
+      return (ZERO);
+    } /* endif */
 }
 
 /*******************************************************************
@@ -2670,10 +2715,10 @@ double LES3DFsd_pState::M_xy(const LES3DFsd_pState &dWdx,
     magnitude_C = sqrt(sqr(dWdx.C)+sqr(dWdy.C)+sqr(dWdz.C));
     if ( C < 0.999 && C > 0.001 && dWdx.C != ZERO ) {//&& dWdy.C != ZERO && dWdz.C != ZERO ) { 
       Mxy = -d_dWdx_dy.C/magnitude_C+dWdx.C*(dWdx.C*d_dWdx_dy.C+dWdy.C*d_dWdy_dy.C+dWdz.C*d_dWdy_dz.C)/pow(magnitude_C,3.0);
-      return ( Mxy );
-   }else{
-      return (0.0);
-   } /* endif */
+      return (Mxy);
+    } else {
+      return (ZERO);
+    } /* endif */
 }
 
 /*******************************************************************
@@ -2862,9 +2907,11 @@ double LES3DFsd_pState::SFS_Diffusion_Progvar (const LES3DFsd_pState &dWdx,
                                                const LES3DFsd_pState &d_dWdx_dy,
                                                const LES3DFsd_pState &d_dWdx_dz,
                                                const LES3DFsd_pState &d_dWdy_dz,
-                                               const int &Flow_Type,
-                                               const double &Volume) const {
-  double grad_eddyviscosity_x, grad_eddyviscosity_y, grad_eddyviscosity_z, sfs_diffusion_progvar_x, sfs_diffusion_progvar_y, sfs_diffusion_progvar_z;
+                                               const int Flow_Type,
+                                               const double &Volume) {
+
+  double grad_eddyviscosity_x, grad_eddyviscosity_y, grad_eddyviscosity_z, 
+         sfs_diffusion_progvar_x, sfs_diffusion_progvar_y, sfs_diffusion_progvar_z;
   double Cv = 0.0184, Cs = 0.086, Schmidt_sfs = 1.0;
     if (Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY) {
       double SS = abs_strain_rate(dWdx,dWdy,dWdz);
@@ -2878,9 +2925,9 @@ double LES3DFsd_pState::SFS_Diffusion_Progvar (const LES3DFsd_pState &dWdx,
       grad_eddyviscosity_z = HALF*Cv*filter_width(Volume)*dWdz.k/sqrt(k);
     } /* endif */
     if ( C < 0.999 && C > 0.001 && dWdx.C != ZERO ) {//&& dWdy.C!= ZERO && dWdz.C != ZERO ) {
-      sfs_diffusion_progvar_x = (eddy_viscosity(dWdx,dWdy,dWdz,Flow_Type,Volume)*dWdx.C*dWdx.rho+rho*dWdx.C*grad_eddyviscosity_x+eddy_viscosity(dWdx,dWdy,dWdz,Flow_Type,Volume)*d_dWdx_dx.C)/Schmidt_sfs;
-      sfs_diffusion_progvar_y = (eddy_viscosity(dWdx,dWdy,dWdz,Flow_Type,Volume)*dWdy.C*dWdy.rho+rho*dWdy.C*grad_eddyviscosity_y+eddy_viscosity(dWdx,dWdy,dWdz,Flow_Type,Volume)*d_dWdy_dy.C)/Schmidt_sfs;
-      sfs_diffusion_progvar_z = (eddy_viscosity(dWdx,dWdy,dWdz,Flow_Type,Volume)*dWdz.C*dWdz.rho+rho*dWdz.C*grad_eddyviscosity_z+eddy_viscosity(dWdx,dWdy,dWdz,Flow_Type,Volume)*d_dWdz_dz.C)/Schmidt_sfs;
+      sfs_diffusion_progvar_x = (mu_t(dWdx,dWdy,dWdz,Flow_Type,Volume)*dWdx.C*dWdx.rho+rho*dWdx.C*grad_eddyviscosity_x+mu_t(dWdx,dWdy,dWdz,Flow_Type,Volume)*d_dWdx_dx.C)/Schmidt_sfs;
+      sfs_diffusion_progvar_y = (mu_t(dWdx,dWdy,dWdz,Flow_Type,Volume)*dWdy.C*dWdy.rho+rho*dWdy.C*grad_eddyviscosity_y+mu_t(dWdx,dWdy,dWdz,Flow_Type,Volume)*d_dWdy_dy.C)/Schmidt_sfs;
+      sfs_diffusion_progvar_z = (mu_t(dWdx,dWdy,dWdz,Flow_Type,Volume)*dWdz.C*dWdz.rho+rho*dWdz.C*grad_eddyviscosity_z+mu_t(dWdx,dWdy,dWdz,Flow_Type,Volume)*d_dWdz_dz.C)/Schmidt_sfs;
       return ( sfs_diffusion_progvar_x+sfs_diffusion_progvar_y+sfs_diffusion_progvar_z );
    }else{
       return (0.0);
@@ -2899,9 +2946,10 @@ double LES3DFsd_pState::SFS_Diffusion_Fsd (const LES3DFsd_pState &dWdx,
                                            const LES3DFsd_pState &d_dWdx_dy,
                                            const LES3DFsd_pState &d_dWdx_dz,
                                            const LES3DFsd_pState &d_dWdy_dz,
-                                           const int &Flow_Type,
-                                           const double &Volume) const {
-     double grad_eddyviscosity_x, grad_eddyviscosity_y, grad_eddyviscosity_z, sfs_diffusion_fsd_x, sfs_diffusion_fsd_y, sfs_diffusion_fsd_z;
+                                           const int Flow_Type,
+                                           const double &Volume) {
+     double grad_eddyviscosity_x, grad_eddyviscosity_y, grad_eddyviscosity_z, 
+            sfs_diffusion_fsd_x, sfs_diffusion_fsd_y, sfs_diffusion_fsd_z;
      double Cv = 0.0184, Cs = 0.086, Schmidt_sfs = 1.0;
     if (Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY) {
       double SS = abs_strain_rate(dWdx,dWdy,dWdz);
@@ -2915,9 +2963,9 @@ double LES3DFsd_pState::SFS_Diffusion_Fsd (const LES3DFsd_pState &dWdx,
       grad_eddyviscosity_z = HALF*Cv*filter_width(Volume)*dWdz.k/sqrt(k);
     } /* endif */
     if ( C < 0.999 && C > 0.001 && dWdx.C != ZERO ) {//&& dWdy.C!= ZERO && dWdz.C != ZERO ) {
-      sfs_diffusion_fsd_x = (eddy_viscosity(dWdx,dWdy,dWdz,Flow_Type,Volume)*dWdx.Fsd*dWdx.rho+rho*dWdx.Fsd*grad_eddyviscosity_x+eddy_viscosity(dWdx,dWdy,dWdz,Flow_Type,Volume)*d_dWdx_dx.Fsd)/Schmidt_sfs;
-      sfs_diffusion_fsd_y = (eddy_viscosity(dWdx,dWdy,dWdz,Flow_Type,Volume)*dWdy.Fsd*dWdy.rho+rho*dWdy.Fsd*grad_eddyviscosity_y+eddy_viscosity(dWdx,dWdy,dWdz,Flow_Type,Volume)*d_dWdy_dy.Fsd)/Schmidt_sfs;
-      sfs_diffusion_fsd_z = (eddy_viscosity(dWdx,dWdy,dWdz,Flow_Type,Volume)*dWdx.Fsd*dWdx.rho+rho*dWdx.Fsd*grad_eddyviscosity_x+eddy_viscosity(dWdx,dWdy,dWdz,Flow_Type,Volume)*d_dWdx_dx.Fsd)/Schmidt_sfs;
+      sfs_diffusion_fsd_x = (mu_t(dWdx,dWdy,dWdz,Flow_Type,Volume)*dWdx.Fsd*dWdx.rho+rho*dWdx.Fsd*grad_eddyviscosity_x+mu_t(dWdx,dWdy,dWdz,Flow_Type,Volume)*d_dWdx_dx.Fsd)/Schmidt_sfs;
+      sfs_diffusion_fsd_y = (mu_t(dWdx,dWdy,dWdz,Flow_Type,Volume)*dWdy.Fsd*dWdy.rho+rho*dWdy.Fsd*grad_eddyviscosity_y+mu_t(dWdx,dWdy,dWdz,Flow_Type,Volume)*d_dWdy_dy.Fsd)/Schmidt_sfs;
+      sfs_diffusion_fsd_z = (mu_t(dWdx,dWdy,dWdz,Flow_Type,Volume)*dWdx.Fsd*dWdx.rho+rho*dWdx.Fsd*grad_eddyviscosity_x+mu_t(dWdx,dWdy,dWdz,Flow_Type,Volume)*d_dWdx_dx.Fsd)/Schmidt_sfs;
       return ( sfs_diffusion_fsd_x+sfs_diffusion_fsd_y+sfs_diffusion_fsd_z );
     }else{
       return (0.0);
@@ -2935,7 +2983,7 @@ double LES3DFsd_pState::Heat_Release_Strain (const LES3DFsd_pState &dWdx,
                                              const LES3DFsd_pState &d_dWdz_dz,
                                              const LES3DFsd_pState &d_dWdx_dy,
                                              const LES3DFsd_pState &d_dWdx_dz,
- 	                                     const LES3DFsd_pState &d_dWdy_dz) const {
+ 	                                     const LES3DFsd_pState &d_dWdy_dz) {
      double tau_fsd, Mxx, Myy, Mzz, heat_release_strain_xx, heat_release_strain_yy, heat_release_strain_zz;
      tau_fsd = HeatRelease_Parameter();
      Mxx = M_xx(dWdx,dWdy,dWdz,d_dWdx_dx,d_dWdx_dy,d_dWdx_dz);
@@ -2963,8 +3011,8 @@ double LES3DFsd_pState::Net_Rate_Change_Progvar (const LES3DFsd_pState &dWdx,
                                                  const LES3DFsd_pState &d_dWdx_dy,
                                                  const LES3DFsd_pState &d_dWdx_dz,
 						 const LES3DFsd_pState &d_dWdy_dz,
-                                                 const int &Flow_Type,
-                                                 const double &Volume) const {
+                                                 const int Flow_Type,
+                                                 const double &Volume) {
   return(  Resolved_Convection_Progvar(dWdx,dWdy,dWdz)
 	   +SFS_Diffusion_Progvar(dWdx,dWdy,dWdz,d_dWdx_dx,d_dWdy_dy,d_dWdz_dz,d_dWdx_dy,d_dWdx_dz,d_dWdy_dz,Flow_Type,Volume)
 	   +Reaction_Rate_Fsd(dWdx,dWdy,dWdz) );
@@ -2982,8 +3030,8 @@ double LES3DFsd_pState::Net_Rate_Change_Fsd (const LES3DFsd_pState &dWdx,
                                              const LES3DFsd_pState &d_dWdx_dy,
                                              const LES3DFsd_pState &d_dWdx_dz,
 			  		     const LES3DFsd_pState &d_dWdy_dz,
-                                             const int &Flow_Type,
-                                             const double &Volume) const {
+                                             const int Flow_Type,
+                                             const double &Volume) {
   return(  Resolved_Convection_Fsd(dWdx,dWdy,dWdz)
           +SFS_Diffusion_Fsd(dWdx,dWdy,dWdz,d_dWdx_dx,d_dWdy_dy,d_dWdz_dz,d_dWdx_dy,d_dWdx_dz,d_dWdy_dz,Flow_Type,Volume)
 	  +Resolved_Strain(dWdx,dWdy,dWdz)
@@ -2998,14 +3046,13 @@ double LES3DFsd_pState::Net_Rate_Change_Fsd (const LES3DFsd_pState &dWdx,
 double LES3DFsd_pState::K_equ_sources(const LES3DFsd_pState &dWdx,
                                       const LES3DFsd_pState &dWdy,
                                       const LES3DFsd_pState &dWdz,
-                                      const int &Flow_Type,
-                                      const double &Volume) const {
+                                      const int Flow_Type,
+                                      const double &Volume) {
 
      double production, dissipation, source, mu_t;
      Tensor3D subfilter_stress;
      double Ceps = 0.845;
  
-     mu_t = mu_t(dWdx,dWdy,dWdz,Flow_Type,Volume);
      subfilter_stress = tau_t(dWdx, dWdy, dWdz, Flow_Type, Volume);
   
      if ( C < 0.999 && C > 0.001 && dWdx.C != ZERO ) {//&& dWdy.C!= ZERO && dWdz.C != ZERO ) {
@@ -3027,14 +3074,14 @@ double LES3DFsd_pState::K_equ_sources(const LES3DFsd_pState &dWdx,
 /*****************************************************************
  * LES3DFsd_pState::Sturbulene -- Turbulence model source terms. *
  *****************************************************************/
-LES3DFsd_cState  LES3DFsd_pState::Sturbulence(const LES3DFsd_pState &Wc,
-                                              const LES3DFsd_pState &dWdx,
-                                              const LES3DFsd_pState &dWdy,
-                                              const LES3DFsd_pState &dWdz,
-                                              const int &Flow_Type,
-                                              const double &Volume) {
+LES3DFsd_cState LES3DFsd_pState::Sturbulence(LES3DFsd_pState &Wc,
+                                             const LES3DFsd_pState &dWdx,
+                                             const LES3DFsd_pState &dWdy,
+                                             const LES3DFsd_pState &dWdz,
+                                             const int Flow_Type,
+                                             const double &Volume) {
    
-  double  resolved_strain, resolved_propagation_curvature, sfs_strain, sfs_curvature;
+  double resolved_strain, resolved_propagation_curvature, sfs_strain, sfs_curvature;
   LES3DFsd_cState Temp;
 
   if ( Wc.C < 0.999 && Wc.C > 0.001 && dWdx.C != ZERO ) {//&& dWdy.C != ZERO && dWdz.C != ZERO ) {
@@ -3049,10 +3096,11 @@ LES3DFsd_cState  LES3DFsd_pState::Sturbulence(const LES3DFsd_pState &Wc,
 
       sfs_curvature = Wc.SFS_Curvature(dWdx,dWdy,dWdz);
 
-      Temp.rhoFsd = resolved_strain + resolved_propagation_curvature + sfs_strain + sfs_curvature ;
+      Temp.rhoFsd = resolved_strain + resolved_propagation_curvature + sfs_strain + sfs_curvature;
+
       if (Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K) {
-    // k-equation Source Term
-      Temp.rhok = Wc.K_equ_sources(dWdx,dWdy,dWdz,Flow_Type,Volume);
+         // k-equation Source Term
+         Temp.rhok = Wc.K_equ_sources(dWdx,dWdy,dWdz,Flow_Type,Volume);
       } /* endif */
   } /* endif */
   return (Temp);
@@ -3193,10 +3241,10 @@ double LES3DFsd_cState::T(void) const {
 } 
 
 /*******************************************************************
- * LES3DFsd_cState::pt -- Return turbulence modified pressure.     *
+ * LES3DFsd_cState::p_t -- Return turbulence modified pressure.     *
  *******************************************************************/
-double LES3DFsd_cState::pt(void) const { 
-   return ( p + 2.0*rho*k/3.0 );
+double LES3DFsd_cState::p_t(void) const { 
+  return (p() + 2.0*rhok/3.0);
 }
 
 /*******************************************************************
@@ -3236,25 +3284,27 @@ double LES3DFsd_cState::k() const {
 void LES3DFsd_cState::premixed_mfrac(void) {
   double burnt_fuel_c, burnt_oxygen_c, stoich_ratio;
   double c_products, products_ratio;
+
+  LES3DFsd_pState W_temp;
   
   // Check realizability of progress variable.
   Realizable_C_Check();  
 
   // Determine stoichiometric ratio
-  if (React.reactset_flag == CH4_1STEP) {
+  if (W_temp.React.reactset_flag == CH4_1STEP) {
     stoich_ratio = 2.0*specdata[1].Mol_mass()/
                    specdata[0].Mol_mass();     // stoichiometric O2/CH4 mass ratio
-  } else if (React.reactset_flag == C3H8_1STEP) {
+  } else if (W_temp.React.reactset_flag == C3H8_1STEP) {
     stoich_ratio = 5.0*specdata[1].Mol_mass()/
                    specdata[0].Mol_mass();     // stoichiometric O2/C3H8 mass ratio
-  } else if (React.reactset_flag == H2O2_1STEP){
+  } else if (W_temp.React.reactset_flag == H2O2_1STEP){
     stoich_ratio = specdata[1].Mol_mass()/
                    2.0/specdata[0].Mol_mass(); // stoichiometric O2/H2 mass ratio
   }
 
   // Calculate fuel mass fraction
   rhospec[0].c = (ONE - rhoC/rho)*rho*_unburnt_fuel_mass_fraction;
-  if (rhospec[0].c < tol) {
+  if (rhospec[0].c < MICRO) {
       rhospec[0].c = ZERO;
   } /* endif */
 
@@ -3289,19 +3339,19 @@ void LES3DFsd_cState::premixed_mfrac(void) {
   } /* endif */
 
   // Determine mass fractions of products
-  if (React.reactset_flag == CH4_1STEP ||
-      React.reactset_flag == C3H8_1STEP) {
+  if (W_temp.React.reactset_flag == CH4_1STEP ||
+      W_temp.React.reactset_flag == C3H8_1STEP) {
     // mass fractions of products
     c_products = ONE - (rhospec[0].c + rhospec[1].c + rhospec[4].c)/rho;
-    if (React.reactset_flag == CH4_1STEP) {
+    if (W_temp.React.reactset_flag == CH4_1STEP) {
        products_ratio = specdata[2].Mol_mass()/(specdata[2].Mol_mass()+2.0*specdata[3].Mol_mass());
-    } else if (React.reactset_flag == C3H8_1STEP) {
+    } else if (W_temp.React.reactset_flag == C3H8_1STEP) {
        products_ratio = 3.0*specdata[2].Mol_mass()/(3.0*specdata[2].Mol_mass()+4.0*specdata[3].Mol_mass());
     } /* endif */ 
     rhospec[2].c = products_ratio*c_products*rho; // CO2 mass fraction
     rhospec[3].c = rho*c_products-rhospec[2].c;  // H2O mass fraction   
     rhospec[1].c = rho*(ONE - c_products - (rhospec[0].c + rhospec[4].c)/rho) ;  // O2 mass fraction
-  } else if (React.reactset_flag == H2O2_1STEP) {
+  } else if (W_temp.React.reactset_flag == H2O2_1STEP) {
     rhospec[2].c = c_products*rho; // H2O mass fraction 
   }
 
@@ -3326,15 +3376,15 @@ void LES3DFsd_cState::premixed_mfrac(void) {
 double LES3DFsd_cState::mu_t(const LES3DFsd_pState &dWdx,
  			     const LES3DFsd_pState &dWdy,
 			     const LES3DFsd_pState &dWdz,
-                             const int &Flow_Type, 
-                             const double &Volume) const{
-    double filter = filter_width(Volume);
+                             const int Flow_Type, 
+                             const double &Volume) {
+  double filter = filter_width(Volume);
   if (Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY) {
     double Cs = 0.18;
     return(rho*Cs*sqr(filter)*abs_strain_rate(dWdx,dWdy,dWdz));
   }else if(Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K) {
     double Cv = 0.086;
-    return(rho*Cv*sqrt(k)*filter);
+    return(rho*Cv*sqrt(k())*filter);
   }
 }
 
@@ -3344,25 +3394,25 @@ double LES3DFsd_cState::mu_t(const LES3DFsd_pState &dWdx,
 double LES3DFsd_cState::kappa_t(const LES3DFsd_pState &dWdx,
  			        const LES3DFsd_pState &dWdy,
 			        const LES3DFsd_pState &dWdz,
-                                const int &Flow_Type, 
-                                const double &Volume) const{
+                                const int Flow_Type, 
+                                const double &Volume) {
   return (mu_t(dWdx,dWdy,dWdz,Flow_Type,Volume)*Cp()/Pr_t()); 
 }
 
 /********************************************************************************
  * LES3DFsd_cState::Ds_t -- Return species turbulent diffusion coefficient.     *
  ********************************************************************************/
-double LES3DFsd_cState::Ds_t(const int &i,
+double LES3DFsd_cState::Ds_t(const int i,
                              const LES3DFsd_pState &dWdx,
  			     const LES3DFsd_pState &dWdy,
 			     const LES3DFsd_pState &dWdz,
-                             const int &Flow_Type, 
-                             const double &Volume) const{
+                             const int Flow_Type, 
+                             const double &Volume) {
   return (mu_t(dWdx,dWdy,dWdz,Flow_Type,Volume)/(rho*Sc_t())); 
 }
 
-double LES3DFsd_cState::Ds_t(const int &i,
-                             const double &mu_t_temp) const{
+double LES3DFsd_cState::Ds_t(const int i,
+                             const double &mu_t_temp) {
   return (mu_t_temp/(rho*Sc_t())); 
 }
 
@@ -3385,6 +3435,34 @@ double LES3DFsd_cState::Sc_t(void) {
  *******************************************************************/
 double LES3DFsd_cState::Le_t(void) {
   return (Sc_t()/Pr_t());
+}
+
+/*************************************************************************
+ * LES3DFsd_cState::filter_width -- LES characteristic filter width      *
+ *************************************************************************/
+double LES3DFsd_cState::filter_width(const double &Volume) const {
+  return (0.0366/60.0);//pow(Volume,1.0/3.0); 
+}
+
+/*********************************************************************************
+ * LES3DFsd_cState::abs_strain_rate -- Absolute value of strain rate tensor      *
+ *********************************************************************************/
+double LES3DFsd_cState::abs_strain_rate(const LES3DFsd_pState &dWdx, 
+                                        const LES3DFsd_pState &dWdy, 
+                                        const LES3DFsd_pState &dWdz) const{
+   Tensor3D strain_rate; 
+   strain_rate.zero();
+   strain_rate.xx = dWdx.v.x;
+   strain_rate.yy = dWdy.v.y;
+   strain_rate.zz = dWdz.v.z;
+   strain_rate.xy = 0.5*(dWdy.v.x + dWdx.v.y);
+   strain_rate.yz = 0.5*(dWdz.v.y + dWdy.v.z);
+   strain_rate.xz = 0.5*(dWdx.v.z + dWdz.v.x);
+  // S[i,j]*S[i,j]
+  double SS = sqr(strain_rate.xx) + sqr(strain_rate.yy) + sqr(strain_rate.zz)
+            + 2.0*(sqr(strain_rate.xy) + sqr(strain_rate.yz) + sqr(strain_rate.xz));
+  // sqrt(2*S*S)
+  return sqrt(2.0*SS);
 }
 
 /*******************************************************************

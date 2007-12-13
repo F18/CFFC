@@ -65,7 +65,7 @@ int main(int num_arg, char *arg_ptr[]) {
    ifstream Input_File;
 
    // Testing commands
-   string TestSuite;
+   string TestSuite, TestRootPath;
    int TestNumber=0;
 
    /********************************************************  
@@ -126,7 +126,7 @@ int main(int num_arg, char *arg_ptr[]) {
 	   test_flag=1;
 	   if (num_arg-1>i && strcmp(arg_ptr[i+1], "-path") != 0 ){
 	     // Read TestSuite name
-	     TestSuite= arg_ptr[++i];
+	     TestSuite = arg_ptr[++i];
 	   } /* endif */
 	   if (num_arg-1>i && strcmp(arg_ptr[i+1], "-path") != 0){
 	  // Read TestNumber
@@ -211,7 +211,7 @@ int main(int num_arg, char *arg_ptr[]) {
     *********************************************************************/
 
    if (test_flag) {
-      error_flag = Perform_UnitTesting(TestSuite, TestNumber);
+      error_flag = Perform_UnitTesting(TestSuite, TestNumber, TestRootPath);
       CFFC_Finalize_MPI();
       return (error_flag);
    } /* endif */
