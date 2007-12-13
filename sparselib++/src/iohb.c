@@ -97,7 +97,7 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<string.h>
-//#include<malloc.h>
+//#include<malloc.h>  Malloc head file is for special function, not require in geneal and not needed here!  Remove by Willem Deconinck, Dec 11, 2007.
 
 void nullchk();
 void ParseIfmt();

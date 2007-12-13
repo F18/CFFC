@@ -202,9 +202,7 @@ CANTERA                   = CANTERA
 CANTERA_DIR               = $(CFFC_Path)/cantera
 
 CANTERA_LIB_DIR           = $(CANTERA_DIR)/build/lib/$(CANTERA_ARCH)
-#CANTERA_INC_DIR           = $(CANTERA_DIR)/build/include
-CANTERA_INC_DIR           = $(CANTERA_DIR)/build/include/cantera
-
+CANTERA_INC_DIR           = $(CANTERA_DIR)/build/include
 
 ifeq ($(CANTERA_VERSION),NoCANTERA)
   CANTERA_CPP_FLAGS       = -D_NO_CANTERA_VERSION
@@ -482,8 +480,6 @@ ifeq ($(PLATFORM),Linux_x86_64)
   endif
 endif
 
-
-
 #Set Darwin_i386 compiling flags
 ifeq ($(PLATFORM),Darwin_i386)
   ifeq ($(MPI_VERSION),NoMPI)
@@ -514,7 +510,6 @@ ifeq ($(PLATFORM),Darwin_i386)
     DEPENDSFLAGS =
   endif  
 endif
-
 
 #
 # Set SGI specific compile flags
