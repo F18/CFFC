@@ -1055,16 +1055,16 @@ Print_Info(std::ostream & out_file){
   out_file << "\n     -> lambda : " << lambda;
   if (Direction_Of_Variation == X_DIRECTION){
     out_file << "\n     -> Dirichlet BC in x-direction"
-	     << "\n         -> X-CoordA: " << CoordA
-	     << "\n         -> Soln(X-CoordA): " << SolnA
-	     << "\n         -> X-CoordB: " << CoordB
-	     << "\n         -> Soln(X-CoordB): " << SolnB;
+	     << "\n         -> XCoordA: " << CoordA
+	     << "\n         -> Soln(XCoordA): " << SolnA
+	     << "\n         -> XCoordB: " << CoordB
+	     << "\n         -> Soln(XCoordB): " << SolnB;
   } else {
     out_file << "\n     -> Dirichlet BC in y-direction"
-	     << "\n         -> Y-CoordA: " << CoordA
-	     << "\n         -> Soln(Y-CoordA): " << SolnA
-	     << "\n         -> Y-CoordB: " << CoordB
-	     << "\n         -> Soln(Y-CoordB): " << SolnB;
+	     << "\n         -> YCoordA: " << CoordA
+	     << "\n         -> Soln(YCoordA): " << SolnA
+	     << "\n         -> YCoordB: " << CoordB
+	     << "\n         -> Soln(YCoordB): " << SolnB;
   }
   
   // call the base Print_Info

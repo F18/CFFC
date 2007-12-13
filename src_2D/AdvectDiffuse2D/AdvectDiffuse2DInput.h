@@ -12,6 +12,7 @@
 
 /* Include CFFC header files */
 #include "AdvectDiffuse2DState.h" // Include 2D advection diffusion equation solution state header file
+#include "New_AdvectDiffuse2DState.h" // Include 2D advection diffusion equation solution state header file
 #include "../Grid/Grid2DQuad.h"   // Include 2D quadrilateral multiblock grid header file
 #include "../FASMultigrid2D/FASMultigrid2DInput.h" // Include multigrid input header file.
 #include "../ICEM/ICEMCFD.h"      // Include ICEMCFD input header file.
@@ -199,6 +200,10 @@ public:
   char BC_East_Type[INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
   char BC_West_Type[INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
   int BC_North, BC_South, BC_East, BC_West;
+  //! Reference states for north and south boundary conditons
+  AdvectDiffuse2D_State_New Ref_State_BC_North, Ref_State_BC_South;
+  //! Reference states for east and west boundary conditons
+  AdvectDiffuse2D_State_New Ref_State_BC_East, Ref_State_BC_West; 
   AdvectDiffuse2D_InflowField *Inflow;    /*!< Pointer to the inflow field */
   //@}
 
@@ -290,6 +295,7 @@ public:
   short & Verbose(void) {return verbose_flag;}
   const short & Verbose(void) const {return verbose_flag;}
   void Verbose(const int & batch_flag){ (batch_flag != 0) ? verbose_flag=OFF: verbose_flag=ON; }
+  bool OutputBoundaryReferenceState(const int & BCtype) const;
   //@}
 
   //! @name Accuracy assessment parameters:

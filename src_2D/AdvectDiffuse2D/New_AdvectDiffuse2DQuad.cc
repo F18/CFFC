@@ -34,7 +34,12 @@ int AdvectDiffuse2D_Quad_Block_New::Number_of_Residual_Norms = 1;
 /**********************
  * Default constructor.
  **********************/
-AdvectDiffuse2D_Quad_Block_New::AdvectDiffuse2D_Quad_Block_New(void): AssessAccuracy(this) {
+AdvectDiffuse2D_Quad_Block_New::AdvectDiffuse2D_Quad_Block_New(void):
+  AssessAccuracy(this),
+  Ref_State_BC_North(0.0), Ref_State_BC_South(0.0),
+  Ref_State_BC_East(0.0), Ref_State_BC_West(0.0)
+{
+
   Freeze_Limiter = OFF;
   // Grid size and variables:
   NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0; Nghost = 0;
@@ -69,6 +74,10 @@ AdvectDiffuse2D_Quad_Block_New::AdvectDiffuse2D_Quad_Block_New(const AdvectDiffu
   Uo = Soln.Uo;
   FluxN = Soln.FluxN; FluxS = Soln.FluxS; FluxE = Soln.FluxE; FluxW = Soln.FluxW;
   UoN = Soln.UoN; UoS = Soln.UoS; UoE = Soln.UoE; UoW = Soln.UoW;
+  Ref_State_BC_North = Soln.Ref_State_BC_North;
+  Ref_State_BC_South = Soln.Ref_State_BC_South;
+  Ref_State_BC_East = Soln.Ref_State_BC_East;
+  Ref_State_BC_West = Soln.Ref_State_BC_West;
   Freeze_Limiter = Soln.Freeze_Limiter;
 }
 
@@ -796,9 +805,77 @@ InviscidAndEllipticFluxStates_AtBoundaryInterface(const int &BOUNDARY,
 }
 
 /***************************************************//**
+ *
  * Assigns boundary condition reference data based on
  * the boundary type for the specified quadrilateral 
- * solution block. 
+ * solution block based on the input parameters.
+ * This routine makes the link between user's specifications
+ * and the values that are set as boundary reference states.
+ ********************************************************/
+void AdvectDiffuse2D_Quad_Block_New::
+Set_Boundary_Reference_States_Based_On_Input(const AdvectDiffuse2D_Input_Parameters &IP){
+
+  // Set boundary reference states to default
+  Set_Default_Boundary_Reference_States();
+
+  // Set the reference values for boundary reference states
+  Set_Reference_Values_For_Boundary_States(IP.Ref_State_BC_North,
+					   IP.Ref_State_BC_South,
+					   IP.Ref_State_BC_East,
+					   IP.Ref_State_BC_West);
+
+  // Set boundary reference states for particular bondary condition types
+  Set_Boundary_Reference_States();
+}
+
+/***************************************************//**
+ * Assigns reference values for the boundary condition 
+ * reference states to what the user specified.
+ * These values are used in Set_Boundary_Reference_States()
+ * routine.
+ ********************************************************/
+void AdvectDiffuse2D_Quad_Block_New::
+Set_Reference_Values_For_Boundary_States(const AdvectDiffuse2D_State_New & Ref_North,
+					 const AdvectDiffuse2D_State_New & Ref_South,
+					 const AdvectDiffuse2D_State_New & Ref_East,
+					 const AdvectDiffuse2D_State_New & Ref_West){
+  Ref_State_BC_North = Ref_North;
+  Ref_State_BC_South = Ref_South;
+  Ref_State_BC_East = Ref_East;
+  Ref_State_BC_West = Ref_West;
+}
+
+/***************************************************//**
+ * Assigns default values to the boundary condition 
+ * reference data for the quadrilateral solution block. 
+ ********************************************************/
+void AdvectDiffuse2D_Quad_Block_New::
+Set_Default_Boundary_Reference_States(void){
+  
+  int i,j;
+
+  for (j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
+    // === Set default reference data for UoW ===
+    UoW[j] = U[ICl][j];
+
+    // === Set default reference data for UoE ===
+    UoE[j] = U[ICu][j];
+  } // endfor(j)
+
+
+  for (i = ICl-Nghost ; i<= ICu+Nghost ; ++i ) {
+    // === Set default reference data for UoS ===
+    UoS[i] = U[i][JCl];
+
+    // === Set default reference data for UoN ===
+    UoN[i] = U[i][JCu];
+  } // enfor(i)
+
+}
+
+/***************************************************//**
+ * Assigns boundary condition reference data based on
+ * the boundary type for the quadrilateral solution block. 
  * 
  ********************************************************/
 void AdvectDiffuse2D_Quad_Block_New::Set_Boundary_Reference_States(void){
@@ -822,17 +899,17 @@ void AdvectDiffuse2D_Quad_Block_New::Set_Boundary_Reference_States(void){
 
     case BC_DIRICHLET :
       // Reference data represents the solution value
-      UoW[j] = 0.0;
+      UoW[j] = Ref_State_BC_West;
       break;
 
     case BC_NEUMANN :
       // Reference data represents the value of the solution gradient
-      UoW[j] = 0.0;
+      UoW[j] = Ref_State_BC_West;
       break;
 
     case BC_FARFIELD :
       // Reference data represents the solution value
-      UoW[j] = 0.0;
+      UoW[j] = Ref_State_BC_West;
       break;
 
     case BC_EXACT_SOLUTION :
@@ -865,17 +942,17 @@ void AdvectDiffuse2D_Quad_Block_New::Set_Boundary_Reference_States(void){
 
     case BC_DIRICHLET :
       // Reference data represents the solution value
-      UoE[j] = 0.0;
+      UoE[j] = Ref_State_BC_East;
       break;
 
     case BC_NEUMANN :
       // Reference data represents the value of the solution gradient
-      UoE[j] = 0.0;
+      UoE[j] = Ref_State_BC_East;
       break;
 
     case BC_FARFIELD :
       // Reference data represents the solution value
-      UoE[j] = 0.0;
+      UoE[j] = Ref_State_BC_East;
       break;
 
     case BC_EXACT_SOLUTION :
@@ -911,17 +988,17 @@ void AdvectDiffuse2D_Quad_Block_New::Set_Boundary_Reference_States(void){
 
     case BC_DIRICHLET :
       // Reference data represents the solution value
-      UoS[i] = 0.0;
+      UoS[i] = Ref_State_BC_South;
       break;
 
     case BC_NEUMANN :
       // Reference data represents the value of the solution gradient
-      UoS[i] = 0.0;
+      UoS[i] = Ref_State_BC_South;
       break;
 
     case BC_FARFIELD :
       // Reference data represents the solution value
-      UoS[i] = 0.0;
+      UoS[i] = Ref_State_BC_South;
       break;
 
     case BC_EXACT_SOLUTION :
@@ -954,17 +1031,17 @@ void AdvectDiffuse2D_Quad_Block_New::Set_Boundary_Reference_States(void){
 
     case BC_DIRICHLET :
       // Reference data represents the solution value
-      UoN[i] = 0.0;
+      UoN[i] = Ref_State_BC_North;
       break;
 
     case BC_NEUMANN :
       // Reference data represents the value of the solution gradient
-      UoN[i] = 0.0;
+      UoN[i] = Ref_State_BC_North;
       break;
 
     case BC_FARFIELD :
       // Reference data represents the solution value
-      UoN[i] = 0.0;
+      UoN[i] = Ref_State_BC_North;
       break;
 
     case BC_EXACT_SOLUTION :

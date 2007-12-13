@@ -39,6 +39,22 @@ int AdvectDiffuse2D_Input_Parameters::Nghost(void) const{
   return Number_Of_Ghost_Cells;
 }
 
+/*!
+ * Decide whether to output or not the boundary reference state for a particular boundary condition.
+ * To get output for a particular BCtype, just add it to the list.
+ */
+bool AdvectDiffuse2D_Input_Parameters::OutputBoundaryReferenceState(const int & BCtype) const{
+  if (BCtype == BC_DIRICHLET ||
+      BCtype == BC_NEUMANN ||
+      BCtype == BC_FARFIELD){
+    // Get output
+    return true;
+  } else {
+    // No output
+    return false;
+  }
+}
+
 /******************************************************//**
  * Parse the input file
  ********************************************************/
@@ -176,11 +192,28 @@ ostream &operator << (ostream &out_file,
 
     // ====    Boundary conditions ====
     if (IP.BCs_Specified) {
-      out_file << "\n  -> Boundary conditions specified as: "
-	       << "\n     -> BC_North = " << IP.BC_North_Type
-	       << "\n     -> BC_South = " << IP.BC_South_Type
-	       << "\n     -> BC_East = " << IP.BC_East_Type
-	       << "\n     -> BC_West = " << IP.BC_West_Type;
+      out_file << "\n  -> Boundary conditions specified as: ";
+
+      // North
+      out_file << "\n     -> BC_North = " << IP.BC_North_Type;
+      if (IP.OutputBoundaryReferenceState(IP.BC_North)){
+	out_file << " , Ref_State = " << IP.Ref_State_BC_North;
+      }
+      // South
+      out_file << "\n     -> BC_South = " << IP.BC_South_Type;
+      if (IP.OutputBoundaryReferenceState(IP.BC_South)){
+	out_file << " , Ref_State = " << IP.Ref_State_BC_South;
+      }
+      // East
+      out_file << "\n     -> BC_East  = " << IP.BC_East_Type;
+      if (IP.OutputBoundaryReferenceState(IP.BC_East)){
+	out_file << " , Ref_State = " << IP.Ref_State_BC_East;
+      }
+      // West
+      out_file << "\n     -> BC_West  = " << IP.BC_West_Type;
+      if (IP.OutputBoundaryReferenceState(IP.BC_West)){
+	out_file << " , Ref_State = " << IP.Ref_State_BC_West;
+      }
     }
 
     // ====    Inflow field ====
@@ -627,6 +660,10 @@ void Set_Default_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
     IP.BC_South = BC_NONE;
     IP.BC_East  = BC_NONE;
     IP.BC_West  = BC_NONE;
+    IP.Ref_State_BC_North = 0.0;
+    IP.Ref_State_BC_South = 0.0;
+    IP.Ref_State_BC_East = 0.0;
+    IP.Ref_State_BC_West = 0.0;
 
     // AMR:
     IP.AMR = 0;
@@ -957,6 +994,19 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.BC_West),
 			  1,
 			  MPI::INT,0);
+    MPI::COMM_WORLD.Bcast(&(IP.Ref_State_BC_North.u),
+			  1,
+			  MPI::DOUBLE,0);
+    MPI::COMM_WORLD.Bcast(&(IP.Ref_State_BC_South.u),
+			  1,
+			  MPI::DOUBLE,0);
+    MPI::COMM_WORLD.Bcast(&(IP.Ref_State_BC_East.u),
+			  1,
+			  MPI::DOUBLE,0);
+    MPI::COMM_WORLD.Bcast(&(IP.Ref_State_BC_West.u),
+			  1,
+			  MPI::DOUBLE,0);
+
     // ICEM:
     if (!CFFC_Primary_MPI_Processor()) {
        IP.ICEMCFD_FileNames = new char*[3];
@@ -1432,6 +1482,19 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.BC_West),
 		       1,
 		       MPI::INT,Source_Rank);
+    Communicator.Bcast(&(IP.Ref_State_BC_North.u),
+		       1,
+		       MPI::DOUBLE,Source_Rank);
+    Communicator.Bcast(&(IP.Ref_State_BC_South.u),
+		       1,
+		       MPI::DOUBLE,Source_Rank);
+    Communicator.Bcast(&(IP.Ref_State_BC_East.u),
+		       1,
+		       MPI::DOUBLE,Source_Rank);
+    Communicator.Bcast(&(IP.Ref_State_BC_West.u),
+		       1,
+		       MPI::DOUBLE,Source_Rank);
+
     // ICEM :
     if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
        IP.ICEMCFD_FileNames = new char*[3];
@@ -2599,6 +2662,13 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
       i_command = INVALID_INPUT_VALUE;
     }
 
+  } else if (strcmp(IP.Next_Control_Parameter, "Ref_State_North") == 0) {
+    i_command = 0;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.Ref_State_BC_North;
+    IP.Input_File.setf(ios::skipws);
+    IP.Input_File.getline(buffer, sizeof(buffer));
+
   } else if (strcmp(IP.Next_Control_Parameter,"BC_South") == 0) {
     i_command = 502;
     Get_Next_Input_Control_Parameter(IP);
@@ -2642,6 +2712,13 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
     } else {
       i_command = INVALID_INPUT_VALUE;
     }
+
+  } else if (strcmp(IP.Next_Control_Parameter, "Ref_State_South") == 0) {
+    i_command = 0;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.Ref_State_BC_South;
+    IP.Input_File.setf(ios::skipws);
+    IP.Input_File.getline(buffer, sizeof(buffer));
 
   } else if (strcmp(IP.Next_Control_Parameter,"BC_East") == 0) {
     i_command = 503;
@@ -2687,6 +2764,13 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
       i_command = INVALID_INPUT_VALUE;
     }
 
+  } else if (strcmp(IP.Next_Control_Parameter, "Ref_State_East") == 0) {
+    i_command = 0;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.Ref_State_BC_East;
+    IP.Input_File.setf(ios::skipws);
+    IP.Input_File.getline(buffer, sizeof(buffer));
+
   } else if (strcmp(IP.Next_Control_Parameter,"BC_West") == 0) {
     i_command = 504;
     Get_Next_Input_Control_Parameter(IP);
@@ -2731,6 +2815,13 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
       i_command = INVALID_INPUT_VALUE;
     }
     
+  } else if (strcmp(IP.Next_Control_Parameter, "Ref_State_West") == 0) {
+    i_command = 0;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.Ref_State_BC_West;
+    IP.Input_File.setf(ios::skipws);
+    IP.Input_File.getline(buffer, sizeof(buffer));
+
   } else if (strcmp(IP.Next_Control_Parameter, "Space_Accuracy") == 0) {
     i_command = 210;
     IP.Line_Number = IP.Line_Number + 1;

@@ -186,6 +186,10 @@ public:
                               *UoS, //!< Boundary condition reference states for south boundary.
                               *UoE, //!< Boundary condition reference states for east boundary.
                               *UoW; //!< Boundary condition reference states for west boundary.
+  //! Reference values for north and south boundary conditon reference states
+  AdvectDiffuse2D_State_New Ref_State_BC_North, Ref_State_BC_South; 
+  //! Reference values for east and west boundary conditon reference states
+  AdvectDiffuse2D_State_New Ref_State_BC_East, Ref_State_BC_West;
   //@}
 
   //! @name Accuracy assessment data:
@@ -324,8 +328,21 @@ public:
 							 AdvectDiffuse2D_State_New &U_face);
   //@}
 
+
+  //! @name Member functions to set boundary states
+  //@{
+  //! Set reference values for boundary reference states
+  void Set_Reference_Values_For_Boundary_States(const AdvectDiffuse2D_State_New & Ref_North,
+						const AdvectDiffuse2D_State_New & Ref_South,
+						const AdvectDiffuse2D_State_New & Ref_East,
+						const AdvectDiffuse2D_State_New & Ref_West);
   //! Set boundary reference states
   void Set_Boundary_Reference_States(void);
+  //! Set boundary reference states to default
+  void Set_Default_Boundary_Reference_States(void);
+  //! Set boundary reference states based on user's input data
+  void Set_Boundary_Reference_States_Based_On_Input(const AdvectDiffuse2D_Input_Parameters &IP);
+  //@}
 
   //! @name Input-output operators.
   //@{
@@ -757,9 +774,6 @@ extern void Output_Nodes_Tecplot(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 extern void ICs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
  	        const AdvectDiffuse2D_Input_Parameters &IP,
                 AdvectDiffuse2D_State_New *Wo);
-
-extern void Set_Boundary_Reference_State(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
-					 const AdvectDiffuse2D_Input_Parameters &IP);
 
 extern void BCs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 		const AdvectDiffuse2D_Input_Parameters &IP);
