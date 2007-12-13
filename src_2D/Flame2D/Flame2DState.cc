@@ -24,7 +24,7 @@ double Flame2D_State::gravity_z = -9.81;
 double* Flame2D_State::y = NULL;
 double* Flame2D_pState::r = NULL;
 double* Flame2D_pState::dihdic = NULL;
-double* Flame2D_pState::hs_i = NULL;
+double* Flame2D_pState::h_i = NULL;
 
 
 /////////////////////////////////////////////////////////////////////
@@ -45,6 +45,10 @@ void Flame2D_pState::setMixture(const string &mech_name,
   ns = Mixture::nSpecies();
   n = ns + NUM_FLAME2D_VAR_SANS_SPECIES;
 #endif
+
+  // determine if this is a reacting case
+  if (Mixture::nReactions()>0) reacting = true;
+  else reacting = false;
 
   //allocate static memory and load the species data  
   AllocateStatic();
@@ -69,6 +73,7 @@ void Flame2D_State::set_gravity(const double &g) { // [m/s^2]
   }
 }
 
+
 /////////////////////////////////////////////////////////////////////
 /// Flux Functions
 /////////////////////////////////////////////////////////////////////
@@ -88,11 +93,23 @@ void Flame2D_pState::Fx(Flame2D_State &FluxX) const {
   }
 }
 
+void Flame2D_pState::Fx(Flame2D_State &FluxX, const double& mult) const {
+  FluxX.rho() = mult * rho()*vx();
+  FluxX.rhovx() = mult * (rho()*sqr(vx()) + p());
+  FluxX.rhovy() = mult * rho()*vx()*vy();
+  FluxX.E() = mult * vx()*H();
+  
+  //multispecies transport
+  for(int i=0; i<ns; i++){
+    FluxX.rhoc(i) = mult * rho()*vx()*c(i);
+  }
+}
+
 void Flame2D_pState::addFx(Flame2D_State &FluxX, const double& mult) const {
-  FluxX.rho() += mult*rho()*vx();
-  FluxX.rhovx() += mult*rho()*sqr(vx()) + p();
-  FluxX.rhovy() += mult*rho()*vx()*vy();
-  FluxX.E() += mult*vx()*H();
+  FluxX.rho() += mult * rho()*vx();
+  FluxX.rhovx() += mult * (rho()*sqr(vx()) + p());
+  FluxX.rhovy() += mult * rho()*vx()*vy();
+  FluxX.E() += mult * vx()*H();
   
   //multispecies transport
   for(int i=0; i<ns; i++){
@@ -131,7 +148,7 @@ void Flame2D_pState::Viscous_Flux_x(const Flame2D_State &dWdx,
   Flux.E() += mult * ( -qflux.x + vx()*tau.xx + vy()*tau.xy );
   //rho * Diffusion_Coef * grad cn 
   for( int i=0; i<ns; i++){
-    Flux.rhoc(i) += mult * (Diffusion_coef(i) * dWdx.c(i)); 
+    Flux.rhoc(i) += mult * rho() * Diffusion_coef(i) * dWdx.c(i);
   }
 
 }
@@ -148,7 +165,7 @@ void Flame2D_pState::Viscous_Flux_y(const Flame2D_State &dWdy,
   Flux.E() += mult * ( -qflux.y + vx()*tau.xy + vy()*tau.yy );
   //rho * Diffusion_Coef * grad cn 
   for( int i=0; i<ns; i++){
-    Flux.rhoc(i) += mult * (Diffusion_coef(i) * dWdy.c(i));     
+    Flux.rhoc(i) += mult * rho() * Diffusion_coef(i) * dWdy.c(i);
   }
 
 }
@@ -242,6 +259,105 @@ Flame2D_State Flame2D_pState::lp_x(const int &index) const {
   } 
   
 }
+
+void Flame2D_pState::Flux_Dissipation(const int &i,
+				      const Flame2D_State &dWrl, 
+				      const double &wavespeed, 
+				      Flame2D_State &Flux,
+				      const double &mult) const {
+
+  //declares
+  static Flame2D_State lp;
+  static Flame2D_State rc;
+  double aa(a());
+  double tmp, dv;
+
+
+  // Compute the left primitive eigenvector
+  // and the right conserved eigenvector, and store it in-place
+  if(i == 1){
+
+    lp.rho() = ZERO;
+    lp.vx() = -HALF*rho()/aa;
+    lp.vy() = ZERO;
+    lp.p() =  HALF/(aa*aa);
+    lp.c(ZERO);
+
+    rc.rho() = ONE;
+    rc.rhovx() = vx()-aa;
+    rc.rhovy() = vy();
+    rc.E() = H()/rho()-vx()*aa;
+    rc.rhoc(c());
+
+  } else if(i == 2) {
+
+    lp.rho() = ONE;
+    lp.vx() = ZERO;
+    lp.vy() = ZERO;
+    lp.p() = -ONE/(aa*aa);
+    lp.c(ZERO);
+
+    rc.rho() = ONE;
+    rc.rhovx() = vx();
+    rc.rhovy() = vy();
+    rc.E() = H()/rho()-Cp()*T();
+    rc.rhoc(c());
+
+    } else if(i == 3) {
+
+    lp.rho() = ZERO;
+    lp.vx() = ZERO;
+    lp.vy() = ONE;
+    lp.p() = ZERO;
+    lp.c(ZERO);
+
+    rc.rho() = ZERO;
+    rc.rhovx() = ZERO;
+    rc.rhovy() = rho();
+    rc.E() = rho()*vy();
+    rc.rhoc(ZERO);
+
+  } else if(i == 4) {  
+
+    lp.rho() = ZERO;
+    lp.vx() = HALF*rho()/aa;
+    lp.vy() = ZERO;
+    lp.p() = HALF/(aa*aa);
+    lp.c(ZERO);
+
+    rc.rho() = ONE;
+    rc.rhovx() = vx()+aa;
+    rc.rhovy() = vy();
+    rc.E() = H()/rho()+vx()*aa;
+    rc.rhoc(c());
+
+  } else{ 
+
+    lp.rho() = ZERO;
+    lp.vx() = ZERO;
+    lp.vy() = ZERO;
+    lp.p() = ZERO;
+    lp.c(ZERO);
+    lp.c(i-NUM_FLAME2D_VAR_SANS_SPECIES-1) = ONE;
+
+    rc.rho() = ZERO;
+    rc.rhovx() = ZERO;
+    rc.rhovy() = ZERO;
+    rc.E() = rho()*dihdic[i-NUM_FLAME2D_VAR_SANS_SPECIES-1];
+    rc.rhoc(ZERO);
+    rc.rhoc(i-NUM_FLAME2D_VAR_SANS_SPECIES-1) = rho();
+
+  } 
+  
+  // Compute the wavestrengh
+  dv = lp * dWrl;
+  
+  // compute the flux dissipation
+  tmp = wavespeed*dv;
+  for ( int k = 1 ; k <= n ; k++ ) Flux[k] += mult*tmp*rc[k];
+  
+}
+
 
 /////////////////////////////////////////////////////////////////////
 /// Low Mach Number Preconditioner Based on Weiss & Smith (1995)
@@ -343,30 +459,63 @@ void Flame2D_pState::Flux_Dissipation_precon(const double &MR2,
   for ( int i = 1 ; i <= n ; i++ ) {
 
     // Compute the left primitive eigenvector
+    // Compute the right conserved eigenvector, and store it in-place
     if(i == 1){
+
       lp.rho() = ZERO;
       lp.vx() = -HALF*rho()*MR2/cprimed;
       lp.vy() = ZERO;
       lp.p() = (-uprimed+cprimed + vx())/(TWO*cprimed*aa*aa);
       lp.c(ZERO);
+
+      rc.rho() = ONE;
+      rc.rhovx() = (uprimed-cprimed)/MR2;
+      rc.rhovy() = vy();
+      rc.E() = h()+HALF*(vsqr()/MR2) - (vx()*cprimed)/MR2;
+      rc.rhoc(c());
+
     } else if(i == 2) {
+
       lp.rho() = ONE;
       lp.vx() = ZERO;
       lp.vy() = ZERO;
       lp.p() = -ONE/(aa*aa);
       lp.c(ZERO);
+
+      rc.rho() = ONE;
+      rc.rhovx() = vx();
+      rc.rhovy() = vy();
+      rc.E() = (h()-Cp()*T()) + HALF*vsqr();
+      rc.rhoc(c());
+
     } else if(i == 3) {
+
       lp.rho() = ZERO;
       lp.vx() = ZERO;
       lp.vy() = ONE;
       lp.p() = ZERO;
       lp.c(ZERO);
+
+      rc.rho() = ZERO;
+      rc.rhovx() = ZERO;
+      rc.rhovy() = rho();
+      rc.E() = rho()*vy();
+      rc.rhoc(ZERO);
+
     } else if(i == 4) {  
+
       lp.rho() = ZERO;
       lp.vx() = HALF*rho()*MR2/cprimed;
       lp.vy() = ZERO;
       lp.p() = (uprimed+cprimed - vx())/(TWO*cprimed*aa*aa);
       lp.c(ZERO);
+
+      rc.rho() = ONE;
+      rc.rhovx() = (uprimed+cprimed)/MR2;
+      rc.rhovy() = vy();
+      rc.E() = h()+HALF*(vsqr()/MR2) + (vx()*cprimed)/MR2;
+      rc.rhoc(c());
+
     } else{ 
       lp.rho() = ZERO;
       lp.vx() = ZERO;
@@ -374,42 +523,16 @@ void Flame2D_pState::Flux_Dissipation_precon(const double &MR2,
       lp.p() = ZERO;
       lp.c(ZERO);
       lp.c(i-NUM_FLAME2D_VAR_SANS_SPECIES-1) = ONE;
-    } 
-    
-    // Compute the right conserved eigenvector, and store it in-place
-    // 
-    if(i == 1){
-      rc.rho() = ONE;
-      rc.rhovx() = (uprimed-cprimed)/MR2;
-      rc.rhovy() = vy();
-      rc.E() = h()+HALF*(vsqr()/MR2) - (vx()*cprimed)/MR2;
-      rc.rhoc(c());
-    } else if(i == 2) {
-      rc.rho() = ONE;
-      rc.rhovx() = vx();
-      rc.rhovy() = vy();
-      rc.E() = (h()-Cp()*T()) + HALF*vsqr();
-      rc.rhoc(c());
-    } else if(i == 3) {
-      rc.rho() = ZERO;
-      rc.rhovx() = ZERO;
-      rc.rhovy() = rho();
-      rc.E() = rho()*vy();
-      rc.rhoc(ZERO);
-    } else if(i == 4) {  
-      rc.rho() = ONE;
-      rc.rhovx() = (uprimed+cprimed)/MR2;
-      rc.rhovy() = vy();
-      rc.E() = h()+HALF*(vsqr()/MR2) + (vx()*cprimed)/MR2;
-      rc.rhoc(c());
-    } else{ 
+
       rc.rho() = ZERO;
       rc.rhovx() = ZERO;
       rc.rhovy() = ZERO;
       rc.E() = rho()*dihdic[i-NUM_FLAME2D_VAR_SANS_SPECIES-1];
       rc.rhoc(ZERO);
       rc.rhoc(i-NUM_FLAME2D_VAR_SANS_SPECIES-1) = rho();
+
     } 
+    
 
     // Compute the wavestrengh
     dv = lp * dWrl;
@@ -454,8 +577,8 @@ void Flame2D_pState::u_a_precon(const double &UR2, double &uprimed, double &cpri
 /****************************************************
  * as defined by E.Turkel (1999)
  ****************************************************/
-double Flame2D_pState::Mr2(const int    &flow_type_flag, 
-                          const double &deltax) const {
+double Flame2D_pState::Mr2(const int &flow_type_flag, 
+			   const double &deltax) const {
   
   double aa(a());
   double MR2 = min(max((vsqr()/(aa*aa)),Mref*Mref),ONE);
@@ -467,6 +590,7 @@ double Flame2D_pState::Mr2(const int    &flow_type_flag,
 
   return (MR2);
 }
+
 
 /************************************************************
  * ORIGINAL LAMINAR ONLY
@@ -693,8 +817,26 @@ void Flame2D_pState::Sa_viscous(Flame2D_State &S,
 void Flame2D_pState::Sw(Flame2D_State &S, 
 			const double& mult) const {
   Mix.getRates( p(), c(), r );
-  for(int i=0; i<ns; i++) S.rhoc(i) += mult*r[i];
+  for(int i=0; i<ns-NSm1; i++) S.rhoc(i) += mult*r[i];
 }
+
+/****************************************************
+ * Chemistry source term jacobian
+ ****************************************************/  
+void Flame2D_pState::dSwdU( ::DenseMatrix &dSdU ) const {
+  int temp = NSm1;
+  int offset( NUM_FLAME2D_VAR_SANS_SPECIES );
+  Mix.dSwdU( dSdU, rho(), p(), c(), offset, 1 );
+}
+
+
+/****************************************************
+ * Max diagonal of chemistry source jacobian
+ ****************************************************/  
+double Flame2D_pState::dSwdU_max_diagonal(void) const {
+  return Mix.dSwdU_max_diagonal( rho(), p(), c() );
+}
+
 
 /****************************************************
  * Source terms associated with gravitational forces
@@ -709,6 +851,48 @@ void Flame2D_pState::Sg(Flame2D_State &S,
   //S.rhovx() += 0.0;  //rho*g_r
   S.rhovy() += mult*rho()*gravity_z;
   S.E() += mult*rho()*gravity_z*vy();
+}
+
+
+/////////////////////////////////////////////////////////////////////
+/// Inviscid Flux Jacobians
+/////////////////////////////////////////////////////////////////////
+
+/************************************************************************
+ * Chem2D_pState::dWdU -- Primitive/Conserved transformation Jacobian   *
+ ************************************************************************/
+void Flame2D_pState::dWdU(::DenseMatrix &dWdQ) const{
+
+  // Note: make sure you loaded the dihdic array outside
+  double Temp( T() );
+  double Rt( Rtot() );
+  double C_p( Cp() );
+  double denominator( C_p/Rt - ONE );
+
+  dWdQ(0,0) = ONE;
+  dWdQ(1,0) = -vx()/rho();
+  dWdQ(1,1) = ONE/rho();
+  dWdQ(2,0) = -vy()/rho();
+  dWdQ(2,2) = ONE/rho(); 
+
+  double phi = ZERO;   
+  for(int j=0; j<ns-NSm1; j++){   
+    phi += c(j)*dihdic[j];
+  }		      
+
+  dWdQ(3,0) = (HALF*vsqr() - h() + C_p*Temp + phi)/denominator;
+  dWdQ(3,1) = -vx()/denominator;
+  dWdQ(3,2) = -vy()/denominator;
+  dWdQ(3,3) = ONE/denominator;
+
+  int NUM_VAR = NUM_FLAME2D_VAR_SANS_SPECIES;
+
+  //Species
+  for(int i=0; i<ns-NSm1; i++){   
+    dWdQ(3, NUM_VAR+i) = - dihdic[i]/denominator;
+    dWdQ(NUM_VAR+i, 0) = - c(i)/rho();
+    dWdQ(NUM_VAR+i, NUM_VAR+i) = ONE/rho();
+  }
 }
 
 
@@ -845,6 +1029,7 @@ void Flame2D_pState::BC_1DFlame_Inflow(const Flame2D_pState &Wi,      //ICu
   vx() = Woutlet.rho()*Woutlet.vx()/Wo.rho();
 
   if( (vx() < 0.1) || (vx() > (Wo.vx()+0.5)) ){
+    cout << "\nAdjusting Inflow\n";
     vx() = Wo.vx();
   }
 
@@ -867,6 +1052,7 @@ void Flame2D_pState::BC_1DFlame_Outflow(const Flame2D_pState &Wi,     //ICu
   //and Wo.p == Winput.p (constant pressure initial condition)
   double sum( Wi.rho()*Wi.vx()*(Wi.vx() - Winlet.vx()) );
   if( sum < ZERO){
+    cout << "\nAdjusting Outflow\n";
     setPressure( Wo.p() );
   } else {
     //no relaxation
@@ -1167,7 +1353,7 @@ void Flame2D_State :: FluxHLLE_x(const Flame2D_pState &Wl,
       Wr.Fx(*this);
     } else { 
       static Flame2D_State dUrl, Fl, Fr;
-      dUrl.Delta( Wr.U(), Wl.U() ); // Evaluate the jumps in the conserved solution states.
+      dUrl.DeltaU( Wr, Wl ); // Evaluate the jumps in the conserved solution states.
       Wr.Fx(Fr);
       Wl.Fx(Fl);
       double a(wavespeed_l*wavespeed_r), b(wavespeed_r-wavespeed_l);
@@ -1278,7 +1464,7 @@ void Flame2D_State :: FluxLinde(const Flame2D_pState &Wl,
     double alpha;
     Wr.Fx(Fr);  Wl.Fx(Fl);
 
-    dUrl.Delta( Wr.U(), Wl.U() );
+    dUrl.DeltaU( Wr, Wl );
     dFrl.Delta( Fr, Fl );
 
     double wavespeed_m( Waa.vx() );
@@ -1414,7 +1600,8 @@ void Flame2D_State :: FluxRoe_x(const Flame2D_pState &Wl,
       
       for (int i=0 ; i < n-NSm1; i++) {
 	if (wavespeeds[i+1] < ZERO) {
-	  *this += wavespeeds[i+1]*((Waa.lp_x(i+1)*dWrl)*Waa.rc_x(i+1));
+	  //*this += wavespeeds[i+1]*((Waa.lp_x(i+1)*dWrl)*Waa.rc_x(i+1));
+	  Waa.Flux_Dissipation(i+1, dWrl, wavespeeds[i+1], *this, 1.0);
 	}
       } 
     } else {
@@ -1424,7 +1611,8 @@ void Flame2D_State :: FluxRoe_x(const Flame2D_pState &Wl,
 			       lambdas_r);
       for (int i=0; i < n-NSm1; i++) {
 	if (wavespeeds[i+1] > ZERO) {
-	  *this -= wavespeeds[i+1]*((Waa.lp_x(i+1)*dWrl)*Waa.rc_x(i+1));
+	  //*this -= wavespeeds[i+1]*((Waa.lp_x(i+1)*dWrl)*Waa.rc_x(i+1));
+	  Waa.Flux_Dissipation(i+1, dWrl, wavespeeds[i+1], *this, -1.0);
 	}
       } 
     } 
@@ -1446,15 +1634,14 @@ void Flame2D_State :: FluxRoe_x(const Flame2D_pState &Wl,
 			     lambdas_r);
      
     // Evaluate the low-Mach-number local preconditioner for the Roe-averaged state.
-    static ::DenseMatrix P(n-NSm1,n-NSm1);
-    P.zero();  //RESET MATRIX TO ZERO!!!
+    static ::DenseMatrix P(n-NSm1,n-NSm1,ZERO);
+    //P.zero(); // <- no need, always writing to the same spot
     Waa.Low_Mach_Number_Preconditioner(P,flow_type_flag,deltax);
     
     // Determine the intermediate state flux.
-    (*this).Vacuum();
-    Wl.addFx(*this, HALF);
+    Wl.Fx(*this, HALF);
     Wr.addFx(*this, HALF);
-    
+
     // compute dissipation flux
     static Flame2D_State Flux_dissipation;
     Waa.Flux_Dissipation_precon( MR2a, dWrl, wavespeeds, Flux_dissipation);
@@ -1686,46 +1873,6 @@ void Flame2D_State::FluxAUSMplus_up_n(const Flame2D_pState &Wl,
 /// Viscous Reconstruction Functions
 /////////////////////////////////////////////////////////////////////
 
-/**********************************************************************
- * Routine: ViscousFluxArithmetic_n                                   *
- *                                                                    *
- * This function returns the intermediate state solution viscous flux *
- * calculated by the arithmetic mean of the cell-centred flux terms   *
- * of the neighbouring cells.                                         *
- *                                                                    *
- **********************************************************************/
-void Flame2D_State::Viscous_FluxArithmetic_n(const Flame2D_pState &Wl,
-					     const Flame2D_State &dWdx_l,
-					     const Flame2D_State &dWdy_l,
-					     const Vector2D &qflux_l,
-					     const Tensor2D &tau_l,
-					     const Flame2D_pState &Wr,
-					     const Flame2D_State &dWdx_r,
-					     const Flame2D_State &dWdy_r,
-					     const Vector2D &qflux_r,
-					     const Tensor2D &tau_r,
-					     const Vector2D &norm_dir,
-					     const double &mult) {
-  // the cosines
-  static const Vector2D i(1,0), j(0,1);
-  double nx( dot(i,norm_dir) ), ny( dot(j,norm_dir) );
-
-  // Fx = 0.5 * ( Wl.Viscous_Flux_x + Wr.Viscous_Flux_x)
-  // Fy = 0.5 * ( Wl.Viscous_Flux_y + Wr.Viscous_Flux_y)
-  // Fn = (Fx*dot(i,norm_dir) + Fy*dot(j,norm_dir))
-
-  // Fx Constribution
-  if (fabs(nx)>TOLER) {
-    Wl.Viscous_Flux_x(dWdx_l, qflux_l, tau_l, *this, mult*HALF*nx);
-    Wr.Viscous_Flux_x(dWdx_r, qflux_r, tau_r, *this, mult*HALF*nx);
-  }
-  // Fy contribution
-  if (fabs(ny)>TOLER) {
-    Wl.Viscous_Flux_y(dWdy_l, qflux_l, tau_l, *this, mult*HALF*ny);
-    Wr.Viscous_Flux_y(dWdy_r, qflux_r, tau_r, *this, mult*HALF*ny);
-  }
-
-}
 
 /**********************************************************************
  * Routine: Viscous_Flux_n                                            *
@@ -1736,8 +1883,8 @@ void Flame2D_State::Viscous_FluxArithmetic_n(const Flame2D_pState &Wl,
  *                                                                    *
  **********************************************************************/
 void Flame2D_State::Viscous_Flux_n(const Flame2D_pState &W,
-				   const Flame2D_pState &dWdx,
-				   const Flame2D_pState &dWdy,
+				   const Flame2D_State &dWdx,
+				   const Flame2D_State &dWdy,
 				   const int Axisymmetric,
 				   const Vector2D X,
 				   const Vector2D &norm_dir,
@@ -1832,73 +1979,93 @@ void Flame2D_State::Viscous_FluxHybrid_n(const Flame2D_pState &W,
 
 }
 
+/////////////////////////////////////////////////////////////////////
+/// Jump Conditions
+/////////////////////////////////////////////////////////////////////
+
+/**********************************************************************
+ * Routine: FlameJumpLowMach_x                                        *
+ *                                                                    *
+ * This routine solves a 1D premixed flame in the x-direction using   *
+ * jump condition equations, subject to a low Mach number assumption, *
+ * that is,                                                           *
+ *                                                                    *
+ *   rho1*T1=rho2*T2  (see Poinsot/Veynante, "Numerical Combustion")  *
+ *                                                                    *
+ * Returns the burnt mixture state vector.                            *
+ *                                                                    *
+ **********************************************************************/
+void Flame2D_pState::FlameJumpLowMach(const Flame2D_pState &Wu) {
+
+  // Product species' mass fractions should already be set
+
+  // declares
+  double rho2, u2, T2, p2, Cp2;      // Unknown variables.
+  double f[3];                       // LHS vector.
+  double delta_vars[3];              // Change in variables.
+  double detJ, detf0, detf1, detf2;  // Determinants.
+
+  // iteration parameters
+  double norm(MILLION), norm_tolerance(1.0e-6);
+  int iter_count, iter_max(20);
+
+  // Initial guess.
+  rho2 = DENSITY_STDATM;
+  u2   = TWO*Wu.vx();
+  T2   = 1000;
+
+  //
+  // Apply Newton's method to solve for rho2, u2, T2.
+  //
+  for( iter_count=0; iter_count<iter_max; iter_count++ ) {
+
+    f[0] = -(rho2*u2 - Wu.rho()*Wu.vx());
+    f[1] = -(rho2*T2 - Wu.rho()*Wu.T());
+    f[2] = -( (h(T2)+HALF*sqr(u2)) - (Wu.h()+HALF*sqr(Wu.vx())) );
+
+    Cp2 = Cp(T2);
+
+    detJ  = u2*(-u2*rho2) - T2*(rho2*Cp2);
+    detf0 = -rho2*(f[0]*u2-f[2]*rho2) + Cp2*(-f[1]*rho2);
+    detf1 = u2*(f[1]*Cp2-f[2]*rho2) - T2*(f[0]*Cp2);
+    detf2 = u2*(-u2*f[1]) - T2*(f[2]*rho2-f[0]*u2);
+
+    delta_vars[0] = detf0/detJ;
+    delta_vars[1] = detf1/detJ;
+    delta_vars[2] = detf2/detJ;
+
+    rho2 = rho2 + delta_vars[0];
+    u2   = u2 + delta_vars[1];
+    T2   = T2 + delta_vars[2];
+
+    norm = sqrt( sqr(delta_vars[0]) + sqr(delta_vars[1]) + sqr(delta_vars[2]) );
+
+    // Newton method converged.
+    if (norm <= norm_tolerance) break;
+
+  }
+
+  // Check if converged
+  if (norm > norm_tolerance || norm!=norm) {
+    cerr << "\nFlame2D_pState::FlameJumpLowMach_x() - Newton's method did not converge.\n";
+    exit(-1);
+  }
+
+
+  // assign
+  rho() = rho2;
+  vx() = u2;
+  vy() = Wu.vy();   // Jump in tangential velocity is zero.
+  p() = Wu.p() + Wu.rho()*sqr(Wu.vx())*(ONE - vx()/Wu.vx());
+  setGas();
+
+}
+
 
 /////////////////////////////////////////////////////////////////////
 /// Exact Test Case Solution Functions
 /////////////////////////////////////////////////////////////////////
 
-/**********************************************************************
- * Routine: RinglebFlow                                               *
- *                                                                    *
- * This function returns the exact solution to Ringleb's flow for the *
- * location X.                                                        *
- *                                                                    *
- **********************************************************************/
-void Flame2D_pState::RinglebFlow(const Vector2D X) {
-
-//   Chem2D_pState W;
-//   double sin_theta, cos_theta, theta;
-//   double f_a, f_ab;
-//   double J, J_a, J_ab;
-//   double rho_a, rho_ab;
-//   double q, q_a, q_ab, k;
-//   double c, c_a = 0.70, c_b = 0.99, c_ab;
-//   double g = GAMMA_AIR, po = PRESSURE_STDATM, rhoo = DENSITY_STDATM;
-
-//   // Use bisection method to solve for the sound speed, c.
-//   while (fabs(c_a - c_b) > NANO) {
-//     // Determine f_a.
-//     rho_a = pow(c_a,TWO/(g-ONE));
-//     J_a = ONE/c_a + ONE/(THREE*c_a*c_a*c_a) + ONE/(FIVE*c_a*c_a*c_a*c_a*c_a) - HALF*log((ONE+c_a)/(ONE-c_a));
-//     q_a = sqrt((TWO/(g-ONE))*(ONE-c_a*c_a));
-//     f_a = (X.x + HALF*J_a)*(X.x + HALF*J_a) + X.y*X.y - ONE/(FOUR*rho_a*rho_a*q_a*q_a*q_a*q_a);
-//     // Determine f_ab.
-//     c_ab = HALF*(c_a + c_b);
-//     rho_ab = pow(c_ab,TWO/(g-ONE));
-//     J_ab = ONE/c_ab + ONE/(THREE*c_ab*c_ab*c_ab) + ONE/(FIVE*c_ab*c_ab*c_ab*c_ab*c_ab) - HALF*log((ONE+c_ab)/(ONE-c_ab));
-//     q_ab = sqrt((TWO/(g-ONE))*(ONE-c_ab*c_ab));
-//     f_ab = (X.x + HALF*J_ab)*(X.x + HALF*J_ab) + X.y*X.y - ONE/(FOUR*rho_ab*rho_ab*q_ab*q_ab*q_ab*q_ab);
-//     if (f_a*f_ab <= ZERO) {
-//       c_b = HALF*(c_a + c_b);
-//     } else {
-//       c_a = HALF*(c_a + c_b);
-//     }
-//   }
-
-//   // Final sound speed, density, and total velocity (speed).
-//   c = HALF*(c_a + c_b);
-//   q = sqrt((TWO/(g-ONE))*(ONE-c*c));
-//   W.rho = pow(c,TWO/(g-ONE));
-//   J = ONE/c + ONE/(THREE*c*c*c) + ONE/(FIVE*c*c*c*c*c) - HALF*log((ONE+c)/(ONE-c));
-//   k = sqrt(TWO/(TWO*W.rho*(X.x+HALF*J)+ONE/(q*q)));
-//   //if (k > 5.0/3.0) cout << "k = " << k << " > 5/3 @ " << X << endl;
-//   sin_theta = max(ZERO,min(ONE,q/k));
-//   theta = TWO*PI-asin(sin_theta);
-//   sin_theta = sin(theta);
-//   cos_theta = cos(theta);
-
-//   W.rho = rhoo*W.rho;
-//   W.v.x = sqrt(g*po/rhoo)*q*cos_theta;
-//   if (X.y < ZERO) W.v.x = -ONE*W.v.x;
-//   W.v.y = sqrt(g*po/rhoo)*q*sin_theta;
-//   W.p   = po*(W.rho/rhoo)*c*c;
-  
-//   W.g   = g;
-
-//   // Return W state.
-//   return W;
-
-}
 
 /**********************************************************************
  * Routine: ViscousChannelFlow                                        *
@@ -1929,7 +2096,8 @@ void Flame2D_pState::ViscousChannelFlow(const Vector2D X,
  * the freestream flow velocity.                                      *
  *                                                                    *
  **********************************************************************/
-void Flame2D_pState::FlatPlate(const Vector2D X,
+void Flame2D_pState::FlatPlate(const Flame2D_pState &Winf,
+			       const Vector2D X,
 			       double &eta,
 			       double &f,
 			       double &fp,
@@ -1941,6 +2109,9 @@ void Flame2D_pState::FlatPlate(const Vector2D X,
   double dn = 0.000005;
   eta = ZERO;
   f = ZERO; fp = ZERO; fpp = 0.33206;
+
+  // set bulk flow conditions
+  Copy(Winf);
 
   // Return upstream conditions before flat plate.
   if (X.x < ZERO) return;

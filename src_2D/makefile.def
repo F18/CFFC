@@ -24,7 +24,7 @@ CANTERA_VERSION = NoCANTERA
 FFTW_VERSION = V32
 
 # Set to ON in order to run the TUT unit testing on
-TUT_TESTING = ON
+TUT_TESTING = OFF
 
 # Set to ON for use with "gprof"
 # <x86  >  gprof cffc2D gmon.out > output.txt
@@ -37,7 +37,7 @@ PROFILING = OFF
 # Do Checking:
 # Set to ON for checking conditions controled by the _DO_CHECKS macro
 # Set to OFF in order to run faster (no condition checking)
-DO_CHECKS = ON
+DO_CHECKS = OFF
 
 # Use 'assert' : Set to OFF if you want to use the 'assert' macro.
 #

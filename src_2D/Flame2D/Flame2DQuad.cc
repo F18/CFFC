@@ -787,6 +787,8 @@ void Flame2D_Quad_Block::Linear_Reconstruction_LeastSquares_Diamond(const int Li
 void Flame2D_Quad_Block::Linear_Reconstruction_LeastSquares_Diamond(const int i, 
 								    const int j,
 								    const int Limiter) {
+
+
   int n, n2, n_pts, i_index[8], j_index[8];
   int n_neigbour;
   double u0Min, u0Max, uQuad[4], phi_;
@@ -800,9 +802,9 @@ void Flame2D_Quad_Block::Linear_Reconstruction_LeastSquares_Diamond(const int i,
     QuadraturePoint_S, 
     QuadraturePoint_W;  
   const Flame2D_State *TopVertex, *BottomVertex;
-  
+
   const int NUM_VAR_FLAME2D = NumVar();
-  
+
   /****************************************************************/
   //  * A least squares       *
   //  * approach is used in the evaluation of the unlimited  *
@@ -811,14 +813,14 @@ void Flame2D_Quad_Block::Linear_Reconstruction_LeastSquares_Diamond(const int i,
   // information of four points are needed
   // centeroid (i+1, j) and vertices (i+1, j) and (i+1, j+1)
   // By convention: the quadrature point (mid-edge) (i, j)  
-  
+
   if (i == ICl-Nghost || i == ICu+Nghost ||
       j == JCl-Nghost || j == JCu+Nghost) {
     n_pts = 0;
-    
-    
+ 
+ 
   } else {
-    
+ 
      n_pts = 8;
      i_index[0] = i-1; j_index[0] = j-1;
      i_index[1] = i  ; j_index[1] = j-1;
@@ -830,11 +832,11 @@ void Flame2D_Quad_Block::Linear_Reconstruction_LeastSquares_Diamond(const int i,
      i_index[7] = i+1; j_index[7] = j+1;
 
   }    
-  
+
   n_neigbour = 4;
-     
+  
   if (n_pts > 0) {
-    
+ 
     /*************** NORTH ****************************/
     /*Formulate the gradients of primitive parameters on the north face of cell (i, j)*/
     DUDx_ave.Vacuum();
@@ -842,8 +844,8 @@ void Flame2D_Quad_Block::Linear_Reconstruction_LeastSquares_Diamond(const int i,
     DxDx_ave = ZERO;
     DxDy_ave = ZERO;
     DyDy_ave = ZERO;
-    
-   
+ 
+
     TopVertex = &Wnd[i][j+1];
     BottomVertex = &Wnd[i+1][j+1];
 
@@ -854,7 +856,7 @@ void Flame2D_Quad_Block::Linear_Reconstruction_LeastSquares_Diamond(const int i,
     //The calculation of this area is used to weight the gradient at the cell center      
     area[0] = HALF*(Grid.Node[i+1][j+1].X - Grid.Node[i][j+1].X )^
       (Grid.xfaceN(i,j)- Grid.Cell[i][j].Xc);
-     
+  
     for (int k=1; k<=NUM_VAR_FLAME2D; k++) {
       QuadraturePoint_N = HALF*( (*TopVertex)[k] + (*BottomVertex)[k]);
       //Left state cell (i,j)
@@ -867,7 +869,7 @@ void Flame2D_Quad_Block::Linear_Reconstruction_LeastSquares_Diamond(const int i,
       DU[3][k] = (*BottomVertex)[k] - QuadraturePoint_N;
     }
 
-    
+ 
     for ( n2 = 0 ; n2 <= n_neigbour -1 ; ++n2 ) {
       DxDx_ave += dX[n2].x*dX[n2].x;
       DxDy_ave += dX[n2].x*dX[n2].y;
@@ -877,21 +879,21 @@ void Flame2D_Quad_Block::Linear_Reconstruction_LeastSquares_Diamond(const int i,
 	DUDy_ave[k] += DU[n2][k]*dX[n2].y;
       }
     } /* endfor */
-    
+ 
     // don't need to do this, it will cancel out
     // DUDx_ave = DUDx_ave/double(n_neigbour);
     // DUDy_ave = DUDy_ave/double(n_neigbour);
     // DxDx_ave = DxDx_ave/double(n_neigbour);
     // DxDy_ave = DxDy_ave/double(n_neigbour);
     // DyDy_ave = DyDy_ave/double(n_neigbour);
-    
+ 
     for (int k=1; k<=NUM_VAR_FLAME2D; k++) {
       dWdx_faceN[i][j][k] = ( (DUDx_ave[k]*DyDy_ave-DUDy_ave[k]*DxDy_ave)/
 				      (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave) );
       dWdy_faceN[i][j][k] = ( (DUDy_ave[k]*DxDx_ave-DUDx_ave[k]*DxDy_ave)/
 				      (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave) );
     }
-        
+     
     /*************** EAST *****************************/
     /*Formulate the gradients of primitive parameters on the east face of cell (i, j)*/
     DUDx_ave.Vacuum();
@@ -899,7 +901,7 @@ void Flame2D_Quad_Block::Linear_Reconstruction_LeastSquares_Diamond(const int i,
     DxDx_ave = ZERO;
     DxDy_ave = ZERO;
     DyDy_ave = ZERO;
-      
+   
     //needs to assign topvertex and bottomvertex information
     TopVertex = &Wnd[i+1][j+1];
     BottomVertex =  &Wnd[i+1][j];
@@ -923,7 +925,7 @@ void Flame2D_Quad_Block::Linear_Reconstruction_LeastSquares_Diamond(const int i,
       //bottom vertex (i+1,j) 
       DU[3][k] = (*BottomVertex)[k] - QuadraturePoint_E;
     }
-    
+ 
     for ( n2 = 0 ; n2 <=  n_neigbour-1 ; ++n2 ) {
       DxDx_ave += dX[n2].x*dX[n2].x;
       DxDy_ave += dX[n2].x*dX[n2].y;
@@ -933,7 +935,7 @@ void Flame2D_Quad_Block::Linear_Reconstruction_LeastSquares_Diamond(const int i,
 	DUDy_ave[k] += DU[n2][k]*dX[n2].y;
       }      
     } /* endfor */
-    
+ 
     // don't need to do this, it will cancel out
     // DUDx_ave = DUDx_ave/double(n_neigbour);
     // DUDy_ave = DUDy_ave/double(n_neigbour);
@@ -946,7 +948,7 @@ void Flame2D_Quad_Block::Linear_Reconstruction_LeastSquares_Diamond(const int i,
       dWdy_faceE[i][j][k] = ( (DUDy_ave[k]*DxDx_ave-DUDx_ave[k]*DxDy_ave)/
 				      (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave) );
     }
-        
+     
     /*************** WEST *****************************/
     /*Formulate the gradients of primitive parameters on the west face of cell (i, j)*/
     DUDx_ave.Vacuum();
@@ -954,7 +956,7 @@ void Flame2D_Quad_Block::Linear_Reconstruction_LeastSquares_Diamond(const int i,
     DxDx_ave = ZERO;
     DxDy_ave = ZERO;
     DyDy_ave = ZERO;
-  
+
     TopVertex = &Wnd[i][j];
     BottomVertex =  &Wnd[i][j+1];
 
@@ -987,7 +989,7 @@ void Flame2D_Quad_Block::Linear_Reconstruction_LeastSquares_Diamond(const int i,
 	DUDy_ave[k] += DU[n2][k]*dX[n2].y;
       }
     } /* endfor */
-    
+ 
      // don't need to do this, it will cancel out
     // DUDx_ave = DUDx_ave/double(n_neigbour);
     // DUDy_ave = DUDy_ave/double(n_neigbour);
@@ -1041,7 +1043,7 @@ void Flame2D_Quad_Block::Linear_Reconstruction_LeastSquares_Diamond(const int i,
 	DUDy_ave[k] += DU[n2][k]*dX[n2].y;
       }      
     } /* endfor */
-    
+ 
     // don't need to do this, it will cancel out
     // DUDx_ave = DUDx_ave/double(n_neigbour);
     // DUDy_ave = DUDy_ave/double(n_neigbour);
@@ -1063,7 +1065,7 @@ void Flame2D_Quad_Block::Linear_Reconstruction_LeastSquares_Diamond(const int i,
 				dWdx_faceW[i][j][k]*area[2] + 
 				dWdx_faceS[i][j][k]*area[3] ); 
       dWdx[i][j][k] /= Grid.Cell[i][j].A; 
-      
+   
       dWdy[i][j][k] = ( dWdy_faceN[i][j][k]*area[0] + 
 				dWdy_faceE[i][j][k]*area[1] +
 				dWdy_faceW[i][j][k]*area[2] + 
@@ -1071,14 +1073,14 @@ void Flame2D_Quad_Block::Linear_Reconstruction_LeastSquares_Diamond(const int i,
       dWdy[i][j][k] /= Grid.Cell[i][j].A;
     }
     /**************************************************/
-      
+   
     if (!Freeze_Limiter) {
 
       dXe = Grid.xfaceE(i, j) - Grid.Cell[i][j].Xc;
       dXw = Grid.xfaceW(i, j) - Grid.Cell[i][j].Xc;
       dXn = Grid.xfaceN(i, j) - Grid.Cell[i][j].Xc;
       dXs = Grid.xfaceS(i, j) - Grid.Cell[i][j].Xc;
-      
+   
       for ( n = 1 ; n <= NUM_VAR_FLAME2D ; ++n ) {
 	u0Min = W[i][j][n];
 	u0Max = u0Min;
@@ -1133,6 +1135,14 @@ void Flame2D_Quad_Block::Linear_Reconstruction_LeastSquares_Diamond(const int i,
       } /* endfor */
     }//end limiter if 
   } else {
+    dWdx_faceN[i][j].Vacuum();
+    dWdx_faceS[i][j].Vacuum();
+    dWdx_faceE[i][j].Vacuum();
+    dWdx_faceW[i][j].Vacuum();
+    dWdy_faceN[i][j].Vacuum();
+    dWdy_faceS[i][j].Vacuum();
+    dWdy_faceE[i][j].Vacuum();
+    dWdy_faceW[i][j].Vacuum();
     dWdx[i][j].Vacuum();
     dWdy[i][j].Vacuum();
     phi[i][j].Vacuum(); 

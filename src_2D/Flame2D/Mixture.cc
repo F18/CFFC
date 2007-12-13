@@ -17,6 +17,7 @@
 #ifndef STATIC_NUMBER_OF_SPECIES
 int     Mixture :: ns = 0;
 #endif
+int     Mixture :: nr = 0;
 double  Mixture :: Tmin = 0.0;
 double  Mixture :: Tmax = 0.0;
 double* Mixture :: Sc_ref = NULL;
@@ -25,6 +26,7 @@ double* Mixture :: Hform = NULL;
 string* Mixture :: names = NULL;
 double* Mixture :: r = NULL;
 double* Mixture :: r0 = NULL;
+double* Mixture :: c = NULL;
 bool    Mixture :: isConstSchmidt = false;
 string  Mixture :: ct_mech_name = "gri30";
 string  Mixture :: ct_mech_file = "gri30.xml";
@@ -34,6 +36,21 @@ Transport*   Mixture :: ct_trans = NULL;
 /////////////////////////////////////////////////////////////////////
 /// STATIC MEMBER FUNCTIONS
 /////////////////////////////////////////////////////////////////////
+
+/****************************************************
+ * Returns the number of species for a mechanism
+ ****************************************************/
+int Mixture :: getNumSpecies(const string &mech_name,
+			     const string &mech_file) {
+
+  try {
+    IdealGasMix gas(mech_file, mech_name);
+    return gas.nSpecies();
+  } catch (CanteraError) {
+    Cantera::showErrors();
+  }
+}
+
 
 /****************************************************
  * Main setup of mixture properties.  Load the specific gas data for
@@ -68,13 +85,16 @@ void Mixture :: setMixture(const string &mech_name,
   if( STATIC_NUMBER_OF_SPECIES != ct_gas->nSpecies()) {
       cerr << "\n ERROR, Mixture::setMixture() - Built using static species with "
 	   << STATIC_NUMBER_OF_SPECIES 
-	   << " species predefined, asking for " << ns
+	   << " species predefined, asking for " <<  ct_gas->nSpecies()
 	   << endl; 
       exit(-1); 
     }
 #else
   ns = ct_gas->nSpecies();
 #endif
+
+  // set the number of reactions
+  nr = ct_gas->nReactions();
 
   //set data temperature ranges for mixture
   Tmin = ct_gas->minTemp();
@@ -107,185 +127,7 @@ void Mixture :: setConstantSchmidt(const double* Sc) {
     Sc_ref[i] = Sc[i];
   }  
 }
-/****************************************************
- * Mixture molecular mass [kg/mol]
- ****************************************************/
-double Mixture :: molarMass( const double* y ) {
-  double sum( 0.0 );
-  for(int i=0; i<ns; i++){
-    sum += y[i]/M[i];
-  }
-  return 1.0/sum;
-}
 
-/****************************************************
- * Mixture heat of formation [J/kg]
- ****************************************************/
-double Mixture :: heatFormation( const double* y ) {
-  double sum( 0.0 );
-  for(int i=0; i<ns; i++){
-    sum += y[i]*Hform[i];
-  }
-  return sum;
-}
-
-// /****************************************************
-//  * Mixture gas constant [kg/mol]
-//  ****************************************************/
-// double Mixture :: gasConstant( const double* y ){
-//   return Cantera::GasConstant/molarMass(y);
-// }
-
-// /****************************************************
-//  * Mixture Heat Capacity (const pressure) J/(kg*K)
-//  ****************************************************/
-// double Mixture :: heatCapacity_p( const double &Temp, const double* y ){
-//   ct_gas->setMassFractions_NoNorm(y);
-//   ct_gas->setTemperature(Temp);
-//   return ct_gas->cp_mass();
-// }
-
-// /****************************************************
-//  * Mixture Heat Capacity (const volume) J/(kg*K)
-//  ****************************************************/
-// double Mixture :: heatCapacity_v( const double &Temp, const double* y ){
-//   ct_gas->setMassFractions_NoNorm(y);
-//   ct_gas->setTemperature(Temp);
-//   return ct_gas->cv_mass();
-// }
-
-// /****************************************************
-//  * Mixture Heat Ratio gamma
-//  ****************************************************/
-// double Mixture :: heatRatio( const double &Temp, const double* y ){
-//   ct_gas->setMassFractions_NoNorm(y);
-//   ct_gas->setTemperature(Temp);
-//   return ct_gas->cp_mole()/ct_gas->cv_mole();
-// }
-
-// /****************************************************
-//  * Mixture Specific Internal Energy J/(kg)
-//  ****************************************************/
-// //! etotal = sensible & chemical
-// double Mixture :: internalEnergy( const double &Temp, const double* y ){
-//   ct_gas->setMassFractions_NoNorm(y);
-//   ct_gas->setTemperature(Temp);
-//   return ct_gas->intEnergy_mass();
-// }
-
-// //! internal energy with no heat of formation included (sensible)
-// double Mixture :: internalEnergySens( const double &Temp, const double* y ){
-//   ct_gas->setMassFractions_NoNorm(y);
-//   ct_gas->setTemperature(Temp);
-//   return (ct_gas->intEnergy_mass() - heatFormation(y));
-// }
-
-// /****************************************************
-//  * Specific absolute enthalpy J/(kg)
-//  ****************************************************/
-// //! htotal = mass fraction * (hsensible + heatofform)
-// double Mixture :: enthalpy( const double &Temp, const double* y ){
-//   ct_gas->setMassFractions_NoNorm(y);
-//   ct_gas->setTemperature(Temp);
-//   return ct_gas->enthalpy_mass();
-// }
-
-// //! absolute enthalpy with no heat of formation included (sensible)
-// double Mixture :: enthalpySens( const double &Temp, const double* y ) {
-//   ct_gas->setMassFractions_NoNorm(y);
-//   ct_gas->setTemperature(Temp);
-//   return (ct_gas->enthalpy_mass() - heatFormation(y));
-// }
-
-// /****************************************************
-//  * Derivative of specific enthalpy dh/dT
-//  * actually is just Cp as Cp = (dh/dT)_p
-//  ****************************************************/
-// double Mixture :: enthalpyPrime( const double &Temp, const double* y ){
-//   return heatCapacity_p( Temp, y );
-// }
-
-// /****************************************************
-//  * Viscosity using Wilke [1950] formulation
-//  ****************************************************/
-// double Mixture :: viscosity(const double &Temp, const double* y) {
-//   ct_gas->setMassFractions_NoNorm(y);
-//   ct_gas->setTemperature(Temp);
-//   return ct_trans->viscosity();
-// }
-
-// /****************************************************
-//  * Thermal Conductivity - Mason & Saxena (1958)  W/(m*K)
-//  ****************************************************/
-// double Mixture :: thermalCond(const double &Temp, const double* y) {
-//   ct_gas->setMassFractions_NoNorm(y);
-//   ct_gas->setTemperature(Temp);
-//   return ct_trans->thermalConductivity();
-// }
-
-// /****************************************************
-//  * Sepcies mixture diffusion coefficient (not implemented)
-//  ****************************************************/
-// double Mixture :: speciesDiffCoeff(const double &Temp, 
-// 				   const double* y, 
-// 				   const int &i){
-//   cerr << "Mixture::speciesDiffCoeff() - Not implemented yet.";
-//   exit(-1);
-// }
-
-// /****************************************************
-//  * Schmidt
-//  ****************************************************/
-// double Mixture :: schmidt(const double &Temp, 
-// 			  const double &rho,
-// 			  const double* y, 
-// 			  const int &i) {
-//   if(isConstSchmidt){
-//     return Sc_ref[i];
-//   } else {
-//     return viscosity(Temp, y)/(rho*speciesDiffCoeff(Temp,y,i));
-//   }
-// }
-
-// /****************************************************
-//  * Prandtl
-//  ****************************************************/
-// double Mixture :: prandtl(const double &Temp, const double* y) {
-//   //Pr = Cp*mu/k
-//   return heatCapacity_p(Temp,y)*viscosity(Temp,y)/thermalCond(Temp,y);
-// }
-
-// /****************************************************
-//  * Lewis
-//  ****************************************************/
-// double Mixture :: lewis(const double &Temp, 
-// 			const double &rho,
-// 			const double* y,
-// 			const int &i) {
-//    if(isConstSchmidt)
-//      return (thermalCond(Temp,y)*Sc_ref[i])/
-//        ( heatCapacity_p(Temp,y)*viscosity(Temp,y) );
-//    else
-//      return thermalCond(Temp,y) / 
-//        ( heatCapacity_p(Temp,y)*rho*speciesDiffCoeff(Temp,y,i) );
-// }
-
-
-// /****************************************************
-//  * Derivative of species h wrt to mass fraction
-//  ****************************************************/
-// void Mixture :: getDihdDc(const double &Temp, 
-// 			  const double &Press, 
-// 			  const double* y, 
-// 			  double* dh) {
-//   ct_gas->setState_TPY(Temp, Press, y);
-//   ct_gas->getEnthalpy_RT(dh); // -> h = hs + hf
-//   double cp( ct_gas->cp_mass() );
-//   double M_mix( molarMass(y) );
-//   for(int i=0; i<ns; i++)
-//     dh[i] = ( dh[i]*(Cantera::GasConstant/M[i])*Temp -
-// 	      cp*Temp*M_mix/M[i] );
-// }
 
 
 /***********************************************************************
@@ -552,25 +394,143 @@ void Mixture::composition( const string& fuel_species,
 } // end of ct_composition
 
 
-// /************************************************************************
-//   Calculates the concentration time rate of change of species from
-//   primitive state W using the general law of mass action.
-//   U is the conserved state container for passing back the 
-//   source terms. ie. U.rhospec[i].c 
-
-//   W.SpecCon:  is the  species mass fractions concentrations
-//               of Chem2D_pState. (c_i*rho/M_i)   mol/m^3
-
-//   Return units are  kg/m^3*s ie. rho*omega (kg/m^3)*(1/s)
-
-// ************************************************************************/
-// void Mixture :: getRates( const double &Temp, const double &Press, 
-// 			  const double* y, double* rr ) {
-//   ct_gas->setState_TPY(Temp, Press, y);
-//   ct_gas->getNetProductionRates(rr);
-// }
-
 
 /////////////////////////////////////////////////////////////////////
 /// LOCAL MEMBER FUNCTIONS
 /////////////////////////////////////////////////////////////////////
+
+
+/***********************************************************************
+  Use cantera to compute the Chemical Source Jacobian.  This function
+  is called from the main dSwdU().
+***********************************************************************/
+void Mixture::dSwdU( ::DenseMatrix &dSdU,
+		     const double &rho,
+		     const double &Press,
+		     const double* y,
+		     const int &offset,
+		     const int &NSm1) const {
+  
+
+  // perturbation factor
+  const double abs_tol( 1.E-6 ); // absolute tolerance (sqrt(machine eps))
+  const double rel_tol( 1.E-6 ); // relative tolerance
+  double eps;
+  
+  //------------------------------------------------
+  // setup
+  //------------------------------------------------
+  // copy mass fractions
+  for (int i=0; i<ns; i++)  c[i] = y[i];
+
+
+  // initial unperturbed values reaction rates
+  ct_gas->setMassFractions_NoNorm(c);
+  ct_gas->setTemperature(T);
+  ct_gas->setPressure(Press);
+  ct_gas->getNetProductionRates(r0);
+
+
+  //------------------------------------------------
+  // Compute \frac{ \partial S_j }{ \partial \rho Y_k }
+  //------------------------------------------------
+  // temporary storage
+  double csave;
+
+  //
+  // iterate over the species (jac columns)
+  //
+  for (int j=0; j<ns-NSm1; j++) {
+    
+    // compute perturbation factor
+    eps = abs_tol + fabs(c[j])*rel_tol;
+
+    // perturb the species concetration array
+    csave = c[j];
+    c[j] += eps;
+
+    // compute the perturbed reaction rates
+    ct_gas->setMassFractions_NoNorm(c);
+    ct_gas->getNetProductionRates(r);
+    
+    //
+    // iterate over the species (jac rows)
+    //
+    for (int i=0; i<ns-NSm1; i++) {
+      
+      // the i,j element of jacobian
+      dSdU(offset+i,offset+j) += M[i]*(r[i]-r0[i]) / (rho*eps);
+
+    } // endfor - rows
+
+    // unperturb
+    c[j] = csave;
+
+  } // endfor - columns
+
+
+}
+
+
+/***********************************************************************
+  Compute the maximum term on the diagonal of the source term jacobian..
+***********************************************************************/
+double Mixture::dSwdU_max_diagonal( const double &rho,
+				    const double &Press,
+				    const double* y) const {
+  
+
+  // perturbation factor
+  const double abs_tol( 1.E-6 ); // absolute tolerance (sqrt(machine eps))
+  const double rel_tol( 1.E-6 ); // relative tolerance
+  double eps;
+  
+  //------------------------------------------------
+  // setup
+  //------------------------------------------------
+  // copy mass fractions
+  for (int i=0; i<ns; i++)  c[i] = y[i];
+
+
+  // initial unperturbed values reaction rates
+  ct_gas->setMassFractions_NoNorm(c);
+  ct_gas->setTemperature(T);
+  ct_gas->setPressure(Press);
+  ct_gas->getNetProductionRates(r0);
+
+
+  //------------------------------------------------
+  // Compute \frac{ \partial S_j }{ \partial \rho Y_k }
+  //------------------------------------------------
+  // temporary storage
+  double csave, max_diagonal(1.0);
+
+  //
+  // iterate over the species
+  //
+  for (int i=0; i<ns; i++) {
+    
+    // compute perturbation factor
+    eps = abs_tol + fabs(c[i])*rel_tol;
+
+    // perturb the species concetration array
+    csave = c[i];
+    c[i] += eps;
+
+    // compute the perturbed reaction rates
+    ct_gas->setMassFractions_NoNorm(c);
+    ct_gas->getNetProductionRates(r);
+         
+    // the j,j element of jacobian
+    max_diagonal = max( max_diagonal, 
+			fabs( M[i]*(r[i]-r0[i]) / (rho*eps) ) );
+
+    // unperturb
+    c[i] = csave;
+
+  } // endfor - columns
+
+  // return the maximum diagonal term
+  return max_diagonal;
+
+}

@@ -69,7 +69,9 @@ void Set_Default_Input_Parameters(Flame2D_Input_Parameters &IP) {
     IP.CFL_Number = 0.5;
     IP.Time_Max = ZERO;
     IP.Source_Term_Multiplyer = 1.0;
-    
+    IP.Fixed_Time_Step = false;
+    IP.Time_Step = ZERO;
+
     /* Dual time stepping */
     IP.Physical_CFL_Number = 0.9;
     IP.dTime = ZERO;
@@ -123,27 +125,27 @@ void Set_Default_Input_Parameters(Flame2D_Input_Parameters &IP) {
     // cantera parameters
     IP.ct_mech_name = "air";
     IP.ct_mech_file = "air.xml";
+    IP.num_species = Mixture::getNumSpecies(IP.ct_mech_name, IP.ct_mech_file);
 
-    // load the mechanism
-    Flame2D_pState::setMixture(IP.ct_mech_name,
-			       IP.ct_mech_file);
+    // allocate memory
     IP.Allocate();
 
     // set constant schmidt
     IP.Schmidt[0] = IP.Global_Schmidt;
     IP.Schmidt[1] = IP.Global_Schmidt;
-    Mixture::setConstantSchmidt(IP.Schmidt);
+    IP.constant_schmidt = true;
+    IP.schmidt_string = "";
 
     //Air at STD_ATM
     //Use air with 79% N2, and 21% 02 by volume.(ie. mol)
+    IP.i_specified_composition = FLAME2D_INPUT_MASS_FRACTIONS;
+    IP.composition_string = "";
     IP.mass_fractions[0] = 0.235;
     IP.mass_fractions[1] = 0.765; 
     IP.Pressure = PRESSURE_STDATM;
     IP.Temperature = TEMPERATURE_STDATM; 
-    IP.Wo.setState_TPY(IP.Temperature, IP.Pressure, IP.mass_fractions);
     IP.Heat_Source = ZERO;
-    IP.Wo.setVelocity( IP.Mach_Number*IP.Wo.a()*cos(TWO*PI*IP.Flow_Angle/360.00),
-		       IP.Mach_Number*IP.Wo.a()*sin(TWO*PI*IP.Flow_Angle/360.00) );
+    IP.reacting = false;
 
     // reaction parameters
     IP.equivalence_ratio = 1.0;
@@ -169,7 +171,6 @@ void Set_Default_Input_Parameters(Flame2D_Input_Parameters &IP) {
     // Gravity
     IP.Gravity = 0;  //default sans gravity
     IP.gravity_z = -9.81;  // [m/s] gravitational accel on earh
-    IP.Wo.set_gravity(IP.gravity_z);
 
     IP.BluffBody_Data_Usage = 0; 
 
@@ -332,6 +333,12 @@ void Broadcast_Input_Parameters(Flame2D_Input_Parameters &IP) {
 
 #ifdef _MPI_VERSION
 
+    //set the path
+    MPI::COMM_WORLD.Bcast(IP.CFFC_Path, 
+			  INPUT_PARAMETER_LENGTH_FLAME2D, 
+			  MPI::CHAR, 0);
+    if (!CFFC_Primary_MPI_Processor()) IP.get_cffc_path();
+
     MPI::COMM_WORLD.Bcast(IP.Input_File_Name, 
                           INPUT_PARAMETER_LENGTH_FLAME2D, 
                           MPI::CHAR, 0);
@@ -363,6 +370,12 @@ void Broadcast_Input_Parameters(Flame2D_Input_Parameters &IP) {
                           1, 
                           MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&(IP.Time_Max), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Fixed_Time_Step), 
+                          1, 
+                          MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Time_Step), 
                           1, 
                           MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&(IP.dTime), 
@@ -407,34 +420,6 @@ void Broadcast_Input_Parameters(Flame2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.i_Flux_Function), 
                           1, 
                           MPI::INT, 0);
-    // Turbulence parameters:
-    MPI::COMM_WORLD.Bcast(IP.Turbulence_BC_Type,
-			  INPUT_PARAMETER_LENGTH_FLAME2D,
-			  MPI::CHAR,0);
-    MPI::COMM_WORLD.Bcast(&(IP.i_Turbulence_BCs),
-			  1,
-			  MPI::INT,0);
-    MPI::COMM_WORLD.Bcast(IP.Friction_Velocity_Type,
-			  INPUT_PARAMETER_LENGTH_FLAME2D,
-			  MPI::CHAR,0);
-    MPI::COMM_WORLD.Bcast(&(IP.i_Friction_Velocity),
-			  1,
-			  MPI::INT,0);
-    MPI::COMM_WORLD.Bcast(&(IP.C_constant),
-			  1,
-			  MPI::DOUBLE,0);
-    MPI::COMM_WORLD.Bcast(&(IP.von_Karman_Constant),
-			  1,
-			  MPI::DOUBLE,0);
-    MPI::COMM_WORLD.Bcast(&(IP.yplus_sublayer),
-			  1,
-			  MPI::DOUBLE,0);
-    MPI::COMM_WORLD.Bcast(&(IP.yplus_buffer_layer),
-			  1,
-			  MPI::DOUBLE,0);
-    MPI::COMM_WORLD.Bcast(&(IP.yplus_outer_layer),
-			  1,
-			  MPI::DOUBLE,0);
     // Initial conditions:
     MPI::COMM_WORLD.Bcast(IP.ICs_Type,
                           INPUT_PARAMETER_LENGTH_FLAME2D, 
@@ -466,122 +451,6 @@ void Broadcast_Input_Parameters(Flame2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.Re_lid),
 			  1,
 			  MPI::DOUBLE,0);
-    /*********************************************************
-     ******************* FLAME2D SPECIFIC *********************
-     *********************************************************/
-    MPI::COMM_WORLD.Bcast(IP.CFFC_Path, 
-			  INPUT_PARAMETER_LENGTH_FLAME2D, 
-			  MPI::CHAR, 0);
-    // Radiation parameters:
-    MPI::COMM_WORLD.Bcast(IP.Rte_Input_File_Name, 
-                          INPUT_PARAMETER_LENGTH_FLAME2D, 
-                          MPI::CHAR, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.Radiation), 
-                          1, 
-                          MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.Max_Number_Sequential_Solves), 
-                          1, 
-                          MPI::INT, 0);
-    //reaction name
-    MPI::COMM_WORLD.Bcast(IP.React_Name, 
-                          INPUT_PARAMETER_LENGTH_FLAME2D, 
-			  MPI::CHAR, 0);
-    
-    // cantera parameters
-    MPI::COMM_WORLD.Bcast(IP.ct_Mech_Name,
-                          INPUT_PARAMETER_LENGTH_FLAME2D,
-			  MPI::CHAR, 0);
-    MPI::COMM_WORLD.Bcast(IP.ct_Mech_File,
-                          INPUT_PARAMETER_LENGTH_FLAME2D,
-			  MPI::CHAR, 0);
-
-    //reaction paramters
-    MPI::COMM_WORLD.Bcast(IP.Fuel_Species, 
-                          INPUT_PARAMETER_LENGTH_FLAME2D, 
-                          MPI::CHAR, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.equivalence_ratio), 
-                          1, 
-                          MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.flame_speed), 
-                          1, 
-                          MPI::DOUBLE, 0);
-
-    //delete current dynamic memory before changing num_species
-    if(!CFFC_Primary_MPI_Processor()) {   
-      IP.Deallocate();
-    } 
-
-    //transport data
-    MPI::COMM_WORLD.Bcast(IP.trans_type, 
-			  INPUT_PARAMETER_LENGTH_FLAME2D, 
-			  MPI::CHAR, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.i_trans_type), 
-			  1, 
-			  MPI::INT, 0);
-    //number of species
-    MPI::COMM_WORLD.Bcast(&(IP.num_species), 
-                          1, 
-                          MPI::INT, 0);
-    //set up new dynamic memory
-    if(!CFFC_Primary_MPI_Processor()) {   
-      IP.Allocate();
-    } 
-
-    //species names & mass fractions
-    for(int i =0; i < IP.num_species; i++){
-      MPI::COMM_WORLD.Bcast(&(IP.mass_fractions[i]), 
-			    1, 
-			    MPI::DOUBLE, 0);
-      MPI::COMM_WORLD.Bcast(&(IP.Schmidt[i]), 
-			    1, 
-			    MPI::DOUBLE, 0);
-      MPI::COMM_WORLD.Bcast(IP.Multispecies[i], 
-			    INPUT_PARAMETER_LENGTH_FLAME2D, 
-			    MPI::CHAR, 0);
-      MPI::COMM_WORLD.Bcast(&(IP.mass_fractions_out[i]), 
-			    1, 
-			    MPI::DOUBLE, 0);
-    }
-    //set recaction and species parameters
-    if (!CFFC_Primary_MPI_Processor()) {      
-      IP.react_name = IP.React_Name;
-      IP.ct_mech_name = IP.ct_Mech_Name;
-      IP.ct_mech_file = IP.ct_Mech_File;
-      for (int i = 0; i < IP.num_species; i++) {
-	IP.multispecies[i] = IP.Multispecies[i];  
-      }    
-
-      //load reaction data
-      if (IP.react_name != "CANTERA")
-	IP.Wo.React.set_reactions(IP.react_name);
-      else
-	IP.Wo.React.ct_load_mechanism(IP.ct_mech_file, IP.ct_mech_name);
-      
-      //Set species if non-reacting
-      if( IP.Wo.React.reactset_flag == NO_REACTIONS){
-	IP.Wo.React.set_species(IP.multispecies,IP.num_species);
-      }  
-          
-      //set the data for each
-      IP.get_cffc_path();
-      IP.Wo.set_species_data(IP.num_species,IP.multispecies,IP.CFFC_Path,
-			     IP.Mach_Number_Reference,IP.Schmidt,IP.i_trans_type); 
-      IP.Wo.set_initial_values(IP.mass_fractions);
-   
-      //set proper Temp & Pressure instead of defaults
-      IP.Wo.rho = IP.Pressure/(IP.Wo.Rtot()*IP.Temperature); 
-      IP.Wo.p = IP.Pressure;	
-      IP.Wo.v.zero();
-    } 
-    /*********************************************************
-     ******************* FLAME2D END **************************
-     *********************************************************/
-
-   if(!CFFC_Primary_MPI_Processor()) {   
-      IP.Wo.v.x = IP.Mach_Number*IP.Wo.a()*cos(TWO*PI*IP.Flow_Angle/360.00);
-      IP.Wo.v.y = IP.Mach_Number*IP.Wo.a()*sin(TWO*PI*IP.Flow_Angle/360.00);
-    }
-
     /***************************************/
     MPI::COMM_WORLD.Bcast(IP.Flow_Type, 
                           INPUT_PARAMETER_LENGTH_FLAME2D, 
@@ -589,7 +458,6 @@ void Broadcast_Input_Parameters(Flame2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.FlowType), 
                           1, 
                           MPI::INT, 0);
-
    /***************************************/
     MPI::COMM_WORLD.Bcast(IP.Flow_Geometry_Type, 
                           INPUT_PARAMETER_LENGTH_FLAME2D, 
@@ -934,638 +802,81 @@ void Broadcast_Input_Parameters(Flame2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.Freeze_Limiter_Residual_Level),
                           1, 
                           MPI::DOUBLE, 0);
-
-    // set gravity
-    IP.Wo.set_gravity(IP.gravity_z);
-
-#endif
-}
-
-#ifdef _MPI_VERSION
-/********************************************************
- * Routine: Broadcast_Input_Parameters                  *
- *                                                      *
- * Broadcast the input parameters variables to all      *
- * processors associated with the specified communicator*
- * from the specified processor using the MPI broadcast *
- *routine.                                              *
- *                                                      *
- ********************************************************/
-void Broadcast_Input_Parameters(Flame2D_Input_Parameters &IP,
-                                MPI::Intracomm &Communicator, 
-                                const int Source_CPU) {
- 
-    int Source_Rank = 0;
-    int i;
-   
-    Communicator.Bcast(IP.Input_File_Name, 
-                       INPUT_PARAMETER_LENGTH_FLAME2D, 
-                       MPI::CHAR, Source_Rank);
-    Communicator.Bcast(&(IP.Line_Number), 
-                       1, 
-                       MPI::INT, Source_Rank);
-    Communicator.Bcast(IP.Time_Integration_Type, 
-                       INPUT_PARAMETER_LENGTH_FLAME2D, 
-                       MPI::CHAR, Source_Rank);
-    // Time integration:
-    Communicator.Bcast(&(IP.i_Time_Integration), 
-                       1, 
-                       MPI::INT, Source_Rank);
-    Communicator.Bcast(&(IP.Time_Accurate), 
-                       1, 
-                       MPI::INT, Source_Rank);
-    Communicator.Bcast(&(IP.Local_Time_Stepping), 
-                       1, 
-                       MPI::INT, Source_Rank);
-    Communicator.Bcast(&(IP.Maximum_Number_of_Time_Steps), 
-                       1, 
-                       MPI::INT, Source_Rank);
-    Communicator.Bcast(&(IP.N_Stage), 
-                       1, 
-                       MPI::INT, Source_Rank);
-    Communicator.Bcast(&(IP.CFL_Number), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.Source_Term_Multiplyer), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.Time_Max), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.dTime), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.Physical_CFL_Number), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.Max_Inner_Steps), 
-                       1, 
-                       MPI::INT, Source_Rank);
-    Communicator.Bcast(&(IP.Residual_Smoothing), 
-                       1, 
-                       MPI::INT, Source_Rank);
-    Communicator.Bcast(&(IP.Residual_Smoothing_Epsilon), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.Residual_Smoothing_Gauss_Seidel_Iterations), 
-                       1, 
-                       MPI::INT, Source_Rank);
-    // Reconstruction:
-    Communicator.Bcast(IP.Reconstruction_Type, 
-                       INPUT_PARAMETER_LENGTH_FLAME2D, 
-                       MPI::CHAR, Source_Rank);
-    Communicator.Bcast(&(IP.i_Reconstruction), 
-                       1, 
-                       MPI::INT, Source_Rank);
-    // Flux functions:
-    Communicator.Bcast(IP.Viscous_Flux_Evaluation_Type, 
-                       INPUT_PARAMETER_LENGTH_FLAME2D, 
-                       MPI::CHAR, Source_Rank);
-    Communicator.Bcast(&(IP.i_Viscous_Flux_Evaluation), 
-                       1, 
-                       MPI::INT, Source_Rank);
-    Communicator.Bcast(IP.Limiter_Type, 
-                       INPUT_PARAMETER_LENGTH_FLAME2D, 
-                       MPI::CHAR, Source_Rank);
-    Communicator.Bcast(&(IP.i_Limiter), 
-                       1, 
-                       MPI::INT, Source_Rank);
-    Communicator.Bcast(IP.Flux_Function_Type, 
-                       INPUT_PARAMETER_LENGTH_FLAME2D, 
-                       MPI::CHAR, Source_Rank);
-    Communicator.Bcast(&(IP.i_Flux_Function), 
-                       1, 
-                       MPI::INT, Source_Rank);
-    // Turbulence parameters:
-    Communicator.Bcast(IP.Turbulence_BC_Type,
-		       INPUT_PARAMETER_LENGTH_FLAME2D,
-		       MPI::CHAR,Source_Rank);
-    Communicator.Bcast(&(IP.i_Turbulence_BCs),
-		       1,
-		       MPI::INT,Source_Rank);
-    Communicator.Bcast(IP.Friction_Velocity_Type,
-		       INPUT_PARAMETER_LENGTH_FLAME2D,
-		       MPI::CHAR,Source_Rank);
-    Communicator.Bcast(&(IP.i_Friction_Velocity),
-		       1,
-		       MPI::INT,Source_Rank);
-    Communicator.Bcast(&(IP.C_constant),
-		       1,
-		       MPI::DOUBLE,Source_Rank);
-    Communicator.Bcast(&(IP.von_Karman_Constant),
-		       1,
-		       MPI::DOUBLE,Source_Rank);
-    Communicator.Bcast(&(IP.yplus_sublayer),
-		       1,
-		       MPI::DOUBLE,Source_Rank);
-    Communicator.Bcast(&(IP.yplus_buffer_layer),
-		       1,
-		       MPI::DOUBLE,Source_Rank);
-    Communicator.Bcast(&(IP.yplus_outer_layer),
-		       1,
-		       MPI::DOUBLE,Source_Rank);
-    // Initial conditions:
-    Communicator.Bcast(IP.ICs_Type, 
-                       INPUT_PARAMETER_LENGTH_FLAME2D, 
-                       MPI::CHAR, Source_Rank);
-    Communicator.Bcast(&(IP.i_ICs), 
-                       1, 
-                       MPI::INT, Source_Rank);
-    Communicator.Bcast(&(IP.i_Grid_Level), 
-                       1, 
-                       MPI::INT, Source_Rank);
-    Communicator.Bcast(&(IP.Pressure), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.Temperature), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.Mach_Number), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank); 
-    Communicator.Bcast(&(IP.Mach_Number_Reference), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank); 
-    Communicator.Bcast(&(IP.Mach_Number_Reference_target), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.Flow_Angle), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.Re_lid), 
-                       1, 
-		       MPI::DOUBLE,Source_Rank);
     /*********************************************************
      ******************* FLAME2D SPECIFIC *********************
      *********************************************************/
-    Communicator.Bcast(IP.CFFC_Path, 
-			  INPUT_PARAMETER_LENGTH_FLAME2D, 
-			  MPI::CHAR, Source_Rank);
     // Radiation parameters:
-    Communicator.Bcast(IP.Rte_Input_File_Name, 
-		       INPUT_PARAMETER_LENGTH_FLAME2D, 
-		       MPI::CHAR, Source_Rank);
-    Communicator.Bcast(&(IP.Radiation), 
-		       1, 
-		       MPI::INT, Source_Rank);
-    Communicator.Bcast(&(IP.Max_Number_Sequential_Solves), 
-		       1, 
-		       MPI::INT, Source_Rank);
-    //reaction name
-    Communicator.Bcast(IP.React_Name, 
+    MPI::COMM_WORLD.Bcast(IP.Rte_Input_File_Name, 
                           INPUT_PARAMETER_LENGTH_FLAME2D, 
-			  MPI::CHAR, Source_Rank);
-    // cantera parameters
-    Communicator.Bcast(IP.ct_Mech_Name,
-		       INPUT_PARAMETER_LENGTH_FLAME2D,
-		       MPI::CHAR, Source_Rank);
-    Communicator.Bcast(IP.ct_Mech_File,
-		       INPUT_PARAMETER_LENGTH_FLAME2D,
-		       MPI::CHAR, Source_Rank);
-    // reaction parameters
-    Communicator.Bcast(IP.Fuel_Species,
-		       INPUT_PARAMETER_LENGTH_FLAME2D,
-		       MPI::CHAR, Source_Rank);
-    Communicator.Bcast(&(IP.equivalence_ratio), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.flame_speed), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-
-    //delete orginal dynamic memory before changing num_species
-    if(!CFFC_Primary_MPI_Processor()) {  
-      IP.Deallocate();  
-    } 
-    //transport data
-    Communicator.Bcast(IP.trans_type, 
-			  INPUT_PARAMETER_LENGTH_FLAME2D, 
-			  MPI::CHAR, Source_Rank);
-    Communicator.Bcast(&(IP.i_trans_type), 
-			  1, 
-			  MPI::INT, Source_Rank);
-    //number of species
-    Communicator.Bcast(&(IP.num_species), 
+                          MPI::CHAR, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Radiation), 
                           1, 
-                          MPI::INT,Source_Rank );
-    //set up dynamic memory
-    if(!CFFC_Primary_MPI_Processor()) {  
+                          MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Max_Number_Sequential_Solves), 
+                          1, 
+                          MPI::INT, 0);
+    //reaction paramters
+    MPI::COMM_WORLD.Bcast(IP.ct_Mech_Name,
+                          INPUT_PARAMETER_LENGTH_FLAME2D,
+			  MPI::CHAR, 0);
+    MPI::COMM_WORLD.Bcast(IP.ct_Mech_File,
+                          INPUT_PARAMETER_LENGTH_FLAME2D,
+			  MPI::CHAR, 0);
+    MPI::COMM_WORLD.Bcast(IP.Fuel_Species, 
+                          INPUT_PARAMETER_LENGTH_FLAME2D, 
+                          MPI::CHAR, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.equivalence_ratio), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.flame_speed), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.constant_schmidt), 
+                          1, 
+                          MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.reacting), 
+                          1, 
+                          MPI::INT, 0);
+    //delete current dynamic memory before changing num_species
+    if(!CFFC_Primary_MPI_Processor()) {   
+      IP.Deallocate();
+    } 
+    //number of species
+    MPI::COMM_WORLD.Bcast(&(IP.num_species), 
+                          1, 
+                          MPI::INT, 0);
+    //set up new dynamic memory
+    if(!CFFC_Primary_MPI_Processor()) {   
       IP.Allocate();
     } 
-    //species names & mass fractions
+    //mass fractions and schmidt numbers
     for(int i =0; i < IP.num_species; i++){
-      Communicator.Bcast(&(IP.mass_fractions[i]), 
+      MPI::COMM_WORLD.Bcast(&(IP.mass_fractions[i]), 
 			    1, 
-			    MPI::DOUBLE, Source_Rank);
-      Communicator.Bcast(&(IP.Schmidt[i]), 
-			 1, 
-			 MPI::DOUBLE, Source_Rank);
-      Communicator.Bcast(IP.Multispecies[i], 
-			 INPUT_PARAMETER_LENGTH_FLAME2D, 
-			 MPI::CHAR, Source_Rank);
-      Communicator.Bcast(&(IP.mass_fractions_out[i]), 
+			    MPI::DOUBLE, 0);
+      MPI::COMM_WORLD.Bcast(&(IP.Schmidt[i]), 
 			    1, 
-			    MPI::DOUBLE, Source_Rank);
+			    MPI::DOUBLE, 0);
     }
-    //set recaction and species parameters
-    if (!CFFC_Primary_MPI_Processor()) {      
-      IP.react_name = IP.React_Name;
+    //setup reference state
+    if (!CFFC_Primary_MPI_Processor()) {
+      // set reaction names
       IP.ct_mech_name = IP.ct_Mech_Name;
       IP.ct_mech_file = IP.ct_Mech_File;
-      for (int i = 0; i < IP.num_species; i++) {
-	IP.multispecies[i] = IP.Multispecies[i];  
-      }     
-
-      //load reaction data
-      if (IP.react_name != "CANTERA")
-	IP.Wo.React.set_reactions(IP.react_name);
-      else
-	IP.Wo.React.ct_load_mechanism(IP.ct_mech_file, IP.ct_mech_name);
-      
-      //Set species if non-reacting
-      if( IP.Wo.React.reactset_flag == NO_REACTIONS){
-	IP.Wo.React.set_species(IP.multispecies,IP.num_species);
-      }  
-
-      //set the data for each
-      IP.get_cffc_path();
-      IP.Wo.set_species_data(IP.num_species,IP.multispecies,IP.CFFC_Path,
-			     IP.Mach_Number_Reference,IP.Schmidt,IP.i_trans_type); 
-      IP.Wo.set_initial_values(IP.mass_fractions);
-
-      //set proper Temp & Pressure instead of defaults
-      IP.Wo.rho = IP.Pressure/(IP.Wo.Rtot()*IP.Temperature); 
-      IP.Wo.p = IP.Pressure;	
-      IP.Wo.v.zero();
+      // force flags
+      IP.i_specified_composition = FLAME2D_INPUT_MASS_FRACTIONS;
+      IP.schmidt_string = "";
+      IP.composition_string = "";
+      //setup
+      IP.setRefSolutionState();
     } 
     /*********************************************************
      ******************* FLAME2D END **************************
      *********************************************************/
-   
-    if(!CFFC_Primary_MPI_Processor()) {   
-      IP.Wo.v.x = IP.Mach_Number*IP.Wo.a()*cos(TWO*PI*IP.Flow_Angle/360.00);
-      IP.Wo.v.y = IP.Mach_Number*IP.Wo.a()*sin(TWO*PI*IP.Flow_Angle/360.00);
-    }
 
-    /********************************************/
-    Communicator.Bcast(IP.Flow_Type, 
-                       INPUT_PARAMETER_LENGTH_FLAME2D, 
-                       MPI::CHAR, Source_Rank);
-    Communicator.Bcast(&(IP.FlowType), 
-                       1, 
-                       MPI::INT, Source_Rank);
-
-    /********************************************/
-    Communicator.Bcast(IP.Flow_Geometry_Type, 
-                       INPUT_PARAMETER_LENGTH_FLAME2D, 
-                       MPI::CHAR, Source_Rank);
-    Communicator.Bcast(&(IP.Axisymmetric), 
-                       1, 
-                       MPI::INT, Source_Rank);
-//     Communicator.Bcast(&(IP.Stretch_Level), 
-//                        1, 
-//                        MPI::INT, Source_Rank);
-    Communicator.Bcast(&(IP.Gravity), 
-                       1, 
-                       MPI::INT, Source_Rank);
-    Communicator.Bcast(&(IP.gravity_z), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.Global_Schmidt),
-                       1, 
-                       MPI::INT, Source_Rank);
-    Communicator.Bcast(&(IP.debug_level), 
-                       1, 
-                       MPI::INT, Source_Rank);
-    Communicator.Bcast(&(IP.Preconditioning), 
-                       1, 
-                       MPI::INT, Source_Rank); 
-    Communicator.Bcast(&(IP.Dual_Time_Stepping), 
-                       1, 
-                       MPI::INT, Source_Rank);
-    Communicator.Bcast(&(IP.BluffBody_Data_Usage), 
-                       1, 
-                       MPI::INT, Source_Rank);
-    Communicator.Bcast(&(IP.Moving_wall_velocity), 
-		       1, 
-		       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.Pressure_Gradient), 
-		       1, 
-		       MPI::DOUBLE, Source_Rank);
-    /********************************************/
-    Communicator.Bcast(IP.Grid_Type, 
-                       INPUT_PARAMETER_LENGTH_FLAME2D, 
-                       MPI::CHAR, Source_Rank);
-    Communicator.Bcast(IP.NACA_Aerofoil_Type, 
-                       INPUT_PARAMETER_LENGTH_FLAME2D, 
-                       MPI::CHAR, Source_Rank);
-    Communicator.Bcast(&(IP.i_Grid), 
-                       1, 
-                       MPI::INT, Source_Rank);
-    Communicator.Bcast(&(IP.Number_of_Cells_Idir), 
-                       1, 
-                       MPI::INT, Source_Rank);
-    Communicator.Bcast(&(IP.Number_of_Cells_Jdir), 
-                       1, 
-                       MPI::INT, Source_Rank);
-    Communicator.Bcast(&(IP.Number_of_Ghost_Cells), 
-                       1, 
-                       MPI::INT, Source_Rank);
-    Communicator.Bcast(&(IP.Number_of_Blocks_Idir), 
-                       1, 
-                       MPI::INT, Source_Rank);
-    Communicator.Bcast(&(IP.Number_of_Blocks_Jdir), 
-                       1, 
-                       MPI::INT, Source_Rank);
-    Communicator.Bcast(&(IP.Box_Width), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.Box_Height), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.Plate_Length), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.Pipe_Length), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.Pipe_Radius), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.Blunt_Body_Radius), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.Blunt_Body_Mach_Number), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.Chamber_Length),
-		       1,
-		       MPI::DOUBLE,Source_Rank);
-    Communicator.Bcast(&(IP.Chamber_Radius),
-		       1,
-		       MPI::DOUBLE,Source_Rank);
-    Communicator.Bcast(&(IP.Chamber_To_Throat_Length),
-		       1,
-		       MPI::DOUBLE,Source_Rank);
-    Communicator.Bcast(&(IP.Nozzle_Length),
-		       1,
-		       MPI::DOUBLE,Source_Rank);
-    Communicator.Bcast(&(IP.Nozzle_Radius_Exit),
-		       1,
-		       MPI::DOUBLE,Source_Rank);
-    Communicator.Bcast(&(IP.Nozzle_Radius_Throat),
-		       1,
-		       MPI::DOUBLE,Source_Rank);
-    Communicator.Bcast(&(IP.Nozzle_Type),
-		       1,
-		       MPI::INT,Source_Rank);
-    Communicator.Bcast(&(IP.Grain_Radius),
-		       1,
-		       MPI::DOUBLE,Source_Rank); 
-    Communicator.Bcast(&(IP.Length_Shroud), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.Radius_Shroud), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.Length_BluffBody), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.Radius_BluffBody), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.Radius_Orifice), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-
-    Communicator.Bcast(&(IP.BluffBody_Coflow_Air_Velocity), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-    
-    Communicator.Bcast(&(IP.BluffBody_Coflow_Fuel_Velocity), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-
-    Communicator.Bcast(&(IP.Radius_Inlet_Pipe), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.Radius_Combustor_Tube), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.Length_Inlet_Pipe), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.Length_Combustor_Tube), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.Cylinder_Radius), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.Ellipse_Length_X_Axis), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.Ellipse_Length_Y_Axis), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.Chord_Length), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.Orifice_Radius), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.Wedge_Angle), 
-		       1, 
-		       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.Wedge_Length), 
-		       1, 
-		       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.Smooth_Bump),
-		       1,
-		       MPI::INT,Source_Rank);
-    Communicator.Bcast(&(IP.X_Shift.x), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.X_Shift.y), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.X_Scale), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.X_Rotate), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-    // Boundary Conditions:
-    Communicator.Bcast(IP.Boundary_Conditions_Specified,
-		       INPUT_PARAMETER_LENGTH_FLAME2D,
-		       MPI::CHAR,Source_Rank);
-    Communicator.Bcast(&(IP.BCs_Specified),
-		       1,
-		       MPI::INT,Source_Rank);
-    Communicator.Bcast(IP.BC_North_Type,
-		       INPUT_PARAMETER_LENGTH_FLAME2D,
-		       MPI::CHAR,Source_Rank);
-    Communicator.Bcast(IP.BC_South_Type,
-		       INPUT_PARAMETER_LENGTH_FLAME2D,
-		       MPI::CHAR,Source_Rank);
-    Communicator.Bcast(IP.BC_East_Type,
-		       INPUT_PARAMETER_LENGTH_FLAME2D,
-		       MPI::CHAR,Source_Rank);
-    Communicator.Bcast(IP.BC_West_Type,
-		       INPUT_PARAMETER_LENGTH_FLAME2D,
-		       MPI::CHAR,Source_Rank);
-    Communicator.Bcast(&(IP.BC_North),
-		       1,
-		       MPI::INT,Source_Rank);
-    Communicator.Bcast(&(IP.BC_South),
-		       1,
-		       MPI::INT,Source_Rank);
-    Communicator.Bcast(&(IP.BC_East),
-		       1,
-		       MPI::INT,Source_Rank);
-    Communicator.Bcast(&(IP.BC_West),
-		       1,
-		       MPI::INT,Source_Rank);
-
-    // AMR & Refinement Parameters
-    Communicator.Bcast(&(IP.AMR), 
-                       1, 
-                       MPI::INT, Source_Rank);
-    Communicator.Bcast(&(IP.AMR_Frequency),
-                       1,
-                       MPI::INT,Source_Rank);
-    Communicator.Bcast(&(IP.Number_of_Initial_Mesh_Refinements), 
-                       1, 
-                       MPI::INT, Source_Rank);
-    Communicator.Bcast(&(IP.Number_of_Uniform_Mesh_Refinements),
-                       1,
-                       MPI::INT,Source_Rank);
-    Communicator.Bcast(&(IP.Number_of_Boundary_Mesh_Refinements),
-                       1,
-                       MPI::INT,Source_Rank);
-    Communicator.Bcast(&(IP.Maximum_Refinement_Level),
-                       1,
-                       MPI::INT,Source_Rank);
-    Communicator.Bcast(&(IP.Minimum_Refinement_Level),
-                       1,
-                       MPI::INT,Source_Rank);
-    Communicator.Bcast(&(IP.Threshold_for_Refinement), 
-		       1, 
-		       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.Threshold_for_Coarsening), 
-		       1, 
-		       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.Number_of_Refinement_Criteria),
-		       1,
-		       MPI::DOUBLE,Source_Rank);
-    Communicator.Bcast(&(IP.Refinement_Criteria_Gradient_Density),
-		       1,
-		       MPI::DOUBLE,Source_Rank);
-    Communicator.Bcast(&(IP.Refinement_Criteria_Divergence_Velocity),
-		       1,
-		       MPI::DOUBLE,Source_Rank);
-    Communicator.Bcast(&(IP.Refinement_Criteria_Curl_Velocity),
-		       1,
-		       MPI::DOUBLE,Source_Rank);
-    Communicator.Bcast(&(IP.Refinement_Criteria_Gradient_Temperature),
-		       1,
-		       MPI::DOUBLE,Source_Rank);
-    Communicator.Bcast(&(IP.Refinement_Criteria_Gradient_CH4),
-		       1,
-		       MPI::DOUBLE,Source_Rank);
-    Communicator.Bcast(&(IP.Refinement_Criteria_Gradient_CO2),
-		       1,
-		       MPI::DOUBLE,Source_Rank);
-
-    // Mesh stretching flag:
-    Communicator.Bcast(&(IP.i_Mesh_Stretching),
-		       1,
-		       MPI::INT,Source_Rank);
-    Communicator.Bcast(&(IP.Mesh_Stretching_Type_Idir),
-		       1,
-		       MPI::INT,Source_Rank);
-    Communicator.Bcast(&(IP.Mesh_Stretching_Type_Jdir),		     
-		       1,
-		       MPI::INT,Source_Rank);
-    Communicator.Bcast(&(IP.Mesh_Stretching_Factor_Idir),
-		       1,
-		       MPI::DOUBLE,Source_Rank);
-    Communicator.Bcast(&(IP.Mesh_Stretching_Factor_Jdir),
-		       1,
-		       MPI::DOUBLE,Source_Rank);
-    // Smooth quad block flag:
-    Communicator.Bcast(&(IP.i_Smooth_Quad_Block),
-		       1,
-		       MPI::INT,Source_Rank);
-    // Morton Ordering Parameters
-    Communicator.Bcast(&(IP.Morton), 
-                       1, 
-                       MPI::INT, Source_Rank);
-    Communicator.Bcast(&(IP.Morton_Reordering_Frequency),
-                       1,
-                       MPI::INT,Source_Rank);
-    // File Names
-    Communicator.Bcast(IP.Output_File_Name, 
-                       INPUT_PARAMETER_LENGTH_FLAME2D, 
-                       MPI::CHAR, Source_Rank);
-    Communicator.Bcast(IP.Grid_File_Name, 
-                       INPUT_PARAMETER_LENGTH_FLAME2D, 
-                       MPI::CHAR, Source_Rank);
-    Communicator.Bcast(IP.Grid_Definition_File_Name, 
-                       INPUT_PARAMETER_LENGTH_FLAME2D, 
-                       MPI::CHAR, Source_Rank);
-    Communicator.Bcast(IP.Restart_File_Name, 
-                       INPUT_PARAMETER_LENGTH_FLAME2D, 
-                       MPI::CHAR, Source_Rank);
-    Communicator.Bcast(IP.Gnuplot_File_Name, 
-                       INPUT_PARAMETER_LENGTH_FLAME2D, 
-                       MPI::CHAR, Source_Rank);
-    Communicator.Bcast(IP.Output_Format_Type, 
-                       INPUT_PARAMETER_LENGTH_FLAME2D, 
-                       MPI::CHAR, Source_Rank);
-    Communicator.Bcast(&(IP.i_Output_Format), 
-                       1, 
-                       MPI::INT, Source_Rank);
-    Communicator.Bcast(&(IP.Restart_Solution_Save_Frequency), 
-                       1, 
-                       MPI::INT, Source_Rank);
-    // Output progress frequency:
-    Communicator.Bcast(&(IP.Output_Progress_Frequency),
-		       1,
-		       MPI::INT,Source_Rank);
-    // Multigrid Related Parameters
-    IP.Multigrid_IP.Broadcast_Input_Parameters(Communicator,
-					       Source_Rank);
-    // Multigrid Related Parameters
-    IP.NKS_IP.Broadcast_Input_Parameters(Communicator,
-					 Source_CPU);
-
-    if (!(CFFC_MPI::This_Processor_Number == Source_Rank)) {
-       IP.Number_of_Processors = CFFC_MPI::Number_of_Processors;
-    } /* endif */
-    Communicator.Bcast(&(IP.Number_of_Blocks_Per_Processor), 
-                       1, 
-                       MPI::INT, Source_Rank);
-   // Freeze_Limiter
-    Communicator.Bcast(&(IP.Freeze_Limiter), 
-                       1, 
-                       MPI::INT, Source_Rank);
-
-    Communicator.Bcast(&(IP.i_Residual_Variable), 
-                       1, 
-                       MPI::INT, Source_Rank);
-    Communicator.Bcast(&(IP.Number_of_Residual_Norms), 
-                       1, 
-                       MPI::INT, Source_Rank);
-
-    // Freeze_Limiter_Residual_Level
-    Communicator.Bcast(&(IP.Freeze_Limiter_Residual_Level), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-
-    // set gravity
-    IP.Wo.set_gravity(IP.gravity_z);
-}
 #endif
+}
+
 
 /********************************************************
  * Routine: Get_Next_Input_Control_Parameter            *
@@ -1757,8 +1068,6 @@ int Parse_Next_Input_Control_Parameter(Flame2D_Input_Parameters &IP) {
 	 IP.BC_South = BC_WALL_VISCOUS_HEATFLUX;
        } else if (strcmp(IP.ICs_Type, "Couette") == 0 ){
 	 IP.i_ICs = IC_VISCOUS_COUETTE; 
-       } else if (strcmp(IP.ICs_Type, "Couette_DeltaP") == 0 ){
-	 IP.i_ICs = IC_VISCOUS_COUETTE_PRESSURE_GRADIENT; 
       /****************** CHEMD2D ******************************/
        } else if (strcmp(IP.ICs_Type, "Mix") == 0) {
 	 IP.i_ICs = IC_GAS_MIX;
@@ -1771,10 +1080,9 @@ int Parse_Next_Input_Control_Parameter(Flame2D_Input_Parameters &IP) {
        } else if (strcmp(IP.ICs_Type, "Pressure_Gradient_y") == 0 ){
 	 IP.i_ICs = IC_PRESSURE_GRADIENT_Y;
        } else if (strcmp(IP.ICs_Type, "1DPremixedFlame") == 0 ){
-	 IP.i_ICs = IC_CHEM_1DFLAME;  
+	 IP.i_ICs = IC_1DFLAME;  
        }else if (strcmp(IP.ICs_Type, "Driven_Cavity_Flow") == 0) {
           IP.i_ICs = IC_VISCOUS_DRIVEN_CAVITY_FLOW;
-          IP.i_ICs = IC_FREE_JET_FLAME;
        }else if (strcmp(IP.ICs_Type, "Restart") == 0) {
           IP.i_ICs = IC_RESTART;
        } else {
@@ -2062,6 +1370,15 @@ int Parse_Next_Input_Control_Parameter(Flame2D_Input_Parameters &IP) {
        IP.Input_File.getline(buffer, sizeof(buffer));
        if (IP.Source_Term_Multiplyer <= ZERO) i_command = INVALID_INPUT_VALUE;
 
+    } else if (strcmp(IP.Next_Control_Parameter, "Fixed_Time_Step") == 0) {
+       i_command = 18;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.Time_Step;
+       IP.Time_Step /= THOUSAND;
+       IP.Fixed_Time_Step = true;
+       IP.Input_File.getline(buffer, sizeof(buffer));
+       if (IP.Time_Step <= ZERO) i_command = INVALID_INPUT_VALUE;
+
     } else if (strcmp(IP.Next_Control_Parameter, "Box_Width") == 0) {
        i_command = 19;
        IP.Line_Number = IP.Line_Number + 1;
@@ -2326,31 +1643,52 @@ int Parse_Next_Input_Control_Parameter(Flame2D_Input_Parameters &IP) {
        if (strcmp(IP.Next_Control_Parameter, "Mechanism_File") == 0){
 	 Get_Next_Input_Control_Parameter(IP);
 	 IP.ct_mech_file = IP.Next_Control_Parameter;
-	 Flame2D_pState::setMixture(IP.ct_mech_name,
-				    IP.ct_mech_file);
+	 IP.num_species = Mixture::getNumSpecies(IP.ct_mech_name, IP.ct_mech_file);
 
 	 // allocate storage
 	 IP.Allocate();
 
 	 //Get species and load appropriate data
-	 for(int i=0; i<IP.Wo.NumSpecies(); i++){
-	   IP.Schmidt[i] = IP.Global_Schmidt;
-	 }   
+	 for(int i=0; i<IP.num_species; i++) IP.Schmidt[i] = IP.Global_Schmidt;
 
        // if no reaction file was given, return in error
        } else {
 	 i_command = INVALID_INPUT_CODE;
        }
 
-    } else if (strcmp(IP.Next_Control_Parameter, "Global_Schmidt") == 0){
+    } else if (strcmp(IP.Next_Control_Parameter,"Reactions") == 0) {
       i_command = 101;
       Get_Next_Input_Control_Parameter(IP);
       if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
-	Mixture::setConstantSchmidt(IP.Schmidt);
+	IP.reacting = true;
       } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
-	// do nothing
+	IP.reacting = false;
       } else {
 	i_command = INVALID_INPUT_VALUE;
+      }
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Varying_Schmidt") == 0) {
+      i_command = 101;
+      Get_Next_Input_Control_Parameter(IP);
+      if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
+	IP.constant_schmidt = false;
+      } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
+	IP.constant_schmidt = true;
+      } else {
+	i_command = INVALID_INPUT_VALUE;
+      }
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Global_Schmidt") == 0){
+      i_command = 101;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Global_Schmidt;
+      IP.Input_File.getline(buffer, sizeof(buffer));
+      if (IP.Global_Schmidt < 0) 
+	i_command = INVALID_INPUT_VALUE;
+      else {
+	for(int i=0; i<IP.num_species; i++) IP.Schmidt[i] = IP.Global_Schmidt;
+	IP.constant_schmidt = true;
+	IP.schmidt_string = "";
       }
 
     } else if (strcmp(IP.Next_Control_Parameter, "Schmidt_Numbers") == 0){
@@ -2360,10 +1698,10 @@ int Parse_Next_Input_Control_Parameter(Flame2D_Input_Parameters &IP) {
       //       CH4:0.5, O2:0.5
       // All other species will be assumed to have unity schmidt number.  
       // Returns them in an array.
-      IP.Input_File.getline(buffer, sizeof(buffer)); 
-      IP.Line_Number = IP.Line_Number + 1 ;
-      Mixture::parse_schmidt_string(buffer, IP.Schmidt);
-      Mixture::setConstantSchmidt(IP.Schmidt);
+      IP.Input_File.getline(buffer, sizeof(buffer));
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.schmidt_string = buffer;
+      IP.constant_schmidt = true;
 
     } else if (strcmp(IP.Next_Control_Parameter, "Mass_Fractions") == 0){
       // Get Initial Mass Fractions from user 
@@ -2374,12 +1712,10 @@ int Parse_Next_Input_Control_Parameter(Flame2D_Input_Parameters &IP) {
       // Returns them in an array.
       IP.Input_File.getline(buffer, sizeof(buffer)); 
       IP.Line_Number = IP.Line_Number + 1 ;
-      Mixture::parse_mass_string(buffer, IP.mass_fractions);
-
-      //Set inital Values; 
-      IP.Wo.setState_TPY(IP.Temperature, IP.Pressure, IP.mass_fractions);
+      IP.i_specified_composition = FLAME2D_INPUT_MASS_FRACTIONS;
+      IP.composition_string = buffer;
 	         
-    } else if (strcmp(IP.Next_Control_Parameter, "Molar_Fractions") == 0){
+    } else if (strcmp(IP.Next_Control_Parameter, "Mole_Fractions") == 0){
       // Get Initial Molar Fractions from user
       // Here we use Cantera to parse the string of the form:
       //       CH4:0.5, O2:0.5
@@ -2388,18 +1724,8 @@ int Parse_Next_Input_Control_Parameter(Flame2D_Input_Parameters &IP) {
       // Returns them in an array.
       IP.Input_File.getline(buffer, sizeof(buffer)); 
       IP.Line_Number = IP.Line_Number + 1 ;
-      Mixture::parse_mole_string(buffer, IP.mass_fractions);
-      
-      // convert molar fractions to mass fractions
-      double sum(0.0);
-      for(int i=0; i<IP.Wo.NumSpecies(); i++) 
-	sum += IP.mass_fractions[i]*Mixture::molarMass(i);
-      for(int i=0; i<IP.Wo.NumSpecies(); i++) 
-	IP.mass_fractions[i] = IP.mass_fractions[i]*Mixture::molarMass(i)/sum;
-      
-      //Set inital Values; 
-      IP.Wo.setState_TPY(IP.Temperature, IP.Pressure, IP.mass_fractions);
-
+      IP.i_specified_composition = FLAME2D_INPUT_MOLE_FRACTIONS;
+      IP.composition_string = buffer;
 	 
     } else if (strcmp(IP.Next_Control_Parameter, "Equivalence_Ratio") == 0){
       // Get Initial Equivalence Ratio from user 
@@ -2408,16 +1734,10 @@ int Parse_Next_Input_Control_Parameter(Flame2D_Input_Parameters &IP) {
       IP.Line_Number = IP.Line_Number + 1;
       IP.Input_File >> IP.equivalence_ratio;
       IP.Input_File.getline(buffer, sizeof(buffer));
-      
+      IP.i_specified_composition = FLAME2D_INPUT_EQUIVALENCE_RATIO;
+
       //Set inital Values; 
-      if (IP.equivalence_ratio < 0) {
-	i_command = INVALID_INPUT_VALUE;
-      } else {
-	Mixture::composition(IP.Fuel_Species, 
-			     IP.equivalence_ratio, 
-			     IP.mass_fractions);
-	IP.Wo.setState_TPY(IP.Temperature, IP.Pressure, IP.mass_fractions);
-      }
+      if (IP.equivalence_ratio < 0) i_command = INVALID_INPUT_VALUE;
           
     
       /************* TEMPERATURE *************/
@@ -2426,12 +1746,7 @@ int Parse_Next_Input_Control_Parameter(Flame2D_Input_Parameters &IP) {
       IP.Line_Number = IP.Line_Number + 1;
       IP.Input_File >> IP.Temperature;
       IP.Input_File.getline(buffer, sizeof(buffer));
-      if (IP.Temperature <= ZERO) {
-	i_command = INVALID_INPUT_VALUE;
-      } else {
-	IP.Wo.setState_TPY(IP.Temperature, IP.Pressure, IP.mass_fractions);
-	//IP.Wo.v.zero();
-     } /* endif */
+      if (IP.Temperature <= ZERO) i_command = INVALID_INPUT_VALUE;
    
       /************* PRESSURE ****************/
     } else if (strcmp(IP.Next_Control_Parameter, "Pressure") == 0) {
@@ -2440,32 +1755,7 @@ int Parse_Next_Input_Control_Parameter(Flame2D_Input_Parameters &IP) {
        IP.Input_File >> IP.Pressure;
        IP.Input_File.getline(buffer, sizeof(buffer));
        IP.Pressure = IP.Pressure*THOUSAND;
-       if (IP.Pressure <= ZERO) {
-	 i_command = INVALID_INPUT_VALUE;
-       } else {
-	 IP.Wo.setState_TPY(IP.Temperature, IP.Pressure, IP.mass_fractions);
-       } /* endif */
-
-       /********** EXIT MASS FRACTIONS ***********/
-    } else if (strcmp(IP.Next_Control_Parameter, "Exit_Mass_Fractions") == 0){
-      i_command = 42;
-
-      // read in mass fractions
-      double temp(0.0);
-      for(int i=0; i<IP.Wo.NumSpecies(); i++) {
-	IP.Input_File  >> IP.mass_fractions_out[i];
-	temp += IP.mass_fractions_out[i];
-      }
-
-      //check to make sure it adds to 1
-      if(temp < ONE-MICRO || temp > ONE+MICRO){ 
-	cout<<"\n Exit Mass Fractions summed to "<<temp<<". Should sum to 1\n";
-	i_command = INVALID_INPUT_VALUE;
-      }
-	 
-      //fudge the line number and istream counters
-      IP.Input_File.getline(buffer, sizeof(buffer));  
-      IP.Line_Number = IP.Line_Number + 1; 
+       if (IP.Pressure <= ZERO) i_command = INVALID_INPUT_VALUE;
 
        /************* FLAME SPEED ****************/
     } else if (strcmp(IP.Next_Control_Parameter, "Flame_Speed") == 0) {
@@ -2496,9 +1786,6 @@ int Parse_Next_Input_Control_Parameter(Flame2D_Input_Parameters &IP) {
 	i_command = INVALID_INPUT_VALUE;
       } else {
 	IP.Mach_Number_Reference = IP.Mach_Number;
-	IP.Wo.set_Mref(IP.Mach_Number_Reference );
-	IP.Wo.setVelocity( IP.Mach_Number*IP.Wo.a()*cos(TWO*PI*IP.Flow_Angle/360.00),
-			   IP.Mach_Number*IP.Wo.a()*sin(TWO*PI*IP.Flow_Angle/360.00) );
       } /* endif */
       
       /********** MACH NUMBER REFERENCE (for Low Mach Number Preconditioning ********/
@@ -2510,19 +1797,13 @@ int Parse_Next_Input_Control_Parameter(Flame2D_Input_Parameters &IP) {
       //if( IP.Mach_Number_Reference_target > IP.Mach_Number_Reference) 
       IP.Mach_Number_Reference_target = IP.Mach_Number_Reference; 
       IP.Input_File.getline(buffer, sizeof(buffer));
-      if (IP.Mach_Number_Reference < ZERO) {
-	i_command = INVALID_INPUT_VALUE;
-      } else {
-	IP.Wo.set_Mref(IP.Mach_Number_Reference );
-      } /* endif */
+      if (IP.Mach_Number_Reference < ZERO) i_command = INVALID_INPUT_VALUE;
   
     } else if (strcmp(IP.Next_Control_Parameter, "Flow_Angle") == 0) {
        i_command = 41;
        IP.Line_Number = IP.Line_Number + 1;
        IP.Input_File >> IP.Flow_Angle;
        IP.Input_File.getline(buffer, sizeof(buffer));
-       IP.Wo.setVelocity( IP.Mach_Number*IP.Wo.a()*cos(TWO*PI*IP.Flow_Angle/360.00),
-			  IP.Mach_Number*IP.Wo.a()*sin(TWO*PI*IP.Flow_Angle/360.00) );
        
     } else if (strcmp(IP.Next_Control_Parameter,"Re_lid") == 0) {
       i_command = 42;
@@ -3650,16 +2931,18 @@ int Process_Input_Control_Parameter_File(Flame2D_Input_Parameters &Input_Paramet
        
    
        if (Command_Flag == EXECUTE_CODE) {
-          break;
+	 // set the reference solution state
+	 Input_Parameters.setRefSolutionState();
+	 break;
        } else if (Command_Flag == TERMINATE_CODE) {
-          break;
+	 break;
        } else if (Command_Flag == INVALID_INPUT_CODE ||
                   Command_Flag == INVALID_INPUT_VALUE) {
-          line_number = -line_number;
-          cout << "\n Flame2D ERROR: Error reading Flame2D data at line #"
-               << -line_number  << " of input data file.\n";
-          error_flag = line_number;
-          break;
+	 line_number = -line_number;
+	 cout << "\n Flame2D ERROR: Error reading Flame2D data at line #"
+	      << -line_number  << " of input data file.\n";
+	 error_flag = line_number;
+	 break;
        } /* endif */
     } /* endwhile */
 
@@ -3669,9 +2952,6 @@ int Process_Input_Control_Parameter_File(Flame2D_Input_Parameters &Input_Paramet
     //Load the C-Type strings from the C++ strings 
     strcpy(Input_Parameters.ct_Mech_Name,Input_Parameters.ct_mech_name.c_str());
     strcpy(Input_Parameters.ct_Mech_File,Input_Parameters.ct_mech_file.c_str());
-
-    // Reset the static variables.
-    Input_Parameters.Wo.set_gravity(Input_Parameters.gravity_z);
 
     // Perform consitency checks on the refinement criteria.
     Input_Parameters.Number_of_Refinement_Criteria = 0;

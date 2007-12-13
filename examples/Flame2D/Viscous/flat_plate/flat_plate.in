@@ -3,29 +3,34 @@
 # Chem2D Viscous Channel Test Case
 #
 ###########################################
-#
 Time_Integration_Type =
 Multistage_Optimal_Smoothing 
 N_Stage =
-3
-############
+5
+########################################
+# 1 Yes, 0, No
 Freeze_Limiter =
 1
+# Relative to L2 Norm, so if rhoU will be much
+# higher than say just rho??
 Freeze_Limiter_Residual_Level = 
-1.0
+10.0
 ############################
 #
 ############################
+#Unsteady
 Time_Accurate = 
 0
+# with local time stepping 
+# 0, 1, 3,4,5
 Local_Time_Stepping =
 1
 ###############################
 # 
 ###############################
 Reconstruction_Type=
-Green_Gauss
-Limiter_Type=
+Least_Squares
+Limiter_Type= 
 Venkatakrishnan
 Flux_Function_Type=
 Roe
@@ -35,50 +40,71 @@ Roe
 Flow_Type=
 Laminar
 Viscous_Flux_Evaluation_Type=
-Diamond_Path_Green_Gauss
+Diamond_Path_Least_Squares
 #############################
 # Set initial conditions
 #############################
 ICs_Type=
-Couette
-Moving_Wall_Velocity=
-29.4
+Flat_Plate
+Temperature =
+300
+Mach_Number =
+0.2
+#Reynolds_Number =
+#10000.0
+Number_of_Ghost_Cells=
+2
 ############################
 # Set mesh info
 ############################
 Grid_Type=
-Couette
+Flat_Plate
+Plate_Length =
+0.002
 Smooth_Quad_Block=
 OFF
-Box_Width=
-0.2
-Box_Height=
-0.001
 Number_of_Cells_Idir= 
-32
+16
+#32
 Number_of_Cells_Jdir=
 24
+#64
 Number_of_Blocks_Idir= 
-1
+3
 Number_of_Blocks_Jdir=
 1
+Mesh_Stretching = 
+ON
+Mesh_Stretching_Factor_Idir =
+1.10
+Mesh_Stretching_Factor_Jdir =
+1.005
+############################
+# Ordering IN regular explicit
+############################
+#Morton =
+#0
+#Morton_Reordering_Frequency =
+#0
 #############################
 # AMR PARAMETERS
 #############################
+AMR =
+OFF
 #AMR_Frequency =
 #0
-#Number_of_Initial_Mesh_Refinements =
-#0
-#Number_of_Uniform_Mesh_Refinements =
-#0
-#Number_of_Boundary_Mesh_Refinements =
-#0
-#Maximum_Refinement_Level =
-#0
-#Minimum_Refinement_Level =
-#0
+Number_of_Initial_Mesh_Refinements =
+0
+Number_of_Uniform_Mesh_Refinements =
+0
+Number_of_Boundary_Mesh_Refinements =
+0
+Maximum_Refinement_Level =
+4
+Minimum_Refinement_Level =
+1
 #Threshold_for_Refinement =
-#0.50
+#0.3
 #Threshold_for_Coarsening =
 #0.10
 ################################
@@ -92,21 +118,21 @@ Number_of_Blocks_Jdir=
 # Set time stepping parameters
 ################################
 CFL_Number=
-0.5 
+0.75
 ####### Explicit ###############
 Maximum_Number_of_Time_Steps =
-100
+10000
 Full_Multigrid =
 0
 ################################
 # 
 ################################
 Restart_Solution_Save_Frequency=
-5000
+1000
 Number_of_Blocks_Per_Processor =
-10
+100
 Output_File_Name= 
-Viscous_couette
+flatplate1
 #################################
 # Execute program
 #################################
@@ -117,8 +143,8 @@ Execute
 #######################
 # Write output
 #######################
-Write_Output
-Write_Output_Cells
+#Write_Output
+#Write_Output_Cells
 #Write_Output_Mesh
 #Write_Mesh_Definition
 #Write_Output_Mesh_Cells
@@ -127,5 +153,23 @@ Write_Output_Cells
 #######################
 # Terminate program
 #######################
+#Refine_Grid
+#Maximum_Number_of_Time_Steps =
+#100
+#Output_File_Name=
+#flatplate2
+#Continue
+#
+#Refine_Grid
+#Maximum_Number_of_Time_Steps =
+#100
+#Output_File_Name=
+#flatplate3
+#Continue
+##########
+Write_Output
+Write_Output_Cells
+Write_Output_Flat_Plate
+##########
 Terminate
-
+#

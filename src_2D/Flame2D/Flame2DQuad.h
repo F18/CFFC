@@ -261,7 +261,6 @@ class Flame2D_Quad_Block{
   static void deallocate_static(void);
 
   /* Update all the nodal values for Wnd */
-  void Update_Wn(const int &ii, const int &jj);
   void Update_Nodal_Values(void);
 
   /* Return primitive solution state at specified node. */
@@ -274,9 +273,17 @@ class Flame2D_Quad_Block{
   Flame2D_State WnSE(const int &ii, const int &jj);
   Flame2D_State WnSW(const int &ii, const int &jj);
 
+  /* Return viscous quantities at node. */
+  void Viscous_Quantities_n( const int &ii, const int &jj, 
+			     Vector2D &qflux, Tensor2D &tau );
+
+  /* Comput bilinear interpolation constants */
   int BiLinearInterpolationCoefficients(double &eta, double &zeta, const int &ii, const int &jj);
   
   void set_v_zero(void);
+
+  /* Spacing for Preconditioner */
+  double delta_n(const int &ii, const int &jj);
 
   /*****************************************************************************
      dWn_dWc is the derivative of node solution w.r.t. cell center solution
@@ -625,51 +632,23 @@ inline Flame2D_State Flame2D_Quad_Block::WnSW(const int &ii, const int &jj) {
 }
 
 inline void Flame2D_Quad_Block::Wn(const int &ii, const int &jj, Flame2D_State &Wnode) {
-  double ax, bx, cx, dx, ay, by, cy, dy, aa, bb, cc, x, y,
-    eta1, zeta1, eta2, zeta2, eta, zeta;
   
-  x=Grid.Node[ii][jj].X.x; y=Grid.Node[ii][jj].X.y;
-  ax=Grid.Cell[ii-1][jj-1].Xc.x;
-  bx=Grid.Cell[ii-1][jj].Xc.x-Grid.Cell[ii-1][jj-1].Xc.x;
-  cx=Grid.Cell[ii][jj-1].Xc.x-Grid.Cell[ii-1][jj-1].Xc.x;
-  dx=Grid.Cell[ii][jj].Xc.x+Grid.Cell[ii-1][jj-1].Xc.x-
-    Grid.Cell[ii-1][jj].Xc.x-Grid.Cell[ii][jj-1].Xc.x;
-  ay=Grid.Cell[ii-1][jj-1].Xc.y;
-  by=Grid.Cell[ii-1][jj].Xc.y-Grid.Cell[ii-1][jj-1].Xc.y;
-  cy=Grid.Cell[ii][jj-1].Xc.y-Grid.Cell[ii-1][jj-1].Xc.y;
-  dy=Grid.Cell[ii][jj].Xc.y+Grid.Cell[ii-1][jj-1].Xc.y-
-    Grid.Cell[ii-1][jj].Xc.y-Grid.Cell[ii][jj-1].Xc.y;
-  aa=bx*dy-dx*by; bb=dy*(ax-x)+bx*cy-cx*by+dx*(y-ay); cc=cy*(ax-x)+cx*(y-ay);
-  if (fabs(aa) < TOLER*TOLER) {
-    if (fabs(bb) >= TOLER*TOLER) { zeta1=-cc/bb; }
-    else { zeta1 = -cc/sgn(bb)*(TOLER*TOLER); }
-    if (fabs(cy+dy*zeta1) >= TOLER*TOLER) { eta1=(y-ay-by*zeta1)/(cy+dy*zeta1); }
-    else { eta1 = HALF; } zeta2=zeta1; eta2=eta1;
-  } else {
-    if (bb*bb-FOUR*aa*cc >= TOLER*TOLER) { zeta1=HALF*(-bb+sqrt(bb*bb-FOUR*aa*cc))/aa; }
-    else { zeta1 = -HALF*bb/aa; }
-    if (fabs(cy+dy*zeta1) < TOLER*TOLER) { eta1=-ONE; }
-    else { eta1=(y-ay-by*zeta1)/(cy+dy*zeta1); }
-    if (bb*bb-FOUR*aa*cc >= TOLER*TOLER) { zeta2=HALF*(-bb-sqrt(bb*bb-FOUR*aa*cc))/aa; }
-    else { zeta2 = -HALF*bb/aa; }
-    if (fabs(cy+dy*zeta2) < TOLER*TOLER) { eta2=-ONE; }
-    else { eta2=(y-ay-by*zeta2)/(cy+dy*zeta2); }
-  } /* end if */
-  if (zeta1 > -TOLER && zeta1 < ONE + TOLER &&
-      eta1  > -TOLER && eta1  < ONE + TOLER) {
-    zeta=zeta1; eta=eta1;
-  } else if (zeta2 > -TOLER && zeta2 < ONE + TOLER &&
-	     eta2  > -TOLER && eta2  < ONE + TOLER) {
-    zeta=zeta2; eta=eta2;
-  } else {
-    zeta=HALF; eta=HALF;
-  } /* endif */
-  
+  double eta(ZERO), zeta(ZERO); 
   const int NUM_VAR(NumVar());
+
+  // get interpolation coefficents
+  BiLinearInterpolationCoefficients(eta, zeta, ii, jj);
+  
+  // perform interpolation
+  double a(1.0 - zeta - eta + zeta*eta);
+  double b(      zeta       - zeta*eta);
+  double c(             eta - zeta*eta);
+  double d(                 + zeta*eta);
   for (int k=1; k<=NUM_VAR; k++) {
-    Wnode[k] = (W[ii-1][jj-1][k] +(W[ii-1][jj][k]-W[ii-1][jj-1][k])*zeta+  
-		(W[ii][jj-1][k]-W[ii-1][jj-1][k])*eta + 
-		(W[ii][jj][k]+W[ii-1][jj-1][k]-W[ii-1][jj][k]-W[ii][jj-1][k])*zeta*eta);
+    Wnode[k]  = a * W[ii-1][jj-1][k];
+    Wnode[k] += b * W[ii-1][jj  ][k];
+    Wnode[k] += c * W[ii  ][jj-1][k];
+    Wnode[k] += d * W[ii  ][jj  ][k];
   }
 }
 
@@ -687,6 +666,73 @@ inline void Flame2D_Quad_Block::Update_Nodal_Values(void) {
   for (int i = 1; i < NCi; ++i )
     for (int j = 1; j < NCj; ++j ) 
       Wn(i,j, Wnd[i][j]);
+}
+
+
+/**************************************************************************
+ * Flame2D_Quad_Block::Wn -- Nodal viscous quantities.                    *
+ **************************************************************************/
+inline void Flame2D_Quad_Block::Viscous_Quantities_n( const int &ii, 
+						      const int &jj, 
+						      Vector2D &qflux, 
+						      Tensor2D &tau ) {
+  // declares
+  static Vector2D q;
+  static Tensor2D t;
+  int i, j;
+
+  // get interpolation coefficients
+  double eta(ZERO), zeta(ZERO); 
+  BiLinearInterpolationCoefficients(eta, zeta, ii, jj);
+  double a(1.0 - zeta - eta + zeta*eta);
+  double b(      zeta       - zeta*eta);
+  double c(             eta - zeta*eta);
+  double d(                 + zeta*eta);
+
+  // interpolate
+  // W[ii-1][jj-1][k] -> 1.0 - zeta - eta + zeta*eta;
+  i = ii-1; j = jj-1;
+  W[i][j].Viscous_Quantities( dWdx[i][j], dWdy[i][j], 
+			      Axisymmetric, 
+			      Grid.Cell[i][j].Xc, 
+			      q, t );
+  qflux  = a * q;
+  tau    = a * t;
+
+  // W[ii-1][jj][k]   ->     + zeta       - zeta*eta;
+  i = ii-1; j = jj;
+  W[i][j].Viscous_Quantities( dWdx[i][j], dWdy[i][j], 
+			      Axisymmetric, 
+			      Grid.Cell[i][j].Xc, 
+			      q, t );
+  qflux += b * q;
+  tau   += b * t;
+
+  // W[ii][jj-1][k]   ->            + eta - zeta*eta;
+  i = ii; j = jj-1;
+  W[i][j].Viscous_Quantities( dWdx[i][j], dWdy[i][j], 
+			      Axisymmetric, 
+			      Grid.Cell[i][j].Xc, 
+			      q, t );
+  qflux += c * q;
+  tau   += c * t;
+
+  // W[ii][jj][k]     ->                  + zeta*eta
+  i = ii; j = jj;
+  W[i][j].Viscous_Quantities( dWdx[i][j], dWdy[i][j], 
+			      Axisymmetric, 
+			      Grid.Cell[i][j].Xc, 
+			      q, t );
+  qflux += d * q;
+  tau   += d * t;
+  
+}
+/**************************************************************************
+ * Flame2D_Quad_Block -- Spacing for Preconditioner.                      *
+ **************************************************************************/
+inline double Flame2D_Quad_Block::delta_n(const int &i, const int &j) {
+  return min( TWO*( Grid.Cell[i][j].A/(Grid.lfaceE(i, j)+Grid.lfaceW(i, j)) ),
+	      TWO*( Grid.Cell[i][j].A/(Grid.lfaceN(i, j)+Grid.lfaceS(i, j)) ) );
 }
 
 
@@ -1669,12 +1715,35 @@ extern void Output_Nodes_Tecplot(Flame2D_Quad_Block &SolnBlk,
                                  const int Output_Title,
 	                         ostream &Out_File);
 
-extern void Output_RHS(Flame2D_Quad_Block &SolnBlk,
-		       const int Number_of_Time_Steps,
-                       const double &Time,
-                       const int Block_Number,
-                       const int Output_Title,
-	               ostream &Out_File);
+extern void Output_Viscous_Channel(Flame2D_Quad_Block &SolnBlk,
+				   const int Block_Number,
+				   const int Output_Title,
+				   ostream &Out_File,
+				   double &l1_norm,
+				   double &l2_norm,
+				   double &max_norm,
+				   double &Vwall,
+				   const double dp);
+
+extern void Output_Flat_Plate(Flame2D_Quad_Block &SolnBlk,
+			      const int Block_Number,
+			      const int Output_Title_Soln,
+			      ostream &Out_File_Soln,
+			      const int Output_Title_Skin,
+			      ostream &Out_File_Skin,
+			      const Flame2D_pState &Winf,
+			      double &l1_norm,
+			      double &l2_norm,
+			      double &max_norm);
+			      
+extern void Output_Driven_Cavity_Flow(Flame2D_Quad_Block &SolnBlk,
+				      const int Block_Number,
+				      const int Output_Title,
+				      ostream &Out_File_u,
+				      ostream &Out_File_v,
+				      const double &Re,
+				      const double &Vwall,
+				      const double &length);
 
 extern void ICs(Flame2D_Quad_Block &SolnBlk,
  	        const int i_ICtype,
@@ -1786,19 +1855,6 @@ extern int Output_Tecplot(Flame2D_Quad_Block *Soln_ptr,
 		          const int Number_of_Time_Steps,
                           const double &Time);
 
-extern int Output_RHS(Flame2D_Quad_Block *Soln_ptr,
-		      AdaptiveBlock2D_List &Soln_Block_List,
-		      Flame2D_Input_Parameters &Input_Parameters,
-		      const int Number_of_Time_Steps,
-		      const double &Time);
-
-int Output_PERTURB(Flame2D_Quad_Block *Soln_ptr,
-		   AdaptiveBlock2D_List &Soln_Block_List,
-		   Flame2D_Input_Parameters &Input_Parameters,
-		   const int Number_of_Time_Steps,
-		   const double &Time,
-		   const CPUTime &CPU_Time);
-
 extern int Output_Cells_Tecplot(Flame2D_Quad_Block *Soln_ptr,
                                 AdaptiveBlock2D_List &Soln_Block_List,
                                 Flame2D_Input_Parameters &Input_Parameters,
@@ -1816,10 +1872,6 @@ extern int Output_Mesh_Gnuplot(Flame2D_Quad_Block *Soln_ptr,
                                Flame2D_Input_Parameters &Input_Parameters,
 		               const int Number_of_Time_Steps,
                                const double &Time);
-
-extern int Output_Ringleb(Flame2D_Quad_Block *Soln_ptr,
-			  AdaptiveBlock2D_List &Soln_Block_List,
-			  Flame2D_Input_Parameters &IP);
 
 extern int Output_Viscous_Channel(Flame2D_Quad_Block *Soln_ptr,
 				  AdaptiveBlock2D_List &Soln_Block_List,
@@ -1901,17 +1953,6 @@ extern int Update_Solution_Multistage_Explicit(Flame2D_Quad_Block *Soln_ptr,
    	                                       const int I_Stage);
 
 
-
-//************ Viscous Stuff************************************/
-extern void Viscous_Calculations(Flame2D_Quad_Block &SolnBlk);
-
-// extern Flame2D_cState Flux_Viscous_x(Flame2D_Quad_Block &SolnBlk, const int &i, const int &j);
-// extern Flame2D_cState Flux_Viscous_y(Flame2D_Quad_Block &SolnBlk, const int &i, const int &j);
-// extern Flame2D_cState Flux_Viscous_n(Flame2D_Quad_Block &SolnBlk, const int &Orient, const int &i, const int &j);
-// extern Flame2D_cState Flux_Viscous_EastFace_Diamond(Flame2D_Quad_Block &SolnBlk, const int &i, const int &j);
-// extern Flame2D_cState Flux_Viscous_NorthFace_Diamond(Flame2D_Quad_Block &SolnBlk, const int &i, const int &j);
-
-
 /**************************************************************************
  * Flame2D_Quad_Block -- Multiple Block External Subroutines for Mesh.     * 
  * Flame2DQuadGrid.cc                                                      *
@@ -1952,11 +1993,11 @@ extern int Output_Cells_Tecplot(Grid2D_Quad_Block **Grid_ptr,
 
 extern int Flame2DQuadSolver(char *Input_File_Name_ptr, int batch_flag);
 
+
 /**************************************************************************
  * Flame2D_Tools -- Tools and stuff                                         *
  * Flame2DTools.cc                                                          *
  **************************************************************************/
-
 extern int Open_Time_Accurate_File(ofstream &Time_Accurate_File,
 				   char *File_Name,
 				   const int Append_to_Fileconst,
@@ -1967,63 +2008,6 @@ extern int Close_Time_Accurate_File(ofstream &Time_Accurate_File);
 extern void Output_to_Time_Accurate_File(ostream &Time_Accurate_File,
 					 const double &Time,
 					 const Flame2D_pState &Soln);
-  
-extern void Output_Ringleb_Solution(Flame2D_Quad_Block &SolnBlk,
-				    const int Block_Number,
-				    const int Output_Title,
-				    ostream &Out_File);
-
-extern void Output_Ringleb_Error(Flame2D_Quad_Block &SolnBlk,
-				 double &l1_norm,
-				 double &l2_norm,
-				 double &max_norm,
-				 int &numberofactivecells);
-
-extern void Output_Viscous_Channel(Flame2D_Quad_Block &SolnBlk,
-				   const int Block_Number,
-				   const int Output_Title,
-				   ostream &Out_File,
-				   double &l1_norm,
-				   double &l2_norm,
-				   double &max_norm,
-				   double &Vwall,
-				   const double dp);
-
-extern void Output_Flat_Plate(Flame2D_Quad_Block &SolnBlk,
-			      const int Block_Number,
-			      const int Output_Title_Soln,
-			      ostream &Out_File_Soln,
-			      const int Output_Title_Skin,
-			      ostream &Out_File_Skin,
-			      const Flame2D_pState &Winf,
-			      double &l1_norm,
-			      double &l2_norm,
-			      double &max_norm);
-			      
-extern void Output_Driven_Cavity_Flow(Flame2D_Quad_Block &SolnBlk,
-				      const int Block_Number,
-				      const int Output_Title,
-				      ostream &Out_File_u,
-				      ostream &Out_File_v,
-				      const double &Re,
-				      const double &Vwall,
-				      const double &length);
-
-extern int Output_Quasi3D_Tecplot(Flame2D_Quad_Block *Soln_ptr,
-				  AdaptiveBlock2D_List &Soln_Block_List,
-				  Flame2D_Input_Parameters &IP,
-				  const int Number_of_Time_Steps,
-				  const double &Time);
-
-extern void Output_Quasi3D_Tecplot(Flame2D_Quad_Block &SolnBlk,
-				   Flame2D_Input_Parameters &IP,
-				   const int Number_of_Time_Steps,
-				   const double &Time,
-				   const int Block_Number,
-				   const int Output_Title,
-				   ostream &Out_File);
-
-int Set_Equilibrium_State(Flame2D_Quad_Block &SolnBlk);
 
 /*************** END FLAME2D ***************************************/
 

@@ -41,6 +41,13 @@ NEW
 //Enviroment Flag 
 #define PATHVAR "CFFC_Path"
 
+//! Composition flag:
+//! This flag species what method was used to specify 
+//! the reference composition.
+enum CompType { FLAME2D_INPUT_MASS_FRACTIONS,
+		FLAME2D_INPUT_MOLE_FRACTIONS,
+		FLAME2D_INPUT_EQUIVALENCE_RATIO };
+
 /*!
  * Class:  Flame2D_Input_Parameters
  *
@@ -68,7 +75,8 @@ class Flame2D_Input_Parameters{
   int i_Time_Integration;
   int Time_Accurate, Local_Time_Stepping, 
       Maximum_Number_of_Time_Steps, N_Stage;
-  double CFL_Number, Time_Max;
+  double CFL_Number, Time_Max, Time_Step;
+  bool Fixed_Time_Step;
 
   //! source term time-step size multiplyer
   double Source_Term_Multiplyer;
@@ -125,21 +133,23 @@ class Flame2D_Input_Parameters{
   //@}
 
   //@{ @name Chemical reacting flow inpput parameters.
+  Flame2D_pState Wo;
+  //! Number of species
+  int num_species;
   //! Array of mass fractions
   double *mass_fractions;
-  Flame2D_pState Wo;
   //! Fuel species
   char Fuel_Species[INPUT_PARAMETER_LENGTH_FLAME2D];
   //! Fuel species
   double equivalence_ratio;
   //!laminar flame speed [m/s]
   double flame_speed;
-  //! Array of exit mass fractions
-  double *mass_fractions_out;
-
-  //! Transport data type
-  char trans_type[INPUT_PARAMETER_LENGTH_FLAME2D];
-  int  i_trans_type; 
+  //! flags for flow properties
+  bool reacting, constant_schmidt;
+  //! temporary storage
+  string schmidt_string, composition_string;
+  int i_specified_composition;
+  
 
   //! BC Pressure Gradient 
   double Pressure_Gradient;
@@ -312,7 +322,6 @@ class Flame2D_Input_Parameters{
   Flame2D_Input_Parameters(){
     Schmidt = NULL; 
     mass_fractions = NULL;
-    mass_fractions_out = NULL;
   }
 
   //! Default constructor.
@@ -329,6 +338,9 @@ class Flame2D_Input_Parameters{
   void Deallocate();
   //@}
 
+  //! set reference state
+  void setRefSolutionState(void);
+
   //@{ @name Input-output operators:
   friend ostream &operator << (ostream &out_file, const Flame2D_Input_Parameters &IP);
   friend istream &operator >> (istream &in_file, Flame2D_Input_Parameters &IP);
@@ -340,20 +352,88 @@ class Flame2D_Input_Parameters{
  * Flame2D_Input_Parameters -- Memory Management              *
  *************************************************************/
 inline void Flame2D_Input_Parameters::Allocate() {
-  mass_fractions = new double[Wo.NumSpecies()];
-  mass_fractions_out = new double[Wo.NumSpecies()];
-  Schmidt = new double[Wo.NumSpecies()];
+  mass_fractions = new double[num_species];
+  Schmidt = new double[num_species];
 }
 
 inline void Flame2D_Input_Parameters::Deallocate() {
   if(mass_fractions != NULL){
     delete[] mass_fractions; mass_fractions=NULL;
-    if (mass_fractions_out != NULL) delete[] mass_fractions_out; mass_fractions_out=NULL;
     if( Schmidt != NULL) delete[] Schmidt; Schmidt = NULL;
     Wo.DeallocateStatic(); 
   }
  
 } 
+
+
+/*************************************************************
+ * Flame2D_Input_Parameters -- Setup ref solution state.      *
+ *************************************************************/
+inline void Flame2D_Input_Parameters::setRefSolutionState(void) {
+
+  // load the mechanism
+  Flame2D_pState::setMixture(ct_mech_name, ct_mech_file);
+  
+  // setup static
+  Flame2D_pState::set_Mref(Mach_Number_Reference );
+  Flame2D_pState::set_gravity(gravity_z);
+  if (!reacting) Flame2D_pState::setNonReacting();
+
+  //-----------------------------------------------------------------
+  // for constant schmidt
+  //-----------------------------------------------------------------
+  if (constant_schmidt) {
+    if (!schmidt_string.empty()) 
+      Mixture::parse_schmidt_string(schmidt_string, Schmidt);
+    Flame2D_pState::setConstantSchmidt(Schmidt);
+  }
+
+  //-----------------------------------------------------------------
+  // Compute the species mass fractions, depending upon
+  // what was specified
+  //-----------------------------------------------------------------
+  // -> Mass fractions
+  if (i_specified_composition == FLAME2D_INPUT_MASS_FRACTIONS) {
+    
+    if (!composition_string.empty()) 
+      Mixture::parse_mass_string(composition_string, mass_fractions);      
+
+  // -> Mole fractions
+  } else if (i_specified_composition == FLAME2D_INPUT_MOLE_FRACTIONS) {
+
+    // store mole fractions in mass_fractions array
+    Mixture::parse_mole_string(composition_string, mass_fractions);
+
+    // convert molar fractions to mass fractions
+    double sum(0.0);
+    for(int i=0; i<num_species; i++) 
+      sum += mass_fractions[i]*Mixture::molarMass(i);
+    for(int i=0; i<num_species; i++) 
+      mass_fractions[i] = mass_fractions[i]*Mixture::molarMass(i)/sum;
+
+  // -> Equivalence Ratio
+  } else if (i_specified_composition == FLAME2D_INPUT_EQUIVALENCE_RATIO) {
+    Mixture::composition(Fuel_Species, 
+			 equivalence_ratio, 
+			 mass_fractions);
+  } // endif - composition
+    
+
+  //-----------------------------------------------------------------
+  // set the solution state
+  //-----------------------------------------------------------------
+  Wo.setState_TPY(Temperature, Pressure, mass_fractions);
+  Wo.setVelocity( Mach_Number*Wo.a()*cos(TWO*PI*Flow_Angle/360.00),
+		  Mach_Number*Wo.a()*sin(TWO*PI*Flow_Angle/360.00) );
+
+  // Now that the mass_fractions and schmidt numbers have been set,
+  // force the flags
+  i_specified_composition = FLAME2D_INPUT_MASS_FRACTIONS;
+  schmidt_string = "";
+  composition_string = "";
+
+}
+
 
 /*************************************************************
  * Flame2D_Input_Parameters -- Input-output operators.        *
@@ -484,17 +564,17 @@ inline ostream &operator << (ostream &out_file,
              << IP.Flux_Function_Type;
     /********** FLAME2D ****************************/
     out_file << "\n  -> Reaction Mechanism: " 
-	     << Mixture::mechName();
+	     << Flame2D_pState::mechName();
     out_file << "\n  -> Species: "<<IP.Wo.NumSpecies()
 	     << "\n  -> Initial mass fractions: ";
     for(int i=0; i<IP.Wo.NumSpecies(); i++){
-      out_file  <<"c["<<Mixture::speciesName(i)<<"]= ";
+      out_file  <<"c["<<Flame2D_pState::speciesName(i)<<"]= ";
       out_file  << IP.Wo.c(i)<<", ";
     } 
     if(IP.FlowType != FLOWTYPE_INVISCID){
       out_file << "\n  -> Schmidt Numbers for Viscous flow: ";
       for(int i=0; i <IP.Wo.NumSpecies(); i++){
-	out_file  <<"Sc["<<Mixture::speciesName(i)<<"]= ";
+	out_file  <<"Sc["<<Flame2D_pState::speciesName(i)<<"]= ";
 	out_file << IP.Schmidt[i]<<", ";
       }
     }
@@ -827,11 +907,11 @@ extern void Set_Default_Input_Parameters(Flame2D_Input_Parameters &IP);
 
 extern void Broadcast_Input_Parameters(Flame2D_Input_Parameters &IP);
 
-#ifdef _MPI_VERSION
-extern void Broadcast_Input_Parameters(Flame2D_Input_Parameters &IP,
-                                       MPI::Intracomm &Communicator, 
-                                       const int Source_CPU);
-#endif
+// #ifdef _MPI_VERSION
+// extern void Broadcast_Input_Parameters(Flame2D_Input_Parameters &IP,
+//                                        MPI::Intracomm &Communicator, 
+//                                        const int Source_CPU);
+// #endif
 
 extern void Get_Next_Input_Control_Parameter(Flame2D_Input_Parameters &IP);
 

@@ -518,8 +518,10 @@ inline char *Date_And_Time() {
 
 #define IC_GAS_MIX		       70
 #define IC_CHEM_CORE_FLAME             71
+#define IC_CORE_FLAME                  71
 #define IC_CHEM_INVERSE_FLAME          72
 #define IC_CHEM_1DFLAME                73
+#define IC_1DFLAME                     73
 #define IC_PRESSURE_GRADIENT_X         74
 #define IC_PRESSURE_GRADIENT_Y         75
 #define IC_HOMOGENEOUS_TURBULENCE      76

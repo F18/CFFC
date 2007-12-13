@@ -12,6 +12,9 @@
 #ifndef _MIXTURE_INCLUDED 
 #define _MIXTURE_INCLUDED
 
+//! include densematrix
+#include "../Math/Matrix.h"
+
 //! Cantera libraries
 #include <cantera/Cantera.h>      // main include
 #include <cantera/IdealGasMix.h>  // reacting, ideal gas mixture class
@@ -29,11 +32,11 @@ using namespace std;
 
 //Temperature convergence tolerance
 #define CONV_TOLERANCE  1e-8
-#define NUM_ITERATIONS  20
+#define NUM_ITERATIONS  25
 
 // If you define this variable, the number of species will be
 // predetermined for faster calculations.., however it is not as general 
-#define STATIC_NUMBER_OF_SPECIES 2 //2 AIR, 6 2STEP_CH4
+#define STATIC_NUMBER_OF_SPECIES 5 //2 AIR, 6 2STEP_CH4
 
 /////////////////////////////////////////////////////////////////////
 /// FUNCTION ROTOTYPES
@@ -73,13 +76,13 @@ public:
   //@{ @name constructors/destructors
   Mixture() : T(TREF), MW(0.0), Cp(0.0), hs(0.0), 
 	      hf(0.0), mu(0.0), kappa(0.0)
-  { Nullify(); Allocate(); for (int i=0; i<ns; i++) diff[i] = 0.0; }
+  { Nullify(); Allocate(); /*for (int i=0; i<ns; i++) diff[i] = 0.0;*/ }
   
   Mixture(const Mixture &M) : T(M.temperature()),
     MW(M.molarMass()), Cp(M.heatCapacity_p()), 
-    hs(M.enthalpySens()), hf(M.heatFormation()), mu(M.viscosity()), 
-    kappa(M.thermalCond())
-  { Nullify(); Allocate(); M.getDiffCoefs(diff); }
+    hs(M.enthalpySens()), hf(M.heatFormation()), 
+    mu(M.viscosity()), kappa(M.thermalCond())
+  { Nullify(); Allocate(); /*M.getDiffCoefs(diff);*/ }
 
   ~Mixture() { Deallocate(); }
 
@@ -90,8 +93,8 @@ public:
     hs = M.enthalpySens();
     hf = M.heatFormation();
     mu = M.viscosity();
-    kappa = M.thermalCond();
-    M.getDiffCoefs(diff);
+    //kappa = M.thermalCond();
+    //M.getDiffCoefs(diff);
   }
   //@}
 
@@ -114,6 +117,7 @@ public:
 
   //@{ @name Static accessors
   static int nSpecies(void) {return ns;};
+  static int nReactions(void) {return nr;};
   static double molarMass(const int&i) {return M[i];};
   static double heatFormation(const int&i) {return Hform[i];};
   static double LowTempRange(void) {return Tmin;};
@@ -125,6 +129,10 @@ public:
   //! allocate / deallocate for static memory
   static void AllocateStatic();
   static void DeallocateStatic();
+
+  //! returns the number of species for a mechanism
+  static int getNumSpecies(const string &mech_name,
+			   const string &mech_file);
 
   //! Static setup function
   static void setMixture(const string &mech_name,
@@ -155,6 +163,9 @@ private:
   void setState_DE(const double &rho, const double& e, const double tol = 1.e-4);
 
 public:
+  //! update thermal conductivity and diffusion coefficients
+  void update_transport(const double &rho, const double* y);
+
   /***************** Mixing Rules ********************
     The following constructors return "total" physical
     parameters based on mixture rules for each.
@@ -162,42 +173,22 @@ public:
   static double molarMass( const double* Y );
   static double heatFormation( const double* Y );
   double gasConstant(void) const;   
-//   static double gasConstant( const double* Y );   
-//   static double heatCapacity_p( const double &Temp, const double* y );
+  static double heatCapacity_p(const double &Temp, const double &Press, 
+			       const double* y);
   double heatCapacity_v(void) const;
-//   static double heatCapacity_v( const double &Temp, const double* y );
   double heatRatio(void) const;
-//   static double heatRatio( const double &Temp, const double* y );
   double internalEnergy() const;
-//   static double internalEnergy( const double &Temp, const double* y );
   double internalEnergySens() const;
-//   static double internalEnergySens( const double &Temp, const double* y );
   double enthalpy(void) const;
-//   static double enthalpy( const double &Temp, const double* y );
-//   static double enthalpySens( const double &Temp, const double* y );
-  double enthalpyPrime(void) const;
-  void getEnthalpySens( const double &Press, const double* y, double*h ) const;
-//   static double enthalpyPrime( const double &Temp, const double* y );
-//   static double viscosity(const double &Temp, const double* y);
-//   static double thermalCond(const double &Temp, const double* y);
-//   static double speciesGibbsFree(const double &Temp, const int &species);
-//   static double speciesDiffCoeff(const double &Temp, const double* y, const int &i);
+  static double enthalpy(const double &Temp, const double &Press, 
+			 const double* y);
+  void getEnthalpy( const double &Press, const double* y, double*h ) const;
   double schmidt(const double &rho, const int &i) const;
-//   static double schmidt(const double &Temp, const double &rho, const double* y, const int &i);
   double prandtl(void) const;
-//   static double prandtl(const double &Temp, const double* y);
   double lewis(const double &rho, const int &i) const;
-//   static double lewis(const double &Temp, const double &rho, const double* y, const int &i);
-
-//   static double temperature(const double& Press, const double* y);
-
   void getDihdDc( const double &Press, 
 		  const double* y, 
 		  double* dh ) const;
-//   static void getDihdDc(const double &Temp, 
-// 			const double &Press, 
-// 			const double* y, 
-// 			double* dh);
 
   /***************** Reaction Rates ******************
     The following functions use CANTERA to compute    
@@ -208,10 +199,15 @@ public:
   void getRates( const double &Press, 
 		 const double* y, 
 		 double* rr ) const;
-//   static void getRates( const double &Temp, 
-// 			const double &Press, 
-// 			const double* y, 
-// 			double* rr );
+  void dSwdU( ::DenseMatrix &dSdU,
+	      const double &rho,
+	      const double &Press,
+	      const double* y,
+	      const int &offset,
+	      const int &NSm1) const;
+  double dSwdU_max_diagonal( const double &rho,
+			     const double &Press,
+			     const double* y) const;
 
   /**************** Output Functions *************************/
   void output (ostream &out) const;
@@ -260,6 +256,7 @@ private:
 #else
   static int       ns; //!< Number of species
 #endif
+  static int      nr;              //!< Number of reactions
   static double Tmin;              //!< min temperature [k]
   static double Tmax;              //!< max temperature [k]
   static double* Sc_ref;           //!< reference species schmidt numbers
@@ -275,7 +272,7 @@ private:
   static Transport* ct_trans;     //!< the Cantera transport object
 
   //! Static storage
-  static double *r, *r0; 
+  static double *r, *r0, *c; 
   //@}
 
 
@@ -319,6 +316,7 @@ inline void Mixture :: AllocateStatic() {
     Hform = new double[ns]; 
     r = new double[ns]; 
     r0 = new double[ns]; 
+    c = new double[ns]; 
   }
 };
 
@@ -331,6 +329,7 @@ inline void Mixture :: DeallocateStatic() {
   if (Hform!=NULL) { delete[] Hform; Hform = NULL; } 
   if (r!=NULL) { delete[] r; r = NULL; } 
   if (r0!=NULL) { delete[] r0; r0 = NULL; } 
+  if (c!=NULL) { delete[] c; c = NULL; } 
 };
 
 /****************************************************
@@ -356,9 +355,8 @@ inline void Mixture :: output (ostream &out) const {
 
 /****************************************************
  * Set the state of the mixture and update all the properties.
- *
- * \param Temp Mixture temperature [k]
- * \param y Mixture species mass fractions.
+ * State is set based on temperature, pressure, and
+ * species mass fractions
  ****************************************************/
 inline void Mixture :: setState_TPY(const double &Temp, 
 				    const double &Press, 
@@ -378,19 +376,28 @@ inline void Mixture :: setState_TPY(const double &Temp,
   hs = ct_gas->enthalpy_mass() - hf;
   Cp = ct_gas->cp_mass();
   mu = ct_trans->viscosity();
-  kappa = ct_trans->thermalConductivity();
+
+  //--------------------------------------------------------
+  // NO NEED TO STORE THESE
+  // kappa = ct_trans->thermalConductivity();
 
   // compute diffusion coefficient
-  if(isConstSchmidt){
-    double rho( Press / (gasConstant()*T) );
-    for (int i=0; i<ns; i++) diff[i] = mu/(rho*Sc_ref[i]);
-  } else {
-    ct_trans->getMixDiffCoeffs(diff);
-  }
+  // if(isConstSchmidt){
+  //   double rho( Press / (gasConstant()*T) );
+  //   for (int i=0; i<ns; i++) diff[i] = mu/(rho*Sc_ref[i]);
+  // } else {
+  //   ct_trans->getMixDiffCoeffs(diff);
+  // }
+  //--------------------------------------------------------
 
 
 }
 
+/****************************************************
+ * Set the state of the mixture and update all the properties.
+ * State is set based on density, pressure, and
+ * species mass fractions
+ ****************************************************/
 inline void Mixture :: setState_DPY(const double &rho, 
 				    const double &Press, 
 				    const double* y)
@@ -415,18 +422,27 @@ inline void Mixture :: setState_DPY(const double &rho,
   hs = ct_gas->enthalpy_mass() - hf;
   Cp = ct_gas->cp_mass();
   mu = ct_trans->viscosity();
-  kappa = ct_trans->thermalConductivity();
+
+  //--------------------------------------------------------
+  // NO NEED TO STORE THESE
+  // kappa = ct_trans->thermalConductivity();
 
   // compute diffusion coefficient
-  if(isConstSchmidt){
-    for (int i=0; i<ns; i++) diff[i] = mu/(rho*Sc_ref[i]);
-  } else {
-    ct_trans->getMixDiffCoeffs(diff);
-  }
+  // if(isConstSchmidt){
+  //   for (int i=0; i<ns; i++) diff[i] = mu/(rho*Sc_ref[i]);
+  // } else {
+  //   ct_trans->getMixDiffCoeffs(diff);
+  // }
+  //--------------------------------------------------------
 
 
 }
 
+/****************************************************
+ * Set the state of the mixture and update all the properties.
+ * State is set based on density, energy, and
+ * species mass fractions
+ ****************************************************/
 inline void Mixture :: setState_DEY(const double &rho, const double &e, 
 				    const double* y)
 {
@@ -443,19 +459,28 @@ inline void Mixture :: setState_DEY(const double &rho, const double &e,
   hs = ct_gas->enthalpy_mass() - hf;
   Cp = ct_gas->cp_mass();
   mu = ct_trans->viscosity();
-  kappa = ct_trans->thermalConductivity();
+
+  //--------------------------------------------------------
+  // NO NEED TO STORE THESE
+  // kappa = ct_trans->thermalConductivity();
 
   // compute diffusion coefficient
-  if(isConstSchmidt){
-    for (int i=0; i<ns; i++) diff[i] = mu/(rho*Sc_ref[i]);
-  } else {
-    ct_trans->getMixDiffCoeffs(diff);
-  }
+  // if(isConstSchmidt){
+  //   for (int i=0; i<ns; i++) diff[i] = mu/(rho*Sc_ref[i]);
+  // } else {
+  //   ct_trans->getMixDiffCoeffs(diff);
+  // }
+  //--------------------------------------------------------
 
 
 }
 
 
+/****************************************************
+ * Set the state of the mixture and update all the properties.
+ * State is set based on density, enthalpy, and
+ * species mass fractions
+ ****************************************************/
 inline void Mixture :: setState_DHY(const double &rho, const double &h, 
 				    const double* y)
 {
@@ -472,19 +497,28 @@ inline void Mixture :: setState_DHY(const double &rho, const double &h,
   hs = ct_gas->enthalpy_mass() - hf;
   Cp = ct_gas->cp_mass();
   mu = ct_trans->viscosity();
-  kappa = ct_trans->thermalConductivity();
 
-  // compute diffusion coefficient
-  if(isConstSchmidt){
-    for (int i=0; i<ns; i++) diff[i] = mu/(rho*Sc_ref[i]);
-  } else {
-    ct_trans->getMixDiffCoeffs(diff);
-  }
+  //--------------------------------------------------------
+  // NO NEED TO STORE THESE
+  // kappa = ct_trans->thermalConductivity();
+  // 
+  // // compute diffusion coefficient
+  // if(isConstSchmidt){
+  //   for (int i=0; i<ns; i++) diff[i] = mu/(rho*Sc_ref[i]);
+  // } else {
+  //   ct_trans->getMixDiffCoeffs(diff);
+  // }
+  //--------------------------------------------------------
 
 
 }
 
 
+/****************************************************
+ * Set the state of the mixture and update all the properties.
+ * State is set based on density, and enthalpy.
+ * Note, mass fractions should already be set.
+ ****************************************************/
 inline void Mixture :: setState_DH(const double &rho, const double& h, 
 				   const double tol) {
   double dt;
@@ -508,9 +542,15 @@ inline void Mixture :: setState_DH(const double &rho, const double& h,
        << "Mixture::setState_DH() - No convergence. dt = " << dt 
        << ". H = " << h 
        << ". n = " << n 
+       << ". T = " << ct_gas->temperature()
        << endl;
 }
 
+/****************************************************
+ * Set the state of the mixture and update all the properties.
+ * State is set based on density, and energy.
+ * Note, mass fractions should already be set.
+ ****************************************************/
 inline void Mixture :: setState_DE(const double &rho, const double& e, 
 				   const double tol) {
   double dt;
@@ -534,8 +574,35 @@ inline void Mixture :: setState_DE(const double &rho, const double& e,
        << "Mixture::setState_DE() - No convergence. dt = " << dt 
        << ". E = " << e
        << ". n = " << n 
+       << ". T = " << ct_gas->temperature()
        << endl;
 }
+
+
+/****************************************************
+ * Compute the remaining transport properties, i.e.
+ * get the thermal conductivity and the species 
+ * diffusivities.
+ ****************************************************/
+inline void Mixture :: update_transport(const double &rho, 
+					const double* y) {
+  // set the state
+  ct_gas->setMassFractions_NoNorm(y);
+  ct_gas->setTemperature(T);
+  ct_gas->setDensity(rho);
+
+  // thermal conductivity
+  kappa = ct_trans->thermalConductivity();
+
+  // compute diffusion coefficient
+  if(isConstSchmidt){
+    for (int i=0; i<ns; i++) diff[i] = mu/(rho*Sc_ref[i]);
+  } else {
+    ct_trans->getMixDiffCoeffs(diff);
+  }
+
+}
+
 
 /************************************************************************
   Calculates the concentration time rate of change of species from
@@ -554,6 +621,7 @@ inline void Mixture :: getRates( const double &Press,
   ct_gas->setMassFractions_NoNorm(y);
   ct_gas->setTemperature(T);
   ct_gas->setPressure(Press);
+  //ct_gas->setState_TPY(T, Press, y);
   ct_gas->getNetProductionRates(rr);
   for (int i=0; i<ns; i++){
     rr[i] = rr[i]*M[i];
@@ -576,10 +644,44 @@ inline void Mixture :: getDihdDc(const double &Press,
 }
 
 /****************************************************
+ * Mixture molecular mass [kg/mol]
+ ****************************************************/
+inline double Mixture :: molarMass( const double* y ) {
+  double sum( 0.0 );
+  for(int i=0; i<ns; i++){
+    sum += y[i]/M[i];
+  }
+  return 1.0/sum;
+}
+
+/****************************************************
+ * Mixture heat of formation [J/kg]
+ ****************************************************/
+inline double Mixture :: heatFormation( const double* y ) {
+  double sum( 0.0 );
+  for(int i=0; i<ns; i++){
+    sum += y[i]*Hform[i];
+  }
+  return sum;
+}
+
+/****************************************************
  * Mixture gas constant [kg/mol]
  ****************************************************/
 inline double Mixture :: gasConstant(void) const {
   return (Cantera::GasConstant/MW);
+}
+
+/****************************************************
+ * Mixture Heat Capacity (const pressure) J/(kg*K)
+ ****************************************************/
+inline double Mixture :: heatCapacity_p(const double &Temp, 
+					const double &Press, 
+					const double* y) {
+  ct_gas->setMassFractions_NoNorm(y);
+  ct_gas->setTemperature(Temp);
+  ct_gas->setPressure(Press);
+  return ct_gas->cp_mass();
 }
 
 /****************************************************
@@ -619,20 +721,23 @@ inline double Mixture :: enthalpy(void) const {
   return ( hs + hf );
 }
 
-/****************************************************
- * Derivative of specific enthalpy dh/dT
- * actually is just Cp as Cp = (dh/dT)_p
- ****************************************************/
-inline double Mixture :: enthalpyPrime(void) const {
-  return Cp;
+//! htotal = mass fraction * (hsensible + heatofform)
+inline double Mixture :: enthalpy(const double &Temp, 
+				  const double &Press, 
+				  const double* y) {
+  ct_gas->setMassFractions_NoNorm(y);
+  ct_gas->setTemperature(Temp);
+  ct_gas->setPressure(Press);
+  return ct_gas->enthalpy_mass();
 }
 
+
 /****************************************************
- * Individual Species sensible enthalpy
+ * Individual Species enthalpy
  ****************************************************/
-inline void Mixture :: getEnthalpySens( const double &Press, 
-					const double* y, 
-					double*h ) const {
+inline void Mixture :: getEnthalpy( const double &Press, 
+				    const double* y, 
+				    double*h ) const {
   ct_gas->setMassFractions_NoNorm(y);
   ct_gas->setTemperature(T);
   ct_gas->setPressure(Press);
@@ -640,12 +745,11 @@ inline void Mixture :: getEnthalpySens( const double &Press,
   for(int i=0; i<ns; i++) h[i] = ( h[i]*(Cantera::GasConstant/M[i])*T );
 }
 
-
 /****************************************************
  * Schmidt
  ****************************************************/
 inline double Mixture :: schmidt(const double &rho,
-				 const int &i) const {
+ 				 const int &i) const {
   if(isConstSchmidt){
     return Sc_ref[i];
   } else {
@@ -665,13 +769,15 @@ inline double Mixture :: prandtl(void) const {
  * Lewis
  ****************************************************/
 inline double Mixture :: lewis(const double &rho,
-			       const int &i) const {
+ 			       const int &i) const {
   if(isConstSchmidt) {
     return (kappa*Sc_ref[i])/( Cp*mu );
   } else {
     return kappa / ( Cp*rho*diff[i] );
   }
 }
+
+
 
 
 #endif // _MIXTURE_INCLUDED
