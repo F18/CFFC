@@ -19,6 +19,10 @@
 #include  "HexaSolverClasses.h"
 #endif  //_HEXA_SOLVER_CLASSES_INCLUDED
 
+#ifndef _HEXA_PRE_PROCESSING_INCLUDED
+#include "HexaPreProcessing.h"
+#endif //_HEXA_PRE_PROCESSING_INCLUDED
+
 #ifndef _HEXA_POST_PROCESSING_INCLUDED
 #include "HexaPostProcessing.h"
 #endif //_HEXA_POST_PROCESSING_INCLUDED
@@ -27,165 +31,9 @@
 #include "HexaExplicitSolver.h"
 #endif //_HEXA_EXPLICIT_SOLVER
 
-// #ifndef _NKS_INCLUDED
-// #include "../NewtonKrylovSchwarz/NKS.h"
-// #endif //_NKS_INCLUDED
-
-/*! *****************************************************
- * Routine: Initialize_Grid                             *
- *                                                      *
- * Create initial mesh.  Read mesh from grid definition *
- * or data files as specified by input parameters.      *
- *                                                      *
- ********************************************************/
-template<typename SOLN_pSTATE, typename SOLN_cSTATE>
-int Initialize_Grid(HexaSolver_Data &Data,
-		    HexaSolver_Solution_Data<SOLN_pSTATE, SOLN_cSTATE> &Solution_Data) {
-  
-  //NOTE: None of thes "GRID" functions pass back an error_flag...
-  int error_flag(0);
-
-  // The primary MPI processor creates the initial mesh.
-  if (CFFC_Primary_MPI_Processor()) {
-    Data.Initial_Mesh.Create_Grid(Solution_Data.Input.Grid_IP);
-    //Outputting solution input parameters
-    if (!Data.batch_flag) {
-      cout << Solution_Data.Input << "\n";
-      cout.flush(); 
-    }
-  } 
-
-  CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
-
-  //Broadcast the mesh to other MPI processors.
-  Data.Initial_Mesh.Broadcast();                    
-  
-  /* Create (allocate) list of hexahedral solution blocks on each processor. */
-  if (!Data.batch_flag) {
-    cout << "\n Creating multi-block octree data structure and assigning"
-	 << "\n  solution blocks corresponding to initial mesh.";
-    cout.flush();
-  } 
-  
-  // FROM AMR 
-  Create_Initial_Solution_Blocks<SOLN_pSTATE, SOLN_cSTATE>(Data.Initial_Mesh,
-							   Solution_Data.Local_Solution_Blocks,
-							   Solution_Data.Input,
-							   Data.Octree,
-							   Data.Global_Adaptive_Block_List,
-							   Data.Local_Adaptive_Block_List);
-  return error_flag;
-} 
-
-
-/*! *****************************************************
- * Routine: Initial_Conditions                          *
- *                                                      *
- *                                                      *
- ********************************************************/
-template<typename SOLN_pSTATE, typename SOLN_cSTATE>
-int Initial_Conditions(HexaSolver_Data &Data,
-		       HexaSolver_Solution_Data<SOLN_pSTATE, SOLN_cSTATE> &Solution_Data) {
-
-  int error_flag(0);
-  
-  /* Set the initial time level. */
-  Data.Time = ZERO;
-  Data.number_of_explicit_time_steps = 0;
-  Data.number_of_implicit_time_steps = 0;
-
-  /* Set the CPU time to zero. */
-  Data.processor_cpu_time.zero();
-  Data.total_cpu_time.zero();
-
-  /* Initialize the conserved and primitive state solution variables. */         
-  if (!Data.batch_flag) {
-    cout << "\n Prescribing initial data.";  cout.flush();
-  } 
-  
-  //Restart 
-  if (Solution_Data.Input.i_ICs == IC_RESTART) {
-    if (!Data.batch_flag){ 
-      cout << "\n Reading solution from restart data files."; 
-      cout.flush();
-    }
-
-    // Read Restart Octree
-    // error_flag = Read_Octree(Octree,Input);
-    if (!Data.batch_flag && error_flag) {
-      cout << "\n ERROR: Unable to open Octree data file on processor "
-	   << Data.Local_Adaptive_Block_List.ThisCPU<< ".\n";
-         cout.flush();
-    } 
-    error_flag = CFFC_OR_MPI(error_flag);
-    if (error_flag) return (error_flag);
-    
-    // Read Restart Solution Files
-    error_flag = Solution_Data.Local_Solution_Blocks.Read_Restart_Solution(Solution_Data.Input,  
-									   Data.Local_Adaptive_Block_List,
-									   Data.number_of_explicit_time_steps,  
-									   Data.Time,
-									   Data.processor_cpu_time);
-    if (!Data.batch_flag && error_flag) {
-      cout << "\n  ERROR: Unable to open restart input data file(s) "
-	   << "on processor "<< CFFC_MPI::This_Processor_Number<< ".\n";
-      cout.flush();
-    } 
-    
-    error_flag = CFFC_OR_MPI(error_flag);
-    if (error_flag) return (error_flag);
-    
-    // Ensure each processor has the correct number of steps and time!!!
-    Data.number_of_explicit_time_steps = CFFC_Maximum_MPI(Data.number_of_explicit_time_steps); 
-    Data.number_of_implicit_time_steps = CFFC_Maximum_MPI(Data.number_of_implicit_time_steps);
-    Data.Time = CFFC_Maximum_MPI(Data.Time);
-    Data.processor_cpu_time.cput = CFFC_Maximum_MPI(Data.processor_cpu_time.cput);
-
-    Solution_Data.Input.Maximum_Number_of_Time_Steps = 
-      CFFC_Maximum_MPI(Solution_Data.Input.Maximum_Number_of_Time_Steps);
-   
-    // NON RESTART 
-  } else {    
-
-     if (Solution_Data.Input.i_Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
-         Solution_Data.Input.i_Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ){ 
-    /////////////////////////////////////////////////////
-    RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>  Create_Turbulence(HAWORTH_POINSOT);   //LES ONLY !GENERIC TYPE??????????
-    Create_Turbulence.Generate_Velocity_Fluctuations(Data.Initial_Mesh, Solution_Data.Input.Grid_IP);
-    //    cout << "\n\n INITIAL TURBULENT FLUCTUATIONS GENERATED. \n\n";
-   ///////////////////////////////////////////////////// 
-     } 
-
-    error_flag = Wall_Distance(Solution_Data.Local_Solution_Blocks.Soln_Blks,  // Turbulence function in GENERIC TYPE????
-			       Data.Octree, 
-			       Data.Local_Adaptive_Block_List);
-    if (!Data.batch_flag && error_flag) {
-      cout << "\n  ERROR: Difficulty determining the wall distance "
-	   << "on processor "<< CFFC_MPI::This_Processor_Number
-	   << ".\n";
-      cout.flush();
-    } 
-    
-    error_flag = CFFC_OR_MPI(error_flag);
-    if (error_flag) return (error_flag);
-    
-    Solution_Data.Local_Solution_Blocks.ICs(Solution_Data.Input);
-  } 
-
-   /* Send solution information between neighbouring blocks to complete
-      prescription of initial data. */   
-  Send_All_Messages<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >(Solution_Data.Local_Solution_Blocks.Soln_Blks,
-							   Data.Local_Adaptive_Block_List,
-							   Solution_Data.Local_Solution_Blocks.Soln_Blks[0].NumVar(),
-							   OFF);
-  
-  /* Prescribe boundary data consistent with initial data. */
-  Solution_Data.Local_Solution_Blocks.BCs(Solution_Data.Input);
-  
-  return error_flag;
-
-}
-
+#ifndef _NKS_INCLUDED
+#include "../NewtonKrylovSchwarz/NKS.h"
+#endif //_NKS_INCLUDED
 
 /*! *****************************************************
  * Routine: HexaSolver                                  *
@@ -219,82 +67,73 @@ int HexaSolver(char *Input_File_Name_ptr,int batch_flag){
     Loop until command_flag is set to TERMINATE_CODE, most likely by
     Input Parameters read in Post_Processing.
   *************************************************************************/  
-  while(Solution_Data.command_flag != TERMINATE_CODE){
+  while (Solution_Data.command_flag != TERMINATE_CODE) {
    
-    /*! **************** INITIAL GRID & SOLUTION SPACE **********************
-      Create initial mesh and allocate Chem2D solution variables for 
-      specified IBVP/BVP problem. 
-    *************************************************************************/    
+    /*! **************** INITIAL GRID & SOLUTION BLOCKS *********************************
+      Create initial mesh and allocate solution variables for specified IBVP/BVP problem. 
+    *************************************************************************************/    
     
     // New Calculation (  != CONTINUE_CODE )
-    if(Solution_Data.command_flag == EXECUTE_CODE) { 
-
+    if (Solution_Data.command_flag == EXECUTE_CODE) { 
       CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization. 
 
-      error_flag = Initialize_Grid(Data,Solution_Data);      
+      error_flag = Initialize_Solution_Blocks(Data,Solution_Data);      
       error_flag = CFFC_OR_MPI(error_flag);
       if (error_flag) return (error_flag);
 
       error_flag = Initial_Conditions(Data,Solution_Data);      
       error_flag = CFFC_OR_MPI(error_flag);
       if (error_flag) return (error_flag);
-    }
+    } /* endif */
     
     /*! *********************** MAIN SOLVER ****************************************
       Solve IBVP or BVP for conservation form of equations on multi-block 
       solution-adaptive quadrilateral mesh.                                  
     ****************************************************************************/    
     CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.    
+    if (!Data.batch_flag) cout << "\n\n Initialization of mesh and solution data complete on " << Date_And_Time() << ".";
     
+    // Open Progress File 
+    if (CFFC_Primary_MPI_Processor()) {    
+      error_flag = Open_Progress_File(Data.residual_file,
+				      Solution_Data.Input.Output_File_Name,
+				      Data.number_of_explicit_time_steps);
+      if (error_flag) {
+	cout << "\n ERROR: Unable to open residual file for the calculation.\n";
+	cout.flush(); return (error_flag);
+      } /* endif */
+    } /* endif */
+
     /********************** EXPLICIT **********************************/  
-    if( (Data.number_of_explicit_time_steps < Solution_Data.Input.Maximum_Number_of_Time_Steps) ||
-	(Solution_Data.Input.Time_Accurate && Solution_Data.Input.Time_Max > Data.Time) ) {    
-      
-      if(Solution_Data.Input.i_Time_Integration == TIME_STEPPING_MULTIGRID){
-	cerr<< "\n MULTIGRID would be here, but not yet. \n"; return error_flag;
+    if ((Data.number_of_explicit_time_steps < Solution_Data.Input.Maximum_Number_of_Time_Steps) ||
+	(Solution_Data.Input.Time_Accurate && Solution_Data.Input.Time_Max > Data.Time)) {    
+      if (Solution_Data.Input.i_Time_Integration == TIME_STEPPING_MULTIGRID) {
+	cerr << "\n MULTIGRID would be here, but not yet. \n"; return error_flag;
       } else {
-	error_flag = Hexa_MultiStage_Explicit_Solver<SOLN_pSTATE, SOLN_cSTATE>
-	  (Data,Solution_Data);
-      }
-    }
+	error_flag = Hexa_MultiStage_Explicit_Solver<SOLN_pSTATE, SOLN_cSTATE>(Data,
+                                                                               Solution_Data);
+      } /* endif */
+    } /* endif */
 
     /********************** IMPLICIT **********************************/  
-    if(Data.number_of_implicit_time_steps < Solution_Data.Input.NKS_IP.Maximum_Number_of_NKS_Iterations){
-      cerr<< "\n NKS would be here, but not yet. \n"; return error_flag;
-      //   	error_flag = Hexa_Newton_Krylov_Schwarz_Solver<SOLN_pSTATE, SOLN_cSTATE> 
-      //       	  (Data,Solution_Data);
-    }
-     
+    if (Data.number_of_implicit_time_steps < Solution_Data.Input.NKS_IP.Maximum_Number_of_NKS_Iterations) {
+      Hexa_Newton_Krylov_Schwarz_Solver<SOLN_pSTATE, SOLN_cSTATE> NKS(Data, Solution_Data);
+      error_flag = NKS.Solve();
+    } /* endif */
+    
+    // Close Progress File 
+    if (CFFC_Primary_MPI_Processor()) error_flag = Close_Progress_File(Data.residual_file);
+    if (error_flag) return (error_flag);
+
     /*! ************************** POST PROCESSSING *******************************
       Solution calculations complete. Write 3D solution to output and restart files  
       as required, reset solution parameters, and run other cases as specified 
       by input parameters.        
     *******************************************************************************/     
     CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.    
+    if (!Data.batch_flag) cout << "\n";
 
     error_flag = Hexa_Post_Processing(Data,Solution_Data);   
-
-     if (Solution_Data.Input.i_Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
-         Solution_Data.Input.i_Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ){ 
-       double u_average, v_average, w_average, sqr_u; 
-       Average_V(Solution_Data.Local_Solution_Blocks.Soln_Blks,  
-	         Data.Local_Adaptive_Block_List,
-                 Solution_Data.Input.Grid_IP,
-                 u_average, v_average, w_average);
-       Average(Solution_Data.Local_Solution_Blocks.Soln_Blks,  
-	       Data.Local_Adaptive_Block_List,
-               Solution_Data.Input.Grid_IP,
-               u_average, v_average, w_average, sqr_u);
-       Turbulent_Burning_Rate(Solution_Data.Local_Solution_Blocks.Soln_Blks,  
-			      Data.Local_Adaptive_Block_List,
-			      Solution_Data.Input.Grid_IP);
-/*        Longitudinal_Correlation(Data.Octree, */
-/*                                 Data.Global_Adaptive_Block_List, */
-/* 			        Data.Local_Adaptive_Block_List, */
-/*                                 Solution_Data.Local_Solution_Blocks.Soln_Blks,   */
-/* 			        Solution_Data.Input.Grid_IP, */
-/*                                 u_average, sqr_u); */
-     } 
     error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return (error_flag);
 
@@ -306,5 +145,4 @@ int HexaSolver(char *Input_File_Name_ptr,int batch_flag){
 
 
 #endif // _HEXA_SOLVER_INCLUDED
-
 

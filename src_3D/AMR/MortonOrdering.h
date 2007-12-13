@@ -95,7 +95,7 @@ inline int* Octree_DataStructure_Morton(Octree_DataStructure &QTD, int *array_pt
   for(unsigned int x = 0; x<QTD.NRi; x++)
     for (unsigned int y = 0; y<QTD.NRj; y++)
       for (unsigned int z = 0; z<QTD.NRk; z++){
-      if(QTD.Roots[x][y][z].childTNW_ptr != NULL || QTD.Roots[x][y][z].block.used == 1 ) {
+      if(QTD.Roots[x*y*z].childTNW_ptr != NULL || QTD.Roots[x*y*z].block.used == 1 ) {
 	//If it has no children and is not being used then it must be a 'hole'
 	maxn = max(QTD.NRi,max(QTD.NRj,QTD.NRk));
 	block_array[roots_count].x = x;
@@ -111,7 +111,7 @@ inline int* Octree_DataStructure_Morton(Octree_DataStructure &QTD, int *array_pt
   sort(&block_array[0], roots_count);
 
   for(roots_count = 0; roots_count<num_of_blocks; roots_count++){
-    array_ptr = OctreeBlock_Morton(QTD.Roots[block_array[roots_count].x][block_array[roots_count].y][block_array[roots_count].z], 
+    array_ptr = OctreeBlock_Morton(QTD.Roots[roots_count], 
                                    array_ptr);
 
   }
@@ -221,18 +221,21 @@ int Morton_ReOrdering_of_Solution_Blocks(Octree_DataStructure                   
     //manipulate Octree & Local_Adaptive_Block_List, 
     
     //********** Need to recall these functions even though they were called within Read_Octree *********
-   
-    // Find the neighbours of the root blocks.
-    Octree_DataStructure::Find_Neighbours_of_Root_Solution_Blocks(Octree);
+
+   // For unstructured root blocks, the information of neighbours of root solution blocks
+    // has been assigned in the create intial solution blocks. Xinfeng Gao Oct.18 2007.
+
+/*     // Find the neighbours of the root blocks. */
+/*     Octree_DataStructure::Find_Neighbours_of_Root_Solution_Blocks(Octree); */
     
     // Modify block neighbours for grid geometries with 
     //periodic boundaries, etc. 
     Octree_DataStructure::Modify_Neighbours_of_Root_Solution_Blocks(Octree, IPs.Grid_IP.i_Grid);
-  
+    
     // Determine the neighbouring blocks of all used (active)
     //solution blocks in the octree data structure. This will
     //also copy block information to local processor solution block list. 
-     Octree_DataStructure::Find_Neighbours(Octree, Local_Adaptive_Block_List);
+    // Octree_DataStructure::Find_Neighbours(Octree, Local_Adaptive_Block_List);
 
     //******************************************************
     
@@ -274,35 +277,41 @@ int Morton_ReOrdering_of_Solution_Blocks(Octree_DataStructure                   
     /* Send solution information between neighbouring blocks to complete
        prescription of initial data. */
     
-    CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
-   
-   
-/*    cout <<" \n MO- Send_All_Messages() ON ";cout.flush();
-      error_flag = Send_All_Messages(Local_SolnBlk, 
-				   Local_Adaptive_Block_List,
-				   NUM_COMP_VECTOR3D,
-				   ON);
-     cout<<"\n MO- Send_All_Messages() OFF ";cout.flush();
-   if (!error_flag) error_flag = Send_All_Messages(Local_SolnBlk, 
-						    Local_Adaptive_Block_List,
-						    Local_SolnBlk[0].NumVar(),
-						    OFF);
-   if (error_flag) {
-      cout << "\n  ERROR: Message passing error during  solution intialization "
-	   << "on processor "
-	   << Local_Adaptive_Block_List.ThisCPU
-	   << ".\n";
-      cout.flush();
-    } // endif 
-  
-    error_flag = CFFC_OR_MPI(error_flag);
-    if (error_flag) return (error_flag);
-*/    
+/*     CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.  */
+/*     // First send mesh and geometry information. */
+/*     error_flag = Send_Messages_Mesh_Geometry_Only<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> > */
+/*                     (Local_Solution_Blocks,  */
+/*                      Local_Adaptive_Block_List); */
+/*     if (error_flag) { */
+/*         cout << "\n ERROR: Message passing error during geometry intialization " */
+/*              << "on processor " */
+/*              << Local_Adaptive_Block_List.ThisCPU */
+/*              << ".\n"; */
+/*         cout.flush(); */
+/*     } /\* endif *\/ */
+/*     error_flag = CFFC_OR_MPI(error_flag); */
+/*     if (error_flag) return (error_flag); */
+/*     // Correct exterior nodes to match with message passed geometry information. */
+/*     Solution_Data.Local_Solution_Blocks.Correct_Grid_Exterior_Nodes(Data.Local_Adaptive_Block_List);\ */
+/*     // Now send solution information and data. */
+/*     error_flag = Send_Messages<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> > */
+/*                     (Local_Solution_Blocks,  */
+/*                      Local_Adaptive_Block_List); */
+/*     if (error_flag) { */
+/*        cout << "\n ERROR: Message passing error during solution intialization " */
+/*             << "on processor " */
+/*             << Local_Adaptive_Block_List.ThisCPU */
+/*             << ".\n"; */
+/*        cout.flush(); */
+/*     } /\* endif *\/ */
+/*     error_flag = CFFC_OR_MPI(error_flag); */
+/*     if (error_flag) return (error_flag); */
 
     /* Prescribe boundary data consistent with initial data. */
     Local_Solution_Blocks.BCs(IPs);
 
     return (0);
+
 }
 
 /******************************************************************************************

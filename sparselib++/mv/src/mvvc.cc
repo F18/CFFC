@@ -33,7 +33,7 @@
 
 MV_Vector_COMPLEX::MV_Vector_COMPLEX()  : p_(0), dim_(0) , ref_(0){};
 
-MV_Vector_COMPLEX::MV_Vector_COMPLEX(unsigned int n) : p_(new COMPLEX[n]), dim_(n), 
+MV_Vector_COMPLEX::MV_Vector_COMPLEX(unsigned int n) : p_(new MVPP_COMPLEX[n]), dim_(n), 
             ref_(0)
 {
     if (p_ == NULL)
@@ -45,8 +45,8 @@ MV_Vector_COMPLEX::MV_Vector_COMPLEX(unsigned int n) : p_(new COMPLEX[n]), dim_(
 }
 
 
-MV_Vector_COMPLEX::MV_Vector_COMPLEX(unsigned int n, const COMPLEX& v) : 
-        p_(new COMPLEX[n]), dim_(n), ref_(0)
+MV_Vector_COMPLEX::MV_Vector_COMPLEX(unsigned int n, const MVPP_COMPLEX& v) : 
+        p_(new MVPP_COMPLEX[n]), dim_(n), ref_(0)
 {
     if (p_ == NULL)
     {
@@ -62,10 +62,10 @@ MV_Vector_COMPLEX::MV_Vector_COMPLEX(unsigned int n, const COMPLEX& v) :
 //
 
 
-MV_Vector_COMPLEX& MV_Vector_COMPLEX::operator=(const COMPLEX & m) 
+MV_Vector_COMPLEX& MV_Vector_COMPLEX::operator=(const MVPP_COMPLEX & m) 
 {
 #ifdef TRACE_VEC
-    cout << "> MV_Vector_COMPLEX::operator=(const COMPLEX & m)  " << endl;
+    cout << "> MV_Vector_COMPLEX::operator=(const MVPP_COMPLEX & m)  " << endl;
 #endif
 
     // unroll loops to depth of length 4
@@ -86,7 +86,7 @@ MV_Vector_COMPLEX& MV_Vector_COMPLEX::operator=(const COMPLEX & m)
     for (; i<N; p_[i++] = m);   // finish off last piece...
 
 #ifdef TRACE_VEC
-    cout << "< MV_Vector_COMPLEX::operator=(const COMPLEX & m)  " << endl;
+    cout << "< MV_Vector_COMPLEX::operator=(const MVPP_COMPLEX & m)  " << endl;
 #endif
     return *this;
 }
@@ -108,7 +108,7 @@ MV_Vector_COMPLEX& MV_Vector_COMPLEX::newsize(unsigned int n)
     if (dim_ != n )                     // only delete and new if
     {                                   // the size of memory is really
         if (p_) delete [] p_;           // changing, otherwise just
-        p_ = new COMPLEX[n];              // copy in place.
+        p_ = new MVPP_COMPLEX[n];              // copy in place.
         if (p_ == NULL)
         {
             cerr << "Error : NULL pointer in operator= " << endl;
@@ -162,13 +162,13 @@ MV_Vector_COMPLEX& MV_Vector_COMPLEX::operator=(const MV_Vector_COMPLEX & m)
 
         // no need to test for overlap, since this region is new
         for (i =0; i< N; i++)       // careful not to use bcopy()
-            p_[i] = m.p_[i];        // here, but COMPLEX::operator= COMPLEX.
+            p_[i] = m.p_[i];        // here, but COMPLEX::operator= MVPP_COMPLEX.
     }
     return *this;   
 }
 
 
-MV_Vector_COMPLEX::MV_Vector_COMPLEX(const MV_Vector_COMPLEX & m) : p_(new COMPLEX[m.dim_]), 
+MV_Vector_COMPLEX::MV_Vector_COMPLEX(const MV_Vector_COMPLEX & m) : p_(new MVPP_COMPLEX[m.dim_]), 
     dim_(m.dim_) , ref_(0)
 {
     if (p_ == NULL)
@@ -183,12 +183,12 @@ MV_Vector_COMPLEX::MV_Vector_COMPLEX(const MV_Vector_COMPLEX & m) : p_(new COMPL
         p_[i] = m.p_[i];
 }
 
-MV_Vector_COMPLEX::MV_Vector_COMPLEX(COMPLEX* d, unsigned int n) : p_(new COMPLEX[n]), 
+MV_Vector_COMPLEX::MV_Vector_COMPLEX(MVPP_COMPLEX* d, unsigned int n) : p_(new MVPP_COMPLEX[n]), 
       dim_(n) , ref_(0)
 {
     if (p_ == NULL)
     {
-        cerr << "Error: Null pointer in MV_Vector_COMPLEX(COMPLEX*, int) " << endl;
+        cerr << "Error: Null pointer in MV_Vector_COMPLEX(MVPP_COMPLEX*, int) " << endl;
         exit(1);
     }
     for (int i=0; i<n; i++)
@@ -198,12 +198,12 @@ MV_Vector_COMPLEX::MV_Vector_COMPLEX(COMPLEX* d, unsigned int n) : p_(new COMPLE
 
 
 
-MV_Vector_COMPLEX::MV_Vector_COMPLEX(const COMPLEX* d, unsigned int n) : p_(new COMPLEX[n]), 
+MV_Vector_COMPLEX::MV_Vector_COMPLEX(const MVPP_COMPLEX* d, unsigned int n) : p_(new MVPP_COMPLEX[n]), 
       dim_(n) , ref_(0)
 {
     if (p_ == NULL)
     {
-        cerr << "Error: Null pointer in MV_Vector_COMPLEX(COMPLEX*, int) " << endl;
+        cerr << "Error: Null pointer in MV_Vector_COMPLEX(MVPP_COMPLEX*, int) " << endl;
         exit(1);
     }
     for (int i=0; i<n; i++)

@@ -159,3 +159,104 @@ int System::Restart_In_Progress()
 
 }
 
+/*------------------------------------------------------------------------------
+ *
+ * Routine: Change_Current_Working_Directory
+ *
+ * Purpose
+ * =======
+ *
+ *  This will change the current working directory to 
+ *  the path 'dirName'.
+ *  If the operation is successful the returned value is 0,
+ *  otherwise is -1.  
+ *
+ *----------------------------------------------------------------------------*/
+
+int System::Change_Current_Working_Directory(const std::string &dirName)
+
+{
+  return chdir(dirName.c_str());
+}
+
+/*------------------------------------------------------------------------------
+ *
+ * Routine: Check_If_File_Exists
+ *
+ * Purpose
+ * =======
+ *
+ *  This will check whether the file with the 'filename' exists on the disk.
+ *  This subroutine doesn't check to see what permissions the current user
+ *  has on the file.
+ *
+ *----------------------------------------------------------------------------*/
+
+bool System::Check_If_File_Exists(char * filename)
+
+{
+  struct stat stFileInfo;
+  bool blnReturn;
+  int intStat;
+
+  // Attempt to get the file attributes
+  intStat = stat(filename,&stFileInfo);
+  if(intStat == 0) {
+    // We were able to get the file attributes
+    // so the file obviously exists.
+    blnReturn = true;
+  } else {
+    // We were not able to get the file attributes.
+    // This may mean that we don't have permission to
+    // access the folder which contains this file. If you
+    // need to do that level of checking, lookup the
+    // return values of stat which will give you
+    // more details on why stat failed.
+    blnReturn = false;
+  }
+  
+  return(blnReturn);
+}
+
+/*------------------------------------------------------------------------------
+ *
+ * Routine: Check_If_File_Exists
+ *
+ * Purpose
+ * =======
+ *
+ *  Subroutine with 'filename' of type string instead of char*
+ *----------------------------------------------------------------------------*/
+
+bool System::Check_If_File_Exists(const std::string& filename)
+
+{
+  return Check_If_File_Exists(filename.c_str());
+}
+
+/*------------------------------------------------------------------------------
+ *
+ * Routine: Get_Current_Path
+ *
+ * Purpose
+ * =======
+ *
+ *  This will write the current path in 'buffer' variable.
+ *  If the operation is successful 'Result' is different than NULL.
+ *  If the operation is unsuccessful 'Result' is NULL,
+ *  and the subroutine throws an error.
+ *  Un unsuccessful operation is most likely due to the buffer size (too small!).
+ *
+ *----------------------------------------------------------------------------*/
+
+void System::Get_Current_Path(char * buffer) throw(std::runtime_error)
+
+{
+  char * Result(NULL);
+  Result = getcwd(buffer, _MAX_PATH_);
+
+  if (Result == NULL){
+    throw std::runtime_error("Get_Current_Path() ERROR: failed to identify the current directory.");
+  }
+
+}

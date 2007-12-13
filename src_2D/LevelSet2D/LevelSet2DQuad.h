@@ -1,6 +1,7 @@
-/**********************************************************************
- * LevelSet2DQuad.h: Header file defining 2D Level Set quadrilateral  *
- *                   mesh solution classes.                           *
+/******************************************************************//**
+ * \file LevelSet2DQuad.h:
+ *
+ * Header file defining 2D Level Set quadrilateral mesh solution classes.
  **********************************************************************/
 
 #ifndef _LEVELSET2D_QUAD_INCLUDED
@@ -46,11 +47,11 @@
 #define CLOSEDCURVE     50
 #define DOMAINBOUNDED   51
 
-#define CLEAN           0
-#define INFECTED        1
-#define UNCHECKED       2
+#define CLEAN           0  //!< Clean flag used in interface tracing.
+#define INFECTED        1  //!< Infected flag used in interface tracing.
+#define UNCHECKED       2  //!< Probably a deprecated flag.
 
-// Interface retrieval debugging option.
+//! Interface retrieval debugging option. Uncomment to print debugging files.
 // #define _RETRIEVE_DEBUG_
 
 /*!
@@ -99,6 +100,10 @@ class Trace_Data {
 
   Trace_Data(void) { Zero(); }
 
+  Trace_Data(int ii, int jj, int fface) {
+    i = ii; j = jj; face = fface;
+  }
+
   void Zero(void) { i = 0; j = 0; face = 0; }
 
   Trace_Data& operator =(const Trace_Data &T) {
@@ -142,12 +147,19 @@ class Trace_Data {
  *                 (x-direction, right-biased stencil) for the block.
  *      dUdxm   -- Return the unlimited variable solution gradients
  *                 (x-direction, left-biased stencil) for the block.
+ *     ddUdxx   -- Return the second-derivative of the variable solution
+ *                 (x-direction) for the block.
  *       dUdy   -- Return the unlimited variable solution gradients 
  *                 (y-direction) for the block.
  *      dUdyp   -- Return the unlimited variable solution gradients
  *                 (y-direction, right-biased stencil) for the block.
  *      dUdym   -- Return the unlimited variable solution gradients
  *                 (y-direction, left-biased stencil) for the block.
+ *     ddUdyy   -- Return the second-derivative of the variable solution
+ *                 (y-direction) for the block.
+ *      kappa   -- Return the curvature of the variable solution for the block.
+ *    gradMag   -- Return the centered magnitude of the gradient of the
+ *                 variable solution for the block.
  *        phi   -- Return the solution slope limiters.
  *         Uo   -- Return initial solution state.
  *        Uoo   -- Return initial solution state (before Eikonal iterations).
@@ -231,6 +243,10 @@ public:
                           **dUdxm, //!< Unlimited solution gradient (x-direction, left-biased stencil).
                           **dUdyp, //!< Unlimited solution gradient (y-direction, right-biased stencil).
                           **dUdym; //!< Unlimited solution gradient (y-direction, left-biased stencil).
+  LevelSet2DState        **ddUdxx, //!< Second-derivative of the solution (x-direction).
+                         **ddUdyy, //!< Second-derivative of the solution (y-direction).
+                          **kappa, //!< Curvature of the solution.
+                        **gradMag; //!< Magnitude of the centered gradient of the solution.
   LevelSet2DState           **phi; //!< Solution slope limiter.
   //@}
 
@@ -244,7 +260,7 @@ public:
   //@{ @name Interface storage and retracing information:
   Interface2D_List Interface_List; //!< Interface list.
   CutType                   **cut; //!< Cell cut types.
-  Trace_Data               *Trace; //!< Data to assist in interface tracing.
+  LinkedList<Trace_Data>    Trace; //!< Data to assist in interface tracing.
   //@}
 
   //@{ @name Creation, copy, and assignment constructors.
@@ -255,18 +271,18 @@ public:
     NCj = 0; JCl = 0; JCu = 0;
     Nghost = 0;
     // Solution variables.
-    U     = NULL; Uo    = NULL; Uoo = NULL;
-    dUdt  = NULL; dt    = NULL;
-    dUdx  = NULL; dUdy  = NULL;
-    dUdxp = NULL; dUdyp = NULL; dUdxm = NULL; dUdym = NULL;
-    phi   = NULL;
-    sign  = NULL;
-    FluxN = NULL; FluxS = NULL; FluxE = NULL; FluxW = NULL;
+    U      = NULL; Uo     = NULL; Uoo = NULL;
+    dUdt   = NULL; dt     = NULL;
+    dUdx   = NULL; dUdy   = NULL;
+    dUdxp  = NULL; dUdyp  = NULL; dUdxm = NULL; dUdym = NULL;
+    ddUdxx = NULL; ddUdyy = NULL; kappa = NULL; gradMag = NULL;
+    phi    = NULL;
+    sign   = NULL;
+    FluxN  = NULL; FluxS = NULL; FluxE = NULL; FluxW = NULL;
     // Interfaces variables.
     //Interface_List = NULL;
     // Cut class.
     cut = NULL;
-    Trace = NULL;
   }
 
   //! Copy constructor.
@@ -277,11 +293,12 @@ public:
     Nghost = Soln.Nghost;
     Grid = Soln.Grid;
     // Solution variables.
-    U     = Soln.U;     Uo    = Soln.Uo;    Uoo   = Soln.Uoo;
-    dUdt  = Soln.dUdt;  dt    = Soln.dt;
-    dUdx  = Soln.dUdx;  dUdy  = Soln.dUdy;
-    dUdxp = Soln.dUdxp; dUdyp = Soln.dUdyp;
-    dUdxm = Soln.dUdxm; dUdym = Soln.dUdym;
+    U     = Soln.U;       Uo    = Soln.Uo;    Uoo   = Soln.Uoo;
+    dUdt  = Soln.dUdt;    dt    = Soln.dt;
+    dUdx  = Soln.dUdx;    dUdy  = Soln.dUdy;
+    dUdxp = Soln.dUdxp;   dUdyp = Soln.dUdyp;
+    dUdxm = Soln.dUdxm;   dUdym = Soln.dUdym;
+    ddUdxx = Soln.ddUdxx; ddUdyy = Soln.ddUdyy; kappa = Soln.kappa; gradMag = Soln.gradMag;
     phi   = Soln.phi;
     sign  = Soln.sign;
     FluxN = Soln.FluxN; FluxS = Soln.FluxS; FluxE = Soln.FluxE; FluxW = Soln.FluxW;
@@ -465,6 +482,10 @@ inline void LevelSet2D_Quad_Block::allocate(const int Ni, const int Nj, const in
   dUdxp = new LevelSet2DState*[NCi];
   dUdym = new LevelSet2DState*[NCi];
   dUdyp = new LevelSet2DState*[NCi];
+  ddUdxx = new LevelSet2DState*[NCi];
+  ddUdyy = new LevelSet2DState*[NCi];
+  kappa = new LevelSet2DState*[NCi];
+  gradMag = new LevelSet2DState*[NCi];
   phi  = new LevelSet2DState*[NCi];
   sign = new double*[NCi];
   Uo   = new LevelSet2DState*[NCi];
@@ -482,6 +503,10 @@ inline void LevelSet2D_Quad_Block::allocate(const int Ni, const int Nj, const in
     dUdxp[i] = new LevelSet2DState[NCj];
     dUdym[i] = new LevelSet2DState[NCj];
     dUdyp[i] = new LevelSet2DState[NCj];
+    ddUdxx[i] = new LevelSet2DState[NCj];
+    ddUdyy[i] = new LevelSet2DState[NCj];
+    kappa[i] = new LevelSet2DState[NCj];
+    gradMag[i] = new LevelSet2DState[NCj];
     phi[i]  = new LevelSet2DState[NCj];
     sign[i] = new double[NCj];
     Uo[i]   = new LevelSet2DState[NCj];
@@ -495,6 +520,10 @@ inline void LevelSet2D_Quad_Block::allocate(const int Ni, const int Nj, const in
       dUdxp[i][j] = LevelSet2D_ZERO;
       dUdym[i][j] = LevelSet2D_ZERO;
       dUdyp[i][j] = LevelSet2D_ZERO;
+      ddUdxx[i][j] = LevelSet2D_ZERO;
+      ddUdyy[i][j] = LevelSet2D_ZERO;
+      kappa[i][j] = LevelSet2D_ZERO;
+      gradMag[i][j] = LevelSet2D_ZERO;
       phi[i][j]  = LevelSet2D_ZERO;
       sign[i][j] = ZERO;
       Uo[i][j]   = LevelSet2D_ZERO;
@@ -506,8 +535,6 @@ inline void LevelSet2D_Quad_Block::allocate(const int Ni, const int Nj, const in
   }
   FluxN = new LevelSet2DState[NCi]; FluxS = new LevelSet2DState[NCi];
   FluxE = new LevelSet2DState[NCj]; FluxW = new LevelSet2DState[NCj];
-  Trace = new Trace_Data[NCi*(NCj+1) + (NCi+1)*NCj];
-  for (int n = 0; n < NCi*(NCj+1) + (NCi+1)*NCj; n++) Trace[n].Zero();
 }
 
 /**********************************************************************
@@ -528,6 +555,10 @@ inline void LevelSet2D_Quad_Block::deallocate(void) {
     delete []dUdxp[i]; dUdxp[i] = NULL;
     delete []dUdym[i]; dUdym[i] = NULL;
     delete []dUdyp[i]; dUdyp[i] = NULL;
+    delete []ddUdxx[i]; ddUdxx[i] = NULL;
+    delete []ddUdyy[i]; ddUdyy[i] = NULL;
+    delete []kappa[i]; kappa[i] = NULL;
+    delete []gradMag[i]; gradMag[i] = NULL;
     delete []phi[i];   phi[i]  = NULL;
     delete []sign[i];  sign[i] = NULL;
     delete []Uo[i];    Uo[i]   = NULL;
@@ -543,12 +574,16 @@ inline void LevelSet2D_Quad_Block::deallocate(void) {
   delete []dUdxp; dUdxp = NULL;
   delete []dUdym; dUdym = NULL;
   delete []dUdyp; dUdyp = NULL;
+  delete []ddUdxx; ddUdxx = NULL;
+  delete []ddUdyy; ddUdyy = NULL;
+  delete []kappa; kappa = NULL;
+  delete []gradMag; gradMag = NULL;
   delete []phi;   phi  = NULL; 
   delete []sign;  sign = NULL; 
   delete []Uo;    Uo   = NULL;
   delete []Uoo;   Uoo  = NULL;
   delete []cut;   cut  = NULL;
-  delete []Trace; Trace = NULL;
+  //delete []Trace; Trace = NULL;
   delete []FluxN; FluxN = NULL; delete []FluxS; FluxS = NULL;
   delete []FluxE; FluxE = NULL; delete []FluxW; FluxW = NULL;
   NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0; Nghost = 0;
@@ -1914,6 +1949,20 @@ extern double Reconstruction_WeightedEssentiallyNonOscillatory(const double v1,
 extern void Reconstruction_WeightedEssentiallyNonOscillatory(LevelSet2D_Quad_Block &SolnBlk,
 							     const int n);
 
+extern void Reconstruction_Curvature(LevelSet2D_Quad_Block &SolnBlk,
+				     LevelSet2D_Input_Parameters &IP,
+				     const int n);
+
+extern void Reconstruction_Curvature_Laplacian(LevelSet2D_Quad_Block &SolnBlk,
+					       const int i,
+					       const int j,
+					       const int n);
+
+extern void Reconstruction_Curvature_Regular(LevelSet2D_Quad_Block &SolnBlk,
+					     const int i,
+					     const int j,
+					     const int n);
+
 extern void Calculate_Refinement_Criteria(double *refinement_criteria,
 					  LevelSet2D_Input_Parameters &IP,
 					  int &number_refinement_criteria,
@@ -1961,6 +2010,11 @@ extern int Reconstruction_EssentiallyNonOscillatory(LevelSet2D_Quad_Block *Soln_
 extern int Reconstruction_WeightedEssentiallyNonOscillatory(LevelSet2D_Quad_Block *Soln_ptr,
 							    AdaptiveBlock2D_List &Soln_Block_List,
 							    const int n);
+
+extern int Reconstruction_Curvature(LevelSet2D_Quad_Block *Soln_ptr,
+				    AdaptiveBlock2D_List &Soln_Block_List,
+				    LevelSet2D_Input_Parameters &Input_Parameters,
+				    const int n);
 
 extern void Set_Global_TimeStep(LevelSet2D_Quad_Block *Soln_ptr,
                                 AdaptiveBlock2D_List &Soln_Block_List,
@@ -2062,12 +2116,14 @@ extern int Trace_Interface_Spline(LevelSet2D_Quad_Block &SolnBlk,
 				  ofstream &dout);
 #endif
 
+extern void Update_Start_List(LevelSet2D_Quad_Block &SolnBlk,
+			      LinkedList<int> &start);
+
 extern void Flag_Infected_Cell(LevelSet2D_Quad_Block &SolnBlk,
 			       const int &ic,
 			       const int &jc,
 			       const double &epsilon,
-			       int &ncells,
-			       int &start);
+			       LinkedList<int> &start);
 
 extern void Clean_Infected_Cell(LevelSet2D_Quad_Block &SolnBlk,
 				const int &ic,
@@ -2118,7 +2174,8 @@ extern int Share_Interface_Information(LevelSet2D_Quad_Block *Soln_ptr,
  *                          Subroutines                               *
  **********************************************************************/
 
-extern double CFL_Hamilton_Jacobi(LevelSet2D_Quad_Block &SolnBlk);
+extern double CFL_Hamilton_Jacobi(LevelSet2D_Quad_Block &SolnBlk,
+				  LevelSet2D_Input_Parameters &IP);
 
 extern int dUdt_Multistage_Hamilton_Jacobi(LevelSet2D_Quad_Block &SolnBlk,
 					   const int i_stage,
@@ -2134,7 +2191,8 @@ extern int Update_Solution_Multistage_Hamilton_Jacobi(LevelSet2D_Quad_Block &Sol
  **********************************************************************/
 
 extern double CFL_Hamilton_Jacobi(LevelSet2D_Quad_Block *Soln_ptr,
-				 AdaptiveBlock2D_List &Soln_Block_List);
+				  AdaptiveBlock2D_List &Soln_Block_List,
+				  LevelSet2D_Input_Parameters &Input_Parameters);
 
 extern int dUdt_Multistage_Hamilton_Jacobi(LevelSet2D_Quad_Block *Soln_ptr,
 					   AdaptiveBlock2D_List &Soln_Block_List,
@@ -2150,6 +2208,11 @@ extern int Update_Solution_Multistage_Hamilton_Jacobi(LevelSet2D_Quad_Block *Sol
  * LevelSet2D_Quad_Block -- Eikonal Single Block External Subroutines *
  **********************************************************************/
 
+extern int Eikonal_Error(LevelSet2D_Quad_Block &SolnBlk,
+			 LevelSet2D_Input_Parameters &IP,
+			 double &block_error,
+			 double &block_area);
+
 extern double CFL_Eikonal(LevelSet2D_Quad_Block &SolnBlk);
 
 extern int dUdt_Multistage_Eikonal(LevelSet2D_Quad_Block &SolnBlk,
@@ -2163,6 +2226,12 @@ extern int Update_Multistage_Eikonal(LevelSet2D_Quad_Block &SolnBlk,
 /**********************************************************************
  * LevelSet2D_Quad_Block -- Eikonal Multi Block External Subroutines  *
  **********************************************************************/
+
+extern int Eikonal_Error(LevelSet2D_Quad_Block *Soln_ptr,
+			 LevelSet2D_Input_Parameters &IP,
+			 AdaptiveBlock2D_List &Soln_Block_List,
+			 double &global_error,
+			 double &global_area);
 
 extern double CFL_Eikonal(LevelSet2D_Quad_Block *Soln_ptr,
 			  AdaptiveBlock2D_List &Soln_Block_List);

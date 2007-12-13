@@ -463,112 +463,69 @@ void dFvdWf_Diamond(DenseMatrix &dFvdWf, DenseMatrix &dGvdWf,
   double kappa = QuadraturePoint_W.kappa();
   double R = NavierStokes2D_cState::R;
 
-  // X - DIRECTION 
-/* 
-                                         dFvdWf
+  // x-direction
+  //                                Fv:
+  // [                              0                               ]
+  // [                                                              ]
+  // [                       /4 ux   2 vy\                          ]
+  // [                       |---- - ----| mu                       ]
+  // [                       \ 3      3  /                          ]
+  // [                                                              ]
+  // [                         (uy + vx) mu                         ]
+  // [                                                              ]
+  // [  /4 ux   2 vy\                       kappa (-px rho + p rhox)]
+  // [u |---- - ----| mu + v (uy + vx) mu - ------------------------]
+  // [  \ 3      3  /                                   2           ]
+  // [                                               rho  R         ]
+  //
+  // Wfx := [rho, rhox, u, ux, uy, v, vx, vy, p, px]
 
-           [   /4 ux   2 vy\
-Fv_temp := [0, |---- - ----| mu, (uy + vx) mu,
-           [   \ 3      3  /
-           [
-
-      /4 ux   2 vy\                       kappa (-px rho + p rhox)      ]
-    u |---- - ----| mu + v (uy + vx) mu - ------------------------, 0, 0]
-      \ 3      3  /                                   2                 ]
-                                                   rho  R               ]
-
-        Wf_temp := [rho, u, v, p, k, omega, rhox, ux, uy, vx, vy, px, kx, omegax]
-
-    [0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0]
-
-    [                            4 mu             2 mu            ]
-    [0 , 0 , 0 , 0 , 0 , 0 , 0 , ---- , 0 , 0 , - ---- , 0 , 0 , 0]
-    [                             3                3              ]
-
-    [0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , mu , mu , 0 , 0 , 0 , 0]
-
-    [kappa (-px rho + 2 p rhox)     2 (-2 ux + vy) mu                    kappa rhox
-    [-------------------------- , - ----------------- , (uy + vx) mu , - ---------- , 0
-    [             3                         3                                 2
-    [          rho  R                                                      rho  R
-
-            kappa p   4 u mu                   2 u mu   kappa        ]
-    , 0 , - ------- , ------ , v mu , v mu , - ------ , ----- , 0 , 0]
-               2        3                        3      rho R        ]
-            rho  R                                                   ]
-
-    [0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0]
-
-    [0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0]
-*/
-
-  dFvdWf(1,7) += 4.0/3.0*mu;
-  dFvdWf(1,10) += -2.0/3.0*mu;
-  dFvdWf(2,8) += mu;
-  dFvdWf(2,9) += mu;
+  dFvdWf(1,3) += 4.0/3.0*mu;
+  dFvdWf(1,7) += -2.0/3.0*mu;
+  dFvdWf(2,4) += mu;
+  dFvdWf(2,6) += mu;
   dFvdWf(3,0) += kappa*(-px*rho+2.0*p*rhox)/(rho*rho*rho)/R;
-  dFvdWf(3,1) += -2.0/3.0*(-2.0*ux+vy)*mu;
-  dFvdWf(3,2) += (uy+vx)*mu;
-  dFvdWf(3,3) += -kappa*rhox/(rho*rho)/R;
-  dFvdWf(3,6) += -kappa*p/(rho*rho)/R;
-  dFvdWf(3,7) += 4.0/3.0*u*mu;
-  dFvdWf(3,8) += v*mu;
-  dFvdWf(3,9) += v*mu;
-  dFvdWf(3,10) += -2.0/3.0*u*mu;
-  dFvdWf(3,11) += kappa/rho/R;
+  dFvdWf(3,1) += -kappa*p/(rho*rho)/R;
+  dFvdWf(3,2) += -2.0/3.0*(-2.0*ux+vy)*mu;
+  dFvdWf(3,3) += 4.0/3.0*u*mu;
+  dFvdWf(3,4) += v*mu;
+  dFvdWf(3,5) += (uy+vx)*mu;
+  dFvdWf(3,6) += v*mu;
+  dFvdWf(3,7) += -2.0/3.0*u*mu;
+  dFvdWf(3,8) += -kappa*rhox/(rho*rho)/R;
+  dFvdWf(3,9) += kappa/rho/R;
 
-   // Y - DIRECTION 
-/*
-                                         dGvdWf
+  // y-direction
+  //                                 Gv:
+  // [                               0                                ]
+  // [                                                                ]
+  // [                          (uy + vx) mu                          ]
+  // [                                                                ]
+  // [                       /  2 ux   4 vy\                          ]
+  // [                       |- ---- + ----| mu                       ]
+  // [                       \   3      3  /                          ]
+  // [                                                                ]
+  // [                   /  2 ux   4 vy\      kappa (-py rho + p rhoy)]
+  // [u (uy + vx) mu + v |- ---- + ----| mu - ------------------------]
+  // [                   \   3      3  /                  2           ]
+  // [                                                 rho  R         ]
+  //
+  // Wfy := [rho, rhoy, u, ux, uy, v, vx, vy, p, py]
 
-           [                 /  2 ux   4 vy\
-Gv_temp := [0, (uy + vx) mu, |- ---- + ----| mu,
-           [                 \   3      3  /
-           [
-
-                       /  2 ux   4 vy\      kappa (-py rho + p rhoy)      ]
-    u (uy + vx) mu + v |- ---- + ----| mu - ------------------------, 0, 0]
-                       \   3      3  /                  2                 ]
-                                                     rho  R               ]
-
-        Wf_temp := [rho, u, v, p, k, omega, rhoy, ux, uy, vx, vy, py, ky, omegay]
-
-    [0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0]
-
-    [0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , mu , mu , 0 , 0 , 0 , 0]
-
-    [                              2 mu           4 mu            ]
-    [0 , 0 , 0 , 0 , 0 , 0 , 0 , - ---- , 0 , 0 , ---- , 0 , 0 , 0]
-    [                               3              3              ]
-
-    [kappa (-py rho + 2 p rhoy)                  2 (-ux + 2 vy) mu     kappa rhoy
-    [-------------------------- , (uy + vx) mu , ----------------- , - ---------- , 0 ,
-    [             3                                      3                  2
-    [          rho  R                                                    rho  R
-
-          kappa p     2 v mu                 4 v mu   kappa        ]
-    0 , - ------- , - ------ , u mu , u mu , ------ , ----- , 0 , 0]
-             2          3                      3      rho R        ]
-          rho  R                                                   ]
-
-    [0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0]
-
-    [0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0]
-*/
-  dGvdWf(1,8) += mu;
-  dGvdWf(1,9) += mu;
-  dGvdWf(2,7) += -2.0/3.0*mu;
-  dGvdWf(2,10) += 4.0/3.0*mu;
+  dGvdWf(1,4) += mu;
+  dGvdWf(1,6) += mu;
+  dGvdWf(2,3) += -2.0/3.0*mu;
+  dGvdWf(2,7) += 4.0/3.0*mu;
   dGvdWf(3,0) += kappa*(-py*rho+2.0*p*rhoy)/(rho*rho*rho)/R;
-  dGvdWf(3,1) += (uy+vx)*mu;
-  dGvdWf(3,2) += 2.0/3.0*(-ux+2.0*vy)*mu;
-  dGvdWf(3,3) += -kappa*rhoy/(rho*rho)/R;
-  dGvdWf(3,6) += -kappa*p/(rho*rho)/R;
-  dGvdWf(3,7) += -2.0/3.0*v*mu;
-  dGvdWf(3,8) += u*mu;
-  dGvdWf(3,9) += u*mu;
-  dGvdWf(3,10) += 4.0/3.0*v*mu;
-  dGvdWf(3,11) += kappa/rho/R;
+  dGvdWf(3,1) += -kappa*p/(rho*rho)/R;
+  dGvdWf(3,2) += (uy+vx)*mu;
+  dGvdWf(3,3) += -2.0/3.0*v*mu;
+  dGvdWf(3,4) += u*mu;
+  dGvdWf(3,5) += 2.0/3.0*(-ux+2.0*vy)*mu;
+  dGvdWf(3,6) += u*mu;
+  dGvdWf(3,7) += 4.0/3.0*v*mu;
+  dGvdWf(3,8) += -kappa*rhoy/(rho*rho)/R;
+  dGvdWf(3,9) += kappa/rho/R;
 }
 
 
@@ -582,43 +539,52 @@ Gv_temp := [0, (uy + vx) mu, |- ---- + ----| mu,
  *                                                      *
  ********************************************************/
 void dWfdWc_Diamond(DenseMatrix &dWfdWc_x, DenseMatrix &dWfdWc_y, 
-    const NavierStokes2D_Quad_Block &SolnBlk,
-    int Orient_face, int Rii, int Rjj, int Orient_cell) {
+                    const NavierStokes2D_Quad_Block &SolnBlk,
+                    int Orient_face, int Rii, int Rjj, int Orient_cell) {
 
-  double intp = ZERO, LL = ZERO, RR = ZERO, dwdx = ZERO, dwdy = ZERO;
+  double LL = ZERO, RR = ZERO, dwdx = ZERO, dwdy = ZERO;
 
   // Determine the influence of the cell on the face of interest.
   SolnBlk.Grid.dFacedC(LL, RR, Rii, Rjj, Orient_face, Orient_cell);
-
-  intp = 0.5 * (LL+RR);
-  for (int i = 0; i < 6; i++) {
-    dWfdWc_x(i, i) = intp;
-    dWfdWc_y(i, i) = intp;
-  } 
+	double intp = 0.5 * (LL+RR);
 
   // Find dwdx and dwdy, the geometric weights used to obtain the 
   // face solution gradients based on the cell-centred variables.
   SolnBlk.Grid.dDiamondPathdC(dwdx, dwdy, Rii, Rjj, Orient_face, LL, RR, Orient_cell);
 
-  dWfdWc_x( 6,0) = dwdx;
-  dWfdWc_x( 7,1) = dwdx;        
-  dWfdWc_x( 9,2) = dwdx;
-  dWfdWc_x(11,3) = dwdx;
-  dWfdWc_x(12,4) = dwdx;
-  dWfdWc_x(13,5) = dwdx;
+  // Wfx := [rho, rhox, u, ux, uy, v, vx, vy, p, px, k, kx, etc ...]
+  // Wfy := [rho, rhoy, u, ux, uy, v, vx, vy, p, py, k, ky, etc ...]
+  // Wc  := [rho, u, v, p, k, etc...]
 
-  dWfdWc_x( 8,1) = dwdy;
-  dWfdWc_x(10,2) = dwdy;
+  // density
+  dWfdWc_x(0,0) = intp;
+  dWfdWc_x(1,0) = dwdx;
+  dWfdWc_y(0,0) = intp;	
+  dWfdWc_y(1,0) = dwdy;
 
-  dWfdWc_y( 6,0) = dwdy;   
-  dWfdWc_y( 8,1) = dwdy;
-  dWfdWc_y(10,2) = dwdy;
-  dWfdWc_y(11,3) = dwdy;
-  dWfdWc_y(12,4) = dwdy;
-  dWfdWc_y(13,5) = dwdy;
+  // x-velocity
+  dWfdWc_x(2,1) = intp;
+  dWfdWc_x(3,1) = dwdx;
+  dWfdWc_x(4,1) = dwdy;
+  dWfdWc_y(2,1) = intp;
+  dWfdWc_y(3,1) = dwdx;
+  dWfdWc_y(4,1) = dwdy;
 
-  dWfdWc_y( 7,1) = dwdx;
-  dWfdWc_y( 9,2) = dwdx;
+  // y-velocity
+  dWfdWc_x(5,2) = intp;
+  dWfdWc_x(6,2) = dwdx;
+  dWfdWc_x(7,2) = dwdy;
+  dWfdWc_y(5,2) = intp;
+  dWfdWc_y(6,2) = dwdx;
+  dWfdWc_y(7,2) = dwdy;
+
+  // the rest, including pressure and all turbulence modelling.
+  for (int i = 3; i < dWfdWc_x.get_m(); i++) {
+    dWfdWc_x(8 + ((i-3) * 2), i) = intp;
+    dWfdWc_x(9 + ((i-3) * 2), i) = dwdx;
+    dWfdWc_y(8 + ((i-3) * 2), i) = intp;
+    dWfdWc_y(9 + ((i-3) * 2), i) = dwdy;
+  }
 }
 
 

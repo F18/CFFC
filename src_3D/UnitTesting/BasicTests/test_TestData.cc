@@ -1,4 +1,5 @@
-/* test_TestData.cc:  Regression tests for the TestData class. */
+/*!\file test_TestData.cc
+  \brief Regression tests for the TestData class. */
 
 /* Include required C++ libraries. */
 // None
@@ -6,7 +7,7 @@
 /* Using std namespace functions */
 // None
 
-/* Include CFDkit+caboodle header files */
+/* Include CFFC header files */
 #include "TestData.h"
 
 
@@ -38,8 +39,8 @@ namespace tut
     ensure_equals("digits", digits, 14);
     #endif
 
-    ensure_equals("output_file_name",strcmp(output_file_name, Global_TestSuit_Path) == 0, true);
-    ensure_equals("input_file_name",strcmp(input_file_name, Global_TestSuit_Path) == 0, true);
+    ensure_equals("output_file_name",strcmp(output_file_name, Global_TestSuite_Path) == 0, true);
+    ensure_equals("input_file_name",strcmp(input_file_name, Global_TestSuite_Path) == 0, true);
   }
 
   /*Test2: */
@@ -243,11 +244,11 @@ namespace tut
   template<>
   void object::test<13>()
   {
-    set_test_name("set_test_suit_path()");
+    set_test_name("set_test_suite_path()");
 
-    set_test_suit_path("UnitTesting/BasicTests");
-    ensure_equals("Global_TestSuit_Path",
-		  strcmp(Global_TestSuit_Path,"./UnitTesting/BasicTests/")==0,
+    set_test_suite_path("UnitTesting/BasicTests");
+    ensure_equals("Global_TestSuite_Path",
+		  strcmp(Global_TestSuite_Path,"./UnitTesting/BasicTests/")==0,
 		  true);
   }
 
@@ -258,7 +259,7 @@ namespace tut
   {
     set_test_name("Set output path");
 
-    set_test_suit_path("UnitTesting");
+    set_test_suite_path("UnitTesting");
     set_local_output_path("BasicTests");
     ensure_equals("Output_Path",
 		  strcmp(Local_Output_Path,"./UnitTesting/BasicTests/")==0,
@@ -272,7 +273,7 @@ namespace tut
   {
     set_test_name("Set input path");
 
-    set_test_suit_path("UnitTesting");
+    set_test_suite_path("UnitTesting");
     set_local_input_path("BasicTests");
     ensure_equals("Input_Path",
 		  strcmp(Local_Input_Path,"./UnitTesting/BasicTests/")==0,

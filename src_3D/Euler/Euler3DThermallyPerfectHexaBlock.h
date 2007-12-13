@@ -20,6 +20,39 @@
 /* Define required specializations. */
 
 template<>
+void Hexa_Block<Euler3D_ThermallyPerfect_pState,
+	        Euler3D_ThermallyPerfect_cState>::
+Output_Tecplot(Input_Parameters<Euler3D_ThermallyPerfect_pState,
+      		                Euler3D_ThermallyPerfect_cState> &IPs,
+               const int Number_of_Time_Steps,
+	       const double &Time,  
+               const int Block_Number,
+	       const int Output_Title,
+	       ostream &Out_File);
+				
+template<>
+void Hexa_Block<Euler3D_ThermallyPerfect_pState, 
+                Euler3D_ThermallyPerfect_cState>::
+Output_Cells_Tecplot(Input_Parameters<Euler3D_ThermallyPerfect_pState,
+      		                      Euler3D_ThermallyPerfect_cState> &IPs, 
+                     const int Number_of_Time_Steps,
+                     const double &Time,
+                     const int Block_Number,
+                     const int Output_Title,
+                     ostream &Out_File);
+
+template<>
+void Hexa_Block<Euler3D_ThermallyPerfect_pState, 
+                Euler3D_ThermallyPerfect_cState>::
+Output_Nodes_Tecplot(Input_Parameters<Euler3D_ThermallyPerfect_pState,
+      		                      Euler3D_ThermallyPerfect_cState> &IPs, 
+                     const int Number_of_Time_Steps,
+                     const double &Time,
+                     const int Block_Number,
+                     const int Output_Title,
+                     ostream &Out_File);
+
+template<>
 int Hexa_Block<Euler3D_ThermallyPerfect_pState, 
                Euler3D_ThermallyPerfect_cState>::
 Update_Solution_Multistage_Explicit(const int i_stage,

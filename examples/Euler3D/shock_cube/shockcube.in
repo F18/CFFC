@@ -12,9 +12,8 @@ Barth_Jespersen
 Flux_Function_Type =
 Roe
 ICs_Type = 
-Sod_Xdir
-#ShockBox
-#ICs_Type = 
+ShockBox
+#Sod_Xdir
 #Uniform
 #Schmidt=
 #1.0
@@ -29,22 +28,22 @@ Cube
 Number_of_Cells_Idir = 
 10
 Number_of_Cells_Jdir =
-40
+10
 Number_of_Cells_Kdir =
 10
 Number_of_Blocks_Idir = 
-1
+2
 Number_of_Blocks_Jdir =
-1
+2
 Number_of_Blocks_Kdir =
-1
+2
 ###############################
 # Set time stepping parameters
 ###############################
 CFL_Number =
 0.5
 Time_Max = 
-0.7
+0.5
 Maximum_Number_of_Time_Steps =
 0
 Number_of_Blocks_Per_Processor =

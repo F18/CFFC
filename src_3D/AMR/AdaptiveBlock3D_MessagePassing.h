@@ -23,7029 +23,559 @@
  *                                                      *
  * Loads the send message passing buffers for sending   *
  * solution information to neighbouring 3D              *
- * hexahedrial multi-block solution blocks with no      *
+ * hexahedral multi-block solution blocks with no       *
  * mesh resolution changes (works on entire 1D array of *
  * 3D solution blocks).                                 *
  *                                                      *
  ********************************************************/
 template <class Hexa_Soln_Block>
 int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
-                                          AdaptiveBlock3D_List &Soln_Block_List,
-                                          const int Number_of_Solution_Variables,
-                                          const int Send_Mesh_Geometry_Only) {
-
+                                          AdaptiveBlock3D_List &Soln_Block_List) {
   
- int i_blk, buffer_size_neighbour, 
-    i_min, i_max, i_inc, i, 
-    j_min, j_max, j_inc, j, 
-    k_min, k_max, k_inc, k, 
-    m, l;
-  int i_ref, j_ref, k_ref;
-  Vector3D x_ref;
+   int buffer_size, neighbour_buffer_size;
 
-  /* Check to see if the number of solution variables specified
-     in the calling argument is correct. */
+   int i_min, i_max, i_inc, i, 
+       j_min, j_max, j_inc, j, 
+       k_min, k_max, k_inc, k, 
+       m, l;
 
-  if (Number_of_Solution_Variables != NUM_COMP_VECTOR3D &&
-      Number_of_Solution_Variables != Soln_Blks[0].NumVar() &&
-      Number_of_Solution_Variables != Soln_Blks[0].NumVar() + NUM_COMP_VECTOR3D) {
-    return(1);
-  } /* endif */
+   int i_ref, j_ref, k_ref;
+
+   int i_bound_elem; // index for boundary element, face edge or vertex
+   int number_neighbours[MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK];
+   int n_imin, n_imax, n_jmin, n_jmax, n_kmin, n_kmax;
+   int i_temp;
    
-    /* Load the send buffers of each solution block. */
-
-  for ( i_blk = 0 ; i_blk < Soln_Block_List.Nblk ; ++i_blk ) {
-
-     ////////////////////////////////////////////////////////////////////
-    // Load send buffer for Top face neighbours of solution blocks. //
-    ////////////////////////////////////////////////////////////////////
-    if (Soln_Block_List.Block[i_blk].used &&
-	(Soln_Block_List.Block[i_blk].nT == 1) &&
-	(Soln_Block_List.Block[i_blk].info.level ==
-	 Soln_Block_List.Block[i_blk].infoT[0].level)) {
-       
-      if (!Send_Mesh_Geometry_Only) {
-	buffer_size_neighbour = Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost*
-	  abs(Soln_Block_List.Block[i_blk].infoT[0].dimen.i)*
-	  abs(Soln_Block_List.Block[i_blk].infoT[0].dimen.j)*
-	  Soln_Blks[i_blk].NumVar();
-
-       
-	if (Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar())
-	  buffer_size_neighbour = buffer_size_neighbour +
-	    Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost*
-	    (abs(Soln_Block_List.Block[i_blk].infoT[0].dimen.i)+1)*
-	    (abs(Soln_Block_List.Block[i_blk].infoT[0].dimen.j)+1)*
-	    NUM_COMP_VECTOR3D+
-	    4*Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost*abs(Soln_Block_List.Block[i_blk].infoT[0].dimen.i)+
-	    4*Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost*abs(Soln_Block_List.Block[i_blk].infoT[0].dimen.j);
-      
-      } else {
-	buffer_size_neighbour = Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost*
-	  (abs(Soln_Block_List.Block[i_blk].infoT[0].dimen.i)+1)*
-	  (abs(Soln_Block_List.Block[i_blk].infoT[0].dimen.j)+1)*
-	  NUM_COMP_VECTOR3D+
-	  4*Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost*abs(Soln_Block_List.Block[i_blk].infoT[0].dimen.i)+
-	  4*Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost*abs(Soln_Block_List.Block[i_blk].infoT[0].dimen.j);
-      } /* endif */
-      l = -1;
-      // Load ghost cell solution variable information as required.
-      if (!Send_Mesh_Geometry_Only) {
-	if (Soln_Block_List.Block[i_blk].infoT[0].dimen.i > 0 &&
-	    Soln_Block_List.Block[i_blk].infoT[0].dimen.j > 0 &&
-	    Soln_Block_List.Block[i_blk].infoT[0].dimen.k > 0) {
-	  i_min = Soln_Blks[i_blk].ICl;
-	  i_max = Soln_Blks[i_blk].ICu;
-	  i_inc = 1;
-	  j_min = Soln_Blks[i_blk].JCl;
-	  j_max = Soln_Blks[i_blk].JCu;
-	  j_inc = 1;
-	  k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost+1;
-	  k_max = Soln_Blks[i_blk].KCu;
-	  k_inc = 1;
-	} else if (Soln_Block_List.Block[i_blk].infoT[0].dimen.i > 0 &&
-		   Soln_Block_List.Block[i_blk].infoT[0].dimen.j > 0) {
-	  i_min = Soln_Blks[i_blk].ICl;
-	  i_max = Soln_Blks[i_blk].ICu;
-	  i_inc = 1;
-	  j_min = Soln_Blks[i_blk].JCl;
-	  j_max = Soln_Blks[i_blk].JCu;
-	  j_inc = 1;
-	  k_min = Soln_Blks[i_blk].KCu;
-	  k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost+1;
-	  k_inc = -1;
-	} else if (Soln_Block_List.Block[i_blk].infoT[0].dimen.j > 0 &&
-		   Soln_Block_List.Block[i_blk].infoT[0].dimen.k > 0) {
-	  i_min = Soln_Blks[i_blk].ICu;
-	  i_max = Soln_Blks[i_blk].ICl;
-	  i_inc = -1;
-	  j_min = Soln_Blks[i_blk].JCl;
-	  j_max = Soln_Blks[i_blk].JCu;
-	  j_inc = 1;
-	  k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost+1;
-	  k_max = Soln_Blks[i_blk].KCu;
-	  k_inc = 1;
-	} else if (Soln_Block_List.Block[i_blk].infoT[0].dimen.i > 0 &&
-		   Soln_Block_List.Block[i_blk].infoT[0].dimen.k > 0) {
-	  i_min = Soln_Blks[i_blk].ICl;
-	  i_max = Soln_Blks[i_blk].ICu;
-	  i_inc = 1;
-	  j_min = Soln_Blks[i_blk].JCu;
-	  j_max = Soln_Blks[i_blk].JCl;
-	  j_inc = -1;
-	  k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost+1;
-	  k_max = Soln_Blks[i_blk].KCu;
-	  k_inc = 1;
-	} else if (Soln_Block_List.Block[i_blk].infoT[0].dimen.k > 0) {
-	  i_min = Soln_Blks[i_blk].ICu;
-	  i_max = Soln_Blks[i_blk].ICl;
-	  i_inc = -1;
-	  j_min = Soln_Blks[i_blk].JCu;
-	  j_max = Soln_Blks[i_blk].JCl;
-	  j_inc = -1;
-	  k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost+1;
-	  k_max = Soln_Blks[i_blk].KCu;
-	  k_inc = 1;
-	} else if (Soln_Block_List.Block[i_blk].infoT[0].dimen.j > 0) {
-	  i_min = Soln_Blks[i_blk].ICu;
-	  i_max = Soln_Blks[i_blk].ICl;
-	  i_inc = -1;
-	  j_min = Soln_Blks[i_blk].JCl;
-	  j_max = Soln_Blks[i_blk].JCu;
-	  j_inc = 1;
-	  k_min = Soln_Blks[i_blk].KCu;
-	  k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost+1;
-	  k_inc = -1;
-	} else if (Soln_Block_List.Block[i_blk].infoT[0].dimen.i > 0) {
-	  i_min = Soln_Blks[i_blk].ICl;
-	  i_max = Soln_Blks[i_blk].ICu;
-	  i_inc = 1;
-	  j_min = Soln_Blks[i_blk].JCu;
-	  j_max = Soln_Blks[i_blk].JCl;
-	  j_inc = -1;
-	  k_min = Soln_Blks[i_blk].KCu;
-	  k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost+1;
-	  k_inc = -1;
-	} else {
-	  i_min = Soln_Blks[i_blk].ICu;
-	  i_max = Soln_Blks[i_blk].ICl;
-	  i_inc = -1;
-	  j_min = Soln_Blks[i_blk].JCu;
-	  j_max = Soln_Blks[i_blk].JCl;
-	  j_inc = -1;
-	  k_min = Soln_Blks[i_blk].KCu;
-	  k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost+1;
-	  k_inc = -1;
-	} /* endif */
-
-
-  
-        
-	i = Soln_Blks[i_blk].LoadSendBuffer(Soln_Block_List.message_noreschange_topface_sendbuf[i_blk],
-					   l,buffer_size_neighbour,
-					   i_min,i_max,i_inc,
-					   j_min,j_max,j_inc,
-					   k_min,k_max,k_inc);
-  
-	if (i != 0) return(2200);
-      } /* endif */
-      // Load ghost cell mesh information as required.
-      if (Send_Mesh_Geometry_Only || Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar()) {
-	if (Soln_Block_List.Block[i_blk].infoT[0].dimen.i > 0 &&
-	    Soln_Block_List.Block[i_blk].infoT[0].dimen.j > 0 &&
-	    Soln_Block_List.Block[i_blk].infoT[0].dimen.k > 0) {
-	  i_min = Soln_Blks[i_blk].Grid.INl;
-	  i_max = Soln_Blks[i_blk].Grid.INu;
-	  i_inc = 1;
-	  j_min = Soln_Blks[i_blk].Grid.JNl;
-	  j_max = Soln_Blks[i_blk].Grid.JNu;
-	  j_inc = 1;
-	  k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost;
-	  k_max = Soln_Blks[i_blk].Grid.KNu-1;
-	  k_inc = 1;
-	  i_ref = i_min;
-	  j_ref = j_min;
-	  k_ref = k_max+1;
-	} else if (Soln_Block_List.Block[i_blk].infoT[0].dimen.i > 0 &&
-	      Soln_Block_List.Block[i_blk].infoT[0].dimen.j > 0 ) {
-	    i_min = Soln_Blks[i_blk].Grid.INl;
-	    i_max = Soln_Blks[i_blk].Grid.INu;
-	    i_inc = 1;
-	    j_min = Soln_Blks[i_blk].Grid.JNl;
-	    j_max = Soln_Blks[i_blk].Grid.JNu;
-	    j_inc = 1;
-	    k_min = Soln_Blks[i_blk].Grid.KNu-1;
-	    k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost;
-	    k_inc = -1;
-	    i_ref = i_min;
-	    j_ref = j_min;
-	    k_ref = k_min+1;
-	} else if ( Soln_Block_List.Block[i_blk].infoT[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoT[0].dimen.k > 0) {
-	      i_min = Soln_Blks[i_blk].Grid.INu;
-	      i_max = Soln_Blks[i_blk].Grid.INl;
-	      i_inc = -1;
-	      j_min = Soln_Blks[i_blk].Grid.JNl;
-	      j_max = Soln_Blks[i_blk].Grid.JNu;
-	      j_inc = 1;
-	      k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost;
-	      k_max = Soln_Blks[i_blk].Grid.KNu-1;
-	      k_inc = 1;
-	      i_ref = i_min;
-	      j_ref = j_min;
-	      k_ref = k_max+1;
-	} else if (Soln_Block_List.Block[i_blk].infoT[0].dimen.i > 0 &&
-		  Soln_Block_List.Block[i_blk].infoT[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl;
-	        i_max = Soln_Blks[i_blk].Grid.INu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu;
-	        j_max = Soln_Blks[i_blk].Grid.JNl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_inc = 1;
-                i_ref = i_min;
-                j_ref = j_min;
-                k_ref = k_max+1;
-	} else if (Soln_Block_List.Block[i_blk].infoT[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu;
-	        i_max = Soln_Blks[i_blk].Grid.INl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu;
-	        j_max = Soln_Blks[i_blk].Grid.JNl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_inc = 1;
-                i_ref = i_min;
-                j_ref = j_min;
-                k_ref = k_max+1;
-	} else if (Soln_Block_List.Block[i_blk].infoT[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu;
-	        i_max = Soln_Blks[i_blk].Grid.INl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl;
-	        j_max = Soln_Blks[i_blk].Grid.JNu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost;
-	        k_inc = -1;
-                i_ref = i_min;
-                j_ref = j_min;
-                k_ref = k_min+1;
-	} else if (Soln_Block_List.Block[i_blk].infoT[0].dimen.i > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl;
-	        i_max = Soln_Blks[i_blk].Grid.INu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu;
-	        j_max = Soln_Blks[i_blk].Grid.JNl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost;
-	        k_inc = -1;
-                i_ref = i_min;
-                j_ref = j_min;
-                k_ref = k_min+1;
-	} else {
-	        i_min = Soln_Blks[i_blk].Grid.INu;
-	        i_max = Soln_Blks[i_blk].Grid.INl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu;
-	        j_max = Soln_Blks[i_blk].Grid.JNl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost;
-	        k_inc = -1;
-                i_ref = i_min;
-                j_ref = j_min;
-                k_ref = k_min+1;
-	} /* endif */
-
-	x_ref = Soln_Blks[i_blk].Grid.Node[i_ref][j_ref][k_ref].X; // Reference node location.
-	for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-	  for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-	    for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc )
-	      for ( m = 1 ; m <= NUM_COMP_VECTOR3D; ++ m) {
-		      l = l + 1;
-                      if (l >= buffer_size_neighbour) return(2201);
-                      Soln_Block_List.message_noreschange_topface_sendbuf[i_blk][l] =
-			Soln_Blks[i_blk].Grid.Node[i][j][k].X[m]-x_ref[m];
-	      } /* endfor */
-	if (Soln_Block_List.Block[i_blk].infoT[0].dimen.i > 0 &&
-                  Soln_Block_List.Block[i_blk].infoT[0].dimen.j > 0 &&
-		  Soln_Block_List.Block[i_blk].infoT[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost+1;
-                k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-	} else if (Soln_Block_List.Block[i_blk].infoT[0].dimen.i > 0 &&
-		    Soln_Block_List.Block[i_blk].infoT[0].dimen.j > 0) {
-		  i_min = Soln_Blks[i_blk].ICl;
-		  i_max = Soln_Blks[i_blk].ICu;
-		  i_inc = 1;
-		  j_min = Soln_Blks[i_blk].JCl;
-		  j_max = Soln_Blks[i_blk].JCu;
-		  j_inc = 1;
-		  k_min = Soln_Blks[i_blk].KCu;
-		  k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost+1;
-		  k_inc = -1;
-	} else if ( Soln_Block_List.Block[i_blk].infoT[0].dimen.j > 0 &&
-		       Soln_Block_List.Block[i_blk].infoT[0].dimen.k > 0) {
-		    i_min = Soln_Blks[i_blk].ICu;
-		    i_max = Soln_Blks[i_blk].ICl;
-		    i_inc = -1;
-		    j_min = Soln_Blks[i_blk].JCl;
-		    j_max = Soln_Blks[i_blk].JCu;
-		    j_inc = 1;
-		    k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost+1;
-		    k_max = Soln_Blks[i_blk].KCu;
-		    k_inc = 1;
-	} else if (Soln_Block_List.Block[i_blk].infoT[0].dimen.i > 0 &&
-			Soln_Block_List.Block[i_blk].infoT[0].dimen.k > 0) {
-		      i_min = Soln_Blks[i_blk].ICl;
-		      i_max = Soln_Blks[i_blk].ICu;
-		      i_inc = 1;
-		      j_min = Soln_Blks[i_blk].JCu;
-		      j_max = Soln_Blks[i_blk].JCl;
-		      j_inc = -1;
-		      k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost+1;
-		      k_max = Soln_Blks[i_blk].KCu;
-		      k_inc = 1;
-	} else if (Soln_Block_List.Block[i_blk].infoT[0].dimen.k> 0) {
-		      i_min = Soln_Blks[i_blk].ICu;
-		      i_max = Soln_Blks[i_blk].ICl;
-		      i_inc = -1;
-		      j_min = Soln_Blks[i_blk].JCu;
-		      j_max = Soln_Blks[i_blk].JCl;
-		      j_inc = -1;
-		      k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost+1;
-		      k_max = Soln_Blks[i_blk].KCu;
-		      k_inc = 1;
-	} else if (Soln_Block_List.Block[i_blk].infoT[0].dimen.j > 0) {
-		      i_min = Soln_Blks[i_blk].ICu;
-		      i_max = Soln_Blks[i_blk].ICl;
-		      i_inc = -1;
-		      j_min = Soln_Blks[i_blk].JCl;
-		      j_max = Soln_Blks[i_blk].JCu;
-		      j_inc = 1;
-		      k_min = Soln_Blks[i_blk].KCu;
-		      k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost+1;
-		      k_inc = -1;
-	} else if (Soln_Block_List.Block[i_blk].infoT[0].dimen.i > 0) {
-		      i_min = Soln_Blks[i_blk].ICl;
-		      i_max = Soln_Blks[i_blk].ICu;
-		      i_inc = 1;
-		      j_min = Soln_Blks[i_blk].JCu;
-		      j_max = Soln_Blks[i_blk].JCl;
-		      j_inc = -1;
-		      k_min = Soln_Blks[i_blk].KCu;
-		      k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost+1;
-		      k_inc = -1;
-	} else {
-		      i_min = Soln_Blks[i_blk].ICu;
-		      i_max = Soln_Blks[i_blk].ICl;
-		      i_inc = -1;
-		      j_min = Soln_Blks[i_blk].JCu;
-		      j_max = Soln_Blks[i_blk].JCl;
-		      j_inc = -1;
-		      k_min = Soln_Blks[i_blk].KCu;
-		      k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost+1;
-		      k_inc = -1;
-	} /* endif */
-	for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-	  for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ){
-	    l = l + 1;
-	    if (l >= buffer_size_neighbour) return(2202);
-	    Soln_Block_List.message_noreschange_topface_sendbuf[i_blk][l] =
-	      double(Soln_Blks[i_blk].Grid.BCtypeW[j][k]);
-	  } /* endfor */
-	for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-	  for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ){
-		      l = l + 1;
-		  if (l >= buffer_size_neighbour) return(2203);
-		  Soln_Block_List.message_noreschange_topface_sendbuf[i_blk][l] =
-		    double(Soln_Blks[i_blk].Grid.BCtypeE[j][k]);
-	  } /* endfor */
-	for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-	  for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-		    l = l + 1;
-		      if (l >= buffer_size_neighbour) return(2204);
-		    Soln_Block_List.message_noreschange_topface_sendbuf[i_blk][l] =
-                      double(Soln_Blks[i_blk].Grid.BCtypeS[i][k]);
-	  } /* endfor */
-	for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-	  for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-		    l = l + 1;
-		      if (l >= buffer_size_neighbour) return(2205);
-		    Soln_Block_List.message_noreschange_topface_sendbuf[i_blk][l] =
-                      double(Soln_Blks[i_blk].Grid.BCtypeN[i][k]);
-	  } /* endfor */
-
-      } /* endif */
-    } /* endif */
-  
+   AdaptiveBlock3D_Info neighbour_info[MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK];
+   int compact_trans_matrix[3]; // orientation of the block that receives message.
+   int ti[3]; // ti[0] -i, ti[1] -j, ti[2] - k; computational orientation of the block that receives message.
+   int ts[3]; // sign of the computational orientation of the block that receives message.
+   int id_min[3], id_max[3], inc[3];
  
-    
-       ////////////////////////////////////////////////////////////////////
-       // Load send buffer for Bottom face neighbours of solution blocks. //
-       ////////////////////////////////////////////////////////////////////
-    if (Soln_Block_List.Block[i_blk].used &&
-           (Soln_Block_List.Block[i_blk].nB == 1) &&
-           (Soln_Block_List.Block[i_blk].info.level ==
-            Soln_Block_List.Block[i_blk].infoB[0].level)) {
-      if (!Send_Mesh_Geometry_Only) {
-             buffer_size_neighbour = Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost*
-                                     abs(Soln_Block_List.Block[i_blk].infoB[0].dimen.i)*
-                                    abs(Soln_Block_List.Block[i_blk].infoB[0].dimen.j)*
-                                     Soln_Blks[i_blk].NumVar();
-             if (Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar())
-                buffer_size_neighbour = buffer_size_neighbour +
-                                        Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost*
-                                        (abs(Soln_Block_List.Block[i_blk].infoB[0].dimen.i)+1)*
-                                        (abs(Soln_Block_List.Block[i_blk].infoB[0].dimen.j)+1)*
-                                        NUM_COMP_VECTOR3D+
-	    4*Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost*abs(Soln_Block_List.Block[i_blk].infoB[0].dimen.i)+
-	    4*Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost*abs(Soln_Block_List.Block[i_blk].infoB[0].dimen.j);
-      } else {
-                buffer_size_neighbour = Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost*
-                                        (abs(Soln_Block_List.Block[i_blk].infoB[0].dimen.i)+1)*
-                                        (abs(Soln_Block_List.Block[i_blk].infoB[0].dimen.j)+1)*
-                                        NUM_COMP_VECTOR3D+
-	    4*Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost*abs(Soln_Block_List.Block[i_blk].infoB[0].dimen.i)+
-	    4*Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost*abs(Soln_Block_List.Block[i_blk].infoB[0].dimen.j);
-      } /* endif */
-      l = -1;
-          // Load ghost cell solution variable information as required.
-      if (!Send_Mesh_Geometry_Only) {
-	if (Soln_Block_List.Block[i_blk].infoB[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoB[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoB[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl;
- 	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCl;
-                k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost-1;
-	        k_inc = 1;
-	} else if (Soln_Block_List.Block[i_blk].infoB[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoB[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl;
- 	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost-1;
-                k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-	} else if (Soln_Block_List.Block[i_blk].infoB[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoB[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-                i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl;
- 	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCl;
-                k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost-1;
-	        k_inc = 1;
-	} else if (Soln_Block_List.Block[i_blk].infoB[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoB[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCl;
-                k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost-1;
-	        k_inc = 1;
-	} else if (Soln_Block_List.Block[i_blk].infoB[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCl;
-                k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost-1;
-	        k_inc = 1;
-	} else if (Soln_Block_List.Block[i_blk].infoB[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl;
- 	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost-1;
-                k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-	} else if (Soln_Block_List.Block[i_blk].infoB[0].dimen.i > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-	        i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost-1;
-                k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-	} else {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost-1;
-                k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-	} /* endif */
-
-	i = Soln_Blks[i_blk].LoadSendBuffer(Soln_Block_List.message_noreschange_bottomface_sendbuf[i_blk],
-                                                l,buffer_size_neighbour,
-                                                i_min,i_max,i_inc,
-						j_min,j_max,j_inc,
-                                                k_min,k_max,k_inc);
-	if (i != 0) return(2100);
-      } /* endif */
-          // Load ghost cell mesh information as required.
-      if (Send_Mesh_Geometry_Only ||
-              Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar()) {
-	if (Soln_Block_List.Block[i_blk].infoB[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoB[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoB[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl;
-	        i_max = Soln_Blks[i_blk].Grid.INu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl;
-	        j_max = Soln_Blks[i_blk].Grid.JNu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost;;
-	        k_inc = 1;
-                i_ref = i_min;
-                j_ref = j_min;
-                k_ref = k_min-1;
-	} else if (Soln_Block_List.Block[i_blk].infoB[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoB[0].dimen.j > 0 ) {
-	        i_min = Soln_Blks[i_blk].Grid.INl;
-	        i_max = Soln_Blks[i_blk].Grid.INu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl;
-	        j_max = Soln_Blks[i_blk].Grid.JNu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost;;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_inc = -1;
-                i_ref = i_min;
-                j_ref = j_min;
-                k_ref = k_max-1;
-	} else if ( Soln_Block_List.Block[i_blk].infoB[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoB[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu;
-	        i_max = Soln_Blks[i_blk].Grid.INl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl;
-	        j_max = Soln_Blks[i_blk].Grid.JNu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost;;
-	        k_inc = 1;
-                i_ref = i_min;
-                j_ref = j_min;
-                k_ref = k_min-1;
-	} else if (Soln_Block_List.Block[i_blk].infoB[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoB[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl;
-	        i_max = Soln_Blks[i_blk].Grid.INu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu;
-	        j_max = Soln_Blks[i_blk].Grid.JNl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost;;
-	        k_inc = 1;
-                i_ref = i_min;
-                j_ref = j_min;
-                k_ref = k_min-1;
-	} else if (Soln_Block_List.Block[i_blk].infoB[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu;
-	        i_max = Soln_Blks[i_blk].Grid.INl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu;
-	        j_max = Soln_Blks[i_blk].Grid.JNl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost;;
-	        k_inc = 1;
-                i_ref = i_min;
-                j_ref = j_min;
-                k_ref = k_min-1;
-	} else if (Soln_Block_List.Block[i_blk].infoB[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu;
-	        i_max = Soln_Blks[i_blk].Grid.INl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl;
-	        j_max = Soln_Blks[i_blk].Grid.JNu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost;;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_inc = -1;
-                i_ref = i_min;
-                j_ref = j_min;
-                k_ref = k_max-1;
-	} else if (Soln_Block_List.Block[i_blk].infoB[0].dimen.i > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl;
-	        i_max = Soln_Blks[i_blk].Grid.INu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu;
-	        j_max = Soln_Blks[i_blk].Grid.JNl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost;;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_inc = -1;
-                i_ref = i_min;
-                j_ref = j_min;
-                k_ref = k_max-1;
-	} else {
-	        i_min = Soln_Blks[i_blk].Grid.INu;
-	        i_max = Soln_Blks[i_blk].Grid.INl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu;
-	        j_max = Soln_Blks[i_blk].Grid.JNl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost;;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_inc = -1;
-                i_ref = i_min;
-                j_ref = j_min;
-                k_ref = k_max-1;
-	} /* endif */
-
-	x_ref = Soln_Blks[i_blk].Grid.Node[i_ref][j_ref][k_ref].X; // Reference node location.
-	for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-	  for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-	    for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc )
-	      for ( m = 1 ; m <= NUM_COMP_VECTOR3D; ++ m) {
-		      l = l + 1;
-                      if (l >= buffer_size_neighbour) return(2101);
-                      Soln_Block_List.message_noreschange_bottomface_sendbuf[i_blk][l] =
-                         Soln_Blks[i_blk].Grid.Node[i][j][k].X[m]-x_ref[m];
-	      } /* endfor */
-
-	if (Soln_Block_List.Block[i_blk].infoB[0].dimen.i > 0 &&
-	    Soln_Block_List.Block[i_blk].infoB[0].dimen.j > 0 &&
-	    Soln_Block_List.Block[i_blk].infoB[0].dimen.k > 0) {
-	  i_min = Soln_Blks[i_blk].ICl;
-	  i_max = Soln_Blks[i_blk].ICu;
-	  i_inc = 1;
-	  j_min = Soln_Blks[i_blk].JCl;
-	  j_max = Soln_Blks[i_blk].JCu;
-	  j_inc = 1;
-	  k_min = Soln_Blks[i_blk].KCl;
-	  k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost-1;
-	  k_inc = 1;
-	} else if (Soln_Block_List.Block[i_blk].infoB[0].dimen.i > 0 &&
-                  Soln_Block_List.Block[i_blk].infoB[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost-1;
-                k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-	} else if ( Soln_Block_List.Block[i_blk].infoB[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoB[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-                i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCl;
-                k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost-1;
-	        k_inc = 1;
-	} else if (Soln_Block_List.Block[i_blk].infoB[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoB[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCl;
-                k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost-1;
-	        k_inc = 1;
-	} else if (Soln_Block_List.Block[i_blk].infoB[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
- 	        k_min = Soln_Blks[i_blk].KCl;
-                k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost-1;
-	        k_inc = 1;
-	} else if (Soln_Block_List.Block[i_blk].infoB[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost-1;
-                k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-	} else if (Soln_Block_List.Block[i_blk].infoB[0].dimen.i > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-	        i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
- 	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost-1;
-                k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-	} else {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost-1;
-                k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-	} /* endif */
-
-	for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-	  for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
-		  l = l + 1;
-		  if (l >= buffer_size_neighbour) return(2102);
-                   Soln_Block_List.message_noreschange_bottomface_sendbuf[i_blk][l] =
-                      double(Soln_Blks[i_blk].Grid.BCtypeW[j][k]);
-	  } /* endfor */
-	for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-	  for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ){
-                   l = l + 1;
-                   if (l >= buffer_size_neighbour) return(2103);
-                   Soln_Block_List.message_noreschange_bottomface_sendbuf[i_blk][l] =
-                      double(Soln_Blks[i_blk].Grid.BCtypeE[j][k]);
-	  } /* endfor */
-	for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-	  for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-                   l = l + 1;
-                   if (l >= buffer_size_neighbour) return(2104);
-                   Soln_Block_List.message_noreschange_bottomface_sendbuf[i_blk][l] =
-                      double(Soln_Blks[i_blk].Grid.BCtypeS[i][k]);
-	  } /* endfor */
-	for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-	  for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-                   l = l + 1;
-                   if (l >= buffer_size_neighbour) return(2105);
-                   Soln_Block_List.message_noreschange_bottomface_sendbuf[i_blk][l] =
-                      double(Soln_Blks[i_blk].Grid.BCtypeN[i][k]);
-	  } /* endfor */
-
-      } /* endif */
-    } /* endif */
-  
-
-       ////////////////////////////////////////////////////////////////////
-       // Load send buffer for North face neighbours of solution blocks. //
-       ////////////////////////////////////////////////////////////////////
-       if (Soln_Block_List.Block[i_blk].used &&
-           (Soln_Block_List.Block[i_blk].nN == 1) &&
-           (Soln_Block_List.Block[i_blk].info.level ==
-            Soln_Block_List.Block[i_blk].infoN[0].level)) {
-          if (!Send_Mesh_Geometry_Only) {
-             buffer_size_neighbour = Soln_Block_List.Block[i_blk].infoN[0].dimen.ghost*
-                                     abs(Soln_Block_List.Block[i_blk].infoN[0].dimen.i)*
-                                     abs(Soln_Block_List.Block[i_blk].infoN[0].dimen.k)*
-                                     Soln_Blks[i_blk].NumVar();
-             if (Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar())
-                buffer_size_neighbour = buffer_size_neighbour +
-                                        Soln_Block_List.Block[i_blk].infoN[0].dimen.ghost*
-                                        (abs(Soln_Block_List.Block[i_blk].infoN[0].dimen.i)+1)*
-                                        (abs(Soln_Block_List.Block[i_blk].infoN[0].dimen.k)+1)*
-                                        NUM_COMP_VECTOR3D+
-		  4*Soln_Block_List.Block[i_blk].infoN[0].dimen.ghost*abs(Soln_Block_List.Block[i_blk].infoN[0].dimen.i)+
-		  4*Soln_Block_List.Block[i_blk].infoN[0].dimen.ghost*abs(Soln_Block_List.Block[i_blk].infoN[0].dimen.k);
-          } else {
-                buffer_size_neighbour = Soln_Block_List.Block[i_blk].infoN[0].dimen.ghost*
-                                        (abs(Soln_Block_List.Block[i_blk].infoN[0].dimen.i)+1)*
-                                        (abs(Soln_Block_List.Block[i_blk].infoN[0].dimen.k)+1)*
-                                        NUM_COMP_VECTOR3D+
-		  4*Soln_Block_List.Block[i_blk].infoN[0].dimen.ghost*abs(Soln_Block_List.Block[i_blk].infoN[0].dimen.i)+
-		  4*Soln_Block_List.Block[i_blk].infoN[0].dimen.ghost*abs(Soln_Block_List.Block[i_blk].infoN[0].dimen.k);
-          } /* endif */
-          l = -1;
-          // Load ghost cell solution variable information as required.
-          if (!Send_Mesh_Geometry_Only) {
-	    if (Soln_Block_List.Block[i_blk].infoN[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoN[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoN[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoN[0].dimen.ghost+1;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCl;
-                k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-	    } else if (Soln_Block_List.Block[i_blk].infoN[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoN[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoN[0].dimen.ghost+1;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCu;
-                k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-	    } else if (Soln_Block_List.Block[i_blk].infoN[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoN[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-                i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoN[0].dimen.ghost+1;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCl;
-                k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-	    } else if (Soln_Block_List.Block[i_blk].infoN[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoN[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoN[0].dimen.ghost+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCl;
-                k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-	    } else if (Soln_Block_List.Block[i_blk].infoN[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoN[0].dimen.ghost+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCl;
-                k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-	    } else if (Soln_Block_List.Block[i_blk].infoN[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoN[0].dimen.ghost+1;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCu;
-                k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-	    } else if (Soln_Block_List.Block[i_blk].infoN[0].dimen.i > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-	        i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoN[0].dimen.ghost+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCu;
-                k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-	    } else {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu;
- 	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoN[0].dimen.ghost+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCu;
-                k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-	    } /* endif */
-             i = Soln_Blks[i_blk].LoadSendBuffer(Soln_Block_List.message_noreschange_northface_sendbuf[i_blk],
-                                                l,buffer_size_neighbour,
-                                                i_min,i_max,i_inc,
-						j_min,j_max,j_inc,
-                                                k_min,k_max,k_inc);
-	     if (i != 0) return(2300);
-          } /* endif */
-          // Load ghost cell mesh information as required.
-          if (Send_Mesh_Geometry_Only ||
-              Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar()) {
-	    if (Soln_Block_List.Block[i_blk].infoN[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoN[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoN[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl;
-	        i_max = Soln_Blks[i_blk].Grid.INu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoN[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl;
-	        k_max = Soln_Blks[i_blk].Grid.KNu;
-	        k_inc = 1;
-                i_ref = i_min;
-                j_ref = j_max+1;
-                k_ref = k_min;
-	    } else if (Soln_Block_List.Block[i_blk].infoN[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoN[0].dimen.j > 0 ) {
-	        i_min = Soln_Blks[i_blk].Grid.INl;
-	        i_max = Soln_Blks[i_blk].Grid.INu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoN[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu;
-	        k_max = Soln_Blks[i_blk].Grid.KNl;
-	        k_inc = -1;
-                i_ref = i_min;
-                j_ref = j_max+1;
-                k_ref = k_min;
-	    } else if ( Soln_Block_List.Block[i_blk].infoN[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoN[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu;
-	        i_max = Soln_Blks[i_blk].Grid.INl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoN[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl;
-	        k_max = Soln_Blks[i_blk].Grid.KNu;
-	        k_inc = 1;
-                i_ref = i_min;
-                j_ref = j_max+1;
-                k_ref = k_min;
-	    } else if (Soln_Block_List.Block[i_blk].infoN[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoN[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl;
-	        i_max = Soln_Blks[i_blk].Grid.INu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoN[0].dimen.ghost;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl;
-	        k_max = Soln_Blks[i_blk].Grid.KNu;
-	        k_inc = 1;
-                i_ref = i_min;
-                j_ref = j_min+1;
-                k_ref = k_min;
-	    } else if (Soln_Block_List.Block[i_blk].infoN[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu;
-	        i_max = Soln_Blks[i_blk].Grid.INl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoN[0].dimen.ghost;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl;
-	        k_max = Soln_Blks[i_blk].Grid.KNu;
-	        k_inc = 1;
-                i_ref = i_min;
-                j_ref = j_min+1;
-                k_ref = k_min;
-	    } else if (Soln_Block_List.Block[i_blk].infoN[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu;
-	        i_max = Soln_Blks[i_blk].Grid.INl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoN[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu;
-	        k_max = Soln_Blks[i_blk].Grid.KNl;
-	        k_inc = -1;
-                i_ref = i_min;
-                j_ref = j_max+1;
-                k_ref = k_min;
-	    } else if (Soln_Block_List.Block[i_blk].infoN[0].dimen.i > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl;
-	        i_max = Soln_Blks[i_blk].Grid.INu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoN[0].dimen.ghost;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu;
-	        k_max = Soln_Blks[i_blk].Grid.KNl;
-	        k_inc = -1;
-                i_ref = i_min;
-                j_ref = j_min+1;
-                k_ref = k_min;
-	    } else {
-	        i_min = Soln_Blks[i_blk].Grid.INu;
-	        i_max = Soln_Blks[i_blk].Grid.INl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoN[0].dimen.ghost;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu;
-	        k_max = Soln_Blks[i_blk].Grid.KNl;
-	        k_inc = -1;
-                i_ref = i_min;
-                j_ref = j_min+1;
-                k_ref = k_min;
-	    } /* endif */
-	    x_ref = Soln_Blks[i_blk].Grid.Node[i_ref][j_ref][k_ref].X; // Reference node location.
-	    for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-	      for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc )
-		  for ( m = 1 ; m <= NUM_COMP_VECTOR3D; ++ m) {
-		      l = l + 1;
-                      if (l >= buffer_size_neighbour) return(2301);
-                      Soln_Block_List.message_noreschange_northface_sendbuf[i_blk][l] =
-                         Soln_Blks[i_blk].Grid.Node[i][j][k].X[m]-x_ref[m];
-		  } /* endfor */
-	    if (Soln_Block_List.Block[i_blk].infoN[0].dimen.i > 0 &&
-                  Soln_Block_List.Block[i_blk].infoN[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoN[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoN[0].dimen.ghost+1;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCl;
-                k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-	    } else if (Soln_Block_List.Block[i_blk].infoN[0].dimen.i > 0 &&
-                  Soln_Block_List.Block[i_blk].infoN[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoN[0].dimen.ghost+1;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCu;
-                k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-	    } else if ( Soln_Block_List.Block[i_blk].infoN[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoN[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-                i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoN[0].dimen.ghost+1;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCl;
-                k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-	    } else if (Soln_Block_List.Block[i_blk].infoN[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoN[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoN[0].dimen.ghost+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCl;
-                k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-	    } else if (Soln_Block_List.Block[i_blk].infoN[0].dimen.k> 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoN[0].dimen.ghost+1;
-	        j_inc = -1;
- 	        k_min = Soln_Blks[i_blk].KCl;
-                k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-	    } else if (Soln_Block_List.Block[i_blk].infoN[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoN[0].dimen.ghost+1;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCu;
-                k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-	    } else if (Soln_Block_List.Block[i_blk].infoN[0].dimen.i > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-	        i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoN[0].dimen.ghost+1;
-	        j_inc = -1;
- 	        k_min = Soln_Blks[i_blk].KCu;
-                k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-            } else {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu;
- 	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoN[0].dimen.ghost+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCu;
-                k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-	    } /* endif */
-
-	    for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-	      for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc ) {
-		  l = l + 1;
-                   if (l >= buffer_size_neighbour) return(2302);
-                   Soln_Block_List.message_noreschange_northface_sendbuf[i_blk][l] =
-                      double(Soln_Blks[i_blk].Grid.BCtypeW[j][k]);
-	      } /* endfor */
-	    for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-	      for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc ) {
-                   l = l + 1;
-                   if (l >= buffer_size_neighbour) return(2303);
-                   Soln_Block_List.message_noreschange_northface_sendbuf[i_blk][l] =
-                      double(Soln_Blks[i_blk].Grid.BCtypeE[j][k]);
-	      } /* endfor */
-	    for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-	      for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-                   l = l + 1;
-                   if (l >= buffer_size_neighbour) return(2304);
-                   Soln_Block_List.message_noreschange_northface_sendbuf[i_blk][l] =
-                      double(Soln_Blks[i_blk].Grid.BCtypeB[i][j]);
-	      } /* endfor */
-	    for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-	      for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-                   l = l + 1;
-                   if (l >= buffer_size_neighbour) return(2305);
-                   Soln_Block_List.message_noreschange_northface_sendbuf[i_blk][l] =
-                      double(Soln_Blks[i_blk].Grid.BCtypeT[i][j]);
-	      } /* endfor */
-
-          } /* endif */
-       } /* endif */
-
-
-       ////////////////////////////////////////////////////////////////////
-       // Load send buffer for South face neighbours of solution blocks. //
-       ////////////////////////////////////////////////////////////////////
-       if (Soln_Block_List.Block[i_blk].used &&
-           (Soln_Block_List.Block[i_blk].nS == 1) &&
-           (Soln_Block_List.Block[i_blk].info.level ==
-            Soln_Block_List.Block[i_blk].infoS[0].level)) {
-          if (!Send_Mesh_Geometry_Only) {
-             buffer_size_neighbour = Soln_Block_List.Block[i_blk].infoS[0].dimen.ghost*
-                                     abs(Soln_Block_List.Block[i_blk].infoS[0].dimen.i)*
-                                     abs(Soln_Block_List.Block[i_blk].infoS[0].dimen.k)*
-                                     Soln_Blks[i_blk].NumVar();
-             if (Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar())
-                buffer_size_neighbour = buffer_size_neighbour +
-                                        Soln_Block_List.Block[i_blk].infoS[0].dimen.ghost*
-                                        (abs(Soln_Block_List.Block[i_blk].infoS[0].dimen.i)+1)*
-                                        (abs(Soln_Block_List.Block[i_blk].infoS[0].dimen.k)+1)*
-                                        NUM_COMP_VECTOR3D+
-		  4*Soln_Block_List.Block[i_blk].infoS[0].dimen.ghost*abs(Soln_Block_List.Block[i_blk].infoS[0].dimen.i)+
-		  4*Soln_Block_List.Block[i_blk].infoS[0].dimen.ghost*abs(Soln_Block_List.Block[i_blk].infoS[0].dimen.k);
-          } else {
-                buffer_size_neighbour = Soln_Block_List.Block[i_blk].infoS[0].dimen.ghost*
-                                        (abs(Soln_Block_List.Block[i_blk].infoS[0].dimen.i)+1)*
-                                        (abs(Soln_Block_List.Block[i_blk].infoS[0].dimen.k)+1)*
-                                        NUM_COMP_VECTOR3D+
-		  4*Soln_Block_List.Block[i_blk].infoS[0].dimen.ghost*abs(Soln_Block_List.Block[i_blk].infoS[0].dimen.i)+
-		  4*Soln_Block_List.Block[i_blk].infoS[0].dimen.ghost*abs(Soln_Block_List.Block[i_blk].infoS[0].dimen.k);
-          } /* endif */
-          l = -1;
-          // Load ghost cell solution variable information as required.
-         if (!Send_Mesh_Geometry_Only) {
-             if (Soln_Block_List.Block[i_blk].infoS[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoS[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoS[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl;
- 	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoS[0].dimen.ghost-1;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCl;
-                k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoS[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoS[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl;
- 	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoS[0].dimen.ghost-1;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCu;
-                k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-             } else if (Soln_Block_List.Block[i_blk].infoS[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoS[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-                i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl;
- 	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoS[0].dimen.ghost-1;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCl;
-                k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoS[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoS[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoS[0].dimen.ghost-1;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCl;
-                k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoS[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoS[0].dimen.ghost-1;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCl;
-                k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoS[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl;
- 	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoS[0].dimen.ghost-1;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCu;
-                k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-             } else if (Soln_Block_List.Block[i_blk].infoS[0].dimen.i > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-	        i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoS[0].dimen.ghost-1;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCu;
-                k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-             } else {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoS[0].dimen.ghost-1;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCu;
-                k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-             } /* endif */
-
-
-             i = Soln_Blks[i_blk].LoadSendBuffer(Soln_Block_List.message_noreschange_southface_sendbuf[i_blk],
-                                                l,buffer_size_neighbour,
-                                                i_min,i_max,i_inc,
-						j_min,j_max,j_inc,
-                                                k_min,k_max,k_inc);
-	     if (i != 0) return(2400);
-          } /* endif */
-          // Load ghost cell mesh information as required.
-          if (Send_Mesh_Geometry_Only ||
-              Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar()) {
-             if (Soln_Block_List.Block[i_blk].infoS[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoS[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoS[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl;
-	        i_max = Soln_Blks[i_blk].Grid.INu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoS[0].dimen.ghost;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl;
-	        k_max = Soln_Blks[i_blk].Grid.KNu;
-	        k_inc = 1;
-                i_ref = i_min;
-                j_ref = j_min-1;
-                k_ref = k_min;
-             } else if (Soln_Block_List.Block[i_blk].infoS[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoS[0].dimen.j > 0 ) {
-	        i_min = Soln_Blks[i_blk].Grid.INl;
-	        i_max = Soln_Blks[i_blk].Grid.INu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoS[0].dimen.ghost;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu;
-	        k_max = Soln_Blks[i_blk].Grid.KNl;
-	        k_inc = -1;
-                i_ref = i_min;
-                j_ref = j_min-1;
-                k_ref = k_min;
-             } else if ( Soln_Block_List.Block[i_blk].infoS[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoS[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu;
-	        i_max = Soln_Blks[i_blk].Grid.INl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoS[0].dimen.ghost;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl;
-	        k_max = Soln_Blks[i_blk].Grid.KNu;
-	        k_inc = 1;
-                i_ref = i_min;
-                j_ref = j_min-1;
-                k_ref = k_min;
-             } else if (Soln_Block_List.Block[i_blk].infoS[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoS[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl;
-	        i_max = Soln_Blks[i_blk].Grid.INu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoS[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl;
-	        k_max = Soln_Blks[i_blk].Grid.KNu;
-	        k_inc = 1;
-                i_ref = i_min;
-                j_ref = j_max-1;
-                k_ref = k_min;
-             } else if (Soln_Block_List.Block[i_blk].infoS[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu;
-	        i_max = Soln_Blks[i_blk].Grid.INl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoS[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl;
-	        k_max = Soln_Blks[i_blk].Grid.KNu;
-	        k_inc = 1;
-                i_ref = i_min;
-                j_ref = j_max-1;
-                k_ref = k_min;
-             } else if (Soln_Block_List.Block[i_blk].infoS[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu;
-	        i_max = Soln_Blks[i_blk].Grid.INl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoS[0].dimen.ghost;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu;
-	        k_max = Soln_Blks[i_blk].Grid.KNl;
-	        k_inc = -1;
-                i_ref = i_min;
-                j_ref = j_min-1;
-                k_ref = k_min;
-             } else if (Soln_Block_List.Block[i_blk].infoS[0].dimen.i > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl;
-	        i_max = Soln_Blks[i_blk].Grid.INu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoS[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu;
-	        k_max = Soln_Blks[i_blk].Grid.KNl;
-	        k_inc = -1;
-                i_ref = i_min;
-                j_ref = j_max-1;
-                k_ref = k_min;
-             } else {
-	        i_min = Soln_Blks[i_blk].Grid.INu;
-	        i_max = Soln_Blks[i_blk].Grid.INl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoS[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu;
-	        k_max = Soln_Blks[i_blk].Grid.KNl;
-	        k_inc = -1;
-                i_ref = i_min;
-                j_ref = j_max-1;
-                k_ref = k_min;
-             } /* endif */
-
-             x_ref = Soln_Blks[i_blk].Grid.Node[i_ref][j_ref][k_ref].X; // Reference node location.
-             for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-	       for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc )
-                   for ( m = 1 ; m <= NUM_COMP_VECTOR3D; ++ m) {
-		      l = l + 1;
-                      if (l >= buffer_size_neighbour) return(2401);
-                      Soln_Block_List.message_noreschange_southface_sendbuf[i_blk][l] =
-                         Soln_Blks[i_blk].Grid.Node[i][j][k].X[m]-x_ref[m];
-                   } /* endfor */
-
-              if (Soln_Block_List.Block[i_blk].infoS[0].dimen.i > 0 &&
-                  Soln_Block_List.Block[i_blk].infoS[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoS[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoS[0].dimen.ghost-1;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCl;
-                k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-              } else if (Soln_Block_List.Block[i_blk].infoS[0].dimen.i > 0 &&
-                  Soln_Block_List.Block[i_blk].infoS[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoS[0].dimen.ghost-1;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCu;
-                k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-              } else if ( Soln_Block_List.Block[i_blk].infoS[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoS[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-                i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoS[0].dimen.ghost-1;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCl;
-                k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-              } else if (Soln_Block_List.Block[i_blk].infoS[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoS[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoS[0].dimen.ghost-1;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCl;
-                k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoS[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoS[0].dimen.ghost-1;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
- 	        k_min = Soln_Blks[i_blk].KCl;
-                k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoS[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoS[0].dimen.ghost-1;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCu;
-                k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-             } else if (Soln_Block_List.Block[i_blk].infoS[0].dimen.i > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-	        i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoS[0].dimen.ghost-1;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
- 	        k_min = Soln_Blks[i_blk].KCu;
-                k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-            } else {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoS[0].dimen.ghost-1;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCu;
-                k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-             } /* endif */
-                for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-		  for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc ) {
-		  l = l + 1;
-                   if (l >= buffer_size_neighbour) return(2402);
-                   Soln_Block_List.message_noreschange_southface_sendbuf[i_blk][l] =
-                      double(Soln_Blks[i_blk].Grid.BCtypeW[j][k]);
-                } /* endfor */
-                for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-		  for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc ) {
-                   l = l + 1;
-                   if (l >= buffer_size_neighbour) return(2403);
-                   Soln_Block_List.message_noreschange_southface_sendbuf[i_blk][l] =
-                      double(Soln_Blks[i_blk].Grid.BCtypeE[j][k]);
-                } /* endfor */
-                for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-		  for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-                   l = l + 1;
-                   if (l >= buffer_size_neighbour) return(2404);
-                   Soln_Block_List.message_noreschange_southface_sendbuf[i_blk][l] =
-                      double(Soln_Blks[i_blk].Grid.BCtypeB[i][j]);
-                } /* endfor */
-                for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-		  for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-                   l = l + 1;
-                   if (l >= buffer_size_neighbour) return(2405);
-                   Soln_Block_List.message_noreschange_southface_sendbuf[i_blk][l] =
-                      double(Soln_Blks[i_blk].Grid.BCtypeT[i][j]);
-		  } /* endfor */
-
-          } /* endif */
-       } /* endif */
-
-       ///////////////////////////////////////////////////////////////////
-       // Load send buffer for East face neighbours of solution blocks. //
-       ///////////////////////////////////////////////////////////////////
-       if (Soln_Block_List.Block[i_blk].used &&
-           (Soln_Block_List.Block[i_blk].nE == 1) &&
-           (Soln_Block_List.Block[i_blk].info.level ==
-            Soln_Block_List.Block[i_blk].infoE[0].level)) {
-          if (!Send_Mesh_Geometry_Only) {
-             buffer_size_neighbour = Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost*
-                                     abs(Soln_Block_List.Block[i_blk].infoE[0].dimen.j)*
-                                     abs(Soln_Block_List.Block[i_blk].infoE[0].dimen.k)*
-                                     Soln_Blks[i_blk].NumVar();
-             if (Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar())
-                buffer_size_neighbour = buffer_size_neighbour +
-                                        Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost*
-                                        (abs(Soln_Block_List.Block[i_blk].infoE[0].dimen.j)+1)*
-                                        (abs(Soln_Block_List.Block[i_blk].infoE[0].dimen.k)+1)*
-                                        NUM_COMP_VECTOR3D+
-		  4*Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost*abs(Soln_Block_List.Block[i_blk].infoE[0].dimen.j)+
-		  4*Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost*abs(Soln_Block_List.Block[i_blk].infoE[0].dimen.k);
-           } else {
-                buffer_size_neighbour = Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost*
-                                        (abs(Soln_Block_List.Block[i_blk].infoE[0].dimen.j)+1)*
-                                        (abs(Soln_Block_List.Block[i_blk].infoE[0].dimen.k)+1)*
-                                        NUM_COMP_VECTOR3D+
-		  4*Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost*abs(Soln_Block_List.Block[i_blk].infoE[0].dimen.j)+
-		  4*Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost*abs(Soln_Block_List.Block[i_blk].infoE[0].dimen.k);
-          } /* endif */
-          l = -1;
-          // Load ghost cell solution variable information as required.
-          if (!Send_Mesh_Geometry_Only) {
-             if (Soln_Block_List.Block[i_blk].infoE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoE[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost+1;
-	        i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoE[0].dimen.j > 0 ) {
-	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost+1;
-	        i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-            } else  if ( Soln_Block_List.Block[i_blk].infoE[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost+1;
-	        i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoE[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-             } else if (Soln_Block_List.Block[i_blk].infoE[0].dimen.i > 0) {
-	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost+1;
-	        i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-             } else {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-             } /* endif */
-             i = Soln_Blks[i_blk].LoadSendBuffer(Soln_Block_List.message_noreschange_eastface_sendbuf[i_blk],
-                                                l,buffer_size_neighbour,
-                                                i_min,i_max,i_inc,j_min,j_max,j_inc,
-                                                k_min,k_max,k_inc);
-	     if (i != 0) return(1200);
-          } /* endif */
-          // Load ghost cell mesh information as required.
-          if (Send_Mesh_Geometry_Only ||
-              Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar()) {
-             if (Soln_Block_List.Block[i_blk].infoE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoE[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INu-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl;
-	        j_max = Soln_Blks[i_blk].Grid.JNu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl;
-	        k_max = Soln_Blks[i_blk].Grid.KNu;
-	        k_inc = 1;
-                i_ref = i_max+1;
-                j_ref = j_min;
-                k_ref = k_min;
-             } else if (Soln_Block_List.Block[i_blk].infoE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoE[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INu-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl;
-	        j_max = Soln_Blks[i_blk].Grid.JNu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu;
-	        k_max = Soln_Blks[i_blk].Grid.KNl;
-	        k_inc = -1;
-                i_ref = i_max+1;
-                j_ref = j_min;
-                k_ref = k_min;
-             } else if (Soln_Block_List.Block[i_blk].infoE[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-1;
-	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl;
-	        j_max = Soln_Blks[i_blk].Grid.JNu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl;
-	        k_max = Soln_Blks[i_blk].Grid.KNu;
-	        k_inc = 1;
-                i_ref = i_min+1;
-                j_ref = j_min;
-                k_ref = k_min;
-             } else  if (Soln_Block_List.Block[i_blk].infoE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INu-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu;
-	        j_max = Soln_Blks[i_blk].Grid.JNl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl;
-	        k_max = Soln_Blks[i_blk].Grid.KNu;
-	        k_inc = 1;
-                i_ref = i_max+1;
-                j_ref = j_min;
-                k_ref = k_min;
-             } else if (Soln_Block_List.Block[i_blk].infoE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-1;
-	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu;
-	        j_max = Soln_Blks[i_blk].Grid.JNl;
-	        j_inc = -1;
- 	        k_min = Soln_Blks[i_blk].Grid.KNl;
-	        k_max = Soln_Blks[i_blk].Grid.KNu;
-	        k_inc = 1;
-               i_ref = i_min+1;
-                j_ref = j_min;
-                k_ref = k_min;
-             } else if (Soln_Block_List.Block[i_blk].infoE[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-1;
-	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl;
-	        j_max = Soln_Blks[i_blk].Grid.JNu;
-	        j_inc = 1;
- 	        k_min = Soln_Blks[i_blk].Grid.KNu;
-	        k_max = Soln_Blks[i_blk].Grid.KNl;
-	        k_inc = -1;
-		i_ref = i_min+1;
-                j_ref = j_min;
-                k_ref = k_min;
-             } else if (Soln_Block_List.Block[i_blk].infoE[0].dimen.i > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INu-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu;
-	        j_max = Soln_Blks[i_blk].Grid.JNl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu;
-	        k_max = Soln_Blks[i_blk].Grid.KNl;
-	        k_inc = 1;
-                i_ref = i_max+1;
-                j_ref = j_min;
-                k_ref = k_min;
-             } else {
-	        i_min = Soln_Blks[i_blk].Grid.INu-1;
-	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu;
-	        j_max = Soln_Blks[i_blk].Grid.JNl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu;
-	        k_max = Soln_Blks[i_blk].Grid.KNl;
-	        k_inc = -1;
-                i_ref = i_min+1;
-                j_ref = j_min;
-                k_ref = k_min;
-             } /* endif */
-             x_ref = Soln_Blks[i_blk].Grid.Node[i_ref][j_ref][k_ref].X; // Reference node location.
-             for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-	       for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc )
-                   for ( m = 1 ; m <= NUM_COMP_VECTOR3D; ++ m) {
-		      l = l + 1;
-                      if (l >= buffer_size_neighbour) return(1201);
-                      Soln_Block_List.message_noreschange_eastface_sendbuf[i_blk][l] =
-                         Soln_Blks[i_blk].Grid.Node[i][j][k].X[m]-x_ref[m];
-                   } /* endfor */
-             if (Soln_Block_List.Block[i_blk].infoE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoE[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost+1;
-	        i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoE[0].dimen.j > 0 ) {
-	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost+1;
-	        i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-             } else if (Soln_Block_List.Block[i_blk].infoE[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost+1;
-	        i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoE[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-             } else if (Soln_Block_List.Block[i_blk].infoE[0].dimen.i > 0) {
-	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost+1;
-	        i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-             } else {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
- 	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-            } /* endif */
-                for ( i  = i_min ; ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc )
-		  for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
-		  l = l + 1;
-                   if (l >= buffer_size_neighbour) return(1202);
-                   Soln_Block_List.message_noreschange_eastface_sendbuf[i_blk][l] =
-                      double(Soln_Blks[i_blk].Grid.BCtypeB[i][j]);
-                } /* endfor */
-                for ( i  = i_min ; ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc )
-		  for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
-                   l = l + 1;
-                   if (l >= buffer_size_neighbour) return(1203);
-                   Soln_Block_List.message_noreschange_eastface_sendbuf[i_blk][l] =
-                      double(Soln_Blks[i_blk].Grid.BCtypeT[i][j]);
-                } /* endfor */
-                for ( i  = i_min ; ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc )
-		  for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc ) {
-                   l = l + 1;
-                   if (l >= buffer_size_neighbour) return(1204);
-                   Soln_Block_List.message_noreschange_eastface_sendbuf[i_blk][l] =
-                      double(Soln_Blks[i_blk].Grid.BCtypeS[i][k]);
-                } /* endfor */
-                for ( i  = i_min ; ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc )
-		  for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc ) {
-                   l = l + 1;
-                   if (l >= buffer_size_neighbour) return(1205);
-                   Soln_Block_List.message_noreschange_eastface_sendbuf[i_blk][l] =
-                      double(Soln_Blks[i_blk].Grid.BCtypeN[i][k]);
-                } /* endfor */
-
-
-
-          } /* endif */
-       } /* endif */
-       
-       
-       ///////////////////////////////////////////////////////////////////
-       // Load send buffer for West face neighbours of solution blocks. //
-       ///////////////////////////////////////////////////////////////////
-       if (Soln_Block_List.Block[i_blk].used &&
-           (Soln_Block_List.Block[i_blk].nW == 1) &&
-           (Soln_Block_List.Block[i_blk].info.level ==
-            Soln_Block_List.Block[i_blk].infoW[0].level)) {
-          if (!Send_Mesh_Geometry_Only) {
-             buffer_size_neighbour = Soln_Block_List.Block[i_blk].infoW[0].dimen.ghost*
-                                     abs(Soln_Block_List.Block[i_blk].infoW[0].dimen.j)*
-                                     abs(Soln_Block_List.Block[i_blk].infoW[0].dimen.k)*
-                                     Soln_Blks[i_blk].NumVar();
-             if (Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar())
-                buffer_size_neighbour = buffer_size_neighbour +
-                                        Soln_Block_List.Block[i_blk].infoW[0].dimen.ghost*
-                                        (abs(Soln_Block_List.Block[i_blk].infoW[0].dimen.j)+1)*
-                                        (abs(Soln_Block_List.Block[i_blk].infoW[0].dimen.k)+1)*
-                                        NUM_COMP_VECTOR3D+
-		  4*Soln_Block_List.Block[i_blk].infoW[0].dimen.ghost*abs(Soln_Block_List.Block[i_blk].infoW[0].dimen.j)+
-		  4*Soln_Block_List.Block[i_blk].infoW[0].dimen.ghost*abs(Soln_Block_List.Block[i_blk].infoW[0].dimen.k);
-          } else {
-                buffer_size_neighbour = Soln_Block_List.Block[i_blk].infoW[0].dimen.ghost*
-                                        (abs(Soln_Block_List.Block[i_blk].infoW[0].dimen.j)+1)*
-                                        (abs(Soln_Block_List.Block[i_blk].infoW[0].dimen.k)+1)*
-                                        NUM_COMP_VECTOR3D+
-		  4*Soln_Block_List.Block[i_blk].infoW[0].dimen.ghost*abs(Soln_Block_List.Block[i_blk].infoW[0].dimen.j)+
-		  4*Soln_Block_List.Block[i_blk].infoW[0].dimen.ghost*abs(Soln_Block_List.Block[i_blk].infoW[0].dimen.k);
-          } /* endif */
-          l = -1;
-         // Load ghost cell solution variable information as required.
-	  if (!Send_Mesh_Geometry_Only) {
-             if (Soln_Block_List.Block[i_blk].infoW[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoW[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-	        i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoW[0].dimen.ghost-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoW[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoW[0].dimen.j > 0 ) {
-	        i_min = Soln_Blks[i_blk].ICl;
-	        i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoW[0].dimen.ghost-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-            } else  if ( Soln_Block_List.Block[i_blk].infoW[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoW[0].dimen.ghost-1;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoW[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-	        i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoW[0].dimen.ghost-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoW[0].dimen.ghost-1;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoW[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoW[0].dimen.ghost-1;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-             } else if (Soln_Block_List.Block[i_blk].infoW[0].dimen.i > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-	        i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoW[0].dimen.ghost-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-             } else {
-	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoW[0].dimen.ghost-1;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-             } /* endif */
-             i = Soln_Blks[i_blk].LoadSendBuffer(Soln_Block_List.message_noreschange_westface_sendbuf[i_blk],
-                                                l,buffer_size_neighbour,
-                                                i_min,i_max,i_inc,j_min,j_max,j_inc,
-                                                k_min,k_max,k_inc);
-	     if (i != 0) return(1300);
-          } /* endif */
-          // Load ghost cell mesh information as required.
-          if (Send_Mesh_Geometry_Only ||
-              Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar()) {
-             if (Soln_Block_List.Block[i_blk].infoW[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoW[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+1;
-	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoW[0].dimen.ghost;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl;
-	        j_max = Soln_Blks[i_blk].Grid.JNu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl;
-	        k_max = Soln_Blks[i_blk].Grid.KNu;
-	        k_inc = 1;
-                i_ref = i_min-1;
-                j_ref = j_min;
-                k_ref = k_min;
-             } else if (Soln_Block_List.Block[i_blk].infoW[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoW[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+1;
-	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoW[0].dimen.ghost;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl;
-	        j_max = Soln_Blks[i_blk].Grid.JNu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu;
-	        k_max = Soln_Blks[i_blk].Grid.KNl;
-	        k_inc = -1;
-                i_ref = i_min-1;
-                j_ref = j_min;
-                k_ref = k_min;
-             } else if (Soln_Block_List.Block[i_blk].infoW[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoW[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INl+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl;
-	        j_max = Soln_Blks[i_blk].Grid.JNu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl;
-	        k_max = Soln_Blks[i_blk].Grid.KNu;
-	        k_inc = 1;
-                i_ref = i_max-1;
-                j_ref = j_min;
-                k_ref = k_min;
-             } else  if (Soln_Block_List.Block[i_blk].infoW[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+1;
-	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoW[0].dimen.ghost;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu;
-	        j_max = Soln_Blks[i_blk].Grid.JNl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl;
-	        k_max = Soln_Blks[i_blk].Grid.KNu;
-	        k_inc = 1;
-                i_ref = i_min-1;
-                j_ref = j_min;
-                k_ref = k_min;
-             } else if (Soln_Block_List.Block[i_blk].infoW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoW[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INl+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu;
-	        j_max = Soln_Blks[i_blk].Grid.JNl;
-	        j_inc = -1;
- 	        k_min = Soln_Blks[i_blk].Grid.KNl;
-	        k_max = Soln_Blks[i_blk].Grid.KNu;
-	        k_inc = 1;
-               i_ref = i_max-1;
-                j_ref = j_min;
-                k_ref = k_min;
-             } else if (Soln_Block_List.Block[i_blk].infoW[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoW[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INl+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl;
-	        j_max = Soln_Blks[i_blk].Grid.JNu;
-	        j_inc = 1;
- 	        k_min = Soln_Blks[i_blk].Grid.KNu;
-	        k_max = Soln_Blks[i_blk].Grid.KNl;
-	        k_inc = -1;
-		i_ref = i_max-1;
-                j_ref = j_min;
-                k_ref = k_min;
-             } else if (Soln_Block_List.Block[i_blk].infoW[0].dimen.i > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+1;
-	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoW[0].dimen.ghost;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu;
-	        j_max = Soln_Blks[i_blk].Grid.JNl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu;
-	        k_max = Soln_Blks[i_blk].Grid.KNl;
-	        k_inc = 1;
-                i_ref = i_min-1;
-                j_ref = j_min;
-                k_ref = k_min;
-             } else {
-	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoW[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INl+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu;
-	        j_max = Soln_Blks[i_blk].Grid.JNl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu;
-	        k_max = Soln_Blks[i_blk].Grid.KNl;
-	        k_inc = -1;
-                i_ref = i_max-1;
-                j_ref = j_min;
-                k_ref = k_min;
-             } /* endif */
-             x_ref = Soln_Blks[i_blk].Grid.Node[i_ref][j_ref][k_ref].X; // Reference node location.
-             for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-	       for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc )
-                   for ( m = 1 ; m <= NUM_COMP_VECTOR3D; ++ m) {
-		      l = l + 1;
-                      if (l >= buffer_size_neighbour) return(1301);
-                      Soln_Block_List.message_noreschange_westface_sendbuf[i_blk][l] =
-                         Soln_Blks[i_blk].Grid.Node[i][j][k].X[m]-x_ref[m];
-                   } /* endfor */
-             if (Soln_Block_List.Block[i_blk].infoW[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoW[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-	        i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoW[0].dimen.ghost-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoW[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoW[0].dimen.j > 0 ) {
-	        i_min = Soln_Blks[i_blk].ICl;
-	        i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoW[0].dimen.ghost-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-             } else if (Soln_Block_List.Block[i_blk].infoW[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoW[0].dimen.ghost-1;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoW[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-	        i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoW[0].dimen.ghost-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoW[0].dimen.ghost-1;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoW[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoW[0].dimen.ghost-1;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-             } else if (Soln_Block_List.Block[i_blk].infoW[0].dimen.i > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-	        i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoW[0].dimen.ghost-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-             } else {
-	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoW[0].dimen.ghost-1;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
- 	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-            } /* endif */
-
-                 for ( i  = i_min ; ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc )
-		   for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
-		  l = l + 1;
-                   if (l >= buffer_size_neighbour) return(1302);
-                   Soln_Block_List.message_noreschange_westface_sendbuf[i_blk][l] =
-                      double(Soln_Blks[i_blk].Grid.BCtypeB[i][j]);
-                } /* endfor */
-                for ( i  = i_min ; ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc )
-		  for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
-                   l = l + 1;
-                   if (l >= buffer_size_neighbour) return(1303);
-                   Soln_Block_List.message_noreschange_westface_sendbuf[i_blk][l] =
-                      double(Soln_Blks[i_blk].Grid.BCtypeT[i][j]);
-                } /* endfor */
-                for ( i  = i_min ; ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc )
-		  for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc ){
-                   l = l + 1;
-                   if (l >= buffer_size_neighbour) return(1304);
-                   Soln_Block_List.message_noreschange_westface_sendbuf[i_blk][l] =
-                      double(Soln_Blks[i_blk].Grid.BCtypeS[i][k]);
-                } /* endfor */
-                for ( i  = i_min ; ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc )
-		  for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc ) {
-                   l = l + 1;
-                   if (l >= buffer_size_neighbour) return(1305);
-                   Soln_Block_List.message_noreschange_westface_sendbuf[i_blk][l] =
-                      double(Soln_Blks[i_blk].Grid.BCtypeN[i][k]);
-                } /* endfor */
-
+   /* Load the send buffers of each solution block. */
+   for (int i_blk = 0 ; i_blk <= Soln_Block_List.Nblk-1 ; ++i_blk) {
+     if (Soln_Block_List.Block[i_blk].used) {
+        // Assign the boundary element information
+        number_neighbours[BE::BSW] = Soln_Block_List.Block[i_blk].nBSW;
+        neighbour_info[BE::BSW] = Soln_Block_List.Block[i_blk].infoBSW[0];
+        
+        number_neighbours[BE::SW] = Soln_Block_List.Block[i_blk].nSW;
+        neighbour_info[BE::SW] = Soln_Block_List.Block[i_blk].infoSW[0];
+        
+        number_neighbours[BE::TSW] = Soln_Block_List.Block[i_blk].nTSW;
+        neighbour_info[BE::TSW] = Soln_Block_List.Block[i_blk].infoTSW[0];
+        
+        number_neighbours[BE::BW] = Soln_Block_List.Block[i_blk].nBW;
+        neighbour_info[BE::BW] = Soln_Block_List.Block[i_blk].infoBW[0];
+        
+        number_neighbours[BE::W] = Soln_Block_List.Block[i_blk].nW;
+        neighbour_info[BE::W] = Soln_Block_List.Block[i_blk].infoW[0];
+        
+        number_neighbours[BE::TW] = Soln_Block_List.Block[i_blk].nTW;
+        neighbour_info[BE::TW] = Soln_Block_List.Block[i_blk].infoTW[0];
+        
+        number_neighbours[BE::BNW] = Soln_Block_List.Block[i_blk].nBNW;
+        neighbour_info[BE::BNW] = Soln_Block_List.Block[i_blk].infoBNW[0];
+        
+        number_neighbours[BE::NW] = Soln_Block_List.Block[i_blk].nNW;
+        neighbour_info[BE::NW] = Soln_Block_List.Block[i_blk].infoNW[0];
+        
+        number_neighbours[BE::TNW] = Soln_Block_List.Block[i_blk].nTNW;
+        neighbour_info[BE::TNW] = Soln_Block_List.Block[i_blk].infoTNW[0];
+        
+        number_neighbours[BE::BS] = Soln_Block_List.Block[i_blk].nBS;
+        neighbour_info[BE::BS] = Soln_Block_List.Block[i_blk].infoBS[0];
+        
+        number_neighbours[BE::S] = Soln_Block_List.Block[i_blk].nS;
+        neighbour_info[BE::S] = Soln_Block_List.Block[i_blk].infoS[0];
+        
+        number_neighbours[BE::TS] = Soln_Block_List.Block[i_blk].nTS;
+        neighbour_info[BE::TS] = Soln_Block_List.Block[i_blk].infoTS[0];
+        
+        number_neighbours[BE::B] = Soln_Block_List.Block[i_blk].nB;
+        neighbour_info[BE::B] = Soln_Block_List.Block[i_blk].infoB[0];
+        
+        number_neighbours[BE::T] = Soln_Block_List.Block[i_blk].nT;
+        neighbour_info[BE::T] = Soln_Block_List.Block[i_blk].infoT[0];
+        
+        number_neighbours[BE::BN] = Soln_Block_List.Block[i_blk].nBN;
+        neighbour_info[BE::BN] = Soln_Block_List.Block[i_blk].infoBN[0];
+        
+        number_neighbours[BE::N] = Soln_Block_List.Block[i_blk].nN;
+        neighbour_info[BE::N] = Soln_Block_List.Block[i_blk].infoN[0];
+        
+        number_neighbours[BE::TN] = Soln_Block_List.Block[i_blk].nTN;
+        neighbour_info[BE::TN] = Soln_Block_List.Block[i_blk].infoTN[0];
+        
+        number_neighbours[BE::BSE] = Soln_Block_List.Block[i_blk].nBSE;
+        neighbour_info[BE::BSE] = Soln_Block_List.Block[i_blk].infoBSE[0];
+        
+        number_neighbours[BE::SE] = Soln_Block_List.Block[i_blk].nSE;
+        neighbour_info[BE::SE] = Soln_Block_List.Block[i_blk].infoSE[0];
+        
+        number_neighbours[BE::TSE] = Soln_Block_List.Block[i_blk].nTSE;
+        neighbour_info[BE::TSE] = Soln_Block_List.Block[i_blk].infoTSE[0];
+        
+        number_neighbours[BE::BE] = Soln_Block_List.Block[i_blk].nBE;
+        neighbour_info[BE::BE] = Soln_Block_List.Block[i_blk].infoBE[0];
+        
+        number_neighbours[BE::E] = Soln_Block_List.Block[i_blk].nE;
+        neighbour_info[BE::E] = Soln_Block_List.Block[i_blk].infoE[0];
+        
+        number_neighbours[BE::TE] = Soln_Block_List.Block[i_blk].nTE;
+        neighbour_info[BE::TE] = Soln_Block_List.Block[i_blk].infoTE[0]; 
+        
+        number_neighbours[BE::BNE] = Soln_Block_List.Block[i_blk].nBNE;
+        neighbour_info[BE::BNE] = Soln_Block_List.Block[i_blk].infoBNE[0]; 
+        
+        number_neighbours[BE::NE] = Soln_Block_List.Block[i_blk].nNE;
+        neighbour_info[BE::NE] = Soln_Block_List.Block[i_blk].infoNE[0];  
+        
+        number_neighbours[BE::TNE] = Soln_Block_List.Block[i_blk].nTNE;
+        neighbour_info[BE::TNE] = Soln_Block_List.Block[i_blk].infoTNE[0]; 
+     
+        for (int ii = -1; ii <= 1; ii++) {
+           for (int jj = -1; jj <= 1; jj++) {
+              for (int kk = -1; kk <= 1; kk++) {
+                 i_bound_elem = 9*(ii+1) + 3*(jj+1) + (kk+1);
+              
+                 if ((number_neighbours[i_bound_elem] == 1) && 
+                     (i_bound_elem != BE::ME) &&
+                     (Soln_Block_List.Block[i_blk].info.level == neighbour_info[i_bound_elem].level)) {
+                    buffer_size = ((abs(ii)*Soln_Block_List.Block[i_blk].info.dimen.ghost) + 
+				   ((!ii)*abs(Soln_Block_List.Block[i_blk].info.dimen.i)))*
+                                  ((abs(jj)*Soln_Block_List.Block[i_blk].info.dimen.ghost) + 
+				   ((!jj)*abs(Soln_Block_List.Block[i_blk].info.dimen.j)))*
+                                  ((abs(kk)*Soln_Block_List.Block[i_blk].info.dimen.ghost) + 
+				   ((!kk)*abs(Soln_Block_List.Block[i_blk].info.dimen.k)))*
+                                  (Soln_Blks[i_blk].NumVar());
+                    l = -1;
+                 
+                    // Load ghost cell solution variable information.
+                    if (ii == -1) {
+                       n_imin = Soln_Blks[i_blk].Nghost;
+                       n_imax = Soln_Blks[i_blk].ICl +1;
+                    } else if (ii == 1){
+                       n_imin =  Soln_Blks[i_blk].ICu-1;
+                       n_imax = Soln_Blks[i_blk].ICu;
+                    } else {
+                       n_imin = 0;
+                       n_imax = 0;
+                    } /* endif */
+                    if (jj == -1 ) {
+                       n_jmin = Soln_Blks[i_blk].Nghost;
+                       n_jmax = Soln_Blks[i_blk].JCl +1;
+                    } else if( jj == 1) {
+                       n_jmin =  Soln_Blks[i_blk].JCu-1;
+                       n_jmax = Soln_Blks[i_blk].JCu;
+                    } else {
+                       n_jmin = 0;
+                       n_jmax = 0;
+                    } /* endif */
+                    if (kk == -1 ) {
+                       n_kmin = Soln_Blks[i_blk].Nghost;
+                       n_kmax = Soln_Blks[i_blk].KCl +1;
+                    } else if ( kk == 1) {
+                       n_kmin =  Soln_Blks[i_blk].KCu-1;
+                       n_kmax = Soln_Blks[i_blk].KCu;
+                    } else {
+                       n_kmin = 0;
+                       n_kmax = 0;
+                    } /* endif */
    
-          } /* endif */
-       } /* endif */
+                    i_min = (!ii)*Soln_Blks[i_blk].ICl + n_imin;
+                    i_max = (!ii)*Soln_Blks[i_blk].ICu + n_imax;
+                    i_inc = 1;
+                    j_min = (!jj)*Soln_Blks[i_blk].JCl + n_jmin;
+                    j_max = (!jj)*Soln_Blks[i_blk].JCu + n_jmax;
+                    j_inc = 1;
+                    k_min = (!kk)*Soln_Blks[i_blk].KCl + n_kmin;
+                    k_max = (!kk)*Soln_Blks[i_blk].KCu + n_kmax;
+                    k_inc = 1;
+                    
+                    // Using transformation matrices to load the send buffer in the order of unloading.
+                    compact_trans_matrix[0] = neighbour_info[i_bound_elem].blkorient.ctm_offsets[0];
+                    compact_trans_matrix[1] = neighbour_info[i_bound_elem].blkorient.ctm_offsets[1];
+                    compact_trans_matrix[2] = neighbour_info[i_bound_elem].blkorient.ctm_offsets[2];
+                   
+                    ts[0] = sgn(compact_trans_matrix[0]);
+                    ts[1] = sgn(compact_trans_matrix[1]);
+                    ts[2] = sgn(compact_trans_matrix[2]);
+                    
+                    ti[0] = abs(compact_trans_matrix[0]) -1;
+                    ti[1] = abs(compact_trans_matrix[1]) -1;
+                    ti[2] = abs(compact_trans_matrix[2]) -1;
 
-       ///////////////////////////////////////////////////////////////////////////
-       // Load send buffer for North West corner neighbours of solution blocks. //
-       ///////////////////////////////////////////////////////////////////////////
-       if (Soln_Block_List.Block[i_blk].used &&
-           (Soln_Block_List.Block[i_blk].nNW == 1) &&
-           (Soln_Block_List.Block[i_blk].info.level ==
-            Soln_Block_List.Block[i_blk].infoNW[0].level)) {
-         if (!Send_Mesh_Geometry_Only) {
-             buffer_size_neighbour = sqr(Soln_Block_List.Block[i_blk].infoNW[0].dimen.ghost)*
-                                     abs(Soln_Block_List.Block[i_blk].infoNW[0].dimen.k)*
-                                     Soln_Blks[i_blk].NumVar();
-             if (Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar())
-                buffer_size_neighbour = buffer_size_neighbour +
-                                        sqr(Soln_Block_List.Block[i_blk].infoNW[0].dimen.ghost)*
-                                        (abs(Soln_Block_List.Block[i_blk].infoNW[0].dimen.k)+1)*
-                                        NUM_COMP_VECTOR3D;
-          } else {
-                buffer_size_neighbour = sqr(Soln_Block_List.Block[i_blk].infoNW[0].dimen.ghost)*
-                                        (abs(Soln_Block_List.Block[i_blk].infoNW[0].dimen.k)+1)*
-                                        NUM_COMP_VECTOR3D;
-          } /* endif */
-          l = -1;
-          // Load ghost cell solution variable information as required.
-          if (!Send_Mesh_Geometry_Only) {
-             if (Soln_Block_List.Block[i_blk].infoNW[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoNW[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoNW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoNW[0].dimen.ghost-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoNW[0].dimen.ghost+1;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoNW[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoNW[0].dimen.j > 0 ) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoNW[0].dimen.ghost-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoNW[0].dimen.ghost+1;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-             } else if ( Soln_Block_List.Block[i_blk].infoNW[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoNW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoNW[0].dimen.ghost-1;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoNW[0].dimen.ghost+1;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoNW[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoNW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoNW[0].dimen.ghost-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoNW[0].dimen.ghost+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoNW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoNW[0].dimen.ghost-1;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoNW[0].dimen.ghost+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoNW[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoNW[0].dimen.ghost-1;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoNW[0].dimen.ghost+1;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-             } else if (Soln_Block_List.Block[i_blk].infoNW[0].dimen.i > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-	        i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoNW[0].dimen.ghost-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoNW[0].dimen.ghost+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-             } else {
-	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoNW[0].dimen.ghost-1;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu;
- 	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoNW[0].dimen.ghost+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-             } /* endif */
+                    if (ts[0] <0) {
+                       i_inc = -1;
+                       i_temp = i_min;
+                       i_min = i_max;
+                       i_max = i_temp;
+                    } /* endif */
+                    if (ts[1] <0) {
+                       j_inc = -1;
+                       i_temp = j_min;
+                       j_min = j_max;
+                       j_max = i_temp;
+                    } /* endif */
+                    if (ts[2] <0) {
+                       k_inc = -1;
+                       i_temp = k_min;
+                       k_min = k_max;
+                       k_max = i_temp;
+                    } /* endif */
+                    
+                    id_min[0] = i_min;
+                    id_min[1] = j_min;
+                    id_min[2] = k_min;
+                    id_max[0] = i_max;
+                    id_max[1] = j_max;
+                    id_max[2] = k_max;
+                    inc[0] = i_inc;
+                    inc[1] = j_inc;
+                    inc[2] = k_inc;
+                    
+                    i = Soln_Blks[i_blk].LoadSendBuffer_Solution(Soln_Block_List.message_noreschange_sendbuf[i_blk][i_bound_elem],
+                                                                 l, buffer_size, 
+                                                                 id_min, id_max, inc, ti);
+                    if (i != 0) return (4001);
+                 } /* endif */
 
-           i = Soln_Blks[i_blk].LoadSendBuffer(Soln_Block_List.message_noreschange_northwestcorner_sendbuf[i_blk],
-                                                l,buffer_size_neighbour,
-                                                i_min,i_max,i_inc,
-                                                j_min,j_max,j_inc,
-                                                k_min,k_max,k_inc);
-	     if (i != 0) return(4200);
-          } /* endif */
-          // Load ghost cell mesh information as required.
-          if (Send_Mesh_Geometry_Only ||
-              Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar()) {
-             if (Soln_Block_List.Block[i_blk].infoNW[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoNW[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoNW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+1;
-	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoNW[0].dimen.ghost;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoNW[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl;
-	        k_max = Soln_Blks[i_blk].Grid.KNu;
-	        k_inc = 1;
-                i_ref = i_min-1;
-                j_ref = j_max+1;
-                k_ref = k_min  ;
-             } else if (Soln_Block_List.Block[i_blk].infoNW[0].dimen.i > 0 &&
-			Soln_Block_List.Block[i_blk].infoNW[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+1;
-	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoNW[0].dimen.ghost;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoNW[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu;
-	        k_max = Soln_Blks[i_blk].Grid.KNl;
-	        k_inc = -1;
-                i_ref = i_min-1;
-                j_ref = j_max+1;
-                k_ref = k_min  ;
-             } else if ( Soln_Block_List.Block[i_blk].infoNW[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoNW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoNW[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INl+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoNW[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl;
-	        k_max = Soln_Blks[i_blk].Grid.KNu;
-	        k_inc = 1;
-                i_ref = i_max-1;
-                j_ref = j_max+1;
-                k_ref = k_min  ;
-             } else if (Soln_Block_List.Block[i_blk].infoNW[0].dimen.i > 0 &&
-			Soln_Block_List.Block[i_blk].infoNW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+1;
-	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoNW[0].dimen.ghost;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoNW[0].dimen.ghost;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl;
-	        k_max = Soln_Blks[i_blk].Grid.KNu;
-	        k_inc = 1;
-                i_ref = i_min-1;
-                j_ref = j_min+1;
-                k_ref = k_min  ;
-             } else if (Soln_Block_List.Block[i_blk].infoNW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoNW[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INl+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoNW[0].dimen.ghost;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl;
-	        k_max = Soln_Blks[i_blk].Grid.KNu;
-	        k_inc = 1;
-                i_ref = i_max-1;
-                j_ref = j_min+1;
-                k_ref = k_min  ;
-             } else if (Soln_Block_List.Block[i_blk].infoNW[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoNW[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INl+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoNW[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu;
-	        k_max = Soln_Blks[i_blk].Grid.KNl;
-	        k_inc = -1;
-                i_ref = i_max-1;
-                j_ref = j_max+1;
-                k_ref = k_min  ;
-             } else if (Soln_Block_List.Block[i_blk].infoNW[0].dimen.i > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+1;
-	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoNW[0].dimen.ghost;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoNW[0].dimen.ghost;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu;
-	        k_max = Soln_Blks[i_blk].Grid.KNl;
-	        k_inc = -1;
-                i_ref = i_min-1;
-                j_ref = j_min+1;
-		k_ref = k_min  ;
-            } else {
-	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoNW[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INl+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoNW[0].dimen.ghost;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu;
-	        k_max = Soln_Blks[i_blk].Grid.KNl;
-	        k_inc = -1;
-                i_ref = i_max-1;
-                j_ref = j_min+1;
-                k_ref = k_min  ;
-             } /* endif */
-             x_ref = Soln_Blks[i_blk].Grid.Node[i_ref][j_ref][k_ref].X; // Reference node location.
-             for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-	       for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc )
-                   for ( m = 1 ; m <= NUM_COMP_VECTOR3D; ++ m) {
-		      l = l + 1;
-                      if (l >= buffer_size_neighbour) return(4201);
-                      Soln_Block_List.message_noreschange_northwestcorner_sendbuf[i_blk][l] =
-                         Soln_Blks[i_blk].Grid.Node[i][j][k].X[m]-x_ref[m];
-                   } /* endfor */
-          } /* endif */
-       } /* endif */
+	      } /* end of for k*/
+	   } /* end of for j*/
+        } /* end of for i*/
 
-       ///////////////////////////////////////////////////////////////////////////
-       // Load send buffer for North East corner neighbours of solution blocks. //
-       ///////////////////////////////////////////////////////////////////////////
-       if (Soln_Block_List.Block[i_blk].used &&
-           (Soln_Block_List.Block[i_blk].nNE == 1) &&
-           (Soln_Block_List.Block[i_blk].info.level ==
-            Soln_Block_List.Block[i_blk].infoNE[0].level)) {
-         if (!Send_Mesh_Geometry_Only) {
-             buffer_size_neighbour = sqr(Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost)*
-                                     abs(Soln_Block_List.Block[i_blk].infoNE[0].dimen.k)*
-                                     Soln_Blks[i_blk].NumVar();
-             if (Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar())
-                buffer_size_neighbour = buffer_size_neighbour +
-                                        sqr(Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost)*
-                                        (abs(Soln_Block_List.Block[i_blk].infoNE[0].dimen.k)+1)*
-                                        NUM_COMP_VECTOR3D;
-          } else {
-                buffer_size_neighbour = sqr(Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost)*
-                                        (abs(Soln_Block_List.Block[i_blk].infoNE[0].dimen.k)+1)*
-                                        NUM_COMP_VECTOR3D;
-          } /* endif */
-          l = -1;
-          // Load ghost cell solution variable information as required.
-          if (!Send_Mesh_Geometry_Only) {
-             if (Soln_Block_List.Block[i_blk].infoNE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoNE[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoNE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost+1;
-                i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost+1;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoNE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoNE[0].dimen.j > 0 ) {
-	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost+1;
-                i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost+1;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-              } else if (Soln_Block_List.Block[i_blk].infoNE[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoNE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost+1;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-              } else if (Soln_Block_List.Block[i_blk].infoNE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoNE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost+1;
-                i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-            } else if (Soln_Block_List.Block[i_blk].infoNE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-              } else if (Soln_Block_List.Block[i_blk].infoNE[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost+1;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
- 	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-            } else if (Soln_Block_List.Block[i_blk].infoNE[0].dimen.i > 0) {
-	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost+1;
-	        i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-             } else {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu;
- 	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-             } /* endif */
+     } /* endif */
+   } /* endfor */
+  
+   /* Loading of send buffers complete.  Return zero value. */
 
-             i = Soln_Blks[i_blk].LoadSendBuffer(Soln_Block_List.message_noreschange_northeastcorner_sendbuf[i_blk],
-                                                l,buffer_size_neighbour,
-                                                i_min,i_max,i_inc,j_min,j_max,j_inc,
-                                                k_min,k_max,k_inc);
-	     if (i != 0) return(5200);
-          } /* endif */
-          // Load ghost cell mesh information as required.
-          if (Send_Mesh_Geometry_Only ||
-              Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar()) {
-             if (Soln_Block_List.Block[i_blk].infoNE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoNE[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoNE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INu-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl;
-	        k_max = Soln_Blks[i_blk].Grid.KNu;
-	        k_inc = 1;
-                i_ref = i_max+1;
-                j_ref = j_max+1;
-                k_ref = k_min;
-             } else if (Soln_Block_List.Block[i_blk].infoNE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoNE[0].dimen.j > 0 ) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INu-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu;
-	        k_max = Soln_Blks[i_blk].Grid.KNl;
-	        k_inc = -1;
-                i_ref = i_max+1;
-                j_ref = j_max+1;
-                k_ref = k_min;
-              } else if (Soln_Block_List.Block[i_blk].infoNE[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoNE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-1;
-	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl;
-	        k_max = Soln_Blks[i_blk].Grid.KNu;
-	        k_inc = 1;
-                i_ref = i_min+1;
-                j_ref = j_max+1;
-                k_ref = k_min;
-              } else if (Soln_Block_List.Block[i_blk].infoNE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoNE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INu-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl;
-	        k_max = Soln_Blks[i_blk].Grid.KNu;
-	        k_inc = 1;
-                i_ref = i_max+1;
-                j_ref = j_min+1;
-                k_ref = k_min;
-              } else if (Soln_Block_List.Block[i_blk].infoNE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-1;
-	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl;
-	        k_max = Soln_Blks[i_blk].Grid.KNu;
-	        k_inc = 1;
-                i_ref = i_min+1;
-                j_ref = j_min+1;
-                k_ref = k_min;
-             } else if (Soln_Block_List.Block[i_blk].infoNE[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-1;
-	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu;
-	        k_max = Soln_Blks[i_blk].Grid.KNl;
-	        k_inc = -1;
-                i_ref = i_min+1;
-                j_ref = j_max+1;
-                k_ref = k_min;
-             } else if (Soln_Block_List.Block[i_blk].infoNE[0].dimen.i > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INu-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu;
-	        k_max = Soln_Blks[i_blk].Grid.KNl;
-	        k_inc = -1;
-                i_ref = i_max+1;
-                j_ref = j_min+1;
-                k_ref = k_min;
-             } else {
-	        i_min = Soln_Blks[i_blk].Grid.INu-1;
-	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoNE[0].dimen.ghost;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu;
-	        k_max = Soln_Blks[i_blk].Grid.KNl;
-	        k_inc = -1;
-                i_ref = i_min+1;
-                j_ref = j_min+1;
-                k_ref = k_min;
-             } /* endif */
-             x_ref = Soln_Blks[i_blk].Grid.Node[i_ref][j_ref][k_ref].X; // Reference node location.
-             for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc )
-                   for ( m = 1 ; m <= NUM_COMP_VECTOR3D; ++ m) {
-		      l = l + 1;
-                      if (l >= buffer_size_neighbour) return(5201);
-                      Soln_Block_List.message_noreschange_northeastcorner_sendbuf[i_blk][l] =
-                         Soln_Blks[i_blk].Grid.Node[i][j][k].X[m]-x_ref[m];
-                   } /* endfor */
-          } /* endif */
-       } /* endif */
+   return (0);
 
-       ///////////////////////////////////////////////////////////////////////////
-       // Load send buffer for South East corner neighbours of solution blocks. //
-       ///////////////////////////////////////////////////////////////////////////
-       if (Soln_Block_List.Block[i_blk].used &&
-           (Soln_Block_List.Block[i_blk].nSE == 1) &&
-           (Soln_Block_List.Block[i_blk].info.level ==
-            Soln_Block_List.Block[i_blk].infoSE[0].level)) {
-         if (!Send_Mesh_Geometry_Only) {
-             buffer_size_neighbour = sqr(Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost)*
-                                     abs(Soln_Block_List.Block[i_blk].infoSE[0].dimen.k)*
-                                     Soln_Blks[i_blk].NumVar();
-             if (Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar())
-                buffer_size_neighbour = buffer_size_neighbour +
-                                        sqr(Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost)*
-                                        (abs(Soln_Block_List.Block[i_blk].infoSE[0].dimen.k)+1)*
-                                        NUM_COMP_VECTOR3D;
-          } else {
-                buffer_size_neighbour = sqr(Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost)*
-                                        (abs(Soln_Block_List.Block[i_blk].infoSE[0].dimen.k)+1)*
-                                        NUM_COMP_VECTOR3D;
-          } /* endif */
-          l = -1;
-          // Load ghost cell solution variable information as required.
-          if (!Send_Mesh_Geometry_Only) {
-             if (Soln_Block_List.Block[i_blk].infoSE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoSE[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoSE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost+1;
-                i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost-1;
-	        j_inc = 1;
-   	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoSE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoSE[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost+1;
-                i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost-1;
-	        j_inc = 1;
-   	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-             } else if (Soln_Block_List.Block[i_blk].infoSE[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoSE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost-1;
-	        j_inc = 1;
-   	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoSE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoSE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost+1;
-                i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost-1;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-   	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-	     } else if (Soln_Block_List.Block[i_blk].infoSE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost-1;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
- 	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-	     } else if (Soln_Block_List.Block[i_blk].infoSE[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost-1;
-	        j_inc = 1;
- 	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-            } else if (Soln_Block_List.Block[i_blk].infoSE[0].dimen.i > 0) {
-	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost+1;
-	        i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost-1;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-             } else {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost-1;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-             } /* endif */
-             i = Soln_Blks[i_blk].LoadSendBuffer(Soln_Block_List.message_noreschange_southeastcorner_sendbuf[i_blk],
-                                                l,buffer_size_neighbour,
-                                                i_min,i_max,i_inc,j_min,j_max,j_inc,
-                                                k_min,k_max,k_inc);
-	     if (i != 0) return(4100);
-          } /* endif */
-          // Load ghost cell mesh information as required.
-          if (Send_Mesh_Geometry_Only ||
-              Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar()) {
-             if (Soln_Block_List.Block[i_blk].infoSE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoSE[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoSE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INu-1;
-                i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl;
-	        k_max = Soln_Blks[i_blk].Grid.KNu;
-	        k_inc = 1;
-                i_ref = i_max+1;
-                j_ref = j_min-1;
-                k_ref = k_min;
-             } else if (Soln_Block_List.Block[i_blk].infoSE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoSE[0].dimen.j > 0 ) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INu-1;
-                i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu;
-	        k_max = Soln_Blks[i_blk].Grid.KNl;
-	        k_inc = -1;
-                i_ref = i_max+1;
-                j_ref = j_min-1;
-                k_ref = k_min;
-             } else if (Soln_Block_List.Block[i_blk].infoSE[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoSE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-1;
-	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost;
-                i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl;
-	        k_max = Soln_Blks[i_blk].Grid.KNu;
-	        k_inc = 1;
-                i_ref = i_min+1;
-                j_ref = j_min-1;
-                k_ref = k_min;
-             } else if (Soln_Block_List.Block[i_blk].infoSE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoSE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INu-1;
-                i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl;
-	        k_max = Soln_Blks[i_blk].Grid.KNu;
-	        k_inc = 1;
-                i_ref = i_max+1;
-                j_ref = j_max-1;
-                k_ref = k_min;
-             } else if (Soln_Block_List.Block[i_blk].infoSE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-1;
-	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost;
-                i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl;
-	        k_max = Soln_Blks[i_blk].Grid.KNu;
-	        k_inc = 1;
-                i_ref = i_min+1;
-                j_ref = j_max-1;
-                k_ref = k_min;
-             } else if (Soln_Block_List.Block[i_blk].infoSE[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-1;
-	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost;
-                i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu;
-	        k_max = Soln_Blks[i_blk].Grid.KNl;
-	        k_inc = -1;
-                i_ref = i_min+1;
-                j_ref = j_min-1;
-                k_ref = k_min;
-             } else if (Soln_Block_List.Block[i_blk].infoSE[0].dimen.i > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INu-1;
-                i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu;
-	        k_max = Soln_Blks[i_blk].Grid.KNl;
-	        k_inc = -1;
-                i_ref = i_max+1;
-                j_ref = j_max-1;
-                k_ref = k_min;
-              } else {
-	        i_min = Soln_Blks[i_blk].Grid.INu-1;
-	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost;
-                i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoSE[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu;
-	        k_max = Soln_Blks[i_blk].Grid.KNl;
-	        k_inc = -1;
-                i_ref = i_min+1;
-                j_ref = j_max-1;
-                k_ref = k_min;
-             } /* endif */
-             x_ref = Soln_Blks[i_blk].Grid.Node[i_ref][j_ref][k_ref].X; // Reference node location.
-             for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-	       for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc )
-                   for ( m = 1 ; m <= NUM_COMP_VECTOR3D; ++ m) {
-		      l = l + 1;
-                      if (l >= buffer_size_neighbour) return(4101);
-                      Soln_Block_List.message_noreschange_southeastcorner_sendbuf[i_blk][l] =
-                         Soln_Blks[i_blk].Grid.Node[i][j][k].X[m]-x_ref[m];
-                   } /* endfor */
-          } /* endif */
-       } /* endif */
+}
 
-       ///////////////////////////////////////////////////////////////////////////
-       // Load send buffer for South West corner neighbours of solution blocks. //
-       ///////////////////////////////////////////////////////////////////////////
-       if (Soln_Block_List.Block[i_blk].used &&
-           (Soln_Block_List.Block[i_blk].nSW == 1) &&
-           (Soln_Block_List.Block[i_blk].info.level ==
-            Soln_Block_List.Block[i_blk].infoSW[0].level)) {
-         if (!Send_Mesh_Geometry_Only) {
-             buffer_size_neighbour = sqr(Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost)*
-                                     abs(Soln_Block_List.Block[i_blk].infoSW[0].dimen.k)*
-                                     Soln_Blks[i_blk].NumVar();
-             if (Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar())
-                buffer_size_neighbour = buffer_size_neighbour +
-                                        sqr(Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost)*
-                                        (abs(Soln_Block_List.Block[i_blk].infoSW[0].dimen.k)+1)*
-                                        NUM_COMP_VECTOR3D;
-          } else {
-                buffer_size_neighbour =sqr(Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost)*
-                                        (abs(Soln_Block_List.Block[i_blk].infoSW[0].dimen.k)+1)*
-                                        NUM_COMP_VECTOR3D;
-          } /* endif */
-          l = -1;
-           // Load ghost cell solution variable information as required.
-          if (!Send_Mesh_Geometry_Only) {
-             if (Soln_Block_List.Block[i_blk].infoSW[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoSW[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoSW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost-1;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-          } else
-             if (Soln_Block_List.Block[i_blk].infoSW[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoSW[0].dimen.j > 0 ) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost-1;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-          } else
-             if ( Soln_Block_List.Block[i_blk].infoSW[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoSW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost-1;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost-1;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-          } else
-             if (Soln_Block_List.Block[i_blk].infoSW[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoSW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost-1;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-            } else if (Soln_Block_List.Block[i_blk].infoSW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost-1;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost-1;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoSW[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost-1;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost-1;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-             } else if (Soln_Block_List.Block[i_blk].infoSW[0].dimen.i > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost-1;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-             } else {
-	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost-1;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost-1;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-             } /* endif */
-             i = Soln_Blks[i_blk].LoadSendBuffer(Soln_Block_List.message_noreschange_southwestcorner_sendbuf[i_blk],
-                                                l,buffer_size_neighbour,
-                                                i_min,i_max,i_inc,j_min,j_max,j_inc,
-                                                k_min,k_max,k_inc);
-	     if (i != 0) return(5100);
-          } /* endif */
-          // Load ghost cell mesh information as required.
-          if (Send_Mesh_Geometry_Only ||
-              Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar()) {
-             if (Soln_Block_List.Block[i_blk].infoSW[0].dimen.i > 0 &&
-                Soln_Block_List.Block[i_blk].infoSW[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoSW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+1;
-	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost;
-                i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl;
-	        k_max = Soln_Blks[i_blk].Grid.KNu;
-	        k_inc = 1;
-                i_ref = i_min-1;
-                j_ref = j_min-1;
-                k_ref = k_min;
-             } else if (Soln_Block_List.Block[i_blk].infoSW[0].dimen.i > 0 &&
-                Soln_Block_List.Block[i_blk].infoSW[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+1;
-	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost;
-                i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu;
-	        k_max = Soln_Blks[i_blk].Grid.KNl;
-	        k_inc = -1;
-                i_ref = i_min-1;
-                j_ref = j_min-1;
-                k_ref = k_min;
-             } else if (Soln_Block_List.Block[i_blk].infoSW[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoSW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INl+1;
-                i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl;
-	        k_max = Soln_Blks[i_blk].Grid.KNu;
-	        k_inc = 1;
-                i_ref = i_max-1;
-                j_ref = j_min-1;
-                k_ref = k_min;
-             } else if (Soln_Block_List.Block[i_blk].infoSW[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoSW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+1;
-	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost;
-                i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl;
-	        k_max = Soln_Blks[i_blk].Grid.KNu;
-	        k_inc = 1;
-                i_ref = i_min-1;
-                j_ref = j_max-1;
-                k_ref = k_min;
-             } else if (Soln_Block_List.Block[i_blk].infoSW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INl+1;
-                i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl;
-	        k_max = Soln_Blks[i_blk].Grid.KNu;
-	        k_inc = 1;
-                i_ref = i_max-1;
-                j_ref = j_max-1;
-                k_ref = k_min;
-             } else if (Soln_Block_List.Block[i_blk].infoSW[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INl+1;
-                i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu;
-	        k_max = Soln_Blks[i_blk].Grid.KNl;
-	        k_inc = -1;
-                i_ref = i_max-1;
-                j_ref = j_min-1;
-                k_ref = k_min;
-             } else if (Soln_Block_List.Block[i_blk].infoSW[0].dimen.i > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+1;
-	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost;
-                i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu;
-	        k_max = Soln_Blks[i_blk].Grid.KNl;
-	        k_inc = -1;
-                i_ref = i_min-1;
-                j_ref = j_max-1;
-                k_ref = k_min;
-             } else {
-	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INl+1;
-                i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoSW[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu;
-	        k_max = Soln_Blks[i_blk].Grid.KNl;
-	        k_inc = -1;
-                i_ref = i_max-1;
-                j_ref = j_max-1;
-                k_ref = k_min;
-             } /* endif */
-             x_ref = Soln_Blks[i_blk].Grid.Node[i_ref][j_ref][k_ref].X; // Reference node location.
-             for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-	       for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc )
-                   for ( m = 1 ; m <= NUM_COMP_VECTOR3D; ++ m) {
-		      l = l + 1;
-                      if (l >= buffer_size_neighbour) return(5101);
-                      Soln_Block_List.message_noreschange_southwestcorner_sendbuf[i_blk][l] =
-                         Soln_Blks[i_blk].Grid.Node[i][j][k].X[m]-x_ref[m];
-		   } /* endfor */
-          } /* endif */
-       } /* endif */
+/***************************************************************************
+ * Routine: Load_Send_Message_Buffers_NoResChange_Mesh_Geometry_Only       *
+ *                                                                         *
+ * Loads the send message passing buffers for sending mesh and geometry    *
+ * information only to neighbouring 3D hexahedral multi-block solution     *
+ * blocks with no mesh resolution changes (works on entire 1D array of     *
+ * 3D solution blocks).                                                    *
+ *                                                                         *
+ ***************************************************************************/
+template <class Hexa_Soln_Block>
+int Load_Send_Message_Buffers_NoResChange_Mesh_Geometry_Only(Hexa_Soln_Block *Soln_Blks,
+                                                             AdaptiveBlock3D_List &Soln_Block_List) {
+  
+   int buffer_size, neighbour_buffer_size;
 
-   ///////////////////////////////////////////////////////////////////////////
-       // Load send buffer for Top North corner neighbours of solution blocks. //
-       ///////////////////////////////////////////////////////////////////////////
-       if (Soln_Block_List.Block[i_blk].used &&
-           (Soln_Block_List.Block[i_blk].nTN == 1) &&
-           (Soln_Block_List.Block[i_blk].info.level ==
-            Soln_Block_List.Block[i_blk].infoTN[0].level)) {
-         if (!Send_Mesh_Geometry_Only) {
-             buffer_size_neighbour = sqr(Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost)*
-                                     abs(Soln_Block_List.Block[i_blk].infoTN[0].dimen.i)*
-                                     Soln_Blks[i_blk].NumVar();
-             if (Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar())
-                buffer_size_neighbour = buffer_size_neighbour +
-                                        sqr(Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost)*
-                                        (abs(Soln_Block_List.Block[i_blk].infoTN[0].dimen.i)+1)*
-                                        NUM_COMP_VECTOR3D;
-          } else {
-                buffer_size_neighbour = sqr(Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost)*
-                                        (abs(Soln_Block_List.Block[i_blk].infoTN[0].dimen.i)+1)*
-                                        NUM_COMP_VECTOR3D;
-          } /* endif */
+   int i_min, i_max, i_inc, i, 
+       j_min, j_max, j_inc, j, 
+       k_min, k_max, k_inc, k, 
+       m, l;
 
-          l = -1;
-          // Load ghost cell solution variable information as required.
-          if (!Send_Mesh_Geometry_Only) {
-             if (Soln_Block_List.Block[i_blk].infoTN[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTN[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTN[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost+1;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost+1;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoTN[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTN[0].dimen.j > 0 ) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost+1;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost+1;
-	        k_inc = -1;
-              } else if (Soln_Block_List.Block[i_blk].infoTN[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTN[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost+1;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost+1;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-              } else if (Soln_Block_List.Block[i_blk].infoTN[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTN[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost+1;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-            } else if (Soln_Block_List.Block[i_blk].infoTN[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost+1;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-              } else if (Soln_Block_List.Block[i_blk].infoTN[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost+1;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
- 	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost+1;
-	        k_inc = -1;
-            } else if (Soln_Block_List.Block[i_blk].infoTN[0].dimen.i > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-	        i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost+1;
-	        k_inc = -1;
-             } else {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu;
- 	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost+1;
-	        k_inc = -1;
-             } /* endif */
-             i = Soln_Blks[i_blk].LoadSendBuffer(Soln_Block_List.message_noreschange_topnorthcorner_sendbuf[i_blk],
-                                                l,buffer_size_neighbour,
-                                                i_min,i_max,i_inc,j_min,j_max,j_inc,
-                                                k_min,k_max,k_inc);
-	     if (i != 0) return(5300);
-          } /* endif */
-          // Load ghost cell mesh information as required.
-          if (Send_Mesh_Geometry_Only ||
-              Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar()) {
-             if (Soln_Block_List.Block[i_blk].infoTN[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTN[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTN[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl;
-	        i_max = Soln_Blks[i_blk].Grid.INu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_inc = 1;
-                i_ref = i_min;
-                j_ref = j_max+1;
-                k_ref = k_max+1;
-             } else if (Soln_Block_List.Block[i_blk].infoTN[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTN[0].dimen.j > 0 ) {
-	        i_min = Soln_Blks[i_blk].Grid.INl;
-	        i_max = Soln_Blks[i_blk].Grid.INu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost;
-	        k_inc = -1;
-                i_ref = i_min;
-                j_ref = j_max+1;
-                k_ref = k_min+1;
-              } else if (Soln_Block_List.Block[i_blk].infoTN[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTN[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu;
-	        i_max = Soln_Blks[i_blk].Grid.INl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_inc = 1;
-                i_ref = i_min;
-                j_ref = j_max+1;
-                k_ref = k_max+1;
-              } else if (Soln_Block_List.Block[i_blk].infoTN[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTN[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl;
-	        i_max = Soln_Blks[i_blk].Grid.INu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_inc = 1;
-                i_ref = i_min;
-                j_ref = j_min+1;
-                k_ref = k_max+1;
-              } else if (Soln_Block_List.Block[i_blk].infoTN[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu;
-	        i_max = Soln_Blks[i_blk].Grid.INl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_inc = 1;
-                i_ref = i_min;
-                j_ref = j_min+1;
-                k_ref = k_max+1;
-             } else if (Soln_Block_List.Block[i_blk].infoTN[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu;
-	        i_max = Soln_Blks[i_blk].Grid.INl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost;
-	        k_inc = -1;
-                i_ref = i_min;
-                j_ref = j_max+1;
-                k_ref = k_min+1;
-             } else if (Soln_Block_List.Block[i_blk].infoTN[0].dimen.i > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl;
-	        i_max = Soln_Blks[i_blk].Grid.INu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost;
-	        k_inc = -1;
-                i_ref = i_min;
-                j_ref = j_min+1;
-                k_ref = k_min+1;
-             } else {
-	        i_min = Soln_Blks[i_blk].Grid.INu;
-	        i_max = Soln_Blks[i_blk].Grid.INl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTN[0].dimen.ghost;
-	        k_inc = -1;
-                i_ref = i_min;
-                j_ref = j_min+1;
-                k_ref = k_min+1;
-             } /* endif */
-             x_ref = Soln_Blks[i_blk].Grid.Node[i_ref][j_ref][k_ref].X; // Reference node location.
-             for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc )
-                   for ( m = 1 ; m <= NUM_COMP_VECTOR3D; ++ m) {
-		      l = l + 1;
-                      if (l >= buffer_size_neighbour) return(5301);
-                      Soln_Block_List.message_noreschange_topnorthcorner_sendbuf[i_blk][l] =
-                         Soln_Blks[i_blk].Grid.Node[i][j][k].X[m]-x_ref[m];
-                   } /* endfor */
-          } /* endif */
-       } /* endif */
+   int i_ref, j_ref, k_ref;
 
-        ///////////////////////////////////////////////////////////////////////////
-       // Load send buffer for Top East corner neighbours of solution blocks. //
-       ///////////////////////////////////////////////////////////////////////////
-       if (Soln_Block_List.Block[i_blk].used &&
-           (Soln_Block_List.Block[i_blk].nTE == 1) &&
-           (Soln_Block_List.Block[i_blk].info.level ==
-            Soln_Block_List.Block[i_blk].infoTE[0].level)) {
-         if (!Send_Mesh_Geometry_Only) {
-             buffer_size_neighbour = sqr(Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost)*
-                                     abs(Soln_Block_List.Block[i_blk].infoTE[0].dimen.j)*
-                                     Soln_Blks[i_blk].NumVar();
-             if (Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar())
-                buffer_size_neighbour = buffer_size_neighbour +
-                                        sqr(Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost)*
-                                        (abs(Soln_Block_List.Block[i_blk].infoTE[0].dimen.j)+1)*
-                                        NUM_COMP_VECTOR3D;
-          } else {
-                buffer_size_neighbour = sqr(Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost)*
-                                        (abs(Soln_Block_List.Block[i_blk].infoTE[0].dimen.j)+1)*
-                                        NUM_COMP_VECTOR3D;
-          } /* endif */
-          l = -1;
-          // Load ghost cell solution variable information as required.
-          if (!Send_Mesh_Geometry_Only) {
-             if (Soln_Block_List.Block[i_blk].infoTE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTE[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost+1;
-                i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost+1;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoTE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTE[0].dimen.j > 0 ) {
-	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost+1;
-                i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost+1;
-	        k_inc = -1;
-              } else if (Soln_Block_List.Block[i_blk].infoTE[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost+1;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-              } else if (Soln_Block_List.Block[i_blk].infoTE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost+1;
-                i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost+1;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-            } else if (Soln_Block_List.Block[i_blk].infoTE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost+1;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-              } else if (Soln_Block_List.Block[i_blk].infoTE[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
- 	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost+1;
-	        k_inc = -1;
-            } else if (Soln_Block_List.Block[i_blk].infoTE[0].dimen.i > 0) {
-	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost+1;
-	        i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost+1;
-	        k_inc = -1;
-             } else {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu;
- 	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost+1;
-	        k_inc = -1;
-             } /* endif */
-             i = Soln_Blks[i_blk].LoadSendBuffer(Soln_Block_List.message_noreschange_topeastcorner_sendbuf[i_blk],
-                                                l,buffer_size_neighbour,
-                                                i_min,i_max,i_inc,j_min,j_max,j_inc,
-                                                k_min,k_max,k_inc);
-	     if (i != 0) return(5400);
-          } /* endif */
-          // Load ghost cell mesh information as required.
-          if (Send_Mesh_Geometry_Only ||
-              Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar()) {
-             if (Soln_Block_List.Block[i_blk].infoTE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTE[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INu-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl;
-	        j_max = Soln_Blks[i_blk].Grid.JNu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_inc = 1;
-                i_ref = i_max+1;
-                j_ref = j_min;
-                k_ref = k_max+1;
-             } else if (Soln_Block_List.Block[i_blk].infoTE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTE[0].dimen.j > 0 ) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INu-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl;
-	        j_max = Soln_Blks[i_blk].Grid.JNu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost;
-	        k_inc = -1;
-                i_ref = i_max+1;
-                j_ref = j_min;
-                k_ref = k_min+1;
-              } else if (Soln_Block_List.Block[i_blk].infoTE[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-1;
-	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl;
-	        j_max = Soln_Blks[i_blk].Grid.JNu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_inc = 1;
-                i_ref = i_min+1;
-                j_ref = j_min;
-                k_ref = k_max+1;
-              } else if (Soln_Block_List.Block[i_blk].infoTE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INu-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu;
-	        j_max = Soln_Blks[i_blk].Grid.JNl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_inc = 1;
-                i_ref = i_max+1;
-                j_ref = j_min;
-                k_ref = k_max+1;
-              } else if (Soln_Block_List.Block[i_blk].infoTE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-1;
-	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu;
-	        j_max = Soln_Blks[i_blk].Grid.JNl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_inc = 1;
-                i_ref = i_min+1;
-                j_ref = j_min;
-                k_ref = k_max+1;
-             } else if (Soln_Block_List.Block[i_blk].infoTE[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-1;
-	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl;
-	        j_max = Soln_Blks[i_blk].Grid.JNu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost;
-	        k_inc = -1;
-                i_ref = i_min+1;
-                j_ref = j_min;
-                k_ref = k_min+1;
-             } else if (Soln_Block_List.Block[i_blk].infoTE[0].dimen.i > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INu-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu;
-	        j_max = Soln_Blks[i_blk].Grid.JNl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost;
-	        k_inc = -1;
-                i_ref = i_max+1;
-                j_ref = j_min;
-                k_ref = k_min+1;
-             } else {
-	        i_min = Soln_Blks[i_blk].Grid.INu-1;
-	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu;
-	        j_max = Soln_Blks[i_blk].Grid.JNl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTE[0].dimen.ghost;
-	        k_inc = -1;
-                i_ref = i_min+1;
-                j_ref = j_min;
-                k_ref = k_min+1;
-             } /* endif */
-             x_ref = Soln_Blks[i_blk].Grid.Node[i_ref][j_ref][k_ref].X; // Reference node location.
-             for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc )
-                   for ( m = 1 ; m <= NUM_COMP_VECTOR3D; ++ m) {
-		      l = l + 1;
-                      if (l >= buffer_size_neighbour) return(5401);
-                      Soln_Block_List.message_noreschange_topeastcorner_sendbuf[i_blk][l] =
-                         Soln_Blks[i_blk].Grid.Node[i][j][k].X[m]-x_ref[m];
-                   } /* endfor */
-          } /* endif */
-       } /* endif */
-        ///////////////////////////////////////////////////////////////////////////
-       // Load send buffer for Top South corner neighbours of solution blocks. //
-       ///////////////////////////////////////////////////////////////////////////
-       if (Soln_Block_List.Block[i_blk].used &&
-           (Soln_Block_List.Block[i_blk].nTS == 1) &&
-           (Soln_Block_List.Block[i_blk].info.level ==
-            Soln_Block_List.Block[i_blk].infoTS[0].level)) {
-         if (!Send_Mesh_Geometry_Only) {
-             buffer_size_neighbour = sqr(Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost)*
-                                     abs(Soln_Block_List.Block[i_blk].infoTS[0].dimen.i)*
-                                     Soln_Blks[i_blk].NumVar();
-             if (Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar())
-                buffer_size_neighbour = buffer_size_neighbour +
-                                        sqr(Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost)*
-                                        (abs(Soln_Block_List.Block[i_blk].infoTS[0].dimen.i)+1)*
-                                        NUM_COMP_VECTOR3D;
-          } else {
-                buffer_size_neighbour = sqr(Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost)*
-                                        (abs(Soln_Block_List.Block[i_blk].infoTS[0].dimen.i)+1)*
-                                        NUM_COMP_VECTOR3D;
-          } /* endif */
-          l = -1;
-          // Load ghost cell solution variable information as required.
-          if (!Send_Mesh_Geometry_Only) {
-             if (Soln_Block_List.Block[i_blk].infoTS[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTS[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTS[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost-1;
-	        j_inc = 1;
-   	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost+1;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-            } else  if (Soln_Block_List.Block[i_blk].infoTS[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTS[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost-1;
-	        j_inc = 1;
-   	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost+1;
-	        k_inc = -1;
-             } else if (Soln_Block_List.Block[i_blk].infoTS[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTS[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost-1;
-	        j_inc = 1;
-   	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost+1;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoTS[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTS[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost-1;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-   	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost+1;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-	     } else if (Soln_Block_List.Block[i_blk].infoTS[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost-1;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
- 	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost+1;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-	     } else if (Soln_Block_List.Block[i_blk].infoTS[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost-1;
-	        j_inc = 1;
- 	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost+1;
-	        k_inc = -1;
-            } else if (Soln_Block_List.Block[i_blk].infoTS[0].dimen.i > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-	        i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost-1;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost+1;
-	        k_inc = -1;
-             } else {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost-1;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost+1;
-	        k_inc = -1;
-             } /* endif */
-             i = Soln_Blks[i_blk].LoadSendBuffer(Soln_Block_List.message_noreschange_topsouthcorner_sendbuf[i_blk],
-                                                l,buffer_size_neighbour,
-                                                i_min,i_max,i_inc,j_min,j_max,j_inc,
-                                                k_min,k_max,k_inc);
-	     if (i != 0) return(4300);
-          } /* endif */
-          // Load ghost cell mesh information as required.
-          if (Send_Mesh_Geometry_Only ||
-              Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar()) {
-             if (Soln_Block_List.Block[i_blk].infoTS[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTS[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTS[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl;
-	        i_max = Soln_Blks[i_blk].Grid.INu;
-                i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_inc = 1;
-                i_ref = i_min;
-                j_ref = j_min-1;
-                k_ref = k_max+1;
-             } else if (Soln_Block_List.Block[i_blk].infoTS[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTS[0].dimen.j > 0 ) {
-	        i_min = Soln_Blks[i_blk].Grid.INl;
-	        i_max = Soln_Blks[i_blk].Grid.INu;
-                i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost;
-	        k_inc = -1;
-                i_ref = i_min;
-                j_ref = j_min-1;
-                k_ref = k_min+1;
-             } else if (Soln_Block_List.Block[i_blk].infoTS[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTS[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu;
-	        i_max = Soln_Blks[i_blk].Grid.INl;
-                i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_inc = 1;
-                i_ref = i_min;
-                j_ref = j_min-1;
-                k_ref = k_max+1;
-             } else if (Soln_Block_List.Block[i_blk].infoTS[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTS[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl;
-	        i_max = Soln_Blks[i_blk].Grid.INu;
-                i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_inc = 1;
-                i_ref = i_min;
-                j_ref = j_max-1;
-                k_ref = k_max+1;
-             } else if (Soln_Block_List.Block[i_blk].infoTS[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu;
-	        i_max = Soln_Blks[i_blk].Grid.INl;
-                i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_inc = 1;
-                i_ref = i_min;
-                j_ref = j_max-1;
-                k_ref = k_max+1;
-             } else if (Soln_Block_List.Block[i_blk].infoTS[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu;
-	        i_max = Soln_Blks[i_blk].Grid.INl;
-                i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost;
-	        k_inc = -1;
-                i_ref = i_min;
-                j_ref = j_min-1;
-                k_ref = k_min+1;
-             } else if (Soln_Block_List.Block[i_blk].infoTS[0].dimen.i > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl;
-	        i_max = Soln_Blks[i_blk].Grid.INu;
-                i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_inc = -1;
- 	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost;
-	        k_inc = -1;
-               i_ref = i_min;
-                j_ref = j_max-1;
-                k_ref = k_min+1;
-              } else {
-	        i_min = Soln_Blks[i_blk].Grid.INu;
-	        i_max = Soln_Blks[i_blk].Grid.INl;
-                i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTS[0].dimen.ghost;
-	        k_inc = -1;
-                i_ref = i_min;
-                j_ref = j_max-1;
-                k_ref = k_min+1;
-             } /* endif */
-             x_ref = Soln_Blks[i_blk].Grid.Node[i_ref][j_ref][k_ref].X; // Reference node location.
-             for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-	       for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc )
-                   for ( m = 1 ; m <= NUM_COMP_VECTOR3D; ++ m) {
-		      l = l + 1;
-                      if (l >= buffer_size_neighbour) return(4301);
-                      Soln_Block_List.message_noreschange_topsouthcorner_sendbuf[i_blk][l] =
-                         Soln_Blks[i_blk].Grid.Node[i][j][k].X[m]-x_ref[m];
-                   } /* endfor */
-          } /* endif */
-       } /* endif */
+   int i_bound_elem; // index for boundary element, face edge or vertex
+   int number_neighbours[MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK];
+   int n_imin, n_imax, n_jmin, n_jmax, n_kmin, n_kmax;
+   int i_temp;
+   
+   AdaptiveBlock3D_Info neighbour_info[MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK];
+   int compact_trans_matrix[3]; // orientation of the block that receives message.
+   int ti[3]; // ti[0] -i, ti[1] -j, ti[2] - k; computational orientation of the block that receives message.
+   int ts[3]; // sign of the computational orientation of the block that receives message.
+   int id_min[3], id_max[3], inc[3];
+ 
+   /* Load the send buffers of each solution block. */
+   for (int i_blk = 0 ; i_blk <= Soln_Block_List.Nblk-1 ; ++i_blk) {
+     if (Soln_Block_List.Block[i_blk].used) {
+        // Assign the boundary element information
+        number_neighbours[BE::BSW] = Soln_Block_List.Block[i_blk].nBSW;
+        neighbour_info[BE::BSW] = Soln_Block_List.Block[i_blk].infoBSW[0];
+        
+        number_neighbours[BE::SW] = Soln_Block_List.Block[i_blk].nSW;
+        neighbour_info[BE::SW] = Soln_Block_List.Block[i_blk].infoSW[0];
+        
+        number_neighbours[BE::TSW] = Soln_Block_List.Block[i_blk].nTSW;
+        neighbour_info[BE::TSW] = Soln_Block_List.Block[i_blk].infoTSW[0];
+        
+        number_neighbours[BE::BW] = Soln_Block_List.Block[i_blk].nBW;
+        neighbour_info[BE::BW] = Soln_Block_List.Block[i_blk].infoBW[0];
+        
+        number_neighbours[BE::W] = Soln_Block_List.Block[i_blk].nW;
+        neighbour_info[BE::W] = Soln_Block_List.Block[i_blk].infoW[0];
+        
+        number_neighbours[BE::TW] = Soln_Block_List.Block[i_blk].nTW;
+        neighbour_info[BE::TW] = Soln_Block_List.Block[i_blk].infoTW[0];
+        
+        number_neighbours[BE::BNW] = Soln_Block_List.Block[i_blk].nBNW;
+        neighbour_info[BE::BNW] = Soln_Block_List.Block[i_blk].infoBNW[0];
+        
+        number_neighbours[BE::NW] = Soln_Block_List.Block[i_blk].nNW;
+        neighbour_info[BE::NW] = Soln_Block_List.Block[i_blk].infoNW[0];
+        
+        number_neighbours[BE::TNW] = Soln_Block_List.Block[i_blk].nTNW;
+        neighbour_info[BE::TNW] = Soln_Block_List.Block[i_blk].infoTNW[0];
+        
+        number_neighbours[BE::BS] = Soln_Block_List.Block[i_blk].nBS;
+        neighbour_info[BE::BS] = Soln_Block_List.Block[i_blk].infoBS[0];
+        
+        number_neighbours[BE::S] = Soln_Block_List.Block[i_blk].nS;
+        neighbour_info[BE::S] = Soln_Block_List.Block[i_blk].infoS[0];
+        
+        number_neighbours[BE::TS] = Soln_Block_List.Block[i_blk].nTS;
+        neighbour_info[BE::TS] = Soln_Block_List.Block[i_blk].infoTS[0];
+        
+        number_neighbours[BE::B] = Soln_Block_List.Block[i_blk].nB;
+        neighbour_info[BE::B] = Soln_Block_List.Block[i_blk].infoB[0];
+        
+        number_neighbours[BE::T] = Soln_Block_List.Block[i_blk].nT;
+        neighbour_info[BE::T] = Soln_Block_List.Block[i_blk].infoT[0];
+        
+        number_neighbours[BE::BN] = Soln_Block_List.Block[i_blk].nBN;
+        neighbour_info[BE::BN] = Soln_Block_List.Block[i_blk].infoBN[0];
+        
+        number_neighbours[BE::N] = Soln_Block_List.Block[i_blk].nN;
+        neighbour_info[BE::N] = Soln_Block_List.Block[i_blk].infoN[0];
+        
+        number_neighbours[BE::TN] = Soln_Block_List.Block[i_blk].nTN;
+        neighbour_info[BE::TN] = Soln_Block_List.Block[i_blk].infoTN[0];
+        
+        number_neighbours[BE::BSE] = Soln_Block_List.Block[i_blk].nBSE;
+        neighbour_info[BE::BSE] = Soln_Block_List.Block[i_blk].infoBSE[0];
+        
+        number_neighbours[BE::SE] = Soln_Block_List.Block[i_blk].nSE;
+        neighbour_info[BE::SE] = Soln_Block_List.Block[i_blk].infoSE[0];
+        
+        number_neighbours[BE::TSE] = Soln_Block_List.Block[i_blk].nTSE;
+        neighbour_info[BE::TSE] = Soln_Block_List.Block[i_blk].infoTSE[0];
+        
+        number_neighbours[BE::BE] = Soln_Block_List.Block[i_blk].nBE;
+        neighbour_info[BE::BE] = Soln_Block_List.Block[i_blk].infoBE[0];
+        
+        number_neighbours[BE::E] = Soln_Block_List.Block[i_blk].nE;
+        neighbour_info[BE::E] = Soln_Block_List.Block[i_blk].infoE[0];
+        
+        number_neighbours[BE::TE] = Soln_Block_List.Block[i_blk].nTE;
+        neighbour_info[BE::TE] = Soln_Block_List.Block[i_blk].infoTE[0]; 
+        
+        number_neighbours[BE::BNE] = Soln_Block_List.Block[i_blk].nBNE;
+        neighbour_info[BE::BNE] = Soln_Block_List.Block[i_blk].infoBNE[0]; 
+        
+        number_neighbours[BE::NE] = Soln_Block_List.Block[i_blk].nNE;
+        neighbour_info[BE::NE] = Soln_Block_List.Block[i_blk].infoNE[0];  
+        
+        number_neighbours[BE::TNE] = Soln_Block_List.Block[i_blk].nTNE;
+        neighbour_info[BE::TNE] = Soln_Block_List.Block[i_blk].infoTNE[0]; 
+     
+        for (int ii = -1; ii <= 1; ii++) {
+           for (int jj = -1; jj <= 1; jj++) {
+              for (int kk = -1; kk <= 1; kk++) {
+                 i_bound_elem = 9*(ii+1) + 3*(jj+1) + (kk+1);
+              
+                 if ((number_neighbours[i_bound_elem] == 1) && 
+                     (i_bound_elem != BE::ME) &&
+                     (Soln_Block_List.Block[i_blk].info.level == neighbour_info[i_bound_elem].level)) {
+                    buffer_size = ((abs(ii)*Soln_Block_List.Block[i_blk].info.dimen.ghost) + 
+				   ((!ii)*abs(Soln_Block_List.Block[i_blk].info.dimen.i)+1))*
+                                  ((abs(jj)*Soln_Block_List.Block[i_blk].info.dimen.ghost) + 
+				   ((!jj)*abs(Soln_Block_List.Block[i_blk].info.dimen.j)+1))*
+                                  ((abs(kk)*Soln_Block_List.Block[i_blk].info.dimen.ghost) + 
+				   ((!kk)*abs(Soln_Block_List.Block[i_blk].info.dimen.k)+1))*
+                                  (NUM_COMP_VECTOR3D) +
+                                  (((!ii)*abs(Soln_Block_List.Block[i_blk].info.dimen.i)))*
+                                  (((!jj)*abs(Soln_Block_List.Block[i_blk].info.dimen.j)))*
+                                  (((!kk)*abs(Soln_Block_List.Block[i_blk].info.dimen.k)));
+                    l = -1;
+                 
+                    // Load ghost cell mesh and BC information.
+                    if (ii == -1) {
+                       n_imin = Soln_Blks[i_blk].Grid.INl +1;
+                       n_imax = Soln_Blks[i_blk].Grid.INl + Soln_Blks[i_blk].Nghost;
+                    } else if (ii == 1) {
+                       n_imin =  Soln_Blks[i_blk].Grid.INu-Soln_Blks[i_blk].Nghost;
+                       n_imax = Soln_Blks[i_blk].Grid.INu-1;
+                    } else {
+                       n_imin = 0;
+                       n_imax = 0;
+                    } /* endif */
+                    if (jj == -1) {
+                       n_jmin = Soln_Blks[i_blk].Grid.JNl +1;
+                       n_jmax = Soln_Blks[i_blk].Grid.JNl +Soln_Blks[i_blk].Nghost;
+                    } else if (jj == 1) {
+                       n_jmin =  Soln_Blks[i_blk].Grid.JNu-Soln_Blks[i_blk].Nghost;
+                       n_jmax = Soln_Blks[i_blk].Grid.JNu-1;
+                    } else {
+                       n_jmin = 0;
+                       n_jmax = 0;
+                    } /* endif */
+                    if (kk == -1 ) {
+                       n_kmin = Soln_Blks[i_blk].Grid.KNl +1;
+                       n_kmax = Soln_Blks[i_blk].Grid.KNl +Soln_Blks[i_blk].Nghost;
+                    } else if (kk == 1) {
+                       n_kmin =  Soln_Blks[i_blk].Grid.KNu-Soln_Blks[i_blk].Nghost;
+                       n_kmax = Soln_Blks[i_blk].Grid.KNu -1;
+                    } else {
+                       n_kmin = 0;
+                       n_kmax = 0;
+                    } /* endif */
+                  
+                    i_min = (!ii)*Soln_Blks[i_blk].Grid.INl + n_imin;
+                    i_max = (!ii)*Soln_Blks[i_blk].Grid.INu + n_imax;
+                    i_inc = 1;
+                    j_min = (!jj)*Soln_Blks[i_blk].Grid.JNl + n_jmin;
+                    j_max = (!jj)*Soln_Blks[i_blk].Grid.JNu + n_jmax;
+                    j_inc = 1;
+                    k_min = (!kk)*Soln_Blks[i_blk].Grid.KNl + n_kmin;
+                    k_max = (!kk)*Soln_Blks[i_blk].Grid.KNu + n_kmax;
+                    k_inc = 1;
+           
+                    // Using transformation matrices to load the send buffer in the order of unloading.
+                    compact_trans_matrix[0] = neighbour_info[i_bound_elem].blkorient.ctm_offsets[0];
+                    compact_trans_matrix[1] = neighbour_info[i_bound_elem].blkorient.ctm_offsets[1];
+                    compact_trans_matrix[2] = neighbour_info[i_bound_elem].blkorient.ctm_offsets[2];
+                   
+                    ts[0] = sgn(compact_trans_matrix[0]);
+                    ts[1] = sgn(compact_trans_matrix[1]);
+                    ts[2] = sgn(compact_trans_matrix[2]);
+                    
+                    ti[0] = abs(compact_trans_matrix[0]) -1;
+                    ti[1] = abs(compact_trans_matrix[1]) -1;
+                    ti[2] = abs(compact_trans_matrix[2]) -1;
 
+                    if (ts[0] <0) {
+                       i_inc = -1;
+                       i_temp = i_min;
+                       i_min = i_max;
+                       i_max = i_temp;
+                    } /* endif */
+                    if (ts[1] <0) {
+                       j_inc = -1;
+                       i_temp = j_min;
+                       j_min = j_max;
+                       j_max = i_temp;
+                    } /* endif */
+                    if (ts[2]<0) {
+                       k_inc = -1;
+                       i_temp = k_min;
+                       k_min = k_max;
+                       k_max = i_temp;
+                    } /* endif */
+                    
+                    id_min[0] = i_min;
+                    id_min[1] = j_min;
+                    id_min[2] = k_min;
+                    id_max[0] = i_max;
+                    id_max[1] = j_max;
+                    id_max[2] = k_max;
+                    inc[0] = i_inc;
+                    inc[1] = j_inc;
+                    inc[2] = k_inc;
+              
+                    i = Soln_Blks[i_blk].LoadSendBuffer_Geometry(Soln_Block_List.message_noreschange_sendbuf[i_blk][i_bound_elem],
+                                                                 l, buffer_size, id_min, id_max, inc, ti);
+                    if (i != 0) return (4002);
+                    
+                    if (ii == -1) {
+                       n_imin = Soln_Blks[i_blk].Nghost;
+                       n_imax = Soln_Blks[i_blk].ICl +1;
+                    } else if (ii == 1) {
+                       n_imin =  Soln_Blks[i_blk].ICu-1;
+                       n_imax = Soln_Blks[i_blk].ICu;
+                    } else {
+                       n_imin = 0;
+                       n_imax = 0;
+                    } /* endif */
+                    if (jj == -1) {
+                       n_jmin = Soln_Blks[i_blk].Nghost;
+                       n_jmax = Soln_Blks[i_blk].JCl +1;
+                    } else if (jj == 1) {
+                       n_jmin =  Soln_Blks[i_blk].JCu-1;
+                       n_jmax = Soln_Blks[i_blk].JCu;
+                    } else {
+                       n_jmin = 0;
+                       n_jmax = 0;
+                    } /* endif */
+                    if (kk == -1) {
+                       n_kmin = Soln_Blks[i_blk].Nghost;
+                       n_kmax = Soln_Blks[i_blk].KCl +1;
+                    } else if (kk == 1) {
+                       n_kmin =  Soln_Blks[i_blk].KCu-1;
+                       n_kmax = Soln_Blks[i_blk].KCu;
+                    } else {
+                       n_kmin = 0;
+                       n_kmax = 0;
+                    } /* endif */
+                    
+                    i_min = (!ii)*Soln_Blks[i_blk].ICl + n_imin;
+                    i_max = (!ii)*Soln_Blks[i_blk].ICu + n_imax;
+                    i_inc = 1;
+                    j_min = (!jj)*Soln_Blks[i_blk].JCl + n_jmin;
+                    j_max = (!jj)*Soln_Blks[i_blk].JCu + n_jmax;
+                    j_inc = 1;
+                    k_min = (!kk)*Soln_Blks[i_blk].KCl + n_kmin;
+                    k_max = (!kk)*Soln_Blks[i_blk].KCu + n_kmax;
+                    k_inc = 1;
+           
+                    // Using transformation matrices to load the send buffer in the order of unloading.
+                    compact_trans_matrix[0] = neighbour_info[i_bound_elem].blkorient.ctm_offsets[0];
+                    compact_trans_matrix[1] = neighbour_info[i_bound_elem].blkorient.ctm_offsets[1];
+                    compact_trans_matrix[2] = neighbour_info[i_bound_elem].blkorient.ctm_offsets[2];
+                    
+                    ts[0] = sgn(compact_trans_matrix[0]);
+                    ts[1] = sgn(compact_trans_matrix[1]);
+                    ts[2] = sgn(compact_trans_matrix[2]);
+                    
+                    ti[0] = abs(compact_trans_matrix[0]) -1;
+                    ti[1] = abs(compact_trans_matrix[1]) -1;
+                    ti[2] = abs(compact_trans_matrix[2]) -1;
 
-       ///////////////////////////////////////////////////////////////////////////
-       // Load send buffer for Top West corner neighbours of solution blocks. //
-       ///////////////////////////////////////////////////////////////////////////
-       if (Soln_Block_List.Block[i_blk].used &&
-           (Soln_Block_List.Block[i_blk].nTW == 1) &&
-           (Soln_Block_List.Block[i_blk].info.level ==
-            Soln_Block_List.Block[i_blk].infoTW[0].level)) {
-         if (!Send_Mesh_Geometry_Only) {
-             buffer_size_neighbour = sqr(Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost)*
-                                     abs(Soln_Block_List.Block[i_blk].infoTW[0].dimen.j)*
-                                     Soln_Blks[i_blk].NumVar();
-             if (Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar())
-                buffer_size_neighbour = buffer_size_neighbour +
-                                        sqr(Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost)*
-                                        (abs(Soln_Block_List.Block[i_blk].infoTW[0].dimen.j)+1)*
-                                        NUM_COMP_VECTOR3D;
-          } else {
-                buffer_size_neighbour = sqr(Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost)*
-                                        (abs(Soln_Block_List.Block[i_blk].infoTW[0].dimen.j)+1)*
-                                        NUM_COMP_VECTOR3D;
-          } /* endif */
-          l = -1;
-          // Load ghost cell solution variable information as required.
-          if (!Send_Mesh_Geometry_Only) {
-             if (Soln_Block_List.Block[i_blk].infoTW[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTW[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost+1;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoTW[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTW[0].dimen.j > 0 ) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost+1;
-	        k_inc = -1;
-             } else if ( Soln_Block_List.Block[i_blk].infoTW[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost-1;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost+1;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoTW[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost+1;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoTW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost-1;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost+1;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoTW[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost-1;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost+1;
-	        k_inc = -1;
-             } else if (Soln_Block_List.Block[i_blk].infoTW[0].dimen.i > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-	        i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost+1;
-	        k_inc = -1;
-             } else {
-	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost-1;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu;
- 	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost+1;
-	        k_inc = -1;
-             } /* endif */
-             i = Soln_Blks[i_blk].LoadSendBuffer(Soln_Block_List.message_noreschange_topwestcorner_sendbuf[i_blk],
-                                                l,buffer_size_neighbour,
-                                                i_min,i_max,i_inc,
-                                                j_min,j_max,j_inc, k_min,k_max,k_inc);
-	     if (i != 0) return(4400);
-          } /* endif */
-          // Load ghost cell mesh information as required.
-          if (Send_Mesh_Geometry_Only ||
-              Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar()) {
-             if (Soln_Block_List.Block[i_blk].infoTW[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTW[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+1;
-	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl;
-	        j_max = Soln_Blks[i_blk].Grid.JNu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_inc = 1;
-                i_ref = i_min-1;
-                j_ref = j_min;
-                k_ref = k_max+1;
-             } else if (Soln_Block_List.Block[i_blk].infoTW[0].dimen.i > 0 &&
-			Soln_Block_List.Block[i_blk].infoTW[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+1;
-	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl;
-	        j_max = Soln_Blks[i_blk].Grid.JNu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost;
-	        k_inc = -1;
-                i_ref = i_min-1;
-                j_ref = j_min;
-                k_ref = k_min+1  ;
-             } else if ( Soln_Block_List.Block[i_blk].infoTW[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INl+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl;
-	        j_max = Soln_Blks[i_blk].Grid.JNu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_inc = 1;
-                i_ref = i_max-1;
-                j_ref = j_min;
-                k_ref = k_max+1;
-             } else if (Soln_Block_List.Block[i_blk].infoTW[0].dimen.i > 0 &&
-			Soln_Block_List.Block[i_blk].infoTW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+1;
-	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu;
-	        j_max = Soln_Blks[i_blk].Grid.JNl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_inc = 1;
-                i_ref = i_min-1;
-                j_ref = j_min;
-                k_ref = k_max+1;
-             } else if (Soln_Block_List.Block[i_blk].infoTW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INl+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu;
-	        j_max = Soln_Blks[i_blk].Grid.JNl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_inc = 1;
-                i_ref = i_max-1;
-                j_ref = j_min;
-                k_ref = k_max+1;
-             } else if (Soln_Block_List.Block[i_blk].infoTW[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INl+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl;
-	        j_max = Soln_Blks[i_blk].Grid.JNu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost;
-	        k_inc = -1;
-                i_ref = i_max-1;
-                j_ref = j_min;
-                k_ref = k_min+1  ;
-             } else if (Soln_Block_List.Block[i_blk].infoTW[0].dimen.i > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+1;
-	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu;
-	        j_max = Soln_Blks[i_blk].Grid.JNl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost;
-	        k_inc = -1;
-                i_ref = i_min-1;
-                j_ref = j_min;
-		k_ref = k_min+1  ;
-            } else {
-	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INl+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu;
-	        j_max = Soln_Blks[i_blk].Grid.JNl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTW[0].dimen.ghost;
-	        k_inc = -1;
-                i_ref = i_max-1;
-                j_ref = j_min;
-                k_ref = k_min+1  ;
-             } /* endif */
-             x_ref = Soln_Blks[i_blk].Grid.Node[i_ref][j_ref][k_ref].X; // Reference node location.
-             for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-	       for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc )
-                   for ( m = 1 ; m <= NUM_COMP_VECTOR3D; ++ m) {
-		      l = l + 1;
-                      if (l >= buffer_size_neighbour) return(4401);
-                      Soln_Block_List.message_noreschange_topwestcorner_sendbuf[i_blk][l] =
-                         Soln_Blks[i_blk].Grid.Node[i][j][k].X[m]-x_ref[m];
-                   } /* endfor */
-          } /* endif */
-       } /* endif */
+                    if (ts[0] <0) {
+                       i_inc = -1;
+                       i_temp = i_min;
+                       i_min = i_max;
+                       i_max = i_temp;
+                    } /* endif */
+                    if (ts[1] <0) {
+                       j_inc = -1;
+                       i_temp = j_min;
+                       j_min = j_max;
+                       j_max = i_temp;
+                    } /* endif */
+                    if (ts[2] <0) {
+                       k_inc = -1;
+                       i_temp = k_min;
+                       k_min = k_max;
+                       k_max = i_temp;
+                    } /* endif */
+                    
+                    id_min[0] = i_min;
+                    id_min[1] = j_min;
+                    id_min[2] = k_min;
+                    id_max[0] = i_max;
+                    id_max[1] = j_max;
+                    id_max[2] = k_max;
+                    inc[0] = i_inc;
+                    inc[1] = j_inc;
+                    inc[2] = k_inc;
 
-   ///////////////////////////////////////////////////////////////////////////
-       // Load send buffer for Bottom North corner neighbours of solution blocks. //
-       ///////////////////////////////////////////////////////////////////////////
-       if (Soln_Block_List.Block[i_blk].used &&
-           (Soln_Block_List.Block[i_blk].nBN == 1) &&
-           (Soln_Block_List.Block[i_blk].info.level ==
-            Soln_Block_List.Block[i_blk].infoBN[0].level)) {
-         if (!Send_Mesh_Geometry_Only) {
-             buffer_size_neighbour = sqr(Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost)*
-                                     abs(Soln_Block_List.Block[i_blk].infoBN[0].dimen.i)*
-                                     Soln_Blks[i_blk].NumVar();
-             if (Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar())
-                buffer_size_neighbour = buffer_size_neighbour +
-                                        sqr(Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost)*
-                                        (abs(Soln_Block_List.Block[i_blk].infoBN[0].dimen.i)+1)*
-                                        NUM_COMP_VECTOR3D;
-          } else {
-                buffer_size_neighbour = sqr(Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost)*
-                                        (abs(Soln_Block_List.Block[i_blk].infoBN[0].dimen.i)+1)*
-                                        NUM_COMP_VECTOR3D;
-          } /* endif */
-          l = -1;
-          // Load ghost cell solution variable information as required.
-          if (!Send_Mesh_Geometry_Only) {
-             if (Soln_Block_List.Block[i_blk].infoBN[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBN[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBN[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost+1;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost-1;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoBN[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBN[0].dimen.j > 0 ) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost+1;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost-1;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-              } else if (Soln_Block_List.Block[i_blk].infoBN[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBN[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost+1;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost-1;
-	        k_inc = 1;
-              } else if (Soln_Block_List.Block[i_blk].infoBN[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBN[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost-1;
-	        k_inc = 1;
-            } else if (Soln_Block_List.Block[i_blk].infoBN[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost-1;
-	        k_inc = 1;
-              } else if (Soln_Block_List.Block[i_blk].infoBN[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost+1;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
- 	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost-1;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-            } else if (Soln_Block_List.Block[i_blk].infoBN[0].dimen.i > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-	        i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost-1;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-             } else {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu;
- 	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost-1;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-             } /* endif */
-             i = Soln_Blks[i_blk].LoadSendBuffer(Soln_Block_List.message_noreschange_bottomnorthcorner_sendbuf[i_blk],
-                                                l,buffer_size_neighbour,
-                                                i_min,i_max,i_inc,j_min,j_max,j_inc,
-                                                k_min,k_max,k_inc);
-	     if (i != 0) return(5500);
-          } /* endif */
-          // Load ghost cell mesh information as required.
-          if (Send_Mesh_Geometry_Only ||
-              Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar()) {
-             if (Soln_Block_List.Block[i_blk].infoBN[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBN[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBN[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl;
-	        i_max = Soln_Blks[i_blk].Grid.INu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost;
-	        k_inc = 1;
-                i_ref = i_min;
-                j_ref = j_max+1;
-                k_ref = k_min-1;
-             } else if (Soln_Block_List.Block[i_blk].infoBN[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBN[0].dimen.j > 0 ) {
-	        i_min = Soln_Blks[i_blk].Grid.INl;
-	        i_max = Soln_Blks[i_blk].Grid.INu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_inc = -1;
-                i_ref = i_min;
-                j_ref = j_max+1;
-                k_ref = k_max-1;
-              } else if (Soln_Block_List.Block[i_blk].infoBN[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBN[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu;
-	        i_max = Soln_Blks[i_blk].Grid.INl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost;
-	        k_inc = 1;
-                i_ref = i_min;
-                j_ref = j_max+1;
-                k_ref = k_min-1;
-              } else if (Soln_Block_List.Block[i_blk].infoBN[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBN[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl;
-	        i_max = Soln_Blks[i_blk].Grid.INu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost;
-	        k_inc = 1;
-                i_ref = i_min;
-                j_ref = j_min+1;
-                k_ref = k_min-1;
-              } else if (Soln_Block_List.Block[i_blk].infoBN[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu;
-	        i_max = Soln_Blks[i_blk].Grid.INl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost;
-	        k_inc = 1;
-                i_ref = i_min;
-                j_ref = j_min+1;
-                k_ref = k_min-1;
-             } else if (Soln_Block_List.Block[i_blk].infoBN[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu;
-	        i_max = Soln_Blks[i_blk].Grid.INl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_inc = -1;
-                i_ref = i_min;
-                j_ref = j_max+1;
-                k_ref = k_max-1;
-             } else if (Soln_Block_List.Block[i_blk].infoBN[0].dimen.i > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl;
-	        i_max = Soln_Blks[i_blk].Grid.INu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_inc = -1;
-                i_ref = i_min;
-                j_ref = j_min+1;
-                k_ref = k_max-1;
-             } else {
-	        i_min = Soln_Blks[i_blk].Grid.INu;
-	        i_max = Soln_Blks[i_blk].Grid.INl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBN[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_inc = -1;
-                i_ref = i_min;
-                j_ref = j_min+1;
-                k_ref = k_max-1;
-             } /* endif */
-             x_ref = Soln_Blks[i_blk].Grid.Node[i_ref][j_ref][k_ref].X; // Reference node location.
-             for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc )
-                   for ( m = 1 ; m <= NUM_COMP_VECTOR3D; ++ m) {
-		      l = l + 1;
-                      if (l >= buffer_size_neighbour) return(5501);
-                      Soln_Block_List.message_noreschange_bottomnorthcorner_sendbuf[i_blk][l] =
-                         Soln_Blks[i_blk].Grid.Node[i][j][k].X[m]-x_ref[m];
-                   } /* endfor */
-          } /* endif */
-       } /* endif */
+/*                     i = Soln_Blks[i_blk].LoadSendBuffer_BCs(Soln_Block_List.message_noreschange_sendbuf[i_blk][i_bound_elem], */
+/*                                                             l, buffer_size,  */
+/*                                                             id_min, id_max, inc, ti, ii, jj, kk); */
+/*                     if (i != 0) return (4003); */
+		 } /* endif */
 
-        ///////////////////////////////////////////////////////////////////////////
-       // Load send buffer for Bottom East corner neighbours of solution blocks. //
-       ///////////////////////////////////////////////////////////////////////////
-       if (Soln_Block_List.Block[i_blk].used &&
-           (Soln_Block_List.Block[i_blk].nBE == 1) &&
-           (Soln_Block_List.Block[i_blk].info.level ==
-            Soln_Block_List.Block[i_blk].infoBE[0].level)) {
-         if (!Send_Mesh_Geometry_Only) {
-             buffer_size_neighbour = sqr(Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost)*
-                                     abs(Soln_Block_List.Block[i_blk].infoBE[0].dimen.j)*
-                                     Soln_Blks[i_blk].NumVar();
-             if (Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar())
-                buffer_size_neighbour = buffer_size_neighbour +
-                                        sqr(Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost)*
-                                        (abs(Soln_Block_List.Block[i_blk].infoBE[0].dimen.j)+1)*
-                                        NUM_COMP_VECTOR3D;
-          } else {
-                buffer_size_neighbour = sqr(Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost)*
-                                        (abs(Soln_Block_List.Block[i_blk].infoBE[0].dimen.j)+1)*
-                                        NUM_COMP_VECTOR3D;
-          } /* endif */
-          l = -1;
-          // Load ghost cell solution variable information as required.
-          if (!Send_Mesh_Geometry_Only) {
-             if (Soln_Block_List.Block[i_blk].infoBE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBE[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost+1;
-                i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost-1;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoBE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBE[0].dimen.j > 0 ) {
-	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost+1;
-                i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost-1;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-              } else if (Soln_Block_List.Block[i_blk].infoBE[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost-1;
-	        k_inc = 1;
-              } else if (Soln_Block_List.Block[i_blk].infoBE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost+1;
-                i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost-1;
-	        k_inc = 1;
-            } else if (Soln_Block_List.Block[i_blk].infoBE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost-1;
-	        k_inc = 1;
-              } else if (Soln_Block_List.Block[i_blk].infoBE[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
- 	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost-1;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-            } else if (Soln_Block_List.Block[i_blk].infoBE[0].dimen.i > 0) {
-	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost+1;
-	        i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost-1;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-             } else {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu;
- 	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost-1;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-             } /* endif */
-             i = Soln_Blks[i_blk].LoadSendBuffer(Soln_Block_List.message_noreschange_bottomeastcorner_sendbuf[i_blk],
-                                                l,buffer_size_neighbour,
-                                                i_min,i_max,i_inc,j_min,j_max,j_inc,
-                                                k_min,k_max,k_inc);
-	     if (i != 0) return(5600);
-          } /* endif */
-          // Load ghost cell mesh information as required.
-          if (Send_Mesh_Geometry_Only ||
-              Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar()) {
-             if (Soln_Block_List.Block[i_blk].infoBE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBE[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INu-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl;
-	        j_max = Soln_Blks[i_blk].Grid.JNu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost;
-	        k_inc = 1;
-                i_ref = i_max+1;
-                j_ref = j_min;
-                k_ref = k_min-1;
-             } else if (Soln_Block_List.Block[i_blk].infoBE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBE[0].dimen.j > 0 ) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INu-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl;
-	        j_max = Soln_Blks[i_blk].Grid.JNu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_inc = -1;
-                i_ref = i_max+1;
-                j_ref = j_min;
-                k_ref = k_max-1;
-              } else if (Soln_Block_List.Block[i_blk].infoBE[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-1;
-	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl;
-	        j_max = Soln_Blks[i_blk].Grid.JNu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost;
-	        k_inc = 1;
-                i_ref = i_min+1;
-                j_ref = j_min;
-                k_ref = k_min-1;
-              } else if (Soln_Block_List.Block[i_blk].infoBE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INu-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu;
-	        j_max = Soln_Blks[i_blk].Grid.JNl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost;
-	        k_inc = 1;
-                i_ref = i_max+1;
-                j_ref = j_min;
-                k_ref = k_min-1;
-              } else if (Soln_Block_List.Block[i_blk].infoBE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-1;
-	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu;
-	        j_max = Soln_Blks[i_blk].Grid.JNl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost;
-	        k_inc = 1;
-                i_ref = i_min+1;
-                j_ref = j_min;
-                k_ref = k_min-1;
-             } else if (Soln_Block_List.Block[i_blk].infoBE[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-1;
-	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl;
-	        j_max = Soln_Blks[i_blk].Grid.JNu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_inc = -1;
-                i_ref = i_min+1;
-                j_ref = j_min;
-                k_ref = k_max-1;
-             } else if (Soln_Block_List.Block[i_blk].infoBE[0].dimen.i > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INu-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu;
-	        j_max = Soln_Blks[i_blk].Grid.JNl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_inc = -1;
-                i_ref = i_max+1;
-                j_ref = j_min;
-                k_ref = k_max-1;
-             } else {
-	        i_min = Soln_Blks[i_blk].Grid.INu-1;
-	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu;
-	        j_max = Soln_Blks[i_blk].Grid.JNl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBE[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_inc = -1;
-                i_ref = i_min+1;
-                j_ref = j_min;
-                k_ref = k_max-1;
-             } /* endif */
-             x_ref = Soln_Blks[i_blk].Grid.Node[i_ref][j_ref][k_ref].X; // Reference node location.
-             for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc )
-                   for ( m = 1 ; m <= NUM_COMP_VECTOR3D; ++ m) {
-		      l = l + 1;
-                      if (l >= buffer_size_neighbour) return(5601);
-                      Soln_Block_List.message_noreschange_bottomeastcorner_sendbuf[i_blk][l] =
-                         Soln_Blks[i_blk].Grid.Node[i][j][k].X[m]-x_ref[m];
-                   } /* endfor */
-          } /* endif */
-       } /* endif */
-        ///////////////////////////////////////////////////////////////////////////
-       // Load send buffer for Bottom South corner neighbours of solution blocks. //
-       ///////////////////////////////////////////////////////////////////////////
-       if (Soln_Block_List.Block[i_blk].used &&
-           (Soln_Block_List.Block[i_blk].nBS == 1) &&
-           (Soln_Block_List.Block[i_blk].info.level ==
-            Soln_Block_List.Block[i_blk].infoBS[0].level)) {
-         if (!Send_Mesh_Geometry_Only) {
-             buffer_size_neighbour = sqr(Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost)*
-                                     abs(Soln_Block_List.Block[i_blk].infoBS[0].dimen.i)*
-                                     Soln_Blks[i_blk].NumVar();
-             if (Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar())
-                buffer_size_neighbour = buffer_size_neighbour +
-                                        sqr(Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost)*
-                                        (abs(Soln_Block_List.Block[i_blk].infoBS[0].dimen.i)+1)*
-                                        NUM_COMP_VECTOR3D;
-          } else {
-                buffer_size_neighbour = sqr(Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost)*
-                                        (abs(Soln_Block_List.Block[i_blk].infoBS[0].dimen.i)+1)*
-                                        NUM_COMP_VECTOR3D;
-          } /* endif */
-          l = -1;
-          // Load ghost cell solution variable information as required.
-          if (!Send_Mesh_Geometry_Only) {
-             if (Soln_Block_List.Block[i_blk].infoBS[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBS[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBS[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost-1;
-	        j_inc = 1;
-   	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost-1;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoBS[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBS[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost-1;
-	        j_inc = 1;
-   	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost-1;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-             } else if (Soln_Block_List.Block[i_blk].infoBS[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBS[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost-1;
-	        j_inc = 1;
-   	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost-1;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoBS[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBS[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost-1;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-   	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost-1;
-	        k_inc = 1;
-	     } else if (Soln_Block_List.Block[i_blk].infoBS[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost-1;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
- 	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost-1;
-	        k_inc = 1;
-	     } else if (Soln_Block_List.Block[i_blk].infoBS[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost-1;
-	        j_inc = 1;
- 	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost-1;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-            } else if (Soln_Block_List.Block[i_blk].infoBS[0].dimen.i > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-	        i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost-1;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost-1;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-             } else {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost-1;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost-1;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-             } /* endif */
-             i = Soln_Blks[i_blk].LoadSendBuffer(Soln_Block_List.message_noreschange_bottomsouthcorner_sendbuf[i_blk],
-                                                l,buffer_size_neighbour,
-                                                i_min,i_max,i_inc,j_min,j_max,j_inc,
-                                                k_min,k_max,k_inc);
-	     if (i != 0) return(4500);
-          } /* endif */
-          // Load ghost cell mesh information as required.
-          if (Send_Mesh_Geometry_Only ||
-              Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar()) {
-             if (Soln_Block_List.Block[i_blk].infoBS[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBS[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBS[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl;
-	        i_max = Soln_Blks[i_blk].Grid.INu;
-                i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost;
-	        k_inc = 1;
-                i_ref = i_min;
-                j_ref = j_min-1;
-                k_ref = k_min-1;
-             } else if (Soln_Block_List.Block[i_blk].infoBS[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBS[0].dimen.j > 0 ) {
-	        i_min = Soln_Blks[i_blk].Grid.INl;
-	        i_max = Soln_Blks[i_blk].Grid.INu;
-                i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_inc = -1;
-                i_ref = i_min;
-                j_ref = j_min-1;
-                k_ref = k_max-1;
-             } else if (Soln_Block_List.Block[i_blk].infoBS[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBS[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu;
-	        i_max = Soln_Blks[i_blk].Grid.INl;
-                i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost;
-	        k_inc = 1;
-                i_ref = i_min;
-                j_ref = j_min-1;
-                k_ref = k_min-1;
-             } else if (Soln_Block_List.Block[i_blk].infoBS[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBS[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl;
-	        i_max = Soln_Blks[i_blk].Grid.INu;
-                i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost;
-	        k_inc = 1;
-                i_ref = i_min;
-                j_ref = j_max-1;
-                k_ref = k_min-1;
-             } else if (Soln_Block_List.Block[i_blk].infoBS[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu;
-	        i_max = Soln_Blks[i_blk].Grid.INl;
-                i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost;
-	        k_inc = 1;
-                i_ref = i_min;
-                j_ref = j_max-1;
-                k_ref = k_min-1;
-             } else if (Soln_Block_List.Block[i_blk].infoBS[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu;
-	        i_max = Soln_Blks[i_blk].Grid.INl;
-                i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_inc = -1;
-                i_ref = i_min;
-                j_ref = j_min-1;
-                k_ref = k_max-1;
-             } else if (Soln_Block_List.Block[i_blk].infoBS[0].dimen.i > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl;
-	        i_max = Soln_Blks[i_blk].Grid.INu;
-                i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_inc = -1;
-                i_ref = i_min;
-                j_ref = j_max-1;
-                k_ref = k_max-1;
-              } else {
-	        i_min = Soln_Blks[i_blk].Grid.INu;
-	        i_max = Soln_Blks[i_blk].Grid.INl;
-                i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBS[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_inc = -1;
-                i_ref = i_min;
-                j_ref = j_max-1;
-                k_ref = k_max-1;
-             } /* endif */
-             x_ref = Soln_Blks[i_blk].Grid.Node[i_ref][j_ref][k_ref].X; // Reference node location.
-             for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-	       for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc )
-                   for ( m = 1 ; m <= NUM_COMP_VECTOR3D; ++ m) {
-		      l = l + 1;
-                      if (l >= buffer_size_neighbour) return(4501);
-                      Soln_Block_List.message_noreschange_bottomsouthcorner_sendbuf[i_blk][l] =
-                         Soln_Blks[i_blk].Grid.Node[i][j][k].X[m]-x_ref[m];
-                   } /* endfor */
-          } /* endif */
-       } /* endif */
+	      } /* end of for k*/
+	   } /* end of for j*/
+        } /* end of for i*/
 
+     } /* endif */
+   } /* endfor */
+  
+   /* Loading of send buffers complete.  Return zero value. */
 
-       ///////////////////////////////////////////////////////////////////////////
-       // Load send buffer for Bottom West corner neighbours of solution blocks. //
-       ///////////////////////////////////////////////////////////////////////////
-       if (Soln_Block_List.Block[i_blk].used &&
-           (Soln_Block_List.Block[i_blk].nBW == 1) &&
-           (Soln_Block_List.Block[i_blk].info.level ==
-            Soln_Block_List.Block[i_blk].infoBW[0].level)) {
-         if (!Send_Mesh_Geometry_Only) {
-             buffer_size_neighbour = sqr(Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost)*
-                                     abs(Soln_Block_List.Block[i_blk].infoBW[0].dimen.j)*
-                                     Soln_Blks[i_blk].NumVar();
-             if (Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar())
-                buffer_size_neighbour = buffer_size_neighbour +
-                                        sqr(Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost)*
-                                        (abs(Soln_Block_List.Block[i_blk].infoBW[0].dimen.j)+1)*
-                                        NUM_COMP_VECTOR3D;
-          } else {
-                buffer_size_neighbour = sqr(Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost)*
-                                        (abs(Soln_Block_List.Block[i_blk].infoBW[0].dimen.j)+1)*
-                                        NUM_COMP_VECTOR3D;
-          } /* endif */
-          l = -1;
-          // Load ghost cell solution variable information as required.
-          if (!Send_Mesh_Geometry_Only) {
-             if (Soln_Block_List.Block[i_blk].infoBW[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBW[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost-1;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoBW[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBW[0].dimen.j > 0 ) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost-1;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-             } else if ( Soln_Block_List.Block[i_blk].infoBW[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost-1;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost-1;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoBW[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost-1;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoBW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost-1;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost-1;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoBW[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost-1;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost-1;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-             } else if (Soln_Block_List.Block[i_blk].infoBW[0].dimen.i > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-	        i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost-1;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-             } else {
-	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost-1;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu;
- 	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost-1;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-             } /* endif */
-             i = Soln_Blks[i_blk].LoadSendBuffer(Soln_Block_List.message_noreschange_bottomwestcorner_sendbuf[i_blk],
-                                                l,buffer_size_neighbour,
-                                                i_min,i_max,i_inc,
-                                                j_min,j_max,j_inc, k_min,k_max,k_inc);
-	     if (i != 0) return(4600);
-          } /* endif */
-          // Load ghost cell mesh information as required.
-          if (Send_Mesh_Geometry_Only ||
-              Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar()) {
-             if (Soln_Block_List.Block[i_blk].infoBW[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBW[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+1;
-	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl;
-	        j_max = Soln_Blks[i_blk].Grid.JNu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost;
-	        k_inc = 1;
-                i_ref = i_min-1;
-                j_ref = j_min;
-                k_ref = k_min-1;
-             } else if (Soln_Block_List.Block[i_blk].infoBW[0].dimen.i > 0 &&
-			Soln_Block_List.Block[i_blk].infoBW[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+1;
-	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl;
-	        j_max = Soln_Blks[i_blk].Grid.JNu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_inc = -1;
-                i_ref = i_min-1;
-                j_ref = j_min;
-                k_ref = k_max-1 ;
-             } else if ( Soln_Block_List.Block[i_blk].infoBW[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INl+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl;
-	        j_max = Soln_Blks[i_blk].Grid.JNu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost;
-	        k_inc = 1;
-                i_ref = i_max-1;
-                j_ref = j_min;
-                k_ref = k_min-1;
-             } else if (Soln_Block_List.Block[i_blk].infoBW[0].dimen.i > 0 &&
-			Soln_Block_List.Block[i_blk].infoBW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+1;
-	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu;
-	        j_max = Soln_Blks[i_blk].Grid.JNl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost;
-	        k_inc = 1;
-                i_ref = i_min-1;
-                j_ref = j_min;
-                k_ref = k_min-1;
-             } else if (Soln_Block_List.Block[i_blk].infoBW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INl+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu;
-	        j_max = Soln_Blks[i_blk].Grid.JNl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost;
-	        k_inc = 1;
-                i_ref = i_max-1;
-                j_ref = j_min;
-                k_ref = k_min-1;
-             } else if (Soln_Block_List.Block[i_blk].infoBW[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INl+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl;
-	        j_max = Soln_Blks[i_blk].Grid.JNu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_inc = -1;
-                i_ref = i_max-1;
-                j_ref = j_min;
-                k_ref = k_max-1 ;
-             } else if (Soln_Block_List.Block[i_blk].infoBW[0].dimen.i > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+1;
-	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu;
-	        j_max = Soln_Blks[i_blk].Grid.JNl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_inc = -1;
-                i_ref = i_min-1;
-                j_ref = j_min;
-		k_ref = k_max-1 ;
-            } else {
-	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INl+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu;
-	        j_max = Soln_Blks[i_blk].Grid.JNl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBW[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_inc = -1;
-                i_ref = i_max-1;
-                j_ref = j_min;
-                k_ref = k_max-1;
-             } /* endif */
-             x_ref = Soln_Blks[i_blk].Grid.Node[i_ref][j_ref][k_ref].X; // Reference node location.
-             for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-	       for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc )
-                   for ( m = 1 ; m <= NUM_COMP_VECTOR3D; ++ m) {
-		      l = l + 1;
-                      if (l >= buffer_size_neighbour) return(4601);
-                      Soln_Block_List.message_noreschange_bottomwestcorner_sendbuf[i_blk][l] =
-                         Soln_Blks[i_blk].Grid.Node[i][j][k].X[m]-x_ref[m];
-                   } /* endfor */
-          } /* endif */
-       } /* endif */
-
-         ///////////////////////////////////////////////////////////////////////////
-       // Load send buffer for Topnorth West corner neighbours of solution blocks. //
-       ///////////////////////////////////////////////////////////////////////////
-       if (Soln_Block_List.Block[i_blk].used &&
-           (Soln_Block_List.Block[i_blk].nTNW == 1) &&
-           (Soln_Block_List.Block[i_blk].info.level ==
-            Soln_Block_List.Block[i_blk].infoTNW[0].level)) {
-          buffer_size_neighbour = sqr(Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost)*
-	    Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost*
-                                  Number_of_Solution_Variables;
-          l = -1;
-          // Load ghost cell solution variable information as required.
-          if (!Send_Mesh_Geometry_Only) {
-             if (Soln_Block_List.Block[i_blk].infoTNW[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTNW[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTNW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost+1;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost+1;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoTNW[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTNW[0].dimen.j > 0 ) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost+1;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost+1;
-	        k_inc = -1;
-             } else if ( Soln_Block_List.Block[i_blk].infoTNW[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTNW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost-1;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost+1;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost+1;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoTNW[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTNW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost+1;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoTNW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost-1;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost+1;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoTNW[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost-1;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost+1;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost+1;
-	        k_inc = -1;
-             } else if (Soln_Block_List.Block[i_blk].infoTNW[0].dimen.i > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-	        i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost+1;
-	        k_inc = -1;
-             } else {
-	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost-1;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu;
- 	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost+1;
-	        k_inc = -1;
-             } /* endif */
-             i = Soln_Blks[i_blk].LoadSendBuffer(Soln_Block_List.message_noreschange_topnorthwestcorner_sendbuf[i_blk],
-                                                l,buffer_size_neighbour,
-                                                i_min,i_max,i_inc,
-                                                j_min,j_max,j_inc,
-                                                k_min,k_max,k_inc);
-	     if (i != 0) return(4700);
-          } /* endif */
-          // Load ghost cell mesh information as required.
-          if (Send_Mesh_Geometry_Only ||
-              Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar()) {
-             if (Soln_Block_List.Block[i_blk].infoTNW[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTNW[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTNW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+1;
-	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_inc = 1;
-                i_ref = i_min-1;
-                j_ref = j_max+1;
-                k_ref = k_max+1  ;
-             } else if (Soln_Block_List.Block[i_blk].infoTNW[0].dimen.i > 0 &&
-			Soln_Block_List.Block[i_blk].infoTNW[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+1;
-	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost;
-	        k_inc = -1;
-                i_ref = i_min-1;
-                j_ref = j_max+1;
-                k_ref = k_min+1;
-             } else if ( Soln_Block_List.Block[i_blk].infoTNW[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTNW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INl+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_inc = 1;
-                i_ref = i_max-1;
-                j_ref = j_max+1;
-                k_ref = k_max+1  ;
-             } else if (Soln_Block_List.Block[i_blk].infoTNW[0].dimen.i > 0 &&
-			Soln_Block_List.Block[i_blk].infoTNW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+1;
-	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_inc = 1;
-                i_ref = i_min-1;
-                j_ref = j_min+1;
-                k_ref = k_max+1  ;
-             } else if (Soln_Block_List.Block[i_blk].infoTNW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INl+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_inc = 1;
-                i_ref = i_max-1;
-                j_ref = j_min+1;
-                k_ref = k_max+1  ;
-             } else if (Soln_Block_List.Block[i_blk].infoTNW[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INl+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost;
-	        k_inc = -1;
-                i_ref = i_max-1;
-                j_ref = j_max+1;
-                k_ref = k_min+1  ;
-             } else if (Soln_Block_List.Block[i_blk].infoTNW[0].dimen.i > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+1;
-	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost;
-	        k_inc = -1;
-                i_ref = i_min-1;
-                j_ref = j_min+1;
-		k_ref = k_min+1  ;
-            } else {
-	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INl+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTNW[0].dimen.ghost;
-	        k_inc = -1;
-                i_ref = i_max-1;
-                j_ref = j_min+1;
-                k_ref = k_min+1  ;
-             } /* endif */
-             x_ref = Soln_Blks[i_blk].Grid.Node[i_ref][j_ref][k_ref].X; // Reference node location.
-             for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-	       for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc )
-                   for ( m = 1 ; m <= NUM_COMP_VECTOR3D; ++ m) {
-		      l = l + 1;
-                      if (l >= buffer_size_neighbour) return(4701);
-                      Soln_Block_List.message_noreschange_topnorthwestcorner_sendbuf[i_blk][l] =
-                         Soln_Blks[i_blk].Grid.Node[i][j][k].X[m]-x_ref[m];
-                   } /* endfor */
-          } /* endif */
-       } /* endif */
-
-
-       ///////////////////////////////////////////////////////////////////////////
-       // Load send buffer for Topsouth East corner neighbours of solution blocks. //
-       ///////////////////////////////////////////////////////////////////////////
-       if (Soln_Block_List.Block[i_blk].used &&
-           (Soln_Block_List.Block[i_blk].nTSE == 1) &&
-           (Soln_Block_List.Block[i_blk].info.level ==
-            Soln_Block_List.Block[i_blk].infoTSE[0].level)) {
-          buffer_size_neighbour = sqr(Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost)*
-	    Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost*
-                                  Number_of_Solution_Variables;
-          l = -1;
-          // Load ghost cell solution variable information as required.
-          if (!Send_Mesh_Geometry_Only) {
-             if (Soln_Block_List.Block[i_blk].infoTSE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTSE[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTSE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost+1;
-                i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost-1;
-	        j_inc = 1;
-   	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost+1;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoTSE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTSE[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost+1;
-                i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost-1;
-	        j_inc = 1;
-   	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost+1;
-	        k_inc = -1;
-             } else if (Soln_Block_List.Block[i_blk].infoTSE[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTSE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost-1;
-	        j_inc = 1;
-   	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost+1;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoTSE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTSE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost+1;
-                i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost-1;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-   	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost+1;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-	     } else if (Soln_Block_List.Block[i_blk].infoTSE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost-1;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
- 	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost+1;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-	     } else if (Soln_Block_List.Block[i_blk].infoTSE[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost-1;
-	        j_inc = 1;
- 	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost+1;
-	        k_inc = -1;
-            } else if (Soln_Block_List.Block[i_blk].infoTSE[0].dimen.i > 0) {
-	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost+1;
-	        i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost-1;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost+1;
-	        k_inc = -1;
-             } else {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost-1;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost+1;
-	        k_inc = -1;
-             } /* endif */
-             i = Soln_Blks[i_blk].LoadSendBuffer(Soln_Block_List.message_noreschange_topsoutheastcorner_sendbuf[i_blk],
-                                                l,buffer_size_neighbour,
-                                                i_min,i_max,i_inc,j_min,j_max,j_inc,
-                                                k_min,k_max,k_inc);
-	     if (i != 0) return(4800);
-          } /* endif */
-          // Load ghost cell mesh information as required.
-          if (Send_Mesh_Geometry_Only ||
-              Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar()) {
-             if (Soln_Block_List.Block[i_blk].infoTSE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTSE[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTSE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INu-1;
-                i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_inc = 1;
-                i_ref = i_max+1;
-                j_ref = j_min-1;
-                k_ref = k_max+1;
-             } else if (Soln_Block_List.Block[i_blk].infoTSE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTSE[0].dimen.j > 0 ) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INu-1;
-                i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost;
-	        k_inc = -1;
-                i_ref = i_max+1;
-                j_ref = j_min-1;
-                k_ref = k_min+1;
-             } else if (Soln_Block_List.Block[i_blk].infoTSE[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTSE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-1;
-	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost;
-                i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_inc = 1;
-                i_ref = i_min+1;
-                j_ref = j_min-1;
-                k_ref = k_max+1;
-             } else if (Soln_Block_List.Block[i_blk].infoTSE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTSE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INu-1;
-                i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_inc = 1;
-                i_ref = i_max+1;
-                j_ref = j_max-1;
-                k_ref = k_max+1;
-             } else if (Soln_Block_List.Block[i_blk].infoTSE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-1;
-	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost;
-                i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_inc = 1;
-                i_ref = i_min+1;
-                j_ref = j_max-1;
-                k_ref = k_max+1;
-             } else if (Soln_Block_List.Block[i_blk].infoTSE[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-1;
-	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost;
-                i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost;
-	        k_inc = -1;
-                i_ref = i_min+1;
-                j_ref = j_min-1;
-                k_ref = k_min+1;
-             } else if (Soln_Block_List.Block[i_blk].infoTSE[0].dimen.i > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INu-1;
-                i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost;
-	        k_inc = -1;
-                i_ref = i_max+1;
-                j_ref = j_max-1;
-                k_ref = k_min+1;
-              } else {
-	        i_min = Soln_Blks[i_blk].Grid.INu-1;
-	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost;
-                i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTSE[0].dimen.ghost;
-	        k_inc = -1;
-                i_ref = i_min+1;
-                j_ref = j_max-1;
-                k_ref = k_min+1;
-             } /* endif */
-             x_ref = Soln_Blks[i_blk].Grid.Node[i_ref][j_ref][k_ref].X; // Reference node location.
-             for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-	       for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc )
-                   for ( m = 1 ; m <= NUM_COMP_VECTOR3D; ++ m) {
-		      l = l + 1;
-                      if (l >= buffer_size_neighbour) return(4801);
-                      Soln_Block_List.message_noreschange_topsoutheastcorner_sendbuf[i_blk][l] =
-                         Soln_Blks[i_blk].Grid.Node[i][j][k].X[m]-x_ref[m];
-                   } /* endfor */
-          } /* endif */
-       } /* endif */
-
-       ///////////////////////////////////////////////////////////////////////////
-       // Load send buffer for Topsouth West corner neighbours of solution blocks. //
-       ///////////////////////////////////////////////////////////////////////////
-       if (Soln_Block_List.Block[i_blk].used &&
-           (Soln_Block_List.Block[i_blk].nTSW == 1) &&
-           (Soln_Block_List.Block[i_blk].info.level ==
-            Soln_Block_List.Block[i_blk].infoTSW[0].level)) {
-          buffer_size_neighbour = sqr(Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost)*
-	    Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost*
-                                  Number_of_Solution_Variables;
-          l = -1;
-          // Load ghost cell solution variable information as required.
-          if (!Send_Mesh_Geometry_Only) {
-             if (Soln_Block_List.Block[i_blk].infoTSW[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTSW[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTSW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost-1;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost+1;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-          } else
-             if (Soln_Block_List.Block[i_blk].infoTSW[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTSW[0].dimen.j > 0 ) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost-1;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost+1;
-	        k_inc = -1;
-          } else
-             if ( Soln_Block_List.Block[i_blk].infoTSW[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTSW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost-1;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost-1;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost+1;
-	        k_inc = -1;
-          } else
-             if (Soln_Block_List.Block[i_blk].infoTSW[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTSW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost-1;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost+1;
-	        k_inc = -1;
-            } else if (Soln_Block_List.Block[i_blk].infoTSW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost-1;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost-1;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost+1;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoTSW[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost-1;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost-1;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost+1;
-	        k_inc = -1;
-             } else if (Soln_Block_List.Block[i_blk].infoTSW[0].dimen.i > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost-1;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost+1;
-	        k_inc = -1;
-             } else {
-	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost-1;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost-1;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost+1;
-	        k_inc = -1;
-             } /* endif */
-             i = Soln_Blks[i_blk].LoadSendBuffer(Soln_Block_List.message_noreschange_topsouthwestcorner_sendbuf[i_blk],
-                                                l,buffer_size_neighbour,
-                                                i_min,i_max,i_inc,j_min,j_max,j_inc,
-                                                k_min,k_max,k_inc);
-	     if (i != 0) return(5800);
-          } /* endif */
-          // Load ghost cell mesh information as required.
-          if (Send_Mesh_Geometry_Only ||
-              Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar()) {
-             if (Soln_Block_List.Block[i_blk].infoTSW[0].dimen.i > 0 &&
-                Soln_Block_List.Block[i_blk].infoTSW[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTSW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+1;
-	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost;
-                i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_inc = 1;
-                i_ref = i_min-1;
-                j_ref = j_min-1;
-                k_ref = k_max+1;
-             } else if (Soln_Block_List.Block[i_blk].infoTSW[0].dimen.i > 0 &&
-                Soln_Block_List.Block[i_blk].infoTSW[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+1;
-	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost;
-                i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost;
-	        k_inc = -1;
-                i_ref = i_min-1;
-                j_ref = j_min-1;
-                k_ref = k_min+1;
-             } else if (Soln_Block_List.Block[i_blk].infoTSW[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTSW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INl+1;
-                i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_inc = 1;
-                i_ref = i_max-1;
-                j_ref = j_min-1;
-                k_ref = k_max+1;
-             } else if (Soln_Block_List.Block[i_blk].infoTSW[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTSW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+1;
-	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost;
-                i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_inc = 1;
-                i_ref = i_min-1;
-                j_ref = j_max-1;
-                k_ref = k_max+1;
-             } else if (Soln_Block_List.Block[i_blk].infoTSW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INl+1;
-                i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_inc = 1;
-                i_ref = i_max-1;
-                j_ref = j_max-1;
-                k_ref = k_max+1;
-             } else if (Soln_Block_List.Block[i_blk].infoTSW[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INl+1;
-                i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost;
-	        k_inc = -1;
-                i_ref = i_max-1;
-                j_ref = j_min-1;
-                k_ref = k_min+1;
-             } else if (Soln_Block_List.Block[i_blk].infoTSW[0].dimen.i > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+1;
-	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost;
-                i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost;
-	        k_inc = -1;
-                i_ref = i_min-1;
-                j_ref = j_max-1;
-                k_ref = k_min+1;
-             } else {
-	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INl+1;
-                i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTSW[0].dimen.ghost;
-	        k_inc = -1;
-                i_ref = i_max-1;
-                j_ref = j_max-1;
-                k_ref = k_min+1;
-             } /* endif */
-             x_ref = Soln_Blks[i_blk].Grid.Node[i_ref][j_ref][k_ref].X; // Reference node location.
-             for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-	       for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc )
-                   for ( m = 1 ; m <= NUM_COMP_VECTOR3D; ++ m) {
-		      l = l + 1;
-                      if (l >= buffer_size_neighbour) return(5801);
-                      Soln_Block_List.message_noreschange_topsouthwestcorner_sendbuf[i_blk][l] =
-                         Soln_Blks[i_blk].Grid.Node[i][j][k].X[m]-x_ref[m];
-		   } /* endfor */
-          } /* endif */
-       } /* endif */
-
-      ///////////////////////////////////////////////////////////////////////////
-       // Load send buffer for Bottomnorth West corner neighbours of solution blocks. //
-       ///////////////////////////////////////////////////////////////////////////
-       if (Soln_Block_List.Block[i_blk].used &&
-           (Soln_Block_List.Block[i_blk].nBNW == 1) &&
-           (Soln_Block_List.Block[i_blk].info.level ==
-            Soln_Block_List.Block[i_blk].infoBNW[0].level)) {
-          buffer_size_neighbour = sqr(Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost)*
-	    Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost*
-                                  Number_of_Solution_Variables;
-          l = -1;
-          // Load ghost cell solution variable information as required.
-          if (!Send_Mesh_Geometry_Only) {
-             if (Soln_Block_List.Block[i_blk].infoBNW[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBNW[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBNW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost+1;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost-1;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoBNW[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBNW[0].dimen.j > 0 ) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost+1;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost-1;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-             } else if ( Soln_Block_List.Block[i_blk].infoBNW[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBNW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost-1;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost+1;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost-1;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoBNW[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBNW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost-1;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoBNW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost-1;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost-1;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoBNW[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost-1;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost+1;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost-1;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-             } else if (Soln_Block_List.Block[i_blk].infoBNW[0].dimen.i > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-	        i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost-1;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-             } else {
-	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost-1;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu;
- 	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost-1;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-             } /* endif */
-             i = Soln_Blks[i_blk].LoadSendBuffer(Soln_Block_List.message_noreschange_bottomnorthwestcorner_sendbuf[i_blk],
-                                                l,buffer_size_neighbour,
-                                                i_min,i_max,i_inc,
-                                                j_min,j_max,j_inc, k_min,k_max,k_inc);
-	     if (i != 0) return(4900);
-          } /* endif */
-          // Load ghost cell mesh information as required.
-          if (Send_Mesh_Geometry_Only ||
-              Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar()) {
-             if (Soln_Block_List.Block[i_blk].infoBNW[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBNW[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBNW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+1;
-	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost;
-	        k_inc = 1;
-                i_ref = i_min-1;
-                j_ref = j_max+1;
-                k_ref = k_min-1  ;
-             } else if (Soln_Block_List.Block[i_blk].infoBNW[0].dimen.i > 0 &&
-			Soln_Block_List.Block[i_blk].infoBNW[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+1;
-	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_inc = -1;
-                i_ref = i_min-1;
-                j_ref = j_max+1;
-                k_ref = k_max-1;
-             } else if ( Soln_Block_List.Block[i_blk].infoBNW[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBNW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INl+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost;
-	        k_inc = 1;
-                i_ref = i_max-1;
-                j_ref = j_max+1;
-                k_ref = k_min-1  ;
-             } else if (Soln_Block_List.Block[i_blk].infoBNW[0].dimen.i > 0 &&
-			Soln_Block_List.Block[i_blk].infoBNW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+1;
-	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost;
-	        k_inc = 1;
-                i_ref = i_min-1;
-                j_ref = j_min+1;
-                k_ref = k_min-1  ;
-             } else if (Soln_Block_List.Block[i_blk].infoBNW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INl+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost;
-	        k_inc = 1;
-                i_ref = i_max-1;
-                j_ref = j_min+1;
-                k_ref = k_min-1  ;
-             } else if (Soln_Block_List.Block[i_blk].infoBNW[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INl+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_inc = -1;
-                i_ref = i_max-1;
-                j_ref = j_max+1;
-                k_ref = k_max-1  ;
-             } else if (Soln_Block_List.Block[i_blk].infoBNW[0].dimen.i > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+1;
-	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_inc = -1;
-                i_ref = i_min-1;
-                j_ref = j_min+1;
-		k_ref = k_max-1  ;
-            } else {
-	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INl+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBNW[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_inc = -1;
-                i_ref = i_max-1;
-                j_ref = j_min+1;
-                k_ref = k_max-1  ;
-             } /* endif */
-             x_ref = Soln_Blks[i_blk].Grid.Node[i_ref][j_ref][k_ref].X; // Reference node location.
-             for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-	       for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc )
-                   for ( m = 1 ; m <= NUM_COMP_VECTOR3D; ++ m) {
-		      l = l + 1;
-                      if (l >= buffer_size_neighbour) return(4901);
-                      Soln_Block_List.message_noreschange_bottomnorthwestcorner_sendbuf[i_blk][l] =
-                         Soln_Blks[i_blk].Grid.Node[i][j][k].X[m]-x_ref[m];
-                   } /* endfor */
-          } /* endif */
-       } /* endif */
-
-       ///////////////////////////////////////////////////////////////////////////
-       // Load send buffer for Bottomnorth East corner neighbours of solution blocks. //
-       ///////////////////////////////////////////////////////////////////////////
-       if (Soln_Block_List.Block[i_blk].used &&
-           (Soln_Block_List.Block[i_blk].nBNE == 1) &&
-           (Soln_Block_List.Block[i_blk].info.level ==
-            Soln_Block_List.Block[i_blk].infoBNE[0].level)) {
-          buffer_size_neighbour = sqr(Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost)*
-	    Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost*
-                                  Number_of_Solution_Variables;
-          l = -1;
-          // Load ghost cell solution variable information as required.
-          if (!Send_Mesh_Geometry_Only) {
-             if (Soln_Block_List.Block[i_blk].infoBNE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBNE[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBNE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost+1;
-                i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost+1;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost-1;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoBNE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBNE[0].dimen.j > 0 ) {
-	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost+1;
-                i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost+1;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost-1;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-              } else if (Soln_Block_List.Block[i_blk].infoBNE[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBNE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost+1;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost-1;
-	        k_inc = 1;
-              } else if (Soln_Block_List.Block[i_blk].infoBNE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBNE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost+1;
-                i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost-1;
-	        k_inc = 1;
-            } else if (Soln_Block_List.Block[i_blk].infoBNE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost-1;
-	        k_inc = 1;
-              } else if (Soln_Block_List.Block[i_blk].infoBNE[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost+1;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
- 	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost-1;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-            } else if (Soln_Block_List.Block[i_blk].infoBNE[0].dimen.i > 0) {
-	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost+1;
-	        i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost-1;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-             } else {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu;
- 	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost-1;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-             } /* endif */
-             i = Soln_Blks[i_blk].LoadSendBuffer(Soln_Block_List.message_noreschange_bottomnortheastcorner_sendbuf[i_blk],
-                                                l,buffer_size_neighbour,
-                                                i_min,i_max,i_inc,j_min,j_max,j_inc,
-                                                k_min,k_max,k_inc);
-	     if (i != 0) return(5900);
-          } /* endif */
-          // Load ghost cell mesh information as required.
-          if (Send_Mesh_Geometry_Only ||
-              Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar()) {
-             if (Soln_Block_List.Block[i_blk].infoBNE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBNE[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBNE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INu-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost;
-	        k_inc = 1;
-                i_ref = i_max+1;
-                j_ref = j_max+1;
-                k_ref = k_min-1;
-             } else if (Soln_Block_List.Block[i_blk].infoBNE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBNE[0].dimen.j > 0 ) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INu-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_inc = -1;
-                i_ref = i_max+1;
-                j_ref = j_max+1;
-                k_ref = k_max-1;
-              } else if (Soln_Block_List.Block[i_blk].infoBNE[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBNE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-1;
-	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost;
-	        k_inc = 1;
-                i_ref = i_min+1;
-                j_ref = j_max+1;
-                k_ref = k_min-1;
-              } else if (Soln_Block_List.Block[i_blk].infoBNE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBNE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INu-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost;
-	        k_inc = 1;
-                i_ref = i_max+1;
-                j_ref = j_min+1;
-                k_ref = k_min-1;
-              } else if (Soln_Block_List.Block[i_blk].infoBNE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-1;
-	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost;
-	        k_inc = 1;
-                i_ref = i_min+1;
-                j_ref = j_min+1;
-                k_ref = k_min-1;
-             } else if (Soln_Block_List.Block[i_blk].infoBNE[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-1;
-	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_inc = -1;
-                i_ref = i_min+1;
-                j_ref = j_max+1;
-                k_ref = k_max-1;
-             } else if (Soln_Block_List.Block[i_blk].infoBNE[0].dimen.i > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INu-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_inc = -1;
-                i_ref = i_max+1;
-                j_ref = j_min+1;
-                k_ref = k_max-1;
-             } else {
-	        i_min = Soln_Blks[i_blk].Grid.INu-1;
-	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBNE[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_inc = -1;
-                i_ref = i_min+1;
-                j_ref = j_min+1;
-                k_ref = k_max-1;
-             } /* endif */
-             x_ref = Soln_Blks[i_blk].Grid.Node[i_ref][j_ref][k_ref].X; // Reference node location.
-             for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc )
-                   for ( m = 1 ; m <= NUM_COMP_VECTOR3D; ++ m) {
-		      l = l + 1;
-                      if (l >= buffer_size_neighbour) return(5901);
-                      Soln_Block_List.message_noreschange_bottomnortheastcorner_sendbuf[i_blk][l] =
-                         Soln_Blks[i_blk].Grid.Node[i][j][k].X[m]-x_ref[m];
-                   } /* endfor */
-          } /* endif */
-       } /* endif */
-
-       ///////////////////////////////////////////////////////////////////////////
-       // Load send buffer for Bottomsouth East corner neighbours of solution blocks. //
-       ///////////////////////////////////////////////////////////////////////////
-       if (Soln_Block_List.Block[i_blk].used &&
-           (Soln_Block_List.Block[i_blk].nBSE == 1) &&
-           (Soln_Block_List.Block[i_blk].info.level ==
-            Soln_Block_List.Block[i_blk].infoBSE[0].level)) {
-             buffer_size_neighbour = sqr(Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost)*
-	       Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost*
-                                  Number_of_Solution_Variables;
-          l = -1;
-          // Load ghost cell solution variable information as required.
-          if (!Send_Mesh_Geometry_Only) {
-             if (Soln_Block_List.Block[i_blk].infoBSE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBSE[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBSE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost+1;
-                i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost-1;
-	        j_inc = 1;
-   	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost-1;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoBSE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBSE[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost+1;
-                i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost-1;
-	        j_inc = 1;
-   	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost-1;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-             } else if (Soln_Block_List.Block[i_blk].infoBSE[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBSE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost-1;
-	        j_inc = 1;
-   	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost-1;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoBSE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBSE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost+1;
-                i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost-1;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-   	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost-1;
-	        k_inc = 1;
-	     } else if (Soln_Block_List.Block[i_blk].infoBSE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost-1;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
- 	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost-1;
-	        k_inc = 1;
-	     } else if (Soln_Block_List.Block[i_blk].infoBSE[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost-1;
-	        j_inc = 1;
- 	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost-1;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-            } else if (Soln_Block_List.Block[i_blk].infoBSE[0].dimen.i > 0) {
-	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost+1;
-	        i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost-1;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost-1;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-             } else {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost-1;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost-1;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-             } /* endif */
-             i = Soln_Blks[i_blk].LoadSendBuffer(Soln_Block_List.message_noreschange_bottomsoutheastcorner_sendbuf[i_blk],
-                                                l,buffer_size_neighbour,
-                                                i_min,i_max,i_inc,j_min,j_max,j_inc,
-                                                k_min,k_max,k_inc);
-	     if (i != 0) return(5000);
-          } /* endif */
-          // Load ghost cell mesh information as required.
-          if (Send_Mesh_Geometry_Only ||
-              Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar()) {
-             if (Soln_Block_List.Block[i_blk].infoBSE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBSE[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBSE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INu-1;
-                i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost;
-	        k_inc = 1;
-                i_ref = i_max+1;
-                j_ref = j_min-1;
-                k_ref = k_min-1;
-             } else if (Soln_Block_List.Block[i_blk].infoBSE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBSE[0].dimen.j > 0 ) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INu-1;
-                i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_inc = -1;
-                i_ref = i_max+1;
-                j_ref = j_min-1;
-                k_ref = k_max-1;
-             } else if (Soln_Block_List.Block[i_blk].infoBSE[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBSE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-1;
-	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost;
-                i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost;
-	        k_inc = 1;
-                i_ref = i_min+1;
-                j_ref = j_min-1;
-                k_ref = k_min-1;
-             } else if (Soln_Block_List.Block[i_blk].infoBSE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBSE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INu-1;
-                i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost;
-	        k_inc = 1;
-                i_ref = i_max+1;
-                j_ref = j_max-1;
-                k_ref = k_min-1;
-             } else if (Soln_Block_List.Block[i_blk].infoBSE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-1;
-	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost;
-                i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost;
-	        k_inc = 1;
-                i_ref = i_min+1;
-                j_ref = j_max-1;
-                k_ref = k_min-1;
-             } else if (Soln_Block_List.Block[i_blk].infoBSE[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-1;
-	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost;
-                i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_inc = -1;
-                i_ref = i_min+1;
-                j_ref = j_min-1;
-                k_ref = k_max-1;
-             } else if (Soln_Block_List.Block[i_blk].infoBSE[0].dimen.i > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INu-1;
-                i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_inc = -1;
-                i_ref = i_max+1;
-                j_ref = j_max-1;
-                k_ref = k_max-1;
-              } else {
-	        i_min = Soln_Blks[i_blk].Grid.INu-1;
-	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost;
-                i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBSE[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_inc = -1;
-                i_ref = i_min+1;
-                j_ref = j_max-1;
-                k_ref = k_max-1;
-             } /* endif */
-             x_ref = Soln_Blks[i_blk].Grid.Node[i_ref][j_ref][k_ref].X; // Reference node location.
-             for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-	       for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc )
-                   for ( m = 1 ; m <= NUM_COMP_VECTOR3D; ++ m) {
-		      l = l + 1;
-                      if (l >= buffer_size_neighbour) return(5001);
-                      Soln_Block_List.message_noreschange_bottomsoutheastcorner_sendbuf[i_blk][l] =
-                         Soln_Blks[i_blk].Grid.Node[i][j][k].X[m]-x_ref[m];
-                   } /* endfor */
-          } /* endif */
-       } /* endif */
-
-       ///////////////////////////////////////////////////////////////////////////
-       // Load send buffer for Topnorth East corner neighbours of solution blocks. //
-       ///////////////////////////////////////////////////////////////////////////
-       if (Soln_Block_List.Block[i_blk].used &&
-           (Soln_Block_List.Block[i_blk].nTNE == 1) &&
-           (Soln_Block_List.Block[i_blk].info.level ==
-            Soln_Block_List.Block[i_blk].infoTNE[0].level)) {
-          buffer_size_neighbour = sqr(Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost)*
-	    Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost*
-                                  Number_of_Solution_Variables;
-          l = -1;
-          // Load ghost cell solution variable information as required.
-          if (!Send_Mesh_Geometry_Only) {
-             if (Soln_Block_List.Block[i_blk].infoTNE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTNE[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTNE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost+1;
-                i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost+1;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost+1;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoTNE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTNE[0].dimen.j > 0 ) {
-	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost+1;
-                i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost+1;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost+1;
-	        k_inc = -1;
-              } else if (Soln_Block_List.Block[i_blk].infoTNE[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTNE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost+1;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost+1;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-              } else if (Soln_Block_List.Block[i_blk].infoTNE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTNE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost+1;
-                i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost+1;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-            } else if (Soln_Block_List.Block[i_blk].infoTNE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost+1;
-	        k_max = Soln_Blks[i_blk].KCu;
-	        k_inc = 1;
-              } else if (Soln_Block_List.Block[i_blk].infoTNE[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost+1;
-	        j_max = Soln_Blks[i_blk].JCu;
-	        j_inc = 1;
- 	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost+1;
-	        k_inc = -1;
-            } else if (Soln_Block_List.Block[i_blk].infoTNE[0].dimen.i > 0) {
-	        i_min = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost+1;
-	        i_max = Soln_Blks[i_blk].ICu;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCu;
-	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost+1;
-	        k_inc = -1;
-             } else {
-	        i_min = Soln_Blks[i_blk].ICu;
-	        i_max = Soln_Blks[i_blk].ICu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost+1;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCu;
- 	        j_max = Soln_Blks[i_blk].JCu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCu;
-	        k_max = Soln_Blks[i_blk].KCu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost+1;
-	        k_inc = -1;
-             } /* endif */
-             i = Soln_Blks[i_blk].LoadSendBuffer(Soln_Block_List.message_noreschange_topnortheastcorner_sendbuf[i_blk],
-                                                l,buffer_size_neighbour,
-                                                i_min,i_max,i_inc,j_min,j_max,j_inc,
-                                                k_min,k_max,k_inc);
-	     if (i != 0) return(5700);
-          } /* endif */
-          // Load ghost cell mesh information as required.
-          if (Send_Mesh_Geometry_Only ||
-              Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar()) {
-             if (Soln_Block_List.Block[i_blk].infoTNE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTNE[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTNE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INu-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_inc = 1;
-                i_ref = i_max+1;
-                j_ref = j_max+1;
-                k_ref = k_max+1;
-             } else if (Soln_Block_List.Block[i_blk].infoTNE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTNE[0].dimen.j > 0 ) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INu-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost;
-	        k_inc = -1;
-                i_ref = i_max+1;
-                j_ref = j_max+1;
-                k_ref = k_min+1;
-              } else if (Soln_Block_List.Block[i_blk].infoTNE[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTNE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-1;
-	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_inc = 1;
-                i_ref = i_min+1;
-                j_ref = j_max+1;
-                k_ref = k_max+1;
-              } else if (Soln_Block_List.Block[i_blk].infoTNE[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoTNE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INu-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_inc = 1;
-                i_ref = i_max+1;
-                j_ref = j_min+1;
-                k_ref = k_max+1;
-              } else if (Soln_Block_List.Block[i_blk].infoTNE[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-1;
-	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_inc = 1;
-                i_ref = i_min+1;
-                j_ref = j_min+1;
-                k_ref = k_max+1;
-             } else if (Soln_Block_List.Block[i_blk].infoTNE[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-1;
-	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost;
-	        k_inc = -1;
-                i_ref = i_min+1;
-                j_ref = j_max+1;
-                k_ref = k_min+1;
-             } else if (Soln_Block_List.Block[i_blk].infoTNE[0].dimen.i > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INu-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost;
-	        k_inc = -1;
-                i_ref = i_max+1;
-                j_ref = j_min+1;
-                k_ref = k_min+1;
-             } else {
-	        i_min = Soln_Blks[i_blk].Grid.INu-1;
-	        i_max = Soln_Blks[i_blk].Grid.INu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNu-1;
-	        j_max = Soln_Blks[i_blk].Grid.JNu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNu-1;
-	        k_max = Soln_Blks[i_blk].Grid.KNu-Soln_Block_List.Block[i_blk].infoTNE[0].dimen.ghost;
-	        k_inc = -1;
-                i_ref = i_min+1;
-                j_ref = j_min+1;
-                k_ref = k_min+1;
-             } /* endif */
-             x_ref = Soln_Blks[i_blk].Grid.Node[i_ref][j_ref][k_ref].X; // Reference node location.
-             for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc )
-                   for ( m = 1 ; m <= NUM_COMP_VECTOR3D; ++ m) {
-		      l = l + 1;
-                      if (l >= buffer_size_neighbour) return(5701);
-                      Soln_Block_List.message_noreschange_topnortheastcorner_sendbuf[i_blk][l] =
-                         Soln_Blks[i_blk].Grid.Node[i][j][k].X[m]-x_ref[m];
-                   } /* endfor */
-          } /* endif */
-       } /* endif */
-
-       ///////////////////////////////////////////////////////////////////////////
-       // Load send buffer for Bottomsouth West corner neighbours of solution blocks. //
-       ///////////////////////////////////////////////////////////////////////////
-       if (Soln_Block_List.Block[i_blk].used &&
-           (Soln_Block_List.Block[i_blk].nBSW == 1) &&
-           (Soln_Block_List.Block[i_blk].info.level ==
-            Soln_Block_List.Block[i_blk].infoBSW[0].level)) {
-          buffer_size_neighbour = sqr(Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost)*
-	    Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost*
-                                  Number_of_Solution_Variables;
-          l = -1;
-          // Load ghost cell solution variable information as required.
-          if (!Send_Mesh_Geometry_Only) {
-             if (Soln_Block_List.Block[i_blk].infoBSW[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBSW[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBSW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost-1;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost-1;
-	        k_inc = 1;
-          } else
-             if (Soln_Block_List.Block[i_blk].infoBSW[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBSW[0].dimen.j > 0 ) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost-1;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost-1;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-          } else
-             if ( Soln_Block_List.Block[i_blk].infoBSW[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBSW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost-1;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost-1;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost-1;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-          } else
-             if (Soln_Block_List.Block[i_blk].infoBSW[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBSW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost-1;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost-1;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-            } else if (Soln_Block_List.Block[i_blk].infoBSW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost-1;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost-1;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCl;
-	        k_max = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost-1;
-	        k_inc = 1;
-             } else if (Soln_Block_List.Block[i_blk].infoBSW[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost-1;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl;
-	        j_max = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost-1;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost-1;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-             } else if (Soln_Block_List.Block[i_blk].infoBSW[0].dimen.i > 0) {
-	        i_min = Soln_Blks[i_blk].ICl;
-                i_max = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost-1;
-	        i_inc = 1;
-	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost-1;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost-1;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-             } else {
-	        i_min = Soln_Blks[i_blk].ICl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost-1;
-	        i_max = Soln_Blks[i_blk].ICl;
-	        i_inc = -1;
-	        j_min = Soln_Blks[i_blk].JCl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost-1;
-	        j_max = Soln_Blks[i_blk].JCl;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].KCl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost-1;
-	        k_max = Soln_Blks[i_blk].KCl;
-	        k_inc = -1;
-             } /* endif */
-
-             i = Soln_Blks[i_blk].LoadSendBuffer(Soln_Block_List.message_noreschange_bottomsouthwestcorner_sendbuf[i_blk],
-                                                l,buffer_size_neighbour,
-                                                i_min,i_max,i_inc,j_min,j_max,j_inc,
-                                                k_min,k_max,k_inc);
-	     if (i != 0) return(6000);
-          } /* endif */
-          // Load ghost cell mesh information as required.
-          if (Send_Mesh_Geometry_Only ||
-              Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar()) {
-             if (Soln_Block_List.Block[i_blk].infoBSW[0].dimen.i > 0 &&
-                Soln_Block_List.Block[i_blk].infoBSW[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBSW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+1;
-	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost;
-                i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost;
-	        k_inc = 1;
-                i_ref = i_min-1;
-                j_ref = j_min-1;
-                k_ref = k_min-1;
-             } else if (Soln_Block_List.Block[i_blk].infoBSW[0].dimen.i > 0 &&
-                Soln_Block_List.Block[i_blk].infoBSW[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+1;
-	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost;
-                i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_inc = -1;
-                i_ref = i_min-1;
-                j_ref = j_min-1;
-                k_ref = k_max-1;
-             } else if (Soln_Block_List.Block[i_blk].infoBSW[0].dimen.j > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBSW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INl+1;
-                i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost;
-	        k_inc = 1;
-                i_ref = i_max-1;
-                j_ref = j_min-1;
-                k_ref = k_min-1;
-             } else if (Soln_Block_List.Block[i_blk].infoBSW[0].dimen.i > 0 &&
-                 Soln_Block_List.Block[i_blk].infoBSW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+1;
-	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost;
-                i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost;
-	        k_inc = 1;
-                i_ref = i_min-1;
-                j_ref = j_max-1;
-                k_ref = k_min-1;
-             } else if (Soln_Block_List.Block[i_blk].infoBSW[0].dimen.k > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INl+1;
-                i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost;
-	        k_inc = 1;
-                i_ref = i_max-1;
-                j_ref = j_max-1;
-                k_ref = k_min-1;
-             } else if (Soln_Block_List.Block[i_blk].infoBSW[0].dimen.j > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INl+1;
-                i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost;
-	        j_inc = 1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_inc = -1;
-                i_ref = i_max-1;
-                j_ref = j_min-1;
-                k_ref = k_max-1;
-             } else if (Soln_Block_List.Block[i_blk].infoBSW[0].dimen.i > 0) {
-	        i_min = Soln_Blks[i_blk].Grid.INl+1;
-	        i_max = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost;
-                i_inc = 1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_inc = -1;
-                i_ref = i_min-1;
-                j_ref = j_max-1;
-                k_ref = k_max-1;
-             } else {
-	        i_min = Soln_Blks[i_blk].Grid.INl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost;
-	        i_max = Soln_Blks[i_blk].Grid.INl+1;
-                i_inc = -1;
-	        j_min = Soln_Blks[i_blk].Grid.JNl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost;
-	        j_max = Soln_Blks[i_blk].Grid.JNl+1;
-	        j_inc = -1;
-	        k_min = Soln_Blks[i_blk].Grid.KNl+Soln_Block_List.Block[i_blk].infoBSW[0].dimen.ghost;
-	        k_max = Soln_Blks[i_blk].Grid.KNl+1;
-	        k_inc = -1;
-                i_ref = i_max-1;
-                j_ref = j_max-1;
-                k_ref = k_max-1;
-             } /* endif */
-             x_ref = Soln_Blks[i_blk].Grid.Node[i_ref][j_ref][k_ref].X; // Reference node location.
-             for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-	       for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc )
-                   for ( m = 1 ; m <= NUM_COMP_VECTOR3D; ++ m) {
-		      l = l + 1;
-                      if (l >= buffer_size_neighbour) return(6001);
-                      Soln_Block_List.message_noreschange_bottomsouthwestcorner_sendbuf[i_blk][l] =
-                         Soln_Blks[i_blk].Grid.Node[i][j][k].X[m]-x_ref[m];
-		   } /* endfor */
-          } /* endif */
-       } /* endif */
-
-       //tims end
-
-       }   /* endfor */
-
-    /* Loading of send buffers complete.  Return zero value. */
-
-    return(0);
+   return (0);
 
 }
 
@@ -7055,7 +585,7 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
  * Loads the send message passing buffers for sending          *
  * solution information from more refined (higher mesh         *
  * resolution) solution blocks to more coarse neighbouring 3D  *
- * hexahedrial multi-block solution blocks with lower mesh     *
+ * hexahedral multi-block solution blocks with lower mesh      *
  * resolution (works on entire 1D array of 3D solution         *
  * blocks).                                                    *
  *                                                             *
@@ -7063,12 +593,10 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
 template <class Hexa_Soln_Block>
 int Load_Send_Message_Buffers_ResChange_FineToCoarse(Hexa_Soln_Block *Soln_Blks,
                                                      AdaptiveBlock3D_List &Soln_Block_List,
-                                                     const int Number_of_Solution_Variables,
-                                                     const int Send_Mesh_Geometry_Only,
                                                      const int Send_Conservative_Solution_Fluxes) {
 
   cout << "\nERROR: Load_Send_Message_Buffers_ResChange_FineToCoarse not defined for 3 dimensions\n";
-  return(2);
+  return (2);
 
 }
 
@@ -7078,19 +606,17 @@ int Load_Send_Message_Buffers_ResChange_FineToCoarse(Hexa_Soln_Block *Soln_Blks,
  * Loads the send message passing buffers for sending          *
  * solution information from more coarse (lower mesh           *
  * resolution) solution blocks to more refined neighbouring 3D *
- * hexahedrial multi-block solution blocks with higher mesh    *
+ * hexahedral multi-block solution blocks with higher mesh     *
  * resolution (works on entire 1D array of 3D solution         *
  * blocks).                                                    *
  *                                                             *
  ***************************************************************/
 template <class Hexa_Soln_Block>
 int Load_Send_Message_Buffers_ResChange_CoarseToFine(Hexa_Soln_Block *Soln_Blks,
-                                                     AdaptiveBlock3D_List &Soln_Block_List,
-                                                     const int Number_of_Solution_Variables,
-                                                     const int Send_Mesh_Geometry_Only) {
+                                                     AdaptiveBlock3D_List &Soln_Block_List) {
 
   cout << "\nERROR: Load_Send_Message_Buffers_ResChange_CoarseToFine not defined for 3 dimensions\n";
-  return(2);
+  return (2);
 
 }
 
@@ -7099,2276 +625,424 @@ int Load_Send_Message_Buffers_ResChange_CoarseToFine(Hexa_Soln_Block *Soln_Blks,
  *                                                      *
  * Unloads the receive message passing buffers for      *
  * receiving solution information from neighbouring 3D  *
- * hexahedrial multi-block solution blocks with no    *
+ * hexahedral multi-block solution blocks with no       *
  * mesh resolution changes (works on entire 1D array of *
  * 3D solution blocks).                                 *
  *                                                      *
  ********************************************************/
 template <class Hexa_Soln_Block>
 int Unload_Receive_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
-                                               AdaptiveBlock3D_List &Soln_Block_List,
-                                               const int Number_of_Solution_Variables,
-                                               const int Send_Mesh_Geometry_Only) {
+                                               AdaptiveBlock3D_List &Soln_Block_List) {
 
-    int i_blk, buffer_size, 
-        i_min, i_max, i_inc, i, 
+    int buffer_size, neighbour_buffer_size;
+
+    int i_min, i_max, i_inc, i, 
         j_min, j_max, j_inc, j, 
         k_min, k_max, k_inc, k, 
         l;
-    Vector3D x_ref;
 
-    /* Check to see if the number of solution variables specified
-       in the calling argument is correct. */
-
-    if (Number_of_Solution_Variables != NUM_COMP_VECTOR3D &&
-        Number_of_Solution_Variables != Soln_Blks[0].NumVar() &&
-        Number_of_Solution_Variables != Soln_Blks[0].NumVar() + NUM_COMP_VECTOR3D) {
-      return(1);
-    } /* endif */
-
+    int i_bound_elem; // index for boundary element, face edge or vertex
+    int number_neighbours[MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK];
+    AdaptiveBlock3D_Info neighbour_info[MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK];
+    int n_imin, n_imax, n_jmin, n_jmax, n_kmin, n_kmax;
+    int recv_bound_elem, recv_blknum;
+    
     /* Unload the receive buffers for each solution block. */
 
-    for ( i_blk = 0 ; i_blk <= Soln_Block_List.Nblk-1 ; ++i_blk ) {
+    for (int i_blk = 0 ; i_blk <= Soln_Block_List.Nblk-1 ; ++i_blk) {
+       if (Soln_Block_List.Block[i_blk].used) {
+          // Assign the boundary element information
+          number_neighbours[BE::BSW] = Soln_Block_List.Block[i_blk].nBSW;
+          neighbour_info[BE::BSW] = Soln_Block_List.Block[i_blk].infoBSW[0];
+          
+          number_neighbours[BE::SW] = Soln_Block_List.Block[i_blk].nSW;
+          neighbour_info[BE::SW] = Soln_Block_List.Block[i_blk].infoSW[0];
+          
+          number_neighbours[BE::TSW] = Soln_Block_List.Block[i_blk].nTSW;
+          neighbour_info[BE::TSW] = Soln_Block_List.Block[i_blk].infoTSW[0];
+          
+          number_neighbours[BE::BW] = Soln_Block_List.Block[i_blk].nBW;
+          neighbour_info[BE::BW] = Soln_Block_List.Block[i_blk].infoBW[0];
+          
+          number_neighbours[BE::W] = Soln_Block_List.Block[i_blk].nW;
+          neighbour_info[BE::W] = Soln_Block_List.Block[i_blk].infoW[0];
+          
+          number_neighbours[BE::TW] = Soln_Block_List.Block[i_blk].nTW;
+          neighbour_info[BE::TW] = Soln_Block_List.Block[i_blk].infoTW[0];
+          
+          number_neighbours[BE::BNW] = Soln_Block_List.Block[i_blk].nBNW;
+          neighbour_info[BE::BNW] = Soln_Block_List.Block[i_blk].infoBNW[0];
+          
+          number_neighbours[BE::NW] = Soln_Block_List.Block[i_blk].nNW;
+          neighbour_info[BE::NW] = Soln_Block_List.Block[i_blk].infoNW[0];
+          
+          number_neighbours[BE::TNW] = Soln_Block_List.Block[i_blk].nTNW;
+          neighbour_info[BE::TNW] = Soln_Block_List.Block[i_blk].infoTNW[0];
+          
+          number_neighbours[BE::BS] = Soln_Block_List.Block[i_blk].nBS;
+          neighbour_info[BE::BS] = Soln_Block_List.Block[i_blk].infoBS[0];
+          
+          number_neighbours[BE::S] = Soln_Block_List.Block[i_blk].nS;
+          neighbour_info[BE::S] = Soln_Block_List.Block[i_blk].infoS[0];
+          
+          number_neighbours[BE::TS] = Soln_Block_List.Block[i_blk].nTS;
+          neighbour_info[BE::TS] = Soln_Block_List.Block[i_blk].infoTS[0];
+          
+          number_neighbours[BE::B] = Soln_Block_List.Block[i_blk].nB;
+          neighbour_info[BE::B] = Soln_Block_List.Block[i_blk].infoB[0];
+          
+          number_neighbours[BE::T] = Soln_Block_List.Block[i_blk].nT;
+          neighbour_info[BE::T] = Soln_Block_List.Block[i_blk].infoT[0];
+          
+          number_neighbours[BE::BN] = Soln_Block_List.Block[i_blk].nBN;
+          neighbour_info[BE::BN] = Soln_Block_List.Block[i_blk].infoBN[0];
+          
+          number_neighbours[BE::N] = Soln_Block_List.Block[i_blk].nN;
+          neighbour_info[BE::N] = Soln_Block_List.Block[i_blk].infoN[0];
+          
+          number_neighbours[BE::TN] = Soln_Block_List.Block[i_blk].nTN;
+          neighbour_info[BE::TN] = Soln_Block_List.Block[i_blk].infoTN[0];
+          
+          number_neighbours[BE::BSE] = Soln_Block_List.Block[i_blk].nBSE;
+          neighbour_info[BE::BSE] = Soln_Block_List.Block[i_blk].infoBSE[0];
+          
+          number_neighbours[BE::SE] = Soln_Block_List.Block[i_blk].nSE;
+          neighbour_info[BE::SE] = Soln_Block_List.Block[i_blk].infoSE[0];
+          
+          number_neighbours[BE::TSE] = Soln_Block_List.Block[i_blk].nTSE;
+          neighbour_info[BE::TSE] = Soln_Block_List.Block[i_blk].infoTSE[0];
+          
+          number_neighbours[BE::BE] = Soln_Block_List.Block[i_blk].nBE;
+          neighbour_info[BE::BE] = Soln_Block_List.Block[i_blk].infoBE[0];
+          
+          number_neighbours[BE::E] = Soln_Block_List.Block[i_blk].nE;
+          neighbour_info[BE::E] = Soln_Block_List.Block[i_blk].infoE[0];
 
-      /////////////////////////////////////////////////////////////////////////
-      // Unload receive buffer for Top face neighbours of solution blocks. //
-      /////////////////////////////////////////////////////////////////////////
-      if (Soln_Block_List.Block[i_blk].used &&
-	  (Soln_Block_List.Block[i_blk].nT == 1) &&
-	  (Soln_Block_List.Block[i_blk].info.level ==
-	   Soln_Block_List.Block[i_blk].infoT[0].level)) {
-	if (!Send_Mesh_Geometry_Only) {
-	  buffer_size = Soln_Block_List.Block[i_blk].info.dimen.ghost*
-	    abs(Soln_Block_List.Block[i_blk].info.dimen.i)*
-	    abs(Soln_Block_List.Block[i_blk].info.dimen.j)*
-	    Soln_Blks[i_blk].NumVar();
-	  if (Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar())
-	    buffer_size = buffer_size +
-	      Soln_Block_List.Block[i_blk].info.dimen.ghost*
-	      (abs(Soln_Block_List.Block[i_blk].info.dimen.i)+1)*
-	      (abs(Soln_Block_List.Block[i_blk].info.dimen.j)+1)*
-	      NUM_COMP_VECTOR3D+
-	      4*Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost*abs(Soln_Block_List.Block[i_blk].infoT[0].dimen.i)+
-	      4*Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost*abs(Soln_Block_List.Block[i_blk].infoT[0].dimen.j);
-	} else {
-	  buffer_size = Soln_Block_List.Block[i_blk].info.dimen.ghost*
-	    (abs(Soln_Block_List.Block[i_blk].info.dimen.i)+1)*
-	    (abs(Soln_Block_List.Block[i_blk].info.dimen.j)+1)*
-	    NUM_COMP_VECTOR3D+
-	    4*Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost*abs(Soln_Block_List.Block[i_blk].infoT[0].dimen.i)+
-	    4*Soln_Block_List.Block[i_blk].infoT[0].dimen.ghost*abs(Soln_Block_List.Block[i_blk].infoT[0].dimen.j);
-	} /* endif */
-	l = -1;
-	// Unload ghost cell solution information as required.
-	if (!Send_Mesh_Geometry_Only) {
-	  i_min = Soln_Blks[i_blk].ICl;
-	  i_max = Soln_Blks[i_blk].ICu;
-	  i_inc = 1;
-	  j_min = Soln_Blks[i_blk].JCl;
-	  j_max = Soln_Blks[i_blk].JCu;
-	  j_inc = 1;
-	  k_min = Soln_Blks[i_blk].KCu+1;
-	  k_max = Soln_Blks[i_blk].KCu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	  k_inc = 1;
-	  i = Soln_Blks[i_blk].UnloadReceiveBuffer(Soln_Block_List.message_noreschange_topface_recbuf[i_blk],
-						  l,buffer_size,
-						  i_min,i_max,i_inc,j_min,j_max,j_inc,
-						  k_min,k_max,k_inc);
-	  if (i != 0) return(2200);
-	} /* endif */
-          // Unload ghost cell mesh information as required.
-	if (Send_Mesh_Geometry_Only ||
-	    Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar()) {
-	  i_min = Soln_Blks[i_blk].Grid.INl;
-	  i_max = Soln_Blks[i_blk].Grid.INu;
-	  i_inc = 1;
-	  j_min = Soln_Blks[i_blk].Grid.JNl;
-	  j_max = Soln_Blks[i_blk].Grid.JNu;
-	  j_inc = 1;
-	  k_min = Soln_Blks[i_blk].Grid.KNu+1;
-	  k_max = Soln_Blks[i_blk].Grid.KNu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	  k_inc = 1;
+          number_neighbours[BE::TE] = Soln_Block_List.Block[i_blk].nTE;
+          neighbour_info[BE::TE] = Soln_Block_List.Block[i_blk].infoTE[0]; 
+          
+          number_neighbours[BE::BNE] = Soln_Block_List.Block[i_blk].nBNE;
+          neighbour_info[BE::BNE] = Soln_Block_List.Block[i_blk].infoBNE[0]; 
+          
+          number_neighbours[BE::NE] = Soln_Block_List.Block[i_blk].nNE;
+          neighbour_info[BE::NE] = Soln_Block_List.Block[i_blk].infoNE[0];  
+          
+          number_neighbours[BE::TNE] = Soln_Block_List.Block[i_blk].nTNE;
+          neighbour_info[BE::TNE] = Soln_Block_List.Block[i_blk].infoTNE[0]; 
+       
+          for (int ii = -1; ii <= 1; ii++) {
+             for (int jj = -1; jj <= 1; jj++) {
+                for (int kk = -1; kk <= 1; kk++) {
+                   i_bound_elem = 9*(ii+1) + 3*(jj+1) + (kk+1);
+                
+                   if ((number_neighbours[i_bound_elem] == 1) && 
+                       (i_bound_elem != BE::ME) &&
+                       (Soln_Block_List.Block[i_blk].info.level == neighbour_info[i_bound_elem].level)) {
+                      buffer_size = ((abs(ii)*Soln_Block_List.Block[i_blk].info.dimen.ghost) + 
+				     ((!ii)*abs(Soln_Block_List.Block[i_blk].info.dimen.i)))*
+                                    ((abs(jj)*Soln_Block_List.Block[i_blk].info.dimen.ghost) + 
+				     ((!jj)*abs(Soln_Block_List.Block[i_blk].info.dimen.j)))*
+                                    ((abs(kk)*Soln_Block_List.Block[i_blk].info.dimen.ghost) + 
+				     ((!kk)*abs(Soln_Block_List.Block[i_blk].info.dimen.k)))*
+                                    (Soln_Blks[i_blk].NumVar());
+                      l = -1;
+                   
+                      // Unload ghost cell solution information.
+                      if (ii == -1) {
+                         n_imin = Soln_Blks[i_blk].Nghost-2;
+                         n_imax = Soln_Blks[i_blk].Nghost-1;
+                      } else if (ii == 1) {
+                         n_imin =  Soln_Blks[i_blk].ICu+ 1;
+                         n_imax = Soln_Blks[i_blk].ICu+ Soln_Blks[i_blk].Nghost;
+                      } else {
+                         n_imin = 0;
+                         n_imax = 0;
+                      } /* endif */
+                      if (jj == -1) {
+                         n_jmin = Soln_Blks[i_blk].Nghost-2;
+                         n_jmax = Soln_Blks[i_blk].Nghost-1;
+                      } else if (jj == 1) {
+                         n_jmin =  Soln_Blks[i_blk].JCu+1;
+                         n_jmax = Soln_Blks[i_blk].JCu + Soln_Blks[i_blk].Nghost;
+                      } else {
+                         n_jmin = 0;
+                         n_jmax = 0;
+                      } /* endif */
+                      if (kk == -1) {
+                         n_kmin = Soln_Blks[i_blk].Nghost-2;
+                         n_kmax = Soln_Blks[i_blk].Nghost-1;
+                      } else if (kk == 1) {
+                         n_kmin =  Soln_Blks[i_blk].KCu + 1;
+                         n_kmax = Soln_Blks[i_blk].KCu +  Soln_Blks[i_blk].Nghost;
+                      } else {
+                         n_kmin = 0;
+                         n_kmax = 0;
+                      } /* endif */
+   
+                      i_min = (!ii)*Soln_Blks[i_blk].ICl + n_imin;
+                      i_max = (!ii)*Soln_Blks[i_blk].ICu + n_imax;
+                      i_inc = 1;
+                      j_min = (!jj)*Soln_Blks[i_blk].JCl + n_jmin;
+                      j_max = (!jj)*Soln_Blks[i_blk].JCu + n_jmax;
+                      j_inc = 1;
+                      k_min = (!kk)*Soln_Blks[i_blk].KCl + n_kmin;
+                      k_max = (!kk)*Soln_Blks[i_blk].KCu + n_kmax;
+                      k_inc = 1;
+                    
+                      i = Soln_Blks[i_blk].UnloadReceiveBuffer_Solution(Soln_Block_List.message_noreschange_recbuf[i_blk][i_bound_elem],
+                                                                        l, buffer_size,
+                                                                        i_min, i_max, i_inc, j_min, j_max, j_inc, k_min, k_max, k_inc);
+                      if (i != 0) return (6001);
+		   } /* endif */
 
-/* 	cout<<"\nat Unload Top buffer_size ="<<buffer_size; */
-/* 	cout<<" i_min= "<<i_min<< " i_max= "<<i_max<< " i_inc= "<<i_inc << " j_min= "<<j_min<< " j_max= "<<j_max */
-/* 	    << " j_inc= "<<j_inc<< " k_min= "<< k_min << " k_max= "<<k_max<< " k_inc= "<<k_inc <<" l="<<l; */
+		} /* end of for k*/
+	     } /* end of for j*/
+	  } /* end of for i*/
 
-	  x_ref = Soln_Blks[i_blk].Grid.Node[i_min][j_min][k_min-1].X; // Reference node location.
-	  for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-	    for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-	      for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-		l = l + NUM_COMP_VECTOR3D;
-		if (l >= buffer_size) return(2201);
-		Soln_Blks[i_blk].Grid.Node[i][j][k].X =
-		  Vector3D(Soln_Block_List.message_noreschange_topface_recbuf[i_blk][l-2],
-			   Soln_Block_List.message_noreschange_topface_recbuf[i_blk][l-1],
-			   Soln_Block_List.message_noreschange_topface_recbuf[i_blk][l])+x_ref;
-	    } /* endfor */
-	    i_min = Soln_Blks[i_blk].ICl;
-	    i_max = Soln_Blks[i_blk].ICu;
-	    i_inc = 1;
-	    j_min = Soln_Blks[i_blk].JCl;
-	    j_max = Soln_Blks[i_blk].JCu;
-	    j_inc = 1;
-	    k_min = Soln_Blks[i_blk].KCu+1;
-	    k_max = Soln_Blks[i_blk].KCu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	    k_inc = 1;
-	    for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-	      for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-		  Soln_Blks[i_blk].Grid.Cell[i][j][k].Xc = Soln_Blks[i_blk].Grid.centroid(i,j,k);
-		  Soln_Blks[i_blk].Grid.Cell[i][j][k].V = Soln_Blks[i_blk].Grid.volume(i, j,k);
-                } /* endfor */
-	    for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-	      for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
-                l = l + 1;
-                if (l >= buffer_size) return(2202);
-                Soln_Blks[i_blk].Grid.BCtypeW[j][k] =
-		  int(Soln_Block_List.message_noreschange_topface_recbuf[i_blk][l]);
-	      } /* endfor */
-	    for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-	      for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ){
-                l = l + 1;
-                if (l >= buffer_size) return(2203);
-                Soln_Blks[i_blk].Grid.BCtypeE[j][k] =
-		  int(Soln_Block_List.message_noreschange_topface_recbuf[i_blk][l]);
-	      } /* endfor */
-	    for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-	      for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-                l = l + 1;
-                if (l >= buffer_size) return(2204);
-                Soln_Blks[i_blk].Grid.BCtypeS[i][k] =
-		  int(Soln_Block_List.message_noreschange_topface_recbuf[i_blk][l]);
-	      } /* endfor */
-	    for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-	      for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-                l = l + 1;
-                if (l >= buffer_size) return(2205);
-                Soln_Blks[i_blk].Grid.BCtypeN[i][k] =
-		  int(Soln_Block_List.message_noreschange_topface_recbuf[i_blk][l]);
-	      } /* endfor */
-          } /* endif */
-	} /* endif */
-
-
-	/////////////////////////////////////////////////////////////////////////
-       // Unload receive buffer for Bottom face neighbours of solution blocks. //
-       /////////////////////////////////////////////////////////////////////////
-       if (Soln_Block_List.Block[i_blk].used &&
-           (Soln_Block_List.Block[i_blk].nB == 1) &&
-           (Soln_Block_List.Block[i_blk].info.level ==
-            Soln_Block_List.Block[i_blk].infoB[0].level)) {
-          if (!Send_Mesh_Geometry_Only) {
-             buffer_size = Soln_Block_List.Block[i_blk].info.dimen.ghost*
-                           abs(Soln_Block_List.Block[i_blk].info.dimen.i)*
-                           abs(Soln_Block_List.Block[i_blk].info.dimen.j)*
-                           Soln_Blks[i_blk].NumVar();
-             if (Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar())
-                buffer_size = buffer_size +
-                              Soln_Block_List.Block[i_blk].info.dimen.ghost*
-                              (abs(Soln_Block_List.Block[i_blk].info.dimen.i)+1)*
-                              (abs(Soln_Block_List.Block[i_blk].info.dimen.j)+1)*
-                              NUM_COMP_VECTOR3D+
-	    4*Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost*abs(Soln_Block_List.Block[i_blk].infoB[0].dimen.i)+
-	    4*Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost*abs(Soln_Block_List.Block[i_blk].infoB[0].dimen.j);
-          } else {
-                buffer_size = Soln_Block_List.Block[i_blk].info.dimen.ghost*
-                              (abs(Soln_Block_List.Block[i_blk].info.dimen.i)+1)*
-                              (abs(Soln_Block_List.Block[i_blk].info.dimen.j)+1)*
-                              NUM_COMP_VECTOR3D+
-	    4*Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost*abs(Soln_Block_List.Block[i_blk].infoB[0].dimen.i)+
-	    4*Soln_Block_List.Block[i_blk].infoB[0].dimen.ghost*abs(Soln_Block_List.Block[i_blk].infoB[0].dimen.j);
-          } /* endif */
-          l = -1;
-          // Unload ghost cell solution information as required.
-          if (!Send_Mesh_Geometry_Only) {
-   	     i_min = Soln_Blks[i_blk].ICl;
-	     i_max = Soln_Blks[i_blk].ICu;
-	     i_inc = 1;
-	     j_min = Soln_Blks[i_blk].JCl;
-	     j_max = Soln_Blks[i_blk].JCu;
-	     j_inc = 1;
-   	     k_min = Soln_Blks[i_blk].KCl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     k_max = Soln_Blks[i_blk].KCl-1;
-             k_inc = 1;
-            i = Soln_Blks[i_blk].UnloadReceiveBuffer(Soln_Block_List.message_noreschange_bottomface_recbuf[i_blk],
-                                                     l,buffer_size,
-                                                     i_min,i_max,i_inc,j_min,j_max,j_inc,
-                                                     k_min,k_max,k_inc);
-	     if (i != 0) return(2100);
-          } /* endif */
-          // Unload ghost cell mesh information as required.
-          if (Send_Mesh_Geometry_Only ||
-              Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar()) {
-	     i_min = Soln_Blks[i_blk].Grid.INl;
-	     i_max = Soln_Blks[i_blk].Grid.INu;
-	     i_inc = 1;
-	     j_min = Soln_Blks[i_blk].Grid.JNl;
-	     j_max = Soln_Blks[i_blk].Grid.JNu;
-	     j_inc = 1;
-	     k_min = Soln_Blks[i_blk].Grid.KNl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     k_max = Soln_Blks[i_blk].Grid.KNl-1;
-	     k_inc = 1;
-             x_ref = Soln_Blks[i_blk].Grid.Node[i_min][j_min][k_max+1].X; // Reference node location.
-             for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-	       for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-		   l = l + NUM_COMP_VECTOR3D;
-                   if (l >= buffer_size) return(2101);
-                   Soln_Blks[i_blk].Grid.Node[i][j][k].X =
-		     Vector3D(Soln_Block_List.message_noreschange_bottomface_recbuf[i_blk][l-2],
-			      Soln_Block_List.message_noreschange_bottomface_recbuf[i_blk][l-1],
-                              Soln_Block_List.message_noreschange_bottomface_recbuf[i_blk][l])+x_ref;
-                } /* endfor */
-  	     i_min = Soln_Blks[i_blk].ICl;
-	     i_max = Soln_Blks[i_blk].ICu;
-	     i_inc = 1;
-	     j_min = Soln_Blks[i_blk].JCl;
-	     j_max = Soln_Blks[i_blk].JCu;
-	     j_inc = 1;
-   	     k_min = Soln_Blks[i_blk].KCl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     k_max = Soln_Blks[i_blk].KCl-1;
-             k_inc = 1;
-              for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-	       for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-	           Soln_Blks[i_blk].Grid.Cell[i][j][k].Xc = Soln_Blks[i_blk].Grid.centroid(i, j,k);
-	           Soln_Blks[i_blk].Grid.Cell[i][j][k].V = Soln_Blks[i_blk].Grid.volume(i, j,k);
-                } /* endfor */
- 	       for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-		 for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
-                l = l + 1;
-                if (l >= buffer_size) return(2102);
-                Soln_Blks[i_blk].Grid.BCtypeW[j][k] =
-                   int(Soln_Block_List.message_noreschange_bottomface_recbuf[i_blk][l]);
-             } /* endfor */
-	       for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-		 for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ){
-                l = l + 1;
-                if (l >= buffer_size) return(2103);
-                Soln_Blks[i_blk].Grid.BCtypeE[j][k] =
-                   int(Soln_Block_List.message_noreschange_bottomface_recbuf[i_blk][l]);
-             } /* endfor */
-	       for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-	       for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-                l = l + 1;
-                if (l >= buffer_size) return(2104);
-                Soln_Blks[i_blk].Grid.BCtypeS[i][k] =
-                   int(Soln_Block_List.message_noreschange_bottomface_recbuf[i_blk][l]);
-             } /* endfor */
-	       for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-		 for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-                l = l + 1;
-                if (l >= buffer_size) return(2105);
-                Soln_Blks[i_blk].Grid.BCtypeN[i][k] =
-                   int(Soln_Block_List.message_noreschange_bottomface_recbuf[i_blk][l]);
-		 } /* endfor */
-          } /* endif */
        } /* endif */
-
-
-       /////////////////////////////////////////////////////////////////////////
-       // Unload receive buffer for North face neighbours of solution blocks. //
-       /////////////////////////////////////////////////////////////////////////
-       if (Soln_Block_List.Block[i_blk].used &&
-           (Soln_Block_List.Block[i_blk].nN == 1) &&
-           (Soln_Block_List.Block[i_blk].info.level ==
-            Soln_Block_List.Block[i_blk].infoN[0].level)) {
-          if (!Send_Mesh_Geometry_Only) {
-             buffer_size = Soln_Block_List.Block[i_blk].info.dimen.ghost*
-                           abs(Soln_Block_List.Block[i_blk].info.dimen.i)*
-                           abs(Soln_Block_List.Block[i_blk].info.dimen.k)*
-                           Soln_Blks[i_blk].NumVar();
-             if (Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar())
-                buffer_size = buffer_size +
-                              Soln_Block_List.Block[i_blk].info.dimen.ghost*
-                              (abs(Soln_Block_List.Block[i_blk].info.dimen.i)+1)*
-                              (abs(Soln_Block_List.Block[i_blk].info.dimen.k)+1)*
-                              NUM_COMP_VECTOR3D+
-		  4*Soln_Block_List.Block[i_blk].infoN[0].dimen.ghost*abs(Soln_Block_List.Block[i_blk].infoN[0].dimen.i)+
-		  4*Soln_Block_List.Block[i_blk].infoN[0].dimen.ghost*abs(Soln_Block_List.Block[i_blk].infoN[0].dimen.k);
-          } else {
-                buffer_size = Soln_Block_List.Block[i_blk].info.dimen.ghost*
-                              (abs(Soln_Block_List.Block[i_blk].info.dimen.i)+1)*
-                              (abs(Soln_Block_List.Block[i_blk].info.dimen.k)+1)*
-                              NUM_COMP_VECTOR3D+
-		  4*Soln_Block_List.Block[i_blk].infoN[0].dimen.ghost*abs(Soln_Block_List.Block[i_blk].infoN[0].dimen.i)+
-		  4*Soln_Block_List.Block[i_blk].infoN[0].dimen.ghost*abs(Soln_Block_List.Block[i_blk].infoN[0].dimen.k);
-          } /* endif */
-          l = -1;
-          // Unload ghost cell solution information as required.
-          if (!Send_Mesh_Geometry_Only) {
-             i_min = Soln_Blks[i_blk].ICl;
-	     i_max = Soln_Blks[i_blk].ICu;
-             i_inc = 1;
-             j_min = Soln_Blks[i_blk].JCu+1;
-             j_max = Soln_Blks[i_blk].JCu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             j_inc = 1;
-             k_min = Soln_Blks[i_blk].KCl;
-             k_max = Soln_Blks[i_blk].KCu;
-             k_inc = 1;
-             i = Soln_Blks[i_blk].UnloadReceiveBuffer(Soln_Block_List.message_noreschange_northface_recbuf[i_blk],
-                                                     l,buffer_size,
-                                                     i_min,i_max,i_inc,j_min,j_max,j_inc,
-                                                     k_min,k_max,k_inc);
-	     if (i != 0) return(2300);
-          } /* endif */
-          // Unload ghost cell mesh information as required.
-          if (Send_Mesh_Geometry_Only ||
-              Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar()) {
-	     i_min = Soln_Blks[i_blk].Grid.INl;
-	     i_max = Soln_Blks[i_blk].Grid.INu;
-	     i_inc = 1;
-	     j_min = Soln_Blks[i_blk].Grid.JNu+1;
-	     j_max = Soln_Blks[i_blk].Grid.JNu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     j_inc = 1;
-	     k_min = Soln_Blks[i_blk].Grid.KNl;
-	     k_max = Soln_Blks[i_blk].Grid.KNu;
-	     k_inc = 1;
-             x_ref = Soln_Blks[i_blk].Grid.Node[i_min][j_min-1][k_min].X; // Reference node location.
-	     for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-	       for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-		   l = l + NUM_COMP_VECTOR3D;
-                   if (l >= buffer_size) return(2301);
-                   Soln_Blks[i_blk].Grid.Node[i][j][k].X =
-		     Vector3D(Soln_Block_List.message_noreschange_northface_recbuf[i_blk][l-2],
-			      Soln_Block_List.message_noreschange_northface_recbuf[i_blk][l-1],
-                              Soln_Block_List.message_noreschange_northface_recbuf[i_blk][l])+x_ref;
-             } /* endfor */
-             i_min = Soln_Blks[i_blk].ICl;
-	     i_max = Soln_Blks[i_blk].ICu;
-	     i_inc = 1;
-	     j_min = Soln_Blks[i_blk].JCu+1;
-	     j_max = Soln_Blks[i_blk].JCu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     j_inc = 1;
-	     k_min = Soln_Blks[i_blk].KCl;
-	     k_max = Soln_Blks[i_blk].KCu;
-	     k_inc = 1;
-             for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-	           Soln_Blks[i_blk].Grid.Cell[i][j][k].Xc = Soln_Blks[i_blk].Grid.centroid(i,j,k);
-	           Soln_Blks[i_blk].Grid.Cell[i][j][k].V = Soln_Blks[i_blk].Grid.volume(i, j,k);
-                } /* endfor */
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-	       for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc ) {
-                l = l + 1;
-                if (l >= buffer_size) return(2302);
-                Soln_Blks[i_blk].Grid.BCtypeW[j][k] =
-                   int(Soln_Block_List.message_noreschange_northface_recbuf[i_blk][l]);
-             } /* endfor */
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-	       for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc ) {
-                l = l + 1;
-                if (l >= buffer_size) return(2303);
-                Soln_Blks[i_blk].Grid.BCtypeE[j][k] =
-                   int(Soln_Block_List.message_noreschange_northface_recbuf[i_blk][l]);
-             } /* endfor */
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-	       for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-                l = l + 1;
-                if (l >= buffer_size) return(2304);
-                Soln_Blks[i_blk].Grid.BCtypeB[i][j] =
-                   int(Soln_Block_List.message_noreschange_northface_recbuf[i_blk][l]);
-             } /* endfor */
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-	       for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-                l = l + 1;
-                if (l >= buffer_size) return(2305);
-                Soln_Blks[i_blk].Grid.BCtypeT[i][j] =
-                   int(Soln_Block_List.message_noreschange_northface_recbuf[i_blk][l]);
-             } /* endfor */
-          } /* endif */
-       } /* endif */
-
-
-       /////////////////////////////////////////////////////////////////////////
-       // Unload receive buffer for South face neighbours of solution blocks. //
-       /////////////////////////////////////////////////////////////////////////
-       if (Soln_Block_List.Block[i_blk].used &&
-           (Soln_Block_List.Block[i_blk].nS == 1) &&
-           (Soln_Block_List.Block[i_blk].info.level ==
-            Soln_Block_List.Block[i_blk].infoS[0].level)) {
-          if (!Send_Mesh_Geometry_Only) {
-             buffer_size = Soln_Block_List.Block[i_blk].info.dimen.ghost*
-                           abs(Soln_Block_List.Block[i_blk].info.dimen.i)*
-                           abs(Soln_Block_List.Block[i_blk].info.dimen.k)*
-                           Soln_Blks[i_blk].NumVar();
-             if (Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar())
-                buffer_size = buffer_size +
-                              Soln_Block_List.Block[i_blk].info.dimen.ghost*
-                              (abs(Soln_Block_List.Block[i_blk].info.dimen.i)+1)*
-                              (abs(Soln_Block_List.Block[i_blk].info.dimen.k)+1)*
-                              NUM_COMP_VECTOR3D+
-		  4*Soln_Block_List.Block[i_blk].infoS[0].dimen.ghost*abs(Soln_Block_List.Block[i_blk].infoS[0].dimen.i)+
-		  4*Soln_Block_List.Block[i_blk].infoS[0].dimen.ghost*abs(Soln_Block_List.Block[i_blk].infoS[0].dimen.k);
-          } else {
-                buffer_size = Soln_Block_List.Block[i_blk].info.dimen.ghost*
-                              (abs(Soln_Block_List.Block[i_blk].info.dimen.i)+1)*
-                              (abs(Soln_Block_List.Block[i_blk].info.dimen.k)+1)*
-                              NUM_COMP_VECTOR3D+
-		  4*Soln_Block_List.Block[i_blk].infoS[0].dimen.ghost*abs(Soln_Block_List.Block[i_blk].infoS[0].dimen.i)+
-		  4*Soln_Block_List.Block[i_blk].infoS[0].dimen.ghost*abs(Soln_Block_List.Block[i_blk].infoS[0].dimen.k);
-          } /* endif */
-          l = -1;
-          // Unload ghost cell solution information as required.
-          if (!Send_Mesh_Geometry_Only) {
-   	     i_min = Soln_Blks[i_blk].ICl;
-	     i_max = Soln_Blks[i_blk].ICu;
-	     i_inc = 1;
-	     j_min = Soln_Blks[i_blk].JCl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     j_max = Soln_Blks[i_blk].JCl-1;
-	     j_inc = 1;
-   	     k_min = Soln_Blks[i_blk].KCl;
-	     k_max = Soln_Blks[i_blk].KCu;
-	     k_inc = 1;
-             i = Soln_Blks[i_blk].UnloadReceiveBuffer(Soln_Block_List.message_noreschange_southface_recbuf[i_blk],
-                                                     l,buffer_size,
-                                                     i_min,i_max,i_inc,j_min,j_max,j_inc,
-                                                     k_min,k_max,k_inc);
-	     if (i != 0) return(2400);
-          } /* endif */
-          // Unload ghost cell mesh information as required.
-          if (Send_Mesh_Geometry_Only ||
-              Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar()) {
-	     i_min = Soln_Blks[i_blk].Grid.INl;
-	     i_max = Soln_Blks[i_blk].Grid.INu;
-	     i_inc = 1;
-	     j_min = Soln_Blks[i_blk].Grid.JNl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     j_max = Soln_Blks[i_blk].Grid.JNl-1;
-	     j_inc = 1;
-	     k_min = Soln_Blks[i_blk].Grid.KNl;
-	     k_max = Soln_Blks[i_blk].Grid.KNu;
-	     k_inc = 1;
-             x_ref = Soln_Blks[i_blk].Grid.Node[i_min][j_max+1][k_min].X; // Reference node location.
-             for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-	       for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-		   l = l + NUM_COMP_VECTOR3D;
-                   if (l >= buffer_size) return(2401);
-                   Soln_Blks[i_blk].Grid.Node[i][j][k].X =
-		     Vector3D(Soln_Block_List.message_noreschange_southface_recbuf[i_blk][l-2],
-		              Soln_Block_List.message_noreschange_southface_recbuf[i_blk][l-1],
-                              Soln_Block_List.message_noreschange_southface_recbuf[i_blk][l])+x_ref;
-                } /* endfor */
-  	     i_min = Soln_Blks[i_blk].ICl;
-	     i_max = Soln_Blks[i_blk].ICu;
-	     i_inc = 1;
-	     j_min = Soln_Blks[i_blk].JCl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     j_max = Soln_Blks[i_blk].JCl-1;
-	     j_inc = 1;
-  	     k_min = Soln_Blks[i_blk].KCl;
-	     k_max = Soln_Blks[i_blk].KCu;
-	     k_inc = 1;
-             for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-	       for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-	           Soln_Blks[i_blk].Grid.Cell[i][j][k].Xc = Soln_Blks[i_blk].Grid.centroid(i, j,k);
-	           Soln_Blks[i_blk].Grid.Cell[i][j][k].V = Soln_Blks[i_blk].Grid.volume(i, j,k);
-             } /* endfor */
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-	       for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc ) {
-                l = l + 1;
-                if (l >= buffer_size) return(2402);
-                Soln_Blks[i_blk].Grid.BCtypeW[j][k] =
-                   int(Soln_Block_List.message_noreschange_southface_recbuf[i_blk][l]);
-             } /* endfor */
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-	       for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc ) {
-                l = l + 1;
-                if (l >= buffer_size) return(2403);
-                Soln_Blks[i_blk].Grid.BCtypeE[j][k] =
-                   int(Soln_Block_List.message_noreschange_southface_recbuf[i_blk][l]);
-             } /* endfor */
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-	       for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-                l = l + 1;
-                if (l >= buffer_size) return(2404);
-                Soln_Blks[i_blk].Grid.BCtypeB[i][j] =
-                   int(Soln_Block_List.message_noreschange_southface_recbuf[i_blk][l]);
-             } /* endfor */
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-	       for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-                l = l + 1;
-                if (l >= buffer_size) return(2405);
-                Soln_Blks[i_blk].Grid.BCtypeT[i][j] =
-                   int(Soln_Block_List.message_noreschange_southface_recbuf[i_blk][l]);
-             } /* endfor */
-
-
-          } /* endif */
-       } /* endif */
-
-
-       ////////////////////////////////////////////////////////////////////////
-       // Unload receive buffer for East face neighbours of solution blocks. //
-       ////////////////////////////////////////////////////////////////////////
-       if (Soln_Block_List.Block[i_blk].used &&
-           (Soln_Block_List.Block[i_blk].nE == 1) &&
-           (Soln_Block_List.Block[i_blk].info.level ==
-            Soln_Block_List.Block[i_blk].infoE[0].level)) {
-          if (!Send_Mesh_Geometry_Only) {
-             buffer_size = Soln_Block_List.Block[i_blk].info.dimen.ghost*
-                           abs(Soln_Block_List.Block[i_blk].info.dimen.j)*
-                           abs(Soln_Block_List.Block[i_blk].info.dimen.k)*
-                           Soln_Blks[i_blk].NumVar();
-             if (Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar())
-                buffer_size = buffer_size +
-                              Soln_Block_List.Block[i_blk].info.dimen.ghost*
-                              (abs(Soln_Block_List.Block[i_blk].info.dimen.j)+1)*
-                              (abs(Soln_Block_List.Block[i_blk].info.dimen.k)+1)*
-                              NUM_COMP_VECTOR3D+
-		  4*Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost*abs(Soln_Block_List.Block[i_blk].infoE[0].dimen.j)+
-		  4*Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost*abs(Soln_Block_List.Block[i_blk].infoE[0].dimen.k);
-          } else {
-                buffer_size = Soln_Block_List.Block[i_blk].info.dimen.ghost*
-                              (abs(Soln_Block_List.Block[i_blk].info.dimen.j)+1)*
-                              (abs(Soln_Block_List.Block[i_blk].info.dimen.k)+1)*
-                              NUM_COMP_VECTOR3D+
-		  4*Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost*abs(Soln_Block_List.Block[i_blk].infoE[0].dimen.j)+
-		  4*Soln_Block_List.Block[i_blk].infoE[0].dimen.ghost*abs(Soln_Block_List.Block[i_blk].infoE[0].dimen.k);
-          } /* endif */
-          l = -1;
-          // Unload ghost cell solution information as required.
-          if (!Send_Mesh_Geometry_Only) {
-   	     i_min = Soln_Blks[i_blk].ICu+1;
- 	     i_max = Soln_Blks[i_blk].ICu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     i_inc = 1;
-	     j_min = Soln_Blks[i_blk].JCl;
-	     j_max = Soln_Blks[i_blk].JCu;
-	     j_inc = 1;
-	     k_min = Soln_Blks[i_blk].KCl;
-	     k_max = Soln_Blks[i_blk].KCu;
-	     k_inc = 1;
-             i = Soln_Blks[i_blk].UnloadReceiveBuffer(Soln_Block_List.message_noreschange_eastface_recbuf[i_blk],
-                                                     l,buffer_size, i_min,i_max,i_inc,j_min,j_max,j_inc,
-                                                     k_min,k_max,k_inc);
-	     if (i != 0) return(1200);
-          } /* endif */
-          // Unload ghost cell mesh information as required.
-          if (Send_Mesh_Geometry_Only ||
-              Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar()) {
-	     i_min = Soln_Blks[i_blk].Grid.INu+1;
-	     i_max = Soln_Blks[i_blk].Grid.INu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     i_inc = 1;
-	     j_min = Soln_Blks[i_blk].Grid.JNl;
-	     j_max = Soln_Blks[i_blk].Grid.JNu;
-	     j_inc = 1;
-	     k_min = Soln_Blks[i_blk].Grid.KNl;
-	     k_max = Soln_Blks[i_blk].Grid.KNu;
-	     k_inc = 1;
-             x_ref = Soln_Blks[i_blk].Grid.Node[i_min-1][j_min][k_min].X; // Reference node location.
-	       for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-		   l = l + NUM_COMP_VECTOR3D;
-                   if (l >= buffer_size) return(1201);
-                   Soln_Blks[i_blk].Grid.Node[i][j][k].X =
-		     Vector3D(Soln_Block_List.message_noreschange_eastface_recbuf[i_blk][l-2],
-		              Soln_Block_List.message_noreschange_eastface_recbuf[i_blk][l-1],
-                              Soln_Block_List.message_noreschange_eastface_recbuf[i_blk][l])+x_ref;
-                } /* endfor */
- 	     i_min = Soln_Blks[i_blk].ICu+1;
-	     i_max = Soln_Blks[i_blk].ICu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     i_inc = 1;
-	     j_min = Soln_Blks[i_blk].JCl;
-	     j_max = Soln_Blks[i_blk].JCu;
-	     j_inc = 1;
-	     k_min = Soln_Blks[i_blk].KCl;
-	     k_max = Soln_Blks[i_blk].KCu;
-	     k_inc = 1;
-	       for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-	           Soln_Blks[i_blk].Grid.Cell[i][j][k].Xc = Soln_Blks[i_blk].Grid.centroid(i, j,k);
-	           Soln_Blks[i_blk].Grid.Cell[i][j][k].V = Soln_Blks[i_blk].Grid.volume(i, j,k);
-                } /* endfor */
-             for ( i  = i_min ; ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc )
-	       for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc ) {
-                l = l + 1;
-                if (l >= buffer_size) return(1202);
-                Soln_Blks[i_blk].Grid.BCtypeS[i][k] =
-                   int(Soln_Block_List.message_noreschange_eastface_recbuf[i_blk][l]);
-             } /* endfor */
-             for ( i  = i_min ; ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc )
-	       for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc ) {
-                l = l + 1;
-                if (l >= buffer_size) return(1203);
-                Soln_Blks[i_blk].Grid.BCtypeN[i][k] =
-                   int(Soln_Block_List.message_noreschange_eastface_recbuf[i_blk][l]);
-             } /* endfor */
-	       for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc )
-		 for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
-                l = l + 1;
-                if (l >= buffer_size) return(1204);
-                Soln_Blks[i_blk].Grid.BCtypeB[i][j] =
-                   int(Soln_Block_List.message_noreschange_eastface_recbuf[i_blk][l]);
-             } /* endfor */
-	     for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc )
-	       for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
-                l = l + 1;
-                if (l >= buffer_size) return(1205);
-                Soln_Blks[i_blk].Grid.BCtypeT[i][j] =
-                   int(Soln_Block_List.message_noreschange_eastface_recbuf[i_blk][l]);
-             } /* endfor */
-
-          } /* endif */
-       } /* endif */
-
-       ////////////////////////////////////////////////////////////////////////
-       // Unload receive buffer for West face neighbours of solution blocks. //
-       ////////////////////////////////////////////////////////////////////////
-       if (Soln_Block_List.Block[i_blk].used &&
-           (Soln_Block_List.Block[i_blk].nW == 1) &&
-           (Soln_Block_List.Block[i_blk].info.level ==
-            Soln_Block_List.Block[i_blk].infoW[0].level)) {
-          if (!Send_Mesh_Geometry_Only) {
-             buffer_size = Soln_Block_List.Block[i_blk].info.dimen.ghost*
-                           abs(Soln_Block_List.Block[i_blk].info.dimen.j)*
-                           abs(Soln_Block_List.Block[i_blk].info.dimen.k)*
-                           Soln_Blks[i_blk].NumVar();
-             if (Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar())
-                buffer_size = buffer_size +
-                              Soln_Block_List.Block[i_blk].info.dimen.ghost*
-                              (abs(Soln_Block_List.Block[i_blk].info.dimen.j)+1)*
-                              (abs(Soln_Block_List.Block[i_blk].info.dimen.k)+1)*
-                              NUM_COMP_VECTOR3D+
-		  4*Soln_Block_List.Block[i_blk].infoW[0].dimen.ghost*abs(Soln_Block_List.Block[i_blk].infoW[0].dimen.j)+
-		  4*Soln_Block_List.Block[i_blk].infoW[0].dimen.ghost*abs(Soln_Block_List.Block[i_blk].infoW[0].dimen.k);
-         } else {
-                buffer_size = Soln_Block_List.Block[i_blk].info.dimen.ghost*
-                              (abs(Soln_Block_List.Block[i_blk].info.dimen.j)+1)*
-                              (abs(Soln_Block_List.Block[i_blk].info.dimen.k)+1)*
-                              NUM_COMP_VECTOR3D+
-		  4*Soln_Block_List.Block[i_blk].infoW[0].dimen.ghost*abs(Soln_Block_List.Block[i_blk].infoW[0].dimen.j)+
-		  4*Soln_Block_List.Block[i_blk].infoW[0].dimen.ghost*abs(Soln_Block_List.Block[i_blk].infoW[0].dimen.k);
-          } /* endif */
-          l = -1;
-          // Unload ghost cell solution information as required.
-          if (!Send_Mesh_Geometry_Only) {
-  	     i_min = Soln_Blks[i_blk].ICl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     i_max = Soln_Blks[i_blk].ICl-1;
-	     i_inc = 1;
-	     j_min = Soln_Blks[i_blk].JCl;
-	     j_max = Soln_Blks[i_blk].JCu;
-	     j_inc = 1;
-	     k_min = Soln_Blks[i_blk].KCl;
-	     k_max = Soln_Blks[i_blk].KCu;
-	     k_inc = 1;
-             i = Soln_Blks[i_blk].UnloadReceiveBuffer(Soln_Block_List.message_noreschange_westface_recbuf[i_blk],
-                                                     l,buffer_size,
-		 i_min,i_max,i_inc,j_min,j_max,j_inc,
-                                                     k_min,k_max,k_inc);
-	     if (i != 0) return(1100);
-          } /* endif */
-          // Unload ghost cell mesh information as required.
-          if (Send_Mesh_Geometry_Only ||
-              Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar()) {
-	     i_min = Soln_Blks[i_blk].Grid.INl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     i_max = Soln_Blks[i_blk].Grid.INl-1;
-	     i_inc = 1;
-	     j_min = Soln_Blks[i_blk].Grid.JNl;
-	     j_max = Soln_Blks[i_blk].Grid.JNu;
-	     j_inc = 1;
-	     k_min = Soln_Blks[i_blk].Grid.KNl;
-	     k_max = Soln_Blks[i_blk].Grid.KNu;
-	     k_inc = 1;
-             x_ref = Soln_Blks[i_blk].Grid.Node[i_max+1][j_min][k_min].X; // Reference node location.
-	       for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-		   l = l + NUM_COMP_VECTOR3D;
-                   if (l >= buffer_size) return(1101);
-                   Soln_Blks[i_blk].Grid.Node[i][j][k].X =
-		     Vector3D(Soln_Block_List.message_noreschange_westface_recbuf[i_blk][l-2],
-		              Soln_Block_List.message_noreschange_westface_recbuf[i_blk][l-1],
-                              Soln_Block_List.message_noreschange_westface_recbuf[i_blk][l])+x_ref;
-                } /* endfor */
-     	     i_min = Soln_Blks[i_blk].ICl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     i_max = Soln_Blks[i_blk].ICl-1;
-	     i_inc = 1;
-	     j_min = Soln_Blks[i_blk].JCl;
-	     j_max = Soln_Blks[i_blk].JCu;
-	     j_inc = 1;
-	     k_min = Soln_Blks[i_blk].KCl;
-	     k_max = Soln_Blks[i_blk].KCu;
-	     k_inc = 1;
-	       for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-	           Soln_Blks[i_blk].Grid.Cell[i][j][k].Xc = Soln_Blks[i_blk].Grid.centroid(i, j,k);
-	           Soln_Blks[i_blk].Grid.Cell[i][j][k].V = Soln_Blks[i_blk].Grid.volume(i, j,k);
-                } /* endfor */
-
-             for ( i  = i_min ; ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc )
-	       for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc ) {
-                l = l + 1;
-                if (l >= buffer_size) return(1102);
-                Soln_Blks[i_blk].Grid.BCtypeS[i][k] =
-                   int(Soln_Block_List.message_noreschange_westface_recbuf[i_blk][l]);
-             } /* endfor */
-             for ( i  = i_min ; ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc )
-	       for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc ) {
-                l = l + 1;
-                if (l >= buffer_size) return(1103);
-                Soln_Blks[i_blk].Grid.BCtypeN[i][k] =
-                   int(Soln_Block_List.message_noreschange_westface_recbuf[i_blk][l]);
-             } /* endfor */
-	       for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc )
-		 for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
-                l = l + 1;
-                if (l >= buffer_size) return(1104);
-                Soln_Blks[i_blk].Grid.BCtypeB[i][j] =
-                   int(Soln_Block_List.message_noreschange_westface_recbuf[i_blk][l]);
-             } /* endfor */
-	     for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc )
-	       for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
-                l = l + 1;
-                if (l >= buffer_size) return(1105);
-                Soln_Blks[i_blk].Grid.BCtypeT[i][j] =
-                   int(Soln_Block_List.message_noreschange_westface_recbuf[i_blk][l]);
-             } /* endfor */
-          } /* endif */
-       } /* endif */
-
-       ////////////////////////////////////////////////////////////////////////////////
-       // Unload receive buffer for North West corner neighbours of solution blocks. //
-       ////////////////////////////////////////////////////////////////////////////////
-       if (Soln_Block_List.Block[i_blk].used &&
-           (Soln_Block_List.Block[i_blk].nNW == 1) &&
-           (Soln_Block_List.Block[i_blk].info.level ==
-            Soln_Block_List.Block[i_blk].infoNW[0].level)) {
-          if (!Send_Mesh_Geometry_Only) {
-             buffer_size = sqr(Soln_Block_List.Block[i_blk].info.dimen.ghost)*
-                           abs(Soln_Block_List.Block[i_blk].info.dimen.k)*
-                           Soln_Blks[i_blk].NumVar();
-             if (Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar())
-                buffer_size = buffer_size +
-		  sqr(Soln_Block_List.Block[i_blk].info.dimen.ghost)*
-		  (abs(Soln_Block_List.Block[i_blk].info.dimen.k)+1)*
-		  NUM_COMP_VECTOR3D;
-          } else {
-                buffer_size = sqr(Soln_Block_List.Block[i_blk].info.dimen.ghost)*
-                              (abs(Soln_Block_List.Block[i_blk].info.dimen.k)+1)*
-                              NUM_COMP_VECTOR3D;
-          } /* endif */
-          l = -1;
-          // Unload ghost cell solution information as required.
-          if (!Send_Mesh_Geometry_Only) {
-             i_min = Soln_Blks[i_blk].ICl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     i_max = Soln_Blks[i_blk].ICl-1;
-             i_inc = 1;
-             j_min = Soln_Blks[i_blk].JCu+1;
-             j_max = Soln_Blks[i_blk].JCu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             j_inc = 1;
-	     k_min = Soln_Blks[i_blk].KCl;
-	     k_max = Soln_Blks[i_blk].KCu;
-	     k_inc = 1;
-             i = Soln_Blks[i_blk].UnloadReceiveBuffer(Soln_Block_List.message_noreschange_northwestcorner_recbuf[i_blk],
-                                                     l,buffer_size,
-                                                     i_min,i_max,i_inc,
-                                                     j_min,j_max,j_inc,k_min,k_max,k_inc);
-	     if (i != 0) return(4200);
-          } /* endif */
-          // Unload ghost cell mesh information as required.
-          if (Send_Mesh_Geometry_Only ||
-              Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar()) {
-	     i_min = Soln_Blks[i_blk].Grid.INl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     i_max = Soln_Blks[i_blk].Grid.INl-1;
-	     i_inc = 1;
-	     j_min = Soln_Blks[i_blk].Grid.JNu+1;
-	     j_max = Soln_Blks[i_blk].Grid.JNu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     j_inc = 1;
-	     k_min = Soln_Blks[i_blk].Grid.KNl;
-	     k_max = Soln_Blks[i_blk].Grid.KNu;
-	     k_inc = 1;
-             x_ref = Soln_Blks[i_blk].Grid.Node[i_max+1][j_min-1][k_min].X; // Reference node location.
-	       for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-		   l = l + NUM_COMP_VECTOR3D;
-                   if (l >= buffer_size) return(4201);
-                   Soln_Blks[i_blk].Grid.Node[i][j][k].X =
-		     Vector3D(Soln_Block_List.message_noreschange_northwestcorner_recbuf[i_blk][l-2],
-		              Soln_Block_List.message_noreschange_northwestcorner_recbuf[i_blk][l-1],
-                              Soln_Block_List.message_noreschange_northwestcorner_recbuf[i_blk][l])+x_ref;
-                } /* endfor */
-             i_min = Soln_Blks[i_blk].ICl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     i_max = Soln_Blks[i_blk].ICl-1;
-	     i_inc = 1;
-	     j_min = Soln_Blks[i_blk].JCu+1;
-	     j_max = Soln_Blks[i_blk].JCu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     j_inc = 1;
-	     k_min = Soln_Blks[i_blk].KCl;
-	     k_max = Soln_Blks[i_blk].KCu;
-	     k_inc = 1;
-	       for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-	           Soln_Blks[i_blk].Grid.Cell[i][j][k].Xc = Soln_Blks[i_blk].Grid.centroid(i, j,k);
-	           Soln_Blks[i_blk].Grid.Cell[i][j][k].V = Soln_Blks[i_blk].Grid.volume(i, j,k);
-                } /* endfor */
-          } /* endif */
-       } /* endif */
-
-       ////////////////////////////////////////////////////////////////////////////////
-       // Unload receive buffer for North East corner neighbours of solution blocks. //
-       ////////////////////////////////////////////////////////////////////////////////
-       if (Soln_Block_List.Block[i_blk].used &&
-           (Soln_Block_List.Block[i_blk].nNE == 1) &&
-           (Soln_Block_List.Block[i_blk].info.level ==
-            Soln_Block_List.Block[i_blk].infoNE[0].level)) {
-          if (!Send_Mesh_Geometry_Only) {
-             buffer_size = sqr(Soln_Block_List.Block[i_blk].info.dimen.ghost)*
-                           abs(Soln_Block_List.Block[i_blk].info.dimen.k)*
-                           Soln_Blks[i_blk].NumVar();
-             if (Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar())
-                buffer_size = buffer_size +
-                              sqr(Soln_Block_List.Block[i_blk].info.dimen.ghost)*
-                              (abs(Soln_Block_List.Block[i_blk].info.dimen.k)+1)*
-                              NUM_COMP_VECTOR3D;
-          } else {
-                buffer_size = sqr(Soln_Block_List.Block[i_blk].info.dimen.ghost)*
-                              (abs(Soln_Block_List.Block[i_blk].info.dimen.k)+1)*
-                              NUM_COMP_VECTOR3D;
-          } /* endif */
-          l = -1;
-          // Unload ghost cell solution information as required.
-          if (!Send_Mesh_Geometry_Only) {
-             i_min = Soln_Blks[i_blk].ICu+1;
-	     i_max = Soln_Blks[i_blk].ICu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             i_inc = 1;
-             j_min = Soln_Blks[i_blk].JCu+1;
-             j_max = Soln_Blks[i_blk].JCu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             j_inc = 1;
-	     k_min = Soln_Blks[i_blk].KCl;
-	     k_max = Soln_Blks[i_blk].KCu;
-	     k_inc = 1;
-             i = Soln_Blks[i_blk].UnloadReceiveBuffer(Soln_Block_List.message_noreschange_northeastcorner_recbuf[i_blk],
-                                                     l,buffer_size,
-                                                     i_min,i_max,i_inc,
-                                                     j_min,j_max,j_inc,k_min,k_max,k_inc);
-	     if (i != 0) return(5200);
-          } /* endif */
-          // Unload ghost cell mesh information as required.
-          if (Send_Mesh_Geometry_Only ||
-              Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar()) {
-	     i_min = Soln_Blks[i_blk].Grid.INu+1;
-	     i_max = Soln_Blks[i_blk].Grid.INu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     i_inc = 1;
-	     j_min = Soln_Blks[i_blk].Grid.JNu+1;
-	     j_max = Soln_Blks[i_blk].Grid.JNu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     j_inc = 1;
-	     k_min = Soln_Blks[i_blk].Grid.KNl;
-	     k_max = Soln_Blks[i_blk].Grid.KNu;
-	     k_inc = 1;
-             x_ref = Soln_Blks[i_blk].Grid.Node[i_min-1][j_min-1][k_min].X; // Reference node location.
-	       for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-		   l = l + NUM_COMP_VECTOR3D;
-                   if (l >= buffer_size) return(5201);
-                   Soln_Blks[i_blk].Grid.Node[i][j][k].X =
-		     Vector3D(Soln_Block_List.message_noreschange_northeastcorner_recbuf[i_blk][l-2],
-		              Soln_Block_List.message_noreschange_northeastcorner_recbuf[i_blk][l-1],
-                              Soln_Block_List.message_noreschange_northeastcorner_recbuf[i_blk][l])+x_ref;
-              } /* endfor */
-             i_min = Soln_Blks[i_blk].ICu+1;
-	     i_max = Soln_Blks[i_blk].ICu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     i_inc = 1;
-	     j_min = Soln_Blks[i_blk].JCu+1;
-	     j_max = Soln_Blks[i_blk].JCu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     j_inc = 1;
-	     k_min = Soln_Blks[i_blk].KCl;
-	     k_max = Soln_Blks[i_blk].KCu;
-	     k_inc = 1;
-	       for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-	           Soln_Blks[i_blk].Grid.Cell[i][j][k].Xc = Soln_Blks[i_blk].Grid.centroid(i, j,k);
-	           Soln_Blks[i_blk].Grid.Cell[i][j][k].V = Soln_Blks[i_blk].Grid.volume(i, j,k);
-                } /* endfor */
-          } /* endif */
-       } /* endif */
-
-       ////////////////////////////////////////////////////////////////////////////////
-       // Unload receive buffer for South East corner neighbours of solution blocks. //
-       ////////////////////////////////////////////////////////////////////////////////
-       if (Soln_Block_List.Block[i_blk].used &&
-           (Soln_Block_List.Block[i_blk].nSE == 1) &&
-           (Soln_Block_List.Block[i_blk].info.level ==
-            Soln_Block_List.Block[i_blk].infoSE[0].level)) {
-          if (!Send_Mesh_Geometry_Only) {
-             buffer_size = sqr(Soln_Block_List.Block[i_blk].info.dimen.ghost)*
-                           abs(Soln_Block_List.Block[i_blk].info.dimen.k)*
-                           Soln_Blks[i_blk].NumVar();
-             if (Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar())
-                buffer_size = buffer_size +
-                              sqr(Soln_Block_List.Block[i_blk].info.dimen.ghost)*
-                              (abs(Soln_Block_List.Block[i_blk].info.dimen.k)+1)*
-                              NUM_COMP_VECTOR3D;
-          } else {
-                buffer_size = sqr(Soln_Block_List.Block[i_blk].info.dimen.ghost)*
-                              (abs(Soln_Block_List.Block[i_blk].info.dimen.k)+1)*
-                              NUM_COMP_VECTOR3D;
-          } /* endif */
-          l = -1;
-          // Unload ghost cell solution information as required.
-          if (!Send_Mesh_Geometry_Only) {
-             i_min = Soln_Blks[i_blk].ICu+1;
-	     i_max = Soln_Blks[i_blk].ICu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             i_inc = 1;
-             j_min = Soln_Blks[i_blk].JCl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             j_max = Soln_Blks[i_blk].JCl-1;
-             j_inc = 1;
-	     k_min = Soln_Blks[i_blk].KCl;
-	     k_max = Soln_Blks[i_blk].KCu;
-	     k_inc = 1;
-             i = Soln_Blks[i_blk].UnloadReceiveBuffer(Soln_Block_List.message_noreschange_southeastcorner_recbuf[i_blk],
-                                                     l,buffer_size,
-                                                     i_min,i_max,i_inc,
-                                                     j_min,j_max,j_inc,k_min,k_max,k_inc);
-	     if (i != 0) return(4100);
-          } /* endif */
-          // Unload ghost cell mesh information as required.
-          if (Send_Mesh_Geometry_Only ||
-              Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar()) {
-	     i_min = Soln_Blks[i_blk].Grid.INu+1;
-	     i_max = Soln_Blks[i_blk].Grid.INu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     i_inc = 1;
-	     j_min = Soln_Blks[i_blk].Grid.JNl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     j_max = Soln_Blks[i_blk].Grid.JNl-1;
-	     j_inc = 1;
-	     k_min = Soln_Blks[i_blk].Grid.KNl;
-	     k_max = Soln_Blks[i_blk].Grid.KNu;
-	     k_inc = 1;
-             x_ref = Soln_Blks[i_blk].Grid.Node[i_min-1][j_max+1][k_min].X; // Reference node location.
-	       for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-		   l = l + NUM_COMP_VECTOR3D;
-                   if (l >= buffer_size) return(4101);
-                   Soln_Blks[i_blk].Grid.Node[i][j][k].X =
-		     Vector3D(Soln_Block_List.message_noreschange_southeastcorner_recbuf[i_blk][l-2],
-		              Soln_Block_List.message_noreschange_southeastcorner_recbuf[i_blk][l-1],
-                              Soln_Block_List.message_noreschange_southeastcorner_recbuf[i_blk][l])+x_ref;
-             } /* endfor */
-             i_min = Soln_Blks[i_blk].ICu+1;
-	     i_max = Soln_Blks[i_blk].ICu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     i_inc = 1;
-             j_min = Soln_Blks[i_blk].JCl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             j_max = Soln_Blks[i_blk].JCl-1;
-	     j_inc = 1;
-	     k_min = Soln_Blks[i_blk].KCl;
-	     k_max = Soln_Blks[i_blk].KCu;
-	     k_inc = 1;
-	       for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-	           Soln_Blks[i_blk].Grid.Cell[i][j][k].Xc = Soln_Blks[i_blk].Grid.centroid(i, j,k);
-	           Soln_Blks[i_blk].Grid.Cell[i][j][k].V = Soln_Blks[i_blk].Grid.volume(i, j,k);
-                } /* endfor */
-          } /* endif */
-       } /* endif */
-
-       ////////////////////////////////////////////////////////////////////////////////
-       // Unload receive buffer for South West corner neighbours of solution blocks. //
-       ////////////////////////////////////////////////////////////////////////////////
-       if (Soln_Block_List.Block[i_blk].used &&
-           (Soln_Block_List.Block[i_blk].nSW == 1) &&
-           (Soln_Block_List.Block[i_blk].info.level ==
-            Soln_Block_List.Block[i_blk].infoSW[0].level)) {
-          if (!Send_Mesh_Geometry_Only) {
-             buffer_size = sqr(Soln_Block_List.Block[i_blk].info.dimen.ghost)*
-                           abs(Soln_Block_List.Block[i_blk].info.dimen.k)*
-                           Soln_Blks[i_blk].NumVar();
-             if (Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar())
-                buffer_size = buffer_size +
-                              sqr(Soln_Block_List.Block[i_blk].info.dimen.ghost)*
-                              (abs(Soln_Block_List.Block[i_blk].info.dimen.k)+1)*
-                              NUM_COMP_VECTOR3D;
-          } else {
-                buffer_size = sqr(Soln_Block_List.Block[i_blk].info.dimen.ghost)*
-                              (abs(Soln_Block_List.Block[i_blk].info.dimen.k)+1)*
-                              NUM_COMP_VECTOR3D;
-          } /* endif */
-          l = -1;
-          // Unload ghost cell solution information as required.
-          if (!Send_Mesh_Geometry_Only) {
-             i_min = Soln_Blks[i_blk].ICl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     i_max = Soln_Blks[i_blk].ICl-1;
-             i_inc = 1;
-             j_min = Soln_Blks[i_blk].JCl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             j_max = Soln_Blks[i_blk].JCl-1;
-             j_inc = 1;
-	     k_min = Soln_Blks[i_blk].KCl;
-	     k_max = Soln_Blks[i_blk].KCu;
-	     k_inc = 1;
-             i = Soln_Blks[i_blk].UnloadReceiveBuffer(Soln_Block_List.message_noreschange_southwestcorner_recbuf[i_blk],
-                                                     l,buffer_size,
-                                                     i_min,i_max,i_inc,
-                                                     j_min,j_max,j_inc,k_min,k_max,k_inc);
-	     if (i != 0) return(5100);
-          } /* endif */
-          // Unload ghost cell mesh information as required.
-          if (Send_Mesh_Geometry_Only ||
-              Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar()) {
-	     i_min = Soln_Blks[i_blk].Grid.INl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     i_max = Soln_Blks[i_blk].Grid.INl-1;
-	     i_inc = 1;
-	     j_min = Soln_Blks[i_blk].Grid.JNl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     j_max = Soln_Blks[i_blk].Grid.JNl-1;
-	     j_inc = 1;
-	     k_min = Soln_Blks[i_blk].Grid.KNl;
-	     k_max = Soln_Blks[i_blk].Grid.KNu;
-	     k_inc = 1;
-             x_ref = Soln_Blks[i_blk].Grid.Node[i_max+1][j_max+1][k_min].X; // Reference node location.
-	       for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-		   l = l + NUM_COMP_VECTOR3D;
-                   if (l >= buffer_size) return(5101);
-                   Soln_Blks[i_blk].Grid.Node[i][j][k].X =
-		     Vector3D(Soln_Block_List.message_noreschange_southwestcorner_recbuf[i_blk][l-2],
-		              Soln_Block_List.message_noreschange_southwestcorner_recbuf[i_blk][l-1],
-                              Soln_Block_List.message_noreschange_southwestcorner_recbuf[i_blk][l])+x_ref;
-             } /* endfor */
-             i_min = Soln_Blks[i_blk].ICl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     i_max = Soln_Blks[i_blk].ICl-1;
-	     i_inc = 1;
-             j_min = Soln_Blks[i_blk].JCl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             j_max = Soln_Blks[i_blk].JCl-1;
-	     j_inc = 1;
-	     k_min = Soln_Blks[i_blk].KCl;
-	     k_max = Soln_Blks[i_blk].KCu;
-	     k_inc = 1;
-	       for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-	           Soln_Blks[i_blk].Grid.Cell[i][j][k].Xc = Soln_Blks[i_blk].Grid.centroid(i, j,k);
-	           Soln_Blks[i_blk].Grid.Cell[i][j][k].V = Soln_Blks[i_blk].Grid.volume(i, j,k);
-             } /* endfor */
-          } /* endif */
-       } /* endif */
-
-
-     ////////////////////////////////////////////////////////////////////////////////
-       // Unload receive buffer for Topnorth  corner neighbours of solution blocks. //
-       ////////////////////////////////////////////////////////////////////////////////
-       if (Soln_Block_List.Block[i_blk].used &&
-           (Soln_Block_List.Block[i_blk].nTN == 1) &&
-           (Soln_Block_List.Block[i_blk].info.level ==
-            Soln_Block_List.Block[i_blk].infoTN[0].level)) {
-          if (!Send_Mesh_Geometry_Only) {
-             buffer_size = sqr(Soln_Block_List.Block[i_blk].info.dimen.ghost)*
-                           abs(Soln_Block_List.Block[i_blk].info.dimen.i)*
-                           Soln_Blks[i_blk].NumVar();
-             if (Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar())
-                buffer_size = buffer_size +
-                              sqr(Soln_Block_List.Block[i_blk].info.dimen.ghost)*
-                              (abs(Soln_Block_List.Block[i_blk].info.dimen.i)+1)*
-                              NUM_COMP_VECTOR3D;
-          } else {
-                buffer_size = sqr(Soln_Block_List.Block[i_blk].info.dimen.ghost)*
-                              (abs(Soln_Block_List.Block[i_blk].info.dimen.i)+1)*
-                              NUM_COMP_VECTOR3D;
-          } /* endif */
-          l = -1;
-          // Unload ghost cell solution information as required.
-          if (!Send_Mesh_Geometry_Only) {
-             i_min = Soln_Blks[i_blk].ICl;
-	     i_max = Soln_Blks[i_blk].ICu;
-             i_inc = 1;
-             j_min = Soln_Blks[i_blk].JCu+1;
-             j_max = Soln_Blks[i_blk].JCu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             j_inc = 1;
-             k_min = Soln_Blks[i_blk].KCu+1;
-             k_max = Soln_Blks[i_blk].KCu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             k_inc = 1;
-             i = Soln_Blks[i_blk].UnloadReceiveBuffer(Soln_Block_List.message_noreschange_topnorthcorner_recbuf[i_blk],
-                                                     l,buffer_size,
-                                                     i_min,i_max,i_inc,
-                                                     j_min,j_max,j_inc,k_min,k_max,k_inc);
-	     if (i != 0) return(5300);
-          } /* endif */
-          // Unload ghost cell mesh information as required.
-          if (Send_Mesh_Geometry_Only ||
-              Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar()) {
-	     i_min = Soln_Blks[i_blk].Grid.INl;
-	     i_max = Soln_Blks[i_blk].Grid.INu;
-	     i_inc = 1;
-	     j_min = Soln_Blks[i_blk].Grid.JNu+1;
-	     j_max = Soln_Blks[i_blk].Grid.JNu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     j_inc = 1;
-	     k_min = Soln_Blks[i_blk].Grid.KNu+1;
-	     k_max = Soln_Blks[i_blk].Grid.KNu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     k_inc = 1;
-             x_ref = Soln_Blks[i_blk].Grid.Node[i_min][j_min-1][k_min-1].X; // Reference node location.
-	       for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-		   l = l + NUM_COMP_VECTOR3D;
-                   if (l >= buffer_size) return(5301);
-                   Soln_Blks[i_blk].Grid.Node[i][j][k].X =
-		     Vector3D(Soln_Block_List.message_noreschange_topnorthcorner_recbuf[i_blk][l-2],
-		              Soln_Block_List.message_noreschange_topnorthcorner_recbuf[i_blk][l-1],
-                              Soln_Block_List.message_noreschange_topnorthcorner_recbuf[i_blk][l])+x_ref;
-              } /* endfor */
-             i_min = Soln_Blks[i_blk].ICl;
-	     i_max = Soln_Blks[i_blk].ICu;
-             i_inc = 1;
-	     j_min = Soln_Blks[i_blk].JCu+1;
-	     j_max = Soln_Blks[i_blk].JCu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     j_inc = 1;
-             k_min = Soln_Blks[i_blk].KCu+1;
-             k_max = Soln_Blks[i_blk].KCu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             k_inc = 1;
-	       for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-	           Soln_Blks[i_blk].Grid.Cell[i][j][k].Xc = Soln_Blks[i_blk].Grid.centroid(i, j,k);
-	           Soln_Blks[i_blk].Grid.Cell[i][j][k].V = Soln_Blks[i_blk].Grid.volume(i, j,k);
-                } /* endfor */
-          } /* endif */
-       } /* endif */
-
-
-
-       ////////////////////////////////////////////////////////////////////////////////
-       // Unload receive buffer for Topsouth  corner neighbours of solution blocks. //
-       ////////////////////////////////////////////////////////////////////////////////
-       if (Soln_Block_List.Block[i_blk].used &&
-           (Soln_Block_List.Block[i_blk].nTS == 1) &&
-           (Soln_Block_List.Block[i_blk].info.level ==
-            Soln_Block_List.Block[i_blk].infoTS[0].level)) {
-          if (!Send_Mesh_Geometry_Only) {
-             buffer_size = sqr(Soln_Block_List.Block[i_blk].info.dimen.ghost)*
-                           abs(Soln_Block_List.Block[i_blk].info.dimen.i)*
-                           Soln_Blks[i_blk].NumVar();
-             if (Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar())
-                buffer_size = buffer_size +
-                              sqr(Soln_Block_List.Block[i_blk].info.dimen.ghost)*
-                              (abs(Soln_Block_List.Block[i_blk].info.dimen.i)+1)*
-                              NUM_COMP_VECTOR3D;
-          } else {
-                buffer_size = sqr(Soln_Block_List.Block[i_blk].info.dimen.ghost)*
-                              (abs(Soln_Block_List.Block[i_blk].info.dimen.i)+1)*
-                              NUM_COMP_VECTOR3D;
-          } /* endif */
-          l = -1;
-          // Unload ghost cell solution information as required.
-          if (!Send_Mesh_Geometry_Only) {
-             i_min = Soln_Blks[i_blk].ICl;
-	     i_max = Soln_Blks[i_blk].ICu;
-             i_inc = 1;
-	     j_min = Soln_Blks[i_blk].JCl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             j_max = Soln_Blks[i_blk].JCl-1;
-             j_inc = 1;
-             k_min = Soln_Blks[i_blk].KCu+1;
-             k_max = Soln_Blks[i_blk].KCu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             k_inc = 1;
-             i = Soln_Blks[i_blk].UnloadReceiveBuffer(Soln_Block_List.message_noreschange_topsouthcorner_recbuf[i_blk],
-                                                     l,buffer_size,
-                                                     i_min,i_max,i_inc,
-                                                     j_min,j_max,j_inc,k_min,k_max,k_inc);
-	     if (i != 0) return(5400);
-          } /* endif */
-          // Unload ghost cell mesh information as required.
-          if (Send_Mesh_Geometry_Only ||
-              Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar()) {
-	     i_min = Soln_Blks[i_blk].Grid.INl;
-	     i_max = Soln_Blks[i_blk].Grid.INu;
-	     i_inc = 1;
-	     j_min = Soln_Blks[i_blk].Grid.JNl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     j_max = Soln_Blks[i_blk].Grid.JNl-1;
-	     j_inc = 1;
-	     k_min = Soln_Blks[i_blk].Grid.KNu+1;
-	     k_max = Soln_Blks[i_blk].Grid.KNu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     k_inc = 1;
-             x_ref = Soln_Blks[i_blk].Grid.Node[i_min][j_max+1][k_min-1].X; // Reference node location.
-	       for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-		   l = l + NUM_COMP_VECTOR3D;
-                   if (l >= buffer_size) return(5401);
-                   Soln_Blks[i_blk].Grid.Node[i][j][k].X =
-		     Vector3D(Soln_Block_List.message_noreschange_topsouthcorner_recbuf[i_blk][l-2],
-		              Soln_Block_List.message_noreschange_topsouthcorner_recbuf[i_blk][l-1],
-                              Soln_Block_List.message_noreschange_topsouthcorner_recbuf[i_blk][l])+x_ref;
-             } /* endfor */
-             i_min = Soln_Blks[i_blk].ICl;
-	     i_max = Soln_Blks[i_blk].ICu;
-             i_inc = 1;
-	     j_min = Soln_Blks[i_blk].JCl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             j_max = Soln_Blks[i_blk].JCl-1;
-	     j_inc = 1;
-             k_min = Soln_Blks[i_blk].KCu+1;
-             k_max = Soln_Blks[i_blk].KCu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             k_inc = 1;
-	       for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-	           Soln_Blks[i_blk].Grid.Cell[i][j][k].Xc = Soln_Blks[i_blk].Grid.centroid(i, j,k);
-	           Soln_Blks[i_blk].Grid.Cell[i][j][k].V = Soln_Blks[i_blk].Grid.volume(i, j,k);
-             } /* endfor */
-          } /* endif */
-       } /* endif */
-
-
-       ////////////////////////////////////////////////////////////////////////////////
-       // Unload receive buffer for Top East corner neighbours of solution blocks. //
-       ////////////////////////////////////////////////////////////////////////////////
-       if (Soln_Block_List.Block[i_blk].used &&
-           (Soln_Block_List.Block[i_blk].nTE == 1) &&
-           (Soln_Block_List.Block[i_blk].info.level ==
-            Soln_Block_List.Block[i_blk].infoTE[0].level)) {
-          if (!Send_Mesh_Geometry_Only) {
-             buffer_size = sqr(Soln_Block_List.Block[i_blk].info.dimen.ghost)*
-                           abs(Soln_Block_List.Block[i_blk].info.dimen.j)*
-                           Soln_Blks[i_blk].NumVar();
-             if (Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar())
-                buffer_size = buffer_size +
-                              sqr(Soln_Block_List.Block[i_blk].info.dimen.ghost)*
-                              (abs(Soln_Block_List.Block[i_blk].info.dimen.j)+1)*
-                              NUM_COMP_VECTOR3D;
-          } else {
-                buffer_size = sqr(Soln_Block_List.Block[i_blk].info.dimen.ghost)*
-                              (abs(Soln_Block_List.Block[i_blk].info.dimen.j)+1)*
-                              NUM_COMP_VECTOR3D;
-          } /* endif */
-          l = -1;
-          // Unload ghost cell solution information as required.
-          if (!Send_Mesh_Geometry_Only) {
-             i_min = Soln_Blks[i_blk].ICu+1;
-	     i_max = Soln_Blks[i_blk].ICu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             i_inc = 1;
-             j_min = Soln_Blks[i_blk].JCl;
-             j_max = Soln_Blks[i_blk].JCu;
-             j_inc = 1;
-             k_min = Soln_Blks[i_blk].KCu+1;
-             k_max = Soln_Blks[i_blk].KCu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             k_inc = 1;
-             i = Soln_Blks[i_blk].UnloadReceiveBuffer(Soln_Block_List.message_noreschange_topeastcorner_recbuf[i_blk],
-                                                     l,buffer_size,
-                                                     i_min,i_max,i_inc,
-                                                     j_min,j_max,j_inc,k_min,k_max,k_inc);
-	     if (i != 0) return(5500);
-          } /* endif */
-          // Unload ghost cell mesh information as required.
-          if (Send_Mesh_Geometry_Only ||
-              Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar()) {
-	     i_min = Soln_Blks[i_blk].Grid.INu+1;
-	     i_max = Soln_Blks[i_blk].Grid.INu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     i_inc = 1;
-	     j_min = Soln_Blks[i_blk].Grid.JNl;
-	     j_max = Soln_Blks[i_blk].Grid.JNu;
-	     j_inc = 1;
-	     k_min = Soln_Blks[i_blk].Grid.KNu+1;
-	     k_max = Soln_Blks[i_blk].Grid.KNu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     k_inc = 1;
-             x_ref = Soln_Blks[i_blk].Grid.Node[i_min-1][j_min][k_min-1].X; // Reference node location.
-	       for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-		   l = l + NUM_COMP_VECTOR3D;
-                   if (l >= buffer_size) return(5501);
-                   Soln_Blks[i_blk].Grid.Node[i][j][k].X =
-		     Vector3D(Soln_Block_List.message_noreschange_topeastcorner_recbuf[i_blk][l-2],
-		              Soln_Block_List.message_noreschange_topeastcorner_recbuf[i_blk][l-1],
-                              Soln_Block_List.message_noreschange_topeastcorner_recbuf[i_blk][l])+x_ref;
-             } /* endfor */
-             i_min = Soln_Blks[i_blk].ICu+1;
-	     i_max = Soln_Blks[i_blk].ICu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     i_inc = 1;
-             j_min = Soln_Blks[i_blk].JCl;
-             j_max = Soln_Blks[i_blk].JCu;
-             j_inc = 1;
-             k_min = Soln_Blks[i_blk].KCu+1;
-             k_max = Soln_Blks[i_blk].KCu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             k_inc = 1;
-	       for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-	           Soln_Blks[i_blk].Grid.Cell[i][j][k].Xc = Soln_Blks[i_blk].Grid.centroid(i, j,k);
-	           Soln_Blks[i_blk].Grid.Cell[i][j][k].V = Soln_Blks[i_blk].Grid.volume(i, j,k);
-                } /* endfor */
-          } /* endif */
-       } /* endif */
-
-
-       ////////////////////////////////////////////////////////////////////////////////
-       // Unload receive buffer for Top West corner neighbours of solution blocks. //
-       ////////////////////////////////////////////////////////////////////////////////
-       if (Soln_Block_List.Block[i_blk].used &&
-           (Soln_Block_List.Block[i_blk].nTW == 1) &&
-           (Soln_Block_List.Block[i_blk].info.level ==
-            Soln_Block_List.Block[i_blk].infoTW[0].level)) {
-          if (!Send_Mesh_Geometry_Only) {
-             buffer_size = sqr(Soln_Block_List.Block[i_blk].info.dimen.ghost)*
-                           abs(Soln_Block_List.Block[i_blk].info.dimen.j)*
-                           Soln_Blks[i_blk].NumVar();
-             if (Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar())
-                buffer_size = buffer_size +
-                              sqr(Soln_Block_List.Block[i_blk].info.dimen.ghost)*
-                              (abs(Soln_Block_List.Block[i_blk].info.dimen.j)+1)*
-                              NUM_COMP_VECTOR3D;
-          } else {
-                buffer_size = sqr(Soln_Block_List.Block[i_blk].info.dimen.ghost)*
-                              (abs(Soln_Block_List.Block[i_blk].info.dimen.j)+1)*
-                              NUM_COMP_VECTOR3D;
-          } /* endif */
-          l = -1;
-          // Unload ghost cell solution information as required.
-          if (!Send_Mesh_Geometry_Only) {
-             i_min = Soln_Blks[i_blk].ICl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     i_max = Soln_Blks[i_blk].ICl-1;
-             i_inc = 1;
-             j_min = Soln_Blks[i_blk].JCl;
-             j_max = Soln_Blks[i_blk].JCu;
-             j_inc = 1;
-             k_min = Soln_Blks[i_blk].KCu+1;
-             k_max = Soln_Blks[i_blk].KCu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             k_inc = 1;
-             i = Soln_Blks[i_blk].UnloadReceiveBuffer(Soln_Block_List.message_noreschange_topwestcorner_recbuf[i_blk],
-                                                     l,buffer_size,
-                                                     i_min,i_max,i_inc,
-                                                     j_min,j_max,j_inc,k_min,k_max,k_inc);
-	     if (i != 0) return(5600);
-          } /* endif */
-          // Unload ghost cell mesh information as required.
-          if (Send_Mesh_Geometry_Only ||
-              Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar()) {
-	     i_min = Soln_Blks[i_blk].Grid.INl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     i_max = Soln_Blks[i_blk].Grid.INl-1;
-	     i_inc = 1;
-	     j_min = Soln_Blks[i_blk].Grid.JNl;
-	     j_max = Soln_Blks[i_blk].Grid.JNu;
-	     j_inc = 1;
-	     k_min = Soln_Blks[i_blk].Grid.KNu+1;
-	     k_max = Soln_Blks[i_blk].Grid.KNu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     k_inc = 1;
-             x_ref = Soln_Blks[i_blk].Grid.Node[i_max+1][j_min][k_min-1].X; // Reference node location.
-	       for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-		   l = l + NUM_COMP_VECTOR3D;
-                   if (l >= buffer_size) return(5601);
-                   Soln_Blks[i_blk].Grid.Node[i][j][k].X =
-		     Vector3D(Soln_Block_List.message_noreschange_topwestcorner_recbuf[i_blk][l-2],
- 		              Soln_Block_List.message_noreschange_topwestcorner_recbuf[i_blk][l-1],
-                             Soln_Block_List.message_noreschange_topwestcorner_recbuf[i_blk][l])+x_ref;
-                } /* endfor */
-             i_min = Soln_Blks[i_blk].ICl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     i_max = Soln_Blks[i_blk].ICl-1;
-	     i_inc = 1;
-             j_min = Soln_Blks[i_blk].JCl;
-             j_max = Soln_Blks[i_blk].JCu;
-             j_inc = 1;
-             k_min = Soln_Blks[i_blk].KCu+1;
-             k_max = Soln_Blks[i_blk].KCu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             k_inc = 1;
-	       for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-	           Soln_Blks[i_blk].Grid.Cell[i][j][k].Xc = Soln_Blks[i_blk].Grid.centroid(i, j,k);
-	           Soln_Blks[i_blk].Grid.Cell[i][j][k].V = Soln_Blks[i_blk].Grid.volume(i, j,k);
-                } /* endfor */
-          } /* endif */
-       } /* endif */
-
-
-       ////////////////////////////////////////////////////////////////////////////////
-       // Unload receive buffer for Bottomnorth  corner neighbours of solution blocks. //
-       ////////////////////////////////////////////////////////////////////////////////
-       if (Soln_Block_List.Block[i_blk].used &&
-           (Soln_Block_List.Block[i_blk].nBN == 1) &&
-           (Soln_Block_List.Block[i_blk].info.level ==
-            Soln_Block_List.Block[i_blk].infoBN[0].level)) {
-          if (!Send_Mesh_Geometry_Only) {
-             buffer_size = sqr(Soln_Block_List.Block[i_blk].info.dimen.ghost)*
-                           abs(Soln_Block_List.Block[i_blk].info.dimen.i)*
-                           Soln_Blks[i_blk].NumVar();
-             if (Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar())
-                buffer_size = buffer_size +
-                              sqr(Soln_Block_List.Block[i_blk].info.dimen.ghost)*
-                              (abs(Soln_Block_List.Block[i_blk].info.dimen.i)+1)*
-                              NUM_COMP_VECTOR3D;
-          } else {
-                buffer_size = sqr(Soln_Block_List.Block[i_blk].info.dimen.ghost)*
-                              (abs(Soln_Block_List.Block[i_blk].info.dimen.i)+1)*
-                              NUM_COMP_VECTOR3D;
-          } /* endif */
-          l = -1;
-          // Unload ghost cell solution information as required.
-          if (!Send_Mesh_Geometry_Only) {
-             i_min = Soln_Blks[i_blk].ICl;
-	     i_max = Soln_Blks[i_blk].ICu;
-             i_inc = 1;
-             j_min = Soln_Blks[i_blk].JCu+1;
-             j_max = Soln_Blks[i_blk].JCu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             j_inc = 1;
-             k_min = Soln_Blks[i_blk].KCl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             k_max = Soln_Blks[i_blk].KCl-1;
-             k_inc = 1;
-             i = Soln_Blks[i_blk].UnloadReceiveBuffer(Soln_Block_List.message_noreschange_bottomnorthcorner_recbuf[i_blk],
-                                                     l,buffer_size,
-                                                     i_min,i_max,i_inc,
-                                                     j_min,j_max,j_inc,k_min,k_max,k_inc);
-	     if (i != 0) return(5700);
-          } /* endif */
-          // Unload ghost cell mesh information as required.
-          if (Send_Mesh_Geometry_Only ||
-              Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar()) {
-	     i_min = Soln_Blks[i_blk].Grid.INl;
-	     i_max = Soln_Blks[i_blk].Grid.INu;
-	     i_inc = 1;
-	     j_min = Soln_Blks[i_blk].Grid.JNu+1;
-	     j_max = Soln_Blks[i_blk].Grid.JNu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     j_inc = 1;
-	     k_min = Soln_Blks[i_blk].Grid.KNl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     k_max = Soln_Blks[i_blk].Grid.KNl-1;
-	     k_inc = 1;
-             x_ref = Soln_Blks[i_blk].Grid.Node[i_min][j_min-1][k_max+1].X; // Reference node location.
-	       for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-		   l = l + NUM_COMP_VECTOR3D;
-                   if (l >= buffer_size) return(5701);
-                   Soln_Blks[i_blk].Grid.Node[i][j][k].X =
-		     Vector3D(Soln_Block_List.message_noreschange_bottomnorthcorner_recbuf[i_blk][l-2],
- 		              Soln_Block_List.message_noreschange_bottomnorthcorner_recbuf[i_blk][l-1],
-                             Soln_Block_List.message_noreschange_bottomnorthcorner_recbuf[i_blk][l])+x_ref;
-              } /* endfor */
-             i_min = Soln_Blks[i_blk].ICl;
-	     i_max = Soln_Blks[i_blk].ICu;
-             i_inc = 1;
-	     j_min = Soln_Blks[i_blk].JCu+1;
-	     j_max = Soln_Blks[i_blk].JCu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     j_inc = 1;
-             k_min = Soln_Blks[i_blk].KCl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             k_max = Soln_Blks[i_blk].KCl-1;
-             k_inc = 1;
-	       for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-	           Soln_Blks[i_blk].Grid.Cell[i][j][k].Xc = Soln_Blks[i_blk].Grid.centroid(i, j,k);
-	           Soln_Blks[i_blk].Grid.Cell[i][j][k].V = Soln_Blks[i_blk].Grid.volume(i, j,k);
-                } /* endfor */
-          } /* endif */
-       } /* endif */
-
-
-       ////////////////////////////////////////////////////////////////////////////////
-       // Unload receive buffer for Bottomsouth  corner neighbours of solution blocks. //
-       ////////////////////////////////////////////////////////////////////////////////
-       if (Soln_Block_List.Block[i_blk].used &&
-           (Soln_Block_List.Block[i_blk].nBS == 1) &&
-           (Soln_Block_List.Block[i_blk].info.level ==
-            Soln_Block_List.Block[i_blk].infoBS[0].level)) {
-          if (!Send_Mesh_Geometry_Only) {
-             buffer_size = sqr(Soln_Block_List.Block[i_blk].info.dimen.ghost)*
-                           abs(Soln_Block_List.Block[i_blk].info.dimen.i)*
-                           Soln_Blks[i_blk].NumVar();
-             if (Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar())
-                buffer_size = buffer_size +
-                              sqr(Soln_Block_List.Block[i_blk].info.dimen.ghost)*
-                              (abs(Soln_Block_List.Block[i_blk].info.dimen.i)+1)*
-                              NUM_COMP_VECTOR3D;
-          } else {
-                buffer_size = sqr(Soln_Block_List.Block[i_blk].info.dimen.ghost)*
-                              (abs(Soln_Block_List.Block[i_blk].info.dimen.i)+1)*
-                              NUM_COMP_VECTOR3D;
-          } /* endif */
-          l = -1;
-          // Unload ghost cell solution information as required.
-          if (!Send_Mesh_Geometry_Only) {
-             i_min = Soln_Blks[i_blk].ICl;
-	     i_max = Soln_Blks[i_blk].ICu;
-             i_inc = 1;
-	     j_min = Soln_Blks[i_blk].JCl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             j_max = Soln_Blks[i_blk].JCl-1;
-             j_inc = 1;
-             k_min = Soln_Blks[i_blk].KCl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             k_max = Soln_Blks[i_blk].KCl-1;
-             k_inc = 1;
-             i = Soln_Blks[i_blk].UnloadReceiveBuffer(Soln_Block_List.message_noreschange_bottomsouthcorner_recbuf[i_blk],
-                                                     l,buffer_size,
-                                                     i_min,i_max,i_inc,
-                                                     j_min,j_max,j_inc,k_min,k_max,k_inc);
-	     if (i != 0) return(5800);
-          } /* endif */
-          // Unload ghost cell mesh information as required.
-          if (Send_Mesh_Geometry_Only ||
-              Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar()) {
-	     i_min = Soln_Blks[i_blk].Grid.INl;
-	     i_max = Soln_Blks[i_blk].Grid.INu;
-	     i_inc = 1;
-	     j_min = Soln_Blks[i_blk].Grid.JNl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     j_max = Soln_Blks[i_blk].Grid.JNl-1;
-	     j_inc = 1;
-	     k_min = Soln_Blks[i_blk].Grid.KNl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     k_max = Soln_Blks[i_blk].Grid.KNl-1;
-	     k_inc = 1;
-             x_ref = Soln_Blks[i_blk].Grid.Node[i_min][j_max+1][k_max+1].X; // Reference node location.
-	       for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-		   l = l + NUM_COMP_VECTOR3D;
-                   if (l >= buffer_size) return(5801);
-                   Soln_Blks[i_blk].Grid.Node[i][j][k].X =
-		     Vector3D(Soln_Block_List.message_noreschange_bottomsouthcorner_recbuf[i_blk][l-2],
-		              Soln_Block_List.message_noreschange_bottomsouthcorner_recbuf[i_blk][l-1],
-                              Soln_Block_List.message_noreschange_bottomsouthcorner_recbuf[i_blk][l])+x_ref;
-             } /* endfor */
-             i_min = Soln_Blks[i_blk].ICl;
-	     i_max = Soln_Blks[i_blk].ICu;
-             i_inc = 1;
-	     j_min = Soln_Blks[i_blk].JCl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             j_max = Soln_Blks[i_blk].JCl-1;
-	     j_inc = 1;
-             k_min = Soln_Blks[i_blk].KCl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             k_max = Soln_Blks[i_blk].KCl-1;
-             k_inc = 1;
-	       for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-	           Soln_Blks[i_blk].Grid.Cell[i][j][k].Xc = Soln_Blks[i_blk].Grid.centroid(i, j,k);
-	           Soln_Blks[i_blk].Grid.Cell[i][j][k].V = Soln_Blks[i_blk].Grid.volume(i, j,k);
-             } /* endfor */
-          } /* endif */
-       } /* endif */
-
-
-       ////////////////////////////////////////////////////////////////////////////////
-       // Unload receive buffer for Bottom East corner neighbours of solution blocks. //
-       ////////////////////////////////////////////////////////////////////////////////
-       if (Soln_Block_List.Block[i_blk].used &&
-           (Soln_Block_List.Block[i_blk].nBE == 1) &&
-           (Soln_Block_List.Block[i_blk].info.level ==
-            Soln_Block_List.Block[i_blk].infoBE[0].level)) {
-          if (!Send_Mesh_Geometry_Only) {
-             buffer_size = sqr(Soln_Block_List.Block[i_blk].info.dimen.ghost)*
-                           abs(Soln_Block_List.Block[i_blk].info.dimen.j)*
-                           Soln_Blks[i_blk].NumVar();
-             if (Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar())
-                buffer_size = buffer_size +
-                              sqr(Soln_Block_List.Block[i_blk].info.dimen.ghost)*
-                              (abs(Soln_Block_List.Block[i_blk].info.dimen.j)+1)*
-                              NUM_COMP_VECTOR3D;
-          } else {
-                buffer_size = sqr(Soln_Block_List.Block[i_blk].info.dimen.ghost)*
-                              (abs(Soln_Block_List.Block[i_blk].info.dimen.j)+1)*
-                              NUM_COMP_VECTOR3D;
-          } /* endif */
-          l = -1;
-          // Unload ghost cell solution information as required.
-          if (!Send_Mesh_Geometry_Only) {
-             i_min = Soln_Blks[i_blk].ICu+1;
-	     i_max = Soln_Blks[i_blk].ICu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             i_inc = 1;
-             j_min = Soln_Blks[i_blk].JCl;
-             j_max = Soln_Blks[i_blk].JCu;
-             j_inc = 1;
-             k_min = Soln_Blks[i_blk].KCl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             k_max = Soln_Blks[i_blk].KCl-1;
-             k_inc = 1;
-             i = Soln_Blks[i_blk].UnloadReceiveBuffer(Soln_Block_List.message_noreschange_bottomeastcorner_recbuf[i_blk],
-                                                     l,buffer_size,
-                                                     i_min,i_max,i_inc,
-                                                     j_min,j_max,j_inc,k_min,k_max,k_inc);
-	     if (i != 0) return(5900);
-          } /* endif */
-          // Unload ghost cell mesh information as required.
-          if (Send_Mesh_Geometry_Only ||
-              Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar()) {
-	     i_min = Soln_Blks[i_blk].Grid.INu+1;
-	     i_max = Soln_Blks[i_blk].Grid.INu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     i_inc = 1;
-	     j_min = Soln_Blks[i_blk].Grid.JNl;
-	     j_max = Soln_Blks[i_blk].Grid.JNu;
-	     j_inc = 1;
-	     k_min = Soln_Blks[i_blk].Grid.KNl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     k_max = Soln_Blks[i_blk].Grid.KNl-1;
-	     k_inc = 1;
-             x_ref = Soln_Blks[i_blk].Grid.Node[i_min-1][j_min][k_max+1].X; // Reference node location.
-	       for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-		   l = l + NUM_COMP_VECTOR3D;
-                   if (l >= buffer_size) return(5901);
-                   Soln_Blks[i_blk].Grid.Node[i][j][k].X =
-		     Vector3D(Soln_Block_List.message_noreschange_bottomeastcorner_recbuf[i_blk][l-2],
-		              Soln_Block_List.message_noreschange_bottomeastcorner_recbuf[i_blk][l-1],
-                              Soln_Block_List.message_noreschange_bottomeastcorner_recbuf[i_blk][l])+x_ref;
-             } /* endfor */
-             i_min = Soln_Blks[i_blk].ICu+1;
-	     i_max = Soln_Blks[i_blk].ICu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     i_inc = 1;
-             j_min = Soln_Blks[i_blk].JCl;
-             j_max = Soln_Blks[i_blk].JCu;
-             j_inc = 1;
-             k_min = Soln_Blks[i_blk].KCl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             k_max = Soln_Blks[i_blk].KCl-1;
-             k_inc = 1;
-	       for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-	           Soln_Blks[i_blk].Grid.Cell[i][j][k].Xc = Soln_Blks[i_blk].Grid.centroid(i, j,k);
-	           Soln_Blks[i_blk].Grid.Cell[i][j][k].V = Soln_Blks[i_blk].Grid.volume(i, j,k);
-                } /* endfor */
-          } /* endif */
-       } /* endif */
-
-
-       ////////////////////////////////////////////////////////////////////////////////
-       // Unload receive buffer for Bottom West corner neighbours of solution blocks. //
-       ////////////////////////////////////////////////////////////////////////////////
-       if (Soln_Block_List.Block[i_blk].used &&
-           (Soln_Block_List.Block[i_blk].nBW == 1) &&
-           (Soln_Block_List.Block[i_blk].info.level ==
-            Soln_Block_List.Block[i_blk].infoBW[0].level)) {
-          if (!Send_Mesh_Geometry_Only) {
-             buffer_size = sqr(Soln_Block_List.Block[i_blk].info.dimen.ghost)*
-                           abs(Soln_Block_List.Block[i_blk].info.dimen.j)*
-                           Soln_Blks[i_blk].NumVar();
-             if (Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar())
-                buffer_size = buffer_size +
-                              sqr(Soln_Block_List.Block[i_blk].info.dimen.ghost)*
-                              (abs(Soln_Block_List.Block[i_blk].info.dimen.j)+1)*
-                              NUM_COMP_VECTOR3D;
-          } else {
-                buffer_size = sqr(Soln_Block_List.Block[i_blk].info.dimen.ghost)*
-                              (abs(Soln_Block_List.Block[i_blk].info.dimen.j)+1)*
-                              NUM_COMP_VECTOR3D;
-          } /* endif */
-          l = -1;
-          // Unload ghost cell solution information as required.
-          if (!Send_Mesh_Geometry_Only) {
-             i_min = Soln_Blks[i_blk].ICl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     i_max = Soln_Blks[i_blk].ICl-1;
-             i_inc = 1;
-             j_min = Soln_Blks[i_blk].JCl;
-             j_max = Soln_Blks[i_blk].JCu;
-             j_inc = 1;
-             k_min = Soln_Blks[i_blk].KCl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             k_max = Soln_Blks[i_blk].KCl-1;
-             k_inc = 1;
-             i = Soln_Blks[i_blk].UnloadReceiveBuffer(Soln_Block_List.message_noreschange_bottomwestcorner_recbuf[i_blk],
-                                                     l,buffer_size,
-                                                     i_min,i_max,i_inc,
-                                                     j_min,j_max,j_inc,k_min,k_max,k_inc);
-	     if (i != 0) return(6000);
-          } /* endif */
-          // Unload ghost cell mesh information as required.
-          if (Send_Mesh_Geometry_Only ||
-              Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar()) {
-	     i_min = Soln_Blks[i_blk].Grid.INl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     i_max = Soln_Blks[i_blk].Grid.INl-1;
-	     i_inc = 1;
-	     j_min = Soln_Blks[i_blk].Grid.JNl;
-	     j_max = Soln_Blks[i_blk].Grid.JNu;
-	     j_inc = 1;
-	     k_min = Soln_Blks[i_blk].Grid.KNl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     k_max = Soln_Blks[i_blk].Grid.KNl-1;
-	     k_inc = 1;
-             x_ref = Soln_Blks[i_blk].Grid.Node[i_max+1][j_min][k_max+1].X; // Reference node location.
-	       for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-		   l = l + NUM_COMP_VECTOR3D;
-                   if (l >= buffer_size) return(6001);
-                   Soln_Blks[i_blk].Grid.Node[i][j][k].X =
-		     Vector3D(Soln_Block_List.message_noreschange_bottomwestcorner_recbuf[i_blk][l-2],
-		              Soln_Block_List.message_noreschange_bottomwestcorner_recbuf[i_blk][l-1],
-                              Soln_Block_List.message_noreschange_bottomwestcorner_recbuf[i_blk][l])+x_ref;
-                } /* endfor */
-             i_min = Soln_Blks[i_blk].ICl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     i_max = Soln_Blks[i_blk].ICl-1;
-	     i_inc = 1;
-             j_min = Soln_Blks[i_blk].JCl;
-             j_max = Soln_Blks[i_blk].JCu;
-             j_inc = 1;
-             k_min = Soln_Blks[i_blk].KCl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             k_max = Soln_Blks[i_blk].KCl-1;
-             k_inc = 1;
-	       for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-	           Soln_Blks[i_blk].Grid.Cell[i][j][k].Xc = Soln_Blks[i_blk].Grid.centroid(i, j,k);
-	           Soln_Blks[i_blk].Grid.Cell[i][j][k].V = Soln_Blks[i_blk].Grid.volume(i, j,k);
-                } /* endfor */
-          } /* endif */
-       } /* endif */
-
-
-       ////////////////////////////////////////////////////////////////////////////////
-       // Unload receive buffer for Topnorth West corner neighbours of solution blocks. //
-       ////////////////////////////////////////////////////////////////////////////////
-       if (Soln_Block_List.Block[i_blk].used &&
-           (Soln_Block_List.Block[i_blk].nTNW == 1) &&
-           (Soln_Block_List.Block[i_blk].info.level ==
-            Soln_Block_List.Block[i_blk].infoTNW[0].level)) {
-          buffer_size = sqr(Soln_Block_List.Block[i_blk].info.dimen.ghost)*
-	    Soln_Block_List.Block[i_blk].info.dimen.ghost*
-                        Number_of_Solution_Variables;
-          l = -1;
-          // Unload ghost cell solution information as required.
-          if (!Send_Mesh_Geometry_Only) {
-             i_min = Soln_Blks[i_blk].ICl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     i_max = Soln_Blks[i_blk].ICl-1;
-             i_inc = 1;
-             j_min = Soln_Blks[i_blk].JCu+1;
-             j_max = Soln_Blks[i_blk].JCu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             j_inc = 1;
-             k_min = Soln_Blks[i_blk].KCu+1;
-             k_max = Soln_Blks[i_blk].KCu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             k_inc = 1;
-             i = Soln_Blks[i_blk].UnloadReceiveBuffer(Soln_Block_List.message_noreschange_topnorthwestcorner_recbuf[i_blk],
-                                                     l,buffer_size,
-                                                     i_min,i_max,i_inc,
-                                                     j_min,j_max,j_inc,k_min,k_max,k_inc);
-	     if (i != 0) return(6100);
-          } /* endif */
-          // Unload ghost cell mesh information as required.
-          if (Send_Mesh_Geometry_Only ||
-              Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar()) {
-	     i_min = Soln_Blks[i_blk].Grid.INl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     i_max = Soln_Blks[i_blk].Grid.INl-1;
-	     i_inc = 1;
-	     j_min = Soln_Blks[i_blk].Grid.JNu+1;
-	     j_max = Soln_Blks[i_blk].Grid.JNu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     j_inc = 1;
-	     k_min = Soln_Blks[i_blk].Grid.KNu+1;
-	     k_max = Soln_Blks[i_blk].Grid.KNu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     k_inc = 1;
-             x_ref = Soln_Blks[i_blk].Grid.Node[i_max+1][j_min-1][k_min-1].X; // Reference node location.
-	       for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-		   l = l + NUM_COMP_VECTOR3D;
-                   if (l >= buffer_size) return(6101);
-                   Soln_Blks[i_blk].Grid.Node[i][j][k].X =
-		     Vector3D(Soln_Block_List.message_noreschange_topnorthwestcorner_recbuf[i_blk][l-2],
-		              Soln_Block_List.message_noreschange_topnorthwestcorner_recbuf[i_blk][l-1],
-                              Soln_Block_List.message_noreschange_topnorthwestcorner_recbuf[i_blk][l])+x_ref;
-                } /* endfor */
-             i_min = Soln_Blks[i_blk].ICl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     i_max = Soln_Blks[i_blk].ICl-1;
-	     i_inc = 1;
-	     j_min = Soln_Blks[i_blk].JCu+1;
-	     j_max = Soln_Blks[i_blk].JCu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     j_inc = 1;
-             k_min = Soln_Blks[i_blk].KCu+1;
-             k_max = Soln_Blks[i_blk].KCu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             k_inc = 1;
-	       for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-	           Soln_Blks[i_blk].Grid.Cell[i][j][k].Xc = Soln_Blks[i_blk].Grid.centroid(i, j,k);
-	           Soln_Blks[i_blk].Grid.Cell[i][j][k].V = Soln_Blks[i_blk].Grid.volume(i, j,k);
-                } /* endfor */
-          } /* endif */
-       } /* endif */
-
-
-
-       ////////////////////////////////////////////////////////////////////////////////
-       // Unload receive buffer for Topsouth East corner neighbours of solution blocks. //
-       ////////////////////////////////////////////////////////////////////////////////
-       if (Soln_Block_List.Block[i_blk].used &&
-           (Soln_Block_List.Block[i_blk].nTSE == 1) &&
-           (Soln_Block_List.Block[i_blk].info.level ==
-            Soln_Block_List.Block[i_blk].infoTSE[0].level)) {
-          buffer_size = sqr(Soln_Block_List.Block[i_blk].info.dimen.ghost)*
-	    Soln_Block_List.Block[i_blk].info.dimen.ghost*
-                        Number_of_Solution_Variables;
-          l = -1;
-          // Unload ghost cell solution information as required.
-          if (!Send_Mesh_Geometry_Only) {
-             i_min = Soln_Blks[i_blk].ICu+1;
-	     i_max = Soln_Blks[i_blk].ICu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             i_inc = 1;
-             j_min = Soln_Blks[i_blk].JCl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             j_max = Soln_Blks[i_blk].JCl-1;
-             j_inc = 1;
-             k_min = Soln_Blks[i_blk].KCu+1;
-             k_max = Soln_Blks[i_blk].KCu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             k_inc = 1;
-             i = Soln_Blks[i_blk].UnloadReceiveBuffer(Soln_Block_List.message_noreschange_topsoutheastcorner_recbuf[i_blk],
-                                                     l,buffer_size,
-                                                     i_min,i_max,i_inc,
-                                                     j_min,j_max,j_inc,k_min,k_max,k_inc);
-	     if (i != 0) return(6300);
-          } /* endif */
-          // Unload ghost cell mesh information as required.
-          if (Send_Mesh_Geometry_Only ||
-              Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar()) {
-	     i_min = Soln_Blks[i_blk].Grid.INu+1;
-	     i_max = Soln_Blks[i_blk].Grid.INu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     i_inc = 1;
-	     j_min = Soln_Blks[i_blk].Grid.JNl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     j_max = Soln_Blks[i_blk].Grid.JNl-1;
-	     j_inc = 1;
-	     k_min = Soln_Blks[i_blk].Grid.KNu+1;
-	     k_max = Soln_Blks[i_blk].Grid.KNu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     k_inc = 1;
-             x_ref = Soln_Blks[i_blk].Grid.Node[i_min-1][j_max+1][k_min-1].X; // Reference node location.
-	       for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-		   l = l + NUM_COMP_VECTOR3D;
-                   if (l >= buffer_size) return(6301);
-                   Soln_Blks[i_blk].Grid.Node[i][j][k].X =
-		     Vector3D(Soln_Block_List.message_noreschange_topsoutheastcorner_recbuf[i_blk][l-2],
- 		              Soln_Block_List.message_noreschange_topsoutheastcorner_recbuf[i_blk][l-1],
-                             Soln_Block_List.message_noreschange_topsoutheastcorner_recbuf[i_blk][l])+x_ref;
-             } /* endfor */
-             i_min = Soln_Blks[i_blk].ICu+1;
-	     i_max = Soln_Blks[i_blk].ICu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     i_inc = 1;
-             j_min = Soln_Blks[i_blk].JCl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             j_max = Soln_Blks[i_blk].JCl-1;
-	     j_inc = 1;
-             k_min = Soln_Blks[i_blk].KCu+1;
-             k_max = Soln_Blks[i_blk].KCu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             k_inc = 1;
-	       for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-	           Soln_Blks[i_blk].Grid.Cell[i][j][k].Xc = Soln_Blks[i_blk].Grid.centroid(i, j,k);
-	           Soln_Blks[i_blk].Grid.Cell[i][j][k].V = Soln_Blks[i_blk].Grid.volume(i, j,k);
-                } /* endfor */
-          } /* endif */
-       } /* endif */
-
-       ////////////////////////////////////////////////////////////////////////////////
-       // Unload receive buffer for Topnorth East corner neighbours of solution blocks. //
-       ////////////////////////////////////////////////////////////////////////////////
-       if (Soln_Block_List.Block[i_blk].used &&
-           (Soln_Block_List.Block[i_blk].nTNE == 1) &&
-           (Soln_Block_List.Block[i_blk].info.level ==
-            Soln_Block_List.Block[i_blk].infoTNE[0].level)) {
-          buffer_size = sqr(Soln_Block_List.Block[i_blk].info.dimen.ghost)*
-	    Soln_Block_List.Block[i_blk].info.dimen.ghost*
-                        Number_of_Solution_Variables;
-          l = -1;
-          // Unload ghost cell solution information as required.
-          if (!Send_Mesh_Geometry_Only) {
-             i_min = Soln_Blks[i_blk].ICu+1;
-	     i_max = Soln_Blks[i_blk].ICu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             i_inc = 1;
-             j_min = Soln_Blks[i_blk].JCu+1;
-             j_max = Soln_Blks[i_blk].JCu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             j_inc = 1;
-             k_min = Soln_Blks[i_blk].KCu+1;
-             k_max = Soln_Blks[i_blk].KCu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             k_inc = 1;
-             i = Soln_Blks[i_blk].UnloadReceiveBuffer(Soln_Block_List.message_noreschange_topnortheastcorner_recbuf[i_blk],
-                                                     l,buffer_size,
-                                                     i_min,i_max,i_inc,
-                                                     j_min,j_max,j_inc,k_min,k_max,k_inc);
-	     if (i != 0) return(6200);
-          } /* endif */
-          // Unload ghost cell mesh information as required.
-          if (Send_Mesh_Geometry_Only ||
-              Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar()) {
-	     i_min = Soln_Blks[i_blk].Grid.INu+1;
-	     i_max = Soln_Blks[i_blk].Grid.INu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     i_inc = 1;
-	     j_min = Soln_Blks[i_blk].Grid.JNu+1;
-	     j_max = Soln_Blks[i_blk].Grid.JNu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     j_inc = 1;
-	     k_min = Soln_Blks[i_blk].Grid.KNu+1;
-	     k_max = Soln_Blks[i_blk].Grid.KNu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     k_inc = 1;
-             x_ref = Soln_Blks[i_blk].Grid.Node[i_min-1][j_min-1][k_min-1].X; // Reference node location.
-	       for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-		   l = l + NUM_COMP_VECTOR3D;
-                   if (l >= buffer_size) return(6201);
-                   Soln_Blks[i_blk].Grid.Node[i][j][k].X =
-		     Vector3D(Soln_Block_List.message_noreschange_topnortheastcorner_recbuf[i_blk][l-2],
-		              Soln_Block_List.message_noreschange_topnortheastcorner_recbuf[i_blk][l-1],
-                              Soln_Block_List.message_noreschange_topnortheastcorner_recbuf[i_blk][l])+x_ref;
-              } /* endfor */
-             i_min = Soln_Blks[i_blk].ICu+1;
-	     i_max = Soln_Blks[i_blk].ICu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     i_inc = 1;
-	     j_min = Soln_Blks[i_blk].JCu+1;
-	     j_max = Soln_Blks[i_blk].JCu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     j_inc = 1;
-             k_min = Soln_Blks[i_blk].KCu+1;
-             k_max = Soln_Blks[i_blk].KCu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             k_inc = 1;
-	       for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-	           Soln_Blks[i_blk].Grid.Cell[i][j][k].Xc = Soln_Blks[i_blk].Grid.centroid(i, j,k);
-	           Soln_Blks[i_blk].Grid.Cell[i][j][k].V = Soln_Blks[i_blk].Grid.volume(i, j,k);
-                } /* endfor */
-          } /* endif */
-       } /* endif */
-
-
-       ////////////////////////////////////////////////////////////////////////////////
-       // Unload receive buffer for Topsouth West corner neighbours of solution blocks. //
-       ////////////////////////////////////////////////////////////////////////////////
-       if (Soln_Block_List.Block[i_blk].used &&
-           (Soln_Block_List.Block[i_blk].nTSW == 1) &&
-           (Soln_Block_List.Block[i_blk].info.level ==
-            Soln_Block_List.Block[i_blk].infoTSW[0].level)) {
-	 buffer_size = sqr(Soln_Block_List.Block[i_blk].info.dimen.ghost)*
-	   Soln_Block_List.Block[i_blk].info.dimen.ghost*
-                        Number_of_Solution_Variables;
-          l = -1;
-          // Unload ghost cell solution information as required.
-          if (!Send_Mesh_Geometry_Only) {
-             i_min = Soln_Blks[i_blk].ICl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     i_max = Soln_Blks[i_blk].ICl-1;
-             i_inc = 1;
-             j_min = Soln_Blks[i_blk].JCl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             j_max = Soln_Blks[i_blk].JCl-1;
-             j_inc = 1;
-             k_min = Soln_Blks[i_blk].KCu+1;
-             k_max = Soln_Blks[i_blk].KCu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             k_inc = 1;
-             i = Soln_Blks[i_blk].UnloadReceiveBuffer(Soln_Block_List.message_noreschange_topsouthwestcorner_recbuf[i_blk],
-                                                     l,buffer_size,
-                                                     i_min,i_max,i_inc,
-                                                     j_min,j_max,j_inc,k_min,k_max,k_inc);
-	     if (i != 0) return(6400);
-          } /* endif */
-          // Unload ghost cell mesh information as required.
-          if (Send_Mesh_Geometry_Only ||
-              Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar()) {
-	     i_min = Soln_Blks[i_blk].Grid.INl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     i_max = Soln_Blks[i_blk].Grid.INl-1;
-	     i_inc = 1;
-	     j_min = Soln_Blks[i_blk].Grid.JNl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     j_max = Soln_Blks[i_blk].Grid.JNl-1;
-	     j_inc = 1;
-	     k_min = Soln_Blks[i_blk].Grid.KNu+1;
-	     k_max = Soln_Blks[i_blk].Grid.KNu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     k_inc = 1;
-             x_ref = Soln_Blks[i_blk].Grid.Node[i_max+1][j_max+1][k_min-1].X; // Reference node location.
-	       for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-		   l = l + NUM_COMP_VECTOR3D;
-                   if (l >= buffer_size) return(6401);
-                   Soln_Blks[i_blk].Grid.Node[i][j][k].X =
-		     Vector3D(Soln_Block_List.message_noreschange_topsouthwestcorner_recbuf[i_blk][l-2],
-		              Soln_Block_List.message_noreschange_topsouthwestcorner_recbuf[i_blk][l-1],
-                              Soln_Block_List.message_noreschange_topsouthwestcorner_recbuf[i_blk][l])+x_ref;
-             } /* endfor */
-             i_min = Soln_Blks[i_blk].ICl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     i_max = Soln_Blks[i_blk].ICl-1;
-	     i_inc = 1;
-             j_min = Soln_Blks[i_blk].JCl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             j_max = Soln_Blks[i_blk].JCl-1;
-	     j_inc = 1;
-             k_min = Soln_Blks[i_blk].KCu+1;
-             k_max = Soln_Blks[i_blk].KCu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             k_inc = 1;
-	       for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-	           Soln_Blks[i_blk].Grid.Cell[i][j][k].Xc = Soln_Blks[i_blk].Grid.centroid(i, j,k);
-	           Soln_Blks[i_blk].Grid.Cell[i][j][k].V = Soln_Blks[i_blk].Grid.volume(i, j,k);
-             } /* endfor */
-          } /* endif */
-       } /* endif */
-
-
-
-       ////////////////////////////////////////////////////////////////////////////////
-       // Unload receive buffer for Bottomnorth West corner neighbours of solution blocks. //
-       ////////////////////////////////////////////////////////////////////////////////
-       if (Soln_Block_List.Block[i_blk].used &&
-           (Soln_Block_List.Block[i_blk].nBNW == 1) &&
-           (Soln_Block_List.Block[i_blk].info.level ==
-            Soln_Block_List.Block[i_blk].infoBNW[0].level)) {
-          buffer_size = sqr(Soln_Block_List.Block[i_blk].info.dimen.ghost)*
-	    Soln_Block_List.Block[i_blk].info.dimen.ghost*
-                        Number_of_Solution_Variables;
-          l = -1;
-          // Unload ghost cell solution information as required.
-          if (!Send_Mesh_Geometry_Only) {
-             i_min = Soln_Blks[i_blk].ICl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     i_max = Soln_Blks[i_blk].ICl-1;
-             i_inc = 1;
-             j_min = Soln_Blks[i_blk].JCu+1;
-             j_max = Soln_Blks[i_blk].JCu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             j_inc = 1;
-             k_min = Soln_Blks[i_blk].KCl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             k_max = Soln_Blks[i_blk].KCl-1;
-             k_inc = 1;
-             i = Soln_Blks[i_blk].UnloadReceiveBuffer(Soln_Block_List.message_noreschange_bottomnorthwestcorner_recbuf[i_blk],
-                                                     l,buffer_size,
-                                                     i_min,i_max,i_inc,
-                                                     j_min,j_max,j_inc,k_min,k_max,k_inc);
-	     if (i != 0) return(6500);
-          } /* endif */
-          // Unload ghost cell mesh information as required.
-          if (Send_Mesh_Geometry_Only ||
-              Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar()) {
-	     i_min = Soln_Blks[i_blk].Grid.INl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     i_max = Soln_Blks[i_blk].Grid.INl-1;
-	     i_inc = 1;
-	     j_min = Soln_Blks[i_blk].Grid.JNu+1;
-	     j_max = Soln_Blks[i_blk].Grid.JNu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     j_inc = 1;
-	     k_min = Soln_Blks[i_blk].Grid.KNl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     k_max = Soln_Blks[i_blk].Grid.KNl-1;
-	     k_inc = 1;
-             x_ref = Soln_Blks[i_blk].Grid.Node[i_max+1][j_min-1][k_max+1].X; // Reference node location.
-	       for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-		   l = l + NUM_COMP_VECTOR3D;
-                   if (l >= buffer_size) return(6501);
-                   Soln_Blks[i_blk].Grid.Node[i][j][k].X =
-		     Vector3D(Soln_Block_List.message_noreschange_bottomnorthwestcorner_recbuf[i_blk][l-2],
-		              Soln_Block_List.message_noreschange_bottomnorthwestcorner_recbuf[i_blk][l-1],
-                              Soln_Block_List.message_noreschange_bottomnorthwestcorner_recbuf[i_blk][l])+x_ref;
-                } /* endfor */
-             i_min = Soln_Blks[i_blk].ICl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     i_max = Soln_Blks[i_blk].ICl-1;
-	     i_inc = 1;
-	     j_min = Soln_Blks[i_blk].JCu+1;
-	     j_max = Soln_Blks[i_blk].JCu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     j_inc = 1;
-             k_min = Soln_Blks[i_blk].KCl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             k_max = Soln_Blks[i_blk].KCl-1;
-             k_inc = 1;
-	       for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-	           Soln_Blks[i_blk].Grid.Cell[i][j][k].Xc = Soln_Blks[i_blk].Grid.centroid(i, j,k);
-	           Soln_Blks[i_blk].Grid.Cell[i][j][k].V = Soln_Blks[i_blk].Grid.volume(i, j,k);
-                } /* endfor */
-          } /* endif */
-       } /* endif */
-
-       ////////////////////////////////////////////////////////////////////////////////
-       // Unload receive buffer for Bottomnorth East corner neighbours of solution blocks. //
-       ////////////////////////////////////////////////////////////////////////////////
-       if (Soln_Block_List.Block[i_blk].used &&
-           (Soln_Block_List.Block[i_blk].nBNE == 1) &&
-           (Soln_Block_List.Block[i_blk].info.level ==
-            Soln_Block_List.Block[i_blk].infoBNE[0].level)) {
-          buffer_size = sqr(Soln_Block_List.Block[i_blk].info.dimen.ghost)*
-	    Soln_Block_List.Block[i_blk].info.dimen.ghost*
-                        Number_of_Solution_Variables;
-          l = -1;
-          // Unload ghost cell solution information as required.
-          if (!Send_Mesh_Geometry_Only) {
-             i_min = Soln_Blks[i_blk].ICu+1;
-	     i_max = Soln_Blks[i_blk].ICu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             i_inc = 1;
-             j_min = Soln_Blks[i_blk].JCu+1;
-             j_max = Soln_Blks[i_blk].JCu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             j_inc = 1;
-             k_min = Soln_Blks[i_blk].KCl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             k_max = Soln_Blks[i_blk].KCl-1;
-             k_inc = 1;
-             i = Soln_Blks[i_blk].UnloadReceiveBuffer(Soln_Block_List.message_noreschange_bottomnortheastcorner_recbuf[i_blk],
-                                                     l,buffer_size,
-                                                     i_min,i_max,i_inc,
-                                                     j_min,j_max,j_inc,k_min,k_max,k_inc);
-	     if (i != 0) return(6600);
-          } /* endif */
-          // Unload ghost cell mesh information as required.
-          if (Send_Mesh_Geometry_Only ||
-              Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar()) {
-	     i_min = Soln_Blks[i_blk].Grid.INu+1;
-	     i_max = Soln_Blks[i_blk].Grid.INu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     i_inc = 1;
-	     j_min = Soln_Blks[i_blk].Grid.JNu+1;
-	     j_max = Soln_Blks[i_blk].Grid.JNu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     j_inc = 1;
-	     k_min = Soln_Blks[i_blk].Grid.KNl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     k_max = Soln_Blks[i_blk].Grid.KNl-1;
-	     k_inc = 1;
-             x_ref = Soln_Blks[i_blk].Grid.Node[i_min-1][j_min-1][k_max+1].X; // Reference node location.
-	       for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-		   l = l + NUM_COMP_VECTOR3D;
-                   if (l >= buffer_size) return(6601);
-                   Soln_Blks[i_blk].Grid.Node[i][j][k].X =
-		     Vector3D(Soln_Block_List.message_noreschange_bottomnortheastcorner_recbuf[i_blk][l-2],
-		              Soln_Block_List.message_noreschange_bottomnortheastcorner_recbuf[i_blk][l-1],
-                              Soln_Block_List.message_noreschange_bottomnortheastcorner_recbuf[i_blk][l])+x_ref;
-              } /* endfor */
-             i_min = Soln_Blks[i_blk].ICu+1;
-	     i_max = Soln_Blks[i_blk].ICu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     i_inc = 1;
-	     j_min = Soln_Blks[i_blk].JCu+1;
-	     j_max = Soln_Blks[i_blk].JCu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     j_inc = 1;
-             k_min = Soln_Blks[i_blk].KCl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             k_max = Soln_Blks[i_blk].KCl-1;
-             k_inc = 1;
-	       for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-	           Soln_Blks[i_blk].Grid.Cell[i][j][k].Xc = Soln_Blks[i_blk].Grid.centroid(i, j,k);
-	           Soln_Blks[i_blk].Grid.Cell[i][j][k].V = Soln_Blks[i_blk].Grid.volume(i, j,k);
-                } /* endfor */
-          } /* endif */
-       } /* endif */
-
-       ////////////////////////////////////////////////////////////////////////////////
-       // Unload receive buffer for Bottomsouth East corner neighbours of solution blocks. //
-       ////////////////////////////////////////////////////////////////////////////////
-       if (Soln_Block_List.Block[i_blk].used &&
-           (Soln_Block_List.Block[i_blk].nBSE == 1) &&
-           (Soln_Block_List.Block[i_blk].info.level ==
-            Soln_Block_List.Block[i_blk].infoBSE[0].level)) {
-          buffer_size = sqr(Soln_Block_List.Block[i_blk].info.dimen.ghost)*
-	    Soln_Block_List.Block[i_blk].info.dimen.ghost*
-                        Number_of_Solution_Variables;
-          l = -1;
-          // Unload ghost cell solution information as required.
-          if (!Send_Mesh_Geometry_Only) {
-             i_min = Soln_Blks[i_blk].ICu+1;
-	     i_max = Soln_Blks[i_blk].ICu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             i_inc = 1;
-             j_min = Soln_Blks[i_blk].JCl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             j_max = Soln_Blks[i_blk].JCl-1;
-             j_inc = 1;
-             k_min = Soln_Blks[i_blk].KCl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             k_max = Soln_Blks[i_blk].KCl-1;
-             k_inc = 1;
-             i = Soln_Blks[i_blk].UnloadReceiveBuffer(Soln_Block_List.message_noreschange_bottomsoutheastcorner_recbuf[i_blk],
-                                                     l,buffer_size,
-                                                     i_min,i_max,i_inc,
-                                                     j_min,j_max,j_inc,k_min,k_max,k_inc);
-	     if (i != 0) return(6700);
-          } /* endif */
-          // Unload ghost cell mesh information as required.
-          if (Send_Mesh_Geometry_Only ||
-              Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar()) {
-	     i_min = Soln_Blks[i_blk].Grid.INu+1;
-	     i_max = Soln_Blks[i_blk].Grid.INu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     i_inc = 1;
-	     j_min = Soln_Blks[i_blk].Grid.JNl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     j_max = Soln_Blks[i_blk].Grid.JNl-1;
-	     j_inc = 1;
-	     k_min = Soln_Blks[i_blk].Grid.KNl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     k_max = Soln_Blks[i_blk].Grid.KNl-1;
-	     k_inc = 1;
-             x_ref = Soln_Blks[i_blk].Grid.Node[i_min-1][j_max+1][k_max+1].X; // Reference node location.
-	       for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-		   l = l + NUM_COMP_VECTOR3D;
-                   if (l >= buffer_size) return(6701);
-                   Soln_Blks[i_blk].Grid.Node[i][j][k].X =
-		     Vector3D(Soln_Block_List.message_noreschange_bottomsoutheastcorner_recbuf[i_blk][l-2],
-		              Soln_Block_List.message_noreschange_bottomsoutheastcorner_recbuf[i_blk][l-1],
-                              Soln_Block_List.message_noreschange_bottomsoutheastcorner_recbuf[i_blk][l])+x_ref;
-             } /* endfor */
-             i_min = Soln_Blks[i_blk].ICu+1;
-	     i_max = Soln_Blks[i_blk].ICu+Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     i_inc = 1;
-             j_min = Soln_Blks[i_blk].JCl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             j_max = Soln_Blks[i_blk].JCl-1;
-	     j_inc = 1;
-             k_min = Soln_Blks[i_blk].KCl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             k_max = Soln_Blks[i_blk].KCl-1;
-             k_inc = 1;
-	       for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-	           Soln_Blks[i_blk].Grid.Cell[i][j][k].Xc = Soln_Blks[i_blk].Grid.centroid(i, j,k);
-	           Soln_Blks[i_blk].Grid.Cell[i][j][k].V = Soln_Blks[i_blk].Grid.volume(i, j,k);
-                } /* endfor */
-          } /* endif */
-       } /* endif */
-
-
-       ////////////////////////////////////////////////////////////////////////////////
-       // Unload receive buffer for Bottomsouth West corner neighbours of solution blocks. //
-       ////////////////////////////////////////////////////////////////////////////////
-       if (Soln_Block_List.Block[i_blk].used &&
-           (Soln_Block_List.Block[i_blk].nBSW == 1) &&
-           (Soln_Block_List.Block[i_blk].info.level ==
-            Soln_Block_List.Block[i_blk].infoBSW[0].level)) {
-          buffer_size = sqr(Soln_Block_List.Block[i_blk].info.dimen.ghost)*
-	    Soln_Block_List.Block[i_blk].info.dimen.ghost*
-                        Number_of_Solution_Variables;
-          l = -1;
-          // Unload ghost cell solution information as required.
-          if (!Send_Mesh_Geometry_Only) {
-             i_min = Soln_Blks[i_blk].ICl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     i_max = Soln_Blks[i_blk].ICl-1;
-             i_inc = 1;
-             j_min = Soln_Blks[i_blk].JCl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             j_max = Soln_Blks[i_blk].JCl-1;
-             j_inc = 1;
-             k_min = Soln_Blks[i_blk].KCl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             k_max = Soln_Blks[i_blk].KCl-1;
-             k_inc = 1;
-             i = Soln_Blks[i_blk].UnloadReceiveBuffer(Soln_Block_List.message_noreschange_bottomsouthwestcorner_recbuf[i_blk],
-                                                     l,buffer_size,
-                                                     i_min,i_max,i_inc,
-                                                     j_min,j_max,j_inc,k_min,k_max,k_inc);
-	     if (i != 0) return(6800);
-          } /* endif */
-          // Unload ghost cell mesh information as required.
-          if (Send_Mesh_Geometry_Only ||
-              Number_of_Solution_Variables > Soln_Blks[i_blk].NumVar()) {
-	     i_min = Soln_Blks[i_blk].Grid.INl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     i_max = Soln_Blks[i_blk].Grid.INl-1;
-	     i_inc = 1;
-	     j_min = Soln_Blks[i_blk].Grid.JNl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     j_max = Soln_Blks[i_blk].Grid.JNl-1;
-	     j_inc = 1;
-	     k_min = Soln_Blks[i_blk].Grid.KNl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     k_max = Soln_Blks[i_blk].Grid.KNl-1;
-	     k_inc = 1;
-             x_ref = Soln_Blks[i_blk].Grid.Node[i_max+1][j_max+1][k_max+1].X; // Reference node location.
-	       for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-		   l = l + NUM_COMP_VECTOR3D;
-                   if (l >= buffer_size) return(6801);
-                   Soln_Blks[i_blk].Grid.Node[i][j][k].X =
-		     Vector3D(Soln_Block_List.message_noreschange_bottomsouthwestcorner_recbuf[i_blk][l-2],
-		              Soln_Block_List.message_noreschange_bottomsouthwestcorner_recbuf[i_blk][l-1],
-                              Soln_Block_List.message_noreschange_bottomsouthwestcorner_recbuf[i_blk][l])+x_ref;
-             } /* endfor */
-             i_min = Soln_Blks[i_blk].ICl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-	     i_max = Soln_Blks[i_blk].ICl-1;
-	     i_inc = 1;
-             j_min = Soln_Blks[i_blk].JCl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             j_max = Soln_Blks[i_blk].JCl-1;
-	     j_inc = 1;
-             k_min = Soln_Blks[i_blk].KCl-Soln_Block_List.Block[i_blk].info.dimen.ghost;
-             k_max = Soln_Blks[i_blk].KCl-1;
-             k_inc = 1;
-	       for ( k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc )
-             for ( j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc )
-                for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
-	           Soln_Blks[i_blk].Grid.Cell[i][j][k].Xc = Soln_Blks[i_blk].Grid.centroid(i, j,k);
-	           Soln_Blks[i_blk].Grid.Cell[i][j][k].V = Soln_Blks[i_blk].Grid.volume(i, j,k);
-             } /* endfor */
-          } /* endif */
-       } /* endif */
-
-
-
-
-    }  /* endfor */
-
+    } /* endfor */
+ 
     /* Unloading of receive buffers complete.  Return zero value. */
+    
+    return (0);
+    
+}
+        
+/***************************************************************************
+ * Routine: Unload_Receive_Message_Buffers_NoResChange_Mesh_Geometry_Only  *
+ *                                                                         *
+ * Unloads the receive message passing buffers for receiving mesh and      *
+ * geometry information only from neighbouring 3D hexahedral  multi-block  *
+ * solution blocks with no mesh resolution changes (works on entire 1D     *
+ * array of 3D solution blocks).                                           *
+ *                                                                         *
+ ***************************************************************************/
+template <class Hexa_Soln_Block>
+int Unload_Receive_Message_Buffers_NoResChange_Mesh_Geometry_Only(Hexa_Soln_Block *Soln_Blks,
+                                                                  AdaptiveBlock3D_List &Soln_Block_List) {
 
-    return(0);
+   int buffer_size, neighbour_buffer_size;
 
+   int i_min, i_max, i_inc, i, 
+       j_min, j_max, j_inc, j, 
+       k_min, k_max, k_inc, k, 
+       l;
+
+    int i_bound_elem; // index for boundary element, face edge or vertex
+    int number_neighbours[MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK];
+    AdaptiveBlock3D_Info neighbour_info[MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK];
+    int n_imin, n_imax, n_jmin, n_jmax, n_kmin, n_kmax;
+    int recv_bound_elem, recv_blknum;
+    
+    /* Unload the receive buffers for each solution block. */
+
+    for (int i_blk = 0 ; i_blk <= Soln_Block_List.Nblk-1 ; ++i_blk) {
+       if (Soln_Block_List.Block[i_blk].used) {
+          // Assign the boundary element information
+          number_neighbours[BE::BSW] = Soln_Block_List.Block[i_blk].nBSW;
+          neighbour_info[BE::BSW] =  Soln_Block_List.Block[i_blk].infoBSW[0];
+          
+          number_neighbours[BE::SW] = Soln_Block_List.Block[i_blk].nSW;
+          neighbour_info[BE::SW] =  Soln_Block_List.Block[i_blk].infoSW[0];
+          
+          number_neighbours[BE::TSW] = Soln_Block_List.Block[i_blk].nTSW;
+          neighbour_info[BE::TSW] =  Soln_Block_List.Block[i_blk].infoTSW[0];
+          
+          number_neighbours[BE::BW] = Soln_Block_List.Block[i_blk].nBW;
+          neighbour_info[BE::BW] =  Soln_Block_List.Block[i_blk].infoBW[0];
+          
+          number_neighbours[BE::W] = Soln_Block_List.Block[i_blk].nW;
+          neighbour_info[BE::W] =  Soln_Block_List.Block[i_blk].infoW[0];
+          
+          number_neighbours[BE::TW] = Soln_Block_List.Block[i_blk].nTW;
+          neighbour_info[BE::TW] =  Soln_Block_List.Block[i_blk].infoTW[0];
+          
+          number_neighbours[BE::BNW] = Soln_Block_List.Block[i_blk].nBNW;
+          neighbour_info[BE::BNW] =  Soln_Block_List.Block[i_blk].infoBNW[0];
+          
+          number_neighbours[BE::NW] = Soln_Block_List.Block[i_blk].nNW;
+          neighbour_info[BE::NW] =  Soln_Block_List.Block[i_blk].infoNW[0];
+          
+          number_neighbours[BE::TNW] = Soln_Block_List.Block[i_blk].nTNW;
+          neighbour_info[BE::TNW] =  Soln_Block_List.Block[i_blk].infoTNW[0];
+          
+          number_neighbours[BE::BS] = Soln_Block_List.Block[i_blk].nBS;
+          neighbour_info[BE::BS] =  Soln_Block_List.Block[i_blk].infoBS[0];
+          
+          number_neighbours[BE::S] = Soln_Block_List.Block[i_blk].nS;
+          neighbour_info[BE::S] =  Soln_Block_List.Block[i_blk].infoS[0];
+          
+          number_neighbours[BE::TS] = Soln_Block_List.Block[i_blk].nTS;
+          neighbour_info[BE::TS] =  Soln_Block_List.Block[i_blk].infoTS[0];
+          
+          number_neighbours[BE::B] = Soln_Block_List.Block[i_blk].nB;
+          neighbour_info[BE::B] =  Soln_Block_List.Block[i_blk].infoB[0];
+          
+          number_neighbours[BE::T] = Soln_Block_List.Block[i_blk].nT;
+          neighbour_info[BE::T] =  Soln_Block_List.Block[i_blk].infoT[0];
+          
+          number_neighbours[BE::BN] = Soln_Block_List.Block[i_blk].nBN;
+          neighbour_info[BE::BN] =  Soln_Block_List.Block[i_blk].infoBN[0];
+          
+          number_neighbours[BE::N] = Soln_Block_List.Block[i_blk].nN;
+          neighbour_info[BE::N] =  Soln_Block_List.Block[i_blk].infoN[0];
+          
+          number_neighbours[BE::TN] = Soln_Block_List.Block[i_blk].nTN;
+          neighbour_info[BE::TN] =  Soln_Block_List.Block[i_blk].infoTN[0];
+          
+          number_neighbours[BE::BSE] = Soln_Block_List.Block[i_blk].nBSE;
+          neighbour_info[BE::BSE] =  Soln_Block_List.Block[i_blk].infoBSE[0];
+          
+          number_neighbours[BE::SE] = Soln_Block_List.Block[i_blk].nSE;
+          neighbour_info[BE::SE] =  Soln_Block_List.Block[i_blk].infoSE[0];
+          
+          number_neighbours[BE::TSE] = Soln_Block_List.Block[i_blk].nTSE;
+          neighbour_info[BE::TSE] =  Soln_Block_List.Block[i_blk].infoTSE[0];
+          
+          number_neighbours[BE::BE] = Soln_Block_List.Block[i_blk].nBE;
+          neighbour_info[BE::BE] =  Soln_Block_List.Block[i_blk].infoBE[0];
+          
+          number_neighbours[BE::E] = Soln_Block_List.Block[i_blk].nE;
+          neighbour_info[BE::E] =  Soln_Block_List.Block[i_blk].infoE[0];
+
+          number_neighbours[BE::TE] = Soln_Block_List.Block[i_blk].nTE;
+          neighbour_info[BE::TE] =  Soln_Block_List.Block[i_blk].infoTE[0]; 
+          
+          number_neighbours[BE::BNE] = Soln_Block_List.Block[i_blk].nBNE;
+          neighbour_info[BE::BNE] =  Soln_Block_List.Block[i_blk].infoBNE[0]; 
+          
+          number_neighbours[BE::NE] = Soln_Block_List.Block[i_blk].nNE;
+          neighbour_info[BE::NE] =  Soln_Block_List.Block[i_blk].infoNE[0];  
+          
+          number_neighbours[BE::TNE] = Soln_Block_List.Block[i_blk].nTNE;
+          neighbour_info[BE::TNE] =  Soln_Block_List.Block[i_blk].infoTNE[0]; 
+       
+          for (int ii = -1; ii <= 1; ii++) {
+             for (int jj = -1; jj <= 1; jj++) {
+                for (int kk = -1; kk <= 1; kk++) {
+                   i_bound_elem = 9*(ii+1) + 3*(jj+1) + (kk+1);
+                
+                   if ((number_neighbours[i_bound_elem] == 1) && 
+                       (i_bound_elem != BE::ME) &&
+                       (Soln_Block_List.Block[i_blk].info.level == neighbour_info[i_bound_elem].level)) {
+                      buffer_size = ((abs(ii)*Soln_Block_List.Block[i_blk].info.dimen.ghost) + 
+				     ((!ii)*abs(Soln_Block_List.Block[i_blk].info.dimen.i)+1))*
+                                    ((abs(jj)*Soln_Block_List.Block[i_blk].info.dimen.ghost) + 
+				     ((!jj)*abs(Soln_Block_List.Block[i_blk].info.dimen.j)+1))*
+                                    ((abs(kk)*Soln_Block_List.Block[i_blk].info.dimen.ghost) + 
+				     ((!kk)*abs(Soln_Block_List.Block[i_blk].info.dimen.k)+1))*
+                                    (NUM_COMP_VECTOR3D) +
+                                    (((!ii)*abs(Soln_Block_List.Block[i_blk].info.dimen.i)))*
+                                    (((!jj)*abs(Soln_Block_List.Block[i_blk].info.dimen.j)))*
+                                    (((!kk)*abs(Soln_Block_List.Block[i_blk].info.dimen.k)));
+                      l = -1;
+                   
+                      // Unload ghost cell mesh and BC information.
+                      if (ii == -1) {
+                         n_imin = Soln_Blks[i_blk].Nghost-2;
+                         n_imax = Soln_Blks[i_blk].Nghost-1;
+                      } else if (ii == 1) {
+                         n_imin =  Soln_Blks[i_blk].Grid.INu+1;
+                         n_imax = Soln_Blks[i_blk].Grid.INu+Soln_Blks[i_blk].Nghost;
+                      } else {
+                         n_imin = 0;
+                         n_imax = 0;
+                      } /* endif */
+                      if (jj == -1) {
+                         n_jmin = Soln_Blks[i_blk].Nghost - 2;
+                         n_jmax = Soln_Blks[i_blk].Nghost - 1;
+                      } else if (jj == 1) {
+                         n_jmin =  Soln_Blks[i_blk].Grid.JNu+1;
+                         n_jmax = Soln_Blks[i_blk].Grid.JNu + Soln_Blks[i_blk].Nghost;
+                      } else {
+                         n_jmin = 0;
+                         n_jmax = 0;
+                      } /* endif */
+                      if (kk == -1) {
+                         n_kmin = Soln_Blks[i_blk].Nghost - 2;
+                         n_kmax = Soln_Blks[i_blk].Nghost - 1;
+                      } else if (kk == 1) {
+                         n_kmin =  Soln_Blks[i_blk].Grid.KNu+1;
+                         n_kmax = Soln_Blks[i_blk].Grid.KNu+ Soln_Blks[i_blk].Nghost;
+                      } else {
+                         n_kmin = 0;
+                         n_kmax = 0;
+                      } /* endif */
+                    
+                      i_min = (!ii)*Soln_Blks[i_blk].Grid.INl + n_imin;
+                      i_max = (!ii)*Soln_Blks[i_blk].Grid.INu + n_imax;
+                      i_inc = 1;
+                      j_min = (!jj)*Soln_Blks[i_blk].Grid.JNl + n_jmin;
+                      j_max = (!jj)*Soln_Blks[i_blk].Grid.JNu + n_jmax;
+                      j_inc = 1;
+                      k_min = (!kk)*Soln_Blks[i_blk].Grid.KNl + n_kmin;
+                      k_max = (!kk)*Soln_Blks[i_blk].Grid.KNu + n_kmax;
+                      k_inc = 1;
+                         
+                      i = Soln_Blks[i_blk].UnloadReceiveBuffer_Geometry(Soln_Block_List.message_noreschange_recbuf[i_blk][i_bound_elem],
+                                                                        l, buffer_size, 
+                                                                        i_min, i_max, i_inc, j_min, j_max, j_inc, k_min, k_max, k_inc);
+                      if (i != 0) return (6002);
+                     
+                      if (ii == -1) {
+                         n_imin = Soln_Blks[i_blk].Nghost -2 ;
+                         n_imax = Soln_Blks[i_blk].Nghost -1 ;
+                      } else if( ii == 1) {
+                         n_imin = Soln_Blks[i_blk].ICu+1;
+                         n_imax = Soln_Blks[i_blk].ICu + Soln_Blks[i_blk].Nghost;
+                      } else {
+                         n_imin = 0;
+                         n_imax = 0;
+                      } /* endif */
+                      if (jj == -1) {
+                         n_jmin = Soln_Blks[i_blk].Nghost - 2;
+                         n_jmax = Soln_Blks[i_blk].Nghost - 1;
+                      } else if ( jj == 1) {
+                         n_jmin =  Soln_Blks[i_blk].JCu+1;
+                         n_jmax = Soln_Blks[i_blk].JCu+ Soln_Blks[i_blk].Nghost;
+                      } else {
+                         n_jmin = 0;
+                         n_jmax = 0;
+                      } /* endif */
+                      if (kk == -1) {
+                         n_kmin = Soln_Blks[i_blk].Nghost - 2;
+                         n_kmax =  Soln_Blks[i_blk].Nghost - 1;
+                      } else if (kk == 1) {
+                         n_kmin =  Soln_Blks[i_blk].KCu+1;
+                         n_kmax = Soln_Blks[i_blk].KCu+ Soln_Blks[i_blk].Nghost;
+                      } else {
+                         n_kmin = 0;
+                         n_kmax = 0;
+                      } /* endif */
+                    
+                      i_min = (!ii)*Soln_Blks[i_blk].ICl + n_imin;
+                      i_max = (!ii)*Soln_Blks[i_blk].ICu + n_imax;
+                      i_inc = 1;
+                      j_min = (!jj)*Soln_Blks[i_blk].JCl + n_jmin;
+                      j_max = (!jj)*Soln_Blks[i_blk].JCu + n_jmax;
+                      j_inc = 1;
+                      k_min = (!kk)*Soln_Blks[i_blk].KCl + n_kmin;
+                      k_max = (!kk)*Soln_Blks[i_blk].KCu + n_kmax;
+                      k_inc = 1;
+                    
+/*                       i = Soln_Blks[i_blk].UnloadReceiveBuffer_BCs(Soln_Block_List.message_noreschange_recbuf[i_blk][i_bound_elem], */
+/*                                                                    l, buffer_size,  */
+/*                                                                    i_min, i_max, i_inc, j_min, j_max, j_inc, k_min, k_max, k_inc, */
+/*                                                                    ii, jj, kk); */
+/*                       if (i != 0) return (6003); */
+		   } /* endif */
+
+		} /* end of for k*/
+	     } /* end of for j*/
+	  } /* end of for i*/
+
+       } /* endif */
+    } /* endfor */
+ 
+    /* Unloading of receive buffers complete.  Return zero value. */
+    
+    return (0);
+    
 }
 
 /******************************************************************
@@ -9384,12 +1058,10 @@ int Unload_Receive_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
 template <class Hexa_Soln_Block>
 int Unload_Receive_Message_Buffers_ResChange_FineToCoarse(Hexa_Soln_Block *Soln_Blks,
                                                           AdaptiveBlock3D_List &Soln_Block_List,
-                                                          const int Number_of_Solution_Variables,
-                                                          const int Send_Mesh_Geometry_Only,
                                                           const int Send_Conservative_Solution_Fluxes) {
 
   cout << "\nERROR: Unload_Receive_Message_Buffers_ResChange_FineToCoarse() not defined for 3 dimensions\n";
-  return(2);
+  return (2);
 
 }
 
@@ -9405,85 +1077,128 @@ int Unload_Receive_Message_Buffers_ResChange_FineToCoarse(Hexa_Soln_Block *Soln_
  ******************************************************************/
 template <class Hexa_Soln_Block>
 int Unload_Receive_Message_Buffers_ResChange_CoarseToFine(Hexa_Soln_Block *Soln_Blks,
-                                                          AdaptiveBlock3D_List &Soln_Block_List,
-                                                          const int Number_of_Solution_Variables,
-                                                          const int Send_Mesh_Geometry_Only) {
+                                                          AdaptiveBlock3D_List &Soln_Block_List) {
 
   cout << "\nERROR: Unload_Receive_Message_Buffers_ResChange_CoarseToFine() not defined for 3 dimensions\n";
-  return(2);
+  return (2);
  
 }
 
 /********************************************************
- * Routine: Send_All_Messages                           *
+ * Routine: Send_Messages                               *
  *                                                      *
  * Loads, sends and exchanges, and then unloads all     *
  * messages for sharing solution information between    *
- * neighbouring 3D hexahedrial multi-block solution   *
+ * neighbouring 3D hexahedral multi-block solution      *
  * blocks (works on entire 1D array of 3D solution      *
  * blocks).                                             *
  *                                                      *
  ********************************************************/
 template <class Hexa_Soln_Block>
-int Send_All_Messages(Hexa_Soln_Block *Soln_Blks,
-                      AdaptiveBlock3D_List &Soln_Block_List,
-                      const int Number_of_Solution_Variables,
-                      const int Send_Mesh_Geometry_Only) {
+int Send_Messages(Hexa_Soln_Block *Soln_Blks,
+                  AdaptiveBlock3D_List &Soln_Block_List) {
 
-    int error_flag;
+    int error_flag, number_of_solution_variables;
 
     /* Load message buffers at block interfaces with no cell resolution change. */
-
-
+   
     error_flag = Load_Send_Message_Buffers_NoResChange(Soln_Blks,
-                                                       Soln_Block_List,
-                                                       Number_of_Solution_Variables,
-                                                       Send_Mesh_Geometry_Only);
+                                                       Soln_Block_List);
     if (error_flag) {
        cout << "\n " << CFFC_Version() 
             << " Message Passing Error: Load_Send_Message_Buffers_NoResChange, "
             << "flag = " << error_flag << ".\n";
-       return(error_flag);
+       return (error_flag);
     } /* endif */
-
 
     /* Exchange message buffers at block interfaces with no cell resolution change. */
 
-    error_flag = AdaptiveBlock3D_List::Exchange_Messages_NoResChange(Soln_Block_List,
-                                                                     Number_of_Solution_Variables);
-    if (error_flag) {
-       cout << "\n " << CFFC_Version()
-            << " Message Passing Error: Exchange_Messages_NoResChange. "
-            << "flag = " << error_flag << ".\n";
-       return(error_flag);
+    // Get the number of variables.
+    for (int i_blk = 0 ; i_blk <= Soln_Block_List.Nblk-1 ; ++i_blk) {
+       if (Soln_Block_List.Block[i_blk].used) {
+	  number_of_solution_variables = Soln_Blks[i_blk].NumVar();
+          break;
+       } /* endif */
     } /* endif */
 
+    error_flag = AdaptiveBlock3D_List::Exchange_Messages_NoResChange(Soln_Block_List,
+                                                                     number_of_solution_variables);
+    if (error_flag) {
+       cout << "\n " << CFFC_Version()
+            << " Message Passing Error: Exchange_Messages_NoResChange, "
+            << "flag = " << error_flag << ".\n";
+       return (error_flag);
+    } /* endif */
 
+    
     /* Unload message buffers at block interfaces with no cell resolution change. */
 
     error_flag = Unload_Receive_Message_Buffers_NoResChange(Soln_Blks,
-                                                            Soln_Block_List,
-                                                            Number_of_Solution_Variables,
-                                                            Send_Mesh_Geometry_Only);
+                                                            Soln_Block_List);
     if (error_flag) {
        cout << "\n " << CFFC_Version()
             << " Message Passing Error: Unload_Receive_Message_Buffers_NoResChange, "
             << "flag = " << error_flag << ".\n";
-       return(error_flag);
+       return (error_flag);
+    } /* endif */
+ 
+    return (error_flag);
+
+}
+
+/********************************************************
+ * Routine: Send_Messages_Mesh_Geometry_Only            *
+ *                                                      *
+ * Loads, sends and exchanges, and then unloads all     *
+ * messages for sharing mesh and geometry information   *
+ * between neighbouring 3D hexahedral multi-block       *
+ * solution blocks (works on entire 1D array of 3D      *
+ * solution blocks).                                    *
+ *                                                      *
+ ********************************************************/
+template <class Hexa_Soln_Block>
+int Send_Messages_Mesh_Geometry_Only(Hexa_Soln_Block *Soln_Blks,
+                                     AdaptiveBlock3D_List &Soln_Block_List) {
+
+    int error_flag;
+
+    /* Load message buffers at block interfaces with no cell resolution change. */
+   
+    error_flag = Load_Send_Message_Buffers_NoResChange_Mesh_Geometry_Only(Soln_Blks,
+                                                                          Soln_Block_List);
+    if (error_flag) {
+       cout << "\n " << CFFC_Version() 
+            << " Message Passing Error: Load_Send_Message_Buffers_NoResChange_Mesh_Geometry_Only, "
+            << "flag = " << error_flag << ".\n";
+       return (error_flag);
     } /* endif */
 
+    /* Exchange message buffers at block interfaces with no cell resolution change. */
 
-    /* Update corner ghost cell information for cases where there are no corner neighbours. */
+    error_flag = 
+       AdaptiveBlock3D_List::Exchange_Messages_NoResChange_Mesh_Geometry_Only(Soln_Block_List);
+    if (error_flag) {
+       cout << "\n " << CFFC_Version()
+            << " Message Passing Error: Exchange_Messages_NoResChange_Mesh_Geometry_Only, "
+            << "flag = " << error_flag << ".\n";
+       return (error_flag);
+    } /* endif */
 
-/*    if (Send_Mesh_Geometry_Only) { */
-/*       for (int nb = 0; nb < Soln_Block_List.Nblk; nb++) { */
-/*         if (Soln_Block_List.Block[nb].used == ADAPTIVEBLOCK3D_USED) Update_Corner_Ghost_Nodes(Soln_Blks[nb].Grid); */
-/*       } /\* endfor *\/ */
-/*     } /\* endif *\/ */
+    
+    /* Unload message buffers at block interfaces with no cell resolution change. */
 
+    error_flag = Unload_Receive_Message_Buffers_NoResChange_Mesh_Geometry_Only(Soln_Blks,
+                                                                               Soln_Block_List);
+    if (error_flag) {
+       cout << "\n " << CFFC_Version()
+            << " Message Passing Error: Unload_Receive_Message_Buffers_NoResChange_Mesh_Geometry_Only, "
+            << "flag = " << error_flag << ".\n";
+       return (error_flag);
+    } /* endif */
+ 
     /* Return error flag. */
 
-    return(error_flag);
+    return (error_flag);
 
 }
 
@@ -9492,7 +1207,7 @@ int Send_All_Messages(Hexa_Soln_Block *Soln_Blks,
  *                                                      *
  * Loads, sends and exchanges, and then unloads the     *
  * conservative flux corrections for neighbouring 3D    *
- * hexahedrial multi-block solution blocks (works on  *
+ * hexahedral multi-block solution blocks (works on     *
  * entire 1D array of 3D solution blocks).              *
  *                                                      *
  ********************************************************/
@@ -9507,8 +1222,6 @@ int Send_Conservative_Flux_Corrections(Hexa_Soln_Block *Soln_Blks,
 
     error_flag = Load_Send_Message_Buffers_ResChange_FineToCoarse(Soln_Blks,
                                                                   Soln_Block_List,
-                                                                  Number_of_Solution_Variables,
-                                                                  OFF,
                                                                   ON);
     if (error_flag) {
        cout << "\n " << CFFC_Version() 
@@ -9533,8 +1246,6 @@ int Send_Conservative_Flux_Corrections(Hexa_Soln_Block *Soln_Blks,
 
     error_flag = Unload_Receive_Message_Buffers_ResChange_FineToCoarse(Soln_Blks,
                                                                        Soln_Block_List,
-                                                                       Number_of_Solution_Variables,
-                                                                       OFF,
                                                                        ON);
     if (error_flag) {
        cout << "\n " << CFFC_Version() 

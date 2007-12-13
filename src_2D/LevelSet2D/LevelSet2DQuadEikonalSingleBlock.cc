@@ -1,10 +1,10 @@
-/**********************************************************************
- * LevelSet2DQuadEikonalSingleBlock.cc                                *
- *                                                                    *
- * Single-block versions of subroutines for the solution of the       *
- * Eikonal equations for the 2D Level Set multi-block quadrilateral   *
- * mesh solution classes.                                             *
- *                                                                    *
+/******************************************************************//**
+ * \file LevelSet2DQuadEikonalSingleBlock.cc                          
+ *                                                                    
+ * Single-block versions of subroutines for the solution of the       
+ * Eikonal equations for the 2D Level Set multi-block quadrilateral   
+ * mesh solution classes.                                             
+ *                                                                    
  **********************************************************************/
 
 // Include 2D LevelSet quadrilateral mesh solution header file.
@@ -17,13 +17,66 @@
  * LevelSet2D_Quad_Block -- Eikonal Single Block External Subroutines.*
  **********************************************************************/
 
-/**********************************************************************
- * Routine: CFL_Eikonal                                               *
- *                                                                    *
- * Determines the allowable global and local time steps (for explicit *
- * Euler time stepping scheme) for the specified quadrilateral        *
- * solution block according to the Courant-Friedrichs-Lewy condition. *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Eikonal_Error                                             
+ *                                                                    
+ * This routine calculates this block's area-weighted error in the    
+ * Eikonal equation solution. Local Error = \f$| \nabla(\phi) - 1 |\f$         
+ *                                                                    
+ **********************************************************************/
+int Eikonal_Error(LevelSet2D_Quad_Block &SolnBlk,
+		  LevelSet2D_Input_Parameters &IP,
+		  double &block_error,
+		  double &block_area) {
+
+  double grad;
+
+  // Error in Eikonal equation at (i,j):
+  double local_error;
+  local_error = ZERO;
+
+  // Perform the biased reconstruction within each cell of the
+  // computational grid.
+  switch(IP.i_Reconstruction) {
+  case RECONSTRUCTION_LINEAR_ESSENTIALLY_NON_OSCILLATORY :
+  case RECONSTRUCTION_QUADRATIC_ESSENTIALLY_NON_OSCILLATORY :
+  case RECONSTRUCTION_CUBIC_ESSENTIALLY_NON_OSCILLATORY :
+    Reconstruction_EssentiallyNonOscillatory(SolnBlk,1,IP.i_Reconstruction);
+    break;
+  case RECONSTRUCTION_WEIGHTED_ESSENTIALLY_NON_OSCILLATORY :
+    Reconstruction_WeightedEssentiallyNonOscillatory(SolnBlk,1);
+    break;
+  default:
+    Reconstruction_EssentiallyNonOscillatory(SolnBlk,1,IP.i_Reconstruction);
+    break;
+  };
+
+  // Compute the error.
+  for (int j = SolnBlk.JCl; j <= SolnBlk.JCu; j++) {
+    for (int i = SolnBlk.ICl; i <= SolnBlk.ICu; i++) {
+      grad = sqrt(max(sqr(max(SolnBlk.dUdxm[i][j].psi,ZERO)),
+		      sqr(min(SolnBlk.dUdxp[i][j].psi,ZERO))) +
+		  max(sqr(max(SolnBlk.dUdym[i][j].psi,ZERO)),
+		      sqr(min(SolnBlk.dUdyp[i][j].psi,ZERO))));
+
+      local_error = abs(grad-ONE);
+      block_error = block_error + local_error*SolnBlk.Grid.Cell[i][j].A;
+      block_area = block_area + SolnBlk.Grid.Cell[i][j].A;
+    }
+  }
+
+  // Eikonal error calculation is successful.
+  return 0;
+
+}
+
+/******************************************************************//**
+ * Routine: CFL_Eikonal                                               
+ *                                                                    
+ * Determines the allowable global and local time steps (for explicit 
+ * Euler time stepping scheme) for the specified quadrilateral        
+ * solution block according to the Courant-Friedrichs-Lewy condition. 
+ *                                                                    
  **********************************************************************/
 double CFL_Eikonal(LevelSet2D_Quad_Block &SolnBlk) {
 
@@ -47,12 +100,12 @@ double CFL_Eikonal(LevelSet2D_Quad_Block &SolnBlk) {
 
 }
 
-/**********************************************************************
- * Routine: dUdt_Multistage_Eikonal                                   *
- *                                                                    *
- * This routine evaulates the stage solution residual for the Eikonal *
- * equation on the specified solution block.                          *
- *                                                                    *
+/******************************************************************//**
+ * Routine: dUdt_Multistage_Eikonal                                   
+ *                                                                    
+ * This routine evaulates the stage solution residual for the Eikonal 
+ * equation on the specified solution block.                          
+ *                                                                    
  **********************************************************************/
 int dUdt_Multistage_Eikonal(LevelSet2D_Quad_Block &SolnBlk,
 			    const int i_stage,
@@ -159,6 +212,16 @@ int dUdt_Multistage_Eikonal(LevelSet2D_Quad_Block &SolnBlk,
 
 	switch(IP.i_Eikonal_Scheme) {
 	case EIKONAL_SCHEME_SUSSMAN :
+	  /**********************************************************************
+	   * Sussman, Smereka, Osher's reinitialization scheme.                 *
+	   *                                                                    *
+	   * See: Sussman, Smereka, Osher, "A level set approach for computing  *
+	   *      solutions to incompressible two-phase flow", J. Comput. Phys. *
+	   *      Vol. 114, pp. 146-159 (1994).                                 *
+	   *                                                                    *
+	   * The scheme is set up so that the gradient is calculated based on   *
+	   * the user's choice of Reconstruction_Type (ie. WENO).               *
+	   **********************************************************************/
 	  // Update the Eikonal equation residual based on the Godunov
 	  // scheme for a Hamilton-Jacobi type equation.
 	  if (SolnBlk.sign[i][j] > ZERO) {
@@ -176,6 +239,13 @@ int dUdt_Multistage_Eikonal(LevelSet2D_Quad_Block &SolnBlk,
 	  }
 	  break;
 	case EIKONAL_SCHEME_RUSSO_SMEREKA :
+	  /**********************************************************************
+	   * Russo and Smereka's new method for computing the signed distance   *
+	   * function.                                                          *
+	   *                                                                    *
+	   * See: Russo, Smereka, "A Remark on Computing Distance Functions",   *
+	   *      J. Comput. Phys. Vol. 163, pp. 51-67 (2000).                  *
+	   **********************************************************************/
 	  if ((SolnBlk.Uoo[i][j].psi*SolnBlk.Uoo[i-1][j].psi < 0) ||
 	      (SolnBlk.Uoo[i][j].psi*SolnBlk.Uoo[i+1][j].psi < 0) ||
 	      (SolnBlk.Uoo[i][j].psi*SolnBlk.Uoo[i][j-1].psi < 0) ||
@@ -183,13 +253,23 @@ int dUdt_Multistage_Eikonal(LevelSet2D_Quad_Block &SolnBlk,
 	    // The current cell is within one grid point from the level set.
 	    dx = max(TOLER,min(fabs(SolnBlk.Grid.Cell[2][2].Xc.x-SolnBlk.Grid.Cell[1][2].Xc.x),
 			       fabs(SolnBlk.Grid.Cell[2][2].Xc.y-SolnBlk.Grid.Cell[2][1].Xc.y)));
-	    SolnBlk.dUdt[i][j][k_residual].psi += (IP.Eikonal_CFL_Number*SolnBlk.dt[i][j])*(TWO*SolnBlk.Uoo[i][j].psi)/sqrt(sqr(SolnBlk.Uoo[i+1][j].psi-SolnBlk.Uoo[i-1][j].psi) +
-										  sqr(SolnBlk.Uoo[i][j+1].psi-SolnBlk.Uoo[i][j-1].psi));
-	    if (SolnBlk.Uoo[i][j].psi < ZERO) {
-	      SolnBlk.dUdt[i][j][k_residual].psi += (IP.Eikonal_CFL_Number*SolnBlk.dt[i][j])*fabs(SolnBlk.U[i][j].psi)/dx;
-	    } else if (SolnBlk.Uoo[i][j].psi > ZERO) {
-	      SolnBlk.dUdt[i][j][k_residual].psi -= (IP.Eikonal_CFL_Number*SolnBlk.dt[i][j])*fabs(SolnBlk.U[i][j].psi)/dx;
-	    }
+
+
+	    double D;
+	    D = (TWO*SolnBlk.Uoo[i][j].psi)/sqrt(sqr(SolnBlk.Uoo[i+1][j].psi-SolnBlk.Uoo[i-1][j].psi) + sqr(SolnBlk.Uoo[i][j+1].psi-SolnBlk.Uoo[i][j-1].psi));
+
+	    SolnBlk.dUdt[i][j][k_residual].psi -= IP.Eikonal_CFL_Number*SolnBlk.dt[i][j]*(SolnBlk.sign[i][j]*fabs(SolnBlk.U[i][j].psi)/dx-D);
+
+
+
+// 	    SolnBlk.dUdt[i][j][k_residual].psi += (IP.Eikonal_CFL_Number*SolnBlk.dt[i][j])*(TWO*SolnBlk.Uoo[i][j].psi)/sqrt(sqr(SolnBlk.Uoo[i+1][j].psi-SolnBlk.Uoo[i-1][j].psi) + sqr(SolnBlk.Uoo[i][j+1].psi-SolnBlk.Uoo[i][j-1].psi));
+
+
+// 	    if (SolnBlk.Uoo[i][j].psi < ZERO) {
+// 	      SolnBlk.dUdt[i][j][k_residual].psi += (IP.Eikonal_CFL_Number*SolnBlk.dt[i][j])*fabs(SolnBlk.U[i][j].psi)/dx;
+// 	    } else if (SolnBlk.Uoo[i][j].psi > ZERO) {
+// 	      SolnBlk.dUdt[i][j][k_residual].psi -= (IP.Eikonal_CFL_Number*SolnBlk.dt[i][j])*fabs(SolnBlk.U[i][j].psi)/dx;
+// 	    }
 
 	  } else {
 	    // The current cell is not within one grid point from the
@@ -231,12 +311,12 @@ int dUdt_Multistage_Eikonal(LevelSet2D_Quad_Block &SolnBlk,
   
 }
 
-/**********************************************************************
- * Routine: Update_Multistage_Eikonal                                 *
- *                                                                    *
- * This routine updates solution states of the given solution block   *
- * for a variety of multi-stage explicit time integration schemes.    *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Update_Multistage_Eikonal                                 
+ *                                                                    
+ * This routine updates solution states of the given solution block   
+ * for a variety of multi-stage explicit time integration schemes.    
+ *                                                                    
  **********************************************************************/
 int Update_Multistage_Eikonal(LevelSet2D_Quad_Block &SolnBlk,
 			      const int i_stage,

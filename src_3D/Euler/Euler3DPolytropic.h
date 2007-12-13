@@ -21,6 +21,10 @@
 #include "Euler3DPolytropicInput.h"
 #endif // _EULER3D_POLYTROPIC_INPUT_INCLUDED
 
+#ifndef _EULER3D_POLYTROPIC_NKS_INLCUDED
+#include "Euler3DPolytropicNKS.h"
+#endif //_EULER3D_POLYTROPIC_NKS_INLCUDED
+
 #ifndef _MPI_INCLUDED
 #include "../MPI/MPI.h"
 #endif // _MPI_INCLUDED

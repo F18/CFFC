@@ -1,10 +1,10 @@
-/**********************************************************************
- * LevelSet2DQuadHamiltonJacobiSingleBlock.cc                         *
- *                                                                    *
- * Single-block versions of subroutines for the solution of the 2D    *
- * Hamilton-Jacobi-type equations for the 2D Level Set multi-block    *
- * quadrilateral mesh solution classes.                               *
- *                                                                    *
+/******************************************************************//**
+ * \file LevelSet2DQuadHamiltonJacobiSingleBlock.cc                   
+ *                                                                    
+ * Single-block versions of subroutines for the solution of the 2D    
+ * Hamilton-Jacobi-type equations for the 2D Level Set multi-block    
+ * quadrilateral mesh solution classes.                               
+ *                                                                    
  **********************************************************************/
 
 // Include 2D LevelSet quadrilateral mesh solution header file.
@@ -18,18 +18,19 @@
  *                          Subroutines.                              *
  **********************************************************************/
 
-/**********************************************************************
- * Routine: CFL_Hamilton_Jacobi                                       *
- *                                                                    *
- * Determines the allowable global and local time steps (for explicit *
- * Euler time stepping scheme) for the specified quadrilateral        *
- * solution block according to the Courant-Friedrichs-Lewy condition. *
- *                                                                    *
+/******************************************************************//**
+ * Routine: CFL_Hamilton_Jacobi                                       
+ *                                                                    
+ * Determines the allowable global and local time steps (for explicit 
+ * Euler time stepping scheme) for the specified quadrilateral        
+ * solution block according to the Courant-Friedrichs-Lewy condition. 
+ *                                                                    
  **********************************************************************/
-double CFL_Hamilton_Jacobi(LevelSet2D_Quad_Block &SolnBlk) {
+double CFL_Hamilton_Jacobi(LevelSet2D_Quad_Block &SolnBlk,
+			   LevelSet2D_Input_Parameters &IP) {
 
-  double dtMin = MILLION, d_i, d_j, w_i, w_j, v_i, v_j, f;
-  double dt_d, dt_v, dt_f;
+  double dtMin = MILLION, d_i, d_j, w_i, w_j, v_i, v_j, f, b;
+  double dt_d, dt_v, dt_f, dt_k;
   Vector2D W, dpsi;
 
   for (int j = SolnBlk.JCl-SolnBlk.Nghost; j <= SolnBlk.JCu+SolnBlk.Nghost; j++) {
@@ -40,12 +41,18 @@ double CFL_Hamilton_Jacobi(LevelSet2D_Quad_Block &SolnBlk) {
 	d_i = TWO*(SolnBlk.Grid.Cell[i][j].A/(SolnBlk.Grid.lfaceE(i,j)+SolnBlk.Grid.lfaceW(i,j)));
 	d_j = TWO*(SolnBlk.Grid.Cell[i][j].A/(SolnBlk.Grid.lfaceN(i,j)+SolnBlk.Grid.lfaceS(i,j)));
 	dt_d = min(d_i,d_j);
+
 	f = fabs(SolnBlk.U[i][j].F);
 	dt_f = min(d_i,d_j)/(fabs(f) + TOLER);
+
 	v_i = HALF*(SolnBlk.U[i][j].V*(SolnBlk.Grid.nfaceE(i,j)-SolnBlk.Grid.nfaceW(i,j)));
 	v_j = HALF*(SolnBlk.U[i][j].V*(SolnBlk.Grid.nfaceN(i,j)-SolnBlk.Grid.nfaceS(i,j)));
 	dt_v = min(d_i/(fabs(v_i)+TOLER),d_j/(fabs(v_j)+TOLER));
-	SolnBlk.dt[i][j] = min(dt_d,min(dt_f,dt_v));
+
+	b = fabs(IP.Curvature_Speed);
+	dt_k = min(sqr(d_i),sqr(d_j))/(fabs(b) + TOLER);
+
+	SolnBlk.dt[i][j] = min(min(dt_d,dt_k),min(dt_f,dt_v));
 	dtMin = min(dtMin,SolnBlk.dt[i][j]);
       }
     }
@@ -56,13 +63,13 @@ double CFL_Hamilton_Jacobi(LevelSet2D_Quad_Block &SolnBlk) {
 
 }
 
-/**********************************************************************
- * Routine: dUdt_Multistage_Hamilton_Jacobi                           *
- *                                                                    *
- * This routine determines the solution residuals for a given stage   *
- * of a variety of multi-stage explicit time integration schemes for  *
- * a given solution block.                                            *
- *                                                                    *
+/******************************************************************//**
+ * Routine: dUdt_Multistage_Hamilton_Jacobi                           
+ *                                                                    
+ * This routine determines the solution residuals for a given stage   
+ * of a variety of multi-stage explicit time integration schemes for  
+ * a given solution block.                                            
+ *                                                                    
  **********************************************************************/
 int dUdt_Multistage_Hamilton_Jacobi(LevelSet2D_Quad_Block &SolnBlk,
 				    const int i_stage,
@@ -106,8 +113,8 @@ int dUdt_Multistage_Hamilton_Jacobi(LevelSet2D_Quad_Block &SolnBlk,
     break;
   };
 
-  // Perform the reconstruction within each cell of the
-  // computational grid for this stage.
+  /* Perform the biased reconstruction within each cell of the
+     computational grid for this stage. */
   switch(IP.i_Reconstruction) {
   case RECONSTRUCTION_LINEAR_ESSENTIALLY_NON_OSCILLATORY :
   case RECONSTRUCTION_QUADRATIC_ESSENTIALLY_NON_OSCILLATORY :
@@ -122,8 +129,12 @@ int dUdt_Multistage_Hamilton_Jacobi(LevelSet2D_Quad_Block &SolnBlk,
     break;
   };
 
-  // Evaluate the time rate of change of the solution (i.e., the 
-  // solution residuals).
+  /* Perform the reconstruction of the curvature within each cell of the
+     computational grid for this stage. */
+  Reconstruction_Curvature(SolnBlk,IP,1);
+
+  /* Evaluate the time rate of change of the solution (i.e., the 
+     solution residuals). */
 
   for (int j = SolnBlk.JCl-1; j <= SolnBlk.JCu+1; j++) {
 
@@ -173,11 +184,11 @@ int dUdt_Multistage_Hamilton_Jacobi(LevelSet2D_Quad_Block &SolnBlk,
 	SolnBlk.dUdy[i][j].psi = sqrt(max(sqr(min(SolnBlk.dUdxm[i][j].psi,ZERO)),sqr(max(SolnBlk.dUdxp[i][j].psi,ZERO))) +
 				      max(sqr(min(SolnBlk.dUdym[i][j].psi,ZERO)),sqr(max(SolnBlk.dUdyp[i][j].psi,ZERO))));
 
-	// Add the front propagation contribution to the level set
- 	// function solution residual:
+	// Add the front propagation contribution to the level set function solution residual.
  	SolnBlk.dUdt[i][j][k_residual].psi -= (IP.Hamilton_Jacobi_CFL_Number*SolnBlk.dt[i][j])*
 	                                      (max(SolnBlk.U[i][j].F,ZERO)*SolnBlk.dUdx[i][j].psi + 
 					       min(SolnBlk.U[i][j].F,ZERO)*SolnBlk.dUdy[i][j].psi);
+
 	// Add the convective/bulk-velocity flow contribution to the
 	// level set function solution residual.
  	SolnBlk.dUdt[i][j][k_residual].psi -= (IP.Hamilton_Jacobi_CFL_Number*SolnBlk.dt[i][j])*
@@ -186,6 +197,11 @@ int dUdt_Multistage_Hamilton_Jacobi(LevelSet2D_Quad_Block &SolnBlk,
  					       max(SolnBlk.U[i][j].V.y,ZERO)*SolnBlk.dUdym[i][j].psi +
  					       min(SolnBlk.U[i][j].V.y,ZERO)*SolnBlk.dUdyp[i][j].psi);
 
+	// Add the curvature-based flow contribution to the
+	// level set function solution residual.
+	SolnBlk.dUdt[i][j][k_residual].psi += (IP.Hamilton_Jacobi_CFL_Number*SolnBlk.dt[i][j])*
+	                                      IP.Curvature_Speed*SolnBlk.kappa[i][j].psi*SolnBlk.gradMag[i][j].psi;
+	
       }
 
       SolnBlk.dUdt[i][SolnBlk.JCl-1][k_residual] = LevelSet2D_ZERO;
@@ -205,12 +221,12 @@ int dUdt_Multistage_Hamilton_Jacobi(LevelSet2D_Quad_Block &SolnBlk,
 
 }
 
-/**********************************************************************
- * Routine: Update_Solution_Multistage_Hamilton_Jacobi                *
- *                                                                    *
- * This routine updates solution states of the given solution block   *
- * for a variety of multi-stage explicit time integration schemes.    *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Update_Solution_Multistage_Hamilton_Jacobi                
+ *                                                                    
+ * This routine updates solution states of the given solution block   
+ * for a variety of multi-stage explicit time integration schemes.    
+ *                                                                    
  **********************************************************************/
 int Update_Solution_Multistage_Hamilton_Jacobi(LevelSet2D_Quad_Block &SolnBlk,
 					       const int i_stage,

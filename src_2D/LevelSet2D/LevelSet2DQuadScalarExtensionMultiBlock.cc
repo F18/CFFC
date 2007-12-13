@@ -1,9 +1,9 @@
-/**********************************************************************
- * LevelSet2DQuadScalarExtensionMultiBlock.cc                         *
- *                                                                    *
- * Scalar extension multi-block versions of subroutines for 2D Level  *
- * Set multi-block quadrilateral mesh solution classes.               *
- *                                                                    *
+/******************************************************************//**
+ * \file LevelSet2DQuadScalarExtensionMultiBlock.cc                   
+ *                                                                    
+ * Scalar extension multi-block versions of subroutines for 2D Level  
+ * Set multi-block quadrilateral mesh solution classes.               
+ *                                                                    
  **********************************************************************/
 
 // Include 2D Level Set quadrilateral mesh solution header file.
@@ -17,14 +17,14 @@
  *                          Subroutines.                              *
  **********************************************************************/
 
-/**********************************************************************
- * Routine: Explicit_Scalar_Extension_Equation                        *
- *                                                                    *
- * This routine manages the explicit solution of the scalar (front    *
- * speed) extension equation which extends any scalar defined on an   *
- * arbitrary interface to the rest of the flow domain in rays normal  *
- * to the front.                                                      *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Explicit_Scalar_Extension_Equation                        
+ *                                                                    
+ * This routine manages the explicit solution of the scalar (front    
+ * speed) extension equation which extends any scalar defined on an   
+ * arbitrary interface to the rest of the flow domain in rays normal  
+ * to the front.                                                      
+ *                                                                    
  **********************************************************************/
 int Explicit_Scalar_Extension_Equation(LevelSet2D_Quad_Block *Soln_ptr,
 				       LevelSet2D_Input_Parameters &Input_Parameters,
@@ -112,16 +112,16 @@ int Explicit_Scalar_Extension_Equation(LevelSet2D_Quad_Block *Soln_ptr,
 
 }
 
-/**********************************************************************
- * Routine: dUdt_Multistage_Scalar_Extension                          *
- *                                                                    *
- * This routine evaluates the stage solution residual for the scalar  *
- * (front speed) extension equation for a 1D array of 2D              *
- * quadrilateral multi-block solution blocks.  A variety of           *
- * multistage explicit time integration and an upwind finite-volume   *
- * spatial discretization procedure can is used depending on the      *
- * specified input data.                                              *
- *                                                                    *
+/******************************************************************//**
+ * Routine: dUdt_Multistage_Scalar_Extension                          
+ *                                                                    
+ * This routine evaluates the stage solution residual for the scalar  
+ * (front speed) extension equation for a 1D array of 2D              
+ * quadrilateral multi-block solution blocks.  A variety of           
+ * multistage explicit time integration and an upwind finite-volume   
+ * spatial discretization procedure can is used depending on the      
+ * specified input data.                                              
+ *                                                                    
  **********************************************************************/
 int dUdt_Multistage_Scalar_Extension(LevelSet2D_Quad_Block *Soln_ptr,
 				     AdaptiveBlock2D_List &Soln_Block_List,
@@ -146,15 +146,15 @@ int dUdt_Multistage_Scalar_Extension(LevelSet2D_Quad_Block *Soln_ptr,
 
 }
 
-/**********************************************************************
- * Routine: Update_Multistage_Scalar_Extension                        *
- *                                                                    *
- * This routine updates the solution for a 1D array of 2D             *
- * quadrilateral multi-block solution blocks for the scalar (front    *
- * speed) extension equation.  Second-order multistage explicit time  *
- * integration and a finite-volume spatial discretization procedure   *
- * is used.                                                           *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Update_Multistage_Scalar_Extension                        
+ *                                                                    
+ * This routine updates the solution for a 1D array of 2D             
+ * quadrilateral multi-block solution blocks for the scalar (front    
+ * speed) extension equation.  Second-order multistage explicit time  
+ * integration and a finite-volume spatial discretization procedure   
+ * is used.                                                           
+ *                                                                    
  **********************************************************************/
 int Update_Multistage_Scalar_Extension(LevelSet2D_Quad_Block *Soln_ptr,
 				       AdaptiveBlock2D_List &Soln_Block_List,
@@ -178,14 +178,14 @@ int Update_Multistage_Scalar_Extension(LevelSet2D_Quad_Block *Soln_ptr,
  
 }
 
-/**********************************************************************
- * Routine: CFL_Scalar_Extension                                      *
- *                                                                    *
- * Determines the allowable global and local time steps for the       *
- * solution of the scalar (front speed) extension equation for a 1D   *
- * array of 2D quadrilateral multi-block solution blocks according to *
- * the Courant-Friedrichs-Lewy condition.                             *
- *                                                                    *
+/******************************************************************//**
+ * Routine: CFL_Scalar_Extension                                      
+ *                                                                    
+ * Determines the allowable global and local time steps for the       
+ * solution of the scalar (front speed) extension equation for a 1D   
+ * array of 2D quadrilateral multi-block solution blocks according to 
+ * the Courant-Friedrichs-Lewy condition.                             
+ *                                                                    
  **********************************************************************/
 double CFL_Scalar_Extension(LevelSet2D_Quad_Block *Soln_ptr,
 			    AdaptiveBlock2D_List &Soln_Block_List) {

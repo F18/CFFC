@@ -61,6 +61,7 @@ using namespace std;
 #define INTERFACE_FLAT_PLATE                      514
 #define INTERFACE_USER_SPECIFIED                  515
 #define INTERFACE_UNION                           516
+#define INTERFACE_STAR                            517
 #define INTERFACE_RESTART                         599
 
 #define INTERFACE_BC_REFLECTION               BC_REFLECTION
@@ -286,6 +287,11 @@ class Interface2D{
   //! Create Zalesak's disk interface spline.
   void Zalesak(const Vector2D &Origin,
 	       const double &Radius);
+
+  //! Create multi-point star interface spline.
+  void Star(const Vector2D &Origin,
+	    const double &Radius,
+	    const int &Num_Ext_Pts);
 
   //! Create Ringleb's flow interface spline.
   void Ringleb(const double &Inner_Streamline_Number,
@@ -800,18 +806,20 @@ inline Interface2D& Interface2D::operator =(const Interface2D &I) {
  * Interface2D -- Output operator.                                    *
  **********************************************************************/
 inline ostream &operator << (ostream &out_file, const Interface2D &I) {
-  out_file << I.Type << endl;
-  out_file << I.Length1 << endl;
-  out_file << I.Length2 << endl;
-  out_file << I.BC_Type << endl;
-  out_file << I.Motion << endl;
-  out_file << I.Speed << endl;
-  out_file << I.Xref << endl;
-  out_file << I.Xmin << endl;
-  out_file << I.Xmax << endl;
-  out_file << I.Spline.np << endl;
-  out_file << I.Spline.type << endl;
+  out_file << "Interface Type: " << I.Type << endl;
+  out_file << "Interface characteristic length: " << I.Length1 << endl;
+  out_file << "Interface characteristic length: " << I.Length2 << endl;
+  out_file << "Interface boundary condition type: " << I.BC_Type << endl;
+  out_file << "Interface motion type: " << I.Motion << endl;
+  out_file << "Interface characteristic speed: " << I.Speed << endl;
+  out_file << "Interface reference point: " << I.Xref << endl;
+  out_file << "Interface bounding box minimum point: " << I.Xmin << endl;
+  out_file << "Interface bounding box maximum point: " << I.Xmax << endl;
+  out_file << "Interface spline, number of points: " << I.Spline.np << endl;
+  out_file << "Interface spline, type: " << I.Spline.type << endl;
+  out_file << "Spline pt  |  Spline tp  |  Spline bc" << endl;
   out_file << I.Spline;
+  out_file << "At spline points:  F_Type  |  F" << endl;
   for (int np = 0; np < I.Spline.np; np++)
     out_file << I.F_Type[np] << I.F[np] << endl;
   return out_file;
@@ -891,6 +899,7 @@ inline double Interface2D_List::max_speed(void) {
 inline ostream &operator << (ostream &out_file, const Interface2D_List &List) {
   out_file << List.Ni << endl;
   for (int n = 1; n <= List.Ni; n++) {
+    out_file << "Ni=" << n << " of " << List.Ni << endl;
     out_file << List[n];
     List.relations[n-1].write(out_file);
   }

@@ -1,4 +1,4 @@
-/* AdaptiveBlock.h:  Header file defining adaptive block classes. */
+/* AdaptiveBlock.h: Header file defining adaptive block classes. */
 
 #ifndef _ADAPTIVEBLOCK3D_INCLUDED
 #define _ADAPTIVEBLOCK3D_INCLUDED
@@ -27,6 +27,10 @@ using namespace std;
 #ifndef _MPI_INCLUDED
 #include "../MPI/MPI.h"
 #endif // _MPI_INCLUDED
+
+#ifndef _BLOCK_ORIENTATION_INFO_INCLUDED
+#include "BlockOrientationInfo.h"
+#endif // _BLOCK_ORIENTATION_INFO_INCLUDED
 
 /* Define the block in-use indicators. */
 
@@ -118,7 +122,7 @@ using namespace std;
  * cin  >> R; (input function)                          *
  *                                                      *
  ********************************************************/
-class AdaptiveBlock3D_ResourceList{
+class AdaptiveBlock3D_ResourceList {
   private:
   public:
     int    ThisCPU;  // Number or rank of CPU executing the
@@ -148,8 +152,7 @@ class AdaptiveBlock3D_ResourceList{
     // Use automatically generated destructor.
 
     /* Assignment operator. */
-    // AdaptiveBlock3D_ResourceList operator = (const AdaptiveBlock3D_ResourceList &R);
-    // Use automatically generated assignment operator.
+    AdaptiveBlock3D_ResourceList & operator =(const AdaptiveBlock3D_ResourceList &R);
 
     /* Allocate memory for the resource list. */
     void allocate(const int ncpu, const int nblk);
@@ -183,11 +186,12 @@ class AdaptiveBlock3D_ResourceList{
                                            const int Number_of_Blocks_per_Processor);
 
     /* Input-output operators. */
+
     friend ostream &operator << (ostream &out_file, 
                                  const AdaptiveBlock3D_ResourceList &R);
+
     friend istream &operator >> (istream &in_file, 
                                  AdaptiveBlock3D_ResourceList &R);
-
 };
 
 /**********************************************************************
@@ -267,6 +271,30 @@ inline void AdaptiveBlock3D_ResourceList::update_return(void) {
 }
 
 /*******************************************************************
+ * AdaptiveBlock3D_ResourceList -- Assignment operator.            *
+ *******************************************************************/
+inline AdaptiveBlock3D_ResourceList &AdaptiveBlock3D_ResourceList::
+operator =(const AdaptiveBlock3D_ResourceList &R) {
+   if (Ntotal != R.Ntotal) {
+      if (CPU != NULL) {
+         delete []CPU; CPU = NULL; 
+      } /* endif */
+      if (Block != NULL) {
+         delete []Block; Block = NULL;
+      } /* endif */
+      if (R.Ntotal > 0) {
+         CPU = new int[R.Ntotal]; Block = new int[R.Ntotal];
+      } /* endif */
+   } /* endif */
+   ThisCPU = R.ThisCPU; Ncpu = R.Ncpu; Nblk = R.Nblk; 
+   Ntotal = R.Ntotal; Nused = R.Nused; Nfree = R.Nfree;
+   for (int i = 0; i <= R.Ntotal-1; ++i ) {
+      CPU[i] = R.CPU[i];
+      Block[i] = R.Block[i];
+   } /* endfor */
+}
+
+/*******************************************************************
  * AdaptiveBlock3D_ResourceList -- Input-output operators.         *
  *******************************************************************/
 inline ostream &operator << (ostream &out_file, 
@@ -286,7 +314,6 @@ inline istream &operator >> (istream &in_file,
   } /* endfor */
   return (in_file);
 }
-
 
 /********************************************************
  * Class: AdaptiveBlock3D_Dimensions                    *
@@ -309,7 +336,7 @@ inline istream &operator >> (istream &in_file,
  * cin  >> D; (input function)                          *
  *                                                      *
  ********************************************************/
-class AdaptiveBlock3D_Dimensions{
+class AdaptiveBlock3D_Dimensions {
   private:
   public:
     int         i,j,k;  // Adaptive block dimensions.
@@ -338,16 +365,25 @@ class AdaptiveBlock3D_Dimensions{
     // Use automatically generated destructor.
 
     /* Assignment operator. */
-    // AdaptiveBlock3D_Dimensions operator = (const AdaptiveBlock3D_Dimensions &Blk_Dimen);
-    // Use automatically generated assignment operator.
+
+    AdaptiveBlock3D_Dimensions & operator =(const AdaptiveBlock3D_Dimensions &Blk_Dimen);
 
     /* Input-output operators. */
+    
     friend ostream &operator << (ostream &out_file,
 				 const AdaptiveBlock3D_Dimensions &Blk_Dimen);
+
     friend istream &operator >> (istream &in_file,
 				 AdaptiveBlock3D_Dimensions &Blk_Dimen);
-
 };
+
+/*************************************************************
+ * AdaptiveBlock3D_Dimensions -- Assignment operator.        *
+ *************************************************************/
+inline AdaptiveBlock3D_Dimensions &AdaptiveBlock3D_Dimensions::
+operator =(const AdaptiveBlock3D_Dimensions &Blk_Dimen) {
+   i = Blk_Dimen.i; j = Blk_Dimen.j; k = Blk_Dimen.k; ghost = Blk_Dimen.ghost;
+}
 
 /*************************************************************
  * AdaptiveBlock3D_Dimensions -- Input-output operators.     *
@@ -387,25 +423,28 @@ inline istream &operator >> (istream &in_file,
  * cin  >> I; (input function)                          *
  *                                                      *
  ********************************************************/
-class AdaptiveBlock3D_Info{
+class AdaptiveBlock3D_Info {
   private:
   public:
-    int                            cpu; // Adaptive block processor number.
-    int                         blknum; // Local adaptive block number.
-    AdaptiveBlock3D_Dimensions   dimen; // Adaptive block dimensions. 
-    int                         sector; // Adaptive block sector number.
-    int                          level; // Adaptive block refinement level.
-	                                // Made public so can access them.
+    int                                                       cpu; // Adaptive block processor number.
+    int                                                    blknum; // Local adaptive block number.
+    AdaptiveBlock3D_Dimensions                              dimen; // Adaptive block dimensions. 
+    int                                                    sector; // Adaptive block sector number.
+    int                                                     level; // Adaptive block refinement level.
+    Block_Orientation_Info                              blkorient; // Block orientation information.
+    Block_Boundary_Elements_on_Domain_Extent                   be; // Block boundary element on grid
+       	                                                           // boundary indicator.
     
     /* Creation, copy, and assignment constructors. */
     AdaptiveBlock3D_Info(void) {
        cpu = 0; blknum = 0; dimen.i = 0; dimen.j = 0; dimen.k = 0; dimen.ghost = 0; 
-       sector = ADAPTIVEBLOCK3D_SECTOR_NONE; level = 0;
+       sector = ADAPTIVEBLOCK3D_SECTOR_NONE; level = 0; 
     }
 
     AdaptiveBlock3D_Info(const AdaptiveBlock3D_Info &Blk_Info) {
        cpu = Blk_Info.cpu; blknum = Blk_Info.blknum;
        dimen = Blk_Info.dimen; sector = Blk_Info.sector; level = Blk_Info.level;
+       blkorient = Blk_Info.blkorient; be = Blk_Info.be;
     }
 
     AdaptiveBlock3D_Info(const int i_processor,
@@ -415,10 +454,13 @@ class AdaptiveBlock3D_Info{
  			 const int k_dimen,
                          const int ghost_dimen,
                          const int i_sector,
-	                 const int i_level) {
+	                 const int i_level,
+                         const Block_Orientation_Info i_blkorient,
+                         const Block_Boundary_Elements_on_Domain_Extent i_be) {
        cpu = i_processor; blknum = i_block;
-       dimen.i = i_dimen; dimen.j = j_dimen;dimen.k = k_dimen;  dimen.ghost = ghost_dimen;
-       sector = i_sector; level = i_level;
+       dimen.i = i_dimen; dimen.j = j_dimen;dimen.k = k_dimen; dimen.ghost = ghost_dimen;
+       sector = i_sector; level = i_level; 
+       blkorient = i_blkorient; be = i_be;
     }
 
     /* Destructor. */
@@ -426,21 +468,22 @@ class AdaptiveBlock3D_Info{
     // Use automatically generated destructor.
 
     /* Assignment operator. */
-    // AdaptiveBlock3D_Info operator = (const AdaptiveBlock3D_Info &Blk_Info);
-    // Use automatically generated assignment operator.
+
+    AdaptiveBlock3D_Info & operator =(const AdaptiveBlock3D_Info &Blk_Info);
 
     /* Reset the block information. */
+
     void reset(void);
-
-
     
     static void Broadcast_Adaptive_Block_Info(AdaptiveBlock3D_Info &Blk_Info);
+
     /* Input-output operators. */
+
     friend ostream &operator << (ostream &out_file,
 				 const AdaptiveBlock3D_Info &Blk_Info);
+
     friend istream &operator >> (istream &in_file,
 				 AdaptiveBlock3D_Info &Blk_Info);
-
 };
 
 /*************************************************************
@@ -455,6 +498,16 @@ inline void AdaptiveBlock3D_Info::reset(void) {
 }
 
 /*************************************************************
+ * AdaptiveBlock3D_Info -- Assignment operator.              *
+ *************************************************************/
+inline AdaptiveBlock3D_Info &AdaptiveBlock3D_Info::
+operator =(const AdaptiveBlock3D_Info &Blk_Info) {
+  cpu = Blk_Info.cpu; blknum = Blk_Info.blknum;
+  dimen = Blk_Info.dimen; sector = Blk_Info.sector; level = Blk_Info.level;
+  blkorient = Blk_Info.blkorient; be = Blk_Info.be;  
+}
+
+/*************************************************************
  * AdaptiveBlock3D_Info -- Input-output operators.           *
  *************************************************************/
 inline ostream &operator << (ostream &out_file,
@@ -463,6 +516,8 @@ inline ostream &operator << (ostream &out_file,
            << " " << Blk_Info.blknum << Blk_Info.dimen 
            << " " << Blk_Info.sector
            << " " << Blk_Info.level;
+  out_file << " " << Blk_Info.blkorient;
+  out_file << " " << Blk_Info.be;
   return (out_file);
 }
 
@@ -475,9 +530,11 @@ inline istream &operator >> (istream &in_file,
   in_file.setf(ios::skipws);
   in_file >> Blk_Info.sector >> Blk_Info.level;
   in_file.unsetf(ios::skipws);
+  in_file.setf(ios::skipws);
+  in_file >> Blk_Info.blkorient;
+  in_file >> Blk_Info.be;
   return (in_file);
 }
-
 
 /********************************************************
  * Class: AdaptiveBlock3D                               *
@@ -605,7 +662,7 @@ inline istream &operator >> (istream &in_file,
  * cin  >> B; (input function)                          *
  *                                                      *
  ********************************************************/
-class AdaptiveBlock3D{
+class AdaptiveBlock3D {
   private:
   public:
     int                    used;  // Adaptive block usage indicator.
@@ -643,17 +700,15 @@ class AdaptiveBlock3D{
                          infoBSW[ADAPTIVEBLOCK3D_NUMBER_CORNER_NEIGHBOURS_MAX],
                          infoBNE[ADAPTIVEBLOCK3D_NUMBER_CORNER_NEIGHBOURS_MAX],
                          infoBSE[ADAPTIVEBLOCK3D_NUMBER_CORNER_NEIGHBOURS_MAX];
-                                 // Block info of neighbouring blocks
- 	                          // Made public so can access them.
     
     /* Creation, copy, and assignment constructors. */
     AdaptiveBlock3D(void) {
        used = ADAPTIVEBLOCK3D_NOT_USED; gblknum = 0;
-       nN = 0; nS = 0; nE = 0; nW = 0; nT=0;nB=0;
+       nN = 0; nS = 0; nE = 0; nW = 0; nT = 0; nB = 0;
        nNW = 0; nNE = 0; nSE = 0; nSW = 0;
        nTN = 0; nTS = 0; nTE = 0; nTW = 0;
-       nTNW = 0; nTNE = 0; nTSE = 0; nTSW = 0;
        nBN = 0; nBS = 0; nBE = 0; nBW = 0;
+       nTNW = 0; nTNE = 0; nTSE = 0; nTSW = 0;
        nBNW = 0; nBNE = 0; nBSE = 0; nBSW = 0;
     }
 
@@ -666,19 +721,16 @@ class AdaptiveBlock3D{
 	 infoN[i] = Blk.infoN[i]; infoS[i] = Blk.infoS[i]; 
 	 infoE[i] = Blk.infoE[i]; infoW[i] = Blk.infoW[i];
        } /* endfor */
-
        nNW = Blk.nNW; nNE = Blk.nNE; nSE = Blk.nSE; nSW = Blk.nSW;
        nTN = Blk.nTN; nTS = Blk.nTS; nTE = Blk.nTE; nTW = Blk.nTW;
        nTNW = Blk.nTNW; nTNE = Blk.nTNE; nTSE = Blk.nTSE; nTSW = Blk.nTSW;
        nBN = Blk.nBN; nBS = Blk.nBS; nBE = Blk.nBE; nBW = Blk.nBW;
        nBNW = Blk.nBNW; nBNE = Blk.nBNE; nBSE = Blk.nBSE; nBSW = Blk.nBSW;
-
        for (i = 0; i <= ADAPTIVEBLOCK3D_NUMBER_EDGE_NEIGHBOURS_MAX-1; ++i) {
 	 infoNW[i]=Blk.infoNW[i]; infoNE[i]=Blk.infoNE[i]; infoSE[i]=Blk.infoSE[i]; infoSW[i]=Blk.infoSW[i];
 	 infoTN[i]=Blk.infoTN[i]; infoTS[i]=Blk.infoTS[i]; infoTE[i]=Blk.infoTE[i]; infoTW[i]=Blk.infoTW[i];
 	 infoBN[i]=Blk.infoBN[i]; infoBS[i]=Blk.infoBS[i]; infoBE[i]=Blk.infoBE[i]; infoBW[i]=Blk.infoBW[i];
-       }
-
+       } /* endfor */
        for (i = 0; i <= ADAPTIVEBLOCK3D_NUMBER_CORNER_NEIGHBOURS_MAX-1; ++i) {
 	 infoTNW[i]=Blk.infoTNW[i];infoTNE[i]=Blk.infoTNE[i]; infoTSE[i]=Blk.infoTSE[i]; infoTSW[i]=Blk.infoTSW[i];
 	 infoBNW[i]=Blk.infoBNW[i];infoBNE[i]=Blk.infoBNE[i]; infoBSE[i]=Blk.infoBSE[i]; infoBSW[i]=Blk.infoBSW[i];
@@ -711,18 +763,113 @@ class AdaptiveBlock3D{
     // Use automatically generated destructor.
 
     /* Assignment operator. */
-    // AdaptiveBlock3D operator =(const AdaptiveBlock3D &Blk);
-    // Use automatically generated assignment operator.
+
+    AdaptiveBlock3D & operator =(const AdaptiveBlock3D &Blk);
+
+    /* Broadcast. */
 
     static void Broadcast_Adaptive_Block(AdaptiveBlock3D &Blk);
 
     /* Input-output operators. */
+
     friend ostream &operator << (ostream &out_file,
 				 const AdaptiveBlock3D &Blk);
+
     friend istream &operator >> (istream &in_file,
 				 AdaptiveBlock3D &Blk);
-
 };
+
+
+/*************************************************************
+ * AdaptiveBlock3D -- Assignment operator.                   *
+ *************************************************************/
+inline AdaptiveBlock3D &AdaptiveBlock3D::operator =(const AdaptiveBlock3D &Blk) {
+  int i; used = Blk.used; gblknum = Blk.gblknum; info = Blk.info;
+  nN = Blk.nN; nS = Blk.nS; nE = Blk.nE; nW = Blk.nW; nT = Blk.nT; nB = Blk.nB;
+  nNW = Blk.nNW; nNE = Blk.nNE; nSE = Blk.nSE; nSW = Blk.nSW;
+  nTN = Blk.nTN; nTS = Blk.nTS; nTE = Blk.nTE; nTW = Blk.nTW;
+  nBN = Blk.nBN; nBS = Blk.nBS; nBE = Blk.nBE; nBW = Blk.nBW;
+  nTNW = Blk.nTNW; nTNE = Blk.nTNE; nTSE = Blk.nTSE; nTSW = Blk.nTSW;
+  nBNW = Blk.nBNW; nBNE = Blk.nBNE; nBSE = Blk.nBSE; nBSW = Blk.nBSW;
+  for (i = 0; i <= Blk.nN-1; ++i) {
+     infoN[i] =  Blk.infoN[i];
+  } /* endfor */
+  for (i = 0; i <= Blk.nS-1; ++i) {
+     infoS[i] =  Blk.infoS[i];
+  } /* endfor */
+  for (i = 0; i <= Blk.nE-1; ++i) {
+     infoE[i] =  Blk.infoE[i];
+  } /* endfor */
+  for (i = 0; i <= Blk.nW-1; ++i) {
+     infoW[i] =  Blk.infoW[i];
+  } /* endfor */
+  for (i = 0; i <= Blk.nT-1; ++i) {
+     infoT[i] =  Blk.infoT[i];
+  } /* endfor */
+  for (i = 0; i <= Blk.nB-1; ++i) {
+     infoB[i] =  Blk.infoB[i];
+  } /* endfor */
+  for (i = 0; i <= Blk.nNW-1; ++i) {
+     infoNW[i] =  Blk.infoNW[i];
+  } /* endfor */
+  for (i = 0; i <= Blk.nNE-1; ++i) {
+     infoNE[i] =  Blk.infoNE[i];
+  } /* endfor */
+  for (i = 0; i <= Blk.nSE-1; ++i) {
+     infoSE[i] =  Blk.infoSE[i];
+  } /* endfor */
+  for (i = 0; i <= Blk.nSW-1; ++i) {
+     infoSW[i] =  Blk.infoSW[i];
+  } /* endfor */
+  for (i = 0; i <= Blk.nTN-1; ++i) {
+     infoTN[i] =  Blk.infoTN[i];
+  } /* endfor */
+  for (i = 0; i <= Blk.nTS-1; ++i) {
+     infoTS[i] =  Blk.infoTS[i];
+  } /* endfor */
+  for (i = 0; i <= Blk.nTE-1; ++i) {
+     infoTE[i] =  Blk.infoTE[i];
+  } /* endfor */
+  for (i = 0; i <= Blk.nTW-1; ++i) {
+     infoTW[i] =  Blk.infoTW[i];
+  } /* endfor */
+  for (i = 0; i <= Blk.nBN-1; ++i) {
+     infoBN[i] =  Blk.infoBN[i];
+  } /* endfor */
+  for (i = 0; i <= Blk.nBS-1; ++i) {
+     infoBS[i] =  Blk.infoBS[i];
+  } /* endfor */
+  for (i = 0; i <= Blk.nBE-1; ++i) {
+     infoBE[i] =  Blk.infoBE[i];
+  } /* endfor */
+ for (i = 0; i <= Blk.nBW-1; ++i) {
+     infoBW[i] =  Blk.infoBW[i];
+  } /* endfor */
+  for (i = 0; i <= Blk.nTNW-1; ++i) {
+     infoTNW[i] =  Blk.infoTNW[i];
+  } /* endfor */
+  for (i = 0; i <= Blk.nTNE-1; ++i) {
+     infoTNE[i] =  Blk.infoTNE[i];
+  } /* endfor */
+  for (i = 0; i <= Blk.nTSE-1; ++i) {
+     infoTSE[i] =  Blk.infoTSE[i];
+  } /* endfor */
+  for (i = 0; i <= Blk.nTSW-1; ++i) {
+     infoTSW[i] =  Blk.infoTSW[i];
+  } /* endfor */
+  for (i = 0; i <= Blk.nBNW-1; ++i) {
+     infoBNW[i] =  Blk.infoBNW[i];
+  } /* endfor */
+  for (i = 0; i <= Blk.nBNE-1; ++i) {
+     infoBNE[i] =  Blk.infoBNE[i];
+  } /* endfor */
+  for (i = 0; i <= Blk.nBSE-1; ++i) {
+     infoBSE[i] =  Blk.infoBSE[i];
+  } /* endfor */
+  for (i = 0; i <= Blk.nBSW-1; ++i) {
+     infoBSW[i] =  Blk.infoBSW[i];
+  } /* endfor */
+}
 
 /*************************************************************
  * AdaptiveBlock3D -- Input-output operators.                *
@@ -731,42 +878,52 @@ inline ostream &operator << (ostream &out_file,
 			     const AdaptiveBlock3D &Blk) {
   int i;
   out_file << " " << Blk.used << " " << Blk.gblknum << Blk.info;
+
   out_file << "\n " << Blk.nT;
   for (i = 0; i <= Blk.nT-1; ++i) {
      out_file << " " << Blk.infoT[i];
   } /* endfor */
+
   out_file << "\n " << Blk.nB;
   for (i = 0; i <= Blk.nB-1; ++i) {
      out_file << " " << Blk.infoB[i];
   } /* endfor */
+
   out_file << "\n " << Blk.nN;
   for (i = 0; i <= Blk.nN-1; ++i) {
      out_file << " " << Blk.infoN[i];
   } /* endfor */
+
   out_file << "\n " << Blk.nS;
   for (i = 0; i <= Blk.nS-1; ++i) {
      out_file << " " << Blk.infoS[i];
   } /* endfor */
+
   out_file << "\n " << Blk.nE;
   for (i = 0; i <= Blk.nE-1; ++i) {
      out_file << " " << Blk.infoE[i];
   } /* endfor */
+
   out_file << "\n " << Blk.nW;
   for (i = 0; i <= Blk.nW-1; ++i) {
      out_file << " " << Blk.infoW[i];
   } /* endfor */
+
   out_file << "\n " << Blk.nNW;
   for (i = 0; i <= Blk.nNW-1; ++i) {
      out_file << " " << Blk.infoNW[i];
   } /* endfor */
+
   out_file << "\n " << Blk.nNE;
   for (i = 0; i <= Blk.nNE-1; ++i) {
      out_file << " " << Blk.infoNE[i];
   } /* endfor */
+
   out_file << "\n " << Blk.nSE;
   for (i = 0; i <= Blk.nSE-1; ++i) {
      out_file << " " << Blk.infoSE[i];
   } /* endfor */
+
   out_file << "\n " << Blk.nSW;
   for (i = 0; i <= Blk.nSW-1; ++i) {
      out_file << " " << Blk.infoSW[i];
@@ -776,68 +933,77 @@ inline ostream &operator << (ostream &out_file,
   for (i = 0; i <= Blk.nTN-1; ++i) {
      out_file << " " << Blk.infoTN[i];
   } /* endfor */
+
   out_file << "\n " << Blk.nTS;
   for (i = 0; i <= Blk.nTS-1; ++i) {
      out_file << " " << Blk.infoTS[i];
   } /* endfor */
+
   out_file << "\n " << Blk.nTE;
   for (i = 0; i <= Blk.nTE-1; ++i) {
      out_file << " " << Blk.infoTE[i];
   } /* endfor */
+
   out_file << "\n " << Blk.nTW;
   for (i = 0; i <= Blk.nTW-1; ++i) {
      out_file << " " << Blk.infoTW[i];
   } /* endfor */
 
-
   out_file << "\n " << Blk.nTNW;
   for (i = 0; i <= Blk.nTNW-1; ++i) {
      out_file << " " << Blk.infoTNW[i];
   } /* endfor */
+
   out_file << "\n " << Blk.nTNE;
   for (i = 0; i <= Blk.nTNE-1; ++i) {
      out_file << " " << Blk.infoTNE[i];
   } /* endfor */
+
   out_file << "\n " << Blk.nTSE;
   for (i = 0; i <= Blk.nTSE-1; ++i) {
      out_file << " " << Blk.infoTSE[i];
   } /* endfor */
+
   out_file << "\n " << Blk.nTSW;
   for (i = 0; i <= Blk.nTSW-1; ++i) {
      out_file << " " << Blk.infoTSW[i];
   } /* endfor */
 
-
   out_file << "\n " << Blk.nBN;
   for (i = 0; i <= Blk.nBN-1; ++i) {
      out_file << " " << Blk.infoBN[i];
   } /* endfor */
+
   out_file << "\n " << Blk.nBS;
   for (i = 0; i <= Blk.nBS-1; ++i) {
      out_file << " " << Blk.infoBS[i];
   } /* endfor */
+
   out_file << "\n " << Blk.nBE;
   for (i = 0; i <= Blk.nBE-1; ++i) {
      out_file << " " << Blk.infoBE[i];
   } /* endfor */
+
   out_file << "\n " << Blk.nBW;
   for (i = 0; i <= Blk.nBW-1; ++i) {
      out_file << " " << Blk.infoBW[i];
   } /* endfor */
 
-
   out_file << "\n " << Blk.nBNW;
   for (i = 0; i <= Blk.nBNW-1; ++i) {
      out_file << " " << Blk.infoBNW[i];
   } /* endfor */
+
   out_file << "\n " << Blk.nBNE;
   for (i = 0; i <= Blk.nBNE-1; ++i) {
      out_file << " " << Blk.infoBNE[i];
   } /* endfor */
+
   out_file << "\n " << Blk.nBSE;
   for (i = 0; i <= Blk.nBSE-1; ++i) {
      out_file << " " << Blk.infoBSE[i];
   } /* endfor */
+
   out_file << "\n " << Blk.nBSW;
   for (i = 0; i <= Blk.nBSW-1; ++i) {
      out_file << " " << Blk.infoBSW[i];
@@ -852,117 +1018,136 @@ inline istream &operator >> (istream &in_file,
   in_file.setf(ios::skipws); in_file >> Blk.used >> Blk.gblknum; 
   in_file.unsetf(ios::skipws);
   in_file >> Blk.info;
+
   in_file.setf(ios::skipws); in_file >> Blk.nT; in_file.unsetf(ios::skipws);
   for (i = 0; i <= Blk.nT-1; ++i) {
      in_file >> Blk.infoT[i];
   } /* endfor */
+
   in_file.setf(ios::skipws); in_file >> Blk.nB; in_file.unsetf(ios::skipws);
   for (i = 0; i <= Blk.nB-1; ++i) {
      in_file >> Blk.infoB[i];
   } /* endfor */
+
   in_file.setf(ios::skipws); in_file >> Blk.nN; in_file.unsetf(ios::skipws);
   for (i = 0; i <= Blk.nN-1; ++i) {
      in_file >> Blk.infoN[i];
   } /* endfor */
+
   in_file.setf(ios::skipws); in_file >> Blk.nS; in_file.unsetf(ios::skipws);
   for (i = 0; i <= Blk.nS-1; ++i) {
      in_file >> Blk.infoS[i];
   } /* endfor */
+
   in_file.setf(ios::skipws); in_file >> Blk.nE; in_file.unsetf(ios::skipws);
   for (i = 0; i <= Blk.nE-1; ++i) {
      in_file >> Blk.infoE[i];
   } /* endfor */
+
   in_file.setf(ios::skipws); in_file >> Blk.nW; in_file.unsetf(ios::skipws);
   for (i = 0; i <= Blk.nW-1; ++i) {
      in_file >> Blk.infoW[i];
   } /* endfor */
+
   in_file.setf(ios::skipws); in_file >> Blk.nNW; in_file.unsetf(ios::skipws);
   for (i = 0; i <= Blk.nNW-1; ++i) {
      in_file >> Blk.infoNW[i];
   } /* endfor */
+
   in_file.setf(ios::skipws); in_file >> Blk.nNE; in_file.unsetf(ios::skipws);
   for (i = 0; i <= Blk.nNE-1; ++i) {
      in_file >> Blk.infoNE[i];
   } /* endfor */
+
   in_file.setf(ios::skipws); in_file >> Blk.nSE; in_file.unsetf(ios::skipws);
   for (i = 0; i <= Blk.nSE-1; ++i) {
      in_file >> Blk.infoSE[i];
   } /* endfor */
+
   in_file.setf(ios::skipws); in_file >> Blk.nSW; in_file.unsetf(ios::skipws);
   for (i = 0; i <= Blk.nSW-1; ++i) {
      in_file >> Blk.infoSW[i];
   } /* endfor */
 
- in_file.setf(ios::skipws); in_file >> Blk.nTN; in_file.unsetf(ios::skipws);
+  in_file.setf(ios::skipws); in_file >> Blk.nTN; in_file.unsetf(ios::skipws);
   for (i = 0; i <= Blk.nTN-1; ++i) {
      in_file >> Blk.infoTN[i];
   } /* endfor */
+
   in_file.setf(ios::skipws); in_file >> Blk.nTS; in_file.unsetf(ios::skipws);
   for (i = 0; i <= Blk.nTS-1; ++i) {
      in_file >> Blk.infoTS[i];
   } /* endfor */
+
   in_file.setf(ios::skipws); in_file >> Blk.nTE; in_file.unsetf(ios::skipws);
   for (i = 0; i <= Blk.nTE-1; ++i) {
      in_file >> Blk.infoTE[i];
   } /* endfor */
+
   in_file.setf(ios::skipws); in_file >> Blk.nTW; in_file.unsetf(ios::skipws);
   for (i = 0; i <= Blk.nTW-1; ++i) {
      in_file >> Blk.infoTW[i];
   } /* endfor */
 
- in_file.setf(ios::skipws); in_file >> Blk.nTNW; in_file.unsetf(ios::skipws);
+  in_file.setf(ios::skipws); in_file >> Blk.nTNW; in_file.unsetf(ios::skipws);
   for (i = 0; i <= Blk.nTNW-1; ++i) {
      in_file >> Blk.infoTNW[i];
   } /* endfor */
+ 
   in_file.setf(ios::skipws); in_file >> Blk.nTNE; in_file.unsetf(ios::skipws);
   for (i = 0; i <= Blk.nTNE-1; ++i) {
      in_file >> Blk.infoTNE[i];
   } /* endfor */
+ 
   in_file.setf(ios::skipws); in_file >> Blk.nTSE; in_file.unsetf(ios::skipws);
   for (i = 0; i <= Blk.nTSE-1; ++i) {
      in_file >> Blk.infoTSE[i];
   } /* endfor */
+
   in_file.setf(ios::skipws); in_file >> Blk.nTSW; in_file.unsetf(ios::skipws);
   for (i = 0; i <= Blk.nTSW-1; ++i) {
      in_file >> Blk.infoTSW[i];
   } /* endfor */
 
-
- in_file.setf(ios::skipws); in_file >> Blk.nBN; in_file.unsetf(ios::skipws);
+  in_file.setf(ios::skipws); in_file >> Blk.nBN; in_file.unsetf(ios::skipws);
   for (i = 0; i <= Blk.nBN-1; ++i) {
      in_file >> Blk.infoBN[i];
   } /* endfor */
+
   in_file.setf(ios::skipws); in_file >> Blk.nBS; in_file.unsetf(ios::skipws);
   for (i = 0; i <= Blk.nBS-1; ++i) {
      in_file >> Blk.infoBS[i];
   } /* endfor */
+
   in_file.setf(ios::skipws); in_file >> Blk.nBE; in_file.unsetf(ios::skipws);
   for (i = 0; i <= Blk.nBE-1; ++i) {
      in_file >> Blk.infoBE[i];
   } /* endfor */
+
   in_file.setf(ios::skipws); in_file >> Blk.nBW; in_file.unsetf(ios::skipws);
   for (i = 0; i <= Blk.nBW-1; ++i) {
      in_file >> Blk.infoBW[i];
   } /* endfor */
 
-
- in_file.setf(ios::skipws); in_file >> Blk.nBNW; in_file.unsetf(ios::skipws);
+  in_file.setf(ios::skipws); in_file >> Blk.nBNW; in_file.unsetf(ios::skipws);
   for (i = 0; i <= Blk.nBNW-1; ++i) {
      in_file >> Blk.infoBNW[i];
   } /* endfor */
+
   in_file.setf(ios::skipws); in_file >> Blk.nBNE; in_file.unsetf(ios::skipws);
   for (i = 0; i <= Blk.nBNE-1; ++i) {
      in_file >> Blk.infoBNE[i];
   } /* endfor */
+
   in_file.setf(ios::skipws); in_file >> Blk.nBSE; in_file.unsetf(ios::skipws);
   for (i = 0; i <= Blk.nBSE-1; ++i) {
      in_file >> Blk.infoBSE[i];
   } /* endfor */
+
   in_file.setf(ios::skipws); in_file >> Blk.nBSW; in_file.unsetf(ios::skipws);
   for (i = 0; i <= Blk.nBSW-1; ++i) {
      in_file >> Blk.infoBSW[i];
   } /* endfor */
-
 
   return (in_file);
 }
@@ -979,58 +1164,8 @@ inline istream &operator >> (istream &in_file,
  *       Block -- Return list of adaptive blocks.             *
  *       RefineFlag -- Return list of mesh refinement         *
  *                     flags for the adaptive blocks.         *
- *       message_noreschange_topface_sendbuf                  *
- *       message_noreschange_topface_recbuf                   *
- *       message_noreschange_bottomface_sendbuf               *
- *       message_noreschange_bottomface_recbuf                *
- *       message_noreschange_northface_sendbuf                *
- *       message_noreschange_northface_recbuf                 *
- *       message_noreschange_southface_sendbuf                *
- *       message_noreschange_southface_recbuf                 *
- *       message_noreschange_eastface_sendbuf                 *
- *       message_noreschange_eastface_recbuf                  *
- *       message_noreschange_westface_sendbuf                 *
- *       message_noreschange_westface_recbuf                  *
- *       message_noreschange_topnorthface_sendbuf             *
- *       message_noreschange_topnorthface_recbuf              *
- *       message_noreschange_topsouthface_sendbuf             *
- *       message_noreschange_topsouthface_recbuf              *
- *       message_noreschange_topeastface_sendbuf              *
- *       message_noreschange_topeastface_recbuf               *
- *       message_noreschange_topwestface_sendbuf              *
- *       message_noreschange_topwestface_recbuf               *
- *       message_noreschange_bottomnorthface_sendbuf          *
- *       message_noreschange_bottomnorthface_recbuf           *
- *       message_noreschange_bottomsouthface_sendbuf          *
- *       message_noreschange_bottomsouthface_recbuf           *
- *       message_noreschange_bottomeastface_sendbuf           *
- *       message_noreschange_bottomeastface_recbuf            *
- *       message_noreschange_bottomwestface_sendbuf           *
- *       message_noreschange_bottomwestface_recbuf            *
- *       message_noreschange_northwestcorner_sendbuf          *
- *       message_noreschange_northwestcorner_recbuf           *
- *       message_noreschange_northeastcorner_sendbuf          *
- *       message_noreschange_northeastcorner_recbuf           *
- *       message_noreschange_southeastcorner_sendbuf          *
- *       message_noreschange_southeastcorner_recbuf           *
- *       message_noreschange_southwestcorner_sendbuf          *
- *       message_noreschange_southwestcorner_recbuf           *
- *       message_noreschange_topnorthwestcorner_sendbuf       *
- *       message_noreschange_topnorthwestcorner_recbuf        *
- *       message_noreschange_topnortheastcorner_sendbuf       *
- *       message_noreschange_topnortheastcorner_recbuf        *
- *       message_noreschange_topsoutheastcorner_sendbuf       *
- *       message_noreschange_topsoutheastcorner_recbuf        *
- *       message_noreschange_topsouthwestcorner_sendbuf       *
- *       message_noreschange_topsouthwestcorner_recbuf        *
- *       message_noreschange_bottomnorthwestcorner_sendbuf    *
- *       message_noreschange_bottomnorthwestcorner_recbuf     *
- *       message_noreschange_bottomnortheastcorner_sendbuf    *
- *       message_noreschange_bottomnortheastcorner_recbuf     *
- *       message_noreschange_bottomsoutheastcorner_sendbuf    *
- *       message_noreschange_bottomsoutheastcorner_recbuf     *
- *       message_noreschange_bottomsouthwestcorner_sendbuf    *
- *       message_noreschange_bottomsouthwestcorner_recbuf     *
+ *       message_noreschange_sendbuf                          *
+ *       message_noreschange_recbuf                           *
  *        -- Return message passing send and receive          *
  *           buffers for block faces and corners with         *
  *           no block resolution (refinement) change.         *
@@ -1056,7 +1191,7 @@ inline istream &operator >> (istream &in_file,
  * cin  >> B; (input function)                                *
  *                                                            *
  **************************************************************/
-class AdaptiveBlock3D_List{
+class AdaptiveBlock3D_List {
   private:
   public:
     int              ThisCPU; // Number or rank of CPU executing the
@@ -1065,350 +1200,41 @@ class AdaptiveBlock3D_List{
                               // blocks in the list.
     AdaptiveBlock3D   *Block; // List of adaptive blocks.
     int          *RefineFlag; // Block refinement (coarsening) flag.
-    double 
-      **message_noreschange_topface_sendbuf,           
-      **message_noreschange_topface_recbuf,            
-      **message_noreschange_bottomface_sendbuf,       
-      **message_noreschange_bottomface_recbuf,        
-      **message_noreschange_northface_sendbuf,
-      **message_noreschange_northface_recbuf,
-      **message_noreschange_southface_sendbuf,
-      **message_noreschange_southface_recbuf,
-      **message_noreschange_eastface_sendbuf,
-      **message_noreschange_eastface_recbuf,
-      **message_noreschange_westface_sendbuf,
-      **message_noreschange_westface_recbuf,
-      **message_noreschange_northwestcorner_sendbuf,
-      **message_noreschange_northwestcorner_recbuf,
-      **message_noreschange_northeastcorner_sendbuf,
-      **message_noreschange_northeastcorner_recbuf,
-      **message_noreschange_southeastcorner_sendbuf,
-      **message_noreschange_southeastcorner_recbuf,
-      **message_noreschange_southwestcorner_sendbuf,
-      **message_noreschange_southwestcorner_recbuf,
-      **message_noreschange_topnorthcorner_sendbuf,
-      **message_noreschange_topnorthcorner_recbuf,
-      **message_noreschange_topsouthcorner_sendbuf,
-      **message_noreschange_topsouthcorner_recbuf,
-      **message_noreschange_topeastcorner_sendbuf,
-      **message_noreschange_topeastcorner_recbuf,
-      **message_noreschange_topwestcorner_sendbuf,
-      **message_noreschange_topwestcorner_recbuf,
-      **message_noreschange_topnorthwestcorner_sendbuf,
-      **message_noreschange_topnorthwestcorner_recbuf,
-      **message_noreschange_topnortheastcorner_sendbuf,
-      **message_noreschange_topnortheastcorner_recbuf,
-      **message_noreschange_topsoutheastcorner_sendbuf,
-      **message_noreschange_topsoutheastcorner_recbuf,
-      **message_noreschange_topsouthwestcorner_sendbuf,
-      **message_noreschange_topsouthwestcorner_recbuf,
-      **message_noreschange_bottomnorthcorner_sendbuf,
-      **message_noreschange_bottomnorthcorner_recbuf,
-      **message_noreschange_bottomsouthcorner_sendbuf,
-      **message_noreschange_bottomsouthcorner_recbuf,
-      **message_noreschange_bottomeastcorner_sendbuf,
-      **message_noreschange_bottomeastcorner_recbuf,
-      **message_noreschange_bottomwestcorner_sendbuf,
-      **message_noreschange_bottomwestcorner_recbuf,
-      **message_noreschange_bottomnorthwestcorner_sendbuf,
-      **message_noreschange_bottomnorthwestcorner_recbuf,
-      **message_noreschange_bottomnortheastcorner_sendbuf,
-      **message_noreschange_bottomnortheastcorner_recbuf,
-      **message_noreschange_bottomsoutheastcorner_sendbuf,
-      **message_noreschange_bottomsoutheastcorner_recbuf,
-      **message_noreschange_bottomsouthwestcorner_sendbuf,
-      **message_noreschange_bottomsouthwestcorner_recbuf;
-                             // Message passing send and receive buffers
-                              // for block faces and corners with no block
-                              // resolution (refinement) change.
-    double 
-      ***message_reschange_northface_sendbuf,
-      ***message_reschange_northface_recbuf,
-      ***message_reschange_southface_sendbuf,
-      ***message_reschange_southface_recbuf,
-      ***message_reschange_eastface_sendbuf,
-      ***message_reschange_eastface_recbuf,
-      ***message_reschange_westface_sendbuf,
-      ***message_reschange_westface_recbuf,
-      **message_reschange_northwestcorner_sendbuf,
-      **message_reschange_northwestcorner_recbuf,
-      **message_reschange_northeastcorner_sendbuf,
-      **message_reschange_northeastcorner_recbuf,
-      **message_reschange_southeastcorner_sendbuf,
-      **message_reschange_southeastcorner_recbuf,
-      **message_reschange_southwestcorner_sendbuf,
-      **message_reschange_southwestcorner_recbuf,
-      ***message_reschange_topface_sendbuf,           
-      ***message_reschange_topface_recbuf,            
-      ***message_reschange_bottomface_sendbuf,       
-      ***message_reschange_bottomface_recbuf,        
-      **message_reschange_topnorthcorner_sendbuf,
-      **message_reschange_topnorthcorner_recbuf,
-      **message_reschange_topsouthcorner_sendbuf,
-      **message_reschange_topsouthcorner_recbuf,
-      **message_reschange_topeastcorner_sendbuf,
-      **message_reschange_topeastcorner_recbuf,
-      **message_reschange_topwestcorner_sendbuf,
-      **message_reschange_topwestcorner_recbuf,
-      **message_reschange_topnorthwestcorner_sendbuf,
-      **message_reschange_topnorthwestcorner_recbuf,
-      **message_reschange_topnortheastcorner_sendbuf,
-      **message_reschange_topnortheastcorner_recbuf,
-      **message_reschange_topsoutheastcorner_sendbuf,
-      **message_reschange_topsoutheastcorner_recbuf,
-      **message_reschange_topsouthwestcorner_sendbuf,
-      **message_reschange_topsouthwestcorner_recbuf,
-      **message_reschange_bottomnorthcorner_sendbuf,
-      **message_reschange_bottomnorthcorner_recbuf,
-      **message_reschange_bottomsouthcorner_sendbuf,
-      **message_reschange_bottomsouthcorner_recbuf,
-      **message_reschange_bottomeastcorner_sendbuf,
-      **message_reschange_bottomeastcorner_recbuf,
-      **message_reschange_bottomwestcorner_sendbuf,
-      **message_reschange_bottomwestcorner_recbuf,
-      **message_reschange_bottomnorthwestcorner_sendbuf,
-      **message_reschange_bottomnorthwestcorner_recbuf,
-      **message_reschange_bottomnortheastcorner_sendbuf,
-      **message_reschange_bottomnortheastcorner_recbuf,
-      **message_reschange_bottomsoutheastcorner_sendbuf,
-      **message_reschange_bottomsoutheastcorner_recbuf,
-      **message_reschange_bottomsouthwestcorner_sendbuf,
-      **message_reschange_bottomsouthwestcorner_recbuf;
-                              // Message passing send and receive buffers
-                              // for block faces and corners with block
-                              // resolution (refinement) change.
-                              // Made public so can access them.
+   
+    // Message passing send and receive buffers
+    // for block faces and corners with no block
+    // resolution (refinement) change.
+    double   ***message_noreschange_sendbuf,
+             ***message_noreschange_recbuf;
+
+    // Message passing send and receive buffers
+    // for block faces and corners with block
+    // resolution (refinement) change.
+    // Made public so can access them.
     
     /* Creation, copy, and assignment constructors. */
     AdaptiveBlock3D_List(void) {
-      ThisCPU = 0; Nblk = 0; Block = NULL; RefineFlag = NULL;
-      // No resolution change message buffers.
-      message_noreschange_northface_sendbuf = NULL;
-      message_noreschange_northface_recbuf = NULL;
-      message_noreschange_southface_sendbuf = NULL;
-      message_noreschange_southface_recbuf = NULL;
-      message_noreschange_eastface_sendbuf = NULL;
-      message_noreschange_eastface_recbuf = NULL;
-      message_noreschange_westface_sendbuf = NULL;
-      message_noreschange_westface_recbuf = NULL;
-      message_noreschange_northwestcorner_sendbuf = NULL;
-      message_noreschange_northwestcorner_recbuf = NULL;
-      message_noreschange_northeastcorner_sendbuf = NULL;
-      message_noreschange_northeastcorner_recbuf = NULL;
-      message_noreschange_southeastcorner_sendbuf = NULL;
-      message_noreschange_southeastcorner_recbuf = NULL;
-      message_noreschange_southwestcorner_sendbuf = NULL;
-      message_noreschange_southwestcorner_recbuf = NULL;
- 
-     message_noreschange_topface_sendbuf = NULL;           
-      message_noreschange_topface_recbuf = NULL;            
-      message_noreschange_bottomface_sendbuf = NULL;       
-      message_noreschange_bottomface_recbuf = NULL;        
-      message_noreschange_topnorthcorner_sendbuf = NULL;
-      message_noreschange_topnorthcorner_recbuf = NULL;
-      message_noreschange_topsouthcorner_sendbuf = NULL;
-      message_noreschange_topsouthcorner_recbuf = NULL;
-      message_noreschange_topeastcorner_sendbuf = NULL;
-      message_noreschange_topeastcorner_recbuf = NULL;
-      message_noreschange_topwestcorner_sendbuf = NULL;
-      message_noreschange_topwestcorner_recbuf = NULL;
-      message_noreschange_topnorthwestcorner_sendbuf = NULL;
-      message_noreschange_topnorthwestcorner_recbuf = NULL;
-      message_noreschange_topnortheastcorner_sendbuf = NULL;
-      message_noreschange_topnortheastcorner_recbuf = NULL;
-      message_noreschange_topsoutheastcorner_sendbuf = NULL;
-      message_noreschange_topsoutheastcorner_recbuf = NULL;
-      message_noreschange_topsouthwestcorner_sendbuf = NULL;
-      message_noreschange_topsouthwestcorner_recbuf = NULL;
-      message_noreschange_bottomnorthcorner_sendbuf = NULL;
-      message_noreschange_bottomnorthcorner_recbuf = NULL;
-      message_noreschange_bottomsouthcorner_sendbuf = NULL;
-      message_noreschange_bottomsouthcorner_recbuf = NULL;
-      message_noreschange_bottomeastcorner_sendbuf = NULL;
-      message_noreschange_bottomeastcorner_recbuf = NULL;
-      message_noreschange_bottomwestcorner_sendbuf = NULL;
-      message_noreschange_bottomwestcorner_recbuf = NULL;
-      message_noreschange_bottomnorthwestcorner_sendbuf = NULL;
-      message_noreschange_bottomnorthwestcorner_recbuf = NULL;
-      message_noreschange_bottomnortheastcorner_sendbuf = NULL;
-      message_noreschange_bottomnortheastcorner_recbuf = NULL;
-      message_noreschange_bottomsoutheastcorner_sendbuf = NULL;
-      message_noreschange_bottomsoutheastcorner_recbuf = NULL;
-      message_noreschange_bottomsouthwestcorner_sendbuf = NULL;
-      message_noreschange_bottomsouthwestcorner_recbuf =NULL;
-      // Resolution change message buffers.
-      message_reschange_northface_sendbuf = NULL;
-      message_reschange_northface_recbuf = NULL;
-      message_reschange_southface_sendbuf = NULL;
-      message_reschange_southface_recbuf = NULL;
-      message_reschange_eastface_sendbuf = NULL;
-      message_reschange_eastface_recbuf = NULL;
-      message_reschange_westface_sendbuf = NULL;
-      message_reschange_westface_recbuf = NULL;
-      message_reschange_northwestcorner_sendbuf = NULL;
-      message_reschange_northwestcorner_recbuf = NULL;
-      message_reschange_northeastcorner_sendbuf = NULL;
-      message_reschange_northeastcorner_recbuf = NULL;
-      message_reschange_southeastcorner_sendbuf = NULL;
-      message_reschange_southeastcorner_recbuf = NULL;
-      message_reschange_southwestcorner_sendbuf = NULL;
-      message_reschange_southwestcorner_recbuf = NULL;
-
-      message_reschange_topface_sendbuf = NULL;           
-      message_reschange_topface_recbuf = NULL;            
-      message_reschange_bottomface_sendbuf = NULL;       
-      message_reschange_bottomface_recbuf = NULL;        
-      message_reschange_topnorthcorner_sendbuf = NULL;
-      message_reschange_topnorthcorner_recbuf = NULL;
-      message_reschange_topsouthcorner_sendbuf = NULL;
-      message_reschange_topsouthcorner_recbuf = NULL;
-      message_reschange_topeastcorner_sendbuf = NULL;
-      message_reschange_topeastcorner_recbuf = NULL;
-      message_reschange_topwestcorner_sendbuf = NULL;
-      message_reschange_topwestcorner_recbuf = NULL;
-      message_reschange_topnorthwestcorner_sendbuf = NULL;
-      message_reschange_topnorthwestcorner_recbuf = NULL;
-      message_reschange_topnortheastcorner_sendbuf = NULL;
-      message_reschange_topnortheastcorner_recbuf = NULL;
-      message_reschange_topsoutheastcorner_sendbuf = NULL;
-      message_reschange_topsoutheastcorner_recbuf = NULL;
-      message_reschange_topsouthwestcorner_sendbuf = NULL;
-      message_reschange_topsouthwestcorner_recbuf = NULL;
-      message_reschange_bottomnorthcorner_sendbuf = NULL;
-      message_reschange_bottomnorthcorner_recbuf = NULL;
-      message_reschange_bottomsouthcorner_sendbuf = NULL;
-      message_reschange_bottomsouthcorner_recbuf = NULL;
-      message_reschange_bottomeastcorner_sendbuf = NULL;
-      message_reschange_bottomeastcorner_recbuf = NULL;
-      message_reschange_bottomwestcorner_sendbuf = NULL;
-      message_reschange_bottomwestcorner_recbuf = NULL;
-      message_reschange_bottomnorthwestcorner_sendbuf = NULL;
-      message_reschange_bottomnorthwestcorner_recbuf = NULL;
-      message_reschange_bottomnortheastcorner_sendbuf = NULL;
-      message_reschange_bottomnortheastcorner_recbuf = NULL;
-      message_reschange_bottomsoutheastcorner_sendbuf = NULL;
-      message_reschange_bottomsoutheastcorner_recbuf = NULL;
-      message_reschange_bottomsouthwestcorner_sendbuf = NULL;
-      message_reschange_bottomsouthwestcorner_recbuf = NULL;
-      }
+       ThisCPU = 0; Nblk = 0; Block = NULL; RefineFlag = NULL;
+       // No resolution change message buffers.
+       message_noreschange_sendbuf = NULL;
+       message_noreschange_recbuf = NULL;
+    }
 
     AdaptiveBlock3D_List(const AdaptiveBlock3D_List &Blk_List) {
-      ThisCPU = Blk_List.ThisCPU; Nblk = Blk_List.Nblk; 
-      Block = Blk_List.Block; RefineFlag = Blk_List.RefineFlag;
-      // No resolution change message buffers.
-      message_noreschange_northface_sendbuf = Blk_List.message_noreschange_northface_sendbuf;
-      message_noreschange_northface_recbuf = Blk_List.message_noreschange_northface_recbuf;
-      message_noreschange_southface_sendbuf = Blk_List.message_noreschange_southface_sendbuf;
-      message_noreschange_southface_recbuf = Blk_List.message_noreschange_southface_recbuf;
-      message_noreschange_eastface_sendbuf = Blk_List.message_noreschange_eastface_sendbuf;
-      message_noreschange_eastface_recbuf = Blk_List.message_noreschange_eastface_recbuf;
-      message_noreschange_westface_sendbuf = Blk_List.message_noreschange_westface_sendbuf;
-      message_noreschange_westface_recbuf = Blk_List.message_noreschange_westface_recbuf;
-      message_noreschange_northwestcorner_sendbuf = Blk_List.message_noreschange_northwestcorner_sendbuf;
-      message_noreschange_northwestcorner_recbuf = Blk_List.message_noreschange_northwestcorner_recbuf;
-      message_noreschange_northeastcorner_sendbuf = Blk_List.message_noreschange_northeastcorner_sendbuf;
-      message_noreschange_northeastcorner_recbuf = Blk_List.message_noreschange_northeastcorner_recbuf;
-      message_noreschange_southeastcorner_sendbuf = Blk_List.message_noreschange_southeastcorner_sendbuf;
-      message_noreschange_southeastcorner_recbuf = Blk_List.message_noreschange_southeastcorner_recbuf;
-      message_noreschange_southwestcorner_sendbuf = Blk_List.message_noreschange_southwestcorner_sendbuf;
-      message_noreschange_southwestcorner_recbuf = Blk_List.message_noreschange_southwestcorner_recbuf;
-      message_noreschange_topface_sendbuf =  Blk_List.message_noreschange_topface_sendbuf;           
-      message_noreschange_topface_recbuf =  Blk_List.message_noreschange_topface_recbuf;            
-      message_noreschange_bottomface_sendbuf =  Blk_List.message_noreschange_bottomface_sendbuf ;       
-      message_noreschange_bottomface_recbuf =  Blk_List.message_noreschange_bottomface_recbuf;        
-      message_noreschange_topnorthcorner_sendbuf =  Blk_List.message_noreschange_topnorthcorner_sendbuf;
-      message_noreschange_topnorthcorner_recbuf =  Blk_List.message_noreschange_topnorthcorner_recbuf;
-      message_noreschange_topsouthcorner_sendbuf =  Blk_List.message_noreschange_topsouthcorner_sendbuf;
-      message_noreschange_topsouthcorner_recbuf =  Blk_List.message_noreschange_topsouthcorner_recbuf;
-      message_noreschange_topeastcorner_sendbuf =  Blk_List.message_noreschange_topeastcorner_sendbuf;
-      message_noreschange_topeastcorner_recbuf =  Blk_List.message_noreschange_topeastcorner_recbuf ;
-      message_noreschange_topwestcorner_sendbuf =  Blk_List.message_noreschange_topwestcorner_sendbuf;
-      message_noreschange_topwestcorner_recbuf =  Blk_List.message_noreschange_topwestcorner_recbuf;
-      message_noreschange_topnorthwestcorner_sendbuf =  Blk_List.message_noreschange_topnorthwestcorner_sendbuf;
-      message_noreschange_topnorthwestcorner_recbuf =  Blk_List.message_noreschange_topnorthwestcorner_recbuf;
-      message_noreschange_topnortheastcorner_sendbuf =  Blk_List.message_noreschange_topnortheastcorner_sendbuf;
-      message_noreschange_topnortheastcorner_recbuf =  Blk_List.message_noreschange_topnortheastcorner_recbuf;
-      message_noreschange_topsoutheastcorner_sendbuf =  Blk_List.message_noreschange_topsoutheastcorner_sendbuf;
-      message_noreschange_topsoutheastcorner_recbuf =  Blk_List.message_noreschange_topsoutheastcorner_recbuf;
-      message_noreschange_topsouthwestcorner_sendbuf =  Blk_List.message_noreschange_topsouthwestcorner_sendbuf;
-      message_noreschange_topsouthwestcorner_recbuf =  Blk_List.message_noreschange_topsouthwestcorner_recbuf;
-      message_noreschange_bottomnorthcorner_sendbuf =  Blk_List.message_noreschange_bottomnorthcorner_sendbuf;
-      message_noreschange_bottomnorthcorner_recbuf =  Blk_List.message_noreschange_bottomnorthcorner_recbuf;
-      message_noreschange_bottomsouthcorner_sendbuf =  Blk_List.message_noreschange_bottomsouthcorner_sendbuf;
-      message_noreschange_bottomsouthcorner_recbuf =  Blk_List.message_noreschange_bottomsouthcorner_recbuf;
-      message_noreschange_bottomeastcorner_sendbuf =  Blk_List.message_noreschange_bottomeastcorner_sendbuf ;
-      message_noreschange_bottomeastcorner_recbuf =  Blk_List.message_noreschange_bottomeastcorner_recbuf;
-      message_noreschange_bottomwestcorner_sendbuf =  Blk_List.message_noreschange_bottomwestcorner_sendbuf;
-      message_noreschange_bottomwestcorner_recbuf =  Blk_List.message_noreschange_bottomwestcorner_recbuf;
-      message_noreschange_bottomnorthwestcorner_sendbuf =  Blk_List.message_noreschange_bottomnorthwestcorner_sendbuf;
-      message_noreschange_bottomnorthwestcorner_recbuf =  Blk_List.message_noreschange_bottomnorthwestcorner_recbuf;
-      message_noreschange_bottomnortheastcorner_sendbuf =  Blk_List.message_noreschange_bottomnortheastcorner_sendbuf;
-      message_noreschange_bottomnortheastcorner_recbuf =  Blk_List.message_noreschange_bottomnortheastcorner_recbuf;
-      message_noreschange_bottomsoutheastcorner_sendbuf =  Blk_List.message_noreschange_bottomsoutheastcorner_sendbuf;
-      message_noreschange_bottomsoutheastcorner_recbuf =  Blk_List.message_noreschange_bottomsoutheastcorner_recbuf;
-      message_noreschange_bottomsouthwestcorner_sendbuf =  Blk_List.message_noreschange_bottomsouthwestcorner_sendbuf;
-      message_noreschange_bottomsouthwestcorner_recbuf = Blk_List.message_noreschange_bottomsouthwestcorner_recbuf ;      // Resolution change message buffers.
-      message_reschange_northface_sendbuf = Blk_List.message_reschange_northface_sendbuf;
-      message_reschange_northface_recbuf = Blk_List.message_reschange_northface_recbuf;
-      message_reschange_southface_sendbuf = Blk_List.message_reschange_southface_sendbuf;
-      message_reschange_southface_recbuf = Blk_List.message_reschange_southface_recbuf;
-      message_reschange_eastface_sendbuf = Blk_List.message_reschange_eastface_sendbuf;
-      message_reschange_eastface_recbuf = Blk_List.message_reschange_eastface_recbuf;
-      message_reschange_westface_sendbuf = Blk_List.message_reschange_westface_sendbuf;
-      message_reschange_westface_recbuf = Blk_List.message_reschange_westface_recbuf;
-      message_reschange_northwestcorner_sendbuf = Blk_List.message_reschange_northwestcorner_sendbuf;
-      message_reschange_northwestcorner_recbuf = Blk_List.message_reschange_northwestcorner_recbuf;
-      message_reschange_northeastcorner_sendbuf = Blk_List.message_reschange_northeastcorner_sendbuf;
-      message_reschange_northeastcorner_recbuf = Blk_List.message_reschange_northeastcorner_recbuf;
-      message_reschange_southeastcorner_sendbuf = Blk_List.message_reschange_southeastcorner_sendbuf;
-      message_reschange_southeastcorner_recbuf = Blk_List.message_reschange_southeastcorner_recbuf;
-      message_reschange_southwestcorner_sendbuf = Blk_List.message_reschange_southwestcorner_sendbuf;
-      message_reschange_southwestcorner_recbuf = Blk_List.message_reschange_southwestcorner_recbuf;
-      message_reschange_topface_sendbuf =  Blk_List.message_reschange_topface_sendbuf;           
-      message_reschange_topface_recbuf =  Blk_List.message_reschange_topface_recbuf;            
-      message_reschange_bottomface_sendbuf =  Blk_List.message_reschange_bottomface_sendbuf;       
-      message_reschange_bottomface_recbuf =  Blk_List.message_reschange_bottomface_recbuf;        
-      message_reschange_topnorthcorner_sendbuf =  Blk_List.message_reschange_topnorthcorner_sendbuf;
-      message_reschange_topnorthcorner_recbuf =  Blk_List.message_reschange_topnorthcorner_recbuf;
-      message_reschange_topsouthcorner_sendbuf =  Blk_List.message_reschange_topsouthcorner_sendbuf;
-      message_reschange_topsouthcorner_recbuf =  Blk_List.message_reschange_topsouthcorner_recbuf;
-      message_reschange_topeastcorner_sendbuf =  Blk_List.message_reschange_topeastcorner_sendbuf;
-      message_reschange_topeastcorner_recbuf =  Blk_List.message_reschange_topeastcorner_recbuf;
-      message_reschange_topwestcorner_sendbuf =  Blk_List.message_reschange_topwestcorner_sendbuf;
-      message_reschange_topwestcorner_recbuf =  Blk_List.message_reschange_topwestcorner_recbuf;
-      message_reschange_topnorthwestcorner_sendbuf =  Blk_List.message_reschange_topnorthwestcorner_sendbuf;
-      message_reschange_topnorthwestcorner_recbuf =  Blk_List.message_reschange_topnorthwestcorner_recbuf;
-      message_reschange_topnortheastcorner_sendbuf =  Blk_List.message_reschange_topnortheastcorner_sendbuf;
-      message_reschange_topnortheastcorner_recbuf =  Blk_List.message_reschange_topnortheastcorner_recbuf;
-      message_reschange_topsoutheastcorner_sendbuf =  Blk_List.message_reschange_topsoutheastcorner_sendbuf;
-      message_reschange_topsoutheastcorner_recbuf =  Blk_List.message_reschange_topsoutheastcorner_recbuf;
-      message_reschange_topsouthwestcorner_sendbuf =  Blk_List.message_reschange_topsouthwestcorner_sendbuf;
-      message_reschange_topsouthwestcorner_recbuf =  Blk_List.message_reschange_topsouthwestcorner_recbuf;
-      message_reschange_bottomnorthcorner_sendbuf =  Blk_List.message_reschange_bottomnorthcorner_sendbuf;
-      message_reschange_bottomnorthcorner_recbuf =  Blk_List.message_reschange_bottomnorthcorner_recbuf;
-      message_reschange_bottomsouthcorner_sendbuf =  Blk_List.message_reschange_bottomsouthcorner_sendbuf;
-      message_reschange_bottomsouthcorner_recbuf =  Blk_List.message_reschange_bottomsouthcorner_recbuf;
-      message_reschange_bottomeastcorner_sendbuf =  Blk_List.message_reschange_bottomeastcorner_sendbuf;
-      message_reschange_bottomeastcorner_recbuf =  Blk_List.message_reschange_bottomeastcorner_recbuf;
-      message_reschange_bottomwestcorner_sendbuf =  Blk_List.message_reschange_bottomwestcorner_sendbuf;
-      message_reschange_bottomwestcorner_recbuf =  Blk_List.message_reschange_bottomwestcorner_recbuf ;
-      message_reschange_bottomnorthwestcorner_sendbuf =  Blk_List.message_reschange_bottomnorthwestcorner_sendbuf;
-      message_reschange_bottomnorthwestcorner_recbuf =  Blk_List.message_reschange_bottomnorthwestcorner_recbuf;
-      message_reschange_bottomnortheastcorner_sendbuf =  Blk_List.message_reschange_bottomnortheastcorner_sendbuf;
-      message_reschange_bottomnortheastcorner_recbuf =  Blk_List.message_reschange_bottomnortheastcorner_recbuf;
-      message_reschange_bottomsoutheastcorner_sendbuf =  Blk_List.message_reschange_bottomsoutheastcorner_sendbuf;
-      message_reschange_bottomsoutheastcorner_recbuf =  Blk_List.message_reschange_bottomsoutheastcorner_recbuf;
-      message_reschange_bottomsouthwestcorner_sendbuf =  Blk_List.message_reschange_bottomsouthwestcorner_sendbuf;
-      message_reschange_bottomsouthwestcorner_recbuf =  Blk_List.message_reschange_bottomsouthwestcorner_recbuf;   
-}
+       ThisCPU = Blk_List.ThisCPU; Nblk = Blk_List.Nblk; 
+       Block = Blk_List.Block; RefineFlag = Blk_List.RefineFlag;
+       // No resolution change message buffers.
+       message_noreschange_sendbuf = Blk_List.message_noreschange_sendbuf;
+       message_noreschange_recbuf = Blk_List.message_noreschange_recbuf;
+    }
 
     /* Destructor. */
     // ~AdaptiveBlock3D_List(void);
     // Use automatically generated destructor.
 
     /* Assignment operator. */
-    // AdaptiveBlock3D_List operator = (const AdaptiveBlock3D_List &Blk_List);
-    // Use automatically generated assignment operator.
+
+    AdaptiveBlock3D_List & operator = (const AdaptiveBlock3D_List &Blk_List);
 
     /* Allocate memory for adaptive block list. */
     void allocate(const int N);
@@ -1440,26 +1266,27 @@ class AdaptiveBlock3D_List{
     
     static void Deallocate_Message_Buffers_ResChange(AdaptiveBlock3D_List &Blk_List);
     
-    static int Exchange_Messages(AdaptiveBlock3D_List &Blk_List,
-                                 const int Number_of_Solution_Variables);
-    
     static int Exchange_Messages_NoResChange(AdaptiveBlock3D_List &Blk_List,
                                              const int Number_of_Solution_Variables);
     
+   static int Exchange_Messages_NoResChange_Mesh_Geometry_Only(AdaptiveBlock3D_List &Blk_List);
+
     static int Exchange_Messages_ResChange_FineToCoarse(AdaptiveBlock3D_List &Blk_List,
                                                         const int Number_of_Solution_Variables);
     
     static int Exchange_Messages_ResChange_CoarseToFine(AdaptiveBlock3D_List &Blk_List,
                                                         const int Number_of_Solution_Variables);
     
-    static  void Copy_Refinement_Flags(AdaptiveBlock3D_List &Blk_List_1,
-                                       AdaptiveBlock3D_List &Blk_List_2);
+    static void Copy_Refinement_Flags(AdaptiveBlock3D_List &Blk_List_1,
+                                      AdaptiveBlock3D_List &Blk_List_2);
+     
     /* Input-output operators. */
+
     friend ostream &operator << (ostream &out_file,
 				 const AdaptiveBlock3D_List &Blk_List);
+
     friend istream &operator >> (istream &in_file,
 				 AdaptiveBlock3D_List &Blk_List);
-
 };
 
 /*************************************************************
@@ -1469,1277 +1296,52 @@ inline void AdaptiveBlock3D_List::allocate(const int N) {
    int i, j; assert( N > 0 ); Nblk = N;
    Block = new AdaptiveBlock3D[Nblk]; 
    RefineFlag = new int[Nblk]; nochangeAll();
-   //
-   // No resolution change message buffers. 
-   message_noreschange_topface_sendbuf = new double*[Nblk];
+   // No resolution change message buffers.
+   message_noreschange_sendbuf = new double**[Nblk];
    for ( i = 0; i <= Nblk-1 ; ++i ) {
-      message_noreschange_topface_sendbuf[i] = new double[1];
-      message_noreschange_topface_sendbuf[i][0] = ZERO;
-   } /* endfor */
-   message_noreschange_topface_recbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_noreschange_topface_recbuf[i] = new double[1];
-      message_noreschange_topface_recbuf[i][0] = ZERO;
-   } /* endfor */
-
-   message_noreschange_bottomface_sendbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      message_noreschange_bottomface_sendbuf[i] = new double[1];
-      message_noreschange_bottomface_sendbuf[i][0] = ZERO;
-   } /* endfor */
-   message_noreschange_bottomface_recbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_noreschange_bottomface_recbuf[i] = new double[1];
-      message_noreschange_bottomface_recbuf[i][0] = ZERO;
-   } /* endfor */
-
-   message_noreschange_northface_sendbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      message_noreschange_northface_sendbuf[i] = new double[1];
-      message_noreschange_northface_sendbuf[i][0] = ZERO;
-   } /* endfor */
-   message_noreschange_northface_recbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_noreschange_northface_recbuf[i] = new double[1];
-      message_noreschange_northface_recbuf[i][0] = ZERO;
-   } /* endfor */
-   message_noreschange_southface_sendbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_noreschange_southface_sendbuf[i] = new double[1];
-      message_noreschange_southface_sendbuf[i][0] = ZERO;
-   } /* endfor */
-   message_noreschange_southface_recbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      message_noreschange_southface_recbuf[i] = new double[1];
-      message_noreschange_southface_recbuf[i][0] = ZERO;
-   } /* endfor */
-   message_noreschange_eastface_sendbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_noreschange_eastface_sendbuf[i] = new double[1];
-      message_noreschange_eastface_sendbuf[i][0] = ZERO;
-   } /* endfor */
-   message_noreschange_eastface_recbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_noreschange_eastface_recbuf[i] = new double[1];
-      message_noreschange_eastface_recbuf[i][0] = ZERO;
-   } /* endfor */
-   message_noreschange_westface_sendbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_noreschange_westface_sendbuf[i] = new double[1];
-      message_noreschange_westface_sendbuf[i][0] = ZERO;
-   } /* endfor */
-   message_noreschange_westface_recbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_noreschange_westface_recbuf[i] = new double[1];
-      message_noreschange_westface_recbuf[i][0] = ZERO;
-   } /* endfor */
-
-   message_noreschange_northwestcorner_sendbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_noreschange_northwestcorner_sendbuf[i] = new double[1];
-      message_noreschange_northwestcorner_sendbuf[i][0] = ZERO;
-   } /* endfor */
-   message_noreschange_northwestcorner_recbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_noreschange_northwestcorner_recbuf[i] = new double[1];
-      message_noreschange_northwestcorner_recbuf[i][0] = ZERO;
-   } /* endfor */
-   message_noreschange_northeastcorner_sendbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_noreschange_northeastcorner_sendbuf[i] = new double[1];
-      message_noreschange_northeastcorner_sendbuf[i][0] = ZERO;
-   } /* endfor */
-   message_noreschange_northeastcorner_recbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_noreschange_northeastcorner_recbuf[i] = new double[1];
-      message_noreschange_northeastcorner_recbuf[i][0] = ZERO;
-   } /* endfor */
-   message_noreschange_southeastcorner_sendbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_noreschange_southeastcorner_sendbuf[i] = new double[1];
-      message_noreschange_southeastcorner_sendbuf[i][0] = ZERO;
-   } /* endfor */
-   message_noreschange_southeastcorner_recbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_noreschange_southeastcorner_recbuf[i] = new double[1];
-      message_noreschange_southeastcorner_recbuf[i][0] = ZERO;
-   } /* endfor */
-   message_noreschange_southwestcorner_sendbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      message_noreschange_southwestcorner_sendbuf[i] = new double[1];
-      message_noreschange_southwestcorner_sendbuf[i][0] = ZERO;
-   } /* endfor */
-   message_noreschange_southwestcorner_recbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      message_noreschange_southwestcorner_recbuf[i] = new double[1];
-      message_noreschange_southwestcorner_recbuf[i][0] = ZERO;
-   } /* endfor */
-
-   /********/
-   message_noreschange_topnorthcorner_sendbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_noreschange_topnorthcorner_sendbuf[i] = new double[1];
-      message_noreschange_topnorthcorner_sendbuf[i][0] = ZERO;
-   } /* endfor */
-   message_noreschange_topnorthcorner_recbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_noreschange_topnorthcorner_recbuf[i] = new double[1];
-      message_noreschange_topnorthcorner_recbuf[i][0] = ZERO;
-   } /* endfor */
-   message_noreschange_topsouthcorner_sendbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_noreschange_topsouthcorner_sendbuf[i] = new double[1];
-      message_noreschange_topsouthcorner_sendbuf[i][0] = ZERO;
-   } /* endfor */
-   message_noreschange_topsouthcorner_recbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_noreschange_topsouthcorner_recbuf[i] = new double[1];
-      message_noreschange_topsouthcorner_recbuf[i][0] = ZERO;
-   } /* endfor */
-   message_noreschange_topeastcorner_sendbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_noreschange_topeastcorner_sendbuf[i] = new double[1];
-      message_noreschange_topeastcorner_sendbuf[i][0] = ZERO;
-   } /* endfor */
-   message_noreschange_topeastcorner_recbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_noreschange_topeastcorner_recbuf[i] = new double[1];
-      message_noreschange_topeastcorner_recbuf[i][0] = ZERO;
-   } /* endfor */
-   message_noreschange_topwestcorner_sendbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      message_noreschange_topwestcorner_sendbuf[i] = new double[1];
-      message_noreschange_topwestcorner_sendbuf[i][0] = ZERO;
-   } /* endfor */
-   message_noreschange_topwestcorner_recbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      message_noreschange_topwestcorner_recbuf[i] = new double[1];
-      message_noreschange_topwestcorner_recbuf[i][0] = ZERO;
-   } /* endfor */
-
-   message_noreschange_topnorthwestcorner_sendbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_noreschange_topnorthwestcorner_sendbuf[i] = new double[1];
-      message_noreschange_topnorthwestcorner_sendbuf[i][0] = ZERO;
-   } /* endfor */
-   message_noreschange_topnorthwestcorner_recbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_noreschange_topnorthwestcorner_recbuf[i] = new double[1];
-      message_noreschange_topnorthwestcorner_recbuf[i][0] = ZERO;
-   } /* endfor */
-   message_noreschange_topnortheastcorner_sendbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_noreschange_topnortheastcorner_sendbuf[i] = new double[1];
-      message_noreschange_topnortheastcorner_sendbuf[i][0] = ZERO;
-   } /* endfor */
-   message_noreschange_topnortheastcorner_recbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_noreschange_topnortheastcorner_recbuf[i] = new double[1];
-      message_noreschange_topnortheastcorner_recbuf[i][0] = ZERO;
-   } /* endfor */
-   message_noreschange_topsoutheastcorner_sendbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_noreschange_topsoutheastcorner_sendbuf[i] = new double[1];
-      message_noreschange_topsoutheastcorner_sendbuf[i][0] = ZERO;
-   } /* endfor */
-   message_noreschange_topsoutheastcorner_recbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_noreschange_topsoutheastcorner_recbuf[i] = new double[1];
-      message_noreschange_topsoutheastcorner_recbuf[i][0] = ZERO;
-   } /* endfor */
-   message_noreschange_topsouthwestcorner_sendbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      message_noreschange_topsouthwestcorner_sendbuf[i] = new double[1];
-      message_noreschange_topsouthwestcorner_sendbuf[i][0] = ZERO;
-   } /* endfor */
-   message_noreschange_topsouthwestcorner_recbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      message_noreschange_topsouthwestcorner_recbuf[i] = new double[1];
-      message_noreschange_topsouthwestcorner_recbuf[i][0] = ZERO;
-   } /* endfor */
-
-   /***bottom**/
-   message_noreschange_bottomnorthcorner_sendbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_noreschange_bottomnorthcorner_sendbuf[i] = new double[1];
-      message_noreschange_bottomnorthcorner_sendbuf[i][0] = ZERO;
-   } /* endfor */
-   message_noreschange_bottomnorthcorner_recbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_noreschange_bottomnorthcorner_recbuf[i] = new double[1];
-      message_noreschange_bottomnorthcorner_recbuf[i][0] = ZERO;
-   } /* endfor */
-   message_noreschange_bottomsouthcorner_sendbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_noreschange_bottomsouthcorner_sendbuf[i] = new double[1];
-      message_noreschange_bottomsouthcorner_sendbuf[i][0] = ZERO;
-   } /* endfor */
-   message_noreschange_bottomsouthcorner_recbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_noreschange_bottomsouthcorner_recbuf[i] = new double[1];
-      message_noreschange_bottomsouthcorner_recbuf[i][0] = ZERO;
-   } /* endfor */
-   message_noreschange_bottomeastcorner_sendbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_noreschange_bottomeastcorner_sendbuf[i] = new double[1];
-      message_noreschange_bottomeastcorner_sendbuf[i][0] = ZERO;
-   } /* endfor */
-   message_noreschange_bottomeastcorner_recbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_noreschange_bottomeastcorner_recbuf[i] = new double[1];
-      message_noreschange_bottomeastcorner_recbuf[i][0] = ZERO;
-   } /* endfor */
-   message_noreschange_bottomwestcorner_sendbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      message_noreschange_bottomwestcorner_sendbuf[i] = new double[1];
-      message_noreschange_bottomwestcorner_sendbuf[i][0] = ZERO;
-   } /* endfor */
-   message_noreschange_bottomwestcorner_recbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      message_noreschange_bottomwestcorner_recbuf[i] = new double[1];
-      message_noreschange_bottomwestcorner_recbuf[i][0] = ZERO;
-   } /* endfor */
-
-   message_noreschange_bottomnorthwestcorner_sendbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_noreschange_bottomnorthwestcorner_sendbuf[i] = new double[1];
-      message_noreschange_bottomnorthwestcorner_sendbuf[i][0] = ZERO;
-   } /* endfor */
-   message_noreschange_bottomnorthwestcorner_recbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_noreschange_bottomnorthwestcorner_recbuf[i] = new double[1];
-      message_noreschange_bottomnorthwestcorner_recbuf[i][0] = ZERO;
-   } /* endfor */
-   message_noreschange_bottomnortheastcorner_sendbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_noreschange_bottomnortheastcorner_sendbuf[i] = new double[1];
-      message_noreschange_bottomnortheastcorner_sendbuf[i][0] = ZERO;
-   } /* endfor */
-   message_noreschange_bottomnortheastcorner_recbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_noreschange_bottomnortheastcorner_recbuf[i] = new double[1];
-      message_noreschange_bottomnortheastcorner_recbuf[i][0] = ZERO;
-   } /* endfor */
-   message_noreschange_bottomsoutheastcorner_sendbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_noreschange_bottomsoutheastcorner_sendbuf[i] = new double[1];
-      message_noreschange_bottomsoutheastcorner_sendbuf[i][0] = ZERO;
-   } /* endfor */
-   message_noreschange_bottomsoutheastcorner_recbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_noreschange_bottomsoutheastcorner_recbuf[i] = new double[1];
-      message_noreschange_bottomsoutheastcorner_recbuf[i][0] = ZERO;
-   } /* endfor */
-   message_noreschange_bottomsouthwestcorner_sendbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      message_noreschange_bottomsouthwestcorner_sendbuf[i] = new double[1];
-      message_noreschange_bottomsouthwestcorner_sendbuf[i][0] = ZERO;
-   } /* endfor */
-   message_noreschange_bottomsouthwestcorner_recbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      message_noreschange_bottomsouthwestcorner_recbuf[i] = new double[1];
-      message_noreschange_bottomsouthwestcorner_recbuf[i][0] = ZERO;
-   } /* endfor */
-
-   //
-
-   //*************************************************
-   //***** Resolution change message buffers.*********
-   //*************************************************
-
-   message_reschange_topface_sendbuf = new double**[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      message_reschange_topface_sendbuf[i] = new double*[2];
-      for (j = 0; j < 2 ; ++j) {
-         message_reschange_topface_sendbuf[i][j] = new double[1];
-         message_reschange_topface_sendbuf[i][j][0] = ZERO;
+       message_noreschange_sendbuf[i] = new double*[MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK];
+      for (j = 0; j < MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK ; ++j) {
+         message_noreschange_sendbuf[i][j] = new double[1];
+         message_noreschange_sendbuf[i][j][0] = ZERO;
       } /* endfor */
    } /* endfor */
-   message_reschange_topface_recbuf = new double**[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_reschange_topface_recbuf[i] = new double*[2];
-      for (j = 0; j < 2 ; ++j) {
-         message_reschange_topface_recbuf[i][j] = new double[1];
-         message_reschange_topface_recbuf[i][j][0] = ZERO;
+   message_noreschange_recbuf = new double**[Nblk];
+   for ( i = 0; i <= Nblk-1 ; ++i ) {
+      message_noreschange_recbuf[i] = new double*[MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK];
+      for (j = 0; j < MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK ; ++j) {
+         message_noreschange_recbuf[i][j] = new double[1];
+         message_noreschange_recbuf[i][j][0] = ZERO;
       } /* endfor */
    } /* endfor */
-   message_reschange_bottomface_sendbuf = new double**[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      message_reschange_bottomface_sendbuf[i] = new double*[2];
-      for (j = 0; j < 2 ; ++j) {
-         message_reschange_bottomface_sendbuf[i][j] = new double[1];
-         message_reschange_bottomface_sendbuf[i][j][0] = ZERO;
-      } /* endfor */
-   } /* endfor */
-   message_reschange_bottomface_recbuf = new double**[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_reschange_bottomface_recbuf[i] = new double*[2];
-      for (j = 0; j < 2 ; ++j) {
-         message_reschange_bottomface_recbuf[i][j] = new double[1];
-         message_reschange_bottomface_recbuf[i][j][0] = ZERO;
-      } /* endfor */
-   } /* endfor */
-
-
-
-   message_reschange_northface_sendbuf = new double**[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      message_reschange_northface_sendbuf[i] = new double*[2];
-      for (j = 0; j < 2 ; ++j) {
-         message_reschange_northface_sendbuf[i][j] = new double[1];
-         message_reschange_northface_sendbuf[i][j][0] = ZERO;
-      } /* endfor */
-   } /* endfor */
-   message_reschange_northface_recbuf = new double**[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_reschange_northface_recbuf[i] = new double*[2];
-      for (j = 0; j < 2 ; ++j) {
-         message_reschange_northface_recbuf[i][j] = new double[1];
-         message_reschange_northface_recbuf[i][j][0] = ZERO;
-      } /* endfor */
-   } /* endfor */
-   message_reschange_southface_sendbuf = new double**[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      message_reschange_southface_sendbuf[i] = new double*[2];
-      for (j = 0; j < 2 ; ++j) {
-         message_reschange_southface_sendbuf[i][j] = new double[1];
-         message_reschange_southface_sendbuf[i][j][0] = ZERO;
-      } /* endfor */
-   } /* endfor */
-   message_reschange_southface_recbuf = new double**[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_reschange_southface_recbuf[i] = new double*[2];
-      for (j = 0; j < 2 ; ++j) {
-         message_reschange_southface_recbuf[i][j] = new double[1];
-         message_reschange_southface_recbuf[i][j][0] = ZERO;
-      } /* endfor */
-   } /* endfor */
-   message_reschange_eastface_sendbuf = new double**[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      message_reschange_eastface_sendbuf[i] = new double*[2];
-      for (j = 0; j < 2 ; ++j) {
-         message_reschange_eastface_sendbuf[i][j] = new double[1];
-         message_reschange_eastface_sendbuf[i][j][0] = ZERO;
-      } /* endfor */
-   } /* endfor */
-   message_reschange_eastface_recbuf = new double**[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_reschange_eastface_recbuf[i] = new double*[2];
-      for (j = 0; j < 2 ; ++j) {
-         message_reschange_eastface_recbuf[i][j] = new double[1];
-         message_reschange_eastface_recbuf[i][j][0] = ZERO;
-      } /* endfor */
-   } /* endfor */
-   message_reschange_westface_sendbuf = new double**[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      message_reschange_westface_sendbuf[i] = new double*[2];
-      for (j = 0; j < 2 ; ++j) {
-         message_reschange_westface_sendbuf[i][j] = new double[1];
-         message_reschange_westface_sendbuf[i][j][0] = ZERO;
-      } /* endfor */
-   } /* endfor */
-   message_reschange_westface_recbuf = new double**[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_reschange_westface_recbuf[i] = new double*[2];
-      for (j = 0; j < 2 ; ++j) {
-         message_reschange_westface_recbuf[i][j] = new double[1];
-         message_reschange_westface_recbuf[i][j][0] = ZERO;
-      } /* endfor */
-   } /* endfor */
-
-   message_reschange_northwestcorner_sendbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_reschange_northwestcorner_sendbuf[i] = new double[1];
-      message_reschange_northwestcorner_sendbuf[i][0] = ZERO;
-   } /* endfor */
-   message_reschange_northwestcorner_recbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_reschange_northwestcorner_recbuf[i] = new double[1];
-      message_reschange_northwestcorner_recbuf[i][0] = ZERO;
-   } /* endfor */
-   message_reschange_northeastcorner_sendbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_reschange_northeastcorner_sendbuf[i] = new double[1];
-      message_reschange_northeastcorner_sendbuf[i][0] = ZERO;
-   } /* endfor */
-   message_reschange_northeastcorner_recbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_reschange_northeastcorner_recbuf[i] = new double[1];
-      message_reschange_northeastcorner_recbuf[i][0] = ZERO;
-   } /* endfor */
-   message_reschange_southeastcorner_sendbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_reschange_southeastcorner_sendbuf[i] = new double[1];
-      message_reschange_southeastcorner_sendbuf[i][0] = ZERO;
-   } /* endfor */
-   message_reschange_southeastcorner_recbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_reschange_southeastcorner_recbuf[i] = new double[1];
-      message_reschange_southeastcorner_recbuf[i][0] = ZERO;
-   } /* endfor */
-   message_reschange_southwestcorner_sendbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      message_reschange_southwestcorner_sendbuf[i] = new double[1];
-      message_reschange_southwestcorner_sendbuf[i][0] = ZERO;
-   } /* endfor */
-   message_reschange_southwestcorner_recbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      message_reschange_southwestcorner_recbuf[i] = new double[1];
-      message_reschange_southwestcorner_recbuf[i][0] = ZERO;
-   } /* endfor */
-
-   //****//
-   message_reschange_topnorthcorner_sendbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_reschange_topnorthcorner_sendbuf[i] = new double[1];
-      message_reschange_topnorthcorner_sendbuf[i][0] = ZERO;
-   } /* endfor */
-   message_reschange_topnorthcorner_recbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_reschange_topnorthcorner_recbuf[i] = new double[1];
-      message_reschange_topnorthcorner_recbuf[i][0] = ZERO;
-   } /* endfor */
-   message_reschange_topsouthcorner_sendbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_reschange_topsouthcorner_sendbuf[i] = new double[1];
-      message_reschange_topsouthcorner_sendbuf[i][0] = ZERO;
-   } /* endfor */
-   message_reschange_topsouthcorner_recbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_reschange_topsouthcorner_recbuf[i] = new double[1];
-      message_reschange_topsouthcorner_recbuf[i][0] = ZERO;
-   } /* endfor */
-   message_reschange_topeastcorner_sendbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_reschange_topeastcorner_sendbuf[i] = new double[1];
-      message_reschange_topeastcorner_sendbuf[i][0] = ZERO;
-   } /* endfor */
-   message_reschange_topeastcorner_recbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_reschange_topeastcorner_recbuf[i] = new double[1];
-      message_reschange_topeastcorner_recbuf[i][0] = ZERO;
-   } /* endfor */
-   message_reschange_topwestcorner_sendbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      message_reschange_topwestcorner_sendbuf[i] = new double[1];
-      message_reschange_topwestcorner_sendbuf[i][0] = ZERO;
-   } /* endfor */
-   message_reschange_topwestcorner_recbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      message_reschange_topwestcorner_recbuf[i] = new double[1];
-      message_reschange_topwestcorner_recbuf[i][0] = ZERO;
-   } /* endfor */
-
-   message_reschange_topnorthwestcorner_sendbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_reschange_topnorthwestcorner_sendbuf[i] = new double[1];
-      message_reschange_topnorthwestcorner_sendbuf[i][0] = ZERO;
-   } /* endfor */
-   message_reschange_topnorthwestcorner_recbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_reschange_topnorthwestcorner_recbuf[i] = new double[1];
-      message_reschange_topnorthwestcorner_recbuf[i][0] = ZERO;
-   } /* endfor */
-   message_reschange_topnortheastcorner_sendbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_reschange_topnortheastcorner_sendbuf[i] = new double[1];
-      message_reschange_topnortheastcorner_sendbuf[i][0] = ZERO;
-   } /* endfor */
-   message_reschange_topnortheastcorner_recbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_reschange_topnortheastcorner_recbuf[i] = new double[1];
-      message_reschange_topnortheastcorner_recbuf[i][0] = ZERO;
-   } /* endfor */
-   message_reschange_topsoutheastcorner_sendbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_reschange_topsoutheastcorner_sendbuf[i] = new double[1];
-      message_reschange_topsoutheastcorner_sendbuf[i][0] = ZERO;
-   } /* endfor */
-   message_reschange_topsoutheastcorner_recbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_reschange_topsoutheastcorner_recbuf[i] = new double[1];
-      message_reschange_topsoutheastcorner_recbuf[i][0] = ZERO;
-   } /* endfor */
-   message_reschange_topsouthwestcorner_sendbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      message_reschange_topsouthwestcorner_sendbuf[i] = new double[1];
-      message_reschange_topsouthwestcorner_sendbuf[i][0] = ZERO;
-   } /* endfor */
-   message_reschange_topsouthwestcorner_recbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      message_reschange_topsouthwestcorner_recbuf[i] = new double[1];
-      message_reschange_topsouthwestcorner_recbuf[i][0] = ZERO;
-   } /* endfor */
- 
-   //***//
-   message_reschange_topnorthcorner_sendbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_reschange_topnorthcorner_sendbuf[i] = new double[1];
-      message_reschange_topnorthcorner_sendbuf[i][0] = ZERO;
-   } /* endfor */
-   message_reschange_topnorthcorner_recbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_reschange_topnorthcorner_recbuf[i] = new double[1];
-      message_reschange_topnorthcorner_recbuf[i][0] = ZERO;
-   } /* endfor */
-   message_reschange_topsouthcorner_sendbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_reschange_topsouthcorner_sendbuf[i] = new double[1];
-      message_reschange_topsouthcorner_sendbuf[i][0] = ZERO;
-   } /* endfor */
-   message_reschange_topsouthcorner_recbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_reschange_topsouthcorner_recbuf[i] = new double[1];
-      message_reschange_topsouthcorner_recbuf[i][0] = ZERO;
-   } /* endfor */
-   message_reschange_topeastcorner_sendbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_reschange_topeastcorner_sendbuf[i] = new double[1];
-      message_reschange_topeastcorner_sendbuf[i][0] = ZERO;
-   } /* endfor */
-   message_reschange_topeastcorner_recbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_reschange_topeastcorner_recbuf[i] = new double[1];
-      message_reschange_topeastcorner_recbuf[i][0] = ZERO;
-   } /* endfor */
-   message_reschange_topwestcorner_sendbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      message_reschange_topwestcorner_sendbuf[i] = new double[1];
-      message_reschange_topwestcorner_sendbuf[i][0] = ZERO;
-   } /* endfor */
-   message_reschange_topwestcorner_recbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      message_reschange_topwestcorner_recbuf[i] = new double[1];
-      message_reschange_topwestcorner_recbuf[i][0] = ZERO;
-   } /* endfor */
-
-   message_reschange_topnorthwestcorner_sendbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_reschange_topnorthwestcorner_sendbuf[i] = new double[1];
-      message_reschange_topnorthwestcorner_sendbuf[i][0] = ZERO;
-   } /* endfor */
-   message_reschange_topnorthwestcorner_recbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_reschange_topnorthwestcorner_recbuf[i] = new double[1];
-      message_reschange_topnorthwestcorner_recbuf[i][0] = ZERO;
-   } /* endfor */
-   message_reschange_topnortheastcorner_sendbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_reschange_topnortheastcorner_sendbuf[i] = new double[1];
-      message_reschange_topnortheastcorner_sendbuf[i][0] = ZERO;
-   } /* endfor */
-   message_reschange_topnortheastcorner_recbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_reschange_topnortheastcorner_recbuf[i] = new double[1];
-      message_reschange_topnortheastcorner_recbuf[i][0] = ZERO;
-   } /* endfor */
-   message_reschange_topsoutheastcorner_sendbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_reschange_topsoutheastcorner_sendbuf[i] = new double[1];
-      message_reschange_topsoutheastcorner_sendbuf[i][0] = ZERO;
-   } /* endfor */
-   message_reschange_topsoutheastcorner_recbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) { 
-      message_reschange_topsoutheastcorner_recbuf[i] = new double[1];
-      message_reschange_topsoutheastcorner_recbuf[i][0] = ZERO;
-   } /* endfor */
-   message_reschange_topsouthwestcorner_sendbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      message_reschange_topsouthwestcorner_sendbuf[i] = new double[1];
-      message_reschange_topsouthwestcorner_sendbuf[i][0] = ZERO;
-   } /* endfor */
-   message_reschange_topsouthwestcorner_recbuf = new double*[Nblk];
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      message_reschange_topsouthwestcorner_recbuf[i] = new double[1];
-      message_reschange_topsouthwestcorner_recbuf[i][0] = ZERO;
-   } /* endfor */
-
 }
 
 /*************************************************************
  * AdaptiveBlock3D_List::deallocate -- Deallocate memory.    *
  *************************************************************/
 inline void AdaptiveBlock3D_List::deallocate(void) {
-   int i, j; delete []Block; Block = NULL;
+   int i, j; 
+   delete []Block; Block = NULL;
    delete []RefineFlag; RefineFlag = NULL;
-   //
-   // No resolution change message buffers.
-
    for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_noreschange_topface_sendbuf[i]; 
-      message_noreschange_topface_sendbuf[i] = NULL;
-   } /* endfor */
-   delete []message_noreschange_topface_sendbuf;
-   message_noreschange_topface_sendbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_noreschange_topface_recbuf[i]; 
-      message_noreschange_topface_recbuf[i] = NULL;
-   } /* endfor */
-   delete []message_noreschange_topface_recbuf;
-   message_noreschange_topface_recbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_noreschange_bottomface_sendbuf[i]; 
-      message_noreschange_bottomface_sendbuf[i] = NULL;
-   } /* endfor */
-   delete []message_noreschange_bottomface_sendbuf;
-   message_noreschange_bottomface_sendbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_noreschange_bottomface_recbuf[i]; 
-      message_noreschange_bottomface_recbuf[i] = NULL;
-   } /* endfor */
-   delete []message_noreschange_bottomface_recbuf;
-   message_noreschange_bottomface_recbuf = NULL;
-
-
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_noreschange_northface_sendbuf[i]; 
-      message_noreschange_northface_sendbuf[i] = NULL;
-   } /* endfor */
-   delete []message_noreschange_northface_sendbuf;
-   message_noreschange_northface_sendbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_noreschange_northface_recbuf[i]; 
-      message_noreschange_northface_recbuf[i] = NULL;
-   } /* endfor */
-   delete []message_noreschange_northface_recbuf;
-   message_noreschange_northface_recbuf = NULL;
-
-  for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_noreschange_southface_sendbuf[i]; 
-      message_noreschange_southface_sendbuf[i] = NULL;
-   } /* endfor */
-   delete []message_noreschange_southface_sendbuf;
-   message_noreschange_southface_sendbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_noreschange_southface_recbuf[i]; 
-      message_noreschange_southface_recbuf[i] = NULL;
-   } /* endfor */
-   delete []message_noreschange_southface_recbuf;
-   message_noreschange_southface_recbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_noreschange_eastface_sendbuf[i]; 
-      message_noreschange_eastface_sendbuf[i] = NULL;
-   } /* endfor */
-   delete []message_noreschange_eastface_sendbuf;
-   message_noreschange_eastface_sendbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_noreschange_eastface_recbuf[i]; 
-      message_noreschange_eastface_recbuf[i] = NULL;
-   } /* endfor */
-   delete []message_noreschange_eastface_recbuf;
-   message_noreschange_eastface_recbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_noreschange_westface_sendbuf[i]; 
-      message_noreschange_westface_sendbuf[i] = NULL;
-   } /* endfor */
-   delete []message_noreschange_westface_sendbuf;
-   message_noreschange_westface_sendbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_noreschange_westface_recbuf[i]; 
-      message_noreschange_westface_recbuf[i] = NULL;
-   } /* endfor */
-   delete []message_noreschange_westface_recbuf;
-   message_noreschange_westface_recbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_noreschange_northwestcorner_sendbuf[i]; 
-      message_noreschange_northwestcorner_sendbuf[i] = NULL;
-   } /* endfor */
-   delete []message_noreschange_northwestcorner_sendbuf;
-   message_noreschange_northwestcorner_sendbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_noreschange_northwestcorner_recbuf[i]; 
-      message_noreschange_northwestcorner_recbuf[i] = NULL;
-   } /* endfor */
-   delete []message_noreschange_northwestcorner_recbuf;
-   message_noreschange_northwestcorner_recbuf = NULL;
-
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_noreschange_northeastcorner_sendbuf[i]; 
-      message_noreschange_northeastcorner_sendbuf[i] = NULL;
-   } /* endfor */
-   delete []message_noreschange_northeastcorner_sendbuf;
-   message_noreschange_northeastcorner_sendbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_noreschange_northeastcorner_recbuf[i]; 
-      message_noreschange_northeastcorner_recbuf[i] = NULL;
-   } /* endfor */
-   delete []message_noreschange_northeastcorner_recbuf;
-   message_noreschange_northeastcorner_recbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_noreschange_southeastcorner_sendbuf[i]; 
-      message_noreschange_southeastcorner_sendbuf[i] = NULL;
-   } /* endfor */
-   delete []message_noreschange_southeastcorner_sendbuf;
-   message_noreschange_southeastcorner_sendbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_noreschange_southeastcorner_recbuf[i]; 
-      message_noreschange_southeastcorner_recbuf[i] = NULL;
-   } /* endfor */
-   delete []message_noreschange_southeastcorner_recbuf;
-   message_noreschange_southeastcorner_recbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_noreschange_southwestcorner_sendbuf[i]; 
-      message_noreschange_southwestcorner_sendbuf[i] = NULL;
-   } /* endfor */
-   delete []message_noreschange_southwestcorner_sendbuf;
-   message_noreschange_southwestcorner_sendbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_noreschange_southwestcorner_recbuf[i]; 
-      message_noreschange_southwestcorner_recbuf[i] = NULL;
-   } /* endfor */
-   delete []message_noreschange_southwestcorner_recbuf;
-   message_noreschange_southwestcorner_recbuf = NULL;
-
-   //***///
-
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_noreschange_topnorthcorner_sendbuf[i]; 
-      message_noreschange_topnorthcorner_sendbuf[i] = NULL;
-   } /* endfor */
-   delete []message_noreschange_topnorthcorner_sendbuf;
-   message_noreschange_topnorthcorner_sendbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_noreschange_topnorthcorner_recbuf[i]; 
-      message_noreschange_topnorthcorner_recbuf[i] = NULL;
-   } /* endfor */
-   delete []message_noreschange_topnorthcorner_recbuf;
-   message_noreschange_topnorthcorner_recbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_noreschange_topsouthcorner_sendbuf[i]; 
-      message_noreschange_topsouthcorner_sendbuf[i] = NULL;
-   } /* endfor */
-   delete []message_noreschange_topsouthcorner_sendbuf;
-   message_noreschange_topsouthcorner_sendbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_noreschange_topsouthcorner_recbuf[i]; 
-      message_noreschange_topsouthcorner_recbuf[i] = NULL;
-   } /* endfor */
-   delete []message_noreschange_topsouthcorner_recbuf;
-   message_noreschange_topsouthcorner_recbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_noreschange_topeastcorner_sendbuf[i]; 
-      message_noreschange_topeastcorner_sendbuf[i] = NULL;
-   } /* endfor */
-   delete []message_noreschange_topeastcorner_sendbuf;
-   message_noreschange_topeastcorner_sendbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_noreschange_topeastcorner_recbuf[i]; 
-      message_noreschange_topeastcorner_recbuf[i] = NULL;
-   } /* endfor */
-   delete []message_noreschange_topeastcorner_recbuf;
-   message_noreschange_topeastcorner_recbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_noreschange_topwestcorner_sendbuf[i]; 
-      message_noreschange_topwestcorner_sendbuf[i] = NULL;
-   } /* endfor */
-   delete []message_noreschange_topwestcorner_sendbuf;
-   message_noreschange_topwestcorner_sendbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_noreschange_topwestcorner_recbuf[i]; 
-      message_noreschange_topwestcorner_recbuf[i] = NULL;
-   } /* endfor */
-   delete []message_noreschange_topwestcorner_recbuf;
-   message_noreschange_topwestcorner_recbuf = NULL;
-
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_noreschange_topnorthwestcorner_sendbuf[i]; 
-      message_noreschange_topnorthwestcorner_sendbuf[i] = NULL;
-   } /* endfor */
-   delete []message_noreschange_topnorthwestcorner_sendbuf;
-   message_noreschange_topnorthwestcorner_sendbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_noreschange_topnorthwestcorner_recbuf[i]; 
-      message_noreschange_topnorthwestcorner_recbuf[i] = NULL;
-   } /* endfor */
-   delete []message_noreschange_topnorthwestcorner_recbuf;
-   message_noreschange_topnorthwestcorner_recbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_noreschange_topnortheastcorner_sendbuf[i]; 
-      message_noreschange_topnortheastcorner_sendbuf[i] = NULL;
-   } /* endfor */
-   delete []message_noreschange_topnortheastcorner_sendbuf;
-   message_noreschange_topnortheastcorner_sendbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_noreschange_topnortheastcorner_recbuf[i]; 
-      message_noreschange_topnortheastcorner_recbuf[i] = NULL;
-   } /* endfor */
-   delete []message_noreschange_topnortheastcorner_recbuf;
-   message_noreschange_topnortheastcorner_recbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_noreschange_topsoutheastcorner_sendbuf[i]; 
-      message_noreschange_topsoutheastcorner_sendbuf[i] = NULL;
-   } /* endfor */
-   delete []message_noreschange_topsoutheastcorner_sendbuf;
-   message_noreschange_topsoutheastcorner_sendbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_noreschange_topsoutheastcorner_recbuf[i]; 
-      message_noreschange_topsoutheastcorner_recbuf[i] = NULL;
-   } /* endfor */
-   delete []message_noreschange_topsoutheastcorner_recbuf;
-   message_noreschange_topsoutheastcorner_recbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_noreschange_topsouthwestcorner_sendbuf[i]; 
-      message_noreschange_topsouthwestcorner_sendbuf[i] = NULL;
-   } /* endfor */
-   delete []message_noreschange_topsouthwestcorner_sendbuf;
-   message_noreschange_topsouthwestcorner_sendbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_noreschange_topsouthwestcorner_recbuf[i]; 
-      message_noreschange_topsouthwestcorner_recbuf[i] = NULL;
-   } /* endfor */
-   delete []message_noreschange_topsouthwestcorner_recbuf;
-   message_noreschange_topsouthwestcorner_recbuf = NULL;
-
-   //***//
-
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_noreschange_bottomnorthcorner_sendbuf[i]; 
-      message_noreschange_bottomnorthcorner_sendbuf[i] = NULL;
-   } /* endfor */
-   delete []message_noreschange_bottomnorthcorner_sendbuf;
-   message_noreschange_bottomnorthcorner_sendbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_noreschange_bottomnorthcorner_recbuf[i]; 
-      message_noreschange_bottomnorthcorner_recbuf[i] = NULL;
-   } /* endfor */
-   delete []message_noreschange_bottomnorthcorner_recbuf;
-   message_noreschange_bottomnorthcorner_recbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_noreschange_bottomsouthcorner_sendbuf[i]; 
-      message_noreschange_bottomsouthcorner_sendbuf[i] = NULL;
-   } /* endfor */
-   delete []message_noreschange_bottomsouthcorner_sendbuf;
-   message_noreschange_bottomsouthcorner_sendbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_noreschange_bottomsouthcorner_recbuf[i]; 
-      message_noreschange_bottomsouthcorner_recbuf[i] = NULL;
-   } /* endfor */
-   delete []message_noreschange_bottomsouthcorner_recbuf;
-   message_noreschange_bottomsouthcorner_recbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_noreschange_bottomeastcorner_sendbuf[i]; 
-      message_noreschange_bottomeastcorner_sendbuf[i] = NULL;
-   } /* endfor */
-   delete []message_noreschange_bottomeastcorner_sendbuf;
-   message_noreschange_bottomeastcorner_sendbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_noreschange_bottomeastcorner_recbuf[i]; 
-      message_noreschange_bottomeastcorner_recbuf[i] = NULL;
-   } /* endfor */
-   delete []message_noreschange_bottomeastcorner_recbuf;
-   message_noreschange_bottomeastcorner_recbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_noreschange_bottomwestcorner_sendbuf[i]; 
-      message_noreschange_bottomwestcorner_sendbuf[i] = NULL;
-   } /* endfor */
-   delete []message_noreschange_bottomwestcorner_sendbuf;
-   message_noreschange_bottomwestcorner_sendbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_noreschange_bottomwestcorner_recbuf[i]; 
-      message_noreschange_bottomwestcorner_recbuf[i] = NULL;
-   } /* endfor */
-   delete []message_noreschange_bottomwestcorner_recbuf;
-   message_noreschange_bottomwestcorner_recbuf = NULL;
-
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_noreschange_bottomnorthwestcorner_sendbuf[i]; 
-      message_noreschange_bottomnorthwestcorner_sendbuf[i] = NULL;
-   } /* endfor */
-   delete []message_noreschange_bottomnorthwestcorner_sendbuf;
-   message_noreschange_bottomnorthwestcorner_sendbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_noreschange_bottomnorthwestcorner_recbuf[i]; 
-      message_noreschange_bottomnorthwestcorner_recbuf[i] = NULL;
-   } /* endfor */
-   delete []message_noreschange_bottomnorthwestcorner_recbuf;
-   message_noreschange_bottomnorthwestcorner_recbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_noreschange_bottomnortheastcorner_sendbuf[i]; 
-      message_noreschange_bottomnortheastcorner_sendbuf[i] = NULL;
-   } /* endfor */
-   delete []message_noreschange_bottomnortheastcorner_sendbuf;
-   message_noreschange_bottomnortheastcorner_sendbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_noreschange_bottomnortheastcorner_recbuf[i]; 
-      message_noreschange_bottomnortheastcorner_recbuf[i] = NULL;
-   } /* endfor */
-   delete []message_noreschange_bottomnortheastcorner_recbuf;
-   message_noreschange_bottomnortheastcorner_recbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_noreschange_bottomsoutheastcorner_sendbuf[i]; 
-      message_noreschange_bottomsoutheastcorner_sendbuf[i] = NULL;
-   } /* endfor */
-   delete []message_noreschange_bottomsoutheastcorner_sendbuf;
-   message_noreschange_bottomsoutheastcorner_sendbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_noreschange_bottomsoutheastcorner_recbuf[i]; 
-      message_noreschange_bottomsoutheastcorner_recbuf[i] = NULL;
-   } /* endfor */
-   delete []message_noreschange_bottomsoutheastcorner_recbuf;
-   message_noreschange_bottomsoutheastcorner_recbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_noreschange_bottomsouthwestcorner_sendbuf[i]; 
-      message_noreschange_bottomsouthwestcorner_sendbuf[i] = NULL;
-   } /* endfor */
-   delete []message_noreschange_bottomsouthwestcorner_sendbuf;
-   message_noreschange_bottomsouthwestcorner_sendbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_noreschange_bottomsouthwestcorner_recbuf[i]; 
-      message_noreschange_bottomsouthwestcorner_recbuf[i] = NULL;
-   } /* endfor */
-   delete []message_noreschange_bottomsouthwestcorner_recbuf;
-   message_noreschange_bottomsouthwestcorner_recbuf = NULL;
-
-   //
-   // Resolution change message buffers.
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      for (j = 0; j < 2 ; ++j) {
-         delete []message_reschange_topface_sendbuf[i][j]; 
-         message_reschange_topface_sendbuf[i][j] = NULL;
+      for (j = 0; j < MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK ; ++j) {
+         delete []message_noreschange_sendbuf[i][j];
+         message_noreschange_sendbuf[i][j] = NULL;
       } /* endfor */
-      delete []message_reschange_topface_sendbuf[i]; 
-      message_reschange_topface_sendbuf[i] = NULL;
+      delete []message_noreschange_sendbuf[i];
+      message_noreschange_sendbuf[i] = NULL;
    } /* endfor */
-   delete []message_reschange_topface_sendbuf;
-   message_reschange_topface_sendbuf = NULL;
+   delete []message_noreschange_sendbuf;
+   message_noreschange_sendbuf = NULL;
    for ( i = 0; i <= Nblk-1 ; ++i ) {
-      for (j = 0; j < 2 ; ++j) {
-         delete []message_reschange_bottomface_sendbuf[i][j]; 
-         message_reschange_bottomface_sendbuf[i][j] = NULL;
+      for (j = 0; j < MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK ; ++j) {
+         delete []message_noreschange_recbuf[i][j];
+         message_noreschange_recbuf[i][j] = NULL;
       } /* endfor */
-      delete []message_reschange_bottomface_sendbuf[i]; 
-      message_reschange_bottomface_sendbuf[i] = NULL;
+      delete []message_noreschange_recbuf[i];
+      message_noreschange_recbuf[i] = NULL;
    } /* endfor */
-   delete []message_reschange_bottomface_sendbuf;
-   message_reschange_bottomface_sendbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      for (j = 0; j < 2 ; ++j) {
-         delete []message_reschange_northface_sendbuf[i][j]; 
-         message_reschange_northface_sendbuf[i][j] = NULL;
-      } /* endfor */
-      delete []message_reschange_northface_sendbuf[i]; 
-      message_reschange_northface_sendbuf[i] = NULL;
-   } /* endfor */
-   delete []message_reschange_northface_sendbuf;
-   message_reschange_northface_sendbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      for (j = 0; j < 2 ; ++j) {
-         delete []message_reschange_northface_recbuf[i][j]; 
-         message_reschange_northface_recbuf[i][j] = NULL;
-      } /* endfor */
-      delete []message_reschange_northface_recbuf[i]; 
-      message_reschange_northface_recbuf[i] = NULL;
-   } /* endfor */
-   delete []message_reschange_northface_recbuf;
-   message_reschange_northface_recbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      for (j = 0; j < 2 ; ++j) {
-         delete []message_reschange_southface_sendbuf[i][j]; 
-         message_reschange_southface_sendbuf[i][j] = NULL;
-      } /* endfor */
-      delete []message_reschange_southface_sendbuf[i]; 
-      message_reschange_southface_sendbuf[i] = NULL;
-   } /* endfor */
-   delete []message_reschange_southface_sendbuf;
-   message_reschange_southface_sendbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      for (j = 0; j < 2 ; ++j) {
-         delete []message_reschange_southface_recbuf[i][j]; 
-         message_reschange_southface_recbuf[i][j] = NULL;
-      } /* endfor */
-      delete []message_reschange_southface_recbuf[i]; 
-      message_reschange_southface_recbuf[i] = NULL;
-   } /* endfor */
-   delete []message_reschange_southface_recbuf;
-   message_reschange_southface_recbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      for (j = 0; j < 2 ; ++j) {
-         delete []message_reschange_eastface_sendbuf[i][j]; 
-         message_reschange_eastface_sendbuf[i][j] = NULL;
-      } /* endfor */
-      delete []message_reschange_eastface_sendbuf[i]; 
-      message_reschange_eastface_sendbuf[i] = NULL;
-   } /* endfor */
-   delete []message_reschange_eastface_sendbuf;
-   message_reschange_eastface_sendbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      for (j = 0; j < 2 ; ++j) {
-         delete []message_reschange_eastface_recbuf[i][j]; 
-         message_reschange_eastface_recbuf[i][j] = NULL;
-      } /* endfor */
-      delete []message_reschange_eastface_recbuf[i]; 
-      message_reschange_eastface_recbuf[i] = NULL;
-   } /* endfor */
-   delete []message_reschange_eastface_recbuf;
-   message_reschange_eastface_recbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      for (j = 0; j < 2 ; ++j) {
-         delete []message_reschange_westface_sendbuf[i][j]; 
-         message_reschange_westface_sendbuf[i][j] = NULL;
-      } /* endfor */
-      delete []message_reschange_westface_sendbuf[i]; 
-      message_reschange_westface_sendbuf[i] = NULL;
-   } /* endfor */
-   delete []message_reschange_westface_sendbuf;
-   message_reschange_westface_sendbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      for (j = 0; j < 2 ; ++j) {
-         delete []message_reschange_westface_recbuf[i][j];
-         message_reschange_westface_recbuf[i][j] = NULL;
-      } /* endfor */
-      delete []message_reschange_westface_recbuf[i]; 
-      message_reschange_westface_recbuf[i] = NULL;
-   } /* endfor */
-   delete []message_reschange_westface_recbuf;
-   message_reschange_westface_recbuf = NULL;
-
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_reschange_northwestcorner_sendbuf[i]; 
-      message_reschange_northwestcorner_sendbuf[i] = NULL;
-   } /* endfor */
-   delete []message_reschange_northwestcorner_sendbuf;
-   message_reschange_northwestcorner_sendbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_reschange_northwestcorner_recbuf[i]; 
-      message_reschange_northwestcorner_recbuf[i] = NULL;
-   } /* endfor */
-   delete []message_reschange_northwestcorner_recbuf;
-   message_reschange_northwestcorner_recbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_reschange_northeastcorner_sendbuf[i]; 
-      message_reschange_northeastcorner_sendbuf[i] = NULL;
-   } /* endfor */
-   delete []message_reschange_northeastcorner_sendbuf;
-   message_reschange_northeastcorner_sendbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_reschange_northeastcorner_recbuf[i]; 
-      message_reschange_northeastcorner_recbuf[i] = NULL;
-   } /* endfor */
-   delete []message_reschange_northeastcorner_recbuf;
-   message_reschange_northeastcorner_recbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_reschange_southeastcorner_sendbuf[i]; 
-      message_reschange_southeastcorner_sendbuf[i] = NULL;
-   } /* endfor */
-   delete []message_reschange_southeastcorner_sendbuf;
-   message_reschange_southeastcorner_sendbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_reschange_southeastcorner_recbuf[i]; 
-      message_reschange_southeastcorner_recbuf[i] = NULL;
-   } /* endfor */
-   delete []message_reschange_southeastcorner_recbuf;
-   message_reschange_southeastcorner_recbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_reschange_southwestcorner_sendbuf[i]; 
-      message_reschange_southwestcorner_sendbuf[i] = NULL;
-   } /* endfor */
-   delete []message_reschange_southwestcorner_sendbuf;
-   message_reschange_southwestcorner_sendbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_reschange_southwestcorner_recbuf[i]; 
-      message_reschange_southwestcorner_recbuf[i] = NULL;
-   } /* endfor */
-   delete []message_reschange_southwestcorner_recbuf;
-   message_reschange_southwestcorner_recbuf = NULL;
-
-   //***//
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_reschange_topnorthcorner_sendbuf[i]; 
-      message_reschange_topnorthcorner_sendbuf[i] = NULL;
-   } /* endfor */
-   delete []message_reschange_topnorthcorner_sendbuf;
-   message_reschange_topnorthcorner_sendbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_reschange_topnorthcorner_recbuf[i]; 
-      message_reschange_topnorthcorner_recbuf[i] = NULL;
-   } /* endfor */
-   delete []message_reschange_topnorthcorner_recbuf;
-   message_reschange_topnorthcorner_recbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_reschange_topsouthcorner_sendbuf[i]; 
-      message_reschange_topsouthcorner_sendbuf[i] = NULL;
-   } /* endfor */
-   delete []message_reschange_topsouthcorner_sendbuf;
-   message_reschange_topsouthcorner_sendbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_reschange_topsouthcorner_recbuf[i]; 
-      message_reschange_topsouthcorner_recbuf[i] = NULL;
-   } /* endfor */
-   delete []message_reschange_topsouthcorner_recbuf;
-   message_reschange_topsouthcorner_recbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_reschange_topeastcorner_sendbuf[i]; 
-      message_reschange_topeastcorner_sendbuf[i] = NULL;
-   } /* endfor */
-   delete []message_reschange_topeastcorner_sendbuf;
-   message_reschange_topeastcorner_sendbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_reschange_topeastcorner_recbuf[i]; 
-      message_reschange_topeastcorner_recbuf[i] = NULL;
-   } /* endfor */
-   delete []message_reschange_topeastcorner_recbuf;
-   message_reschange_topeastcorner_recbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_reschange_topwestcorner_sendbuf[i]; 
-      message_reschange_topwestcorner_sendbuf[i] = NULL;
-   } /* endfor */
-   delete []message_reschange_topwestcorner_sendbuf;
-   message_reschange_topwestcorner_sendbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_reschange_topwestcorner_recbuf[i]; 
-      message_reschange_topwestcorner_recbuf[i] = NULL;
-   } /* endfor */
-   delete []message_reschange_topwestcorner_recbuf;
-   message_reschange_topwestcorner_recbuf = NULL;
-
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_reschange_topnorthwestcorner_sendbuf[i]; 
-      message_reschange_topnorthwestcorner_sendbuf[i] = NULL;
-   } /* endfor */
-   delete []message_reschange_topnorthwestcorner_sendbuf;
-   message_reschange_topnorthwestcorner_sendbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_reschange_topnorthwestcorner_recbuf[i]; 
-      message_reschange_topnorthwestcorner_recbuf[i] = NULL;
-   } /* endfor */
-   delete []message_reschange_topnorthwestcorner_recbuf;
-   message_reschange_topnorthwestcorner_recbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_reschange_topnortheastcorner_sendbuf[i]; 
-      message_reschange_topnortheastcorner_sendbuf[i] = NULL;
-   } /* endfor */
-   delete []message_reschange_topnortheastcorner_sendbuf;
-   message_reschange_topnortheastcorner_sendbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_reschange_topnortheastcorner_recbuf[i]; 
-      message_reschange_topnortheastcorner_recbuf[i] = NULL;
-   } /* endfor */
-   delete []message_reschange_topnortheastcorner_recbuf;
-   message_reschange_topnortheastcorner_recbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_reschange_topsoutheastcorner_sendbuf[i]; 
-      message_reschange_topsoutheastcorner_sendbuf[i] = NULL;
-   } /* endfor */
-   delete []message_reschange_topsoutheastcorner_sendbuf;
-   message_reschange_topsoutheastcorner_sendbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_reschange_topsoutheastcorner_recbuf[i]; 
-      message_reschange_topsoutheastcorner_recbuf[i] = NULL;
-   } /* endfor */
-   delete []message_reschange_topsoutheastcorner_recbuf;
-   message_reschange_topsoutheastcorner_recbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_reschange_topsouthwestcorner_sendbuf[i]; 
-      message_reschange_topsouthwestcorner_sendbuf[i] = NULL;
-   } /* endfor */
-   delete []message_reschange_topsouthwestcorner_sendbuf;
-   message_reschange_topsouthwestcorner_sendbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_reschange_topsouthwestcorner_recbuf[i]; 
-      message_reschange_topsouthwestcorner_recbuf[i] = NULL;
-   } /* endfor */
-   delete []message_reschange_topsouthwestcorner_recbuf;
-   message_reschange_topsouthwestcorner_recbuf = NULL;
-
-
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_reschange_bottomnorthcorner_sendbuf[i]; 
-      message_reschange_bottomnorthcorner_sendbuf[i] = NULL;
-   } /* endfor */
-   delete []message_reschange_bottomnorthcorner_sendbuf;
-   message_reschange_bottomnorthcorner_sendbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_reschange_bottomnorthcorner_recbuf[i]; 
-      message_reschange_bottomnorthcorner_recbuf[i] = NULL;
-   } /* endfor */
-   delete []message_reschange_bottomnorthcorner_recbuf;
-   message_reschange_bottomnorthcorner_recbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_reschange_bottomsouthcorner_sendbuf[i]; 
-      message_reschange_bottomsouthcorner_sendbuf[i] = NULL;
-   } /* endfor */
-   delete []message_reschange_bottomsouthcorner_sendbuf;
-   message_reschange_bottomsouthcorner_sendbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_reschange_bottomsouthcorner_recbuf[i]; 
-      message_reschange_bottomsouthcorner_recbuf[i] = NULL;
-   } /* endfor */
-   delete []message_reschange_bottomsouthcorner_recbuf;
-   message_reschange_bottomsouthcorner_recbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_reschange_bottomeastcorner_sendbuf[i]; 
-      message_reschange_bottomeastcorner_sendbuf[i] = NULL;
-   } /* endfor */
-   delete []message_reschange_bottomeastcorner_sendbuf;
-   message_reschange_bottomeastcorner_sendbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_reschange_bottomeastcorner_recbuf[i]; 
-      message_reschange_bottomeastcorner_recbuf[i] = NULL;
-   } /* endfor */
-   delete []message_reschange_bottomeastcorner_recbuf;
-   message_reschange_bottomeastcorner_recbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_reschange_bottomwestcorner_sendbuf[i]; 
-      message_reschange_bottomwestcorner_sendbuf[i] = NULL;
-   } /* endfor */
-   delete []message_reschange_bottomwestcorner_sendbuf;
-   message_reschange_bottomwestcorner_sendbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_reschange_bottomwestcorner_recbuf[i]; 
-      message_reschange_bottomwestcorner_recbuf[i] = NULL;
-   } /* endfor */
-   delete []message_reschange_bottomwestcorner_recbuf;
-   message_reschange_bottomwestcorner_recbuf = NULL;
-
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_reschange_bottomnorthwestcorner_sendbuf[i]; 
-      message_reschange_bottomnorthwestcorner_sendbuf[i] = NULL;
-   } /* endfor */
-   delete []message_reschange_bottomnorthwestcorner_sendbuf;
-   message_reschange_bottomnorthwestcorner_sendbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_reschange_bottomnorthwestcorner_recbuf[i]; 
-      message_reschange_bottomnorthwestcorner_recbuf[i] = NULL;
-   } /* endfor */
-   delete []message_reschange_bottomnorthwestcorner_recbuf;
-   message_reschange_bottomnorthwestcorner_recbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_reschange_bottomnortheastcorner_sendbuf[i]; 
-      message_reschange_bottomnortheastcorner_sendbuf[i] = NULL;
-   } /* endfor */
-   delete []message_reschange_bottomnortheastcorner_sendbuf;
-   message_reschange_bottomnortheastcorner_sendbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_reschange_bottomnortheastcorner_recbuf[i]; 
-      message_reschange_bottomnortheastcorner_recbuf[i] = NULL;
-   } /* endfor */
-   delete []message_reschange_bottomnortheastcorner_recbuf;
-   message_reschange_bottomnortheastcorner_recbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_reschange_bottomsoutheastcorner_sendbuf[i]; 
-      message_reschange_bottomsoutheastcorner_sendbuf[i] = NULL;
-   } /* endfor */
-   delete []message_reschange_bottomsoutheastcorner_sendbuf;
-   message_reschange_bottomsoutheastcorner_sendbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_reschange_bottomsoutheastcorner_recbuf[i]; 
-      message_reschange_bottomsoutheastcorner_recbuf[i] = NULL;
-   } /* endfor */
-   delete []message_reschange_bottomsoutheastcorner_recbuf;
-   message_reschange_bottomsoutheastcorner_recbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_reschange_bottomsouthwestcorner_sendbuf[i]; 
-      message_reschange_bottomsouthwestcorner_sendbuf[i] = NULL;
-   } /* endfor */
-   delete []message_reschange_bottomsouthwestcorner_sendbuf;
-   message_reschange_bottomsouthwestcorner_sendbuf = NULL;
-   for ( i = 0; i <= Nblk-1 ; ++i ) {
-      delete []message_reschange_bottomsouthwestcorner_recbuf[i]; 
-      message_reschange_bottomsouthwestcorner_recbuf[i] = NULL;
-   } /* endfor */
-   delete []message_reschange_bottomsouthwestcorner_recbuf;
-   message_reschange_bottomsouthwestcorner_recbuf = NULL;
-
+   delete []message_noreschange_recbuf;
+   message_noreschange_recbuf = NULL;
    // Reset the number of solution blocks.
    Nblk = 0;
 }
@@ -2796,13 +1398,36 @@ inline int AdaptiveBlock3D_List::Nused(void) {
 }
 
 /*************************************************************
+ * AdaptiveBlock3D_List -- Assignment operator.              *
+ *************************************************************/
+// Ne that message buffers are not assigned!
+inline AdaptiveBlock3D_List &AdaptiveBlock3D_List::
+operator =(const AdaptiveBlock3D_List &Blk_List) {
+   if (Nblk != Blk_List.Nblk) {
+      if (Block != NULL) {
+         delete []Block; Block = NULL; 
+      } /* endif */
+      if (RefineFlag != NULL) {
+         delete []RefineFlag; RefineFlag = NULL;
+      } /* endif */
+      if (Blk_List.Nblk > 0) {
+         Block = new AdaptiveBlock3D[Blk_List.Nblk]; RefineFlag = new int[Blk_List.Nblk];
+      } /* endif */
+   } /* endif */
+   ThisCPU = Blk_List.ThisCPU; Nblk = Blk_List.Nblk;
+   for (int i = 0 ; i <= Blk_List.Nblk-1; ++i ) {
+      Block[i] = Blk_List.Block[i];
+      RefineFlag[i] = Blk_List.RefineFlag[i];
+   } /* endfor */
+}
+
+/*************************************************************
  * AdaptiveBlock3D_List -- Input-output operators.           *
  *************************************************************/
 inline ostream &operator << (ostream &out_file,
 			     const AdaptiveBlock3D_List &Blk_List) {
-  int i;
   out_file << Blk_List.Nblk << "\n";
-  for ( i = 0 ; i <= Blk_List.Nblk-1; ++i ) {
+  for (int i = 0 ; i <= Blk_List.Nblk-1; ++i ) {
      out_file << Blk_List.Block[i] << "\n";
   } /* endfor */
   return (out_file);
@@ -2820,7 +1445,6 @@ inline istream &operator >> (istream &in_file,
   } /* endfor */
   return (in_file);
 }
-
 
 /*******************************************************************
  * AdaptiveBlock3D -- Include templated message passing rountines. *

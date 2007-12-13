@@ -87,6 +87,8 @@ void Grid3D_Input_Parameters::Broadcast(void) {
    MPI::COMM_WORLD.Bcast(&(X_Rotate),
                          1,
                          MPI::DOUBLE, 0);
+
+   // Grid cube and box dimensions:
    MPI::COMM_WORLD.Bcast(&(Box_Length),
                          1,
                          MPI::DOUBLE, 0);
@@ -167,8 +169,26 @@ int Grid3D_Input_Parameters::Parse_Next_Input_Control_Parameter(char *code,
         Box_Width = ONE;
         Box_Height = ONE;
 
+     } else if (strcmp(Grid_Type, "Periodic_Box") == 0) {
+        i_Grid = GRID_PERIODIC_BOX;
+        Box_Length = ONE;
+        Box_Width = ONE;
+        Box_Height = ONE;
+
+     } else if (strcmp(Grid_Type, "Periodic_Box_With_Inflow") == 0) {
+        i_Grid = GRID_PERIODIC_BOX_WITH_INFLOW;
+        Box_Length = ONE;
+        Box_Width = ONE;
+        Box_Height = ONE;
+
      } else if (strcmp(Grid_Type, "Channel") == 0) {
-        i_Grid = GRID_CHANNEL;
+        i_Grid = GRID_CHANNEL_ZDIR;
+        Box_Length = 0.2;
+        Box_Width = 0.001;
+        Box_Height = 0.001;
+
+     } else if (strcmp(Grid_Type, "Channel_X") == 0) {
+        i_Grid = GRID_CHANNEL_XDIR;
         Box_Length = 0.2;
         Box_Width = 0.001;
         Box_Height = 0.001;
@@ -190,18 +210,15 @@ int Grid3D_Input_Parameters::Parse_Next_Input_Control_Parameter(char *code,
      } else if (strcmp(Grid_Type, "Pipe") == 0) {
         i_Grid = GRID_PIPE;
 
+     } else if (strcmp(Grid_Type, "Bump_Channel_Flow") == 0) {
+       i_Grid = GRID_BUMP_CHANNEL_FLOW;
+
      } else if (strcmp(Grid_Type, "Bluff_Body_Burner") == 0) {
         i_Grid = GRID_BLUFF_BODY_BURNER;
 
      } else if (strcmp(Grid_Type, "ICEMCFD") == 0) {
         i_Grid = GRID_ICEMCFD;
         ICEMCFD_FileNames = ICEMCFD_get_filenames();
-
-     } else if (strcmp(Grid_Type, "Turbulent_Premixed_Flame") == 0) {
-        i_Grid = GRID_TURBULENT_PREMIXED_FLAME;
-        Box_Length = 1.0;
-        Box_Width = 1.0;
-        Box_Height = 1.0;
 
      } else {
         i_command = INVALID_INPUT_VALUE;
@@ -338,18 +355,18 @@ int Grid3D_Input_Parameters::Parse_Next_Input_Control_Parameter(char *code,
   } else if (strcmp(code, "Box_Length") == 0) {
      i_command = 3028;
      value >> Box_Length;
-     if (Box_Length < 0) i_command = INVALID_INPUT_VALUE;
+     if (Box_Length <= ZERO) i_command = INVALID_INPUT_VALUE;
 
   } else if (strcmp(code, "Box_Width") == 0) {
      i_command = 3029;
      value >> Box_Width;
-     if (Box_Width < 0) i_command = INVALID_INPUT_VALUE;
+     if (Box_Width <= ZERO) i_command = INVALID_INPUT_VALUE;
 
   } else if (strcmp(code, "Box_Height") == 0) {
      i_command = 3030;
      value >> Box_Height;
-     if (Box_Height < 0) i_command = INVALID_INPUT_VALUE;
-
+     if (Box_Height <= ZERO) i_command = INVALID_INPUT_VALUE;
+    
   } else {
      i_command = INVALID_INPUT_CODE;
 
@@ -402,6 +419,8 @@ void Grid3D_Input_Parameters::Output(ostream &out_file) const {
         out_file << "\n  -> family_topo file : " << ICEMCFD_FileNames[2];
         break;
      case GRID_CUBE : 
+     case GRID_PERIODIC_BOX : 
+     case GRID_PERIODIC_BOX_WITH_INFLOW : 
         out_file << "\n  -> Length of Solution Domain (m): "
                  << Box_Length;
         out_file << "\n  -> Width of Solution Domain (m): "
@@ -417,15 +436,6 @@ void Grid3D_Input_Parameters::Output(ostream &out_file) const {
         out_file << "\n  -> Height of Solution Domain (m): "
                  << Box_Height;
         break;
-      case GRID_TURBULENT_PREMIXED_FLAME :
-        out_file << "\n  -> Length of Solution Domain (m): "
-                 << Box_Length;
-        out_file << "\n  -> Width of Solution Domain (m): "
-                 << Box_Width;
-        out_file << "\n  -> Height of Solution Domain (m): "
-                 << Box_Height;
-        break;
-
      default:
         out_file << "\n  -> Length of Solution Domain (m): "
                  << Box_Length;

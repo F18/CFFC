@@ -131,7 +131,8 @@ void Set_Default_Input_Parameters(Gaussian2D_Input_Parameters &IP) {
     IP.pr = (2.0)/(3.0);
 
     // Boundary Conditions
-    IP.alpha = 1.0;
+    IP.alpha_m = 1.0;
+    IP.alpha_t = 1.0;
     IP.Ramp_by_Mach_Number = 0.0;
     IP.Number_of_Time_Steps_to_Ramp = 0; 
     string_ptr = "OFF";
@@ -147,6 +148,10 @@ void Set_Default_Input_Parameters(Gaussian2D_Input_Parameters &IP) {
     IP.BC_East  = BC_NONE;
     IP.BC_West  = BC_NONE;
 
+    IP.Temperature_North_BC = IP.Temperature;
+    IP.Temperature_South_BC = IP.Temperature;
+    IP.Temperature_East_BC = IP.Temperature;
+    IP.Temperature_West_BC = IP.Temperature;
 
     IP.Plate_Length = ONE;
     IP.Pipe_Length = ONE;
@@ -398,15 +403,9 @@ void Broadcast_Input_Parameters(Gaussian2D_Input_Parameters &IP) {
                           1, 
                           MPI::DOUBLE, 0);
     if (!CFFC_Primary_MPI_Processor()) {
-       IP.Wo.setgas(IP.Gas_Type);
-       IP.Wo = Gaussian2D_pState(IP.Pressure*IP.Wo.M/(AVOGADRO*BOLTZMANN*IP.Temperature)/THOUSAND, 
-                              ZERO, 
-                              ZERO, 
-                              IP.Pressure);
-       IP.Wo.v.x = IP.Mach_Number*IP.Wo.sound()*cos(TWO*PI*IP.Flow_Angle/360.00);
-       IP.Wo.v.y = IP.Mach_Number*IP.Wo.sound()*sin(TWO*PI*IP.Flow_Angle/360.00);
-       IP.Uo.setgas(IP.Gas_Type);
-       IP.Uo = U(IP.Wo);
+      IP.Wo.set_state_from_ips(IP);
+      IP.Uo.setgas(IP.Gas_Type);
+      IP.Uo = U(IP.Wo);
     } // endif 
     MPI::COMM_WORLD.Bcast(&(IP.W1.d), 
                           1, 
@@ -592,12 +591,19 @@ void Broadcast_Input_Parameters(Gaussian2D_Input_Parameters &IP) {
       IP.Wo.pr = IP.pr;
       IP.Uo.pr = IP.pr;
     } // endif 
-    MPI::COMM_WORLD.Bcast(&(IP.alpha), 
+    MPI::COMM_WORLD.Bcast(&(IP.alpha_m), 
                           1, 
                           MPI::DOUBLE, 0);
     if (!CFFC_Primary_MPI_Processor()) {
-      IP.Wo.alpha = IP.alpha;
-      IP.Uo.alpha = IP.alpha;
+      IP.Wo.alpha_m = IP.alpha_m;
+      IP.Uo.alpha_m = IP.alpha_m;
+    } // endif 
+    MPI::COMM_WORLD.Bcast(&(IP.alpha_t), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    if (!CFFC_Primary_MPI_Processor()) {
+      IP.Wo.alpha_t = IP.alpha_t;
+      IP.Uo.alpha_t = IP.alpha_t;
     } // endif 
     MPI::COMM_WORLD.Bcast(&(IP.Ramp_by_Mach_Number), 
                           1, 
@@ -635,6 +641,18 @@ void Broadcast_Input_Parameters(Gaussian2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.BC_West),
 			  1,
 			  MPI::INT,0);
+    MPI::COMM_WORLD.Bcast(&(IP.Temperature_North_BC), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Temperature_South_BC), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Temperature_East_BC), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Temperature_West_BC), 
+                          1, 
+                          MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(IP.NASA_Rotor37_Data_Directory, 
                           INPUT_PARAMETER_LENGTH_GAUSSIAN2D, 
                           MPI::CHAR, 0);
@@ -957,15 +975,9 @@ void Broadcast_Input_Parameters(Gaussian2D_Input_Parameters &IP,
                        1, 
                        MPI::DOUBLE, Source_Rank);
     if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
-       IP.Wo.setgas(IP.Gas_Type);
-       IP.Wo = Gaussian2D_pState(IP.Pressure*IP.Wo.M/(AVOGADRO*BOLTZMANN*IP.Temperature)/THOUSAND, 
-                              ZERO, 
-                              ZERO, 
-                              IP.Pressure);
-       IP.Wo.v.x = IP.Mach_Number*IP.Wo.sound()*cos(TWO*PI*IP.Flow_Angle/360.00);
-       IP.Wo.v.y = IP.Mach_Number*IP.Wo.sound()*sin(TWO*PI*IP.Flow_Angle/360.00);
-       IP.Uo.setgas(IP.Gas_Type);
-       IP.Uo = U(IP.Wo);
+      IP.Wo.set_state_from_ips(IP);
+      IP.Uo.setgas(IP.Gas_Type);
+      IP.Uo = U(IP.Wo);
     } // endif
     Communicator.Bcast(&(IP.W1.d), 
                        1, 
@@ -1151,12 +1163,19 @@ void Broadcast_Input_Parameters(Gaussian2D_Input_Parameters &IP,
       IP.Wo.pr = IP.pr;
       IP.Uo.pr = IP.pr;
     } // endif
-    Communicator.Bcast(&(IP.alpha), 
+    Communicator.Bcast(&(IP.alpha_m), 
                        1, 
                        MPI::DOUBLE, Source_Rank);
     if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
-      IP.Wo.alpha = IP.alpha;
-      IP.Uo.alpha = IP.alpha;
+      IP.Wo.alpha_m = IP.alpha_m;
+      IP.Uo.alpha_m = IP.alpha_m;
+    } // endif
+    Communicator.Bcast(&(IP.alpha_t), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
+    if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
+      IP.Wo.alpha_t = IP.alpha_t;
+      IP.Uo.alpha_t = IP.alpha_t;
     } // endif
     Communicator.Bcast(&(IP.Ramp_by_Mach_Number), 
                        1, 
@@ -1194,6 +1213,18 @@ void Broadcast_Input_Parameters(Gaussian2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.BC_West),
 		       1,
 		       MPI::INT,Source_Rank);
+    Communicator.Bcast(&(IP.Temperature_North_BC), 
+		       1, 
+		       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.Temperature_South_BC), 
+		       1, 
+		       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.Temperature_East_BC), 
+		       1, 
+		       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.Temperature_West_BC), 
+		       1, 
+		       MPI::DOUBLE, Source_Rank);
     Communicator.Bcast(IP.NASA_Rotor37_Data_Directory, 
                      INPUT_PARAMETER_LENGTH_GAUSSIAN2D, 
                      MPI::CHAR, Source_Rank);
@@ -2069,14 +2100,23 @@ int Parse_Next_Input_Control_Parameter(Gaussian2D_Input_Parameters &IP) {
        IP.Input_File.getline(buffer, sizeof(buffer));
        if (IP.pr < ZERO) i_command = INVALID_INPUT_VALUE;
 
-    } else if (strcmp(IP.Next_Control_Parameter, "Alpha") == 0) {
+    } else if (strcmp(IP.Next_Control_Parameter, "Alpha_m") == 0) {
        i_command = 43;
        IP.Line_Number = IP.Line_Number + 1;
-       IP.Input_File >> IP.alpha;
-       IP.Wo.alpha = IP.alpha;
-       IP.Uo.alpha = IP.alpha;
+       IP.Input_File >> IP.alpha_m;
+       IP.Wo.alpha_m = IP.alpha_m;
+       IP.Uo.alpha_m = IP.alpha_m;
        IP.Input_File.getline(buffer, sizeof(buffer));
-       if (IP.alpha < ZERO || IP.alpha > ONE) i_command = INVALID_INPUT_VALUE;
+       if (IP.alpha_m < ZERO || IP.alpha_m > ONE) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(IP.Next_Control_Parameter, "Alpha_t") == 0) {
+       i_command = 43;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.alpha_t;
+       IP.Wo.alpha_t = IP.alpha_t;
+       IP.Uo.alpha_t = IP.alpha_t;
+       IP.Input_File.getline(buffer, sizeof(buffer));
+       if (IP.alpha_t < ZERO || IP.alpha_t > ONE) i_command = INVALID_INPUT_VALUE;
 
     } else if (strcmp(IP.Next_Control_Parameter, "Ramp_by_Mach_Number") == 0) {
        i_command = 43;
@@ -2096,13 +2136,7 @@ int Parse_Next_Input_Control_Parameter(Gaussian2D_Input_Parameters &IP) {
        Get_Next_Input_Control_Parameter(IP);
        strcpy(IP.Gas_Type, 
               IP.Next_Control_Parameter);
-       IP.Wo.setgas(IP.Gas_Type);
-       IP.Wo = Gaussian2D_pState(IP.Pressure*IP.Wo.M/(AVOGADRO*BOLTZMANN*IP.Temperature)/THOUSAND, 
-                              ZERO, 
-                              ZERO, 
-                              IP.Pressure);
-       IP.Wo.v.x = IP.Mach_Number*IP.Wo.sound()*cos(TWO*PI*IP.Flow_Angle/360.00);
-       IP.Wo.v.y = IP.Mach_Number*IP.Wo.sound()*sin(TWO*PI*IP.Flow_Angle/360.00);
+       IP.Wo.set_state_from_ips(IP);
        IP.Uo.setgas(IP.Gas_Type);
        IP.Uo = U(IP.Wo);
 
@@ -2116,6 +2150,7 @@ int Parse_Next_Input_Control_Parameter(Gaussian2D_Input_Parameters &IP) {
        } else {
           IP.Wo.v.x = IP.Mach_Number*IP.Wo.sound()*cos(TWO*PI*IP.Flow_Angle/360.00);
           IP.Wo.v.y = IP.Mach_Number*IP.Wo.sound()*sin(TWO*PI*IP.Flow_Angle/360.00);
+	  IP.Uo = U(IP.Wo);
        } /* endif */
 
     } else if (strcmp(IP.Next_Control_Parameter, "Flow_Angle") == 0) {
@@ -2125,6 +2160,7 @@ int Parse_Next_Input_Control_Parameter(Gaussian2D_Input_Parameters &IP) {
        IP.Input_File.getline(buffer, sizeof(buffer));
        IP.Wo.v.x = IP.Mach_Number*IP.Wo.sound()*cos(TWO*PI*IP.Flow_Angle/360.00);
        IP.Wo.v.y = IP.Mach_Number*IP.Wo.sound()*sin(TWO*PI*IP.Flow_Angle/360.00);
+       IP.Uo = U(IP.Wo);
 
     } else if (strcmp(IP.Next_Control_Parameter, "Pressure") == 0) {
        i_command = 47;
@@ -2135,12 +2171,8 @@ int Parse_Next_Input_Control_Parameter(Gaussian2D_Input_Parameters &IP) {
        if (IP.Pressure <= ZERO) {
           i_command = INVALID_INPUT_VALUE;
        } else {
-          IP.Wo = Gaussian2D_pState(IP.Pressure*IP.Wo.M/(AVOGADRO*BOLTZMANN*IP.Temperature)/THOUSAND, 
-                                 ZERO, 
-                                 ZERO, 
-                                 IP.Pressure);
-          IP.Wo.v.x = IP.Mach_Number*IP.Wo.sound()*cos(TWO*PI*IP.Flow_Angle/360.00);
-          IP.Wo.v.y = IP.Mach_Number*IP.Wo.sound()*sin(TWO*PI*IP.Flow_Angle/360.00);
+	 IP.Wo.set_state_from_ips(IP);
+	 IP.Uo = U(IP.Wo);
        } /* endif */
 
     } else if (strcmp(IP.Next_Control_Parameter, "Temperature") == 0) {
@@ -2151,12 +2183,8 @@ int Parse_Next_Input_Control_Parameter(Gaussian2D_Input_Parameters &IP) {
        if (IP.Temperature <= ZERO) {
           i_command = INVALID_INPUT_VALUE;
        } else {
-          IP.Wo = Gaussian2D_pState(IP.Pressure*IP.Wo.M/(AVOGADRO*BOLTZMANN*IP.Temperature)/THOUSAND, 
-                                 ZERO, 
-                                 ZERO, 
-                                 IP.Pressure);
-          IP.Wo.v.x = IP.Mach_Number*IP.Wo.sound()*cos(TWO*PI*IP.Flow_Angle/360.00);
-          IP.Wo.v.y = IP.Mach_Number*IP.Wo.sound()*sin(TWO*PI*IP.Flow_Angle/360.00);
+	 IP.Wo.set_state_from_ips(IP);
+	 IP.Uo = U(IP.Wo);
        } /* endif */
 
     } else if (strcmp(IP.Next_Control_Parameter, "Time_Max") == 0) {
@@ -2274,6 +2302,13 @@ int Parse_Next_Input_Control_Parameter(Gaussian2D_Input_Parameters &IP) {
        IP.Input_File.getline(buffer, sizeof(buffer));
        if (IP.Heat_Transfer != 0 &&
 	   IP.Heat_Transfer != 1 ) i_command = INVALID_INPUT_VALUE;
+#ifndef _GAUSSIAN_HEAT_TRANSFER_
+       if (IP.Heat_Transfer != 0) {
+	 cout << "This version of gaussian2D was compiled without heat transfer." << endl
+	      << "Recompile with _GAUSSIAN_HEAT_TRANSFER_ defined" << endl;
+	 i_command = INVALID_INPUT_VALUE;
+       }
+#endif
 
     } else if (strcmp(IP.Next_Control_Parameter, "Restart_Solution_Save_Frequency") == 0) {
        i_command = 53;
@@ -2688,6 +2723,8 @@ int Parse_Next_Input_Control_Parameter(Gaussian2D_Input_Parameters &IP) {
 	IP.BC_North = BC_ADIABATIC_WALL;
       } else if (strcmp(IP.BC_North_Type,"Isothermal_Wall") == 0) {
 	IP.BC_North = BC_WALL_VISCOUS_ISOTHERMAL;
+      } else if (strcmp(IP.BC_North_Type,"Temperature_Slip") == 0) {
+	IP.BC_North = BC_TEMPERATURE_SLIP;
       } else if (strcmp(IP.BC_North_Type,"Fixed") == 0) {
 	IP.BC_North = BC_FIXED;
       } else if (strcmp(IP.BC_North_Type,"Constant_Extrapolation") == 0) {
@@ -2718,6 +2755,8 @@ int Parse_Next_Input_Control_Parameter(Gaussian2D_Input_Parameters &IP) {
 	IP.BC_South = BC_ADIABATIC_WALL;
       } else if (strcmp(IP.BC_South_Type,"Isothermal_Wall") == 0) {
 	IP.BC_South = BC_WALL_VISCOUS_ISOTHERMAL;
+      } else if (strcmp(IP.BC_South_Type,"Temperature_Slip") == 0) {
+	IP.BC_South = BC_TEMPERATURE_SLIP;
       } else if (strcmp(IP.BC_South_Type,"Fixed") == 0) {
 	IP.BC_South = BC_FIXED;
       } else if (strcmp(IP.BC_South_Type,"Constant_Extrapolation") == 0) {
@@ -2749,6 +2788,8 @@ int Parse_Next_Input_Control_Parameter(Gaussian2D_Input_Parameters &IP) {
 	IP.BC_East = BC_ADIABATIC_WALL;
       } else if (strcmp(IP.BC_East_Type,"Isothermal_Wall") == 0) {
 	IP.BC_East = BC_WALL_VISCOUS_ISOTHERMAL;
+      } else if (strcmp(IP.BC_East_Type,"Temperature_Slip") == 0) {
+	IP.BC_East = BC_TEMPERATURE_SLIP;
       } else if (strcmp(IP.BC_East_Type,"Fixed") == 0) {
 	IP.BC_East = BC_FIXED;
       } else if (strcmp(IP.BC_East_Type,"Constant_Extrapolation") == 0) {
@@ -2782,6 +2823,8 @@ int Parse_Next_Input_Control_Parameter(Gaussian2D_Input_Parameters &IP) {
 	IP.BC_West = BC_ADIABATIC_WALL;
       } else if (strcmp(IP.BC_West_Type,"Isothermal_Wall") == 0) {
 	IP.BC_West = BC_WALL_VISCOUS_ISOTHERMAL;
+      } else if (strcmp(IP.BC_West_Type,"Temperature_Slip") == 0) {
+	IP.BC_West = BC_TEMPERATURE_SLIP;
       } else if (strcmp(IP.BC_West_Type,"Fixed") == 0) {
 	IP.BC_West = BC_FIXED;
       } else if (strcmp(IP.BC_West_Type,"Constant_Extrapolation") == 0) {
@@ -2803,6 +2846,34 @@ int Parse_Next_Input_Control_Parameter(Gaussian2D_Input_Parameters &IP) {
       } else {
 	i_command = INVALID_INPUT_VALUE;
       }
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Temperature_North_BC") == 0) {
+      i_command = 505;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Temperature_North_BC;
+      IP.Input_File.getline(buffer,sizeof(buffer));
+      if (IP.Temperature_North_BC < ZERO) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Temperature_South_BC") == 0) {
+      i_command = 506;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Temperature_South_BC;
+      IP.Input_File.getline(buffer,sizeof(buffer));
+      if (IP.Temperature_South_BC < ZERO) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Temperature_East_BC") == 0) {
+      i_command = 505;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Temperature_East_BC;
+      IP.Input_File.getline(buffer,sizeof(buffer));
+      if (IP.Temperature_East_BC < ZERO) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(IP.Next_Control_Parameter,"Temperature_West_BC") == 0) {
+      i_command = 505;
+      IP.Line_Number = IP.Line_Number + 1;
+      IP.Input_File >> IP.Temperature_West_BC;
+      IP.Input_File.getline(buffer,sizeof(buffer));
+      if (IP.Temperature_West_BC < ZERO) i_command = INVALID_INPUT_VALUE;
 
     ////////////////////////////////////////////////////////////////////
     // INTERFACE PARAMETERS                                           //

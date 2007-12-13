@@ -2,7 +2,7 @@
 #define _HEXA_POST_PROCESSING_INCLUDED
 
 /*! *****************************************************
- * Routine: Hexa_PostProcessing                         *
+ * Routine: Hexa_Post_Processing                        *
  *                                                      *
  * Post Processes Solver Solution Data base on flags    *
  * in the Input File.  Also allows for the command_flag *
@@ -21,7 +21,11 @@ int Hexa_Post_Processing(HexaSolver_Data &Data,
   int error_flag(0);
   int line_number;
 
-  while (Solution_Data.command_flag != TERMINATE_CODE){
+  error_flag = Hexa_Post_Processing_Specializations(Data,
+	  	  	                            Solution_Data);
+  if (error_flag) return error_flag;
+
+  while (Solution_Data.command_flag != TERMINATE_CODE) {
     
     if (CFFC_Primary_MPI_Processor()) {    
       Solution_Data.Input.Get_Next_Input_Control_Parameter(true);
@@ -44,7 +48,7 @@ int Hexa_Post_Processing(HexaSolver_Data &Data,
          // called when the scope of the calculation is done...
          // ....
 
-         // Output input parameters for new caluculation.
+         // Output input parameters for new calculation.
          if (!Data.batch_flag)  {
             cout << "\n\n Starting a new calculation.";
             cout << Solution_Data.Input << "\n";
@@ -247,9 +251,25 @@ int Hexa_Post_Processing(HexaSolver_Data &Data,
          
    } /* endwhile */
   
-  
-  return error_flag;
+   return error_flag;
+
 }
 
+
+/*! *****************************************************
+ * Routine: Hexa_Post_Processing_Specializations        *
+ *                                                      *
+ *                                                      *
+ ********************************************************/
+template<typename SOLN_pSTATE, typename SOLN_cSTATE>
+int Hexa_Post_Processing_Specializations(HexaSolver_Data &Data,
+		 	                 HexaSolver_Solution_Data<SOLN_pSTATE, SOLN_cSTATE> &Solution_Data) {
+
+
+   int error_flag(0);
+  
+   return error_flag;
+
+}
 
 #endif // _HEXA_POST_PROCESSING_INCLUDED

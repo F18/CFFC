@@ -120,8 +120,9 @@ class CFD_Input_Parameters{
   int i_Time_Integration;
   int Time_Accurate, Local_Time_Stepping, 
       Maximum_Number_of_Time_Steps, N_Stage;
-  //! p-norm calculation indicator (0 density, 1, momentum, 2 k,...)
-  int p_Norm_Indicator;
+  //! Residual_Norm calculation indicator (0 density, 1, momentum, 2 k,...)
+  int Residual_Norm;
+  int Number_of_Residual_Norms;
   double CFL_Number, Time_Max;
   //@}
 
@@ -231,7 +232,8 @@ class CFD_Input_Parameters{
     N_Stage = 1;
     CFL_Number = HALF;
     Time_Max = ZERO;
-    p_Norm_Indicator = 1;
+    Residual_Norm = 1;   //density default
+    Number_of_Residual_Norms =1;
     // Reconstruction type indicator and related input parameters:
     strcpy(Reconstruction_Type, "Least_Squares");
     i_Reconstruction = RECONSTRUCTION_LEAST_SQUARES;

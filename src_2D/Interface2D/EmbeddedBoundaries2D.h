@@ -598,7 +598,7 @@ public:
  * templated class essentially replaces the ****2DQuadSolvers routine
  * used by the individual equation-type solvers in CFFC.  The
  * set-up of the problem and the output of the computed solution is 
- * performd in the routine found in EmbeddedBoundaries_Solvers.h, 
+ * performed in the routine found in EmbeddedBoundaries_Solver.h, 
  * however, the explicit solution of the system of equations is found in
  * the 'Execute' function.
  * 
@@ -2046,12 +2046,14 @@ Mesh_Unadjustment(void) {
       Mesh_Unadjustment(nb);
     }
   }
+
   int error_flag = Send_All_Messages(Local_SolnBlk,
 				     *Local_Solution_Block_List,
 				     NUM_COMP_VECTOR2D,
 				     ON);
   //CFFC_Broadcast_MPI(&error_flag,1);
   //if (error_flag) return error_flag;
+
 }
 
 template <class cState, class pState, class Quad_Soln_Block, class Quad_Soln_Input_Parameters>
@@ -8370,7 +8372,7 @@ Adaptive_Mesh_Refinement(const int &Set_New_Refinement_Flags,
 	}
       }
     }
-
+    
 #ifdef _MPI_VERSION
     for (int n = 0; n < Interface_Union_List.Ni+1; n++) {
       maximum_interface_mesh_refinement_flag[n] = CFFC_Maximum_MPI(maximum_interface_mesh_refinement_flag[n]);
@@ -8557,11 +8559,6 @@ Adaptive_Mesh_Refinement(const int &Set_New_Refinement_Flags,
 //   Fix_Refined_Block_Boundaries(Local_SolnBlk,
 //     			       *Local_Solution_Block_List);
 
-  // Unadjust the mesh.
-  Mesh_Unadjustment();   //ADDED BY JAMES FOR GHOST CELL TROUBLES WHEN MESH REFINEMENT 
-                         //IS DONE ON BOUNDARIES
-                         //I also changed the lines commented with &*&*&*&*&*&*
-
   // Re-allocate memory for all message passing buffers used to send
   // solution information between neighbouring solution blocks.
   Allocate_Message_Buffers(*Local_Solution_Block_List,
@@ -8582,8 +8579,8 @@ Adaptive_Mesh_Refinement(const int &Set_New_Refinement_Flags,
   if (Interface_Component_List.Ni && Perform_Mesh_Adjustment) {
 
     for (int nb = 0; nb < Local_Solution_Block_List->Nblk; nb++) {
-      if (Local_Solution_Block_List->Block[nb].used == ADAPTIVEBLOCK2D_USED){// &&         //&*&*&*&*&*&*&*&*&*&*&*&*&*&*
-	//Local_Solution_Block_List->RefineFlag[nb] == ADAPTIVEBLOCK2D_NOCHANGE) {         //&*&*&*&*&*&*&*&*&*&*&*&*&*&*
+      if (Local_Solution_Block_List->Block[nb].used == ADAPTIVEBLOCK2D_USED &&
+	  Local_Solution_Block_List->RefineFlag[nb] == ADAPTIVEBLOCK2D_NOCHANGE) {
 	error_flag = Pre_Mesh_Adjustment_Painting(nb);
 	if (!error_flag) Adjustment_Data[nb].Initialize();
 	if (!error_flag) error_flag = Mesh_Adjustment_Sharp_Corners(nb);

@@ -30,14 +30,14 @@
 #define _MV_VECTOR_COMPLEX_H    
 
 // Added by CPTG, Nov. 2003.
-#ifndef COMPLEX
+#ifndef MVPP_COMPLEX
 #ifdef _GNU_GCC_296
-#define COMPLEX complex<double>
+#define MVPP_COMPLEX complex<double>
 #endif
 #ifdef _GNU_GCC_3
-#define COMPLEX complex<double>
+#define MVPP_COMPLEX complex<double>
 #else
-#define COMPLEX complex<double>
+#define MVPP_COMPLEX complex<double>
 #endif
 #endif
 
@@ -63,7 +63,7 @@ using namespace std;
 class MV_Vector_COMPLEX
 {                                                                      
     protected:                                                           
-           COMPLEX *p_;
+           MVPP_COMPLEX *p_;
            unsigned int dim_;
            int ref_;  // 0 or 1; does this own its own memory space?
     public:                                                            
@@ -75,11 +75,11 @@ class MV_Vector_COMPLEX
                                                                        
     MV_Vector_COMPLEX();                             
     MV_Vector_COMPLEX(unsigned int);                             
-    MV_Vector_COMPLEX(unsigned int, const COMPLEX&);   
+    MV_Vector_COMPLEX(unsigned int, const MVPP_COMPLEX&);   
                                                      
                                                     
-    MV_Vector_COMPLEX(COMPLEX*, unsigned int);      
-    MV_Vector_COMPLEX(const COMPLEX*, unsigned int);        
+    MV_Vector_COMPLEX(MVPP_COMPLEX*, unsigned int);      
+    MV_Vector_COMPLEX(const MVPP_COMPLEX*, unsigned int);        
     MV_Vector_COMPLEX(const MV_Vector_COMPLEX &); 
     
     // reference of an exisiting data structure
@@ -89,7 +89,7 @@ class MV_Vector_COMPLEX
     // not used in the construction.  (MV_Vector::ref_type is an enum that
     // can *only* have the value of 1.
     //
-    MV_Vector_COMPLEX(COMPLEX* d, unsigned int N, MV_Vector_::ref_type i) :
+    MV_Vector_COMPLEX(MVPP_COMPLEX* d, unsigned int N, MV_Vector_::ref_type i) :
                             p_(d), dim_(N), ref_(i) {}
 
     MV_Vector_COMPLEX(const MV_Vector_COMPLEX &V, MV_Vector_::ref_type i)   :
@@ -102,14 +102,14 @@ class MV_Vector_COMPLEX
         /*::::::::::::::::::::::::::::::::*/                           
                                                                        
 
-    COMPLEX&      operator()(unsigned int i)
+    MVPP_COMPLEX&      operator()(unsigned int i)
                   {
 #                   ifdef MV_VECTOR_BOUNDS_CHECK
                     assert(i < dim_);
 #                   endif
                     return p_[i];
                   }
-    const  COMPLEX&       operator()(unsigned int i) const 
+    const  MVPP_COMPLEX&       operator()(unsigned int i) const 
                   {
 #                   ifdef MV_VECTOR_BOUNDS_CHECK
                     assert(i < dim_);
@@ -117,14 +117,14 @@ class MV_Vector_COMPLEX
                     return p_[i];
                   }
 
-    COMPLEX&      operator[](unsigned int i)
+    MVPP_COMPLEX&      operator[](unsigned int i)
                   {
 #                   ifdef MV_VECTOR_BOUNDS_CHECK
                     assert(i < dim_);
 #                   endif
                     return p_[i];
                   }
-    const  COMPLEX&       operator[](unsigned int i) const 
+    const  MVPP_COMPLEX&       operator[](unsigned int i) const 
                   {
 #                   ifdef MV_VECTOR_BOUNDS_CHECK
                     assert(i < dim_);
@@ -151,7 +151,7 @@ class MV_Vector_COMPLEX
         /*::::::::::::::*/                                             
                                                                        
     MV_Vector_COMPLEX & operator=(const MV_Vector_COMPLEX&);
-    MV_Vector_COMPLEX & operator=(const COMPLEX&);
+    MV_Vector_COMPLEX & operator=(const MVPP_COMPLEX&);
 
 
     friend ostream& operator<<(ostream &s, const MV_Vector_COMPLEX &A);

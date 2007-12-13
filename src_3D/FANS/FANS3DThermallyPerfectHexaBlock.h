@@ -16,6 +16,10 @@
 #include "FANS3DThermallyPerfectState.h"
 #endif // _FANS3D_THERMALLYPERFECT_STATE_INCLUDED   
 
+#ifndef _BLUFFBODY_DATABASE_INCLUDED
+#include "BluffBodyBurner.h"
+#endif // _BLUFFBODY_DATABASE_INCLUDE
+
 /* Define required specializations. */
 
 template<>

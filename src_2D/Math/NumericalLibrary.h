@@ -1,8 +1,8 @@
 /*!\file NumericalLibrary.h
   \brief Header file defining some useful numerical methods/objects. */
 
-#ifndef _NumericalLibrary_INCLUDED
-#define _NumericalLibrary_INCLUDED
+#ifndef _NUMERICAL_LIBRARY_INCLUDED
+#define _NUMERICAL_LIBRARY_INCLUDED
 
 /* Include required C++ libraries. */
 #include <limits>
@@ -248,6 +248,65 @@ template<typename ObjectType, typename Member_Pointer, typename SolutionType>
 inline _Member_Function_Wrapper_<ObjectType,Member_Pointer,SolutionType> 
 wrapped_member_function(ObjectType *object, Member_Pointer mem_func, SolutionType dummy){
   return _Member_Function_Wrapper_<ObjectType,Member_Pointer,SolutionType> (object,mem_func);
+}
+
+/************************************************************************//**
+ * \class _Member_Function_Wrapper_One_Parameter_
+ * \brief Adaptor for making a class member function that takes one (unsigned) parameter
+ * look like an ordinary function
+ *
+ * This wrapper is useful for passing member functions to subroutines that 
+ * take ordinary functions (e.g. numerical integration subroutines)
+ ****************************************************************************/
+template<class ObjectType, class Member_Pointer, class SolutionType>
+  class _Member_Function_Wrapper_One_Parameter_{
+  
+ public:
+  
+  /* constructor */
+  _Member_Function_Wrapper_One_Parameter_(ObjectType *object,
+					  Member_Pointer mem_func,
+					  const unsigned param): Obj(object), Ptr(mem_func), parameter(param){ }
+    
+    // "member function evaluation" with three parameters
+    SolutionType operator() (double val1, double val2, double val3){
+      return (Obj->*Ptr)(val1,val2,val3,parameter);
+    }
+    
+    // "member function evaluation" with two parameters
+    SolutionType operator() (double val1, double val2){
+      return (Obj->*Ptr)(val1,val2,parameter);
+    }
+    
+    // "member function evaluation" with one parameter
+    SolutionType operator() (double val1){
+      return (Obj->*Ptr)(val1,parameter);
+    }
+    
+  private:
+    _Member_Function_Wrapper_One_Parameter_();	/* make default constructor private */
+    ObjectType *Obj;		/*!< pointer to the object */
+    Member_Pointer Ptr;		/*!< pointer to the class member function */
+    unsigned parameter;         /*!< variable to store the function parameter value */
+  };
+
+
+/************************************************************************//**
+ * \fn _Member_Function_Wrapper_One_Parameter<ObjectType,Member_Pointer,SolutionType> 
+ wrapped_member_function_one_parameter(ObjectType *object, Member_Pointer mem_func, SolutionType dummy)
+ * \brief Adaptor for making a class member function that takes one (unsigned) parameter
+ * look like an ordinary function.
+ *
+ * \param object the object used to access the member function
+ * \param mem_func the member function object
+ * \param param the value of the parameter used to evaluate the function
+ * \param dummy used only to provide the solution type
+ ****************************************************************************/
+template<typename ObjectType, typename Member_Pointer, typename SolutionType>
+inline _Member_Function_Wrapper_One_Parameter_<ObjectType,Member_Pointer,SolutionType> 
+wrapped_member_function_one_parameter(ObjectType *object, Member_Pointer mem_func,
+				      unsigned parameter, SolutionType dummy){
+  return _Member_Function_Wrapper_One_Parameter_<ObjectType,Member_Pointer,SolutionType> (object,mem_func,parameter);
 }
 
 

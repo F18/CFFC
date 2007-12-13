@@ -823,7 +823,7 @@ Euler2D_pState Reflect(const Euler2D_pState &W,
     /* Reflect the normal velocity in the rotated frame. */
 
     ur = -ur + TWO*Vr.x;
-    vr =  vr + TWO*Vr.y;
+    vr =  vr;// + TWO*Vr.y;
 
     /* Rotate back to the original Cartesian reference frame. */
 

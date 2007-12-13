@@ -1,6 +1,58 @@
 #ifndef _HEXA_SOLVER_CLASSES_INCLUDED
 #define _HEXA_SOLVER_CLASSES_INCLUDED
 
+/*! **************************************************************
+ * class:  HexaSolver_Data                                       *
+ *                                                               *
+ * This class contains the no solution specific data, ie grids,  *
+ * block lists, etc. required by the Hexa Solver.  Its primary   *
+ * function is to serve as a data container to organize and      *
+ * simplify data handling within the Hexa Solver functions.      *
+ *                                                               *
+ * Data Members:                                                 *
+ *    Initial_Mesh               -                               *
+ *    Local_Adaptive_Block_List  -                               *
+ *    Global_Adaptive_Block_List -                               *
+ *    Octree                     -                               *
+ *                                                               *
+ *****************************************************************/ 
+class HexaSolver_Data {
+  private:
+  protected: 
+  public:
+
+  Grid3D_Hexa_Multi_Block_List        Initial_Mesh;  
+  AdaptiveBlock3D_List                Local_Adaptive_Block_List; 
+  AdaptiveBlock3D_ResourceList        Global_Adaptive_Block_List;
+  Octree_DataStructure                Octree;
+  
+  // cpu time variables
+  CPUTime processor_cpu_time, total_cpu_time;  
+  
+  // Time step / iteration counters
+  int number_of_explicit_time_steps;       
+  int number_of_implicit_time_steps;
+
+  // Physical Time for Unsteady Calculations
+  double Time;
+
+  // Batch mode flag, deactivates STDOUT ie. cout
+  int batch_flag;
+
+  // Residaul File Output Stream
+  ofstream residual_file;
+
+  int total_number_of_time_steps() { return (number_of_explicit_time_steps+number_of_implicit_time_steps); }
+ 
+  /*********************************/
+  //default constructor(s)
+  HexaSolver_Data(void){}
+  HexaSolver_Data(int batch): batch_flag(batch) {}
+
+  // Destructor
+  ~HexaSolver_Data() {}
+ 
+};
 
 /*! **************************************************************
  * class:  HexaSolver_Solution_Data                              *
@@ -70,57 +122,5 @@ Get_Input_Parameters(char *Input_File_Name,int batch_flag){
   
   return error_flag;
 }
-
-
-/*! **************************************************************
- * class:  HexaSolver_Data                                       *
- *                                                               *
- * This class contains the no solution specific data, ie grids,  *
- * block lists, etc. required by the Hexa Solver.  Its primary   *
- * function is to serve as a data container to organize and      *
- * simplify data handling within the Hexa Solver functions.      *
- *                                                               *
- * Data Members:                                                 *
- *    Initial_Mesh               -                               *
- *    Local_Adaptive_Block_List  -                               *
- *    Global_Adaptive_Block_List -                               *
- *    Octree                     -                               *
- *                                                               *
- *****************************************************************/ 
-class HexaSolver_Data {
-  private:
-  protected: 
-  public:
-
-  Grid3D_Hexa_Multi_Block             Initial_Mesh;  
-  AdaptiveBlock3D_List                Local_Adaptive_Block_List; 
-  AdaptiveBlock3D_ResourceList        Global_Adaptive_Block_List;
-  Octree_DataStructure                Octree;
-  
-  // cpu time variables
-  CPUTime processor_cpu_time, total_cpu_time;  
-  
-  // Time step / iteration counters
-  int number_of_explicit_time_steps;       
-  int number_of_implicit_time_steps;
-
-  // Physical Time for Unsteady Calculations
-  double Time;
-
-  // Batch mode flag, deactivates STDOUT ie. cout
-  int batch_flag;
-
-  int total_number_of_time_steps() { return (number_of_explicit_time_steps+number_of_implicit_time_steps); }
- 
-  /*********************************/
-  //default constructor(s)
-  HexaSolver_Data(void){}
-  HexaSolver_Data(int batch): batch_flag(batch) {}
-
-  // Destructor
-  ~HexaSolver_Data() {}
- 
-};
-
 
 #endif //_HEXA_SOLVER_CLASSES_INCLUDED

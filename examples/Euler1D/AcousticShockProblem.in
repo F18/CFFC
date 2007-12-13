@@ -1,0 +1,245 @@
+	###############################################################
+	#-------------------------------------------------------------#
+	#  Starting Paramters for the AcousticShock simulation        #
+	#-------------------------------------------------------------#
+	###############################################################
+
+		##############################
+		#	DEFINE PROBLEM       #
+		##############################
+ICs_Type =
+	Acoustic_Shock_IVP
+
+		##############################
+		#	DEFINE GEOMETRY      #
+		##############################
+Grid_Type =
+	Uniform
+X_Min =
+	-5.0
+X_Max =
+	5.0
+Number_of_Cells = 
+	1800
+
+		###################################
+		# DEFINE TIME MARCHING PARAMETERS #
+		###################################
+
+Time_Max = 
+	2.0
+	# 4.0
+
+Time_Accurate =	   	
+		1  # Time accurate is ON
+
+Maximum_Number_of_Time_Steps =
+	 	1
+
+Time_Integration_Type =
+	    Explicit_Predictor_Corrector4_HO
+	    #Explicit_Predictor_Corrector_HO
+	    #Explicit_Euler_HO
+
+CFL_Number =
+	0.5
+	# 0.8
+
+		############################################
+		# DEFINE SPATIAL DISCRETIZATION PARAMETERS #
+		############################################
+
+Space_Accuracy =
+	  4
+
+Reconstruction_Type =
+	    #ENO
+	    #CENO
+	    ENO_Characteristic
+
+CENO_Tolerance =
+	    500
+
+Limiter_Type =
+	     Venkatakrishnan
+	    # Barth_Jespersen
+	    # VanLeer
+
+Flux_Function_Type = 
+	    Roe
+
+		#########################################
+		# 	DEFINE OUTPUT PARAMETERS  	#
+		#########################################
+
+Output_File_Name = 
+		 AcousticShock_4th_CENO_400cells
+
+Output_Format_Type =
+	    tecplot
+
+
+#############    #########################################    #############
+#		 	MAIN RUN  PROGRAM COMMANDS 			  #
+#############    #########################################    #############
+Execute
+Write_Output
+Terminate
+
+		#########################
+		#-----------------------#
+		#  	  Run II 	#
+		#########################
+
+#################################
+# VARY THE FOLLOWING PARAMETERS #
+#################################
+Time_Max = 
+	  2.0
+	# 4.0
+	
+Space_Accuracy =
+	3
+
+Output_File_Name = 
+	 AcousticShock_3rd_CENO_400cells
+
+########## RUN II COMMANDS #######
+Execute
+#Write_Output
+#Terminate
+
+
+		#########################
+		#-----------------------#
+		#  	  Run III 	#
+		#########################
+
+#################################
+# VARY THE FOLLOWING PARAMETERS #
+#################################
+
+
+########## RUN III COMMANDS #######
+
+
+		#########################
+		#-----------------------#
+		#  	  Run IV 	#
+		#########################
+
+#################################
+# VARY THE FOLLOWING PARAMETERS #
+#################################
+
+
+########## RUN IV COMMANDS #######
+
+		#########################
+		#-----------------------#
+		#  	  Run V 	#
+		#########################
+
+#################################
+# VARY THE FOLLOWING PARAMETERS #
+#################################
+
+########## RUN V COMMANDS #######
+
+		#########################
+		#-----------------------#
+		#  	  Run VI 	#
+		#########################
+
+#################################
+# VARY THE FOLLOWING PARAMETERS #
+#################################
+
+########## RUN VI COMMANDS #######
+
+		#########################
+		#-----------------------#
+		#  	  Run VII 	#
+		#########################
+
+#################################
+# VARY THE FOLLOWING PARAMETERS #
+#################################
+
+########## RUN VII COMMANDS #######
+
+		#########################
+		#-----------------------#
+		#  	  Run VIII 	#
+		#########################
+
+#################################
+# VARY THE FOLLOWING PARAMETERS #
+#################################
+
+########## RUN VIII COMMANDS #######
+
+
+
+
+
+
+
+
+#################################################################
+#   	   AVAILABLE OPTIONS FOR THE INPUT PARAMETERS 		#
+#################################################################
+
+# Contact_Surface                :ICs_Type 
+# Rarefaction_Wave               :ICs_Type 
+# Brio_Wu                        :ICs_Type 
+# Riemann                        :ICs_Type 
+# Square_Wave                    :ICs_Type 
+# Sinx2_Wave                     :ICs_Type 
+# Impulsive_Rod                  :ICs_Type 
+# Sinusoidal_Rod1                :ICs_Type 
+# Sinusoidal_Rod4                :ICs_Type 
+# Riemann_IVP_qx=0               :ICs_Type 
+# Riemann_IVP_T=0                :ICs_Type 
+# Riemann_IVP                    :ICs_Type
+# Acoustic_Shock_IVP
+# Jiang_IVP
+# Blast_Wave_IVP 
+# 
+# Explicit_Euler                 :Time_Integration_Type
+# Explicit_Euler_HO              :Time_Integration_Type
+# Explicit_Predictor_Corrector   :Time_Integration_Type
+# Explicit_Predictor_Corrector_HO:Time_Integration_Type
+# Explicit_Predictor_Corrector4_HO :Time_Integration_Type
+# Lax_Friedrichs                 :Time_Integration_Type
+# Lax_Wendroff                   :Time_Integration_Type
+# MacCormack                     :Time_Integration_Type
+# Hancock                       :Time_Integration_Type
+# 
+# MUSCL                          :Reconstruction_Type
+# Least_Squares                  :Reconstruction_Type
+# Green_Gauss                    :Reconstruction_Type
+# Characteristic                 :Reconstruction_Type
+# High_Order                     :Reconstruction_Type
+# 
+# Zero                           :Limiter_Type
+# One                            :Limiter_Type
+# Minmod                         :Limiter_Type
+# UMIST                          :Limiter_Type
+# Double_Minmod                  :Limiter_Type
+# Superbee                       :Limiter_Type
+# Phi                            :Limiter_Type
+# VanLeer                        :Limiter_Type
+# VanAlbada                      :Limiter_Type
+# Venkatakrishnan                :Limiter_Type
+# Barth_Jespersen                :Limiter_Type
+# Data_Dependent                 :Limiter_Type
+# 
+# Godunov                        :Flux_Function_Type
+# Roe                            :Flux_Function_Type
+# Rusanov                        :Flux_Function_Type
+# HLLE                           :Flux_Function_Type
+# Linde                          :Flux_Function_Type
+# HLLC                           :Flux_Function_Type
+# Osher                          :Flux_Function_Type
+#

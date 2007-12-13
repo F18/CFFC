@@ -1,9 +1,9 @@
-/**********************************************************************
- * LevelSet2DQuadMultiBlock.cc                                        *
- *                                                                    *
- * Multi-block versions of subroutines for 2D Level Set multi-block   *
- * quadrilateral mesh solution classes.                               *
- *                                                                    *
+/******************************************************************//**
+ * \file LevelSet2DQuadMultiBlock.cc                                  
+ *                                                                    
+ * Multi-block versions of subroutines for 2D Level Set multi-block   
+ * quadrilateral mesh solution classes.                               
+ *                                                                    
  **********************************************************************/
 
 // Include 2D LevelSet quadrilateral mesh solution header file.
@@ -16,12 +16,12 @@
  * LevelSet2D_Quad_Block -- Multiple Block External Subroutines.      *
  **********************************************************************/
 
-/**********************************************************************
- * Routine: Allocate                                                  *
- *                                                                    *
- * Allocate memory for 1D array of 2D quadrilateral multi-block       *
- * solution blocks.                                                   *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Allocate                                                  
+ *                                                                    
+ * Allocate memory for 1D array of 2D quadrilateral multi-block       
+ * solution blocks.                                                   
+ *                                                                    
  **********************************************************************/
 LevelSet2D_Quad_Block* Allocate(LevelSet2D_Quad_Block *Soln_ptr,
 				LevelSet2D_Input_Parameters &Input_Parameters) {
@@ -34,12 +34,12 @@ LevelSet2D_Quad_Block* Allocate(LevelSet2D_Quad_Block *Soln_ptr,
 
 }
 
-/**********************************************************************
- * Routine: Deallocate                                                *
- *                                                                    *
- * Deallocate memory for 1D array of 2D quadrilateral multi-block     *
- * solution blocks.                                                   *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Deallocate                                                
+ *                                                                    
+ * Deallocate memory for 1D array of 2D quadrilateral multi-block     
+ * solution blocks.                                                   
+ *                                                                    
  **********************************************************************/
 LevelSet2D_Quad_Block* Deallocate(LevelSet2D_Quad_Block *Soln_ptr,
 				  LevelSet2D_Input_Parameters &Input_Parameters) {
@@ -56,12 +56,12 @@ LevelSet2D_Quad_Block* Deallocate(LevelSet2D_Quad_Block *Soln_ptr,
   
 }
 
-/**********************************************************************
- * Routine: ICs                                                       *
- *                                                                    *
- * Initializes the interface(s) on each of the solution blocks in the *
- * 1D array of 2D quadrilateral multi-block solution blocks.          *
- *                                                                    *
+/******************************************************************//**
+ * Routine: ICs                                                       
+ *                                                                    
+ * Initializes the interface(s) on each of the solution blocks in the 
+ * 1D array of 2D quadrilateral multi-block solution blocks.          
+ *                                                                    
  **********************************************************************/
 void ICs(LevelSet2D_Quad_Block *Soln_ptr,
 	 AdaptiveBlock2D_List &Soln_Block_List,
@@ -73,12 +73,12 @@ void ICs(LevelSet2D_Quad_Block *Soln_ptr,
 
 }
 
-/**********************************************************************
- * Routine: Construct_Bulk_Flow_Field                                 *
- *                                                                    *
- * Constructs the bulk flow field data to the solution variables of a *
- * 1D array of 2D quadrilateral multi-block solution blocks.          *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Construct_Bulk_Flow_Field                                 
+ *                                                                    
+ * Constructs the bulk flow field data to the solution variables of a 
+ * 1D array of 2D quadrilateral multi-block solution blocks.          
+ *                                                                    
  **********************************************************************/
 int Construct_Bulk_Flow_Field(LevelSet2D_Quad_Block *Soln_ptr,
 			      AdaptiveBlock2D_List &Soln_Block_List,
@@ -99,12 +99,12 @@ int Construct_Bulk_Flow_Field(LevelSet2D_Quad_Block *Soln_ptr,
 
 }
 
-/**********************************************************************
- * Routine: BCs                                                       *
- *                                                                    *
- * Apply boundary conditions at boundaries of a 1D array of 2D        *
- * quadrilateral multi-block solution blocks.                         *
- *                                                                    *
+/******************************************************************//**
+ * Routine: BCs                                                       
+ *                                                                    
+ * Apply boundary conditions at boundaries of a 1D array of 2D        
+ * quadrilateral multi-block solution blocks.                         
+ *                                                                    
  **********************************************************************/
 void BCs(LevelSet2D_Quad_Block *Soln_ptr,
          AdaptiveBlock2D_List &Soln_Block_List,
@@ -119,13 +119,13 @@ void BCs(LevelSet2D_Quad_Block *Soln_ptr,
 
 }
 
-/**********************************************************************
- * Routine: Linear_Reconstruction                                     *
- *                                                                    *
- * This routine determines the linear reconstruction of the solution  *
- * gradients for a 1D array of 2D quadrilateral multi-block Level Set *
- * solution blocks.                                                   *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Linear_Reconstruction                                     
+ *                                                                    
+ * This routine determines the linear reconstruction of the solution  
+ * gradients for a 1D array of 2D quadrilateral multi-block Level Set 
+ * solution blocks.                                                   
+ *                                                                    
  **********************************************************************/
 // int Linear_Reconstruction(LevelSet2D_Quad_Block *Soln_ptr,
 // 			  AdaptiveBlock2D_List &Soln_Block_List,
@@ -157,13 +157,13 @@ void BCs(LevelSet2D_Quad_Block *Soln_ptr,
  
 // }
 
-/**********************************************************************
- * Routine: Reconstruction_EssentiallyNonOscillatory                  *
- *                                                                    *
- * This routine determines the linear reconstruction of the solution  *
- * gradients of a given variable, n, for a 1D array of 2D Cartesian   *
- * solution blocks using an essentially non-oscillatory scheme.       *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Reconstruction_EssentiallyNonOscillatory                  
+ *                                                                    
+ * This routine determines the linear reconstruction of the solution  
+ * gradients of a given variable, n, for a 1D array of 2D Cartesian   
+ * solution blocks using an essentially non-oscillatory scheme.       
+ *                                                                    
  **********************************************************************/
 int Reconstruction_EssentiallyNonOscillatory(LevelSet2D_Quad_Block *Soln_ptr,
 					     AdaptiveBlock2D_List &Soln_Block_List,
@@ -187,13 +187,13 @@ int Reconstruction_EssentiallyNonOscillatory(LevelSet2D_Quad_Block *Soln_ptr,
 
 }
 
-/**********************************************************************
- * Routine: Reconstruction_WeightedEssentiallyNonOscillatory          *
- *                                                                    *
- * This routine determines the linear reconstruction of the solution  *
- * gradients of a given variable, n, for a 1D array of 2D Cartesian   *
- * solution blocks using an essentially non-oscillatory scheme.       *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Reconstruction_WeightedEssentiallyNonOscillatory          
+ *                                                                    
+ * This routine determines the linear reconstruction of the solution  
+ * gradients of a given variable, n, for a 1D array of 2D Cartesian   
+ * solution blocks using an essentially non-oscillatory scheme.       
+ *                                                                    
  **********************************************************************/
 int Reconstruction_WeightedEssentiallyNonOscillatory(LevelSet2D_Quad_Block *Soln_ptr,
 						     AdaptiveBlock2D_List &Soln_Block_List,
@@ -215,12 +215,41 @@ int Reconstruction_WeightedEssentiallyNonOscillatory(LevelSet2D_Quad_Block *Soln
 
 }
 
-/**********************************************************************
- * Routine: Set_Global_TimeStep                                       *
- *                                                                    *
- * Assigns global time step to a 1D array of 2D quadrilateral         *
- * multi-block solution blocks for time-accurate calculations.        *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Reconstruction_Curvature                                  
+ *                                                                    
+ * This routine determines the curvature of a given variable, n, for  
+ * a 1D array of 2D Cartesian solution blocks using one of three      
+ * methods.                                                           
+ *                                                                    
+ **********************************************************************/
+int Reconstruction_Curvature(LevelSet2D_Quad_Block *Soln_ptr,
+			     AdaptiveBlock2D_List &Soln_Block_List,
+			     LevelSet2D_Input_Parameters &Input_Parameters,
+			     const int n) {
+  int error_flag = 0;
+
+  /* Perform the reconstruction of the curvature of the specified
+     state variable, n, within each block of the block list. */
+  for (int nb = 0; nb < Soln_Block_List.Nblk; nb++) {
+    if (Soln_Block_List.Block[nb].used == ADAPTIVEBLOCK2D_USED) {
+      Reconstruction_Curvature(Soln_ptr[nb],
+			       Input_Parameters,
+			       n);
+    }
+  }
+
+  // Cartesian multi-block solution blocks successfully updated.
+  return error_flag;
+
+}
+
+/******************************************************************//**
+ * Routine: Set_Global_TimeStep                                       
+ *                                                                    
+ * Assigns global time step to a 1D array of 2D quadrilateral         
+ * multi-block solution blocks for time-accurate calculations.        
+ *                                                                    
  **********************************************************************/
 void Set_Global_TimeStep(LevelSet2D_Quad_Block *Soln_ptr,
                          AdaptiveBlock2D_List &Soln_Block_List,
@@ -234,13 +263,13 @@ void Set_Global_TimeStep(LevelSet2D_Quad_Block *Soln_ptr,
   
 }
 
-/**********************************************************************
- * Routine: L1_Norm_Residual                                          *
- *                                                                    *
- * Determines the L1-norm of the solution residual for a 1D array of  *
- * 2D quadrilateral multi-block solution blocks.  Useful for          *
- * monitoring convergence of the solution for steady state problems.  *
- *                                                                    *
+/******************************************************************//**
+ * Routine: L1_Norm_Residual                                          
+ *                                                                    
+ * Determines the L1-norm of the solution residual for a 1D array of  
+ * 2D quadrilateral multi-block solution blocks.  Useful for          
+ * monitoring convergence of the solution for steady state problems.  
+ *                                                                    
  **********************************************************************/
 double L1_Norm_Residual(LevelSet2D_Quad_Block *Soln_ptr,
 			AdaptiveBlock2D_List &Soln_Block_List,
@@ -260,13 +289,13 @@ double L1_Norm_Residual(LevelSet2D_Quad_Block *Soln_ptr,
   
 }
 
-/**********************************************************************
- * Routine: L2_Norm_Residual                                          *
- *                                                                    *
- * Determines the L2-norm of the solution residual for a 1D array of  *
- * 2D quadrilateral multi-block solution blocks.  Useful for          *
- * monitoring convergence of the solution for steady state problems.  *
- *                                                                    *
+/******************************************************************//**
+ * Routine: L2_Norm_Residual                                          
+ *                                                                    
+ * Determines the L2-norm of the solution residual for a 1D array of  
+ * 2D quadrilateral multi-block solution blocks.  Useful for          
+ * monitoring convergence of the solution for steady state problems.  
+ *                                                                    
  **********************************************************************/
 double L2_Norm_Residual(LevelSet2D_Quad_Block *Soln_ptr,
 			AdaptiveBlock2D_List &Soln_Block_List,
@@ -290,13 +319,13 @@ double L2_Norm_Residual(LevelSet2D_Quad_Block *Soln_ptr,
   
 }
 
-/**********************************************************************
- * Routine: Max_Norm_Residual                                         *
- *                                                                    *
- * Determines the maximum norm of the solution residual for a 1D      *
- * array of 2D quadrilateral multi-block solution blocks.  Useful for *
- * monitoring convergence of the solution for steady state problems.  *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Max_Norm_Residual                                         
+ *                                                                    
+ * Determines the maximum norm of the solution residual for a 1D      
+ * array of 2D quadrilateral multi-block solution blocks.  Useful for 
+ * monitoring convergence of the solution for steady state problems.  
+ *                                                                    
  **********************************************************************/
 double Max_Norm_Residual(LevelSet2D_Quad_Block *Soln_ptr,
 			 AdaptiveBlock2D_List &Soln_Block_List,
@@ -317,13 +346,13 @@ double Max_Norm_Residual(LevelSet2D_Quad_Block *Soln_ptr,
   
 }
 
-/**********************************************************************
- * Routine: Store_Initial_Eikonal_Solution                            *
- *                                                                    *
- * This routine makes a copy of the solution prior to solving the     *
- * Eikonal equation. This initial solution is used in solving the     *
- * equation.                                                          *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Store_Initial_Eikonal_Solution                            
+ *                                                                    
+ * This routine makes a copy of the solution prior to solving the     
+ * Eikonal equation. This initial solution is used in solving the     
+ * equation.                                                          
+ *                                                                    
  **********************************************************************/
 int Store_Initial_Eikonal_Solution(LevelSet2D_Quad_Block *Soln_ptr,
 				   AdaptiveBlock2D_List &Soln_Block_List) {
@@ -343,15 +372,15 @@ int Store_Initial_Eikonal_Solution(LevelSet2D_Quad_Block *Soln_ptr,
 
 }
 
-/**********************************************************************
- * Routine: Calculate_Sign_Function                                   *
- *                                                                    *
- * This routine determines the sign function of the signed distance   *
- * function for a 1D array of 2D quadrilateral multi-block solution   *
- * blocks.  Required for the solution of the Eikonal equation for     *
- * redistancing the distance function and the scalar extension        *
- * equation.                                                          *
- *                                                                    *
+/******************************************************************//**
+ * Routine: Calculate_Sign_Function                                   
+ *                                                                    
+ * This routine determines the sign function of the signed distance   
+ * function for a 1D array of 2D quadrilateral multi-block solution   
+ * blocks.  Required for the solution of the Eikonal equation for     
+ * redistancing the distance function and the scalar extension        
+ * equation.                                                          
+ *                                                                    
  **********************************************************************/
 int Calculate_Sign_Function(LevelSet2D_Quad_Block *Soln_ptr,
 			    AdaptiveBlock2D_List &Soln_Block_List,
@@ -373,13 +402,13 @@ int Calculate_Sign_Function(LevelSet2D_Quad_Block *Soln_ptr,
 
 }
 
-/**********************************************************************
- * Routine: Initial_Adaptive_Mesh_Refinement                          *
- *                                                                    *
- * This routine calls the AMR routine for initial refinement.  This   *
- * routine is required to facilitate reapplication of the initial     *
- * conditions.                                                        * 
- *                                                                    *
+/******************************************************************//**
+ * Routine: Initial_Adaptive_Mesh_Refinement                          
+ *                                                                    
+ * This routine calls the AMR routine for initial refinement.  This   
+ * routine is required to facilitate reapplication of the initial     
+ * conditions.                                                         
+ *                                                                    
  **********************************************************************/
 int Initial_Adaptive_Mesh_Refinement(LevelSet2D_Quad_Block *Soln_ptr,
 				     LevelSet2D_Input_Parameters &Input_Parameters,
@@ -543,13 +572,13 @@ int Initial_Adaptive_Mesh_Refinement(LevelSet2D_Quad_Block *Soln_ptr,
 
 }
 
-/**********************************************************************
- * Routine: Uniform_Adaptive_Mesh_Refinement                          *
- *                                                                    *
- * This routine calls the AMR routine for uniform refinement.  This   *
- * routine is required to facilitate reapplication of the uniform     *
- * conditions.                                                        * 
- *                                                                    *
+/******************************************************************//**
+ * Routine: Uniform_Adaptive_Mesh_Refinement                          
+ *                                                                    
+ * This routine calls the AMR routine for uniform refinement.  This   
+ * routine is required to facilitate reapplication of the uniform     
+ * conditions.                                                         
+ *                                                                    
  **********************************************************************/
 int Uniform_Adaptive_Mesh_Refinement(LevelSet2D_Quad_Block *Soln_ptr,
 				     LevelSet2D_Input_Parameters &Input_Parameters,
@@ -668,7 +697,7 @@ int Uniform_Adaptive_Mesh_Refinement(LevelSet2D_Quad_Block *Soln_ptr,
 				 OFF);
   if (error_flag) return error_flag;
 
-  // Uniform mesh refinement was successfull.
+  // Uniform mesh refinement was successful.
   return 0;
 
 }

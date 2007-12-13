@@ -1,7 +1,10 @@
-/*******************************************************************
+/*! \mainpage
+
+\verbatim
+ *******************************************************************
  *******************************************************************
  **********                                               **********
- ******                 CFFC2D Version 1.00                  *******
+ ******                 CFFC2D Version 0.01                  *******
  ****                       (07/19/07)                          ****
  ****                                                           ****
  ****  Computational Framework for Fluids and Combustion (CFFC) ****
@@ -11,31 +14,37 @@
  **********                                               **********
  *******************************************************************
  ******************************************************************* 
+\endverbatim
+*/
 
-         This computer program can be used to solve a selected
- set of linear and nonlinear partial differential equations (PDEs)
+/*! \file cffc2D.cc
+
+    \brief Main executable for CFFC2D framework.
+
+ This computer program can be used to solve a selected
+ set of linear and non-linear partial differential equations (PDEs)
  on  one- and two-dimensional spatial domains using a
  variety of solution techniques appropriate for the problem.  The
  PDEs that can be treated include:
 
- -- the scalar advection equation,
- -- the inviscid Burger's equation,
- -- the Poisson equation,
- -- the scalar heat equation,
- -- the hyperbolic heat equations (Maxwell-Cattaneo equations),
- -- the advection diffusion equation,
- -- the Euler equations of continuum fluid dynamics,
- -- the Euler/dusty-gas equations,
- -- the Euler multispecies with finite rate chemistry equation system,
- -- the Navier-Stokes equations of continuum fluid dynamics,
- -- the ideal MHD equations,
- -- the 10-moment equations of the Gaussian closure,
- -- the generalized 10-moment equations with heat conduction,
- -- the 35-moment equations of the Gaussian-based 35-moment closure.
+ - the scalar advection equation,
+ - the inviscid Burger's equation,
+ - the Poisson equation,
+ - the scalar heat equation,
+ - the hyperbolic heat equations (Maxwell-Cattaneo equations),
+ - the advection diffusion equation,
+ - the Euler equations of continuum fluid dynamics,
+ - the Euler/dusty-gas equations,
+ - the Euler multispecies with finite rate chemistry equation system,
+ - the Navier-Stokes equations of continuum fluid dynamics,
+ - the ideal MHD equations,
+ - the 10-moment equations of the Gaussian closure,
+ - the generalized 10-moment equations with heat conduction,
+ - the 35-moment equations of the Gaussian-based 35-moment closure.
 
  The program is built using the CFFC library.
 
- *******************************************************************/
+*/
 
 /* Include the header files defining various variable types and data
    structures, classes, functions, operators, global variables,
@@ -51,7 +60,7 @@ using namespace std;
 #include "Solvers1D/Scalar1D.h"
 #include "Solvers1D/Heat1D.h"
 #include "Solvers1D/HyperHeat1D.h"
-#include "Solvers1D/Euler1D.h"
+#include "Euler1D/Euler1D.h"
 #include "Solvers1D/MHD1D.h"
 #include "AdvectDiffuse2D/AdvectDiffuse2DQuad.h"
 #include "AdvectDiffuse2D/AdvectDiffuse2DQuad_NKS.h"
@@ -114,7 +123,7 @@ int main(int num_arg, char *arg_ptr[]) {
   ifstream Input_File;
 
   // Unit testing flags:
-  string TestSuite;
+  string TestSuite, TestRootPath;
   int TestNumber=0;
 
   /********************************************************  
@@ -189,13 +198,18 @@ int main(int num_arg, char *arg_ptr[]) {
         //mpirun_flag = 1;
       } else if (strcmp(arg_ptr[i], "-t") == 0) {
 	test_flag=1;
+	if (num_arg-1>i && strcmp(arg_ptr[i+1], "-path") != 0 ){
+	  // Read TestSuite name
+	  TestSuite= arg_ptr[++i];
+	} /* endif */
+	if (num_arg-1>i && strcmp(arg_ptr[i+1], "-path") != 0){
+	  // Read TestNumber
+	  TestNumber = atoi(arg_ptr[++i]);
+	} /* endif */
+      } else if (strcmp(arg_ptr[i], "-path") == 0) {
 	if (num_arg-1>i){
-	  TestSuite = arg_ptr[i+1];
-	} /* endif */
-	if (num_arg-1>i+1){
-	  TestNumber = atoi(arg_ptr[i+2]);
-	} /* endif */
-	break;
+	  TestRootPath = arg_ptr[++i];
+	}  /* endif */
       } else {
         error_flag = 1;
       } /* endif */
@@ -222,14 +236,14 @@ int main(int num_arg, char *arg_ptr[]) {
    ******************************************************************/
 
   if (CFFC_Primary_MPI_Processor() && (version_flag || help_flag || !batch_flag)) {
-     cout << '\n' << program_title_ptr << '\n';
-     cout << program_version_ptr << '\n';
-     cout << "Built using " << CFFC_Version() << "\n";
-     cout << CFFC_Version_MPI() << "\n";
-     cout << Cantera_Version() << "\n";
-     cout << ICEMCFD_Version() << "\n";
-     cout << "Built using MV++, SparseLib++, IML++, BPKIT, and FFTW Libraries\n";
-     cout << "Built using CEA Thermodynamic and Transport Data, NASA Glenn Research Center\n";
+     cout << '\n' << program_title_ptr << '\n'
+	  << program_version_ptr << '\n'
+	  << "Built using " << CFFC_Version() << "\n"
+	  << CFFC_Version_MPI() << "\n"
+	  << Cantera_Version() << "\n"
+	  << ICEMCFD_Version() << "\n"
+	  << "Built using MV++, SparseLib++, IML++, BPKIT, and FFTW Libraries\n"
+	  << "Built using CEA Thermodynamic and Transport Data, NASA Glenn Research Center\n";
      cout.flush();
   } /* endif */
 
@@ -257,10 +271,12 @@ int main(int num_arg, char *arg_ptr[]) {
 	  << " -t test-suite-name [test-number] \n"
 	  << "                 run all tests in test-suite-name or \n"
 	  << "                 a particular test-number \n"
- 	  << "                 example: cffc2D -t MyTestSuit 3\n";
+ 	  << "                 example: cffc2D -t MyTestSuit 3\n"
+	  << " -path name      use 'name' as path to '/src_2D' directory\n"
+	  << "                 use this option if you run UnitTesting framework\n"
+	  << "                 from a directory different than '/src_2D'\n";  
      cout.flush();
   } /* endif */
-
   if (help_flag) {
      CFFC_Finalize_MPI();
      return (0);
@@ -271,7 +287,7 @@ int main(int num_arg, char *arg_ptr[]) {
    *********************************************************************/
 
   if (test_flag) {
-     error_flag = Perform_UnitTesting(TestSuite, TestNumber);
+     error_flag = Perform_UnitTesting(TestSuite, TestNumber, TestRootPath);
      CFFC_Finalize_MPI();
      return (error_flag);
   } /* endif */

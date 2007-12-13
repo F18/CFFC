@@ -17,12 +17,11 @@
 #include "../AMR/AdaptiveBlock3D.h"
 #endif //_ADAPTIVEBLOCK3D_INCLUDED
 
-// a list of solution blocks on a processor
-template<class HEXA_BLOCK> class Hexa_Multi_Block{
+// A local list of solution blocks on a given processor.
+template<class HEXA_BLOCK> class Hexa_Multi_Block {
    
   private:
   public:
-     
    HEXA_BLOCK *Soln_Blks;          // Array of hexahedral solution blocks.
    int Number_of_Soln_Blks;        // Number or size of array of hexahedral solution blocks. 
    int *Block_Used;                // Solution block usage indicator.
@@ -77,6 +76,18 @@ template<class HEXA_BLOCK> class Hexa_Multi_Block{
 
    void Broadcast(void);
 
+   void Update_Grid_Exterior_Nodes(void);
+
+   void Update_Grid_Cells(void);
+
+   void Update_Grid_Ghost_Cells(void);
+
+   void Rotate_Grid(const double &Angle, 
+                    const double &Angle1, 
+                    const double &Angle2);
+
+   void Correct_Grid_Exterior_Nodes(AdaptiveBlock3D_List &Blk_List);
+
    int Read_Restart_Solution(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
                                               typename HEXA_BLOCK::Soln_cState> &Input,
                              AdaptiveBlock3D_List &Soln_Block_List,
@@ -109,11 +120,15 @@ template<class HEXA_BLOCK> class Hexa_Multi_Block{
                             const int Number_of_Time_Steps,
                             const double &Time);
 
-   double L1_Norm_Residual(void);
+   double L1_Norm_Residual(const int &var);
 
-   double L2_Norm_Residual(void);
+   double L2_Norm_Residual(const int &var);
 
-   double Max_Norm_Residual(void);
+   double Max_Norm_Residual(const int &var);
+
+   void Evaluate_Limiters(void);
+  
+   void Freeze_Limiters(void);
 
    void Set_Global_TimeStep(const double &Dt_min);
 
@@ -135,7 +150,6 @@ template<class HEXA_BLOCK> class Hexa_Multi_Block{
    int Update_Solution_Multistage_Explicit(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
                                                             typename HEXA_BLOCK::Soln_cState> &Input, 
                                            const int I_Stage);
-
 };
 
 /********************************************************
@@ -226,7 +240,7 @@ void Hexa_Multi_Block<HEXA_BLOCK>::Broadcast(void) {
 
     /* Broadcast each of the hexahedral solution blocks. */
 
-    for (int  i = 0 ; i < Number_of_Soln_Blks ; ++i ) {
+    for (int i = 0 ; i < Number_of_Soln_Blks ; ++i) {
       if (Block_Used[i]) Soln_Blks[i].Broadcast();
     } /* endfor */
 
@@ -235,33 +249,152 @@ void Hexa_Multi_Block<HEXA_BLOCK>::Broadcast(void) {
 }
 
 /********************************************************
+ * Routine: Update_Grid_Exterior_Nodes                  *
+ *                                                      *
+ * Updates the exterior nodes of each grid in the list  *
+ * of hexahedral solution blocks.                       *
+ *                                                      *
+ ********************************************************/
+template<class HEXA_BLOCK>
+void Hexa_Multi_Block<HEXA_BLOCK>::Update_Grid_Exterior_Nodes(void) {
+
+  if (Allocated) {
+
+    for (int i = 0 ; i < Number_of_Soln_Blks ; ++i) {
+      if (Block_Used[i]) Soln_Blks[i].Update_Grid_Exterior_Nodes();
+    } /* endfor */
+
+  } /* endif */
+
+}
+
+/********************************************************
+ * Routine: Update_Grid_Cells                           *
+ *                                                      *
+ * Updates the computational cells of each grid in the  *
+ * list of hexahedral solution blocks.                  *
+ *                                                      *
+ ********************************************************/
+template<class HEXA_BLOCK>
+void Hexa_Multi_Block<HEXA_BLOCK>::Update_Grid_Cells(void) {
+
+  if (Allocated) {
+
+    for (int i = 0 ; i < Number_of_Soln_Blks ; ++i) {
+      if (Block_Used[i]) Soln_Blks[i].Update_Grid_Cells();
+    } /* endfor */
+
+  } /* endif */
+
+}
+
+/********************************************************
+ * Routine: Update_Grid_Ghost_Cells                     *
+ *                                                      *
+ * Updates the ghost cells of each grid in the list     *
+ * of hexahedral solution blocks.                       *
+ *                                                      *
+ ********************************************************/
+template<class HEXA_BLOCK>
+void Hexa_Multi_Block<HEXA_BLOCK>::Update_Grid_Ghost_Cells(void) {
+
+  if (Allocated) {
+
+    for (int i = 0 ; i < Number_of_Soln_Blks ; ++i) {
+      if (Block_Used[i]) Soln_Blks[i].Update_Grid_Ghost_Cells();
+    } /* endfor */
+
+  } /* endif */
+
+}
+
+/********************************************************
+ * Routine: Rotate_Grid                                 *
+ *                                                      *
+ * Applies a rotation to each grid in the list          *
+ * of hexahedral solution blocks.                       *
+ *                                                      *
+ ********************************************************/
+template<class HEXA_BLOCK>
+void Hexa_Multi_Block<HEXA_BLOCK>::Rotate_Grid(const double &Angle, 
+                                               const double &Angle1, 
+                                               const double &Angle2) {
+
+  if (Allocated) {
+
+    for (int i = 0 ; i < Number_of_Soln_Blks ; ++i) {
+      if (Block_Used[i]) Soln_Blks[i].Rotate_Grid(Angle, 
+                                                  Angle1, 
+                                                  Angle2);
+    } /* endfor */
+
+  } /* endif */
+
+}
+
+/**********************************************************
+ * Routine: Correct_Grid_Exterior_Nodes                   *
+ *                                                        *
+ * Correct the the exterior nodes of all of the grids     *
+ * in the 1D array of 3D hexahedaral multi-block solution *
+ * blocks.                                                *
+ *                                                        *
+ **********************************************************/
+template <class HEXA_BLOCK>
+void Hexa_Multi_Block<HEXA_BLOCK>::Correct_Grid_Exterior_Nodes(AdaptiveBlock3D_List &Blk_List) {
+   
+  int i_bound_elem; // index for boundary element, face edge or vertex
+
+  if (Allocated) {
+
+     for (int i_blk = 0 ; i_blk <= Blk_List.Nblk-1 ; ++i_blk ) {
+        if (Blk_List.Block[i_blk].used ) {
+           for (int ii = -1; ii <= 1; ii++){
+              for (int jj = -1; jj <= 1; jj++){
+                 for (int kk = -1; kk <= 1; kk++){
+                    i_bound_elem = 9*(ii+1) + 3*(jj+1) + (kk+1);
+                    if (Blk_List.Block[i_blk].info.be.on_grid_boundary[i_bound_elem]) {
+                       Soln_Blks[i_blk].Grid.Correct_Exterior_Nodes(ii, 
+                                                                    jj, 
+                                                                    kk, 
+                                                                    Blk_List.Block[i_blk].info.be.on_grid_boundary);
+                    }/* endif */
+                 }/* end for k */
+              }/* end for j */
+           }/* end for i */
+        }/* endif */
+     }  /* endfor */
+
+  } /* endif */
+      
+  Update_Grid_Ghost_Cells();
+
+}
+
+/********************************************************
  * Routine: L1_Norm_Residual                            *
  *                                                      *
  * Determines the L1-norm of the solution residual for  *
- * a 1D array of 3D hexahedrial multi-block solution    *
+ * a 1D array of 3D hexahedral multi-block solution     *
  * blocks.  Useful for monitoring convergence of the    *
  * solution for steady state problems.                  *
  *                                                      *
  ********************************************************/
 template<class HEXA_BLOCK>
-double Hexa_Multi_Block<HEXA_BLOCK>::L1_Norm_Residual(void) {
+double Hexa_Multi_Block<HEXA_BLOCK>::L1_Norm_Residual(const int &var) {
    
-   double l1_norm;
-   l1_norm = ZERO;
+  double l1_norm(ZERO);
+  
+  /* Calculate the L1-norm. Sum the L1-norm for each solution block. */   
+
+  for (int nblk = 0; nblk < Number_of_Soln_Blks; ++nblk) {
+    if (Block_Used[nblk]) {
+      l1_norm += Soln_Blks[nblk].L1_Norm_Residual(var);
+    } 
+  }  
+
+  return (l1_norm);
    
-   /* Calculate the L1-norm.
-      Sum the L1-norm for each solution block. */
-   
-   for (int nblk = 0; nblk < Number_of_Soln_Blks; ++nblk) {
-      if (Block_Used[nblk]) {
-         l1_norm += Soln_Blks[nblk].L1_Norm_Residual();
-      } /* endif */
-   }  /* endfor */
-
-   /* Return the L1-norm. */
-
-   return (l1_norm);
-
 }
 
 /********************************************************
@@ -274,29 +407,24 @@ double Hexa_Multi_Block<HEXA_BLOCK>::L1_Norm_Residual(void) {
  *                                                      *
  ********************************************************/
 template<class HEXA_BLOCK>
-double Hexa_Multi_Block<HEXA_BLOCK>::L2_Norm_Residual(void) {
+double Hexa_Multi_Block<HEXA_BLOCK>::L2_Norm_Residual(const int &var) {
 
+  double l2_norm(ZERO);
    
-   double l2_norm;
+  /* Sum the square of the L2-norm for each solution block. */  
 
-   l2_norm = ZERO;
-   
-   /* Sum the square of the L2-norm for each solution block. */
-      
-   for (int nblk = 0; nblk < Number_of_Soln_Blks; ++nblk) {
-      if (Block_Used[nblk]) {
-         l2_norm += Soln_Blks[nblk].L2_Norm_Residual();
-      } /* endif */
-   }  /* endfor */
-   
-   /* Calculate the L2-norm for all blocks. */
-   
-   l2_norm = sqrt(l2_norm);
-   
-   /* Return the L2-norm. */
-   
-   return (l2_norm);
-   
+  for (int nblk = 0; nblk < Number_of_Soln_Blks; ++nblk) {
+    if (Block_Used[nblk]) {
+      l2_norm += sqr(Soln_Blks[nblk].L2_Norm_Residual(var));
+    } 
+  }  
+
+  /* Calculate the L2-norm for all blocks. */  
+
+  l2_norm = sqrt(l2_norm);
+  
+  return (l2_norm);  
+
 }
 
 /********************************************************
@@ -309,24 +437,58 @@ double Hexa_Multi_Block<HEXA_BLOCK>::L2_Norm_Residual(void) {
  *                                                      *
  ********************************************************/
 template<class HEXA_BLOCK>
-double Hexa_Multi_Block<HEXA_BLOCK>::Max_Norm_Residual(void) {
+double Hexa_Multi_Block<HEXA_BLOCK>::Max_Norm_Residual(const int &var) {
    
-   double max_norm;
+  double max_norm(ZERO);
    
-   max_norm = ZERO;
-   
-   /* Find the maximum norm for all solution blocks. */
-   
-   for (int nblk = 0; nblk < Number_of_Soln_Blks; ++nblk) {
-      if(Block_Used[nblk]){
-         max_norm = max(max_norm, (Soln_Blks[nblk].Max_Norm_Residual()));
-      } /* endif */
-   }  /* endfor */
-   
-   /* Return the maximum norm. */
-   
-   return (max_norm);
-   
+  /* Find the maximum norm for all solution blocks. */   
+
+  for (int nblk = 0; nblk < Number_of_Soln_Blks; ++nblk) {
+    if(Block_Used[nblk]){
+      max_norm = max(max_norm, (Soln_Blks[nblk].Max_Norm_Residual(var)));
+    } 
+  }        
+
+  return (max_norm);  
+
+}
+
+/********************************************************
+ * Routine: Evaluate_Limiters                           *
+ *                                                      *
+ * Set conditions to evaluate the limiters for a        *
+ * 1D array of 3D hexahedral multi-block solution       *
+ * blocks.                                              *
+ *                                                      *
+ ********************************************************/
+template<class HEXA_BLOCK>
+void Hexa_Multi_Block<HEXA_BLOCK>::Evaluate_Limiters(void) {
+
+  for (int nblk = 0; nblk < Number_of_Soln_Blks; ++nblk) {
+    if(Block_Used[nblk]){
+      Soln_Blks[nblk].Evaluate_Limiters();  
+    } 
+  }  
+
+}
+
+/********************************************************
+ * Routine: Freeze_Limiters                             *
+ *                                                      *
+ * Set conditions to freeze the limiters for a          *
+ * 1D array of 3D hexahedral multi-block solution       *
+ * blocks.                                              *
+ *                                                      *
+ ********************************************************/
+template<class HEXA_BLOCK>
+void Hexa_Multi_Block<HEXA_BLOCK>::Freeze_Limiters(void) {
+
+  for (int nblk = 0; nblk < Number_of_Soln_Blks; ++nblk) {
+    if(Block_Used[nblk]){
+      Soln_Blks[nblk].Freeze_Limiters();  
+    } 
+  }    
+
 }
 
 /********************************************************

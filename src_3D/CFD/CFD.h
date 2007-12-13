@@ -64,7 +64,7 @@ inline string CFFC_Name() {
 
 // Version.
 inline string CFFC_Version() {
-  return ("CFFC, Version 0.00, UTIAS CFD & Propulsion Group, 1999-2007.");
+  return ("CFFC, Version 0.01, UTIAS CFD & Propulsion Group, 1999-2007.");
 }
 
 // Cantera Version.
@@ -216,6 +216,8 @@ inline char *Date_And_Time() {
 #define GRID_COUETTE_XDIR                    28
 #define GRID_COUETTE_YDIR                    29
 #define GRID_BLUFF_BODY_BURNER               30
+#define GRID_PERIODIC_BOX                    31
+#define GRID_PERIODIC_BOX_WITH_INFLOW        32
 
 #define GRID_ICEMCFD                       1000
 #define GRID_READ_FROM_DEFINITION_FILE    10000
@@ -223,8 +225,6 @@ inline char *Date_And_Time() {
 
 #define GRID_1DFLAME                         51
 #define GRID_LAMINAR_FLAME                   52
-
-#define GRID_TURBULENT_PREMIXED_FLAME        60
 
 /**********************************************************************
  * CFD -- Nozzle Types.                                               *
@@ -462,6 +462,17 @@ inline char *Date_And_Time() {
 #define FRICTION_VELOCITY_WALL_SHEAR_STRESS       971
 #define FRICTION_VELOCITY_ITERATIVE               972
 #define FRICTION_VELOCITY_PIPE                    973
+
+/********************************************************
+ * CFD -- Turbulence energy spectrum.                   *
+ ********************************************************/
+ 
+#define SPECTRUM_LEE_REYNOLDS                    0
+#define SPECTRUM_LAVAL_NAZARENKO                 1
+#define SPECTRUM_VON_KARMAN_PAO                  2
+#define SPECTRUM_HAWORTH_POINSOT                 3
+#define SPECTRUM_CHASNOV                         4
+#define SPECTRUM_BELL_DAY                        5
 
 /**********************************************************************
  * CFD -- Initial Condition Types.                                    *
@@ -748,25 +759,6 @@ inline char *Date_And_Time() {
 #define NORTH_WEST                     12
 #define SOUTH_EAST                     13
 #define SOUTH_WEST                     14
-
-/********************************************************
- * CFD -- Turbulence energy spectrum.                   *
- ********************************************************/
- 
-#define LEE_REYNOLDS                    0
-#define LAVAL_NAZARENKO                 1
-#define VON_KARMAN_PAO                  2
-#define HAWORTH_POINSOT                 3
-#define CHASNOV                         4
-#define BELL_DAY                        5
-
-/********************************************************
- * CFD -- Subfilter scale models for LES.               *
- ********************************************************/
- 
-#define NO_MODEL                        0
-#define SMAGORINSKY_YOSHIZAWA           1
-#define SFS_K_EQUATION                  2
 
 /**********************************************************************
  * CFD -- Inline functions.                                           *
