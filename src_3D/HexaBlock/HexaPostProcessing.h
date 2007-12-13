@@ -48,7 +48,7 @@ int Hexa_Post_Processing(HexaSolver_Data &Data,
          // called when the scope of the calculation is done...
          // ....
 
-         // Output input parameters for new caluculation.
+         // Output input parameters for new calculation.
          if (!Data.batch_flag)  {
             cout << "\n\n Starting a new calculation.";
             cout << Solution_Data.Input << "\n";

@@ -540,7 +540,6 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::allocate(const int Ni,
     NCi=Ni+2*Ng; ICl=Ng; ICu=Ni+Ng-1; 
     NCj=Nj+2*Ng; JCl=Ng; JCu=Nj+Ng-1;
     NCk=Nk+2*Ng; KCl=Ng; KCu=Nk+Ng-1; Nghost=Ng;
-    Flow_Type = FLOWTYPE_INVISCID; Freeze_Limiter = OFF;
     Allocated = HEXA_BLOCK_USED;
     Grid.allocate(Ni, Nj, Nk, Ng);
     allocate();
