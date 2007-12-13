@@ -259,6 +259,48 @@ void AdvectDiffuse2D_Quad_Block_New::Calculate_Nodal_Solutions(void){
 
 }
 
+/*********************************************//**
+ * Compute the state used to evaluate the 
+ * elliptic-flux at an interior interface.
+ * 
+ * \param ii_L i-index of the left interface cell
+ * \param jj_L j-index of the left interface cell
+ * \param ii_R i-index of the right interface cell
+ * \param jj_R j-index of the right interface cell
+ * \param GQPoint the calculation point
+ * \param State the interface state
+ *************************************************/
+void AdvectDiffuse2D_Quad_Block_New::EllipticFluxStateAtInteriorInterface(const int & ii_L, const int & jj_L,
+									  const int & ii_R, const int & jj_R,
+									  const Vector2D & GQPoint,
+									  AdvectDiffuse2D_State_New & State){
+
+  require( ( ii_L == ii_R || jj_L == jj_R) &&
+	   ( ii_L == ii_R || ii_L == (ii_R - 1) ) && 
+	   ( jj_L == jj_R || jj_L == (jj_R - 1) ),
+	   "AdvectDiffuse2D_Quad_Block_New::ViscousFluxStateAtInteriorInterface() ERROR! Inconsistent cell indexes!");
+
+  // Use bilinear interpolation to compute the required state
+  if (jj_L == jj_R){
+    // i-direction interface
+    Bilinear_Interpolation_ZY(U[ii_L][jj_L]      ,  Grid.CellCentroid(ii_L,jj_L),
+			      U_Node(ii_R,jj_R)  ,  Grid.Node[ii_R][jj_R].X,
+			      U[ii_R][jj_R]      ,  Grid.CellCentroid(ii_R,jj_R),
+			      U_Node(ii_R,jj_R+1),  Grid.Node[ii_R][jj_R+1].X,
+			      GQPoint, State );
+    return;
+  } else {
+    // j-direction interface
+    Bilinear_Interpolation_ZY(U[ii_L][jj_L]      , Grid.CellCentroid(ii_L,jj_L), 
+			      U_Node(ii_R+1,jj_R), Grid.Node[ii_R+1][jj_R].X, 
+			      U[ii_R][jj_R]      , Grid.CellCentroid(ii_R,jj_R), 
+			      U_Node(ii_R,jj_R)  ,Grid.Node[ii_R][jj_R].X, 
+			      GQPoint, State );
+    return;
+  }
+  
+}
+
 /**************************************************//**
  * Calculate the gradient of the solution at the 
  * specified inter-cellular face using different 
@@ -282,23 +324,27 @@ Vector2D AdvectDiffuse2D_Quad_Block_New::InterfaceSolutionGradient(const int & i
     if (jj_L == jj_R){
       // i-direction interface
       return DiamondPathGradientReconstruction(Grid.CellCentroid(ii_L,jj_L), U[ii_L][jj_L],
-					       Grid.Node[ii_R][jj_R].X, U_Node(ii_R,jj_R),
+					       Grid.Node[ii_R][jj_R].X     , U_Node(ii_R,jj_R),
 					       Grid.CellCentroid(ii_R,jj_R), U[ii_R][jj_R],
-					       Grid.Node[ii_R][jj_R+1].X, U_Node(ii_R,jj_R+1),
+					       Grid.Node[ii_R][jj_R+1].X   , U_Node(ii_R,jj_R+1),
 					       DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
     } else {
       // j-direction interface
       return DiamondPathGradientReconstruction(Grid.CellCentroid(ii_L,jj_L), U[ii_L][jj_L],
-					       Grid.Node[ii_R+1][jj_R].X, U_Node(ii_R+1,jj_R),
+					       Grid.Node[ii_R+1][jj_R].X   , U_Node(ii_R+1,jj_R),
 					       Grid.CellCentroid(ii_R,jj_R), U[ii_R][jj_R],
-					       Grid.Node[ii_R][jj_R].X, U_Node(ii_R,jj_R),
+					       Grid.Node[ii_R][jj_R].X     , U_Node(ii_R,jj_R),
 					       DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
     }
     break;
 
+
+  case VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE :
+    
+    break;
+
   default :
-    // Use the diamond path reconstruction
-    ii_L;
+    throw runtime_error("AdvectDiffuse2D_Quad_Block_New::InterfaceSolutionGradient() ERROR! Unknown gradient reconstruction type!");
   }
 }
 
@@ -448,19 +494,24 @@ AdvectDiffuse2D_State_New AdvectDiffuse2D_Quad_Block_New::SourceTerm(const int &
 /*********************************************//**
  * Compute the inviscid-flux ghost-cell state at a 
  * boundary interface. 
- * This state depends on the boundary conditions that 
+ * Compute the state used to evaluate the 
+ * elliptic-flux at a boundary interface.
+ * These states depends on the boundary conditions that 
  * need to be enforced.
  * 
  * \param BOUNDARY boundary position specifier (i.e. WEST, EAST, SOUTH or NORTH)
- * \param ii i-index of the cell in which the calculation is done
- * \param ii j-index of the cell in which the calculation is done
- * \param Ul the left interface state
- * \param Ur the right interface state
+ * \param ii       i-index of the cell in which the calculation is done
+ * \param jj       j-index of the cell in which the calculation is done
+ * \param Ul       the left interface state
+ * \param Ur       the right interface state
+ * \param U_face   the interface state
  *************************************************/
-void AdvectDiffuse2D_Quad_Block_New::InviscidFluxStateAtBoundaryInterface(const int &BOUNDARY,
-									  const int &ii, const int &jj,
-									  AdvectDiffuse2D_State_New &Ul,
-									  AdvectDiffuse2D_State_New &Ur){
+void AdvectDiffuse2D_Quad_Block_New::
+InviscidAndEllipticFluxStates_AtBoundaryInterface(const int &BOUNDARY,
+						  const int &ii, const int &jj,
+						  AdvectDiffuse2D_State_New &Ul,
+						  AdvectDiffuse2D_State_New &Ur,
+						  AdvectDiffuse2D_State_New &U_face){
   double Vn;
 
   switch(BOUNDARY){
@@ -477,6 +528,9 @@ void AdvectDiffuse2D_Quad_Block_New::InviscidFluxStateAtBoundaryInterface(const 
     case BC_FROZEN :
       // Calculate Ul based on the reconstruction in the ghost cell
       Ul = PiecewiseLinearSolutionAtLocation(ii  , jj,Grid.xfaceE(ii  , jj));
+
+      // Calculate U_face based on the unlimited reconstruction in the ghost cell
+      U_face = UnlimitedPiecewiseLinearSolutionAtLocation(ii  , jj,Grid.xfaceE(ii  , jj));
       break;
       
       // Category II
@@ -484,6 +538,7 @@ void AdvectDiffuse2D_Quad_Block_New::InviscidFluxStateAtBoundaryInterface(const 
     case BC_DIRICHLET :
     case BC_EXACT_SOLUTION :
       Ul = UoW[jj];
+      U_face = UoW[jj];
       break;
       
       // Category III
@@ -494,6 +549,9 @@ void AdvectDiffuse2D_Quad_Block_New::InviscidFluxStateAtBoundaryInterface(const 
     case BC_OUTFLOW :
     case BC_CONSTANT_EXTRAPOLATION :
       Ul = Ur;
+      
+      // Calculate U_face based on the unlimited reconstruction of the right interface cell
+      U_face = UnlimitedPiecewiseLinearSolutionAtLocation(ii+1 , jj,Grid.xfaceE(ii  , jj));
       break;
       
       // Category IV
@@ -513,15 +571,19 @@ void AdvectDiffuse2D_Quad_Block_New::InviscidFluxStateAtBoundaryInterface(const 
 	// The flow enters the domain
 	// Use the boundary condition value
 	Ul = UoW[jj];
+	U_face = UoW[jj];
       } else {
 	// The flow leaves the domain
 	// Use the interior domain value
 	Ul = Ur;
+
+	// Calculate U_face based on the unlimited reconstruction of the right interface cell
+	U_face = UnlimitedPiecewiseLinearSolutionAtLocation(ii+1 , jj,Grid.xfaceE(ii  , jj));
       }
       break;
 
     default:
-      throw runtime_error("AdvectDiffuse2D_Quad_Block_New::InviscidFluxStateAtBoundaryInterface() ERROR! No such West BCtype!");
+      throw runtime_error("AdvectDiffuse2D_Quad_Block::InviscidAndEllipticFluxStates_AtBoundaryInterface() ERROR! No such West BCtype!");
     }// endswitch (Grid.BCtypeW[jj])
     break;
 
@@ -538,6 +600,9 @@ void AdvectDiffuse2D_Quad_Block_New::InviscidFluxStateAtBoundaryInterface(const 
     case BC_FROZEN :
       // Calculate Ur based on the reconstruction in the ghost cell
       Ur = PiecewiseLinearSolutionAtLocation(ii+1, jj,Grid.xfaceW(ii+1, jj));
+
+      // Calculate U_face based on the unlimited reconstruction in the ghost cell
+      U_face = UnlimitedPiecewiseLinearSolutionAtLocation(ii+1, jj,Grid.xfaceW(ii+1, jj));
       break;
       
       // Category II
@@ -545,6 +610,7 @@ void AdvectDiffuse2D_Quad_Block_New::InviscidFluxStateAtBoundaryInterface(const 
     case BC_DIRICHLET :
     case BC_EXACT_SOLUTION :
       Ur = UoE[jj];
+      U_face = UoE[jj];
       break;
       
       // Category III
@@ -555,6 +621,9 @@ void AdvectDiffuse2D_Quad_Block_New::InviscidFluxStateAtBoundaryInterface(const 
     case BC_OUTFLOW :
     case BC_CONSTANT_EXTRAPOLATION :
       Ur = Ul;
+      
+      // Calculate U_face based on the unlimited reconstruction of the left interface cell
+      U_face = UnlimitedPiecewiseLinearSolutionAtLocation(ii , jj,Grid.xfaceW(ii+1, jj));
       break;
       
       // Category IV
@@ -574,15 +643,17 @@ void AdvectDiffuse2D_Quad_Block_New::InviscidFluxStateAtBoundaryInterface(const 
 	// The flow enters the domain
 	// Use the boundary condition value
 	Ur = UoE[jj];
+	U_face = UoE[jj];
       } else {
 	// The flow leaves the domain
 	// Use the interior domain value
 	Ur = Ul;
+	U_face = UnlimitedPiecewiseLinearSolutionAtLocation(ii , jj,Grid.xfaceW(ii+1, jj));
       }
       break;
 
     default:
-      throw runtime_error("AdvectDiffuse2D_Quad_Block_New::InviscidFluxStateAtBoundaryInterface() ERROR! No such East BCtype!");
+      throw runtime_error("AdvectDiffuse2D_Quad_Block::InviscidAndEllipticFluxStates_AtBoundaryInterface() ERROR! No such East BCtype!");
     }// endswitch (Grid.BCtypeE[jj])
     break;
 
@@ -598,6 +669,9 @@ void AdvectDiffuse2D_Quad_Block_New::InviscidFluxStateAtBoundaryInterface(const 
     case BC_FROZEN :
       // Calculate Ul based on the reconstruction in the ghost cell
       Ul = PiecewiseLinearSolutionAtLocation(ii ,jj  ,Grid.xfaceN(ii ,jj  ));
+
+      // Calculate U_face based on the unlimited reconstruction in the ghost cell
+      U_face = UnlimitedPiecewiseLinearSolutionAtLocation(ii ,jj  ,Grid.xfaceN(ii ,jj  ));
       break;
       
       // Category II
@@ -605,6 +679,7 @@ void AdvectDiffuse2D_Quad_Block_New::InviscidFluxStateAtBoundaryInterface(const 
     case BC_DIRICHLET :
     case BC_EXACT_SOLUTION :
       Ul = UoS[ii];
+      U_face = UoS[ii];
       break;
       
       // Category III
@@ -615,6 +690,9 @@ void AdvectDiffuse2D_Quad_Block_New::InviscidFluxStateAtBoundaryInterface(const 
     case BC_OUTFLOW :
     case BC_CONSTANT_EXTRAPOLATION :
       Ul = Ur;
+
+      // Calculate U_face based on the unlimited reconstruction of the right interface cell
+      U_face = UnlimitedPiecewiseLinearSolutionAtLocation(ii ,jj+1,Grid.xfaceN(ii ,jj  ));
       break;
       
       // Category IV
@@ -634,15 +712,17 @@ void AdvectDiffuse2D_Quad_Block_New::InviscidFluxStateAtBoundaryInterface(const 
 	// The flow enters the domain
 	// Use the boundary condition value
 	Ul = UoS[ii];
+	U_face = UoS[ii];
       } else {
 	// The flow leaves the domain
 	// Use the interior domain value
 	Ul = Ur;
+	U_face = UnlimitedPiecewiseLinearSolutionAtLocation(ii ,jj+1,Grid.xfaceN(ii ,jj  ));
       }
       break;
 
     default:
-      throw runtime_error("AdvectDiffuse2D_Quad_Block_New::InviscidFluxStateAtBoundaryInterface() ERROR! No such South BCtype!");
+      throw runtime_error("AdvectDiffuse2D_Quad_Block_New::InviscidAndEllipticFluxStates_AtBoundaryInterface() ERROR! No such South BCtype!");
     }// endswitch (Grid.BCtypeS[ii])
     break;
 
@@ -658,6 +738,9 @@ void AdvectDiffuse2D_Quad_Block_New::InviscidFluxStateAtBoundaryInterface(const 
     case BC_FROZEN :
       // Calculate Ur based on the reconstruction in the ghost cell
       Ur = PiecewiseLinearSolutionAtLocation(ii ,jj+1,Grid.xfaceS(ii ,jj+1));
+
+      // Calculate U_face based on the unlimited reconstruction in the ghost cell
+      U_face = UnlimitedPiecewiseLinearSolutionAtLocation(ii ,jj+1,Grid.xfaceS(ii ,jj+1));
       break;
       
       // Category II
@@ -665,6 +748,7 @@ void AdvectDiffuse2D_Quad_Block_New::InviscidFluxStateAtBoundaryInterface(const 
     case BC_DIRICHLET :
     case BC_EXACT_SOLUTION :
       Ur = UoN[ii];
+      U_face = UoN[ii];
       break;
       
       // Category III
@@ -675,6 +759,9 @@ void AdvectDiffuse2D_Quad_Block_New::InviscidFluxStateAtBoundaryInterface(const 
     case BC_OUTFLOW :
     case BC_CONSTANT_EXTRAPOLATION :
       Ur = Ul;
+
+      // Calculate U_face based on the unlimited reconstruction of the left interface cell
+      U_face = UnlimitedPiecewiseLinearSolutionAtLocation(ii ,jj  ,Grid.xfaceS(ii ,jj+1));
       break;
       
       // Category IV
@@ -694,20 +781,22 @@ void AdvectDiffuse2D_Quad_Block_New::InviscidFluxStateAtBoundaryInterface(const 
 	// The flow enters the domain
 	// Use the boundary condition value
 	Ur = UoN[ii];
+	U_face = UoN[ii];
       } else {
 	// The flow leaves the domain
 	// Use the interior domain value
 	Ur = Ul;
+	U_face = UnlimitedPiecewiseLinearSolutionAtLocation(ii ,jj  ,Grid.xfaceS(ii ,jj+1));
       }
       break;
 
     default:
-      throw runtime_error("AdvectDiffuse2D_Quad_Block_New::InviscidFluxStateAtBoundaryInterface() ERROR! No such North BCtype!");
+      throw runtime_error("AdvectDiffuse2D_Quad_Block_New::InviscidAndEllipticFluxStates_AtBoundaryInterface() ERROR! No such North BCtype!");
     }// endswitch (Grid.BCtypeN[ii])
     break;
 
   default:
-    throw runtime_error("AdvectDiffuse2D_Quad_Block_New::InviscidFluxStateAtBoundaryInterface() ERROR! No such boundary!");
+    throw runtime_error("AdvectDiffuse2D_Quad_Block_New::InviscidAndEllipticFluxStates_AtBoundaryInterface() ERROR! No such boundary!");
   }
 
 }

@@ -3168,7 +3168,7 @@ int dUdt_Residual_Evaluation(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 
   int i, j;
   Vector2D dX;
-  AdvectDiffuse2D_State_New Ul, Ur, Flux;
+  AdvectDiffuse2D_State_New Ul, Ur, U_face, Flux;
   Vector2D GradU_face;		// Solution gradient at the inter-cellular face
 
   /* Perform the linear reconstruction within each cell
@@ -3194,7 +3194,6 @@ int dUdt_Residual_Evaluation(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
      using a bilinear interpolation procedure . */
   SolnBlk.Calculate_Nodal_Solutions();
 
-
   /* Evaluate the time rate of change of the solution
      (i.e., the solution residuals) using a second-order
      limited upwind finite-volume scheme for the convective 
@@ -3216,33 +3215,45 @@ int dUdt_Residual_Evaluation(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 	  // Compute the right interface state based on reconstruction
 	  Ur = SolnBlk.PiecewiseLinearSolutionAtLocation(i+1, j,SolnBlk.Grid.xfaceW(i+1, j));
 
-	  // Compute the left interface state for inviscid flux
-	  // calculation such that to satisfy the WEST boundary condition
-	  SolnBlk.InviscidFluxStateAtBoundaryInterface(WEST,i,j,Ul,Ur);
+	  /* Compute the left interface state for inviscid flux calculation 
+	     and the solution state at the Gauss quadrature point 
+	     for calculation of the diffusion coefficient
+	     such that to satisfy the WEST boundary condition */
+	  SolnBlk.InviscidAndEllipticFluxStates_AtBoundaryInterface(WEST,i,j,Ul,Ur,U_face);
 	  
 	} else if (i == SolnBlk.ICu){ // This is a EAST boundary interface
 	  // Compute the left interface state based on reconstruction
 	  Ul = SolnBlk.PiecewiseLinearSolutionAtLocation(i  , j,SolnBlk.Grid.xfaceE(i  , j));
 	  
-	  // Compute the right interface state for inviscid flux
-	  // calculation such that to satisfy the EAST boundary condition
-	  SolnBlk.InviscidFluxStateAtBoundaryInterface(EAST,i,j,Ul,Ur);
-	  
+	  /* Compute the left interface state for inviscid flux calculation 
+	     and the solution state at the Gauss quadrature point 
+	     for calculation of the diffusion coefficient
+	     such that to satisfy the EAST boundary condition */
+	  SolnBlk.InviscidAndEllipticFluxStates_AtBoundaryInterface(EAST,i,j,Ul,Ur,U_face);
+
 	} else {		// This is an interior interface
 	  // Compute left and right interface states at 
 	  // the face midpoint based on reconstruction
 	  Ul = SolnBlk.PiecewiseLinearSolutionAtLocation(i  , j,SolnBlk.Grid.xfaceE(i  , j));
 	  Ur = SolnBlk.PiecewiseLinearSolutionAtLocation(i+1, j,SolnBlk.Grid.xfaceW(i+1, j));
+
+	  // Determine the solution state at the Gauss quadrature
+	  // point for the calculation of the diffusion coefficient
+	  SolnBlk.EllipticFluxStateAtInteriorInterface(i  ,j,
+						       i+1,j,
+						       SolnBlk.Grid.xfaceE(i,j),U_face);
 	}
 
 	// Compute the advective flux 'Fa' in the normal direction at the face midpoint 
 	Flux = Fa(Ul, Ur, SolnBlk.Grid.xfaceE(i,j), SolnBlk.Grid.nfaceE(i,j));
 	
-
-
+	// Calculate gradient at the face midpoint
+	GradU_face = SolnBlk.InterfaceSolutionGradient(i  ,j,
+						       i+1,j,
+						       IP.i_Viscous_Reconstruction);
    
 	// Add the viscous (diffusive) flux 'Fd' in the normal direction at the face midpoint to the face total flux
-	Flux += Fd(Ul, Ur, GradU_face, SolnBlk.Grid.xfaceE(i,j), SolnBlk.Grid.nfaceE(i,j));
+	Flux += Fd(U_face, GradU_face, SolnBlk.Grid.xfaceE(i,j), SolnBlk.Grid.nfaceE(i,j));
 
 	/* Evaluate cell-averaged solution changes. */
 	SolnBlk.dUdt[i  ][j][0] -= Flux*SolnBlk.Grid.lfaceE(i  , j)/SolnBlk.Grid.Cell[i  ][j].A;
@@ -3282,28 +3293,46 @@ int dUdt_Residual_Evaluation(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 	// Compute the right interface state based on reconstruction
 	Ur = SolnBlk.PiecewiseLinearSolutionAtLocation(i ,j+1,SolnBlk.Grid.xfaceS(i ,j+1));
 	
-	// Compute the left interface state for inviscid flux
-	// calculation such that to satisfy the SOUTH boundary condition
-	SolnBlk.InviscidFluxStateAtBoundaryInterface(SOUTH,i,j,Ul,Ur);
+	/* Compute the left interface state for inviscid flux calculation 
+	   and the solution state at the Gauss quadrature point 
+	   for calculation of the diffusion coefficient
+	   such that to satisfy the SOUTH boundary condition */
+	SolnBlk.InviscidAndEllipticFluxStates_AtBoundaryInterface(SOUTH,i,j,Ul,Ur,U_face);
 	  
       } else if (j == SolnBlk.JCu){ // This is a NORTH boundary interface
 	// Compute the left interface state based on reconstruction
 	Ul = SolnBlk.PiecewiseLinearSolutionAtLocation(i ,j  ,SolnBlk.Grid.xfaceN(i ,j  ));
 	  
-	// Compute the right interface state for inviscid flux
-	// calculation such that to satisfy the NORTH boundary condition
-	SolnBlk.InviscidFluxStateAtBoundaryInterface(NORTH,i,j,Ul,Ur);
+	/* Compute the left interface state for inviscid flux calculation 
+	   and the solution state at the Gauss quadrature point 
+	   for calculation of the diffusion coefficient
+	   such that to satisfy the NORTH boundary condition */
+	SolnBlk.InviscidAndEllipticFluxStates_AtBoundaryInterface(NORTH,i,j,Ul,Ur,U_face);
 	  
       } else {		// This is an interior interface
 	// Compute left and right interface states at 
 	// the face midpoint based on reconstruction
 	Ul = SolnBlk.PiecewiseLinearSolutionAtLocation(i ,j  ,SolnBlk.Grid.xfaceN(i ,j  ));
 	Ur = SolnBlk.PiecewiseLinearSolutionAtLocation(i ,j+1,SolnBlk.Grid.xfaceS(i ,j+1));
+
+	// Determine the solution state at the Gauss quadrature
+	// point for the calculation of the diffusion coefficient
+	SolnBlk.EllipticFluxStateAtInteriorInterface(i  ,j,
+						     i  ,j+1,
+						     SolnBlk.Grid.xfaceN(i,j),U_face);
       }
 
       // Compute the advective flux in the normal direction at the face midpoint 
       Flux = Fa(Ul, Ur, SolnBlk.Grid.xfaceN(i,j), SolnBlk.Grid.nfaceN(i, j));
     
+      // Calculate gradient at the face midpoint
+      GradU_face = SolnBlk.InterfaceSolutionGradient(i  ,j,
+						     i  ,j+1,
+						     IP.i_Viscous_Reconstruction);
+      
+      // Add the viscous (diffusive) flux 'Fd' in the normal direction at the face midpoint to the face total flux
+      Flux += Fd(U_face, GradU_face, SolnBlk.Grid.xfaceN(i,j), SolnBlk.Grid.nfaceN(i,j));
+
       /* Evaluate cell-averaged solution changes. */
       SolnBlk.dUdt[i][j  ][0] -= Flux*SolnBlk.Grid.lfaceN(i, j  )/SolnBlk.Grid.Cell[i][j  ].A;
       SolnBlk.dUdt[i][j+1][0] += Flux*SolnBlk.Grid.lfaceS(i, j+1)/SolnBlk.Grid.Cell[i][j+1].A;
@@ -3341,7 +3370,8 @@ int dUdt_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
   int i, j, k_residual;
   double omega;
   Vector2D dX;
-  AdvectDiffuse2D_State_New Ul, Ur, Flux;
+  AdvectDiffuse2D_State_New Ul, Ur, U_face, Flux;
+  Vector2D GradU_face;		// Solution gradient at the inter-cellular face
 
   /* Evaluate the solution residual for stage 
      i_stage of an N stage scheme. */
@@ -3398,6 +3428,10 @@ int dUdt_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
     break;
   } /* endswitch */
 
+  /* Calculate the solution values at the mesh nodes
+     using a bilinear interpolation procedure . */
+  SolnBlk.Calculate_Nodal_Solutions();
+
   /* Evaluate the time rate of change of the solution
      (i.e., the solution residuals) using a second-order
      limited upwind finite-volume scheme for the convective 
@@ -3452,27 +3486,45 @@ int dUdt_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 	  // Compute the right interface state based on reconstruction
 	  Ur = SolnBlk.PiecewiseLinearSolutionAtLocation(i+1, j,SolnBlk.Grid.xfaceW(i+1, j));
 
-	  // Compute the left interface state for inviscid flux
-	  // calculation such that to satisfy the WEST boundary condition
-	  SolnBlk.InviscidFluxStateAtBoundaryInterface(WEST,i,j,Ul,Ur);
+	  /* Compute the left interface state for inviscid flux calculation 
+	     and the solution state at the Gauss quadrature point 
+	     for calculation of the diffusion coefficient
+	     such that to satisfy the WEST boundary condition */
+	  SolnBlk.InviscidAndEllipticFluxStates_AtBoundaryInterface(WEST,i,j,Ul,Ur,U_face);
 	  
 	} else if (i == SolnBlk.ICu){ // This is a EAST boundary interface
 	  // Compute the left interface state based on reconstruction
 	  Ul = SolnBlk.PiecewiseLinearSolutionAtLocation(i  , j,SolnBlk.Grid.xfaceE(i  , j));
-	  
-	  // Compute the right interface state for inviscid flux
-	  // calculation such that to satisfy the EAST boundary condition
-	  SolnBlk.InviscidFluxStateAtBoundaryInterface(EAST,i,j,Ul,Ur);
+
+	  /* Compute the left interface state for inviscid flux calculation 
+	     and the solution state at the Gauss quadrature point 
+	     for calculation of the diffusion coefficient
+	     such that to satisfy the EAST boundary condition */
+	  SolnBlk.InviscidAndEllipticFluxStates_AtBoundaryInterface(EAST,i,j,Ul,Ur,U_face);
 	  
 	} else {		// This is an interior interface
 	  // Compute left and right interface states at 
 	  // the face midpoint based on reconstruction
 	  Ul = SolnBlk.PiecewiseLinearSolutionAtLocation(i  , j,SolnBlk.Grid.xfaceE(i  , j));
 	  Ur = SolnBlk.PiecewiseLinearSolutionAtLocation(i+1, j,SolnBlk.Grid.xfaceW(i+1, j));
+
+	  // Determine the solution state at the Gauss quadrature
+	  // point for the calculation of the diffusion coefficient
+	  SolnBlk.EllipticFluxStateAtInteriorInterface(i  ,j,
+						       i+1,j,
+						       SolnBlk.Grid.xfaceE(i,j),U_face);
 	}
 	
 	// Compute the advective flux in the normal direction at the face midpoint 
 	Flux = Fa(Ul, Ur, SolnBlk.Grid.xfaceE(i,j), SolnBlk.Grid.nfaceE(i,j));
+
+	// Calculate gradient at the face midpoint
+	GradU_face = SolnBlk.InterfaceSolutionGradient(i  ,j,
+						       i+1,j,
+						       IP.i_Viscous_Reconstruction);
+   
+	// Add the viscous (diffusive) flux 'Fd' in the normal direction at the face midpoint to the face total flux
+	Flux += Fd(U_face, GradU_face, SolnBlk.Grid.xfaceE(i,j), SolnBlk.Grid.nfaceE(i,j));
 
 	/* Evaluate cell-averaged solution changes. */
 	SolnBlk.dUdt[i  ][j][k_residual] -= ( (IP.CFL_Number*SolnBlk.dt[i  ][j])* 
@@ -3516,28 +3568,46 @@ int dUdt_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
       if (j == SolnBlk.JCl-1){ // This is a SOUTH boundary interface
 	// Compute the right interface state based on reconstruction
 	Ur = SolnBlk.PiecewiseLinearSolutionAtLocation(i ,j+1,SolnBlk.Grid.xfaceS(i ,j+1));
-	
-	// Compute the left interface state for inviscid flux
-	// calculation such that to satisfy the SOUTH boundary condition
-	SolnBlk.InviscidFluxStateAtBoundaryInterface(SOUTH,i,j,Ul,Ur);
+
+	/* Compute the left interface state for inviscid flux calculation 
+	   and the solution state at the Gauss quadrature point 
+	   for calculation of the diffusion coefficient
+	   such that to satisfy the SOUTH boundary condition */
+	SolnBlk.InviscidAndEllipticFluxStates_AtBoundaryInterface(SOUTH,i,j,Ul,Ur,U_face);
 	  
       } else if (j == SolnBlk.JCu){ // This is a NORTH boundary interface
 	// Compute the left interface state based on reconstruction
 	Ul = SolnBlk.PiecewiseLinearSolutionAtLocation(i ,j  ,SolnBlk.Grid.xfaceN(i ,j  ));
-	  
-	// Compute the right interface state for inviscid flux
-	// calculation such that to satisfy the NORTH boundary condition
-	SolnBlk.InviscidFluxStateAtBoundaryInterface(NORTH,i,j,Ul,Ur);
+
+	/* Compute the left interface state for inviscid flux calculation 
+	   and the solution state at the Gauss quadrature point 
+	   for calculation of the diffusion coefficient
+	   such that to satisfy the NORTH boundary condition */
+	SolnBlk.InviscidAndEllipticFluxStates_AtBoundaryInterface(NORTH,i,j,Ul,Ur,U_face);
 	  
       } else {		// This is an interior interface
 	// Compute left and right interface states at 
 	// the face midpoint based on reconstruction
 	Ul = SolnBlk.PiecewiseLinearSolutionAtLocation(i ,j  ,SolnBlk.Grid.xfaceN(i ,j  ));
 	Ur = SolnBlk.PiecewiseLinearSolutionAtLocation(i ,j+1,SolnBlk.Grid.xfaceS(i ,j+1));
+
+	// Determine the solution state at the Gauss quadrature
+	// point for the calculation of the diffusion coefficient
+	SolnBlk.EllipticFluxStateAtInteriorInterface(i  ,j,
+						     i  ,j+1,
+						     SolnBlk.Grid.xfaceN(i,j),U_face);
       }
 
       // Compute the advective flux in the normal direction at the face midpoint 
       Flux = Fa(Ul, Ur, SolnBlk.Grid.xfaceN(i,j), SolnBlk.Grid.nfaceN(i, j));
+
+      // Calculate gradient at the face midpoint
+      GradU_face = SolnBlk.InterfaceSolutionGradient(i  ,j,
+						     i  ,j+1,
+						     IP.i_Viscous_Reconstruction);
+      
+      // Add the viscous (diffusive) flux 'Fd' in the normal direction at the face midpoint to the face total flux
+      Flux += Fd(U_face, GradU_face, SolnBlk.Grid.xfaceN(i,j), SolnBlk.Grid.nfaceN(i,j));
     
       /* Evaluate cell-averaged solution changes. */
       SolnBlk.dUdt[i][j  ][k_residual] -= ( (IP.CFL_Number*SolnBlk.dt[i][j  ])*

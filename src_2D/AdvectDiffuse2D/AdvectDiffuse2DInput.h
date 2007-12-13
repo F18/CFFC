@@ -111,6 +111,8 @@ public:
   int i_ReconstructionMethod;	/*!< Index to store the reconstruction method. */
   int Space_Accuracy;		/*!< Parameter to show the order of accuracy in space. */
   int IncludeHighOrderBoundariesRepresentation;	/*!< Flag for including or excluding high-order BCs. */
+  char Viscous_Reconstruction_Type[INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
+  int i_Viscous_Reconstruction; /*!< Index to store the method for computing face gradients for viscous fluxes. */
   //@}
 
   //! @name Limiter type indicator and related input parameters:

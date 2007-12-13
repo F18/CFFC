@@ -342,7 +342,7 @@ namespace tut
     		    Result,
     		    AcceptedError(Result,1.0e-12));
 
-    // Analytic result for the gradient at the interface between cell (7,6) and (8,6) (j-direction interface)
+    // Analytic result for the gradient at the interface between cell (7,6) and (7,7) (j-direction interface)
     Location = SolnBlk[0].Grid.xfaceN(7,6);
     Result = SolnBlk[0].ExactSoln->Gradient(Location.x,Location.y);
 
@@ -350,6 +350,54 @@ namespace tut
 		    SolnBlk[0].InterfaceSolutionGradient(7,6,7,7,VISCOUS_RECONSTRUCTION_DIAMOND_PATH),
 		    Result,
 		    AcceptedError(Result,1.0e-12));
+  }
+
+  /* Test 5:*/
+  template<>
+  template<>
+  void AdvectDiffuse2D_Quad_Block_object::test<5>()
+  {
+
+    set_test_name("EllipticFluxStateAtInteriorInterface()");
+    set_local_input_path("QuadBlockData");
+    set_local_output_path("QuadBlockData");
+
+    // Set input file name
+    Open_Input_File("LaplaceInRectangularBox.in");
+
+    // Parse the input file
+    IP.Verbose() = false;
+    IP.Parse_Input_File(input_file_name);
+
+    // Create computational domain
+    InitializeComputationalDomain(MeshBlk,QuadTree,
+				  GlobalList_Soln_Blocks, LocalList_Soln_Blocks, 
+				  SolnBlk, IP);
+
+    // Apply initial condition
+    ICs(SolnBlk,LocalList_Soln_Blocks,IP);
+
+    // Compute nodal values
+    SolnBlk[0].Calculate_Nodal_Solutions();
+
+    // Analytic result for the solution at the interface between cell (7,6) and (8,6) (i-direction interface)
+    Vector2D Location = SolnBlk[0].Grid.xfaceE(7,6);
+    double Result = SolnBlk[0].ExactSoln->Solution(Location.x,Location.y);
+
+    // Numeric result
+    AdvectDiffuse2D_State_New U_face;
+    SolnBlk[0].EllipticFluxStateAtInteriorInterface(7,6,8,6,Location,U_face);
+
+    ensure_distance("Solution betwen cells (7,6) and (8,6)", U_face.u, Result, AcceptedError(Result,1.0e-8));
+
+    // Analytic result for the solution at the interface between cell (7,6) and (7,7) (j-direction interface)
+    Location = SolnBlk[0].Grid.xfaceN(7,6);
+    Result = SolnBlk[0].ExactSoln->Solution(Location.x,Location.y);
+
+    // Numeric result
+    SolnBlk[0].EllipticFluxStateAtInteriorInterface(7,6,7,7,Location,U_face);
+
+    ensure_distance("Gradient betwen cells (7,6) and (7,7)", U_face.u, Result, AcceptedError(Result,1.0e-8));
   }
 
 

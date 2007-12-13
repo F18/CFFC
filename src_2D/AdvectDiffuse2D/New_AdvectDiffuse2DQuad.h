@@ -250,7 +250,14 @@ public:
 
   //! @name Evaluate diffusive fluxes.
   //@{
-  void Calculate_Nodal_Solutions(void); //!< Calculate the solution at mesh nodes
+  //! Calculate the solution at mesh nodes
+  void Calculate_Nodal_Solutions(void);
+
+  //! Calculate the solution state at a location on an interior inter-cellular face
+  void EllipticFluxStateAtInteriorInterface(const int & ii_L, const int & jj_L,
+					    const int & ii_R, const int & jj_R,
+					    const Vector2D & GQPoint,
+					    AdvectDiffuse2D_State_New & State);
 
   //! Calculate the solution gradient at the specified interface
   Vector2D InterfaceSolutionGradient(const int & ii_L, const int & jj_L,
@@ -300,14 +307,21 @@ public:
   double PiecewiseLinearSolutionAtLocation(const int &ii, const int &jj,
 					   const Vector2D &CalculationPoint,
 					   const unsigned int &parameter) const;
+
+  AdvectDiffuse2D_State_New UnlimitedPiecewiseLinearSolutionForDelta(const int &ii, const int &jj,
+								     const double &DeltaXToCentroid,
+								     const double &DeltaYToCentroid) const;
+  AdvectDiffuse2D_State_New UnlimitedPiecewiseLinearSolutionAtLocation(const int &ii, const int &jj,
+								       const Vector2D &CalculationPoint) const;
   //@}
 
-  //! @name Member functions to compute the inviscid flux state at a boundary interface
+  //! @name Member functions to compute the inviscid and elliptic flux state at a boundary interface
   //@{
-  void InviscidFluxStateAtBoundaryInterface(const int &BOUNDARY,
-					    const int &ii, const int &jj,
-					    AdvectDiffuse2D_State_New &Ul,
-					    AdvectDiffuse2D_State_New &Ur);
+  void InviscidAndEllipticFluxStates_AtBoundaryInterface(const int &BOUNDARY,
+							 const int &ii, const int &jj,
+							 AdvectDiffuse2D_State_New &Ul,
+							 AdvectDiffuse2D_State_New &Ur,
+							 AdvectDiffuse2D_State_New &U_face);
   //@}
 
   //! Set boundary reference states
@@ -651,6 +665,41 @@ inline double AdvectDiffuse2D_Quad_Block_New::PiecewiseLinearSolutionAtLocation(
 										const unsigned int &parameter) const{
   return PiecewiseLinearSolutionAtLocation(ii,jj,CalculationPoint)[parameter];
 }
+
+/*!
+ * Compute the solution provided by the UNLIMITED (i.e. no limiter!) piecewise 
+ * linear reconstruction at a location relative to the cell centroid.
+ *
+ * \param ii i-index of the cell
+ * \param jj j-index of the cell
+ * \param DeltaXToCentroid the X-delta between the point of interest and the centroid
+ * \param DeltaYToCentroid the Y-delta between the point of interest and the centroid
+ */
+inline AdvectDiffuse2D_State_New 
+AdvectDiffuse2D_Quad_Block_New::UnlimitedPiecewiseLinearSolutionForDelta(const int &ii, const int &jj,
+									 const double &DeltaXToCentroid,
+									 const double &DeltaYToCentroid) const{
+
+  return U[ii][jj] + dUdx[ii][jj]*DeltaXToCentroid + dUdy[ii][jj]*DeltaYToCentroid;
+}
+
+/*!
+ * Compute the solution provided by the UNLIMITED (i.e. no limiter!) piecewise 
+ * linear reconstruction at a particular location.
+ *
+ * \param ii i-index of the cell
+ * \param jj j-index of the cell
+ * \param CalculationPoint the Cartesian coordinates of the point of interest
+ */
+inline AdvectDiffuse2D_State_New 
+AdvectDiffuse2D_Quad_Block_New::UnlimitedPiecewiseLinearSolutionAtLocation(const int &ii, const int &jj,
+									   const Vector2D &CalculationPoint) const{
+
+  // calculate the distance between the point of interest and the centroid of the cell
+  Vector2D dX(CalculationPoint - Grid.Cell[ii][jj].Xc);	
+  return UnlimitedPiecewiseLinearSolutionForDelta(ii,jj,dX.x,dX.y);
+}
+
 
 /**************************************************************************
  * AdvectDiffuse2D_Quad_Block_New -- Single Block External Subroutines.       *

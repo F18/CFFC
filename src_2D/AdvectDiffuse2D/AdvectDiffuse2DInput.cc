@@ -277,6 +277,9 @@ ostream &operator << (ostream &out_file,
       out_file << "\n  -> Freeze Limiter when L2-norm of residual is < "
 	       << IP.Freeze_Limiter_Residual_Level;
     } /* endif */
+    if (IP.i_ReconstructionMethod != RECONSTRUCTION_CENO ){
+      out_file << "\n  -> Elliptic Flux Evaluation: " << IP.Viscous_Reconstruction_Type;
+    }
     if (IP.IncludeHighOrderBoundariesRepresentation == OFF){
       out_file << "\n  -> Boundary Accuracy: " << "2nd-Order";
     } else {
@@ -498,6 +501,7 @@ void Set_Default_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
     string_ptr = "AdvectDiffuse2D.in";
     strcpy(IP.Input_File_Name, string_ptr);
 
+    // Time-stepping parameters:
     string_ptr = "Explicit_Euler";
     strcpy(IP.Time_Integration_Type, string_ptr);
     IP.i_Time_Integration = TIME_STEPPING_EXPLICIT_EULER;
@@ -511,10 +515,12 @@ void Set_Default_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
     // Residual variable:
     IP.i_Residual_Variable = 1;
 
+    // Residual smoothing:
     IP.Residual_Smoothing = 0;
     IP.Residual_Smoothing_Epsilon = ZERO;
     IP.Residual_Smoothing_Gauss_Seidel_Iterations = 2;
 
+    // Reconstruction type:
     string_ptr = "Least_Squares";
     strcpy(IP.Reconstruction_Type, string_ptr);
     IP.i_Reconstruction = RECONSTRUCTION_LEAST_SQUARES;
@@ -522,25 +528,28 @@ void Set_Default_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
     IP.IncludeHighOrderBoundariesRepresentation = OFF;
     IP.i_ReconstructionMethod = RECONSTRUCTION_LEAST_SQUARES;
 
+    // Viscous gradient reconstruction type:
+    string_ptr = "Diamond_Path";
+    strcpy(IP.Viscous_Reconstruction_Type,string_ptr);
+    IP.i_Viscous_Reconstruction = VISCOUS_RECONSTRUCTION_DIAMOND_PATH;
+
+    // Limiter type:
     string_ptr = "Barth_Jespersen";
     strcpy(IP.Limiter_Type, string_ptr);
     IP.i_Limiter = LIMITER_BARTH_JESPERSEN;
+    IP.Freeze_Limiter = 0;
+    IP.Freeze_Limiter_Residual_Level = 1e-4;
 
+    // Initial conditions:
     string_ptr = "Uniform";
     strcpy(IP.ICs_Type, string_ptr);
     IP.i_ICs = IC_UNIFORM;
+    IP.Exact_Integration_Digits = 9;
 
-    IP.Kappa = 0.02;
-    IP.a = ONE;
-    IP.b = ONE;
-    IP.Tau = ONE;
-
-    string_ptr = "Uniform";
-    strcpy(IP.Velocity_Field_Type, string_ptr);
-    IP.i_Velocity_Field = VELOCITY_FIELD_UNIFORM;
-
+    // Source term:
     IP.SourceTerm->SetSourceField(SOURCE_FIELD_ZERO); // set the default source term (no source field)
 
+    // State conditions:
     IP.Uo = AdvectDiffuse2D_State(ONE,
  	                          IP.a,
                                   IP.b,
@@ -549,12 +558,13 @@ void Set_Default_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
     IP.U1 = IP.Uo; IP.U1.u = ZERO;
     IP.U2 = IP.Uo; IP.U2.u = -ONE;
     IP.RefU = IP.Uo;
-    IP.Exact_Integration_Digits = 9;
 
+    // Geometry switch:
     string_ptr = "Planar";
     strcpy(IP.Flow_Geometry_Type, string_ptr);
     IP.Axisymmetric = 0;
 
+    // Grid parameters:
     string_ptr = "Square";
     strcpy(IP.Grid_Type, string_ptr);
     IP.i_Grid = GRID_SQUARE;
@@ -565,7 +575,6 @@ void Set_Default_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
     IP.Number_of_Ghost_Cells = 2;
     IP.Number_of_Blocks_Idir = 1;
     IP.Number_of_Blocks_Jdir = 1;
- 
     IP.Plate_Length = ONE;
     IP.Pipe_Length = ONE;
     IP.Pipe_Radius = HALF;
@@ -587,12 +596,23 @@ void Set_Default_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
     IP.Ellipse_Length_Y_Axis = HALF;
     IP.Chord_Length = ONE;
     IP.Orifice_Radius = ONE;
-
     IP.X_Shift = Vector2D_ZERO;
     IP.X_Scale = ONE;
     IP.X_Rotate = ZERO;
+    IP.i_Smooth_Quad_Block = ON;        // Smooth quad block flag:
+    IP.IterationsOfInteriorNodesDisturbances = 0;     /* Number of iterations of disturbing the mesh 
+							 (create an unsmooth interior mesh) */
+    IP.Num_Of_Spline_Control_Points = 361; /* Number of control points on the 2D spline (used for some grids) */
 
+    // ICEM:
     IP.ICEMCFD_FileNames = ICEMCFD_get_filenames();
+
+    // Mesh stretching factor:
+    IP.i_Mesh_Stretching = OFF;
+    IP.Mesh_Stretching_Type_Idir = STRETCHING_FCN_LINEAR;
+    IP.Mesh_Stretching_Type_Jdir = STRETCHING_FCN_LINEAR;
+    IP.Mesh_Stretching_Factor_Idir = 1.01;
+    IP.Mesh_Stretching_Factor_Jdir = 1.01;
 
     // Boundary conditions:
     string_ptr = "OFF";
@@ -616,27 +636,20 @@ void Set_Default_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
     IP.Number_of_Boundary_Mesh_Refinements = 0;
     IP.Maximum_Refinement_Level = 100;
     IP.Minimum_Refinement_Level = 1;
-
     IP.Threshold_for_Refinement = 0.50;
     IP.Threshold_for_Coarsening = 0.10;
 
-    // Smooth quad block flag:
-    IP.i_Smooth_Quad_Block = ON;
-
+    // Default output file names and parameters:
     string_ptr = "outputfile.dat";
     strcpy(IP.Output_File_Name, string_ptr);
-
     string_ptr = "gridfile.grid";
     strcpy(IP.Grid_File_Name, string_ptr);
     string_ptr = "gridfile.griddef";
     strcpy(IP.Grid_Definition_File_Name, string_ptr);
-
     string_ptr = "restartfile.soln";
     strcpy(IP.Restart_File_Name, string_ptr);
-
     string_ptr = "gnuplotfile.gplt";
     strcpy(IP.Gnuplot_File_Name, string_ptr);
-
     string_ptr = "Tecplot";
     strcpy(IP.Output_Format_Type, string_ptr);
     IP.i_Output_Format = IO_TECPLOT;
@@ -645,56 +658,18 @@ void Set_Default_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
     // Default output progress frequency:
     IP.Output_Progress_Frequency = 50;
 
+    // Input_file parameters:
     string_ptr = " ";
     strcpy(IP.Next_Control_Parameter, string_ptr);
-
     IP.Line_Number = 0;
-
     IP.Number_of_Processors = CFFC_MPI::Number_of_Processors;
     IP.Number_of_Blocks_Per_Processor = 10;
-
-    // GMRES restart:
-    IP.GMRES_Restart = 30;
-    
-    // GMRES tolerance:
-    IP.GMRES_Toler = 1e-5;
-    
-    // GMRES overlap:
-    IP.GMRES_Overlap = 0;
-
-    // GMRES P_Switch:
-    IP.GMRES_P_Switch = 1;
-
-    // Finite_Time_Step:
-    IP.Finite_Time_Step = 0;
-    IP.Finite_Time_Step_Initial_CFL = 1;
-
-    // Freeze_Limiter
-    IP.Freeze_Limiter = 0;
-
-    // Limiter_switch
-    IP.Freeze_Limiter_Residual_Level = 1e-4;
-
-    // Mesh stretching factor:
-    IP.i_Mesh_Stretching = OFF;
-    IP.Mesh_Stretching_Type_Idir = STRETCHING_FCN_LINEAR;
-    IP.Mesh_Stretching_Type_Jdir = STRETCHING_FCN_LINEAR;
-    IP.Mesh_Stretching_Factor_Idir = 1.01;
-    IP.Mesh_Stretching_Factor_Jdir = 1.01;
-
-    // Smooth quad block flag:
-    IP.i_Smooth_Quad_Block = ON;
-
-    // Number of iterations of disturbing the mesh (create an unsmooth interior mesh)
-    IP.IterationsOfInteriorNodesDisturbances = 0;
-
-    // Number of control points on the 2D spline (used for some grids)
-    IP.Num_Of_Spline_Control_Points = 361;
 
     // Accuracy assessment parameters:
     IP.Accuracy_Assessment_Mode = ACCURACY_ASSESSMENT_BASED_ON_EXACT_SOLUTION;
     IP.Accuracy_Assessment_Exact_Digits = 10;
     IP.Accuracy_Assessment_Parameter = 1;
+
 }
 
 /******************************************************//**
@@ -767,6 +742,13 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.IncludeHighOrderBoundariesRepresentation), 
                           1, 
                           MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(IP.Viscous_Reconstruction_Type,
+			  INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D,
+			  MPI::CHAR,0);
+    MPI::COMM_WORLD.Bcast(&(IP.i_Viscous_Reconstruction),
+			  1,
+			  MPI::INT,0);
+
     MPI::COMM_WORLD.Bcast(IP.Limiter_Type, 
                           INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D, 
                           MPI::CHAR, 0);
@@ -1235,6 +1217,13 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.IncludeHighOrderBoundariesRepresentation), 
 		       1, 
 		       MPI::INT, Source_Rank);
+    Communicator.Bcast(IP.Viscous_Reconstruction_Type,
+		       INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D,
+		       MPI::CHAR,Source_Rank);
+    Communicator.Bcast(&(IP.i_Viscous_Reconstruction),
+		       1,
+		       MPI::INT,Source_Rank);
+
     Communicator.Bcast(IP.Limiter_Type, 
                        INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D, 
                        MPI::CHAR, Source_Rank);
@@ -1678,6 +1667,20 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
       std::cout << "\n ==> Unknown reconstruction method!";
       i_command = INVALID_INPUT_VALUE;
     } /* endif */
+
+  } else if (strcmp(IP.Next_Control_Parameter,"Viscous_Reconstruction_Type") == 0) {
+    i_command = 0;
+    Get_Next_Input_Control_Parameter(IP);
+    strcpy(IP.Viscous_Reconstruction_Type,IP.Next_Control_Parameter);
+    if (strcmp(IP.Viscous_Reconstruction_Type,"Arithmetic_Average") == 0) {
+      IP.i_Viscous_Reconstruction = VISCOUS_RECONSTRUCTION_ARITHMETIC_AVERAGE;
+    } else if (strcmp(IP.Viscous_Reconstruction_Type,"Diamond_Path") == 0) {
+      IP.i_Viscous_Reconstruction = VISCOUS_RECONSTRUCTION_DIAMOND_PATH;
+    } else if (strcmp(IP.Viscous_Reconstruction_Type,"Hybrid") == 0) {
+      IP.i_Viscous_Reconstruction = VISCOUS_RECONSTRUCTION_HYBRID;
+    } else {
+      i_command = INVALID_INPUT_VALUE;
+    }
 
   } else if (strcmp(IP.Next_Control_Parameter, "Limiter_Type") == 0) {
     i_command = 3;
