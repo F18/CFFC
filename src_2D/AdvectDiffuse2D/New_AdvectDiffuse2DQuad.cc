@@ -26,12 +26,6 @@ int AdvectDiffuse2D_Quad_Block_New::Flow_Type = FLOWTYPE_INVISCID;
 int AdvectDiffuse2D_Quad_Block_New::Axisymmetric = OFF;
 // Initialize Number_of_Residual_Norms
 int AdvectDiffuse2D_Quad_Block_New::Number_of_Residual_Norms = 1;
-// Initialize U_Node
-AdvectDiffuse2D_State_New **AdvectDiffuse2D_Quad_Block_New::U_Nodes = NULL;
-// Initialize NNi
-int AdvectDiffuse2D_Quad_Block_New::NNi = 0;
-// Initialize NNj
-int AdvectDiffuse2D_Quad_Block_New::NNj = 0;
 
 
 /*******************************************************************************
@@ -44,8 +38,9 @@ AdvectDiffuse2D_Quad_Block_New::AdvectDiffuse2D_Quad_Block_New(void): AssessAccu
   Freeze_Limiter = OFF;
   // Grid size and variables:
   NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0; Nghost = 0;
+  NNi = 0; NNj = 0;
   // Solution variables:
-  U = NULL; dt = NULL; dUdt = NULL; 
+  U = NULL; U_Nodes = NULL; dt = NULL; dUdt = NULL; 
   dUdx = NULL; dUdy = NULL; phi = NULL; Uo = NULL;
   FluxN = NULL; FluxS = NULL; FluxE = NULL; FluxW = NULL;
   UoN = NULL; UoS = NULL; UoE = NULL; UoW = NULL;
@@ -152,6 +147,8 @@ void AdvectDiffuse2D_Quad_Block_New::deallocate(void) {
     delete []UoN; UoN = NULL; delete []UoS; UoS = NULL;
     delete []UoE; UoE = NULL; delete []UoW; UoW = NULL;
     NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0; Nghost = 0;
+
+    deallocate_U_Nodes();
   }
 }
 
@@ -170,9 +167,6 @@ void AdvectDiffuse2D_Quad_Block_New::allocate_U_Nodes(const int &_NNi, const int
     for (int i=0; i<=NNi-1; ++i){
       U_Nodes[i] = new AdvectDiffuse2D_State_New[NNj];
     }
-
-    // Schedule the static memory pool to be deallocated at exit
-    std::atexit(deallocate_U_Nodes);
   }
 }
 

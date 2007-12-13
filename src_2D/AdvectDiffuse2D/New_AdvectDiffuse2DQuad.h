@@ -134,7 +134,7 @@ public:
   AdvectDiffuse2D_State_New    **U; //!< Solution state.
 
   /*! Storage for the solution states at the grid nodes in the calculation of diffusive fluxes */
-  static AdvectDiffuse2D_State_New    **U_Nodes;
+  AdvectDiffuse2D_State_New    **U_Nodes;
   //@}
 
   //! @name Grid block information:
@@ -221,7 +221,7 @@ public:
   void allocate_U_Nodes(const int &_NNi, const int &_NNj);
 
   //! Deallocate the static memory pool U_Nodes
-  static void deallocate_U_Nodes(void);
+  void deallocate_U_Nodes(void);
   //@}
 
   //! @name Bilinear interplation (Zingg & Yarrow).
@@ -444,7 +444,7 @@ private:
   AdvectDiffuse2D_Quad_Block_New(const AdvectDiffuse2D_Quad_Block_New &Soln); //!< Private copy constructor
   AdvectDiffuse2D_Quad_Block_New operator = (const AdvectDiffuse2D_Quad_Block_New &Soln);   //!< Private assignment operator
 
-  static int NNi, NNj;		//!< number of nodes in i-direction and j-direction.
+  int NNi, NNj;		//!< number of nodes in i-direction and j-direction.
 
 };
 
