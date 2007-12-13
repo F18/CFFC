@@ -939,14 +939,14 @@ void Output_Tecplot(Chem2D_Quad_Block &SolnBlk,
 
   Chem2D_pState W_node;
    
+  /* Ensure boundary conditions are updated before
+     evaluating solution at the nodes. */
+  BCs(SolnBlk,IP);
+
   /* Cell centered shear and qflux */
   if (SolnBlk.Flow_Type != FLOWTYPE_INVISCID) {
     Viscous_Calculations(SolnBlk);
   }
-
-  /* Ensure boundary conditions are updated before
-     evaluating solution at the nodes. */
-  BCs(SolnBlk,IP);
 
   /* Output node solution data. */
   Out_File << setprecision(14);
@@ -1060,12 +1060,12 @@ void Output_Cells_Tecplot(Chem2D_Quad_Block &SolnBlk,
     int i, j;
     Chem2D_cState omega;
 
+    BCs(SolnBlk,IP);
+
     /* Cell centered shear and qflux */
     if (SolnBlk.Flow_Type != FLOWTYPE_INVISCID) {
       Viscous_Calculations(SolnBlk);
     }
-
-    BCs(SolnBlk,IP);
 
     Out_File << setprecision(14);
     if (Output_Title) {
@@ -1085,8 +1085,16 @@ void Output_Cells_Tecplot(Chem2D_Quad_Block &SolnBlk,
        for(int i =0 ;i<SolnBlk.W[0][0].ns ;i++){
 	 Out_File <<"\"c"<<SolnBlk.W[0][0].specdata[i].Speciesname()<<"\" \\ \n";
        }
-        //Calculated values
-       Out_File << "\"T\" \\ \n"
+       Out_File << "\"rho*u\" \\ \n"
+                << "\"rho*v\" \\ \n";
+       //Calculated values
+       Out_File << "\"qflux_x\" \\ \n"  
+		<< "\"qflux_y\" \\  \n"   
+		<< "\"Tau_xx\" \\  \n"  //rr -axisymmetric
+		<< "\"Tau_xy\" \\  \n"  //rz
+		<< "\"Tau_yy\" \\  \n"  //zz
+		<< "\"Tau_zz\" \\  \n"
+		<< "\"T\" \\ \n"
 	        << "\"M\" \\ \n"
                 << "\"R\" \\ \n"
 	        << "\"viscosity\" \\ \n"
@@ -1098,6 +1106,42 @@ void Output_Cells_Tecplot(Chem2D_Quad_Block &SolnBlk,
 		<<"\"rho*E\" \\ \n"
 		<< "\"e\" \\  \n" 
 		<< "\"e_s\" \\ \n";
+       for(int i =0 ;i<SolnBlk.W[0][0].ns ;i++){
+ 	 Out_File <<"\"D_"<<SolnBlk.W[0][0].specdata[i].Speciesname()<<"\" \\ \n";
+       }
+       // reaction rates
+       for(int i =0 ;i<SolnBlk.W[0][0].ns ;i++){
+ 	 Out_File <<"\"omega_c"<<SolnBlk.W[0][0].specdata[i].Speciesname()<<"\" \\ \n";
+       }
+       // Gradients
+       Out_File << "\"dWdx_rho\" \\ \n"
+		<< "\"dWdx_u\" \\ \n"
+		<< "\"dWdx_v\" \\ \n"
+		<< "\"dWdx_p\" \\ \n"
+		<< "\"dWdx_k\" \\ \n"
+		<< "\"dWdx_o\" \\ \n";
+       for(int i =0 ;i<SolnBlk.W[0][0].ns ;i++){
+ 	 Out_File <<"\"dWdx_c"<<SolnBlk.W[0][0].specdata[i].Speciesname()<<"\" \\ \n";
+       }
+       Out_File << "\"dWdy_rho\" \\ \n"
+		<< "\"dWdy_u\" \\ \n"
+		<< "\"dWdy_v\" \\ \n"
+ 		<< "\"dWdy_p\" \\ \n"
+		<< "\"dWdy_k\" \\ \n"
+		<< "\"dWdy_o\" \\ \n";
+       for(int i =0 ;i<SolnBlk.W[0][0].ns ;i++){
+ 	 Out_File <<"\"dWdy_c"<<SolnBlk.W[0][0].specdata[i].Speciesname()<<"\" \\ \n";
+       }
+       // dUdt
+       Out_File << "\"dUdt_rho\" \\ \n"
+		<< "\"dUdt_rhou\" \\ \n"
+		<< "\"dUdt_rhov\" \\ \n"
+		<< "\"dUdt_E\" \\ \n"
+		<< "\"dUdt_rhok\" \\ \n"
+		<< "\"dUdt_rhoo\" \\ \n";
+       for(int i =0 ;i<SolnBlk.W[0][0].ns ;i++){
+ 	 Out_File <<"\"dUdt_rhoc"<<SolnBlk.W[0][0].specdata[i].Speciesname()<<"\" \\ \n";
+       }
        
 
        // Zone details
@@ -1116,11 +1160,16 @@ void Output_Cells_Tecplot(Chem2D_Quad_Block &SolnBlk,
 
     for ( j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu + SolnBlk.Nghost ; ++j ) {
        for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu + SolnBlk.Nghost ; ++i ) {
-           Out_File << " "  << SolnBlk.Grid.Cell[i][j].Xc
+	   omega = SolnBlk.W[i][j].Sw(SolnBlk.W[i][j].React.reactset_flag,SolnBlk.Flow_Type);
+	   omega /= SolnBlk.W[i][j].rho;
+	   Out_File << " "  << SolnBlk.Grid.Cell[i][j].Xc
                     << SolnBlk.W[i][j];
-           Out_File.setf(ios::scientific);
+	   Out_File << " " << SolnBlk.U[i][j].rhov.x
+		    << " " << SolnBlk.U[i][j].rhov.y;
+	   Out_File.setf(ios::scientific);
 	   //Temperature
-	   Out_File << " " << SolnBlk.W[i][j].T()
+	   Out_File << " " << SolnBlk.W[i][j].qflux<< " " <<SolnBlk.W[i][j].tau
+		    << " " << SolnBlk.W[i][j].T()
 		    << " " << SolnBlk.W[i][j].v.abs()/SolnBlk.W[i][j].a() 
 		    << " " << SolnBlk.W[i][j].Rtot()
 		    << " " << SolnBlk.W[i][j].mu()
@@ -1131,9 +1180,18 @@ void Output_Cells_Tecplot(Chem2D_Quad_Block &SolnBlk,
 		    << " " << SolnBlk.W[i][j].hs()
 		    << " " << SolnBlk.W[i][j].E() 
 		    << " " << SolnBlk.W[i][j].e() 
-		    << " " << SolnBlk.W[i][j].es()<<endl;
-	   Out_File<< "\n";
+		    << " " << SolnBlk.W[i][j].es();
+	   for(int k=0 ;k<SolnBlk.W[0][0].ns ;k++){
+	     Out_File << " " << SolnBlk.W[i][j].spec[k].diffusion_coef;
+	   }
            Out_File.unsetf(ios::scientific);
+	   for(int k=0; k<omega.ns; k++){
+	     Out_File <<" "<<omega.rhospec[k].c;
+	   }
+ 	   Out_File << SolnBlk.dWdx[i][j]
+ 		    << SolnBlk.dWdy[i][j];
+	   Out_File << SolnBlk.dUdt[i][j][0];
+	   Out_File<< "\n";
        } /* endfor */
     } /* endfor */
     Out_File << setprecision(6);
@@ -1445,8 +1503,8 @@ void ICs(Chem2D_Quad_Block &SolnBlk,
 //     case IC_VISCOUS_COUETTE_PRESSURE_GRADIENT:  
       //Couette flow with pressure gradient
       // -635.00  -423.33  -211.67  0.00  211.67  423.33  635.00
-//       //total pressure change
-//       delta_pres = Input_Parameters.Pressure_Gradient; // 635.54; 
+      //total pressure change
+      delta_pres = Input_Parameters.Pressure_Gradient; // 635.54; 
     
       //grid spacing 
       dX.x = fabs(SolnBlk.Grid.Cell[SolnBlk.ICl][0].Xc.x - SolnBlk.Grid.Cell[SolnBlk.ICl-1][0].Xc.x);
@@ -1638,6 +1696,14 @@ void ICs(Chem2D_Quad_Block &SolnBlk,
       Wl = Wo[0]; 
       Wr = Wo[0]; 
  
+      Wl.v.x = 0.41010;	
+      Wr.v.x = 3.103; 
+      Wr.spec[0] = ZERO;       //CH4
+      Wr.spec[1] = 0.0000;     //O2
+      Wr.spec[2] = 0.1511;     //CO2
+      Wr.spec[3] = 0.1242;     //H2O 
+      Wr.rho = Wr.p/(Wr.Rtot()*2320); //2234
+
       //Set downstream products, flamespeeds, Temperatures,
       if(Wo[0].React.reactset_flag == CH4_1STEP){
 	//set to phi=1.0 values from CHEMKIN
@@ -1803,28 +1869,28 @@ void ICs(Chem2D_Quad_Block &SolnBlk,
 	//
       } else if (Wo[0].React.reactset_flag == CANTERA) {
 
-	// get equilibrium composition
-	Wo[0].React.ct_equilibrium_HP<Chem2D_pState>( Wr );
+// 	// get equilibrium composition
+// 	Wo[0].React.ct_equilibrium_HP<Chem2D_pState>( Wr );
 
-	// set laminar flame speed
- 	Wl.v.x = Input_Parameters.flame_speed;
+// 	// set laminar flame speed
+//  	Wl.v.x = Input_Parameters.flame_speed;
 
-	// set exit mass fractions
- 	//for (int k=0; k<Input_Parameters.num_species; k++)
-	//  Wr.spec[k].c = Input_Parameters.mass_fractions_out[k];
+// 	// set exit mass fractions
+//  	//for (int k=0; k<Input_Parameters.num_species; k++)
+// 	//  Wr.spec[k].c = Input_Parameters.mass_fractions_out[k];
 
-	// compute flame jump conditions for T and v
-	if ( FlameJumpLowMach_x<Chem2D_pState>( /* unburnt */Wl, 
-						/*  burnt  */Wr ) ) {
-	  cerr << "\nChem2DQuadSingleBlock.cc::ICs() - "
-	       << "Error computing 1D premixed flame jump conditions.\n";
-	  exit(-1);
-	} // endif - flame
+// 	// compute flame jump conditions for T and v
+// 	if ( FlameJumpLowMach_x<Chem2D_pState>( /* unburnt */Wl, 
+// 						/*  burnt  */Wr ) ) {
+// 	  cerr << "\nChem2DQuadSingleBlock.cc::ICs() - "
+// 	       << "Error computing 1D premixed flame jump conditions.\n";
+// 	  exit(-1);
+// 	} // endif - flame
 
-	// fix constant pressure
-	double T( Wr.T() );
-	Wr.p = Wl.p;
-	Wr.rho = Wr.p/(Wr.Rtot()*T);
+// 	// fix constant pressure
+// 	double T( Wr.T() );
+// 	Wr.p = Wl.p;
+// 	Wr.rho = Wr.p/(Wr.Rtot()*T);
 
 
       } else {
@@ -7768,7 +7834,13 @@ void Viscous_Calculations(Chem2D_Quad_Block &SolnBlk) {
       /****************** Thermal Diffusion ****************************/
       // q -= rho * sum ( hs * Ds *gradcs)  
       SolnBlk.U[i][j].qflux -= SolnBlk.U[i][j].rho*SolnBlk.U[i][j].thermal_diffusion(Temperature);  
-      
+//       for(int k=0; k<SolnBlk.U[i][j].ns; k++){ 
+//  	SolnBlk.U[i][j].qflux -= SolnBlk.U[i][j].rho*
+//  	  (SolnBlk.U[i][j].specdata[k].Enthalpy(Temperature) + SolnBlk.U[i][j].specdata[k].Heatofform()) * 
+//   	  (SolnBlk.U[i][j].rhospec[k].diffusion_coef/SolnBlk.U[i][j].rho)*
+//  	  (SolnBlk.U[i][j].rhospec[k].gradc/SolnBlk.U[i][j].rho);
+//        }
+
       /**************** Turbulent Heat flux Vector *********************/
       /****************** Thermal Conduction ***************************
          q = - kappa * grad(T)                                         */

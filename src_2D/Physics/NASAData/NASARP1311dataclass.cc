@@ -9,7 +9,7 @@
         assosiated header file: 
                   NASARP1311.h
 
-*****************************************************************************/
+****************************************************************************/
 
 #ifndef _NASARP1311_DATA_INCLUDED
 #include "NASARP1311data.h"
@@ -158,6 +158,7 @@ void NASARP1311data::GetThermoData(const string spec) {
     //convert from J/mol to J/kg by / my mol_mass
     Temp = type.substr(66,80);
     thermo_data[i].DeltaHref_in(stof(Temp)/mol_mass);
+    thermo_data[i].DeltaHref_in(0.0);
 
     // Everything is set up around 7 exponents so check!
     //if(thermo_data[i].Numexponents() != 7){

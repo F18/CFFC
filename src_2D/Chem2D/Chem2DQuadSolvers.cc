@@ -688,10 +688,10 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
             } 
 	  } 	 
 	  
-	  if (!Input_Parameters.Local_Time_Stepping) { 
+ 	  if (!Input_Parameters.Local_Time_Stepping) { 
 	    // Set global time step.	
 	    Set_Global_TimeStep(Local_SolnBlk, List_of_Local_Solution_Blocks,dTime);
-	  } 
+ 	  } 
 
 	  /************************ NORMS *****************************************
            Determine the L1, L2, and max norms of the solution residual. 

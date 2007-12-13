@@ -449,25 +449,41 @@ double Chem2D_pState::dmudT(void) const{
   Thermal Conductivity - Mason & Saxena (1958)  W/(m*K)
 ****************************************************/
 double Chem2D_pState::kappa(void) const{
-  double sum = 0.0;  
+//   double sum = 0.0;  
+//   double Temp = T();
+
+//   for(int i=0; i<ns; i++){
+//     double phi = 0.0;
+//     for (int j=0; j<ns; j++){
+//       if(i == 0){
+// 	spec_tmp[j] = specdata[j].Viscosity(Temp);
+//       }
+//       if(i != j){
+// 	phi += (spec[j].c / specdata[j].Mol_mass())*
+// 	  pow(ONE + sqrt(spec_tmp[i]/spec_tmp[j])*
+// 	      pow(specdata[j].Mol_mass()/specdata[i].Mol_mass(),0.25),2.0)/
+// 	  sqrt(EIGHT*(ONE +specdata[i].Mol_mass()/specdata[j].Mol_mass()));
+//       }
+//     }
+ 
+//     sum += (specdata[i].ThermalConduct(Temp)*spec[i].c) / 
+//       (spec[i].c + (specdata[i].Mol_mass()) * 1.065 * phi);
+//   }  
+
+
+  double sum1 = 0.0;  
+  double sum2 = 0.0;  
   double Temp = T();
+  double MW = Mass();
+  double lambda, chi;
 
   for(int i=0; i<ns; i++){
-    double phi = 0.0;
-    for (int j=0; j<ns; j++){
-      if(i == 0){
-	spec_tmp[j] = specdata[j].Viscosity(Temp);
-      }
-      if(i != j){
-	phi += (spec[j].c / specdata[j].Mol_mass())*
-	  pow(ONE + sqrt(spec_tmp[i]/spec_tmp[j])*
-	      pow(specdata[j].Mol_mass()/specdata[i].Mol_mass(),0.25),2.0)/
-	  sqrt(EIGHT*(ONE +specdata[i].Mol_mass()/specdata[j].Mol_mass()));
-      }
-    }
+
+    lambda = specdata[i].ThermalConduct(Temp);
+    chi = spec[i].c * MW / specdata[i].Mol_mass();
  
-    sum += (specdata[i].ThermalConduct(Temp)*spec[i].c) / 
-      (spec[i].c + (specdata[i].Mol_mass()) * 1.065 * phi);
+    sum1 += chi / lambda;
+    sum2 += chi * lambda;
   }  
 
   
@@ -479,7 +495,7 @@ double Chem2D_pState::kappa(void) const{
 //   }
 //   sum = HALF*(one + ONE/two);
 
-  return sum;
+  return HALF * (sum2 + 1.0 / sum1);
 
 }
 
@@ -649,6 +665,7 @@ Vector2D Chem2D_pState::thermal_diffusion(void) const{
   Vector2D sum;
   sum.zero();
   double Temp = T();
+
   //problems with Species overloaded operators
   for(int i=0; i<ns; i++){ 
     sum  +=  (specdata[i].Enthalpy(Temp) + specdata[i].Heatofform())
@@ -3031,6 +3048,7 @@ Chem2D_pState BC_1DFlame_Inflow(const Chem2D_pState &Wi,
   Wnew.v.x = Woutlet.rho*Woutlet.v.x/Wo.rho;
 
   if(Wnew.v.x  < 0.1 || Wnew.v.x > (Wo.v.x + 0.5)){
+    cout << "\nAdjusting Inflow\n";
     Wnew.v.x = Wo.v.x;
   }
    
@@ -3055,6 +3073,7 @@ Chem2D_pState BC_1DFlame_Outflow(const Chem2D_pState &Wi,       //ICu
   //and Wo.p == Winput.p (constant pressure initial condition)
   double sum = Wi.rho*Wi.v.x*(Wi.v.x - Winlet.v.x);
   if( sum < ZERO){
+    cout << "\nAdjusting Outflow\n";
     Wnew.p = Wo.p;
   } else {
     //no relaxation
@@ -4450,7 +4469,7 @@ Chem2D_cState Viscous_Flux_n(Chem2D_pState &W,
   U.qflux = - W.kappa()*grad_T;
   //Thermal diffusion, q -= rho * sum ( hs * Ds *gradcs)
   U.qflux -= U.rho*U.thermal_diffusion(Temperature);  
-  
+
   //Turbulent heat flux
   //Thermal conduction, q = - kappa * grad(T)
   if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||

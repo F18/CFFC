@@ -1539,9 +1539,9 @@ void Reaction_set::ct_dSwdU_FiniteDiff( DenseMatrix &dSwdU,
 
     // perturb the species concetration array
     csave_k = c[j];
-    csave_N = c[num_species-1];
+//     csave_N = c[num_species-1];
     c[j] += eps;
-    c[num_species-1] = max(c[num_species-1]-eps, ZERO);
+//     c[num_species-1] = max(c[num_species-1]-eps, ZERO);
 
     // compute the perturbed reaction rates
     ct_gas->setMassFractions_NoNorm(c);
@@ -1559,7 +1559,7 @@ void Reaction_set::ct_dSwdU_FiniteDiff( DenseMatrix &dSwdU,
 
     // unperturb
     c[j] = csave_k;
-    c[num_species-1] = csave_N;
+//     c[num_species-1] = csave_N;
 
   } // endfor - columns
 
@@ -1569,7 +1569,7 @@ void Reaction_set::ct_dSwdU_FiniteDiff( DenseMatrix &dSwdU,
   ***********************************************
   *
   * COMMENT OUT THIS BLOCK OF CODE FOR dS/dT=0 ASSUMPTION
-  */
+  *
   //------------------------------------------------
   // Compute \frac{ \partial S_j }{ \partial T }
   //------------------------------------------------
@@ -1635,7 +1635,7 @@ void Reaction_set::ct_dSwdU_FiniteDiff( DenseMatrix &dSwdU,
 
   } // endfor - rows
         
-  /*
+  *
   ***********************************************
   * END FROZEN TEMPERATURE ASSUMPTION
   ***********************************************

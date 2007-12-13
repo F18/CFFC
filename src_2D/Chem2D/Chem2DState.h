@@ -1627,14 +1627,14 @@ inline bool Chem2D_cState::Unphysical_Properties_Check(const int Flow_Type, cons
 
   if ((Flow_Type == FLOWTYPE_INVISCID ||
        Flow_Type == FLOWTYPE_LAMINAR) &&
-      (rho <= ZERO ||!negative_speccheck(n) ||es() <= ZERO)) {
+      (rho <= ZERO ||!negative_speccheck(n) /*||es() <= ZERO*/)) {
     cout << "\n " << CFFC_Name() 
 	 << " Chem2D ERROR: Negative Density || Energy || mass fractions: \n" << *this <<endl;
     return false;
   }
   if ((Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON ||
        Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) &&
-      (rho <= ZERO || !negative_speccheck(n) ||es() <= ZERO ||
+      (rho <= ZERO || !negative_speccheck(n) /*||es() <= ZERO*/ ||
        rhok < ZERO ||rhoomega < ZERO)) {
     cout << "\n " << CFFC_Name() 
 	 << " Chem2D ERROR: Negative Density || Energy || mass fractions || Turbulent kinetic energy || : \n"

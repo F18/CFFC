@@ -68,9 +68,16 @@ int Open_Time_Accurate_File(ofstream &Time_Accurate_File,
       }   
       //Viscous Terms 
       Time_Accurate_File << "\"T\" \\ \n"
-			 << "\"e\" \\ \n"
-			 << "\"es\" \\ \n"
-			 << "\"e_ref\" \\ \n"; 
+			 << "\"rho*H\"  \\ \n"  
+			 <<"\"h\" \\ \n"
+			 <<"\"h_s\" \\ \n"
+			 <<"\"rho*E\" \\ \n"
+			 << "\"e\" \\  \n" 
+			 << "\"e_s\" \\ \n";
+       // reaction rates
+       for(int i =0 ;i<Soln.ns ;i++){
+ 	 Time_Accurate_File <<"\"omega_c"<<Soln.specdata[i].Speciesname()<<"\" \\ \n";
+       }
 //       for(int i=0;i<Soln.React.num_reactions; i++){
 // 	Time_Accurate_File <<"\"kf"<<i<<"\" \\ \n";
 // 	Time_Accurate_File <<"\"kb"<<i<<"\" \\ \n";
@@ -104,13 +111,21 @@ void Output_to_Time_Accurate_File(ostream &Time_Accurate_File,
 			       const double &Time,
 			       const Chem2D_pState &Soln){
   double Temp=Soln.T();
+  Chem2D_cState omega = Soln.Sw(Soln.React.reactset_flag,0);
 
   Time_Accurate_File << setprecision(6);
   Time_Accurate_File << Time << " " <<Soln 
 		     <<" "<<Temp
-		     <<" "<<Soln.e()
-		     <<" "<<Soln.es()
-                     <<" "<<Soln.eref();
+		     << " " << Soln.H() 
+		     << " " << Soln.h() 
+		     << " " << Soln.hs()
+		     << " " << Soln.E() 
+		     << " " << Soln.e()
+		     << " " << Soln.es();
+  for(int k=0; k<omega.ns; k++){
+    Time_Accurate_File <<" "<<omega.rhospec[k].c;
+  }
+
 //   for(int i=0;i<Soln.React.num_reactions; i++){
 //     double kf = Soln.React.reactions[i].kf(Temp);
 //     Time_Accurate_File <<" "<<kf
