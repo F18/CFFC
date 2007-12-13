@@ -175,8 +175,12 @@ class Vector3D{
     friend Vector3D &operator -=(Vector3D &V1, const Vector3D &V2);
     
     /* Relational operators. */
-    friend int operator ==(const Vector3D &V1, const Vector3D &V2);
-    friend int operator !=(const Vector3D &V1, const Vector3D &V2);
+    friend bool operator ==(const Vector3D &V1, const Vector3D &V2);
+    friend bool operator !=(const Vector3D &V1, const Vector3D &V2);
+    friend bool operator <=(const Vector3D &V1, const Vector3D &V2);
+    friend bool operator >=(const Vector3D &V1, const Vector3D &V2);
+    friend bool operator <(const Vector3D &V1, const Vector3D &V2);
+    friend bool operator >(const Vector3D &V1, const Vector3D &V2);
     
     /* Input-output operators. */
     friend ostream &operator << (ostream &out_file, const Vector3D &V);
@@ -369,12 +373,28 @@ inline Vector3D &operator -=(Vector3D &V1, const Vector3D &V2) {
 /********************************************************
  * Vector3D -- Relational operators.                    *
  ********************************************************/
-inline int operator ==(const Vector3D &V1, const Vector3D &V2) {
+inline bool operator ==(const Vector3D &V1, const Vector3D &V2) {
   return (V1.x == V2.x && V1.y == V2.y && V1.z == V2.z);
 }
 
-inline int operator !=(const Vector3D &V1, const Vector3D &V2) {
+inline bool operator !=(const Vector3D &V1, const Vector3D &V2) {
   return (V1.x != V2.x || V1.y != V2.y || V1.z != V2.z);
+}
+
+inline bool operator <=(const Vector3D &V1, const Vector3D &V2) {
+    return (V1.x <= V2.x && V1.y <= V2.y && V1.z <= V2.z);
+}
+
+inline bool operator >=(const Vector3D &V1, const Vector3D &V2) {
+    return (V1.x >= V2.x && V1.y >= V2.y && V1.z >= V2.z);
+}
+
+inline bool operator <(const Vector3D &V1, const Vector3D &V2) {
+    return (V1.x < V2.x && V1.y < V2.y && V1.z < V2.z);
+}
+
+inline bool operator >(const Vector3D &V1, const Vector3D &V2) {
+    return (V1.x > V2.x && V1.y > V2.y && V1.z > V2.z);
 }
 
 /********************************************************
