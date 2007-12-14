@@ -3222,144 +3222,15 @@ int dUdt_Residual_Evaluation(Flame2D_Quad_Block &SolnBlk,
       
       if ( j >= SolnBlk.JCl-JCl_overlap && j <= SolnBlk.JCu+JCu_overlap ) { 
 
-	//-----------------------------------------------------------
 
-	// EAST BOUNDARY
-	if (i == SolnBlk.ICl-1 && 
-	    (SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
-	     SolnBlk.Grid.BCtypeW[j] == BC_CHARACTERISTIC ||
-	     SolnBlk.Grid.BCtypeW[j] == BC_FREE_SLIP_ISOTHERMAL ||
-	     SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
-	     SolnBlk.Grid.BCtypeW[j] == BC_MOVING_WALL_ISOTHERMAL ||
-	     SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_HEATFLUX ||
-	     SolnBlk.Grid.BCtypeW[j] == BC_MOVING_WALL_HEATFLUX ||
-	     SolnBlk.Grid.BCtypeW[j] == BC_1DFLAME_INFLOW ||
-	     SolnBlk.Grid.BCtypeW[j] == BC_1DFLAME_OUTFLOW ||
-	     SolnBlk.Grid.BCtypeW[j] == BC_2DFLAME_INFLOW ||
-	     SolnBlk.Grid.BCtypeW[j] == BC_2DFLAME_OUTFLOW )) {
-	  
-	  // reconstruct to get the right face state
-	  dX = SolnBlk.Grid.xfaceW(i+1, j)-SolnBlk.Grid.Cell[i+1][j].Xc;	      	      
-	  Wr.Reconstruct( SolnBlk.W[i+1][j], SolnBlk.phi[i+1][j],
-			  SolnBlk.dWdx[i+1][j], SolnBlk.dWdy[i+1][j], dX );
-	  
-	  // WEST face of cell (i+1,j) is a REFLECTION boundary.
-	  if (SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION) {
-	    Wl.Reflect(Wr, SolnBlk.Grid.nfaceW(i+1, j));
-	  // WEST face of cell (i+1,j) is a FREE_SLIP_ISOTHERMAL boundary.
-	  } else if (SolnBlk.Grid.BCtypeW[j] == BC_FREE_SLIP_ISOTHERMAL) {
-	    Wl.Free_Slip(Wr,SolnBlk.WoW[j], SolnBlk.Grid.nfaceW(i+1, j),FIXED_TEMPERATURE_WALL);	      
-	  // WEST face of cell (i+1,j) is a WALL_VISCOUS_ISOTHERMAL boundary.
-	  } else if (SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL) {
-	    Wl.No_Slip(Wr,SolnBlk.WoW[j], SolnBlk.Grid.nfaceW(i+1, j),FIXED_TEMPERATURE_WALL);
-	  // WEST face of cell (i+1,j) is a MOVING_WALL_ISOTHERMAL boundary.
-	  } else if (SolnBlk.Grid.BCtypeW[j] == BC_MOVING_WALL_ISOTHERMAL) {
-	    Wl.Moving_Wall(Wr,SolnBlk.WoW[j], SolnBlk.Grid.nfaceW(i+1, j),
-			   SolnBlk.Moving_wall_velocity,FIXED_TEMPERATURE_WALL);
-	  // WEST face of cell (i+1,j) is a WALL_VISCOUS_HEATFLUX boundary.
-	  } else if (SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_HEATFLUX) {
-	    Wl.No_Slip(Wr,SolnBlk.WoW[j], SolnBlk.Grid.nfaceW(i+1, j), ADIABATIC_WALL);
-	  // WEST face of cell (i+1,j) is a MOVING_WALL_HEATFLUX boundary.
-	  } else if (SolnBlk.Grid.BCtypeW[j] == BC_MOVING_WALL_HEATFLUX) {
-	    Wl.Moving_Wall(Wr,SolnBlk.WoW[j], SolnBlk.Grid.nfaceW(i+1, j),
-			   SolnBlk.Moving_wall_velocity,ADIABATIC_WALL );
-	  // WEST face of cell (i+1,j) is a 1DFLAME_INFLOW boundary.
-	  } else if (SolnBlk.Grid.BCtypeW[j] == BC_1DFLAME_INFLOW){
-	    Wl.BC_1DFlame_Inflow(Wr, 
-				 SolnBlk.WoW[j],
-				 SolnBlk.W[SolnBlk.ICu][j],
-				 SolnBlk.Grid.nfaceW(i+1, j));	    
-	  // WEST face of cell (i+1,j) is a 1DFLAME_OUTFLOW boundary.
-	  } else if (SolnBlk.Grid.BCtypeW[j] == BC_1DFLAME_OUTFLOW){
-	    Wl.BC_1DFlame_Outflow(Wr, 
-				  SolnBlk.WoW[j], 
-				  SolnBlk.W[SolnBlk.ICu][j],
-				  SolnBlk.Grid.nfaceW(i+1, j));
-	  // WEST face of cell (i+1,j) is a CHARACTERISTIC boundary.
-	  } else if (SolnBlk.Grid.BCtypeW[j] == BC_CHARACTERISTIC) {
-	    Wl.BC_Characteristic_Pressure(Wr, 
-					  SolnBlk.WoW[j], 
-					  SolnBlk.Grid.nfaceW(i+1, j));
-	  // WEST face of cell (i+1,j) is an UNKNOWN boundary.
-	  } else {
-	    cerr<< "\n Wrong BC in  dUdt_Residual_Evaluation "<< SolnBlk.Grid.BCtypeW[j]; exit(1);
-	  }
-	  
-	// WEST BOUNDARY
-	} else if (i == SolnBlk.ICu && 
-		   (SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
-		    SolnBlk.Grid.BCtypeE[j] == BC_CHARACTERISTIC ||  
-		    SolnBlk.Grid.BCtypeE[j] == BC_FREE_SLIP_ISOTHERMAL ||
-		    SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
-		    SolnBlk.Grid.BCtypeE[j] == BC_MOVING_WALL_ISOTHERMAL ||
-		    SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_HEATFLUX ||
-		    SolnBlk.Grid.BCtypeE[j] == BC_MOVING_WALL_HEATFLUX ||
-		    SolnBlk.Grid.BCtypeE[j] == BC_1DFLAME_INFLOW ||
-		    SolnBlk.Grid.BCtypeE[j] == BC_1DFLAME_OUTFLOW ||
-		    SolnBlk.Grid.BCtypeE[j] == BC_2DFLAME_INFLOW ||
-		    SolnBlk.Grid.BCtypeE[j] == BC_2DFLAME_OUTFLOW )) {
-
-	  // reconstruct to get the right face state
-	  dX = SolnBlk.Grid.xfaceE(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
-	  Wl.Reconstruct( SolnBlk.W[i][j], SolnBlk.phi[i][j], 
-			  SolnBlk.dWdx[i][j], SolnBlk.dWdy[i][j], dX );
-
-	  // EAST face of cell (i,j) is a REFLECTION boundary.
-	  if (SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION) {
-	    Wr.Reflect(Wl, SolnBlk.Grid.nfaceE(i, j));   
-	  // EAST face of cell (i,j) is a FREE_SLIP_ISOTHERMAL boundary.
-	  } else if (SolnBlk.Grid.BCtypeE[j] == BC_FREE_SLIP_ISOTHERMAL) {
-	    Wr.Free_Slip(Wl, SolnBlk.WoE[j],SolnBlk.Grid.nfaceE(i, j),FIXED_TEMPERATURE_WALL);
-	  // EAST face of cell (i,j) is a WALL_VISCOUS_ISOTHERMAL boundary.
-	  } else if (SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL) {
-	    Wr.No_Slip(Wl, SolnBlk.WoE[j],SolnBlk.Grid.nfaceE(i, j),FIXED_TEMPERATURE_WALL);
-	  // EAST face of cell (i,j) is a MOVING_WALL_ISOTHERMAL boundary.
-	  } else if (SolnBlk.Grid.BCtypeE[j] == BC_MOVING_WALL_ISOTHERMAL) {
-	    Wr.Moving_Wall(Wl,SolnBlk.WoE[j], SolnBlk.Grid.nfaceE(i, j),
-			   SolnBlk.Moving_wall_velocity,FIXED_TEMPERATURE_WALL);
-	  // EAST face of cell (i,j) is a WALL_VISCOUS_HEATFLUX boundary.
-	  } else if (SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_HEATFLUX) {
-	    Wr.No_Slip(Wl, SolnBlk.WoE[j],SolnBlk.Grid.nfaceE(i, j),ADIABATIC_WALL);
-	  // EAST face of cell (i,j) is a MOVING_WALL_HEATFLUX boundary.
-	  } else if (SolnBlk.Grid.BCtypeE[j] == BC_MOVING_WALL_HEATFLUX) {
-	    Wr.Moving_Wall(Wl,SolnBlk.WoE[j], SolnBlk.Grid.nfaceE(i, j),
-			   SolnBlk.Moving_wall_velocity,ADIABATIC_WALL);
-	  // EAST face of cell (i,j) is a 1DFLAME_INFLOW boundary.
-	  } else if (SolnBlk.Grid.BCtypeE[j] == BC_1DFLAME_INFLOW){
-	    Wr.BC_1DFlame_Inflow(Wl, 
-				 SolnBlk.WoE[j],
-				 SolnBlk.W[SolnBlk.ICl][j],
-				 SolnBlk.Grid.nfaceE(i, j));
-	  // EAST face of cell (i,j) is a 1DFLAME_OUTFLOW boundary.
-	  } else if (SolnBlk.Grid.BCtypeE[j] == BC_1DFLAME_OUTFLOW){
-	    Wr.BC_1DFlame_Outflow(Wl, 
-				  SolnBlk.WoE[j],
-				  SolnBlk.W[SolnBlk.ICl][j], 
-				  SolnBlk.Grid.nfaceE(i, j));
-	  // EAST face of cell (i,j) is a CHARACTERISTIC boundary.
-	  } else if (SolnBlk.Grid.BCtypeE[j] == BC_CHARACTERISTIC) { 
-	    Wr.BC_Characteristic_Pressure(Wl, 
-					  SolnBlk.WoE[j], 
-					  SolnBlk.Grid.nfaceE(i, j));
-	  // EAST face of cell (i,j) is a UNKNOWN boundary.
-	  } else {
-	    cerr<< "\n Wrong BC in  dUdt_Residual_Evaluation "<< SolnBlk.Grid.BCtypeE[j]; exit(1);
-	  }
-
-	// EAST face is either a normal cell or possibly a FIXED, 
-	// NONE or EXTRAPOLATION boundary.
-	} else {            
-	  dX = SolnBlk.Grid.xfaceE(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
-	  Wl.Reconstruct( SolnBlk.W[i][j], SolnBlk.phi[i][j],
-			  SolnBlk.dWdx[i][j], SolnBlk.dWdy[i][j], dX );
-	  dX = SolnBlk.Grid.xfaceW(i+1, j)-SolnBlk.Grid.Cell[i+1][j].Xc;
-	  Wr.Reconstruct( SolnBlk.W[i+1][j], SolnBlk.phi[i+1][j],
-			  SolnBlk.dWdx[i+1][j], SolnBlk.dWdy[i+1][j], dX );
-	} // endif
-
+	// interpolate
+	dX = SolnBlk.Grid.xfaceE(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
+	Wl.Reconstruct( SolnBlk.W[i][j], SolnBlk.phi[i][j],
+			SolnBlk.dWdx[i][j], SolnBlk.dWdy[i][j], dX );
+	dX = SolnBlk.Grid.xfaceW(i+1, j)-SolnBlk.Grid.Cell[i+1][j].Xc;
+	Wr.Reconstruct( SolnBlk.W[i+1][j], SolnBlk.phi[i+1][j],
+			SolnBlk.dWdx[i+1][j], SolnBlk.dWdy[i+1][j], dX );
     
-	//-----------------------------------------------------------
-
 	// Spacing for Preconditioner 
 	if(Input_Parameters.Preconditioning){
 	  delta_n = SolnBlk.delta_n(i,j);
@@ -3490,153 +3361,13 @@ int dUdt_Residual_Evaluation(Flame2D_Quad_Block &SolnBlk,
   for ( int i = SolnBlk.ICl-ICl_overlap ; i <= SolnBlk.ICu+ICu_overlap ; ++i ) {
     for ( int j = SolnBlk.JCl-1-JCl_overlap ; j <= SolnBlk.JCu+JCu_overlap ; ++j ) {
       
-      //-----------------------------------------------------------
-
-      // SOUTH BOUNDARY
-      if (j == SolnBlk.JCl-1 && 
-	  (SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
-	   SolnBlk.Grid.BCtypeS[i] == BC_CHARACTERISTIC ||
-	   SolnBlk.Grid.BCtypeS[i] == BC_FREE_SLIP_ISOTHERMAL ||
-	   SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
-	   SolnBlk.Grid.BCtypeS[i] == BC_MOVING_WALL_ISOTHERMAL ||
-	   SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_HEATFLUX ||
-	   SolnBlk.Grid.BCtypeS[i] == BC_MOVING_WALL_HEATFLUX || 
-	   SolnBlk.Grid.BCtypeS[i] == BC_1DFLAME_INFLOW ||
-	   SolnBlk.Grid.BCtypeS[i] == BC_1DFLAME_OUTFLOW || 
-	   SolnBlk.Grid.BCtypeS[i] == BC_2DFLAME_INFLOW ||
-	   SolnBlk.Grid.BCtypeS[i] == BC_2DFLAME_OUTFLOW )) {
-	
-	// reconstruct to get the right face state
-	dX = SolnBlk.Grid.xfaceS(i, j+1)-SolnBlk.Grid.Cell[i][j+1].Xc;
-	Wr.Reconstruct( SolnBlk.W[i][j+1], SolnBlk.phi[i][j+1], 
-			SolnBlk.dWdx[i][j+1], SolnBlk.dWdy[i][j+1], dX );
-
-	// SOUTH face of cell (i,j+1) is a REFLECTION boundary.
-	if (SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION) {
-	  Wl.Reflect(Wr, SolnBlk.Grid.nfaceS(i, j+1)); 
-	// SOUTH face of cell (i,j+1) is a FREE_SLIP_ISOTHERMAL boundary.
-	} else if (SolnBlk.Grid.BCtypeS[i] == BC_FREE_SLIP_ISOTHERMAL) {
-	  Wl.Free_Slip(Wr,SolnBlk.WoS[i], SolnBlk.Grid.nfaceS(i, j+1),FIXED_TEMPERATURE_WALL);
-	// SOUTH face of cell (i,j+1) is a WALL_VISCOUS_ISOTHERMAL boundary.
-	} else if (SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL) {
-	  Wl.No_Slip(Wr,SolnBlk.WoS[i], SolnBlk.Grid.nfaceS(i, j+1),FIXED_TEMPERATURE_WALL);
-	// SOUTH face of cell (i,j+1) is a MOVING_WALL_ISOTHERMAL boundary.
-	} else if (SolnBlk.Grid.BCtypeS[i] == BC_MOVING_WALL_ISOTHERMAL) {
-	  Wl.Moving_Wall(Wr,SolnBlk.WoS[i], SolnBlk.Grid.nfaceS(i, j+1),
-			 SolnBlk.Moving_wall_velocity,FIXED_TEMPERATURE_WALL);
-	// SOUTH face of cell (i,j+1) is a WALL_VISCOUS_HEATFLUX boundary.
-	} else if (SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_HEATFLUX) {
-	  Wl.No_Slip(Wr,SolnBlk.WoS[i], SolnBlk.Grid.nfaceS(i, j+1),ADIABATIC_WALL);
-	// SOUTH face of cell (i,j+1) is a MOVING_WALL_HEATFLUX boundary.
-	} else if (SolnBlk.Grid.BCtypeS[i] == BC_MOVING_WALL_HEATFLUX) {
-	  Wl.Moving_Wall(Wr,SolnBlk.WoS[i], SolnBlk.Grid.nfaceS(i, j+1),
-			 SolnBlk.Moving_wall_velocity,ADIABATIC_WALL); 
-	// SOUTH face of cell (i,j+1) is a 1DFLAME_INFLOW boundary.
-	} else if (SolnBlk.Grid.BCtypeS[i] == BC_1DFLAME_INFLOW){
-	  Wl.BC_1DFlame_Inflow(Wr, 
-			       SolnBlk.WoS[i], 
-			       SolnBlk.W[i][SolnBlk.JCu],
-			       SolnBlk.Grid.nfaceS(i, j+1));
-	// SOUTH face of cell (i,j+1) is a 2DFLAME_INFLOW boundary.
-	} else if (SolnBlk.Grid.BCtypeS[i] == BC_2DFLAME_INFLOW){
-	  Wl.BC_2DFlame_Inflow(Wr, 
-			       SolnBlk.WoS[i], 
-			       SolnBlk.Grid.nfaceS(i, j+1));
-	// SOUTH face of cell (i,j+1) is a 1DFLAME_OUTFLOW boundary.
-	} else if (SolnBlk.Grid.BCtypeS[i] == BC_1DFLAME_OUTFLOW){
-	  Wl.BC_1DFlame_Outflow(Wr, 
-				SolnBlk.WoS[i], 
-				SolnBlk.W[i][SolnBlk.JCu],
-				SolnBlk.Grid.nfaceS(i, j+1));
-	// SOUTH face of cell (i,j+1) is a CHARACTERISTIC boundary.
-	} else if(SolnBlk.Grid.BCtypeS[i] == BC_CHARACTERISTIC)  { 
-	  Wl.BC_Characteristic_Pressure(Wr, 
-					SolnBlk.WoS[i], 
-					SolnBlk.Grid.nfaceS(i, j+1));
-	// SOUTH face of cell (i,j+1) is a UNKNOWN boundary.
-	} else {
-	  cerr<< "\n Wrong BC in  dUdt_Residual_Evaluation "<< SolnBlk.Grid.BCtypeS[i]; exit(1);
-	} 
-
-      // NORTH BOUNDARY
-      } else if (j == SolnBlk.JCu && 
-		 (SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
-		  SolnBlk.Grid.BCtypeN[i] == BC_CHARACTERISTIC ||
-		  SolnBlk.Grid.BCtypeN[i] == BC_FREE_SLIP_ISOTHERMAL || 
-		  SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
-		  SolnBlk.Grid.BCtypeN[i] == BC_MOVING_WALL_ISOTHERMAL ||
-		  SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_HEATFLUX ||
-		  SolnBlk.Grid.BCtypeN[i] == BC_MOVING_WALL_HEATFLUX ||
-		  SolnBlk.Grid.BCtypeN[i] == BC_1DFLAME_INFLOW ||
-		  SolnBlk.Grid.BCtypeN[i] == BC_1DFLAME_OUTFLOW||
-		  SolnBlk.Grid.BCtypeN[i] == BC_2DFLAME_INFLOW ||
-		  SolnBlk.Grid.BCtypeN[i] == BC_2DFLAME_OUTFLOW )) {
-	  
-	// reconstruct to get the left face state
-	dX = SolnBlk.Grid.xfaceN(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
-	Wl.Reconstruct( SolnBlk.W[i][j], SolnBlk.phi[i][j], 
-			SolnBlk.dWdx[i][j], SolnBlk.dWdy[i][j], dX );
-
-	// NORTH face of cell (i,j) is a REFLECTION boundary.
-	if (SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION) {
-	  Wr.Reflect(Wl, SolnBlk.Grid.nfaceN(i, j));	
-	// NORTH face of cell (i,j) is a FREE_SLIP_ISOTHERMAL boundary.
-	} else if (SolnBlk.Grid.BCtypeN[i] == BC_FREE_SLIP_ISOTHERMAL) {
-	  Wr.Free_Slip(Wl, SolnBlk.WoN[i], SolnBlk.Grid.nfaceN(i, j),FIXED_TEMPERATURE_WALL);
-	// NORTH face of cell (i,j) is a WALL_VISCOUS_ISOTHERMAL boundary.
-	} else if (SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL) {
-	  Wr.No_Slip(Wl, SolnBlk.WoN[i], SolnBlk.Grid.nfaceN(i, j),FIXED_TEMPERATURE_WALL);
-	// NORTH face of cell (i,j) is a MOVING_WALL_ISOTHERMAL boundary.
-	} else if (SolnBlk.Grid.BCtypeN[i] == BC_MOVING_WALL_ISOTHERMAL) {
-	  Wr.Moving_Wall(Wl,SolnBlk.WoN[i],  SolnBlk.Grid.nfaceN(i, j),
-			 SolnBlk.Moving_wall_velocity,FIXED_TEMPERATURE_WALL);
-	// NORTH face of cell (i,j) is a WALL_VISCOUS_HEATFLUX boundary.
-	} else if (SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_HEATFLUX) {
-	  Wr.No_Slip(Wl, SolnBlk.WoN[i], SolnBlk.Grid.nfaceN(i, j),ADIABATIC_WALL );
-	// NORTH face of cell (i,j) is a MOVING_WALL_HEATFLUX boundary.
-	} else if (SolnBlk.Grid.BCtypeN[i] == BC_MOVING_WALL_HEATFLUX) {
-	  Wr.Moving_Wall(Wl,SolnBlk.WoN[i],  SolnBlk.Grid.nfaceN(i, j),
-			 SolnBlk.Moving_wall_velocity,ADIABATIC_WALL ); 
-	// NORTH face of cell (i,j) is a 1DFLAME_INFLOW boundary.
-	} else if (SolnBlk.Grid.BCtypeN[i] == BC_1DFLAME_INFLOW){
-	  Wr.BC_1DFlame_Inflow(Wl, 
-			       SolnBlk.WoN[i], 
-			       SolnBlk.W[i][SolnBlk.JCl],
-			       SolnBlk.Grid.nfaceN(i, j));
-	// NORTH face of cell (i,j) is a 1DFLAME_OUTFLOW boundary.
-	} else if (SolnBlk.Grid.BCtypeN[i] == BC_1DFLAME_OUTFLOW){
-	  Wr.BC_1DFlame_Outflow(Wl, 
-				SolnBlk.WoN[i], 
-				SolnBlk.W[i][SolnBlk.JCl],
-				SolnBlk.Grid.nfaceN(i, j));
-	// NORTH face of cell (i,j) is a 2DFLAME_OUTFLOW boundary.
-	} else if (SolnBlk.Grid.BCtypeN[i] == BC_2DFLAME_OUTFLOW){
-	  Wr.BC_2DFlame_Outflow(Wl, 
-				SolnBlk.WoN[i], 
-				SolnBlk.Grid.nfaceN(i, j));	    
-	// NORTH face of cell (i,j) is a CHARACTERISTIC boundary.
-	} else if(SolnBlk.Grid.BCtypeN[i] == BC_CHARACTERISTIC)  { 
-	  Wr.BC_Characteristic_Pressure(Wl, 
-					SolnBlk.WoN[i], 
-					SolnBlk.Grid.nfaceN(i, j));
-	// NORTH face of cell (i,j) is a UKNOWN boundary.
-	} else {
-	  cerr<< "\n Wrong BC in  dUdt_Residual_Evaluation "<< SolnBlk.Grid.BCtypeN[i]; exit(1);
-	}  
-	  
-      // NORTH face is either a normal cell or possibly a FIXED, 
-      // NONE or EXTRAPOLATION boundary.
-      } else {
-	dX = SolnBlk.Grid.xfaceN(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
-	Wl.Reconstruct( SolnBlk.W[i][j], SolnBlk.phi[i][j],
-			SolnBlk.dWdx[i][j], SolnBlk.dWdy[i][j], dX );
-	dX = SolnBlk.Grid.xfaceS(i, j+1)-SolnBlk.Grid.Cell[i][j+1].Xc;
-	Wr.Reconstruct( SolnBlk.W[i][j+1], SolnBlk.phi[i][j+1],
-			SolnBlk.dWdx[i][j+1], SolnBlk.dWdy[i][j+1], dX );
-      }
-	  
-      //-----------------------------------------------------------
-
+      // interpolate
+      dX = SolnBlk.Grid.xfaceN(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
+      Wl.Reconstruct( SolnBlk.W[i][j], SolnBlk.phi[i][j],
+		      SolnBlk.dWdx[i][j], SolnBlk.dWdy[i][j], dX );
+      dX = SolnBlk.Grid.xfaceS(i, j+1)-SolnBlk.Grid.Cell[i][j+1].Xc;
+      Wr.Reconstruct( SolnBlk.W[i][j+1], SolnBlk.phi[i][j+1],
+		      SolnBlk.dWdx[i][j+1], SolnBlk.dWdy[i][j+1], dX );
       // Spacing for Preconditioner 
       if(Input_Parameters.Preconditioning){
 	delta_n = SolnBlk.delta_n(i,j);
@@ -3709,8 +3440,6 @@ int dUdt_Residual_Evaluation(Flame2D_Quad_Block &SolnBlk,
       SolnBlk.dUdt[i][j][0].add( Flux, -SolnBlk.Grid.lfaceN(i, j)/SolnBlk.Grid.Cell[i][j].A );
       SolnBlk.dUdt[i][j+1][0].add( Flux, SolnBlk.Grid.lfaceS(i, j+1)/SolnBlk.Grid.Cell[i][j+1].A );
 	
-      //-----------------------------------------------------------
-
       // Save south and north face boundary flux.
       // USED for AMR 
       if (j == SolnBlk.JCl-1) {
@@ -3875,144 +3604,17 @@ int dUdt_Multistage_Explicit(Flame2D_Quad_Block &SolnBlk,
       } // endif - stage
 
       //-----------------------------------------------------------
- 
-      if ( j > SolnBlk.JCl-1 && j < SolnBlk.JCu+1 ) {
+
+      if ( j >= SolnBlk.JCl && j <= SolnBlk.JCu ) {
 	 
-	// EAST BOUNDARY
-	if (i == SolnBlk.ICl-1 && 
-	    (SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION ||
-	     SolnBlk.Grid.BCtypeW[j] == BC_CHARACTERISTIC ||
-	     SolnBlk.Grid.BCtypeW[j] == BC_FREE_SLIP_ISOTHERMAL ||
-	     SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
-	     SolnBlk.Grid.BCtypeW[j] == BC_MOVING_WALL_ISOTHERMAL ||
-	     SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_HEATFLUX ||
-	     SolnBlk.Grid.BCtypeW[j] == BC_MOVING_WALL_HEATFLUX ||
-	     SolnBlk.Grid.BCtypeW[j] == BC_1DFLAME_INFLOW ||
-	     SolnBlk.Grid.BCtypeW[j] == BC_1DFLAME_OUTFLOW ||
-	     SolnBlk.Grid.BCtypeW[j] == BC_2DFLAME_INFLOW ||
-	     SolnBlk.Grid.BCtypeW[j] == BC_2DFLAME_OUTFLOW )) {
-	  
-	  // reconstruct to get the right face state
-	  dX = SolnBlk.Grid.xfaceW(i+1, j)-SolnBlk.Grid.Cell[i+1][j].Xc;	      	      
-	  Wr.Reconstruct( SolnBlk.W[i+1][j], SolnBlk.phi[i+1][j],
-			  SolnBlk.dWdx[i+1][j], SolnBlk.dWdy[i+1][j], dX );	
-	  
-	  // WEST face of cell (i+1,j) is a REFLECTION boundary.
-	  if (SolnBlk.Grid.BCtypeW[j] == BC_REFLECTION) {
-	    Wl.Reflect(Wr, SolnBlk.Grid.nfaceW(i+1, j));
-	  // WEST face of cell (i+1,j) is a FREE_SLIP_ISOTHERMAL boundary.
-	  } else if (SolnBlk.Grid.BCtypeW[j] == BC_FREE_SLIP_ISOTHERMAL) {
-	    Wl.Free_Slip(Wr,SolnBlk.WoW[j], SolnBlk.Grid.nfaceW(i+1, j),FIXED_TEMPERATURE_WALL);	      
-	  // WEST face of cell (i+1,j) is a WALL_VISCOUS_ISOTHERMAL boundary.
-	  } else if (SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL) {
-	    Wl.No_Slip(Wr,SolnBlk.WoW[j], SolnBlk.Grid.nfaceW(i+1, j),FIXED_TEMPERATURE_WALL);
-	  // WEST face of cell (i+1,j) is a MOVING_WALL_ISOTHERMAL boundary.
-	  } else if (SolnBlk.Grid.BCtypeW[j] == BC_MOVING_WALL_ISOTHERMAL) {
-	    Wl.Moving_Wall(Wr,SolnBlk.WoW[j], SolnBlk.Grid.nfaceW(i+1, j),
-			   SolnBlk.Moving_wall_velocity,FIXED_TEMPERATURE_WALL);
-	  // WEST face of cell (i+1,j) is a WALL_VISCOUS_HEATFLUX boundary.
-	  } else if (SolnBlk.Grid.BCtypeW[j] == BC_WALL_VISCOUS_HEATFLUX) {
-	    Wl.No_Slip(Wr,SolnBlk.WoW[j], SolnBlk.Grid.nfaceW(i+1, j), ADIABATIC_WALL);
-	  // WEST face of cell (i+1,j) is a MOVING_WALL_HEATFLUX boundary.
-	  } else if (SolnBlk.Grid.BCtypeW[j] == BC_MOVING_WALL_HEATFLUX) {
-	    Wl.Moving_Wall(Wr,SolnBlk.WoW[j], SolnBlk.Grid.nfaceW(i+1, j),
-			   SolnBlk.Moving_wall_velocity,ADIABATIC_WALL );
-	  // WEST face of cell (i+1,j) is a 1DFLAME_INFLOW boundary.
-	  } else if (SolnBlk.Grid.BCtypeW[j] == BC_1DFLAME_INFLOW){
-	    Wl.BC_1DFlame_Inflow(Wr, 
-				 SolnBlk.WoW[j],
-				 SolnBlk.W[SolnBlk.ICu][j],
-				 SolnBlk.Grid.nfaceW(i+1, j));	    
-	  // WEST face of cell (i+1,j) is a 1DFLAME_OUTFLOW boundary.
-	  } else if (SolnBlk.Grid.BCtypeW[j] == BC_1DFLAME_OUTFLOW){
-	    Wl.BC_1DFlame_Outflow(Wr, 
-				  SolnBlk.WoW[j], 
-				  SolnBlk.W[SolnBlk.ICu][j],
-				  SolnBlk.Grid.nfaceW(i+1, j));
-	  // WEST face of cell (i+1,j) is a CHARACTERISTIC boundary.
-	  } else if (SolnBlk.Grid.BCtypeW[j] == BC_CHARACTERISTIC) {
-	    Wl.BC_Characteristic_Pressure(Wr, 
-					  SolnBlk.WoW[j], 
-					  SolnBlk.Grid.nfaceW(i+1, j));
-	  // WEST face of cell (i+1,j) is an UNKNOWN boundary.
-	  } else {
-	    cerr<< "\n Wrong BC in  dUdt_Residual_Evaluation "<< SolnBlk.Grid.BCtypeW[j]; exit(1);
-	  }
-	  
-	// WEST BOUNDARY
-	} else if (i == SolnBlk.ICu && 
-		   (SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION ||
-		    SolnBlk.Grid.BCtypeE[j] == BC_CHARACTERISTIC ||  
-		    SolnBlk.Grid.BCtypeE[j] == BC_FREE_SLIP_ISOTHERMAL ||
-		    SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
-		    SolnBlk.Grid.BCtypeE[j] == BC_MOVING_WALL_ISOTHERMAL ||
-		    SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_HEATFLUX ||
-		    SolnBlk.Grid.BCtypeE[j] == BC_MOVING_WALL_HEATFLUX ||
-		    SolnBlk.Grid.BCtypeE[j] == BC_1DFLAME_INFLOW ||
-		    SolnBlk.Grid.BCtypeE[j] == BC_1DFLAME_OUTFLOW ||
-		    SolnBlk.Grid.BCtypeE[j] == BC_2DFLAME_INFLOW ||
-		    SolnBlk.Grid.BCtypeE[j] == BC_2DFLAME_OUTFLOW )) {
-
-	  // reconstruct to get the right face state
-	  dX = SolnBlk.Grid.xfaceE(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
-	  Wl.Reconstruct( SolnBlk.W[i][j], SolnBlk.phi[i][j],
-			  SolnBlk.dWdx[i][j], SolnBlk.dWdy[i][j], dX );
-
-	  // EAST face of cell (i,j) is a REFLECTION boundary.
-	  if (SolnBlk.Grid.BCtypeE[j] == BC_REFLECTION) {
-	    Wr.Reflect(Wl, SolnBlk.Grid.nfaceE(i, j));   
-	  // EAST face of cell (i,j) is a FREE_SLIP_ISOTHERMAL boundary.
-	  } else if (SolnBlk.Grid.BCtypeE[j] == BC_FREE_SLIP_ISOTHERMAL) {
-	    Wr.Free_Slip(Wl, SolnBlk.WoE[j],SolnBlk.Grid.nfaceE(i, j),FIXED_TEMPERATURE_WALL);
-	  // EAST face of cell (i,j) is a WALL_VISCOUS_ISOTHERMAL boundary.
-	  } else if (SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL) {
-	    Wr.No_Slip(Wl, SolnBlk.WoE[j],SolnBlk.Grid.nfaceE(i, j),FIXED_TEMPERATURE_WALL);
-	  // EAST face of cell (i,j) is a MOVING_WALL_ISOTHERMAL boundary.
-	  } else if (SolnBlk.Grid.BCtypeE[j] == BC_MOVING_WALL_ISOTHERMAL) {
-	    Wr.Moving_Wall(Wl,SolnBlk.WoE[j], SolnBlk.Grid.nfaceE(i, j),
-			   SolnBlk.Moving_wall_velocity,FIXED_TEMPERATURE_WALL);
-	  // EAST face of cell (i,j) is a WALL_VISCOUS_HEATFLUX boundary.
-	  } else if (SolnBlk.Grid.BCtypeE[j] == BC_WALL_VISCOUS_HEATFLUX) {
-	    Wr.No_Slip(Wl, SolnBlk.WoE[j],SolnBlk.Grid.nfaceE(i, j),ADIABATIC_WALL);
-	  // EAST face of cell (i,j) is a MOVING_WALL_HEATFLUX boundary.
-	  } else if (SolnBlk.Grid.BCtypeE[j] == BC_MOVING_WALL_HEATFLUX) {
-	    Wr.Moving_Wall(Wl,SolnBlk.WoE[j], SolnBlk.Grid.nfaceE(i, j),
-			   SolnBlk.Moving_wall_velocity,ADIABATIC_WALL);
-	  // EAST face of cell (i,j) is a 1DFLAME_INFLOW boundary.
-	  } else if (SolnBlk.Grid.BCtypeE[j] == BC_1DFLAME_INFLOW){
-	    Wr.BC_1DFlame_Inflow(Wl, 
-				 SolnBlk.WoE[j],
-				 SolnBlk.W[SolnBlk.ICl][j],
-				 SolnBlk.Grid.nfaceE(i, j));
-	  // EAST face of cell (i,j) is a 1DFLAME_OUTFLOW boundary.
-	  } else if (SolnBlk.Grid.BCtypeE[j] == BC_1DFLAME_OUTFLOW){
-	    Wr.BC_1DFlame_Outflow(Wl, 
-				  SolnBlk.WoE[j],
-				  SolnBlk.W[SolnBlk.ICl][j], 
-				  SolnBlk.Grid.nfaceE(i, j));
-	  // EAST face of cell (i,j) is a CHARACTERISTIC boundary.
-	  } else if (SolnBlk.Grid.BCtypeE[j] == BC_CHARACTERISTIC) { 
-	    Wr.BC_Characteristic_Pressure(Wl, 
-					  SolnBlk.WoE[j], 
-					  SolnBlk.Grid.nfaceE(i, j));
-	  // EAST face of cell (i,j) is a UNKNOWN boundary.
-	  } else {
-	    cerr<< "\n Wrong BC in  dUdt_Residual_Evaluation "<< SolnBlk.Grid.BCtypeE[j]; exit(1);
-	  }
-
-	// EAST face is either a normal cell or possibly a FIXED, 
-	// NONE or EXTRAPOLATION boundary.
-	} else {            
-	  dX = SolnBlk.Grid.xfaceE(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
-	  Wl.Reconstruct( SolnBlk.W[i][j], SolnBlk.phi[i][j],
-			  SolnBlk.dWdx[i][j], SolnBlk.dWdy[i][j], dX );
-	  dX = SolnBlk.Grid.xfaceW(i+1, j)-SolnBlk.Grid.Cell[i+1][j].Xc;
-	  Wr.Reconstruct( SolnBlk.W[i+1][j], SolnBlk.phi[i+1][j], 
-			  SolnBlk.dWdx[i+1][j], SolnBlk.dWdy[i+1][j], dX );
-	} // endif
-
-	//-----------------------------------------------------------
-
+	// interpolate
+	dX = SolnBlk.Grid.xfaceE(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
+	Wl.Reconstruct( SolnBlk.W[i][j], SolnBlk.phi[i][j],
+			SolnBlk.dWdx[i][j], SolnBlk.dWdy[i][j], dX );
+	dX = SolnBlk.Grid.xfaceW(i+1, j)-SolnBlk.Grid.Cell[i+1][j].Xc;
+	Wr.Reconstruct( SolnBlk.W[i+1][j], SolnBlk.phi[i+1][j], 
+			SolnBlk.dWdx[i+1][j], SolnBlk.dWdy[i+1][j], dX );
+	
 	// Spacing for Preconditioner 
 	if(Input_Parameters.Preconditioning){
 	  delta_n = SolnBlk.delta_n(i,j);
@@ -4090,11 +3692,7 @@ int dUdt_Multistage_Explicit(Flame2D_Quad_Block &SolnBlk,
 						     SolnBlk.dt[i+1][j]*SolnBlk.Grid.lfaceW(i+1, j)/
 						     SolnBlk.Grid.Cell[i+1][j].A) );
 	  
-	/*****************************************
-	 ************* SOURCE TERMS **************
-	 *****************************************/
-
-	/* Include axisymmetric source terms as required. */
+	// Include axisymmetric source terms as required.
 	if (SolnBlk.Axisymmetric) {
 	  SolnBlk.W[i][j].Sa_inviscid(SolnBlk.dUdt[i][j][k_residual],
 				      SolnBlk.Grid.Cell[i][j].Xc,
@@ -4111,7 +3709,7 @@ int dUdt_Multistage_Explicit(Flame2D_Quad_Block &SolnBlk,
 				       SolnBlk.Axisymmetric,
 				       Input_Parameters.CFL_Number*SolnBlk.dt[i][j]);
 	  }
-	} /* endif */
+	} // endif
 
 	// Include source terms associated with the finite-rate chemistry
 	if (Flame2D_State::isReacting()) {
@@ -4156,153 +3754,14 @@ int dUdt_Multistage_Explicit(Flame2D_Quad_Block &SolnBlk,
   for ( i = SolnBlk.ICl ; i <= SolnBlk.ICu ; ++i ) {
     for ( j  = SolnBlk.JCl-1 ; j <= SolnBlk.JCu ; ++j ) {
 
-      //-----------------------------------------------------------
-
-      // SOUTH BOUNDARY
-      if (j == SolnBlk.JCl-1 && 
-	  (SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION ||
-	   SolnBlk.Grid.BCtypeS[i] == BC_CHARACTERISTIC ||
-	   SolnBlk.Grid.BCtypeS[i] == BC_FREE_SLIP_ISOTHERMAL ||
-	   SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
-	   SolnBlk.Grid.BCtypeS[i] == BC_MOVING_WALL_ISOTHERMAL ||
-	   SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_HEATFLUX ||
-	   SolnBlk.Grid.BCtypeS[i] == BC_MOVING_WALL_HEATFLUX || 
-	   SolnBlk.Grid.BCtypeS[i] == BC_1DFLAME_INFLOW ||
-	   SolnBlk.Grid.BCtypeS[i] == BC_1DFLAME_OUTFLOW || 
-	   SolnBlk.Grid.BCtypeS[i] == BC_2DFLAME_INFLOW ||
-	   SolnBlk.Grid.BCtypeS[i] == BC_2DFLAME_OUTFLOW )) {
-	
-	// reconstruct to get the right face state
-	dX = SolnBlk.Grid.xfaceS(i, j+1)-SolnBlk.Grid.Cell[i][j+1].Xc;
-	Wr.Reconstruct( SolnBlk.W[i][j+1], SolnBlk.phi[i][j+1],
-			SolnBlk.dWdx[i][j+1], SolnBlk.dWdy[i][j+1], dX );
-
-	// SOUTH face of cell (i,j+1) is a REFLECTION boundary.
-	if (SolnBlk.Grid.BCtypeS[i] == BC_REFLECTION) {
-	  Wl.Reflect(Wr, SolnBlk.Grid.nfaceS(i, j+1)); 
-	// SOUTH face of cell (i,j+1) is a FREE_SLIP_ISOTHERMAL boundary.
-	} else if (SolnBlk.Grid.BCtypeS[i] == BC_FREE_SLIP_ISOTHERMAL) {
-	  Wl.Free_Slip(Wr,SolnBlk.WoS[i], SolnBlk.Grid.nfaceS(i, j+1),FIXED_TEMPERATURE_WALL);
-	// SOUTH face of cell (i,j+1) is a WALL_VISCOUS_ISOTHERMAL boundary.
-	} else if (SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL) {
-	  Wl.No_Slip(Wr,SolnBlk.WoS[i], SolnBlk.Grid.nfaceS(i, j+1),FIXED_TEMPERATURE_WALL);
-	// SOUTH face of cell (i,j+1) is a MOVING_WALL_ISOTHERMAL boundary.
-	} else if (SolnBlk.Grid.BCtypeS[i] == BC_MOVING_WALL_ISOTHERMAL) {
-	  Wl.Moving_Wall(Wr,SolnBlk.WoS[i], SolnBlk.Grid.nfaceS(i, j+1),
-			 SolnBlk.Moving_wall_velocity,FIXED_TEMPERATURE_WALL);
-	// SOUTH face of cell (i,j+1) is a WALL_VISCOUS_HEATFLUX boundary.
-	} else if (SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_HEATFLUX) {
-	  Wl.No_Slip(Wr,SolnBlk.WoS[i], SolnBlk.Grid.nfaceS(i, j+1),ADIABATIC_WALL);
-	// SOUTH face of cell (i,j+1) is a MOVING_WALL_HEATFLUX boundary.
-	} else if (SolnBlk.Grid.BCtypeS[i] == BC_MOVING_WALL_HEATFLUX) {
-	  Wl.Moving_Wall(Wr,SolnBlk.WoS[i], SolnBlk.Grid.nfaceS(i, j+1),
-			 SolnBlk.Moving_wall_velocity,ADIABATIC_WALL); 
-	// SOUTH face of cell (i,j+1) is a 1DFLAME_INFLOW boundary.
-	} else if (SolnBlk.Grid.BCtypeS[i] == BC_1DFLAME_INFLOW){
-	  Wl.BC_1DFlame_Inflow(Wr, 
-			       SolnBlk.WoS[i], 
-			       SolnBlk.W[i][SolnBlk.JCu],
-			       SolnBlk.Grid.nfaceS(i, j+1));
-	// SOUTH face of cell (i,j+1) is a 2DFLAME_INFLOW boundary.
-	} else if (SolnBlk.Grid.BCtypeS[i] == BC_2DFLAME_INFLOW){
-	  Wl.BC_2DFlame_Inflow(Wr, 
-			       SolnBlk.WoS[i], 
-			       SolnBlk.Grid.nfaceS(i, j+1));
-	// SOUTH face of cell (i,j+1) is a 1DFLAME_OUTFLOW boundary.
-	} else if (SolnBlk.Grid.BCtypeS[i] == BC_1DFLAME_OUTFLOW){
-	  Wl.BC_1DFlame_Outflow(Wr, 
-				SolnBlk.WoS[i], 
-				SolnBlk.W[i][SolnBlk.JCu],
-				SolnBlk.Grid.nfaceS(i, j+1));
-	// SOUTH face of cell (i,j+1) is a CHARACTERISTIC boundary.
-	} else if(SolnBlk.Grid.BCtypeS[i] == BC_CHARACTERISTIC)  { 
-	  Wl.BC_Characteristic_Pressure(Wr, 
-					SolnBlk.WoS[i], 
-					SolnBlk.Grid.nfaceS(i, j+1));
-	// SOUTH face of cell (i,j+1) is a UNKNOWN boundary.
-	} else {
-	  cerr<< "\n Wrong BC in  dUdt_Residual_Evaluation "<< SolnBlk.Grid.BCtypeS[i]; exit(1);
-	} 
-	  
-      // NORTH BOUNDARY
-      } else if (j == SolnBlk.JCu && 
-		 (SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION ||
-		  SolnBlk.Grid.BCtypeN[i] == BC_CHARACTERISTIC ||
-		  SolnBlk.Grid.BCtypeN[i] == BC_FREE_SLIP_ISOTHERMAL || 
-		  SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
-		  SolnBlk.Grid.BCtypeN[i] == BC_MOVING_WALL_ISOTHERMAL ||
-		  SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_HEATFLUX ||
-		  SolnBlk.Grid.BCtypeN[i] == BC_MOVING_WALL_HEATFLUX ||
-		  SolnBlk.Grid.BCtypeN[i] == BC_1DFLAME_INFLOW ||
-		  SolnBlk.Grid.BCtypeN[i] == BC_1DFLAME_OUTFLOW||
-		  SolnBlk.Grid.BCtypeN[i] == BC_2DFLAME_INFLOW ||
-		  SolnBlk.Grid.BCtypeN[i] == BC_2DFLAME_OUTFLOW )) {
-	  
-	// reconstruct to get the left face state
-	dX = SolnBlk.Grid.xfaceN(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
-	Wl.Reconstruct( SolnBlk.W[i][j], SolnBlk.phi[i][j],
-			SolnBlk.dWdx[i][j], SolnBlk.dWdy[i][j], dX );
-
-	// NORTH face of cell (i,j) is a REFLECTION boundary.
-	if (SolnBlk.Grid.BCtypeN[i] == BC_REFLECTION) {
-	  Wr.Reflect(Wl, SolnBlk.Grid.nfaceN(i, j));	
-	// NORTH face of cell (i,j) is a FREE_SLIP_ISOTHERMAL boundary.
-	} else if (SolnBlk.Grid.BCtypeN[i] == BC_FREE_SLIP_ISOTHERMAL) {
-	  Wr.Free_Slip(Wl, SolnBlk.WoN[i], SolnBlk.Grid.nfaceN(i, j),FIXED_TEMPERATURE_WALL);
-	// NORTH face of cell (i,j) is a WALL_VISCOUS_ISOTHERMAL boundary.
-	} else if (SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL) {
-	  Wr.No_Slip(Wl, SolnBlk.WoN[i], SolnBlk.Grid.nfaceN(i, j),FIXED_TEMPERATURE_WALL);
-	// NORTH face of cell (i,j) is a MOVING_WALL_ISOTHERMAL boundary.
-	} else if (SolnBlk.Grid.BCtypeN[i] == BC_MOVING_WALL_ISOTHERMAL) {
-	  Wr.Moving_Wall(Wl,SolnBlk.WoN[i],  SolnBlk.Grid.nfaceN(i, j),
-			 SolnBlk.Moving_wall_velocity,FIXED_TEMPERATURE_WALL);
-	// NORTH face of cell (i,j) is a WALL_VISCOUS_HEATFLUX boundary.
-	} else if (SolnBlk.Grid.BCtypeN[i] == BC_WALL_VISCOUS_HEATFLUX) {
-	  Wr.No_Slip(Wl, SolnBlk.WoN[i], SolnBlk.Grid.nfaceN(i, j),ADIABATIC_WALL );
-	// NORTH face of cell (i,j) is a MOVING_WALL_HEATFLUX boundary.
-	} else if (SolnBlk.Grid.BCtypeN[i] == BC_MOVING_WALL_HEATFLUX) {
-	  Wr.Moving_Wall(Wl,SolnBlk.WoN[i],  SolnBlk.Grid.nfaceN(i, j),
-			 SolnBlk.Moving_wall_velocity,ADIABATIC_WALL ); 
-	// NORTH face of cell (i,j) is a 1DFLAME_INFLOW boundary.
-	} else if (SolnBlk.Grid.BCtypeN[i] == BC_1DFLAME_INFLOW){
-	  Wr.BC_1DFlame_Inflow(Wl, 
-			       SolnBlk.WoN[i], 
-			       SolnBlk.W[i][SolnBlk.JCl],
-			       SolnBlk.Grid.nfaceN(i, j));
-	// NORTH face of cell (i,j) is a 1DFLAME_OUTFLOW boundary.
-	} else if (SolnBlk.Grid.BCtypeN[i] == BC_1DFLAME_OUTFLOW){
-	  Wr.BC_1DFlame_Outflow(Wl, 
-				SolnBlk.WoN[i], 
-				SolnBlk.W[i][SolnBlk.JCl],
-				SolnBlk.Grid.nfaceN(i, j));
-	// NORTH face of cell (i,j) is a 2DFLAME_OUTFLOW boundary.
-	} else if (SolnBlk.Grid.BCtypeN[i] == BC_2DFLAME_OUTFLOW){
-	  Wr.BC_2DFlame_Outflow(Wl, 
-				SolnBlk.WoN[i], 
-				SolnBlk.Grid.nfaceN(i, j));	    
-	// NORTH face of cell (i,j) is a CHARACTERISTIC boundary.
-	} else if(SolnBlk.Grid.BCtypeN[i] == BC_CHARACTERISTIC)  { 
-	  Wr.BC_Characteristic_Pressure(Wl, 
-					SolnBlk.WoN[i], 
-					SolnBlk.Grid.nfaceN(i, j));
-	// NORTH face of cell (i,j) is a UKNOWN boundary.
-	} else {
-	  cerr<< "\n Wrong BC in  dUdt_Residual_Evaluation "<< SolnBlk.Grid.BCtypeN[i]; exit(1);
-	}  
-	  
-      // NORTH face is either a normal cell or possibly a FIXED, 
-      // NONE or EXTRAPOLATION boundary.
-      } else {
-	dX = SolnBlk.Grid.xfaceN(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
-	Wl.Reconstruct( SolnBlk.W[i][j], SolnBlk.phi[i][j],
-			SolnBlk.dWdx[i][j], SolnBlk.dWdy[i][j], dX );
-	dX = SolnBlk.Grid.xfaceS(i, j+1)-SolnBlk.Grid.Cell[i][j+1].Xc;
-	Wr.Reconstruct( SolnBlk.W[i][j+1], SolnBlk.phi[i][j+1],
-			SolnBlk.dWdx[i][j+1], SolnBlk.dWdy[i][j+1], dX );
-      }
+      // interpolate
+      dX = SolnBlk.Grid.xfaceN(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
+      Wl.Reconstruct( SolnBlk.W[i][j], SolnBlk.phi[i][j],
+		      SolnBlk.dWdx[i][j], SolnBlk.dWdy[i][j], dX );
+      dX = SolnBlk.Grid.xfaceS(i, j+1)-SolnBlk.Grid.Cell[i][j+1].Xc;
+      Wr.Reconstruct( SolnBlk.W[i][j+1], SolnBlk.phi[i][j+1],
+		      SolnBlk.dWdx[i][j+1], SolnBlk.dWdy[i][j+1], dX );
 		
-      //-----------------------------------------------------------
-      
       // Spacing for Preconditioner 
       if(Input_Parameters.Preconditioning){
 	delta_n = SolnBlk.delta_n(i,j);
@@ -4382,8 +3841,6 @@ int dUdt_Multistage_Explicit(Flame2D_Quad_Block &SolnBlk,
 						   SolnBlk.dt[i][j+1]*
 						   SolnBlk.Grid.lfaceS(i,j+1)/
 						   SolnBlk.Grid.Cell[i][j+1].A) );
-
-      //-----------------------------------------------------------
 
       // Save south and north face boundary flux.
       // USED for AMR 
