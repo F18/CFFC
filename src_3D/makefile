@@ -118,9 +118,11 @@ SRC_MULTIGRID = $(MULTIGRID_DIR)FASMultigridInput.cc
 SRC_NKS = $(NKS_DIR)NKSInput.cc
 
 # Euler3D:
-SRC_EULER_POLYTROPIC = $(EULER_DIR)Euler3DPolytropicState.cc
+SRC_EULER_POLYTROPIC = $(EULER_DIR)Euler3DPolytropicInput.cc \
+                       $(EULER_DIR)Euler3DPolytropicState.cc
 
-SRC_EULER_THERMPERFECT = $(EULER_DIR)Euler3DThermallyPerfectState.cc \
+SRC_EULER_THERMPERFECT = $(EULER_DIR)Euler3DThermallyPerfectInput.cc \
+                         $(EULER_DIR)Euler3DThermallyPerfectState.cc \
                          $(EULER_DIR)Euler3DThermallyPerfectHexaBlock.cc
 
 # Add Euler3D testing if required:
@@ -137,7 +139,8 @@ SRC_EULER_THERMPERFECT_EXE = $(EULER_DIR)Euler3DThermallyPerfect.cc
 
 # NavierStokes3D:
 SRC_NAVIERSTOKES_POLYTROPIC =
-SRC_NAVIERSTOKES_THERMPERFECT = $(NAVIERSTOKES_DIR)NavierStokes3DThermallyPerfectState.cc \
+SRC_NAVIERSTOKES_THERMPERFECT = $(NAVIERSTOKES_DIR)NavierStokes3DThermallyPerfectInput.cc \
+                                $(NAVIERSTOKES_DIR)NavierStokes3DThermallyPerfectState.cc \
                                 $(NAVIERSTOKES_DIR)NavierStokes3DThermallyPerfectHexaBlock.cc
 
 SRC_NAVIERSTOKES = $(SRC_NAVIERSTOKES_POLYTROPIC) $(SRC_NAVIERSTOKES_THERMPERFECT)
@@ -147,7 +150,8 @@ SRC_NAVIERSTOKES_THERMPERFECT_EXE = $(NAVIERSTOKES_DIR)NavierStokes3DThermallyPe
 
 # FANS3D:
 SRC_FANS_POLYTROPIC =
-SRC_FANS_THERMPERFECT = $(FANS_DIR)FANS3DThermallyPerfectState.cc \
+SRC_FANS_THERMPERFECT = $(FANS_DIR)FANS3DThermallyPerfectInput.cc \
+                        $(FANS_DIR)FANS3DThermallyPerfectState.cc \
                         $(FANS_DIR)FANS3DThermallyPerfectHexaBlock.cc \
                         $(FANS_DIR)BluffBodyBurner.cc
 
@@ -157,8 +161,10 @@ SRC_FANS_POLYTROPIC_EXE = $(FANS_DIR)FANS3DPolytropic.cc
 SRC_FANS_THERMPERFECT_EXE = $(FANS_DIR)FANS3DThermallyPerfect.cc
 
 # LES3DFSD:
-SRC_LESFSD = $(LESFSD_DIR)LES3DFsdState.cc \
-             $(LESFSD_DIR)LES3DFsdHexaBlock.cc
+SRC_LESFSD = $(LESFSD_DIR)LES3DFsdInput.cc \
+             $(LESFSD_DIR)LES3DFsdState.cc \
+             $(LESFSD_DIR)LES3DFsdHexaBlock.cc \
+             $(LESFSD_DIR)LES3DFsdHexaMultiBlock.cc
 
 SRC_LESFSD_EXE = $(LESFSD_DIR)LES3DFsd.cc
 

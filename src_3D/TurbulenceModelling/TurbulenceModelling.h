@@ -710,7 +710,7 @@ Energy_Spectrum_Value(const double &abs_wave_num) const {
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 int RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>::
 Generate_Velocity_Fluctuations(Grid3D_Hexa_Multi_Block &InitMeshBlks,
-			       Grid3D_Input_Parameters/*<SOLN_pSTATE, SOLN_cSTATE>*/ &IPs) const {
+			       Grid3D_Input_Parameters &IPs) const {
 
   double L1, L2, L3;
   L1 = IPs./*IP_Grid.*/Box_Length;
@@ -905,8 +905,10 @@ Generate_Velocity_Fluctuations(Grid3D_Hexa_Multi_Block &InitMeshBlks,
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 void RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>::
 Write_Initial_Turbulent_Fluctuations(Grid3D_Hexa_Multi_Block &InitMeshBlks,
-				     Grid3D_Input_Parameters/*<SOLN_pSTATE, SOLN_cSTATE>*/ &IPs,
-				     double *u, double *v, double *w) const {
+				     Grid3D_Input_Parameters &IPs,
+				     double *u, 
+                                     double *v, 
+                                     double *w) const {
 
   int ii, jj, kk;
   int Nblks_i, Nblks_j, Nblks_k;

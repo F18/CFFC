@@ -114,7 +114,7 @@ void Block_Orientation_Info::broadcast(void){
 void  Block_Boundary_Elements_on_Domain_Extent::broadcast(void){
 
 #ifdef _MPI_VERSION
-   MPI::COMM_WORLD.Bcast(boundary_element_on_domain_extent, MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(on_grid_boundary, MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK, MPI::INT, 0);
 #endif    
 
 }

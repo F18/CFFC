@@ -1,6 +1,7 @@
+
 #ifndef  _LES3DFSD_HEXA_BLOCK_INCLUDED
 #include "LES3DFsdHexaBlock.h"
-#endif //  _LES3DFSD_HEXA_BLOCK_INCLUDED
+#endif // _LES3DFSD_HEXA_BLOCK_INCLUDED
 
 /********************************************************
  * Routine: Output_Tecplot                              *
@@ -11,7 +12,7 @@
  * TECPLOT.                                             *
  *                                                      *
  ********************************************************/
-template< >
+template<>
 void Hexa_Block<LES3DFsd_pState,LES3DFsd_cState>::
 Output_Tecplot(Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs,
                const int Number_of_Time_Steps,
@@ -168,7 +169,7 @@ Output_Tecplot(Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs,
  * TECPLOT.                                             *
  *                                                      *
  ********************************************************/
-template< >
+template<>
 void Hexa_Block<LES3DFsd_pState,LES3DFsd_cState>::
 Output_Cells_Tecplot(Input_Parameters<LES3DFsd_pState, 
                                       LES3DFsd_cState> &IPs,
@@ -407,7 +408,7 @@ Output_Cells_Tecplot(Input_Parameters<LES3DFsd_pState,
  * TECPLOT.                                             *
  *                                                      *
  ********************************************************/
-template< >
+template<>
 void Hexa_Block<LES3DFsd_pState,LES3DFsd_cState>::
 Output_Nodes_Tecplot(Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs,
                const int Number_of_Time_Steps,
@@ -560,7 +561,7 @@ Output_Nodes_Tecplot(Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs,
  * solution block.                                      *
  *                                                      *
  ********************************************************/
-template< >
+template<>
 int Hexa_Block<LES3DFsd_pState,LES3DFsd_cState>::
 ICs(const int i_ICtype,
     Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs){
@@ -786,7 +787,7 @@ ICs(const int i_ICtype,
     
 }
 
-template< >
+template<>
 void Hexa_Block<LES3DFsd_pState,LES3DFsd_cState>::
 BCs(Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs){
    
