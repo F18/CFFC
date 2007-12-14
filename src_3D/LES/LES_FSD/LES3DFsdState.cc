@@ -1206,6 +1206,21 @@ double LES3DFsd_pState::Mr2(const double &deltax,
 }
 
 /***********************************************************************************
+ * LES3DFsd_pState::u_plus_aprecon -- Preconditioned velocity                      *
+ ***********************************************************************************/
+double LES3DFsd_pState::u_plus_aprecon(const double &u, 
+                                       double &deltax, 
+                                       const double &lengthx, 
+                                       const double &dTime) {
+  double Temp = T();
+  double cc = a_t();
+  double UR2 = Mr2(deltax, lengthx, dTime)*cc*cc;
+  double alpha = HALF*( ONE - (ONE/(Rtot()*Temp) - ONE/(Cp()*Temp))*UR2);
+  // uprime + cprime
+  return ( u*(ONE - alpha) + sqrt(alpha*alpha*u*u + UR2) );
+}
+
+/***********************************************************************************
  * LES3DFsd_pState::u_a_precon -- Preconditioned velocity and soundspeed           *
  ***********************************************************************************/
 void LES3DFsd_pState::u_a_precon(const double &UR2, 
@@ -1807,7 +1822,7 @@ LES3DFsd_cState LES3DFsd_pState::FluxHLLE_x(const LES3DFsd_cState &Ul,
 /**************************************************************************
  * LES3DFsd_pState::FluxHLLE_n -- HLLE flux function, n-direction flux.   *
  **************************************************************************/
-LES3DFsd_cState  LES3DFsd_pState::FluxHLLE_n(const LES3DFsd_pState &Wl,
+LES3DFsd_cState LES3DFsd_pState::FluxHLLE_n(const LES3DFsd_pState &Wl,
                                              const LES3DFsd_pState &Wr,
                                              const Vector3D &norm_dir) {
 
@@ -1823,7 +1838,7 @@ LES3DFsd_cState  LES3DFsd_pState::FluxHLLE_n(const LES3DFsd_pState &Wl,
 
 }
 
-LES3DFsd_cState  LES3DFsd_pState::FluxHLLE_n(const LES3DFsd_cState &Ul,
+LES3DFsd_cState LES3DFsd_pState::FluxHLLE_n(const LES3DFsd_cState &Ul,
                                              const LES3DFsd_cState &Ur,
                                              const Vector3D &norm_dir) {
     return (FluxHLLE_n(Ul.W(), Ur.W(), norm_dir));
@@ -1832,7 +1847,7 @@ LES3DFsd_cState  LES3DFsd_pState::FluxHLLE_n(const LES3DFsd_cState &Ul,
 /**************************************************************************
  * LES3DFsd_pState::FluxRoe_x -- Roe flux function, x-direction flux.     *
  **************************************************************************/
-LES3DFsd_cState  LES3DFsd_pState::FluxRoe_x(const  LES3DFsd_pState &Wl,  
+LES3DFsd_cState LES3DFsd_pState::FluxRoe_x(const  LES3DFsd_pState &Wl,  
                                             const  LES3DFsd_pState &Wr){
    
    LES3DFsd_pState Wa, dWrl, wavespeeds, lambdas_l, lambdas_r, lambdas_a;
@@ -2043,9 +2058,9 @@ LES3DFsd_cState LES3DFsd_pState::FluxAUSMplus_up_n(const LES3DFsd_pState &Wl,
  * LES3DFsd_pState::lambda_minus -- Negative wave speeds determined using *
  *                                  Harten entropy fix.                   *
  **************************************************************************/
-LES3DFsd_pState lambda_minus(const LES3DFsd_pState &lambdas_a,
-                             const LES3DFsd_pState &lambdas_l,
-                             const LES3DFsd_pState &lambdas_r) {
+LES3DFsd_pState LES3DFsd_pState::lambda_minus(const LES3DFsd_pState &lambdas_a,
+                                              const LES3DFsd_pState &lambdas_l,
+                                              const LES3DFsd_pState &lambdas_r) {
 
    LES3DFsd_pState W_temp;
    W_temp.rho = HartenFixNeg(lambdas_a[1],lambdas_l[1],lambdas_r[1]);
@@ -2069,9 +2084,9 @@ LES3DFsd_pState lambda_minus(const LES3DFsd_pState &lambdas_a,
  * LES3DFsd_pState::lambda_plus -- Positive wave speeds determined using  *
  *                                 Harten entropy fix.                    *
  **************************************************************************/
-LES3DFsd_pState lambda_plus(const LES3DFsd_pState &lambdas_a,
-                            const LES3DFsd_pState &lambdas_l,
-                            const LES3DFsd_pState &lambdas_r) {
+LES3DFsd_pState LES3DFsd_pState::lambda_plus(const LES3DFsd_pState &lambdas_a,
+                                             const LES3DFsd_pState &lambdas_l,
+                                             const LES3DFsd_pState &lambdas_r) {
    
    LES3DFsd_pState W_temp;
    W_temp.rho = HartenFixPos(lambdas_a[1],lambdas_l[1],lambdas_r[1]);
@@ -3468,7 +3483,7 @@ double LES3DFsd_cState::abs_strain_rate(const LES3DFsd_pState &dWdx,
 /*******************************************************************
  * LES3DFsd_cState::W -- Return primitive solution state vector.   *
  *******************************************************************/
-LES3DFsd_pState LES3DFsd_cState::W(void)const{
+LES3DFsd_pState LES3DFsd_cState::W(void){
    LES3DFsd_pState Temp;
    Temp.rho = rho;
    Temp.v = v();  
@@ -3482,21 +3497,21 @@ LES3DFsd_pState LES3DFsd_cState::W(void)const{
    return Temp;
 }
 
-LES3DFsd_pState LES3DFsd_cState::W(const LES3DFsd_cState &U) const{
+LES3DFsd_pState LES3DFsd_cState::W(void) const{
     LES3DFsd_pState Temp;
-    Temp.rho = U.rho;
-    Temp.v = U.v();  
-    Temp.p = U.p();
-    Temp.C = U.C();  
-    Temp.Fsd = U.Fsd();
-    Temp.k = U.k();  
-    for(int i=0; i<U.ns; i++){
-      Temp.spec[i] = U.rhospec[i]/U.rho;
+    Temp.rho = rho;
+    Temp.v = v();  
+    Temp.p = p();
+    Temp.C = C();  
+    Temp.Fsd = Fsd();
+    Temp.k = k();  
+    for(int i=0; i<ns; i++){
+      Temp.spec[i] = rhospec[i]/rho;
     } /* endfor */
     return Temp;
 }
 
-LES3DFsd_pState W(const LES3DFsd_cState &U) {
+LES3DFsd_pState LES3DFsd_cState::W(const LES3DFsd_cState &U) const {
   LES3DFsd_pState Temp;
   Temp.rho = U.rho;
   Temp.v = U.v();

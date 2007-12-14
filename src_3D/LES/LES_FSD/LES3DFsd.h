@@ -25,6 +25,10 @@
 #include "LES3DFsdHexaBlock.h"
 #endif // _LES3DFSD_HEXA_BLOCK_INCLUDED
 
+#ifndef _LES3DFSD_HEXA_MULTIBLOCK_INCLUDED
+#include "LES3DFsdHexaMultiBlock.h"
+#endif // _LES3DFSD_HEXA_MULTIBLOCK_INCLUDED
+
 #ifndef _MPI_INCLUDED
 #include "../../MPI/MPI.h"
 #endif // _MPI_INCLUDED

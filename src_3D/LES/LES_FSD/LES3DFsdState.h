@@ -220,7 +220,9 @@ class LES3DFsd_pState : public NavierStokes3D_ThermallyPerfect_pState {
 /*        --------------------- */
 //@{
    //! Copy solution state (cheaper than = operator)
-   void Copy(const LES3DFsd_pState &W);
+   void Copy(const LES3DFsd_pState &W) {
+     Euler3D_ThermallyPerfect_pState::Copy(W); C = W.C; Fsd = W.Fsd; k = W.k; 
+   }
 
    //! Assigns a vacuum solution state
    void Vacuum(void) { 
@@ -557,6 +559,9 @@ class LES3DFsd_pState : public NavierStokes3D_ThermallyPerfect_pState {
 //@{
    //! Return the square value of Mach number
    double Mr2(const double &deltax, const double &lengthx, const double &dTime);
+
+   //! Preconditioned velocity
+   double u_plus_aprecon(const double &u, double &deltax, const double &lengthx, const double &dTime);
 
    //! Preconditioned velocity and sound speed
    void u_a_precon(const double &UR,double &uprimed, double &cprimed) const;
@@ -1113,7 +1118,9 @@ class LES3DFsd_cState : public NavierStokes3D_ThermallyPerfect_cState {
 /** @name Some useful operators */
 /*        --------------------- */
 //@{
-   void Copy(const LES3DFsd_cState &U);
+   void Copy(const LES3DFsd_cState &U){
+     Euler3D_ThermallyPerfect_cState::Copy(U); rhoC = U.rhoC; rhoFsd = U.rhoFsd; rhok = U.rhok; 
+   }
 
    void Vacuum(){ Euler3D_ThermallyPerfect_cState::Vacuum(); rhok = ZERO; rhoC = ZERO; rhoFsd = ZERO;}  
 

@@ -598,7 +598,7 @@ ICs(const int i_ICtype,
 	      double tau_fsd = 2218/298-1.0;//W[i][j][k].HeatRelease_Parameter();
        	      W[i][j][k].C = (erf(xx*4000.0)+1.0)/2.0;
               W[i][j][k].p = 101325.0;
-	      W[i][j][k] = W[i][j][k].premixed_mfrac();
+	      W[i][j][k].premixed_mfrac();
        	      W[i][j][k].rho = 1.13*W[ICu][j][k].Rtot()/W[i][j][k].Rtot()/(1.0+tau_fsd*W[i][j][k].C);
               W[i][j][k].v.x = 1.13*0.3837/W[i][j][k].rho;
        	      W[i][j][k].Fsd = 3000.0*exp(-sqr(xx*4000.0))/sqrt(3.1415926)/W[i][j][k].rho;
@@ -2148,7 +2148,7 @@ Update_Solution_Multistage_Explicit(const int i_stage,
 	       if (IPs.i_Flow_Type==FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY){
 		 U[i][j][k].rhok=0.0;
 	       }
-	       U[i][j][k] = U[i][j][k].premixed_mfrac();
+	       U[i][j][k].premixed_mfrac();
             }
 
             // Check physical validity of update solution state
