@@ -73,20 +73,20 @@ void SemiImplicitBlockJacobi_dSdW(::DenseMatrix &dSdW,
   //
   // Viscous Axisymmetric source term jacobian    
   //
-//   if(SolnBlk.Axisymmetric && SolnBlk.Flow_Type != FLOWTYPE_INVISCID){     
-
-//     //Cacluate 2nd derivatives  
-//     double d_dWdx_dW_C,d_dWdy_dW_C;
-//     d_dWd_dW_Center(d_dWdx_dW_C,d_dWdy_dW_C,SolnBlk,ii, jj);  
+  if(SolnBlk.Axisymmetric && SolnBlk.Flow_Type != FLOWTYPE_INVISCID){     
     
-//     // Compute the jacobian
-//     Wo.dSa_vdW(dSdW,
-// 			      SolnBlk.dWdx[ii][jj],
-// 			      SolnBlk.dWdy[ii][jj],
-// 			      SolnBlk.Grid.Cell[ii][jj].Xc,
-// 			      SolnBlk.Flow_Type, SolnBlk.Axisymmetric,
-// 			      d_dWdx_dW_C,d_dWdy_dW_C);
-//   }
+    //Cacluate 2nd derivatives  
+    double d_dWdx_dW_C,d_dWdy_dW_C;
+    d_dWd_dW_Center(d_dWdx_dW_C,d_dWdy_dW_C,SolnBlk,ii, jj);  
+    
+    // Compute the jacobian
+    Wo.dSa_vdW(dSdW,
+	       SolnBlk.dWdx[ii][jj],
+	       SolnBlk.dWdy[ii][jj],
+	       SolnBlk.Grid.Cell[ii][jj].Xc,
+	       SolnBlk.Axisymmetric,
+	       d_dWdx_dW_C,d_dWdy_dW_C);
+  }
   
 }
 
@@ -105,20 +105,19 @@ void SemiImplicitBlockJacobi_dSdU(::DenseMatrix &dSdU,
 				  const int &ii, const int &jj){
   
   //Add Jacobian for inviscid axisymmetric source terms
-//   if (SolnBlk.Axisymmetric) {
-//     Wo.dSa_idU(dSdU,
-// 			      SolnBlk.Grid.Cell[ii][jj].Xc, 
-// 			      SolnBlk.Flow_Type,
-// 			      SolnBlk.Axisymmetric);
-//   }
+  if (SolnBlk.Axisymmetric) {
+    Wo.dSa_idU(dSdU,
+	       SolnBlk.Grid.Cell[ii][jj].Xc, 
+	       SolnBlk.Axisymmetric);
+  }
   
   //Add Jacobian for finite-rate chemistry source terms  
   if (Flame2D_pState::isReacting()) Wo.dSwdU(dSdU);  
 
   //Add Jacobian for gravitational source terms
-//   if (SolnBlk.Gravity){
-//     Wo.dSgdU(dSdU);
-//   } 
+  if (SolnBlk.Gravity){
+    Wo.dSgdU(dSdU);
+  } 
   
 }
 

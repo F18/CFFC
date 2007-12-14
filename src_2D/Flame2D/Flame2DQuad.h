@@ -754,7 +754,7 @@ inline ostream &operator << (ostream &out_file,
   if (SolnBlk.NCi == 0 || SolnBlk.NCj == 0) return(out_file);
   for ( j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
      for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
-         out_file << SolnBlk.W[i][j] << "\n";
+         out_file << SolnBlk.U[i][j] << "\n";
      } /* endfor */
   } /* endfor */
   for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
@@ -773,7 +773,6 @@ inline istream &operator >> (istream &in_file,
 
   int i, j, k, ni, il, iu, nj, jl, ju, ng;
   Flame2D_State Flame2D_VACUUM;  Flame2D_VACUUM.Vacuum();
-  Flame2D_State Wtmp;
   Grid2D_Quad_Block New_Grid; in_file >> New_Grid;
   in_file.setf(ios::skipws);
   in_file >> ni >> il >> iu >> ng; in_file >> nj >> jl >> ju;
@@ -794,9 +793,8 @@ inline istream &operator >> (istream &in_file,
   Copy_Quad_Block(SolnBlk.Grid, New_Grid); New_Grid.deallocate();
   for ( j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
      for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
-         in_file >> Wtmp;
-         SolnBlk.W[i][j].setW(Wtmp);
-         SolnBlk.W[i][j].getU(SolnBlk.U[i][j]);
+         in_file >> SolnBlk.U[i][j];
+         SolnBlk.W[i][j].setU(SolnBlk.U[i][j]);
          for ( k = 0 ; k <= NUMBER_OF_RESIDUAL_VECTORS_FLAME2D-1 ; ++k ) {
 	     SolnBlk.dUdt[i][j][k] = Flame2D_VACUUM;
          } /* endfor */

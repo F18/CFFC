@@ -24,7 +24,9 @@ double Flame2D_State::gravity_z = -9.81;
 double* Flame2D_State::y = NULL;
 double* Flame2D_pState::r = NULL;
 double* Flame2D_pState::dihdic = NULL;
+double Flame2D_pState::phi = 0.0;
 double* Flame2D_pState::h_i = NULL;
+double* Flame2D_pState::cp_i = NULL;
 
 
 /////////////////////////////////////////////////////////////////////
@@ -600,7 +602,7 @@ double Flame2D_pState::Mr2(const int &flow_type_flag,
 void Flame2D_pState::Low_Mach_Number_Preconditioner(::DenseMatrix &P,
 						    const int &Viscous_flag, 
 						    const double &deltax ) const{  
-  // Note: make sure you loaded the dihdic array outside
+  // Note: make sure you loaded the dihdic array and phi outside
   double Temp( T() );
   double Rmix( Rtot() );
   double enthalpy( h() );
@@ -608,11 +610,6 @@ void Flame2D_pState::Low_Mach_Number_Preconditioner(::DenseMatrix &P,
   double aa( a() );
   double theta( ONE/(Mr2(Viscous_flag,deltax)*aa*aa) + ONE/(CP*Temp) );
  
-  double phi = ZERO;   
-  for(int j=0; j<ns-NSm1; j++){   
-    phi += c(j)*dihdic[j];
-  }		      
-
   double alpha( theta*p()/rho() );
   double alpham1( alpha - ONE );
   double Omega( (Rmix - CP)*p()/(rho()*Rmix) );
@@ -670,18 +667,13 @@ void Flame2D_pState::Low_Mach_Number_Preconditioner(::DenseMatrix &P,
 void Flame2D_pState::Low_Mach_Number_Preconditioner_Inverse(::DenseMatrix &Pinv,	
 							    const int &Viscous_flag, 
 							    const double &deltax ) const{  
-  // Note: make sure you loaded the dihdic array outside
+  // Note: make sure you loaded the dihdic array and phi outside
   double Temp( T() );
   double Rmix( Rtot() );
   double enthalpy( h() );
   double CP( Cp() );
   double aa( a() );
   double theta( ONE/(Mr2(Viscous_flag,deltax)*aa*aa) + ONE/(CP*Temp) );
-
-  double phi = ZERO;
-  for(int j=0; j<ns-NSm1; j++){ 
-    phi += c(j)*dihdic[j];
-  }
 
   double AA( p()*(rho()*Rmix-theta*p()*CP) );
   double BB( Rmix*rho()*(theta*p()-rho()) );
@@ -774,6 +766,59 @@ void Flame2D_pState::Sa_inviscid(Flame2D_State &S,
 
 
 }
+
+
+/****************************************************************
+ * Axisymmetric Source Term Jacboian (Inviscid)                 * 
+ ****************************************************************/
+void Flame2D_pState::dSa_idU( ::DenseMatrix &dSa_IdU, 
+			      const Vector2D &X, 
+			      const int Axisymmetric ) const {
+
+  double enthalpy( h() );
+  double CP( Cp() );
+  double RTOT( Rtot() );
+  double Temp( T() );
+  double vsqrd( vsqr() );
+
+  // axisymmetric case 1  -- y radial direction 
+  if(Axisymmetric == AXISYMMETRIC_Y){
+    cout<<"\n ISSUES IN dSa_idU AXISYMMETRIC_Y \n"; exit(1);
+
+  // axisymmetric case 1  -- x radial direction 
+  } else if(Axisymmetric == AXISYMMETRIC_X){ 
+    
+    dSa_IdU(0,1) -= ONE/X.x;
+    dSa_IdU(1,0) += vx()*vx()/X.x;
+    dSa_IdU(1,1) -= TWO*vx()/X.x;
+    dSa_IdU(2,0) += vx()*vy()/X.x;
+    dSa_IdU(2,1) -= vy()/X.x;
+    dSa_IdU(2,2) -= vx()/X.x;
+    
+    double a( RTOT/(CP-RTOT) );
+    double b( CP/(CP-RTOT) );
+    dSa_IdU(3,0) -= a * ( vx()*(phi + vsqrd) + 
+			  vx()*CP*( p()/rho() - enthalpy - HALF*vsqrd )/RTOT ) / X.x;
+    dSa_IdU(3,1) -= ( enthalpy + b*HALF*vsqrd - 
+		      a*HALF*(THREE*vx()*vx() + vy()*vy()) ) / X.x;
+    dSa_IdU(3,2) += a*vx()*vy()/X.x;
+    dSa_IdU(3,3) -= b*vx()/X.x;      
+    
+    //Multispecies terms
+    const int NUM_VAR = NUM_FLAME2D_VAR_SANS_SPECIES;
+    double d( CP/RTOT - ONE );
+    for(int i=0; i<ns-NSm1;i++){
+      dSa_IdU(3,i+NUM_VAR) += vx()*dihdic[i]/d/X.x; 
+      dSa_IdU(NUM_VAR+i,0) += vx()*c(i)/X.x;
+      dSa_IdU(NUM_VAR+i,1) -= c(i)/X.x;
+      dSa_IdU(NUM_VAR+i,NUM_VAR+i) -= vx()/X.x;
+    }
+    
+  }
+
+}
+
+
 /***************************************************************
  * Axisymmetric flow source terms (Viscous)                    *  
  ***************************************************************/
@@ -811,6 +856,84 @@ void Flame2D_pState::Sa_viscous(Flame2D_State &S,
   
 }
 
+
+/**************************************************************** 
+ * Axisymmetric Source Term Jacboian (Viscous)                  *  
+ ****************************************************************/
+void Flame2D_pState::dSa_vdW(::DenseMatrix &dSa_VdW,
+			     const Flame2D_State &dWdx,
+			     const Flame2D_State &dWdy,
+			     const Vector2D &X, 
+			     const int Axisymmetric,
+			     const double &d_dWdx_dW, 
+			     const double &d_dWdy_dW) const {
+
+  const int NUM_VAR = NUM_FLAME2D_VAR_SANS_SPECIES;
+  double Rmix( Rtot() );
+  double Temp( T() );
+  double Mu( mu() );
+  double Kappa( kappa() );
+  double p_( p() );
+  double rho_( rho() );
+
+  //-----------------------------------------------------------------
+  // axisymmetric case 1  -- x radial direction 
+  //-----------------------------------------------------------------
+  if(Axisymmetric == AXISYMMETRIC_X){   
+
+    // radius
+    double radius( X.x );
+
+    // get species properties
+    //Cp(cp_i); // <- individual species specific heats
+    //h(h_i); // <- individual species enthalpies
+    Cp_and_h( cp_i, h_i );
+
+
+    dSa_VdW(2,2) += TWO*Mu*(d_dWdx_dW - ONE/radius)/radius;    
+    dSa_VdW(2,1) += Mu*d_dWdy_dW/radius;
+    dSa_VdW(2,2) += Mu*d_dWdx_dW/radius ;
+    
+    //energy
+    double Sum_q(ZERO), Sum_dq(ZERO), Sum_dhi(ZERO);
+    double tmp;
+    for(int i = 0; i<ns; i++){
+      tmp = cp_i[i]*Diffusion_coef(i)*dWdx.c(i);
+      Sum_q += tmp/Rmix;      // - ns-1 ???
+      Sum_dq -= tmp*Temp;
+      //Sum_dhi += cp_i[i]*Temp*rho_*Diffusion_coef(i)*dWdx.c(i)/(Rmix); // <- For full NS-1 consistency
+    } 
+
+    dSa_VdW(3,0) += ( Kappa*( -(dWdx.p() - p_/rho_*dWdx.rho())/rho_ + 
+			      (p_*dWdx.rho()/(rho_*rho_) - p_*d_dWdx_dW/rho_) ) / (rho_*Rmix) + 
+		      Sum_dq ) / radius;
+    dSa_VdW(3,1) += ( Mu*vy()*d_dWdy_dW + 
+		      TWO*Mu*(TWO/THREE*dWdx.vx() - dWdx.vy()/THREE - vx()/(THREE*radius)) +
+		      TWO*vx()*Mu*(TWO/THREE*d_dWdx_dW-ONE/(THREE*radius)) ) / radius;
+    dSa_VdW(3,2) += ( Mu*(dWdy.vx() + dWdx.vy()) + 
+		      vy()*Mu*d_dWdx_dW - TWO/THREE*Mu*vx()*d_dWdy_dW ) / radius;
+    dSa_VdW(3,3) += ( Kappa*(d_dWdx_dW - dWdx.rho()/rho_)/(rho_*Rmix) + Sum_q )/radius;
+   
+    //Multispecies
+    double rhoD;
+    for(int i = 0; i<(ns-NSm1); i++){ 
+      rhoD = rho_*Diffusion_coef(i);
+      dSa_VdW(3,NUM_VAR+i) += ( rhoD * h_i[i] * d_dWdx_dW ) / radius;  
+      //- specdata[Num].Rs()*Sum_dhi)/radius; // <- For full NS-1 consistency
+      dSa_VdW(NUM_VAR+i,NUM_VAR+i) += rhoD*d_dWdx_dW/radius;
+    }
+    
+
+  //-----------------------------------------------------------------
+  // axisymmetric case 1  -- y radial direction 
+  //-----------------------------------------------------------------
+  } else if(Axisymmetric == AXISYMMETRIC_Y){ 
+    cout<<"\n AXISYMMETRIC_Y NOT DONE YET ";
+  }
+       
+}
+
+
 /****************************************************
  * Source terms associated with finite-rate chemistry
  ****************************************************/  
@@ -824,9 +947,7 @@ void Flame2D_pState::Sw(Flame2D_State &S,
  * Chemistry source term jacobian
  ****************************************************/  
 void Flame2D_pState::dSwdU( ::DenseMatrix &dSdU ) const {
-  int temp = NSm1;
-  int offset( NUM_FLAME2D_VAR_SANS_SPECIES );
-  Mix.dSwdU( dSdU, rho(), p(), c(), offset, 1 );
+  Mix.dSwdU( dSdU, rho(), p(), c(), NUM_FLAME2D_VAR_SANS_SPECIES, NSm1 );
 }
 
 
@@ -853,6 +974,13 @@ void Flame2D_pState::Sg(Flame2D_State &S,
   S.E() += mult*rho()*gravity_z*vy();
 }
 
+/****************************************************
+ * Source terms associated with gravitational forces
+ ****************************************************/
+void Flame2D_pState::dSgdU(::DenseMatrix &dSgdU) const {
+  dSgdU(2,0) += gravity_z;
+  dSgdU(3,2) += gravity_z;
+}
 
 /////////////////////////////////////////////////////////////////////
 /// Inviscid Flux Jacobians
@@ -863,7 +991,7 @@ void Flame2D_pState::Sg(Flame2D_State &S,
  ************************************************************************/
 void Flame2D_pState::dWdU(::DenseMatrix &dWdQ) const{
 
-  // Note: make sure you loaded the dihdic array outside
+  // Note: make sure you loaded the dihdic array and phi outside
   double Temp( T() );
   double Rt( Rtot() );
   double C_p( Cp() );
@@ -874,11 +1002,6 @@ void Flame2D_pState::dWdU(::DenseMatrix &dWdQ) const{
   dWdQ(1,1) = ONE/rho();
   dWdQ(2,0) = -vy()/rho();
   dWdQ(2,2) = ONE/rho(); 
-
-  double phi = ZERO;   
-  for(int j=0; j<ns-NSm1; j++){   
-    phi += c(j)*dihdic[j];
-  }		      
 
   dWdQ(3,0) = (HALF*vsqr() - h() + C_p*Temp + phi)/denominator;
   dWdQ(3,1) = -vx()/denominator;

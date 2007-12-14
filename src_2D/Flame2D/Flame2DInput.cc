@@ -1934,7 +1934,14 @@ int Parse_Next_Input_Control_Parameter(Flame2D_Input_Parameters &IP) {
 
     } else if (strcmp(IP.Next_Control_Parameter, "Gravity") == 0) {
       i_command = 511; 
-      IP.Gravity = 1;
+      Get_Next_Input_Control_Parameter(IP);
+      if (strcmp(IP.Next_Control_Parameter,"ON") == 0) {
+	IP.Gravity = 1;
+      } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0) {
+	IP.Gravity = 0;
+      } else {
+	i_command = INVALID_INPUT_VALUE;
+      }
 
     } else if (strcmp(IP.Next_Control_Parameter, "Gravitational_Acceleration") == 0) {
       i_command = 512; 

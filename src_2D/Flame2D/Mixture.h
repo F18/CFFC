@@ -175,6 +175,9 @@ public:
   double gasConstant(void) const;   
   static double heatCapacity_p(const double &Temp, const double &Press, 
 			       const double* y);
+  void getHeatCapacity_p( const double &Press, 
+			  const double* y, 
+			  double*cp ) const;
   double heatCapacity_v(void) const;
   double heatRatio(void) const;
   double internalEnergy() const;
@@ -183,12 +186,18 @@ public:
   static double enthalpy(const double &Temp, const double &Press, 
 			 const double* y);
   void getEnthalpy( const double &Press, const double* y, double*h ) const;
+  void get_cp_and_h( const double &Press, 
+		     const double* y, 
+		     double*cp,
+		     double*h) const;
   double schmidt(const double &rho, const int &i) const;
   double prandtl(void) const;
   double lewis(const double &rho, const int &i) const;
   void getDihdDc( const double &Press, 
 		  const double* y, 
-		  double* dh ) const;
+		  const int NSm1,
+		  double* dh,
+		  double& phi ) const;
 
   /***************** Reaction Rates ******************
     The following functions use CANTERA to compute    
@@ -203,8 +212,8 @@ public:
 	      const double &rho,
 	      const double &Press,
 	      const double* y,
-	      const int &offset,
-	      const int &NSm1) const;
+	      const int offset,
+	      const int NSm1) const;
   double dSwdU_max_diagonal( const double &rho,
 			     const double &Press,
 			     const double* y) const;
@@ -633,14 +642,27 @@ inline void Mixture :: getRates( const double &Press,
  ****************************************************/
 inline void Mixture :: getDihdDc(const double &Press, 
 				 const double* y, 
-				 double* dh) const {
+				 const int NSm1,
+				 double* dh,
+				 double& phi) const {
   ct_gas->setMassFractions_NoNorm(y);
   ct_gas->setTemperature(T);
   ct_gas->setPressure(Press);
   ct_gas->getEnthalpy_RT(dh); // -> h = hs + hf
-  for(int i=0; i<ns; i++)
-    dh[i] = ( dh[i]*(Cantera::GasConstant/M[i])*T -
-	      Cp*T*MW/M[i] );
+
+  // get last species value
+  // for h_k - h_N
+  double hN( 0.0 );
+  if (NSm1) hN = ( dh[ns-1]*(Cantera::GasConstant/M[ns-1])*T -
+		   Cp*T*MW/M[ns-1] );
+  
+  // compute the rest and phi at the same time
+  phi = 0.0;
+  for(int i=0; i<ns-NSm1; i++) {
+    dh[i] = ( ( dh[i]*(Cantera::GasConstant/M[i])*T -
+		Cp*T*MW/M[i] ) - hN );
+    phi += y[i] * dh[i];
+  }
 }
 
 /****************************************************
@@ -742,8 +764,43 @@ inline void Mixture :: getEnthalpy( const double &Press,
   ct_gas->setTemperature(T);
   ct_gas->setPressure(Press);
   ct_gas->getEnthalpy_RT(h); // -> h = hs + hf
-  for(int i=0; i<ns; i++) h[i] = ( h[i]*(Cantera::GasConstant/M[i])*T );
+  for(int i=0; i<ns; i++) h[i] *= (Cantera::GasConstant/M[i])*T;
 }
+
+/****************************************************
+ * Individual Species Specific Heat
+ ****************************************************/
+inline void Mixture :: getHeatCapacity_p( const double &Press, 
+					  const double* y, 
+					  double*cp ) const {
+  ct_gas->setMassFractions_NoNorm(y);
+  ct_gas->setTemperature(T);
+  ct_gas->setPressure(Press);
+  ct_gas->getCp_R(cp);
+  for(int i=0; i<ns; i++) cp[i] *= (Cantera::GasConstant/M[i]);
+}
+
+/****************************************************
+ * How about both at once!!!
+ ****************************************************/
+inline void Mixture :: get_cp_and_h( const double &Press, 
+				     const double* y, 
+				     double*cp,
+				     double*h) const {
+  ct_gas->setMassFractions_NoNorm(y);
+  ct_gas->setTemperature(T);
+  ct_gas->setPressure(Press);
+  ct_gas->getEnthalpy_RT(h); // -> h = hs + hf
+  ct_gas->getCp_R(cp);
+
+  double R;
+  for(int i=0; i<ns; i++) {
+    R = Cantera::GasConstant/M[i];
+    h[i] *= R*T;
+    cp[i] *= R;
+  }
+}
+
 
 /****************************************************
  * Schmidt

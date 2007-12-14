@@ -336,10 +336,12 @@ class Flame2D_pState : public Flame2D_State {
 
   /************** Private Objects **********************/
 private:
-  Mixture Mix;       //!< Mixture Object
-  static double* r;  //!< Temporary storage for reaction rates
+  Mixture Mix;         //!< Mixture Object
+  static double* r;    //!< Temporary storage for reaction rates
   static double* dihdic;  //!< Temporary storage for dihdic
-  static double* h_i;//!< Temporary storage for h(i)
+  static double phi;   //!< Temporary storage for phi -> used with dihdic
+  static double* h_i;  //!< Temporary storage for h(i)
+  static double* cp_i; //!< Temporary storage for cp(i)
 
 public:
   /************** Constructors/Destructors ***********/
@@ -548,6 +550,11 @@ public:
   double Cp(const double &Temp) const { return Mix.heatCapacity_p(Temp, p(), c()); };
   double Cp(void) const { return Mix.heatCapacity_p(); };
   double Cv(void) const { return Mix.heatCapacity_v(); };
+  void Cp(double*cpi) const { Mix.getHeatCapacity_p(p(), c(), cpi); };
+  void Cp_and_h( double*cp, double*h ) const {
+    Mix.get_cp_and_h( p(), c(), cp, h );
+  }
+  //! ideal gas ratio
   double g(void) const { return Mix.heatRatio(); };
   //!< transport
   double mu(void) const { return Mix.viscosity(); };
@@ -562,10 +569,7 @@ public:
   double diedip() const { return (hprime() - Rtot())/(rho()*Rtot()); };
   double diedirho() const { return -p()*(hprime() - Rtot())/(rho()*rho()*Rtot()); };
   double load_dihdic() const {
-    Mix.getDihdDc( p(), c(), dihdic );
-#ifdef _NS_MINUS_ONE
-    for (int i=0; i<ns; i++) dihdic[i] -= dihdic[ns-1];
-#endif
+    Mix.getDihdDc( p(), c(), NSm1, dihdic, phi );
   };
   //! update related transport properties -> kappa and D_i
   void update_transport(void) { Mix.update_transport(rho(), c()); };
@@ -649,13 +653,23 @@ public:
   /********** Axisymmetric Source Terms *****************/
   void Sa_inviscid(Flame2D_State &S, const Vector2D &X, 
 		   const int Axisymmetric, const double& mult=1.0) const;
+  void dSa_idU( ::DenseMatrix &dSa_IdU, 
+		const Vector2D &X, 
+		const int Axisymmetric ) const;
   void Sa_viscous(Flame2D_State &S, 
 		  const Flame2D_State &dWdx,
 		  const Flame2D_State &dWdy,
 		  const Vector2D &X, 
 		  const int Axisymmetric, 
 		  const double& mult=1.0) const;
-    
+  void dSa_vdW( ::DenseMatrix &dSa_VdW,
+		const Flame2D_State &dWdx,
+		const Flame2D_State &dWdy,
+		const Vector2D &X, 
+		const int Axisymmetric,
+		const double &d_dWdx_dW, 
+		const double &d_dWdy_dW) const;
+  
   /* Source terms associated with finite-rate chemistry */
   void Sw(Flame2D_State &S, const double& mult=1.0) const;
   void dSwdU(::DenseMatrix &dSdU) const;
@@ -663,6 +677,7 @@ public:
 
   /** Source terms associated with gravitational forces */
   void Sg(Flame2D_State &S, const double& mult=1.0) const;
+  void dSgdU(::DenseMatrix &dSgdU) const;
 
   /*************** Preconditioning **********************/
   double u_plus_aprecon(const double &u,const int &flow_type_flag,
@@ -779,6 +794,7 @@ inline void Flame2D_pState :: AllocateStatic() {
     r = new double[ns];
     dihdic = new double[ns];
     h_i = new double[ns];
+    cp_i = new double[ns];
     y = new double[ns];
   }
 };
@@ -787,6 +803,7 @@ inline void Flame2D_pState :: DeallocateStatic() {
   if (r!=NULL) { delete[] r; r = NULL; } 
   if (dihdic!=NULL) { delete[] dihdic; dihdic = NULL; } 
   if (h_i!=NULL) { delete[] h_i; h_i = NULL; } 
+  if (cp_i!=NULL) { delete[] cp_i; cp_i = NULL; } 
   if (y!=NULL) { delete[] y; y = NULL; } 
   Mixture::DeallocateStatic();
 };

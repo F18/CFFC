@@ -1,4 +1,4 @@
-/////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
 ///
 /// \file Mixture.cc
 /// 
@@ -408,8 +408,8 @@ void Mixture::dSwdU( ::DenseMatrix &dSdU,
 		     const double &rho,
 		     const double &Press,
 		     const double* y,
-		     const int &offset,
-		     const int &NSm1) const {
+		     const int offset,
+		     const int NSm1) const {
   
 
   // perturbation factor
