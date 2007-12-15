@@ -789,6 +789,13 @@ ICs(const int i_ICtype,
     
 }
 
+/********************************************************
+ * Routine: BCs                                         *
+ *                                                      *
+ * Apply boundary conditions at boundaries of the       *
+ * specified hexa solution block.                       *
+ *                                                      *
+ ********************************************************/
 template<>
 void Hexa_Block<LES3DFsd_pState,LES3DFsd_cState>::
 BCs(Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs){
@@ -1599,10 +1606,18 @@ CFL(Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs){
    return (dtMin);
 }
 
+/********************************************************
+ * Routine: dUdt_Multistage_Explicit                    *
+ *                                                      *
+ * This routine determines the solution residuals for a *
+ * given stage of a variety of multi-stage explicit     *
+ * time integration schemes for a given solution block. *
+ *                                                      *
+ ********************************************************/
 template<>
-int Hexa_Block<LES3DFsd_pState,LES3DFsd_cState>::
+int Hexa_Block<LES3DFsd_pState, LES3DFsd_cState>::
 dUdt_Multistage_Explicit(const int i_stage,
-                         Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs) {
+                         Input_Parameters<LES3DFsd_pState, LES3DFsd_cState> &IPs) {
 
    int i, j, k,  k_residual;
    double omega;
@@ -1622,7 +1637,6 @@ dUdt_Multistage_Explicit(const int i_stage,
    Wr = W_VACUUM;
    Flux = U_VACUUM;
    Temp = U_VACUUM;
-
 
    // Evaluate the time step fraction and residual storage location for the stage. 
    switch(IPs.i_Time_Integration) {
@@ -1662,26 +1676,13 @@ dUdt_Multistage_Explicit(const int i_stage,
       of the computational grid for this stage. */
    
    switch(IPs.i_Reconstruction) {
-      
-   case RECONSTRUCTION_LEAST_SQUARES :
-
-      Linear_Reconstruction_LeastSquares(IPs.i_Limiter);
-
-      break;
-   default:
+     case RECONSTRUCTION_LEAST_SQUARES :
+       Linear_Reconstruction_LeastSquares(IPs.i_Limiter);
+       break;
+    default:
       Linear_Reconstruction_LeastSquares(IPs.i_Limiter);
       break;
    } /* endswitch */
-
-
-   // compute y+ etc.;
-   //   Wall_Shear( );
-   
-    /* Compute viscous stresses and heat conduction vector if using cell-centered methods. */
-//     if (SolnBlk.Flow_Type != FLOWTYPE_INVISCID && 
-//         Input_Parameters.i_Viscous_Flux_Evaluation == VISCOUS_RECONSTRUCTION_ARITHMETIC) {
-//        Viscous_Calculations(SolnBlk);
-//     }
 
    /* Evaluate the time rate of change of the solution
       (i.e., the solution residuals) using a second-order
@@ -1698,35 +1699,39 @@ dUdt_Multistage_Explicit(const int i_stage,
          } /* endif */
          
          for ( i = ICl-1; i <= ICu; ++i ) {
+
             if ( i_stage == 1 ) {
                Uo[i+1][j][k] = U[i+1][j][k];
                dUdt[i+1][j][k][k_residual] = U_VACUUM;
             } else if (( j > JCl-1 && j < JCu+1 ) 
                        && (k > KCl-1 && k < KCu+1)) {
                switch(IPs.i_Time_Integration) {
-               case TIME_STEPPING_EXPLICIT_PREDICTOR_CORRECTOR:
-                  //  dUdt[i+1][j][k][k_residual] = 
-                  //  dUdt[i+1][j][k][k_residual];
-                  break;
-               case TIME_STEPPING_EXPLICIT_RUNGE_KUTTA:
-		  if (IPs.N_Stage == 2) {
+                 case TIME_STEPPING_EXPLICIT_PREDICTOR_CORRECTOR:
+                   //  dUdt[i+1][j][k][k_residual] = 
+                   //  dUdt[i+1][j][k][k_residual];
+                   break;
+
+                 case TIME_STEPPING_EXPLICIT_RUNGE_KUTTA:
+		   if (IPs.N_Stage == 2) {
                      // dUdt[i+1][j][k_residual] = 
                      // dUdt[i+1][j][k_residual];
-                  } else if (IPs.N_Stage == 4 && i_stage == 4) {
-                     dUdt[i+1][j][k][k_residual] = 
-                        dUdt[i+1][j][k][0] + 
-                        TWO*dUdt[i+1][j][k][1] +TWO*dUdt[i+1][j][k][2];
-                  } else {
-         	     dUdt[i+1][j][k][k_residual].Vacuum();
-                  } /* endif */
-                  break;
-               case TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING :
-                  dUdt[i+1][j][k][k_residual] = U_VACUUM;
-                  break;
-               default:
-                  dUdt[i+1][j][k][k_residual] = U_VACUUM;
-                  break;
-               } /* endswitch */
+                   } else if (IPs.N_Stage == 4 && i_stage == 4) {
+                      dUdt[i+1][j][k][k_residual] = dUdt[i+1][j][k][0] + 
+                                                    TWO*dUdt[i+1][j][k][1] +
+                                                    TWO*dUdt[i+1][j][k][2];
+                   } else {
+          	     dUdt[i+1][j][k][k_residual].Vacuum();
+                   } /* endif */
+                   break;
+
+                 case TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING :
+                   dUdt[i+1][j][k][k_residual] = U_VACUUM;
+                   break;
+
+                 default:
+                   dUdt[i+1][j][k][k_residual] = U_VACUUM;
+                   break;
+	       } /* endswitch */
             } /* endif */
 
             if (( j > JCl-1 && j < JCu+1 ) && 
@@ -1743,21 +1748,24 @@ dUdt_Multistage_Explicit(const int i_stage,
                                  
                   if ( Grid.BCtypeW[j][k] == BC_REFLECTION) {
                      Wl = LES3DFsd_pState::Reflect(Wr,Grid.nfaceW(i+1,j,k));
-                  }
+                  } /* endif */
+
                   if ( Grid.BCtypeW[j][k] == BC_NO_SLIP) {
                      Wl = LES3DFsd_pState::NoSlip(Wr,WoW[j][k],
                                                   Grid.nfaceW(i+1,j,k), 
                                                   IPs.Pressure_Gradient,
                                                   FIXED_TEMPERATURE_WALL);
                                                          
-                  }
+                  } /* endif */
+
                   if ( Grid.BCtypeW[j][k] == BC_MOVING_WALL) {
                      Wl = LES3DFsd_pState::MovingWall(Wr,WoW[j][k],
                                                       Grid.nfaceW(i+1,j,k),
                                                       IPs.Moving_Wall_Velocity,
                                                       IPs.Pressure_Gradient,
                                                       FIXED_TEMPERATURE_WALL);
-                  }
+                  } /* endif */
+
                } else if (i ==  ICu && 
                          (Grid.BCtypeE[j][k] == BC_REFLECTION||
                           Grid.BCtypeE[j][k] == BC_NO_SLIP||
@@ -1767,22 +1775,26 @@ dUdt_Multistage_Explicit(const int i_stage,
                      ( phi[i][j][k]^ dWdx[i][j][k])*dX.x +
                      ( phi[i][j][k]^ dWdy[i][j][k])*dX.y +
                      ( phi[i][j][k]^ dWdz[i][j][k])*dX.z;
+
                   if ( Grid.BCtypeE[j][k] == BC_REFLECTION) {
                      Wr = LES3DFsd_pState::Reflect(Wl,Grid.nfaceE(i,j,k));
-                  } 
+                  } /* endif */
+
                   if ( Grid.BCtypeE[j][k] == BC_NO_SLIP) {
                      Wr = LES3DFsd_pState::NoSlip(Wl,WoE[j][k],
                                                   Grid.nfaceE(i,j,k), 
                                                   IPs.Pressure_Gradient, 
                                                   FIXED_TEMPERATURE_WALL);
-                  } 
+                  } /* endif */
+
                   if ( Grid.BCtypeE[j][k] == BC_MOVING_WALL) {
                      Wr = LES3DFsd_pState::MovingWall(Wl,WoE[j][k],
                                                       Grid.nfaceE(i,j,k),  
                                                       IPs.Moving_Wall_Velocity,
                                                       IPs.Pressure_Gradient,
                                                       FIXED_TEMPERATURE_WALL);
-                  }
+                  } /* endif */
+
                } else { 
                   dX = Grid.xfaceE(i,j,k)- Grid.Cell[i][j][k].Xc;
                   Wl = W[i][j][k] + 
@@ -1794,36 +1806,44 @@ dUdt_Multistage_Explicit(const int i_stage,
                      ( phi[i+1][j][k]^ dWdx[i+1][j][k])*dX.x +
                      ( phi[i+1][j][k]^ dWdy[i+1][j][k])*dX.y +
                      ( phi[i+1][j][k]^ dWdz[i+1][j][k])*dX.z;
+
                } /* endif */
                
-	  // Spacing for Preconditioner 
-	  if(IPs.Flow_Type != FLOWTYPE_INVISCID && IPs.Preconditioning){
- 	     delta_n = min(min(TWO*(Grid.volume(i,j,k)/(Grid.AfaceE(i,j,k)+Grid.AfaceW(i,j,k))),
-  			       TWO*(Grid.volume(i,j,k)/(Grid.AfaceN(i,j,k)+Grid.AfaceS(i,j,k)))),
-                               TWO*(Grid.volume(i,j,k)/(Grid.AfaceTop(i,j,k)+Grid.AfaceBot(i,j,k))));
-	  }
+               // Spacing for Preconditioner 
+	       if(IPs.Flow_Type != FLOWTYPE_INVISCID && IPs.Preconditioning){
+ 	          delta_n = min(min(TWO*(Grid.volume(i,j,k)/(Grid.AfaceE(i,j,k)+Grid.AfaceW(i,j,k))),
+  			    TWO*(Grid.volume(i,j,k)/(Grid.AfaceN(i,j,k)+Grid.AfaceS(i,j,k)))),
+                            TWO*(Grid.volume(i,j,k)/(Grid.AfaceTop(i,j,k)+Grid.AfaceBot(i,j,k))));
+	       } /* endif */
+
+               // Evaluate inviscid numerical flux
                switch(IPs.i_Flux_Function) {
-               case FLUX_FUNCTION_HLLE :
+                case FLUX_FUNCTION_HLLE :
                   Flux = LES3DFsd_pState::FluxHLLE_n(Wl, Wr, Grid.nfaceE(i,j,k));
                   break;
-               case FLUX_FUNCTION_ROE :
+                case FLUX_FUNCTION_ROE :
                   Flux = LES3DFsd_pState::FluxRoe_n(Wl, Wr, Grid.nfaceE(i,j,k));
                   break;
-  	       case FLUX_FUNCTION_AUSM_PLUS_UP :
+   	        case FLUX_FUNCTION_AUSM_PLUS_UP :
  		  Flux = LES3DFsd_pState::FluxAUSMplus_up_n(Wl, Wr, Grid.nfaceE(i,j,k));
  	          break;
                } /* endswitch */
-               // add viscous flux in i direction
+
+               // Add viscous flux in i direction
                Flux -=  LES3DFsd_pState::FluxViscous_n(Wl, Wr,
-                                                       W[i][j][k],W[i+1][j][k], 
-                                                       dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k],
-                                                       dWdx[i+1][j][k],dWdy[i+1][j][k],dWdz[i+1][j][k],
-                                                       Grid.nfaceE(i,j,k),Grid.Voe(i,j,k),  
-                                                       Grid.delta_oe(i,j,k),Grid.volume(i,j,k), 
-	                                               Grid.volume(i+1,j,k),Flow_Type);
+                                                       W[i][j][k], W[i+1][j][k], 
+                                                       dWdx[i][j][k], dWdy[i][j][k], dWdz[i][j][k],
+                                                       dWdx[i+1][j][k], dWdy[i+1][j][k], dWdz[i+1][j][k],
+                                                       Grid.nfaceE(i,j,k), Grid.Voe(i,j,k),  
+                                                       Grid.delta_oe(i,j,k), Grid.volume(i,j,k), 
+	                                               Grid.volume(i+1,j,k), Flow_Type);
+
                /* Evaluate cell-averaged solution changes. */
-               dUdt[i][j][k][k_residual] -= (IPs.CFL_Number*dt[i][j][k])*Flux*Grid.AfaceE(i,j,k)/Grid.volume(i,j,k);
-               dUdt[i+1][j][k][k_residual] += (IPs.CFL_Number*dt[i+1][j][k])*Flux*Grid.AfaceW(i+1,j,k)/Grid.volume(i+1,j,k);
+               dUdt[i][j][k][k_residual] -= (IPs.CFL_Number*dt[i][j][k])*
+                                            Flux*Grid.AfaceE(i,j,k)/Grid.volume(i,j,k);
+               dUdt[i+1][j][k][k_residual] += (IPs.CFL_Number*dt[i+1][j][k])*
+                                              Flux*Grid.AfaceW(i+1,j,k)/Grid.volume(i+1,j,k);
+
                /* Include source terms associated with turbulence model */
                 dUdt[i][j][k][k_residual] += (IPs.CFL_Number*dt[i][j][k])*LES3DFsd_pState::Sturbulence(W[i][j][k],
                                                                                                        dWdx[i][j][k],
@@ -1831,16 +1851,14 @@ dUdt_Multistage_Explicit(const int i_stage,
                                                                                                        dWdz[i][j][k],
                                                                                                        Flow_Type,
                                                                                                        Grid.volume(i,j,k));
-          /* Include physical time derivative for dual time stepping */
-//           if (IPs.Dual_Time_Stepping) {
-//             //cout << "Source[k] dual time" << endl;
-//             dUdt[i][j][k][k_residual] -= (IPs.CFL_Number*dt[i][j][k])*
-//                                               W[i][j][k].S_dual_time_stepping(U[i][j][k], Ut[i][j][k], Uold[i][j][k], 
-//                                                                                    dTime, IPs.first_step);
-//           }
+               /* Include physical time derivative for dual time stepping */
+//                if (IPs.Dual_Time_Stepping) {
+//                   dUdt[i][j][k][k_residual] -= (IPs.CFL_Number*dt[i][j][k])*
+//                                                W[i][j][k].S_dual_time_stepping(U[i][j][k], Ut[i][j][k], Uold[i][j][k], 
+//                                                                                dTime, IPs.first_step);
+//                } /* endif */
 
-	   /* Save west and east face boundary flux. */
-               
+               /* Save west and east face boundary flux. */
                //    if (i ==  ICl-1) {
 //                     FluxW[j] = -Flux* Grid.lfaceW(i+1, j);
 //                 } else if (i ==  ICu) {
@@ -1863,6 +1881,7 @@ dUdt_Multistage_Explicit(const int i_stage,
    for ( k = KCl; k <= KCu; ++k ) {
       for ( i = ICl; i <= ICu; ++i ) {
          for ( j = JCl-1; j <= JCu; ++j ) {
+
             /* Evaluate the cell interface j-direction fluxes. */
             if (j == JCl-1 && 
                 ( Grid.BCtypeS[i][k] == BC_REFLECTION ||
@@ -1873,98 +1892,115 @@ dUdt_Multistage_Explicit(const int i_stage,
                   ( phi[i][j+1][k]^ dWdx[i][j+1][k])*dX.x +
                   ( phi[i][j+1][k]^ dWdy[i][j+1][k])*dX.y+
                   ( phi[i][j+1][k]^ dWdz[i][j+1][k])*dX.z;
+
                if ( Grid.BCtypeS[i][k] == BC_REFLECTION) {
                   Wl = LES3DFsd_pState::Reflect(Wr,Grid.nfaceS(i,j+1,k));
-                }
-                if ( Grid.BCtypeS[i][k] == BC_NO_SLIP) {
+	       } /* endif */
+
+               if ( Grid.BCtypeS[i][k] == BC_NO_SLIP) {
                   Wl = LES3DFsd_pState::NoSlip(Wr,WoS[i][k],
                                                Grid.nfaceS(i,j+1,k),
                                                IPs.Pressure_Gradient,
                                                FIXED_TEMPERATURE_WALL);
-                }
-                if ( Grid.BCtypeS[i][k] == BC_MOVING_WALL) {
+	       } /* endif */
+
+               if ( Grid.BCtypeS[i][k] == BC_MOVING_WALL) {
                   Wl = LES3DFsd_pState::MovingWall(Wr,WoS[i][k],
                                                    Grid.nfaceS(i,j+1,k),
                                                    IPs.Moving_Wall_Velocity,
                                                    IPs.Pressure_Gradient,
                                                    FIXED_TEMPERATURE_WALL);
-                }
-             } else if ( j ==  JCu && 
-                       ( Grid.BCtypeN[i][k] == BC_REFLECTION ||
-                         Grid.BCtypeN[i][k] == BC_NO_SLIP||
-                         Grid.BCtypeN[i][k] == BC_MOVING_WALL)) {
-                dX = Grid.xfaceN(i,j,k)- Grid.Cell[i][j][k].Xc;
-                Wl = W[i][j][k] + 
-                   ( phi[i][j][k]^ dWdx[i][j][k])*dX.x+
-                   ( phi[i][j][k]^ dWdy[i][j][k])*dX.y+
-                   ( phi[i][j][k]^ dWdz[i][j][k])*dX.z;
-                if ( Grid.BCtypeN[i][k] == BC_REFLECTION) {
-                   Wr = LES3DFsd_pState::Reflect(Wl,Grid.nfaceN(i,j,k));
-                }
-                if ( Grid.BCtypeN[i][k] == BC_NO_SLIP) {
-                   Wr = LES3DFsd_pState::NoSlip(Wl,WoN[i][k],
-                                                Grid.nfaceN(i,j,k),
-                                                IPs.Pressure_Gradient,
-                                                FIXED_TEMPERATURE_WALL);
-                }
-                if ( Grid.BCtypeN[i][k] == BC_MOVING_WALL) {
-                   Wr = LES3DFsd_pState::MovingWall(Wl,WoN[i][k],
-                                                    Grid.nfaceN(i,j,k),
-                                                    IPs.Moving_Wall_Velocity,
-                                                    IPs.Pressure_Gradient,
-                                                    FIXED_TEMPERATURE_WALL);
-                }
-             } else {
-                dX = Grid.xfaceN(i,j,k)- Grid.Cell[i][j][k].Xc;
-                Wl = W[i][j][k] + 
-                   ( phi[i][j][k]^ dWdx[i][j][k])*dX.x +
-                   ( phi[i][j][k]^ dWdy[i][j][k])*dX.y +
-                   ( phi[i][j][k]^ dWdz[i][j][k])*dX.z;
-                dX =  Grid.xfaceS(i,j+1,k)- Grid.Cell[i][j+1][k].Xc;
-                Wr =  W[i][j+1][k] +
-                   ( phi[i][j+1][k]^ dWdx[i][j+1][k])*dX.x +
-                   ( phi[i][j+1][k]^ dWdy[i][j+1][k])*dX.y +
-                   ( phi[i][j+1][k]^ dWdz[i][j+1][k])*dX.z;
-          } /* endif */
+	       } /* endif */
 
-	  // Spacing for Preconditioner 
-	  if(IPs.Flow_Type != FLOWTYPE_INVISCID && IPs.Preconditioning){
-	    delta_n = min(min(TWO*(Grid.volume(i,j,k)/(Grid.AfaceE(i,j,k)+Grid.AfaceW(i,j,k))),
-			      TWO*(Grid.volume(i,j,k)/(Grid.AfaceN(i,j,k)+Grid.AfaceS(i,j,k)))),
-                              TWO*( Grid.volume(i,j,k)/(Grid.AfaceTop(i,j,k)+Grid.AfaceBot(i,j,k))));
-	  }
-             switch(IPs.i_Flux_Function) {
-             case FLUX_FUNCTION_HLLE :
+            } else if ( j ==  JCu && 
+                      ( Grid.BCtypeN[i][k] == BC_REFLECTION ||
+                        Grid.BCtypeN[i][k] == BC_NO_SLIP||
+                        Grid.BCtypeN[i][k] == BC_MOVING_WALL)) {
+               dX = Grid.xfaceN(i,j,k)- Grid.Cell[i][j][k].Xc;
+               Wl = W[i][j][k] + 
+                  ( phi[i][j][k]^ dWdx[i][j][k])*dX.x+
+                  ( phi[i][j][k]^ dWdy[i][j][k])*dX.y+
+                  ( phi[i][j][k]^ dWdz[i][j][k])*dX.z;
+               if ( Grid.BCtypeN[i][k] == BC_REFLECTION) {
+                  Wr = LES3DFsd_pState::Reflect(Wl,Grid.nfaceN(i,j,k));
+               } /* endif */
+
+               if ( Grid.BCtypeN[i][k] == BC_NO_SLIP) {
+                  Wr = LES3DFsd_pState::NoSlip(Wl,WoN[i][k],
+                                               Grid.nfaceN(i,j,k),
+                                               IPs.Pressure_Gradient,
+                                               FIXED_TEMPERATURE_WALL);
+               } /* endif */
+
+               if ( Grid.BCtypeN[i][k] == BC_MOVING_WALL) {
+                  Wr = LES3DFsd_pState::MovingWall(Wl,WoN[i][k],
+                                                   Grid.nfaceN(i,j,k),
+                                                   IPs.Moving_Wall_Velocity,
+                                                   IPs.Pressure_Gradient,
+                                                   FIXED_TEMPERATURE_WALL);
+               } /* endif */
+
+            } else {
+               dX = Grid.xfaceN(i,j,k)- Grid.Cell[i][j][k].Xc;
+               Wl = W[i][j][k] + 
+                  ( phi[i][j][k]^ dWdx[i][j][k])*dX.x +
+                  ( phi[i][j][k]^ dWdy[i][j][k])*dX.y +
+                  ( phi[i][j][k]^ dWdz[i][j][k])*dX.z;
+               dX =  Grid.xfaceS(i,j+1,k)- Grid.Cell[i][j+1][k].Xc;
+               Wr =  W[i][j+1][k] +
+                  ( phi[i][j+1][k]^ dWdx[i][j+1][k])*dX.x +
+                  ( phi[i][j+1][k]^ dWdy[i][j+1][k])*dX.y +
+                  ( phi[i][j+1][k]^ dWdz[i][j+1][k])*dX.z;
+
+	    } /* endif */
+
+	    // Spacing for Preconditioner 
+	    if (IPs.Flow_Type != FLOWTYPE_INVISCID && IPs.Preconditioning){
+ 	       delta_n = min(min(TWO*(Grid.volume(i,j,k)/(Grid.AfaceE(i,j,k)+Grid.AfaceW(i,j,k))),
+                                 TWO*(Grid.volume(i,j,k)/(Grid.AfaceN(i,j,k)+Grid.AfaceS(i,j,k)))),
+                                 TWO*( Grid.volume(i,j,k)/(Grid.AfaceTop(i,j,k)+Grid.AfaceBot(i,j,k))));
+	    } /* endif */
+
+            // Evaluate inviscid numerical flux
+            switch(IPs.i_Flux_Function) {
+              case FLUX_FUNCTION_HLLE :
                 Flux =  LES3DFsd_pState::FluxHLLE_n(Wl, Wr, Grid.nfaceN(i,j,k));
                 break;
-             case FLUX_FUNCTION_ROE :
+              case FLUX_FUNCTION_ROE :
                 Flux =  LES3DFsd_pState::FluxRoe_n(Wl, Wr, Grid.nfaceN(i,j,k));
                 break;
-             case FLUX_FUNCTION_AUSM_PLUS_UP :
-		Flux =  LES3DFsd_pState::FluxAUSMplus_up_n(Wl, Wr, Grid.nfaceN(i,j,k));
+              case FLUX_FUNCTION_AUSM_PLUS_UP :
+                Flux =  LES3DFsd_pState::FluxAUSMplus_up_n(Wl, Wr, Grid.nfaceN(i,j,k));
 	        break;
-             } /* endswitch */
-             // add viscous flux in j direction
-             Flux -= LES3DFsd_pState::FluxViscous_n(Wl,Wr, 
-                                                    W[i][j][k],W[i][j+1][k],
-                                                    dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k],
-                                                    dWdx[i][j+1][k],dWdy[i][j+1][k],dWdz[i][j+1][k],
-                                                    Grid.nfaceN(i,j,k),Grid.Von(i,j,k),
-                                                    Grid.delta_on(i,j,k),Grid.volume(i,j,k), 
-                                                    Grid.volume(i,j+1,k),Flow_Type);
-             /* Evaluate cell-averaged solution changes. */
-             dUdt[i][j][k][k_residual] -= (IPs.CFL_Number*dt[i][j][k])*Flux*Grid.AfaceN(i,j,k)/Grid.volume(i,j,k);
-             dUdt[i][j+1][k][k_residual] += (IPs.CFL_Number*dt[i][j+1][k])*Flux*Grid.AfaceS(i,j+1,k)/Grid.volume(i,j+1,k);
-          /* Save south and north face boundary flux. */
-          // if (j ==  JCl-1) {
+            } /* endswitch */
+
+            // Add viscous flux in j direction
+            Flux -= LES3DFsd_pState::FluxViscous_n(Wl, Wr, 
+                                                   W[i][j][k], W[i][j+1][k],
+                                                   dWdx[i][j][k], dWdy[i][j][k], dWdz[i][j][k],
+                                                   dWdx[i][j+1][k], dWdy[i][j+1][k], dWdz[i][j+1][k],
+                                                   Grid.nfaceN(i,j,k), Grid.Von(i,j,k),
+                                                   Grid.delta_on(i,j,k), Grid.volume(i,j,k), 
+                                                   Grid.volume(i,j+1,k), Flow_Type);
+            
+            /* Evaluate cell-averaged solution changes. */
+            dUdt[i][j][k][k_residual] -= (IPs.CFL_Number*dt[i][j][k])*
+                                         Flux*Grid.AfaceN(i,j,k)/Grid.volume(i,j,k);
+            dUdt[i][j+1][k][k_residual] += (IPs.CFL_Number*dt[i][j+1][k])*
+                                           Flux*Grid.AfaceS(i,j+1,k)/Grid.volume(i,j+1,k);
+
+            /* Save south and north face boundary flux. */
+
+//           if (j ==  JCl-1) {
 //               FluxS[i] = -Flux* Grid.lfaceS(i, j+1);
 //           } else if (j ==  JCu) {
 //               FluxN[i] = Flux* Grid.lfaceN(i, j);
 //           } /* endif */
 
 	 } /* endfor */
-           dUdt[i][JCl-1][k][k_residual] = U_VACUUM;
-           dUdt[i][JCu+1][k][k_residual] = U_VACUUM;
+
+         dUdt[i][JCl-1][k][k_residual] = U_VACUUM;
+         dUdt[i][JCu+1][k][k_residual] = U_VACUUM;
       } /* endfor */
    } /* endfor */
 
@@ -1972,6 +2008,7 @@ dUdt_Multistage_Explicit(const int i_stage,
    for ( i = ICl; i <= ICu; ++i ) {
       for ( j = JCl; j <= JCu; ++j ){
          for ( k = KCl-1; k <= KCu; ++k )  {
+
             /* Evaluate the cell interface j-direction fluxes. */
             if ( k == KCl-1 && 
                ( Grid.BCtypeB[i][j] == BC_REFLECTION  || 
@@ -1986,20 +2023,23 @@ dUdt_Multistage_Explicit(const int i_stage,
 
                if ( Grid.BCtypeB[i][j] == BC_REFLECTION) {
                   Wl = LES3DFsd_pState::Reflect(Wr,Grid.nfaceBot(i,j,k+1));
-               }
+               } /* endif */
+
                if ( Grid.BCtypeB[i][j] == BC_NO_SLIP) {
                   Wl = LES3DFsd_pState::NoSlip(Wr,WoB[i][j],
                                                Grid.nfaceBot(i,j,k+1), 
                                                IPs.Pressure_Gradient,
                                                FIXED_TEMPERATURE_WALL);
-               }
+               } /* endif */
+
                if ( Grid.BCtypeB[i][j] == BC_MOVING_WALL) {
                   Wl = LES3DFsd_pState::MovingWall(Wr,WoB[i][j],
                                                    Grid.nfaceBot(i,j,k+1),
                                                    IPs.Moving_Wall_Velocity,
                                                    IPs.Pressure_Gradient,
                                                    FIXED_TEMPERATURE_WALL);
-               }
+               } /* endif */
+
             } else if ( k == KCu && 
                       ( Grid.BCtypeT[i][j] == BC_REFLECTION ||
                         Grid.BCtypeT[i][j] == BC_NO_SLIP ||
@@ -2013,77 +2053,98 @@ dUdt_Multistage_Explicit(const int i_stage,
 
                 if ( Grid.BCtypeT[i][j] == BC_REFLECTION) {
                    Wr = LES3DFsd_pState::Reflect(Wl,Grid.nfaceTop(i,j,k));
-                }
+                } /* endif */
+
                 if ( Grid.BCtypeT[i][j] == BC_NO_SLIP) {
                    Wr = LES3DFsd_pState::NoSlip(Wl,WoT[i][j],
                                                 Grid.nfaceTop(i,j,k), 
                                                 IPs.Pressure_Gradient,
                                                 FIXED_TEMPERATURE_WALL );
-                }
+                } /* endif */
+
                 if ( Grid.BCtypeT[i][j] == BC_MOVING_WALL) {
                    Wr = LES3DFsd_pState::MovingWall(Wl,WoT[i][j],
                                                     Grid.nfaceTop(i,j,k),
                                                     IPs.Moving_Wall_Velocity,
                                                     IPs.Pressure_Gradient, 
                                                     FIXED_TEMPERATURE_WALL );
-                }
-             } else {
-                dX = Grid.xfaceTop(i,j,k)- Grid.Cell[i][j][k].Xc;
-                Wl = W[i][j][k] + 
+                } /* endif */
+
+            } else {
+               dX = Grid.xfaceTop(i,j,k)- Grid.Cell[i][j][k].Xc;
+               Wl = W[i][j][k] + 
                    ( phi[i][j][k]^ dWdx[i][j][k])*dX.x +
                    ( phi[i][j][k]^ dWdy[i][j][k])*dX.y +
                    ( phi[i][j][k]^ dWdz[i][j][k])*dX.z;
-                dX = Grid.xfaceBot(i,j,k+1)- Grid.Cell[i][j][k+1].Xc;
-                Wr = W[i][j][k+1] +
+               dX = Grid.xfaceBot(i,j,k+1)- Grid.Cell[i][j][k+1].Xc;
+               Wr = W[i][j][k+1] +
                    ( phi[i][j][k+1]^ dWdx[i][j][k+1])*dX.x +
                    ( phi[i][j][k+1]^ dWdy[i][j][k+1])*dX.y +
                    ( phi[i][j][k+1]^ dWdz[i][j][k+1])*dX.z;
-             } /* endif */
+
+            } /* endif */
              
-	  // Spacing for Preconditioner 
-	  if(IPs.Flow_Type != FLOWTYPE_INVISCID && IPs.Preconditioning){
- 	     delta_n = min(min(TWO*(Grid.volume(i,j,k)/(Grid.AfaceE(i,j,k)+Grid.AfaceW(i,j,k))),
-			       TWO*(Grid.volume(i,j,k)/(Grid.AfaceN(i,j,k)+Grid.AfaceS(i,j,k)))),
-                               TWO*(Grid.volume(i,j,k)/(Grid.AfaceTop(i,j,k)+Grid.AfaceBot(i,j,k))));
-	  }
-             switch(IPs.i_Flux_Function) {
-             case FLUX_FUNCTION_HLLE :
+	    // Spacing for Preconditioner 
+	    if (IPs.Flow_Type != FLOWTYPE_INVISCID && IPs.Preconditioning) {
+  	       delta_n = min(min(TWO*(Grid.volume(i,j,k)/(Grid.AfaceE(i,j,k)+Grid.AfaceW(i,j,k))),
+	                         TWO*(Grid.volume(i,j,k)/(Grid.AfaceN(i,j,k)+Grid.AfaceS(i,j,k)))),
+                                 TWO*(Grid.volume(i,j,k)/(Grid.AfaceTop(i,j,k)+Grid.AfaceBot(i,j,k))));
+	    } /* endif */
+
+            // Evaluate inviscid numerical flux
+            switch(IPs.i_Flux_Function) {
+              case FLUX_FUNCTION_HLLE :
                 Flux =  LES3DFsd_pState::FluxHLLE_n(Wl, Wr, Grid.nfaceTop(i,j,k));
                 break;
-             case FLUX_FUNCTION_ROE :
+              case FLUX_FUNCTION_ROE :
                 Flux =  LES3DFsd_pState::FluxRoe_n(Wl, Wr, Grid.nfaceTop(i,j,k));
                 break;
-             case FLUX_FUNCTION_AUSM_PLUS_UP :
+              case FLUX_FUNCTION_AUSM_PLUS_UP :
 		Flux =  LES3DFsd_pState::FluxAUSMplus_up_n(Wl, Wr, Grid.nfaceTop(i,j,k));
 	        break;
-             } /* endswitch */
-             // add viscous flux in k direction
-             Flux -=  LES3DFsd_pState::FluxViscous_n(Wl, Wr,
-                                                     W[i][j][k],W[i][j][k+1], 
-                                                     dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k],
-                                                     dWdx[i][j][k+1],dWdy[i][j][k+1],dWdz[i][j][k+1],
-                                                     Grid.nfaceTop(i,j,k),Grid.Vot(i,j,k), 
-                                                     Grid.delta_ot(i,j,k),Grid.volume(i,j,k), 
- 						     Grid.volume(i,j,k+1),Flow_Type);
-             /* Evaluate cell-averaged solution changes. */
-             dUdt[i][j][k][k_residual] -= (IPs.CFL_Number*dt[i][j][k])*Flux*Grid.AfaceTop(i,j,k)/Grid.volume(i,j,k);
-             dUdt[i][j][k+1][k_residual] += (IPs.CFL_Number*dt[i][j][k+1])*Flux*Grid.AfaceBot(i,j,k+1)/Grid.volume(i,j,k+1);
-             /* Save top and bottom face boundary flux. */
-             // if (j ==  JCl-1) {
+	    } /* endswitch */
+
+            // Add viscous flux in k direction
+            Flux -=  LES3DFsd_pState::FluxViscous_n(Wl, Wr,
+                                                    W[i][j][k], W[i][j][k+1], 
+                                                    dWdx[i][j][k], dWdy[i][j][k], dWdz[i][j][k],
+                                                    dWdx[i][j][k+1], dWdy[i][j][k+1], dWdz[i][j][k+1],
+                                                    Grid.nfaceTop(i,j,k), Grid.Vot(i,j,k), 
+                                                    Grid.delta_ot(i,j,k), Grid.volume(i,j,k), 
+                                                    Grid.volume(i,j,k+1), Flow_Type);
+
+            /* Evaluate cell-averaged solution changes. */
+             dUdt[i][j][k][k_residual] -= (IPs.CFL_Number*dt[i][j][k])*
+                                          Flux*Grid.AfaceTop(i,j,k)/Grid.volume(i,j,k);
+             dUdt[i][j][k+1][k_residual] += (IPs.CFL_Number*dt[i][j][k+1])*
+                                            Flux*Grid.AfaceBot(i,j,k+1)/Grid.volume(i,j,k+1);
+
+            /* Save top and bottom face boundary flux. */
+//           if (j ==  JCl-1) {
 //               FluxS[i] = -Flux* Grid.lfaceS(i, j+1);
 //           } else if (j ==  JCu) {
 //               FluxN[i] = Flux* Grid.lfaceN(i, j);
 //           } /* endif */
              
           } /* endfor */
+
           dUdt[i][j][KCl-1][k_residual] = U_VACUUM;
           dUdt[i][j][KCu+1][k_residual] = U_VACUUM;
       } /* endfor */
    } /* endfor */
 
    return (0);
+
 }
 
+/********************************************************
+ * Routine: Update_Solution_Multistage_Explicit         *
+ *                                                      *
+ * This routine updates solution states of the given    *
+ * solution block for a variety of multi-stage explicit *
+ * time integration schemes.                            *
+ *                                                      *
+ ********************************************************/
 template<>
 int Hexa_Block<LES3DFsd_pState,LES3DFsd_cState>::
 Update_Solution_Multistage_Explicit(const int i_stage,
@@ -2095,10 +2156,10 @@ Update_Solution_Multistage_Explicit(const int i_stage,
    // Memory for linear system solver.
    //   LES3DFsd_cState dU_precon;
 
-  /* Additional variables for dual time stepping. */
-  double dTime = ZERO;          // Physical time step
-  double residual_denominator;  // Improves convergence for inner iterations
-  double length_n = max(max(IPs.Grid_IP.Box_Length, IPs.Grid_IP.Box_Width), IPs.Grid_IP.Box_Height);    
+   /* Additional variables for dual time stepping. */
+   double dTime = ZERO;          // Physical time step
+   double residual_denominator;  // Improves convergence for inner iterations
+   double length_n = max(max(IPs.Grid_IP.Box_Length, IPs.Grid_IP.Box_Width), IPs.Grid_IP.Box_Height);    
 
 //   if (IPs.Dual_Time_Stepping) {
 //     dTime = IPs.dTime;
@@ -2108,51 +2169,57 @@ Update_Solution_Multistage_Explicit(const int i_stage,
       location for the stage. */
   
    switch(IPs.i_Time_Integration) {
-   case TIME_STEPPING_EXPLICIT_EULER :
-      omega = Runge_Kutta(i_stage, IPs.N_Stage);
-      k_residual = 0;
-      break;
-   case TIME_STEPPING_EXPLICIT_PREDICTOR_CORRECTOR :
-      omega = Runge_Kutta(i_stage, IPs.N_Stage);
-      k_residual = 0;
-      break;
-   case TIME_STEPPING_EXPLICIT_RUNGE_KUTTA :
-      omega = Runge_Kutta(i_stage, IPs.N_Stage);
-      k_residual = 0;
-      if (IPs.N_Stage == 4) {
-         if (i_stage == 4) {
-            k_residual = 0;
-         } else {
-            k_residual = i_stage - 1;
-         } /* endif */
-      } /* endif */
-      break;
-   case TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING :
-      omega = MultiStage_Optimally_Smoothing(i_stage, 
-                                             IPs.N_Stage,
-                                             IPs.i_Limiter);
-      k_residual = 0;
-      break;
-   default:
-      omega = Runge_Kutta(i_stage, IPs.N_Stage);
-      k_residual = 0;
-      break;
+     case TIME_STEPPING_EXPLICIT_EULER :
+       omega = Runge_Kutta(i_stage, IPs.N_Stage);
+       k_residual = 0;
+       break;
+
+     case TIME_STEPPING_EXPLICIT_PREDICTOR_CORRECTOR :
+       omega = Runge_Kutta(i_stage, IPs.N_Stage);
+       k_residual = 0;
+       break;
+
+     case TIME_STEPPING_EXPLICIT_RUNGE_KUTTA :
+       omega = Runge_Kutta(i_stage, IPs.N_Stage);
+       k_residual = 0;
+       if (IPs.N_Stage == 4) {
+          if (i_stage == 4) {
+             k_residual = 0;
+          } else {
+             k_residual = i_stage - 1;
+          } /* endif */
+       } /* endif */
+       break;
+
+     case TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING :
+       omega = MultiStage_Optimally_Smoothing(i_stage, 
+                                              IPs.N_Stage,
+                                              IPs.i_Limiter);
+       k_residual = 0;
+       break;
+
+     default:
+       omega = Runge_Kutta(i_stage, IPs.N_Stage);
+       k_residual = 0;
+       break;
+
    } /* endswitch */
+
    /* Update solution variables for this stage. */
+
    for ( k  =  KCl ; k <=  KCu ; ++k ) {
       for ( j  =  JCl ; j <=  JCu ; ++j ) {
          for ( i =  ICl ; i <=  ICu ; ++i ) {
             
-            if (IPs.Local_Time_Stepping == 
-                GLOBAL_TIME_STEPPING || 
-                IPs.Local_Time_Stepping == 
-                SCALAR_LOCAL_TIME_STEPPING) {
+  	    // Update conserved solution state
+            if (IPs.Local_Time_Stepping == GLOBAL_TIME_STEPPING || 
+                IPs.Local_Time_Stepping == SCALAR_LOCAL_TIME_STEPPING) {
                U[i][j][k] = Uo[i][j][k] + omega* dUdt[i][j][k][k_residual];
 	       if (IPs.i_Flow_Type==FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY){
 		 U[i][j][k].rhok=0.0;
-	       }
+	       } /* endif */
 	       U[i][j][k].premixed_mfrac();
-            }
+            } /* endif */
 
             // Check physical validity of update solution state
             if (IPs.Local_Time_Stepping == GLOBAL_TIME_STEPPING) {
@@ -2177,6 +2244,10 @@ Update_Solution_Multistage_Explicit(const int i_stage,
 		return (1);
               } /* endif */
 	    } /* endif */
+
+            // Update primitive solution state
+            W[i][j][k] = U[i][j][k].W();
+	    W[i][j][k].premixed_mfrac();
 
         /************ FORM LHS FOR DUAL TIME STEPPING SIMI-IMPLICIT WITH PRECONDITIONING ***************/
 //         if (Input_Parameters.Local_Time_Stepping == DUAL_SEMI_IMPLICIT_LOW_MACH_NUMBER_PRECONDITIONER) {
@@ -2215,7 +2286,6 @@ Update_Solution_Multistage_Explicit(const int i_stage,
 //           //                             dTime
 //           LinSys.A += Precon;   
 // 	}
-            W[i][j][k] = U[i][j][k].W();
          } /* endfor */    	 
       } /* endfor */    
    } /* endfor */
@@ -2223,6 +2293,7 @@ Update_Solution_Multistage_Explicit(const int i_stage,
    /* Solution successfully updated. */
     
    return (0);   
+
 }
  
 
