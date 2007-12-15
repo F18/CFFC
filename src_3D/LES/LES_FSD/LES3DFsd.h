@@ -26,7 +26,7 @@
 #endif // _LES3DFSD_HEXA_BLOCK_INCLUDED
 
 #ifndef _LES3DFSD_HEXA_MULTIBLOCK_INCLUDED
-#include "LES3DFsdHexaMultiBlock.h"
+#include "LES3DFsdHexaPreProcessing.h"
 #endif // _LES3DFSD_HEXA_MULTIBLOCK_INCLUDED
 
 #ifndef _MPI_INCLUDED

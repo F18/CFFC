@@ -1,15 +1,7 @@
-/**************LES3DFsdHexaMultiBlock.h*************
- *        Header file creating multiblock list.    * 
- ***************************************************/
+/**************LES3DFsdHexaPreProcessing.h*************/
 
-#ifndef _LES3DFSD_HEXA_MULTIBLOCK_INCLUDED
-#define _LES3DFSD_HEXA_MULTIBLOCK_INCLUDED
-
-/* Include required C++ libraries. */
-
-#ifndef _LES3DFSD_INCLUDED
-#include "LES3DFsd.h"
-#endif // _LES3DFSD_INCLUDED   
+#ifndef _LES3DFSD_HEXA_PREPROCEESING_INCLUDED
+#define _LES3DFSD_HEXA_PREPROCESSING_INCLUDED
 
 /* Define the specializations. */
 
@@ -25,4 +17,4 @@ int Hexa_Post_Processing_Specializations(HexaSolver_Data &Data,
 		 	                 HexaSolver_Solution_Data<LES3DFsd_pState,
                                                                   LES3DFsd_cState> &Solution_Data);
 
-#endif // _LES3DFSD_HEXA_MULTIBLOCK_INCLUDED
+#endif // _LES3DFSD_HEXA_PREPROCESSING_INCLUDED

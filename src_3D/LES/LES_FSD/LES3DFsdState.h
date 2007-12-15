@@ -13,13 +13,13 @@
 /* Include header file for base solution classes from which the classes are derived. */
 
 #ifndef _NAVIERSTOKES3D_THERMALLYPERFECT_STATE_INCLUDED
-#include "../NavierStokes/NavierStokes3DThermallyPerfectState.h"
+#include "../../NavierStokes/NavierStokes3DThermallyPerfectState.h"
 #endif  //NAVIERSTOKES3D_THERMALLYPERFECT_STATE_INCLUDED
 
 /* Include turbulence modelling header file. */
 
 #ifndef _TURBULENCE_MODELLING_INCLUDED
-#include "../TurbulenceModelling/TurbulenceModelling.h"
+#include "../../TurbulenceModelling/TurbulenceModelling.h"
 #endif  //TURBULENCE_MODELLING_INCLUDED
 
 /* Define the classes. */

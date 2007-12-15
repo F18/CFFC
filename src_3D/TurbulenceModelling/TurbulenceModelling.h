@@ -552,7 +552,7 @@ int Wall_Distance(HEXA_BLOCK *Solution_Block,
  * Rogallo's procedure.
  *
  */
-template<class SOLN_pSTATE, class SOLN_cSTATE>
+template<typename SOLN_pSTATE, typename SOLN_cSTATE>
 class RandomFieldRogallo {
   private:
     int spectrum_flag;  //!< Turbulence kinetic energy spectrum flag.
@@ -586,10 +586,10 @@ class RandomFieldRogallo {
 
     double Energy_Spectrum_Value(const double &abs_wave_num) const;
 
-    int Generate_Velocity_Fluctuations(Grid3D_Hexa_Multi_Block &InitMeshBlks,
-				       Grid3D_Input_Parameters &IPs) const;
+    int Generate_Velocity_Fluctuations(Grid3D_Hexa_Multi_Block_List &InitMeshBlks,
+				       Grid3D_Input_Parameters &IPs);
 
-    void Write_Initial_Turbulent_Fluctuations(Grid3D_Hexa_Multi_Block &InitMeshBlks,
+    void Write_Initial_Turbulent_Fluctuations(Grid3D_Hexa_Multi_Block_List &InitMeshBlks,
 					      Grid3D_Input_Parameters &IPs,
 					      double *u, double *v, double *w) const;
        
@@ -600,7 +600,7 @@ class RandomFieldRogallo {
 //-----------------------------------------------------//
 
 // alpha
-template<class SOLN_pSTATE, class SOLN_cSTATE>
+template<typename SOLN_pSTATE, typename SOLN_cSTATE>
 complex<double> RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>::
 alpha(const double &abs_wave_num, const double &theta1, const double &phi) const {
 
@@ -611,7 +611,7 @@ alpha(const double &abs_wave_num, const double &theta1, const double &phi) const
 }
 
 // beta
-template<class SOLN_pSTATE, class SOLN_cSTATE>
+template<typename SOLN_pSTATE, typename SOLN_cSTATE>
 complex<double> RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>::
 beta(const double &abs_wave_num, const double &theta2, const double &phi) const {
 
@@ -622,7 +622,7 @@ beta(const double &abs_wave_num, const double &theta2, const double &phi) const 
 }
 
 // Prescribed energy spectrum
-template<class SOLN_pSTATE, class SOLN_cSTATE>
+template<typename SOLN_pSTATE, typename SOLN_cSTATE>
 double RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>::
 Energy_Spectrum_Value(const double &abs_wave_num) const {
 
@@ -707,20 +707,20 @@ Energy_Spectrum_Value(const double &abs_wave_num) const {
 }
  
 // Generate_Velocity_Fluctuations
-template<class SOLN_pSTATE, class SOLN_cSTATE>
+template<typename SOLN_pSTATE, typename SOLN_cSTATE>
 int RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>::
-Generate_Velocity_Fluctuations(Grid3D_Hexa_Multi_Block &InitMeshBlks,
-			       Grid3D_Input_Parameters &IPs) const {
+Generate_Velocity_Fluctuations(Grid3D_Hexa_Multi_Block_List &InitMeshBlks,
+			       Grid3D_Input_Parameters &IPs) {
 
   double L1, L2, L3;
-  L1 = IPs./*IP_Grid.*/Box_Length;
-  L2 = IPs./*IP_Grid.*/Box_Width;
-  L3 = IPs./*IP_Grid.*/Box_Height;
+  L1 = IPs.Box_Length;
+  L2 = IPs.Box_Width;
+  L3 = IPs.Box_Height;
 
   int Nx, Ny, Nz;
-  Nx = IPs./*IP_Grid.ICells*/NCells_Idir * IPs.NBlk_Idir;//InitMeshBlks.NBlk_Idir;//->NBI;
-  Ny = IPs./*IP_Grid.JCells*/NCells_Jdir * IPs.NBlk_Jdir;//InitMeshBlks.NBlk_Jdir;//->NBJ;
-  Nz = IPs./*IP_Grid.KCells*/NCells_Kdir * IPs.NBlk_Kdir;//InitMeshBlks.NBlk_Kdir;//->NBK;
+  Nx = IPs.NCells_Idir * InitMeshBlks.NBlk_Idir;
+  Ny = IPs.NCells_Jdir * InitMeshBlks.NBlk_Jdir;
+  Nz = IPs.NCells_Kdir * InitMeshBlks.NBlk_Kdir;
 
   double        scaling_factor = 1.0/double(Nx*Ny*Nz);  // Scaling factor for the complex to real transform
 
@@ -840,29 +840,13 @@ Generate_Velocity_Fluctuations(Grid3D_Hexa_Multi_Block &InitMeshBlks,
 
 	// real values at 8 corners
 // 	if ( (i==0 || i==Nx/2)  &&  (j==0 || j==Ny/2) ) {
-	    
 // 	    uu[i][j][l].im = 0.0;
 // 	    vv[i][j][l].im = 0.0;
 // 	    ww[i][j][l].im = 0.0;
-
 // 	}
-
-// 	cout << "\n (" << uu[i][j][l].re << "," << uu[i][j][l].im <<") \t"
-// 	     << "(" << vv[i][j][l].re << "," << vv[i][j][l].im <<") \t"
-// 	     << "(" << ww[i][j][l].re << "," << ww[i][j][l].im <<")";
-	
-        // cout <<"("<< k1*uu[i][j][l].re + k2*vv[i][j][l].re + k3*ww[i][j][l].re <<","
-// 	     << k1*uu[i][j][l].im + k2*vv[i][j][l].im + k3*ww[i][j][l].im <<") \t";
-      
-      } // end for
-      
-      //cout << endl;
-
-    } // end for
-    
-    //cout << endl;
-
-  } // end for
+      } /* end for */
+    } /* end for */
+  } /* end for */
   
   physical = fftw_plan_dft_c2r_3d(Nx, Ny, Nz, uu, u, /*FFTW_BACKWARD,*/ FFTW_ESTIMATE);
   fftw_execute(physical); 
@@ -888,7 +872,11 @@ Generate_Velocity_Fluctuations(Grid3D_Hexa_Multi_Block &InitMeshBlks,
   }
 
   Write_Initial_Turbulent_Fluctuations(InitMeshBlks, IPs, u, v, w);
-
+  if (CFFC_Primary_MPI_Processor()) {
+    cout << "\n\n ==========================================================================\n"; 
+    cout << " Generate Turbulence Field"<<endl;
+    cout << " ==========================================================================" << endl;
+  } 
   // Deallocations   
   fftw_free(u);
   fftw_free(v);
@@ -902,37 +890,18 @@ Generate_Velocity_Fluctuations(Grid3D_Hexa_Multi_Block &InitMeshBlks,
 }
 
 // Write_Initial_Turbulent_Fluctuations
-template<class SOLN_pSTATE, class SOLN_cSTATE>
+template<typename SOLN_pSTATE, typename SOLN_cSTATE>
 void RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>::
-Write_Initial_Turbulent_Fluctuations(Grid3D_Hexa_Multi_Block &InitMeshBlks,
+Write_Initial_Turbulent_Fluctuations(Grid3D_Hexa_Multi_Block_List &InitMeshBlks,
 				     Grid3D_Input_Parameters &IPs,
 				     double *u, 
                                      double *v, 
                                      double *w) const {
 
-  int ii, jj, kk;
-  int Nblks_i, Nblks_j, Nblks_k;
-  int ICblk, JCblk, KCblk; 
-  
-  Nblks_i = IPs.NBlk_Idir;//InitMeshBlks.NBlk_Idir;//->NBI;
-  Nblks_j = IPs.NBlk_Jdir;//InitMeshBlks.NBlk_Jdir;//->NBJ;
-  Nblks_k = IPs.NBlk_Kdir;//InitMeshBlks.NBlk_Kdir;//->NBK;
-
-/*   cout << "\n\n Nblks_i: " << Nblks_i << "\t Nblks_j: "  */
-/*        << Nblks_j << "\t Nblks_k: " << Nblks_k; */
-  ICblk = IPs./*IP_Grid.ICells*/NCells_Idir; //  /Nblks_i;  // Cells per block in the I direction
-  JCblk = IPs./*IP_Grid.JCells*/NCells_Jdir; //  /Nblks_j;  // Cells per block in the J direction
-  KCblk = IPs./*IP_Grid.KCells*/NCells_Kdir; //  /Nblks_k;  // Cells per block in the J direction
-  
-/*   cout << "\n ICblk: " << ICblk << "\t JCblk: "  */
-/*        << JCblk << "\t KCblk: " << KCblk; */
-
   int Nx, Ny, Nz;
-  Nx = IPs./*IP_Grid.ICells*/NCells_Idir * Nblks_i;
-  Ny = IPs./*IP_Grid.JCells*/NCells_Jdir * Nblks_j;
-  Nz = IPs./*IP_Grid.KCells*/NCells_Kdir * Nblks_k;
-/*   cout << "\n Nx: " << Nx << "\t Ny: " */
-/*        << Ny << "\t Nz: " << Nz; */
+  Nx = IPs.NCells_Idir * InitMeshBlks.NBlk_Idir;
+  Ny = IPs.NCells_Jdir * InitMeshBlks.NBlk_Idir;
+  Nz = IPs.NCells_Kdir * InitMeshBlks.NBlk_Idir;
 
   ofstream out_file;
   out_file.open("Initial_Turbulence_Fluctuations.dat", ios::out);
@@ -944,47 +913,38 @@ Write_Initial_Turbulent_Fluctuations(Grid3D_Hexa_Multi_Block &InitMeshBlks,
     out_file.setf(ios::scientific);
     //    out_file << "VARIABLES= 'x', 'y', 'z', 'velocity-x', 'velocity-y', 'velocity-z' " << endl;
 
-  for (int i_blk=0; i_blk<Nblks_i; ++i_blk) {
-    for (int j_blk=0; j_blk<Nblks_j; ++j_blk) {
-      for (int k_blk=0; k_blk<Nblks_k; ++k_blk) {
-	
-	int ICl = InitMeshBlks.Grid_Blks[i_blk][j_blk][k_blk].ICl, ICu = InitMeshBlks.Grid_Blks[i_blk][j_blk][k_blk].ICu;
-	int JCl = InitMeshBlks.Grid_Blks[i_blk][j_blk][k_blk].JCl, JCu = InitMeshBlks.Grid_Blks[i_blk][j_blk][k_blk].JCu;
-	int KCl = InitMeshBlks.Grid_Blks[i_blk][j_blk][k_blk].KCl, KCu = InitMeshBlks.Grid_Blks[i_blk][j_blk][k_blk].KCu;
+    for ( int nb = 0; nb < InitMeshBlks.NBlk; ++nb ) {
 
-	if (ICu-ICl+1 != ICblk  ||  JCu-JCl+1 != JCblk  || KCu-KCl+1 != KCblk) {
+	int ICl = InitMeshBlks.Grid_Blks[nb].ICl, ICu = InitMeshBlks.Grid_Blks[nb].ICu;
+	int JCl = InitMeshBlks.Grid_Blks[nb].JCl, JCu = InitMeshBlks.Grid_Blks[nb].JCu;
+	int KCl = InitMeshBlks.Grid_Blks[nb].KCl, KCu = InitMeshBlks.Grid_Blks[nb].KCu;
+
+	if (ICu-ICl+1 != IPs.NCells_Idir  ||  JCu-JCl+1 != IPs.NCells_Jdir  || KCu-KCl+1 != IPs.NCells_Kdir) {
 	  cout << "\nERROR: Number of cell does not match writing Initial_Turbulence_Fluctuations.dat";
 	}
 
-	//       out_file << "ZONE   I=" << Nx/Nblks_i << "\t J=" << Ny/Nblks_j << "\t K=" << Nz/Nblks_k << endl;
-
-	for (int i=0; i<ICblk; ++i) {
-	  ii = i_blk*ICblk + i;
-	  for (int j=0; j<JCblk; ++j) {
-	    jj = j_blk*JCblk + j;
-	    for (int k=0; k<KCblk; ++k) {
-	      kk = k_blk*KCblk + k;
+	for (int i=0; i<IPs.NCells_Idir; ++i) {
+	  int ii = Nx + i;
+	  for (int j=0; j<IPs.NCells_Jdir; ++j) {
+	    int jj = Ny + j;
+	    for (int k=0; k<IPs.NCells_Kdir; ++k) {
+	      int kk = Nz + k;
 
 	      out_file << setprecision(10)
-		       << InitMeshBlks.Grid_Blks[i_blk][j_blk][k_blk].Cell[i+ICl][j+JCl][k+KCl].Xc
+		       << InitMeshBlks.Grid_Blks[nb].Cell[i+ICl][j+JCl][k+KCl].Xc
 		       << " " << u[kk + Nz*(jj+Ny*ii)]
 		       << " " << v[kk + Nz*(jj+Ny*ii)]
 		       << " " << w[kk + Nz*(jj+Ny*ii)] << "\n";
 	    }
 	  }
 	}
-
+        out_file.setf(ios::scientific);
 	out_file << endl;
-	
-      }
     }
-  }
-
   out_file.close();   
-
 }
 
-template<class HEXA_BLOCK>
+template<typename HEXA_BLOCK>
 void Time_Averaging_of_Velocity_Field(HEXA_BLOCK *Solution_Block,
                                       AdaptiveBlock3D_List &LocalSolnBlockList,
                                       Grid3D_Input_Parameters &IPs,
@@ -996,9 +956,7 @@ void Time_Averaging_of_Velocity_Field(HEXA_BLOCK *Solution_Block,
   double Yfuel_conditional = ZERO;
   Vector3D vel;  vel.zero();
   //Conditional average on fresh gas
-/*   if (IPs.react_name != "NO_REACTIONS") { */
   Yfuel_conditional = 0.95*0.05518;//IPs.Fresh_Fuel_Mass_Fraction;
-/*   } */
   for (int p = 0 ; p <= LocalSolnBlockList.Nblk-1 ; p++ ) {
     if (LocalSolnBlockList.Block[p].used == ADAPTIVEBLOCK3D_USED) {
       for (int i = Solution_Block[p].ICl ; i <= Solution_Block[p].ICu ; i++) {
@@ -1024,7 +982,7 @@ void Time_Averaging_of_Velocity_Field(HEXA_BLOCK *Solution_Block,
   w_average = vel.z/Volume;
 }
 
-template <class HEXA_BLOCK>
+template <typename HEXA_BLOCK>
 double Time_Averaging_of_Turbulent_Burning_Rate(HEXA_BLOCK *Solution_Block,
                                                 AdaptiveBlock3D_List &LocalSolnBlockList,
                                                 Grid3D_Input_Parameters &IPs){
@@ -1048,11 +1006,15 @@ double Time_Averaging_of_Turbulent_Burning_Rate(HEXA_BLOCK *Solution_Block,
 }
   burning_rate = CFFC_Summation_MPI(burning_rate);
   burning_rate = burning_rate*0.3837/(Ly*Lz);//IPs.laminar_flame_speed/Ly;//(rho_u*Ly);  //(rho_u*Yf_u*Ly);
-  cout << "\n Turbulent Burning Rate = "<< burning_rate << endl;
+  if (CFFC_Primary_MPI_Processor()) {
+    cout << "\n\n ==========================================================================\n"; 
+    cout << " Turbulent Burning Rate = "<<burning_rate<<endl;
+    cout << " ==========================================================================" << endl;
+  } 
   return burning_rate;
 }
 
-template<class SOLN_pState, class SOLN_cState, class HEXA_BLOCK>
+template<typename HEXA_BLOCK>
 void Time_Averaging_of_Solution(HEXA_BLOCK *Solution_Block,
                                 AdaptiveBlock3D_List &LocalSolnBlockList,
                                 Grid3D_Input_Parameters &IPs,
@@ -1064,38 +1026,32 @@ void Time_Averaging_of_Solution(HEXA_BLOCK *Solution_Block,
   double vis, u_ave, v_ave, w_ave, local_vol, total_vol = ZERO, vis_ave = ZERO;
   double u_p=ZERO, v_p=ZERO, w_p=ZERO, ens=ZERO, eps_w=ZERO, eps_ss=ZERO;
   double Yfuel_conditional = ZERO;
-  SOLN_pState dWdx, dWdy, dWdz;
   
   //Conditional average on fresh gas
-  //  if (IPs.react_name != "NO_REACTIONS") {
   Yfuel_conditional = 0.95*0.05518;//IPs.Fresh_Fuel_Mass_Fraction;
-  //  }
   u_ave = u_average;
   v_ave = v_average;  
   w_ave = w_average;  
     
   for (int p = 0; p < LocalSolnBlockList.Nblk; p++) {
     if (LocalSolnBlockList.Block[p].used == ADAPTIVEBLOCK3D_USED) {
-      //      int q = p; 
       for (int i = Solution_Block[p].ICl; i <= Solution_Block[p].ICu; ++i) {
         for (int j  = Solution_Block[p].JCl; j <= Solution_Block[p].JCu; ++j) {
            for (int k  = Solution_Block[p].KCl; k <= Solution_Block[p].KCu; ++k) {
           if (Solution_Block[p].W[i][j][k].spec[0].c >= Yfuel_conditional) {
             vis = Solution_Block[p].W[i][j][k].mu()/(Solution_Block[p].W[i][j][k].rho);
-	    // Rescale viscosity dividing by the thickening factor and the wrinkling
-            // factor,i.e. calculate the real viscosity.
             local_vol = Solution_Block[p].Grid.volume(i,j,k);
             total_vol += local_vol;
             vis_ave += vis*local_vol;
             u_p += sqr(Solution_Block[p].W[i][j][k].v.x - u_ave) * local_vol;
             v_p += sqr(Solution_Block[p].W[i][j][k].v.y - v_ave) * local_vol;
             w_p += sqr(Solution_Block[p].W[i][j][k].v.z - w_ave) * local_vol;
-            ens += Solution_Block[p].enstrophy(i,j,k) * local_vol;
-            eps_w += 2.0*vis*Solution_Block[p].enstrophy(i,j,k) * local_vol;
-            dWdx = Solution_Block[p].dWdx[i][j][k];
-            dWdy = Solution_Block[p].dWdy[i][j][k];
-            dWdz = Solution_Block[p].dWdz[i][j][k];
-            eps_ss += 2.0*vis*(sqr(Solution_Block[p].W[i][j][k].abs_strain_rate(dWdx, dWdy, dWdz))/2.0) * local_vol;
+/*             ens += Solution_Block[p].enstrophy(i,j,k) * local_vol; */
+/*             eps_w += 2.0*vis*Solution_Block[p].enstrophy(i,j,k) * local_vol; */
+/*             dWdx = Solution_Block[p].dWdx[i][j][k]; */
+/*             dWdy = Solution_Block[p].dWdy[i][j][k]; */
+/*             dWdz = Solution_Block[p].dWdz[i][j][k]; */
+/*             eps_ss += 2.0*vis*(sqr(Solution_Block[p].W[i][j][k].abs_strain_rate(dWdx, dWdy, dWdz))/2.0) * local_vol; */
 	  }
 	}
       }
@@ -1126,27 +1082,26 @@ void Time_Averaging_of_Solution(HEXA_BLOCK *Solution_Block,
 
   if (ens == ZERO) {
     Taylor_scale = ZERO;
-  } else {
-    Taylor_scale = sqrt(TWO*u_rms*u_rms/(TWO*ens));//sqrt(10.0*vis_ave*1.5*u_rms*u_rms/eps_w);//sqrt(TWO*u_rms*u_rms/(TWO*ens));//?????????
+/*   } else { */
+/*     Taylor_scale = sqrt(TWO*u_rms*u_rms/(TWO*ens));//sqrt(10.0*vis_ave*1.5*u_rms*u_rms/eps_w);//sqrt(TWO*u_rms*u_rms/(TWO*ens));//????????? */
   }
 
   Re_Taylor =  u_rms*Taylor_scale/vis_ave;//???????????
-  Kolmogorov_scale = pow(pow(vis_ave, THREE)/eps_w, 0.25);//????????
-  L11= 0.09*pow(1.5*u_rms*u_rms, 1.5)/eps_w;//ens;
+/*   Kolmogorov_scale = pow(pow(vis_ave, THREE)/eps_w, 0.25);//???????? */
+/*   L11= 0.09*pow(1.5*u_rms*u_rms, 1.5)/eps_w;//ens; */
 
-  if (eps_w > 0.0) {
-    l_1 = 0.42*pow(u_rms, 3.0)/eps_w;
-  } else {
-    l_1 = 0.0;
-  }
-  if (eps_ss > 0.0) {
-    l_2 = 0.42*pow(u_rms, 3.0)/eps_ss;
-  } else {
-    l_2 = 0.0;
-  }
+/*   if (eps_w > 0.0) { */
+/*     l_1 = 0.42*pow(u_rms, 3.0)/eps_w; */
+/*   } else { */
+/*     l_1 = 0.0; */
+/*   } */
+/*   if (eps_ss > 0.0) { */
+/*     l_2 = 0.42*pow(u_rms, 3.0)/eps_ss; */
+/*   } else { */
+/*     l_2 = 0.0; */
+/*   } */
 
   if (CFFC_Primary_MPI_Processor()) {
-    // Output
     cout << "\n\n ==========================================================================\n"; 
     cout << " In physical space:\n";
     cout << "\n <u^2> = "<< u_p <<"  "<< "<v^2> = "<< v_p <<"  "<< "<v^2> = "<< w_p <<"  "
@@ -1163,7 +1118,7 @@ void Time_Averaging_of_Solution(HEXA_BLOCK *Solution_Block,
   } 
 }
 
-template <class HEXA_BLOCK>
+template <typename HEXA_BLOCK>
 int Longitudinal_Correlation(Octree_DataStructure &OcTree,
                              AdaptiveBlock3D_ResourceList &Global_Soln_Block_List,
 			     AdaptiveBlock3D_List &LocalSolnBlockList,

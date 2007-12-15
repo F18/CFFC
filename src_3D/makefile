@@ -164,7 +164,7 @@ SRC_FANS_THERMPERFECT_EXE = $(FANS_DIR)FANS3DThermallyPerfect.cc
 SRC_LESFSD = $(LESFSD_DIR)LES3DFsdInput.cc \
              $(LESFSD_DIR)LES3DFsdState.cc \
              $(LESFSD_DIR)LES3DFsdHexaBlock.cc \
-             $(LESFSD_DIR)LES3DFsdHexaMultiBlock.cc
+             $(LESFSD_DIR)LES3DFsdHexaPreProcessing.cc
 
 SRC_LESFSD_EXE = $(LESFSD_DIR)LES3DFsd.cc
 

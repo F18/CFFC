@@ -63,7 +63,7 @@ Output_Tecplot(Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs,
       
       Out_File <<"\"T\" \\ \n"
                <<"\"FSD\" \\ \n"
-               <<"\"Vorticity\" \\ \n"
+//                <<"\"Vorticity\" \\ \n"
                <<"\"Mx\" \\ \n"
                <<"\"My\" \\ \n"  
                <<"\"Mz\" \\ \n"  
@@ -110,7 +110,7 @@ Output_Tecplot(Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs,
             Out_File.setf(ios::scientific);
             Out_File << " " << W_node.T() 
                      << " " << W_node.Fsd*W_node.rho
-                     << " " << W_node.vorticity(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k])
+//                      << " " << W_node.vorticity(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k])
                      << " " << W_node.M_x(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k])
                      << " " << W_node.M_y(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k]) 
                      << " " << W_node.M_z(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k]) 
@@ -411,11 +411,11 @@ Output_Cells_Tecplot(Input_Parameters<LES3DFsd_pState,
 template<>
 void Hexa_Block<LES3DFsd_pState,LES3DFsd_cState>::
 Output_Nodes_Tecplot(Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs,
-               const int Number_of_Time_Steps,
-               const double &Time,
-               const int Block_Number,
-               const int Output_Title,
-               ostream &Out_File) {
+                     const int Number_of_Time_Steps,
+                     const double &Time,
+                     const int Block_Number,
+                     const int Output_Title,
+                     ostream &Out_File) {
    int i, j, k;
  
    LES3DFsd_pState W_node;
@@ -459,6 +459,7 @@ Output_Nodes_Tecplot(Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs,
       
       Out_File <<"\"T\" \\ \n"
                <<"\"FSD\" \\ \n"
+//                <<"\"Vorticity\" \\ \n"
                <<"\"Mx\" \\ \n"
                <<"\"My\" \\ \n"  
                <<"\"Mz\" \\ \n"  
@@ -505,6 +506,7 @@ Output_Nodes_Tecplot(Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs,
             Out_File.setf(ios::scientific);
             Out_File << " " << W_node.T()
                      << " " << W_node.Fsd*W_node.rho
+//                      << " " << W_node.vorticity(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k])
                      << " " << W_node.M_x(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k])
                      << " " << W_node.M_y(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k]) 
                      << " " << W_node.M_z(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k]) 
@@ -650,9 +652,9 @@ ICs(const int i_ICtype,
 
  		if ( dd == ZERO ||  dd > sqrt(sqr(IPs.Grid_IP.Box_Width) + sqr(IPs.Grid_IP.Box_Height) + sqr(IPs.Grid_IP.Box_Length) )) {
  		  cout << "\nYOU ARE NOT SUPPOSED TO REACH THIS LINE!!!";
+  		} //else { 
+	      } //end if
 
-  		} //else {
-	     } // end if
 	 }  while ( !InFile.eof() ); // end while
 	  
 	    // reset EOF flag
