@@ -348,12 +348,13 @@ void Hexa_Multi_Block<HEXA_BLOCK>::Correct_Grid_Exterior_Nodes(AdaptiveBlock3D_L
   if (Allocated) {
 
      for (int i_blk = 0 ; i_blk <= Blk_List.Nblk-1 ; ++i_blk ) {
-        if (Blk_List.Block[i_blk].used ) {
+        if (Blk_List.Block[i_blk].used) {
            for (int ii = -1; ii <= 1; ii++){
               for (int jj = -1; jj <= 1; jj++){
                  for (int kk = -1; kk <= 1; kk++){
                     i_bound_elem = 9*(ii+1) + 3*(jj+1) + (kk+1);
-                    if (Blk_List.Block[i_blk].info.be.on_grid_boundary[i_bound_elem]) {
+                    if (Blk_List.Block[i_blk].info.be.on_grid_boundary[i_bound_elem] &&
+                        i_bound_elem != BE::ME) {
                        Soln_Blks[i_blk].Grid.Correct_Exterior_Nodes(ii, 
                                                                     jj, 
                                                                     kk, 

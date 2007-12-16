@@ -257,6 +257,18 @@ class FANS3D_ThermallyPerfect_KOmega_pState : public NavierStokes3D_ThermallyPer
 /** @name Some useful operators */
 /*        --------------------- */
 //@{
+   //! Assign the species data (needs to be called only once as it is static)
+   void set_species_data(const int &n,
+                         const string *S,
+                         const char *PATH,
+                         const int &debug, 
+                         const double &Mr, 
+                         const double* Sc,
+                         const int &trans_data) {
+      Euler3D_ThermallyPerfect_pState::set_species_data(n, S, PATH, debug, Mr, Sc, trans_data);
+      num_vars = NUM_EULER3D_VAR_SANS_SPECIES + NUM_FANS3D_VAR_EXTRA + ns;
+   }
+
    //! Copy solution state (cheaper than = operator)
    void Copy(const FANS3D_ThermallyPerfect_KOmega_pState &W) {
       Euler3D_ThermallyPerfect_pState::Copy(W); k = W.k; omega = W.omega;
@@ -810,6 +822,18 @@ class FANS3D_ThermallyPerfect_KOmega_cState : public NavierStokes3D_ThermallyPer
 /** @name Some useful operators */
 /*        --------------------- */
 //@{
+   //! Assign the species data (needs to be called only once as it is static)
+   void set_species_data(const int &n,
+                         const string *S,
+                         const char *PATH,
+                         const int &debug, 
+                         const double &Mr, 
+                         const double* Sc,
+                         const int &trans_data) {
+      Euler3D_ThermallyPerfect_cState::set_species_data(n, S, PATH, debug, Mr, Sc, trans_data);
+      num_vars = NUM_EULER3D_VAR_SANS_SPECIES + NUM_FANS3D_VAR_EXTRA + ns;
+   }
+
    //! Copy solution state (cheaper than = operator)
    void Copy(const FANS3D_ThermallyPerfect_KOmega_cState &U) {
       Euler3D_ThermallyPerfect_cState::Copy(U); rhok = U.rhok; rhoomega = U.rhoomega;
@@ -987,7 +1011,7 @@ inline double& FANS3D_ThermallyPerfect_KOmega_pState::operator[](int index) {
    case 7:
       return omega;
    default :
-      return spec[index-(NUM_EULER3D_VAR_SANS_SPECIES + NUM_FANS3D_VAR_EXTRA +1)].c;
+      return spec[index-(NUM_EULER3D_VAR_SANS_SPECIES+NUM_FANS3D_VAR_EXTRA+1)].c;
    };
 }
 
@@ -1008,7 +1032,7 @@ inline const double& FANS3D_ThermallyPerfect_KOmega_pState::operator[](int index
    case 7:
       return omega;
    default :
-      return spec[index-(NUM_EULER3D_VAR_SANS_SPECIES + NUM_FANS3D_VAR_EXTRA +1)].c;     
+      return spec[index-(NUM_EULER3D_VAR_SANS_SPECIES+NUM_FANS3D_VAR_EXTRA+1)].c;     
    };
 }
 
@@ -1260,7 +1284,7 @@ inline double& FANS3D_ThermallyPerfect_KOmega_cState::operator[](int index) {
    case 7:
       return rhoomega;
    default :
-      return rhospec[index-(NUM_EULER3D_VAR_SANS_SPECIES + NUM_FANS3D_VAR_EXTRA +1)].c;     
+      return rhospec[index-(NUM_EULER3D_VAR_SANS_SPECIES+NUM_FANS3D_VAR_EXTRA+1)].c;     
    };
 }
 
@@ -1281,7 +1305,7 @@ inline const double& FANS3D_ThermallyPerfect_KOmega_cState::operator[](int index
    case 7:
       return rhoomega;
    default :
-      return rhospec[index-(NUM_EULER3D_VAR_SANS_SPECIES + NUM_FANS3D_VAR_EXTRA +1)].c; 
+      return rhospec[index-(NUM_EULER3D_VAR_SANS_SPECIES+NUM_FANS3D_VAR_EXTRA+1)].c; 
    };
 }
 

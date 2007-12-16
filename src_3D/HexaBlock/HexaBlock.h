@@ -1397,8 +1397,8 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
    Vector3D MOVING_WALL_VELOCITY = IPs.Moving_Wall_Velocity, dX;
    double dpdx;
      
-   for ( k = KCl-Nghost ; k <= KCu+Nghost ; ++k) {
-      for ( j = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
+   for (k = KCl-Nghost ; k <= KCu+Nghost ; ++k) {
+      for (j = JCl-Nghost ; j <= JCu+Nghost ; ++j) {
          // Prescribe West boundary conditions.
          switch(Grid.BCtypeW[j][k]) {
           case BC_NONE :

@@ -446,11 +446,6 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid(Grid3D_Input_Parameters &Input) {
        break;
    } /* endswitch */
 
-   /* Call the function Find_Neighbours to obtain the neighbour block information
-      and assign values to data members in the grid block connectivity data structure. */
-    
-   Find_Neighbours(Input);
-
 }
 
 /********************************************************
@@ -535,6 +530,12 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Cube(Grid3D_Input_Parameters &Inp
    Grid2D_Box_XYplane = Deallocate_Multi_Block_Grid(Grid2D_Box_XYplane,
                                                     Input.NBlk_Idir, 
                                                     Input.NBlk_Jdir);
+
+
+   /* Call the function Find_Neighbours to obtain the neighbour block information
+      and assign values to data members in the grid block connectivity data structure. */
+    
+   Find_Neighbours(Input);
 
 }
 
@@ -657,36 +658,634 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Periodic_Box(Grid3D_Input_Paramet
       for (int jBlk = 0; jBlk <= Input.NBlk_Jdir-1; ++jBlk) {
          for (int iBlk = 0; iBlk <= Input.NBlk_Idir-1; ++iBlk) {
 
- //                  Connectivity[nBLK].num_neighT = 
-//                   Connectivity[nBLK].neighT_info = 
-//                   Connectivity[nBLK].be.on_grid_boundary[BE::T] = 0;
-
 	    nBlk = iBlk + 
                    jBlk*Input.NBlk_Idir + 
                    kBlk*Input.NBlk_Idir*Input.NBlk_Jdir;
 
+            int opposite_nBlk(0), opposite_iBlk(0), opposite_jBlk(0), opposite_kBlk(0);
+
             if (iBlk == 0) {
-
+	       opposite_iBlk = Input.NBlk_Idir-1;
+            } else if (iBlk == Input.NBlk_Idir-1) {
+	       opposite_iBlk = 0;
             } /* endif */
 
-            if (iBlk == Input.NBlk_Idir-1) {
-
-            } /* endif */
-
-            if (jBlk == 0 && jBlk == Input.NBlk_Jdir-1) {
-
-   	    } else if (jBlk == 0) {
-
+            if (jBlk == 0) {
+	       opposite_jBlk = Input.NBlk_Jdir-1;
             } else if (jBlk == Input.NBlk_Jdir-1) {
-
+	       opposite_jBlk = 0;
             } /* endif */
-            if (kBlk == 0 && kBlk == Input.NBlk_Kdir-1) {
 
-   	    } else if (kBlk == 0) {
-
+   	    if (kBlk == 0) {
+	       opposite_kBlk = Input.NBlk_Kdir-1;
             } else if (kBlk == Input.NBlk_Kdir-1) {
-
+	       opposite_kBlk = 0;
             } /* endif */
+
+	    opposite_nBlk = opposite_iBlk + 
+                            opposite_jBlk*Input.NBlk_Idir + 
+                            opposite_kBlk*Input.NBlk_Idir*Input.NBlk_Jdir;
+
+            for (int nDir = 0; nDir <= MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK-1; ++nDir) {
+               switch (nDir) { 
+                 case BE::BSW : // 0
+                   if (Connectivity[nBlk].num_neighBSW == 0 && 
+                       (Input.i_Grid != GRID_PERIODIC_BOX_WITH_INFLOW ||
+                        (Input.i_Grid == GRID_PERIODIC_BOX_WITH_INFLOW &&
+                         iBlk > 0))
+                       ) {
+		      Connectivity[nBlk].num_neighBSW = 1;
+                      Connectivity[nBlk].neighBSW[0] = opposite_nBlk;
+                      Connectivity[nBlk].neighBSW_info[0].ctm_offsets[0] = 1; 
+                      Connectivity[nBlk].neighBSW_info[0].ctm_offsets[1] = 2;  
+                      Connectivity[nBlk].neighBSW_info[0].ctm_offsets[2] = 3;
+                      Connectivity[nBlk].neighBSW_info[0].ctm_offsets[3] = Input.NCells_Idir; 
+                      Connectivity[nBlk].neighBSW_info[0].ctm_offsets[4] = Input.NCells_Jdir;  
+                      Connectivity[nBlk].neighBSW_info[0].ctm_offsets[5] = Input.NCells_Kdir;  
+                      Connectivity[nBlk].neighBSW_info[0].direction_me_to_neighbour[0] = -1; 
+                      Connectivity[nBlk].neighBSW_info[0].direction_me_to_neighbour[1] = -1;
+                      Connectivity[nBlk].neighBSW_info[0].direction_me_to_neighbour[2] = -1; 
+                      Connectivity[nBlk].neighBSW_info[0].direction_neighbour_to_me[0] = 1; 
+                      Connectivity[nBlk].neighBSW_info[0].direction_neighbour_to_me[1] = 1;
+                      Connectivity[nBlk].neighBSW_info[0].direction_neighbour_to_me[2] = 1; 
+                      Connectivity[nBlk].be.on_grid_boundary[BE::BSW] = 0;
+                   } /* endif */
+ 	           break;
+
+                 case BE::SW :  // 1
+                   if (Connectivity[nBlk].num_neighSW == 0 && 
+                       (Input.i_Grid != GRID_PERIODIC_BOX_WITH_INFLOW ||
+                        (Input.i_Grid == GRID_PERIODIC_BOX_WITH_INFLOW &&
+                         iBlk > 0))
+                       ) {
+		      Connectivity[nBlk].num_neighSW = 1;
+                      Connectivity[nBlk].neighSW[0] = opposite_nBlk;
+                      Connectivity[nBlk].neighSW_info[0].ctm_offsets[0] = 1; 
+                      Connectivity[nBlk].neighSW_info[0].ctm_offsets[1] = 2;  
+                      Connectivity[nBlk].neighSW_info[0].ctm_offsets[2] = 3;
+                      Connectivity[nBlk].neighSW_info[0].ctm_offsets[3] = Input.NCells_Idir; 
+                      Connectivity[nBlk].neighSW_info[0].ctm_offsets[4] = Input.NCells_Jdir;  
+                      Connectivity[nBlk].neighSW_info[0].ctm_offsets[5] = 0;
+                      Connectivity[nBlk].neighSW_info[0].direction_me_to_neighbour[0] = -1; 
+                      Connectivity[nBlk].neighSW_info[0].direction_me_to_neighbour[1] = -1;
+                      Connectivity[nBlk].neighSW_info[0].direction_me_to_neighbour[2] = 0; 
+                      Connectivity[nBlk].neighSW_info[0].direction_neighbour_to_me[0] = 1; 
+                      Connectivity[nBlk].neighSW_info[0].direction_neighbour_to_me[1] = 1;
+                      Connectivity[nBlk].neighSW_info[0].direction_neighbour_to_me[2] = 0;
+                      Connectivity[nBlk].be.on_grid_boundary[BE::SW] = 0;
+                   } /* endif */
+		   break;
+
+                 case BE::TSW : // 2
+                   if (Connectivity[nBlk].num_neighTSW == 0 && 
+                       (Input.i_Grid != GRID_PERIODIC_BOX_WITH_INFLOW ||
+                        (Input.i_Grid == GRID_PERIODIC_BOX_WITH_INFLOW &&
+                         iBlk > 0))
+                       ) {
+		      Connectivity[nBlk].num_neighTSW = 1;
+                      Connectivity[nBlk].neighTSW[0] = opposite_nBlk;
+                      Connectivity[nBlk].neighTSW_info[0].ctm_offsets[0] = 1; 
+                      Connectivity[nBlk].neighTSW_info[0].ctm_offsets[1] = 2;  
+                      Connectivity[nBlk].neighTSW_info[0].ctm_offsets[2] = 3;
+                      Connectivity[nBlk].neighTSW_info[0].ctm_offsets[3] = Input.NCells_Idir; 
+                      Connectivity[nBlk].neighTSW_info[0].ctm_offsets[4] = Input.NCells_Jdir;  
+                      Connectivity[nBlk].neighTSW_info[0].ctm_offsets[5] = -Input.NCells_Kdir;
+                      Connectivity[nBlk].neighTSW_info[0].direction_me_to_neighbour[0] = -1; 
+                      Connectivity[nBlk].neighTSW_info[0].direction_me_to_neighbour[1] = -1;
+                      Connectivity[nBlk].neighTSW_info[0].direction_me_to_neighbour[2] = 1; 
+                      Connectivity[nBlk].neighTSW_info[0].direction_neighbour_to_me[0] = 1; 
+                      Connectivity[nBlk].neighTSW_info[0].direction_neighbour_to_me[1] = 1;
+                      Connectivity[nBlk].neighTSW_info[0].direction_neighbour_to_me[2] = -1;
+                      Connectivity[nBlk].be.on_grid_boundary[BE::TSW] = 0;
+                   } /* endif */
+		   break;
+
+                 case BE::BW :  // 3
+                   if (Connectivity[nBlk].num_neighBW == 0 && 
+                       (Input.i_Grid != GRID_PERIODIC_BOX_WITH_INFLOW ||
+                        (Input.i_Grid == GRID_PERIODIC_BOX_WITH_INFLOW &&
+                         iBlk > 0))
+                       ) {
+		      Connectivity[nBlk].num_neighBW = 1;
+                      Connectivity[nBlk].neighBW[0] = opposite_nBlk;
+                      Connectivity[nBlk].neighBW_info[0].ctm_offsets[0] = 1; 
+                      Connectivity[nBlk].neighBW_info[0].ctm_offsets[1] = 2;  
+                      Connectivity[nBlk].neighBW_info[0].ctm_offsets[2] = 3;
+                      Connectivity[nBlk].neighBW_info[0].ctm_offsets[3] = Input.NCells_Idir; 
+                      Connectivity[nBlk].neighBW_info[0].ctm_offsets[4] = 0;  
+                      Connectivity[nBlk].neighBW_info[0].ctm_offsets[5] = Input.NCells_Kdir;
+                      Connectivity[nBlk].neighBW_info[0].direction_me_to_neighbour[0] = -1; 
+                      Connectivity[nBlk].neighBW_info[0].direction_me_to_neighbour[1] = 0;
+                      Connectivity[nBlk].neighBW_info[0].direction_me_to_neighbour[2] = -1; 
+                      Connectivity[nBlk].neighBW_info[0].direction_neighbour_to_me[0] = 1; 
+                      Connectivity[nBlk].neighBW_info[0].direction_neighbour_to_me[1] = 0;
+                      Connectivity[nBlk].neighBW_info[0].direction_neighbour_to_me[2] = 1;
+                      Connectivity[nBlk].be.on_grid_boundary[BE::BW] = 0;
+                   } /* endif */
+		   break;
+
+                 case BE::W :   // 4
+                   if (Connectivity[nBlk].num_neighW == 0 && 
+                       (Input.i_Grid != GRID_PERIODIC_BOX_WITH_INFLOW ||
+                        (Input.i_Grid == GRID_PERIODIC_BOX_WITH_INFLOW &&
+                         iBlk > 0))
+                       ) {
+		      Connectivity[nBlk].num_neighW = 1;
+                      Connectivity[nBlk].neighW = opposite_nBlk;
+                      Connectivity[nBlk].neighW_info.ctm_offsets[0] = 1; 
+                      Connectivity[nBlk].neighW_info.ctm_offsets[1] = 2;  
+                      Connectivity[nBlk].neighW_info.ctm_offsets[2] = 3;
+                      Connectivity[nBlk].neighW_info.ctm_offsets[3] = Input.NCells_Idir; 
+                      Connectivity[nBlk].neighW_info.ctm_offsets[4] = 0;  
+                      Connectivity[nBlk].neighW_info.ctm_offsets[5] = 0;
+                      Connectivity[nBlk].neighW_info.direction_me_to_neighbour[0] = -1; 
+                      Connectivity[nBlk].neighW_info.direction_me_to_neighbour[1] = 0;
+                      Connectivity[nBlk].neighW_info.direction_me_to_neighbour[2] = 0; 
+                      Connectivity[nBlk].neighW_info.direction_neighbour_to_me[0] = 1; 
+                      Connectivity[nBlk].neighW_info.direction_neighbour_to_me[1] = 0;
+                      Connectivity[nBlk].neighW_info.direction_neighbour_to_me[2] = 0;
+                      Connectivity[nBlk].be.on_grid_boundary[BE::W] = 0;
+                   } /* endif */
+		   break;
+
+                 case BE::TW :  // 5
+                   if (Connectivity[nBlk].num_neighTW == 0 && 
+                       (Input.i_Grid != GRID_PERIODIC_BOX_WITH_INFLOW ||
+                        (Input.i_Grid == GRID_PERIODIC_BOX_WITH_INFLOW &&
+                         iBlk > 0))
+                       ) {
+		      Connectivity[nBlk].num_neighTW = 1;
+                      Connectivity[nBlk].neighTW[0] = opposite_nBlk;
+                      Connectivity[nBlk].neighTW_info[0].ctm_offsets[0] = 1; 
+                      Connectivity[nBlk].neighTW_info[0].ctm_offsets[1] = 2;  
+                      Connectivity[nBlk].neighTW_info[0].ctm_offsets[2] = 3;
+                      Connectivity[nBlk].neighTW_info[0].ctm_offsets[3] = Input.NCells_Idir; 
+                      Connectivity[nBlk].neighTW_info[0].ctm_offsets[4] = 0;  
+                      Connectivity[nBlk].neighTW_info[0].ctm_offsets[5] = -Input.NCells_Kdir;
+                      Connectivity[nBlk].neighTW_info[0].direction_me_to_neighbour[0] = -1; 
+                      Connectivity[nBlk].neighTW_info[0].direction_me_to_neighbour[1] = 0;
+                      Connectivity[nBlk].neighTW_info[0].direction_me_to_neighbour[2] = 1; 
+                      Connectivity[nBlk].neighTW_info[0].direction_neighbour_to_me[0] = 1; 
+                      Connectivity[nBlk].neighTW_info[0].direction_neighbour_to_me[1] = 0;
+                      Connectivity[nBlk].neighTW_info[0].direction_neighbour_to_me[2] = -1;
+                      Connectivity[nBlk].be.on_grid_boundary[BE::TW] = 0;
+                   } /* endif */
+		   break;
+
+                 case BE::BNW : // 6
+                   if (Connectivity[nBlk].num_neighBNW == 0 && 
+                       (Input.i_Grid != GRID_PERIODIC_BOX_WITH_INFLOW ||
+                        (Input.i_Grid == GRID_PERIODIC_BOX_WITH_INFLOW &&
+                         iBlk > 0))
+                       ) {
+		      Connectivity[nBlk].num_neighBNW = 1;
+                      Connectivity[nBlk].neighBNW[0] = opposite_nBlk;
+                      Connectivity[nBlk].neighBNW_info[0].ctm_offsets[0] = 1; 
+                      Connectivity[nBlk].neighBNW_info[0].ctm_offsets[1] = 2;  
+                      Connectivity[nBlk].neighBNW_info[0].ctm_offsets[2] = 3;
+                      Connectivity[nBlk].neighBNW_info[0].ctm_offsets[3] = Input.NCells_Idir; 
+                      Connectivity[nBlk].neighBNW_info[0].ctm_offsets[4] = -Input.NCells_Jdir;  
+                      Connectivity[nBlk].neighBNW_info[0].ctm_offsets[5] = Input.NCells_Kdir;  
+                      Connectivity[nBlk].neighBNW_info[0].direction_me_to_neighbour[0] = -1; 
+                      Connectivity[nBlk].neighBNW_info[0].direction_me_to_neighbour[1] = 1;
+                      Connectivity[nBlk].neighBNW_info[0].direction_me_to_neighbour[2] = -1; 
+                      Connectivity[nBlk].neighBNW_info[0].direction_neighbour_to_me[0] = 1; 
+                      Connectivity[nBlk].neighBNW_info[0].direction_neighbour_to_me[1] = -1;
+                      Connectivity[nBlk].neighBNW_info[0].direction_neighbour_to_me[2] = 1;
+                      Connectivity[nBlk].be.on_grid_boundary[BE::BNW] = 0;
+                   } /* endif */
+		   break;
+
+                 case BE::NW :  // 7
+                   if (Connectivity[nBlk].num_neighNW == 0 && 
+                       (Input.i_Grid != GRID_PERIODIC_BOX_WITH_INFLOW ||
+                        (Input.i_Grid == GRID_PERIODIC_BOX_WITH_INFLOW &&
+                         iBlk > 0))
+                       ) {
+		      Connectivity[nBlk].num_neighNW = 1;
+                      Connectivity[nBlk].neighNW[0] = opposite_nBlk;
+                      Connectivity[nBlk].neighNW_info[0].ctm_offsets[0] = 1; 
+                      Connectivity[nBlk].neighNW_info[0].ctm_offsets[1] = 2;  
+                      Connectivity[nBlk].neighNW_info[0].ctm_offsets[2] = 3;
+                      Connectivity[nBlk].neighNW_info[0].ctm_offsets[3] = Input.NCells_Idir; 
+                      Connectivity[nBlk].neighNW_info[0].ctm_offsets[4] = -Input.NCells_Jdir;  
+                      Connectivity[nBlk].neighNW_info[0].ctm_offsets[5] = 0;  
+                      Connectivity[nBlk].neighNW_info[0].direction_me_to_neighbour[0] = -1; 
+                      Connectivity[nBlk].neighNW_info[0].direction_me_to_neighbour[1] = 1;
+                      Connectivity[nBlk].neighNW_info[0].direction_me_to_neighbour[2] = 0; 
+                      Connectivity[nBlk].neighNW_info[0].direction_neighbour_to_me[0] = 1; 
+                      Connectivity[nBlk].neighNW_info[0].direction_neighbour_to_me[1] = -1;
+                      Connectivity[nBlk].neighNW_info[0].direction_neighbour_to_me[2] = 0;
+                      Connectivity[nBlk].be.on_grid_boundary[BE::NW] = 0;
+                   } /* endif */
+		   break;
+
+                 case BE::TNW : // 8
+                   if (Connectivity[nBlk].num_neighTNW == 0 && 
+                       (Input.i_Grid != GRID_PERIODIC_BOX_WITH_INFLOW ||
+                        (Input.i_Grid == GRID_PERIODIC_BOX_WITH_INFLOW &&
+                         iBlk > 0))
+                       ) {
+		      Connectivity[nBlk].num_neighTNW = 1;
+                      Connectivity[nBlk].neighTNW[0] = opposite_nBlk;
+                      Connectivity[nBlk].neighTNW_info[0].ctm_offsets[0] = 1; 
+                      Connectivity[nBlk].neighTNW_info[0].ctm_offsets[1] = 2;  
+                      Connectivity[nBlk].neighTNW_info[0].ctm_offsets[2] = 3;
+                      Connectivity[nBlk].neighTNW_info[0].ctm_offsets[3] = Input.NCells_Idir; 
+                      Connectivity[nBlk].neighTNW_info[0].ctm_offsets[4] = -Input.NCells_Jdir;  
+                      Connectivity[nBlk].neighTNW_info[0].ctm_offsets[5] = -Input.NCells_Kdir;  
+                      Connectivity[nBlk].neighTNW_info[0].direction_me_to_neighbour[0] = -1; 
+                      Connectivity[nBlk].neighTNW_info[0].direction_me_to_neighbour[1] = 1;
+                      Connectivity[nBlk].neighTNW_info[0].direction_me_to_neighbour[2] = 1; 
+                      Connectivity[nBlk].neighTNW_info[0].direction_neighbour_to_me[0] = 1; 
+                      Connectivity[nBlk].neighTNW_info[0].direction_neighbour_to_me[1] = -1;
+                      Connectivity[nBlk].neighTNW_info[0].direction_neighbour_to_me[2] = -1;
+                      Connectivity[nBlk].be.on_grid_boundary[BE::TNW] = 0;
+                   } /* endif */
+		   break;
+
+                 case BE::BS :  // 9
+                   if (Connectivity[nBlk].num_neighBS == 0) {
+		      Connectivity[nBlk].num_neighBS = 1;
+                      Connectivity[nBlk].neighBS[0] = opposite_nBlk;
+                      Connectivity[nBlk].neighBS_info[0].ctm_offsets[0] = 1; 
+                      Connectivity[nBlk].neighBS_info[0].ctm_offsets[1] = 2;  
+                      Connectivity[nBlk].neighBS_info[0].ctm_offsets[2] = 3;
+                      Connectivity[nBlk].neighBS_info[0].ctm_offsets[3] = 0; 
+                      Connectivity[nBlk].neighBS_info[0].ctm_offsets[4] = Input.NCells_Jdir;  
+                      Connectivity[nBlk].neighBS_info[0].ctm_offsets[5] = Input.NCells_Kdir;  
+                      Connectivity[nBlk].neighBS_info[0].direction_me_to_neighbour[0] = 0; 
+                      Connectivity[nBlk].neighBS_info[0].direction_me_to_neighbour[1] = -1;
+                      Connectivity[nBlk].neighBS_info[0].direction_me_to_neighbour[2] = -1; 
+                      Connectivity[nBlk].neighBS_info[0].direction_neighbour_to_me[0] = 0; 
+                      Connectivity[nBlk].neighBS_info[0].direction_neighbour_to_me[1] = 1;
+                      Connectivity[nBlk].neighBS_info[0].direction_neighbour_to_me[2] = 1;
+                      Connectivity[nBlk].be.on_grid_boundary[BE::BS] = 0;
+                   } /* endif */
+		   break;
+
+                 case BE::S :   // 10
+                   if (Connectivity[nBlk].num_neighS == 0) {
+		      Connectivity[nBlk].num_neighS = 1;
+                      Connectivity[nBlk].neighS = opposite_nBlk;
+                      Connectivity[nBlk].neighS_info.ctm_offsets[0] = 1; 
+                      Connectivity[nBlk].neighS_info.ctm_offsets[1] = 2;  
+                      Connectivity[nBlk].neighS_info.ctm_offsets[2] = 3;
+                      Connectivity[nBlk].neighS_info.ctm_offsets[3] = 0; 
+                      Connectivity[nBlk].neighS_info.ctm_offsets[4] = Input.NCells_Jdir;  
+                      Connectivity[nBlk].neighS_info.ctm_offsets[5] = 0;
+                      Connectivity[nBlk].neighS_info.direction_me_to_neighbour[0] = 0; 
+                      Connectivity[nBlk].neighS_info.direction_me_to_neighbour[1] = -1;
+                      Connectivity[nBlk].neighS_info.direction_me_to_neighbour[2] = 0; 
+                      Connectivity[nBlk].neighS_info.direction_neighbour_to_me[0] = 0; 
+                      Connectivity[nBlk].neighS_info.direction_neighbour_to_me[1] = 1;
+                      Connectivity[nBlk].neighS_info.direction_neighbour_to_me[2] = 0;
+                      Connectivity[nBlk].be.on_grid_boundary[BE::S] = 0;
+                   } /* endif */
+		   break;
+
+                 case BE::TS :  // 11
+                   if (Connectivity[nBlk].num_neighTS == 0) {
+		      Connectivity[nBlk].num_neighTS = 1;
+                      Connectivity[nBlk].neighTS[0] = opposite_nBlk;
+                      Connectivity[nBlk].neighTS_info[0].ctm_offsets[0] = 1; 
+                      Connectivity[nBlk].neighTS_info[0].ctm_offsets[1] = 2;  
+                      Connectivity[nBlk].neighTS_info[0].ctm_offsets[2] = 3;
+                      Connectivity[nBlk].neighTS_info[0].ctm_offsets[3] = 0; 
+                      Connectivity[nBlk].neighTS_info[0].ctm_offsets[4] = Input.NCells_Jdir;  
+                      Connectivity[nBlk].neighTS_info[0].ctm_offsets[5] = -Input.NCells_Kdir;  
+                      Connectivity[nBlk].neighTS_info[0].direction_me_to_neighbour[0] = 0; 
+                      Connectivity[nBlk].neighTS_info[0].direction_me_to_neighbour[1] = -1;
+                      Connectivity[nBlk].neighTS_info[0].direction_me_to_neighbour[2] = 1; 
+                      Connectivity[nBlk].neighTS_info[0].direction_neighbour_to_me[0] = 0; 
+                      Connectivity[nBlk].neighTS_info[0].direction_neighbour_to_me[1] = 1;
+                      Connectivity[nBlk].neighTS_info[0].direction_neighbour_to_me[2] = -1;
+                      Connectivity[nBlk].be.on_grid_boundary[BE::TS] = 0;
+                   } /* endif */
+		   break;
+
+                 case BE::B :   // 12
+                   if (Connectivity[nBlk].num_neighB == 0) {
+		      Connectivity[nBlk].num_neighB = 1;
+                      Connectivity[nBlk].neighB = opposite_nBlk;
+                      Connectivity[nBlk].neighB_info.ctm_offsets[0] = 1; 
+                      Connectivity[nBlk].neighB_info.ctm_offsets[1] = 2;  
+                      Connectivity[nBlk].neighB_info.ctm_offsets[2] = 3;
+                      Connectivity[nBlk].neighB_info.ctm_offsets[3] = 0; 
+                      Connectivity[nBlk].neighB_info.ctm_offsets[4] = 0;  
+                      Connectivity[nBlk].neighB_info.ctm_offsets[5] = Input.NCells_Kdir;
+                      Connectivity[nBlk].neighB_info.direction_me_to_neighbour[0] = 0; 
+                      Connectivity[nBlk].neighB_info.direction_me_to_neighbour[1] = 0;
+                      Connectivity[nBlk].neighB_info.direction_me_to_neighbour[2] = -1; 
+                      Connectivity[nBlk].neighB_info.direction_neighbour_to_me[0] = 0; 
+                      Connectivity[nBlk].neighB_info.direction_neighbour_to_me[1] = 0;
+                      Connectivity[nBlk].neighB_info.direction_neighbour_to_me[2] = 1;
+                      Connectivity[nBlk].be.on_grid_boundary[BE::B] = 0;
+                   } /* endif */
+		   break;
+
+                 case BE::T :   // 14
+                   if (Connectivity[nBlk].num_neighT == 0) {
+		      Connectivity[nBlk].num_neighT = 1;
+                      Connectivity[nBlk].neighT = opposite_nBlk;
+                      Connectivity[nBlk].neighT_info.ctm_offsets[0] = 1; 
+                      Connectivity[nBlk].neighT_info.ctm_offsets[1] = 2;  
+                      Connectivity[nBlk].neighT_info.ctm_offsets[2] = 3;
+                      Connectivity[nBlk].neighT_info.ctm_offsets[3] = 0; 
+                      Connectivity[nBlk].neighT_info.ctm_offsets[4] = 0;  
+                      Connectivity[nBlk].neighT_info.ctm_offsets[5] = -Input.NCells_Kdir;
+                      Connectivity[nBlk].neighT_info.direction_me_to_neighbour[0] = 0; 
+                      Connectivity[nBlk].neighT_info.direction_me_to_neighbour[1] = 0;
+                      Connectivity[nBlk].neighT_info.direction_me_to_neighbour[2] = 1; 
+                      Connectivity[nBlk].neighT_info.direction_neighbour_to_me[0] = 0; 
+                      Connectivity[nBlk].neighT_info.direction_neighbour_to_me[1] = 0;
+                      Connectivity[nBlk].neighT_info.direction_neighbour_to_me[2] = -1;
+                      Connectivity[nBlk].be.on_grid_boundary[BE::T] = 0;
+                   } /* endif */
+		   break;
+
+                 case BE::BN :  // 15
+                   if (Connectivity[nBlk].num_neighBN == 0) {
+		      Connectivity[nBlk].num_neighBN = 1;
+                      Connectivity[nBlk].neighBN[0] = opposite_nBlk;
+                      Connectivity[nBlk].neighBN_info[0].ctm_offsets[0] = 1; 
+                      Connectivity[nBlk].neighBN_info[0].ctm_offsets[1] = 2;  
+                      Connectivity[nBlk].neighBN_info[0].ctm_offsets[2] = 3;
+                      Connectivity[nBlk].neighBN_info[0].ctm_offsets[3] = 0; 
+                      Connectivity[nBlk].neighBN_info[0].ctm_offsets[4] = -Input.NCells_Jdir;  
+                      Connectivity[nBlk].neighBN_info[0].ctm_offsets[5] = Input.NCells_Kdir;  
+                      Connectivity[nBlk].neighBN_info[0].direction_me_to_neighbour[0] = 0; 
+                      Connectivity[nBlk].neighBN_info[0].direction_me_to_neighbour[1] = 1;
+                      Connectivity[nBlk].neighBN_info[0].direction_me_to_neighbour[2] = -1; 
+                      Connectivity[nBlk].neighBN_info[0].direction_neighbour_to_me[0] = 0; 
+                      Connectivity[nBlk].neighBN_info[0].direction_neighbour_to_me[1] = -1;
+                      Connectivity[nBlk].neighBN_info[0].direction_neighbour_to_me[2] = 1;
+                      Connectivity[nBlk].be.on_grid_boundary[BE::BN] = 0;
+                   } /* endif */
+		   break;
+
+                 case BE::N :   // 16
+                   if (Connectivity[nBlk].num_neighN == 0) {
+		      Connectivity[nBlk].num_neighN = 1;
+                      Connectivity[nBlk].neighN = opposite_nBlk;
+                      Connectivity[nBlk].neighN_info.ctm_offsets[0] = 1; 
+                      Connectivity[nBlk].neighN_info.ctm_offsets[1] = 2;  
+                      Connectivity[nBlk].neighN_info.ctm_offsets[2] = 3;
+                      Connectivity[nBlk].neighN_info.ctm_offsets[3] = 0; 
+                      Connectivity[nBlk].neighN_info.ctm_offsets[4] = -Input.NCells_Jdir;  
+                      Connectivity[nBlk].neighN_info.ctm_offsets[5] = 0;
+                      Connectivity[nBlk].neighN_info.direction_me_to_neighbour[0] = 0; 
+                      Connectivity[nBlk].neighN_info.direction_me_to_neighbour[1] = 1;
+                      Connectivity[nBlk].neighN_info.direction_me_to_neighbour[2] = 0; 
+                      Connectivity[nBlk].neighN_info.direction_neighbour_to_me[0] = 0; 
+                      Connectivity[nBlk].neighN_info.direction_neighbour_to_me[1] = -1;
+                      Connectivity[nBlk].neighN_info.direction_neighbour_to_me[2] = 0;
+                      Connectivity[nBlk].be.on_grid_boundary[BE::N] = 0;
+                   } /* endif */
+		   break;
+
+                 case BE::TN :  // 17
+                   if (Connectivity[nBlk].num_neighTN == 0) {
+		      Connectivity[nBlk].num_neighTN = 1;
+                      Connectivity[nBlk].neighTN[0] = opposite_nBlk;
+                      Connectivity[nBlk].neighTN_info[0].ctm_offsets[0] = 1; 
+                      Connectivity[nBlk].neighTN_info[0].ctm_offsets[1] = 2;  
+                      Connectivity[nBlk].neighTN_info[0].ctm_offsets[2] = 3;
+                      Connectivity[nBlk].neighTN_info[0].ctm_offsets[3] = 0; 
+                      Connectivity[nBlk].neighTN_info[0].ctm_offsets[4] = -Input.NCells_Jdir;  
+                      Connectivity[nBlk].neighTN_info[0].ctm_offsets[5] = -Input.NCells_Kdir;  
+                      Connectivity[nBlk].neighTN_info[0].direction_me_to_neighbour[0] = 0; 
+                      Connectivity[nBlk].neighTN_info[0].direction_me_to_neighbour[1] = 1;
+                      Connectivity[nBlk].neighTN_info[0].direction_me_to_neighbour[2] = 1; 
+                      Connectivity[nBlk].neighTN_info[0].direction_neighbour_to_me[0] = 0; 
+                      Connectivity[nBlk].neighTN_info[0].direction_neighbour_to_me[1] = -1;
+                      Connectivity[nBlk].neighTN_info[0].direction_neighbour_to_me[2] = -1;
+                      Connectivity[nBlk].be.on_grid_boundary[BE::TN] = 0;
+                   } /* endif */
+		   break;
+
+                 case BE::BSE : // 18
+                   if (Connectivity[nBlk].num_neighBSE == 0 && 
+                       (Input.i_Grid != GRID_PERIODIC_BOX_WITH_INFLOW ||
+                        (Input.i_Grid == GRID_PERIODIC_BOX_WITH_INFLOW &&
+                         iBlk < Input.NBlk_Idir-1))
+                       ) {
+		      Connectivity[nBlk].num_neighBSE = 1;
+                      Connectivity[nBlk].neighBSE[0] = opposite_nBlk;
+                      Connectivity[nBlk].neighBSE_info[0].ctm_offsets[0] = 1; 
+                      Connectivity[nBlk].neighBSE_info[0].ctm_offsets[1] = 2;  
+                      Connectivity[nBlk].neighBSE_info[0].ctm_offsets[2] = 3;
+                      Connectivity[nBlk].neighBSE_info[0].ctm_offsets[3] = Input.NCells_Idir; 
+                      Connectivity[nBlk].neighBSE_info[0].ctm_offsets[4] = -Input.NCells_Jdir;  
+                      Connectivity[nBlk].neighBSE_info[0].ctm_offsets[5] = -Input.NCells_Kdir;  
+                      Connectivity[nBlk].neighBSE_info[0].direction_me_to_neighbour[0] = 1; 
+                      Connectivity[nBlk].neighBSE_info[0].direction_me_to_neighbour[1] = -1;
+                      Connectivity[nBlk].neighBSE_info[0].direction_me_to_neighbour[2] = -1; 
+                      Connectivity[nBlk].neighBSE_info[0].direction_neighbour_to_me[0] = -1; 
+                      Connectivity[nBlk].neighBSE_info[0].direction_neighbour_to_me[1] = 1;
+                      Connectivity[nBlk].neighBSE_info[0].direction_neighbour_to_me[2] = 1;
+                      Connectivity[nBlk].be.on_grid_boundary[BE::BSE] = 0;
+                   } /* endif */
+		   break;
+
+                 case BE::SE :  // 19
+                   if (Connectivity[nBlk].num_neighSE == 0 && 
+                       (Input.i_Grid != GRID_PERIODIC_BOX_WITH_INFLOW ||
+                        (Input.i_Grid == GRID_PERIODIC_BOX_WITH_INFLOW &&
+                         iBlk < Input.NBlk_Idir-1))
+                       ) {
+		      Connectivity[nBlk].num_neighSE = 1;
+                      Connectivity[nBlk].neighSE[0] = opposite_nBlk;
+                      Connectivity[nBlk].neighSE_info[0].ctm_offsets[0] = 1; 
+                      Connectivity[nBlk].neighSE_info[0].ctm_offsets[1] = 2;  
+                      Connectivity[nBlk].neighSE_info[0].ctm_offsets[2] = 3;
+                      Connectivity[nBlk].neighSE_info[0].ctm_offsets[3] = Input.NCells_Idir; 
+                      Connectivity[nBlk].neighSE_info[0].ctm_offsets[4] = -Input.NCells_Jdir;  
+                      Connectivity[nBlk].neighSE_info[0].ctm_offsets[5] = 0;  
+                      Connectivity[nBlk].neighSE_info[0].direction_me_to_neighbour[0] = 1; 
+                      Connectivity[nBlk].neighSE_info[0].direction_me_to_neighbour[1] = -1;
+                      Connectivity[nBlk].neighSE_info[0].direction_me_to_neighbour[2] = 0; 
+                      Connectivity[nBlk].neighSE_info[0].direction_neighbour_to_me[0] = -1; 
+                      Connectivity[nBlk].neighSE_info[0].direction_neighbour_to_me[1] = 1;
+                      Connectivity[nBlk].neighSE_info[0].direction_neighbour_to_me[2] = 0;
+                      Connectivity[nBlk].be.on_grid_boundary[BE::SE] = 0;
+                   } /* endif */
+		   break;
+
+                 case BE::TSE : // 20
+                   if (Connectivity[nBlk].num_neighTSE == 0 && 
+                       (Input.i_Grid != GRID_PERIODIC_BOX_WITH_INFLOW ||
+                        (Input.i_Grid == GRID_PERIODIC_BOX_WITH_INFLOW &&
+                         iBlk < Input.NBlk_Idir-1))
+                       ) {
+		      Connectivity[nBlk].num_neighTSE = 1;
+                      Connectivity[nBlk].neighTSE[0] = opposite_nBlk;
+                      Connectivity[nBlk].neighTSE_info[0].ctm_offsets[0] = 1; 
+                      Connectivity[nBlk].neighTSE_info[0].ctm_offsets[1] = 2;  
+                      Connectivity[nBlk].neighTSE_info[0].ctm_offsets[2] = 3;
+                      Connectivity[nBlk].neighTSE_info[0].ctm_offsets[3] = -Input.NCells_Idir; 
+                      Connectivity[nBlk].neighTSE_info[0].ctm_offsets[4] = Input.NCells_Jdir;  
+                      Connectivity[nBlk].neighTSE_info[0].ctm_offsets[5] = -Input.NCells_Kdir;  
+                      Connectivity[nBlk].neighTSE_info[0].direction_me_to_neighbour[0] = 1; 
+                      Connectivity[nBlk].neighTSE_info[0].direction_me_to_neighbour[1] = -1;
+                      Connectivity[nBlk].neighTSE_info[0].direction_me_to_neighbour[2] = 1; 
+                      Connectivity[nBlk].neighTSE_info[0].direction_neighbour_to_me[0] = -1; 
+                      Connectivity[nBlk].neighTSE_info[0].direction_neighbour_to_me[1] = 1;
+                      Connectivity[nBlk].neighTSE_info[0].direction_neighbour_to_me[2] = -1;
+                      Connectivity[nBlk].be.on_grid_boundary[BE::TSE] = 0;
+                   } /* endif */
+		   break;
+
+                 case BE::BE :  // 21
+                   if (Connectivity[nBlk].num_neighBE == 0 && 
+                       (Input.i_Grid != GRID_PERIODIC_BOX_WITH_INFLOW ||
+                        (Input.i_Grid == GRID_PERIODIC_BOX_WITH_INFLOW &&
+                         iBlk < Input.NBlk_Idir-1))
+                       ) {
+		      Connectivity[nBlk].num_neighBE = 1;
+                      Connectivity[nBlk].neighBE[0] = opposite_nBlk;
+                      Connectivity[nBlk].neighBE_info[0].ctm_offsets[0] = 1; 
+                      Connectivity[nBlk].neighBE_info[0].ctm_offsets[1] = 2;  
+                      Connectivity[nBlk].neighBE_info[0].ctm_offsets[2] = 3;
+                      Connectivity[nBlk].neighBE_info[0].ctm_offsets[3] = -Input.NCells_Idir; 
+                      Connectivity[nBlk].neighBE_info[0].ctm_offsets[4] = 0;  
+                      Connectivity[nBlk].neighBE_info[0].ctm_offsets[5] = Input.NCells_Kdir;  
+                      Connectivity[nBlk].neighBE_info[0].direction_me_to_neighbour[0] = 1; 
+                      Connectivity[nBlk].neighBE_info[0].direction_me_to_neighbour[1] = 0;
+                      Connectivity[nBlk].neighBE_info[0].direction_me_to_neighbour[2] = -1; 
+                      Connectivity[nBlk].neighBE_info[0].direction_neighbour_to_me[0] = -1; 
+                      Connectivity[nBlk].neighBE_info[0].direction_neighbour_to_me[1] = 0;
+                      Connectivity[nBlk].neighBE_info[0].direction_neighbour_to_me[2] = 1;
+                      Connectivity[nBlk].be.on_grid_boundary[BE::BE] = 0;
+                   } /* endif */
+		   break;
+
+                 case BE::E :   // 22
+                   if (Connectivity[nBlk].num_neighE == 0 && 
+                       (Input.i_Grid != GRID_PERIODIC_BOX_WITH_INFLOW ||
+                        (Input.i_Grid == GRID_PERIODIC_BOX_WITH_INFLOW &&
+                         iBlk < Input.NBlk_Idir-1))
+                       ) {
+		      Connectivity[nBlk].num_neighE = 1;
+                      Connectivity[nBlk].neighE = opposite_nBlk;
+                      Connectivity[nBlk].neighE_info.ctm_offsets[0] = 1; 
+                      Connectivity[nBlk].neighE_info.ctm_offsets[1] = 2;  
+                      Connectivity[nBlk].neighE_info.ctm_offsets[2] = 3;
+                      Connectivity[nBlk].neighE_info.ctm_offsets[3] = -Input.NCells_Idir; 
+                      Connectivity[nBlk].neighE_info.ctm_offsets[4] = 0;  
+                      Connectivity[nBlk].neighE_info.ctm_offsets[5] = 0;
+                      Connectivity[nBlk].neighE_info.direction_me_to_neighbour[0] = 1; 
+                      Connectivity[nBlk].neighE_info.direction_me_to_neighbour[1] = 0;
+                      Connectivity[nBlk].neighE_info.direction_me_to_neighbour[2] = 0; 
+                      Connectivity[nBlk].neighE_info.direction_neighbour_to_me[0] = -1; 
+                      Connectivity[nBlk].neighE_info.direction_neighbour_to_me[1] = 0;
+                      Connectivity[nBlk].neighE_info.direction_neighbour_to_me[2] = 0;
+                      Connectivity[nBlk].be.on_grid_boundary[BE::E] = 0;
+                   } /* endif */
+		   break;
+
+                 case BE::TE :  // 23
+                   if (Connectivity[nBlk].num_neighTE == 0 && 
+                       (Input.i_Grid != GRID_PERIODIC_BOX_WITH_INFLOW ||
+                        (Input.i_Grid == GRID_PERIODIC_BOX_WITH_INFLOW &&
+                         iBlk < Input.NBlk_Idir-1))
+                       ) {
+		      Connectivity[nBlk].num_neighTE = 1;
+                      Connectivity[nBlk].neighTE[0] = opposite_nBlk;
+                      Connectivity[nBlk].neighTE_info[0].ctm_offsets[0] = 1; 
+                      Connectivity[nBlk].neighTE_info[0].ctm_offsets[1] = 2;  
+                      Connectivity[nBlk].neighTE_info[0].ctm_offsets[2] = 3;
+                      Connectivity[nBlk].neighTE_info[0].ctm_offsets[3] = -Input.NCells_Idir; 
+                      Connectivity[nBlk].neighTE_info[0].ctm_offsets[4] = 0;  
+                      Connectivity[nBlk].neighTE_info[0].ctm_offsets[5] = -Input.NCells_Kdir;  
+                      Connectivity[nBlk].neighTE_info[0].direction_me_to_neighbour[0] = 1; 
+                      Connectivity[nBlk].neighTE_info[0].direction_me_to_neighbour[1] = 0;
+                      Connectivity[nBlk].neighTE_info[0].direction_me_to_neighbour[2] = 1; 
+                      Connectivity[nBlk].neighTE_info[0].direction_neighbour_to_me[0] = -1; 
+                      Connectivity[nBlk].neighTE_info[0].direction_neighbour_to_me[1] = 0;
+                      Connectivity[nBlk].neighTE_info[0].direction_neighbour_to_me[2] = -1;
+                      Connectivity[nBlk].be.on_grid_boundary[BE::TE] = 0;
+                   } /* endif */
+		   break;
+
+                 case BE::BNE : // 24
+                   if (Connectivity[nBlk].num_neighBNE == 0 && 
+                       (Input.i_Grid != GRID_PERIODIC_BOX_WITH_INFLOW ||
+                        (Input.i_Grid == GRID_PERIODIC_BOX_WITH_INFLOW &&
+                         iBlk < Input.NBlk_Idir-1))
+                       ) {
+		      Connectivity[nBlk].num_neighBNE = 1;
+                      Connectivity[nBlk].neighBNE[0] = opposite_nBlk;
+                      Connectivity[nBlk].neighBNE[0] = opposite_nBlk;
+                      Connectivity[nBlk].neighBNE_info[0].ctm_offsets[0] = 1; 
+                      Connectivity[nBlk].neighBNE_info[0].ctm_offsets[1] = 2;  
+                      Connectivity[nBlk].neighBNE_info[0].ctm_offsets[2] = 3;
+                      Connectivity[nBlk].neighBNE_info[0].ctm_offsets[3] = -Input.NCells_Idir; 
+                      Connectivity[nBlk].neighBNE_info[0].ctm_offsets[4] = -Input.NCells_Jdir;  
+                      Connectivity[nBlk].neighBNE_info[0].ctm_offsets[5] = Input.NCells_Kdir;  
+                      Connectivity[nBlk].neighBNE_info[0].direction_me_to_neighbour[0] = 1; 
+                      Connectivity[nBlk].neighBNE_info[0].direction_me_to_neighbour[1] = 1;
+                      Connectivity[nBlk].neighBNE_info[0].direction_me_to_neighbour[2] = -1; 
+                      Connectivity[nBlk].neighBNE_info[0].direction_neighbour_to_me[0] = -1; 
+                      Connectivity[nBlk].neighBNE_info[0].direction_neighbour_to_me[1] = -1;
+                      Connectivity[nBlk].neighBNE_info[0].direction_neighbour_to_me[2] = 1;
+                      Connectivity[nBlk].be.on_grid_boundary[BE::BNE] = 0;
+                   } /* endif */
+		   break;
+
+                 case BE::NE :  // 25
+                   if (Connectivity[nBlk].num_neighNE == 0 && 
+                       (Input.i_Grid != GRID_PERIODIC_BOX_WITH_INFLOW ||
+                        (Input.i_Grid == GRID_PERIODIC_BOX_WITH_INFLOW &&
+                         iBlk < Input.NBlk_Idir-1))
+                       ) {
+		      Connectivity[nBlk].num_neighNE = 1;
+                      Connectivity[nBlk].neighNE[0] = opposite_nBlk;
+                      Connectivity[nBlk].neighNE_info[0].ctm_offsets[0] = 1; 
+                      Connectivity[nBlk].neighNE_info[0].ctm_offsets[1] = 2;  
+                      Connectivity[nBlk].neighNE_info[0].ctm_offsets[2] = 3;
+                      Connectivity[nBlk].neighNE_info[0].ctm_offsets[3] = -Input.NCells_Idir; 
+                      Connectivity[nBlk].neighNE_info[0].ctm_offsets[4] = -Input.NCells_Jdir;  
+                      Connectivity[nBlk].neighNE_info[0].ctm_offsets[5] = 0;  
+                      Connectivity[nBlk].neighNE_info[0].direction_me_to_neighbour[0] = 1; 
+                      Connectivity[nBlk].neighNE_info[0].direction_me_to_neighbour[1] = 1;
+                      Connectivity[nBlk].neighNE_info[0].direction_me_to_neighbour[2] = 0; 
+                      Connectivity[nBlk].neighNE_info[0].direction_neighbour_to_me[0] = -1; 
+                      Connectivity[nBlk].neighNE_info[0].direction_neighbour_to_me[1] = -1;
+                      Connectivity[nBlk].neighNE_info[0].direction_neighbour_to_me[2] = 0;
+                      Connectivity[nBlk].be.on_grid_boundary[BE::NE] = 0;
+                   } /* endif */
+		   break;
+
+                 case BE::TNE : // 26
+                   if (Connectivity[nBlk].num_neighTNE == 0 && 
+                       (Input.i_Grid != GRID_PERIODIC_BOX_WITH_INFLOW ||
+                        (Input.i_Grid == GRID_PERIODIC_BOX_WITH_INFLOW &&
+                         iBlk < Input.NBlk_Idir-1))
+                       ) {
+		      Connectivity[nBlk].num_neighTNE = 1;
+                      Connectivity[nBlk].neighTNE[0] = opposite_nBlk;
+                      Connectivity[nBlk].neighTNE_info[0].ctm_offsets[0] = 1; 
+                      Connectivity[nBlk].neighTNE_info[0].ctm_offsets[1] = 2;  
+                      Connectivity[nBlk].neighTNE_info[0].ctm_offsets[2] = 3;
+                      Connectivity[nBlk].neighTNE_info[0].ctm_offsets[3] = -Input.NCells_Idir; 
+                      Connectivity[nBlk].neighTNE_info[0].ctm_offsets[4] = -Input.NCells_Jdir;  
+                      Connectivity[nBlk].neighTNE_info[0].ctm_offsets[5] = -Input.NCells_Kdir;  
+                      Connectivity[nBlk].neighTNE_info[0].direction_me_to_neighbour[0] = 1; 
+                      Connectivity[nBlk].neighTNE_info[0].direction_me_to_neighbour[1] = 1;
+                      Connectivity[nBlk].neighTNE_info[0].direction_me_to_neighbour[2] = 1; 
+                      Connectivity[nBlk].neighTNE_info[0].direction_neighbour_to_me[0] = -1; 
+                      Connectivity[nBlk].neighTNE_info[0].direction_neighbour_to_me[1] = -1;
+                      Connectivity[nBlk].neighTNE_info[0].direction_neighbour_to_me[2] = -1;
+                      Connectivity[nBlk].be.on_grid_boundary[BE::TNE] = 0;
+                   } /* endif */
+		   break;
+
+                 default :
+		   break;
+               } /* endswitch */
+            } /* endif */
+
          } /* endfor */
       } /* endfor */
    } /* endfor */
@@ -875,6 +1474,12 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Channel(Grid3D_Input_Parameters &
                                                      Input.NBlk_Idir, 
                                                      Input.NBlk_Jdir);
 
+
+   /* Call the function Find_Neighbours to obtain the neighbour block information
+      and assign values to data members in the grid block connectivity data structure. */
+    
+   Find_Neighbours(Input);
+
 }
 
 /********************************************************
@@ -1059,6 +1664,12 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Couette(Grid3D_Input_Parameters &
                                                      Input.NBlk_Idir, 
                                                      Input.NBlk_Jdir);
 
+
+   /* Call the function Find_Neighbours to obtain the neighbour block information
+      and assign values to data members in the grid block connectivity data structure. */
+    
+   Find_Neighbours(Input);
+
 }
 
 /********************************************************
@@ -1132,6 +1743,12 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Pipe(Grid3D_Input_Parameters &Inp
                                    Grid2D_Pipe_XYplane,
                                    numblk_idir_pipe,
 		                   numblk_jdir_pipe);
+
+
+   /* Call the function Find_Neighbours to obtain the neighbour block information
+      and assign values to data members in the grid block connectivity data structure. */
+    
+   Find_Neighbours(Input);
 
 }
 
@@ -1219,6 +1836,12 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Bump_Channel_Flow(Grid3D_Input_Pa
   Grid2D_XYplane = Deallocate_Multi_Block_Grid(Grid2D_XYplane,
 					       Number_of_Blocks_Idir,
 					       Number_of_Blocks_Jdir);
+
+
+   /* Call the function Find_Neighbours to obtain the neighbour block information
+      and assign values to data members in the grid block connectivity data structure. */
+    
+   Find_Neighbours(Input);
 
 }
 
@@ -1489,6 +2112,12 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Bluff_Body_Burner(Grid3D_Input_Pa
                                    numblk_idir_coflow,
 		                   numblk_jdir_coflow);
 
+
+   /* Call the function Find_Neighbours to obtain the neighbour block information
+      and assign values to data members in the grid block connectivity data structure. */
+    
+   Find_Neighbours(Input);
+
 }
 
 /********************************************************
@@ -1503,6 +2132,12 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_ICEMCFD(Grid3D_Input_Parameters &
 
    assert(NBlk_Idir >= 1 && NBlk_Jdir >= 1 && NBlk_Kdir >= 1); 
    Allocated = 1;
+
+
+   /* Call the function Find_Neighbours to obtain the neighbour block information
+      and assign values to data members in the grid block connectivity data structure. */
+    
+   Find_Neighbours(Input);
 
 }
 

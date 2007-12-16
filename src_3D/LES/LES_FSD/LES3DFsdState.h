@@ -101,7 +101,7 @@ class LES3DFsd_pState;
  *  - Fvy              -- Return y-direction viscous solution flux
  *  - Fvz              -- Return z-direction viscous solution flux
  *  - Schemistry       -- Return source terms associated with finite-rate chemistry
- *  - Sturbulence      -- Return source terms associated with turbulence modelling
+ *  - Sturbchem        -- Return source terms associated with modelled turbulence-chemistry interaction
  *  - lambda           -- Return x-direction eigenvalue
  *  - rc               -- Return x-direction conserved right eigenvector
  *  - lp               -- Return x-direction primitive left eigenvector
@@ -165,12 +165,12 @@ class LES3DFsd_pState : public NavierStokes3D_ThermallyPerfect_pState {
 /*        ---------------------------- */
 //@{
    //! Default creation constructor (assign default values)
-   LES3DFsd_pState(void) : NavierStokes3D_ThermallyPerfect_pState(), C(ONE), Fsd(MILLION), k(ZERO) {
+   LES3DFsd_pState(void) : NavierStokes3D_ThermallyPerfect_pState(), C(ZERO), Fsd(MILLION), k(ZERO) {
      premixed_mfrac(); }
    
    //! Constructor from base class (allows return of derived type)
    LES3DFsd_pState(const NavierStokes3D_ThermallyPerfect_pState &W1) : 
-     NavierStokes3D_ThermallyPerfect_pState(W1), C(ONE), Fsd(MILLION), k(ZERO) { }
+     NavierStokes3D_ThermallyPerfect_pState(W1), C(ZERO), Fsd(MILLION), k(ZERO) { }
 
    //! Constructor from base class
    LES3DFsd_pState(const NavierStokes3D_ThermallyPerfect_pState &W1,
@@ -221,8 +221,23 @@ class LES3DFsd_pState : public NavierStokes3D_ThermallyPerfect_pState {
 /** @name Some useful operators */
 /*        --------------------- */
 //@{
+   //! Assign the species data (needs to be called only once as it is static)
+   void set_species_data(const int &n,
+                         const string *S,
+                         const char *PATH,
+                         const int &debug, 
+                         const double &Mr, 
+                         const double* Sc,
+                         const int &trans_data) {
+      Euler3D_ThermallyPerfect_pState::set_species_data(n, S, PATH, debug, Mr, Sc, trans_data);
+      num_vars = NUM_EULER3D_VAR_SANS_SPECIES + NUM_LES3D_VAR_EXTRA + 0*ns;
+   }
+
    //! Copy solution state (cheaper than = operator)
    void Copy(const LES3DFsd_pState &W);
+
+   //! Returns the number of variables - number of species
+   int NumVarSansSpecies(void) const {return num_vars;}
 
    //! Assigns a vacuum solution state
    void Vacuum(void) { 
@@ -623,25 +638,15 @@ class LES3DFsd_pState : public NavierStokes3D_ThermallyPerfect_pState {
    //! Returns Harten-Lax-van-Leer-Einfeldt (HLLE) x-direction flux
    static LES3DFsd_cState FluxHLLE_x(const LES3DFsd_pState &Wl,
                                      const LES3DFsd_pState &Wr);
-   //! Returns Harten-Lax-van-Leer-Einfeldt (HLLE) x-direction flux
-   static LES3DFsd_cState FluxHLLE_x(const LES3DFsd_cState &Ul,
-                                     const LES3DFsd_cState &Ur);
 
-    //! Returns Harten-Lax-van-Leer-Einfeldt (HLLE) flux in n-direction
+   //! Returns Harten-Lax-van-Leer-Einfeldt (HLLE) flux in n-direction
    static LES3DFsd_cState FluxHLLE_n(const LES3DFsd_pState &Wl,
                                      const LES3DFsd_pState &Wr,
-                                     const Vector3D &norm_dir);
-    //! Returns Harten-Lax-van-Leer-Einfeldt (HLLE) flux in n-direction
-   static LES3DFsd_cState FluxHLLE_n(const LES3DFsd_cState &Ul,
-                                     const LES3DFsd_cState &Ur,
                                      const Vector3D &norm_dir);
 
    //! Returns Roe flux x-direction flux
    static LES3DFsd_cState FluxRoe_x(const LES3DFsd_pState &Wl, 
                                     const LES3DFsd_pState &Wr);
-   //! Returns Roe flux x-direction flux
-   static LES3DFsd_cState FluxRoe_x(const LES3DFsd_cState &Ul,
-				    const LES3DFsd_cState &Ur);
 
    //! Returns Roe flux in n-direction
    static LES3DFsd_cState FluxRoe_n(const LES3DFsd_pState &Wl,
@@ -651,9 +656,6 @@ class LES3DFsd_pState : public NavierStokes3D_ThermallyPerfect_pState {
    //! Returns AUSMplus_up flux x-direction flux
    static LES3DFsd_cState FluxAUSMplus_up_x(const LES3DFsd_pState &Wl,
                                             const LES3DFsd_pState &Wr);
-   //! Returns AUSMplus_up flux x-direction flux
-   static LES3DFsd_cState FluxAUSMplus_up_x(const LES3DFsd_cState &Ul,
-                                            const LES3DFsd_cState &Ur);
 
    //! Returns AUSMplus_up flux in n-direction
    static LES3DFsd_cState FluxAUSMplus_up_n(const LES3DFsd_pState &Wl,
@@ -968,12 +970,12 @@ class LES3DFsd_pState : public NavierStokes3D_ThermallyPerfect_pState {
                         const double &Volume);
 
    //! Source terms for C-Fsd-k model
-   static LES3DFsd_cState Sturbulence(LES3DFsd_pState &Wc,
-                                      const LES3DFsd_pState &dWdx,
-                                      const LES3DFsd_pState &dWdy,
-                                      const LES3DFsd_pState &dWdz,
-                                      const int Flow_Type,
-                                      const double &Volume);
+   static LES3DFsd_cState Sturbchem(LES3DFsd_pState &Wc,
+                                    const LES3DFsd_pState &dWdx,
+                                    const LES3DFsd_pState &dWdy,
+                                    const LES3DFsd_pState &dWdz,
+                                    const int Flow_Type,
+                                    const double &Volume);
 //@}
 
 /** @name Operators */
@@ -1095,12 +1097,12 @@ class LES3DFsd_cState : public NavierStokes3D_ThermallyPerfect_cState {
 /*        ---------------------------- */
 //@{
    //! Default creation constructor (assign default values)
-   LES3DFsd_cState(): NavierStokes3D_ThermallyPerfect_cState(), rhoC(rho*ONE), rhoFsd(MILLION), rhok(ZERO) {
+   LES3DFsd_cState(): NavierStokes3D_ThermallyPerfect_cState(), rhoC(ZERO), rhoFsd(MILLION), rhok(ZERO) {
      premixed_mfrac(); }
    
    //! Constructor from base class (allows return of derived type)
    LES3DFsd_cState(const NavierStokes3D_ThermallyPerfect_cState &U1) : 
-     NavierStokes3D_ThermallyPerfect_cState(U1), rhoC(rho*ONE), rhoFsd(MILLION), rhok(ZERO) { }
+     NavierStokes3D_ThermallyPerfect_cState(U1), rhoC(ZERO), rhoFsd(MILLION), rhok(ZERO) { }
 
    //! Constructor from base class
    LES3DFsd_cState(const NavierStokes3D_ThermallyPerfect_cState &U1,
@@ -1151,8 +1153,22 @@ class LES3DFsd_cState : public NavierStokes3D_ThermallyPerfect_cState {
 /** @name Some useful operators */
 /*        --------------------- */
 //@{
+   //! Assign the species data (needs to be called only once as it is static)
+   void set_species_data(const int &n,
+                         const string *S,
+                         const char *PATH,
+                         const int &debug, 
+                         const double &Mr, 
+                         const double* Sc,
+                         const int &trans_data) {
+      Euler3D_ThermallyPerfect_cState::set_species_data(n, S, PATH, debug, Mr, Sc, trans_data);
+      num_vars = NUM_EULER3D_VAR_SANS_SPECIES + NUM_LES3D_VAR_EXTRA + 0*ns;
+   }
+
+   //! Copy solution state (cheaper than = operator)
    void Copy(const LES3DFsd_cState &U);
 
+   //! Assigns a vacuum solution state
    void Vacuum(void) { 
      rho = ZERO; rhov.zero(); E=ZERO; rhoC = ZERO; rhoFsd = ZERO; rhok = ZERO;
    }
@@ -1381,7 +1397,7 @@ inline double& LES3DFsd_pState::operator[](int index) {
    case 8:
       return k;
    default :
-      return spec[index-(NUM_EULER3D_VAR_SANS_SPECIES + NUM_LES3D_VAR_EXTRA +1)].c;
+      return spec[index-(NUM_EULER3D_VAR_SANS_SPECIES+NUM_LES3D_VAR_EXTRA+1)].c;
    };
 }
 
@@ -1404,7 +1420,7 @@ inline const double& LES3DFsd_pState::operator[](int index) const {
    case 8:
       return k;
    default :
-      return spec[index-(NUM_EULER3D_VAR_SANS_SPECIES + NUM_LES3D_VAR_EXTRA +1)].c;
+      return spec[index-(NUM_EULER3D_VAR_SANS_SPECIES+NUM_LES3D_VAR_EXTRA+1)].c;
    };
 }
 
@@ -1631,7 +1647,7 @@ inline double& LES3DFsd_cState::operator[](int index) {
    case 8:
       return rhok;
    default :
-      return rhospec[index-(NUM_EULER3D_VAR_SANS_SPECIES + NUM_LES3D_VAR_EXTRA +1)].c;
+      return rhospec[index-(NUM_EULER3D_VAR_SANS_SPECIES+NUM_LES3D_VAR_EXTRA+1)].c;
    };
 }
 
@@ -1654,7 +1670,7 @@ inline const double& LES3DFsd_cState::operator[](int index) const {
    case 8:
       return rhok;
    default :
-      return rhospec[index-(NUM_EULER3D_VAR_SANS_SPECIES + NUM_LES3D_VAR_EXTRA +1)].c;
+      return rhospec[index-(NUM_EULER3D_VAR_SANS_SPECIES+NUM_LES3D_VAR_EXTRA+1)].c;
    };
 }
 

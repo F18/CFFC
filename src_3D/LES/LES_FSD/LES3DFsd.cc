@@ -4,8 +4,7 @@
  ******                LES3DFsd Version 1.00                 *******
  ****                       (10/19/07)                          ****
  ****                                                           ****
- ****    Solver for LES Navier Stokes Equations Governing Flow  ****
- ****    of Thermally Perfect Gases in Three Space Dimensions   ****
+ ****  Solver for perfmoring LES Turbulent Premixed Combustion  ****
  ****                                                           ****
  ******       UTIAS, CFD & Propulsion Group, 1999-2007        ******
  **********                                               **********
@@ -52,7 +51,7 @@ int main(int num_arg, char *arg_ptr[]) {
    char *command_name_ptr;
 
    char *program_title_ptr = 
-     "LES3DFsd: Solver for the LES Navier Stokes Equations Governing Thermally Perfect Gases in 3 Space Dimensions.";
+     "LES3DFsd: Solver for performing LES of Turbulence Premixed Combustion Processes Using FSD Approach.";
 
    // Version of code:
    char *program_version_ptr = 
@@ -248,6 +247,6 @@ int main(int num_arg, char *arg_ptr[]) {
    //Ending properly
    return (0);
    
-/* End LES3DFsd program. */
+   /* End LES3DFsd program. */
 
 }

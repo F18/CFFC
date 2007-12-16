@@ -1347,12 +1347,9 @@ FluxHLLE_x(const FANS3D_ThermallyPerfect_KOmega_pState &Wl,
            const FANS3D_ThermallyPerfect_KOmega_pState &Wr) {
    
    double wavespeed_l, wavespeed_r;
- 
    FANS3D_ThermallyPerfect_KOmega_pState Wa, lambdas_l, lambdas_r, lambdas_a;
    FANS3D_ThermallyPerfect_KOmega_cState Flux, dUrl;
    
-   int num_vars = Wl.num_vars;
-
    /* Evaluate the Roe-average primitive solution state. */
    
    Wa = RoeAverage(Wl, Wr);
@@ -1371,8 +1368,8 @@ FluxHLLE_x(const FANS3D_ThermallyPerfect_KOmega_pState &Wl,
    
    wavespeed_l = min(lambdas_l[1],
                      lambdas_a[1]);
-   wavespeed_r = max(lambdas_r[num_vars-NUM_FANS3D_VAR_EXTRA-lambdas_r.ns],
-                     lambdas_a[num_vars-NUM_FANS3D_VAR_EXTRA-lambdas_a.ns]);
+   wavespeed_r = max(lambdas_r[5],
+                     lambdas_a[5]);
    
    wavespeed_l = min(wavespeed_l, ZERO);
    wavespeed_r = max(wavespeed_r, ZERO); 
@@ -1587,8 +1584,8 @@ Vector2D FANS3D_ThermallyPerfect_KOmega_pState::HLLE_wavespeeds(const FANS3D_The
     /* Determine the intermediate state flux. */
     wavespeed.x = min(lambdas_l[1],
                       lambdas_a[1]);
-    wavespeed.y = max(lambdas_r[lambdas_r.NumVarSansSpecies()],
-                      lambdas_a[lambdas_a.NumVarSansSpecies()]);
+    wavespeed.y = max(lambdas_r[5],
+                      lambdas_a[5]);
  
     wavespeed.x = min(wavespeed.x, ZERO); //lambda minus
     wavespeed.y = max(wavespeed.y, ZERO); //lambda plus 

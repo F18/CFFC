@@ -116,7 +116,7 @@ int Initial_Conditions(HexaSolver_Data &Data,
       CFFC_Maximum_MPI(Solution_Data.Input.Maximum_Number_of_Time_Steps);
    
   // Generate initial solution data to begin calculation. 
-  } else {    
+  } else {
     error_flag = Wall_Distance(Solution_Data.Local_Solution_Blocks.Soln_Blks,  // Turbulence function in GENERIC TYPE????
 			       Data.Octree, 
 			       Data.Local_Adaptive_Block_List);
@@ -173,6 +173,7 @@ int Initial_Conditions(HexaSolver_Data &Data,
    if (error_flag) return (error_flag);
   
   /* Prescribe boundary data consistent with initial data. */
+
   Solution_Data.Local_Solution_Blocks.BCs(Solution_Data.Input);
   
   return error_flag;

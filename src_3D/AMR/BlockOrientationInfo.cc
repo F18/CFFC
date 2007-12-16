@@ -4,10 +4,160 @@
 #include"BlockOrientationInfo.h"
 #endif// _BLOCK_ORIENTATION_INFO_INCLUDED
 
-#ifndef  _SYSTEM_LINUX_INCLUDED
-#include "../System/System_Linux.h"
-#endif //_SYSTEM_LINUX_INCLUDED
+/*************************************************************************************************************************
+ * Direction_Indices::direction_number_to_direction_indices -- Return indices given a direction number.                  *
+ *************************************************************************************************************************/
+Direction_Indices Direction_Indices::direction_number_to_direction_indices(const int direction_number) const {
+   switch (direction_number) { 
+   case DIRECTION::BSW : // 0
+     return Direction_Indices(-1, -1, -1);    
+   case DIRECTION::SW :  // 1
+     return Direction_Indices(-1, -1, 0);
+   case DIRECTION::TSW : // 2
+     return Direction_Indices(-1, -1, 1);
+   case DIRECTION::BW :  // 3
+     return Direction_Indices(-1, 0, -1);    
+   case DIRECTION::W :   // 4
+     return Direction_Indices(-1, 0, 0);
+   case DIRECTION::TW :  // 5
+     return Direction_Indices(-1, 0, 1);
+   case DIRECTION::BNW : // 6
+     return Direction_Indices(-1, 1, -1);    
+   case DIRECTION::NW :  // 7
+     return Direction_Indices(-1, 1, 0);
+   case DIRECTION::TNW : // 8
+     return Direction_Indices(-1, 1, 1);
+   case DIRECTION::BS :  // 9
+     return Direction_Indices(0, -1, -1);    
+   case DIRECTION::S :   // 10
+     return Direction_Indices(0, -1, 0);
+   case DIRECTION::TS :  // 11
+     return Direction_Indices(0, -1, 1);
+   case DIRECTION::B :   // 12
+     return Direction_Indices(0, 0, -1);    
+   case DIRECTION::T :   // 13
+     return Direction_Indices(0, 0, 1);
+   case DIRECTION::BN :  // 14
+     return Direction_Indices(0, 1, -1);    
+   case DIRECTION::N :   // 15
+     return Direction_Indices(0, 1, 0);
+   case DIRECTION::TN :  // 16
+     return Direction_Indices(0, 1, 1);
+   case DIRECTION::BSE : // 17
+     return Direction_Indices(1, -1, -1);    
+   case DIRECTION::SE :  // 18
+     return Direction_Indices(1, -1, 0);
+   case DIRECTION::TSE : // 19
+     return Direction_Indices(1, -1, 1);
+   case DIRECTION::BE :  // 20
+     return Direction_Indices(1, 0, -1);    
+   case DIRECTION::E :   // 21
+     return Direction_Indices(1, 0, 0);
+   case DIRECTION::TE :  // 22
+     return Direction_Indices(1, 0, 1);
+   case DIRECTION::BNE : // 23
+     return Direction_Indices(1, 1, -1);    
+   case DIRECTION::NE :  // 24
+     return Direction_Indices(1, 1, 0);
+   case DIRECTION::TNE : // 25
+     return Direction_Indices(1, 1, 1);
+   default :
+     return Direction_Indices(0, 0, 0);
+   }; /* endswitch */
+}
 
+/*************************************************************************************************************************
+ * Direction_Indices::direction_indices_to_direction_number -- Return direction number given the indices.                *
+ *************************************************************************************************************************/
+int Direction_Indices::direction_indices_to_direction_number(void) const {
+   int dir_num = direction_indices_to_boundary_element_number();
+   if (dir_num > BE::ME) dir_num = dir_num - 1;
+   return dir_num;
+}
+
+int Direction_Indices::direction_indices_to_direction_number(const Direction_Indices &DI) const {
+   int dir_num = DI.direction_indices_to_boundary_element_number();
+   if (dir_num > BE::ME) dir_num = dir_num - 1;
+   return dir_num;
+}
+
+/*************************************************************************************************************************
+ * Direction_Indices::boundary_element_number_to_direction_indices -- Return boundary element number given a             *
+ *                                                                    direction number.                                  *
+ *************************************************************************************************************************/
+Direction_Indices Direction_Indices::boundary_element_number_to_direction_indices(const int boundary_element_number) const {
+   switch (boundary_element_number) { 
+   case BE::BSW : // 0
+     return Direction_Indices(-1, -1, -1);    
+   case BE::SW :  // 1
+     return Direction_Indices(-1, -1, 0);
+   case BE::TSW : // 2
+     return Direction_Indices(-1, -1, 1);
+   case BE::BW :  // 3
+     return Direction_Indices(-1, 0, -1);    
+   case BE::W :   // 4
+     return Direction_Indices(-1, 0, 0);
+   case BE::TW :  // 5
+     return Direction_Indices(-1, 0, 1);
+   case BE::BNW : // 6
+     return Direction_Indices(-1, 1, -1);    
+   case BE::NW :  // 7
+     return Direction_Indices(-1, 1, 0);
+   case BE::TNW : // 8
+     return Direction_Indices(-1, 1, 1);
+   case BE::BS :  // 9
+     return Direction_Indices(0, -1, -1);    
+   case BE::S :   // 10
+     return Direction_Indices(0, -1, 0);
+   case BE::TS :  // 11
+     return Direction_Indices(0, -1, 1);
+   case BE::B :   // 12
+     return Direction_Indices(0, 0, -1);    
+   case BE::ME :  // 13
+     return Direction_Indices(0, 0, 0);
+   case BE::T :   // 14
+     return Direction_Indices(0, 0, 1);
+   case BE::BN :  // 15
+     return Direction_Indices(0, 1, -1);    
+   case BE::N :   // 16
+     return Direction_Indices(0, 1, 0);
+   case BE::TN :  // 17
+     return Direction_Indices(0, 1, 1);
+   case BE::BSE : // 18
+     return Direction_Indices(1, -1, -1);    
+   case BE::SE :  // 19
+     return Direction_Indices(1, -1, 0);
+   case BE::TSE : // 20
+     return Direction_Indices(1, -1, 1);
+   case BE::BE :  // 21
+     return Direction_Indices(1, 0, -1);    
+   case BE::E :   // 22
+     return Direction_Indices(1, 0, 0);
+   case BE::TE :  // 23
+     return Direction_Indices(1, 0, 1);
+   case BE::BNE : // 24
+     return Direction_Indices(1, 1, -1);    
+   case BE::NE :  // 25
+     return Direction_Indices(1, 1, 0);
+   case BE::TNE : // 26
+     return Direction_Indices(1, 1, 1);
+   default :
+     return Direction_Indices(0, 0, 0);
+   }; /* endswitch */
+}
+
+/*************************************************************************************************************************
+ * Direction_Indices::direction_indices_to_boundary_element_number --  Return boundary element number given the indices. *
+ *************************************************************************************************************************/
+int Direction_Indices::direction_indices_to_boundary_element_number(void) const {
+  return ((i+1)*9 + (j+1)*3 + (k+1));
+}
+
+int Direction_Indices::direction_indices_to_boundary_element_number(const Direction_Indices &DI) const {
+  return ((DI.i+1)*9 + (DI.j+1)*3 + (DI.k+1));
+}
+
+//=======================================================
 void Block_Orientation_Info::set_block_orientation_info(BlkC::BlockConnectivity &blkc, 
                                                         const int iblk,
                                                         const int which_neighbour,

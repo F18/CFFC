@@ -1071,14 +1071,12 @@ void Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState,
 BCs(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState, 
                      FANS3D_ThermallyPerfect_KOmega_cState> &IPs) {
    
-   int i, j, k;
    double dpdx, dpdy, dpdz;
    Vector3D dX;
    Vector3D MOVING_WALL_VELOCITY = IPs.Moving_Wall_Velocity;
 
-   for ( k = KCl-Nghost ; k <= KCu+Nghost ; ++k) {
-      for ( j = JCl-Nghost ; j <=  JCu+Nghost ; ++j ) {
-         
+   for (int k = KCl - Nghost; k <= KCu + Nghost; ++k) {
+      for (int j = JCl - Nghost; j <= JCu + Nghost; ++j ) {
          // Prescribe West boundary conditions.
          switch(Grid.BCtypeW[j][k]) {
           case BC_NONE :
@@ -1100,13 +1098,6 @@ BCs(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
             W[ICl-2][j][k] = W[ICl][j][k] ;
             W[ICl-2][j][k].p = WoW[j][k].p;
             U[ICl-2][j][k] =  W[ICl-2][j][k].U();
-            break;
-
-          case BC_CONSTANT_EXTRAPOLATION :
-            W[ICl-1][j][k] = W[ICl][j][k];
-            U[ICl-1][j][k] = W[ICl-1][j][k].U();
-            W[ICl-2][j][k] = W[ICl][j][k] ;
-            U[ICl-2][j][k] = W[ICl-2][j][k].U();
             break;
 
           case BC_CHANNEL_INFLOW:
@@ -1162,6 +1153,14 @@ BCs(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
             U[ICl-2][j][k] = W[ICl-2][j][k].U();
             break;
                     
+          case BC_CONSTANT_EXTRAPOLATION :
+	  default :
+            W[ICl-1][j][k] = W[ICl][j][k];
+            U[ICl-1][j][k] = W[ICl-1][j][k].U();
+            W[ICl-2][j][k] = W[ICl][j][k] ;
+            U[ICl-2][j][k] = W[ICl-2][j][k].U();
+            break;
+
          } /* endswitch */
          
          // Prescribe East boundary conditions.
@@ -1184,13 +1183,6 @@ BCs(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
             U[ICu+1][j][k] = W[ICu+1][j][k].U();
             W[ICu+2][j][k] = W[ICu-1][j][k];
             W[ICu+2][j][k].p = WoE[j][k].p; 
-            U[ICu+2][j][k] = W[ICu+2][j][k].U();
-            break;
-
-          case BC_CONSTANT_EXTRAPOLATION :
-            W[ICu+1][j][k] = W[ICu][j][k];
-            U[ICu+1][j][k] = W[ICu+1][j][k].U();
-            W[ICu+2][j][k] = W[ICu][j][k];
             U[ICu+2][j][k] = W[ICu+2][j][k].U();
             break;
 
@@ -1244,14 +1236,21 @@ BCs(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
             U[ICu+2][j][k] = W[ICu+2][j][k].U();
             break;
             
+          case BC_CONSTANT_EXTRAPOLATION :
+	  default :
+            W[ICu+1][j][k] = W[ICu][j][k];
+            U[ICu+1][j][k] = W[ICu+1][j][k].U();
+            W[ICu+2][j][k] = W[ICu][j][k];
+            U[ICu+2][j][k] = W[ICu+2][j][k].U();
+            break;
+
          } /* endswitch */
          
       } /* endfor */
    } /* endfor */
    
-   for ( k = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
-      for ( i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
-              
+   for (int k = KCl - Nghost; k <= KCu + Nghost; ++k ) {
+      for (int i = ICl - Nghost; i <= ICu + Nghost; ++i ) {
         // Prescribe North boundary conditions.
          switch(Grid.BCtypeN[i][k]) {
           case BC_NONE :
@@ -1293,13 +1292,6 @@ BCs(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
             U[i][JCu+2][k] = W[i][JCu+2][k].U( );
             break;
             
-          case BC_CONSTANT_EXTRAPOLATION :
-            W[i][ JCu+1][k] = W[i][ JCu][k];
-            U[i][ JCu+1][k] =  W[i][ JCu+1][k].U();
-            W[i][ JCu+2][k] =  W[i][ JCu][k];
-            U[i][ JCu+2][k] =  W[i][ JCu+2][k].U();
-            break;
-
           case BC_PERIODIC :
             W[i][JCu+1][k] = W[i][JCl+1][k];
             U[i][JCu+1][k] = U[i][JCl+1][k];
@@ -1335,6 +1327,14 @@ BCs(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
             U[i][JCu+2][k] = W[i][JCu+2][k].U();
             break;
 
+          case BC_CONSTANT_EXTRAPOLATION :
+	  default :
+            W[i][ JCu+1][k] = W[i][ JCu][k];
+            U[i][ JCu+1][k] =  W[i][ JCu+1][k].U();
+            W[i][ JCu+2][k] =  W[i][ JCu][k];
+            U[i][ JCu+2][k] =  W[i][ JCu+2][k].U();
+            break;
+
          } /* endswitch */
     
          // Prescribe South boundary conditions.
@@ -1357,13 +1357,6 @@ BCs(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
             U[i][JCl-1][k] = W[i][ JCl-1][k].U();
             W[i][JCl-2][k] = W[i][ JCl+1][k];
             W[i][JCl-2][k].p = WoS[i][k].p;
-            U[i][JCl-2][k] = W[i][ JCl-2][k].U();
-	    break;
-
-          case BC_CONSTANT_EXTRAPOLATION :
-            W[i][JCl-1][k] = W[i][ JCl][k];
-            U[i][JCl-1][k] = W[i][ JCl-1][k].U();
-            W[i][JCl-2][k] = W[i][ JCl][k];
             U[i][JCl-2][k] = W[i][ JCl-2][k].U();
 	    break;
 
@@ -1418,14 +1411,21 @@ BCs(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
             U[i][JCl-2][k] =  W[i][JCl-2][k].U();
             break;
             
+          case BC_CONSTANT_EXTRAPOLATION :
+	  default :
+            W[i][JCl-1][k] = W[i][ JCl][k];
+            U[i][JCl-1][k] = W[i][ JCl-1][k].U();
+            W[i][JCl-2][k] = W[i][ JCl][k];
+            U[i][JCl-2][k] = W[i][ JCl-2][k].U();
+	    break;
+
          } /* endswitch */
 
       } /* endfor */
    } /* endfor */
  
-   for ( j = JCl-Nghost ; j <= JCu+ Nghost ; ++j ) {
-      for ( i = ICl- Nghost ; i <= ICu+ Nghost ; ++i ) {
- 
+   for (int j = JCl - Nghost; j <= JCu + Nghost; ++j) {
+      for (int i = ICl - Nghost; i <= ICu + Nghost; ++i) {
          // Prescribe Bottom boundary conditions.
          switch( Grid.BCtypeB[i][j]) {
           case BC_NONE :
@@ -1446,13 +1446,6 @@ BCs(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
             U[i][j][ KCl-1] = W[i][j][ KCl-1].U();
             W[i][j][ KCl-2] = W[i][j][ KCl+1];
             W[i][j][ KCl-2].p = WoB[i][j].p;
-            U[i][j][ KCl-2] = W[i][j][ KCl-2].U();
-            break;
-
-          case BC_CONSTANT_EXTRAPOLATION :
-            W[i][j][ KCl-1] = W[i][j][ KCl];
-            U[i][j][ KCl-1] = W[i][j][ KCl-1].U();
-            W[i][j][ KCl-2] = W[i][j][ KCl];
             U[i][j][ KCl-2] = W[i][j][ KCl-2].U();
             break;
 
@@ -1518,12 +1511,18 @@ BCs(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
             U[i][j][KCl-2] = W[i][j][KCl-2].U();
             break;
 
+          case BC_CONSTANT_EXTRAPOLATION :
+	  default :
+            W[i][j][ KCl-1] = W[i][j][ KCl];
+            U[i][j][ KCl-1] = W[i][j][ KCl-1].U();
+            W[i][j][ KCl-2] = W[i][j][ KCl];
+            U[i][j][ KCl-2] = W[i][j][ KCl-2].U();
+            break;
             
          } /* endswitch */
          
-       
          // Prescribe Top boundary conditions.
-         switch( Grid.BCtypeT[i][j]) {
+         switch(Grid.BCtypeT[i][j]) {
           case BC_NONE :
             break;
             
@@ -1541,13 +1540,6 @@ BCs(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
             U[i][j][KCu+1] = W[i][j][KCu+1].U();
             W[i][j][KCu+2] = W[i][j][KCu-1];
             W[i][j][KCu+2].p = WoT[i][j].p;
-            U[i][j][KCu+2] = W[i][j][KCu+2].U();
-            break;
-
-          case BC_CONSTANT_EXTRAPOLATION :
-            W[i][j][KCu+1] = W[i][j][KCu];
-            U[i][j][KCu+1] = W[i][j][KCu+1].U();
-            W[i][j][KCu+2] = W[i][j][KCu];
             U[i][j][KCu+2] = W[i][j][KCu+2].U();
             break;
 
@@ -1598,6 +1590,15 @@ BCs(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
                                                                                FIXED_TEMPERATURE_WALL);
             U[i][j][KCu+2] = W[i][j][KCu+2].U();
             break;
+ 
+          case BC_CONSTANT_EXTRAPOLATION :
+	  default :
+            W[i][j][KCu+1] = W[i][j][KCu];
+            U[i][j][KCu+1] = W[i][j][KCu+1].U();
+            W[i][j][KCu+2] = W[i][j][KCu];
+            U[i][j][KCu+2] = W[i][j][KCu+2].U();
+            break;
+
          } /* endswitch */
 
       } /* endfor */

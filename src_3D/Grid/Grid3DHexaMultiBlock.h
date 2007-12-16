@@ -22,7 +22,11 @@
 #include "../AMR/BlockOrientationInfo.h"
 #endif // _BLOCK_ORIENTATION_INFO_INCLUDED
 
+//! 
+#define GRID3D_HEXA_MULTI_BLOCK_NAX_NUMBER_OF_DIRECTIONS_TO_NEIGHBOURS   26
+
 //! Maximum number of grid block neighbours in each direction
+#define	GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS_PER_DIRECTION  4
 #define	GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS  2
 
 //! No grid block neighbour block  
@@ -33,6 +37,8 @@
 class Grid3D_Hexa_Multi_Block_Connectivity {
   public:
    //! Number of neigbouring grid blocks in each of the 26 directions
+   int      number_neighbours[GRID3D_HEXA_MULTI_BLOCK_NAX_NUMBER_OF_DIRECTIONS_TO_NEIGHBOURS];
+
    //! Number of neighbouring grid blocks sharing each of the six (6) faces of the block 
    int      num_neighT,num_neighB,num_neighN,num_neighS,num_neighE,num_neighW;
 
@@ -46,6 +52,9 @@ class Grid3D_Hexa_Multi_Block_Connectivity {
             num_neighBNW,num_neighBSW,num_neighBNE,num_neighBSE;
 
    //! Grid block numbers for each of the neigbouring grid blocks in each of the 26 directions
+   int      neighbour_blknum[GRID3D_HEXA_MULTI_BLOCK_NAX_NUMBER_OF_DIRECTIONS_TO_NEIGHBOURS]
+                            [GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS_PER_DIRECTION];
+
    //! Grid block numbers for neighbouring grid blocks sharing each of the six (6) faces of the block
    int      neighT,neighB,neighN,neighS,neighE,neighW;
 
@@ -74,6 +83,9 @@ class Grid3D_Hexa_Multi_Block_Connectivity {
             neighBSE[GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS];
    
    //! Compact transformation matrix for each of the neigbouring grid blocks in each of the 26 directions
+   int      neighbour_orient_info[GRID3D_HEXA_MULTI_BLOCK_NAX_NUMBER_OF_DIRECTIONS_TO_NEIGHBOURS]
+                                 [GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS_PER_DIRECTION];
+
    //! Compact transformation matrix for neighbouring grid blocks sharing each of the six (6) faces of the block
    Block_Orientation_Info  neighT_info,neighB_info,neighN_info,neighS_info,neighE_info,neighW_info; 
 
