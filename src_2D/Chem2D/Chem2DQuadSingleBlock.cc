@@ -1173,18 +1173,18 @@ void Output_Cells_Tecplot(Chem2D_Quad_Block &SolnBlk,
                     << SolnBlk.W[i][j];
            Out_File.setf(ios::scientific);
 	   //Temperature
-	   Out_File << " " << SolnBlk.W[i][j].qflux<< " " << SolnBlk.W[i][j].tau
-		    << " " << SolnBlk.W[i][j].theta<< " " << SolnBlk.W[i][j].lambda
+	   Out_File << " " << SolnBlk.U[i][j].qflux<< " " << SolnBlk.U[i][j].tau
+		    << " " << SolnBlk.U[i][j].theta<< " " << SolnBlk.U[i][j].lambda
 		    << " " << SolnBlk.W[i][j].T()
 		    << " " << SolnBlk.W[i][j].v.abs()/SolnBlk.W[i][j].a() 
 		    << " " << SolnBlk.W[i][j].Rtot()
 		    << " " << SolnBlk.W[i][j].mu()
 		    << " " << SolnBlk.W[i][j].kappa()
-		    << " " << SolnBlk.W[i][j].Prandtl(); 
+		    << " " << SolnBlk.U[i][j].Prandtl(); 
 	   //Prandtl, Schmidt, Lewis   
 	   for(int k =0 ;k<SolnBlk.W[0][0].ns ;k++){	  
- 	       Out_File<<" "<<SolnBlk.W[i][j].Schmidt_No(k) 
-		       <<" "<<SolnBlk.W[i][j].Lewis(k);  
+ 	       Out_File<<" "<<SolnBlk.U[i][j].Schmidt_No(k) 
+		       <<" "<<SolnBlk.U[i][j].Lewis(k);  
 	   }
 	   //Residuals
 	   Out_File << " " << SolnBlk.dUdt[i][j][0];
@@ -2144,27 +2144,47 @@ void ICs(Chem2D_Quad_Block &SolnBlk,
     case IC_CHEM_PREMIXED_FLAME :           
 
       if(Wo[0].React.reactset_flag == CH4_2STEP || Wo[0].React.reactset_flag == CH4_1STEP){
-	fuel_spacing = 0.01;      //m
-	fuel_velocity = 1.10;     //m/s  //0.70
+	fuel_spacing = 0.011;      //m
+	fuel_velocity = 1.10;     //m/s  
 	fuel_temp_inlet = 298.0;  //K 
-	tube_thickness =  0.0;    //m delta	 //no tube 
+	tube_thickness =  0.001;    //m delta	
 
-	air_spacing = 0.030;       //m   //0.025
-	air_velocity = 0.0;        //m/s  0.35
+	air_spacing = 0.030;       //m   
+	air_velocity = 0.0;        //m/s 
 	air_temp_inlet = 298.0;    //K
-	ignition_temp = 1300.0;    //K
+	ignition_temp = 1200.0;    //K
 	
 	Wr = Wo[0];
 	Wl = Wo[0];
 	
-	//Premixed FUEL phi=1.05 CH4 & O2
-	Wl.spec[0] = 0.3446;   //CH4
-	Wl.spec[1] = 0.6554;   //O2
-	for(int q=2; q < Wl.ns; q++){
+        //phi=0.95
+// 	Wl.spec[0] = 0.054;   //CH4
+//  	Wl.spec[1] = 0.2213;   //O2
+//  	Wl.spec[Wl.ns-1] = 0.7247; //N2
+
+	//Premixed FUEL phi=1.05 CH4 & AIR (O2 &N2)
+	Wl.spec[0] = 0.05766;   //CH4
+	Wl.spec[1] = 0.21966;   //O2
+	Wl.spec[Wl.ns-1] = 0.72268; //N2
+
+	// phi=1.0
+ // 	Wl.spec[0] = 0.0551;   //CH4
+//  	Wl.spec[1] = 0.2202;   //O2
+//  	Wl.spec[Wl.ns-1] = 0.7247; //N2
+	for(int q=2; q < Wl.ns-1; q++){
 	  Wl.spec[q].c =ZERO;
 	}
 	Wl.rho = Wl.p/(Wl.Rtot()*fuel_temp_inlet);
 	Wl.v.zero();
+
+	//PRODUCTS
+// 	Wr.spec[0] = 0.0;   //CH4
+//  	Wr.spec[1] = 0.0;   //O2
+// 	Wr.spec[2] = 0.1511;     //CO2
+// 	Wr.spec[3] = 0.1242;     //H2O 
+// 	Wr.spec[Wl.ns-1] = 0.7247; //N2
+// 	Wr.rho = Wr.p/(Wr.Rtot()*2320); //2234
+// 	Wr.v.zero();
 
 	//air 21% O2 & 79% N2
 	for(int q=0; q < Wr.ns; q++){
@@ -2184,7 +2204,7 @@ void ICs(Chem2D_Quad_Block &SolnBlk,
 	for ( int i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
   	  //region for injected fuel 
  	  if (SolnBlk.Grid.Cell[i][j].Xc.x <= fuel_spacing ){ 
-    	    if (SolnBlk.Grid.Cell[i][j].Xc.y <0.006 ){
+    	    if (SolnBlk.Grid.Cell[i][j].Xc.y <0.02 ){
 	      SolnBlk.W[i][j] = Wl;
 	      SolnBlk.W[i][j].rho = Wl.p/(Wl.Rtot()*fuel_temp_inlet);  //set BC value to proper inlet temp
 	      SolnBlk.W[i][j].v.y = fuel_velocity;
@@ -2208,16 +2228,16 @@ void ICs(Chem2D_Quad_Block &SolnBlk,
 	    SolnBlk.W[i][j].v.zero(); 	   	    
  	  } 
 
-	  //IGNITOR across fuel and air inlets   //0.006  & 0.003
-	  if( SolnBlk.Grid.Cell[i][j].Xc.y < 0.006 && SolnBlk.Grid.Cell[i][j].Xc.y > 0.003){   	   
-	    if ( SolnBlk.Grid.Cell[i][j].Xc.x <= 0.75*fuel_spacing && SolnBlk.Grid.Cell[i][j].Xc.x > fuel_spacing*0.25){ 
+	  //IGNITOR across fuel and air inlets   
+	  if( SolnBlk.Grid.Cell[i][j].Xc.y < 0.022 && SolnBlk.Grid.Cell[i][j].Xc.y > 0.017){   	    
+	    if ( SolnBlk.Grid.Cell[i][j].Xc.x <= 1.1*fuel_spacing && SolnBlk.Grid.Cell[i][j].Xc.x > fuel_spacing*0.9){ 
 	      SolnBlk.W[i][j].rho = Wl.p/(Wl.Rtot()*ignition_temp);
-	    } else if (SolnBlk.Grid.Cell[i][j].Xc.x <= fuel_spacing){
-	      SolnBlk.W[i][j].rho = Wr.p/(Wr.Rtot()*ignition_temp);
+// 	    } else if (SolnBlk.Grid.Cell[i][j].Xc.x <= fuel_spacing){
+// 	      SolnBlk.W[i][j].rho = Wr.p/(Wr.Rtot()*ignition_temp);
 // 	    } else if (SolnBlk.Grid.Cell[i][j].Xc.x <= air_spacing*0.5){
 // 	      SolnBlk.W[i][j].rho = Wr.p/(Wr.Rtot()*ignition_temp);
-	    } else {
-	      //left at air
+// 	    } else {
+// 	      //left at air
 	    }
 	  }
 	  SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
@@ -5670,7 +5690,7 @@ void Calculate_Refinement_Criteria(double *refinement_criteria,
       refinement_criteria_number++;
     }
     if (IP.Refinement_Criteria_Divergence_Velocity) {
-      refinement_criteria[refinement_criteria_number] = div_V_criteria_max;
+      refinement_criteria[refinement_criteria_number] = ONE; //div_V_criteria_max;  //HACK FOR UNIFORM REFINEMENT !!!!!!!
       refinement_criteria_number++;
     }
     if (IP.Refinement_Criteria_Curl_Velocity) {
@@ -6260,7 +6280,11 @@ int dUdt_Residual_Evaluation(Chem2D_Quad_Block &SolnBlk,
 	    Wr = BC_1DFlame_Outflow(Wl, 
 				    SolnBlk.WoE[j],
 				    SolnBlk.W[SolnBlk.ICl][j], 
-				    SolnBlk.Grid.nfaceE(i, j));
+				    SolnBlk.Grid.nfaceE(i, j));	 
+	  } else if (SolnBlk.Grid.BCtypeE[i] == BC_2DFLAME_OUTFLOW){
+	    Wr = BC_2DFlame_Outflow(Wl, 
+				    SolnBlk.WoE[i], 
+				    SolnBlk.Grid.nfaceE(i, j));	    
 	  } else if (SolnBlk.Grid.BCtypeE[j] == BC_CHARACTERISTIC) { 
 	    Wr = BC_Characteristic_Pressure(Wl, 
 					    SolnBlk.WoE[j], 
@@ -6588,8 +6612,7 @@ int dUdt_Residual_Evaluation(Chem2D_Quad_Block &SolnBlk,
 	} /* endif */
 	  
 	// Spacing for Preconditioner 
-	if(SolnBlk.Flow_Type != FLOWTYPE_INVISCID && 
-           Input_Parameters.Preconditioning){
+	if(Input_Parameters.Preconditioning){
 	  delta_n = min( TWO*(SolnBlk.Grid.Cell[i][j].A/
 			      (SolnBlk.Grid.lfaceE(i, j)+SolnBlk.Grid.lfaceW(i, j))),
 			 TWO*(SolnBlk.Grid.Cell[i][j].A/
@@ -6984,7 +7007,11 @@ int dUdt_Multistage_Explicit(Chem2D_Quad_Block &SolnBlk,
 	    Wr = BC_1DFlame_Outflow(Wl, 
 				    SolnBlk.WoE[j],
 				    SolnBlk.W[SolnBlk.ICl][j], 
-				    SolnBlk.Grid.nfaceE(i, j));
+				    SolnBlk.Grid.nfaceE(i, j));  
+	  } else if (SolnBlk.Grid.BCtypeE[i] == BC_2DFLAME_OUTFLOW){
+	    Wr = BC_2DFlame_Outflow(Wl, 
+				    SolnBlk.WoE[i], 
+				    SolnBlk.Grid.nfaceE(i, j));	    
 	  } else if (SolnBlk.Grid.BCtypeE[j] == BC_CHARACTERISTIC) { 
 	    Wr = BC_Characteristic_Pressure(Wl, 
 					    SolnBlk.WoE[j], 
@@ -7313,8 +7340,7 @@ int dUdt_Multistage_Explicit(Chem2D_Quad_Block &SolnBlk,
 	} /* endif */
 		
 	// Spacing for Preconditioner 
-	if(SolnBlk.Flow_Type != FLOWTYPE_INVISCID && 
-           Input_Parameters.Preconditioning){
+	if(Input_Parameters.Preconditioning){
 	  delta_n = min( TWO*(SolnBlk.Grid.Cell[i][j].A/
 			      (SolnBlk.Grid.lfaceE(i, j)+SolnBlk.Grid.lfaceW(i, j))),
 			 TWO*(SolnBlk.Grid.Cell[i][j].A/
@@ -7615,10 +7641,9 @@ int Update_Solution_Multistage_Explicit(Chem2D_Quad_Block &SolnBlk,
 	}
 	
 	// Spacing for preconditioner and viscous 
-	if (SolnBlk.Flow_Type != FLOWTYPE_INVISCID && 
-	    (Input_Parameters.Local_Time_Stepping == LOW_MACH_NUMBER_WEISS_SMITH_PRECONDITIONER || 
-	     Input_Parameters.Local_Time_Stepping == SEMI_IMPLICIT_LOW_MACH_NUMBER_PRECONDITIONER ||
-	     Input_Parameters.Local_Time_Stepping == MATRIX_WITH_LOW_MACH_NUMBER_PRECONDITIONER) ){	     
+	if (Input_Parameters.Local_Time_Stepping == LOW_MACH_NUMBER_WEISS_SMITH_PRECONDITIONER || 
+	    Input_Parameters.Local_Time_Stepping == SEMI_IMPLICIT_LOW_MACH_NUMBER_PRECONDITIONER ||
+	    Input_Parameters.Local_Time_Stepping == MATRIX_WITH_LOW_MACH_NUMBER_PRECONDITIONER) {	     
 	  delta_n = min( TWO*(SolnBlk.Grid.Cell[i][j].A/
 			      (SolnBlk.Grid.lfaceE(i, j)+SolnBlk.Grid.lfaceW(i, j))),
 			 TWO*(SolnBlk.Grid.Cell[i][j].A/

@@ -1453,10 +1453,6 @@ Chem2D_pState Chem2D_pState::operator *(const double &a) const{
   Temp.rho = rho*a;  Temp.v = v*a; Temp.p = p*a;
   Temp.k = k*a; Temp.omega = omega*a;
   for( int i=0; i<ns; i++) Temp.spec[i] = spec[i]*a; 
-  Temp.tau = tau*a;
-  Temp.qflux = qflux*a;
-  Temp.lambda= lambda*a;
-  Temp.theta = theta*a;
   return(Temp);
 }
 
@@ -1465,10 +1461,6 @@ Chem2D_pState operator *(const double &a, const Chem2D_pState &W){
   Temp.rho = W.rho*a;  Temp.v = W.v*a; Temp.p = W.p*a;
   Temp.k = W.k*a; Temp.omega = W.omega*a;
   for( int i=0; i<W.ns; i++) Temp.spec[i] = W.spec[i]*a;
-  Temp.tau = W.tau*a;
-  Temp.qflux = W.qflux*a;
-  Temp.lambda= W.lambda*a;
-  Temp.theta = W.theta*a;
   return(Temp);
 }
 
@@ -1478,10 +1470,6 @@ Chem2D_pState Chem2D_pState::operator /(const double &a) const {
   Temp.rho = rho/a; Temp.v = v/a; Temp.p = p/a; 
   Temp.k = k/a; Temp.omega = omega/a;
   for(int i=0; i<ns; i++) Temp.spec[i] = spec[i]/a;
-  Temp.tau = tau/a;
-  Temp.qflux = qflux/a;
-  Temp.lambda= lambda/a;
-  Temp.theta = theta/a;
   return(Temp);
 }
 
@@ -1524,10 +1512,6 @@ Chem2D_pState& Chem2D_pState::operator +=(const Chem2D_pState &W){
   k += W.k;
   omega += W.omega;
   for( int i=0; i<ns; i++)  spec[i].c += W.spec[i].c;
-  tau += W.tau;
-  qflux += W.qflux;
-  lambda += W.lambda;
-  theta += W.theta;
   return (*this);
 }
 
@@ -1538,10 +1522,6 @@ Chem2D_pState& Chem2D_pState::operator -=(const Chem2D_pState &W) {
   k -= W.k;
   omega -= W.omega;
   for(int i=0; i<ns; i++) spec[i].c -= W.spec[i].c;
-  tau -= W.tau;
-  qflux -= W.qflux;
-  lambda -= W.lambda;
-  theta -= W.theta;
   return (*this); 
 }
 
@@ -1561,10 +1541,6 @@ Chem2D_pState operator -(const Chem2D_pState &W) {
 
   for(int i=0; i<W.ns; i++)  spt[i] = -W.spec[i]; 
   Chem2D_pState Temp(-W.rho,-W.v,-W.p, -W.k, -W.omega ,spt);
-  Temp.tau = -W.tau;
-  Temp.qflux = -W.qflux;
-  Temp.lambda = -W.lambda;
-  Temp.theta= -W.theta;
 
 #ifndef STATIC_NUMBER_OF_SPECIES
   delete[] spt;
@@ -1588,9 +1564,7 @@ int operator ==(const Chem2D_pState &W1, const Chem2D_pState &W2) {
     }
   }  
   return (W1.rho == W2.rho && W1.v == W2.v && W1.p == W2.p&& W1.k == W2.k && W1.omega == W2.omega
-	  && Temp == true && W1.tau == W2.tau &&
-	  W1.qflux == W2.qflux&& W1.lambda == W2.lambda &&
-	  W1.theta == W2.theta);  
+	  && Temp == true);
 }
 
 int operator !=(const Chem2D_pState &W1, const Chem2D_pState &W2) {
@@ -1603,9 +1577,7 @@ int operator !=(const Chem2D_pState &W1, const Chem2D_pState &W2) {
     }
   }
   return (W1.rho != W2.rho || W1.v != W2.v || W1.p != W2.p || W1.k != W2.k || W1.omega != W2.omega
-	  || Temp != true || W1.tau != W2.tau ||
-	  W1.qflux != W2.qflux|| W1.lambda != W2.lambda ||
-	  W1.theta != W2.theta);  
+	  || Temp != true);
 }
 
 /********************************************************
@@ -1618,7 +1590,6 @@ ostream &operator << (ostream &out_file, const Chem2D_pState &W) {
   for( int i=0; i<W.ns; i++){
     out_file<<" "<<W.spec[i];
   }
-  //out_file << " " << W.qflux << " " <<W.tau << " " << W.theta << " " << W.lambda;
   out_file.unsetf(ios::scientific);
   return (out_file);
 }
@@ -1630,7 +1601,6 @@ istream &operator >> (istream &in_file, Chem2D_pState &W) {
   for( int i=0; i<W.ns; i++){
     in_file>>W.spec[i];
   }
-  //in_file >>W.qflux >>W.tau >>W.theta >>W.lambda;
   in_file.unsetf(ios::skipws);
    return (in_file);
 }
@@ -2159,18 +2129,18 @@ double Chem2D_cState::Rtot() const{
   return (sum/rho);
 }
 
-// /**************************************************
-//   mixture Heat Capacity (const pressure) J/(kg*K)
-// ***************************************************/
-// double Chem2D_cState::Cp(void) const{
-//   // = sum ( mass fraction * species Cp) 
-//   double Temp = T();
-//   double sum = 0.0;
-//   for(int i=0; i<ns; i++){
-//     sum += rhospec[i].c*specdata[i].HeatCapacity_p(Temp);
-//   }
-//   return (sum/rho);
-// }
+/**************************************************
+  mixture Heat Capacity (const pressure) J/(kg*K)
+***************************************************/
+double Chem2D_cState::Cp(void) const{
+  // = sum ( mass fraction * species Cp) 
+  double Temp = T();
+  double sum = 0.0;
+  for(int i=0; i<ns; i++){
+    sum += rhospec[i].c*specdata[i].HeatCapacity_p(Temp);
+  }
+  return (sum/rho);
+}
 
 // /**************************************************
 //   mixture Heat Capacity (const volume) J/(kg*K)
@@ -2198,23 +2168,26 @@ double Chem2D_cState::Rtot() const{
  ***************************************************/
 double Chem2D_cState::e(void) const{
   // = sum (mass fraction * species e) 
-  double sum = 0.0;
-  double Temp = T();
-  for(int i=0; i<ns; i++){ //(Enthalpy(Temp) - (R/mol_mass)*Temp)
-    sum += rhospec[i].c*(specdata[i].Enthalpy(Temp) + specdata[i].Heatofform() 
-			 - specdata[i].Rs()*Temp);
-  }
-  return (sum/rho);
+//   double sum = 0.0;
+//   double Temp = T();
+//   for(int i=0; i<ns; i++){ //(Enthalpy(Temp) - (R/mol_mass)*Temp)
+//     sum += rhospec[i].c*(specdata[i].Enthalpy(Temp) + specdata[i].Heatofform() 
+// 			 - specdata[i].Rs()*Temp);
+//   }
+//  return (sum/rho); 
+  return ( (E - HALF*rhov.sqr()/rho - rhok )/rho);  // (avoid Tcalc)! 
 }
 
-double Chem2D_cState::es(void) const{
+double Chem2D_cState::es(void) const{  
   // = sum (mass fraction * species e) 
-  double sum = 0.0;
-  double Temp = T();
-  for(int i=0; i<ns; i++){ //(Enthalpy(Temp) - (R/mol_mass)*Temp)
-    sum += rhospec[i].c*(specdata[i].Enthalpy(Temp) - specdata[i].Rs()*Temp);
-  }
-  return (sum/rho);
+//   double sum = 0.0;
+//   double Temp = T();
+//   for(int i=0; i<ns; i++){ //(Enthalpy(Temp) - (R/mol_mass)*Temp)
+//     sum += rhospec[i].c*(specdata[i].Enthalpy(Temp) - specdata[i].Rs()*Temp);
+//   }
+//   return (sum/rho);
+
+  return ( (E - HALF*rhov.sqr()/rho - rhok)/rho - heatofform() );  //(avoid Tcalc)! 
 }
 
 /**************************************************
@@ -2222,20 +2195,20 @@ double Chem2D_cState::es(void) const{
 ***************************************************/
 double Chem2D_cState::h(const double &Temp) const{
   // = sum (mass fraction * species h) 
- double sum = 0.0;  
- for(int i=0; i<ns; i++){
-   sum += rhospec[i].c*(specdata[i].Enthalpy(Temp) + specdata[i].Heatofform());
- }
- return (sum/rho);
+  double sum(ZERO);
+  for(int i=0; i<ns; i++){
+    sum += rhospec[i].c*(specdata[i].Enthalpy(Temp) + specdata[i].Heatofform());
+  }
+  return (sum/rho);
 }
 
 double Chem2D_cState::hs(const double &Temp) const{
   // = sum (mass fraction * species h) 
- double sum = 0.0;  
- for(int i=0; i<ns; i++){
-   sum += rhospec[i].c*(specdata[i].Enthalpy(Temp));
- }
- return (sum/rho);
+  double sum(ZERO);
+  for(int i=0; i<ns; i++){
+    sum += rhospec[i].c*(specdata[i].Enthalpy(Temp));
+  }
+  return (sum/rho);
 }
 
 /**************************************************
@@ -2243,7 +2216,7 @@ double Chem2D_cState::hs(const double &Temp) const{
    actually is just Cp as Cp = (dh/dT)_p
 ***************************************************/
 double Chem2D_cState::hprime(const double &Temp) const{
- double sum = 0.0;  
+  double sum(ZERO);
  for(int i=0; i<ns; i++){
    sum += rhospec[i].c*specdata[i].Enthalpy_prime(Temp);
  }
@@ -2252,11 +2225,11 @@ double Chem2D_cState::hprime(const double &Temp) const{
 
 /************* Mixture Heats of Formation *********/
 double Chem2D_cState::heatofform(void) const{ 
-  double sum = 0.0;
+  double sum(ZERO);
   for(int i=0; i<ns; i++){ 
     sum += rhospec[i].c*specdata[i].Heatofform();
   }
-  return (sum);
+  return (sum/rho);
 }
 
 
@@ -2538,10 +2511,6 @@ Chem2D_cState Chem2D_cState::operator *(const double &a) const{
   Temp.rho = rho*a;  Temp.rhov = rhov*a; Temp.E = E*a;
   Temp.rhok = rhok*a; Temp.rhoomega = rhoomega*a;
   for( int i=0; i<ns; i++)Temp.rhospec[i] = rhospec[i]*a;
-  Temp.tau = tau*a;
-  Temp.qflux = qflux*a;
-  Temp.lambda = lambda*a;
-  Temp.theta = theta*a;
   return(Temp);
 }
 
@@ -2559,10 +2528,6 @@ Chem2D_cState Chem2D_cState::operator /(const double &a) const {
   Temp.rho = rho/a; Temp.rhov = rhov/a; Temp.E = E/a;
   Temp.rhok = rhok/a; Temp.rhoomega = rhoomega/a;
   for(int i=0; i<ns; i++) Temp.rhospec[i] = rhospec[i]/a; 
-  Temp.tau = tau/a;
-  Temp.qflux = qflux/a;
-  Temp.lambda = lambda/a;
-  Temp.theta = theta/a;
   return(Temp);
 }
 
@@ -2607,10 +2572,6 @@ Chem2D_cState& Chem2D_cState::operator +=(const Chem2D_cState &U){
   rhok += U.rhok;
   rhoomega += U.rhoomega;
   for( int i=0; i<ns; i++)  rhospec[i].c += U.rhospec[i].c;
-  tau += U.tau;
-  qflux += U.qflux; 
-  lambda += U.lambda;
-  theta += U.theta; 
   return (*this);
 }
 
@@ -2621,10 +2582,6 @@ Chem2D_cState& Chem2D_cState::operator -=(const Chem2D_cState &U) {
   rhok -= U.rhok;
   rhoomega -= U.rhoomega;
   for(int i=0; i<ns; i++)   rhospec[i].c -= U.rhospec[i].c;
-  tau -= U.tau;
-  qflux -= U.qflux; 
-  lambda -= U.lambda;
-  theta -= U.theta; 
   return (*this); 
 }
 
@@ -2636,10 +2593,6 @@ Chem2D_cState& Chem2D_cState::operator *=(const double &a) {
   rhok *= a;
   rhoomega *= a;
   for (int i = 0; i < ns; i++) rhospec[i] *= a;
-  tau *= a;
-  qflux *= a;
-  lambda *= a;
-  theta *= a;
   return *this;
 }   
 
@@ -2651,10 +2604,6 @@ Chem2D_cState& Chem2D_cState::operator /=(const double &a) {
   rhok /= a;
   rhoomega /= a;
   for (int i = 0; i < ns; i++) rhospec[i] /= a;
-  tau /= a;
-  qflux /= a;
-  lambda /= a;
-  theta /= a;
   return *this;
 }
 
@@ -2669,10 +2618,6 @@ Chem2D_cState operator -(const Chem2D_cState &U) {
 #endif
   for(int i=0; i<U.ns; i++) spt[i] = -U.rhospec[i];
   Chem2D_cState Temp(-U.rho,-U.rhov, -U.E, -U.rhok, -U.rhoomega, spt);
-  Temp.tau = -U.tau;
-  Temp.qflux = -U.qflux;
-  Temp.lambda = -U.lambda;
-  Temp.theta = -U.theta;
 #ifndef STATIC_NUMBER_OF_SPECIES
   delete[] spt;
 #endif
@@ -2695,9 +2640,7 @@ int operator ==(const Chem2D_cState &U1, const Chem2D_cState &U2) {
   }  
   return (U1.rho == U2.rho && U1.rhov == U2.rhov && U1.E == U2.E 
 	  && U1.rhok == U2.rhok && U1.rhoomega == U2.rhoomega &&
-	  U1.tau == U2.tau && U1.qflux == U2.qflux&&
-	  U1.lambda == U2.lambda && U1.theta == U2.theta
-	  &&Temp == true);
+	  Temp == true);
 }
 
 int operator !=(const Chem2D_cState &U1, const Chem2D_cState &U2) {
@@ -2711,9 +2654,7 @@ int operator !=(const Chem2D_cState &U1, const Chem2D_cState &U2) {
     }
     return (U1.rho != U2.rho || U1.rhov != U2.rhov || U1.E != U2.E 
 	    ||  U1.rhok != U2.rhok ||  U1.rhoomega != U2.rhoomega ||
-	    U1.tau != U2.tau || U1.qflux != U2.qflux
-	    ||U1.lambda != U2.lambda || U1.theta != U2.theta
-	    || Temp != true);
+	    Temp != true);
     
 }
 
@@ -2727,7 +2668,6 @@ ostream &operator << (ostream &out_file, const Chem2D_cState &U) {
   for( int i=0; i<U.ns; i++){
     out_file<<" "<<U.rhospec[i];
   } 
-  // out_file << " " <<U.qflux<< " " <<U.tau << " " <<U.theta<< " " <<U.lambda;
   out_file.unsetf(ios::scientific);
   return (out_file);
 }
@@ -2739,7 +2679,6 @@ istream &operator >> (istream &in_file, Chem2D_cState &U) {
   for( int i=0; i<U.ns; i++){
     in_file>>U.rhospec[i]; 
   } 
-  //in_file >>U.qflux>>U.tau >>U.theta>>U.lambda;
   in_file.unsetf(ios::skipws);
   return (in_file);
 }

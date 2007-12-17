@@ -220,8 +220,7 @@ class Chem2D_pState {
                  { specnull(); set_initial_values(mfrac); }
 
   //this is needed for the operator overload returns!!!!
-  Chem2D_pState(const Chem2D_pState &W): rho(W.rho), v(W.v), p(W.p), k(W.k), omega(W.omega),
- 					 tau(W.tau), qflux(W.qflux), lambda(W.lambda), theta(W.theta) 
+  Chem2D_pState(const Chem2D_pState &W): rho(W.rho), v(W.v), p(W.p), k(W.k), omega(W.omega)
                                         { specnull(); set_initial_values(W.spec); }      
   //@}
 
@@ -244,14 +243,12 @@ class Chem2D_pState {
    /*************** VACUUM OPERATOR *********************/
    void Vacuum(){ rho=ZERO; v.zero(); p=ZERO; k=ZERO; omega = ZERO; 
      for(int i=0; i<ns; i++)  spec[i].Vacuum();
-     tau.zero(); qflux.zero(); lambda.zero(); theta.zero(); 
    }
 
    void zero_non_sol(){
      for(int i=0; i<ns; i++){
        spec[i].diffusion_coef=ZERO;
      }
-     tau.zero(); qflux.zero(); lambda.zero(); theta.zero(); 
    }  
  
   //! Set turbulence static variables.
@@ -596,8 +593,7 @@ class Chem2D_pState {
 		 
    // WARNING - automatic type conversion
    Chem2D_cState(const Chem2D_pState &W) :  rho(W.rho), rhov(W.rhov()),
-		   E(W.E()), rhok(W.rho*W.k), rhoomega(W.rho*W.omega),
-		   tau(W.tau), qflux(W.qflux), lambda(W.lambda), theta(W.theta)
+					    E(W.E()), rhok(W.rho*W.k), rhoomega(W.rho*W.omega)
    {   
      for(int i=0; i<W.ns; i++){
        rhospec[i].c = W.rho*W.spec[i].c;
@@ -608,8 +604,7 @@ class Chem2D_pState {
 
 
    //this is needed for the operator overload returns!!!!
-   Chem2D_cState(const Chem2D_cState &U): rho(U.rho), rhov(U.rhov), E(U.E), rhok(U.rhok), rhoomega(U.rhoomega),
- 					 tau(U.tau), qflux(U.qflux), lambda(U.lambda), theta(U.theta)
+   Chem2D_cState(const Chem2D_cState &U): rho(U.rho), rhov(U.rhov), E(U.E), rhok(U.rhok), rhoomega(U.rhoomega)
                                          { rhospecnull(); set_initial_values(U.rhospec); }
 
    //read in ns species data, call only once as its static
@@ -628,14 +623,12 @@ class Chem2D_pState {
    /***************** VACUUM ************************/
    void Vacuum(){ rho=ZERO; rhov.zero(); E=ZERO; rhok = ZERO; rhoomega = ZERO; 
      for(int i=0; i<ns; i++) rhospec[i].Vacuum();
-     tau.zero();  qflux.zero(); lambda.zero(); theta.zero(); 
    }  
 
    void zero_non_sol(){
      for(int i=0; i<ns; i++){
        rhospec[i].diffusion_coef=ZERO;
      }
-     tau.zero(); qflux.zero(); lambda.zero(); theta.zero();  
    }  
 
    //! Set turbulence static variables.
@@ -656,7 +649,7 @@ class Chem2D_pState {
    ****************************************************/
    //double Mass(void);       //mixture molecular mass
    double Rtot(void) const; 
- //  double Cp(void) const;   //mixture heat capacity (Pressure constant)
+   double Cp(void) const;   //mixture heat capacity (Pressure constant)
  //  double Cv(void) const;   //mixture heat capacity (Volume constant)
  //  double g(void) const;    //specific heat ratio
    double gamma_guess(void) const;   //mixture specifc heat ratio
@@ -693,6 +686,9 @@ class Chem2D_pState {
 
 
    /************** Temperature Derivatives *******************/
+   double Schmidt_No(const int &) const;
+   double Prandtl() const;
+   double Lewis(const int &) const;
    double dmudT(void) const;
 
    // STRAIN RATE, LAMINAR STRESS, REYNOLD STRESS 6 FUNCTIONS\
@@ -857,9 +853,34 @@ inline void Chem2D_pState::set_turbulence_variables(const double &C_constant,
  }
 
  /********************** Lewis *****************************/
- inline double Chem2D_pState::Lewis(const int &i) const{
+ inline double Chem2D_pState::Lewis(const int &i) const{   
    if(spec[i].diffusion_coef > ZERO){
      return kappa()/(rho*Cp()*spec[i].diffusion_coef);
+   }
+   return ZERO;
+ }
+
+ /********************** Prandtl ****************************/
+ inline double Chem2D_cState::Prandtl(void) const{
+   //Pr = Cp*mu/k 
+   Chem2D_pState Temp = W(*this);
+   return Cp()*mu()/Temp.kappa();
+ }
+
+ /********************** Schmidt ****************************/
+ inline double Chem2D_cState::Schmidt_No(const int &i) const{
+   if(rhospec[i].diffusion_coef > ZERO){
+     return mu()/(rhospec[i].diffusion_coef);
+   } else {
+     return Schmidt[i];
+   }
+ }
+
+ /********************** Lewis *****************************/
+ inline double Chem2D_cState::Lewis(const int &i) const{
+   Chem2D_pState Temp = W(*this);
+   if(rhospec[i].diffusion_coef > ZERO){
+     return Temp.kappa()/(Cp()*rhospec[i].diffusion_coef);
    }
    return ZERO;
  }
@@ -1062,10 +1083,6 @@ inline void Chem2D_pState::Copy(const Chem2D_pState &W){
   k = W.k;
   omega = W.omega;
   for( int i=0; i<ns; i++) spec[i] = W.spec[i];
-  tau = W.tau;
-  qflux = W.qflux;
-  lambda = W.lambda;
-  theta = W.theta;
 }
 
 //**************** Index Operators *************************/
@@ -1147,10 +1164,6 @@ inline Chem2D_cState Chem2D_pState::U(const Chem2D_pState &W) const{
     Temp.E = W.E();
     Temp.rhok = W.rho*W.k;
     Temp.rhoomega = W.rho*W.omega;
-    Temp.tau = W.tau;
-    Temp.qflux = W.qflux; 
-    Temp.lambda = W.lambda;
-    Temp.theta = W.theta; 
     return Temp;
 }
 
@@ -1165,10 +1178,6 @@ inline Chem2D_cState U(const Chem2D_pState &W) {
   Temp.E = W.E(); 
   Temp.rhok = W.rho*W.k;
   Temp.rhoomega = W.rho*W.omega;
-  Temp.tau = W.tau;
-  Temp.qflux = W.qflux; 
-  Temp.lambda = W.lambda;
-  Temp.theta = W.theta; 
   return Temp;
 }
 
@@ -1212,10 +1221,6 @@ inline void Chem2D_cState::Copy(const Chem2D_cState &U){
   for( int i=0; i<ns; i++){ 
     rhospec[i] = U.rhospec[i];
   } 
-  tau = U.tau;
-  qflux = U.qflux; 
-  lambda = U.lambda;
-  theta = U.theta; 
 }
 
 /**********************************************************************
@@ -1471,10 +1476,6 @@ inline Chem2D_pState Chem2D_cState::W(const Chem2D_cState &U) const{
     Temp.p = U.p();
     Temp.k = U.k();
     Temp.omega = U.omega();
-    Temp.tau = U.tau;
-    Temp.qflux = U.qflux; 
-    Temp.lambda = U.lambda;
-    Temp.theta = U.theta; 
    
     return Temp;
 }
@@ -1490,10 +1491,6 @@ inline Chem2D_pState W(const Chem2D_cState &U) {
   Temp.p = U.p();
   Temp.k = U.k();
   Temp.omega = U.omega();
-  Temp.tau = U.tau;
-  Temp.qflux = U.qflux;
-  Temp.lambda = U.lambda;
-  Temp.theta = U.theta;
 
   return Temp;
 }
