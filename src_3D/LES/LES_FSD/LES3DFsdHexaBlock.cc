@@ -568,35 +568,31 @@ int Hexa_Block<LES3DFsd_pState,LES3DFsd_cState>::
 ICs(const int i_ICtype,
     Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs){
    
-   int i, j, k;
-   
    double dpdx, dpdy, dpdz, delta_pres_x, delta_pres_y, delta_pres_z ;
    double zd, zz, di, Um;
-   
-   Flow_Type = IPs.i_Flow_Type;
    
    LES3DFsd_pState Wl, Wr;
    
    switch(i_ICtype) {
-      
-   case IC_UNIFORM :
-      // Set the solution state to the initial state Wo[0].
-      for (k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) 
-         for ( j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) 
-            for ( i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
-               W[i][j][k] = IPs.Wo;
-               U[i][j][k] = W[i][j][k].U( );
-               
-            }
-      break;
+     case IC_UNIFORM :
+       // Set the solution state to the initial state Wo[0].
+       for (int k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
+	  for (int j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
+             for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
+                W[i][j][k] = IPs.Wo;
+                W[i][j][k].premixed_mfrac();
+                U[i][j][k] = W[i][j][k].U();
+                U[i][j][k].premixed_mfrac();
+             } /* endfor */
+	  } /* endfor */
+       } /* endfor */
+       break;
       
    case IC_TURBULENT_PREMIXED_FLAME :
-
-    ifstream InFile;
-
-      for (k  =  KCl- Nghost ; k <=  KCu+ Nghost ; ++k ) 
-         for (j  =  JCl- Nghost ; j <=  JCu+ Nghost ; ++j ) 
-            for ( i =  ICl- Nghost ; i <=  ICu+ Nghost ; ++i ) {
+     ifstream InFile;
+     for (int k  = KCl- Nghost ; k <=  KCu+ Nghost ; ++k) {
+        for (int j  = JCl- Nghost ; j <=  JCu+ Nghost ; ++j) {
+           for (int i = ICl- Nghost ; i <=  ICu+ Nghost ; ++i) {
 	      double xx = -Grid.Cell[i][j][k].Xc.x;//+(1.0/2.0)*IPs.Grid_IP.Box_Length;
 	      double tau_fsd = 2218/298-1.0;//W[i][j][k].HeatRelease_Parameter();
        	      W[i][j][k].C = (erf(xx*4000.0)+1.0)/2.0;
@@ -607,81 +603,76 @@ ICs(const int i_ICtype,
        	      W[i][j][k].Fsd = 3000.0*exp(-sqr(xx*4000.0))/sqrt(3.1415926)/W[i][j][k].rho;
 	      W[i][j][k].k = 0.0;
               U[i][j][k] = W[i][j][k].U();
+	      U[i][j][k].premixed_mfrac();
+	   } /* endfor */
+	} /* endfor */
+     } /* endfor */
 
-            } /* endfor */
+     // Open data file for reading
+     InFile.open("Initial_Turbulence_Fluctuations.dat", ios::in); 
+     // Check to see if successful
+     if(InFile.fail()){ 
+       cerr<<"\nError opening file: Initial_Turbulence.dat to read" <<endl;
+       exit(1); 
+     } 
 
-      // Open data file for reading
-      InFile.open("Initial_Turbulence_Fluctuations.dat", ios::in); 
-      // Check to see if successful
-      if(InFile.fail()){ 
-        cerr<<"\nError opening file: Initial_Turbulence.dat to read" <<endl;
-        exit(1); 
-      } 
+     bool interpolate_flag;
+     double xx, yy, zz, dx, dy, dz, dd, uprime_x, uprime_y, uprime_z;
 
-      bool interpolate_flag;
-      double xx, yy, zz, dx, dy, dz, dd, uprime_x, uprime_y, uprime_z;
-
-      InFile.setf(ios::skipws);
+     InFile.setf(ios::skipws);
  
-      for ( i =  ICl- Nghost ; i <=  ICu+ Nghost ; ++i ) 
-         for (j  =  JCl- Nghost ; j <=  JCu+ Nghost ; ++j ) 
-	   for (k  =  KCl- Nghost ; k <=  KCu+ Nghost ; ++k ) {
+     for (int i =  ICl- Nghost ; i <=  ICu+ Nghost ; ++i ) {
+        for (int j  =  JCl- Nghost ; j <=  JCu+ Nghost ; ++j ) {
+           for (int k  =  KCl- Nghost ; k <=  KCu+ Nghost ; ++k ) {
+              if ((i>=ICl && i<=ICu) && (j>=JCl && j<=JCu) && (k>=KCl && k<=KCu)) {
+                interpolate_flag = true;
 
-	 if ((i>=ICl && i<=ICu) && (j>=JCl && j<=JCu) && (k>=KCl && k<=KCu)) {
+ 	        do {
+	           InFile >> xx >> yy >> zz >> uprime_x >> uprime_y >> uprime_z;
+   	           if (fabs((xx - Grid.Cell[i][j][k].Xc.x)/Grid.Cell[i][j][k].Xc.x) < 1.0E-2  &&
+		       fabs((yy - Grid.Cell[i][j][k].Xc.y)/Grid.Cell[i][j][k].Xc.y) < 1.0E-2  &&
+		       fabs((zz - Grid.Cell[i][j][k].Xc.z)/Grid.Cell[i][j][k].Xc.z) < 1.0E-2) {
+                      W[i][j][k].v.x += uprime_x;
+                      W[i][j][k].v.y += uprime_y;
+                      W[i][j][k].v.z += uprime_z;
+                      interpolate_flag = false;
+ 	              break;
+                   } else {
+                      dx = Grid.Cell[i][j][k].Xc.x - xx;
+                      dy = Grid.Cell[i][j][k].Xc.y - yy;
+                      dz = Grid.Cell[i][j][k].Xc.z - zz;
+                      dd = sqrt(dx*dx + dy*dy + dz*dz);
+                      if (dd == ZERO ||  dd > sqrt(sqr(IPs.Grid_IP.Box_Width) + 
+                          sqr(IPs.Grid_IP.Box_Height) + sqr(IPs.Grid_IP.Box_Length) )) {
+ 		         cout << "\nYOU ARE NOT SUPPOSED TO REACH THIS LINE!!!";
+  		      } //else { 
+	           }//end if
+		} /* enddo */
+                while ( !InFile.eof() ); // end while
+	      } /* endif */
+	      U[i][j][k] = W[i][j][k].U();
+	   } /* endfor */
+	} /* endfor */
+     } /* endfor */
 
- 	    interpolate_flag = true;
+     InFile.unsetf(ios::skipws);
+     InFile.close();
 
- 	    do{
-	      InFile >> xx >> yy >> zz >> uprime_x >> uprime_y >> uprime_z;
-
- 	      if (fabs((xx - Grid.Cell[i][j][k].Xc.x)/Grid.Cell[i][j][k].Xc.x) < 1.0E-2  &&
-		  fabs((yy - Grid.Cell[i][j][k].Xc.y)/Grid.Cell[i][j][k].Xc.y) < 1.0E-2  &&
-		  fabs((zz - Grid.Cell[i][j][k].Xc.z)/Grid.Cell[i][j][k].Xc.z) < 1.0E-2) {
-
- 		W[i][j][k].v.x += uprime_x;
- 		W[i][j][k].v.y += uprime_y;
- 		W[i][j][k].v.z += uprime_z;
- 		interpolate_flag = false;
- 		break;
-
-  	      } else {
- 		dx = Grid.Cell[i][j][k].Xc.x - xx;
- 		dy = Grid.Cell[i][j][k].Xc.y - yy;
- 		dz = Grid.Cell[i][j][k].Xc.z - zz;
- 		dd = sqrt(dx*dx + dy*dy + dz*dz);
-
- 		if ( dd == ZERO ||  dd > sqrt(sqr(IPs.Grid_IP.Box_Width) + sqr(IPs.Grid_IP.Box_Height) + sqr(IPs.Grid_IP.Box_Length) )) {
- 		  cout << "\nYOU ARE NOT SUPPOSED TO REACH THIS LINE!!!";
-  		} //else { 
-	      } //end if
-
-	 }  while ( !InFile.eof() ); // end while
-	  
-	    // reset EOF flag
-//  	    if ( InFile.eof() ) {
-//  	      InFile.clear(); 
-//  	      // Go to the beginning of the file 
-//   	      InFile.seekg(0, ios::beg);
-//  	    } 
-	   
-	 }
-	    U[i][j][k] = W[i][j][k].U();
-    }
-
-      InFile.unsetf(ios::skipws);
-      InFile.close();
-
-   if (Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K){ 
-     Linear_Reconstruction_LeastSquares(IPs.i_Limiter);
-     for (k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) 
-         for ( j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) 
-            for ( i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
-	      //       	      W[i][j][k].Fsd = 200.0*W[i][j][k].Fsd;
- 		W[i][j][k].k = 0.005*sqr(W[i][j][k].filter_width(Grid.volume(i,j,k))*W[i][j][k].abs_strain_rate(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k]));
+     if (Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K){ 
+        Linear_Reconstruction_LeastSquares(IPs.i_Limiter);
+        for (int k  = KCl-Nghost ; k <= KCu+Nghost ; ++k) {
+  	   for (int j  = JCl-Nghost ; j <= JCu+Nghost ; ++j) {
+              for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i) {
+	        //W[i][j][k].Fsd = 200.0*W[i][j][k].Fsd;
+ 		W[i][j][k].k = 0.005*sqr(W[i][j][k].filter_width(Grid.volume(i,j,k))*
+                               W[i][j][k].abs_strain_rate(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k]));
+	        W[i][j][k].premixed_mfrac();
   	        U[i][j][k] = W[i][j][k].U();
- 	      }
-   }
-
+ 	        U[i][j][k].premixed_mfrac();
+ 	      } /* endfor */
+	   } /* endfor */
+	} /* endfor */
+     } /* endif */
      break;  
       
    } //end of switch
@@ -689,8 +680,8 @@ ICs(const int i_ICtype,
    /* Set default values for the boundary conditions
       reference states. */
 
-   for ( k = KCl-Nghost ; k<= KCu+Nghost; ++k )
-      for ( j = JCl-Nghost ; j<= JCu+Nghost; ++j ){
+   for (int k = KCl-Nghost ; k<= KCu+Nghost; ++k) {
+      for (int j = JCl-Nghost ; j<= JCu+Nghost; ++j){
          if ((k >= KCl && k <= KCu) && (j >= JCl && j <= JCu)) {
             WoW[j][k] = W[ICl][j][k];
             WoE[j][k] = W[ICu][j][k];
@@ -719,10 +710,13 @@ ICs(const int i_ICtype,
             WoW[j][k] = W[ICl][JCu][KCl];
             WoE[j][k] = W[ICu][JCu][KCl];
          }
+         WoW[j][k].premixed_mfrac();
+         WoE[j][k].premixed_mfrac();
       } /* endfor */ 
+   } /* endfor */
     
-   for (  k = KCl-Nghost ; k <= KCu+Nghost ; ++k ) 
-      for (  i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
+   for (int  k = KCl-Nghost ; k <= KCu+Nghost ; ++k) {
+      for (int  i = ICl-Nghost ; i <= ICu+Nghost ; ++i) {
          if ((k >= KCl && k <= KCu) && (i >= ICl && i <= ICu)) {
             WoS[i][k] = W[i][JCl][k];
             WoN[i][k] = W[i][JCu][k];
@@ -750,42 +744,48 @@ ICs(const int i_ICtype,
          } else if (i >ICu  && k < KCl) {
             WoS[i][k] = W[ICu][JCl][KCl];
             WoN[i][k] = W[ICu][JCu][KCl];
-         }
+         } /* endif */
+         WoS[i][k].premixed_mfrac();
+         WoN[i][k].premixed_mfrac();
       } /* endfor */
+   } /* endfor */
 
-   for (  j = JCl-Nghost ; j <= JCu+Nghost ; ++j ) 
-      for (  i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
-          if ((j >= JCl && j <= JCu) && (i >= ICl && i <= ICu)) {
-             WoT[i][j] = W[i][j][KCu];
-             WoB[i][j] = W[i][j][KCl];
-          }  else if (i < ICl &&  j< JCl) {
-             WoT[i][j] = W[ICl][JCl][KCu];
-             WoB[i][j] = W[ICl][JCl][KCl];
-          } else if(i > ICu &&  j > JCu) {
-             WoT[i][j] = W[ICu][JCu][KCu];
-             WoB[i][j] = W[ICu][JCu][KCl];
-          }else if (i < ICl && (j >= JCl && j <= JCu)) {
-             WoT[i][j] = W[ICl][j][KCu];
-             WoB[i][j] = W[ICl][j][KCl];
-          }else if (i > ICu && (j >= JCl && j <= JCu)) {
-             WoT[i][j] = W[ICu][j][KCu];
-             WoB[i][j] = W[ICu][j][KCl];
-          } else if ((i >= ICl && i <= ICu) &&  j< JCl) {
-             WoT[i][j] = W[i][JCl][KCu];
-             WoB[i][j] = W[i][JCl][KCl];
-          } else if ((i >= ICl && i <= ICu) &&  j> JCu) {
-             WoT[i][j] = W[i][JCu][KCu];
-             WoB[i][j] = W[i][JCu][KCl];
-          } else if (i > ICu && j < JCl) {
-             WoT[i][j] = W[ICu][JCl][KCu];
-             WoB[i][j] = W[ICu][JCl][KCl];
-          } else if (i < ICl && j > JCu) {
-             WoT[i][j] = W[ICl][JCu][KCu];
-             WoB[i][j] = W[ICl][JCu][KCl];
-          }
-       } /* endfor */
+   for (int  j = JCl-Nghost ; j <= JCu+Nghost ; ++j) {
+      for (int  i = ICl-Nghost ; i <= ICu+Nghost ; ++i) {
+         if ((j >= JCl && j <= JCu) && (i >= ICl && i <= ICu)) {
+            WoT[i][j] = W[i][j][KCu];
+            WoB[i][j] = W[i][j][KCl];
+         }  else if (i < ICl &&  j< JCl) {
+            WoT[i][j] = W[ICl][JCl][KCu];
+            WoB[i][j] = W[ICl][JCl][KCl];
+         } else if(i > ICu &&  j > JCu) {
+            WoT[i][j] = W[ICu][JCu][KCu];
+            WoB[i][j] = W[ICu][JCu][KCl];
+         }else if (i < ICl && (j >= JCl && j <= JCu)) {
+            WoT[i][j] = W[ICl][j][KCu];
+            WoB[i][j] = W[ICl][j][KCl];
+         }else if (i > ICu && (j >= JCl && j <= JCu)) {
+            WoT[i][j] = W[ICu][j][KCu];
+            WoB[i][j] = W[ICu][j][KCl];
+         } else if ((i >= ICl && i <= ICu) &&  j< JCl) {
+            WoT[i][j] = W[i][JCl][KCu];
+            WoB[i][j] = W[i][JCl][KCl];
+         } else if ((i >= ICl && i <= ICu) &&  j> JCu) {
+            WoT[i][j] = W[i][JCu][KCu];
+            WoB[i][j] = W[i][JCu][KCl];
+         } else if (i > ICu && j < JCl) {
+            WoT[i][j] = W[ICu][JCl][KCu];
+            WoB[i][j] = W[ICu][JCl][KCl];
+         } else if (i < ICl && j > JCu) {
+            WoT[i][j] = W[ICl][JCu][KCu];
+            WoB[i][j] = W[ICl][JCu][KCl];
+         } /* endif */
+         WoT[i][j].premixed_mfrac();
+         WoB[i][j].premixed_mfrac();
+      } /* endfor */
+   } /* endfor */
       
-    return (0);
+   return (0);
     
 }
 
@@ -1562,10 +1562,10 @@ CFL(Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs){
                                                                      dTime));
 	       } /* endif */
                      
-               if (IPs.i_Flow_Type != FLOWTYPE_INVISCID) {  
+               if (Flow_Type != FLOWTYPE_INVISCID) {  
                   nv = W[i][j][k].mu()/W[i][j][k].rho;
 
-                  if (IPs.i_Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K) {  
+                  if (Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K) {  
 		     nv_t = W[i][j][k].mu_t(dWdx[i][j][k],
                                             dWdy[i][j][k],
                                             dWdz[i][j][k],
@@ -2239,7 +2239,7 @@ Update_Solution_Multistage_Explicit(const int i_stage,
             if (IPs.Local_Time_Stepping == GLOBAL_TIME_STEPPING || 
                 IPs.Local_Time_Stepping == SCALAR_LOCAL_TIME_STEPPING) {
                U[i][j][k] = Uo[i][j][k] + omega* dUdt[i][j][k][k_residual];
-	       if (IPs.i_Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY){
+	       if (Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY){
 		 U[i][j][k].rhok = ZERO;
 	       } /* endif */
 	       U[i][j][k].premixed_mfrac();
@@ -2320,4 +2320,40 @@ Update_Solution_Multistage_Explicit(const int i_stage,
 
 }
  
+/*******************************************************************************
+ * Routine: UnloadReceiveBuffer_Solution -- Unloads solution data from the     *
+ *                                          receive message buffer.            *
+ *******************************************************************************/
+template<>
+int Hexa_Block<LES3DFsd_pState,LES3DFsd_cState>::
+UnloadReceiveBuffer_Solution(double *buffer,
+                             int &buffer_count,
+                             const int buffer_size,
+                             const int i_min, 
+                             const int i_max,
+                             const int i_inc,
+                             const int j_min, 
+                             const int j_max,
+                             const int j_inc,
+			     const int k_min, 
+                             const int k_max,
+                             const int k_inc) {
 
+   for (int k  = k_min ; ((k_inc+1)/2) ? (k <= k_max):(k >= k_max) ; k += k_inc) {
+      for (int j  = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc) {
+         for (int i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc) {
+            for (int nV = 1; nV <=NumVar(); ++ nV) {
+               buffer_count++;
+               if (buffer_count >= buffer_size) return(1);    
+               U[i][j][k][nV] = buffer[buffer_count];
+               U[i][j][k].premixed_mfrac();
+            } /* endfor */
+            W[i][j][k] = U[i][j][k].W();
+            W[i][j][k].premixed_mfrac();
+         } /* endfor */
+      } /* endfor */
+   } /* endfor */ 
+
+   return (0);
+
+}

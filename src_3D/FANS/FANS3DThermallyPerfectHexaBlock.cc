@@ -1695,11 +1695,11 @@ CFL(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
                                      d_j/(a+fabs(v_j))),
                                      d_k/(a+fabs(v_k)));
                
-               if (IPs.i_Flow_Type != FLOWTYPE_INVISCID) {  
+               if (Flow_Type != FLOWTYPE_INVISCID) {  
                   nv = W[i][j][k].mu()/W[i][j][k].rho;
          
-                  if (IPs.i_Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
-                      IPs.i_Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
+                  if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||
+                      Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON) {
                      nv_t = W[i][j][k].mu_t()/W[i][j][k].rho; 
                      nv = max(nv, nv_t);
                   } /* endif */

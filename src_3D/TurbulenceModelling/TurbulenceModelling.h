@@ -924,11 +924,11 @@ Write_Initial_Turbulent_Fluctuations(Grid3D_Hexa_Multi_Block_List &InitMeshBlks,
 	}
 
 	for (int i=0; i<IPs.NCells_Idir; ++i) {
-	  int ii = Nx + i;
+	  int ii = nb + i;
 	  for (int j=0; j<IPs.NCells_Jdir; ++j) {
-	    int jj = Ny + j;
+	    int jj = nb + j;
 	    for (int k=0; k<IPs.NCells_Kdir; ++k) {
-	      int kk = Nz + k;
+	      int kk = nb + k;
 
 	      out_file << setprecision(10)
 		       << InitMeshBlks.Grid_Blks[nb].Cell[i+ICl][j+JCl][k+KCl].Xc

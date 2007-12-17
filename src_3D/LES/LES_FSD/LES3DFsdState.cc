@@ -642,7 +642,7 @@ LES3DFsd_cState LES3DFsd_pState::F(void) {
    Temp.rhov.x = rho*sqr(v.x) + p + (TWO/THREE)*rho*k;
    Temp.rhov.y = rho*v.x*v.y;
    Temp.rhov.z = rho*v.x*v.z;
-   Temp.E = v.x*(H() + (TWO/THREE)*rho*k);
+   Temp.E = v.x*H();
    Temp.rhoC = rho*v.x*C;
    Temp.rhoFsd = rho*v.x*Fsd;
    Temp.rhok = rho*v.x*k;
@@ -655,7 +655,7 @@ LES3DFsd_cState LES3DFsd_pState::F(void) const {
    Temp.rhov.x = rho*sqr(v.x) + p + (TWO/THREE)*rho*k;
    Temp.rhov.y = rho*v.x*v.y;
    Temp.rhov.z = rho*v.x*v.z;
-   Temp.E = v.x*(H() + (TWO/THREE)*rho*k);
+   Temp.E = v.x*H();
    Temp.rhoC = rho*v.x*C;
    Temp.rhoFsd = rho*v.x*Fsd;
    Temp.rhok = rho*v.x*k;
@@ -671,7 +671,7 @@ LES3DFsd_cState LES3DFsd_pState::Fx(void) {
    Temp.rhov.x = rho*sqr(v.x) + p + (TWO/THREE)*rho*k;
    Temp.rhov.y = rho*v.x*v.y;
    Temp.rhov.z = rho*v.x*v.z;
-   Temp.E = v.x*(H() + (TWO/THREE)*rho*k);
+   Temp.E = v.x*H();
    Temp.rhoC = rho*v.x*C;
    Temp.rhoFsd = rho*v.x*Fsd;
    Temp.rhok = rho*v.x*k;
@@ -684,7 +684,7 @@ LES3DFsd_cState LES3DFsd_pState::Fx(void) const {
    Temp.rhov.x = rho*sqr(v.x) + p + (TWO/THREE)*rho*k;
    Temp.rhov.y = rho*v.x*v.y;
    Temp.rhov.z = rho*v.x*v.z;
-   Temp.E = v.x*(H() + (TWO/THREE)*rho*k);
+   Temp.E = v.x*H();
    Temp.rhoC = rho*v.x*C;
    Temp.rhoFsd = rho*v.x*Fsd;
    Temp.rhok = rho*v.x*k;
@@ -700,7 +700,7 @@ LES3DFsd_cState LES3DFsd_pState::Fy(void) {
    Temp.rhov.x = rho*v.x*v.y;
    Temp.rhov.y = rho*sqr(v.y) + p + (TWO/THREE)*rho*k;
    Temp.rhov.z = rho*v.y*v.z;
-   Temp.E = v.y*(H() + (TWO/THREE)*rho*k);
+   Temp.E = v.y*H();
    Temp.rhoC = rho*v.y*C;
    Temp.rhoFsd = rho*v.y*Fsd;
    Temp.rhok = rho*v.y*k;
@@ -713,7 +713,7 @@ LES3DFsd_cState LES3DFsd_pState::Fy(void) const {
    Temp.rhov.x = rho*v.x*v.y;
    Temp.rhov.y = rho*sqr(v.y) + p + (TWO/THREE)*rho*k;
    Temp.rhov.z = rho*v.y*v.z;
-   Temp.E = v.y*(H() + (TWO/THREE)*rho*k);
+   Temp.E = v.y*H();
    Temp.rhoC = rho*v.y*C;
    Temp.rhoFsd = rho*v.y*Fsd;
    Temp.rhok = rho*v.y*k;
@@ -729,7 +729,7 @@ LES3DFsd_cState LES3DFsd_pState::Fz(void) {
    Temp.rhov.x = rho*v.x*v.z;
    Temp.rhov.y = rho*v.y*v.z;
    Temp.rhov.z = rho*sqr(v.z) + p + (TWO/THREE)*rho*k;
-   Temp.E = v.z*(H() + (TWO/THREE)*rho*k);
+   Temp.E = v.z*H();
    Temp.rhoC = rho*v.z*C;
    Temp.rhoFsd = rho*v.z*Fsd;
    Temp.rhok = rho*v.z*k;
@@ -742,7 +742,7 @@ LES3DFsd_cState LES3DFsd_pState::Fz(void) const {
    Temp.rhov.x = rho*v.x*v.z;
    Temp.rhov.y = rho*v.y*v.z;
    Temp.rhov.z = rho*sqr(v.z) + p + (TWO/THREE)*rho*k;
-   Temp.E = v.z*(H() + (TWO/THREE)*rho*k);
+   Temp.E = v.z*H();
    Temp.rhoC = rho*v.z*C;
    Temp.rhoFsd = rho*v.z*Fsd;
    Temp.rhok = rho*v.z*k;

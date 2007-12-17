@@ -680,7 +680,7 @@ CFL(Input_Parameters<NavierStokes3D_ThermallyPerfect_pState,
                                      d_j/(a+fabs(v_j))),
                                      d_k/(a+fabs(v_k)));
                
-               if (IPs.i_Flow_Type != FLOWTYPE_INVISCID) {  
+               if (Flow_Type != FLOWTYPE_INVISCID) {  
                   nv = W[i][j][k].mu()/W[i][j][k].rho;
                   dt_vis = min(min((d_i*d_i)/(3.0*nv), 
                                    (d_j*d_j)/(3.0*nv)), 
