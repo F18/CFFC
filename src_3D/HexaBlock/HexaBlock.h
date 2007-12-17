@@ -1392,13 +1392,11 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
 void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::
 BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
    
-   int i, j, k;
-   
-   Vector3D MOVING_WALL_VELOCITY = IPs.Moving_Wall_Velocity, dX;
+   Vector3D dX;
    double dpdx;
      
-   for (k = KCl-Nghost ; k <= KCu+Nghost ; ++k) {
-      for (j = JCl-Nghost ; j <= JCu+Nghost ; ++j) {
+   for (int k = KCl-Nghost ; k <= KCu+Nghost ; ++k) {
+      for (int j = JCl-Nghost ; j <= JCu+Nghost ; ++j) {
          // Prescribe West boundary conditions.
          switch(Grid.BCtypeW[j][k]) {
           case BC_NONE :
@@ -1453,13 +1451,13 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
           case BC_MOVING_WALL :
             W[ICl-1][j][k] = SOLN_pSTATE::MovingWall(W[ICl][j][k],WoW[j][k],
                                                      Grid.nfaceW(ICl,j,k),
-                                                     MOVING_WALL_VELOCITY,
+                                                     IPs.Moving_Wall_Velocity,
                                                      IPs.Pressure_Gradient,
                                                      FIXED_TEMPERATURE_WALL);
             U[ICl-1][j][k] = W[ICl-1][j][k].U();
             W[ICl-2][j][k] = SOLN_pSTATE::MovingWall(W[ICl+1][j][k], WoW[j][k], 
                                                      Grid.nfaceW(ICl,j,k),
-                                                     MOVING_WALL_VELOCITY, 
+                                                     IPs.Moving_Wall_Velocity, 
                                                      IPs.Pressure_Gradient,
                                                      FIXED_TEMPERATURE_WALL);
             U[ICl-2][j][k] = W[ICl-2][j][k].U();
@@ -1568,14 +1566,14 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
             W[ICu+1][j][k] = SOLN_pSTATE::MovingWall(W[ICu][j][k], 
                                                      WoE[j][k], 
                                                      Grid.nfaceE(ICu,j,k),
-                                                     MOVING_WALL_VELOCITY,
+                                                     IPs.Moving_Wall_Velocity,
                                                      IPs.Pressure_Gradient,
                                                      FIXED_TEMPERATURE_WALL);
             U[ICu+1][j][k] = W[ICu+1][j][k].U();
             W[ICu+2][j][k] = SOLN_pSTATE::MovingWall(W[ICu-1][j][k], 
                                                      WoE[j][k], 
                                                      Grid.nfaceE(ICu,j,k),
-                                                     MOVING_WALL_VELOCITY,
+                                                     IPs.Moving_Wall_Velocity,
                                                      IPs.Pressure_Gradient,
                                                      FIXED_TEMPERATURE_WALL);
             U[ICu+2][j][k] = W[ICu+2][j][k].U();
@@ -1637,8 +1635,8 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
       } /* endfor */
    } /* endfor */
    
-   for ( k = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
-      for ( i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
+   for (int k = KCl-Nghost ; k <= KCu+Nghost ; ++k) {
+      for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i) {
          // Prescribe South boundary conditions.
          switch(Grid.BCtypeS[i][k]) {
           case BC_NONE :
@@ -1695,14 +1693,14 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
             W[i][JCl-1][k] = SOLN_pSTATE::MovingWall(W[i][JCl][k], 
                                                      WoS[i][k], 
                                                      Grid.nfaceS(i, JCl,k),
-                                                     MOVING_WALL_VELOCITY,
+                                                     IPs.Moving_Wall_Velocity,
                                                      IPs.Pressure_Gradient, 
                                                      FIXED_TEMPERATURE_WALL);
             U[i][JCl-1][k] = W[i][JCl-1][k].U();
             W[i][JCl-2][k] = SOLN_pSTATE::MovingWall(W[i][JCl+1][k], 
                                                      WoS[i][k],
                                                      Grid.nfaceS(i, JCl,k),
-                                                     MOVING_WALL_VELOCITY, 
+                                                     IPs.Moving_Wall_Velocity, 
                                                      IPs.Pressure_Gradient,
                                                      FIXED_TEMPERATURE_WALL);
             U[i][JCl-2][k] = W[i][JCl-2][k].U();
@@ -1794,14 +1792,14 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
             W[i][JCu+1][k] = SOLN_pSTATE::MovingWall(W[i][JCu][k], 
                                                      WoN[i][k],
                                                      Grid.nfaceN(i,JCu,k),
-                                                     MOVING_WALL_VELOCITY,
+                                                     IPs.Moving_Wall_Velocity,
                                                      IPs.Pressure_Gradient,
                                                      FIXED_TEMPERATURE_WALL);
             U[i][JCu+1][k] = W[i][JCu+1][k].U();
             W[i][JCu+2][k] = SOLN_pSTATE::MovingWall(W[i][JCu-1][k], 
                                                      WoN[i][k],
                                                      Grid.nfaceN(i,JCu,k),
-                                                     MOVING_WALL_VELOCITY,
+                                                     IPs.Moving_Wall_Velocity,
                                                      IPs.Pressure_Gradient,
                                                      FIXED_TEMPERATURE_WALL);
             U[i][JCu+2][k] = W[i][JCu+2][k].U();
@@ -1839,8 +1837,8 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
       } /* endfor */
    } /* endfor */
    
-   for ( j = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
-      for ( i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
+   for (int j = JCl-Nghost ; j <= JCu+Nghost ; ++j) {
+      for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i) {
          // Prescribe Bottom boundary conditions.
          switch(Grid.BCtypeB[i][j]) {
           case BC_NONE :
@@ -1897,14 +1895,14 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
             W[i][j][KCl-1] = SOLN_pSTATE::MovingWall(W[i][j][KCl], 
                                                      WoB[i][j],
                                                      Grid.nfaceBot(i,j,KCl),
-                                                     MOVING_WALL_VELOCITY,
+                                                     IPs.Moving_Wall_Velocity,
                                                      IPs.Pressure_Gradient,
                                                      FIXED_TEMPERATURE_WALL);
             U[i][j][KCl-1] = W[i][j][KCl-1].U();
             W[i][j][KCl-2] = SOLN_pSTATE::MovingWall(W[i][j][KCl+1], 
                                                      WoB[i][j],
                                                      Grid.nfaceBot(i,j,KCl),
-                                                     MOVING_WALL_VELOCITY,
+                                                     IPs.Moving_Wall_Velocity,
                                                      IPs.Pressure_Gradient,
                                                      FIXED_TEMPERATURE_WALL);
             U[i][j][KCl-2] = W[i][j][KCl-2].U();
@@ -1996,14 +1994,14 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
             W[i][j][KCu+1] = SOLN_pSTATE::MovingWall(W[i][j][KCu], 
                                                      WoT[i][j],
                                                      Grid.nfaceTop(i,j,KCu),
-                                                     MOVING_WALL_VELOCITY,
+                                                     IPs.Moving_Wall_Velocity,
                                                      IPs.Pressure_Gradient,
                                                      FIXED_TEMPERATURE_WALL);
             U[i][j][KCu+1] = W[i][j][KCu+1].U();
             W[i][j][KCu+2] = SOLN_pSTATE::MovingWall(W[i][j][KCu-1], 
                                                      WoT[i][j],
                                                      Grid.nfaceTop(i,j,KCu),
-                                                     MOVING_WALL_VELOCITY,
+                                                     IPs.Moving_Wall_Velocity,
                                                      IPs.Pressure_Gradient,
                                                      FIXED_TEMPERATURE_WALL);
             U[i][j][KCu+2] = W[i][j][KCu +2].U();
@@ -2494,7 +2492,6 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
 int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::
 dUdt_Residual_Evaluation(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
 
-  int i, j, k;
    Vector3D dX;
    
    SOLN_pSTATE Wl, Wr;
@@ -2523,88 +2520,92 @@ dUdt_Residual_Evaluation(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
       limited upwind scheme with a variety of flux functions. */
  
    // Add i-direction (zeta-direction) fluxes.
-   for ( k  =  KCl-1 ; k <=  KCu+1 ; ++k ){
-     for ( j  =  JCl-1 ; j <=  JCu+1 ; ++j ) {	
+   for (int k  =  KCl-1 ; k <=  KCu+1 ; ++k){
+     for (int j  =  JCl-1 ; j <=  JCu+1 ; ++j) {	
 	dUdt[ ICl-1][j][k][0] = U_VACUUM;      
 	
-	for ( i =  ICl-1 ; i <=  ICu ; ++i ) {
+	for (int i =  ICl-1 ; i <=  ICu ; ++i) {
 	  dUdt[i+1][j][k][0] = U_VACUUM;
 	  
 	  if (( j >  JCl-1 && j <  JCu+1 ) &&
 	      ( k >  KCl-1 && k <  KCu+1 )) {
-	    
 	    /* Evaluate the cell interface i-direction fluxes. */
-	    if (i ==  ICl-1 &&  (Grid.BCtypeW[j][k] == BC_REFLECTION ||
-				 Grid.BCtypeW[j][k] == BC_NO_SLIP ||
-				 Grid.BCtypeW[j][k] == BC_MOVING_WALL) ) {
+	    if (i == ICl-1 && (Grid.BCtypeW[j][k] == BC_REFLECTION ||
+			       Grid.BCtypeW[j][k] == BC_NO_SLIP ||
+			       Grid.BCtypeW[j][k] == BC_MOVING_WALL) ) {
 	      
 	      dX =  Grid.xfaceW(i+1, j, k)- Grid.Cell[i+1][j][k].Xc;
               
 	      Wr =  W[i+1][j][k] +
-		( phi[i+1][j][k]^dWdx[i+1][j][k])*dX.x +
-		( phi[i+1][j][k]^dWdy[i+1][j][k])*dX.y +
-		( phi[i+1][j][k]^dWdz[i+1][j][k])*dX.z;
+                    (phi[i+1][j][k]^dWdx[i+1][j][k])*dX.x +
+                    (phi[i+1][j][k]^dWdy[i+1][j][k])*dX.y +
+                    (phi[i+1][j][k]^dWdz[i+1][j][k])*dX.z;
 	      
-	      if ( Grid.BCtypeW[j][k] == BC_REFLECTION) {
-		Wl =  SOLN_pSTATE::Reflect(Wr,  Grid.nfaceW(i+1, j, k));
-	      }
-	      if ( Grid.BCtypeW[j][k] == BC_NO_SLIP) {
-		Wl =  SOLN_pSTATE::NoSlip(Wr, WoW[j][k], Grid.nfaceW(i+1, j, k),
-					   IPs.Pressure_Gradient,
-					   FIXED_TEMPERATURE_WALL);
-	      }
-	      if ( Grid.BCtypeW[j][k] == BC_MOVING_WALL) {
-		Wl =  SOLN_pSTATE::MovingWall(Wr, WoW[j][k], Grid.nfaceW(i+1, j, k),
-					       IPs.Moving_Wall_Velocity,
-					       IPs.Pressure_Gradient,
-					       FIXED_TEMPERATURE_WALL);
-	      }
+	      if (Grid.BCtypeW[j][k] == BC_REFLECTION) {
+		Wl = SOLN_pSTATE::Reflect(Wr, Grid.nfaceW(i+1, j, k));
+	      } /* endif */
+
+	      if (Grid.BCtypeW[j][k] == BC_NO_SLIP) {
+		Wl = SOLN_pSTATE::NoSlip(Wr, WoW[j][k], Grid.nfaceW(i+1, j, k),
+				         IPs.Pressure_Gradient,
+				         FIXED_TEMPERATURE_WALL);
+	      } /* endif */
+
+	      if (Grid.BCtypeW[j][k] == BC_MOVING_WALL) {
+		Wl = SOLN_pSTATE::MovingWall(Wr, WoW[j][k], Grid.nfaceW(i+1, j, k),
+					     IPs.Moving_Wall_Velocity,
+					     IPs.Pressure_Gradient,
+					     FIXED_TEMPERATURE_WALL);
+	      } /* endif */
+
 	    } else if (i ==  ICu &&
 		       ( Grid.BCtypeE[j][k] == BC_REFLECTION ||
 			 Grid.BCtypeE[j][k] == BC_NO_SLIP ||
 			 Grid.BCtypeE[j][k] == BC_MOVING_WALL )) {
 	      
 	      dX =  Grid.xfaceE(i, j, k)- Grid.Cell[i][j][k].Xc;
+
 	      Wl =  W[i][j][k] +
-		( phi[i][j][k]^ dWdx[i][j][k])*dX.x +
-		( phi[i][j][k]^ dWdy[i][j][k])*dX.y +
-		( phi[i][j][k]^ dWdz[i][j][k])*dX.z;
-	      if ( Grid.BCtypeE[j][k] == BC_REFLECTION) {
-		Wr =  SOLN_pSTATE::Reflect(Wl,  Grid.nfaceE(i, j, k));
-	      }
-	      if ( Grid.BCtypeE[j][k] == BC_NO_SLIP) {
+                    (phi[i][j][k]^ dWdx[i][j][k])*dX.x +
+                    (phi[i][j][k]^ dWdy[i][j][k])*dX.y +
+                    (phi[i][j][k]^ dWdz[i][j][k])*dX.z;
+
+	      if (Grid.BCtypeE[j][k] == BC_REFLECTION) {
+		Wr =  SOLN_pSTATE::Reflect(Wl, Grid.nfaceE(i, j, k));
+	      } /* endif */
+
+	      if (Grid.BCtypeE[j][k] == BC_NO_SLIP) {
 		Wr =  SOLN_pSTATE::NoSlip(Wl, WoE[j][k], Grid.nfaceE(i, j, k),
 					   IPs.Pressure_Gradient,
 					   FIXED_TEMPERATURE_WALL);
-	      }
-	      if ( Grid.BCtypeE[j][k] == BC_MOVING_WALL) {
+	      } /* endif */
+	      if (Grid.BCtypeE[j][k] == BC_MOVING_WALL) {
 		Wr =  SOLN_pSTATE::MovingWall(Wl, WoE[j][k], Grid.nfaceE(i, j, k),
 					       IPs.Moving_Wall_Velocity,
 					       IPs.Pressure_Gradient,
 					       FIXED_TEMPERATURE_WALL);
-	      }
+	      } /* endif */
 	      
 	    } else {
 	      dX =  Grid.xfaceE(i, j, k)- Grid.Cell[i][j][k].Xc;
 	      Wl =  W[i][j][k] +
-		( phi[i][j][k]^ dWdx[i][j][k])*dX.x +
-		( phi[i][j][k]^ dWdy[i][j][k])*dX.y +
-		( phi[i][j][k]^ dWdz[i][j][k])*dX.z;
+                    (phi[i][j][k]^ dWdx[i][j][k])*dX.x +
+                    (phi[i][j][k]^ dWdy[i][j][k])*dX.y +
+                    (phi[i][j][k]^ dWdz[i][j][k])*dX.z;
 	      dX =  Grid.xfaceW(i+1, j, k)- Grid.Cell[i+1][j][k].Xc;
 	      Wr =  W[i+1][j][k] +
-		( phi[i+1][j][k]^ dWdx[i+1][j][k])*dX.x +
-		( phi[i+1][j][k]^ dWdy[i+1][j][k])*dX.y +
-		( phi[i+1][j][k]^ dWdz[i+1][j][k])*dX.z;                  
+                    (phi[i+1][j][k]^ dWdx[i+1][j][k])*dX.x +
+                    (phi[i+1][j][k]^ dWdy[i+1][j][k])*dX.y +
+                    (phi[i+1][j][k]^ dWdz[i+1][j][k])*dX.z;                  
 	    } /* endif */
 	    
-               
 	    switch(IPs.i_Flux_Function) {
-	    case FLUX_FUNCTION_HLLE :	      
-	      Flux =  SOLN_pSTATE::FluxHLLE_n(Wl, Wr,  Grid.nfaceE(i, j, k));              
-	      break;
-	    case FLUX_FUNCTION_ROE :
-	      Flux =  SOLN_pSTATE::FluxRoe_n(Wl, Wr,  Grid.nfaceE(i, j, k));
-	      break;
+              case FLUX_FUNCTION_HLLE :	      
+	        Flux =  SOLN_pSTATE::FluxHLLE_n(Wl, Wr,  Grid.nfaceE(i, j, k));              
+	        break;
+	      case FLUX_FUNCTION_ROE :
+	        Flux =  SOLN_pSTATE::FluxRoe_n(Wl, Wr,  Grid.nfaceE(i, j, k));
+	        break;
 	    } /* endswitch */
             
 	    /* Evaluate cell-averaged solution changes. */
@@ -2627,8 +2628,8 @@ dUdt_Residual_Evaluation(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
 	  } /* endif */
 	} /* endfor */
          
-	if (( j >  JCl-1 && j <  JCu+1 ) &&
-	    ( k >  KCl-1 && k <  KCu+1 ) ) {
+	if (( j > JCl-1 && j < JCu+1 ) &&
+	    ( k > KCl-1 && k < KCu+1 ) ) {
 	  dUdt[ ICl-1][j][k][0] = U_VACUUM;
 	  dUdt[ ICu+1][j][k][0] = U_VACUUM;
 	} /* endif */
@@ -2637,82 +2638,88 @@ dUdt_Residual_Evaluation(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
    } /* endfor */
    
    // Add j-direction (eta-direction) fluxes.
-   for ( k =  KCl ; k <=  KCu ; ++k ){
-      for ( i =  ICl ; i <=  ICu ; ++i ) {
-         for ( j  =  JCl-1 ; j <=  JCu ; ++j ) {
+   for (int k =  KCl ; k <=  KCu ; ++k) {
+      for (int i =  ICl ; i <=  ICu ; ++i) {
+         for (int j  =  JCl-1 ; j <=  JCu ; ++j) {
             
             /* Evaluate the cell interface j-direction fluxes. */
             if (j ==  JCl-1 &&
-                ( Grid.BCtypeS[i][k] == BC_REFLECTION ||
-                  Grid.BCtypeS[i][k] == BC_NO_SLIP||
-                  Grid.BCtypeS[i][k] == BC_MOVING_WALL)) {
+                (Grid.BCtypeS[i][k] == BC_REFLECTION ||
+                 Grid.BCtypeS[i][k] == BC_NO_SLIP||
+                 Grid.BCtypeS[i][k] == BC_MOVING_WALL)) {
                dX =  Grid.xfaceS(i, j+1, k)- Grid.Cell[i][j+1][k].Xc;
+
                Wr =  W[i][j+1][k] +
-                  ( phi[i][j+1][k]^ dWdx[i][j+1][k])*dX.x +
-                  ( phi[i][j+1][k]^ dWdy[i][j+1][k])*dX.y+
-                  ( phi[i][j+1][k]^ dWdz[i][j+1][k])*dX.z;
-               if ( Grid.BCtypeS[i][k] == BC_REFLECTION) {
-                  Wl =  SOLN_pSTATE::Reflect(Wr,  Grid.nfaceS(i, j+1, k));
-               }
-               if ( Grid.BCtypeS[i][k] == BC_NO_SLIP) {
+                     (phi[i][j+1][k]^ dWdx[i][j+1][k])*dX.x +
+                     (phi[i][j+1][k]^ dWdy[i][j+1][k])*dX.y+
+                     (phi[i][j+1][k]^ dWdz[i][j+1][k])*dX.z;
+
+               if (Grid.BCtypeS[i][k] == BC_REFLECTION) {
+                  Wl =  SOLN_pSTATE::Reflect(Wr, Grid.nfaceS(i, j+1, k));
+               } /* endif */
+
+               if (Grid.BCtypeS[i][k] == BC_NO_SLIP) {
                   Wl =  SOLN_pSTATE::NoSlip(Wr, WoS[i][k], Grid.nfaceS(i, j+1, k),
-                                             IPs.Pressure_Gradient,
-                                             FIXED_TEMPERATURE_WALL);
-               }
-               if ( Grid.BCtypeS[i][k] == BC_MOVING_WALL) {
+                                            IPs.Pressure_Gradient,
+                                            FIXED_TEMPERATURE_WALL);
+               } /* endif */
+
+               if (Grid.BCtypeS[i][k] == BC_MOVING_WALL) {
                   Wl =  SOLN_pSTATE::MovingWall(Wr, WoS[i][k], Grid.nfaceS(i, j+1, k),
-                                                 IPs.Moving_Wall_Velocity,
-                                                 IPs.Pressure_Gradient,
-                                                 FIXED_TEMPERATURE_WALL);
-               }
+                                                IPs.Moving_Wall_Velocity,
+                                                IPs.Pressure_Gradient,
+                                                FIXED_TEMPERATURE_WALL);
+               } /* endif */
                
             } else if (j ==  JCu &&
-                       ( Grid.BCtypeN[i][k] == BC_REFLECTION ||
-                         Grid.BCtypeN[i][k] == BC_NO_SLIP||
-                         Grid.BCtypeN[i][k] == BC_MOVING_WALL)) {
+                       (Grid.BCtypeN[i][k] == BC_REFLECTION ||
+                        Grid.BCtypeN[i][k] == BC_NO_SLIP||
+                        Grid.BCtypeN[i][k] == BC_MOVING_WALL)) {
                dX =  Grid.xfaceN(i, j, k)- Grid.Cell[i][j][k].Xc;
+
                Wl =  W[i][j][k] +
-                  ( phi[i][j][k]^ dWdx[i][j][k])*dX.x+
-                  ( phi[i][j][k]^ dWdy[i][j][k])*dX.y+
-                  ( phi[i][j][k]^ dWdz[i][j][k])*dX.z;
-               if ( Grid.BCtypeN[i][k] == BC_REFLECTION) {
-                  Wr =  SOLN_pSTATE::Reflect(Wl,  Grid.nfaceN(i, j, k));
-               }
-               if ( Grid.BCtypeN[i][k] == BC_NO_SLIP) {
+                     (phi[i][j][k]^ dWdx[i][j][k])*dX.x+
+                     (phi[i][j][k]^ dWdy[i][j][k])*dX.y+
+                     (phi[i][j][k]^ dWdz[i][j][k])*dX.z;
+
+               if (Grid.BCtypeN[i][k] == BC_REFLECTION) {
+                  Wr =  SOLN_pSTATE::Reflect(Wl, Grid.nfaceN(i, j, k));
+               } /* endif */
+
+               if (Grid.BCtypeN[i][k] == BC_NO_SLIP) {
                   Wr =  SOLN_pSTATE::NoSlip(Wl, WoN[i][k], Grid.nfaceN(i, j, k),
                                              IPs.Pressure_Gradient,
                                              FIXED_TEMPERATURE_WALL );
-               }
-               if ( Grid.BCtypeN[i][k] == BC_MOVING_WALL) {
+               } /* endif */
+
+               if (Grid.BCtypeN[i][k] == BC_MOVING_WALL) {
                   Wr =  SOLN_pSTATE::MovingWall(Wl, WoN[i][k], Grid.nfaceN(i, j, k),
                                                  IPs.Moving_Wall_Velocity,
                                                  IPs.Pressure_Gradient,
                                                  FIXED_TEMPERATURE_WALL );
-               }
+               } /* endif */
                
             } else {
                dX =  Grid.xfaceN(i, j, k)- Grid.Cell[i][j][k].Xc;
                Wl =  W[i][j][k] +
-                  ( phi[i][j][k]^ dWdx[i][j][k])*dX.x +
-                  ( phi[i][j][k]^ dWdy[i][j][k])*dX.y +
-                  ( phi[i][j][k]^ dWdz[i][j][k])*dX.z;
+                     (phi[i][j][k]^ dWdx[i][j][k])*dX.x +
+                     (phi[i][j][k]^ dWdy[i][j][k])*dX.y +
+                     (phi[i][j][k]^ dWdz[i][j][k])*dX.z;
                dX =  Grid.xfaceS(i, j+1, k)- Grid.Cell[i][j+1][k].Xc;
                Wr =  W[i][j+1][k] +
-                  ( phi[i][j+1][k]^ dWdx[i][j+1][k])*dX.x +
-                  ( phi[i][j+1][k]^ dWdy[i][j+1][k])*dX.y +
-                  ( phi[i][j+1][k]^ dWdz[i][j+1][k])*dX.z;
+                     (phi[i][j+1][k]^ dWdx[i][j+1][k])*dX.x +
+                     (phi[i][j+1][k]^ dWdy[i][j+1][k])*dX.y +
+                     (phi[i][j+1][k]^ dWdz[i][j+1][k])*dX.z;
             } /* endif */
             
             switch(IPs.i_Flux_Function) {
-            case FLUX_FUNCTION_HLLE :
-               Flux =  SOLN_pSTATE::FluxHLLE_n(Wl, Wr,  Grid.nfaceN(i, j, k));
-               break;
-            case FLUX_FUNCTION_ROE :
-               Flux =  SOLN_pSTATE::FluxRoe_n(Wl, Wr,  Grid.nfaceN(i, j, k));
-               break;
+              case FLUX_FUNCTION_HLLE :
+                Flux = SOLN_pSTATE::FluxHLLE_n(Wl, Wr,  Grid.nfaceN(i, j, k));
+                break;
+              case FLUX_FUNCTION_ROE :
+                Flux = SOLN_pSTATE::FluxRoe_n(Wl, Wr,  Grid.nfaceN(i, j, k));
+                break;
             } /* endswitch */
-            
-            // add viscous flux in j direction
             
             /* Evaluate cell-averaged solution changes. */
 
@@ -2733,8 +2740,8 @@ dUdt_Residual_Evaluation(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
             
          } /* endfor */
 
-         if (( i >  ICl-1 && i <  ICu+1 ) &&
-             ( k >  KCl-1 && k <  KCu+1 ) ) {
+         if (( i > ICl-1 && i < ICu+1 ) &&
+             ( k > KCl-1 && k < KCu+1 ) ) {
             dUdt[i][ JCl-1][k][0] = U_VACUUM;
             dUdt[i][ JCu+1][k][0] = U_VACUUM;
          }
@@ -2743,81 +2750,87 @@ dUdt_Residual_Evaluation(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
    }/* endfor */
            
    // Add k-direction (gamma-direction) fluxes.
-   for ( i =  ICl; i <=  ICu ; ++i ){
-      for ( j  =  JCl ; j <=  JCu ; ++j ){
-         for ( k =  KCl-1 ; k <=  KCu ; ++k )  {
+   for (int i =  ICl; i <=  ICu ; ++i){
+      for (int j  =  JCl ; j <=  JCu ; ++j){
+         for (int k =  KCl-1 ; k <=  KCu ; ++k)  {
             
             /* Evaluate the cell interface j-direction fluxes. */
             if (k ==  KCl-1 &&
-                ( Grid.BCtypeB[i][j] == BC_REFLECTION ||
-                  Grid.BCtypeB[i][j] == BC_NO_SLIP ||
-                  Grid.BCtypeB[i][j] == BC_MOVING_WALL)) {
-               
+                (Grid.BCtypeB[i][j] == BC_REFLECTION ||
+                 Grid.BCtypeB[i][j] == BC_NO_SLIP ||
+                 Grid.BCtypeB[i][j] == BC_MOVING_WALL)) {
                dX =  Grid.xfaceBot(i, j, k+1)- Grid.Cell[i][j][k+1].Xc;
+
                Wr =  W[i][j][k+1] +
-                  ( phi[i][j][k+1]^ dWdx[i][j][k+1])*dX.x +
-                  ( phi[i][j][k+1]^ dWdy[i][j][k+1])*dX.y+
-                  ( phi[i][j][k+1]^ dWdz[i][j][k+1])*dX.z;
-               if ( Grid.BCtypeB[i][j] == BC_REFLECTION) {
-                  Wl =  SOLN_pSTATE::Reflect(Wr,  Grid.nfaceBot(i, j, k+1));
-               }
-               if ( Grid.BCtypeB[i][j] == BC_NO_SLIP) {
+                     (phi[i][j][k+1]^ dWdx[i][j][k+1])*dX.x +
+                     (phi[i][j][k+1]^ dWdy[i][j][k+1])*dX.y+
+                     (phi[i][j][k+1]^ dWdz[i][j][k+1])*dX.z;
+
+               if (Grid.BCtypeB[i][j] == BC_REFLECTION) {
+                  Wl = SOLN_pSTATE::Reflect(Wr, Grid.nfaceBot(i, j, k+1));
+               } /* endif */
+
+               if (Grid.BCtypeB[i][j] == BC_NO_SLIP) {
                   Wl =  SOLN_pSTATE::NoSlip(Wr, WoB[i][j], Grid.nfaceBot(i, j, k+1),
-                                             IPs.Pressure_Gradient,
-                                             FIXED_TEMPERATURE_WALL);
-               }
-               if ( Grid.BCtypeB[i][j] == BC_MOVING_WALL) {
+                                            IPs.Pressure_Gradient,
+                                            FIXED_TEMPERATURE_WALL);
+               } /* endif */
+
+               if (Grid.BCtypeB[i][j] == BC_MOVING_WALL) {
                   Wl =  SOLN_pSTATE::MovingWall(Wr, WoB[i][j], Grid.nfaceBot(i, j, k+1),
-                                                 IPs.Moving_Wall_Velocity,
-                                                 IPs.Pressure_Gradient,
-                                                 FIXED_TEMPERATURE_WALL);
-               }
-               
-               
+                                                IPs.Moving_Wall_Velocity,
+                                                IPs.Pressure_Gradient,
+                                                FIXED_TEMPERATURE_WALL);
+               } /* endif */
+
             } else if (k ==  KCu &&
-                       ( Grid.BCtypeT[i][j] == BC_REFLECTION ||
-                         Grid.BCtypeT[i][j] == BC_NO_SLIP||
-                         Grid.BCtypeT[i][j] == BC_MOVING_WALL)) {
-               
+                       (Grid.BCtypeT[i][j] == BC_REFLECTION ||
+                        Grid.BCtypeT[i][j] == BC_NO_SLIP||
+                        Grid.BCtypeT[i][j] == BC_MOVING_WALL)) {
                dX =  Grid.xfaceTop(i, j, k)- Grid.Cell[i][j][k].Xc;
+
                Wl =  W[i][j][k] +
-                  ( phi[i][j][k]^ dWdx[i][j][k])*dX.x+
-                  ( phi[i][j][k]^ dWdy[i][j][k])*dX.y+
-                  ( phi[i][j][k]^ dWdz[i][j][k])*dX.z;
-               if ( Grid.BCtypeT[i][j] == BC_REFLECTION) {
-                  Wr =  SOLN_pSTATE::Reflect(Wl,  Grid.nfaceTop(i, j, k));
-               }
-               if ( Grid.BCtypeT[i][j] == BC_NO_SLIP) {
+                     (phi[i][j][k]^ dWdx[i][j][k])*dX.x+
+                     (phi[i][j][k]^ dWdy[i][j][k])*dX.y+
+                     (phi[i][j][k]^ dWdz[i][j][k])*dX.z;
+
+               if (Grid.BCtypeT[i][j] == BC_REFLECTION) {
+                  Wr =  SOLN_pSTATE::Reflect(Wl, Grid.nfaceTop(i, j, k));
+               } /* endif */
+
+               if (Grid.BCtypeT[i][j] == BC_NO_SLIP) {
                   Wr =  SOLN_pSTATE::NoSlip(Wl, WoT[i][j], Grid.nfaceTop(i, j, k),
-                                             IPs.Pressure_Gradient,
-                                             FIXED_TEMPERATURE_WALL );
-               }
-               if ( Grid.BCtypeT[i][j] == BC_MOVING_WALL) {
+                                            IPs.Pressure_Gradient,
+                                            FIXED_TEMPERATURE_WALL );
+               } /* endif */
+
+               if (Grid.BCtypeT[i][j] == BC_MOVING_WALL) {
                   Wr =  SOLN_pSTATE::MovingWall(Wl, WoT[i][j], Grid.nfaceTop(i, j, k),
-                                                 IPs.Moving_Wall_Velocity,
-                                                 IPs.Pressure_Gradient,
-                                                 FIXED_TEMPERATURE_WALL );
-               }
+                                                IPs.Moving_Wall_Velocity,
+                                                IPs.Pressure_Gradient,
+                                                FIXED_TEMPERATURE_WALL );
+               } /* endif */
+
             } else {
                dX =  Grid.xfaceTop(i, j, k)- Grid.Cell[i][j][k].Xc;
                Wl =  W[i][j][k] +
-                  ( phi[i][j][k]^ dWdx[i][j][k])*dX.x +
-                  ( phi[i][j][k]^ dWdy[i][j][k])*dX.y +
-                  ( phi[i][j][k]^ dWdz[i][j][k])*dX.z;
+                     (phi[i][j][k]^ dWdx[i][j][k])*dX.x +
+                     (phi[i][j][k]^ dWdy[i][j][k])*dX.y +
+                     (phi[i][j][k]^ dWdz[i][j][k])*dX.z;
                dX =  Grid.xfaceBot(i, j, k+1)- Grid.Cell[i][j][k+1].Xc;
                Wr =  W[i][j][k+1] +
-                  ( phi[i][j][k+1]^ dWdx[i][j][k+1])*dX.x +
-                  ( phi[i][j][k+1]^ dWdy[i][j][k+1])*dX.y +
-                  ( phi[i][j][k+1]^ dWdz[i][j][k+1])*dX.z;
+                     (phi[i][j][k+1]^ dWdx[i][j][k+1])*dX.x +
+                     (phi[i][j][k+1]^ dWdy[i][j][k+1])*dX.y +
+                     (phi[i][j][k+1]^ dWdz[i][j][k+1])*dX.z;
             } /* endif */
              
             switch(IPs.i_Flux_Function) {
-            case FLUX_FUNCTION_HLLE :
-               Flux =  SOLN_pSTATE::FluxHLLE_n(Wl, Wr, Grid.nfaceTop(i, j, k));
-               break;
-            case FLUX_FUNCTION_ROE :
-               Flux =  SOLN_pSTATE::FluxRoe_n(Wl, Wr, Grid.nfaceTop(i, j, k));
-               break;
+              case FLUX_FUNCTION_HLLE :
+                Flux =  SOLN_pSTATE::FluxHLLE_n(Wl, Wr, Grid.nfaceTop(i, j, k));
+                break;
+              case FLUX_FUNCTION_ROE :
+                Flux =  SOLN_pSTATE::FluxRoe_n(Wl, Wr, Grid.nfaceTop(i, j, k));
+                break;
             } /* endswitch */
             
             /* Evaluate cell-averaged solution changes. */

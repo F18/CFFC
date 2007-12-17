@@ -305,19 +305,18 @@ ICs(const int i_ICtype,
    FANS3D_ThermallyPerfect_KOmega_pState Wl, Wr;
 
    switch(i_ICtype) {
-      case IC_VISCOUS_COUETTE :
       case IC_VISCOUS_COUETTE_PRESSURE_GRADIENT_X :
          dpdx = IPs.Pressure_Gradient.x;  
-         delta_pres = dpdx*IPs.Grid_IP.Box_Length;
+         delta_pres = dpdx*IPs.Grid_IP.Box_Width;
          for (int k = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
             for (int j = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
                for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
                   W[i][j][k] = IPs.Wo;
-                  W[i][j][k].v.x = HALF*(-dpdx)/W[i][j][k].mu()*(Grid.Cell[i][j][k].Xc.z + 
-                                   0.5*IPs.Grid_IP.Box_Height)*
-                                   (Grid.Cell[i][j][k].Xc.z - 0.5*IPs.Grid_IP.Box_Height) +
-                                   IPs.Moving_Wall_Velocity.x*(Grid.Cell[i][j][k].Xc.z/IPs.Grid_IP.Box_Height + 
-                                   HALF);
+                  W[i][j][k].v.x = HALF*(-dpdx)/W[i][j][k].mu()*
+                                   (Grid.Cell[i][j][k].Xc.y + 0.5*IPs.Grid_IP.Box_Height)*
+                                   (Grid.Cell[i][j][k].Xc.y - 0.5*IPs.Grid_IP.Box_Height) +
+                                   IPs.Moving_Wall_Velocity.x*
+                                   (Grid.Cell[i][j][k].Xc.y/IPs.Grid_IP.Box_Height+HALF);
                   W[i][j][k].p = IPs.Wo.p - (i-ICl-Nghost)*delta_pres/(ICu-ICl);	 
                   if (i == ICl-Nghost || i == ICl-Nghost+1 ) {
                     W[i][j][k].p = IPs.Wo.p;
@@ -333,17 +332,17 @@ ICs(const int i_ICtype,
 
       case IC_VISCOUS_COUETTE_PRESSURE_GRADIENT_Y :
          dpdy = IPs.Pressure_Gradient.y;  
-         delta_pres = dpdy*IPs.Grid_IP.Box_Width;
+         delta_pres = dpdy*IPs.Grid_IP.Box_Height;
          for (int k = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
             for (int j = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
                for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
                   W[i][j][k] = IPs.Wo;
-                  W[i][j][k].v.y = HALF*(-dpdy)/W[i][j][k].mu()*(Grid.Cell[i][j][k].Xc.z + 
-                                   0.5*IPs.Grid_IP.Box_Height)*(Grid.Cell[i][j][k].Xc.z - 
-                                   0.5*IPs.Grid_IP.Box_Height) +
-                                   IPs.Moving_Wall_Velocity.y*(Grid.Cell[i][j][k].Xc.z/IPs.Grid_IP.Box_Height + 
-                                   HALF);
-                  W[i][j][k].p = IPs.Wo.p - (Grid.Cell[i][j][k].Xc.y)*delta_pres/IPs.Grid_IP.Box_Width;	 
+                  W[i][j][k].v.y = HALF*(-dpdy)/W[i][j][k].mu()*
+                                   (Grid.Cell[i][j][k].Xc.x + 0.5*IPs.Grid_IP.Box_Width)*
+                                   (Grid.Cell[i][j][k].Xc.x - 0.5*IPs.Grid_IP.Box_Width) +
+                                   IPs.Moving_Wall_Velocity.y*
+                                   (Grid.Cell[i][j][k].Xc.x/IPs.Grid_IP.Box_Width+HALF);
+                  W[i][j][k].p = IPs.Wo.p - (j-JCl-Nghost)*delta_pres/(JCu-JCl);
                   if (j == JCl-Nghost || j == JCl-Nghost+1 ){
                      W[i][j][k].p = IPs.Wo.p;
                   } /* endif */
@@ -356,19 +355,20 @@ ICs(const int i_ICtype,
 	 } /* endfor */
          break; 
 
+      case IC_VISCOUS_COUETTE :
       case IC_VISCOUS_COUETTE_PRESSURE_GRADIENT_Z :
          dpdz = IPs.Pressure_Gradient.z;  
-         delta_pres = dpdz*IPs.Grid_IP.Box_Height;
+         delta_pres = dpdz*IPs.Grid_IP.Box_Length;
          for (int k = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
             for (int j = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
                for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
                   W[i][j][k] = IPs.Wo;
-                  W[i][j][k].v.z = HALF*(-dpdz)/W[i][j][k].mu()*(Grid.Cell[i][j][k].Xc.y + 
-                                   0.5*IPs.Grid_IP.Box_Width)*
-                                   (Grid.Cell[i][j][k].Xc.y - 0.5*IPs.Grid_IP.Box_Width) +
-                                   IPs.Moving_Wall_Velocity.z*(Grid.Cell[i][j][k].Xc.y/IPs.Grid_IP.Box_Width + 
-                                   HALF);
-                  W[i][j][k].p = IPs.Wo.p - (Grid.Cell[i][j][k].Xc.z)*delta_pres/IPs.Grid_IP.Box_Height;
+                  W[i][j][k].v.z = HALF*(-dpdz)/W[i][j][k].mu()*
+                                   (Grid.Cell[i][j][k].Xc.y + 0.5*IPs.Grid_IP.Box_Height)*
+                                   (Grid.Cell[i][j][k].Xc.y - 0.5*IPs.Grid_IP.Box_Height) +
+                                   IPs.Moving_Wall_Velocity.z*
+                                   (Grid.Cell[i][j][k].Xc.y/IPs.Grid_IP.Box_Height+HALF);
+                  W[i][j][k].p = IPs.Wo.p - (k-KCl-Nghost)*delta_pres/(KCu-KCl);
                   if (k == KCl-Nghost || k == KCl-Nghost+1 ) {
                      W[i][j][k].p = IPs.Wo.p;
                   } /* endif */
@@ -383,71 +383,114 @@ ICs(const int i_ICtype,
       
       case IC_PRESSURE_GRADIENT_X :
          dpdx = IPs.Pressure_Gradient.x;  
-         delta_pres = dpdx*IPs.Grid_IP.Box_Length;
-         di =  1.0/sqr(IPs.Grid_IP.Box_Height/2.0)+ 1.0/sqr(IPs.Grid_IP.Box_Width/2.0);
-         U_axi = delta_pres/(2.0*W[0][0][0].mu())/di;
+         delta_pres = dpdx*IPs.Grid_IP.Box_Width;
          for (int k = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
             for (int j = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
                for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
                   W[i][j][k] = IPs.Wo;
-                  W[i][j][k].v.x = 0.5*(-dpdx)/W[i][j][k].mu()*(Grid.Cell[i][j][k].Xc.z + 
-                                   0.5*IPs.Grid_IP.Box_Height)*
-                                   (Grid.Cell[i][j][k].Xc.z - 0.5*IPs.Grid_IP.Box_Height);
+                  W[i][j][k].v.x = -HALF*(dpdx/W[i][j][k].mu())*
+                                   (Grid.Cell[i][j][k].Xc.y + 0.5*IPs.Grid_IP.Box_Height)*
+                                   (Grid.Cell[i][j][k].Xc.y - 0.5*IPs.Grid_IP.Box_Height);
                   W[i][j][k].p = IPs.Wo.p - (i-ICl-Nghost)*delta_pres/(ICu-ICl);	 
                   if( i == ICl-Nghost || i == ICl-Nghost+1 ){
                      W[i][j][k].p = IPs.Wo.p;
-                  }
+                  } /* endif */
                   if( i == ICu+Nghost || i == ICu+Nghost-1){
                      W[i][j][k].p = IPs.Wo.p - delta_pres; 
-                  }
+                  } /* endif */
                   U[i][j][k] = W[i][j][k].U();
 	       } /* endfor */ 
 	    } /* endfor */       
 	 } /* endfor */
          break; 
 
+      case IC_PRESSURE_GRADIENT_Y :
+         dpdx = IPs.Pressure_Gradient.y;  
+         delta_pres = dpdx*IPs.Grid_IP.Box_Height;
+         for (int k = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
+            for (int j = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
+               for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
+                  W[i][j][k] = IPs.Wo;
+                  W[i][j][k].v.y = -HALF*(dpdx/W[i][j][k].mu())*
+                                   (Grid.Cell[i][j][k].Xc.x + 0.5*IPs.Grid_IP.Box_Width)*
+                                   (Grid.Cell[i][j][k].Xc.x - 0.5*IPs.Grid_IP.Box_Width);
+                  W[i][j][k].p = IPs.Wo.p - (j-JCl-Nghost)*delta_pres/(JCu-JCl);	 
+                  if( j == JCl-Nghost || j == JCl-Nghost+1 ){
+                     W[i][j][k].p = IPs.Wo.p;
+                  }
+                  if( j == JCu+Nghost || j == JCu+Nghost-1){
+                     W[i][j][k].p = IPs.Wo.p - delta_pres; 
+                  }
+                  U[i][j][k] = W[i][j][k].U();
+	       } /* endfor */ 
+	    } /* endfor */       
+	 } /* endfor */
+         break;
+
+      case IC_PRESSURE_GRADIENT_Z :
+         dpdx = IPs.Pressure_Gradient.z;  
+         delta_pres = dpdx*IPs.Grid_IP.Box_Length;
+         for (int k = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
+            for (int j = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
+               for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
+                  W[i][j][k] = IPs.Wo;
+                  W[i][j][k].v.z = -HALF*(dpdx/W[i][j][k].mu())*
+                                   (Grid.Cell[i][j][k].Xc.y + 0.5*IPs.Grid_IP.Box_Height)*
+                                   (Grid.Cell[i][j][k].Xc.y - 0.5*IPs.Grid_IP.Box_Height);
+                  W[i][j][k].p = IPs.Wo.p - (k-KCl-Nghost)*delta_pres/(KCu-KCl);	 
+                  if( k == KCl-Nghost || k == KCl-Nghost+1 ){
+                     W[i][j][k].p = IPs.Wo.p;
+                  }
+                  if( k == KCu+Nghost || k == KCu+Nghost-1){
+                     W[i][j][k].p = IPs.Wo.p - delta_pres; 
+                  }
+                  U[i][j][k] = W[i][j][k].U();
+	       } /* endfor */ 
+	    } /* endfor */       
+	 } /* endfor */
+         break;
+
       case IC_CHANNEL_FLOW :
-         // the North and South are walls; testing the profile in y direction.  
-         // this case is from John Laufer
+         // John Laufer, NACA case: 
          // Investigation of Turbulent Flow in a Two-Dimensional Channel
          dpdx = IPs.Pressure_Gradient.x;  
          dpdy = IPs.Pressure_Gradient.y;  
          dpdz = IPs.Pressure_Gradient.z;  
-         delta_pres_x = dpdx*IPs.Grid_IP.Box_Length;
-         delta_pres_y = dpdy*IPs.Grid_IP.Box_Width;
-         delta_pres_z = dpdz*IPs.Grid_IP.Box_Height;
-         Um = IPs.Reynolds_Number* IPs.Wo.mu()/(IPs.Wo.rho*IPs.Grid_IP.Box_Height);
+         delta_pres_x = dpdx*IPs.Grid_IP.Box_Width;
+         delta_pres_y = dpdy*IPs.Grid_IP.Box_Height;
+         delta_pres_z = dpdz*IPs.Grid_IP.Box_Length;
+         Um = IPs.Reynolds_Number*IPs.Wo.mu()/(IPs.Wo.rho*IPs.Grid_IP.Box_Height);
          if (IPs.Pressure_Gradient.x != ZERO) {
             for (int k = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
 	       for (int j = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
                   for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
                      W[i][j][k] = IPs.Wo;
-                     WallData[i][j][k].tauw = fabs(-IPs.Grid_IP.Box_Height *dpdx);
+                     WallData[i][j][k].tauw = fabs(-IPs.Grid_IP.Box_Height*dpdx);
                      WallData[i][j][k].utau = sqrt(WallData[i][j][k].tauw/W[i][j][k].rho);
                      W[i][j][k].k = WallData[i][j][k].utau*WallData[i][j][k].utau/
                                     sqrt(W[0][0][0].k_omega_model.beta_star);
-                     W[i][j][k].p = IPs.Wo.p - (Grid.Cell[i][j][k].Xc.x)*delta_pres_x/
-                                    IPs.Grid_IP.Box_Length;	 
+                     W[i][j][k].p = IPs.Wo.p - 
+                                    (Grid.Cell[i][j][k].Xc.x)*delta_pres_x/IPs.Grid_IP.Box_Width;	 
                      // setting the u velocity in a turbulent channel flow
                      // by using the power law of u velocity in a turbulent pipe flow
                      zd = Grid.Cell[i][j][k].Xc.y;
-                     if (zd > 0.0 && zd < 0.5*IPs.Grid_IP.Box_Width) {
-                        zz = (1.0- zd/(0.5*IPs.Grid_IP.Box_Width));
+                     if (zd > 0.0 && zd < 0.5*IPs.Grid_IP.Box_Height) {
+                         zz = (1.0- zd/(0.5*IPs.Grid_IP.Box_Height));
                         W[i][j][k].v.x = Um*pow(zz, 0.133);
                         // try to feed a reasonalbe k profile as initial condition
                         // to see how far it goes, since this case has really small 
                         // pressure gradient
                         W[i][j][k].k = ( 0.5886 - 31.2*(zd)+2039.6*zd*zd -19208*zd*zd*zd );
                         if(zd <=0.01) {W[i][j][k].k = 0.465;}
-                     } else if(zd < ZERO && fabs(zd)< 0.5*IPs.Grid_IP.Box_Width) {
-                        zz = (fabs(zd)/(0.5*IPs.Grid_IP.Box_Width) - 1.0);
+                     } else if(zd < ZERO && fabs(zd)< 0.5*IPs.Grid_IP.Box_Height) {
+                        zz = (fabs(zd)/(0.5*IPs.Grid_IP.Box_Height) - 1.0);
                         W[i][j][k].v.x = Um*pow(fabs(zz), 0.133);
                         // try to feed a reasonalbe k profile as initial condition
                         // to see how far it goes, since this case has really small 
                         // pressure gradient
                         W[i][j][k].k = (0.5886 - 31.2*fabs(zd)+2039.6*zd*zd -
                                        19208*fabs(zd)*zd*zd );
-                        if(fabs(zd) <=0.01) {  W[i][j][k].k = 0.465;}
+                        if(fabs(zd) <=0.01) {W[i][j][k].k = 0.465;}
                      } else {
                         W[i][j][k].v.x = Um;
                      } /* endif */
@@ -468,31 +511,31 @@ ICs(const int i_ICtype,
 	       for (int j  = JCl-Nghost ; j <= JCu+Nghost ; ++j) {
                   for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i) {
                      W[i][j][k] = IPs.Wo;
-                     WallData[i][j][k].tauw = fabs(-IPs.Grid_IP.Box_Height *dpdy);
+                     WallData[i][j][k].tauw = fabs(-IPs.Grid_IP.Box_Width*dpdy);
                      WallData[i][j][k].utau = sqrt(WallData[i][j][k].tauw/W[i][j][k].rho);
                      W[i][j][k].k = WallData[i][j][k].utau*WallData[i][j][k].utau/
                                     sqrt(W[0][0][0].k_omega_model.beta_star);
-                     W[i][j][k].p = IPs.Wo.p - (Grid.Cell[i][j][k].Xc.y)*delta_pres_y/
-                                    IPs.Grid_IP.Box_Width;	 
+                     W[i][j][k].p = IPs.Wo.p - 
+                                    (Grid.Cell[i][j][k].Xc.y)*delta_pres_y/IPs.Grid_IP.Box_Height;	 
                      // setting the u velocity in a turbulent channel flow
                      // by using the power law of u velocity in a turbulent pipe flow
-                     zd = Grid.Cell[i][j][k].Xc.z;
-                     if (zd > 0.0 && zd < 0.5*IPs.Grid_IP.Box_Height) {
-                        zz = (1.0- zd/(0.5*IPs.Grid_IP.Box_Height));
+                     zd = Grid.Cell[i][j][k].Xc.x;
+                     if (zd > 0.0 && zd < 0.5*IPs.Grid_IP.Box_Width) {
+                        zz = (1.0- zd/(0.5*IPs.Grid_IP.Box_Width));
                         W[i][j][k].v.y = Um*pow(zz, 0.133);
                         // try to feed a reasonalbe k profile as initial condition
                         // to see how far it goes, since this case has really small 
                         // pressure gradient
                         W[i][j][k].k = ( 0.5886 - 31.2*(zd)+2039.6*zd*zd -19208*zd*zd*zd );
                         if(zd <=0.01) {W[i][j][k].k = 0.465;}
-                     } else if (zd<ZERO && fabs(zd)< 0.5*IPs.Grid_IP.Box_Height) {
-                        zz = (fabs(zd)/(0.5*IPs.Grid_IP.Box_Height) - 1.0);
+                     } else if (zd<ZERO && fabs(zd)< 0.5*IPs.Grid_IP.Box_Width) {
+                        zz = (fabs(zd)/(0.5*IPs.Grid_IP.Box_Width) - 1.0);
                         W[i][j][k].v.y = Um*pow(fabs(zz), 0.133);
                         // try to feed a reasonalbe k profile as initial condition
                         // to see how far it goes, since this case has really small 
                         // pressure gradient
                         W[i][j][k].k = (0.5886 - 31.2*fabs(zd)+2039.6*zd*zd -
-                                       19208*fabs(zd)*zd*zd );
+                                        19208*fabs(zd)*zd*zd );
                         if (fabs(zd) <=0.01) { W[i][j][k].k = 0.465;}
                      } else {
                         W[i][j][k].v.y = Um;
@@ -514,25 +557,25 @@ ICs(const int i_ICtype,
 	       for (int j  = JCl-Nghost ; j <= JCu+Nghost ; ++j) {
                   for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i) {
                      W[i][j][k] = IPs.Wo;
-                     WallData[i][j][k].tauw = fabs(-IPs.Grid_IP.Box_Width *dpdz);
+                     WallData[i][j][k].tauw = fabs(-IPs.Grid_IP.Box_Height*dpdz);
                      WallData[i][j][k].utau = sqrt(WallData[i][j][k].tauw/W[i][j][k].rho);
                      W[i][j][k].k = WallData[i][j][k].utau*WallData[i][j][k].utau/
                                     sqrt(W[0][0][0].k_omega_model.beta_star);
-                     W[i][j][k].p = IPs.Wo.p - (Grid.Cell[i][j][k].Xc.z)*delta_pres_z/
-                                    IPs.Grid_IP.Box_Height;	 
+                     W[i][j][k].p = IPs.Wo.p - 
+                                    (Grid.Cell[i][j][k].Xc.z)*delta_pres_z/IPs.Grid_IP.Box_Length;	 
                      // setting the u velocity in a turbulent channel flow
                      // by using the power law of u velocity in a turbulent pipe flow
                      zd = Grid.Cell[i][j][k].Xc.y;
-                     if (zd > 0.0 && zd < 0.5*IPs.Grid_IP.Box_Width) {
-                        zz = (1.0- zd/(0.5*IPs.Grid_IP.Box_Width));
+                     if (zd > 0.0 && zd < 0.5*IPs.Grid_IP.Box_Height) {
+                         zz = (1.0- zd/(0.5*IPs.Grid_IP.Box_Height));
                         W[i][j][k].v.z = Um*pow(zz, 0.133);
                         // try to feed a reasonalbe k profile as initial condition
                         // to see how far it goes, since this case has really small 
                         // pressure gradient
                         W[i][j][k].k = (0.5886 - 31.2*(zd)+2039.6*zd*zd -19208*zd*zd*zd);
                         if (zd <=0.01) {W[i][j][k].k = 0.465;}
-                     } else if (zd<ZERO && fabs(zd)< 0.5*IPs.Grid_IP.Box_Width) {
-                        zz = (fabs(zd)/(0.5*IPs.Grid_IP.Box_Width) - 1.0);
+                     } else if (zd<ZERO && fabs(zd)< 0.5*IPs.Grid_IP.Box_Height) {
+                        zz = (fabs(zd)/(0.5*IPs.Grid_IP.Box_Height) - 1.0);
                         W[i][j][k].v.z = Um*pow(fabs(zz), 0.133);
                         // try to feed a reasonalbe k profile as initial condition
                         // to see how far it goes, since this case has really small 
@@ -1073,7 +1116,6 @@ BCs(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
    
    double dpdx, dpdy, dpdz;
    Vector3D dX;
-   Vector3D MOVING_WALL_VELOCITY = IPs.Moving_Wall_Velocity;
 
    for (int k = KCl - Nghost; k <= KCu + Nghost; ++k) {
       for (int j = JCl - Nghost; j <= JCu + Nghost; ++j ) {
@@ -1141,13 +1183,13 @@ BCs(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
           case BC_MOVING_WALL :
             W[ICl-1][j][k] = FANS3D_ThermallyPerfect_KOmega_pState::MovingWall(W[ICl][j][k],WoW[j][k],
                                                                                Grid.nfaceW(ICl,j,k),
-                                                                               MOVING_WALL_VELOCITY,
+                                                                               IPs.Moving_Wall_Velocity,
                                                                                IPs.Pressure_Gradient,
                                                                                FIXED_TEMPERATURE_WALL);
             U[ICl-1][j][k] = W[ICl-1][j][k].U();
             W[ICl-2][j][k] = FANS3D_ThermallyPerfect_KOmega_pState::MovingWall(W[ICl+1][j][k], WoW[j][k], 
                                                                                Grid.nfaceW(ICl,j,k),
-                                                                               MOVING_WALL_VELOCITY, 
+                                                                               IPs.Moving_Wall_Velocity, 
                                                                                IPs.Pressure_Gradient,
                                                                                FIXED_TEMPERATURE_WALL);
             U[ICl-2][j][k] = W[ICl-2][j][k].U();
@@ -1224,13 +1266,13 @@ BCs(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
           case BC_MOVING_WALL :
             W[ICu+1][j][k] = FANS3D_ThermallyPerfect_KOmega_pState::MovingWall(W[ICu][j][k], WoE[j][k], 
                                                                                Grid.nfaceE(ICu,j,k),
-                                                                               MOVING_WALL_VELOCITY,    
+                                                                               IPs.Moving_Wall_Velocity,    
                                                                                IPs.Pressure_Gradient,
                                                                                FIXED_TEMPERATURE_WALL);
             U[ICu+1][j][k] = W[ICu+1][j][k].U();
             W[ICu+2][j][k] = FANS3D_ThermallyPerfect_KOmega_pState::MovingWall(W[ICu-1][j][k], WoE[j][k], 
                                                                                Grid.nfaceE(ICu,j,k),
-                                                                               MOVING_WALL_VELOCITY,   
+                                                                               IPs.Moving_Wall_Velocity,   
                                                                                IPs.Pressure_Gradient,
                                                                                FIXED_TEMPERATURE_WALL);
             U[ICu+2][j][k] = W[ICu+2][j][k].U();
@@ -1306,24 +1348,24 @@ BCs(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
                                                                             FIXED_TEMPERATURE_WALL);
             U[i][JCu+1][k] = W[i][JCu+1][k].U();
             W[i][JCu+2][k] = FANS3D_ThermallyPerfect_KOmega_pState::NoSlip(W[i][JCu-1][k], WoN[i][k],
-                                                                            Grid.nfaceN(i, JCu, k),
-                                                                            IPs.Pressure_Gradient,
-                                                                            FIXED_TEMPERATURE_WALL);
+                                                                           Grid.nfaceN(i, JCu, k),
+                                                                           IPs.Pressure_Gradient,
+                                                                           FIXED_TEMPERATURE_WALL);
             U[i][JCu+2][k] = W[i][JCu+2][k].U();
             break;
             
           case BC_MOVING_WALL :
             W[i][JCu+1][k] = FANS3D_ThermallyPerfect_KOmega_pState::MovingWall(W[i][JCu][k], WoN[i][k],
-                                                                                Grid.nfaceN(i, JCu, k),
-                                                                                MOVING_WALL_VELOCITY,
-                                                                                IPs.Pressure_Gradient,
-                                                                                FIXED_TEMPERATURE_WALL);
+                                                                               Grid.nfaceN(i, JCu, k),
+                                                                               IPs.Moving_Wall_Velocity,
+                                                                               IPs.Pressure_Gradient,
+                                                                               FIXED_TEMPERATURE_WALL);
             U[i][JCu+1][k] = W[i][JCu+1][k].U();
             W[i][JCu+2][k] = FANS3D_ThermallyPerfect_KOmega_pState::MovingWall(W[i][JCu-1][k], WoN[i][k],
-                                                                                Grid.nfaceN(i, JCu, k),
-                                                                                MOVING_WALL_VELOCITY,
-                                                                                IPs.Pressure_Gradient,
-                                                                                FIXED_TEMPERATURE_WALL);
+                                                                               Grid.nfaceN(i, JCu, k),
+                                                                               IPs.Moving_Wall_Velocity,
+                                                                               IPs.Pressure_Gradient,
+                                                                               FIXED_TEMPERATURE_WALL);
             U[i][JCu+2][k] = W[i][JCu+2][k].U();
             break;
 
@@ -1385,29 +1427,29 @@ BCs(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
 
           case BC_NO_SLIP :
             W[i][JCl-1][k] = FANS3D_ThermallyPerfect_KOmega_pState::NoSlip(W[i][JCl][k], WoS[i][k], 
-                                                                            Grid.nfaceS(i, JCl,k),
-                                                                            IPs.Pressure_Gradient,
-                                                                            FIXED_TEMPERATURE_WALL);
+                                                                           Grid.nfaceS(i, JCl,k),
+                                                                           IPs.Pressure_Gradient,
+                                                                           FIXED_TEMPERATURE_WALL);
             U[i][JCl-1][k] =  W[i][JCl-1][k].U();
             W[i][JCl-2][k] = FANS3D_ThermallyPerfect_KOmega_pState::NoSlip(W[i][JCl+1][k], WoS[i][k],
-                                                                            Grid.nfaceS(i, JCl,k),   
-                                                                            IPs.Pressure_Gradient,
-                                                                            FIXED_TEMPERATURE_WALL);
+                                                                           Grid.nfaceS(i, JCl,k),   
+                                                                           IPs.Pressure_Gradient,
+                                                                           FIXED_TEMPERATURE_WALL);
             U[i][JCl-2][k] =  W[i][JCl-2][k].U();
             break;
 
           case BC_MOVING_WALL :
             W[i][JCl-1][k] = FANS3D_ThermallyPerfect_KOmega_pState::MovingWall(W[i][JCl][k], WoS[i][k], 
-                                                                                Grid.nfaceS(i, JCl,k),
-                                                                                MOVING_WALL_VELOCITY,
-                                                                                IPs.Pressure_Gradient, 
-                                                                                FIXED_TEMPERATURE_WALL);
+                                                                               Grid.nfaceS(i, JCl,k),
+                                                                               IPs.Moving_Wall_Velocity,
+                                                                               IPs.Pressure_Gradient, 
+                                                                               FIXED_TEMPERATURE_WALL);
             U[i][JCl-1][k] =  W[i][JCl-1][k].U();
             W[i][JCl-2][k] = FANS3D_ThermallyPerfect_KOmega_pState::MovingWall(W[i][JCl+1][k], WoS[i][k],
-                                                                                Grid.nfaceS(i, JCl,k),
-                                                                                MOVING_WALL_VELOCITY, 
-                                                                                IPs.Pressure_Gradient,
-                                                                                FIXED_TEMPERATURE_WALL);
+                                                                               Grid.nfaceS(i, JCl,k),
+                                                                               IPs.Moving_Wall_Velocity, 
+                                                                               IPs.Pressure_Gradient,
+                                                                               FIXED_TEMPERATURE_WALL);
             U[i][JCl-2][k] =  W[i][JCl-2][k].U();
             break;
             
@@ -1499,13 +1541,13 @@ BCs(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
           case BC_MOVING_WALL :
             W[i][j][KCl-1] = FANS3D_ThermallyPerfect_KOmega_pState::MovingWall(W[i][j][KCl], WoB[i][j],
                                                                                Grid.nfaceBot(i, j,KCl),
-                                                                               MOVING_WALL_VELOCITY,
+                                                                               IPs.Moving_Wall_Velocity,
                                                                                IPs.Pressure_Gradient,
                                                                                FIXED_TEMPERATURE_WALL);
             U[i][j][KCl-1] = W[i][j][KCl-1].U();
             W[i][j][KCl-2] = FANS3D_ThermallyPerfect_KOmega_pState::MovingWall(W[i][j][KCl+1], WoB[i][j],
                                                                                Grid.nfaceBot(i, j ,KCl),
-                                                                               MOVING_WALL_VELOCITY,
+                                                                               IPs.Moving_Wall_Velocity,
                                                                                IPs.Pressure_Gradient,
                                                                                FIXED_TEMPERATURE_WALL);
             U[i][j][KCl-2] = W[i][j][KCl-2].U();
@@ -1579,13 +1621,13 @@ BCs(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
           case BC_MOVING_WALL :
             W[i][j][KCu+1] = FANS3D_ThermallyPerfect_KOmega_pState::MovingWall(W[i][j][KCu], WoT[i][j],
                                                                                Grid.nfaceTop(i, j , KCu),
-                                                                               MOVING_WALL_VELOCITY,
+                                                                               IPs.Moving_Wall_Velocity,
                                                                                IPs.Pressure_Gradient,
                                                                                FIXED_TEMPERATURE_WALL);
             U[i][j][KCu+1] = W[i][j][KCu+1].U();
             W[i][j][KCu+2] = FANS3D_ThermallyPerfect_KOmega_pState::MovingWall(W[i][j][KCu -1], WoT[i][j],
                                                                                Grid.nfaceTop(i, j , KCu),
-                                                                               MOVING_WALL_VELOCITY,
+                                                                               IPs.Moving_Wall_Velocity,
                                                                                IPs.Pressure_Gradient,
                                                                                FIXED_TEMPERATURE_WALL);
             U[i][j][KCu+2] = W[i][j][KCu+2].U();

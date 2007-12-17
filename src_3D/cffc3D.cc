@@ -306,7 +306,7 @@ int main(int num_arg, char *arg_ptr[]) {
     ********************************************************/
 
    if (CFFC_Primary_MPI_Processor() && !batch_flag) 
-      cout << "\n\nCFFC3D: Execution complete.\n";
+      cout << "\n\nCFFC3D: Execution complete.\n\n";
 
    //Ending properly
    return (0);

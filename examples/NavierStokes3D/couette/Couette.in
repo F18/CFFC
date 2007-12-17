@@ -2,9 +2,9 @@ Time_Integration_Type =
 Explicit_Runge_Kutta
 #Explicit_Euler
 Time_Accurate = 
-0
+OFF
 Local_Time_Stepping =
-0
+1
 Reconstruction_Type =
 Least_Squares
 Limiter_Type = 
@@ -12,14 +12,17 @@ Barth_Jespersen
 Flux_Function_Type =
 Roe
 ICs_Type = 
-Restart
+#Restart
 #Couette
+#Couette_Pressure_Gradient_x
+#Couette_Pressure_Gradient_y
+Couette_Pressure_Gradient_z
 Flow_Type = 
 Laminar
-Moving_Wall_Velocity_x=
-29.4
-Pressure_Gradient_xdir=
-0
+Moving_Wall_Velocity =
+29.4  29.4   29.4
+Pressure_Gradient =
+0.00  0.00   0.00
 #Species
 #3
 #CH4 N2 O2
@@ -31,11 +34,14 @@ Schmidt=
 Temperature = 
 298
 Grid_Type =
-Couette
+#Couette
+#Couette_X
+#Couette_Y
+Couette_Z
 Number_of_Cells_Idir = 
-20
+10
 Number_of_Cells_Jdir =
-4
+10
 Number_of_Cells_Kdir =
 10
 Number_of_Blocks_Idir = 
@@ -50,15 +56,15 @@ Number_of_Blocks_Kdir =
 CFL_Number =
 0.25
 Time_Max = 
-0.2
+0.0
 #0.20
 # 0.91
 Maximum_Number_of_Time_Steps =
-50000
+0
 Number_of_Blocks_Per_Processor =
 1
 Output_File_Name = 
-couette_fine
+Couette
 #######################
 # Execute program
 #######################
@@ -67,7 +73,7 @@ Execute
 # Write output
 #######################
 Write_Output_Cells
-#Write_Output
+Write_Output
 Write_Restart
 #######################
 # Terminate program

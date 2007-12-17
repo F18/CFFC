@@ -1420,12 +1420,12 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Channel(Grid3D_Input_Parameters &
              } else if (Input.i_Grid == GRID_CHANNEL_YDIR) {
 
    	        if (iBlk == Input.NBlk_Idir-1) {
-                   BC_east = BC_CONSTANT_EXTRAPOLATION;
+                   BC_east = BC_WALL_VISCOUS;
                 } else {
                    BC_east = BC_NONE;
                 } /* endif */
                 if (iBlk == 0) {
-                   BC_west = BC_CONSTANT_EXTRAPOLATION;
+                   BC_west = BC_WALL_VISCOUS;
                 } else {
                    BC_west = BC_NONE;
                 } /* endif */
@@ -1442,12 +1442,12 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Channel(Grid3D_Input_Parameters &
                 } /* endif */
 
 	        if (kBlk == Input.NBlk_Kdir-1) {
-                   BC_top = BC_WALL_VISCOUS;
+                   BC_top = BC_CONSTANT_EXTRAPOLATION;
                 } else {
                    BC_top = BC_NONE;
                 } /* endif */
                 if (kBlk == 0) {
-                   BC_bottom = BC_WALL_VISCOUS;
+                   BC_bottom = BC_CONSTANT_EXTRAPOLATION;
                 } else {
                    BC_bottom = BC_NONE;
                 } /* endif */
@@ -1610,12 +1610,12 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Couette(Grid3D_Input_Parameters &
              } else if (Input.i_Grid == GRID_COUETTE_YDIR) {
 
    	        if (iBlk == Input.NBlk_Idir-1) {
-                   BC_east = BC_CONSTANT_EXTRAPOLATION;
+                   BC_east = BC_MOVING_WALL;
                 } else {
                    BC_east = BC_NONE;
                 } /* endif */
                 if (iBlk == 0) {
-                   BC_west = BC_CONSTANT_EXTRAPOLATION;
+                   BC_west = BC_NO_SLIP;
                 } else {
                    BC_west = BC_NONE;
                 } /* endif */
@@ -1632,12 +1632,12 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Couette(Grid3D_Input_Parameters &
                 } /* endif */
 
 	        if (kBlk == Input.NBlk_Kdir-1) {
-                   BC_top = BC_MOVING_WALL;
+                   BC_top = BC_CONSTANT_EXTRAPOLATION;
                 } else {
                    BC_top = BC_NONE;
                 } /* endif */
                 if (kBlk == 0) {
-                   BC_bottom = BC_NO_SLIP;
+                   BC_bottom = BC_CONSTANT_EXTRAPOLATION;
                 } else {
                    BC_bottom = BC_NONE;
                 } /* endif */
