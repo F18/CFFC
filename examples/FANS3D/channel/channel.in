@@ -38,9 +38,9 @@ Temperature =
 Grid_Type =
 Turbulent_Channel
 Number_of_Cells_Idir = 
-20
+4
 Number_of_Cells_Jdir =
-20
+32
 Number_of_Cells_Kdir =
 20
 Number_of_Blocks_Idir = 
@@ -59,7 +59,7 @@ Time_Max =
 #0.20
 # 0.91
 Maximum_Number_of_Time_Steps =
-0
+50
 Number_of_Blocks_Per_Processor =
 10
 Output_File_Name = 

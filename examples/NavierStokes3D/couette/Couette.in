@@ -39,11 +39,11 @@ Grid_Type =
 #Couette_Y
 Couette_Z
 Number_of_Cells_Idir = 
-10
+4
 Number_of_Cells_Jdir =
-10
+16
 Number_of_Cells_Kdir =
-10
+20
 Number_of_Blocks_Idir = 
 1
 Number_of_Blocks_Jdir =
@@ -60,7 +60,7 @@ Time_Max =
 #0.20
 # 0.91
 Maximum_Number_of_Time_Steps =
-0
+100
 Number_of_Blocks_Per_Processor =
 1
 Output_File_Name = 

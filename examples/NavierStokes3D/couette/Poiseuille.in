@@ -1,6 +1,9 @@
 Time_Integration_Type =
+Multistage_Optimal_Smoothing
+#Explicit_Runge_Kutta
 #Explicit_Euler
-Explicit_Runge_Kutta
+N_Stage = 
+3
 Time_Accurate = 
 OFF
 Local_Time_Stepping =
@@ -36,11 +39,11 @@ Grid_Type =
 #Channel_Y
 Channel_Z
 Number_of_Cells_Idir = 
-10
+4
 Number_of_Cells_Jdir =
-10
+32
 Number_of_Cells_Kdir =
-10
+20
 Number_of_Blocks_Idir = 
 1
 Number_of_Blocks_Jdir =
@@ -55,9 +58,9 @@ CFL_Number =
 Time_Max = 
 0.0
 Maximum_Number_of_Time_Steps =
-0
+100
 Number_of_Blocks_Per_Processor =
-1
+20
 Output_File_Name = 
 Poiseuille
 #######################
