@@ -14,7 +14,7 @@
 /**************************************************************************
  * Flame2D_Quad_Block -- Multiple Block External Subroutines.             *
  **************************************************************************/
-
+  
 /********************************************************
  * Routine: Allocate                                    *
  *                                                      *
@@ -23,13 +23,13 @@
  *                                                      *
  ********************************************************/
 Flame2D_Quad_Block* Allocate(Flame2D_Quad_Block *Soln_ptr,
-                             Flame2D_Input_Parameters &Input_Parameters) {
+			     Flame2D_Input_Parameters &Input_Parameters) {
 
-    /* Allocate memory. */
-    Soln_ptr = new Flame2D_Quad_Block[Input_Parameters.Number_of_Blocks_Per_Processor];
+  /* Allocate memory. */
+  Soln_ptr = new Flame2D_Quad_Block[Input_Parameters.Number_of_Blocks_Per_Processor];
 
-    /* Return memory location. */
-    return(Soln_ptr);
+  /* Return memory location. */
+  return(Soln_ptr);
 }
 
 /********************************************************
@@ -40,17 +40,17 @@ Flame2D_Quad_Block* Allocate(Flame2D_Quad_Block *Soln_ptr,
  *                                                      *
  ********************************************************/
 Flame2D_Quad_Block* Deallocate(Flame2D_Quad_Block *Soln_ptr,
-                               Flame2D_Input_Parameters &Input_Parameters) {
+			       Flame2D_Input_Parameters &Input_Parameters) {
  
-    /* Deallocate memory. */
-    for (int i = 0 ; i <= Input_Parameters.Number_of_Blocks_Per_Processor-1 ; ++i ) {
-       if (Soln_ptr[i].W != NULL) Soln_ptr[i].deallocate();
-    }  /* endfor */
-    delete []Soln_ptr;
-    Soln_ptr = NULL;
+  /* Deallocate memory. */
+  for (int i = 0 ; i <= Input_Parameters.Number_of_Blocks_Per_Processor-1 ; ++i ) {
+    if (Soln_ptr[i].W != NULL) Soln_ptr[i].deallocate();
+  }  /* endfor */
+  delete []Soln_ptr;
+  Soln_ptr = NULL;
 
-    /* Return memory location. */
-    return(Soln_ptr);
+  /* Return memory location. */
+  return(Soln_ptr);
 }
 
 /********************************************************
@@ -62,8 +62,8 @@ Flame2D_Quad_Block* Deallocate(Flame2D_Quad_Block *Soln_ptr,
  *                                                      *
  ********************************************************/
 void ICs(Flame2D_Quad_Block *Soln_ptr,
-         AdaptiveBlock2D_List &Soln_Block_List, 
-         Flame2D_Input_Parameters &Input_Parameters) {
+	 AdaptiveBlock2D_List &Soln_Block_List, 
+	 Flame2D_Input_Parameters &Input_Parameters) {
 
   Flame2D_pState Wo[5];
   
@@ -105,87 +105,87 @@ void ICs(Flame2D_Quad_Block *Soln_ptr,
  *                                                      *
  ********************************************************/
 int Read_Restart_Solution(Flame2D_Quad_Block *Soln_ptr,
-                          AdaptiveBlock2D_List &Soln_Block_List,
-                          Flame2D_Input_Parameters &Input_Parameters,
-                          int &Number_of_Time_Steps,
-                          double &Time,
-                          CPUTime &CPU_Time) {
+			  AdaptiveBlock2D_List &Soln_Block_List,
+			  Flame2D_Input_Parameters &Input_Parameters,
+			  int &Number_of_Time_Steps,
+			  double &Time,
+			  CPUTime &CPU_Time) {
 
-    int i, i_new_time_set, nsteps;
-    char prefix[256], extension[256], restart_file_name[256], line[256];
-    char *restart_file_name_ptr;
-    ifstream restart_file;
-    double time0;
-    CPUTime cpu_time0;
+  int i, i_new_time_set, nsteps;
+  char prefix[256], extension[256], restart_file_name[256], line[256];
+  char *restart_file_name_ptr;
+  ifstream restart_file;
+  double time0;
+  CPUTime cpu_time0;
 
-    /* Determine prefix of restart file names. */
+  /* Determine prefix of restart file names. */
     
-    i = 0;
-    while (1) {
-       if (Input_Parameters.Restart_File_Name[i] == ' ' ||
-           Input_Parameters.Restart_File_Name[i] == '.') break;
-       prefix[i]=Input_Parameters.Restart_File_Name[i];
-       i = i + 1;
-       if (i > strlen(Input_Parameters.Restart_File_Name) ) break;
-    } /* endwhile */
-    prefix[i] = '\0';
-    strcat(prefix, "_blk");
+  i = 0;
+  while (1) {
+    if (Input_Parameters.Restart_File_Name[i] == ' ' ||
+	Input_Parameters.Restart_File_Name[i] == '.') break;
+    prefix[i]=Input_Parameters.Restart_File_Name[i];
+    i = i + 1;
+    if (i > strlen(Input_Parameters.Restart_File_Name) ) break;
+  } /* endwhile */
+  prefix[i] = '\0';
+  strcat(prefix, "_blk");
 
-    /* Read the initial data for each solution block. */
+  /* Read the initial data for each solution block. */
 
-    i_new_time_set = 0;
-    for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
-       if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
-	  // Restart file name base on global block number.
-          sprintf(extension, "%.6d", Soln_Block_List.Block[i].gblknum);
-          strcat(extension, ".soln");
-          strcpy(restart_file_name, prefix);
-          strcat(restart_file_name, extension);
-          restart_file_name_ptr = restart_file_name;
+  i_new_time_set = 0;
+  for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
+    if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
+      // Restart file name base on global block number.
+      sprintf(extension, "%.6d", Soln_Block_List.Block[i].gblknum);
+      strcat(extension, ".soln");
+      strcpy(restart_file_name, prefix);
+      strcat(restart_file_name, extension);
+      restart_file_name_ptr = restart_file_name;
 
-          // Open restart file.  
-	  restart_file.open(restart_file_name_ptr, ios::in);
-	  if(restart_file.fail()){ 
-	    cerr<<"\nError opening file: "<<restart_file_name<<endl;
-	    return 1; 
-	  }	 
+      // Open restart file.  
+      restart_file.open(restart_file_name_ptr, ios::in);
+      if(restart_file.fail()){ 
+	cerr<<"\nError opening file: "<<restart_file_name<<endl;
+	return 1; 
+      }	 
           
-          // Read solution block data.
-          restart_file.setf(ios::skipws);
-          restart_file >> nsteps >> time0 >> cpu_time0;
-          restart_file.unsetf(ios::skipws);
+      // Read solution block data.
+      restart_file.setf(ios::skipws);
+      restart_file >> nsteps >> time0 >> cpu_time0;
+      restart_file.unsetf(ios::skipws);
     	  
-          if (!i_new_time_set) {
-             Number_of_Time_Steps = nsteps;
-             //Input_Parameters.Maximum_Number_of_Time_Steps += Number_of_Time_Steps;
-	     Time = time0;
-             CPU_Time.cput = cpu_time0.cput;
+      if (!i_new_time_set) {
+	Number_of_Time_Steps = nsteps;
+	//Input_Parameters.Maximum_Number_of_Time_Steps += Number_of_Time_Steps;
+	Time = time0;
+	CPU_Time.cput = cpu_time0.cput;
 	 
-             i_new_time_set = 1;
-          } /* endif */
+	i_new_time_set = 1;
+      } /* endif */
 
-	  /************** Quad Single Block Data from file *********************/
-	  restart_file >> Soln_ptr[i];
+      /************** Quad Single Block Data from file *********************/
+      restart_file >> Soln_ptr[i];
 
-	  /*********************************************************************/
-	  //OVERIDE Restart File settings with Input File Settings (may have changed)
-	  Soln_ptr[i].Flow_Type = Input_Parameters.FlowType;
-	  Soln_ptr[i].Axisymmetric = Input_Parameters.Axisymmetric;
-	  Soln_ptr[i].Gravity = Input_Parameters.Gravity;
-	  Soln_ptr[i].debug_level = Input_Parameters.debug_level;
-	  Soln_ptr[i].Moving_wall_velocity = Input_Parameters.Moving_wall_velocity;
-	  Soln_ptr[i].residual_variable = Input_Parameters.i_Residual_Variable;
-	  Soln_ptr[i].Number_of_Residual_Norms = Input_Parameters.Number_of_Residual_Norms;
-	  /*********************************************************************/
+      /*********************************************************************/
+      //OVERIDE Restart File settings with Input File Settings (may have changed)
+      Soln_ptr[i].Flow_Type = Input_Parameters.FlowType;
+      Soln_ptr[i].Axisymmetric = Input_Parameters.Axisymmetric;
+      Soln_ptr[i].Gravity = Input_Parameters.Gravity;
+      Soln_ptr[i].debug_level = Input_Parameters.debug_level;
+      Soln_ptr[i].Moving_wall_velocity = Input_Parameters.Moving_wall_velocity;
+      Soln_ptr[i].residual_variable = Input_Parameters.i_Residual_Variable;
+      Soln_ptr[i].Number_of_Residual_Norms = Input_Parameters.Number_of_Residual_Norms;
+      /*********************************************************************/
 	  	  
-	  // Close restart file.
-          restart_file.close();
+      // Close restart file.
+      restart_file.close();
 	  
-       } /* endif */
-    }  /* endfor */
+    } /* endif */
+  }  /* endfor */
 
-    /* Reading of restart files complete.  Return zero value. */
-    return(0);
+  /* Reading of restart files complete.  Return zero value. */
+  return(0);
 
 }
 
@@ -199,63 +199,63 @@ int Read_Restart_Solution(Flame2D_Quad_Block *Soln_ptr,
  *                                                      *
  ********************************************************/
 int Write_Restart_Solution(Flame2D_Quad_Block *Soln_ptr,
-                           AdaptiveBlock2D_List &Soln_Block_List,
-                           Flame2D_Input_Parameters &Input_Parameters,
-                           const int Number_of_Time_Steps,
-                           const double &Time,
-                           const CPUTime &CPU_Time) {
+			   AdaptiveBlock2D_List &Soln_Block_List,
+			   Flame2D_Input_Parameters &Input_Parameters,
+			   const int Number_of_Time_Steps,
+			   const double &Time,
+			   const CPUTime &CPU_Time) {
 
-    int i;
-    char prefix[256], extension[256], restart_file_name[256];
-    char *restart_file_name_ptr;
-    ofstream restart_file;
+  int i;
+  char prefix[256], extension[256], restart_file_name[256];
+  char *restart_file_name_ptr;
+  ofstream restart_file;
 
-    /* Determine prefix of restart file names. */
+  /* Determine prefix of restart file names. */
 
 
-    i = 0;
+  i = 0;
  
-    while (1) {
-       if (Input_Parameters.Restart_File_Name[i] == ' ' ||
-           Input_Parameters.Restart_File_Name[i] == '.') break;
-       prefix[i]=Input_Parameters.Restart_File_Name[i];
-       i = i + 1;
-       if (i > strlen(Input_Parameters.Restart_File_Name) ) break;
-    } /* endwhile */
-    prefix[i] = '\0';
-    strcat(prefix, "_blk");
+  while (1) {
+    if (Input_Parameters.Restart_File_Name[i] == ' ' ||
+	Input_Parameters.Restart_File_Name[i] == '.') break;
+    prefix[i]=Input_Parameters.Restart_File_Name[i];
+    i = i + 1;
+    if (i > strlen(Input_Parameters.Restart_File_Name) ) break;
+  } /* endwhile */
+  prefix[i] = '\0';
+  strcat(prefix, "_blk");
 
 
-    /* Write the solution data for each solution block. */
+  /* Write the solution data for each solution block. */
   
-    for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
-       if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
-	  // Restart file name base on global block number.
-          sprintf(extension, "%.6d", Soln_Block_List.Block[i].gblknum);
-          strcat(extension, ".soln");
-          strcpy(restart_file_name, prefix);
-          strcat(restart_file_name, extension);
-          restart_file_name_ptr = restart_file_name;
+  for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
+    if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
+      // Restart file name base on global block number.
+      sprintf(extension, "%.6d", Soln_Block_List.Block[i].gblknum);
+      strcat(extension, ".soln");
+      strcpy(restart_file_name, prefix);
+      strcat(restart_file_name, extension);
+      restart_file_name_ptr = restart_file_name;
 
-          // Open restart file.
-          restart_file.open(restart_file_name_ptr, ios::out);
-          if (restart_file.fail()) return (1);
+      // Open restart file.
+      restart_file.open(restart_file_name_ptr, ios::out);
+      if (restart_file.fail()) return (1);
 
-          // Write solution block data.
-          restart_file.setf(ios::scientific);
-          restart_file << setprecision(14) << Number_of_Time_Steps 
-                       << " " << Time << " " << CPU_Time << "\n";
-          restart_file.unsetf(ios::scientific);
+      // Write solution block data.
+      restart_file.setf(ios::scientific);
+      restart_file << setprecision(14) << Number_of_Time_Steps 
+		   << " " << Time << " " << CPU_Time << "\n";
+      restart_file.unsetf(ios::scientific);
 
-      	  restart_file << setprecision(14) << Soln_ptr[i];
+      restart_file << setprecision(14) << Soln_ptr[i];
 
     
-          // Close restart file.
-          restart_file.close();
-       } /* endif */
-    }  /* endfor */
-    /* Writing of restart files complete.  Return zero value. */
-    return(0);
+      // Close restart file.
+      restart_file.close();
+    } /* endif */
+  }  /* endfor */
+  /* Writing of restart files complete.  Return zero value. */
+  return(0);
 }
 
 /********************************************************
@@ -270,67 +270,67 @@ int Write_Restart_Solution(Flame2D_Quad_Block *Soln_ptr,
  *                                                      *
  ********************************************************/
 int Output_Tecplot(Flame2D_Quad_Block *Soln_ptr,
-                   AdaptiveBlock2D_List &Soln_Block_List,
-                   Flame2D_Input_Parameters &Input_Parameters,
-                   const int Number_of_Time_Steps,
-                   const double &Time) {
+		   AdaptiveBlock2D_List &Soln_Block_List,
+		   Flame2D_Input_Parameters &Input_Parameters,
+		   const int Number_of_Time_Steps,
+		   const double &Time) {
 
-    int i, i_output_title;
-    char prefix[256], extension[256], output_file_name[256];
-    char *output_file_name_ptr;
-    ofstream output_file;    
+  int i, i_output_title;
+  char prefix[256], extension[256], output_file_name[256];
+  char *output_file_name_ptr;
+  ofstream output_file;    
 
-    /* Determine prefix of output data file names. */
+  /* Determine prefix of output data file names. */
 
-    i = 0;
-    while (1) {
-       if (Input_Parameters.Output_File_Name[i] == ' ' ||
-           Input_Parameters.Output_File_Name[i] == '.') break;
-       prefix[i]=Input_Parameters.Output_File_Name[i];
-       i = i + 1;
-       if (i > strlen(Input_Parameters.Output_File_Name) ) break;
-    } /* endwhile */
-    prefix[i] = '\0';
-    strcat(prefix, "_cpu");
+  i = 0;
+  while (1) {
+    if (Input_Parameters.Output_File_Name[i] == ' ' ||
+	Input_Parameters.Output_File_Name[i] == '.') break;
+    prefix[i]=Input_Parameters.Output_File_Name[i];
+    i = i + 1;
+    if (i > strlen(Input_Parameters.Output_File_Name) ) break;
+  } /* endwhile */
+  prefix[i] = '\0';
+  strcat(prefix, "_cpu");
 
-    /* Determine output data file name for this processor. */
+  /* Determine output data file name for this processor. */
 
-    sprintf(extension, "%.6d", Soln_Block_List.ThisCPU);
-    strcat(extension, ".dat");
-    strcpy(output_file_name, prefix);
-    strcat(output_file_name, extension);
-    output_file_name_ptr = output_file_name;
+  sprintf(extension, "%.6d", Soln_Block_List.ThisCPU);
+  strcat(extension, ".dat");
+  strcpy(output_file_name, prefix);
+  strcat(output_file_name, extension);
+  output_file_name_ptr = output_file_name;
 
-    /* Open the output data file. */
+  /* Open the output data file. */
 
-    output_file.open(output_file_name_ptr, ios::out);
-    if (output_file.fail()) return (1);
+  output_file.open(output_file_name_ptr, ios::out);
+  if (output_file.fail()) return (1);
 
-    /* Write the solution data for each solution block. */
+  /* Write the solution data for each solution block. */
 
-    i_output_title = 1;
-    for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
-      if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
+  i_output_title = 1;
+  for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
+    if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
       
-	Output_Tecplot(Soln_ptr[i], Input_Parameters,
-		       Number_of_Time_Steps, 
-		       Time,
-		       Soln_Block_List.Block[i].gblknum,
-		       i_output_title,
-		       output_file);
-	//cout<<" \n Returned to Multi \n";
+      Output_Tecplot(Soln_ptr[i], Input_Parameters,
+		     Number_of_Time_Steps, 
+		     Time,
+		     Soln_Block_List.Block[i].gblknum,
+		     i_output_title,
+		     output_file);
+      //cout<<" \n Returned to Multi \n";
           
-	if (i_output_title) i_output_title = 0;
-      } /* endif */
-    }  /* endfor */
+      if (i_output_title) i_output_title = 0;
+    } /* endif */
+  }  /* endfor */
  
-    /* Close the output data file. */
+  /* Close the output data file. */
 
-    output_file.close();
+  output_file.close();
 
-    /* Writing of output data files complete.  Return zero value. */
+  /* Writing of output data files complete.  Return zero value. */
 
-    return(0);
+  return(0);
 
 }
 
@@ -346,65 +346,65 @@ int Output_Tecplot(Flame2D_Quad_Block *Soln_ptr,
  *                                                      *
  ********************************************************/
 int Output_Cells_Tecplot(Flame2D_Quad_Block *Soln_ptr,
-                         AdaptiveBlock2D_List &Soln_Block_List,
-                         Flame2D_Input_Parameters &Input_Parameters,
-                         const int Number_of_Time_Steps,
-                         const double &Time) {
+			 AdaptiveBlock2D_List &Soln_Block_List,
+			 Flame2D_Input_Parameters &Input_Parameters,
+			 const int Number_of_Time_Steps,
+			 const double &Time) {
 
   
-    int i, i_output_title;
-    char prefix[256], extension[256], output_file_name[256];
-    char *output_file_name_ptr;
-    ofstream output_file;    
+  int i, i_output_title;
+  char prefix[256], extension[256], output_file_name[256];
+  char *output_file_name_ptr;
+  ofstream output_file;    
 
-    /* Determine prefix of output data file names. */
+  /* Determine prefix of output data file names. */
 
-    i = 0;
-    while (1) {
-       if (Input_Parameters.Output_File_Name[i] == ' ' ||
-           Input_Parameters.Output_File_Name[i] == '.') break;
-       prefix[i]=Input_Parameters.Output_File_Name[i];
-       i = i + 1;
-       if (i > strlen(Input_Parameters.Output_File_Name) ) break;
-    } /* endwhile */
-    prefix[i] = '\0';
-    strcat(prefix, "_cells_cpu");
+  i = 0;
+  while (1) {
+    if (Input_Parameters.Output_File_Name[i] == ' ' ||
+	Input_Parameters.Output_File_Name[i] == '.') break;
+    prefix[i]=Input_Parameters.Output_File_Name[i];
+    i = i + 1;
+    if (i > strlen(Input_Parameters.Output_File_Name) ) break;
+  } /* endwhile */
+  prefix[i] = '\0';
+  strcat(prefix, "_cells_cpu");
 
-    /* Determine output data file name for this processor. */
+  /* Determine output data file name for this processor. */
 
-    sprintf(extension, "%.6d", Soln_Block_List.ThisCPU);
-    strcat(extension, ".dat");
-    strcpy(output_file_name, prefix);
-    strcat(output_file_name, extension);
-    output_file_name_ptr = output_file_name;
+  sprintf(extension, "%.6d", Soln_Block_List.ThisCPU);
+  strcat(extension, ".dat");
+  strcpy(output_file_name, prefix);
+  strcat(output_file_name, extension);
+  output_file_name_ptr = output_file_name;
 
-    /* Open the output data file. */
+  /* Open the output data file. */
 
-    output_file.open(output_file_name_ptr, ios::out);
-    if (output_file.fail()) return (1);
+  output_file.open(output_file_name_ptr, ios::out);
+  if (output_file.fail()) return (1);
 
-    /* Write the solution data for each solution block. */
+  /* Write the solution data for each solution block. */
 
-    i_output_title = 1;
-    for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
-       if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
-	 Output_Cells_Tecplot(Soln_ptr[i],Input_Parameters, 
-                               Number_of_Time_Steps, 
-                               Time,
-                               Soln_Block_List.Block[i].gblknum,
-                               i_output_title,
-                               output_file);
-	  if (i_output_title) i_output_title = 0;
-       } /* endif */
-    }  /* endfor */
+  i_output_title = 1;
+  for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
+    if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
+      Output_Cells_Tecplot(Soln_ptr[i],Input_Parameters, 
+			   Number_of_Time_Steps, 
+			   Time,
+			   Soln_Block_List.Block[i].gblknum,
+			   i_output_title,
+			   output_file);
+      if (i_output_title) i_output_title = 0;
+    } /* endif */
+  }  /* endfor */
 
-    /* Close the output data file. */
+  /* Close the output data file. */
 
-    output_file.close();
+  output_file.close();
 
-    /* Writing of output data files complete.  Return zero value. */
+  /* Writing of output data files complete.  Return zero value. */
 
-    return(0);
+  return(0);
 
 }
 
@@ -419,64 +419,64 @@ int Output_Cells_Tecplot(Flame2D_Quad_Block *Soln_ptr,
  *                                                      *
  ********************************************************/
 int Output_Nodes_Tecplot(Flame2D_Quad_Block *Soln_ptr,
-                         AdaptiveBlock2D_List &Soln_Block_List,
-                         Flame2D_Input_Parameters &Input_Parameters,
-                         const int Number_of_Time_Steps,
-                         const double &Time) {
+			 AdaptiveBlock2D_List &Soln_Block_List,
+			 Flame2D_Input_Parameters &Input_Parameters,
+			 const int Number_of_Time_Steps,
+			 const double &Time) {
 
-    int i, i_output_title;
-    char prefix[256], extension[256], output_file_name[256];
-    char *output_file_name_ptr;
-    ofstream output_file;    
+  int i, i_output_title;
+  char prefix[256], extension[256], output_file_name[256];
+  char *output_file_name_ptr;
+  ofstream output_file;    
 
-    /* Determine prefix of output data file names. */
+  /* Determine prefix of output data file names. */
 
-    i = 0;
-    while (1) {
-       if (Input_Parameters.Output_File_Name[i] == ' ' ||
-           Input_Parameters.Output_File_Name[i] == '.') break;
-       prefix[i]=Input_Parameters.Output_File_Name[i];
-       i = i + 1;
-       if (i > strlen(Input_Parameters.Output_File_Name) ) break;
-    } /* endwhile */
-    prefix[i] = '\0';
-    strcat(prefix, "_nodes_cpu");
+  i = 0;
+  while (1) {
+    if (Input_Parameters.Output_File_Name[i] == ' ' ||
+	Input_Parameters.Output_File_Name[i] == '.') break;
+    prefix[i]=Input_Parameters.Output_File_Name[i];
+    i = i + 1;
+    if (i > strlen(Input_Parameters.Output_File_Name) ) break;
+  } /* endwhile */
+  prefix[i] = '\0';
+  strcat(prefix, "_nodes_cpu");
 
-    /* Determine output data file name for this processor. */
+  /* Determine output data file name for this processor. */
 
-    sprintf(extension, "%.6d", Soln_Block_List.ThisCPU);
-    strcat(extension, ".dat");
-    strcpy(output_file_name, prefix);
-    strcat(output_file_name, extension);
-    output_file_name_ptr = output_file_name;
+  sprintf(extension, "%.6d", Soln_Block_List.ThisCPU);
+  strcat(extension, ".dat");
+  strcpy(output_file_name, prefix);
+  strcat(output_file_name, extension);
+  output_file_name_ptr = output_file_name;
 
-    /* Open the output data file. */
+  /* Open the output data file. */
 
-    output_file.open(output_file_name_ptr, ios::out);
-    if (output_file.fail()) return (1);
+  output_file.open(output_file_name_ptr, ios::out);
+  if (output_file.fail()) return (1);
 
-    /* Write the solution data for each solution block. */
+  /* Write the solution data for each solution block. */
 
-    i_output_title = 1;
-    for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
-       if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
-	 Output_Nodes_Tecplot(Soln_ptr[i],
-			      Number_of_Time_Steps,
-			      Time,
-			      Soln_Block_List.Block[i].gblknum,
-			      i_output_title,
-			      output_file);
-	  if (i_output_title) i_output_title = 0;
-       } /* endif */
-    }  /* endfor */
+  i_output_title = 1;
+  for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
+    if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
+      Output_Nodes_Tecplot(Soln_ptr[i],
+			   Number_of_Time_Steps,
+			   Time,
+			   Soln_Block_List.Block[i].gblknum,
+			   i_output_title,
+			   output_file);
+      if (i_output_title) i_output_title = 0;
+    } /* endif */
+  }  /* endfor */
 
-    /* Close the output data file. */
+  /* Close the output data file. */
 
-    output_file.close();
+  output_file.close();
 
-    /* Writing of output data files complete.  Return zero value. */
+  /* Writing of output data files complete.  Return zero value. */
 
-    return(0);
+  return(0);
 
 }
 
@@ -491,62 +491,62 @@ int Output_Nodes_Tecplot(Flame2D_Quad_Block *Soln_ptr,
  *                                                      *
  ********************************************************/
 int Output_Mesh_Tecplot(Flame2D_Quad_Block *Soln_ptr,
-                        AdaptiveBlock2D_List &Soln_Block_List,
-                        Flame2D_Input_Parameters &Input_Parameters,
-                        const int Number_of_Time_Steps,
-                        const double &Time) {
+			AdaptiveBlock2D_List &Soln_Block_List,
+			Flame2D_Input_Parameters &Input_Parameters,
+			const int Number_of_Time_Steps,
+			const double &Time) {
 
-    int i, i_output_title;
-    char prefix[256], extension[256], output_file_name[256];
-    char *output_file_name_ptr;
-    ofstream output_file;    
+  int i, i_output_title;
+  char prefix[256], extension[256], output_file_name[256];
+  char *output_file_name_ptr;
+  ofstream output_file;    
 
-    /* Determine prefix of output data file names. */
+  /* Determine prefix of output data file names. */
 
-    i = 0;
-    while (1) {
-       if (Input_Parameters.Output_File_Name[i] == ' ' ||
-           Input_Parameters.Output_File_Name[i] == '.') break;
-       prefix[i]=Input_Parameters.Output_File_Name[i];
-       i = i + 1;
-       if (i > strlen(Input_Parameters.Output_File_Name) ) break;
-    } /* endwhile */
-    prefix[i] = '\0';
-    strcat(prefix, "_mesh_cpu");
+  i = 0;
+  while (1) {
+    if (Input_Parameters.Output_File_Name[i] == ' ' ||
+	Input_Parameters.Output_File_Name[i] == '.') break;
+    prefix[i]=Input_Parameters.Output_File_Name[i];
+    i = i + 1;
+    if (i > strlen(Input_Parameters.Output_File_Name) ) break;
+  } /* endwhile */
+  prefix[i] = '\0';
+  strcat(prefix, "_mesh_cpu");
 
-    /* Determine output data file name for this processor. */
+  /* Determine output data file name for this processor. */
 
-    sprintf(extension, "%.6d", Soln_Block_List.ThisCPU);
-    strcat(extension, ".dat");
-    strcpy(output_file_name, prefix);
-    strcat(output_file_name, extension);
-    output_file_name_ptr = output_file_name;
+  sprintf(extension, "%.6d", Soln_Block_List.ThisCPU);
+  strcat(extension, ".dat");
+  strcpy(output_file_name, prefix);
+  strcat(output_file_name, extension);
+  output_file_name_ptr = output_file_name;
 
-    /* Open the output data file. */
+  /* Open the output data file. */
 
-    output_file.open(output_file_name_ptr, ios::out);
-    if (output_file.fail()) return (1);
+  output_file.open(output_file_name_ptr, ios::out);
+  if (output_file.fail()) return (1);
 
-    /* Write the solution data for each solution block. */
+  /* Write the solution data for each solution block. */
 
-    i_output_title = 1;
-    for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
-       if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
-          Output_Tecplot(Soln_ptr[i].Grid, 
-                         Soln_Block_List.Block[i].gblknum,
-                         i_output_title,
-                         output_file);
-	  if (i_output_title) i_output_title = 0;
-       } /* endif */
-    }  /* endfor */
+  i_output_title = 1;
+  for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
+    if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
+      Output_Tecplot(Soln_ptr[i].Grid, 
+		     Soln_Block_List.Block[i].gblknum,
+		     i_output_title,
+		     output_file);
+      if (i_output_title) i_output_title = 0;
+    } /* endif */
+  }  /* endfor */
 
-    /* Close the output data file. */
+  /* Close the output data file. */
 
-    output_file.close();
+  output_file.close();
 
-    /* Writing of output data files complete.  Return zero value. */
+  /* Writing of output data files complete.  Return zero value. */
 
-    return(0);
+  return(0);
 
 }
 
@@ -562,62 +562,62 @@ int Output_Mesh_Tecplot(Flame2D_Quad_Block *Soln_ptr,
  *                                                      *
  ********************************************************/
 int Output_Mesh_Gnuplot(Flame2D_Quad_Block *Soln_ptr,
-                        AdaptiveBlock2D_List &Soln_Block_List,
-                        Flame2D_Input_Parameters &Input_Parameters,
-                        const int Number_of_Time_Steps,
-                        const double &Time) {
+			AdaptiveBlock2D_List &Soln_Block_List,
+			Flame2D_Input_Parameters &Input_Parameters,
+			const int Number_of_Time_Steps,
+			const double &Time) {
 
-    int i, i_output_title;
-    char prefix[256], extension[256], output_file_name[256];
-    char *output_file_name_ptr;
-    ofstream output_file;    
+  int i, i_output_title;
+  char prefix[256], extension[256], output_file_name[256];
+  char *output_file_name_ptr;
+  ofstream output_file;    
 
-    /* Determine prefix of output data file names. */
+  /* Determine prefix of output data file names. */
 
-    i = 0;
-    while (1) {
-       if (Input_Parameters.Output_File_Name[i] == ' ' ||
-           Input_Parameters.Output_File_Name[i] == '.') break;
-       prefix[i]=Input_Parameters.Output_File_Name[i];
-       i = i + 1;
-       if (i > strlen(Input_Parameters.Output_File_Name) ) break;
-    } /* endwhile */
-    prefix[i] = '\0';
-    strcat(prefix, "_mesh_cpu");
+  i = 0;
+  while (1) {
+    if (Input_Parameters.Output_File_Name[i] == ' ' ||
+	Input_Parameters.Output_File_Name[i] == '.') break;
+    prefix[i]=Input_Parameters.Output_File_Name[i];
+    i = i + 1;
+    if (i > strlen(Input_Parameters.Output_File_Name) ) break;
+  } /* endwhile */
+  prefix[i] = '\0';
+  strcat(prefix, "_mesh_cpu");
 
-    /* Determine output data file name for this processor. */
+  /* Determine output data file name for this processor. */
 
-    sprintf(extension, "%.6d", Soln_Block_List.ThisCPU);
-    strcat(extension, ".dat");
-    strcpy(output_file_name, prefix);
-    strcat(output_file_name, extension);
-    output_file_name_ptr = output_file_name;
+  sprintf(extension, "%.6d", Soln_Block_List.ThisCPU);
+  strcat(extension, ".dat");
+  strcpy(output_file_name, prefix);
+  strcat(output_file_name, extension);
+  output_file_name_ptr = output_file_name;
 
-    /* Open the output data file. */
+  /* Open the output data file. */
 
-    output_file.open(output_file_name_ptr, ios::out);
-    if (output_file.fail()) return (1);
+  output_file.open(output_file_name_ptr, ios::out);
+  if (output_file.fail()) return (1);
 
-    /* Write the solution data for each solution block. */
+  /* Write the solution data for each solution block. */
 
-    i_output_title = 1;
-    for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
-       if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
-          Output_Gnuplot(Soln_ptr[i].Grid, 
-                         Soln_Block_List.Block[i].gblknum,
-                         i_output_title,
-                         output_file);
-	  if (i_output_title) i_output_title = 0;
-       } /* endif */
-    }  /* endfor */
+  i_output_title = 1;
+  for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
+    if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
+      Output_Gnuplot(Soln_ptr[i].Grid, 
+		     Soln_Block_List.Block[i].gblknum,
+		     i_output_title,
+		     output_file);
+      if (i_output_title) i_output_title = 0;
+    } /* endif */
+  }  /* endfor */
 
-    /* Close the output data file. */
+  /* Close the output data file. */
 
-    output_file.close();
+  output_file.close();
 
-    /* Writing of output data files complete.  Return zero value. */
+  /* Writing of output data files complete.  Return zero value. */
 
-    return(0);
+  return(0);
 
 }
 
@@ -630,18 +630,18 @@ int Output_Mesh_Gnuplot(Flame2D_Quad_Block *Soln_ptr,
  *                                                      *
  ********************************************************/
 void BCs(Flame2D_Quad_Block *Soln_ptr,
-         AdaptiveBlock2D_List &Soln_Block_List,
+	 AdaptiveBlock2D_List &Soln_Block_List,
 	 Flame2D_Input_Parameters &Input_Parameters) {
 
-    int i;
+  int i;
 
-    /* Prescribe boundary data for each solution block. */
+  /* Prescribe boundary data for each solution block. */
 
-    for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
-       if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
-	 BCs(Soln_ptr[i],Input_Parameters);
-       } /* endif */
-    }  /* endfor */
+  for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
+    if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
+      BCs(Soln_ptr[i],Input_Parameters);
+    } /* endif */
+  }  /* endfor */
 }
 
 /********************************************************
@@ -655,23 +655,23 @@ void BCs(Flame2D_Quad_Block *Soln_ptr,
  *                                                      *
  ********************************************************/
 double CFL(Flame2D_Quad_Block *Soln_ptr,
-           AdaptiveBlock2D_List &Soln_Block_List,
-           Flame2D_Input_Parameters &Input_Parameters) {
+	   AdaptiveBlock2D_List &Soln_Block_List,
+	   Flame2D_Input_Parameters &Input_Parameters) {
 
-    int i;
-    double dtMin;
+  int i;
+  double dtMin;
 
-    dtMin = MILLION;
+  dtMin = MILLION;
  
-    /* Determine the allowable time step for each solution block. */
+  /* Determine the allowable time step for each solution block. */
 
-    for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
-       if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
-          dtMin = min(dtMin, CFL(Soln_ptr[i], Input_Parameters));
-       } /* endif */
-    }  /* endfor */
-   /* Return the global time step. */
-    return (dtMin);
+  for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
+    if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
+      dtMin = min(dtMin, CFL(Soln_ptr[i], Input_Parameters));
+    } /* endif */
+  }  /* endfor */
+  /* Return the global time step. */
+  return (dtMin);
 }
 
 /********************************************************
@@ -683,14 +683,14 @@ double CFL(Flame2D_Quad_Block *Soln_ptr,
  *                                                      *
  ********************************************************/
 void Set_Global_TimeStep(Flame2D_Quad_Block *Soln_ptr,
-                         AdaptiveBlock2D_List &Soln_Block_List,
-                         const double &Dt_min) {
-    int i;
-    for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
-       if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
-          Set_Global_TimeStep(Soln_ptr[i], Dt_min);
-       } /* endif */
-    }  /* endfor */
+			 AdaptiveBlock2D_List &Soln_Block_List,
+			 const double &Dt_min) {
+  int i;
+  for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
+    if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
+      Set_Global_TimeStep(Soln_ptr[i], Dt_min);
+    } /* endif */
+  }  /* endfor */
 
 }
 
@@ -704,7 +704,7 @@ void Set_Global_TimeStep(Flame2D_Quad_Block *Soln_ptr,
  *                                                      *
  ********************************************************/
 double L1_Norm_Residual(Flame2D_Quad_Block *Soln_ptr,
-		      AdaptiveBlock2D_List &Soln_Block_List) {
+			AdaptiveBlock2D_List &Soln_Block_List) {
 
   /* Calculate the L1-norm. Sum the L1-norm for each solution block. */
   double l1_norm(ZERO);
@@ -848,11 +848,11 @@ void Max_Norm_Residual(Flame2D_Quad_Block *Soln_ptr,
  *                                                      *
  ********************************************************/
 void Evaluate_Limiters(Flame2D_Quad_Block *Soln_ptr,
-                       AdaptiveBlock2D_List &Soln_Block_List) {
+		       AdaptiveBlock2D_List &Soln_Block_List) {
 
-    for (int i = 0 ; i < Soln_Block_List.Nblk ; ++i ) {
-      if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) Soln_ptr[i].evaluate_limiters();
-    }
+  for (int i = 0 ; i < Soln_Block_List.Nblk ; ++i ) {
+    if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) Soln_ptr[i].evaluate_limiters();
+  }
 }
 
 /********************************************************
@@ -864,11 +864,11 @@ void Evaluate_Limiters(Flame2D_Quad_Block *Soln_ptr,
  *                                                      *
  ********************************************************/
 void Freeze_Limiters(Flame2D_Quad_Block *Soln_ptr,
-                     AdaptiveBlock2D_List &Soln_Block_List) {
+		     AdaptiveBlock2D_List &Soln_Block_List) {
 
-    for (int i = 0 ; i < Soln_Block_List.Nblk ; ++i ) {
-       if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) Soln_ptr[i].freeze_limiters();
-    }  
+  for (int i = 0 ; i < Soln_Block_List.Nblk ; ++i ) {
+    if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) Soln_ptr[i].freeze_limiters();
+  }  
 }
 
 /********************************************************
@@ -879,45 +879,45 @@ void Freeze_Limiters(Flame2D_Quad_Block *Soln_ptr,
  *                                                      *
  ********************************************************/
 void Residual_Smoothing(Flame2D_Quad_Block *Soln_ptr,
-                        AdaptiveBlock2D_List &Soln_Block_List,
-                        Flame2D_Input_Parameters &Input_Parameters,
-                        const int I_Stage) {
+			AdaptiveBlock2D_List &Soln_Block_List,
+			Flame2D_Input_Parameters &Input_Parameters,
+			const int I_Stage) {
 
-    int i, k_residual;
+  int i, k_residual;
 
-    switch(Input_Parameters.i_Time_Integration) {
-      case TIME_STEPPING_EXPLICIT_EULER :
-        k_residual = 0;
-        break;
-      case TIME_STEPPING_EXPLICIT_PREDICTOR_CORRECTOR :
-        k_residual = 0;
-        break;
-      case TIME_STEPPING_EXPLICIT_RUNGE_KUTTA :
-        k_residual = 0;
-	if (Input_Parameters.N_Stage == 4) {
-	   if (I_Stage == 4) {
-	      k_residual = 0;
-           } else {
-	      k_residual = I_Stage - 1;
-           } /* endif */
-        } /* endif */
-        break;
-      case TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING :
-        k_residual = 0;
-        break;
-      default:
-        k_residual = 0;
-        break;
-    } /* endswitch */
+  switch(Input_Parameters.i_Time_Integration) {
+  case TIME_STEPPING_EXPLICIT_EULER :
+    k_residual = 0;
+    break;
+  case TIME_STEPPING_EXPLICIT_PREDICTOR_CORRECTOR :
+    k_residual = 0;
+    break;
+  case TIME_STEPPING_EXPLICIT_RUNGE_KUTTA :
+    k_residual = 0;
+    if (Input_Parameters.N_Stage == 4) {
+      if (I_Stage == 4) {
+	k_residual = 0;
+      } else {
+	k_residual = I_Stage - 1;
+      } /* endif */
+    } /* endif */
+    break;
+  case TIME_STEPPING_MULTISTAGE_OPTIMAL_SMOOTHING :
+    k_residual = 0;
+    break;
+  default:
+    k_residual = 0;
+    break;
+  } /* endswitch */
 
-    for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
-       if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
-	 Residual_Smoothing(Soln_ptr[i],
-                            k_residual,
-			    Input_Parameters.Residual_Smoothing_Epsilon, 
-                            Input_Parameters.Residual_Smoothing_Gauss_Seidel_Iterations);
-       } /* endif */
-    }  /* endfor */
+  for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
+    if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
+      Residual_Smoothing(Soln_ptr[i],
+			 k_residual,
+			 Input_Parameters.Residual_Smoothing_Epsilon, 
+			 Input_Parameters.Residual_Smoothing_Gauss_Seidel_Iterations);
+    } /* endif */
+  }  /* endfor */
 
 }
 
@@ -932,21 +932,21 @@ void Residual_Smoothing(Flame2D_Quad_Block *Soln_ptr,
  *                                                              *
  ****************************************************************/
 void Apply_Boundary_Flux_Corrections(Flame2D_Quad_Block *Soln_ptr,
-                                     AdaptiveBlock2D_List &Soln_Block_List) {
+				     AdaptiveBlock2D_List &Soln_Block_List) {
 
-    int i;
+  int i;
 
-    /* Prescribe boundary data for each solution block. */
+  /* Prescribe boundary data for each solution block. */
 
-    for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
-       if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
-          Apply_Boundary_Flux_Corrections(Soln_ptr[i],
-                                          Soln_Block_List.Block[i].nN,
-                                          Soln_Block_List.Block[i].nS,
-                                          Soln_Block_List.Block[i].nE,
-                                          Soln_Block_List.Block[i].nW);
-       } /* endif */
-    }  /* endfor */
+  for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
+    if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
+      Apply_Boundary_Flux_Corrections(Soln_ptr[i],
+				      Soln_Block_List.Block[i].nN,
+				      Soln_Block_List.Block[i].nS,
+				      Soln_Block_List.Block[i].nE,
+				      Soln_Block_List.Block[i].nW);
+    } /* endif */
+  }  /* endfor */
 
 }
 
@@ -960,30 +960,30 @@ void Apply_Boundary_Flux_Corrections(Flame2D_Quad_Block *Soln_ptr,
  *                                                              *
  ****************************************************************/
 void Apply_Boundary_Flux_Corrections_Multistage_Explicit(Flame2D_Quad_Block *Soln_ptr,
-                                                         AdaptiveBlock2D_List &Soln_Block_List,
-                                                         Flame2D_Input_Parameters &Input_Parameters,
-   	                                                 const int I_Stage) {
+							 AdaptiveBlock2D_List &Soln_Block_List,
+							 Flame2D_Input_Parameters &Input_Parameters,
+							 const int I_Stage) {
 
-    int i;
+  int i;
 
-    /* Prescribe boundary data for each solution block. */
+  /* Prescribe boundary data for each solution block. */
 
-    for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
-       if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
-          Apply_Boundary_Flux_Corrections_Multistage_Explicit(Soln_ptr[i],
-                                                              I_Stage,
-                                                              Input_Parameters.N_Stage,
-                                                              Input_Parameters.CFL_Number,
-                                                              Input_Parameters.i_Time_Integration,
-                                                              Input_Parameters.i_Reconstruction,
-                                                              Input_Parameters.i_Limiter, 
-                                                              Input_Parameters.i_Flux_Function,
-                                                              Soln_Block_List.Block[i].nN,
-                                                              Soln_Block_List.Block[i].nS,
-                                                              Soln_Block_List.Block[i].nE,
-                                                              Soln_Block_List.Block[i].nW);
-       } /* endif */
-    }  /* endfor */
+  for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
+    if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
+      Apply_Boundary_Flux_Corrections_Multistage_Explicit(Soln_ptr[i],
+							  I_Stage,
+							  Input_Parameters.N_Stage,
+							  Input_Parameters.CFL_Number,
+							  Input_Parameters.i_Time_Integration,
+							  Input_Parameters.i_Reconstruction,
+							  Input_Parameters.i_Limiter, 
+							  Input_Parameters.i_Flux_Function,
+							  Soln_Block_List.Block[i].nN,
+							  Soln_Block_List.Block[i].nS,
+							  Soln_Block_List.Block[i].nE,
+							  Soln_Block_List.Block[i].nW);
+    } /* endif */
+  }  /* endfor */
 
 }
 
@@ -1000,31 +1000,31 @@ void Apply_Boundary_Flux_Corrections_Multistage_Explicit(Flame2D_Quad_Block *Sol
  ********************************************************/
 int dUdt_Multistage_Explicit(Flame2D_Quad_Block *Soln_ptr,
 			     AdaptiveBlockResourceList &Global_Soln_Block_List,
-                             AdaptiveBlock2D_List &Local_Soln_Block_List,
-                             Flame2D_Input_Parameters &Input_Parameters,
-   	                     const int I_Stage) {
+			     AdaptiveBlock2D_List &Local_Soln_Block_List,
+			     Flame2D_Input_Parameters &Input_Parameters,
+			     const int I_Stage) {
 
-    int i, error_flag;
+  int i, error_flag;
 
-    error_flag = 0;
+  error_flag = 0;
 
-    /* Update the solution for each solution block. */
+  /* Update the solution for each solution block. */
 
  
-    for ( i = 0 ; i <= Local_Soln_Block_List.Nblk-1 ; ++i ) {
-       if (Local_Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
+  for ( i = 0 ; i <= Local_Soln_Block_List.Nblk-1 ; ++i ) {
+    if (Local_Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
 	 
-          error_flag = dUdt_Multistage_Explicit(Soln_ptr[i],
-                                                I_Stage,
-                                                Input_Parameters);	 
-          if (error_flag) return (error_flag);
-       } /* endif */
-    }  /* endfor */
+      error_flag = dUdt_Multistage_Explicit(Soln_ptr[i],
+					    I_Stage,
+					    Input_Parameters);	 
+      if (error_flag) return (error_flag);
+    } /* endif */
+  }  /* endfor */
  
-    /* Residuals for each quadrilateral multi-block solution block
-       successfully calcualted.  Return. */
+  /* Residuals for each quadrilateral multi-block solution block
+     successfully calcualted.  Return. */
 
-    return(error_flag);
+  return(error_flag);
 
 }
 /********************************************************
@@ -1039,30 +1039,28 @@ int dUdt_Multistage_Explicit(Flame2D_Quad_Block *Soln_ptr,
  *                                                      *
  ********************************************************/
 int Update_Solution_Multistage_Explicit(Flame2D_Quad_Block *Soln_ptr,
-                                        AdaptiveBlock2D_List &Soln_Block_List,
-                                        Flame2D_Input_Parameters &Input_Parameters,
-   	                                const int I_Stage) {
+					AdaptiveBlock2D_List &Soln_Block_List,
+					Flame2D_Input_Parameters &Input_Parameters,
+					const int I_Stage) {
 
-    int i, error_flag;
+  int i, error_flag;
 
-    error_flag = 0;
+  error_flag = 0;
 
-    /* Update the solution for each solution block. */
+  /* Update the solution for each solution block. */
 
-    for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
-       if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
-          error_flag = Update_Solution_Multistage_Explicit(Soln_ptr[i],
-                                                           I_Stage,
-                                                           Input_Parameters);
-          if (error_flag) return (error_flag);
-       } /* endif */
-    }  /* endfor */
+  for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
+    if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
+      error_flag = Update_Solution_Multistage_Explicit(Soln_ptr[i],
+						       I_Stage,
+						       Input_Parameters);
+      if (error_flag) return (error_flag);
+    } /* endif */
+  }  /* endfor */
 
-    /* Quadrilateral multi-block solution blocks
-       successfully updated.  Return. */
+  /* Quadrilateral multi-block solution blocks
+     successfully updated.  Return. */
 
-    return(error_flag);
+  return(error_flag);
 
 }
-
-

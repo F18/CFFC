@@ -35,10 +35,16 @@ NEW
 
 #include "Flame2DState.h"
 
+/////////////////////////////////////////////////////////////////////
+/// Defines
+/////////////////////////////////////////////////////////////////////
+
 /* Define the structures and classes. */
+#undef INPUT_PARAMETER_LENGTH_FLAME2D
 #define	INPUT_PARAMETER_LENGTH_FLAME2D    128
 
 //Enviroment Flag 
+#undef PATHVAR
 #define PATHVAR "CFFC_Path"
 
 //! Composition flag:
@@ -48,6 +54,11 @@ enum CompType { FLAME2D_INPUT_MASS_FRACTIONS,
 		FLAME2D_INPUT_MOLE_FRACTIONS,
 		FLAME2D_INPUT_EQUIVALENCE_RATIO };
 
+
+/////////////////////////////////////////////////////////////////////
+/// Function Definitions
+/////////////////////////////////////////////////////////////////////
+
 /*!
  * Class:  Flame2D_Input_Parameters
  *
@@ -56,8 +67,8 @@ enum CompType { FLAME2D_INPUT_MASS_FRACTIONS,
  *
  */
 class Flame2D_Input_Parameters{
-  private:
-  public:
+private:
+public:
   //@{ @name Input file parameters.
   //! Input file name:
   char Input_File_Name[INPUT_PARAMETER_LENGTH_FLAME2D];
@@ -74,7 +85,7 @@ class Flame2D_Input_Parameters{
   char Time_Integration_Type[INPUT_PARAMETER_LENGTH_FLAME2D];
   int i_Time_Integration;
   int Time_Accurate, Local_Time_Stepping, 
-      Maximum_Number_of_Time_Steps, N_Stage;
+    Maximum_Number_of_Time_Steps, N_Stage;
   double CFL_Number, Time_Max, Time_Step;
   bool Fixed_Time_Step;
 
@@ -207,20 +218,20 @@ class Flame2D_Input_Parameters{
   char NACA_Aerofoil_Type[INPUT_PARAMETER_LENGTH_FLAME2D];
   int i_Grid;
   int Number_of_Cells_Idir, Number_of_Cells_Jdir, Number_of_Ghost_Cells,
-      Number_of_Blocks_Idir, Number_of_Blocks_Jdir;
+    Number_of_Blocks_Idir, Number_of_Blocks_Jdir;
   double Box_Width, Box_Height, Plate_Length, 
-         Pipe_Length, Pipe_Radius, 
-         Blunt_Body_Radius, Blunt_Body_Mach_Number,
-         Chamber_Length, Chamber_Radius, Chamber_To_Throat_Length,
-         Nozzle_Length, Nozzle_Radius_Exit, Nozzle_Radius_Throat, Grain_Radius,
-         Cylinder_Radius, Ellipse_Length_X_Axis, 
-         Ellipse_Length_Y_Axis, Chord_Length, Orifice_Radius,
-         Wedge_Angle, Wedge_Length, Heat_Source; 
+    Pipe_Length, Pipe_Radius, 
+    Blunt_Body_Radius, Blunt_Body_Mach_Number,
+    Chamber_Length, Chamber_Radius, Chamber_To_Throat_Length,
+    Nozzle_Length, Nozzle_Radius_Exit, Nozzle_Radius_Throat, Grain_Radius,
+    Cylinder_Radius, Ellipse_Length_X_Axis, 
+    Ellipse_Length_Y_Axis, Chord_Length, Orifice_Radius,
+    Wedge_Angle, Wedge_Length, Heat_Source; 
 
   //! Bluff Body
   double Length_Shroud,Radius_Shroud,Length_BluffBody,Radius_BluffBody,
-     Radius_Orifice, Length_Inlet_Pipe, Radius_Inlet_Pipe, Length_Combustor_Tube, 
-     Radius_Combustor_Tube;
+    Radius_Orifice, Length_Inlet_Pipe, Radius_Inlet_Pipe, Length_Combustor_Tube, 
+    Radius_Combustor_Tube;
   double BluffBody_Coflow_Air_Velocity, BluffBody_Coflow_Fuel_Velocity;
   int BluffBody_Data_Usage; // 0 no, 1 yes, 
 
@@ -398,7 +409,7 @@ inline void Flame2D_Input_Parameters::setRefSolutionState(void) {
     if (!composition_string.empty()) 
       Mixture::parse_mass_string(composition_string, mass_fractions);      
 
-  // -> Mole fractions
+    // -> Mole fractions
   } else if (i_specified_composition == FLAME2D_INPUT_MOLE_FRACTIONS) {
 
     // store mole fractions in mass_fractions array
@@ -411,7 +422,7 @@ inline void Flame2D_Input_Parameters::setRefSolutionState(void) {
     for(int i=0; i<num_species; i++) 
       mass_fractions[i] = mass_fractions[i]*Mixture::molarMass(i)/sum;
 
-  // -> Equivalence Ratio
+    // -> Equivalence Ratio
   } else if (i_specified_composition == FLAME2D_INPUT_EQUIVALENCE_RATIO) {
     Mixture::composition(Fuel_Species, 
 			 equivalence_ratio, 
@@ -419,9 +430,9 @@ inline void Flame2D_Input_Parameters::setRefSolutionState(void) {
   } // endif - composition
     
 
-  //-----------------------------------------------------------------
-  // set the solution state
-  //-----------------------------------------------------------------
+    //-----------------------------------------------------------------
+    // set the solution state
+    //-----------------------------------------------------------------
   Wo.setState_TPY(Temperature, Pressure, mass_fractions);
   Wo.setVelocity( Mach_Number*Wo.a()*cos(TWO*PI*Flow_Angle/360.00),
 		  Mach_Number*Wo.a()*sin(TWO*PI*Flow_Angle/360.00) );
@@ -440,441 +451,441 @@ inline void Flame2D_Input_Parameters::setRefSolutionState(void) {
  *************************************************************/
 inline ostream &operator << (ostream &out_file,
 			     const Flame2D_Input_Parameters &IP) {
-    out_file << setprecision(6);
-    out_file << "\n  -> CFFC Path: " 
-	     << IP.CFFC_Path;
+  out_file << setprecision(6);
+  out_file << "\n  -> CFFC Path: " 
+	   << IP.CFFC_Path;
   
-    /*********************************************************/
-    out_file << "\n\n Solving 2D MulitSpecies";
-    if (IP.FlowType ==  FLOWTYPE_INVISCID){
-      out_file<<" Euler (Inviscid) ";
-    } else {
-      out_file<<" Navier-Stokes (Viscous) ";
-    }
-    out_file<<"equations (IBVP/BVP) "; 
-    if (IP.i_Grid == GRID_CARTESIAN_UNIFORM) {
-      out_file<<"\n on uniform Cartesian mesh.";
-    } else { 
-      out_file <<"\n on multi-block solution-adaptive quadrilateral mesh.";
-    } 
-    if (IP.Radiation)
-      out_file<<"\n Radiation heat transfer modelled.";
-    else
-      out_file<<"\n Radiation Neglected.";
+  /*********************************************************/
+  out_file << "\n\n Solving 2D MulitSpecies";
+  if (IP.FlowType ==  FLOWTYPE_INVISCID){
+    out_file<<" Euler (Inviscid) ";
+  } else {
+    out_file<<" Navier-Stokes (Viscous) ";
+  }
+  out_file<<"equations (IBVP/BVP) "; 
+  if (IP.i_Grid == GRID_CARTESIAN_UNIFORM) {
+    out_file<<"\n on uniform Cartesian mesh.";
+  } else { 
+    out_file <<"\n on multi-block solution-adaptive quadrilateral mesh.";
+  } 
+  if (IP.Radiation)
+    out_file<<"\n Radiation heat transfer modelled.";
+  else
+    out_file<<"\n Radiation Neglected.";
 
-    /*********************************************************/
-    if (IP.FlowType ==  FLOWTYPE_INVISCID) {
-    } else if (IP.FlowType == FLOWTYPE_LAMINAR) {
-      out_file << "\n  -> Laminar flow";
-    }
+  /*********************************************************/
+  if (IP.FlowType ==  FLOWTYPE_INVISCID) {
+  } else if (IP.FlowType == FLOWTYPE_LAMINAR) {
+    out_file << "\n  -> Laminar flow";
+  }
 
-    /*********************************************************/
-    out_file << "\n  -> Input File Name: " 
-             << IP.Input_File_Name;
-    if (IP.Time_Accurate) { 
-       out_file << "\n  -> Time Accurate (Unsteady) Solution";
-    } else {
-       out_file << "\n  -> Time Invariant (Steady-State) Solution";
-    }
-    if (IP.Axisymmetric) { 
-       out_file << "\n  -> 2D Axisymmetric Flow";
-    } else {
-       out_file << "\n  -> 2D Planar Flow";
-    }
-    /********************************************************/
-    if(IP.Gravity) {
-      out_file << "\n  -> With Gravity (-z): g_z="<<IP.gravity_z<<" [m/s]";
-    }
-    if(IP.FlowType != FLOWTYPE_INVISCID) {
-      out_file << "\n  -> Viscous Reconstruction Method: "
-	       << IP.Viscous_Flux_Evaluation_Type;
-    }
-    if(IP.debug_level){
-      out_file << "\n  -> Debug level: "
-	       << IP.debug_level;
-    }
-    /********************************************************/
-    out_file << "\n  -> Time Integration: " 
-             << IP.Time_Integration_Type;
-    out_file << "\n  -> Number of Stages in Multi-Stage Scheme: " 
-             << IP.N_Stage;
-    /*****************************************************
-     *                     Multigrid                     */
-    if (IP.i_Time_Integration == TIME_STEPPING_MULTIGRID)
-      {
-	out_file << IP.Multigrid_IP;
-      }
-
-    /*****************************************************/
-    if (IP.Local_Time_Stepping == GLOBAL_TIME_STEPPING) {
-      out_file << "\n  -> Global Time Stepping";
-    } else if (IP.Local_Time_Stepping == SCALAR_LOCAL_TIME_STEPPING) {
-      out_file << "\n  -> Scalar Local Time Stepping";
-    } else if (IP.Local_Time_Stepping == MATRIX_LOCAL_TIME_STEPPING) {
-      out_file << "\n  -> Matrix Local Time Stepping";
-    } else if (IP.Local_Time_Stepping == LOW_MACH_NUMBER_WEISS_SMITH_PRECONDITIONER) {
-      out_file << "\n  -> Low-Mach-Number Local Preconditioning (Weiss-Smith)";
-    } else if (IP.Local_Time_Stepping == SEMI_IMPLICIT_LOCAL_TIME_STEPPING) {
-      out_file << "\n  -> Semi-Implicit Local Time Stepping";
-    } else if (IP.Local_Time_Stepping == SEMI_IMPLICIT_LOW_MACH_NUMBER_PRECONDITIONER) {
-      out_file << "\n  -> Semi-Implicit Low-Mach-Number Local Preconditioned Time Stepping"; 
-    } else if (IP.Local_Time_Stepping == MATRIX_WITH_LOW_MACH_NUMBER_PRECONDITIONER) {
-      out_file << "\n  -> Matrix Local Time Stepping with Low-Mach-Number Local Preconditioning";
-    } else if (IP.Local_Time_Stepping == DUAL_TIME_STEPPING) {
-      out_file << "\n  -> Dual Time Stepping";
-    } else if (IP.Local_Time_Stepping == DUAL_LOW_MACH_NUMBER_PRECONDITIONER) {
-      out_file << "\n  -> Dual Low-Mach-Number Local Preconditioned Time Stepping";
-    } else if (IP.Local_Time_Stepping == DUAL_SEMI_IMPLICIT_LOW_MACH_NUMBER_PRECONDITIONER) {
-      out_file << "\n  -> Dual Semi-Implicit Low-Mach-Number Local Preconditioned Time Stepping";
-    } 
-
-
-
-    /*********************************************************/
-    if (IP.Preconditioning == 1){
-	out_file <<"\n  -> Mach Number Reference "<<IP.Mach_Number_Reference;
+  /*********************************************************/
+  out_file << "\n  -> Input File Name: " 
+	   << IP.Input_File_Name;
+  if (IP.Time_Accurate) { 
+    out_file << "\n  -> Time Accurate (Unsteady) Solution";
+  } else {
+    out_file << "\n  -> Time Invariant (Steady-State) Solution";
+  }
+  if (IP.Axisymmetric) { 
+    out_file << "\n  -> 2D Axisymmetric Flow";
+  } else {
+    out_file << "\n  -> 2D Planar Flow";
+  }
+  /********************************************************/
+  if(IP.Gravity) {
+    out_file << "\n  -> With Gravity (-z): g_z="<<IP.gravity_z<<" [m/s]";
+  }
+  if(IP.FlowType != FLOWTYPE_INVISCID) {
+    out_file << "\n  -> Viscous Reconstruction Method: "
+	     << IP.Viscous_Flux_Evaluation_Type;
+  }
+  if(IP.debug_level){
+    out_file << "\n  -> Debug level: "
+	     << IP.debug_level;
+  }
+  /********************************************************/
+  out_file << "\n  -> Time Integration: " 
+	   << IP.Time_Integration_Type;
+  out_file << "\n  -> Number of Stages in Multi-Stage Scheme: " 
+	   << IP.N_Stage;
+  /*****************************************************
+   *                     Multigrid                     */
+  if (IP.i_Time_Integration == TIME_STEPPING_MULTIGRID)
+    {
+      out_file << IP.Multigrid_IP;
     }
 
-    /*********************************************************/
-    out_file << "\n  -> L1-, L2-, and max-norms computed on residual variable: " << IP.i_Residual_Variable;
+  /*****************************************************/
+  if (IP.Local_Time_Stepping == GLOBAL_TIME_STEPPING) {
+    out_file << "\n  -> Global Time Stepping";
+  } else if (IP.Local_Time_Stepping == SCALAR_LOCAL_TIME_STEPPING) {
+    out_file << "\n  -> Scalar Local Time Stepping";
+  } else if (IP.Local_Time_Stepping == MATRIX_LOCAL_TIME_STEPPING) {
+    out_file << "\n  -> Matrix Local Time Stepping";
+  } else if (IP.Local_Time_Stepping == LOW_MACH_NUMBER_WEISS_SMITH_PRECONDITIONER) {
+    out_file << "\n  -> Low-Mach-Number Local Preconditioning (Weiss-Smith)";
+  } else if (IP.Local_Time_Stepping == SEMI_IMPLICIT_LOCAL_TIME_STEPPING) {
+    out_file << "\n  -> Semi-Implicit Local Time Stepping";
+  } else if (IP.Local_Time_Stepping == SEMI_IMPLICIT_LOW_MACH_NUMBER_PRECONDITIONER) {
+    out_file << "\n  -> Semi-Implicit Low-Mach-Number Local Preconditioned Time Stepping"; 
+  } else if (IP.Local_Time_Stepping == MATRIX_WITH_LOW_MACH_NUMBER_PRECONDITIONER) {
+    out_file << "\n  -> Matrix Local Time Stepping with Low-Mach-Number Local Preconditioning";
+  } else if (IP.Local_Time_Stepping == DUAL_TIME_STEPPING) {
+    out_file << "\n  -> Dual Time Stepping";
+  } else if (IP.Local_Time_Stepping == DUAL_LOW_MACH_NUMBER_PRECONDITIONER) {
+    out_file << "\n  -> Dual Low-Mach-Number Local Preconditioned Time Stepping";
+  } else if (IP.Local_Time_Stepping == DUAL_SEMI_IMPLICIT_LOW_MACH_NUMBER_PRECONDITIONER) {
+    out_file << "\n  -> Dual Semi-Implicit Low-Mach-Number Local Preconditioned Time Stepping";
+  } 
 
-    /*********************************************************/
-    if (IP.Residual_Smoothing) {
-      out_file << "\n  -> Residual Smoothing";
-      out_file << "\n  -> Epsilon: " 
-               << IP.Residual_Smoothing_Epsilon;
-      out_file << "\n  -> Gauss_Seidel_Iterations: " 
-               << IP.Residual_Smoothing_Gauss_Seidel_Iterations;
-    }
 
-    /*****************************************************/
-    out_file << "\n  -> Reconstruction: " 
-             << IP.Reconstruction_Type;
-    out_file << "\n  -> Limiter: " 
-             << IP.Limiter_Type;   
-    if (IP.Limiter_Type != LIMITER_ZERO && IP.Freeze_Limiter) {
-      out_file << "\n  -> Freeze Limiter when L2-norm of residual is < "
-	       << IP.Freeze_Limiter_Residual_Level;
-    } 
-    out_file << "\n  -> Residual L2 Norm of: "; 
-    if (IP.i_Residual_Variable == 1) out_file <<" density ";
-    if (IP.i_Residual_Variable == 2 || IP.i_Residual_Variable == 3) out_file <<" momentum ";
-    if (IP.i_Residual_Variable == 4) out_file <<" energy ";
-    out_file << "\n  -> Flux Function: " 
-             << IP.Flux_Function_Type;
-    /********** FLAME2D ****************************/
-    out_file << "\n  -> Reaction Mechanism: " 
-	     << Flame2D_pState::mechName();
-    out_file << "\n  -> Species: "<<IP.Wo.NumSpecies()
-	     << "\n  -> Initial mass fractions: ";
-    for(int i=0; i<IP.Wo.NumSpecies(); i++){
-      out_file  <<"c["<<Flame2D_pState::speciesName(i)<<"]= ";
-      out_file  << IP.Wo.c(i)<<", ";
-    } 
-    if(IP.FlowType != FLOWTYPE_INVISCID){
-      out_file << "\n  -> Schmidt Numbers for Viscous flow: ";
-      for(int i=0; i <IP.Wo.NumSpecies(); i++){
-	out_file  <<"Sc["<<Flame2D_pState::speciesName(i)<<"]= ";
-	out_file << IP.Schmidt[i]<<", ";
-      }
+
+  /*********************************************************/
+  if (IP.Preconditioning == 1){
+    out_file <<"\n  -> Mach Number Reference "<<IP.Mach_Number_Reference;
+  }
+
+  /*********************************************************/
+  out_file << "\n  -> L1-, L2-, and max-norms computed on residual variable: " << IP.i_Residual_Variable;
+
+  /*********************************************************/
+  if (IP.Residual_Smoothing) {
+    out_file << "\n  -> Residual Smoothing";
+    out_file << "\n  -> Epsilon: " 
+	     << IP.Residual_Smoothing_Epsilon;
+    out_file << "\n  -> Gauss_Seidel_Iterations: " 
+	     << IP.Residual_Smoothing_Gauss_Seidel_Iterations;
+  }
+
+  /*****************************************************/
+  out_file << "\n  -> Reconstruction: " 
+	   << IP.Reconstruction_Type;
+  out_file << "\n  -> Limiter: " 
+	   << IP.Limiter_Type;   
+  if (IP.Limiter_Type != LIMITER_ZERO && IP.Freeze_Limiter) {
+    out_file << "\n  -> Freeze Limiter when L2-norm of residual is < "
+	     << IP.Freeze_Limiter_Residual_Level;
+  } 
+  out_file << "\n  -> Residual L2 Norm of: "; 
+  if (IP.i_Residual_Variable == 1) out_file <<" density ";
+  if (IP.i_Residual_Variable == 2 || IP.i_Residual_Variable == 3) out_file <<" momentum ";
+  if (IP.i_Residual_Variable == 4) out_file <<" energy ";
+  out_file << "\n  -> Flux Function: " 
+	   << IP.Flux_Function_Type;
+  /********** FLAME2D ****************************/
+  out_file << "\n  -> Reaction Mechanism: " 
+	   << Flame2D_pState::mechName();
+  out_file << "\n  -> Species: "<<IP.Wo.NumSpecies()
+	   << "\n  -> Initial mass fractions: ";
+  for(int i=0; i<IP.Wo.NumSpecies(); i++){
+    out_file  <<"c["<<Flame2D_pState::speciesName(i)<<"]= ";
+    out_file  << IP.Wo.c(i)<<", ";
+  } 
+  if(IP.FlowType != FLOWTYPE_INVISCID){
+    out_file << "\n  -> Schmidt Numbers for Viscous flow: ";
+    for(int i=0; i <IP.Wo.NumSpecies(); i++){
+      out_file  <<"Sc["<<Flame2D_pState::speciesName(i)<<"]= ";
+      out_file << IP.Schmidt[i]<<", ";
     }
-    /*********************************************/ 
-    out_file << "\n  -> Initial Conditions: " 
-             << IP.ICs_Type;
-    switch(IP.i_ICs) {
-      case IC_CONSTANT :
-        out_file << "\n  -> Pressure (kPa): " 
-                 << IP.Pressure/THOUSAND;
-        out_file << "\n  -> Temperature (K): " 
-                 << IP.Temperature;
-        out_file << "\n  -> Mach Number: " 
-                 << IP.Mach_Number;
-        out_file << "\n  -> Flow Angle: " 
-                 << IP.Flow_Angle;
-        break;
-      case IC_UNIFORM :
-        out_file << "\n  -> Pressure (kPa): " 
-                 << IP.Pressure/THOUSAND;
-        out_file << "\n  -> Temperature (K): " 
-                 << IP.Temperature;
-	out_file << "\n  -> Heat_source : " 
-		 << IP.Heat_Source;
-        out_file << "\n  -> Mach Number: " 
-                 << IP.Mach_Number;
-        out_file << "\n  -> Flow Angle (degrees): " 
-                 << IP.Flow_Angle;
-        break;
-      case IC_SOD_XDIR :
-        break;
-      case IC_SOD_YDIR :
-        break;
-      case IC_GROTH_XDIR :
-        break;
-      case IC_GROTH_YDIR :
-        break;
-      case IC_EINFELDT_XDIR :
-        break;
-      case IC_EINFELDT_YDIR :
-        break;
-      case IC_SHOCK_BOX :
-        break;
-      case IC_HIGH_PRESSURE_RESERVOIR :
-        break;
-      case IC_LOW_PRESSURE_RESERVOIR :
-        break;
-      case IC_RIEMANN :
-	break;
-      case IC_RIEMANN_XDIR :
-	break;
-      case IC_RIEMANN_YDIR :
-        out_file << "\n  -> Pressure (kPa): " 
-                 << IP.Pressure/THOUSAND;
-        out_file << "\n  -> Temperature (K): " 
-                 << IP.Temperature;
-        out_file << "\n  -> Mach Number: " 
-                 << IP.Mach_Number;
-        out_file << "\n  -> Flow Angle (degrees): " 
-                 << IP.Flow_Angle;
-        break;
-    case IC_VISCOUS_DRIVEN_CAVITY_FLOW :
-       out_file << "\n  -> Driven cavity flow with lid speed: " << IP.Moving_wall_velocity
-                << " and Reynolds number: " << IP.Re_lid;
-       break;
-       /******** FLAME2D ********/
-    case IC_GAS_MIX :
-      break;
-    case IC_CHEM_CORE_FLAME:
-      break;
-    case IC_CHEM_INVERSE_FLAME:
-      break;
-    case IC_CHEM_1DFLAME:
-      break;
-    case IC_PRESSURE_GRADIENT_X:
-      break;
-    case IC_PRESSURE_GRADIENT_Y:
-      break;
-    case IC_VISCOUS_COUETTE:
-      break;
-    case IC_VISCOUS_FLAT_PLATE :
-      out_file << "\n  -> Viscous flat plate free stream Mach number: " << IP.Mach_Number;
-      out_file << "\n  -> Viscous flat plate Reynolds number: "
- 	       <<IP.Wo.Re(IP.Plate_Length);
-      break;
-      /********** FLAME2D *******/
-    default:
-      break;
-    } /* endswitch */
-    out_file << "\n  -> Grid: " 
-             << IP.Grid_Type;
-    switch(IP.i_Grid) {
-      case GRID_CARTESIAN_UNIFORM :
-        out_file << "\n  -> Width of Solution Domain (m): " 
-                 << IP.Box_Width;
-        out_file << "\n  -> Height of Solution Domain (m): " 
-                 << IP.Box_Height;
-        break;
-      case GRID_SQUARE :
-        out_file << "\n  -> Size of Solution Domain (m): " 
-                 << IP.Box_Width;
-        break;
-      case GRID_RECTANGULAR_BOX :
-        out_file << "\n  -> Width of Solution Domain (m): " 
-                 << IP.Box_Width;
-        out_file << "\n  -> Height of Solution Domain (m): " 
-                 << IP.Box_Height;
-        break;
-      case GRID_COUETTE :
-	out_file << "\n  -> Width of Solution Domain (m): " 
-		 << IP.Box_Width;
-	out_file << "\n  -> Height of Solution Domain (m): " 
-		 << IP.Box_Height;
-	out_file << "\n  -> Moving Wall Velocity (m/s): "
-		 << IP.Moving_wall_velocity;
-	break;   
-      case GRID_TEST :
-	out_file << "\n  -> Width of Solution Domain (m): " 
-		 << IP.Box_Width;
-	out_file << "\n  -> Height of Solution Domain (m): " 
-		 << IP.Box_Height;
-	break;
-      case GRID_1DFLAME :
-	out_file << "\n  -> Width of Solution Domain (m): " 
-		 << IP.Box_Width;
-	out_file << "\n  -> Height of Solution Domain (m): " 
-		 << IP.Box_Height;
-	break;
-      case GRID_LAMINAR_FLAME :
-	out_file << "\n  -> Width of Solution Domain (m): " 
-		 << IP.Pipe_Length;
-	out_file << "\n  -> Height of Solution Domain (m): " 
-		 << IP.Pipe_Radius;
-	break;
-      case GRID_FLAT_PLATE :
-        out_file << "\n  -> Plate Length (m): " 
-                 << IP.Plate_Length;
-        break;
-    case GRID_PIPE :
-       out_file << "\n  -> Pipe Length (m): " 
-                << IP.Pipe_Length;
-       out_file << "\n  -> Pipe Radius (m): " 
-                << IP.Pipe_Radius;
-       break;
-    case GRID_DRIVEN_CAVITY_FLOW:
-       out_file << "\n  -> Cavity Depth (m): " 
-                << IP.Box_Width; 
-//        out_file <<" \n  -> Cavity Grid Stretch level "<<IP.Stretch_Level;
-       break;
+  }
+  /*********************************************/ 
+  out_file << "\n  -> Initial Conditions: " 
+	   << IP.ICs_Type;
+  switch(IP.i_ICs) {
+  case IC_CONSTANT :
+    out_file << "\n  -> Pressure (kPa): " 
+	     << IP.Pressure/THOUSAND;
+    out_file << "\n  -> Temperature (K): " 
+	     << IP.Temperature;
+    out_file << "\n  -> Mach Number: " 
+	     << IP.Mach_Number;
+    out_file << "\n  -> Flow Angle: " 
+	     << IP.Flow_Angle;
+    break;
+  case IC_UNIFORM :
+    out_file << "\n  -> Pressure (kPa): " 
+	     << IP.Pressure/THOUSAND;
+    out_file << "\n  -> Temperature (K): " 
+	     << IP.Temperature;
+    out_file << "\n  -> Heat_source : " 
+	     << IP.Heat_Source;
+    out_file << "\n  -> Mach Number: " 
+	     << IP.Mach_Number;
+    out_file << "\n  -> Flow Angle (degrees): " 
+	     << IP.Flow_Angle;
+    break;
+  case IC_SOD_XDIR :
+    break;
+  case IC_SOD_YDIR :
+    break;
+  case IC_GROTH_XDIR :
+    break;
+  case IC_GROTH_YDIR :
+    break;
+  case IC_EINFELDT_XDIR :
+    break;
+  case IC_EINFELDT_YDIR :
+    break;
+  case IC_SHOCK_BOX :
+    break;
+  case IC_HIGH_PRESSURE_RESERVOIR :
+    break;
+  case IC_LOW_PRESSURE_RESERVOIR :
+    break;
+  case IC_RIEMANN :
+    break;
+  case IC_RIEMANN_XDIR :
+    break;
+  case IC_RIEMANN_YDIR :
+    out_file << "\n  -> Pressure (kPa): " 
+	     << IP.Pressure/THOUSAND;
+    out_file << "\n  -> Temperature (K): " 
+	     << IP.Temperature;
+    out_file << "\n  -> Mach Number: " 
+	     << IP.Mach_Number;
+    out_file << "\n  -> Flow Angle (degrees): " 
+	     << IP.Flow_Angle;
+    break;
+  case IC_VISCOUS_DRIVEN_CAVITY_FLOW :
+    out_file << "\n  -> Driven cavity flow with lid speed: " << IP.Moving_wall_velocity
+	     << " and Reynolds number: " << IP.Re_lid;
+    break;
+    /******** FLAME2D ********/
+  case IC_GAS_MIX :
+    break;
+  case IC_CHEM_CORE_FLAME:
+    break;
+  case IC_CHEM_INVERSE_FLAME:
+    break;
+  case IC_CHEM_1DFLAME:
+    break;
+  case IC_PRESSURE_GRADIENT_X:
+    break;
+  case IC_PRESSURE_GRADIENT_Y:
+    break;
+  case IC_VISCOUS_COUETTE:
+    break;
+  case IC_VISCOUS_FLAT_PLATE :
+    out_file << "\n  -> Viscous flat plate free stream Mach number: " << IP.Mach_Number;
+    out_file << "\n  -> Viscous flat plate Reynolds number: "
+	     <<IP.Wo.Re(IP.Plate_Length);
+    break;
+    /********** FLAME2D *******/
+  default:
+    break;
+  } /* endswitch */
+  out_file << "\n  -> Grid: " 
+	   << IP.Grid_Type;
+  switch(IP.i_Grid) {
+  case GRID_CARTESIAN_UNIFORM :
+    out_file << "\n  -> Width of Solution Domain (m): " 
+	     << IP.Box_Width;
+    out_file << "\n  -> Height of Solution Domain (m): " 
+	     << IP.Box_Height;
+    break;
+  case GRID_SQUARE :
+    out_file << "\n  -> Size of Solution Domain (m): " 
+	     << IP.Box_Width;
+    break;
+  case GRID_RECTANGULAR_BOX :
+    out_file << "\n  -> Width of Solution Domain (m): " 
+	     << IP.Box_Width;
+    out_file << "\n  -> Height of Solution Domain (m): " 
+	     << IP.Box_Height;
+    break;
+  case GRID_COUETTE :
+    out_file << "\n  -> Width of Solution Domain (m): " 
+	     << IP.Box_Width;
+    out_file << "\n  -> Height of Solution Domain (m): " 
+	     << IP.Box_Height;
+    out_file << "\n  -> Moving Wall Velocity (m/s): "
+	     << IP.Moving_wall_velocity;
+    break;   
+  case GRID_TEST :
+    out_file << "\n  -> Width of Solution Domain (m): " 
+	     << IP.Box_Width;
+    out_file << "\n  -> Height of Solution Domain (m): " 
+	     << IP.Box_Height;
+    break;
+  case GRID_1DFLAME :
+    out_file << "\n  -> Width of Solution Domain (m): " 
+	     << IP.Box_Width;
+    out_file << "\n  -> Height of Solution Domain (m): " 
+	     << IP.Box_Height;
+    break;
+  case GRID_LAMINAR_FLAME :
+    out_file << "\n  -> Width of Solution Domain (m): " 
+	     << IP.Pipe_Length;
+    out_file << "\n  -> Height of Solution Domain (m): " 
+	     << IP.Pipe_Radius;
+    break;
+  case GRID_FLAT_PLATE :
+    out_file << "\n  -> Plate Length (m): " 
+	     << IP.Plate_Length;
+    break;
+  case GRID_PIPE :
+    out_file << "\n  -> Pipe Length (m): " 
+	     << IP.Pipe_Length;
+    out_file << "\n  -> Pipe Radius (m): " 
+	     << IP.Pipe_Radius;
+    break;
+  case GRID_DRIVEN_CAVITY_FLOW:
+    out_file << "\n  -> Cavity Depth (m): " 
+	     << IP.Box_Width; 
+    //        out_file <<" \n  -> Cavity Grid Stretch level "<<IP.Stretch_Level;
+    break;
        
-    case GRID_BLUNT_BODY :
-       out_file << "\n  -> Cylinder Radius (m): " 
-                << IP.Blunt_Body_Radius;
-       break;
-    case GRID_BLUFF_BODY :
-       out_file << "\n  -> Shroud Length (m): " 
-                << IP.Length_Shroud;
-       out_file << "\n  -> Shroud Radius (m): " 
-                << IP.Radius_Shroud;
-       out_file << "\n  -> Bluff Body Length (m): " 
-                << IP.Length_BluffBody;
-       out_file << "\n  -> Bluff Body Radius (m): " 
-                << IP.Radius_BluffBody;
-       out_file << "\n  -> Fuel Orifice Radius (m): " 
-                << IP.Radius_Orifice;
-       break;
-    case GRID_DUMP_COMBUSTOR :
-       out_file << "\n  -> Inlet Pipe Length (m): " 
-                << IP.Length_Inlet_Pipe;
-       out_file << "\n  -> Inlet Pipe Radius (m): " 
-                << IP.Radius_Inlet_Pipe;
-       out_file << "\n  -> Combustor Tube Length (m): " 
-                << IP.Length_Combustor_Tube;
-       out_file << "\n  -> Combustor Tube Radius(m): " 
-                << IP.Radius_Combustor_Tube;
-       break;
-      case GRID_CIRCULAR_CYLINDER :
-        out_file << "\n  -> Cylinder Radius (m): " 
-                 << IP.Cylinder_Radius;
-        break;
-      case GRID_ELLIPSE :
-        out_file << "\n  -> Width of Ellipse along x-axis (m): " 
-                 << IP.Ellipse_Length_X_Axis;
-        out_file << "\n  -> Height of Ellipse along y-axis (m): " 
-                 << IP.Ellipse_Length_Y_Axis;
-        break;
-      case GRID_NACA_AEROFOIL :
-        out_file << "\n  -> NACA " 
-                 << IP.NACA_Aerofoil_Type;
-        out_file << "\n  -> Chord Length (m): " 
-                 << IP.Chord_Length;
-        break;
-      case GRID_FREE_JET :
-        out_file << "\n  -> Orifice Radius (m): " 
-                 << IP.Orifice_Radius;
-        break;
-      case GRID_WEDGE :
-        out_file << "\n  -> Wedge Angle (degrees): " << IP.Wedge_Angle;
-	out_file << "\n  -> Wedge Length (m): " << IP.Wedge_Length;
-	break;
-      case GRID_BUMP_CHANNEL_FLOW :
-	if (strcmp(IP.Grid_Type,"Bump_Channel_Flow") == 0) {
-	  if (IP.Smooth_Bump) out_file << " (smooth bump)";
-	  else out_file << " (non-smooth bump)";
-	}
-	break;
-      case GRID_ICEMCFD :
-        break;
-      case GRID_READ_FROM_DEFINITION_FILE :
-        break;
-      case GRID_READ_FROM_GRID_DATA_FILE :
-        break;
-      default:
-        out_file << "\n  -> Width of Solution Domain (m): " 
-                 << IP.Box_Width;
-        out_file << "\n  -> Height of Solution Domain (m): " 
-                 << IP.Box_Height;
-        break;
-    } /* endswitch */
-    if (IP.BCs_Specified) {
-      out_file << "\n  -> Boundary conditions specified as: "
-	       << "\n     -> BC_North = " << IP.BC_North_Type
-	       << "\n     -> BC_South = " << IP.BC_South_Type
-	       << "\n     -> BC_East = " << IP.BC_East_Type
-	       << "\n     -> BC_West = " << IP.BC_West_Type;
+  case GRID_BLUNT_BODY :
+    out_file << "\n  -> Cylinder Radius (m): " 
+	     << IP.Blunt_Body_Radius;
+    break;
+  case GRID_BLUFF_BODY :
+    out_file << "\n  -> Shroud Length (m): " 
+	     << IP.Length_Shroud;
+    out_file << "\n  -> Shroud Radius (m): " 
+	     << IP.Radius_Shroud;
+    out_file << "\n  -> Bluff Body Length (m): " 
+	     << IP.Length_BluffBody;
+    out_file << "\n  -> Bluff Body Radius (m): " 
+	     << IP.Radius_BluffBody;
+    out_file << "\n  -> Fuel Orifice Radius (m): " 
+	     << IP.Radius_Orifice;
+    break;
+  case GRID_DUMP_COMBUSTOR :
+    out_file << "\n  -> Inlet Pipe Length (m): " 
+	     << IP.Length_Inlet_Pipe;
+    out_file << "\n  -> Inlet Pipe Radius (m): " 
+	     << IP.Radius_Inlet_Pipe;
+    out_file << "\n  -> Combustor Tube Length (m): " 
+	     << IP.Length_Combustor_Tube;
+    out_file << "\n  -> Combustor Tube Radius(m): " 
+	     << IP.Radius_Combustor_Tube;
+    break;
+  case GRID_CIRCULAR_CYLINDER :
+    out_file << "\n  -> Cylinder Radius (m): " 
+	     << IP.Cylinder_Radius;
+    break;
+  case GRID_ELLIPSE :
+    out_file << "\n  -> Width of Ellipse along x-axis (m): " 
+	     << IP.Ellipse_Length_X_Axis;
+    out_file << "\n  -> Height of Ellipse along y-axis (m): " 
+	     << IP.Ellipse_Length_Y_Axis;
+    break;
+  case GRID_NACA_AEROFOIL :
+    out_file << "\n  -> NACA " 
+	     << IP.NACA_Aerofoil_Type;
+    out_file << "\n  -> Chord Length (m): " 
+	     << IP.Chord_Length;
+    break;
+  case GRID_FREE_JET :
+    out_file << "\n  -> Orifice Radius (m): " 
+	     << IP.Orifice_Radius;
+    break;
+  case GRID_WEDGE :
+    out_file << "\n  -> Wedge Angle (degrees): " << IP.Wedge_Angle;
+    out_file << "\n  -> Wedge Length (m): " << IP.Wedge_Length;
+    break;
+  case GRID_BUMP_CHANNEL_FLOW :
+    if (strcmp(IP.Grid_Type,"Bump_Channel_Flow") == 0) {
+      if (IP.Smooth_Bump) out_file << " (smooth bump)";
+      else out_file << " (non-smooth bump)";
     }
-    out_file << "\n  -> Mesh shift, scale, and rotate: " 
-             << IP.X_Shift << " " << IP.X_Scale << " " << IP.X_Rotate;
-    out_file << "\n  -> Number of Blocks i-direction: "
-             << IP.Number_of_Blocks_Idir;
-    out_file << "\n  -> Number of Blocks j-direction: " 
-             << IP.Number_of_Blocks_Jdir;
-    out_file << "\n  -> Number of Cells i-direction: "
-             << IP.Number_of_Cells_Idir;
-    out_file << "\n  -> Number of Cells j-direction: " 
-             << IP.Number_of_Cells_Jdir;
-    out_file << "\n  -> Number of Ghost Cells: " 
-             << IP.Number_of_Ghost_Cells;
-    if (IP.Number_of_Initial_Mesh_Refinements > 0)
+    break;
+  case GRID_ICEMCFD :
+    break;
+  case GRID_READ_FROM_DEFINITION_FILE :
+    break;
+  case GRID_READ_FROM_GRID_DATA_FILE :
+    break;
+  default:
+    out_file << "\n  -> Width of Solution Domain (m): " 
+	     << IP.Box_Width;
+    out_file << "\n  -> Height of Solution Domain (m): " 
+	     << IP.Box_Height;
+    break;
+  } /* endswitch */
+  if (IP.BCs_Specified) {
+    out_file << "\n  -> Boundary conditions specified as: "
+	     << "\n     -> BC_North = " << IP.BC_North_Type
+	     << "\n     -> BC_South = " << IP.BC_South_Type
+	     << "\n     -> BC_East = " << IP.BC_East_Type
+	     << "\n     -> BC_West = " << IP.BC_West_Type;
+  }
+  out_file << "\n  -> Mesh shift, scale, and rotate: " 
+	   << IP.X_Shift << " " << IP.X_Scale << " " << IP.X_Rotate;
+  out_file << "\n  -> Number of Blocks i-direction: "
+	   << IP.Number_of_Blocks_Idir;
+  out_file << "\n  -> Number of Blocks j-direction: " 
+	   << IP.Number_of_Blocks_Jdir;
+  out_file << "\n  -> Number of Cells i-direction: "
+	   << IP.Number_of_Cells_Idir;
+  out_file << "\n  -> Number of Cells j-direction: " 
+	   << IP.Number_of_Cells_Jdir;
+  out_file << "\n  -> Number of Ghost Cells: " 
+	   << IP.Number_of_Ghost_Cells;
+  if (IP.Number_of_Initial_Mesh_Refinements > 0)
     out_file << "\n  -> Number of Initial Mesh Refinements : " 
-             << IP.Number_of_Initial_Mesh_Refinements;
-    if (IP.Number_of_Uniform_Mesh_Refinements > 0)
+	     << IP.Number_of_Initial_Mesh_Refinements;
+  if (IP.Number_of_Uniform_Mesh_Refinements > 0)
     out_file << "\n  -> Number of Uniform Mesh Refinements : " 
 	     << IP.Number_of_Uniform_Mesh_Refinements;
-    if (IP.Number_of_Boundary_Mesh_Refinements > 0)
+  if (IP.Number_of_Boundary_Mesh_Refinements > 0)
     out_file << "\n  -> Number of Boundary Mesh Refinements : " 
 	     << IP.Number_of_Boundary_Mesh_Refinements;
-    if (IP.Refinement_Criteria_Gradient_Density)
+  if (IP.Refinement_Criteria_Gradient_Density)
     out_file << "\n     -> Gradient of the density field refinement criteria";
-    if (IP.Refinement_Criteria_Divergence_Velocity)
+  if (IP.Refinement_Criteria_Divergence_Velocity)
     out_file << "\n     -> Divergence of the velocity field refinement criteria";
-    if (IP.Refinement_Criteria_Curl_Velocity)
+  if (IP.Refinement_Criteria_Curl_Velocity)
     out_file << "\n     -> Curl of the velocity field refinement criteria";
-    if (IP.Refinement_Criteria_Gradient_Temperature)
+  if (IP.Refinement_Criteria_Gradient_Temperature)
     out_file << "\n     -> Gradient of the temperature field refinement criteria";
-    if (IP.Refinement_Criteria_Gradient_CH4)
+  if (IP.Refinement_Criteria_Gradient_CH4)
     out_file << "\n     -> Gradient of the CH4 mass fraction field refinement criteria";
-    if (IP.Refinement_Criteria_Gradient_CO2)
+  if (IP.Refinement_Criteria_Gradient_CO2)
     out_file << "\n     -> Gradient of the CO2 mass fraction field refinement criteria";
-    out_file << "\n  -> Smooth Quad Block: "
+  out_file << "\n  -> Smooth Quad Block: "
 	   << IP.i_Smooth_Quad_Block;
-    out_file << "\n  -> CFL Number: " 
-             << IP.CFL_Number;
-    if (IP.Dual_Time_Stepping)
-      out_file << "\n  -> Physical CFL Number: "
-	       << IP.Physical_CFL_Number; 
-    out_file << "\n  -> Maximum Time (ms): " 
-             << IP.Time_Max*THOUSAND;
-    out_file << "\n  -> Maximum Number of Explicit Time Steps (Iterations): " 
-             << IP.Maximum_Number_of_Time_Steps;
-    out_file << "\n  -> Maximum Number of Implicit (NKS) Steps (Iterations): " 
-	     << IP.NKS_IP.Maximum_Number_of_NKS_Iterations;
-    out_file << "\n  -> Number of Processors: " 
-             << IP.Number_of_Processors;
-    out_file << "\n  -> Number of Blocks Per Processor: " 
-             << IP.Number_of_Blocks_Per_Processor;
-    out_file << "\n  -> Output File Name: " 
-             << IP.Output_File_Name;
-    out_file << "\n  -> Output Format: " 
-             << IP.Output_Format_Type;
-    out_file << "\n  -> Restart Solution Save Frequency: "
-             << IP.Restart_Solution_Save_Frequency
-             << " steps (iterations)"; 
-    if (IP.AMR) out_file << "\n  -> AMR Frequency: "
-                         << IP.AMR_Frequency
-                         << " steps (iterations)";
-    if (IP.Morton) out_file << "\n  -> Morton Re-Ordering Frequency: "
-                            << IP.Morton_Reordering_Frequency
-                            << " steps (iterations)"; 
-    if (IP.Time_Accurate_Plot_Frequency !=0 && IP.Time_Accurate){
-      out_file << "\n  -> Time Accurate Solution Plot Frequency: "
-	       << IP.Time_Accurate_Plot_Frequency
-	       << " steps (iterations)"; 
-    }
-    return (out_file);
+  out_file << "\n  -> CFL Number: " 
+	   << IP.CFL_Number;
+  if (IP.Dual_Time_Stepping)
+    out_file << "\n  -> Physical CFL Number: "
+	     << IP.Physical_CFL_Number; 
+  out_file << "\n  -> Maximum Time (ms): " 
+	   << IP.Time_Max*THOUSAND;
+  out_file << "\n  -> Maximum Number of Explicit Time Steps (Iterations): " 
+	   << IP.Maximum_Number_of_Time_Steps;
+  out_file << "\n  -> Maximum Number of Implicit (NKS) Steps (Iterations): " 
+	   << IP.NKS_IP.Maximum_Number_of_NKS_Iterations;
+  out_file << "\n  -> Number of Processors: " 
+	   << IP.Number_of_Processors;
+  out_file << "\n  -> Number of Blocks Per Processor: " 
+	   << IP.Number_of_Blocks_Per_Processor;
+  out_file << "\n  -> Output File Name: " 
+	   << IP.Output_File_Name;
+  out_file << "\n  -> Output Format: " 
+	   << IP.Output_Format_Type;
+  out_file << "\n  -> Restart Solution Save Frequency: "
+	   << IP.Restart_Solution_Save_Frequency
+	   << " steps (iterations)"; 
+  if (IP.AMR) out_file << "\n  -> AMR Frequency: "
+		       << IP.AMR_Frequency
+		       << " steps (iterations)";
+  if (IP.Morton) out_file << "\n  -> Morton Re-Ordering Frequency: "
+			  << IP.Morton_Reordering_Frequency
+			  << " steps (iterations)"; 
+  if (IP.Time_Accurate_Plot_Frequency !=0 && IP.Time_Accurate){
+    out_file << "\n  -> Time Accurate Solution Plot Frequency: "
+	     << IP.Time_Accurate_Plot_Frequency
+	     << " steps (iterations)"; 
+  }
+  return (out_file);
 }
 
 inline istream &operator >> (istream &in_file,
 			     Flame2D_Input_Parameters &IP) {
-    return (in_file);
+  return (in_file);
 }
 
 
@@ -907,20 +918,15 @@ extern void Set_Default_Input_Parameters(Flame2D_Input_Parameters &IP);
 
 extern void Broadcast_Input_Parameters(Flame2D_Input_Parameters &IP);
 
-// #ifdef _MPI_VERSION
-// extern void Broadcast_Input_Parameters(Flame2D_Input_Parameters &IP,
-//                                        MPI::Intracomm &Communicator, 
-//                                        const int Source_CPU);
-// #endif
-
 extern void Get_Next_Input_Control_Parameter(Flame2D_Input_Parameters &IP);
 
 extern int Parse_Next_Input_Control_Parameter(Flame2D_Input_Parameters &IP);
 
 extern int Process_Input_Control_Parameter_File(Flame2D_Input_Parameters &Input_Parameters,
-                                                char *Input_File_Name_ptr,
-                                                int &Command_Flag);
+						char *Input_File_Name_ptr,
+						int &Command_Flag);
 
 extern void Equivalence_Ratio(const double &phi);
+
 
 #endif /* _FLAME2D_INPUT_INCLUDED  */

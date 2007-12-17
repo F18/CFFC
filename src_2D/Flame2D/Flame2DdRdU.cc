@@ -14,9 +14,15 @@
 /////////////////////////////////////////////////////////////////////
 #include "Flame2DdRdU.h"
 
-// All functions setup to use "Uo" values as point implicit 
-// can be used in a multistage scheme and this insures 
-// that all Jacobians are taken as dR/dUo.
+// All functions should use Uo values as semi-implicit can be used in 
+// a multistage scheme and this ensures that all Jacobians are taken as dR/dUo.
+// For NKS, these functions are only called after an update, so U and Uo
+// are equivalent.  To speed up calculations for semi-implicit methods, 
+// the conserved Uo is converted to Wo and passed down through all the
+// SemiImplicitBlockJacobi() functions.  However, the dFIdW() functions
+// are now based off of W as they are only used by NKS.  If one were
+// to use a point-implicit method which would require dFIdW, which
+// can be used in a multistage scheme, this would no longer be consistent.
 
 
 /////////////////////////////////////////////////////////////////////
@@ -31,17 +37,17 @@
  * and implicit calculations.                           *
  *                                                      * 
  ********************************************************/ 
-void SemiImplicitBlockJacobi(::DenseMatrix &dSdU,
+void SemiImplicitBlockJacobi(DenseMatrix &dSdU,
 			     Flame2D_Quad_Block &SolnBlk,
-			     const Flame2D_pState &Wo,
+			     Flame2D_pState &Wo,
 			     const int &ii, const int &jj){ 
   
   if (SolnBlk.Axisymmetric && SolnBlk.Flow_Type != FLOWTYPE_INVISCID) { 
 
     // declares
     int n = dSdU.get_n(); 
-    static ::DenseMatrix dRdW(n,n); dRdW.zero();
-    static ::DenseMatrix dWdU(n,n); dWdU.zero();
+    static DenseMatrix dRdW(n,n); dRdW.zero();
+    static DenseMatrix dWdU(n,n); dWdU.zero();
     
     // Add Source Jacobians (viscous axisymmetric, turbulence)
     SemiImplicitBlockJacobi_dSdW(dRdW,SolnBlk,Wo,ii,jj);
@@ -65,9 +71,9 @@ void SemiImplicitBlockJacobi(::DenseMatrix &dSdU,
  * and implicit calculations.                           *
  *                                                      * 
  ********************************************************/ 
-void SemiImplicitBlockJacobi_dSdW(::DenseMatrix &dSdW,
+void SemiImplicitBlockJacobi_dSdW(DenseMatrix &dSdW,
 				  Flame2D_Quad_Block &SolnBlk,
-				  const Flame2D_pState &Wo,
+				  Flame2D_pState &Wo,
 				  const int &ii, const int &jj){ 
   
   //
@@ -99,9 +105,9 @@ void SemiImplicitBlockJacobi_dSdW(::DenseMatrix &dSdW,
  * and implicit calculations.                           *
  *                                                      * 
  ********************************************************/ 
-void SemiImplicitBlockJacobi_dSdU(::DenseMatrix &dSdU,
+void SemiImplicitBlockJacobi_dSdU(DenseMatrix &dSdU,
 				  Flame2D_Quad_Block &SolnBlk,
-				  const Flame2D_pState &Wo,
+				  Flame2D_pState &Wo,
 				  const int &ii, const int &jj){
   
   //Add Jacobian for inviscid axisymmetric source terms
@@ -122,6 +128,667 @@ void SemiImplicitBlockJacobi_dSdU(::DenseMatrix &dSdU,
 }
 
 
+
+/////////////////////////////////////////////////////////////////////
+/// Inviscid Flux Jacobian (FI)
+/////////////////////////////////////////////////////////////////////
+
+/*********************************************************
+ * Routine: Rotation_Matrix2                             *
+ *                                                       *
+ * This function returns either the rotation matrix, A,  *
+ * or the inverse of A.                                  *
+ *                                                       *
+ * Note: A_matrix = 1 for returning A.                   *
+ *                = 0 for returning inverse of A.        *
+ *                                                       *
+ *********************************************************/
+/*The rotation matrix is used for the inviscid flux calculations */
+void RotationMatrix(DenseMatrix &mat, const Vector2D &nface, const int A_matrix) 
+{
+  const double &cos_angle = nface.x; 
+  const double &sin_angle = nface.y;
+    
+  mat.identity();
+    
+  if (A_matrix) {
+    // Rotation Matrix, A 
+    mat(1,1) = cos_angle;
+    mat(1,2) = sin_angle;
+    mat(2,1) = -sin_angle;
+    mat(2,2) = cos_angle;
+  } else {
+    // Rotation Matrix, Inv A 
+    mat(1,1) = cos_angle;
+    mat(1,2) = -sin_angle;
+    mat(2,1) = sin_angle;
+    mat(2,2) = cos_angle;
+  } /* endif */
+
+} 
+
+
+/********************************************************
+ * Routine: PointImplicitBlkJ Inviscid Flux Jacobian    *
+ *                                                      *
+ * This routine returns the inviscid components of      *    
+ * Point Implicit Block Jacobian matrix for the         *
+ * specified local solution block.                      *
+ *                                                      *
+ ********************************************************/
+// Based on HLLE || ROE Flux Function
+void dFIdW_Inviscid(DenseMatrix &dRdW, 
+		    Flame2D_Quad_Block &SolnBlk, 
+		    Flame2D_Input_Parameters &Input_Parameters,
+		    const int &ii, const int &jj){
+  
+
+  if (Input_Parameters.i_Flux_Function == FLUX_FUNCTION_HLLE ){    
+    dFIdW_Inviscid_HLLE(dRdW,SolnBlk,Input_Parameters,ii, jj, NORTH);
+    dFIdW_Inviscid_HLLE(dRdW,SolnBlk,Input_Parameters,ii, jj, SOUTH);
+    dFIdW_Inviscid_HLLE(dRdW,SolnBlk,Input_Parameters,ii, jj, EAST);
+    dFIdW_Inviscid_HLLE(dRdW,SolnBlk,Input_Parameters,ii, jj, WEST);
+    dRdW = dRdW/SolnBlk.Grid.Cell[ii][jj].A;
+    
+  } else if (Input_Parameters.i_Flux_Function == FLUX_FUNCTION_ROE ){
+    
+    dFIdW_Inviscid_ROE(dRdW,SolnBlk,Input_Parameters,ii, jj, NORTH);
+    dFIdW_Inviscid_ROE(dRdW,SolnBlk,Input_Parameters,ii, jj, SOUTH);
+    dFIdW_Inviscid_ROE(dRdW,SolnBlk,Input_Parameters,ii, jj, EAST);
+    dFIdW_Inviscid_ROE(dRdW,SolnBlk,Input_Parameters,ii, jj, WEST);
+    dRdW = dRdW/SolnBlk.Grid.Cell[ii][jj].A;
+    
+  } else {
+    cerr<<"\n NOT A VALID FLUX FUNCTION FOR USE WITH Point Implicit \n";
+  }
+  
+}
+
+
+/********************************************************
+ * Routine: Inviscid Flux Jacobian using HLLE           *
+ *                                                      *
+ * This routine returns the inviscid components of      *    
+ * Point Implicit Block Jacobian matrix for the         *
+ * specified local solution block.                      *
+ *                                                      *
+ ********************************************************/
+void dFIdW_Inviscid_HLLE(DenseMatrix &dRdW, 
+			 Flame2D_Quad_Block &SolnBlk,
+			 Flame2D_Input_Parameters &Input_Parameters, 
+			 const int &ii, const int &jj, 
+			 const int Orient){
+
+  // declares
+  const int NUM_VAR = dRdW.get_n(); 
+  const int overlap = Input_Parameters.NKS_IP.GMRES_Overlap;
+  static Vector2D nface, lambdas;   
+  static DenseMatrix dFidW(NUM_VAR, NUM_VAR);
+  static DenseMatrix A(NUM_VAR, NUM_VAR);
+  static DenseMatrix AI(NUM_VAR, NUM_VAR);
+  static DenseMatrix II(NUM_VAR, NUM_VAR);
+  dFidW.zero();
+  II.identity();
+
+  //---------------------------------------------------------------
+  // Compute HLLE wavespeeds
+  //---------------------------------------------------------------
+  if (ii < SolnBlk.ICl -overlap || ii > SolnBlk.ICu +overlap ||
+      jj < SolnBlk.JCl -overlap || jj > SolnBlk.JCu +overlap) {
+    //Ghost cell so shouldn't be here
+    exit(-1);
+  } else if (Orient == NORTH) {
+    nface = SolnBlk.Grid.nfaceN(ii, jj-1);
+    Flame2D_pState::HLLE_wavespeeds(SolnBlk.W[ii][jj-1], 
+				    SolnBlk.W[ii][jj], nface, 
+				    lambdas);
+  } else if (Orient == SOUTH) {
+    nface = SolnBlk.Grid.nfaceS(ii, jj+1);
+    Flame2D_pState::HLLE_wavespeeds(SolnBlk.W[ii][jj+1], 
+				    SolnBlk.W[ii][jj], nface, 
+				    lambdas);
+  } else if (Orient == EAST) {
+    nface = SolnBlk.Grid.nfaceE(ii-1, jj);     
+    Flame2D_pState::HLLE_wavespeeds(SolnBlk.W[ii-1][jj], 
+				    SolnBlk.W[ii][jj], nface, 
+				    lambdas);
+  } else if (Orient == WEST) {
+    nface = SolnBlk.Grid.nfaceW(ii+1, jj);
+    Flame2D_pState::HLLE_wavespeeds(SolnBlk.W[ii+1][jj], 
+				    SolnBlk.W[ii][jj], nface, 
+				    lambdas);
+  }
+
+  // Compute Rotation matrices
+  RotationMatrix(A, nface, 1);
+  RotationMatrix(AI, nface, 0);
+   
+  //Weightings
+  double gamma( (lambdas.x*lambdas.y)/(lambdas.y-lambdas.x) );
+  double beta( - lambdas.x/(lambdas.y-lambdas.x) );
+
+  //---------------------------------------------------------------
+  // Compute the Jacobian
+  //---------------------------------------------------------------
+    
+  // temporarily store velocity
+  double u( ((const Flame2D_pState&)SolnBlk.W[ii][jj]).vx() ), 
+    v( ((const Flame2D_pState&)SolnBlk.W[ii][jj]).vy() );
+
+  // rotate in place
+  SolnBlk.W[ii][jj].Rotate(nface);
+
+  // Compute Jac
+  SolnBlk.W[ii][jj].dFIdW(dFidW);
+
+  // rotate back with exact values
+  SolnBlk.W[ii][jj].setVelocity(u, v);
+
+
+  //---------------------------------------------------------------
+  // Add to dRdW
+  //---------------------------------------------------------------
+  if (Orient == NORTH) {                 
+    dRdW += SolnBlk.Grid.lfaceN(ii, jj-1)*(AI*(beta*dFidW + gamma*II)*A); 
+  } else if (Orient == SOUTH) {     
+    dRdW += SolnBlk.Grid.lfaceS(ii, jj+1)*(AI*(beta*dFidW + gamma*II)*A); 
+  } else if (Orient == EAST) {                
+    dRdW += SolnBlk.Grid.lfaceE(ii-1, jj)*(AI*(beta*dFidW + gamma*II)*A);      
+  } else if (Orient == WEST) {     
+    dRdW += SolnBlk.Grid.lfaceW(ii+1, jj)*(AI*(beta*dFidW + gamma*II)*A); 
+  } else {
+    cerr<<" NOT A VALID ORIENTATION "; exit(1);
+  }
+
+} 
+
+/********************************************************
+ * Routine: Inviscid Flux Jacobian using Roe            *
+ *                                                      *
+ * This routine returns the inviscid components of      *    
+ * Jacobian matrix for the specified local solution     *
+ * block calculated analytically.                       *
+ *                                                      *
+ * dF/dW_R                                              *
+ ********************************************************/
+void dFIdW_Inviscid_ROE(DenseMatrix& dRdW, 
+			Flame2D_Quad_Block &SolnBlk,  
+			Flame2D_Input_Parameters &Input_Parameters,
+			const int &ii, const int &jj, 
+			const int Orient){
+   
+  // declares
+  const int overlap = Input_Parameters.NKS_IP.GMRES_Overlap;
+  const int NUM_VAR = dRdW.get_n();
+  static Vector2D nface;
+  double lface;
+  static DenseMatrix dFidW(NUM_VAR, NUM_VAR);
+  static DenseMatrix A(NUM_VAR, NUM_VAR);
+  static DenseMatrix AI(NUM_VAR, NUM_VAR);
+  Flame2D_pState *Wl, *Wr;
+  static Flame2D_pState Wa;
+  static Flame2D_State lambdas_a, lambdas_l, lambdas_r, wavespeeds;
+  dFidW.zero();
+
+  // GHOST CELL so do nothing
+  if (ii < SolnBlk.ICl -overlap || ii > SolnBlk.ICu + overlap ||
+      jj < SolnBlk.JCl -overlap || jj > SolnBlk.JCu + overlap) {
+    cout<<"\n Hey I am not suppose to be here! \n"; 
+    exit(-1);
+  }
+
+  // get orientation
+  int Ri, Rj;
+  if (Orient == NORTH) {
+    Ri = ii; Rj=jj-1;
+    nface = SolnBlk.Grid.nfaceN(Ri, Rj);
+    lface = SolnBlk.Grid.lfaceN(Ri, Rj);
+    Wl = &SolnBlk.W[Ri  ][Rj  ]; 
+    Wr = &SolnBlk.W[Ri  ][Rj+1]; 
+  } else if (Orient == SOUTH) {
+    Ri = ii; Rj=jj+1;
+    nface = SolnBlk.Grid.nfaceS(Ri, Rj);
+    lface = SolnBlk.Grid.lfaceS(Ri, Rj);
+    Wl = &SolnBlk.W[Ri  ][Rj  ]; 
+    Wr = &SolnBlk.W[Ri  ][Rj-1];  
+  } else if (Orient == EAST) { 
+    Ri = ii-1; Rj=jj;
+    nface = SolnBlk.Grid.nfaceE(Ri, Rj);     
+    lface = SolnBlk.Grid.lfaceE(Ri, Rj);
+    Wl = &SolnBlk.W[Ri  ][Rj  ]; 
+    Wr = &SolnBlk.W[Ri+1][Rj  ];
+  } else if (Orient == WEST) { 
+    Ri = ii+1; Rj=jj;
+    nface = SolnBlk.Grid.nfaceW(Ri, Rj);
+    lface = SolnBlk.Grid.lfaceW(Ri, Rj);
+    Wl = &SolnBlk.W[Ri  ][Rj  ]; 
+    Wr = &SolnBlk.W[Ri-1][Rj  ];
+  }
+    
+  // Compute Rotation matrices
+  RotationMatrix(A, nface, 1);
+  RotationMatrix(AI, nface, 0);
+
+  //---------------------------------------------------------------
+  // Compute the Jacobian
+  //---------------------------------------------------------------
+  // temporary storage
+  double ur( ((const Flame2D_pState*)Wr)->vx() ), 
+    vr( ((const Flame2D_pState*)Wr)->vy() ), 
+    ul( ((const Flame2D_pState*)Wl)->vx() ), 
+    vl( ((const Flame2D_pState*)Wl)->vy() );
+
+  //Rotate left and right states in place 
+  Wl->Rotate(nface);
+  Wr->Rotate(nface);
+     
+  //Determin Roe Averaged State
+  Wa.RoeAverage( *Wl, *Wr );
+    
+  // Jacobian dF/dW
+  // Note: Wr will always be i,j
+  Wr->dFIdW(dFidW, HALF);
+
+  //---------------------------------------------------------------
+  // Regular Roe (no preconditioning)
+  //---------------------------------------------------------------
+  if(!Input_Parameters.Preconditioning){
+
+    // Determine Wave Speeds
+    Wl->lambda_x(lambdas_l);
+    Wr->lambda_x(lambdas_r);
+    Wa.lambda_x(lambdas_a);
+    wavespeeds.HartenFix_Abs( lambdas_a,
+			      lambdas_l,
+			      lambdas_r );         
+      
+    // Compute each element of Jacobian(i,j)
+    // dFidW(irow, jcol) -= HALF*wavespeeds[i]*lp[jcol+1]*rc[irow+1];
+    Wa.Flux_Dissipation_Jac(dFidW, wavespeeds, HALF);
+
+      
+    //---------------------------------------------------------------
+    // LOW MACH NUMBER PRECONDITIONING
+    //---------------------------------------------------------------
+  } else if(Input_Parameters.Preconditioning){
+       
+    //preconditioner spacing -> THIS MAY NOT BE CONSISTENT !!!!!!!!!!!
+    double deltax( SolnBlk.delta_n(ii, jj) );
+
+    // Roeaverage state preconditioned velocity
+    double MR2a( Wa.Mr2(SolnBlk.Flow_Type,deltax) );
+      
+    // Determine Preconditioned Wave Speeds
+    Wl->lambda_preconditioned_x(lambdas_l, Wl->Mr2(SolnBlk.Flow_Type,deltax)); 
+    Wr->lambda_preconditioned_x(lambdas_r, Wr->Mr2(SolnBlk.Flow_Type,deltax));
+    Wa.lambda_preconditioned_x(lambdas_a, MR2a);
+    wavespeeds.HartenFix_Abs( lambdas_a, 
+			      lambdas_l, 
+			      lambdas_r );       
+       
+    // Calculate the preconditioned upwind dissipation flux.
+    // dFidW(irow, jcol) -= HALF*wavespeeds[i]*lp[jcol+1]*rc[irow+1];
+    static DenseMatrix Flux_dissipation(NUM_VAR,NUM_VAR);
+    Flux_dissipation.zero();
+    Wa.Flux_Dissipation_Jac_precon(Flux_dissipation, MR2a, wavespeeds, HALF);
+
+    // Evaluate the low-Mach-number local preconditioner for the Roe-averaged state.
+    static DenseMatrix P( NUM_VAR, NUM_VAR, ZERO);          
+    Wa.Low_Mach_Number_Preconditioner(P,SolnBlk.Flow_Type,deltax);
+       
+    // Add preconditioned dissipation to Inviscid Jacobian
+    dFidW += P*Flux_dissipation;
+       
+  }     
+     
+  //---------------------------------------------------------------
+  // Add to dRdW
+  //---------------------------------------------------------------
+  //Rotate back 
+  dRdW += lface*AI*dFidW*A;
+    
+  // Rotate Back -> avoid roundoff by setting the exact values
+  Wl->setVelocity( ul, vl );
+  Wr->setVelocity( ur, vr );
+      
+}
+
+
+/********************************************************
+ * Routine: Inviscid Flux Jacobian using AUSM_plus_up   *
+ *                                                      *
+ * This routine returns the inviscid components of      *    
+ * Jacobian matrix for the specified local solution     *
+ * block calculated analytically.                       *
+ *                                                      *
+ * dF/dW_R                                              *
+ ********************************************************/
+void dFIdW_Inviscid_AUSM_plus_up(DenseMatrix& dRdW, 
+				 Flame2D_Quad_Block &SolnBlk,  
+				 Flame2D_Input_Parameters &Input_Parameters,
+				 const int &ii, const int &jj, 
+				 const int Orient){
+   
+  // declares
+  const int overlap = Input_Parameters.NKS_IP.GMRES_Overlap;
+  const int NUM_VAR = dRdW.get_n();
+  static Vector2D nface;
+  double lface;
+  static DenseMatrix dFidW(NUM_VAR, NUM_VAR);
+  static DenseMatrix A(NUM_VAR, NUM_VAR);
+  static DenseMatrix AI(NUM_VAR, NUM_VAR);
+  dFidW.zero();
+
+  // GHOST CELL so do nothing
+  if (ii < SolnBlk.ICl -overlap || ii > SolnBlk.ICu + overlap ||
+      jj < SolnBlk.JCl -overlap || jj > SolnBlk.JCu + overlap) {
+    cout<<"\n Hey I am not suppose to be here! \n";
+    exit(-1);
+  }
+
+  // get orientation
+  int Ri, Rj;
+  if (Orient == NORTH) {
+    Ri = ii; Rj=jj-1;
+    nface = SolnBlk.Grid.nfaceN(Ri, Rj);
+    lface = SolnBlk.Grid.lfaceN(Ri, Rj);
+  } else if (Orient == SOUTH) {
+    Ri = ii; Rj=jj+1;
+    nface = SolnBlk.Grid.nfaceS(Ri, Rj);
+    lface = SolnBlk.Grid.lfaceS(Ri, Rj);
+  } else if (Orient == EAST) { 
+    Ri = ii-1; Rj=jj;
+    nface = SolnBlk.Grid.nfaceE(Ri, Rj);     
+    lface = SolnBlk.Grid.lfaceE(Ri, Rj);
+  } else if (Orient == WEST) { 
+    Ri = ii+1; Rj=jj;
+    nface = SolnBlk.Grid.nfaceW(Ri, Rj);
+    lface = SolnBlk.Grid.lfaceW(Ri, Rj);
+  }
+     
+  // Compute Rotation matrices
+  RotationMatrix(A, nface, 1);
+  RotationMatrix(AI, nface, 0);
+          
+  //---------------------------------------------------------------
+  // Compute the Jacobian
+  //---------------------------------------------------------------
+
+  // temporarily store velocity
+  double u( ((const Flame2D_pState&)SolnBlk.W[ii][jj]).vx() ), 
+    v( ((const Flame2D_pState&)SolnBlk.W[ii][jj]).vy() );
+
+  // rotate in place
+  SolnBlk.W[ii][jj].Rotate(nface);
+
+  // Compute Jac
+  SolnBlk.W[ii][jj].dFIdW(dFidW, HALF);
+
+  // rotate back with exact values
+  SolnBlk.W[ii][jj].setVelocity(u, v);
+
+  //---------------------------------------------------------------
+  // FILL IN AUSM SPECIFIC STUFF HERE
+  //---------------------------------------------------------------
+    
+  //---------------------------------------------------------------
+  // Add to dRdW
+  //---------------------------------------------------------------
+  //Rotate back 
+  dRdW += lface*AI*dFidW*A;
+        
+}
+
+/////////////////////////////////////////////////////////////////////
+/// Viscous Flux Jacobian (Fv)
+/////////////////////////////////////////////////////////////////////
+
+/********************************************************
+ * Routine: dFvdWf_Diamond                              *
+ *                                                      *
+ * This routine calculates the Viscous components of    *
+ * the residual with respect to the primitive variables *   
+ * in based on Green Gauss Diamond Path Reconstruction. *
+ *                                                      *
+ ********************************************************/
+void dFvdWf_Diamond(DenseMatrix &dFvdWf, 
+		    DenseMatrix &dGvdWf, 
+		    Flame2D_Quad_Block &SolnBlk,
+		    const int &Orient, 
+		    const int &ii, const int &jj){
+   
+  // declares
+  static Flame2D_pState QuadraturePoint_W;
+  const Flame2D_State *QuadraturePoint_dWdx, *QuadraturePoint_dWdy;
+  double radius(0.0);
+  
+  //---------------------------------------------------------------
+  // Compute Gradients
+  //---------------------------------------------------------------
+  switch(Orient){
+
+    /****************************** NORTH ******************************/
+  case NORTH:
+    // QuadraturePoint_W = HALF*(SolnBlk.UnoNW(ii, jj).W() +SolnBlk.UnoNE(ii, jj).W() );
+    QuadraturePoint_W.Average( SolnBlk.Wnd[ii][jj+1], SolnBlk.Wnd[ii+1][jj+1] );
+    QuadraturePoint_dWdx = &SolnBlk.dWdx_faceN[ii][jj];
+    QuadraturePoint_dWdy = &SolnBlk.dWdy_faceN[ii][jj];
+
+    if (SolnBlk.Axisymmetric == AXISYMMETRIC_X) {
+      radius = (SolnBlk.Grid.xfaceN(ii,jj).x < MICRO) ? MICRO : SolnBlk.Grid.xfaceN(ii,jj).x;     
+    } else if (SolnBlk.Axisymmetric == AXISYMMETRIC_Y) {    
+      radius = (SolnBlk.Grid.xfaceN(ii,jj).y < MICRO) ? MICRO : SolnBlk.Grid.xfaceN(ii,jj).y;            
+    } 
+
+    break;
+
+    /****************************** EAST ******************************/
+  case EAST:
+    // QuadraturePoint_W = HALF*(SolnBlk.UnoNE(ii, jj).W() + SolnBlk.UnoSE(ii, jj).W() );
+    QuadraturePoint_W.Average( SolnBlk.Wnd[ii+1][jj+1], SolnBlk.Wnd[ii+1][jj] );
+    QuadraturePoint_dWdx = &SolnBlk.dWdx_faceE[ii][jj];
+    QuadraturePoint_dWdy = &SolnBlk.dWdy_faceE[ii][jj];
+
+    if (SolnBlk.Axisymmetric == AXISYMMETRIC_X) {
+      radius = ( SolnBlk.Grid.xfaceE(ii,jj).x < MICRO) ? MICRO : SolnBlk.Grid.xfaceE(ii,jj).x;     
+    } else if (SolnBlk.Axisymmetric == AXISYMMETRIC_Y) {    
+      radius = ( SolnBlk.Grid.xfaceE(ii,jj).y < MICRO) ? MICRO : SolnBlk.Grid.xfaceE(ii,jj).y;            
+    } 
+
+    break;
+
+    /****************************** SOUTH ******************************/
+  case SOUTH:      
+    // QuadraturePoint_W = HALF*(SolnBlk.UnoSE(ii, jj).W() +SolnBlk.UnoSW(ii, jj).W() );
+    QuadraturePoint_W.Average( SolnBlk.Wnd[ii+1][jj], SolnBlk.Wnd[ii][jj] );
+    QuadraturePoint_dWdx = &SolnBlk.dWdx_faceS[ii][jj];
+    QuadraturePoint_dWdy = &SolnBlk.dWdy_faceS[ii][jj];
+     
+    if (SolnBlk.Axisymmetric == AXISYMMETRIC_X) {
+      radius = (SolnBlk.Grid.xfaceS(ii,jj).x < MICRO) ? MICRO : SolnBlk.Grid.xfaceS(ii,jj).x;     
+    } else if (SolnBlk.Axisymmetric == AXISYMMETRIC_Y) {    
+      radius = (SolnBlk.Grid.xfaceS(ii,jj).y < MICRO) ? MICRO : SolnBlk.Grid.xfaceS(ii,jj).y;            
+    } 
+    break;
+
+    /****************************** WEST ******************************/
+  case WEST:       
+    // QuadraturePoint_W = HALF*(SolnBlk.UnoNW(ii, jj).W() +SolnBlk.UnoSW(ii, jj).W());
+    QuadraturePoint_W.Average( SolnBlk.Wnd[ii][jj+1], SolnBlk.Wnd[ii][jj] );
+    QuadraturePoint_dWdx = &SolnBlk.dWdx_faceW[ii][jj];
+    QuadraturePoint_dWdy = &SolnBlk.dWdy_faceW[ii][jj];
+     
+    if (SolnBlk.Axisymmetric == AXISYMMETRIC_X) {
+      radius = (SolnBlk.Grid.xfaceW(ii,jj).x < MICRO) ? MICRO : SolnBlk.Grid.xfaceW(ii,jj).x;     
+    } else if (SolnBlk.Axisymmetric == AXISYMMETRIC_Y) {    
+      radius = (SolnBlk.Grid.xfaceW(ii,jj).y < MICRO) ? MICRO : SolnBlk.Grid.xfaceW(ii,jj).y;            
+    } 
+    break;
+  }
+
+  //---------------------------------------------------------------
+  // Compute Jacobian terms
+  //---------------------------------------------------------------
+  QuadraturePoint_W.dFvdWf_dGvdWf( dFvdWf, dGvdWf, 
+				   *QuadraturePoint_dWdx, 
+				   *QuadraturePoint_dWdy, 
+				   SolnBlk.Axisymmetric, radius );
+    
+}
+
+
+/********************************************************
+ * Routine: dWfdWc_Diamond                              *
+ *                                                      *
+ * This routine calculates the transformation matrix    *
+ * to convert from the Cell Face to Cell Center used    *
+ * for constructing the Viscous Jacobians based         *
+ * on a diamond path recontstruction.                   *  
+ *                                                      *
+ ********************************************************/
+void dWfdWc_Diamond(DenseMatrix &dWfdWc_x,
+		    DenseMatrix &dWfdWc_y, 
+		    Flame2D_Quad_Block &SolnBlk,
+		    const int &Orient_face, 
+		    const int &i, const int &j, 
+		    const int &Orient_cell){
+   
+  //---------------------------------------------------------------
+  // All these confusing relationships are based on an outward
+  // facing normal from the Orient_face ie  NORTH face ,
+  // left is NW and right is NE.  
+  //---------------------------------------------------------------
+  double LL(ZERO),RR(ZERO); 
+  switch (Orient_face){
+  case NORTH:
+    if(Orient_cell == CENTER){    
+      LL = SolnBlk.dWn_dWc(i,j+1, NORTH_WEST);
+      RR = SolnBlk.dWn_dWc(i+1, j+1, NORTH_EAST);
+    } else if(Orient_cell == NORTH){     
+      LL = SolnBlk.dWn_dWc(i,j+1, SOUTH_WEST);
+      RR = SolnBlk.dWn_dWc(i+1, j+1, SOUTH_EAST);
+    } else if(Orient_cell == EAST){
+      LL = ZERO;
+      RR = SolnBlk.dWn_dWc(i+1,j+1,NORTH_WEST);                  
+    } else if(Orient_cell == WEST){ 
+      LL = SolnBlk.dWn_dWc(i,j+1,NORTH_EAST);      
+      RR = ZERO;                   
+    } else if(Orient_cell == NORTH_WEST){
+      LL = SolnBlk.dWn_dWc(i,j+1,SOUTH_EAST);      
+      RR = ZERO;   
+    } else if(Orient_cell == NORTH_EAST){
+      LL = ZERO;
+      RR = SolnBlk.dWn_dWc(i+1,j+1,SOUTH_WEST);    
+    }
+    break;
+      
+  case EAST:
+    if(Orient_cell == CENTER){  
+      LL = SolnBlk.dWn_dWc(i+1, j+1, NORTH_EAST);
+      RR = SolnBlk.dWn_dWc(i+1, j, SOUTH_EAST); 
+    } else if(Orient_cell == EAST){    
+      LL = SolnBlk.dWn_dWc(i+1, j+1, NORTH_WEST);
+      RR = SolnBlk.dWn_dWc(i+1, j, SOUTH_WEST); 
+    } else if(Orient_cell == NORTH){     
+      LL = SolnBlk.dWn_dWc(i+1,j+1,SOUTH_EAST);
+      RR = ZERO;
+    } else if(Orient_cell == SOUTH){           
+      LL = ZERO;
+      RR = SolnBlk.dWn_dWc(i+1,j,NORTH_EAST);       
+    } else if(Orient_cell == NORTH_EAST){     
+      LL = SolnBlk.dWn_dWc(i+1,j+1,SOUTH_WEST);
+      RR = ZERO;
+    } else if(Orient_cell == SOUTH_EAST){           
+      LL = ZERO;
+      RR = SolnBlk.dWn_dWc(i+1,j,NORTH_WEST);       
+    }
+    break;
+  
+  case SOUTH:
+    if(Orient_cell == CENTER){  
+      LL = SolnBlk.dWn_dWc(i+1,j,SOUTH_EAST);
+      RR = SolnBlk.dWn_dWc(i,j, SOUTH_WEST);
+    } else if(Orient_cell == SOUTH){     
+      LL = SolnBlk.dWn_dWc(i+1,j, NORTH_EAST);
+      RR = SolnBlk.dWn_dWc(i,j, NORTH_WEST);
+    } else if(Orient_cell == EAST){ 
+      LL = SolnBlk.dWn_dWc(i+1,j, SOUTH_WEST);      
+      RR = ZERO;
+    } else if(Orient_cell == WEST){    
+      LL = ZERO; 
+      RR = SolnBlk.dWn_dWc(i,j, SOUTH_EAST);                              
+    } else if(Orient_cell == SOUTH_EAST){ 
+      LL = SolnBlk.dWn_dWc(i+1,j, NORTH_WEST);      
+      RR = ZERO;
+    } else if(Orient_cell == SOUTH_WEST){    
+      LL = ZERO; 
+      RR = SolnBlk.dWn_dWc(i,j, NORTH_EAST);      
+    }
+    break;
+   
+  case WEST:
+    if(Orient_cell == CENTER){  
+      LL = SolnBlk.dWn_dWc(i,j, SOUTH_WEST);
+      RR = SolnBlk.dWn_dWc(i,j+1,NORTH_WEST);  
+    } else if(Orient_cell == WEST){  
+      LL = SolnBlk.dWn_dWc(i,j, SOUTH_EAST);
+      RR = SolnBlk.dWn_dWc(i,j+1,NORTH_EAST);  
+    } else if(Orient_cell == SOUTH){           
+      LL = SolnBlk.dWn_dWc(i,j,NORTH_WEST);
+      RR = ZERO;
+    } else if(Orient_cell == NORTH){   
+      LL = ZERO;
+      RR = SolnBlk.dWn_dWc(i,j+1,SOUTH_WEST);
+    } else if(Orient_cell == SOUTH_WEST){           
+      LL = SolnBlk.dWn_dWc(i,j,NORTH_EAST);
+      RR = ZERO;
+    } else if(Orient_cell == NORTH_WEST){   
+      LL = ZERO;
+      RR = SolnBlk.dWn_dWc(i,j+1,SOUTH_EAST);
+    }
+    break;     
+  }
+
+  //get 2nd derivatives
+  double d_dWdx_dW(ZERO), d_dWdy_dW(ZERO);
+  d_dWd_dW_Diamond(d_dWdx_dW,d_dWdy_dW,SolnBlk,LL,RR,Orient_cell,Orient_face,i,j);
+ 
+  /*********************** X - DIRECTION **************************************/
+  for(int nn=0; nn<6; nn++){
+    dWfdWc_x(nn,nn) = HALF*(LL+RR);
+    dWfdWc_y(nn,nn) = dWfdWc_x(nn,nn);
+  } 
+ 
+  dWfdWc_x(6,0) = d_dWdx_dW;
+  dWfdWc_x(7,1) = d_dWdx_dW;        //NOTE 7,1 & 8,1 same for X and Y 
+  dWfdWc_x(8,1) = d_dWdy_dW;
+  dWfdWc_x(9,2) =  dWfdWc_x(7,1);
+  dWfdWc_x(10,2) =  dWfdWc_x(8,1);
+  dWfdWc_x(11,3) = d_dWdx_dW;
+  dWfdWc_x(12,4) = d_dWdx_dW;
+  dWfdWc_x(13,5) = d_dWdx_dW;
+   
+  const int ns = Flame2D_State::NumSpecies() - Flame2D_State::NSm1;
+  for(int Num=0; Num<(ns); Num++){
+    dWfdWc_x(14+Num,6+Num) =  d_dWdx_dW;
+    dWfdWc_y(14+Num,6+Num) =  d_dWdy_dW;
+  }
+
+  /*********************** Y - DIRECTION **************************************/
+  dWfdWc_y(6,0) = d_dWdy_dW;   
+  dWfdWc_y(7,1) = d_dWdx_dW;
+  dWfdWc_y(8,1) = d_dWdy_dW;
+  dWfdWc_y(9,2) =  dWfdWc_y(7,1);
+  dWfdWc_y(10,2) =  dWfdWc_y(8,1);
+  dWfdWc_y(11,3) = d_dWdy_dW;
+  dWfdWc_y(12,4) = d_dWdy_dW;
+  dWfdWc_y(13,5) = d_dWdy_dW;
+     
+}
+
+/////////////////////////////////////////////////////////////////////
+/// 2nd deriavaites
+/////////////////////////////////////////////////////////////////////
 
 /********************************************************
  * Routine: d_dWd_dW_Diamond                            *
@@ -350,3 +1017,4 @@ void d_dWd_dW_Center(double &d_dWdx_dW_C, double &d_dWdy_dW_C,
       
 
 }
+

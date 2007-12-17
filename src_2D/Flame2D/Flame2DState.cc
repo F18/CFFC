@@ -18,16 +18,13 @@
 int Flame2D_State :: n = 0;
 int Flame2D_State :: ns = 0;
 #endif
-bool Flame2D_State::reacting = false;
-double Flame2D_State::Mref = 0.5;
-double Flame2D_State::gravity_z = -9.81;
-double* Flame2D_State::y = NULL;
-double* Flame2D_pState::r = NULL;
-double* Flame2D_pState::dihdic = NULL;
-double Flame2D_pState::phi = 0.0;
-double* Flame2D_pState::h_i = NULL;
-double* Flame2D_pState::cp_i = NULL;
-
+bool    Flame2D_State  :: reacting = false;
+double  Flame2D_State  :: Mref = 0.5;
+double  Flame2D_State  :: gravity_z = -9.81;
+double* Flame2D_State  :: y = NULL;
+double* Flame2D_pState :: r = NULL;
+double* Flame2D_pState :: h_i = NULL;
+double* Flame2D_pState :: cp_i = NULL;
 
 /////////////////////////////////////////////////////////////////////
 /// Static Setup Functions
@@ -69,7 +66,7 @@ void Flame2D_State::set_gravity(const double &g) { // [m/s^2]
     cerr<<"\n Flame2D_pState::set_gravity() - Gravity acting upwards!!!! \n";
     exit(1);
     
-  // gravity acting downwards (-ve), OK
+    // gravity acting downwards (-ve), OK
   } else {
     gravity_z = g;
   }
@@ -134,6 +131,97 @@ Flame2D_State Flame2D_pState::Fx(void) const {
   return FluxX;
 }
 
+/********************************************************
+ * Chem2D_pState::dFIdU -- Invisicd Flux Jacobian       *
+ ********************************************************/
+void Flame2D_pState::dFIdU(DenseMatrix &dFdU) {
+  
+  //cout<<"\n USING DFIDU \n";
+  
+  // Note: make sure you loaded the dihdic array and phi outside
+  updateDihdDic();
+  double phi( Phi() );
+  double Temp( T() );
+  double Rt( Rtot() );
+  double C_p( Cp() );
+  double ht( h() );
+  double A( C_p/Rt );
+  double denominator( A - ONE );
+
+  dFdU(0,1) += ONE;
+  dFdU(1,0) += ( A*( - vx()*vx() ) + 
+		 HALF*(THREE*vx()*vx() + vy()+vy()) - 
+		 ht + C_p*Temp + phi ) / denominator;
+  dFdU(1,1) += vx()*(TWO*A-THREE)/denominator; 
+  dFdU(1,2) -= vy()/denominator;
+  dFdU(1,3) += ONE/denominator;
+  dFdU(2,0) -= vx()*vy();
+  dFdU(2,1) += vy();
+  dFdU(2,2) += vx();
+  dFdU(3,0) += vx()*( vx()*vx() + vy()+vy() + C_p*Temp - 
+		      A*( HALF*(vx()*vx() + vy()+vy()) + ht ) + phi ) / denominator;
+  dFdU(3,1) += ht + HALF*(vx()*vx() + vy()*vy()) - vx()*vx()/denominator;
+  dFdU(3,2) -= vx()*vy()/denominator;
+  dFdU(3,3) += vx()*A/denominator;
+  //Species
+  const int NUM_VAR = NUM_FLAME2D_VAR_SANS_SPECIES;
+  for(int i = 0; i<ns-NSm1; i++){ 
+    dFdU(1,NUM_VAR+i) -= dihdic(i)/denominator; 
+       
+    dFdU(3,NUM_VAR+i) = vx()*dihdic(i);    
+    dFdU(NUM_VAR+i, 0) -= c(i)*vx() ;
+    dFdU(NUM_VAR+i, 1) += c(i);
+    dFdU(NUM_VAR+i,NUM_VAR+i) += vx();        
+  }
+ 
+}
+
+/********************************************************
+ * Chem2D_pState::dFIdW -- Invisicd Flux Jacobian       *
+ ********************************************************/
+void Flame2D_pState::dFIdW(DenseMatrix &dFdW, 
+			   const double& mult) {
+    
+  // Note: make sure you loaded the dihdic array and phi outside
+  updateDihdDic();
+  double Temp( T() );
+  double Rt( Rtot() );
+  double C_p( Cp() );
+  double ht( h() );
+  double A( ht + HALF*vsqr() );
+  double rho_vx( rho()*vx() );
+  double rho_vy( rho()*vy() );
+  double vx_vx( vx()*vx() );
+  double vx_vy( vx()*vy() );
+  double vy_vy( vy()*vy() );
+    
+  dFdW(0,0) = mult * vx();
+  dFdW(0,1) = mult * rho();
+  dFdW(1,0) = mult * vx_vx;
+  dFdW(1,1) = mult * TWO*rho_vx; 
+  dFdW(1,3) = mult * ONE;
+  dFdW(2,0) = mult * vx_vy;
+  dFdW(2,1) = mult * rho_vy;
+  dFdW(2,2) = mult * rho_vx;
+  dFdW(3,0) = mult * ( A*vx() - C_p*Temp*vx() );
+  dFdW(3,1) = mult * ( rho()*vx_vx + rho()*A );
+  dFdW(3,2) = mult * rho()*vx_vy;
+  dFdW(3,3) = mult * vx()*C_p/Rt;
+    
+  //Species
+  const int NUM_VAR = NUM_FLAME2D_VAR_SANS_SPECIES;
+  for(int i = 0; i<ns-NSm1; i++){ 
+    dFdW(3,NUM_VAR+i) = mult * rho_vx*dihdic(i);    
+      
+    dFdW(NUM_VAR+i, 0) = mult * c(i)*vx();
+    dFdW(NUM_VAR+i, 1) = mult * rho()*c(i);
+    dFdW(NUM_VAR+i,NUM_VAR+i) = mult * rho_vx;        
+  }
+    
+}
+
+
+  
 /*****************************************************************
  * Viscous fluxes  (laminar flow)                                * 
  * Viscous fluxes  (turbulent flows) are defined in single block * 
@@ -169,6 +257,140 @@ void Flame2D_pState::Viscous_Flux_y(const Flame2D_State &dWdy,
   for( int i=0; i<ns; i++){
     Flux.rhoc(i) += mult * rho() * Diffusion_coef(i) * dWdy.c(i);
   }
+
+}
+
+
+/********************************************************
+ * Chem2D_pState::dFvdWf -- Viscous Flux Jacobian       *
+ ********************************************************/
+void Flame2D_pState :: dFvdWf_dGvdWf( DenseMatrix dFvdWf, 
+				      DenseMatrix dGvdWf, 
+				      const Flame2D_State &dWdx, 
+				      const Flame2D_State &dWdy, 
+				      const int &Axisymmetric, 
+				      const double &radius ) {
+
+  // get references to gradients
+  double *dhdT = cp_i;
+  double *h = h_i;
+  Cp_and_h( dhdT, h );
+  const double *dcdx   = dWdx.c();
+  const double *dcdy   = dWdy.c();
+  const double &drhodx = dWdx.rho();
+  const double &drhody = dWdy.rho();
+  const double &dpdx   = dWdx.p();
+  const double &dpdy   = dWdy.p();
+  const double &dUdx   = dWdx.vx();
+  const double &dUdy   = dWdy.vx();
+  const double &dVdx   = dWdx.vy();
+  const double &dVdy   = dWdy.vy();
+
+   
+  //---------------------------------------------------------------
+  // Compute Jacobian terms
+  //---------------------------------------------------------------
+
+  // get some quantities of interest
+  updateTransport();
+  const double &rho_ = rho();
+  const double &p_ = p();
+  const double &vx_ = vx();
+  const double &vy_ = vy();
+  const double Kappa( kappa() );
+  const double Mu( mu() );
+  const double Rmix( Rtot() );
+  const double rho1R(rho_*rho_*Rmix);
+  const double rho2R(rho_*rho_*Rmix);
+  const double rho3R(rho_*rho_*rho_*Rmix);
+  const double mu_vx( Mu*vx_ );
+  const double mu_vy( Mu*vy_ );
+
+  /*********************** X - DIRECTION **************************************/
+
+  dFvdWf(1, 7) += FOUR/THREE*Mu;
+  dFvdWf(1, 10) -= TWO/THREE*Mu;
+  dFvdWf(2, 8) += Mu;
+  dFvdWf(2, 9) += Mu;  
+   
+  double Sum_q(ZERO);
+  double Sum_dq(ZERO);
+  for(int Num = 0; Num<ns; Num++){
+    Sum_q +=  dhdT[Num]*Diffusion_coef(Num)*dcdx[Num]/Rmix;
+    Sum_dq -= dhdT[Num]*Diffusion_coef(Num)*dcdx[Num]*p_/rho1R;
+  } 
+
+  dFvdWf(3,0) += ( Kappa*( -dpdx/rho2R + TWO*p_*drhodx/rho3R ) + 
+		   Sum_dq );
+  dFvdWf(3,1) += TWO*Mu*(TWO/THREE*dUdx - dVdy/THREE);
+  dFvdWf(3,2) += Mu*(dUdy+dVdx);
+  dFvdWf(3,3) += -drhodx/rho2R*Kappa + Sum_q;
+
+  dFvdWf(3,6) -= p_/rho2R*Kappa;
+  dFvdWf(3,7) += FOUR/THREE*mu_vx;
+  dFvdWf(3,8) += mu_vy;
+  dFvdWf(3,9) = dFvdWf(3,8);
+  dFvdWf(3,10) -= TWO/THREE*mu_vx;
+  dFvdWf(3,11) = Kappa/rho1R; 
+
+  // Axisymmetric
+  if(Axisymmetric == AXISYMMETRIC_Y){
+    dFvdWf(1,2) -=  TWO/THREE*Mu/radius;
+    dFvdWf(3,1) -=  TWO/THREE*mu_vy/radius;
+    dFvdWf(3,2) -=  TWO/THREE*mu_vx/radius;
+  } else if(Axisymmetric == AXISYMMETRIC_X){    
+    dFvdWf(1,1) -=  TWO/THREE*Mu/radius;
+    dFvdWf(3,1) -=  FOUR/THREE*mu_vx/radius;
+  }
+ 
+  //multispecies
+  for(int Num = 0; Num<ns-NSm1; Num++){
+    dFvdWf(3,14+Num) = rho_*Diffusion_coef(Num)*h[Num];  //+  H3???
+    dFvdWf(6+Num, 14+Num) = rho_*Diffusion_coef(Num);
+  }
+   
+  /*********************** Y - DIRECTION **************************************/
+
+  dGvdWf(1, 8) += Mu;
+  dGvdWf(1, 9) += Mu; 
+  dGvdWf(2, 7) -= TWO/THREE*Mu;
+  dGvdWf(2, 10) += FOUR/THREE*Mu;
+
+  Sum_q = ZERO;  Sum_dq = ZERO;
+  for(int Num = 0; Num<ns; Num++){
+    Sum_q +=  dhdT[Num]*Diffusion_coef(Num)*dcdy[Num]/Rmix;
+    Sum_dq -= dhdT[Num]*Diffusion_coef(Num)*dcdy[Num]*p_/rho1R;
+  } 
+   
+  dGvdWf(3,0) += ( Kappa*(-dpdy/rho2R + TWO*p_*drhody/rho3R) + 
+		   Sum_dq ); 
+  dGvdWf(3,1) += Mu*(dUdy + dVdx);
+  dGvdWf(3,2) += TWO*Mu*( TWO/THREE*dVdy - dUdx/THREE );
+  dGvdWf(3,3) += -drhody/rho2R*Kappa + Sum_q;
+  dGvdWf(3,6) -= p_/rho2R*Kappa;
+ 
+  dGvdWf(3,7) -= TWO/THREE*mu_vy;
+  dGvdWf(3,8) += mu_vx;
+  dGvdWf(3,9) = dGvdWf(3,8);
+  dGvdWf(3,10) += FOUR/THREE*mu_vy;
+  dGvdWf(3,11) = Kappa/rho1R; 
+
+  //Axisymmetric 
+  if(Axisymmetric == AXISYMMETRIC_Y){    
+    dGvdWf(2,2) -=  TWO/THREE*Mu/radius;
+    dGvdWf(3,2) -=  FOUR/THREE*mu_vy/radius;
+  } else if(Axisymmetric == AXISYMMETRIC_X){
+    dGvdWf(2,1) -=  TWO/THREE*Mu/radius;
+    dGvdWf(3,1) -=  TWO/THREE*mu_vy/radius;
+    dGvdWf(3,2) -=  TWO/THREE*mu_vx/radius;
+  }
+
+  //multispecies
+  for(int Num = 0; Num<ns-NSm1; Num++){
+    dGvdWf(3,14+Num) = rho_*Diffusion_coef(Num)*h[Num];
+    dGvdWf(6+Num, 14+Num) = rho_*Diffusion_coef(Num);
+  }
+
 
 }
 
@@ -215,142 +437,110 @@ void Flame2D_pState::lambda_preconditioned_x(Flame2D_State &lambdas,
 /// EIGENVECTORS
 /////////////////////////////////////////////////////////////////////
 
-// Conserved Right Eigenvector -- (x-direction)
-Flame2D_State Flame2D_pState::rc_x(const int &index) const {
-
-  if(index == 1){
-    double aa(a()); 
-    return (Flame2D_State(ONE, vx()-aa, vy(), H()/rho()-vx()*aa, c()));
-  } else if(index == 2) {
-    return (Flame2D_State(ONE, vx(), vy(), H()/rho()-Cp()*T(), c())); 
-  } else if(index == 3) {
-    return (Flame2D_State(ZERO, ZERO, rho(), rho()*vy(), ZERO));
-  } else if(index == 4) {
-    double aa(a());
-    return (Flame2D_State(ONE, vx()+aa, vy(), H()/rho()+vx()*aa, c()));
-  } else{ 
-    static Flame2D_State tmp;
-    tmp.Vacuum();
-    int k( (index-1)-NUM_FLAME2D_VAR_SANS_SPECIES );
-    tmp.E() = rho()*dihdic[k];  // -> note - dihdic needs to be loaded first outside
-    tmp.rhoc(k) = rho();
-    return tmp;
-  }
-}
-
-// Primitive Left Eigenvector -- (x-direction)
-Flame2D_State Flame2D_pState::lp_x(const int &index) const {
- 
-  if(index == 1){
-    double aa(a());
-    return (Flame2D_State(ZERO, -HALF*rho()/aa, ZERO, HALF/(aa*aa), ZERO));
-  } else if(index == 2) {
-    double aa(a());
-    return (Flame2D_State(ONE, ZERO, ZERO, -ONE/(aa*aa), ZERO));
-  } else if(index == 3) {
-    return  (Flame2D_State(ZERO, ZERO, ONE, ZERO, ZERO));
-  } else if(index == 4) {  
-     double aa(a());
-     return (Flame2D_State(ZERO, HALF*rho()/aa, ZERO, HALF/(aa*aa), ZERO));
-  } else{ 
-    static Flame2D_State tmp;
-    tmp.Vacuum();
-    int k( (index-1)-NUM_FLAME2D_VAR_SANS_SPECIES );
-    tmp.rhoc(k) = ONE;
-    return tmp;
-  } 
-  
-}
-
-void Flame2D_pState::Flux_Dissipation(const int &i,
-				      const Flame2D_State &dWrl, 
-				      const double &wavespeed, 
-				      Flame2D_State &Flux,
-				      const double &mult) const {
-
-  //declares
-  static Flame2D_State lp;
-  static Flame2D_State rc;
+/****************************************************
+ * Primitive Left Eigenvector -- (x-direction)
+ ****************************************************/
+void  Flame2D_pState::lp_x(const int &i, Flame2D_State& lp) const {
   double aa(a());
-  double tmp, dv;
-
-
   // Compute the left primitive eigenvector
-  // and the right conserved eigenvector, and store it in-place
   if(i == 1){
-
     lp.rho() = ZERO;
     lp.vx() = -HALF*rho()/aa;
     lp.vy() = ZERO;
     lp.p() =  HALF/(aa*aa);
     lp.c(ZERO);
-
-    rc.rho() = ONE;
-    rc.rhovx() = vx()-aa;
-    rc.rhovy() = vy();
-    rc.E() = H()/rho()-vx()*aa;
-    rc.rhoc(c());
-
   } else if(i == 2) {
-
     lp.rho() = ONE;
     lp.vx() = ZERO;
     lp.vy() = ZERO;
     lp.p() = -ONE/(aa*aa);
     lp.c(ZERO);
-
-    rc.rho() = ONE;
-    rc.rhovx() = vx();
-    rc.rhovy() = vy();
-    rc.E() = H()/rho()-Cp()*T();
-    rc.rhoc(c());
-
-    } else if(i == 3) {
-
+  } else if(i == 3) {
     lp.rho() = ZERO;
     lp.vx() = ZERO;
     lp.vy() = ONE;
     lp.p() = ZERO;
     lp.c(ZERO);
-
-    rc.rho() = ZERO;
-    rc.rhovx() = ZERO;
-    rc.rhovy() = rho();
-    rc.E() = rho()*vy();
-    rc.rhoc(ZERO);
-
   } else if(i == 4) {  
-
     lp.rho() = ZERO;
     lp.vx() = HALF*rho()/aa;
     lp.vy() = ZERO;
     lp.p() = HALF/(aa*aa);
     lp.c(ZERO);
-
-    rc.rho() = ONE;
-    rc.rhovx() = vx()+aa;
-    rc.rhovy() = vy();
-    rc.E() = H()/rho()+vx()*aa;
-    rc.rhoc(c());
-
   } else{ 
-
     lp.rho() = ZERO;
     lp.vx() = ZERO;
     lp.vy() = ZERO;
     lp.p() = ZERO;
     lp.c(ZERO);
     lp.c(i-NUM_FLAME2D_VAR_SANS_SPECIES-1) = ONE;
+  } 
+}
 
+/****************************************************
+ * Conserved Right Eigenvector -- (x-direction)
+ ****************************************************/
+void Flame2D_pState::rc_x(const int &i, 
+			  Flame2D_State& rc) {
+  double aa(a());
+  updateDihdDic();
+  // Compute the right conserved eigenvector
+  if(i == 1){
+    rc.rho() = ONE;
+    rc.rhovx() = vx()-aa;
+    rc.rhovy() = vy();
+    rc.E() = H()/rho()-vx()*aa;
+    rc.rhoc(c());
+  } else if(i == 2) {
+    rc.rho() = ONE;
+    rc.rhovx() = vx();
+    rc.rhovy() = vy();
+    rc.E() = H()/rho()-Cp()*T();
+    rc.rhoc(c());
+  } else if(i == 3) {
+    rc.rho() = ZERO;
+    rc.rhovx() = ZERO;
+    rc.rhovy() = rho();
+    rc.E() = rho()*vy();
+    rc.rhoc(ZERO);
+  } else if(i == 4) {  
+    rc.rho() = ONE;
+    rc.rhovx() = vx()+aa;
+    rc.rhovy() = vy();
+    rc.E() = H()/rho()+vx()*aa;
+    rc.rhoc(c());
+  } else{ 
     rc.rho() = ZERO;
     rc.rhovx() = ZERO;
     rc.rhovy() = ZERO;
-    rc.E() = rho()*dihdic[i-NUM_FLAME2D_VAR_SANS_SPECIES-1];
+    rc.E() = rho()*dihdic(i-NUM_FLAME2D_VAR_SANS_SPECIES-1);
     rc.rhoc(ZERO);
     rc.rhoc(i-NUM_FLAME2D_VAR_SANS_SPECIES-1) = rho();
-
   } 
-  
+}
+
+
+/****************************************************
+ * Flux Dissipation  = wavespeed*((lp_x*dWrl)*rc_x) -- (x-direction)
+ ****************************************************/
+void Flame2D_pState::Flux_Dissipation(const int &i,
+				      const Flame2D_State &dWrl, 
+				      const double &wavespeed, 
+				      Flame2D_State &Flux,
+				      const double &mult) {
+
+  // NOTE:  dihdic needs to be loaded first outside
+
+  //declares
+  static Flame2D_State lp;
+  static Flame2D_State rc;
+  double tmp, dv;
+
+  // Compute the left primitive eigenvector
+  // and the right conserved eigenvector, and store it in-place
+  lp_x(i, lp);
+  rc_x(i, rc);
+
   // Compute the wavestrengh
   dv = lp * dWrl;
   
@@ -360,89 +550,142 @@ void Flame2D_pState::Flux_Dissipation(const int &i,
   
 }
 
+/****************************************************
+ * Flux Dissipation Jacobian 
+ * Jac(irow, jcol) -= HALF*wavespeeds[i]*lp[jcol+1]*rc[irow+1];
+ ****************************************************/
+void Flame2D_pState::Flux_Dissipation_Jac(DenseMatrix &Jac,
+					  const Flame2D_State &wavespeeds, 
+					  const double &mult) {
+
+  // NOTE:  dihdic needs to be loaded first outside
+  const int NUM_VAR = Jac.get_n();
+    
+  //declares
+  static Flame2D_State lp;
+  static Flame2D_State rc;
+
+  //
+  // Loop through each wavespeed and each element of Jacobian(i,j)        
+  //
+  for (int i=1; i <= NUM_VAR; i++) { 
+      
+    // compute left and right eigenvectors
+    lp_x(i, lp);
+    rc_x(i, rc);
+      
+    // compute i,j element
+    for(int irow =0; irow< NUM_VAR; irow++)
+      for(int jcol =0; jcol< NUM_VAR; jcol++)
+	Jac(irow, jcol) -= mult*wavespeeds[i]*lp[jcol+1]*rc[irow+1];
+  } 
+      
+}
 
 /////////////////////////////////////////////////////////////////////
 /// Low Mach Number Preconditioner Based on Weiss & Smith (1995)
 /////////////////////////////////////////////////////////////////////
 
-// Conserved Right Eigenvector -- (x-direction)
-Flame2D_State Flame2D_pState::rc_x_precon(const int &index, const double &MR2) const {
-  
-  if(index == 1){
-    double aa(a());
-    double uprimed,cprimed;
-    u_a_precon(MR2*aa*aa,uprimed,cprimed);
-    return (Flame2D_State(ONE, 
-			  (uprimed-cprimed)/MR2,
-			  vy(),			
-			  h()+HALF*(vsqr()/MR2) - (vx()*cprimed)/MR2,
-			  c()));
-    
-  } else if(index == 2) {
-    return (Flame2D_State(ONE, vx(), vy(), (h()-Cp()*T()) + HALF*vsqr(), c()));
-
-  } else if(index == 3) {
-    return (Flame2D_State(ZERO, ZERO, rho(), rho()*vy(),ZERO));
-    
-  } else if(index == 4) { 
-    double aa(a());
-    double uprimed,cprimed;
-    u_a_precon(MR2*aa*aa,uprimed,cprimed);
-    return (Flame2D_State(ONE,
-			  (uprimed+cprimed)/MR2,
-			  vy(), 
-			  h()+HALF*(vsqr()/MR2) + (vx()*cprimed)/MR2,
-			  c()));
-    
+/****************************************************
+ * Primitive Left Eigenvector -- (x-direction)
+ ****************************************************/
+void Flame2D_pState::lp_x_precon(const int &i, 
+				 const double &MR2, 
+				 const double &uprimed, 
+				 const double &cprimed, 
+				 Flame2D_State& lp) const {
+  double aa(a());
+  // Compute the left primitive eigenvector
+  if(i == 1){
+    lp.rho() = ZERO;
+    lp.vx() = -HALF*rho()*MR2/cprimed;
+    lp.vy() = ZERO;
+    lp.p() = (-uprimed+cprimed + vx())/(TWO*cprimed*aa*aa);
+    lp.c(ZERO);
+  } else if(i == 2) {
+    lp.rho() = ONE;
+    lp.vx() = ZERO;
+    lp.vy() = ZERO;
+    lp.p() = -ONE/(aa*aa);
+    lp.c(ZERO);
+  } else if(i == 3) {
+    lp.rho() = ZERO;
+    lp.vx() = ZERO;
+    lp.vy() = ONE;
+    lp.p() = ZERO;
+    lp.c(ZERO);
+  } else if(i == 4) {  
+    lp.rho() = ZERO;
+    lp.vx() = HALF*rho()*MR2/cprimed;
+    lp.vy() = ZERO;
+    lp.p() = (uprimed+cprimed - vx())/(TWO*cprimed*aa*aa);
+    lp.c(ZERO);
   } else{ 
-    static Flame2D_State tmp;
-    tmp.Vacuum();
-    int k( (index-1)-NUM_FLAME2D_VAR_SANS_SPECIES );
-    tmp.E() = rho()*dihdic[k];  // -> note - dihdic needs to be loaded first outside
-    tmp.rhoc(k) = rho();
-    return tmp;
-   }
-
-}
-
-// Primitive Left Eigenvector -- (x-direction)
-Flame2D_State Flame2D_pState::lp_x_precon(const int &index, const double &MR2) const {
-
-  if(index == 1){
-    double aa(a());
-    double uprimed,cprimed;
-    u_a_precon(MR2*aa*aa,uprimed,cprimed);
-    return (Flame2D_State(ZERO, 
-			  -HALF*rho()*MR2/cprimed, 
-			  ZERO,
-			  (-uprimed+cprimed + vx())/(TWO*cprimed*aa*aa),
-			  ZERO));
-  } else if(index == 2) {
-    double aa(a());
-    return (Flame2D_State(ONE, ZERO, ZERO, -ONE/(aa*aa),ZERO));
-  } else if(index == 3) {
-    return  (Flame2D_State(ZERO, ZERO, ONE, ZERO,ZERO));
-  } else if(index == 4) {  
-    double aa(a());
-    double uprimed,cprimed;
-    u_a_precon(MR2*aa*aa,uprimed,cprimed);
-    return (Flame2D_State(ZERO, 
-			  HALF*rho()*MR2/cprimed, 
-			  ZERO,
-			  (uprimed+cprimed - vx())/(TWO*cprimed*aa*aa),
-			  ZERO));
-  } else{ 
-    static Flame2D_State tmp;
-    tmp.Vacuum();
-    tmp.c(index-(NUM_FLAME2D_VAR_SANS_SPECIES+1)) = ONE;
-    return tmp;
+    lp.rho() = ZERO;
+    lp.vx() = ZERO;
+    lp.vy() = ZERO;
+    lp.p() = ZERO;
+    lp.c(ZERO);
+    lp.c(i-NUM_FLAME2D_VAR_SANS_SPECIES-1) = ONE;
   } 
 }
 
+/****************************************************
+ * Conserved Right Eigenvector -- (x-direction)
+ ****************************************************/
+void Flame2D_pState::rc_x_precon(const int &i, 
+				 const double &MR2, 
+				 const double &uprimed, 
+				 const double &cprimed, 
+				 Flame2D_State& rc) {
+  double aa(a());
+  updateDihdDic();
+  // Compute the right conserved eigenvector
+  if(i == 1){
+    rc.rho() = ONE;
+    rc.rhovx() = (uprimed-cprimed)/MR2;
+    rc.rhovy() = vy();
+    rc.E() = h()+HALF*(vsqr()/MR2) - (vx()*cprimed)/MR2;
+    rc.rhoc(c());
+  } else if(i == 2) {
+    rc.rho() = ONE;
+    rc.rhovx() = vx();
+    rc.rhovy() = vy();
+    rc.E() = (h()-Cp()*T()) + HALF*vsqr();
+    rc.rhoc(c());
+  } else if(i == 3) {
+    rc.rho() = ZERO;
+    rc.rhovx() = ZERO;
+    rc.rhovy() = rho();
+    rc.E() = rho()*vy();
+    rc.rhoc(ZERO);
+  } else if(i == 4) {  
+    rc.rho() = ONE;
+    rc.rhovx() = (uprimed+cprimed)/MR2;
+    rc.rhovy() = vy();
+    rc.E() = h()+HALF*(vsqr()/MR2) + (vx()*cprimed)/MR2;
+    rc.rhoc(c());
+  } else{ 
+    rc.rho() = ZERO;
+    rc.rhovx() = ZERO;
+    rc.rhovy() = ZERO;
+    rc.E() = rho()*dihdic(i-NUM_FLAME2D_VAR_SANS_SPECIES-1);
+    rc.rhoc(ZERO);
+    rc.rhoc(i-NUM_FLAME2D_VAR_SANS_SPECIES-1) = rho();
+  } 
+}
+
+
+
+/****************************************************
+ * Flux Dissipation  = wavespeed*((lp_x*dWrl)*rc_x) -- (x-direction)
+ ****************************************************/
 void Flame2D_pState::Flux_Dissipation_precon(const double &MR2, 
 					     const Flame2D_State &dWrl, 
 					     const Flame2D_State &wavespeeds, 
-					     Flame2D_State &Flux_dissipation) const {
+					     Flame2D_State &Flux_dissipation) {
+
+  // NOTE:  dihdic needs to be loaded first outside
 
   //declares
   static Flame2D_State lp;
@@ -462,79 +705,8 @@ void Flame2D_pState::Flux_Dissipation_precon(const double &MR2,
 
     // Compute the left primitive eigenvector
     // Compute the right conserved eigenvector, and store it in-place
-    if(i == 1){
-
-      lp.rho() = ZERO;
-      lp.vx() = -HALF*rho()*MR2/cprimed;
-      lp.vy() = ZERO;
-      lp.p() = (-uprimed+cprimed + vx())/(TWO*cprimed*aa*aa);
-      lp.c(ZERO);
-
-      rc.rho() = ONE;
-      rc.rhovx() = (uprimed-cprimed)/MR2;
-      rc.rhovy() = vy();
-      rc.E() = h()+HALF*(vsqr()/MR2) - (vx()*cprimed)/MR2;
-      rc.rhoc(c());
-
-    } else if(i == 2) {
-
-      lp.rho() = ONE;
-      lp.vx() = ZERO;
-      lp.vy() = ZERO;
-      lp.p() = -ONE/(aa*aa);
-      lp.c(ZERO);
-
-      rc.rho() = ONE;
-      rc.rhovx() = vx();
-      rc.rhovy() = vy();
-      rc.E() = (h()-Cp()*T()) + HALF*vsqr();
-      rc.rhoc(c());
-
-    } else if(i == 3) {
-
-      lp.rho() = ZERO;
-      lp.vx() = ZERO;
-      lp.vy() = ONE;
-      lp.p() = ZERO;
-      lp.c(ZERO);
-
-      rc.rho() = ZERO;
-      rc.rhovx() = ZERO;
-      rc.rhovy() = rho();
-      rc.E() = rho()*vy();
-      rc.rhoc(ZERO);
-
-    } else if(i == 4) {  
-
-      lp.rho() = ZERO;
-      lp.vx() = HALF*rho()*MR2/cprimed;
-      lp.vy() = ZERO;
-      lp.p() = (uprimed+cprimed - vx())/(TWO*cprimed*aa*aa);
-      lp.c(ZERO);
-
-      rc.rho() = ONE;
-      rc.rhovx() = (uprimed+cprimed)/MR2;
-      rc.rhovy() = vy();
-      rc.E() = h()+HALF*(vsqr()/MR2) + (vx()*cprimed)/MR2;
-      rc.rhoc(c());
-
-    } else{ 
-      lp.rho() = ZERO;
-      lp.vx() = ZERO;
-      lp.vy() = ZERO;
-      lp.p() = ZERO;
-      lp.c(ZERO);
-      lp.c(i-NUM_FLAME2D_VAR_SANS_SPECIES-1) = ONE;
-
-      rc.rho() = ZERO;
-      rc.rhovx() = ZERO;
-      rc.rhovy() = ZERO;
-      rc.E() = rho()*dihdic[i-NUM_FLAME2D_VAR_SANS_SPECIES-1];
-      rc.rhoc(ZERO);
-      rc.rhoc(i-NUM_FLAME2D_VAR_SANS_SPECIES-1) = rho();
-
-    } 
-    
+    lp_x_precon(i, MR2, uprimed, cprimed, lp);
+    rc_x_precon(i, MR2, uprimed, cprimed, rc);
 
     // Compute the wavestrengh
     dv = lp * dWrl;
@@ -548,11 +720,50 @@ void Flame2D_pState::Flux_Dissipation_precon(const double &MR2,
 }
 
 /****************************************************
+ * Flux Dissipation Jacobian 
+ * Jac(irow, jcol) -= HALF*wavespeeds[i]*lp[jcol+1]*rc[irow+1];
+ ****************************************************/
+void Flame2D_pState::Flux_Dissipation_Jac_precon(DenseMatrix &Jac,
+						 const double &MR2,
+						 const Flame2D_State &wavespeeds, 
+						 const double &mult) {
+
+  // NOTE:  dihdic needs to be loaded first outside
+  const int NUM_VAR = Jac.get_n();
+    
+  //declares
+  static Flame2D_State lp;
+  static Flame2D_State rc;
+  double aa(a());
+  double uprimed,cprimed;
+
+  // compute preconditioned velocity and soundspeed
+  u_a_precon(MR2*aa*aa,uprimed,cprimed);
+
+  //
+  // Calculate the preconditioned upwind dissipation flux.
+  //
+  for (int i=1; i <=  NUM_VAR; i++) {
+      
+    // compute left and right eigenvectors
+    lp_x_precon(i, MR2, uprimed, cprimed, lp);
+    rc_x_precon(i, MR2, uprimed, cprimed, rc);
+      
+    // compute i,j element
+    for(int irow =0; irow < NUM_VAR; irow++)
+      for(int jcol =0; jcol < NUM_VAR; jcol++)	   
+	Jac(irow, jcol) -= HALF*wavespeeds[i]*lp[jcol+1]*rc[irow+1];
+  }
+    
+}
+
+
+/****************************************************
  * For CFL calculation
  ****************************************************/
 double Flame2D_pState::u_plus_aprecon(const double &u, 
 				      const int &flow_type_flag, 
-				      const double &deltax) const {
+				      const double &deltax) {
   double Temp(T());
   double aa(a());
   double UR2( Mr2(flow_type_flag,deltax)*aa*aa );
@@ -580,13 +791,14 @@ void Flame2D_pState::u_a_precon(const double &UR2, double &uprimed, double &cpri
  * as defined by E.Turkel (1999)
  ****************************************************/
 double Flame2D_pState::Mr2(const int &flow_type_flag, 
-			   const double &deltax) const {
+			   const double &deltax) {
   
   double aa(a());
   double MR2 = min(max((vsqr()/(aa*aa)),Mref*Mref),ONE);
   
   // Need deltax which is based on cell spacing 
   if(flow_type_flag){ 
+    updateViscosity();
     MR2 = pow(max(sqrt(MR2*aa*aa), mu()/(rho()*deltax)),2.0)/(aa*aa);
   }
 
@@ -599,10 +811,12 @@ double Flame2D_pState::Mr2(const int &flow_type_flag,
  * (will be replaced by version commented out below 
  *  when corrected)
  ************************************************************/
-void Flame2D_pState::Low_Mach_Number_Preconditioner(::DenseMatrix &P,
+void Flame2D_pState::Low_Mach_Number_Preconditioner(DenseMatrix &P,
 						    const int &Viscous_flag, 
-						    const double &deltax ) const{  
+						    const double &deltax ) {  
   // Note: make sure you loaded the dihdic array and phi outside
+  updateDihdDic();
+  double phi( Phi() );
   double Temp( T() );
   double Rmix( Rtot() );
   double enthalpy( h() );
@@ -638,10 +852,10 @@ void Flame2D_pState::Low_Mach_Number_Preconditioner(::DenseMatrix &P,
   //Multispecies
   for(int j=0; j<ns-NSm1; j++){  
      
-    P(0,j+NUM_VAR) = dihdic[j]*alpham1/Omega;
-    P(1,j+NUM_VAR) = vx()*dihdic[j]*alpham1/Omega;
-    P(2,j+NUM_VAR) = vy()*dihdic[j]*alpham1/Omega;
-    P(3,j+NUM_VAR) = dihdic[j]*(V+enthalpy)*alpham1/Omega;	
+    P(0,j+NUM_VAR) = dihdic(j)*alpham1/Omega;
+    P(1,j+NUM_VAR) = vx()*dihdic(j)*alpham1/Omega;
+    P(2,j+NUM_VAR) = vy()*dihdic(j)*alpham1/Omega;
+    P(3,j+NUM_VAR) = dihdic(j)*(V+enthalpy)*alpham1/Omega;	
     for(int i=0; i<ns-NSm1; i++){ 
       if(i==j){ 
 	P(i+NUM_VAR,0) = (c(i))*(beta-V)*alpham1/Omega;
@@ -649,25 +863,27 @@ void Flame2D_pState::Low_Mach_Number_Preconditioner(::DenseMatrix &P,
 	P(i+NUM_VAR,2) = (c(i))*vy()*alpham1/Omega;
 	P(i+NUM_VAR,3) = -(c(i))*alpham1/Omega;
 	//diagonal
-	P(i+NUM_VAR,j+NUM_VAR) = c(i)*dihdic[j]*alpham1/Omega+ONE;
+	P(i+NUM_VAR,j+NUM_VAR) = c(i)*dihdic(j)*alpham1/Omega+ONE;
       }
       else {
-	P(i+NUM_VAR,j+NUM_VAR) = c(i)*dihdic[j]*alpham1/Omega;
+	P(i+NUM_VAR,j+NUM_VAR) = c(i)*dihdic(j)*alpham1/Omega;
       }
     }       
   }
 
-//   cout<<"\n Pin with Mref \n"<<Mref<<endl<<P;
+  //   cout<<"\n Pin with Mref \n"<<Mref<<endl<<P;
   //P.zero(); P.identity(); //SET TO Mref=1.0;
 
 
 }
 
 /************************************************************/
-void Flame2D_pState::Low_Mach_Number_Preconditioner_Inverse(::DenseMatrix &Pinv,	
+void Flame2D_pState::Low_Mach_Number_Preconditioner_Inverse(DenseMatrix &Pinv,	
 							    const int &Viscous_flag, 
-							    const double &deltax ) const{  
+							    const double &deltax ) {  
   // Note: make sure you loaded the dihdic array and phi outside
+  updateDihdDic();
+  double phi( Phi() );
   double Temp( T() );
   double Rmix( Rtot() );
   double enthalpy( h() );
@@ -705,10 +921,10 @@ void Flame2D_pState::Low_Mach_Number_Preconditioner_Inverse(::DenseMatrix &Pinv,
   
   //Multispecies
   for(int j=0; j<ns-NSm1; j++){   
-    Pinv(0,j+NUM_VAR) = -dihdic[j]*BB/AA;
-    Pinv(1,j+NUM_VAR) = -vx()*dihdic[j]*BB/AA;
-    Pinv(2,j+NUM_VAR) = -vy()*dihdic[j]*BB/AA;
-    Pinv(3,j+NUM_VAR) = -dihdic[j]*BB*DD/AA;
+    Pinv(0,j+NUM_VAR) = -dihdic(j)*BB/AA;
+    Pinv(1,j+NUM_VAR) = -vx()*dihdic(j)*BB/AA;
+    Pinv(2,j+NUM_VAR) = -vy()*dihdic(j)*BB/AA;
+    Pinv(3,j+NUM_VAR) = -dihdic(j)*BB*DD/AA;
     for(int i=0; i<ns-NSm1; i++){  
       if(i==j){
 	Pinv(i+NUM_VAR,0) = (c(i))*CC*BB/AA;
@@ -716,10 +932,10 @@ void Flame2D_pState::Low_Mach_Number_Preconditioner_Inverse(::DenseMatrix &Pinv,
 	Pinv(i+NUM_VAR,2) = -(c(i))*vy()*BB/AA;
 	Pinv(i+NUM_VAR,3) = (c(i))*BB/AA;
 	//diagonal	
-	Pinv(i+NUM_VAR,j+NUM_VAR) = 1.0 - c(i)*dihdic[j]*BB/AA ;
+	Pinv(i+NUM_VAR,j+NUM_VAR) = 1.0 - c(i)*dihdic(j)*BB/AA ;
       }
       else {
-	Pinv(i+NUM_VAR,j+NUM_VAR) = -c(i)*dihdic[j]*BB/AA;
+	Pinv(i+NUM_VAR,j+NUM_VAR) = -c(i)*dihdic(j)*BB/AA;
       } 
     }   
   }  
@@ -752,7 +968,7 @@ void Flame2D_pState::Sa_inviscid(Flame2D_State &S,
       S.rhoc(i) -= mult*rho()*vx()*c(i)/X.x;         //correct for ns-1 ????
     }
 
-  //y is radial
+    //y is radial
   } else if (Axisymmetric == AXISYMMETRIC_Y) {
     S.rho() -= mult*rho()*vy()/X.y;
     S.rhovx() -= mult*rho()*vx()*vy()/X.y; 
@@ -771,10 +987,13 @@ void Flame2D_pState::Sa_inviscid(Flame2D_State &S,
 /****************************************************************
  * Axisymmetric Source Term Jacboian (Inviscid)                 * 
  ****************************************************************/
-void Flame2D_pState::dSa_idU( ::DenseMatrix &dSa_IdU, 
+void Flame2D_pState::dSa_idU( DenseMatrix &dSa_IdU, 
 			      const Vector2D &X, 
-			      const int Axisymmetric ) const {
+			      const int Axisymmetric ) {
 
+  // Note: make sure you loaded the dihdic array and phi outside
+  updateDihdDic();
+  double phi( Phi() );
   double enthalpy( h() );
   double CP( Cp() );
   double RTOT( Rtot() );
@@ -785,7 +1004,7 @@ void Flame2D_pState::dSa_idU( ::DenseMatrix &dSa_IdU,
   if(Axisymmetric == AXISYMMETRIC_Y){
     cout<<"\n ISSUES IN dSa_idU AXISYMMETRIC_Y \n"; exit(1);
 
-  // axisymmetric case 1  -- x radial direction 
+    // axisymmetric case 1  -- x radial direction 
   } else if(Axisymmetric == AXISYMMETRIC_X){ 
     
     dSa_IdU(0,1) -= ONE/X.x;
@@ -808,7 +1027,7 @@ void Flame2D_pState::dSa_idU( ::DenseMatrix &dSa_IdU,
     const int NUM_VAR = NUM_FLAME2D_VAR_SANS_SPECIES;
     double d( CP/RTOT - ONE );
     for(int i=0; i<ns-NSm1;i++){
-      dSa_IdU(3,i+NUM_VAR) += vx()*dihdic[i]/d/X.x; 
+      dSa_IdU(3,i+NUM_VAR) += vx()*dihdic(i)/d/X.x; 
       dSa_IdU(NUM_VAR+i,0) += vx()*c(i)/X.x;
       dSa_IdU(NUM_VAR+i,1) -= c(i)/X.x;
       dSa_IdU(NUM_VAR+i,NUM_VAR+i) -= vx()/X.x;
@@ -827,7 +1046,7 @@ void Flame2D_pState::Sa_viscous(Flame2D_State &S,
 				const Flame2D_State &dWdy,
 				const Vector2D &X, 
 				const int Axisymmetric, 
-				const double& mult) const {
+				const double& mult) {
   
   // compute laminar stresses and heat flux vector
   static Vector2D qflux;
@@ -860,14 +1079,15 @@ void Flame2D_pState::Sa_viscous(Flame2D_State &S,
 /**************************************************************** 
  * Axisymmetric Source Term Jacboian (Viscous)                  *  
  ****************************************************************/
-void Flame2D_pState::dSa_vdW(::DenseMatrix &dSa_VdW,
+void Flame2D_pState::dSa_vdW(DenseMatrix &dSa_VdW,
 			     const Flame2D_State &dWdx,
 			     const Flame2D_State &dWdy,
 			     const Vector2D &X, 
 			     const int Axisymmetric,
 			     const double &d_dWdx_dW, 
-			     const double &d_dWdy_dW) const {
+			     const double &d_dWdy_dW) {
 
+  updateTransport();
   const int NUM_VAR = NUM_FLAME2D_VAR_SANS_SPECIES;
   double Rmix( Rtot() );
   double Temp( T() );
@@ -924,9 +1144,9 @@ void Flame2D_pState::dSa_vdW(::DenseMatrix &dSa_VdW,
     }
     
 
-  //-----------------------------------------------------------------
-  // axisymmetric case 1  -- y radial direction 
-  //-----------------------------------------------------------------
+    //-----------------------------------------------------------------
+    // axisymmetric case 1  -- y radial direction 
+    //-----------------------------------------------------------------
   } else if(Axisymmetric == AXISYMMETRIC_Y){ 
     cout<<"\n AXISYMMETRIC_Y NOT DONE YET ";
   }
@@ -946,7 +1166,7 @@ void Flame2D_pState::Sw(Flame2D_State &S,
 /****************************************************
  * Chemistry source term jacobian
  ****************************************************/  
-void Flame2D_pState::dSwdU( ::DenseMatrix &dSdU ) const {
+void Flame2D_pState::dSwdU( DenseMatrix &dSdU ) const {
   Mix.dSwdU( dSdU, rho(), p(), c(), NUM_FLAME2D_VAR_SANS_SPECIES, NSm1 );
 }
 
@@ -977,7 +1197,7 @@ void Flame2D_pState::Sg(Flame2D_State &S,
 /****************************************************
  * Source terms associated with gravitational forces
  ****************************************************/
-void Flame2D_pState::dSgdU(::DenseMatrix &dSgdU) const {
+void Flame2D_pState::dSgdU(DenseMatrix &dSgdU) const {
   dSgdU(2,0) += gravity_z;
   dSgdU(3,2) += gravity_z;
 }
@@ -989,9 +1209,11 @@ void Flame2D_pState::dSgdU(::DenseMatrix &dSgdU) const {
 /************************************************************************
  * Chem2D_pState::dWdU -- Primitive/Conserved transformation Jacobian   *
  ************************************************************************/
-void Flame2D_pState::dWdU(::DenseMatrix &dWdQ) const{
+void Flame2D_pState::dWdU(DenseMatrix &dWdQ) {
 
   // Note: make sure you loaded the dihdic array and phi outside
+  updateDihdDic();
+  double phi( Phi() );
   double Temp( T() );
   double Rt( Rtot() );
   double C_p( Cp() );
@@ -1012,7 +1234,7 @@ void Flame2D_pState::dWdU(::DenseMatrix &dWdQ) const{
 
   //Species
   for(int i=0; i<ns-NSm1; i++){   
-    dWdQ(3, NUM_VAR+i) = - dihdic[i]/denominator;
+    dWdQ(3, NUM_VAR+i) = - dihdic(i)/denominator;
     dWdQ(NUM_VAR+i, 0) = - c(i)/rho();
     dWdQ(NUM_VAR+i, NUM_VAR+i) = ONE/rho();
   }
@@ -1036,26 +1258,26 @@ void Flame2D_pState::dWdU(::DenseMatrix &dWdQ) const{
 void Flame2D_pState::Reflect(const Flame2D_pState &W,
 			     const Vector2D &norm_dir) {
 
-    Copy(W);
+  Copy(W);
  
-    /* Determine the direction cosine's for the frame
-       rotation. */
-    double cos_angle(norm_dir.x), sin_angle(norm_dir.y);
+  /* Determine the direction cosine's for the frame
+     rotation. */
+  double cos_angle(norm_dir.x), sin_angle(norm_dir.y);
 
 
-    /* Apply the frame rotation and calculate the primitive
-       solution state variables in the local rotated frame
-       defined by the unit normal vector. */
-    double ur(   W.vx()*cos_angle + W.vy()*sin_angle );
-    double vr( - W.vx()*sin_angle + W.vy()*cos_angle );
+  /* Apply the frame rotation and calculate the primitive
+     solution state variables in the local rotated frame
+     defined by the unit normal vector. */
+  double ur(   W.vx()*cos_angle + W.vy()*sin_angle );
+  double vr( - W.vx()*sin_angle + W.vy()*cos_angle );
 
-    /* Reflect the normal velocity in the rotated frame. */
-    ur = -ur;
+  /* Reflect the normal velocity in the rotated frame. */
+  ur = -ur;
 
-    /* Rotate back to the original Cartesian reference frame. */
-    vx() = ur*cos_angle - vr*sin_angle;
-    vy() = ur*sin_angle + vr*cos_angle;
-  }
+  /* Rotate back to the original Cartesian reference frame. */
+  vx() = ur*cos_angle - vr*sin_angle;
+  vy() = ur*sin_angle + vr*cos_angle;
+}
 
 /********************************************************
  * Routine: FREE SLIP                                   *
@@ -1119,12 +1341,12 @@ void Flame2D_pState::Moving_Wall(const Flame2D_pState &Win,
   vx() = ur*cos_angle - vr*sin_angle;
   vy() = ur*sin_angle + vr*cos_angle;
    
- //   /* Fixed Wall Temperature */
-//    if(TEMPERATURE_BC_FLAG == FIXED_TEMPERATURE_WALL){
-//      Temp.rho = Temp.p/(Temp.Rtot()*Wout.T());
-//    }
+  //   /* Fixed Wall Temperature */
+  //    if(TEMPERATURE_BC_FLAG == FIXED_TEMPERATURE_WALL){
+  //      Temp.rho = Temp.p/(Temp.Rtot()*Wout.T());
+  //    }
    
-   //ADIABATIC_WALL -> constant extrapolation for Adiabatic */
+  //ADIABATIC_WALL -> constant extrapolation for Adiabatic */
 
 }
 
@@ -1201,9 +1423,9 @@ void Flame2D_pState::BC_2DFlame_Inflow(const Flame2D_pState &Wi,
   Copy(Wo);
   vx() = Wi.vx();
 
-//   Flame2D_pState Wnew(Wi);  
-//   Wnew.p = Wo.p;         //fix pressure & V velocity
-//   Wnew.v.y = Wo.v.y;
+  //   Flame2D_pState Wnew(Wi);  
+  //   Wnew.p = Wo.p;         //fix pressure & V velocity
+  //   Wnew.v.y = Wo.v.y;
  
 }
 
@@ -1275,7 +1497,7 @@ void Flame2D_pState::BC_Characteristic_Pressure(const Flame2D_pState &Wi,
   
   /* Apply the frame rotation and evaluate interior and 
      imposed boundary solution states in the local rotated 
-       frame defined by the unit normal vector. */
+     frame defined by the unit normal vector. */
 
   Wi_rotated.vx() =   Wi.vx()*cos_angle + Wi.vy()*sin_angle;
   Wi_rotated.vy() = - Wi.vx()*sin_angle + Wi.vy()*cos_angle;
@@ -1393,6 +1615,62 @@ void Flame2D_State :: HartenFix_Abs(const Flame2D_State &lambdas_a,
 }
 
 
+/*********************************************************
+ * Routine: HLLE_wavespeeds                              *
+ *                                                       *
+ * This function returns lambda plus and lambda minus    *
+ * for rotated Riemann problem aligned with norm_dir     *
+ * given unroated solution states Wl and Wr.             *
+ * Note: wavespeed.x = wavespeed_l = lambda minus.       *
+ *       wavespeed.y = wavespeed_r = lambda plus.        *
+ *                                                       *
+ *********************************************************/
+void Flame2D_pState :: HLLE_wavespeeds(Flame2D_pState &Wl,
+				       Flame2D_pState &Wr,
+				       const Vector2D &norm_dir,
+				       Vector2D &wavespeed) {
+
+  // declares
+  static Flame2D_pState Wa;
+  static Flame2D_State lambdas_l, lambdas_r, lambdas_a;
+  int NUM_VAR_CHEM2D = ( NumVar() );
+
+  // temporary storage
+  double ur( ((const Flame2D_pState&)Wr).vx() ), 
+    vr( ((const Flame2D_pState&)Wr).vy() ), 
+    ul( ((const Flame2D_pState&)Wl).vx() ), 
+    vl( ((const Flame2D_pState&)Wl).vy() );
+
+  /* Use rotated values to calculate eignvalues */
+  Wl.Rotate(norm_dir);
+  Wr.Rotate(norm_dir);
+
+  /* Evaluate the Roe-average primitive solution state. */
+  Wa.RoeAverage(Wl, Wr);
+    
+  /* Evaluate the left, right, and average state eigenvalues. */
+  Wl.lambda_x(lambdas_l);
+  Wr.lambda_x(lambdas_r);
+  Wa.lambda_x(lambdas_a);
+
+  /* Determine the intermediate state flux. */
+  wavespeed.x = min(lambdas_l[1],
+		    lambdas_a[1]);   //u-a
+  wavespeed.y = max(lambdas_r[4],
+		    lambdas_a[4]);   //u+a
+  wavespeed.x = min(wavespeed.x, ZERO); //lambda minus
+  wavespeed.y = max(wavespeed.y, ZERO); //lambda plus 
+
+  /* Rotate Back -> avoid roundoff by setting the exact values */
+  Wl.setVelocity( ul, vl );
+  Wr.setVelocity( ur, vr );
+
+
+  //    cout<< "lambda - = "<<wavespeed.x<< "lambda + = "<<wavespeed.y<<endl;
+
+}
+
+
 /********************************************************
  * Routine: RoeAverage (Roe Averages)                   *
  *                                                      *
@@ -1408,27 +1686,27 @@ void Flame2D_State :: HartenFix_Abs(const Flame2D_State &lambdas_a,
 void Flame2D_pState :: RoeAverage(const Flame2D_pState &Wl,
 				  const Flame2D_pState &Wr) {
 
-    /* Determine the left and right state specific enthalpies
-       and square roots of the density. */
-    double Hl( Wl.H()/Wl.rho() );
-    double Hr( Wr.H()/Wr.rho() );
-    double srhol( sqrt(Wl.rho()) );
-    double srhor( sqrt(Wr.rho()) );
+  /* Determine the left and right state specific enthalpies
+     and square roots of the density. */
+  double Hl( Wl.H()/Wl.rho() );
+  double Hr( Wr.H()/Wr.rho() );
+  double srhol( sqrt(Wl.rho()) );
+  double srhor( sqrt(Wr.rho()) );
 
-    /* Determine the appropriate Roe averages. */
-    rho() = srhol*srhor;
-    vx() = (srhol*Wl.vx()+srhor*Wr.vx())/(srhol+srhor);
-    vy() = (srhol*Wl.vy()+srhor*Wr.vy())/(srhol+srhor);
-    for(int i=0; i<ns; i++){
-      c(i) = (srhol*Wl.c(i) + srhor*Wr.c(i))/(srhol+srhor);
-    }
+  /* Determine the appropriate Roe averages. */
+  rho() = srhol*srhor;
+  vx() = (srhol*Wl.vx()+srhor*Wr.vx())/(srhol+srhor);
+  vy() = (srhol*Wl.vy()+srhor*Wr.vy())/(srhol+srhor);
+  for(int i=0; i<ns; i++){
+    c(i) = (srhol*Wl.c(i) + srhor*Wr.c(i))/(srhol+srhor);
+  }
  
-    double Ha( (srhol*Hl+srhor*Hr)/(srhol+srhor) );
-    double ha( Ha - HALF*(sqr(vx())+sqr(vy())) );
+  double Ha( (srhol*Hl+srhor*Hr)/(srhol+srhor) );
+  double ha( Ha - HALF*(sqr(vx())+sqr(vy())) );
 
-    //double TEMP = Temp.T(ha);
-    // set pressure
-    setEnthalpy(ha);
+  //double TEMP = Temp.T(ha);
+  // set pressure
+  setEnthalpy(ha);
   
 }
 
@@ -1446,44 +1724,44 @@ void Flame2D_pState :: RoeAverage(const Flame2D_pState &Wl,
 void Flame2D_State :: FluxHLLE_x(const Flame2D_pState &Wl,
 				 const Flame2D_pState &Wr) {
 
-    double wavespeed_l, wavespeed_r;
-    static Flame2D_pState Wa;
-    static Flame2D_State lambdas_l, lambdas_r, lambdas_a;
+  double wavespeed_l, wavespeed_r;
+  static Flame2D_pState Wa;
+  static Flame2D_State lambdas_l, lambdas_r, lambdas_a;
 
-    /* Evaluate the Roe-average primitive solution state. */   
-    Wa.RoeAverage(Wl, Wr);
+  /* Evaluate the Roe-average primitive solution state. */   
+  Wa.RoeAverage(Wl, Wr);
 
-    /* Evaluate the left, right, and average state eigenvalues. */     
-    Wl.lambda_x(lambdas_l);
-    Wr.lambda_x(lambdas_r);
-    Wa.lambda_x(lambdas_a);
+  /* Evaluate the left, right, and average state eigenvalues. */     
+  Wl.lambda_x(lambdas_l);
+  Wr.lambda_x(lambdas_r);
+  Wa.lambda_x(lambdas_a);
     
-    /* Determine the intermediate state flux. */
-    wavespeed_l = min(lambdas_l[1], lambdas_a[1]);
+  /* Determine the intermediate state flux. */
+  wavespeed_l = min(lambdas_l[1], lambdas_a[1]);
 
-    //wavespeed_r = max(lambdas_r[NUM_VAR_FLAME2D],
-    //                  lambdas_a[NUM_VAR_FLAME2D]);
-    wavespeed_r = max(lambdas_r[4],lambdas_a[4]); //MARKTHIS XINFENG
-    //   wavespeed_r = max(lambdas_r[NUM_VAR_FLAME2D-lambdas_r.ns],
-    //                       lambdas_a[NUM_VAR_FLAME2D-lambdas_a.ns]); 
-    wavespeed_l = min(wavespeed_l, ZERO);
-    wavespeed_r = max(wavespeed_r, ZERO);
+  //wavespeed_r = max(lambdas_r[NUM_VAR_FLAME2D],
+  //                  lambdas_a[NUM_VAR_FLAME2D]);
+  wavespeed_r = max(lambdas_r[4],lambdas_a[4]); //MARKTHIS XINFENG
+  //   wavespeed_r = max(lambdas_r[NUM_VAR_FLAME2D-lambdas_r.ns],
+  //                       lambdas_a[NUM_VAR_FLAME2D-lambdas_a.ns]); 
+  wavespeed_l = min(wavespeed_l, ZERO);
+  wavespeed_r = max(wavespeed_r, ZERO);
   
 
-    if (wavespeed_l >= ZERO) {
-      Wl.Fx(*this);
-    } else if (wavespeed_r <= ZERO) {
-      Wr.Fx(*this);
-    } else { 
-      static Flame2D_State dUrl, Fl, Fr;
-      dUrl.DeltaU( Wr, Wl ); // Evaluate the jumps in the conserved solution states.
-      Wr.Fx(Fr);
-      Wl.Fx(Fl);
-      double a(wavespeed_l*wavespeed_r), b(wavespeed_r-wavespeed_l);
-      for (int i=0; i<n; i++) {
-	x[i] = ( (wavespeed_r*Fl.x[i]-wavespeed_l*Fr.x[i]) + a*dUrl.x[i] ) / b;
-      }
-    } /* endif */
+  if (wavespeed_l >= ZERO) {
+    Wl.Fx(*this);
+  } else if (wavespeed_r <= ZERO) {
+    Wr.Fx(*this);
+  } else { 
+    static Flame2D_State dUrl, Fl, Fr;
+    dUrl.DeltaU( Wr, Wl ); // Evaluate the jumps in the conserved solution states.
+    Wr.Fx(Fr);
+    Wl.Fx(Fl);
+    double a(wavespeed_l*wavespeed_r), b(wavespeed_r-wavespeed_l);
+    for (int i=0; i<n; i++) {
+      x[i] = ( (wavespeed_r*Fl.x[i]-wavespeed_l*Fr.x[i]) + a*dUrl.x[i] ) / b;
+    }
+  } /* endif */
 
 }
 
@@ -1504,42 +1782,38 @@ void Flame2D_State :: FluxHLLE_x(const Flame2D_pState &Wl,
  * solution states.  See Harten, Lax, van Leer (1983).   *
  *                                                       *
  *********************************************************/
-void Flame2D_State :: FluxHLLE_n(const Flame2D_pState &Wl,
-				 const Flame2D_pState &Wr,
+void Flame2D_State :: FluxHLLE_n(Flame2D_pState &Wl,
+				 Flame2D_pState &Wr,
 				 const Vector2D &norm_dir) {
 
-  static Flame2D_pState Wl_rotated, Wr_rotated;
-  Wl_rotated.Copy(Wl), Wr_rotated.Copy(Wr);
-  
-  /* Determine the direction cosine's for the frame
-     rotation. */
-  
-  double cos_angle( norm_dir.x), sin_angle( norm_dir.y );
-  
   /* Apply the frame rotation and evaluate left and right
      solution states in the local rotated frame defined
      by the unit normal vector. */
-  //    Wl_rotated.Copy(Wl);
-  //     Wr_rotated.Copy(Wr);
-  
-  
-  Wl_rotated.setVelocity( Wl.vx()*cos_angle + Wl.vy()*sin_angle,
-			  - Wl.vx()*sin_angle + Wl.vy()*cos_angle );
-  
-  Wr_rotated.setVelocity( Wr.vx()*cos_angle + Wr.vy()*sin_angle,
-			  - Wr.vx()*sin_angle + Wr.vy()*cos_angle );
-  
+
+  double ur( ((const Flame2D_pState&)Wr).vx() ), 
+    vr( ((const Flame2D_pState&)Wr).vy() ), 
+    ul( ((const Flame2D_pState&)Wl).vx() ), 
+    vl( ((const Flame2D_pState&)Wl).vy() );
+
+  /* Use rotated values to calculate eignvalues */
+  Wl.Rotate(norm_dir);
+  Wr.Rotate(norm_dir);
+
   /* Evaluate the intermediate state solution 
      flux in the rotated frame. */
   
-  FluxHLLE_x(Wl_rotated, Wr_rotated);
-  double ur(rhovx()), vr(rhovy());
+  FluxHLLE_x(Wl, Wr);
   
   /* Rotate back to the original Cartesian reference
      frame and return the solution flux. */
-  rhovx() = ur*cos_angle - vr*sin_angle;
-  rhovy() = ur*sin_angle + vr*cos_angle;
-  
+
+  RotateBack(norm_dir);
+
+  /* Rotate Back -> avoid roundoff by setting the exact values */
+
+  Wl.setVelocity( ul, vl );
+  Wr.setVelocity( ur, vr );
+
 }
 
 /*********************************************************
@@ -1611,10 +1885,10 @@ void Flame2D_State :: FluxLinde(const Flame2D_pState &Wl,
       
     } /* endif */
     
-    // compute the flux
+      // compute the flux
     double a(wavespeed_l*wavespeed_r), 
-           b(wavespeed_r-wavespeed_l),
-           c(ONE-(ONE-max(wavespeed_m/wavespeed_r, wavespeed_m/wavespeed_l))*alpha);
+      b(wavespeed_r-wavespeed_l),
+      c(ONE-(ONE-max(wavespeed_m/wavespeed_r, wavespeed_m/wavespeed_l))*alpha);
     for (int i=0; i<n; i++) {
       x[i] =( (wavespeed_r*Fl.x[i]-wavespeed_l*Fr.x[i]) + a*c*dUrl.x[i]) / b;
     }
@@ -1639,43 +1913,39 @@ void Flame2D_State :: FluxLinde(const Flame2D_pState &Wl,
  * (1998).                                               *
  *                                                       *
  *********************************************************/
-void Flame2D_State :: FluxLinde_n(const Flame2D_pState &Wl,
-				  const Flame2D_pState &Wr,
+void Flame2D_State :: FluxLinde_n(Flame2D_pState &Wl,
+				  Flame2D_pState &Wr,
 				  const Vector2D &norm_dir) {
 
-  static Flame2D_pState Wl_rotated, Wr_rotated;
-  Wl_rotated.Copy(Wl);  Wr_rotated.Copy(Wr);
-  
-  /* Determine the direction cosine's for the frame
-     rotation. */
-  
-  double cos_angle( norm_dir.x ); 
-  double sin_angle( norm_dir.y );
-  
   /* Apply the frame rotation and evaluate left and right
      solution states in the local rotated frame defined
      by the unit normal vector. */
-  //     Wl_rotated.Copy(Wl);
-  //     Wr_rotated.Copy(Wr);
-  
-  Wl_rotated.setVelocity( Wl.vx()*cos_angle + Wl.vy()*sin_angle,
-			  - Wl.vx()*sin_angle + Wl.vy()*cos_angle );
-  
-  Wr_rotated.setVelocity( Wr.vx()*cos_angle + Wr.vy()*sin_angle,
-			  - Wr.vx()*sin_angle + Wr.vy()*cos_angle );
-  
+
+  double ur( ((const Flame2D_pState&)Wr).vx() ), 
+    vr( ((const Flame2D_pState&)Wr).vy() ), 
+    ul( ((const Flame2D_pState&)Wl).vx() ), 
+    vl( ((const Flame2D_pState&)Wl).vy() );
+
+  /* Use rotated values to calculate eignvalues */
+  Wl.Rotate(norm_dir);
+  Wr.Rotate(norm_dir);
+
   /* Evaluate the intermediate state solution 
-     flux in the rotated frame. */ 
+     flux in the rotated frame. */
   
-  FluxLinde(Wl_rotated, Wr_rotated);
-  double ur(rhovx()), vr(rhovy());
+  FluxLinde(Wl, Wr);
   
   /* Rotate back to the original Cartesian reference
      frame and return the solution flux. */
-  
-  rhovx() = ur*cos_angle - vr*sin_angle;
-  rhovy() = ur*sin_angle + vr*cos_angle;
 
+  RotateBack(norm_dir);
+
+  /* Rotate Back -> avoid roundoff by setting the exact values */
+
+  Wl.setVelocity( ul, vl );
+  Wr.setVelocity( ur, vr );
+
+ 
 }
 
 /*********************************************************
@@ -1688,8 +1958,8 @@ void Flame2D_State :: FluxLinde_n(const Flame2D_pState &Wl,
  * (1981).                                               *
  *                                                       *
  *********************************************************/
-void Flame2D_State :: FluxRoe_x(const Flame2D_pState &Wl,
-				const Flame2D_pState &Wr,
+void Flame2D_State :: FluxRoe_x(Flame2D_pState &Wl,
+				Flame2D_pState &Wr,
 				const int &Preconditioning,
 				const int &flow_type_flag,
 				const double &deltax) {
@@ -1697,24 +1967,24 @@ void Flame2D_State :: FluxRoe_x(const Flame2D_pState &Wl,
   static Flame2D_pState Wa;
   static Flame2D_State dWrl, wavespeeds, lambdas_l, lambdas_r, lambdas_a;
   
-  /* Evaluate the Roe-average primitive solution state. */    
+  // Evaluate the Roe-average primitive solution state.
   Wa.RoeAverage(Wl, Wr);
   const Flame2D_pState& Waa = Wa;
 
-  /* Evaluate the jumps in the primitive solution states. */
+  // Evaluate the jumps in the primitive solution states.
   dWrl.Delta(Wr,Wl);
   
-  // load the static dihdic array first before computing 
-  // eigenvectors
-  Waa.load_dihdic();
-
-  /* Evaluate the left, right, and average state eigenvalues. */
+  //---------------------------------------------------------------
+  // No Preconditioning
+  //---------------------------------------------------------------
   if(!Preconditioning){
+    // Evaluate the left, right, and average state eigenvalues.
+
     Wl.lambda_x(lambdas_l);
     Wr.lambda_x(lambdas_r);
-    Waa.lambda_x(lambdas_a);
+    Wa.lambda_x(lambdas_a);
 
-    /* Determine the intermediate state flux. */
+    // Determine the intermediate state flux.
     if (Waa.vx() >= ZERO) {
       Wl.Fx(*this);   
       wavespeeds.HartenFix_Neg(lambdas_a,
@@ -1724,7 +1994,7 @@ void Flame2D_State :: FluxRoe_x(const Flame2D_pState &Wl,
       for (int i=0 ; i < n-NSm1; i++) {
 	if (wavespeeds[i+1] < ZERO) {
 	  //*this += wavespeeds[i+1]*((Waa.lp_x(i+1)*dWrl)*Waa.rc_x(i+1));
-	  Waa.Flux_Dissipation(i+1, dWrl, wavespeeds[i+1], *this, 1.0);
+	  Wa.Flux_Dissipation(i+1, dWrl, wavespeeds[i+1], *this, 1.0);
 	}
       } 
     } else {
@@ -1735,21 +2005,23 @@ void Flame2D_State :: FluxRoe_x(const Flame2D_pState &Wl,
       for (int i=0; i < n-NSm1; i++) {
 	if (wavespeeds[i+1] > ZERO) {
 	  //*this -= wavespeeds[i+1]*((Waa.lp_x(i+1)*dWrl)*Waa.rc_x(i+1));
-	  Waa.Flux_Dissipation(i+1, dWrl, wavespeeds[i+1], *this, -1.0);
+	  Wa.Flux_Dissipation(i+1, dWrl, wavespeeds[i+1], *this, -1.0);
 	}
       } 
     } 
     
-    /******* LOW MACH NUMBER PRECONDITIONING ********************/
-    /* Evaluate the left, right, and average state eigenvalues. */
+    //---------------------------------------------------------------
+    // LOW MACH NUMBER PRECONDITIONING
+    //---------------------------------------------------------------
   } else if(Preconditioning){
+    // Evaluate the left, right, and average state eigenvalues.
 
     //calculating Mr^2 and passing to save computation,
     //not conceptually nice but saves from recalculating
-    double MR2a( Waa.Mr2(flow_type_flag,deltax) );
+    double MR2a( Wa.Mr2(flow_type_flag,deltax) );
     Wl.lambda_preconditioned_x(lambdas_l, Wl.Mr2(flow_type_flag,deltax)); 
     Wr.lambda_preconditioned_x(lambdas_r, Wr.Mr2(flow_type_flag,deltax));
-    Waa.lambda_preconditioned_x(lambdas_a, MR2a);
+    Wa.lambda_preconditioned_x(lambdas_a, MR2a);
     
     // Evaluate the jumps in the primitive solution states.
     wavespeeds.HartenFix_Abs(lambdas_a,
@@ -1757,9 +2029,9 @@ void Flame2D_State :: FluxRoe_x(const Flame2D_pState &Wl,
 			     lambdas_r);
      
     // Evaluate the low-Mach-number local preconditioner for the Roe-averaged state.
-    static ::DenseMatrix P(n-NSm1,n-NSm1,ZERO);
+    static DenseMatrix P(n-NSm1,n-NSm1,ZERO);
     //P.zero(); // <- no need, always writing to the same spot
-    Waa.Low_Mach_Number_Preconditioner(P,flow_type_flag,deltax);
+    Wa.Low_Mach_Number_Preconditioner(P, flow_type_flag, deltax);
     
     // Determine the intermediate state flux.
     Wl.Fx(*this, HALF);
@@ -1767,7 +2039,7 @@ void Flame2D_State :: FluxRoe_x(const Flame2D_pState &Wl,
 
     // compute dissipation flux
     static Flame2D_State Flux_dissipation;
-    Waa.Flux_Dissipation_precon( MR2a, dWrl, wavespeeds, Flux_dissipation);
+    Wa.Flux_Dissipation_precon( MR2a, dWrl, wavespeeds, Flux_dissipation);
     
     // Add preconditioned upwind dissipation flux.
     for ( int i = 0 ; i < n-NSm1 ; i++ ) {
@@ -1798,42 +2070,40 @@ void Flame2D_State :: FluxRoe_x(const Flame2D_pState &Wl,
  * (1981).                                               *
  *                                                       *
  *********************************************************/
-void Flame2D_State :: FluxRoe_n(const Flame2D_pState &Wl,
-				const Flame2D_pState &Wr,
+void Flame2D_State :: FluxRoe_n(Flame2D_pState &Wl,
+				Flame2D_pState &Wr,
 				const Vector2D &norm_dir,
 				const int &Preconditioning,
 				const int &flow_type_flag,
 				const double &delta_n ) {
 
-  static Flame2D_pState Wl_rotated, Wr_rotated;
-  Wl_rotated.Copy(Wl);  Wr_rotated.Copy(Wr);
-
-  /* Determine the direction cosine's for the frame rotation. */
-
-  double cos_angle( norm_dir.x ), sin_angle( norm_dir.y );
-
   /* Apply the frame rotation and evaluate left and right
      solution states in the local rotated frame defined
      by the unit normal vector. */
-  
-  Wl_rotated.setVelocity( Wl.vx()*cos_angle +  Wl.vy()*sin_angle,
-			  - Wl.vx()*sin_angle + Wl.vy()*cos_angle );
-  
-  Wr_rotated.setVelocity( Wr.vx()*cos_angle + Wr.vy()*sin_angle,
-			  - Wr.vx()*sin_angle + Wr.vy()*cos_angle );
-  
+
+  double ur( ((const Flame2D_pState&)Wr).vx() ), 
+    vr( ((const Flame2D_pState&)Wr).vy() ), 
+    ul( ((const Flame2D_pState&)Wl).vx() ), 
+    vl( ((const Flame2D_pState&)Wl).vy() );
+
+  /* Use rotated values to calculate eignvalues */
+  Wl.Rotate(norm_dir);
+  Wr.Rotate(norm_dir);
+
   /* Evaluate the intermediate state solution 
      flux in the rotated frame. */
   
-  FluxRoe_x(Wl_rotated, Wr_rotated, 
-	    Preconditioning,flow_type_flag,delta_n);
-  double ur(rhovx()), vr(rhovy());
-  
+  FluxRoe_x(Wl, Wr, Preconditioning,flow_type_flag,delta_n);
+ 
   /* Rotate back to the original Cartesian reference
      frame and return the solution flux. */
-  
-  rhovx() = ur*cos_angle - vr*sin_angle;
-  rhovy() = ur*sin_angle + vr*cos_angle;
+
+  RotateBack(norm_dir);
+
+  /* Rotate Back -> avoid roundoff by setting the exact values */
+
+  Wl.setVelocity( ul, vl );
+  Wr.setVelocity( ur, vr );
 
 }
 
@@ -1933,7 +2203,7 @@ void Flame2D_State::FluxAUSMplus_up(const Flame2D_pState &Wl,
 
   } //end if
 
-  // scale the flux
+    // scale the flux
   for(int i=0; i<n; ++i) x[i] *= mass_flux_half;
 
   // Add the pressure contribution to the intermediate state solution flux:
@@ -1955,39 +2225,38 @@ void Flame2D_State::FluxAUSMplus_up(const Flame2D_pState &Wl,
  * intermediate  state in terms of the rotated solution states.       *
  * See M.-S. Liou (J. Comp. Physics 2006).                            *
  **********************************************************************/
-void Flame2D_State::FluxAUSMplus_up_n(const Flame2D_pState &Wl,
-				      const Flame2D_pState &Wr,
+void Flame2D_State::FluxAUSMplus_up_n(Flame2D_pState &Wl,
+				      Flame2D_pState &Wr,
 				      const Vector2D &norm_dir) {
 
-
-  static Flame2D_pState Wl_rotated, Wr_rotated;
-  Wl_rotated.Copy(Wl);  Wr_rotated.Copy(Wr);
-
-  /* Determine the direction cosine's for the frame rotation. */
-
-  double cos_angle( norm_dir.x ), sin_angle( norm_dir.y );
 
   /* Apply the frame rotation and evaluate left and right
      solution states in the local rotated frame defined
      by the unit normal vector. */
-  
-  Wl_rotated.setVelocity( Wl.vx()*cos_angle +  Wl.vy()*sin_angle,
-			  - Wl.vx()*sin_angle + Wl.vy()*cos_angle );
-  
-  Wr_rotated.setVelocity( Wr.vx()*cos_angle + Wr.vy()*sin_angle,
-			  - Wr.vx()*sin_angle + Wr.vy()*cos_angle );
-  
+
+  double ur( ((const Flame2D_pState&)Wr).vx() ), 
+    vr( ((const Flame2D_pState&)Wr).vy() ), 
+    ul( ((const Flame2D_pState&)Wl).vx() ), 
+    vl( ((const Flame2D_pState&)Wl).vy() );
+
+  /* Use rotated values to calculate eignvalues */
+  Wl.Rotate(norm_dir);
+  Wr.Rotate(norm_dir);
+
   /* Evaluate the intermediate state solution 
      flux in the rotated frame. */
   
-  FluxAUSMplus_up(Wl_rotated, Wr_rotated);
-  double ur(rhovx()), vr(rhovy());
-  
+  FluxAUSMplus_up(Wl, Wr);
+
   /* Rotate back to the original Cartesian reference
      frame and return the solution flux. */
-  
-  rhovx() = ur*cos_angle - vr*sin_angle;
-  rhovy() = ur*sin_angle + vr*cos_angle;
+
+  RotateBack(norm_dir);
+
+  /* Rotate Back -> avoid roundoff by setting the exact values */
+
+  Wl.setVelocity( ul, vl );
+  Wr.setVelocity( ur, vr );
 
 }
 
@@ -2005,7 +2274,7 @@ void Flame2D_State::FluxAUSMplus_up_n(const Flame2D_pState &Wl,
  * the primitive variables.                                           *
  *                                                                    *
  **********************************************************************/
-void Flame2D_State::Viscous_Flux_n(const Flame2D_pState &W,
+void Flame2D_State::Viscous_Flux_n(Flame2D_pState &W,
 				   const Flame2D_State &dWdx,
 				   const Flame2D_State &dWdy,
 				   const int Axisymmetric,
@@ -2045,21 +2314,21 @@ void Flame2D_State::Viscous_Flux_n(const Flame2D_pState &W,
  * Also returns the face gradients in dWd[xy] (passed by reference)   *
  *                                                                    *
  **********************************************************************/
-void Flame2D_State::Viscous_FluxHybrid_n(const Flame2D_pState &W,
-					Flame2D_State &dWdx, 
-					Flame2D_State &dWdy,
-					const Vector2D &X,
-					const Flame2D_pState &Wl,
-					const Flame2D_State &dWdx_l,
-					const Flame2D_State &dWdy_l,
-					const Vector2D &Xl,
-					const Flame2D_pState &Wr,
-					const Flame2D_State &dWdx_r,
-					const Flame2D_State &dWdy_r,
-					const Vector2D &Xr,
-					const int &Axisymmetric,
-					const Vector2D &norm_dir,
-					const double &mult) {
+void Flame2D_State::Viscous_FluxHybrid_n(Flame2D_pState &W,
+					 Flame2D_State &dWdx, 
+					 Flame2D_State &dWdy,
+					 const Vector2D &X,
+					 const Flame2D_pState &Wl,
+					 const Flame2D_State &dWdx_l,
+					 const Flame2D_State &dWdy_l,
+					 const Vector2D &Xl,
+					 const Flame2D_pState &Wr,
+					 const Flame2D_State &dWdx_r,
+					 const Flame2D_State &dWdy_r,
+					 const Vector2D &Xr,
+					 const int &Axisymmetric,
+					 const Vector2D &norm_dir,
+					 const double &mult) {
 
   static Vector2D qflux;
   static Tensor2D tau;
@@ -2202,6 +2471,7 @@ void Flame2D_pState::FlameJumpLowMach(const Flame2D_pState &Wu) {
 void Flame2D_pState::ViscousChannelFlow(const Vector2D X,
 					const double Vwall,
 					const double dp) {
+  updateViscosity();
   vx()  = ( (HALF/mu())*(-dp/0.2)*
 	    (pow(X.y,TWO) - (0.001*0.001/4.0)) + 
 	    Vwall*(X.y/0.001 + 0.5) );
@@ -2248,6 +2518,7 @@ void Flame2D_pState::FlatPlate(const Flame2D_pState &Winf,
   }
 
   // Determine the dimensionless similarity coordinate, eta:
+  updateViscosity();
   eta = X.y*sqrt(vx()/(X.x*mu()/rho()));
 
   // If eta is greater than 8.4, for the sake of expediency, use linear
@@ -2308,7 +2579,7 @@ void Flame2D_pState::FlatPlate(const Flame2D_pState &Winf,
 double Flame2D_pState::WallShearStress(const Vector2D &X1,
 				       const Vector2D &X2,
 				       const Vector2D &X3,
-				       const Vector2D &norm_dir) const {
+				       const Vector2D &norm_dir) {
 
   double l21, l32, l13, A, dWdn;
   Vector2D n21, n32, n13;
@@ -2344,6 +2615,7 @@ double Flame2D_pState::WallShearStress(const Vector2D &X1,
   dWdn = dWdy.vx();//dot(Vector2D(dWdx.v.x,dWdy.v.y),norm_dir);
 
   // Return the wall shear stress.
+  updateViscosity();
   return mu()*dWdn;
 
 }

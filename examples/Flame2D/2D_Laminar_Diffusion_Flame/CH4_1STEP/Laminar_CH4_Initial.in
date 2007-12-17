@@ -46,7 +46,7 @@ ICs_Type=
 Restart
 #Core_Flame
 Mach_Number_Reference=
-0.2
+0.1
 ###########################
 # Set mesh info
 ############################

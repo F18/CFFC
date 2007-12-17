@@ -17,6 +17,39 @@ Freeze_Limiter_Residual_Level =
 # 1 rho, 4 energy (follows index operator for pstate)
 Residual_Variable =
 1
+############################
+# NKS PARAMETERS
+############################
+#----------- GMRES -------------
+GMRES_Overlap =
+0
+GMRES_Initial_Tolerance =
+1.0e-02
+GMRES_Final_Tolerance =
+1.0e-02
+GMRES_Block_Preconditioner = 
+ILUK
+#( ILUK, Diagonal)
+GMRES_ILUK_Level_of_Fill = 
+4
+GMRES_Normalization=
+ON
+GMRES_Check=
+ON
+#---------- NK -----------------
+NKS_Overall_Tolerance =
+1.0e-12
+# Implict Euler Startup
+NKS_Finite_Time_Step =
+ON
+NKS_Finite_Time_Step_Initial_CFL =
+10.0
+NKS_Finite_Time_Step_Max_CFL =
+500.0
+#---------- Precon ------------
+Jacobian_Order =
+Source_Terms_Only
+#Second_Order_Diamond_Path_with_Roe
 ##############################
 #
 ##############################
@@ -68,9 +101,16 @@ Number_of_Blocks_Jdir=
 CFL_Number=
 1.0
 Source_Term_Multiplyer=
-1.E+03
+1.E+00
 Maximum_Number_of_Time_Steps=
-10000
+50
+####### Implicit ###############
+Maximum_Number_of_NKS_Iterations =
+50
+Maximum_Number_of_GMRES_Iterations=
+100
+GMRES_Restart =
+100
 ##############################
 Output_File_Name= 
 1STEP_CH4_1DFLAME

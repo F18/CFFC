@@ -10,8 +10,11 @@
 // Include main solution block header file.
 #include "Flame2DQuad.h"
 
+// Include some tools
+#include "Flame2DTools.h"
+
 // Include FLAME2D NKS Specializations header file.
-//#include "Flame2DQuadNKS.h"
+#include "Flame2DQuadNKS.h"
 
 // Include Rte2D solver Sepcialization header file.
 //#include "Flame2DQuadRte.h"
@@ -68,28 +71,28 @@ int Flame2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
    ******************** INPUT PARAMETERS  **********************************
      Set default values for the input solution parameters and then read user 
      specified input values from the specified input parameter file.            
-   *************************************************************************
-   *************************************************************************/  
+     *************************************************************************
+     *************************************************************************/  
   //The primary MPI processor processes the input parameter file.
   if (CFFC_Primary_MPI_Processor()) {
     if (!batch_flag) {
-        cout << "\n Reading Flame2D input data file `"
-             << Input_File_Name_ptr << "'."; 
+      cout << "\n Reading Flame2D input data file `"
+	   << Input_File_Name_ptr << "'."; 
     } // endif
     error_flag = Process_Input_Control_Parameter_File(Input_Parameters,
 						      Input_File_Name_ptr,
 						      command_flag);
     if (!batch_flag && error_flag == 0) {
-        cout << Input_Parameters << "\n";
-        cout.flush();
+      cout << Input_Parameters << "\n";
+      cout.flush();
     } // endif
   } else {
     error_flag = 0;
   } // endif
 
 
-  // Broadcast input solution parameters to other MPI processors.
-  // MPI barrier to ensure processor synchronization.
+    // Broadcast input solution parameters to other MPI processors.
+    // MPI barrier to ensure processor synchronization.
   CFFC_Barrier_MPI();
   CFFC_Broadcast_MPI(&error_flag, 1);
   if (error_flag != 0) return (error_flag); 
@@ -103,13 +106,13 @@ int Flame2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
   
   /*************************************************************************
    ******************** INITIAL GRID & SOLUTION SPACE **********************
-   Create initial mesh and allocate Flame2D solution variables for 
-   specified IBVP/BVP problem. 
-   *************************************************************************
-   *************************************************************************/
+     Create initial mesh and allocate Flame2D solution variables for 
+     specified IBVP/BVP problem. 
+     *************************************************************************
+     *************************************************************************/
 
   //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  execute_new_calculation: ;
+ execute_new_calculation: ;
   //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   // MPI barrier to ensure processor synchronization.
@@ -134,16 +137,16 @@ int Flame2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
       error_flag = 0;
     } // endif
     
-     if (error_flag) {
-       cout << "\n Flame2D ERROR: Unable to create valid Flame2D multi-block mesh.\n";
-       cout.flush();
-     } // endif
+    if (error_flag) {
+      cout << "\n Flame2D ERROR: Unable to create valid Flame2D multi-block mesh.\n";
+      cout.flush();
+    } // endif
   } else {
     MeshBlk = NULL;
   } // endif
 
-  // Broadcast the mesh to other MPI processors.
-  // MPI barrier to ensure processor synchronization.
+    // Broadcast the mesh to other MPI processors.
+    // MPI barrier to ensure processor synchronization.
   CFFC_Barrier_MPI();
   // Broadcast mesh error flag.
   CFFC_Broadcast_MPI(&error_flag, 1); 
@@ -153,12 +156,12 @@ int Flame2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 
   /************************************************************************
    ******************** MULTIBLOCK QUADTREE *******************************
-     Create (allocate) multi-block quadtree data structure, create
-     (allocate) array of local  2D equation solution blocks, 
-     assign and create (allocate) 2D equation solution blocks
-     corresponding to the initial mesh. 
-   ************************************************************************
-   ************************************************************************/
+       Create (allocate) multi-block quadtree data structure, create
+       (allocate) array of local  2D equation solution blocks, 
+       assign and create (allocate) 2D equation solution blocks
+       corresponding to the initial mesh. 
+       ************************************************************************
+       ************************************************************************/
   if (!batch_flag){
     cout << "\n Creating multi-block quadtree data structure and assigning"
 	 << "\n Flame2D solution blocks corresponding to initial mesh.";
@@ -224,11 +227,11 @@ int Flame2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 				       Time,
 				       processor_cpu_time);
     if (error_flag) {
-         cout << "\n Flame2D ERROR: Unable to open Flame2D restart input data file(s) "
-              << "on processor "
-              << List_of_Local_Solution_Blocks.ThisCPU
-              << ".\n";
-         cout.flush();
+      cout << "\n Flame2D ERROR: Unable to open Flame2D restart input data file(s) "
+	   << "on processor "
+	   << List_of_Local_Solution_Blocks.ThisCPU
+	   << ".\n";
+      cout.flush();
     } // endif
     error_flag = CFFC_OR_MPI(error_flag); 
     if (error_flag){ 
@@ -248,9 +251,9 @@ int Flame2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 				   NUM_COMP_VECTOR2D,
 				   ON);     
 
-  //
-  // Else apply initial conditions from input parameters
-  //
+    //
+    // Else apply initial conditions from input parameters
+    //
   } else {   
 
     // Send grid information between neighbouring blocks BEFORE applying ICs
@@ -264,20 +267,20 @@ int Flame2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
   } // endif
   
   
-  /******************************************************************************  
-    Send solution information between neighbouring blocks to complete
-    prescription of initial data. 
-  *******************************************************************************/
-  // MPI barrier to ensure processor synchronization.
+    /******************************************************************************  
+      Send solution information between neighbouring blocks to complete
+      prescription of initial data. 
+    *******************************************************************************/
+    // MPI barrier to ensure processor synchronization.
   CFFC_Barrier_MPI();
  
   // OLD grid send_all_messages, moved before ICs to help with values used in BCs 
   // set from ICs, ie ghost cell node locations, changed before ICs 
 
   if (!error_flag) error_flag = Send_All_Messages(Local_SolnBlk, 
-                                                  List_of_Local_Solution_Blocks,
-                                                  NUM_VAR_FLAME2D,
-                                                  OFF);
+						  List_of_Local_Solution_Blocks,
+						  NUM_VAR_FLAME2D,
+						  OFF);
   if (error_flag) {
     cout << "\n Flame2D ERROR: Message passing error during Flame2D solution intialization "
 	 << "on processor "
@@ -301,74 +304,74 @@ int Flame2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
    *******************************************************************************/  
   // Perform uniform, boundary, and, initial mesh refinement.
   if (Input_Parameters.i_ICs != IC_RESTART) {
-     if (!batch_flag) cout << "\n Performing Flame2D uniform mesh refinement.";
-     error_flag = Uniform_AMR(Local_SolnBlk,
-                              Input_Parameters,
-                              QuadTree,
-                              List_of_Global_Solution_Blocks,
-                              List_of_Local_Solution_Blocks);
-     if (error_flag) {
-       cout << "\n Flame2D ERROR: Uniform AMR error on processor "
-	    << List_of_Local_Solution_Blocks.ThisCPU << "." << endl;
-       cout.flush();
-     } // endif
-     error_flag = CFFC_OR_MPI(error_flag);
-     if (error_flag) return error_flag;
+    if (!batch_flag) cout << "\n Performing Flame2D uniform mesh refinement.";
+    error_flag = Uniform_AMR(Local_SolnBlk,
+			     Input_Parameters,
+			     QuadTree,
+			     List_of_Global_Solution_Blocks,
+			     List_of_Local_Solution_Blocks);
+    if (error_flag) {
+      cout << "\n Flame2D ERROR: Uniform AMR error on processor "
+	   << List_of_Local_Solution_Blocks.ThisCPU << "." << endl;
+      cout.flush();
+    } // endif
+    error_flag = CFFC_OR_MPI(error_flag);
+    if (error_flag) return error_flag;
 
-     ///////////////////////////////////////////////////////////////////////////
-     if (!batch_flag) cout << "\n Performing Flame2D boundary mesh refinement.";
-     error_flag = Boundary_AMR(Local_SolnBlk,
-                               Input_Parameters,
-                               QuadTree,
-                               List_of_Global_Solution_Blocks,
-                               List_of_Local_Solution_Blocks);
-     if (error_flag) {
-       cout << "\n Flame2D ERROR: Boundary AMR error on processor "
-	    << List_of_Local_Solution_Blocks.ThisCPU << "." << endl;
-       cout.flush();
-     } // endif
-     error_flag = CFFC_OR_MPI(error_flag);
-     if (error_flag) return error_flag;
+    ///////////////////////////////////////////////////////////////////////////
+    if (!batch_flag) cout << "\n Performing Flame2D boundary mesh refinement.";
+    error_flag = Boundary_AMR(Local_SolnBlk,
+			      Input_Parameters,
+			      QuadTree,
+			      List_of_Global_Solution_Blocks,
+			      List_of_Local_Solution_Blocks);
+    if (error_flag) {
+      cout << "\n Flame2D ERROR: Boundary AMR error on processor "
+	   << List_of_Local_Solution_Blocks.ThisCPU << "." << endl;
+      cout.flush();
+    } // endif
+    error_flag = CFFC_OR_MPI(error_flag);
+    if (error_flag) return error_flag;
 
-     ///////////////////////////////////////////////////////////////////////////
-     if (!batch_flag) cout << "\n Performing Flame2D initial mesh refinement.";
-     error_flag = Initial_AMR(Local_SolnBlk,
-                              Input_Parameters,
-	   	              QuadTree,
-		              List_of_Global_Solution_Blocks,
-		              List_of_Local_Solution_Blocks);
-     if (error_flag) {
-        cout << "\n Flame2D ERROR: Initial AMR error on processor "
-             << List_of_Local_Solution_Blocks.ThisCPU
-             << ".\n";
-        cout.flush();
-     } // endif
-     error_flag = CFFC_OR_MPI(error_flag);
-     if (error_flag) return (error_flag);
+    ///////////////////////////////////////////////////////////////////////////
+    if (!batch_flag) cout << "\n Performing Flame2D initial mesh refinement.";
+    error_flag = Initial_AMR(Local_SolnBlk,
+			     Input_Parameters,
+			     QuadTree,
+			     List_of_Global_Solution_Blocks,
+			     List_of_Local_Solution_Blocks);
+    if (error_flag) {
+      cout << "\n Flame2D ERROR: Initial AMR error on processor "
+	   << List_of_Local_Solution_Blocks.ThisCPU
+	   << ".\n";
+      cout.flush();
+    } // endif
+    error_flag = CFFC_OR_MPI(error_flag);
+    if (error_flag) return (error_flag);
   } // endif
 
-  // Output multi-block solution-adaptive quadrilateral mesh statistics.
+    // Output multi-block solution-adaptive quadrilateral mesh statistics.
   if (!batch_flag) {
-     cout << "\n\n Multi-block solution-adaptive quadrilateral mesh statistics: "; 
-     cout << "\n  -> Number of Root Blocks i-direction: "
-          << QuadTree.NRi;
-     cout << "\n  -> Number of Root Blocks j-direction: " 
-          << QuadTree.NRj;
-     cout << "\n  -> Total Number of Used Blocks: " 
-          << QuadTree.countUsedBlocks();
-     cout << "\n  -> Total Number of Computational Cells: " 
-          << QuadTree.countUsedCells();
-     cout << "\n  -> Number of Mesh Refinement Levels: " 
-	  << QuadTree.highestRefinementLevel()+1;
-     cout << "\n  -> Refinement Efficiency: " 
-          << QuadTree.efficiencyRefinement() << "\n"; 
-     cout.flush();
+    cout << "\n\n Multi-block solution-adaptive quadrilateral mesh statistics: "; 
+    cout << "\n  -> Number of Root Blocks i-direction: "
+	 << QuadTree.NRi;
+    cout << "\n  -> Number of Root Blocks j-direction: " 
+	 << QuadTree.NRj;
+    cout << "\n  -> Total Number of Used Blocks: " 
+	 << QuadTree.countUsedBlocks();
+    cout << "\n  -> Total Number of Computational Cells: " 
+	 << QuadTree.countUsedCells();
+    cout << "\n  -> Number of Mesh Refinement Levels: " 
+	 << QuadTree.highestRefinementLevel()+1;
+    cout << "\n  -> Refinement Efficiency: " 
+	 << QuadTree.efficiencyRefinement() << "\n"; 
+    cout.flush();
   } // endif
  
-  /***********************************************************************	
-   MORTON ORDERING of initial solution blocks 
-   (should be meshed with AMR, ie when Refine_Grid is done call the ordering)
-  ************************************************************************/
+    /***********************************************************************	
+      MORTON ORDERING of initial solution blocks 
+      (should be meshed with AMR, ie when Refine_Grid is done call the ordering)
+    ************************************************************************/
   if (Input_Parameters.Morton){
     if (!batch_flag) cout << "\n\n Applying Morton re-ordering algorithm to initial solution blocks. ";
 
@@ -399,8 +402,8 @@ int Flame2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
   } 
   
   /***********************************************************************	
-   RADIATION SOLVER setup of initial grid, solution blocks, quadtree,
-   initial conditions.                                                      
+      RADIATION SOLVER setup of initial grid, solution blocks, quadtree,
+      initial conditions.                                                      
   ************************************************************************/
   if (Input_Parameters.Radiation == RADIATION_RTE){
 
@@ -445,7 +448,7 @@ int Flame2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 
     } // endif - restart
 
-    // set the current number of sequential solves and the update frequency
+      // set the current number of sequential solves and the update frequency
     number_sequential_solves = 0;
 
 #else
@@ -458,16 +461,16 @@ int Flame2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 
   } // endif
 
-  /****************************************************************************
-   *********************** MAIN SOLVER ****************************************
-   Solve IBVP or BVP for conservation form of 2D Axisymmetric multispecies 
-   chemically reacting thermally perfect equations on multi-block 
-   solution-adaptive quadrilateral mesh.                                  
-   ****************************************************************************
-   ****************************************************************************/  
+    /****************************************************************************
+     *********************** MAIN SOLVER ****************************************
+     Solve IBVP or BVP for conservation form of 2D Axisymmetric multispecies 
+     chemically reacting thermally perfect equations on multi-block 
+     solution-adaptive quadrilateral mesh.                                  
+     ****************************************************************************
+     ****************************************************************************/  
   
-  //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  continue_existing_calculation: ;
+    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ continue_existing_calculation: ;
   //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   
   // MPI barrier to ensure processor synchronization.
@@ -512,12 +515,12 @@ int Flame2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 					     Local_SolnBlk[0].W[2][2]);
       }
       if (error_flag) {
-        cout << "\n Flame2D ERROR: Unable to open residual file for Flame2D calculation.\n";
-        cout.flush();
+	cout << "\n Flame2D ERROR: Unable to open residual file for Flame2D calculation.\n";
+	cout.flush();
       } // endif
     } // endif
     
-    // MPI barrier to ensure processor synchronization.
+      // MPI barrier to ensure processor synchronization.
     CFFC_Barrier_MPI();
     CFFC_Broadcast_MPI(&error_flag, 1);
     if (error_flag) return (error_flag);
@@ -525,7 +528,7 @@ int Flame2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
     processor_cpu_time.reset();
     
     /**************************************************************************
-     Perform required number of iterations (time steps). 
+        Perform required number of iterations (time steps). 
     **************************************************************************/ 
     if ((!Input_Parameters.Time_Accurate && 
 	 Input_Parameters.Maximum_Number_of_Time_Steps > 0) ||
@@ -534,96 +537,96 @@ int Flame2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
       if (!batch_flag) { cout << "\n\n Beginning Explicit Flame2D computations on "
 			      << Date_And_Time() << ".\n\n"; time(&start_explicit); /*start_explicit = clock();*/ }
 
-     last_step = 0;
-     int i=1;
-     double number_explicit_steps = 0;
+      last_step = 0;
+      int i=1;
+      double number_explicit_steps = 0;
 
-     while ((!Input_Parameters.Time_Accurate &&
-	     number_explicit_steps < Input_Parameters.Maximum_Number_of_Time_Steps) ||
-	    (Input_Parameters.Time_Accurate && Time < Input_Parameters.Time_Max)) {
+      while ((!Input_Parameters.Time_Accurate &&
+	      number_explicit_steps < Input_Parameters.Maximum_Number_of_Time_Steps) ||
+	     (Input_Parameters.Time_Accurate && Time < Input_Parameters.Time_Max)) {
 
-       /***********************************************************************	
-	MORTON ORDERING of solution blocks during solution ever "n" steps
-        ??? Should this be coupled with AMR Frequency ????
-       ************************************************************************/
-       if (Input_Parameters.Morton && !first_step &&
-	   number_of_time_steps%Input_Parameters.Morton_Reordering_Frequency == 0) {
-	 if (!batch_flag) cout << "\n\n Applying Morton re-ordering algorithm to solution blocks at n = "
-			       << number_of_time_steps << ".";
-	 error_flag = Morton_ReOrdering_of_Solution_Blocks(QuadTree, 
-							   List_of_Global_Solution_Blocks, 
-							   List_of_Local_Solution_Blocks, 
-							   Local_SolnBlk, 
-							   Input_Parameters, 
-							   number_of_time_steps, 
-							   Time, 
-							   processor_cpu_time); 
-	 if (error_flag) {
-	   cout <<"\n Flame2D ERROR: Morton re-ordering error on processor "
-		<< List_of_Local_Solution_Blocks.ThisCPU
-		<< ".\n";
-	   cout.flush();
-	   return (error_flag);
-	 } 
-	 error_flag = CFFC_OR_MPI(error_flag);
-	 if (error_flag) return (error_flag);
-	 //Output space filling curve in Tecplot format
-	 if (!batch_flag) cout << "\n Outputting space filling curve showing block loading for CPUs.";
-	 Morton_SFC_Output_Tecplot(Local_SolnBlk, 
-				   Input_Parameters, 
-				    List_of_Local_Solution_Blocks);
-       } 
-       
-        /***********************************************************************	
-	MESH REFINEMENT: Periodically refine the mesh (AMR). 
+	/***********************************************************************	
+	   MORTON ORDERING of solution blocks during solution ever "n" steps
+           ??? Should this be coupled with AMR Frequency ????
 	************************************************************************/
-        if (Input_Parameters.AMR) {
+	if (Input_Parameters.Morton && !first_step &&
+	    number_of_time_steps%Input_Parameters.Morton_Reordering_Frequency == 0) {
+	  if (!batch_flag) cout << "\n\n Applying Morton re-ordering algorithm to solution blocks at n = "
+				<< number_of_time_steps << ".";
+	  error_flag = Morton_ReOrdering_of_Solution_Blocks(QuadTree, 
+							    List_of_Global_Solution_Blocks, 
+							    List_of_Local_Solution_Blocks, 
+							    Local_SolnBlk, 
+							    Input_Parameters, 
+							    number_of_time_steps, 
+							    Time, 
+							    processor_cpu_time); 
+	  if (error_flag) {
+	    cout <<"\n Flame2D ERROR: Morton re-ordering error on processor "
+		 << List_of_Local_Solution_Blocks.ThisCPU
+		 << ".\n";
+	    cout.flush();
+	    return (error_flag);
+	  } 
+	  error_flag = CFFC_OR_MPI(error_flag);
+	  if (error_flag) return (error_flag);
+	  //Output space filling curve in Tecplot format
+	  if (!batch_flag) cout << "\n Outputting space filling curve showing block loading for CPUs.";
+	  Morton_SFC_Output_Tecplot(Local_SolnBlk, 
+				    Input_Parameters, 
+				    List_of_Local_Solution_Blocks);
+	} 
+       
+	/***********************************************************************	
+	   MESH REFINEMENT: Periodically refine the mesh (AMR). 
+	************************************************************************/
+	if (Input_Parameters.AMR) {
 	  if (!first_step &&
-	       number_of_time_steps-Input_Parameters.AMR_Frequency*
-	       (number_of_time_steps/Input_Parameters.AMR_Frequency) == 0 ) {
-              if (!batch_flag) cout << "\n\n Refining Grid.  Performing adaptive mesh refinement at n = "
-                                    << number_of_time_steps << ".";
-              Evaluate_Limiters(Local_SolnBlk, 
-                                List_of_Local_Solution_Blocks);
-              error_flag = AMR(Local_SolnBlk,
-			       Input_Parameters,
-                               QuadTree,
-                               List_of_Global_Solution_Blocks,
-                               List_of_Local_Solution_Blocks,
-                               ON, 
-			       ON);
-              if (error_flag) {
-                 cout << "\n Flame2D ERROR: Flame2D AMR error on processor "
-	              << List_of_Local_Solution_Blocks.ThisCPU
-	              << ".\n";
-	         cout.flush();
-              } // endif
-              error_flag = CFFC_OR_MPI(error_flag);
-              if (error_flag) return (error_flag);
-              if (!batch_flag) {
-	         cout << "\n New multi-block solution-adaptive quadrilateral mesh statistics: "; 
-	         cout << "\n  -> Number of Root Blocks i-direction: "
-	              << QuadTree.NRi;
-                 cout << "\n  -> Number of Root Blocks j-direction: " 
-                      << QuadTree.NRj;
-                 cout << "\n  -> Total Number of Used Blocks: " 
-	              << QuadTree.countUsedBlocks();
-                 cout << "\n  -> Total Number of Computational Cells: " 
-	              << QuadTree.countUsedCells();
-                 cout << "\n  -> Number of Mesh Refinement Levels: " 
-                      << QuadTree.highestRefinementLevel()+1;
-                 cout << "\n  -> Refinement Efficiency: " 
-                      << QuadTree.efficiencyRefinement() << "\n";
-                 cout.flush();
-              } // endif
-           } // endif
-        } // endif
+	      number_of_time_steps-Input_Parameters.AMR_Frequency*
+	      (number_of_time_steps/Input_Parameters.AMR_Frequency) == 0 ) {
+	    if (!batch_flag) cout << "\n\n Refining Grid.  Performing adaptive mesh refinement at n = "
+				  << number_of_time_steps << ".";
+	    Evaluate_Limiters(Local_SolnBlk, 
+			      List_of_Local_Solution_Blocks);
+	    error_flag = AMR(Local_SolnBlk,
+			     Input_Parameters,
+			     QuadTree,
+			     List_of_Global_Solution_Blocks,
+			     List_of_Local_Solution_Blocks,
+			     ON, 
+			     ON);
+	    if (error_flag) {
+	      cout << "\n Flame2D ERROR: Flame2D AMR error on processor "
+		   << List_of_Local_Solution_Blocks.ThisCPU
+		   << ".\n";
+	      cout.flush();
+	    } // endif
+	    error_flag = CFFC_OR_MPI(error_flag);
+	    if (error_flag) return (error_flag);
+	    if (!batch_flag) {
+	      cout << "\n New multi-block solution-adaptive quadrilateral mesh statistics: "; 
+	      cout << "\n  -> Number of Root Blocks i-direction: "
+		   << QuadTree.NRi;
+	      cout << "\n  -> Number of Root Blocks j-direction: " 
+		   << QuadTree.NRj;
+	      cout << "\n  -> Total Number of Used Blocks: " 
+		   << QuadTree.countUsedBlocks();
+	      cout << "\n  -> Total Number of Computational Cells: " 
+		   << QuadTree.countUsedCells();
+	      cout << "\n  -> Number of Mesh Refinement Levels: " 
+		   << QuadTree.highestRefinementLevel()+1;
+	      cout << "\n  -> Refinement Efficiency: " 
+		   << QuadTree.efficiencyRefinement() << "\n";
+	      cout.flush();
+	    } // endif
+	  } // endif
+	} // endif
 
-	/********************** TIME STEPS **************************************
+	  /********************** TIME STEPS **************************************
            Determine local and global time steps. 
-	*************************************************************************/
+	  *************************************************************************/
 
-	// Find global minimum time step for all processors.
+	  // Find global minimum time step for all processors.
 	dTime = CFL(Local_SolnBlk, List_of_Local_Solution_Blocks, Input_Parameters);
 	dTime = CFFC_Minimum_MPI(dTime);
 	    
@@ -648,11 +651,11 @@ int Flame2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	  }
 	} 	 
 	  
-  	if (!Input_Parameters.Local_Time_Stepping) { 
+	if (!Input_Parameters.Local_Time_Stepping) { 
 	  // Set global time step.
 	  if (Input_Parameters.Fixed_Time_Step) dTime = Input_Parameters.Time_Step;
 	  Set_Global_TimeStep(Local_SolnBlk, List_of_Local_Solution_Blocks,dTime);
-  	} 
+	} 
 
 	/************************ NORMS *****************************************
            Determine the L1, L2, and max norms of the solution residual. 
@@ -673,7 +676,7 @@ int Flame2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	// Total CPU time for all processors.
 	total_cpu_time.cput = CFFC_Summation_MPI(processor_cpu_time.cput); 
 	/************************ RESTART *****************************************
-          Periodically save restart solution files. 
+           Periodically save restart solution files. 
 	***************************************************************************/ 
 	    
 	if (!first_step &&
@@ -751,14 +754,14 @@ int Flame2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	***************************************************************************/
  
 	if (!Input_Parameters.Time_Accurate &&
- 	    number_explicit_steps >= 
- 	    Input_Parameters.Maximum_Number_of_Time_Steps) break;
- 	if (Input_Parameters.Time_Accurate && 
- 	    Time >= Input_Parameters.Time_Max) break;
+	    number_explicit_steps >= 
+	    Input_Parameters.Maximum_Number_of_Time_Steps) break;
+	if (Input_Parameters.Time_Accurate && 
+	    Time >= Input_Parameters.Time_Max) break;
 
-	// 	/******************* LIMITER FREEZE ***************************************	
-	// 	 Freeze limiters as necessary
-	// 	***************************************************************************/
+	/******************* LIMITER FREEZE ***************************************	
+	   Freeze limiters as necessary
+	***************************************************************************/
 	//         if (!first_step &&
 	//             Input_Parameters.Freeze_Limiter &&
 	//             limiter_freezing_off &&           
@@ -858,9 +861,9 @@ int Flame2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	    
 	} /* endfor */
 	
-	/******************* UPDATE TIMER & COUNTER *******************************
-          Update time and time step counter. 
-	***************************************************************************/
+	  /******************* UPDATE TIMER & COUNTER *******************************
+           Update time and time step counter. 
+	  ***************************************************************************/
 	if (first_step) {
 	  first_step = 0;
 	  Input_Parameters.first_step = 0;
@@ -870,9 +873,9 @@ int Flame2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	number_explicit_steps++;
 
 	// check for last step
-        if (!Input_Parameters.Time_Accurate &&
+	if (!Input_Parameters.Time_Accurate &&
 	    number_explicit_steps == Input_Parameters.Maximum_Number_of_Time_Steps) {
-          last_step = 1;
+	  last_step = 1;
 	}
 		
 	if (Input_Parameters.i_Time_Integration != 
@@ -897,10 +900,10 @@ int Flame2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
     } // endif
 
 
-    /************************************************************************************  
-    Update ghostcell information and prescribe boundary conditions to ensure
-    that the solution is consistent on each block. 
-    *************************************************************************************/
+      /************************************************************************************  
+       Update ghostcell information and prescribe boundary conditions to ensure
+       that the solution is consistent on each block. 
+      *************************************************************************************/
     CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
     
     error_flag = Send_All_Messages(Local_SolnBlk, 
@@ -925,7 +928,7 @@ int Flame2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
       error_flag = Close_Time_Accurate_File(time_accurate_data_file);
     } // endif
       
-    //housecleaning
+      //housecleaning
     delete[] residual_l1_norm;  delete[] residual_l2_norm;  delete[] residual_max_norm;
 
   }  //END EXPLICT NON-MULTIGRID
@@ -934,11 +937,88 @@ int Flame2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
   /// APPLY Newton_Krylov_Schwarz
   /////////////////////////////////////////////////////////////////////////////
 
+  if (Input_Parameters.NKS_IP.Maximum_Number_of_NKS_Iterations > 0) {
+    time_t start_NKS, end_NKS;
+
+    if (CFFC_Primary_MPI_Processor()) {
+      error_flag = Open_Progress_File(residual_file,
+				      Input_Parameters.Output_File_Name,
+				      number_of_time_steps,
+				      Local_SolnBlk[0].residual_variable,
+				      Local_SolnBlk[0].Number_of_Residual_Norms);
+      if (error_flag) {
+	cout << "\n Flame2D ERROR: Unable to open residual file for Chem2D calculation.\n";
+	cout.flush();
+      } /* endif */
+    } /* endif */
+
+    CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+    CFFC_Broadcast_MPI(&error_flag, 1);
+    if (error_flag) return (error_flag);
+
+    //Turn Limiter Freezing OFF for startup
+    Evaluate_Limiters(Local_SolnBlk, List_of_Local_Solution_Blocks);
+
+    if (!batch_flag){ cout << "\n\n Beginning Flame2D NKS computations on " << Date_And_Time() << ".\n\n"; time(&start_NKS); }
+
+    //Store Explicit times for output
+    CPUTime Explicit_processor_cpu_time = processor_cpu_time;
+    CPUTime Explicit_total_cpu_time =  total_cpu_time;
+    
+    //Perform NKS Iterations 
+    error_flag = Newton_Krylov_Schwarz_Solver<Flame2D_pState,
+      Flame2D_Quad_Block,
+      Flame2D_Input_Parameters>(processor_cpu_time,
+				residual_file,
+				number_of_time_steps, // explicit time steps
+				Time,							
+				Local_SolnBlk, 
+				List_of_Local_Solution_Blocks,
+				Input_Parameters);
+     
+    processor_cpu_time.update();
+    total_cpu_time.cput = CFFC_Summation_MPI(processor_cpu_time.cput);  
+    
+    if (error_flag) {
+      if (CFFC_Primary_MPI_Processor()) { 
+	cout << "\n Flame2D_NKS ERROR: Chem2D solution error on processor " 
+	     << List_of_Local_Solution_Blocks.ThisCPU << ".\n";
+	cout.flush();
+      } /* endif */
+    } /* endif */
+
+    CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+    CFFC_Broadcast_MPI(&error_flag, 1);
+    if (error_flag) return (error_flag);
+    
+    /***********************************************************************/
+    if (!batch_flag) { cout << "\n\n Chem2D NKS computations complete on " << Date_And_Time() << ".\n"; time(&end_NKS); }
+
+    if (!batch_flag) {
+      cout<<"\n ----------------------------------------------------------------";
+      cout<<"\n -------- Solution Computations Summary in minutes --------------";
+      cout<<"\n ----------------------------------------------------------------";
+      cout<<"\n Total Startup CPU Time\t\t = "<<Explicit_total_cpu_time.min();
+      cout<<"\n Total NKS CPU Time \t\t = "<<total_cpu_time.min()-Explicit_total_cpu_time.min();
+      cout<<"\n Total CPU Time \t\t = "<<total_cpu_time.min(); 
+      cout<<"\n Total Startup Clock Time\t = "<<difftime(end_explicit,start_explicit)/60.0;
+      cout<<"\n Total NKS Clock Time\t\t = "<<difftime(end_NKS,start_NKS)/60.0;
+      cout<<"\n Total Clock Time\t\t = "<<difftime(end_NKS,start_explicit)/60.0;    //if no explicit start_eplicit not defined...
+      cout<<"\n ----------------------------------------------------------------";
+      cout<<"\n ----------------------------------------------------------------";
+      cout<<"\n ----------------------------------------------------------------\n";
+    } 
+    //Also want to output total GMRES & NKS Iterations, and maybe max memory usage possibly??
+
+    if (CFFC_Primary_MPI_Processor()) error_flag = Close_Progress_File(residual_file); 
+     
+  } 
+
 
 
   /***********************************************************************	
-   RADIATION SOLVER solution of equation of radiation transfer to obtain
-   the radiation heat flux term.
+      RADIATION SOLVER solution of equation of radiation transfer to obtain
+      the radiation heat flux term.
   ************************************************************************/
   if (Input_Parameters.Radiation == RADIATION_RTE &&
       Input_Parameters.Max_Number_Sequential_Solves > 0) {
@@ -971,8 +1051,8 @@ int Flame2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
       goto continue_existing_calculation;
       //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-    //
-    // print out finalstats for sequential solver
+      //
+      // print out finalstats for sequential solver
     } else if (!batch_flag) {
       cout << endl << endl << string(70,'=');
       cout << "\n Sequential Solver Finished on " << Date_And_Time();
@@ -986,16 +1066,16 @@ int Flame2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
   } // endif - radiation
 
 
-  /***************************************************************************
-   ************************** POST PROCESSSING *******************************
-    Solution calculations complete. Write 2D solution to output and restart files  
-    as required, reset solution parameters, and run other cases as specified 
-    by input parameters.        
-   *************************************************************************** 
-   ****************************************************************************/ 
+    /***************************************************************************
+     ************************** POST PROCESSSING *******************************
+     Solution calculations complete. Write 2D solution to output and restart files  
+     as required, reset solution parameters, and run other cases as specified 
+     by input parameters.        
+     *************************************************************************** 
+     ****************************************************************************/ 
 
-  //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  postprocess_current_calculation: ;
+    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ postprocess_current_calculation: ;
   //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   // MPI barrier to ensure processor synchronization.
@@ -1042,9 +1122,9 @@ int Flame2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	cout << Input_Parameters << "\n";
 	cout.flush();
       } // endif
-      // Execute new calculation.
+	// Execute new calculation.
       
-      //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       goto execute_new_calculation;
       //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     }
@@ -1081,8 +1161,8 @@ int Flame2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
       return (0);
     }
     /************************************************************************
-    ******************** CONTINUE CODE ie RESTART ***************************
-    *************************************************************************/
+     ******************** CONTINUE CODE ie RESTART ***************************
+     *************************************************************************/
     else if (command_flag == CONTINUE_CODE) {
       // Reset maximum time step counter.
       // Input_Parameters.Maximum_Number_of_Time_Steps += number_of_time_steps;
@@ -1093,9 +1173,9 @@ int Flame2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	cout << Input_Parameters << "\n";
 	cout.flush();
       } // endif
-      // Continue existing calculation.     
-      //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-       goto continue_existing_calculation;
+	// Continue existing calculation.     
+	//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      goto continue_existing_calculation;
       //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     }
     
@@ -1131,31 +1211,12 @@ int Flame2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	     << QuadTree.countUsedBlocks();
 	cout << "\n  -> Total Number of Computational Cells: " 
 	     << QuadTree.countUsedCells();
-        cout << "\n  -> Number of Mesh Refinement Levels: " 
+	cout << "\n  -> Number of Mesh Refinement Levels: " 
 	     << QuadTree.highestRefinementLevel()+1;
-        cout << "\n  -> Refinement Efficiency: " 
-             << QuadTree.efficiencyRefinement() << "\n";
-        cout.flush();
+	cout << "\n  -> Refinement Efficiency: " 
+	     << QuadTree.efficiencyRefinement() << "\n";
+	cout.flush();
       } // endif
-      //          if (CFFC_Primary_MPI_Processor()) {
-      //             for ( int j_blk = 0 ; j_blk <= QuadTree.Nblk-1 ; ++j_blk ) {
-      //                for ( int i_blk = 0 ; i_blk <= QuadTree.Ncpu-1 ; ++i_blk ) {
-      // 	          if (QuadTree.Blocks[i_blk][j_blk] != NULL) {
-      //                      cout << "\n cpu = " 
-      //                           << i_blk
-      //                           << " blk = "
-      //                           << j_blk
-      //                           << " blk = "
-      //                           << QuadTree.Blocks[i_blk][j_blk]->block;
-      //                   } else {
-      //                      cout << "\n cpu = " 
-      //                           << i_blk
-      //                           << " blk = "
-      //                           << j_blk;
-      //                   } // endif
-      //                } /* endfor */
-      //             } /* endfor */
-      //          } // endif
       
     }
     /************************************************************************
@@ -1163,28 +1224,28 @@ int Flame2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
      *************************************************************************/
     else if (command_flag == MORTON_ORDERING_CODE) {
       if (!batch_flag) cout << "\n\n Applying Morton re-ordering algorithm.";
-        error_flag = Morton_ReOrdering_of_Solution_Blocks(QuadTree, 
-                                                          List_of_Global_Solution_Blocks, 
-                                                          List_of_Local_Solution_Blocks, 
-                                                          Local_SolnBlk, 
-                                                          Input_Parameters, 
-                                                          number_of_time_steps, 
-                                                          Time, 
-                                                          processor_cpu_time); 
-        if (error_flag) {
-           cout <<"\n Flame2D ERROR: Morton re-ordering error on processor "
-                << List_of_Local_Solution_Blocks.ThisCPU
-                << ".\n";
-           cout.flush();
-           return (error_flag);
-        } // endif
-        error_flag = CFFC_OR_MPI(error_flag);
-        if (error_flag) return (error_flag);
-        //Output space filling curve in Tecplot format
-        if (!batch_flag) cout << "\n Outputting space filling curve showing block loading for CPUs.";
-        Morton_SFC_Output_Tecplot(Local_SolnBlk, 
-                                  Input_Parameters,
-                                  List_of_Local_Solution_Blocks);
+      error_flag = Morton_ReOrdering_of_Solution_Blocks(QuadTree, 
+							List_of_Global_Solution_Blocks, 
+							List_of_Local_Solution_Blocks, 
+							Local_SolnBlk, 
+							Input_Parameters, 
+							number_of_time_steps, 
+							Time, 
+							processor_cpu_time); 
+      if (error_flag) {
+	cout <<"\n Flame2D ERROR: Morton re-ordering error on processor "
+	     << List_of_Local_Solution_Blocks.ThisCPU
+	     << ".\n";
+	cout.flush();
+	return (error_flag);
+      } // endif
+      error_flag = CFFC_OR_MPI(error_flag);
+      if (error_flag) return (error_flag);
+      //Output space filling curve in Tecplot format
+      if (!batch_flag) cout << "\n Outputting space filling curve showing block loading for CPUs.";
+      Morton_SFC_Output_Tecplot(Local_SolnBlk, 
+				Input_Parameters,
+				List_of_Local_Solution_Blocks);
 
     }
     /************************************************************************
@@ -1309,7 +1370,7 @@ int Flame2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
      ******************** WRITE OUTPUT GRID NODES ****************************
      *************************************************************************/
     else if (command_flag == WRITE_OUTPUT_GRID_NODES_CODE) {
-         // Output multi-block solution-adaptive mesh node data file.
+      // Output multi-block solution-adaptive mesh node data file.
       if (CFFC_Primary_MPI_Processor()) {
 	if (!batch_flag) cout << "\n Writing Flame2D multi-block mesh to node data output file.";
 	error_flag = Output_Nodes_Tecplot(MeshBlk,
@@ -1341,8 +1402,8 @@ int Flame2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
     }
 
     /*************************************************************************
-    **************** WRITE VICOUS CHANNEL ***********************************
-    *************************************************************************/ 
+     **************** WRITE VICOUS CHANNEL ***********************************
+     *************************************************************************/ 
     else if (command_flag == WRITE_OUTPUT_VISCOUS_CHANNEL_CODE) {
       if (!batch_flag) cout << endl << " Writing exact solution and error norms for the viscous channel flow.";
       error_flag = Output_Viscous_Channel(Local_SolnBlk,
@@ -1423,19 +1484,16 @@ int Flame2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	   << -line_number  << " of input data file.\n";
       cout.flush();
       return (line_number);
-     } // endif
+    } // endif
     
   } /* endwhile */
 
-  /********************************************************  
-   * End of all Flame2DSolver computations and I/O.       *
-   ********************************************************/    
-  //should use terminate code ie. should never get here?
+    /********************************************************  
+     * End of all Flame2DSolver computations and I/O.       *
+     ********************************************************/    
+    //should use terminate code ie. should never get here?
   cout<<"\nEND OF FLAME2DSOLVER BUT DIDN'T USE TERMINATE!!\n"; cout.flush();
   
   return (0);
  
 } //end Flame2DSolver
-
-
-

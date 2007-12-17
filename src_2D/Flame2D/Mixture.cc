@@ -30,8 +30,8 @@ double* Mixture :: c = NULL;
 bool    Mixture :: isConstSchmidt = false;
 string  Mixture :: ct_mech_name = "gri30";
 string  Mixture :: ct_mech_file = "gri30.xml";
-IdealGasMix* Mixture :: ct_gas = NULL;
-Transport*   Mixture :: ct_trans = NULL;
+Cantera::IdealGasMix* Mixture :: ct_gas = NULL;
+Cantera::Transport*   Mixture :: ct_trans = NULL;
 
 /////////////////////////////////////////////////////////////////////
 /// STATIC MEMBER FUNCTIONS
@@ -44,9 +44,9 @@ int Mixture :: getNumSpecies(const string &mech_name,
 			     const string &mech_file) {
 
   try {
-    IdealGasMix gas(mech_file, mech_name);
+    Cantera::IdealGasMix gas(mech_file, mech_name);
     return gas.nSpecies();
-  } catch (CanteraError) {
+  } catch (Cantera::CanteraError) {
     Cantera::showErrors();
   }
 }
@@ -73,22 +73,22 @@ void Mixture :: setMixture(const string &mech_name,
   ct_mech_name = mech_name;
   ct_mech_file = mech_file;
   try {
-    ct_gas = new IdealGasMix(ct_mech_file, ct_mech_name);
+    ct_gas = new Cantera::IdealGasMix(ct_mech_file, ct_mech_name);
     ct_trans = newTransportMgr("Mix", ct_gas);
   }
-  catch (CanteraError) {
+  catch (Cantera::CanteraError) {
     Cantera::showErrors();
   }
 
   // ascertain the number of species
 #ifdef STATIC_NUMBER_OF_SPECIES
   if( STATIC_NUMBER_OF_SPECIES != ct_gas->nSpecies()) {
-      cerr << "\n ERROR, Mixture::setMixture() - Built using static species with "
-	   << STATIC_NUMBER_OF_SPECIES 
-	   << " species predefined, asking for " <<  ct_gas->nSpecies()
-	   << endl; 
-      exit(-1); 
-    }
+    cerr << "\n ERROR, Mixture::setMixture() - Built using static species with "
+	 << STATIC_NUMBER_OF_SPECIES 
+	 << " species predefined, asking for " <<  ct_gas->nSpecies()
+	 << endl; 
+    exit(-1); 
+  }
 #else
   ns = ct_gas->nSpecies();
 #endif
@@ -160,14 +160,14 @@ void Mixture::parse_mass_string(const string& massFracStr,
       index++;
     } // endwhile
 
-    // normalize to unity
+      // normalize to unity
     double sum(0.0);
     for(int index=0; index<ns; index++) sum += massFracs[index];
     if (sum>1.e-7) for(int index=0; index<ns; index++) massFracs[index] /= sum;
 
-  //
-  // for a composition map (eg. CH4:0.5, O2:0.5)
-  //
+    //
+    // for a composition map (eg. CH4:0.5, O2:0.5)
+    //
   } else {
 
     // set mass fractions and make sure they sum to unity
@@ -179,13 +179,13 @@ void Mixture::parse_mass_string(const string& massFracStr,
 
 } // end of ct_parse_mass_string
 
-/***********************************************************************
+  /***********************************************************************
   Use cantera to parse the input mole fraction string of the form
       CH4:0.5, O2:0.5
   All other species will be assumed to have 0 mole fractions.  Cantera
   also normalizes the mole fractions to sum to unity.  Returns them in
   an array.
-***********************************************************************/
+  ***********************************************************************/
 void Mixture::parse_mole_string(const string& moleFracStr, 
 				double* moleFracs) {
 
@@ -209,14 +209,14 @@ void Mixture::parse_mole_string(const string& moleFracStr,
       index++;
     } // endwhile
 
-    // normalize to unity
+      // normalize to unity
     double sum(0.0);
     for(int index=0; index<ns; index++) sum += moleFracs[index];
     if (sum>1.e-7) for(int index=0; index<ns; index++) moleFracs[index] /= sum;
 
-  //
-  // for a composition map (eg. CH4:0.5, O2:0.5)
-  //
+    //
+    // for a composition map (eg. CH4:0.5, O2:0.5)
+    //
   } else {
 
     // set mole fractions and make sure they sum to unity
@@ -229,12 +229,12 @@ void Mixture::parse_mole_string(const string& moleFracStr,
 } // end of ct_parse_mass_string
 
 
-/***********************************************************************
+  /***********************************************************************
   Use cantera to parse the input schmidt number string of the form
       CH4:0.5, O2:0.5
   All other species will be assumed to have unity Schmidt number.  
   Returns them in an array.
-***********************************************************************/
+  ***********************************************************************/
 void Mixture::parse_schmidt_string( const string& schmidtStr, 
 				    double* schmidt) {
 
@@ -258,13 +258,13 @@ void Mixture::parse_schmidt_string( const string& schmidtStr,
       index++;
     } // endwhile
 
-  //
-  // for a composition map (eg. CH4:0.5, O2:0.5)
-  //
+      //
+      // for a composition map (eg. CH4:0.5, O2:0.5)
+      //
   } else {
 
     // declares
-    compositionMap xx;
+    Cantera::compositionMap xx;
     int kk = ct_gas->nSpecies();
     double s;
     
@@ -272,7 +272,7 @@ void Mixture::parse_schmidt_string( const string& schmidtStr,
     for (int k = 0; k < kk; k++) xx[ct_gas->speciesName(k)] = -1.0;
     
     // parse map
-    parseCompString(schmidtStr, xx);
+    Cantera::parseCompString(schmidtStr, xx);
     
     // set schmidt numbers
     for (int k = 0; k < kk; k++) { 
@@ -285,10 +285,10 @@ void Mixture::parse_schmidt_string( const string& schmidtStr,
 
 } // end of ct_parse_mass_string
 
-/***********************************************************************
+  /***********************************************************************
   Use cantera to return the species index.  Exits in error if an
   unidentified species is requested.
-***********************************************************************/
+  ***********************************************************************/
 int Mixture::speciesIndex(const string &sp) {
 
   // get index
@@ -301,7 +301,7 @@ int Mixture::speciesIndex(const string &sp) {
     exit(-1);
   } // endif
 
-  // return index
+    // return index
   return index;
 
 
@@ -309,7 +309,7 @@ int Mixture::speciesIndex(const string &sp) {
 
 
 
-/************************************************************************
+  /************************************************************************
   Calculates the equilibrium composition given an unburnt mixture
   using CANTERA.  This is only for CANTERA reaction types.  Here
   we hold enthalpy and pressure fixed.
@@ -317,7 +317,7 @@ int Mixture::speciesIndex(const string &sp) {
   Wu - unburnt state
   Wb - burnt state
 
-************************************************************************/
+  ************************************************************************/
 
 void Mixture::equilibrate_HP( double &Temp, double &Press, double* y ) {
 
@@ -334,7 +334,7 @@ void Mixture::equilibrate_HP( double &Temp, double &Press, double* y ) {
 } // end of ct_equilibrate
 
 
-/************************************************************************
+  /************************************************************************
   Calculates the equilibrium composition given an unburnt mixture
   using CANTERA.  This is only for CANTERA reaction types.  Here 
   we hold temperature and pressure fixed.
@@ -342,7 +342,7 @@ void Mixture::equilibrate_HP( double &Temp, double &Press, double* y ) {
   Wu - unburnt state
   Wb - burnt state
 
-************************************************************************/
+  ************************************************************************/
 void Mixture::equilibrate_TP( double &Temp, double &Press, double* y ) {
 
   // set state and equilibrate
@@ -356,13 +356,13 @@ void Mixture::equilibrate_TP( double &Temp, double &Press, double* y ) {
 
 
 
-/***********************************************************************
+  /***********************************************************************
 
   This function computes the composition of a hydrocarbon (CxHy), O2, 
   and N2 mixture.  Cantera is used to convert molar fraction to mass
   fraction.
 
-***********************************************************************/
+  ***********************************************************************/
 void Mixture::composition( const string& fuel_species, 
 			   const double &phi,
 			   double* massFracs ) {
@@ -395,16 +395,16 @@ void Mixture::composition( const string& fuel_species,
 
 
 
-/////////////////////////////////////////////////////////////////////
-/// LOCAL MEMBER FUNCTIONS
-/////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////
+  /// LOCAL MEMBER FUNCTIONS
+  /////////////////////////////////////////////////////////////////////
 
 
-/***********************************************************************
+  /***********************************************************************
   Use cantera to compute the Chemical Source Jacobian.  This function
   is called from the main dSwdU().
-***********************************************************************/
-void Mixture::dSwdU( ::DenseMatrix &dSdU,
+  ***********************************************************************/
+void Mixture::dSwdU( DenseMatrix &dSdU,
 		     const double &rho,
 		     const double &Press,
 		     const double* y,
@@ -463,7 +463,7 @@ void Mixture::dSwdU( ::DenseMatrix &dSdU,
 
     } // endfor - rows
 
-    // unperturb
+      // unperturb
     c[j] = csave;
 
   } // endfor - columns
@@ -530,7 +530,7 @@ double Mixture::dSwdU_max_diagonal( const double &rho,
 
   } // endfor - columns
 
-  // return the maximum diagonal term
+    // return the maximum diagonal term
   return max_diagonal;
 
 }

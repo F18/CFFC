@@ -9,7 +9,7 @@
 ///        anywhere else.
 ///
 /////////////////////////////////////////////////////////////////////
-#include "Flame2DQuad.h"
+#include "Flame2DTools.h"
 
 
 /////////////////////////////////////////////////////////////////////
@@ -28,68 +28,68 @@ int Open_Time_Accurate_File(ofstream &Time_Accurate_File,
 			    const int Append_to_File,
 			    const Flame2D_pState &Soln) {
 
-    int i;
-    char prefix[256], extension[256], 
-      time_accurate_file_name[256];
-    char *time_accurate_name_ptr;
+  int i;
+  char prefix[256], extension[256], 
+    time_accurate_file_name[256];
+  char *time_accurate_name_ptr;
     
-    // Determine the name of the file.
-    i = 0;
-    while (1) {  //wow this is weird way to do this
-       if (File_Name[i] == ' ' ||
-           File_Name[i] == '.') break;
-       prefix[i] = File_Name[i];
-       i = i + 1;
-       if (i > strlen(File_Name) ) break;
-    } // endwhile
-    prefix[i] = '\0';
-    strcat(prefix, "_time_accurate");
-    strcpy(extension, ".dat");
-    strcpy(time_accurate_file_name, prefix);
-    strcat(time_accurate_file_name, extension);
+  // Determine the name of the file.
+  i = 0;
+  while (1) {  //wow this is weird way to do this
+    if (File_Name[i] == ' ' ||
+	File_Name[i] == '.') break;
+    prefix[i] = File_Name[i];
+    i = i + 1;
+    if (i > strlen(File_Name) ) break;
+  } // endwhile
+  prefix[i] = '\0';
+  strcat(prefix, "_time_accurate");
+  strcpy(extension, ".dat");
+  strcpy(time_accurate_file_name, prefix);
+  strcat(time_accurate_file_name, extension);
 
-    time_accurate_name_ptr = time_accurate_file_name;
+  time_accurate_name_ptr = time_accurate_file_name;
 
-    // Open the file.
-    if (Append_to_File) {
-       Time_Accurate_File.open(time_accurate_name_ptr, ios::out|ios::app);
-    } else {
-       Time_Accurate_File.open(time_accurate_name_ptr, ios::out);
-    } /* endif */
-    if (Time_Accurate_File.fail()) return (1);
+  // Open the file.
+  if (Append_to_File) {
+    Time_Accurate_File.open(time_accurate_name_ptr, ios::out|ios::app);
+  } else {
+    Time_Accurate_File.open(time_accurate_name_ptr, ios::out);
+  } /* endif */
+  if (Time_Accurate_File.fail()) return (1);
 
-    //
-    // Write the appropriate Tecplot header information.
-    //
-    if(!Append_to_File){
-      Time_Accurate_File << "TITLE = \" Unsteady Mass Fraction plots "
-			 << "\"" << "\n"  
-			 << "VARIABLES = \"time\" \\ \n"
-			 << "\"rho\" \\ \n"
-			 << "\"u\" \\ \n"
-			 << "\"v\" \\ \n"
-			 << "\"p\" \\ \n";
-       //n species mass fractions names
-       for(int i =0; i<Flame2D_pState::NumSpecies(); i++){
-	 Time_Accurate_File <<"\"c"<<Flame2D_pState::speciesName(i)<<"\" \\ \n";
-       }
-       //Calculated values
-       Time_Accurate_File << "\"T\" \\ \n"
-			  << "\"R\" \\ \n"
-			  << "\"viscosity\" \\ \n"
-			  << "\"thermal conduct\" \\ \n"
-			  << "\"Prandtl\" \\ \n"
-			  << "\"rho*H\"  \\ \n"  
-			  <<"\"h\" \\ \n"
-			  <<"\"h_s\" \\ \n"
-			  <<"\"rho*E\" \\ \n"
-			  << "\"e\" \\  \n" 
-			  << "\"e_s\" \\ \n";
-       for(int i =0; i<Flame2D_pState::NumSpecies(); i++){
-	 Time_Accurate_File <<"\"omega_c"<<Flame2D_pState::speciesName(i)<<"\" \\ \n";
-       }
+  //
+  // Write the appropriate Tecplot header information.
+  //
+  if(!Append_to_File){
+    Time_Accurate_File << "TITLE = \" Unsteady Mass Fraction plots "
+		       << "\"" << "\n"  
+		       << "VARIABLES = \"time\" \\ \n"
+		       << "\"rho\" \\ \n"
+		       << "\"u\" \\ \n"
+		       << "\"v\" \\ \n"
+		       << "\"p\" \\ \n";
+    //n species mass fractions names
+    for(int i =0; i<Flame2D_pState::NumSpecies(); i++){
+      Time_Accurate_File <<"\"c"<<Flame2D_pState::speciesName(i)<<"\" \\ \n";
     }
-    return(0);
+    //Calculated values
+    Time_Accurate_File << "\"T\" \\ \n"
+		       << "\"R\" \\ \n"
+		       << "\"viscosity\" \\ \n"
+		       << "\"thermal conduct\" \\ \n"
+		       << "\"Prandtl\" \\ \n"
+		       << "\"rho*H\"  \\ \n"  
+		       <<"\"h\" \\ \n"
+		       <<"\"h_s\" \\ \n"
+		       <<"\"rho*E\" \\ \n"
+		       << "\"e\" \\  \n" 
+		       << "\"e_s\" \\ \n";
+    for(int i =0; i<Flame2D_pState::NumSpecies(); i++){
+      Time_Accurate_File <<"\"omega_c"<<Flame2D_pState::speciesName(i)<<"\" \\ \n";
+    }
+  }
+  return(0);
 
 }
 
@@ -101,8 +101,8 @@ int Open_Time_Accurate_File(ofstream &Time_Accurate_File,
  *                                                      *
  ********************************************************/
 int Close_Time_Accurate_File(ofstream &Time_Accurate_File) {
-    Time_Accurate_File.close();
-    return(0);
+  Time_Accurate_File.close();
+  return(0);
 }
 
 /********************************************************
@@ -114,14 +114,15 @@ int Close_Time_Accurate_File(ofstream &Time_Accurate_File) {
  *                                                      *
  ********************************************************/
 void Output_to_Time_Accurate_File(ostream &Time_Accurate_File,
-			       const double &Time,
-			       const Flame2D_pState &Soln){
+				  const double &Time,
+				  Flame2D_pState &Soln){
 
   // compute reaction rates
   Flame2D_State omega;
   omega.Vacuum();
   if (Flame2D_pState::isReacting()) Soln.Sw( omega );
 
+  Soln.updateViscosity();
 
   Time_Accurate_File << setprecision(6);
   Time_Accurate_File.setf(ios::scientific);
@@ -135,7 +136,7 @@ void Output_to_Time_Accurate_File(ostream &Time_Accurate_File,
 		     << " " << Soln.H() 
 		     << " " << Soln.h() 
 		     << " " << Soln.hs()
-		     << " " << Soln.E() 
+		     << " " << ((const Flame2D_pState&)Soln).E() 
 		     << " " << Soln.e()
 		     << " " << Soln.es();
   for(int k=0; k<Flame2D_pState::NumSpecies(); k++){
@@ -495,14 +496,16 @@ void Output_Flat_Plate(Flame2D_Quad_Block &SolnBlk,
 		       ostream &Out_File_Soln,
 		       const int Output_Title_Skin,
 		       ostream &Out_File_Skin,
-		       const Flame2D_pState &Winf,
+		       Flame2D_pState &Winf,
 		       double &l1_norm,
 		       double &l2_norm,
 		       double &max_norm){
 
   Flame2D_pState W, We;
+  const Flame2D_pState &Winf_ptr = Winf;
   Vector2D X;
   double eta, f, fp, fpp, Rex, linf, Cf, Cfe, xpt;   //NEEDS LOGIC TO ONLY OUTPUT BLOCKS ALONG PLATE !!!!!!
+  Winf.updateViscosity();
 
   //-------------------------------------------------------------------
   // Output node solution data.  
@@ -563,8 +566,8 @@ void Output_Flat_Plate(Flame2D_Quad_Block &SolnBlk,
 
 	  // compute flat plate solution
 	  We.FlatPlate(Winf,X,eta,f,fp,fpp);
-	  linf = 10000.0*(Winf.mu()/Winf.rho())/Winf.vx();
-	  Rex = (Winf.vx()/(Winf.mu()/Winf.rho()))*((X.x+NANO)/ONE);
+	  linf = 10000.0*(Winf.mu()/Winf_ptr.rho())/Winf_ptr.vx();
+	  Rex = (Winf_ptr.vx()/(Winf.mu()/Winf_ptr.rho()))*((X.x+NANO)/ONE);
 	  
 	  // Output data.
 	  const Flame2D_pState& We_ptr = We;
@@ -581,9 +584,9 @@ void Output_Flat_Plate(Flame2D_Quad_Block &SolnBlk,
 			<< " " << f
 			<< " " << fp
 			<< " " << fpp
-			<< " " << W_ptr.vx()/Winf.vx()
-			<< " " << We_ptr.vx()/Winf.vx()
-			<< " " << (W_ptr.vy()/Winf.vx())*sqrt(Winf.vx()/((Winf.mu()/Winf.rho())*(X.x+NANO)))
+			<< " " << W_ptr.vx()/Winf_ptr.vx()
+			<< " " << We_ptr.vx()/Winf_ptr.vx()
+			<< " " << (W_ptr.vy()/Winf_ptr.vx())*sqrt(Winf_ptr.vx()/((Winf.mu()/Winf_ptr.rho())*(X.x+NANO)))
 			<< " " << HALF*(eta*fp-f)
 			<< endl;
 
@@ -594,10 +597,10 @@ void Output_Flat_Plate(Flame2D_Quad_Block &SolnBlk,
 
   } // endfor - points
 
-  //-------------------------------------------------------------------
-  // Output skin friction coefficient.
-  //-------------------------------------------------------------------
-  // only output for blocks along the plate
+    //-------------------------------------------------------------------
+    // Output skin friction coefficient.
+    //-------------------------------------------------------------------
+    // only output for blocks along the plate
   if (SolnBlk.Grid.BCtypeS[SolnBlk.Nghost] == BC_WALL_VISCOUS_HEATFLUX) {
     
     // output title
@@ -626,8 +629,8 @@ void Output_Flat_Plate(Flame2D_Quad_Block &SolnBlk,
 	W = SolnBlk.W[i][j];
 
 	// Determine the skin friction coefficient.
-	linf = 10000.0*(Winf.mu()/Winf.rho())/Winf.vx();
-	Rex = (Winf.vx()/(Winf.mu()/Winf.rho()))*((X.x+NANO)/ONE);
+	linf = 10000.0*(Winf.mu()/Winf_ptr.rho())/Winf_ptr.vx();
+	Rex = (Winf_ptr.vx()/(Winf.mu()/Winf_ptr.rho()))*((X.x+NANO)/ONE);
 
 	if (X.x >= ZERO && j == 2 && SolnBlk.Grid.BCtypeS[i] == BC_WALL_VISCOUS_HEATFLUX){
 	     
@@ -637,7 +640,7 @@ void Output_Flat_Plate(Flame2D_Quad_Block &SolnBlk,
 	  Cf  = TWO*W.WallShearStress(X,
 				      SolnBlk.Grid.nodeSW(i,j).X,
 				      SolnBlk.Grid.nodeSE(i,j).X,
-				      Vector2D(ONE,ZERO))/(Winf.rho()*Winf.vx()*Winf.vx());
+				      Vector2D(ONE,ZERO))/(Winf_ptr.rho()*Winf_ptr.vx()*Winf_ptr.vx());
 	  // Output data.
 	  Out_File_Skin.setf(ios::scientific);
 	  Out_File_Skin << " " << X.x
@@ -646,7 +649,7 @@ void Output_Flat_Plate(Flame2D_Quad_Block &SolnBlk,
 			<< " " << Cfe
 			<< endl;
 	  // Calculate error norms.
- 	  l1_norm += fabs(Cf - Cfe);
+	  l1_norm += fabs(Cf - Cfe);
 	  l2_norm += sqr(Cf - Cfe);
 	  max_norm = max(max_norm,fabs(Cf - Cfe));
 	  
