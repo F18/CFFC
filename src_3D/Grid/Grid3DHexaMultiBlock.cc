@@ -549,6 +549,8 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Cube(Grid3D_Input_Parameters &Inp
 void Grid3D_Hexa_Multi_Block_List::Create_Grid_Periodic_Box(Grid3D_Input_Parameters &Input) {
 
    int nBlk;
+   int opposite_nBlk, opposite_iBlk, opposite_jBlk, opposite_kBlk;
+   Direction_Indices Dir_Index;
    int BC_top, BC_bottom;
    Grid2D_Quad_Block **Grid2D_Box_XYplane;
 
@@ -662,31 +664,42 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Periodic_Box(Grid3D_Input_Paramet
                    jBlk*Input.NBlk_Idir + 
                    kBlk*Input.NBlk_Idir*Input.NBlk_Jdir;
 
-            int opposite_nBlk(0), opposite_iBlk(0), opposite_jBlk(0), opposite_kBlk(0);
-
-            if (iBlk == 0) {
-	       opposite_iBlk = Input.NBlk_Idir-1;
-            } else if (iBlk == Input.NBlk_Idir-1) {
-	       opposite_iBlk = 0;
-            } /* endif */
-
-            if (jBlk == 0) {
-	       opposite_jBlk = Input.NBlk_Jdir-1;
-            } else if (jBlk == Input.NBlk_Jdir-1) {
-	       opposite_jBlk = 0;
-            } /* endif */
-
-   	    if (kBlk == 0) {
-	       opposite_kBlk = Input.NBlk_Kdir-1;
-            } else if (kBlk == Input.NBlk_Kdir-1) {
-	       opposite_kBlk = 0;
-            } /* endif */
-
-	    opposite_nBlk = opposite_iBlk + 
-                            opposite_jBlk*Input.NBlk_Idir + 
-                            opposite_kBlk*Input.NBlk_Idir*Input.NBlk_Jdir;
-
             for (int nDir = 0; nDir <= MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK-1; ++nDir) {
+               Dir_Index = Dir_Index.boundary_element_number_to_direction_indices(nDir);
+
+               if (iBlk == 0 && Dir_Index.i != 0) {
+	          opposite_iBlk = Input.NBlk_Idir-1;
+               } else if (iBlk == Input.NBlk_Idir-1 && Dir_Index.i != 0) {
+	          opposite_iBlk = 0;
+               } else {
+	          opposite_iBlk = iBlk;
+               } /* endif */
+
+               if (jBlk == 0 && Dir_Index.j != 0) {
+	          opposite_jBlk = Input.NBlk_Jdir-1;
+               } else if (jBlk == Input.NBlk_Jdir-1 && Dir_Index.j != 0) {
+	          opposite_jBlk = 0;
+               } else {
+	          opposite_jBlk = jBlk;
+               } /* endif */
+
+   	       if (kBlk == 0 && Dir_Index.k != 0) {
+	          opposite_kBlk = Input.NBlk_Kdir-1;
+               } else if (kBlk == Input.NBlk_Kdir-1 && Dir_Index.k != 0) {
+	          opposite_kBlk = 0;
+               } else {
+	          opposite_kBlk = kBlk;
+               } /* endif */
+
+	       opposite_nBlk = opposite_iBlk + 
+                               opposite_jBlk*Input.NBlk_Idir + 
+                               opposite_kBlk*Input.NBlk_Idir*Input.NBlk_Jdir;
+
+               cout << "\n current block: " << nBlk << " " << iBlk << " " << jBlk << " " << kBlk;
+               cout << "\n direction: " << Dir_Index;
+               cout << "\n opposite block: " << opposite_nBlk << " " << opposite_iBlk << " " 
+                    << opposite_jBlk << " " << opposite_kBlk;
+
                switch (nDir) { 
                  case BE::BSW : // 0
                    if (Connectivity[nBlk].num_neighBSW == 0 && 

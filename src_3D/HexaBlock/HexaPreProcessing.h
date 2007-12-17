@@ -130,13 +130,16 @@ int Initial_Conditions(HexaSolver_Data &Data,
     if (error_flag) return (error_flag);
 
     // Call ICs:
-    Solution_Data.Local_Solution_Blocks.ICs(Solution_Data.Input);
+    //Solution_Data.Local_Solution_Blocks.ICs(Solution_Data.Input);
 
     // Call specializations:
     error_flag = Hexa_Pre_Processing_Specializations(Data,
                                                      Solution_Data);
     error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return (error_flag);
+
+    // Call ICs:
+    Solution_Data.Local_Solution_Blocks.ICs(Solution_Data.Input);
   } /* endif */
 
   /* Send solution information between neighbouring blocks to complete

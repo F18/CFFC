@@ -165,12 +165,12 @@ class LES3DFsd_pState : public NavierStokes3D_ThermallyPerfect_pState {
 /*        ---------------------------- */
 //@{
    //! Default creation constructor (assign default values)
-   LES3DFsd_pState(void) : NavierStokes3D_ThermallyPerfect_pState(), C(ZERO), Fsd(MILLION), k(ZERO) {
+   LES3DFsd_pState(void) : NavierStokes3D_ThermallyPerfect_pState(), C(ZERO), Fsd(ZERO), k(ZERO) {
      premixed_mfrac(); }
    
    //! Constructor from base class (allows return of derived type)
    LES3DFsd_pState(const NavierStokes3D_ThermallyPerfect_pState &W1) : 
-     NavierStokes3D_ThermallyPerfect_pState(W1), C(ZERO), Fsd(MILLION), k(ZERO) { }
+     NavierStokes3D_ThermallyPerfect_pState(W1), C(ZERO), Fsd(ZERO), k(ZERO) { }
 
    //! Constructor from base class
    LES3DFsd_pState(const NavierStokes3D_ThermallyPerfect_pState &W1,
@@ -1097,12 +1097,12 @@ class LES3DFsd_cState : public NavierStokes3D_ThermallyPerfect_cState {
 /*        ---------------------------- */
 //@{
    //! Default creation constructor (assign default values)
-   LES3DFsd_cState(): NavierStokes3D_ThermallyPerfect_cState(), rhoC(ZERO), rhoFsd(MILLION), rhok(ZERO) {
+   LES3DFsd_cState(): NavierStokes3D_ThermallyPerfect_cState(), rhoC(ZERO), rhoFsd(ZERO), rhok(ZERO) {
      premixed_mfrac(); }
    
    //! Constructor from base class (allows return of derived type)
    LES3DFsd_cState(const NavierStokes3D_ThermallyPerfect_cState &U1) : 
-     NavierStokes3D_ThermallyPerfect_cState(U1), rhoC(ZERO), rhoFsd(MILLION), rhok(ZERO) { }
+     NavierStokes3D_ThermallyPerfect_cState(U1), rhoC(ZERO), rhoFsd(ZERO), rhok(ZERO) { }
 
    //! Constructor from base class
    LES3DFsd_cState(const NavierStokes3D_ThermallyPerfect_cState &U1,

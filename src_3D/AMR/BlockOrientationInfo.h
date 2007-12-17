@@ -129,7 +129,7 @@ class Direction_Indices {
     int direction_indices_to_direction_number(void) const;
     int direction_indices_to_direction_number(const Direction_Indices &DI) const;
 
-    /* Return boundary element number given a direction number. */
+    /* Return direction indices given boundary element number. */
     Direction_Indices boundary_element_number_to_direction_indices(const int boundary_element_number) const;
 
     /* Return boundary element number given the indices. */

@@ -20,7 +20,6 @@ Output_Tecplot(Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs,
                const int Block_Number,
                const int Output_Title,
                ostream &Out_File) {
-   int i, j, k;
  
    LES3DFsd_pState W_node;
    
@@ -57,7 +56,7 @@ Output_Tecplot(Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs,
                << "\"FSD/rho\" \\ \n"
                << "\"k\" \\ \n";
       //n species mass fractions names
-      for(int i =0 ;i<W[0][0][0].ns ;i++){
+      for(int i =0 ; i < W[0][0][0].ns ;i++){
          Out_File <<"\"c_"<<W[0][0][0].specdata[i].Speciesname()<<"\" \\ \n";
       }
       
@@ -87,9 +86,9 @@ Output_Tecplot(Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs,
       
       Out_File<< "ZONE T =  \"Block Number = " << Block_Number
               << "\" \\ \n"
-              << "I = " << Grid.INu -  Grid.INl + 1 << " \\ \n"
-              << "J = " << Grid.JNu -  Grid.JNl + 1 << " \\ \n"
-              << "K = " << Grid.KNu -  Grid.KNl + 1 << " \\ \n"
+              << "I = " << Grid.INu - Grid.INl + 1 << " \\ \n"
+              << "J = " << Grid.JNu - Grid.JNl + 1 << " \\ \n"
+              << "K = " << Grid.KNu - Grid.KNl + 1 << " \\ \n"
               << "DATAPACKING = POINT \n";
       
    } else {
@@ -102,10 +101,11 @@ Output_Tecplot(Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs,
    } /* endif */
    
    
-   for ( k  =  Grid.KNl ; k <=  Grid.KNu ; ++k ) {
-      for ( j  =  Grid.JNl ; j <=  Grid.JNu ; ++j ) {
-         for ( i =  Grid.INl ; i <=  Grid.INu ; ++i ) {
+   for (int k = Grid.KNl ; k <= Grid.KNu ; ++k) {
+      for (int j = Grid.JNl ; j <= Grid.JNu ; ++j) {
+         for (int i = Grid.INl ; i <= Grid.INu ; ++i) {
             W_node = Wn(i, j, k);
+            W_node.premixed_mfrac();           
             Out_File << " "  << Grid.Node[i][j][k].X << W_node;
             Out_File.setf(ios::scientific);
             Out_File << " " << W_node.T() 
@@ -186,7 +186,6 @@ Output_Cells_Tecplot(Input_Parameters<LES3DFsd_pState,
 
    /* Output cell centred solution data. */
 
-   int i, j, k;
    Out_File << setprecision(14);
 
 //     for (int k  = KCl; k <= KCu; ++k ) {
@@ -214,9 +213,9 @@ Output_Cells_Tecplot(Input_Parameters<LES3DFsd_pState,
                << "\"FSD/rho\" \\ \n"
                << "\"k\" \\ \n";
       //n species mass fractions names
-      for( i =0; i<W[0][0][0].ns; i++){
+      for (int i =0; i<W[0][0][0].ns; i++){
          Out_File <<"\"c"<<W[0][0][0].specdata[i].Speciesname()<<"\" \\ \n";
-      }
+      } /* endif */
      
       Out_File <<"\"T\" \\ \n"
                <<"\"R\" \\ \n";
@@ -245,23 +244,23 @@ Output_Cells_Tecplot(Input_Parameters<LES3DFsd_pState,
 
       Out_File << "ZONE T =  \"Block Number = " << Block_Number
                << "\" \\ \n"
-               << "I = " <<  ICu -  ICl + 2*Nghost +1 << " \\ \n"
-               << "J = " <<  JCu -  JCl + 2*Nghost +1 << " \\ \n"
-               << "K = " <<  KCu -  KCl + 2*Nghost +1 << " \\ \n"
+               << "I = " << Grid.ICu - Grid.ICl + 2*Grid.Nghost + 1 << " \\ \n"
+               << "J = " << Grid.JCu - Grid.JCl + 2*Grid.Nghost + 1 << " \\ \n"
+               << "K = " << Grid.KCu - Grid.KCl + 2*Grid.Nghost + 1 << " \\ \n"
                << "DATAPACKING = POINT \n";
    } else {
       Out_File << "ZONE T =  \"Block Number = " << Block_Number
                << "\" \\ \n"
-               << "I = " <<  Grid.ICu -  Grid.ICl + 2* Nghost + 1 << " \\ \n"
-               << "J = " <<  Grid.JCu -  Grid.JCl + 2* Nghost + 1 << " \\ \n"
-               << "K = " <<  Grid.KCu -  Grid.KCl + 2* Nghost + 1 << " \\ \n"
+               << "I = " << Grid.ICu - Grid.ICl + 2*Grid.Nghost + 1 << " \\ \n"
+               << "J = " << Grid.JCu - Grid.JCl + 2*Grid.Nghost + 1 << " \\ \n"
+               << "K = " << Grid.KCu - Grid.KCl + 2*Grid.Nghost + 1 << " \\ \n"
                << "DATAPACKING = POINT \n";
       
    } /* endif */
 
-   for ( k =  KCl- Nghost ; k <=  KCu+ Nghost ; ++k) {
-      for ( j  =  JCl- Nghost ; j <=  JCu+ Nghost ; ++j ) {
-         for ( i =  ICl- Nghost ; i <=  ICu+ Nghost ; ++i ) {
+   for (int k = Grid.KCl-Grid.Nghost; k <= Grid.KCu+Grid.Nghost; ++k) {
+      for (int j  = Grid.JCl-Grid.Nghost; j <= Grid.JCu+Grid.Nghost; ++j ) {
+         for (int i = Grid.ICl-Grid.Nghost; i <= Grid.ICu+Grid.Nghost; ++i ) {
             
             Out_File << " "  <<  Grid.Cell[i][j][k].Xc
                      <<  W[i][j][k];
@@ -400,7 +399,7 @@ Output_Cells_Tecplot(Input_Parameters<LES3DFsd_pState,
 }
 
 /********************************************************
- * Routine: Output_Tecplot                              *
+ * Routine: Output_Nodes_Tecplot                        *
  *                                                      *
  * Writes the solution values at the nodes of the       *
  * specified hexadedral solution block to the           *
@@ -416,8 +415,7 @@ Output_Nodes_Tecplot(Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs,
                      const int Block_Number,
                      const int Output_Title,
                      ostream &Out_File) {
-   int i, j, k;
- 
+
    LES3DFsd_pState W_node;
    
 //     for (int k  = KCl; k <= KCu; ++k ) {
@@ -483,9 +481,9 @@ Output_Nodes_Tecplot(Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs,
       
       Out_File<< "ZONE T =  \"Block Number = " << Block_Number
               << "\" \\ \n"
-              << "I = " << Grid.INu -  Grid.INl + 1 << " \\ \n"
-              << "J = " << Grid.JNu -  Grid.JNl + 1 << " \\ \n"
-              << "K = " << Grid.KNu -  Grid.KNl + 1 << " \\ \n"
+              << "I = " << Grid.INu - Grid.INl + 1 << " \\ \n"
+              << "J = " << Grid.JNu - Grid.JNl + 1 << " \\ \n"
+              << "K = " << Grid.KNu - Grid.KNl + 1 << " \\ \n"
               << "DATAPACKING = POINT \n";
       
    } else {
@@ -498,10 +496,11 @@ Output_Nodes_Tecplot(Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs,
    } /* endif */
    
    
-   for ( k  =  Grid.KNl ; k <=  Grid.KNu ; ++k ) {
-      for ( j  =  Grid.JNl ; j <=  Grid.JNu ; ++j ) {
-         for ( i =  Grid.INl ; i <=  Grid.INu ; ++i ) {
+   for (int k  = Grid.KNl; k <= Grid.KNu; ++k) {
+      for (int j  = Grid.JNl; j <= Grid.JNu; ++j) {
+         for (int i = Grid.INl; i <= Grid.INu; ++i) {
             W_node = Wn(i, j, k);
+            W_node.premixed_mfrac(); 
             Out_File << " "  << Grid.Node[i][j][k].X <<W_node;
             Out_File.setf(ios::scientific);
             Out_File << " " << W_node.T()
@@ -593,7 +592,7 @@ ICs(const int i_ICtype,
      for (int k  = KCl- Nghost ; k <=  KCu+ Nghost ; ++k) {
         for (int j  = JCl- Nghost ; j <=  JCu+ Nghost ; ++j) {
            for (int i = ICl- Nghost ; i <=  ICu+ Nghost ; ++i) {
-	      double xx = -Grid.Cell[i][j][k].Xc.x;//+(1.0/2.0)*IPs.Grid_IP.Box_Length;
+	      double xx = Grid.Cell[i][j][k].Xc.x;//+(1.0/2.0)*IPs.Grid_IP.Box_Length;
 	      double tau_fsd = 2218/298-1.0;//W[i][j][k].HeatRelease_Parameter();
        	      W[i][j][k].C = (erf(xx*4000.0)+1.0)/2.0;
               W[i][j][k].p = 101325.0;

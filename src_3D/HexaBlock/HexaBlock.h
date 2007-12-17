@@ -979,9 +979,9 @@ Output_Tecplot(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs,
       
       Out_File<< "ZONE T =  \"Block Number = " << Block_Number
               << "\" \\ \n"
-              << "I = " << Grid.INu -  Grid.INl + 1 << " \\ \n"
-              << "J = " << Grid.JNu -  Grid.JNl + 1 << " \\ \n"
-              << "K = " << Grid.KNu -  Grid.KNl + 1 << " \\ \n"
+              << "I = " << Grid.INu - Grid.INl + 1 << " \\ \n"
+              << "J = " << Grid.JNu - Grid.JNl + 1 << " \\ \n"
+              << "K = " << Grid.KNu - Grid.KNl + 1 << " \\ \n"
               << "DATAPACKING = POINT \n";
    } else {
       Out_File << "ZONE T =  \"Block Number = " << Block_Number
@@ -992,9 +992,9 @@ Output_Tecplot(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs,
                << "DATAPACKING = POINT \n";              
    } /* endif */
    
-   for (int k  =  Grid.KNl ; k <=  Grid.KNu ; ++k) {
-      for (int j  =  Grid.JNl ; j <=  Grid.JNu ; ++j) {
-         for (int i =  Grid.INl ; i <=  Grid.INu ; ++i) {
+   for (int k  = Grid.KNl ; k <= Grid.KNu ; ++k) {
+      for (int j  = Grid.JNl ; j <= Grid.JNu ; ++j) {
+         for (int i = Grid.INl ; i <= Grid.INu ; ++i) {
             W_node = Wn(i, j, k);
             Out_File << " "  << Grid.Node[i][j][k].X << W_node;
             Out_File.setf(ios::scientific);
@@ -1055,22 +1055,22 @@ Output_Cells_Tecplot(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs,
 
       Out_File << "ZONE T =  \"Block Number = " << Block_Number
                << "\" \\ \n"
-               << "I = " <<  ICu -  ICl + 2*Nghost +1 << " \\ \n"
-               << "J = " <<  JCu -  JCl + 2*Nghost +1 << " \\ \n"
-               << "K = " <<  KCu -  KCl + 2*Nghost +1 << " \\ \n"
+               << "I = " << Grid.ICu - Grid.ICl + 2*Grid.Nghost + 1 << " \\ \n"
+               << "J = " << Grid.JCu - Grid.JCl + 2*Grid.Nghost + 1 << " \\ \n"
+               << "K = " << Grid.KCu - Grid.KCl + 2*Grid.Nghost + 1 << " \\ \n"
                << "DATAPACKING = POINT \n";
    } else {
       Out_File << "ZONE T =  \"Block Number = " << Block_Number
                << "\" \\ \n"
-               << "I = " <<  Grid.ICu -  Grid.ICl + 2* Nghost + 1 << " \\ \n"
-               << "J = " <<  Grid.JCu -  Grid.JCl + 2* Nghost + 1 << " \\ \n"
-               << "K = " <<  Grid.KCu -  Grid.KCl + 2* Nghost + 1 << " \\ \n"
+               << "I = " << Grid.ICu - Grid.ICl + 2*Grid.Nghost + 1 << " \\ \n"
+               << "J = " << Grid.JCu - Grid.JCl + 2*Grid.Nghost + 1 << " \\ \n"
+               << "K = " << Grid.KCu - Grid.KCl + 2*Grid.Nghost + 1 << " \\ \n"
                << "DATAPACKING = POINT \n";
    } /* endif */
 
-   for (int k =  KCl- Nghost ; k <=  KCu+ Nghost ; ++k) {
-      for (int j  =  JCl- Nghost ; j <=  JCu+ Nghost ; ++j) {
-         for (int i =  ICl- Nghost ; i <=  ICu+ Nghost ; ++i) {
+   for (int k = Grid.KCl-Grid.Nghost ; k <= Grid.KCu+Grid.Nghost ; ++k) {
+      for (int j  = Grid.JCl-Grid.Nghost ; j <= Grid.JCu+Grid.Nghost ; ++j) {
+         for (int i = Grid.ICl-Grid.Nghost ; i <= Grid.ICu+Grid.Nghost ; ++i) {
             Out_File << " "  <<  Grid.Cell[i][j][k].Xc << W[i][j][k];
             Out_File.setf(ios::scientific);
             Out_File << " " <<  W[i][j][k].T() 

@@ -72,6 +72,8 @@ template<class HEXA_BLOCK> class Hexa_Multi_Block {
 
    void Deallocate(void);
 
+   int Number_of_Soln_Blks_in_Use(void);
+
    void Copy(Hexa_Multi_Block &Solution2);
 
    void Broadcast(void);
@@ -194,6 +196,27 @@ void Hexa_Multi_Block<HEXA_BLOCK>::Deallocate(void) {
 
       Allocated = 0;
    } /* endif */
+
+}
+
+/********************************************************
+ * Routine: Number_of_Soln_Blks_in_Use                  *
+ *                                                      *
+ * Returns number of solution block in current use.     *
+ *                                                      *
+ ********************************************************/
+template<class HEXA_BLOCK>
+int Hexa_Multi_Block<HEXA_BLOCK>::Number_of_Soln_Blks_in_Use(void) {
+
+  int number_in_use(0);
+
+  if (Allocated && Number_of_Soln_Blks >= 1) {
+    for (int i = 0; i < Number_of_Soln_Blks; ++i) {
+       if (Block_Used[i]) number_in_use = number_in_use+1;
+    } /* endfor */
+  } /* endif */
+
+  return (number_in_use);
 
 }
 
@@ -625,9 +648,10 @@ int Hexa_Multi_Block<HEXA_BLOCK>::WtoU(void){
  *                                                      *
  ********************************************************/
 template<class HEXA_BLOCK>
-int Hexa_Multi_Block<HEXA_BLOCK>::dUdt_Multistage_Explicit(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
-                                                                            typename HEXA_BLOCK::Soln_cState> &Input,
-                                                           const int I_Stage) {
+int Hexa_Multi_Block<HEXA_BLOCK>::
+dUdt_Multistage_Explicit(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
+                                          typename HEXA_BLOCK::Soln_cState> &Input,
+                         const int I_Stage) {
    
    int i, error_flag;
    error_flag = 0;
@@ -657,9 +681,10 @@ int Hexa_Multi_Block<HEXA_BLOCK>::dUdt_Multistage_Explicit(Input_Parameters<type
  *                                                      *
  ********************************************************/
 template<class HEXA_BLOCK>
-int Hexa_Multi_Block<HEXA_BLOCK>::Update_Solution_Multistage_Explicit(Input_Parameters<typename HEXA_BLOCK::Soln_pState,
-                                                                                       typename HEXA_BLOCK::Soln_cState> &Input,
-                                                                      const int I_Stage) {
+int Hexa_Multi_Block<HEXA_BLOCK>::
+Update_Solution_Multistage_Explicit(Input_Parameters<typename HEXA_BLOCK::Soln_pState,
+                                                     typename HEXA_BLOCK::Soln_cState> &Input,
+                                    const int I_Stage) {
    
    int i, error_flag;
    error_flag = 0;
@@ -688,20 +713,23 @@ int Hexa_Multi_Block<HEXA_BLOCK>::Update_Solution_Multistage_Explicit(Input_Para
  *                                                      *
  ********************************************************/
 template<class HEXA_BLOCK>
-int Hexa_Multi_Block<HEXA_BLOCK>::Read_Restart_Solution(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
-                                                                         typename HEXA_BLOCK::Soln_cState> &Input,
-                                                        AdaptiveBlock3D_List &Local_Adaptive_Block_List,
-                                                        int &Number_of_Time_Steps,
-                                                        double &Time,
-                                                        CPUTime &CPU_Time) {
+int Hexa_Multi_Block<HEXA_BLOCK>::
+Read_Restart_Solution(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
+                                       typename HEXA_BLOCK::Soln_cState> &Input,
+                      AdaptiveBlock3D_List &Local_Adaptive_Block_List,
+                      int &Number_of_Time_Steps,
+                      double &Time,
+                      CPUTime &CPU_Time) {
    
-   int i, i_new_time_set, nsteps, nblk;
+   int i, i_new_time_set, nsteps;
    char prefix[256], extension[256], restart_file_name[256], line[256];
    char *restart_file_name_ptr;
    ifstream restart_file;
    double time0;
    CPUTime cpu_time0;
-   
+
+   /* Determine prefix of restart file names. */
+
    i = 0;
    while (1) {
       if (Input.Restart_File_Name[i] == ' ' ||
@@ -717,7 +745,7 @@ int Hexa_Multi_Block<HEXA_BLOCK>::Read_Restart_Solution(Input_Parameters<typenam
 
    i_new_time_set = 0;
 
-   for (nblk = 0; nblk < Local_Adaptive_Block_List.Nblk; ++nblk) { 
+   for (int nblk = 0; nblk < Local_Adaptive_Block_List.Nblk; ++nblk) { 
       if (Local_Adaptive_Block_List.Block[nblk].used == ADAPTIVEBLOCK3D_USED){
          sprintf(extension, "%.6d", Local_Adaptive_Block_List.Block[nblk].gblknum);
          strcat(extension, ".soln");
@@ -772,21 +800,25 @@ int Hexa_Multi_Block<HEXA_BLOCK>::Read_Restart_Solution(Input_Parameters<typenam
  *                                                      *
  ********************************************************/
 template<class HEXA_BLOCK>
-int Hexa_Multi_Block<HEXA_BLOCK>::Write_Restart_Solution(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
-                                                                          typename HEXA_BLOCK::Soln_cState> &Input,
-                                                         AdaptiveBlock3D_List &Local_Adaptive_Block_List,
-                                                         const int Number_of_Time_Steps,
-                                                         const double &Time,
-                                                         const CPUTime &CPU_Time) {
+int Hexa_Multi_Block<HEXA_BLOCK>::
+Write_Restart_Solution(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
+                                        typename HEXA_BLOCK::Soln_cState> &Input,
+                       AdaptiveBlock3D_List &Local_Adaptive_Block_List,
+                       const int Number_of_Time_Steps,
+                       const double &Time,
+                       const CPUTime &CPU_Time) {
    
-   int i, nblk;
+   int i;
    char prefix[256], extension[256], restart_file_name[256];
    char *restart_file_name_ptr;
    ofstream restart_file;
    
+   /* Return if there are no solution blocks to write. */
+
+   if (Number_of_Soln_Blks_in_Use() == 0) return(0);
+
    /* Determine prefix of restart file names. */
-   nblk = 0;
-     
+
    i = 0;
    while (1) {
       if (Input.Restart_File_Name[i] == ' ' ||
@@ -798,7 +830,7 @@ int Hexa_Multi_Block<HEXA_BLOCK>::Write_Restart_Solution(Input_Parameters<typena
    prefix[i] = '\0';
    strcat(prefix, "_blk");
     
-   for (nblk = 0; nblk < Local_Adaptive_Block_List.Nblk; ++nblk){
+   for (int nblk = 0; nblk < Local_Adaptive_Block_List.Nblk; ++nblk){
       if (Local_Adaptive_Block_List.Block[nblk].used == ADAPTIVEBLOCK3D_USED){    
          sprintf(extension, "%.6d", Local_Adaptive_Block_List.Block[nblk].gblknum);
          strcat(extension, ".soln");
@@ -847,17 +879,22 @@ int Hexa_Multi_Block<HEXA_BLOCK>::Write_Restart_Solution(Input_Parameters<typena
  *                                                      *
  ********************************************************/
 template<class HEXA_BLOCK>
-int Hexa_Multi_Block<HEXA_BLOCK>::Output_Tecplot(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
-                                                                  typename HEXA_BLOCK::Soln_cState> &Input,
-                                                 AdaptiveBlock3D_List &Local_Adaptive_Block_List,
-                                                 const int Number_of_Time_Steps,
-                                                 const double &Time) {
+int Hexa_Multi_Block<HEXA_BLOCK>::
+Output_Tecplot(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
+                                typename HEXA_BLOCK::Soln_cState> &Input,
+               AdaptiveBlock3D_List &Local_Adaptive_Block_List,
+               const int Number_of_Time_Steps,
+               const double &Time) {
    
-    int i, i_output_title, nblk;
+    int i, i_output_title;
     char prefix[256], extension[256], output_file_name[256];
     char *output_file_name_ptr;
     ofstream output_file;    
    
+    /* Return if there are no solution blocks to write. */
+
+    if (Number_of_Soln_Blks_in_Use() == 0) return(0);
+
     /* Determine prefix of output data file names. */
 
     i = 0;
@@ -887,7 +924,7 @@ int Hexa_Multi_Block<HEXA_BLOCK>::Output_Tecplot(Input_Parameters<typename HEXA_
     /* Write the solution data for each solution block. */
 
     i_output_title = 1;
-    for (nblk = 0; nblk<Local_Adaptive_Block_List.Nblk; ++nblk) {
+    for (int nblk = 0; nblk<Local_Adaptive_Block_List.Nblk; ++nblk) {
        if (Local_Adaptive_Block_List.Block[nblk].used == ADAPTIVEBLOCK3D_USED) {    
           Soln_Blks[nblk].Output_Tecplot(Input,
                                          Number_of_Time_Steps, 
@@ -921,16 +958,21 @@ int Hexa_Multi_Block<HEXA_BLOCK>::Output_Tecplot(Input_Parameters<typename HEXA_
  *                                                      *
  ********************************************************/
 template<class HEXA_BLOCK>
-int Hexa_Multi_Block<HEXA_BLOCK>::Output_Cells_Tecplot(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
-                                                                        typename HEXA_BLOCK::Soln_cState> &Input,
-                                                        AdaptiveBlock3D_List &Local_Adaptive_Block_List,
-                                                        const int Number_of_Time_Steps,
-                                                        const double &Time) {
+int Hexa_Multi_Block<HEXA_BLOCK>::
+Output_Cells_Tecplot(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
+                                      typename HEXA_BLOCK::Soln_cState> &Input,
+                     AdaptiveBlock3D_List &Local_Adaptive_Block_List,
+                     const int Number_of_Time_Steps,
+                     const double &Time) {
    
-    int i, i_output_title, nblk;
+    int i, i_output_title;
     char prefix[256], extension[256], output_file_name[256];
     char *output_file_name_ptr;
     ofstream output_file;    
+
+    /* Return if there are no solution blocks to write. */
+
+    if (Number_of_Soln_Blks_in_Use() == 0) return(0);
 
     /* Determine prefix of output data file names. */
  
@@ -944,7 +986,8 @@ int Hexa_Multi_Block<HEXA_BLOCK>::Output_Cells_Tecplot(Input_Parameters<typename
     } /* endwhile */
     prefix[i] = '\0';
     strcat(prefix, "_cells_cpu");
-       /* Determine output data file name for this processor. */
+
+    /* Determine output data file name for this processor. */
 
     sprintf(extension, "%.6d", Local_Adaptive_Block_List.ThisCPU);
     strcat(extension, ".dat");
@@ -960,7 +1003,7 @@ int Hexa_Multi_Block<HEXA_BLOCK>::Output_Cells_Tecplot(Input_Parameters<typename
     /* Write the solution data for each solution block. */
 
     i_output_title = 1;
-    for (nblk = 0; nblk < Local_Adaptive_Block_List.Nblk; ++nblk) {
+    for (int nblk = 0; nblk < Local_Adaptive_Block_List.Nblk; ++nblk) {
        if (Local_Adaptive_Block_List.Block[nblk].used == ADAPTIVEBLOCK3D_USED) {    
          Soln_Blks[nblk].Output_Cells_Tecplot(Input,
                                               Number_of_Time_Steps, 
@@ -994,16 +1037,21 @@ int Hexa_Multi_Block<HEXA_BLOCK>::Output_Cells_Tecplot(Input_Parameters<typename
  *                                                      *
  ********************************************************/
 template<class HEXA_BLOCK>
-int Hexa_Multi_Block<HEXA_BLOCK>::Output_Nodes_Tecplot(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
-                                                                        typename HEXA_BLOCK::Soln_cState> &Input,
-                                                       AdaptiveBlock3D_List &Local_Adaptive_Block_List,
-                                                       const int Number_of_Time_Steps,
-                                                       const double &Time) {
+int Hexa_Multi_Block<HEXA_BLOCK>::
+Output_Nodes_Tecplot(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
+                                      typename HEXA_BLOCK::Soln_cState> &Input,
+                     AdaptiveBlock3D_List &Local_Adaptive_Block_List,
+                     const int Number_of_Time_Steps,
+                     const double &Time) {
    
-    int i, i_output_title, nblk;
+    int i, i_output_title;
     char prefix[256], extension[256], output_file_name[256];
     char *output_file_name_ptr;
     ofstream output_file;    
+
+    /* Return if there are no solution blocks to write. */
+
+    if (Number_of_Soln_Blks_in_Use() == 0) return(0);
 
     /* Determine prefix of output data file names. */
  
@@ -1034,7 +1082,7 @@ int Hexa_Multi_Block<HEXA_BLOCK>::Output_Nodes_Tecplot(Input_Parameters<typename
     /* Write the solution data for each solution block. */
 
     i_output_title = 1;
-    for (nblk = 0; nblk < Local_Adaptive_Block_List.Nblk; ++nblk) {
+    for (int nblk = 0; nblk < Local_Adaptive_Block_List.Nblk; ++nblk) {
        if (Local_Adaptive_Block_List.Block[nblk].used == ADAPTIVEBLOCK3D_USED) {    
          Soln_Blks[nblk].Output_Nodes_Tecplot(Input,
                                               Number_of_Time_Steps, 
