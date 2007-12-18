@@ -28,79 +28,79 @@ int Newton_Update(Chem2D_Quad_Block *SolnBlk,
 		  AdaptiveBlock2D_List &List_of_Local_Solution_Blocks,
 		  Chem2D_Input_Parameters &Input_Parameters,
 		  GMRES_RightPrecon_MatrixFree<Chem2D_pState,Chem2D_Quad_Block,Chem2D_Input_Parameters> &GMRES,
-		  double Relaxation_multiplier) {
+      double Relaxation_multiplier) {
 
   int Num_Var = SolnBlk[0].NumVar();  	
   int error_flag = 0;
   
-  /* Update Solution. No updates to Ghost Cells, let the BC's take care of it */
+   /* Update Solution. No updates to Ghost Cells, let the BC's take care of it */
   for ( int Bcount = 0 ; Bcount < List_of_Local_Solution_Blocks.Nblk ; ++Bcount ) {
     if (List_of_Local_Solution_Blocks.Block[Bcount].used == ADAPTIVEBLOCK2D_USED) {
       for (int j = SolnBlk[Bcount].JCl; j <= SolnBlk[Bcount].JCu; j++){
 	for (int i = SolnBlk[Bcount].ICl; i <= SolnBlk[Bcount].ICu; i++){
 	  
-	  /* Update solutions in conserved variables  U = Uo + RELAXATION*deltaU = Uo + denormalized(x) */	 
-	  for(int varindex =1; varindex < Num_Var; varindex++){	                       
-	    SolnBlk[Bcount].U[i][j][varindex] = SolnBlk[Bcount].Uo[i][j][varindex]  +  
+ 	  /* Update solutions in conserved variables  U = Uo + RELAXATION*deltaU = Uo + denormalized(x) */	 
+ 	  for(int varindex =1; varindex < Num_Var; varindex++){	                       
+ 	    SolnBlk[Bcount].U[i][j][varindex] = SolnBlk[Bcount].Uo[i][j][varindex]  +  
 	      Relaxation_multiplier*GMRES.deltaU(Bcount,i,j,varindex-1);
-	  } 	      	  
-	  //CHEM2D N-1 
-	  SolnBlk[Bcount].U[i][j][Num_Var] = SolnBlk[Bcount].U[i][j].rho*(ONE - SolnBlk[Bcount].U[i][j].sum_species());	   
+ 	  } 	      	  
+ 	  //CHEM2D N-1 
+ 	  SolnBlk[Bcount].U[i][j][Num_Var] = SolnBlk[Bcount].U[i][j].rho*(ONE - SolnBlk[Bcount].U[i][j].sum_species());	   
 	  	  
-	  /**************************************************************************/
-	  // Apply update reduction while any one of the updated variables is unphysical 
-	  if(! SolnBlk[Bcount].U[i][j].Unphysical_Properties_Check( SolnBlk[Bcount].Flow_Type, 10)){	   
-	    double update_reduction_factor = ONE;	    
-	    for (int n_update_reduction = 1; n_update_reduction <= 10; ++n_update_reduction) {		  
-	      update_reduction_factor = HALF*update_reduction_factor;		  		  
-	      for(int varindex = 1; varindex <= Num_Var-1; varindex++){		              
-		SolnBlk[Bcount].U[i][j][varindex] = SolnBlk[Bcount].Uo[i][j][varindex] 
-		  + GMRES.deltaU(Bcount,i,j,varindex-1)*update_reduction_factor;
-	      }   
-	      SolnBlk[Bcount].U[i][j][Num_Var] = SolnBlk[Bcount].U[i][j].rho*(ONE - SolnBlk[Bcount].U[i][j].sum_species());
-	      cout<<"\n Applying Reduction to solution in NKS "<<n_update_reduction;
-	      if( SolnBlk[Bcount].U[i][j].Unphysical_Properties_Check( SolnBlk[Bcount].Flow_Type,n_update_reduction))  break;	      
-	    } 
-	  }
+  	  /**************************************************************************/
+ 	  // Apply update reduction while any one of the updated variables is unphysical 
+ 	  if(! SolnBlk[Bcount].U[i][j].Unphysical_Properties_Check( SolnBlk[Bcount].Flow_Type, 10)){	   
+ 	    double update_reduction_factor = ONE;	    
+ 	    for (int n_update_reduction = 1; n_update_reduction <= 10; ++n_update_reduction) {		  
+ 	      update_reduction_factor = HALF*update_reduction_factor;		  		  
+ 	      for(int varindex = 1; varindex <= Num_Var-1; varindex++){		              
+ 		SolnBlk[Bcount].U[i][j][varindex] = SolnBlk[Bcount].Uo[i][j][varindex] 
+ 		  + GMRES.deltaU(Bcount,i,j,varindex-1)*update_reduction_factor;
+ 	      }   
+ 	      SolnBlk[Bcount].U[i][j][Num_Var] = SolnBlk[Bcount].U[i][j].rho*(ONE - SolnBlk[Bcount].U[i][j].sum_species());
+ 	      cout<<"\n Applying Reduction to solution in NKS "<<n_update_reduction;
+ 	      if( SolnBlk[Bcount].U[i][j].Unphysical_Properties_Check( SolnBlk[Bcount].Flow_Type,n_update_reduction))  break;	      
+ 	    } 
+ 	  }
 	 
-	  /**************************************************************************/
-	  // Error Check
-	  if(! SolnBlk[Bcount].U[i][j].Unphysical_Properties_Check(SolnBlk[Bcount].Flow_Type,10)) error_flag = 1;
+ 	  /**************************************************************************/
+ 	  // Error Check
+ 	  if(! SolnBlk[Bcount].U[i][j].Unphysical_Properties_Check(SolnBlk[Bcount].Flow_Type,10)) error_flag = 1;
 	 	  
-	  /**************************************************************************/
-	  //Update solution in primitive variables.	 
-	  SolnBlk[Bcount].W[i][j] = W(SolnBlk[Bcount].U[i][j]); 
+ 	  /**************************************************************************/
+ 	  //Update solution in primitive variables.	 
+ 	  SolnBlk[Bcount].W[i][j] = W(SolnBlk[Bcount].U[i][j]); 
 	    
 	} 
       }
       
-      // #ifdef _NKS_VERBOSE  
-      //       if (CFFC_Primary_MPI_Processor()) { 
-      // 	/**************************************************************************/
-      // 	//FOR DEBUGGING OUTPUT GMRES deltaU set to "SCALED" residual
-      // 	double *norm = new double[Num_Var-1];
-      // 	for(int i= 0; i< Num_Var-1; i++) norm[i]=ZERO;
+// #ifdef _NKS_VERBOSE  
+//       if (CFFC_Primary_MPI_Processor()) { 
+// 	/**************************************************************************/
+// 	//FOR DEBUGGING OUTPUT GMRES deltaU set to "SCALED" residual
+// 	double *norm = new double[Num_Var-1];
+// 	for(int i= 0; i< Num_Var-1; i++) norm[i]=ZERO;
 	
-      for (int j = SolnBlk[Bcount].JCl-SolnBlk[Bcount].Nghost; j <= SolnBlk[Bcount].JCu+SolnBlk[Bcount].Nghost; j++){
-	for (int i = SolnBlk[Bcount].ICl-SolnBlk[Bcount].Nghost; i <= SolnBlk[Bcount].ICu+SolnBlk[Bcount].Nghost; i++){
-	  for(int varindex =1; varindex < Num_Var; varindex++){	  	   
-	    //SolnBlk[Bcount].dUdt[i][j][0][varindex] = GMRES.deltaU_test(Bcount,i,j,varindex-1);
-	    SolnBlk[Bcount].dUdt[i][j][0][varindex] = GMRES.b_test(Bcount,i,j,varindex-1);
-	    //norm[varindex-1] += sqr(SolnBlk[Bcount].dUdt[i][j][0][varindex]);
-	    // norm[varindex-1] = max(norm[varindex-1],fabs(SolnBlk[Bcount].dUdt[i][j][0][varindex]));
-	  }
-	} 
-      }
-      // 	cout<<"\n *************** ";
-      // 	for(int i= 0; i<11; i++){
-      // 	  //cout<<"\n L2 norm of variable "<<i<<" = "<<sqrt(norm[i]);
-      // 	  cout<<"\n max norm of variable "<<i<<" = "<<norm[i];
-      // 	}
-      // 	cout<<"\n *************** ";
-      // 	delete[] norm;
-      /**************************************************************************/
-      //       }
-      // #endif
+	for (int j = SolnBlk[Bcount].JCl-SolnBlk[Bcount].Nghost; j <= SolnBlk[Bcount].JCu+SolnBlk[Bcount].Nghost; j++){
+	  for (int i = SolnBlk[Bcount].ICl-SolnBlk[Bcount].Nghost; i <= SolnBlk[Bcount].ICu+SolnBlk[Bcount].Nghost; i++){
+	    for(int varindex =1; varindex < Num_Var; varindex++){	  	   
+	      //SolnBlk[Bcount].dUdt[i][j][0][varindex] = GMRES.deltaU_test(Bcount,i,j,varindex-1);
+	      SolnBlk[Bcount].dUdt[i][j][0][varindex] = GMRES.b_test(Bcount,i,j,varindex-1);
+	      //norm[varindex-1] += sqr(SolnBlk[Bcount].dUdt[i][j][0][varindex]);
+	      // norm[varindex-1] = max(norm[varindex-1],fabs(SolnBlk[Bcount].dUdt[i][j][0][varindex]));
+	    }
+	  } 
+	}
+// 	cout<<"\n *************** ";
+// 	for(int i= 0; i<11; i++){
+// 	  //cout<<"\n L2 norm of variable "<<i<<" = "<<sqrt(norm[i]);
+// 	  cout<<"\n max norm of variable "<<i<<" = "<<norm[i];
+// 	}
+// 	cout<<"\n *************** ";
+// 	delete[] norm;
+	/**************************************************************************/
+//       }
+// #endif
 
     } 
   }   
@@ -181,7 +181,7 @@ Implicit_Euler(const int &cell_index_i,const int &cell_index_j, DenseMatrix* Jac
 
     DenseMatrix II(blocksize,blocksize);  
     II.identity();    
-    Jacobian[CENTER] -= II/*LHS_Time<Chem2D_Input_Parameters>(*Input_Parameters, SolnBlk->dt[cell_index_i][cell_index_j],DTS_dTime)*/;
+    Jacobian[CENTER] -= II*LHS_Time<Chem2D_Input_Parameters>(*Input_Parameters, SolnBlk->dt[cell_index_i][cell_index_j],DTS_dTime);
   }
 
 }
@@ -525,22 +525,21 @@ calculate_Matrix_Free(const double &epsilon)
 	  }
 	  V[(search_directions+1)*scalar_dim+iter] -= 
 	    normalizeR(value * LHS_Time<Chem2D_Input_Parameters>(*Input_Parameters,SolnBlk->dt[i][j],DTS_ptr->DTS_dTime),k);   
-	  //No Preconditioner
+	//No Preconditioner
 	} else { // z/h
 	  V[(search_directions+1)*scalar_dim+iter] -= normalizeUtoR( W[(search_directions)*scalar_dim + iter] 
-								     * LHS_Time<Chem2D_Input_Parameters>(*Input_Parameters,SolnBlk->dt[i][j],DTS_ptr->DTS_dTime),k);
+			      * LHS_Time<Chem2D_Input_Parameters>(*Input_Parameters,SolnBlk->dt[i][j],DTS_ptr->DTS_dTime),k);
 	}       
 
-	// #ifdef _NKS_VERBOSE_NAN_CHECK
-	// 	// nan check most commonly caused by nans in dUdt !!!!
-	// 	if (V[(search_directions+1)*scalar_dim+iter] != V[(search_directions+1)*scalar_dim+iter] ){
-	// 	  cout<<"\n nan in V[ "<<(search_directions+1)*scalar_dim+iter<<"] at "<<i<<" "<<j<<" "<<k
-	// 	      <<" dUdt "<<  normalizeR(SolnBlk->dUdt[i][j][0][k+1],k) <<" b "<< b[iter]
-	// 	      <<" z "<<W[(search_directions)*scalar_dim + iter]<< " h "<<( SolnBlk->dt[i][j]*ao);
-	// 	}
-	// #endif
+// #ifdef _NKS_VERBOSE_NAN_CHECK
+// 	// nan check most commonly caused by nans in dUdt !!!!
+// 	if (V[(search_directions+1)*scalar_dim+iter] != V[(search_directions+1)*scalar_dim+iter] ){
+// 	  cout<<"\n nan in V[ "<<(search_directions+1)*scalar_dim+iter<<"] at "<<i<<" "<<j<<" "<<k
+// 	      <<" dUdt "<<  normalizeR(SolnBlk->dUdt[i][j][0][k+1],k) <<" b "<< b[iter]
+// 	      <<" z "<<W[(search_directions)*scalar_dim + iter]<< " h "<<( SolnBlk->dt[i][j]*ao);
+// 	}
+// #endif
       } 
-
     } 
   } 
 }
@@ -598,7 +597,7 @@ calculate_Matrix_Free_Restart(const double &epsilon)
 	  }
 	  V[iter] -= normalizeR(value * LHS_Time<Chem2D_Input_Parameters>(*Input_Parameters,SolnBlk->dt[i][j],DTS_ptr->DTS_dTime),k);
 	  
-	  //No Preconditioner
+	//No Preconditioner
 	} else { // z/h
 	  V[iter] -= normalizeUtoR(x[iter] * LHS_Time<Chem2D_Input_Parameters>(*Input_Parameters,SolnBlk->dt[i][j],DTS_ptr->DTS_dTime),k);	
 	}
