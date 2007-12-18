@@ -136,6 +136,16 @@ class Direction_Indices {
     int direction_indices_to_boundary_element_number(void) const;
     int direction_indices_to_boundary_element_number(const Direction_Indices &DI) const;
 
+    /* Return indices of node for referencing the geometry. */
+    Direction_Indices reference_geomety_node(const int boundary_element_number,
+                                             const int i_low,
+                                             const int i_up,
+                                             const int j_low,
+                                             const int j_up,
+                                             const int k_low,
+                                             const int k_up,
+                                             const int nghost) const;
+
     /* Index operator. */
 
    int &operator[](int index);

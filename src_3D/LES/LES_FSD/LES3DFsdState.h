@@ -253,25 +253,16 @@ class LES3DFsd_pState : public NavierStokes3D_ThermallyPerfect_pState {
       } /* endif */
    }
 
-   //! Check for physical validity of the progress variable
-   void Realizable_Mass_Fraction_Check(void) {
-      if (C > ONE) {
-        C = ONE;
-        premixed_mfrac();
-      } else if (C < ZERO) {
-        C = ZERO;
-        premixed_mfrac();
-      } /* endif */
-   }
-
    //! Check for physical validity of scalars
-   bool Realizable_Scalar_Check(void) {
-     double LOCAL_TOL = MICRO;
-     if ( C < LOCAL_TOL ) { C = ZERO; premixed_mfrac(); }
-     if ( Fsd < LOCAL_TOL ) { Fsd = ZERO; }
-     if ( k < LOCAL_TOL ) { k = ZERO; }
+   void Realizable_Scalar_Check(void) {
+     if ( C < ZERO ) { 
+        C = ZERO;
+     } else if (C > ONE) {
+        C = ONE;
+     } /* endif */
+     if ( Fsd < ZERO ) { Fsd = ZERO; }
+     if ( k < ZERO ) { k = ZERO; }
      if ( C > 0.999 || C < 0.001 ) { Fsd = ZERO; }
-     return true;
    }
 
    //! Check for physical validity of the solution vector
@@ -1182,25 +1173,16 @@ class LES3DFsd_cState : public NavierStokes3D_ThermallyPerfect_cState {
       } /* endif */
    }
 
-   //! Check for physical validity of the progress variable
-   void Realizable_Mass_Fraction_Check(void) {
-      if (rhoC/rho > ONE) {
-        rhoC = ONE*rho;
-        premixed_mfrac();
-      } else if (rhoC < ZERO) {
-        rhoC = ZERO;
-        premixed_mfrac();
-      } /* endif */
-   }
-
    //! Check for physical validity of scalars
-   bool Realizable_Scalar_Check(void) {
-     double LOCAL_TOL = MICRO;
-     if ( rhoC < LOCAL_TOL ) { rhoC = ZERO; premixed_mfrac(); }
-     if ( rhoFsd < LOCAL_TOL ) { rhoFsd = ZERO; }
-     if ( rhok < LOCAL_TOL ) { rhok = ZERO; }
+   void Realizable_Scalar_Check(void) {
+     if ( rhoC < ZERO ) { 
+        rhoC = ZERO; 
+     } else if (rhoC/rho > ONE) {
+        rhoC = ONE*rho;
+     } /* endif */
+     if ( rhoFsd < ZERO ) { rhoFsd = ZERO; }
+     if ( rhok < ZERO ) { rhok = ZERO; }
      if ( rhoC/rho > 0.999 || rhoC/rho < 0.001 ) { rhoFsd = ZERO; }
-     return true;
    }
 
    //! Check for physical validity of the solution vector

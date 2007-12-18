@@ -20,8 +20,7 @@
  *                                                                      solution state.  *
  *****************************************************************************************/
 bool FANS3D_ThermallyPerfect_KOmega_pState::Realizable_Solution_Check(void) {
-   if (rho <= ZERO || !negative_speccheck() || p <= ZERO ||
-       k <= ZERO || omega <= ZERO) {    
+   if (rho <= ZERO || !negative_speccheck() || p <= ZERO || k < ZERO || omega <= ZERO) {    
       cout << "\n " << CFFC_Name() 
            << " ERROR: Primitive solution state has a negative density, pressure, mass fractions,"
            << " turbulent kinetic energy, and/or dissipation rate.\n";
@@ -1865,8 +1864,7 @@ Sturbulence(FANS3D_ThermallyPerfect_KOmega_pState &Wc,
  *                                                                      solution state.  *
  *****************************************************************************************/
 bool FANS3D_ThermallyPerfect_KOmega_cState::Realizable_Solution_Check(void) {
-   if (rho <= ZERO || !negative_speccheck() || es() <= ZERO ||
-       rhok <= ZERO || rhoomega <= ZERO) {    
+   if (rho <= ZERO || !negative_speccheck() || es() <= ZERO || rhok < ZERO || rhoomega <= ZERO) {    
       cout << "\n " << CFFC_Name() 
            << " ERROR: Conserved solution state has a negative density, energy, mass fractions,"
            << " turbulent kinetic energy, and/or dissipation rate.\n";

@@ -53,7 +53,8 @@ void LES3DFsd_pState::Copy(const LES3DFsd_pState &W) {
  * LES3DFsd_pState::Realizable_Solution_Check -- Check physical validity of solution state.  *
  *********************************************************************************************/
 bool LES3DFsd_pState::Realizable_Solution_Check(void) {
-   if (rho <= ZERO || p <= ZERO || C <= ZERO || Fsd <= ZERO || k <= ZERO ) {    
+   Realizable_Scalar_Check();
+   if (rho <= ZERO || p <= ZERO || C < ZERO || Fsd < ZERO || k < ZERO ) {    
       cout << "\n " << CFFC_Name() 
            << " ERROR: Primitive solution state has a negative density, pressure, progress variable,"
            << " FSD, and/or turbulent kinetic energy.\n";
@@ -3304,7 +3305,8 @@ void LES3DFsd_cState::Copy(const LES3DFsd_cState &U) {
  * LES3DFsd_cState::Realizable_Solution_Check -- Check physical validity of solution state.  *
  *********************************************************************************************/
 bool LES3DFsd_cState::Realizable_Solution_Check(void) {
-  if (rho <= ZERO || es() <= ZERO || rhoC <= ZERO || rhoFsd <= ZERO || rhok <= ZERO ) {    
+   Realizable_Scalar_Check();
+   if (rho <= ZERO || es() <= ZERO || rhoC < ZERO || rhoFsd < ZERO || rhok < ZERO ) {    
       cout << "\n " << CFFC_Name() 
            << " ERROR: Conservative solution state has a negative density, energy, progress variable,"
            << " FSD, and/or turbulent kinetic energy.\n";

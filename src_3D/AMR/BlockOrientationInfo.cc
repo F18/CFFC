@@ -157,6 +157,77 @@ int Direction_Indices::direction_indices_to_boundary_element_number(const Direct
   return ((DI.i+1)*9 + (DI.j+1)*3 + (DI.k+1));
 }
 
+/*************************************************************************************************************************
+ * Direction_Indices::reference_geomety_node -- Return  indices of node for referencing the geometry.                    *
+ *************************************************************************************************************************/
+Direction_Indices Direction_Indices::reference_geomety_node(const int boundary_element_number,
+                                                            const int i_low,
+                                                            const int i_up,
+                                                            const int j_low,
+                                                            const int j_up,
+                                                            const int k_low,
+                                                            const int k_up,
+                                                            const int nghost) const {
+   switch (boundary_element_number) { 
+   case BE::BSW : // 0
+     return Direction_Indices(i_low, j_low, k_low);    
+   case BE::SW :  // 1
+     return Direction_Indices(i_low, j_low, k_low);  // edge
+   case BE::TSW : // 2
+     return Direction_Indices(i_low, j_low, k_up);
+   case BE::BW :  // 3
+     return Direction_Indices(i_low, j_low, k_low); // edge
+   case BE::W :   // 4
+     return Direction_Indices(-1, 0, 0);
+   case BE::TW :  // 5
+     return Direction_Indices(-1, 0, 1);
+   case BE::BNW : // 6
+     return Direction_Indices(i_low, j_up, k_low);    
+   case BE::NW :  // 7
+     return Direction_Indices(-1, 1, 0);
+   case BE::TNW : // 8
+     return Direction_Indices(i_low, j_up, k_up);
+   case BE::BS :  // 9
+     return Direction_Indices(0, -1, -1);    
+   case BE::S :   // 10
+     return Direction_Indices(0, -1, 0);
+   case BE::TS :  // 11
+     return Direction_Indices(0, -1, 1);
+   case BE::B :   // 12
+     return Direction_Indices(0, 0, -1);    
+   case BE::ME :  // 13
+     return Direction_Indices(0, 0, 0);
+   case BE::T :   // 14
+     return Direction_Indices(0, 0, 1);
+   case BE::BN :  // 15
+     return Direction_Indices(0, 1, -1);    
+   case BE::N :   // 16
+     return Direction_Indices(0, 1, 0);
+   case BE::TN :  // 17
+     return Direction_Indices(0, 1, 1);
+   case BE::BSE : // 18
+     return Direction_Indices(i_up, j_low, k_low);    
+   case BE::SE :  // 19
+     return Direction_Indices(1, -1, 0);
+   case BE::TSE : // 20
+     return Direction_Indices(i_up, j_low, k_up);
+   case BE::BE :  // 21
+     return Direction_Indices(1, 0, -1);    
+   case BE::E :   // 22
+     return Direction_Indices(1, 0, 0);
+   case BE::TE :  // 23
+     return Direction_Indices(1, 0, 1);
+   case BE::BNE : // 24
+     return Direction_Indices(i_up, j_up, k_low);    
+   case BE::NE :  // 25
+     return Direction_Indices(1, 1, 0);
+   case BE::TNE : // 26
+     return Direction_Indices(i_up, j_up, k_up);
+   default :
+     return Direction_Indices(0, 0, 0);
+   }; /* endswitch */
+}
+
 //=======================================================
 void Block_Orientation_Info::set_block_orientation_info(BlkC::BlockConnectivity &blkc, 
                                                         const int iblk,
