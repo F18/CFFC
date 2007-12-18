@@ -48,9 +48,11 @@ using namespace std;
 #define CP_AIR_SDATM  1008.8401778  // J/(kg K)
 
 
-//Temperature convergence tolerance
+// Temperature convergence tolerance
+// For explicit -> TOL ~ 1.0E-08 is good
+// For implicit -> TOL < 1.0E-10 is necessary 
 #undef CONV_TOLERANCE
-#define CONV_TOLERANCE  1e-8
+#define CONV_TOLERANCE  1e-10
 #undef NUM_ITERATIONS
 #define NUM_ITERATIONS  25
 
