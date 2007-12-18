@@ -742,7 +742,7 @@ public:
   double PDE_RighHandSide(const double &x, const double &y) const {return 0.0; }
 
   //! Update internal variables
-  void Set_ParticularSolution_Parameters(void){ };
+  void Set_ParticularSolution_Parameters(void);
 
   //! Parse the input control parameters
   void Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters & IP, int & i_command);
@@ -757,20 +757,39 @@ private:
   double XVelocity;	//!< velocity in the x-direction
   double k;		//!< diffusion coefficient
   double L;             //!< channel length
+
+  double r1,r2,R,Term;	//!< internal variables
 };
 
 //! Return exact solution 
 inline double AdvectionDiffusionInRectangularChannel_ExactSolution::
 EvaluateSolutionAt(const double &x, const double &y) const {
+
+  if (x <= L){
+    /* The expression below is the exact implementation of the analytic solution.
+       However, it poses some numerical problems for high ratios between velocity and diffusion coefficient. */
+    //  return sin(PI*y)*( (r2*exp(r1*x + r2*L) - r1*exp(r1*L+r2*x)) / (r2*exp(r2*L) - r1*exp(r1*L)) );
+    
+    // Rearrange the terms to avoid numerical problems
+    return sin(PI*y)*( (R*pow(Term*exp(x),r1) - exp(r2*x)) / (R*pow(Term,r1) - 1.0) );
+  } else {
+    return 0.0;
+  }
+
+}
+
+//! Set particular parameters/variables
+inline void AdvectionDiffusionInRectangularChannel_ExactSolution::
+Set_ParticularSolution_Parameters(void){
   double Temp(HALF*XVelocity/k);
-  double r1, r2;
-  
+
   r1 = Temp + sqrt(sqr(Temp) + sqr(PI));
   r2 = Temp - sqrt(sqr(Temp) + sqr(PI));
 
-  return sin(PI*y)*( (r2*exp(r1*x + r2*L) - r1*exp(r1*L+r2*x)) / (r2*exp(r2*L) - r1*exp(r1*L)) );
-}
+  R = r2/r1;
 
+  Term = exp(L*(R-1));
+}
 
 /*! 
  * \class SinusoidalVariation_ExactSolution

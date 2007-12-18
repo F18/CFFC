@@ -168,9 +168,10 @@ void SourceTermFields::Broadcast(void){
 double SourceTermFields::getStabilityLimit(const double &x, const double &y, const double &u){
   // Pass possibly necessary information for determining the stability limit
 
+  // Return the absolute value to make sure that DeltaT gets set correctly
   if (FieldRequireIntegration()) {
-    return SourcePtr->StabilityLimit(x,y,u);
+    return fabs(SourcePtr->StabilityLimit(x,y,u));
   } else {
-    return SourcePtr->StabilityLimit(u);
+    return fabs(SourcePtr->StabilityLimit(u));
   }
 }
