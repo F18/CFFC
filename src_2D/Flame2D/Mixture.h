@@ -50,7 +50,7 @@ using namespace std;
 
 // Temperature convergence tolerance
 // For explicit -> TOL ~ 1.0E-08 is good
-// For implicit -> TOL < 1.0E-10 is necessary 
+// For implicit -> TOL ~ 1.0E-10 is necessary 
 #undef CONV_TOLERANCE
 #define CONV_TOLERANCE  1e-10
 #undef NUM_ITERATIONS
