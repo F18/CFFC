@@ -8,6 +8,7 @@
 #include "Flame2DdRdU.h"
 #include "../NewtonKrylovSchwarz2D/NKS2D.h"
 
+
 /*! *****************************************************************************************
  *  Flame2D Specialization of blocksize to use N-1 not N variables                           *
  ********************************************************************************************/
@@ -197,9 +198,9 @@ Implicit_Euler(const int &cell_index_i,const int &cell_index_j, DenseMatrix* Jac
 
     static DenseMatrix II(blocksize,blocksize);  
     II.identity();    
-    Jacobian[CENTER] -= II*LHS_Time<Flame2D_Input_Parameters>(*Input_Parameters, 
-							      SolnBlk->dt[cell_index_i][cell_index_j],
-							      DTS_dTime);
+    Jacobian[CENTER] -= II/*LHS_Time<Flame2D_Input_Parameters>(*Input_Parameters, 
+			    SolnBlk->dt[cell_index_i][cell_index_j],
+			    DTS_dTime)*/;
   }
 
 }

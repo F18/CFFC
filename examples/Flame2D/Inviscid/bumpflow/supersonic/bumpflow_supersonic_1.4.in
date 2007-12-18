@@ -19,17 +19,17 @@ Time_Accurate=
 0
 # 0, 1, 3,4,5
 Local_Time_Stepping=
-1
+0
 #########################
 Reconstruction_Type=
-Green_Gauss 
-#Least_Squares
+Least_Squares
 Limiter_Type=
-Venkatakrishnan
+Zero
+#Venkatakrishnan
 #Barth_Jespersen
 #Zero
 Flux_Function_Type=
-HLLE
+AUSM_plus_up
 ############################
 #
 ###########################
@@ -51,14 +51,14 @@ GMRES_Initial_Tolerance =
 GMRES_Final_Tolerance =
 2.0e-01
 GMRES_Block_Preconditioner = 
-ILUK
+Diagonal
 #( ILUK, Diagonal)
 GMRES_ILUK_Level_of_Fill = 
 4
 GMRES_Normalization=
-ON
+OFF
 GMRES_Check=
-ON
+OFF
 #---------- NK -----------------
 NKS_Overall_Tolerance =
 1.0e-10
@@ -71,7 +71,12 @@ NKS_Finite_Time_Step_Initial_CFL =
 #500.0
 #---------- Precon ------------
 Jacobian_Order =
-First_Order_Inviscid_Roe
+Source_Terms_Only
+#First_Order_Inviscid_HLLE
+NKS_Write_Output_Cells_Freq =
+1
+#GMRES_Epsilon_Naught=
+#1.e-2
 #########################
 # Set initial conditions
 #########################
@@ -125,14 +130,14 @@ Threshold_for_Coarsening=
 CFL_Number=
 0.5
 Maximum_Number_of_Time_Steps=
-2000
+300
 Full_Multigrid=
 0
 ####### Implicit ###############
 Maximum_Number_of_NKS_Iterations =
-0
+1
 Maximum_Number_of_GMRES_Iterations=
-100
+1
 GMRES_Restart =
 100
 ################

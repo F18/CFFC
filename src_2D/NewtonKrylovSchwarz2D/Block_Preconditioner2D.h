@@ -22,7 +22,7 @@
  ********************************************************/
 template <typename SOLN_VAR_TYPE, typename SOLN_BLOCK_TYPE, typename INPUT_TYPE>
 class Block_Preconditioner {
-  private:
+private:
   int blocksize;
   int Jacobian_stencil_size; 
 
@@ -39,8 +39,8 @@ class Block_Preconditioner {
   DenseMatrix Rotation_Matrix(const Vector2D &nface, const int &A_matrix); //Used in Jacobian_LocalBlock
   DenseMat DenseMatrix_to_DenseMat(const DenseMatrix &B); 
 
-  protected:
-  public:
+protected:
+public:
   //Address of corresponding Solution block data
   SOLN_BLOCK_TYPE *SolnBlk;
   INPUT_TYPE *Input_Parameters;  
@@ -55,7 +55,7 @@ class Block_Preconditioner {
   /*******************************************************/
   //default constructors
   Block_Preconditioner(void):Jacobian_stencil_size(5), blocksize(1),
-    SolnBlk(NULL),Input_Parameters(NULL), ILUK_Precon(NULL), Jacobi_Precon(NULL) {}
+			     SolnBlk(NULL),Input_Parameters(NULL), ILUK_Precon(NULL), Jacobi_Precon(NULL) {}
   Block_Preconditioner(SOLN_BLOCK_TYPE  &Soln_ptr,INPUT_TYPE &IP, const int &_blocksize)		      
   { Create_Preconditioner(Soln_ptr,IP,_blocksize); }
   
@@ -152,8 +152,8 @@ Preconditioner_dFVdU(DenseMatrix &dFvdU, const int Rii, const int Rjj,
 template<typename SOLN_VAR_TYPE, typename SOLN_BLOCK_TYPE, typename INPUT_TYPE>
 inline void Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE>::
 Preconditioner_dSdU( int cell_index_i, int cell_index_j, DenseMatrix &Jacobian) {
-//   cerr<<"\n EXPLICIT SPECIALIZATION OF Preconditioner_dSdU for Block_Preconditioner2D.h requried \n";
-//   exit(1);
+  //   cerr<<"\n EXPLICIT SPECIALIZATION OF Preconditioner_dSdU for Block_Preconditioner2D.h requried \n";
+  //   exit(1);
 }
 
 template<typename SOLN_VAR_TYPE, typename SOLN_BLOCK_TYPE, typename INPUT_TYPE>
@@ -262,8 +262,8 @@ Create_Preconditioner( SOLN_BLOCK_TYPE  &Soln_ptr, INPUT_TYPE &IP, const int &_b
       IP.NKS_IP.Jacobian_Order == FIRST_ORDER_INVISCID_AUSMPLUSUP) {
     Jacobian_stencil_size = 5;
   } else if (IP.NKS_IP.Jacobian_Order == SECOND_ORDER_DIAMOND_WITH_HLLE ||
-             IP.NKS_IP.Jacobian_Order == SECOND_ORDER_DIAMOND_WITH_ROE ||
-             IP.NKS_IP.Jacobian_Order == SECOND_ORDER_DIAMOND_WITH_AUSMPLUSUP) {
+	     IP.NKS_IP.Jacobian_Order == SECOND_ORDER_DIAMOND_WITH_ROE ||
+	     IP.NKS_IP.Jacobian_Order == SECOND_ORDER_DIAMOND_WITH_AUSMPLUSUP) {
     Jacobian_stencil_size = 9;
   } else {
     cerr<<"\n Invalid Jacobian Preconditioner Order "<<IP.NKS_IP.Jacobian_Order;
@@ -375,8 +375,8 @@ Update_Jacobian_and_Preconditioner(const double &DTS_dTime)
       //! Calculate Local Approximate Jacobian                        
       switch(Input_Parameters->NKS_IP.Jacobian_Order){
       case SOURCE_TERMS_ONLY :
- 	Implicit_Euler(i,j, Jacobian_Data,DTS_dTime);
-	Preconditioner_dSdU(i,j,Jacobian_Data[CENTER]);
+	Implicit_Euler(i,j, Jacobian_Data,DTS_dTime);
+	//Preconditioner_dSdU(i,j,Jacobian_Data[CENTER]);
 	break;
       case FIRST_ORDER_INVISCID_HLLE : 
 	Implicit_Euler(i,j, Jacobian_Data,DTS_dTime);
@@ -527,19 +527,19 @@ First_Order_Inviscid_Jacobian_HLLE(const int &cell_index_i,const int &cell_index
   //! Calculate Jacobian matrix -> blocksizexblocksize matrix in DenseMatrix format
   //North
   Jacobian[NORTH] = (SolnBlk->Grid.lfaceN(cell_index_i,cell_index_j-1) 
-		 * AI_N * (beta_N * dFdU_N + gamma_N * II) * A_N); 
+		     * AI_N * (beta_N * dFdU_N + gamma_N * II) * A_N); 
 
   //South
   Jacobian[SOUTH] = (SolnBlk->Grid.lfaceS(cell_index_i,cell_index_j+1) 
-		 * AI_S * (beta_S * dFdU_S + gamma_S * II) * A_S);
+		     * AI_S * (beta_S * dFdU_S + gamma_S * II) * A_S);
 
   //East
   Jacobian[EAST] = (SolnBlk->Grid.lfaceE(cell_index_i-1,cell_index_j) 
-		 * AI_E * (beta_E * dFdU_E + gamma_E * II) * A_E);
+		    * AI_E * (beta_E * dFdU_E + gamma_E * II) * A_E);
 
   //West
   Jacobian[WEST] = (SolnBlk->Grid.lfaceW(cell_index_i+1,cell_index_j) 
-		 * AI_W * (beta_W * dFdU_W + gamma_W * II) * A_W);
+		    * AI_W * (beta_W * dFdU_W + gamma_W * II) * A_W);
 
   //Center calculated from neighbours
   //! Using the fact that dF/dU(right) = - dF/dU(left) 
@@ -560,7 +560,7 @@ First_Order_Inviscid_Jacobian_HLLE(const int &cell_index_i,const int &cell_index
 template <typename SOLN_VAR_TYPE, typename SOLN_BLOCK_TYPE, typename INPUT_TYPE>
 inline void Block_Preconditioner<SOLN_VAR_TYPE,SOLN_BLOCK_TYPE,INPUT_TYPE>::
 First_Order_Inviscid_Jacobian_Roe(const int &cell_index_i,const int &cell_index_j, 
-				   DenseMatrix* Jacobian){              
+				  DenseMatrix* Jacobian){              
     
   //! Calculate Jacobian matrix -> blocksizexblocksize matrix in DenseMatrix format
   Preconditioner_dFIdU_Roe(Jacobian[NORTH],cell_index_i,cell_index_j,NORTH);
@@ -571,7 +571,7 @@ First_Order_Inviscid_Jacobian_Roe(const int &cell_index_i,const int &cell_index_
   //Center calculated from neighbours
   //! Using the fact that dF/dU(right) = - dF/dU(left) 
   Jacobian[CENTER] += (Jacobian[NORTH] + Jacobian[SOUTH] + Jacobian[EAST]  + Jacobian[WEST])
-                     /SolnBlk->Grid.Cell[cell_index_i][cell_index_j].A;
+    /SolnBlk->Grid.Cell[cell_index_i][cell_index_j].A;
 
   Jacobian[NORTH] = -Jacobian[NORTH]/SolnBlk->Grid.Cell[cell_index_i][cell_index_j-1].A;
   Jacobian[SOUTH] = -Jacobian[SOUTH]/SolnBlk->Grid.Cell[cell_index_i][cell_index_j+1].A;
@@ -821,14 +821,14 @@ Rotation_Matrix(const Vector2D &nface, const int &A_matrix)
 
 
 
-  /************* DEBUGGING FOR FIRST ORDER *********************
+/************* DEBUGGING FOR FIRST ORDER *********************
   cout<<"\n CELL "<<cell_index_i<<" "<<cell_index_j;  
   cout<<"\n faces \n N"<< nface_N <<"\n S "<<nface_S<<"\n E "<<nface_E<<"\n W "<<nface_W;
   cout<<"\n lambdas \n N"<< lambdas_N <<"\n S "<<lambdas_S<<"\n E "<<lambdas_E<<"\n W "<<lambdas_W;
   cout<<"\n dFdUs \n N \n"<< dFdU_N <<"\n S \n"<<dFdU_S<<"\n E \n"<<dFdU_E<<"\n W \n"<<dFdU_W;
   cout<<"\n Jacobians \n N \n"<<Jacobian[1]<<"\n S \n"<<Jacobian[3]
       <<"\n E \n"<<Jacobian[4]<<"\n W \n"<<Jacobian[2]<<"\n C \n"<<Jacobian[0];
-  *********************************************/
+*********************************************/
 
 
 //   /************************************************************************/
@@ -881,4 +881,3 @@ Rotation_Matrix(const Vector2D &nface, const int &A_matrix)
 
 //   /*********************** TEST OF BPKIT DATA STRUCTURE *******************/
 //   /************************************************************************/
-
