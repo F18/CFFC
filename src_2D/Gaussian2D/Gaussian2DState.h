@@ -1913,7 +1913,7 @@ inline Gaussian2D_cState Gaussian2D_pState::Gy(const Gaussian2D_pState &dWdy) co
  ********************************************************/
 inline void Gaussian2D_pState::ComputeHeatTerms(const Gaussian2D_pState &dWdx,
 						const Gaussian2D_pState &dWdy,
-						const Vector2D &X,//this variable is added to be consistend with Jai
+						const Vector2D &X,//this variable is added to be consistent with Jai
 						const int &Axisymmetric) {
 
   double tau = tt()/pr * 2.0/5.0 * g_gm1;
@@ -3182,7 +3182,7 @@ inline Gaussian2D_cState Gaussian2D_cState::Gy(const Gaussian2D_pState &dWdy) co
  ********************************************************/
 inline void Gaussian2D_cState::ComputeHeatTerms(const Gaussian2D_pState &dWdx,
 						const Gaussian2D_pState &dWdy,
-						const Vector2D &X,//this variable is added to be consistend with Jai
+						const Vector2D &X,//this variable is added to be consistent with Jai
 						const int &Axisymmetric) {  //this is very poorly coded.
                                                                             //fix this later
   Tensor2D pressure = p();
