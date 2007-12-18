@@ -17,6 +17,8 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
 
   error_flag = Create_Turbulence.Generate_Velocity_Fluctuations(Data.Initial_Mesh, Solution_Data.Input.Grid_IP);
 
+  Solution_Data.Local_Solution_Blocks.IC_Turbulence_Field(Solution_Data.Input);
+
   return error_flag;
 
 }

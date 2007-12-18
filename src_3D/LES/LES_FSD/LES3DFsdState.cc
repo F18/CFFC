@@ -53,7 +53,7 @@ void LES3DFsd_pState::Copy(const LES3DFsd_pState &W) {
  * LES3DFsd_pState::Realizable_Solution_Check -- Check physical validity of solution state.  *
  *********************************************************************************************/
 bool LES3DFsd_pState::Realizable_Solution_Check(void) {
-   if (rho <= ZERO || p <= ZERO || C <= ZERO || Fsd <= ZERO || k <= ZERO ) {    
+   if (rho <= ZERO || p <= ZERO || C < ZERO || Fsd < ZERO || k < ZERO ) {    
       cout << "\n " << CFFC_Name() 
            << " ERROR: Primitive solution state has a negative density, pressure, progress variable,"
            << " FSD, and/or turbulent kinetic energy.\n";
@@ -112,7 +112,7 @@ double LES3DFsd_pState::a_t(void) const {
 void LES3DFsd_pState::premixed_mfrac(void) {
   double unburnt_oxygen_c, burnt_fuel_c, burnt_oxygen_c, stoich_ratio;
   double c_products, products_ratio;
-  
+
   // Check realizability of progress variable.
   Realizable_C_Check();  
 
@@ -226,7 +226,7 @@ double LES3DFsd_pState::mu_t(const LES3DFsd_pState &dWdx,
   double filter = filter_width(Volume);
   if (Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY) {
     double Cs = 0.18;
-    return(rho*Cs*sqr(filter)*abs_strain_rate(dWdx,dWdy,dWdz));
+    return(rho*sqr(Cs*filter)*abs_strain_rate(dWdx,dWdy,dWdz));
   } else if(Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K) {
     double Cv = 0.086;
     return(rho*Cv*sqrt(k)*filter);
@@ -286,7 +286,7 @@ double LES3DFsd_pState::Le_t(void) {
  * LES3DFsd_pState::filter_width -- LES characteristic filter width      *
  *************************************************************************/
 double LES3DFsd_pState::filter_width(const double &Volume) const {
-  return (0.0366/60.0);//pow(Volume,1.0/3.0); 
+  return (0.0366/30);//pow(Volume,1.0/3.0)); 
 }
 
 /*******************************************************************************
@@ -2500,7 +2500,7 @@ double LES3DFsd_pState::SFS_Kinetic_Energy_Fsd(const LES3DFsd_pState &dWdx,
 
   if ( Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ) {
     double CI = 0.005;
-    return (CI*sqr(filter_width(Volume)*abs_strain_rate(dWdx,dWdy,dWdz)));
+    return (CI*sqr(filter_width(Volume*abs_strain_rate(dWdx,dWdy,dWdz))));
   } else if ( Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ) {
     return (k);
   } /* endif */
@@ -3304,7 +3304,7 @@ void LES3DFsd_cState::Copy(const LES3DFsd_cState &U) {
  * LES3DFsd_cState::Realizable_Solution_Check -- Check physical validity of solution state.  *
  *********************************************************************************************/
 bool LES3DFsd_cState::Realizable_Solution_Check(void) {
-  if (rho <= ZERO || es() <= ZERO || rhoC <= ZERO || rhoFsd <= ZERO || rhok <= ZERO ) {    
+  if (rho <= ZERO || es() <= ZERO || rhoC < ZERO || rhoFsd < ZERO || rhok < ZERO ) {    
       cout << "\n " << CFFC_Name() 
            << " ERROR: Conservative solution state has a negative density, energy, progress variable,"
            << " FSD, and/or turbulent kinetic energy.\n";
@@ -3592,7 +3592,7 @@ double LES3DFsd_cState::mu_t(const LES3DFsd_pState &dWdx,
   double filter = filter_width(Volume);
   if (Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY) {
     double Cs = 0.18;
-    return(rho*Cs*sqr(filter)*abs_strain_rate(dWdx,dWdy,dWdz));
+    return(rho*sqr(Cs*filter)*abs_strain_rate(dWdx,dWdy,dWdz));
   } else if (Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K) {
     double Cv = 0.086;
     return(rho*Cv*sqrt(k())*filter);
@@ -3659,7 +3659,7 @@ double LES3DFsd_cState::Le_t(void) {
  * LES3DFsd_cState::filter_width -- LES characteristic filter width      *
  *************************************************************************/
 double LES3DFsd_cState::filter_width(const double &Volume) const {
-  return (0.0366/60.0);//pow(Volume,1.0/3.0); 
+  return (0.0366/30);//pow(Volume,1.0/3.0)); 
 }
 
 /*********************************************************************************

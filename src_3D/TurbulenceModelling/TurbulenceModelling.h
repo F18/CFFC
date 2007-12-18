@@ -587,7 +587,7 @@ class RandomFieldRogallo {
     double Energy_Spectrum_Value(const double &abs_wave_num) const;
 
     int Generate_Velocity_Fluctuations(Grid3D_Hexa_Multi_Block_List &InitMeshBlks,
-				       Grid3D_Input_Parameters &IPs);
+			               Grid3D_Input_Parameters &IPs);
 
     void Write_Initial_Turbulent_Fluctuations(Grid3D_Hexa_Multi_Block_List &InitMeshBlks,
 					      Grid3D_Input_Parameters &IPs,
@@ -660,7 +660,7 @@ Energy_Spectrum_Value(const double &abs_wave_num) const {
     /*****  Haworth and Poinsot paper  *****/
   case SPECTRUM_HAWORTH_POINSOT :
     //double EE, kp, 
-    u = 4.5;  Lp = TWO*PI/4.0;  // kp=4.0, u=2.5  kp=8
+    u = 2.5;  Lp = TWO*PI/4.0;  // kp=4.0, u=2.5  kp=8
     kp = TWO*PI/Lp;
     EE = (32.0/3.0) * sqrt(2.0/PI)* (u*u/kp) * pow(k/kp, 4.0) * exp(-2.0*(k/kp)*(k/kp));
     break;
@@ -718,9 +718,9 @@ Generate_Velocity_Fluctuations(Grid3D_Hexa_Multi_Block_List &InitMeshBlks,
   L3 = IPs.Box_Height;
 
   int Nx, Ny, Nz;
-  Nx = IPs.NCells_Idir * InitMeshBlks.NBlk_Idir;
-  Ny = IPs.NCells_Jdir * InitMeshBlks.NBlk_Jdir;
-  Nz = IPs.NCells_Kdir * InitMeshBlks.NBlk_Kdir;
+  Nx = IPs.NCells_Idir;// * InitMeshBlks.NBlk_Idir;
+  Ny = IPs.NCells_Jdir;// * InitMeshBlks.NBlk_Jdir;
+  Nz = IPs.NCells_Kdir;// * InitMeshBlks.NBlk_Kdir;
 
   double        scaling_factor = 1.0/double(Nx*Ny*Nz);  // Scaling factor for the complex to real transform
 
@@ -885,8 +885,6 @@ Generate_Velocity_Fluctuations(Grid3D_Hexa_Multi_Block_List &InitMeshBlks,
   fftw_free(vv);
   fftw_free(ww);
 
-  return 0;
-
 }
 
 // Write_Initial_Turbulent_Fluctuations
@@ -1039,13 +1037,17 @@ void Time_Averaging_of_Solution(HEXA_BLOCK *Solution_Block,
         for (int j  = Solution_Block[p].JCl; j <= Solution_Block[p].JCu; ++j) {
            for (int k  = Solution_Block[p].KCl; k <= Solution_Block[p].KCu; ++k) {
           if (Solution_Block[p].W[i][j][k].spec[0].c >= Yfuel_conditional) {
-            vis = Solution_Block[p].W[i][j][k].mu()/(Solution_Block[p].W[i][j][k].rho);
             local_vol = Solution_Block[p].Grid.volume(i,j,k);
             total_vol += local_vol;
-            vis_ave += vis*local_vol;
             u_p += sqr(Solution_Block[p].W[i][j][k].v.x - u_ave) * local_vol;
             v_p += sqr(Solution_Block[p].W[i][j][k].v.y - v_ave) * local_vol;
             w_p += sqr(Solution_Block[p].W[i][j][k].v.z - w_ave) * local_vol;
+/*             vis = Solution_Block[p].W[i][j][k].mu()/Solution_Block[p].W[i][j][k].rho; */
+            vis = Solution_Block[p].W[i][j][k].mu_t(Solution_Block[p].dWdx[i][j][k],Solution_Block[p].dWdy[i][j][k],Solution_Block[p].dWdz[i][j][k],Solution_Block[p].Flow_Type,Solution_Block[p].Grid.volume(i,j,k))/(Solution_Block[p].W[i][j][k].rho);
+            vis_ave += vis*local_vol;
+            ens += sqr(Solution_Block[p].W[i][j][k].SFS_Kinetic_Energy_Fsd(Solution_Block[p].dWdx[i][j][k],Solution_Block[p].dWdy[i][j][k],Solution_Block[p].dWdz[i][j][k],Solution_Block[p].Flow_Type,local_vol)/vis)/2.0 * local_vol;
+            eps_w += 2.0*vis*ens;
+            eps_ss += 2.0*vis*(sqr(Solution_Block[p].W[i][j][k].abs_strain_rate(Solution_Block[p].dWdx[i][j][k],Solution_Block[p].dWdy[i][j][k],Solution_Block[p].dWdz[i][j][k]))/2.0) * local_vol;
 /*             ens += Solution_Block[p].enstrophy(i,j,k) * local_vol; */
 /*             eps_w += 2.0*vis*Solution_Block[p].enstrophy(i,j,k) * local_vol; */
 /*             dWdx = Solution_Block[p].dWdx[i][j][k]; */
@@ -1082,24 +1084,24 @@ void Time_Averaging_of_Solution(HEXA_BLOCK *Solution_Block,
 
   if (ens == ZERO) {
     Taylor_scale = ZERO;
-/*   } else { */
-/*     Taylor_scale = sqrt(TWO*u_rms*u_rms/(TWO*ens));//sqrt(10.0*vis_ave*1.5*u_rms*u_rms/eps_w);//sqrt(TWO*u_rms*u_rms/(TWO*ens));//????????? */
+  } else {
+    Taylor_scale = sqrt(TWO*u_rms*u_rms/(TWO*ens));//sqrt(10.0*vis_ave*1.5*u_rms*u_rms/eps_w);//sqrt(TWO*u_rms*u_rms/(TWO*ens));//?????????
   }
 
   Re_Taylor =  u_rms*Taylor_scale/vis_ave;//???????????
-/*   Kolmogorov_scale = pow(pow(vis_ave, THREE)/eps_w, 0.25);//???????? */
-/*   L11= 0.09*pow(1.5*u_rms*u_rms, 1.5)/eps_w;//ens; */
+  Kolmogorov_scale = pow(pow(vis_ave, THREE)/eps_w, 0.25);//????????
+  L11= 0.09*pow(1.5*u_rms*u_rms, 1.5)/eps_w;//ens;
 
-/*   if (eps_w > 0.0) { */
-/*     l_1 = 0.42*pow(u_rms, 3.0)/eps_w; */
-/*   } else { */
-/*     l_1 = 0.0; */
-/*   } */
-/*   if (eps_ss > 0.0) { */
-/*     l_2 = 0.42*pow(u_rms, 3.0)/eps_ss; */
-/*   } else { */
-/*     l_2 = 0.0; */
-/*   } */
+  if (eps_w > 0.0) {
+    l_1 = 0.42*pow(u_rms, 3.0)/eps_w;
+  } else {
+    l_1 = 0.0;
+  }
+  if (eps_ss > 0.0) {
+    l_2 = 0.42*pow(u_rms, 3.0)/eps_ss;
+  } else {
+    l_2 = 0.0;
+  }
 
   if (CFFC_Primary_MPI_Processor()) {
     cout << "\n\n ==========================================================================\n"; 

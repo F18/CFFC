@@ -58,6 +58,13 @@ ICs(const int i_ICtype,
                      LES3DFsd_cState> &IPs);
 
 template<>
+int Hexa_Block<LES3DFsd_pState, 
+               LES3DFsd_cState>::
+IC_Turbulence_Field(const int i_ICtype,
+                    Input_Parameters<LES3DFsd_pState, 
+                                     LES3DFsd_cState> &IPs);
+
+template<>
 void Hexa_Block<LES3DFsd_pState, 
                 LES3DFsd_cState>::
 BCs(Input_Parameters<LES3DFsd_pState, 

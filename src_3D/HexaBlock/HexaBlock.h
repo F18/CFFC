@@ -220,6 +220,9 @@ class Hexa_Block{
    int ICs(const int i_ICtype, 
            Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs);
 
+   int IC_Turbulence_Field(const int i_ICtype,
+                           Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs);
+
    void BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs);
 
    double CFL(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs);

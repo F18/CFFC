@@ -695,11 +695,6 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Periodic_Box(Grid3D_Input_Paramet
                                opposite_jBlk*Input.NBlk_Idir + 
                                opposite_kBlk*Input.NBlk_Idir*Input.NBlk_Jdir;
 
-               cout << "\n current block: " << nBlk << " " << iBlk << " " << jBlk << " " << kBlk;
-               cout << "\n direction: " << Dir_Index;
-               cout << "\n opposite block: " << opposite_nBlk << " " << opposite_iBlk << " " 
-                    << opposite_jBlk << " " << opposite_kBlk;
-
                switch (nDir) { 
                  case BE::BSW : // 0
                    if (Connectivity[nBlk].num_neighBSW == 0 && 
