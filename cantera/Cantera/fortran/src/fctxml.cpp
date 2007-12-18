@@ -3,9 +3,13 @@
 
 // Cantera includes
 #include "ctml.h"
-#include "importCTML.h"
+//#include "importCTML.h"
+using namespace ctml;
 
 #include "../../clib/src/Cabinet.h"
+
+// Assign storage for the templated classes static member
+template<> Cabinet<XML_Node> * Cabinet<XML_Node>::__storage = 0;
 
 inline XML_Node* _xml(const integer* i) {
     return Cabinet<XML_Node>::cabinet(false)->item(*i);

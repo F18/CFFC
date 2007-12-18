@@ -1,5 +1,11 @@
 /**
  *  @file DebyeHuckel.cpp
+ *    Declarations for the %DebyeHuckel ThermoPhase object, which models dilute
+ *    electrolyte solutions
+ *    (see \ref thermoprops and \link Cantera::DebyeHuckel DebyeHuckel \endlink).
+ *
+ * Class %DebyeHuckel represents a dilute liquid electrolyte phase which
+ * obeys the Debye Huckel formulation for nonideality.
  */
 /*
  * Copywrite (2006) Sandia Corporation. Under the terms of 
@@ -7,28 +13,31 @@
  * U.S. Government retains certain rights in this software.
  */
 /*
- * $Id: DebyeHuckel.cpp,v 1.4 2006/07/13 20:05:11 hkmoffa Exp $
+ * $Id: DebyeHuckel.cpp,v 1.23 2007/06/13 00:08:35 hkmoffa Exp $
  */
-
+//! Max function
 #ifndef MAX
 #define MAX(x,y)    (( (x) > (y) ) ? (x) : (y))
 #endif
 
 #include "DebyeHuckel.h"
-#include "importCTML.h"
+//#include "importCTML.h"
+#include "ThermoFactory.h"
 #include "WaterProps.h"
 #include "WaterPDSS.h"
+#include <string.h>
+
+using namespace std;
 
 namespace Cantera {
 
-  /**
+  /*
    * Default constructor
    */
   DebyeHuckel::DebyeHuckel() :
     MolalityVPSSTP(),
     m_formDH(DHFORM_DILUTE_LIMIT),
     m_formGC(2),
-    m_Pcurrent(OneAtm),
     m_IionicMolality(0.0),
     m_maxIionicStrength(30.0),
     m_useHelgesonFixedForm(false),
@@ -40,12 +49,15 @@ namespace Cantera {
     m_densWaterSS(1000.),
     m_waterProps(0)
   {
+    m_useTmpRefStateStorage = true;
+    m_useTmpStandardStateStorage = false;
     m_npActCoeff.resize(3);
     m_npActCoeff[0] = 0.1127;
     m_npActCoeff[1] = -0.01049;
     m_npActCoeff[2] = 1.545E-3;
   }
-  /**
+
+  /*
    * Working constructors
    *
    *  The two constructors below are the normal way
@@ -53,11 +65,10 @@ namespace Cantera {
    *  the routine initThermo(), with a reference to the
    *  XML database to get the info for the phase.
    */
-  DebyeHuckel::DebyeHuckel(string inputFile, string id) :
+  DebyeHuckel::DebyeHuckel(std::string inputFile, std::string id) :
     MolalityVPSSTP(),
     m_formDH(DHFORM_DILUTE_LIMIT),
     m_formGC(2),
-    m_Pcurrent(OneAtm),
     m_IionicMolality(0.0),
     m_maxIionicStrength(30.0),
     m_useHelgesonFixedForm(false),
@@ -69,18 +80,19 @@ namespace Cantera {
     m_densWaterSS(1000.),
     m_waterProps(0)
   {
+    m_useTmpRefStateStorage = true;
+    m_useTmpStandardStateStorage = false;
     m_npActCoeff.resize(3);
     m_npActCoeff[0] = 0.1127;
     m_npActCoeff[1] = -0.01049;
     m_npActCoeff[2] = 1.545E-3;
-    constructPhaseFile(inputFile, id);
+    constructPhaseFile(inputFile, id); 
   }
 
-  DebyeHuckel::DebyeHuckel(XML_Node& phaseRoot, string id) :
+  DebyeHuckel::DebyeHuckel(XML_Node& phaseRoot, std::string id) :
     MolalityVPSSTP(),
     m_formDH(DHFORM_DILUTE_LIMIT),
     m_formGC(2),
-    m_Pcurrent(OneAtm),
     m_IionicMolality(0.0),
     m_maxIionicStrength(3.0),
     m_useHelgesonFixedForm(false),
@@ -92,21 +104,35 @@ namespace Cantera {
     m_densWaterSS(1000.),
     m_waterProps(0)
   {
+    m_useTmpRefStateStorage = true;
+    m_useTmpStandardStateStorage = false;
     m_npActCoeff.resize(3);
     m_npActCoeff[0] = 0.1127;
     m_npActCoeff[1] = -0.01049;
     m_npActCoeff[2] = 1.545E-3;
-    constructPhaseXML(phaseRoot, id);
+    constructPhaseXML(phaseRoot, id);   
   }
  
-  /**
+  /*
    * Copy Constructor:
    *
    *  Note this stuff will not work until the underlying phase
    *  has a working copy constructor
    */
   DebyeHuckel::DebyeHuckel(const DebyeHuckel &b) :
-    MolalityVPSSTP(b)
+    MolalityVPSSTP(),
+    m_formDH(DHFORM_DILUTE_LIMIT),
+    m_formGC(2),
+    m_IionicMolality(0.0),
+    m_maxIionicStrength(30.0),
+    m_useHelgesonFixedForm(false),
+    m_IionicMolalityStoich(0.0),
+    m_form_A_Debye(A_DEBYE_CONST),
+    m_A_Debye(1.172576),   // units = sqrt(kg/gmol)
+    m_B_Debye(3.28640E9),   // units = sqrt(kg/gmol) / m
+    m_waterSS(0),
+    m_densWaterSS(1000.),
+    m_waterProps(0)
   {
     /*
      * Use the assignment operator to do the brunt
@@ -115,7 +141,7 @@ namespace Cantera {
     *this = b;
   }
 
-  /**
+  /*
    * operator=()
    *
    *  Note this stuff will not work until the underlying phase
@@ -127,7 +153,6 @@ namespace Cantera {
       MolalityVPSSTP::operator=(b);
       m_formDH              = b.m_formDH;
       m_formGC              = b.m_formGC;
-      m_Pcurrent            = b.m_Pcurrent;
       m_Aionic              = b.m_Aionic;
       m_npActCoeff          = b.m_npActCoeff;
       m_IionicMolality      = b.m_IionicMolality;
@@ -167,7 +192,7 @@ namespace Cantera {
   }
 
 
-  /**
+  /*
    * ~DebyeHuckel():   (virtual)
    *
    *   Destructor for DebyeHuckel. Release objects that
@@ -182,19 +207,19 @@ namespace Cantera {
     } 
   }
 
-  /**
+  /*
    *  duplMyselfAsThermoPhase():
    *
    *  This routine operates at the ThermoPhase level to 
    *  duplicate the current object. It uses the copy constructor
    *  defined above.
    */
-  ThermoPhase* DebyeHuckel::duplMyselfAsThermoPhase() {
+  ThermoPhase* DebyeHuckel::duplMyselfAsThermoPhase() const {
     DebyeHuckel* mtp = new DebyeHuckel(*this);
     return (ThermoPhase *) mtp;
   }
 
-  /** 
+  /*
    * Equation of state type flag. The base class returns
    * zero. Subclasses should define this to return a unique
    * non-zero value. Constants defined for this purpose are
@@ -222,7 +247,7 @@ namespace Cantera {
   //
   // -------- Molar Thermodynamic Properties of the Solution --------------- 
   //
-  /**
+  /*
    * Molar enthalpy of the solution. Units: J/kmol.
    */
   doublereal DebyeHuckel::enthalpy_mole() const {
@@ -230,7 +255,7 @@ namespace Cantera {
     return mean_X(DATA_PTR(m_tmpV));
   }
 
-  /**
+  /*
    * Molar internal energy of the solution. Units: J/kmol.
    *
    * This is calculated from the soln enthalpy and then
@@ -244,7 +269,7 @@ namespace Cantera {
     return uu;
   }
 
-  /**
+  /*
    *  Molar soln entropy at constant pressure. Units: J/kmol/K. 
    *
    *  This is calculated from the partial molar entropies.
@@ -254,13 +279,13 @@ namespace Cantera {
     return mean_X(DATA_PTR(m_tmpV));
   }
 
-  /// Molar Gibbs function. Units: J/kmol. 
+  // Molar Gibbs function. Units: J/kmol. 
   doublereal DebyeHuckel::gibbs_mole() const {
     getChemPotentials(DATA_PTR(m_tmpV));
     return mean_X(DATA_PTR(m_tmpV));
   }
 
-  /**
+  /*
    * Molar heat capacity at constant pressure. Units: J/kmol/K. 
    *
    * Returns the solution heat capacition at constant pressure.
@@ -284,7 +309,7 @@ namespace Cantera {
   // ------- Mechanical Equation of State Properties ------------------------
   //
 
-  /**
+  /*
    * Pressure. Units: Pa.
    * For this incompressible system, we return the internally storred
    * independent value of the pressure.
@@ -293,22 +318,29 @@ namespace Cantera {
     return m_Pcurrent;
   }
 
-  /**
+  /*
    * Set the pressure at constant temperature. Units: Pa.
    * This method sets a constant within the object.
    * The mass density is not a function of pressure.
    */
   void DebyeHuckel::setPressure(doublereal p) {
+
 #ifdef DEBUG_MODE
     //printf("setPressure: %g\n", p);
 #endif
-    double temp = temperature();
-    if (m_waterSS) {
-      /*
-       * Call the water SS and set it's internal state
-       */
-      m_waterSS->setTempPressure(temp, p);
+    /*
+     * Store the current pressure
+     */
+    m_Pcurrent = p;
 
+    /*
+     * update the standard state thermo
+     * -> This involves calling the water function and setting the pressure
+     */
+    _updateStandardStateThermo();
+
+    if (m_waterSS) {
+   
       /*
        * Store the internal density of the water SS.
        * Note, we would have to do this for all other
@@ -316,10 +348,6 @@ namespace Cantera {
        */
       m_densWaterSS = m_waterSS->density();
     }
-    /*
-     * Store the current pressure
-     */
-    m_Pcurrent = p;
     /*
      * Calculate all of the other standard volumes
      * -> note these are constant for now
@@ -350,13 +378,13 @@ namespace Cantera {
 
     /*
      * Now, update the State class with the results. This
-     * store the denisty.
+     * stores the density.
      */
     State::setDensity(dd);
 
   }
 
-  /**
+  /*
    * The isothermal compressibility. Units: 1/Pa.
    * The isothermal compressibility is defined as
    * \f[
@@ -372,7 +400,7 @@ namespace Cantera {
     return 0.0;
   }
 
-  /**
+  /*
    * The thermal expansion coefficient. Units: 1/K.
    * The thermal expansion coefficient is defined as
    *
@@ -389,7 +417,7 @@ namespace Cantera {
     return 0.0;
   }
     
-  /**
+  /*
    * Overwritten setDensity() function is necessary because the
    * density is not an indendent variable.
    *
@@ -413,7 +441,7 @@ namespace Cantera {
     }
   }
 
-  /**
+  /*
    * Overwritten setMolarDensity() function is necessary because the
    * density is not an indendent variable.
    *
@@ -430,15 +458,13 @@ namespace Cantera {
     }
   }
 
-  /**
+  /*
    * Overwritten setTemperature(double) from State.h. This
    * function sets the temperature, and makes sure that
    * the value propagates to underlying objects.
    */
-  void DebyeHuckel::setTemperature(double temp) {
-    if (m_waterSS) {
-      m_waterSS->setTemperature(temp);
-    }
+  void DebyeHuckel::setTemperature(doublereal temp) {
+    _updateStandardStateThermo();
     State::setTemperature(temp);
   }
 
@@ -447,7 +473,7 @@ namespace Cantera {
   // ------- Activities and Activity Concentrations
   //
 
-  /**
+  /*
    * This method returns an array of generalized concentrations
    * \f$ C_k\f$ that are defined such that 
    * \f$ a_k = C_k / C^0_k, \f$ where \f$ C^0_k \f$ 
@@ -468,7 +494,7 @@ namespace Cantera {
     }
   }
 
-  /**
+  /*
    * The standard concentration \f$ C^0_k \f$ used to normalize
    * the generalized concentration. In many cases, this quantity
    * will be the same for all species in a phase - for example,
@@ -490,7 +516,7 @@ namespace Cantera {
     return 1.0 / mvSolvent;
   }
     
-  /**
+  /*
    * Returns the natural logarithm of the standard 
    * concentration of the kth species
    */
@@ -499,7 +525,7 @@ namespace Cantera {
     return log(c_solvent);
   }
     
-  /**
+  /*
    * Returns the units of the standard and general concentrations
    * Note they have the same units, as their divisor is 
    * defined to be equal to the activity of the kth species
@@ -521,7 +547,7 @@ namespace Cantera {
    *  uA[4] = Temperature units - default = 0;
    *  uA[5] = time units - default = 0
    */
-  void DebyeHuckel::getUnitsStandardConc(double *uA, int k, int sizeUA) {
+  void DebyeHuckel::getUnitsStandardConc(double *uA, int k, int sizeUA) const {
     for (int i = 0; i < sizeUA; i++) {
       if (i == 0) uA[0] = 1.0;
       if (i == 1) uA[1] = -nDim();
@@ -533,7 +559,7 @@ namespace Cantera {
   }    
 
 
-  /**
+  /*
    * Get the array of non-dimensional activities at
    * the current solution temperature, pressure, and
    * solution concentration.
@@ -541,6 +567,7 @@ namespace Cantera {
    *
    */
   void DebyeHuckel::getActivities(doublereal* ac) const {
+    _updateStandardStateThermo();
     /*
      * Update the molality array, m_molalities()
      *   This requires an update due to mole fractions
@@ -556,7 +583,7 @@ namespace Cantera {
       exp(m_lnActCoeffMolal[m_indexSolvent]) * xmolSolvent;
   }
 
-  /**
+  /*
    * getMolalityActivityCoefficients()             (virtual, const)
    *
    * Get the array of non-dimensional Molality based
@@ -569,7 +596,7 @@ namespace Cantera {
    */
   void DebyeHuckel::
   getMolalityActivityCoefficients(doublereal* acMolality) const {
-
+    _updateStandardStateThermo();
     A_Debye_TP(-1.0, -1.0);
     s_update_lnMolalityActCoeff();
     copy(m_lnActCoeffMolal.begin(), m_lnActCoeffMolal.end(), acMolality);
@@ -581,7 +608,7 @@ namespace Cantera {
   //
   // ------ Partial Molar Properties of the Solution -----------------
   //
-  /**
+  /*
    * Get the species chemical potentials. Units: J/kmol.
    *
    * This function returns a vector of chemical potentials of the 
@@ -628,7 +655,7 @@ namespace Cantera {
   }
 
 
-  /**
+  /*
    * Returns an array of partial molar enthalpies for the species
    * in the mixture.
    * Units (J/kmol)
@@ -673,7 +700,7 @@ namespace Cantera {
     }
   }
 
-  /**
+  /*
    *
    * getPartialMolarEntropies()        (virtual, const)
    *
@@ -751,7 +778,7 @@ namespace Cantera {
     }
   }
 
-  /**
+  /*
    * getPartialMolarVolumes()                (virtual, const)
    *
    * returns an array of partial molar volumes of the species
@@ -833,7 +860,7 @@ namespace Cantera {
    *           in the Solution ------------------
    */
 
-  /**
+  /*
    *  getStandardChemPotentials()      (virtual, const)
    *
    *
@@ -850,6 +877,7 @@ namespace Cantera {
    *  units = J / kmol
    */
   void DebyeHuckel::getStandardChemPotentials(doublereal* mu) const {
+    _updateStandardStateThermo();
     getGibbs_ref(mu);
     doublereal pref;
     doublereal delta_p;
@@ -863,7 +891,7 @@ namespace Cantera {
     }
   }
     
-  /**
+  /*
    * Get the nondimensional gibbs function for the species
    * standard states at the current T and P of the solution.
    *
@@ -879,6 +907,7 @@ namespace Cantera {
    *           standard state gibbs function for species k. 
    */
   void DebyeHuckel::getGibbs_RT(doublereal* grt) const {
+    _updateStandardStateThermo();
     getPureGibbs(grt);
     doublereal invRT = 1.0 / _RT();
     for (int k = 0; k < m_kk; k++) {
@@ -886,7 +915,7 @@ namespace Cantera {
     }
   }
     
-  /**
+  /*
    *
    * getPureGibbs()
    *
@@ -905,10 +934,7 @@ namespace Cantera {
     getStandardChemPotentials(gpure);
   }
 
-  /**
-   *
-   * getEnthalpy_RT()        (virtual, const)
-   *
+  /*
    * Get the array of nondimensional Enthalpy functions for the ss
    * species at the current <I>T</I> and <I>P</I> of the solution.
    * We assume an incompressible constant partial molar
@@ -922,6 +948,7 @@ namespace Cantera {
    */
   void DebyeHuckel::
   getEnthalpy_RT(doublereal* hrt) const {
+    _updateStandardStateThermo();
     getEnthalpy_RT_ref(hrt);
     doublereal pref;
     doublereal delta_p;
@@ -937,9 +964,7 @@ namespace Cantera {
     }
   }
     
-  /**
-   *  getEntropy_R()         (virtual, const)
-   * 
+  /*
    * Get the nondimensional Entropies for the species
    * standard states at the current T and P of the solution.
    *
@@ -947,12 +972,16 @@ namespace Cantera {
    * due to the zero volume expansivity:
    * i.e., (dS/dp)_T = (dV/dT)_P = 0.0
    *
+   * The solvent water entropy is obtained from a pure water
+   * equation of state model.
+   *
    * @param sr Vector of length m_kk, which on return sr[k]
    *           will contain the nondimensional
    *           standard state entropy of species k.
    */
   void DebyeHuckel::
   getEntropy_R(doublereal* sr) const {
+    _updateStandardStateThermo();
     getEntropy_R_ref(sr);
     if (m_waterSS) {
       sr[0] = m_waterSS->entropy_mole();
@@ -960,7 +989,7 @@ namespace Cantera {
     }
   }
 
-  /**
+  /*
    * Get the nondimensional heat capacity at constant pressure
    * function for the species
    * standard states at the current T and P of the solution.
@@ -971,11 +1000,15 @@ namespace Cantera {
    * \f$ Cp^{ref}_k(T)\f$ is the constant pressure heat capacity
    * of species <I>k</I> at the reference pressure, \f$p_{ref}\f$.
    *
+   * The solvent water heat capacity is obtained from a pure water
+   * equation of state model.
+   *
    * @param cpr Vector of length m_kk, which on return cpr[k]
    *           will contain the nondimensional 
    *           constant pressure heat capacity for species k. 
    */
   void DebyeHuckel::getCp_R(doublereal* cpr) const {
+    _updateStandardStateThermo();
     getCp_R_ref(cpr);
     if (m_waterSS) {
       cpr[0] = m_waterSS->cp_mole();
@@ -983,13 +1016,14 @@ namespace Cantera {
     }
   }
     
-  /**
+  /*
    * Get the molar volumes of each species in their standard
    * states at the current
    * <I>T</I> and <I>P</I> of the solution.
    * units = m^3 / kmol
    */
   void DebyeHuckel::getStandardVolumes(doublereal *vol) const {
+    _updateStandardStateThermo();
     copy(m_speciesSize.begin(),
 	 m_speciesSize.end(), vol);
     if (m_waterSS) {
@@ -997,7 +1031,113 @@ namespace Cantera {
       vol[0] = molecularWeight(0)/dd;
     }
   }
+  
+
+
+  void DebyeHuckel::getGibbs_RT_ref(doublereal *grt) const {
+    /*
+     * Call the function that makes sure the local copy of
+     * the species reference thermo functions are up to date
+     * for the current temperature.
+     */
+    _updateRefStateThermo();
+    /*
+     * Copy the gibbs function into return vector.
+     */
+    copy(m_g0_RT.begin(), m_g0_RT.end(), grt);
+   
+    if (m_waterSS) {
+      double pnow = m_Pcurrent;
+      double tnow = temperature();
+      m_waterSS->setTempPressure(tnow, m_p0);
+      double mu0 = m_waterSS->gibbs_mole();
+      m_waterSS->setTempPressure(tnow, pnow);
+      double rt = _RT();
+      grt[0] = mu0 / rt;
+    }
     
+  }
+
+  void DebyeHuckel::getEnthalpy_RT_ref(doublereal *hrt) const {
+    /*
+     * Call the function that makes sure the local copy of
+     * the species reference thermo functions are up to date
+     * for the current temperature.
+     */
+    _updateRefStateThermo();
+    /*
+     * Copy the gibbs function into return vector.
+     */
+    copy(m_h0_RT.begin(), m_h0_RT.end(), hrt);
+   
+    if (m_waterSS) {
+      double pnow = m_Pcurrent;
+      double tnow = temperature();
+      m_waterSS->setTempPressure(tnow, m_p0);
+      double h0 = m_waterSS->enthalpy_mole();
+      m_waterSS->setTempPressure(tnow, pnow);
+      double rt = _RT();
+      hrt[0] = h0 / rt;
+    }
+  }
+
+  void DebyeHuckel::getEntropy_R_ref(doublereal *sr) const {
+    /*
+     * Call the function that makes sure the local copy of
+     * the species reference thermo functions are up to date
+     * for the current temperature.
+     */
+    _updateRefStateThermo();
+    /*
+     * Copy the gibbs function into return vector.
+     */
+    copy(m_s0_R.begin(), m_s0_R.end(), sr);
+   
+    if (m_waterSS) {
+      double pnow = m_Pcurrent;
+      double tnow = temperature();
+      m_waterSS->setTempPressure(tnow, m_p0);
+      double s0 = m_waterSS->entropy_mole();
+      m_waterSS->setTempPressure(tnow, pnow);
+      sr[0] = s0 / GasConstant;
+    }
+  }
+
+  void DebyeHuckel::getCp_R_ref(doublereal *cpr) const {
+    /*
+     * Call the function that makes sure the local copy of
+     * the species reference thermo functions are up to date
+     * for the current temperature.
+     */
+    _updateRefStateThermo();
+    copy(m_cp0_R.begin(), m_cp0_R.end(), cpr); 
+    if (m_waterSS) {
+      double pnow = m_Pcurrent;
+      double tnow = temperature();
+      m_waterSS->setTempPressure(tnow, m_p0);
+      double cp0 = m_waterSS->cp_mole();
+      m_waterSS->setTempPressure(tnow, pnow);
+      cpr[0] = cp0 / GasConstant;
+    }
+  }
+
+  /*
+   * Get the molar volumes of each species in their reference
+   * states at the current
+   * <I>T</I> and <I>P</I> of the solution.
+   * units = m^3 / kmol
+   */
+  void DebyeHuckel::getStandardVolumes_ref(doublereal *vol) const {
+    double psave = m_Pcurrent;
+    _updateStandardStateThermo(m_p0);
+    copy(m_speciesSize.begin(),
+	 m_speciesSize.end(), vol);
+    if (m_waterSS) {
+      double dd = m_waterSS->density();
+      vol[0] = molecularWeight(0)/dd;
+    }
+    _updateStandardStateThermo(psave);
+  }
 
   /*
    * ------ Thermodynamic Values for the Species Reference States ---
@@ -1009,7 +1149,7 @@ namespace Cantera {
    *  -------------- Utilities -------------------------------
    */
 
-  /**
+  /*
    *  Initialization routine for a DebyeHuckel phase.
    *
    * This is a virtual routine. This routine will call initThermo()
@@ -1020,7 +1160,7 @@ namespace Cantera {
     initLengths();
   }
 
-  /**
+  /*
    * constructPhaseFile
    *
    * Initialization of a Debye-Huckel phase using an
@@ -1036,13 +1176,13 @@ namespace Cantera {
    *            phase. If none is given, the first XML
    *            phase element will be used.
    */
-  void DebyeHuckel::constructPhaseFile(string inputFile, string id) {
+  void DebyeHuckel::constructPhaseFile(std::string inputFile, std::string id) {
 
     if (inputFile.size() == 0) {
       throw CanteraError("DebyeHuckel::initThermo",
 			 "input file is null");
     }
-    string path = findInputFile(inputFile);
+    std::string path = findInputFile(inputFile);
     ifstream fin(path.c_str());
     if (!fin) {
       throw CanteraError("DebyeHuckel::initThermo","could not open "
@@ -1072,7 +1212,7 @@ namespace Cantera {
    * utility function to assign an integer value from a string
    * for the ElectrolyteSpeciesType field.
    */
-  static int interp_est(string estString) {
+  static int interp_est(std::string estString) {
     const char *cc = estString.c_str();
     if (!strcasecmp(cc, "solvent")) {
       return cEST_solvent;
@@ -1094,7 +1234,7 @@ namespace Cantera {
     return rval;
   }
    	
-  /**
+  /*
    *   Import and initialize a DebyeHuckel phase 
    *   specification in an XML tree into the current object.
    *   Here we read an XML description of the phase.
@@ -1118,10 +1258,10 @@ namespace Cantera {
    *             to see if phaseNode is pointing to the phase
    *             with the correct id. 
    */
-  void DebyeHuckel::constructPhaseXML(XML_Node& phaseNode, string id) {
+  void DebyeHuckel::constructPhaseXML(XML_Node& phaseNode, std::string id) {
    
     if (id.size() > 0) {
-      string idp = phaseNode.id();
+      std::string idp = phaseNode.id();
       if (idp != id) {
 	throw CanteraError("DebyeHuckel::constructPhaseXML", 
 			   "phasenode and Id are incompatible");
@@ -1143,7 +1283,7 @@ namespace Cantera {
     if (thermoNode.hasChild("standardConc")) {
       XML_Node& scNode = thermoNode.child("standardConc");
       m_formGC = 2;
-      string formString = scNode.attrib("model");
+      std::string formString = scNode.attrib("model");
       if (formString != "") {
 	if (formString == "unity") {
 	  m_formGC = 0;
@@ -1165,10 +1305,10 @@ namespace Cantera {
      * Get the Name of the Solvent:
      *      <solvent> solventName </solvent>
      */
-    string solventName = "";
+    std::string solventName = "";
     if (thermoNode.hasChild("solvent")) {
       XML_Node& scNode = thermoNode.child("solvent");
-      vector<string> nameSolventa;
+      vector<std::string> nameSolventa;
       getStringArray(scNode, nameSolventa);
       int nsp = static_cast<int>(nameSolventa.size());
       if (nsp != 1) {
@@ -1185,7 +1325,7 @@ namespace Cantera {
     if (thermoNode.hasChild("activityCoefficients")) {
       XML_Node& scNode = thermoNode.child("activityCoefficients");
       m_formDH = DHFORM_DILUTE_LIMIT;
-      string formString = scNode.attrib("model");
+      std::string formString = scNode.attrib("model");
       if (formString != "") {
 	if        (formString == "Dilute_limit") {
 	  m_formDH = DHFORM_DILUTE_LIMIT;
@@ -1223,7 +1363,7 @@ namespace Cantera {
 
   }
 
-  /**
+  /*
    * Process the XML file after species are set up.
    *
    *  This gets called from importPhase(). It processes the XML file
@@ -1242,9 +1382,9 @@ namespace Cantera {
    *             with the correct id.
    */
   void DebyeHuckel::
-  initThermoXML(XML_Node& phaseNode, string id) {
+  initThermoXML(XML_Node& phaseNode, std::string id) {
     int k;
-    string stemp;
+    std::string stemp;
     /*
      * Find the Thermo XML node 
      */
@@ -1258,7 +1398,7 @@ namespace Cantera {
      * Initialize all of the lengths of arrays in the object
      * now that we know what species are in the phase.
      */
-    initLengths();
+    initThermo();
 
     /*
      * Reconcile the solvent name and index.
@@ -1267,10 +1407,10 @@ namespace Cantera {
      * Get the Name of the Solvent:
      *      <solvent> solventName </solvent>
      */
-    string solventName = "";
+    std::string solventName = "";
     if (thermoNode.hasChild("solvent")) {
       XML_Node& scNode = thermoNode.child("solvent");
-      vector<string> nameSolventa;
+      vector<std::string> nameSolventa;
       getStringArray(scNode, nameSolventa);
       int nsp = static_cast<int>(nameSolventa.size());
       if (nsp != 1) {
@@ -1280,7 +1420,7 @@ namespace Cantera {
       solventName = nameSolventa[0];
     }
     for (k = 0; k < m_kk; k++) {
-      string sname = speciesName(k);
+      std::string sname = speciesName(k);
       if (solventName == sname) {
 	m_indexSolvent = k;
 	break;
@@ -1321,13 +1461,13 @@ namespace Cantera {
 			 "Species " + sss[k] + 
 			   " standardState XML block  not found");
       }
-      string modelStringa = ss->attrib("model");
+      std::string modelStringa = ss->attrib("model");
       if (modelStringa == "") {
 	throw CanteraError("DebyeHuckel::initThermoXML",
 			   "Species " + sss[k] + 
 			   " standardState XML block model attribute not found");
       }
-      string modelString = lowercase(modelStringa);
+      std::string modelString = lowercase(modelStringa);
 
       if (k == 0) {
 	if (modelString == "wateriapws" || modelString == "real_water" ||
@@ -1479,15 +1619,15 @@ namespace Cantera {
       if (acNode.hasChild("ionicRadius")) {
 	XML_Node& irNode = acNode.child("ionicRadius");
 
-	string Aunits = "";
+	std::string Aunits = "";
 	double Afactor = 1.0;
 	if (irNode.hasAttrib("units")) {
-	  string Aunits = irNode.attrib("units");
+	  std::string Aunits = irNode.attrib("units");
 	  Afactor = toSI(Aunits); 
 	}
 
 	if (irNode.hasAttrib("default")) {
-	  string ads = irNode.attrib("default");
+	  std::string ads = irNode.attrib("default");
 	  double ad = fpValue(ads);
 	  for (int k = 0; k < m_kk; k++) {
 	    m_Aionic[k] = ad * Afactor;
@@ -1521,7 +1661,7 @@ namespace Cantera {
 	   * lack of agreement (HKM -> may be changed in the
 	   * future).
 	   */
-	  map<string,string>::const_iterator _b = m.begin();
+	  map<std::string,std::string>::const_iterator _b = m.begin();
 	  for (; _b != m.end(); ++_b) {
 	    int kk = speciesIndex(_b->first);
 	    if (kk < 0) {
@@ -1571,7 +1711,7 @@ namespace Cantera {
        */
       const XML_Node *phaseSpecies = speciesData();
       if (phaseSpecies) {
-	string kname, jname;
+	std::string kname, jname;
 	vector<XML_Node*> xspecies;
 	phaseSpecies->getChildren("species",xspecies);
 	int jj = xspecies.size();
@@ -1602,9 +1742,9 @@ namespace Cantera {
 	if (acNodePtr->hasChild("stoichIsMods")) {
 	  XML_Node& sIsNode = acNodePtr->child("stoichIsMods");
 
-	  map<string, string> msIs;
+	  map<std::string, std::string> msIs;
 	  getMap(sIsNode, msIs);
-	  map<string,string>::const_iterator _b = msIs.begin();
+	  map<std::string,std::string>::const_iterator _b = msIs.begin();
 	  for (; _b != msIs.end(); ++_b) {
 	    int kk = speciesIndex(_b->first);
 	    if (kk < 0) {
@@ -1650,13 +1790,13 @@ namespace Cantera {
     const XML_Node *phaseSpecies = speciesData();
     const XML_Node *spPtr = 0;
     if (phaseSpecies) {
-      string kname;
+      std::string kname;
       for (k = 0; k < m_kk; k++) {
 	kname = speciesName(k);
 	spPtr = speciesXML_Node(kname, phaseSpecies);
 	if (!spPtr) {
 	  if (spPtr->hasChild("electrolyteSpeciesType")) {
-	    string est = getString(*spPtr, "electrolyteSpeciesType");
+	    std::string est = getString(*spPtr, "electrolyteSpeciesType");
 	    if ((m_electrolyteSpeciesType[k] = interp_est(est)) == -1) {
 	      throw CanteraError("DebyeHuckel:initThermoXML",
 				 "Bad electrolyte type: " + est);
@@ -1671,14 +1811,14 @@ namespace Cantera {
     if (acNodePtr) {
       if (acNodePtr->hasChild("electrolyteSpeciesType")) {
 	XML_Node& ESTNode = acNodePtr->child("electrolyteSpeciesType");
-	map<string, string> msEST;
+	map<std::string, std::string> msEST;
 	getMap(ESTNode, msEST);
-	map<string,string>::const_iterator _b = msEST.begin();
+	map<std::string,std::string>::const_iterator _b = msEST.begin();
 	for (; _b != msEST.end(); ++_b) {
 	  int kk = speciesIndex(_b->first);
 	  if (kk < 0) {
 	  } else {
-	    string est = _b->second;
+	    std::string est = _b->second;
 	    if ((m_electrolyteSpeciesType[kk] = interp_est(est))  == -1) {
 	      throw CanteraError("DebyeHuckel:initThermoXML",
 				 "Bad electrolyte type: " + est);
@@ -1686,6 +1826,11 @@ namespace Cantera {
 	  }
 	}
       }
+    }
+
+    
+    if (m_waterSS) {
+      m_useTmpRefStateStorage = false;
     }
 
     /*
@@ -1698,7 +1843,7 @@ namespace Cantera {
 
   }
 
-  /**
+  /*
    * @internal
    * Set equation of state parameters. The number and meaning of
    * these depends on the subclass. 
@@ -1708,9 +1853,11 @@ namespace Cantera {
    */
   void DebyeHuckel::setParameters(int n, doublereal* c) {
   }
-  void DebyeHuckel::getParameters(int &n, doublereal * const c) {
+
+  void DebyeHuckel::getParameters(int &n, doublereal * const c) const {
   }
-  /**
+
+  /*
    * Set equation of state parameter values from XML
    * entries. This method is called by function importPhase in
    * file importCTML.cpp when processing a phase definition in
@@ -1727,17 +1874,17 @@ namespace Cantera {
   void DebyeHuckel::setParametersFromXML(const XML_Node& eosdata) {
   }
     
-  /**
+  /*
    * Report the molar volume of species k
    *
    * units - \f$ m^3 kmol^-1 \f$
    */
-  double DebyeHuckel::speciesMolarVolume(int k) const {
-    return m_speciesSize[k];
-  }
+  // double DebyeHuckel::speciesMolarVolume(int k) const {
+  // return m_speciesSize[k];
+  //}
 
 
-  /**
+  /*
    * A_Debye_TP()                              (virtual)
    *
    *   Returns the A_Debye parameter as a function of temperature
@@ -1773,7 +1920,7 @@ namespace Cantera {
     return A;
   }
 
-  /**
+  /*
    * dA_DebyedT_TP()                              (virtual)
    *
    *  Returns the derivative of the A_Debye parameter with
@@ -1799,7 +1946,6 @@ namespace Cantera {
       break;
     case A_DEBYE_WATER:
       dAdT = m_waterProps->ADebye(T, P, 1);
-      //dAdT = WaterProps::ADebye(T, P, 1);
       break;
     default:
       printf("shouldn't be here\n");
@@ -1808,7 +1954,7 @@ namespace Cantera {
     return dAdT;
   }
 
-  /**
+  /*
    * d2A_DebyedT2_TP()                              (virtual)
    *
    *  Returns the 2nd derivative of the A_Debye parameter with
@@ -1842,7 +1988,7 @@ namespace Cantera {
     return d2AdT2;
   }
 
-  /**
+  /*
    * dA_DebyedP_TP()                              (virtual)
    *
    *  Returns the derivative of the A_Debye parameter with
@@ -1891,18 +2037,18 @@ namespace Cantera {
    * ------------ Private and Restricted Functions ------------------
    */
 
-  /**
+  /*
    * Bail out of functions with an error exit if they are not
    * implemented.
    */
-  doublereal DebyeHuckel::err(string msg) const {
+  doublereal DebyeHuckel::err(std::string msg) const {
     throw CanteraError("DebyeHuckel",
 		       "Unfinished func called: " + msg );
     return 0.0;
   }
 
 
-  /**
+  /*
    * initLengths():
    *
    * This internal function adjusts the lengths of arrays based on
@@ -1910,7 +2056,6 @@ namespace Cantera {
    */
   void DebyeHuckel::initLengths() {
     m_kk = nSpecies();
-    MolalityVPSSTP::initThermo();
  
     /*
      * Obtain the limits of the temperature from the species
@@ -1935,7 +2080,7 @@ namespace Cantera {
     }
   }
 
-  /**
+  /*
    * nonpolarActCoeff()                    (private)
    *
    *   Static function that implements the non-polar species
@@ -1979,7 +2124,7 @@ namespace Cantera {
   }
 
 
-  /**
+  /*
    *  _activityWaterHelgesonFixedForm()          
    *
    *      Formula for the log of the activity of the water
@@ -2007,7 +2152,7 @@ namespace Cantera {
     return lac;
   }
 
-  /**
+  /*
    * s_update_lnMolalityActCoeff():
    *
    *   Using internally stored values, this function calculates
@@ -2065,7 +2210,7 @@ namespace Cantera {
       m_IionicMolalityStoich = m_maxIionicStrength;
     }
 
-    /**
+    /*
      * Possibly update the storred value of the
      * Debye-Huckel parameter A_Debye
      * This parameter appears on the top of the activity
@@ -2277,7 +2422,7 @@ namespace Cantera {
       lnActivitySolvent - log(xmolSolvent);
   }
 
-  /**
+  /*
    * s_update_dMolalityActCoeff_dT()         (private, const )
    *
    *   Using internally stored values, this function calculates
@@ -2292,6 +2437,7 @@ namespace Cantera {
   void DebyeHuckel::s_update_dlnMolalityActCoeff_dT() const {
     double z_k, coeff, tmp, y, yp1, sigma, tmpLn;
     int k;
+    // First we store dAdT explicitly here
     double dAdT =  dA_DebyedT_TP();
     if (dAdT == 0.0) {
       for (k = 0; k < m_kk; k++) {
@@ -2310,13 +2456,17 @@ namespace Cantera {
     double sqrtI  = sqrt(m_IionicMolality);
     double numdAdTTmp = dAdT * sqrtI;
     double denomTmp = m_B_Debye * sqrtI;
+    double d_lnActivitySolvent_dT = 0;
 
     switch (m_formDH) {
     case DHFORM_DILUTE_LIMIT:
-      for (int k = 0; k < m_kk; k++) {
+      for (int k = 1; k < m_kk; k++) {
 	m_dlnActCoeffMolaldT[k] = 
 	  m_lnActCoeffMolal[k] * dAdT / m_A_Debye;
       }
+      d_lnActivitySolvent_dT = 	2.0 / 3.0 * dAdT * m_Mnaught *
+	m_IionicMolality * sqrt(m_IionicMolality);
+      m_dlnActCoeffMolaldT[m_indexSolvent] =  d_lnActivitySolvent_dT;
       break;
 
     case DHFORM_BDOT_AK:
@@ -2357,7 +2507,8 @@ namespace Cantera {
 	sigma = 0.0;
       }
       m_dlnActCoeffMolaldT[m_indexSolvent] =
-	2.0 /3.0 * dAdT * m_Mnaught * m_IionicMolality * sqrtI * sigma;
+	2.0 /3.0 * dAdT * m_Mnaught * 
+	m_IionicMolality * sqrtI * sigma;
       break;
 
     case DHFORM_BETAIJ:
@@ -2376,8 +2527,7 @@ namespace Cantera {
       } else {
 	sigma = 0.0;
       }
-      m_dlnActCoeffMolaldT[m_indexSolvent] =  
-	(xmolSolvent - 1.0)/xmolSolvent + 
+      m_dlnActCoeffMolaldT[m_indexSolvent] =
 	2.0 /3.0 * dAdT * m_Mnaught * 
 	m_IionicMolality * sqrtI * sigma;
       break;
@@ -2397,8 +2547,7 @@ namespace Cantera {
       }
 
       sigma = 1.0 / ( 1.0 + denomTmp);
-      m_dlnActCoeffMolaldT[m_indexSolvent] =  
-	(xmolSolvent - 1.0)/xmolSolvent + 
+      m_dlnActCoeffMolaldT[m_indexSolvent] =
 	2.0 /3.0 * dAdT * m_Mnaught * 
 	m_IionicMolality * sqrtI * sigma;
       break;
@@ -2408,9 +2557,11 @@ namespace Cantera {
       exit(-1);
       break;
     }
+
+ 
   }
 
-  /**
+  /*
    * s_update_d2lnMolalityActCoeff_dT2()         (private, const )
    *
    *   Using internally stored values, this function calculates
@@ -2423,7 +2574,6 @@ namespace Cantera {
    *   solvent activity coefficient is on the molality
    *   scale. It's derivatives are too.
    */
-
   void DebyeHuckel::s_update_d2lnMolalityActCoeff_dT2() const {
     double z_k, coeff, tmp, y, yp1, sigma, tmpLn;
     int k;
@@ -2514,8 +2664,7 @@ namespace Cantera {
       } else {
 	sigma = 0.0;
       } 
-      m_d2lnActCoeffMolaldT2[m_indexSolvent] =  
-	(xmolSolvent - 1.0)/xmolSolvent + 
+      m_d2lnActCoeffMolaldT2[m_indexSolvent] =
 	2.0 /3.0 * d2AdT2 * m_Mnaught * 
 	m_IionicMolality * sqrtI * sigma;
       break;
@@ -2526,17 +2675,16 @@ namespace Cantera {
       for (int k = 0; k < m_kk; k++) {
 	if (k != m_indexSolvent) {
 	  z_k = m_speciesCharge[k];
-	  m_dlnActCoeffMolaldT[k] = 
+	  m_d2lnActCoeffMolaldT2[k] = 
 	    - z_k * z_k * numd2AdT2Tmp / (1.0 + denomTmp)
 	    - 2.0 * z_k * z_k * d2AdT2 * tmpLn 
 	    / (m_B_Debye * m_Aionic[0]);
-	  m_dlnActCoeffMolaldT[k] /= 3.0; 
+	  m_d2lnActCoeffMolaldT2[k] /= 3.0; 
 	}
       }
 
       sigma = 1.0 / ( 1.0 + denomTmp);
-      m_dlnActCoeffMolaldT[m_indexSolvent] =  
-	(xmolSolvent - 1.0)/xmolSolvent + 
+      m_d2lnActCoeffMolaldT2[m_indexSolvent] =
 	2.0 /3.0 * d2AdT2 * m_Mnaught * 
 	m_IionicMolality * sqrtI * sigma;
       break;
@@ -2548,7 +2696,7 @@ namespace Cantera {
     }
   }
 
-  /**
+  /*
    * s_update_dlnMolalityActCoeff_dP()         (private, const )
    *
    *   Using internally stored values, this function calculates
@@ -2634,7 +2782,8 @@ namespace Cantera {
 	sigma = 0.0;
       }
       m_dlnActCoeffMolaldP[m_indexSolvent] =
-	2.0 /3.0 * dAdP * m_Mnaught * m_IionicMolality * sqrtI * sigma;
+	2.0 /3.0 * dAdP * m_Mnaught * 
+	m_IionicMolality * sqrtI * sigma;
       break;
 
     case DHFORM_BETAIJ:
@@ -2653,8 +2802,7 @@ namespace Cantera {
       } else {
 	sigma = 0.0;
       }
-      m_dlnActCoeffMolaldP[m_indexSolvent] =  
-	(xmolSolvent - 1.0)/xmolSolvent + 
+      m_dlnActCoeffMolaldP[m_indexSolvent] =
 	2.0 /3.0 * dAdP * m_Mnaught * 
 	m_IionicMolality * sqrtI * sigma;
       break;
@@ -2674,8 +2822,7 @@ namespace Cantera {
       }
 
       sigma = 1.0 / ( 1.0 + denomTmp);
-      m_dlnActCoeffMolaldP[m_indexSolvent] =  
-	(xmolSolvent - 1.0)/xmolSolvent + 
+      m_dlnActCoeffMolaldP[m_indexSolvent] =
 	2.0 /3.0 * dAdP * m_Mnaught * 
 	m_IionicMolality * sqrtI * sigma;
       break;
@@ -2687,6 +2834,29 @@ namespace Cantera {
     }
   }
  
+  /*
+   * Updates the standard state thermodynamic functions at the current T and P of the solution.
+   *
+   * @internal
+   *
+   * This function gets called for every call to functions in this
+   * class. It checks to see whether the temperature or pressure has changed and
+   * thus the ss thermodynamics functions for all of the species
+   * must be recalculated.
+   */                    
+  void DebyeHuckel::_updateStandardStateThermo(doublereal pnow) const {
+    _updateRefStateThermo();
+    doublereal tnow = temperature();
+    if (pnow == -1.0) {
+      pnow = m_Pcurrent;
+    }
+    if (m_tlast != tnow || m_plast != pnow) {
+      if (m_waterSS) {
+	m_waterSS->setTempPressure(tnow, pnow);
+      }
+      m_tlast = tnow;
+      m_plast = pnow;
+    }
+  }
+ 
 }
-
-

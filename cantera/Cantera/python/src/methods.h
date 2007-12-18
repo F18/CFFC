@@ -57,6 +57,9 @@ static PyMethodDef ct_methods[] = {
     {"kin_delete", kin_delete,  METH_VARARGS},
     {"kin_nspecies", kin_nspecies,  METH_VARARGS},
     {"kin_nreactions", kin_nrxns,  METH_VARARGS},
+    {"kin_nPhases", kin_nPhases,  METH_VARARGS},
+    {"kin_phaseIndex", kin_phaseIndex,  METH_VARARGS},
+    {"kin_reactionPhaseIndex", kin_reactionPhaseIndex,  METH_VARARGS},
     {"kin_isreversible", kin_isrev,  METH_VARARGS},
     {"kin_rstoichcoeff", kin_rstoichcoeff,  METH_VARARGS},
     {"kin_pstoichcoeff", kin_pstoichcoeff,  METH_VARARGS},
@@ -127,6 +130,7 @@ static PyMethodDef ct_methods[] = {
     {"stflow_new", py_stflow_new, METH_VARARGS},
     {"stflow_setPressure", py_stflow_setPressure, METH_VARARGS},
     {"stflow_setTransport", py_stflow_setTransport, METH_VARARGS},
+    {"stflow_enableSoret", py_stflow_enableSoret, METH_VARARGS},
     {"stflow_setFixedTempProfile", py_stflow_setFixedTempProfile, METH_VARARGS},
     {"stflow_solveSpeciesEqs", py_stflow_solveSpeciesEqs, METH_VARARGS},
     {"stflow_solveEnergyEqn", py_stflow_solveEnergyEqn, METH_VARARGS},
@@ -259,8 +263,10 @@ static PyMethodDef ct_methods[] = {
 
     {"func_new", py_func_new, METH_VARARGS},
     {"func_newcombo", py_func_newcombo, METH_VARARGS},
+    {"func_derivative", py_func_derivative, METH_VARARGS},
     {"func_del", py_func_del, METH_VARARGS},
     {"func_value", py_func_value, METH_VARARGS},
+    {"func_write", py_func_write, METH_VARARGS},
 
     {"mix_new", py_mix_new, METH_VARARGS},
     {"mix_del", py_mix_del, METH_VARARGS},
@@ -287,6 +293,8 @@ static PyMethodDef ct_methods[] = {
     {"mix_elementMoles", py_mix_elementMoles, METH_VARARGS},
     {"mix_equilibrate", py_mix_equilibrate, METH_VARARGS},
     {"mix_getChemPotentials", py_mix_getChemPotentials, METH_VARARGS},
+
+    {"ct_appdelete", pyct_appdelete, METH_VARARGS},
 
 #ifdef INCL_USER_PYTHON
 #include "usermethods.h"

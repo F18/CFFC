@@ -1,6 +1,11 @@
 /**
  *  @file DebyeHuckel.h
+ *    Headers for the %DebyeHuckel ThermoPhase object, which models dilute
+ *    electrolyte solutions
+ *    (see \ref thermoprops and \link Cantera::DebyeHuckel DebyeHuckel \endlink) .
  *
+ * Class %DebyeHuckel represents a dilute liquid electrolyte phase which
+ * obeys the Debye Huckel formulation for nonideality.
  */
 /*
  * Copywrite (2006) Sandia Corporation. Under the terms of 
@@ -8,7 +13,7 @@
  * U.S. Government retains certain rights in this software.
  */
 /*
- * $Id: DebyeHuckel.h,v 1.5 2006/07/13 20:05:11 hkmoffa Exp $
+ * $Id: DebyeHuckel.h,v 1.27 2007/06/14 15:05:49 hkmoffa Exp $
  */
 
 #ifndef CT_DEBYEHUCKEL_H
@@ -20,105 +25,640 @@
 
 namespace Cantera {
 
-  /**
-   * @defgroup thermoprops Thermodynamic Properties
-   *
-   * These classes are used to compute thermodynamic properties.
+  /*!
+   * @name Formats for the Activity Coefficients 
+   *    
+   *   These are possible formats for the molality-based activity coefficients.
    */
-
-  /**
-   * DebyeHuckel.h
-   *
-   * Major Parameters:
-   *
-   * m_formDH = Form of the Debye-Huckel expression
-   *
-   *  DHFORM_DILUTE_LIMIT = 0
-   *
-   *      This form assumes a dilute limit to DH, and is mainly
-   *      for informational purposes:
-   *
-   *   ln(gamma_k)/RT = -z_k**2 * alpha * sqrt(I)
-   *
-   *              where  I = 1/2 sum_k( molality_k * z_k**2)
-   * 
-   *  DHFORM_BDOT_AK       = 1
-   *
-   *      This form assumes Bethke's format for the DH coefficient
-   *
-   *   ln(gamma_k)/RT = -z_k**2 * alpha * sqrt(I) / (1 + B * a_k * sqrt(I))
-   *                        + bdot_k * I
-   *      
-   *         (note, this particular form where a_k can differ in 
-   *          multielectrolyte
-   *          solutions has problems wrt a gibbs-duhem analysis. However
-   *          we include it here because there is a lot of data fit to it)
-   *
-   *  DHFORM_BDOT_AUNIFORM = 2
-   *
-   *      This form assumes Bethke's format for the DH coefficient
-   *
-   *   ln(gamma_k)/RT = -z_k**2 * alpha * sqrt(I) / (1 + B * a * sqrt(I))
-   *                        + bdot_k * I
-   *      
-   *         The value of a is determined at the beginning of the 
-   *         calculation, and not changed.
-   *
-   *  DHFORM_BETAIJ        = 3
-   * 
-   *      This form assumes a linear expansion in a virial coefficient form
-   *      It is used extensively in Newmann's book, and is the beginning of
-   *      more complex treatments for stronger electrolytes, like Pitzer
-   *      and HMW treatments.
-   *
-   *  ln(gamma_k)/RT = -z_k**2 * alpha * sqrt(I) / (1 + B * a * sqrt(I))
-   *                        + 2* sum_j (beta_jk m_j)
-   *  
-   *  DHFORM_PITZER_BETAIJ  = 4
-   * 
-   *      This form assumes an activity coefficient formulation consistent
-   *      with a truncated form of Pitzer's formulation.
-   *
-   *  ln(gamma_k)/RT = -z_k**2 * alpha * sqrt(I) / (1 + B * a * sqrt(I))
-   *       -2 * z_k**2 * alpha * ln(1 + B * a * sqrt(I)) / (B * a)
-   *                        + 2 * sum_j (beta_jk m_j)
-   *  
-   */
+  //@{
 #define DHFORM_DILUTE_LIMIT  0
 #define DHFORM_BDOT_AK       1
 #define DHFORM_BDOT_ACOMMON  2
 #define DHFORM_BETAIJ        3
 #define DHFORM_PITZER_BETAIJ 4
- 
+  //@}
   /*
-   *  Acceptable ways to calculate the value of A_Debye
+   *  @name  Acceptable ways to calculate the value of A_Debye
    */
+  //@{
 #define    A_DEBYE_CONST  0
 #define    A_DEBYE_WATER  1
+  //@}
 
   class WaterProps;
   class WaterPDSS;
 
   /**
-   * Definition of the DebyeHuckel object
+   * @ingroup thermoprops
+   *
+   * Class %DebyeHuckel represents a dilute liquid electrolyte phase which
+   * obeys the Debye Huckel formulation for nonideality.
+   *
+   * The concentrations of the ionic species are assumed to obey the electroneutrality
+   * condition. 
+   *
+   * <HR>
+   * <H2> Specification of Species Standard %State Properties </H2>
+   * <HR>
+   *
+   * The standard states are on the unit molality basis. Therefore, in the
+   * documentation below, the normal \f$ o \f$ superscript is replaced with
+   * the \f$ \triangle \f$ symbol. The reference state symbol is now
+   *  \f$ \triangle, ref \f$.
+   * 
+   *  
+   *  It is assumed that the reference state thermodynamics may be
+   *  obtained by a pointer to a populated species thermodynamic property
+   *  manager class (see ThermoPhase::m_spthermo). How to relate pressure
+   *  changes to the reference state thermodynamics is resolved at this level.
+   *
+   *  For an incompressible,
+   * stoichiometric substance, the molar internal energy is
+   * independent of pressure. Since the thermodynamic properties
+   * are specified by giving the standard-state enthalpy, the
+   * term \f$ P_0 \hat v\f$ is subtracted from the specified molar
+   * enthalpy to compute the molar internal energy. The entropy is
+   * assumed to be independent of the pressure.
+   *
+   * The enthalpy function is given by the following relation.
+   *
+   *       \f[
+   *   \raggedright  h^\triangle_k(T,P) = h^{\triangle,ref}_k(T) 
+   *         + \tilde v \left( P - P_{ref} \right) 
+   *       \f]
+   *
+   * For an incompressible,
+   * stoichiometric substance, the molar internal energy is
+   * independent of pressure. Since the thermodynamic properties
+   * are specified by giving the standard-state enthalpy, the
+   * term \f$ P_{ref} \tilde v\f$ is subtracted from the specified reference molar
+   * enthalpy to compute the molar internal energy.
+   *
+   *       \f[
+   *            u^\triangle_k(T,P) = h^{\triangle,ref}_k(T) - P_{ref} \tilde v
+   *       \f]
+   *
+   * The standard state heat capacity and entropy are independent
+   * of pressure. The standard state gibbs free energy is obtained
+   * from the enthalpy and entropy functions.
+   *
+   * The vector Constituents::m_speciesSize[] is used to hold the
+   * base values of species sizes. These are defined as the 
+   * molar volumes of species at infinite dilution at 300 K and 1 atm
+   * of water. m_speciesSize are calculated during the initialization of the
+   * %DebyeHuckel object and are then not touched.
+   *
+   * The current model assumes that an incompressible molar volume for
+   * all solutes. The molar volume for the water solvent, however,
+   * is obtained from a pure water equation of state, waterSS.
+   * Therefore, the water standard state varies with both T and P.
+   * It is an error to request standard state water properties  at a T and P
+   * where the water phase is not a stable phase, i.e., beyond its
+   * spinodal curve.
+   *   
+   * <HR>
+   * <H2> Specification of Solution Thermodynamic Properties </H2>
+   * <HR>
+   *
+   * Chemical potentials
+   * of the solutes,  \f$ \mu_k \f$, and the solvent, \f$ \mu_o \f$, which are based 
+   * on the molality form, have the following general format:
+   *
+   * \f[
+   *    \mu_k = \mu^{\triangle}_k(T,P) + R T ln(\gamma_k^{\triangle} \frac{m_k}{m^\triangle}) 
+   * \f]
+   * \f[
+   *    \mu_o = \mu^o_o(T,P) + RT ln(a_o) 
+   * \f]
+   *
+   * where \f$ \gamma_k^{\triangle} \f$ is the molality based activity coefficient for species
+   * \f$k\f$.
+   * 
+   * Individual activity coefficients of ions can not be independently measured. Instead,
+   * only binary pairs forming electroneutral solutions can be measured.
+ 
+   *
+   *  <H3> Ionic Strength </H3>
+   *
+   *  Most of the parameterizations within the model use the ionic strength 
+   *  as a key variable. The ionic strength, \f$ I\f$ is defined as follows
+   *
+   *  \f[
+   *    I = \frac{1}{2} \sum_k{m_k  z_k^2}
+   *  \f]
+   *
+   * \f$ m_k \f$ is the molality of the kth species. \f$ z_k \f$ is the charge
+   * of the kth species. Note, the ionic strength is a defined units quantity.
+   * The molality has defined units of gmol kg-1, and therefore the ionic
+   * strength has units of sqrt( gmol kg-1).
+   *
+   * In some instances, from some authors, a different 
+   * formulation is used for the ionic strength in the equations below. The different
+   * formulation is due to the possibility of the existence of weak acids and how
+   * association wrt to the weak acid equilibrium relation affects the calculation 
+   * of the activity coefficients via the assumed value of the ionic strength.
+   *
+   * If we are to assume that the association reaction doesn't have an effect
+   * on the ionic strength, then we will want to consider the associated weak
+   * acid as in effect being fully dissociated, when we calculate an effective
+   * value for the ionic strength. We will call this calculated value, the
+   * stoichiometric ionic strength, \f$ I_s \f$, putting a subscript s to denote
+   * it from the more straightforward calculation of \f$ I \f$.
+   *
+   *  \f[
+   *    I_s = \frac{1}{2} \sum_k{m_k^s  z_k^2}
+   *  \f]
+   *
+   *  Here, \f$ m_k^s \f$ is the value of the molalities calculated assuming that
+   *  all weak acid-base pairs are in their fully dissociated states. This calculation may
+   * be simplified by considering that the weakly associated acid may be made up of two
+   * charged species, k1 and k2, each with their own charges, obeying the following relationship:
+   *
+   *   \f[
+   *      z_k = z_{k1} +  z_{k2}
+   *   \f]
+   *  Then, we may only need to specify one charge value, say, \f$  z_{k1}\f$, 
+   *  the cation charge number,
+   *  in order to get both numbers, since we have already specified \f$ z_k \f$ 
+   *  in the definition of original species.
+   *  Then, the stoichiometric ionic strength may be calculated via the following formula.
+   *
+   *  \f[
+   *    I_s = \frac{1}{2} \left(\sum_{k,ions}{m_k  z_k^2}+ 
+   *               \sum_{k,weak_assoc}(m_k  z_{k1}^2 + m_k  z_{k2}^2) \right)
+   *  \f]
+   *
+   *  The specification of which species are weakly associated acids is made in the input 
+   *  file via the
+   *  <TT> stoichIsMods </TT> XML block, where the charge for k1 is also specified. 
+   *  An example is given below:
+   * 
+   * @code
+   *          <stoichIsMods>
+   *                NaCl(aq):-1.0
+   *          </stoichIsMods>
+   * @endcode
+   *
+   *  Because we need the concept of a weakly associated acid in order to calculated 
+   *  \f$ I_s \f$ we need to 
+   *  catalog all species in the phase. This is done using the following categories:
+   *
+   *  -  <B>cEST_solvent</B>    :           Solvent species (neutral)
+   *  -  <B>cEST_chargedSpecies</B>         Charged species (charged)
+   *  -  <B>cEST_weakAcidAssociated</B>     Species which can break apart into charged species.
+   *                                        It may or may not be charged.  These may or 
+   *                                        may not be be included in the
+   *                                        species solution vector.
+   *  -  <B>cEST_strongAcidAssociated</B>   Species which always breaksapart into charged species.
+   *                                        It may or may not be charged. Normally, these aren't included
+   *                                        in the speciation vector.
+   *  -  <B>cEST_polarNeutral </B>          Polar neutral species
+   *  -  <B>cEST_nonpolarNeutral</B>        Non poloar neutral species
+   *
+   *  Polar and non-polar neutral species are differentiated, because some additions 
+   *  to the activity 
+   *  coefficient expressions distinguish between these two types of solutes. This is the so-called
+   *  salt-out effect.
+   *
+   * The type of species is specified in the <TT>electrolyteSpeciesType</TT> XML block.
+   * Note, this is not
+   * considered a part of the specification of the standard state for the species, 
+   * at this time. Therefore,
+   * this information is put under the <TT>activityCoefficient</TT> XML block. An example 
+   * is given below
+   *
+   * @code
+   *         <electrolyteSpeciesType>
+   *                H2L(L):solvent
+   *                H+:chargedSpecies
+   *                NaOH(aq):weakAcidAssociated
+   *                NaCl(aq):strongAcidAssociated
+   *                NH3(aq):polarNeutral
+   *                O2(aq):nonpolarNeutral
+   *         </electrolyteSpeciesType>
+   * @endcode
+   *
+   *  Much of the species electrolyte type information is infered from other information in the
+   *  input file. For example, as species which is charged is given the "chargedSpecies" default
+   *  category. A neutral solute species is put into the "nonpolarNeutral" category by default.
+   *
+   * The specification of solute activity coefficients depends on the model
+   * assumed for the Debye-Huckel term. The model is set by the
+   * internal parameter #m_formDH. We will now describe each category in its own section.
+   *
+   *
+   *  <H3> Debye-Huckel Dilute Limit </H3>
+   *
+   *  DHFORM_DILUTE_LIMIT = 0
+   *
+   *      This form assumes a dilute limit to DH, and is mainly
+   *      for informational purposes:
+   *  \f[
+   *      \ln(\gamma_k^\triangle) = - z_k^2 A_{Debye} \sqrt{I}
+   *  \f]
+   *              where \f$ I\f$ is the ionic strength
+   *  \f[
+   *    I = \frac{1}{2} \sum_k{m_k  z_k^2}
+   *  \f]
+   *
+   *  The activity for the solvent water,\f$ a_o \f$, is not independent and must be 
+   *  determined from the Gibbs-Duhem relation.
+   *
+   *  \f[
+   *       \ln(a_o) = \frac{X_o - 1.0}{X_o} + \frac{ 2 A_{Debye} \tilde{M}_o}{3} (I)^{3/2}
+   *  \f]
+   *     
+   *
+   *  <H3> Bdot Formulation </H3>
+   *
+   *    DHFORM_BDOT_AK       = 1
+   *
+   *      This form assumes Bethke's format for the Debye Huckel activity coefficient:
+   *
+   *   \f[
+   *      \ln(\gamma_k^\triangle) = -z_k^2 \frac{A_{Debye} \sqrt{I}}{ 1 + B_{Debye}  a_k \sqrt{I}}
+   *                        + \log(10) B^{dot}_k  I
+   *   \f]
+   *
+   *      Note, this particular form where \f$ a_k \f$ can differ in 
+   *          multielectrolyte
+   *          solutions has problems with respect to a Gibbs-Duhem analysis. However,
+   *          we include it here because there is a lot of data fit to it.
+   *
+   *  The activity for the solvent water,\f$ a_o \f$, is not independent and must be 
+   *  determined from the Gibbs-Duhem relation. Here, we use:
+   *
+   *  \f[
+   *       \ln(a_o) = \frac{X_o - 1.0}{X_o} 
+   *        + \frac{ 2 A_{Debye} \tilde{M}_o}{3} (I)^{1/2}
+   *                        \left[ \sum_k{\frac{1}{2} m_k z_k^2 \sigma( B_{Debye} a_k \sqrt{I} ) } \right]
+   *                        - \frac{\log(10)}{2} \tilde{M}_o I \sum_k{ B^{dot}_k m_k}
+   *  \f]
+   *    where
+   *  \f[
+   *     \sigma (y) = \frac{3}{y^3} \left[ (1+y) - 2 \ln(1 + y) - \frac{1}{1+y} \right]
+   *  \f]
+   *
+   * Additionally, Helgeson's formulation for the water activity is offered as an
+   * alternative.
+   *
+   *
+   *  <H3> Bdot Formulation with Uniform Size Parameter in the Denominator </H3>
+   *
+   *  DHFORM_BDOT_AUNIFORM = 2
+   *
+   *      This form assumes Bethke's format for the Debye-Huckel activity coefficient
+   *
+   *   \f[
+   *    \ln(\gamma_k^\triangle) = -z_k^2 \frac{A_{Debye} \sqrt{I}}{ 1 + B_{Debye}  a \sqrt{I}}
+   *                        + \log(10) B^{dot}_k  I
+   *   \f]
+   *      
+   *         The value of a is determined at the beginning of the 
+   *         calculation, and not changed.
+   *
+   *  \f[
+   *       \ln(a_o) = \frac{X_o - 1.0}{X_o} 
+   *        + \frac{ 2 A_{Debye} \tilde{M}_o}{3} (I)^{3/2} \sigma( B_{Debye} a \sqrt{I} )
+   *                        - \frac{\log(10)}{2} \tilde{M}_o I \sum_k{ B^{dot}_k m_k}
+   *  \f]
+   *
+   *
+   *  <H3> Beta_IJ formulation </H3>
+   *
+   *  DHFORM_BETAIJ        = 3
+   * 
+   *      This form assumes a linear expansion in a virial coefficient form
+   *      It is used extensively in the book by Newmann, "Electrochemistry Systems", 
+   *      and is the beginning of
+   *      more complex treatments for stronger electrolytes, fom Pitzer
+   *      and from Harvey, Moller, and Weire.
+   *  
+   *   \f[
+   *    \ln(\gamma_k^\triangle) = -z_k^2 \frac{A_{Debye} \sqrt{I}}{ 1 + B_{Debye}  a \sqrt{I}}
+   *                         + 2 \sum_j \beta_{j,k} m_j
+   *   \f]
+   *
+   *   In the current treatment the binary interaction coefficients, \f$ \beta_{j,k}\f$, are 
+   *   independent of temperature and pressure.
+   *
+   *  \f[
+   *       \ln(a_o) = \frac{X_o - 1.0}{X_o} 
+   *        + \frac{ 2 A_{Debye} \tilde{M}_o}{3} (I)^{3/2} \sigma( B_{Debye} a \sqrt{I} )
+   *        -  \tilde{M}_o  \sum_j \sum_k \beta_{j,k} m_j m_k
+   *  \f]
+   *
+   * In this formulation the ionic radius, \f$ a \f$, is a constant. This must be supplied to the
+   * model, in an <DFN> ionicRadius </DFN> XML block.
+   *
+   * The \f$ \beta_{j,k} \f$ parameters are binary interaction parameters. They are supplied to
+   * the object in an <TT> DHBetaMatrix </TT> XML block. There are in principle \f$ N (N-1) /2 \f$
+   * different, symmetric interaction parameters, where \f$ N \f$ are the number of solute species in the
+   * mechanism.  
+   * An example is given below.
+   *
+   * An example <TT> activityCoefficients </TT> XML block for this formulation is supplied below
+   *
+   * @code
+   *  <activityCoefficients model="Beta_ij">
+   *         <!-- A_Debye units = sqrt(kg/gmol) -->
+   *         <A_Debye> 1.172576 </A_Debye>
+   *         <!-- B_Debye units = sqrt(kg/gmol)/m   -->
+   *         <B_Debye> 3.28640E9 </B_Debye>
+   *         <ionicRadius default="3.042843"  units="Angstroms">
+   *         </ionicRadius>
+   *         <DHBetaMatrix>
+   *               H+:Cl-:0.27
+   *               Na+:Cl-:0.15
+   *               Na+:OH-:0.06
+   *         </DHBetaMatrix>
+   *         <stoichIsMods>
+   *                NaCl(aq):-1.0
+   *         </stoichIsMods>
+   *         <electrolyteSpeciesType>
+   *                H+:chargedSpecies
+   *                NaCl(aq):weakAcidAssociated
+   *         </electrolyteSpeciesType>
+   *  </activityCoefficients>
+   * @endcode
+   *
+   *  <H3> Pitzer Beta_IJ formulation </H3>
+   *
+   *  DHFORM_PITZER_BETAIJ  = 4
+   * 
+   *      This form assumes an activity coefficient formulation consistent
+   *      with a truncated form of Pitzer's formulation. Pitzer's formulation is equivalent
+   *      to the formulations above in the dilute limit, where rigorous theory may be applied.
+   *
+   *   \f[
+   *     \ln(\gamma_k^\triangle) = -z_k^2 \frac{A_{Debye}}{3} \frac{\sqrt{I}}{ 1 + B_{Debye}  a \sqrt{I}}
+   *       -2 z_k^2 \frac{A_{Debye}}{3}  \frac{\ln(1 + B_{Debye}  a  \sqrt{I})}{ B_{Debye}  a}
+   *                         + 2 \sum_j \beta_{j,k} m_j
+   *   \f]
+   *
+   *
+   *  \f[
+   *       \ln(a_o) = \frac{X_o - 1.0}{X_o} 
+   *        + \frac{ 2 A_{Debye} \tilde{M}_o}{3} \frac{(I)^{3/2} }{1 +  B_{Debye}  a \sqrt{I} }
+   *        -  \tilde{M}_o  \sum_j \sum_k \beta_{j,k} m_j m_k
+   *  \f]
+   *
+   * <H3> Specification of the Debye Huckel Constants </H3>
+   *
+   *  In the equations above, the formulas for  \f$  A_{Debye} \f$ and \f$  B_{Debye} \f$ 
+   *  are needed. The %DebyeHuckel object uses two methods for specifying these quantities.
+   *  The default method is to assume that \f$  A_{Debye} \f$  is a constant, given
+   *  in the initialization process, and storred in the
+   *  member double, m_A_Debye. Optionally, a full water treatment may be employed that makes
+   *  \f$ A_{Debye} \f$ a full function of <I>T</I> and <I>P</I>.
+   *
+   *   \f[
+   *      A_{Debye} = \frac{F e B_{Debye}}{8 \pi \epsilon R T} {\left( C_o \tilde{M}_o \right)}^{1/2}
+   *   \f]
+   * where
+   * 
+   *  \f[
+   *         B_{Debye} = \frac{F} {{(\frac{\epsilon R T}{2})}^{1/2}} 
+   *  \f]
+   *  Therefore:
+   * \f[
+   *   A_{Debye} = \frac{1}{8 \pi} 
+   *                 {\left(\frac{2 N_a \rho_o}{1000}\right)}^{1/2}
+   *                 {\left(\frac{N_a e^2}{\epsilon R T }\right)}^{3/2}
+   * \f]
+   *
+   *            Units = sqrt(kg/gmol)
+   *
+   *     where
+   *      - \f$ N_a \f$ is Avrogadro's number
+   *      - \f$ \rho_w \f$ is the density of water
+   *      - \f$ e \f$ is the electronic charge
+   *      - \f$ \epsilon = K \epsilon_o \f$ is the permitivity of water
+   *           where \f$ K \f$ is the dielectric condstant of water,
+   *           and  \f$ \epsilon_o \f$ is the permitivity of free space.
+   *      - \f$ \rho_o \f$ is the density of the solvent in its standard state.
+   *
+   *            Nominal value at 298 K and 1 atm = 1.172576 (kg/gmol)<SUP>1/2</SUP>
+   *                  based on:
+   *                 -   \f$ \epsilon / \epsilon_0 \f$ = 78.54
+   *                           (water at 25C)
+   *                 -   \f$ \epsilon_0 \f$= 8.854187817E-12 C<SUP>2</SUP> N<SUP>-1</SUP> m<SUP>-2</SUP>
+   *                 -   e = 1.60217653E-19 C
+   *                 -   F = 9.6485309E7 C kmol<SUP>-1</SUP>
+   *                 -   R = 8.314472E3 kg m<SUP>2</SUP> s<SUP>-2</SUP> kmol<SUP>-1</SUP> K<SUP>-1</SUP>
+   *                 -   T = 298.15 K
+   *                 -   B_Debye = 3.28640E9 (kg/gmol)<SUP>1/2</SUP> m<SUP>-1</SUP>
+   *                 -   \f$N_a\f$ = 6.0221415E26 kmol<SUP>-1</SUP>
+   *
+   * An example of a fixed value implementation is given below.
+   * @code
+   *   <activityCoefficients model="Beta_ij">
+   *         <!-- A_Debye units = sqrt(kg/gmol)  -->
+   *         <A_Debye> 1.172576 </A_Debye>
+   *         <!-- B_Debye units = sqrt(kg/gmol)/m  -->
+   *         <B_Debye> 3.28640E9 </B_Debye>
+   *   </activityCoefficients>
+   * @endcode
+   *
+   * An example of a variable value implementation is given below.
+   *
+   * @code
+   *   <activityCoefficients model="Beta_ij">
+   *         <A_Debye model="water" /> 
+   *         <!-- B_Debye units = sqrt(kg/gmol)/m  -->
+   *         <B_Debye> 3.28640E9 </B_Debye>
+   *   </activityCoefficients>
+   * @endcode
+   *
+   *  Currently, \f$  B_{Debye} \f$ is a constant in the model, specified either by a default
+   *  water value, or through the input file. This may have to be looked at, in the future.
+   *
+   * <HR>
+   * <H2> %Application within %Kinetics Managers </H2>
+   * <HR>
+   *
+   * For the time being, we have set the standard concentration for all species in
+   * this phase equal to the default concentration of the solvent at 298 K and 1 atm. 
+   * This means that the
+   * kinetics operator essentially works on an activities basis, with units specified
+   * as if it were on a concentration basis.
+   *
+   * For example, a bulk-phase binary reaction between liquid species j and k, producing
+   * a new liquid species l would have the
+   * following equation for its rate of progress variable, \f$ R^1 \f$, which has
+   * units of kmol m-3 s-1.
+   *
+   *   \f[
+   *    R^1 = k^1 C_j^a C_k^a =  k^1 (C_o a_j) (C_o a_k) 
+   *   \f]
+   * where
+   *   \f[
+   *      C_j^a = C_o a_j \quad and \quad C_k^a = C_o a_k
+   *   \f]
+   *   
+   *  \f$ C_j^a \f$ is the activity concentration of species j, and 
+   *  \f$ C_k^a \f$ is the activity concentration of species k. \f$ C_o \f$
+   *  is the concentration of water at 298 K and 1 atm. \f$ a_j \f$ is
+   *  the activity of species j at the current temperature and pressure
+   *  and concentration of the liquid phase. \f$k^1 \f$ has units of m3 kmol-1 s-1.
+   *
+   *  The reverse rate constant can then be obtained from the law of microscopic reversibility
+   * and the equilibrium expression for the system.
+   *
+   *   \f[
+   *         \frac{a_j a_k}{ a_l} = K^{o,1} = \exp(\frac{\mu^o_l - \mu^o_j - \mu^o_k}{R T} )
+   *   \f]
+   *
+   *  \f$  K^{o,1} \f$ is the dimensionless form of the equilibrium constant.
+   *  
+   *   \f[
+   *    R^{-1} = k^{-1} C_l^a =  k^{-1} (C_o a_l)
+   *   \f]
+   *
+   *  where
+   *
+   *    \f[
+   *       k^{-1} =  k^1 K^{o,1} C_o
+   *   \f]
+   *
+   *  \f$k^{-1} \f$ has units of s-1.
+   * 
+   *  Note, this treatment may be modified in the future, as events dictate.
+   *
+   * <HR>
+   * <H2> Instantiation of the Class </H2>
+   * <HR>
+   *
+   * The constructor for this phase is NOT located in the default ThermoFactory
+   * for %Cantera. However, a new %DebyeHuckel object may be created by 
+   * the following code snippets:
+   *
+   * @code
+   *      DebyeHuckel *DH = new DebyeHuckel("DH_NaCl.xml", "NaCl_electrolyte");
+   * @endcode
+   *
+   * or
+   *
+   * @code
+   *    char iFile[80], file_ID[80];
+   *    strcpy(iFile, "DH_NaCl.xml");
+   *    sprintf(file_ID,"%s#NaCl_electrolyte", iFile);
+   *    XML_Node *xm = get_XML_NameID("phase", file_ID, 0);
+   *    DebyeHuckel *dh = new DebyeHuckel(*xm);
+   * @endcode
+   *
+   * or by the following call to importPhase():
+   *
+   * @code
+   *    char iFile[80], file_ID[80];
+   *    strcpy(iFile, "DH_NaCl.xml");
+   *    sprintf(file_ID,"%s#NaCl_electrolyte", iFile);
+   *    XML_Node *xm = get_XML_NameID("phase", file_ID, 0);
+   *    DebyeHuckel dhphase;
+   *    importPhase(*xm, &dhphase);
+   * @endcode
+   *
+   * <HR>
+   * <H2> XML Example </H2>
+   * <HR>
+   *
+   * The phase model name for this is called StoichSubstance. It must be supplied
+   * as the model attribute of the thermo XML element entry.
+   * Within the phase XML block,
+   * the density of the phase must be specified. An example of an XML file
+   * this phase is given below. 
+   * 
+   * @verbatim
+   <phase id="NaCl_electrolyte" dim="3">
+    <speciesArray datasrc="#species_waterSolution">
+               H2O(L) Na+ Cl- H+ OH- NaCl(aq) NaOH(aq)
+    </speciesArray>
+    <state>
+      <temperature units="K"> 300  </temperature>
+      <pressure units="Pa">101325.0</pressure>
+      <soluteMolalities>
+             Na+:3.0
+             Cl-:3.0
+             H+:1.0499E-8
+             OH-:1.3765E-6
+             NaCl(aq):0.98492
+             NaOH(aq):3.8836E-6
+      </soluteMolalities>
+    </state>
+    <!-- thermo model identifies the inherited class
+         from ThermoPhase that will handle the thermodynamics.
+      -->
+    <thermo model="DebyeHuckel">
+       <standardConc model="solvent_volume" />
+       <activityCoefficients model="Beta_ij">
+                <!-- A_Debye units = sqrt(kg/gmol)  -->
+                <A_Debye> 1.172576 </A_Debye>
+                <!-- B_Debye units = sqrt(kg/gmol)/m   -->
+                <B_Debye> 3.28640E9 </B_Debye>
+                <ionicRadius default="3.042843"  units="Angstroms">
+                </ionicRadius>
+                <DHBetaMatrix>
+                  H+:Cl-:0.27
+                  Na+:Cl-:0.15
+                  Na+:OH-:0.06
+                </DHBetaMatrix>
+                <stoichIsMods>
+                   NaCl(aq):-1.0
+                </stoichIsMods>
+                <electrolyteSpeciesType>
+                   H+:chargedSpecies
+                   NaCl(aq):weakAcidAssociated
+                </electrolyteSpeciesType>
+       </activityCoefficients>
+       <solvent> H2O(L) </solvent>
+    </thermo>
+    <elementArray datasrc="elements.xml"> O H Na Cl </elementArray>
+  </phase> 
+  @endverbatim
+   *
+   *
    */
   class DebyeHuckel : public MolalityVPSSTP {
 
   public:
         
-    /// Constructors 
+    //! Empty Constructor
     DebyeHuckel();
+
+    //! Copy constructor
     DebyeHuckel(const DebyeHuckel &);
+
+    //! Assignment operator
     DebyeHuckel& operator=(const	DebyeHuckel&);
 
-    DebyeHuckel(string inputFile, string id = "");
-    DebyeHuckel(XML_Node& phaseRef, string id = "");
+    //! Full constructor for creating the phase.
+    /*!
+     *  @param inputFile  File name containing the XML description of the phase
+     *  @param id     id attribute containing the name of the phase. 
+     *                (default is the empty string)
+     */
+    DebyeHuckel(std::string inputFile, std::string id = "");
+
+    //! Full constructor for creating the phase.
+    /*!
+     *  @param phaseRef XML phase node containing the description of the phase
+     *  @param id     id attribute containing the name of the phase. 
+     *                (default is the empty string)
+     */
+    DebyeHuckel(XML_Node& phaseRef, std::string id = "");
 
     /// Destructor. 
     virtual ~DebyeHuckel();
 
-
-    ThermoPhase *duplMyselfAsThermoPhase();
+    //! Duplicator from the ThermoPhase parent class
+    /*!
+     * Given a pointer to a ThermoPhase object, this function will
+     * duplicate the ThermoPhase object and all underlying structures.
+     * This is basically a wrapper around the copy constructor.
+     *
+     * @return returns a pointer to a ThermoPhase
+     */
+    ThermoPhase *duplMyselfAsThermoPhase() const;
 
     /**
      *   
@@ -186,7 +726,7 @@ namespace Cantera {
      */
     virtual doublereal cp_mole() const;
 
-    /// Molar heat capacity at constant volume. Units: J/kmol/K.
+    //! Molar heat capacity at constant volume. Units: J/kmol/K.
     /*
      *      (HKM -> Bump up to Parent object)
      */
@@ -204,17 +744,23 @@ namespace Cantera {
      *   thrown.  
      */
 
-    /**
-     * Pressure. Units: Pa.
+    //! Return the thermodynamic pressure (Pa).
+    /*!
      * For this incompressible system, we return the internally storred
      * independent value of the pressure.
-     */ 
+     */
     virtual doublereal pressure() const;
 
-    /**
-     * Set the pressure at constant temperature. Units: Pa.
-     * This method sets a constant within the object.
-     * The mass density is not a function of pressure.
+    //! Set the internally storred pressure (Pa) at constant
+    //! temperature and composition
+    /*!
+     *  This method sets the pressure within the object.
+     *  The water model is a completely compressible model.
+     *  Also, the dielectric constant is pressure dependent.
+     *
+     *  @param p input Pressure (Pa)
+     *
+     * @todo Implement a variable pressure capability
      */
     virtual void setPressure(doublereal p);
 
@@ -243,7 +789,8 @@ namespace Cantera {
      */
     void calcDensity();
 
-    /**
+    //! Set the internally storred density (gm/m^3) of the phase.
+    /*!
      * Overwritten setDensity() function is necessary because the
      * density is not an indendent variable.
      *
@@ -254,28 +801,46 @@ namespace Cantera {
      * to create a condition where the density is a function of 
      * the pressure.
      *
-     * This function will now throw an error condition.
+     * This function will now throw an error condition if the
+     * input isn't exactly equal to the current density.
+     *
+     *
+     * @todo Now have a compressible ss equation for liquid water.
+     *       Therefore, this phase is compressible. May still
+     *       want to change the independent variable however. 
      *
      *  NOTE: This is an overwritten function from the State.h
      *        class
+     * 
+     * @param rho Input density (kg/m^3).
      */
     void setDensity(doublereal rho);
 
+    //! Set the internally storred molar density (kmol/m^3) of the phase.
     /**
      * Overwritten setMolarDensity() function is necessary because the
      * density is not an indendent variable.
      *
-     * This function will now throw an error condition.
+     * This function will now throw an error condition if the input
+     * isn't exactly equal to the current molar density.
      *
      *  NOTE: This is a virtual function overwritten from the State.h
      *        class
+     *
+     * @param conc   Input molar density (kmol/m^3).
      */
     virtual void setMolarDensity(doublereal conc);
 
-   /**
+    //! Set the temperature (K)
+    /*!
      * Overwritten setTemperature(double) from State.h. This
      * function sets the temperature, and makes sure that
-     * the value propagates to underlying objects.
+     * the value propagates to underlying objects, such as
+     * the water standard state model.
+     *
+     * @todo Make State::setTemperature a virtual function
+     *
+     * @param temp Temperature in kelvin
      */
     virtual void setTemperature(doublereal temp);
 
@@ -310,40 +875,6 @@ namespace Cantera {
      */
 
     /**
-     * Set the potential energy of species k to pe.
-     * Units: J/kmol.
-     * This function must be reimplemented in inherited classes
-     * of ThermoPhase.
-     */
-    virtual void setPotentialEnergy(int k, doublereal pe) {
-      err("setPotentialEnergy");
-    }
-
-    /**
-     * Get the potential energy of species k.
-     * Units: J/kmol.
-     * This function must be reimplemented in inherited classes
-     * of ThermoPhase.
-     */
-    virtual doublereal potentialEnergy(int k) const {
-      return err("potentialEnergy");
-    }
-
-    /**
-     * Set the electric potential of this phase (V).
-     * This is used by classes InterfaceKinetics and EdgeKinetics to
-     * compute the rates of charge-transfer reactions, and in computing
-     * the electrochemical potentials of the species.
-     */
-    void setElectricPotential(doublereal v) {
-      m_phi = v;
-    }
-
-    /// The electric potential of this phase (V).
-    doublereal electricPotential() const { return m_phi; }
-
-
-    /**
      * @}
      * @name Activities, Standard States,  and Activity Concentrations
      *
@@ -356,8 +887,8 @@ namespace Cantera {
      * @{
      */
 
-    /**
-     * This method returns an array of generalized concentrations
+    //! This method returns an array of generalized concentrations
+    /*!
      * \f$ C_k\f$ that are defined such that 
      * \f$ a_k = C_k / C^0_k, \f$ where \f$ C^0_k \f$ 
      * is a standard concentration
@@ -371,28 +902,35 @@ namespace Cantera {
      */
     virtual void getActivityConcentrations(doublereal* c) const;
 
-    /**
+    //! Return the standard concentration for the kth species
+    /*!
      * The standard concentration \f$ C^0_k \f$ used to normalize
-     * the generalized concentration. In many cases, this quantity
-     * will be the same for all species in a phase - for example,
-     * for an ideal gas \f$ C^0_k = P/\hat R T \f$. For this
-     * reason, this method returns a single value, instead of an
-     * array.  However, for phases in which the standard
-     * concentration is species-specific (e.g. surface species of
-     * different sizes), this method may be called with an
-     * optional parameter indicating the species.
+     * the activity (i.e., generalized) concentration in
+     * kinetics calculations.
+     *
+     * For the time being, we will use the concentration of pure
+     * solvent for the the standard concentration of all species.
+     * This has the effect of making reaction rates
+     * based on the molality of species proportional to the
+     * molality of the species.
+     *
+     * @param k Optional parameter indicating the species. The default
+     *         is to assume this refers to species 0.
+     * @return 
+     *   Returns the standard Concentration in units of 
+     *   m<SUP>3</SUP> kmol<SUP>-1</SUP>.
      */
     virtual doublereal standardConcentration(int k=0) const;
 
-    /**
-     * Returns the natural logarithm of the standard 
-     * concentration of the kth species
+    //! Natural logarithm of the standard concentration of the kth species.
+    /*!
+     * @param k    index of the species (defaults to zero)
      */
     virtual doublereal logStandardConc(int k=0) const;
 
-    /**
-     * Returns the units of the standard and generalized
-     * concentrations Note they have the same units, as their
+    //! Returns the units of the standard and generalized concentrations.
+    /*!
+     * Note they have the same units, as their
      * ratio is defined to be equal to the activity of the kth
      * species in the solution, which is unitless.
      *
@@ -400,6 +938,12 @@ namespace Cantera {
      * units are needed. Usually, MKS units are assumed throughout
      * the program and in the XML input files.
      *
+     * The base %ThermoPhase class assigns the default quantities
+     * of (kmol/m3) for all species.
+     * Inherited classes are responsible for overriding the default 
+     * values if necessary.
+     *
+     * @param uA Output vector containing the units
      *  uA[0] = kmol units - default  = 1
      *  uA[1] = m    units - default  = -nDim(), the number of spatial
      *                                dimensions in the Phase class.
@@ -407,25 +951,37 @@ namespace Cantera {
      *  uA[3] = Pa(pressure) units - default = 0;
      *  uA[4] = Temperature units - default = 0;
      *  uA[5] = time units - default = 0
+     * @param k species index. Defaults to 0.
+     * @param sizeUA output int containing the size of the vector.
+     *        Currently, this is equal to 6.
      */
     virtual void getUnitsStandardConc(double *uA, int k = 0,
-				      int sizeUA = 6);
+				      int sizeUA = 6) const;
 
-    /**
-     * Get the array of non-dimensional molality-based activities at
-     * the current solution temperature, pressure, and
-     * solution concentration.
+    //! Get the array of non-dimensional activities at
+    //! the current solution temperature, pressure, and solution concentration.
+    /*!
+     *
+     * We resolve this function at this level by calling
+     * on the activityConcentration function. However, 
+     * derived classes may want to override this default
+     * implementation.
+     *
      * (note solvent is on molar scale).
+     *
+     * @param ac  Output vector of activities. Length: m_kk.
      */
     virtual void getActivities(doublereal* ac) const;
 
-    /**
-     * Get the array of non-dimensional molality-based 
-     * activity coefficients at
-     * the current solution temperature, pressure, and
-     * solution concentration.
-     * (note solvent is on molar scale. The solvent molar
-     *  based activity coefficient is returned).
+    //! Get the array of non-dimensional molality-based 
+    //! activity coefficients at
+    //! the current solution temperature, pressure, and solution concentration.
+    /*!
+     *  note solvent is on molar scale. The solvent molar
+     *  based activity coefficient is returned.
+     *
+     * @param acMolality Vector of Molality-based activity coefficients
+     *                   Length: m_kk
      */
     virtual void 
     getMolalityActivityCoefficients(doublereal* acMolality) const;
@@ -434,78 +990,65 @@ namespace Cantera {
     /// @name  Partial Molar Properties of the Solution -----------------
     //@{
 
-    /**
-     * Get the species chemical potentials. Units: J/kmol.
+    
+    //! Get the species chemical potentials. Units: J/kmol.
+    /*!
      *
      * This function returns a vector of chemical potentials of the 
      * species in solution.
+     *
      * \f[
-     *    \mu_k = \mu^{ref}_k(T) + V_k * (p - p_o) + R T ln(X_k)
+     *    \mu_k = \mu^{\triangle}_k(T,P) + R T ln(\gamma_k^{\triangle} m_k)
      * \f]
      *  or another way to phrase this is
-     * \f[
-     *    \mu_k = \mu^o_k(T,p) + R T ln(X_k) 
-     * \f]
-     *  where \f$ \mu^o_k(T,p) = \mu^{ref}_k(T) + V_k * (p - p_o)\f$
+     *
+     *  where
+     *
+     * @param mu  Output vector of species chemical 
+     *            potentials. Length: m_kk. Units: J/kmol
      */
     virtual void getChemPotentials(doublereal* mu) const;
 
-
-    /**
-     * Get the species electrochemical potentials. 
-     * These are partial molar quantities.
-     * This method adds a term \f$ Fz_k \phi_k \f$ to the 
-     * to each chemical potential.
-     *
-     * Units: J/kmol
-     */
-    void getElectrochemPotentials(doublereal* mu) const {
-      getChemPotentials(mu);
-      double ve = Faraday * electricPotential();
-      for (int k = 0; k < m_kk; k++) {
-	mu[k] += ve*charge(k);
-      }
-    }
-
-    /**
-     * Returns an array of partial molar enthalpies for the species
-     * in the mixture.
-     * Units (J/kmol)
+    //! Returns an array of partial molar enthalpies for the species
+    //! in the mixture. Units (J/kmol)
+    /*!
      * For this phase, the partial molar enthalpies are equal to the
-     * pure species enthalpies
+     * standard state enthalpies modified by the derivative of the
+     * molality-based activity coefficent wrt temperature
+     *
      *  \f[
-     * \bar h_k(T,P) = \hat h^{ref}_k(T) + (P - P_{ref}) \hat V^0_k
+     * \bar h_k(T,P) = h^{\triangle}_k(T,P) - R T^2 \frac{d \ln(\gamma_k^\triangle)}{dT}
      * \f]
-     * The reference-state pure-species enthalpies, 
-     * \f$ \hat h^{ref}_k(T) \f$,
-     * at the reference pressure,\f$ P_{ref} \f$,
-     * are computed by the species thermodynamic 
-     * property manager. They are polynomial functions of temperature.
-     * @see SpeciesThermo
+     * The solvent partial molar enthalpy is equal to 
+     *  \f[
+     * \bar h_o(T,P) = h^{o}_o(T,P) - R T^2 \frac{d \ln(a_o}{dT}
+     * \f]
+     *
+     * The temperature dependence of the activity coefficients currently
+     * only occurs through the temperature dependence of the Debye constant.
+     *
+     * @param hbar    Output vector of species partial molar enthalpies.
+     *                Length: m_kk. units are J/kmol.
      */
     virtual void getPartialMolarEnthalpies(doublereal* hbar) const;
 
+    //! Returns an array of partial molar entropies of the species in the
+    //! solution. Units: J/kmol/K.
     /**
-     * getPartialMolarEntropies()        (virtual, const)
-     *
-     * Returns an array of partial molar entropies of the species in the
-     * solution. Units: J/kmol.
-     *
      * Maxwell's equations provide an insight in how to calculate this
-     * (p.215 Smith and Van Ness)
+     *   (p.215 Smith and Van Ness)
      *
      *      d(chemPot_i)/dT = -sbar_i
      *      
-     *
      * For this phase, the partial molar entropies are equal to the
      * SS species entropies plus the ideal solution contribution.following
      * contribution:
      *  \f[
-     * \bar s_k(T,P) =  \hat s^0_k(T) - R log(M0 * molality[k])
+     *     \bar s_k(T,P) =  \hat s^0_k(T) - R log(M0 * molality[k])
      * \f]
      * \f[
-     * \bar s_solvent(T,P) =  \hat s^0_solvent(T) 
-     *             - R ((xmolSolvent - 1.0) / xmolSolvent)
+     *      \bar s_solvent(T,P) =  \hat s^0_solvent(T) 
+     *                  - R ((xmolSolvent - 1.0) / xmolSolvent)
      * \f]
      *
      * The reference-state pure-species entropies,\f$ \hat s^0_k(T) \f$,
@@ -513,20 +1056,31 @@ namespace Cantera {
      * species thermodynamic
      * property manager. They are polynomial functions of temperature.
      * @see SpeciesThermo
+     *
+     *  @param sbar    Output vector of species partial molar entropies.
+     *                 Length = m_kk. units are J/kmol/K.
      */
     virtual void getPartialMolarEntropies(doublereal* sbar) const;
      
-    /**
-     * returns an array of partial molar volumes of the species
-     * in the solution. Units: m^3 kmol-1.
-     *
-     * For this solution, thepartial molar volumes are equal to the
-     * constant species molar volumes.
+    //! Return an array of partial molar heat capacities for the
+    //! species in the mixture.  Units: J/kmol/K
+    /*!
+     * @param cpbar   Output vector of species partial molar heat 
+     *                capacities at constant pressure.
+     *                Length = m_kk. units are J/kmol/K.
      */
-    virtual void getPartialMolarVolumes(doublereal* vbar) const;
-
     virtual void getPartialMolarCp(doublereal* cpbar) const;
 
+    //! Return an array of partial molar volumes for the
+    //! species in the mixture. Units: m^3/kmol.
+    /*!
+     * For this solution, the partial molar volumes are equal to the
+     * constant species molar volumes.
+     *
+     *  @param vbar   Output vector of speciar partial molar volumes.
+     *                Length = m_kk. units are m^3/kmol.
+     */
+    virtual void getPartialMolarVolumes(doublereal* vbar) const;
 
     //@}
 
@@ -535,7 +1089,14 @@ namespace Cantera {
     //@{
 
      
-    /**
+
+    //! Get the array of chemical potentials at unit activity for the species
+    //! at their standard states at the current <I>T</I> and <I>P</I> of the solution.
+    /*!
+     * These are the standard state chemical potentials \f$ \mu^0_k(T,P)
+     * \f$. The values are evaluated at the current
+     * temperature and pressure of the solution
+     *
      *  Get the standard state chemical potentials of the species.
      *  This is the array of chemical potentials at unit activity 
      *  \f$ \mu^0_k(T,P) \f$.
@@ -546,89 +1107,186 @@ namespace Cantera {
      *  equilibrium constant Kc. Therefore, Kc will also depend
      *  on T and P. This is the norm for liquid and solid systems.
      *
-     *  units = J / kmol
+     * @param mu      Output vector of chemical potentials. 
+     *                Length: m_kk.
      */
     virtual void getStandardChemPotentials(doublereal* mu) const;
 
-    /**
-     * Get the nondimensional gibbs function for the species
-     * standard states at the current T and P of the solution.
-     *
+    //! Get the nondimensional Gibbs functions for the species
+    //! in their standard states at the current <I>T</I> and <I>P</I> of the solution.
+    /*!
+     *  The standard states are on the unit molality basis.
      *  \f[
-     *  \mu^0_k(T,P) = \mu^{ref}_k(T) + (P - P_{ref}) * V_k
+     *  \mu^{\triangle}_k(T,P) = \mu^{\triangle,ref}_k(T) + (P - P_{ref}) * V_k
      * \f]
-     * where \f$V_k\f$ is the molar volume of pure species <I>k</I>.
-     * \f$ \mu^{ref}_k(T)\f$ is the chemical potential of pure
+     *
+     *  where \f$V_k\f$ is the molar volume of pure species <I>k</I>.
+     * \f$ \mu^{\triangle,ref}_k(T)\f$ is the chemical potential of pure
      * species <I>k</I> at the reference pressure, \f$P_{ref}\f$.
      *
-     * @param grt Vector of length m_kk, which on return sr[k]
-     *           will contain the nondimensional 
-     *           standard state gibbs function for species k. 
+     * @param grt  Output vector of nondimensional standard state gibbs free energies
+     *             Length: m_kk.
      */
     virtual void getGibbs_RT(doublereal* grt) const;
 
-    /**
-     * Get the nondimensional Gibbs functions for the standard
-     * state of the species at the current T and P.
+    //! Get the Gibbs functions for the standard
+    //! state of the species at the current <I>T</I> and <I>P</I> of the solution
+    /*!
+     *  The standard states are on the unit molality basis.
+     * Units are Joules/kmol
+     * @param gpure  Output vector of  standard state gibbs free energies
+     *               Length: m_kk.
      */
     virtual void getPureGibbs(doublereal* gpure) const;
 
-    /**
-     *
-     * getEnthalpy_RT()        (virtual, const)
-     *
-     * Get the array of nondimensional Enthalpy functions for the 
-     * standard states 
-     * species at the current <I>T</I> and <I>P</I> of the solution.
+    //! Get the nondimensional Enthalpy functions for the species
+    //! at their standard states at the current <I>T</I> and <I>P</I> of the solution.
+    /*!
+     *  The standard states are on the unit molality basis.
      * We assume an incompressible constant partial molar
-     * volume here:
-     * \f[
-     *  h^0_k(T,P) = h^{ref}_k(T) + (P - P_{ref}) * V_k
-     * \f]
-     * where \f$V_k\f$ is the molar volume of SS species <I>k<\I>.
+     * volume for the solutes.
+     *
+     *  \f[
+     *      h^{\triangle}_k(T,P) = h^{\triangle,ref}_k(T) + (P - P_{ref}) * V_k
+     *  \f]
+     *
+     * where \f$V_k\f$ is the molar volume of SS species <I>k</I>.
      * \f$ h^{ref}_k(T)\f$ is the enthalpy of the SS
-     * species <I>k<\I> at the reference pressure, \f$P_{ref}\f$.
+     * species <I>k</I> at the reference pressure, \f$P_{ref}\f$.
+     *
+     * The solvent water enthalpy is obtained from a pure water
+     * equation of state model.
+     *
+     * @param hrt      Output vector of nondimensional standard state enthalpies.
+     *                 Length: m_kk.
      */
     virtual void getEnthalpy_RT(doublereal* hrt) const;
 
-    /**
-     * Get the nondimensional Entropies for the species
-     * standard states at the current T and P of the solution.
+    //! Get the array of nondimensional Entropy functions for the
+    //! standard state species at the current <I>T</I> and <I>P</I> of the solution.
+    /*!
+     *
+     *  The standard states are on the unit molality basis.
+     *
+     *  \f[
+     *      s^{\triangle}_k(T,P) = s^{\triangle,ref}_k(T) 
+     *  \f]
      *
      * Note, this is equal to the reference state entropies
      * due to the zero volume expansivity:
      * i.e., (dS/dp)_T = (dV/dT)_P = 0.0
      *
-     * @param sr Vector of length m_kk, which on return sr[k]
-     *           will contain the nondimensional
-     *           standard state entropy of species k.
+     * The solvent water entropy is obtained from a pure water
+     * equation of state model.
+     *
+     * @param sr   Output vector of  nondimensional standard state entropies.
+     *             Length: m_kk. The solvent water is species 0, always.
      */
     virtual void getEntropy_R(doublereal* sr) const;
 
-    /**
-     * Get the nondimensional heat capacity at constant pressure
-     * function for the species
-     * standard states at the current T and P of the solution.
+    //! Get the nondimensional Heat Capacities at constant
+    //! pressure for the species standard states
+    //! at the current <I>T</I> and <I>P</I> of the solution
+    /*!
+     *  The standard states are on the unit molality basis.
+     * For the solutes:
      * \f[
-     *  Cp^0_k(T,P) = Cp^{ref}_k(T)
+     *  Cp^\triangle_k(T,P) = Cp^{\triangle,ref}_k(T)
      * \f]
-     * where \f$V_k\f$ is the molar volume of pure species <I>k</I>.
+     *
      * \f$ Cp^{ref}_k(T)\f$ is the constant pressure heat capacity
      * of species <I>k</I> at the reference pressure, \f$p_{ref}\f$.
      *
+     * The solute heat capacity is obtained from a pure water
+     * equation of state model, so it depends on T and P.
+     *
      * @param cpr Vector of length m_kk, which on return cpr[k]
      *           will contain the nondimensional 
-     *           constant pressure heat capacity for species k. 
+     *           constant pressure heat capacity for species k.
      */
     virtual void getCp_R(doublereal* cpr) const;
 
-    /**
-     * Get the molar volumes of each species in their standard
-     * states at the current
-     * <I>T</I> and <I>P</I> of the solution.
+    //!  Get the molar volumes of the species standard states at the current
+    //!  <I>T</I> and <I>P</I> of the solution.
+    /*!
+     * The current model assumes that an incompressible molar volume for
+     * all solutes. The molar volume for the water solvent, however,
+     * is obtained from a pure water equation of state, waterSS.
+     * Therefore, the water standard state varies with both T and P.
+     * It is an error to request the water molar volume at a T and P
+     * where the water phase is not stable phase.
+     *
      * units = m^3 / kmol
+     *
+     * @param vol     Output vector containing the standard state volumes.
+     *                Length: m_kk. The solvent water is species 0, always.
      */
     virtual void getStandardVolumes(doublereal *vol) const;
+
+    //!  Returns the vector of nondimensional
+    //!  Gibbs Free Energies of the reference state at the current temperature
+    //!  of the solution and the reference pressure for the species.
+    /*!
+     * @param grt     Output vector containing the nondimensional reference state
+     *                Gibbs Free energies.  Length: m_kk.
+     */
+    virtual void getGibbs_RT_ref(doublereal *grt) const;
+
+   //!  Returns the vector of nondimensional
+    //!  enthalpies of the reference state at the current temperature
+    //!  of the solution and the reference pressure for the species.
+    /*!
+     * @param hrt     Output vector containing the nondimensional reference state enthalpies
+     *                Length: m_kk.
+     */
+    virtual void getEnthalpy_RT_ref(doublereal *hrt) const;
+
+    /*!
+     *  Returns the vector of nondimensional
+     *  entropies of the reference state at the current temperature
+     *  of the solution and the reference pressure for each species.
+     *
+     * @param er      Output vector containing the nondimensional reference state
+     *                entropies.  Length: m_kk.
+       */
+    virtual void getEntropy_R_ref(doublereal *er) const;
+
+    /*!
+     *  Returns the vector of nondimensional
+     *  constant pressure heat capacities of the reference state
+     *  at the current temperature of the solution
+     *  and reference pressure for each species.
+     *
+     * @param cprt   Output vector of nondimensional reference state
+     *               heat capacities at constant pressure for the species.
+     *               Length: m_kk
+     */
+    virtual void getCp_R_ref(doublereal *cprt) const;
+
+    //!  Get the molar volumes of the species reference states at the current
+    //!  <I>T</I> and <I>P_ref</I> of the solution.
+    /*!
+     * units = m^3 / kmol
+     *
+     * @param vol     Output vector containing the standard state volumes.
+     *                Length: m_kk.
+     */
+    virtual void getStandardVolumes_ref(doublereal *vol) const;
+
+  protected:
+
+    //! Updates the standard state thermodynamic functions at the current T and P of the solution.
+    /*!
+     * @internal
+     *
+     * This function gets called for every call to a public function in this
+     * class. It checks to see whether the temperature or pressure has changed and
+     * thus whether the ss thermodynamics functions must be recalculated.
+     *
+     * @param pres  Pressure at which to evaluate the standard states.
+     *              The default, indicated by a -1.0, is to use the current pressure
+     */                    
+    virtual void _updateStandardStateThermo(doublereal pres = -1.0) const;
 
     //@}
     /// @name Thermodynamic Values for the Species Reference States ---
@@ -664,53 +1322,59 @@ namespace Cantera {
      * @{
      */
 
-    /**
-     * This method is used by the ChemEquil equilibrium solver.
+    //!This method is used by the ChemEquil equilibrium solver.
+    /*!
      * It sets the state such that the chemical potentials satisfy
      * \f[ \frac{\mu_k}{\hat R T} = \sum_m A_{k,m}
      * \left(\frac{\lambda_m} {\hat R T}\right) \f] where 
      * \f$ \lambda_m \f$ is the element potential of element m. The
      * temperature is unchanged.  Any phase (ideal or not) that
      * implements this method can be equilibrated by ChemEquil.
+     *
+     * @param lambda_RT Input vector of dimensionless element potentials
+     *                  The length is equal to nElements().
      */ 
+  public:
     virtual void setToEquilState(const doublereal* lambda_RT) {
       err("setToEquilState");
     }
 
-    // called by function 'equilibrate' in ChemEquil.h to transfer
-    // the element potentials to this object
-    void setElementPotentials(const vector_fp& lambda) {
-      m_lambda = lambda;
-    }
-
-    void getElementPotentials(doublereal* lambda) {
-      copy(m_lambda.begin(), m_lambda.end(), lambda);
-    }
 
     //@}
 
 
-    /**
+    //! Set the equation of state parameters
+    /*!
      * @internal
-     * Set equation of state parameters. The number and meaning of
-     * these depends on the subclass. 
+     *  The number and meaning of these depends on the subclass. 
+     *
      * @param n number of parameters
-     * @param c array of \i n coefficients
-     * 
+     * @param c array of \a n coefficients
      */
     virtual void setParameters(int n, doublereal* c);
-    virtual void getParameters(int &n, doublereal * const c);
 
-    /**
-     * Set equation of state parameter values from XML
-     * entries. This method is called by function importPhase in
+    //! Get the equation of state parameters in a vector
+    /*!
+     * @internal
+     * The number and meaning of these depends on the subclass. 
+     *
+     * @param n number of parameters
+     * @param c array of \a n coefficients
+     */
+    virtual void getParameters(int &n, doublereal * const c) const;
+
+    //! Set equation of state parameter values from XML entries.
+    /*!
+     *
+     * This method is called by function importPhase() in
      * file importCTML.cpp when processing a phase definition in
      * an input file. It should be overloaded in subclasses to set
      * any parameters that are specific to that particular phase
-     * model. 
+     * model. Note, this method is called before the phase is
+     * initialzed with elements and/or species.
      *   
      * @param eosdata An XML_Node object corresponding to
-     * the "thermo" entry for this phase in the input file.
+     *                the "thermo" entry for this phase in the input file.
      */
     virtual void setParametersFromXML(const XML_Node& eosdata);
  
@@ -720,20 +1384,7 @@ namespace Cantera {
         
     //@{
         
-    /// Critical temperature (K).
-    virtual doublereal critTemperature() const {
-      err("critTemperature"); return -1.0;
-    }
-        
-    /// Critical pressure (Pa).
-    virtual doublereal critPressure() const {
-      err("critPressure"); return -1.0;
-    }
-        
-    /// Critical density (kg/m3).
-    virtual doublereal critDensity() const {
-      err("critDensity"); return -1.0;
-    }                
+   
         
     //@}
         
@@ -744,8 +1395,23 @@ namespace Cantera {
     virtual doublereal satTemperature(doublereal p) const {
       err("satTemperature"); return -1.0;
     }
-        
-    virtual doublereal satPressure(doublereal t) const {
+
+    //! Get the saturation pressure for a given temperature. 
+    /*!
+     * Note the limitations of this function. Stability considerations
+     * concernting multiphase equilibrium are ignored in this 
+     * calculation. Therefore, the call is made directly to the SS of 
+     * water underneath. The object is put back into its original
+     * state at the end of the call.
+     *
+     * @todo This is probably not implemented correctly. The stability
+     *       of the salt should be added into this calculation. The
+     *       underlying water model may be called to get the stability
+     *       of the pure water solution, if needed.
+     *
+     * @param T  Temperature (kelvin)
+     */   
+    virtual doublereal satPressure(doublereal T) const {
       err("satPressure"); return -1.0;
     }
         
@@ -768,17 +1434,7 @@ namespace Cantera {
      *  -------------- Utilities -------------------------------
      */
 
-    /**
-     * @internal Install a species thermodynamic property
-     * manager. The species thermodynamic property manager
-     * computes properties of the pure species for use in
-     * constructing solution properties. It is meant for internal
-     * use, and some classes derived from ThermoPhase may not use
-     * any species thermodynamic property manager.
-     */
-    void setSpeciesThermo(SpeciesThermo* spthermo) 
-    { m_spthermo = spthermo; }
-
+ 
     /**
      * Return a reference to the species thermodynamic property
      * manager.  @todo This method will fail if no species thermo
@@ -786,7 +1442,7 @@ namespace Cantera {
      */
     SpeciesThermo& speciesThermo() { return *m_spthermo; }
 
-
+    //! Initialize the object's internal lengths after species are set
     /**
      * @internal Initialize. This method is provided to allow
      * subclasses to perform any initialization required after all
@@ -796,16 +1452,19 @@ namespace Cantera {
      * and subclasses that do not require initialization do not
      * need to overload this method.  When importing a CTML phase
      * description, this method is called just prior to returning
-     * from function importPhase.
+     * from function importPhase().
+     *
+     * Cascading call sequence downwards starting with Parent.
+     *
+     * @internal
      *
      * @see importCTML.cpp
      */
     virtual void initThermo();
 
-    /*
-     * Initialization of a DebyeHuckel phase using an
-     * xml file
-     *
+    
+    //! Initialization of a DebyeHuckel phase using an xml file
+    /*!
      * This routine is a precursor to initThermo(XML_Node*)
      * routine, which does most of the work.
      *
@@ -816,11 +1475,11 @@ namespace Cantera {
      *            phase. If none is given, the first XML
      *            phase element will be used.
      */
-    virtual void constructPhaseFile(string infile, string id="");
-
-    /*
-     *   Import and initialize a DebyeHuckel phase 
-     *   specification in an XML tree into the current object.
+    void constructPhaseFile(std::string infile, std::string id="");
+    
+    //!   Import and initialize a DebyeHuckel phase 
+    //!   specification in an XML tree into the current object.
+    /*!
      *   Here we read an XML description of the phase.
      *   We import descriptions of the elements that make up the
      *   species in a phase.
@@ -838,116 +1497,187 @@ namespace Cantera {
      *             point to an XML phase object, it must have
      *             sibling nodes "speciesData" that describe
      *             the species in the phase.
+     *
      * @param id   ID of the phase. If nonnull, a check is done
      *             to see if phaseNode is pointing to the phase
      *             with the correct id. 
      */
-    virtual void constructPhaseXML(XML_Node& phaseNode, string id="");
-
-
-    virtual void  initThermoXML(XML_Node& phaseNode, string id);
-
-    /**
-     * Report the molar volume of species k
+    void constructPhaseXML(XML_Node& phaseNode, std::string id="");
+    
+    //! Process the XML file after species are set up.
+    /*!
+     *  This gets called from importPhase(). It processes the XML file
+     *  after the species are set up. This is the main routine for
+     *  reading in activity coefficient parameters.
      *
-     * units - \f$ m^3 kmol^-1 \f$
+     * @param phaseNode This object must be the phase node of a
+     *             complete XML tree
+     *             description of the phase, including all of the
+     *             species data. In other words while "phase" must
+     *             point to an XML phase object, it must have
+     *             sibling nodes "speciesData" that describe
+     *             the species in the phase.
+     * @param id   ID of the phase. If nonnull, a check is done
+     *             to see if phaseNode is pointing to the phase
+     *             with the correct id.
      */
-    double speciesMolarVolume(int k) const;
-
-    /**
-     * Fill in a return vector containing the species molar volumes
-     * units - \f$ m^3 kmol^-1 \f$
-     */
-    //void   getSpeciesMolarVolumes(double *smv) const;
-
-
-    /**
-     *  Value of the Debye Huckel constant as a function of temperature
-     * and pressure.
+    virtual void  initThermoXML(XML_Node& phaseNode, std::string id);
+    
+    //! Return  the Debye Huckel constant as a function of temperature
+    //! and pressure (Units = sqrt(kg/gmol))
+    /*!
+     *  The default is to assume that it is constant, given
+     *  in the initialization process, and storred in the
+     *  member double, m_A_Debye. Optionally, a full water treatment may be employed that makes
+     *  \f$ A_{Debye} \f$ a full function of T and P.
      *
-     *            A_Debye = (F e B_Debye) / (8 Pi epsilon R T)
+     *   \f[
+     *      A_{Debye} = \frac{F e B_{Debye}}{8 \pi \epsilon R T} {\left( C_o \tilde{M}_o \right)}^{1/2}
+     *   \f]
+     * where
+     * 
+     *  \f[
+     *         B_{Debye} = \frac{F} {{(\frac{\epsilon R T}{2})}^{1/2}} 
+     *  \f]
+     *  Therefore:
+     * \f[
+     *   A_{Debye} = \frac{1}{8 \pi} 
+     *                 {\left(\frac{2 N_a \rho_o}{1000}\right)}^{1/2}
+     *                 {\left(\frac{N_a e^2}{\epsilon R T }\right)}^{3/2}
+     * \f]
      *
      *            Units = sqrt(kg/gmol)
+     *
+     *     where
+     *      - \f$ N_a \f$ is Avrogadro's number
+     *      - \f$ \rho_w \f$ is the density of water
+     *      - \f$ e \f$ is the electronic charge
+     *      - \f$ \epsilon = K \epsilon_o \f$ is the permitivity of water
+     *           where \f$ K \f$ is the dielectric condstant of water,
+     *           and  \f$ \epsilon_o \f$ is the permitivity of free space.
+     *      = \f$ \rho_o \f$ is the density of the solvent in its standard state.
+     *
+     *            Nominal value at 298 K and 1 atm = 1.172576 (kg/gmol)<SUP>1/2</SUP>
+     *                  based on:
+     *                 -   \f$ \epsilon / \epsilon_0 \f$ = 78.54
+     *                           (water at 25C)
+     *                 -   \f$ \epsilon_0 \f$= 8.854187817E-12 C<SUP>2</SUP> N<SUP>-1</SUP> m<SUP>-2</SUP>
+     *                 -   e = 1.60217653E-19 C
+     *                 -   F = 9.6485309E7 C kmol<SUP>-1</SUP>
+     *                 -   R = 8.314472E3 kg m<SUP>2</SUP> s<SUP>-2</SUP> kmol<SUP>-1</SUP> K<SUP>-1</SUP>
+     *                 -   T = 298.15 K
+     *                 -   B_Debye = 3.28640E9 (kg/gmol)<SUP>1/2</SUP> m<SUP>-1</SUP>
+     *                 -   \f$N_a\f$ = 6.0221415E26 kmol<SUP>-1</SUP>
+     *   
+     * @param temperature Temperature in kelvin. Defaults to -1, in which
+     *                    case the   temperature of the phase is assumed.
+     *
+     * @param pressure Pressure (Pa). Defaults to -1, in which
+     *                    case the pressure of the phase is assumed.
      */
     virtual double A_Debye_TP(double temperature = -1.0, 
 			      double pressure = -1.0) const;
 
-    /**
-     * Value of the derivative of the Debye Huckel constant with 
-     * respect to temperature as a function of temperature
-     * and pressure.
+    
+    //! Value of the derivative of the Debye Huckel constant with 
+    //! respect to temperature.
+    /*!
+     * This is a function of temperature and pressure. See A_Debye_TP() for 
+     * a definition of \f$ A_{Debye} \f$.
+     *     
+     *            Units = sqrt(kg/gmol) K-1
      *
-     *            A_Debye = (F e B_Debye) / (8 Pi epsilon R T)
+     * @param temperature Temperature in kelvin. Defaults to -1, in which
+     *                    case the   temperature of the phase is assumed.
      *
-     *            Units = sqrt(kg/gmol)
+     * @param pressure Pressure (Pa). Defaults to -1, in which
+     *                    case the pressure of the phase is assumed.
      */
     virtual double dA_DebyedT_TP(double temperature = -1.0, 
 				 double pressure = -1.0) const;
-
-    /**
-     * Value of the 2nd derivative of the Debye Huckel constant with 
-     * respect to temperature as a function of temperature
-     * and pressure.
+    
+    //! Value of the 2nd derivative of the Debye Huckel constant with 
+    //! respect to temperature as a function of temperature and pressure.
+    /*!
+     * This is a function of temperature and pressure. See A_Debye_TP() for 
+     * a definition of \f$ A_{Debye} \f$.
+     *     
+     *            Units = sqrt(kg/gmol) K-2
      *
-     *            A_Debye = (F e B_Debye) / (8 Pi epsilon R T)
+     * @param temperature Temperature in kelvin. Defaults to -1, in which
+     *                    case the   temperature of the phase is assumed.
      *
-     *            Units = sqrt(kg/gmol)
+     * @param pressure Pressure (Pa). Defaults to -1, in which
+     *                    case the pressure of the phase is assumed.
      */
     virtual double d2A_DebyedT2_TP(double temperature = -1.0, 
 				   double pressure = -1.0) const;
 
-    /**
-     * Value of the derivative of the Debye Huckel constant with 
-     * respect to pressure, as a function of temperature
-     * and pressure.
+    //! Value of the derivative of the Debye Huckel constant with 
+    //! respect to pressure, as a function of temperature and pressure.
+    /*!
+     * This is a function of temperature and pressure. See A_Debye_TP() for 
+     * a definition of \f$ A_{Debye} \f$.
+     *     
+     *            Units = sqrt(kg/gmol) Pa-1
      *
-     *      A_Debye = (F e B_Debye) / (8 Pi epsilon R T)
+     * @param temperature Temperature in kelvin. Defaults to -1, in which
+     *                    case the   temperature of the phase is assumed.
      *
-     *  Units = sqrt(kg/gmol)
+     * @param pressure Pressure (Pa). Defaults to -1, in which
+     *                    case the pressure of the phase is assumed.
      */
     virtual double dA_DebyedP_TP(double temperature = -1.0, 
 				 double pressure = -1.0) const;
 
-    /*
-     * AionicRadius()
-     *
-     *      Reports the ionic radius of the kth species
+    //!Reports the ionic radius of the kth species
+    /*!
+     * @param k  species index.
      */
     double AionicRadius(int k = 0) const;
 
-    /**
-     *
-     * formDH():
-     *
-     *  Returns the form of the Debye-Huckel parameterization used
-     */
+    //! Returns the form of the Debye-Huckel parameterization used
     int formDH() const { return m_formDH; }
 
+    //! Returns a reference to M_Beta_ij
     Array2D& get_Beta_ij() { return m_Beta_ij; }
 
   private:
-    /*   Static function that implements the non-polar species
-     *   salt-out modifications.
+
+
+    //!  Static function that implements the non-polar species
+    //!   salt-out modifications.
+    /*!
      *   Returns the calculated activity coefficients.
+     *
+     * @param IionicMolality Value of the ionic molality (sqrt(gmol/kg))
      */
     double _nonpolarActCoeff(double IionicMolality) const;
 
-    /**
-     *      Formula for the osmotic coefficient that occurs in
-     *      the GWB. It is originally from Helgeson for a variable
+    
+    //!      Formula for the osmotic coefficient that occurs in the GWB.
+    /*!
+     * It is originally from Helgeson for a variable
      *      NaCl brine. It's to be used with extreme caution.
      */
     double _osmoticCoeffHelgesonFixedForm() const;
-    double _lnactivityWaterHelgesonFixedForm() const;
 
+    //!      Formula for the log of the water activity that occurs in the GWB.
+    /*!
+     * It is originally from Helgeson for a variable
+     *      NaCl brine. It's to be used with extreme caution.
+     */
+    double _lnactivityWaterHelgesonFixedForm() const;
+ 
+ 
     //@}
 
          
   protected:
 
-    /**
-     * This is the form of the Debye-Huckel parameterization
-     * used in this model.
+   
+    //! form of the Debye-Huckel parameterization  used in the model.
+    /*!
      * The options are described at the top of this document,
      * and in the general documentation.
      * The list is repeated here:
@@ -991,12 +1721,17 @@ namespace Cantera {
      */
     int m_formGC;
 
-    /**
-     *  Current pressure in Pascal
+    //! Vector containing the electrolyte species type
+    /*!
+     * The possible types are:
+     *  - solvent
+     *  - Charged Species
+     *  - weakAcidAssociated
+     *  - strongAcidAssociated
+     *  - polarNeutral
+     *  - nonpolarNeutral
+     *  .
      */
-    double m_Pcurrent;
-
-	
     vector_int  m_electrolyteSpeciesType;
 
     /**
@@ -1022,6 +1757,8 @@ namespace Cantera {
      */
     double m_maxIionicStrength;
 
+  public:
+
     /**
      * If true, then the fixed for of Helgeson's activity
      * for water is used instead of the rigoruous form 
@@ -1029,15 +1766,14 @@ namespace Cantera {
      * used with caution, and is really only included as a 
      * validation exercise.
      */
-  public:
     bool m_useHelgesonFixedForm;
   protected:
-    /**
-     * Stoichiometric ionic strength on the molality scale
-     */
+
+    //! Stoichiometric ionic strength on the molality scale
     mutable double m_IionicMolalityStoich;
 
   public:
+
     /**
      * Form of the constant outside the Debye-Huckel term
      * called A. It's normally a function of temperature 
@@ -1057,6 +1793,8 @@ namespace Cantera {
     int m_form_A_Debye;
 
   protected:
+
+    //! Current value of the Debye Constant, A_Debye
     /**
      * A_Debye -> this expression appears on the top of the
      *            ln actCoeff term in the general Debye-Huckel
@@ -1082,6 +1820,7 @@ namespace Cantera {
      */
     mutable double m_A_Debye;
 
+    //! Current value of the constant that appears in the denominator
     /**
      * B_Debye -> this expression appears on the bottom of the
      *            ln actCoeff term in the general Debye-Huckel
@@ -1104,6 +1843,7 @@ namespace Cantera {
      */
     double m_B_Debye;
 
+    //! Array of B_Dot valyes
     /**
      *  B_Dot ->  This expression is an extension of the 
      *            Debye-Huckel expression used in some formulations
@@ -1120,11 +1860,17 @@ namespace Cantera {
      */
     array_fp m_npActCoeff;
 
-    /**
-     *  Water standard state -> derived from the
-     *  equation of state for water.
+    
+    //! Pointer to the  Water standard state object
+    /*!
+     *  derived from the equation of state for water.
      */
     WaterPDSS *m_waterSS;
+
+    //! Storage for the density of water's standard state
+    /*!
+     * Density depends on temperature and pressure.
+     */
     double m_densWaterSS;
 
     /**
@@ -1175,31 +1921,81 @@ namespace Cantera {
      */
     Array2D m_Beta_ij;
 
-    /**
-     *  Logarithm of the activity coefficients on the molality
-     *  scale.
+    //!  Logarithm of the activity coefficients on the molality scale.
+    /*!
      *       mutable because we change this if the composition
      *       or temperature or pressure changes.
      */
     mutable array_fp m_lnActCoeffMolal;
+
+    //! Derivative of log act coeff wrt T
     mutable array_fp m_dlnActCoeffMolaldT;
+
+    //! 2nd Derivative of log act coeff wrt T
     mutable array_fp m_d2lnActCoeffMolaldT2;
+
+    //! Derivative of log act coeff wrt P
     mutable array_fp m_dlnActCoeffMolaldP;
   
   private:
-    doublereal err(string msg) const;
+    doublereal err(std::string msg) const;
 
-
+    //! Initialize the internal lengths.
+    /*!
+     * This internal function adjusts the lengths of arrays based on
+     * the number of species.
+     */
     void initLengths();
 
-    /*
-     * This function will be called to update the internally storred
+  private:
+    //! Calculate the log activity coefficients
+    /*!
+     * This function updates the internally storred
      * natural logarithm of the molality activity coefficients 
      */
     void s_update_lnMolalityActCoeff() const;
 
+    //! Calculation of temperatue derivative of activity coefficient
+    /*!
+     *   Using internally stored values, this function calculates
+     *   the temperature derivative of the logarithm of the
+     *   activity coefficient for all species in the mechanism.
+     *
+     *   We assume that the activity coefficients are current in this routine
+     *
+     *
+     *
+     *   The solvent activity coefficient is on the molality scale. It's derivative is too.
+     */
     void s_update_dlnMolalityActCoeff_dT() const;
+
+    //! Calculate the temperature 2nd derivative of the activity coefficient
+    /*!
+     *   Using internally stored values, this function calculates
+     *   the temperature 2nd derivative of the logarithm of the
+     *   activity coefficient for all species in the mechanism.
+     *
+     *   We assume that the activity coefficients are current in this routine
+     *
+     *   solvent activity coefficient is on the molality
+     *   scale. It's derivatives are too.
+     *
+     * note: private routine
+     */
     void s_update_d2lnMolalityActCoeff_dT2() const;
+
+    //! Calculate the pressure derivative of the activity coefficient
+    /*!
+     *   Using internally stored values, this function calculates
+     *   the pressure derivative of the logarithm of the
+     *   activity coefficient for all species in the mechanism.
+     *
+     *   We assume that the activity coefficients, molalities,
+     *   and A_Debye are current.
+     *
+     *   solvent activity coefficient is on the molality
+     *   scale. It's derivatives are too.
+     */
     void s_update_dlnMolalityActCoeff_dP() const;
   };
 

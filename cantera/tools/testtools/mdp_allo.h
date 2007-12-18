@@ -7,11 +7,11 @@
  *
  * $Author: hkmoffa $
  *
- * $Date: 2004/08/27 20:08:10 $
+ * $Date: 2007/03/26 21:53:45 $
  *
- * $Revision: 1.2 $
+ * $Revision: 1.3 $
  *
- * $Name: HEAD $
+ * $Name:  $
  *====================================================================*/
 #ifndef MDP_ALLO_H
 #define MDP_ALLO_H
@@ -31,7 +31,7 @@
 /*
  *  These are a poor man's way of specifying whether a value should be
  *  initialized. These are seldom used numbers whic
- * $Name: HEAD $
+ * $Name:  $
  *====================h can be used in place
  *  of real ints and dbls to indicate that initialization shouldn't take
  *  place.
@@ -95,6 +95,8 @@ extern void    mdp_realloc_ptr_1(void ***, int, int);
 extern char   *mdp_copy_C16_NAME_to_string(const C16_NAME);
 extern char   *mdp_copy_string(const char *);
 extern void    mdp_safe_copy_string(char **, const char *);
+
+extern void ***mdp_alloc_ptr_2(int, int);
 
 /*****************************************************************************/
 #endif

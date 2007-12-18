@@ -5,6 +5,8 @@
 
 #include "Domain1D.h"
 
+using namespace std;
+
 namespace Cantera {
 
     void Domain1D::
@@ -88,8 +90,8 @@ namespace Cantera {
             jmax = m_points - 1;
         }
         else {            // evaluate points for Jacobian
-            jmin = max(jpt-1, 0);
-            jmax = min(jpt+1,m_points-1);
+            jmin = std::max(jpt-1, 0);
+            jmax = std::min(jpt+1,m_points-1);
         }
 
         for (j = jmin; j <= jmax; j++) {

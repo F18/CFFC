@@ -7,8 +7,10 @@
 #pragma warning(disable:4503)
 #endif
 
-#include "../ct_defs.h"
+#include "ct_defs.h"
 #include "Domain1D.h"
+
+using namespace std;
 
 namespace Cantera {
 

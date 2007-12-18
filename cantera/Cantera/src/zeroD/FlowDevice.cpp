@@ -1,7 +1,9 @@
 
 #include "FlowDevice.h"
 #include "ReactorBase.h"
-#include "../Func1.h"
+#include "Func1.h"
+
+using namespace std;
 
 namespace CanteraZeroD {
 

@@ -26,6 +26,17 @@ py_func_newcombo(PyObject *self, PyObject *args)
 }
 
 static PyObject*
+py_func_derivative(PyObject *self, PyObject *args)
+{
+    int type, n, m;
+    if (!PyArg_ParseTuple(args, "i:func_derivative", &n))
+        return NULL;
+    int nn = func_derivative(n);
+    if (nn < 0) return reportError(nn);
+    return Py_BuildValue("i",nn);
+}
+
+static PyObject*
 py_func_del(PyObject *self, PyObject *args)
 {
     int n;
@@ -45,5 +56,27 @@ py_func_value(PyObject *self, PyObject *args)
         return NULL;
     double r = func_value(n, t);
     return Py_BuildValue("d",r);
+}
+
+
+
+static PyObject*
+py_func_write(PyObject *self, PyObject *args)
+{
+    int n;
+    char* arg;
+    char* nm;
+    int lennm;
+    if (!PyArg_ParseTuple(args, "iis:func_write", &n, &lennm, &arg))
+        return NULL;
+    nm = new char[lennm+1];
+    int iok = func_write(n, lennm, arg, nm);
+    if (iok < 0) {
+        delete[] nm;
+        return reportError(iok);
+    }
+    PyObject* r = Py_BuildValue("s",nm);
+    delete[] nm;
+    return r;
 }
 

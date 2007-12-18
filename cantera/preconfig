@@ -77,7 +77,7 @@ USE_NUMERIC=${USE_NUMERIC:="default"}
 
 # If numarray was installed using the --home option, set this to the
 # home directory for numarray.
-NUMARRAY_HOME=${NUMARRAY_HOME:=""}
+#NUMARRAY_HOME=${NUMARRAY_HOME:="$HOME/python_packages"}
 
 # If you want to install the Cantera Python package somewhere other
 # than the default 'site-packages' directory within the Python library
@@ -112,9 +112,8 @@ PYTHON_SITE_PACKAGE_TOPDIR=${PYTHON_SITE_PACKAGE_TOPDIR:="/usr/local"}
 #
 # Note that you may need to run 'mex -setup' within MATLAB to
 # configure it for your C++ compiler before running this script.
-#BUILD_MATLAB_TOOLBOX=${BUILD_MATLAB_TOOLBOX:="default"}
 BUILD_MATLAB_TOOLBOX=${BUILD_MATLAB_TOOLBOX:="n"}
-
+MATLAB_CMD=${MATLAB_CMD:="default"}
                              
 #----------- Fortran 90/95 --------------------------------------------------
 
@@ -180,6 +179,7 @@ DEBUG_MODE="n"
 
 # thermodynamic properties 
 ENABLE_THERMO='y'
+
 ######################################################################
 # optional phase types. These may not be needed by all users. Set them
 # to 'n' to omit them from the kernel.
@@ -187,6 +187,9 @@ ENABLE_THERMO='y'
 WITH_LATTICE_SOLID=${WITH_LATTICE_SOLID:="y"}
 WITH_METAL=${WITH_METAL:="y"}
 WITH_STOICH_SUBSTANCE='y' 
+WITH_SEMICONDUCTOR='y'
+WITH_ADSORBATE='y'
+WITH_SPECTRA=${WITH_SPECTRA:="y"}
 
 # This flag enables the inclusion of accurate liquid/vapor equations
 # of state for several fluids, including water, nitrogen, hydrogen,
@@ -194,12 +197,16 @@ WITH_STOICH_SUBSTANCE='y'
 WITH_PURE_FLUIDS='y'
 
 # This flag enables the inclusion of ideal solution capabilities
-WITH_IDEAL_SOLUTIONS=${WITH_IDEAL_SOLUTIONS:="n"}
+WITH_IDEAL_SOLUTIONS=${WITH_IDEAL_SOLUTIONS:="y"}
 
 # Enable expanded electrochemistry capabilities, include thermo
 # models for electrolyte solutions
-WITH_ELECTROLYTES=${WITH_ELECTROLYTES:="n"}
+WITH_ELECTROLYTES=${WITH_ELECTROLYTES:="y"}
 
+# Enable generating phase models from PrIMe models. For more
+# information about PrIME, see http://www.primekinetics.org
+# WARNING: Support for PrIMe is experimental!
+WITH_PRIME=${WITH_PRIME:="n"}
 
 ######################################################################
 # if set to 'y', the ck2cti program that converts Chemkin input files
@@ -207,9 +214,19 @@ WITH_ELECTROLYTES=${WITH_ELECTROLYTES:="n"}
 # files, or if you run ck2cti on some other machine, you can set this to 'n'. 
 ENABLE_CK=${ENABLE_CK:='y'}
 
-# homogeneous and heterogeneous kinetics
-ENABLE_KINETICS='y'
+######################################################################
 
+# Enable homogeneous kinetics
+WITH_KINETICS='y'
+
+# Enable heterogeneous kinetics (surface chemistry). This also enables
+# charge transfer reactions for electrochemistry.
+WITH_HETERO_KINETICS='y'
+
+# Enable reaction path analysis
+WITH_REACTION_PATHS='y'
+
+######################################################################
 # transport properties
 ENABLE_TRANSPORT='y'  
 
@@ -230,6 +247,12 @@ ENABLE_RXNPATH='y'
 
 # two phase pure fluids
 ENABLE_TPX='y'
+
+# write HTMl log files. Some multiphase equilibrium procedures can
+# write copious diagnostic log messages. Set this to anything but 'y'
+# to remove this capability (results in slightly faster equilibrium 
+# calculations)
+WITH_HTML_LOG_FILES='y'
 
 #-----------------------------------------------------------------
 #         CVODE / CVODES
@@ -255,7 +278,7 @@ USE_SUNDIALS=${USE_SUNDIALS:='default'}
 # This is where you installed sundials if you used the --prefix option
 # when you configured sundials. If you didn't use the prefix option,
 # then comment this line out.
-SUNDIALS_HOME=${SUNDIALS_HOME:=$HOME/sundials}
+#SUNDIALS_HOME=${SUNDIALS_HOME:=""}
 
 
 # It is recommended that you install the newest release of sundials 
@@ -323,13 +346,31 @@ CXXFLAGS=${CXXFLAGS:="-O3 -Wall"}
 # Ending libraries to tack onto the linking of all C++ programs
 LCXX_END_LIBS=${LCXX_END_LIBS:="-lm"}
 
-# the compiler flag to use to compile code that will be inserted into
+# The compiler flag to use to compile code that will be inserted into
 # shared libraries.
-PIC=${PIC:=-fPIC}
+PIC=${PIC:=""}
 
 # the compiler option to create a shared library from object files
-SHARED=${SHARED:="-shared"}
+SHARED=${SHARED:="-dynamic"}
  
+#-------------------------------------------------------------------
+#      Thread Safety
+#-------------------------------------------------------------------
+
+# Cantera can be built so that it is thread safe. Doing so requires
+# using procedures from the boost library, so if you want thread
+# safety then you need to get and install boost (http://www.boost.org) 
+# if you don't have it.  This is turned off by default, in which case
+# boost is not required to build Cantera.
+
+BUILD_THREAD_SAFE=${BUILD_THREAD_SAFE:="n"}
+
+# where boost header and library files may be found
+BOOST_INC_DIR=${BOOST_INC_DIR:="/usr/local/include/boost-1_34"}
+BOOST_LIB_DIR=${BOOST_LIB_DIR:="/usr/local/lib"}
+
+# the boost thread library
+BOOST_THREAD_LIB=${BOOST_THREAD_LIB:="boost_thread-mt-1_34"}
 
 #-------------------------------------------------------------------
 #      External procedures
@@ -354,7 +395,7 @@ BUILD_WITH_F2C=${BUILD_WITH_F2C:="y"}
 
 # if you are building the external Fortran 77 procedures from the Fortran 
 # source code, enter the compiler here. 
-F77=${F77:=g77}
+F77=${F77:=gfortran}
 
 # Fortran 77 compiler flags. Note that the Fortran compiler flags must be set
 # to produce object code compatible with the C/C++ compiler you are using.
@@ -362,7 +403,7 @@ FFLAGS=${FFLAGS:='-O3'}
 
 # the additional Fortran flags required for linking, if any. Leave commented
 # out if no additional flags are required.
-#LFORT_FLAGS="-lcc_dynamic"
+LFORT_FLAGS="-L/usr/local/lib"
 
 
 #------------------------------------------------------
@@ -382,6 +423,11 @@ RANLIB=${RANLIB:="ranlib"}
 # doesn't work, try GNU make.
 MAKE=${MAKE:=make}
 
+# The command to run when "installing". This defaults now to the
+# install-sh bourne shell script that comes with the autoconf package.
+# It can be overridden here.
+INSTALL_BIN=${INSTALL_BIN:=config/install-sh}
+
 # The directory location of the graphviz program, dot.  dot is used
 # for creating the documentation, and for making reaction path
 # diagrams.  if "dot" is in your path, you can leave this unspecified.
@@ -395,6 +441,8 @@ GRAPHVIZDIR=${GRAPHVIZDIR:=" "}
 CXX_EXT=${CXX_EXT:=cpp}
 F77_EXT=${F77_EXT:=f}
 F90_EXT=${F90_EXT:=f90}
+EXE_EXT=${EXE_EXT:=}
+
 
 
 CT_SHARED_LIB=${CT_SHARED_LIB:=clib}
@@ -405,7 +453,7 @@ CT_SHARED_LIB=${CT_SHARED_LIB:=clib}
 RPFONT=${RPFONT:="Helvetica"}
 
 # Don't change this.
-CANTERA_VERSION=${CANTERA_VERSION:="1.7.0"} 
+CANTERA_VERSION=${CANTERA_VERSION:="1.7.1"} 
 
 #-----------------------------------------------------------------------
 #------------------- don't change anything below!! ---------------------
@@ -423,14 +471,16 @@ export BUILD_WITH_F2C
 export BUILD_F90_INTERFACE
 export PYTHON_PACKAGE
 export BUILD_MATLAB_TOOLBOX
-#export MATLAB_CMD
+export MATLAB_CMD
 export CT_SHARED_LIB
 export CXX
 export CXX_EXT
 export CXXFLAGS
 export CC
 export ENABLE_THERMO
-export ENABLE_KINETICS
+export WITH_KINETICS
+export WITH_HETERO_KINETICS
+export WITH_REACTION_PATHS
 export ENABLE_TRANSPORT
 export ENABLE_CK
 export ENABLE_EQUIL
@@ -446,6 +496,7 @@ export F90
 export F90_EXT
 export FFLAGS
 export F90FLAGS
+export INSTALL_BIN
 export LAPACK_NAMES
 export LCXX_FLAGS
 export LCXX_END_LIBS
@@ -476,16 +527,27 @@ export SUNDIALS_VERSION
 
 export WITH_LATTICE_SOLID
 export WITH_METAL
+export WITH_SEMICONDUCTOR
+export WITH_ADSORBATE
+export WITH_SPECTRA
 export WITH_STOICH_SUBSTANCE
 export WITH_PURE_FLUIDS
 export WITH_IDEAL_SOLUTIONS
 export WITH_ELECTROLYTES
+export WITH_PRIME
+
+export BUILD_THREAD_SAFE
+export BOOST_INC_DIR
+export BOOST_LIB_DIR
+export BOOST_THREAD_LIB
+
+export WITH_HTML_LOG_FILES
 
 #cd config
-chmod +x ./configure 
-chmod +x config/config.guess
-chmod +x config/config.sub
-#chmod +x config/install-sh
+chmod -f +x ./configure 
+chmod -f +x config/config.guess
+chmod -f +x config/config.sub
+#chmod -f +x config/install-sh
 
 #
 # Decide whether to add a prefix variable to the configure line

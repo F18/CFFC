@@ -10,7 +10,7 @@ import types
 from Cantera.num import asarray
 from exceptions import CanteraError
 
-__revision__ = "$Id: Phase.py,v 1.8 2005/06/18 17:01:05 dggoodwin Exp $"
+__revision__ = "$Id: Phase.py,v 1.9 2007/05/25 14:17:38 dggoodwin Exp $"
 
 # return true is x is a sequence
 def _isseq(n, x):
@@ -84,7 +84,7 @@ class Phase:
             m = self.elementIndex(element)
             k = self.speciesIndex(species)
             na = _cantera.phase_natoms(self._phase_id, k, m)
-            if na < 0: return 0
+            #if na < 0: return 0
             return na
         except CanteraError:
             return 0

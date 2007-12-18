@@ -2,8 +2,8 @@
  *  @file ReactorBase.cpp
  *
  * $Author: dggoodwin $
- * $Revision: 1.10 $
- * $Date: 2006/05/06 14:56:57 $
+ * $Revision: 1.11 $
+ * $Date: 2006/11/27 21:43:34 $
  */
 
 // Copyright 2001  California Institute of Technology
@@ -18,6 +18,7 @@
 #include "FlowDevice.h"
 #include "Wall.h"
 
+using namespace std;
 namespace CanteraZeroD {
 
     ReactorBase::ReactorBase(string name) : m_nsp(0), 

@@ -9,7 +9,7 @@
 #ifndef CT_THERMO_INCL
 #define CT_THERMO_INCL
 
-#include "kernel/thermo/SingleSpeciesTP.h"
-#include "kernel/thermo/StoichSubstanceSSTP.h"
+#include "kernel/ThermoFactory.h"
+#include "importPhase.h"
 
 #endif

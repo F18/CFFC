@@ -4,8 +4,8 @@
 
 /*
  * $Author: dggoodwin $
- * $Revision: 1.29 $
- * $Date: 2006/04/28 17:22:23 $
+ * $Revision: 1.32 $
+ * $Date: 2007/05/04 14:41:27 $
  */
 
 // Copyright 2002  California Institute of Technology
@@ -22,11 +22,12 @@
 #include <time.h>
 
 #include "StFlow.h"
-#include "../ArrayViewer.h"
-#include "../ctml.h"
+#include "ArrayViewer.h"
+#include "ctml.h"
 #include "MultiJac.h"
 
 using namespace ctml;
+using namespace std;
 
 namespace Cantera {
 
@@ -264,6 +265,16 @@ namespace Cantera {
         }
         else 
             throw CanteraError("setTransport","unknown transport model.");
+    }
+
+    void StFlow::enableSoret(bool withSoret) { 
+        if (m_transport_option == c_Multi_Transport)
+            m_do_soret = withSoret;
+        else {
+            throw CanteraError("setTransport",
+                "Thermal diffusion (the Soret effect) "
+                "requires using a multicomponent transport model.");
+        }
     }
 
 

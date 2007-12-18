@@ -3,8 +3,8 @@
 //  zero-dimensional kinetics example program
 //
 //  $Author: hkmoffa $
-//  $Revision: 1.2 $
-//  $Date: 2006/08/20 00:13:21 $
+//  $Revision: 1.3 $
+//  $Date: 2007/12/04 18:10:47 $
 //
 //  copyright California Institute of Technology 2006
 //
@@ -120,10 +120,7 @@ int kinetics_example3(int job) {
              << "  kin3.csv    (Excel CSV file)" << endl
              << "  kin3.dat    (Tecplot data file)" << endl;
 
-#define DEBUG_HKM
-#ifdef DEBUG_HKM
 	delete gg;
-#endif
         return 0;
     }
 

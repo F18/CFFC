@@ -1,8 +1,8 @@
 
 /*
- *  $Author: hkmoffa $
- *  $Date: 2006/07/05 21:23:40 $
- *  $Revision: 1.1 $
+ *  $Author: dggoodwin $
+ *  $Date: 2007/05/04 15:18:45 $
+ *  $Revision: 1.3 $
  *
 
  */
@@ -15,15 +15,11 @@
 #include "InterfaceKinetics.h"
 #else
 #include "Cantera.h"
-#include "kernel/ct_defs.h"
-#include "kernel/ctml.h"
-#include "kernel/GasKinetics.h"
-#include "kernel/importCTML.h"
-#include "kernel/ThermoPhase.h"
-#include "kernel/InterfaceKinetics.h"
+#include "kinetics.h"
 #endif
 
 using namespace Cantera;
+using namespace std;
 
 #
 int main(int argc, char **argv) {

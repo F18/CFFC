@@ -5,8 +5,8 @@
 
 /*
  *  $Author: dggoodwin $
- *  $Date: 2003/04/14 17:57:52 $
- *  $Revision: 1.1.1.1 $
+ *  $Date: 2006/11/27 21:43:34 $
+ *  $Revision: 1.2 $
  *
  *  Copyright 2002 California Institute of Technology
  *
@@ -61,7 +61,7 @@ namespace Cantera {
 
         doublereal* getWorkArray();
         void releaseWorkArray(doublereal* work);
-        vector<doublereal*> m_workarrays;
+        std::vector<doublereal*> m_workarrays;
         int m_maxAge;
         int m_nv, m_np, m_n;
         doublereal m_elapsed;

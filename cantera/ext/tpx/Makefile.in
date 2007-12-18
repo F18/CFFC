@@ -4,7 +4,8 @@
 .SUFFIXES : .cpp .d .o
 
 do_ranlib = @DO_RANLIB@
-CXX_FLAGS = @CXXFLAGS@ $(CXX_OPT)
+PIC_FLAG=@PIC@
+CXX_FLAGS = @CXXFLAGS@ $(CXX_OPT) $(PIC_FLAG)
 
 #COBJS = tpx_files.o
 COBJS = Methane.o Nitrogen.o Oxygen.o Water.o Hydrogen.o RedlichKwong.o \
@@ -21,7 +22,7 @@ DEPENDS = $(COBJS:.o=.d)
 all:  $(TPLIB)
 
 %.d:
-	g++ -MM $(CXX_INCLUDES) $*.cpp > $*.d
+	@CXX_DEPENDS@ $(CXX_INCLUDES) $*.cpp > $*.d
 
 .cpp.o:
 	@CXX@ -c $< @DEFS@ $(CXX_FLAGS) $(CXX_INCLUDES)

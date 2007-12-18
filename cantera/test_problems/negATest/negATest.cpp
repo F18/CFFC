@@ -1,35 +1,24 @@
 
 /*
- *  $Author: hkmoffa $
- *  $Date: 2006/07/03 19:58:43 $
- *  $Revision: 1.1 $
+ *  $Author: dggoodwin $
+ *  $Date: 2007/05/04 15:18:45 $
+ *  $Revision: 1.3 $
  *
 
  */
-#ifdef SRCDIRTREE
-#include "ct_defs.h"
-#include "ctml.h"
-#include "GasKinetics.h"
-#include "importCTML.h"
-#include "ThermoPhase.h"
-#include "InterfaceKinetics.h"
-#else
+
 #include "Cantera.h"
-#include "kernel/ct_defs.h"
-#include "kernel/ctml.h"
-#include "kernel/GasKinetics.h"
-#include "kernel/importCTML.h"
-#include "kernel/ThermoPhase.h"
-#include "kernel/InterfaceKinetics.h"
-#endif
+#include "kinetics.h"
+
+#include <string>
 
 using namespace Cantera;
+using namespace std; 
 
-#
 int main(int argc, char **argv) {
   try {   
     int i;
-    string infile = "noxNeg.xml";
+    std::string infile = "noxNeg.xml";
     double x[20];
     double cdot[20], ddot[20];
     

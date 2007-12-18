@@ -1,5 +1,5 @@
 /*
- * $Id: PureFluid.h,v 1.4 2006/04/30 22:17:15 hkmoffa Exp $
+ * $Id: PureFluid.h,v 1.6 2007/05/04 15:18:41 dggoodwin Exp $
  */
 #ifndef CXX_PUREFLUID
 #define CXX_PUREFLUID
@@ -7,7 +7,7 @@
 #include <string>
 
 #include "kernel/PureFluidPhase.h"
-#include "kernel/importCTML.h"
+#include "kinetics.h"
 namespace Cantera {
 
 
@@ -17,7 +17,7 @@ namespace Cantera {
 
         PureFluid() : m_ok(false), m_r(0) {}
 
-        PureFluid(string infile, string id="") : m_ok(false), m_r(0) {
+        PureFluid(std::string infile, std::string id="") : m_ok(false), m_r(0) {
             
         m_r = get_XML_File(infile); 
         if (id == "-") id = "";
@@ -27,7 +27,7 @@ namespace Cantera {
         }
 
 
-        PureFluid(XML_Node& root, string id) : m_ok(false), m_r(0) {
+        PureFluid(XML_Node& root, std::string id) : m_ok(false), m_r(0) {
             m_ok = buildSolutionFromXML(root, id, "phase", this, 0);
         }
         
@@ -35,8 +35,8 @@ namespace Cantera {
 
         bool operator!() { return !m_ok;}
         bool ready() const { return m_ok; }
-        friend ostream& operator<<(ostream& s, PureFluid& mix) {
-            string r = report(mix, true);
+        friend std::ostream& operator<<(std::ostream& s, PureFluid& mix) {
+            std::string r = report(mix, true);
             s << r;
             return s;
         }
@@ -50,7 +50,7 @@ namespace Cantera {
 
     class Water : public PureFluid {
     public:
-        Water() : PureFluid(string("liquidvapor.cti"),string("water")) {}
+        Water() : PureFluid(std::string("liquidvapor.cti"),std::string("water")) {}
         virtual ~Water() {}
     };
 
