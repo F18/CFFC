@@ -88,6 +88,18 @@ Update_Solution_Multistage_Explicit(const int i_stage,
                                     Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
                                                      FANS3D_ThermallyPerfect_KOmega_cState> &IPs);
 
+
+template<>
+int  Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState,
+                FANS3D_ThermallyPerfect_KOmega_cState>::
+                Interpolator(const FlowField_2D &Numflowfield2D);
+  
+ 
+template<> 
+int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState,  
+               FANS3D_ThermallyPerfect_KOmega_cState>::Wall_Shear(void);
+
+
 template<>
 double Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState, 
                   FANS3D_ThermallyPerfect_KOmega_cState>::
@@ -95,8 +107,5 @@ Wall_Friction_Velocity(const int i,
                        const int j, 
                        const int k);
 
-template<> 
-int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState,  
-               FANS3D_ThermallyPerfect_KOmega_cState>::Wall_Shear(void);
 
 #endif // _FANS3D_THERMALLYPERFECT_HEXA_BLOCK_INCLUDED

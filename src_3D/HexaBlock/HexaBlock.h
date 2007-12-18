@@ -4,11 +4,17 @@
 #ifndef _HEXA_BLOCK_INCLUDED
 #define _HEXA_BLOCK_INCLUDED
 
+#include <stdexcept>
+
 /* Include required CFFC header files. */
 
 #ifndef _CFD_INCLUDED
 #include "../CFD/CFD.h"
 #endif // _CFD_INCLUDED
+
+#ifndef _MATH_MACROS_INCLUDED
+#include "../Math/Math.h"
+#endif // _MATH_MACROS_INCLUDED
 
 #ifndef _INPUT_INCLUDED
 #include "../CFD/Input.h"
@@ -33,6 +39,10 @@
 #ifndef _TURBULENCE_MODELLING_INCLUDED
 #include "../TurbulenceModelling/TurbulenceModelling.h"
 #endif // TURBULENCE_MODELLING_INCLUDED   
+
+#ifndef _INTERPOLATION2DTO3D_INCLUDED
+#include "../FANS/Interpolation2Dto3D.h"
+#endif// _INTERPOLATION2DTO3D_INCLUDED
 
 /* Define the solution block in-use indicators. */
 
@@ -129,6 +139,7 @@ class Hexa_Block{
    /* Allocate memory for structured hexahedrial solution block. */
    void allocate(void);
    void allocate(const int Ni, const int Nj, const int Nk, const int Ng);
+
  
    /* Deallocate memory for structured hexahedral solution block. */
    void deallocate(void);
@@ -234,6 +245,8 @@ class Hexa_Block{
 
    int WtoU(void);
 
+   int Interpolator(const FlowField_2D &Numflowfield2D);
+   
    void Evaluate_Limiters(void){ Freeze_Limiter = OFF; }
 
    void Freeze_Limiters(void) { Freeze_Limiter = ON; }
@@ -540,7 +553,6 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::allocate(const int Ni,
     NCi=Ni+2*Ng; ICl=Ng; ICu=Ni+Ng-1; 
     NCj=Nj+2*Ng; JCl=Ng; JCu=Nj+Ng-1;
     NCk=Nk+2*Ng; KCl=Ng; KCu=Nk+Ng-1; Nghost=Ng;
-    Flow_Type = FLOWTYPE_INVISCID; Freeze_Limiter = OFF;
     Allocated = HEXA_BLOCK_USED;
     Grid.allocate(Ni, Nj, Nk, Ng);
     allocate();
@@ -676,6 +688,7 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Create_Block(Grid3D_Hexa_Block &Grid2
    } /* endif */
  
 }
+
 
 /********************************************************
  * Routine: Copy                                        *
@@ -2085,6 +2098,19 @@ double Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Max_Norm_Residual(const int &var) {
 }
 
 /********************************************************
+ * Routine: Interpolator                                *
+ * Interpolate the numerical solution of 2D to 3D       *
+ * to initialize the solution field.                    *
+ *                                                      *
+ ********************************************************/
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+   int  Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Interpolator(const FlowField_2D &Numflowfield2D){
+   
+   return (0);
+   
+}
+
+/********************************************************
  * Routine: WtoU                                        *
  *                                                      *
  * Convert primitive solution vector to conservative    *
@@ -2093,11 +2119,24 @@ double Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Max_Norm_Residual(const int &var) {
  ********************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::WtoU(void) {
+  bool dbg = false;
 
-   for (int k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
+  for (int k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
       for (int j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
          for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
             U[i][j][k]= W[i][j][k].U();
+            
+            /* if(  W[i][j][k][11]> 1.0) dbg =true; */
+/*             else dbg = false; */
+            
+            
+/*             if(dbg){ */
+               
+/*                cout<<"\n i j k xc "<<i<<","<<j<<","<<k<<"  "<<Grid.Cell[i][j][k].Xc<<endl; */
+/*                cout<<"\n U  = "<<U[i][j][k]<<endl; */
+/*                cout<<"\n W  = "<<W[i][j][k]<<endl; */
+/*             } */
+            
          } /* endfor */
       } /* endfor */
    } /* endfor */

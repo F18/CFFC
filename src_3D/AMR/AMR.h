@@ -622,8 +622,8 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
 	    n_cpu = Octree.Roots[nr].block.info.cpu;
             n_blk = Octree.Roots[nr].block.info.blknum;
             Local_Adaptive_Block_List.Block[n_blk] = Octree.Roots[nr].block;
-            Local_Solution_Blocks.Soln_Blks[n_blk].Create_Block(Initial_Mesh.Grid_Blks[nr]);
             Local_Solution_Blocks.Soln_Blks[n_blk].Flow_Type = Input.i_Flow_Type;
+            Local_Solution_Blocks.Soln_Blks[n_blk].Create_Block(Initial_Mesh.Grid_Blks[nr]);
             Local_Solution_Blocks.Block_Used[n_blk] = HEXA_BLOCK_USED;
          } /* endif */
      } /* endif */

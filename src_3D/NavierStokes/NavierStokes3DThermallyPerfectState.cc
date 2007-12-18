@@ -21,17 +21,19 @@
 double NavierStokes3D_ThermallyPerfect_pState::mu(void) {
   double sum =0.0;
   double Temp = T();
+
   for (int i = 0; i < ns; i++) {
-    double phi = 0.0;
-    for (int j = 0; j < ns; j++) {
+     double phi = 0.0;
+     for (int j = 0; j < ns; j++) {
       if (i == 0) {
-        _temp_values[j] = specdata[j].Viscosity(Temp);
+         _temp_values[j] = specdata[j].Viscosity(Temp);
       } /* endif */
       phi += (spec[j].c / specdata[j].Mol_mass())*pow(ONE + 
              sqrt(_temp_values[i]/_temp_values[j])*
              pow(specdata[j].Mol_mass()/specdata[i].Mol_mass(),0.25),2.0)/
              sqrt(EIGHT*(ONE +specdata[i].Mol_mass()/specdata[j].Mol_mass()));
-    } /* endfor */
+      
+     } /* endfor */
     sum += (spec[i].c * _temp_values[i]) / (specdata[i].Mol_mass() * phi);
   } /* endfor */
   return sum;
@@ -783,6 +785,9 @@ FluxViscous_n(const NavierStokes3D_ThermallyPerfect_pState &Wl,
 double NavierStokes3D_ThermallyPerfect_cState::mu(void) {
    double sum = ZERO;
    double Temp = T();
+   
+ 
+   
    for (int i = 0; i < ns; i++) {
      double phi = 0.0;
      for (int j = 0; j < ns; j++) {

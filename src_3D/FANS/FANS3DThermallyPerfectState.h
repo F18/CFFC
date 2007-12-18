@@ -666,6 +666,15 @@ class FANS3D_ThermallyPerfect_KOmega_pState : public NavierStokes3D_ThermallyPer
    friend istream& operator >> (istream &in_file,
                                 FANS3D_ThermallyPerfect_KOmega_pState &W);
 //@}
+
+ void set_species_data(const int &n,
+                         const string *S,
+                         const char *PATH,
+                         const int &debug,
+                         const double &Mr,
+                         const double* Sc,
+                         const int &trans_data);
+
 };
 
 /*!
@@ -960,6 +969,14 @@ class FANS3D_ThermallyPerfect_KOmega_cState : public NavierStokes3D_ThermallyPer
    friend istream& operator >> (istream &in_file,
                                 FANS3D_ThermallyPerfect_KOmega_cState &U);
 //@}
+
+ void set_species_data(const int &n,
+                         const string *S,
+                         const char *PATH,
+                         const int &debug,
+                         const double &Mr,
+                         const double* Sc,
+                         const int &trans_data);
 };
 
 

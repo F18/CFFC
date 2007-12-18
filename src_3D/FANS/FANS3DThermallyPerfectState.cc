@@ -13,6 +13,99 @@
 /*****************************************************************************************
  * FANS3D_ThermallyPerfect_KOmega_pState member functions                                *
  *****************************************************************************************/
+void FANS3D_ThermallyPerfect_KOmega_pState::set_species_data(const int &n,
+                                                             const string *S,
+                                                             const char *PATH,
+                                                             const int &debug, 
+                                                             const double &Mr, 
+                                                             const double* Sc,
+                                                             const int &trans_data){ 
+
+
+   // Set the new number of species. 
+   ns = n;
+      
+   num_vars = ns + NUM_EULER3D_VAR_SANS_SPECIES+ NUM_FANS3D_VAR_EXTRA;
+   
+   // Create static memory for NASA data.
+   Deallocate_static();
+   Allocate_static();
+
+   // Create memory for species data (static or dynamic as requested).
+   Deallocate();
+   Allocate();
+
+   // Read in and assign appropriate NASA data for each species to be used.
+   for (int i = 0; i < ns; i++) {
+     //overwrite default data  
+     specdata[i].Getdata(S[i], PATH, trans_data);  
+     Schmidt[i] = Sc[i];
+   } /* endfor */
+
+   // Set initial values for the species.
+   for (int i=0; i < ns; i++) {
+      spec[i].c = ONE/ns; 
+   } /* endfor */
+
+   // Set data temperature ranges for mixture calculations.
+   Temp_low_range(); 
+   Temp_high_range(); 
+   
+   // Set debug information level.
+   debug_level = debug;   
+  
+  
+  
+}   
+
+void FANS3D_ThermallyPerfect_KOmega_cState::set_species_data(const int &n, 
+                                                             const string *S, 
+                                                             const char *PATH,
+                                                             const int &debug, 
+                                                             const double &Mr, 
+                                                             const double* Sc,
+                                                             const int &trans_data){ 
+ 
+ 
+
+
+
+   // Set the new number of species. 
+   ns = n;
+      
+   num_vars = ns + NUM_EULER3D_VAR_SANS_SPECIES+ NUM_FANS3D_VAR_EXTRA;
+   
+   // Create static memory for NASA data.
+   Deallocate_static();
+   Allocate_static();
+
+   // Create memory for species data.
+   Deallocate();
+   Allocate();
+
+   // Read in and assign appropriate NASA data for each species to be used.
+   for (int i = 0; i < ns; i++) {
+      //overwrite default data  
+      specdata[i].Getdata(S[i], PATH, trans_data);
+      Schmidt[i] = Sc[i];  
+   } /* endfor */
+
+   // Set initial values for the species.
+   for (int i = 0; i < ns; i++) {
+      rhospec[i].c = rho/ns; 
+   } /* endfor */
+
+   // Set data temperature ranges for mixture calculations.
+   Temp_low_range();
+   Temp_high_range();
+
+   // Set debug information level.
+   debug_level = debug;
+
+
+ 
+   
+}      
 
 /*****************************************************************************************
  * FANS3D_ThermallyPerfect_KOmega_pState::Realizable_Solution_Check -- Check physical    *

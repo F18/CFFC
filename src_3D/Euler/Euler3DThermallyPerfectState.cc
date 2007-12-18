@@ -135,7 +135,7 @@ void Euler3D_ThermallyPerfect_pState::Copy(const Euler3D_ThermallyPerfect_pState
 /***************************************************************************************
  * Euler3D_ThermallyPerfect_pState::Temp_low_range -- Set the lower bound for valid T. *
  ***************************************************************************************/
-inline void Euler3D_ThermallyPerfect_pState::Temp_low_range(void) {  
+void Euler3D_ThermallyPerfect_pState::Temp_low_range(void) {  
    // Get max of the min temperature of the lowest region
    double temp = specdata[0].Low_range();
    for (int i = 0; i < ns; i++) {
@@ -147,7 +147,7 @@ inline void Euler3D_ThermallyPerfect_pState::Temp_low_range(void) {
 /***************************************************************************************
  * Euler3D_ThermallyPerfect_pState::Temp_high_range -- Set the upper bound for valid T.*
  ***************************************************************************************/
-inline void Euler3D_ThermallyPerfect_pState::Temp_high_range(void) {
+void Euler3D_ThermallyPerfect_pState::Temp_high_range(void) {
    // Get min of the max temperature of the highest region
    double temp = specdata[0].High_range();
    for (int i = 0; i < ns; i++) {

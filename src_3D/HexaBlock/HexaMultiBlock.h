@@ -138,6 +138,11 @@ template<class HEXA_BLOCK> class Hexa_Multi_Block {
    void BCs(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
                              typename HEXA_BLOCK::Soln_cState> &Input);
 
+
+   int Read_and_Interpolate(FlowField_2D &Numflowfield2D,
+                            const int ICtypes, 
+                            const char *const cffc_path);
+   
    int WtoU(void);
 
    double CFL(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
@@ -585,6 +590,46 @@ void Hexa_Multi_Block<HEXA_BLOCK>::Set_Global_TimeStep(const double &Dt_min){
 }
 
 /********************************************************
+ * Routine: ReadandInterpolate                          *
+ * Read in the 2D numerical solution  and               *
+ * Interpolate the numerical solution of 2D to 3D       *
+ * to initialize the solution field.                    *
+ *                                                      *
+ ********************************************************/
+template<class HEXA_BLOCK>
+int Hexa_Multi_Block<HEXA_BLOCK>::Read_and_Interpolate(FlowField_2D &Numflowfield2D,
+                                                       const int ICtypes, 
+                                                       const char *const cffc_path){
+   int error_flag;
+   error_flag = 0;
+   
+   
+   if ((Soln_Blks[0].Flow_Type != FLOWTYPE_TURBULENT_RANS_K_OMEGA) ||
+       (ICtypes != IC_TURBULENT_DIFFUSION_FLAME)) return (0);
+
+
+   if (ICtypes == IC_TURBULENT_DIFFUSION_FLAME){
+      if(CFFC_Primary_MPI_Processor())  Numflowfield2D.read_numerical_solution(cffc_path);
+   }
+   
+#ifdef _MPI_VERSION  
+   MPI::COMM_WORLD.Bcast(Numflowfield2D.data.begin(),Numflowfield2D.data.size(), MPI::DOUBLE, 0);
+#endif 
+
+   for (int nblk = 0; nblk < Number_of_Soln_Blks; ++nblk) { 
+      if (Block_Used[nblk]) {
+         
+         error_flag =  Soln_Blks[nblk].Interpolator(Numflowfield2D);
+         if (error_flag) return (error_flag);
+      
+      } /* endif */
+   }  /* endfor */
+   
+   return (error_flag);
+   
+}
+
+/********************************************************
  * Routine: WtoU                                        *
  *                                                      *
  * Convert primitive solution vector to conservative    *
@@ -599,7 +644,8 @@ int Hexa_Multi_Block<HEXA_BLOCK>::WtoU(void){
    
    /* Convert U to W for each solution block. */
 
-   for(int nblk = 0; nblk < Number_of_Soln_Blks; ++nblk){
+//   for(int nblk = 0; nblk < Number_of_Soln_Blks; ++nblk){
+      for (int nblk = 28; nblk < 29; ++nblk) { 
       if (Block_Used[nblk]) {
          error_flag = Soln_Blks[nblk].WtoU();
          if (error_flag) return (error_flag);

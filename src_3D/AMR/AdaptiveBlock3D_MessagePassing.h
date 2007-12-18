@@ -55,6 +55,7 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
    /* Load the send buffers of each solution block. */
    for (int i_blk = 0 ; i_blk <= Soln_Block_List.Nblk-1 ; ++i_blk) {
      if (Soln_Block_List.Block[i_blk].used) {
+              
         // Assign the boundary element information
         number_neighbours[BE::BSW] = Soln_Block_List.Block[i_blk].nBSW;
         neighbour_info[BE::BSW] = Soln_Block_List.Block[i_blk].infoBSW[0];

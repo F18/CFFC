@@ -1,6 +1,10 @@
 #ifndef _HEXA_PRE_PROCESSING_INCLUDED
 #define _HEXA_PRE_PROCESSING_INCLUDED
 
+#ifndef _INTERPOLATION2DTO3D_INCLUDED
+#include "../FANS/Interpolation2Dto3D.h"
+#endif// _INTERPOLATION2DTO3D_INCLUDED
+
 /*! *****************************************************
  * Routine: Initialize_Solution_Blocks                  *
  *                                                      *
@@ -117,7 +121,8 @@ int Initial_Conditions(HexaSolver_Data &Data,
    
   // Generate initial solution data to begin calculation. 
   } else {    
-    error_flag = Wall_Distance(Solution_Data.Local_Solution_Blocks.Soln_Blks,  // Turbulence function in GENERIC TYPE????
+
+     error_flag = Wall_Distance(Solution_Data.Local_Solution_Blocks.Soln_Blks,  // Turbulence function in GENERIC TYPE????
 			       Data.Octree, 
 			       Data.Local_Adaptive_Block_List);
     if (!Data.batch_flag && error_flag) {
@@ -128,10 +133,20 @@ int Initial_Conditions(HexaSolver_Data &Data,
     } /* endif */
     error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return (error_flag);
-    
+      
+    // Intialization 
     Solution_Data.Local_Solution_Blocks.ICs(Solution_Data.Input);
+
+    // Initialization of the flow field with available 2D numerical solution
+    // for some cases.
+    FlowField_2D Numflowfield2D;
+    
+    Solution_Data.Local_Solution_Blocks.Read_and_Interpolate(Numflowfield2D,
+                                                             Solution_Data.Input.i_ICs,Solution_Data.Input.CFFC_Path);
+    
   } /* endif */
 
+    
   error_flag = Hexa_Pre_Processing_Specializations(Data,
                                                    Solution_Data);
   if (error_flag) return (error_flag);  
@@ -168,10 +183,15 @@ int Initial_Conditions(HexaSolver_Data &Data,
    } /* endif */
    error_flag = CFFC_OR_MPI(error_flag);
    if (error_flag) return (error_flag);
+
+
+ 
   
   /* Prescribe boundary data consistent with initial data. */
-  Solution_Data.Local_Solution_Blocks.BCs(Solution_Data.Input);
+   Solution_Data.Local_Solution_Blocks.BCs(Solution_Data.Input);
+
   
+
   return error_flag;
 
 }
