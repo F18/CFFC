@@ -718,9 +718,9 @@ Generate_Velocity_Fluctuations(Grid3D_Hexa_Multi_Block_List &InitMeshBlks,
   L3 = IPs.Box_Height;
 
   int Nx, Ny, Nz;
-  Nx = IPs.NCells_Idir;// * InitMeshBlks.NBlk_Idir;
-  Ny = IPs.NCells_Jdir;// * InitMeshBlks.NBlk_Jdir;
-  Nz = IPs.NCells_Kdir;// * InitMeshBlks.NBlk_Kdir;
+  Nx = IPs.NCells_Idir * InitMeshBlks.NBlk_Idir;
+  Ny = IPs.NCells_Jdir * InitMeshBlks.NBlk_Jdir;
+  Nz = IPs.NCells_Kdir * InitMeshBlks.NBlk_Kdir;
 
   double        scaling_factor = 1.0/double(Nx*Ny*Nz);  // Scaling factor for the complex to real transform
 
