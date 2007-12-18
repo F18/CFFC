@@ -31,6 +31,7 @@ using namespace std;
 #ifdef _CANTERA_VERSION
 #include <cantera/Cantera.h>      // main include
 #include <cantera/IdealGasMix.h>  // reacting, ideal gas mixture class
+#include <cantera/equilibrium.h>  // canteraequilibrium solver
 #endif //_CANTERA_VERSION
 
 //Calorie to Joule conversion
@@ -262,7 +263,7 @@ public:
   string ct_mech_name;     //Reaction mechanism file path
   string ct_mech_file;     //Reaction mechanism file path
 #ifdef _CANTERA_VERSION
-  IdealGasMix* ct_gas;     //the Cantera IdealGasMix object
+  Cantera::IdealGasMix* ct_gas; //the Cantera IdealGasMix object
 #endif
 
   // indexes of specific species
@@ -298,8 +299,6 @@ public:
 			     double* moleFracs);
   int ct_get_species_index(const string &sp);
   // compute equilibrium concetration with cantera
-  void ct_equilibrate_HP() const; // needed cause of DenseMatrix conflicts
-  void ct_equilibrate_TP() const; // needed cause of DenseMatrix conflicts
   template<class SOLN_pSTATE>
   void ct_equilibrium_HP( SOLN_pSTATE &W ) const;
   template<class SOLN_pSTATE>
@@ -1674,7 +1673,13 @@ inline void Reaction_set::ct_equilibrium_HP( SOLN_pSTATE &W ) const {
 
   // set state and equilibrate
   ct_gas->setState_TPY(W.T(), W.p, c);
-  ct_equilibrate_HP();
+  try {
+    equilibrate( *ct_gas, "HP" );
+  }
+  catch (Cantera::CanteraError) {
+    Cantera::showErrors();
+  }
+
 
   //get burnt mass fractions
   ct_gas->getMassFractions(c);
@@ -1717,7 +1722,13 @@ inline void Reaction_set::ct_equilibrium_TP( SOLN_pSTATE &W ) const {
 
   // set state and equilibrate
   ct_gas->setState_TPY(T, W.p, c);
-  ct_equilibrate_HP();
+  try {
+    equilibrate( *ct_gas, "TP" );
+  }
+  catch (Cantera::CanteraError) {
+    Cantera::showErrors();
+  }
+
 
   //get burnt mass fractions
   ct_gas->getMassFractions(c);

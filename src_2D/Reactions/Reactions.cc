@@ -7,13 +7,6 @@
 #include "Reactions.h"
 #endif // _REACTIONS_INCLUDED
 
-//
-// Cantera Libraries
-//
-#ifdef _CANTERA_VERSION
-#include <cantera/equilibrium.h>  // canteraequilibrium solver
-#endif //_CANTERA_VERSION
-
 /***********************************************************************
   Static object initialization.
 ***********************************************************************/
@@ -441,9 +434,9 @@ void Reaction_set::ct_load_mechanism(string &mechanism_file_name,
   
   //create a new ideal gas mixture class
   try {
-    ct_gas = new IdealGasMix(mechanism_file_name, mechanism_name);
+    ct_gas = new Cantera::IdealGasMix(mechanism_file_name, mechanism_name);
   }
-  catch (CanteraError) {
+  catch (Cantera::CanteraError) {
     Cantera::showErrors();
   }
 
@@ -638,7 +631,7 @@ void Reaction_set::ct_parse_schmidt_string( const string& schmidtStr,
   } else {
 
     // declares
-    compositionMap xx;
+    Cantera::compositionMap xx;
     int kk = ct_gas->nSpecies();
     double s;
     
@@ -646,7 +639,7 @@ void Reaction_set::ct_parse_schmidt_string( const string& schmidtStr,
     for (int k = 0; k < kk; k++) xx[ct_gas->speciesName(k)] = -1.0;
     
     // parse map
-    parseCompString(schmidtStr, xx);
+    Cantera::parseCompString(schmidtStr, xx);
     
     // set schmidt numbers
     for (int k = 0; k < kk; k++) { 
@@ -696,61 +689,6 @@ int Reaction_set::ct_get_species_index(const string &sp) {
 #endif //_CANTERA_VERSION
 
 } // end of ct_get_species_index
-
-
-/***********************************************************************
-
-  This function is required as a workarround due to conflicts between
-  ::DenseMatrix and Cantera::DenseMatrix.  Instead of inserting '::'
-  everywhere in front of DenseMatrix, I just move the header file into
-  this include.  The problem only comes about when including 
-  <cantera/equilibrium.h> which defines the function 
-  'Cantera::equilibrate()'.
-
-  All this function does is equilibrate the fresh gas mixture defined
-  in the IdealGasMix::ct_gas object.
-
-***********************************************************************/
-void Reaction_set::ct_equilibrate_HP( ) const {
-
-#ifdef _CANTERA_VERSION
-
-  try {
-    equilibrate( *ct_gas, "HP" );
-  }
-  catch (CanteraError) {
-    Cantera::showErrors();
-  }
-
-#else
-  cout<<"\n CODE NOT COMPILED WITH CANTERA!";
-  cout<<"\n YOU SHOULD NOT BE HERE!";
-  exit(-1);
-
-#endif //_CANTERA_VERSION
-
-} // end of ct_parse_mass_string
-
-
-void Reaction_set::ct_equilibrate_TP( ) const {
-
-#ifdef _CANTERA_VERSION
-
-  try {
-    equilibrate( *ct_gas, "TP" );
-  }
-  catch (CanteraError) {
-    Cantera::showErrors();
-  }
-
-#else
-  cout<<"\n CODE NOT COMPILED WITH CANTERA!";
-  cout<<"\n YOU SHOULD NOT BE HERE!";
-  exit(-1);
-
-#endif //_CANTERA_VERSION
-
-} // end of ct_parse_mass_string
 
 
 /***********************************************************************
