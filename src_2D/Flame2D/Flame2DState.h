@@ -1005,8 +1005,9 @@ inline void Flame2D_State::DeltaU(const Flame2D_pState& Wr, const Flame2D_pState
  * Flame2D_State -- Rotate: Rotate the solution state   *
  ********************************************************/
 inline void Flame2D_State::Rotate( const Vector2D &norm_dir ) {
-  vx() =    vx()*norm_dir.x + vy()*norm_dir.y;
-  vy() =  - vx()*norm_dir.y + vy()*norm_dir.x;
+  double u(vx()), v(vy());
+  vx() =    u*norm_dir.x + v*norm_dir.y;
+  vy() =  - u*norm_dir.y + v*norm_dir.x;
 }
 
 inline void Flame2D_State::RotateBack( const Vector2D &norm_dir ) {

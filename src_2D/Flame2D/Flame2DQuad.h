@@ -414,6 +414,12 @@ public:
 						const int j,
 						const int Limiter);
 
+  // reconstructed higher order left and right solution states
+  void Reconstructed_LeftandRight_States(Flame2D_pState &Wl, 
+					 Flame2D_pState &Wr, 
+					 const int &i, const int &j,
+					 const int& dir) const;
+
 };
 
 /**************************************************************************
@@ -1953,5 +1959,6 @@ extern int Flame2DQuadSolver(char *Input_File_Name_ptr, int batch_flag);
 
 
 /*************** END FLAME2D ***************************************/
+
 
 #endif /* _FLAME2D_QUAD_INCLUDED  */

@@ -1457,3 +1457,332 @@ void Flame2D_Quad_Block::Linear_Reconstruction_GreenGauss_Diamond(const int i,
   } 
       
 }
+
+
+/////////////////////////////////////////////////////////////////////
+/// reconstructed higher order left and right solution states
+/////////////////////////////////////////////////////////////////////
+
+/********************************************************
+ * Routine: Reconstructed_LeftandRight_States           *
+ *                                                      *
+ * Reconstructs the left and right solution states at   *
+ * the grid boundaries.  This is needed by              *
+ * dUdt_Multistage_Explicit() and dUdt_Residual_Eval(). *
+ *                                                      *
+ ********************************************************/
+void Flame2D_Quad_Block::Reconstructed_LeftandRight_States(Flame2D_pState &Wl, 
+							   Flame2D_pState &Wr, 
+							   const int &i, const int &j,
+							   const int& dir) const {
+  // declares
+  static Vector2D dX;
+    
+
+  switch (dir) {
+
+  case X_DIRECTION:
+      
+    //---------------------------------------------------------------
+    // EAST BOUNDARY
+    //---------------------------------------------------------------
+    if (i == ICl-1 && 
+	(Grid.BCtypeW[j] == BC_REFLECTION ||
+	 Grid.BCtypeW[j] == BC_CHARACTERISTIC ||
+	 Grid.BCtypeW[j] == BC_FREE_SLIP_ISOTHERMAL ||
+	 Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+	 Grid.BCtypeW[j] == BC_MOVING_WALL_ISOTHERMAL ||
+	 Grid.BCtypeW[j] == BC_WALL_VISCOUS_HEATFLUX ||
+	 Grid.BCtypeW[j] == BC_MOVING_WALL_HEATFLUX ||
+	 Grid.BCtypeW[j] == BC_1DFLAME_INFLOW ||
+	 Grid.BCtypeW[j] == BC_1DFLAME_OUTFLOW ||
+	 Grid.BCtypeW[j] == BC_2DFLAME_INFLOW ||
+	 Grid.BCtypeW[j] == BC_2DFLAME_OUTFLOW )) {
+      
+      // reconstruct to get the right face state
+      dX = Grid.xfaceW(i+1, j)-Grid.Cell[i+1][j].Xc;                      
+      Wr.Reconstruct( W[i+1][j], phi[i+1][j],
+		      dWdx[i+1][j], dWdy[i+1][j], dX );     
+          
+      // WEST face of cell (i+1,j) is a REFLECTION boundary.
+      if (Grid.BCtypeW[j] == BC_REFLECTION) {
+	Wl.Reflect(Wr, Grid.nfaceW(i+1, j));
+	// WEST face of cell (i+1,j) is a FREE_SLIP_ISOTHERMAL boundary.
+      } else if (Grid.BCtypeW[j] == BC_FREE_SLIP_ISOTHERMAL) {
+	Wl.Free_Slip(Wr,WoW[j], Grid.nfaceW(i+1, j),FIXED_TEMPERATURE_WALL);              
+	// WEST face of cell (i+1,j) is a WALL_VISCOUS_ISOTHERMAL boundary.
+      } else if (Grid.BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL) {
+	Wl.No_Slip(Wr,WoW[j], Grid.nfaceW(i+1, j),FIXED_TEMPERATURE_WALL);
+	// WEST face of cell (i+1,j) is a MOVING_WALL_ISOTHERMAL boundary.
+      } else if (Grid.BCtypeW[j] == BC_MOVING_WALL_ISOTHERMAL) {
+	Wl.Moving_Wall(Wr,WoW[j], Grid.nfaceW(i+1, j),
+		       Moving_wall_velocity,FIXED_TEMPERATURE_WALL);
+	// WEST face of cell (i+1,j) is a WALL_VISCOUS_HEATFLUX boundary.
+      } else if (Grid.BCtypeW[j] == BC_WALL_VISCOUS_HEATFLUX) {
+	Wl.No_Slip(Wr,WoW[j], Grid.nfaceW(i+1, j), ADIABATIC_WALL);
+	// WEST face of cell (i+1,j) is a MOVING_WALL_HEATFLUX boundary.
+      } else if (Grid.BCtypeW[j] == BC_MOVING_WALL_HEATFLUX) {
+	Wl.Moving_Wall(Wr,WoW[j], Grid.nfaceW(i+1, j),
+		       Moving_wall_velocity,ADIABATIC_WALL );
+	// WEST face of cell (i+1,j) is a 1DFLAME_INFLOW boundary.
+      } else if (Grid.BCtypeW[j] == BC_1DFLAME_INFLOW){
+	Wl.BC_1DFlame_Inflow(Wr, 
+			     WoW[j],
+			     W[ICu][j],
+			     Grid.nfaceW(i+1, j));      
+	// WEST face of cell (i+1,j) is a 1DFLAME_OUTFLOW boundary.
+      } else if (Grid.BCtypeW[j] == BC_1DFLAME_OUTFLOW){
+	Wl.BC_1DFlame_Outflow(Wr, 
+			      WoW[j], 
+			      W[ICu][j],
+			      Grid.nfaceW(i+1, j));
+	// WEST face of cell (i+1,j) is a CHARACTERISTIC boundary.
+      } else if (Grid.BCtypeW[j] == BC_CHARACTERISTIC) {
+	Wl.BC_Characteristic_Pressure(Wr, 
+				      WoW[j], 
+				      Grid.nfaceW(i+1, j));
+	// WEST face of cell (i+1,j) is an UNKNOWN boundary.
+      } else {
+	cerr<< "\n Wrong BC in  dUdt_Residual_Evaluation "<< Grid.BCtypeW[j]; exit(1);
+      }
+
+
+      //---------------------------------------------------------------
+      // WEST BOUNDARY
+      //---------------------------------------------------------------
+    } else if (i == ICu && 
+	       (Grid.BCtypeE[j] == BC_REFLECTION ||
+		Grid.BCtypeE[j] == BC_CHARACTERISTIC ||  
+		Grid.BCtypeE[j] == BC_FREE_SLIP_ISOTHERMAL ||
+		Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+		Grid.BCtypeE[j] == BC_MOVING_WALL_ISOTHERMAL ||
+		Grid.BCtypeE[j] == BC_WALL_VISCOUS_HEATFLUX ||
+		Grid.BCtypeE[j] == BC_MOVING_WALL_HEATFLUX ||
+		Grid.BCtypeE[j] == BC_1DFLAME_INFLOW ||
+		Grid.BCtypeE[j] == BC_1DFLAME_OUTFLOW ||
+		Grid.BCtypeE[j] == BC_2DFLAME_INFLOW ||
+		Grid.BCtypeE[j] == BC_2DFLAME_OUTFLOW )) {
+
+      // reconstruct to get the right face state
+      dX = Grid.xfaceE(i, j)-Grid.Cell[i][j].Xc;
+      Wl.Reconstruct( W[i][j], phi[i][j],
+		      dWdx[i][j], dWdy[i][j], dX );
+
+      // EAST face of cell (i,j) is a REFLECTION boundary.
+      if (Grid.BCtypeE[j] == BC_REFLECTION) {
+	Wr.Reflect(Wl, Grid.nfaceE(i, j));   
+	// EAST face of cell (i,j) is a FREE_SLIP_ISOTHERMAL boundary.
+      } else if (Grid.BCtypeE[j] == BC_FREE_SLIP_ISOTHERMAL) {
+	Wr.Free_Slip(Wl, WoE[j],Grid.nfaceE(i, j),FIXED_TEMPERATURE_WALL);
+	// EAST face of cell (i,j) is a WALL_VISCOUS_ISOTHERMAL boundary.
+      } else if (Grid.BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL) {
+	Wr.No_Slip(Wl, WoE[j],Grid.nfaceE(i, j),FIXED_TEMPERATURE_WALL);
+	// EAST face of cell (i,j) is a MOVING_WALL_ISOTHERMAL boundary.
+      } else if (Grid.BCtypeE[j] == BC_MOVING_WALL_ISOTHERMAL) {
+	Wr.Moving_Wall(Wl,WoE[j], Grid.nfaceE(i, j),
+		       Moving_wall_velocity,FIXED_TEMPERATURE_WALL);
+	// EAST face of cell (i,j) is a WALL_VISCOUS_HEATFLUX boundary.
+      } else if (Grid.BCtypeE[j] == BC_WALL_VISCOUS_HEATFLUX) {
+	Wr.No_Slip(Wl, WoE[j],Grid.nfaceE(i, j),ADIABATIC_WALL);
+	// EAST face of cell (i,j) is a MOVING_WALL_HEATFLUX boundary.
+      } else if (Grid.BCtypeE[j] == BC_MOVING_WALL_HEATFLUX) {
+	Wr.Moving_Wall(Wl,WoE[j], Grid.nfaceE(i, j),
+		       Moving_wall_velocity,ADIABATIC_WALL);
+	// EAST face of cell (i,j) is a 1DFLAME_INFLOW boundary.
+      } else if (Grid.BCtypeE[j] == BC_1DFLAME_INFLOW){
+	Wr.BC_1DFlame_Inflow(Wl, 
+			     WoE[j],
+			     W[ICl][j],
+			     Grid.nfaceE(i, j));
+	// EAST face of cell (i,j) is a 1DFLAME_OUTFLOW boundary.
+      } else if (Grid.BCtypeE[j] == BC_1DFLAME_OUTFLOW){
+	Wr.BC_1DFlame_Outflow(Wl, 
+			      WoE[j],
+			      W[ICl][j], 
+			      Grid.nfaceE(i, j));
+	// EAST face of cell (i,j) is a CHARACTERISTIC boundary.
+      } else if (Grid.BCtypeE[j] == BC_CHARACTERISTIC) { 
+	Wr.BC_Characteristic_Pressure(Wl, 
+				      WoE[j], 
+				      Grid.nfaceE(i, j));
+	// EAST face of cell (i,j) is a UNKNOWN boundary.
+      } else {
+	cerr<< "\n Wrong BC in  dUdt_Residual_Evaluation "<< Grid.BCtypeE[j]; exit(1);
+      }
+
+
+
+      //---------------------------------------------------------------
+      // EAST face is either a normal cell or possibly a FIXED, 
+      // NONE or EXTRAPOLATION boundary.
+      //---------------------------------------------------------------
+    } else {            
+      dX = Grid.xfaceE(i, j)-Grid.Cell[i][j].Xc;
+      Wl.Reconstruct( W[i][j], phi[i][j],
+		      dWdx[i][j], dWdy[i][j], dX );
+      dX = Grid.xfaceW(i+1, j)-Grid.Cell[i+1][j].Xc;
+      Wr.Reconstruct( W[i+1][j], phi[i+1][j], 
+		      dWdx[i+1][j], dWdy[i+1][j], dX );
+    } // endif
+      
+    break;
+      
+
+  case Y_DIRECTION:
+
+    //---------------------------------------------------------------
+    // SOUTH BOUNDARY
+    //---------------------------------------------------------------
+    if (j == JCl-1 && 
+	(Grid.BCtypeS[i] == BC_REFLECTION ||
+	 Grid.BCtypeS[i] == BC_CHARACTERISTIC ||
+	 Grid.BCtypeS[i] == BC_FREE_SLIP_ISOTHERMAL ||
+	 Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+	 Grid.BCtypeS[i] == BC_MOVING_WALL_ISOTHERMAL ||
+	 Grid.BCtypeS[i] == BC_WALL_VISCOUS_HEATFLUX ||
+	 Grid.BCtypeS[i] == BC_MOVING_WALL_HEATFLUX || 
+	 Grid.BCtypeS[i] == BC_1DFLAME_INFLOW ||
+	 Grid.BCtypeS[i] == BC_1DFLAME_OUTFLOW || 
+	 Grid.BCtypeS[i] == BC_2DFLAME_INFLOW ||
+	 Grid.BCtypeS[i] == BC_2DFLAME_OUTFLOW )) {
+        
+      // reconstruct to get the right face state
+      dX = Grid.xfaceS(i, j+1)-Grid.Cell[i][j+1].Xc;
+      Wr.Reconstruct( W[i][j+1], phi[i][j+1],
+		      dWdx[i][j+1], dWdy[i][j+1], dX );
+
+      // SOUTH face of cell (i,j+1) is a REFLECTION boundary.
+      if (Grid.BCtypeS[i] == BC_REFLECTION) {
+	Wl.Reflect(Wr, Grid.nfaceS(i, j+1)); 
+	// SOUTH face of cell (i,j+1) is a FREE_SLIP_ISOTHERMAL boundary.
+      } else if (Grid.BCtypeS[i] == BC_FREE_SLIP_ISOTHERMAL) {
+	Wl.Free_Slip(Wr,WoS[i], Grid.nfaceS(i, j+1),FIXED_TEMPERATURE_WALL);
+	// SOUTH face of cell (i,j+1) is a WALL_VISCOUS_ISOTHERMAL boundary.
+      } else if (Grid.BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL) {
+	Wl.No_Slip(Wr,WoS[i], Grid.nfaceS(i, j+1),FIXED_TEMPERATURE_WALL);
+	// SOUTH face of cell (i,j+1) is a MOVING_WALL_ISOTHERMAL boundary.
+      } else if (Grid.BCtypeS[i] == BC_MOVING_WALL_ISOTHERMAL) {
+	Wl.Moving_Wall(Wr,WoS[i], Grid.nfaceS(i, j+1),
+		       Moving_wall_velocity,FIXED_TEMPERATURE_WALL);
+	// SOUTH face of cell (i,j+1) is a WALL_VISCOUS_HEATFLUX boundary.
+      } else if (Grid.BCtypeS[i] == BC_WALL_VISCOUS_HEATFLUX) {
+	Wl.No_Slip(Wr,WoS[i], Grid.nfaceS(i, j+1),ADIABATIC_WALL);
+	// SOUTH face of cell (i,j+1) is a MOVING_WALL_HEATFLUX boundary.
+      } else if (Grid.BCtypeS[i] == BC_MOVING_WALL_HEATFLUX) {
+	Wl.Moving_Wall(Wr,WoS[i], Grid.nfaceS(i, j+1),
+		       Moving_wall_velocity,ADIABATIC_WALL); 
+	// SOUTH face of cell (i,j+1) is a 1DFLAME_INFLOW boundary.
+      } else if (Grid.BCtypeS[i] == BC_1DFLAME_INFLOW){
+	Wl.BC_1DFlame_Inflow(Wr, 
+			     WoS[i], 
+			     W[i][JCu],
+			     Grid.nfaceS(i, j+1));
+	// SOUTH face of cell (i,j+1) is a 2DFLAME_INFLOW boundary.
+      } else if (Grid.BCtypeS[i] == BC_2DFLAME_INFLOW){
+	Wl.BC_2DFlame_Inflow(Wr, 
+			     WoS[i], 
+			     Grid.nfaceS(i, j+1));
+	// SOUTH face of cell (i,j+1) is a 1DFLAME_OUTFLOW boundary.
+      } else if (Grid.BCtypeS[i] == BC_1DFLAME_OUTFLOW){
+	Wl.BC_1DFlame_Outflow(Wr, 
+			      WoS[i], 
+			      W[i][JCu],
+			      Grid.nfaceS(i, j+1));
+	// SOUTH face of cell (i,j+1) is a CHARACTERISTIC boundary.
+      } else if(Grid.BCtypeS[i] == BC_CHARACTERISTIC)  { 
+	Wl.BC_Characteristic_Pressure(Wr, 
+				      WoS[i], 
+				      Grid.nfaceS(i, j+1));
+	// SOUTH face of cell (i,j+1) is a UNKNOWN boundary.
+      } else {
+	cerr<< "\n Wrong BC in  dUdt_Residual_Evaluation "<< Grid.BCtypeS[i]; exit(1);
+      } 
+
+
+      //---------------------------------------------------------------
+      // NORTH BOUNDARY
+      //---------------------------------------------------------------
+    } else if (j == JCu && 
+	       (Grid.BCtypeN[i] == BC_REFLECTION ||
+		Grid.BCtypeN[i] == BC_CHARACTERISTIC ||
+		Grid.BCtypeN[i] == BC_FREE_SLIP_ISOTHERMAL || 
+		Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+		Grid.BCtypeN[i] == BC_MOVING_WALL_ISOTHERMAL ||
+		Grid.BCtypeN[i] == BC_WALL_VISCOUS_HEATFLUX ||
+		Grid.BCtypeN[i] == BC_MOVING_WALL_HEATFLUX ||
+		Grid.BCtypeN[i] == BC_1DFLAME_INFLOW ||
+		Grid.BCtypeN[i] == BC_1DFLAME_OUTFLOW||
+		Grid.BCtypeN[i] == BC_2DFLAME_INFLOW ||
+		Grid.BCtypeN[i] == BC_2DFLAME_OUTFLOW )) {
+          
+      // reconstruct to get the left face state
+      dX = Grid.xfaceN(i, j)-Grid.Cell[i][j].Xc;
+      Wl.Reconstruct( W[i][j], phi[i][j],
+		      dWdx[i][j], dWdy[i][j], dX );
+
+      // NORTH face of cell (i,j) is a REFLECTION boundary.
+      if (Grid.BCtypeN[i] == BC_REFLECTION) {
+	Wr.Reflect(Wl, Grid.nfaceN(i, j));    
+	// NORTH face of cell (i,j) is a FREE_SLIP_ISOTHERMAL boundary.
+      } else if (Grid.BCtypeN[i] == BC_FREE_SLIP_ISOTHERMAL) {
+	Wr.Free_Slip(Wl, WoN[i], Grid.nfaceN(i, j),FIXED_TEMPERATURE_WALL);
+	// NORTH face of cell (i,j) is a WALL_VISCOUS_ISOTHERMAL boundary.
+      } else if (Grid.BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL) {
+	Wr.No_Slip(Wl, WoN[i], Grid.nfaceN(i, j),FIXED_TEMPERATURE_WALL);
+	// NORTH face of cell (i,j) is a MOVING_WALL_ISOTHERMAL boundary.
+      } else if (Grid.BCtypeN[i] == BC_MOVING_WALL_ISOTHERMAL) {
+	Wr.Moving_Wall(Wl,WoN[i],  Grid.nfaceN(i, j),
+		       Moving_wall_velocity,FIXED_TEMPERATURE_WALL);
+	// NORTH face of cell (i,j) is a WALL_VISCOUS_HEATFLUX boundary.
+      } else if (Grid.BCtypeN[i] == BC_WALL_VISCOUS_HEATFLUX) {
+	Wr.No_Slip(Wl, WoN[i], Grid.nfaceN(i, j),ADIABATIC_WALL );
+	// NORTH face of cell (i,j) is a MOVING_WALL_HEATFLUX boundary.
+      } else if (Grid.BCtypeN[i] == BC_MOVING_WALL_HEATFLUX) {
+	Wr.Moving_Wall(Wl,WoN[i],  Grid.nfaceN(i, j),
+		       Moving_wall_velocity,ADIABATIC_WALL ); 
+	// NORTH face of cell (i,j) is a 1DFLAME_INFLOW boundary.
+      } else if (Grid.BCtypeN[i] == BC_1DFLAME_INFLOW){
+	Wr.BC_1DFlame_Inflow(Wl, 
+			     WoN[i], 
+			     W[i][JCl],
+			     Grid.nfaceN(i, j));
+	// NORTH face of cell (i,j) is a 1DFLAME_OUTFLOW boundary.
+      } else if (Grid.BCtypeN[i] == BC_1DFLAME_OUTFLOW){
+	Wr.BC_1DFlame_Outflow(Wl, 
+			      WoN[i], 
+			      W[i][JCl],
+			      Grid.nfaceN(i, j));
+	// NORTH face of cell (i,j) is a 2DFLAME_OUTFLOW boundary.
+      } else if (Grid.BCtypeN[i] == BC_2DFLAME_OUTFLOW){
+	Wr.BC_2DFlame_Outflow(Wl, 
+			      WoN[i], 
+			      Grid.nfaceN(i, j));         
+	// NORTH face of cell (i,j) is a CHARACTERISTIC boundary.
+      } else if(Grid.BCtypeN[i] == BC_CHARACTERISTIC)  { 
+	Wr.BC_Characteristic_Pressure(Wl, 
+				      WoN[i], 
+				      Grid.nfaceN(i, j));
+	// NORTH face of cell (i,j) is a UKNOWN boundary.
+      } else {
+	cerr<< "\n Wrong BC in  dUdt_Residual_Evaluation "<< Grid.BCtypeN[i]; exit(1);
+
+      }  
+          
+      //---------------------------------------------------------------
+      // NORTH face is either a normal cell or possibly a FIXED, 
+      // NONE or EXTRAPOLATION boundary.
+      //---------------------------------------------------------------
+    } else {
+      dX = Grid.xfaceN(i, j)-Grid.Cell[i][j].Xc;
+      Wl.Reconstruct( W[i][j], phi[i][j],
+		      dWdx[i][j], dWdy[i][j], dX );
+      dX = Grid.xfaceS(i, j+1)-Grid.Cell[i][j+1].Xc;
+      Wr.Reconstruct( W[i][j+1], phi[i][j+1],
+		      dWdx[i][j+1], dWdy[i][j+1], dX );
+    }
+
+    break;
+
+  } // end switch
+
+}

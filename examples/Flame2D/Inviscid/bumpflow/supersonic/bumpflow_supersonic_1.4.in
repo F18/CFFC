@@ -22,15 +22,14 @@ Local_Time_Stepping=
 1
 #########################
 Reconstruction_Type=
-Least_Squares
-#Green_Gauss 
+Green_Gauss 
 #Least_Squares
 Limiter_Type=
 Venkatakrishnan
 #Barth_Jespersen
 #Zero
 Flux_Function_Type=
-Roe
+HLLE
 ############################
 #
 ###########################
@@ -126,12 +125,12 @@ Threshold_for_Coarsening=
 CFL_Number=
 0.5
 Maximum_Number_of_Time_Steps=
-500
+2000
 Full_Multigrid=
 0
 ####### Implicit ###############
 Maximum_Number_of_NKS_Iterations =
-50
+0
 Maximum_Number_of_GMRES_Iterations=
 100
 GMRES_Restart =

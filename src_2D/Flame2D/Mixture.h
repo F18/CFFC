@@ -106,7 +106,7 @@ public:
   ~Mixture() { Deallocate(); }
 
   void Copy( const Mixture &M ) {
-    MW = M.temperature();
+    T = M.temperature();
     MW = M.molarMass();
     Cp = M.heatCapacity_p();
     hs = M.enthalpySens();
@@ -613,7 +613,8 @@ inline void Mixture :: setState_DH(const double &rho, const double& h,
        << ". H = " << h 
        << ". n = " << n 
        << ". T = " << ct_gas->temperature()
-       << endl;
+       << endl 
+       << flush;
 }
 
 /****************************************************
@@ -645,7 +646,8 @@ inline void Mixture :: setState_DE(const double &rho, const double& e,
        << ". E = " << e
        << ". n = " << n 
        << ". T = " << ct_gas->temperature()
-       << endl;
+       << endl
+       << flush;
 }
 
 /****************************************************
@@ -939,5 +941,6 @@ inline double Mixture :: lewis(const double &rho,
     return kappa / ( Cp*rho*diff[i] );
   }
 }
+
 
 #endif // _MIXTURE_INCLUDED

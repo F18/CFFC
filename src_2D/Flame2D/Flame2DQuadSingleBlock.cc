@@ -1095,6 +1095,13 @@ void Output_Cells_Tecplot(Flame2D_Quad_Block &SolnBlk,
     for(int i =0; i<Flame2D_pState::NumSpecies(); i++){
       Out_File <<"\"dWdy_c"<<Flame2D_pState::speciesName(i)<<"\" \\ \n";
     }
+    Out_File << "\"phi_rho\" \\ \n"
+	     << "\"phi_u\" \\ \n"
+	     << "\"phi_v\" \\ \n"
+	     << "\"phi_p\" \\ \n";
+    for(int i =0; i<Flame2D_pState::NumSpecies(); i++){
+      Out_File <<"\"phi_c"<<Flame2D_pState::speciesName(i)<<"\" \\ \n";
+    }
     // dUdt
     Out_File << "\"dUdt_rho\" \\ \n"
 	     << "\"dUdt_rhou\" \\ \n"
@@ -1167,7 +1174,8 @@ void Output_Cells_Tecplot(Flame2D_Quad_Block &SolnBlk,
       Out_File.unsetf(ios::scientific);
       // Gradients
       Out_File << SolnBlk.dWdx[i][j]
-	       << SolnBlk.dWdy[i][j];
+	       << SolnBlk.dWdy[i][j]
+	       << SolnBlk.phi[i][j];
       // dUdt
       Out_File << SolnBlk.dUdt[i][j][0];
       Out_File << endl;
@@ -3225,13 +3233,8 @@ int dUdt_Residual_Evaluation(Flame2D_Quad_Block &SolnBlk,
       if ( j >= SolnBlk.JCl-JCl_overlap && j <= SolnBlk.JCu+JCu_overlap ) { 
 
 
-	// interpolate
-	dX = SolnBlk.Grid.xfaceE(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
-	Wl.Reconstruct( SolnBlk.W[i][j], SolnBlk.phi[i][j],
-			SolnBlk.dWdx[i][j], SolnBlk.dWdy[i][j], dX );
-	dX = SolnBlk.Grid.xfaceW(i+1, j)-SolnBlk.Grid.Cell[i+1][j].Xc;
-	Wr.Reconstruct( SolnBlk.W[i+1][j], SolnBlk.phi[i+1][j],
-			SolnBlk.dWdx[i+1][j], SolnBlk.dWdy[i+1][j], dX );
+	// Determine left and right states
+	SolnBlk.Reconstructed_LeftandRight_States( Wl, Wr, i, j, X_DIRECTION );
     
 	// Spacing for Preconditioner 
 	if(Input_Parameters.Preconditioning){
@@ -3357,13 +3360,9 @@ int dUdt_Residual_Evaluation(Flame2D_Quad_Block &SolnBlk,
   for ( int i = SolnBlk.ICl-ICl_overlap ; i <= SolnBlk.ICu+ICu_overlap ; ++i ) {
     for ( int j = SolnBlk.JCl-1-JCl_overlap ; j <= SolnBlk.JCu+JCu_overlap ; ++j ) {
       
-      // interpolate
-      dX = SolnBlk.Grid.xfaceN(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
-      Wl.Reconstruct( SolnBlk.W[i][j], SolnBlk.phi[i][j],
-		      SolnBlk.dWdx[i][j], SolnBlk.dWdy[i][j], dX );
-      dX = SolnBlk.Grid.xfaceS(i, j+1)-SolnBlk.Grid.Cell[i][j+1].Xc;
-      Wr.Reconstruct( SolnBlk.W[i][j+1], SolnBlk.phi[i][j+1],
-		      SolnBlk.dWdx[i][j+1], SolnBlk.dWdy[i][j+1], dX );
+      // Determine left and right states
+      SolnBlk.Reconstructed_LeftandRight_States( Wl, Wr, i, j, Y_DIRECTION );
+
       // Spacing for Preconditioner 
       if(Input_Parameters.Preconditioning){
 	delta_n = SolnBlk.delta_n(i,j);
@@ -3599,13 +3598,8 @@ int dUdt_Multistage_Explicit(Flame2D_Quad_Block &SolnBlk,
 
       if ( j >= SolnBlk.JCl && j <= SolnBlk.JCu ) {
 	 
-	// interpolate
-	dX = SolnBlk.Grid.xfaceE(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
-	Wl.Reconstruct( SolnBlk.W[i][j], SolnBlk.phi[i][j],
-			SolnBlk.dWdx[i][j], SolnBlk.dWdy[i][j], dX );
-	dX = SolnBlk.Grid.xfaceW(i+1, j)-SolnBlk.Grid.Cell[i+1][j].Xc;
-	Wr.Reconstruct( SolnBlk.W[i+1][j], SolnBlk.phi[i+1][j], 
-			SolnBlk.dWdx[i+1][j], SolnBlk.dWdy[i+1][j], dX );
+	// Determine left and right states
+	SolnBlk.Reconstructed_LeftandRight_States( Wl, Wr, i, j, X_DIRECTION );
 	
 	// Spacing for Preconditioner 
 	if(Input_Parameters.Preconditioning){
@@ -3740,13 +3734,8 @@ int dUdt_Multistage_Explicit(Flame2D_Quad_Block &SolnBlk,
   for ( i = SolnBlk.ICl ; i <= SolnBlk.ICu ; ++i ) {
     for ( j  = SolnBlk.JCl-1 ; j <= SolnBlk.JCu ; ++j ) {
 
-      // interpolate
-      dX = SolnBlk.Grid.xfaceN(i, j)-SolnBlk.Grid.Cell[i][j].Xc;
-      Wl.Reconstruct( SolnBlk.W[i][j], SolnBlk.phi[i][j],
-		      SolnBlk.dWdx[i][j], SolnBlk.dWdy[i][j], dX );
-      dX = SolnBlk.Grid.xfaceS(i, j+1)-SolnBlk.Grid.Cell[i][j+1].Xc;
-      Wr.Reconstruct( SolnBlk.W[i][j+1], SolnBlk.phi[i][j+1],
-		      SolnBlk.dWdx[i][j+1], SolnBlk.dWdy[i][j+1], dX );
+      // Determine left and right states
+      SolnBlk.Reconstructed_LeftandRight_States( Wl, Wr, i, j, Y_DIRECTION );
 		
       // Spacing for Preconditioner 
       if(Input_Parameters.Preconditioning){
@@ -3758,7 +3747,6 @@ int dUdt_Multistage_Explicit(Flame2D_Quad_Block &SolnBlk,
       // Determine NORTH face inviscid flux.
       switch(Input_Parameters.i_Flux_Function) {
       case FLUX_FUNCTION_ROE :
-
 	Flux.FluxRoe_n(Wl, Wr, SolnBlk.Grid.nfaceN(i, j),
 		       Input_Parameters.Preconditioning,SolnBlk.Flow_Type,delta_n);
 	break;
@@ -4152,4 +4140,3 @@ void Radiation_Source_Eval( Flame2D_Quad_Block &SolnBlk,
 
 
 } // end Radiation_Source_Eval()
-
