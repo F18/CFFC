@@ -285,61 +285,78 @@ First_Order_Inviscid_Jacobian_HLLE(const int &cell_index_i,const int &cell_index
   RotationMatrix(A_W, nface_W, 1);
   RotationMatrix(AI_W, nface_W, 0);
 
-  //! Calculate dFdU using solutions in the rotated frame -> matrix in DenseMatrix format. 
-  // no need to zero again, always writing to same spot
-  static DenseMatrix dFdU_N(blocksize,blocksize,ZERO);
-  static DenseMatrix dFdU_S(blocksize,blocksize,ZERO);
-  static DenseMatrix dFdU_E(blocksize,blocksize,ZERO);
-  static DenseMatrix dFdU_W(blocksize,blocksize,ZERO);
-
   //Solution Rotate provided in pState 
   // Rotate in place
   double u( ((const Flame2D_pState&)SolnBlk->W[cell_index_i][cell_index_j]).vx() ), 
     v( ((const Flame2D_pState&)SolnBlk->W[cell_index_i][cell_index_j]).vy() );
 
   SolnBlk->W[cell_index_i][cell_index_j].Rotate(nface_N);
-  SolnBlk->W[cell_index_i][cell_index_j].dFIdU(dFdU_N); 
+  SolnBlk->W[cell_index_i][cell_index_j].dFIdU(Jacobian[NORTH]); 
   SolnBlk->W[cell_index_i][cell_index_j].setVelocity(u, v);
 
   SolnBlk->W[cell_index_i][cell_index_j].Rotate(nface_S);
-  SolnBlk->W[cell_index_i][cell_index_j].dFIdU(dFdU_S);
+  SolnBlk->W[cell_index_i][cell_index_j].dFIdU(Jacobian[SOUTH]);
   SolnBlk->W[cell_index_i][cell_index_j].setVelocity(u, v);
 
   SolnBlk->W[cell_index_i][cell_index_j].Rotate(nface_E);
-  SolnBlk->W[cell_index_i][cell_index_j].dFIdU(dFdU_E);
+  SolnBlk->W[cell_index_i][cell_index_j].dFIdU(Jacobian[EAST]);
   SolnBlk->W[cell_index_i][cell_index_j].setVelocity(u, v);
 
   SolnBlk->W[cell_index_i][cell_index_j].Rotate(nface_W);
-  SolnBlk->W[cell_index_i][cell_index_j].dFIdU(dFdU_W);
+  SolnBlk->W[cell_index_i][cell_index_j].dFIdU(Jacobian[WEST]);
   SolnBlk->W[cell_index_i][cell_index_j].setVelocity(u, v);
 
   //! Calculate Jacobian matrix -> blocksizexblocksize matrix in DenseMatrix format
+  //  NOTE: NORTH, SOUTH, EAST, and WEST jacobians are zero at this point,
+  //        CENTER already has terms in it
   static DenseMatrix II(blocksize,blocksize);  II.identity();    
   //North
-  Jacobian[NORTH] = (SolnBlk->Grid.lfaceN(cell_index_i,cell_index_j-1) 
-		     * AI_N * (beta_N * dFdU_N + gamma_N * II) * A_N); 
+  //   Jacobian[NORTH] = (SolnBlk->Grid.lfaceN(cell_index_i,cell_index_j-1) 
+  // 		     * AI_N * (beta_N * dFdU_N + gamma_N * II) * A_N); 
+  Jacobian[NORTH] *= SolnBlk->Grid.lfaceN(cell_index_i,cell_index_j-1) * beta_N;
+  Jacobian[NORTH] += (SolnBlk->Grid.lfaceN(cell_index_i,cell_index_j-1) * gamma_N) * II;
+  Jacobian[NORTH]  = AI_N * Jacobian[NORTH] * A_N;
 
   //South
-  Jacobian[SOUTH] = (SolnBlk->Grid.lfaceS(cell_index_i,cell_index_j+1) 
-		     * AI_S * (beta_S * dFdU_S + gamma_S * II) * A_S);
+  //   Jacobian[SOUTH] = (SolnBlk->Grid.lfaceS(cell_index_i,cell_index_j+1) 
+  // 		     * AI_S * (beta_S * dFdU_S + gamma_S * II) * A_S);
+  Jacobian[SOUTH] *= SolnBlk->Grid.lfaceS(cell_index_i,cell_index_j+1) * beta_S;
+  Jacobian[SOUTH] += (SolnBlk->Grid.lfaceS(cell_index_i,cell_index_j+1) * gamma_S) * II;
+  Jacobian[SOUTH]  = AI_S * Jacobian[SOUTH] * A_S;
 
   //East
-  Jacobian[EAST] = (SolnBlk->Grid.lfaceE(cell_index_i-1,cell_index_j) 
-		    * AI_E * (beta_E * dFdU_E + gamma_E * II) * A_E);
+  //   Jacobian[EAST] = (SolnBlk->Grid.lfaceE(cell_index_i-1,cell_index_j) 
+  // 		    * AI_E * (beta_E * dFdU_E + gamma_E * II) * A_E);
+  Jacobian[EAST] *= SolnBlk->Grid.lfaceE(cell_index_i-1,cell_index_j) * beta_E;
+  Jacobian[EAST] += (SolnBlk->Grid.lfaceE(cell_index_i-1,cell_index_j) * gamma_E) * II;
+  Jacobian[EAST]  = AI_E * Jacobian[EAST] * A_E;
 
   //West
-  Jacobian[WEST] = (SolnBlk->Grid.lfaceW(cell_index_i+1,cell_index_j) 
-		    * AI_W * (beta_W * dFdU_W + gamma_W * II) * A_W);
+  //   Jacobian[WEST] = (SolnBlk->Grid.lfaceW(cell_index_i+1,cell_index_j) 
+  // 		    * AI_W * (beta_W * dFdU_W + gamma_W * II) * A_W);
+  Jacobian[WEST] *= SolnBlk->Grid.lfaceW(cell_index_i+1,cell_index_j) * beta_W;
+  Jacobian[WEST] += (SolnBlk->Grid.lfaceW(cell_index_i+1,cell_index_j) * gamma_W) * II;
+  Jacobian[WEST]  = AI_W * Jacobian[WEST] * A_W;
 
   //Center calculated from neighbours
-  //! Using the fact that dF/dU(right) = - dF/dU(left) 
-  Jacobian[CENTER] += (Jacobian[NORTH] + Jacobian[SOUTH] + Jacobian[EAST]  + Jacobian[WEST])
-    /SolnBlk->Grid.Cell[cell_index_i][cell_index_j].A;
-
-  Jacobian[NORTH] = -Jacobian[NORTH]/SolnBlk->Grid.Cell[cell_index_i][cell_index_j-1].A;
-  Jacobian[SOUTH] = -Jacobian[SOUTH]/SolnBlk->Grid.Cell[cell_index_i][cell_index_j+1].A;
-  Jacobian[EAST] = -Jacobian[EAST]/SolnBlk->Grid.Cell[cell_index_i-1][cell_index_j].A;
-  Jacobian[WEST] = -Jacobian[WEST]/SolnBlk->Grid.Cell[cell_index_i+1][cell_index_j].A;
+  //! Using the fact that dF/dU(right) = - dF/dU(left)
+  const double Ac = SolnBlk->Grid.Cell[cell_index_i][cell_index_j].A;
+  Jacobian[NORTH]  *= 1.0/Ac;
+  Jacobian[CENTER] += Jacobian[NORTH];
+  
+  Jacobian[SOUTH]  *= 1.0/Ac;
+  Jacobian[CENTER] += Jacobian[SOUTH];
+  
+  Jacobian[EAST]   *= 1.0/Ac;
+  Jacobian[CENTER] += Jacobian[EAST];
+  
+  Jacobian[WEST]   *= 1.0/Ac;
+  Jacobian[CENTER] += Jacobian[WEST];
+  
+  Jacobian[NORTH] *= -Ac/SolnBlk->Grid.Cell[cell_index_i][cell_index_j-1].A;
+  Jacobian[SOUTH] *= -Ac/SolnBlk->Grid.Cell[cell_index_i][cell_index_j+1].A;
+  Jacobian[EAST]  *= -Ac/SolnBlk->Grid.Cell[cell_index_i-1][cell_index_j].A;
+  Jacobian[WEST]  *= -Ac/SolnBlk->Grid.Cell[cell_index_i+1][cell_index_j].A;
 
 }
 
@@ -355,12 +372,12 @@ template<> inline void Block_Preconditioner<Flame2D_pState,
 Preconditioner_dFIdU_Roe(DenseMatrix &_dFIdU, int ii, int jj, int Orient)
 { 
   // declares
-  static DenseMatrix dFI_dW(blocksize,blocksize);
-  dFI_dW.zero();
+  static DenseMatrix dFIdW(blocksize,blocksize);
+  dFIdW.zero();
   
   //! Calculate dFdU using solutions in the rotated frame -> matrix in DenseMatrix format. 
-  dFIdW_Inviscid_ROE(dFI_dW, *SolnBlk,*Input_Parameters, ii,jj,Orient);  
-  //dFIdW_Inviscid_ROE_FD(dFI_dW, *SolnBlk,*Input_Parameters, ii,jj,Orient);
+  dFIdW_Inviscid_ROE(dFIdW, *SolnBlk,*Input_Parameters, ii,jj,Orient);  
+  //dFIdW_Inviscid_ROE_FD(dFIdW, *SolnBlk,*Input_Parameters, ii,jj,Orient);
  
   //transformation Jacobian 
   // Non neeed to zero more than once, always writing to the same spot
@@ -368,7 +385,48 @@ Preconditioner_dFIdU_Roe(DenseMatrix &_dFIdU, int ii, int jj, int Orient)
   
   //transformation Jacobian  Wo == W here 
   SolnBlk->W[ii][jj].dWdU(dWdU);
-  _dFIdU += dFI_dW*dWdU;
+  _dFIdU += dFIdW*dWdU;
+
+}
+
+
+/*****************************************************************************
+ *  Calculate First Order Local Jacobian Block(s) Coresponding to Cell(i,j)  *
+ *  using Roe                                                                *
+ *****************************************************************************/
+template<> inline void Block_Preconditioner<Flame2D_pState,
+					    Flame2D_Quad_Block,					    
+					    Flame2D_Input_Parameters>::
+First_Order_Inviscid_Jacobian_Roe(const int &cell_index_i,const int &cell_index_j, 
+				   DenseMatrix* Jacobian){              
+    
+  //! Calculate Jacobian matrix -> blocksizexblocksize matrix in DenseMatrix format
+  //  NOTE: NORTH, SOUTH, EAST, and WEST jacobians are zero at this point,
+  //        CENTER already has terms in it
+  Preconditioner_dFIdU_Roe(Jacobian[NORTH],cell_index_i,cell_index_j,NORTH);
+  Preconditioner_dFIdU_Roe(Jacobian[SOUTH],cell_index_i,cell_index_j,SOUTH); 
+  Preconditioner_dFIdU_Roe(Jacobian[EAST],cell_index_i,cell_index_j,EAST);        
+  Preconditioner_dFIdU_Roe(Jacobian[WEST],cell_index_i,cell_index_j,WEST); 
+
+  //Center calculated from neighbours
+  //! Using the fact that dF/dU(right) = - dF/dU(left)
+  const double Ac = SolnBlk->Grid.Cell[cell_index_i][cell_index_j].A;
+  Jacobian[NORTH]  *= 1.0/Ac;
+  Jacobian[CENTER] += Jacobian[NORTH];
+  
+  Jacobian[SOUTH]  *= 1.0/Ac;
+  Jacobian[CENTER] += Jacobian[SOUTH];
+  
+  Jacobian[EAST]   *= 1.0/Ac;
+  Jacobian[CENTER] += Jacobian[EAST];
+  
+  Jacobian[WEST]   *= 1.0/Ac;
+  Jacobian[CENTER] += Jacobian[WEST];
+  
+  Jacobian[NORTH] *= -Ac/SolnBlk->Grid.Cell[cell_index_i][cell_index_j-1].A;
+  Jacobian[SOUTH] *= -Ac/SolnBlk->Grid.Cell[cell_index_i][cell_index_j+1].A;
+  Jacobian[EAST]  *= -Ac/SolnBlk->Grid.Cell[cell_index_i-1][cell_index_j].A;
+  Jacobian[WEST]  *= -Ac/SolnBlk->Grid.Cell[cell_index_i+1][cell_index_j].A;
 
 }
 
@@ -400,6 +458,32 @@ Preconditioner_dFIdU_AUSM_plus_up(DenseMatrix &_dFIdU, int ii, int jj, int Orien
 
 }
 
+/*****************************************************************************
+ *  Calculate First Order Local Jacobian Block(s) Coresponding to Cell(i,j)  *
+ *  using AUSM_plus_up                                                       *
+ ****************************************************************************/
+template<> inline void Block_Preconditioner<Flame2D_pState,
+					    Flame2D_Quad_Block,					    
+					    Flame2D_Input_Parameters>::
+First_Order_Inviscid_Jacobian_AUSM_plus_up(const int &cell_index_i,const int &cell_index_j, 
+					   DenseMatrix* Jacobian){              
+
+  //! Calculate Jacobian matrix -> blocksizexblocksize matrix in DenseMatrix format
+  Preconditioner_dFIdU_AUSM_plus_up(Jacobian[NORTH],cell_index_i,cell_index_j,NORTH);
+  Preconditioner_dFIdU_AUSM_plus_up(Jacobian[SOUTH],cell_index_i,cell_index_j,SOUTH); 
+  Preconditioner_dFIdU_AUSM_plus_up(Jacobian[EAST],cell_index_i,cell_index_j,EAST);        
+  Preconditioner_dFIdU_AUSM_plus_up(Jacobian[WEST],cell_index_i,cell_index_j,WEST); 
+
+  //! Using the fact that dF/dU(right) = - dF/dU(left) 
+  Jacobian[CENTER] += (Jacobian[NORTH] + Jacobian[SOUTH] + Jacobian[EAST]  + Jacobian[WEST])
+    /SolnBlk->Grid.Cell[cell_index_i][cell_index_j].A;
+
+  Jacobian[NORTH] = -Jacobian[NORTH]/SolnBlk->Grid.Cell[cell_index_i][cell_index_j-1].A;
+  Jacobian[SOUTH] = -Jacobian[SOUTH]/SolnBlk->Grid.Cell[cell_index_i][cell_index_j+1].A;
+  Jacobian[EAST] = -Jacobian[EAST]/SolnBlk->Grid.Cell[cell_index_i-1][cell_index_j].A;
+  Jacobian[WEST] = -Jacobian[WEST]/SolnBlk->Grid.Cell[cell_index_i+1][cell_index_j].A;
+  
+}
 
 /*!**************************************************************
  * Specialization of Block_Preconditioner::Preconditioner_dFVdU *
@@ -413,9 +497,18 @@ template<> inline void Block_Preconditioner<Flame2D_pState,
 Preconditioner_dFVdU(DenseMatrix &dFvdU, const int Rii, const int Rjj, 
 		     const int Wii, const int Wjj, const int Orient_face, const int Orient_cell) {
 
+  // declares
   double lface;
   Vector2D nface;
+  const int ns = SolnBlk->W[Rii][Rjj].NumSpecies()-Flame2D_pState::NSm1;
+  const int Matrix_size = 14 + ns;
+  static DenseMatrix dFvdWf(blocksize, Matrix_size); dFvdWf.zero();
+  static DenseMatrix dWfdWx(Matrix_size, blocksize); dWfdWx.zero();
+  static DenseMatrix dGvdWf(blocksize, Matrix_size); dGvdWf.zero();
+  static DenseMatrix dWfdWy(Matrix_size, blocksize); dWfdWy.zero();
+  static DenseMatrix dGVdW(blocksize, blocksize); dGVdW.zero();
 
+  // determine orientation
   switch(Orient_face){
   case NORTH:
     nface = SolnBlk->Grid.nfaceN(Rii, Rjj);
@@ -435,16 +528,7 @@ Preconditioner_dFVdU(DenseMatrix &dFvdU, const int Rii, const int Rjj,
     break;  
   }
 
-  const int ns = SolnBlk->W[Rii][Rjj].NumSpecies()-Flame2D_pState::NSm1;
-  //int Matrix_size = 2*NUM_VAR_FLAME2D+2;      // 14+Ns ?????  for variable R,k,mu, ie functions of ci see dRdU.cc
-  const int Matrix_size = 14 + ns;
-
-  static DenseMatrix dFvdWf(blocksize, Matrix_size); dFvdWf.zero();
-  static DenseMatrix dWfdWx(Matrix_size, blocksize); dWfdWx.zero();
-  static DenseMatrix dGvdWf(blocksize, Matrix_size); dGvdWf.zero();
-  static DenseMatrix dWfdWy(Matrix_size, blocksize); dWfdWy.zero();
-  static DenseMatrix dGVdW(blocksize, blocksize); dGVdW.zero();
-
+  //compute jacobian
   dFvdWf_Diamond(dFvdWf,dGvdWf,*SolnBlk, Orient_face, Rii, Rjj);
   dWfdWc_Diamond(dWfdWx,dWfdWy,*SolnBlk, Orient_face, Rii, Rjj, Orient_cell); 
   
@@ -459,6 +543,127 @@ Preconditioner_dFVdU(DenseMatrix &dFvdU, const int Rii, const int Rjj,
 
 
 }
+
+
+/****************************************************************************
+ *  Calculate Second Order Local Jacobian Block(s) Coresponding to Cell(i,j) *                      
+ ****************************************************************************/
+template<> inline void Block_Preconditioner<Flame2D_pState,
+					    Flame2D_Quad_Block,					    
+					    Flame2D_Input_Parameters>::
+Second_Order_Viscous_Jacobian(const int &cell_index_i,const int &cell_index_j, DenseMatrix* Jacobian){
+
+  // A real cludge with all the DenseMatrices and recalculations, 
+  //  but just to test, need to change for performance....
+  DenseMatrix JacobianN(blocksize,blocksize,ZERO);   //TEMP VAR
+  DenseMatrix JacobianS(blocksize,blocksize,ZERO);    //TEMP VAR
+  DenseMatrix JacobianE(blocksize,blocksize,ZERO);     //TEMP VAR 
+  DenseMatrix JacobianW(blocksize,blocksize,ZERO);     //TEMP VAR 
+
+  //Also should rewrite to minimize dR/dU calls and just 
+  //call dWdU, but this needs to be done in Preconditioner_dFVdU
+  
+  //***************** dR(i,j)/dU(i,j) *********************************************/
+  //CENTER
+  Preconditioner_dFVdU(JacobianN,cell_index_i,cell_index_j,
+		       cell_index_i,cell_index_j,NORTH,CENTER);
+  Preconditioner_dFVdU(JacobianS,cell_index_i,cell_index_j,
+		       cell_index_i,cell_index_j,SOUTH,CENTER);
+  Preconditioner_dFVdU(JacobianE,cell_index_i,cell_index_j,
+		       cell_index_i,cell_index_j,EAST,CENTER);
+  Preconditioner_dFVdU(JacobianW,cell_index_i,cell_index_j,
+		       cell_index_i,cell_index_j,WEST,CENTER);
+
+  Jacobian[CENTER] += (JacobianN + JacobianS + JacobianE  + JacobianW) 
+    /SolnBlk->Grid.Cell[cell_index_i][cell_index_j].A;
+
+
+  /***************** dR(i,j-1)/dU(i,j) *********************************************/
+  //NORTH                           
+  JacobianN.zero();
+  Preconditioner_dFVdU(JacobianN,cell_index_i,cell_index_j-1,
+		       cell_index_i,cell_index_j,EAST,NORTH); 
+  Preconditioner_dFVdU(JacobianN,cell_index_i,cell_index_j-1,
+		       cell_index_i,cell_index_j,NORTH,NORTH); 
+  Preconditioner_dFVdU(JacobianN,cell_index_i,cell_index_j-1,
+		       cell_index_i,cell_index_j,WEST,NORTH); 
+ 
+  /***************** dR(i,j+1)/dU(i,j) *********************************************/
+  //SOUTH 
+  JacobianS.zero();
+  Preconditioner_dFVdU(JacobianS,cell_index_i,cell_index_j+1,
+		       cell_index_i,cell_index_j,EAST,SOUTH);
+  Preconditioner_dFVdU(JacobianS,cell_index_i,cell_index_j+1,
+		       cell_index_i,cell_index_j,SOUTH,SOUTH);
+  Preconditioner_dFVdU(JacobianS,cell_index_i,cell_index_j+1,
+		       cell_index_i,cell_index_j,WEST,SOUTH);
+  
+  /***************** dR(i-1,j)/dU(i,j) *********************************************/
+  //EAST 
+  JacobianE.zero();
+  Preconditioner_dFVdU(JacobianE,cell_index_i-1,cell_index_j,
+		       cell_index_i,cell_index_j,NORTH,EAST);
+  Preconditioner_dFVdU(JacobianE,cell_index_i-1,cell_index_j,
+		       cell_index_i,cell_index_j,EAST,EAST);
+  Preconditioner_dFVdU(JacobianE,cell_index_i-1,cell_index_j,
+		       cell_index_i,cell_index_j,SOUTH,EAST);
+
+  /***************** dR(i+1,j)/dU(i,j) *********************************************/
+  //WEST
+  JacobianW.zero(); 
+  Preconditioner_dFVdU(JacobianW,cell_index_i+1,cell_index_j,
+		       cell_index_i,cell_index_j, NORTH,WEST);
+  Preconditioner_dFVdU(JacobianW,cell_index_i+1,cell_index_j,
+		       cell_index_i,cell_index_j, WEST,WEST);
+  Preconditioner_dFVdU(JacobianW,cell_index_i+1,cell_index_j,
+		       cell_index_i,cell_index_j, SOUTH,WEST);
+
+  Jacobian[NORTH] += JacobianN/SolnBlk->Grid.Cell[cell_index_i][cell_index_j-1].A;
+  Jacobian[SOUTH] += JacobianS/SolnBlk->Grid.Cell[cell_index_i][cell_index_j+1].A;
+  Jacobian[EAST] += JacobianE/SolnBlk->Grid.Cell[cell_index_i-1][cell_index_j].A;
+  Jacobian[WEST] += JacobianW/SolnBlk->Grid.Cell[cell_index_i+1][cell_index_j].A; 
+
+  /********************************************************************************/
+  //CORNERS reuse matrices
+  JacobianN.zero();  JacobianS.zero();
+  JacobianE.zero();  JacobianW.zero();
+
+  /***************** dR(i+1,j+1)/dU(i,j) *********************************************/
+  //SOUTHWEST
+  Preconditioner_dFVdU(JacobianS,cell_index_i+1,cell_index_j+1,
+		       cell_index_i,cell_index_j,SOUTH,SOUTH_WEST);
+  Preconditioner_dFVdU(JacobianS,cell_index_i+1,cell_index_j+1,
+		       cell_index_i,cell_index_j, WEST,SOUTH_WEST);  
+  Jacobian[SOUTH_WEST] += JacobianS/SolnBlk->Grid.Cell[cell_index_i+1][cell_index_j+1].A;
+  
+  /***************** dR(i-1,j+1)/dU(i,j) *********************************************/
+  //SOUTHEAST
+  Preconditioner_dFVdU(JacobianE,cell_index_i-1,cell_index_j+1,
+		       cell_index_i,cell_index_j,SOUTH,SOUTH_EAST);
+  Preconditioner_dFVdU(JacobianE,cell_index_i-1,cell_index_j+1,
+		       cell_index_i,cell_index_j,EAST,SOUTH_EAST);  
+  Jacobian[SOUTH_EAST] += JacobianE/SolnBlk->Grid.Cell[cell_index_i-1][cell_index_j+1].A;
+
+  /***************** dR(i+1,j-1)/dU(i,j) *********************************************/
+  //NORTHWEST
+  Preconditioner_dFVdU(JacobianW,cell_index_i+1,cell_index_j-1,
+		       cell_index_i,cell_index_j, NORTH,NORTH_WEST);
+  Preconditioner_dFVdU(JacobianW,cell_index_i+1,cell_index_j-1,
+		       cell_index_i,cell_index_j, WEST,NORTH_WEST);  
+  Jacobian[NORTH_WEST] += JacobianW/SolnBlk->Grid.Cell[cell_index_i+1][cell_index_j-1].A;
+
+  /***************** dR(i-1,j-1)/dU(i,j) *********************************************/
+  //NORTHEAST
+  Preconditioner_dFVdU(JacobianN,cell_index_i-1,cell_index_j-1,
+		       cell_index_i,cell_index_j, NORTH,NORTH_EAST);
+  Preconditioner_dFVdU(JacobianN,cell_index_i-1,cell_index_j-1,
+		       cell_index_i,cell_index_j, EAST,NORTH_EAST);  
+  Jacobian[NORTH_EAST] += JacobianN/SolnBlk->Grid.Cell[cell_index_i-1][cell_index_j-1].A;
+
+
+}
+
+
 
 /*!**************************************************************
  * Specialization of Block_Preconditioner::Preconditioner_dSdU  *

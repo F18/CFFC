@@ -250,7 +250,7 @@ void dFIdW_Inviscid_ROE(DenseMatrix& dRdW,
      
   //Determin Roe Averaged State
   Wa.RoeAverage( *Wl, *Wr );
-    
+
   // Jacobian dF/dW
   // Note: Wr will always be i,j
   Wr->dFIdW(dFidW, HALF);
@@ -266,8 +266,8 @@ void dFIdW_Inviscid_ROE(DenseMatrix& dRdW,
     Wa.lambda_x(lambdas_a);
     wavespeeds.HartenFix_Abs( lambdas_a,
 			      lambdas_l,
-			      lambdas_r );         
-      
+			      lambdas_r );
+
     // Compute each element of Jacobian(i,j)
     // dFidW(irow, jcol) -= HALF*wavespeeds[i]*lp[jcol+1]*rc[irow+1];
     Wa.Flux_Dissipation_Jac(dFidW, wavespeeds, HALF);
@@ -311,7 +311,8 @@ void dFIdW_Inviscid_ROE(DenseMatrix& dRdW,
   // Add to dRdW
   //---------------------------------------------------------------
   //Rotate back 
-  dRdW += lface*AI*dFidW*A;
+  dFidW *= lface;
+  dRdW += AI*dFidW*A;
     
   // Rotate Back -> avoid roundoff by setting the exact values
   Wl->setVelocity( ul, vl );
@@ -430,7 +431,8 @@ void dFIdW_Inviscid_ROE_FD(DenseMatrix& dRdW,
   // Add to dRdW
   //---------------------------------------------------------------
   //Rotate back 
-  dRdW += lface*AI*dFidW*A;
+  dFidW *= lface;
+  dRdW += AI*dFidW*A;
     
   // Rotate Back -> avoid roundoff by setting the exact values
   Wl->setVelocity( ul, vl );
@@ -514,12 +516,15 @@ void dFIdW_Inviscid_AUSM_plus_up(DenseMatrix& dRdW,
   //---------------------------------------------------------------
   // FILL IN AUSM SPECIFIC STUFF HERE
   //---------------------------------------------------------------
-    
+  cerr << "dFIdW_Inviscid_AUSM_plus_up(): Not finished yet lazy ass!!!!";
+  exit(-1);
+
   //---------------------------------------------------------------
   // Add to dRdW
   //---------------------------------------------------------------
   //Rotate back 
-  dRdW += lface*AI*dFidW*A;
+  dFidW *= lface;
+  dRdW += AI*dFidW*A;
         
 }
 

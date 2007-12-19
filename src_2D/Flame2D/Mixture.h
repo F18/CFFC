@@ -52,7 +52,7 @@ using namespace std;
 // For explicit -> TOL ~ 1.0E-08 is good
 // For implicit -> TOL ~ 1.0E-10 is necessary 
 #undef CONV_TOLERANCE
-#define CONV_TOLERANCE  1e-10
+#define CONV_TOLERANCE  1e-8
 #undef NUM_ITERATIONS
 #define NUM_ITERATIONS  25
 
@@ -511,11 +511,11 @@ inline void Mixture :: setState_DEY(const double &rho, const double &e,
 
   // set the cantera gas state
   ct_gas->setMassFractions_NoNorm(y);
+  MW = ct_gas->meanMolecularWeight();
   setState_DE(rho, e, CONV_TOLERANCE);
 
   // compute the thermo / trans properties
   T = ct_gas->temperature();
-  MW = ct_gas->meanMolecularWeight();
   hs = ct_gas->enthalpy_mass() - hf;
   Cp = ct_gas->cp_mass();
 
@@ -555,11 +555,11 @@ inline void Mixture :: setState_DHY(const double &rho, const double &h,
 
   // set the cantera gas state
   ct_gas->setMassFractions_NoNorm(y);
+  MW = ct_gas->meanMolecularWeight();
   setState_DH(rho, h, CONV_TOLERANCE);
 
   // compute the thermo / trans properties
   T = ct_gas->temperature();
-  MW = ct_gas->meanMolecularWeight();
   hs = ct_gas->enthalpy_mass() - hf;
   Cp = ct_gas->cp_mass();
 
@@ -629,12 +629,13 @@ inline void Mixture :: setState_DE(const double &rho, const double& e,
   double dt;
   ct_gas->setDensity(rho);
   ct_gas->setTemperature(T);
+  double Rmix( gasConstant() );
 
   // Newton iteration
   int n;
   for (n = 0; n < NUM_ITERATIONS; n++) {
     // time step
-    dt = (e - ct_gas->intEnergy_mass())/ct_gas->cp_mass();
+    dt = (e - ct_gas->intEnergy_mass())/(ct_gas->cp_mass()-Rmix);
     // limit step size to 100 K
     // if (dt > 100.0) dt = 100.0;
     // else if (dt < -100.0) dt = -100.0;
