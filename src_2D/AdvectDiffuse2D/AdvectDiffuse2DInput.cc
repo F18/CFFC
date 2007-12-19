@@ -794,18 +794,6 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.i_ICs), 
                           1, 
                           MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.Kappa), 
-                          1, 
-                          MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.a), 
-                          1, 
-                          MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.b), 
-                          1, 
-                          MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.Tau), 
-                          1, 
-                          MPI::DOUBLE, 0);
     if (!CFFC_Primary_MPI_Processor()) {
       IP.Uo = AdvectDiffuse2D_State(ONE);
       IP.U1 = IP.Uo; IP.U1.u = ZERO;
@@ -820,12 +808,6 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
                           1, 
                           MPI::DOUBLE, 0);
 
-    MPI::COMM_WORLD.Bcast(IP.Velocity_Field_Type, 
-                          INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D, 
-                          MPI::CHAR, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.i_Velocity_Field), 
-                          1, 
-                          MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(IP.Flow_Geometry_Type, 
                           INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D, 
                           MPI::CHAR, 0);
@@ -1098,29 +1080,6 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.Number_of_Blocks_Per_Processor), 
                           1, 
                           MPI::INT, 0);
-    // GMRES restart:
-    MPI::COMM_WORLD.Bcast(&(IP.GMRES_Restart), 
-                          1, 
-                          MPI::INT, 0);
-    // GMRES overlap:
-    MPI::COMM_WORLD.Bcast(&(IP.GMRES_Overlap), 
-			  1, 
-			  MPI::INT, 0);
-    // GMRES tolerance:
-    MPI::COMM_WORLD.Bcast(&(IP.GMRES_Toler), 
-			  1, 
-                          MPI::DOUBLE, 0);
-    // GMRES P_Switch:
-    MPI::COMM_WORLD.Bcast(&(IP.GMRES_P_Switch), 
-			  1, 
-			  MPI::INT, 0);
-    // Finite Time Step:
-    MPI::COMM_WORLD.Bcast(&(IP.Finite_Time_Step), 
-			  1, 
-			  MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.Finite_Time_Step_Initial_CFL), 
-			  1, 
-			  MPI::DOUBLE, 0);
 
     // Freeze_Limiter
     MPI::COMM_WORLD.Bcast(&(IP.Freeze_Limiter), 
@@ -1260,18 +1219,6 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.i_ICs), 
                        1, 
                        MPI::INT, Source_Rank);
-    Communicator.Bcast(&(IP.Kappa), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.a), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.b), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.Tau), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
     if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
       IP.Uo = AdvectDiffuse2D_State(ONE);
       IP.U1 = IP.Uo; IP.U1.u = ZERO;
@@ -1286,12 +1233,6 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP,
 		       1, 
 		       MPI::DOUBLE, Source_Rank);
 
-    Communicator.Bcast(IP.Velocity_Field_Type, 
-                       INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D, 
-                       MPI::CHAR, Source_Rank);
-    Communicator.Bcast(&(IP.i_Velocity_Field), 
-                       1, 
-                       MPI::INT, Source_Rank);
     Communicator.Bcast(IP.Flow_Geometry_Type, 
                        INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D, 
                        MPI::CHAR, Source_Rank);
@@ -1564,30 +1505,6 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP,
                        1, 
                        MPI::INT, Source_Rank);
 
-    // GMRES restart:
-    Communicator.Bcast(&(IP.GMRES_Restart), 
-                       1, 
-                       MPI::INT, Source_Rank);
-    // GMRES overlap:
-    Communicator.Bcast(&(IP.GMRES_Overlap), 
-                       1, 
-                       MPI::INT, Source_Rank);
-    // GMRES tolerance:
-    Communicator.Bcast(&(IP.GMRES_Toler), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-    // GMRES P_Switch:
-    Communicator.Bcast(&(IP.GMRES_P_Switch), 
-                       1, 
-                       MPI::INT, Source_Rank);
-
-    // GMRES Finite_Time_Step:
-    Communicator.Bcast(&(IP.Finite_Time_Step), 
-                       1, 
-                       MPI::INT, Source_Rank);
-    Communicator.Bcast(&(IP.Finite_Time_Step_Initial_CFL), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
    // Freeze_Limiter
     Communicator.Bcast(&(IP.Freeze_Limiter), 
                        1, 
@@ -2129,36 +2046,6 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
     IP.Input_File.getline(buffer, sizeof(buffer));
     if (IP.Time_Max < ZERO) i_command = INVALID_INPUT_VALUE;
 
-  } else if (strcmp(IP.Next_Control_Parameter, "Kappa") == 0) {
-    i_command = 40;
-    IP.Line_Number = IP.Line_Number + 1;
-    IP.Input_File >> IP.Kappa;
-    IP.Input_File.getline(buffer, sizeof(buffer));
-    if (IP.Kappa < ZERO) {
-      i_command = INVALID_INPUT_VALUE;
-    } /* endif */
-
-  } else if (strcmp(IP.Next_Control_Parameter, "a") == 0) {
-    i_command = 41;
-    IP.Line_Number = IP.Line_Number + 1;
-    IP.Input_File >> IP.a;
-    IP.Input_File.getline(buffer, sizeof(buffer));
-
-  } else if (strcmp(IP.Next_Control_Parameter, "b") == 0) {
-    i_command = 42;
-    IP.Line_Number = IP.Line_Number + 1;
-    IP.Input_File >> IP.b;
-    IP.Input_File.getline(buffer, sizeof(buffer));
-
-  } else if (strcmp(IP.Next_Control_Parameter, "Tau") == 0) {
-    i_command = 43;
-    IP.Line_Number = IP.Line_Number + 1;
-    IP.Input_File >> IP.Tau;
-    IP.Input_File.getline(buffer, sizeof(buffer));
-    if (IP.Tau < ZERO) {
-      i_command = INVALID_INPUT_VALUE;
-    } /* endif */
-
   } else if (strcmp(IP.Next_Control_Parameter, "Number_of_Blocks_Per_Processor") == 0) {
     i_command = 44;
     IP.Line_Number = IP.Line_Number + 1;
@@ -2260,22 +2147,6 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
     IP.Input_File >> IP.Freeze_Limiter_Residual_Level;
     IP.Input_File.getline(buffer, sizeof(buffer));
     if (IP.Freeze_Limiter_Residual_Level < 0) i_command = INVALID_INPUT_VALUE;
-
-  } else if (strcmp(IP.Next_Control_Parameter, "Finite_Time_Step") == 0) {
-    // GMRES Finite_Time_Step
-    i_command = 63;
-    IP.Line_Number = IP.Line_Number + 1;
-    IP.Input_File >> IP.Finite_Time_Step;
-    IP.Input_File.getline(buffer, sizeof(buffer));
-    if (IP.Finite_Time_Step < 0) i_command = INVALID_INPUT_VALUE;
-
-  } else if (strcmp(IP.Next_Control_Parameter, "Finite_Time_Step_Initial_CFL") == 0) {
-    // GMRES Finite_Time_Step_Initial_CFL
-    i_command = 64;
-    IP.Line_Number = IP.Line_Number + 1;
-    IP.Input_File >> IP.Finite_Time_Step_Initial_CFL;
-    IP.Input_File.getline(buffer, sizeof(buffer));
-    if (IP.Finite_Time_Step_Initial_CFL < 0) i_command = INVALID_INPUT_VALUE;
 
   } else if (strcmp(IP.Next_Control_Parameter, "AMR") == 0) {
     i_command = 65;

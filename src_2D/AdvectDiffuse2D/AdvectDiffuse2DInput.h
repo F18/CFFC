@@ -26,10 +26,6 @@
 // Enviroment flag for CFFC root directory path
 #define PATHVAR_ADVECTDIFFUSE2D "CFFC_Path"
 
-#define VELOCITY_FIELD_ZERO        0
-#define VELOCITY_FIELD_UNIFORM     1
-#define VELOCITY_FIELD_ROTATING    2
-
 /*! 
  * \class AdvectDiffuse2D_Input_Parameters
  *
@@ -60,31 +56,6 @@ public:
   double CFL_Number, Time_Max;
   //! Residual variable:
   int i_Residual_Variable;
-  //@}
-
-  //! @name Newton-Krylov-Schwarz input parameters.
-  //@{
-  //! Maximum number of Newton-Krylov-Schwarz iterations.
-  int Maximum_Number_of_NKS_Iterations;
-  //! Maximum number of GMRES iterations.
-  int Maximum_Number_of_GMRES_Iterations;
-  //! GMRES restart:
-  int GMRES_Restart;
-  //! GMRES tolerance:
-  double GMRES_Toler;
-  //! Overall tolerance:
-  double Overall_Toler;
-  //! GMRES overlap:
-  int GMRES_Overlap;
-  //! GMRES P_Switch:
-  int GMRES_P_Switch;
-  //! ILU(k) - level of fill
-  int GMRES_ILUK_Level_of_Fill;
-  //! Finite_Time_Step:
-  int Finite_Time_Step;
-  double Finite_Time_Step_Initial_CFL;
-  //! Normalization:
-  int Normalization;
   //@}
 
   //! @name Implicit residual smoothing control parameters:
@@ -139,16 +110,9 @@ public:
   unsigned int Exact_Integration_Digits;    //!< Number of exact digits with which the some integrations are carried out
   //@}
 
-  //! @name Diffusion coefficient, advection speeds, and relaxation time:
+  //! @name Source term parameters:
   //@{
-  double Kappa, a, b, Tau;
   SourceTermFields *SourceTerm;        /*!< Pointer to the source term field. */
-  //@}
-
-  //! @name Convection velocity field type parameters:
-  //@{
-  char Velocity_Field_Type[INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
-  int i_Velocity_Field;
   //@}
 
   //! @name Flow geometry (planar or axisymmetric):
