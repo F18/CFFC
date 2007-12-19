@@ -533,7 +533,7 @@ void Hexa_Multi_Block<HEXA_BLOCK>::ICs(Input_Parameters<typename HEXA_BLOCK::Sol
 
    for (int nblk = 0; nblk < Number_of_Soln_Blks; ++nblk) {
       if (Block_Used[nblk]) {
-         error_flag = Soln_Blks[nblk].ICs(Input.i_ICs, Input);
+         error_flag = Soln_Blks[nblk].ICs(Input);
       } /* endif */
    }  /* endfor */
    

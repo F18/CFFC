@@ -285,8 +285,7 @@ Output_Nodes_Tecplot(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
 template<>
 int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState, 
                FANS3D_ThermallyPerfect_KOmega_cState>::
-ICs(const int i_ICtype,
-    Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState, 
+ICs(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState, 
                      FANS3D_ThermallyPerfect_KOmega_cState> &IPs) {
    
    double dpdx, dpdy, dpdz, delta_pres, delta_pres_x, delta_pres_y, delta_pres_z;
@@ -304,7 +303,7 @@ ICs(const int i_ICtype,
 
    FANS3D_ThermallyPerfect_KOmega_pState Wl, Wr;
 
-   switch(i_ICtype) {
+   switch(IPs.i_ICs) {
       case IC_VISCOUS_COUETTE_PRESSURE_GRADIENT_X :
          dpdx = IPs.Pressure_Gradient.x;  
          delta_pres = dpdx*IPs.Grid_IP.Box_Width;

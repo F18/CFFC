@@ -616,11 +616,6 @@ Create_Homogeneous_Turbulence_Velocity_Field(const Grid3D_Hexa_Multi_Block_List 
 	             index = iz + 
                              iy*Nz + 
                              ix*Ny*Nz;
- /*                     cout << "\n iBlk, jBlk, kBlk, nBlk: "  */
-/*                           << iBlk << " " << jBlk << " " << kBlk << " " << nBlk  */
-/*                           << " i, j, k, ix, iy, iz: " */
-/*                           << i << " " << j << " " << k << " " << ix << " " << iy << " " << iz  */
-/*                           << " index: " << index; cout.flush(); */
                      Initial_Velocity_Field.Vel_Blks[nBlk].Velocity[i][j][k].x = u[index];
                      Initial_Velocity_Field.Vel_Blks[nBlk].Velocity[i][j][k].y = v[index];
                      Initial_Velocity_Field.Vel_Blks[nBlk].Velocity[i][j][k].z = w[index];
@@ -714,8 +709,9 @@ void Assign_Homogeneous_Turbulence_Velocity_Field(HEXA_BLOCK *Solution_Block,
 
    for (int nBlk = 0 ; nBlk <= LocalSolnBlockList.Nblk-1 ; nBlk++) {
       if (LocalSolnBlockList.Block[nBlk].used == ADAPTIVEBLOCK3D_USED) {
-	 Assign_Homogeneous_Turbulence_Velocity_Field(Solution_Block[nBlk],
-                                                      Velocity_Field.Vel_Blks[nBlk]);
+	 if (Velocity_Field.Vel_Blks[LocalSolnBlockList.Block[nBlk].gblknum].Allocated)
+	    Assign_Homogeneous_Turbulence_Velocity_Field(Solution_Block[nBlk],
+               Velocity_Field.Vel_Blks[LocalSolnBlockList.Block[nBlk].gblknum]);
       } /* endif */
    }  /* endfor */
 

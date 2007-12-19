@@ -272,8 +272,7 @@ Output_Nodes_Tecplot(Input_Parameters<NavierStokes3D_ThermallyPerfect_pState,
 template<>
 int Hexa_Block<NavierStokes3D_ThermallyPerfect_pState, 
                NavierStokes3D_ThermallyPerfect_cState>::
-ICs(const int i_ICtype,
-    Input_Parameters<NavierStokes3D_ThermallyPerfect_pState, 
+ICs(Input_Parameters<NavierStokes3D_ThermallyPerfect_pState, 
                      NavierStokes3D_ThermallyPerfect_cState> &IPs) {
 
    double dpdx, dpdy, dpdz, delta_pres;
@@ -281,7 +280,7 @@ ICs(const int i_ICtype,
       
    NavierStokes3D_ThermallyPerfect_pState Wl, Wr;
    
-   switch(i_ICtype) {
+   switch(IPs.i_ICs) {
       case IC_VISCOUS_COUETTE_PRESSURE_GRADIENT_X :
          dpdx = IPs.Pressure_Gradient.x;  
          delta_pres = dpdx*IPs.Grid_IP.Box_Width;

@@ -564,12 +564,11 @@ Output_Nodes_Tecplot(Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs,
  ********************************************************/
 template<>
 int Hexa_Block<LES3DFsd_pState,LES3DFsd_cState>::
-ICs(const int i_ICtype,
-    Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs){
+ICs(Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs){
    
    LES3DFsd_pState Wl, Wr;
    
-   switch(i_ICtype) {
+   switch(IPs.i_ICs) {
      case IC_UNIFORM :
        // Set the solution state to the initial state Wo[0].
        for (int k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {

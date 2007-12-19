@@ -53,8 +53,7 @@ Output_Nodes_Tecplot(Input_Parameters<LES3DFsd_pState,
 template<>
 int Hexa_Block<LES3DFsd_pState, 
                LES3DFsd_cState>::
-ICs(const int i_ICtype,
-    Input_Parameters<LES3DFsd_pState, 
+ICs(Input_Parameters<LES3DFsd_pState, 
                      LES3DFsd_cState> &IPs);
 
 template<>

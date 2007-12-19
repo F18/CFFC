@@ -58,8 +58,7 @@ Output_Nodes_Tecplot(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
 template<>
 int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState, 
                FANS3D_ThermallyPerfect_KOmega_cState>::
-ICs(const int i_ICtype,
-    Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState, 
+ICs(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState, 
                      FANS3D_ThermallyPerfect_KOmega_cState> &IPs);
 
 template<>

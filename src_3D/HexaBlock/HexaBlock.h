@@ -217,10 +217,7 @@ class Hexa_Block{
                              const int Output_Title,
                              ostream &Out_File);
 
-   int ICs(const int i_ICtype, 
-           Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs);
-
-   int ICs_Turbulent_Velocity_Field(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs);
+   int ICs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs);
 
    void BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs);
 
@@ -1171,15 +1168,14 @@ Output_Nodes_Tecplot(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs,
  ********************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::
-ICs(const int i_ICtype,
-    Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
+ICs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
    
    double dpdx, dpdy, dpdz, delta_pres;
    double di, U_axi, Um;
       
    SOLN_pSTATE Wl, Wr;
    
-   switch(i_ICtype) {
+   switch(IPs.i_ICs) {
       case IC_SHOCK_BOX :
 	 Wl = SOLN_pSTATE(IPs.Wo);
          Wl.rho = DENSITY_STDATM;
@@ -1381,21 +1377,6 @@ ICs(const int i_ICtype,
       
    return (0);
     
-}
-
-/********************************************************
- * Routine: ICs_Turbulent_Velocity_Field                *
- *                                                      *
- * Assigns an initial turbulent velocity field as       *
- * required to pecified hexa solution block.            *
- *                                                      *
- ********************************************************/
-template<class SOLN_pSTATE, class SOLN_cSTATE>
-int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::
-ICs_Turbulent_Velocity_Field(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
-
-   return (0);
-
 }
 
 /********************************************************
