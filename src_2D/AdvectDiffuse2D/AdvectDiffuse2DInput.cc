@@ -816,24 +816,6 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.RefU.u), 
                           1, 
                           MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.RefU.V.x), 
-                          1, 
-                          MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.RefU.V.y), 
-                          1, 
-                          MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.RefU.k), 
-                          1, 
-                          MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.RefU.T), 
-                          1, 
-                          MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.RefU.Fd.x), 
-                          1, 
-                          MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.RefU.Fd.y), 
-                          1, 
-                          MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&(IP.Exact_Integration_Digits), 
                           1, 
                           MPI::DOUBLE, 0);
@@ -1298,24 +1280,6 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP,
 
     // Reference state
     Communicator.Bcast(&(IP.RefU.u), 
-		       1, 
-		       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.RefU.V.x), 
-		       1, 
-		       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.RefU.V.y), 
-		       1, 
-		       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.RefU.k), 
-		       1, 
-		       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.RefU.T), 
-		       1, 
-		       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.RefU.Fd.x), 
-		       1, 
-		       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.RefU.Fd.y), 
 		       1, 
 		       MPI::DOUBLE, Source_Rank);
     Communicator.Bcast(&(IP.Exact_Integration_Digits), 
