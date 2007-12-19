@@ -9,7 +9,7 @@
 
 /* Include CFFC header files */
 #include "TestData.h"
-#include "../New_AdvectDiffuse2DState.h"
+#include "../AdvectDiffuse2DState.h"
 
 namespace tut
 {

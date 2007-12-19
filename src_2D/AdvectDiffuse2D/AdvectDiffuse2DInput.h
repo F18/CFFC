@@ -12,7 +12,6 @@
 
 /* Include CFFC header files */
 #include "AdvectDiffuse2DState.h" // Include 2D advection diffusion equation solution state header file
-#include "New_AdvectDiffuse2DState.h" // Include 2D advection diffusion equation solution state header file
 #include "../Grid/Grid2DQuad.h"   // Include 2D quadrilateral multiblock grid header file
 #include "../FASMultigrid2D/FASMultigrid2DInput.h" // Include multigrid input header file.
 #include "../ICEM/ICEMCFD.h"      // Include ICEMCFD input header file.
@@ -133,9 +132,9 @@ public:
   //@{
   char ICs_Type[INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
   int i_ICs;
-  AdvectDiffuse2D_State Uo, U1, U2;
+  AdvectDiffuse2D_State_New Uo, U1, U2;
   AdvectDiffuse2D_ExactSolutions *ExactSoln; /*!< Pointer to the exact solution */
-  AdvectDiffuse2D_State RefU;		/*!< Reference state, used by CENO to normalize the
+  AdvectDiffuse2D_State_New RefU;		/*!< Reference state, used by CENO to normalize the
 					   variables in the computation of the smoothness indicator. */
   unsigned int Exact_Integration_Digits;    //!< Number of exact digits with which the some integrations are carried out
   //@}

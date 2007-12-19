@@ -9,7 +9,7 @@
 
 /* Include CFFC header files */
 #include "TestData.h"
-#include "../New_AdvectDiffuse2DQuad.h"
+#include "../AdvectDiffuse2DQuad.h"
 #include "../../HighOrderReconstruction/AccuracyAssessment2DMultiBlock.h"
 
 namespace tut

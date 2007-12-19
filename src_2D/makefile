@@ -178,15 +178,10 @@ SRC_EULER1D_EXE = $(EULER_1D_DIR)Euler1DMain.cc
 SRC_ADVECTDIFFUSE = $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DState.cc \
 	            $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DInput.cc \
                     $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuad.cc \
-                    $(ADVECTDIFFUSE_DIR)New_AdvectDiffuse2DQuad.cc \
 	            $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuadSingleBlock.cc \
-	            $(ADVECTDIFFUSE_DIR)New_AdvectDiffuse2DQuadSingleBlock.cc \
                     $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuadMultiBlock.cc \
-                    $(ADVECTDIFFUSE_DIR)New_AdvectDiffuse2DQuadMultiBlock.cc \
                     $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuadGrid.cc \
                     $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuadSolvers.cc \
-                    $(ADVECTDIFFUSE_DIR)New_AdvectDiffuse2DQuadSolvers.cc \
-                    $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuad_NKS.cc \
 		    $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DExactSolutions.cc \
 		    $(ADVECTDIFFUSE_DIR)ExactSolutions.cc \
                     $(ADVECTDIFFUSE_DIR)VelocityFields.cc \
@@ -194,8 +189,7 @@ SRC_ADVECTDIFFUSE = $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DState.cc \
                     $(ADVECTDIFFUSE_DIR)SourceTermFields.cc \
                     $(ADVECTDIFFUSE_DIR)SourceFields.cc \
                     $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DInflowField.cc \
-                    $(ADVECTDIFFUSE_DIR)InflowFields.cc \
-		    $(ADVECTDIFFUSE_DIR)New_AdvectDiffuse2DState.cc
+                    $(ADVECTDIFFUSE_DIR)InflowFields.cc
 SRC_ADVECTDIFFUSE_EXE = $(ADVECTDIFFUSE_DIR)AdvectDiffuse2D.cc
 
 # Add AdvectDiffuse 2D Testing If Required:

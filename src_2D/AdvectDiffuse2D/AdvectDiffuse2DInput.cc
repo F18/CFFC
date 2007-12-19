@@ -583,11 +583,7 @@ void Set_Default_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
     IP.SourceTerm->SetSourceField(SOURCE_FIELD_ZERO); // set the default source term (no source field)
 
     // State conditions:
-    IP.Uo = AdvectDiffuse2D_State(ONE,
- 	                          IP.a,
-                                  IP.b,
-	                          IP.Kappa,
-                                  IP.Tau);
+    IP.Uo = AdvectDiffuse2D_State_New(ONE);
     IP.U1 = IP.Uo; IP.U1.u = ZERO;
     IP.U2 = IP.Uo; IP.U2.u = -ONE;
     IP.RefU = IP.Uo;
@@ -811,13 +807,9 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
                           1, 
                           MPI::DOUBLE, 0);
     if (!CFFC_Primary_MPI_Processor()) {
-       IP.Uo = AdvectDiffuse2D_State(ONE, 
-                                     IP.a, 
-                                     IP.b, 
-                                     IP.Kappa,
-                                     IP.Tau);
-       IP.U1 = IP.Uo; IP.U1.u = ZERO;
-       IP.U2 = IP.Uo; IP.U2.u = -ONE;
+      IP.Uo = AdvectDiffuse2D_State_New(ONE);
+      IP.U1 = IP.Uo; IP.U1.u = ZERO;
+      IP.U2 = IP.Uo; IP.U2.u = -ONE;
     } /* endif */
 
     // Reference state
@@ -1299,13 +1291,9 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP,
                        1, 
                        MPI::DOUBLE, Source_Rank);
     if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
-       IP.Uo = AdvectDiffuse2D_State(ONE, 
-                                     IP.a, 
-                                     IP.b, 
-                                     IP.Kappa,
-                                     IP.Tau);
-       IP.U1 = IP.Uo; IP.U1.u = ZERO;
-       IP.U2 = IP.Uo; IP.U2.u = -ONE;
+      IP.Uo = AdvectDiffuse2D_State_New(ONE);
+      IP.U1 = IP.Uo; IP.U1.u = ZERO;
+      IP.U2 = IP.Uo; IP.U2.u = -ONE;
     } /* endif */
 
     // Reference state
@@ -3013,11 +3001,7 @@ int Process_Input_Control_Parameter_File(AdvectDiffuse2D_Input_Parameters &Input
 
     // Set reference states
     // Uo state
-    Input_Parameters.Uo = AdvectDiffuse2D_State(ONE,
-						Input_Parameters.a,
-						Input_Parameters.b,
-						Input_Parameters.Kappa,
-						Input_Parameters.Tau);
+    Input_Parameters.Uo = AdvectDiffuse2D_State_New(ONE);
     // U1 state
     Input_Parameters.U1 = Input_Parameters.Uo;
     Input_Parameters.U1.u = ZERO;

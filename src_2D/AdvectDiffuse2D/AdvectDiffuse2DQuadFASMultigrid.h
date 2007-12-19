@@ -1,7 +1,7 @@
 #ifndef _ADVECTDIFFUSE2D_FASMULTIGRID_SPECIALIZATION_INCLUDED 
 #define _ADVECTDIFFUSE2D_FASMULTIGRID_SPECIALIZATION_INCLUDED 
 
-#include "New_AdvectDiffuse2DQuad.h"
+#include "AdvectDiffuse2DQuad.h"
 #include "../FASMultigrid2D/FASMultigrid2D.h"
 
 /*! *****************************************************************************************

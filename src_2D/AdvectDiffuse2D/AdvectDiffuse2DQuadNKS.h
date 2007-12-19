@@ -4,7 +4,7 @@
 /****************************************************************/
 /****** NKS REQUIRED SPECIALIZATIONS & FUNCTIONS ****************/
 /****************************************************************/  
-#include "New_AdvectDiffuse2DQuad.h"
+#include "AdvectDiffuse2DQuad.h"
 #include "../NewtonKrylovSchwarz2D/NKS2D.h"
 
 
