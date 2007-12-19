@@ -220,6 +220,8 @@ class Hexa_Block{
    int ICs(const int i_ICtype, 
            Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs);
 
+   int ICs_Turbulent_Velocity_Field(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs);
+
    void BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs);
 
    double CFL(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs);
@@ -1379,6 +1381,21 @@ ICs(const int i_ICtype,
       
    return (0);
     
+}
+
+/********************************************************
+ * Routine: ICs_Turbulent_Velocity_Field                *
+ *                                                      *
+ * Assigns an initial turbulent velocity field as       *
+ * required to pecified hexa solution block.            *
+ *                                                      *
+ ********************************************************/
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::
+ICs_Turbulent_Velocity_Field(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
+
+   return (0);
+
 }
 
 /********************************************************

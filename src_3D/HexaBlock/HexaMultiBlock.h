@@ -526,12 +526,14 @@ void Hexa_Multi_Block<HEXA_BLOCK>::Freeze_Limiters(void) {
 template<class HEXA_BLOCK>
 void Hexa_Multi_Block<HEXA_BLOCK>::ICs(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
                                                         typename HEXA_BLOCK::Soln_cState> &Input) {
+
+   int error_flag(0);
    
    /* Assign initial data for each solution block. */
 
    for (int nblk = 0; nblk < Number_of_Soln_Blks; ++nblk) {
       if (Block_Used[nblk]) {
-         Soln_Blks[nblk].ICs(Input.i_ICs, Input);
+         error_flag = Soln_Blks[nblk].ICs(Input.i_ICs, Input);
       } /* endif */
    }  /* endfor */
    

@@ -567,9 +567,6 @@ int Hexa_Block<LES3DFsd_pState,LES3DFsd_cState>::
 ICs(const int i_ICtype,
     Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs){
    
-   double dpdx, dpdy, dpdz, delta_pres_x, delta_pres_y, delta_pres_z ;
-   double zd, zz, di, Um;
-   
    LES3DFsd_pState Wl, Wr;
    
    switch(i_ICtype) {
@@ -588,7 +585,6 @@ ICs(const int i_ICtype,
        break;
       
    case IC_TURBULENT_PREMIXED_FLAME :
-     ifstream InFile;
      for (int k  = KCl- Nghost ; k <=  KCu+ Nghost ; ++k) {
         for (int j  = JCl- Nghost ; j <=  JCu+ Nghost ; ++j) {
            for (int i = ICl- Nghost ; i <=  ICu+ Nghost ; ++i) {
@@ -606,72 +602,6 @@ ICs(const int i_ICtype,
 	   } /* endfor */
 	} /* endfor */
      } /* endfor */
-
-     // Open data file for reading
-     InFile.open("Initial_Turbulence_Fluctuations.dat", ios::in); 
-     // Check to see if successful
-     if(InFile.fail()){ 
-       cerr<<"\nError opening file: Initial_Turbulence.dat to read" <<endl;
-       exit(1); 
-     } 
-
-     bool interpolate_flag;
-     double xx, yy, zz, dx, dy, dz, dd, uprime_x, uprime_y, uprime_z;
-
-     InFile.setf(ios::skipws);
- 
-     for (int i =  ICl- Nghost ; i <=  ICu+ Nghost ; ++i ) {
-        for (int j  =  JCl- Nghost ; j <=  JCu+ Nghost ; ++j ) {
-           for (int k  =  KCl- Nghost ; k <=  KCu+ Nghost ; ++k ) {
-              if ((i>=ICl && i<=ICu) && (j>=JCl && j<=JCu) && (k>=KCl && k<=KCu)) {
-                interpolate_flag = true;
-
- 	        do {
-	           InFile >> xx >> yy >> zz >> uprime_x >> uprime_y >> uprime_z;
-   	           if (fabs((xx - Grid.Cell[i][j][k].Xc.x)/Grid.Cell[i][j][k].Xc.x) < 1.0E-2  &&
-		       fabs((yy - Grid.Cell[i][j][k].Xc.y)/Grid.Cell[i][j][k].Xc.y) < 1.0E-2  &&
-		       fabs((zz - Grid.Cell[i][j][k].Xc.z)/Grid.Cell[i][j][k].Xc.z) < 1.0E-2) {
-                      W[i][j][k].v.x += uprime_x;
-                      W[i][j][k].v.y += uprime_y;
-                      W[i][j][k].v.z += uprime_z;
-                      interpolate_flag = false;
- 	              break;
-                   } else {
-                      dx = Grid.Cell[i][j][k].Xc.x - xx;
-                      dy = Grid.Cell[i][j][k].Xc.y - yy;
-                      dz = Grid.Cell[i][j][k].Xc.z - zz;
-                      dd = sqrt(dx*dx + dy*dy + dz*dz);
-                      if (dd == ZERO ||  dd > sqrt(sqr(IPs.Grid_IP.Box_Width) + 
-                          sqr(IPs.Grid_IP.Box_Height) + sqr(IPs.Grid_IP.Box_Length) )) {
- 		         cout << "\nYOU ARE NOT SUPPOSED TO REACH THIS LINE!!!";
-  		      } //else { 
-	           }//end if
-		} /* enddo */
-                while ( !InFile.eof() ); // end while
-	      } /* endif */
-	      U[i][j][k] = W[i][j][k].U();
-	   } /* endfor */
-	} /* endfor */
-     } /* endfor */
-
-     InFile.unsetf(ios::skipws);
-     InFile.close();
-
-     if (Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K){ 
-        Linear_Reconstruction_LeastSquares(IPs.i_Limiter);
-        for (int k  = KCl-Nghost ; k <= KCu+Nghost ; ++k) {
-  	   for (int j  = JCl-Nghost ; j <= JCu+Nghost ; ++j) {
-              for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i) {
-	        //W[i][j][k].Fsd = 200.0*W[i][j][k].Fsd;
- 		W[i][j][k].k = 0.005*sqr(W[i][j][k].filter_width(Grid.volume(i,j,k))*
-                               W[i][j][k].abs_strain_rate(dWdx[i][j][k],dWdy[i][j][k],dWdz[i][j][k]));
-	        W[i][j][k].premixed_mfrac();
-  	        U[i][j][k] = W[i][j][k].U();
- 	        U[i][j][k].premixed_mfrac();
- 	      } /* endfor */
-	   } /* endfor */
-	} /* endfor */
-     } /* endif */
      break;  
       
    } //end of switch

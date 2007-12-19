@@ -164,7 +164,8 @@ class Grid3D_Hexa_Multi_Block_List {
                            NBlk_Jdir, 
                            NBlk_Kdir; // Number of blocks in i, j and k directions.
     int                    Allocated; // Indicates if the grid blocks have been allocated or not.
-   
+ 
+    // Grid block connectivity information  
     Grid3D_Hexa_Multi_Block_Connectivity  *Connectivity; 
    
     /* Creation constructors. */

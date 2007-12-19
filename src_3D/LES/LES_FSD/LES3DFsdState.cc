@@ -227,7 +227,7 @@ double LES3DFsd_pState::mu_t(const LES3DFsd_pState &dWdx,
   double filter = filter_width(Volume);
   if (Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY) {
     double Cs = 0.18;
-    return(rho*Cs*sqr(filter)*abs_strain_rate(dWdx,dWdy,dWdz));
+    return(rho*sqr(Cs*filter)*abs_strain_rate(dWdx,dWdy,dWdz));
   } else if(Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K) {
     double Cv = 0.086;
     return(rho*Cv*sqrt(k)*filter);
@@ -287,7 +287,7 @@ double LES3DFsd_pState::Le_t(void) {
  * LES3DFsd_pState::filter_width -- LES characteristic filter width      *
  *************************************************************************/
 double LES3DFsd_pState::filter_width(const double &Volume) const {
-  return (0.0366/60.0);//pow(Volume,1.0/3.0); 
+  return (0.0366/30.0);//pow(Volume,1.0/3.0); 
 }
 
 /*******************************************************************************
@@ -3594,7 +3594,7 @@ double LES3DFsd_cState::mu_t(const LES3DFsd_pState &dWdx,
   double filter = filter_width(Volume);
   if (Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY) {
     double Cs = 0.18;
-    return(rho*Cs*sqr(filter)*abs_strain_rate(dWdx,dWdy,dWdz));
+    return(rho*sqr(Cs*filter)*abs_strain_rate(dWdx,dWdy,dWdz));
   } else if (Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K) {
     double Cv = 0.086;
     return(rho*Cv*sqrt(k())*filter);
@@ -3661,7 +3661,7 @@ double LES3DFsd_cState::Le_t(void) {
  * LES3DFsd_cState::filter_width -- LES characteristic filter width      *
  *************************************************************************/
 double LES3DFsd_cState::filter_width(const double &Volume) const {
-  return (0.0366/60.0);//pow(Volume,1.0/3.0); 
+  return (0.0366/30.0);//pow(Volume,1.0/3.0); 
 }
 
 /*********************************************************************************
