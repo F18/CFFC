@@ -113,7 +113,7 @@ namespace tut
 
     AdvectDiffuse2D_Input_Parameters IP;
 
-    IP.Verbose() = ON;
+    IP.Verbose() = OFF;
     Set_Default_Input_Parameters(IP);
 
     // Set input file name

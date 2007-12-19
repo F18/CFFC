@@ -266,7 +266,8 @@ public:
   //! Calculate the solution gradient at the specified interface
   Vector2D InterfaceSolutionGradient(const int & ii_L, const int & jj_L,
 				     const int & ii_R, const int & jj_R,
-				     const int &Gradient_Reconstruction_Type);
+				     const int &Gradient_Reconstruction_Type,
+				     const int &Stencil_Flag);
 
   //! Calculate the solution gradient based on a diamond path reconstruction
   Vector2D DiamondPathGradientReconstruction(const Vector2D &Xl, const AdvectDiffuse2D_State_New &Ul,
@@ -319,13 +320,15 @@ public:
 								       const Vector2D &CalculationPoint) const;
   //@}
 
-  //! @name Member functions to compute the inviscid and elliptic flux state at a boundary interface
+  //! @name Member functions to compute the inviscid and elliptic flux states at a boundary interface
   //@{
   void InviscidAndEllipticFluxStates_AtBoundaryInterface(const int &BOUNDARY,
 							 const int &ii, const int &jj,
 							 AdvectDiffuse2D_State_New &Ul,
 							 AdvectDiffuse2D_State_New &Ur,
-							 AdvectDiffuse2D_State_New &U_face);
+							 AdvectDiffuse2D_State_New &U_face,
+							 Vector2D &GradU_face,
+							 const int &Gradient_Reconstruction_Type);
   //@}
 
 

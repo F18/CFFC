@@ -1157,6 +1157,8 @@ void BCs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
   int i(0), j(0);
   int ghost;
   double Vn;
+  AdvectDiffuse2D_State_New dUdn;
+  double dx_normal;
   
 
   for ( j = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
@@ -1182,13 +1184,29 @@ void BCs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 
 	case BC_INFLOW :	// Inflow BC is treated as a Dirichlet BC. Make sure that UoW has the right inflow data!
 	case BC_DIRICHLET :	// Use UoW as reference value
+	  // Compute the dx in the normal direction between the Gauss point and the first interior cell centroid.
+	  dx_normal = ( SolnBlk.Grid.xfaceW(SolnBlk.ICl,j) - 
+			SolnBlk.Grid.CellCentroid(SolnBlk.ICl,j) ) * SolnBlk.Grid.nfaceW(SolnBlk.ICl,j);
+	  // Estimate the solution gradient in the normal direction
+	  dUdn = (SolnBlk.UoW[j] - SolnBlk.U[SolnBlk.ICl][j])/dx_normal;
+
+	  // Fill in the ghost cells.
 	  for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
-	    SolnBlk.U[SolnBlk.ICl-ghost][j] = SolnBlk.UoW[j];
+	    dx_normal = ( SolnBlk.Grid.CellCentroid(SolnBlk.ICl-ghost,j) -
+			  SolnBlk.Grid.xfaceW(SolnBlk.ICl,j)) * SolnBlk.Grid.nfaceW(SolnBlk.ICl,j);
+	    SolnBlk.U[SolnBlk.ICl-ghost][j] = ( SolnBlk.UoW[j] + dUdn * dx_normal );
 	  }
 	  break;
 
-	case BC_NEUMANN :       
-	  throw runtime_error("BCs() ERROR! Neumann BC hasn't been implemented yet!");
+	case BC_NEUMANN :
+	  // The ghost cell values are set based on the normal gradient provided by the user (UoW[j])
+	  // and the average solution of the first interior cell.
+	  for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	    dx_normal = ( SolnBlk.Grid.CellCentroid(SolnBlk.ICl-ghost,j) -
+			  SolnBlk.Grid.xfaceW(SolnBlk.ICl,j)) * SolnBlk.Grid.nfaceW(SolnBlk.ICl,j);
+
+	    SolnBlk.U[SolnBlk.ICl-ghost][j] = ( SolnBlk.U[SolnBlk.ICl][j] + SolnBlk.UoW[j] * dx_normal );
+	  }
 	  break;
 
 	case BC_FARFIELD :
@@ -1206,8 +1224,18 @@ void BCs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 	  if (Vn <= ZERO){
 	    // The flow enters the domain
 	    // Use UoW as reference value
+	    
+	    // Compute the dx in the normal direction between the Gauss point and the first interior cell centroid.
+	    dx_normal = ( SolnBlk.Grid.xfaceW(SolnBlk.ICl,j) - 
+			  SolnBlk.Grid.CellCentroid(SolnBlk.ICl,j) ) * SolnBlk.Grid.nfaceW(SolnBlk.ICl,j);
+	    // Estimate the solution gradient in the normal direction
+	    dUdn = (SolnBlk.UoW[j] - SolnBlk.U[SolnBlk.ICl][j])/dx_normal;
+
+	    // Fill in the ghost cells.
 	    for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
-	      SolnBlk.U[SolnBlk.ICl-ghost][j] = SolnBlk.UoW[j];
+	      dx_normal = ( SolnBlk.Grid.CellCentroid(SolnBlk.ICl-ghost,j) -
+			    SolnBlk.Grid.xfaceW(SolnBlk.ICl,j)) * SolnBlk.Grid.nfaceW(SolnBlk.ICl,j);
+	      SolnBlk.U[SolnBlk.ICl-ghost][j] = ( SolnBlk.UoW[j] + dUdn * dx_normal );
 	    }
 
 	  } else {
@@ -1273,13 +1301,29 @@ void BCs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 	  
 	case BC_INFLOW :	// Inflow BC is treated as a Dirichlet BC. Make sure that UoE has the right inflow data!
 	case BC_DIRICHLET :	// Use UoE as reference value
+	  // Compute the dx in the normal direction between the Gauss point and the first interior cell centroid.
+	  dx_normal = ( SolnBlk.Grid.xfaceE(SolnBlk.ICu,j) - 
+			SolnBlk.Grid.CellCentroid(SolnBlk.ICu,j) ) * SolnBlk.Grid.nfaceE(SolnBlk.ICu,j);
+	  // Estimate the solution gradient in the normal direction
+	  dUdn = (SolnBlk.UoE[j] - SolnBlk.U[SolnBlk.ICu][j])/dx_normal;
+
+	  // Fill in the ghost cells.
 	  for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
-	    SolnBlk.U[SolnBlk.ICu+ghost][j] = SolnBlk.UoE[j];
+	    dx_normal = ( SolnBlk.Grid.CellCentroid(SolnBlk.ICu+ghost,j) -
+			  SolnBlk.Grid.xfaceW(SolnBlk.ICu,j)) * SolnBlk.Grid.nfaceE(SolnBlk.ICu,j);
+	    SolnBlk.U[SolnBlk.ICu+ghost][j] = ( SolnBlk.UoE[j] + dUdn * dx_normal );
 	  }
 	  break;
 	  
 	case BC_NEUMANN :
-	  throw runtime_error("BCs() ERROR! Neumann BC hasn't been implemented yet!");
+	  // The ghost cell values are set based on the normal gradient provided by the user (UoE[j])
+	  // and the average solution of the first interior cell.
+	  for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	    dx_normal = ( SolnBlk.Grid.CellCentroid(SolnBlk.ICu+ghost,j) -
+			  SolnBlk.Grid.xfaceW(SolnBlk.ICu,j)) * SolnBlk.Grid.nfaceE(SolnBlk.ICu,j);
+
+	    SolnBlk.U[SolnBlk.ICu+ghost][j] = ( SolnBlk.U[SolnBlk.ICu][j] + SolnBlk.UoE[j] * dx_normal );
+	  }
 	  break;
 
 	case BC_FARFIELD :
@@ -1297,8 +1341,18 @@ void BCs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 	  if (Vn <= ZERO){
 	    // The flow enters the domain
 	    // Use UoE as reference value
+
+	    // Compute the dx in the normal direction between the Gauss point and the first interior cell centroid.
+	    dx_normal = ( SolnBlk.Grid.xfaceE(SolnBlk.ICu,j) - 
+			  SolnBlk.Grid.CellCentroid(SolnBlk.ICu,j) ) * SolnBlk.Grid.nfaceE(SolnBlk.ICu,j);
+	    // Estimate the solution gradient in the normal direction
+	    dUdn = (SolnBlk.UoE[j] - SolnBlk.U[SolnBlk.ICu][j])/dx_normal;
+	    
+	    // Fill in the ghost cells.
 	    for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
-	      SolnBlk.U[SolnBlk.ICu+ghost][j] = SolnBlk.UoE[j];
+	      dx_normal = ( SolnBlk.Grid.CellCentroid(SolnBlk.ICu+ghost,j) -
+			    SolnBlk.Grid.xfaceW(SolnBlk.ICu,j)) * SolnBlk.Grid.nfaceE(SolnBlk.ICu,j);
+	      SolnBlk.U[SolnBlk.ICu+ghost][j] = ( SolnBlk.UoE[j] + dUdn * dx_normal );
 	    }
 
 	  } else {
@@ -1364,13 +1418,29 @@ void BCs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
       
     case BC_INFLOW :	// Inflow BC is treated as a Dirichlet BC. Make sure that UoS has the right inflow data!
     case BC_DIRICHLET :	// Use UoS as reference value
+      // Compute the dx in the normal direction between the Gauss point and the first interior cell centroid.
+      dx_normal = ( SolnBlk.Grid.xfaceS(i,SolnBlk.JCl) - 
+		    SolnBlk.Grid.CellCentroid(i,SolnBlk.JCl) ) * SolnBlk.Grid.nfaceS(i,SolnBlk.JCl);
+      // Estimate the solution gradient in the normal direction
+      dUdn = (SolnBlk.UoS[i] - SolnBlk.U[i][SolnBlk.JCl])/dx_normal;
+      
+      // Fill in the ghost cells.
       for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
-	SolnBlk.U[i][SolnBlk.JCl-ghost] = SolnBlk.UoS[i];
+	dx_normal = ( SolnBlk.Grid.CellCentroid(i,SolnBlk.JCl-ghost) -
+		      SolnBlk.Grid.xfaceS(i,SolnBlk.JCl)) * SolnBlk.Grid.nfaceS(i,SolnBlk.JCl);
+	SolnBlk.U[i][SolnBlk.JCl-ghost] = ( SolnBlk.UoS[i] + dUdn * dx_normal );
       }
       break;
       
     case BC_NEUMANN :
-      throw runtime_error("BCs() ERROR! Neumann BC hasn't been implemented yet!");
+      // The ghost cell values are set based on the normal gradient provided by the user (UoS[i])
+      // and the average solution of the first interior cell.
+      for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	dx_normal = ( SolnBlk.Grid.CellCentroid(i,SolnBlk.JCl-ghost) -
+		      SolnBlk.Grid.xfaceS(i,SolnBlk.JCl)) * SolnBlk.Grid.nfaceS(i,SolnBlk.JCl);
+
+	SolnBlk.U[i][SolnBlk.JCl-ghost] = ( SolnBlk.U[i][SolnBlk.JCl] + SolnBlk.UoS[i] * dx_normal );
+      }
       break;
       
     case BC_FARFIELD :
@@ -1388,8 +1458,18 @@ void BCs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
       if (Vn <= ZERO){
 	// The flow enters the domain
 	// Use UoS as reference value
+
+	// Compute the dx in the normal direction between the Gauss point and the first interior cell centroid.
+	dx_normal = ( SolnBlk.Grid.xfaceS(i,SolnBlk.JCl) - 
+		      SolnBlk.Grid.CellCentroid(i,SolnBlk.JCl) ) * SolnBlk.Grid.nfaceS(i,SolnBlk.JCl);
+	// Estimate the solution gradient in the normal direction
+	dUdn = (SolnBlk.UoS[i] - SolnBlk.U[i][SolnBlk.JCl])/dx_normal;
+      
+	// Fill in the ghost cells.
 	for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
-	  SolnBlk.U[i][SolnBlk.JCl-ghost] = SolnBlk.UoS[i];
+	  dx_normal = ( SolnBlk.Grid.CellCentroid(i,SolnBlk.JCl-ghost) -
+			SolnBlk.Grid.xfaceS(i,SolnBlk.JCl)) * SolnBlk.Grid.nfaceS(i,SolnBlk.JCl);
+	  SolnBlk.U[i][SolnBlk.JCl-ghost] = ( SolnBlk.UoS[i] + dUdn * dx_normal );
 	}
 
       } else {
@@ -1450,13 +1530,29 @@ void BCs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
       
     case BC_INFLOW :	// Inflow BC is treated as a Dirichlet BC. Make sure that UoN has the right inflow data!
     case BC_DIRICHLET :	// Use UoN as reference value
+      // Compute the dx in the normal direction between the Gauss point and the first interior cell centroid.
+      dx_normal = ( SolnBlk.Grid.xfaceN(i,SolnBlk.JCu) - 
+		    SolnBlk.Grid.CellCentroid(i,SolnBlk.JCu) ) * SolnBlk.Grid.nfaceN(i,SolnBlk.JCu);
+      // Estimate the solution gradient in the normal direction
+      dUdn = (SolnBlk.UoN[i] - SolnBlk.U[i][SolnBlk.JCu])/dx_normal;
+
+      // Fill in the ghost cells.
       for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
-	SolnBlk.U[i][SolnBlk.JCu+ghost] = SolnBlk.UoN[i];
+	dx_normal = ( SolnBlk.Grid.CellCentroid(i,SolnBlk.JCu+ghost) -
+		      SolnBlk.Grid.xfaceN(i,SolnBlk.JCu)) * SolnBlk.Grid.nfaceN(i,SolnBlk.JCu);
+	SolnBlk.U[i][SolnBlk.JCu+ghost] = ( SolnBlk.UoN[i] + dUdn * dx_normal );
       }
       break;
       
     case BC_NEUMANN :
-      throw runtime_error("BCs() ERROR! Neumann BC hasn't been implemented yet!");
+      // The ghost cell values are set based on the normal gradient provided by the user (UoN[i])
+      // and the average solution of the first interior cell.
+      for( ghost = 1; ghost <= SolnBlk.Nghost; ++ghost){
+	dx_normal = ( SolnBlk.Grid.CellCentroid(i,SolnBlk.JCu+ghost) -
+		      SolnBlk.Grid.xfaceN(i,SolnBlk.JCu)) * SolnBlk.Grid.nfaceN(i,SolnBlk.JCu);
+
+	SolnBlk.U[i][SolnBlk.JCu+ghost] = ( SolnBlk.U[i][SolnBlk.JCu] + SolnBlk.UoN[i] * dx_normal );
+      }
       break;
       
     case BC_FARFIELD :
@@ -1567,7 +1663,7 @@ double CFL(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 
 	// Determine stability limit imposed by the diffusion term
       if (SolnBlk.DiffusionCoeffAtCellCentroid(i,j) > TOLER) {
-	dt_diff = HALF*min(sqr(d_i), sqr(d_j))/SolnBlk.DiffusionCoeffAtCellCentroid(i,j);
+	dt_diff = HALF*min(sqr(d_i), sqr(d_j))/fabs(SolnBlk.DiffusionCoeffAtCellCentroid(i,j));
       } else {
 	dt_diff = MILLION;
       } /* endif */
@@ -2977,6 +3073,8 @@ int dUdt_Residual_Evaluation(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
   Vector2D dX;
   AdvectDiffuse2D_State_New Ul, Ur, U_face, Flux;
   Vector2D GradU_face;		// Solution gradient at the inter-cellular face
+  /* Set the stencil flag for the gradient reconstruction to the most common case. */
+  int GradientReconstructionStencilFlag(DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
 
   /* Perform the linear reconstruction within each cell
      of the computational grid for this stage. */
@@ -3022,21 +3120,29 @@ int dUdt_Residual_Evaluation(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 	  // Compute the right interface state based on reconstruction
 	  Ur = SolnBlk.PiecewiseLinearSolutionAtLocation(i+1, j,SolnBlk.Grid.xfaceW(i+1, j));
 
-	  /* Compute the left interface state for inviscid flux calculation 
-	     and the solution state at the Gauss quadrature point 
-	     for calculation of the diffusion coefficient
-	     such that to satisfy the WEST boundary condition */
-	  SolnBlk.InviscidAndEllipticFluxStates_AtBoundaryInterface(WEST,i,j,Ul,Ur,U_face);
+	  /* Compute the left interface state for inviscid flux calculation,
+	     the solution state for calculation of the diffusion coefficient 
+	     and the solution gradient such that to satisfy the WEST boundary 
+	     condition at the Gauss quadrature point. */
+	  SolnBlk.InviscidAndEllipticFluxStates_AtBoundaryInterface(WEST,
+								    i,j,
+								    Ul,Ur,
+								    U_face,
+								    GradU_face,IP.i_Viscous_Reconstruction);
 	  
 	} else if (i == SolnBlk.ICu){ // This is a EAST boundary interface
 	  // Compute the left interface state based on reconstruction
 	  Ul = SolnBlk.PiecewiseLinearSolutionAtLocation(i  , j,SolnBlk.Grid.xfaceE(i  , j));
 	  
-	  /* Compute the left interface state for inviscid flux calculation 
-	     and the solution state at the Gauss quadrature point 
-	     for calculation of the diffusion coefficient
-	     such that to satisfy the EAST boundary condition */
-	  SolnBlk.InviscidAndEllipticFluxStates_AtBoundaryInterface(EAST,i,j,Ul,Ur,U_face);
+	  /* Compute the left interface state for inviscid flux calculation,
+	     the solution state for calculation of the diffusion coefficient 
+	     and the solution gradient such that to satisfy the EAST boundary 
+	     condition at the Gauss quadrature point. */
+	  SolnBlk.InviscidAndEllipticFluxStates_AtBoundaryInterface(EAST,
+								    i,j,
+								    Ul,Ur,
+								    U_face,
+								    GradU_face,IP.i_Viscous_Reconstruction);
 
 	} else {		// This is an interior interface
 	  // Compute left and right interface states at 
@@ -3049,16 +3155,17 @@ int dUdt_Residual_Evaluation(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 	  SolnBlk.EllipticFluxStateAtInteriorInterface(i  ,j,
 						       i+1,j,
 						       SolnBlk.Grid.xfaceE(i,j),U_face);
+
+	  // Calculate gradient at the face midpoint
+	  GradU_face = SolnBlk.InterfaceSolutionGradient(i  ,j,
+							 i+1,j,
+							 IP.i_Viscous_Reconstruction,
+							 GradientReconstructionStencilFlag);
 	}
 
 	// Compute the advective flux 'Fa' in the normal direction at the face midpoint 
 	Flux = Fa(Ul, Ur, SolnBlk.Grid.xfaceE(i,j), SolnBlk.Grid.nfaceE(i,j));
-	
-	// Calculate gradient at the face midpoint
-	GradU_face = SolnBlk.InterfaceSolutionGradient(i  ,j,
-						       i+1,j,
-						       IP.i_Viscous_Reconstruction);
-   
+	  
 	// Add the viscous (diffusive) flux 'Fd' in the normal direction at the face midpoint to the face total flux
 	Flux += Fd(U_face, GradU_face, SolnBlk.Grid.xfaceE(i,j), SolnBlk.Grid.nfaceE(i,j));
 
@@ -3100,21 +3207,29 @@ int dUdt_Residual_Evaluation(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 	// Compute the right interface state based on reconstruction
 	Ur = SolnBlk.PiecewiseLinearSolutionAtLocation(i ,j+1,SolnBlk.Grid.xfaceS(i ,j+1));
 	
-	/* Compute the left interface state for inviscid flux calculation 
-	   and the solution state at the Gauss quadrature point 
-	   for calculation of the diffusion coefficient
-	   such that to satisfy the SOUTH boundary condition */
-	SolnBlk.InviscidAndEllipticFluxStates_AtBoundaryInterface(SOUTH,i,j,Ul,Ur,U_face);
+	/* Compute the left interface state for inviscid flux calculation,
+	   the solution state for calculation of the diffusion coefficient 
+	   and the solution gradient such that to satisfy the SOUTH boundary 
+	   condition at the Gauss quadrature point. */
+	SolnBlk.InviscidAndEllipticFluxStates_AtBoundaryInterface(SOUTH,
+								  i,j,
+								  Ul,Ur,
+								  U_face,
+								  GradU_face,IP.i_Viscous_Reconstruction);
 	  
       } else if (j == SolnBlk.JCu){ // This is a NORTH boundary interface
 	// Compute the left interface state based on reconstruction
 	Ul = SolnBlk.PiecewiseLinearSolutionAtLocation(i ,j  ,SolnBlk.Grid.xfaceN(i ,j  ));
 	  
-	/* Compute the left interface state for inviscid flux calculation 
-	   and the solution state at the Gauss quadrature point 
-	   for calculation of the diffusion coefficient
-	   such that to satisfy the NORTH boundary condition */
-	SolnBlk.InviscidAndEllipticFluxStates_AtBoundaryInterface(NORTH,i,j,Ul,Ur,U_face);
+	/* Compute the left interface state for inviscid flux calculation,
+	   the solution state for calculation of the diffusion coefficient 
+	   and the solution gradient such that to satisfy the NORTH boundary 
+	   condition at the Gauss quadrature point. */
+	SolnBlk.InviscidAndEllipticFluxStates_AtBoundaryInterface(NORTH,
+								  i,j,
+								  Ul,Ur,
+								  U_face,
+								  GradU_face,IP.i_Viscous_Reconstruction);
 	  
       } else {		// This is an interior interface
 	// Compute left and right interface states at 
@@ -3127,16 +3242,17 @@ int dUdt_Residual_Evaluation(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 	SolnBlk.EllipticFluxStateAtInteriorInterface(i  ,j,
 						     i  ,j+1,
 						     SolnBlk.Grid.xfaceN(i,j),U_face);
+
+	// Calculate gradient at the face midpoint
+	GradU_face = SolnBlk.InterfaceSolutionGradient(i  ,j,
+						       i  ,j+1,
+						       IP.i_Viscous_Reconstruction,
+						       GradientReconstructionStencilFlag);
       }
 
       // Compute the advective flux in the normal direction at the face midpoint 
       Flux = Fa(Ul, Ur, SolnBlk.Grid.xfaceN(i,j), SolnBlk.Grid.nfaceN(i, j));
-    
-      // Calculate gradient at the face midpoint
-      GradU_face = SolnBlk.InterfaceSolutionGradient(i  ,j,
-						     i  ,j+1,
-						     IP.i_Viscous_Reconstruction);
-      
+         
       // Add the viscous (diffusive) flux 'Fd' in the normal direction at the face midpoint to the face total flux
       Flux += Fd(U_face, GradU_face, SolnBlk.Grid.xfaceN(i,j), SolnBlk.Grid.nfaceN(i,j));
 
@@ -3179,6 +3295,9 @@ int dUdt_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
   Vector2D dX;
   AdvectDiffuse2D_State_New Ul, Ur, U_face, Flux;
   Vector2D GradU_face;		// Solution gradient at the inter-cellular face
+  /* Set the stencil flag for the gradient reconstruction to the most common case. */
+  int GradientReconstructionStencilFlag(DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
+
 
   /* Evaluate the solution residual for stage 
      i_stage of an N stage scheme. */
@@ -3293,21 +3412,29 @@ int dUdt_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 	  // Compute the right interface state based on reconstruction
 	  Ur = SolnBlk.PiecewiseLinearSolutionAtLocation(i+1, j,SolnBlk.Grid.xfaceW(i+1, j));
 
-	  /* Compute the left interface state for inviscid flux calculation 
-	     and the solution state at the Gauss quadrature point 
-	     for calculation of the diffusion coefficient
-	     such that to satisfy the WEST boundary condition */
-	  SolnBlk.InviscidAndEllipticFluxStates_AtBoundaryInterface(WEST,i,j,Ul,Ur,U_face);
+	  /* Compute the left interface state for inviscid flux calculation,
+	     the solution state for calculation of the diffusion coefficient 
+	     and the solution gradient such that to satisfy the WEST boundary 
+	     condition at the Gauss quadrature point. */
+	  SolnBlk.InviscidAndEllipticFluxStates_AtBoundaryInterface(WEST,
+								    i,j,
+								    Ul,Ur,
+								    U_face,
+								    GradU_face,IP.i_Viscous_Reconstruction);
 	  
 	} else if (i == SolnBlk.ICu){ // This is a EAST boundary interface
 	  // Compute the left interface state based on reconstruction
 	  Ul = SolnBlk.PiecewiseLinearSolutionAtLocation(i  , j,SolnBlk.Grid.xfaceE(i  , j));
 
-	  /* Compute the left interface state for inviscid flux calculation 
-	     and the solution state at the Gauss quadrature point 
-	     for calculation of the diffusion coefficient
-	     such that to satisfy the EAST boundary condition */
-	  SolnBlk.InviscidAndEllipticFluxStates_AtBoundaryInterface(EAST,i,j,Ul,Ur,U_face);
+	  /* Compute the left interface state for inviscid flux calculation,
+	     the solution state for calculation of the diffusion coefficient 
+	     and the solution gradient such that to satisfy the EAST boundary 
+	     condition at the Gauss quadrature point. */
+	  SolnBlk.InviscidAndEllipticFluxStates_AtBoundaryInterface(EAST,
+								    i,j,
+								    Ul,Ur,
+								    U_face,
+								    GradU_face,IP.i_Viscous_Reconstruction);
 	  
 	} else {		// This is an interior interface
 	  // Compute left and right interface states at 
@@ -3320,16 +3447,17 @@ int dUdt_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 	  SolnBlk.EllipticFluxStateAtInteriorInterface(i  ,j,
 						       i+1,j,
 						       SolnBlk.Grid.xfaceE(i,j),U_face);
-	}
+
+	  // Calculate gradient at the face midpoint
+	  GradU_face = SolnBlk.InterfaceSolutionGradient(i  ,j,
+							 i+1,j,
+							 IP.i_Viscous_Reconstruction,
+							 GradientReconstructionStencilFlag);
+   	}
 	
 	// Compute the advective flux in the normal direction at the face midpoint 
 	Flux = Fa(Ul, Ur, SolnBlk.Grid.xfaceE(i,j), SolnBlk.Grid.nfaceE(i,j));
 
-	// Calculate gradient at the face midpoint
-	GradU_face = SolnBlk.InterfaceSolutionGradient(i  ,j,
-						       i+1,j,
-						       IP.i_Viscous_Reconstruction);
-   
 	// Add the viscous (diffusive) flux 'Fd' in the normal direction at the face midpoint to the face total flux
 	Flux += Fd(U_face, GradU_face, SolnBlk.Grid.xfaceE(i,j), SolnBlk.Grid.nfaceE(i,j));
 
@@ -3380,7 +3508,11 @@ int dUdt_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 	   and the solution state at the Gauss quadrature point 
 	   for calculation of the diffusion coefficient
 	   such that to satisfy the SOUTH boundary condition */
-	SolnBlk.InviscidAndEllipticFluxStates_AtBoundaryInterface(SOUTH,i,j,Ul,Ur,U_face);
+	SolnBlk.InviscidAndEllipticFluxStates_AtBoundaryInterface(SOUTH,
+								  i,j,
+								  Ul,Ur,
+								  U_face,
+								  GradU_face,IP.i_Viscous_Reconstruction);
 	  
       } else if (j == SolnBlk.JCu){ // This is a NORTH boundary interface
 	// Compute the left interface state based on reconstruction
@@ -3390,7 +3522,11 @@ int dUdt_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 	   and the solution state at the Gauss quadrature point 
 	   for calculation of the diffusion coefficient
 	   such that to satisfy the NORTH boundary condition */
-	SolnBlk.InviscidAndEllipticFluxStates_AtBoundaryInterface(NORTH,i,j,Ul,Ur,U_face);
+	SolnBlk.InviscidAndEllipticFluxStates_AtBoundaryInterface(NORTH,
+								  i,j,
+								  Ul,Ur,
+								  U_face,
+								  GradU_face,IP.i_Viscous_Reconstruction);
 	  
       } else {		// This is an interior interface
 	// Compute left and right interface states at 
@@ -3403,16 +3539,17 @@ int dUdt_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 	SolnBlk.EllipticFluxStateAtInteriorInterface(i  ,j,
 						     i  ,j+1,
 						     SolnBlk.Grid.xfaceN(i,j),U_face);
+
+	// Calculate gradient at the face midpoint
+	GradU_face = SolnBlk.InterfaceSolutionGradient(i  ,j,
+						       i  ,j+1,
+						       IP.i_Viscous_Reconstruction,
+						       GradientReconstructionStencilFlag);
       }
 
       // Compute the advective flux in the normal direction at the face midpoint 
       Flux = Fa(Ul, Ur, SolnBlk.Grid.xfaceN(i,j), SolnBlk.Grid.nfaceN(i, j));
 
-      // Calculate gradient at the face midpoint
-      GradU_face = SolnBlk.InterfaceSolutionGradient(i  ,j,
-						     i  ,j+1,
-						     IP.i_Viscous_Reconstruction);
-      
       // Add the viscous (diffusive) flux 'Fd' in the normal direction at the face midpoint to the face total flux
       Flux += Fd(U_face, GradU_face, SolnBlk.Grid.xfaceN(i,j), SolnBlk.Grid.nfaceN(i,j));
     

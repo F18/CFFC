@@ -311,10 +311,14 @@ void AdvectDiffuse2D_Quad_Block_New::EllipticFluxStateAtInteriorInterface(const 
  * calculate the viscous (diffusive) flux through
  * the interface between the left cell (ii_L,jj_L)
  * and the right cell (ii_R,jj_R).
+ *
+ * \param Gradient_Reconstruction_Type specifies the reconstruction method
+ * \param Stencil_Flag specifies the reconstruction stencil
  *************************************************/
 Vector2D AdvectDiffuse2D_Quad_Block_New::InterfaceSolutionGradient(const int & ii_L, const int & jj_L,
 								   const int & ii_R, const int & jj_R,
-								   const int &Gradient_Reconstruction_Type){
+								   const int &Gradient_Reconstruction_Type,
+								   const int &Stencil_Flag){
   
   require( ( ii_L == ii_R || jj_L == jj_R) &&
 	   ( ii_L == ii_R || ii_L == (ii_R - 1) ) && 
@@ -330,14 +334,14 @@ Vector2D AdvectDiffuse2D_Quad_Block_New::InterfaceSolutionGradient(const int & i
 					       Grid.Node[ii_R][jj_R].X     , U_Node(ii_R,jj_R),
 					       Grid.CellCentroid(ii_R,jj_R), U[ii_R][jj_R],
 					       Grid.Node[ii_R][jj_R+1].X   , U_Node(ii_R,jj_R+1),
-					       DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
+					       Stencil_Flag);
     } else {
       // j-direction interface
       return DiamondPathGradientReconstruction(Grid.CellCentroid(ii_L,jj_L), U[ii_L][jj_L],
 					       Grid.Node[ii_R+1][jj_R].X   , U_Node(ii_R+1,jj_R),
 					       Grid.CellCentroid(ii_R,jj_R), U[ii_R][jj_R],
 					       Grid.Node[ii_R][jj_R].X     , U_Node(ii_R,jj_R),
-					       DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
+					       Stencil_Flag);
     }
     break;
 
@@ -495,11 +499,11 @@ AdvectDiffuse2D_State_New AdvectDiffuse2D_Quad_Block_New::SourceTerm(const int &
 }
 
 /*********************************************//**
- * Compute the inviscid-flux ghost-cell state at a 
- * boundary interface. 
- * Compute the state used to evaluate the 
- * elliptic-flux at a boundary interface.
- * These states depends on the boundary conditions that 
+ * Compute the inviscid-flux ghost-cell state, 
+ * the solution state used to evaluate the 
+ * the diffusion coefficient for the elliptic-flux and
+ * the the solution gradient at a boundary interface.
+ * These variables depend on the boundary conditions that 
  * need to be enforced.
  * 
  * \param BOUNDARY boundary position specifier (i.e. WEST, EAST, SOUTH or NORTH)
@@ -508,14 +512,19 @@ AdvectDiffuse2D_State_New AdvectDiffuse2D_Quad_Block_New::SourceTerm(const int &
  * \param Ul       the left interface state
  * \param Ur       the right interface state
  * \param U_face   the interface state
- *************************************************/
+ * \param GradU_face solution gradient at the interface
+ * \param Gradient_Reconstruction_Type gradient-reconstruction method index
+ **********************************************************************************/
 void AdvectDiffuse2D_Quad_Block_New::
 InviscidAndEllipticFluxStates_AtBoundaryInterface(const int &BOUNDARY,
 						  const int &ii, const int &jj,
 						  AdvectDiffuse2D_State_New &Ul,
 						  AdvectDiffuse2D_State_New &Ur,
-						  AdvectDiffuse2D_State_New &U_face){
+						  AdvectDiffuse2D_State_New &U_face,
+						  Vector2D &GradU_face,
+						  const int &Gradient_Reconstruction_Type){
   double Vn;
+  AdvectDiffuse2D_State_New Value;
 
   switch(BOUNDARY){
 
@@ -525,39 +534,158 @@ InviscidAndEllipticFluxStates_AtBoundaryInterface(const int &BOUNDARY,
   case WEST :			
     // Compute left interface state based on reconstruction or the particular boundary condition
     switch (Grid.BCtypeW[jj]){
-      // Category I
+
     case BC_NONE :
+      // Calculate Ul based on the reconstruction in the ghost cell
+      Ul = PiecewiseLinearSolutionAtLocation(ii  , jj,Grid.xfaceE(ii  , jj));
+      // Calculate U_face based on the unlimited reconstruction in the ghost cell
+      U_face = UnlimitedPiecewiseLinearSolutionAtLocation(ii  , jj,Grid.xfaceE(ii  , jj));
+      // Calculate GradU_face in the same way as for an interior interface
+      GradU_face = InterfaceSolutionGradient(ii  ,jj,
+					     ii+1,jj,
+					     Gradient_Reconstruction_Type,
+					     DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
+      break;
+
     case BC_PERIODIC :
+      // Calculate Ul based on the reconstruction in the ghost cell
+      Ul = PiecewiseLinearSolutionAtLocation(ii  , jj,Grid.xfaceE(ii  , jj));
+      // Calculate U_face based on the unlimited reconstruction in the ghost cell
+      U_face = UnlimitedPiecewiseLinearSolutionAtLocation(ii  , jj,Grid.xfaceE(ii  , jj));
+      // Calculate GradU_face in the same way as for an interior interface
+      GradU_face = InterfaceSolutionGradient(ii  ,jj,
+					     ii+1,jj,
+					     Gradient_Reconstruction_Type,
+					     DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
+      break;
+
     case BC_FROZEN :
       // Calculate Ul based on the reconstruction in the ghost cell
       Ul = PiecewiseLinearSolutionAtLocation(ii  , jj,Grid.xfaceE(ii  , jj));
-
       // Calculate U_face based on the unlimited reconstruction in the ghost cell
       U_face = UnlimitedPiecewiseLinearSolutionAtLocation(ii  , jj,Grid.xfaceE(ii  , jj));
+      // Calculate GradU_face in the same way as for an interior interface
+      GradU_face = InterfaceSolutionGradient(ii  ,jj,
+					     ii+1,jj,
+					     Gradient_Reconstruction_Type,
+					     DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
       break;
       
-      // Category II
     case BC_INFLOW :
-    case BC_DIRICHLET :
-    case BC_EXACT_SOLUTION :
+      // Set Ul to the value imposed by the inflow conditions
       Ul = UoW[jj];
+      // Set U_face to the value imposed by the inflow conditions
       U_face = UoW[jj];
+      // Calculate GradU_face based on the interior triangle (i.e. right triangle)
+      GradU_face = InterfaceSolutionGradient(ii  ,jj,
+					     ii+1,jj,
+					     Gradient_Reconstruction_Type,
+      					     DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
+      break;
+
+    case BC_DIRICHLET :
+      // Set Ul to the value imposed by the Dirichlet condition
+      Ul = UoW[jj];
+      // Set U_face to the value imposed by the Dirichlet condition
+      U_face = UoW[jj];
+      // Calculate GradU_face based on the interior triangle (i.e. right triangle)
+      GradU_face = InterfaceSolutionGradient(ii  ,jj,
+					     ii+1,jj,
+					     Gradient_Reconstruction_Type,
+					     DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
+      break;
+
+    case BC_EXACT_SOLUTION :
+      // Set Ul to the value imposed by the exact solution
+      Ul = UoW[jj];
+      // Set U_face to the value imposed by the exact solution
+      U_face = UoW[jj];
+      // Calculate GradU_face in the same way as for an interior interface
+      GradU_face = InterfaceSolutionGradient(ii  ,jj,
+					     ii+1,jj,
+					     Gradient_Reconstruction_Type,
+					     DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);   
       break;
       
-      // Category III
-    case BC_NEUMANN : 
-    case BC_SYMMETRY_PLANE :
-    case BC_EXTRAPOLATE :
-    case BC_LINEAR_EXTRAPOLATION :
-    case BC_OUTFLOW :
-    case BC_CONSTANT_EXTRAPOLATION :
-      Ul = Ur;
-      
+    case BC_NEUMANN :
+      // Set Ul equal to the right side value (i.e Ur)
+      Ul = Ur;     
       // Calculate U_face based on the unlimited reconstruction of the right interface cell
       U_face = UnlimitedPiecewiseLinearSolutionAtLocation(ii+1 , jj,Grid.xfaceE(ii  , jj));
+      /* Set the normal gradient to the value imposed by the user.
+	 To determine the gradient at the interface based on the gradient normal value,
+	 the two Cartesian components are considered equal and therefore they can be
+	 expressed only as a function of the components of the normal vector and 
+	 the value of the gradient along the normal.
+       */
+      Value = UoW[jj]/(Grid.nfaceE(ii  , jj).x + Grid.nfaceE(ii  , jj).y);
+      GradU_face = Vector2D(Value.u,Value.u);
+      break;
+
+    case BC_SYMMETRY_PLANE :
+      // Set Ul equal to the right side value (i.e Ur)
+      Ul = Ur;     
+      // Calculate U_face based on the unlimited reconstruction of the right interface cell
+      U_face = UnlimitedPiecewiseLinearSolutionAtLocation(ii+1 , jj,Grid.xfaceE(ii  , jj));
+      // Calculate GradU_face based on the interior triangle (i.e. right triangle)
+      GradU_face = InterfaceSolutionGradient(ii  ,jj,
+					     ii+1,jj,
+					     Gradient_Reconstruction_Type,
+					     DIAMONDPATH_RIGHT_TRIANGLE);
+      break;
+
+    case BC_EXTRAPOLATE :
+      // Set Ul equal to the right side value (i.e Ur)
+      Ul = Ur;     
+      // Calculate U_face based on the unlimited reconstruction of the right interface cell
+      U_face = UnlimitedPiecewiseLinearSolutionAtLocation(ii+1 , jj,Grid.xfaceE(ii  , jj));
+      // Calculate GradU_face in the same way as for an interior interface
+      GradU_face = InterfaceSolutionGradient(ii  ,jj,
+					     ii+1,jj,
+					     Gradient_Reconstruction_Type,
+					     DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
+      break;
+
+    case BC_LINEAR_EXTRAPOLATION :
+      // Set Ul equal to the right side value (i.e Ur)
+      Ul = Ur;     
+      // Calculate U_face based on the unlimited reconstruction of the right interface cell
+      U_face = UnlimitedPiecewiseLinearSolutionAtLocation(ii+1 , jj,Grid.xfaceE(ii  , jj));
+      // Calculate GradU_face in the same way as for an interior interface
+      GradU_face = InterfaceSolutionGradient(ii  ,jj,
+					     ii+1,jj,
+					     Gradient_Reconstruction_Type,
+					     DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
+      break;
+
+    case BC_OUTFLOW :
+      // Set Ul equal to the right side value (i.e Ur)
+      Ul = Ur;     
+      // Calculate U_face based on the unlimited reconstruction of the right interface cell
+      U_face = UnlimitedPiecewiseLinearSolutionAtLocation(ii+1 , jj,Grid.xfaceE(ii  , jj));
+      /* Calculate GradU_face in the same way as for an interior interface,
+	 even if the gradient should be ZERO right on the boundary.
+	 However, that would imply a linear reconstruction with a ZERO slope everywhere
+	 in the cell, which is again wrong.
+       */ 
+      GradU_face = InterfaceSolutionGradient(ii  ,jj,
+					     ii+1,jj,
+					     Gradient_Reconstruction_Type,
+					     DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
+      break;
+
+    case BC_CONSTANT_EXTRAPOLATION :
+      // Set Ul equal to the right side value (i.e Ur)
+      Ul = Ur;     
+      // Calculate U_face based on the unlimited reconstruction of the right interface cell
+      U_face = UnlimitedPiecewiseLinearSolutionAtLocation(ii+1 , jj,Grid.xfaceE(ii  , jj));
+      // Calculate GradU_face in the same way as for an interior interface
+      GradU_face = InterfaceSolutionGradient(ii  ,jj,
+					     ii+1,jj,
+					     Gradient_Reconstruction_Type,
+					     DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
       break;
       
-      // Category IV
     case BC_FARFIELD :
       /* Farfield BC is implemented differently for flows that 
 	 enter the domain than for flows that leave the domain.
@@ -573,15 +701,27 @@ InviscidAndEllipticFluxStates_AtBoundaryInterface(const int &BOUNDARY,
       if (Vn <= ZERO){
 	// The flow enters the domain
 	// Use the boundary condition value
+	// Set Ul to the value imposed by the user
 	Ul = UoW[jj];
+	// Set U_face to the value imposed by the user
 	U_face = UoW[jj];
+	// Calculate GradU_face based on the interior triangle (i.e. right triangle)
+	GradU_face = InterfaceSolutionGradient(ii  ,jj,
+					       ii+1,jj,
+					       Gradient_Reconstruction_Type,
+					       DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
       } else {
 	// The flow leaves the domain
 	// Use the interior domain value
+	// Set Ul equal to the right side value (i.e Ur)
 	Ul = Ur;
-
 	// Calculate U_face based on the unlimited reconstruction of the right interface cell
 	U_face = UnlimitedPiecewiseLinearSolutionAtLocation(ii+1 , jj,Grid.xfaceE(ii  , jj));
+	// Calculate GradU_face in the same way as for an interior interface
+	GradU_face = InterfaceSolutionGradient(ii  ,jj,
+					       ii+1,jj,
+					       Gradient_Reconstruction_Type,
+					       DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
       }
       break;
 
@@ -597,36 +737,156 @@ InviscidAndEllipticFluxStates_AtBoundaryInterface(const int &BOUNDARY,
   case EAST :
     // Compute right interface state based on reconstruction or the particular boundary condition
     switch (Grid.BCtypeE[jj]){
-      // Category I
+
     case BC_NONE :
+      // Calculate Ur based on the reconstruction in the ghost cell
+      Ur = PiecewiseLinearSolutionAtLocation(ii+1, jj,Grid.xfaceW(ii+1, jj));
+      // Calculate U_face based on the unlimited reconstruction in the ghost cell
+      U_face = UnlimitedPiecewiseLinearSolutionAtLocation(ii+1, jj,Grid.xfaceW(ii+1, jj));
+      // Calculate GradU_face in the same way as for an interior interface
+      GradU_face = InterfaceSolutionGradient(ii  ,jj,
+					     ii+1,jj,
+					     Gradient_Reconstruction_Type,
+					     DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
+      break;
+
     case BC_PERIODIC :
+      // Calculate Ur based on the reconstruction in the ghost cell
+      Ur = PiecewiseLinearSolutionAtLocation(ii+1, jj,Grid.xfaceW(ii+1, jj));
+      // Calculate U_face based on the unlimited reconstruction in the ghost cell
+      U_face = UnlimitedPiecewiseLinearSolutionAtLocation(ii+1, jj,Grid.xfaceW(ii+1, jj));
+      // Calculate GradU_face in the same way as for an interior interface
+      GradU_face = InterfaceSolutionGradient(ii  ,jj,
+					     ii+1,jj,
+					     Gradient_Reconstruction_Type,
+					     DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
+      break;
+
     case BC_FROZEN :
       // Calculate Ur based on the reconstruction in the ghost cell
       Ur = PiecewiseLinearSolutionAtLocation(ii+1, jj,Grid.xfaceW(ii+1, jj));
-
       // Calculate U_face based on the unlimited reconstruction in the ghost cell
       U_face = UnlimitedPiecewiseLinearSolutionAtLocation(ii+1, jj,Grid.xfaceW(ii+1, jj));
+      // Calculate GradU_face in the same way as for an interior interface
+      GradU_face = InterfaceSolutionGradient(ii  ,jj,
+					     ii+1,jj,
+					     Gradient_Reconstruction_Type,
+					     DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
       break;
       
-      // Category II
     case BC_INFLOW :
-    case BC_DIRICHLET :
-    case BC_EXACT_SOLUTION :
+      // Set Ur to the value imposed by the inflow conditions
       Ur = UoE[jj];
+      // Set U_face to the value imposed by the inflow conditions
       U_face = UoE[jj];
+      // Calculate GradU_face based on the interior triangle (i.e. left triangle)
+      GradU_face = InterfaceSolutionGradient(ii  ,jj,
+					     ii+1,jj,
+					     Gradient_Reconstruction_Type,
+					     DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
+      break;
+
+    case BC_DIRICHLET :
+      // Set Ur to the value imposed by the Dirichlet condition
+      Ur = UoE[jj];
+      // Set U_face to the value imposed by the Dirichlet condition
+      U_face = UoE[jj];
+      // Calculate GradU_face based on the interior triangle (i.e. left triangle)
+      GradU_face = InterfaceSolutionGradient(ii  ,jj,
+					     ii+1,jj,
+					     Gradient_Reconstruction_Type,
+					     DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
+      break;
+
+    case BC_EXACT_SOLUTION :
+      // Set Ur to the value imposed by the exact solution
+      Ur = UoE[jj];
+      // Set U_face to the value imposed by the exact solution
+      U_face = UoE[jj];
+      // Calculate GradU_face in the same way as for an interior interface
+      GradU_face = InterfaceSolutionGradient(ii  ,jj,
+					     ii+1,jj,
+					     Gradient_Reconstruction_Type,
+					     DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
       break;
       
-      // Category III
     case BC_NEUMANN : 
-    case BC_SYMMETRY_PLANE :
-    case BC_EXTRAPOLATE :
-    case BC_LINEAR_EXTRAPOLATION :
-    case BC_OUTFLOW :
-    case BC_CONSTANT_EXTRAPOLATION :
-      Ur = Ul;
-      
+      // Set Ur equal to the left side value (i.e Ul)
+      Ur = Ul;     
       // Calculate U_face based on the unlimited reconstruction of the left interface cell
       U_face = UnlimitedPiecewiseLinearSolutionAtLocation(ii , jj,Grid.xfaceW(ii+1, jj));
+      /* Set the normal gradient to the value imposed by the user.
+	 To determine the gradient at the interface based on the gradient normal value,
+	 the two Cartesian components are considered equal and therefore they can be
+	 expressed only as a function of the components of the normal vector and 
+	 the value of the gradient along the normal.
+       */
+      Value = UoE[jj]/(Grid.nfaceW(ii+1, jj).x + Grid.nfaceW(ii+1, jj).y);
+      GradU_face = Vector2D(Value.u,Value.u);
+      break;
+
+    case BC_SYMMETRY_PLANE :
+      // Set Ur equal to the left side value (i.e Ul)
+      Ur = Ul;     
+      // Calculate U_face based on the unlimited reconstruction of the left interface cell
+      U_face = UnlimitedPiecewiseLinearSolutionAtLocation(ii , jj,Grid.xfaceW(ii+1, jj));
+      // Calculate GradU_face based on the interior triangle (i.e. left triangle)
+      GradU_face = InterfaceSolutionGradient(ii  ,jj,
+					     ii+1,jj,
+					     Gradient_Reconstruction_Type,
+					     DIAMONDPATH_LEFT_TRIANGLE);
+      break;
+
+    case BC_EXTRAPOLATE :
+      // Set Ur equal to the left side value (i.e Ul)
+      Ur = Ul;     
+      // Calculate U_face based on the unlimited reconstruction of the left interface cell
+      U_face = UnlimitedPiecewiseLinearSolutionAtLocation(ii , jj,Grid.xfaceW(ii+1, jj));
+      // Calculate GradU_face in the same way as for an interior interface
+      GradU_face = InterfaceSolutionGradient(ii  ,jj,
+					     ii+1,jj,
+					     Gradient_Reconstruction_Type,
+					     DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
+      break;
+
+    case BC_LINEAR_EXTRAPOLATION :
+      // Set Ur equal to the left side value (i.e Ul)
+      Ur = Ul;     
+      // Calculate U_face based on the unlimited reconstruction of the left interface cell
+      U_face = UnlimitedPiecewiseLinearSolutionAtLocation(ii , jj,Grid.xfaceW(ii+1, jj));
+      // Calculate GradU_face in the same way as for an interior interface
+      GradU_face = InterfaceSolutionGradient(ii  ,jj,
+					     ii+1,jj,
+					     Gradient_Reconstruction_Type,
+					     DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
+      break;
+
+    case BC_OUTFLOW :
+      // Set Ur equal to the left side value (i.e Ul)
+      Ur = Ul;     
+      // Calculate U_face based on the unlimited reconstruction of the left interface cell
+      U_face = UnlimitedPiecewiseLinearSolutionAtLocation(ii , jj,Grid.xfaceW(ii+1, jj));
+      /* Calculate GradU_face in the same way as for an interior interface,
+	 even if the gradient should be ZERO right on the boundary.
+	 However, that would imply a linear reconstruction with a ZERO slope everywhere
+	 in the cell, which is again wrong.
+       */ 
+      GradU_face = InterfaceSolutionGradient(ii  ,jj,
+					     ii+1,jj,
+					     Gradient_Reconstruction_Type,
+					     DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
+      break;
+
+    case BC_CONSTANT_EXTRAPOLATION :
+      // Set Ur equal to the left side value (i.e Ul)
+      Ur = Ul;     
+      // Calculate U_face based on the unlimited reconstruction of the left interface cell
+      U_face = UnlimitedPiecewiseLinearSolutionAtLocation(ii , jj,Grid.xfaceW(ii+1, jj));
+      // Calculate GradU_face in the same way as for an interior interface
+      GradU_face = InterfaceSolutionGradient(ii  ,jj,
+					     ii+1,jj,
+					     Gradient_Reconstruction_Type,
+					     DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
       break;
       
       // Category IV
@@ -645,13 +905,27 @@ InviscidAndEllipticFluxStates_AtBoundaryInterface(const int &BOUNDARY,
       if (Vn <= ZERO){
 	// The flow enters the domain
 	// Use the boundary condition value
+	// Set Ur to the value imposed by the user
 	Ur = UoE[jj];
+	// Set U_face to the value imposed by the user
 	U_face = UoE[jj];
+	// Calculate GradU_face based on the interior triangle (i.e. leftt triangle)
+	GradU_face = InterfaceSolutionGradient(ii  ,jj,
+					       ii+1,jj,
+					       Gradient_Reconstruction_Type,
+					       DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
       } else {
 	// The flow leaves the domain
 	// Use the interior domain value
+	// Set Ur equal to the left side value (i.e Ul)
 	Ur = Ul;
+	// Calculate U_face based on the unlimited reconstruction of the left interface cell
 	U_face = UnlimitedPiecewiseLinearSolutionAtLocation(ii , jj,Grid.xfaceW(ii+1, jj));
+	// Calculate GradU_face in the same way as for an interior interface
+	GradU_face = InterfaceSolutionGradient(ii  ,jj,
+					       ii+1,jj,
+					       Gradient_Reconstruction_Type,
+					       DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
       }
       break;
 
@@ -666,39 +940,158 @@ InviscidAndEllipticFluxStates_AtBoundaryInterface(const int &BOUNDARY,
   case SOUTH :
     // Compute left interface state based on reconstruction or the particular boundary condition
     switch (Grid.BCtypeS[ii]){
-      // Category I
+
     case BC_NONE :
+      // Calculate Ul based on the reconstruction in the ghost cell
+      Ul = PiecewiseLinearSolutionAtLocation(ii ,jj  ,Grid.xfaceN(ii ,jj  ));
+      // Calculate U_face based on the unlimited reconstruction in the ghost cell
+      U_face = UnlimitedPiecewiseLinearSolutionAtLocation(ii ,jj  ,Grid.xfaceN(ii ,jj  ));
+      // Calculate GradU_face in the same way as for an interior interface
+      GradU_face = InterfaceSolutionGradient(ii,jj,
+					     ii,jj+1,
+					     Gradient_Reconstruction_Type,
+					     DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
+      break;
+
     case BC_PERIODIC :
+      // Calculate Ul based on the reconstruction in the ghost cell
+      Ul = PiecewiseLinearSolutionAtLocation(ii ,jj  ,Grid.xfaceN(ii ,jj  ));
+      // Calculate U_face based on the unlimited reconstruction in the ghost cell
+      U_face = UnlimitedPiecewiseLinearSolutionAtLocation(ii ,jj  ,Grid.xfaceN(ii ,jj  ));
+      // Calculate GradU_face in the same way as for an interior interface
+      GradU_face = InterfaceSolutionGradient(ii,jj,
+					     ii,jj+1,
+					     Gradient_Reconstruction_Type,
+					     DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
+      break;
+
     case BC_FROZEN :
       // Calculate Ul based on the reconstruction in the ghost cell
       Ul = PiecewiseLinearSolutionAtLocation(ii ,jj  ,Grid.xfaceN(ii ,jj  ));
-
       // Calculate U_face based on the unlimited reconstruction in the ghost cell
       U_face = UnlimitedPiecewiseLinearSolutionAtLocation(ii ,jj  ,Grid.xfaceN(ii ,jj  ));
+      // Calculate GradU_face in the same way as for an interior interface
+      GradU_face = InterfaceSolutionGradient(ii,jj,
+					     ii,jj+1,
+					     Gradient_Reconstruction_Type,
+					     DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
       break;
       
-      // Category II
     case BC_INFLOW :
-    case BC_DIRICHLET :
-    case BC_EXACT_SOLUTION :
+      // Set Ul to the value imposed by the inflow conditions
       Ul = UoS[ii];
+      // Set U_face to the value imposed by the inflow conditions
       U_face = UoS[ii];
+      // Calculate GradU_face based on the interior triangle (i.e. right triangle)
+      GradU_face = InterfaceSolutionGradient(ii,jj,
+					     ii,jj+1,
+					     Gradient_Reconstruction_Type,
+					     DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
+      break;
+
+    case BC_DIRICHLET :
+      // Set Ul to the value imposed by the Dirichlet condition
+      Ul = UoS[ii];
+      // Set U_face to the value imposed by the Dirichlet condition
+      U_face = UoS[ii];
+      // Calculate GradU_face based on the interior triangle (i.e. right triangle)
+      GradU_face = InterfaceSolutionGradient(ii,jj,
+					     ii,jj+1,
+					     Gradient_Reconstruction_Type,
+					     DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
+      break;
+
+    case BC_EXACT_SOLUTION :
+      // Set Ul to the value imposed by the exact solution
+      Ul = UoS[ii];
+      // Set U_face to the value imposed by the exact solution
+      U_face = UoS[ii];
+      // Calculate GradU_face in the same way as for an interior interface
+      GradU_face = InterfaceSolutionGradient(ii,jj,
+					     ii,jj+1,
+					     Gradient_Reconstruction_Type,
+					     DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
       break;
       
-      // Category III
     case BC_NEUMANN : 
-    case BC_SYMMETRY_PLANE :
-    case BC_EXTRAPOLATE :
-    case BC_LINEAR_EXTRAPOLATION :
-    case BC_OUTFLOW :
-    case BC_CONSTANT_EXTRAPOLATION :
+      // Set Ul equal to the right side value (i.e Ur)
       Ul = Ur;
-
       // Calculate U_face based on the unlimited reconstruction of the right interface cell
       U_face = UnlimitedPiecewiseLinearSolutionAtLocation(ii ,jj+1,Grid.xfaceN(ii ,jj  ));
+      /* Set the normal gradient to the value imposed by the user.
+	 To determine the gradient at the interface based on the gradient normal value,
+	 the two Cartesian components are considered equal and therefore they can be
+	 expressed only as a function of the components of the normal vector and 
+	 the value of the gradient along the normal.
+       */
+      Value = UoS[ii]/(Grid.nfaceN(ii  , jj).x + Grid.nfaceN(ii  , jj).y);
+      GradU_face = Vector2D(Value.u,Value.u);
+      break;
+
+    case BC_SYMMETRY_PLANE :
+      // Set Ul equal to the right side value (i.e Ur)
+      Ul = Ur;
+      // Calculate U_face based on the unlimited reconstruction of the right interface cell
+      U_face = UnlimitedPiecewiseLinearSolutionAtLocation(ii ,jj+1,Grid.xfaceN(ii ,jj  ));
+      // Calculate GradU_face based on the interior triangle (i.e. right triangle)
+      GradU_face = InterfaceSolutionGradient(ii,jj,
+					     ii,jj+1,
+					     Gradient_Reconstruction_Type,
+					     DIAMONDPATH_RIGHT_TRIANGLE); 
+      break;
+
+    case BC_EXTRAPOLATE :
+      // Set Ul equal to the right side value (i.e Ur)
+      Ul = Ur;
+      // Calculate U_face based on the unlimited reconstruction of the right interface cell
+      U_face = UnlimitedPiecewiseLinearSolutionAtLocation(ii ,jj+1,Grid.xfaceN(ii ,jj  ));
+      // Calculate GradU_face in the same way as for an interior interface
+      GradU_face = InterfaceSolutionGradient(ii,jj,
+					     ii,jj+1,
+					     Gradient_Reconstruction_Type,
+					     DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
+      break;
+
+    case BC_LINEAR_EXTRAPOLATION :
+      // Set Ul equal to the right side value (i.e Ur)
+      Ul = Ur;
+      // Calculate U_face based on the unlimited reconstruction of the right interface cell
+      U_face = UnlimitedPiecewiseLinearSolutionAtLocation(ii ,jj+1,Grid.xfaceN(ii ,jj  ));
+      // Calculate GradU_face in the same way as for an interior interface
+      GradU_face = InterfaceSolutionGradient(ii,jj,
+					     ii,jj+1,
+					     Gradient_Reconstruction_Type,
+					     DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
+      break;
+
+    case BC_OUTFLOW :
+      // Set Ul equal to the right side value (i.e Ur)
+      Ul = Ur;
+      // Calculate U_face based on the unlimited reconstruction of the right interface cell
+      U_face = UnlimitedPiecewiseLinearSolutionAtLocation(ii ,jj+1,Grid.xfaceN(ii ,jj  ));
+      /* Calculate GradU_face in the same way as for an interior interface,
+	 even if the gradient should be ZERO right on the boundary.
+	 However, that would imply a linear reconstruction with a ZERO slope everywhere
+	 in the cell, which is again wrong.
+       */ 
+      GradU_face = InterfaceSolutionGradient(ii,jj,
+					     ii,jj+1,
+					     Gradient_Reconstruction_Type,
+					     DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
+      break;
+
+    case BC_CONSTANT_EXTRAPOLATION :
+      // Set Ul equal to the right side value (i.e Ur)
+      Ul = Ur;
+      // Calculate U_face based on the unlimited reconstruction of the right interface cell
+      U_face = UnlimitedPiecewiseLinearSolutionAtLocation(ii ,jj+1,Grid.xfaceN(ii ,jj  ));
+      // Calculate GradU_face in the same way as for an interior interface
+      GradU_face = InterfaceSolutionGradient(ii,jj,
+					     ii,jj+1,
+					     Gradient_Reconstruction_Type,
+					     DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
       break;
       
-      // Category IV
     case BC_FARFIELD :
       /* Farfield BC is implemented differently for flows that 
 	 enter the domain than for flows that leave the domain.
@@ -714,13 +1107,27 @@ InviscidAndEllipticFluxStates_AtBoundaryInterface(const int &BOUNDARY,
       if (Vn <= ZERO){
 	// The flow enters the domain
 	// Use the boundary condition value
+	// Set Ul to the value imposed by the user
 	Ul = UoS[ii];
+	// Set U_face to the value imposed by the user
 	U_face = UoS[ii];
+	// Calculate GradU_face based on the interior triangle (i.e. right triangle)
+	GradU_face = InterfaceSolutionGradient(ii,jj,
+					       ii,jj+1,
+					       Gradient_Reconstruction_Type,
+					       DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
       } else {
 	// The flow leaves the domain
 	// Use the interior domain value
+	// Set Ul equal to the right side value (i.e Ur)
 	Ul = Ur;
+	// Calculate U_face based on the unlimited reconstruction of the right interface cell
 	U_face = UnlimitedPiecewiseLinearSolutionAtLocation(ii ,jj+1,Grid.xfaceN(ii ,jj  ));
+	// Calculate GradU_face in the same way as for an interior interface
+	GradU_face = InterfaceSolutionGradient(ii,jj,
+					       ii,jj+1,
+					       Gradient_Reconstruction_Type,
+					       DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
       }
       break;
 
@@ -735,39 +1142,158 @@ InviscidAndEllipticFluxStates_AtBoundaryInterface(const int &BOUNDARY,
   case NORTH :
     // Compute right interface state based on reconstruction or the particular boundary condition
     switch (Grid.BCtypeN[ii]){
-      // Category I
+
     case BC_NONE :
+      // Calculate Ur based on the reconstruction in the ghost cell
+      Ur = PiecewiseLinearSolutionAtLocation(ii ,jj+1,Grid.xfaceS(ii ,jj+1));
+      // Calculate U_face based on the unlimited reconstruction in the ghost cell
+      U_face = UnlimitedPiecewiseLinearSolutionAtLocation(ii ,jj+1,Grid.xfaceS(ii ,jj+1));
+      // Calculate GradU_face in the same way as for an interior interface
+      GradU_face = InterfaceSolutionGradient(ii,jj,
+					     ii,jj+1,
+					     Gradient_Reconstruction_Type,
+					     DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
+      break;
+
     case BC_PERIODIC :
+      // Calculate Ur based on the reconstruction in the ghost cell
+      Ur = PiecewiseLinearSolutionAtLocation(ii ,jj+1,Grid.xfaceS(ii ,jj+1));
+      // Calculate U_face based on the unlimited reconstruction in the ghost cell
+      U_face = UnlimitedPiecewiseLinearSolutionAtLocation(ii ,jj+1,Grid.xfaceS(ii ,jj+1));
+      // Calculate GradU_face in the same way as for an interior interface
+      GradU_face = InterfaceSolutionGradient(ii,jj,
+					     ii,jj+1,
+					     Gradient_Reconstruction_Type,
+					     DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
+      break;
+
     case BC_FROZEN :
       // Calculate Ur based on the reconstruction in the ghost cell
       Ur = PiecewiseLinearSolutionAtLocation(ii ,jj+1,Grid.xfaceS(ii ,jj+1));
-
       // Calculate U_face based on the unlimited reconstruction in the ghost cell
       U_face = UnlimitedPiecewiseLinearSolutionAtLocation(ii ,jj+1,Grid.xfaceS(ii ,jj+1));
+      // Calculate GradU_face in the same way as for an interior interface
+      GradU_face = InterfaceSolutionGradient(ii,jj,
+					     ii,jj+1,
+					     Gradient_Reconstruction_Type,
+					     DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
       break;
       
-      // Category II
     case BC_INFLOW :
-    case BC_DIRICHLET :
-    case BC_EXACT_SOLUTION :
+      // Set Ur to the value imposed by the inflow conditions
       Ur = UoN[ii];
+      // Set U_face to the value imposed by the inflow conditions
       U_face = UoN[ii];
+      // Calculate GradU_face based on the interior triangle (i.e. left triangle)
+      GradU_face = InterfaceSolutionGradient(ii,jj,
+					     ii,jj+1,
+					     Gradient_Reconstruction_Type,
+					     DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
+      break;
+
+    case BC_DIRICHLET :
+      // Set Ur to the value imposed by the Dirichlet condition
+      Ur = UoN[ii];
+      // Set U_face to the value imposed by the Dirichlet condition
+      U_face = UoN[ii];
+      // Calculate GradU_face based on the interior triangle (i.e. left triangle)
+      GradU_face = InterfaceSolutionGradient(ii,jj,
+					     ii,jj+1,
+					     Gradient_Reconstruction_Type,
+					     DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
+      break;
+
+    case BC_EXACT_SOLUTION :
+      // Set Ur to the value imposed by the exact solution
+      Ur = UoN[ii];
+      // Set U_face to the value imposed by the exact solution
+      U_face = UoN[ii];
+      // Calculate GradU_face in the same way as for an interior interface
+      GradU_face = InterfaceSolutionGradient(ii,jj,
+					     ii,jj+1,
+					     Gradient_Reconstruction_Type,
+					     DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
       break;
       
-      // Category III
     case BC_NEUMANN : 
-    case BC_SYMMETRY_PLANE :
-    case BC_EXTRAPOLATE :
-    case BC_LINEAR_EXTRAPOLATION :
-    case BC_OUTFLOW :
-    case BC_CONSTANT_EXTRAPOLATION :
+      // Set Ur equal to the left side value (i.e Ul)
       Ur = Ul;
-
       // Calculate U_face based on the unlimited reconstruction of the left interface cell
       U_face = UnlimitedPiecewiseLinearSolutionAtLocation(ii ,jj  ,Grid.xfaceS(ii ,jj+1));
+      /* Set the normal gradient to the value imposed by the user.
+	 To determine the gradient at the interface based on the gradient normal value,
+	 the two Cartesian components are considered equal and therefore they can be
+	 expressed only as a function of the components of the normal vector and 
+	 the value of the gradient along the normal.
+       */
+      Value = UoN[ii]/(Grid.nfaceS(ii ,jj+1).x + Grid.nfaceS(ii ,jj+1).y);
+      GradU_face = Vector2D(Value.u,Value.u);
+      break;
+
+    case BC_SYMMETRY_PLANE :
+      // Set Ur equal to the left side value (i.e Ul)
+      Ur = Ul;
+      // Calculate U_face based on the unlimited reconstruction of the left interface cell
+      U_face = UnlimitedPiecewiseLinearSolutionAtLocation(ii ,jj  ,Grid.xfaceS(ii ,jj+1));
+      // Calculate GradU_face based on the interior triangle (i.e. left triangle)
+      GradU_face = InterfaceSolutionGradient(ii,jj,
+					     ii,jj+1,
+					     Gradient_Reconstruction_Type,
+					     DIAMONDPATH_LEFT_TRIANGLE);
+      break;
+
+    case BC_EXTRAPOLATE :
+      // Set Ur equal to the left side value (i.e Ul)
+      Ur = Ul;
+      // Calculate U_face based on the unlimited reconstruction of the left interface cell
+      U_face = UnlimitedPiecewiseLinearSolutionAtLocation(ii ,jj  ,Grid.xfaceS(ii ,jj+1));
+      // Calculate GradU_face in the same way as for an interior interface
+      GradU_face = InterfaceSolutionGradient(ii,jj,
+					     ii,jj+1,
+					     Gradient_Reconstruction_Type,
+					     DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
+      break;
+
+    case BC_LINEAR_EXTRAPOLATION :
+      // Set Ur equal to the left side value (i.e Ul)
+      Ur = Ul;
+      // Calculate U_face based on the unlimited reconstruction of the left interface cell
+      U_face = UnlimitedPiecewiseLinearSolutionAtLocation(ii ,jj  ,Grid.xfaceS(ii ,jj+1));
+      // Calculate GradU_face in the same way as for an interior interface
+      GradU_face = InterfaceSolutionGradient(ii,jj,
+					     ii,jj+1,
+					     Gradient_Reconstruction_Type,
+					     DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
+      break;
+
+    case BC_OUTFLOW :
+      // Set Ur equal to the left side value (i.e Ul)
+      Ur = Ul;
+      // Calculate U_face based on the unlimited reconstruction of the left interface cell
+      U_face = UnlimitedPiecewiseLinearSolutionAtLocation(ii ,jj  ,Grid.xfaceS(ii ,jj+1));
+      /* Calculate GradU_face in the same way as for an interior interface,
+	 even if the gradient should be ZERO right on the boundary.
+	 However, that would imply a linear reconstruction with a ZERO slope everywhere
+	 in the cell, which is again wrong.
+       */ 
+      GradU_face = InterfaceSolutionGradient(ii,jj,
+					     ii,jj+1,
+					     Gradient_Reconstruction_Type,
+					     DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
+      break;
+
+    case BC_CONSTANT_EXTRAPOLATION :
+      // Set Ur equal to the left side value (i.e Ul)
+      Ur = Ul;
+      // Calculate U_face based on the unlimited reconstruction of the left interface cell
+      U_face = UnlimitedPiecewiseLinearSolutionAtLocation(ii ,jj  ,Grid.xfaceS(ii ,jj+1));
+      // Calculate GradU_face in the same way as for an interior interface
+      GradU_face = InterfaceSolutionGradient(ii,jj,
+					     ii,jj+1,
+					     Gradient_Reconstruction_Type,
+					     DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
       break;
       
-      // Category IV
     case BC_FARFIELD :
       /* Farfield BC is implemented differently for flows that 
 	 enter the domain than for flows that leave the domain.
@@ -783,13 +1309,27 @@ InviscidAndEllipticFluxStates_AtBoundaryInterface(const int &BOUNDARY,
       if (Vn <= ZERO){
 	// The flow enters the domain
 	// Use the boundary condition value
+	// Set Ur to the value imposed by the user
 	Ur = UoN[ii];
+	// Set U_face to the value imposed by the user
 	U_face = UoN[ii];
+	// Calculate GradU_face based on the interior triangle (i.e. leftt triangle)
+	GradU_face = InterfaceSolutionGradient(ii,jj,
+					       ii,jj+1,
+					       Gradient_Reconstruction_Type,
+					       DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
       } else {
 	// The flow leaves the domain
 	// Use the interior domain value
+	// Set Ur equal to the left side value (i.e Ul)
 	Ur = Ul;
+	// Calculate U_face based on the unlimited reconstruction of the left interface cell
 	U_face = UnlimitedPiecewiseLinearSolutionAtLocation(ii ,jj  ,Grid.xfaceS(ii ,jj+1));
+	// Calculate GradU_face in the same way as for an interior interface
+	GradU_face = InterfaceSolutionGradient(ii,jj,
+					       ii,jj+1,
+					       Gradient_Reconstruction_Type,
+					       DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
       }
       break;
 

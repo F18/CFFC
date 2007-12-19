@@ -338,7 +338,9 @@ namespace tut
     Vector2D Result = SolnBlk[0].ExactSoln->Gradient(Location.x,Location.y);
 
     ensure_distance("Gradient betwen cells (7,6) and (8,6)",
-    		    SolnBlk[0].InterfaceSolutionGradient(7,6,8,6,VISCOUS_RECONSTRUCTION_DIAMOND_PATH),
+    		    SolnBlk[0].InterfaceSolutionGradient(7,6,8,6,
+							 VISCOUS_RECONSTRUCTION_DIAMOND_PATH,
+							 DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION),
     		    Result,
     		    AcceptedError(Result,1.0e-12));
 
@@ -347,7 +349,9 @@ namespace tut
     Result = SolnBlk[0].ExactSoln->Gradient(Location.x,Location.y);
 
     ensure_distance("Gradient betwen cells (7,6) and (7,7)",
-		    SolnBlk[0].InterfaceSolutionGradient(7,6,7,7,VISCOUS_RECONSTRUCTION_DIAMOND_PATH),
+		    SolnBlk[0].InterfaceSolutionGradient(7,6,7,7,
+							 VISCOUS_RECONSTRUCTION_DIAMOND_PATH,
+							 DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION),
 		    Result,
 		    AcceptedError(Result,1.0e-12));
   }
