@@ -283,7 +283,7 @@ void dFIdW_Inviscid_ROE(DenseMatrix& dRdW,
 
     // Roeaverage state preconditioned velocity
     double MR2a( Wa.Mr2(SolnBlk.Flow_Type,deltax) );
-      
+
     // Determine Preconditioned Wave Speeds
     Wl->lambda_preconditioned_x(lambdas_l, Wl->Mr2(SolnBlk.Flow_Type,deltax)); 
     Wr->lambda_preconditioned_x(lambdas_r, Wr->Mr2(SolnBlk.Flow_Type,deltax));
@@ -291,7 +291,7 @@ void dFIdW_Inviscid_ROE(DenseMatrix& dRdW,
     wavespeeds.HartenFix_Abs( lambdas_a, 
 			      lambdas_l, 
 			      lambdas_r );       
-       
+
     // Calculate the preconditioned upwind dissipation flux.
     // dFidW(irow, jcol) -= HALF*wavespeeds[i]*lp[jcol+1]*rc[irow+1];
     static DenseMatrix Flux_dissipation(NUM_VAR,NUM_VAR);

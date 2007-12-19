@@ -35,6 +35,35 @@ Freeze_Limiter_Residual_Level =
 # 1 density
 Residual_Variable =
 1
+############################
+# NKS PARAMETERS
+############################
+GMRES_Overlap =
+0
+GMRES_Initial_Tolerance =
+1.0e-01
+GMRES_Final_Tolerance =
+1.0e-01
+NKS_Overall_Tolerance =
+1.0e-10
+GMRES_Block_Preconditioner = 
+ILUK
+#( ILUK, Diagonal)
+GMRES_ILUK_Level_of_Fill = 
+4
+GMRES_Check
+ON
+# Implict Euler Startup
+NKS_Finite_Time_Step =
+ON
+NKS_Finite_Time_Step_Initial_CFL =
+5.0
+NKS_Finite_Time_Step_Max_CFL =
+1e12
+GMRES_Normalization = 
+ON
+Jacobian_Order =
+First_Order_Inviscid_HLLE
 #########################
 # Set initial conditions
 #########################
@@ -97,12 +126,19 @@ CFL_Number =
 0.75
 # 1000,300
 Maximum_Number_of_Time_Steps =
-300
+500
 Full_Multigrid =
 0
+##### IMPLICIT PARAMETERS ###############
+Maximum_Number_of_NKS_Iterations =
+100
+Maximum_Number_of_GMRES_Iterations =
+80
+GMRES_Restart =
+80
+########################################
 Restart_Solution_Save_Frequency=
 5000
-########################################
 Number_of_Blocks_Per_Processor =
 16
 Output_File_Name = 

@@ -38,6 +38,38 @@ Freeze_Limiter_Residual_Level=
 ######################
 Number_of_Ghost_Cells=
 2
+############################
+# NKS PARAMETERS
+############################
+#----------- GMRES -------------
+GMRES_Overlap =
+0
+GMRES_Initial_Tolerance =
+2.0e-01
+GMRES_Final_Tolerance =
+2.0e-01
+GMRES_Block_Preconditioner = 
+ILUK
+#( ILUK, Diagonal)
+GMRES_ILUK_Level_of_Fill = 
+4
+GMRES_Normalization=
+ON
+GMRES_Check=
+ON
+#---------- NK -----------------
+NKS_Overall_Tolerance =
+1.0e-08
+# Implict Euler Startup
+NKS_Finite_Time_Step =
+ON
+NKS_Finite_Time_Step_Initial_CFL=
+1e4
+NKS_Finite_Time_Step_Max_CFL=
+1e12
+#---------- Precon ------------
+Jacobian_Order =
+First_Order_Inviscid_Roe
 #########################
 # Set initial conditions
 #########################
@@ -95,16 +127,21 @@ Morton_Reordering_Frequency=
 CFL_Number=
 0.5
 Maximum_Number_of_Time_Steps=
-5000
+50
 Full_Multigrid=
 0
+####### Implicit ###############
+Maximum_Number_of_NKS_Iterations =
+50
+Maximum_Number_of_GMRES_Iterations=
+100
+GMRES_Restart =
+100
 ################
 Number_of_Blocks_Per_Processor=
 100
 Output_File_Name= 
 bump_flow
-Temperature=
-1500
 #######################
 # Execute program
 #######################
