@@ -689,8 +689,11 @@ public:
 
   /******************* Flux Jacobians *******************/
   void dWdU(DenseMatrix &dWdQ);
+  void dWdU_FD(DenseMatrix &dWdQ) const;
   void dFIdU(DenseMatrix &dFdU);
+  void dFIdU_FD(DenseMatrix &dFdU) const;
   void dFIdW(DenseMatrix &dFdW, const double& mult=1.0);
+  void dFIdW_FD(DenseMatrix &dFdW, const double& mult=1.0) const;
   void dFvdWf_dGvdWf( DenseMatrix dFvdWf, 
 		      DenseMatrix dGvdWf, 
 		      const Flame2D_State &dWdx, 

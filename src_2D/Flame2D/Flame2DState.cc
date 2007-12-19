@@ -140,41 +140,83 @@ void Flame2D_pState::dFIdU(DenseMatrix &dFdU) {
   
   // Note: make sure you loaded the dihdic array and phi outside
   updateDihdDic();
-  double phi( Phi() );
-  double Temp( T() );
-  double Rt( Rtot() );
-  double C_p( Cp() );
-  double ht( h() );
-  double A( C_p/Rt );
-  double denominator( A - ONE );
+  const double phi( Phi() );
+  const double Temp( T() );
+  const double Rt( Rtot() );
+  const double C_p( Cp() );
+  const double ht( h() );
+  const double A( C_p/Rt );
+  const double denominator( A - ONE );
+  const double two_vy( vy()+vy() );
+  const double vx2( vx()*vx() );
+  const double vsqrd( vsqr() );
+  const double vx_vy( vx()*vy() );
 
-  dFdU(0,1) += ONE;
-  dFdU(1,0) += ( A*( - vx()*vx() ) + 
-		 HALF*(THREE*vx()*vx() + vy()+vy()) - 
-		 ht + C_p*Temp + phi ) / denominator;
-  dFdU(1,1) += vx()*(TWO*A-THREE)/denominator; 
-  dFdU(1,2) -= vy()/denominator;
-  dFdU(1,3) += ONE/denominator;
-  dFdU(2,0) -= vx()*vy();
-  dFdU(2,1) += vy();
-  dFdU(2,2) += vx();
-  dFdU(3,0) += vx()*( vx()*vx() + vy()+vy() + C_p*Temp - 
-		      A*( HALF*(vx()*vx() + vy()+vy()) + ht ) + phi ) / denominator;
-  dFdU(3,1) += ht + HALF*(vx()*vx() + vy()*vy()) - vx()*vx()/denominator;
-  dFdU(3,2) -= vx()*vy()/denominator;
-  dFdU(3,3) += vx()*A/denominator;
+  dFdU(0,1) = ONE;
+  dFdU(1,0) = ( A*( - vx2 ) + HALF*(THREE*vx2 + two_vy) - 
+		ht + C_p*Temp + phi ) / denominator;
+  dFdU(1,1) = vx()*(TWO*A-THREE)/denominator; 
+  dFdU(1,2) = - vy()/denominator;
+  dFdU(1,3) = ONE/denominator;
+  dFdU(2,0) = - vx_vy;
+  dFdU(2,1) = vy();
+  dFdU(2,2) = vx();
+  dFdU(3,0) = vx()*( vx2 + two_vy + C_p*Temp - 
+		      A*( HALF*(vx2 + two_vy) + ht ) + phi ) / denominator;
+  dFdU(3,1) = ht + HALF*vsqrd - vx2/denominator;
+  dFdU(3,2) = - vx_vy/denominator;
+  dFdU(3,3) = vx()*A/denominator;
   //Species
   const int NUM_VAR = NUM_FLAME2D_VAR_SANS_SPECIES;
   for(int i = 0; i<ns-NSm1; i++){ 
-    dFdU(1,NUM_VAR+i) -= dihdic(i)/denominator; 
-       
-    dFdU(3,NUM_VAR+i) = vx()*dihdic(i);    
-    dFdU(NUM_VAR+i, 0) -= c(i)*vx() ;
-    dFdU(NUM_VAR+i, 1) += c(i);
-    dFdU(NUM_VAR+i,NUM_VAR+i) += vx();        
+    dFdU(1,NUM_VAR+i) = - dihdic(i)/denominator; 
+    dFdU(3,NUM_VAR+i) = - vx()*dihdic(i)/denominator;    
+    dFdU(NUM_VAR+i, 0) = - c(i)*vx() ;
+    dFdU(NUM_VAR+i, 1) = c(i);
+    dFdU(NUM_VAR+i,NUM_VAR+i) = vx();        
   }
  
 }
+
+/********************************************************
+ * Chem2D_pState::dFIdU -- Invisicd Flux Jacobian       *
+ ********************************************************/
+// Finite differnece check of dFxdU
+void Flame2D_pState::dFIdU_FD(DenseMatrix &dFdU) const {
+
+  // declares
+  const int NUM_VAR = dFdU.get_n();
+  static Flame2D_State UU;
+  static Flame2D_State A,C;
+  static Flame2D_pState B,D;
+  const double perturb = 5e-6;
+  double a;
+
+  // set UU
+  getU(UU);
+
+  // finitie differences
+  for(int jcol=0; jcol<NUM_VAR; jcol++){    
+    A = UU;  C = UU;
+    if( jcol <NUM_FLAME2D_VAR_SANS_SPECIES) {
+      A[jcol+1] += perturb*max(ONE,UU[jcol+1]); 
+      C[jcol+1] -= perturb*max(ONE,UU[jcol+1]);
+    } else {                                       //enforce sum(ci) = 1;
+      a = perturb*max(ONE,UU[jcol+1]); 
+      A[jcol+1] += a;
+      A[NUM_VAR+1] -= a;      
+      C[jcol+1] -= a;
+      C[NUM_VAR+1] += a;
+    }   
+    B.setU(A);   D.setU(C);    
+    B.Fx(A);     D.Fx(C);
+    for(int irow=0; irow<NUM_VAR; irow++){
+      dFdU(irow,jcol) = ( A[irow+1] - C[irow+1])/(TWO*perturb*max(ONE, UU[jcol+1]));      
+    }
+  } 
+
+}
+
 
 /********************************************************
  * Chem2D_pState::dFIdW -- Invisicd Flux Jacobian       *
@@ -220,6 +262,39 @@ void Flame2D_pState::dFIdW(DenseMatrix &dFdW,
     
 }
 
+/********************************************************
+ * Chem2D_pState::dFIdW -- Invisicd Flux Jacobian       *
+ ********************************************************/
+// Finite differnece check of dFxdW
+void Flame2D_pState::dFIdW_FD(DenseMatrix &dFdW, const double &mult) const {
+
+  // declares
+  const int NUM_VAR = dFdW.get_n();
+  static Flame2D_pState A,C;
+  static Flame2D_State B,D;
+  const double perturb = 5e-6;
+  double a;
+
+  // finitie differences
+  for(int jcol=0; jcol<NUM_VAR; jcol++){    
+    A.Copy(*this);  C.Copy(*this);
+    if( jcol <NUM_FLAME2D_VAR_SANS_SPECIES) {
+      A[jcol+1] += perturb*max(ONE,(*this)[jcol+1]); 
+      C[jcol+1] -= perturb*max(ONE,(*this)[jcol+1]);
+    } else {                                       //enforce sum(ci) = 1;
+      a = perturb*max(ONE,(*this)[jcol+1]); 
+      A[jcol+1] += a;
+      A[NUM_VAR+1] -= a;      
+      C[jcol+1] -= a;
+      C[NUM_VAR+1] += a;
+    }   
+    A.Fx(B);   C.Fx(D);
+    for(int irow=0; irow<NUM_VAR; irow++){
+      dFdW(irow,jcol) = mult*( B[irow+1] - D[irow+1])/(TWO*perturb*max(ONE, (*this)[jcol+1]));      
+    }
+  } 
+
+}
 
   
 /*****************************************************************
@@ -1240,6 +1315,43 @@ void Flame2D_pState::dWdU(DenseMatrix &dWdQ) {
   }
 }
 
+/************************************************************************
+ * Chem2D_pState::dWdU -- Primitive/Conserved transformation Jacobian   *
+ ************************************************************************/
+// Finite differnece check of dWdU
+// shows error in (3,0) ie dp/rho due to pertubing rho and cState T() calc.
+void Flame2D_pState::dWdU_FD(DenseMatrix &dWdQ) const {
+
+  // declares
+  const int NUM_VAR = dWdQ.get_n();
+  static Flame2D_State UU;
+  static Flame2D_State A,C;
+  static Flame2D_pState B,D;
+  const double perturb = 5e-6;
+  double a;
+
+  // set UU
+  getU(UU);
+
+  for(int jcol=0; jcol<NUM_VAR; jcol++){    
+    A = UU;    C = UU;
+    if( jcol <NUM_FLAME2D_VAR_SANS_SPECIES) {
+      A[jcol+1] += perturb*max(ONE,A[jcol+1]); 
+      C[jcol+1] -= perturb*max(ONE,C[jcol+1]);
+    } else {                                       //enforce sum(ci) = 1;
+      a =  perturb*max(ONE,A[jcol+1]); 
+      A[jcol+1] += a;
+      A[NUM_VAR+1] -= a;      
+      C[jcol+1] -= a;
+      C[NUM_VAR+1] += a;
+    }
+    B.setU(A);   D.setU(C);    
+    for(int irow=0; irow<NUM_VAR; irow++){
+      dWdQ(irow,jcol) = ( B[irow+1] - D[irow+1])/(TWO*perturb*max(ONE,UU[jcol+1]));     
+    }
+  } 
+
+}
 
 /////////////////////////////////////////////////////////////////////
 /// Boundary Conditions

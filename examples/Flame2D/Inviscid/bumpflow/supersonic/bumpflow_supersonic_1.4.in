@@ -29,7 +29,7 @@ Venkatakrishnan
 #Barth_Jespersen
 #Zero
 Flux_Function_Type=
-HLLE
+Roe
 ############################
 #
 ###########################
@@ -125,12 +125,12 @@ Threshold_for_Coarsening=
 CFL_Number=
 0.5
 Maximum_Number_of_Time_Steps=
-2000
+300
 Full_Multigrid=
 0
 ####### Implicit ###############
 Maximum_Number_of_NKS_Iterations =
-0
+50
 Maximum_Number_of_GMRES_Iterations=
 100
 GMRES_Restart =

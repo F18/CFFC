@@ -215,7 +215,9 @@ template<> inline void Block_Preconditioner<Flame2D_pState,
 					    Flame2D_Input_Parameters>::
 Preconditioner_dFIdU(DenseMatrix &_dFIdU, Flame2D_pState W)
 {  
-  W.dFIdU(_dFIdU);
+  //W.dFIdU(_dFIdU);
+  cerr << "Preconditioner_dFIdU(): Function note used";
+  exit(-1);
 }
 
 /*****************************************************************************
@@ -284,10 +286,11 @@ First_Order_Inviscid_Jacobian_HLLE(const int &cell_index_i,const int &cell_index
   RotationMatrix(AI_W, nface_W, 0);
 
   //! Calculate dFdU using solutions in the rotated frame -> matrix in DenseMatrix format. 
-  static DenseMatrix dFdU_N(blocksize,blocksize); dFdU_N.zero();
-  static DenseMatrix dFdU_S(blocksize,blocksize); dFdU_S.zero();
-  static DenseMatrix dFdU_E(blocksize,blocksize); dFdU_E.zero();
-  static DenseMatrix dFdU_W(blocksize,blocksize); dFdU_W.zero();
+  // no need to zero again, always writing to same spot
+  static DenseMatrix dFdU_N(blocksize,blocksize,ZERO);
+  static DenseMatrix dFdU_S(blocksize,blocksize,ZERO);
+  static DenseMatrix dFdU_E(blocksize,blocksize,ZERO);
+  static DenseMatrix dFdU_W(blocksize,blocksize,ZERO);
 
   //Solution Rotate provided in pState 
   // Rotate in place
@@ -295,19 +298,19 @@ First_Order_Inviscid_Jacobian_HLLE(const int &cell_index_i,const int &cell_index
     v( ((const Flame2D_pState&)SolnBlk->W[cell_index_i][cell_index_j]).vy() );
 
   SolnBlk->W[cell_index_i][cell_index_j].Rotate(nface_N);
-  Preconditioner_dFIdU(dFdU_N, SolnBlk->W[cell_index_i][cell_index_j]); 
+  SolnBlk->W[cell_index_i][cell_index_j].dFIdU(dFdU_N); 
   SolnBlk->W[cell_index_i][cell_index_j].setVelocity(u, v);
 
   SolnBlk->W[cell_index_i][cell_index_j].Rotate(nface_S);
-  Preconditioner_dFIdU(dFdU_S, SolnBlk->W[cell_index_i][cell_index_j]);
+  SolnBlk->W[cell_index_i][cell_index_j].dFIdU(dFdU_S);
   SolnBlk->W[cell_index_i][cell_index_j].setVelocity(u, v);
 
   SolnBlk->W[cell_index_i][cell_index_j].Rotate(nface_E);
-  Preconditioner_dFIdU(dFdU_E, SolnBlk->W[cell_index_i][cell_index_j]);
+  SolnBlk->W[cell_index_i][cell_index_j].dFIdU(dFdU_E);
   SolnBlk->W[cell_index_i][cell_index_j].setVelocity(u, v);
 
   SolnBlk->W[cell_index_i][cell_index_j].Rotate(nface_W);
-  Preconditioner_dFIdU(dFdU_W, SolnBlk->W[cell_index_i][cell_index_j]);
+  SolnBlk->W[cell_index_i][cell_index_j].dFIdU(dFdU_W);
   SolnBlk->W[cell_index_i][cell_index_j].setVelocity(u, v);
 
   //! Calculate Jacobian matrix -> blocksizexblocksize matrix in DenseMatrix format
@@ -351,15 +354,17 @@ template<> inline void Block_Preconditioner<Flame2D_pState,
 					    Flame2D_Input_Parameters>::
 Preconditioner_dFIdU_Roe(DenseMatrix &_dFIdU, int ii, int jj, int Orient)
 { 
+  // declares
   static DenseMatrix dFI_dW(blocksize,blocksize);
   dFI_dW.zero();
   
+  //! Calculate dFdU using solutions in the rotated frame -> matrix in DenseMatrix format. 
   dFIdW_Inviscid_ROE(dFI_dW, *SolnBlk,*Input_Parameters, ii,jj,Orient);  
   //dFIdW_Inviscid_ROE_FD(dFI_dW, *SolnBlk,*Input_Parameters, ii,jj,Orient);
  
   //transformation Jacobian 
-  static DenseMatrix dWdU(blocksize,blocksize); 
-  dWdU.zero();
+  // Non neeed to zero more than once, always writing to the same spot
+  static DenseMatrix dWdU(blocksize,blocksize,ZERO); 
   
   //transformation Jacobian  Wo == W here 
   SolnBlk->W[ii][jj].dWdU(dWdU);
@@ -378,14 +383,18 @@ template<> inline void Block_Preconditioner<Flame2D_pState,
 					    Flame2D_Input_Parameters>::
 Preconditioner_dFIdU_AUSM_plus_up(DenseMatrix &_dFIdU, int ii, int jj, int Orient)
 {   
+  // declares
   static DenseMatrix dFIdW(blocksize,blocksize);
   dFIdW.zero();
   
+  //! Calculate dFdU using solutions in the rotated frame -> matrix in DenseMatrix format. 
   dFIdW_Inviscid_AUSM_plus_up(dFIdW, *SolnBlk,*Input_Parameters, ii,jj,Orient);
   
   //transformation Jacobian 
-  static DenseMatrix dWdU(blocksize,blocksize);
-  dWdU.zero();
+  // Non neeed to zero more than once, always writing to the same spot
+  static DenseMatrix dWdU(blocksize,blocksize,ZERO);
+
+  //transformation Jacobian  Wo == W here 
   SolnBlk->W[ii][jj].dWdU(dWdU);
   _dFIdU += dFIdW*dWdU;
 
