@@ -147,13 +147,16 @@ void Flame2D_pState::dFIdU(DenseMatrix &dFdU) {
   const double ht( h() );
   const double A( C_p/Rt );
   const double denominator( A - ONE );
-  const double two_vy( vy()+vy() );
+  //const double two_vy( vy()+vy() );
+  const double vy2( vy()*vy() );
   const double vx2( vx()*vx() );
   const double vsqrd( vsqr() );
   const double vx_vy( vx()*vy() );
 
   dFdU(0,1) = ONE;
-  dFdU(1,0) = ( A*( - vx2 ) + HALF*(THREE*vx2 + two_vy) - 
+  //   dFdU(1,0) = ( A*( - vx2 ) + HALF*(THREE*vx2 + two_vy) - 
+  // 		ht + C_p*Temp + phi ) / denominator;
+  dFdU(1,0) = ( A*( - vx2 ) + HALF*(THREE*vx2 + vy2) - 
 		ht + C_p*Temp + phi ) / denominator;
   dFdU(1,1) = vx()*(TWO*A-THREE)/denominator; 
   dFdU(1,2) = - vy()/denominator;
@@ -161,8 +164,10 @@ void Flame2D_pState::dFIdU(DenseMatrix &dFdU) {
   dFdU(2,0) = - vx_vy;
   dFdU(2,1) = vy();
   dFdU(2,2) = vx();
-  dFdU(3,0) = vx()*( vx2 + two_vy + C_p*Temp - 
-		      A*( HALF*(vx2 + two_vy) + ht ) + phi ) / denominator;
+  //   dFdU(3,0) = vx()*( vx2 + two_vy + C_p*Temp - 
+  // 		      A*( HALF*(vx2 + two_vy) + ht ) + phi ) / denominator;
+  dFdU(3,0) = vx()*( vsqrd + C_p*Temp - 
+		      A*( HALF*vsqrd + ht ) + phi ) / denominator;
   dFdU(3,1) = ht + HALF*vsqrd - vx2/denominator;
   dFdU(3,2) = - vx_vy/denominator;
   dFdU(3,3) = vx()*A/denominator;
