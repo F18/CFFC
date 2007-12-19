@@ -1,4 +1,4 @@
-/*! \file New_AdvectDiffuse2DQuadSolvers.cc
+/*! \file AdvectDiffuse2DQuadSolvers.cc
   @brief 2D Advection Diffusion Equation Multi-Block Quadrilateral Mesh Solvers. */
 
 /* Include required C++ libraries. */
@@ -21,8 +21,8 @@
  * solution-adaptive mesh.                              
  *                                                      
  ********************************************************/
-int New_AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
-				  int batch_flag) {
+int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
+			      int batch_flag) {
   
   /********************************************************  
    * Local variable declarations.                         *
@@ -38,10 +38,10 @@ int New_AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
   QuadTreeBlock_DataStructure   QuadTree;
   AdaptiveBlockResourceList     List_of_Global_Solution_Blocks;
   AdaptiveBlock2D_List          List_of_Local_Solution_Blocks;
-  AdvectDiffuse2D_Quad_Block_New   *Local_SolnBlk;
+  AdvectDiffuse2D_Quad_Block   *Local_SolnBlk;
 
-  FAS_Multigrid2D_Solver<AdvectDiffuse2D_State_New, 
-                         AdvectDiffuse2D_Quad_Block_New, 
+  FAS_Multigrid2D_Solver<AdvectDiffuse2D_State, 
+                         AdvectDiffuse2D_Quad_Block, 
                          AdvectDiffuse2D_Input_Parameters> MGSolver;
 
   /* Define residual file and cpu time variables. */
@@ -815,8 +815,8 @@ int New_AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
      CPUTime Explicit_total_cpu_time =  total_cpu_time;
     
      //Perform NKS Iterations 
-     error_flag = Newton_Krylov_Schwarz_Solver<AdvectDiffuse2D_State_New,                    //pass in Time for DTS ??
-                                               AdvectDiffuse2D_Quad_Block_New,                                               
+     error_flag = Newton_Krylov_Schwarz_Solver<AdvectDiffuse2D_State,                    //pass in Time for DTS ??
+                                               AdvectDiffuse2D_Quad_Block,                                               
                                                AdvectDiffuse2D_Input_Parameters>(processor_cpu_time,
 										 residual_file,
 										 number_of_time_steps, // explicit time steps

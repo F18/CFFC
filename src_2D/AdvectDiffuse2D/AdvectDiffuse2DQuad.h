@@ -1,8 +1,8 @@
-/*!\file New_AdvectDiffuse2DQuad.h
+/*!\file AdvectDiffuse2DQuad.h
   \brief Temporary header file defining 2D Advection Diffusion Equation Quadrilateral Mesh Solution Classes. */
 
-#ifndef _NEW_ADVECTDIFFUSE2D_QUAD_INCLUDED
-#define _NEW_ADVECTDIFFUSE2D_QUAD_INCLUDED
+#ifndef _ADVECTDIFFUSE2D_QUAD_INCLUDED
+#define _ADVECTDIFFUSE2D_QUAD_INCLUDED
 
 /* Include required C++ libraries. */
 // None
@@ -26,7 +26,7 @@
 #define	NUMBER_OF_RESIDUAL_VECTORS_ADVECTDIFFUSE2D    3
 
 /*!
- * Class: AdvectDiffuse2D_Quad_Block_New
+ * Class: AdvectDiffuse2D_Quad_Block
  *
  * @brief Class definition of the 2D advection-diffusion solution blocks.
  *
@@ -119,22 +119,22 @@
  * cin  >> S; (input function)
  * \endverbatim
  */
-class AdvectDiffuse2D_Quad_Block_New{
+class AdvectDiffuse2D_Quad_Block{
 public:
 
   //! @name Defined public types:
   //@{
   typedef AdvectDiffuse2D_ExactSolutions Exact_Solution_Type;
-  typedef AccuracyAssessment2D<AdvectDiffuse2D_Quad_Block_New> Accuracy_Assessment_Type;
+  typedef AccuracyAssessment2D<AdvectDiffuse2D_Quad_Block> Accuracy_Assessment_Type;
   //@}
 
 
   //! @name Solution state arrays:
   //@{
-  AdvectDiffuse2D_State_New    **U; //!< Solution state.
+  AdvectDiffuse2D_State    **U; //!< Solution state.
 
   /*! Storage for the solution states at the grid nodes in the calculation of diffusive fluxes */
-  AdvectDiffuse2D_State_New    **U_Nodes;
+  AdvectDiffuse2D_State    **U_Nodes;
   //@}
 
   //! @name Grid block information:
@@ -152,25 +152,25 @@ public:
   //! @name Residual and time-stepping arrays:
   //@{
   double                         **dt; //!< Local time step.
-  AdvectDiffuse2D_State_New   ***dUdt; //!< Solution residual.
-  AdvectDiffuse2D_State_New      **Uo; //!< Initial solution.
+  AdvectDiffuse2D_State       ***dUdt; //!< Solution residual.
+  AdvectDiffuse2D_State          **Uo; //!< Initial solution.
   static int residual_variable;        //!< Static integer that indicates which variable is used for residual calculations.
   static int Number_of_Residual_Norms; //!< How many Residual norms to plot?
   //@}
 
   //! @name Solution gradient arrays:
   //@{
-  AdvectDiffuse2D_State_New    **dUdx; //!< Unlimited solution gradient (x-direction).
-  AdvectDiffuse2D_State_New    **dUdy; //!< Unlimited solution gradient (y-direction).
-  AdvectDiffuse2D_State_New     **phi; //!< Solution slope limiter.
+  AdvectDiffuse2D_State    **dUdx; //!< Unlimited solution gradient (x-direction).
+  AdvectDiffuse2D_State    **dUdy; //!< Unlimited solution gradient (y-direction).
+  AdvectDiffuse2D_State     **phi; //!< Solution slope limiter.
   //@}
 
   //! @name Boundary solution flux arrays:
   //@{
-  AdvectDiffuse2D_State_New   *FluxN, //!< North boundary solution flux.
-                              *FluxS, //!< South boundary solution flux.
-                              *FluxE, //!< East boundary solution flux.
-                              *FluxW; //!< West boundary solution flux.
+  AdvectDiffuse2D_State   *FluxN, //!< North boundary solution flux.
+                          *FluxS, //!< South boundary solution flux.
+                          *FluxE, //!< East boundary solution flux.
+                          *FluxW; //!< West boundary solution flux.
   //@}
 
   //! @name Problem indicator flags:
@@ -182,14 +182,14 @@ public:
 
   //! @name Boundary condtion reference states:
   //@{
-  AdvectDiffuse2D_State_New   *UoN, //!< Boundary condition reference states for north boundary.
-                              *UoS, //!< Boundary condition reference states for south boundary.
-                              *UoE, //!< Boundary condition reference states for east boundary.
-                              *UoW; //!< Boundary condition reference states for west boundary.
+  AdvectDiffuse2D_State   *UoN, //!< Boundary condition reference states for north boundary.
+                          *UoS, //!< Boundary condition reference states for south boundary.
+                          *UoE, //!< Boundary condition reference states for east boundary.
+                          *UoW; //!< Boundary condition reference states for west boundary.
   //! Reference values for north and south boundary conditon reference states
-  AdvectDiffuse2D_State_New Ref_State_BC_North, Ref_State_BC_South; 
+  AdvectDiffuse2D_State Ref_State_BC_North, Ref_State_BC_South; 
   //! Reference values for east and west boundary conditon reference states
-  AdvectDiffuse2D_State_New Ref_State_BC_East, Ref_State_BC_West;
+  AdvectDiffuse2D_State Ref_State_BC_East, Ref_State_BC_West;
   //@}
 
   //! @name Accuracy assessment data:
@@ -207,10 +207,10 @@ public:
   //! @name Creation, copy, and assignment constructors.
   //@{
   //! Default constructor.
-  AdvectDiffuse2D_Quad_Block_New(void);
+  AdvectDiffuse2D_Quad_Block(void);
 
   /* Destructor. */
-  ~AdvectDiffuse2D_Quad_Block_New(void){ deallocate(); }
+  ~AdvectDiffuse2D_Quad_Block(void){ deallocate(); }
   //@}
 
   //! @name Allocate and deallocate functions.
@@ -231,12 +231,12 @@ public:
   //! @name Bilinear interplation (Zingg & Yarrow).
   //@{
   //! Return solution state at specified node.
-  AdvectDiffuse2D_State_New Un(const int &ii, const int &jj);
+  AdvectDiffuse2D_State Un(const int &ii, const int &jj);
 
-  AdvectDiffuse2D_State_New UnNW(const int &ii, const int &jj); //!< Return solution state at cell NW node.
-  AdvectDiffuse2D_State_New UnNE(const int &ii, const int &jj); //!< Return solution state at cell NE node.
-  AdvectDiffuse2D_State_New UnSE(const int &ii, const int &jj); //!< Return solution state at cell SE node.
-  AdvectDiffuse2D_State_New UnSW(const int &ii, const int &jj); //!< Return solution state at cell SW node.
+  AdvectDiffuse2D_State UnNW(const int &ii, const int &jj); //!< Return solution state at cell NW node.
+  AdvectDiffuse2D_State UnNE(const int &ii, const int &jj); //!< Return solution state at cell NE node.
+  AdvectDiffuse2D_State UnSE(const int &ii, const int &jj); //!< Return solution state at cell SE node.
+  AdvectDiffuse2D_State UnSW(const int &ii, const int &jj); //!< Return solution state at cell SW node.
 
   //! Return solution state at specified node.
   double un(const int &ii, const int &jj);
@@ -249,7 +249,7 @@ public:
 
   //! @name Field access
   //@{
-  const AdvectDiffuse2D_State_New& U_Node(const int &ii, const int &jj)const { return U_Nodes[ii][jj]; }
+  const AdvectDiffuse2D_State& U_Node(const int &ii, const int &jj)const { return U_Nodes[ii][jj]; }
   //@}
 
   //! @name Evaluate diffusive fluxes.
@@ -261,7 +261,7 @@ public:
   void EllipticFluxStateAtInteriorInterface(const int & ii_L, const int & jj_L,
 					    const int & ii_R, const int & jj_R,
 					    const Vector2D & GQPoint,
-					    AdvectDiffuse2D_State_New & State);
+					    AdvectDiffuse2D_State & State);
 
   //! Calculate the solution gradient at the specified interface
   Vector2D InterfaceSolutionGradient(const int & ii_L, const int & jj_L,
@@ -270,17 +270,17 @@ public:
 				     const int &Stencil_Flag);
 
   //! Calculate the solution gradient based on a diamond path reconstruction
-  Vector2D DiamondPathGradientReconstruction(const Vector2D &Xl, const AdvectDiffuse2D_State_New &Ul,
-					     const Vector2D &Xd, const AdvectDiffuse2D_State_New &Ud,
-					     const Vector2D &Xr, const AdvectDiffuse2D_State_New &Ur,
-					     const Vector2D &Xu, const AdvectDiffuse2D_State_New &Uu,
+  Vector2D DiamondPathGradientReconstruction(const Vector2D &Xl, const AdvectDiffuse2D_State &Ul,
+					     const Vector2D &Xd, const AdvectDiffuse2D_State &Ud,
+					     const Vector2D &Xr, const AdvectDiffuse2D_State &Ur,
+					     const Vector2D &Xu, const AdvectDiffuse2D_State &Uu,
 					     const int &stencil_flag);
   //@}
 
   //! @name Source term member functions
   //@{
-  AdvectDiffuse2D_State_New SourceTerm(const int & ii, const int & jj) const;
-  AdvectDiffuse2D_State_New AxisymmetricSourceTerm(const int & ii, const int & jj) const;
+  AdvectDiffuse2D_State SourceTerm(const int & ii, const int & jj) const;
+  AdvectDiffuse2D_State AxisymmetricSourceTerm(const int & ii, const int & jj) const;
   //! Determine the stability limit imposed by the source term
   double SourceTermStabilityLimit(const int & ii, const int & jj) const;
   //@}
@@ -300,23 +300,23 @@ public:
 
   //! @name Member functions to compute the piecewise linear solution at a particular location
   //@{
-  AdvectDiffuse2D_State_New PiecewiseLinearSolutionForDelta(const int &ii, const int &jj,
+  AdvectDiffuse2D_State PiecewiseLinearSolutionForDelta(const int &ii, const int &jj,
 							    const double &DeltaXToCentroid,
 							    const double &DeltaYToCentroid) const;
   double PiecewiseLinearSolutionForDelta(const int &ii, const int &jj,
 					 const double &DeltaXToCentroid,
 					 const double &DeltaYToCentroid,
 					 const unsigned int &parameter) const;
-  AdvectDiffuse2D_State_New PiecewiseLinearSolutionAtLocation(const int &ii, const int &jj,
+  AdvectDiffuse2D_State PiecewiseLinearSolutionAtLocation(const int &ii, const int &jj,
 							      const Vector2D &CalculationPoint) const;
   double PiecewiseLinearSolutionAtLocation(const int &ii, const int &jj,
 					   const Vector2D &CalculationPoint,
 					   const unsigned int &parameter) const;
 
-  AdvectDiffuse2D_State_New UnlimitedPiecewiseLinearSolutionForDelta(const int &ii, const int &jj,
+  AdvectDiffuse2D_State UnlimitedPiecewiseLinearSolutionForDelta(const int &ii, const int &jj,
 								     const double &DeltaXToCentroid,
 								     const double &DeltaYToCentroid) const;
-  AdvectDiffuse2D_State_New UnlimitedPiecewiseLinearSolutionAtLocation(const int &ii, const int &jj,
+  AdvectDiffuse2D_State UnlimitedPiecewiseLinearSolutionAtLocation(const int &ii, const int &jj,
 								       const Vector2D &CalculationPoint) const;
   //@}
 
@@ -324,9 +324,9 @@ public:
   //@{
   void InviscidAndEllipticFluxStates_AtBoundaryInterface(const int &BOUNDARY,
 							 const int &ii, const int &jj,
-							 AdvectDiffuse2D_State_New &Ul,
-							 AdvectDiffuse2D_State_New &Ur,
-							 AdvectDiffuse2D_State_New &U_face,
+							 AdvectDiffuse2D_State &Ul,
+							 AdvectDiffuse2D_State &Ur,
+							 AdvectDiffuse2D_State &U_face,
 							 Vector2D &GradU_face,
 							 const int &Gradient_Reconstruction_Type);
   //@}
@@ -335,10 +335,10 @@ public:
   //! @name Member functions to set boundary states
   //@{
   //! Set reference values for boundary reference states
-  void Set_Reference_Values_For_Boundary_States(const AdvectDiffuse2D_State_New & Ref_North,
-						const AdvectDiffuse2D_State_New & Ref_South,
-						const AdvectDiffuse2D_State_New & Ref_East,
-						const AdvectDiffuse2D_State_New & Ref_West);
+  void Set_Reference_Values_For_Boundary_States(const AdvectDiffuse2D_State & Ref_North,
+						const AdvectDiffuse2D_State & Ref_South,
+						const AdvectDiffuse2D_State & Ref_East,
+						const AdvectDiffuse2D_State & Ref_West);
   //! Set boundary reference states
   void Set_Boundary_Reference_States(void);
   //! Set boundary reference states to default
@@ -350,9 +350,9 @@ public:
   //! @name Input-output operators.
   //@{
   friend ostream &operator << (ostream &out_file,
-			       const AdvectDiffuse2D_Quad_Block_New &Soln);
+			       const AdvectDiffuse2D_Quad_Block &Soln);
   friend istream &operator >> (istream &in_file,
-			       AdvectDiffuse2D_Quad_Block_New &Soln);
+			       AdvectDiffuse2D_Quad_Block &Soln);
   //@}
 
   //! @name Member functions required for message passing.
@@ -461,8 +461,8 @@ public:
   //@}
 
 private:
-  AdvectDiffuse2D_Quad_Block_New(const AdvectDiffuse2D_Quad_Block_New &Soln); //!< Private copy constructor
-  AdvectDiffuse2D_Quad_Block_New operator = (const AdvectDiffuse2D_Quad_Block_New &Soln);   //!< Private assignment operator
+  AdvectDiffuse2D_Quad_Block(const AdvectDiffuse2D_Quad_Block &Soln); //!< Private copy constructor
+  AdvectDiffuse2D_Quad_Block operator = (const AdvectDiffuse2D_Quad_Block &Soln);   //!< Private assignment operator
 
   int NNi, NNj;		//!< number of nodes in i-direction and j-direction.
 
@@ -491,7 +491,7 @@ public:
    */
   SourceTermFunctionalWithPiecewiseLinear(const int &_ii_,
 					  const int& _jj_,
-					  const AdvectDiffuse2D_Quad_Block_New *_SolnBlk_): ii(_ii_),
+					  const AdvectDiffuse2D_Quad_Block *_SolnBlk_): ii(_ii_),
 											    jj(_jj_),
 											    SolnBlk(_SolnBlk_){ };
   
@@ -502,7 +502,7 @@ public:
   
 private:
   int ii,jj;	  //!< cell indexes
-  const AdvectDiffuse2D_Quad_Block_New * SolnBlk; //!< pointer to the solution block
+  const AdvectDiffuse2D_Quad_Block * SolnBlk; //!< pointer to the solution block
   
   //! private default cstr
   SourceTermFunctionalWithPiecewiseLinear();
@@ -512,61 +512,61 @@ private:
 
 
 /**************************************************************************
- * AdvectDiffuse2D_Quad_Block_New::Un?? -- Get cell node solution states.     *
+ * AdvectDiffuse2D_Quad_Block::Un?? -- Get cell node solution states.     *
  **************************************************************************/
-inline AdvectDiffuse2D_State_New AdvectDiffuse2D_Quad_Block_New::UnNW(const int &ii, const int &jj) {
+inline AdvectDiffuse2D_State AdvectDiffuse2D_Quad_Block::UnNW(const int &ii, const int &jj) {
   return (Un(ii, jj+1));
 }
 
-inline AdvectDiffuse2D_State_New AdvectDiffuse2D_Quad_Block_New::UnNE(const int &ii, const int &jj) {
+inline AdvectDiffuse2D_State AdvectDiffuse2D_Quad_Block::UnNE(const int &ii, const int &jj) {
   return (Un(ii+1, jj+1));
 }
 
-inline AdvectDiffuse2D_State_New AdvectDiffuse2D_Quad_Block_New::UnSE(const int &ii, const int &jj) {
+inline AdvectDiffuse2D_State AdvectDiffuse2D_Quad_Block::UnSE(const int &ii, const int &jj) {
   return (Un(ii+1, jj));
 }
 
-inline AdvectDiffuse2D_State_New AdvectDiffuse2D_Quad_Block_New::UnSW(const int &ii, const int &jj) {
+inline AdvectDiffuse2D_State AdvectDiffuse2D_Quad_Block::UnSW(const int &ii, const int &jj) {
   return (Un(ii, jj));
 }
 
 /**************************************************************************
- * AdvectDiffuse2D_Quad_Block_New::un?? -- Get cell node solution values.     *
+ * AdvectDiffuse2D_Quad_Block::un?? -- Get cell node solution values.     *
  **************************************************************************/
-inline double AdvectDiffuse2D_Quad_Block_New::unNW(const int &ii, const int &jj) {
+inline double AdvectDiffuse2D_Quad_Block::unNW(const int &ii, const int &jj) {
   return (un(ii, jj+1));
 }
 
-inline double AdvectDiffuse2D_Quad_Block_New::unNE(const int &ii, const int &jj) {
+inline double AdvectDiffuse2D_Quad_Block::unNE(const int &ii, const int &jj) {
   return (un(ii+1, jj+1));
 }
 
-inline double AdvectDiffuse2D_Quad_Block_New::unSE(const int &ii, const int &jj) {
+inline double AdvectDiffuse2D_Quad_Block::unSE(const int &ii, const int &jj) {
   return (un(ii+1, jj));
 }
 
-inline double AdvectDiffuse2D_Quad_Block_New::unSW(const int &ii, const int &jj) {
+inline double AdvectDiffuse2D_Quad_Block::unSW(const int &ii, const int &jj) {
   return (un(ii, jj));
 }
 
 /*********************//**
  * Node solution value. 
  ***********************/
-inline double AdvectDiffuse2D_Quad_Block_New::un(const int &ii, const int &jj) {
+inline double AdvectDiffuse2D_Quad_Block::un(const int &ii, const int &jj) {
   return Un(ii,jj)[1];
 }
 
 /***************************************************//**
  * Calculate velocity at the PointOfInterest location
  ****************************************************/
-inline Vector2D AdvectDiffuse2D_Quad_Block_New::VelocityAtLocation(const Vector2D &PointOfInterest) const {
+inline Vector2D AdvectDiffuse2D_Quad_Block::VelocityAtLocation(const Vector2D &PointOfInterest) const {
   return (*U)->V(PointOfInterest.x,PointOfInterest.y);
 }
 
 /***************************************************//**
  * Calculate velocity at the centroid of cell (ii,jj).
  ****************************************************/
-inline Vector2D AdvectDiffuse2D_Quad_Block_New::VelocityAtCellCentroid(const int & ii, const int & jj) const {
+inline Vector2D AdvectDiffuse2D_Quad_Block::VelocityAtCellCentroid(const int & ii, const int & jj) const {
   return U[ii][jj].V(Grid.XCellCentroid(ii,jj), Grid.YCellCentroid(ii,jj));
 }
 
@@ -575,7 +575,7 @@ inline Vector2D AdvectDiffuse2D_Quad_Block_New::VelocityAtCellCentroid(const int
  * Use the solution stored in the state class as
  * parameter for the diffusion coefficient field.
  ******************************************************************/
-inline double AdvectDiffuse2D_Quad_Block_New::DiffusionCoeffAtCellCentroid(const int & ii, const int & jj) const {
+inline double AdvectDiffuse2D_Quad_Block::DiffusionCoeffAtCellCentroid(const int & ii, const int & jj) const {
   return U[ii][jj].k(Grid.XCellCentroid(ii,jj), Grid.YCellCentroid(ii,jj), U[ii][jj].u);
 }
 
@@ -584,7 +584,7 @@ inline double AdvectDiffuse2D_Quad_Block_New::DiffusionCoeffAtCellCentroid(const
  * Use the solution stored in the state class as the parameter 
  * at the centroid of cell (ii,jj) for the non-linear source term field
  ******************************************************************/
-inline double AdvectDiffuse2D_Quad_Block_New::SourceTermStabilityLimit(const int & ii, const int & jj) const {
+inline double AdvectDiffuse2D_Quad_Block::SourceTermStabilityLimit(const int & ii, const int & jj) const {
   return U[ii][jj].SourceTerm->getStabilityLimit(Grid.XCellCentroid(ii,jj),
 						 Grid.YCellCentroid(ii,jj),
 						 U[ii][jj].u);
@@ -595,30 +595,30 @@ inline double AdvectDiffuse2D_Quad_Block_New::SourceTermStabilityLimit(const int
  * This routine returns actually the integral of the axisymmetric source
  * term over the domain of cell (ii,jj) divided by the area.
  ******************************************************************/
-inline AdvectDiffuse2D_State_New AdvectDiffuse2D_Quad_Block_New::AxisymmetricSourceTerm(const int & ii,
+inline AdvectDiffuse2D_State AdvectDiffuse2D_Quad_Block::AxisymmetricSourceTerm(const int & ii,
 											const int & jj) const{
-  return AdvectDiffuse2D_State_New(U[ii][jj].s_axi(Grid.Cell[ii][jj].Xc));
+  return AdvectDiffuse2D_State(U[ii][jj].s_axi(Grid.Cell[ii][jj].Xc));
 }
 
 
 /**********************************************************************************
- * AdvectDiffuse2D_Quad_Block_New::evaluate_limiters -- Set flag to evaluate limiters.
+ * AdvectDiffuse2D_Quad_Block::evaluate_limiters -- Set flag to evaluate limiters.
  **********************************************************************************/
-inline void AdvectDiffuse2D_Quad_Block_New::evaluate_limiters(void) {
+inline void AdvectDiffuse2D_Quad_Block::evaluate_limiters(void) {
   Freeze_Limiter = OFF; 
 }
 
 /**********************************************************************************
- * AdvectDiffuse2D_Quad_Block_New::freeze_limiters -- Set flag to freeze limiters.    *
+ * AdvectDiffuse2D_Quad_Block::freeze_limiters -- Set flag to freeze limiters.    *
  **********************************************************************************/
-inline void AdvectDiffuse2D_Quad_Block_New::freeze_limiters(void) {
+inline void AdvectDiffuse2D_Quad_Block::freeze_limiters(void) {
   Freeze_Limiter = ON; 
 }
 
 /*******************************************************************************
- * AdvectDiffuse2D_Quad_Block_New::NumVar -- Returns number of state variables.    *
+ * AdvectDiffuse2D_Quad_Block::NumVar -- Returns number of state variables.    *
  *******************************************************************************/
-inline int AdvectDiffuse2D_Quad_Block_New::NumVar(void) {
+inline int AdvectDiffuse2D_Quad_Block::NumVar(void) {
   return (int(NUM_VAR_ADVECTDIFFUSE2D));
 }
 
@@ -631,10 +631,10 @@ inline int AdvectDiffuse2D_Quad_Block_New::NumVar(void) {
  * \param DeltaXToCentroid the X-delta between the point of interest and the centroid
  * \param DeltaYToCentroid the Y-delta between the point of interest and the centroid
  */
-inline AdvectDiffuse2D_State_New 
-AdvectDiffuse2D_Quad_Block_New::PiecewiseLinearSolutionForDelta(const int &ii, const int &jj,
-								const double &DeltaXToCentroid,
-								const double &DeltaYToCentroid) const{
+inline AdvectDiffuse2D_State 
+AdvectDiffuse2D_Quad_Block::PiecewiseLinearSolutionForDelta(const int &ii, const int &jj,
+							    const double &DeltaXToCentroid,
+							    const double &DeltaYToCentroid) const{
   return U[ii][jj] + (phi[ii][jj]^(dUdx[ii][jj]*DeltaXToCentroid + dUdy[ii][jj]*DeltaYToCentroid) );
 }
 
@@ -648,10 +648,10 @@ AdvectDiffuse2D_Quad_Block_New::PiecewiseLinearSolutionForDelta(const int &ii, c
  * \param DeltaYToCentroid the Y-delta between the point of interest and the centroid
  * \param parameter the parameter for which the solution is computed
  */
-inline double AdvectDiffuse2D_Quad_Block_New::PiecewiseLinearSolutionForDelta(const int &ii, const int &jj,
-									      const double &DeltaXToCentroid,
-									      const double &DeltaYToCentroid,
-									      const unsigned int &parameter) const{
+inline double AdvectDiffuse2D_Quad_Block::PiecewiseLinearSolutionForDelta(const int &ii, const int &jj,
+									  const double &DeltaXToCentroid,
+									  const double &DeltaYToCentroid,
+									  const unsigned int &parameter) const{
   return PiecewiseLinearSolutionForDelta(ii,jj,DeltaXToCentroid,DeltaYToCentroid)[parameter];
 }
 
@@ -663,9 +663,9 @@ inline double AdvectDiffuse2D_Quad_Block_New::PiecewiseLinearSolutionForDelta(co
  * \param jj j-index of the cell
  * \param CalculationPoint the Cartesian coordinates of the point of interest
  */
-inline AdvectDiffuse2D_State_New 
-AdvectDiffuse2D_Quad_Block_New::PiecewiseLinearSolutionAtLocation(const int &ii, const int &jj,
-								  const Vector2D &CalculationPoint) const{
+inline AdvectDiffuse2D_State 
+AdvectDiffuse2D_Quad_Block::PiecewiseLinearSolutionAtLocation(const int &ii, const int &jj,
+							      const Vector2D &CalculationPoint) const{
   // calculate the distance between the point of interest and the centroid of the cell
   Vector2D dX(CalculationPoint - Grid.Cell[ii][jj].Xc);	
   return PiecewiseLinearSolutionForDelta(ii,jj,dX.x,dX.y);
@@ -680,9 +680,9 @@ AdvectDiffuse2D_Quad_Block_New::PiecewiseLinearSolutionAtLocation(const int &ii,
  * \param CalculationPoint the Cartesian coordinates of the point of interest
  * \param parameter the parameter for which the solution is computed
  */
-inline double AdvectDiffuse2D_Quad_Block_New::PiecewiseLinearSolutionAtLocation(const int &ii, const int &jj,
-										const Vector2D &CalculationPoint,
-										const unsigned int &parameter) const{
+inline double AdvectDiffuse2D_Quad_Block::PiecewiseLinearSolutionAtLocation(const int &ii, const int &jj,
+									    const Vector2D &CalculationPoint,
+									    const unsigned int &parameter) const{
   return PiecewiseLinearSolutionAtLocation(ii,jj,CalculationPoint)[parameter];
 }
 
@@ -695,10 +695,10 @@ inline double AdvectDiffuse2D_Quad_Block_New::PiecewiseLinearSolutionAtLocation(
  * \param DeltaXToCentroid the X-delta between the point of interest and the centroid
  * \param DeltaYToCentroid the Y-delta between the point of interest and the centroid
  */
-inline AdvectDiffuse2D_State_New 
-AdvectDiffuse2D_Quad_Block_New::UnlimitedPiecewiseLinearSolutionForDelta(const int &ii, const int &jj,
-									 const double &DeltaXToCentroid,
-									 const double &DeltaYToCentroid) const{
+inline AdvectDiffuse2D_State 
+AdvectDiffuse2D_Quad_Block::UnlimitedPiecewiseLinearSolutionForDelta(const int &ii, const int &jj,
+								     const double &DeltaXToCentroid,
+								     const double &DeltaYToCentroid) const{
 
   return U[ii][jj] + dUdx[ii][jj]*DeltaXToCentroid + dUdy[ii][jj]*DeltaYToCentroid;
 }
@@ -711,9 +711,9 @@ AdvectDiffuse2D_Quad_Block_New::UnlimitedPiecewiseLinearSolutionForDelta(const i
  * \param jj j-index of the cell
  * \param CalculationPoint the Cartesian coordinates of the point of interest
  */
-inline AdvectDiffuse2D_State_New 
-AdvectDiffuse2D_Quad_Block_New::UnlimitedPiecewiseLinearSolutionAtLocation(const int &ii, const int &jj,
-									   const Vector2D &CalculationPoint) const{
+inline AdvectDiffuse2D_State 
+AdvectDiffuse2D_Quad_Block::UnlimitedPiecewiseLinearSolutionAtLocation(const int &ii, const int &jj,
+								       const Vector2D &CalculationPoint) const{
 
   // calculate the distance between the point of interest and the centroid of the cell
   Vector2D dX(CalculationPoint - Grid.Cell[ii][jj].Xc);	
@@ -722,36 +722,36 @@ AdvectDiffuse2D_Quad_Block_New::UnlimitedPiecewiseLinearSolutionAtLocation(const
 
 
 /**************************************************************************
- * AdvectDiffuse2D_Quad_Block_New -- Single Block External Subroutines.       *
+ * AdvectDiffuse2D_Quad_Block -- Single Block External Subroutines.       *
  **************************************************************************/
-extern void Write_Solution_Block(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
+extern void Write_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk,
 	                         ostream &Out_File);
 
-extern void Read_Solution_Block(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
+extern void Read_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk,
 	                        istream &In_File);
 
-extern void Broadcast_Solution_Block(AdvectDiffuse2D_Quad_Block_New &SolnBlk);
+extern void Broadcast_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk);
 
 #ifdef _MPI_VERSION
-extern void Broadcast_Solution_Block(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
+extern void Broadcast_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk,
                                      MPI::Intracomm &Communicator, 
                                      const int Source_CPU);
 #endif
 
-extern void Copy_Solution_Block(AdvectDiffuse2D_Quad_Block_New &SolnBlk1,
-		                const AdvectDiffuse2D_Quad_Block_New &SolnBlk2);
+extern void Copy_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk1,
+		                const AdvectDiffuse2D_Quad_Block &SolnBlk2);
 
-extern int Prolong_Solution_Block(AdvectDiffuse2D_Quad_Block_New &SolnBlk_Fine,
-				  AdvectDiffuse2D_Quad_Block_New &SolnBlk_Original,
+extern int Prolong_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk_Fine,
+				  AdvectDiffuse2D_Quad_Block &SolnBlk_Original,
 				  const int Sector);
 
-extern int Restrict_Solution_Block(AdvectDiffuse2D_Quad_Block_New &SolnBlk_Coarse,
-				   AdvectDiffuse2D_Quad_Block_New &SolnBlk_Original_SW,
-				   AdvectDiffuse2D_Quad_Block_New &SolnBlk_Original_SE,
-				   AdvectDiffuse2D_Quad_Block_New &SolnBlk_Original_NW,
-				   AdvectDiffuse2D_Quad_Block_New &SolnBlk_Original_NE);
+extern int Restrict_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk_Coarse,
+				   AdvectDiffuse2D_Quad_Block &SolnBlk_Original_SW,
+				   AdvectDiffuse2D_Quad_Block &SolnBlk_Original_SE,
+				   AdvectDiffuse2D_Quad_Block &SolnBlk_Original_NW,
+				   AdvectDiffuse2D_Quad_Block &SolnBlk_Original_NE);
 
-extern void Output_Tecplot(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
+extern void Output_Tecplot(AdvectDiffuse2D_Quad_Block &SolnBlk,
 			   AdvectDiffuse2D_Input_Parameters &IP,
 		           const int Number_of_Time_Steps,
                            const double &Time,
@@ -759,7 +759,7 @@ extern void Output_Tecplot(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
                            const int Output_Title,
 	                   ostream &Out_File);
 
-extern void Output_Cells_Tecplot(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
+extern void Output_Cells_Tecplot(AdvectDiffuse2D_Quad_Block &SolnBlk,
 				 AdvectDiffuse2D_Input_Parameters &IP,
 		                 const int Number_of_Time_Steps,
                                  const double &Time,
@@ -767,53 +767,53 @@ extern void Output_Cells_Tecplot(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
                                  const int Output_Title,
 	                         ostream &Out_File);
 
-extern void Output_Nodes_Tecplot(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
+extern void Output_Nodes_Tecplot(AdvectDiffuse2D_Quad_Block &SolnBlk,
 		                 const int Number_of_Time_Steps,
                                  const double &Time,
                                  const int Block_Number,
                                  const int Output_Title,
 	                         ostream &Out_File);
 
-extern void ICs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
+extern void ICs(AdvectDiffuse2D_Quad_Block &SolnBlk,
  	        const AdvectDiffuse2D_Input_Parameters &IP,
-                AdvectDiffuse2D_State_New *Wo);
+                AdvectDiffuse2D_State *Wo);
 
-extern void BCs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
+extern void BCs(AdvectDiffuse2D_Quad_Block &SolnBlk,
 		const AdvectDiffuse2D_Input_Parameters &IP);
 
-extern double CFL(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
+extern double CFL(AdvectDiffuse2D_Quad_Block &SolnBlk,
                   AdvectDiffuse2D_Input_Parameters &Input_Parameters);
 
-extern void Set_Global_TimeStep(AdvectDiffuse2D_Quad_Block_New &SolnBlk, 
+extern void Set_Global_TimeStep(AdvectDiffuse2D_Quad_Block &SolnBlk, 
                                 const double &Dt_min);
 
-extern double L1_Norm_Residual(AdvectDiffuse2D_Quad_Block_New &SolnBlk);
+extern double L1_Norm_Residual(AdvectDiffuse2D_Quad_Block &SolnBlk);
 
-extern double L2_Norm_Residual(AdvectDiffuse2D_Quad_Block_New &SolnBlk);
+extern double L2_Norm_Residual(AdvectDiffuse2D_Quad_Block &SolnBlk);
 
-extern double Max_Norm_Residual(AdvectDiffuse2D_Quad_Block_New &SolnBlk);
+extern double Max_Norm_Residual(AdvectDiffuse2D_Quad_Block &SolnBlk);
 
-extern void Linear_Reconstruction_GreenGauss(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
+extern void Linear_Reconstruction_GreenGauss(AdvectDiffuse2D_Quad_Block &SolnBlk,
                                              const int i,
                                              const int j,
 					     const int Limiter);
 
-extern void Linear_Reconstruction_GreenGauss(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
+extern void Linear_Reconstruction_GreenGauss(AdvectDiffuse2D_Quad_Block &SolnBlk,
 					     const int Limiter);
 
-extern void Linear_Reconstruction_LeastSquares(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
+extern void Linear_Reconstruction_LeastSquares(AdvectDiffuse2D_Quad_Block &SolnBlk,
                                                const int i,
                                                const int j,
 					       const int Limiter);
 
-extern void Linear_Reconstruction_LeastSquares(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
+extern void Linear_Reconstruction_LeastSquares(AdvectDiffuse2D_Quad_Block &SolnBlk,
 					       const int Limiter);
 
-extern void Linear_Reconstruction(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
+extern void Linear_Reconstruction(AdvectDiffuse2D_Quad_Block &SolnBlk,
 				  const int & Reconstruction_Type,
 				  const int & Limiter);
 
-extern void Residual_Smoothing(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
+extern void Residual_Smoothing(AdvectDiffuse2D_Quad_Block &SolnBlk,
                                const int k_residual,
 			       double &epsilon, 
                                const int number_of_Gauss_Seidel_iterations);
@@ -821,23 +821,23 @@ extern void Residual_Smoothing(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 extern void Calculate_Refinement_Criteria(double *refinement_criteria,
 					  AdvectDiffuse2D_Input_Parameters &IP,
                                           int &number_refinement_criteria,
-                                          AdvectDiffuse2D_Quad_Block_New &SolnBlk);
+                                          AdvectDiffuse2D_Quad_Block &SolnBlk);
 
-extern void Fix_Refined_Block_Boundaries(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
+extern void Fix_Refined_Block_Boundaries(AdvectDiffuse2D_Quad_Block &SolnBlk,
                                          const int Fix_North_Boundary,
                                          const int Fix_South_Boundary,
                                          const int Fix_East_Boundary,
                                          const int Fix_West_Boundary);
 
-extern void Unfix_Refined_Block_Boundaries(AdvectDiffuse2D_Quad_Block_New &SolnBlk);
+extern void Unfix_Refined_Block_Boundaries(AdvectDiffuse2D_Quad_Block &SolnBlk);
 
-extern void Apply_Boundary_Flux_Corrections(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
+extern void Apply_Boundary_Flux_Corrections(AdvectDiffuse2D_Quad_Block &SolnBlk,
                                             const int Number_Neighbours_North_Boundary,
                                             const int Number_Neighbours_South_Boundary,
                                             const int Number_Neighbours_East_Boundary,
                                             const int Number_Neighbours_West_Boundary);
 
-extern void Apply_Boundary_Flux_Corrections_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
+extern void Apply_Boundary_Flux_Corrections_Multistage_Explicit(AdvectDiffuse2D_Quad_Block &SolnBlk,
                                                                 const int i_stage,
                                                                 const int n_stage,
                                                                 const double &CFL_Number,
@@ -849,145 +849,145 @@ extern void Apply_Boundary_Flux_Corrections_Multistage_Explicit(AdvectDiffuse2D_
                                                                 const int Number_Neighbours_East_Boundary,
                                                                 const int Number_Neighbours_West_Boundary);
 
-extern int dUdt_Residual_Evaluation(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
+extern int dUdt_Residual_Evaluation(AdvectDiffuse2D_Quad_Block &SolnBlk,
 				    AdvectDiffuse2D_Input_Parameters &Input_Parameters);
 
-extern int dUdt_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
+extern int dUdt_Multistage_Explicit(AdvectDiffuse2D_Quad_Block &SolnBlk,
    	                            const int i_stage,
                                     AdvectDiffuse2D_Input_Parameters &Input_Parameters);
 
-extern int Update_Solution_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
+extern int Update_Solution_Multistage_Explicit(AdvectDiffuse2D_Quad_Block &SolnBlk,
    	                                       const int i_stage,
                                                AdvectDiffuse2D_Input_Parameters &Input_Parameters);
 
 
 /**************************************************************************
- * AdvectDiffuse2D_Quad_Block_New -- Multiple Block External Subroutines.     *
+ * AdvectDiffuse2D_Quad_Block -- Multiple Block External Subroutines.     *
  **************************************************************************/
 
-extern AdvectDiffuse2D_Quad_Block_New* Allocate(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+extern AdvectDiffuse2D_Quad_Block* Allocate(AdvectDiffuse2D_Quad_Block *Soln_ptr,
 						AdvectDiffuse2D_Input_Parameters &Input_Parameters);
 
-extern AdvectDiffuse2D_Quad_Block_New* Deallocate(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+extern AdvectDiffuse2D_Quad_Block* Deallocate(AdvectDiffuse2D_Quad_Block *Soln_ptr,
 						  AdvectDiffuse2D_Input_Parameters &Input_Parameters);
 
-extern void ICs(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+extern void ICs(AdvectDiffuse2D_Quad_Block *Soln_ptr,
 		AdaptiveBlock2D_List &Soln_Block_List,
 		AdvectDiffuse2D_Input_Parameters &Input_Parameters);
 
-extern int Read_Restart_Solution(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+extern int Read_Restart_Solution(AdvectDiffuse2D_Quad_Block *Soln_ptr,
                                  AdaptiveBlock2D_List &Soln_Block_List,
                                  AdvectDiffuse2D_Input_Parameters &Input_Parameters,
 		                 int &Number_of_Time_Steps,
                                  double &Time,
                                  CPUTime &CPU_Time);
 
-extern int Write_Restart_Solution(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+extern int Write_Restart_Solution(AdvectDiffuse2D_Quad_Block *Soln_ptr,
                                   AdaptiveBlock2D_List &Soln_Block_List,
                                   AdvectDiffuse2D_Input_Parameters &Input_Parameters,
 		                  const int Number_of_Time_Steps,
                                   const double &Time,
                                   const CPUTime &CPU_Time);
 
-extern int Output_Tecplot(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+extern int Output_Tecplot(AdvectDiffuse2D_Quad_Block *Soln_ptr,
                           AdaptiveBlock2D_List &Soln_Block_List,
                           AdvectDiffuse2D_Input_Parameters &Input_Parameters,
 		          const int Number_of_Time_Steps,
                           const double &Time);
 
-extern int Output_Cells_Tecplot(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+extern int Output_Cells_Tecplot(AdvectDiffuse2D_Quad_Block *Soln_ptr,
                                 AdaptiveBlock2D_List &Soln_Block_List,
                                 AdvectDiffuse2D_Input_Parameters &Input_Parameters,
 		                const int Number_of_Time_Steps,
                                 const double &Time);
 
-extern int Output_Nodes_Tecplot(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+extern int Output_Nodes_Tecplot(AdvectDiffuse2D_Quad_Block *Soln_ptr,
                                 AdaptiveBlock2D_List &Soln_Block_List,
                                 AdvectDiffuse2D_Input_Parameters &Input_Parameters,
 		                const int Number_of_Time_Steps,
                                 const double &Time);
 
-extern int Output_Mesh_Tecplot(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+extern int Output_Mesh_Tecplot(AdvectDiffuse2D_Quad_Block *Soln_ptr,
                                AdaptiveBlock2D_List &Soln_Block_List,
                                AdvectDiffuse2D_Input_Parameters &Input_Parameters,
 		               const int Number_of_Time_Steps,
                                const double &Time);
 
-extern int Output_Mesh_Gnuplot(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+extern int Output_Mesh_Gnuplot(AdvectDiffuse2D_Quad_Block *Soln_ptr,
                                AdaptiveBlock2D_List &Soln_Block_List,
                                AdvectDiffuse2D_Input_Parameters &Input_Parameters,
 		               const int Number_of_Time_Steps,
                                const double &Time);
 
-extern void Linear_Reconstruction(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+extern void Linear_Reconstruction(AdvectDiffuse2D_Quad_Block *Soln_ptr,
 				  AdaptiveBlock2D_List &Soln_Block_List,
 				  AdvectDiffuse2D_Input_Parameters &Input_Parameters);
 
-extern void BCs(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+extern void BCs(AdvectDiffuse2D_Quad_Block *Soln_ptr,
                 AdaptiveBlock2D_List &Soln_Block_List,
 		AdvectDiffuse2D_Input_Parameters &Input_Parameters);
 
-extern double CFL(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+extern double CFL(AdvectDiffuse2D_Quad_Block *Soln_ptr,
                   AdaptiveBlock2D_List &Soln_Block_List,
                   AdvectDiffuse2D_Input_Parameters &Input_Parameters);
 
-extern void Set_Global_TimeStep(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+extern void Set_Global_TimeStep(AdvectDiffuse2D_Quad_Block *Soln_ptr,
                                 AdaptiveBlock2D_List &Soln_Block_List, 
                                 const double &Dt_min);
 
-extern double L1_Norm_Residual(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+extern double L1_Norm_Residual(AdvectDiffuse2D_Quad_Block *Soln_ptr,
                                AdaptiveBlock2D_List &Soln_Block_List);
 
-extern double L2_Norm_Residual(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+extern double L2_Norm_Residual(AdvectDiffuse2D_Quad_Block *Soln_ptr,
                                AdaptiveBlock2D_List &Soln_Block_List);
 
-extern double Max_Norm_Residual(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+extern double Max_Norm_Residual(AdvectDiffuse2D_Quad_Block *Soln_ptr,
                                 AdaptiveBlock2D_List &Soln_Block_List);
 
-extern void L1_Norm_Residual(AdvectDiffuse2D_Quad_Block_New *Soln_ptr, 
+extern void L1_Norm_Residual(AdvectDiffuse2D_Quad_Block *Soln_ptr, 
 			     AdaptiveBlock2D_List &Soln_Block_List,
 			     double *l1_norm);
 
-extern void L2_Norm_Residual(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+extern void L2_Norm_Residual(AdvectDiffuse2D_Quad_Block *Soln_ptr,
 			     AdaptiveBlock2D_List &Soln_Block_List,
 			     double *l2_norm);
 
-extern void Max_Norm_Residual(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+extern void Max_Norm_Residual(AdvectDiffuse2D_Quad_Block *Soln_ptr,
 			      AdaptiveBlock2D_List &Soln_Block_List,
 			      double *max_norm);
 
-extern void Evaluate_Limiters(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+extern void Evaluate_Limiters(AdvectDiffuse2D_Quad_Block *Soln_ptr,
                               AdaptiveBlock2D_List &Soln_Block_List);
 
-extern void Freeze_Limiters(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+extern void Freeze_Limiters(AdvectDiffuse2D_Quad_Block *Soln_ptr,
                             AdaptiveBlock2D_List &Soln_Block_List);
 
-extern void Residual_Smoothing(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+extern void Residual_Smoothing(AdvectDiffuse2D_Quad_Block *Soln_ptr,
                                AdaptiveBlock2D_List &Soln_Block_List,
                                AdvectDiffuse2D_Input_Parameters &Input_Parameters,
    	                       const int I_Stage);
 
-extern void Apply_Boundary_Flux_Corrections(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+extern void Apply_Boundary_Flux_Corrections(AdvectDiffuse2D_Quad_Block *Soln_ptr,
                                             AdaptiveBlock2D_List &Soln_Block_List);
 
-extern void Apply_Boundary_Flux_Corrections_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+extern void Apply_Boundary_Flux_Corrections_Multistage_Explicit(AdvectDiffuse2D_Quad_Block *Soln_ptr,
                                                                 AdaptiveBlock2D_List &Soln_Block_List,
                                                                 AdvectDiffuse2D_Input_Parameters &Input_Parameters,
    	                                                        const int I_Stage);
 
-extern int dUdt_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+extern int dUdt_Multistage_Explicit(AdvectDiffuse2D_Quad_Block *Soln_ptr,
 				    AdaptiveBlockResourceList &Global_Soln_Block_List,
                                     AdaptiveBlock2D_List &Local_Soln_Block_List,
                                     AdvectDiffuse2D_Input_Parameters &Input_Parameters,
    	                            const int I_Stage);
 
-extern int Update_Solution_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+extern int Update_Solution_Multistage_Explicit(AdvectDiffuse2D_Quad_Block *Soln_ptr,
                                                AdaptiveBlock2D_List &Soln_Block_List,
                                                AdvectDiffuse2D_Input_Parameters &Input_Parameters,
    	                                       const int I_Stage);
 
 /********************************************************************************
- * AdvectDiffuse2D_Quad_Block_New -- Multiple Block External Subroutines for Mesh.  *
+ * AdvectDiffuse2D_Quad_Block -- Multiple Block External Subroutines for Mesh.  *
  ********************************************************************************/
 
 extern Grid2D_Quad_Block** Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
@@ -1021,7 +1021,7 @@ extern int Output_Cells_Tecplot(Grid2D_Quad_Block **Grid_ptr,
  * AdvectDiffuse2D_Quad_Block -- Solvers.                                 *
  **************************************************************************/
 
-extern int New_AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
-					 int batch_flag);
+extern int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
+				     int batch_flag);
 
 #endif /* _ADVECTDIFFUSE2D_QUAD_INCLUDED  */

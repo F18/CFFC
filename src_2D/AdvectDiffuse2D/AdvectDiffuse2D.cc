@@ -242,8 +242,8 @@ int main(int num_arg, char *arg_ptr[]) {
    * PERFORM REQUIRED CALCULATIONS.                          *
    ***********************************************************/
 
-  error_flag = New_AdvectDiffuse2DQuadSolver(Input_File_Name_ptr,
-					     batch_flag);
+  error_flag = AdvectDiffuse2DQuadSolver(Input_File_Name_ptr,
+					 batch_flag);
   
   if (error_flag) {
      CFFC_Finalize_MPI();

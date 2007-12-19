@@ -211,7 +211,7 @@ namespace tut
 
     set_test_name("Connect_Pointer_To_Flow_Field()");
 
-    AdvectDiffuse2D_State_New State;
+    AdvectDiffuse2D_State State;
 
     VelocityFields::Set_RotationalFlow_Parameters(10.0, "Inverse_Proportional_Distance", Vector2D(2.5,4.5));
 
@@ -230,7 +230,7 @@ namespace tut
 
     set_test_name("Connect_Pointer_To_Diffusion_Field()");
 
-    AdvectDiffuse2D_State_New State;
+    AdvectDiffuse2D_State State;
 
     DiffusionFields::Set_ConstantDiffusionField(10.0);
 
@@ -248,7 +248,7 @@ namespace tut
 
     set_test_name("operator ==");
 
-    AdvectDiffuse2D_State_New State(12.2323), State_Copy(12.2323);
+    AdvectDiffuse2D_State State(12.2323), State_Copy(12.2323);
 
     // === check
     ensure_equals("equal states", State == State_Copy, true );
@@ -262,7 +262,7 @@ namespace tut
 
     set_test_name("operator ==");
 
-    AdvectDiffuse2D_State_New State(12.2323), State_Copy(12.232);
+    AdvectDiffuse2D_State State(12.2323), State_Copy(12.232);
 
     // === check
     ensure_equals("different states", State == State_Copy, false );
@@ -276,7 +276,7 @@ namespace tut
 
     set_test_name("operator !=");
 
-    AdvectDiffuse2D_State_New State(12.2323), State_Copy(12.232);
+    AdvectDiffuse2D_State State(12.2323), State_Copy(12.232);
 
     // === check
     ensure_equals("different states", State != State_Copy, true );
@@ -290,7 +290,7 @@ namespace tut
 
     set_test_name("operator !=");
 
-    AdvectDiffuse2D_State_New State(12.2323), State_Copy(12.2323);
+    AdvectDiffuse2D_State State(12.2323), State_Copy(12.2323);
 
     // === check
     ensure_equals("equal states", State != State_Copy, false);
@@ -304,7 +304,7 @@ namespace tut
 
     set_test_name("Assignment operator");
 
-    AdvectDiffuse2D_State_New State(12.2323), State_Copy;
+    AdvectDiffuse2D_State State(12.2323), State_Copy;
 
     // === check
     ensure_equals("different states", State != State_Copy, true);
@@ -324,7 +324,7 @@ namespace tut
 
     set_test_name("Copy constructor");
 
-    AdvectDiffuse2D_State_New State(12.2323), State_Copy(State);
+    AdvectDiffuse2D_State State(12.2323), State_Copy(State);
 
     // === check
     ensure_equals("equal states", State == State_Copy, true);
@@ -338,14 +338,14 @@ namespace tut
 
     set_test_name("operator +");
 
-    AdvectDiffuse2D_State_New A(12.2323), B(A), C, Result(12.2323*2);
+    AdvectDiffuse2D_State A(12.2323), B(A), C, Result(12.2323*2);
 
     // summation
     C = A + B;
 
     // === check
-    ensure_equals("unmodified A", A, AdvectDiffuse2D_State_New(12.2323) );
-    ensure_equals("unmodified B", B, AdvectDiffuse2D_State_New(12.2323) );
+    ensure_equals("unmodified A", A, AdvectDiffuse2D_State(12.2323) );
+    ensure_equals("unmodified B", B, AdvectDiffuse2D_State(12.2323) );
     ensure_equals("summation", C , Result);
   }
 
@@ -357,14 +357,14 @@ namespace tut
 
     set_test_name("operator -");
 
-    AdvectDiffuse2D_State_New A(12.2323), B(12.2325), C, Result(-0.0002), tol(1.0e-14);
+    AdvectDiffuse2D_State A(12.2323), B(12.2325), C, Result(-0.0002), tol(1.0e-14);
 
     // subtraction
     C = A - B;
 
     // === check
-    ensure_equals("unmodified A", A, AdvectDiffuse2D_State_New(12.2323) );
-    ensure_equals("unmodified B", B, AdvectDiffuse2D_State_New(12.2325) );
+    ensure_equals("unmodified A", A, AdvectDiffuse2D_State(12.2323) );
+    ensure_equals("unmodified B", B, AdvectDiffuse2D_State(12.2325) );
     ensure_distance("subtraction", C , Result, AcceptedError(Result));
   }
 
@@ -376,14 +376,14 @@ namespace tut
 
     set_test_name("operator *");
 
-    AdvectDiffuse2D_State_New A(12.2323), B(12.2325), C, Result(12.2323*12.2325);
+    AdvectDiffuse2D_State A(12.2323), B(12.2325), C, Result(12.2323*12.2325);
 
     // multiplication
     C = A * B;
 
     // === check
-    ensure_equals("unmodified A", A, AdvectDiffuse2D_State_New(12.2323) );
-    ensure_equals("unmodified B", B, AdvectDiffuse2D_State_New(12.2325) );
+    ensure_equals("unmodified A", A, AdvectDiffuse2D_State(12.2323) );
+    ensure_equals("unmodified B", B, AdvectDiffuse2D_State(12.2325) );
     ensure_equals("multiplication", C , Result);
   }
 
@@ -396,14 +396,14 @@ namespace tut
     set_test_name("operator * ");
 
     double a(-0.2323);
-    AdvectDiffuse2D_State_New A(12.2323), B, C, Result(12.2323*a);
+    AdvectDiffuse2D_State A(12.2323), B, C, Result(12.2323*a);
 
     // multiplication
     B = A * a;
     C = a * A;
 
     // === check
-    ensure_equals("unmodified A", A, AdvectDiffuse2D_State_New(12.2323) );
+    ensure_equals("unmodified A", A, AdvectDiffuse2D_State(12.2323) );
     ensure_equals("scalar multiplication I", B , Result);
     ensure_equals("scalar multiplication II", C , Result);
   }
@@ -417,13 +417,13 @@ namespace tut
     set_test_name("operator / ");
 
     double a(-0.2323);
-    AdvectDiffuse2D_State_New A(12.2323), B, C, Result(12.2323/a);
+    AdvectDiffuse2D_State A(12.2323), B, C, Result(12.2323/a);
 
     // division
     B = A / a;
 
     // === check
-    ensure_equals("unmodified A", A, AdvectDiffuse2D_State_New(12.2323) );
+    ensure_equals("unmodified A", A, AdvectDiffuse2D_State(12.2323) );
     ensure_equals("division with scalar", B , Result);
   }
 
@@ -435,13 +435,13 @@ namespace tut
 
     set_test_name("unary operator + ");
 
-    AdvectDiffuse2D_State_New A(12.2323), B, Result(12.2323);
+    AdvectDiffuse2D_State A(12.2323), B, Result(12.2323);
 
     // unary operator
     B = + A;
 
     // === check
-    ensure_equals("unmodified A", A, AdvectDiffuse2D_State_New(12.2323) );
+    ensure_equals("unmodified A", A, AdvectDiffuse2D_State(12.2323) );
     ensure_equals("result", B , Result);
   }
 
@@ -453,13 +453,13 @@ namespace tut
 
     set_test_name("unary operator - ");
 
-    AdvectDiffuse2D_State_New A(12.2323), B, Result(-12.2323);
+    AdvectDiffuse2D_State A(12.2323), B, Result(-12.2323);
 
     // unary operator
     B = - A;
 
     // === check
-    ensure_equals("unmodified A", A, AdvectDiffuse2D_State_New(12.2323) );
+    ensure_equals("unmodified A", A, AdvectDiffuse2D_State(12.2323) );
     ensure_equals("result", B , Result);
   }
 
@@ -471,13 +471,13 @@ namespace tut
 
     set_test_name("operator +=");
 
-    AdvectDiffuse2D_State_New A(12.2323), B(A), Result(12.2323*2);
+    AdvectDiffuse2D_State A(12.2323), B(A), Result(12.2323*2);
 
     // summation
     A += B;
 
     // === check
-    ensure_equals("unmodified B", B, AdvectDiffuse2D_State_New(12.2323) );
+    ensure_equals("unmodified B", B, AdvectDiffuse2D_State(12.2323) );
     ensure_equals("summation", A , Result);
   }
 
@@ -489,13 +489,13 @@ namespace tut
 
     set_test_name("operator -=");
 
-    AdvectDiffuse2D_State_New A(12.2323), B(12.2325),  Result(-0.0002), tol(1.0e-13);
+    AdvectDiffuse2D_State A(12.2323), B(12.2325),  Result(-0.0002), tol(1.0e-13);
 
     // subtraction
     A -= B;
 
     // === check
-    ensure_equals("unmodified B", B, AdvectDiffuse2D_State_New(12.2325) );
+    ensure_equals("unmodified B", B, AdvectDiffuse2D_State(12.2325) );
     ensure_distance("subtraction", A , Result, tol);
   }
 
@@ -507,13 +507,13 @@ namespace tut
 
     set_test_name("operator *=");
 
-    AdvectDiffuse2D_State_New A(12.2323), B(12.2325), Result(12.2323*12.2325);
+    AdvectDiffuse2D_State A(12.2323), B(12.2325), Result(12.2323*12.2325);
 
     // multiplication
     A *= B;
 
     // === check
-    ensure_equals("unmodified B", B, AdvectDiffuse2D_State_New(12.2325) );
+    ensure_equals("unmodified B", B, AdvectDiffuse2D_State(12.2325) );
     ensure_equals("multiplication", A , Result);
   }
 
@@ -526,7 +526,7 @@ namespace tut
     set_test_name("operator * ");
 
     double a(-0.2323);
-    AdvectDiffuse2D_State_New A(12.2323), Result(12.2323*a);
+    AdvectDiffuse2D_State A(12.2323), Result(12.2323*a);
 
     // multiplication
     A *= a;
@@ -544,7 +544,7 @@ namespace tut
     set_test_name("operator / ");
 
     double a(-0.2323);
-    AdvectDiffuse2D_State_New A(12.2323), Result(12.2323/a);
+    AdvectDiffuse2D_State A(12.2323), Result(12.2323/a);
 
     // division
     A /= a;
@@ -562,13 +562,13 @@ namespace tut
     set_test_name("combination of operators ");
 
     double a(-0.2323);
-    AdvectDiffuse2D_State_New A(12.2323), B(-0.2324), C(-34.24), Result(12.2323 - (12.2323 + (-0.2324))*(-34.24)/a );
+    AdvectDiffuse2D_State A(12.2323), B(-0.2324), C(-34.24), Result(12.2323 - (12.2323 + (-0.2324))*(-34.24)/a );
 
     // division
     A += -(A + B)*C/a;
 
     // === check
-    ensure_distance("division with scalar", A , Result, AdvectDiffuse2D_State_New(fabs(Result[1])*1.0));
+    ensure_distance("division with scalar", A , Result, AdvectDiffuse2D_State(fabs(Result[1])*1.0));
   }
 
   /* Test 30:*/
@@ -579,7 +579,7 @@ namespace tut
 
     set_test_name("input-output operators ");
 
-    AdvectDiffuse2D_State_New A(12.2323);
+    AdvectDiffuse2D_State A(12.2323);
 
     // === check
     Check_Input_Output_Operator(A);
@@ -594,9 +594,9 @@ namespace tut
     set_test_name("Advective flux");
 
     VelocityFields::Set_RotationalFlow_Parameters(10.0, "Inverse_Proportional_Distance", Vector2D(2.5,4.5));
-    VelocityFields::Connect_Pointer_To_Flow_Field(AdvectDiffuse2D_State_New::V);
+    VelocityFields::Connect_Pointer_To_Flow_Field(AdvectDiffuse2D_State::V);
 
-    AdvectDiffuse2D_State_New A(12.2323);
+    AdvectDiffuse2D_State A(12.2323);
     Vector2D Result = Vector2D(-8,6)*12.2323, tol(1.0e-13);
 
     // === check advective flux
@@ -614,14 +614,14 @@ namespace tut
 
     // Set velocity field
     VelocityFields::Set_RotationalFlow_Parameters(10.0, "Inverse_Proportional_Distance", Vector2D(2.5,4.5));
-    VelocityFields::Connect_Pointer_To_Flow_Field(AdvectDiffuse2D_State_New::V);
+    VelocityFields::Connect_Pointer_To_Flow_Field(AdvectDiffuse2D_State::V);
 
     // Set diffusion field
     DiffusionFields::Set_ConstantDiffusionField(10.0);
-    DiffusionFields::Connect_Pointer_To_Diffusion_Field(AdvectDiffuse2D_State_New::k);
+    DiffusionFields::Connect_Pointer_To_Diffusion_Field(AdvectDiffuse2D_State::k);
 
     // Set initial data
-    AdvectDiffuse2D_State_New A(12.2323);
+    AdvectDiffuse2D_State A(12.2323);
     double dUdx(1.5), dUdy(3.4);
     Vector2D tol(1.0e-13), GradU(dUdx,dUdy), Result(-10.0*dUdx,-10*dUdy);
 
@@ -642,14 +642,14 @@ namespace tut
 
     // Set velocity field
     VelocityFields::Set_RotationalFlow_Parameters(10.0, "Inverse_Proportional_Distance", Vector2D(2.5,4.5));
-    VelocityFields::Connect_Pointer_To_Flow_Field(AdvectDiffuse2D_State_New::V);
+    VelocityFields::Connect_Pointer_To_Flow_Field(AdvectDiffuse2D_State::V);
 
     // Set initial data
-    AdvectDiffuse2D_State_New A(12.0), B(5.0);
+    AdvectDiffuse2D_State A(12.0), B(5.0);
     Vector2D Normal(1,0);
     
     // === check advective flux
-    ensure_distance("Fa I", Fa(A,B,8.5,12.5,Normal), AdvectDiffuse2D_State_New(-40.0), AdvectDiffuse2D_State_New(tol));
+    ensure_distance("Fa I", Fa(A,B,8.5,12.5,Normal), AdvectDiffuse2D_State(-40.0), AdvectDiffuse2D_State(tol));
   }
 
   /* Test 34:*/
@@ -662,14 +662,14 @@ namespace tut
 
     // Set velocity field
     VelocityFields::Set_RotationalFlow_Parameters(10.0, "Inverse_Proportional_Distance", Vector2D(2.5,4.5));
-    VelocityFields::Connect_Pointer_To_Flow_Field(AdvectDiffuse2D_State_New::V);
+    VelocityFields::Connect_Pointer_To_Flow_Field(AdvectDiffuse2D_State::V);
 
     // Set initial data
-    AdvectDiffuse2D_State_New A(12.0), B(5.0);
+    AdvectDiffuse2D_State A(12.0), B(5.0);
     Vector2D Normal(0,1);
     
     // === check advective flux
-    ensure_distance("Fa I", Fa(A,B,8.5,12.5,Normal), AdvectDiffuse2D_State_New(72.0), AdvectDiffuse2D_State_New(tol));
+    ensure_distance("Fa I", Fa(A,B,8.5,12.5,Normal), AdvectDiffuse2D_State(72.0), AdvectDiffuse2D_State(tol));
   }
 
   /* Test 35:*/
@@ -682,24 +682,24 @@ namespace tut
 
     // Set velocity field
     VelocityFields::Set_RotationalFlow_Parameters(10.0, "Inverse_Proportional_Distance", Vector2D(2.5,4.5));
-    VelocityFields::Connect_Pointer_To_Flow_Field(AdvectDiffuse2D_State_New::V);
+    VelocityFields::Connect_Pointer_To_Flow_Field(AdvectDiffuse2D_State::V);
 
     // Set diffusion field
     DiffusionFields::Set_ConstantDiffusionField(10.0);
-    DiffusionFields::Connect_Pointer_To_Diffusion_Field(AdvectDiffuse2D_State_New::k);
+    DiffusionFields::Connect_Pointer_To_Diffusion_Field(AdvectDiffuse2D_State::k);
 
     // Set initial data
-    AdvectDiffuse2D_State_New Ul(12.2323), Ur(5.34);
+    AdvectDiffuse2D_State Ul(12.2323), Ur(5.34);
     double dUdx_L(1.5), dUdy_L(3.4), dUdx_R(1.5), dUdy_R(3.4);
     // Calculate GradU as average between the Left and Right gradients
     Vector2D GradU = 0.5*(Vector2D(dUdx_L,dUdy_L) + Vector2D(dUdx_R,dUdy_R));
 
     Vector2D Normal(1,0);
-    AdvectDiffuse2D_State_New Result(-10*1.5);
+    AdvectDiffuse2D_State Result(-10*1.5);
 
     // === check diffusive flux
-    ensure_distance("Fd at Point I", Fd(Ul,Ur,GradU,8.5,12.5,Normal), Result, AdvectDiffuse2D_State_New(tol));
-    ensure_distance("Fd at Point II", Fd(Ul,Ur,GradU.x,GradU.y,8.5,12.5,Normal), Result, AdvectDiffuse2D_State_New(tol));
+    ensure_distance("Fd at Point I", Fd(Ul,Ur,GradU,8.5,12.5,Normal), Result, AdvectDiffuse2D_State(tol));
+    ensure_distance("Fd at Point II", Fd(Ul,Ur,GradU.x,GradU.y,8.5,12.5,Normal), Result, AdvectDiffuse2D_State(tol));
   }
 
   /* Test 36:*/
@@ -712,24 +712,24 @@ namespace tut
 
     // Set velocity field
     VelocityFields::Set_RotationalFlow_Parameters(10.0, "Inverse_Proportional_Distance", Vector2D(2.5,4.5));
-    VelocityFields::Connect_Pointer_To_Flow_Field(AdvectDiffuse2D_State_New::V);
+    VelocityFields::Connect_Pointer_To_Flow_Field(AdvectDiffuse2D_State::V);
 
     // Set diffusion field
     DiffusionFields::Set_ConstantDiffusionField(10.0);
-    DiffusionFields::Connect_Pointer_To_Diffusion_Field(AdvectDiffuse2D_State_New::k);
+    DiffusionFields::Connect_Pointer_To_Diffusion_Field(AdvectDiffuse2D_State::k);
 
     // Set initial data
-    AdvectDiffuse2D_State_New Ul(12.2323), Ur(5.34);
+    AdvectDiffuse2D_State Ul(12.2323), Ur(5.34);
     double dUdx_L(1.5), dUdy_L(6.4), dUdx_R(3.5), dUdy_R(3.4);
     // Calculate GradU as average between the Left and Right gradients
     Vector2D GradU = 0.5*(Vector2D(dUdx_L,dUdy_L) + Vector2D(dUdx_R,dUdy_R));
 
     Vector2D Normal(0,1);
-    AdvectDiffuse2D_State_New Result(-10*0.5*(6.4+3.4));
+    AdvectDiffuse2D_State Result(-10*0.5*(6.4+3.4));
 
     // === check diffusive flux
-    ensure_distance("Fd at Point I", Fd(Ul,Ur,GradU,8.5,12.5,Normal), Result, AdvectDiffuse2D_State_New(tol));
-    ensure_distance("Fd at Point II", Fd(Ul,Ur,GradU.x,GradU.y,8.5,12.5,Normal), Result, AdvectDiffuse2D_State_New(tol));
+    ensure_distance("Fd at Point I", Fd(Ul,Ur,GradU,8.5,12.5,Normal), Result, AdvectDiffuse2D_State(tol));
+    ensure_distance("Fd at Point II", Fd(Ul,Ur,GradU.x,GradU.y,8.5,12.5,Normal), Result, AdvectDiffuse2D_State(tol));
 
   }
 
@@ -742,7 +742,7 @@ namespace tut
     set_test_name("Source term function s()");
 
     // Set initial data
-    AdvectDiffuse2D_State_New U(12.2323);
+    AdvectDiffuse2D_State U(12.2323);
     double Result;
 
     // Set the source field
@@ -770,15 +770,15 @@ namespace tut
 
     // Set velocity field
     VelocityFields::Set_RotationalFlow_Parameters(10.0, "Inverse_Proportional_Distance", Vector2D(2.5,4.5));
-    VelocityFields::Connect_Pointer_To_Flow_Field(AdvectDiffuse2D_State_New::V);
+    VelocityFields::Connect_Pointer_To_Flow_Field(AdvectDiffuse2D_State::V);
 
     // Set diffusion field
     Vector2D RefPoint(1.0,2.0);
     DiffusionFields::Set_LinearDiffusionField(0.1, 0.5, 0.4, RefPoint);
-    DiffusionFields::Connect_Pointer_To_Diffusion_Field(AdvectDiffuse2D_State_New::k);
+    DiffusionFields::Connect_Pointer_To_Diffusion_Field(AdvectDiffuse2D_State::k);
 
     // Set initial data
-    AdvectDiffuse2D_State_New U(12.2323);
+    AdvectDiffuse2D_State U(12.2323);
     double Result = 0.1*(3.5-RefPoint.x) + 0.5*(-1.2 - RefPoint.y) + 0.4*12.2323;
 
     // === check diffusive field
@@ -795,17 +795,17 @@ namespace tut
 
     // Set velocity field
     VelocityFields::Set_RotationalFlow_Parameters(10.0, "Inverse_Proportional_Distance", Vector2D(2.5,4.5));
-    VelocityFields::Connect_Pointer_To_Flow_Field(AdvectDiffuse2D_State_New::V);
+    VelocityFields::Connect_Pointer_To_Flow_Field(AdvectDiffuse2D_State::V);
 
     // Set diffusion field
     DiffusionFields::Set_LinearDiffusionField(0.1, 0.5, 0.4);
-    DiffusionFields::Connect_Pointer_To_Diffusion_Field(AdvectDiffuse2D_State_New::k);
+    DiffusionFields::Connect_Pointer_To_Diffusion_Field(AdvectDiffuse2D_State::k);
 
     // Set initial data
-    AdvectDiffuse2D_State_New Ul(12.2323), Ur(5.34);
+    AdvectDiffuse2D_State Ul(12.2323), Ur(5.34);
     Vector2D GradU(1.5,5.6);
     Vector2D Normal(0.4,0.916515139);
-    AdvectDiffuse2D_State_New Result(-(0.1*8.5 + 0.5*(-12.5) + 0.4*0.5*(Ul.u + Ur.u))*(GradU.x*Normal.x + GradU.y*Normal.y));
+    AdvectDiffuse2D_State Result(-(0.1*8.5 + 0.5*(-12.5) + 0.4*0.5*(Ul.u + Ur.u))*(GradU.x*Normal.x + GradU.y*Normal.y));
 
     // === check diffusive flux
     ensure_distance("Fd at Point I", Fd(Ul,Ur,GradU,8.5,-12.5,Normal), Result, AcceptedError(Result));

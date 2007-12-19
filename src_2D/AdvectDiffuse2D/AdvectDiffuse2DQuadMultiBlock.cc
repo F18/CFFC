@@ -1,4 +1,4 @@
-/* \file New_AdvectDiffuse2DQuadMultiBlock.cc
+/* \file AdvectDiffuse2DQuadMultiBlock.cc
    \brief  Multi-Block Versions of Subroutines for 2D Advection Diffusion Equation
            Multi-Block Quadrilateral Mesh Solution Classes. */
 
@@ -17,12 +17,12 @@
  * multi-block solution blocks.                         
  *                                                      
  ********************************************************/
-AdvectDiffuse2D_Quad_Block_New* Allocate(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
-					 AdvectDiffuse2D_Input_Parameters &Input_Parameters) {
+AdvectDiffuse2D_Quad_Block* Allocate(AdvectDiffuse2D_Quad_Block *Soln_ptr,
+				     AdvectDiffuse2D_Input_Parameters &Input_Parameters) {
 
   /* Allocate memory. */
 
-  Soln_ptr = new AdvectDiffuse2D_Quad_Block_New[Input_Parameters.Number_of_Blocks_Per_Processor];
+  Soln_ptr = new AdvectDiffuse2D_Quad_Block[Input_Parameters.Number_of_Blocks_Per_Processor];
 
   /* Return memory location. */
 
@@ -37,8 +37,8 @@ AdvectDiffuse2D_Quad_Block_New* Allocate(AdvectDiffuse2D_Quad_Block_New *Soln_pt
  * multi-block solution blocks.                         
  *                                                      
  ********************************************************/
-AdvectDiffuse2D_Quad_Block_New* Deallocate(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
-					   AdvectDiffuse2D_Input_Parameters &Input_Parameters) {
+AdvectDiffuse2D_Quad_Block* Deallocate(AdvectDiffuse2D_Quad_Block *Soln_ptr,
+				       AdvectDiffuse2D_Input_Parameters &Input_Parameters) {
 
   int i;
  
@@ -64,12 +64,12 @@ AdvectDiffuse2D_Quad_Block_New* Deallocate(AdvectDiffuse2D_Quad_Block_New *Soln_
  * multi-block solution blocks.                         
  *                                                      
  ********************************************************/
-void ICs(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+void ICs(AdvectDiffuse2D_Quad_Block *Soln_ptr,
          AdaptiveBlock2D_List &Soln_Block_List,
          AdvectDiffuse2D_Input_Parameters &Input_Parameters) {
 
   int i;
-  AdvectDiffuse2D_State_New Uo[5];
+  AdvectDiffuse2D_State Uo[5];
   int I = Input_Parameters.Number_of_Blocks_Idir;
   int J = Input_Parameters.Number_of_Blocks_Jdir;
 
@@ -78,7 +78,7 @@ void ICs(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
   //   Uo[0] = Input_Parameters.Uo;
   //   Uo[1] = Input_Parameters.U1;
   //   Uo[2] = Input_Parameters.U2;
-  Uo[0] = AdvectDiffuse2D_State_New(1.0);
+  Uo[0] = AdvectDiffuse2D_State(1.0);
 
   /* Assign initial data for each solution block. */
 
@@ -106,7 +106,7 @@ void ICs(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
  * restart solution files.                              
  *                                                      
  ********************************************************/
-int Read_Restart_Solution(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+int Read_Restart_Solution(AdvectDiffuse2D_Quad_Block *Soln_ptr,
                           AdaptiveBlock2D_List &Soln_Block_List,
                           AdvectDiffuse2D_Input_Parameters &Input_Parameters,
                           int &Number_of_Time_Steps,
@@ -182,7 +182,7 @@ int Read_Restart_Solution(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
  * restart solution files.                              
  *                                                      
  ********************************************************/
-int Write_Restart_Solution(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+int Write_Restart_Solution(AdvectDiffuse2D_Quad_Block *Soln_ptr,
                            AdaptiveBlock2D_List &Soln_Block_List,
                            AdvectDiffuse2D_Input_Parameters &Input_Parameters,
                            const int Number_of_Time_Steps,
@@ -251,7 +251,7 @@ int Write_Restart_Solution(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
  * TECPLOT solution files.                              
  *                                                      
  ********************************************************/
-int Output_Tecplot(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+int Output_Tecplot(AdvectDiffuse2D_Quad_Block *Soln_ptr,
                    AdaptiveBlock2D_List &Soln_Block_List,
                    AdvectDiffuse2D_Input_Parameters &Input_Parameters,
                    const int Number_of_Time_Steps,
@@ -325,7 +325,7 @@ int Output_Tecplot(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
  * TECPLOT solution files.                              
  *                                                      
  ********************************************************/
-int Output_Cells_Tecplot(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+int Output_Cells_Tecplot(AdvectDiffuse2D_Quad_Block *Soln_ptr,
                          AdaptiveBlock2D_List &Soln_Block_List,
                          AdvectDiffuse2D_Input_Parameters &Input_Parameters,
                          const int Number_of_Time_Steps,
@@ -398,7 +398,7 @@ int Output_Cells_Tecplot(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
  * if cannot write any of the TECPLOT solution files.   
  *                                                      
  ********************************************************/
-int Output_Nodes_Tecplot(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+int Output_Nodes_Tecplot(AdvectDiffuse2D_Quad_Block *Soln_ptr,
                          AdaptiveBlock2D_List &Soln_Block_List,
                          AdvectDiffuse2D_Input_Parameters &Input_Parameters,
                          const int Number_of_Time_Steps,
@@ -470,7 +470,7 @@ int Output_Nodes_Tecplot(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
  * if cannot write any of the TECPLOT solution files.   
  *                                                      
  ********************************************************/
-int Output_Mesh_Tecplot(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+int Output_Mesh_Tecplot(AdvectDiffuse2D_Quad_Block *Soln_ptr,
                         AdaptiveBlock2D_List &Soln_Block_List,
                         AdvectDiffuse2D_Input_Parameters &Input_Parameters,
                         const int Number_of_Time_Steps,
@@ -540,7 +540,7 @@ int Output_Mesh_Tecplot(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
  * if cannot write any of the GNUPLOT solution files.   
  *                                                      
  ********************************************************/
-int Output_Mesh_Gnuplot(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+int Output_Mesh_Gnuplot(AdvectDiffuse2D_Quad_Block *Soln_ptr,
                         AdaptiveBlock2D_List &Soln_Block_List,
                         AdvectDiffuse2D_Input_Parameters &Input_Parameters,
                         const int Number_of_Time_Steps,
@@ -607,7 +607,7 @@ int Output_Mesh_Gnuplot(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
  * the solution of a 1D array of 2D quadrilateral multi-block 
  * solution blocks.
  ********************************************************/
-extern void Linear_Reconstruction(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+extern void Linear_Reconstruction(AdvectDiffuse2D_Quad_Block *Soln_ptr,
 				  AdaptiveBlock2D_List &Soln_Block_List,
 				  AdvectDiffuse2D_Input_Parameters &Input_Parameters){
 
@@ -633,7 +633,7 @@ extern void Linear_Reconstruction(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
  * blocks.                                              
  *                                                      
  ********************************************************/
-void BCs(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+void BCs(AdvectDiffuse2D_Quad_Block *Soln_ptr,
          AdaptiveBlock2D_List &Soln_Block_List,
 	 AdvectDiffuse2D_Input_Parameters &Input_Parameters) {
 
@@ -660,7 +660,7 @@ void BCs(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
  * criteria for the diffusion and source terms.         
  *                                                      
  ********************************************************/
-double CFL(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+double CFL(AdvectDiffuse2D_Quad_Block *Soln_ptr,
            AdaptiveBlock2D_List &Soln_Block_List,
            AdvectDiffuse2D_Input_Parameters &Input_Parameters) {
 
@@ -691,7 +691,7 @@ double CFL(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
  * time-accurate calculations.                          
  *                                                      
  ********************************************************/
-void Set_Global_TimeStep(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+void Set_Global_TimeStep(AdvectDiffuse2D_Quad_Block *Soln_ptr,
                          AdaptiveBlock2D_List &Soln_Block_List,
                          const double &Dt_min) {
 
@@ -714,7 +714,7 @@ void Set_Global_TimeStep(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
  * solution for steady state problems.                  
  *                                                      
  ********************************************************/
-double L1_Norm_Residual(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+double L1_Norm_Residual(AdvectDiffuse2D_Quad_Block *Soln_ptr,
                         AdaptiveBlock2D_List &Soln_Block_List) {
 
   int i;
@@ -746,7 +746,7 @@ double L1_Norm_Residual(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
  * solution for steady state problems.                  
  *                                                      
  ********************************************************/
-double L2_Norm_Residual(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+double L2_Norm_Residual(AdvectDiffuse2D_Quad_Block *Soln_ptr,
                         AdaptiveBlock2D_List &Soln_Block_List) {
 
   int i;
@@ -781,7 +781,7 @@ double L2_Norm_Residual(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
  * of the solution for steady state problems.           
  *                                                      
  ********************************************************/
-double Max_Norm_Residual(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+double Max_Norm_Residual(AdvectDiffuse2D_Quad_Block *Soln_ptr,
                          AdaptiveBlock2D_List &Soln_Block_List) {
 
   int i;
@@ -812,7 +812,7 @@ double Max_Norm_Residual(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
  * solution for steady state problems.                  
  *                                                      
  ********************************************************/
-void L1_Norm_Residual(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+void L1_Norm_Residual(AdvectDiffuse2D_Quad_Block *Soln_ptr,
 		      AdaptiveBlock2D_List &Soln_Block_List,
 		      double *l1_norm) {
 
@@ -835,7 +835,7 @@ void L1_Norm_Residual(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
  * solution for steady state problems.                  
  *                                                      
  ********************************************************/
-void L2_Norm_Residual(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+void L2_Norm_Residual(AdvectDiffuse2D_Quad_Block *Soln_ptr,
 		      AdaptiveBlock2D_List &Soln_Block_List,
 		      double *l2_norm) {
 
@@ -859,7 +859,7 @@ void L2_Norm_Residual(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
  * of the solution for steady state problems.           
  *                                                      
  ********************************************************/
-void Max_Norm_Residual(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+void Max_Norm_Residual(AdvectDiffuse2D_Quad_Block *Soln_ptr,
 		       AdaptiveBlock2D_List &Soln_Block_List,
 		       double *max_norm) {
   
@@ -881,7 +881,7 @@ void Max_Norm_Residual(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
  * blocks.                                              
  *                                                      
  ********************************************************/
-void Evaluate_Limiters(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+void Evaluate_Limiters(AdvectDiffuse2D_Quad_Block *Soln_ptr,
                        AdaptiveBlock2D_List &Soln_Block_List) {
 
   int i;
@@ -900,7 +900,7 @@ void Evaluate_Limiters(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
  * blocks.                                              
  *                                                      
  ********************************************************/
-void Freeze_Limiters(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+void Freeze_Limiters(AdvectDiffuse2D_Quad_Block *Soln_ptr,
                      AdaptiveBlock2D_List &Soln_Block_List) {
 
   int i;
@@ -919,7 +919,7 @@ void Freeze_Limiters(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
  * 2D quadrilateral multi-block  solution blocks.       
  *                                                      
  ********************************************************/
-void Residual_Smoothing(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+void Residual_Smoothing(AdvectDiffuse2D_Quad_Block *Soln_ptr,
                         AdaptiveBlock2D_List &Soln_Block_List,
                         AdvectDiffuse2D_Input_Parameters &Input_Parameters,
                         const int I_Stage) {
@@ -971,7 +971,7 @@ void Residual_Smoothing(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
  * with resolution mesh changes.                                
  *                                                              
  ****************************************************************/
-void Apply_Boundary_Flux_Corrections(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+void Apply_Boundary_Flux_Corrections(AdvectDiffuse2D_Quad_Block *Soln_ptr,
                                      AdaptiveBlock2D_List &Soln_Block_List) {
 
   int i;
@@ -999,7 +999,7 @@ void Apply_Boundary_Flux_Corrections(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
  * with resolution mesh changes.                                
  *                                                              
  ****************************************************************/
-void Apply_Boundary_Flux_Corrections_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+void Apply_Boundary_Flux_Corrections_Multistage_Explicit(AdvectDiffuse2D_Quad_Block *Soln_ptr,
                                                          AdaptiveBlock2D_List &Soln_Block_List,
                                                          AdvectDiffuse2D_Input_Parameters &Input_Parameters,
    	                                                 const int I_Stage) {
@@ -1039,7 +1039,7 @@ void Apply_Boundary_Flux_Corrections_Multistage_Explicit(AdvectDiffuse2D_Quad_Bl
  * depending on the specified input values. 
  *                                                      
  ********************************************************/
-int dUdt_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+int dUdt_Multistage_Explicit(AdvectDiffuse2D_Quad_Block *Soln_ptr,
 			     AdaptiveBlockResourceList &Global_Soln_Block_List,
                              AdaptiveBlock2D_List &Local_Soln_Block_List,
                              AdvectDiffuse2D_Input_Parameters &Input_Parameters,
@@ -1081,7 +1081,7 @@ int dUdt_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
  * depending on the specified input values. 
  *                                                      
  ********************************************************/
-int Update_Solution_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New *Soln_ptr,
+int Update_Solution_Multistage_Explicit(AdvectDiffuse2D_Quad_Block *Soln_ptr,
                                         AdaptiveBlock2D_List &Soln_Block_List,
                                         AdvectDiffuse2D_Input_Parameters &Input_Parameters,
    	                                const int I_Stage) {

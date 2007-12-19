@@ -11,7 +11,7 @@
 #include "AdvectDiffuse2DState.h" /* Include 2D advection diffusion equation solution state header file. */
 
 // ===  Static member variables ===
-AdvectDiffuse2D_State_New::AdvectionVelocityType AdvectDiffuse2D_State_New::V = VelocityFields::Quiescent_Flow;
-AdvectDiffuse2D_State_New::DiffusionFieldType AdvectDiffuse2D_State_New::k = DiffusionFields::Zero_Diffusion;
-SourceTermFields* AdvectDiffuse2D_State_New::SourceTerm = NULL;
+AdvectDiffuse2D_State::AdvectionVelocityType AdvectDiffuse2D_State::V = VelocityFields::Quiescent_Flow;
+AdvectDiffuse2D_State::DiffusionFieldType AdvectDiffuse2D_State::k = DiffusionFields::Zero_Diffusion;
+SourceTermFields* AdvectDiffuse2D_State::SourceTerm = NULL;
 

@@ -9,8 +9,8 @@
  *                                                                                          *
  ********************************************************************************************/
 template<> inline
-void FAS_Multigrid2D_Solver<AdvectDiffuse2D_State_New,
-			    AdvectDiffuse2D_Quad_Block_New,
+void FAS_Multigrid2D_Solver<AdvectDiffuse2D_State,
+			    AdvectDiffuse2D_Quad_Block,
 			    AdvectDiffuse2D_Input_Parameters>::
 Update_Primitive_Variables(const int &Level) {
   // do nothing (there are no conserved and primitive variables in advection diffusion)
@@ -26,8 +26,8 @@ Update_Primitive_Variables(const int &Level) {
  *                                                                      *
  ***********************************************************************/
 template <>
-void FAS_Multigrid2D_Solver<AdvectDiffuse2D_State_New,
-			    AdvectDiffuse2D_Quad_Block_New,
+void FAS_Multigrid2D_Solver<AdvectDiffuse2D_State,
+			    AdvectDiffuse2D_Quad_Block,
 			    AdvectDiffuse2D_Input_Parameters>::
 Restrict_Boundary_Ref_States(const int &Level_Fine) {
 

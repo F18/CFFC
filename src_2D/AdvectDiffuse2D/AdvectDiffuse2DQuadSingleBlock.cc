@@ -1,4 +1,4 @@
-/*! \file New_AdvectDiffuse2DQuadSingleBlock.cc:
+/*! \file AdvectDiffuse2DQuadSingleBlock.cc:
   \brief Temporary Single-Block Versions of Subroutines for 2D Advection Diffusion Equation
   Multi-Block Quadrilateral Mesh Solution Classes. */
 
@@ -23,7 +23,7 @@
  * specified output stream for restart purposes.        
  *                                                      
  ********************************************************/
-void Write_Solution_Block(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
+void Write_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk,
 	                  ostream &Out_File) {
 
   Out_File << setprecision(14) << SolnBlk << setprecision(6);
@@ -39,7 +39,7 @@ void Write_Solution_Block(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
  * purposes.                                            
  *                                                      
  ********************************************************/
-void Read_Solution_Block(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
+void Read_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk,
 	                 istream &In_File) {
 
   In_File >> SolnBlk;
@@ -54,7 +54,7 @@ void Read_Solution_Block(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
  * primary processor using the MPI broadcast routine.   
  *                                                      
  ********************************************************/
-void Broadcast_Solution_Block(AdvectDiffuse2D_Quad_Block_New &SolnBlk) {
+void Broadcast_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk) {
 
 #ifdef _MPI_VERSION
   int i, j, ni, nj, ng, block_allocated, buffer_size;
@@ -199,7 +199,7 @@ void Broadcast_Solution_Block(AdvectDiffuse2D_Quad_Block_New &SolnBlk) {
  * routine.                                             
  *                                                      
  ********************************************************/
-void Broadcast_Solution_Block(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
+void Broadcast_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk,
                               MPI::Intracomm &Communicator, 
                               const int Source_CPU) {
 
@@ -344,8 +344,8 @@ void Broadcast_Solution_Block(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
  * solution block SolnBlk2 to SolnBlk1.                 
  *                                                      
  ********************************************************/
-void Copy_Solution_Block(AdvectDiffuse2D_Quad_Block_New &SolnBlk1,
-                         const AdvectDiffuse2D_Quad_Block_New &SolnBlk2) {
+void Copy_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk1,
+                         const AdvectDiffuse2D_Quad_Block &SolnBlk2) {
 
   int i, j, k;
 
@@ -412,8 +412,8 @@ void Copy_Solution_Block(AdvectDiffuse2D_Quad_Block_New &SolnBlk1,
  * solution block SolnBlk_Fine.                         
  *                                                      
  ********************************************************/
-int Prolong_Solution_Block(AdvectDiffuse2D_Quad_Block_New &SolnBlk_Fine,
-			   AdvectDiffuse2D_Quad_Block_New &SolnBlk_Original,
+int Prolong_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk_Fine,
+			   AdvectDiffuse2D_Quad_Block &SolnBlk_Original,
 			   const int Sector) {
 
   int i, j, k, i_min, i_max, j_min, j_max, mesh_refinement_permitted;
@@ -559,11 +559,11 @@ int Prolong_Solution_Block(AdvectDiffuse2D_Quad_Block_New &SolnBlk_Fine,
  * solution block SolnBlk_Coarse.                       
  *                                                      
  ********************************************************/
-int Restrict_Solution_Block(AdvectDiffuse2D_Quad_Block_New &SolnBlk_Coarse,
-			    AdvectDiffuse2D_Quad_Block_New &SolnBlk_Original_SW,
-			    AdvectDiffuse2D_Quad_Block_New &SolnBlk_Original_SE,
-			    AdvectDiffuse2D_Quad_Block_New &SolnBlk_Original_NW,
-			    AdvectDiffuse2D_Quad_Block_New &SolnBlk_Original_NE) {
+int Restrict_Solution_Block(AdvectDiffuse2D_Quad_Block &SolnBlk_Coarse,
+			    AdvectDiffuse2D_Quad_Block &SolnBlk_Original_SW,
+			    AdvectDiffuse2D_Quad_Block &SolnBlk_Original_SE,
+			    AdvectDiffuse2D_Quad_Block &SolnBlk_Original_NW,
+			    AdvectDiffuse2D_Quad_Block &SolnBlk_Original_NE) {
 
   int i, j, i_coarse, j_coarse, mesh_coarsening_permitted;
  
@@ -806,7 +806,7 @@ int Restrict_Solution_Block(AdvectDiffuse2D_Quad_Block_New &SolnBlk_Coarse,
  * TECPLOT.                                             
  *                                                      
  ********************************************************/
-void Output_Tecplot(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
+void Output_Tecplot(AdvectDiffuse2D_Quad_Block &SolnBlk,
                     AdvectDiffuse2D_Input_Parameters &IP,
                     const int Number_of_Time_Steps,
                     const double &Time,
@@ -815,7 +815,7 @@ void Output_Tecplot(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 	            ostream &Out_File) {
 
   int i, j;
-  AdvectDiffuse2D_State_New U_node;
+  AdvectDiffuse2D_State U_node;
   Vector2D Node;
 
   /* Ensure boundary conditions are updated before
@@ -883,7 +883,7 @@ void Output_Tecplot(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
  * TECPLOT.                                             
  *                                                      
  ********************************************************/
-void Output_Cells_Tecplot(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
+void Output_Cells_Tecplot(AdvectDiffuse2D_Quad_Block &SolnBlk,
                           AdvectDiffuse2D_Input_Parameters &IP,
                           const int Number_of_Time_Steps,
                           const double &Time,
@@ -948,7 +948,7 @@ void Output_Cells_Tecplot(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
  * stream suitable for plotting with TECPLOT.           
  *                                                      
  ********************************************************/
-void Output_Nodes_Tecplot(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
+void Output_Nodes_Tecplot(AdvectDiffuse2D_Quad_Block &SolnBlk,
                           const int Number_of_Time_Steps,
                           const double &Time,
                           const int Block_Number,
@@ -992,14 +992,14 @@ void Output_Nodes_Tecplot(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
  * solution block.                                      
  *                                                      
  ********************************************************/
-void ICs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
+void ICs(AdvectDiffuse2D_Quad_Block &SolnBlk,
 	 const AdvectDiffuse2D_Input_Parameters &IP,
-         AdvectDiffuse2D_State_New *Uo) {
+         AdvectDiffuse2D_State *Uo) {
 
   int i, j, k;
   double r0;
   Vector2D x0;
-  AdvectDiffuse2D_State_New Ul, Ur;
+  AdvectDiffuse2D_State Ul, Ur;
 
   /* Assign the initial data for the IVP of interest. */
 
@@ -1151,13 +1151,13 @@ void ICs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
  * specified quadrilateral solution block.              
  * 
  ********************************************************/
-void BCs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
+void BCs(AdvectDiffuse2D_Quad_Block &SolnBlk,
 	 const AdvectDiffuse2D_Input_Parameters &IP) {
 
   int i(0), j(0);
   int ghost;
   double Vn;
-  AdvectDiffuse2D_State_New dUdn;
+  AdvectDiffuse2D_State dUdn;
   double dx_normal;
   
 
@@ -1627,7 +1627,7 @@ void BCs(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
  * the diffusion and source terms.                      
  *                                                      
  ********************************************************/
-double CFL(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
+double CFL(AdvectDiffuse2D_Quad_Block &SolnBlk,
            AdvectDiffuse2D_Input_Parameters &Input_Parameters) {
 
   int i, j;
@@ -1692,7 +1692,7 @@ double CFL(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
  * for time-accurate calculations.                      
  *                                                      
  ********************************************************/
-void Set_Global_TimeStep(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
+void Set_Global_TimeStep(AdvectDiffuse2D_Quad_Block &SolnBlk,
                          const double &Dt_min) {
 
   int i, j;
@@ -1714,7 +1714,7 @@ void Set_Global_TimeStep(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
  * for steady state problems.                           
  *                                                      
  ********************************************************/
-double L1_Norm_Residual(AdvectDiffuse2D_Quad_Block_New &SolnBlk) {
+double L1_Norm_Residual(AdvectDiffuse2D_Quad_Block &SolnBlk) {
 
   int i, j;
   double l1_norm;
@@ -1740,7 +1740,7 @@ double L1_Norm_Residual(AdvectDiffuse2D_Quad_Block_New &SolnBlk) {
  * for steady state problems.                           
  *                                                      
  ********************************************************/
-double L2_Norm_Residual(AdvectDiffuse2D_Quad_Block_New &SolnBlk) {
+double L2_Norm_Residual(AdvectDiffuse2D_Quad_Block &SolnBlk) {
 
   int i, j;
   double l2_norm;
@@ -1768,7 +1768,7 @@ double L2_Norm_Residual(AdvectDiffuse2D_Quad_Block_New &SolnBlk) {
  * for steady state problems.                           
  *                                                      
  ********************************************************/
-double Max_Norm_Residual(AdvectDiffuse2D_Quad_Block_New &SolnBlk) {
+double Max_Norm_Residual(AdvectDiffuse2D_Quad_Block &SolnBlk) {
 
   int i, j;
   double max_norm;
@@ -1797,7 +1797,7 @@ double Max_Norm_Residual(AdvectDiffuse2D_Quad_Block_New &SolnBlk) {
  * used.                                                
  *                                                      
  ********************************************************/
-void Linear_Reconstruction_GreenGauss(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
+void Linear_Reconstruction_GreenGauss(AdvectDiffuse2D_Quad_Block &SolnBlk,
 				      const int i, 
                                       const int j,
                                       const int Limiter) {
@@ -2171,7 +2171,7 @@ void Linear_Reconstruction_GreenGauss(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
  * gradients.  Several slope limiters may be used.      
  *                                                      
  ********************************************************/
-void Linear_Reconstruction_GreenGauss(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
+void Linear_Reconstruction_GreenGauss(AdvectDiffuse2D_Quad_Block &SolnBlk,
 				      const int Limiter) {
 
   int i, j;
@@ -2199,7 +2199,7 @@ void Linear_Reconstruction_GreenGauss(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
  * used.                                                
  *                                                      
  ********************************************************/
-void Linear_Reconstruction_LeastSquares(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
+void Linear_Reconstruction_LeastSquares(AdvectDiffuse2D_Quad_Block &SolnBlk,
 				        const int i, 
                                         const int j,
                                         const int Limiter) {
@@ -2530,7 +2530,7 @@ void Linear_Reconstruction_LeastSquares(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
  * gradients.  Several slope limiters may be used.      
  *                                                      
  ********************************************************/
-void Linear_Reconstruction_LeastSquares(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
+void Linear_Reconstruction_LeastSquares(AdvectDiffuse2D_Quad_Block &SolnBlk,
 				        const int Limiter) {
 
   int i, j;
@@ -2554,7 +2554,7 @@ void Linear_Reconstruction_LeastSquares(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
  * computational mesh of the specified quadrilateral    
  * solution block.
  ********************************************************/
-void Linear_Reconstruction(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
+void Linear_Reconstruction(AdvectDiffuse2D_Quad_Block &SolnBlk,
 			   const int &Reconstruction_Type,
 			   const int &Limiter) {
 
@@ -2584,7 +2584,7 @@ void Linear_Reconstruction(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
  * boundaries are not smoothed.                         
  *                                                      
  ********************************************************/
-void Residual_Smoothing(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
+void Residual_Smoothing(AdvectDiffuse2D_Quad_Block &SolnBlk,
                         const int k_residual,
 			double &epsilon,
                         const int number_of_Gauss_Seidel_iterations) {
@@ -2629,7 +2629,7 @@ void Residual_Smoothing(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
 void Calculate_Refinement_Criteria(double *refinement_criteria,
 				   AdvectDiffuse2D_Input_Parameters &IP,
                                    int &number_refinement_criteria,
-                                   AdvectDiffuse2D_Quad_Block_New &SolnBlk) {
+                                   AdvectDiffuse2D_Quad_Block &SolnBlk) {
 
   int i, j;
 
@@ -2684,7 +2684,7 @@ void Calculate_Refinement_Criteria(double *refinement_criteria,
  * coarser solution blocks).                            
  *                                                      
  ********************************************************/
-void Fix_Refined_Block_Boundaries(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
+void Fix_Refined_Block_Boundaries(AdvectDiffuse2D_Quad_Block &SolnBlk,
                                   const int Fix_North_Boundary,
                                   const int Fix_South_Boundary,
                                   const int Fix_East_Boundary,
@@ -2795,7 +2795,7 @@ void Fix_Refined_Block_Boundaries(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
  * unmodified positions.                                
  *                                                      
  ********************************************************/
-void Unfix_Refined_Block_Boundaries(AdvectDiffuse2D_Quad_Block_New &SolnBlk) {
+void Unfix_Refined_Block_Boundaries(AdvectDiffuse2D_Quad_Block &SolnBlk) {
 
   int i, j;
   double sp_l, sp_r, sp_m, ds_ratio, dl, dr;
@@ -2914,7 +2914,7 @@ void Unfix_Refined_Block_Boundaries(AdvectDiffuse2D_Quad_Block_New &SolnBlk) {
  * boundaries with mesh resolution changes.                     
  *                                                              
  ****************************************************************/
-void Apply_Boundary_Flux_Corrections(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
+void Apply_Boundary_Flux_Corrections(AdvectDiffuse2D_Quad_Block &SolnBlk,
                                      const int Number_Neighbours_North_Boundary,
                                      const int Number_Neighbours_South_Boundary,
                                      const int Number_Neighbours_East_Boundary,
@@ -2968,7 +2968,7 @@ void Apply_Boundary_Flux_Corrections(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
  * boundaries with mesh resolution changes.                     
  *                                                              
  ****************************************************************/
-void Apply_Boundary_Flux_Corrections_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
+void Apply_Boundary_Flux_Corrections_Multistage_Explicit(AdvectDiffuse2D_Quad_Block &SolnBlk,
                                                          const int i_stage,
                                                          const int n_stage,
 	                                                 const double &CFL_Number,
@@ -3066,12 +3066,12 @@ void Apply_Boundary_Flux_Corrections_Multistage_Explicit(AdvectDiffuse2D_Quad_Bl
  * The residual is stored in dUdt[][][0].               
  *                                                      
  ********************************************************/
-int dUdt_Residual_Evaluation(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
+int dUdt_Residual_Evaluation(AdvectDiffuse2D_Quad_Block &SolnBlk,
 			     AdvectDiffuse2D_Input_Parameters &IP) {
 
   int i, j;
   Vector2D dX;
-  AdvectDiffuse2D_State_New Ul, Ur, U_face, Flux;
+  AdvectDiffuse2D_State Ul, Ur, U_face, Flux;
   Vector2D GradU_face;		// Solution gradient at the inter-cellular face
   /* Set the stencil flag for the gradient reconstruction to the most common case. */
   int GradientReconstructionStencilFlag(DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
@@ -3286,14 +3286,14 @@ int dUdt_Residual_Evaluation(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
  * time integration schemes for a given solution block. 
  *                                                      
  ********************************************************/
-int dUdt_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
+int dUdt_Multistage_Explicit(AdvectDiffuse2D_Quad_Block &SolnBlk,
                              const int i_stage,
                              AdvectDiffuse2D_Input_Parameters &IP) {
 
   int i, j, k_residual;
   double omega;
   Vector2D dX;
-  AdvectDiffuse2D_State_New Ul, Ur, U_face, Flux;
+  AdvectDiffuse2D_State Ul, Ur, U_face, Flux;
   Vector2D GradU_face;		// Solution gradient at the inter-cellular face
   /* Set the stencil flag for the gradient reconstruction to the most common case. */
   int GradientReconstructionStencilFlag(DIAMONDPATH_QUADRILATERAL_RECONSTRUCTION);
@@ -3586,7 +3586,7 @@ int dUdt_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
  * time integration schemes.                            
  *                                                      
  ********************************************************/
-int Update_Solution_Multistage_Explicit(AdvectDiffuse2D_Quad_Block_New &SolnBlk,
+int Update_Solution_Multistage_Explicit(AdvectDiffuse2D_Quad_Block &SolnBlk,
                                         const int i_stage,
                                         AdvectDiffuse2D_Input_Parameters &IP) {
 

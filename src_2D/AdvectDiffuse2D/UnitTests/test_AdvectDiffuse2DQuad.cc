@@ -33,8 +33,8 @@ namespace tut
     QuadTreeBlock_DataStructure  QuadTree;
     AdaptiveBlockResourceList    GlobalList_Soln_Blocks;
     AdaptiveBlock2D_List         LocalList_Soln_Blocks;
-    AdvectDiffuse2D_Quad_Block_New   *SolnBlk;
-    AdvectDiffuse2D_Quad_Block_New    Soln;
+    AdvectDiffuse2D_Quad_Block   *SolnBlk;
+    AdvectDiffuse2D_Quad_Block    Soln;
     CPUTime processor_cpu_time;
 
     int error_flag;
@@ -53,11 +53,11 @@ namespace tut
 				       QuadTreeBlock_DataStructure & _QuadTree_,
 				       AdaptiveBlockResourceList & _GlobalList_Soln_Blocks_,
 				       AdaptiveBlock2D_List & _LocalList_Soln_Blocks_,
-				       AdvectDiffuse2D_Quad_Block_New *& _SolnBlk_,
+				       AdvectDiffuse2D_Quad_Block *& _SolnBlk_,
 				       AdvectDiffuse2D_Input_Parameters & _IP_) throw(std::runtime_error);
 
     // Output_Block()
-    void Output_Block(AdvectDiffuse2D_Quad_Block_New & SolnBlock,
+    void Output_Block(AdvectDiffuse2D_Quad_Block & SolnBlock,
 		      AdvectDiffuse2D_Input_Parameters & _IP_){};
 
   private:
@@ -96,7 +96,7 @@ namespace tut
 								      QuadTreeBlock_DataStructure & _QuadTree_,
 								      AdaptiveBlockResourceList & _GlobalList_Soln_Blocks_,
 								      AdaptiveBlock2D_List & _LocalList_Soln_Blocks_,
-								      AdvectDiffuse2D_Quad_Block_New *& _SolnBlk_,
+								      AdvectDiffuse2D_Quad_Block *& _SolnBlk_,
 								      AdvectDiffuse2D_Input_Parameters & _IP_)
     throw(std::runtime_error){
 
@@ -389,7 +389,7 @@ namespace tut
     double Result = SolnBlk[0].ExactSoln->Solution(Location.x,Location.y);
 
     // Numeric result
-    AdvectDiffuse2D_State_New U_face;
+    AdvectDiffuse2D_State U_face;
     SolnBlk[0].EllipticFluxStateAtInteriorInterface(7,6,8,6,Location,U_face);
 
     ensure_distance("Solution betwen cells (7,6) and (8,6)", U_face.u, Result, AcceptedError(Result,1.0e-8));

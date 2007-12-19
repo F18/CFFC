@@ -132,9 +132,9 @@ public:
   //@{
   char ICs_Type[INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
   int i_ICs;
-  AdvectDiffuse2D_State_New Uo, U1, U2;
+  AdvectDiffuse2D_State Uo, U1, U2;
   AdvectDiffuse2D_ExactSolutions *ExactSoln; /*!< Pointer to the exact solution */
-  AdvectDiffuse2D_State_New RefU;		/*!< Reference state, used by CENO to normalize the
+  AdvectDiffuse2D_State RefU;		/*!< Reference state, used by CENO to normalize the
 					   variables in the computation of the smoothness indicator. */
   unsigned int Exact_Integration_Digits;    //!< Number of exact digits with which the some integrations are carried out
   //@}
@@ -200,9 +200,9 @@ public:
   char BC_West_Type[INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
   int BC_North, BC_South, BC_East, BC_West;
   //! Reference states for north and south boundary conditons
-  AdvectDiffuse2D_State_New Ref_State_BC_North, Ref_State_BC_South;
+  AdvectDiffuse2D_State Ref_State_BC_North, Ref_State_BC_South;
   //! Reference states for east and west boundary conditons
-  AdvectDiffuse2D_State_New Ref_State_BC_East, Ref_State_BC_West; 
+  AdvectDiffuse2D_State Ref_State_BC_East, Ref_State_BC_West; 
   AdvectDiffuse2D_InflowField *Inflow;    /*!< Pointer to the inflow field */
   //@}
 

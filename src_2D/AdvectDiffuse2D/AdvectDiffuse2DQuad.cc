@@ -11,21 +11,21 @@
 #include "AdvectDiffuse2DQuad.h"        // AdvectDiffuse2D_Quad_Block class
 
 /*********************************************************************
- * Static Variable Initialization for AdvectDiffuse2D_Quad_Block_New *
+ * Static Variable Initialization for AdvectDiffuse2D_Quad_Block *
  *********************************************************************/
 
 // Initialize residual_variable
-int AdvectDiffuse2D_Quad_Block_New::residual_variable = 1;
+int AdvectDiffuse2D_Quad_Block::residual_variable = 1;
 // Initialize ExactSoln
-AdvectDiffuse2D_ExactSolutions *AdvectDiffuse2D_Quad_Block_New::ExactSoln = NULL;
+AdvectDiffuse2D_ExactSolutions *AdvectDiffuse2D_Quad_Block::ExactSoln = NULL;
 // Initialize Inflow
-AdvectDiffuse2D_InflowField *AdvectDiffuse2D_Quad_Block_New::Inflow = NULL;
+AdvectDiffuse2D_InflowField *AdvectDiffuse2D_Quad_Block::Inflow = NULL;
 // Initialize Flow_Type
-int AdvectDiffuse2D_Quad_Block_New::Flow_Type = FLOWTYPE_INVISCID;
+int AdvectDiffuse2D_Quad_Block::Flow_Type = FLOWTYPE_INVISCID;
 // Initialize Axisymmetric
-int AdvectDiffuse2D_Quad_Block_New::Axisymmetric = OFF;
+int AdvectDiffuse2D_Quad_Block::Axisymmetric = OFF;
 // Initialize Number_of_Residual_Norms
-int AdvectDiffuse2D_Quad_Block_New::Number_of_Residual_Norms = 1;
+int AdvectDiffuse2D_Quad_Block::Number_of_Residual_Norms = 1;
 
 
 /*******************************************************************************
@@ -34,7 +34,7 @@ int AdvectDiffuse2D_Quad_Block_New::Number_of_Residual_Norms = 1;
 /**********************
  * Default constructor.
  **********************/
-AdvectDiffuse2D_Quad_Block_New::AdvectDiffuse2D_Quad_Block_New(void):
+AdvectDiffuse2D_Quad_Block::AdvectDiffuse2D_Quad_Block(void):
   AssessAccuracy(this),
   Ref_State_BC_North(0.0), Ref_State_BC_South(0.0),
   Ref_State_BC_East(0.0), Ref_State_BC_West(0.0)
@@ -64,7 +64,7 @@ AdvectDiffuse2D_Quad_Block_New::AdvectDiffuse2D_Quad_Block_New(void):
 /******************************************
  * Private copy constructor. (shallow copy)
  *****************************************/
-AdvectDiffuse2D_Quad_Block_New::AdvectDiffuse2D_Quad_Block_New(const AdvectDiffuse2D_Quad_Block_New &Soln):
+AdvectDiffuse2D_Quad_Block::AdvectDiffuse2D_Quad_Block(const AdvectDiffuse2D_Quad_Block &Soln):
   AssessAccuracy(this)
 {
   NCi = Soln.NCi; ICl = Soln.ICl; ICu = Soln.ICu; 
@@ -84,7 +84,7 @@ AdvectDiffuse2D_Quad_Block_New::AdvectDiffuse2D_Quad_Block_New(const AdvectDiffu
 /**********************
  * Allocate memory.            
  **********************/
-void AdvectDiffuse2D_Quad_Block_New::allocate(const int &Ni, const int &Nj, const int &Ng) {
+void AdvectDiffuse2D_Quad_Block::allocate(const int &Ni, const int &Nj, const int &Ng) {
   int i, j, k;
   assert(Ni > 1 && Nj > 1 && Ng > 1 && Ng > 1);
 
@@ -98,22 +98,22 @@ void AdvectDiffuse2D_Quad_Block_New::allocate(const int &Ni, const int &Nj, cons
     Grid.allocate(Ni, Nj, Ng);
     NCi = Ni+2*Ng; ICl = Ng; ICu = Ni+Ng-1;
     NCj = Nj+2*Ng; JCl = Ng; JCu = Nj+Ng-1; Nghost = Ng;
-    U = new AdvectDiffuse2D_State_New*[NCi]; dt = new double*[NCi]; dUdt = new AdvectDiffuse2D_State_New**[NCi]; 
-    dUdx = new AdvectDiffuse2D_State_New*[NCi]; dUdy = new AdvectDiffuse2D_State_New*[NCi]; 
-    phi = new AdvectDiffuse2D_State_New*[NCi]; Uo = new AdvectDiffuse2D_State_New*[NCi];
+    U = new AdvectDiffuse2D_State*[NCi]; dt = new double*[NCi]; dUdt = new AdvectDiffuse2D_State**[NCi]; 
+    dUdx = new AdvectDiffuse2D_State*[NCi]; dUdy = new AdvectDiffuse2D_State*[NCi]; 
+    phi = new AdvectDiffuse2D_State*[NCi]; Uo = new AdvectDiffuse2D_State*[NCi];
     for ( i = 0; i <= NCi-1 ; ++i ) {
-      U[i] = new AdvectDiffuse2D_State_New[NCj]; 
-      dt[i] = new double[NCj]; dUdt[i] = new AdvectDiffuse2D_State_New*[NCj];
+      U[i] = new AdvectDiffuse2D_State[NCj]; 
+      dt[i] = new double[NCj]; dUdt[i] = new AdvectDiffuse2D_State*[NCj];
       for ( j = 0; j <= NCj-1 ; ++j )
-	{ dUdt[i][j] = new AdvectDiffuse2D_State_New[NUMBER_OF_RESIDUAL_VECTORS_ADVECTDIFFUSE2D]; }
-      dUdx[i] = new AdvectDiffuse2D_State_New[NCj]; dUdy[i] = new AdvectDiffuse2D_State_New[NCj]; 
-      phi[i] = new AdvectDiffuse2D_State_New[NCj];
-      Uo[i] = new AdvectDiffuse2D_State_New[NCj];
+	{ dUdt[i][j] = new AdvectDiffuse2D_State[NUMBER_OF_RESIDUAL_VECTORS_ADVECTDIFFUSE2D]; }
+      dUdx[i] = new AdvectDiffuse2D_State[NCj]; dUdy[i] = new AdvectDiffuse2D_State[NCj]; 
+      phi[i] = new AdvectDiffuse2D_State[NCj];
+      Uo[i] = new AdvectDiffuse2D_State[NCj];
     } /* endfor */
-    FluxN = new AdvectDiffuse2D_State_New[NCi]; FluxS = new AdvectDiffuse2D_State_New[NCi];
-    FluxE = new AdvectDiffuse2D_State_New[NCj]; FluxW = new AdvectDiffuse2D_State_New[NCj];
-    UoN = new AdvectDiffuse2D_State_New[NCi]; UoS = new AdvectDiffuse2D_State_New[NCi];
-    UoE = new AdvectDiffuse2D_State_New[NCj]; UoW = new AdvectDiffuse2D_State_New[NCj];
+    FluxN = new AdvectDiffuse2D_State[NCi]; FluxS = new AdvectDiffuse2D_State[NCi];
+    FluxE = new AdvectDiffuse2D_State[NCj]; FluxW = new AdvectDiffuse2D_State[NCj];
+    UoN = new AdvectDiffuse2D_State[NCi]; UoS = new AdvectDiffuse2D_State[NCi];
+    UoE = new AdvectDiffuse2D_State[NCj]; UoW = new AdvectDiffuse2D_State[NCj];
     // Set the solution residuals, gradients, limiters, and other values to zero.
     for (j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
       for ( i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
@@ -136,7 +136,7 @@ void AdvectDiffuse2D_Quad_Block_New::allocate(const int &Ni, const int &Nj, cons
 /***********************
  * Deallocate memory.   
  ***********************/
-void AdvectDiffuse2D_Quad_Block_New::deallocate(void) {
+void AdvectDiffuse2D_Quad_Block::deallocate(void) {
   if (U != NULL){
     /* free the memory if there is memory allocated */
     int i, j; Grid.deallocate();
@@ -164,7 +164,7 @@ void AdvectDiffuse2D_Quad_Block_New::deallocate(void) {
 /***********************\\**
  * Allocate memory U_Node
  *************************/
-void AdvectDiffuse2D_Quad_Block_New::allocate_U_Nodes(const int &_NNi, const int &_NNj) {
+void AdvectDiffuse2D_Quad_Block::allocate_U_Nodes(const int &_NNi, const int &_NNj) {
   if (NNi != _NNi || NNj != _NNj){ // memory must be reallocated
     
     // free the memory if there is memory allocated
@@ -172,9 +172,9 @@ void AdvectDiffuse2D_Quad_Block_New::allocate_U_Nodes(const int &_NNi, const int
 
     // allocate new memory
     NNi = _NNi; NNj = _NNj;
-    U_Nodes = new AdvectDiffuse2D_State_New*[NNi];
+    U_Nodes = new AdvectDiffuse2D_State*[NNi];
     for (int i=0; i<=NNi-1; ++i){
-      U_Nodes[i] = new AdvectDiffuse2D_State_New[NNj];
+      U_Nodes[i] = new AdvectDiffuse2D_State[NNj];
     }
   }
 }
@@ -182,7 +182,7 @@ void AdvectDiffuse2D_Quad_Block_New::allocate_U_Nodes(const int &_NNi, const int
 /***********************\\**
  * Deallocate memory U_Node
  *************************/
-void AdvectDiffuse2D_Quad_Block_New::deallocate_U_Nodes(void){
+void AdvectDiffuse2D_Quad_Block::deallocate_U_Nodes(void){
   if (U_Nodes != NULL){
     for (int i=0; i<=NNi-1; ++i){
       delete [] U_Nodes[i]; U_Nodes[i] = NULL;
@@ -196,7 +196,7 @@ void AdvectDiffuse2D_Quad_Block_New::deallocate_U_Nodes(void){
 /***********************
  * Node solution state. 
  ***********************/
-AdvectDiffuse2D_State_New AdvectDiffuse2D_Quad_Block_New::Un(const int &ii, const int &jj) {
+AdvectDiffuse2D_State AdvectDiffuse2D_Quad_Block::Un(const int &ii, const int &jj) {
   double ax, bx, cx, dx, ay, by, cy, dy, aa, bb, cc, x, y, 
     eta1, zeta1, eta2, zeta2, eta, zeta;
   double As, Bs, Cs, Ds;
@@ -241,7 +241,7 @@ AdvectDiffuse2D_State_New AdvectDiffuse2D_Quad_Block_New::Un(const int &ii, cons
   As=U[ii-1][jj-1].u; Bs=U[ii-1][jj].u-U[ii-1][jj-1].u; Cs=U[ii][jj-1].u-U[ii-1][jj-1].u;
   Ds=U[ii][jj].u+U[ii-1][jj-1].u-U[ii-1][jj].u-U[ii][jj-1].u;
 
-  return (AdvectDiffuse2D_State_New(As+Bs*zeta+Cs*eta+Ds*zeta*eta));
+  return (AdvectDiffuse2D_State(As+Bs*zeta+Cs*eta+Ds*zeta*eta));
 }
 
 /**************************************************//**
@@ -251,7 +251,7 @@ AdvectDiffuse2D_State_New AdvectDiffuse2D_Quad_Block_New::Un(const int &ii, cons
  * nodal solutions, which are stored in the common
  * memory pool U_Nodes.
  *************************************************/
-void AdvectDiffuse2D_Quad_Block_New::Calculate_Nodal_Solutions(void){
+void AdvectDiffuse2D_Quad_Block::Calculate_Nodal_Solutions(void){
   int i,j;
 
   for (j = JCl ; j<= JCu+1 ; ++j){
@@ -273,15 +273,15 @@ void AdvectDiffuse2D_Quad_Block_New::Calculate_Nodal_Solutions(void){
  * \param GQPoint the calculation point
  * \param State the interface state
  *************************************************/
-void AdvectDiffuse2D_Quad_Block_New::EllipticFluxStateAtInteriorInterface(const int & ii_L, const int & jj_L,
+void AdvectDiffuse2D_Quad_Block::EllipticFluxStateAtInteriorInterface(const int & ii_L, const int & jj_L,
 									  const int & ii_R, const int & jj_R,
 									  const Vector2D & GQPoint,
-									  AdvectDiffuse2D_State_New & State){
+									  AdvectDiffuse2D_State & State){
 
   require( ( ii_L == ii_R || jj_L == jj_R) &&
 	   ( ii_L == ii_R || ii_L == (ii_R - 1) ) && 
 	   ( jj_L == jj_R || jj_L == (jj_R - 1) ),
-	   "AdvectDiffuse2D_Quad_Block_New::ViscousFluxStateAtInteriorInterface() ERROR! Inconsistent cell indexes!");
+	   "AdvectDiffuse2D_Quad_Block::ViscousFluxStateAtInteriorInterface() ERROR! Inconsistent cell indexes!");
 
   // Use bilinear interpolation to compute the required state
   if (jj_L == jj_R){
@@ -315,7 +315,7 @@ void AdvectDiffuse2D_Quad_Block_New::EllipticFluxStateAtInteriorInterface(const 
  * \param Gradient_Reconstruction_Type specifies the reconstruction method
  * \param Stencil_Flag specifies the reconstruction stencil
  *************************************************/
-Vector2D AdvectDiffuse2D_Quad_Block_New::InterfaceSolutionGradient(const int & ii_L, const int & jj_L,
+Vector2D AdvectDiffuse2D_Quad_Block::InterfaceSolutionGradient(const int & ii_L, const int & jj_L,
 								   const int & ii_R, const int & jj_R,
 								   const int &Gradient_Reconstruction_Type,
 								   const int &Stencil_Flag){
@@ -323,7 +323,7 @@ Vector2D AdvectDiffuse2D_Quad_Block_New::InterfaceSolutionGradient(const int & i
   require( ( ii_L == ii_R || jj_L == jj_R) &&
 	   ( ii_L == ii_R || ii_L == (ii_R - 1) ) && 
 	   ( jj_L == jj_R || jj_L == (jj_R - 1) ),
-	   "AdvectDiffuse2D_Quad_Block_New::InterfaceSolutionGradient() ERROR! Inconsistent cell indexes!");
+	   "AdvectDiffuse2D_Quad_Block::InterfaceSolutionGradient() ERROR! Inconsistent cell indexes!");
 
   switch(Gradient_Reconstruction_Type){
   case VISCOUS_RECONSTRUCTION_DIAMOND_PATH :
@@ -351,7 +351,7 @@ Vector2D AdvectDiffuse2D_Quad_Block_New::InterfaceSolutionGradient(const int & i
     break;
 
   default :
-    throw runtime_error("AdvectDiffuse2D_Quad_Block_New::InterfaceSolutionGradient() ERROR! Unknown gradient reconstruction type!");
+    throw runtime_error("AdvectDiffuse2D_Quad_Block::InterfaceSolutionGradient() ERROR! Unknown gradient reconstruction type!");
   }
 }
 
@@ -367,16 +367,16 @@ Vector2D AdvectDiffuse2D_Quad_Block_New::InterfaceSolutionGradient(const int & i
  * gradient is expressed only as a function of the 
  * solution states at those points. 
  *************************************************/
-Vector2D AdvectDiffuse2D_Quad_Block_New::
-DiamondPathGradientReconstruction(const Vector2D &Xl, const AdvectDiffuse2D_State_New &Ul,
-				  const Vector2D &Xd, const AdvectDiffuse2D_State_New &Ud,
-				  const Vector2D &Xr, const AdvectDiffuse2D_State_New &Ur,
-				  const Vector2D &Xu, const AdvectDiffuse2D_State_New &Uu,
+Vector2D AdvectDiffuse2D_Quad_Block::
+DiamondPathGradientReconstruction(const Vector2D &Xl, const AdvectDiffuse2D_State &Ul,
+				  const Vector2D &Xd, const AdvectDiffuse2D_State &Ud,
+				  const Vector2D &Xr, const AdvectDiffuse2D_State &Ur,
+				  const Vector2D &Xu, const AdvectDiffuse2D_State &Uu,
 				  const int &stencil_flag){
 
   if (stencil_flag == DIAMONDPATH_NONE) return Vector2D(0.0);
 
-  AdvectDiffuse2D_State_New U_face, dUdxl, dUdyl, dUdxr, dUdyr;
+  AdvectDiffuse2D_State U_face, dUdxl, dUdyl, dUdxr, dUdyr;
   double A, Al, Ar;
   Vector2D ndl, nud, nlu, nrd, nur, ndu;
   int error_flag;
@@ -469,7 +469,7 @@ DiamondPathGradientReconstruction(const Vector2D &Xl, const AdvectDiffuse2D_Stat
  * 
  * \todo Add integration with high-order reconstruction!
  *************************************************/
-AdvectDiffuse2D_State_New AdvectDiffuse2D_Quad_Block_New::SourceTerm(const int & ii, const int & jj) const{
+AdvectDiffuse2D_State AdvectDiffuse2D_Quad_Block::SourceTerm(const int & ii, const int & jj) const{
   
   double SourceTermIntegral(0.0), _dummy_(0.0);
 
@@ -489,12 +489,12 @@ AdvectDiffuse2D_State_New AdvectDiffuse2D_Quad_Block_New::SourceTerm(const int &
     // Integrate the source term functional over the cell (ii,jj) domain
     SourceTermIntegral = Grid.Integration.IntegrateFunctionOverCell(ii,jj,NonLinearSourceVariation,10,_dummy_);
 
-    // compute average value and cast the result to AdvectDiffuse2D_State_New
-    return AdvectDiffuse2D_State_New(SourceTermIntegral/Grid.Cell[ii][jj].A);
+    // compute average value and cast the result to AdvectDiffuse2D_State
+    return AdvectDiffuse2D_State(SourceTermIntegral/Grid.Cell[ii][jj].A);
 
   } else {
     // this source term field is already integrated numerically and expressed as a function of cell average solution
-    return AdvectDiffuse2D_State_New(U[ii][jj].s());
+    return AdvectDiffuse2D_State(U[ii][jj].s());
   }
 }
 
@@ -515,16 +515,16 @@ AdvectDiffuse2D_State_New AdvectDiffuse2D_Quad_Block_New::SourceTerm(const int &
  * \param GradU_face solution gradient at the interface
  * \param Gradient_Reconstruction_Type gradient-reconstruction method index
  **********************************************************************************/
-void AdvectDiffuse2D_Quad_Block_New::
+void AdvectDiffuse2D_Quad_Block::
 InviscidAndEllipticFluxStates_AtBoundaryInterface(const int &BOUNDARY,
 						  const int &ii, const int &jj,
-						  AdvectDiffuse2D_State_New &Ul,
-						  AdvectDiffuse2D_State_New &Ur,
-						  AdvectDiffuse2D_State_New &U_face,
+						  AdvectDiffuse2D_State &Ul,
+						  AdvectDiffuse2D_State &Ur,
+						  AdvectDiffuse2D_State &U_face,
 						  Vector2D &GradU_face,
 						  const int &Gradient_Reconstruction_Type){
   double Vn;
-  AdvectDiffuse2D_State_New Value;
+  AdvectDiffuse2D_State Value;
 
   switch(BOUNDARY){
 
@@ -1132,7 +1132,7 @@ InviscidAndEllipticFluxStates_AtBoundaryInterface(const int &BOUNDARY,
       break;
 
     default:
-      throw runtime_error("AdvectDiffuse2D_Quad_Block_New::InviscidAndEllipticFluxStates_AtBoundaryInterface() ERROR! No such South BCtype!");
+      throw runtime_error("AdvectDiffuse2D_Quad_Block::InviscidAndEllipticFluxStates_AtBoundaryInterface() ERROR! No such South BCtype!");
     }// endswitch (Grid.BCtypeS[ii])
     break;
 
@@ -1334,12 +1334,12 @@ InviscidAndEllipticFluxStates_AtBoundaryInterface(const int &BOUNDARY,
       break;
 
     default:
-      throw runtime_error("AdvectDiffuse2D_Quad_Block_New::InviscidAndEllipticFluxStates_AtBoundaryInterface() ERROR! No such North BCtype!");
+      throw runtime_error("AdvectDiffuse2D_Quad_Block::InviscidAndEllipticFluxStates_AtBoundaryInterface() ERROR! No such North BCtype!");
     }// endswitch (Grid.BCtypeN[ii])
     break;
 
   default:
-    throw runtime_error("AdvectDiffuse2D_Quad_Block_New::InviscidAndEllipticFluxStates_AtBoundaryInterface() ERROR! No such boundary!");
+    throw runtime_error("AdvectDiffuse2D_Quad_Block::InviscidAndEllipticFluxStates_AtBoundaryInterface() ERROR! No such boundary!");
   }
 
 }
@@ -1352,7 +1352,7 @@ InviscidAndEllipticFluxStates_AtBoundaryInterface(const int &BOUNDARY,
  * This routine makes the link between user's specifications
  * and the values that are set as boundary reference states.
  ********************************************************/
-void AdvectDiffuse2D_Quad_Block_New::
+void AdvectDiffuse2D_Quad_Block::
 Set_Boundary_Reference_States_Based_On_Input(const AdvectDiffuse2D_Input_Parameters &IP){
 
   // Set boundary reference states to default
@@ -1374,11 +1374,11 @@ Set_Boundary_Reference_States_Based_On_Input(const AdvectDiffuse2D_Input_Paramet
  * These values are used in Set_Boundary_Reference_States()
  * routine.
  ********************************************************/
-void AdvectDiffuse2D_Quad_Block_New::
-Set_Reference_Values_For_Boundary_States(const AdvectDiffuse2D_State_New & Ref_North,
-					 const AdvectDiffuse2D_State_New & Ref_South,
-					 const AdvectDiffuse2D_State_New & Ref_East,
-					 const AdvectDiffuse2D_State_New & Ref_West){
+void AdvectDiffuse2D_Quad_Block::
+Set_Reference_Values_For_Boundary_States(const AdvectDiffuse2D_State & Ref_North,
+					 const AdvectDiffuse2D_State & Ref_South,
+					 const AdvectDiffuse2D_State & Ref_East,
+					 const AdvectDiffuse2D_State & Ref_West){
   Ref_State_BC_North = Ref_North;
   Ref_State_BC_South = Ref_South;
   Ref_State_BC_East = Ref_East;
@@ -1389,7 +1389,7 @@ Set_Reference_Values_For_Boundary_States(const AdvectDiffuse2D_State_New & Ref_N
  * Assigns default values to the boundary condition 
  * reference data for the quadrilateral solution block. 
  ********************************************************/
-void AdvectDiffuse2D_Quad_Block_New::
+void AdvectDiffuse2D_Quad_Block::
 Set_Default_Boundary_Reference_States(void){
   
   int i,j;
@@ -1418,7 +1418,7 @@ Set_Default_Boundary_Reference_States(void){
  * the boundary type for the quadrilateral solution block. 
  * 
  ********************************************************/
-void AdvectDiffuse2D_Quad_Block_New::Set_Boundary_Reference_States(void){
+void AdvectDiffuse2D_Quad_Block::Set_Boundary_Reference_States(void){
 
   int i,j;
   Vector2D PointOfInterest;
@@ -1607,7 +1607,7 @@ void AdvectDiffuse2D_Quad_Block_New::Set_Boundary_Reference_States(void){
  * Output operator.
  ********************/
 ostream &operator << (ostream &out_file,
-		      const AdvectDiffuse2D_Quad_Block_New &SolnBlk) {
+		      const AdvectDiffuse2D_Quad_Block &SolnBlk) {
   int i, j; 
   out_file << SolnBlk.Grid;
   out_file << SolnBlk.NCi << " " << SolnBlk.ICl << " " << SolnBlk.ICu << "\n";
@@ -1635,7 +1635,7 @@ ostream &operator << (ostream &out_file,
  * Input operator.
  ********************/
 istream &operator >> (istream &in_file,
-		      AdvectDiffuse2D_Quad_Block_New &SolnBlk) {
+		      AdvectDiffuse2D_Quad_Block &SolnBlk) {
   int i, j, k, ni, il, iu, nj, jl, ju, ng;
   Grid2D_Quad_Block New_Grid;
   in_file >> New_Grid;
@@ -1694,7 +1694,7 @@ istream &operator >> (istream &in_file,
 /********************************
  * Loads send message buffer.
  ********************************/
-int AdvectDiffuse2D_Quad_Block_New::LoadSendBuffer(double *buffer,
+int AdvectDiffuse2D_Quad_Block::LoadSendBuffer(double *buffer,
 						   int &buffer_count,
 						   const int buffer_size,
 						   const int i_min, 
@@ -1719,7 +1719,7 @@ int AdvectDiffuse2D_Quad_Block_New::LoadSendBuffer(double *buffer,
 /*******************************************************************************
  * Loads send message buffer for fine to coarse block message passing.          
  *******************************************************************************/
-int AdvectDiffuse2D_Quad_Block_New::LoadSendBuffer_F2C(double *buffer,
+int AdvectDiffuse2D_Quad_Block::LoadSendBuffer_F2C(double *buffer,
 						       int &buffer_count,
 						       const int buffer_size,
 						       const int i_min, 
@@ -1751,7 +1751,7 @@ int AdvectDiffuse2D_Quad_Block_New::LoadSendBuffer_F2C(double *buffer,
 /*******************************************************************************
  * Loads send message buffer for coarse to fine block message passing.         
  *******************************************************************************/
-int AdvectDiffuse2D_Quad_Block_New::LoadSendBuffer_C2F(double *buffer,
+int AdvectDiffuse2D_Quad_Block::LoadSendBuffer_C2F(double *buffer,
 						       int &buffer_count,
 						       const int buffer_size,
 						       const int i_min, 
@@ -1765,7 +1765,7 @@ int AdvectDiffuse2D_Quad_Block_New::LoadSendBuffer_C2F(double *buffer,
   int i, j, k;
   Vector2D dX;
   double ufine;
-  AdvectDiffuse2D_State_New Ufine;
+  AdvectDiffuse2D_State Ufine;
   int Limiter = LIMITER_VENKATAKRISHNAN;
 
   if (j_inc > 0) {
@@ -2228,7 +2228,7 @@ int AdvectDiffuse2D_Quad_Block_New::LoadSendBuffer_C2F(double *buffer,
 /*******************************************************************************
  * Unloads receive buffer.
  *******************************************************************************/
-int AdvectDiffuse2D_Quad_Block_New::UnloadReceiveBuffer(double *buffer,
+int AdvectDiffuse2D_Quad_Block::UnloadReceiveBuffer(double *buffer,
 							int &buffer_count,
 							const int buffer_size,
 							const int i_min, 
@@ -2253,7 +2253,7 @@ int AdvectDiffuse2D_Quad_Block_New::UnloadReceiveBuffer(double *buffer,
 /***********************************************************************************
  * Unloads receive message buffer for fine to coarse block message passing.
  ***********************************************************************************/
-int AdvectDiffuse2D_Quad_Block_New::UnloadReceiveBuffer_F2C(double *buffer,
+int AdvectDiffuse2D_Quad_Block::UnloadReceiveBuffer_F2C(double *buffer,
 							    int &buffer_count,
 							    const int buffer_size,
 							    const int i_min, 
@@ -2278,7 +2278,7 @@ int AdvectDiffuse2D_Quad_Block_New::UnloadReceiveBuffer_F2C(double *buffer,
 /***********************************************************************************
  * Unloads receive message buffer for coarse to fine block message passing.
  ***********************************************************************************/
-int AdvectDiffuse2D_Quad_Block_New::UnloadReceiveBuffer_C2F(double *buffer,
+int AdvectDiffuse2D_Quad_Block::UnloadReceiveBuffer_C2F(double *buffer,
 							    int &buffer_count,
 							    const int buffer_size,
 							    const int i_min, 
@@ -2305,7 +2305,7 @@ int AdvectDiffuse2D_Quad_Block_New::UnloadReceiveBuffer_C2F(double *buffer,
  * within a given cell (i,j) of the computational mesh for 
  * the specified quadrilateral solution block.            
  **************************************************************/
-void AdvectDiffuse2D_Quad_Block_New::SubcellReconstruction(const int i, 
+void AdvectDiffuse2D_Quad_Block::SubcellReconstruction(const int i, 
 							   const int j,
 							   const int Limiter) {
 
@@ -2623,7 +2623,7 @@ void AdvectDiffuse2D_Quad_Block_New::SubcellReconstruction(const int i,
  * Loads send message buffer for fine to coarse block message 
  * passing of conservative solution fluxes.
  ****************************************************************/
-int AdvectDiffuse2D_Quad_Block_New::LoadSendBuffer_Flux_F2C(double *buffer,
+int AdvectDiffuse2D_Quad_Block::LoadSendBuffer_Flux_F2C(double *buffer,
 							    int &buffer_count,
 							    const int buffer_size,
 							    const int i_min, 
@@ -2673,7 +2673,7 @@ int AdvectDiffuse2D_Quad_Block_New::LoadSendBuffer_Flux_F2C(double *buffer,
  * Unloads receive message buffer for fine to coarse 
  * block message passing of conservative solution fluxes.  
  ***********************************************************/
-int AdvectDiffuse2D_Quad_Block_New::UnloadReceiveBuffer_Flux_F2C(double *buffer,
+int AdvectDiffuse2D_Quad_Block::UnloadReceiveBuffer_Flux_F2C(double *buffer,
 								 int &buffer_count,
 								 const int buffer_size,
 								 const int i_min, 
@@ -2727,7 +2727,7 @@ int AdvectDiffuse2D_Quad_Block_New::UnloadReceiveBuffer_Flux_F2C(double *buffer,
  * TECPLOT.                                         
  * This subroutine is used only for debugging!
  ***********************************************************/
-void AdvectDiffuse2D_Quad_Block_New::Output_Tecplot_Debug_Mode(AdaptiveBlock2D_List &Soln_Block_List,
+void AdvectDiffuse2D_Quad_Block::Output_Tecplot_Debug_Mode(AdaptiveBlock2D_List &Soln_Block_List,
 							       const AdvectDiffuse2D_Input_Parameters &IP,
 							       const int &Block_Number){
  
@@ -2765,7 +2765,7 @@ void AdvectDiffuse2D_Quad_Block_New::Output_Tecplot_Debug_Mode(AdaptiveBlock2D_L
   if (output_file.fail()) { throw runtime_error("Output_Tecplot() ERROR! Fail to open the output file!"); }
   
   /* Write the solution data for the solution block. */
-  AdvectDiffuse2D_State_New U_node;
+  AdvectDiffuse2D_State U_node;
   Vector2D Node;
 
   /* Ensure boundary conditions are updated before
@@ -2829,7 +2829,7 @@ void AdvectDiffuse2D_Quad_Block_New::Output_Tecplot_Debug_Mode(AdaptiveBlock2D_L
  * TECPLOT.                                         
  * This subroutine is used only for debugging!
  ***********************************************************/
-void AdvectDiffuse2D_Quad_Block_New::Output_Cells_Tecplot_Debug_Mode(AdaptiveBlock2D_List &Soln_Block_List,
+void AdvectDiffuse2D_Quad_Block::Output_Cells_Tecplot_Debug_Mode(AdaptiveBlock2D_List &Soln_Block_List,
 								     const AdvectDiffuse2D_Input_Parameters &IP,
 								     const int &Block_Number){
 

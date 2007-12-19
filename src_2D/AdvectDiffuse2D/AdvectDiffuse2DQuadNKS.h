@@ -16,11 +16,11 @@
  *                                                                                          *
  ********************************************************************************************/
 template <>
-int Newton_Update(AdvectDiffuse2D_Quad_Block_New *SolnBlk,
+int Newton_Update(AdvectDiffuse2D_Quad_Block *SolnBlk,
 		  AdaptiveBlock2D_List &List_of_Local_Solution_Blocks,
 		  AdvectDiffuse2D_Input_Parameters &Input_Parameters,
-		  GMRES_RightPrecon_MatrixFree<AdvectDiffuse2D_State_New,
-		  AdvectDiffuse2D_Quad_Block_New,
+		  GMRES_RightPrecon_MatrixFree<AdvectDiffuse2D_State,
+		  AdvectDiffuse2D_Quad_Block,
 		  AdvectDiffuse2D_Input_Parameters> &GMRES,
 		  double Relaxation_multiplier) {
 
@@ -51,10 +51,10 @@ int Newton_Update(AdvectDiffuse2D_Quad_Block_New *SolnBlk,
  * Calculates the dFdU matrix used to generate the approximate  *               
  * Jacobian for the Block Preconditioner.                       *
  ****************************************************************/
-template<> inline void Block_Preconditioner<AdvectDiffuse2D_State_New,
-					    AdvectDiffuse2D_Quad_Block_New,					    
+template<> inline void Block_Preconditioner<AdvectDiffuse2D_State,
+					    AdvectDiffuse2D_Quad_Block,					    
 					    AdvectDiffuse2D_Input_Parameters>::
-Preconditioner_dFIdU(DenseMatrix &_dFdU, AdvectDiffuse2D_State_New U)
+Preconditioner_dFIdU(DenseMatrix &_dFdU, AdvectDiffuse2D_State U)
 {
   // Must be revisited
 }
@@ -66,8 +66,8 @@ Preconditioner_dFIdU(DenseMatrix &_dFdU, AdvectDiffuse2D_State_New U)
  * Normaliazes the dFdU matrix used to generate the approximate *               
  * Jacobian for the Block Preconditioner.                       *
  ****************************************************************/
-template<> inline void Block_Preconditioner<AdvectDiffuse2D_State_New,
-					    AdvectDiffuse2D_Quad_Block_New,					    
+template<> inline void Block_Preconditioner<AdvectDiffuse2D_State,
+					    AdvectDiffuse2D_Quad_Block,					    
 					    AdvectDiffuse2D_Input_Parameters>::
 normalize_Preconditioner_dFdU(DenseMatrix &dFdU) 
 {
@@ -82,8 +82,8 @@ normalize_Preconditioner_dFdU(DenseMatrix &dFdU)
  * \todo Must be revisited                                      *
  ****************************************************************/
 template <>
-void Block_Preconditioner<AdvectDiffuse2D_State_New,
-			  AdvectDiffuse2D_Quad_Block_New,					    
+void Block_Preconditioner<AdvectDiffuse2D_State,
+			  AdvectDiffuse2D_Quad_Block,					    
 			  AdvectDiffuse2D_Input_Parameters>::
 Update_Jacobian_and_Preconditioner(const double &DTS_dTime)
 {
@@ -170,8 +170,8 @@ Update_Jacobian_and_Preconditioner(const double &DTS_dTime)
  *   normalize_values[1-n] = values for index[1-n]        *
  *             where n = the number of solution variables *
  **********************************************************/
-template<> inline void GMRES_Block<AdvectDiffuse2D_State_New,
-				   AdvectDiffuse2D_Quad_Block_New,					    
+template<> inline void GMRES_Block<AdvectDiffuse2D_State,
+				   AdvectDiffuse2D_Quad_Block,					    
 				   AdvectDiffuse2D_Input_Parameters>::
 set_normalize_values(void)
 {   
@@ -184,8 +184,8 @@ set_normalize_values(void)
  * Calculate Restart Soln_ptr.U =  Soln_ptr.Uo + denormalize( epsilon * x(i) )  *
  ********************************************************************************/
 template <> inline 
-void GMRES_Block<AdvectDiffuse2D_State_New,
-		 AdvectDiffuse2D_Quad_Block_New,					    
+void GMRES_Block<AdvectDiffuse2D_State,
+		 AdvectDiffuse2D_Quad_Block,					    
 		 AdvectDiffuse2D_Input_Parameters>::
 calculate_perturbed_residual_Restart(const double &epsilon) {    
   int i,j, varindex;
@@ -206,8 +206,8 @@ calculate_perturbed_residual_Restart(const double &epsilon) {
  * Copy forward difference & calculate backwards for 2nd order derivative       *
  ********************************************************************************/
 template <> inline 
-void GMRES_Block<AdvectDiffuse2D_State_New,
-		 AdvectDiffuse2D_Quad_Block_New,					    
+void GMRES_Block<AdvectDiffuse2D_State,
+		 AdvectDiffuse2D_Quad_Block,					    
 		 AdvectDiffuse2D_Input_Parameters>::
 calculate_perturbed_residual_2nd_Restart(const double &epsilon) {    
   for (int j = JCl - Nghost ; j <= JCu + Nghost ; j++) {
@@ -229,8 +229,8 @@ calculate_perturbed_residual_2nd_Restart(const double &epsilon) {
  * Calculate Soln_ptr.U =  Soln_ptr.Uo + denormalize( epsilon * W(i) )          *
  ********************************************************************************/
 template <> inline 
-void GMRES_Block<AdvectDiffuse2D_State_New,
-		 AdvectDiffuse2D_Quad_Block_New,					    
+void GMRES_Block<AdvectDiffuse2D_State,
+		 AdvectDiffuse2D_Quad_Block,					    
 		 AdvectDiffuse2D_Input_Parameters>::
 calculate_perturbed_residual(const double &epsilon)
 {    
@@ -250,8 +250,8 @@ calculate_perturbed_residual(const double &epsilon)
  * Copy forward difference & calculate backwards for 2nd order derivative       *
  ********************************************************************************/
 template <> inline 
-void GMRES_Block<AdvectDiffuse2D_State_New,
-		 AdvectDiffuse2D_Quad_Block_New,					    
+void GMRES_Block<AdvectDiffuse2D_State,
+		 AdvectDiffuse2D_Quad_Block,					    
 		 AdvectDiffuse2D_Input_Parameters>::
 calculate_perturbed_residual_2nd(const double &epsilon) {    
   for (int j = JCl - Nghost ; j <= JCu + Nghost ; j++) {  //includes ghost cells 
@@ -275,8 +275,8 @@ calculate_perturbed_residual_2nd(const double &epsilon) {
  * \todo Must be revisited                                                     *
  *******************************************************************************/
 template <> inline 
-int GMRES_Block<AdvectDiffuse2D_State_New,
-		AdvectDiffuse2D_Quad_Block_New,					    
+int GMRES_Block<AdvectDiffuse2D_State,
+		AdvectDiffuse2D_Quad_Block,					    
 		AdvectDiffuse2D_Input_Parameters>::
 LoadSendBuffer_C2F(double *buffer,
 		   int &buffer_count,
@@ -300,8 +300,8 @@ LoadSendBuffer_C2F(double *buffer,
  *              the specified quadrilateral solution block.               *
  **************************************************************************/
 template <>
-void GMRES_Block<AdvectDiffuse2D_State_New,
-		 AdvectDiffuse2D_Quad_Block_New,					    
+void GMRES_Block<AdvectDiffuse2D_State,
+		 AdvectDiffuse2D_Quad_Block,					    
 		 AdvectDiffuse2D_Input_Parameters>::
 SubcellReconstruction(const int i, 
  		      const int j,
@@ -311,7 +311,7 @@ SubcellReconstruction(const int i,
   double u0, u0Min, u0Max, uQuad[4], phi_n;
   double DxDx_ave, DxDy_ave, DyDy_ave;
   Vector2D dX;
-  AdvectDiffuse2D_State_New U0, DU, DUDx_ave, DUDy_ave, W_VACUUM;
+  AdvectDiffuse2D_State U0, DU, DUDx_ave, DUDy_ave, W_VACUUM;
   W_VACUUM.Vacuum();
   
   /* Carry out the limited solution reconstruction in
