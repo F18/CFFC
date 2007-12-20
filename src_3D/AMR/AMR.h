@@ -661,6 +661,133 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
 
 }
 
+
+/******************************************************************
+ * Routine: Create_Restart_Solution_Blocks                        *
+ *                                                                *
+ * This routine recreates the local and global block resource     * 
+ * list data                                                      *
+ * structures for performing the restart calculations base on     *
+ * the saved octree data structure.                               *
+ *                                                                *
+ ******************************************************************/
+template<typename SOLN_pSTATE, typename SOLN_cSTATE>
+int Create_Restart_Solution_Blocks(Hexa_Multi_Block<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> > &Local_Solution_Blocks,
+                                   Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>              &Input,
+                                   Octree_DataStructure                                    &Octree,
+                                   AdaptiveBlock3D_ResourceList                            &Global_Adaptive_Block_List,
+                                   AdaptiveBlock3D_List                                    &Local_Adaptive_Block_List) {
+   
+   int n_cpu, n_blk, neighbour_cpu, neighbour_blk, number_of_solution_variables; 
+   int *rootblks_cpu_number, *rootblks_blk_number;
+   
+      
+   /* Create (allocate) array of local 3D hexahedral solution blocks for restart. */
+      
+   Local_Solution_Blocks.Allocate(Input.AMR_IP.Number_of_Blocks_Per_Processor);
+   
+   AdaptiveBlock3D_ResourceList::Create_Block_Resource_List(Global_Adaptive_Block_List,
+                                                            Input.AMR_IP.Number_of_Processors,
+                                                            Input.AMR_IP.Number_of_Blocks_Per_Processor);
+   Local_Adaptive_Block_List.allocate(Input.AMR_IP.Number_of_Blocks_Per_Processor);
+   Local_Adaptive_Block_List.ThisCPU = Global_Adaptive_Block_List.ThisCPU;
+   
+   /* Loop over all root blocks and determine the CPU and local block numbers for
+      each solution block. */
+   
+   rootblks_cpu_number = new int[Octree.NR];
+   rootblks_blk_number = new int[Octree.NR];
+   
+   for (int nb = 0; nb <= Octree.NR-1; ++nb) {
+      if    (Octree.Roots[nb].block.used) { 
+         // Get next free solution block from list of available
+         // solution blocks.
+         if (Global_Adaptive_Block_List.Nfree > 0) {
+            n_cpu = Global_Adaptive_Block_List.nextCPU();
+            n_blk = Global_Adaptive_Block_List.nextBlock();
+            Global_Adaptive_Block_List.update_next();
+            rootblks_cpu_number[nb] = n_cpu;
+            rootblks_blk_number[nb] = n_blk;
+         } else {
+            cout << "\n"
+                 << " AMR Error: Create_Initial_Solution_Blocks, "
+                 << "Insufficient number of hexahedral solution blocks.\n";
+            return (1);
+         } /* endif */
+      } /* endif */
+   } /* endfor */
+   
+   /* Create local and global block lists with using the information from octree root blocks . */
+
+   for (int nb = 0; nb <=  Octree.NR-1; ++nb) {
+      if  (Octree.Roots[nb].block.used){
+         
+	 // Obtain CPU and block number.
+         n_cpu = rootblks_cpu_number[nb];
+         n_blk = rootblks_blk_number[nb];
+         // Assign appropriate octree block pointer to octree root solution block.                    
+         Octree.Blocks[n_cpu][n_blk] = &(Octree.Roots[nb]);
+      } else{
+         Octree.Roots[nb].block.used = 0;
+      } /* endif */
+      
+   } /* endfor */
+
+   delete []rootblks_cpu_number;
+   delete []rootblks_blk_number;
+   
+   /* Loop over all root blocks and assign local solution block information 
+      and create local solution blocks as required. */
+
+   for (int nr = 0; nr <= Octree.NR-1; ++nr) {
+      if (Octree.Roots[nr].block.used) { // Adaptive root block is used!!!!
+         // For solution blocks on this processor (or processor
+         // element), add block to local list, create the solution
+         // block, and copy the appropriate block of the
+         // initial hexarilateral mesh to the solution block mesh.
+         if (Octree.Roots[nr].block.info.cpu == Global_Adaptive_Block_List.ThisCPU) {
+	    n_cpu = Octree.Roots[nr].block.info.cpu;
+            n_blk = Octree.Roots[nr].block.info.blknum;
+            Local_Adaptive_Block_List.Block[n_blk] = Octree.Roots[nr].block;
+            Local_Solution_Blocks.Soln_Blks[n_blk].Flow_Type = Input.i_Flow_Type;
+            Local_Solution_Blocks.Soln_Blks[n_blk].Create_Block(Initial_Mesh.Grid_Blks[nr]);
+            Local_Solution_Blocks.Block_Used[n_blk] = HEXA_BLOCK_USED;
+         } /* endif */
+     } /* endif */
+   } /* endfor */
+   
+   /* Renumber all solution blocks, assigning a unique global block number. */
+
+   Octree_DataStructure::Renumber_Solution_Blocks(Octree,
+                                                  Local_Adaptive_Block_List);
+
+   /* Modify block neighbours for grid geometries with periodic boundaries, etc. */
+
+   Octree_DataStructure::Modify_Neighbours_of_Root_Solution_Blocks(Octree,
+                                                                   Local_Adaptive_Block_List,
+                                                                   Input.Grid_IP.i_Grid);
+
+   /* Allocates memory for all message passing buffers used to send
+      solution information between neighbouring solution blocks. */
+
+   // Get the number of variables.
+   for (int i_blk = 0 ; i_blk <= Local_Adaptive_Block_List.Nblk-1 ; ++i_blk) {
+      if (Local_Adaptive_Block_List.Block[i_blk].used) {
+         number_of_solution_variables = Local_Solution_Blocks.Soln_Blks[i_blk].NumVar();
+         break;
+      } /* endif */
+   } /* endif */
+
+   AdaptiveBlock3D_List::Allocate_Message_Buffers(Local_Adaptive_Block_List,
+                                                  number_of_solution_variables);
+ 
+   /* Solution block allocation and assignment complete.
+      Return pointer to local solution blocks. */
+
+   return(0);
+
+}
+
 /********************************************************
  * Routine: Read_Octree                                 *
  *                                                      *
@@ -673,7 +800,7 @@ int Read_Octree(Octree_DataStructure                       &Octree,
                 AdaptiveBlock3D_List                       &Local_Adaptive_Block_List,
                 Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &Input) {
 
-    int i, nri, nrj, nrk, ncpu, nblk;
+   int i, nr, nri, nrj, nrk, ncpu, nblk;
     int iBLK, jBLK, kBLK, iCPU;
     char Octree_file_name[256];
     char *Octree_file_name_ptr;
@@ -707,34 +834,29 @@ int Read_Octree(Octree_DataStructure                       &Octree,
 
     if (CFFC_Primary_MPI_Processor()) {
        Octree_file.setf(ios::skipws);
-       Octree_file >> nri >> nrj >> nrk >> ncpu >> nblk;
+       Octree_file >> nr >> nri >> nrj >> nrk >> ncpu >> nblk;
        
        Octree_file.unsetf(ios::skipws);
 
-       Create_Octree_Data_Structure(Octree,
+       Octree_DataStructure::Create_Octree_Data_Structure(Octree,
                                     nri,
   	                            nrj,
   	                            nrk,
-                                    Input.Number_of_Processors,
-                                    Input.Number_of_Blocks_Per_Processor);
+                                    Input.AMR_IP.Number_of_Processors,
+                                    Input.AMR_IP.Number_of_Blocks_Per_Processor);
     } /* endif */
 
     /* Re-create and re-initialize the block resource list. */
 
-    Create_Block_Resource_List(Global_Adaptive_Block_List,
-                               Input.Number_of_Processors, 
-	  		       Input.Number_of_Blocks_Per_Processor);
+    AdaptiveBlock3D_ResourceList::Create_Block_Resource_List(Global_Adaptive_Block_List,
+                               Input.AMR_IP.Number_of_Processors, 
+	  		       Input.AMR_IP.Number_of_Blocks_Per_Processor);
 
     /* On primary processor, read the Octree data from the file. */
 
     if (CFFC_Primary_MPI_Processor()) {
-       for ( kBLK = 0 ; kBLK <= Octree.NRk-1 ; ++kBLK ) {
-	 for ( jBLK = 0 ; jBLK <= Octree.NRj-1 ; ++jBLK ) {
-           for ( iBLK = 0 ; iBLK <= Octree.NRi-1 ; ++iBLK ) {
-	      Octree.Roots[iBLK*jBLK*kBLK].read(Octree_file,
-                                                Global_Adaptive_Block_List);
-           } /* endfor */
-           } /* endfor */
+       for ( int nBLK = 0 ; nBLK <= nr-1 ; ++nBLK ) {
+          Octree.Roots[nBLK].read(Octree_file, Global_Adaptive_Block_List);
        } /* endfor */
     } /* endif */
 
@@ -745,13 +867,13 @@ int Read_Octree(Octree_DataStructure                       &Octree,
 
     /* Set the maximum and minimum refinement levels. */
 
-    Octree.MaximumRefinementLevel = Input.Maximum_Refinement_Level-1;
-    Octree.MinimumRefinementLevel = Input.Minimum_Refinement_Level-1;
+    Octree.MaximumRefinementLevel = Input.AMR_IP.Maximum_Refinement_Level-1;
+    Octree.MinimumRefinementLevel = Input.AMR_IP.Minimum_Refinement_Level-1;
 
     /* Set the thresholds for refinement and coarsening of the mesh. */
 
-    Octree.RefineThreshold = Input.Threshold_for_Refinement;
-    Octree.CoarsenThreshold = Input.Threshold_for_Coarsening;
+    Octree.RefineThreshold = Input.AMR_IP.Threshold_for_Refinement;
+    Octree.CoarsenThreshold = Input.AMR_IP.Threshold_for_Coarsening;
 
     /* Re-evaluate Octree block pointers. */
 
@@ -760,33 +882,30 @@ int Read_Octree(Octree_DataStructure                       &Octree,
     /* (Re-)Allocate memory for local processor solution block list. */
 
     if (Local_Adaptive_Block_List.Nblk > 0) Local_Adaptive_Block_List.deallocate();
-    Local_Adaptive_Block_List.allocate(Input.Number_of_Blocks_Per_Processor);
+    Local_Adaptive_Block_List.allocate(Input.AMR_IP.Number_of_Blocks_Per_Processor);
     Local_Adaptive_Block_List.ThisCPU = Global_Adaptive_Block_List.ThisCPU;
 
-    /* Find the neighbours of the root blocks. */
-
-    //Octree_DataStructure::Find_Neighbours_of_Root_Solution_Blocks(Octree);
-
-    /* Modify block neighbours for grid geometries with 
+     
+    /* Modify block neighbours for grid geometries with
        periodic boundaries, etc. */
 
     Octree_DataStructure::Modify_Neighbours_of_Root_Solution_Blocks(Octree,
-                                                                    Input.i_Grid);
-
+                                                                    Input.Grid_IP.i_Grid);
+    
     /* Determine the neighbouring blocks of all used (active)
        solution blocks in the Octree data structure. This will
        also copy block information to local processor solution block
        list. */
-
-    Octree_DataStructure::Find_Neighbours(Octree,
-                                          Local_Adaptive_Block_List);
-
+    
+    /* Octree_DataStructure::Find_Neighbours(Octree, */
+    /*                                           Local_Adaptive_Block_List); */
+    
     /* On primary processor, close Octree data file. */
-
+    
     if (CFFC_Primary_MPI_Processor()) Octree_file.close();
-
+    
     /* Reading of Octree data file complete.  Return zero value. */
-
+    
     return(0);
 
 }

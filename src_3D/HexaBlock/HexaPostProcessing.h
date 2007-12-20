@@ -102,9 +102,7 @@ int Hexa_Post_Processing(HexaSolver_Data &Data,
 									 Data.total_number_of_time_steps(),
 									 Data.Time);
        
-         cout<<"\n AFTER OUTPUT NODE "<<endl;
-         
-         Solution_Data.Local_Solution_Blocks.WtoU();
+       
          
          if (error_flag) {
             cout << "\n  ERROR: Unable to open  node output " 
@@ -126,10 +124,7 @@ int Hexa_Post_Processing(HexaSolver_Data &Data,
 									       Data.Local_Adaptive_Block_List,
 									       Data.total_number_of_time_steps(),
 									       Data.Time);
-         
-         cout<<"\n AFTER OUTPUT NODE "<<endl;
-         
-         Solution_Data.Local_Solution_Blocks.WtoU();
+       
          if (error_flag) {
             cout << "\n  ERROR: Unable to open  cell output data file(s) on processor "
                  << CFFC_MPI::This_Processor_Number

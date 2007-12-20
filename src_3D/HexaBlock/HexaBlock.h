@@ -2132,9 +2132,11 @@ int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::WtoU(void) {
             
 /*             if(dbg){ */
                
-/*                cout<<"\n i j k xc "<<i<<","<<j<<","<<k<<"  "<<Grid.Cell[i][j][k].Xc<<endl; */
-/*                cout<<"\n U  = "<<U[i][j][k]<<endl; */
-/*                cout<<"\n W  = "<<W[i][j][k]<<endl; */
+               cout<<"\n i j k xc "<<i<<","<<j<<","<<k<<"  "<<Grid.Cell[i][j][k].Xc<<endl;
+               cout<<"\n U  = "<<U[i][j][k]<<endl;
+               cout<<"\n W  = "<<W[i][j][k]<<endl;
+               cout.flush();
+               
 /*             } */
             
          } /* endfor */

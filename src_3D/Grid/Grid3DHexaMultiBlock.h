@@ -100,8 +100,9 @@ class Grid3D_Hexa_Multi_Block_Connectivity {
                            neighBSW_info[GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS],
                            neighBNE_info[GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS],
                            neighBSE_info[GRID3D_HEXA_MULTI_BLOCK_MAX_NEIGHBOURS];
+  
+   //! Elemet on grid boundary.
 
-   //! Compact transformation matrix for grid blocks sharing each of the eight (8) corners of the block
    Block_Boundary_Elements_on_Domain_Extent boundary_element_on_grid_boundary;
    
    //! Creation constructor

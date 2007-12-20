@@ -86,8 +86,21 @@ int Initial_Conditions(HexaSolver_Data &Data,
       cout.flush();
     } /* endif */
 
+    cout << "\n Reading solution from restart data files."; 
     // Read Restart Octree
-    // error_flag = Read_Octree(Octree,Input);
+/*     error_flag = Read_Octree<SOLN_pSTATE, SOLN_cSTATE>(Data.Octree,  */
+/*                                                        Data.Global_Adaptive_Block_List, */
+/*                                                        Data.Local_Adaptive_Block_List,  */
+/*                                                        Solution_Data.Input); */
+    
+  /*   // based on the Octree and recreate the local block list.  */
+/*     Create_Restart_Solution_Blocks<SOLN_pSTATE, SOLN_cSTATE>(Solution_Data.Local_Solution_Blocks, */
+/* 							   Solution_Data.Input, */
+/* 							   Data.Octree, */
+/* 							   Data.Global_Adaptive_Block_List, */
+/* 							   Data.Local_Adaptive_Block_List); */
+
+
     if (!Data.batch_flag && error_flag) {
       cout << "\n ERROR: Unable to open Octree data file on processor "
 	   << Data.Local_Adaptive_Block_List.ThisCPU<< ".\n";
@@ -102,6 +115,10 @@ int Initial_Conditions(HexaSolver_Data &Data,
 									   Data.number_of_explicit_time_steps,  
 									   Data.Time,
 									   Data.processor_cpu_time);
+  
+
+    Solution_Data.Local_Solution_Blocks.WtoU();
+    
     if (!Data.batch_flag && error_flag) {
       cout << "\n ERROR: Unable to open restart input data file(s) "
 	   << "on processor "<< CFFC_MPI::This_Processor_Number<< ".\n";
