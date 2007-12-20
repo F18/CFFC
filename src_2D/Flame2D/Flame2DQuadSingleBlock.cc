@@ -1356,6 +1356,7 @@ void ICs(Flame2D_Quad_Block &SolnBlk,
 	
 	//velocity profiles
 	if (j >= SolnBlk.JCl && j <= SolnBlk.JCu){
+	  SolnBlk.W[i][j].updateViscosity();
 	  SolnBlk.W[i][j].setVelocityX( (HALF/SolnBlk.W[i][j].mu())*(-delta_pres/0.2)*
 					(pow(SolnBlk.Grid.Cell[i][j].Xc.y,TWO) - (0.001*0.001/4.0)) +
 					SolnBlk.Moving_wall_velocity*(SolnBlk.Grid.Cell[i][j].Xc.y/0.001 + 0.5) );

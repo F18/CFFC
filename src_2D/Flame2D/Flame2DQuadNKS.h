@@ -494,19 +494,29 @@ Preconditioner_dFVdU(DenseMatrix &dFvdU,
 		     const int Orient_face, 
 		     const int Orient_cell) {
 
+  //-----------------------------------------------------------------
   // declares
+  //-----------------------------------------------------------------
+  // temporaries
   double lface;
   static Vector2D nface;
-  const int ns = SolnBlk->W[Rii][Rjj].NumSpecies()-Flame2D_pState::NSm1;
-  const int Matrix_size = 14 + ns;
 
-  // Only need to zero these matrices once as we are always writing to the
-  // same spot
-  static DenseMatrix dFvdWf(blocksize, Matrix_size,ZERO);
+  // solution size
+  const int ns = SolnBlk->W[Rii][Rjj].NumSpecies()-Flame2D_pState::NSm1;
+  const int Matrix_size = 12 + ns; // rho, u, v, p, c1, c2, 
+                                   // drho, du/dx,  du/dy, dv/dx, dv/dy, dp/dx, dcn/dx
+
+  // temporary matrices
+  static DenseMatrix dFvdWf(blocksize, Matrix_size); dFvdWf.zero();
+  static DenseMatrix dGvdWf(blocksize, Matrix_size); dGvdWf.zero();
+  // Only need to zero these matrices once as we are always writing to the same spot
   static DenseMatrix dWfdWx(Matrix_size, blocksize,ZERO);
-  static DenseMatrix dGvdWf(blocksize, Matrix_size,ZERO);
   static DenseMatrix dWfdWy(Matrix_size, blocksize,ZERO);
   static DenseMatrix dGVdW(blocksize, blocksize, ZERO);
+
+  //-----------------------------------------------------------------
+  // Main computation
+  //-----------------------------------------------------------------
 
   // determine orientation
   switch(Orient_face){
@@ -535,12 +545,16 @@ Preconditioner_dFVdU(DenseMatrix &dFvdU,
   // build the jacobian
   // dGVdW = lface * (nface.x*(dFvdWf*dWfdWx) + nface.y*(dGvdWf*dWfdWy));
   if ( fabs(nface.x)>TOLER && fabs(nface.y)<=TOLER ) {
-    dFvdWf = (lface * nface.x) * (dFvdWf*dWfdWx);
+    dFvdWf *= lface * nface.x;
+    dGVdW = dFvdWf*dWfdWx;
   } else if ( fabs(nface.x)<=TOLER  && fabs(nface.y)>TOLER)  {
-    dGvdWf = (lface * nface.y) * (dGvdWf*dWfdWy);
+    dGvdWf *= lface * nface.y;
+    dGVdW = dGvdWf*dWfdWy;
   } else {
-    dFvdWf = (lface * nface.x) * (dFvdWf*dWfdWx);
-    dGvdWf += (lface * nface.y) * (dGvdWf*dWfdWy);
+    dFvdWf *= lface * nface.x;
+    dGvdWf *= lface * nface.y;
+    dGVdW = dFvdWf*dWfdWx;
+    dGVdW += dGvdWf*dWfdWy;
   }
   
   //transformation Jacobian

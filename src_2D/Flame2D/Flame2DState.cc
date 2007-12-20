@@ -404,9 +404,9 @@ void Flame2D_pState :: dFvdWf_dGvdWf( DenseMatrix dFvdWf,
   dFvdWf(3,6) -= p_/rho2R*Kappa;
   dFvdWf(3,7) += FOUR/THREE*mu_vx;
   dFvdWf(3,8) += mu_vy;
-  dFvdWf(3,9) = dFvdWf(3,8);
+  dFvdWf(3,9) += mu_vy;
   dFvdWf(3,10) -= TWO/THREE*mu_vx;
-  dFvdWf(3,11) = Kappa/rho1R; 
+  dFvdWf(3,11) += Kappa/rho1R; 
 
   // Axisymmetric
   if(Axisymmetric == AXISYMMETRIC_Y){
@@ -420,8 +420,8 @@ void Flame2D_pState :: dFvdWf_dGvdWf( DenseMatrix dFvdWf,
  
   //multispecies
   for(int Num = 0; Num<ns-NSm1; Num++){
-    dFvdWf(3,14+Num) = rho_*Diffusion_coef(Num)*h[Num];  //+  H3???
-    dFvdWf(6+Num, 14+Num) = rho_*Diffusion_coef(Num);
+    dFvdWf(3,14+Num) += rho_*Diffusion_coef(Num)*h[Num];  //+  H3???
+    dFvdWf(6+Num, 14+Num) += rho_*Diffusion_coef(Num);
   }
    
   /*********************** Y - DIRECTION **************************************/
@@ -446,9 +446,9 @@ void Flame2D_pState :: dFvdWf_dGvdWf( DenseMatrix dFvdWf,
  
   dGvdWf(3,7) -= TWO/THREE*mu_vy;
   dGvdWf(3,8) += mu_vx;
-  dGvdWf(3,9) = dGvdWf(3,8);
+  dGvdWf(3,9) += mu_vx;
   dGvdWf(3,10) += FOUR/THREE*mu_vy;
-  dGvdWf(3,11) = Kappa/rho1R; 
+  dGvdWf(3,11) += Kappa/rho1R; 
 
   //Axisymmetric 
   if(Axisymmetric == AXISYMMETRIC_Y){    
@@ -462,8 +462,8 @@ void Flame2D_pState :: dFvdWf_dGvdWf( DenseMatrix dFvdWf,
 
   //multispecies
   for(int Num = 0; Num<ns-NSm1; Num++){
-    dGvdWf(3,14+Num) = rho_*Diffusion_coef(Num)*h[Num];
-    dGvdWf(6+Num, 14+Num) = rho_*Diffusion_coef(Num);
+    dGvdWf(3,14+Num) += rho_*Diffusion_coef(Num)*h[Num];
+    dGvdWf(6+Num, 14+Num) += rho_*Diffusion_coef(Num);
   }
 
 
