@@ -48,8 +48,7 @@ NKS_Finite_Time_Step_Max_CFL =
 500.0
 #---------- Precon ------------
 Jacobian_Order =
-Source_Terms_Only
-#Second_Order_Diamond_Path_with_Roe
+Second_Order_Diamond_Path_with_Roe
 ##############################
 #
 ##############################
