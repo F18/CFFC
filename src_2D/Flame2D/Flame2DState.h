@@ -581,7 +581,10 @@ public:
   double Sc(const int &i) const { return Mix.schmidt(rho(), i); };
   double Pr(void) const { return Mix.prandtl(); };
   double Le(const int &i) const { return Mix.lewis(rho(), i); };
-  double Re(const double &l) const { return rho()*vabs()*l/mu(); };
+  double Re(const double &l) { 
+    updateViscosity(); 
+    return rho()*vabs()*l/mu(); 
+  };
   //!< Derivatives
   double diedip() const { return (hprime() - Rtot())/(rho()*Rtot()); };
   double diedirho() const { return -p()*(hprime() - Rtot())/(rho()*rho()*Rtot()); };
@@ -694,8 +697,8 @@ public:
   void dFIdU_FD(DenseMatrix &dFdU) const;
   void dFIdW(DenseMatrix &dFdW, const double& mult=1.0);
   void dFIdW_FD(DenseMatrix &dFdW, const double& mult=1.0) const;
-  void dFvdWf_dGvdWf( DenseMatrix dFvdWf, 
-		      DenseMatrix dGvdWf, 
+  void dFvdWf_dGvdWf( DenseMatrix &dFvdWf, 
+		      DenseMatrix &dGvdWf, 
 		      const Flame2D_State &dWdx, 
 		      const Flame2D_State &dWdy, 
 		      const int &Axisymmetric, 

@@ -81,7 +81,9 @@ void dWfdWc_Diamond(DenseMatrix &dWfdWc_x,
 		    Flame2D_Quad_Block &SolnBlk,
 		    const int &Orient_face, 
 		    const int &i, const int &j, 
-		    const int &Orient_cell);
+		    const int &Orient_cell,
+		    const double &mult_x=1.0,
+		    const double &mult_y=1.0);
 
 void dFvdWf_Diamond(DenseMatrix &dFvdWf, 
 		    DenseMatrix &dGvdWf, 

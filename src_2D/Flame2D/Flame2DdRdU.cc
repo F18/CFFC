@@ -640,7 +640,9 @@ void dWfdWc_Diamond(DenseMatrix &dWfdWc_x,
 		    Flame2D_Quad_Block &SolnBlk,
 		    const int &Orient_face, 
 		    const int &i, const int &j, 
-		    const int &Orient_cell){
+		    const int &Orient_cell,
+		    const double &mult_x,
+		    const double &mult_y) {
    
   //---------------------------------------------------------------
   // All these confusing relationships are based on an outward
@@ -742,37 +744,32 @@ void dWfdWc_Diamond(DenseMatrix &dWfdWc_x,
   double d_dWdx_dW(ZERO), d_dWdy_dW(ZERO);
   d_dWd_dW_Diamond(d_dWdx_dW,d_dWdy_dW,SolnBlk,LL,RR,Orient_cell,Orient_face,i,j);
  
-  /*********************** X - DIRECTION **************************************/
-  for(int nn=0; nn<6; nn++){
-    dWfdWc_x(nn,nn) = HALF*(LL+RR);
-    dWfdWc_y(nn,nn) = dWfdWc_x(nn,nn);
+  /**************************************************************/ 
+  for(int nn=0; nn<4; nn++){
+    dWfdWc_x(nn,nn) = mult_x * HALF*(LL+RR);
+    dWfdWc_y(nn,nn) = mult_y * HALF*(LL+RR);
   } 
- 
-  dWfdWc_x(6,0) = d_dWdx_dW;
-  dWfdWc_x(7,1) = d_dWdx_dW;        //NOTE 7,1 & 8,1 same for X and Y 
-  dWfdWc_x(8,1) = d_dWdy_dW;
-  dWfdWc_x(9,2) =  dWfdWc_x(7,1);
-  dWfdWc_x(10,2) =  dWfdWc_x(8,1);
-  dWfdWc_x(11,3) = d_dWdx_dW;
-  dWfdWc_x(12,4) = d_dWdx_dW;
-  dWfdWc_x(13,5) = d_dWdx_dW;
-   
+  /***************** X - DIRECTION ******************************/ 
+  dWfdWc_x(4,0) = mult_x * d_dWdx_dW;
+  dWfdWc_x(5,1) = mult_x * d_dWdx_dW; //NOTE 5,1 & 6,1 same for X and Y 
+  dWfdWc_x(6,1) = mult_x * d_dWdy_dW;
+  dWfdWc_x(7,2) = mult_x * d_dWdx_dW; //NOTE 7,2 & 8,2 same for X and Y
+  dWfdWc_x(8,2) = mult_x * d_dWdy_dW;
+  dWfdWc_x(9,3) = mult_x * d_dWdx_dW;
+  /***************** Y - DIRECTION ******************************/
+  dWfdWc_y(4,0) = mult_y * d_dWdy_dW;   
+  dWfdWc_y(5,1) = mult_y * d_dWdx_dW;
+  dWfdWc_y(6,1) = mult_y * d_dWdy_dW;
+  dWfdWc_y(7,2) = mult_y * d_dWdx_dW;
+  dWfdWc_y(8,2) = mult_y * d_dWdy_dW;
+  dWfdWc_y(9,3) = mult_y * d_dWdy_dW;
+  /**************************************************************/      
   const int ns = Flame2D_State::NumSpecies() - Flame2D_State::NSm1;
   for(int Num=0; Num<(ns); Num++){
-    dWfdWc_x(14+Num,6+Num) =  d_dWdx_dW;
-    dWfdWc_y(14+Num,6+Num) =  d_dWdy_dW;
+    dWfdWc_x(10+Num,4+Num) = mult_x * d_dWdx_dW;
+    dWfdWc_y(10+Num,4+Num) = mult_y * d_dWdy_dW;
   }
 
-  /*********************** Y - DIRECTION **************************************/
-  dWfdWc_y(6,0) = d_dWdy_dW;   
-  dWfdWc_y(7,1) = d_dWdx_dW;
-  dWfdWc_y(8,1) = d_dWdy_dW;
-  dWfdWc_y(9,2) =  dWfdWc_y(7,1);
-  dWfdWc_y(10,2) =  dWfdWc_y(8,1);
-  dWfdWc_y(11,3) = d_dWdy_dW;
-  dWfdWc_y(12,4) = d_dWdy_dW;
-  dWfdWc_y(13,5) = d_dWdy_dW;
-     
 }
 
 /////////////////////////////////////////////////////////////////////

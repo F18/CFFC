@@ -353,7 +353,7 @@ public:
   void setRefSolutionState(void);
 
   //@{ @name Input-output operators:
-  friend ostream &operator << (ostream &out_file, const Flame2D_Input_Parameters &IP);
+  friend ostream &operator << (ostream &out_file, Flame2D_Input_Parameters &IP);
   friend istream &operator >> (istream &in_file, Flame2D_Input_Parameters &IP);
   //@}
 
@@ -450,7 +450,11 @@ inline void Flame2D_Input_Parameters::setRefSolutionState(void) {
  * Flame2D_Input_Parameters -- Input-output operators.        *
  *************************************************************/
 inline ostream &operator << (ostream &out_file,
-			     const Flame2D_Input_Parameters &IP) {
+			     Flame2D_Input_Parameters &IP) {
+
+  // set a constant reference
+  const Flame2D_pState &Wo = IP.Wo;
+
   out_file << setprecision(6);
   out_file << "\n  -> CFFC Path: " 
 	   << IP.CFFC_Path;
@@ -576,15 +580,15 @@ inline ostream &operator << (ostream &out_file,
   /********** FLAME2D ****************************/
   out_file << "\n  -> Reaction Mechanism: " 
 	   << Flame2D_pState::mechName();
-  out_file << "\n  -> Species: "<<IP.Wo.NumSpecies()
+  out_file << "\n  -> Species: "<<Wo.NumSpecies()
 	   << "\n  -> Initial mass fractions: ";
-  for(int i=0; i<IP.Wo.NumSpecies(); i++){
+  for(int i=0; i<Wo.NumSpecies(); i++){
     out_file  <<"c["<<Flame2D_pState::speciesName(i)<<"]= ";
-    out_file  << IP.Wo.c(i)<<", ";
+    out_file  << Wo.c(i)<<", ";
   } 
   if(IP.FlowType != FLOWTYPE_INVISCID){
     out_file << "\n  -> Schmidt Numbers for Viscous flow: ";
-    for(int i=0; i <IP.Wo.NumSpecies(); i++){
+    for(int i=0; i <Wo.NumSpecies(); i++){
       out_file  <<"Sc["<<Flame2D_pState::speciesName(i)<<"]= ";
       out_file << IP.Schmidt[i]<<", ";
     }

@@ -8,19 +8,24 @@
 #include "Flame2DdRdU.h"
 #include "../NewtonKrylovSchwarz2D/NKS2D.h"
 
-/*! *****************************************************************************************
- *  Flame2D Specialization of blocksize to use N-1 not N variables                           *
- ********************************************************************************************/
-template <> int set_blocksize(Flame2D_Quad_Block &SolnBlk){ return (SolnBlk.NumVar()-1); }
+/****************************************************************/
+
+/*! *************************************************************
+ * Flame2D Specialization of blocksize to use N-1 not N         *
+ * variables                                                    *
+ ****************************************************************/
+template <> int set_blocksize(Flame2D_Quad_Block &SolnBlk)
+{ return (SolnBlk.NumVar()-1); }
 
 
-/*! *****************************************************************************************
- *  Specialization of Newton_Update                                                         *
- *                                                                                          *
- * This routine updates the previous Solution Data Uo with the deltaU from the GMRES        *                  
- * iterative solver.  U = Uo + GMRES.delatU                                                 *
- *                                                                                          *
- ********************************************************************************************/
+/*! *************************************************************
+ *  Specialization of Newton_Update                             *
+ *                                                              *
+ * This routine updates the previous Solution Data Uo with the  *
+ * deltaU from the GMRES                                        *
+ * iterative solver.  U = Uo + GMRES.delatU                     *
+ *                                                              *
+ ****************************************************************/
 template <>
 int Newton_Update(Flame2D_Quad_Block *SolnBlk,
 		  AdaptiveBlock2D_List &List_of_Local_Solution_Blocks,
@@ -85,12 +90,12 @@ int Newton_Update(Flame2D_Quad_Block *SolnBlk,
 	} 
       }
       
-      // #ifdef _NKS_VERBOSE  
-      //       if (CFFC_Primary_MPI_Processor()) { 
-      // 	/**************************************************************************/
-      // 	//FOR DEBUGGING OUTPUT GMRES deltaU set to "SCALED" residual
-      // 	double *norm = new double[Num_Var-1];
-      // 	for(int i= 0; i< Num_Var-1; i++) norm[i]=ZERO;
+// #ifdef _NKS_VERBOSE  
+//       if (CFFC_Primary_MPI_Processor()) { 
+//      /**************************************************************************/
+// 	//FOR DEBUGGING OUTPUT GMRES deltaU set to "SCALED" residual
+// 	double *norm = new double[Num_Var-1];
+// 	for(int i= 0; i< Num_Var-1; i++) norm[i]=ZERO;
 	
       for (int j = SolnBlk[Bcount].JCl-SolnBlk[Bcount].Nghost; j <= SolnBlk[Bcount].JCu+SolnBlk[Bcount].Nghost; j++){
 	for (int i = SolnBlk[Bcount].ICl-SolnBlk[Bcount].Nghost; i <= SolnBlk[Bcount].ICu+SolnBlk[Bcount].Nghost; i++){
@@ -102,29 +107,31 @@ int Newton_Update(Flame2D_Quad_Block *SolnBlk,
 	  }
 	} 
       }
-      // 	cout<<"\n *************** ";
-      // 	for(int i= 0; i<11; i++){
-      // 	  //cout<<"\n L2 norm of variable "<<i<<" = "<<sqrt(norm[i]);
-      // 	  cout<<"\n max norm of variable "<<i<<" = "<<norm[i];
-      // 	}
-      // 	cout<<"\n *************** ";
-      // 	delete[] norm;
-      /**************************************************************************/
-      //       }
-      // #endif
+// 	cout<<"\n *************** ";
+// 	for(int i= 0; i<11; i++){
+// 	  //cout<<"\n L2 norm of variable "<<i<<" = "<<sqrt(norm[i]);
+// 	  cout<<"\n max norm of variable "<<i<<" = "<<norm[i];
+// 	}
+// 	cout<<"\n *************** ";
+// 	delete[] norm;
+//      /**************************************************************************/
+//       }
+// #endif
 
     } 
   }   
   return error_flag; 
 }
 
-/*! *****************************************************************************************
- * Flame2D Specific  Finite_Time_Step                                                        *
- *                                                                                          *
- * This routine calculates the Finite Time Step using a basic SER approach for startup,     *                  
- * returning a "CFL" number to multiply by the stability determined dt.                     *
- *                                                                                          *
- ********************************************************************************************/
+/*! *************************************************************
+ * Flame2D Specific  Finite_Time_Step                           *
+ *                                                              *
+ * This routine calculates the Finite Time Step using a basic   *
+ * SER approach for startup,                                    *
+ * returning a "CFL" number to multiply by the stability        *
+ * determined dt.                                               *
+ *                                                              *
+ ****************************************************************/
 template <> double Finite_Time_Step(const Flame2D_Input_Parameters &Input_Parameters, 
 				    const double &L2norm_first,
 				    const double &L2norm_current,
@@ -159,13 +166,16 @@ template <> double Finite_Time_Step(const Flame2D_Input_Parameters &Input_Parame
 }
 
 
-/*****************************************************************************
- * SPECIALIZATION of finite time step addition to diagonal.                  *
- *****************************************************************************/ 
+/*! *************************************************************
+ * SPECIALIZATION of finite time step addition to diagonal.     *
+ ****************************************************************/ 
 template<> inline void Block_Preconditioner<Flame2D_pState,
-					    Flame2D_Quad_Block,					    
+					    Flame2D_Quad_Block,
 					    Flame2D_Input_Parameters>::
-Implicit_Euler(const int &cell_index_i,const int &cell_index_j, DenseMatrix* Jacobian,const double& DTS_dTime)
+Implicit_Euler(const int &cell_index_i,
+	       const int &cell_index_j, 
+	       DenseMatrix* Jacobian, 
+	       const double& DTS_dTime)
 {   
   //
   //Low Mach # Preconditioning 
@@ -205,7 +215,7 @@ Implicit_Euler(const int &cell_index_i,const int &cell_index_j, DenseMatrix* Jac
 }
 
 /*!**************************************************************
- * Specialization of Block_Preconditioner::Preconditioner_dFIdU  *
+ * Specialization of Block_Preconditioner::Preconditioner_dFIdU *
  *                                                              *
  * Calculates the dFdU matrix used to generate the approximate  *               
  * Jacobian for the Block Preconditioner.                       *
@@ -220,23 +230,29 @@ Preconditioner_dFIdU(DenseMatrix &_dFIdU, Flame2D_pState W)
   exit(-1);
 }
 
-/*****************************************************************************
- *  Calculate First Order Local Jacobian Block(s) Coresponding to Cell(i,j)  *
- *  using HLLE                                                               *
- *****************************************************************************/ 
+/*! *************************************************************
+ *  Calculate First Order Local Jacobian Block(s) Coresponding  *
+ *  to Cell(i,j) using HLLE                                     *
+ ****************************************************************/ 
 template<> inline void Block_Preconditioner<Flame2D_pState,
-					    Flame2D_Quad_Block,					    
+					    Flame2D_Quad_Block,
 					    Flame2D_Input_Parameters>::
-First_Order_Inviscid_Jacobian_HLLE(const int &cell_index_i,const int &cell_index_j, 
+First_Order_Inviscid_Jacobian_HLLE(const int &cell_index_i,
+				   const int &cell_index_j, 
 				   DenseMatrix* Jacobian){              
 
   //! Caculate normal vectors -> in Vector2D format. 
-  static Vector2D nface_N; nface_N = SolnBlk->Grid.nfaceN(cell_index_i,cell_index_j-1);
-  static Vector2D nface_S; nface_S = SolnBlk->Grid.nfaceS(cell_index_i,cell_index_j+1);
-  static Vector2D nface_E; nface_E = SolnBlk->Grid.nfaceE(cell_index_i-1,cell_index_j);
-  static Vector2D nface_W; nface_W = SolnBlk->Grid.nfaceW(cell_index_i+1,cell_index_j);
+  static Vector2D nface_N; 
+  static Vector2D nface_S; 
+  static Vector2D nface_E; 
+  static Vector2D nface_W; 
+  nface_N = SolnBlk->Grid.nfaceN(cell_index_i,cell_index_j-1);
+  nface_S = SolnBlk->Grid.nfaceS(cell_index_i,cell_index_j+1);
+  nface_E = SolnBlk->Grid.nfaceE(cell_index_i-1,cell_index_j);
+  nface_W = SolnBlk->Grid.nfaceW(cell_index_i+1,cell_index_j);
 
-  //! Calculate wavespeeds using solutions in the rotated frame -> in Vector2D format.
+  //! Calculate wavespeeds using solutions in the rotated frame 
+  //! -> in Vector2D format.
   static Vector2D lambdas_N;
   Flame2D_pState::HLLE_wavespeeds(SolnBlk->W[cell_index_i][cell_index_j-1], 
 				  SolnBlk->W[cell_index_i][cell_index_j], 
@@ -255,7 +271,8 @@ First_Order_Inviscid_Jacobian_HLLE(const int &cell_index_i,const int &cell_index
 				  nface_W, lambdas_W);
 
   //checks necessary ????
-  //if ((lambdas_W.y-lambdas_W.x) == ZERO) cout << " WEST : HLLE_wavespeeds " << endl;
+  //if ((lambdas_W.y-lambdas_W.x) == ZERO) 
+  //  cout << " WEST : HLLE_wavespeeds " << endl;
  
   //! Calculate constants gamma and beta -> scalar values. 
   double gamma_N( (lambdas_N.x*lambdas_N.y)/(lambdas_N.y-lambdas_N.x) );
@@ -267,7 +284,8 @@ First_Order_Inviscid_Jacobian_HLLE(const int &cell_index_i,const int &cell_index
   double gamma_W( (lambdas_W.x*lambdas_W.y)/(lambdas_W.y-lambdas_W.x) );
   double beta_W( - lambdas_W.x/(lambdas_W.y-lambdas_W.x) );
 
-  //! Obtain rotation matrices with normal vector -> matrices in DenseMatrix format. 
+  //! Obtain rotation matrices with normal vector -> matrices in 
+  //! DenseMatrix format. 
   static DenseMatrix A_N(blocksize,blocksize);
   static DenseMatrix AI_N(blocksize,blocksize);
   static DenseMatrix A_S(blocksize,blocksize);
@@ -287,7 +305,8 @@ First_Order_Inviscid_Jacobian_HLLE(const int &cell_index_i,const int &cell_index
 
   //Solution Rotate provided in pState 
   // Rotate in place
-  double u( ((const Flame2D_pState&)SolnBlk->W[cell_index_i][cell_index_j]).vx() ), 
+  double 
+    u( ((const Flame2D_pState&)SolnBlk->W[cell_index_i][cell_index_j]).vx() ), 
     v( ((const Flame2D_pState&)SolnBlk->W[cell_index_i][cell_index_j]).vy() );
 
   SolnBlk->W[cell_index_i][cell_index_j].Rotate(nface_N);
@@ -306,34 +325,27 @@ First_Order_Inviscid_Jacobian_HLLE(const int &cell_index_i,const int &cell_index
   SolnBlk->W[cell_index_i][cell_index_j].dFIdU(Jacobian[WEST]);
   SolnBlk->W[cell_index_i][cell_index_j].setVelocity(u, v);
 
-  //! Calculate Jacobian matrix -> blocksizexblocksize matrix in DenseMatrix format
+  //! Calculate Jacobian matrix -> blocksizexblocksize matrix in 
+  //! DenseMatrix format
   //  NOTE: NORTH, SOUTH, EAST, and WEST jacobians are zero at this point,
   //        CENTER already has terms in it
   static DenseMatrix II(blocksize,blocksize);  II.identity();    
   //North
-  //   Jacobian[NORTH] = (SolnBlk->Grid.lfaceN(cell_index_i,cell_index_j-1) 
-  // 		     * AI_N * (beta_N * dFdU_N + gamma_N * II) * A_N); 
   Jacobian[NORTH] *= SolnBlk->Grid.lfaceN(cell_index_i,cell_index_j-1) * beta_N;
   Jacobian[NORTH] += (SolnBlk->Grid.lfaceN(cell_index_i,cell_index_j-1) * gamma_N) * II;
   Jacobian[NORTH]  = AI_N * Jacobian[NORTH] * A_N;
 
   //South
-  //   Jacobian[SOUTH] = (SolnBlk->Grid.lfaceS(cell_index_i,cell_index_j+1) 
-  // 		     * AI_S * (beta_S * dFdU_S + gamma_S * II) * A_S);
   Jacobian[SOUTH] *= SolnBlk->Grid.lfaceS(cell_index_i,cell_index_j+1) * beta_S;
   Jacobian[SOUTH] += (SolnBlk->Grid.lfaceS(cell_index_i,cell_index_j+1) * gamma_S) * II;
   Jacobian[SOUTH]  = AI_S * Jacobian[SOUTH] * A_S;
 
   //East
-  //   Jacobian[EAST] = (SolnBlk->Grid.lfaceE(cell_index_i-1,cell_index_j) 
-  // 		    * AI_E * (beta_E * dFdU_E + gamma_E * II) * A_E);
   Jacobian[EAST] *= SolnBlk->Grid.lfaceE(cell_index_i-1,cell_index_j) * beta_E;
   Jacobian[EAST] += (SolnBlk->Grid.lfaceE(cell_index_i-1,cell_index_j) * gamma_E) * II;
   Jacobian[EAST]  = AI_E * Jacobian[EAST] * A_E;
 
   //West
-  //   Jacobian[WEST] = (SolnBlk->Grid.lfaceW(cell_index_i+1,cell_index_j) 
-  // 		    * AI_W * (beta_W * dFdU_W + gamma_W * II) * A_W);
   Jacobian[WEST] *= SolnBlk->Grid.lfaceW(cell_index_i+1,cell_index_j) * beta_W;
   Jacobian[WEST] += (SolnBlk->Grid.lfaceW(cell_index_i+1,cell_index_j) * gamma_W) * II;
   Jacobian[WEST]  = AI_W * Jacobian[WEST] * A_W;
@@ -360,9 +372,11 @@ First_Order_Inviscid_Jacobian_HLLE(const int &cell_index_i,const int &cell_index
  * Jacobian for the Block Preconditioner.                       *
  ****************************************************************/ 
 template<> inline void Block_Preconditioner<Flame2D_pState,
-					    Flame2D_Quad_Block,			    
+					    Flame2D_Quad_Block,
 					    Flame2D_Input_Parameters>::
-Preconditioner_dFIdU_Roe(DenseMatrix &_dFIdU, int ii, int jj, int Orient)
+Preconditioner_dFIdU_Roe(DenseMatrix &_dFIdU, 
+			 int ii, int jj, 
+			 int Orient)
 { 
   // declares
   static DenseMatrix dFIdW(blocksize,blocksize);
@@ -383,22 +397,25 @@ Preconditioner_dFIdU_Roe(DenseMatrix &_dFIdU, int ii, int jj, int Orient)
 }
 
 
-/*****************************************************************************
- *  Calculate First Order Local Jacobian Block(s) Coresponding to Cell(i,j)  *
- *  using Roe                                                                *
- *****************************************************************************/
+/*!**************************************************************
+ *  Calculate First Order Local Jacobian Block(s) Coresponding  *
+ *  to Cell(i,j)                                                *
+ *  using Roe                                                   *
+ ****************************************************************/
 template<> inline void Block_Preconditioner<Flame2D_pState,
-					    Flame2D_Quad_Block,					    
+					    Flame2D_Quad_Block,
 					    Flame2D_Input_Parameters>::
-First_Order_Inviscid_Jacobian_Roe(const int &cell_index_i,const int &cell_index_j, 
-				   DenseMatrix* Jacobian){              
+First_Order_Inviscid_Jacobian_Roe(const int &cell_index_i,
+				  const int &cell_index_j, 
+				  DenseMatrix* Jacobian){              
     
-  //! Calculate Jacobian matrix -> blocksizexblocksize matrix in DenseMatrix format
+  //! Calculate Jacobian matrix -> blocksizexblocksize matrix in 
+  //! DenseMatrix format
   //  NOTE: NORTH, SOUTH, EAST, and WEST jacobians are zero at this point,
   //        CENTER already has terms in it
   Preconditioner_dFIdU_Roe(Jacobian[NORTH],cell_index_i,cell_index_j,NORTH);
   Preconditioner_dFIdU_Roe(Jacobian[SOUTH],cell_index_i,cell_index_j,SOUTH); 
-  Preconditioner_dFIdU_Roe(Jacobian[EAST],cell_index_i,cell_index_j,EAST);        
+  Preconditioner_dFIdU_Roe(Jacobian[EAST],cell_index_i,cell_index_j,EAST);
   Preconditioner_dFIdU_Roe(Jacobian[WEST],cell_index_i,cell_index_j,WEST); 
 
   //Center calculated from neighbours
@@ -424,15 +441,18 @@ First_Order_Inviscid_Jacobian_Roe(const int &cell_index_i,const int &cell_index_
  * Jacobian for the Block Preconditioner.                       *
  ****************************************************************/ 
 template<> inline void Block_Preconditioner<Flame2D_pState,
-					    Flame2D_Quad_Block,			    
+					    Flame2D_Quad_Block,
 					    Flame2D_Input_Parameters>::
-Preconditioner_dFIdU_AUSM_plus_up(DenseMatrix &_dFIdU, int ii, int jj, int Orient)
+Preconditioner_dFIdU_AUSM_plus_up(DenseMatrix &_dFIdU, 
+				  int ii, int jj, 
+				  int Orient)
 {   
   // declares
   static DenseMatrix dFIdW(blocksize,blocksize);
   dFIdW.zero();
   
-  //! Calculate dFdU using solutions in the rotated frame -> matrix in DenseMatrix format. 
+  //! Calculate dFdU using solutions in the rotated frame 
+  //! -> matrix in DenseMatrix format. 
   dFIdW_Inviscid_AUSM_plus_up(dFIdW, *SolnBlk,*Input_Parameters, ii,jj,Orient);
   
   //transformation Jacobian 
@@ -445,23 +465,29 @@ Preconditioner_dFIdU_AUSM_plus_up(DenseMatrix &_dFIdU, int ii, int jj, int Orien
 
 }
 
-/*****************************************************************************
- *  Calculate First Order Local Jacobian Block(s) Coresponding to Cell(i,j)  *
- *  using AUSM_plus_up                                                       *
- ****************************************************************************/
+/*!**************************************************************
+ *  Calculate First Order Local Jacobian Block(s) Coresponding  *
+ *  to Cell(i,j) using AUSM_plus_up                             *
+ ****************************************************************/
 template<> inline void Block_Preconditioner<Flame2D_pState,
-					    Flame2D_Quad_Block,					    
+					    Flame2D_Quad_Block,
 					    Flame2D_Input_Parameters>::
-First_Order_Inviscid_Jacobian_AUSM_plus_up(const int &cell_index_i,const int &cell_index_j, 
+First_Order_Inviscid_Jacobian_AUSM_plus_up(const int &cell_index_i,
+					   const int &cell_index_j, 
 					   DenseMatrix* Jacobian){              
 
-  //! Calculate Jacobian matrix -> blocksizexblocksize matrix in DenseMatrix format
+  //! Calculate Jacobian matrix -> blocksizexblocksize matrix in 
+  //! DenseMatrix format
   //  NOTE: NORTH, SOUTH, EAST, and WEST jacobians are zero at this point,
   //        CENTER already has terms in it
-  Preconditioner_dFIdU_AUSM_plus_up(Jacobian[NORTH],cell_index_i,cell_index_j,NORTH);
-  Preconditioner_dFIdU_AUSM_plus_up(Jacobian[SOUTH],cell_index_i,cell_index_j,SOUTH); 
-  Preconditioner_dFIdU_AUSM_plus_up(Jacobian[EAST],cell_index_i,cell_index_j,EAST);        
-  Preconditioner_dFIdU_AUSM_plus_up(Jacobian[WEST],cell_index_i,cell_index_j,WEST); 
+  Preconditioner_dFIdU_AUSM_plus_up(Jacobian[NORTH],
+				    cell_index_i,cell_index_j,NORTH);
+  Preconditioner_dFIdU_AUSM_plus_up(Jacobian[SOUTH],
+				    cell_index_i,cell_index_j,SOUTH); 
+  Preconditioner_dFIdU_AUSM_plus_up(Jacobian[EAST],
+				    cell_index_i,cell_index_j,EAST);        
+  Preconditioner_dFIdU_AUSM_plus_up(Jacobian[WEST],
+				    cell_index_i,cell_index_j,WEST); 
 
   //Center calculated from neighbours
   //! Using the fact that dF/dU(right) = - dF/dU(left)
@@ -503,13 +529,13 @@ Preconditioner_dFVdU(DenseMatrix &dFvdU,
 
   // solution size
   const int ns = SolnBlk->W[Rii][Rjj].NumSpecies()-Flame2D_pState::NSm1;
-  const int Matrix_size = 12 + ns; // rho, u, v, p, c1, c2, 
-                                   // drho, du/dx,  du/dy, dv/dx, dv/dy, dp/dx, dcn/dx
+  const int Matrix_size = 10 + ns; // rho, u, v, p, drho, du/dx, du/dy, 
+                                   // dv/dx, dv/dy, dp/dx, dcn/dx
 
   // temporary matrices
-  static DenseMatrix dFvdWf(blocksize, Matrix_size); dFvdWf.zero();
-  static DenseMatrix dGvdWf(blocksize, Matrix_size); dGvdWf.zero();
   // Only need to zero these matrices once as we are always writing to the same spot
+  static DenseMatrix dFvdWf(blocksize, Matrix_size,ZERO);
+  static DenseMatrix dGvdWf(blocksize, Matrix_size,ZERO); 
   static DenseMatrix dWfdWx(Matrix_size, blocksize,ZERO);
   static DenseMatrix dWfdWy(Matrix_size, blocksize,ZERO);
   static DenseMatrix dGVdW(blocksize, blocksize, ZERO);
@@ -540,19 +566,17 @@ Preconditioner_dFVdU(DenseMatrix &dFvdU,
 
   //compute jacobian terms
   dFvdWf_Diamond(dFvdWf,dGvdWf,*SolnBlk, Orient_face, Rii, Rjj);
-  dWfdWc_Diamond(dWfdWx,dWfdWy,*SolnBlk, Orient_face, Rii, Rjj, Orient_cell); 
+  dWfdWc_Diamond(dWfdWx,dWfdWy,*SolnBlk, Orient_face, Rii, Rjj, 
+		 Orient_cell, lface*nface.x, lface*nface.y ); 
   
   // build the jacobian
   // dGVdW = lface * (nface.x*(dFvdWf*dWfdWx) + nface.y*(dGvdWf*dWfdWy));
+  // NOTE: lface*nface.x and lface*nface.y already multiplied in
   if ( fabs(nface.x)>TOLER && fabs(nface.y)<=TOLER ) {
-    dFvdWf *= lface * nface.x;
     dGVdW = dFvdWf*dWfdWx;
   } else if ( fabs(nface.x)<=TOLER  && fabs(nface.y)>TOLER)  {
-    dGvdWf *= lface * nface.y;
     dGVdW = dGvdWf*dWfdWy;
   } else {
-    dFvdWf *= lface * nface.x;
-    dGvdWf *= lface * nface.y;
     dGVdW = dFvdWf*dWfdWx;
     dGVdW += dGvdWf*dWfdWy;
   }
@@ -565,17 +589,19 @@ Preconditioner_dFVdU(DenseMatrix &dFvdU,
   SolnBlk->W[Wii][Wjj].dWdU(dWdU);  
   dFvdU += dGVdW*dWdU;
 
-
 }
 
 
-/****************************************************************************
- *  Calculate Second Order Local Jacobian Block(s) Coresponding to Cell(i,j) *                      
- ****************************************************************************/
+/*!**************************************************************
+ * Calculate Second Order Local Jacobian Block(s) Coresponding  *
+ * to Cell(i,j)                                                 *
+ ****************************************************************/
 template<> inline void Block_Preconditioner<Flame2D_pState,
-					    Flame2D_Quad_Block,					    
+					    Flame2D_Quad_Block,
 					    Flame2D_Input_Parameters>::
-Second_Order_Viscous_Jacobian(const int &cell_index_i,const int &cell_index_j, DenseMatrix* Jacobian){
+Second_Order_Viscous_Jacobian(const int &cell_index_i,
+			      const int &cell_index_j, 
+			      DenseMatrix* Jacobian){
 
   // A real cludge with all the DenseMatrices and recalculations, 
   //  but just to test, need to change for performance....
@@ -587,7 +613,7 @@ Second_Order_Viscous_Jacobian(const int &cell_index_i,const int &cell_index_j, D
   //Also should rewrite to minimize dR/dU calls and just 
   //call dWdU, but this needs to be done in Preconditioner_dFVdU
   
-  //***************** dR(i,j)/dU(i,j) *********************************************/
+  /***************** dR(i,j)/dU(i,j) ******************************/
   //CENTER
   JacobianN.zero(); JacobianS.zero(); JacobianE.zero(); JacobianW.zero();
   Preconditioner_dFVdU(JacobianN,cell_index_i,cell_index_j,
@@ -606,7 +632,7 @@ Second_Order_Viscous_Jacobian(const int &cell_index_i,const int &cell_index_j, D
 				 SolnBlk->Grid.Cell[cell_index_i][cell_index_j].A );
     }				 
 
-  /***************** dR(i,j-1)/dU(i,j) *********************************************/
+  /***************** dR(i,j-1)/dU(i,j) ****************************/
   //NORTH                           
   JacobianN.zero();
   Preconditioner_dFVdU(JacobianN,cell_index_i,cell_index_j-1,
@@ -616,7 +642,7 @@ Second_Order_Viscous_Jacobian(const int &cell_index_i,const int &cell_index_j, D
   Preconditioner_dFVdU(JacobianN,cell_index_i,cell_index_j-1,
 		       cell_index_i,cell_index_j,WEST,NORTH); 
  
-  /***************** dR(i,j+1)/dU(i,j) *********************************************/
+  /***************** dR(i,j+1)/dU(i,j) ****************************/
   //SOUTH 
   JacobianS.zero();
   Preconditioner_dFVdU(JacobianS,cell_index_i,cell_index_j+1,
@@ -626,7 +652,7 @@ Second_Order_Viscous_Jacobian(const int &cell_index_i,const int &cell_index_j, D
   Preconditioner_dFVdU(JacobianS,cell_index_i,cell_index_j+1,
 		       cell_index_i,cell_index_j,WEST,SOUTH);
   
-  /***************** dR(i-1,j)/dU(i,j) *********************************************/
+  /***************** dR(i-1,j)/dU(i,j) ****************************/
   //EAST 
   JacobianE.zero();
   Preconditioner_dFVdU(JacobianE,cell_index_i-1,cell_index_j,
@@ -636,7 +662,7 @@ Second_Order_Viscous_Jacobian(const int &cell_index_i,const int &cell_index_j, D
   Preconditioner_dFVdU(JacobianE,cell_index_i-1,cell_index_j,
 		       cell_index_i,cell_index_j,SOUTH,EAST);
 
-  /***************** dR(i+1,j)/dU(i,j) *********************************************/
+  /***************** dR(i+1,j)/dU(i,j) ****************************/
   //WEST
   JacobianW.zero(); 
   Preconditioner_dFVdU(JacobianW,cell_index_i+1,cell_index_j,
@@ -646,51 +672,58 @@ Second_Order_Viscous_Jacobian(const int &cell_index_i,const int &cell_index_j, D
   Preconditioner_dFVdU(JacobianW,cell_index_i+1,cell_index_j,
 		       cell_index_i,cell_index_j, SOUTH,WEST);
 
-  /********************************************************************************/
+  /****************************************************************/
   // CORNER matrices are still zero at this point
 
-  /***************** dR(i+1,j+1)/dU(i,j) *********************************************/
+  /***************** dR(i+1,j+1)/dU(i,j) **************************/
   //SOUTHWEST
   Preconditioner_dFVdU(Jacobian[SOUTH_WEST],cell_index_i+1,cell_index_j+1,
 		       cell_index_i,cell_index_j,SOUTH,SOUTH_WEST);
   Preconditioner_dFVdU(Jacobian[SOUTH_WEST],cell_index_i+1,cell_index_j+1,
 		       cell_index_i,cell_index_j, WEST,SOUTH_WEST);
   
-  /***************** dR(i-1,j+1)/dU(i,j) *********************************************/
+  /***************** dR(i-1,j+1)/dU(i,j) **************************/
   //SOUTHEAST
   Preconditioner_dFVdU(Jacobian[SOUTH_EAST],cell_index_i-1,cell_index_j+1,
 		       cell_index_i,cell_index_j,SOUTH,SOUTH_EAST);
   Preconditioner_dFVdU(Jacobian[SOUTH_EAST],cell_index_i-1,cell_index_j+1,
 		       cell_index_i,cell_index_j,EAST,SOUTH_EAST);
 
-  /***************** dR(i+1,j-1)/dU(i,j) *********************************************/
+  /***************** dR(i+1,j-1)/dU(i,j) **************************/
   //NORTHWEST
   Preconditioner_dFVdU(Jacobian[NORTH_WEST],cell_index_i+1,cell_index_j-1,
 		       cell_index_i,cell_index_j, NORTH,NORTH_WEST);
   Preconditioner_dFVdU(Jacobian[NORTH_WEST],cell_index_i+1,cell_index_j-1,
 		       cell_index_i,cell_index_j, WEST,NORTH_WEST);
 
-  /***************** dR(i-1,j-1)/dU(i,j) *********************************************/
+  /***************** dR(i-1,j-1)/dU(i,j) **************************/
   //NORTHEAST
   Preconditioner_dFVdU(Jacobian[NORTH_EAST],cell_index_i-1,cell_index_j-1,
 		       cell_index_i,cell_index_j, NORTH,NORTH_EAST);
   Preconditioner_dFVdU(Jacobian[NORTH_EAST],cell_index_i-1,cell_index_j-1,
 		       cell_index_i,cell_index_j, EAST,NORTH_EAST);  
-  /********************************************************************************/
+  /****************************************************************/
   for (int i=0; i<blocksize; i++)
     for (int j=0; j<blocksize; j++) {
-      Jacobian[NORTH](i,j) += JacobianN(i,j)/SolnBlk->Grid.Cell[cell_index_i][cell_index_j-1].A;
-      Jacobian[SOUTH](i,j) += JacobianS(i,j)/SolnBlk->Grid.Cell[cell_index_i][cell_index_j+1].A;
-      Jacobian[EAST](i,j) += JacobianE(i,j)/SolnBlk->Grid.Cell[cell_index_i-1][cell_index_j].A;
-      Jacobian[WEST](i,j) += JacobianW(i,j)/SolnBlk->Grid.Cell[cell_index_i+1][cell_index_j].A; 
+      Jacobian[NORTH](i,j) += 
+	JacobianN(i,j)/SolnBlk->Grid.Cell[cell_index_i][cell_index_j-1].A;
+      Jacobian[SOUTH](i,j) += 
+	JacobianS(i,j)/SolnBlk->Grid.Cell[cell_index_i][cell_index_j+1].A;
+      Jacobian[EAST](i,j) += 
+	JacobianE(i,j)/SolnBlk->Grid.Cell[cell_index_i-1][cell_index_j].A;
+      Jacobian[WEST](i,j) += 
+	JacobianW(i,j)/SolnBlk->Grid.Cell[cell_index_i+1][cell_index_j].A; 
 
-      Jacobian[SOUTH_WEST](i,j) /= SolnBlk->Grid.Cell[cell_index_i+1][cell_index_j+1].A;
-      Jacobian[SOUTH_EAST](i,j) /= SolnBlk->Grid.Cell[cell_index_i-1][cell_index_j+1].A;
-      Jacobian[NORTH_WEST](i,j) /= SolnBlk->Grid.Cell[cell_index_i+1][cell_index_j-1].A;
-      Jacobian[NORTH_EAST](i,j) /= SolnBlk->Grid.Cell[cell_index_i-1][cell_index_j-1].A;
+      Jacobian[SOUTH_WEST](i,j) /= 
+	SolnBlk->Grid.Cell[cell_index_i+1][cell_index_j+1].A;
+      Jacobian[SOUTH_EAST](i,j) /= 
+	SolnBlk->Grid.Cell[cell_index_i-1][cell_index_j+1].A;
+      Jacobian[NORTH_WEST](i,j) /= 
+	SolnBlk->Grid.Cell[cell_index_i+1][cell_index_j-1].A;
+      Jacobian[NORTH_EAST](i,j) /= 
+	SolnBlk->Grid.Cell[cell_index_i-1][cell_index_j-1].A;
     }
-  /********************************************************************************/
-
+  /****************************************************************/
 
 }
 
@@ -764,6 +797,21 @@ template<> inline void Block_Preconditioner<Flame2D_pState,
 normalize_Preconditioner_dFdU(DenseMatrix &dFdU) 
 { 
   normalize_Preconditioner(dFdU); 
+}
+
+/*!**************************************************************
+ *  Specialization of Block_Preconditioner::                    *
+ *                                     Pre_Precon_SolnBlk_Init  *
+ *                                                              *
+ * Update the Wnd array of nodal values before we build a       *               
+ * Second_Order_Viscous_Jacobian.                               *
+ ****************************************************************/
+template<> 
+inline void Block_Preconditioner<Flame2D_pState,
+				 Flame2D_Quad_Block,
+				 Flame2D_Input_Parameters>::
+Pre_Precon_SolnBlk_Init(void) {
+  SolnBlk->Update_Nodal_Values();
 }
 
 
@@ -933,11 +981,11 @@ SubcellReconstruction(const int i,
 
 }
   
-/*******************************************************************************
- * GMRES_Block::LoadSendBuffer_C2F -- Loads send message buffer for            *
- *                                    coarse to fine block message             *
- *                                    passing.                                 *
- *******************************************************************************/
+/**************************************************************************
+ * GMRES_Block::LoadSendBuffer_C2F -- Loads send message buffer for       *
+ *                                    coarse to fine block message        *
+ *                                    passing.                            *
+ **************************************************************************/
 template <> 
 inline int GMRES_Block<Flame2D_pState,
 		       Flame2D_Quad_Block,
@@ -963,7 +1011,7 @@ LoadSendBuffer_C2F(double *buffer,
     if (j_inc > 0) {             
       if (i_inc > 0) {
 
-	/******************************* CASE #1 ***************************************/
+	/************************ CASE #1 ******************************/
 	for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
 	  // Perform limited linear least squares reconstruction in cell (i, j_min).
 	  SubcellReconstruction(i, j_min, LIMITER);                    
@@ -1046,7 +1094,7 @@ LoadSendBuffer_C2F(double *buffer,
 	  } /* endfor */
 	} /* endfor */
 	
-	  /******************************* CASE #2 ***************************************/
+	/************************ CASE #2 ******************************/
       } else {
 	for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
 	  // Perform limited linear least squares reconstruction in cell (i, j_min).
@@ -1126,7 +1174,7 @@ LoadSendBuffer_C2F(double *buffer,
 	} /* endfor */
       } /* endif */
 
-	/******************************* CASE #3 ***************************************/
+	/************************ CASE #3 ******************************/
     } else {
       if (i_inc > 0) {
 	for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
@@ -1205,7 +1253,7 @@ LoadSendBuffer_C2F(double *buffer,
 	    buffer[buffer_count] = Wfine[k+1];
 	  } /* endfor */
 	} /* endfor */
-	  /******************************* CASE #4 ***************************************/
+	/************************ CASE #4 ******************************/
       } else {
 	for ( i = i_min ;  ((i_inc+1)/2) ? (i <= i_max):(i >= i_max) ; i += i_inc ) {
 	  // Perform limited linear least squares reconstruction in cell (i, j_min).
@@ -1290,7 +1338,7 @@ LoadSendBuffer_C2F(double *buffer,
     } /* endif */
 
 
-      /******************************* CASE #5 ***************************************/
+    /************************ CASE #5 ******************************/
   } else { // East or west boundary.
     // Four different orderings to consider depending on the value of i_inc & j_inc.
     if (j_inc > 0) {
@@ -1362,7 +1410,7 @@ LoadSendBuffer_C2F(double *buffer,
 	    buffer[buffer_count] = Wfine[k+1];
 	  } /* endfor */
 	} /* endfor */
-	  /******************************* CASE #6 ***************************************/
+	/************************ CASE #6 ******************************/
       } else {
 	for ( j = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
 	  // Perform limited linear least squares reconstruction in cell (i_min, j).
@@ -1432,7 +1480,7 @@ LoadSendBuffer_C2F(double *buffer,
 	  } /* endfor */
 	} /* endfor */
       } /* endif */	
-	/******************************* CASE #7 ***************************************/
+	/************************ CASE #7 ******************************/
     } else {
       if (i_inc > 0) {
 	for ( j = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
@@ -1503,7 +1551,7 @@ LoadSendBuffer_C2F(double *buffer,
 	  } /* endfor */
 	} /* endfor */\
 
-	  /******************************* CASE #8 ***************************************/
+	/************************ CASE #8 ******************************/
       } else {
 	for ( j = j_min ; ((j_inc+1)/2) ? (j <= j_max):(j >= j_max) ; j += j_inc ) {
 	  // Perform limited linear least squares reconstruction in cell (i_min, j).
@@ -1582,84 +1630,140 @@ LoadSendBuffer_C2F(double *buffer,
 /**************************************************************************
  * Routine: calculate_pertubed_residual                                   *
  **************************************************************************/
+//-------------------------------------------------------------------
 // Calculate SolnBlk.U =  SolnBlk.Uo + denormalize( epsilon * W(i) )
+//-------------------------------------------------------------------
 template <>inline void GMRES_Block<Flame2D_pState,
 				   Flame2D_Quad_Block,
 				   Flame2D_Input_Parameters>::
 calculate_perturbed_residual(const double &epsilon)
 {    
-  for (int j = JCl - Nghost ; j <= JCu + Nghost ; j++) {  //includes ghost cells 
-    for (int i = ICl - Nghost ; i <= ICu + Nghost ; i++) {         
+  //
+  // Loop over grid, including ghost cells
+  // 
+  for (int j = JCl - Nghost ; j <= JCu + Nghost ; j++) { 
+    for (int i = ICl - Nghost ; i <= ICu + Nghost ; i++) {
+
+      // compute perturbed state
       for(int varindex = 0; varindex < blocksize; varindex++){
 	SolnBlk->U[i][j][varindex+1] = SolnBlk->Uo[i][j][varindex+1] +
-	  denormalizeU( epsilon*W[search_directions*scalar_dim+index(i,j,varindex)], varindex);
+	  denormalizeU( epsilon*W[search_directions*scalar_dim + 
+				  index(i,j,varindex)], varindex);
       }     
-      //Flame2D spec_check to make sure species (Uo + epsilon*W(i)) > ZERO , ie physical for dUdt calc 
-      if(!SolnBlk->U[i][j].speciesOK(10)) { cerr<<"\n FAILURE in calculate_perturbed_residual"; exit(1); }       
+
+      //Flame2D spec_check to make sure species (Uo + epsilon*W(i)) > ZERO
+      // ie physical for dUdt calc 
+      if(!SolnBlk->U[i][j].speciesOK(10)) { 
+	cerr<<"\n FAILURE in calculate_perturbed_residual"; 
+	exit(1); 
+      }
+
       // Update primitive variables.
       SolnBlk->W[i][j].setU( SolnBlk->U[i][j] );
     }
   }  
 }
 
+//-------------------------------------------------------------------
 // Calculate SolnBlk.U =  SolnBlk.Uo - denormalize( epsilon * W(i) )
+//-------------------------------------------------------------------
 template <>inline void GMRES_Block<Flame2D_pState,
 				   Flame2D_Quad_Block,
 				   Flame2D_Input_Parameters>::
 calculate_perturbed_residual_2nd(const double &epsilon)
 {    
-  for (int j = JCl - Nghost ; j <= JCu + Nghost ; j++) {  //includes ghost cells 
+  //
+  // Loop over grid, including ghost cells
+  // 
+  for (int j = JCl - Nghost ; j <= JCu + Nghost ; j++) { 
     for (int i = ICl - Nghost ; i <= ICu + Nghost ; i++) {      
       
       //copy back R + epsilon * W(i)
       SolnBlk->dUdt[i][j][1] = SolnBlk->dUdt[i][j][0];
 
+      // compute perturbed state
       for(int varindex = 0; varindex < blocksize; varindex++){	
 	SolnBlk->U[i][j][varindex+1] = SolnBlk->Uo[i][j][varindex+1] -
-	  denormalizeU( epsilon*W[search_directions*scalar_dim+index(i,j,varindex)], varindex);	    	
+	  denormalizeU( epsilon*W[search_directions*scalar_dim + 
+				  index(i,j,varindex)], varindex);	    	
       }     
-      //Flame2D spec_check to make sure species (Uo + epsilon*W(i)) > ZERO , ie physical for dUdt calc 
-      if(!SolnBlk->U[i][j].speciesOK(10)) { cerr<<"\n FAILURE in calculate_perturbed_residual"; exit(1); }       
+
+      //Flame2D spec_check to make sure species (Uo + epsilon*W(i)) > ZERO
+      // ie physical for dUdt calc 
+      if(!SolnBlk->U[i][j].speciesOK(10)) { 
+	cerr<<"\n FAILURE in calculate_perturbed_residual"; 
+	exit(1); 
+      }
+
       // Update primitive variables.
       SolnBlk->W[i][j].setU( SolnBlk->U[i][j] );
     }
   }  
 }
 
+//-------------------------------------------------------------------
 // Calculate SolnBlk.U =  SolnBlk.Uo + denormalize( epsilon * x(i) )
+//-------------------------------------------------------------------
 template <>inline void GMRES_Block<Flame2D_pState,
 				   Flame2D_Quad_Block,
 				   Flame2D_Input_Parameters>::
 calculate_perturbed_residual_Restart(const double &epsilon)
 {    
+  //
+  // Loop over grid, including ghost cells
+  // 
   for (int j = JCl - Nghost ; j <= JCu + Nghost ; j++) {
     for (int i = ICl - Nghost ; i <= ICu + Nghost ; i++) {
+
+      // compute perturbed state
       for(int varindex = 0; varindex < blocksize; varindex++){	
-	SolnBlk->U[i][j][varindex+1] = SolnBlk->Uo[i][j][varindex+1] + denormalizeU( epsilon*x[index(i,j,varindex)], varindex);
+	SolnBlk->U[i][j][varindex+1] = SolnBlk->Uo[i][j][varindex+1] + 
+	  denormalizeU( epsilon*x[index(i,j,varindex)], varindex);
       }  
-      if(!SolnBlk->U[i][j].speciesOK(10)) { cerr<<"\n FAILURE in calculate_perturbed_residual_Restart "; exit(1); }
+
+      //Flame2D spec_check to make sure species (Uo + epsilon*W(i)) > ZERO
+      // ie physical for dUdt calc 
+      if(!SolnBlk->U[i][j].speciesOK(10)) { 
+	cerr<<"\n FAILURE in calculate_perturbed_residual_Restart "; 
+	exit(1); 
+      }
+
       // Update primitive variables.
       SolnBlk->W[i][j].setU( SolnBlk->U[i][j] );
     }
   }  
 }
 
+//-------------------------------------------------------------------
 // Calculate SolnBlk.U =  SolnBlk.Uo + denormalize( epsilon * x(i) )
+//-------------------------------------------------------------------
 template <>inline void GMRES_Block<Flame2D_pState,
 				   Flame2D_Quad_Block,
 				   Flame2D_Input_Parameters>::
 calculate_perturbed_residual_2nd_Restart(const double &epsilon)
 {    
+  //
+  // Loop over grid, including ghost cells
+  // 
   for (int j = JCl - Nghost ; j <= JCu + Nghost ; j++) {
     for (int i = ICl - Nghost ; i <= ICu + Nghost ; i++) {   
       
       //copy back R + epsilon * W(i)
       SolnBlk->dUdt[i][j][1] = SolnBlk->dUdt[i][j][0];
       
+      // compute perturbed state
       for(int varindex = 0; varindex < blocksize; varindex++){	
-	SolnBlk->U[i][j][varindex+1] = SolnBlk->Uo[i][j][varindex+1] - denormalizeU( epsilon*x[index(i,j,varindex)], varindex);
+	SolnBlk->U[i][j][varindex+1] = SolnBlk->Uo[i][j][varindex+1] - 
+	  denormalizeU( epsilon*x[index(i,j,varindex)], varindex);
       }  
-      if(!SolnBlk->U[i][j].speciesOK(10)) { cerr<<"\n FAILURE in calculate_perturbed_residual_Restart "; exit(1); }
+
+      //Flame2D spec_check to make sure species (Uo + epsilon*W(i)) > ZERO
+      // ie physical for dUdt calc 
+      if(!SolnBlk->U[i][j].speciesOK(10)) { 
+	cerr<<"\n FAILURE in calculate_perturbed_residual_Restart "; 
+	exit(1); 
+      }
+      
       // Update primitive variables.
       SolnBlk->W[i][j].setU( SolnBlk->U[i][j] );
     }
@@ -1718,10 +1822,14 @@ calculate_Matrix_Free(const double &epsilon)
 	
 	if( Input_Parameters->NKS_IP.GMRES_Frechet_Derivative_Order == FIRST_ORDER ){
 	  //forwards differenceing R(U+epsilon) - R(U) / epsilon
-	  V[(search_directions+1)*scalar_dim+iter] = (normalizeR(SolnBlk->dUdt[i][j][0][k+1],k) - b[iter]) / epsilon ;
+	  V[(search_directions+1)*scalar_dim+iter] = 
+	    (normalizeR(SolnBlk->dUdt[i][j][0][k+1],k) - 
+	     b[iter]) / epsilon ;
 	} else if ( Input_Parameters->NKS_IP.GMRES_Frechet_Derivative_Order == SECOND_ORDER ){
 	  //2nd order R(U+epsilon) - R(U-epsilon) / 2*epsilon
-	  V[(search_directions+1)*scalar_dim+iter] = normalizeR( SolnBlk->dUdt[i][j][1][k+1] - SolnBlk->dUdt[i][j][0][k+1],k)/(TWO*epsilon);
+	  V[(search_directions+1)*scalar_dim+iter] = 
+	    normalizeR( SolnBlk->dUdt[i][j][1][k+1] - 
+			SolnBlk->dUdt[i][j][0][k+1],k)/(TWO*epsilon);
 	}
 
 	//
@@ -1742,20 +1850,21 @@ calculate_Matrix_Free(const double &epsilon)
 	  //No Preconditioner
 	} else {
 	  // z/h
-	  V[(search_directions+1)*scalar_dim+iter] -= normalizeUtoR( W[(search_directions)*scalar_dim + iter] 
-								     * LHS_Time<Flame2D_Input_Parameters>(*Input_Parameters,
-													  SolnBlk->dt[i][j],
-													  DTS_ptr->DTS_dTime),k);
+	  V[(search_directions+1)*scalar_dim+iter] -= 
+	    normalizeUtoR( W[(search_directions)*scalar_dim + iter] 
+			   * LHS_Time<Flame2D_Input_Parameters>(*Input_Parameters,
+								SolnBlk->dt[i][j],
+								DTS_ptr->DTS_dTime),k);
 	}       
 
-	// #ifdef _NKS_VERBOSE_NAN_CHECK
-	// 	// nan check most commonly caused by nans in dUdt !!!!
-	// 	if (V[(search_directions+1)*scalar_dim+iter] != V[(search_directions+1)*scalar_dim+iter] ){
-	// 	  cout<<"\n nan in V[ "<<(search_directions+1)*scalar_dim+iter<<"] at "<<i<<" "<<j<<" "<<k
-	// 	      <<" dUdt "<<  normalizeR(SolnBlk->dUdt[i][j][0][k+1],k) <<" b "<< b[iter]
-	// 	      <<" z "<<W[(search_directions)*scalar_dim + iter]<< " h "<<( SolnBlk->dt[i][j]*ao);
-	// 	}
-	// #endif
+// #ifdef _NKS_VERBOSE_NAN_CHECK
+// 	// nan check most commonly caused by nans in dUdt !!!!
+// 	if (V[(search_directions+1)*scalar_dim+iter] != V[(search_directions+1)*scalar_dim+iter] ){
+// 	  cout<<"\n nan in V[ "<<(search_directions+1)*scalar_dim+iter<<"] at "<<i<<" "<<j<<" "<<k
+// 	      <<" dUdt "<<  normalizeR(SolnBlk->dUdt[i][j][0][k+1],k) <<" b "<< b[iter]
+// 	      <<" z "<<W[(search_directions)*scalar_dim + iter]<< " h "<<( SolnBlk->dt[i][j]*ao);
+// 	}
+// #endif
       } 
     } 
   } 
