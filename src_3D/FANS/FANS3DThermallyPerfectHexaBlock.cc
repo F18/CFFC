@@ -1956,10 +1956,9 @@ dUdt_Multistage_Explicit(const int i_stage,
                                                                      dWdy[i][j][k], 
                                                                      dWdz[i][j][k]);
 
-
                /* Include source terms associated with the finite-rate chemistry and
                   turbulence/chemistry interactions */
-               
+             
                if (W[i][j][k].React.reactset_flag != NO_REACTIONS) {
                   dUdt[i][j][k][k_residual] += IPs.CFL_Number*dt[i][j][k]*
                     FANS3D_ThermallyPerfect_KOmega_pState::Seddydissipation(W[i][j][k]);
@@ -2346,6 +2345,9 @@ Update_Solution_Multistage_Explicit(const int i_stage,
             
             // Check physical validity of update solution state
             if (IPs.Local_Time_Stepping == GLOBAL_TIME_STEPPING) {
+               
+               U[i][j][k].Realizable_Turbulence_Quantities_Check();
+               
 	      if (!U[i][j][k].Realizable_Solution_Check()) {
                 cout << "\n " << CFFC_Name() 
                      << " ERROR: Negative Density, Mass Fractions, Kinetic Energy, and/or Sensible Energy: \n"

@@ -46,25 +46,25 @@ SOLN_cSTATE Seddydissipationmodel(SOLN_pSTATE &W) {
    double a,b, dcdt;
    
    double model_constant = 4.0;
-   double tau_c, tau_t, s ;
+   double tau_c, s ;
+
+   tau_c = 0.0;
+   dcdt = 0.0;
    
    switch(W.React.reactset_flag){
      //--------- ONE STEP CH4 ----------//
      case CH4_1STEP: 
-       s = TWO*(W.specdata[1].Mol_mass()*THOUSAND)/(W.specdata[0].Mol_mass()*THOUSAND);
-       if (W.spec[0].c > ZERO && W.spec[1].c > ZERO) {
+
+        if (W.spec[0].c > ZERO && W.spec[1].c > ZERO) {
+
+           s = TWO*(W.specdata[1].Mol_mass()*THOUSAND)/(W.specdata[0].Mol_mass()*THOUSAND);
+  
           // tau_t --- s/(mol/cm^3)
-          tau_t = (W.specdata[0].Mol_mass()*THOUSAND)/(W.k_omega_model.beta_star*max(TOLER, W.omega))/
+          tau_c = (W.specdata[0].Mol_mass()*THOUSAND)/(W.k_omega_model.beta_star*max(TOLER, W.omega))/
                   (model_constant*rho*min(W.spec[0].c, W.spec[1].c/s) );
-          tau_c +=tau_t;
-       } /* endif */
+        } /* endif */
      
-       // compare two time scales
-       //   if(kf[0]!=ZERO){
-       //     tau_l =(W.rho*W.spec[0].c)/(M[0]*kf[0]*THOUSAND);
-       //     tau_t = ONE/(W.beta_star*max(TOLER, W.omega)*cm1);
-       //     cout<<"\n t_l = "<<tau_l<<"  t_t "<<tau_t<<endl;
-       //     }
+    
        if (tau_c > ZERO) {
           for (int index =0; index < W.ns; index++){
              switch(index) {
@@ -114,6 +114,7 @@ SOLN_cSTATE Seddydissipationmodel(SOLN_pSTATE &W) {
      break;
 
    } /* endswitch */
+   
      
    return U_return;
   

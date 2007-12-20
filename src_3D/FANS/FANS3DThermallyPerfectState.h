@@ -286,6 +286,11 @@ class FANS3D_ThermallyPerfect_KOmega_pState : public NavierStokes3D_ThermallyPer
 
    //! Check for physical validity of the solution vector
    bool Realizable_Solution_Check(void);
+   void Realizable_Turbulence_Quantities_Check(void) {
+      if ( k < ZERO ) { k = ZERO; }
+      if ( omega < ZERO) { omega = TOLER; }
+   }
+
 //@}
 
 /** @name Thermodynamic and other state functions */
@@ -855,6 +860,12 @@ class FANS3D_ThermallyPerfect_KOmega_cState : public NavierStokes3D_ThermallyPer
 
    //! Check for physical validity of the solution vector
    bool Realizable_Solution_Check(void);
+    //! Check for physical validity of scalars
+   void Realizable_Turbulence_Quantities_Check(void) {
+      if ( rhok < ZERO ) { rhok = ZERO; }
+      if ( rhoomega < ZERO) { rhoomega = TOLER; }
+   }
+
 //@}
 
 /** @name Thermodynamic and other state functions */
