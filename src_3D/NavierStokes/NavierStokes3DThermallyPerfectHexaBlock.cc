@@ -272,8 +272,7 @@ Output_Nodes_Tecplot(Input_Parameters<NavierStokes3D_ThermallyPerfect_pState,
 template<>
 int Hexa_Block<NavierStokes3D_ThermallyPerfect_pState, 
                NavierStokes3D_ThermallyPerfect_cState>::
-ICs(const int i_ICtype,
-    Input_Parameters<NavierStokes3D_ThermallyPerfect_pState, 
+ICs(Input_Parameters<NavierStokes3D_ThermallyPerfect_pState, 
                      NavierStokes3D_ThermallyPerfect_cState> &IPs) {
 
    double dpdx, dpdy, dpdz, delta_pres;
@@ -281,20 +280,19 @@ ICs(const int i_ICtype,
       
    NavierStokes3D_ThermallyPerfect_pState Wl, Wr;
    
-   switch(i_ICtype) {
-      case IC_VISCOUS_COUETTE :
+   switch(IPs.i_ICs) {
       case IC_VISCOUS_COUETTE_PRESSURE_GRADIENT_X :
          dpdx = IPs.Pressure_Gradient.x;  
-         delta_pres = dpdx*IPs.Grid_IP.Box_Length;
+         delta_pres = dpdx*IPs.Grid_IP.Box_Width;
          for (int k = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
             for (int j = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
                for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
                   W[i][j][k] = IPs.Wo;
-                  W[i][j][k].v.x = HALF*(-dpdx)/W[i][j][k].mu()*(Grid.Cell[i][j][k].Xc.z + 
-                                   0.5*IPs.Grid_IP.Box_Height)*
-                                   (Grid.Cell[i][j][k].Xc.z - 0.5*IPs.Grid_IP.Box_Height) +
-                                   IPs.Moving_Wall_Velocity.x*(Grid.Cell[i][j][k].Xc.z/IPs.Grid_IP.Box_Height + 
-                                   HALF);
+                  W[i][j][k].v.x = HALF*(-dpdx)/W[i][j][k].mu()*
+                                   (Grid.Cell[i][j][k].Xc.y + 0.5*IPs.Grid_IP.Box_Height)*
+                                   (Grid.Cell[i][j][k].Xc.y - 0.5*IPs.Grid_IP.Box_Height) +
+                                   IPs.Moving_Wall_Velocity.x*
+                                   (Grid.Cell[i][j][k].Xc.y/IPs.Grid_IP.Box_Height+HALF);
                   W[i][j][k].p = IPs.Wo.p - (i-ICl-Nghost)*delta_pres/(ICu-ICl);	 
                   if (i == ICl-Nghost || i == ICl-Nghost+1 ) {
                     W[i][j][k].p = IPs.Wo.p;
@@ -310,17 +308,17 @@ ICs(const int i_ICtype,
 
       case IC_VISCOUS_COUETTE_PRESSURE_GRADIENT_Y :
          dpdy = IPs.Pressure_Gradient.y;  
-         delta_pres = dpdy*IPs.Grid_IP.Box_Width;
+         delta_pres = dpdy*IPs.Grid_IP.Box_Height;
          for (int k = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
             for (int j = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
                for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
                   W[i][j][k] = IPs.Wo;
-                  W[i][j][k].v.y = HALF*(-dpdy)/W[i][j][k].mu()*(Grid.Cell[i][j][k].Xc.z + 
-                                   0.5*IPs.Grid_IP.Box_Height)*(Grid.Cell[i][j][k].Xc.z - 
-                                   0.5*IPs.Grid_IP.Box_Height) +
-                                   IPs.Moving_Wall_Velocity.y*(Grid.Cell[i][j][k].Xc.z/IPs.Grid_IP.Box_Height + 
-                                   HALF);
-                  W[i][j][k].p = IPs.Wo.p - (Grid.Cell[i][j][k].Xc.y)*delta_pres/IPs.Grid_IP.Box_Width;	 
+                  W[i][j][k].v.y = HALF*(-dpdy)/W[i][j][k].mu()*
+                                   (Grid.Cell[i][j][k].Xc.x + 0.5*IPs.Grid_IP.Box_Width)*
+                                   (Grid.Cell[i][j][k].Xc.x - 0.5*IPs.Grid_IP.Box_Width) +
+                                   IPs.Moving_Wall_Velocity.y*
+                                   (Grid.Cell[i][j][k].Xc.x/IPs.Grid_IP.Box_Width+HALF);
+                  W[i][j][k].p = IPs.Wo.p - (j-JCl-Nghost)*delta_pres/(JCu-JCl);
                   if (j == JCl-Nghost || j == JCl-Nghost+1 ){
                      W[i][j][k].p = IPs.Wo.p;
                   } /* endif */
@@ -333,19 +331,20 @@ ICs(const int i_ICtype,
 	 } /* endfor */
          break; 
 
+      case IC_VISCOUS_COUETTE :
       case IC_VISCOUS_COUETTE_PRESSURE_GRADIENT_Z :
          dpdz = IPs.Pressure_Gradient.z;  
-         delta_pres = dpdz*IPs.Grid_IP.Box_Height;
+         delta_pres = dpdz*IPs.Grid_IP.Box_Length;
          for (int k = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
             for (int j = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
                for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
                   W[i][j][k] = IPs.Wo;
-                  W[i][j][k].v.z = HALF*(-dpdz)/W[i][j][k].mu()*(Grid.Cell[i][j][k].Xc.y + 
-                                   0.5*IPs.Grid_IP.Box_Width)*
-                                   (Grid.Cell[i][j][k].Xc.y - 0.5*IPs.Grid_IP.Box_Width) +
-                                   IPs.Moving_Wall_Velocity.z*(Grid.Cell[i][j][k].Xc.y/IPs.Grid_IP.Box_Width + 
-                                   HALF);
-                  W[i][j][k].p = IPs.Wo.p - (Grid.Cell[i][j][k].Xc.z)*delta_pres/IPs.Grid_IP.Box_Height;
+                  W[i][j][k].v.z = HALF*(-dpdz)/W[i][j][k].mu()*
+                                   (Grid.Cell[i][j][k].Xc.y + 0.5*IPs.Grid_IP.Box_Height)*
+                                   (Grid.Cell[i][j][k].Xc.y - 0.5*IPs.Grid_IP.Box_Height) +
+                                   IPs.Moving_Wall_Velocity.z*
+                                   (Grid.Cell[i][j][k].Xc.y/IPs.Grid_IP.Box_Height+HALF);
+                  W[i][j][k].p = IPs.Wo.p - (k-KCl-Nghost)*delta_pres/(KCu-KCl);
                   if (k == KCl-Nghost || k == KCl-Nghost+1 ) {
                      W[i][j][k].p = IPs.Wo.p;
                   } /* endif */
@@ -360,56 +359,72 @@ ICs(const int i_ICtype,
       
       case IC_PRESSURE_GRADIENT_X :
          dpdx = IPs.Pressure_Gradient.x;  
-         delta_pres = dpdx*IPs.Grid_IP.Box_Length;
-         di =  1.0/sqr(IPs.Grid_IP.Box_Height/2.0)+ 1.0/sqr(IPs.Grid_IP.Box_Width/2.0);
-         U_axi = delta_pres/(2.0*W[0][0][0].mu())/di;
+         delta_pres = dpdx*IPs.Grid_IP.Box_Width;
          for (int k = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
             for (int j = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
                for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
                   W[i][j][k] = IPs.Wo;
-                  W[i][j][k].v.x = 0.5*(-dpdx)/W[i][j][k].mu()*(Grid.Cell[i][j][k].Xc.z + 
-                                   0.5*IPs.Grid_IP.Box_Height)*
-                                   (Grid.Cell[i][j][k].Xc.z - 0.5*IPs.Grid_IP.Box_Height);
+                  W[i][j][k].v.x = -HALF*(dpdx/W[i][j][k].mu())*
+                                   (Grid.Cell[i][j][k].Xc.y + 0.5*IPs.Grid_IP.Box_Height)*
+                                   (Grid.Cell[i][j][k].Xc.y - 0.5*IPs.Grid_IP.Box_Height);
                   W[i][j][k].p = IPs.Wo.p - (i-ICl-Nghost)*delta_pres/(ICu-ICl);	 
                   if( i == ICl-Nghost || i == ICl-Nghost+1 ){
                      W[i][j][k].p = IPs.Wo.p;
-                  }
+                  } /* endif */
                   if( i == ICu+Nghost || i == ICu+Nghost-1){
                      W[i][j][k].p = IPs.Wo.p - delta_pres; 
-                  }
+                  } /* endif */
                   U[i][j][k] = W[i][j][k].U();
 	       } /* endfor */ 
 	    } /* endfor */       
 	 } /* endfor */
          break; 
 
-      case IC_CHANNEL_FLOW :
-         // this case is from John Laufer
-         // Investigation of Turbulent Flow in a Two-Dimensional Channel
-         // debugging purpose here (laminar flow)
-         dpdx = IPs.Pressure_Gradient.x;  
-         delta_pres = dpdx*IPs.Grid_IP.Box_Length;
-         Um = 22.3;
-         //Um = 7.07; // computed from Reynolds number 61600
+      case IC_PRESSURE_GRADIENT_Y :
+         dpdx = IPs.Pressure_Gradient.y;  
+         delta_pres = dpdx*IPs.Grid_IP.Box_Height;
          for (int k = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
-	    for (int j = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
+            for (int j = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
                for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
                   W[i][j][k] = IPs.Wo;
-                  W[i][j][k].p = IPs.Wo.p - (i-ICl-Nghost)*delta_pres/(ICu-ICl);	 
-                  if( i == ICl-Nghost || i == ICl-Nghost+1 ){
+                  W[i][j][k].v.y = -HALF*(dpdx/W[i][j][k].mu())*
+                                   (Grid.Cell[i][j][k].Xc.x + 0.5*IPs.Grid_IP.Box_Width)*
+                                   (Grid.Cell[i][j][k].Xc.x - 0.5*IPs.Grid_IP.Box_Width);
+                  W[i][j][k].p = IPs.Wo.p - (j-JCl-Nghost)*delta_pres/(JCu-JCl);	 
+                  if( j == JCl-Nghost || j == JCl-Nghost+1 ){
                      W[i][j][k].p = IPs.Wo.p;
                   }
-                  if( i == ICu+Nghost || i == ICu+Nghost-1){
+                  if( j == JCu+Nghost || j == JCu+Nghost-1){
                      W[i][j][k].p = IPs.Wo.p - delta_pres; 
                   }
-                  W[i][j][k].v.x = 0.5*(-dpdx)/W[i][j][k].mu()*(Grid.Cell[i][j][k].Xc.y + 
-                                   0.5*IPs.Grid_IP.Box_Width)*
-                                   (Grid.Cell[i][j][k].Xc.y - 0.5*IPs.Grid_IP.Box_Width);
                   U[i][j][k] = W[i][j][k].U();
- 	       } /* endfor */
-	    } /* endfor */
+	       } /* endfor */ 
+	    } /* endfor */       
 	 } /* endfor */
-         break; 
+         break;
+
+      case IC_PRESSURE_GRADIENT_Z :
+         dpdx = IPs.Pressure_Gradient.z;  
+         delta_pres = dpdx*IPs.Grid_IP.Box_Length;
+         for (int k = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
+            for (int j = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
+               for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
+                  W[i][j][k] = IPs.Wo;
+                  W[i][j][k].v.z = -HALF*(dpdx/W[i][j][k].mu())*
+                                   (Grid.Cell[i][j][k].Xc.y + 0.5*IPs.Grid_IP.Box_Height)*
+                                   (Grid.Cell[i][j][k].Xc.y - 0.5*IPs.Grid_IP.Box_Height);
+                  W[i][j][k].p = IPs.Wo.p - (k-KCl-Nghost)*delta_pres/(KCu-KCl);	 
+                  if( k == KCl-Nghost || k == KCl-Nghost+1 ){
+                     W[i][j][k].p = IPs.Wo.p;
+                  }
+                  if( k == KCu+Nghost || k == KCu+Nghost-1){
+                     W[i][j][k].p = IPs.Wo.p - delta_pres; 
+                  }
+                  U[i][j][k] = W[i][j][k].U();
+	       } /* endfor */ 
+	    } /* endfor */       
+	 } /* endfor */
+         break;
 
       case IC_SHOCK_BOX :
 	 Wl = NavierStokes3D_ThermallyPerfect_pState(IPs.Wo);
@@ -664,7 +679,7 @@ CFL(Input_Parameters<NavierStokes3D_ThermallyPerfect_pState,
                                      d_j/(a+fabs(v_j))),
                                      d_k/(a+fabs(v_k)));
                
-               if (IPs.i_Flow_Type != FLOWTYPE_INVISCID) {  
+               if (Flow_Type != FLOWTYPE_INVISCID) {  
                   nv = W[i][j][k].mu()/W[i][j][k].rho;
                   dt_vis = min(min((d_i*d_i)/(3.0*nv), 
                                    (d_j*d_j)/(3.0*nv)), 

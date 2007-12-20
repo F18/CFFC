@@ -216,6 +216,8 @@ inline char *Date_And_Time() {
 #define GRID_COUETTE_XDIR                    28
 #define GRID_COUETTE_YDIR                    29
 #define GRID_BLUFF_BODY_BURNER               30
+#define GRID_PERIODIC_BOX                    31
+#define GRID_PERIODIC_BOX_WITH_INFLOW        32
 
 #define GRID_ICEMCFD                       1000
 #define GRID_READ_FROM_DEFINITION_FILE    10000
@@ -431,6 +433,8 @@ inline char *Date_And_Time() {
 #define FLOWTYPE_TURBULENT_DES                         9
 #define FLOWTYPE_TURBULENT_DES_K_OMEGA                10
 #define FLOWTYPE_TURBULENT_DNS                        11
+#define FLOWTYPE_TURBULENT_LES_C_FSD_K                12
+#define FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY      13
 
 /**********************************************************************
  * CFD -- Particle-phase formulation.                                 *
@@ -458,6 +462,17 @@ inline char *Date_And_Time() {
 #define FRICTION_VELOCITY_WALL_SHEAR_STRESS       971
 #define FRICTION_VELOCITY_ITERATIVE               972
 #define FRICTION_VELOCITY_PIPE                    973
+
+/********************************************************
+ * CFD -- Turbulence energy spectrum.                   *
+ ********************************************************/
+ 
+#define SPECTRUM_LEE_REYNOLDS                    0
+#define SPECTRUM_LAVAL_NAZARENKO                 1
+#define SPECTRUM_VON_KARMAN_PAO                  2
+#define SPECTRUM_HAWORTH_POINSOT                 3
+#define SPECTRUM_CHASNOV                         4
+#define SPECTRUM_BELL_DAY                        5
 
 /**********************************************************************
  * CFD -- Initial Condition Types.                                    *
@@ -576,6 +591,8 @@ inline char *Date_And_Time() {
 #define IC_ELECTRIC_FIELD_DOUBLE_QUADRUPOLE  203
 #define IC_ELECTRIC_FIELD_DOUBLE_OCTAPOLE    204
 
+#define IC_TURBULENT_PREMIXED_FLAME   300
+
 /********************************************************
  * CFD -- Time Integration (Time-Stepping) Types.       *
  ********************************************************/
@@ -681,7 +698,7 @@ inline char *Date_And_Time() {
 #define FLUX_FUNCTION_OSHER                            7
 #define FLUX_FUNCTION_VANLEER                          8
 #define FLUX_FUNCTION_AUSM                             9
-#define FLUX_FUNCTION_AUSMplus                        10
+#define FLUX_FUNCTION_AUSM_PLUS_UP                    10
 #define	FLUX_FUNCTION_ROE_PRECON_WS                   11
 #define	FLUX_FUNCTION_HLLE_PRECON_WS                  12
 
@@ -743,17 +760,6 @@ inline char *Date_And_Time() {
 #define SOUTH_EAST                     13
 #define SOUTH_WEST                     14
 
-/********************************************************
- * CFD -- Turbulence energy spectrum.                   *
- ********************************************************/
- 
-#define LEE_REYNOLDS                    0
-#define LAVAL_NAZARENKO                 1
-#define VON_KARMAN_PAO                  2
-#define HAWORTH_POINSOT                 3
-#define CHASNOV                         4
-#define BELL_DAY                        5
-
 /**********************************************************************
  * CFD -- Inline functions.                                           *
  **********************************************************************/
@@ -805,7 +811,7 @@ inline double vanalbada(const double &x, const double &y,
 		        const double &epsi)
    { return (x*y+sqr(epsi))*(x+y)/(sqr(x)+sqr(y)+TWO*sqr(epsi)); }
 
-// Inline functions for AUSMplusUP flux calculation.
+// Inline functions for AUSMPlusUp flux calculation.
 // M+1
 inline double Mplus_1(double M)
   { return 0.5*(M + fabs(M)); }

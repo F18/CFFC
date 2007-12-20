@@ -1438,6 +1438,20 @@ extern Grid2D_Quad_Block** Grid_Rectangular_Box(Grid2D_Quad_Block **Grid_ptr,
 	                                        const int Number_of_Cells_Jdir,
 					        const int Number_of_Ghost_Cells);
 
+extern Grid2D_Quad_Block** Grid_Periodic_Box(Grid2D_Quad_Block **Grid_ptr,
+                                             int &Number_of_Blocks_Idir,
+                                             int &Number_of_Blocks_Jdir,
+                                             const double &Width,
+                                             const double &Height,
+					     const int Stretching_Flag,
+					     const int Stretching_Type_Idir,
+					     const int Stretching_Type_Jdir,
+				       	     const double &Stretching_Factor_Idir,
+					     const double &Stretching_Factor_Jdir,
+ 	                                     const int Number_of_Cells_Idir,
+	                                     const int Number_of_Cells_Jdir,
+					     const int Number_of_Ghost_Cells);
+
 extern Grid2D_Quad_Block** Grid_Flat_Plate(Grid2D_Quad_Block **Grid_ptr,
                                            int &Number_of_Blocks_Idir,
                                            int &Number_of_Blocks_Jdir,

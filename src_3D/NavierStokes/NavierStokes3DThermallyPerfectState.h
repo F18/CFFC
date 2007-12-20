@@ -188,7 +188,7 @@ class NavierStokes3D_ThermallyPerfect_pState : public Euler3D_ThermallyPerfect_p
    }
 
    //! Default destructor
-   ~NavierStokes3D_ThermallyPerfect_pState() {
+   ~NavierStokes3D_ThermallyPerfect_pState(void) {
       Deallocate();
    }
 //@}
@@ -522,7 +522,7 @@ class NavierStokes3D_ThermallyPerfect_cState : public Euler3D_ThermallyPerfect_c
    }
 
    //! Default destructor
-   ~NavierStokes3D_ThermallyPerfect_cState() {
+   ~NavierStokes3D_ThermallyPerfect_cState(void) {
       Deallocate();
    }
 //@}

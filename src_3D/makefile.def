@@ -58,6 +58,7 @@ DEPENDSFLAGS =
 #   x86_64 - gcc (3.x,4.x) 
 #   alpha  - cxx (6.x)
 #   ia64   - icc (v8.0,v8.1)
+#   mac - intel
 #
 PLATFORM:= $(shell uname)_$(shell uname -m)
 ifeq ($(PLATFORM),Linux_i486)
@@ -147,7 +148,7 @@ BPKIT_LD_FLAGS            = -L$(BPKIT_LIB_DIR) -lbpkit
 
 BLAS_LD_FLAGS             = -lblas -llapack -lgcc -lg2c
 ifeq ($(PLATFORM),Linux_i386)
-  BLAS_LD_FLAGS           = -lblas -llapack -lgcc 
+  BLAS_LD_FLAGS           = -lblas -llapack -lgcc
   ifeq ($(GCC_VERSION),ICC)
    BLAS_LD_FLAGS   	  = -lblas -llapack -lifcore -lg2c
   endif
@@ -161,6 +162,9 @@ endif
 ifeq ($(PLATFORM),Linux_x86_64)
   BLAS_LD_FLAGS           = -lblas -llapack -lg2c -lgcc
 endif
+ifeq ($(PLATFORM),Darwin_i386)
+  BLAS_LD_FLAGS           = -lblas -llapack -lgcc -lgfortran
+ endif
 
 #
 # Set flags associated with block connectivity library, blkclib
@@ -175,6 +179,10 @@ BLKCLIB_LD_FLAGS        = -L$(BLKCLIB_LIB_DIR) -lblkc
 # Set flags associated with cantera
 ifeq ($(PLATFORM),Linux_i386)
   CANTERA_ARCH          = $(shell uname -m)-pc-linux-gnu
+  CANTERA_LCXX_END_LIBS = -lm
+endif
+ifeq ($(PLATFORM),Darwin_i386)
+  CANTERA_ARCH          =  $(shell uname -m)-apple-darwin-$(shell uname -r)
   CANTERA_LCXX_END_LIBS = -lm
 endif
 ifeq ($(PLATFORM),Linux_alpha)
@@ -267,11 +275,13 @@ ifeq ($(PLATFORM),Linux_i386)
        MODFLAG = -module
        CFLAGS = -O2
     endif
-    LDFLAGS = $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS)  $(BLKCLIB_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) $(CANTERA_LD_FLAGS) -lm
+    LDFLAGS = $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLKCLIB_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) $(CANTERA_LD_FLAGS) -lm
     # Profiling with gprof 
     ifeq ($(PROFILING),ON)
-      CXXFLAGS = -g -pg 
-      LDFLAGS = $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS)  $(BLKCLIB_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) $(CANTERA_LD_FLAGS) -lm -pg
+      FFLAGS   = -g -pg
+      CFLAGS   = -g -pg
+      CXXFLAGS = -g -pg
+      LDFLAGS += -pg
     endif
     LD = $(CXX)
     DEPENDSFLAGS =
@@ -327,8 +337,10 @@ ifeq ($(PLATFORM),Linux_alpha)
     CXXFLAGS = -arch host -tune host -fast -w -std gnu
     LDFLAGS = $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(BLKCLIB_LD_FLAGS) $(FFTW_LD_FLAGS) $(CANTERA_LD_FLAGS) -lm 
     ifeq ($(PROFILING),ON)
-      CXXFLAGS = -pg -arch host -tune host -fast -w -std gnu 
-      LDFLAGS = $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(BLKCLIB_LD_FLAGS) $(FFTW_LD_FLAGS) $(CANTERA_LD_FLAGS) -lm -pg 
+      FFLAGS   += -pg
+      CFLAGS   += -pg
+      CXXFLAGS += -pg
+      LDFLAGS  += -pg
     endif
     LD = $(CXX)	
     DEPENDSFLAGS = 
@@ -346,6 +358,12 @@ ifeq ($(PLATFORM),Linux_alpha)
     CXXFLAGS = -arch host -tune host -fast -w -std gnu
     LD = $(CXX)
     LDFLAGS = $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS)  $(BLKCLIB_LD_FLAGS) $(FFTW_LD_FLAGS) $(CANTERA_LD_FLAGS) -lm
+    ifeq ($(PROFILING),ON)
+      FFLAGS   += -pg
+      CFLAGS   += -pg
+      CXXFLAGS += -pg
+      LDFLAGS  += -pg
+    endif
     DEPENDSFLAGS = -I/usr/local/mpi/include/mpi2c++
   endif
 endif
@@ -366,7 +384,10 @@ ifeq ($(PLATFORM),Linux_ia64)
     CFLAGS = -w0 -O2 -mp -ftz 
     LDFLAGS = $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS)  $(BLKCLIB_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) $(CANTERA_LD_FLAGS) -limf
     ifeq ($(PROFILING),ON)
-      CXXFLAGS = -w0 -mp -ftz -g -p
+      FFLAGS   += -qp
+      CFLAGS   += -qp
+      CXXFLAGS += -qp
+      LDFLAGS  += -qp
     endif
     LD = $(CXX)
     DEPENDSFLAGS =
@@ -399,6 +420,12 @@ ifeq ($(PLATFORM),Linux_ia64)
     CFLAGS = -w0 -O2 -mp -ftz 
     LD = $(CXX)
     LDFLAGS =  $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS)  $(BLKCLIB_LD_FLAGS) $(FFTW_LD_FLAGS) $(CANTERA_LD_FLAGS) -limf
+    ifeq ($(PROFILING),ON)
+      FFLAGS   += -qp
+      CFLAGS   += -qp
+      CXXFLAGS += -qp
+      LDFLAGS  += -qp
+    endif
     DEPENDSFLAGS = 
   endif
 endif
@@ -451,6 +478,37 @@ ifeq ($(PLATFORM),Linux_x86_64)
     LDFLAGS = $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS)  $(BLKCLIB_LD_FLAGS) $(FFTW_LD_FLAGS) -lm
     DEPENDSFLAGS = 
   endif
+endif
+
+#Set Darwin_i386 compiling flags
+ifeq ($(PLATFORM),Darwin_i386)
+  ifeq ($(MPI_VERSION),NoMPI)
+    FC = gfortran
+    F90 = $(FC)
+    CC = gcc
+    CXX = g++
+    CPPFLAGS = -D_NO_MPI_VERSION -D_GNU_GCC_296 $(ICEMCFD_CPP_FLAGS) $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) $(BLKCLIB_CPP_FLAGS) $(FFTW_CPP_FLAGS) $(CANTERA_CPP_FLAGS)
+    FFLAGS = -O -w
+    F90FLAGS = $(FFLAGS) -fdefault-real-8
+    MODFLAG = -M
+    CXXFLAGS = -O 	
+    ifeq ($(GCC_VERSION),V3+)
+       CPPFLAGS = -D_NO_MPI_VERSION -D_GNU_GCC_3 $(ICEMCFD_CPP_FLAGS) $(SPARSELIB_CPP_FLAGS) $(BPKIT_CPP_FLAGS) $(BLKCLIB_CPP_FLAGS) $(FFTW_CPP_FLAGS) $(CANTERA_CPP_FLAGS)
+       CFLAGS = -O3 
+       CXXFLAGS = -O3
+    endif   
+   
+    LDFLAGS = $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS)  $(BLKCLIB_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) $(CANTERA_LD_FLAGS) -lm
+    
+    # Profiling with gprof 
+    ifeq ($(PROFILING),ON)
+      CXXFLAGS = -g -pg 
+      LDFLAGS = $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS)  $(BLKCLIB_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) $(CANTERA_LD_FLAGS) -lm -pg
+    endif
+    
+    LD = $(CXX)
+    DEPENDSFLAGS =
+  endif  
 endif
 
 #

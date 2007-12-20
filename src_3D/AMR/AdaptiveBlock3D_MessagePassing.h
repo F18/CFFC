@@ -55,7 +55,6 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
    /* Load the send buffers of each solution block. */
    for (int i_blk = 0 ; i_blk <= Soln_Block_List.Nblk-1 ; ++i_blk) {
      if (Soln_Block_List.Block[i_blk].used) {
-              
         // Assign the boundary element information
         number_neighbours[BE::BSW] = Soln_Block_List.Block[i_blk].nBSW;
         neighbour_info[BE::BSW] = Soln_Block_List.Block[i_blk].infoBSW[0];
@@ -155,9 +154,9 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                     // Load ghost cell solution variable information.
                     if (ii == -1) {
                        n_imin = Soln_Blks[i_blk].Nghost;
-                       n_imax = Soln_Blks[i_blk].ICl +1;
+                       n_imax = Soln_Blks[i_blk].ICl+1;
                     } else if (ii == 1){
-                       n_imin =  Soln_Blks[i_blk].ICu-1;
+                       n_imin = Soln_Blks[i_blk].ICu-1;
                        n_imax = Soln_Blks[i_blk].ICu;
                     } else {
                        n_imin = 0;
@@ -165,9 +164,9 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                     } /* endif */
                     if (jj == -1 ) {
                        n_jmin = Soln_Blks[i_blk].Nghost;
-                       n_jmax = Soln_Blks[i_blk].JCl +1;
+                       n_jmax = Soln_Blks[i_blk].JCl+1;
                     } else if( jj == 1) {
-                       n_jmin =  Soln_Blks[i_blk].JCu-1;
+                       n_jmin = Soln_Blks[i_blk].JCu-1;
                        n_jmax = Soln_Blks[i_blk].JCu;
                     } else {
                        n_jmin = 0;
@@ -175,9 +174,9 @@ int Load_Send_Message_Buffers_NoResChange(Hexa_Soln_Block *Soln_Blks,
                     } /* endif */
                     if (kk == -1 ) {
                        n_kmin = Soln_Blks[i_blk].Nghost;
-                       n_kmax = Soln_Blks[i_blk].KCl +1;
+                       n_kmax = Soln_Blks[i_blk].KCl+1;
                     } else if ( kk == 1) {
-                       n_kmin =  Soln_Blks[i_blk].KCu-1;
+                       n_kmin = Soln_Blks[i_blk].KCu-1;
                        n_kmax = Soln_Blks[i_blk].KCu;
                     } else {
                        n_kmin = 0;
@@ -392,31 +391,31 @@ int Load_Send_Message_Buffers_NoResChange_Mesh_Geometry_Only(Hexa_Soln_Block *So
                  
                     // Load ghost cell mesh and BC information.
                     if (ii == -1) {
-                       n_imin = Soln_Blks[i_blk].Grid.INl +1;
-                       n_imax = Soln_Blks[i_blk].Grid.INl + Soln_Blks[i_blk].Nghost;
+                       n_imin = Soln_Blks[i_blk].Grid.INl+1;
+                       n_imax = Soln_Blks[i_blk].Grid.INl+Soln_Blks[i_blk].Nghost;
                     } else if (ii == 1) {
-                       n_imin =  Soln_Blks[i_blk].Grid.INu-Soln_Blks[i_blk].Nghost;
+                       n_imin = Soln_Blks[i_blk].Grid.INu-Soln_Blks[i_blk].Nghost;
                        n_imax = Soln_Blks[i_blk].Grid.INu-1;
                     } else {
                        n_imin = 0;
                        n_imax = 0;
                     } /* endif */
                     if (jj == -1) {
-                       n_jmin = Soln_Blks[i_blk].Grid.JNl +1;
-                       n_jmax = Soln_Blks[i_blk].Grid.JNl +Soln_Blks[i_blk].Nghost;
+                       n_jmin = Soln_Blks[i_blk].Grid.JNl+1;
+                       n_jmax = Soln_Blks[i_blk].Grid.JNl+Soln_Blks[i_blk].Nghost;
                     } else if (jj == 1) {
-                       n_jmin =  Soln_Blks[i_blk].Grid.JNu-Soln_Blks[i_blk].Nghost;
+                       n_jmin = Soln_Blks[i_blk].Grid.JNu-Soln_Blks[i_blk].Nghost;
                        n_jmax = Soln_Blks[i_blk].Grid.JNu-1;
                     } else {
                        n_jmin = 0;
                        n_jmax = 0;
                     } /* endif */
                     if (kk == -1 ) {
-                       n_kmin = Soln_Blks[i_blk].Grid.KNl +1;
-                       n_kmax = Soln_Blks[i_blk].Grid.KNl +Soln_Blks[i_blk].Nghost;
+                       n_kmin = Soln_Blks[i_blk].Grid.KNl+1;
+                       n_kmax = Soln_Blks[i_blk].Grid.KNl+Soln_Blks[i_blk].Nghost;
                     } else if (kk == 1) {
-                       n_kmin =  Soln_Blks[i_blk].Grid.KNu-Soln_Blks[i_blk].Nghost;
-                       n_kmax = Soln_Blks[i_blk].Grid.KNu -1;
+                       n_kmin = Soln_Blks[i_blk].Grid.KNu-Soln_Blks[i_blk].Nghost;
+                       n_kmax = Soln_Blks[i_blk].Grid.KNu-1;
                     } else {
                        n_kmin = 0;
                        n_kmax = 0;

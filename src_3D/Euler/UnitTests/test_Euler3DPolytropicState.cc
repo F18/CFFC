@@ -41,27 +41,6 @@ namespace tut
     
   };
 
-void ensure_distance_cState(string assertion, const Euler3D_Polytropic_cState &U1, const Euler3D_Polytropic_cState &U2, double tol) {
-	ensure_distance (assertion, U1*U1 , U2*U2 , tol );
-}
-
-void ensure_distance_pState(string assertion, const Euler3D_Polytropic_pState &W1, const Euler3D_Polytropic_pState &W2, double tol) {
-	ensure_distance (assertion, W1*W1 , W2*W2 , tol );
-}
-
-void ensure_distance_DenseMatrix(string assertion, DenseMatrix &M1, DenseMatrix M2, double tol) {
-	ensure("dimensions", M1.get_n() == M2.get_n());
-	ensure("dimensions", M1.get_m() == M2.get_m());
-	int n = M1.get_m(), m = M1.get_n();
-	for (int i=0; i<m; i++) {
-		for (int j=0; j<n; j++) {
-			ensure_distance(assertion, M1(i,j) , M2(i,j) , tol);
-		}
-	}
-		
-			
-}
-
 
   /**
    * This group of declarations is just to register
@@ -155,8 +134,8 @@ void ensure_distance_DenseMatrix(string assertion, DenseMatrix &M1, DenseMatrix 
 	ensure ("copy U", Uco == U);
 	
 	/* check if W == U.W() and U == W.U() */
-	ensure_distance_pState ("assignment W -> U", W , U.W() , tol );
-	ensure_distance_cState ("assignment U -> W", U , W.U() , tol );
+	ensure_distance ("assignment W -> U", W , U.W() , Euler3D_Polytropic_pState(tol) );
+	ensure_distance ("assignment U -> W", U , W.U() , Euler3D_Polytropic_cState(tol) );
 
   }
 
@@ -228,19 +207,19 @@ void ensure_distance_DenseMatrix(string assertion, DenseMatrix &M1, DenseMatrix 
 	ensure_distance("U[4]", U.rhov.z , U[4] , tol);
 	ensure_distance("U[5]", U.E      , U[5] , tol);
 	
-	ensure_distance_pState("W+W" , W+W , Euler3D_Polytropic_pState(rho+rho,v+v,p+p) , tol);
-	ensure_distance_pState("W-W" , W-W , Euler3D_Polytropic_pState(rho-rho,v-v,p-p) , tol);
-	ensure_distance		  ("W*W" , W*W , rho*rho+v*v+p*p , tol);
-	ensure_distance_pState("W^W" , W^W , Euler3D_Polytropic_pState(rho*rho,v.x*v.x,v.y*v.y,v.z*v.z,p*p) , tol);
-	ensure_distance_pState("W*a" , W*a , Euler3D_Polytropic_pState(rho*a,v*a,p*a) , tol);
-	ensure_distance_pState("a*W" , a*W , Euler3D_Polytropic_pState(a*rho,a*v,a*p) , tol);
+	ensure_distance("W+W" , W+W , Euler3D_Polytropic_pState(rho+rho,v+v,p+p) , Euler3D_Polytropic_pState(tol));
+	ensure_distance("W-W" , W-W , Euler3D_Polytropic_pState(rho-rho,v-v,p-p) , Euler3D_Polytropic_pState(tol));
+	ensure_distance("W*W" , W*W , rho*rho+v*v+p*p , tol);
+	ensure_distance("W^W" , W^W , Euler3D_Polytropic_pState(rho*rho,v.x*v.x,v.y*v.y,v.z*v.z,p*p) , Euler3D_Polytropic_pState(tol));
+	ensure_distance("W*a" , W*a , Euler3D_Polytropic_pState(rho*a,v*a,p*a) , Euler3D_Polytropic_pState(tol));
+	ensure_distance("a*W" , a*W , Euler3D_Polytropic_pState(a*rho,a*v,a*p) , Euler3D_Polytropic_pState(tol));
 
-	ensure_distance_cState("U+U" , U+U , Euler3D_Polytropic_cState(rho+rho,rhov.x+rhov.x,rhov.y+rhov.y,rhov.z+rhov.z,E+E) , tol);
-	ensure_distance_cState("U-U" , U-U , Euler3D_Polytropic_cState(rho-rho,rhov-rhov,E-E) , tol);
-	ensure_distance		  ("U*U" , U*U , rho*rho+rhov*rhov+E*E , tol);
-	ensure_distance_cState("U^U" , U^U , Euler3D_Polytropic_cState(rho*rho,rhov.x*rhov.x,rhov.y*rhov.y,rhov.z*rhov.z,E*E) , tol);
-	ensure_distance_cState("U*a" , U*a , Euler3D_Polytropic_cState(rho*a,rhov*a,E*a) , tol);
-	ensure_distance_cState("a*U" , a*U , Euler3D_Polytropic_cState(a*rho,a*rhov,a*E) , tol);
+	ensure_distance("U+U" , U+U , Euler3D_Polytropic_cState(rho+rho,rhov.x+rhov.x,rhov.y+rhov.y,rhov.z+rhov.z,E+E) , Euler3D_Polytropic_cState(tol));
+	ensure_distance("U-U" , U-U , Euler3D_Polytropic_cState(rho-rho,rhov-rhov,E-E) , Euler3D_Polytropic_cState(tol));
+	ensure_distance("U*U" , U*U , rho*rho+rhov*rhov+E*E , tol);
+	ensure_distance("U^U" , U^U , Euler3D_Polytropic_cState(rho*rho,rhov.x*rhov.x,rhov.y*rhov.y,rhov.z*rhov.z,E*E) , Euler3D_Polytropic_cState(tol));
+	ensure_distance("U*a" , U*a , Euler3D_Polytropic_cState(rho*a,rhov*a,E*a) , Euler3D_Polytropic_cState(tol));
+	ensure_distance("a*U" , a*U , Euler3D_Polytropic_cState(a*rho,a*rhov,a*E) , Euler3D_Polytropic_cState(tol));
 	
   }
   
@@ -297,9 +276,9 @@ void ensure_distance_DenseMatrix(string assertion, DenseMatrix &M1, DenseMatrix 
 	ensure("Fz[4]", Fz[4] == 22.0);
 	ensure("Fz[5]", Fz[5] == 84.0);
 	
-	ensure_distance_cState("U.Fx()=W.Fx()" , U.Fx() , Fx , tol);
-	ensure_distance_cState("U.Fy()=W.Fy()" , U.Fy() , Fy , tol);
-	ensure_distance_cState("U.Fz()=W.Fz()" , U.Fz() , Fz , tol);
+	ensure_distance("U.Fx()=W.Fx()" , U.Fx() , Fx , Euler3D_Polytropic_cState(tol));
+	ensure_distance("U.Fy()=W.Fy()" , U.Fy() , Fy , Euler3D_Polytropic_cState(tol));
+	ensure_distance("U.Fz()=W.Fz()" , U.Fz() , Fz , Euler3D_Polytropic_cState(tol));
 	
 	/* Mathematica results for dFxdU */
 	dFxdU_num(0,1) = 1.0;
@@ -320,7 +299,7 @@ void ensure_distance_DenseMatrix(string assertion, DenseMatrix &M1, DenseMatrix 
 	dFxdU_num(4,3) = -1.2;
 	dFxdU_num(4,4) = 1.4;
 
-	ensure_distance_DenseMatrix("dFxdU", dFxdU, dFxdU_num, tol);
+	ensure_distance("dFxdU", dFxdU, dFxdU_num, DenseMatrix(dFxdU,tol));
 	
 	/* Mathematica results for dFydU */
 	dFydU_num(0,2) = 1.0;
@@ -341,7 +320,7 @@ void ensure_distance_DenseMatrix(string assertion, DenseMatrix &M1, DenseMatrix 
 	dFydU_num(4,3) = -2.4;
 	dFydU_num(4,4) = 2.8;
 	
-	ensure_distance_DenseMatrix("dFydU", dFydU, dFydU_num, tol);
+	ensure_distance("dFydU", dFydU, dFydU_num, DenseMatrix(dFydU,tol));
 
 	/* Mathematica results for dFzdU */
 	dFzdU_num(0,3) = 1.0;
@@ -362,7 +341,7 @@ void ensure_distance_DenseMatrix(string assertion, DenseMatrix &M1, DenseMatrix 
 	dFzdU_num(4,3) = 10.4;
 	dFzdU_num(4,4) = 4.2;
 	
-	ensure_distance_DenseMatrix("dFzdU", dFzdU, dFzdU_num, tol);
+	ensure_distance("dFzdU", dFzdU, dFzdU_num, DenseMatrix(dFzdU,tol));
 	
 	/* Mathematica results for dUdW*/
 	dUdW_num(0,0) = 1.0;
@@ -378,7 +357,7 @@ void ensure_distance_DenseMatrix(string assertion, DenseMatrix &M1, DenseMatrix 
 	dUdW_num(4,3) = 6.0;
 	dUdW_num(4,4) = 2.5;
 	
-	ensure_distance_DenseMatrix("dUdW", dUdW, dUdW_num, tol);
+	ensure_distance("dUdW", dUdW, dUdW_num, DenseMatrix(dUdW,tol));
 	
 	/* Mathematica results for dUdW*/
 	dWdU_num(0,0) = 1.0;
@@ -394,7 +373,7 @@ void ensure_distance_DenseMatrix(string assertion, DenseMatrix &M1, DenseMatrix 
 	dWdU_num(4,3) = -1.2;
 	dWdU_num(4,4) = 0.4;
 	
-	ensure_distance_DenseMatrix("dWdU", dWdU, dWdU_num, tol);
+	ensure_distance("dWdU", dWdU, dWdU_num, DenseMatrix(dWdU,tol));
 	
 	
 	/* Mathematica results for rc_x*/
@@ -404,11 +383,11 @@ void ensure_distance_DenseMatrix(string assertion, DenseMatrix &M1, DenseMatrix 
 	Euler3D_Polytropic_cState rc_x4_num(0.0,0.0,0.0,2.0,6.0);
 	Euler3D_Polytropic_cState rc_x5_num(1.0,2.673320053068151,2.0,3.0,15.673320053068153);
 
-	ensure_distance_cState("rc_x1",rc_x1_num,W.rc_x(1),tol);
-	ensure_distance_cState("rc_x2",rc_x2_num,W.rc_x(2),tol);
-	ensure_distance_cState("rc_x3",rc_x3_num,W.rc_x(3),tol);
-	ensure_distance_cState("rc_x4",rc_x4_num,W.rc_x(4),tol);
-	ensure_distance_cState("rc_x5",rc_x5_num,W.rc_x(5),tol);
+	ensure_distance("rc_x1",rc_x1_num,W.rc_x(1),Euler3D_Polytropic_cState(tol));
+	ensure_distance("rc_x2",rc_x2_num,W.rc_x(2),Euler3D_Polytropic_cState(tol));
+	ensure_distance("rc_x3",rc_x3_num,W.rc_x(3),Euler3D_Polytropic_cState(tol));
+	ensure_distance("rc_x4",rc_x4_num,W.rc_x(4),Euler3D_Polytropic_cState(tol));
+	ensure_distance("rc_x5",rc_x5_num,W.rc_x(5),Euler3D_Polytropic_cState(tol));
 	
 	/* Mathematica results for lp_x*/
 	Euler3D_Polytropic_pState lp_x1_num(0.0,-0.5976143046671968,0.0,0.0,0.17857142857142855);
@@ -417,11 +396,11 @@ void ensure_distance_DenseMatrix(string assertion, DenseMatrix &M1, DenseMatrix 
 	Euler3D_Polytropic_pState lp_x4_num(0.0,0.0,0.0,1.0,0.0);
 	Euler3D_Polytropic_pState lp_x5_num(0.0,0.5976143046671968,0.0,0.0,0.17857142857142855);
 	
-	ensure_distance_pState("lp_x1",lp_x1_num,W.lp_x(1),tol);
-	ensure_distance_pState("lp_x2",lp_x2_num,W.lp_x(2),tol);
-	ensure_distance_pState("lp_x3",lp_x3_num,W.lp_x(3),tol);
-	ensure_distance_pState("lp_x4",lp_x4_num,W.lp_x(4),tol);
-	ensure_distance_pState("lp_x5",lp_x5_num,W.lp_x(5),tol);
+	ensure_distance("lp_x1",lp_x1_num,W.lp_x(1),Euler3D_Polytropic_pState(tol));
+	ensure_distance("lp_x2",lp_x2_num,W.lp_x(2),Euler3D_Polytropic_pState(tol));
+	ensure_distance("lp_x3",lp_x3_num,W.lp_x(3),Euler3D_Polytropic_pState(tol));
+	ensure_distance("lp_x4",lp_x4_num,W.lp_x(4),Euler3D_Polytropic_pState(tol));
+	ensure_distance("lp_x5",lp_x5_num,W.lp_x(5),Euler3D_Polytropic_pState(tol));
 	
 	
 	/* Mathematica results for rc_y*/
@@ -431,11 +410,11 @@ void ensure_distance_DenseMatrix(string assertion, DenseMatrix &M1, DenseMatrix 
 	Euler3D_Polytropic_cState rc_y4_num(0.0,0.0,0.0,2.0,6.0);
 	Euler3D_Polytropic_cState rc_y5_num(1.0,1.0,3.673320053068151,3.0,17.346640106136306);
 	
-	ensure_distance_cState("rc_y1",rc_y1_num,W.rc_y(1),tol);
-	ensure_distance_cState("rc_y2",rc_y2_num,W.rc_y(2),tol);
-	ensure_distance_cState("rc_y3",rc_y3_num,W.rc_y(3),tol);
-	ensure_distance_cState("rc_y4",rc_y4_num,W.rc_y(4),tol);
-	ensure_distance_cState("rc_y5",rc_y5_num,W.rc_y(5),tol);
+	ensure_distance("rc_y1",rc_y1_num,W.rc_y(1),Euler3D_Polytropic_cState(tol));
+	ensure_distance("rc_y2",rc_y2_num,W.rc_y(2),Euler3D_Polytropic_cState(tol));
+	ensure_distance("rc_y3",rc_y3_num,W.rc_y(3),Euler3D_Polytropic_cState(tol));
+	ensure_distance("rc_y4",rc_y4_num,W.rc_y(4),Euler3D_Polytropic_cState(tol));
+	ensure_distance("rc_y5",rc_y5_num,W.rc_y(5),Euler3D_Polytropic_cState(tol));
 	
 	/* Mathematica results for lp_y*/
 	Euler3D_Polytropic_pState lp_y1_num(0.0,0.0,-0.5976143046671968,0.0,0.17857142857142855);
@@ -444,11 +423,11 @@ void ensure_distance_DenseMatrix(string assertion, DenseMatrix &M1, DenseMatrix 
 	Euler3D_Polytropic_pState lp_y4_num(0.0,0.0,0.0,1.0,0.0);
 	Euler3D_Polytropic_pState lp_y5_num(0.0,0.0,0.5976143046671968,0.0,0.17857142857142855);
 	
-	ensure_distance_pState("lp_y1",lp_y1_num,W.lp_y(1),tol);
-	ensure_distance_pState("lp_y2",lp_y2_num,W.lp_y(2),tol);
-	ensure_distance_pState("lp_y3",lp_y3_num,W.lp_y(3),tol);
-	ensure_distance_pState("lp_y4",lp_y4_num,W.lp_y(4),tol);
-	ensure_distance_pState("lp_y5",lp_y5_num,W.lp_y(5),tol);
+	ensure_distance("lp_y1",lp_y1_num,W.lp_y(1),Euler3D_Polytropic_pState(tol));
+	ensure_distance("lp_y2",lp_y2_num,W.lp_y(2),Euler3D_Polytropic_pState(tol));
+	ensure_distance("lp_y3",lp_y3_num,W.lp_y(3),Euler3D_Polytropic_pState(tol));
+	ensure_distance("lp_y4",lp_y4_num,W.lp_y(4),Euler3D_Polytropic_pState(tol));
+	ensure_distance("lp_y5",lp_y5_num,W.lp_y(5),Euler3D_Polytropic_pState(tol));
 	
 	
 	
@@ -459,11 +438,11 @@ void ensure_distance_DenseMatrix(string assertion, DenseMatrix &M1, DenseMatrix 
 	Euler3D_Polytropic_cState rc_z4_num(0.0,0.0,2.0,0.0,4.0);
 	Euler3D_Polytropic_cState rc_z5_num(1.0,1.0,2.0,4.673320053068151,19.019960159204455);
 	
-	ensure_distance_cState("rc_z1",rc_z1_num,W.rc_z(1),tol);
-	ensure_distance_cState("rc_z2",rc_z2_num,W.rc_z(2),tol);
-	ensure_distance_cState("rc_z3",rc_z3_num,W.rc_z(3),tol);
-	ensure_distance_cState("rc_z4",rc_z4_num,W.rc_z(4),tol);
-	ensure_distance_cState("rc_z5",rc_z5_num,W.rc_z(5),tol);
+	ensure_distance("rc_z1",rc_z1_num,W.rc_z(1),Euler3D_Polytropic_cState(tol));
+	ensure_distance("rc_z2",rc_z2_num,W.rc_z(2),Euler3D_Polytropic_cState(tol));
+	ensure_distance("rc_z3",rc_z3_num,W.rc_z(3),Euler3D_Polytropic_cState(tol));
+	ensure_distance("rc_z4",rc_z4_num,W.rc_z(4),Euler3D_Polytropic_cState(tol));
+	ensure_distance("rc_z5",rc_z5_num,W.rc_z(5),Euler3D_Polytropic_cState(tol));
 	
 	/* Mathematica results for lp_z*/
 	Euler3D_Polytropic_pState lp_z1_num(0.0,0.0,0.0,-0.5976143046671968,0.17857142857142855);
@@ -472,11 +451,11 @@ void ensure_distance_DenseMatrix(string assertion, DenseMatrix &M1, DenseMatrix 
 	Euler3D_Polytropic_pState lp_z4_num(0.0,0.0,1.0,0.0,0.0);
 	Euler3D_Polytropic_pState lp_z5_num(0.0,0.0,0.0,0.5976143046671968,0.17857142857142855);
 		
-	ensure_distance_pState("lp_z1",lp_z1_num,W.lp_z(1),tol);
-	ensure_distance_pState("lp_z2",lp_z2_num,W.lp_z(2),tol);
-	ensure_distance_pState("lp_z3",lp_z3_num,W.lp_z(3),tol);
-	ensure_distance_pState("lp_z4",lp_z4_num,W.lp_z(4),tol);
-	ensure_distance_pState("lp_z5",lp_z5_num,W.lp_z(5),tol);
+	ensure_distance("lp_z1",lp_z1_num,W.lp_z(1),Euler3D_Polytropic_pState(tol));
+	ensure_distance("lp_z2",lp_z2_num,W.lp_z(2),Euler3D_Polytropic_pState(tol));
+	ensure_distance("lp_z3",lp_z3_num,W.lp_z(3),Euler3D_Polytropic_pState(tol));
+	ensure_distance("lp_z4",lp_z4_num,W.lp_z(4),Euler3D_Polytropic_pState(tol));
+	ensure_distance("lp_z5",lp_z5_num,W.lp_z(5),Euler3D_Polytropic_pState(tol));
 	
   }
 
@@ -495,8 +474,9 @@ void ensure_distance_DenseMatrix(string assertion, DenseMatrix &M1, DenseMatrix 
 		double p = 4.0;
 		
 		Euler3D_Polytropic_pState W1(rho, v.x, v.y, v.z, p);
-		Euler3D_Polytropic_pState W2, Roe_x, Roe_y, Roe_z, Roe_n;
-		Euler3D_Polytropic_pState HLLE_x, HLLE_y, HLLE_z, HLLE_n;
+		Euler3D_Polytropic_pState W2;
+        Euler3D_Polytropic_cState Roe_x, Roe_y, Roe_z, Roe_n;
+		Euler3D_Polytropic_cState HLLE_x, HLLE_y, HLLE_z, HLLE_n;
 		W2 = 2.0*W1;
 
 		Roe_x = Euler3D_Polytropic_pState::FluxRoe_x(W1,W2);
@@ -509,13 +489,13 @@ void ensure_distance_DenseMatrix(string assertion, DenseMatrix &M1, DenseMatrix 
 		HLLE_z = Euler3D_Polytropic_pState::FluxHLLE_z(W1,W2);
 		HLLE_n = Euler3D_Polytropic_pState::FluxHLLE_n(W1,W2,Vector3D(0,1,0));
 
-		ensure_distance_cState("FluxRoe_x", Roe_x , Euler3D_Polytropic_pState::FluxRoe_n(W1,W2,Vector3D(1,0,0)) , tol);
-		ensure_distance_cState("FluxRoe_y", Roe_y , Euler3D_Polytropic_pState::FluxRoe_n(W1,W2,Vector3D(0,1,0)) , tol);
-		ensure_distance_cState("FluxRoe_z", Roe_z , Euler3D_Polytropic_pState::FluxRoe_n(W1,W2,Vector3D(0,0,1)) , tol);
+		ensure_distance("FluxRoe_x", Roe_x , Euler3D_Polytropic_pState::FluxRoe_n(W1,W2,Vector3D(1,0,0)) , Euler3D_Polytropic_cState(tol));
+		ensure_distance("FluxRoe_y", Roe_y , Euler3D_Polytropic_pState::FluxRoe_n(W1,W2,Vector3D(0,1,0)) , Euler3D_Polytropic_cState(tol));
+		ensure_distance("FluxRoe_z", Roe_z , Euler3D_Polytropic_pState::FluxRoe_n(W1,W2,Vector3D(0,0,1)) , Euler3D_Polytropic_cState(tol));
 
-		ensure_distance_cState("FluxHLLE_x", HLLE_x , Euler3D_Polytropic_pState::FluxHLLE_n(W1,W2,Vector3D(1,0,0)) , tol);
-		ensure_distance_cState("FluxHLLE_y", HLLE_y , Euler3D_Polytropic_pState::FluxHLLE_n(W1,W2,Vector3D(0,1,0)) , tol);
-		ensure_distance_cState("FluxHLLE_z", HLLE_z , Euler3D_Polytropic_pState::FluxHLLE_n(W1,W2,Vector3D(0,0,1)) , tol);
+		ensure_distance("FluxHLLE_x", HLLE_x , Euler3D_Polytropic_pState::FluxHLLE_n(W1,W2,Vector3D(1,0,0)) , Euler3D_Polytropic_cState(tol));
+		ensure_distance("FluxHLLE_y", HLLE_y , Euler3D_Polytropic_pState::FluxHLLE_n(W1,W2,Vector3D(0,1,0)) , Euler3D_Polytropic_cState(tol));
+		ensure_distance("FluxHLLE_z", HLLE_z , Euler3D_Polytropic_pState::FluxHLLE_n(W1,W2,Vector3D(0,0,1)) , Euler3D_Polytropic_cState(tol));
 
 	}
 

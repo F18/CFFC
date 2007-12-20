@@ -1306,12 +1306,12 @@ void Output_Tecplot(LESPremixed2D_Quad_Block &SolnBlk,
        }else{
        Out_File<< " " << SolnBlk.Reaction_Rate_Fsd_n(i,j);
        }
-       Out_File<< " " << W_node.S_turbulence_model( SolnBlk.dWdx[i][j],
+             Out_File<< " " << W_node.S_turbulence_model( SolnBlk.dWdx[i][j],
                  		                    SolnBlk.dWdy[i][j],
                                                     SolnBlk.Grid.Cell[i][j].Xc,
                                                     SolnBlk.Flow_Type,
                                                     SolnBlk.Axisymmetric).rhoscalar[1]
-	       << " " << SolnBlk.M_x_n(i,j)
+               << " " << SolnBlk.M_x_n(i,j)
 	       << " " << SolnBlk.M_y_n(i,j)
                << " " << SolnBlk.Resolved_Strain_n(i,j)
 	       << " " << SolnBlk.Resolved_Propagation_Curvature_n(i,j)

@@ -509,7 +509,7 @@ void Average(LESPremixed2D_Quad_Block *Soln_ptr,
 
   Re_Taylor =  u_rms*Taylor_scale/vis_ave;
   Kolmogorov_scale = pow(pow(vis_ave, THREE)/eps_w, 0.25);
-
+double L11= 0.09*pow(u_rms*u_rms, 1.5)/eps_w;
 
   if (eps_w > 0.0) {
     l_1 = 0.42*pow(u_rms, 3.0)/eps_w;
@@ -533,7 +533,7 @@ void Average(LESPremixed2D_Quad_Block *Soln_ptr,
 	 << "\n eps_w = "<< eps_w  //<<"  "<< "eps_ss = "<< eps_ss <<"  "
 	 << "l_1 = "<< l_1 <<"  "<< "l_2 = " << l_2 <<"  "
 	 << "\n vis = "<< vis_ave << "  Re_Taylor = " << Re_Taylor <<"  "
-	 << "\n Taylor_scale = " << Taylor_scale <<"  " 
+	 << "\n Taylor_scale = " << Taylor_scale <<"  "<<"L11=  "<<L11<<" " 
 	 << "Kolmogorov_scale = " << Kolmogorov_scale << endl;
     cout << " ==========================================================================" << endl;
   } 

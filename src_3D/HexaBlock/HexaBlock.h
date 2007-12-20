@@ -4,8 +4,6 @@
 #ifndef _HEXA_BLOCK_INCLUDED
 #define _HEXA_BLOCK_INCLUDED
 
-#include <stdexcept>
-
 /* Include required CFFC header files. */
 
 #ifndef _CFD_INCLUDED
@@ -40,9 +38,7 @@
 #include "../TurbulenceModelling/TurbulenceModelling.h"
 #endif // TURBULENCE_MODELLING_INCLUDED   
 
-#ifndef _INTERPOLATION2DTO3D_INCLUDED
-#include "../FANS/Interpolation2Dto3D.h"
-#endif// _INTERPOLATION2DTO3D_INCLUDED
+class FlowField_2D;
 
 /* Define the solution block in-use indicators. */
 
@@ -139,7 +135,6 @@ class Hexa_Block{
    /* Allocate memory for structured hexahedrial solution block. */
    void allocate(void);
    void allocate(const int Ni, const int Nj, const int Nk, const int Ng);
-
  
    /* Deallocate memory for structured hexahedral solution block. */
    void deallocate(void);
@@ -228,8 +223,9 @@ class Hexa_Block{
                              const int Output_Title,
                              ostream &Out_File);
 
-   int ICs(const int i_ICtype, 
-           Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs);
+   int ICs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs);
+
+   int Interpolate_2Dto3D(const FlowField_2D &Numflowfield2D);
 
    void BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs);
 
@@ -245,8 +241,6 @@ class Hexa_Block{
 
    int WtoU(void);
 
-   int Interpolator(const FlowField_2D &Numflowfield2D);
-   
    void Evaluate_Limiters(void){ Freeze_Limiter = OFF; }
 
    void Freeze_Limiters(void) { Freeze_Limiter = ON; }
@@ -689,7 +683,6 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Create_Block(Grid3D_Hexa_Block &Grid2
  
 }
 
-
 /********************************************************
  * Routine: Copy                                        *
  *                                                      *
@@ -993,9 +986,9 @@ Output_Tecplot(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs,
       
       Out_File<< "ZONE T =  \"Block Number = " << Block_Number
               << "\" \\ \n"
-              << "I = " << Grid.INu -  Grid.INl + 1 << " \\ \n"
-              << "J = " << Grid.JNu -  Grid.JNl + 1 << " \\ \n"
-              << "K = " << Grid.KNu -  Grid.KNl + 1 << " \\ \n"
+              << "I = " << Grid.INu - Grid.INl + 1 << " \\ \n"
+              << "J = " << Grid.JNu - Grid.JNl + 1 << " \\ \n"
+              << "K = " << Grid.KNu - Grid.KNl + 1 << " \\ \n"
               << "DATAPACKING = POINT \n";
    } else {
       Out_File << "ZONE T =  \"Block Number = " << Block_Number
@@ -1006,9 +999,9 @@ Output_Tecplot(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs,
                << "DATAPACKING = POINT \n";              
    } /* endif */
    
-   for (int k  =  Grid.KNl ; k <=  Grid.KNu ; ++k) {
-      for (int j  =  Grid.JNl ; j <=  Grid.JNu ; ++j) {
-         for (int i =  Grid.INl ; i <=  Grid.INu ; ++i) {
+   for (int k  = Grid.KNl ; k <= Grid.KNu ; ++k) {
+      for (int j  = Grid.JNl ; j <= Grid.JNu ; ++j) {
+         for (int i = Grid.INl ; i <= Grid.INu ; ++i) {
             W_node = Wn(i, j, k);
             Out_File << " "  << Grid.Node[i][j][k].X << W_node;
             Out_File.setf(ios::scientific);
@@ -1069,22 +1062,22 @@ Output_Cells_Tecplot(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs,
 
       Out_File << "ZONE T =  \"Block Number = " << Block_Number
                << "\" \\ \n"
-               << "I = " <<  ICu -  ICl + 2*Nghost +1 << " \\ \n"
-               << "J = " <<  JCu -  JCl + 2*Nghost +1 << " \\ \n"
-               << "K = " <<  KCu -  KCl + 2*Nghost +1 << " \\ \n"
+               << "I = " << Grid.ICu - Grid.ICl + 2*Grid.Nghost + 1 << " \\ \n"
+               << "J = " << Grid.JCu - Grid.JCl + 2*Grid.Nghost + 1 << " \\ \n"
+               << "K = " << Grid.KCu - Grid.KCl + 2*Grid.Nghost + 1 << " \\ \n"
                << "DATAPACKING = POINT \n";
    } else {
       Out_File << "ZONE T =  \"Block Number = " << Block_Number
                << "\" \\ \n"
-               << "I = " <<  Grid.ICu -  Grid.ICl + 2* Nghost + 1 << " \\ \n"
-               << "J = " <<  Grid.JCu -  Grid.JCl + 2* Nghost + 1 << " \\ \n"
-               << "K = " <<  Grid.KCu -  Grid.KCl + 2* Nghost + 1 << " \\ \n"
+               << "I = " << Grid.ICu - Grid.ICl + 2*Grid.Nghost + 1 << " \\ \n"
+               << "J = " << Grid.JCu - Grid.JCl + 2*Grid.Nghost + 1 << " \\ \n"
+               << "K = " << Grid.KCu - Grid.KCl + 2*Grid.Nghost + 1 << " \\ \n"
                << "DATAPACKING = POINT \n";
    } /* endif */
 
-   for (int k =  KCl- Nghost ; k <=  KCu+ Nghost ; ++k) {
-      for (int j  =  JCl- Nghost ; j <=  JCu+ Nghost ; ++j) {
-         for (int i =  ICl- Nghost ; i <=  ICu+ Nghost ; ++i) {
+   for (int k = Grid.KCl-Grid.Nghost ; k <= Grid.KCu+Grid.Nghost ; ++k) {
+      for (int j  = Grid.JCl-Grid.Nghost ; j <= Grid.JCu+Grid.Nghost ; ++j) {
+         for (int i = Grid.ICl-Grid.Nghost ; i <= Grid.ICu+Grid.Nghost ; ++i) {
             Out_File << " "  <<  Grid.Cell[i][j][k].Xc << W[i][j][k];
             Out_File.setf(ios::scientific);
             Out_File << " " <<  W[i][j][k].T() 
@@ -1183,15 +1176,14 @@ Output_Nodes_Tecplot(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs,
  ********************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::
-ICs(const int i_ICtype,
-    Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
+ICs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
    
    double dpdx, dpdy, dpdz, delta_pres;
    double di, U_axi, Um;
       
    SOLN_pSTATE Wl, Wr;
    
-   switch(i_ICtype) {
+   switch(IPs.i_ICs) {
       case IC_SHOCK_BOX :
 	 Wl = SOLN_pSTATE(IPs.Wo);
          Wl.rho = DENSITY_STDATM;
@@ -1396,6 +1388,20 @@ ICs(const int i_ICtype,
 }
 
 /********************************************************
+ * Routine: Interpolate_2Dto3D                          *
+ *                                                      *
+ * Interpolate a 2D numerical solution to current 3D    *
+ * grid for initialization of the solution field.       *
+ *                                                      *
+ ********************************************************/
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Interpolate_2Dto3D(const FlowField_2D &Numflowfield2D){
+   
+   return (0);
+   
+}
+
+/********************************************************
  * Routine: BCs                                         *
  *                                                      *
  * Apply boundary conditions at boundaries of the       *
@@ -1406,50 +1412,41 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
 void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::
 BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
    
-   int i, j, k;
-   
-   Vector3D MOVING_WALL_VELOCITY = IPs.Moving_Wall_Velocity, dX;
+   Vector3D dX;
    double dpdx;
      
-   for ( k = KCl-Nghost ; k <= KCu+Nghost ; ++k) {
-      for ( j = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
+   for (int k = KCl-Nghost ; k <= KCu+Nghost ; ++k) {
+      for (int j = JCl-Nghost ; j <= JCu+Nghost ; ++j) {
          // Prescribe West boundary conditions.
          switch(Grid.BCtypeW[j][k]) {
           case BC_NONE :
             break;
 
           case BC_FIXED :
-            W[ ICl-1][j][k] = WoW[j][k];
-            U[ ICl-1][j][k] = W[ICl-1][j][k].U();
-            W[ ICl-2][j][k] = WoW[j][k];
-            U[ ICl-2][j][k] = W[ICl-2][j][k].U();
+            W[ICl-1][j][k] = WoW[j][k];
+            U[ICl-1][j][k] = W[ICl-1][j][k].U();
+            W[ICl-2][j][k] = WoW[j][k];
+            U[ICl-2][j][k] = W[ICl-2][j][k].U();
 	    break;
 
           case BC_REFLECTION :
-            W[ ICl-1][j][k] = SOLN_pSTATE::Reflect(W[ICl][j][k],
-                                                   Grid.nfaceW( ICl,j,k));
-            U[ ICl-1][j][k] = W[ICl-1][j][k].U();
-            W[ ICl-2][j][k] = SOLN_pSTATE::Reflect(W[ICl+1][j][k],
-                                                   Grid.nfaceW(ICl,j,k));
-            U[ ICl-2][j][k] = W[ICl-2][j][k].U();
+            W[ICl-1][j][k] = SOLN_pSTATE::Reflect(W[ICl][j][k],
+                                                  Grid.nfaceW( ICl,j,k));
+            U[ICl-1][j][k] = W[ICl-1][j][k].U();
+            W[ICl-2][j][k] = SOLN_pSTATE::Reflect(W[ICl+1][j][k],
+                                                  Grid.nfaceW(ICl,j,k));
+            U[ICl-2][j][k] = W[ICl-2][j][k].U();
             break;
 
           case BC_FIXED_PRESSURE :
-            W[ ICl-1][j][k] = W[ICl][j][k];
-            W[ ICl-1][j][k].p = WoW[j][k].p;
-            U[ ICl-1][j][k] = W[ICl-1][j][k].U();
-            W[ ICl-2][j][k] = W[ICl][j][k] ;
-            W[ ICl-2][j][k].p = WoW[j][k].p;
-            U[ ICl-2][j][k] = W[ICl-2][j][k].U();
+            W[ICl-1][j][k] = W[ICl][j][k];
+            W[ICl-1][j][k].p = WoW[j][k].p;
+            U[ICl-1][j][k] = W[ICl-1][j][k].U();
+            W[ICl-2][j][k] = W[ICl][j][k] ;
+            W[ICl-2][j][k].p = WoW[j][k].p;
+            U[ICl-2][j][k] = W[ICl-2][j][k].U();
             break;
-
-          case BC_CONSTANT_EXTRAPOLATION :
-            W[ ICl-1][j][k] = W[ICl][j][k];
-            U[ ICl-1][j][k] = W[ICl-1][j][k].U();
-            W[ ICl-2][j][k] = W[ICl][j][k] ;
-            U[ ICl-2][j][k] = W[ICl-2][j][k].U();
-            break;
-            
+         
           case BC_PERIODIC :  
             W[ICl-1][j][k] = W[ICu-1][j][k];
             U[ICl-1][j][k] = U[ICu-1][j][k];
@@ -1459,33 +1456,53 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
 
           case BC_NO_SLIP :
             W[ICl-1][j][k] = SOLN_pSTATE::NoSlip(W[ICl][j][k],WoW[j][k], 
-                                                  Grid.nfaceW(ICl,j,k),
-                                                  IPs.Pressure_Gradient,
-                                                   FIXED_TEMPERATURE_WALL);
+                                                 Grid.nfaceW(ICl,j,k),
+                                                 IPs.Pressure_Gradient,
+                                                 FIXED_TEMPERATURE_WALL);
             U[ICl-1][j][k] = W[ICl-1][j][k].U();
             W[ICl-2][j][k] = SOLN_pSTATE::NoSlip(W[ICl+1][j][k], 
-                                                  WoW[j][k], 
-                                                  Grid.nfaceW(ICl,j,k),
-                                                  IPs.Pressure_Gradient,
-                                                  FIXED_TEMPERATURE_WALL);
+                                                 WoW[j][k], 
+                                                 Grid.nfaceW(ICl,j,k),
+                                                 IPs.Pressure_Gradient,
+                                                 FIXED_TEMPERATURE_WALL);
             U[ICl-2][j][k] = W[ICl-2][j][k].U();
             break;
 
           case BC_MOVING_WALL :
             W[ICl-1][j][k] = SOLN_pSTATE::MovingWall(W[ICl][j][k],WoW[j][k],
-                                         Grid.nfaceW(ICl,j,k),
-                                         MOVING_WALL_VELOCITY,
-                                                      IPs.Pressure_Gradient,
-                                         FIXED_TEMPERATURE_WALL);
+                                                     Grid.nfaceW(ICl,j,k),
+                                                     IPs.Moving_Wall_Velocity,
+                                                     IPs.Pressure_Gradient,
+                                                     FIXED_TEMPERATURE_WALL);
             U[ICl-1][j][k] = W[ICl-1][j][k].U();
             W[ICl-2][j][k] = SOLN_pSTATE::MovingWall(W[ICl+1][j][k], WoW[j][k], 
-                                         Grid.nfaceW(ICl,j,k),
-                                         MOVING_WALL_VELOCITY, 
-                                                      IPs.Pressure_Gradient,
-                                         FIXED_TEMPERATURE_WALL);
+                                                     Grid.nfaceW(ICl,j,k),
+                                                     IPs.Moving_Wall_Velocity, 
+                                                     IPs.Pressure_Gradient,
+                                                     FIXED_TEMPERATURE_WALL);
             U[ICl-2][j][k] = W[ICl-2][j][k].U();
             break;
            
+          case BC_INFLOW_SUBSONIC :
+            // all fixed except pressure which is constant extrapolation
+	    W[ICl-1][j][k] = WoW[j][k];
+            W[ICl-1][j][k].p = W[ICl][j][k].p;
+            U[ICl-1][j][k] = W[ICl-1][j][k].U();
+            W[ICl-2][j][k] = WoW[j][k];
+            W[ICl-2][j][k].p = W[ICl][j][k].p;
+	    U[ICl-2][j][k] = W[ICl-2][j][k].U();
+	    break;
+
+          case BC_OUTFLOW_SUBSONIC :
+	    // all constant extrapolation except pressure which is fixed.
+	    W[ICl-1][j][k] = W[ICl][j][k]; 
+	    W[ICl-1][j][k].p = WoW[j][k].p;
+	    U[ICl-1][j][k] = W[ICl-1][j][k].U();
+            W[ICl-2][j][k] = W[ICl][j][k]; 
+            W[ICl-2][j][k].p = WoW[j][k].p;
+            U[ICl-2][j][k] = W[ICl-2][j][k].U();
+	    break;
+
           case BC_CHANNEL_INFLOW:
             dpdx = IPs.Pressure_Gradient.x; 
             //for turbulent channel flow
@@ -1503,6 +1520,14 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
             U[ICl-2][j][k] = W[ICl-2][j][k].U();
             break;  
             
+          case BC_CONSTANT_EXTRAPOLATION :
+	  default :
+            W[ICl-1][j][k] = W[ICl][j][k];
+            U[ICl-1][j][k] = W[ICl-1][j][k].U();
+            W[ICl-2][j][k] = W[ICl][j][k] ;
+            U[ICl-2][j][k] = W[ICl-2][j][k].U();
+            break;
+
          } /* endswitch */
          
          // Prescribe East boundary conditions.
@@ -1511,35 +1536,28 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
             break;
 
           case BC_FIXED :
-	    W[ ICu+1][j][k] = WoE[j][k];
-            U[ ICu+1][j][k] = W[ICu+1][j][k].U();
-            W[ ICu+2][j][k] = WoE[j][k];
-            U[ ICu+2][j][k] = W[ICl+2][j][k].U();
+	    W[ICu+1][j][k] = WoE[j][k];
+            U[ICu+1][j][k] = W[ICu+1][j][k].U();
+            W[ICu+2][j][k] = WoE[j][k];
+            U[ICu+2][j][k] = W[ICl+2][j][k].U();
 	    break;
 
           case BC_REFLECTION :
-            W[ ICu+1][j][k] = SOLN_pSTATE::Reflect(W[ICu][j][k],
-                                                   Grid.nfaceE(ICu,j,k));
-            U[ ICu+1][j][k] = W[ ICu+1][j][k].U();
-            W[ ICu+2][j][k] = SOLN_pSTATE::Reflect(W[ICu-1][j][k],
-                                                   Grid.nfaceE(ICu,j,k));
-            U[ ICu+2][j][k] = W[ ICu+2][j][k].U();
+            W[ICu+1][j][k] = SOLN_pSTATE::Reflect(W[ICu][j][k],
+                                                  Grid.nfaceE(ICu,j,k));
+            U[ICu+1][j][k] = W[ ICu+1][j][k].U();
+            W[ICu+2][j][k] = SOLN_pSTATE::Reflect(W[ICu-1][j][k],
+                                                  Grid.nfaceE(ICu,j,k));
+            U[ICu+2][j][k] = W[ ICu+2][j][k].U();
             break;
 
           case BC_FIXED_PRESSURE :
-            W[ ICu+1][j][k] = W[ICu][j][k];
-            W[ ICu+1][j][k].p = WoE[j][k].p;
-            U[ ICu+1][j][k] = W[ICu+1][j][k].U();
-            W[ ICu+2][j][k] = W[ICu-1][j][k];
-            W[ ICu+2][j][k].p = WoE[j][k].p; 
-            U[ ICu+2][j][k] = W[ICu+2][j][k].U();
-            break;
-
-          case BC_CONSTANT_EXTRAPOLATION :
-            W[ ICu+1][j][k] = W[ICu][j][k];
-            U[ ICu+1][j][k] = W[ICu+1][j][k].U();
-            W[ ICu+2][j][k] = W[ICu][j][k];
-            U[ ICu+2][j][k] = W[ICu+2][j][k].U();
+            W[ICu+1][j][k] = W[ICu][j][k];
+            W[ICu+1][j][k].p = WoE[j][k].p;
+            U[ICu+1][j][k] = W[ICu+1][j][k].U();
+            W[ICu+2][j][k] = W[ICu-1][j][k];
+            W[ICu+2][j][k].p = WoE[j][k].p; 
+            U[ICu+2][j][k] = W[ICu+2][j][k].U();
             break;
 
           case BC_PERIODIC :
@@ -1551,35 +1569,55 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
 
           case BC_NO_SLIP :
             W[ICu+1][j][k] = SOLN_pSTATE::NoSlip(W[ICu][j][k], 
-                                                  WoE[j][k], 
-                                                  Grid.nfaceE(ICu,j,k),
-                                                  IPs.Pressure_Gradient,
-                                                  FIXED_TEMPERATURE_WALL);
+                                                 WoE[j][k], 
+                                                 Grid.nfaceE(ICu,j,k),
+                                                 IPs.Pressure_Gradient,
+                                                 FIXED_TEMPERATURE_WALL);
             U[ICu+1][j][k] = W[ICu+1][j][k].U();
             W[ICu+2][j][k] = SOLN_pSTATE::NoSlip(W[ICu-1][j][k], 
-                                                  WoE[j][k], 
-                                                  Grid.nfaceE(ICu,j,k),
-                                                  IPs.Pressure_Gradient,
-                                                  FIXED_TEMPERATURE_WALL);
+                                                 WoE[j][k], 
+                                                 Grid.nfaceE(ICu,j,k),
+                                                 IPs.Pressure_Gradient,
+                                                 FIXED_TEMPERATURE_WALL);
             U[ICu+2][j][k] = W[ICu+2][j][k].U();
             break;
             
           case BC_MOVING_WALL :
             W[ICu+1][j][k] = SOLN_pSTATE::MovingWall(W[ICu][j][k], 
-                                                      WoE[j][k], 
-                                                      Grid.nfaceE(ICu,j,k),
-                                                      MOVING_WALL_VELOCITY,
-                                                      IPs.Pressure_Gradient,
-                                                      FIXED_TEMPERATURE_WALL);
+                                                     WoE[j][k], 
+                                                     Grid.nfaceE(ICu,j,k),
+                                                     IPs.Moving_Wall_Velocity,
+                                                     IPs.Pressure_Gradient,
+                                                     FIXED_TEMPERATURE_WALL);
             U[ICu+1][j][k] = W[ICu+1][j][k].U();
             W[ICu+2][j][k] = SOLN_pSTATE::MovingWall(W[ICu-1][j][k], 
-                                                      WoE[j][k], 
-                                                      Grid.nfaceE(ICu,j,k),
-                                                      MOVING_WALL_VELOCITY,
-                                                      IPs.Pressure_Gradient,
-                                                      FIXED_TEMPERATURE_WALL);
+                                                     WoE[j][k], 
+                                                     Grid.nfaceE(ICu,j,k),
+                                                     IPs.Moving_Wall_Velocity,
+                                                     IPs.Pressure_Gradient,
+                                                     FIXED_TEMPERATURE_WALL);
             U[ICu+2][j][k] = W[ICu+2][j][k].U();
             break;
+
+          case BC_INFLOW_SUBSONIC :
+            // all fixed except pressure which is constant extrapolation
+	    W[ICu+1][j][k] = WoE[j][k];
+            W[ICu+1][j][k].p = W[ICu][j][k].p;
+	    U[ICu+1][j][k] = W[ICu+1][j][k].U();
+ 	    W[ICu+2][j][k] = WoE[j][k];
+            W[ICu+2][j][k].p = W[ICu][j][k].p;
+	    U[ICu+2][j][k] = W[ICu+2 ][j][k].U();
+	    break;
+
+	  case BC_OUTFLOW_SUBSONIC :
+	    // all constant extrapolation except pressure which is fixed.
+	    W[ICu+1][j][k] = W[ICu][j][k]; 
+	    W[ICu+1][j][k].p = WoE[j][k].p;
+	    U[ICu+1][j][k] = W[ICu+1][j][k].U();
+	    W[ICu+2][j][k] = W[ICu][j][k]; 
+	    W[ICu+2][j][k].p = WoE[j][k].p;
+	    U[ICu+2][j][k] = W[ICu+2][j][k].U();
+	  break;
 
           case BC_CHANNEL_OUTFLOW:
             dpdx = IPs.Pressure_Gradient.x; 
@@ -1604,13 +1642,21 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
 //             U[ ICu+2][j][k] = W[ ICu+2][j][k].U();
 //             break;
 
+          case BC_CONSTANT_EXTRAPOLATION :
+	  default :
+            W[ICu+1][j][k] = W[ICu][j][k];
+            U[ICu+1][j][k] = W[ICu+1][j][k].U();
+            W[ICu+2][j][k] = W[ICu][j][k];
+            U[ICu+2][j][k] = W[ICu+2][j][k].U();
+            break;
+
          }//endofeastface
          
       } /* endfor */
    } /* endfor */
    
-   for ( k = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
-      for ( i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
+   for (int k = KCl-Nghost ; k <= KCu+Nghost ; ++k) {
+      for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i) {
          // Prescribe South boundary conditions.
          switch(Grid.BCtypeS[i][k]) {
           case BC_NONE :
@@ -1641,13 +1687,6 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
             U[i][ JCl-2][k] = W[i][JCl-2][k].U();
 	    break;
 
-          case BC_CONSTANT_EXTRAPOLATION :
-            W[i][ JCl-1][k] = W[i][ JCl][k];
-            U[i][ JCl-1][k] =  W[i][ JCl-1][k].U();
-            W[i][ JCl-2][k] = W[i][ JCl][k];
-            U[i][ JCl-2][k] =  W[i][ JCl-2][k].U();
-	    break;
-
           case BC_PERIODIC :
             W[i][JCl-1][k] = W[i][JCu-1][k];
             U[i][JCl-1][k] = U[i][JCu-1][k];
@@ -1657,35 +1696,64 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
 
           case BC_NO_SLIP :
             W[i][JCl-1][k] = SOLN_pSTATE::NoSlip(W[i][JCl][k], 
-                                                  WoS[i][k], 
-                                                  Grid.nfaceS(i,JCl,k),
-                                                  IPs.Pressure_Gradient,
-                                                  FIXED_TEMPERATURE_WALL);
+                                                 WoS[i][k], 
+                                                 Grid.nfaceS(i,JCl,k),
+                                                 IPs.Pressure_Gradient,
+                                                 FIXED_TEMPERATURE_WALL);
             U[i][JCl-1][k] = W[i][JCl-1][k].U();
             W[i][JCl-2][k] = SOLN_pSTATE::NoSlip(W[i][JCl+1][k], 
-                                                  WoS[i][k],
-                                                  Grid.nfaceS(i, JCl,k),
-                                                  IPs.Pressure_Gradient,
-                                                  FIXED_TEMPERATURE_WALL);
+                                                 WoS[i][k],
+                                                 Grid.nfaceS(i, JCl,k),
+                                                 IPs.Pressure_Gradient,
+                                                 FIXED_TEMPERATURE_WALL);
             U[i][JCl-2][k] = W[i][JCl-2][k].U();
             break;
 
           case BC_MOVING_WALL :
             W[i][JCl-1][k] = SOLN_pSTATE::MovingWall(W[i][JCl][k], 
-                                                      WoS[i][k], 
-                                                      Grid.nfaceS(i, JCl,k),
-                                                      MOVING_WALL_VELOCITY,
-                                                      IPs.Pressure_Gradient, 
-                                                      FIXED_TEMPERATURE_WALL);
+                                                     WoS[i][k], 
+                                                     Grid.nfaceS(i, JCl,k),
+                                                     IPs.Moving_Wall_Velocity,
+                                                     IPs.Pressure_Gradient, 
+                                                     FIXED_TEMPERATURE_WALL);
             U[i][JCl-1][k] = W[i][JCl-1][k].U();
             W[i][JCl-2][k] = SOLN_pSTATE::MovingWall(W[i][JCl+1][k], 
-                                                      WoS[i][k],
-                                                      Grid.nfaceS(i, JCl,k),
-                                                      MOVING_WALL_VELOCITY, 
-                                                      IPs.Pressure_Gradient,
-                                                      FIXED_TEMPERATURE_WALL);
-            U[i][JCl-2][k] =  W[i][JCl-2][k].U();
+                                                     WoS[i][k],
+                                                     Grid.nfaceS(i, JCl,k),
+                                                     IPs.Moving_Wall_Velocity, 
+                                                     IPs.Pressure_Gradient,
+                                                     FIXED_TEMPERATURE_WALL);
+            U[i][JCl-2][k] = W[i][JCl-2][k].U();
             break;
+
+          case BC_INFLOW_SUBSONIC :
+            // all fixed except pressure which is constant extrapolation
+	    W[i][JCl-1][k] = WoS[i][k];
+            W[i][JCl-1][k].p = W[i][JCl][k].p;
+            U[i][JCl-1][k] = W[i][JCl-1][k].U();
+            W[i][JCl-2][k] = WoS[i][k];
+            W[i][JCl-2][k].p = W[i][JCl][k].p;
+	    U[i][JCl-2][k] = W[i][JCl-2][k].U();
+	    break;
+
+          case BC_OUTFLOW_SUBSONIC :
+	    // all constant extrapolation except pressure which is fixed.
+	    W[i][JCl-1][k] = W[i][JCl][k]; 
+	    W[i][JCl-1][k].p = WoS[i][k].p;
+	    U[i][JCl-1][k] = W[i][JCl-1][k].U();
+            W[i][JCl-2][k] = W[i][JCl][k]; 
+            W[i][JCl-2][k].p = WoS[i][k].p;
+            U[i][JCl-2][k] = W[i][JCl-2][k].U();
+	    break;
+
+          case BC_CONSTANT_EXTRAPOLATION :
+	  default : 
+            W[i][JCl-1][k] = W[i][JCl][k];
+            U[i][JCl-1][k] = W[i][JCl-1][k].U();
+            W[i][JCl-2][k] = W[i][JCl][k];
+            U[i][JCl-2][k] = W[i][JCl-2][k].U();
+	    break;
+
          } /* endswitch */
           
          // Prescribe North boundary conditions.
@@ -1701,30 +1769,23 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
 	    break;
 
           case BC_REFLECTION :
-            W[i][ JCu+1][k] = SOLN_pSTATE::Reflect(W[i][ JCu][k],
-                                                   Grid.nfaceN(i,JCu,k));
-            U[i][ JCu+1][k] = W[i][ JCu+1][k].U();
-            W[i][ JCu+2][k] = SOLN_pSTATE::Reflect(W[i][ JCu-1][k],
-                                                   Grid.nfaceN(i,  JCu, k));
-            U[i][ JCu+2][k] = W[i][ JCu+2][k].U();
+            W[i][JCu+1][k] = SOLN_pSTATE::Reflect(W[i][ JCu][k],
+                                                  Grid.nfaceN(i, JCu,k));
+            U[i][JCu+1][k] = W[i][ JCu+1][k].U();
+            W[i][JCu+2][k] = SOLN_pSTATE::Reflect(W[i][ JCu-1][k],
+                                                  Grid.nfaceN(i, JCu, k));
+            U[i][JCu+2][k] = W[i][ JCu+2][k].U();
             break;
             
           case BC_FIXED_PRESSURE :
-            W[i][ JCu+1][k] = W[i][ JCu][k];
-            W[i][ JCu+1][k].p = WoN[i][k].p;
-            U[i][ JCu+1][k] = W[i][ JCu+1][k].U();
-            W[i][ JCu+2][k] = W[i][ JCu-1][k];
-            W[i][ JCu+2][k].p = WoN[i][k].p;
-            U[i][ JCu+2][k] = W[i][ JCu+2][k].U();
+            W[i][JCu+1][k] = W[i][JCu][k];
+            W[i][JCu+1][k].p = WoN[i][k].p;
+            U[i][JCu+1][k] = W[i][JCu+1][k].U();
+            W[i][JCu+2][k] = W[i][JCu-1][k];
+            W[i][JCu+2][k].p = WoN[i][k].p;
+            U[i][JCu+2][k] = W[i][JCu+2][k].U();
             break;
             
-          case BC_CONSTANT_EXTRAPOLATION :
-            W[i][ JCu+1][k] = W[i][ JCu][k];
-            U[i][ JCu+1][k] =  W[i][ JCu+1][k].U();
-            W[i][ JCu+2][k] =  W[i][ JCu][k];
-            U[i][ JCu+2][k] =  W[i][ JCu+2][k].U();
-            break;
-
           case BC_PERIODIC :
             W[i][JCu+1][k] = W[i][JCl+1][k];
             U[i][JCu+1][k] = U[i][JCl+1][k];
@@ -1734,42 +1795,70 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
 
           case BC_NO_SLIP :
             W[i][JCu+1][k] = SOLN_pSTATE::NoSlip(W[i][JCu][k], 
-                                                  WoN[i][k],
-                                                  Grid.nfaceN(i,JCu,k),
-                                                  IPs.Pressure_Gradient,
-                                                  FIXED_TEMPERATURE_WALL);
+                                                 WoN[i][k],
+                                                 Grid.nfaceN(i,JCu,k),
+                                                 IPs.Pressure_Gradient,
+                                                 FIXED_TEMPERATURE_WALL);
             U[i][JCu+1][k] = W[i][JCu+1][k].U();
             W[i][JCu+2][k] = SOLN_pSTATE::NoSlip(W[i][JCu-1][k], 
-                                                  WoN[i][k],
-                                                  Grid.nfaceN(i,JCu,k),
-                                                  IPs.Pressure_Gradient,
-                                                  FIXED_TEMPERATURE_WALL);
+                                                 WoN[i][k],
+                                                 Grid.nfaceN(i,JCu,k),
+                                                 IPs.Pressure_Gradient,
+                                                 FIXED_TEMPERATURE_WALL);
             U[i][JCu+2][k] = W[i][JCu+2][k].U();
             break;
 
           case BC_MOVING_WALL :
             W[i][JCu+1][k] = SOLN_pSTATE::MovingWall(W[i][JCu][k], 
-                                                      WoN[i][k],
-                                                      Grid.nfaceN(i,JCu,k),
-                                                      MOVING_WALL_VELOCITY,
-                                                      IPs.Pressure_Gradient,
-                                                      FIXED_TEMPERATURE_WALL);
-            U[i][JCu+1][k] = W[i][JCu+1][k].U( );
+                                                     WoN[i][k],
+                                                     Grid.nfaceN(i,JCu,k),
+                                                     IPs.Moving_Wall_Velocity,
+                                                     IPs.Pressure_Gradient,
+                                                     FIXED_TEMPERATURE_WALL);
+            U[i][JCu+1][k] = W[i][JCu+1][k].U();
             W[i][JCu+2][k] = SOLN_pSTATE::MovingWall(W[i][JCu-1][k], 
-                                                      WoN[i][k],
-                                                      Grid.nfaceN(i,JCu,k),
-                                                      MOVING_WALL_VELOCITY,
-                                                      IPs.Pressure_Gradient,
-                                                      FIXED_TEMPERATURE_WALL);
-            U[i][JCu+2][k] = W[i][JCu+2][k].U( );
+                                                     WoN[i][k],
+                                                     Grid.nfaceN(i,JCu,k),
+                                                     IPs.Moving_Wall_Velocity,
+                                                     IPs.Pressure_Gradient,
+                                                     FIXED_TEMPERATURE_WALL);
+            U[i][JCu+2][k] = W[i][JCu+2][k].U();
+            break;
+
+          case BC_INFLOW_SUBSONIC :
+            // all fixed except pressure which is constant extrapolation
+	    W[i][JCu+1][k] = WoN[i][k];
+            W[i][JCu+1][k].p = W[i][JCu][k].p;
+            U[i][JCu+1][k] = W[i][JCu+1][k].U();
+            W[i][JCu+2][k] = WoN[i][k];
+            W[i][JCu+2][k].p = W[i][JCu][k].p;
+	    U[i][JCu+2][k] = W[i][JCu+2][k].U();
+	    break;
+
+          case BC_OUTFLOW_SUBSONIC :
+	    // all constant extrapolation except pressure which is fixed.
+	    W[i][JCu+1][k] = W[i][JCu][k]; 
+	    W[i][JCu+1][k].p = WoN[i][k].p;
+	    U[i][JCu+1][k] = W[i][JCu+1][k].U();
+            W[i][JCu+2][k] = W[i][JCu][k]; 
+            W[i][JCu+2][k].p = WoN[i][k].p;
+            U[i][JCu+2][k] = W[i][JCu+2][k].U();
+	    break;
+
+          case BC_CONSTANT_EXTRAPOLATION :
+	  default :
+            W[i][JCu+1][k] = W[i][JCu][k];
+            U[i][JCu+1][k] = W[i][JCu+1][k].U();
+            W[i][JCu+2][k] = W[i][JCu][k];
+            U[i][JCu+2][k] = W[i][JCu+2][k].U();
             break;
 
          } /* endswitch */
       } /* endfor */
    } /* endfor */
    
-   for ( j = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
-      for ( i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
+   for (int j = JCl-Nghost ; j <= JCu+Nghost ; ++j) {
+      for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i) {
          // Prescribe Bottom boundary conditions.
          switch(Grid.BCtypeB[i][j]) {
           case BC_NONE :
@@ -1783,67 +1872,88 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
 	    break;
 
           case BC_REFLECTION :
-            W[i][j][ KCl-1 ] = SOLN_pSTATE::Reflect(W[i][j][ KCl],
-                                                    Grid.nfaceBot(i,j, KCl));
-            U[i][j][ KCl-1] =  W[i][j][ KCl-1].U();
-            W[i][j][ KCl-2] = SOLN_pSTATE::Reflect(W[i][j][ KCl+1],
-                                                   Grid.nfaceBot(i,j,KCl));
-            U[i][j][ KCl-2] = W[i][j][ KCl-2].U();
+            W[i][j][KCl-1] = SOLN_pSTATE::Reflect(W[i][j][ KCl],
+                                                  Grid.nfaceBot(i,j, KCl));
+            U[i][j][KCl-1] =  W[i][j][ KCl-1].U();
+            W[i][j][KCl-2] = SOLN_pSTATE::Reflect(W[i][j][ KCl+1],
+                                                  Grid.nfaceBot(i,j,KCl));
+            U[i][j][KCl-2] = W[i][j][ KCl-2].U();
             break;
             
           case BC_FIXED_PRESSURE :
-            W[i][j][ KCl-1 ] = W[i][j][ KCl];
-            W[i][j][ KCl-1 ].p = WoB[i][j].p;
+            W[i][j][ KCl-1] = W[i][j][ KCl];
+            W[i][j][ KCl-1].p = WoB[i][j].p;
             U[i][j][ KCl-1] = W[i][j][ KCl-1].U();
             W[i][j][ KCl-2] = W[i][j][ KCl+1];
             W[i][j][ KCl-2].p = WoB[i][j].p;
             U[i][j][ KCl-2] = W[i][j][ KCl-2].U();
             break;
 
-          case BC_CONSTANT_EXTRAPOLATION :
-            W[i][j][ KCl-1 ] = W[i][j][ KCl];
-            U[i][j][ KCl-1] = W[i][j][ KCl-1].U();
-            W[i][j][ KCl-2] = W[i][j][ KCl];
-            U[i][j][ KCl-2] = W[i][j][ KCl-2].U();
-            break;
-
           case BC_PERIODIC :
-            W[i][j][KCl- 1] = W[i][j][KCu -1];
-            U[i][j][KCl- 1] = U[i][j][KCu -1];
-            W[i][j][KCl- 2] = W[i][j][KCu -2];
-            U[i][j][KCl -2] = U[i][j][KCu -2];
+            W[i][j][KCl-1] = W[i][j][KCu-1];
+            U[i][j][KCl-1] = U[i][j][KCu-1];
+            W[i][j][KCl-2] = W[i][j][KCu-2];
+            U[i][j][KCl-2] = U[i][j][KCu-2];
             break;
 
           case BC_NO_SLIP :
             W[i][j][KCl-1] = SOLN_pSTATE::NoSlip(W[i][j][KCl], 
-                                                  WoB[i][j],
-                                                  Grid.nfaceBot(i,j,KCl),
-                                                  IPs.Pressure_Gradient,
-                                                  FIXED_TEMPERATURE_WALL);
+                                                 WoB[i][j],
+                                                 Grid.nfaceBot(i,j,KCl),
+                                                 IPs.Pressure_Gradient,
+                                                 FIXED_TEMPERATURE_WALL);
             U[i][j][KCl-1] = W[i][j][KCl-1].U(); 
             W[i][j][KCl-2] = SOLN_pSTATE::NoSlip(W[i][j][KCl+1], 
-                                                  WoB[i][j],
-                                                  Grid.nfaceBot(i, j, KCl),
-                                                  IPs.Pressure_Gradient,
-                                                  FIXED_TEMPERATURE_WALL);
+                                                 WoB[i][j],
+                                                 Grid.nfaceBot(i, j, KCl),
+                                                 IPs.Pressure_Gradient,
+                                                 FIXED_TEMPERATURE_WALL);
             U[i][j][KCl-2] = W[i][j][KCl-2].U();
             break;
             
           case BC_MOVING_WALL :
             W[i][j][KCl-1] = SOLN_pSTATE::MovingWall(W[i][j][KCl], 
-                                                      WoB[i][j],
-                                                      Grid.nfaceBot(i,j,KCl),
-                                                      MOVING_WALL_VELOCITY,
-                                                      IPs.Pressure_Gradient,
-                                                      FIXED_TEMPERATURE_WALL);
+                                                     WoB[i][j],
+                                                     Grid.nfaceBot(i,j,KCl),
+                                                     IPs.Moving_Wall_Velocity,
+                                                     IPs.Pressure_Gradient,
+                                                     FIXED_TEMPERATURE_WALL);
             U[i][j][KCl-1] = W[i][j][KCl-1].U();
             W[i][j][KCl-2] = SOLN_pSTATE::MovingWall(W[i][j][KCl+1], 
-                                                      WoB[i][j],
-                                                      Grid.nfaceBot(i,j,KCl),
-                                                      MOVING_WALL_VELOCITY,
-                                                      IPs.Pressure_Gradient,
-                                                      FIXED_TEMPERATURE_WALL);
-            U[i][j][KCl-2] =  W[i][j][KCl-2].U();
+                                                     WoB[i][j],
+                                                     Grid.nfaceBot(i,j,KCl),
+                                                     IPs.Moving_Wall_Velocity,
+                                                     IPs.Pressure_Gradient,
+                                                     FIXED_TEMPERATURE_WALL);
+            U[i][j][KCl-2] = W[i][j][KCl-2].U();
+            break;
+
+          case BC_INFLOW_SUBSONIC :
+            // all fixed except pressure which is constant extrapolation
+	    W[i][j][KCl-1] = WoB[i][j];
+            W[i][j][KCl-1].p = W[i][j][KCl].p;
+            U[i][j][KCl-1] = W[i][j][KCl-1].U();
+            W[i][j][KCl-2] = WoB[i][j];
+            W[i][j][KCl-2].p = W[i][j][KCl].p;
+	    U[i][j][KCl-2] = W[i][j][KCl-2].U();
+	    break;
+
+          case BC_OUTFLOW_SUBSONIC :
+	    // all constant extrapolation except pressure which is fixed.
+	    W[i][j][KCl-1] = W[i][j][KCl]; 
+	    W[i][j][KCl-1].p = WoB[i][j].p;
+	    U[i][j][KCl-1] = W[i][j][KCl-1].U();
+            W[i][j][KCl-2] = W[i][j][KCl]; 
+            W[i][j][KCl-2].p = WoB[i][j].p;
+            U[i][j][KCl-2] = W[i][j][KCl-2].U();
+	    break;
+
+          case BC_CONSTANT_EXTRAPOLATION :
+	  default : 
+            W[i][j][KCl-1] = W[i][j][KCl];
+            U[i][j][KCl-1] = W[i][j][KCl-1].U();
+            W[i][j][KCl-2] = W[i][j][KCl];
+            U[i][j][KCl-2] = W[i][j][KCl-2].U();
             break;
 
          } /* endswitch */
@@ -1861,69 +1971,90 @@ BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
 	    break;
 
           case BC_REFLECTION :
-            W[i][j][ KCu+1] = SOLN_pSTATE::Reflect(W[i][j][ KCu],
-                                                   Grid.nfaceTop(i,j,KCu));
-            U[i][j][ KCu+1] = W[i][j][ KCu+1].U();
-            W[i][j][ KCu+2] = SOLN_pSTATE::Reflect(W[i][j][ KCu-1],
-                                                   Grid.nfaceTop(i,j,KCu));
-            U[i][j][ KCu+2] =  W[i][j][ KCu+2].U();
+            W[i][j][KCu+1] = SOLN_pSTATE::Reflect(W[i][j][ KCu],
+                                                  Grid.nfaceTop(i,j,KCu));
+            U[i][j][KCu+1] = W[i][j][ KCu+1].U();
+            W[i][j][KCu+2] = SOLN_pSTATE::Reflect(W[i][j][ KCu-1],
+                                                  Grid.nfaceTop(i,j,KCu));
+            U[i][j][KCu+2] =  W[i][j][ KCu+2].U();
             break;
 
           case BC_FIXED_PRESSURE :
-            W[i][j][ KCu+1] = W[i][j][ KCu];
-            W[i][j][ KCu+1].p = WoT[i][j].p;
-            U[i][j][ KCu+1] = W[i][j][ KCu+1].U();
-            W[i][j][ KCu+2] = W[i][j][ KCu-1];
-            W[i][j][ KCu+2].p = WoT[i][j].p;
-            U[i][j][ KCu+2] = W[i][j][ KCu+2].U();
-            break;
-
-          case BC_CONSTANT_EXTRAPOLATION :
-            W[i][j][ KCu+1] = W[i][j][ KCu];
-            U[i][j][ KCu+1] = W[i][j][ KCu+1].U();
-            W[i][j][ KCu+2] = W[i][j][ KCu];
-            U[i][j][ KCu+2] = W[i][j][ KCu+2].U();
+            W[i][j][KCu+1] = W[i][j][ KCu];
+            W[i][j][KCu+1].p = WoT[i][j].p;
+            U[i][j][KCu+1] = W[i][j][ KCu+1].U();
+            W[i][j][KCu+2] = W[i][j][ KCu-1];
+            W[i][j][KCu+2].p = WoT[i][j].p;
+            U[i][j][KCu+2] = W[i][j][ KCu+2].U();
             break;
 
           case BC_PERIODIC :
-            W[i][j][KCu + 1] = W[i][j][KCl +1];
-            U[i][j][KCu + 1] = U[i][j][KCl +1];
-            W[i][j][KCu + 2] = W[i][j][KCl +2];
-            U[i][j][KCu + 2] = U[i][j][KCl +2];
+            W[i][j][KCu+1] = W[i][j][KCl+1];
+            U[i][j][KCu+1] = U[i][j][KCl+1];
+            W[i][j][KCu+2] = W[i][j][KCl+2];
+            U[i][j][KCu+2] = U[i][j][KCl+2];
             break;
 
           case BC_NO_SLIP :
-            W[i][j][KCu +1] = SOLN_pSTATE::NoSlip(W[i][j][KCu], 
-                                                   WoT[i][j],
-                                                   Grid.nfaceTop(i,j,KCu),
-                                                   IPs.Pressure_Gradient,
-                                                   FIXED_TEMPERATURE_WALL);
-            U[i][j][KCu +1] = W[i][j][KCu+1].U();
-            W[i][j][KCu +2] = SOLN_pSTATE::NoSlip(W[i][j][KCu-1], 
-                                                   WoT[i][j],
-                                                   Grid.nfaceTop(i,j,KCu),
-                                                   IPs.Pressure_Gradient, 
-                                                   FIXED_TEMPERATURE_WALL);
-            U[i][j][KCu +2] = W[i][j][KCu +2].U();
+            W[i][j][KCu+1] = SOLN_pSTATE::NoSlip(W[i][j][KCu], 
+                                                 WoT[i][j],
+                                                 Grid.nfaceTop(i,j,KCu),
+                                                 IPs.Pressure_Gradient,
+                                                 FIXED_TEMPERATURE_WALL);
+            U[i][j][KCu+1] = W[i][j][KCu+1].U();
+            W[i][j][KCu+2] = SOLN_pSTATE::NoSlip(W[i][j][KCu-1], 
+                                                 WoT[i][j],
+                                                 Grid.nfaceTop(i,j,KCu),
+                                                 IPs.Pressure_Gradient, 
+                                                 FIXED_TEMPERATURE_WALL);
+            U[i][j][KCu+2] = W[i][j][KCu +2].U();
             break;
             
           case BC_MOVING_WALL :
-            W[i][j][KCu +1] = SOLN_pSTATE::MovingWall(W[i][j][KCu], 
-                                                       WoT[i][j],
-                                                       Grid.nfaceTop(i,j,KCu),
-                                                       MOVING_WALL_VELOCITY,
-                                                       IPs.Pressure_Gradient,
-                                                       FIXED_TEMPERATURE_WALL);
-            U[i][j][KCu +1] = W[i][j][KCu+1].U();
-            W[i][j][KCu +2] = SOLN_pSTATE::MovingWall(W[i][j][KCu-1], 
-                                                       WoT[i][j],
-                                                       Grid.nfaceTop(i,j,KCu),
-                                                       MOVING_WALL_VELOCITY,
-                                                       IPs.Pressure_Gradient,
-                                                       FIXED_TEMPERATURE_WALL);
-            U[i][j][KCu +2] = W[i][j][KCu +2].U();
+            W[i][j][KCu+1] = SOLN_pSTATE::MovingWall(W[i][j][KCu], 
+                                                     WoT[i][j],
+                                                     Grid.nfaceTop(i,j,KCu),
+                                                     IPs.Moving_Wall_Velocity,
+                                                     IPs.Pressure_Gradient,
+                                                     FIXED_TEMPERATURE_WALL);
+            U[i][j][KCu+1] = W[i][j][KCu+1].U();
+            W[i][j][KCu+2] = SOLN_pSTATE::MovingWall(W[i][j][KCu-1], 
+                                                     WoT[i][j],
+                                                     Grid.nfaceTop(i,j,KCu),
+                                                     IPs.Moving_Wall_Velocity,
+                                                     IPs.Pressure_Gradient,
+                                                     FIXED_TEMPERATURE_WALL);
+            U[i][j][KCu+2] = W[i][j][KCu +2].U();
             break;
             
+          case BC_INFLOW_SUBSONIC :
+            // all fixed except pressure which is constant extrapolation
+	    W[i][j][KCu+1] = WoT[i][j];
+            W[i][j][KCu+1].p = W[i][j][KCu].p;
+            U[i][j][KCu+1] = W[i][j][KCu+1].U();
+            W[i][j][KCu+2] = WoT[i][j];
+            W[i][j][KCu+2].p = W[i][j][KCu].p;
+	    U[i][j][KCu+2] = W[i][j][KCu+-2].U();
+	    break;
+
+          case BC_OUTFLOW_SUBSONIC :
+	    // all constant extrapolation except pressure which is fixed.
+	    W[i][j][KCu+1] = W[i][j][KCu]; 
+	    W[i][j][KCu+1].p = WoT[i][j].p;
+	    U[i][j][KCu+1] = W[i][j][KCu+1].U();
+            W[i][j][KCu+2] = W[i][j][KCu]; 
+            W[i][j][KCu+2].p = WoT[i][j].p;
+            U[i][j][KCu+2] = W[i][j][KCu+2].U();
+	    break;
+
+          case BC_CONSTANT_EXTRAPOLATION :
+	  default : 
+            W[i][j][KCu+1] = W[i][j][KCu];
+            U[i][j][KCu+1] = W[i][j][KCu+1].U();
+            W[i][j][KCu+2] = W[i][j][KCu];
+            U[i][j][KCu+2] = W[i][j][KCu+2].U();
+            break;
+
          } /* endswitch */
       } /* endfor */
    } /* endfor */
@@ -2098,19 +2229,6 @@ double Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Max_Norm_Residual(const int &var) {
 }
 
 /********************************************************
- * Routine: Interpolator                                *
- * Interpolate the numerical solution of 2D to 3D       *
- * to initialize the solution field.                    *
- *                                                      *
- ********************************************************/
-template<class SOLN_pSTATE, class SOLN_cSTATE>
-   int  Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Interpolator(const FlowField_2D &Numflowfield2D){
-   
-   return (0);
-   
-}
-
-/********************************************************
  * Routine: WtoU                                        *
  *                                                      *
  * Convert primitive solution vector to conservative    *
@@ -2119,26 +2237,11 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
  ********************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::WtoU(void) {
-  bool dbg = false;
 
-  for (int k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
+   for (int k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
       for (int j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
          for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
             U[i][j][k]= W[i][j][k].U();
-            
-            /* if(  W[i][j][k][11]> 1.0) dbg =true; */
-/*             else dbg = false; */
-            
-            
-/*             if(dbg){ */
-               
-               cout<<"\n i j k xc "<<i<<","<<j<<","<<k<<"  "<<Grid.Cell[i][j][k].Xc<<endl;
-               cout<<"\n U  = "<<U[i][j][k]<<endl;
-               cout<<"\n W  = "<<W[i][j][k]<<endl;
-               cout.flush();
-               
-/*             } */
-            
          } /* endfor */
       } /* endfor */
    } /* endfor */
@@ -2196,7 +2299,7 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Linear_Reconstruction_LeastSquares(co
    int n, n2, n_pts, i_index[26], j_index[26], k_index[26];
    double u0Min, u0Max, uHexa[6], PHI;
    double DxDx_ave, DxDy_ave, DyDy_ave, DxDz_ave, DyDz_ave, DzDz_ave;
-   double D;;
+   double D;
    Vector3D dX;
    
    /* solnvec in  DU (DUDx_ave, DUDy_ave, DUDz_ave, D1, D2, D3) 
@@ -2409,7 +2512,6 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
 int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::
 dUdt_Residual_Evaluation(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
 
-  int i, j, k;
    Vector3D dX;
    
    SOLN_pSTATE Wl, Wr;
@@ -2438,88 +2540,92 @@ dUdt_Residual_Evaluation(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
       limited upwind scheme with a variety of flux functions. */
  
    // Add i-direction (zeta-direction) fluxes.
-   for ( k  =  KCl-1 ; k <=  KCu+1 ; ++k ){
-     for ( j  =  JCl-1 ; j <=  JCu+1 ; ++j ) {	
+   for (int k  =  KCl-1 ; k <=  KCu+1 ; ++k){
+     for (int j  =  JCl-1 ; j <=  JCu+1 ; ++j) {	
 	dUdt[ ICl-1][j][k][0] = U_VACUUM;      
 	
-	for ( i =  ICl-1 ; i <=  ICu ; ++i ) {
+	for (int i =  ICl-1 ; i <=  ICu ; ++i) {
 	  dUdt[i+1][j][k][0] = U_VACUUM;
 	  
 	  if (( j >  JCl-1 && j <  JCu+1 ) &&
 	      ( k >  KCl-1 && k <  KCu+1 )) {
-	    
 	    /* Evaluate the cell interface i-direction fluxes. */
-	    if (i ==  ICl-1 &&  (Grid.BCtypeW[j][k] == BC_REFLECTION ||
-				 Grid.BCtypeW[j][k] == BC_NO_SLIP ||
-				 Grid.BCtypeW[j][k] == BC_MOVING_WALL) ) {
+	    if (i == ICl-1 && (Grid.BCtypeW[j][k] == BC_REFLECTION ||
+			       Grid.BCtypeW[j][k] == BC_NO_SLIP ||
+			       Grid.BCtypeW[j][k] == BC_MOVING_WALL) ) {
 	      
 	      dX =  Grid.xfaceW(i+1, j, k)- Grid.Cell[i+1][j][k].Xc;
               
 	      Wr =  W[i+1][j][k] +
-		( phi[i+1][j][k]^dWdx[i+1][j][k])*dX.x +
-		( phi[i+1][j][k]^dWdy[i+1][j][k])*dX.y +
-		( phi[i+1][j][k]^dWdz[i+1][j][k])*dX.z;
+                    (phi[i+1][j][k]^dWdx[i+1][j][k])*dX.x +
+                    (phi[i+1][j][k]^dWdy[i+1][j][k])*dX.y +
+                    (phi[i+1][j][k]^dWdz[i+1][j][k])*dX.z;
 	      
-	      if ( Grid.BCtypeW[j][k] == BC_REFLECTION) {
-		Wl =  SOLN_pSTATE::Reflect(Wr,  Grid.nfaceW(i+1, j, k));
-	      }
-	      if ( Grid.BCtypeW[j][k] == BC_NO_SLIP) {
-		Wl =  SOLN_pSTATE::NoSlip(Wr, WoW[j][k], Grid.nfaceW(i+1, j, k),
-					   IPs.Pressure_Gradient,
-					   FIXED_TEMPERATURE_WALL);
-	      }
-	      if ( Grid.BCtypeW[j][k] == BC_MOVING_WALL) {
-		Wl =  SOLN_pSTATE::MovingWall(Wr, WoW[j][k], Grid.nfaceW(i+1, j, k),
-					       IPs.Moving_Wall_Velocity,
-					       IPs.Pressure_Gradient,
-					       FIXED_TEMPERATURE_WALL);
-	      }
+	      if (Grid.BCtypeW[j][k] == BC_REFLECTION) {
+		Wl = SOLN_pSTATE::Reflect(Wr, Grid.nfaceW(i+1, j, k));
+	      } /* endif */
+
+	      if (Grid.BCtypeW[j][k] == BC_NO_SLIP) {
+		Wl = SOLN_pSTATE::NoSlip(Wr, WoW[j][k], Grid.nfaceW(i+1, j, k),
+				         IPs.Pressure_Gradient,
+				         FIXED_TEMPERATURE_WALL);
+	      } /* endif */
+
+	      if (Grid.BCtypeW[j][k] == BC_MOVING_WALL) {
+		Wl = SOLN_pSTATE::MovingWall(Wr, WoW[j][k], Grid.nfaceW(i+1, j, k),
+					     IPs.Moving_Wall_Velocity,
+					     IPs.Pressure_Gradient,
+					     FIXED_TEMPERATURE_WALL);
+	      } /* endif */
+
 	    } else if (i ==  ICu &&
 		       ( Grid.BCtypeE[j][k] == BC_REFLECTION ||
 			 Grid.BCtypeE[j][k] == BC_NO_SLIP ||
 			 Grid.BCtypeE[j][k] == BC_MOVING_WALL )) {
 	      
 	      dX =  Grid.xfaceE(i, j, k)- Grid.Cell[i][j][k].Xc;
+
 	      Wl =  W[i][j][k] +
-		( phi[i][j][k]^ dWdx[i][j][k])*dX.x +
-		( phi[i][j][k]^ dWdy[i][j][k])*dX.y +
-		( phi[i][j][k]^ dWdz[i][j][k])*dX.z;
-	      if ( Grid.BCtypeE[j][k] == BC_REFLECTION) {
-		Wr =  SOLN_pSTATE::Reflect(Wl,  Grid.nfaceE(i, j, k));
-	      }
-	      if ( Grid.BCtypeE[j][k] == BC_NO_SLIP) {
+                    (phi[i][j][k]^ dWdx[i][j][k])*dX.x +
+                    (phi[i][j][k]^ dWdy[i][j][k])*dX.y +
+                    (phi[i][j][k]^ dWdz[i][j][k])*dX.z;
+
+	      if (Grid.BCtypeE[j][k] == BC_REFLECTION) {
+		Wr =  SOLN_pSTATE::Reflect(Wl, Grid.nfaceE(i, j, k));
+	      } /* endif */
+
+	      if (Grid.BCtypeE[j][k] == BC_NO_SLIP) {
 		Wr =  SOLN_pSTATE::NoSlip(Wl, WoE[j][k], Grid.nfaceE(i, j, k),
 					   IPs.Pressure_Gradient,
 					   FIXED_TEMPERATURE_WALL);
-	      }
-	      if ( Grid.BCtypeE[j][k] == BC_MOVING_WALL) {
+	      } /* endif */
+	      if (Grid.BCtypeE[j][k] == BC_MOVING_WALL) {
 		Wr =  SOLN_pSTATE::MovingWall(Wl, WoE[j][k], Grid.nfaceE(i, j, k),
 					       IPs.Moving_Wall_Velocity,
 					       IPs.Pressure_Gradient,
 					       FIXED_TEMPERATURE_WALL);
-	      }
+	      } /* endif */
 	      
 	    } else {
 	      dX =  Grid.xfaceE(i, j, k)- Grid.Cell[i][j][k].Xc;
 	      Wl =  W[i][j][k] +
-		( phi[i][j][k]^ dWdx[i][j][k])*dX.x +
-		( phi[i][j][k]^ dWdy[i][j][k])*dX.y +
-		( phi[i][j][k]^ dWdz[i][j][k])*dX.z;
+                    (phi[i][j][k]^ dWdx[i][j][k])*dX.x +
+                    (phi[i][j][k]^ dWdy[i][j][k])*dX.y +
+                    (phi[i][j][k]^ dWdz[i][j][k])*dX.z;
 	      dX =  Grid.xfaceW(i+1, j, k)- Grid.Cell[i+1][j][k].Xc;
 	      Wr =  W[i+1][j][k] +
-		( phi[i+1][j][k]^ dWdx[i+1][j][k])*dX.x +
-		( phi[i+1][j][k]^ dWdy[i+1][j][k])*dX.y +
-		( phi[i+1][j][k]^ dWdz[i+1][j][k])*dX.z;                  
+                    (phi[i+1][j][k]^ dWdx[i+1][j][k])*dX.x +
+                    (phi[i+1][j][k]^ dWdy[i+1][j][k])*dX.y +
+                    (phi[i+1][j][k]^ dWdz[i+1][j][k])*dX.z;                  
 	    } /* endif */
 	    
-               
 	    switch(IPs.i_Flux_Function) {
-	    case FLUX_FUNCTION_HLLE :	      
-	      Flux =  SOLN_pSTATE::FluxHLLE_n(Wl, Wr,  Grid.nfaceE(i, j, k));              
-	      break;
-	    case FLUX_FUNCTION_ROE :
-	      Flux =  SOLN_pSTATE::FluxRoe_n(Wl, Wr,  Grid.nfaceE(i, j, k));
-	      break;
+              case FLUX_FUNCTION_HLLE :	      
+	        Flux =  SOLN_pSTATE::FluxHLLE_n(Wl, Wr,  Grid.nfaceE(i, j, k));              
+	        break;
+	      case FLUX_FUNCTION_ROE :
+	        Flux =  SOLN_pSTATE::FluxRoe_n(Wl, Wr,  Grid.nfaceE(i, j, k));
+	        break;
 	    } /* endswitch */
             
 	    /* Evaluate cell-averaged solution changes. */
@@ -2542,8 +2648,8 @@ dUdt_Residual_Evaluation(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
 	  } /* endif */
 	} /* endfor */
          
-	if (( j >  JCl-1 && j <  JCu+1 ) &&
-	    ( k >  KCl-1 && k <  KCu+1 ) ) {
+	if (( j > JCl-1 && j < JCu+1 ) &&
+	    ( k > KCl-1 && k < KCu+1 ) ) {
 	  dUdt[ ICl-1][j][k][0] = U_VACUUM;
 	  dUdt[ ICu+1][j][k][0] = U_VACUUM;
 	} /* endif */
@@ -2552,82 +2658,88 @@ dUdt_Residual_Evaluation(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
    } /* endfor */
    
    // Add j-direction (eta-direction) fluxes.
-   for ( k =  KCl ; k <=  KCu ; ++k ){
-      for ( i =  ICl ; i <=  ICu ; ++i ) {
-         for ( j  =  JCl-1 ; j <=  JCu ; ++j ) {
+   for (int k =  KCl ; k <=  KCu ; ++k) {
+      for (int i =  ICl ; i <=  ICu ; ++i) {
+         for (int j  =  JCl-1 ; j <=  JCu ; ++j) {
             
             /* Evaluate the cell interface j-direction fluxes. */
             if (j ==  JCl-1 &&
-                ( Grid.BCtypeS[i][k] == BC_REFLECTION ||
-                  Grid.BCtypeS[i][k] == BC_NO_SLIP||
-                  Grid.BCtypeS[i][k] == BC_MOVING_WALL)) {
+                (Grid.BCtypeS[i][k] == BC_REFLECTION ||
+                 Grid.BCtypeS[i][k] == BC_NO_SLIP||
+                 Grid.BCtypeS[i][k] == BC_MOVING_WALL)) {
                dX =  Grid.xfaceS(i, j+1, k)- Grid.Cell[i][j+1][k].Xc;
+
                Wr =  W[i][j+1][k] +
-                  ( phi[i][j+1][k]^ dWdx[i][j+1][k])*dX.x +
-                  ( phi[i][j+1][k]^ dWdy[i][j+1][k])*dX.y+
-                  ( phi[i][j+1][k]^ dWdz[i][j+1][k])*dX.z;
-               if ( Grid.BCtypeS[i][k] == BC_REFLECTION) {
-                  Wl =  SOLN_pSTATE::Reflect(Wr,  Grid.nfaceS(i, j+1, k));
-               }
-               if ( Grid.BCtypeS[i][k] == BC_NO_SLIP) {
+                     (phi[i][j+1][k]^ dWdx[i][j+1][k])*dX.x +
+                     (phi[i][j+1][k]^ dWdy[i][j+1][k])*dX.y+
+                     (phi[i][j+1][k]^ dWdz[i][j+1][k])*dX.z;
+
+               if (Grid.BCtypeS[i][k] == BC_REFLECTION) {
+                  Wl =  SOLN_pSTATE::Reflect(Wr, Grid.nfaceS(i, j+1, k));
+               } /* endif */
+
+               if (Grid.BCtypeS[i][k] == BC_NO_SLIP) {
                   Wl =  SOLN_pSTATE::NoSlip(Wr, WoS[i][k], Grid.nfaceS(i, j+1, k),
-                                             IPs.Pressure_Gradient,
-                                             FIXED_TEMPERATURE_WALL);
-               }
-               if ( Grid.BCtypeS[i][k] == BC_MOVING_WALL) {
+                                            IPs.Pressure_Gradient,
+                                            FIXED_TEMPERATURE_WALL);
+               } /* endif */
+
+               if (Grid.BCtypeS[i][k] == BC_MOVING_WALL) {
                   Wl =  SOLN_pSTATE::MovingWall(Wr, WoS[i][k], Grid.nfaceS(i, j+1, k),
-                                                 IPs.Moving_Wall_Velocity,
-                                                 IPs.Pressure_Gradient,
-                                                 FIXED_TEMPERATURE_WALL);
-               }
+                                                IPs.Moving_Wall_Velocity,
+                                                IPs.Pressure_Gradient,
+                                                FIXED_TEMPERATURE_WALL);
+               } /* endif */
                
             } else if (j ==  JCu &&
-                       ( Grid.BCtypeN[i][k] == BC_REFLECTION ||
-                         Grid.BCtypeN[i][k] == BC_NO_SLIP||
-                         Grid.BCtypeN[i][k] == BC_MOVING_WALL)) {
+                       (Grid.BCtypeN[i][k] == BC_REFLECTION ||
+                        Grid.BCtypeN[i][k] == BC_NO_SLIP||
+                        Grid.BCtypeN[i][k] == BC_MOVING_WALL)) {
                dX =  Grid.xfaceN(i, j, k)- Grid.Cell[i][j][k].Xc;
+
                Wl =  W[i][j][k] +
-                  ( phi[i][j][k]^ dWdx[i][j][k])*dX.x+
-                  ( phi[i][j][k]^ dWdy[i][j][k])*dX.y+
-                  ( phi[i][j][k]^ dWdz[i][j][k])*dX.z;
-               if ( Grid.BCtypeN[i][k] == BC_REFLECTION) {
-                  Wr =  SOLN_pSTATE::Reflect(Wl,  Grid.nfaceN(i, j, k));
-               }
-               if ( Grid.BCtypeN[i][k] == BC_NO_SLIP) {
+                     (phi[i][j][k]^ dWdx[i][j][k])*dX.x+
+                     (phi[i][j][k]^ dWdy[i][j][k])*dX.y+
+                     (phi[i][j][k]^ dWdz[i][j][k])*dX.z;
+
+               if (Grid.BCtypeN[i][k] == BC_REFLECTION) {
+                  Wr =  SOLN_pSTATE::Reflect(Wl, Grid.nfaceN(i, j, k));
+               } /* endif */
+
+               if (Grid.BCtypeN[i][k] == BC_NO_SLIP) {
                   Wr =  SOLN_pSTATE::NoSlip(Wl, WoN[i][k], Grid.nfaceN(i, j, k),
                                              IPs.Pressure_Gradient,
                                              FIXED_TEMPERATURE_WALL );
-               }
-               if ( Grid.BCtypeN[i][k] == BC_MOVING_WALL) {
+               } /* endif */
+
+               if (Grid.BCtypeN[i][k] == BC_MOVING_WALL) {
                   Wr =  SOLN_pSTATE::MovingWall(Wl, WoN[i][k], Grid.nfaceN(i, j, k),
                                                  IPs.Moving_Wall_Velocity,
                                                  IPs.Pressure_Gradient,
                                                  FIXED_TEMPERATURE_WALL );
-               }
+               } /* endif */
                
             } else {
                dX =  Grid.xfaceN(i, j, k)- Grid.Cell[i][j][k].Xc;
                Wl =  W[i][j][k] +
-                  ( phi[i][j][k]^ dWdx[i][j][k])*dX.x +
-                  ( phi[i][j][k]^ dWdy[i][j][k])*dX.y +
-                  ( phi[i][j][k]^ dWdz[i][j][k])*dX.z;
+                     (phi[i][j][k]^ dWdx[i][j][k])*dX.x +
+                     (phi[i][j][k]^ dWdy[i][j][k])*dX.y +
+                     (phi[i][j][k]^ dWdz[i][j][k])*dX.z;
                dX =  Grid.xfaceS(i, j+1, k)- Grid.Cell[i][j+1][k].Xc;
                Wr =  W[i][j+1][k] +
-                  ( phi[i][j+1][k]^ dWdx[i][j+1][k])*dX.x +
-                  ( phi[i][j+1][k]^ dWdy[i][j+1][k])*dX.y +
-                  ( phi[i][j+1][k]^ dWdz[i][j+1][k])*dX.z;
+                     (phi[i][j+1][k]^ dWdx[i][j+1][k])*dX.x +
+                     (phi[i][j+1][k]^ dWdy[i][j+1][k])*dX.y +
+                     (phi[i][j+1][k]^ dWdz[i][j+1][k])*dX.z;
             } /* endif */
             
             switch(IPs.i_Flux_Function) {
-            case FLUX_FUNCTION_HLLE :
-               Flux =  SOLN_pSTATE::FluxHLLE_n(Wl, Wr,  Grid.nfaceN(i, j, k));
-               break;
-            case FLUX_FUNCTION_ROE :
-               Flux =  SOLN_pSTATE::FluxRoe_n(Wl, Wr,  Grid.nfaceN(i, j, k));
-               break;
+              case FLUX_FUNCTION_HLLE :
+                Flux = SOLN_pSTATE::FluxHLLE_n(Wl, Wr,  Grid.nfaceN(i, j, k));
+                break;
+              case FLUX_FUNCTION_ROE :
+                Flux = SOLN_pSTATE::FluxRoe_n(Wl, Wr,  Grid.nfaceN(i, j, k));
+                break;
             } /* endswitch */
-            
-            // add viscous flux in j direction
             
             /* Evaluate cell-averaged solution changes. */
 
@@ -2648,8 +2760,8 @@ dUdt_Residual_Evaluation(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
             
          } /* endfor */
 
-         if (( i >  ICl-1 && i <  ICu+1 ) &&
-             ( k >  KCl-1 && k <  KCu+1 ) ) {
+         if (( i > ICl-1 && i < ICu+1 ) &&
+             ( k > KCl-1 && k < KCu+1 ) ) {
             dUdt[i][ JCl-1][k][0] = U_VACUUM;
             dUdt[i][ JCu+1][k][0] = U_VACUUM;
          }
@@ -2658,81 +2770,87 @@ dUdt_Residual_Evaluation(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
    }/* endfor */
            
    // Add k-direction (gamma-direction) fluxes.
-   for ( i =  ICl; i <=  ICu ; ++i ){
-      for ( j  =  JCl ; j <=  JCu ; ++j ){
-         for ( k =  KCl-1 ; k <=  KCu ; ++k )  {
+   for (int i =  ICl; i <=  ICu ; ++i){
+      for (int j  =  JCl ; j <=  JCu ; ++j){
+         for (int k =  KCl-1 ; k <=  KCu ; ++k)  {
             
             /* Evaluate the cell interface j-direction fluxes. */
             if (k ==  KCl-1 &&
-                ( Grid.BCtypeB[i][j] == BC_REFLECTION ||
-                  Grid.BCtypeB[i][j] == BC_NO_SLIP ||
-                  Grid.BCtypeB[i][j] == BC_MOVING_WALL)) {
-               
+                (Grid.BCtypeB[i][j] == BC_REFLECTION ||
+                 Grid.BCtypeB[i][j] == BC_NO_SLIP ||
+                 Grid.BCtypeB[i][j] == BC_MOVING_WALL)) {
                dX =  Grid.xfaceBot(i, j, k+1)- Grid.Cell[i][j][k+1].Xc;
+
                Wr =  W[i][j][k+1] +
-                  ( phi[i][j][k+1]^ dWdx[i][j][k+1])*dX.x +
-                  ( phi[i][j][k+1]^ dWdy[i][j][k+1])*dX.y+
-                  ( phi[i][j][k+1]^ dWdz[i][j][k+1])*dX.z;
-               if ( Grid.BCtypeB[i][j] == BC_REFLECTION) {
-                  Wl =  SOLN_pSTATE::Reflect(Wr,  Grid.nfaceBot(i, j, k+1));
-               }
-               if ( Grid.BCtypeB[i][j] == BC_NO_SLIP) {
+                     (phi[i][j][k+1]^ dWdx[i][j][k+1])*dX.x +
+                     (phi[i][j][k+1]^ dWdy[i][j][k+1])*dX.y+
+                     (phi[i][j][k+1]^ dWdz[i][j][k+1])*dX.z;
+
+               if (Grid.BCtypeB[i][j] == BC_REFLECTION) {
+                  Wl = SOLN_pSTATE::Reflect(Wr, Grid.nfaceBot(i, j, k+1));
+               } /* endif */
+
+               if (Grid.BCtypeB[i][j] == BC_NO_SLIP) {
                   Wl =  SOLN_pSTATE::NoSlip(Wr, WoB[i][j], Grid.nfaceBot(i, j, k+1),
-                                             IPs.Pressure_Gradient,
-                                             FIXED_TEMPERATURE_WALL);
-               }
-               if ( Grid.BCtypeB[i][j] == BC_MOVING_WALL) {
+                                            IPs.Pressure_Gradient,
+                                            FIXED_TEMPERATURE_WALL);
+               } /* endif */
+
+               if (Grid.BCtypeB[i][j] == BC_MOVING_WALL) {
                   Wl =  SOLN_pSTATE::MovingWall(Wr, WoB[i][j], Grid.nfaceBot(i, j, k+1),
-                                                 IPs.Moving_Wall_Velocity,
-                                                 IPs.Pressure_Gradient,
-                                                 FIXED_TEMPERATURE_WALL);
-               }
-               
-               
+                                                IPs.Moving_Wall_Velocity,
+                                                IPs.Pressure_Gradient,
+                                                FIXED_TEMPERATURE_WALL);
+               } /* endif */
+
             } else if (k ==  KCu &&
-                       ( Grid.BCtypeT[i][j] == BC_REFLECTION ||
-                         Grid.BCtypeT[i][j] == BC_NO_SLIP||
-                         Grid.BCtypeT[i][j] == BC_MOVING_WALL)) {
-               
+                       (Grid.BCtypeT[i][j] == BC_REFLECTION ||
+                        Grid.BCtypeT[i][j] == BC_NO_SLIP||
+                        Grid.BCtypeT[i][j] == BC_MOVING_WALL)) {
                dX =  Grid.xfaceTop(i, j, k)- Grid.Cell[i][j][k].Xc;
+
                Wl =  W[i][j][k] +
-                  ( phi[i][j][k]^ dWdx[i][j][k])*dX.x+
-                  ( phi[i][j][k]^ dWdy[i][j][k])*dX.y+
-                  ( phi[i][j][k]^ dWdz[i][j][k])*dX.z;
-               if ( Grid.BCtypeT[i][j] == BC_REFLECTION) {
-                  Wr =  SOLN_pSTATE::Reflect(Wl,  Grid.nfaceTop(i, j, k));
-               }
-               if ( Grid.BCtypeT[i][j] == BC_NO_SLIP) {
+                     (phi[i][j][k]^ dWdx[i][j][k])*dX.x+
+                     (phi[i][j][k]^ dWdy[i][j][k])*dX.y+
+                     (phi[i][j][k]^ dWdz[i][j][k])*dX.z;
+
+               if (Grid.BCtypeT[i][j] == BC_REFLECTION) {
+                  Wr =  SOLN_pSTATE::Reflect(Wl, Grid.nfaceTop(i, j, k));
+               } /* endif */
+
+               if (Grid.BCtypeT[i][j] == BC_NO_SLIP) {
                   Wr =  SOLN_pSTATE::NoSlip(Wl, WoT[i][j], Grid.nfaceTop(i, j, k),
-                                             IPs.Pressure_Gradient,
-                                             FIXED_TEMPERATURE_WALL );
-               }
-               if ( Grid.BCtypeT[i][j] == BC_MOVING_WALL) {
+                                            IPs.Pressure_Gradient,
+                                            FIXED_TEMPERATURE_WALL );
+               } /* endif */
+
+               if (Grid.BCtypeT[i][j] == BC_MOVING_WALL) {
                   Wr =  SOLN_pSTATE::MovingWall(Wl, WoT[i][j], Grid.nfaceTop(i, j, k),
-                                                 IPs.Moving_Wall_Velocity,
-                                                 IPs.Pressure_Gradient,
-                                                 FIXED_TEMPERATURE_WALL );
-               }
+                                                IPs.Moving_Wall_Velocity,
+                                                IPs.Pressure_Gradient,
+                                                FIXED_TEMPERATURE_WALL );
+               } /* endif */
+
             } else {
                dX =  Grid.xfaceTop(i, j, k)- Grid.Cell[i][j][k].Xc;
                Wl =  W[i][j][k] +
-                  ( phi[i][j][k]^ dWdx[i][j][k])*dX.x +
-                  ( phi[i][j][k]^ dWdy[i][j][k])*dX.y +
-                  ( phi[i][j][k]^ dWdz[i][j][k])*dX.z;
+                     (phi[i][j][k]^ dWdx[i][j][k])*dX.x +
+                     (phi[i][j][k]^ dWdy[i][j][k])*dX.y +
+                     (phi[i][j][k]^ dWdz[i][j][k])*dX.z;
                dX =  Grid.xfaceBot(i, j, k+1)- Grid.Cell[i][j][k+1].Xc;
                Wr =  W[i][j][k+1] +
-                  ( phi[i][j][k+1]^ dWdx[i][j][k+1])*dX.x +
-                  ( phi[i][j][k+1]^ dWdy[i][j][k+1])*dX.y +
-                  ( phi[i][j][k+1]^ dWdz[i][j][k+1])*dX.z;
+                     (phi[i][j][k+1]^ dWdx[i][j][k+1])*dX.x +
+                     (phi[i][j][k+1]^ dWdy[i][j][k+1])*dX.y +
+                     (phi[i][j][k+1]^ dWdz[i][j][k+1])*dX.z;
             } /* endif */
              
             switch(IPs.i_Flux_Function) {
-            case FLUX_FUNCTION_HLLE :
-               Flux =  SOLN_pSTATE::FluxHLLE_n(Wl, Wr, Grid.nfaceTop(i, j, k));
-               break;
-            case FLUX_FUNCTION_ROE :
-               Flux =  SOLN_pSTATE::FluxRoe_n(Wl, Wr, Grid.nfaceTop(i, j, k));
-               break;
+              case FLUX_FUNCTION_HLLE :
+                Flux =  SOLN_pSTATE::FluxHLLE_n(Wl, Wr, Grid.nfaceTop(i, j, k));
+                break;
+              case FLUX_FUNCTION_ROE :
+                Flux =  SOLN_pSTATE::FluxRoe_n(Wl, Wr, Grid.nfaceTop(i, j, k));
+                break;
             } /* endswitch */
             
             /* Evaluate cell-averaged solution changes. */

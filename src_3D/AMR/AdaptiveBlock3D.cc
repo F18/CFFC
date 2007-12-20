@@ -58,7 +58,7 @@ void AdaptiveBlock3D_Info::Broadcast_Adaptive_Block_Info(AdaptiveBlock3D_Info &B
   MPI::COMM_WORLD.Bcast(&(Blk_Info.sector), 1, MPI::INT, 0);
   MPI::COMM_WORLD.Bcast(&(Blk_Info.level), 1, MPI::INT, 0);
   Blk_Info.blkorient.broadcast();
-  Blk_Info.be_on_grid_boundary.broadcast();
+  Blk_Info.be.broadcast();
 #endif
 
 }

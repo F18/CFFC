@@ -13,11 +13,15 @@
 #include "../NavierStokes/NavierStokes3DThermallyPerfectState.h"
 #endif  //NAVIERSTOKES3D_THERMALLYPERFECT_STATE_INCLUDED
 
-/* Include turbulence modelling header file. */
+/* Include turbulence modelling and eddy dissipation model header files. */
 
 #ifndef _TURBULENCE_MODELLING_INCLUDED
 #include "../TurbulenceModelling/TurbulenceModelling.h"
 #endif  //TURBULENCE_MODELLING_INCLUDED
+
+#ifndef _EDDY_DISSIPATION_MODELLING_INCLUDED 
+#include "../TurbulenceModelling/EddyDissipationModel.h"
+#endif // _EDDY_DISSIPATION_MODELLING_INCLUDED
 
 /* Define the classes. */
 
@@ -95,6 +99,7 @@ class FANS3D_ThermallyPerfect_KOmega_cState;
  *  - Fvz              -- Return z-direction viscous solution flux
  *  - Schemistry       -- Return source terms associated with finite-rate chemistry
  *  - Sturbulence      -- Return source terms associated with turbulence modelling
+ *  - Seddydissipation -- Return source terms eddy dissipation modelling of turbulence/chemistry interaction
  *  - lambda           -- Return x-direction eigenvalue
  *  - rc               -- Return x-direction conserved right eigenvector
  *  - lp               -- Return x-direction primitive left eigenvector
@@ -249,7 +254,7 @@ class FANS3D_ThermallyPerfect_KOmega_pState : public NavierStokes3D_ThermallyPer
    }
 
    //! Default destructor
-   ~FANS3D_ThermallyPerfect_KOmega_pState() {
+   ~FANS3D_ThermallyPerfect_KOmega_pState(void) {
       Deallocate();
    }
 //@}
@@ -257,6 +262,18 @@ class FANS3D_ThermallyPerfect_KOmega_pState : public NavierStokes3D_ThermallyPer
 /** @name Some useful operators */
 /*        --------------------- */
 //@{
+   //! Assign the species data (needs to be called only once as it is static)
+   void set_species_data(const int &n,
+                         const string *S,
+                         const char *PATH,
+                         const int &debug, 
+                         const double &Mr, 
+                         const double* Sc,
+                         const int &trans_data) {
+      Euler3D_ThermallyPerfect_pState::set_species_data(n, S, PATH, debug, Mr, Sc, trans_data);
+      num_vars = NUM_EULER3D_VAR_SANS_SPECIES + NUM_FANS3D_VAR_EXTRA + ns;
+   }
+
    //! Copy solution state (cheaper than = operator)
    void Copy(const FANS3D_ThermallyPerfect_KOmega_pState &W) {
       Euler3D_ThermallyPerfect_pState::Copy(W); k = W.k; omega = W.omega;
@@ -295,13 +312,13 @@ class FANS3D_ThermallyPerfect_KOmega_pState : public NavierStokes3D_ThermallyPer
    //! Eddy (turbulent) viscosity
    double mu_t(void);      
 
-   //! Turbulent) thermal conductivity
+   //! Turbulent thermal conductivity
    double kappa_t(void);      
 
    //! Species turbulent diffusion coefficient
-   double Ds_t(const int &i);
+   double Ds_t(const int i);
    //! Species turbulent diffusion coefficient
-   double Ds_t(const int &i,
+   double Ds_t(const int i,
                const double &mu_t_temp);
 
    //! Turbulent Prandtl number
@@ -599,13 +616,17 @@ class FANS3D_ThermallyPerfect_KOmega_pState : public NavierStokes3D_ThermallyPer
                                                        const int &TEMPERATURE_BC_FLAG);
 //@}
    
-/** @name Turbulence Model Source Terms */
-/*        ----------------------------- */
+/** @name Turbulence and Chemistry Modelling Source Terms */
+/*        ----------------------------------------------- */
 //@{
+   //! Return source terms associated with turbulence modelling
    static FANS3D_ThermallyPerfect_KOmega_cState Sturbulence(FANS3D_ThermallyPerfect_KOmega_pState &Wc,
                                                             const FANS3D_ThermallyPerfect_KOmega_pState &dWdx,
                                                             const FANS3D_ThermallyPerfect_KOmega_pState &dWdy,
                                                             const FANS3D_ThermallyPerfect_KOmega_pState &dWdz);
+
+   //! Return source terms associated with eddy dissipation modelling of turbulence/chemistry interaction
+   static FANS3D_ThermallyPerfect_KOmega_cState Seddydissipation(FANS3D_ThermallyPerfect_KOmega_pState &Wc);
 //@}
 
 /** @name Operators */
@@ -666,19 +687,10 @@ class FANS3D_ThermallyPerfect_KOmega_pState : public NavierStokes3D_ThermallyPer
    friend istream& operator >> (istream &in_file,
                                 FANS3D_ThermallyPerfect_KOmega_pState &W);
 //@}
-
- void set_species_data(const int &n,
-                         const string *S,
-                         const char *PATH,
-                         const int &debug,
-                         const double &Mr,
-                         const double* Sc,
-                         const int &trans_data);
-
 };
 
 /*!
- * Class: FANS3D_ThermallyPerfect_KOmega_pState
+ * Class: FANS3D_ThermallyPerfect_KOmega_cState
  *
  * \brief Conserved state solution class for 3D Favre-average Navier-Stokes
  *        equations with k-omega turbulence model governing flows of thermally 
@@ -811,7 +823,7 @@ class FANS3D_ThermallyPerfect_KOmega_cState : public NavierStokes3D_ThermallyPer
    }
    
    //! Default destructor
-   ~FANS3D_ThermallyPerfect_KOmega_cState() {
+   ~FANS3D_ThermallyPerfect_KOmega_cState(void) {
       Deallocate();
    }
 //@}
@@ -819,6 +831,18 @@ class FANS3D_ThermallyPerfect_KOmega_cState : public NavierStokes3D_ThermallyPer
 /** @name Some useful operators */
 /*        --------------------- */
 //@{
+   //! Assign the species data (needs to be called only once as it is static)
+   void set_species_data(const int &n,
+                         const string *S,
+                         const char *PATH,
+                         const int &debug, 
+                         const double &Mr, 
+                         const double* Sc,
+                         const int &trans_data) {
+      Euler3D_ThermallyPerfect_cState::set_species_data(n, S, PATH, debug, Mr, Sc, trans_data);
+      num_vars = NUM_EULER3D_VAR_SANS_SPECIES + NUM_FANS3D_VAR_EXTRA + ns;
+   }
+
    //! Copy solution state (cheaper than = operator)
    void Copy(const FANS3D_ThermallyPerfect_KOmega_cState &U) {
       Euler3D_ThermallyPerfect_cState::Copy(U); rhok = U.rhok; rhoomega = U.rhoomega;
@@ -875,9 +899,9 @@ class FANS3D_ThermallyPerfect_KOmega_cState : public NavierStokes3D_ThermallyPer
    double kappa_t(void);     
 
    //! Species turbulent diffusion coefficient
-   double Ds_t(const int &i);
+   double Ds_t(const int i);
    //! Species turbulent diffusion coefficient
-   double Ds_t(const int &i,
+   double Ds_t(const int i,
                const double &mu_t_temp);
 
    //! Turbulent Prandtl number
@@ -969,14 +993,6 @@ class FANS3D_ThermallyPerfect_KOmega_cState : public NavierStokes3D_ThermallyPer
    friend istream& operator >> (istream &in_file,
                                 FANS3D_ThermallyPerfect_KOmega_cState &U);
 //@}
-
- void set_species_data(const int &n,
-                         const string *S,
-                         const char *PATH,
-                         const int &debug,
-                         const double &Mr,
-                         const double* Sc,
-                         const int &trans_data);
 };
 
 
@@ -1004,7 +1020,7 @@ inline double& FANS3D_ThermallyPerfect_KOmega_pState::operator[](int index) {
    case 7:
       return omega;
    default :
-      return spec[index-(NUM_EULER3D_VAR_SANS_SPECIES + NUM_FANS3D_VAR_EXTRA +1)].c;
+      return spec[index-(NUM_EULER3D_VAR_SANS_SPECIES+NUM_FANS3D_VAR_EXTRA+1)].c;
    };
 }
 
@@ -1025,7 +1041,7 @@ inline const double& FANS3D_ThermallyPerfect_KOmega_pState::operator[](int index
    case 7:
       return omega;
    default :
-      return spec[index-(NUM_EULER3D_VAR_SANS_SPECIES + NUM_FANS3D_VAR_EXTRA +1)].c;     
+      return spec[index-(NUM_EULER3D_VAR_SANS_SPECIES+NUM_FANS3D_VAR_EXTRA+1)].c;     
    };
 }
 
@@ -1277,7 +1293,7 @@ inline double& FANS3D_ThermallyPerfect_KOmega_cState::operator[](int index) {
    case 7:
       return rhoomega;
    default :
-      return rhospec[index-(NUM_EULER3D_VAR_SANS_SPECIES + NUM_FANS3D_VAR_EXTRA +1)].c;     
+      return rhospec[index-(NUM_EULER3D_VAR_SANS_SPECIES+NUM_FANS3D_VAR_EXTRA+1)].c;     
    };
 }
 
@@ -1298,7 +1314,7 @@ inline const double& FANS3D_ThermallyPerfect_KOmega_cState::operator[](int index
    case 7:
       return rhoomega;
    default :
-      return rhospec[index-(NUM_EULER3D_VAR_SANS_SPECIES + NUM_FANS3D_VAR_EXTRA +1)].c; 
+      return rhospec[index-(NUM_EULER3D_VAR_SANS_SPECIES+NUM_FANS3D_VAR_EXTRA+1)].c; 
    };
 }
 

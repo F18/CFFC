@@ -55,8 +55,7 @@ Output_Nodes_Tecplot(Input_Parameters<NavierStokes3D_ThermallyPerfect_pState,
 template<>
 int Hexa_Block<NavierStokes3D_ThermallyPerfect_pState, 
                NavierStokes3D_ThermallyPerfect_cState>::
-ICs(const int i_ICtype,
-    Input_Parameters<NavierStokes3D_ThermallyPerfect_pState, 
+ICs(Input_Parameters<NavierStokes3D_ThermallyPerfect_pState, 
                      NavierStokes3D_ThermallyPerfect_cState> &IPs);
 
 template<>

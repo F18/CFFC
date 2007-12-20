@@ -1,6 +1,5 @@
 /* Interpolation2Dto3D.h: */  
 
-
 #ifndef _INTERPOLATION2DTO3D_INCLUDED
 #define _INTERPOLATION2DTO3D_INCLUDED
 
@@ -11,7 +10,6 @@
 #ifndef _CFD_INCLUDED
 #include "../CFD/CFD.h"
 #endif // _CFD_INCLUDED
-
 
 /*******************************************************************************
  *
@@ -24,7 +22,6 @@
  *   newline.  EOF is returned if it is detected.
  *
  ******************************************************************************/
-
 inline int skip_line(FILE* fs)
 
 {
@@ -154,13 +151,6 @@ inline int  FlowField_2D::read_numerical_solution(const char *const cffc_path){
    
     
 }
-
-
-
-
-
-
-
 
 #endif // _INTERPOLATION2DTO3D_INCLUDED
 

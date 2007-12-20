@@ -269,7 +269,7 @@ class Euler3D_ThermallyPerfect_pState {
    }
      
    //! Default destructor
-   ~Euler3D_ThermallyPerfect_pState() {
+   ~Euler3D_ThermallyPerfect_pState(void) {
       Deallocate(); 
    }
 //@}
@@ -412,7 +412,7 @@ class Euler3D_ThermallyPerfect_pState {
    void Copy(const Euler3D_ThermallyPerfect_pState &W);
 
    //! Returns the number of variables - number of species
-   int NumVarSansSpecies(void) const { return num_vars - ns; }
+   int NumVarSansSpecies(void) const {return num_vars - ns;}
 
    //! Assigns a vacuum solution state
    void Vacuum(void){ 
@@ -901,7 +901,7 @@ class Euler3D_ThermallyPerfect_cState {
    }  
 
    //! Default destructor
-   ~Euler3D_ThermallyPerfect_cState(){ 
+   ~Euler3D_ThermallyPerfect_cState(void){ 
      Deallocate();
    }
 //@}

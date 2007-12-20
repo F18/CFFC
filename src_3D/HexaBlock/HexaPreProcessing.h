@@ -1,9 +1,6 @@
+
 #ifndef _HEXA_PRE_PROCESSING_INCLUDED
 #define _HEXA_PRE_PROCESSING_INCLUDED
-
-#ifndef _INTERPOLATION2DTO3D_INCLUDED
-#include "../FANS/Interpolation2Dto3D.h"
-#endif// _INTERPOLATION2DTO3D_INCLUDED
 
 /*! *****************************************************
  * Routine: Initialize_Solution_Blocks                  *
@@ -137,9 +134,8 @@ int Initial_Conditions(HexaSolver_Data &Data,
       CFFC_Maximum_MPI(Solution_Data.Input.Maximum_Number_of_Time_Steps);
    
   // Generate initial solution data to begin calculation. 
-  } else {    
-
-     error_flag = Wall_Distance(Solution_Data.Local_Solution_Blocks.Soln_Blks,  // Turbulence function in GENERIC TYPE????
+  } else {
+    error_flag = Wall_Distance(Solution_Data.Local_Solution_Blocks.Soln_Blks,  // Turbulence function in GENERIC TYPE????
 			       Data.Octree, 
 			       Data.Local_Adaptive_Block_List);
     if (!Data.batch_flag && error_flag) {
@@ -150,43 +146,41 @@ int Initial_Conditions(HexaSolver_Data &Data,
     } /* endif */
     error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return (error_flag);
-      
-    // Intialization 
+
+    // Call ICs:
     Solution_Data.Local_Solution_Blocks.ICs(Solution_Data.Input);
 
-    // Initialization of the flow field with available 2D numerical solution
-    // for some cases.
-    FlowField_2D Numflowfield2D;
-    
-    Solution_Data.Local_Solution_Blocks.Read_and_Interpolate(Numflowfield2D,
-                                                             Solution_Data.Input.i_ICs,Solution_Data.Input.CFFC_Path);
-    
+    // Call specializations:
+    error_flag = Hexa_Pre_Processing_Specializations(Data,
+                                                     Solution_Data);
+    error_flag = CFFC_OR_MPI(error_flag);
+    if (error_flag) return (error_flag);
   } /* endif */
-
-    
-  error_flag = Hexa_Pre_Processing_Specializations(Data,
-                                                   Solution_Data);
-  if (error_flag) return (error_flag);  
 
   /* Send solution information between neighbouring blocks to complete
      prescription of initial data. */
 
   CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization. 
+
   // First send mesh and geometry information.
-  error_flag = Send_Messages_Mesh_Geometry_Only<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >
-                  (Solution_Data.Local_Solution_Blocks.Soln_Blks, 
-                   Data.Local_Adaptive_Block_List);
-  if (!Data.batch_flag && error_flag) {
-      cout << "\n ERROR: Message passing error during geometry intialization "
-           << "on processor "
-           << CFFC_MPI::This_Processor_Number
-           << ".\n";
-      cout.flush();
-   } /* endif */
-  error_flag = CFFC_OR_MPI(error_flag);
-  if (error_flag) return (error_flag);
-  // Correct exterior nodes to match with message passed geometry information.
-  Solution_Data.Local_Solution_Blocks.Correct_Grid_Exterior_Nodes(Data.Local_Adaptive_Block_List);
+  if (Solution_Data.Input.Grid_IP.i_Grid != GRID_PERIODIC_BOX && // temporary check for periodic grids (to be removed, CPTG)
+      Solution_Data.Input.Grid_IP.i_Grid != GRID_PERIODIC_BOX_WITH_INFLOW) { 
+     error_flag = Send_Messages_Mesh_Geometry_Only<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >
+                     (Solution_Data.Local_Solution_Blocks.Soln_Blks,
+                      Data.Local_Adaptive_Block_List);
+     if (!Data.batch_flag && error_flag) {
+         cout    << "\n ERROR: Message passing error during geometry intialization "
+              << "on processor "
+              << CFFC_MPI::This_Processor_Number
+              << ".\n";
+         cout.flush();
+     } /* endif */
+     error_flag = CFFC_OR_MPI(error_flag);
+     if (error_flag) return (error_flag);
+     // Correct exterior nodes to match with message passed geometry information.
+     Solution_Data.Local_Solution_Blocks.Correct_Grid_Exterior_Nodes(Data.Local_Adaptive_Block_List);
+  } /* endif */
+
   // Now send solution information and data.
   error_flag = Send_Messages<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >
                   (Solution_Data.Local_Solution_Blocks.Soln_Blks, 
@@ -201,13 +195,11 @@ int Initial_Conditions(HexaSolver_Data &Data,
    error_flag = CFFC_OR_MPI(error_flag);
    if (error_flag) return (error_flag);
 
-
- 
-  
   /* Prescribe boundary data consistent with initial data. */
-   Solution_Data.Local_Solution_Blocks.BCs(Solution_Data.Input);
 
-  
+  Solution_Data.Local_Solution_Blocks.BCs(Solution_Data.Input);
+
+  /* End of prepocessing. */  
 
   return error_flag;
 

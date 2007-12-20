@@ -13,99 +13,6 @@
 /*****************************************************************************************
  * FANS3D_ThermallyPerfect_KOmega_pState member functions                                *
  *****************************************************************************************/
-void FANS3D_ThermallyPerfect_KOmega_pState::set_species_data(const int &n,
-                                                             const string *S,
-                                                             const char *PATH,
-                                                             const int &debug, 
-                                                             const double &Mr, 
-                                                             const double* Sc,
-                                                             const int &trans_data){ 
-
-
-   // Set the new number of species. 
-   ns = n;
-      
-   num_vars = ns + NUM_EULER3D_VAR_SANS_SPECIES+ NUM_FANS3D_VAR_EXTRA;
-   
-   // Create static memory for NASA data.
-   Deallocate_static();
-   Allocate_static();
-
-   // Create memory for species data (static or dynamic as requested).
-   Deallocate();
-   Allocate();
-
-   // Read in and assign appropriate NASA data for each species to be used.
-   for (int i = 0; i < ns; i++) {
-     //overwrite default data  
-     specdata[i].Getdata(S[i], PATH, trans_data);  
-     Schmidt[i] = Sc[i];
-   } /* endfor */
-
-   // Set initial values for the species.
-   for (int i=0; i < ns; i++) {
-      spec[i].c = ONE/ns; 
-   } /* endfor */
-
-   // Set data temperature ranges for mixture calculations.
-   Temp_low_range(); 
-   Temp_high_range(); 
-   
-   // Set debug information level.
-   debug_level = debug;   
-  
-  
-  
-}   
-
-void FANS3D_ThermallyPerfect_KOmega_cState::set_species_data(const int &n, 
-                                                             const string *S, 
-                                                             const char *PATH,
-                                                             const int &debug, 
-                                                             const double &Mr, 
-                                                             const double* Sc,
-                                                             const int &trans_data){ 
- 
- 
-
-
-
-   // Set the new number of species. 
-   ns = n;
-      
-   num_vars = ns + NUM_EULER3D_VAR_SANS_SPECIES+ NUM_FANS3D_VAR_EXTRA;
-   
-   // Create static memory for NASA data.
-   Deallocate_static();
-   Allocate_static();
-
-   // Create memory for species data.
-   Deallocate();
-   Allocate();
-
-   // Read in and assign appropriate NASA data for each species to be used.
-   for (int i = 0; i < ns; i++) {
-      //overwrite default data  
-      specdata[i].Getdata(S[i], PATH, trans_data);
-      Schmidt[i] = Sc[i];  
-   } /* endfor */
-
-   // Set initial values for the species.
-   for (int i = 0; i < ns; i++) {
-      rhospec[i].c = rho/ns; 
-   } /* endfor */
-
-   // Set data temperature ranges for mixture calculations.
-   Temp_low_range();
-   Temp_high_range();
-
-   // Set debug information level.
-   debug_level = debug;
-
-
- 
-   
-}      
 
 /*****************************************************************************************
  * FANS3D_ThermallyPerfect_KOmega_pState::Realizable_Solution_Check -- Check physical    *
@@ -113,8 +20,7 @@ void FANS3D_ThermallyPerfect_KOmega_cState::set_species_data(const int &n,
  *                                                                      solution state.  *
  *****************************************************************************************/
 bool FANS3D_ThermallyPerfect_KOmega_pState::Realizable_Solution_Check(void) {
-   if (rho <= ZERO || !negative_speccheck() || p <= ZERO ||
-       k <= ZERO || omega <= ZERO) {    
+   if (rho <= ZERO || !negative_speccheck() || p <= ZERO || k < ZERO || omega <= ZERO) {    
       cout << "\n " << CFFC_Name() 
            << " ERROR: Primitive solution state has a negative density, pressure, mass fractions,"
            << " turbulent kinetic energy, and/or dissipation rate.\n";
@@ -179,11 +85,11 @@ double FANS3D_ThermallyPerfect_KOmega_pState::kappa_t(void) {
  * FANS3D_ThermallyPerfect_KOmega_pState::Ds_t -- Return species turbulent diffusion     *
  *                                                coefficient.                           *
  *****************************************************************************************/
-double FANS3D_ThermallyPerfect_KOmega_pState::Ds_t(const int &i) {
+double FANS3D_ThermallyPerfect_KOmega_pState::Ds_t(const int i) {
    return (mu_t()/(rho*Sc_t()));
 }
 
-double FANS3D_ThermallyPerfect_KOmega_pState::Ds_t(const int &i,
+double FANS3D_ThermallyPerfect_KOmega_pState::Ds_t(const int i,
                                                    const double &mu_t_temp) {
    return (mu_t_temp/(rho*Sc_t()));
 }
@@ -648,30 +554,30 @@ FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_pState::Fy(
  ***************************************************************************************/
 FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_pState::Fz(void) {
    FANS3D_ThermallyPerfect_KOmega_cState Temp;
-   Temp.rho = rho*v.y;
-   Temp.rhov.x = rho*v.x*v.y;
-   Temp.rhov.y = rho*sqr(v.y) + p + (TWO/THREE)*rho*k;
-   Temp.rhov.z = rho*v.y*v.z;
-   Temp.E = v.y*(H() + (TWO/THREE)*rho*k);
-   Temp.rhok = rho*v.y*k;
-   Temp.rhoomega = rho*v.y*omega;
+   Temp.rho = rho*v.z;
+   Temp.rhov.x = rho*v.x*v.z;
+   Temp.rhov.y = rho*v.y*v.z;
+   Temp.rhov.z = rho*sqr(v.z) + p + (TWO/THREE)*rho*k;;
+   Temp.E = v.z*(H() + (TWO/THREE)*rho*k);
+   Temp.rhok = rho*v.z*k;
+   Temp.rhoomega = rho*v.z*omega;
    for (int i = 0; i < ns; i++) {
-      Temp.rhospec[i].c = rho*v.y*spec[i].c;
+      Temp.rhospec[i].c = rho*v.z*spec[i].c;
    } /* endfor */
    return (Temp);
 }
 
 FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_pState::Fz(void) const {
    FANS3D_ThermallyPerfect_KOmega_cState Temp;
-   Temp.rho = rho*v.y;
-   Temp.rhov.x = rho*v.x*v.y;
-   Temp.rhov.y = rho*sqr(v.y) + p + (TWO/THREE)*rho*k;
-   Temp.rhov.z = rho*v.y*v.z;
-   Temp.E = v.y*(H() + (TWO/THREE)*rho*k);
-   Temp.rhok = rho*v.y*k;
-   Temp.rhoomega = rho*v.y*omega;
+   Temp.rho = rho*v.z;
+   Temp.rhov.x = rho*v.x*v.z;
+   Temp.rhov.y = rho*v.y*v.z;
+   Temp.rhov.z = rho*sqr(v.z) + p + (TWO/THREE)*rho*k;;
+   Temp.E = v.z*(H() + (TWO/THREE)*rho*k);
+   Temp.rhok = rho*v.z*k;
+   Temp.rhoomega = rho*v.z*omega;
    for (int i = 0; i < ns; i++) {
-      Temp.rhospec[i].c = rho*v.y*spec[i].c;
+      Temp.rhospec[i].c = rho*v.z*spec[i].c;
    } /* endfor */
    return (Temp);
 }
@@ -1440,12 +1346,9 @@ FluxHLLE_x(const FANS3D_ThermallyPerfect_KOmega_pState &Wl,
            const FANS3D_ThermallyPerfect_KOmega_pState &Wr) {
    
    double wavespeed_l, wavespeed_r;
- 
    FANS3D_ThermallyPerfect_KOmega_pState Wa, lambdas_l, lambdas_r, lambdas_a;
    FANS3D_ThermallyPerfect_KOmega_cState Flux, dUrl;
    
-   int num_vars = Wl.num_vars;
-
    /* Evaluate the Roe-average primitive solution state. */
    
    Wa = RoeAverage(Wl, Wr);
@@ -1464,8 +1367,8 @@ FluxHLLE_x(const FANS3D_ThermallyPerfect_KOmega_pState &Wl,
    
    wavespeed_l = min(lambdas_l[1],
                      lambdas_a[1]);
-   wavespeed_r = max(lambdas_r[num_vars-NUM_FANS3D_VAR_EXTRA-lambdas_r.ns],
-                     lambdas_a[num_vars-NUM_FANS3D_VAR_EXTRA-lambdas_a.ns]);
+   wavespeed_r = max(lambdas_r[5],
+                     lambdas_a[5]);
    
    wavespeed_l = min(wavespeed_l, ZERO);
    wavespeed_r = max(wavespeed_r, ZERO); 
@@ -1680,8 +1583,8 @@ Vector2D FANS3D_ThermallyPerfect_KOmega_pState::HLLE_wavespeeds(const FANS3D_The
     /* Determine the intermediate state flux. */
     wavespeed.x = min(lambdas_l[1],
                       lambdas_a[1]);
-    wavespeed.y = max(lambdas_r[lambdas_r.NumVarSansSpecies()],
-                      lambdas_a[lambdas_a.NumVarSansSpecies()]);
+    wavespeed.y = max(lambdas_r[5],
+                      lambdas_a[5]);
  
     wavespeed.x = min(wavespeed.x, ZERO); //lambda minus
     wavespeed.y = max(wavespeed.y, ZERO); //lambda plus 
@@ -1910,7 +1813,7 @@ NoSlip(const FANS3D_ThermallyPerfect_KOmega_pState &Win,
  ************************************************************************/
 
 /***************************************************************************************
- * FANS3D_ThermallyPerfect_KOmega_pState::Sturbulene -- Turbulence model source terms. *
+ * FANS3D_ThermallyPerfect_KOmega_pState::Sturbulence -- Turbulence model source terms.*
  ***************************************************************************************/
 FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_pState::
 Sturbulence(FANS3D_ThermallyPerfect_KOmega_pState &Wc,
@@ -1951,6 +1854,16 @@ Sturbulence(FANS3D_ThermallyPerfect_KOmega_pState &Wc,
 
 } 
 
+/***************************************************************************************
+ * FANS3D_ThermallyPerfect_KOmega_pState::Seddydissioation -- Source terms associated  *
+ *       with eddy dissipation modelling of turbulence/chemistry interaction.          *
+ ***************************************************************************************/
+FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_pState::
+Seddydissipation(FANS3D_ThermallyPerfect_KOmega_pState &Wc) {
+   return (Seddydissipationmodel<FANS3D_ThermallyPerfect_KOmega_pState,
+                                 FANS3D_ThermallyPerfect_KOmega_cState>(Wc));
+} 
+
 /*****************************************************************************************
  * FANS3D_ThermallyPerfect_KOmega_cState member functions                                *
  *****************************************************************************************/
@@ -1961,8 +1874,7 @@ Sturbulence(FANS3D_ThermallyPerfect_KOmega_pState &Wc,
  *                                                                      solution state.  *
  *****************************************************************************************/
 bool FANS3D_ThermallyPerfect_KOmega_cState::Realizable_Solution_Check(void) {
-   if (rho <= ZERO || !negative_speccheck() || es() <= ZERO ||
-       rhok <= ZERO || rhoomega <= ZERO) {    
+   if (rho <= ZERO || !negative_speccheck() || es() <= ZERO || rhok < ZERO || rhoomega <= ZERO) {    
       cout << "\n " << CFFC_Name() 
            << " ERROR: Conserved solution state has a negative density, energy, mass fractions,"
            << " turbulent kinetic energy, and/or dissipation rate.\n";
@@ -2132,11 +2044,11 @@ double FANS3D_ThermallyPerfect_KOmega_cState::kappa_t(void) {
  * FANS3D_ThermallyPerfect_KOmega_cState::Ds_t -- Return species turbulent diffusion     *
  *                                                coefficient.                           *
  *****************************************************************************************/
-double FANS3D_ThermallyPerfect_KOmega_cState::Ds_t(const int &i) {
+double FANS3D_ThermallyPerfect_KOmega_cState::Ds_t(const int i) {
    return (mu_t()/(rho*Sc_t()));
 }
 
-double FANS3D_ThermallyPerfect_KOmega_cState::Ds_t(const int &i,
+double FANS3D_ThermallyPerfect_KOmega_cState::Ds_t(const int i,
                                                    const double &mu_t_temp) {
    return (mu_t_temp/(rho*Sc_t()));
 }

@@ -20,6 +20,12 @@
 #include "BluffBodyBurner.h"
 #endif // _BLUFFBODY_DATABASE_INCLUDE
 
+/* Include 2D to 3D solution interpolation header file. */
+
+#ifndef _INTERPOLATION2DTO3D_INCLUDED
+#include "Interpolation2Dto3D.h"
+#endif// _INTERPOLATION2DTO3D_INCLUDED
+
 /* Define required specializations. */
 
 template<>
@@ -58,9 +64,13 @@ Output_Nodes_Tecplot(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
 template<>
 int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState, 
                FANS3D_ThermallyPerfect_KOmega_cState>::
-ICs(const int i_ICtype,
-    Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState, 
+ICs(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState, 
                      FANS3D_ThermallyPerfect_KOmega_cState> &IPs);
+
+template<>
+int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState,
+               FANS3D_ThermallyPerfect_KOmega_cState>::
+Interpolate_2Dto3D(const FlowField_2D &Numflowfield2D);
 
 template<>
 void Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState, 
@@ -88,18 +98,6 @@ Update_Solution_Multistage_Explicit(const int i_stage,
                                     Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
                                                      FANS3D_ThermallyPerfect_KOmega_cState> &IPs);
 
-
-template<>
-int  Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState,
-                FANS3D_ThermallyPerfect_KOmega_cState>::
-                Interpolator(const FlowField_2D &Numflowfield2D);
-  
- 
-template<> 
-int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState,  
-               FANS3D_ThermallyPerfect_KOmega_cState>::Wall_Shear(void);
-
-
 template<>
 double Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState, 
                   FANS3D_ThermallyPerfect_KOmega_cState>::
@@ -107,5 +105,8 @@ Wall_Friction_Velocity(const int i,
                        const int j, 
                        const int k);
 
+template<> 
+int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState,  
+               FANS3D_ThermallyPerfect_KOmega_cState>::Wall_Shear(void);
 
 #endif // _FANS3D_THERMALLYPERFECT_HEXA_BLOCK_INCLUDED

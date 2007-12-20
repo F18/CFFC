@@ -367,4 +367,3 @@ int Turbulence_Model_k_omega::automatic_wall_treatment_residual_evaluaton(
   
 }
 
-   

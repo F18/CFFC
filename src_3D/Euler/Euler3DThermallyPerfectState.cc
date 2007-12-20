@@ -1291,8 +1291,6 @@ FluxHLLE_x(const Euler3D_ThermallyPerfect_pState &Wl,
    Euler3D_ThermallyPerfect_pState Wa, lambdas_l, lambdas_r, lambdas_a;
    Euler3D_ThermallyPerfect_cState Flux, dUrl;
    
-   int num_vars = Wl.num_vars;
-      
    /* Evaluate the Roe-average primitive solution state. */
    
    Wa = RoeAverage(Wl, Wr);
@@ -1311,8 +1309,8 @@ FluxHLLE_x(const Euler3D_ThermallyPerfect_pState &Wl,
    
    wavespeed_l = min(lambdas_l[1],
                      lambdas_a[1]);
-   wavespeed_r = max(lambdas_r[num_vars-lambdas_r.ns],
-                     lambdas_a[num_vars-lambdas_a.ns]);
+   wavespeed_r = max(lambdas_r[5],
+                     lambdas_a[5]);
 
    wavespeed_l = min(wavespeed_l, ZERO);
    wavespeed_r = max(wavespeed_r, ZERO);
@@ -1322,9 +1320,9 @@ FluxHLLE_x(const Euler3D_ThermallyPerfect_pState &Wl,
    } else if (wavespeed_r <= ZERO) {
       Flux = Wr.F();
    } else {
-      Flux =   ( (wavespeed_r*Wl.F()-wavespeed_l*Wr.F())
-                 +(wavespeed_l*wavespeed_r)*dUrl)/
-         (wavespeed_r-wavespeed_l);
+      Flux = ( (wavespeed_r*Wl.F()-wavespeed_l*Wr.F())
+              +(wavespeed_l*wavespeed_r)*dUrl)/
+             (wavespeed_r-wavespeed_l);
    } /* endif */
 
    /* Return solution flux. */
@@ -1336,9 +1334,10 @@ FluxHLLE_x(const Euler3D_ThermallyPerfect_pState &Wl,
 Euler3D_ThermallyPerfect_cState Euler3D_ThermallyPerfect_pState::
 FluxHLLE_x(const Euler3D_ThermallyPerfect_cState &Ul,
            const Euler3D_ThermallyPerfect_cState &Ur) {
-   return (FluxHLLE_x(Ul.W(), Ur.W()));
-}
 
+   return (FluxHLLE_x(Ul.W(), Ur.W()));
+
+}
 
 /******************************************************************************************
  * Euler3D_ThermallyPerfect_pState::FluxHLLE_n -- HLLE flux function, n-direction flux.   *
@@ -1364,7 +1363,9 @@ Euler3D_ThermallyPerfect_cState Euler3D_ThermallyPerfect_pState::
 FluxHLLE_n(const Euler3D_ThermallyPerfect_cState &Ul,
            const Euler3D_ThermallyPerfect_cState &Ur,
            const Vector3D &norm_dir) {
+
    return (FluxHLLE_n(Ul.W(), Ur.W(), norm_dir));
+
 }
 
 /******************************************************************************************
@@ -1522,8 +1523,8 @@ Vector2D Euler3D_ThermallyPerfect_pState::HLLE_wavespeeds(const Euler3D_Thermall
     /* Determine the intermediate state flux. */
     wavespeed.x = min(lambdas_l[1],
                       lambdas_a[1]);
-    wavespeed.y = max(lambdas_r[lambdas_r.NumVarSansSpecies()],
-                      lambdas_a[lambdas_a.NumVarSansSpecies()]);
+    wavespeed.y = max(lambdas_r[5],
+                      lambdas_a[5]);
  
     wavespeed.x = min(wavespeed.x, ZERO); //lambda minus
     wavespeed.y = max(wavespeed.y, ZERO); //lambda plus 

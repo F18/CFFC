@@ -35,6 +35,7 @@ MATH_DIR = Math/
 MPI_DIR = MPI/
 MULTIGRID_DIR = FASMultigrid/
 NAVIERSTOKES_DIR = NavierStokes/
+LESFSD_DIR = LES/LES_FSD/
 NKS_DIR = NewtonKrylovSchwarz/
 PHYSICS_DIR = Physics/
 EOS_DIR = $(PHYSICS_DIR)EquationOfState/
@@ -117,9 +118,11 @@ SRC_MULTIGRID = $(MULTIGRID_DIR)FASMultigridInput.cc
 SRC_NKS = $(NKS_DIR)NKSInput.cc
 
 # Euler3D:
-SRC_EULER_POLYTROPIC = $(EULER_DIR)Euler3DPolytropicState.cc
+SRC_EULER_POLYTROPIC = $(EULER_DIR)Euler3DPolytropicInput.cc \
+                       $(EULER_DIR)Euler3DPolytropicState.cc
 
-SRC_EULER_THERMPERFECT = $(EULER_DIR)Euler3DThermallyPerfectState.cc \
+SRC_EULER_THERMPERFECT = $(EULER_DIR)Euler3DThermallyPerfectInput.cc \
+                         $(EULER_DIR)Euler3DThermallyPerfectState.cc \
                          $(EULER_DIR)Euler3DThermallyPerfectHexaBlock.cc
 
 # Add Euler3D testing if required:
@@ -136,7 +139,8 @@ SRC_EULER_THERMPERFECT_EXE = $(EULER_DIR)Euler3DThermallyPerfect.cc
 
 # NavierStokes3D:
 SRC_NAVIERSTOKES_POLYTROPIC =
-SRC_NAVIERSTOKES_THERMPERFECT = $(NAVIERSTOKES_DIR)NavierStokes3DThermallyPerfectState.cc \
+SRC_NAVIERSTOKES_THERMPERFECT = $(NAVIERSTOKES_DIR)NavierStokes3DThermallyPerfectInput.cc \
+                                $(NAVIERSTOKES_DIR)NavierStokes3DThermallyPerfectState.cc \
                                 $(NAVIERSTOKES_DIR)NavierStokes3DThermallyPerfectHexaBlock.cc
 
 SRC_NAVIERSTOKES = $(SRC_NAVIERSTOKES_POLYTROPIC) $(SRC_NAVIERSTOKES_THERMPERFECT)
@@ -146,14 +150,24 @@ SRC_NAVIERSTOKES_THERMPERFECT_EXE = $(NAVIERSTOKES_DIR)NavierStokes3DThermallyPe
 
 # FANS3D:
 SRC_FANS_POLYTROPIC =
-SRC_FANS_THERMPERFECT = $(FANS_DIR)FANS3DThermallyPerfectState.cc \
+SRC_FANS_THERMPERFECT = $(FANS_DIR)FANS3DThermallyPerfectInput.cc \
+                        $(FANS_DIR)FANS3DThermallyPerfectState.cc \
                         $(FANS_DIR)FANS3DThermallyPerfectHexaBlock.cc \
+                        $(FANS_DIR)FANS3DThermallyPerfectHexaPreProcessing.cc \
                         $(FANS_DIR)BluffBodyBurner.cc
 
 SRC_FANS = $(SRC_FANS_POLYTROPIC) $(SRC_FANS_THERMPERFECT)
 
 SRC_FANS_POLYTROPIC_EXE = $(FANS_DIR)FANS3DPolytropic.cc
 SRC_FANS_THERMPERFECT_EXE = $(FANS_DIR)FANS3DThermallyPerfect.cc
+
+# LES3DFSD:
+SRC_LESFSD = $(LESFSD_DIR)LES3DFsdInput.cc \
+             $(LESFSD_DIR)LES3DFsdState.cc \
+             $(LESFSD_DIR)LES3DFsdHexaBlock.cc \
+             $(LESFSD_DIR)LES3DFsdHexaPreProcessing.cc
+
+SRC_LESFSD_EXE = $(LESFSD_DIR)LES3DFsd.cc
 
 # Physics, Turbulence, Thermodynamics, and Chemistry:
 SRC_PHYSICS = $(PHYSICS_DIR)SpeciesInput.cc
@@ -187,7 +201,7 @@ ifeq ($(TUT_TESTING),ON)
   SRC_BASE += $(SRC_TUT)
 endif
 SRC_CFFC = $(SRC_BASE) \
-           $(SRC_EULER) $(SRC_NAVIERSTOKES) $(SRC_FANS) \
+           $(SRC_EULER) $(SRC_NAVIERSTOKES) $(SRC_FANS) $(SRC_LESFSD)\
            $(SRC_PHYSICS) $(SRC_TURBULENCE) $(SRC_EOS) $(SRC_NASADATA) \
            $(SRC_REACTIONS)
 
@@ -244,6 +258,10 @@ OBJ_FANS = $(SRC_FANS:.cc=.o)
 OBJ_FANS_POLYTROPIC_EXE = $(SRC_FANS_POLYTROPIC_EXE:.cc=.o)
 OBJ_FANS_THERMPERFECT_EXE = $(SRC_FANS_THERMPERFECT_EXE:.cc=.o)
 
+#LES3DFSD:
+OBJ_LESFSD = $(SRC_LESFSD:.cc=.o)
+OBJ_LESFSD_EXE = $(SRC_LESFSD_EXE:.cc=.o)
+
 # Physics, Turbulence, Thermodynamics, and Chemistry:
 OBJ_PHYSICS = $(SRC_PHYSICS:.cc=.o)
 OBJ_TURBULENCE = $(SRC_TURBULENCE:.cc=.o)
@@ -268,7 +286,7 @@ ifeq ($(TUT_TESTING),ON)
   OBJ_BASE += $(OBJ_TUT)
 endif
 OBJ_CFFC = $(OBJ_BASE) \
-           $(OBJ_EULER) $(OBJ_NAVIERSTOKES) $(OBJ_FANS) \
+           $(OBJ_EULER) $(OBJ_NAVIERSTOKES) $(OBJ_FANS) $(OBJ_LESFSD)\
            $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_EOS) $(OBJ_NASADATA) \
            $(OBJ_REACTIONS)
 
@@ -283,6 +301,7 @@ EXE_EULER_POLYTROPIC = euler3Dpolytropic
 EXE_EULER_THERMPERFECT = euler3Dthermallyperfect
 EXE_NAVIERSTOKES_THERMPERFECT = navierstokes3Dthermallyperfect
 EXE_FANS_THERMPERFECT = fans3Dthermallyperfect
+EXE_LESFSD = les3Dfsd
 
 ###############################################################################
 # Define dependencies
@@ -301,6 +320,8 @@ help:
 	@echo "|             compile navierstokes3Dthermallyperfect stand alone program            |"
 	@echo "|        make fans3Dthermallyperfect                                                |"
 	@echo "|             compile fans3Dthermallyperfect stand alone program                    |"
+	@echo "|        make les3Dfsd                                                              |"
+	@echo "|             compile les3Dfsd stand alone program                                  |"
 	@echo "|        make install              copies cffc3D executable to bin directory        |"
 	@echo "|        make install-all          copies all executables to bin directory          |"
 	@echo "|        make uninstall            removes cffc3D executable from bin directory     |"
@@ -335,7 +356,9 @@ help:
 	@echo "|                                                                                   |"
 	@echo "+-----------------------------------------------------------------------------------+"
 
-all: $(EXE_MAIN) $(EXE_EULER_POLYTROPIC) $(EXE_EULER_THERMPERFECT) $(EXE_NAVIERSTOKES_THERMPERFECT) $(EXE_FANS_THERMPERFECT)
+all: $(EXE_MAIN) $(EXE_EULER_POLYTROPIC) $(EXE_EULER_THERMPERFECT) \
+     $(EXE_NAVIERSTOKES_THERMPERFECT) \
+     $(EXE_FANS_THERMPERFECT) $(EXE_LESFSD)
 	@echo ' '	
 	@echo All programs have been brought up to date.
 	@echo '-------------------------------------------'
@@ -424,47 +447,68 @@ $(EXE_MAIN): $(OBJ_MAIN) $(OBJ_CFFC)
 	@echo '------------------------------------------------'
 	@echo ' '
 
-$(EXE_EULER_POLYTROPIC): $(OBJ_EULER_POLYTROPIC_EXE) $(OBJ_BASE) $(OBJ_EULER_POLYTROPIC) $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS)
+$(EXE_EULER_POLYTROPIC): $(OBJ_EULER_POLYTROPIC_EXE) $(OBJ_BASE) $(OBJ_EULER_POLYTROPIC) \
+                         $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS)
 	@echo ' '
 	@echo Building program $(EXE_EULER_POLYTROPIC) for a $(PLATFORM) platform.
 	@echo '-----------------------------------------------------------------'
 	@echo ' '
-	$(LD) -o $(EXE_EULER_POLYTROPIC) $(OBJ_EULER_POLYTROPIC_EXE) $(OBJ_BASE) $(OBJ_EULER_POLYTROPIC) $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(LDFLAGS)
+	$(LD) -o $(EXE_EULER_POLYTROPIC) $(OBJ_EULER_POLYTROPIC_EXE) $(OBJ_BASE) $(OBJ_EULER_POLYTROPIC) \
+                 $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(LDFLAGS)
 	@echo ' '
 	@echo Program $(EXE_EULER_POLYTROPIC) has been brought up to date.
 	@echo '---------------------------------------------------------'
 	@echo ' '
 
-$(EXE_EULER_THERMPERFECT): $(OBJ_EULER_THERMPERFECT_EXE) $(OBJ_BASE) $(OBJ_EULER_THERMPERFECT) $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS)
+$(EXE_EULER_THERMPERFECT): $(OBJ_EULER_THERMPERFECT_EXE) $(OBJ_BASE) $(OBJ_EULER_THERMPERFECT) \
+                           $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS)
 	@echo ' '
 	@echo Building program $(EXE_EULER_THERMPERFECT) for a $(PLATFORM) platform.
 	@echo '-----------------------------------------------------------------'
 	@echo ' '
-	$(LD) -o $(EXE_EULER_THERMPERFECT) $(OBJ_EULER_THERMPERFECT_EXE) $(OBJ_BASE) $(OBJ_EULER_THERMPERFECT) $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(LDFLAGS)
+	$(LD) -o $(EXE_EULER_THERMPERFECT) $(OBJ_EULER_THERMPERFECT_EXE) $(OBJ_BASE) $(OBJ_EULER_THERMPERFECT) \
+                 $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(LDFLAGS)
 	@echo ' '
 	@echo Program $(EXE_EULER_THERMPERFECT) has been brought up to date.
 	@echo '---------------------------------------------------------'
 	@echo ' '
 
-$(EXE_NAVIERSTOKES_THERMPERFECT): $(OBJ_NAVIERSTOKES_THERMPERFECT_EXE) $(OBJ_BASE) $(OBJ_NAVIERSTOKES_THERMPERFECT) $(OBJ_EULER_THERMPERFECT) $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS)
+$(EXE_NAVIERSTOKES_THERMPERFECT): $(OBJ_NAVIERSTOKES_THERMPERFECT_EXE) $(OBJ_BASE) $(OBJ_NAVIERSTOKES_THERMPERFECT) \
+                                  $(OBJ_EULER_THERMPERFECT) $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS)
 	@echo ' '
 	@echo Building program $(EXE_NAVIERSTOKES_THERMPERFECT) for a $(PLATFORM) platform.
 	@echo '-----------------------------------------------------------------'
 	@echo ' '
-	$(LD) -o $(EXE_NAVIERSTOKES_THERMPERFECT) $(OBJ_NAVIERSTOKES_THERMPERFECT_EXE) $(OBJ_BASE) $(OBJ_NAVIERSTOKES_THERMPERFECT) $(OBJ_EULER_THERMPERFECT) $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(LDFLAGS)
+	$(LD) -o $(EXE_NAVIERSTOKES_THERMPERFECT) $(OBJ_NAVIERSTOKES_THERMPERFECT_EXE) $(OBJ_BASE) $(OBJ_NAVIERSTOKES_THERMPERFECT) \
+                 $(OBJ_EULER_THERMPERFECT) $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(LDFLAGS)
 	@echo ' '
 	@echo Program $(EXE_NAVIERSTOKES_THERMPERFECT) has been brought up to date.
 	@echo '---------------------------------------------------------'
 	@echo ' '
 
-$(EXE_FANS_THERMPERFECT): $(OBJ_FANS_THERMPERFECT_EXE) $(OBJ_BASE) $(OBJ_FANS_THERMPERFECT) $(OBJ_NAVIERSTOKES_THERMPERFECT) $(OBJ_EULER_THERMPERFECT) $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS)
+$(EXE_FANS_THERMPERFECT): $(OBJ_FANS_THERMPERFECT_EXE) $(OBJ_BASE) $(OBJ_FANS_THERMPERFECT) $(OBJ_NAVIERSTOKES_THERMPERFECT) \
+                          $(OBJ_EULER_THERMPERFECT) $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS)
 	@echo ' '
 	@echo Building program $(EXE_FANS_THERMPERFECT) for a $(PLATFORM) platform.
 	@echo '-----------------------------------------------------------------'
 	@echo ' '
-	$(LD) -o $(EXE_FANS_THERMPERFECT) $(OBJ_FANS_THERMPERFECT_EXE) $(OBJ_BASE) $(OBJ_FANS_THERMPERFECT) $(OBJ_NAVIERSTOKES_THERMPERFECT) $(OBJ_EULER_THERMPERFECT) $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(LDFLAGS)
+	$(LD) -o $(EXE_FANS_THERMPERFECT) $(OBJ_FANS_THERMPERFECT_EXE) $(OBJ_BASE) $(OBJ_FANS_THERMPERFECT) $(OBJ_NAVIERSTOKES_THERMPERFECT) \
+                 $(OBJ_EULER_THERMPERFECT) $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(LDFLAGS)
 	@echo ' '
 	@echo Program $(EXE_FANS_THERMPERFECT) has been brought up to date.
+	@echo '---------------------------------------------------------'
+	@echo ' '
+
+$(EXE_LESFSD): $(OBJ_LESFSD_EXE) $(OBJ_BASE) $(OBJ_LESFSD) $(OBJ_NAVIERSTOKES_THERMPERFECT) $(OBJ_EULER_THERMPERFECT) \
+               $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS)
+	@echo ' '
+	@echo Building program $(EXE_LESFSD) for a $(PLATFORM) platform.
+	@echo '-----------------------------------------------------------------'
+	@echo ' '
+	$(LD) -o $(EXE_LESFSD) $(OBJ_LESFSD_EXE) $(OBJ_BASE) $(OBJ_LESFSD) $(OBJ_NAVIERSTOKES_THERMPERFECT) $(OBJ_EULER_THERMPERFECT) \
+                 $(OBJ_PHYSICS) $(OBJ_TURBULENCE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(LDFLAGS)
+	@echo ' '
+	@echo Program $(EXE_LESFSD) has been brought up to date.
 	@echo '---------------------------------------------------------'
 	@echo ' '
 
@@ -479,9 +523,9 @@ install: $(EXE_MAIN)
 	@echo " "
 
 install-all: $(EXE_MAIN) $(EXE_EULER_POLYTROPIC) $(EXE_EULER_THERMPERFECT) \
-             $(EXE_NAVIERSTOKES_THERMPERFECT) $(EXE_FANS_THERMPERFECT)
+             $(EXE_NAVIERSTOKES_THERMPERFECT) $(EXE_FANS_THERMPERFECT) $(EXE_LESFSD)
 	@for f in $(EXE_MAIN) $(EXE_EULER_POLYTROPIC) $(EXE_EULER_THERMPERFECT) \
-                  $(EXE_NAVIERSTOKES_THERMPERFECT) $(EXE_FANS_THERMPERFECT); \
+                  $(EXE_NAVIERSTOKES_THERMPERFECT) $(EXE_FANS_THERMPERFECT) $(EXE_LESFSD); \
 	do \
 	  echo "Installing $$f"; \
 	  cp $$f $(CFFC_BIN_DIR); \
@@ -501,11 +545,11 @@ uninstall:
 
 uninstall-all:
 	@for f in $(EXE_MAIN) $(EXE_EULER_POLYTROPIC) $(EXE_EULER_THERMPERFECT) \
-                  $(EXE_NAVIERSTOKES_THERMPERFECT) $(EXE_FANS_THERMPERFECT); \
+                  $(EXE_NAVIERSTOKES_THERMPERFECT) $(EXE_FANS_THERMPERFECT) $(EXE_LESFSD); \
 	do \
 	  echo "Uninstalling $$f"; \
 	  cd $(CFFC_BIN_DIR) $(EXE_EULER_POLYTROPIC) $(EXE_EULER_THERMPERFECT) \
-             $(EXE_NAVIERSTOKES_THERMPERFECT) $(EXE_FANS_THERMPERFECT); \
+             $(EXE_NAVIERSTOKES_THERMPERFECT) $(EXE_FANS_THERMPERFECT) $(EXE_LESFSD); \
 	  rm -f $$f; \
 	done;
 	@echo " "
@@ -558,6 +602,7 @@ clean:
 	rm -f $(EULER_DIR)UnitTests/*.o $(EULER_DIR)UnitTests/*.il $(EULER_DIR)UnitTests/*~ $(EULER_DIR)UnitTests/*.bak
 	rm -f $(NAVIERSTOKES_DIR)*.o $(NAVIERSTOKES_DIR)*.il $(NAVIERSTOKES_DIR)*~ $(NAVIERSTOKES_DIR)*.depend $(NAVIERSTOKES_DIR)*.bak
 	rm -f $(FANS_DIR)*.o $(FANS_DIR)*.il $(FANS_DIR)*~ $(FANS_DIR)*.depend $(NAVIERSTOKES_DIR)*.bak
+	rm -f $(LESFSD_DIR)*.o $(LESFSD_DIR)*.il $(LESFSD_DIR)*~ $(LESFSD_DIR)*.depend $(NAVIERSTOKES_DIR)*.bak
 	rm -f $(HEXA_DIR)*.o $(HEXA_DIR)*.il $(HEXA_DIR)*~
 	rm -f $(PHYSICS_DIR)*.o $(PHYSICS_DIR)*.il $(PHYSICS_DIR)*~
 	rm -f $(TURBULENCE_DIR)*.o $(TURBULENCE_DIR)*.il $(TURBULENCE_DIR)*~
@@ -576,6 +621,7 @@ clean:
 	rm -f $(EXE_EULER_THERMPERFECT)
 	rm -f $(EXE_NAVIERSTOKES_THERMPERFECT)
 	rm -f $(EXE_FANS_THERMPERFECT)
+	rm -f $(EXE_LESFSD)
 	rm -fr $(DEPEND_DIR)
 	@echo ' '
 	@echo All source file directories are now clean.
@@ -664,6 +710,7 @@ ifeq ($(strip $(filter $(MAKECMDGOALS), $(NODEP_LIST)) ), )
 	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_EULER_THERMPERFECT_EXE)))
 	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_NAVIERSTOKES_THERMPERFECT_EXE)))
 	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_FANS_THERMPERFECT_EXE)))
+	sinclude $(patsubst %.cc,$(DEPEND_DIR)%.d, $(filter %.cc, $(SRC_LESFSD_EXE)))
 endif
 endif
 

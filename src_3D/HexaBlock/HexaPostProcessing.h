@@ -48,7 +48,7 @@ int Hexa_Post_Processing(HexaSolver_Data &Data,
          // called when the scope of the calculation is done...
          // ....
 
-         // Output input parameters for new caluculation.
+         // Output input parameters for new calculation.
          if (!Data.batch_flag)  {
             cout << "\n\n Starting a new calculation.";
             cout << Solution_Data.Input << "\n";
@@ -101,9 +101,6 @@ int Hexa_Post_Processing(HexaSolver_Data &Data,
 									 Data.Local_Adaptive_Block_List,
 									 Data.total_number_of_time_steps(),
 									 Data.Time);
-       
-       
-         
          if (error_flag) {
             cout << "\n  ERROR: Unable to open  node output " 
                          "data file(s) on processor "
@@ -124,7 +121,6 @@ int Hexa_Post_Processing(HexaSolver_Data &Data,
 									       Data.Local_Adaptive_Block_List,
 									       Data.total_number_of_time_steps(),
 									       Data.Time);
-       
          if (error_flag) {
             cout << "\n  ERROR: Unable to open  cell output data file(s) on processor "
                  << CFFC_MPI::This_Processor_Number
