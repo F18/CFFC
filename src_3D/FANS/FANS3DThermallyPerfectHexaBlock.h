@@ -20,6 +20,12 @@
 #include "BluffBodyBurner.h"
 #endif // _BLUFFBODY_DATABASE_INCLUDE
 
+/* Include 2D to 3D solution interpolation header file. */
+
+#ifndef _INTERPOLATION2DTO3D_INCLUDED
+#include "Interpolation2Dto3D.h"
+#endif// _INTERPOLATION2DTO3D_INCLUDED
+
 /* Define required specializations. */
 
 template<>
@@ -60,6 +66,11 @@ int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState,
                FANS3D_ThermallyPerfect_KOmega_cState>::
 ICs(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState, 
                      FANS3D_ThermallyPerfect_KOmega_cState> &IPs);
+
+template<>
+int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState,
+               FANS3D_ThermallyPerfect_KOmega_cState>::
+Interpolate_2Dto3D(const FlowField_2D &Numflowfield2D);
 
 template<>
 void Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState, 

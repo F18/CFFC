@@ -10,6 +10,10 @@
 #include "../CFD/CFD.h"
 #endif // _CFD_INCLUDED
 
+#ifndef _MATH_MACROS_INCLUDED
+#include "../Math/Math.h"
+#endif // _MATH_MACROS_INCLUDED
+
 #ifndef _INPUT_INCLUDED
 #include "../CFD/Input.h"
 #endif // _INPUT_INCLUDED
@@ -33,6 +37,8 @@
 #ifndef _TURBULENCE_MODELLING_INCLUDED
 #include "../TurbulenceModelling/TurbulenceModelling.h"
 #endif // TURBULENCE_MODELLING_INCLUDED   
+
+class FlowField_2D;
 
 /* Define the solution block in-use indicators. */
 
@@ -218,6 +224,8 @@ class Hexa_Block{
                              ostream &Out_File);
 
    int ICs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs);
+
+   int Interpolate_2Dto3D(const FlowField_2D &Numflowfield2D);
 
    void BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs);
 
@@ -1377,6 +1385,20 @@ ICs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
       
    return (0);
     
+}
+
+/********************************************************
+ * Routine: Interpolate_2Dto3D                          *
+ *                                                      *
+ * Interpolate a 2D numerical solution to current 3D    *
+ * grid for initialization of the solution field.       *
+ *                                                      *
+ ********************************************************/
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Interpolate_2Dto3D(const FlowField_2D &Numflowfield2D){
+   
+   return (0);
+   
 }
 
 /********************************************************

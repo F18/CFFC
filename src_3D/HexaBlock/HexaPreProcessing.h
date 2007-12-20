@@ -1,3 +1,4 @@
+
 #ifndef _HEXA_PRE_PROCESSING_INCLUDED
 #define _HEXA_PRE_PROCESSING_INCLUDED
 
@@ -176,11 +177,13 @@ int Initial_Conditions(HexaSolver_Data &Data,
    } /* endif */
    error_flag = CFFC_OR_MPI(error_flag);
    if (error_flag) return (error_flag);
-  
+
   /* Prescribe boundary data consistent with initial data. */
 
   Solution_Data.Local_Solution_Blocks.BCs(Solution_Data.Input);
-  
+
+  /* End of prepocessing. */  
+
   return error_flag;
 
 }

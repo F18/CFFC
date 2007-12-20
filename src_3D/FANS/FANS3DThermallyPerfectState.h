@@ -13,11 +13,15 @@
 #include "../NavierStokes/NavierStokes3DThermallyPerfectState.h"
 #endif  //NAVIERSTOKES3D_THERMALLYPERFECT_STATE_INCLUDED
 
-/* Include turbulence modelling header file. */
+/* Include turbulence modelling and eddy dissipation model header files. */
 
 #ifndef _TURBULENCE_MODELLING_INCLUDED
 #include "../TurbulenceModelling/TurbulenceModelling.h"
 #endif  //TURBULENCE_MODELLING_INCLUDED
+
+#ifndef _EDDY_DISSIPATION_MODELLING_INCLUDED 
+#include "../TurbulenceModelling/EddyDissipationModel.h"
+#endif // _EDDY_DISSIPATION_MODELLING_INCLUDED
 
 /* Define the classes. */
 
@@ -95,6 +99,7 @@ class FANS3D_ThermallyPerfect_KOmega_cState;
  *  - Fvz              -- Return z-direction viscous solution flux
  *  - Schemistry       -- Return source terms associated with finite-rate chemistry
  *  - Sturbulence      -- Return source terms associated with turbulence modelling
+ *  - Seddydissipation -- Return source terms eddy dissipation modelling of turbulence/chemistry interaction
  *  - lambda           -- Return x-direction eigenvalue
  *  - rc               -- Return x-direction conserved right eigenvector
  *  - lp               -- Return x-direction primitive left eigenvector
@@ -611,13 +616,17 @@ class FANS3D_ThermallyPerfect_KOmega_pState : public NavierStokes3D_ThermallyPer
                                                        const int &TEMPERATURE_BC_FLAG);
 //@}
    
-/** @name Turbulence Model Source Terms */
-/*        ----------------------------- */
+/** @name Turbulence and Chemistry Modelling Source Terms */
+/*        ----------------------------------------------- */
 //@{
+   //! Return source terms associated with turbulence modelling
    static FANS3D_ThermallyPerfect_KOmega_cState Sturbulence(FANS3D_ThermallyPerfect_KOmega_pState &Wc,
                                                             const FANS3D_ThermallyPerfect_KOmega_pState &dWdx,
                                                             const FANS3D_ThermallyPerfect_KOmega_pState &dWdy,
                                                             const FANS3D_ThermallyPerfect_KOmega_pState &dWdz);
+
+   //! Return source terms associated with eddy dissipation modelling of turbulence/chemistry interaction
+   static FANS3D_ThermallyPerfect_KOmega_cState Seddydissipation(FANS3D_ThermallyPerfect_KOmega_pState &Wc);
 //@}
 
 /** @name Operators */

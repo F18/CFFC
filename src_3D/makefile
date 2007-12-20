@@ -153,6 +153,7 @@ SRC_FANS_POLYTROPIC =
 SRC_FANS_THERMPERFECT = $(FANS_DIR)FANS3DThermallyPerfectInput.cc \
                         $(FANS_DIR)FANS3DThermallyPerfectState.cc \
                         $(FANS_DIR)FANS3DThermallyPerfectHexaBlock.cc \
+                        $(FANS_DIR)FANS3DThermallyPerfectHexaPreProcessing.cc \
                         $(FANS_DIR)BluffBodyBurner.cc
 
 SRC_FANS = $(SRC_FANS_POLYTROPIC) $(SRC_FANS_THERMPERFECT)

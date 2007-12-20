@@ -58,7 +58,7 @@ CFL_Number =
 Maximum_Number_of_Time_Steps =
 0
 Number_of_Blocks_Per_Processor =
-10
+100
 Output_File_Name = 
 turbulentflame
 #######################

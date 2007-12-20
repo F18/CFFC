@@ -287,11 +287,11 @@ int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState,
                FANS3D_ThermallyPerfect_KOmega_cState>::
 ICs(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState, 
                      FANS3D_ThermallyPerfect_KOmega_cState> &IPs) {
-   
+
    double dpdx, dpdy, dpdz, delta_pres, delta_pres_x, delta_pres_y, delta_pres_z;
    double zd, zz, di, Um, U_axi;
    
-   double Rprime, yprime, xn, yn, fc, tempvalue;
+   double Rprime, yprime, xn, yn, fc, tempvalue, r_fuel;
    Vector2D Xt;
    ReactiveScalarField_Fuel_CH4H2 RSF;
    NonreactiveScalarField NRSF;
@@ -835,159 +835,32 @@ ICs(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
          } /* endfor */
          break;
 
-      case IC_TURBULENT_DIFFUSION_FLAME :  
-         for (int k  = KCl-Nghost ; k <= KCu+Nghost ; ++k) {
-            for (int j  = JCl-Nghost ; j <= JCu+Nghost ; ++j) {
-               for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i) {
-                  // Apply uniform solution state
-                  W[i][j][k] = IPs.Wo;
-                  W[i][j][k].v.z= ZERO;
-                  W[i][j][k].v.x = ZERO;
-                  W[i][j][k].v.y = ZERO;
-                  W[i][j][k].rho = W[i][j][k].p/( W[i][j][k].Rtot()*300.0);
-                  tempvalue =  BluffBody_Coflow_Air_Velocity*(HALF*(IPs.Grid_IP.Radius_Coflow_Inlet_Pipe-
-                               IPs.Grid_IP.Radius_Bluff_Body))/(W[i][j][k].mu()/W[i][j][k].rho);
-                  WallData[i][j][k].tauw = 0.0228*W[i][j][k].rho* BluffBody_Coflow_Air_Velocity*
-                                           BluffBody_Coflow_Air_Velocity/pow(fabs(tempvalue), 0.25);
-                  WallData[i][j][k].utau = sqrt(WallData[i][j][k].tauw/W[i][j][k].rho);
-                  W[i][j][k].k = 0.5*WallData[i][j][k].utau*WallData[i][j][k].utau/sqrt(W[0][0][0].k_omega_model.beta_star);
-                  WallData[i][j][k].yplus = WallData[i][j][k].ywall*WallData[i][j][k].utau/
-                                            (W[i][j][k].mu()/W[i][j][k].rho);
-                  if (WallData[i][j][k].ywall !=ZERO) {
-                     if (WallData[i][j][k].yplus<=W[0][0][0].k_omega_model.y_sublayer) {
-                        W[i][j][k].omega = 6.0*(W[i][j][k].mu()/W[i][j][k].rho)/
-                                           (W[0][0][0].k_omega_model.beta*WallData[i][j][k].ywall*WallData[i][j][k].ywall);
-                     } else {
-                        W[i][j][k].omega = sqrt(W[i][j][k].k)/(pow(W[0][0][0].k_omega_model.beta_star, 0.25)*
-                                           W[0][0][0].k_omega_model.Karman_const*WallData[i][j][k].ywall);
-                     }
-                  }
-                  // Specifying the velocity profiles in the annular pipe (coflowing air and jet)
-                  if ((fabs(Grid.Cell[i][j][k].Xc.y)>IPs.Grid_IP.Radius_Bluff_Body) && 
-                      (fabs(Grid.Cell[i][j][k].Xc.y)<IPs.Grid_IP.Radius_Coflow_Inlet_Pipe)) {
-                     if (Grid.Cell[i][j][k].Xc.z <=  0.5*IPs.Grid_IP.Length_Combustor_Tube) {
-                        Rprime = (IPs.Grid_IP.Radius_Coflow_Inlet_Pipe - IPs.Grid_IP.Radius_Bluff_Body)/2.0;
-                        if (fabs(Grid.Cell[i][j][k].Xc.y)<=(IPs.Grid_IP.Radius_Bluff_Body+ Rprime)){
-                           yprime = fabs(Grid.Cell[i][j][k].Xc.y) -  IPs.Grid_IP.Radius_Bluff_Body;
-                           if (yprime !=0.0) {
-                              W[i][j][k].v.z = BluffBody_Coflow_Air_Velocity*pow(fabs(yprime/Rprime), 0.143);
-                           } else {
-                              W[i][j][k].v.z = BluffBody_Coflow_Air_Velocity;
-                           }
-                        } else {
-                           yprime = fabs(Grid.Cell[i][j][k].Xc.y) -  IPs.Grid_IP.Radius_Bluff_Body- Rprime;
-                           if (yprime !=0.0) {
-                              W[i][j][k].v.z = BluffBody_Coflow_Air_Velocity*pow(fabs(1.0- fabs(yprime/Rprime)), 0.143);
-                           } else {
-                              W[i][j][k].v.z = BluffBody_Coflow_Air_Velocity;
-                           }
-                        }
-                     }
-                  }
-                  if ((fabs(Grid.Cell[i][j][k].Xc.x)>IPs.Grid_IP.Radius_Bluff_Body) && 
-                      (fabs(Grid.Cell[i][j][k].Xc.x)<IPs.Grid_IP.Radius_Coflow_Inlet_Pipe)) {
-                     if (Grid.Cell[i][j][k].Xc.z <=  0.5*IPs.Grid_IP.Length_Combustor_Tube) {
-                        Rprime = (IPs.Grid_IP.Radius_Coflow_Inlet_Pipe - IPs.Grid_IP.Radius_Bluff_Body)/2.0;
-                        if (fabs(Grid.Cell[i][j][k].Xc.x)<=(IPs.Grid_IP.Radius_Bluff_Body+ Rprime)) {
-                           yprime = fabs(Grid.Cell[i][j][k].Xc.x) -  IPs.Grid_IP.Radius_Bluff_Body;
-                           if (yprime !=0.0) {
-                              W[i][j][k].v.z = BluffBody_Coflow_Air_Velocity*pow(fabs(yprime/Rprime), 0.143);
-                           } else {
-                              W[i][j][k].v.z = BluffBody_Coflow_Air_Velocity;
-                           }
-                        } else {
-                           yprime = fabs(Grid.Cell[i][j][k].Xc.x) -  IPs.Grid_IP.Radius_Bluff_Body- Rprime;
-                           if (yprime !=0.0) {
-                              W[i][j][k].v.z = BluffBody_Coflow_Air_Velocity*pow(fabs(1.0- fabs(yprime/Rprime)), 0.143);
-                           } else {
-                              W[i][j][k].v.z = BluffBody_Coflow_Air_Velocity;
-                           }
-                        }
-                     }
-                  }
-                  if (fabs(Grid.Cell[i][j][k].Xc.y) <= IPs.Grid_IP.Radius_Fuel_Line) {
-                     if (Grid.Cell[i][j][k].Xc.z <=  0.5*IPs.Grid_IP.Length_Combustor_Tube) {
-                        Rprime = IPs.Grid_IP.Radius_Fuel_Line;
-                        if (Grid.Cell[i][j][k].Xc.y<0.0) {
-                           yprime = fabs(Grid.Cell[i][j][k].Xc.y);
-                           if (yprime !=0.0) {
-                              W[i][j][k].v.z = BluffBody_Coflow_Fuel_Velocity*pow(fabs(yprime/Rprime), 0.143);
-                           } else {
-                              W[i][j][k].v.z = BluffBody_Coflow_Fuel_Velocity;
-                           }
-                        } else {
-                           yprime = fabs(Grid.Cell[i][j][k].Xc.y) ;
-                           if (yprime !=0.0) {
-                              W[i][j][k].v.z = BluffBody_Coflow_Fuel_Velocity*pow(fabs(1.0- fabs(yprime/Rprime)), 0.143);
-                           } else {
-                              W[i][j][k].v.z = BluffBody_Coflow_Fuel_Velocity;
-                           }
-                        }
-                     }
-                  }
-                  if (fabs(Grid.Cell[i][j][k].Xc.x) <= IPs.Grid_IP.Radius_Fuel_Line) {
-                     if (Grid.Cell[i][j][k].Xc.z <=  0.5*IPs.Grid_IP.Length_Combustor_Tube) {
-                        Rprime = IPs.Grid_IP.Radius_Fuel_Line;
-                        if (Grid.Cell[i][j][k].Xc.x<0.0) {
-                           yprime = fabs(Grid.Cell[i][j][k].Xc.x);
-                           if (yprime !=0.0) {
-                              W[i][j][k].v.z =  BluffBody_Coflow_Fuel_Velocity*pow(fabs(yprime/Rprime), 0.143);
-                           } else {
-                              W[i][j][k].v.z =  BluffBody_Coflow_Fuel_Velocity;
-                           }
-                        } else {
-                           yprime = fabs(Grid.Cell[i][j][k].Xc.x) ;
-                           if (yprime !=0.0) {
-                              W[i][j][k].v.z =  BluffBody_Coflow_Fuel_Velocity*pow(fabs(1.0- fabs(yprime/Rprime)), 0.143);
-                          } else {
-                              W[i][j][k].v.z =  BluffBody_Coflow_Fuel_Velocity;
-                          }
-			}
-                     }
-                  }
-                  if (IPs.Wo.React.reactset_flag == CH4_1STEP) {
-                     if (fabs(Grid.Cell[i][j][k].Xc.x)<0.5*IPs.Grid_IP.Radius_Fuel_Line && 
-                         Grid.Cell[i][j][k].Xc.z>0.0 && 
-                         Grid.Cell[i][j][k].Xc.z<0.1*IPs.Grid_IP.Length_Combustor_Tube) {
-                        double profile = 0.996;
-                        W[i][j][k].spec[0] = profile;
-                        W[i][j][k].spec[1] = (ONE-profile)*0.235;
-                        W[i][j][k].spec[2] = ZERO; //CO2
-                        W[i][j][k].spec[3] = ZERO ; //H2O
-                        W[i][j][k].spec[ IPs.Wo.ns-1] =(ONE-profile)*0.765;//N2
-                        W[i][j][k].rho = W[i][j][k].p/( W[i][j][k].Rtot()*300);
-                     }
-                     if (fabs(Grid.Cell[i][j][k].Xc.y)<0.5*IPs.Grid_IP.Radius_Fuel_Line && 
-                         Grid.Cell[i][j][k].Xc.z>0.0 && 
-                         Grid.Cell[i][j][k].Xc.z<0.1*IPs.Grid_IP.Length_Combustor_Tube) {
-                        double profile = 0.996;// ONE*pow((1.0-abs(Grid.Cell[i][j][k].Xc.y)/IPs.Grid_IP.Radius_Fuel_Line), 0.143);
-                        W[i][j][k].spec[0] = profile;
-                        W[i][j][k].spec[1] = (ONE-profile)*0.235;
-                        W[i][j][k].spec[2] = ZERO; //CO2
-                        W[i][j][k].spec[3] = ZERO ; //H2O
-                        W[i][j][k].spec[ IPs.Wo.ns-1] =(ONE-profile)*0.765;//N2
-                        W[i][j][k].rho = W[i][j][k].p/( W[i][j][k].Rtot()*300);
-                     }
-                  }// mass fraction distribution for CH4 bluff body burner at the fuel inlet
-                  W[i][j][k].rho = W[i][j][k].p/( W[i][j][k].Rtot()*300.0);
-                  U[i][j][k] = W[i][j][k].U();
-               } /* endfor */
-	    } /* endfor */
+   case IC_TURBULENT_DIFFUSION_FLAME :  
+      // set default value, but will be overwrite by interpolation (interior cells).
+      // this way won't leave some ghost cells with unsigned values.
+      // automatically using the interpolation of 2D numerical solution to 3D.
+      for (int k = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
+         for (int j = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
+            for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
+               W[i][j][k] = IPs.Wo;
+               U[i][j][k] = W[i][j][k].U( );
+            } /* endfor */
          } /* endfor */
-         break;
-
-      case IC_UNIFORM :
-      default:
-         // Set the solution state everywhere to the initial state Wo[0].
-	 for (int k = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
-	    for (int j = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
-               for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
-                  W[i][j][k] = IPs.Wo;
-                  U[i][j][k] = W[i][j][k].U( );
-               } /* endfor */
-	    } /* endfor */
-	 } /* endfor */
-         break;
+      } /* endfor */
+      break;
+      
+   case IC_UNIFORM :
+   default:
+      // Set the solution state everywhere to the initial state Wo[0].
+      for (int k = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
+         for (int j = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
+            for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
+               W[i][j][k] = IPs.Wo;
+               U[i][j][k] = W[i][j][k].U( );
+            } /* endfor */
+         } /* endfor */
+      } /* endfor */
+      break;
       
    } /* endswitch */
 
@@ -1092,12 +965,121 @@ ICs(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
           }
        } /* endfor */
    } /* endfor */
-      
+   
    // compute y+ etc.;
-   Wall_Shear();
+   if(IPs.i_ICs != IC_TURBULENT_DIFFUSION_FLAME && 
+      IPs.i_ICs != IC_TURBULENT_COFLOW) {
+      Wall_Shear();
+   } /* endif */
 
    return (0);
     
+}
+
+/********************************************************
+ * Routine: Interpolate_2Dto3D                          *
+ *                                                      *
+ * Interpolate a 2D numerical solution to current 3D    *
+ * grid for initialization of the solution field.       *
+ *                                                      *
+ ********************************************************/
+template<>
+int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState,
+                FANS3D_ThermallyPerfect_KOmega_cState>::
+Interpolate_2Dto3D(const FlowField_2D &Numflowfield2D) {
+   
+   FANS3D_ThermallyPerfect_KOmega_pState W_quad[5];
+   Vector2D Xp[5];
+   
+   const int end2d_i =  FlowField_2D::ni-2;
+   const int end2d_j =  FlowField_2D::nj-2;
+   
+   bool dbg = false;
+
+   for (int k = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
+      for (int j = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
+         for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
+
+            const double r = sqrt(std::pow(Grid.Cell[i][j][k].Xc.x, 2) + std::pow(Grid.Cell[i][j][k].Xc.y, 2));
+            const double d = Grid.Cell[i][j][k].Xc.z;
+            const double sinalpha = Grid.Cell[i][j][k].Xc.y/r;
+            const double cosalpha = Grid.Cell[i][j][k].Xc.x/r;
+
+            int iz ;
+            
+            // Find the correct zone.
+            for (iz = 0 ; iz != FlowField_2D::nzone; ++iz) {
+               if ((d>=Numflowfield2D.data(iz, 1, 1, 0) &&
+                    d<Numflowfield2D.data(iz, end2d_i, end2d_j , 0)) &&
+                   (r>=Numflowfield2D.data(iz, 1, 1, 1) &&
+                    r<=Numflowfield2D.data(iz, end2d_i, end2d_j, 1)) ) break;
+            } 
+            
+            if (iz != FlowField_2D::nzone) {
+//                cout <<"\n FANS3DThermallyPerfectHexaBlock::Interpolate_2Dto3D, "
+//                     << "could not find the correct zone for interpolation."
+//                     << "\n i j k x y d r  " << i << "  " << j << "  " << k << "  " 
+//                     << Grid.Cell[i][j][k].Xc.x << " " << Grid.Cell[i][j][k].Xc.y << "  " 
+//                     << d << "  " << r << "  " << endl;
+//                exit(1);
+
+               // find the correct indices for the location being interpolated in 2d zone.
+               int i_2d = 1;
+               while (d > Numflowfield2D.data(iz, i_2d+1, 0, 0)) ++i_2d;
+               int j_2d = 1;
+               while (r > Numflowfield2D.data(iz, 0, j_2d+1, 1)) ++j_2d;
+         
+               int iU = 1;
+            
+               // read the data into the four points
+               for(int iv = i_2d; iv<= i_2d+1; ++iv) {
+                  for(int jv = j_2d; jv<=j_2d+1; ++jv) {
+                               
+                     W_quad[iU][1] = Numflowfield2D.data(iz, iv, jv, 2);
+                     W_quad[iU][4] = Numflowfield2D.data(iz, iv, jv, 3);
+                     const double u_rad =Numflowfield2D.data(iz, iv, jv, 4);
+                  
+                     W_quad[iU][2] = u_rad * cosalpha;
+                     W_quad[iU][3] = u_rad * sinalpha;
+                  
+                     for(int nv = 5; nv<=NumVar(); ++nv){
+                        W_quad[iU][nv] = Numflowfield2D.data(iz, iv, jv, nv);
+                     }
+                     
+                     Xp[iU] = Vector2D(Numflowfield2D.data(iz, iv, jv, 0), Numflowfield2D.data(iz, iv, jv, 1));
+
+                     ++iU;
+                  }
+	       }
+                           
+               Xp[0] = Vector2D(d, r);
+               // interpolate primitive variables                           
+               Bilinear_Interpolation_HC(W_quad[3], Xp[3], W_quad[4], Xp[4], W_quad[2], 
+                                         Xp[2], W_quad[1], Xp[1], Xp[0], W_quad[0]);
+            
+               int ins;
+               // ensure the 'physical' meaning of the interpolated values.
+               for (ins =1; ins<=NumVar(); ++ins){
+                  if(ins ==1 || ins>=5 ) W_quad[0][ins] = max(0.0, W_quad[0][ins]); 
+                  if(ins>=8) W_quad[0][ins] = min(0.990, W_quad[0][ins]); 
+               }
+            
+               W[i][j][k] = W_quad[0];      
+               U[i][j][k] = W[i][j][k].U();
+
+	    } /* endif */
+            
+         } /* endfor */
+      } /* endfor */
+   } /* endfor */
+   
+   // The Wall_Shear is needed for computing the y+ etc.;
+   // This interpolator replaces the ICs, and it now has to be called here. 
+ 
+   Wall_Shear();
+   
+   return (0);
+   
 }
 
 /********************************************************
@@ -1967,18 +1949,28 @@ dUdt_Multistage_Explicit(const int i_stage,
                   Grid.volume(i+1, j ,k);
                                  
                /* Include source terms associated with turbulence model */
+
                dUdt[i][j][k][k_residual] += (IPs.CFL_Number* dt[i][j][k])*
                   FANS3D_ThermallyPerfect_KOmega_pState::Sturbulence(W[i][j][k], 
                                                                      dWdx[i][j][k], 
                                                                      dWdy[i][j][k], 
                                                                      dWdz[i][j][k]);
-     
-	   /* Save west and east face boundary flux. */
+
+
+               /* Include source terms associated with the finite-rate chemistry and
+                  turbulence/chemistry interactions */
                
-               //    if (i ==  ICl-1) {
-//                     FluxW[j] = -Flux* Grid.lfaceW(i+1, j);
+               if (W[i][j][k].React.reactset_flag != NO_REACTIONS) {
+                  dUdt[i][j][k][k_residual] += IPs.CFL_Number*dt[i][j][k]*
+                    FANS3D_ThermallyPerfect_KOmega_pState::Seddydissipation(W[i][j][k]);
+               } /* endif */
+     
+  	       /* Save west and east face boundary flux. */
+               
+//                 if (i ==  ICl-1) {
+//                    FluxW[j] = -Flux* Grid.lfaceW(i+1, j);
 //                 } else if (i ==  ICu) {
-//                     FluxE[j] = Flux* Grid.lfaceE(i, j);
+//                    FluxE[j] = Flux* Grid.lfaceE(i, j);
 //                 } /* endif */ 
                
             } /* endif */
@@ -1994,11 +1986,11 @@ dUdt_Multistage_Explicit(const int i_stage,
  
    // Add j-direction (eta-direction) fluxes.
    for ( k =  KCl ; k <=  KCu ; ++k ) {
-      
       for ( i =  ICl ; i <=  ICu ; ++i ) {
          for ( j  =  JCl-1 ; j <=  JCu ; ++j ) {
             
             /* Evaluate the cell interface j-direction fluxes. */
+
             if (j ==  JCl-1 && 
                 ( Grid.BCtypeS[i][k] == BC_REFLECTION ||
                   Grid.BCtypeS[i][k] == BC_NO_SLIP||
@@ -2011,7 +2003,7 @@ dUdt_Multistage_Explicit(const int i_stage,
                   ( phi[i][j+1][k]^ dWdz[i][j+1][k])*dX.z;
                if ( Grid.BCtypeS[i][k] == BC_REFLECTION) {
                   Wl =  FANS3D_ThermallyPerfect_KOmega_pState::Reflect(Wr,  Grid.nfaceS(i, j+1, k));
-                }
+	       } /* endif */
                 if ( Grid.BCtypeS[i][k] == BC_NO_SLIP) {
                    Wl =  FANS3D_ThermallyPerfect_KOmega_pState::NoSlip(Wr, WoS[i][k], Grid.nfaceS(i, j+1, k),
                                                                         IPs.Pressure_Gradient,
@@ -2402,9 +2394,9 @@ template<>
 int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState,  
                FANS3D_ThermallyPerfect_KOmega_cState>::Wall_Shear(void) { 
    
-   for (int k = Grid.KCl- Grid.Nghost ; k <= Grid.KCu+ Grid.Nghost ; ++k )
-      for (int j = Grid.JCl- Grid.Nghost ; j <= Grid.JCu+ Grid.Nghost ; ++j ) 
-         for (int i = Grid.ICl- Grid.Nghost ; i <= Grid.ICu+ Grid.Nghost ; ++i ) {
+    for (int k = Grid.KCl- Grid.Nghost ; k <= Grid.KCu+ Grid.Nghost ; ++k ) {
+       for (int j = Grid.JCl- Grid.Nghost ; j <= Grid.JCu+ Grid.Nghost ; ++j ) {
+          for (int i = Grid.ICl- Grid.Nghost ; i <= Grid.ICu+ Grid.Nghost ; ++i ) {
             
             // for ghost cells close to solid wall, the ywall is set to be zero,
             // this is related to the application of wall function (see the logic in the wall fucntion code
@@ -2487,16 +2479,17 @@ int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState,
                WallData[i][j][ Grid.KCu+2].ywall = ZERO;
                
             }
-               
-            WallData[i][j][k].utau = Wall_Friction_Velocity(i, j, k);//xinfeng: note: use the experimental data. utau_experimental = 0.3.
-            WallData[i][j][k].tauw =  W[i][j][k].rho * sqr(WallData[i][j][k].utau);
-            WallData[i][j][k].yplus =  WallData[i][j][k].utau*WallData[i][j][k].ywall/
-               ( W[i][j][k].mu()/ W[i][j][k].rho);
-            
-                             
-         } /* endfor */
 
-   return 0;
+            WallData[i][j][k].utau = Wall_Friction_Velocity(i, j, k);
+	    WallData[i][j][k].tauw = W[i][j][k].rho * sqr(WallData[i][j][k].utau);
+	    WallData[i][j][k].yplus = WallData[i][j][k].utau*WallData[i][j][k].ywall/
+                                      (W[i][j][k].mu()/W[i][j][k].rho);
+                             
+	  } /* endfor */
+       } /* endfor */
+    } /* endfor */
+
+    return 0;
       
 }
 
@@ -2513,7 +2506,7 @@ Wall_Friction_Velocity(const int i,
                        const int j, 
                        const int k) {
  
-   if( Flow_Type != FLOWTYPE_TURBULENT_RANS_K_OMEGA){
+   if (Flow_Type != FLOWTYPE_TURBULENT_RANS_K_OMEGA) {
       exit(1);
    } else {
       double y, yplus, yplus_o;
@@ -2522,31 +2515,32 @@ Wall_Friction_Velocity(const int i,
          tangentialvelocity, normalvelocity;
       double q, u_t1;
       int n, m;
-      
+     
       y =  WallData[i][j][k].ywall;
       
       kappa = W[i][j][k].k_omega_model.Karman_const;
       Const = W[i][j][k].k_omega_model.C_const;
       Const = exp(kappa*Const);
       Betastar = W[i][j][k].k_omega_model.beta_star;
+    
       nu = W[i][j][k].mu()/W[i][j][k].rho;
       tangentialvelocity = abs(W[i][j][k].v);
-           
+         
       // tangentialvelocity = abs(W[i][j][k].v - (W[i][j][k].v * WallData[i][j][k].nwall)*WallData[i][j][k].nwall);
       // note: may 31, 2005 ; the total velocity seems work better for bluff body configuration
-      if(y==ZERO){// for those ghost cells close to the solid walls
+      if (y==ZERO) {// for those ghost cells close to the solid walls
          Friction_Velocity = ZERO;
-      }else{
+      } else {
          Friction_Velocity = sqrt(nu*tangentialvelocity/y);
      
-      }
+      } /* endif */
       
       yplus = y*Friction_Velocity/nu;
       yplus_o = 10.80487081;
       //solving from maple by getting the crosspoint of u+ = y+ ----
       //u+ = 1/kappa ln(y+)+C;
-      
-      if (yplus<yplus_o){
+    
+      if (yplus<yplus_o) {
          //* some flow geometry type or some flow field type,
          //there are some regions that utangential velocity ends up to be ZERO*//
          // in which case, the zero utau is problematic for the wall function, so the following check is necessary.        //
@@ -2596,19 +2590,19 @@ Wall_Friction_Velocity(const int i,
          
          //cout<<"\n y+<y+o :   Friction_Velocity= "<< Friction_Velocity<<endl;
          return  (Friction_Velocity);
-      
-      }else{
+     
+      } else {
          //iteratively solve to obtain the friction velocity
          //initial guess with an "analytical" solution
          u_t0 = 1.1;
          n = 0;
          m = 20;
          epsilon= 1e-3;
-         
-         nu = W[i][j][k].mu()/W[i][j][k].rho;
+     
+         nu =  W[i][j][k].mu()/W[i][j][k].rho;
          value = log(Const*y*u_t0/nu);
          f0 = u_t0 - kappa*tangentialvelocity/value;
-         
+     
          do {
             value = log(Const*y*u_t0/nu);
             q = 1.0+ kappa*tangentialvelocity/(u_t0*value*value);
@@ -2621,11 +2615,10 @@ Wall_Friction_Velocity(const int i,
          } while((fabs(f0)>= epsilon) && (n<=m));
          
          Friction_Velocity = u_t1;
-         
+     
          return  Friction_Velocity ;
       }
    }//end of turbulent case 
    
 } 
 
- 

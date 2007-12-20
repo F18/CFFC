@@ -1,6 +1,6 @@
 /**************LES3DFsdHexaPreProcessing.h*************/
 
-#ifndef _LES3DFSD_HEXA_PREPROCEESING_INCLUDED
+#ifndef _LES3DFSD_HEXA_PREPROCESSING_INCLUDED
 #define _LES3DFSD_HEXA_PREPROCESSING_INCLUDED
 
 /* Define the specializations. */

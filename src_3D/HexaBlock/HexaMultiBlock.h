@@ -137,6 +137,10 @@ template<class HEXA_BLOCK> class Hexa_Multi_Block {
    void ICs(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
                              typename HEXA_BLOCK::Soln_cState> &Input);
 
+   int Interpolate_2Dto3D(FlowField_2D &Numflowfield2D,
+                          Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
+                                           typename HEXA_BLOCK::Soln_cState> &Input);
+
    void BCs(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
                              typename HEXA_BLOCK::Soln_cState> &Input);
 
@@ -540,6 +544,32 @@ void Hexa_Multi_Block<HEXA_BLOCK>::ICs(Input_Parameters<typename HEXA_BLOCK::Sol
 }
 
 /********************************************************
+ * Routine: Interpolate_2Dto3D                          *
+ *                                                      *
+ * Read in a 2D numerical solution field and            *
+ * interpolates the solution to the current 3D so as    *
+ * to initialize the solution field.                    *
+ *                                                      *
+ ********************************************************/
+template<class HEXA_BLOCK>
+int Hexa_Multi_Block<HEXA_BLOCK>::Interpolate_2Dto3D(FlowField_2D &Numflowfield2D,
+                                                     Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
+						                      typename HEXA_BLOCK::Soln_cState> &Input) {
+
+   int error_flag(0);
+   
+   for (int nblk = 0; nblk < Number_of_Soln_Blks; ++nblk) { 
+      if (Block_Used[nblk]) {
+         error_flag =  Soln_Blks[nblk].Interpolate_2Dto3D(Numflowfield2D);
+         if (error_flag) return (error_flag);
+      } /* endif */
+   }  /* endfor */
+   
+   return (error_flag);
+   
+}
+
+/********************************************************
  * Routine: BCs                                         *
  *                                                      *
  * Apply boundary conditions at boundaries of a 1D      *
@@ -602,7 +632,7 @@ double Hexa_Multi_Block<HEXA_BLOCK>::CFL(Input_Parameters<typename HEXA_BLOCK::S
  *                                                      *
  ********************************************************/
 template<class HEXA_BLOCK>
-void Hexa_Multi_Block<HEXA_BLOCK>::Set_Global_TimeStep(const double &Dt_min){
+void Hexa_Multi_Block<HEXA_BLOCK>::Set_Global_TimeStep(const double &Dt_min) {
 
    for (int nblk = 0; nblk < Number_of_Soln_Blks; ++nblk) { 
       if (Block_Used[nblk]) {
@@ -627,7 +657,7 @@ int Hexa_Multi_Block<HEXA_BLOCK>::WtoU(void){
    
    /* Convert U to W for each solution block. */
 
-   for(int nblk = 0; nblk < Number_of_Soln_Blks; ++nblk){
+   for (int nblk = 0; nblk < Number_of_Soln_Blks; ++nblk) {
       if (Block_Used[nblk]) {
          error_flag = Soln_Blks[nblk].WtoU();
          if (error_flag) return (error_flag);

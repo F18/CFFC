@@ -1813,7 +1813,7 @@ NoSlip(const FANS3D_ThermallyPerfect_KOmega_pState &Win,
  ************************************************************************/
 
 /***************************************************************************************
- * FANS3D_ThermallyPerfect_KOmega_pState::Sturbulene -- Turbulence model source terms. *
+ * FANS3D_ThermallyPerfect_KOmega_pState::Sturbulence -- Turbulence model source terms.*
  ***************************************************************************************/
 FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_pState::
 Sturbulence(FANS3D_ThermallyPerfect_KOmega_pState &Wc,
@@ -1852,6 +1852,16 @@ Sturbulence(FANS3D_ThermallyPerfect_KOmega_pState &Wc,
    
    return (Temp);
 
+} 
+
+/***************************************************************************************
+ * FANS3D_ThermallyPerfect_KOmega_pState::Seddydissioation -- Source terms associated  *
+ *       with eddy dissipation modelling of turbulence/chemistry interaction.          *
+ ***************************************************************************************/
+FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_pState::
+Seddydissipation(FANS3D_ThermallyPerfect_KOmega_pState &Wc) {
+   return (Seddydissipationmodel<FANS3D_ThermallyPerfect_KOmega_pState,
+                                 FANS3D_ThermallyPerfect_KOmega_cState>(Wc));
 } 
 
 /*****************************************************************************************
