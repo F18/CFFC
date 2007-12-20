@@ -716,11 +716,11 @@ inline void NASARotor37::initializeHubShroud (void) {
   strcpy(fname, datafile_path);
   strcat(fname, R37_HUB_SHROUD_GEOMETRY_FILE);
   rotorGeom.open(fname, ios::in);
-  if(rotorGeom.bad()) {
+  if(rotorGeom.fail()) {
     cout << "\n ERROR: Unable to open hub/shroud data for NASA rotor 37.\n";
     cout.flush();
   } /* endif */
-  assert(!rotorGeom.bad());
+  assert(!rotorGeom.fail());
 
   rotorGeom.setf(ios::skipws);
 
@@ -838,11 +838,11 @@ inline void NASARotor37::initializeBoundaryFlowConditions(int mflow) {
   strcpy(fname, datafile_path);
   strcat(fname, UPSTREAM_DOWNSTREAM_FLOW_DATA_FILE);
   flowData.open(fname, ios::in);
-  if(flowData.bad()) {
+  if(flowData.fail()) {
     cout << "\n ERROR: Upstream flow data file for NASA rotor 37 not found.";
     cout.flush();
   } /* endif */
-  assert(!flowData.bad());
+  assert(!flowData.fail());
       
   if (mflow != 1 && mflow != 2) {
     cout << "ERROR: Incorrect flow type for NASA rotor 37.";
@@ -992,11 +992,11 @@ inline void NASARotor37::initializeBoundaryFlowConditions(int mflow) {
   
   flowData.close();
   flowData.open(fname, ios::in);
-  if(flowData.bad()) {
+  if(flowData.fail()) {
     cout << "\n ERROR: Downstream flow data file for NASA rotor 37 not found.";
     cout.flush();
   } /* endif */
-  assert(!flowData.bad());
+  assert(!flowData.fail());
 
   //number of data pts
   nPts = DOWNSTREAM_FLOW_DATA_POINTS_R37;
@@ -1147,11 +1147,11 @@ inline void NASARotor37::initializeBladeGeom(void) {
   strcpy(fname,datafile_path);
   strcat(fname, R37_BLADE_GEOMETRY_FILE);
   bladeDataFile.open(fname, ios::in);
-  if(bladeDataFile.bad()) {
+  if(bladeDataFile.fail()) {
     cout << "\n ERROR: Blade geometry data file for NASA rotor 37 not found.";
     cout.flush();
   } /* endif */
-  assert(!bladeDataFile.bad());
+  assert(!bladeDataFile.fail());
   
   //skip
   skipL(5, bladeDataFile);
@@ -1196,7 +1196,7 @@ inline void NASARotor37::outputTP_UpstreamFlowConditions(char fname[256]) {
   ofstream outf;
 
   outf.open(fname, ios::out);
-  assert(!outf.bad());
+  assert(!outf.fail());
 
   outf.precision(15);
   outf << "TITLE = \"DATA FOR ROTOR 37 @ UPSTREAM STATION\"\n"
@@ -1254,7 +1254,7 @@ inline void NASARotor37::outputTP_DownstreamFlowConditions(char fname[256]) {
   ofstream outf;
 
   outf.open(fname, ios::out);
-  assert(!outf.bad());
+  assert(!outf.fail());
 
   outf.precision(15);
   outf << "TITLE = \"DATA FOR ROTOR 37 @ DOWNSTREAM STATION\"\n"
@@ -1685,7 +1685,7 @@ inline void NASARotor37::outputTP_Geometry(char filename[]) {
   ofstream TPfile;
 
   TPfile.open(filename, ios::out);
-  assert(!TPfile.bad());
+  assert(!TPfile.fail());
  
   nS=21;  //number of cross-sections  per blade = every 5% span
   nP=R37GEOM_NUMPTS*2-2; //number of points per surface
@@ -3560,8 +3560,8 @@ inline void NASARotor37::outputTP_Mesh3D(const int Number_of_Cells_Idir,
   out_file_top.open(fnameTop, ios::out);
   out_file_bot.open(fnameBot, ios::out);
 
-  assert(!out_file_top.bad());
-  assert(!out_file_bot.bad());
+  assert(!out_file_top.fail());
+  assert(!out_file_bot.fail());
 
   cout << "\n NASA Rotor 37 3D structured mesh generation.";
 
@@ -3699,7 +3699,7 @@ inline void NASARotor37::output_Tetin(char fname[], int layers) {
   ofstream out_file;
 
   out_file.open(fname, ios::out);
-  assert(!out_file.bad());
+  assert(!out_file.fail());
 
   leadI = new int[layers];
   trailI = new int[layers];

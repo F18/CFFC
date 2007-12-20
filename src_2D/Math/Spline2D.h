@@ -395,6 +395,12 @@ extern void Create_Spline_Line(Spline2D &Line_Spline,
 			       const Vector2D &V2,
   	                       const int Number_of_Spline_Points);
 
+extern void Create_Spline_Line_Polar_Coordinates(Spline2D &Line_Spline,
+						 const double &Inner_Radius,
+						 const double &Outer_Radius,
+						 const double &Theta,
+						 const int Number_of_Spline_Points);
+
 extern void Create_Spline_Circular_Arc(Spline2D &Circle_Spline,
 			               const Vector2D &Origin,
 				       const double &Radius,

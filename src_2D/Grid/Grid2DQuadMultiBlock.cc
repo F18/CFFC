@@ -3524,6 +3524,131 @@ Grid2D_Quad_Block** Grid_Circular_Cylinder(Grid2D_Quad_Block **Grid_ptr,
 
 }
 
+/***********************************************************************************//*
+ * Routine: Grid_Annulus                                
+ *                                                         
+ * Generates a single-block O-type grid for predicting     
+ * flow through an annulus of given inner and outer radii. 
+ *                                                      
+ * \param ThetaStart the start angle of the annulus (east edge) measured counterclockwise
+ * \param ThetaEnd   the end angle of the annulus (west edge) measured counterclockwise
+ ****************************************************************************************/
+Grid2D_Quad_Block** Grid_Annulus(Grid2D_Quad_Block **Grid_ptr,
+				 int &Number_of_Blocks_Idir,
+				 int &Number_of_Blocks_Jdir,
+				 const double &Inner_Radius,
+				 const double &Outer_Radius,
+				 const double &ThetaStart,
+				 const double &ThetaEnd,
+				 const int Stretching_Type_Idir,
+				 const int Stretching_Type_Jdir,
+				 const double &Stretching_Factor_Idir,
+				 const double &Stretching_Factor_Jdir,
+				 const int Number_of_Cells_Idir,
+				 const int Number_of_Cells_Jdir,
+				 const int Number_of_Ghost_Cells) {
+  
+  int n_cells_i, n_cells_j, Stretch_I, Stretch_J,
+    Orthogonal_North, Orthogonal_South,
+    Orthogonal_East, Orthogonal_West;
+  double Beta_I, Tau_I, Beta_J, Tau_J;
+  Vector2D x1, x2;
+  Spline2D Bnd_Spline_North, Bnd_Spline_South,
+    Bnd_Spline_East, Bnd_Spline_West;
+
+  /* Allocate memory for grid blocks.  There is one grid
+     blocks for this mesh. */
+
+  Number_of_Blocks_Idir = 1;
+  Number_of_Blocks_Jdir = 1;
+  Grid_ptr = Allocate_Multi_Block_Grid(Grid_ptr, 
+				       Number_of_Blocks_Idir, 
+				       Number_of_Blocks_Jdir);
+
+  /* Create the mesh for the block. */
+
+  /* Create the splines defining the north, south,
+     east, and west boundaries of the grid. */
+
+  x1 = Vector2D(ZERO,ZERO);
+  Create_Spline_Circular_Arc(Bnd_Spline_North,
+			     x1,
+			     Outer_Radius,
+			     ThetaEnd,
+			     ThetaStart,
+			     int(2*fabs(ThetaEnd-ThetaStart)+1)); // consider 2 points per degree
+  Create_Spline_Circular_Arc(Bnd_Spline_South,
+			     x1,
+			     Inner_Radius,
+			     ThetaEnd,
+			     ThetaStart,
+			     int(2*fabs(ThetaEnd-ThetaStart)+1)); // consider 2 points per degree
+
+  Create_Spline_Line_Polar_Coordinates(Bnd_Spline_East, Inner_Radius, Outer_Radius, ThetaStart, 2);
+  Create_Spline_Line_Polar_Coordinates(Bnd_Spline_West, Inner_Radius, Outer_Radius, ThetaEnd, 2);
+
+  /* Set the boundary condition types for each of the
+     boundary splines. */
+    
+  Bnd_Spline_North.setBCtype(BC_DIRICHLET);
+  Bnd_Spline_South.setBCtype(BC_DIRICHLET);
+  Bnd_Spline_East.setBCtype(BC_INFLOW);	 // inflow BC is treated as a Dirichlet boundary condition
+  Bnd_Spline_West.setBCtype(BC_OUTFLOW); // outflow BC is treated as a Neumann boundary condition
+
+  /* Determine the number of cells for this block. */
+    
+  n_cells_i = Number_of_Cells_Idir;
+  n_cells_j = Number_of_Cells_Jdir;
+    
+  /* Assign values to the stretching function parameters
+     and boundary grid line orthogonality parameters. */
+    
+  Stretch_I = Stretching_Type_Idir;
+  Beta_I = Stretching_Factor_Idir;
+  Tau_I = ZERO;
+  Stretch_J = Stretching_Type_Jdir;
+  Beta_J = Stretching_Factor_Jdir;
+  Tau_J = ZERO;
+
+  Orthogonal_North = 0;
+  Orthogonal_South = 0;
+  Orthogonal_East = 0;
+  Orthogonal_West = 0;
+    
+  /* Create the 2D quadrilateral grid block. */
+
+  Create_Quad_Block(Grid_ptr[0][0],
+		    Bnd_Spline_North,
+		    Bnd_Spline_South,
+		    Bnd_Spline_East,
+		    Bnd_Spline_West,
+		    n_cells_i,
+		    n_cells_j,
+		    Number_of_Ghost_Cells,
+		    GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+		    Stretch_I,
+		    Beta_I, 
+		    Tau_I,
+		    Stretch_J,
+		    Beta_J,
+		    Tau_J,
+		    Orthogonal_North,
+		    Orthogonal_South,
+		    Orthogonal_East,
+		    Orthogonal_West);
+
+  /* Deallocate the memory for the boundary splines. */
+    
+  Bnd_Spline_North.deallocate();
+  Bnd_Spline_South.deallocate();
+  Bnd_Spline_East.deallocate();
+  Bnd_Spline_West.deallocate();
+
+  /* Return the grid. */
+    
+  return(Grid_ptr);
+}
+
 /********************************************************
  * Routine: Grid_Ellipse                                *
  *                                                      *

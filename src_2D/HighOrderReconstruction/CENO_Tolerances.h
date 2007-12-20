@@ -29,6 +29,7 @@ class CENO_Tolerances: public EpsilonTol{
   static double epsilon_absolute_square;  //!< the square of the absolute epsilon
   static double cross_epsilon;            //!< equal to 2*epsilon_relative*epsilon_absolute
   static double Fit_Tolerance;	          //!< value used to distinguish between smooth and non-smooth solution reconstructions.
+  static double AMR_Smoothness_Units;     //!< value used in computing the refinement criterion based on smoothness indicator
 
   /* These functions can be used to determine what 
      an acceptable tolerance is around the quantity U. */
@@ -46,21 +47,22 @@ class CENO_Tolerances: public EpsilonTol{
 
   static void SetDefaults(void);
 
+  static void Broadcast(void);
+
  protected:
-  CENO_Tolerances(){};
+  CENO_Tolerances();      //!< Private default constructor
+  CENO_Tolerances(const CENO_Tolerances&); //!< Private copy constructor
+  CENO_Tolerances& operator=(const CENO_Tolerances&); //!< Private assignment operator
+
 
   // Update tolerances that depend on the values of other tolerances
   static void UpdateDependentTolerances(void);
-
-  // flag to track changes to the default values
-  static bool ChangedDefault_Epsilon;
-  static bool ChangedDefault_EpsilonAbsolute;
-  static bool ChangedDefault_EpsilonRelative;
 
   static double epsilon_default;          //!< this is a copy of epsilon that cannot be modified at runtime
   static double epsilon_relative_default; //!< this is a copy of epsilon_relative that cannot be modified at runtime
   static double epsilon_absolute_default; //!< this is a copy of epsilon_absolute that cannot be modified at runtime
   static double Fit_Tolerance_default;    //!< this is a copy of Fit_Tolerance that cannot be modified at runtime
+  static double AMR_Smoothness_Units_default;  //!< this is a copy of AMR_Smoothness_Units that cannot be modified at runtime
 };
 
 /*!
@@ -74,7 +76,9 @@ inline void CENO_Tolerances::Print_CENO_Tolerances(ostream& os){
      << "epsilon_absolute=" << epsilon_absolute << "\n"
      << "epsilon_absolute_square=" << epsilon_absolute_square << "\n"
      << "cross_epsilon=" << cross_epsilon << "\n"
-     << "MachineEpsilon=" << MachineEps << "\n";
+     << "MachineEpsilon=" << MachineEps << "\n"
+     << "Fit_Tolerance=" << Fit_Tolerance << "\n"
+     << "AMR_Smoothness_Units=" << AMR_Smoothness_Units << "\n";
 }
 
 /*! 
@@ -127,26 +131,29 @@ inline void CENO_Tolerances::Parse_Next_Input_Control_Parameter(Input_Parameters
     ++IP.Line_Number;
     IP.Input_File >> epsilon;
     IP.Input_File.getline(buffer, sizeof(buffer));
-    ChangedDefault_Epsilon = true;
 
   } else if (strcmp(IP.Next_Control_Parameter, "CENO_Absolute_Epsilon") == 0) {
     i_command = 0;
     ++IP.Line_Number;
     IP.Input_File >> epsilon_absolute;
     IP.Input_File.getline(buffer, sizeof(buffer));
-    ChangedDefault_EpsilonAbsolute = true;
 
   } else if (strcmp(IP.Next_Control_Parameter, "CENO_Relative_Epsilon") == 0) {
     i_command = 0;
     ++IP.Line_Number;
     IP.Input_File >> epsilon_relative;
     IP.Input_File.getline(buffer, sizeof(buffer));
-    ChangedDefault_EpsilonRelative = true;
 
   } else if (strcmp(IP.Next_Control_Parameter, "CENO_Tolerance") == 0) {
     i_command = 0;
     ++IP.Line_Number;
     IP.Input_File >> Fit_Tolerance;
+    IP.Input_File.getline(buffer, sizeof(buffer));
+
+  } else if (strcmp(IP.Next_Control_Parameter, "CENO_AMR_Units") == 0) {
+    i_command = 0;
+    ++IP.Line_Number;
+    IP.Input_File >> AMR_Smoothness_Units;
     IP.Input_File.getline(buffer, sizeof(buffer));
     
   } else {
@@ -154,7 +161,7 @@ inline void CENO_Tolerances::Parse_Next_Input_Control_Parameter(Input_Parameters
     return;
   } // endif
 
-  // Update all tolerances
+  // Update all dependent tolerances
   UpdateDependentTolerances();
 }
 

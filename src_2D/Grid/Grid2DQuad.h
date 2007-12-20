@@ -1,4 +1,5 @@
-/* Grid2DQuad.h:  Header file defining 2D quadrilateral block grid type. */
+/* \file Grid2DQuad.h
+   \brief Header file defining 2D quadrilateral block grid type. */
 
 #ifndef _GRID2D_QUAD_BLOCK_INCLUDED
 #define _GRID2D_QUAD_BLOCK_INCLUDED
@@ -46,6 +47,8 @@ using namespace std;
 #ifndef _LINEARSYSTEMS_INCLUDED
 #include "../Math/LinearSystems.h"
 #endif // _LINEARSYSTEMS_INCLUDED
+
+#include "Grid2DQuadIntegration.h" // Include the 2D quadrilateral domain integration class header file.
 
 /* Define the following types of 2D quadrilateral block 
    node initialization procedures. */
@@ -247,6 +250,11 @@ using namespace std;
 class Grid2D_Quad_Block{
   private:
   public:
+  //! @name Defined datatypes
+  //@{
+  typedef Node2D NodeType;
+  //@}
+  
     int                   NNi, //!< Number of nodes in i-direction (zeta-direction).
                           INl, //!< Lower index for nodes in i-direction (zeta-direction).
                           INu; //!< Upper index for nodes in i-direction (zeta-direction).
@@ -289,43 +297,17 @@ class Grid2D_Quad_Block{
                   OrthogonalE, //!< East boundary orthogonality parameter.
                   OrthogonalW; //!< West boundary orthogonality parameter.
                                // Made public so can access them.
+
+    Grid2DQuadIntegration<Grid2D_Quad_Block> Integration; //!< Variable that provides access to integration subroutines
+  
 			
     //@{ @name Constructors.
 
     //! Creation constructor.
-    Grid2D_Quad_Block(void) {
-       NNi = 0; INl = 0; INu = 0; NNj = 0; JNl = 0; JNu = 0;
-       NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0;
-       Nghost = 0;
-       Node = NULL; Cell = NULL;
-       BCtypeN = NULL; BCtypeS = NULL; BCtypeE = NULL; BCtypeW = NULL;
-       SminN = ZERO; SmaxN = ZERO; SminS = ZERO; SmaxS = ZERO; 
-       SminE = ZERO; SmaxE = ZERO; SminW = ZERO; SmaxW = ZERO;
-       StretchI = 0; StretchJ = 0; BetaI = ONE; TauI = ONE;
-       BetaJ = ONE; TauJ = ONE;
-       OrthogonalN = 1; OrthogonalS = 1; OrthogonalE = 1; OrthogonalW = 1;
-    }
+    Grid2D_Quad_Block(void);
 
     //! Copy constructor.
-    Grid2D_Quad_Block(const Grid2D_Quad_Block &G) {
-       NNi = G.NNi; INl = G.INl; INu = G.INu; 
-       NNj = G.NNj; JNl = G.JNl; JNu = G.JNu;
-       NCi = G.NCi; ICl = G.ICl; ICu = G.ICu; 
-       NCj = G.NCj; JCl = G.JCl; JCu = G.JCu;
-       Nghost = G.Nghost;
-       Node = G.Node; Cell = G.Cell;
-       BCtypeN = G.BCtypeN; BCtypeS = G.BCtypeS; 
-       BCtypeE = G.BCtypeE; BCtypeW = G.BCtypeW;
-       BndNorthSpline = G.BndNorthSpline; BndSouthSpline = G.BndSouthSpline;
-       BndEastSpline = G.BndEastSpline; BndWestSpline = G.BndWestSpline;
-       SminN = G.SminN; SmaxN = G.SmaxN; SminS = G.SminS; SmaxS = G.SmaxS; 
-       SminE = G.SminE; SmaxE = G.SmaxE; SminW = G.SminW; SmaxW = G.SmaxW;
-       StretchI = G.StretchI; StretchJ = G.StretchJ; BetaI = G.BetaI; 
-       TauI = G.TauI; BetaJ = G.BetaJ; TauJ = G.TauJ;
-       OrthogonalN = G.OrthogonalN; OrthogonalS = G.OrthogonalS; 
-       OrthogonalE = G.OrthogonalE; OrthogonalW = G.OrthogonalW;
-    }
-
+    Grid2D_Quad_Block(const Grid2D_Quad_Block &G);
     //@}
 
     /* Destructor. */
@@ -365,6 +347,16 @@ class Grid2D_Quad_Block{
     Vector2D centroidSE(const int ii, const int jj) const;
     Vector2D centroidNW(const int ii, const int jj) const;
     Vector2D centroidNE(const int ii, const int jj) const;
+    //@}
+
+    //! @name Calculate centroid of cell.
+    //@{
+    //! Access the centroid of cell (ii,jj)
+    const Vector2D & CellCentroid(int ii, int jj) const {return Cell[ii][jj].Xc; }
+    //! Access the x-coordinate of the centroid of cell (ii,jj)
+    const double & XCellCentroid(int ii, int jj) const {return Cell[ii][jj].Xc.x; }
+    //! Access the y-coordinate of the centroid of cell (ii,jj)
+    const double & YCellCentroid(int ii, int jj) const {return Cell[ii][jj].Xc.y; }
     //@}
 
     //@{ @name Calculate cell area.
@@ -451,11 +443,6 @@ class Grid2D_Quad_Block{
     void set_BCs(const int& FACE, const int& BC);
     //@}
 
-    /* Assignment operator. */
-    // Grid2D_Quad_Block operator = 
-    //    (const Grid2D_Quad_Block &G);
-    // Use automatically generated assignment operator.
-
     //@{ @name Binary arithmetic operators.
     friend Grid2D_Quad_Block operator +(Grid2D_Quad_Block &G, const Vector2D &V);
     friend Grid2D_Quad_Block operator -(Grid2D_Quad_Block &G, const Vector2D &V);
@@ -471,6 +458,44 @@ class Grid2D_Quad_Block{
     //@}
 
 };
+
+/*************************************************************************
+ * Grid2D_Quad_Block::Grid2D_Quad_Block -- Creation constructor.         *
+ *************************************************************************/
+inline Grid2D_Quad_Block::Grid2D_Quad_Block(void): Integration(this) {
+  NNi = 0; INl = 0; INu = 0; NNj = 0; JNl = 0; JNu = 0;
+  NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0;
+  Nghost = 0;
+  Node = NULL; Cell = NULL;
+  BCtypeN = NULL; BCtypeS = NULL; BCtypeE = NULL; BCtypeW = NULL;
+  SminN = ZERO; SmaxN = ZERO; SminS = ZERO; SmaxS = ZERO; 
+  SminE = ZERO; SmaxE = ZERO; SminW = ZERO; SmaxW = ZERO;
+  StretchI = 0; StretchJ = 0; BetaI = ONE; TauI = ONE;
+  BetaJ = ONE; TauJ = ONE;
+  OrthogonalN = 1; OrthogonalS = 1; OrthogonalE = 1; OrthogonalW = 1;
+}
+
+/**********************************************************************************
+ * Grid2D_Quad_Block::Grid2D_Quad_Block(Grid2D_Quad_Block &) -- Copy constructor. *
+ *********************************************************************************/
+inline Grid2D_Quad_Block::Grid2D_Quad_Block(const Grid2D_Quad_Block &G): Integration(this) {
+  NNi = G.NNi; INl = G.INl; INu = G.INu; 
+  NNj = G.NNj; JNl = G.JNl; JNu = G.JNu;
+  NCi = G.NCi; ICl = G.ICl; ICu = G.ICu; 
+  NCj = G.NCj; JCl = G.JCl; JCu = G.JCu;
+  Nghost = G.Nghost;
+  Node = G.Node; Cell = G.Cell;
+  BCtypeN = G.BCtypeN; BCtypeS = G.BCtypeS; 
+  BCtypeE = G.BCtypeE; BCtypeW = G.BCtypeW;
+  BndNorthSpline = G.BndNorthSpline; BndSouthSpline = G.BndSouthSpline;
+  BndEastSpline = G.BndEastSpline; BndWestSpline = G.BndWestSpline;
+  SminN = G.SminN; SmaxN = G.SmaxN; SminS = G.SminS; SmaxS = G.SmaxS; 
+  SminE = G.SminE; SmaxE = G.SmaxE; SminW = G.SminW; SmaxW = G.SmaxW;
+  StretchI = G.StretchI; StretchJ = G.StretchJ; BetaI = G.BetaI; 
+  TauI = G.TauI; BetaJ = G.BetaJ; TauJ = G.TauJ;
+  OrthogonalN = G.OrthogonalN; OrthogonalS = G.OrthogonalS; 
+  OrthogonalE = G.OrthogonalE; OrthogonalW = G.OrthogonalW;
+}
 
 /*************************************************************************
  * Grid2D_Quad_Block::allocate -- Allocate memory.                       *
@@ -1721,7 +1746,7 @@ extern void Read_Quad_Block(Grid2D_Quad_Block &Grid,
 	                    istream &In_File);
 
 extern void Copy_Quad_Block(Grid2D_Quad_Block &Grid1,
-		            Grid2D_Quad_Block &Grid2);
+		            const Grid2D_Quad_Block &Grid2);
 
 extern void Translate_Quad_Block(Grid2D_Quad_Block &Grid,
 	      	                 const Vector2D &V);
@@ -2089,6 +2114,21 @@ extern Grid2D_Quad_Block** Grid_Circular_Cylinder(Grid2D_Quad_Block **Grid_ptr,
  		                                  const int Number_of_Cells_Idir,
 		                                  const int Number_of_Cells_Jdir,
 						  const int Number_of_Ghost_Cells);
+
+extern Grid2D_Quad_Block** Grid_Annulus(Grid2D_Quad_Block **Grid_ptr,
+					int &Number_of_Blocks_Idir,
+					int &Number_of_Blocks_Jdir,
+					const double &Inner_Radius,
+					const double &Outer_Radius,
+					const double &ThetaStart,
+					const double &ThetaEnd,
+					const int Stretching_Type_Idir,
+					const int Stretching_Type_Jdir,
+					const double &Stretching_Factor_Idir,
+					const double &Stretching_Factor_Jdir,
+					const int Number_of_Cells_Idir,
+					const int Number_of_Cells_Jdir,
+					const int Number_of_Ghost_Cells);
 
 extern Grid2D_Quad_Block** Grid_Ellipse(Grid2D_Quad_Block **Grid_ptr,
                                         int &Number_of_Blocks_Idir,

@@ -1,45 +1,33 @@
-/* AdvectDiffuse2DQuadSolvers.cc:  2D Advection Diffusion Equation 
-                                   Multi-Block Quadrilateral Mesh Solvers. */
+/*! \file AdvectDiffuse2DQuadSolvers.cc
+  @brief 2D Advection Diffusion Equation Multi-Block Quadrilateral Mesh Solvers. */
 
-/* Include 2D advection diffusion equation quadrilateral mesh solution header file. */
+/* Include required C++ libraries. */
+// None
 
-#ifndef _ADVECTDIFFUSE2D_QUAD_INCLUDED
-#include "AdvectDiffuse2DQuad.h"
-#endif // _ADVECTDIFFUSE2D_QUAD_INCLUDED
+/* Using std namespace functions */
+// None
 
-/* Include the multigrid header file. */
+/* Include CFFC header files */
+#include "AdvectDiffuse2DQuad.h" /* Include 2D advection diffusion equation quadrilateral mesh solution header file. */
+#include "AdvectDiffuse2DQuadFASMultigrid.h" /* Include the multigrid header file. */
+#include "AdvectDiffuse2DQuadNKS.h"          /* Include 2D Newton-Krylov-Schwarz solver header file for advection-diffusion. */
+#include "../HighOrderReconstruction/AccuracyAssessment2DMultiBlock.h" /* Include 2D accuracy assessment for multi-block level. */
 
-#ifndef _FASMULTIGRID2D_INCLUDED
-#include "../FASMultigrid2D/FASMultigrid2D.h"
-#endif // _FASMULTIGRID2D_INCLUDED
-
-/* Include 2D advection diffusion multigrid specializations header file. */
-
-#ifndef _ADVECTDIFFUSE2D_QUAD_MULTIGRID_INCLUDED
-#include "AdvectDiffuse2DQuadMultigrid.h"
-#endif // _ADVECTDIFFUSE2D_QUAD_MULTIGRID_INCLUDED
-
-/* Include 2D advection diffusion equation Newton-Krylov-Schwarz solver header file. */
-
-#ifndef _ADVECTDIFFUSE2D_QUAD_NKS_INCLUDED
-#include "AdvectDiffuse2DQuad_NKS.h"
-#endif // _ADVECTDIFFUSE2D_QUAD_NKS_INCLUDED
-
-/********************************************************
- * Routine: AdvectDiffuse2DQuadSolver                   *
- *                                                      *
- * Computes solutions to 2D advection diffusion         *
- * equations on 2D quadrilateral multi-block            *
- * solution-adaptive mesh.                              *
- *                                                      *
+/******************************************************//**
+ * Routine: AdvectDiffuse2DQuadSolver                   
+ *                                                      
+ * Computes solutions to 2D advection diffusion         
+ * equations on 2D quadrilateral multi-block            
+ * solution-adaptive mesh.                              
+ *                                                      
  ********************************************************/
 int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
-                              int batch_flag) {
-
+			      int batch_flag) {
+  
   /********************************************************  
    * Local variable declarations.                         *
    ********************************************************/
-
+  
   // AdvectDiffuse2D input variables and parameters:
   AdvectDiffuse2D_Input_Parameters Input_Parameters;
 
@@ -52,20 +40,21 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
   AdaptiveBlock2D_List          List_of_Local_Solution_Blocks;
   AdvectDiffuse2D_Quad_Block   *Local_SolnBlk;
 
-  FAS_Multigrid2D_Solver<double, 
+  FAS_Multigrid2D_Solver<AdvectDiffuse2D_State, 
                          AdvectDiffuse2D_Quad_Block, 
                          AdvectDiffuse2D_Input_Parameters> MGSolver;
 
   /* Define residual file and cpu time variables. */
 
   ofstream residual_file;
-  CPUTime processor_cpu_time, total_cpu_time, NKS_time;
+  CPUTime processor_cpu_time, total_cpu_time, NKS_total_cpu_time;
+  time_t start_explicit = 0, end_explicit = 0;
 
   /* Other local solution variables. */
 
   int number_of_time_steps, first_step,
-      command_flag, error_flag, line_number, 
-      i_stage, perform_explicit_time_marching, limiter_freezing_off;
+    command_flag, error_flag, line_number, 
+    i_stage, perform_explicit_time_marching, limiter_freezing_off;
 
   double Time, dTime;
 
@@ -80,19 +69,20 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
 
   // The primary MPI processor reads and parses the input file.
   if (CFFC_Primary_MPI_Processor()) {
-     if (!batch_flag) {
-        cout << "\n Reading AdvectDiffuse2D input data file `"
-             << Input_File_Name_ptr << "'.";
-     } /* endif */
-     error_flag = Process_Input_Control_Parameter_File(Input_Parameters,
-                                                       Input_File_Name_ptr,
-                                                       command_flag);
-     if (!batch_flag && error_flag == 0) {
-        cout << Input_Parameters << "\n";
-        cout.flush();
-     } /* endif */
+    if (!batch_flag) {
+      cout << "\n Reading AdvectDiffuse2D input data file `"
+	   << Input_File_Name_ptr << "'.";
+      cout.flush();
+    } /* endif */
+    error_flag = Process_Input_Control_Parameter_File(Input_Parameters,
+						      Input_File_Name_ptr,
+						      command_flag);
+    if (!batch_flag && error_flag == 0) {
+      cout << Input_Parameters << "\n";
+      cout.flush();
+    } /* endif */
   } else {
-     error_flag = 0;
+    error_flag = 0;
   } /* endif */
 
   // Broadcast input solution parameters to other MPI processors.
@@ -102,13 +92,14 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
   CFFC_Broadcast_MPI(&command_flag, 1);
   if (command_flag == TERMINATE_CODE) return (0);
   Broadcast_Input_Parameters(Input_Parameters);
+  Input_Parameters.Verbose(batch_flag);    //< Set Input_Parameters to batch_mode if required
 
   /*************************************************************  
    * Create initial mesh and allocate AdvectDiffuse2D solution *
    * variables for specified IBVP/BVP problem.                 *
    *************************************************************/
 
-  execute_new_calculation: ;
+ execute_new_calculation: ;
   CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
 
   /* Create initial mesh.  Read mesh from grid definition or data files 
@@ -116,27 +107,27 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
 
   // The primary MPI processor creates the mesh.
   if (CFFC_Primary_MPI_Processor()) {
-     if (!batch_flag) cout << "\n Creating (or reading) initial quadrilateral multi-block mesh.";
-     MeshBlk = NULL;
-     MeshBlk = Multi_Block_Grid(MeshBlk, 
-                                Input_Parameters);
+    if (!batch_flag) cout << "\n Creating (or reading) initial quadrilateral multi-block mesh.";
+    MeshBlk = NULL;
+    MeshBlk = Multi_Block_Grid(MeshBlk, 
+			       Input_Parameters);
 
-     if (MeshBlk == NULL) {
-        error_flag = 1;
-     } else if (Check_Multi_Block_Grid(MeshBlk,
-                                       Input_Parameters.Number_of_Blocks_Idir,
-  	                               Input_Parameters.Number_of_Blocks_Jdir)) {
-        error_flag = 1;
-     } else {
-        error_flag = 0;
-     } /* endif */
+    if (MeshBlk == NULL) {
+      error_flag = 1;
+    } else if (Check_Multi_Block_Grid(MeshBlk,
+				      Input_Parameters.Number_of_Blocks_Idir,
+				      Input_Parameters.Number_of_Blocks_Jdir)) {
+      error_flag = 1;
+    } else {
+      error_flag = 0;
+    } /* endif */
 
-     if (error_flag) {
-        cout << "\n AdvectDiffuse2D ERROR: Unable to create valid AdvectDiffuse2D multi-block mesh.\n";
-        cout.flush();
-     } /* endif */
+    if (error_flag) {
+      cout << "\n AdvectDiffuse2D ERROR: Unable to create valid AdvectDiffuse2D multi-block mesh.\n";
+      cout.flush();
+    } /* endif */
   } else {
-     MeshBlk = NULL;
+    MeshBlk = NULL;
   } /* endif */
 
   // Broadcast the mesh to other MPI processors.
@@ -164,18 +155,18 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
   /* Output multi-block solution-adaptive quadrilateral mesh statistics. */
 
   if (!batch_flag) {
-     cout << "\n\n Multi-block solution-adaptive quadrilateral mesh statistics: "; 
-     cout << "\n  -> Number of Root Blocks i-direction: "
-          << QuadTree.NRi;
-     cout << "\n  -> Number of Root Blocks j-direction: " 
-          << QuadTree.NRj;
-     cout << "\n  -> Total Number of Used Blocks: " 
-          << QuadTree.countUsedBlocks();
-     cout << "\n  -> Total Number of Computational Cells: " 
-          << QuadTree.countUsedCells() << "\n"; 
-     cout << "\n  -> Refinement Efficiency: " 
-          << QuadTree.efficiencyRefinement() << "\n";
-     cout.flush();
+    cout << "\n\n Multi-block solution-adaptive quadrilateral mesh statistics: "; 
+    cout << "\n  -> Number of Root Blocks i-direction: "
+	 << QuadTree.NRi;
+    cout << "\n  -> Number of Root Blocks j-direction: " 
+	 << QuadTree.NRj;
+    cout << "\n  -> Total Number of Used Blocks: " 
+	 << QuadTree.countUsedBlocks();
+    cout << "\n  -> Total Number of Computational Cells: " 
+	 << QuadTree.countUsedCells();
+    cout << "\n  -> Refinement Efficiency: " 
+	 << QuadTree.efficiencyRefinement() << "\n";
+    cout.flush();
   } /* endif */
 
   /********************************************************  
@@ -187,76 +178,71 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
   Time = ZERO;
   number_of_time_steps = 0;
 
- /* Set the CPU time to zero. */
+  /* Set the CPU time to zero. */
 
   processor_cpu_time.zero();
   total_cpu_time.zero();
-  
-  /* Initialize the conserved and primitive state
-     solution variables. */
+
+  /* Initialize the state solution variables. */
   if (!batch_flag) cout << "\n Prescribing AdvectDiffuse2D initial data.";
   if (Input_Parameters.i_ICs == IC_RESTART) {
-     if (!batch_flag) cout << "\n Reading AdvectDiffuse2D solution from restart data files.";
+    if (!batch_flag) cout << "\n Reading AdvectDiffuse2D solution from restart data files.";
 
-     //Check that restart files are probably not corrupt.
-     if (CFFC_Primary_MPI_Processor()) {
-       if(System::Restart_In_Progress()) {
-	 cout << "\n  Restart-in-progress flag detected, assuming data is corrupt."
-	      << "\n  Uncompressing backups.";
-	 System::Uncompress_Restart();
-	 System::Remove_Restart_Flag();
-	 cout << "\n  Backup successfully uncompressed; reading.";
-       }
-     }
-     CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+    //Check that restart files are probably not corrupt.
+    if (CFFC_Primary_MPI_Processor()) {
+      if(System::Restart_In_Progress()) {
+	cout << "\n  Restart-in-progress flag detected, assuming data is corrupt."
+	     << "\n  Uncompressing backups.";
+	System::Uncompress_Restart();
+	System::Remove_Restart_Flag();
+	cout << "\n  Backup successfully uncompressed; reading.";
+      }
+    }
+    CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
 
-     error_flag = Read_QuadTree(QuadTree,
-                                List_of_Global_Solution_Blocks,
-                                List_of_Local_Solution_Blocks, 
-                                Input_Parameters);
-     if (error_flag) {
-        cout << "\n AdvectDiffuse2D ERROR: Unable to open AdvectDiffuse2D quadtree data file "
-             << "on processor "
-             << List_of_Local_Solution_Blocks.ThisCPU
-             << ".\n";
-        cout.flush();
-     } /* endif */
-     error_flag = CFFC_OR_MPI(error_flag);
-     if (error_flag) return (error_flag);
-     Allocate_Message_Buffers(List_of_Local_Solution_Blocks,
-                              Local_SolnBlk[0].NumVar()+NUM_COMP_VECTOR2D);
+    error_flag = Read_QuadTree(QuadTree,
+			       List_of_Global_Solution_Blocks,
+			       List_of_Local_Solution_Blocks, 
+			       Input_Parameters);
+    if (error_flag) {
+      cout << "\n AdvectDiffuse2D ERROR: Unable to open AdvectDiffuse2D quadtree data file "
+	   << "on processor "
+	   << List_of_Local_Solution_Blocks.ThisCPU
+	   << ".\n";
+      cout.flush();
+    } /* endif */
+    error_flag = CFFC_OR_MPI(error_flag);
+    if (error_flag) return (error_flag);
+    Allocate_Message_Buffers(List_of_Local_Solution_Blocks,
+			     Local_SolnBlk[0].NumVar()+NUM_COMP_VECTOR2D);
 
-     error_flag = Read_Restart_Solution(Local_SolnBlk, 
-                                        List_of_Local_Solution_Blocks, 
-                                        Input_Parameters,
-                                        number_of_time_steps,
-                                        Time,
-                                        processor_cpu_time);
-     if (error_flag) {
-        cout << "\n AdvectDiffuse2D ERROR: Unable to open AdvectDiffuse2D restart input data file(s) "
-             << "on processor "
-             << List_of_Local_Solution_Blocks.ThisCPU
-             << ".\n";
-        cout.flush();
-     } /* endif */
+    error_flag = Read_Restart_Solution(Local_SolnBlk, 
+				       List_of_Local_Solution_Blocks, 
+				       Input_Parameters,
+				       number_of_time_steps,
+				       Time,
+				       processor_cpu_time);
+    if (error_flag) {
+      cout << "\n AdvectDiffuse2D ERROR: Unable to open AdvectDiffuse2D restart input data file(s) "
+	   << "on processor "
+	   << List_of_Local_Solution_Blocks.ThisCPU
+	   << ".\n";
+      cout.flush();
+    } /* endif */
 
-     error_flag = CFFC_OR_MPI(error_flag);
-     if (error_flag) return (error_flag);
+    error_flag = CFFC_OR_MPI(error_flag);
+    if (error_flag) return (error_flag);
 
-     // Ensure each processor has the correct time and time!!!
-     number_of_time_steps = CFFC_Maximum_MPI(number_of_time_steps);
-     Time = CFFC_Maximum_MPI(Time);
-     processor_cpu_time.cput = CFFC_Maximum_MPI(processor_cpu_time.cput);
-     Input_Parameters.Maximum_Number_of_Time_Steps =
-       CFFC_Maximum_MPI(Input_Parameters.Maximum_Number_of_Time_Steps);
+    // Ensure each processor has the correct time and time!!!
+    number_of_time_steps = CFFC_Maximum_MPI(number_of_time_steps);
+    Time = CFFC_Maximum_MPI(Time);
+    processor_cpu_time.cput = CFFC_Maximum_MPI(processor_cpu_time.cput);
+    Input_Parameters.Maximum_Number_of_Time_Steps =
+      CFFC_Maximum_MPI(Input_Parameters.Maximum_Number_of_Time_Steps);
   } else {
-     ICs(Local_SolnBlk, 
-         List_of_Local_Solution_Blocks, 
-         Input_Parameters,
-	 QuadTree);
-     Set_Advection_Velocity_Field(Local_SolnBlk, 
-                                  List_of_Local_Solution_Blocks, 
-                                  Input_Parameters);
+    ICs(Local_SolnBlk, 
+	List_of_Local_Solution_Blocks, 
+	Input_Parameters);
   } /* endif */
 
   /* Send solution information between neighbouring blocks to complete
@@ -275,11 +261,11 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
                                                   OFF);
 
   if (error_flag) {
-     cout << "\n AdvectDiffuse2D ERROR: Message passing error during AdvectDiffuse2D solution intialization "
-          << "on processor "
-          << List_of_Local_Solution_Blocks.ThisCPU
-          << ".\n";
-     cout.flush();
+    cout << "\n AdvectDiffuse2D ERROR: Message passing error during AdvectDiffuse2D solution intialization "
+	 << "on processor "
+	 << List_of_Local_Solution_Blocks.ThisCPU
+	 << ".\n";
+    cout.flush();
   } /* endif */
 
   error_flag = CFFC_OR_MPI(error_flag);
@@ -294,48 +280,48 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
   /* Perform initial mesh refinement. */
 
   if (Input_Parameters.i_ICs != IC_RESTART) {
-     if (!batch_flag) cout << "\n Performing AdvectDiffuse2D uniform mesh refinement.";
-     error_flag = Uniform_AMR2(Local_SolnBlk,
-                               Input_Parameters,
-                               QuadTree,
-                               List_of_Global_Solution_Blocks,
-                               List_of_Local_Solution_Blocks);
-     if (error_flag) {
-       cout << "\n AdvectDiffuse2D ERROR: Uniform AMR error on processor "
-	    << List_of_Local_Solution_Blocks.ThisCPU << "." << endl;
-       cout.flush();
-     } /* endif */
-     error_flag = CFFC_OR_MPI(error_flag);
-     if (error_flag) return error_flag;
+    if (!batch_flag) cout << "\n Performing AdvectDiffuse2D uniform mesh refinement.";
+    error_flag = Uniform_AMR(Local_SolnBlk,
+			     Input_Parameters,
+			     QuadTree,
+			     List_of_Global_Solution_Blocks,
+			     List_of_Local_Solution_Blocks);
+    if (error_flag) {
+      cout << "\n AdvectDiffuse2D ERROR: Uniform AMR error on processor "
+	   << List_of_Local_Solution_Blocks.ThisCPU << "." << endl;
+      cout.flush();
+    } /* endif */
+    error_flag = CFFC_OR_MPI(error_flag);
+    if (error_flag) return error_flag;
 
-     if (!batch_flag) cout << "\n Performing AdvectDiffuse2D boundary mesh refinement.";
-     error_flag = Boundary_AMR2(Local_SolnBlk,
-                                Input_Parameters,
-                                QuadTree,
-                                List_of_Global_Solution_Blocks,
-                                List_of_Local_Solution_Blocks);
-     if (error_flag) {
-       cout << "\n AdvectDiffuse2D ERROR: Boundary AMR error on processor "
-	    << List_of_Local_Solution_Blocks.ThisCPU << "." << endl;
-       cout.flush();
-     } /* endif */
-     error_flag = CFFC_OR_MPI(error_flag);
-     if (error_flag) return error_flag;
-
-     if (!batch_flag) cout << "\n Performing AdvectDiffuse2D initial mesh refinement.";
-     error_flag = Initial_AMR2(Local_SolnBlk,
-                               Input_Parameters,
-	  	               QuadTree,
-		               List_of_Global_Solution_Blocks,
-		               List_of_Local_Solution_Blocks);
-     if (error_flag) {
-        cout << "\n AdvectDiffuse2D ERROR: Initial AMR error on processor "
-             << List_of_Local_Solution_Blocks.ThisCPU
-             << ".\n";
-        cout.flush();
-     } /* endif */
-     error_flag = CFFC_OR_MPI(error_flag);
-     if (error_flag) return (error_flag);
+    if (!batch_flag) cout << "\n Performing AdvectDiffuse2D boundary mesh refinement.";
+    error_flag = Boundary_AMR(Local_SolnBlk,
+			      Input_Parameters,
+			      QuadTree,
+			      List_of_Global_Solution_Blocks,
+			      List_of_Local_Solution_Blocks);
+    if (error_flag) {
+      cout << "\n AdvectDiffuse2D ERROR: Boundary AMR error on processor "
+	   << List_of_Local_Solution_Blocks.ThisCPU << "." << endl;
+      cout.flush();
+    } /* endif */
+    error_flag = CFFC_OR_MPI(error_flag);
+    if (error_flag) return error_flag;
+     
+    if (!batch_flag) cout << "\n Performing AdvectDiffuse2D initial mesh refinement.";
+    error_flag = Initial_AMR(Local_SolnBlk,
+			     Input_Parameters,
+			     QuadTree,
+			     List_of_Global_Solution_Blocks,
+			     List_of_Local_Solution_Blocks);
+    if (error_flag) {
+      cout << "\n AdvectDiffuse2D ERROR: Initial AMR error on processor "
+	   << List_of_Local_Solution_Blocks.ThisCPU
+	   << ".\n";
+      cout.flush();
+    } /* endif */
+    error_flag = CFFC_OR_MPI(error_flag);
+    if (error_flag) return (error_flag);
   } /* endif */
 
   /* Output multi-block solution-adaptive quadrilateral mesh statistics. */
@@ -357,11 +343,6 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
      cout.flush();
   } /* endif */
 
-  /* Set Analytical Solution if problem is 1D-Diffusion or Circular Advection */
-  Set_Analytical_Solution(Local_SolnBlk,
-			  List_of_Local_Solution_Blocks,
-			  Input_Parameters);
-
   /********************************************************  
    * Solve IBVP or BVP for 2D advection diffusion         *
    * equations on multi-block solution-adaptive           *
@@ -370,6 +351,12 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
 
   continue_existing_calculation: ;
   CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+
+  // Reset accuracy assessment
+  AccuracyAssessment2D_MultiBlock::ResetForNewCalculation(Local_SolnBlk,
+							  List_of_Local_Solution_Blocks);
+
+  if(!batch_flag) { time(&start_explicit); }
 
   if (Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID) {
 
@@ -399,7 +386,36 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
     }
     CFFC_Broadcast_MPI(&error_flag,1);
     if (error_flag) return error_flag;
-  
+
+  } else if (Input_Parameters.i_Time_Integration == TIME_STEPPING_DUAL_TIME_STEPPING) {
+
+    // Allocate memory for the multigrid solver.
+    error_flag = MGSolver.allocate(Local_SolnBlk,
+				   &QuadTree,
+				   &List_of_Global_Solution_Blocks,
+				   &List_of_Local_Solution_Blocks,
+				   &Input_Parameters);
+    if (error_flag) {
+      cout << "\n Euler2D ERROR: Unable to allocate memory for DTS multigrid solver.\n";
+      cout.flush();
+    }
+    CFFC_Broadcast_MPI(&error_flag,1);
+    if (error_flag) return error_flag;
+
+    // Execute DTS FAS multigrid solver.
+    error_flag = MGSolver.DTS_Multigrid_Solution(batch_flag,
+						 number_of_time_steps,
+						 Time,
+						 processor_cpu_time,
+						 total_cpu_time,
+						 residual_file);
+    if (error_flag) {
+      cout << "\n Euler2D ERROR: Error during DTS multigrid solution.\n";
+      cout.flush();
+    }
+    CFFC_Broadcast_MPI(&error_flag,1);
+    if (error_flag) return error_flag;
+
   } else {
     
     /* Open residual file and reset the CPU time. */
@@ -429,11 +445,11 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
 	 Input_Parameters.Maximum_Number_of_Time_Steps > 0 &&
 	 number_of_time_steps < Input_Parameters.Maximum_Number_of_Time_Steps) ||
         (!Input_Parameters.Time_Accurate &&
-	 Input_Parameters.Maximum_Number_of_NKS_Iterations > 0) ||
+	 Input_Parameters.NKS_IP.Maximum_Number_of_NKS_Iterations > 0) ||
 	(Input_Parameters.Time_Accurate &&
 	 Input_Parameters.Time_Max > Time)) {
-      if (!batch_flag) cout << "\n\n Beginning AdvectDiffuse2D computations on "
-			    << Date_And_Time() << ".\n\n";
+      if (!batch_flag){ cout << "\n\n Beginning AdvectDiffuse2D computations on "
+			     << Date_And_Time() << ".\n\n"; start_explicit = clock(); }
 
       if ((!Input_Parameters.Time_Accurate &&
 	   Input_Parameters.Maximum_Number_of_Time_Steps > 0 &&
@@ -468,7 +484,14 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
 	         cout.flush();
               } /* endif */
               error_flag = CFFC_OR_MPI(error_flag);
-              if (error_flag) return (error_flag);
+              if (error_flag) {
+                 command_flag = Output_Tecplot(Local_SolnBlk,
+                                               List_of_Local_Solution_Blocks,
+                                               Input_Parameters,
+                                               number_of_time_steps,
+                                               Time);
+                 return (error_flag);
+              } /* endif */
               if (!batch_flag) {
 	         cout << "\n New multi-block solution-adaptive quadrilateral mesh statistics: "; 
 	         cout << "\n  -> Number of Root Blocks i-direction: "
@@ -590,14 +613,14 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
 	
 	/* Output progress information for the calculation. */
 	 if (!batch_flag) Output_Progress_L2norm(number_of_time_steps,
-						 Time,
+						 Time*THOUSAND,
 						 total_cpu_time,
 						 residual_l2_norm,
 						 first_step,
 						 50);
 
 	 //  	if (!batch_flag) Output_Progress(number_of_time_steps,
-	 //  					 Time,
+	 //  					 Time*THOUSAND,
 	 //  					 total_cpu_time,
 	 //  					 residual_l1_norm,
 	 //  					 first_step,
@@ -606,7 +629,7 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
 	 if (CFFC_Primary_MPI_Processor() && !first_step) {
 	   Output_Progress_to_File(residual_file,
 				   number_of_time_steps,
-				   Time,
+				   Time*THOUSAND,
 				   total_cpu_time,
 				   residual_l1_norm,
 				   residual_l2_norm,
@@ -726,8 +749,8 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
 	
       } /* endwhile */
 
-      if (!batch_flag) cout << "\n\n AdvectDiffuse2D computations complete on " 
-			    << Date_And_Time() << ".\n";
+      if (!batch_flag){ cout << "\n\n AdvectDiffuse2D computations complete on " 
+			     << Date_And_Time() << ".\n"; end_explicit = clock(); }
     } /* endif */
     
     /* Update ghostcell information and prescribe boundary conditions to ensure
@@ -758,65 +781,122 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
 
   } /* endif - Multigrid or Not */
   
-  /*******************************/
-  /* APPLY Newton_Krylov_Schwarz */
-  /*******************************/
+  if(!batch_flag) { time(&end_explicit); }
 
-  if (Input_Parameters.Maximum_Number_of_NKS_Iterations > 0) {
+
+  /*************************************************************************************************************************/
+  /************************ APPLY Newton_Krylov_Schwarz ********************************************************************/
+  /*************************************************************************************************************************/\
+  if (Input_Parameters.NKS_IP.Maximum_Number_of_NKS_Iterations > 0) {
+     time_t start_NKS, end_NKS;
+
      if (CFFC_Primary_MPI_Processor()) {
-         error_flag = Open_Progress_File(residual_file,
-	  			         Input_Parameters.Output_File_Name,
-				         number_of_time_steps);
-         if (error_flag) {
-            cout << "\n AdvectDiffuse2D ERROR: Unable to open residual file for AdvectDiffuse2D calculation.\n";
-            cout.flush();
-         } /* endif */
+        error_flag = Open_Progress_File(residual_file,
+	 			        Input_Parameters.Output_File_Name,
+				        number_of_time_steps);
+        if (error_flag) {
+           cout << "\n AdvectDiffuse2D ERROR: Unable to open residual file for AdvectDiffuse2D calculation.\n";
+           cout.flush();
+        } /* endif */ 
      } /* endif */
-    
+
      CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
      CFFC_Broadcast_MPI(&error_flag, 1);
      if (error_flag) return (error_flag);
 
-     Set_Analytical_Solution(Local_SolnBlk, 
-     			     List_of_Local_Solution_Blocks,
-     			     Input_Parameters);
-     Evaluate_Limiters(Local_SolnBlk, 
-                       List_of_Local_Solution_Blocks);
-     
-     if (!batch_flag) cout << "\n\n Beginning AdvectDiffuse2D NKS computations on "
-	 		   << Date_And_Time() << ".\n\n";
+     //Turn Limiter Freezing OFF for startup 
+     Evaluate_Limiters(Local_SolnBlk, List_of_Local_Solution_Blocks);
 
-     NKS_time.zero();
+     if (!batch_flag){ cout << "\n\n Beginning AdvectDiffuse2D NKS computations on " 
+			    << Date_And_Time() << ".\n\n"; time(&start_NKS); }
 
-     error_flag = Newton_Krylov_Schwarz_Solver(residual_file,
-                                               number_of_time_steps,
-     					       Local_SolnBlk, 
-     					       List_of_Local_Solution_Blocks,
-     					       Input_Parameters);
+     //Store Explicit times for output
+     CPUTime Explicit_processor_cpu_time = processor_cpu_time;
+     CPUTime Explicit_total_cpu_time =  total_cpu_time;
+    
+     //Perform NKS Iterations 
+     error_flag = Newton_Krylov_Schwarz_Solver<AdvectDiffuse2D_State,                    //pass in Time for DTS ??
+                                               AdvectDiffuse2D_Quad_Block,                                               
+                                               AdvectDiffuse2D_Input_Parameters>(processor_cpu_time,
+										 residual_file,
+										 number_of_time_steps, // explicit time steps
+										 Time,
+										 Local_SolnBlk, 
+										 List_of_Local_Solution_Blocks,
+										 Input_Parameters);
+      
+     processor_cpu_time.update();
+     total_cpu_time.cput = CFFC_Summation_MPI(processor_cpu_time.cput); 
 
-     NKS_time.update();
-     
-     if (CFFC_Primary_MPI_Processor()) { 
-        cout << "\nNKS_time in minutes = " << NKS_time.min() << endl;
-     } /* endif */
-     
      if (error_flag) {
         if (CFFC_Primary_MPI_Processor()) { 
-     	   cout << "\n AdvectDiffuse2D_NKS ERROR: AdvectDiffuse2D solution error on processor " 
+   	   cout << "\n AdvectDiffuse2D_NKS ERROR: AdvectDiffuse2D solution error on processor " 
                 << List_of_Local_Solution_Blocks.ThisCPU << ".\n";
-     	   cout.flush();
-     	} /* endif */
+   	   cout.flush();
+   	} /* endif */
      } /* endif */
-
+   
      CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
      CFFC_Broadcast_MPI(&error_flag, 1);
      if (error_flag) return (error_flag);
 
-     if (!batch_flag) cout << "\n\n AdvectDiffuse2D NKS computations complete on " 
-                           << Date_And_Time() << ".\n";
+     /***********************************************************************/
+     if (!batch_flag) { cout << "\n\n AdvectDiffuse2D NKS computations complete on " 
+			     << Date_And_Time() << ".\n"; time(&end_NKS); }
 
-     if (CFFC_Primary_MPI_Processor()) error_flag = Close_Progress_File(residual_file);
-  } /* endif */
+     if (!batch_flag) {
+       cout<<"\n ----------------------------------------------------------------";
+       cout<<"\n -------- Solution Computations Summary in minutes --------------";
+       cout<<"\n ----------------------------------------------------------------";
+       cout<<"\n Total Startup CPU Time\t\t = "<<Explicit_total_cpu_time.min();
+       cout<<"\n Total NKS CPU Time \t\t = "<<total_cpu_time.min()-Explicit_total_cpu_time.min();
+       cout<<"\n Total CPU Time \t\t = "<<total_cpu_time.min(); 
+       cout<<"\n Total Startup Clock Time\t = "<<difftime(end_explicit,start_explicit)/60.0;
+       cout<<"\n Total NKS Clock Time\t\t = "<<difftime(end_NKS,start_NKS)/60.0;
+       cout<<"\n Total Clock Time\t\t = "<<difftime(end_NKS,start_explicit)/60.0;   //if no explicit start_explicit not defined
+       cout<<"\n ----------------------------------------------------------------";
+       cout<<"\n ----------------------------------------------------------------";
+       cout<<"\n ----------------------------------------------------------------\n";
+     } 
+     //Also want to output total GMRES & NKS Iterations, and maybe max memory usage possibly??
+
+     if (CFFC_Primary_MPI_Processor()) error_flag = Close_Progress_File(residual_file); 
+     
+  } 
+  /*************************************************************************************************************************/
+  /*************************************************************************************************************************/
+  /*************************************************************************************************************************/
+
+
+  /***************************************************************
+   * Perform solution reconstruction with the final average      *
+   * states in order to use the true piecewise representation    *
+   * of the solution for post-processing steps, such as solution *
+   * plotting or accuracy assessment.                            *
+   **************************************************************/
+  if (CFFC_Primary_MPI_Processor() && (!batch_flag)) {
+    std::cout << "\n\n ---------------------------------------\n"
+	      << " Reconstruct final solution.\n";
+  }
+
+  if ( Input_Parameters.i_Reconstruction == RECONSTRUCTION_HIGH_ORDER){
+    // Use high-order reconstruction
+    
+    // \todo Add high-order reconstruction
+  } else {
+    // Use low-order reconstruction
+    Linear_Reconstruction(Local_SolnBlk, 
+			  List_of_Local_Solution_Blocks,
+			  Input_Parameters);
+  } // endif
+  
+  if (CFFC_Primary_MPI_Processor() && (!batch_flag)) {
+    std::cout << " Solution reconstruction done.\n" << " ---------------------------------------\n";
+  }
+  
+  /*************************************************************************************************************************/
+  /*************************************************************************************************************************/
+
 
   /********************************************************
    * Solution calculations complete.                      *
@@ -847,7 +927,6 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
 	 }
          Local_SolnBlk = Deallocate(Local_SolnBlk, 
                                     Input_Parameters);
-         //Deallocate_Message_Buffers(List_of_Local_Solution_Blocks); // Not necessary here!
          List_of_Local_Solution_Blocks.deallocate();
          List_of_Global_Solution_Blocks.deallocate();
          QuadTree.deallocate();
@@ -871,7 +950,6 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
 	 }
          Local_SolnBlk = Deallocate(Local_SolnBlk, 
                                     Input_Parameters);
-         //Deallocate_Message_Buffers(List_of_Local_Solution_Blocks); // Not necessary here!
          List_of_Local_Solution_Blocks.deallocate();
          List_of_Global_Solution_Blocks.deallocate();
          QuadTree.deallocate();
@@ -932,33 +1010,25 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
                  << QuadTree.efficiencyRefinement() << "\n";
             cout.flush();
          } /* endif */
-//          if (CFFC_Primary_MPI_Processor()) {
-//             for ( int j_blk = 0 ; j_blk <= QuadTree.Nblk-1 ; ++j_blk ) {
-//                for ( int i_blk = 0 ; i_blk <= QuadTree.Ncpu-1 ; ++i_blk ) {
-// 	          if (QuadTree.Blocks[i_blk][j_blk] != NULL) {
-//                      cout << "\n cpu = " 
-//                           << i_blk
-//                           << " blk = "
-//                           << j_blk
-//                           << " blk = "
-//                           << QuadTree.Blocks[i_blk][j_blk]->block;
-//                   } else {
-//                      cout << "\n cpu = " 
-//                           << i_blk
-//                           << " blk = "
-//                           << j_blk;
-//                   } /* endif */
-//                } /* endfor */
-//             } /* endfor */
-//          } /* endif */
-         // Reset advection velocity field.
-         Set_Advection_Velocity_Field(Local_SolnBlk, 
-                                      List_of_Local_Solution_Blocks, 
-                                      Input_Parameters);
-         // Reset analytic solution if problem is 1D-Diffusion or Circular Advection.
-         Set_Analytical_Solution(Local_SolnBlk,
-                                 List_of_Local_Solution_Blocks,
-                                 Input_Parameters);
+	 //          if (CFFC_Primary_MPI_Processor()) {
+	 //             for ( int j_blk = 0 ; j_blk <= QuadTree.Nblk-1 ; ++j_blk ) {
+	 //                for ( int i_blk = 0 ; i_blk <= QuadTree.Ncpu-1 ; ++i_blk ) {
+	 // 	          if (QuadTree.Blocks[i_blk][j_blk] != NULL) {
+	 //                      cout << "\n cpu = " 
+	 //                           << i_blk
+	 //                           << " blk = "
+	 //                           << j_blk
+	 //                           << " blk = "
+	 //                           << QuadTree.Blocks[i_blk][j_blk]->block;
+	 //                   } else {
+	 //                      cout << "\n cpu = " 
+	 //                           << i_blk
+	 //                           << " blk = "
+	 //                           << j_blk;
+	 //                   } /* endif */
+	 //                } /* endfor */
+	 //             } /* endfor */
+	 //          } /* endif */
 
      } else if (command_flag == WRITE_OUTPUT_CODE) {
          // Output solution data.
@@ -1010,7 +1080,8 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
 
      } else if (command_flag == WRITE_OUTPUT_NODES_CODE) {
        if (!batch_flag) cout << "\n Writing AdvectDiffuse2D node locations to output data file(s).";
-       if (!(Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID ||
+       if (Input_Parameters.NKS_IP.Maximum_Number_of_NKS_Iterations > 0 ||
+	   !(Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID ||
 	     Input_Parameters.i_Time_Integration == TIME_STEPPING_DUAL_TIME_STEPPING)) {
 	 error_flag = Output_Nodes_Tecplot(Local_SolnBlk,
 					   List_of_Local_Solution_Blocks,
@@ -1136,16 +1207,41 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
          CFFC_Broadcast_MPI(&error_flag, 1);
          if (error_flag) return (error_flag);
 
+     } else if (command_flag == WRITE_ERROR_NORMS_TO_SCREEN) {
+       if (CFFC_Primary_MPI_Processor() && (!batch_flag)) {
+	 cout << "\n\n ---------------------------------------\n" 
+	      << " Writing error norms to screen ...\n";
+	 cout.flush();
+       }
+
+       error_flag = AccuracyAssessment2D_MultiBlock::PrintErrorNorms(Local_SolnBlk, 
+								     List_of_Local_Solution_Blocks, 
+								     Input_Parameters,
+								     std::cout);
+       
+       if (CFFC_Primary_MPI_Processor() && error_flag) {
+	 cout << "\n AdvectDiffuse2D ERROR: Unable to write AdvectDiffuse2D error norms data.\n"; cout.flush();
+       } // endif
+
+       CFFC_Broadcast_MPI(&error_flag, 1);
+       if (error_flag) return (error_flag);
+
+       if (CFFC_Primary_MPI_Processor() && (!batch_flag)) {
+	 cout << "\n ---------------------------------------\n";       
+	 cout.flush();
+       }
+
      } else if (command_flag == INVALID_INPUT_CODE ||
                 command_flag == INVALID_INPUT_VALUE) {
          line_number = -line_number;
          cout << "\n AdvectDiffuse2D ERROR: Error reading AdvectDiffuse2D data at line #"
-	      << -line_number  << " of input data file.";
+	      << -line_number  << " of input data file.\n";
          cout.flush();
          return (line_number);
      } /* endif */
 
   } /* endwhile */
+
 
   /**********************************************************  
    * End of all AdvectDiffuse2DSolver computations and I/O. *

@@ -751,7 +751,7 @@ Output_Multigrid(int &number_of_time_steps,
 
     // Open the output data file.
     output_file.open(output_file_name_ptr,ios::out);
-    if (output_file.bad()) return 1;
+    if (output_file.fail()) return 1;
 
     // Write the solution data for each solution block.
     i_output_title = 1;
@@ -837,7 +837,7 @@ Output_Multigrid_Cells(int &number_of_time_steps,
 
     // Open the output data file.
     output_file.open(output_file_name_ptr,ios::out);
-    if (output_file.bad()) return 1;
+    if (output_file.fail()) return 1;
 
     // Write the solution data for each solution block.
     i_output_title = 1;
@@ -915,7 +915,7 @@ Output_Multigrid_Nodes(int &number_of_time_steps,
 
     // Open the output data file.
     output_file.open(output_file_name_ptr,ios::out);
-    if (output_file.bad()) return 1;
+    if (output_file.fail()) return 1;
 
     // Write the solution data for each solution block.
     i_output_title = 1;

@@ -50,7 +50,9 @@ public:
   static short USE_PRIMITIVE_VARIABLES;
 
 private:
-  ENO_Execution_Mode(void){};
+  ENO_Execution_Mode(void);   //!< Private default constructor
+  ENO_Execution_Mode(const ENO_Execution_Mode&); //!< Private copy constructor
+  ENO_Execution_Mode& operator=(const ENO_Execution_Mode&); //!< Private assignment operator
 
 };
 

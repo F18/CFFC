@@ -1,0 +1,20 @@
+
+	###########################
+	#  DEFINE EXACT SOLUTION  #
+	###########################
+Exact_Solution =
+		Advection_Diffusion_In_Rectangular_Channel
+
+XVelocity_Coeff =
+		10.0
+Diffusion_Coeff =
+		0.01
+Channel_Length_Coeff =
+		    3.1
+
+
+	#######################
+	#   Execute program   #
+	#######################
+Execute
+

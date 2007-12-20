@@ -1,4 +1,5 @@
-/* Spline2D.cc:  Subroutines for various 2D spline classes. */
+/* \file Spline2D.cc
+   \brief  Subroutines for various 2D spline classes. */
 
 /* Include the 2D Spline header file. */
 
@@ -707,6 +708,31 @@ void Create_Spline_Line(Spline2D &Line_Spline,
 
     Line_Spline.pathlength();
 
+}
+
+/******************************************************//**
+ * This routine calculates and returns a 2D spline      
+ * representing a straight line between two points.
+ * The start and end points are determined based on 
+ * the polar coordinates (Inner_Radius,Theta) and (Outer_Radius,Theta).     
+ * The angle Theta is considered to be given in degrees.                                                       
+ ********************************************************/
+void Create_Spline_Line_Polar_Coordinates(Spline2D &Line_Spline,
+					  const double &Inner_Radius,
+					  const double &Outer_Radius,
+					  const double &Theta,
+					  const int Number_of_Spline_Points){
+  
+  Vector2D V1, V2;		// the Cartesian coordinates of the start and end points of the line.
+
+  // Set V1
+  V1.setWithPolarCoord(Inner_Radius,Theta);
+
+  // Set V2
+  V2.setWithPolarCoord(Outer_Radius,Theta);
+
+  // Generate the line
+  Create_Spline_Line(Line_Spline,V1,V2,Number_of_Spline_Points);
 }
 
 /********************************************************
