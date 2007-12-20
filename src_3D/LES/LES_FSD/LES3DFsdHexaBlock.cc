@@ -1038,22 +1038,22 @@ BCs(Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs){
 
            case BC_INFLOW_SUBSONIC :
 	     // all fixed except v.x (u) which is constant extrapolation
-	     W[i][JCl-1][k] = WoS[i][k];
-	     W[i][JCl-1][k].v.y = W[i][JCl][k].v.y;
-	     U[i][JCl-1][k] = W[i][JCl-1][k].U();
- 	     W[i][JCl-2][k] = WoS[i][k];
-	     W[i][JCl-2][k].v.y = W[i][JCl][k].v.y;
-	     U[i][JCl-2][k] = W[i][JCl-2][k].U();
+	     W[i][JCu+1][k] = WoN[i][k];
+	     W[i][JCu+1][k].v.y = W[i][JCu][k].v.y;
+	     U[i][JCu+1][k] = W[i][JCu+1][k].U();
+ 	     W[i][JCu+2][k] = WoN[i][k];
+	     W[i][JCu+2][k].v.y = W[i][JCu][k].v.y;
+	     U[i][JCu+2][k] = W[i][JCu+2][k].U();
 	     break;
 
            case BC_OUTFLOW_SUBSONIC :
 	     // all constant extrapolation except pressure which is fixed.
-	     W[i][JCl-1][k] = W[i][JCl][k];
-	     W[i][JCl-1][k].p = WoS[i][k].p;
-	     U[i][JCl-1][k] = W[i][JCl-1][k].U();
- 	     W[i][JCl-2][k] = W[i][JCl][k];
-	     W[i][JCl-2][k].p = WoS[i][k].p;
-	     U[i][JCl-2][k] = W[i][JCl-2][k].U();
+	     W[i][JCu+1][k] = W[i][JCu][k];
+	     W[i][JCu+1][k].p = WoN[i][k].p;
+	     U[i][JCu+1][k] = W[i][JCu+1][k].U();
+ 	     W[i][JCu+2][k] = W[i][JCl][k];
+	     W[i][JCu+2][k].p = WoN[i][k].p;
+	     U[i][JCu+2][k] = W[i][JCu+2][k].U();
 	     break;
 
            case BC_CONSTANT_EXTRAPOLATION :
