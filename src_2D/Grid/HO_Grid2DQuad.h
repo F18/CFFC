@@ -34,7 +34,11 @@ using namespace std;
 #include "../Math/Spline2D.h"
 #endif // _SPLINE2D_INCLUDED
 
+#ifndef _CELL2D_INCLUDED
 #include "HO_Cell2D.h"
+#endif // _CELL2D_INCLUDED
+
+#include "HO_Node2D.h"
 
 #ifndef _MPI_INCLUDED
 #include "../MPI/MPI.h"
@@ -73,7 +77,7 @@ using namespace std;
 /* Define the quadrilateral 2D grid block class. */
 
 /*!
- * Class: Grid2D_Quad_Block
+ * Class: Grid2D_Quad_Block_HO
  *
  * @brief Definition of the 2D quadrilateral mesh block.
  *
@@ -245,12 +249,12 @@ using namespace std;
  * cin  >> G; (input function)
  * \endverbatim
  */
-class Grid2D_Quad_Block{
+class Grid2D_Quad_Block_HO{
   private:
   public:
   //! @name Defined datatypes
   //@{
-  typedef Node2D NodeType;
+  typedef Node2D_HO NodeType;
   //@}
   
     int                   NNi, //!< Number of nodes in i-direction (zeta-direction).
@@ -266,8 +270,8 @@ class Grid2D_Quad_Block{
                           JCl, //!< Lower index for cells in j-direction (eta-direction).
                           JCu; //!< Upper index for cells in j-direction (eta-direction).
     int                Nghost; //!< Number of ghost cells.
-    Node2D             **Node; //!< Array of 2D node position vectors
-    Cell2D             **Cell; //!< Array of 2D cell centre vectors
+    Node2D_HO             **Node; //!< Array of 2D node position vectors
+    Cell2D_HO             **Cell; //!< Array of 2D cell centre vectors
     int              *BCtypeN, //!< North boundary condition type specifier.
                      *BCtypeS, //!< South boundary condition type specifier.
                      *BCtypeE, //!< East boundary condition type specifier.
@@ -296,24 +300,24 @@ class Grid2D_Quad_Block{
                   OrthogonalW; //!< West boundary orthogonality parameter.
                                // Made public so can access them.
 
-    Grid2DQuadIntegration<Grid2D_Quad_Block> Integration; //!< Variable that provides access to integration subroutines
+    Grid2DQuadIntegration<Grid2D_Quad_Block_HO> Integration; //!< Variable that provides access to integration subroutines
   
 			
     //@{ @name Constructors.
 
     //! Creation constructor.
-    Grid2D_Quad_Block(void);
+    Grid2D_Quad_Block_HO(void);
 
     //! Copy constructor.
-    Grid2D_Quad_Block(const Grid2D_Quad_Block &G);
+    Grid2D_Quad_Block_HO(const Grid2D_Quad_Block_HO &G);
     //@}
 
     /* Destructor. */
-    // ~Grid2D_Quad_Block(void);
+    // ~Grid2D_Quad_Block_HO(void);
     // Use automatically generated destructor.
 
     /* Assignment operator. */
-    // Grid2D_Quad_Block operator = (const Grid2D_Quad_Block &Soln);
+    // Grid2D_Quad_Block_HO operator = (const Grid2D_Quad_Block_HO &Soln);
     // Use automatically generated assignment operator.
 
     //@{ @name Allocation and Deallocation
@@ -339,7 +343,7 @@ class Grid2D_Quad_Block{
     //@}
 
     //@{ @name Calculate centroid of cell.
-    Vector2D centroid(const Cell2D &Cell) const;
+    Vector2D centroid(const Cell2D_HO &Cell) const;
     Vector2D centroid(const int ii, const int jj) const;
     Vector2D centroidSW(const int ii, const int jj) const;
     Vector2D centroidSE(const int ii, const int jj) const;
@@ -358,49 +362,49 @@ class Grid2D_Quad_Block{
     //@}
 
     //@{ @name Calculate cell area.
-    double area(const Cell2D &Cell) const;
+    double area(const Cell2D_HO &Cell) const;
     double area(const int ii, const int jj) const;
     //@}
 
     //@{ @name Get cell nodes.
-    Node2D nodeNW(const Cell2D &Cell) const;
-    Node2D nodeNW(const int ii, const int jj) const;
+    Node2D_HO nodeNW(const Cell2D_HO &Cell) const;
+    Node2D_HO nodeNW(const int ii, const int jj) const;
 
-    Node2D nodeNE(const Cell2D &Cell) const;
-    Node2D nodeNE(const int ii, const int jj) const;
+    Node2D_HO nodeNE(const Cell2D_HO &Cell) const;
+    Node2D_HO nodeNE(const int ii, const int jj) const;
 
-    Node2D nodeSE(const Cell2D &Cell) const;
-    Node2D nodeSE(const int ii, const int jj) const;
+    Node2D_HO nodeSE(const Cell2D_HO &Cell) const;
+    Node2D_HO nodeSE(const int ii, const int jj) const;
 
-    Node2D nodeSW(const Cell2D &Cell) const;
-    Node2D nodeSW(const int ii, const int jj) const;
+    Node2D_HO nodeSW(const Cell2D_HO &Cell) const;
+    Node2D_HO nodeSW(const int ii, const int jj) const;
     //@}
 
     //@{ @name Get cell face midpoints.
-    Vector2D xfaceN(const Cell2D &Cell) const;
+    Vector2D xfaceN(const Cell2D_HO &Cell) const;
     Vector2D xfaceN(const int ii, const int jj) const;
 
-    Vector2D xfaceS(const Cell2D &Cell) const;
+    Vector2D xfaceS(const Cell2D_HO &Cell) const;
     Vector2D xfaceS(const int ii, const int jj) const;
 
-    Vector2D xfaceE(const Cell2D &Cell) const;
+    Vector2D xfaceE(const Cell2D_HO &Cell) const;
     Vector2D xfaceE(const int ii, const int jj) const;
 
-    Vector2D xfaceW(const Cell2D &Cell) const;
+    Vector2D xfaceW(const Cell2D_HO &Cell) const;
     Vector2D xfaceW(const int ii, const int jj) const;
     //@}
 
     //@{ @name Get cell face lengths.
-    double lfaceN(const Cell2D &Cell) const;
+    double lfaceN(const Cell2D_HO &Cell) const;
     double lfaceN(const int ii, const int jj) const;
 
-    double lfaceS(const Cell2D &Cell) const;
+    double lfaceS(const Cell2D_HO &Cell) const;
     double lfaceS(const int ii, const int jj) const;
 
-    double lfaceE(const Cell2D &Cell) const;
+    double lfaceE(const Cell2D_HO &Cell) const;
     double lfaceE(const int ii, const int jj) const;
 
-    double lfaceW(const Cell2D &Cell) const;
+    double lfaceW(const Cell2D_HO &Cell) const;
     double lfaceW(const int ii, const int jj) const;
     //@}
 
@@ -409,16 +413,16 @@ class Grid2D_Quad_Block{
     //@}
 
     //@{ @name Get the unit vector normal to the cell faces.
-    Vector2D nfaceN(const Cell2D &Cell) const;
+    Vector2D nfaceN(const Cell2D_HO &Cell) const;
     Vector2D nfaceN(const int ii, const int jj) const;
 
-    Vector2D nfaceS(const Cell2D &Cell) const;
+    Vector2D nfaceS(const Cell2D_HO &Cell) const;
     Vector2D nfaceS(const int ii, const int jj) const;
 
-    Vector2D nfaceE(const Cell2D &Cell) const;
+    Vector2D nfaceE(const Cell2D_HO &Cell) const;
     Vector2D nfaceE(const int ii, const int jj) const;
 
-    Vector2D nfaceW(const Cell2D &Cell) const;
+    Vector2D nfaceW(const Cell2D_HO &Cell) const;
     Vector2D nfaceW(const int ii, const int jj) const;
     //@}
 
@@ -442,25 +446,25 @@ class Grid2D_Quad_Block{
     //@}
 
     //@{ @name Binary arithmetic operators.
-    friend Grid2D_Quad_Block operator +(Grid2D_Quad_Block &G, const Vector2D &V);
-    friend Grid2D_Quad_Block operator -(Grid2D_Quad_Block &G, const Vector2D &V);
-    friend Grid2D_Quad_Block operator *(Grid2D_Quad_Block &G, const double &a);
-    friend Grid2D_Quad_Block operator *(const double &a, Grid2D_Quad_Block &G);
-    friend Grid2D_Quad_Block operator /(Grid2D_Quad_Block &G, const double &a);
-    friend Grid2D_Quad_Block operator ^(Grid2D_Quad_Block &G, const double &a);
+    friend Grid2D_Quad_Block_HO operator +(Grid2D_Quad_Block_HO &G, const Vector2D &V);
+    friend Grid2D_Quad_Block_HO operator -(Grid2D_Quad_Block_HO &G, const Vector2D &V);
+    friend Grid2D_Quad_Block_HO operator *(Grid2D_Quad_Block_HO &G, const double &a);
+    friend Grid2D_Quad_Block_HO operator *(const double &a, Grid2D_Quad_Block_HO &G);
+    friend Grid2D_Quad_Block_HO operator /(Grid2D_Quad_Block_HO &G, const double &a);
+    friend Grid2D_Quad_Block_HO operator ^(Grid2D_Quad_Block_HO &G, const double &a);
     //@}
 
     //@{ @name Input-output operators.
-    friend ostream &operator << (ostream &out_file, const Grid2D_Quad_Block &G);
-    friend istream &operator >> (istream &in_file, Grid2D_Quad_Block &G);
+    friend ostream &operator << (ostream &out_file, const Grid2D_Quad_Block_HO &G);
+    friend istream &operator >> (istream &in_file, Grid2D_Quad_Block_HO &G);
     //@}
 
 };
 
 /*************************************************************************
- * Grid2D_Quad_Block::Grid2D_Quad_Block -- Creation constructor.         *
+ * Grid2D_Quad_Block_HO::Grid2D_Quad_Block_HO -- Creation constructor.         *
  *************************************************************************/
-inline Grid2D_Quad_Block::Grid2D_Quad_Block(void): Integration(this) {
+inline Grid2D_Quad_Block_HO::Grid2D_Quad_Block_HO(void): Integration(this) {
   NNi = 0; INl = 0; INu = 0; NNj = 0; JNl = 0; JNu = 0;
   NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0;
   Nghost = 0;
@@ -474,9 +478,9 @@ inline Grid2D_Quad_Block::Grid2D_Quad_Block(void): Integration(this) {
 }
 
 /**********************************************************************************
- * Grid2D_Quad_Block::Grid2D_Quad_Block(Grid2D_Quad_Block &) -- Copy constructor. *
+ * Grid2D_Quad_Block_HO::Grid2D_Quad_Block_HO(Grid2D_Quad_Block_HO &) -- Copy constructor. *
  *********************************************************************************/
-inline Grid2D_Quad_Block::Grid2D_Quad_Block(const Grid2D_Quad_Block &G): Integration(this) {
+inline Grid2D_Quad_Block_HO::Grid2D_Quad_Block_HO(const Grid2D_Quad_Block_HO &G): Integration(this) {
   NNi = G.NNi; INl = G.INl; INu = G.INu; 
   NNj = G.NNj; JNl = G.JNl; JNu = G.JNu;
   NCi = G.NCi; ICl = G.ICl; ICu = G.ICu; 
@@ -496,25 +500,25 @@ inline Grid2D_Quad_Block::Grid2D_Quad_Block(const Grid2D_Quad_Block &G): Integra
 }
 
 /*************************************************************************
- * Grid2D_Quad_Block::allocate -- Allocate memory.                       *
+ * Grid2D_Quad_Block_HO::allocate -- Allocate memory.                       *
  *************************************************************************/
-inline void Grid2D_Quad_Block::allocate(const int Ni, const int Nj, const int Ng) {
+inline void Grid2D_Quad_Block_HO::allocate(const int Ni, const int Nj, const int Ng) {
    int i; assert( Ni > 1 && Nj > 1 && Ng >= 2);
    NNi = Ni+2*Ng+1; INl = Ng; INu = Ni+Ng; NNj = Nj+2*Ng+1; JNl = Ng; JNu = Nj+Ng;
    NCi = Ni+2*Ng; ICl = Ng; ICu = Ni+Ng-1; NCj = Nj+2*Ng; JCl = Ng; JCu = Nj+Ng-1;
    Nghost = Ng;
-   Node = new Node2D*[NNi];
-   for ( i = 0; i <= NNi-1 ; ++i ) Node[i] = new Node2D[NNj];
-   Cell = new Cell2D*[NCi];
-   for ( i = 0; i <= NCi-1 ; ++i ) Cell[i] = new Cell2D[NCj];
+   Node = new Node2D_HO*[NNi];
+   for ( i = 0; i <= NNi-1 ; ++i ) Node[i] = new Node2D_HO[NNj];
+   Cell = new Cell2D_HO*[NCi];
+   for ( i = 0; i <= NCi-1 ; ++i ) Cell[i] = new Cell2D_HO[NCj];
    BCtypeN = new int[NCi]; BCtypeS = new int[NCi];
    BCtypeE = new int[NCj]; BCtypeW = new int[NCj];
 }
 
 /*************************************************************************
- * Grid2D_Quad_Block::deallocate -- Deallocate memory.                   *
+ * Grid2D_Quad_Block_HO::deallocate -- Deallocate memory.                   *
  *************************************************************************/
-inline void Grid2D_Quad_Block::deallocate(void) {
+inline void Grid2D_Quad_Block_HO::deallocate(void) {
    int i;
    for ( i = 0; i <= NNi-1 ; ++i ) {
       delete []Node[i]; Node[i] = NULL;
@@ -537,20 +541,20 @@ inline void Grid2D_Quad_Block::deallocate(void) {
 }
 
 /*************************************************************************
- * Grid2D_Quad_Block::allocateNodes -- Allocate nodes.                   *
+ * Grid2D_Quad_Block_HO::allocateNodes -- Allocate nodes.                   *
  *************************************************************************/
-inline void Grid2D_Quad_Block::allocateNodes(const int Ni, const int Nj, const int Ng) {
+inline void Grid2D_Quad_Block_HO::allocateNodes(const int Ni, const int Nj, const int Ng) {
    int i; assert( Ni > 1 && Nj > 1 && Ng >= 2);
    NNi = Ni+2*Ng+1; INl = Ng; INu = Ni+Ng;
    NNj = Nj+2*Ng+1; JNl = Ng; JNu = Nj+Ng;
-   Node = new Node2D*[NNi];
-   for ( i = 0; i <= NNi-1 ; ++i ) Node[i] = new Node2D[NNj];
+   Node = new Node2D_HO*[NNi];
+   for ( i = 0; i <= NNi-1 ; ++i ) Node[i] = new Node2D_HO[NNj];
 }
 
 /*************************************************************************
- * Grid2D_Quad_Block::deallocateNodes -- Deallocate Nodes.               *
+ * Grid2D_Quad_Block_HO::deallocateNodes -- Deallocate Nodes.               *
  *************************************************************************/
-inline void Grid2D_Quad_Block::deallocateNodes(void) {
+inline void Grid2D_Quad_Block_HO::deallocateNodes(void) {
    int i;
    for ( i = 0; i <= NNi-1 ; ++i ) {
       delete []Node[i]; Node[i] = NULL;
@@ -560,23 +564,23 @@ inline void Grid2D_Quad_Block::deallocateNodes(void) {
 }
 
 /*************************************************************************
- * Grid2D_Quad_Block::allocateCells -- Allocate cells.                   *
+ * Grid2D_Quad_Block_HO::allocateCells -- Allocate cells.                   *
  *************************************************************************/
-inline void Grid2D_Quad_Block::allocateCells(const int Ni, const int Nj, const int Ng) {
+inline void Grid2D_Quad_Block_HO::allocateCells(const int Ni, const int Nj, const int Ng) {
    int i; assert( Ni > 1 && Nj > 1 && Ng >= 2);
    NCi = Ni+2*Ng; ICl = Ng; ICu = Ni+Ng-1;
    NCj = Nj+2*Ng; JCl = Ng; JCu = Nj+Ng-1;
    Nghost = Ng;
-   Cell = new Cell2D*[NNi];
-   for ( i = 0; i <= NCi-1 ; ++i ) Cell[i] = new Cell2D[NCj];
+   Cell = new Cell2D_HO*[NNi];
+   for ( i = 0; i <= NCi-1 ; ++i ) Cell[i] = new Cell2D_HO[NCj];
    BCtypeN = new int[NCi]; BCtypeS = new int[NCi];
    BCtypeE = new int[NCj]; BCtypeW = new int[NCj];
 }
 
 /*************************************************************************
- * Grid2D_Quad_Block::deallocateCells -- Deallocate Cells.               *
+ * Grid2D_Quad_Block_HO::deallocateCells -- Deallocate Cells.               *
  *************************************************************************/
-inline void Grid2D_Quad_Block::deallocateCells(void) {
+inline void Grid2D_Quad_Block_HO::deallocateCells(void) {
    int i;
    for ( i = 0; i <= NCi-1 ; ++i ) {
       delete []Cell[i]; Cell[i] = NULL;
@@ -588,7 +592,7 @@ inline void Grid2D_Quad_Block::deallocateCells(void) {
 }
 
 /**********************************************************************
- * Grid2D_Quad_Block::centroid -- Cell centre.                        *
+ * Grid2D_Quad_Block_HO::centroid -- Cell centre.                        *
  *                                                                    *
  * The centroid of a triangular cell can be determined from the       *
  * average of the three distinct vertices.  However, this method is   *
@@ -598,11 +602,11 @@ inline void Grid2D_Quad_Block::deallocateCells(void) {
  * sub-triangles.                                                     *
  *                                                                    *
  **********************************************************************/
-inline Vector2D Grid2D_Quad_Block::centroid(const Cell2D &Cell) const {
+inline Vector2D Grid2D_Quad_Block_HO::centroid(const Cell2D_HO &Cell) const {
   return centroid(Cell.I,Cell.J);
 }
 
-inline Vector2D Grid2D_Quad_Block::centroid(const int ii, const int jj) const {
+inline Vector2D Grid2D_Quad_Block_HO::centroid(const int ii, const int jj) const {
   Vector2D X1, X2, X3, X4, Xc1, Xc2, X;
   double A1, A2;
   // Cell nodes in counter-clockwise order.
@@ -623,7 +627,7 @@ inline Vector2D Grid2D_Quad_Block::centroid(const int ii, const int jj) const {
   return 0.25*(Node[ii][jj].X + Node[ii+1][jj].X + Node[ii+1][jj+1].X + Node[ii][jj+1].X);
 }
 
-inline Vector2D Grid2D_Quad_Block::centroidSW(const int ii, const int jj) const {
+inline Vector2D Grid2D_Quad_Block_HO::centroidSW(const int ii, const int jj) const {
   Vector2D X1, X2, X3, X4, Xc1, Xc2;
   double A1, A2;
   // Cell nodes in counter-clockwise order.
@@ -644,7 +648,7 @@ inline Vector2D Grid2D_Quad_Block::centroidSW(const int ii, const int jj) const 
   return (X1 + X2 + X3 + X4)/4.0;
 }
 
-inline Vector2D Grid2D_Quad_Block::centroidSE(const int ii, const int jj) const {
+inline Vector2D Grid2D_Quad_Block_HO::centroidSE(const int ii, const int jj) const {
   Vector2D X1, X2, X3, X4, Xc1, Xc2;
   double A1, A2;
   // Cell nodes in counter-clockwise order.
@@ -665,7 +669,7 @@ inline Vector2D Grid2D_Quad_Block::centroidSE(const int ii, const int jj) const 
   return (X1 + X2 + X3 + X4)/4.0;
 }
 
-inline Vector2D Grid2D_Quad_Block::centroidNW(const int ii, const int jj) const {
+inline Vector2D Grid2D_Quad_Block_HO::centroidNW(const int ii, const int jj) const {
   Vector2D X1, X2, X3, X4, Xc1, Xc2;
   double A1, A2;
   // Cell nodes in counter-clockwise order.
@@ -686,7 +690,7 @@ inline Vector2D Grid2D_Quad_Block::centroidNW(const int ii, const int jj) const 
   return (X1 + X2 + X3 + X4)/4.0;
 }
 
-inline Vector2D Grid2D_Quad_Block::centroidNE(const int ii, const int jj) const {
+inline Vector2D Grid2D_Quad_Block_HO::centroidNE(const int ii, const int jj) const {
   Vector2D X1, X2, X3, X4, Xc1, Xc2;
   double A1, A2;
   // Cell nodes in counter-clockwise order.
@@ -708,16 +712,16 @@ inline Vector2D Grid2D_Quad_Block::centroidNE(const int ii, const int jj) const 
 }
 
 /*************************************************************************
- * Grid2D_Quad_Block::area -- Cell area.                                 *
+ * Grid2D_Quad_Block_HO::area -- Cell area.                                 *
  *************************************************************************/
-inline double Grid2D_Quad_Block::area(const Cell2D &Cell) const {
+inline double Grid2D_Quad_Block_HO::area(const Cell2D_HO &Cell) const {
     return (HALF*(((Node[Cell.I+1][Cell.J].X-Node[Cell.I][Cell.J].X)^(
                     Node[Cell.I][Cell.J+1].X-Node[Cell.I][Cell.J].X)) +
                   ((Node[Cell.I+1][Cell.J+1].X-Node[Cell.I][Cell.J+1].X)^(
                     Node[Cell.I+1][Cell.J+1].X-Node[Cell.I+1][Cell.J].X))));
 }
 
-inline double Grid2D_Quad_Block::area(const int ii, const int jj) const {
+inline double Grid2D_Quad_Block_HO::area(const int ii, const int jj) const {
     return (HALF*(((Node[ii+1][jj].X-Node[ii][jj].X)^(
                     Node[ii][jj+1].X-Node[ii][jj].X)) +
                   ((Node[ii+1][jj+1].X-Node[ii][jj+1].X)^(
@@ -725,125 +729,125 @@ inline double Grid2D_Quad_Block::area(const int ii, const int jj) const {
 }
 
 /*************************************************************************
- * Grid2D_Quad_Block::node?? -- Get cell nodes.                          *
+ * Grid2D_Quad_Block_HO::node?? -- Get cell nodes.                          *
  *************************************************************************/
-inline Node2D Grid2D_Quad_Block::nodeNW(const Cell2D &Cell) const {
+inline Node2D_HO Grid2D_Quad_Block_HO::nodeNW(const Cell2D_HO &Cell) const {
     return (Node[Cell.I][Cell.J+1]);
 }
 
-inline Node2D Grid2D_Quad_Block::nodeNW(const int ii, const int jj) const {
+inline Node2D_HO Grid2D_Quad_Block_HO::nodeNW(const int ii, const int jj) const {
     return (Node[ii][jj+1]);
 }
 
-inline Node2D Grid2D_Quad_Block::nodeNE(const Cell2D &Cell) const {
+inline Node2D_HO Grid2D_Quad_Block_HO::nodeNE(const Cell2D_HO &Cell) const {
     return (Node[Cell.I+1][Cell.J+1]);
 }
 
-inline Node2D Grid2D_Quad_Block::nodeNE(const int ii, const int jj) const {
+inline Node2D_HO Grid2D_Quad_Block_HO::nodeNE(const int ii, const int jj) const {
     return (Node[ii+1][jj+1]);
 }
 
-inline Node2D Grid2D_Quad_Block::nodeSE(const Cell2D &Cell) const {
+inline Node2D_HO Grid2D_Quad_Block_HO::nodeSE(const Cell2D_HO &Cell) const {
     return (Node[Cell.I+1][Cell.J]);
 }
 
-inline Node2D Grid2D_Quad_Block::nodeSE(const int ii, const int jj) const {
+inline Node2D_HO Grid2D_Quad_Block_HO::nodeSE(const int ii, const int jj) const {
     return (Node[ii+1][jj]);
 }
 
-inline Node2D Grid2D_Quad_Block::nodeSW(const Cell2D &Cell) const {
+inline Node2D_HO Grid2D_Quad_Block_HO::nodeSW(const Cell2D_HO &Cell) const {
     return (Node[Cell.I][Cell.J]);
 }
 
-inline Node2D Grid2D_Quad_Block::nodeSW(const int ii, const int jj) const {
+inline Node2D_HO Grid2D_Quad_Block_HO::nodeSW(const int ii, const int jj) const {
     return (Node[ii][jj]);
 }
 
 /*************************************************************************
- * Grid2D_Quad_Block::xface? -- Get face midpoints.                      *
+ * Grid2D_Quad_Block_HO::xface? -- Get face midpoints.                      *
  *************************************************************************/
-inline Vector2D Grid2D_Quad_Block::xfaceN(const Cell2D &Cell) const {
+inline Vector2D Grid2D_Quad_Block_HO::xfaceN(const Cell2D_HO &Cell) const {
     return (HALF*(Node[Cell.I][Cell.J+1].X+Node[Cell.I+1][Cell.J+1].X));
 }
 
-inline Vector2D Grid2D_Quad_Block::xfaceN(const int ii, const int jj) const {
+inline Vector2D Grid2D_Quad_Block_HO::xfaceN(const int ii, const int jj) const {
     return (HALF*(Node[ii][jj+1].X+Node[ii+1][jj+1].X));
 }
 
-inline Vector2D Grid2D_Quad_Block::xfaceS(const Cell2D &Cell) const {
+inline Vector2D Grid2D_Quad_Block_HO::xfaceS(const Cell2D_HO &Cell) const {
     return (HALF*(Node[Cell.I][Cell.J].X+Node[Cell.I+1][Cell.J].X));
 }
 
-inline Vector2D Grid2D_Quad_Block::xfaceS(const int ii, const int jj) const {
+inline Vector2D Grid2D_Quad_Block_HO::xfaceS(const int ii, const int jj) const {
     return (HALF*(Node[ii][jj].X+Node[ii+1][jj].X));
 }
 
-inline Vector2D Grid2D_Quad_Block::xfaceE(const Cell2D &Cell) const {
+inline Vector2D Grid2D_Quad_Block_HO::xfaceE(const Cell2D_HO &Cell) const {
     return (HALF*(Node[Cell.I+1][Cell.J].X+Node[Cell.I+1][Cell.J+1].X));
 }
 
-inline Vector2D Grid2D_Quad_Block::xfaceE(const int ii, const int jj) const {
+inline Vector2D Grid2D_Quad_Block_HO::xfaceE(const int ii, const int jj) const {
     return (HALF*(Node[ii+1][jj].X+Node[ii+1][jj+1].X));
 }
 
-inline Vector2D Grid2D_Quad_Block::xfaceW(const Cell2D &Cell) const {
+inline Vector2D Grid2D_Quad_Block_HO::xfaceW(const Cell2D_HO &Cell) const {
     return (HALF*(Node[Cell.I][Cell.J].X+Node[Cell.I][Cell.J+1].X));
 }
 
-inline Vector2D Grid2D_Quad_Block::xfaceW(const int ii, const int jj) const {
+inline Vector2D Grid2D_Quad_Block_HO::xfaceW(const int ii, const int jj) const {
     return (HALF*(Node[ii][jj].X+Node[ii][jj+1].X));
 }
 
 /*************************************************************************
- * Grid2D_Quad_Block::lface? -- Get face lengths.                        *
+ * Grid2D_Quad_Block_HO::lface? -- Get face lengths.                        *
  *************************************************************************/
-inline double Grid2D_Quad_Block::lfaceN(const Cell2D &Cell) const {
+inline double Grid2D_Quad_Block_HO::lfaceN(const Cell2D_HO &Cell) const {
     return (abs(Node[Cell.I][Cell.J+1].X-Node[Cell.I+1][Cell.J+1].X));
 }
 
-inline double Grid2D_Quad_Block::lfaceN(const int ii, const int jj) const {
+inline double Grid2D_Quad_Block_HO::lfaceN(const int ii, const int jj) const {
     return (abs(Node[ii][jj+1].X-Node[ii+1][jj+1].X));
 }
 
-inline double Grid2D_Quad_Block::lfaceS(const Cell2D &Cell) const {
+inline double Grid2D_Quad_Block_HO::lfaceS(const Cell2D_HO &Cell) const {
     return (abs(Node[Cell.I][Cell.J].X-Node[Cell.I+1][Cell.J].X));
 }
 
-inline double Grid2D_Quad_Block::lfaceS(const int ii, const int jj) const {
+inline double Grid2D_Quad_Block_HO::lfaceS(const int ii, const int jj) const {
     return (abs(Node[ii][jj].X-Node[ii+1][jj].X));
 }
 
-inline double Grid2D_Quad_Block::lfaceE(const Cell2D &Cell) const {
+inline double Grid2D_Quad_Block_HO::lfaceE(const Cell2D_HO &Cell) const {
     return (abs(Node[Cell.I+1][Cell.J].X-Node[Cell.I+1][Cell.J+1].X));
 }
 
-inline double Grid2D_Quad_Block::lfaceE(const int ii, const int jj) const {
+inline double Grid2D_Quad_Block_HO::lfaceE(const int ii, const int jj) const {
     return (abs(Node[ii+1][jj].X-Node[ii+1][jj+1].X));
 }
 
-inline double Grid2D_Quad_Block::lfaceW(const Cell2D &Cell) const {
+inline double Grid2D_Quad_Block_HO::lfaceW(const Cell2D_HO &Cell) const {
     return (abs(Node[Cell.I][Cell.J].X-Node[Cell.I][Cell.J+1].X));
 }
 
-inline double Grid2D_Quad_Block::lfaceW(const int ii, const int jj) const {
+inline double Grid2D_Quad_Block_HO::lfaceW(const int ii, const int jj) const {
     return (abs(Node[ii][jj].X-Node[ii][jj+1].X));
 }
 
 /*************************************************************************
- * Grid2D_Quad_Block::cell_perimeter -- Get cell perimeter.              *
+ * Grid2D_Quad_Block_HO::cell_perimeter -- Get cell perimeter.              *
  *************************************************************************/
-inline double Grid2D_Quad_Block::cell_perimeter(const int ii, const int jj) const {
+inline double Grid2D_Quad_Block_HO::cell_perimeter(const int ii, const int jj) const {
   return lfaceE(ii,jj)+lfaceN(ii,jj)+lfaceW(ii,jj)+lfaceS(ii,jj);
 }
 
 /*************************************************************************
- * Grid2D_Quad_Block::nface? -- Get cell face normals.                   *
+ * Grid2D_Quad_Block_HO::nface? -- Get cell face normals.                   *
  *************************************************************************/
-inline Vector2D Grid2D_Quad_Block::nfaceN(const Cell2D &Cell) const {
+inline Vector2D Grid2D_Quad_Block_HO::nfaceN(const Cell2D_HO &Cell) const {
   return nfaceN(Cell.I,Cell.J);
 }
 
-inline Vector2D Grid2D_Quad_Block::nfaceN(const int ii, const int jj) const {
+inline Vector2D Grid2D_Quad_Block_HO::nfaceN(const int ii, const int jj) const {
   if(lfaceN(ii,jj) > NANO*cell_perimeter(ii,jj)) {
        return (Vector2D( (Node[ii][jj+1].X.y - Node[ii+1][jj+1].X.y),
 			 -(Node[ii][jj+1].X.x - Node[ii+1][jj+1].X.x))/
@@ -853,11 +857,11 @@ inline Vector2D Grid2D_Quad_Block::nfaceN(const int ii, const int jj) const {
      }
 }
 
-inline Vector2D Grid2D_Quad_Block::nfaceS(const Cell2D &Cell) const {
+inline Vector2D Grid2D_Quad_Block_HO::nfaceS(const Cell2D_HO &Cell) const {
   return nfaceS(Cell.I,Cell.J);
 }
 
-inline Vector2D Grid2D_Quad_Block::nfaceS(const int ii, const int jj) const {
+inline Vector2D Grid2D_Quad_Block_HO::nfaceS(const int ii, const int jj) const {
   if(lfaceS(ii,jj) > NANO*cell_perimeter(ii,jj)) {
     return (Vector2D( (Node[ii+1][jj].X.y - Node[ii][jj].X.y),
 		      -(Node[ii+1][jj].X.x - Node[ii][jj].X.x))/
@@ -867,11 +871,11 @@ inline Vector2D Grid2D_Quad_Block::nfaceS(const int ii, const int jj) const {
   }
 }
 
-inline Vector2D Grid2D_Quad_Block::nfaceE(const Cell2D &Cell) const {
+inline Vector2D Grid2D_Quad_Block_HO::nfaceE(const Cell2D_HO &Cell) const {
   return nfaceE(Cell.I,Cell.J);
 }
 
-inline Vector2D Grid2D_Quad_Block::nfaceE(const int ii, const int jj) const {
+inline Vector2D Grid2D_Quad_Block_HO::nfaceE(const int ii, const int jj) const {
   if(lfaceE(ii,jj) > NANO*cell_perimeter(ii,jj)) {
     return (Vector2D( (Node[ii+1][jj+1].X.y - Node[ii+1][jj].X.y),
 		      -(Node[ii+1][jj+1].X.x - Node[ii+1][jj].X.x))/
@@ -881,11 +885,11 @@ inline Vector2D Grid2D_Quad_Block::nfaceE(const int ii, const int jj) const {
   }
 }
 
-inline Vector2D Grid2D_Quad_Block::nfaceW(const Cell2D &Cell) const {
+inline Vector2D Grid2D_Quad_Block_HO::nfaceW(const Cell2D_HO &Cell) const {
   return nfaceW(Cell.I,Cell.J);
 }
 
-inline Vector2D Grid2D_Quad_Block::nfaceW(const int ii, const int jj) const {
+inline Vector2D Grid2D_Quad_Block_HO::nfaceW(const int ii, const int jj) const {
   if(lfaceW(ii,jj) > NANO*cell_perimeter(ii,jj)) {
     return (Vector2D( (Node[ii][jj].X.y - Node[ii][jj+1].X.y),
 		      -(Node[ii][jj].X.x - Node[ii][jj+1].X.x))/
@@ -896,10 +900,10 @@ inline Vector2D Grid2D_Quad_Block::nfaceW(const int ii, const int jj) const {
 }
 
 /*************************************************************************
- * Grid2D_Quad_Block::dNdC -- Influence coefficients based on            *
+ * Grid2D_Quad_Block_HO::dNdC -- Influence coefficients based on            *
  *                            bilinear interpolation.                    *
  *************************************************************************/
-inline double Grid2D_Quad_Block::dNdC(const int ii, const int jj, 
+inline double Grid2D_Quad_Block_HO::dNdC(const int ii, const int jj, 
                                       const int cell_orientation) const {
   double ax, bx, cx, dx, ay, by, cy, dy, aa, bb, cc, x, y, 
          eta1, zeta1, eta2, zeta2, eta, zeta;
@@ -988,7 +992,7 @@ inline double Grid2D_Quad_Block::dNdC(const int ii, const int jj,
 }
 
 /*************************************************************************
- * Grid2D_Quad_Block::dFacedC -- Influence coefficients based on         *
+ * Grid2D_Quad_Block_HO::dFacedC -- Influence coefficients based on         *
  *                               bilinear interpolation.                 *
  *************************************************************************/
 //  dFacedC:
@@ -1036,7 +1040,7 @@ inline double Grid2D_Quad_Block::dNdC(const int ii, const int jj,
 //  face.  So "left_node_weight" is zero. Also the node to the right of 
 //  the face is the NW node of the cell to the east.
 //
-inline void Grid2D_Quad_Block::dFacedC(double &left_node_weight, 
+inline void Grid2D_Quad_Block_HO::dFacedC(double &left_node_weight, 
                                        double &right_node_weight, 
                                        const int i, const int j, const int face, 
                                        const int cell_orientation) const {
@@ -1146,7 +1150,7 @@ inline void Grid2D_Quad_Block::dFacedC(double &left_node_weight,
 }
 
 /*************************************************************************
- * Grid2D_Quad_Block::dDiamondPathdC -- Influence coefficients for       *
+ * Grid2D_Quad_Block_HO::dDiamondPathdC -- Influence coefficients for       *
  *                                      diamond path gradient            *
  *                                      reconstruction of face solution  *
  *                                      gradients.                       *
@@ -1162,7 +1166,7 @@ inline void Grid2D_Quad_Block::dFacedC(double &left_node_weight,
 //  
 //  This function finds d_dWdx_dW and the corresponding d_dWdy_dW. 
 //
-inline void Grid2D_Quad_Block::dDiamondPathdC(double &d_dWdx_dW, double &d_dWdy_dW, 
+inline void Grid2D_Quad_Block_HO::dDiamondPathdC(double &d_dWdx_dW, double &d_dWdy_dW, 
                                               const int i, const int j, const int face, 
                                               const double &face_left_node_weight, 
                                               const double &face_right_node_weight, 
@@ -1331,9 +1335,9 @@ inline void Grid2D_Quad_Block::dDiamondPathdC(double &d_dWdx_dW, double &d_dWdy_
 }
 
 /************************************************************************
- * Grid2D_Quad_Block::set_BCs -- Change a block's BC's.                 *
+ * Grid2D_Quad_Block_HO::set_BCs -- Change a block's BC's.                 *
  ************************************************************************/
-inline void Grid2D_Quad_Block::set_BCs(const int& FACE, const int& BC){
+inline void Grid2D_Quad_Block_HO::set_BCs(const int& FACE, const int& BC){
   switch(FACE){
     case NORTH:
       for ( int i = ICl - Nghost; i <=  ICu + Nghost; i++) {
@@ -1363,10 +1367,10 @@ inline void Grid2D_Quad_Block::set_BCs(const int& FACE, const int& BC){
 }
 
 /********************************************************
- * Grid2D_Quad_Block -- Binary arithmetic operators.    *
+ * Grid2D_Quad_Block_HO -- Binary arithmetic operators.    *
  ********************************************************/
 // Shift operators.
-inline Grid2D_Quad_Block operator +(Grid2D_Quad_Block &G, const Vector2D &V) {
+inline Grid2D_Quad_Block_HO operator +(Grid2D_Quad_Block_HO &G, const Vector2D &V) {
   int i, j;
   for ( j = G.JNl-G.Nghost ; j <= G.JNu+G.Nghost; ++j ) {
      for ( i = G.INl-G.Nghost ; i <= G.INu+G.Nghost; ++i ) {
@@ -1386,7 +1390,7 @@ inline Grid2D_Quad_Block operator +(Grid2D_Quad_Block &G, const Vector2D &V) {
   return (G);
 }
 
-inline Grid2D_Quad_Block operator -(Grid2D_Quad_Block &G, const Vector2D &V) {
+inline Grid2D_Quad_Block_HO operator -(Grid2D_Quad_Block_HO &G, const Vector2D &V) {
   int i, j;
   for ( j = G.JNl-G.Nghost ; j <= G.JNu+G.Nghost; ++j ) {
      for ( i = G.INl-G.Nghost ; i <= G.INu+G.Nghost; ++i ) {
@@ -1407,7 +1411,7 @@ inline Grid2D_Quad_Block operator -(Grid2D_Quad_Block &G, const Vector2D &V) {
 }
 
 // Scaling operators.
-inline Grid2D_Quad_Block operator *(Grid2D_Quad_Block &G, const double &a) {
+inline Grid2D_Quad_Block_HO operator *(Grid2D_Quad_Block_HO &G, const double &a) {
   int i, j;
   for ( j = G.JNl-G.Nghost ; j <= G.JNu+G.Nghost; ++j ) {
      for ( i = G.INl-G.Nghost ; i <= G.INu+G.Nghost; ++i ) {
@@ -1427,7 +1431,7 @@ inline Grid2D_Quad_Block operator *(Grid2D_Quad_Block &G, const double &a) {
   return (G);
 }
 
-inline Grid2D_Quad_Block operator *(const double &a, Grid2D_Quad_Block &G) {
+inline Grid2D_Quad_Block_HO operator *(const double &a, Grid2D_Quad_Block_HO &G) {
   int i, j;
   for ( j = G.JNl-G.Nghost ; j <= G.JNu+G.Nghost; ++j ) {
      for ( i = G.INl-G.Nghost ; i <= G.INu+G.Nghost; ++i ) {
@@ -1451,7 +1455,7 @@ inline Grid2D_Quad_Block operator *(const double &a, Grid2D_Quad_Block &G) {
   return (G);
 }
 
-inline Grid2D_Quad_Block operator /(Grid2D_Quad_Block &G, const double &a) {
+inline Grid2D_Quad_Block_HO operator /(Grid2D_Quad_Block_HO &G, const double &a) {
   int i, j;
   for ( j = G.JNl-G.Nghost ; j <= G.JNu+G.Nghost; ++j ) {
      for ( i = G.INl-G.Nghost ; i <= G.INu+G.Nghost; ++i ) {
@@ -1476,7 +1480,7 @@ inline Grid2D_Quad_Block operator /(Grid2D_Quad_Block &G, const double &a) {
 }
 
 // Rotation operator.
-inline Grid2D_Quad_Block operator ^(Grid2D_Quad_Block &G, const double &a) {
+inline Grid2D_Quad_Block_HO operator ^(Grid2D_Quad_Block_HO &G, const double &a) {
   int i, j; double cos_angle, sin_angle; Vector2D X;
   cos_angle = cos(-a); sin_angle = sin(-a);
   for ( j = G.JNl-G.Nghost ; j <= G.JNu+G.Nghost; ++j ) {
@@ -1502,10 +1506,10 @@ inline Grid2D_Quad_Block operator ^(Grid2D_Quad_Block &G, const double &a) {
 }
 
 /*************************************************************************
- * Grid2D_Quad_Block -- Input-output operators.                          *
+ * Grid2D_Quad_Block_HO -- Input-output operators.                          *
  *************************************************************************/
 inline ostream &operator << (ostream &out_file, 
-                             const Grid2D_Quad_Block &G) {
+                             const Grid2D_Quad_Block_HO &G) {
   int i, j;
   out_file << G.NNi << " " << G.INl << " " << G.INu << "\n";
   out_file << G.NNj << " " << G.JNl << " " << G.JNu << "\n";
@@ -1564,7 +1568,7 @@ inline ostream &operator << (ostream &out_file,
 }
 
 inline istream &operator >> (istream &in_file, 
-                             Grid2D_Quad_Block &G) {
+                             Grid2D_Quad_Block_HO &G) {
   int i, j, ni, il, iu, nj, jl, ju, ng;
   in_file.setf(ios::skipws);
   in_file >> ni >> il >> iu;
@@ -1658,22 +1662,23 @@ inline istream &operator >> (istream &in_file,
   return (in_file);
 }
 
+#if 0
 /*************************************************************************
- * Grid2D_Quad_Block -- External subroutines for single grid block.      *
+ * Grid2D_Quad_Block_HO -- External subroutines for single grid block.      *
  *************************************************************************/
 
-extern void Create_Quad_Block(Grid2D_Quad_Block &Grid,
+extern void Create_Quad_Block(Grid2D_Quad_Block_HO &Grid,
 		              const int Number_of_Cells_Idir,
 		              const int Number_of_Cells_Jdir,
 			      const int Number_of_Ghost_Cells);
 
-extern void Create_Quad_Block(Grid2D_Quad_Block &Grid,
+extern void Create_Quad_Block(Grid2D_Quad_Block_HO &Grid,
                               char *Bnd_Spline_File_Name_ptr,
 		              const int Number_of_Cells_Idir,
 		              const int Number_of_Cells_Jdir,
 			      const int Number_of_Ghost_Cells);
 
-extern void Create_Quad_Block(Grid2D_Quad_Block &Grid,
+extern void Create_Quad_Block(Grid2D_Quad_Block_HO &Grid,
                               Spline2D &Bnd_Spline_North,
                               Spline2D &Bnd_Spline_South,
                               Spline2D &Bnd_Spline_East,
@@ -1693,18 +1698,18 @@ extern void Create_Quad_Block(Grid2D_Quad_Block &Grid,
      		              const int Orthogonal_East,
                               const int Orthogonal_West);
 
-extern void Broadcast_Quad_Block(Grid2D_Quad_Block &Grid);
+extern void Broadcast_Quad_Block(Grid2D_Quad_Block_HO &Grid);
 
 #ifdef _MPI_VERSION
-extern void Broadcast_Quad_Block(Grid2D_Quad_Block &Grid,
+extern void Broadcast_Quad_Block(Grid2D_Quad_Block_HO &Grid,
                                  MPI::Intracomm &Communicator, 
                                  const int Source_CPU);
 #endif
 
-extern void Smooth_Quad_Block(Grid2D_Quad_Block &Grid,
+extern void Smooth_Quad_Block(Grid2D_Quad_Block_HO &Grid,
 		              const int Number_of_Iterations);
 
-extern void Smooth_Rocket_Motor(Grid2D_Quad_Block &Grid,
+extern void Smooth_Rocket_Motor(Grid2D_Quad_Block_HO &Grid,
 				const double &Length_Chamber,
 				const double &Radius_Chamber,
 				const double &Length_Chamber_To_Throat,
@@ -1721,166 +1726,166 @@ extern void Smooth_Rocket_Motor(Grid2D_Quad_Block &Grid,
 				const int &ri,const int &rj,
 				const int &NRi,const int &NRj);
 
-extern void Set_BCs(Grid2D_Quad_Block &Grid);
+extern void Set_BCs(Grid2D_Quad_Block_HO &Grid);
 
-extern void Update_Exterior_Nodes(Grid2D_Quad_Block &Grid);
+extern void Update_Exterior_Nodes(Grid2D_Quad_Block_HO &Grid);
 
-extern void Update_Corner_Ghost_Nodes(Grid2D_Quad_Block &Grid);
+extern void Update_Corner_Ghost_Nodes(Grid2D_Quad_Block_HO &Grid);
 
-extern void Update_Cells(Grid2D_Quad_Block &Grid);
+extern void Update_Cells(Grid2D_Quad_Block_HO &Grid);
 
-extern int Check_Quad_Block(Grid2D_Quad_Block &Grid);
+extern int Check_Quad_Block(Grid2D_Quad_Block_HO &Grid);
 
-extern void Write_Quad_Block_Definition(Grid2D_Quad_Block &Grid,
+extern void Write_Quad_Block_Definition(Grid2D_Quad_Block_HO &Grid,
                                         ostream &Out_File);
 
-extern void Read_Quad_Block_Definition(Grid2D_Quad_Block &Grid,
+extern void Read_Quad_Block_Definition(Grid2D_Quad_Block_HO &Grid,
                                        istream &In_File);
 
-extern void Write_Quad_Block(Grid2D_Quad_Block &Grid,
+extern void Write_Quad_Block(Grid2D_Quad_Block_HO &Grid,
 	                     ostream &Out_File);
 
-extern void Read_Quad_Block(Grid2D_Quad_Block &Grid,
+extern void Read_Quad_Block(Grid2D_Quad_Block_HO &Grid,
 	                    istream &In_File);
 
-extern void Copy_Quad_Block(Grid2D_Quad_Block &Grid1,
-		            const Grid2D_Quad_Block &Grid2);
+extern void Copy_Quad_Block(Grid2D_Quad_Block_HO &Grid1,
+		            const Grid2D_Quad_Block_HO &Grid2);
 
-extern void Translate_Quad_Block(Grid2D_Quad_Block &Grid,
+extern void Translate_Quad_Block(Grid2D_Quad_Block_HO &Grid,
 	      	                 const Vector2D &V);
 
-extern void Scale_Quad_Block(Grid2D_Quad_Block &Grid,
+extern void Scale_Quad_Block(Grid2D_Quad_Block_HO &Grid,
 	      	             const double &Scaling_Factor);
 
-extern void Rotate_Quad_Block(Grid2D_Quad_Block &Grid,
+extern void Rotate_Quad_Block(Grid2D_Quad_Block_HO &Grid,
 	      	              const double &Angle);
 
-extern void Reflect_Quad_Block(Grid2D_Quad_Block &Grid);
+extern void Reflect_Quad_Block(Grid2D_Quad_Block_HO &Grid);
 
-extern void Output_Tecplot(Grid2D_Quad_Block &Grid,
+extern void Output_Tecplot(Grid2D_Quad_Block_HO &Grid,
                            const int Block_Number,
                            const int Output_Title,
  	                   ostream &Out_File);
 
-extern void Output_Nodes_Tecplot(Grid2D_Quad_Block &Grid,
+extern void Output_Nodes_Tecplot(Grid2D_Quad_Block_HO &Grid,
                                  const int Block_Number,
                                  const int Output_Title,
  	                         ostream &Out_File);
 
-extern void Output_Cells_Tecplot(Grid2D_Quad_Block &Grid,
+extern void Output_Cells_Tecplot(Grid2D_Quad_Block_HO &Grid,
                                  const int Block_Number,
                                  const int Output_Title,
  	                         ostream &Out_File);
 
-extern void Output_Gnuplot(Grid2D_Quad_Block &Grid,
+extern void Output_Gnuplot(Grid2D_Quad_Block_HO &Grid,
                            const int Block_Number,
                            const int Output_Title,
  	                   ostream &Out_File);
 
-extern void Double_Mesh_Resolution(Grid2D_Quad_Block &Grid_Double,
-                                   Grid2D_Quad_Block &Grid_Original);
+extern void Double_Mesh_Resolution(Grid2D_Quad_Block_HO &Grid_Double,
+                                   Grid2D_Quad_Block_HO &Grid_Original);
 
-extern void Half_Mesh_Resolution(Grid2D_Quad_Block &Grid_Half,
-                                 Grid2D_Quad_Block &Grid_Original);
+extern void Half_Mesh_Resolution(Grid2D_Quad_Block_HO &Grid_Half,
+                                 Grid2D_Quad_Block_HO &Grid_Original);
 
-extern void Refine_Mesh(Grid2D_Quad_Block &Grid_Fine,
-                        Grid2D_Quad_Block &Grid_Original,
+extern void Refine_Mesh(Grid2D_Quad_Block_HO &Grid_Fine,
+                        Grid2D_Quad_Block_HO &Grid_Original,
                         const int Sector);
 
-extern void Coarsen_Mesh(Grid2D_Quad_Block &Grid_Coarse,
-                         Grid2D_Quad_Block &Grid_Original_SW,
-                         Grid2D_Quad_Block &Grid_Original_SE,
-                         Grid2D_Quad_Block &Grid_Original_NW,
-                         Grid2D_Quad_Block &Grid_Original_NE);
+extern void Coarsen_Mesh(Grid2D_Quad_Block_HO &Grid_Coarse,
+                         Grid2D_Quad_Block_HO &Grid_Original_SW,
+                         Grid2D_Quad_Block_HO &Grid_Original_SE,
+                         Grid2D_Quad_Block_HO &Grid_Original_NW,
+                         Grid2D_Quad_Block_HO &Grid_Original_NE);
 
-extern void Fix_Refined_Mesh_Boundaries(Grid2D_Quad_Block &Grid,
+extern void Fix_Refined_Mesh_Boundaries(Grid2D_Quad_Block_HO &Grid,
                                         const int Fix_North_Boundary,
                                         const int Fix_South_Boundary,
                                         const int Fix_East_Boundary,
                                         const int Fix_West_Boundary);
 
-extern void Unfix_Refined_Mesh_Boundaries(Grid2D_Quad_Block &Grid);
+extern void Unfix_Refined_Mesh_Boundaries(Grid2D_Quad_Block_HO &Grid);
 
 /*************************************************************************
- * Grid2D_Quad_Block -- External subroutines for 2D array of grid blocks.*
+ * Grid2D_Quad_Block_HO -- External subroutines for 2D array of grid blocks.*
  *************************************************************************/
 
-extern Grid2D_Quad_Block** Allocate_Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
+extern Grid2D_Quad_Block_HO** Allocate_Multi_Block_Grid(Grid2D_Quad_Block_HO **Grid_ptr,
 						     const int Number_of_Blocks_Idir,
 						     const int Number_of_Blocks_Jdir);
 
-extern Grid2D_Quad_Block** Deallocate_Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
+extern Grid2D_Quad_Block_HO** Deallocate_Multi_Block_Grid(Grid2D_Quad_Block_HO **Grid_ptr,
 						       const int Number_of_Blocks_Idir,
 						       const int Number_of_Blocks_Jdir);
 
-extern Grid2D_Quad_Block** Broadcast_Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
+extern Grid2D_Quad_Block_HO** Broadcast_Multi_Block_Grid(Grid2D_Quad_Block_HO **Grid_ptr,
 				                      int &Number_of_Blocks_Idir,
 		                                      int &Number_of_Blocks_Jdir);
 
-extern void Write_Multi_Block_Grid_Definition(Grid2D_Quad_Block **Grid_ptr,
+extern void Write_Multi_Block_Grid_Definition(Grid2D_Quad_Block_HO **Grid_ptr,
                  			      const int Number_of_Blocks_Idir,
 		                              const int Number_of_Blocks_Jdir,
                                               ostream &Out_File);
 
-extern Grid2D_Quad_Block** Read_Multi_Block_Grid_Definition(Grid2D_Quad_Block **Grid_ptr,
+extern Grid2D_Quad_Block_HO** Read_Multi_Block_Grid_Definition(Grid2D_Quad_Block_HO **Grid_ptr,
 				                            int &Number_of_Blocks_Idir,
 		                                            int &Number_of_Blocks_Jdir,
                                                             istream &In_File);
 
-extern void Write_Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
+extern void Write_Multi_Block_Grid(Grid2D_Quad_Block_HO **Grid_ptr,
 				   const int Number_of_Blocks_Idir,
 		                   const int Number_of_Blocks_Jdir,
                                    ostream &Out_File);
 
-extern Grid2D_Quad_Block** Read_Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
+extern Grid2D_Quad_Block_HO** Read_Multi_Block_Grid(Grid2D_Quad_Block_HO **Grid_ptr,
 				                 int &Number_of_Blocks_Idir,
 		                                 int &Number_of_Blocks_Jdir,
                                                  istream &In_File);
 
-extern void Translate_Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
+extern void Translate_Multi_Block_Grid(Grid2D_Quad_Block_HO **Grid_ptr,
                                        const int Number_of_Blocks_Idir,
                                        const int Number_of_Blocks_Jdir,
 	      	                       const Vector2D &V);
 
-extern void Scale_Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
+extern void Scale_Multi_Block_Grid(Grid2D_Quad_Block_HO **Grid_ptr,
                                    const int Number_of_Blocks_Idir,
                                    const int Number_of_Blocks_Jdir,
 	      	                   const double &Scaling_Factor);
 
-extern void Rotate_Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
+extern void Rotate_Multi_Block_Grid(Grid2D_Quad_Block_HO **Grid_ptr,
                                     const int Number_of_Blocks_Idir,
                                     const int Number_of_Blocks_Jdir,
 	      	                    const double &Angle);
 
-extern void Reflect_Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
+extern void Reflect_Multi_Block_Grid(Grid2D_Quad_Block_HO **Grid_ptr,
                                      const int Number_of_Blocks_Idir,
                                      const int Number_of_Blocks_Jdir);
 
-extern int Check_Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
+extern int Check_Multi_Block_Grid(Grid2D_Quad_Block_HO **Grid_ptr,
                                   const int Number_of_Blocks_Idir,
                                   const int Number_of_Blocks_Jdir);
 
-extern void Output_Tecplot(Grid2D_Quad_Block **Grid_ptr,
+extern void Output_Tecplot(Grid2D_Quad_Block_HO **Grid_ptr,
 			   const int Number_of_Blocks_Idir,
 		           const int Number_of_Blocks_Jdir,
  	                   ostream &Out_File);
 
-extern void Output_Nodes_Tecplot(Grid2D_Quad_Block **Grid_ptr,
+extern void Output_Nodes_Tecplot(Grid2D_Quad_Block_HO **Grid_ptr,
                                  const int Number_of_Blocks_Idir,
                                  const int Number_of_Blocks_Jdir,
  	                         ostream &Out_File);
 
-extern void Output_Cells_Tecplot(Grid2D_Quad_Block **Grid_ptr,
+extern void Output_Cells_Tecplot(Grid2D_Quad_Block_HO **Grid_ptr,
                                  const int Number_of_Blocks_Idir,
                                  const int Number_of_Blocks_Jdir,
  	                         ostream &Out_File);
 
-extern void Output_Gnuplot(Grid2D_Quad_Block **Grid_ptr,
+extern void Output_Gnuplot(Grid2D_Quad_Block_HO **Grid_ptr,
 			   const int Number_of_Blocks_Idir,
 		           const int Number_of_Blocks_Jdir,
  	                   ostream &Out_File);
 
-extern Grid2D_Quad_Block** Grid_Rectangular_Box(Grid2D_Quad_Block **Grid_ptr,
+extern Grid2D_Quad_Block_HO** Grid_Rectangular_Box(Grid2D_Quad_Block_HO **Grid_ptr,
                                                 int &Number_of_Blocks_Idir,
 		                                int &Number_of_Blocks_Jdir,
                                                 const double &Width,
@@ -1889,7 +1894,7 @@ extern Grid2D_Quad_Block** Grid_Rectangular_Box(Grid2D_Quad_Block **Grid_ptr,
 		                                const int Number_of_Cells_Jdir,
 						const int Number_of_Ghost_Cells);
 
-extern Grid2D_Quad_Block** Grid_Rectangular_Box(Grid2D_Quad_Block **Grid_ptr,
+extern Grid2D_Quad_Block_HO** Grid_Rectangular_Box(Grid2D_Quad_Block_HO **Grid_ptr,
                                                 int &Number_of_Blocks_Idir,
                                                 int &Number_of_Blocks_Jdir,
                                                 const double &Width,
@@ -1903,7 +1908,7 @@ extern Grid2D_Quad_Block** Grid_Rectangular_Box(Grid2D_Quad_Block **Grid_ptr,
 	                                        const int Number_of_Cells_Jdir,
 					        const int Number_of_Ghost_Cells);
 
-extern Grid2D_Quad_Block** Grid_Flat_Plate(Grid2D_Quad_Block **Grid_ptr,
+extern Grid2D_Quad_Block_HO** Grid_Flat_Plate(Grid2D_Quad_Block_HO **Grid_ptr,
                                            int &Number_of_Blocks_Idir,
                                            int &Number_of_Blocks_Jdir,
                                            const double &Length,
@@ -1915,7 +1920,7 @@ extern Grid2D_Quad_Block** Grid_Flat_Plate(Grid2D_Quad_Block **Grid_ptr,
 		                           const int Number_of_Cells_Jdir,
 					   const int Number_of_Ghost_Cells);
 
-extern Grid2D_Quad_Block** Grid_Flat_Plate_NK(Grid2D_Quad_Block **Grid_ptr,
+extern Grid2D_Quad_Block_HO** Grid_Flat_Plate_NK(Grid2D_Quad_Block_HO **Grid_ptr,
 	 			              int &Number_of_Blocks_Idir,
 				              int &Number_of_Blocks_Jdir,
 				              const double &Length,
@@ -1926,7 +1931,7 @@ extern Grid2D_Quad_Block** Grid_Flat_Plate_NK(Grid2D_Quad_Block **Grid_ptr,
 				              const int Number_of_Cells_Jdir,
 				              const int Number_of_Ghost_Cells);
 
-extern Grid2D_Quad_Block** Grid_Flat_Plate3(Grid2D_Quad_Block **Grid_ptr,
+extern Grid2D_Quad_Block_HO** Grid_Flat_Plate3(Grid2D_Quad_Block_HO **Grid_ptr,
 	 			            int &Number_of_Blocks_Idir,
 				            int &Number_of_Blocks_Jdir,
 				            const double &Length,
@@ -1937,7 +1942,7 @@ extern Grid2D_Quad_Block** Grid_Flat_Plate3(Grid2D_Quad_Block **Grid_ptr,
 				            const int Number_of_Cells_Jdir,
 				            const int Number_of_Ghost_Cells);
 
-extern Grid2D_Quad_Block** Grid_Flat_Plate4(Grid2D_Quad_Block **Grid_ptr,
+extern Grid2D_Quad_Block_HO** Grid_Flat_Plate4(Grid2D_Quad_Block_HO **Grid_ptr,
 				            int &Number_of_Blocks_Idir,
 				            int &Number_of_Blocks_Jdir,
 				            const double &Length,
@@ -1948,7 +1953,7 @@ extern Grid2D_Quad_Block** Grid_Flat_Plate4(Grid2D_Quad_Block **Grid_ptr,
 				            const int Number_of_Cells_Jdir,
 				            const int Number_of_Ghost_Cells);
 
-extern Grid2D_Quad_Block** Grid_Flat_Plate9(Grid2D_Quad_Block **Grid_ptr,
+extern Grid2D_Quad_Block_HO** Grid_Flat_Plate9(Grid2D_Quad_Block_HO **Grid_ptr,
  	 			            int &Number_of_Blocks_Idir,
 				            int &Number_of_Blocks_Jdir,
 				            const double &Length,
@@ -1960,7 +1965,7 @@ extern Grid2D_Quad_Block** Grid_Flat_Plate9(Grid2D_Quad_Block **Grid_ptr,
 				            const int Number_of_Cells_Jdir,
 				            const int Number_of_Ghost_Cells);
 
-extern Grid2D_Quad_Block** Grid_1D_Flame(Grid2D_Quad_Block **Grid_ptr,
+extern Grid2D_Quad_Block_HO** Grid_1D_Flame(Grid2D_Quad_Block_HO **Grid_ptr,
 					 int &Number_of_Blocks_Idir,
 					 int &Number_of_Blocks_Jdir,
 					 const double &Length,
@@ -1969,7 +1974,7 @@ extern Grid2D_Quad_Block** Grid_1D_Flame(Grid2D_Quad_Block **Grid_ptr,
 					 const int Number_of_Cells_Jdir,
 					 const int Number_of_Ghost_Cells);
 
-extern Grid2D_Quad_Block** Grid_2D_Laminar_Flame(Grid2D_Quad_Block **Grid_ptr,
+extern Grid2D_Quad_Block_HO** Grid_2D_Laminar_Flame(Grid2D_Quad_Block_HO **Grid_ptr,
 						 int &Number_of_Blocks_Idir,
 						 int &Number_of_Blocks_Jdir,
 						 const double &Length,
@@ -1979,7 +1984,7 @@ extern Grid2D_Quad_Block** Grid_2D_Laminar_Flame(Grid2D_Quad_Block **Grid_ptr,
 						 const int Number_of_Ghost_Cells,
 						 const int Flame_Type_Flag); 
 
-extern Grid2D_Quad_Block** Grid_Pipe(Grid2D_Quad_Block **Grid_ptr,
+extern Grid2D_Quad_Block_HO** Grid_Pipe(Grid2D_Quad_Block_HO **Grid_ptr,
                                      int &Number_of_Blocks_Idir,
                                      int &Number_of_Blocks_Jdir,
                                      const double &Length,
@@ -1990,7 +1995,7 @@ extern Grid2D_Quad_Block** Grid_Pipe(Grid2D_Quad_Block **Grid_ptr,
 		                     const int Number_of_Cells_Jdir,
 				     const int Number_of_Ghost_Cells);
 
-extern Grid2D_Quad_Block** Grid_Pipe(Grid2D_Quad_Block **Grid_ptr,
+extern Grid2D_Quad_Block_HO** Grid_Pipe(Grid2D_Quad_Block_HO **Grid_ptr,
                                      int &Number_of_Blocks_Idir,
                                      int &Number_of_Blocks_Jdir,
                                      const double &Length,
@@ -2000,7 +2005,7 @@ extern Grid2D_Quad_Block** Grid_Pipe(Grid2D_Quad_Block **Grid_ptr,
 		                     const int Number_of_Cells_Jdir,
 				     const int Number_of_Ghost_Cells);
 
-extern Grid2D_Quad_Block** Grid_Blunt_Body(Grid2D_Quad_Block **Grid_ptr,
+extern Grid2D_Quad_Block_HO** Grid_Blunt_Body(Grid2D_Quad_Block_HO **Grid_ptr,
                                            int &Number_of_Blocks_Idir,
                                            int &Number_of_Blocks_Jdir,
                                            const double &Radius,
@@ -2009,7 +2014,7 @@ extern Grid2D_Quad_Block** Grid_Blunt_Body(Grid2D_Quad_Block **Grid_ptr,
 		                           const int Number_of_Cells_Jdir,
 					   const int Number_of_Ghost_Cells);
 
-extern Grid2D_Quad_Block** Grid_Rocket_Motor(Grid2D_Quad_Block **Grid_ptr,
+extern Grid2D_Quad_Block_HO** Grid_Rocket_Motor(Grid2D_Quad_Block_HO **Grid_ptr,
 					     int &Number_of_Blocks_Idir,
 					     int &Number_of_Blocks_Jdir,
 					     const double &Length_Chamber,
@@ -2029,7 +2034,7 @@ extern Grid2D_Quad_Block** Grid_Rocket_Motor(Grid2D_Quad_Block **Grid_ptr,
 					     const int Number_of_Cells_Jdir,
 					     const int Number_of_Ghost_Cells);
 
-extern Grid2D_Quad_Block** Grid_Nozzleless_Rocket_Motor(Grid2D_Quad_Block **Grid_ptr,
+extern Grid2D_Quad_Block_HO** Grid_Nozzleless_Rocket_Motor(Grid2D_Quad_Block_HO **Grid_ptr,
 							int &Number_of_Blocks_Idir,
 							int &Number_of_Blocks_Jdir,
 							const double &Length_Chamber,
@@ -2045,7 +2050,7 @@ extern Grid2D_Quad_Block** Grid_Nozzleless_Rocket_Motor(Grid2D_Quad_Block **Grid
 							const int Number_of_Cells_Jdir,
 							const int Number_of_Ghost_Cells);
 
-extern Grid2D_Quad_Block** Grid_Jet_Flow(Grid2D_Quad_Block **Grid_ptr,
+extern Grid2D_Quad_Block_HO** Grid_Jet_Flow(Grid2D_Quad_Block_HO **Grid_ptr,
 					 int &Number_of_Blocks_Idir,
 					 int &Number_of_Blocks_Jdir,
 					 const double &Radius,
@@ -2058,7 +2063,7 @@ extern Grid2D_Quad_Block** Grid_Jet_Flow(Grid2D_Quad_Block **Grid_ptr,
 					 const int Number_of_Cells_Jdir,
 					 const int Number_of_Ghost_Cells) ;
 
-extern Grid2D_Quad_Block** Grid_Mixing_Layer(Grid2D_Quad_Block **Grid_ptr,
+extern Grid2D_Quad_Block_HO** Grid_Mixing_Layer(Grid2D_Quad_Block_HO **Grid_ptr,
 					     int &Number_of_Blocks_Idir,
 					     int &Number_of_Blocks_Jdir,
                                              const double &Length,
@@ -2071,7 +2076,7 @@ extern Grid2D_Quad_Block** Grid_Mixing_Layer(Grid2D_Quad_Block **Grid_ptr,
 					     const int Number_of_Cells_Jdir,
 					     const int Number_of_Ghost_Cells) ;
 
-extern Grid2D_Quad_Block** Grid_Nozzle(Grid2D_Quad_Block **Grid_ptr,
+extern Grid2D_Quad_Block_HO** Grid_Nozzle(Grid2D_Quad_Block_HO **Grid_ptr,
 				       int &Number_of_Blocks_Idir,
 				       int &Number_of_Blocks_Jdir,
 				       const double &Length_Nozzle,
@@ -2088,7 +2093,7 @@ extern Grid2D_Quad_Block** Grid_Nozzle(Grid2D_Quad_Block **Grid_ptr,
 				       const int Number_of_Cells_Jdir,
 				       const int Number_of_Ghost_Cells);
 
-extern Grid2D_Quad_Block** Grid_Circular_Cylinder(Grid2D_Quad_Block **Grid_ptr,
+extern Grid2D_Quad_Block_HO** Grid_Circular_Cylinder(Grid2D_Quad_Block_HO **Grid_ptr,
                                                   int &Number_of_Blocks_Idir,
                                                   int &Number_of_Blocks_Jdir,
                                                   const double &Radius,
@@ -2100,7 +2105,7 @@ extern Grid2D_Quad_Block** Grid_Circular_Cylinder(Grid2D_Quad_Block **Grid_ptr,
 		                                  const int Number_of_Cells_Jdir,
 						  const int Number_of_Ghost_Cells);
 
-extern Grid2D_Quad_Block** Grid_Circular_Cylinder(Grid2D_Quad_Block **Grid_ptr,
+extern Grid2D_Quad_Block_HO** Grid_Circular_Cylinder(Grid2D_Quad_Block_HO **Grid_ptr,
                                                   int &Number_of_Blocks_Idir,
                                                   int &Number_of_Blocks_Jdir,
                                                   const double &Inner_Radius,
@@ -2113,7 +2118,7 @@ extern Grid2D_Quad_Block** Grid_Circular_Cylinder(Grid2D_Quad_Block **Grid_ptr,
 		                                  const int Number_of_Cells_Jdir,
 						  const int Number_of_Ghost_Cells);
 
-extern Grid2D_Quad_Block** Grid_Annulus(Grid2D_Quad_Block **Grid_ptr,
+extern Grid2D_Quad_Block_HO** Grid_Annulus(Grid2D_Quad_Block_HO **Grid_ptr,
 					int &Number_of_Blocks_Idir,
 					int &Number_of_Blocks_Jdir,
 					const double &Inner_Radius,
@@ -2128,7 +2133,7 @@ extern Grid2D_Quad_Block** Grid_Annulus(Grid2D_Quad_Block **Grid_ptr,
 					const int Number_of_Cells_Jdir,
 					const int Number_of_Ghost_Cells);
 
-extern Grid2D_Quad_Block** Grid_Ellipse(Grid2D_Quad_Block **Grid_ptr,
+extern Grid2D_Quad_Block_HO** Grid_Ellipse(Grid2D_Quad_Block_HO **Grid_ptr,
                                         int &Number_of_Blocks_Idir,
                                         int &Number_of_Blocks_Jdir,
                                         const double &A,
@@ -2137,7 +2142,7 @@ extern Grid2D_Quad_Block** Grid_Ellipse(Grid2D_Quad_Block **Grid_ptr,
 		                        const int Number_of_Cells_Jdir,
 					const int Number_of_Ghost_Cells);
 
-extern Grid2D_Quad_Block** Grid_NACA_Aerofoil(Grid2D_Quad_Block **Grid_ptr,
+extern Grid2D_Quad_Block_HO** Grid_NACA_Aerofoil(Grid2D_Quad_Block_HO **Grid_ptr,
                                               int &Number_of_Blocks_Idir,
                                               int &Number_of_Blocks_Jdir,
                                               char *NACA_Aerofoil_Type_ptr,
@@ -2146,7 +2151,7 @@ extern Grid2D_Quad_Block** Grid_NACA_Aerofoil(Grid2D_Quad_Block **Grid_ptr,
 		                              const int Number_of_Cells_Jdir,
 					      const int Number_of_Ghost_Cells);
 
-extern Grid2D_Quad_Block** Grid_Free_Jet(Grid2D_Quad_Block **Grid_ptr,
+extern Grid2D_Quad_Block_HO** Grid_Free_Jet(Grid2D_Quad_Block_HO **Grid_ptr,
                                          int &Number_of_Blocks_Idir,
                                          int &Number_of_Blocks_Jdir,
 				         const double &Radius,
@@ -2154,7 +2159,7 @@ extern Grid2D_Quad_Block** Grid_Free_Jet(Grid2D_Quad_Block **Grid_ptr,
 		                         const int Number_of_Cells_Jdir,
 					 const int Number_of_Ghost_Cells);
 
-extern Grid2D_Quad_Block** Grid_Wedge(Grid2D_Quad_Block **Grid_ptr,
+extern Grid2D_Quad_Block_HO** Grid_Wedge(Grid2D_Quad_Block_HO **Grid_ptr,
                                       int &Number_of_Blocks_Idir,
                                       int &Number_of_Blocks_Jdir,
 				      const double &Wedge_Angle,
@@ -2167,7 +2172,7 @@ extern Grid2D_Quad_Block** Grid_Wedge(Grid2D_Quad_Block **Grid_ptr,
 				      const int Number_of_Cells_Jdir,
 				      const int Number_of_Ghost_Cells);
 
-extern Grid2D_Quad_Block** Grid_Unsteady_Blunt_Body(Grid2D_Quad_Block **Grid_ptr,
+extern Grid2D_Quad_Block_HO** Grid_Unsteady_Blunt_Body(Grid2D_Quad_Block_HO **Grid_ptr,
                                                     int &Number_of_Blocks_Idir,
                                                     int &Number_of_Blocks_Jdir,
 						    const double &Radius,
@@ -2176,7 +2181,7 @@ extern Grid2D_Quad_Block** Grid_Unsteady_Blunt_Body(Grid2D_Quad_Block **Grid_ptr
 						    const int Number_of_Cells_Jdir,
 						    const int Number_of_Ghost_Cells);
 
-extern Grid2D_Quad_Block** Grid_Ringleb_Flow(Grid2D_Quad_Block **Grid_ptr,
+extern Grid2D_Quad_Block_HO** Grid_Ringleb_Flow(Grid2D_Quad_Block_HO **Grid_ptr,
                                              int &Number_of_Blocks_Idir,
                                              int &Number_of_Blocks_Jdir,
 					     const double &Inner_Streamline_Number,
@@ -2186,7 +2191,7 @@ extern Grid2D_Quad_Block** Grid_Ringleb_Flow(Grid2D_Quad_Block **Grid_ptr,
 				             const int Number_of_Cells_Jdir,
 					     const int Number_of_Ghost_Cells);
 
-extern Grid2D_Quad_Block** Grid_Bump_Channel_Flow(Grid2D_Quad_Block **Grid_ptr,
+extern Grid2D_Quad_Block_HO** Grid_Bump_Channel_Flow(Grid2D_Quad_Block_HO **Grid_ptr,
 						  int &Number_of_Blocks_Idir,
 						  int &Number_of_Blocks_Jdir,
 						  const int Smooth_Bump,
@@ -2194,7 +2199,7 @@ extern Grid2D_Quad_Block** Grid_Bump_Channel_Flow(Grid2D_Quad_Block **Grid_ptr,
 						  const int Number_of_Cells_Jdir,
 						  const int Number_of_Ghost_Cells);
 
-extern Grid2D_Quad_Block** Grid_Driven_Cavity_Flow(Grid2D_Quad_Block **Grid_ptr,
+extern Grid2D_Quad_Block_HO** Grid_Driven_Cavity_Flow(Grid2D_Quad_Block_HO **Grid_ptr,
 						   int &Number_of_Blocks_Idir,
 						   int &Number_of_Blocks_Jdir,
 						   const double &Width,
@@ -2207,7 +2212,7 @@ extern Grid2D_Quad_Block** Grid_Driven_Cavity_Flow(Grid2D_Quad_Block **Grid_ptr,
 						   const int Number_of_Cells_Jdir,
 						   const int Number_of_Ghost_Cells);
 
-extern Grid2D_Quad_Block** Grid_Backward_Facing_Step(Grid2D_Quad_Block **Grid_ptr,
+extern Grid2D_Quad_Block_HO** Grid_Backward_Facing_Step(Grid2D_Quad_Block_HO **Grid_ptr,
 						     int &Number_of_Blocks_Idir,
 						     int &Number_of_Blocks_Jdir,
 						     const double &Step_Height,
@@ -2218,7 +2223,7 @@ extern Grid2D_Quad_Block** Grid_Backward_Facing_Step(Grid2D_Quad_Block **Grid_pt
 						     const int Number_of_Cells_Jdir,
 						     const int Number_of_Ghost_Cells);
 
-extern Grid2D_Quad_Block** Grid_Forward_Facing_Step(Grid2D_Quad_Block **Grid_ptr,
+extern Grid2D_Quad_Block_HO** Grid_Forward_Facing_Step(Grid2D_Quad_Block_HO **Grid_ptr,
 						     int &Number_of_Blocks_Idir,
 						     int &Number_of_Blocks_Jdir,
 						     const double &Step_Height,
@@ -2229,7 +2234,7 @@ extern Grid2D_Quad_Block** Grid_Forward_Facing_Step(Grid2D_Quad_Block **Grid_ptr
 						     const int Number_of_Cells_Jdir,
 						     const int Number_of_Ghost_Cells);
 
-extern Grid2D_Quad_Block** Grid_NASA_Rotor_37(Grid2D_Quad_Block **Grid_ptr,
+extern Grid2D_Quad_Block_HO** Grid_NASA_Rotor_37(Grid2D_Quad_Block_HO **Grid_ptr,
 					      int &Number_of_Blocks_Idir,
 					      int &Number_of_Blocks_Jdir,
 					      const double &Rotor_Percent_Span,
@@ -2237,7 +2242,7 @@ extern Grid2D_Quad_Block** Grid_NASA_Rotor_37(Grid2D_Quad_Block **Grid_ptr,
 					      const int Number_of_Cells_Jdir,
 					      const int Number_of_Ghost_Cells);
 
-extern Grid2D_Quad_Block** Grid_NASA_Rotor_67(Grid2D_Quad_Block **Grid_ptr,
+extern Grid2D_Quad_Block_HO** Grid_NASA_Rotor_67(Grid2D_Quad_Block_HO **Grid_ptr,
 					      int &Number_of_Blocks_Idir,
 					      int &Number_of_Blocks_Jdir,
 					      const double &Rotor_Percent_Span,
@@ -2245,7 +2250,7 @@ extern Grid2D_Quad_Block** Grid_NASA_Rotor_67(Grid2D_Quad_Block **Grid_ptr,
 					      const int Number_of_Cells_Jdir,
 					      const int Number_of_Ghost_Cells);
 
-extern Grid2D_Quad_Block** Grid_Desolvation_Chamber(Grid2D_Quad_Block **Grid_ptr,
+extern Grid2D_Quad_Block_HO** Grid_Desolvation_Chamber(Grid2D_Quad_Block_HO **Grid_ptr,
 						    const int &Chamber_BC_Type,
 						    int &Number_of_Blocks_Idir,
 						    int &Number_of_Blocks_Jdir,
@@ -2253,7 +2258,7 @@ extern Grid2D_Quad_Block** Grid_Desolvation_Chamber(Grid2D_Quad_Block **Grid_ptr
 						    const int Number_of_Cells_Jdir,
 						    const int Number_of_Ghost_Cells);
 
-extern Grid2D_Quad_Block** Grid_Adiabatic_Flat_Plate(Grid2D_Quad_Block **Grid_ptr,
+extern Grid2D_Quad_Block_HO** Grid_Adiabatic_Flat_Plate(Grid2D_Quad_Block_HO **Grid_ptr,
                                               int &Number_of_Blocks_Idir,
                                               int &Number_of_Blocks_Jdir,
                                               const double &Length,
@@ -2261,7 +2266,7 @@ extern Grid2D_Quad_Block** Grid_Adiabatic_Flat_Plate(Grid2D_Quad_Block **Grid_pt
 		                              const int Number_of_Cells_Jdir,
 					      const int Number_of_Ghost_Cells);
 
-extern Grid2D_Quad_Block** Grid_Adiabatic_Circular_Cylinder(Grid2D_Quad_Block **Grid_ptr,
+extern Grid2D_Quad_Block_HO** Grid_Adiabatic_Circular_Cylinder(Grid2D_Quad_Block_HO **Grid_ptr,
 							    int &Number_of_Blocks_Idir,
 							    int &Number_of_Blocks_Jdir,
 							    const double &Radius,
@@ -2269,7 +2274,7 @@ extern Grid2D_Quad_Block** Grid_Adiabatic_Circular_Cylinder(Grid2D_Quad_Block **
 							    const int Number_of_Cells_Jdir,
 							    const int Number_of_Ghost_Cells);
 
-extern Grid2D_Quad_Block** Grid_Adiabatic_Circular_Cylinder(Grid2D_Quad_Block **Grid_ptr,
+extern Grid2D_Quad_Block_HO** Grid_Adiabatic_Circular_Cylinder(Grid2D_Quad_Block_HO **Grid_ptr,
 							    int &Number_of_Blocks_Idir,
 							    int &Number_of_Blocks_Jdir,
 							    const double &Inner_Radius,
@@ -2278,7 +2283,7 @@ extern Grid2D_Quad_Block** Grid_Adiabatic_Circular_Cylinder(Grid2D_Quad_Block **
 							    const int Number_of_Cells_Jdir,
 							    const int Number_of_Ghost_Cells);
 
-extern Grid2D_Quad_Block** Grid_Adiabatic_Couette(Grid2D_Quad_Block **Grid_ptr,
+extern Grid2D_Quad_Block_HO** Grid_Adiabatic_Couette(Grid2D_Quad_Block_HO **Grid_ptr,
 						  int &Number_of_Blocks_Idir,
 						  int &Number_of_Blocks_Jdir,
 						  const double &Separation,
@@ -2286,7 +2291,7 @@ extern Grid2D_Quad_Block** Grid_Adiabatic_Couette(Grid2D_Quad_Block **Grid_ptr,
 						  const int Number_of_Cells_Jdir,
 						  const int Number_of_Ghost_Cells);
 
-extern Grid2D_Quad_Block** Grid_Cylindrical_Encl(Grid2D_Quad_Block **Grid_ptr,
+extern Grid2D_Quad_Block_HO** Grid_Cylindrical_Encl(Grid2D_Quad_Block_HO **Grid_ptr,
 						 int &Number_of_Blocks_Idir,
 						 int &Number_of_Blocks_Jdir,
 						 const double &Length,
@@ -2296,7 +2301,7 @@ extern Grid2D_Quad_Block** Grid_Cylindrical_Encl(Grid2D_Quad_Block **Grid_ptr,
 						 const int Number_of_Cells_Jdir,
 						 const int Number_of_Ghost_Cells);
 
-extern Grid2D_Quad_Block** Grid_Rectangular_Encl(Grid2D_Quad_Block **Grid_ptr,
+extern Grid2D_Quad_Block_HO** Grid_Rectangular_Encl(Grid2D_Quad_Block_HO **Grid_ptr,
 						 int &Number_of_Blocks_Idir,
 						 int &Number_of_Blocks_Jdir,
 						 const double &Width,
@@ -2305,7 +2310,7 @@ extern Grid2D_Quad_Block** Grid_Rectangular_Encl(Grid2D_Quad_Block **Grid_ptr,
 						 const int Number_of_Cells_Jdir,
 						 const int Number_of_Ghost_Cells);
 
-extern Grid2D_Quad_Block** Grid_Tube_2D(Grid2D_Quad_Block **Grid_ptr,
+extern Grid2D_Quad_Block_HO** Grid_Tube_2D(Grid2D_Quad_Block_HO **Grid_ptr,
 				        int &Number_of_Blocks_Idir,
 				        int &Number_of_Blocks_Jdir,
 				        const double &Radius,
@@ -2315,7 +2320,7 @@ extern Grid2D_Quad_Block** Grid_Tube_2D(Grid2D_Quad_Block **Grid_ptr,
                                         const int i_Stretching_Radial_Dir,
 				        const double &Stretching_Radial_Dir);
 
-extern Grid2D_Quad_Block** Grid_Annulus_2D(Grid2D_Quad_Block **Grid_ptr,
+extern Grid2D_Quad_Block_HO** Grid_Annulus_2D(Grid2D_Quad_Block_HO **Grid_ptr,
 				           int &Number_of_Blocks_Idir,
 				           int &Number_of_Blocks_Jdir,
 				           const double &Radius_Inner,
@@ -2326,4 +2331,5 @@ extern Grid2D_Quad_Block** Grid_Annulus_2D(Grid2D_Quad_Block **Grid_ptr,
                                            const int i_Stretching_Radial_Dir,
 				           const double &Stretching_Radial_Dir);
 
+#endif
 #endif /* _GRID2D_QUAD_BLOCK_INCLUDED  */

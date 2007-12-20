@@ -7,4 +7,6 @@
 /********************************************************************
  * Cell2D_Cartesian -- Create storage and set cell lengths.         *
  ********************************************************************/
-Vector2D Cell2D_Cartesian::dx = Vector2D_ZERO;
+Vector2D Cell2D_Cartesian_HO::dx = Vector2D_ZERO;
+
+Cell2D_Cartesian_HO Cell2D_Cartesian_HO::Cell2D_Cartesian_HO_ONE(ONE);

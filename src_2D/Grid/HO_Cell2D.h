@@ -1,36 +1,27 @@
-/* \file Cell2D.h
-   \brief Header file defining 2D cell types. */
+/* \file HO_Cell2D.h
+   \brief Header file defining 2D high-order cell types. */
 
 #ifndef _HO_CELL2D_INCLUDED
 #define _HO_CELL2D_INCLUDED
 
 /* Include required C++ libraries. */
-
 #include <cstdio>
 #include <iostream>
 #include <iomanip>
 #include <fstream>
 
+/* Using std namespace functions */
 using namespace std;
 
-/* Include math macro and 2D vector header files. */
+/* Include CFFC header files */
+#include "../Math/Math.h"	/* Include math macro header files. */
+#include "../Math/Vector2D.h"   /* Include vector header files. */
 
-#ifndef _MATH_MACROS_INCLUDED
-#include "../Math/Math.h"
-#endif // _MATH_MACROS_INCLUDED
 
-#ifndef _VECTOR2D_INCLUDED
-#include "../Math/Vector2D.h"
-#endif //_VECTOR2D_INCLUDED
-
-#ifndef _TENSOR2D_INCLUDED
-#include "../Math/Tensor2D.h"
-#endif //_TENSOR2D_INCLUDED
-
-/* Define the basic 2D cell class. */
+/* Define the classes. */
 
 /*!
- * Class: Cell2D
+ * \class Cell2D_HO
  *
  * \begin{verbatim}
  * Member functions
@@ -52,258 +43,190 @@ using namespace std;
  * cin  >> C; (input function)
  * \end{verbatim}
  */
-class Cell2D{
-private:
+class Cell2D_HO{
 public:
-  Vector2D     Xc; //!< Location of cell center.
-  int        I, J; //!< (i,j) indices for cell.
-  double        A; //!< Cell area.
-		      
-  /* Creation, copy, and assignment constructors. */
-  Cell2D(void) {
-    Xc.x = ONE; Xc.y = ONE; I = 0; J = 0; A = ONE;
-  }
+  Vector2D     Xc;    //!< Location of cell center.
+  int        I, J;    //!< (i,j) indices for cell.
+  double        A;    //!< Cell area.
+		  
 
-  Cell2D(const Cell2D &Cell) {
-    Xc = Cell.Xc; I = Cell.I; J = Cell.J; A = Cell.A;
-  }
+  //! @name Creation and copy constructors.
+  //@{
+  //! Default constructor.
+  Cell2D_HO(void);
 
-  Cell2D(const Vector2D &V) {
-    Xc = V;
-  }
+  //! Copy constructor
+  Cell2D_HO(const Cell2D_HO &Cell);
 
-  Cell2D(const double &xx, const double &yy) {
-    Xc.x = xx; Xc.y = yy;
-  }
+  //! Constructor with centroid location
+  Cell2D_HO(const Vector2D &V);
+
+  //! Constructor with centroid locations
+  Cell2D_HO(const double &xx, const double &yy);
+  //@}
     
-  /* Destructor. */
-  // ~Cell2D(void);
-  // Use automatically generated destructor.
-
-  /* Set cell center location. */
+  //! @name Set cell center location.
+  //@{
   void setloc(void);
-  void setloc(const Cell2D &Cell);
+  void setloc(const Cell2D_HO &Cell);
   void setloc(const Vector2D &V);
   void setloc(const double &xx, const double &yy);
+  //@}
 
-  /* Set cell (i,j) indices. */
+  //! @name Set cell (i,j) indices.
+  //@{
   void setindex(void);
-  void setindex(const Cell2D &Cell);
+  void setindex(const Cell2D_HO &Cell);
   void setindex(const int II, const int JJ);
+  //@}
 
-  /* Assignment operator. */
-  // Cell2D operator = (const Cell2D &Cell);
-  // Use automatically generated assignment operator.
+  //! @name Relational operators.
+  //@{
+  friend bool operator ==(const Cell2D_HO &Cell1, const Cell2D_HO &Cell2);
+  friend bool operator !=(const Cell2D_HO &Cell1, const Cell2D_HO &Cell2);
+  //@}
 
-  /* Relational operators. */
-  friend int operator ==(const Cell2D &Cell1, const Cell2D &Cell2);
-  friend int operator !=(const Cell2D &Cell1, const Cell2D &Cell2);
+  //! @name Input-output operators.
+  //@{
+  friend ostream &operator << (ostream &out_file, const Cell2D_HO &Cell);
+  friend istream &operator >> (istream &in_file, Cell2D_HO &Cell);
+  //@}
 
-  /* Input-output operators. */
-  friend ostream &operator << (ostream &out_file, const Cell2D &Cell);
-  friend istream &operator >> (istream &in_file, Cell2D &Cell);
-    
+private:    
 };
 
-/******************************************************************
- * Cell2D::setloc -- Set cell center location.                    *
- ******************************************************************/
-inline void Cell2D::setloc(void) {
-    Xc.x = ONE; Xc.y = ONE;
+
+/*!
+ * Default constructor
+ */
+inline Cell2D_HO::Cell2D_HO(void): Xc(ONE), I(0), J(0), A(ONE)
+{
+  // 
 }
 
-inline void Cell2D::setloc(const Cell2D &Cell) {
-    Xc = Cell.Xc;
+/*!
+ * Copy constructor
+ */
+inline Cell2D_HO::Cell2D_HO(const Cell2D_HO &Cell):
+  Xc(Cell.Xc), I(Cell.I), J(Cell.J), A(Cell.A)
+{
+  // 
 }
 
-inline void Cell2D::setloc(const Vector2D &V) {
-    Xc = V;
+/*!
+ * Constructor with centroid location
+ */
+inline Cell2D_HO::Cell2D_HO(const Vector2D &V): Xc(V), I(0), J(0), A(ONE)
+{
+  // 
 }
 
-inline void Cell2D::setloc(const double &xx, const double &yy) {
-    Xc.x = xx; Xc.y = yy;
+/*!
+ * Constructor with centroid locations
+ */
+inline Cell2D_HO::Cell2D_HO(const double &xx, const double &yy):
+  I(0), J(0), A(ONE)
+{
+  Xc.x = xx; 
+  Xc.y = yy;
 }
 
-/******************************************************************
- * Cell2D::setindex -- Set cell (i,j) indices.                    *
- ******************************************************************/
-inline void Cell2D::setindex(void) {
-    I = 0; J = 0;
+/*!
+ * Set cell center location
+ */
+inline void Cell2D_HO::setloc(void) {
+  Xc.x = ONE; Xc.y = ONE;
 }
 
-inline void Cell2D::setindex(const Cell2D &Cell) {
+/*!
+ * Set cell center location
+ */
+inline void Cell2D_HO::setloc(const Cell2D_HO &Cell) {
+  Xc = Cell.Xc;
+}
+
+/*!
+ * Set cell center location
+ */
+inline void Cell2D_HO::setloc(const Vector2D &V) {
+  Xc = V;
+}
+
+/*!
+ * Set cell center location
+ */
+inline void Cell2D_HO::setloc(const double &xx, const double &yy) {
+  Xc.x = xx; Xc.y = yy;
+}
+
+/*
+ * Set cell (i,j) indices.
+ */
+inline void Cell2D_HO::setindex(void) {
+  I = 0; J = 0;
+}
+
+/*
+ * Set cell (i,j) indices.
+ */
+inline void Cell2D_HO::setindex(const Cell2D_HO &Cell) {
     I = Cell.I; J = Cell.J;
 }
 
-inline void Cell2D::setindex(const int II, const int JJ) {
+/*
+ * Set cell (i,j) indices.
+ */
+inline void Cell2D_HO::setindex(const int II, const int JJ) {
     I = II; J = JJ;
 }
 
-/******************************************************************
- * Cell2D -- Relational operators.                                *
- ******************************************************************/
-inline int operator ==(const Cell2D &Cell1,
-		       const Cell2D &Cell2) {
-    return (Cell1.Xc == Cell2.Xc && Cell1.A == Cell2.A);
+/*
+ * Equal operator
+ */
+inline bool operator ==(const Cell2D_HO &Cell1,
+			const Cell2D_HO &Cell2) {
+  return (Cell1.Xc == Cell2.Xc && Cell1.A == Cell2.A);
 }
 
-inline int operator !=(const Cell2D &Cell1,
-		       const Cell2D &Cell2) {
-    return (Cell1.Xc != Cell2.Xc || Cell1.A != Cell2.A);
+/*
+ * Not-equal operator
+ */
+inline bool operator !=(const Cell2D_HO &Cell1,
+			const Cell2D_HO &Cell2) {
+  return (Cell1.Xc != Cell2.Xc || Cell1.A != Cell2.A);
 }
-
-/******************************************************************
- * Cell2D -- Input-output operators.                              *
- ******************************************************************/
-inline ostream &operator << (ostream &out_file,
-			     const Cell2D &Cell) {
-    out_file << " " << Cell.I << " " << Cell.J << Cell.Xc;
-    out_file.setf(ios::scientific);
-    out_file << " " << Cell.A;
-    out_file.unsetf(ios::scientific);
-    return (out_file);
-}
-
-inline istream &operator >> (istream &in_file,
-			     Cell2D &Cell) {
-    in_file.setf(ios::skipws);
-    in_file >> Cell.I >> Cell.J; 
-    in_file.unsetf(ios::skipws);
-    in_file >> Cell.Xc;
-    in_file.setf(ios::skipws);
-    in_file >> Cell.A;
-    in_file.unsetf(ios::skipws);
-    return (in_file);
-}
-
-/* Define the basic 2D node class. */
 
 /*!
- * Class: Node2D
- *
- * \begin{verbatim}
- * Member functions
- *      X       -- Return 2D vector containing location of node.
- *      setloc  -- Set node location (position).
- *
- * Member operators
- *      N -- a node
- *
- * N = N;
- * N == N;
- * N != N;
- * cout << N; (output function)
- * cin  >> N; (input function)
- * \end{verbatim}
+ * Output operator
  */
-class Node2D{
-  private:
-  public:
-    Vector2D         X;   // Node location.
-	                  // Made public so can access them.
-		      
-    /* Creation, copy, and assignment constructors. */
-    Node2D(void) {
-       X.x = ONE; X.y = ONE;
-    }
-
-    Node2D(const Node2D &Node) {
-       X = Node.X;
-    }
-
-    Node2D(const Vector2D &V) {
-       X = V;
-    }
-
-    Node2D(const double &xx, const double &yy) {
-       X.x = xx; X.y = yy;
-    }
-    
-    /* Destructor. */
-    // ~Node2D(void);
-    // Use automatically generated destructor.
-
-    /* Set cell center location. */
-    void setloc(void);
-    void setloc(const Node2D &Node);
-    void setloc(const Vector2D &V);
-    void setloc(const double &xx, const double &yy);
-
-    /* Return the x and y values */
-    double & x(void) { return X.x;}
-    const double & x(void) const { return X.x;}
-    double & y(void) { return X.y;}
-    const double & y(void) const { return X.y;}
-
-    /* Assignment operator. */
-    // Node2D operator = (const Node2D &Node);
-    // Use automatically generated assignment operator.
-
-    /* Relational operators. */
-    friend int operator ==(const Node2D &Node1,
-			   const Node2D &Node2);
-    friend int operator !=(const Node2D &Node1,
-			   const Node2D &Node2);
-    
-    /* Input-output operators. */
-    friend ostream &operator << (ostream &out_file,
-				 const Node2D &Node);
-    friend istream &operator >> (istream &in_file,
-				 Node2D &Node);
-    
-};
-
-/******************************************************************
- * Node2D::setloc -- Set cell center location.                    *
- ******************************************************************/
-inline void Node2D::setloc(void) {
-    X.x = ONE; X.y = ONE;
-}
-
-inline void Node2D::setloc(const Node2D &Node) {
-    X = Node.X;
-}
-
-inline void Node2D::setloc(const Vector2D &V) {
-    X = V;
-}
-
-inline void Node2D::setloc(const double &xx, const double &yy) {
-    X.x = xx; X.y = yy;
-}
-
-/******************************************************************
- * Node2D -- Relational operators.                                *
- ******************************************************************/
-inline int operator ==(const Node2D &Node1,
-		       const Node2D &Node2) {
-    return (Node1.X == Node2.X);
-}
-
-inline int operator !=(const Node2D &Node1,
-		       const Node2D &Node2) {
-    return (Node1.X != Node2.X);
-}
-
-/******************************************************************
- * Node2D -- Input-output operators.                              *
- ******************************************************************/
 inline ostream &operator << (ostream &out_file,
-			     const Node2D &Node) {
-    out_file << Node.X;
-    return (out_file);
+			     const Cell2D_HO &Cell) {
+  out_file << " " << Cell.I << " " << Cell.J << Cell.Xc;
+  out_file.setf(ios::scientific);
+  out_file << " " << Cell.A;
+  out_file.unsetf(ios::scientific);
+  return (out_file);
 }
 
+/*!
+ * Input operator
+ */
 inline istream &operator >> (istream &in_file,
-			     Node2D &Node) {
-    in_file >> Node.X; 
-    return (in_file);
+			     Cell2D_HO &Cell) {
+  in_file.setf(ios::skipws);
+  in_file >> Cell.I >> Cell.J; 
+  in_file.unsetf(ios::skipws);
+  in_file >> Cell.Xc;
+  in_file.setf(ios::skipws);
+  in_file >> Cell.A;
+  in_file.unsetf(ios::skipws);
+  return (in_file);
 }
 
 /* Define the cell class for a uniform 2D Cartesian mesh. */
 
 /*********************************************************
- * Class: Cell2D_Cartesian                               *
+ * Class: Cell2D_Cartesian_HO                               *
  *                                                       *
  * Member functions                                      *
  *      xc      -- Return 2D vector containing location  *
@@ -350,32 +273,33 @@ inline istream &operator >> (istream &in_file,
  * cin  >> C; (input function)                           *
  *                                                       *
  *********************************************************/
-class Cell2D_Cartesian{
+class Cell2D_Cartesian_HO{
   private:
   public:
-    Vector2D         xc;   // Location of cell center.
-    static Vector2D  dx;   // Vector of cell lengths.
-	                   // Made public so can access them.
+  Vector2D         xc;   // Location of cell center.
+  static Vector2D  dx;   // Vector of cell lengths.
+
+  static Cell2D_Cartesian_HO Cell2D_Cartesian_HO_ONE;
 		      
     /* Creation, copy, and assignment constructors. */
-    Cell2D_Cartesian(void) {
+    Cell2D_Cartesian_HO(void) {
        xc.x = ONE; xc.y = ONE;  
     }
 
-    Cell2D_Cartesian(const Cell2D_Cartesian &Cell) {
+    Cell2D_Cartesian_HO(const Cell2D_Cartesian_HO &Cell) {
        xc = Cell.xc;
     }
 
-    Cell2D_Cartesian(const Vector2D &V) {
+    Cell2D_Cartesian_HO(const Vector2D &V) {
        xc = V;
     }
 
-    Cell2D_Cartesian(const double &xx, const double &yy) {
+    Cell2D_Cartesian_HO(const double &xx, const double &yy) {
        xc.x = xx; xc.y = yy;
     }
     
     /* Destructor. */
-    // ~Cell2D_Cartesian(void);
+    // ~Cell2D_Cartesian_HO(void);
     // Use automatically generated destructor.
 
     /* Cell area. */
@@ -415,167 +339,167 @@ class Cell2D_Cartesian{
 
     /* Set cell center location. */
     void setloc(void);
-    void setloc(const Cell2D_Cartesian &Cell);
+    void setloc(const Cell2D_Cartesian_HO &Cell);
     void setloc(const Vector2D &V);
     void setloc(const double &xx, const double &yy);
 
     /* Assignment operator. */
-    // Cell2D_Cartesian operator = (const Cell2D_Cartesian &Cell);
+    // Cell2D_Cartesian_HO operator = (const Cell2D_Cartesian_HO &Cell);
     // Use automatically generated assignment operator.
 
     /* Relational operators. */
-    friend int operator ==(const Cell2D_Cartesian &Cell1,
-			   const Cell2D_Cartesian &Cell2);
-    friend int operator !=(const Cell2D_Cartesian &Cell1,
-			   const Cell2D_Cartesian &Cell2);
+    friend int operator ==(const Cell2D_Cartesian_HO &Cell1,
+			   const Cell2D_Cartesian_HO &Cell2);
+    friend int operator !=(const Cell2D_Cartesian_HO &Cell1,
+			   const Cell2D_Cartesian_HO &Cell2);
     
     /* Input-output operators. */
     friend ostream &operator << (ostream &out_file,
-				 const Cell2D_Cartesian &Cell);
+				 const Cell2D_Cartesian_HO &Cell);
     friend istream &operator >> (istream &in_file,
-				 Cell2D_Cartesian &Cell);
+				 Cell2D_Cartesian_HO &Cell);
     
 };
 
 /******************************************************************
- * Cell2D_Cartesian::A -- Return cell area.                       *
+ * Cell2D_Cartesian_HO::A -- Return cell area.                       *
  ******************************************************************/
-inline double Cell2D_Cartesian::A(void) {
+inline double Cell2D_Cartesian_HO::A(void) {
     return (dx.x*dx.y);
 }
 
-inline double Cell2D_Cartesian::A(void) const {
+inline double Cell2D_Cartesian_HO::A(void) const {
     return (dx.x*dx.y);
 }
 
 /******************************************************************
- * Cell2D_Cartesian::xn?? -- Get cell nodes.                      *
+ * Cell2D_Cartesian_HO::xn?? -- Get cell nodes.                      *
  ******************************************************************/
-inline Vector2D Cell2D_Cartesian::xnNW(void) {
+inline Vector2D Cell2D_Cartesian_HO::xnNW(void) {
     return (Vector2D(xc-HALF*dx.x*Vector2D_NX+HALF*dx.y*Vector2D_NY));
 }
 
-inline Vector2D Cell2D_Cartesian::xnNW(void) const {
+inline Vector2D Cell2D_Cartesian_HO::xnNW(void) const {
     return (Vector2D(xc-HALF*dx.x*Vector2D_NX+HALF*dx.y*Vector2D_NY));
 }
 
-inline Vector2D Cell2D_Cartesian::xnNE(void) {
+inline Vector2D Cell2D_Cartesian_HO::xnNE(void) {
     return (Vector2D(xc+HALF*dx.x*Vector2D_NX+HALF*dx.y*Vector2D_NY));
 }
 
-inline Vector2D Cell2D_Cartesian::xnNE(void) const {
+inline Vector2D Cell2D_Cartesian_HO::xnNE(void) const {
     return (Vector2D(xc+HALF*dx.x*Vector2D_NX+HALF*dx.y*Vector2D_NY));
 }
 
-inline Vector2D Cell2D_Cartesian::xnSE(void) {
+inline Vector2D Cell2D_Cartesian_HO::xnSE(void) {
     return (Vector2D(xc+HALF*dx.x*Vector2D_NX-HALF*dx.y*Vector2D_NY));
 }
 
-inline Vector2D Cell2D_Cartesian::xnSE(void) const {
+inline Vector2D Cell2D_Cartesian_HO::xnSE(void) const {
     return (Vector2D(xc+HALF*dx.x*Vector2D_NX-HALF*dx.y*Vector2D_NY));
 }
 
-inline Vector2D Cell2D_Cartesian::xnSW(void) {
+inline Vector2D Cell2D_Cartesian_HO::xnSW(void) {
     return (Vector2D(xc-HALF*dx.x*Vector2D_NX-HALF*dx.y*Vector2D_NY));
 }
 
-inline Vector2D Cell2D_Cartesian::xnSW(void) const {
+inline Vector2D Cell2D_Cartesian_HO::xnSW(void) const {
     return (Vector2D(xc-HALF*dx.x*Vector2D_NX-HALF*dx.y*Vector2D_NY));
 }
 
 /******************************************************************
- * Cell2D_Cartesian::xf? -- Get cell faces.                       *
+ * Cell2D_Cartesian_HO::xf? -- Get cell faces.                       *
  ******************************************************************/
-inline Vector2D Cell2D_Cartesian::xfN(void) {
+inline Vector2D Cell2D_Cartesian_HO::xfN(void) {
     return (Vector2D(xc+HALF*dx.y*Vector2D_NY));
 }
 
-inline Vector2D Cell2D_Cartesian::xfN(void) const {
+inline Vector2D Cell2D_Cartesian_HO::xfN(void) const {
     return (Vector2D(xc+HALF*dx.y*Vector2D_NY));
 }
 
-inline Vector2D Cell2D_Cartesian::xfS(void) {
+inline Vector2D Cell2D_Cartesian_HO::xfS(void) {
     return (Vector2D(xc-HALF*dx.y*Vector2D_NY));
 }
 
-inline Vector2D Cell2D_Cartesian::xfS(void) const {
+inline Vector2D Cell2D_Cartesian_HO::xfS(void) const {
     return (Vector2D(xc-HALF*dx.y*Vector2D_NY));
 }
 
-inline Vector2D Cell2D_Cartesian::xfE(void) {
+inline Vector2D Cell2D_Cartesian_HO::xfE(void) {
     return (Vector2D(xc+HALF*dx.x*Vector2D_NX));
 }
 
-inline Vector2D Cell2D_Cartesian::xfE(void) const {
+inline Vector2D Cell2D_Cartesian_HO::xfE(void) const {
     return (Vector2D(xc+HALF*dx.x*Vector2D_NX));
 }
 
-inline Vector2D Cell2D_Cartesian::xfW(void) {
+inline Vector2D Cell2D_Cartesian_HO::xfW(void) {
     return (Vector2D(xc-HALF*dx.x*Vector2D_NX));
 }
 
-inline Vector2D Cell2D_Cartesian::xfW(void) const {
+inline Vector2D Cell2D_Cartesian_HO::xfW(void) const {
     return (Vector2D(xc-HALF*dx.x*Vector2D_NX));
 }
 
 /******************************************************************
- * Cell2D_Cartesian::setsize -- Set cell dimensions.              *
+ * Cell2D_Cartesian_HO::setsize -- Set cell dimensions.              *
  ******************************************************************/
-inline void Cell2D_Cartesian::setsize(void) {
-    dx.x = ONE; dx.y = ONE;
+inline void Cell2D_Cartesian_HO::setsize(void) {
+  dx.x = ONE; dx.y = ONE;
 }
 
-inline void Cell2D_Cartesian::setsize(const Vector2D &xx) {
-    dx = xx;
+inline void Cell2D_Cartesian_HO::setsize(const Vector2D &xx) {
+  dx = xx;
 }
 
-inline void Cell2D_Cartesian::setsize(const double &xx, const double &yy) {
-    dx.x = xx; dx.y = yy;
+inline void Cell2D_Cartesian_HO::setsize(const double &xx, const double &yy) {
+  dx.x = xx; dx.y = yy;
 }
 
 /******************************************************************
- * Cell2D_Cartesian::setloc -- Set cell center location.          *
+ * Cell2D_Cartesian_HO::setloc -- Set cell center location.          *
  ******************************************************************/
-inline void Cell2D_Cartesian::setloc(void) {
+inline void Cell2D_Cartesian_HO::setloc(void) {
     xc.x = ONE; xc.y = ONE;
 }
 
-inline void Cell2D_Cartesian::setloc(const Cell2D_Cartesian &Cell) {
+inline void Cell2D_Cartesian_HO::setloc(const Cell2D_Cartesian_HO &Cell) {
     xc = Cell.xc;
 }
 
-inline void Cell2D_Cartesian::setloc(const Vector2D  &V) {
+inline void Cell2D_Cartesian_HO::setloc(const Vector2D  &V) {
     xc = V;
 }
 
-inline void Cell2D_Cartesian::setloc(const double &xx, const double &yy) {
+inline void Cell2D_Cartesian_HO::setloc(const double &xx, const double &yy) {
     xc.x = xx; xc.y = yy;
 }
 
 /******************************************************************
- * Cell2D_Cartesian -- Relational operators.                      *
+ * Cell2D_Cartesian_HO -- Relational operators.                      *
  ******************************************************************/
-inline int operator ==(const Cell2D_Cartesian &Cell1,
-		       const Cell2D_Cartesian &Cell2) {
+inline int operator ==(const Cell2D_Cartesian_HO &Cell1,
+		       const Cell2D_Cartesian_HO &Cell2) {
     return (Cell1.xc == Cell2.xc);
 }
 
-inline int operator !=(const Cell2D_Cartesian &Cell1,
-		       const Cell2D_Cartesian &Cell2) {
+inline int operator !=(const Cell2D_Cartesian_HO &Cell1,
+		       const Cell2D_Cartesian_HO &Cell2) {
     return (Cell1.xc != Cell2.xc);
 }
 
 /******************************************************************
- * Cell2D_Cartesian -- Input-output operators.                    *
+ * Cell2D_Cartesian_HO -- Input-output operators.                    *
  ******************************************************************/
 inline ostream &operator << (ostream &out_file,
-			     const Cell2D_Cartesian &Cell) {
+			     const Cell2D_Cartesian_HO &Cell) {
     out_file << Cell.xc;
     return (out_file);
 }
 
 inline istream &operator >> (istream &in_file,
-			     Cell2D_Cartesian &Cell) {
+			     Cell2D_Cartesian_HO &Cell) {
     in_file >> Cell.xc; 
     return (in_file);
 }
@@ -871,10 +795,5 @@ inline istream &operator >> (istream &in_file,
     in_file >> Cell.xc; 
     return (in_file);
 }
-
-/******************************************************************
- * Useful 2D cell constants.                                      *
- ******************************************************************/
-const Cell2D_Cartesian Cell2D_Cartesian_ONE(ONE, ONE);
 
 #endif /* _CELL2D_INCLUDED  */
