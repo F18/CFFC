@@ -106,6 +106,7 @@ SRC_GRID = $(GRID_DIR)Cell1D.cc \
            $(GRID_DIR)Grid3DHexaMultiBlock.cc
 SRC_ICEMCFD = $(ICEMCFD_DIR)ICEMCFD.cc \
 	      $(ICEMCFD_DIR)ICEMCFD_ctype.c
+
 # Add Grid Testing If Required:
 SRC_GRID_TESTS := test_Grid2DQuadIntegration.cc
 SRC_GRID_TESTS := $(addprefix $(GRID_DIR)UnitTests/,$(SRC_GRID_TESTS))
@@ -568,7 +569,6 @@ EXE_ELECTROSTATIC2D = electrostatic2D
 EXE_RTE2D = rte2D
 EXE_LEVELSET2D = levelset2D
 EXE_EMBEDDEDBOUNDARIES2D = embeddedboundaries2D
-
 
 ###############################################################################
 # Define dependencies
