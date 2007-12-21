@@ -10,7 +10,11 @@
 #ifndef _CFD_INCLUDED
 #include "../CFD/CFD.h"
 #endif // _CFD_INCLUDED
+/* Include required CFFC header files. */
 
+#ifndef _MPI_INCLUDED
+#include "../MPI/MPI.h"
+#endif // _MPI_INCLUDED
 /*******************************************************************************
  *
  * Routine: skip_line
@@ -72,31 +76,61 @@ class FlowField_2D {
 
   public:
 
-   enum 
-      {
-         nzone = 43,
-         ni = 12,
-         nj = 12,
-         nvar = 30
-      };
+   int nzone;
+   int ni;
+   int nj;
+   int nvar;
    
+
+     
    
    Array::Dynamic<double, 4> data;
    
    /* Creation constructors. */
-
-   FlowField_2D(void): data(nzone, ni, nj, nvar){ }
+   FlowField_2D(void):nzone(43), ni(10), nj(10), nvar(30){};
    
-   int read_numerical_solution(const char *const cffc_path);
+   int read_numerical_solution_hotflow(const char *const cffc_path);
+   int read_numerical_solution_coldflow(const char *const cffc_path);
+   
+   void Allocate(int i_ICs){
+      if(i_ICs == IC_TURBULENT_DIFFUSION_FLAME){
+         nzone = 43;
+         ni = 12;
+         nj = 12;
+         nvar = 30;
+         
+         data.allocate(nzone, ni, nj, nvar);
+      }
+      if(i_ICs == IC_TURBULENT_COFLOW){
+         
+         nzone = 14;
+         ni = 20;
+         nj = 20;
+         nvar = 30;
+         data.allocate(nzone, ni, nj, nvar);
+      }
+   };
+   
+
+   void Deallocate(int i_ICs){
+      if(i_ICs == IC_TURBULENT_DIFFUSION_FLAME){
+         data.deallocate();
+      }
+      if(i_ICs == IC_TURBULENT_COFLOW){
+         data.deallocate();
+      }
+      
+   };
    
    
 };
 
 
-inline int  FlowField_2D::read_numerical_solution(const char *const cffc_path){
+inline int  FlowField_2D::read_numerical_solution_hotflow(const char *const cffc_path){
 
+      
    FILE * fp;
-
+   
    char filename[256];
    
    strcpy(filename, cffc_path);
@@ -142,6 +176,66 @@ inline int  FlowField_2D::read_numerical_solution(const char *const cffc_path){
    }// finish reading all the data
 
    
+   
+   fclose (fp);
+  
+
+
+   return 0;
+   
+    
+}
+
+inline int  FlowField_2D::read_numerical_solution_coldflow(const char *const cffc_path){
+
+   
+   FILE * fp;
+
+   char filename[256];
+   
+   strcpy(filename, cffc_path);
+   strcat(filename, "/src_3D/FANS/BluffBodyBurner_coldflow_2D.dat");
+   
+   fp = fopen (filename,"r");
+   
+   if ( !fp ) {
+      cout << "File not found.\n";
+      return 1;
+   }
+   
+   char str, zoneT;  
+   int izone;
+       
+   for(int iblk = 0; iblk<nzone; iblk++){
+      
+      fscanf(fp, "%c", &str);
+      if ( str == 'T' )
+         for ( int n = 37 ; n-- ; ) skip_line(fp);  // Skip header lines
+      
+      fscanf(fp, "ZONE T =  \"Block Number = %d \"", &izone);
+      
+      skip_line(fp);
+      skip_line(fp);
+      skip_line(fp);
+      skip_line(fp);
+   
+     
+      for(int jd = 0; jd<nj; jd++){
+         for(int id = 0; id<ni; id++){
+            for(int iv = 0; iv<nvar; iv++){
+               
+               fscanf(fp, "%lf", &data(izone, id, jd, iv));
+              
+               
+            }
+            skip_line(fp);
+         }
+      }
+      
+      
+   }// finish reading all the data
+
+   
 
    fclose (fp);
   
@@ -151,6 +245,7 @@ inline int  FlowField_2D::read_numerical_solution(const char *const cffc_path){
    
     
 }
+
 
 #endif // _INTERPOLATION2DTO3D_INCLUDED
 

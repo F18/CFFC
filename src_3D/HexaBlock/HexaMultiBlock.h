@@ -136,13 +136,10 @@ template<class HEXA_BLOCK> class Hexa_Multi_Block {
 
    void ICs(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
                              typename HEXA_BLOCK::Soln_cState> &Input);
-
-   int Interpolate_2Dto3D(FlowField_2D &Numflowfield2D,
-                          Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
-                                           typename HEXA_BLOCK::Soln_cState> &Input);
-
    void BCs(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
-                             typename HEXA_BLOCK::Soln_cState> &Input);
+            typename HEXA_BLOCK::Soln_cState> &Input);
+
+   int Interpolate_2Dto3D(FlowField_2D &Numflowfield2D);
 
    int WtoU(void);
 
@@ -552,9 +549,7 @@ void Hexa_Multi_Block<HEXA_BLOCK>::ICs(Input_Parameters<typename HEXA_BLOCK::Sol
  *                                                      *
  ********************************************************/
 template<class HEXA_BLOCK>
-int Hexa_Multi_Block<HEXA_BLOCK>::Interpolate_2Dto3D(FlowField_2D &Numflowfield2D,
-                                                     Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
-						                      typename HEXA_BLOCK::Soln_cState> &Input) {
+int Hexa_Multi_Block<HEXA_BLOCK>::Interpolate_2Dto3D(FlowField_2D &Numflowfield2D) {
 
    int error_flag(0);
    

@@ -1386,7 +1386,6 @@ ICs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
    return (0);
     
 }
-
 /********************************************************
  * Routine: Interpolate_2Dto3D                          *
  *                                                      *
