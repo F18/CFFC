@@ -1241,6 +1241,24 @@ void ICs(Gaussian2D_Quad_Block &SolnBlk,
            } /* endfor */
         } /* endfor */
         break;
+      case IC_SHOCK_STRUCTURE_M9_0:
+	if(Wo[0].gas != GAS_A) {
+	  cout << "error....don't change gas from \"A\".\n";
+	  assert(1==2);
+	}
+	Wl = Gaussian2D_pState(1.661, 2869.73, 0.0, 101325.0);
+	Wr = Gaussian2D_pState(6.40671, 744.003, 0.0, 1.02338e7);
+        for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
+            for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
+              if (SolnBlk.Grid.Cell[i][j].Xc.x <= ZERO) {
+                 SolnBlk.W[i][j] = Wl;
+              } else {
+                 SolnBlk.W[i][j] = Wr;
+              } /* end if */
+              SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
+           } /* endfor */
+        } /* endfor */
+        break;
       case IC_SHOCK_STRUCTURE_M10_0:
 	if(Wo[0].gas != GAS_A) {
 	  cout << "error....don't change gas from \"A\".\n";

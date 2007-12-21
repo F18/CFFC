@@ -599,10 +599,11 @@ inline char *Date_And_Time() {
 #define IC_SHOCK_STRUCTURE_M1_3       301
 #define IC_SHOCK_STRUCTURE_M1_5       302
 #define IC_SHOCK_STRUCTURE_M2_0       303
-#define IC_SHOCK_STRUCTURE_M10_0      304
-#define IC_PIPE                       305
-#define IC_COUETTE                    306
-#define IC_BLUNT_BODY                 307
+#define IC_SHOCK_STRUCTURE_M9_0       304
+#define IC_SHOCK_STRUCTURE_M10_0      305
+#define IC_PIPE                       306
+#define IC_COUETTE                    307
+#define IC_BLUNT_BODY                 308
 
 #define IC_SPECIFIED                  400
 #define IC_DISCONTINUOUS              401
