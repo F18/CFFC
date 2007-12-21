@@ -603,14 +603,14 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Periodic_Box(Grid3D_Input_Paramet
             /* Assign top and bottom boundary conditions. */
 
             if (kBlk == Input.NBlk_Kdir-1) {
- 	       BC_top = BC_NONE;
+              BC_top = BC_NONE;
             } else {
-               BC_top = BC_NONE;
+              BC_top = BC_NONE;
             } /* endif */
             if (kBlk == 0) {
-               BC_bottom = BC_NONE;
+	      BC_bottom = BC_NONE;
             } else {
-               BC_bottom = BC_NONE;
+              BC_bottom = BC_NONE;
             } /* endif */
 
             Grid_Blks[nBlk].Set_BCs_Zdir(BC_top, BC_bottom);

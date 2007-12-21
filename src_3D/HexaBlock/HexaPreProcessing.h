@@ -144,18 +144,18 @@ int Initial_Conditions(HexaSolver_Data &Data,
 
   CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization. 
   // First send mesh and geometry information.
-  error_flag = Send_Messages_Mesh_Geometry_Only<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >
-                  (Solution_Data.Local_Solution_Blocks.Soln_Blks,
-                   Data.Local_Adaptive_Block_List);
-  if (!Data.batch_flag && error_flag) {
-      cout << "\n ERROR: Message passing error during geometry intialization "
-           << "on processor "
-           << CFFC_MPI::This_Processor_Number
-           << ".\n";
-      cout.flush();
-   } /* endif */
-  error_flag = CFFC_OR_MPI(error_flag);
-  if (error_flag) return (error_flag);
+/*   error_flag = Send_Messages_Mesh_Geometry_Only<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> > */
+/*                   (Solution_Data.Local_Solution_Blocks.Soln_Blks, */
+/*                    Data.Local_Adaptive_Block_List); */
+/*   if (!Data.batch_flag && error_flag) { */
+/*       cout << "\n ERROR: Message passing error during geometry intialization " */
+/*            << "on processor " */
+/*            << CFFC_MPI::This_Processor_Number */
+/*            << ".\n"; */
+/*       cout.flush(); */
+/*    } /\* endif *\/ */
+/*   error_flag = CFFC_OR_MPI(error_flag); */
+/*   if (error_flag) return (error_flag); */
   // Correct exterior nodes to match with message passed geometry information.
   Solution_Data.Local_Solution_Blocks.Correct_Grid_Exterior_Nodes(Data.Local_Adaptive_Block_List);
   // Now send solution information and data.

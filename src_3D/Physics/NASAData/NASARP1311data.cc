@@ -382,7 +382,7 @@ int NASARP1311data::Which_coef(double &Temp){
       return i; 
     }
   }
-  
+
   //check if below range and if it is use lowest data set.
   if (Temp < thermo_data[0].Low_range() && Temp > 0.0 ){
     Temp = thermo_data[0].Low_range();

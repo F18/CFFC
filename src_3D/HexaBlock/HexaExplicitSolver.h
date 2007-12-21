@@ -159,12 +159,13 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
        * time stepping scheme.                                   *
        ***********************************************************/
       for (int i_stage  = 1 ; i_stage <= Solution_Data.Input.N_Stage ; ++i_stage ) {
-      
+
 	/*******************************************************************/
 	// 1. Send/Copy the information between blocks...
 	error_flag = Send_Messages<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >
                         (Solution_Data.Local_Solution_Blocks.Soln_Blks,
 			 Data.Local_Adaptive_Block_List);
+
 	if (error_flag) {
            cout << "\n ERROR: Message passing error during explicit time marching "
                 << "on processor "
@@ -174,11 +175,11 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
 	} /* endif */
 	error_flag = CFFC_OR_MPI(error_flag);        
 	if (error_flag) return (error_flag);
-	
+
 	/************* BOUNDARY CONDITIONS *********************************/
 	// 2. Apply boundary conditions for stage.
 	Solution_Data.Local_Solution_Blocks.BCs(Solution_Data.Input);
-	
+
 	 /*************** UPDATE SOLUTION **********************************/
 	// 3. Determine solution residuals for stage.
 	error_flag = Solution_Data.Local_Solution_Blocks.dUdt_Multistage_Explicit(Solution_Data.Input,
@@ -191,7 +192,7 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
 	} /* endif */
 	error_flag = CFFC_OR_MPI(error_flag);        
 	if (error_flag) return (error_flag);
-          	
+
 	/*******************************************************************/
 	// 4. Send boundary flux corrections at block interfaces with resolution changes.
 
@@ -214,7 +215,7 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
 	} /* endif */
 	error_flag = CFFC_OR_MPI(error_flag);
 	if (error_flag) return (error_flag);
-                    
+
       }  // END Multistage for loop
       /************************************************************************/
 
@@ -242,7 +243,7 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
   } // END ( Time or Steps) IF
 
   CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
- 
+
   /************************************************************************************  
    END OF EXPLICIT TIME MARCHING SCHEME CALCULATION:
    Update ghostcell information and prescribe boundary conditions to ensure

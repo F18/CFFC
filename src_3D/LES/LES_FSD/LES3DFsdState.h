@@ -723,6 +723,11 @@ class LES3DFsd_pState : public NavierStokes3D_ThermallyPerfect_pState {
 /** @name Turbulence Model Source Terms */
 /*        ----------------------------- */
 //@{
+   //! Enstrophy
+   double Enstrophy(const LES3DFsd_pState &dWdx, 
+                    const LES3DFsd_pState &dWdy, 
+                    const LES3DFsd_pState &dWdz) const;
+
    //! Absolute value of strain rate
    double abs_strain_rate(const LES3DFsd_pState &dWdx, 
                           const LES3DFsd_pState &dWdy, 

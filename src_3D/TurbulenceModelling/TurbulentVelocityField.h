@@ -121,9 +121,9 @@ inline void Turbulent_Velocity_Field_Block::allocate(const int Ni,
                                                      const int Nk,
                                                      const int Ng) {
    assert( Ni >= 1 && Nj >= 1 && Nk >= 1 && Ng >=1 && !Allocated);
-   NCi = Ni+2*Ng; ICl = Ng; ICu = Ni+Ng-1; 
-   NCj = Nj+2*Ng; JCl = Ng; JCu = Nj+Ng-1; 
-   NCk = Nk+2*Ng; KCl = Ng; KCu = Nk+Ng-1; 
+   NCi = Ni+2*Ng; ICl = Ng; ICu = Ni+Ng-1;
+   NCj = Nj+2*Ng; JCl = Ng; JCu = Nj+Ng-1;
+   NCk = Nk+2*Ng; KCl = Ng; KCu = Nk+Ng-1;
    Nghost = Ng;
    Allocated = TURBULENT_VELOCITY_FIELD_DATA_USED;
 
@@ -394,7 +394,7 @@ Energy_Spectrum_Value(const double &abs_wave_num) const {
     /*****  Haworth and Poinsot paper  *****/
   case SPECTRUM_HAWORTH_POINSOT :
     //double EE, kp, 
-    u = 2.5;  Lp = TWO*PI/4.0;  // kp=4.0, u=2.5  kp=8
+    u = 4.5;  Lp = TWO*PI/4.0;  // kp=4.0, u=2.5  kp=8
     kp = TWO*PI/Lp;
     EE = (32.0/3.0) * sqrt(2.0/PI)* (u*u/kp) * pow(k/kp, 4.0) * exp(-2.0*(k/kp)*(k/kp));
     break;
@@ -485,9 +485,11 @@ Create_Homogeneous_Turbulence_Velocity_Field(const Grid3D_Hexa_Multi_Block_List 
   complex<double> aa, bb;
   double deno;
 
+  if (CFFC_Primary_MPI_Processor()) {
   cout << "\n\n ==========================================================================\n"; 
   cout << " Generating Homegeneous Turbulent Velocity Field"<<endl;
   cout << " ==========================================================================" << endl;
+  }
 
   for (int i=0; i<Nx; ++i) {
     iconj = (i==0  ?  0 : Nx-i);
@@ -616,11 +618,6 @@ Create_Homogeneous_Turbulence_Velocity_Field(const Grid3D_Hexa_Multi_Block_List 
 	             index = iz + 
                              iy*Nz + 
                              ix*Ny*Nz;
- /*                     cout << "\n iBlk, jBlk, kBlk, nBlk: "  */
-/*                           << iBlk << " " << jBlk << " " << kBlk << " " << nBlk  */
-/*                           << " i, j, k, ix, iy, iz: " */
-/*                           << i << " " << j << " " << k << " " << ix << " " << iy << " " << iz  */
-/*                           << " index: " << index; cout.flush(); */
                      Initial_Velocity_Field.Vel_Blks[nBlk].Velocity[i][j][k].x = u[index];
                      Initial_Velocity_Field.Vel_Blks[nBlk].Velocity[i][j][k].y = v[index];
                      Initial_Velocity_Field.Vel_Blks[nBlk].Velocity[i][j][k].z = w[index];
@@ -714,8 +711,10 @@ void Assign_Homogeneous_Turbulence_Velocity_Field(HEXA_BLOCK *Solution_Block,
 
    for (int nBlk = 0 ; nBlk <= LocalSolnBlockList.Nblk-1 ; nBlk++) {
       if (LocalSolnBlockList.Block[nBlk].used == ADAPTIVEBLOCK3D_USED) {
+	if (Velocity_Field.Vel_Blks[LocalSolnBlockList.Block[nBlk].gblknum].Allocated) {
 	 Assign_Homogeneous_Turbulence_Velocity_Field(Solution_Block[nBlk],
-                                                      Velocity_Field.Vel_Blks[nBlk]);
+                                                      Velocity_Field.Vel_Blks[LocalSolnBlockList.Block[nBlk].gblknum]);
+	}/* endif */
       } /* endif */
    }  /* endfor */
 
@@ -838,14 +837,12 @@ void Time_Averaging_of_Solution(HEXA_BLOCK *Solution_Block,
             u_p += sqr(Solution_Block[p].W[i][j][k].v.x - u_ave) * local_vol;
             v_p += sqr(Solution_Block[p].W[i][j][k].v.y - v_ave) * local_vol;
             w_p += sqr(Solution_Block[p].W[i][j][k].v.z - w_ave) * local_vol;
-/*             vis = Solution_Block[p].W[i][j][k].mu()/Solution_Block[p].W[i][j][k].rho; */
-            vis = Solution_Block[p].W[i][j][k].mu_t(Solution_Block[p].dWdx[i][j][k],Solution_Block[p].dWdy[i][j][k],Solution_Block[p].dWdz[i][j][k],Solution_Block[p].Flow_Type,Solution_Block[p].Grid.volume(i,j,k))/(Solution_Block[p].W[i][j][k].rho);
+            vis = Solution_Block[p].W[i][j][k].mu()/Solution_Block[p].W[i][j][k].rho;
+/*             vis = Solution_Block[p].W[i][j][k].mu_t(Solution_Block[p].dWdx[i][j][k],Solution_Block[p].dWdy[i][j][k],Solution_Block[p].dWdz[i][j][k],Solution_Block[p].Flow_Type,Solution_Block[p].Grid.volume(i,j,k))/(Solution_Block[p].W[i][j][k].rho); */
             vis_ave += vis*local_vol;
-            ens += sqr(Solution_Block[p].W[i][j][k].SFS_Kinetic_Energy_Fsd(Solution_Block[p].dWdx[i][j][k],Solution_Block[p].dWdy[i][j][k],Solution_Block[p].dWdz[i][j][k],Solution_Block[p].Flow_Type,local_vol)/vis)/2.0 * local_vol;
-            eps_w += 2.0*vis*ens;
+            ens += Solution_Block[p].W[i][j][k].Enstrophy(Solution_Block[p].dWdx[i][j][k],Solution_Block[p].dWdy[i][j][k],Solution_Block[p].dWdz[i][j][k]) * local_vol;
+            eps_w += 2.0*vis* Solution_Block[p].W[i][j][k].Enstrophy(Solution_Block[p].dWdx[i][j][k],Solution_Block[p].dWdy[i][j][k],Solution_Block[p].dWdz[i][j][k]) * local_vol;
             eps_ss += 2.0*vis*(sqr(Solution_Block[p].W[i][j][k].abs_strain_rate(Solution_Block[p].dWdx[i][j][k],Solution_Block[p].dWdy[i][j][k],Solution_Block[p].dWdz[i][j][k]))/2.0) * local_vol;
-/*             ens += Solution_Block[p].enstrophy(i,j,k) * local_vol; */
-/*             eps_w += 2.0*vis*Solution_Block[p].enstrophy(i,j,k) * local_vol; */
 /*             dWdx = Solution_Block[p].dWdx[i][j][k]; */
 /*             dWdy = Solution_Block[p].dWdy[i][j][k]; */
 /*             dWdz = Solution_Block[p].dWdz[i][j][k]; */
@@ -878,15 +875,16 @@ void Time_Averaging_of_Solution(HEXA_BLOCK *Solution_Block,
   double Taylor_scale, Kolmogorov_scale, Re_Taylor, L11; 
   double l_1, l_2;
 
+  Kolmogorov_scale = pow(pow(vis_ave, THREE)/eps_w, 0.25);//????????
+
   if (ens == ZERO) {
     Taylor_scale = ZERO;
   } else {
-    Taylor_scale = sqrt(TWO*u_rms*u_rms/(TWO*ens));//sqrt(10.0*vis_ave*1.5*u_rms*u_rms/eps_w);//sqrt(TWO*u_rms*u_rms/(TWO*ens));//?????????
+    Taylor_scale = u_rms*sqrt(15.0)*Kolmogorov_scale;//sqrt(10.0*vis_ave*1.5*u_rms*u_rms/ens);//sqrt(TWO*u_rms*u_rms/(TWO*ens));//?????????
   }
 
   Re_Taylor =  u_rms*Taylor_scale/vis_ave;//???????????
-  Kolmogorov_scale = pow(pow(vis_ave, THREE)/eps_w, 0.25);//????????
-  L11= 0.09*pow(1.5*u_rms*u_rms, 1.5)/eps_w;//ens;
+  L11= 0.09*pow(1.5*u_rms*u_rms, 1.5)/eps_ss;
 
   if (eps_w > 0.0) {
     l_1 = 0.42*pow(u_rms, 3.0)/eps_w;

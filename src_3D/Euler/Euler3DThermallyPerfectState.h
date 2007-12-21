@@ -156,6 +156,12 @@ class Euler3D_ThermallyPerfect_pState {
   protected:
    static double             *_temp_values;  //!< Temporary static values for species calculations
    static double              *_diff_coeff;  //!< Temporary static values for species diffusion calculations
+   static double                ***_d2Wdx2;  //!< Temporary static values of second derivitives of primitive variables
+   static double                ***_d2Wdy2;  //!< Temporary static values of second derivitives of primitive variables
+   static double                ***_d2Wdz2;  //!< Temporary static values of second derivitives of primitive variables
+   static double                ***_d2Wdxy;  //!< Temporary static values of second derivitives of primitive variables
+   static double                ***_d2Wdxz;  //!< Temporary static values of second derivitives of primitive variables
+   static double                ***_d2Wdyz;  //!< Temporary static values of second derivitives of primitive variables
 
   public:
    double                              rho;  //!< Mixture density (kg/m^3)

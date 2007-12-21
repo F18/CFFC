@@ -29,6 +29,8 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
                                                Data.Local_Adaptive_Block_List,
                                                Velocity_Field);
 
+  Solution_Data.Local_Solution_Blocks.ICs_Specializations(Solution_Data.Input);
+
   return error_flag;
 
 }

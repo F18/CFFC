@@ -137,6 +137,9 @@ template<class HEXA_BLOCK> class Hexa_Multi_Block {
    void ICs(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
                              typename HEXA_BLOCK::Soln_cState> &Input);
 
+   void ICs_Specializations(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
+                                             typename HEXA_BLOCK::Soln_cState> &Input);
+
    void BCs(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
                              typename HEXA_BLOCK::Soln_cState> &Input);
 
@@ -519,7 +522,7 @@ void Hexa_Multi_Block<HEXA_BLOCK>::Freeze_Limiters(void) {
  * Routine: ICs                                         *
  *                                                      *
  * Assigns initial conditions and data to the           *
- * solution variables of a 1D array of 3D hexahedrial *
+ * solution variables of a 1D array of 3D hexahedrial   *
  * multi-block solution blocks.                         *
  *                                                      *
  ********************************************************/
@@ -534,6 +537,30 @@ void Hexa_Multi_Block<HEXA_BLOCK>::ICs(Input_Parameters<typename HEXA_BLOCK::Sol
    for (int nblk = 0; nblk < Number_of_Soln_Blks; ++nblk) {
       if (Block_Used[nblk]) {
          error_flag = Soln_Blks[nblk].ICs(Input.i_ICs, Input);
+      } /* endif */
+   }  /* endfor */
+   
+}
+
+/********************************************************
+ * Routine: ICs_Specializations                         *
+ *                                                      *
+ * Assigns initial conditions and data to the           *
+ * solution variables of a 1D array of 3D hexahedrial   *
+ * multi-block solution blocks.                         *
+ *                                                      *
+ ********************************************************/
+template<class HEXA_BLOCK>
+void Hexa_Multi_Block<HEXA_BLOCK>::ICs_Specializations(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
+                                                                        typename HEXA_BLOCK::Soln_cState> &Input) {
+
+   int error_flag(0);
+   
+   /* Assign initial data for each solution block. */
+
+   for (int nblk = 0; nblk < Number_of_Soln_Blks; ++nblk) {
+      if (Block_Used[nblk]) {
+         error_flag = Soln_Blks[nblk].ICs_Specializations(Input.i_ICs, Input);
       } /* endif */
    }  /* endfor */
    
