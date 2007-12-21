@@ -667,28 +667,28 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Periodic_Box(Grid3D_Input_Paramet
             for (int nDir = 0; nDir <= MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK-1; ++nDir) {
                Dir_Index = Dir_Index.boundary_element_number_to_direction_indices(nDir);
 
-               if (iBlk == 0 && Dir_Index.i != 0) {
+               if (iBlk == 0 && Dir_Index.i < 0) {
 	          opposite_iBlk = Input.NBlk_Idir-1;
-               } else if (iBlk == Input.NBlk_Idir-1 && Dir_Index.i != 0) {
+               } else if (iBlk == Input.NBlk_Idir-1 && Dir_Index.i > 0) {
 	          opposite_iBlk = 0;
                } else {
-	          opposite_iBlk = iBlk;
+	          opposite_iBlk = iBlk + Dir_Index.i;
                } /* endif */
 
-               if (jBlk == 0 && Dir_Index.j != 0) {
+               if (jBlk == 0 && Dir_Index.j < 0) {
 	          opposite_jBlk = Input.NBlk_Jdir-1;
-               } else if (jBlk == Input.NBlk_Jdir-1 && Dir_Index.j != 0) {
+               } else if (jBlk == Input.NBlk_Jdir-1 && Dir_Index.j > 0) {
 	          opposite_jBlk = 0;
                } else {
-	          opposite_jBlk = jBlk;
+	          opposite_jBlk = jBlk + Dir_Index.j;
                } /* endif */
 
-   	       if (kBlk == 0 && Dir_Index.k != 0) {
+   	       if (kBlk == 0 && Dir_Index.k < 0) {
 	          opposite_kBlk = Input.NBlk_Kdir-1;
-               } else if (kBlk == Input.NBlk_Kdir-1 && Dir_Index.k != 0) {
+               } else if (kBlk == Input.NBlk_Kdir-1 && Dir_Index.k > 0) {
 	          opposite_kBlk = 0;
                } else {
-	          opposite_kBlk = kBlk;
+	          opposite_kBlk = kBlk + Dir_Index.k;
                } /* endif */
 
 	       opposite_nBlk = opposite_iBlk + 

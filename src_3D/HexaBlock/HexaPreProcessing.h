@@ -18,7 +18,8 @@ int Initialize_Solution_Blocks(HexaSolver_Data &Data,
   //NOTE: None of the initial "GRID" functions pass back an error_flag...
   int error_flag(0);
 
-  // The primary MPI processor creates the initial mesh.
+  /* Create the initial mesh on the primary MPI processor. */
+
   if (CFFC_Primary_MPI_Processor()) {
     Data.Initial_Mesh.Create_Grid(Solution_Data.Input.Grid_IP);
     //Outputting solution input parameters
@@ -27,12 +28,14 @@ int Initialize_Solution_Blocks(HexaSolver_Data &Data,
       cout.flush(); 
     } /* endif */
   } /* endif */
-
   CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
-  //Broadcast the mesh to other MPI processors.
+  
+  /* Broadcast the mesh to other MPI processors. */
+
   Data.Initial_Mesh.Broadcast();                    
   
   /* Create (allocate) list of hexahedral solution blocks on each processor. */
+
   if (!Data.batch_flag) {
     cout << "\n Creating multi-block octree data structure and assigning"
 	 << "\n  solution blocks corresponding to initial mesh.";
@@ -40,12 +43,17 @@ int Initialize_Solution_Blocks(HexaSolver_Data &Data,
   } /* endif */
   
   // FROM AMR 
-  Create_Initial_Solution_Blocks<SOLN_pSTATE, SOLN_cSTATE>(Data.Initial_Mesh,
-							   Solution_Data.Local_Solution_Blocks,
-							   Solution_Data.Input,
-							   Data.Octree,
-							   Data.Global_Adaptive_Block_List,
-							   Data.Local_Adaptive_Block_List);
+  error_flag = Create_Initial_Solution_Blocks<SOLN_pSTATE, SOLN_cSTATE>(Data.Initial_Mesh,
+		  					                Solution_Data.Local_Solution_Blocks,
+							                Solution_Data.Input,
+							                Data.Octree,
+							                Data.Global_Adaptive_Block_List,
+							                Data.Local_Adaptive_Block_List);
+  error_flag = CFFC_OR_MPI(error_flag);
+  if (error_flag) return (error_flag);
+
+  /* Initialization of solution blocks complete, return. */
+
   return error_flag;
 
 } 
