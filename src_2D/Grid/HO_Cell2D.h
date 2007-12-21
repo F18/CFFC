@@ -88,8 +88,8 @@ public:
 
   //! @name Input-output operators.
   //@{
-  friend ostream &operator << (ostream &out_file, const Cell2D_HO &Cell);
-  friend istream &operator >> (istream &in_file, Cell2D_HO &Cell);
+  friend ostream & operator << (ostream &out_file, const Cell2D_HO &Cell);
+  friend istream & operator >> (istream &in_file, Cell2D_HO &Cell);
   //@}
 
 private:    
@@ -159,28 +159,28 @@ inline void Cell2D_HO::setloc(const double &xx, const double &yy) {
   Xc.x = xx; Xc.y = yy;
 }
 
-/*
+/*!
  * Set cell (i,j) indices.
  */
 inline void Cell2D_HO::setindex(void) {
   I = 0; J = 0;
 }
 
-/*
+/*!
  * Set cell (i,j) indices.
  */
 inline void Cell2D_HO::setindex(const Cell2D_HO &Cell) {
     I = Cell.I; J = Cell.J;
 }
 
-/*
+/*!
  * Set cell (i,j) indices.
  */
 inline void Cell2D_HO::setindex(const int II, const int JJ) {
     I = II; J = JJ;
 }
 
-/*
+/*!
  * Equal operator
  */
 inline bool operator ==(const Cell2D_HO &Cell1,
@@ -188,7 +188,7 @@ inline bool operator ==(const Cell2D_HO &Cell1,
   return (Cell1.Xc == Cell2.Xc && Cell1.A == Cell2.A);
 }
 
-/*
+/*!
  * Not-equal operator
  */
 inline bool operator !=(const Cell2D_HO &Cell1,
@@ -223,577 +223,757 @@ inline istream &operator >> (istream &in_file,
   return (in_file);
 }
 
-/* Define the cell class for a uniform 2D Cartesian mesh. */
-
-/*********************************************************
- * Class: Cell2D_Cartesian_HO                               *
- *                                                       *
- * Member functions                                      *
- *      xc      -- Return 2D vector containing location  *
- *                 of cell center.                       *
- *      dx      -- Return 2D vector of cell dimensions.  *
- *                                                       *
- *                                                       *
- *                 xnNW-----xfN----xnNE                  *
- *                   |              |                    *
- *                   |              |                    *
- *       Cell       xfW      xc    xfE                   *
- *                   |              |                    *
- *                   |              |                    *
- *                 xnSW-----xfS----xnSE                  *
- *                                                       *
- *                                                       *
- *      A       -- Return the area of the cell.          *
- *      xnNW    -- Return 2D vector containing location  *
- *                 of north-west node.                   *
- *      xnNE    -- Return 2D vector containing location  *
- *                 of north-east node.                   *
- *      xnSE    -- Return 2D vector containing location  *
- *                 of south-east node.                   *
- *      xnSW    -- Return 2D vector containing location  *
- *                 of south-west node.                   *
- *      xfN     -- Return 2D vector containing location  *
- *                 of center of north cell face.         *
- *      xfS     -- Return 2D vector containing location  *
- *                 of center of south cell face.         *
- *      xfE     -- Return 2D vector containing location  *
- *                 of center of east cell face.          *
- *      xfW     -- Return 2D vector containing location  *
- *                 of center of west cell face.          *
- *      setsize -- Set cell dimensions.                  *
- *      setloc  -- Set cell center location (position).  * 
- *                                                       *
- * Member operators                                      *
- *      C -- a cell                                      *
- *                                                       *
- * C = C;                                                *
- * C == C;                                               *
- * C != C;                                               *
- * cout << C; (output function)                          *
- * cin  >> C; (input function)                           *
- *                                                       *
- *********************************************************/
+/*!
+ * \class Cell2D_Cartesian_HO                            
+ * \brief Define the cell class for a uniform 2D Cartesian mesh.
+ * \verbatim
+ * Member functions                                      
+ *      xc      -- Return 2D vector containing location  
+ *                 of cell center.                       
+ *      dx      -- Return 2D vector of cell dimensions.  
+ *                                                       
+ *                                                       
+ *                 xnNW-----xfN----xnNE                  
+ *                   |              |                    
+ *                   |              |                    
+ *       Cell       xfW      xc    xfE                   
+ *                   |              |                    
+ *                   |              |                    
+ *                 xnSW-----xfS----xnSE                  
+ *                                                       
+ *                      UnitTests                                 
+ *      A       -- Return the area of the cell.          
+ *      xnNW    -- Return 2D vector containing location  
+ *                 of north-west node.                   
+ *      xnNE    -- Return 2D vector containing location  
+ *                 of north-east node.                    
+ *      xnSE    -- Return 2D vector containing location  
+ *                 of south-east node.                   
+ *      xnSW    -- Return 2D vector containing location  
+ *                 of south-west node.                   
+ *      xfN     -- Return 2D vector containing location  
+ *                 of center of north cell face.         
+ *      xfS     -- Return 2D vector containing location  
+ *                 of center of south cell face.         
+ *      xfE     -- Return 2D vector containing location  
+ *                 of center of east cell face.          
+ *      xfW     -- Return 2D vector containing location  
+ *                 of center of west cell face.          
+ *      setsize -- Set cell dimensions.                  
+ *      setloc  -- Set cell center location (position).   
+ *                                                       
+ * Member operators                                      
+ *      C -- a cell                                      
+ *                                                       
+ * C = C;                                                
+ * C == C;                                               
+ * C != C;              UnitTests                                 
+ * cout << C; (output function)                          
+ * cin  >> C; (input function)                           
+ * \endverbatim                                                       
+ */
 class Cell2D_Cartesian_HO{
-  private:
-  public:
-  Vector2D         xc;   // Location of cell center.
-  static Vector2D  dx;   // Vector of cell lengths.
-
+private:
+public:
+  Vector2D         xc;   //!< Location of cell center.
+  static Vector2D  dx;   //!< Vector of cell lengths.
+  
   static Cell2D_Cartesian_HO Cell2D_Cartesian_HO_ONE;
-		      
-    /* Creation, copy, and assignment constructors. */
-    Cell2D_Cartesian_HO(void) {
-       xc.x = ONE; xc.y = ONE;  
-    }
+  
+  //! @name Constructors.
+  //@{
+  
+  //!Default constructor
+  Cell2D_Cartesian_HO(void);
+  
+  //!Copy Constructor
+  Cell2D_Cartesian_HO(const Cell2D_Cartesian_HO &Cell);
+  
+  //! Constructor with given 2D vector
+  Cell2D_Cartesian_HO(const Vector2D &V);
+  
+  //! Constructor with given coordinates
+  Cell2D_Cartesian_HO(const double &xx, const double &yy);
+  //@}
+  
+  //! @name Cell area.
+  //@{
+  double A(void);
+  double A(void) const;
+  //@}
 
-    Cell2D_Cartesian_HO(const Cell2D_Cartesian_HO &Cell) {
-       xc = Cell.xc;
-    }
+  //!@name Node locations. 
+  //@{
+  Vector2D xnNW(void);
+  Vector2D xnNW(void) const;
+  
+  Vector2D xnNE(void);
+  Vector2D xnNE(void) const;
+  
+  Vector2D xnSE(void);
+  Vector2D xnSE(void) const;
+  
+  Vector2D xnSW(void);
+  Vector2D xnSW(void) const;
+  //@}
 
-    Cell2D_Cartesian_HO(const Vector2D &V) {
-       xc = V;
-    }
+  //!@name Face midpoints.
+  //@{
+  Vector2D xfN(void);
+  Vector2D xfN(void) const;
+  
+  Vector2D xfS(void);
+  Vector2D xfS(void) const;
+  
+  Vector2D xfE(void);
+  Vector2D xfE(void) const;
+  
+  Vector2D xfW(void);
+  Vector2D xfW(void) const;
+  //@}
 
-    Cell2D_Cartesian_HO(const double &xx, const double &yy) {
-       xc.x = xx; xc.y = yy;
-    }
-    
-    /* Destructor. */
-    // ~Cell2D_Cartesian_HO(void);
-    // Use automatically generated destructor.
+  //!@name Set cell dimensions. 
+  //@{
+  void setsize(void);
+  void setsize(const Vector2D &xx);
+  void setsize(const double &xx, const double &yy);
+  //@}
+  
+  //!@name Set cell center location.
+  //@{
+  void setloc(void);
+  void setloc(const Cell2D_Cartesian_HO &Cell);
+  void setloc(const Vector2D &V);
+  void setloc(const double &xx, const double &yy);
+  //@}
+  
+  //!@name Relational operators.
+  //@{
+  friend int operator ==(const Cell2D_Cartesian_HO &Cell1,
+			 const Cell2D_Cartesian_HO &Cell2);
+  friend int operator !=(const Cell2D_Cartesian_HO &Cell1,
+			 const Cell2D_Cartesian_HO &Cell2);
+  //@}
 
-    /* Cell area. */
-    double A(void);
-    double A(void) const;
-
-    /* Node locations. */
-    Vector2D xnNW(void);
-    Vector2D xnNW(void) const;
-
-    Vector2D xnNE(void);
-    Vector2D xnNE(void) const;
-
-    Vector2D xnSE(void);
-    Vector2D xnSE(void) const;
-
-    Vector2D xnSW(void);
-    Vector2D xnSW(void) const;
-
-    /* Face midpoints. */
-    Vector2D xfN(void);
-    Vector2D xfN(void) const;
-
-    Vector2D xfS(void);
-    Vector2D xfS(void) const;
-
-    Vector2D xfE(void);
-    Vector2D xfE(void) const;
-
-    Vector2D xfW(void);
-    Vector2D xfW(void) const;
-
-    /* Set cell dimensions. */
-    void setsize(void);
-    void setsize(const Vector2D &xx);
-    void setsize(const double &xx, const double &yy);
-
-    /* Set cell center location. */
-    void setloc(void);
-    void setloc(const Cell2D_Cartesian_HO &Cell);
-    void setloc(const Vector2D &V);
-    void setloc(const double &xx, const double &yy);
-
-    /* Assignment operator. */
-    // Cell2D_Cartesian_HO operator = (const Cell2D_Cartesian_HO &Cell);
-    // Use automatically generated assignment operator.
-
-    /* Relational operators. */
-    friend int operator ==(const Cell2D_Cartesian_HO &Cell1,
-			   const Cell2D_Cartesian_HO &Cell2);
-    friend int operator !=(const Cell2D_Cartesian_HO &Cell1,
-			   const Cell2D_Cartesian_HO &Cell2);
-    
-    /* Input-output operators. */
-    friend ostream &operator << (ostream &out_file,
-				 const Cell2D_Cartesian_HO &Cell);
-    friend istream &operator >> (istream &in_file,
-				 Cell2D_Cartesian_HO &Cell);
-    
+  //!@name Input-output operators.
+  //@{
+  friend ostream &operator << (ostream &out_file,
+			       const Cell2D_Cartesian_HO &Cell);
+  friend istream &operator >> (istream &in_file,
+			       Cell2D_Cartesian_HO &Cell);
+  //@}
 };
 
-/******************************************************************
- * Cell2D_Cartesian_HO::A -- Return cell area.                       *
- ******************************************************************/
+//!Default constructor
+inline Cell2D_Cartesian_HO::Cell2D_Cartesian_HO(void) : xc(ONE)
+{
+  //
+}
+
+//!Copy Constructor
+inline Cell2D_Cartesian_HO::Cell2D_Cartesian_HO(const Cell2D_Cartesian_HO &Cell) : xc (Cell.xc)
+{
+  //
+}
+
+//! Constructor with centroid location
+inline Cell2D_Cartesian_HO::Cell2D_Cartesian_HO(const Vector2D &V) : xc(V) 
+{
+  //
+}
+
+//! Constructor with centroid location
+inline Cell2D_Cartesian_HO::Cell2D_Cartesian_HO(const double &xx, const double &yy) :  xc(ONE)
+{
+  //
+}
+
+/*!
+ * Return cell area. 
+ */
 inline double Cell2D_Cartesian_HO::A(void) {
-    return (dx.x*dx.y);
+  return (dx.x*dx.y);
 }
 
+/*!
+ * Return cell area. 
+ */
 inline double Cell2D_Cartesian_HO::A(void) const {
-    return (dx.x*dx.y);
+  return (dx.x*dx.y);
 }
 
-/******************************************************************
- * Cell2D_Cartesian_HO::xn?? -- Get cell nodes.                      *
- ******************************************************************/
+/*!
+ *Get North-West cell node.
+ */
 inline Vector2D Cell2D_Cartesian_HO::xnNW(void) {
-    return (Vector2D(xc-HALF*dx.x*Vector2D_NX+HALF*dx.y*Vector2D_NY));
+  return (Vector2D(xc-HALF*dx.x*Vector2D_NX+HALF*dx.y*Vector2D_NY));
 }
 
+/*!
+ *Get North-West cell node.
+ */
 inline Vector2D Cell2D_Cartesian_HO::xnNW(void) const {
-    return (Vector2D(xc-HALF*dx.x*Vector2D_NX+HALF*dx.y*Vector2D_NY));
+  return (Vector2D(xc-HALF*dx.x*Vector2D_NX+HALF*dx.y*Vector2D_NY));
 }
 
+/*!
+ *Get North-East cell node.
+ */
 inline Vector2D Cell2D_Cartesian_HO::xnNE(void) {
-    return (Vector2D(xc+HALF*dx.x*Vector2D_NX+HALF*dx.y*Vector2D_NY));
+  return (Vector2D(xc+HALF*dx.x*Vector2D_NX+HALF*dx.y*Vector2D_NY));
 }
 
+/*!
+ *Get North-East cell node.
+ */
 inline Vector2D Cell2D_Cartesian_HO::xnNE(void) const {
-    return (Vector2D(xc+HALF*dx.x*Vector2D_NX+HALF*dx.y*Vector2D_NY));
+  return (Vector2D(xc+HALF*dx.x*Vector2D_NX+HALF*dx.y*Vector2D_NY));
 }
 
+/*!
+ *Get South-East cell node.
+ */
 inline Vector2D Cell2D_Cartesian_HO::xnSE(void) {
-    return (Vector2D(xc+HALF*dx.x*Vector2D_NX-HALF*dx.y*Vector2D_NY));
+  return (Vector2D(xc+HALF*dx.x*Vector2D_NX-HALF*dx.y*Vector2D_NY));
 }
 
+
+/*!
+ *Get South-East cell node.
+ */
 inline Vector2D Cell2D_Cartesian_HO::xnSE(void) const {
-    return (Vector2D(xc+HALF*dx.x*Vector2D_NX-HALF*dx.y*Vector2D_NY));
+  return (Vector2D(xc+HALF*dx.x*Vector2D_NX-HALF*dx.y*Vector2D_NY));
 }
 
+
+/*!
+ *Get South-West cell node.
+ */
 inline Vector2D Cell2D_Cartesian_HO::xnSW(void) {
-    return (Vector2D(xc-HALF*dx.x*Vector2D_NX-HALF*dx.y*Vector2D_NY));
+  return (Vector2D(xc-HALF*dx.x*Vector2D_NX-HALF*dx.y*Vector2D_NY));
 }
 
+
+/*!
+ *Get South-West cell node.
+ */
 inline Vector2D Cell2D_Cartesian_HO::xnSW(void) const {
-    return (Vector2D(xc-HALF*dx.x*Vector2D_NX-HALF*dx.y*Vector2D_NY));
+  return (Vector2D(xc-HALF*dx.x*Vector2D_NX-HALF*dx.y*Vector2D_NY));
 }
 
-/******************************************************************
- * Cell2D_Cartesian_HO::xf? -- Get cell faces.                       *
- ******************************************************************/
+/*!
+ * Get North cell face.
+ */
 inline Vector2D Cell2D_Cartesian_HO::xfN(void) {
-    return (Vector2D(xc+HALF*dx.y*Vector2D_NY));
+  return (Vector2D(xc+HALF*dx.y*Vector2D_NY));
 }
 
+/*!
+ * Get North cell face.
+ */
 inline Vector2D Cell2D_Cartesian_HO::xfN(void) const {
-    return (Vector2D(xc+HALF*dx.y*Vector2D_NY));
+  return (Vector2D(xc+HALF*dx.y*Vector2D_NY));
 }
 
+/*!
+ * Get South cell face.
+ */
 inline Vector2D Cell2D_Cartesian_HO::xfS(void) {
-    return (Vector2D(xc-HALF*dx.y*Vector2D_NY));
+  return (Vector2D(xc-HALF*dx.y*Vector2D_NY));
 }
 
+/*!
+ * Get South cell face.
+ */
 inline Vector2D Cell2D_Cartesian_HO::xfS(void) const {
-    return (Vector2D(xc-HALF*dx.y*Vector2D_NY));
+  return (Vector2D(xc-HALF*dx.y*Vector2D_NY));
 }
 
+/*!
+ * Get East cell face.
+ */
 inline Vector2D Cell2D_Cartesian_HO::xfE(void) {
-    return (Vector2D(xc+HALF*dx.x*Vector2D_NX));
+  return (Vector2D(xc+HALF*dx.x*Vector2D_NX));
 }
 
+/*!
+ * Get East cell face.
+ */
 inline Vector2D Cell2D_Cartesian_HO::xfE(void) const {
-    return (Vector2D(xc+HALF*dx.x*Vector2D_NX));
+  return (Vector2D(xc+HALF*dx.x*Vector2D_NX));
 }
 
+/*!
+ * Get West cell face.
+ */
 inline Vector2D Cell2D_Cartesian_HO::xfW(void) {
-    return (Vector2D(xc-HALF*dx.x*Vector2D_NX));
+  return (Vector2D(xc-HALF*dx.x*Vector2D_NX));
 }
 
+/*!
+ * Get West cell face.
+ */
 inline Vector2D Cell2D_Cartesian_HO::xfW(void) const {
-    return (Vector2D(xc-HALF*dx.x*Vector2D_NX));
+  return (Vector2D(xc-HALF*dx.x*Vector2D_NX));
 }
 
-/******************************************************************
- * Cell2D_Cartesian_HO::setsize -- Set cell dimensions.              *
- ******************************************************************/
+/*!
+ * Set default cell dimensions. dx.x = one, dx.y = one.
+ */
 inline void Cell2D_Cartesian_HO::setsize(void) {
   dx.x = ONE; dx.y = ONE;
 }
 
+/*!
+ * Set cell dimensions.
+ */
 inline void Cell2D_Cartesian_HO::setsize(const Vector2D &xx) {
   dx = xx;
 }
 
+/*!
+ * Set cell dimensions.
+ */
 inline void Cell2D_Cartesian_HO::setsize(const double &xx, const double &yy) {
   dx.x = xx; dx.y = yy;
 }
 
-/******************************************************************
- * Cell2D_Cartesian_HO::setloc -- Set cell center location.          *
- ******************************************************************/
+/*!
+ *Set default cell center location. xc.x = one, xc.y = one.
+ */
 inline void Cell2D_Cartesian_HO::setloc(void) {
-    xc.x = ONE; xc.y = ONE;
+  xc.x = ONE; xc.y = ONE;
 }
 
+/*!
+ *Set cell center location.
+ */
 inline void Cell2D_Cartesian_HO::setloc(const Cell2D_Cartesian_HO &Cell) {
-    xc = Cell.xc;
+  xc = Cell.xc;
 }
 
+/*!
+ *Set cell center location.
+ */
 inline void Cell2D_Cartesian_HO::setloc(const Vector2D  &V) {
-    xc = V;
+  xc = V;
 }
 
+/*!
+ *Set cell center location.
+ */
 inline void Cell2D_Cartesian_HO::setloc(const double &xx, const double &yy) {
-    xc.x = xx; xc.y = yy;
+  xc.x = xx; xc.y = yy;
 }
 
-/******************************************************************
- * Cell2D_Cartesian_HO -- Relational operators.                      *
- ******************************************************************/
+/*!
+ *Equal operator.
+ */
 inline int operator ==(const Cell2D_Cartesian_HO &Cell1,
 		       const Cell2D_Cartesian_HO &Cell2) {
-    return (Cell1.xc == Cell2.xc);
+  return (Cell1.xc == Cell2.xc);
 }
 
+/*!
+ * Not-equal operator.
+ */
 inline int operator !=(const Cell2D_Cartesian_HO &Cell1,
 		       const Cell2D_Cartesian_HO &Cell2) {
-    return (Cell1.xc != Cell2.xc);
+  return (Cell1.xc != Cell2.xc);
 }
 
-/******************************************************************
- * Cell2D_Cartesian_HO -- Input-output operators.                    *
- ******************************************************************/
+/*!
+ * Output operator.
+ */
 inline ostream &operator << (ostream &out_file,
 			     const Cell2D_Cartesian_HO &Cell) {
-    out_file << Cell.xc;
-    return (out_file);
+  out_file << Cell.xc;
+  return (out_file);
 }
 
+/*!
+ * Input operator.
+ */
 inline istream &operator >> (istream &in_file,
 			     Cell2D_Cartesian_HO &Cell) {
-    in_file >> Cell.xc; 
-    return (in_file);
+  in_file >> Cell.xc; 
+  return (in_file);
 }
 
+/*!
+ * \class Cell2D_Quad_HO                                  
+ * \brief Define the cell class for a 2D quadrilateral mesh.
+ * \verbatim                                                     
+ * Member functions                                     
+ *      xc      -- Return 2D vector containing location 
+ *                 of cell center.                      
+ *      xnNW    -- Return 2D vector containing location 
+ *                 of north-west node.                  
+ *      xnNE    -- Return 2D vector containing location 
+ *                 of north-east node.                  
+ *      xnSE    -- Return 2D vector containing location 
+ *                 of south-east node.                  
+ *      xnSW    -- Return 2D vector containing location 
+ *                 of south-west node.                  
+ *                                                      
+ *                                                      
+ *                 xnNW-----xfN----xnNE                 
+ *                   |              |                   
+ *                   |              |                   
+ *       Cell       xfW      xc    xfE                  
+ *                   |              |                   
+ *                   |              |                   
+ *                 xnSW-----xfS----xnSE                 
+ *                                                      
+ *                                                      
+ *      A       -- Return the area of the cell.         
+ *      xfN     -- Return 2D vector containing location 
+ *                 of midpoint of north cell face.      
+ *      xfS     -- Return 2D vector containing location 
+ *                 of midpoint of south cell face.      
+ *      xfE     -- Return 2D vector containing location 
+ *                 of midpoint of east cell face.       
+ *      xfW     -- Return 2D vector containing location 
+ *                 of midpoint of west cell face.       
+ *      lfN     -- Return the length of north cell face.
+ *      lfS     -- Return the length of south cell face.
+ *      lfE     -- Return the length of east cell face. 
+ *      lfW     -- Return the length of west cell face. 
+ *      setnodes -- Set cell node locations.             
+ *                                                      
+ * Member operators                                     
+ *      C -- a cell                                     
+ *                                                      
+ * C = C;                                               
+ * C == C;                                              
+ * C != C;                                              
+ * cout << C; (output function)                         
+ * cin  >> C; (input function)                          
+ * \endverbatim                                                     
+ */
 
-/* Define the cell class for a 2D quadrilateral mesh. */
+class Cell2D_Quad_HO{
+private:
+public:
+  Vector2D         xc;   //!< Location of cell center.
+  Vector2D       xnNW;   //!< Location of north-west node.
+  Vector2D       xnNE;   //!< Location of north-east node.
+  Vector2D       xnSE;   //!< Location of south-east node.
+  Vector2D       xnSW;   //!< Location of south-west node.
+ 
+  //! @name Constructors
+  //@{
+  //! Default constructor.
+  Cell2D_Quad_HO(void) ;
+  
+  //! Copy constructor.
+  Cell2D_Quad_HO(const Cell2D_Quad_HO &Cell) ;
+  
+  //! Constructor with centroid location.
+  Cell2D_Quad_HO(const Vector2D &V1, const Vector2D &V2,
+		 const Vector2D &V3, const Vector2D &V4);
+  
+  //! Constructor with centroid locations.
+  Cell2D_Quad_HO(const double &x1, const double &y1,
+		 const double &x2, const double &y2,
+		 const double &x3, const double &y3,
+		 const double &x4, const double &y4);
+  //@}
+  
+  //! @name Cell Area.
+  //@{
+  double A(void);
+  double A(void) const;
+  //@}
+  
+  //! @name Face midpoints.
+  //@{
+  Vector2D xfN(void);
+  Vector2D xfN(void) const;
+  
+  Vector2D xfS(void);
+  Vector2D xfS(void) const;
+  
+  Vector2D xfE(void);
+  Vector2D xfE(void) const;
+  
+  Vector2D xfW(void);
+  Vector2D xfW(void) const;
+  //@}
+  
+  //! @name  Face lengths.
+  //@{
+  double lfN(void);
+  double lfN(void) const;
+  
+  double lfS(void);
+  double lfS(void) const;
+  
+  double lfE(void);
+  double lfE(void) const;
+  
+  double lfW(void);
+  double lfW(void) const;
+  //@}
+  
+  //! @name Set cell node locations.
+  //@{
+  void setnodes(void);
+  void setnodes(const Cell2D_Quad_HO &Cell);
+  void setnodes(const Vector2D &V1, const Vector2D &V2,
+		const Vector2D &V3, const Vector2D &V4);
+  void setnodes(const double &x1, const double &y1,
+		const double &x2, const double &y2,
+		const double &x3, const double &y3,
+		const double &x4, const double &y4);
+  //@}
 
-/*********************************************************
- * Class: Cell2D_Quad                                    *
- *                                                       *
- * Member functions                                      *
- *      xc      -- Return 2D vector containing location  *
- *                 of cell center.                       *
- *      xnNW    -- Return 2D vector containing location  *
- *                 of north-west node.                   *
- *      xnNE    -- Return 2D vector containing location  *
- *                 of north-east node.                   *
- *      xnSE    -- Return 2D vector containing location  *
- *                 of south-east node.                   *
- *      xnSW    -- Return 2D vector containing location  *
- *                 of south-west node.                   *
- *                                                       *
- *                                                       *
- *                 xnNW-----xfN----xnNE                  *
- *                   |              |                    *
- *                   |              |                    *
- *       Cell       xfW      xc    xfE                   *
- *                   |              |                    *
- *                   |              |                    *
- *                 xnSW-----xfS----xnSE                  *
- *                                                       *
- *                                                       *
- *      A       -- Return the area of the cell.          *
- *      xfN     -- Return 2D vector containing location  *
- *                 of midpoint of north cell face.       *
- *      xfS     -- Return 2D vector containing location  *
- *                 of midpoint of south cell face.       *
- *      xfE     -- Return 2D vector containing location  *
- *                 of midpoint of east cell face.        *
- *      xfW     -- Return 2D vector containing location  *
- *                 of midpoint of west cell face.        *
- *      lfN     -- Return the length of north cell face. *
- *      lfS     -- Return the length of south cell face. *
- *      lfE     -- Return the length of east cell face.  *
- *      lfW     -- Return the length of west cell face.  *
- *      setnodes -- Set cell node locations.             * 
- *                                                       *
- * Member operators                                      *
- *      C -- a cell                                      *
- *                                                       *
- * C = C;                                                *
- * C == C;                                               *
- * C != C;                                               *
- * cout << C; (output function)                          *
- * cin  >> C; (input function)                           *
- *                                                       *
- *********************************************************/
-class Cell2D_Quad{
-  private:
-  public:
-    Vector2D         xc;   // Location of cell center.
-    Vector2D       xnNW;   // Location of north-west node.
-    Vector2D       xnNE;   // Location of north-east node.
-    Vector2D       xnSE;   // Location of south-east node.
-    Vector2D       xnSW;   // Location of south-west node.
-	                   // Made public so can access them.
-		      
-    /* Creation, copy, and assignment constructors. */
-    Cell2D_Quad(void) {
-       xnNW.x = ZERO; xnNW.y = ONE; xnNE.x = ONE; xnNE.y = ONE;
-       xnSE.x = ONE; xnSE.y = ZERO; xnSW.x = ZERO; xnSW.y = ZERO;
-       xc = (xnNW+xnNE+xnSE+xnSW)/FOUR; 
-    }
-
-    Cell2D_Quad(const Cell2D_Quad &Cell) {
-       xnNW = Cell.xnNW; xnNE = Cell.xnNE; xnSE = Cell.xnSE; 
-       xnSW = Cell.xnSW; xc = Cell.xc;
-    }
-
-    Cell2D_Quad(const Vector2D &V1, const Vector2D &V2,
-                         const Vector2D &V3, const Vector2D &V4) {
-       xnNW = V4; xnNE = V3; xnSE = V2; xnSW = V1; 
-       xc = (xnNW+xnNE+xnSE+xnSW)/FOUR;
-    }
-
-    Cell2D_Quad(const double &x1, const double &y1,
-                         const double &x2, const double &y2,
-                         const double &x3, const double &y3,
-                         const double &x4, const double &y4) {
-       xnNW.x = x4; xnNW.y = y4; xnNE.x = x3; xnNE.y = y3;
-       xnSE.x = x2; xnSE.y = y2; xnSW.x = x1; xnSW.y = y1;
-       xc = (xnNW+xnNE+xnSE+xnSW)/FOUR;
-    }
-    
-    /* Destructor. */
-    // ~Cell2D_Quad(void);
-    // Use automatically generated destructor.
-
-    /* Cell area. */
-    double A(void);
-    double A(void) const;
-
-    /* Face midpoints. */
-    Vector2D xfN(void);
-    Vector2D xfN(void) const;
-
-    Vector2D xfS(void);
-    Vector2D xfS(void) const;
-
-    Vector2D xfE(void);
-    Vector2D xfE(void) const;
-
-    Vector2D xfW(void);
-    Vector2D xfW(void) const;
-
-    /* Face lengths. */
-    double lfN(void);
-    double lfN(void) const;
-
-    double lfS(void);
-    double lfS(void) const;
-
-    double lfE(void);
-    double lfE(void) const;
-
-    double lfW(void);
-    double lfW(void) const;
-
-    /* Set cell node locations. */
-    void setnodes(void);
-    void setnodes(const Cell2D_Quad &Cell);
-    void setnodes(const Vector2D &V1, const Vector2D &V2,
-                  const Vector2D &V3, const Vector2D &V4);
-    void setnodes(const double &x1, const double &y1,
-                  const double &x2, const double &y2,
-                  const double &x3, const double &y3,
-                  const double &x4, const double &y4);
-
-    /* Assignment operator. */
-    // Cell2D_Quad operator = (const Cell2D_Quad &Cell);
-    // Use automatically generated assignment operator.
-
-    /* Relational operators. */
-    friend int operator ==(const Cell2D_Quad &Cell1,
-			   const Cell2D_Quad &Cell2);
-    friend int operator !=(const Cell2D_Quad &Cell1,
-			   const Cell2D_Quad &Cell2);
-    
-    /* Input-output operators. */
-    friend ostream &operator << (ostream &out_file,
-				 const Cell2D_Quad &Cell);
-    friend istream &operator >> (istream &in_file,
-				 Cell2D_Quad &Cell);
-    
+  //! @name Relational operators.
+  //@{
+  friend int operator ==(const Cell2D_Quad_HO &Cell1,
+			 const Cell2D_Quad_HO &Cell2);
+  friend int operator !=(const Cell2D_Quad_HO &Cell1,
+			 const Cell2D_Quad_HO &Cell2);
+  //@}
+  
+  //! @name Input-output operators.
+  //@{
+  friend ostream &operator << (ostream &out_file,
+			       const Cell2D_Quad_HO &Cell);
+  friend istream &operator >> (istream &in_file,
+			       Cell2D_Quad_HO &Cell);
+  //@}
+  
 };
 
-/******************************************************************
- * Cell2D_Quad::A -- Return cell area.                            *
- ******************************************************************/
-inline double Cell2D_Quad::A(void) {
-    return (HALF*(((xnSE-xnSW)^(xnNW-xnSW))+((xnNE-xnNW)^(xnNE-xnSE))));
+//! Default constructor.
+inline Cell2D_Quad_HO::Cell2D_Quad_HO(void) {
+  xnNW.x = ZERO; xnNW.y = ONE; xnNE.x = ONE; xnNE.y = ONE;
+  xnSE.x = ONE; xnSE.y = ZERO; xnSW.x = ZERO; xnSW.y = ZERO;
+  xc = (xnNW+xnNE+xnSE+xnSW)/FOUR; 
 }
 
-inline double Cell2D_Quad::A(void) const {
-    return (HALF*(((xnSE-xnSW)^(xnNW-xnSW))+((xnNE-xnNW)^(xnNE-xnSE))));
-}
-
-/******************************************************************
- * Cell2D_Quad::xf? -- Get face midpoints.                        *
- ******************************************************************/
-inline Vector2D Cell2D_Quad::xfN(void) {
-    return (HALF*(xnNE+xnNW));
-}
-
-inline Vector2D Cell2D_Quad::xfN(void) const {
-    return (HALF*(xnNE+xnNW));
-}
-
-inline Vector2D Cell2D_Quad::xfS(void) {
-    return (HALF*(xnSE+xnSW));
-}
-
-inline Vector2D Cell2D_Quad::xfS(void) const {
-    return (HALF*(xnSE+xnSW));
-}
-
-inline Vector2D Cell2D_Quad::xfE(void) {
-    return (HALF*(xnSE+xnNE));
-}
-
-inline Vector2D Cell2D_Quad::xfE(void) const {
-    return (HALF*(xnSE+xnNE));
-}
-
-inline Vector2D Cell2D_Quad::xfW(void) {
-    return (HALF*(xnSW+xnNW));
-}
-
-inline Vector2D Cell2D_Quad::xfW(void) const {
-    return (HALF*(xnSW+xnNW));
-}
-
-/******************************************************************
- * Cell2D_Quad::lf? -- Get face lengths.                          *
- ******************************************************************/
-inline double Cell2D_Quad::lfN(void) {
-    return (abs(xnNE-xnNW));
-}
-
-inline double Cell2D_Quad::lfN(void) const {
-    return (abs(xnNE-xnNW));
-}
-
-inline double Cell2D_Quad::lfS(void) {
-    return (abs(xnSW-xnSE));
-}
-
-inline double Cell2D_Quad::lfS(void) const {
-    return (abs(xnSW-xnSE));
-}
-
-inline double Cell2D_Quad::lfE(void) {
-    return (abs(xnNE-xnSE));
-}
-
-inline double Cell2D_Quad::lfE(void) const {
-    return (abs(xnNE-xnSE));
-}
-
-inline double Cell2D_Quad::lfW(void) {
-    return (abs(xnNW-xnSW));
-}
-
-inline double Cell2D_Quad::lfW(void) const {
-    return (abs(xnNW-xnSW));
-}
-
-/******************************************************************
- * Cell2D_Quad::setnodes -- Set cell node locations.              *
- ******************************************************************/
-inline void Cell2D_Quad::setnodes(void) {
-    xnNW.x = ZERO; xnNW.y = ONE; xnNE.x = ONE; xnNE.y = ONE;
-    xnSE.x = ONE; xnSE.y = ZERO; xnSW.x = ZERO; xnSW.y = ZERO;
-    xc = (xnNW+xnNE+xnSE+xnSW)/FOUR;
-}
-
-inline void Cell2D_Quad::setnodes(const Cell2D_Quad &Cell) {
+//! Copy constructor.
+inline Cell2D_Quad_HO::Cell2D_Quad_HO(const Cell2D_Quad_HO &Cell) {
     xnNW = Cell.xnNW; xnNE = Cell.xnNE; xnSE = Cell.xnSE; 
     xnSW = Cell.xnSW; xc = Cell.xc;
-}
-
-inline void Cell2D_Quad::setnodes(const Vector2D &V1, const Vector2D &V2,
-                                  const Vector2D &V3, const Vector2D &V4) {
+  }
+  
+//! Constructor with centroid location.
+inline Cell2D_Quad_HO::Cell2D_Quad_HO(const Vector2D &V1, const Vector2D &V2,
+	      const Vector2D &V3, const Vector2D &V4) {
     xnNW = V4; xnNE = V3; xnSE = V2; xnSW = V1; 
     xc = (xnNW+xnNE+xnSE+xnSW)/FOUR;
-}
-
-inline void Cell2D_Quad::setnodes(const double &x1, const double &y1,
-                                  const double &x2, const double &y2,
-                                  const double &x3, const double &y3,
-                                  const double &x4, const double &y4) {
+  }
+  
+//! Constructor with centroid locations.
+inline Cell2D_Quad_HO::Cell2D_Quad_HO(const double &x1, const double &y1,
+	      const double &x2, const double &y2,
+	      const double &x3, const double &y3,
+	      const double &x4, const double &y4) {
     xnNW.x = x4; xnNW.y = y4; xnNE.x = x3; xnNE.y = y3;
     xnSE.x = x2; xnSE.y = y2; xnSW.x = x1; xnSW.y = y1;
     xc = (xnNW+xnNE+xnSE+xnSW)/FOUR;
+  }
+
+/*!
+ *Return cell area.
+ */
+inline double Cell2D_Quad_HO::A(void) {
+  return (HALF*(((xnSE-xnSW)^(xnNW-xnSW))+((xnNE-xnNW)^(xnNE-xnSE))));
 }
 
-/******************************************************************
- * Cell2D_Quad -- Relational operators.                           *
- ******************************************************************/
-inline int operator ==(const Cell2D_Quad &Cell1,
-		       const Cell2D_Quad &Cell2) {
-    return (Cell1.xnNE == Cell2.xnNE && Cell1.xnNW == Cell2.xnNW &&
-            Cell1.xnSW == Cell2.xnSW && Cell1.xnSE == Cell2.xnSE);
+/*!
+ *Return cell area.
+ */
+inline double Cell2D_Quad_HO::A(void) const {
+  return (HALF*(((xnSE-xnSW)^(xnNW-xnSW))+((xnNE-xnNW)^(xnNE-xnSE))));
 }
 
-inline int operator !=(const Cell2D_Quad &Cell1,
-		       const Cell2D_Quad &Cell2) {
-    return (Cell1.xnNE != Cell2.xnNE || Cell1.xnNW != Cell2.xnNW ||
-            Cell1.xnSW != Cell2.xnSW || Cell1.xnSE != Cell2.xnSE);
+/*!
+ *Get North face midpoints.
+ */
+inline Vector2D Cell2D_Quad_HO::xfN(void) {
+  return (HALF*(xnNE+xnNW));
 }
 
-/******************************************************************
- * Cell2D_Quad -- Input-output operators.                         *
- ******************************************************************/
+/*!
+ *Get North face midpoints.
+ */
+inline Vector2D Cell2D_Quad_HO::xfN(void) const {
+  return (HALF*(xnNE+xnNW));
+}
+
+/*!
+ *Get South face midpoints.
+ */
+inline Vector2D Cell2D_Quad_HO::xfS(void) {
+  return (HALF*(xnSE+xnSW));
+}
+
+/*!
+ *Get South face midpoints.
+ */
+inline Vector2D Cell2D_Quad_HO::xfS(void) const {
+  return (HALF*(xnSE+xnSW));
+}
+
+/*!
+ *Get East face midpoints.
+ */
+inline Vector2D Cell2D_Quad_HO::xfE(void) {
+  return (HALF*(xnSE+xnNE));
+}
+
+/*!
+ *Get East face midpoints.
+ */
+inline Vector2D Cell2D_Quad_HO::xfE(void) const {
+  return (HALF*(xnSE+xnNE));
+}
+
+/*!
+ *Get West face midpoints.
+ */
+inline Vector2D Cell2D_Quad_HO::xfW(void) {
+  return (HALF*(xnSW+xnNW));
+}
+
+/*!
+ *Get West face midpoints.
+ */
+inline Vector2D Cell2D_Quad_HO::xfW(void) const {
+  return (HALF*(xnSW+xnNW));
+}
+
+/*!
+ *Get North face lengths.
+ */
+inline double Cell2D_Quad_HO::lfN(void) {
+  return (abs(xnNE-xnNW));
+}
+
+/*!
+ *Get North face lengths.
+ */
+inline double Cell2D_Quad_HO::lfN(void) const {
+  return (abs(xnNE-xnNW));
+}
+
+/*!
+ *Get South face lengths.
+ */
+inline double Cell2D_Quad_HO::lfS(void) {
+  return (abs(xnSW-xnSE));
+}
+
+/*!
+ *Get South face lengths.
+ */
+inline double Cell2D_Quad_HO::lfS(void) const {
+  return (abs(xnSW-xnSE));
+}
+
+/*!
+ *Get East face lengths.
+ */
+inline double Cell2D_Quad_HO::lfE(void) {
+  return (abs(xnNE-xnSE));
+}
+
+/*!
+ *Get East face lengths.
+ */
+inline double Cell2D_Quad_HO::lfE(void) const {
+  return (abs(xnNE-xnSE));
+}
+
+/*!
+ *Get West face lengths.
+ */
+inline double Cell2D_Quad_HO::lfW(void) {
+  return (abs(xnNW-xnSW));
+}
+
+/*!
+ *Get West face lengths.
+ */
+inline double Cell2D_Quad_HO::lfW(void) const {
+  return (abs(xnNW-xnSW));
+}
+
+/*!
+ *Set default cell node locations.
+ */
+inline void Cell2D_Quad_HO::setnodes(void) {
+  xnNW.x = ZERO; xnNW.y = ONE; xnNE.x = ONE; xnNE.y = ONE;
+  xnSE.x = ONE; xnSE.y = ZERO; xnSW.x = ZERO; xnSW.y = ZERO;
+  xc = (xnNW+xnNE+xnSE+xnSW)/FOUR;
+}
+
+/*!
+ *Set cell node locations .
+ */
+inline void Cell2D_Quad_HO::setnodes(const Cell2D_Quad_HO &Cell) {
+  xnNW = Cell.xnNW; xnNE = Cell.xnNE; xnSE = Cell.xnSE; 
+  xnSW = Cell.xnSW; xc = Cell.xc;
+}
+
+/*!
+ *Set cell node locations.
+ */
+inline void Cell2D_Quad_HO::setnodes(const Vector2D &V1, const Vector2D &V2,
+                                  const Vector2D &V3, const Vector2D &V4) {
+  xnNW = V4; xnNE = V3; xnSE = V2; xnSW = V1; 
+  xc = (xnNW+xnNE+xnSE+xnSW)/FOUR;
+}
+
+/*!
+ *Set cell node locations.
+ */
+inline void Cell2D_Quad_HO::setnodes(const double &x1, const double &y1,
+                                  const double &x2, const double &y2,
+                                  const double &x3, const double &y3,
+                                  const double &x4, const double &y4) {
+  xnNW.x = x4; xnNW.y = y4; xnNE.x = x3; xnNE.y = y3;
+  xnSE.x = x2; xnSE.y = y2; xnSW.x = x1; xnSW.y = y1;
+  xc = (xnNW+xnNE+xnSE+xnSW)/FOUR;
+}
+
+/*!
+ *Equal operator.
+ */
+inline int operator ==(const Cell2D_Quad_HO &Cell1,
+		       const Cell2D_Quad_HO &Cell2) {
+  return (Cell1.xnNE == Cell2.xnNE && Cell1.xnNW == Cell2.xnNW &&
+	  Cell1.xnSW == Cell2.xnSW && Cell1.xnSE == Cell2.xnSE);
+}
+
+/*!
+ *Non-Equal operator.
+ */
+inline int operator !=(const Cell2D_Quad_HO &Cell1,
+		       const Cell2D_Quad_HO &Cell2) {
+  return (Cell1.xnNE != Cell2.xnNE || Cell1.xnNW != Cell2.xnNW ||
+	  Cell1.xnSW != Cell2.xnSW || Cell1.xnSE != Cell2.xnSE);
+}
+
+/*!
+ * Output operator.
+ */
 inline ostream &operator << (ostream &out_file,
-			     const Cell2D_Quad &Cell) {
-    out_file << Cell.xc;
-    return (out_file);
+			     const Cell2D_Quad_HO &Cell) {
+  out_file << Cell.xc;
+  return (out_file);
 }
 
+/*!
+ * Input operator.
+ */
 inline istream &operator >> (istream &in_file,
-			     Cell2D_Quad &Cell) {
-    in_file >> Cell.xc; 
-    return (in_file);
+			     Cell2D_Quad_HO &Cell) {
+  in_file >> Cell.xc; 
+  return (in_file);
 }
 
 #endif /* _CELL2D_INCLUDED  */
