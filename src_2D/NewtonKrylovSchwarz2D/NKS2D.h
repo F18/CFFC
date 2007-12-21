@@ -66,7 +66,7 @@ int NKS_DTS_Output(SOLN_BLOCK_TYPE *SolnBlk,
 		   AdaptiveBlock2D_List List_of_Local_Solution_Blocks, 
 		   INPUT_TYPE & Input_Parameters,
 		   const int &Steps,
-		   const int &Physical_Time) {
+		   const double &Physical_Time) {
   cout<<"\n SPECIALIZATION OF NKS_DTS_Output REQUIRED TO USE DTS_Time_Accurate_Plot_Frequency \n";
 }
 
@@ -574,8 +574,7 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
     if (error_flag) return (error_flag);
 	  
     /* Apply boundary flux corrections to residual to ensure that method is conservative. */
-    Apply_Boundary_Flux_Corrections(SolnBlk, 
-		                    List_of_Local_Solution_Blocks);
+    Apply_Boundary_Flux_Corrections(SolnBlk,List_of_Local_Solution_Blocks);
 
     res_cputime += double(clock() - t0) / double(CLOCKS_PER_SEC);
     res_nevals++;

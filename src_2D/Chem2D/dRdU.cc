@@ -363,8 +363,8 @@ void dFIdW_Inviscid_ROE(DenseMatrix& dRdW, Chem2D_Quad_Block &SolnBlk,
        double MR2a = Wa.Mr2(SolnBlk.Flow_Type,deltax);  
        // Determine Preconditioned Wave Speeds                                                                   
        wavespeeds = HartenFixAbs( Wa.lambda_preconditioned_x(MR2a),
-				  Wl.lambda_preconditioned_x(Wl.Mr2(SolnBlk.Flow_Type,deltax)),
-				  Wr.lambda_preconditioned_x(Wr.Mr2(SolnBlk.Flow_Type,deltax)));
+				  Left.lambda_preconditioned_x(Left.Mr2(SolnBlk.Flow_Type,deltax)),
+				  Right.lambda_preconditioned_x(Right.Mr2(SolnBlk.Flow_Type,deltax)));
        
        
        //Calculate the preconditioned upwind dissipation flux.

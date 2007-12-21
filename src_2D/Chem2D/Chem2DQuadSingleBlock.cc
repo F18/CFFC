@@ -960,18 +960,18 @@ void Output_Tecplot(Chem2D_Quad_Block &SolnBlk,
       Out_File <<"\"c_"<<SolnBlk.W[0][0].specdata[i].Speciesname()<<"\" \\ \n";
     }  
     //   Viscous Terms 
-    Out_File << "\"qflux_x\" \\ \n"  
-	     << "\"qflux_y\" \\  \n"   
-	     << "\"Tau_xx\" \\  \n"  //rr -axisymmetric
-	     << "\"Tau_xy\" \\  \n"  //rz
-	     << "\"Tau_yy\" \\  \n"  //zz
-	     << "\"Tau_zz\" \\  \n"
-	     << "\"theta_x\" \\  \n"  
-	     << "\"theta_y\" \\  \n"   
-	     << "\"lambda_xx\" \\  \n"  //rr -axisymmetric
-	     << "\"lambda_xy\" \\  \n"  //rz
-	     << "\"lambda_yy\" \\  \n"  //zz
-	     << "\"lambda_zz\" \\  \n";   
+//     Out_File << "\"qflux_x\" \\ \n"                         
+// 	     << "\"qflux_y\" \\  \n"   
+// 	     << "\"Tau_xx\" \\  \n"  //rr -axisymmetric
+// 	     << "\"Tau_xy\" \\  \n"  //rz
+// 	     << "\"Tau_yy\" \\  \n"  //zz
+// 	     << "\"Tau_zz\" \\  \n"
+// 	     << "\"theta_x\" \\  \n"  
+// 	     << "\"theta_y\" \\  \n"   
+// 	     << "\"lambda_xx\" \\  \n"  //rr -axisymmetric
+// 	     << "\"lambda_xy\" \\  \n"  //rz
+// 	     << "\"lambda_yy\" \\  \n"  //zz
+// 	     << "\"lambda_zz\" \\  \n";   
     //  Calculated values
     Out_File<< "\"T\" \\  \n" 
 	    << "\"R\" \\  \n"
@@ -1012,8 +1012,8 @@ void Output_Tecplot(Chem2D_Quad_Block &SolnBlk,
       Out_File << " " << SolnBlk.Grid.Node[i][j].X<<endl<<W_node;
       //T,M,H,s, and all the rest of the calcuatated parameters
       Out_File.setf(ios::scientific);
-      Out_File << " " << W_node.qflux<< " " <<W_node.tau
-	       << " " << W_node.theta<< " " <<W_node.lambda
+      Out_File /*<< " " << W_node.qflux<< " " <<W_node.tau                //THESE NEED TO BE FIXED TO OUTPUT FROM U 
+		 << " " << W_node.theta<< " " <<W_node.lambda */          //AS NOT "stored" in W anymore 
 	       << " " << W_node.T()<< " " << W_node.Rtot()
 	       << " " << W_node.v.abs()/W_node.a() 
 	       << " " << W_node.mu() <<" "<< W_node.kappa()
@@ -1124,28 +1124,32 @@ void Output_Cells_Tecplot(Chem2D_Quad_Block &SolnBlk,
 // 		  <<"\"Dif_coef_"<<SolnBlk.W[0][0].specdata[i].Speciesname()<<"\" \\ \n"; 
 //        }       
 //        //gradients
-//        Out_File<< "\"dx_rho\" \\ \n"
-// 	       << "\"dx_u\" \\ \n"
-// 	       << "\"dx_v\" \\ \n"
-// 	       << "\"dx_p\" \\ \n";
-//        //n species mass fractions names
-//        for(int i =0 ;i<SolnBlk.W[0][0].ns ;i++){
-// 	     Out_File <<"\"dx_c"<<SolnBlk.W[0][0].specdata[i].Speciesname()<<"\" \\ \n";
-//        }  
+       Out_File<< "\"dx_rho\" \\ \n"
+	       << "\"dx_u\" \\ \n"
+	       << "\"dx_v\" \\ \n"
+	       << "\"dx_p\" \\ \n"
+               << "\"dx_k\" \\ \n"
+	       << "\"dx_omega\" \\ \n";
+       //n species mass fractions names
+       for(int i =0 ;i<SolnBlk.W[0][0].ns ;i++){
+	     Out_File <<"\"dx_c"<<SolnBlk.W[0][0].specdata[i].Speciesname()<<"\" \\ \n";
+       }  
 //        Out_File<< "\"dx_q_x\" \n"  
 // 	       << "\"dx_q_y\" \n"  
 // 	       << "\"dx_Tau_xx\" \n"  //rr -axisymmetric
 // 	       << "\"dx_Tau_xy\" \n"  //rz
 // 	       << "\"dx_Tau_yy\" \n"  //zz
 // 	       << "\"dx_Tau_zz\" \n"; //thetatheta       
-//        Out_File<< "\"dy_rho\" \\ \n"
-// 	       << "\"dy_u\" \\ \n"
-// 	       << "\"dy_v\" \\ \n"
-// 	       << "\"dy_p\" \\ \n";
-//        //n species mass fractions names
-//        for(int i =0 ;i<SolnBlk.W[0][0].ns ;i++){
-//  	     Out_File <<"\"dy_c"<<SolnBlk.W[0][0].specdata[i].Speciesname()<<"\" \\ \n";
-//        }  
+       Out_File<< "\"dy_rho\" \\ \n"
+	       << "\"dy_u\" \\ \n"
+	       << "\"dy_v\" \\ \n"
+	       << "\"dy_p\" \\ \n"
+               << "\"dy_k\" \\ \n"
+	       << "\"dy_omega\" \\ \n";
+       //n species mass fractions names
+       for(int i =0 ;i<SolnBlk.W[0][0].ns ;i++){
+ 	     Out_File <<"\"dy_c"<<SolnBlk.W[0][0].specdata[i].Speciesname()<<"\" \\ \n";
+       }  
 //        Out_File<< "\"dy_q_x\" \n"  
 // 	       << "\"dy_q_y\" \n"   
 // 	       << "\"dy_Tau_xx\" \n"  //rr -axisymmetric
@@ -1198,9 +1202,9 @@ void Output_Cells_Tecplot(Chem2D_Quad_Block &SolnBlk,
 // 	     Out_File <<SolnBlk.W[i][j].spec[k].gradc<<" "
 // 		      <<SolnBlk.W[i][j].spec[k].diffusion_coef;
 // 	   }
-// 	   //gradients
-// 	   Out_File <<SolnBlk.dWdx[i][j]
-// 		    <<SolnBlk.dWdy[i][j];
+	   //gradients
+	   Out_File <<SolnBlk.dWdx[i][j]
+		    <<SolnBlk.dWdy[i][j];
 	   Out_File<< "\n";
            Out_File.unsetf(ios::scientific);
        } /* endfor */
@@ -2204,7 +2208,7 @@ void ICs(Chem2D_Quad_Block &SolnBlk,
 	for ( int i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
   	  //region for injected fuel 
  	  if (SolnBlk.Grid.Cell[i][j].Xc.x <= fuel_spacing ){ 
-    	    if (SolnBlk.Grid.Cell[i][j].Xc.y <0.02 ){
+    	    if (SolnBlk.Grid.Cell[i][j].Xc.y <0.035 ){
 	      SolnBlk.W[i][j] = Wl;
 	      SolnBlk.W[i][j].rho = Wl.p/(Wl.Rtot()*fuel_temp_inlet);  //set BC value to proper inlet temp
 	      SolnBlk.W[i][j].v.y = fuel_velocity;
@@ -2229,8 +2233,8 @@ void ICs(Chem2D_Quad_Block &SolnBlk,
  	  } 
 
 	  //IGNITOR across fuel and air inlets   
-	  if( SolnBlk.Grid.Cell[i][j].Xc.y < 0.022 && SolnBlk.Grid.Cell[i][j].Xc.y > 0.017){   	    
-	    if ( SolnBlk.Grid.Cell[i][j].Xc.x <= 1.1*fuel_spacing && SolnBlk.Grid.Cell[i][j].Xc.x > fuel_spacing*0.9){ 
+	  if( SolnBlk.Grid.Cell[i][j].Xc.y < 0.035 && SolnBlk.Grid.Cell[i][j].Xc.y > 0.03){   	    
+	    if ( SolnBlk.Grid.Cell[i][j].Xc.x <= 1.0*fuel_spacing && SolnBlk.Grid.Cell[i][j].Xc.x > fuel_spacing*0.9){ 
 	      SolnBlk.W[i][j].rho = Wl.p/(Wl.Rtot()*ignition_temp);
 // 	    } else if (SolnBlk.Grid.Cell[i][j].Xc.x <= fuel_spacing){
 // 	      SolnBlk.W[i][j].rho = Wr.p/(Wr.Rtot()*ignition_temp);
@@ -5615,7 +5619,7 @@ void Calculate_Refinement_Criteria(double *refinement_criteria,
     for ( j  = SolnBlk.JCl-1 ; j <= SolnBlk.JCu+1 ; ++j ) {
        for ( i = SolnBlk.ICl-1 ; i <= SolnBlk.ICu+1 ; ++i ) {
 	 // Reconstruct the solution within the cell.
-	 //Linear_Reconstruction_GreenGauss(SolnBlk, i, j, LIMITER_UNLIMITED);
+	 // Linear_Reconstruction_GreenGauss(SolnBlk, i, j, LIMITER_UNLIMITED);
 	 //Linear_Reconstruction_LeastSquares(SolnBlk, i, j, LIMITER_UNLIMITED);
 	 //Required if initial refinement, ie. 0 iterations 
 	 Linear_Reconstruction_LeastSquares_2(SolnBlk, i, j, LIMITER_UNLIMITED);
@@ -5702,7 +5706,7 @@ void Calculate_Refinement_Criteria(double *refinement_criteria,
       refinement_criteria_number++;
     }
     if (IP.Refinement_Criteria_Gradient_CH4){
-      refinement_criteria[refinement_criteria_number] = grad_CO2_criteria_max;
+      refinement_criteria[refinement_criteria_number] = grad_CH4_criteria_max;
       refinement_criteria_number++;
     }
     if (IP.Refinement_Criteria_Gradient_CO2){
@@ -7893,9 +7897,6 @@ void Viscous_Calculations(Chem2D_Quad_Block &SolnBlk) {
 	/***************** Diffusion coefficients **********************/
 	// using global Schmidt number relation Sc = mu/rho*Ds
 	SolnBlk.U[i][j].rhospec[k].diffusion_coef = mu/SolnBlk.W[i][j].Schmidt[k];
-// 	/***************** mass fraction gradients *********************/
-// 	SolnBlk.U[i][j].rhospec[k].gradc.x = SolnBlk.U[i][j].rho * SolnBlk.dWdx[i][j].spec[k].c;
-// 	SolnBlk.U[i][j].rhospec[k].gradc.y = SolnBlk.U[i][j].rho * SolnBlk.dWdy[i][j].spec[k].c;
       }
       X = SolnBlk.Grid.Cell[i][j].Xc;
       /***************** Molecular (Laminar) Stresses ******************/

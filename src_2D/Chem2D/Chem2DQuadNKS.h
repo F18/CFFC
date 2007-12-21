@@ -156,7 +156,7 @@ int NKS_DTS_Output(Chem2D_Quad_Block *SolnBlk,
 		   AdaptiveBlock2D_List List_of_Local_Solution_Blocks, 
 		   Chem2D_Input_Parameters &Input_Parameters,
 		   const int &Steps,
-		   const int &Physical_Time) {
+		   const double &Physical_Time) {
   int error_flag = Output_Tecplot_Periodic(SolnBlk, 
 					   List_of_Local_Solution_Blocks, 
 					   Input_Parameters,

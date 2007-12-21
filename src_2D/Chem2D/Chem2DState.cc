@@ -684,14 +684,14 @@ void dFIdU(DenseMatrix &dFdU, const Chem2D_pState &W, const int Flow_Type) {
 #endif 
   }
   dFdU(0,1) += ONE;
-  dFdU(1,0) += ( (C_p/Rt)*( - W.v.x*W.v.x) + HALF*(THREE*W.v.x*W.v.x + W.v.y+W.v.y) - ht + C_p*Temp + phi )/denominator;
+  dFdU(1,0) += ( (C_p/Rt)*( - W.v.x*W.v.x) + HALF*(THREE*W.v.x*W.v.x + W.v.y*W.v.y) - ht + C_p*Temp + phi )/denominator;
   dFdU(1,1) += W.v.x*(TWO*C_p/Rt-THREE)/denominator; 
   dFdU(1,2) -= W.v.y/denominator;
   dFdU(1,3) += ONE/denominator;
   dFdU(2,0) -= W.v.x*W.v.y;
   dFdU(2,1) += W.v.y;
   dFdU(2,2) += W.v.x;
-  dFdU(3,0) += W.v.x*( W.v.x*W.v.x + W.v.y+W.v.y + C_p*Temp - (C_p/Rt)*( HALF*(W.v.x*W.v.x + W.v.y+W.v.y) + ht) + phi)/denominator;
+  dFdU(3,0) += W.v.x*( W.v.x*W.v.x + W.v.y+W.v.y + C_p*Temp - (C_p/Rt)*( HALF*(W.v.x*W.v.x + W.v.y*W.v.y) + ht) + phi)/denominator;
   dFdU(3,1) += ht + HALF*(W.v.x*W.v.x + W.v.y*W.v.y) - W.v.x*W.v.x/denominator;
   dFdU(3,2) -= W.v.x*W.v.y/denominator;
   dFdU(3,3) += W.v.x*C_p/denominator/Rt;
