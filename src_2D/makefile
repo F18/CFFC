@@ -111,7 +111,8 @@ SRC_GRID = $(GRID_DIR)Cell1D.cc \
 SRC_ICEMCFD = $(ICEMCFD_DIR)ICEMCFD.cc \
 	      $(ICEMCFD_DIR)ICEMCFD_ctype.c
 # Add Grid Testing If Required:
-SRC_GRID_TESTS := test_Grid2DQuadIntegration.cc
+SRC_GRID_TESTS := test_Grid2DQuadIntegration.cc \
+		  test_HO_Grid2DQuad.cc
 SRC_GRID_TESTS := $(addprefix $(GRID_DIR)UnitTests/,$(SRC_GRID_TESTS))
 ifeq ($(TUT_TESTING),ON) 
   SRC_GRID += $(SRC_GRID_TESTS)
