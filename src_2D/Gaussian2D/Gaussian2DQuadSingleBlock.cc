@@ -1247,7 +1247,7 @@ void ICs(Gaussian2D_Quad_Block &SolnBlk,
 	  assert(1==2);
 	}
 	Wl = Gaussian2D_pState(1.661, 2869.73, 0.0, 101325.0);
-	Wr = Gaussian2D_pState(6.40671, 744.003, 0.0, 1.02338e7);
+	Wr = Gaussian2D_pState(6.40671, 744.005, 0.0, 1.02338e7);
         for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
             for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
               if (SolnBlk.Grid.Cell[i][j].Xc.x <= ZERO) {
