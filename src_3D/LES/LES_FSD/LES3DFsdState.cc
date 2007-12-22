@@ -18,7 +18,7 @@ double LES3DFsd_pState::Mref = 0.1;
 double LES3DFsd_pState::_fuel_equivalence_ratio=1.0;
 double LES3DFsd_pState::_unburnt_fuel_mass_fraction=0.05518;
 double LES3DFsd_pState::_reactants_density=1.13;
-double LES3DFsd_pState::_laminar_flame_speed=0.3738;
+double LES3DFsd_pState::_laminar_flame_speed=0.3837;
 double LES3DFsd_pState::_laminar_flame_thickness=4.4E-04;
 double LES3DFsd_pState::_adiabatic_flame_temperature=2218.0;
 
@@ -29,7 +29,7 @@ double LES3DFsd_cState::Mref = 0.1;
 double LES3DFsd_cState::_fuel_equivalence_ratio=1.0;
 double LES3DFsd_cState::_unburnt_fuel_mass_fraction=0.05518;
 double LES3DFsd_cState::_reactants_density=1.13;
-double LES3DFsd_cState::_laminar_flame_speed=0.3738;
+double LES3DFsd_cState::_laminar_flame_speed=0.3837;
 double LES3DFsd_cState::_laminar_flame_thickness=4.4E-04;
 double LES3DFsd_cState::_adiabatic_flame_temperature=2218.0;
 

@@ -888,11 +888,10 @@ void Time_Averaging_of_Solution(HEXA_BLOCK *Solution_Block,
     Taylor_scale = ZERO;
   } else {
     Taylor_scale = u_rms*sqrt(15.0)*Kolmogorov_scale;
-    //sqrt(10.0*vis_ave*1.5*u_rms*u_rms/ens);//sqrt(TWO*u_rms*u_rms/(TWO*ens));//?????????
   }
 
   Re_Taylor = u_rms*Taylor_scale/vis_ave;
-  L11= 0.09*pow(1.5*u_rms*u_rms, 1.5)/eps_ss;
+  L11= 0.09*pow(0.5*u_rms*u_rms, 1.5)/eps_w;
 
   if (eps_w > 0.0) {
     l_1 = 0.42*pow(u_rms, 3.0)/eps_w;
@@ -907,7 +906,7 @@ void Time_Averaging_of_Solution(HEXA_BLOCK *Solution_Block,
   }
 
   if (CFFC_Primary_MPI_Processor()) {
-    cout << "\n\n ==========================================================================\n"; 
+    cout << "\n ==========================================================================\n"; 
     cout << " In physical space:\n";
     cout << "\n <u^2> = "<< u_p <<"  "<< "<v^2> = "<< v_p <<"  "<< "<v^2> = "<< w_p <<"  "
 	 << "u_rms  = " << u_rms <<"  "

@@ -680,15 +680,15 @@ ICs(Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs){
      for (int k  = KCl- Nghost ; k <=  KCu+ Nghost ; ++k) {
         for (int j  = JCl- Nghost ; j <=  JCu+ Nghost ; ++j) {
            for (int i = ICl- Nghost ; i <=  ICu+ Nghost ; ++i) {
-	      double xx = Grid.Cell[i][j][k].Xc.x;//+(1.0/2.0)*IPs.Grid_IP.Box_Length;
-	      double tau_fsd = 2218/298-1.0;//W[i][j][k].HeatRelease_Parameter();
+	      double xx = Grid.Cell[i][j][k].Xc.x;
+	      double tau_fsd = W[i][j][k].HeatRelease_Parameter();
        	      W[i][j][k].C = (erf(xx*4000.0)+1.0)/2.0;
               W[i][j][k].p = 101325.0;
 	      W[i][j][k].premixed_mfrac();
        	      W[i][j][k].rho = 1.13*W[ICu][j][k].Rtot()/W[i][j][k].Rtot()/(1.0+tau_fsd*W[i][j][k].C);
               W[i][j][k].v.x = 1.13*0.3837/W[i][j][k].rho;
-       	      W[i][j][k].Fsd = 0.6*3000.0*exp(-sqr(xx*4000.0))/sqrt(3.1415926)/W[i][j][k].rho;
-	      W[i][j][k].k = 0.0;
+       	      W[i][j][k].Fsd = 4000.0*exp(-sqr(xx*4000.0))/sqrt(3.1415926)/W[i][j][k].rho;
+	      W[i][j][k].k = 0.00;
               U[i][j][k] = W[i][j][k].U();
 	      U[i][j][k].premixed_mfrac();
 	   } /* endfor */
