@@ -109,4 +109,5 @@ template<>
 int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState,  
                FANS3D_ThermallyPerfect_KOmega_cState>::Wall_Shear(void);
 
+
 #endif // _FANS3D_THERMALLYPERFECT_HEXA_BLOCK_INCLUDED

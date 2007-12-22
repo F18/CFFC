@@ -38,6 +38,10 @@
 #include "../TurbulenceModelling/TurbulenceModelling.h"
 #endif // TURBULENCE_MODELLING_INCLUDED   
 
+#ifndef _OCTREE_INCLUDED
+#include "../AMR/Octree.h"
+#endif // _OCTREE_INCLUDED
+
 class FlowField_2D;
 
 /* Define the solution block in-use indicators. */
@@ -2241,6 +2245,7 @@ int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::WtoU(void) {
       for (int j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
          for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
             U[i][j][k]= W[i][j][k].U();
+                     
          } /* endfor */
       } /* endfor */
    } /* endfor */

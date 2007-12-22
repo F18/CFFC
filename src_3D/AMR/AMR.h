@@ -830,7 +830,9 @@ int Read_Octree(Octree_DataStructure                       &Octree,
 
     if (CFFC_Primary_MPI_Processor()) {
        for ( int nBLK = 0 ; nBLK <= nr-1 ; ++nBLK ) {
-          Octree.Roots[nBLK].read(Octree_file, Global_Adaptive_Block_List);
+          Octree.Roots[nBLK].read(Octree_file, Global_Adaptive_Block_List); 
+         
+                  
        } /* endfor */
     } /* endif */
 
@@ -860,12 +862,13 @@ int Read_Octree(Octree_DataStructure                       &Octree,
     Local_Adaptive_Block_List.ThisCPU = Global_Adaptive_Block_List.ThisCPU;
 
      
+   
     /* Modify block neighbours for grid geometries with
        periodic boundaries, etc. */
 
     Octree_DataStructure::Modify_Neighbours_of_Root_Solution_Blocks(Octree,
                                                                     Input.Grid_IP.i_Grid);
-    
+  
     /* Determine the neighbouring blocks of all used (active)
        solution blocks in the Octree data structure. This will
        also copy block information to local processor solution block
@@ -873,6 +876,30 @@ int Read_Octree(Octree_DataStructure                       &Octree,
     
     /* Octree_DataStructure::Find_Neighbours(Octree, */
     /*                                           Local_Adaptive_Block_List); */
+    
+    /* Finally re-assign local solution block information 
+       and create local solution blocks as specified by the restart. */
+    
+   for (int nr = 0; nr <= Octree.NR-1; ++nr) {
+      if (Octree.Roots[nr].block.used) { // Adaptive root block is used!!!!
+         // For solution blocks on this processor (or processor
+         // element), add block to local list, create the solution
+         // block, and copy the appropriate block of the
+         // initial hexarilateral mesh to the solution block mesh.
+         if (Octree.Roots[nr].block.info.cpu == Global_Adaptive_Block_List.ThisCPU) {
+	    int n_cpu = Octree.Roots[nr].block.info.cpu;
+            int n_blk = Octree.Roots[nr].block.info.blknum;
+          
+            Local_Adaptive_Block_List.Block[n_blk] = Octree.Roots[nr].block;
+        
+            
+            //cout<<" Block =  "<<Local_Adaptive_Block_List.Block[n_blk]<<endl;
+            
+         } /* endif */
+      
+      } /* endif */
+   } /* endfor */
+    
     
     /* On primary processor, close Octree data file. */
     
@@ -915,7 +942,7 @@ int Write_Octree(Octree_DataStructure                        &Octree,
        strcat(Octree_file_name, "_Octree.tree");
        Octree_file_name_ptr = Octree_file_name;
     } /* endif */
-    /* On primary processor, ppen the Octree data file. */
+    /* On primary processor, open the Octree data file. */
 
     if (CFFC_Primary_MPI_Processor()) {
        Octree_file.open(Octree_file_name_ptr, ios::out);
@@ -927,12 +954,13 @@ int Write_Octree(Octree_DataStructure                        &Octree,
     if (CFFC_Primary_MPI_Processor()) {
       Octree_file << Octree;
     }
+
     /* On primary processor, close Octree data file. */
-
+    
     if (CFFC_Primary_MPI_Processor()) Octree_file.close();
-
+    
     /* Writing of Octree data file complete.  Return zero value. */
-
+    
     return(0);
 
 }
@@ -946,12 +974,12 @@ int Write_Octree(Octree_DataStructure                        &Octree,
  *                                                        *
  **********************************************************/
 template<typename SOLN_pSTATE, typename SOLN_cSTATE>
-void Flag_Blocks_For_Refinement(Hexa_Multi_Block<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> > &Local_Solution_Blocks,
-                                Octree_DataStructure                                    &Octree,
-                                AdaptiveBlock3D_ResourceList                            &Global_Adaptive_Block_List,
-                                AdaptiveBlock3D_List                                    &Local_Adaptive_Block_List) {
-
-  cout<<"\nError Flag_Blocks_For_Refinement is not written for 3D";
+   void Flag_Blocks_For_Refinement(Hexa_Multi_Block<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> > &Local_Solution_Blocks,
+                                   Octree_DataStructure                                    &Octree,
+                                   AdaptiveBlock3D_ResourceList                            &Global_Adaptive_Block_List,
+                                   AdaptiveBlock3D_List                                    &Local_Adaptive_Block_List) {
+   
+   cout<<"\nError Flag_Blocks_For_Refinement is not written for 3D";
 
 }
 

@@ -140,7 +140,9 @@ template<class HEXA_BLOCK> class Hexa_Multi_Block {
             typename HEXA_BLOCK::Soln_cState> &Input);
 
    int Interpolate_2Dto3D(FlowField_2D &Numflowfield2D);
-
+   
+   int Wall_Shear(void);
+   
    int WtoU(void);
 
    double CFL(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
@@ -730,6 +732,28 @@ Update_Solution_Multistage_Explicit(Input_Parameters<typename HEXA_BLOCK::Soln_p
 }
 
 /********************************************************
+ * Routine: Wall_Shear                                  *
+ *                                                      *
+ *                                                      *
+ ********************************************************/
+template<class HEXA_BLOCK>
+int Hexa_Multi_Block<HEXA_BLOCK>::Wall_Shear(void){
+   
+
+   int error_flag(0);
+   
+   /* Compute wall shear for each solution block. */
+   
+   for (int nblk = 0; nblk < Number_of_Soln_Blks; ++nblk) {
+      if (Block_Used[nblk]) {
+         error_flag = Soln_Blks[nblk].Wall_Shear();
+         if (error_flag) return (error_flag);
+      } /* endif */
+   }  /* endfor */
+   return(error_flag);
+}
+
+/********************************************************
  * Routine: Read_Restart_Solution                       *
  *                                                      *
  * Reads restart solution file(s) and assigns values to *
@@ -742,7 +766,7 @@ Update_Solution_Multistage_Explicit(Input_Parameters<typename HEXA_BLOCK::Soln_p
 template<class HEXA_BLOCK>
 int Hexa_Multi_Block<HEXA_BLOCK>::
 Read_Restart_Solution(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
-                                       typename HEXA_BLOCK::Soln_cState> &Input,
+                      typename HEXA_BLOCK::Soln_cState> &Input,
                       AdaptiveBlock3D_List &Local_Adaptive_Block_List,
                       int &Number_of_Time_Steps,
                       double &Time,
@@ -754,7 +778,8 @@ Read_Restart_Solution(Input_Parameters<typename HEXA_BLOCK::Soln_pState,
    ifstream restart_file;
    double time0;
    CPUTime cpu_time0;
-
+   int error_flag = 0;
+   
    /* Determine prefix of restart file names. */
 
    i = 0;
@@ -805,8 +830,6 @@ Read_Restart_Solution(Input_Parameters<typename HEXA_BLOCK::Soln_pState,
               
          // Close restart file.
          restart_file.close();
-
-         Soln_Blks[nblk].Wall_Shear();
        
        }  /* endif */
     } /* endfor */

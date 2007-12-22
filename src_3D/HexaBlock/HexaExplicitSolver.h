@@ -159,6 +159,7 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
        * time stepping scheme.                                   *
        ***********************************************************/
       for (int i_stage  = 1 ; i_stage <= Solution_Data.Input.N_Stage ; ++i_stage ) {
+
       
 	/*******************************************************************/
 	// 1. Send/Copy the information between blocks...
@@ -174,7 +175,8 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
 	} /* endif */
 	error_flag = CFFC_OR_MPI(error_flag);        
 	if (error_flag) return (error_flag);
-	
+
+      	
 	/************* BOUNDARY CONDITIONS *********************************/
 	// 2. Apply boundary conditions for stage.
 	Solution_Data.Local_Solution_Blocks.BCs(Solution_Data.Input);
@@ -191,7 +193,8 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
 	} /* endif */
 	error_flag = CFFC_OR_MPI(error_flag);        
 	if (error_flag) return (error_flag);
-          	
+         
+      
 	/*******************************************************************/
 	// 4. Send boundary flux corrections at block interfaces with resolution changes.
 
@@ -202,6 +205,7 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
 	// 6. Smooth the solution residual using implicit residual smoothing. */
 
 	/*******************************************************************/
+   
 	// 7. Update solution for stage.
 	error_flag = 
            Solution_Data.Local_Solution_Blocks.Update_Solution_Multistage_Explicit(Solution_Data.Input, 
@@ -214,7 +218,8 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
 	} /* endif */
 	error_flag = CFFC_OR_MPI(error_flag);
 	if (error_flag) return (error_flag);
-                    
+       	
+        
       }  // END Multistage for loop
       /************************************************************************/
 

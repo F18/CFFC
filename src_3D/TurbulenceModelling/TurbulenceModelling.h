@@ -417,10 +417,10 @@ int Wall_Distance(HEXA_BLOCK *Solution_Block,
 
   // Compute the distance to the nearest wall for the centroid of every cell.
   for (int iCPU = 0; iCPU < Octree.Ncpu; iCPU++) { // Loop over available processors.
-    for (int iBLK = 0; iBLK < Octree.Nblk; iBLK++) { // Loop over available blocks.
-      if (Octree.Blocks[iCPU][iBLK] != NULL) {
-	if (Octree.Blocks[iCPU][iBLK]->block.used) {
-
+     for (int iBLK = 0; iBLK < Octree.Nblk; iBLK++) { // Loop over available blocks.
+        if (Octree.Blocks[iCPU][iBLK] != NULL) {
+           if (Octree.Blocks[iCPU][iBLK]->block.used) {
+              
           // Determine dimensions of block of interest.
      	  ilow = 0;
 	  jlow = 0;
@@ -433,7 +433,8 @@ int Wall_Distance(HEXA_BLOCK *Solution_Block,
 	           2*LocalSolnBlockList.Block[iBLK].info.dimen.ghost;
              kup = LocalSolnBlockList.Block[iBLK].info.dimen.k - 1 +
 	           2*LocalSolnBlockList.Block[iBLK].info.dimen.ghost;
-	  } else {
+
+          } else {
              iup = 0;
              jup = 0;
              kup = 0;
@@ -442,7 +443,7 @@ int Wall_Distance(HEXA_BLOCK *Solution_Block,
 	  jup = CFFC_Maximum_MPI(jup);
           kup = CFFC_Maximum_MPI(kup);
 
-	  // Allocate buffer for storing cell centers.
+          // Allocate buffer for storing cell centers.
 	  ni = iup - ilow + 1;
 	  nj = jup - jlow + 1;
           nk = kup - klow + 1;
@@ -457,12 +458,15 @@ int Wall_Distance(HEXA_BLOCK *Solution_Block,
                       x_buffer[buffer_size  ] = Solution_Block[iBLK].Grid.Cell[i][j][k].Xc.x;
                       x_buffer[buffer_size+1] = Solution_Block[iBLK].Grid.Cell[i][j][k].Xc.y;
                       x_buffer[buffer_size+2] = Solution_Block[iBLK].Grid.Cell[i][j][k].Xc.z;
+
                       buffer_size = buffer_size + 3;
                    } /* endfor */
                 } /* endfor */
              } /* endfor */
 	  } /* endif */
               
+
+
 #ifdef _MPI_VERSION
 	  buffer_size = 3*ni*nj*nk;
 	  MPI::COMM_WORLD.Bcast(x_buffer, buffer_size, MPI::DOUBLE, iCPU);
@@ -524,7 +528,10 @@ int Wall_Distance(HEXA_BLOCK *Solution_Block,
                       Solution_Block[iBLK].WallData[i][j][k].Xwall = X_wall;
                       Solution_Block[iBLK].WallData[i][j][k].nwall = n_wall;
                       Solution_Block[iBLK].WallData[i][j][k].BCwall = BC_wall;
+
+                      
                    } /* endif */
+                   
                 } /* endfor */
              } /* endfor */
           } /* endfor */

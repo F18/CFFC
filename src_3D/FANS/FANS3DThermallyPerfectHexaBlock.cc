@@ -275,6 +275,7 @@ Output_Nodes_Tecplot(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
     
 }
 
+
 /********************************************************
  * Routine: ICs                                         *
  *                                                      *
@@ -2182,11 +2183,13 @@ Update_Solution_Multistage_Explicit(const int i_stage,
       break;
    } /* endswitch */
 
-   /* Update solution variables for this stage. */
+     /* Update solution variables for this stage. */
 
    for (int k =  KCl ; k <= KCu ; ++k ) {
       for (int j = JCl ; j <= JCu ; ++j ) {
          for (int i = ICl ; i <= ICu ; ++i ) {
+
+                   
             if (IPs.Local_Time_Stepping == 
                 GLOBAL_TIME_STEPPING || 
                 IPs.Local_Time_Stepping == 
@@ -2213,8 +2216,9 @@ Update_Solution_Multistage_Explicit(const int i_stage,
                   U[i][j][k].rho, W[i][j][k].mu(), 
                   i, j, k, WallData[i][j][k],
                   Grid, U[i][j][k].rhoomega);
-               
+
             } else { // wall function
+             
                U[i][j][k].k_omega_model.wall_function(U[i][j][k].rho, 
                                                       W[i][j][k].mu(), 
                                                       WallData[i][j][k], 
@@ -2222,9 +2226,10 @@ Update_Solution_Multistage_Explicit(const int i_stage,
                                                       U[i][j][k].rhoomega); 
             } /* endif */
             
+                     
             // Check physical validity of update solution state
             if (IPs.Local_Time_Stepping == GLOBAL_TIME_STEPPING) {
-               
+             
                U[i][j][k].Realizable_Turbulence_Quantities_Check();
                
 	      if (!U[i][j][k].Realizable_Solution_Check()) {
@@ -2238,8 +2243,11 @@ Update_Solution_Multistage_Explicit(const int i_stage,
 		return (1);
               } /* endif */
 
-            } else {
-	      if (!U[i][j][k].Realizable_Solution_Check()) {
+            } else{
+
+               U[i][j][k].Realizable_Turbulence_Quantities_Check();
+
+               if (!U[i][j][k].Realizable_Solution_Check()) {
                 cout << "\n " << CFFC_Name() 
                      << " ERROR: Negative Density, Mass Fractions, Kinetic Energy, and/or Sensible Energy: \n"
                      << " cell = (" << i << ", " << j <<", "<< k << ") " 
@@ -2252,8 +2260,11 @@ Update_Solution_Multistage_Explicit(const int i_stage,
 
             } /* endif */
             
+         
             W[i][j][k] = U[i][j][k].W();
-            
+           
+
+    
          } /* endfor */    	 
       } /* endfor */    
    } /* endfor */

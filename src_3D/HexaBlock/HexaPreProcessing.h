@@ -83,47 +83,57 @@ int Initial_Conditions(HexaSolver_Data &Data,
       cout.flush();
     } /* endif */
 
-    cout << "\n Reading solution from restart data files."; 
     // Read Restart Octree
-/*     error_flag = Read_Octree<SOLN_pSTATE, SOLN_cSTATE>(Data.Octree,  */
-/*                                                        Data.Global_Adaptive_Block_List, */
-/*                                                        Data.Local_Adaptive_Block_List,  */
-/*                                                        Solution_Data.Input); */
-    
-  /*   // based on the Octree and recreate the local block list.  */
-/*     Create_Restart_Solution_Blocks<SOLN_pSTATE, SOLN_cSTATE>(Solution_Data.Local_Solution_Blocks, */
-/* 							   Solution_Data.Input, */
-/* 							   Data.Octree, */
-/* 							   Data.Global_Adaptive_Block_List, */
-/* 							   Data.Local_Adaptive_Block_List); */
-
-
     if (!Data.batch_flag && error_flag) {
-      cout << "\n ERROR: Unable to open Octree data file on processor "
-	   << Data.Local_Adaptive_Block_List.ThisCPU<< ".\n";
-         cout.flush();
+       cout << "\n ERROR: Unable to open Octree data file on processor "
+            << Data.Local_Adaptive_Block_List.ThisCPU<< ".\n";
+       cout.flush();
     } /* endif */
     error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return (error_flag);
     
     // Read Restart Solution Files
     error_flag = Solution_Data.Local_Solution_Blocks.Read_Restart_Solution(Solution_Data.Input,  
-									   Data.Local_Adaptive_Block_List,
+                                                                           Data.Local_Adaptive_Block_List,
 									   Data.number_of_explicit_time_steps,  
 									   Data.Time,
 									   Data.processor_cpu_time);
-  
-
-    Solution_Data.Local_Solution_Blocks.WtoU();
+   
     
     if (!Data.batch_flag && error_flag) {
-      cout << "\n ERROR: Unable to open restart input data file(s) "
+       cout << "\n ERROR: Unable to open restart input data file(s) "
 	   << "on processor "<< CFFC_MPI::This_Processor_Number<< ".\n";
-      cout.flush();
+       cout.flush();
     } /* endif */ 
+     error_flag = CFFC_OR_MPI(error_flag);
+    if (error_flag) return (error_flag);
+   
+ // read Octree after restart solution and then modifying the local adaptive 
+    // block list according to the new set-up, for example number of processor available. 
+   /*  error_flag = Read_Octree<SOLN_pSTATE, SOLN_cSTATE>(Data.Octree, */
+/*                                                        Data.Global_Adaptive_Block_List, */
+/*                                                        Data.Local_Adaptive_Block_List, */
+/*                                                        Solution_Data.Input); */
+    
+/*     error_flag = CFFC_OR_MPI(error_flag); */
+/*     if (error_flag) return (error_flag); */
+    
+    error_flag = Wall_Distance(Solution_Data.Local_Solution_Blocks.Soln_Blks,  // Turbulence function in GENERIC TYPE????
+			       Data.Octree, 
+			       Data.Local_Adaptive_Block_List);
+    if (!Data.batch_flag && error_flag) {
+       cout << "\n ERROR: Difficulty determining the wall distance "
+            << "on processor "<< CFFC_MPI::This_Processor_Number
+            << ".\n";
+       cout.flush();
+    } /* endif */
     error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return (error_flag);
-    
+
+    error_flag = Solution_Data.Local_Solution_Blocks.Wall_Shear();
+
+    error_flag = CFFC_OR_MPI(error_flag);
+    if (error_flag) return (error_flag);
     // Ensure each processor has the correct number of steps and time!!!
     Data.number_of_explicit_time_steps = CFFC_Maximum_MPI(Data.number_of_explicit_time_steps); 
     Data.number_of_implicit_time_steps = CFFC_Maximum_MPI(Data.number_of_implicit_time_steps);
