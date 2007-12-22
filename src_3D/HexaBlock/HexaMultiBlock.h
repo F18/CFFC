@@ -134,8 +134,11 @@ template<class HEXA_BLOCK> class Hexa_Multi_Block {
 
    void Set_Global_TimeStep(const double &Dt_min);
 
-   void ICs(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
-                             typename HEXA_BLOCK::Soln_cState> &Input);
+   int ICs(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
+                            typename HEXA_BLOCK::Soln_cState> &Input);
+
+   int ICs_Specializations(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
+                                            typename HEXA_BLOCK::Soln_cState> &Input);
 
    int Interpolate_2Dto3D(FlowField_2D &Numflowfield2D,
                           Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
@@ -472,7 +475,7 @@ double Hexa_Multi_Block<HEXA_BLOCK>::Max_Norm_Residual(const int &var) {
   /* Find the maximum norm for all solution blocks. */   
 
   for (int nblk = 0; nblk < Number_of_Soln_Blks; ++nblk) {
-    if(Block_Used[nblk]){
+    if (Block_Used[nblk]){
       max_norm = max(max_norm, (Soln_Blks[nblk].Max_Norm_Residual(var)));
     } 
   }        
@@ -523,13 +526,13 @@ void Hexa_Multi_Block<HEXA_BLOCK>::Freeze_Limiters(void) {
  * Routine: ICs                                         *
  *                                                      *
  * Assigns initial conditions and data to the           *
- * solution variables of a 1D array of 3D hexahedrial *
+ * solution variables of a 1D array of 3D hexahedral    *
  * multi-block solution blocks.                         *
  *                                                      *
  ********************************************************/
 template<class HEXA_BLOCK>
-void Hexa_Multi_Block<HEXA_BLOCK>::ICs(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
-                                                        typename HEXA_BLOCK::Soln_cState> &Input) {
+int Hexa_Multi_Block<HEXA_BLOCK>::ICs(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
+                                                       typename HEXA_BLOCK::Soln_cState> &Input) {
 
    int error_flag(0);
    
@@ -538,9 +541,43 @@ void Hexa_Multi_Block<HEXA_BLOCK>::ICs(Input_Parameters<typename HEXA_BLOCK::Sol
    for (int nblk = 0; nblk < Number_of_Soln_Blks; ++nblk) {
       if (Block_Used[nblk]) {
          error_flag = Soln_Blks[nblk].ICs(Input);
+         if (error_flag) return (error_flag);
+      } /* endif */
+   }  /* endfor */
+
+   /* Initializations complete, return. */
+
+   return (error_flag);
+   
+}
+
+/********************************************************
+ * Routine: ICs_Specializations                         *
+ *                                                      *
+ * Assigns specialized initial conditions and data to   *
+ * solution variables of a 1D array of 3D hexahedral    *
+ * multi-block solution blocks.                         *
+ *                                                      *
+ ********************************************************/
+template<class HEXA_BLOCK>
+int Hexa_Multi_Block<HEXA_BLOCK>::ICs_Specializations(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
+                                                                       typename HEXA_BLOCK::Soln_cState> &Input) {
+
+   int error_flag(0);
+
+   /* Assign specialized initial data for each solution block. */
+
+   for (int nblk = 0; nblk < Number_of_Soln_Blks; ++nblk) {
+      if (Block_Used[nblk]) {
+         error_flag = Soln_Blks[nblk].ICs_Specializations(Input);
+         if (error_flag) return (error_flag);
       } /* endif */
    }  /* endfor */
    
+   /* Initializations complete, return. */
+
+   return (error_flag);
+
 }
 
 /********************************************************

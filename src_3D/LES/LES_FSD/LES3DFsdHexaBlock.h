@@ -57,6 +57,12 @@ ICs(Input_Parameters<LES3DFsd_pState,
                      LES3DFsd_cState> &IPs);
 
 template<>
+int Hexa_Block<LES3DFsd_pState, 
+               LES3DFsd_cState>::
+ICs_Specializations(Input_Parameters<LES3DFsd_pState, 
+                                     LES3DFsd_cState> &IPs);
+
+template<>
 void Hexa_Block<LES3DFsd_pState, 
                 LES3DFsd_cState>::
 BCs(Input_Parameters<LES3DFsd_pState, 

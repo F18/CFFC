@@ -58,7 +58,6 @@ int Initialize_Solution_Blocks(HexaSolver_Data &Data,
 
 } 
 
-
 /*! *****************************************************
  * Routine: Initial_Conditions                          *
  *                                                      *
@@ -71,15 +70,18 @@ int Initial_Conditions(HexaSolver_Data &Data,
   int error_flag(0);
   
   /* Set the initial time level. */
+
   Data.Time = ZERO;
   Data.number_of_explicit_time_steps = 0;
   Data.number_of_implicit_time_steps = 0;
 
   /* Set the CPU time to zero. */
+
   Data.processor_cpu_time.zero();
   Data.total_cpu_time.zero();
 
   /* Initialize the conserved and primitive state solution variables. */         
+
   if (!Data.batch_flag) {
     cout << "\n Prescribing initial data.";  cout.flush();
   } /* endif */
@@ -139,11 +141,25 @@ int Initial_Conditions(HexaSolver_Data &Data,
     if (error_flag) return (error_flag);
 
     // Call ICs:
-    Solution_Data.Local_Solution_Blocks.ICs(Solution_Data.Input);
+    error_flag = Solution_Data.Local_Solution_Blocks.ICs(Solution_Data.Input);
+    if (!Data.batch_flag && error_flag) {
+      cout << "\n ERROR: Issues with initialization of solution data "
+	   << "on processor "<< CFFC_MPI::This_Processor_Number
+	   << ".\n";
+      cout.flush();
+    } /* endif */
+    error_flag = CFFC_OR_MPI(error_flag);
+    if (error_flag) return (error_flag);
 
     // Call specializations:
     error_flag = Hexa_Pre_Processing_Specializations(Data,
                                                      Solution_Data);
+    if (!Data.batch_flag && error_flag) {
+      cout << "\n ERROR: Issues with pre-processing specializations "
+           << "on processor "<< CFFC_MPI::This_Processor_Number
+           << ".\n";
+      cout.flush();
+    } /* endif */
     error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return (error_flag);
   } /* endif */
@@ -207,6 +223,10 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
 
   int error_flag(0);
   
+  // Call ICs_Specializations:
+  error_flag = Solution_Data.Local_Solution_Blocks.ICs_Specializations(Solution_Data.Input);
+  if (error_flag) return (error_flag);
+
   return error_flag;
 
 }

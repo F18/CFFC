@@ -22,12 +22,14 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
   error_flag = Velocity_Field_Type.Create_Homogeneous_Turbulence_Velocity_Field(Data.Initial_Mesh, 
 										Velocity_Field,
                                                                                 Solution_Data.Input.Grid_IP);
-
   if (error_flag) return error_flag;
 
   Assign_Homogeneous_Turbulence_Velocity_Field(Solution_Data.Local_Solution_Blocks.Soln_Blks,
                                                Data.Local_Adaptive_Block_List,
                                                Velocity_Field);
+
+  error_flag = Solution_Data.Local_Solution_Blocks.ICs_Specializations(Solution_Data.Input);
+  if (error_flag) return error_flag;
 
   return error_flag;
 

@@ -52,6 +52,12 @@ class FlowField_2D;
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 class Hexa_Block{
   protected:
+   static SOLN_pSTATE      ***_d2Wdx2;  //!< Temporary static values of second derivitives of primitive variables
+   static SOLN_pSTATE      ***_d2Wdy2;  //!< Temporary static values of second derivitives of primitive variables
+   static SOLN_pSTATE      ***_d2Wdz2;  //!< Temporary static values of second derivitives of primitive variables
+   static SOLN_pSTATE     ***_d2Wdxdy;  //!< Temporary static values of second derivitives of primitive variables
+   static SOLN_pSTATE     ***_d2Wdxdz;  //!< Temporary static values of second derivitives of primitive variables
+   static SOLN_pSTATE     ***_d2Wdydz;  //!< Temporary static values of second derivitives of primitive variables
  
   public:
    typedef SOLN_pSTATE Soln_pState;
@@ -139,6 +145,12 @@ class Hexa_Block{
    /* Deallocate memory for structured hexahedral solution block. */
    void deallocate(void);
    
+   /* Allocate static memory for structured hexahedrial solution block. */
+   void allocate_static(void);
+
+   /* Deallocate static memory for structured hexahedrial solution block. */
+   void deallocate_static(void);
+
    /* Return primitive solution state at specified node. */
    SOLN_pSTATE Wn(const int ii, const int jj, const int kk);
    
@@ -225,6 +237,8 @@ class Hexa_Block{
 
    int ICs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs);
 
+   int ICs_Specializations(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs);
+
    int Interpolate_2Dto3D(const FlowField_2D &Numflowfield2D);
 
    void BCs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs);
@@ -251,6 +265,8 @@ class Hexa_Block{
                                            const int Limiter);
 
    void Linear_Reconstruction_LeastSquares(const int Limiter);
+
+   void Reconstruction_Second_Derivatives(void);
 
    int Wall_Shear(void);
    
@@ -448,7 +464,6 @@ istream &operator >> (istream &in_file,
 /******************************************************************
  * Hexa_Block::allocate -- Allocate memory.                       *
  ******************************************************************/
-
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::allocate(void){
      
@@ -487,7 +502,7 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::allocate(void){
          } /* endfor */
       } /* endfor */
    } /* endfor */
-   
+
    SOLN_cSTATE U_VACUUM;
    U_VACUUM.Vacuum();
    SOLN_pSTATE W_VACUUM;
@@ -628,6 +643,83 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::deallocate(void) {
       NCk = 0; KCl = 0; KCu = 0;  Nghost = 0;
       Allocated = HEXA_BLOCK_NOT_USED;
    } /* endif */
+
+}
+
+/******************************************************************
+ * Hexa_Block::allocate_static -- Allocate static memory.         *
+ ******************************************************************/
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::allocate_static(void){
+     
+   _d2Wdx2 = new SOLN_pSTATE**[NCi];
+   _d2Wdy2 = new SOLN_pSTATE**[NCi];
+   _d2Wdz2 = new SOLN_pSTATE**[NCi];
+   _d2Wdxdy = new SOLN_pSTATE**[NCi];
+   _d2Wdxdz = new SOLN_pSTATE**[NCi];
+   _d2Wdydz = new SOLN_pSTATE**[NCi];
+   
+   for (int i = 0; i <= NCi-1 ; ++i) {
+     _d2Wdx2[i] = new SOLN_pSTATE*[NCj];
+     _d2Wdy2[i] = new SOLN_pSTATE*[NCj];
+     _d2Wdz2[i] = new SOLN_pSTATE*[NCj];
+     _d2Wdxdy[i] = new SOLN_pSTATE*[NCj];
+     _d2Wdxdz[i] = new SOLN_pSTATE*[NCj];
+     _d2Wdydz[i] = new SOLN_pSTATE*[NCj];
+      for (int j = 0; j <= NCj-1 ; ++j) {
+        _d2Wdx2[i][j] = new SOLN_pSTATE[NCk];
+        _d2Wdy2[i][j] = new SOLN_pSTATE[NCk];
+        _d2Wdz2[i][j] = new SOLN_pSTATE[NCk];
+        _d2Wdxdy[i][j] = new SOLN_pSTATE[NCk];
+        _d2Wdxdz[i][j] = new SOLN_pSTATE[NCk];
+        _d2Wdydz[i][j] = new SOLN_pSTATE[NCk];
+      } /* endfor */
+   } /* endfor */
+
+   for (int k  = KCl-Nghost ; k <= KCu+Nghost ; ++k) {
+      for (int j  = JCl-Nghost ; j <= JCu+Nghost ; ++j) {
+         for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i) {
+	   _d2Wdx2[i][j][k].Vacuum(); 
+	   _d2Wdy2[i][j][k].Vacuum();
+	   _d2Wdz2[i][j][k].Vacuum(); 
+	   _d2Wdxdy[i][j][k].Vacuum(); 
+	   _d2Wdxdz[i][j][k].Vacuum();
+	   _d2Wdydz[i][j][k].Vacuum(); 
+	 } /* endfor */
+      } /* endfor */
+   } /*endfor */
+
+}
+
+/******************************************************************
+ * Hexa_Block::deallocate_static -- Deallocate static memory.     *
+ ******************************************************************/
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::deallocate_static(void){
+
+      for (int i = 0; i <= NCi-1; ++i) {
+         for (int j = 0; j <= NCj-1 ; ++j) {
+            delete []_d2Wdx2[i][j]; _d2Wdx2[i][j] = NULL; 
+            delete []_d2Wdy2[i][j]; _d2Wdy2[i][j] = NULL;
+            delete []_d2Wdz2[i][j]; _d2Wdz2[i][j] = NULL;
+            delete []_d2Wdxdy[i][j]; _d2Wdxdy[i][j] = NULL; 
+            delete []_d2Wdxdz[i][j]; _d2Wdxdz[i][j] = NULL;
+            delete []_d2Wdydz[i][j]; _d2Wdydz[i][j] = NULL;
+         } /* endfor */
+         delete []_d2Wdx2[i]; _d2Wdx2[i] = NULL; 
+         delete []_d2Wdy2[i]; _d2Wdy2[i] = NULL;
+         delete []_d2Wdz2[i]; _d2Wdz2[i] = NULL;
+         delete []_d2Wdxdy[i]; _d2Wdxdy[i] = NULL; 
+         delete []_d2Wdxdz[i]; _d2Wdxdz[i] = NULL;
+         delete []_d2Wdydz[i]; _d2Wdydz[i] = NULL;
+      } /* endfor */
+
+   delete[] _d2Wdx2; _d2Wdx2 = NULL; 
+   delete[] _d2Wdy2; _d2Wdy2 = NULL; 
+   delete[] _d2Wdz2; _d2Wdz2 = NULL; 
+   delete[] _d2Wdxdy; _d2Wdxdy = NULL; 
+   delete[] _d2Wdxdz; _d2Wdxdz = NULL; 
+   delete[] _d2Wdydz; _d2Wdydz = NULL; 
 
 }
 
@@ -1388,6 +1480,21 @@ ICs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
 }
 
 /********************************************************
+ * Routine: ICs_Specializations                         *
+ *                                                      *
+ * Apply any specializations for initial conditions to  *
+ * the hexahedral solution block.                       *
+ *                                                      *
+ ********************************************************/
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::
+ICs_Specializations(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
+
+   return (0);
+   
+}
+
+/********************************************************
  * Routine: Interpolate_2Dto3D                          *
  *                                                      *
  * Interpolate a 2D numerical solution to current 3D    *
@@ -1396,7 +1503,7 @@ ICs(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
  ********************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Interpolate_2Dto3D(const FlowField_2D &Numflowfield2D){
-   
+
    return (0);
    
 }
@@ -2499,6 +2606,65 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Linear_Reconstruction_LeastSquares(co
        phi[i][j][k].Vacuum(); 
    } /* endif */
     
+}
+
+/********************************************************
+ * Routine: Reconstruction_Second_Derivatives           *
+ *                                                      *
+ * This routine reconstruct second derivitives using    *
+ * finite difference.                                   *  
+ *                                                      *
+ ********************************************************/
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Reconstruction_Second_Derivatives(void) {
+
+    double DX, DY, DZ;
+
+    for (int  k  = KCl; k <= KCu; ++k ) {
+      for (int j  = JCl; j <= JCu; ++j ) {
+	for (int i = ICl; i <= ICu; ++i ) {
+
+	  if (i == ICu || j == JCu || k == KCu) {
+	    //BFW
+            DX = Grid.Cell[i][j][k].Xc.x - Grid.Cell[i-1][j][k].Xc.x;
+	    DY = Grid.Cell[i][j][k].Xc.y - Grid.Cell[i][j-1][k].Xc.y;
+	    DZ = Grid.Cell[i][j][k].Xc.z - Grid.Cell[i][j][k-1].Xc.z;
+	    _d2Wdx2[i][j][k] = ( dWdx[i][j][k] - dWdx[i-1][j][k] )/ DX;
+	    _d2Wdy2[i][j][k] = ( dWdy[i][j][k] - dWdy[i][j-1][k] )/ DY;
+	    _d2Wdz2[i][j][k] = ( dWdz[i][j][k] - dWdz[i][j][k-1] )/ DZ;      
+	    _d2Wdxdy[i][j][k] = ( dWdx[i][j][k] - dWdx[i][j-1][k] )/ DY;
+	    _d2Wdxdz[i][j][k] = ( dWdx[i][j][k] - dWdx[i][j][k-1] )/ DZ;
+	    _d2Wdydz[i][j][k] = ( dWdy[i][j][k] - dWdy[i][j][k-1] )/ DZ;
+
+	  } else if (i == ICl || j == JCl || k == KCl){
+	    //FFW
+	    DX = Grid.Cell[i+1][j][k].Xc.x - Grid.Cell[i][j][k].Xc.x;
+	    DY = Grid.Cell[i][j+1][k].Xc.y - Grid.Cell[i][j][k].Xc.y;
+	    DZ = Grid.Cell[i][j][k+1].Xc.z - Grid.Cell[i][j][k].Xc.z;
+	    _d2Wdx2[i][j][k] = ( dWdx[i+1][j][k] - dWdx[i][j][k] )/ DX;
+	    _d2Wdy2[i][j][k] = ( dWdy[i][j+1][k] - dWdy[i][j][k] )/ DY;
+	    _d2Wdz2[i][j][k] = ( dWdz[i][j][k+1] - dWdz[i][j][k] )/ DZ;
+	    _d2Wdxdy[i][j][k] = ( dWdx[i][j+1][k] - dWdx[i][j][k] )/ DY;
+	    _d2Wdxdz[i][j][k] = ( dWdx[i][j][k+1] - dWdx[i][j][k] )/ DZ;	  
+            _d2Wdydz[i][j][k] = ( dWdy[i][j][k+1] - dWdy[i][j][k] )/ DZ;
+
+	  } else {
+
+	    DX = Grid.Cell[i+1][j][k].Xc.x - Grid.Cell[i-1][j][k].Xc.x;
+	    DY = Grid.Cell[i][j+1][k].Xc.y - Grid.Cell[i][j-1][k].Xc.y;
+	    DZ = Grid.Cell[i][j][k+1].Xc.z - Grid.Cell[i][j][k-1].Xc.z;
+	    _d2Wdx2[i][j][k] = ( dWdx[i+1][j][k] - dWdx[i-1][j][k] )/ DX; 
+	    _d2Wdy2[i][j][k] = ( dWdy[i][j+1][k] - dWdy[i][j-1][k] )/ DY;
+	    _d2Wdz2[i][j][k] = ( dWdz[i][j][k+1] - dWdz[i][j][k-1] )/ DZ;
+	    _d2Wdxdy[i][j][k] = ( dWdx[i][j+1][k] - dWdx[i][j-1][k] )/ DY;
+	    _d2Wdxdz[i][j][k] = ( dWdx[i][j][k+1] - dWdx[i][j][k-1] )/ DZ;
+	    _d2Wdydz[i][j][k] = ( dWdy[i][j][k+1] - dWdy[i][j][k-1] )/ DZ;
+
+	  } /* endif */
+	} /* endfor */
+      } /* endfor */
+    } /* endfor */
+
 }
 
 /********************************************************
@@ -4096,5 +4262,41 @@ UnloadReceiveBuffer_Flux_F2C(double *buffer,
    return (2);
 
 }
+
+/*******************************************************************************
+ * Hexa_Block:: templated storage creation for static variable _d2Wdx2         *
+ *******************************************************************************/
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+SOLN_pSTATE*** Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::_d2Wdx2 = NULL;
+
+/*******************************************************************************
+ * Hexa_Block:: templated storage creation for static variable _d2Wdy2         *
+ *******************************************************************************/
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+SOLN_pSTATE*** Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::_d2Wdy2 = NULL;
+
+/*******************************************************************************
+ * Hexa_Block:: templated storage creation for static variable _d2Wdz2         *
+ *******************************************************************************/
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+SOLN_pSTATE*** Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::_d2Wdz2 = NULL;
+
+/*******************************************************************************
+ * Hexa_Block:: templated storage creation for static variable _d2Wdxy         *
+ *******************************************************************************/
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+SOLN_pSTATE*** Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::_d2Wdxdy = NULL;
+
+/*******************************************************************************
+ * Hexa_Block:: templated storage creation for static variable _d2Wdxz         *
+ *******************************************************************************/
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+SOLN_pSTATE*** Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::_d2Wdxdz = NULL;
+
+/*******************************************************************************
+ * Hexa_Block:: templated storage creation for static variable _d2Wdyz         *
+ *******************************************************************************/
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+SOLN_pSTATE*** Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::_d2Wdydz = NULL;
 
 #endif // _HEXA_BLOCK_INCLUDED

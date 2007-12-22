@@ -287,7 +287,7 @@ double LES3DFsd_pState::Le_t(void) {
  * LES3DFsd_pState::filter_width -- LES characteristic filter width      *
  *************************************************************************/
 double LES3DFsd_pState::filter_width(const double &Volume) const {
-  return (0.0366/30.0);//pow(Volume,1.0/3.0); 
+  return (2.0*pow(Volume,1.0/3.0)); 
 }
 
 /*******************************************************************************
@@ -2428,6 +2428,18 @@ LES3DFsd_pState LES3DFsd_pState::NoSlip(const LES3DFsd_pState &Win,
  ************************************************************************/
 
 /*********************************************************************************
+ * LES3DFsd_pState::Enstrophy                                                    *
+ *********************************************************************************/
+double LES3DFsd_pState::Enstrophy(const LES3DFsd_pState &dWdx, 
+                                  const LES3DFsd_pState &dWdy, 
+                                  const LES3DFsd_pState &dWdz) const{
+  Tensor3D vorticity_tensor = vorticity(dWdx,dWdy,dWdz);
+   double ens;
+   ens = sqr(vorticity_tensor.xy)+sqr(vorticity_tensor.xz)+sqr(vorticity_tensor.yz);
+   return ens;
+}
+
+/*********************************************************************************
  * LES3DFsd_pState::abs_strain_rate -- Absolute value of strain rate tensor      *
  *********************************************************************************/
 double LES3DFsd_pState::abs_strain_rate(const LES3DFsd_pState &dWdx, 
@@ -2572,7 +2584,7 @@ double LES3DFsd_pState::Reaction_Rate_Fsd(const LES3DFsd_pState &dWdx,
    double tau_fsd = HeatRelease_Parameter();
 
    if ( C < 0.999 && C > 0.001 && dWdx.C != ZERO ) {//&& dWdy.C != ZERO && dWdz.C != ZERO ) {
-     return ( _reactants_density*_laminar_flame_speed*Fsd*rho ); //-tau_fsd*_laminar_flame_speed*(rho*(1-2*C)*(dWdx.C+dWdy.C+dWdz.C)+C*(1-C)*(dWdx.rho+dWdy.rho+dWdz.rho)) );
+     return ( _reactants_density*_laminar_flame_speed*Fsd*rho );//-tau_fsd*_laminar_flame_speed*(rho*(1-2*C)*(dWdx.C+dWdy.C+dWdz.C)+C*(1-C)*(dWdx.rho+dWdy.rho+dWdz.rho)) );
    } else {
      return (ZERO);
    } /* endif */
@@ -3661,7 +3673,7 @@ double LES3DFsd_cState::Le_t(void) {
  * LES3DFsd_cState::filter_width -- LES characteristic filter width      *
  *************************************************************************/
 double LES3DFsd_cState::filter_width(const double &Volume) const {
-  return (0.0366/30.0);//pow(Volume,1.0/3.0); 
+  return (2.0*pow(Volume,1.0/3.0)); 
 }
 
 /*********************************************************************************
