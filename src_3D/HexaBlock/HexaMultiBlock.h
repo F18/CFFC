@@ -18,9 +18,12 @@
 #endif //_ADAPTIVEBLOCK3D_INCLUDED
 
 // A local list of solution blocks on a given processor.
-template<class HEXA_BLOCK> class Hexa_Multi_Block {
-   
+template<class HEXA_BLOCK> 
+class Hexa_Multi_Block {
   private:
+
+  protected:
+
   public:
    HEXA_BLOCK *Soln_Blks;          // Array of hexahedral solution blocks.
    int Number_of_Soln_Blks;        // Number or size of array of hexahedral solution blocks. 

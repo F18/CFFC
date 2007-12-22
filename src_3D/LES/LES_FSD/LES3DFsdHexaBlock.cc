@@ -3,6 +3,102 @@
 #include "LES3DFsdHexaBlock.h"
 #endif // _LES3DFSD_HEXA_BLOCK_INCLUDED
 
+/******************************************************************
+ * Routine: allocate_static -- Allocate static memory.            *
+ ******************************************************************/
+template<>
+void Hexa_Block<LES3DFsd_pState, LES3DFsd_cState>::allocate_static(void) {
+     
+   if (_Allocated && (_NSi < NCi || _NSj < NCj || _NSk < NCk)) {
+     deallocate_static();
+   } /* endif */
+
+   if (!_Allocated) {
+
+      _NSi = NCi; _NSj = NCj; _NSk = NCk;
+
+      _d2Wdx2 = new LES3DFsd_pState**[NCi];
+      _d2Wdy2 = new LES3DFsd_pState**[NCi];
+      _d2Wdz2 = new LES3DFsd_pState**[NCi];
+      _d2Wdxdy = new LES3DFsd_pState**[NCi];
+      _d2Wdxdz = new LES3DFsd_pState**[NCi];
+      _d2Wdydz = new LES3DFsd_pState**[NCi];
+   
+      for (int i = 0; i <= NCi-1 ; ++i) {
+         _d2Wdx2[i] = new LES3DFsd_pState*[NCj];
+         _d2Wdy2[i] = new LES3DFsd_pState*[NCj];
+         _d2Wdz2[i] = new LES3DFsd_pState*[NCj];
+         _d2Wdxdy[i] = new LES3DFsd_pState*[NCj];
+         _d2Wdxdz[i] = new LES3DFsd_pState*[NCj];
+         _d2Wdydz[i] = new LES3DFsd_pState*[NCj];
+         for (int j = 0; j <= NCj-1 ; ++j) {
+            _d2Wdx2[i][j] = new LES3DFsd_pState[NCk];
+            _d2Wdy2[i][j] = new LES3DFsd_pState[NCk];
+            _d2Wdz2[i][j] = new LES3DFsd_pState[NCk];
+            _d2Wdxdy[i][j] = new LES3DFsd_pState[NCk];
+            _d2Wdxdz[i][j] = new LES3DFsd_pState[NCk];
+            _d2Wdydz[i][j] = new LES3DFsd_pState[NCk];
+         } /* endfor */
+      } /* endfor */
+
+      for (int k  = KCl-Nghost ; k <= KCu+Nghost ; ++k) {
+         for (int j  = JCl-Nghost ; j <= JCu+Nghost ; ++j) {
+            for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i) {
+	       _d2Wdx2[i][j][k].Vacuum(); 
+	       _d2Wdy2[i][j][k].Vacuum();
+	       _d2Wdz2[i][j][k].Vacuum(); 
+	       _d2Wdxdy[i][j][k].Vacuum(); 
+	       _d2Wdxdz[i][j][k].Vacuum();
+	       _d2Wdydz[i][j][k].Vacuum(); 
+	    } /* endfor */
+         } /* endfor */
+      } /*endfor */
+ 
+      _Allocated = HEXA_BLOCK_USED;
+
+   } /* endif */
+
+}
+
+/******************************************************************
+ * Routine: deallocate_static -- Deallocate static memory.        *
+ ******************************************************************/
+template<>
+void Hexa_Block<LES3DFsd_pState, LES3DFsd_cState>::deallocate_static(void) {
+
+   if (_Allocated) { 
+
+      for (int i = 0; i <= NCi-1; ++i) {
+         for (int j = 0; j <= NCj-1 ; ++j) {
+            delete []_d2Wdx2[i][j]; _d2Wdx2[i][j] = NULL; 
+            delete []_d2Wdy2[i][j]; _d2Wdy2[i][j] = NULL;
+            delete []_d2Wdz2[i][j]; _d2Wdz2[i][j] = NULL;
+            delete []_d2Wdxdy[i][j]; _d2Wdxdy[i][j] = NULL; 
+            delete []_d2Wdxdz[i][j]; _d2Wdxdz[i][j] = NULL;
+            delete []_d2Wdydz[i][j]; _d2Wdydz[i][j] = NULL;
+         } /* endfor */
+         delete []_d2Wdx2[i]; _d2Wdx2[i] = NULL; 
+         delete []_d2Wdy2[i]; _d2Wdy2[i] = NULL;
+         delete []_d2Wdz2[i]; _d2Wdz2[i] = NULL;
+         delete []_d2Wdxdy[i]; _d2Wdxdy[i] = NULL; 
+         delete []_d2Wdxdz[i]; _d2Wdxdz[i] = NULL;
+         delete []_d2Wdydz[i]; _d2Wdydz[i] = NULL;
+      } /* endfor */
+
+      delete[] _d2Wdx2; _d2Wdx2 = NULL; 
+      delete[] _d2Wdy2; _d2Wdy2 = NULL; 
+      delete[] _d2Wdz2; _d2Wdz2 = NULL; 
+      delete[] _d2Wdxdy; _d2Wdxdy = NULL; 
+      delete[] _d2Wdxdz; _d2Wdxdz = NULL; 
+      delete[] _d2Wdydz; _d2Wdydz = NULL; 
+
+      _NSi = 0; _NSj = 0; _NSk = 0; 
+      _Allocated = HEXA_BLOCK_NOT_USED;
+
+   } /* endif */
+
+}
+
 /********************************************************
  * Routine: Output_Tecplot                              *
  *                                                      *
@@ -23,14 +119,12 @@ Output_Tecplot(Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs,
  
    LES3DFsd_pState W_node;
 
-   allocate_static();
-
    /* Ensure boundary conditions are updated before
       evaluating solution at the nodes. */
    
    BCs(IPs);
    
-  for (int k  = KCl; k <= KCu; ++k ) {
+   for (int k  = KCl; k <= KCu; ++k ) {
       for (int j  = JCl; j <= JCu; ++j ) {
          for (int i = ICl; i <= ICu; ++i ) {
             Reconstruction_Second_Derivatives();	 
@@ -159,8 +253,6 @@ Output_Tecplot(Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs,
 
    Out_File << setprecision(6);
   
-   deallocate_static();
-
 }
 
 /********************************************************
@@ -181,8 +273,6 @@ Output_Cells_Tecplot(Input_Parameters<LES3DFsd_pState,
                      const int Block_Number,
                      const int Output_Title,
                      ostream &Out_File) {
-
-   allocate_static();
 
    /* Ensure boundary conditions are updated before
       evaluating solution at the nodes. */
@@ -400,8 +490,6 @@ Output_Cells_Tecplot(Input_Parameters<LES3DFsd_pState,
    
    Out_File << setprecision(6);
 
-   deallocate_static();
-
 }
 
 /********************************************************
@@ -423,8 +511,6 @@ Output_Nodes_Tecplot(Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs,
                      ostream &Out_File) {
 
    LES3DFsd_pState W_node;
-
-   allocate_static();   
 
    /* Ensure boundary conditions are updated before
       evaluating solution at the nodes. */
@@ -559,8 +645,6 @@ Output_Nodes_Tecplot(Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs,
    } /* endfor */
 
    Out_File << setprecision(6);
-
-   deallocate_static();
 
 }
 

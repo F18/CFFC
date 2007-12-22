@@ -38,7 +38,8 @@ double Turbulence_Model_k_omega::f_beta(const Tensor3D &rotation,
 //      |Omega_ij Omega_jk S_ki|
 // Xw = |----------------------| 
 //      |  (beta_o* omega)^3   |
-   kai_w_numerator = rotation.xy*(-rotation.xy)*strain_rate.xx + 
+   kai_w_numerator = 
+      rotation.xy*(-rotation.xy)*strain_rate.xx + 
       rotation.xy*rotation.yz*strain_rate.xz + 
       rotation.xz*(-rotation.xz)*strain_rate.xx +  
       rotation.xz*(-rotation.yz)*strain_rate.xy + 

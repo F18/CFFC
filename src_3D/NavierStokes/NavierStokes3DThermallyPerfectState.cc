@@ -212,31 +212,53 @@ strain_rate(const NavierStokes3D_ThermallyPerfect_pState &dWdx,
 
    strain_rate_tensor.xx = dWdx.v.x;
    strain_rate_tensor.xy = (dWdy.v.x + dWdx.v.y)/TWO;
+   strain_rate_tensor.xz = (dWdz.v.x + dWdx.v.z)/TWO;
    strain_rate_tensor.yy = dWdy.v.y;
    strain_rate_tensor.yz = (dWdz.v.y + dWdy.v.z)/TWO;
    strain_rate_tensor.zz = dWdz.v.z;
-   strain_rate_tensor.xz = (dWdx.v.z + dWdz.v.x)/TWO;
 
    return (strain_rate_tensor);
 
 }
 
 /********************************************************************************************
- * NavierStokes3D_ThermallyPerfect_pState::vorticity -- Returns vorticity tensor.           *
+ * NavierStokes3D_ThermallyPerfect_pState::rotation -- Returns rotation tensor.             *
  ********************************************************************************************/
+// Note that this is an antisymmetric tensor that is stored as a symmetric tensor.
+// Care must be exercised in it's use.
 Tensor3D NavierStokes3D_ThermallyPerfect_pState::
+rotation(const NavierStokes3D_ThermallyPerfect_pState &dWdx, 
+         const NavierStokes3D_ThermallyPerfect_pState &dWdy, 
+         const NavierStokes3D_ThermallyPerfect_pState &dWdz) const {
+
+   Tensor3D rotation_tensor;
+
+   rotation_tensor.xx = ZERO;
+   rotation_tensor.xy = (dWdy.v.x - dWdx.v.y)/TWO;
+   rotation_tensor.xz = (dWdz.v.x - dWdx.v.z)/TWO;
+   rotation_tensor.yy = ZERO;
+   rotation_tensor.yz = (dWdz.v.y - dWdy.v.z)/TWO;
+   rotation_tensor.zz = ZERO;
+
+   return (rotation_tensor);
+
+}
+
+/********************************************************************************************
+ * NavierStokes3D_ThermallyPerfect_pState::vorticity -- Returns vorticity vector.           *
+ ********************************************************************************************/
+Vector3D NavierStokes3D_ThermallyPerfect_pState::
 vorticity(const NavierStokes3D_ThermallyPerfect_pState &dWdx, 
           const NavierStokes3D_ThermallyPerfect_pState &dWdy, 
           const NavierStokes3D_ThermallyPerfect_pState &dWdz) const {
 
-   Tensor3D vorticity_tensor;
-   vorticity_tensor.zero();
+   Vector3D vorticity_vector;
 
-   vorticity_tensor.xy = -(dWdx.v.y - dWdy.v.x)/TWO;
-   vorticity_tensor.xz = (dWdz.v.x - dWdx.v.z)/TWO;
-   vorticity_tensor.yz = -(dWdy.v.z - dWdz.v.y)/TWO;
+   vorticity_vector.x = dWdy.v.z - dWdz.v.y;
+   vorticity_vector.y = -(dWdx.v.z - dWdz.v.x);
+   vorticity_vector.z = dWdx.v.y - dWdy.v.x;
 
-   return (vorticity_tensor);
+   return (vorticity_vector);
 
 }
 

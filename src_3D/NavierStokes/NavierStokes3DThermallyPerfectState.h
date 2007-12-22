@@ -336,8 +336,13 @@ class NavierStokes3D_ThermallyPerfect_pState : public Euler3D_ThermallyPerfect_p
                         const NavierStokes3D_ThermallyPerfect_pState &dWdy, 
                         const NavierStokes3D_ThermallyPerfect_pState &dWdz) const;
 
-   //! Returns the flow vorticity tensor
-   Tensor3D vorticity(const NavierStokes3D_ThermallyPerfect_pState &dWdx, 
+   //! Returns the rotation tensor
+   Tensor3D rotation(const NavierStokes3D_ThermallyPerfect_pState &dWdx, 
+                     const NavierStokes3D_ThermallyPerfect_pState &dWdy, 
+                     const NavierStokes3D_ThermallyPerfect_pState &dWdz) const;
+
+   //! Returns the velocity vorticity vector
+   Vector3D vorticity(const NavierStokes3D_ThermallyPerfect_pState &dWdx, 
                       const NavierStokes3D_ThermallyPerfect_pState &dWdy, 
                       const NavierStokes3D_ThermallyPerfect_pState &dWdz) const;
 //@}

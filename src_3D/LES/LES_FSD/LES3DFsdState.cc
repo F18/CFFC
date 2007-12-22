@@ -2433,10 +2433,7 @@ LES3DFsd_pState LES3DFsd_pState::NoSlip(const LES3DFsd_pState &Win,
 double LES3DFsd_pState::Enstrophy(const LES3DFsd_pState &dWdx, 
                                   const LES3DFsd_pState &dWdy, 
                                   const LES3DFsd_pState &dWdz) const{
-  Tensor3D vorticity_tensor = vorticity(dWdx,dWdy,dWdz);
-   double ens;
-   ens = sqr(vorticity_tensor.xy)+sqr(vorticity_tensor.xz)+sqr(vorticity_tensor.yz);
-   return ens;
+   return sqr(vorticity(dWdx,dWdy,dWdz));
 }
 
 /*********************************************************************************
@@ -2446,19 +2443,14 @@ double LES3DFsd_pState::abs_strain_rate(const LES3DFsd_pState &dWdx,
                                         const LES3DFsd_pState &dWdy, 
                                         const LES3DFsd_pState &dWdz) const{
 
-   Tensor3D strain_rate; 
-   strain_rate.zero();
-   strain_rate.xx = dWdx.v.x;
-   strain_rate.yy = dWdy.v.y;
-   strain_rate.zz = dWdz.v.z;
-   strain_rate.xy = 0.5*(dWdy.v.x + dWdx.v.y);
-   strain_rate.yz = 0.5*(dWdz.v.y + dWdy.v.z);
-   strain_rate.xz = 0.5*(dWdx.v.z + dWdz.v.x);
-  // S[i,j]*S[i,j]
-  double SS = sqr(strain_rate.xx) + sqr(strain_rate.yy) + sqr(strain_rate.zz)
-            + 2.0*(sqr(strain_rate.xy) + sqr(strain_rate.yz) + sqr(strain_rate.xz));
-  // sqrt(2*S*S)
-  return sqrt(2.0*SS);
+   Tensor3D strain_rate_tensor = strain_rate(dWdx, dWdy, dWdz);
+   // S[i,j]*S[i,j]
+   double SS = sqr(strain_rate_tensor.xx) + sqr(strain_rate_tensor.yy) + 
+               sqr(strain_rate_tensor.zz) +
+               TWO*(sqr(strain_rate_tensor.xy) + sqr(strain_rate_tensor.yz) + 
+                    sqr(strain_rate_tensor.xz));
+   // sqrt(2*S*S)
+   return sqrt(TWO*SS);
 
 }
 
@@ -3127,11 +3119,13 @@ double LES3DFsd_pState::SFS_Diffusion_Fsd(const LES3DFsd_pState &dWdx,
 
     if (Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY) {
       double SS = abs_strain_rate(dWdx,dWdy,dWdz);
-      Vector3D grad_rate = grad_abs_strain_rate(dWdx,dWdy,dWdz,d_dWdx_dx,d_dWdy_dy,d_dWdz_dz,d_dWdx_dy,d_dWdx_dz,d_dWdy_dz);
+      Vector3D grad_rate = grad_abs_strain_rate(dWdx,dWdy,dWdz,d_dWdx_dx,
+                                                d_dWdy_dy,d_dWdz_dz,d_dWdx_dy,
+                                                d_dWdx_dz,d_dWdy_dz);
       grad_eddyviscosity_x = sqr(Cs*filter_width(Volume))*TWO*grad_rate.x/SS;
       grad_eddyviscosity_y = sqr(Cs*filter_width(Volume))*TWO*grad_rate.y/SS;
       grad_eddyviscosity_z = sqr(Cs*filter_width(Volume))*TWO*grad_rate.z/SS;
-    }else if (Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K) {
+    } else if (Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K) {
       grad_eddyviscosity_x = HALF*Cv*filter_width(Volume)*dWdx.k/sqrt(k);
       grad_eddyviscosity_y = HALF*Cv*filter_width(Volume)*dWdy.k/sqrt(k);
       grad_eddyviscosity_z = HALF*Cv*filter_width(Volume)*dWdz.k/sqrt(k);

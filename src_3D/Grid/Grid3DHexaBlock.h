@@ -421,6 +421,7 @@ inline void Grid3D_Hexa_Block::allocate(const int Ni,
                                         const int Nj, 
                                         const int Nk, 
                                         const int Ng) {
+
    assert( Ni >= 1 && Nj >= 1 && Nk >= 1 && Ng >=1 && !Allocated);
    NNi = Ni+2*Ng+1; INl = Ng; INu = Ni+Ng; 
    NNj = Nj+2*Ng+1; JNl = Ng; JNu = Nj+Ng; 
@@ -428,7 +429,7 @@ inline void Grid3D_Hexa_Block::allocate(const int Ni,
    NCi = Ni+2*Ng; ICl = Ng; ICu = Ni+Ng-1; 
    NCj = Nj+2*Ng; JCl = Ng; JCu = Nj+Ng-1; 
    NCk = Nk+2*Ng; KCl = Ng; KCu = Nk+Ng-1;
-   Nghost = Ng; Allocated = GRID3D_HEXA_BLOCK_USED;
+   Nghost = Ng;
    
    Node = new Node3D**[NNi];
    for (int i = 0; i < NNi; ++i ){
@@ -457,13 +458,18 @@ inline void Grid3D_Hexa_Block::allocate(const int Ni,
       BCtypeN[i] = new int[NCk]; BCtypeS[i] = new int[NCk];
       BCtypeT[i] = new int[NCj]; BCtypeB[i] = new int[NCj];
    } /* endfor */
+
+   Allocated = GRID3D_HEXA_BLOCK_USED;
+
 }
 
 /*************************************************************************
  * Grid3D_Hexa_Block::deallocate -- Deallocate memory.                   *
  *************************************************************************/
 inline void Grid3D_Hexa_Block::deallocate(void) {
+
    if (Allocated) {
+
       assert(NNi >= 1 && NNj >= 1 && NNk >= 1);
       for (int i = 0; i <= NNi-1 ; ++i ) {
          for ( int j = 0 ; j <= NNj-1 ; ++j) {
@@ -505,8 +511,12 @@ inline void Grid3D_Hexa_Block::deallocate(void) {
       NCi = 0; ICl = 0; ICu = 0; 
       NCj = 0; JCl = 0; JCu = 0; 
       NCk = 0; KCl = 0; KCu = 0;
-      Nghost = 0; Allocated = GRID3D_HEXA_BLOCK_NOT_USED;
+      Nghost = 0; 
+
+      Allocated = GRID3D_HEXA_BLOCK_NOT_USED;
+
    } /* endif */
+
 }
 
 /*************************************************************************

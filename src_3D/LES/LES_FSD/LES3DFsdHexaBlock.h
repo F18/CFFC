@@ -18,8 +18,13 @@
 /* Define required specializations. */
 
 template<>
-void Hexa_Block<LES3DFsd_pState,
-	        LES3DFsd_cState>::
+void Hexa_Block<LES3DFsd_pState, LES3DFsd_cState>::allocate_static(void);
+
+template<>
+void Hexa_Block<LES3DFsd_pState, LES3DFsd_cState>::deallocate_static(void);
+
+template<>
+void Hexa_Block<LES3DFsd_pState, LES3DFsd_cState>::
 Output_Tecplot(Input_Parameters<LES3DFsd_pState,
       		                LES3DFsd_cState> &IPs,
                const int Number_of_Time_Steps,
@@ -29,8 +34,7 @@ Output_Tecplot(Input_Parameters<LES3DFsd_pState,
 	       ostream &Out_File);
 				
 template<>
-void Hexa_Block<LES3DFsd_pState, 
-                LES3DFsd_cState>::
+void Hexa_Block<LES3DFsd_pState, LES3DFsd_cState>::
 Output_Cells_Tecplot(Input_Parameters<LES3DFsd_pState,
       		                      LES3DFsd_cState> &IPs, 
                      const int Number_of_Time_Steps,
@@ -40,8 +44,7 @@ Output_Cells_Tecplot(Input_Parameters<LES3DFsd_pState,
                      ostream &Out_File);
 
 template<>
-void Hexa_Block<LES3DFsd_pState, 
-                LES3DFsd_cState>::
+void Hexa_Block<LES3DFsd_pState, LES3DFsd_cState>::
 Output_Nodes_Tecplot(Input_Parameters<LES3DFsd_pState,
       		                      LES3DFsd_cState> &IPs, 
                      const int Number_of_Time_Steps,
@@ -51,45 +54,39 @@ Output_Nodes_Tecplot(Input_Parameters<LES3DFsd_pState,
                      ostream &Out_File);
 
 template<>
-int Hexa_Block<LES3DFsd_pState, 
-               LES3DFsd_cState>::
+int Hexa_Block<LES3DFsd_pState, LES3DFsd_cState>::
 ICs(Input_Parameters<LES3DFsd_pState, 
                      LES3DFsd_cState> &IPs);
 
 template<>
-int Hexa_Block<LES3DFsd_pState, 
-               LES3DFsd_cState>::
+int Hexa_Block<LES3DFsd_pState, LES3DFsd_cState>::
 ICs_Specializations(Input_Parameters<LES3DFsd_pState, 
                                      LES3DFsd_cState> &IPs);
 
 template<>
-void Hexa_Block<LES3DFsd_pState, 
-                LES3DFsd_cState>::
+void Hexa_Block<LES3DFsd_pState, LES3DFsd_cState>::
 BCs(Input_Parameters<LES3DFsd_pState, 
                      LES3DFsd_cState> &IPs);
 
 template<>
-double Hexa_Block<LES3DFsd_pState,
-                  LES3DFsd_cState>::
+double Hexa_Block<LES3DFsd_pState, LES3DFsd_cState>::
 CFL(Input_Parameters<LES3DFsd_pState,
                      LES3DFsd_cState> &IPs);
 
 template<>
-int Hexa_Block<LES3DFsd_pState, 
-               LES3DFsd_cState>::
+int Hexa_Block<LES3DFsd_pState, LES3DFsd_cState>::
 dUdt_Multistage_Explicit(const int i_stage,
                          Input_Parameters<LES3DFsd_pState, 
                                           LES3DFsd_cState> &IPs);
 
 template<>
-int Hexa_Block<LES3DFsd_pState, 
-               LES3DFsd_cState>::
+int Hexa_Block<LES3DFsd_pState, LES3DFsd_cState>::
 Update_Solution_Multistage_Explicit(const int i_stage,
                                     Input_Parameters<LES3DFsd_pState,
                                                      LES3DFsd_cState> &IPs);
 
 template<>
-int Hexa_Block<LES3DFsd_pState,LES3DFsd_cState>::
+int Hexa_Block<LES3DFsd_pState, LES3DFsd_cState>::
 UnloadReceiveBuffer_Solution(double *buffer,
                              int &buffer_count,
                              const int buffer_size,
