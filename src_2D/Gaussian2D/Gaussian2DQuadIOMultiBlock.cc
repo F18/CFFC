@@ -774,11 +774,12 @@ int Output_Shock_Structure(Gaussian2D_Quad_Block *Soln_ptr,
 			   const int Number_of_Time_Steps,
 			   const double &Time) {
 
-    int i, j, i_output_title, ii, jj;
+    int i, j, i_output_title, jj;
     char prefix[256], extension[256], output_file_name[256];
     char *output_file_name_ptr;
     ofstream output_file;    
     double y(MILLION), y_tol(ZERO);
+    double x_max(0.0), x_min(0.0);
 
     Gaussian2D_pState Wu, Wd;  //up- and down-stream condition
 
@@ -820,13 +821,15 @@ int Output_Shock_Structure(Gaussian2D_Quad_Block *Soln_ptr,
 	    y_tol = Soln_ptr[i].Grid.lfaceE(Soln_ptr[i].ICl,j)/4.0;
 	  }
 
-	  ii = (Soln_ptr[i].Grid.ICl+Soln_ptr[i].Grid.ICu)/2;
 	  jj = (Soln_ptr[i].Grid.JCl+Soln_ptr[i].Grid.JCu)/2;
 
-	  if(Soln_ptr[i].Grid.Cell[ii][jj].Xc.x < 0.0) {
+	  if(Soln_ptr[i].Grid.Node[Soln_ptr[i].Grid.INl][jj].X.x < x_min) {
 	    Wu = Soln_ptr[i].WoW[jj];
-	  } else {
+	    x_min = Soln_ptr[i].Grid.Node[Soln_ptr[i].Grid.INl][jj].X.x;
+	  }
+	  if(Soln_ptr[i].Grid.Node[Soln_ptr[i].Grid.INu][jj].X.x > x_max) {
 	    Wd = Soln_ptr[i].WoE[jj];
+	    x_max = Soln_ptr[i].Grid.Node[Soln_ptr[i].Grid.INu][jj].X.x;
 	  }
 	}
       }
