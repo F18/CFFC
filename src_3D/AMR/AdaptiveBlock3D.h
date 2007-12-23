@@ -406,6 +406,7 @@ inline istream &operator >> (istream &in_file,
  * Class: AdaptiveBlock3D_Info                          *
  *                                                      *
  * Member functions                                     *
+ *    gblknum   -- Return global adaptive block number. *
  *       cpu    -- Return adaptive block processor      *
  *                 or processor element number.         *
  *    blknum    -- Return local adaptive block number   *
@@ -426,6 +427,7 @@ inline istream &operator >> (istream &in_file,
 class AdaptiveBlock3D_Info {
   private:
   public:
+    int                                                   gblknum;  // Global adaptive block number.
     int                                                       cpu; // Adaptive block processor number.
     int                                                    blknum; // Local adaptive block number.
     AdaptiveBlock3D_Dimensions                              dimen; // Adaptive block dimensions. 
@@ -437,17 +439,18 @@ class AdaptiveBlock3D_Info {
     
     /* Creation, copy, and assignment constructors. */
     AdaptiveBlock3D_Info(void) {
-       cpu = 0; blknum = 0; dimen.i = 0; dimen.j = 0; dimen.k = 0; dimen.ghost = 0; 
+       gblknum = 0; cpu = 0; blknum = 0; dimen.i = 0; dimen.j = 0; dimen.k = 0; dimen.ghost = 0; 
        sector = ADAPTIVEBLOCK3D_SECTOR_NONE; level = 0; 
     }
 
     AdaptiveBlock3D_Info(const AdaptiveBlock3D_Info &Blk_Info) {
-       cpu = Blk_Info.cpu; blknum = Blk_Info.blknum;
+       gblknum = Blk_Info.gblknum; cpu = Blk_Info.cpu; blknum = Blk_Info.blknum;
        dimen = Blk_Info.dimen; sector = Blk_Info.sector; level = Blk_Info.level;
        blkorient = Blk_Info.blkorient; be = Blk_Info.be;
     }
 
-    AdaptiveBlock3D_Info(const int i_processor,
+    AdaptiveBlock3D_Info(const int i_gblk,
+                         const int i_processor,
 	                 const int i_block,
                          const int i_dimen,
 			 const int j_dimen,
@@ -457,7 +460,7 @@ class AdaptiveBlock3D_Info {
 	                 const int i_level,
                          const Block_Orientation_Info i_blkorient,
                          const Block_Boundary_Elements_on_Domain_Extent i_be) {
-       cpu = i_processor; blknum = i_block;
+       gblknum = i_gblk; cpu = i_processor; blknum = i_block;
        dimen.i = i_dimen; dimen.j = j_dimen;dimen.k = k_dimen; dimen.ghost = ghost_dimen;
        sector = i_sector; level = i_level; 
        blkorient = i_blkorient; be = i_be;
@@ -490,6 +493,7 @@ class AdaptiveBlock3D_Info {
  * AdaptiveBlock3D_Info -- Reset the block information.      *
  *************************************************************/
 inline void AdaptiveBlock3D_Info::reset(void) {
+  gblknum = 0;
   cpu = 0; 
   blknum = 0; 
   dimen.i = 0; dimen.j = 0; dimen.k = 0; dimen.ghost = 0; 
@@ -502,7 +506,7 @@ inline void AdaptiveBlock3D_Info::reset(void) {
  *************************************************************/
 inline AdaptiveBlock3D_Info &AdaptiveBlock3D_Info::
 operator =(const AdaptiveBlock3D_Info &Blk_Info) {
-  cpu = Blk_Info.cpu; blknum = Blk_Info.blknum;
+  gblknum = Blk_Info.gblknum; cpu = Blk_Info.cpu; blknum = Blk_Info.blknum;
   dimen = Blk_Info.dimen; sector = Blk_Info.sector; level = Blk_Info.level;
   blkorient = Blk_Info.blkorient; be = Blk_Info.be;  
 }
@@ -512,7 +516,8 @@ operator =(const AdaptiveBlock3D_Info &Blk_Info) {
  *************************************************************/
 inline ostream &operator << (ostream &out_file,
 			     const AdaptiveBlock3D_Info &Blk_Info) {
-  out_file << " " << Blk_Info.cpu 
+  out_file << " " << Blk_Info.gblknum
+           << " " << Blk_Info.cpu 
            << " " << Blk_Info.blknum << Blk_Info.dimen 
            << " " << Blk_Info.sector
            << " " << Blk_Info.level;
@@ -524,7 +529,7 @@ inline ostream &operator << (ostream &out_file,
 inline istream &operator >> (istream &in_file,
 			     AdaptiveBlock3D_Info &Blk_Info) {
   in_file.setf(ios::skipws);
-  in_file >> Blk_Info.cpu >> Blk_Info.blknum;
+  in_file >> Blk_Info.gblknum >> Blk_Info.cpu >> Blk_Info.blknum;
   in_file.unsetf(ios::skipws);
   in_file >> Blk_Info.dimen;
   in_file.setf(ios::skipws);
@@ -541,7 +546,6 @@ inline istream &operator >> (istream &in_file,
  *                                                      *
  * Member functions                                     *
  *      used     -- Return adaptive block usage.        *
- *   gblknum     -- Return global block number.         *
  *      info     -- Return adaptive block info.         *
  *        nT     -- Return number of Top neighbour      *
  *                  blocks.                             *
@@ -666,7 +670,6 @@ class AdaptiveBlock3D {
   private:
   public:
     int                    used;  // Adaptive block usage indicator.
-    int                 gblknum;  // Global adaptive block number.
     AdaptiveBlock3D_Info   info;  // Adaptive block Info.
     int       nT,nB,nN,nS,nE,nW;  // Number of neighbouring blocks in each of the 26 directions
     int         nNW,nNE,nSE,nSW;  
@@ -703,7 +706,7 @@ class AdaptiveBlock3D {
     
     /* Creation, copy, and assignment constructors. */
     AdaptiveBlock3D(void) {
-       used = ADAPTIVEBLOCK3D_NOT_USED; gblknum = 0;
+       used = ADAPTIVEBLOCK3D_NOT_USED; 
        nN = 0; nS = 0; nE = 0; nW = 0; nT = 0; nB = 0;
        nNW = 0; nNE = 0; nSE = 0; nSW = 0;
        nTN = 0; nTS = 0; nTE = 0; nTW = 0;
@@ -714,7 +717,7 @@ class AdaptiveBlock3D {
 
     AdaptiveBlock3D(const AdaptiveBlock3D &Blk) {
        int i;
-       used = Blk.used; gblknum = Blk.gblknum; info = Blk.info;
+       used = Blk.used; info = Blk.info;
        nT = Blk.nT; nB = Blk.nB; nN = Blk.nN; nS = Blk.nS; nE = Blk.nE; nW = Blk.nW;
        for (i = 0; i <= ADAPTIVEBLOCK3D_NUMBER_FACE_NEIGHBOURS_MAX-1; ++i) {
 	 infoT[i] = Blk.infoT[i]; infoB[i] = Blk.infoB[i]; 
@@ -739,7 +742,7 @@ class AdaptiveBlock3D {
 
     AdaptiveBlock3D(const AdaptiveBlock3D *Blk) {
        int i;
-       used = Blk->used; gblknum = Blk->gblknum; info = Blk->info;
+       used = Blk->used; info = Blk->info;
         nT = Blk->nT; nB = Blk->nB; nN = Blk->nN; nS = Blk->nS; nE = Blk->nE; nW = Blk->nW;
        for (i = 0; i <= ADAPTIVEBLOCK3D_NUMBER_FACE_NEIGHBOURS_MAX-1; ++i) {
 	 infoT[i] = Blk->infoT[i]; infoB[i] = Blk->infoB[i];
@@ -784,7 +787,7 @@ class AdaptiveBlock3D {
  * AdaptiveBlock3D -- Assignment operator.                   *
  *************************************************************/
 inline AdaptiveBlock3D &AdaptiveBlock3D::operator =(const AdaptiveBlock3D &Blk) {
-  int i; used = Blk.used; gblknum = Blk.gblknum; info = Blk.info;
+  int i; used = Blk.used; info = Blk.info;
   nN = Blk.nN; nS = Blk.nS; nE = Blk.nE; nW = Blk.nW; nT = Blk.nT; nB = Blk.nB;
   nNW = Blk.nNW; nNE = Blk.nNE; nSE = Blk.nSE; nSW = Blk.nSW;
   nTN = Blk.nTN; nTS = Blk.nTS; nTE = Blk.nTE; nTW = Blk.nTW;
@@ -877,7 +880,7 @@ inline AdaptiveBlock3D &AdaptiveBlock3D::operator =(const AdaptiveBlock3D &Blk) 
 inline ostream &operator << (ostream &out_file,
 			     const AdaptiveBlock3D &Blk) {
   int i;
-  out_file << " " << Blk.used << " " << Blk.gblknum << Blk.info;
+  out_file << " " << Blk.used << " " << Blk.info;
 
   out_file << "\n " << Blk.nT;
   for (i = 0; i <= Blk.nT-1; ++i) {
@@ -1015,7 +1018,8 @@ inline ostream &operator << (ostream &out_file,
 inline istream &operator >> (istream &in_file,
 			     AdaptiveBlock3D &Blk) {
   int i;
-  in_file.setf(ios::skipws); in_file >> Blk.used >> Blk.gblknum; 
+  in_file.setf(ios::skipws); 
+  in_file >> Blk.used;
   in_file.unsetf(ios::skipws);
   in_file >> Blk.info;
 

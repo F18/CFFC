@@ -711,9 +711,9 @@ void Assign_Homogeneous_Turbulence_Velocity_Field(HEXA_BLOCK *Solution_Block,
 
    for (int nBlk = 0 ; nBlk <= LocalSolnBlockList.Nblk-1 ; nBlk++) {
       if (LocalSolnBlockList.Block[nBlk].used == ADAPTIVEBLOCK3D_USED) {
-	 if (Velocity_Field.Vel_Blks[LocalSolnBlockList.Block[nBlk].gblknum].Allocated) {
+	 if (Velocity_Field.Vel_Blks[LocalSolnBlockList.Block[nBlk].info.gblknum].Allocated) {
   	    Assign_Homogeneous_Turbulence_Velocity_Field(Solution_Block[nBlk],
-                                                         Velocity_Field.Vel_Blks[LocalSolnBlockList.Block[nBlk].gblknum]);
+                Velocity_Field.Vel_Blks[LocalSolnBlockList.Block[nBlk].info.gblknum]);
 	 } /* endif */
       } /* endif */
    }  /* endfor */

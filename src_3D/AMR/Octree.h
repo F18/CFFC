@@ -416,7 +416,7 @@ inline void OctreeBlock::read(istream &in_file) {
 }
 
 inline void OctreeBlock::read(istream &in_file,
-                                AdaptiveBlock3D_ResourceList &List_of_Available_Blocks) {
+                              AdaptiveBlock3D_ResourceList &List_of_Available_Blocks) {
   int number_of_children; 
   in_file >> block;
   if (block.used) {
@@ -554,7 +554,7 @@ inline void OctreeBlock::broadcast(void) {
 inline void OctreeBlock::broadcast(AdaptiveBlock3D_ResourceList &List_of_Available_Blocks) {
 #ifdef _MPI_VERSION
   int number_of_children; 
-   AdaptiveBlock3D::Broadcast_Adaptive_Block(block);
+  AdaptiveBlock3D::Broadcast_Adaptive_Block(block);
   if (!CFFC_Primary_MPI_Processor()) {
      if (block.used) {
         if (List_of_Available_Blocks.Nfree > 0) {
@@ -824,9 +824,12 @@ class Octree_DataStructure{
     /* Octree block root indices. */
     AdaptiveBlock3D_Dimensions getRoot(OctreeBlock *Block_Ptr);
 
+    /* Reassign neighbour information for root blocks. */
+    void reassignRootNeighbours(void);
+
     /* Find neighbour of octree block in specified search direction. */
     OctreeBlock *getNeighbour(OctreeBlock *Block_Ptr,
-                                const int Search_Dir_Mask);
+                              const int Search_Dir_Mask);
 
     /* Find neighbouring blocks. */
     void findNeighbours(void);
@@ -866,12 +869,10 @@ class Octree_DataStructure{
     static void Renumber_Solution_Blocks(Octree_DataStructure &Octree,
                                          AdaptiveBlock3D_List &LocalSolnBlockList);
 
-    static void Modify_Neighbours_of_Root_Solution_Blocks(Octree_DataStructure &Octree,
-                                                          const int Grid_Type);
+    static void Reassign_Root_Neighbours(Octree_DataStructure &Octree);
 
-    static void Modify_Neighbours_of_Root_Solution_Blocks(Octree_DataStructure &Octree,
-                                                          AdaptiveBlock3D_List &LocalSolnBlockList,
-                                                          const int Grid_Type);
+    static void Reassign_Root_Neighbours(Octree_DataStructure &Octree,
+                                         AdaptiveBlock3D_List &LocalSolnBlockList);
 
     static void Find_Neighbours(Octree_DataStructure &Octree);
 
@@ -1020,9 +1021,9 @@ inline void Octree_DataStructure::assign_block_ptr(OctreeBlock *Block_Ptr) {
 
 inline void Octree_DataStructure::assign_block_pointers(void) {
    for (int jBLK = 0; jBLK <= Nblk-1; ++jBLK) {
-     for (int iBLK = 0; iBLK <= Ncpu-1; ++iBLK) {
+      for (int iBLK = 0; iBLK <= Ncpu-1; ++iBLK) {
          Blocks[iBLK][jBLK] = NULL;
-       } /* endfor */
+      } /* endfor */
    } /* endfor */
    for (int iBLK = 0 ; iBLK <= NR-1; ++iBLK ) {
       assign_block_ptr(&(Roots[iBLK]));
@@ -1038,7 +1039,7 @@ inline void Octree_DataStructure::renumber(void) {
       for (int iCPU = 0 ; iCPU <= Ncpu-1 ; ++iCPU) {
          if (Blocks[iCPU][nBLK] != NULL) {
             if (Blocks[iCPU][nBLK]->block.used) {
-               Blocks[iCPU][nBLK]->block.gblknum = global_block_number;
+               Blocks[iCPU][nBLK]->block.info.gblknum = global_block_number;
                ++global_block_number;
             } /* endif */
          } /* endif */
@@ -1096,7 +1097,7 @@ inline double Octree_DataStructure::efficiencyRefinement(void) {
                                        Blocks[iCPU][nBLK]->block.info.dimen.j*
                                        Blocks[iCPU][nBLK]->block.info.dimen.k;
                number_of_cells_with_uniform_mesh +=
-                                       int(pow(double(4), double(max_level-Blocks[iCPU][nBLK]->block.info.level)))*
+                                       int(pow(double(8), double(max_level-Blocks[iCPU][nBLK]->block.info.level)))*
                                        (Blocks[iCPU][nBLK]->block.info.dimen.i*
                                         Blocks[iCPU][nBLK]->block.info.dimen.j*
                                         Blocks[iCPU][nBLK]->block.info.dimen.k);
@@ -1121,6 +1122,303 @@ inline AdaptiveBlock3D_Dimensions Octree_DataStructure::getRoot(OctreeBlock *Blo
     } /* endfor */
   } /* endfor */
   return (AdaptiveBlock3D_Dimensions(-1, -1, -1, 0));
+}
+
+/****************************************************************************
+ * Octree_DataStructure::reassignRootNeighbours -- Reassign root neighbours.*
+ ****************************************************************************/
+inline void Octree_DataStructure::reassignRootNeighbours(void) {
+
+   int nr_neighbour;
+
+   for (int nr = 0; nr <= NR-1; ++nr) {
+      if (Roots[nr].block.nT > 0) {
+         for (int nr_search = 0; nr_search <= NR-1; ++nr_search) {
+            if (Roots[nr_search].block.info.gblknum == Roots[nr].block.infoT[0].gblknum) {
+	       nr_neighbour = nr_search;
+	       break;
+	    } /* endif */
+         } /* endfor */
+         Roots[nr].block.infoT[0].blknum = Roots[nr_neighbour].block.info.blknum;
+         Roots[nr].block.infoT[0].cpu = Roots[nr_neighbour].block.info.cpu;
+      } /* endif */
+
+      if (Roots[nr].block.nB > 0) {
+         for (int nr_search = 0; nr_search <= NR-1; ++nr_search) {
+            if (Roots[nr_search].block.info.gblknum == Roots[nr].block.infoB[0].gblknum) {
+	       nr_neighbour = nr_search;
+	       break;
+	    } /* endif */
+         } /* endfor */
+         Roots[nr].block.infoB[0].blknum = Roots[nr_neighbour].block.info.blknum;
+         Roots[nr].block.infoB[0].cpu = Roots[nr_neighbour].block.info.cpu;
+      } /* endif */
+   
+      if (Roots[nr].block.nN > 0) {
+         for (int nr_search = 0; nr_search <= NR-1; ++nr_search) {
+            if (Roots[nr_search].block.info.gblknum == Roots[nr].block.infoN[0].gblknum) {
+	       nr_neighbour = nr_search;
+	       break;
+	    } /* endif */
+         } /* endfor */
+         Roots[nr].block.infoN[0].blknum = Roots[nr_neighbour].block.info.blknum;
+         Roots[nr].block.infoN[0].cpu = Roots[nr_neighbour].block.info.cpu;
+      } /* endif */
+   
+      if (Roots[nr].block.nS > 0) {
+         for (int nr_search = 0; nr_search <= NR-1; ++nr_search) {
+            if (Roots[nr_search].block.info.gblknum == Roots[nr].block.infoS[0].gblknum) {
+	       nr_neighbour = nr_search;
+	       break;
+	    } /* endif */
+         } /* endfor */
+         Roots[nr].block.infoS[0].blknum = Roots[nr_neighbour].block.info.blknum;
+         Roots[nr].block.infoS[0].cpu = Roots[nr_neighbour].block.info.cpu;
+      } /* endif */
+ 
+      if (Roots[nr].block.nE > 0) {
+         for (int nr_search = 0; nr_search <= NR-1; ++nr_search) {
+            if (Roots[nr_search].block.info.gblknum == Roots[nr].block.infoE[0].gblknum) {
+	       nr_neighbour = nr_search;
+	       break;
+	    } /* endif */
+         } /* endfor */
+         Roots[nr].block.infoE[0].blknum = Roots[nr_neighbour].block.info.blknum;
+         Roots[nr].block.infoE[0].cpu = Roots[nr_neighbour].block.info.cpu;
+      } /* endif */
+
+      if (Roots[nr].block.nW > 0) {
+         for (int nr_search = 0; nr_search <= NR-1; ++nr_search) {
+            if (Roots[nr_search].block.info.gblknum == Roots[nr].block.infoW[0].gblknum) {
+	       nr_neighbour = nr_search;
+	       break;
+	    } /* endif */
+         } /* endfor */
+         Roots[nr].block.infoW[0].blknum = Roots[nr_neighbour].block.info.blknum;
+         Roots[nr].block.infoW[0].cpu = Roots[nr_neighbour].block.info.cpu;
+      } /* endif */
+      
+      if (Roots[nr].block.nNW > 0) {
+         for (int nr_search = 0; nr_search <= NR-1; ++nr_search) {
+            if (Roots[nr_search].block.info.gblknum == Roots[nr].block.infoNW[0].gblknum) {
+	       nr_neighbour = nr_search;
+	       break;
+	    } /* endif */
+         } /* endfor */
+         Roots[nr].block.infoNW[0].blknum = Roots[nr_neighbour].block.info.blknum;
+         Roots[nr].block.infoNW[0].cpu = Roots[nr_neighbour].block.info.cpu;
+      } /* endif */
+
+      if (Roots[nr].block.nNE > 0) {
+         for (int nr_search = 0; nr_search <= NR-1; ++nr_search) {
+            if (Roots[nr_search].block.info.gblknum == Roots[nr].block.infoNE[0].gblknum) {
+	       nr_neighbour = nr_search;
+	       break;
+	    } /* endif */
+         } /* endfor */
+         Roots[nr].block.infoNE[0].blknum = Roots[nr_neighbour].block.info.blknum;
+         Roots[nr].block.infoNE[0].cpu = Roots[nr_neighbour].block.info.cpu;
+      } /* endif */
+   
+      if (Roots[nr].block.nSE > 0) {
+         for (int nr_search = 0; nr_search <= NR-1; ++nr_search) {
+            if (Roots[nr_search].block.info.gblknum == Roots[nr].block.infoSE[0].gblknum) {
+	       nr_neighbour = nr_search;
+	       break;
+	    } /* endif */
+         } /* endfor */
+         Roots[nr].block.infoSE[0].blknum = Roots[nr_neighbour].block.info.blknum;
+         Roots[nr].block.infoSE[0].cpu = Roots[nr_neighbour].block.info.cpu;
+      } /* endif */
+
+      if (Roots[nr].block.nSW > 0) {
+         for (int nr_search = 0; nr_search <= NR-1; ++nr_search) {
+            if (Roots[nr_search].block.info.gblknum == Roots[nr].block.infoSW[0].gblknum) {
+	       nr_neighbour = nr_search;
+	       break;
+	    } /* endif */
+         } /* endfor */
+         Roots[nr].block.infoSW[0].blknum = Roots[nr_neighbour].block.info.blknum;
+         Roots[nr].block.infoSW[0].cpu = Roots[nr_neighbour].block.info.cpu;
+      } /* endif */
+
+      if (Roots[nr].block.nTN > 0) {
+         for (int nr_search = 0; nr_search <= NR-1; ++nr_search) {
+            if (Roots[nr_search].block.info.gblknum == Roots[nr].block.infoTN[0].gblknum) {
+	       nr_neighbour = nr_search;
+	       break;
+	    } /* endif */
+         } /* endfor */
+         Roots[nr].block.infoTN[0].blknum = Roots[nr_neighbour].block.info.blknum;
+         Roots[nr].block.infoTN[0].cpu = Roots[nr_neighbour].block.info.cpu;
+      } /* endif */
+
+      if (Roots[nr].block.nTS > 0) {
+         for (int nr_search = 0; nr_search <= NR-1; ++nr_search) {
+            if (Roots[nr_search].block.info.gblknum == Roots[nr].block.infoTS[0].gblknum) {
+	       nr_neighbour = nr_search;
+	       break;
+	    } /* endif */
+         } /* endfor */
+         Roots[nr].block.infoTS[0].blknum = Roots[nr_neighbour].block.info.blknum;
+         Roots[nr].block.infoTS[0].cpu = Roots[nr_neighbour].block.info.cpu;
+      } /* endif */
+   
+      if (Roots[nr].block.nTE > 0) {
+         for (int nr_search = 0; nr_search <= NR-1; ++nr_search) {
+            if (Roots[nr_search].block.info.gblknum == Roots[nr].block.infoTE[0].gblknum) {
+	       nr_neighbour = nr_search;
+	       break;
+	    } /* endif */
+         } /* endfor */
+         Roots[nr].block.infoTE[0].blknum = Roots[nr_neighbour].block.info.blknum;
+         Roots[nr].block.infoTE[0].cpu = Roots[nr_neighbour].block.info.cpu;
+      } /* endif */
+
+      if (Roots[nr].block.nTW > 0) {
+         for (int nr_search = 0; nr_search <= NR-1; ++nr_search) {
+            if (Roots[nr_search].block.info.gblknum == Roots[nr].block.infoTW[0].gblknum) {
+	       nr_neighbour = nr_search;
+	       break;
+	    } /* endif */
+         } /* endfor */
+         Roots[nr].block.infoTW[0].blknum = Roots[nr_neighbour].block.info.blknum;
+         Roots[nr].block.infoTW[0].cpu = Roots[nr_neighbour].block.info.cpu;
+      } /* endif */
+
+      if (Roots[nr].block.nBN > 0) {
+         for (int nr_search = 0; nr_search <= NR-1; ++nr_search) {
+            if (Roots[nr_search].block.info.gblknum == Roots[nr].block.infoBN[0].gblknum) {
+	       nr_neighbour = nr_search;
+	       break;
+	    } /* endif */
+         } /* endfor */
+         Roots[nr].block.infoBN[0].blknum = Roots[nr_neighbour].block.info.blknum;
+         Roots[nr].block.infoBN[0].cpu = Roots[nr_neighbour].block.info.cpu;
+      } /* endif */
+
+      if (Roots[nr].block.nBS > 0) {
+         for (int nr_search = 0; nr_search <= NR-1; ++nr_search) {
+            if (Roots[nr_search].block.info.gblknum == Roots[nr].block.infoBS[0].gblknum) {
+	       nr_neighbour = nr_search;
+	       break;
+	    } /* endif */
+         } /* endfor */
+         Roots[nr].block.infoBS[0].blknum = Roots[nr_neighbour].block.info.blknum;
+         Roots[nr].block.infoBS[0].cpu = Roots[nr_neighbour].block.info.cpu;;
+      } /* endif */
+
+      if (Roots[nr].block.nBE > 0) {
+         for (int nr_search = 0; nr_search <= NR-1; ++nr_search) {
+            if (Roots[nr_search].block.info.gblknum == Roots[nr].block.infoBE[0].gblknum) {
+	       nr_neighbour = nr_search;
+	       break;
+	    } /* endif */
+         } /* endfor */
+         Roots[nr].block.infoBE[0].blknum = Roots[nr_neighbour].block.info.blknum;
+         Roots[nr].block.infoBE[0].cpu = Roots[nr_neighbour].block.info.cpu;
+      } /* endif */
+ 
+      if (Roots[nr].block.nBW > 0) {
+         for (int nr_search = 0; nr_search <= NR-1; ++nr_search) {
+            if (Roots[nr_search].block.info.gblknum == Roots[nr].block.infoBW[0].gblknum) {
+	       nr_neighbour = nr_search;
+	       break;
+	    } /* endif */
+         } /* endfor */
+         Roots[nr].block.infoBW[0].blknum = Roots[nr_neighbour].block.info.blknum;
+         Roots[nr].block.infoBW[0].cpu = Roots[nr_neighbour].block.info.cpu;
+      } /* endif */
+
+      if (Roots[nr].block.nTNW > 0) {
+         for (int nr_search = 0; nr_search <= NR-1; ++nr_search) {
+            if (Roots[nr_search].block.info.gblknum == Roots[nr].block.infoTNW[0].gblknum) {
+	       nr_neighbour = nr_search;
+	       break;
+	    } /* endif */
+         } /* endfor */
+         Roots[nr].block.infoTNW[0].blknum = Roots[nr_neighbour].block.info.blknum;
+         Roots[nr].block.infoTNW[0].cpu = Roots[nr_neighbour].block.info.cpu;
+      } /* endif */
+
+      if (Roots[nr].block.nTSW > 0) {
+         for (int nr_search = 0; nr_search <= NR-1; ++nr_search) {
+            if (Roots[nr_search].block.info.gblknum == Roots[nr].block.infoTSW[0].gblknum) {
+	       nr_neighbour = nr_search;
+	       break;
+	    } /* endif */
+         } /* endfor */
+         Roots[nr].block.infoTSW[0].blknum = Roots[nr_neighbour].block.info.blknum;
+         Roots[nr].block.infoTSW[0].cpu = Roots[nr_neighbour].block.info.cpu;
+      } /* endif */
+
+      if (Roots[nr].block.nTNE > 0) {
+         for (int nr_search = 0; nr_search <= NR-1; ++nr_search) {
+            if (Roots[nr_search].block.info.gblknum == Roots[nr].block.infoTNE[0].gblknum) {
+	       nr_neighbour = nr_search;
+	       break;
+	    } /* endif */
+         } /* endfor */
+         Roots[nr].block.infoTNE[0].blknum = Roots[nr_neighbour].block.info.blknum;
+         Roots[nr].block.infoTNE[0].cpu = Roots[nr_neighbour].block.info.cpu;
+      } /* endif */
+
+      if (Roots[nr].block.nTSE > 0) {
+         for (int nr_search = 0; nr_search <= NR-1; ++nr_search) {
+            if (Roots[nr_search].block.info.gblknum == Roots[nr].block.infoTSE[0].gblknum) {
+	       nr_neighbour = nr_search;
+	       break;
+	    } /* endif */
+         } /* endfor */
+         Roots[nr].block.infoTSE[0].blknum = Roots[nr_neighbour].block.info.blknum;
+         Roots[nr].block.infoTSE[0].cpu = Roots[nr_neighbour].block.info.cpu;
+      } /* endif */
+
+      if (Roots[nr].block.nBNW > 0) {
+         for (int nr_search = 0; nr_search <= NR-1; ++nr_search) {
+            if (Roots[nr_search].block.info.gblknum == Roots[nr].block.infoBNW[0].gblknum) {
+	       nr_neighbour = nr_search;
+	       break;
+	    } /* endif */
+         } /* endfor */
+         Roots[nr].block.infoBNW[0].blknum = Roots[nr_neighbour].block.info.blknum;
+         Roots[nr].block.infoBNW[0].cpu = Roots[nr_neighbour].block.info.cpu;
+      } /* endif */
+
+      if (Roots[nr].block.nBSW > 0) {
+         for (int nr_search = 0; nr_search <= NR-1; ++nr_search) {
+            if (Roots[nr_search].block.info.gblknum == Roots[nr].block.infoBSW[0].gblknum) {
+	       nr_neighbour = nr_search;
+	       break;
+	    } /* endif */
+         } /* endfor */
+         Roots[nr].block.infoBSW[0].blknum = Roots[nr_neighbour].block.info.blknum;
+         Roots[nr].block.infoBSW[0].cpu = Roots[nr_neighbour].block.info.cpu;
+      } /* endif */
+
+      if (Roots[nr].block.nBNE > 0) {
+         for (int nr_search = 0; nr_search <= NR-1; ++nr_search) {
+            if (Roots[nr_search].block.info.gblknum == Roots[nr].block.infoBNE[0].gblknum) {
+	       nr_neighbour = nr_search;
+	       break;
+	    } /* endif */
+         } /* endfor */
+         Roots[nr].block.infoBNE[0].blknum = Roots[nr_neighbour].block.info.blknum;
+         Roots[nr].block.infoBNE[0].cpu = Roots[nr_neighbour].block.info.cpu;
+      } /* endif */
+
+      if (Roots[nr].block.nBSE > 0) {
+         for (int nr_search = 0; nr_search <= NR-1; ++nr_search) {
+            if (Roots[nr_search].block.info.gblknum == Roots[nr].block.infoBSE[0].gblknum) {
+	       nr_neighbour = nr_search;
+	       break;
+	    } /* endif */
+         } /* endfor */
+         Roots[nr].block.infoBSE[0].blknum = Roots[nr_neighbour].block.info.blknum;
+         Roots[nr].block.infoBSE[0].cpu = Roots[nr_neighbour].block.info.cpu;
+      } /* endif */
+   } /* endfor */
+
 }
 
 /****************************************************************************

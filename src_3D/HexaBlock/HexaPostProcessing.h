@@ -122,7 +122,7 @@ int Hexa_Post_Processing(HexaSolver_Data &Data,
 									       Data.total_number_of_time_steps(),
 									       Data.Time);
          if (error_flag) {
-            cout << "\n  ERROR: Unable to open  cell output data file(s) on processor "
+            cout << "\n  ERROR: Unable to open cell output data file(s) on processor "
                  << CFFC_MPI::This_Processor_Number
                  << ".\n";
             cout.flush();
@@ -142,7 +142,7 @@ int Hexa_Post_Processing(HexaSolver_Data &Data,
 									       Data.total_number_of_time_steps(),
 									       Data.Time);
          if (error_flag) {
-            cout << "\n  ERROR: Unable to open  cell output data file(s) on processor "
+            cout << "\n  ERROR: Unable to open cell output data file(s) on processor "
                  << CFFC_MPI::This_Processor_Number
                  << ".\n";
             cout.flush();
@@ -159,7 +159,7 @@ int Hexa_Post_Processing(HexaSolver_Data &Data,
 
          error_flag = Write_Octree(Data.Octree, Solution_Data.Input);
          if (error_flag) {
-            cout << "\n  ERROR: Unable to open  octree data file on processor " 
+            cout << "\n  ERROR: Unable to open octree data file on processor " 
                  << CFFC_MPI::This_Processor_Number
                  << ".\n";
             cout.flush();

@@ -819,7 +819,7 @@ Read_Restart_Solution(Input_Parameters<typename HEXA_BLOCK::Soln_pState,
 
    for (int nblk = 0; nblk < Local_Adaptive_Block_List.Nblk; ++nblk) { 
       if (Local_Adaptive_Block_List.Block[nblk].used == ADAPTIVEBLOCK3D_USED){
-         sprintf(extension, "%.6d", Local_Adaptive_Block_List.Block[nblk].gblknum);
+         sprintf(extension, "%.6d", Local_Adaptive_Block_List.Block[nblk].info.gblknum);
          strcat(extension, ".soln");
          strcpy(restart_file_name, prefix);
          strcat(restart_file_name, extension);
@@ -904,7 +904,7 @@ Write_Restart_Solution(Input_Parameters<typename HEXA_BLOCK::Soln_pState,
     
    for (int nblk = 0; nblk < Local_Adaptive_Block_List.Nblk; ++nblk){
       if (Local_Adaptive_Block_List.Block[nblk].used == ADAPTIVEBLOCK3D_USED){    
-         sprintf(extension, "%.6d", Local_Adaptive_Block_List.Block[nblk].gblknum);
+         sprintf(extension, "%.6d", Local_Adaptive_Block_List.Block[nblk].info.gblknum);
          strcat(extension, ".soln");
          strcpy(restart_file_name, prefix);
          strcat(restart_file_name, extension);
@@ -1001,7 +1001,7 @@ Output_Tecplot(Input_Parameters<typename HEXA_BLOCK::Soln_pState,
           Soln_Blks[nblk].Output_Tecplot(Input,
                                          Number_of_Time_Steps, 
                                          Time,
-                                         Local_Adaptive_Block_List.Block[nblk].gblknum,
+                                         Local_Adaptive_Block_List.Block[nblk].info.gblknum,
                                          i_output_title,
                                          output_file);
           if (i_output_title) i_output_title = 0;
@@ -1080,7 +1080,7 @@ Output_Cells_Tecplot(Input_Parameters<typename HEXA_BLOCK::Soln_pState,
          Soln_Blks[nblk].Output_Cells_Tecplot(Input,
                                               Number_of_Time_Steps, 
                                               Time,
-                                              Local_Adaptive_Block_List.Block[nblk].gblknum,
+                                              Local_Adaptive_Block_List.Block[nblk].info.gblknum,
                                               i_output_title,
                                               output_file);
          if (i_output_title) i_output_title = 0;
@@ -1159,7 +1159,7 @@ Output_Nodes_Tecplot(Input_Parameters<typename HEXA_BLOCK::Soln_pState,
          Soln_Blks[nblk].Output_Nodes_Tecplot(Input,
                                               Number_of_Time_Steps, 
                                               Time,
-                                              Local_Adaptive_Block_List.Block[nblk].gblknum,
+                                              Local_Adaptive_Block_List.Block[nblk].info.gblknum,
                                               i_output_title,
                                               output_file);
          if (i_output_title) i_output_title = 0;

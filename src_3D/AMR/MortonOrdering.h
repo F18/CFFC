@@ -51,7 +51,7 @@ inline unsigned long long morton_number(int depth,unsigned int x, unsigned int y
 
 inline int* OctreeBlock_Morton(OctreeBlock &QTB, int *array_ptr) {
   if (QTB.block.used){               //no children then assign value
-    array_ptr[0] = QTB.block.gblknum;       //assign Global adaptive block number into the correct position
+    array_ptr[0] = QTB.block.info.gblknum;       //assign Global adaptive block number into the correct position
     return (array_ptr +1);           //Shift the array pointer to point to an empty spot (array[1])
   }
   else{  //Go through all 8 children and assign positions in the array ptr
@@ -204,7 +204,8 @@ int Morton_ReOrdering_of_Solution_Blocks(Octree_DataStructure                   
     for (index=0; index <num_of_blocks; index++)
       for ( int oldCPU = 0; oldCPU < Octree.Ncpu; oldCPU++ )
 	for ( int oldBLK = 0; oldBLK < Octree.Nblk; oldBLK++){
-	  if (Octree.Blocks[oldCPU][oldBLK]!=NULL && morton_array[index] == Octree.Blocks[oldCPU][oldBLK]->block.gblknum){
+	  if (Octree.Blocks[oldCPU][oldBLK]!=NULL && morton_array[index] == 
+              Octree.Blocks[oldCPU][oldBLK]->block.info.gblknum){
 	    Octree.Blocks[oldCPU][oldBLK]->block.info.cpu = CPU;  
 	    Octree.Blocks[oldCPU][oldBLK]->block.info.blknum = BLK;
 	    BLK++;
@@ -227,10 +228,6 @@ int Morton_ReOrdering_of_Solution_Blocks(Octree_DataStructure                   
 
 /*     // Find the neighbours of the root blocks. */
 /*     Octree_DataStructure::Find_Neighbours_of_Root_Solution_Blocks(Octree); */
-    
-    // Modify block neighbours for grid geometries with 
-    //periodic boundaries, etc. 
-    Octree_DataStructure::Modify_Neighbours_of_Root_Solution_Blocks(Octree, IPs.Grid_IP.i_Grid);
     
     // Determine the neighbouring blocks of all used (active)
     //solution blocks in the octree data structure. This will

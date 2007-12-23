@@ -94,9 +94,13 @@ int Initial_Conditions(HexaSolver_Data &Data,
     } /* endif */
 
     // Read Restart Octree
-    // error_flag = Read_Octree(Octree,Input);
+    error_flag = Read_Octree(Data.Octree,
+                             Data.Global_Adaptive_Block_List,
+                             Data.Local_Adaptive_Block_List,
+                             Solution_Data.Local_Solution_Blocks,
+                             Solution_Data.Input);
     if (!Data.batch_flag && error_flag) {
-      cout << "\n ERROR: Unable to open Octree data file on processor "
+      cout << "\n ERROR: Unable to open octree data file on processor "
 	   << Data.Local_Adaptive_Block_List.ThisCPU<< ".\n";
          cout.flush();
     } /* endif */
@@ -205,6 +209,29 @@ int Initial_Conditions(HexaSolver_Data &Data,
   /* Prescribe boundary data consistent with initial data. */
 
   Solution_Data.Local_Solution_Blocks.BCs(Solution_Data.Input);
+
+  /* Output multi-block solution-adaptive quadrilateral mesh statistics. */
+
+  if (!Data.batch_flag) {
+     cout << "\n\n Multi-block solution-adaptive hexahedral mesh statistics: "; 
+     cout << "\n  -> Number of Root Blocks: "
+          << Data.Octree.NR;
+     cout << "\n  -> Number of Root Blocks i-direction: "
+          << Data.Octree.NRi;
+     cout << "\n  -> Number of Root Blocks j-direction: " 
+          << Data.Octree.NRj;
+     cout << "\n  -> Number of Root Blocks k-direction: " 
+          << Data.Octree.NRk;
+     cout << "\n  -> Total Number of Used Blocks: " 
+          << Data.Octree.countUsedBlocks();
+     cout << "\n  -> Total Number of Computational Cells: " 
+          << Data.Octree.countUsedCells();
+     cout << "\n  -> Number of Mesh Refinement Levels: " 
+	  << Data.Octree.highestRefinementLevel()+1;
+     cout << "\n  -> Refinement Efficiency: " 
+          << Data.Octree.efficiencyRefinement(); 
+     cout.flush();
+  } /* endif */
 
   /* End of prepocessing. */  
 

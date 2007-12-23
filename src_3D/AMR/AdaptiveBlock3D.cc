@@ -76,7 +76,7 @@ void AdaptiveBlock3D::Broadcast_Adaptive_Block(AdaptiveBlock3D &Blk) {
 #ifdef _MPI_VERSION
    int i;
    MPI::COMM_WORLD.Bcast(&(Blk.used), 1, MPI::INT, 0);
-   MPI::COMM_WORLD.Bcast(&(Blk.gblknum), 1, MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(&(Blk.info.gblknum), 1, MPI::INT, 0);
    AdaptiveBlock3D_Info::Broadcast_Adaptive_Block_Info(Blk.info);
    MPI::COMM_WORLD.Bcast(&(Blk.nT), 1, MPI::INT, 0);
    for (i = 0; i <= Blk.nT-1; ++i) {
