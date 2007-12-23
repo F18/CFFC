@@ -135,8 +135,6 @@ class Hexa_Multi_Block {
   
    void Freeze_Limiters(void);
 
-   void Set_Global_TimeStep(const double &Dt_min);
-
    int ICs(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
                             typename HEXA_BLOCK::Soln_cState> &Input);
 
@@ -150,10 +148,14 @@ class Hexa_Multi_Block {
    void BCs(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
                              typename HEXA_BLOCK::Soln_cState> &Input);
 
-   int WtoU(void);
-
    double CFL(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
                                typename HEXA_BLOCK::Soln_cState> &Input);
+
+   void Set_Global_TimeStep(const double &Dt_min);
+
+   int Wall_Shear(void);
+
+   int WtoU(void);
 
    int dUdt_Multistage_Explicit(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
                                 typename HEXA_BLOCK::Soln_cState> &Input,
@@ -663,6 +665,7 @@ double Hexa_Multi_Block<HEXA_BLOCK>::CFL(Input_Parameters<typename HEXA_BLOCK::S
    return (dtMin);
     
 }
+
 /********************************************************
  * Routine: Set_Global_TimeStep                         *
  *                                                      *
@@ -679,6 +682,30 @@ void Hexa_Multi_Block<HEXA_BLOCK>::Set_Global_TimeStep(const double &Dt_min) {
          Soln_Blks[nblk].Set_Global_TimeStep(Dt_min);
       } /* endif */
    }  /* endfor */
+
+}
+
+/********************************************************
+ * Routine: Wall_Shear                                  *
+ *                                                      *
+ * Evaluates the wall shear stress.                     *
+ *                                                      *
+ ********************************************************/
+template<class HEXA_BLOCK>
+int Hexa_Multi_Block<HEXA_BLOCK>::Wall_Shear(void) {
+   
+   int error_flag(0);
+   
+   /* Compute wall shear for each solution block. */
+   
+   for (int nblk = 0; nblk < Number_of_Soln_Blks; ++nblk) {
+      if (Block_Used[nblk]) {
+         error_flag = Soln_Blks[nblk].Wall_Shear();
+         if (error_flag) return (error_flag);
+      } /* endif */
+   }  /* endfor */
+
+   return(error_flag);
 
 }
 
@@ -851,8 +878,6 @@ Read_Restart_Solution(Input_Parameters<typename HEXA_BLOCK::Soln_pState,
          // Close restart file.
          restart_file.close();
 
-         Soln_Blks[nblk].Wall_Shear();
-       
        }  /* endif */
     } /* endfor */
     

@@ -284,6 +284,12 @@ class FANS3D_ThermallyPerfect_KOmega_pState : public NavierStokes3D_ThermallyPer
       Euler3D_ThermallyPerfect_pState::Vacuum(); k = ZERO; omega = ZERO;
    }
 
+   //! Check for physical validity of the turbulence quantities
+   void Realizable_Turbulence_Quantities_Check(void) {
+      if ( k < ZERO ) { k = ZERO; }
+      if ( omega <= ZERO) { omega = TOLER; }
+   }
+
    //! Check for physical validity of the solution vector
    bool Realizable_Solution_Check(void);
 //@}
@@ -851,6 +857,12 @@ class FANS3D_ThermallyPerfect_KOmega_cState : public NavierStokes3D_ThermallyPer
    //! Assigns a vacuum solution state
    void Vacuum(void) {
       Euler3D_ThermallyPerfect_cState::Vacuum(); rhok = ZERO; rhoomega = ZERO;
+   }
+
+   //! Check for physical validity of the turbulence quantities
+   void Realizable_Turbulence_Quantities_Check(void) {
+      if ( rhok < ZERO ) { rhok = ZERO; }
+      if ( rhoomega <= ZERO) { rhoomega = rho*TOLER; }
    }
 
    //! Check for physical validity of the solution vector

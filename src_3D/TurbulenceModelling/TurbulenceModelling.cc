@@ -153,11 +153,15 @@ int Turbulence_Model_k_omega::low_Reynolds_number_formulation(
                              grid.BCtypeT[i][j]  == BC_WALL_VISCOUS_ISOTHERMAL ||
                              grid.BCtypeT[i][j] == BC_WALL_VISCOUS_HEATFLUX ||
                              grid.BCtypeT[i][j] == BC_ADIABATIC_WALL))){
+    
+   
+      if(wall.ywall !=0){
+         domega =  d*6.0*(mu/d)/(beta*sqr(wall.ywall));
+      }else{
+         domega = MILLION;
+      }
       
-      domega =  d*6.0*(mu/d)/(beta*sqr(wall.ywall));
-      
-        
-   }// end of checking
+    }// end of checking
     
    return 0;
       

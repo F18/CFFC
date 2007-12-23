@@ -43,28 +43,27 @@ SOLN_cSTATE Seddydissipationmodel(SOLN_pSTATE &W) {
    double Press = W.p;    // [Pa]
    double PressDyne = W.p*TEN; // N/m^2 -> dyne/cm^2
    double rho= W.rho/THOUSAND; //kg/m^3 -> g/cm^3 
-   double a,b, dcdt;
    
-   double model_constant = 4.0;
-   double tau_c, tau_t, s ;
-   
+   double model_constant(FOUR), tau_c(ZERO), dcdt(ZERO), s;
+
    switch(W.React.reactset_flag){
      //--------- ONE STEP CH4 ----------//
      case CH4_1STEP: 
-       s = TWO*(W.specdata[1].Mol_mass()*THOUSAND)/(W.specdata[0].Mol_mass()*THOUSAND);
-       if (W.spec[0].c > ZERO && W.spec[1].c > ZERO) {
-          // tau_t --- s/(mol/cm^3)
-          tau_t = (W.specdata[0].Mol_mass()*THOUSAND)/(W.k_omega_model.beta_star*max(TOLER, W.omega))/
-                  (model_constant*rho*min(W.spec[0].c, W.spec[1].c/s) );
-          tau_c +=tau_t;
-       } /* endif */
-     
+
+        if (W.spec[0].c > ZERO && W.spec[1].c > ZERO) {
+          s = TWO*(W.specdata[1].Mol_mass()*THOUSAND)/
+              (W.specdata[0].Mol_mass()*THOUSAND);
+          // tau_c --- s/(mol/cm^3)
+          tau_c = (W.specdata[0].Mol_mass()*THOUSAND)/
+                  (W.k_omega_model.beta_star*max(TOLER, W.omega))/
+                  (model_constant*rho*min(W.spec[0].c, W.spec[1].c/s));
+        } /* endif */
+ 
        // compare two time scales
-       //   if(kf[0]!=ZERO){
+       //   if (kf[0]!=ZERO) {
        //     tau_l =(W.rho*W.spec[0].c)/(M[0]*kf[0]*THOUSAND);
-       //     tau_t = ONE/(W.beta_star*max(TOLER, W.omega)*cm1);
-       //     cout<<"\n t_l = "<<tau_l<<"  t_t "<<tau_t<<endl;
-       //     }
+       //   } /* endif */
+
        if (tau_c > ZERO) {
           for (int index =0; index < W.ns; index++){
              switch(index) {
@@ -85,7 +84,8 @@ SOLN_cSTATE Seddydissipationmodel(SOLN_pSTATE &W) {
              // "dcdt" in mol/(cm^3*s)
              // U_return.rhospec[].c should be in (kg/(m^3*s))
              // conversion :  g/mol * mol/(cm^3*s) = g/(10^(-6)m^3s) = 1000* kg/(m^3*s)
-             U_return.rhospec[index].c =  W.specdata[index].Mol_mass()*THOUSAND*dcdt*THOUSAND;
+             U_return.rhospec[index].c = W.specdata[index].Mol_mass()*
+                                         THOUSAND*dcdt*THOUSAND;
           } /* endfor */
        } else {
           for(int index =0; index<W.ns; index++){
@@ -105,7 +105,8 @@ SOLN_cSTATE Seddydissipationmodel(SOLN_pSTATE &W) {
              } /* endswitch */
            
              //dcdt in kg/m^3*s   g/mol *(mol/cm^3*s)*1e3
-             U_return.rhospec[index].c = W.specdata[index].Mol_mass()*THOUSAND*dcdt*THOUSAND;
+             U_return.rhospec[index].c = W.specdata[index].Mol_mass()*
+                                         THOUSAND*dcdt*THOUSAND;
           } /* endfor */
        } /* endif */
        break;

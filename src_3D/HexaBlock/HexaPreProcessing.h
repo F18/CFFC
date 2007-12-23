@@ -86,7 +86,9 @@ int Initial_Conditions(HexaSolver_Data &Data,
     cout << "\n Prescribing initial data.";  cout.flush();
   } /* endif */
   
+  //======================================================
   // Read solution from restart data files.
+  //======================================================
   if (Solution_Data.Input.i_ICs == IC_RESTART) {
     if (!Data.batch_flag){ 
       cout << "\n Reading solution from restart data files."; 
@@ -121,6 +123,30 @@ int Initial_Conditions(HexaSolver_Data &Data,
     error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return (error_flag);
     
+    // Calculate y+:
+    error_flag = Wall_Distance(Solution_Data.Local_Solution_Blocks.Soln_Blks, // Turbulence function in GENERIC TYPE????
+			       Data.Octree, 
+			       Data.Local_Adaptive_Block_List);
+    if (!Data.batch_flag && error_flag) {
+      cout << "\n ERROR: Difficulty determining the wall distance "
+	   << "on processor "<< CFFC_MPI::This_Processor_Number
+	   << ".\n";
+      cout.flush();
+    } /* endif */
+    error_flag = CFFC_OR_MPI(error_flag);
+    if (error_flag) return (error_flag);
+
+    // Calculate wall shear:
+    error_flag = Solution_Data.Local_Solution_Blocks.Wall_Shear();
+    if (!Data.batch_flag && error_flag) {
+      cout << "\n ERROR: Difficulty determining the wall shear "
+	   << "on processor "<< CFFC_MPI::This_Processor_Number
+	   << ".\n";
+      cout.flush();
+    } /* endif */
+    error_flag = CFFC_OR_MPI(error_flag);
+    if (error_flag) return (error_flag);
+
     // Ensure each processor has the correct number of steps and time!!!
     Data.number_of_explicit_time_steps = CFFC_Maximum_MPI(Data.number_of_explicit_time_steps); 
     Data.number_of_implicit_time_steps = CFFC_Maximum_MPI(Data.number_of_implicit_time_steps);
@@ -130,9 +156,12 @@ int Initial_Conditions(HexaSolver_Data &Data,
     Solution_Data.Input.Maximum_Number_of_Time_Steps = 
       CFFC_Maximum_MPI(Solution_Data.Input.Maximum_Number_of_Time_Steps);
    
+  //======================================================
   // Generate initial solution data to begin calculation. 
+  //======================================================
   } else {
-    error_flag = Wall_Distance(Solution_Data.Local_Solution_Blocks.Soln_Blks,  // Turbulence function in GENERIC TYPE????
+    // Calculate y+:
+    error_flag = Wall_Distance(Solution_Data.Local_Solution_Blocks.Soln_Blks, // Turbulence function in GENERIC TYPE????
 			       Data.Octree, 
 			       Data.Local_Adaptive_Block_List);
     if (!Data.batch_flag && error_flag) {
