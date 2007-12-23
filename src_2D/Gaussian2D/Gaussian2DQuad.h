@@ -202,7 +202,7 @@ class Gaussian2D_Quad_Block{
        FluxN = NULL; FluxS = NULL; FluxE = NULL; FluxW = NULL;
        WoN = NULL; WoS = NULL; WoE = NULL; WoW = NULL;
        oldT_N = NULL; oldT_S = NULL; oldT_E = NULL; oldT_W = NULL;
-       Axisymmetric = 0; Heat_Transfer = 0;
+       Axisymmetric = 0;
        Freeze_Limiter = OFF;
     }
 
@@ -214,7 +214,7 @@ class Gaussian2D_Quad_Block{
        FluxN = Soln.FluxN; FluxS = Soln.FluxS; FluxE = Soln.FluxE; FluxW = Soln.FluxW;
        WoN = Soln.WoN; WoS = Soln.WoS; WoE = Soln.WoE; WoW = Soln.WoW;
        oldT_N = Soln.oldT_N; oldT_S = Soln.oldT_S; oldT_E = Soln.oldT_E; oldT_W = Soln.oldT_W;
-       Axisymmetric = Soln.Axisymmetric; Heat_Transfer = Soln.Heat_Transfer; 
+       Axisymmetric = Soln.Axisymmetric;
        Freeze_Limiter = Soln.Freeze_Limiter;
     }
 
