@@ -2933,7 +2933,9 @@ extern void Output_Shock_Structure(Gaussian2D_Quad_Block &SolnBlk,
 				   int &Output_Title,
 				   ostream &Out_File,
 				   const double &y,
-				   const double &y_tol);
+				   const double &y_tol,
+				   const Gaussian2D_pState &Wu,
+				   const Gaussian2D_pState &Wd);
 
 extern void ICs(Gaussian2D_Quad_Block &SolnBlk,
  	        Gaussian2D_Input_Parameters &Input_Parameters,

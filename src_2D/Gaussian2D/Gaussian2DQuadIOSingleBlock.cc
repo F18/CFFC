@@ -713,8 +713,10 @@ void Output_Shock_Structure(Gaussian2D_Quad_Block &SolnBlk,
 			    int &Output_Title,
 			    ostream &Out_File,
 			    const double &y,
-			    const double &y_tol) {
-  int i, j, output_flag(0);
+			    const double &y_tol,
+			    const Gaussian2D_pState &Wu,
+			    const Gaussian2D_pState &Wd) {
+    int i, j, output_flag(0);
 
     /* Ensure boundary conditions are updated before
        outputting solution */
@@ -739,19 +741,12 @@ void Output_Shock_Structure(Gaussian2D_Quad_Block &SolnBlk,
 		 << ", Time = " << Time
 		 << "\"" << "\n"
 		 << "VARIABLES = \"x\" \\ \n"
-		 << "\"y\" \\ \n"
-		 << "\"Mean Free Path\" \\ \n"
-		 << "\"x/mfp_ref\" \\ \n"
 		 << "\"rho\" \\ \n"
-		 << "\"u\" \\ \n"
-		 << "\"v\" \\ \n"
-		 << "\"pxx\" \\ \n"
-		 << "\"pxy\" \\ \n"
-		 << "\"pyy\" \\ \n"
-		 << "\"pzz\" \\ \n"
-		 << "\"erot\" \\ \n"
 		 << "\"T\" \\ \n"
-		 << "\"DetP\" \\ \n"
+		 << "\"u\" \\ \n"
+		 << "\"Pxx\" \\ \n"
+		 << "\"Pyy\" \\ \n"
+		 << "\"Qxxx\" \\ \n"
 		 << "ZONE T =  \"Block Number = " << Block_Number
 		 << "\" \\ \n"
 		 << "I = " << SolnBlk.Grid.ICu - SolnBlk.Grid.ICl + 1 << " \\ \n"
@@ -766,16 +761,27 @@ void Output_Shock_Structure(Gaussian2D_Quad_Block &SolnBlk,
 
       for ( j  = SolnBlk.JCl ; j <= SolnBlk.JCu ; ++j ) {
 	for ( i = SolnBlk.ICl ; i <= SolnBlk.ICu ; ++i ) {
+#ifdef _GAUSSIAN_HEAT_TRANSFER_
+	   //note: this does not compute the heat terms in exactly the same way as in
+	   //      the residual calculation.  Be sure you know what you're computing.
+	   SolnBlk.W[i][j].ComputeHeatTerms(SolnBlk.dWdx[i][j],SolnBlk.dWdy[i][j],
+					    Vector2D(0.0,0.0),0);
+#endif
 	  if(fabs(SolnBlk.Grid.Cell[SolnBlk.ICl][j].Xc.y-y)<y_tol && 
 	     SolnBlk.Grid.Cell[SolnBlk.ICl][j].Xc.y > 0.0) {
-	    Out_File << " "  << SolnBlk.Grid.Cell[i][j].Xc;
 	    Out_File.setf(ios::scientific);
-	    Out_File << " "  << SolnBlk.W[i][j].mfp() 
-		     << " "  << SolnBlk.Grid.Cell[i][j].Xc.x/SolnBlk.WoN[0].mfp(); //I don't use IP.Wo because it is not reset after a restart.
-	    Out_File.unsetf(ios::scientific);
-	    Out_File << SolnBlk.W[i][j];
-	    Out_File.setf(ios::scientific);
-	    Out_File << " " << SolnBlk.W[i][j].T() << " " << SolnBlk.W[i][j].DetP() << "\n";
+	    Out_File << " "  << SolnBlk.Grid.Cell[i][j].Xc.x/Wu.mfp();
+	    Out_File << " "  << (SolnBlk.W[i][j].d-Wu.d)/(Wd.d-Wu.d);
+	    Out_File << " "  << SolnBlk.W[i][j].T();
+	    Out_File << " "  << SolnBlk.W[i][j].v.x;
+	    Out_File << " "  << SolnBlk.W[i][j].p.xx;
+	    Out_File << " "  << SolnBlk.W[i][j].p.yy;
+#ifdef _GAUSSIAN_HEAT_TRANSFER_
+	    Out_File << " "  << SolnBlk.W[i][j].q.xxx/( pow(SolnBlk.W[i][j].p.xx,1.5)/sqrt(SolnBlk.W[i][j].d) );
+#else
+	    Out_File << " "  << 0.00;
+#endif
+	    Out_File << "\n";
 	    Out_File.unsetf(ios::scientific);
 	  }
 	} /* endfor */

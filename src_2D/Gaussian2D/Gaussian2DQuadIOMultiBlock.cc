@@ -774,11 +774,13 @@ int Output_Shock_Structure(Gaussian2D_Quad_Block *Soln_ptr,
 			   const int Number_of_Time_Steps,
 			   const double &Time) {
 
-    int i, j, i_output_title;
+    int i, j, i_output_title, ii, jj;
     char prefix[256], extension[256], output_file_name[256];
     char *output_file_name_ptr;
     ofstream output_file;    
     double y(MILLION), y_tol(ZERO);
+
+    Gaussian2D_pState Wu, Wd;  //up- and down-stream condition
 
     /* Determine prefix of output data file names. */
 
@@ -810,14 +812,27 @@ int Output_Shock_Structure(Gaussian2D_Quad_Block *Soln_ptr,
 
     for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
       if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
+
 	for( j = Soln_ptr[i].Grid.JCl; j <= Soln_ptr[i].Grid.JCu; ++j) {
-	  if(Soln_ptr[i].Grid.Cell[Soln_ptr[i].ICl][j].Xc.y < y){
+	  if(Soln_ptr[i].Grid.Cell[Soln_ptr[i].ICl][j].Xc.y > 0.0 &&
+	     Soln_ptr[i].Grid.Cell[Soln_ptr[i].ICl][j].Xc.y < y){
 	    y = Soln_ptr[i].Grid.Cell[Soln_ptr[i].ICl][j].Xc.y;
 	    y_tol = Soln_ptr[i].Grid.lfaceE(Soln_ptr[i].ICl,j)/4.0;
+	  }
+
+	  ii = (Soln_ptr[i].Grid.ICl+Soln_ptr[i].Grid.ICu)/2;
+	  jj = (Soln_ptr[i].Grid.JCl+Soln_ptr[i].Grid.JCu)/2;
+
+	  if(Soln_ptr[i].Grid.Cell[ii][jj].Xc.x < 0.0) {
+	    Wu = Soln_ptr[i].WoW[jj];
+	  } else {
+	    Wd = Soln_ptr[i].WoE[jj];
 	  }
 	}
       }
     }
+
+    cout << endl << "Upstream state:" << endl << Wu << endl << "Downstream state:" << endl << Wd << endl;
 
     /* Write the solution data for each solution block. */
 
@@ -832,7 +847,9 @@ int Output_Shock_Structure(Gaussian2D_Quad_Block *Soln_ptr,
 				i_output_title,
 				output_file,
 				y,
-				y_tol);
+				y_tol,
+				Wu,
+				Wd);
 	 //if (i_output_title) i_output_title = 0;
        } /* endif */
     }  /* endfor */
