@@ -880,8 +880,8 @@ Interpolate_2Dto3D(const FlowField_2D &Numflowfield2D) {
       for (int j = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
          for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
 
-            const double r = sqrt(pow(Grid.Cell[i][j][k].Xc.x, 2) + 
-                                  pow(Grid.Cell[i][j][k].Xc.y, 2));
+            const double r = sqrt(std::pow(Grid.Cell[i][j][k].Xc.x, 2) + 
+                                  std::pow(Grid.Cell[i][j][k].Xc.y, 2));
             const double d = Grid.Cell[i][j][k].Xc.z;
             const double sinalpha = Grid.Cell[i][j][k].Xc.y/r;
             const double cosalpha = Grid.Cell[i][j][k].Xc.x/r;
