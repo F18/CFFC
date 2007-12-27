@@ -219,6 +219,10 @@ int Initial_Conditions(HexaSolver_Data &Data,
      if (error_flag) return (error_flag);
      // Correct exterior nodes to match with message passed geometry information.
      Solution_Data.Local_Solution_Blocks.Correct_Grid_Exterior_Nodes(Data.Local_Adaptive_Block_List);
+
+     // Fix corner ghost nodes for three-block abutting cases.
+     Solution_Data.Local_Solution_Blocks.Fix_Corner_Cells_for_3_Blks_Abutting(Data.Local_Adaptive_Block_List);
+     
   } /* endif */
 
   // Now send solution information and data.

@@ -289,7 +289,7 @@ ICs(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
                      FANS3D_ThermallyPerfect_KOmega_cState> &IPs) {
 
    double dpdx, dpdy, dpdz, delta_pres, delta_pres_x, delta_pres_y, delta_pres_z;
-   double zd, zz, di, Um, U_axi;
+   double r, zd, zz, di, Um, U_axi;
    
    double Rprime, yprime, xn, yn, fc, tempvalue, r_fuel;
    Vector2D Xt;
@@ -598,6 +598,52 @@ ICs(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
 	    } /* endfor */
 
 	 } /* endif */         
+         break; 
+
+      case IC_TURBULENT_PIPE_FLOW :
+         // John Laufer, NACA case: 
+         // Investigation of Turbulent Flow in a Two-Dimensional Channel
+         // the pipe grid is extruding from 2D grid, so only one set-up,
+         // i.e. the z is the axial.
+         dpdz = IPs.Pressure_Gradient.z;  
+         delta_pres_z = dpdz*IPs.Grid_IP.Box_Length;
+         Um = IPs.Reynolds_Number*IPs.Wo.mu()/(IPs.Wo.rho*IPs.Grid_IP.Pipe_Radius);
+        
+         for (int k  = KCl-Nghost ; k <= KCu+Nghost ; ++k) {
+            for (int j  = JCl-Nghost ; j <= JCu+Nghost ; ++j) {
+               for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i) {
+                  W[i][j][k] = IPs.Wo;
+                  WallData[i][j][k].tauw = fabs(-0.5*IPs.Grid_IP.Pipe_Radius*dpdz);
+                  WallData[i][j][k].utau = sqrt(WallData[i][j][k].tauw/W[i][j][k].rho);
+                  W[i][j][k].k = WallData[i][j][k].utau*WallData[i][j][k].utau/
+                     sqrt(W[0][0][0].k_omega_model.beta_star);
+                  W[i][j][k].p = IPs.Wo.p - Grid.Cell[i][j][k].Xc.z*dpdz;	 
+                  // setting the axial velocity in a turbulent pipe flow
+                  // by using the power law of aixal velocity in a turbulent pipe flow
+                  r = sqrt(Grid.Cell[i][j][k].Xc.x*Grid.Cell[i][j][k].Xc.x 
+                           + Grid.Cell[i][j][k].Xc.y*Grid.Cell[i][j][k].Xc.y );
+                  
+                  zz = (1.0- r/IPs.Grid_IP.Pipe_Radius);
+                  if(zz > 0 && zz <= 1.0) W[i][j][k].v.z = Um*pow(zz, 0.133);
+
+                  // try to feed a reasonalbe k profile as initial condition
+                  // to see how far it goes, since this case has really small 
+                  // pressure gradient
+                  //W[i][j][k].k = 0.5;//(0.5886 - 31.2*r+2039.6*r*r -19208*r*r*r);
+                     
+                  if (WallData[i][j][k].ywall !=0.0) {
+                     W[i][j][k].omega = WallData[i][j][k].utau/
+                        (sqrt(W[0][0][0].k_omega_model.beta_star)*
+                         W[0][0][0].k_omega_model.Karman_const*
+                         WallData[i][j][k].ywall); 
+                  } /* endif */
+                  //conservative solution state
+                  U[i][j][k] = W[i][j][k].U();
+               } /* endfor */
+            } /* endfor */
+         } /* endfor */
+
+         
          break; 
 
       case IC_SHOCK_BOX :
@@ -2189,6 +2235,13 @@ Update_Solution_Multistage_Explicit(const int i_stage,
                 IPs.Local_Time_Stepping == 
                 SCALAR_LOCAL_TIME_STEPPING) {
                U[i][j][k] = Uo[i][j][k] + omega* dUdt[i][j][k][k_residual];
+                              
+//                if(i==5 && j==9 && k==8){
+//                   cout<<"\n Uo= "<< Uo[i][j][k]<<endl;
+//                   cout<<"\n omega= "<<omega<<endl;
+//                   cout<<"\n dUdt = "<< dUdt[i][j][k][k_residual]<<endl;
+//                }
+               
       	       //N-1 species
                U[i][j][k][num_vars] = U[i][j][k].rho*(ONE - U[i][j][k].sum_species());
             } /* endif */
@@ -2221,7 +2274,7 @@ Update_Solution_Multistage_Explicit(const int i_stage,
             
             // Check physical validity of update solution state
             if (IPs.Local_Time_Stepping == GLOBAL_TIME_STEPPING) {
-	      if (!U[i][j][k].Realizable_Solution_Check()) {
+               if (!U[i][j][k].Realizable_Solution_Check()) {
                 cout << "\n " << CFFC_Name() 
                      << " ERROR: Negative Density, Mass Fractions, Kinetic Energy, and/or Sensible Energy: \n"
                      << " cell = (" << i << ", " << j <<", "<< k << ") " 
@@ -2233,14 +2286,14 @@ Update_Solution_Multistage_Explicit(const int i_stage,
               } /* endif */
 
             } else {
-	      if (!U[i][j][k].Realizable_Solution_Check()) {
-                cout << "\n " << CFFC_Name() 
-                     << " ERROR: Negative Density, Mass Fractions, Kinetic Energy, and/or Sensible Energy: \n"
-                     << " cell = (" << i << ", " << j <<", "<< k << ") " 
-                     << " X = " <<  Grid.Cell[i][j][k].Xc 
-                     << "\n U = " <<  U[i][j][k] 
-                     << "\n dUdt = " << dUdt[i][j][k][k_residual] 
-                     << " omega = " << omega << "\n";
+               if (!U[i][j][k].Realizable_Solution_Check()) {
+                  cout << "\n " << CFFC_Name() 
+                       << " ERROR: Negative Density, Mass Fractions, Kinetic Energy, and/or Sensible Energy: \n"
+                       << " cell = (" << i << ", " << j <<", "<< k << ") " 
+                       << " X = " <<  Grid.Cell[i][j][k].Xc 
+                       << "\n U = " <<  U[i][j][k] 
+                       << "\n dUdt = " << dUdt[i][j][k][k_residual] 
+                       << " omega = " << omega << "\n";
 		return (1);
               } /* endif */
 

@@ -1098,6 +1098,112 @@ void Grid3D_Hexa_Block::Correct_Exterior_Nodes(const int ii,
    
 }
 
+/**************************************************************
+ * Routine: Fix_Corner_Cells_for_3_Blks_Abutting              *
+ *                                                            *
+ * For those three blocks abutting each other, each block     *
+ * has no corner nodes. The corner nodes geometry and         *
+ * solutons don't have real physical meaning. This situation  *
+ * will corrupte the gradient reconstruction. Also the        *
+ * output soluion will have these unphysical regions, which   *
+ * might confuse the analysis.  The most convenient way       *
+ * to fix those nodes are that just make them coincide with   *
+ * the nearest phyiscal ones, and all the reconstructions     *
+ * and outputs remain the general format.                     *
+ **************************************************************/
+int Grid3D_Hexa_Block::Fix_Corner_Cells_for_3_Blks_Abutting(const int i_elem, 
+                                                             const int j_elem, 
+                                                             const int k_elem, 
+                                                            const int numNeigh,
+                                                            const int be) {
+
+   int execute_this_prog = 0;
+   
+   if( ((abs(i_elem) && abs(j_elem) && !(k_elem)) ||
+        (abs(i_elem) && abs(k_elem) && !(j_elem)) ||
+        (abs(j_elem) && abs(k_elem) && !(i_elem))) && (!numNeigh && !be) ) {
+      
+      execute_this_prog = 1;
+   }
+   
+   if(!execute_this_prog) return 0;
+   
+   // execute this program for the true situation.
+   int i_nearest, j_nearest, k_nearest;
+   int i_inc, j_inc, k_inc;
+   
+   // default values
+   i_nearest = Nghost;
+   j_nearest = Nghost;
+   k_nearest = Nghost;
+   
+   i_inc = 0;
+   j_inc = 0;
+   k_inc = 0;
+   
+   // set the corner's nearest nodes based on where the element is located.
+   if(i_elem <0){
+      i_nearest = Nghost;
+      i_inc = -1;
+   }else{
+      i_nearest = ICu;
+      i_inc = 1;
+   }
+   if(j_elem <0){
+      j_nearest = Nghost;
+      j_inc = -1;
+   }else{
+      j_nearest = JCu;
+      j_inc = 1;
+   }
+   if(k_elem <0){
+      k_nearest = Nghost;
+      k_inc = -1;
+   }else{
+      k_nearest = KCu;
+      k_inc = 1;
+   }
+   
+   // coincide the ghost corners with the nearest physical ones.
+   if(abs(i_elem) && abs(j_elem) && !(k_elem)){
+      for (int kDir = KCl-Nghost; kDir<= KCu+Nghost-1; ++kDir){
+         for(int jDir = 1; jDir <= Nghost; ++jDir){
+            for(int iDir = 1; iDir <= Nghost; ++iDir){
+               Cell[i_nearest + i_inc*iDir][j_nearest + j_inc*jDir][kDir].Xc = 
+                  Cell[i_nearest][j_nearest][kDir].Xc;
+               
+            }
+         }
+      }
+   }
+   if(abs(i_elem) && abs(k_elem) && !(j_elem)){
+      for (int jDir = JCl-Nghost; jDir<= JCu+Nghost-1; ++jDir){
+         for(int iDir = 1; iDir <= Nghost; ++iDir){
+            for(int kDir = 1; kDir <= Nghost; ++kDir){
+               Cell[i_nearest + i_inc*iDir][jDir][k_nearest + k_inc*kDir].Xc = 
+                  Cell[i_nearest][jDir][k_nearest].Xc;
+            }
+         }
+      }
+   }
+
+   if (abs(j_elem) && abs(k_elem) && !(i_elem)){
+      for (int iDir = ICl-Nghost; iDir<= ICu+Nghost-1; ++iDir){
+         for(int jDir = 1; jDir <= Nghost; ++jDir){
+            for(int kDir = 1; kDir <= Nghost; ++kDir){
+               Cell[iDir][j_nearest + j_inc*jDir][k_nearest + k_inc*kDir].Xc = 
+                  Cell[iDir][j_nearest][k_nearest].Xc;
+               
+            }
+         }
+      }
+   }
+   
+   return 0;
+   
+}
+
+
 /*****************************************************************
  * Routine: Update Cells                                         *
  *                                                               *

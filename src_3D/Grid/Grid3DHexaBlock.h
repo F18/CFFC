@@ -377,6 +377,12 @@ class Grid3D_Hexa_Block {
                                 const int k_elem, 
                                 const int *be);
 
+    int Fix_Corner_Cells_for_3_Blks_Abutting(const int i_elem, 
+                                             const int j_elem, 
+                                             const int k_elem, 
+                                             const int numNeigh,
+                                             const int be);
+    
     void Update_Cells(void);
 
     void Update_Ghost_Cells(void);

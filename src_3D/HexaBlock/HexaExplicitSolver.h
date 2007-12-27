@@ -179,17 +179,21 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
 	// 2. Apply boundary conditions for stage.
 	Solution_Data.Local_Solution_Blocks.BCs(Solution_Data.Input);
 	
-	 /*************** UPDATE SOLUTION **********************************/
+	 /*************** UPDATE CORNOR GHOST CELLS SOLUTION *****/
+        // For those 3 blocks abutting cases, this is to fix the gradient-recosntruction.
+        Solution_Data.Local_Solution_Blocks.Update_Corner_Cells_for_3_Blks_Abutting(Data.Local_Adaptive_Block_List);
+
+        /*************** UPDATE SOLUTION **********************************/
 	// 3. Determine solution residuals for stage.
 	error_flag = Solution_Data.Local_Solution_Blocks.dUdt_Multistage_Explicit(Solution_Data.Input,
-                                                                                  i_stage);        
+                                                                                  i_stage);
 	if (error_flag) {
 	  cout << "\n ERROR: Solution residual error on processor"
 	       << CFFC_MPI::This_Processor_Number
                << ".\n";
 	  cout.flush();
 	} /* endif */
-	error_flag = CFFC_OR_MPI(error_flag);        
+	error_flag = CFFC_OR_MPI(error_flag);
 	if (error_flag) return (error_flag);
           	
 	/*******************************************************************/
@@ -203,10 +207,10 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
 
 	/*******************************************************************/
 	// 7. Update solution for stage.
-	error_flag = 
-           Solution_Data.Local_Solution_Blocks.Update_Solution_Multistage_Explicit(Solution_Data.Input, 
+	error_flag =
+           Solution_Data.Local_Solution_Blocks.Update_Solution_Multistage_Explicit(Solution_Data.Input,
                                                                                    i_stage);
-	if (error_flag) {	  
+	if (error_flag) {
 	  cout << "\n ERROR: Solution update error on processor "
 	       << CFFC_MPI::This_Processor_Number
                << ".\n";
@@ -263,6 +267,11 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
 
   Solution_Data.Local_Solution_Blocks.BCs(Solution_Data.Input);
 
+	
+  /*************** UPDATE CORNOR GHOST CELLS SOLUTION *****/
+  // For those 3 blocks abutting cases, this is to fix the gradient-recosntruction.
+  Solution_Data.Local_Solution_Blocks.Update_Corner_Cells_for_3_Blks_Abutting(Data.Local_Adaptive_Block_List);
+  
   return error_flag;
 
 }

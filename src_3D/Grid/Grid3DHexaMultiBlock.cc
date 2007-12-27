@@ -1711,7 +1711,7 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Pipe(Grid3D_Input_Parameters &Inp
                                    Input.NCells_Jdir,
 				   Input.Nghost,
                                    STRETCHING_FCN_MAX_CLUSTERING,
-                                   1.25);
+                                   1.0001);
 
     /* Create the mesh for each block representing
        the complete grid. */
@@ -1732,21 +1732,20 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Pipe(Grid3D_Input_Parameters &Inp
          	                   BC_NONE,
                                    BC_NONE,
        	                           BC_NONE,
-                                   BC_NONE,
-                                   BC_DIRICHLET);
+                                   BC_CONSTANT_EXTRAPOLATION,
+                                   BC_FIXED_PRESSURE);
         } else {
            Grid_Blks[iBlk].Set_BCs(BC_NONE,
        	                           BC_NONE,
-				   BC_WALL_VISCOUS,
+				   BC_NO_SLIP,
        	                           BC_NONE,
-                                   BC_NONE,
-                                   BC_DIRICHLET);
+                                   BC_CONSTANT_EXTRAPOLATION,
+                                   BC_FIXED_PRESSURE);
         } /* endif */
 
     } /* endfor */
 
     /* Deallocate 2D grid. */
-
     Grid2D_Pipe_XYplane = Deallocate_Multi_Block_Grid(
                                    Grid2D_Pipe_XYplane,
                                    numblk_idir_pipe,
@@ -3612,7 +3611,7 @@ void Grid3D_Hexa_Multi_Block::Create_Grid_Pipe(Grid3D_Input_Parameters &Input) {
                                    Input.NCells_Jdir,
 				   Input.Nghost,
                                    STRETCHING_FCN_MAX_CLUSTERING,
-                                   1.25);
+                                   1.00001);
 
     /* Create the mesh for each block representing
        the complete grid. */
@@ -3633,15 +3632,15 @@ void Grid3D_Hexa_Multi_Block::Create_Grid_Pipe(Grid3D_Input_Parameters &Input) {
          	                         BC_NONE,
                                          BC_NONE,
        	                                 BC_NONE,
-                                         BC_NONE,
-                                         BC_DIRICHLET);
+                                         BC_FIXED_PRESSURE,
+                                         BC_FIXED_PRESSURE);
         } else {
            Grid_Blks[iBlk][0][0].Set_BCs(BC_NONE,
        	                                 BC_NONE,
-					 BC_WALL_VISCOUS,
+					 BC_NO_SLIP,
        	                                 BC_NONE,
-                                         BC_NONE,
-                                         BC_DIRICHLET);
+                                         BC_FIXED_PRESSURE,
+                                         BC_FIXED_PRESSURE);
         } /* endif */
 
     } /* endfor */
