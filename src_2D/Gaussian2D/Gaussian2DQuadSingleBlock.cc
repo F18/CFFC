@@ -1181,7 +1181,25 @@ void ICs(Gaussian2D_Quad_Block &SolnBlk,
               if (SolnBlk.Grid.Cell[i][j].Xc.x <= ZERO) {
                  SolnBlk.W[i][j] = Wl;
               } else {
-                 SolnBlk.W[i][j] = Wr;	     
+                 SolnBlk.W[i][j] = Wr;
+              } /* end if */
+              SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
+           } /* endfor */
+        } /* endfor */
+        break;
+      case IC_SHOCK_STRUCTURE_M1_2:
+	if(Wo[0].gas != GAS_A) {
+	  cout << "error....don't change gas from \"A\".\n";
+	  assert(1==2);
+	}
+	Wl = Gaussian2D_pState(1.661, 382.63, 0.0, 101325.0);
+	Wr = Gaussian2D_pState(2.15481, 294.944, 0.0, 157054);
+        for (j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
+            for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
+              if (SolnBlk.Grid.Cell[i][j].Xc.x <= ZERO) {
+                 SolnBlk.W[i][j] = Wl;
+              } else {
+                 SolnBlk.W[i][j] = Wr;
               } /* end if */
               SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
            } /* endfor */
@@ -1199,7 +1217,7 @@ void ICs(Gaussian2D_Quad_Block &SolnBlk,
               if (SolnBlk.Grid.Cell[i][j].Xc.x <= ZERO) {
                  SolnBlk.W[i][j] = Wl;
               } else {
-                 SolnBlk.W[i][j] = Wr;	     
+                 SolnBlk.W[i][j] = Wr;
               } /* end if */
               SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
            } /* endfor */
@@ -1217,7 +1235,7 @@ void ICs(Gaussian2D_Quad_Block &SolnBlk,
               if (SolnBlk.Grid.Cell[i][j].Xc.x <= ZERO) {
                  SolnBlk.W[i][j] = Wl;
               } else {
-                 SolnBlk.W[i][j] = Wr;	     
+                 SolnBlk.W[i][j] = Wr;
               } /* end if */
               SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
            } /* endfor */
@@ -1235,7 +1253,7 @@ void ICs(Gaussian2D_Quad_Block &SolnBlk,
               if (SolnBlk.Grid.Cell[i][j].Xc.x <= ZERO) {
                  SolnBlk.W[i][j] = Wl;
               } else {
-                 SolnBlk.W[i][j] = Wr;	     
+                 SolnBlk.W[i][j] = Wr;
               } /* end if */
               SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
            } /* endfor */
@@ -1271,7 +1289,7 @@ void ICs(Gaussian2D_Quad_Block &SolnBlk,
               if (SolnBlk.Grid.Cell[i][j].Xc.x <= ZERO) {
                  SolnBlk.W[i][j] = Wl;
               } else {
-                 SolnBlk.W[i][j] = Wr;	     
+                 SolnBlk.W[i][j] = Wr;
               } /* end if */
               SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
            } /* endfor */
@@ -1286,7 +1304,7 @@ void ICs(Gaussian2D_Quad_Block &SolnBlk,
                if (SolnBlk.Grid.Cell[i][j].Xc.x <= ZERO) {
                   SolnBlk.W[i][j] = Wl;
                } else {
-                  SolnBlk.W[i][j] = Wr;	
+                  SolnBlk.W[i][j] = Wr;
                } /* end if */
                SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
             } /* endfor */

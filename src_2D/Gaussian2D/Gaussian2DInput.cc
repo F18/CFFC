@@ -1623,6 +1623,12 @@ int Parse_Next_Input_Control_Parameter(Gaussian2D_Input_Parameters &IP) {
 	  strcpy(IP.Gas_Type, string_ptr);
 	  IP.Wo.setgas(IP.Gas_Type);
 	  IP.Wo = Gaussian2D_pState(1.661, 350.7444241833, 0.0, 101325.0);
+       } else if (strcmp(IP.ICs_Type, "Shock_Structure_M1_2") == 0) {
+          IP.i_ICs = IC_SHOCK_STRUCTURE_M1_2;
+	  string_ptr = "A";
+	  strcpy(IP.Gas_Type, string_ptr);
+	  IP.Wo.setgas(IP.Gas_Type);
+	  IP.Wo = Gaussian2D_pState(1.661, 382.63, 0.0, 101325.0);
        } else if (strcmp(IP.ICs_Type, "Shock_Structure_M1_3") == 0) {
           IP.i_ICs = IC_SHOCK_STRUCTURE_M1_3;
 	  string_ptr = "A";
