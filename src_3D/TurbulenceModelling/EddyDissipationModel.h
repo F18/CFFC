@@ -16,6 +16,10 @@
 #include "../Reactions/Reactions.h"
 #endif // _REACTIONS_INCLUDED 
 
+#ifndef _LINEARSYSTEMS_INCLUDED
+#include "../Math/LinearSystems.h"
+#endif // _LINEARSYSTEMS_INCLUDED
+
 // modeling chemistry source term with using
 // eddy dissipation model for describing turbulence/chemistry interaction.
 template<class SOLN_pSTATE, class SOLN_cSTATE>
@@ -119,5 +123,92 @@ SOLN_cSTATE Seddydissipationmodel(SOLN_pSTATE &W) {
    return U_return;
   
 }
+
+// Formulate the chemistry source Jacobians with using
+// eddy dissipation model for describing turbulence/chemistry interaction.
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+DenseMatrix Jacobian_eddydissipationmodel(SOLN_pSTATE &W);
+
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+DenseMatrix Jacobian_eddydissipationmodel(SOLN_pSTATE &W) {
+   
+   int num_react_species = W[0][0][0].ns;
+   int NUM_VAR = W[0][0][0].num_vars - num_react_species;
+   int size =  W[0][0][0].num_vars;
+   
+   DenseMatrix dSwdU(size-1, size -1); 
+   
+   double model_constant(FOUR), s;
+   
+   double *M = new double[num_react_species];
+   double *c = new double[num_react_species];
+  
+   for(int i=0; i<num_react_species; i++){
+      M[i] = W.specdata[i].Mol_mass()*THOUSAND;  //kg/mol -> g/mol
+      c[i] = W.spec[i].c;                  //unitless
+   }
+  
+  switch(W.React.reactset_flag){
+      //--------- ONE STEP CH4 ----------//
+   case CH4_1STEP: 
+      
+      if (c[0] > ZERO && c[1] > ZERO) {
+         s = TWO*(W.specdata[1].Mol_mass()*THOUSAND)/
+            (W.specdata[0].Mol_mass()*THOUSAND);
+         
+         if(c[0] < c[1]/s){
+
+            dSwdU(NUM_VAR, 0) =  model_constant*W.omega*c[0];
+            dSwdU(NUM_VAR+1, 0) = TWO*M[1]/M[0]*model_constant*W.omega*c[0];
+            dSwdU(NUM_VAR+2, 0) = -ONE*M[2]/M[0]*model_constant*W.omega*c[0];
+            dSwdU(NUM_VAR+3, 0) = -TWO*M[3]/M[0]*model_constant*W.omega*c[0];
+            
+            dSwdU(NUM_VAR, 6) = -model_constant*c[0];
+            dSwdU(NUM_VAR+1, 6) = -TWO*M[1]/M[0]*model_constant*c[0];
+            dSwdU(NUM_VAR+2, 6) =  ONE*M[2]/M[0]*model_constant*c[0];
+            dSwdU(NUM_VAR+3, 6) =  TWO*M[3]/M[0]*model_constant*c[0];
+            
+            dSwdU(NUM_VAR,NUM_VAR) = -model_constant*W.omega;
+            dSwdU(NUM_VAR+1,NUM_VAR) = -TWO*M[1]/M[0]*model_constant*W.omega;
+            dSwdU(NUM_VAR+2,NUM_VAR) =  ONE*M[2]/M[0]*model_constant*W.omega;
+            dSwdU(NUM_VAR+3,NUM_VAR) =  TWO*M[3]/M[0]*model_constant*W.omega;
+            
+         }else{
+            dSwdU(NUM_VAR, 0) = model_constant*W.omega*c[1]/s;
+            dSwdU(NUM_VAR+1, 0) = TWO*M[1]/M[0]*model_constant*W.omega*c[1]/s;
+            dSwdU(NUM_VAR+2, 0) = -ONE*M[2]/M[0]*model_constant*W.omega*c[1]/s;
+            dSwdU(NUM_VAR+3, 0) = -TWO*M[3]/M[0]*model_constant*W.omega*c[1]/s;
+            
+            dSwdU(NUM_VAR, 6) = -model_constant*c[1]/s;
+            dSwdU(NUM_VAR+1, 6) = -TWO*M[1]/M[0]*model_constant*c[1]/s;
+            dSwdU(NUM_VAR+2, 6) =  ONE*M[2]/M[0]*model_constant*c[1]/s;
+            dSwdU(NUM_VAR+3, 6) =  TWO*M[3]/M[0]*model_constant*c[1]/s;
+            
+            dSwdU(NUM_VAR,NUM_VAR+1) = -model_constant*W.omega/s;
+            dSwdU(NUM_VAR+1,NUM_VAR+1) = -TWO*M[1]/M[0]*model_constant*W.omega/s;
+            dSwdU(NUM_VAR+2,NUM_VAR+1) =  ONE*M[2]/M[0]*model_constant*W.omega/s;
+            dSwdU(NUM_VAR+3,NUM_VAR+1) =  TWO*M[3]/M[0]*model_constant*W.omega/s;
+         }
+
+
+         
+      }
+      
+      break;
+      
+   default:
+      break;
+   } /* endswitch */
+   
+ //clean up memory
+  delete[] M; delete[] c;
+
+  return dSdU;
+  
+   
+}
+
+
+
   
 #endif // _EDDY_DISSIPATION_MODELLING_INCLUDED 
