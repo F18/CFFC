@@ -607,7 +607,7 @@ ICs(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
          // i.e. the z is the axial.
          dpdz = IPs.Pressure_Gradient.z;  
          delta_pres_z = dpdz*IPs.Grid_IP.Box_Length;
-         Um = IPs.Reynolds_Number*IPs.Wo.mu()/(IPs.Wo.rho*IPs.Grid_IP.Pipe_Radius);
+         Um = IPs.Reynolds_Number*IPs.Wo.mu()/(IPs.Wo.rho*TWO*IPs.Grid_IP.Pipe_Radius);
         
          for (int k  = KCl-Nghost ; k <= KCu+Nghost ; ++k) {
             for (int j  = JCl-Nghost ; j <= JCu+Nghost ; ++j) {
