@@ -16,40 +16,160 @@
 /*!
  * Default constructor.
  */
-Grid2D_Quad_Block_HO::Grid2D_Quad_Block_HO(void): Integration(this) {
-  NNi = 0; INl = 0; INu = 0; NNj = 0; JNl = 0; JNu = 0;
-  NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0;
-  Nghost = 0;
-  Node = NULL; Cell = NULL;
-  BCtypeN = NULL; BCtypeS = NULL; BCtypeE = NULL; BCtypeW = NULL;
-  SminN = ZERO; SmaxN = ZERO; SminS = ZERO; SmaxS = ZERO; 
-  SminE = ZERO; SmaxE = ZERO; SminW = ZERO; SmaxW = ZERO;
-  StretchI = 0; StretchJ = 0; BetaI = ONE; TauI = ONE;
-  BetaJ = ONE; TauJ = ONE;
-  OrthogonalN = 1; OrthogonalS = 1; OrthogonalE = 1; OrthogonalW = 1;
+Grid2D_Quad_Block_HO::Grid2D_Quad_Block_HO(void)
+  : Integration(this),
+    NNi(0), INl(0), INu(0), NNj(0), JNl(0), JNu(0),
+    NCi(0), ICl(0), ICu(0), NCj(0), JCl(0), JCu(0),
+    Nghost(0),
+    Node(NULL), Cell(NULL),
+    BCtypeN(NULL), BCtypeS(NULL), BCtypeE(NULL), BCtypeW(NULL),
+    SminN(ZERO), SmaxN(ZERO), SminS(ZERO), SmaxS(ZERO), 
+    SminE(ZERO), SmaxE(ZERO), SminW(ZERO), SmaxW(ZERO),
+    StretchI(0), StretchJ(0), BetaI(ONE), TauI(ONE),
+    BetaJ(ONE), TauJ(ONE),
+    OrthogonalN(1), OrthogonalS(1), OrthogonalE(1), OrthogonalW(1)
+{
+  // 
 }
 
 /*!
- * Copy constructor.
+ * Copy constructor. It is declared private
  */
-Grid2D_Quad_Block_HO::Grid2D_Quad_Block_HO(const Grid2D_Quad_Block_HO &G): Integration(this) {
+Grid2D_Quad_Block_HO::Grid2D_Quad_Block_HO(const Grid2D_Quad_Block_HO &G)
+  :Integration(this),
+   NNi(0), INl(0), INu(0), NNj(0), JNl(0), JNu(0),
+   NCi(0), ICl(0), ICu(0), NCj(0), JCl(0), JCu(0),
+   Nghost(0),
+   Node(NULL), Cell(NULL),
+   BCtypeN(NULL), BCtypeS(NULL), BCtypeE(NULL), BCtypeW(NULL),
+   SminN(ZERO), SmaxN(ZERO), SminS(ZERO), SmaxS(ZERO), 
+   SminE(ZERO), SmaxE(ZERO), SminW(ZERO), SmaxW(ZERO),
+   StretchI(0), StretchJ(0),
+   BetaI(ONE), TauI(ONE),
+   BetaJ(ONE), TauJ(ONE),
+   OrthogonalN(1), OrthogonalS(1), OrthogonalE(1), OrthogonalW(1)
+{
+  int Ni, Nj;
+  int i,j;
+
+  // allocate memory for the new container
+  Ni = G.NCi - 2*G.Nghost;
+  Nj = G.NCj - 2*G.Nghost;
+  allocate(Ni,Nj,G.Nghost);
+
+  // Set the grid values by copying from the grid block G.
+  if (G.Node != NULL) {
+
+    // Copy the node locations of the grid block G.
+    for (j  = G.JNl-G.Nghost; j <= G.JNu+G.Nghost ; ++j ) {
+      for ( i = G.INl-G.Nghost ; i <= G.INu+G.Nghost ; ++i ) {
+	Node[i][j].X = G.Node[i][j].X;
+      } /* endfor */
+    } /* endfor */
+    
+    // Copy the cell values of grid block G.
+    for ( j = G.JCl-G.Nghost; j <= G.JCu+G.Nghost ; ++j) {
+      for ( i = G.ICl-G.Nghost ; i <= G.ICu+G.Nghost ; ++i) {
+	Cell[i][j].I  = G.Cell[i][j].I;
+	Cell[i][j].J  = G.Cell[i][j].J;
+	Cell[i][j].Xc = G.Cell[i][j].Xc;
+	Cell[i][j].A  = G.Cell[i][j].A;
+      } /* endfor */
+    } /* endfor */
+
+    // Copy the boundary condition type info of grid block G.
+    for ( i = G.ICl-G.Nghost ; i <= G.ICu+G.Nghost ; ++i) {
+      BCtypeN[i] = G.BCtypeN[i];
+      BCtypeS[i] = G.BCtypeS[i];
+    } /* endfor */
+    for ( j = G.JCl-G.Nghost ; j <= G.JCu+G.Nghost ; ++j) {
+      BCtypeE[j] = G.BCtypeE[j];
+      BCtypeW[j] = G.BCtypeW[j];
+    } /* endfor */
+  } /* endif */
+
+
+  // Copy boundary spline info of grid block G.
+  if (G.BndNorthSpline.np != 0) {
+    Copy_Spline(BndNorthSpline, G.BndNorthSpline);
+  } else if (BndNorthSpline.np != 0) {
+    BndNorthSpline.deallocate();
+  } /* endif */
+
+  if (G.BndSouthSpline.np != 0) {
+    Copy_Spline(BndSouthSpline, G.BndSouthSpline);
+  } else if (BndSouthSpline.np != 0) {
+    BndSouthSpline.deallocate();
+  } /* endif */
   
+  if (G.BndEastSpline.np != 0) {
+    Copy_Spline(BndEastSpline, G.BndEastSpline);
+  } else if (BndEastSpline.np != 0) {
+    BndEastSpline.deallocate();
+  } /* endif */
+  
+  if (G.BndWestSpline.np != 0) {
+    Copy_Spline(BndWestSpline, G.BndWestSpline);
+  } else if (BndWestSpline.np != 0) {
+    BndWestSpline.deallocate();
+  } /* endif */
+
+  // Copy boundary spline pathlength info of grid block G.
+  SminN = G.SminN;
+  SmaxN = G.SmaxN;
+  SminS = G.SminS;
+  SmaxS = G.SmaxS;
+  SminE = G.SminE;
+  SmaxE = G.SmaxE;
+  SminW = G.SminW;
+  SmaxW = G.SmaxW;
+  
+  // Copy node stretching info of grid block G.
+  StretchI = G.StretchI;
+  BetaI = G.BetaI;
+  TauI = G.TauI;
+  StretchJ = G.StretchJ;
+  BetaJ = G.BetaJ;
+  TauJ = G.TauJ;
+  OrthogonalN = G.OrthogonalN;
+  OrthogonalS = G.OrthogonalS;
+  OrthogonalE = G.OrthogonalE;
+  OrthogonalW = G.OrthogonalW;
 }
 
 /*!
  * Allocate memory.
+ *
+ * \param Ni number of cells in i-direction
+ * \param Nj number of cells in j-direction
+ * \param Ng number of ghost cells
  */
 void Grid2D_Quad_Block_HO::allocate(const int Ni, const int Nj, const int Ng) {
-  int i; assert( Ni > 1 && Nj > 1 && Ng >= 2);
-  NNi = Ni+2*Ng+1; INl = Ng; INu = Ni+Ng; NNj = Nj+2*Ng+1; JNl = Ng; JNu = Nj+Ng;
-  NCi = Ni+2*Ng; ICl = Ng; ICu = Ni+Ng-1; NCj = Nj+2*Ng; JCl = Ng; JCu = Nj+Ng-1;
-  Nghost = Ng;
-  Node = new Node2D_HO*[NNi];
-  for ( i = 0; i <= NNi-1 ; ++i ) Node[i] = new Node2D_HO[NNj];
-  Cell = new Cell2D_HO*[NCi];
-  for ( i = 0; i <= NCi-1 ; ++i ) Cell[i] = new Cell2D_HO[NCj];
-  BCtypeN = new int[NCi]; BCtypeS = new int[NCi];
-  BCtypeE = new int[NCj]; BCtypeW = new int[NCj];
+  int i;
+
+  // Check conditions
+  assert( Ni > 1 && Nj > 1 && Ng >= 2);
+
+  // Check if the new required memory has dimensions different than the currently allocated ones
+  if ( Ni != (NCi-2*Nghost)  ||  Nj != (NCj-2*Nghost) ){
+
+    // free the memory if there is memory allocated
+    deallocate();
+    
+    // allocate new memory 
+    NNi = Ni+2*Ng+1; INl = Ng; INu = Ni+Ng;
+    NNj = Nj+2*Ng+1; JNl = Ng; JNu = Nj+Ng;
+    NCi = Ni+2*Ng;   ICl = Ng; ICu = Ni+Ng-1;
+    NCj = Nj+2*Ng;   JCl = Ng; JCu = Nj+Ng-1;
+    Nghost = Ng;
+    
+    Node = new Node2D_HO*[NNi];
+    for ( i = 0; i <= NNi-1 ; ++i ) Node[i] = new Node2D_HO[NNj];
+    Cell = new Cell2D_HO*[NCi];
+    for ( i = 0; i <= NCi-1 ; ++i ) Cell[i] = new Cell2D_HO[NCj];
+    BCtypeN = new int[NCi]; BCtypeS = new int[NCi];
+    BCtypeE = new int[NCj]; BCtypeW = new int[NCj];
+  }
 }
 
 /*
@@ -57,79 +177,149 @@ void Grid2D_Quad_Block_HO::allocate(const int Ni, const int Nj, const int Ng) {
  */
 void Grid2D_Quad_Block_HO::deallocate(void) {
   int i;
-  for ( i = 0; i <= NNi-1 ; ++i ) {
-    delete []Node[i]; Node[i] = NULL;
-  } /* endfor */
-  delete []Node; Node = NULL;
-  for ( i = 0; i <= NCi-1 ; ++i ) {
-    delete []Cell[i]; Cell[i] = NULL;
-  } /* endfor */
-  delete []Cell; Cell = NULL; 
-  delete []BCtypeN; BCtypeN = NULL; delete []BCtypeS; BCtypeS = NULL; 
-  delete []BCtypeE; BCtypeE = NULL; delete []BCtypeW; BCtypeW = NULL;
+
+  // Deallocate nodes
+  if (Node != NULL){
+    for ( i = 0; i <= NNi-1 ; ++i ) {
+      delete []Node[i]; Node[i] = NULL;
+    } /* endfor */
+    delete []Node; Node = NULL;
+  }
+
+  // Deallocate cells
+  if (Cell != NULL){
+    for ( i = 0; i <= NCi-1 ; ++i ) {
+      delete []Cell[i]; Cell[i] = NULL;
+    } /* endfor */
+    delete []Cell; Cell = NULL; 
+  }
+
+  // Deallocate North boundary conditions
+  if (BCtypeN != NULL){
+    delete []BCtypeN; BCtypeN = NULL;
+  }
+  // Deallocate South boundary conditions
+  if (BCtypeS != NULL){
+    delete []BCtypeS; BCtypeS = NULL; 
+  }
+  // Deallocate East boundary conditions
+  if (BCtypeE != NULL){
+    delete []BCtypeE; BCtypeE = NULL;
+  }
+  // Deallocate West boundary conditions
+  if (BCtypeW != NULL){
+    delete []BCtypeW; BCtypeW = NULL;
+  }
+
+  // Deallocate boundary splines
+  BndNorthSpline.deallocate(); BndSouthSpline.deallocate();
+  BndEastSpline.deallocate(); BndWestSpline.deallocate();
+
+  // Reset mesh indexes
   NNi = 0; INl = 0; INu = 0; NNj = 0; JNl = 0; JNu = 0;
   NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0;
   Nghost = 0;
-  BndNorthSpline.deallocate(); BndSouthSpline.deallocate();
-  BndEastSpline.deallocate(); BndWestSpline.deallocate();
   StretchI = 0; StretchJ = 0; BetaI = ONE; TauI = ONE;
   BetaJ = ONE; TauJ = ONE;
   OrthogonalN = 1; OrthogonalS = 1; OrthogonalE = 1; OrthogonalW = 1;
 }
 
 /*!
- * Allocate nodes.
+ * Assignment operator =
  */
-void Grid2D_Quad_Block_HO::allocateNodes(const int Ni, const int Nj, const int Ng) {
-  int i; assert( Ni > 1 && Nj > 1 && Ng >= 2);
-  NNi = Ni+2*Ng+1; INl = Ng; INu = Ni+Ng;
-  NNj = Nj+2*Ng+1; JNl = Ng; JNu = Nj+Ng;
-  Node = new Node2D_HO*[NNi];
-  for ( i = 0; i <= NNi-1 ; ++i ){ 
-    Node[i] = new Node2D_HO[NNj];
-  }
-}
+Grid2D_Quad_Block_HO& Grid2D_Quad_Block_HO::operator=(const Grid2D_Quad_Block_HO &Grid) {
 
-/*!
- * Deallocate Nodes.
- */
-void Grid2D_Quad_Block_HO::deallocateNodes(void) {
-  int i;
-  for ( i = 0; i <= NNi-1 ; ++i ) {
-    delete []Node[i]; Node[i] = NULL;
-  } /* endfor */
-  delete []Node; Node = NULL;
-  NNi = 0; INl = 0; INu = 0; NNj = 0; JNl = 0; JNu = 0; Nghost = 0;
-}
+  // !!! If the LHS grid block already has objects assigned, these are going to be deleted.
+  // Handle self-assignment:
+  if (this == & Grid) return *this;
 
-/*!
- * Allocate cells.
- */
-void Grid2D_Quad_Block_HO::allocateCells(const int Ni, const int Nj, const int Ng) {
-  int i; assert( Ni > 1 && Nj > 1 && Ng >= 2);
-  NCi = Ni+2*Ng; ICl = Ng; ICu = Ni+Ng-1;
-  NCj = Nj+2*Ng; JCl = Ng; JCu = Nj+Ng-1;
-  Nghost = Ng;
-  Cell = new Cell2D_HO*[NNi];
-  for ( i = 0; i <= NCi-1 ; ++i ) Cell[i] = new Cell2D_HO[NCj];
-  BCtypeN = new int[NCi]; BCtypeS = new int[NCi];
-  BCtypeE = new int[NCj]; BCtypeW = new int[NCj];
-}
+  int Ni, Nj;
+  int i,j;
 
-/*!
- * Deallocate Cells.
- */
-void Grid2D_Quad_Block_HO::deallocateCells(void) {
-  int i;
-  for ( i = 0; i <= NCi-1 ; ++i ) {
-    delete []Cell[i]; Cell[i] = NULL;
-  } /* endfor */
-  delete []Cell; Cell = NULL; 
-  delete []BCtypeN; BCtypeN = NULL; delete []BCtypeS; BCtypeS = NULL; 
-  delete []BCtypeE; BCtypeE = NULL; delete []BCtypeW; BCtypeW = NULL;
-  NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0; Nghost = 0;
-}
+  // re-allocate memory if there isn't enough
+  Ni = Grid.NCi - 2*Grid.Nghost;
+  Nj = Grid.NCj - 2*Grid.Nghost;
+  allocate(Ni,Nj,Grid.Nghost);
 
+  // Set the grid values by copying from the grid block Grid.
+  if (Grid.Node != NULL) {
+
+    // Copy the node locations of the grid block Grid.
+    for (j  = Grid.JNl-Grid.Nghost; j <= Grid.JNu+Grid.Nghost ; ++j ) {
+      for ( i = Grid.INl-Grid.Nghost ; i <= Grid.INu+Grid.Nghost ; ++i ) {
+	Node[i][j].X = Grid.Node[i][j].X;
+      } /* endfor */
+    } /* endfor */
+    
+    // Copy the cell values of grid block Grid.
+    for ( j = Grid.JCl-Grid.Nghost; j <= Grid.JCu+Grid.Nghost ; ++j) {
+      for ( i = Grid.ICl-Grid.Nghost ; i <= Grid.ICu+Grid.Nghost ; ++i) {
+	Cell[i][j].I  = Grid.Cell[i][j].I;
+	Cell[i][j].J  = Grid.Cell[i][j].J;
+	Cell[i][j].Xc = Grid.Cell[i][j].Xc;
+	Cell[i][j].A  = Grid.Cell[i][j].A;
+      } /* endfor */
+    } /* endfor */
+
+    // Copy the boundary condition type info of grid block Grid.
+    for ( i = Grid.ICl-Grid.Nghost ; i <= Grid.ICu+Grid.Nghost ; ++i) {
+      BCtypeN[i] = Grid.BCtypeN[i];
+      BCtypeS[i] = Grid.BCtypeS[i];
+    } /* endfor */
+    for ( j = Grid.JCl-Grid.Nghost ; j <= Grid.JCu+Grid.Nghost ; ++j) {
+      BCtypeE[j] = Grid.BCtypeE[j];
+      BCtypeW[j] = Grid.BCtypeW[j];
+    } /* endfor */
+  } /* endif */
+
+
+  // Copy boundary spline info of grid block Grid.
+  if (Grid.BndNorthSpline.np != 0) {
+    Copy_Spline(BndNorthSpline, Grid.BndNorthSpline);
+  } else if (BndNorthSpline.np != 0) {
+    BndNorthSpline.deallocate();
+  } /* endif */
+
+  if (Grid.BndSouthSpline.np != 0) {
+    Copy_Spline(BndSouthSpline, Grid.BndSouthSpline);
+  } else if (BndSouthSpline.np != 0) {
+    BndSouthSpline.deallocate();
+  } /* endif */
+  
+  if (Grid.BndEastSpline.np != 0) {
+    Copy_Spline(BndEastSpline, Grid.BndEastSpline);
+  } else if (BndEastSpline.np != 0) {
+    BndEastSpline.deallocate();
+  } /* endif */
+  
+  if (Grid.BndWestSpline.np != 0) {
+    Copy_Spline(BndWestSpline, Grid.BndWestSpline);
+  } else if (BndWestSpline.np != 0) {
+    BndWestSpline.deallocate();
+  } /* endif */
+
+  // Copy boundary spline pathlength info of grid block Grid.
+  SminN = Grid.SminN;
+  SmaxN = Grid.SmaxN;
+  SminS = Grid.SminS;
+  SmaxS = Grid.SmaxS;
+  SminE = Grid.SminE;
+  SmaxE = Grid.SmaxE;
+  SminW = Grid.SminW;
+  SmaxW = Grid.SmaxW;
+  
+  // Copy node stretching info of grid block Grid.
+  StretchI = Grid.StretchI;
+  BetaI = Grid.BetaI;
+  TauI = Grid.TauI;
+  StretchJ = Grid.StretchJ;
+  BetaJ = Grid.BetaJ;
+  TauJ = Grid.TauJ;
+  OrthogonalN = Grid.OrthogonalN;
+  OrthogonalS = Grid.OrthogonalS;
+  OrthogonalE = Grid.OrthogonalE;
+  OrthogonalW = Grid.OrthogonalW;
+}
 
 /*!
  * Calculate influence coefficients 
@@ -607,17 +797,22 @@ ostream &operator << (ostream &out_file,
   if (G.NNi == 0 || G.NNj == 0) return(out_file);
   out_file << G.NCi << " " << G.ICl << " " << G.ICu << "\n";
   out_file << G.NCj << " " << G.JCl << " " << G.JCu << "\n";
+
+  // Output node data
   for ( j = G.JNl-G.Nghost ; j <= G.JNu+G.Nghost; ++j ) {
     for ( i = G.INl-G.Nghost ; i <= G.INu+G.Nghost; ++i ) {
       out_file << G.Node[i][j].X << "\n";
     } /* endfor */
   } /* endfor */
+
   for ( i = G.ICl-G.Nghost ; i <= G.ICu+G.Nghost ; ++i) {
     out_file << G.BCtypeN[i] << " " << G.BCtypeS[i] << "\n";
   } /* endfor */
   for ( j = G.JCl-G.Nghost ; j <= G.JCu+G.Nghost ; ++j) {
     out_file << G.BCtypeE[j] << " " << G.BCtypeW[j] << "\n";
   } /* endfor */
+
+  // Output North boundary spline information
   if (G.BndNorthSpline.np != 0 ) {
     out_file << G.BndNorthSpline.np   << " " 
 	     << G.BndNorthSpline.type << "\n"; 
@@ -625,6 +820,8 @@ ostream &operator << (ostream &out_file,
   } else {
     out_file << G.BndNorthSpline.np << "\n";
   } /* endif */
+
+  // Output South boundary spline information
   if (G.BndSouthSpline.np != 0 ) {
     out_file << G.BndSouthSpline.np   << " " 
 	     << G.BndSouthSpline.type << "\n"; 
@@ -632,6 +829,8 @@ ostream &operator << (ostream &out_file,
   } else {
     out_file << G.BndSouthSpline.np << "\n";
   } /* endif */
+
+  // Output East boundary spline information
   if (G.BndEastSpline.np != 0 ) {
     out_file << G.BndEastSpline.np   << " " 
 	     << G.BndEastSpline.type << "\n"; 
@@ -639,6 +838,8 @@ ostream &operator << (ostream &out_file,
   } else {
     out_file << G.BndEastSpline.np << "\n";
   } /* endif */
+
+  // Output West boundary spline information
   if (G.BndWestSpline.np != 0 ) {
     out_file << G.BndWestSpline.np   << " " 
 	     << G.BndWestSpline.type << "\n"; 
@@ -646,6 +847,7 @@ ostream &operator << (ostream &out_file,
   } else {
     out_file << G.BndWestSpline.np << "\n";
   } /* endif */
+
   out_file.setf(ios::scientific);
   out_file << G.SminN << " " << G.SmaxN << " " << G.SminS << " " << G.SmaxS << "\n"; 
   out_file << G.SminE << " " << G.SmaxE << " " << G.SminW << " " << G.SmaxW << "\n";
@@ -660,26 +862,35 @@ ostream &operator << (ostream &out_file,
 istream &operator >> (istream &in_file, 
 		      Grid2D_Quad_Block_HO &G) {
   int i, j, ni, il, iu, nj, jl, ju, ng;
+
+  // Read mesh parameters
   in_file.setf(ios::skipws);
+  // Read indexes for nodes
   in_file >> ni >> il >> iu;
   in_file >> nj >> jl >> ju;
   in_file >> ng;
   in_file.unsetf(ios::skipws);
+
+  // Provide enough memory for the new mesh
   if (ni == 0 || nj == 0) {
     if (G.Node != NULL) G.deallocate(); return(in_file);
   } /* endif */
   if (G.Node == NULL || G.Cell == NULL || G.NNi != ni || G.NNj != nj) {
-    if (G.Node != NULL) G.deallocate(); 
     G.allocate(ni-2*ng-1, nj-2*ng-1, ng);
   } /* endif */
+
+  // Read indexes for cells
   in_file.setf(ios::skipws);
   in_file >> ni >> il >> iu; in_file >> nj >> jl >> ju;
   in_file.unsetf(ios::skipws);
+
+  // Read the coordinates of the mesh nodes
   for ( j = G.JNl-G.Nghost ; j <= G.JNu+G.Nghost; ++j ) {
     for ( i = G.INl-G.Nghost ; i <= G.INu+G.Nghost; ++i ) {
       in_file >> G.Node[i][j].X;
     } /* endfor */
   } /* endfor */
+
   for ( j = G.JCl-G.Nghost ; j <= G.JCu+G.Nghost ; ++j) {
     for ( i = G.ICl-G.Nghost ; i <= G.ICu+G.Nghost ; ++i) {
       G.Cell[i][j].I = i; G.Cell[i][j].J = j;
@@ -687,6 +898,8 @@ istream &operator >> (istream &in_file,
       G.Cell[i][j].A = G.area(i, j);
     } /* endfor */
   } /* endfor */
+
+  // Read the type of boundary conditions for each boundary
   for ( i = G.ICl-G.Nghost ; i <= G.ICu+G.Nghost ; ++i) {
     in_file.setf(ios::skipws);
     in_file >> G.BCtypeN[i] >> G.BCtypeS[i];
@@ -697,6 +910,8 @@ istream &operator >> (istream &in_file,
     in_file >> G.BCtypeE[j] >> G.BCtypeW[j];
     in_file.unsetf(ios::skipws);
   } /* endfor */
+
+  // Read the North boundary spline
   in_file.setf(ios::skipws);
   in_file >> ni;
   in_file.unsetf(ios::skipws);
@@ -708,6 +923,8 @@ istream &operator >> (istream &in_file,
     in_file.unsetf(ios::skipws);
     in_file >> G.BndNorthSpline; G.BndNorthSpline.pathlength();
   } /* endif */
+
+  // Read the South boundary spline
   in_file.setf(ios::skipws);
   in_file >> ni;
   in_file.unsetf(ios::skipws);
@@ -719,6 +936,8 @@ istream &operator >> (istream &in_file,
     in_file.unsetf(ios::skipws);
     in_file >> G.BndSouthSpline; G.BndSouthSpline.pathlength();
   } /* endif */
+
+  // Read the East boundary spline
   in_file.setf(ios::skipws);
   in_file >> nj;
   in_file.unsetf(ios::skipws);
@@ -730,6 +949,8 @@ istream &operator >> (istream &in_file,
     in_file.unsetf(ios::skipws);
     in_file >> G.BndEastSpline; G.BndEastSpline.pathlength();
   } /* endif */
+
+  // Read the West boundary spline
   in_file.setf(ios::skipws);
   in_file >> nj;
   in_file.unsetf(ios::skipws);
@@ -741,6 +962,8 @@ istream &operator >> (istream &in_file,
     in_file.unsetf(ios::skipws);
     in_file >> G.BndWestSpline; G.BndWestSpline.pathlength();
   } /* endif */
+
+
   in_file.setf(ios::skipws);
   in_file >> G.SminN >> G.SmaxN >> G.SminS >> G.SmaxS; 
   in_file >> G.SminE >> G.SmaxE >> G.SminW >> G.SmaxW;
@@ -751,3 +974,4 @@ istream &operator >> (istream &in_file,
   in_file.unsetf(ios::skipws);
   return (in_file);
 }
+

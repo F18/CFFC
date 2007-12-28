@@ -102,6 +102,53 @@ namespace tut
     ensure_equals("JNu", Grid.JNu, 17);
   }
 
+  /* Test 2:*/
+  template<>
+  template<>
+  void Grid2DQuad_HO_object::test<2>()
+  {
+
+    set_test_name("operator = (assignment)");
+
+    // Create block grid
+    Grid2D_Quad_Block_HO Grid, Grid_Copy;
+    Grid.allocate(10,15,2);
+    
+    // operation
+    Grid_Copy = Grid;
+
+    // == check 
+    ensure_equals("NNi", Grid_Copy.NNi, 15);
+    ensure_equals("NNj", Grid_Copy.NNj, 20);
+    ensure_equals("NCi", Grid_Copy.NCi, 14);
+    ensure_equals("NCj", Grid_Copy.NCj, 19);
+    ensure_equals("Nghost", Grid_Copy.Nghost, 2);
+    ensure_equals("ICl", Grid_Copy.ICl, 2);
+    ensure_equals("ICu", Grid_Copy.ICu, 11);
+    ensure_equals("JCl", Grid_Copy.JCl, 2);
+    ensure_equals("JCu", Grid_Copy.JCu, 16);
+    ensure_equals("INl", Grid_Copy.INl, 2);
+    ensure_equals("INu", Grid_Copy.INu, 12);
+    ensure_equals("JNl", Grid_Copy.JNl, 2);
+    ensure_equals("JNu", Grid_Copy.JNu, 17);
+  }
+
+  /* Test 3:*/
+  template<>
+  template<>
+  void Grid2DQuad_HO_object::test<3>()
+  {
+
+    set_test_name("Check input-output operators");
+
+    // Create block grid
+    Grid2D_Quad_Block_HO Grid;
+    Grid.allocate(10,15,2);
+    
+    // == check 
+    Check_Input_Output_Operator("Grid variable", Grid);
+  }
+
 
 }
 

@@ -151,18 +151,6 @@ using namespace std;
  *                    quadrilateral grid block.
  *      deallocate -- Deallocate memory for structured
  *                    quadrilateral grid block.
- *      allocateNodes -- Allocate memory for nodes of
- *                       structured quadrilateral grid
- *                       block.
- *      deallocateNodes -- Deallocate memory for nodes
- *                         of structured quadrilateral
- *                         grid block.
- *      allocateCells -- Allocate memory for nodes of
- *                       structured quadrilateral grid
- *                       block.
- *      deallocateCells -- Deallocate memory for nodes
- *                         of structured quadrilateral
- *                         grid block.
  *      centroid   -- Calculate 2D vector containing
  *                    the location of cell center.
  *      area       -- Calculate the area for cell.
@@ -310,7 +298,7 @@ public:
   ~Grid2D_Quad_Block_HO(void){ deallocate(); }
 
   //! Assignment operator.
-  Grid2D_Quad_Block_HO operator = (const Grid2D_Quad_Block_HO &Soln);
+  Grid2D_Quad_Block_HO& operator= (const Grid2D_Quad_Block_HO &Grid);
   //@}
 
   //! @name Memory allocation and deallocation
@@ -320,18 +308,6 @@ public:
 
   //! Deallocate memory for structured quadrilateral grid block.
   void deallocate(void);
-
-  //! Allocate memory for nodes of structured quadrilateral grid block.
-  void allocateNodes(const int Ni, const int Nj, const int Ng);
-
-  //! Deallocate memory for nodes of structured quadrilateral grid block.
-  void deallocateNodes(void);
-
-  //! Allocate memory for cells of structured quadrilateral grid block.
-  void allocateCells(const int Ni, const int Nj, const int Ng);
-
-  //! Deallocate memory for cells of structured quadrilateral grid block.
-  void deallocateCells(void);
   //@}
 
   //! @name Calculate cell centroid.
