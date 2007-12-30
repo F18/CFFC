@@ -717,41 +717,63 @@ Grid2D_Quad_Block** Grid_Rectangular_Box(Grid2D_Quad_Block **Grid_ptr,
       /* Set the boundary condition types for each of the
 	 boundary splines. */
 
+	Stretch_I = STRETCHING_FCN_LINEAR;
+	Stretch_J = STRETCHING_FCN_LINEAR;
+	Beta_I = ZERO; 
+	Beta_J = ZERO;
+
       if (jBlk == Number_of_Blocks_Jdir-1) {
 	Bnd_Spline_North.setBCtype(BC_REFLECTION);
+
+        if (Stretching_Flag) {
+           Stretch_J = Stretching_Type_Jdir;
+           Beta_J = Stretching_Factor_Jdir;
+        }
+      
       } else {
 	Bnd_Spline_North.setBCtype(BC_NONE);
       } /* endif */
       if (jBlk == 0) {
 	Bnd_Spline_South.setBCtype(BC_REFLECTION);
+
+        if (Stretching_Flag) {
+           Stretch_J = STRETCHING_FCN_MIN_CLUSTERING ;
+           Beta_J = Stretching_Factor_Jdir;
+        }
+        
       } else {
 	Bnd_Spline_South.setBCtype(BC_NONE);
       } /* endif */
       if (iBlk == Number_of_Blocks_Idir-1) {
 	Bnd_Spline_East.setBCtype(BC_REFLECTION);
+        
+        
       } else {
-	Bnd_Spline_East.setBCtype(BC_NONE);
+         Bnd_Spline_East.setBCtype(BC_NONE);
       } /* endif */
       if (iBlk == 0) {
 	Bnd_Spline_West.setBCtype(BC_REFLECTION);
+       
       } else {
-	Bnd_Spline_West.setBCtype(BC_NONE);
+         Bnd_Spline_West.setBCtype(BC_NONE);
       } /* endif */
-
+      
       /* Assign values to the stretching function parameters
 	 and boundary grid line orthogonality parameters. */
 
-      if (Stretching_Flag) {
-	Stretch_I = Stretching_Type_Idir;
-	Stretch_J = Stretching_Type_Jdir;
-	Beta_I = Stretching_Factor_Idir;
-	Beta_J = Stretching_Factor_Jdir;
-      } else {
-	Stretch_I = STRETCHING_FCN_LINEAR;
-	Stretch_J = STRETCHING_FCN_LINEAR;
-	Beta_I = ZERO; 
-	Beta_J = ZERO;
-      }
+    //   if (Stretching_Flag) {
+// 	Stretch_I = Stretching_Type_Idir;
+// 	Stretch_J = Stretching_Type_Jdir;
+// 	Beta_I = Stretching_Factor_Idir;
+// 	Beta_J = Stretching_Factor_Jdir;
+     
+//       } else {
+// 	Stretch_I = STRETCHING_FCN_LINEAR;
+// 	Stretch_J = STRETCHING_FCN_LINEAR;
+// 	Beta_I = ZERO; 
+// 	Beta_J = ZERO;
+//       }
+
       Tau_I = ZERO;
       Tau_J = ZERO;
       Orthogonal_North = 0;

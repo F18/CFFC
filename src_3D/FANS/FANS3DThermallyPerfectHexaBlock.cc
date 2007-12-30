@@ -55,6 +55,13 @@ Output_Tecplot(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
          Out_File << "\"c_" << W[0][0][0].specdata[i].Speciesname() 
                   << "\" \\ \n";
       } /* endfor */
+
+      Out_File << "\"lambda_xx\" \\  \n"  
+               << "\"lambda_xy\" \\  \n"  
+               << "\"lambda_xz\" \\  \n"  
+               << "\"lambda_yy\" \\  \n"  
+               << "\"lambda_yz\" \\  \n"  
+               << "\"lambda_zz\" \\  \n";   
       
       Out_File << "\"T\" \\ \n"
                << "\"M\" \\ \n";      
@@ -79,6 +86,8 @@ Output_Tecplot(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
          for (int i =  Grid.INl ; i <=  Grid.INu ; ++i ) {
             W_node = Wn(i, j, k);
             Out_File << " "  << Grid.Node[i][j][k].X << W_node;
+            Out_File.setf(ios::scientific);
+            Out_File << " "  << W_node.tau_t(dWdx[i][j][k], dWdy[i][j][k], dWdz[i][j][k]);
             Out_File.setf(ios::scientific);
             Out_File << " " << W_node.T() 
                      << " " << W_node.M() << "\n";
@@ -143,6 +152,13 @@ Output_Cells_Tecplot(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
                   << "\" \\ \n";
       } /* endfor */
      
+      Out_File << "\"lambda_xx\" \\  \n"  
+               << "\"lambda_xy\" \\  \n"  
+               << "\"lambda_xz\" \\  \n"  
+               << "\"lambda_yy\" \\  \n"  
+               << "\"lambda_yz\" \\  \n"  
+               << "\"lambda_zz\" \\  \n";   
+
       Out_File <<"\"T\" \\ \n"
                <<"\"M\" \\ \n"
                << "\"ywall\" \\ \n"
@@ -170,6 +186,9 @@ Output_Cells_Tecplot(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
          for (int i =  ICl- Nghost ; i <=  ICu+ Nghost ; ++i ) {
             Out_File << " " << Grid.Cell[i][j][k].Xc
                      << W[i][j][k];
+            Out_File.setf(ios::scientific);
+            Out_File << " "  << W[i][j][k].tau_t(dWdx[i][j][k], dWdy[i][j][k], dWdz[i][j][k]);
+            
             Out_File.setf(ios::scientific);
             Out_File << " " << W[i][j][k].T() 
                      << " " << W[i][j][k].M();
@@ -240,6 +259,13 @@ Output_Nodes_Tecplot(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
                   << "\" \\ \n";
       } /* endfor */
       
+      Out_File << "\"lambda_xx\" \\  \n"  
+               << "\"lambda_xy\" \\  \n"  
+               << "\"lambda_xz\" \\  \n"  
+               << "\"lambda_yy\" \\  \n"  
+               << "\"lambda_yz\" \\  \n"  
+               << "\"lambda_zz\" \\  \n";   
+      
       Out_File << "\"T\" \\ \n"
                << "\"M\" \\ \n";
 
@@ -263,6 +289,8 @@ Output_Nodes_Tecplot(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
          for (int i =  Grid.INl ; i <=  Grid.INu ; ++i ) {
             W_node = Wn(i, j, k);
             Out_File << " "  << Grid.Node[i][j][k].X << W_node;
+            Out_File.setf(ios::scientific);
+            Out_File << " "  << W_node.tau_t(dWdx[i][j][k], dWdy[i][j][k], dWdz[i][j][k]);
             Out_File.setf(ios::scientific);
             Out_File << " " << W_node.T()
                      << " " << W_node.M() << "\n";
@@ -290,6 +318,7 @@ ICs(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
 
    double dpdx, dpdy, dpdz, delta_pres, delta_pres_x, delta_pres_y, delta_pres_z;
    double r, zd, zz, di, Um, U_axi;
+   double exp_a, exp_b, ke;
    
    double Rprime, yprime, xn, yn, fc, tempvalue, r_fuel;
    Vector2D Xt;
@@ -615,7 +644,7 @@ ICs(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
                   W[i][j][k] = IPs.Wo;
                   WallData[i][j][k].tauw = fabs(-0.5*IPs.Grid_IP.Pipe_Radius*dpdz);
                   WallData[i][j][k].utau = sqrt(WallData[i][j][k].tauw/W[i][j][k].rho);
-                  W[i][j][k].k = WallData[i][j][k].utau*WallData[i][j][k].utau/
+                  ke = WallData[i][j][k].utau*WallData[i][j][k].utau/
                      sqrt(W[0][0][0].k_omega_model.beta_star);
                   W[i][j][k].p = IPs.Wo.p - Grid.Cell[i][j][k].Xc.z*dpdz;	 
                   // setting the axial velocity in a turbulent pipe flow
@@ -625,12 +654,12 @@ ICs(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
                   
                   zz = (1.0- r/IPs.Grid_IP.Pipe_Radius);
                   if(zz > 0 && zz <= 1.0) W[i][j][k].v.z = Um*pow(zz, 0.133);
-
-                  // try to feed a reasonalbe k profile as initial condition
-                  // to see how far it goes, since this case has really small 
-                  // pressure gradient
-                  //W[i][j][k].k = 0.5;//(0.5886 - 31.2*r+2039.6*r*r -19208*r*r*r);
-                     
+                  
+                  exp_a = 1.43785171089353038809E+01;
+                  exp_b = -1.95126777548776608739E-01;
+                  // specifying a k profile as close as to that of a pipe flow
+                  W[i][j][k].k = exp(exp_a*r + exp_b);
+                  
                   if (WallData[i][j][k].ywall !=0.0) {
                      W[i][j][k].omega = WallData[i][j][k].utau/
                         (sqrt(W[0][0][0].k_omega_model.beta_star)*
