@@ -3849,19 +3849,18 @@ int Update_Solution_Multistage_Explicit(Flame2D_Quad_Block &SolnBlk,
 
   int k_residual;
   double omega, delta_n;
-  const int NUM_VAR_FLAME2D( SolnBlk.NumVar() );
-  const int NSm1(Flame2D_State::NSm1);
+  const int NUM_VAR_FLAME2D( Flame2D_State::NumEqn() );
   static Flame2D_pState Wo;
   bool isGoodState;
 
   // Memory for linear system solver. 
   DenseSystemLinEqs LinSys;
-  static DenseMatrix dSdU(NUM_VAR_FLAME2D-NSm1,NUM_VAR_FLAME2D-NSm1);            // Source Jacobian
-  static DenseMatrix Precon(NUM_VAR_FLAME2D-NSm1,NUM_VAR_FLAME2D-NSm1,ZERO);     // Low Mach number preconditioner
-  static DenseMatrix Precon_Inv(NUM_VAR_FLAME2D-NSm1,NUM_VAR_FLAME2D-NSm1,ZERO); // Inverse of low Mach number preconditioner
+  static DenseMatrix dSdU(NUM_VAR_FLAME2D,NUM_VAR_FLAME2D);            // Source Jacobian
+  static DenseMatrix Precon(NUM_VAR_FLAME2D,NUM_VAR_FLAME2D,ZERO);     // Low Mach number preconditioner
+  static DenseMatrix Precon_Inv(NUM_VAR_FLAME2D,NUM_VAR_FLAME2D,ZERO); // Inverse of low Mach number preconditioner
   
   /* Allocate memory for linear system solver. */
-  LinSys.allocate(NUM_VAR_FLAME2D-NSm1);
+  LinSys.allocate(NUM_VAR_FLAME2D);
 
   /* Evaluate the time step fraction and residual storage location for the stage. */
   switch(Input_Parameters.i_Time_Integration) {
@@ -4047,14 +4046,14 @@ int Update_Solution_Multistage_Explicit(Flame2D_Quad_Block &SolnBlk,
 	 ******************* EVALUATE RHS *********************************
 	 ******************************************************************/
 	// omega*(dt*RHS)
-	for (int k = 0; k < NUM_VAR_FLAME2D - NSm1; k++) {
+	for (int k = 0; k < NUM_VAR_FLAME2D; k++) {
 	  LinSys.b(k) = omega*SolnBlk.dUdt[i][j][k_residual][k+1];
 	}
 	/* Solve system of equations using LU decomposition Gaussian elimination procedure. */
 	LinSys.solve(LU_DECOMPOSITION);
 	
 	/* Update the conserved solution variables. */
-	for (int k = 0; k < NUM_VAR_FLAME2D - NSm1; k++) {
+	for (int k = 0; k < NUM_VAR_FLAME2D; k++) {
 	  SolnBlk.U[i][j][k+1] = SolnBlk.Uo[i][j][k+1] + LinSys.x(k);
 	} 
 
@@ -4091,14 +4090,14 @@ int Update_Solution_Multistage_Explicit(Flame2D_Quad_Block &SolnBlk,
 	      LinSys.A = Precon*LinSys.A;	     
 	    }
 
-	    for (int k = 0; k < NUM_VAR_FLAME2D-NSm1; k++) {
+	    for (int k = 0; k < NUM_VAR_FLAME2D; k++) {
 	      LinSys.b(k) = omega*SolnBlk.dUdt[i][j][k_residual][k+1];
 	    } 
 	    
 	    LinSys.solve(LU_DECOMPOSITION);
 	    
 	    /* Update the conserved Solution */
-	    for (int k = 0; k < NUM_VAR_FLAME2D-NSm1; k++) {
+	    for (int k = 0; k < NUM_VAR_FLAME2D; k++) {
 	      SolnBlk.U[i][j][k+1] = SolnBlk.Uo[i][j][k+1] + LinSys.x(k);
 	    } 
 	    	    

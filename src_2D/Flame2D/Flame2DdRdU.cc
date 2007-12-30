@@ -764,7 +764,7 @@ void dWfdWc_Diamond(DenseMatrix &dWfdWc_x,
   dWfdWc_y(8,2) = mult_y * d_dWdy_dW;
   dWfdWc_y(9,3) = mult_y * d_dWdy_dW;
   /**************************************************************/      
-  const int ns = Flame2D_State::NumSpecies() - Flame2D_State::NSm1;
+  const int ns = Flame2D_State::NumSpeciesEqn();
   for(int Num=0; Num<(ns); Num++){
     dWfdWc_x(10+Num,4+Num) = mult_x * d_dWdx_dW;
     dWfdWc_y(10+Num,4+Num) = mult_y * d_dWdy_dW;

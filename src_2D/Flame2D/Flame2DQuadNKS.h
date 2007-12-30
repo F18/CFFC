@@ -15,7 +15,7 @@
  * variables                                                    *
  ****************************************************************/
 template <> int set_blocksize(Flame2D_Quad_Block &SolnBlk)
-{ return (SolnBlk.NumVar()-1); }
+{ return (Flame2D_State::NumEqn()); }
 
 
 /*! *************************************************************
@@ -36,8 +36,7 @@ int Newton_Update(Flame2D_Quad_Block *SolnBlk,
 		  double Relaxation_multiplier) {
 
   // declares
-  const int Num_Var = SolnBlk[0].NumVar();  	
-  const int NSm1 = Flame2D_pState::NSm1;
+  const int Num_Var = Flame2D_pState::NumEqn();  	
   int error_flag = 0;
   bool isGoodState;
   
@@ -51,7 +50,7 @@ int Newton_Update(Flame2D_Quad_Block *SolnBlk,
 	  
 	  // Update solutions in conserved variables  
 	  // U = Uo + RELAXATION*deltaU = Uo + denormalized(x)
-	  for(int varindex =1; varindex <= Num_Var-NSm1; varindex++){	                       
+	  for(int varindex =1; varindex <= Num_Var; varindex++){	                       
 	    SolnBlk[Bcount].U[i][j][varindex] = SolnBlk[Bcount].Uo[i][j][varindex]  +  
 	      Relaxation_multiplier*GMRES.deltaU(Bcount,i,j,varindex-1);
 	  } 	      	  
@@ -67,7 +66,7 @@ int Newton_Update(Flame2D_Quad_Block *SolnBlk,
 	    double update_reduction_factor = ONE;	    
 	    for (int n_update_reduction = 1; n_update_reduction <= 10; ++n_update_reduction) {
 	      update_reduction_factor = HALF*update_reduction_factor;		  		  
-	      for(int varindex = 1; varindex <= Num_Var-NSm1; varindex++){
+	      for(int varindex = 1; varindex <= Num_Var; varindex++){
 		SolnBlk[Bcount].U[i][j][varindex] = SolnBlk[Bcount].Uo[i][j][varindex] 
 		  + GMRES.deltaU(Bcount,i,j,varindex-1)*update_reduction_factor;
 	      }   
@@ -528,7 +527,7 @@ Preconditioner_dFVdU(DenseMatrix &dFvdU,
   static Vector2D nface;
 
   // solution size
-  const int ns = SolnBlk->W[Rii][Rjj].NumSpecies()-Flame2D_pState::NSm1;
+  const int ns = SolnBlk->W[Rii][Rjj].NumSpeciesEqn();
   const int Matrix_size = 10 + ns; // rho, u, v, p, drho, du/dx, du/dy, 
                                    // dv/dx, dv/dy, dp/dx, dcn/dx
 
@@ -755,7 +754,7 @@ Preconditioner_dSdU(int ii, int jj, DenseMatrix &dRdU){
  ****************************************************************/
 void normalize_Preconditioner(DenseMatrix &dFdU) 
 { 
-  int nsp( Flame2D_pState::NumSpecies() - Flame2D_pState::NSm1 );
+  int nsp( Flame2D_pState::NumSpeciesEqn() );
   static const Flame2D_pState W_STD_ATM;
   static double ao( W_STD_ATM.a() );
   static double rho( W_STD_ATM.rho() );

@@ -173,10 +173,16 @@ public:
   // return the number of variables
   static int NumVar() { return n; }
 
+  // return the actual number of equations we are solving
+  static int NumEqn() { return n-NSm1; }
+
   // return the number of species
   static int NumSpecies() { return ns; }
 
-  // return the number of species
+  // return the number of species equations
+  static int NumSpeciesEqn() { return ns_eqn; }
+
+  // is the mixture reacting
   static bool isReacting() { return reacting; }
 
   //! set static variables
@@ -291,7 +297,7 @@ public:
   /**
    * Private Objects
    */
-public:
+protected:
 
 #ifdef _NS_MINUS_ONE
   static const int  NSm1 = 1;
@@ -299,15 +305,15 @@ public:
   static const int  NSm1 = 0;
 #endif
 
-protected:
-
 #ifdef STATIC_NUMBER_OF_SPECIES
-  static const int  n = STATIC_NUM_FLAME2D_VAR;
-  static const int ns = STATIC_NUMBER_OF_SPECIES;
+  static const int      n = STATIC_NUM_FLAME2D_VAR;
+  static const int     ns = STATIC_NUMBER_OF_SPECIES;
+  static const int ns_eqn = ns-NSm1;
   double            x[n];
 #else
   static int        n; //!< Total number of vars
   static int       ns; //!< Number of species
+  static int   ns_eqn; //!< Number of species equations
   double           *x;
 #endif
   static bool      reacting; //!< boolean indicating whether gas is reacting
@@ -1148,7 +1154,7 @@ inline bool Flame2D_State::speciesOK(const int &harshness) {
   double sum(ZERO);
 
   //-------- Negative Check ------------//     
-  for(int i=0; i<ns-NSm1; i++){
+  for(int i=0; i<ns_eqn; i++){
     yi = rhoc(i)/rho();
 
     //
