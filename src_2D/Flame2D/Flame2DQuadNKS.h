@@ -811,7 +811,11 @@ inline void Block_Preconditioner<Flame2D_pState,
 				 Flame2D_Quad_Block,
 				 Flame2D_Input_Parameters>::
 Pre_Precon_SolnBlk_Init(void) {
-  SolnBlk->Update_Nodal_Values();
+  if ( Input_Parameters->NKS_IP.Jacobian_Order == SECOND_ORDER_DIAMOND_WITH_HLLE ||
+       Input_Parameters->NKS_IP.Jacobian_Order == SECOND_ORDER_DIAMOND_WITH_ROE ||
+       Input_Parameters->NKS_IP.Jacobian_Order == SECOND_ORDER_DIAMOND_WITH_AUSMPLUSUP ) {
+    SolnBlk->Update_Nodal_Values();
+  }
 }
 
 

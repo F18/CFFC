@@ -239,7 +239,8 @@ void dFIdW_Inviscid_ROE(DenseMatrix& dRdW,
   // Compute the Jacobian
   //---------------------------------------------------------------
   // temporary storage
-  double ur( ((const Flame2D_pState*)Wr)->vx() ), 
+  double 
+    ur( ((const Flame2D_pState*)Wr)->vx() ), 
     vr( ((const Flame2D_pState*)Wr)->vy() ), 
     ul( ((const Flame2D_pState*)Wl)->vx() ), 
     vl( ((const Flame2D_pState*)Wl)->vy() );
@@ -501,7 +502,8 @@ void dFIdW_Inviscid_AUSM_plus_up(DenseMatrix& dRdW,
   //---------------------------------------------------------------
 
   // temporarily store velocity
-  double u( ((const Flame2D_pState&)SolnBlk.W[ii][jj]).vx() ), 
+  double 
+    u( ((const Flame2D_pState&)SolnBlk.W[ii][jj]).vx() ), 
     v( ((const Flame2D_pState&)SolnBlk.W[ii][jj]).vy() );
 
   // rotate in place
@@ -516,8 +518,6 @@ void dFIdW_Inviscid_AUSM_plus_up(DenseMatrix& dRdW,
   //---------------------------------------------------------------
   // FILL IN AUSM SPECIFIC STUFF HERE
   //---------------------------------------------------------------
-  cerr << "dFIdW_Inviscid_AUSM_plus_up(): Not finished yet lazy ass!!!!";
-  exit(-1);
 
   //---------------------------------------------------------------
   // Add to dRdW
