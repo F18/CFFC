@@ -427,11 +427,11 @@ public:
   //@{
   void Create_Quad_Block(const int Number_of_Cells_Idir,
 			 const int Number_of_Cells_Jdir,
-			 const int Number_of_Ghost_Cells){};
+			 const int Number_of_Ghost_Cells);
   void Create_Quad_Block(char *Bnd_Spline_File_Name_ptr,
 			 const int Number_of_Cells_Idir,
 			 const int Number_of_Cells_Jdir,
-			 const int Number_of_Ghost_Cells){};
+			 const int Number_of_Ghost_Cells);
   void Create_Quad_Block(Spline2D &Bnd_Spline_North,
 			 Spline2D &Bnd_Spline_South,
 			 Spline2D &Bnd_Spline_East,
@@ -449,22 +449,22 @@ public:
 			 const int Orthogonal_North,
 			 const int Orthogonal_South,
 			 const int Orthogonal_East,
-			 const int Orthogonal_West){};
+			 const int Orthogonal_West);
   //@}
 
   //! @name Broadcast functions (MPI)
   //@{
-  void Broadcast_Quad_Block(void){};
+  void Broadcast_Quad_Block(void);
   
 #ifdef _MPI_VERSION
   void Broadcast_Quad_Block(MPI::Intracomm &Communicator, 
-			    const int Source_CPU){};
+			    const int Source_CPU);
 #endif
   //@}
   
   //! @name Smooth quad grid
   //@{
-  void Smooth_Quad_Block(const int Number_of_Iterations){};
+  void Smooth_Quad_Block(const int Number_of_Iterations);
   
   void Smooth_Rocket_Motor(const double &Length_Chamber,
 			   const double &Radius_Chamber,
@@ -480,95 +480,91 @@ public:
 			   const int &level,
 			   const int &di,const int &dj,
 			   const int &ri,const int &rj,
-			   const int &NRi,const int &NRj){};
+			   const int &NRi,const int &NRj);
   //@}
   
   //!@name Set Boundary Conditions.
   //@{
-  void Set_BCs(void){};
+  void Set_BCs(void);
   //@}
   
   //!@name Update geometry and geometric properties.
   //@{
-  void Update_Exterior_Nodes(void){};
+  void Update_Exterior_Nodes(void);
   
-  void Update_Corner_Ghost_Nodes(void){};
+  void Update_Corner_Ghost_Nodes(void);
   
-  void Update_Cells(void){};
+  void Update_Cells(void);
   
-  int Check_Quad_Block(void){};
+  int Check_Quad_Block(void);
   //@}
   
   //!@name Input/Output functions
   //@{
-  void Write_Quad_Block_Definition(ostream &Out_File){};
+  void Write_Quad_Block_Definition(ostream &Out_File);
   
-  void Read_Quad_Block_Definition(istream &In_File){};
+  void Read_Quad_Block_Definition(istream &In_File);
   
-  void Write_Quad_Block(ostream &Out_File){};
+  void Write_Quad_Block(ostream &Out_File);
 
-  void Read_Quad_Block(istream &In_File){};
+  void Read_Quad_Block(istream &In_File);
   //@}
 
   //!@name Copy block
   //@{
-  void Copy_Quad_Block(const Grid2D_Quad_Block_HO &Grid2){};
+  void Copy_Quad_Block(const Grid2D_Quad_Block_HO &Grid2){ *this = Grid2; };
   //@}
   
   //!@name Block manipulation
   //@{
-  void Translate_Quad_Block(const Vector2D &V){};
+  void Translate_Quad_Block(const Vector2D &V);
   
-  void Scale_Quad_Block(const double &Scaling_Factor){};
+  void Scale_Quad_Block(const double &Scaling_Factor);
   
-  void Rotate_Quad_Block(const double &Angle){};
+  void Rotate_Quad_Block(const double &Angle);
   
-  void Reflect_Quad_Block(void){};
+  void Reflect_Quad_Block(void);
   //@}
   
   //!@ Output functions for plotting.
   //@{
   void Output_Tecplot(const int Block_Number,
 		      const int Output_Title,
-		      ostream &Out_File){};
+		      ostream &Out_File);
   
   void Output_Nodes_Tecplot(const int Block_Number,
 			    const int Output_Title,
-			    ostream &Out_File){};
+			    ostream &Out_File);
   
   void Output_Cells_Tecplot(const int Block_Number,
 			    const int Output_Title,
-			    ostream &Out_File){};
+			    ostream &Out_File);
   
   void Output_Gnuplot(const int Block_Number,
 		      const int Output_Title,
-		      ostream &Out_File){};
+		      ostream &Out_File);
   //@}
   
   //!@name AMR related functions
   //@{
-  void Double_Mesh_Resolution(Grid2D_Quad_Block_HO &Grid_Double,
-			      Grid2D_Quad_Block_HO &Grid_Original){};
+  void Double_Mesh_Resolution(Grid2D_Quad_Block_HO &Grid_Original);
   
-  void Half_Mesh_Resolution(Grid2D_Quad_Block_HO &Grid_Half,
-			    Grid2D_Quad_Block_HO &Grid_Original){};
+  void Half_Mesh_Resolution(Grid2D_Quad_Block_HO &Grid_Original);
   
-  void Refine_Mesh(Grid2D_Quad_Block_HO &Grid_Fine,
-		   Grid2D_Quad_Block_HO &Grid_Original,
-		   const int Sector){};
+  void Refine_Mesh(Grid2D_Quad_Block_HO &Grid_Original,
+		   const int Sector);
   
-  void Coarsen_Mesh(Grid2D_Quad_Block_HO &Grid_Coarse,
-		    Grid2D_Quad_Block_HO &Grid_Original_SW,
+  void Coarsen_Mesh(Grid2D_Quad_Block_HO &Grid_Original_SW,
 		    Grid2D_Quad_Block_HO &Grid_Original_SE,
 		    Grid2D_Quad_Block_HO &Grid_Original_NW,
-		    Grid2D_Quad_Block_HO &Grid_Original_NE){};
+		    Grid2D_Quad_Block_HO &Grid_Original_NE);
   
   void Fix_Refined_Mesh_Boundaries(const int Fix_North_Boundary,
 				   const int Fix_South_Boundary,
 				   const int Fix_East_Boundary,
-				   const int Fix_West_Boundary){};
+				   const int Fix_West_Boundary);
   
-  void Unfix_Refined_Mesh_Boundaries(Grid2D_Quad_Block_HO &Grid){};
+  void Unfix_Refined_Mesh_Boundaries(void);
   //@}
   
   //! @name Binary arithmetic operators.
