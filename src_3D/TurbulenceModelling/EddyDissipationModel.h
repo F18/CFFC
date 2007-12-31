@@ -196,7 +196,7 @@ DenseMatrix Jacobian_eddydissipationmodel(SOLN_pSTATE &W) {
   //clean up memory
   delete[] M; delete[] c;
 
-  return dSdU;
+  return dSwdU;
      
 }
  
