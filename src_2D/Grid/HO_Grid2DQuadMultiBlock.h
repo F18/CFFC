@@ -81,12 +81,13 @@ public:
   //! @name Broadcast functions (MPI)
   //@{
   void Broadcast_Multi_Block_Grid(void);
+  
   //@}
   
   //! @name Smooth quad grid
   //@{
   //@}
-  
+    
   //!@name Set Boundary Conditions.
   //@{
   //@}
@@ -97,6 +98,10 @@ public:
   
   //!@name Input/Output functions
   //@{
+  void Write_Multi_Block_Grid_Definition(ostream &Out_File);
+  void Read_Multi_Block_Grid_Definition(istream &In_File);
+  void Write_Multi_Block_Grid(ostream &Out_File);
+  void Read_Multi_Block_Grid(istream &In_File);
   //@}
 
   //!@name Copy block
@@ -105,10 +110,180 @@ public:
   
   //!@name Block manipulation
   //@{
+  void Translate_Multi_Block_Grid(const Vector2D &V);
+  void Scale_Multi_Block_Grid(const double &Scaling_Factor);
+  void Rotate_Multi_Block_Grid(const double &Angle);
+  void Reflect_Multi_Block_Grid(void);
+  int Check_Multi_Block_Grid(void);
   //@}
   
-  //!@ Output functions for plotting.
+  //!@name Output functions for plotting.
   //@{
+  void Output_Tecplot(ostream &Out_File);
+  void Output_Nodes_Tecplot(ostream &Out_File);
+  void Output_Cells_Tecplot(ostream &Out_File);
+  void Output_Gnuplot(ostream &Out_File);
+  //@}
+  
+
+  //!@name Uniform 2D Cartesian mesh for different shapes.
+  //@{
+  void Grid_Rectangular_Box(int &_Number_of_Blocks_Idir_,
+			    int &_Number_of_Blocks_Jdir_,
+			    const double &Width,
+			    const double &Height,
+			    const int Number_of_Cells_Idir,
+			    const int Number_of_Cells_Jdir,
+			    const int Number_of_Ghost_Cells);
+  
+  void Grid_Rectangular_Box(const double &Width,
+			    const double &Height,
+			    const int Stretching_Flag,
+			    const int Stretching_Type_Idir,
+			    const int Stretching_Type_Jdir,
+			    const double &Stretching_Factor_Idir,
+			    const double &Stretching_Factor_Jdir,
+			    const int Number_of_Cells_Idir,
+			    const int Number_of_Cells_Jdir,
+			    const int Number_of_Ghost_Cells);
+
+  void Grid_Flat_Plate(const double &Length,
+		       const int Flat_Plate_BC_Type,
+		       const int Stretching_Flag,
+		       const double &Stretching_Factor_Idir,
+		       const double &Stretching_Factor_Jdir,
+		       const int Number_of_Cells_Idir,
+		       const int Number_of_Cells_Jdir,
+		       const int Number_of_Ghost_Cells);
+
+  void Grid_Flat_Plate_NK(const double &Length,
+			  const int Stretching_Flag,
+			  const double &Stretching_Factor_Idir,
+			  const double &Stretching_Factor_Jdir,
+			  const int Number_of_Cells_Idir,
+			  const int Number_of_Cells_Jdir,
+			  const int Number_of_Ghost_Cells);
+
+  void Grid_Flat_Plate3(const double &Length,
+			const int &Stretching_Flag,
+			const double &Stretching_Factor_Idir,
+			const double &Stretching_Factor_Jdir,
+			const int Number_of_Cells_Idir,
+			const int Number_of_Cells_Jdir,
+			const int Number_of_Ghost_Cells);
+
+  void Grid_Flat_Plate4(const double &Length,
+			const int &Stretching_Flag,
+			const double &Stretching_Factor_Idir,
+			const double &Stretching_Factor_Jdir,
+			const int Number_of_Cells_Idir,
+			const int Number_of_Cells_Jdir,
+			const int Number_of_Ghost_Cells);
+  void Grid_Flat_Plate9(const double &Length,
+			const int &Flat_Plate_BC_Type,
+			const int &Stretching_Flag,
+			const double &Stretching_Factor_Idir,
+			const double &Stretching_Factor_Jdir,
+			const int Number_of_Cells_Idir,
+			const int Number_of_Cells_Jdir,
+			const int Number_of_Ghost_Cells);
+
+  void Grid_1D_Flame(const double &Length,
+		     const double &Heigth,
+		     const int Number_of_Cells_Idir,
+		     const int Number_of_Cells_Jdir,
+		     const int Number_of_Ghost_Cells);
+  
+  void Grid_2D_Laminar_Flame(const double &Length,
+			     const double &Heigth,
+			     const int Number_of_Cells_Idir,
+			     const int Number_of_Cells_Jdir, 
+			     const int Number_of_Ghost_Cells,
+			     const int Flame_Type_Flag);
+
+  void Grid_Pipe(const double &Length,
+		 const double &Radius,
+		 const int Stretching_Flag,
+		 const double Stretching_Factor,
+		 const int Number_of_Cells_Idir,
+		 const int Number_of_Cells_Jdir,
+		 const int Number_of_Ghost_Cells);  
+
+  void Grid_Pipe(const double &Length,
+		 const double &Radius,
+		 const int &Axisymmetric,
+		 const int Number_of_Cells_Idir,
+		 const int Number_of_Cells_Jdir,
+		 const int Number_of_Ghost_Cells);
+  
+  void  Grid_Blunt_Body(const double &Radius,
+			const double &Mach_Number,
+			const int Number_of_Cells_Idir,
+			const int Number_of_Cells_Jdir,
+			const int Number_of_Ghost_Cells);
+
+  void Grid_Rocket_Motor(const double &Length_Chamber,
+			 const double &Radius_Chamber,
+			 const double &Length_Chamber_To_Throat,
+			 const double &Length_Nozzle,
+			 const double &Radius_Nozzle_Exit,
+			 const double &Radius_Nozzle_Throat,
+			 const double &Radius_Grain,
+			 const int &Nozzle_Type,
+			 const int &Chamber_BC_Type,
+			 const int &Stretching_Flag,
+			 const int Stretching_Type_Jdir,
+			 const double &Stretching_Factor_Idir,
+			 const double &Stretching_Factor_Jdir,
+			 const int Number_of_Cells_Idir,
+			 const int Number_of_Cells_Jdir,
+			 const int Number_of_Ghost_Cells);
+  
+  void Grid_Nozzleless_Rocket_Motor(const double &Length_Chamber,
+				    const double &Radius_Chamber,
+				    const double &Length_Nozzle,
+				    const double &Radius_Nozzle_Exit,
+				    const int &Chamber_BC_Type,
+				    const int &Stretching_Flag,
+				    const int Stretching_Type_Jdir,
+				    const double &Stretching_Factor_Idir,
+				    const double &Stretching_Factor_Jdir,
+				    const int Number_of_Cells_Idir,
+				    const int Number_of_Cells_Jdir,
+				    const int Number_of_Ghost_Cells);
+
+  void Grid_Nozzle(const double &Length_Nozzle,
+		   const double &Radius_Chamber,
+		   const double &Radius_Nozzle_Exit,
+		   const double &Radius_Nozzle_Throat,
+		   const int &Nozzle_Type,
+		   const int &Stretching_Flag,
+		   const int &Stretching_Type_Idir,
+		   const int &Stretching_Type_Jdir,
+		   const double &Stretching_Factor_Idir,
+		   const double &Stretching_Factor_Jdir,
+		   const int Number_of_Cells_Idir,
+		   const int Number_of_Cells_Jdir,
+		   const int Number_of_Ghost_Cells);
+  
+  void Grid_Circular_Cylinder(const double &Radius,
+			      const int Stretching_Type_Idir,
+			      const int Stretching_Type_Jdir,
+			      const double &Stretching_Factor_Idir,
+			      const double &Stretching_Factor_Jdir,
+			      const int Number_of_Cells_Idir,
+			      const int Number_of_Cells_Jdir,
+			      const int Number_of_Ghost_Cells);
+
+  void Grid_Circular_Cylinder(const double &Inner_Radius,
+			      const double &Outer_Radius,
+			      const int Stretching_Type_Idir,
+			      const int Stretching_Type_Jdir,
+			      const double &Stretching_Factor_Idir,
+			      const double &Stretching_Factor_Jdir,
+			      const int Number_of_Cells_Idir,
+			      const int Number_of_Cells_Jdir,
+			      const int Number_of_Ghost_Cells)
   //@}
   
   //!@name AMR related functions
