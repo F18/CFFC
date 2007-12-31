@@ -1,123 +1,169 @@
-/* Grid2DQuadMultiBlock.cc:  Multi-block subroutines for 
-                             2D quadrilateral block grid class. */
+/* \file HO_Grid2DQuadMultiBlock.cc
+   \brief Multi-block subroutines for high-order 2D quadrilateral multi-block grid class. */
 
-/* Include 2D quadrilateral block grid type header file. */
+/* Include required C++ libraries. */
+// None
 
-#include "HO_Grid2DQuad.h"
+/* Using std namespace functions */
+// None
 
-// Include NASA rotor 37 and 67 header files.
+/* Include CFFC header files */
+#include "HO_Grid2DQuadMultiBlock.h"  /* Include 2D quadrilateral multi-block grid type header file. */
+#include "../Grid/NASARotor37.h"       /* Include NASA rotor 37 header files. */
+#include "../Grid/NASARotor67.h"       /* Include NASA rotor 67 header files. */
 
-#ifndef _NASA_ROTOR37_INCLUDED
-#include "../Grid/NASARotor37.h"
-#endif // _NASA_ROTOR37_INCLUDED
 
-#ifndef _NASA_ROTOR67_INCLUDED
-#include "../Grid/NASARotor67.h"
-#endif // _NASA_ROTOR67_INCLUDED
+// ===== Member functions =====
 
-/*************************************************************************
- * Grid2D_Quad_Block -- External subroutines for 2D array of grid blocks.*
- *************************************************************************/
-
-/********************************************************
- * Routine: Allocate_Multi_Block_Grid                   *
- *                                                      *
- * Allocate memory for a 2D array of 2D quadrilateral   *
- * multi-block grids.                                   *
- *                                                      *
- ********************************************************/
-Grid2D_Quad_Block** Allocate_Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
-					      const int Number_of_Blocks_Idir,
-		                              const int Number_of_Blocks_Jdir) {
-
-    int i;
- 
-    /* Allocate memory. */
-
-    Grid_ptr = new Grid2D_Quad_Block*[Number_of_Blocks_Idir];
-    for ( i = 0 ; i <= Number_of_Blocks_Idir-1 ; ++i ) {
-      Grid_ptr[i] = new Grid2D_Quad_Block[Number_of_Blocks_Jdir];
-    }  /* endfor */
-
-    /* Return memory location. */
-
-    return(Grid_ptr);
-
+/*!
+ * Default constructor.
+ */
+Grid2D_Quad_MultiBlock_HO::Grid2D_Quad_MultiBlock_HO(void)
+  : Number_of_Blocks_Idir(0), Number_of_Blocks_Jdir(0),
+    Grid_ptr(NULL)
+{
+  //
 }
 
-/********************************************************
- * Routine: Deallocate_Multi_Block_Grid                 *
- *                                                      *
- * Deallocate memory for a 2D array of 2D quadrilateral *
- * multi-block grids.                                   *
- *                                                      *
- ********************************************************/
-Grid2D_Quad_Block** Deallocate_Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
-					        const int Number_of_Blocks_Idir,
-		                                const int Number_of_Blocks_Jdir) {
+/*!
+ * Copy constructor. It is declared private
+ */
+Grid2D_Quad_MultiBlock_HO::Grid2D_Quad_MultiBlock_HO(const Grid2D_Quad_MultiBlock_HO &G)
+  : Number_of_Blocks_Idir(0), Number_of_Blocks_Jdir(0),
+    Grid_ptr(NULL)
+{
+  int i,j;
 
-    int i, j;
- 
-    /* Deallocate memory. */
+  allocate(G.Blocks_Idir(), G.Blocks_Jdir());
 
-    for ( i = 0 ; i <= Number_of_Blocks_Idir-1 ; ++i ) {
-       for ( j = Number_of_Blocks_Jdir-1 ; j >= 0 ; --j ) {
-          if (Grid_ptr[i][j].Node != NULL && Grid_ptr[i][j].Cell != NULL) { 
-             Grid_ptr[i][j].deallocate();
-          } else if (Grid_ptr[i][j].Node != NULL) {
-             Grid_ptr[i][j].deallocateNodes();
-          } else if (Grid_ptr[i][j].Cell != NULL) {
-             Grid_ptr[i][j].deallocateCells();
-          } /* endif */
-       }  /* endfor */
+  // Copy the individual blocks
+  if (G.Grid_ptr != NULL) {
+    for (j = 0; j<=Last_jBlock(); ++j){
+      for (i = 0; i<=Last_iBlock(); ++i){
+	Grid_ptr[i][j] = G(i,j);
+      }	// endfor
+    } // endfor
+  } // endif
+}
 
-       delete []Grid_ptr[i];
-       Grid_ptr[i] = NULL;
-    }  /* endfor */
+/*!
+ * Allocate memory for the 2D quadrilateral multi-block grid.
+ *
+ * \param _Number_of_Blocks_Idir_ number of blocks in i-direction
+ * \param _Number_of_Blocks_Jdir_ number of blocks in j-direction
+ */
+void Grid2D_Quad_MultiBlock_HO::allocate(const int & _Number_of_Blocks_Idir_,
+					 const int & _Number_of_Blocks_Jdir_) {
+
+  // Check conditions
+  assert( _Number_of_Blocks_Idir_ >= 1 && _Number_of_Blocks_Jdir_ >= 1 );
+
+  // Check if the new required memory has dimensions different than the currently allocated ones
+  if ( _Number_of_Blocks_Idir_ != Number_of_Blocks_Idir || 
+       _Number_of_Blocks_Jdir_ != Number_of_Blocks_Jdir ){
+
+    // Free the memory if there is memory allocated
+    deallocate();
+    
+    // Set mesh parameters
+    Number_of_Blocks_Idir = _Number_of_Blocks_Idir_;
+    Number_of_Blocks_Jdir = _Number_of_Blocks_Jdir_;
+
+    /* Allocate memory. */
+    Grid_ptr = new Grid2D_Quad_Block_HO*[Number_of_Blocks_Idir];
+    for (int i = 0 ; i <= Last_iBlock() ; ++i ) {
+      Grid_ptr[i] = new Grid2D_Quad_Block_HO[Number_of_Blocks_Jdir];
+    } /* endfor */
+
+  } // endif
+}
+
+/*
+ * Deallocate memory.
+ */
+void Grid2D_Quad_MultiBlock_HO::deallocate(void) {
+
+  if (Grid_ptr != NULL){
+  
+    // deallocate the j-direction blocks
+    for (int i = 0 ; i <= Last_iBlock() ; ++i ) {
+      delete []Grid_ptr[i];
+      Grid_ptr[i] = NULL;
+    }
+
+    // deallocate the i-direction blocks
     delete []Grid_ptr;
     Grid_ptr = NULL;
 
-    /* Return memory location. */
-
-    return(Grid_ptr);
-
+    // Reset indexes
+    Number_of_Blocks_Idir = 0;
+    Number_of_Blocks_Jdir = 0;
+  }
 }
 
-/********************************************************
- * Routine: Broadcast_Multi_Block_Grid                  *
- *                                                      *
- * Broadcasts a 2D array of 2D quadrilateral            *
- * multi-block grids to all processors involved in the  *
- * calculation from the primary processor using the MPI *
- * broadcast routine.                                   *
- *                                                      *
- ********************************************************/
-Grid2D_Quad_Block** Broadcast_Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
-			                       int &Number_of_Blocks_Idir,
-		                               int &Number_of_Blocks_Jdir) {
+/*!
+ * Assignment operator =
+ */
+Grid2D_Quad_MultiBlock_HO& Grid2D_Quad_MultiBlock_HO::operator=(const Grid2D_Quad_MultiBlock_HO &G) {
+
+  // !!! If the LHS grid block already has objects assigned, these are going to be deleted.
+  // Handle self-assignment:
+  if (this == &G) return *this;
+
+  int i,j;
+
+  // re-allocate memory if there isn't enough
+  allocate(G.Blocks_Idir(),G.Blocks_Jdir());
+
+  // Copy the values from each single block.
+  if (G.Grid_ptr != NULL) {
+    for (j = 0; j<=Last_jBlock(); ++j){
+      for (i = 0; i<=Last_iBlock(); ++i){
+	Grid_ptr[i][j] = G(i,j);
+      }	// endfor
+    } // endfor
+  } // endif
+}
+
+
+/*!
+ * Broadcasts the multi-block grid to all processors 
+ * involved in the calculation from the primary processor 
+ * using the MPI broadcast routine.
+ */
+void Grid2D_Quad_MultiBlock_HO::Broadcast_Multi_Block_Grid(void) {
     
 #ifdef _MPI_VERSION
-    int i, j;
+  int i, j;
+  int Num_iBlocks(0), Num_jBlocks(0);
+  
+  if (CFFC_Primary_MPI_Processor()) {
+    // initialize the number of blocks with values from the primary CPU
+    Num_iBlocks = Number_of_Blocks_Idir;
+    Num_jBlocks = Number_of_Blocks_Jdir;
+  }
 
-    if (!CFFC_Primary_MPI_Processor()) {
-       if (Grid_ptr != NULL) Grid_ptr = Deallocate_Multi_Block_Grid(Grid_ptr,
-                                                                    Number_of_Blocks_Idir,
-                                                                    Number_of_Blocks_Jdir);
-       Grid_ptr = Allocate_Multi_Block_Grid(Grid_ptr,
-                                            Number_of_Blocks_Idir,
-                                            Number_of_Blocks_Jdir);
-    } /* endif */
+  // Broadcast the number of blocks in both directions
+  CFFC_Broadcast_MPI(&Num_iBlocks,1);
+  CFFC_Broadcast_MPI(&Num_jBlocks,1);
 
-    for ( j = 0 ; j <= Number_of_Blocks_Jdir-1 ; ++j ) {
-       for ( i = 0; i <= Number_of_Blocks_Idir-1 ; ++i ) {
- 	  Broadcast_Quad_Block(Grid_ptr[i][j]);
-       }  /* endfor */
+  // Re-allocate memory on CPUs different than the primary one
+  if (!CFFC_Primary_MPI_Processor()) {
+    allocate(Num_iBlocks,Num_jBlocks);
+  } /* endif */
+  
+  // Broadcast the individual grid blocks
+  for ( j = 0 ; j <= Last_jBlock() ; ++j ) {
+    for ( i = 0; i <= Last_iBlock() ; ++i ) {
+      Grid_ptr[i][j].Broadcast_Quad_Block();
     }  /* endfor */
+  }  /* endfor */
 #endif
-
-    return(Grid_ptr);
-
 }
+
+
+#if 0
+
 
 /********************************************************
  * Routine: Write_Multi_Block_Grid_Definition           *
@@ -1998,252 +2044,6 @@ Grid2D_Quad_Block** Grid_1D_Flame(Grid2D_Quad_Block **Grid_ptr,
      /* Return the grid. */
      return(Grid_ptr);
  }
-
-// // FLAME WITH INLET (grid issues)
-
-// /********************************************************
-//  * Routine: Grid_2D_Lamiar_Flame (Vertical)             *
-//  *                                                      *
-//  * Generates a quadilateral mesh with clustering        *
-//  * along the centerline (West) and entry (south)        *
-//  * for the predicition of 2D laminar diffusion flames   *                      
-//  *                                                      *
-//  * Usage: Grid_ptr = Grid_2D_Laminar_Flame (Grid_ptr,   *
-//  *                                   nblk_i,            *
-//  *                                   nblk_j,            *
-//  *                                   TWO,               *
-//  *                                   0.2,               *
-//  *         		             100,               *
-//  *         		             10,                *
-//  *                                   2);                *
-//  *                                                      *
-//  ********************************************************/
-// Grid2D_Quad_Block** Grid_2D_Laminar_Flame(Grid2D_Quad_Block **Grid_ptr,
-// 					  int &Number_of_Blocks_Idir,
-// 					  int &Number_of_Blocks_Jdir,
-// 					  const double &Length,
-// 					  const double &Heigth,
-// 					  const int Number_of_Cells_Idir,
-// 					  const int Number_of_Cells_Jdir, 
-// 					  const int Number_of_Ghost_Cells,
-// 					  const int Flame_Type_Flag) {
-
-
-//     int  n_cells_i, n_cells_j, Stretch_I, Stretch_J,
-//       Orthogonal_North, Orthogonal_South,
-//       Orthogonal_East, Orthogonal_West,
-//       Number_of_Blocks_Fuel,  Number_of_Blocks_Gap,
-//       Number_of_Blocks_Air, Number_of_Blocks_Free;
-
-//     double Beta_I, Tau_I, Beta_J, Tau_J, Top, Bot, East,West,
-//       fuel_spacing,  tube_spacing, air_spacing;
-      
-//     Vector2D xc_NW, xc_NE, xc_SE, xc_SW;
-//     Spline2D Bnd_Spline_North, Bnd_Spline_South,
-//       Bnd_Spline_East, Bnd_Spline_West;
-  
-//     /******************************************************/
-//     //Standard Core Flame  //Flame_Type_Flag == IC_RESTART
-//     if( (Flame_Type_Flag == IC_RESTART || Flame_Type_Flag == IC_CHEM_CORE_FLAME) && Number_of_Blocks_Idir == 10 ){
-//        fuel_spacing = 0.002;                   //m 
-//        tube_spacing = fuel_spacing + 0.00038;  //m 
-//        air_spacing = 0.025 - tube_spacing;     //m 
-      
-//       //I-direction (inlet) blocks 
-//        Number_of_Blocks_Fuel = 4;
-//        Number_of_Blocks_Gap  = 1; 
-//        Number_of_Blocks_Air = 5;
-//        Number_of_Blocks_Free = 0;
-
-//     } else {
-//       cerr<<"\n Initial conditions not valid for 2D Laminar Flame Grid"; cout.flush();
-//       exit(1);
-//     }
-
-//     if( Number_of_Blocks_Idir != Number_of_Blocks_Fuel + Number_of_Blocks_Gap + Number_of_Blocks_Air + Number_of_Blocks_Free ){
-//       cout<<"\n WARNING: Grid_2D_Laminar_Flame has a fixed initial number of Blocks in the x-direction to insure proper BC's, ";
-//       cout<<" currently it is set to "<< Number_of_Blocks_Fuel + Number_of_Blocks_Gap + Number_of_Blocks_Air + Number_of_Blocks_Free; 
-//     }
-
-//     Number_of_Blocks_Idir = Number_of_Blocks_Fuel + Number_of_Blocks_Gap + Number_of_Blocks_Air + Number_of_Blocks_Free;
-
-//     /* Allocate memory for grid blocks. */
-//     Grid_ptr = Allocate_Multi_Block_Grid(Grid_ptr, 
-//                                          Number_of_Blocks_Idir, 
-//                                          Number_of_Blocks_Jdir);
-
-    
-//     /* Create the mesh for each block representing the complete grid. */
-
-//     for ( int iBlk = 0; iBlk < Number_of_Blocks_Idir; iBlk++ ) {
-//       for ( int jBlk = 0; jBlk < Number_of_Blocks_Jdir; jBlk++ ) {
-	
-// 	/* Assign values to the locations of the corners  of the rectangular box shaped domain representing
-//            each of the blocks in the grid. */
-	       
-// 	Stretch_J = STRETCHING_FCN_MIN_CLUSTERING;
-// 	Beta_J = 1.05; 
-// 	Tau_J = ZERO;
-// 	Orthogonal_East = 0;
-// 	Orthogonal_West = 0;
-// 	Stretch_I = STRETCHING_FCN_MIN_CLUSTERING;
-// 	Beta_I = 1.05; 
-// 	Tau_I = ZERO;
-// 	Orthogonal_North = 0;
-// 	Orthogonal_South = 0;
-
-// 	//Stretching for J Blocks
-// 	Top = StretchingFcn(double(jBlk + 1)/double(Number_of_Blocks_Jdir), Beta_J, Tau_J, Stretch_J);
-// 	Bot = StretchingFcn(double(jBlk)/double(Number_of_Blocks_Jdir), Beta_J, Tau_J, Stretch_J);  
-
-// 	/**************** INLET **********************/
-// 	// Only one block 
-// 	if( Number_of_Blocks_Idir == 1 ) {
-// 	  xc_NW = Vector2D( ZERO , Heigth);
-// 	  xc_NE = Vector2D( Length , Heigth); 
-// 	  xc_SE = Vector2D( Length , ZERO); 
-// 	  xc_SW = Vector2D( ZERO , ZERO); 
-	 
-// 	  //Fuel Inlet
-// 	} else if(iBlk < Number_of_Blocks_Fuel ) {
-// 	  xc_NW = Vector2D( double(iBlk) * fuel_spacing/double(Number_of_Blocks_Fuel), Top*Heigth);
-// 	  xc_NE = Vector2D( double(iBlk + 1) * fuel_spacing/double(Number_of_Blocks_Fuel), Top*Heigth);			    
-// 	  xc_SE = Vector2D( double(iBlk + 1) * fuel_spacing/double(Number_of_Blocks_Fuel), Bot*Heigth);			    
-// 	  xc_SW = Vector2D( double(iBlk) * fuel_spacing/double(Number_of_Blocks_Fuel), Bot*Heigth);
-			    
-// 	  //Dead space
-// 	} else if( iBlk == Number_of_Blocks_Gap + Number_of_Blocks_Fuel - 1 ) {     
-// 	  xc_NW = Vector2D( fuel_spacing, Top*Heigth);
-// 	  xc_NE = Vector2D( tube_spacing,Top*Heigth); 
-// 	  xc_SE = Vector2D( tube_spacing, Bot*Heigth); 
-// 	  xc_SW = Vector2D( fuel_spacing, Bot*Heigth); 
-
-// 	  //Air Inlet
-// 	} else if( iBlk < Number_of_Blocks_Gap + Number_of_Blocks_Fuel + Number_of_Blocks_Air) {
-
-// 	  //Air Coflow Block Stretching I-direction
-// 	  West = StretchingFcn(double(iBlk - (Number_of_Blocks_Fuel + Number_of_Blocks_Gap))/
-// 			       double(Number_of_Blocks_Air), Beta_I, Tau_I, Stretch_I);
-// 	  East = StretchingFcn(double(iBlk- (Number_of_Blocks_Fuel + Number_of_Blocks_Gap) + 1)/
-// 			       double(Number_of_Blocks_Air), Beta_I, Tau_I, Stretch_I);  
-
-// 	  xc_NW = Vector2D( tube_spacing + West*air_spacing, Top*Heigth);			    
-// 	  xc_NE = Vector2D( tube_spacing + East*air_spacing, Top*Heigth);					 			   
-// 	  xc_SE = Vector2D( tube_spacing + East*air_spacing, Bot*Heigth);					   
-// 	  xc_SW = Vector2D( tube_spacing + West*air_spacing, Bot*Heigth);
-			   	  
-// 	  //Quiesent Air
-// 	} else {
-// 	  xc_NW = Vector2D( tube_spacing + air_spacing + double(iBlk - (Number_of_Blocks_Fuel + Number_of_Blocks_Gap + Number_of_Blocks_Air)) 
-// 			    * (Length - air_spacing - tube_spacing)/double(Number_of_Blocks_Free), Top*Heigth);
-// 	  xc_NE = Vector2D( tube_spacing + air_spacing + double(iBlk - (Number_of_Blocks_Fuel + Number_of_Blocks_Gap + Number_of_Blocks_Air) + 1) 
-// 			    * (Length - air_spacing - tube_spacing)/double(Number_of_Blocks_Free), Top*Heigth);
-// 	  xc_SE = Vector2D( tube_spacing + air_spacing + double(iBlk - (Number_of_Blocks_Fuel + Number_of_Blocks_Gap + Number_of_Blocks_Air) + 1) 
-// 			    * (Length - air_spacing - tube_spacing)/double(Number_of_Blocks_Free), Bot*Heigth);	
-// 	  xc_SW = Vector2D( tube_spacing + air_spacing + double(iBlk - (Number_of_Blocks_Fuel + Number_of_Blocks_Gap + Number_of_Blocks_Air ))
-// 			    * (Length - air_spacing - tube_spacing)/double(Number_of_Blocks_Free), Bot*Heigth);	
-// 	}
-	
-// 	Create_Spline_Line(Bnd_Spline_North, xc_NW, xc_NE, 2);
-// 	Create_Spline_Line(Bnd_Spline_South, xc_SW, xc_SE, 2);
-// 	Create_Spline_Line(Bnd_Spline_East, xc_SE, xc_NE, 2);
-// 	Create_Spline_Line(Bnd_Spline_West, xc_SW, xc_NW, 2);
-	
-// 	/* Set the boundary condition types for each of the  boundary splines. */
-// 	if( Number_of_Blocks_Idir == 1 && Number_of_Blocks_Jdir ==1 ) {
-// 	  Bnd_Spline_West.setBCtype(BC_REFLECTION);   
-// 	  Bnd_Spline_East.setBCtype(BC_REFLECTION);          //BC_FREE_SLIP_ISOTHERMAL);  
-// 	  Bnd_Spline_South.setBCtype(BC_FIXED);
-// 	  Bnd_Spline_North.setBCtype(BC_2DFLAME_OUTFLOW);
-// 	} else {
-// 	  if (iBlk == 0 ) {
-// 	    Bnd_Spline_West.setBCtype(BC_REFLECTION);    //centerline
-// 	    Bnd_Spline_East.setBCtype(BC_NONE);
-// 	  } else if (iBlk == Number_of_Blocks_Fuel-1 && jBlk == 0 )  {    //gap 
-// 	    Bnd_Spline_West.setBCtype(BC_NONE);     
-// 	    Bnd_Spline_East.setBCtype(BC_WALL_VISCOUS_HEATFLUX);     
-// 	  } else if (iBlk == Number_of_Blocks_Fuel+Number_of_Blocks_Gap && jBlk == 0)  { //gap
-// 	    Bnd_Spline_West.setBCtype(BC_WALL_VISCOUS_HEATFLUX);
-// 	    Bnd_Spline_East.setBCtype( BC_NONE);   
-// 	  } else if (iBlk == Number_of_Blocks_Idir-1 )  {
-// 	    Bnd_Spline_West.setBCtype(BC_NONE);      
-// 	    Bnd_Spline_East.setBCtype(BC_REFLECTION); //BC_FREE_SLIP_ISOTHERMAL);  //farfield right  
-// 	  } else { 
-// 	    Bnd_Spline_West.setBCtype(BC_NONE);      
-// 	    Bnd_Spline_East.setBCtype(BC_NONE);
-// 	  }
-	  
-// 	  if (jBlk == 1 && iBlk == Number_of_Blocks_Gap + Number_of_Blocks_Fuel - 1 && Number_of_Blocks_Gap!=0) {
-// 	    Bnd_Spline_South.setBCtype(BC_WALL_VISCOUS_HEATFLUX);      //Gap wall
-// 	    Bnd_Spline_North.setBCtype(BC_NONE);
-// 	  } else if (jBlk == 0 && iBlk < Number_of_Blocks_Gap + Number_of_Blocks_Fuel + Number_of_Blocks_Air ) {
-// 	    Bnd_Spline_South.setBCtype(BC_2DFLAME_INFLOW); //BC_FIXED);        //Bottom Inflow Left
-// 	    Bnd_Spline_North.setBCtype(BC_NONE);	  
-// 	  } else if(jBlk == 0) {
-// 	    Bnd_Spline_South.setBCtype(BC_2DFLAME_INFLOW); //BC_FIXED); //BC_WALL_VISCOUS_HEATFLUX);     //Bottom Right        
-// 	    Bnd_Spline_North.setBCtype(BC_NONE);
-// 	  } else if(jBlk == Number_of_Blocks_Jdir-1 ){  
-// 	    Bnd_Spline_North.setBCtype(BC_2DFLAME_OUTFLOW); //BC_CHARACTERISTIC); //Top outflow 
-// 	    Bnd_Spline_South.setBCtype(BC_NONE);
-// 	  } else {
-// 	    Bnd_Spline_South.setBCtype(BC_NONE);
-// 	    Bnd_Spline_North.setBCtype(BC_NONE);
-// 	  }
-	
-	
-// 	  /* Assign values to the stretching function parameters
-// 	     and boundary grid line orthogonality parameters. */
-// 	  Stretch_I = STRETCHING_FCN_LINEAR; 
-// 	  Beta_I = ZERO; 
-// 	  Tau_I = ZERO;
-// 	  Stretch_J = STRETCHING_FCN_LINEAR;
-// 	  Beta_J = ZERO;
-// 	  Tau_J = ZERO; 
-// 	}
-	
-	
-//  	if( (iBlk != Number_of_Blocks_Gap + Number_of_Blocks_Fuel-1) || (jBlk != 0)) {
-
-// 	  /* Determine the number of cells for this block. */
-// 	  n_cells_i = Number_of_Cells_Idir/Number_of_Blocks_Idir;
-// 	  n_cells_j = Number_of_Cells_Jdir/Number_of_Blocks_Jdir;
-	  
-	
-// 	  /* Create the 2D quadrilateral grid block. */
-// 	  Create_Quad_Block(Grid_ptr[iBlk][jBlk],
-//                           Bnd_Spline_North,
-//                           Bnd_Spline_South,
-//                           Bnd_Spline_East,
-//                           Bnd_Spline_West,
-//                           n_cells_i,
-//   	                  n_cells_j,
-// 			  Number_of_Ghost_Cells,
-//                           GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-//                           Stretch_I,
-//                           Beta_I, 
-//                           Tau_I,
-//                           Stretch_J,
-//                           Beta_J,
-//                           Tau_J,
-//                           Orthogonal_North,
-// 		          Orthogonal_South,
-//      		          Orthogonal_East,
-//                           Orthogonal_West);
-//  	}
-      
-// 	/* Deallocate the memory for the boundary splines. */
-// 	Bnd_Spline_North.deallocate();
-// 	Bnd_Spline_South.deallocate();
-// 	Bnd_Spline_East.deallocate();
-// 	Bnd_Spline_West.deallocate();
-//       }
-//     }
-
-    
-
-//     /* Return the grid. */
-//     return(Grid_ptr);
-// }
 
 
 /********************************************************
@@ -8942,3 +8742,5 @@ Grid2D_Quad_Block** Grid_Annulus_2D(Grid2D_Quad_Block **Grid_ptr,
     return(Grid_ptr);
 
 }
+
+#endif
