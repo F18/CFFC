@@ -23,7 +23,7 @@ using namespace std;
 /*!
  * \class Cell2D_HO
  *
- * \begin{verbatim}
+ * \verbatim
  * Member functions
  *     Xc       -- Return 2D vector containing location of the cell
  *                 center (centroid).
@@ -41,7 +41,7 @@ using namespace std;
  * C != C;
  * cout << C; (output function)
  * cin  >> C; (input function)
- * \end{verbatim}
+ * \endverbatim
  */
 class Cell2D_HO{
 public:

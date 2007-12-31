@@ -1,5 +1,5 @@
 /* \file HO_Grid2DQuad.h
-   \brief Header file defining 2D quadrilateral high-order block grid type. */
+   \brief Header file defining high-order 2D quadrilateral block grid type. */
 
 #ifndef _HO_GRID2D_QUAD_BLOCK_INCLUDED
 #define _HO_GRID2D_QUAD_BLOCK_INCLUDED
@@ -51,7 +51,7 @@ using namespace std;
 
 
 
-/* Define the quadrilateral 2D grid block class. */
+/* Define the high-order quadrilateral 2D grid block class. */
 
 /*!
  * \class Grid2D_Quad_Block_HO
