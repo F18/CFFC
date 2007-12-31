@@ -1702,16 +1702,15 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Pipe(Grid3D_Input_Parameters &Inp
     /* Creat 2D cross-section grids from which the 3D grid
        will be extruded. */
 
-    Grid2D_Pipe_XYplane = Grid_Tube_2D(
-                                   Grid2D_Pipe_XYplane,
-                                   numblk_idir_pipe,
-		                   numblk_jdir_pipe,
-                                   Input.Pipe_Radius,
-                                   Input.NCells_Idir,
-                                   Input.NCells_Jdir,
-				   Input.Nghost,
-                                   STRETCHING_FCN_MAX_CLUSTERING,
-                                   1.0001);
+    Grid2D_Pipe_XYplane = Grid_Tube_2D(Grid2D_Pipe_XYplane,
+                                       numblk_idir_pipe,
+		                       numblk_jdir_pipe,
+                                       Input.Pipe_Radius,
+                                       Input.NCells_Idir,
+                                       Input.NCells_Jdir,
+				       Input.Nghost,
+                                       STRETCHING_FCN_MAX_CLUSTERING,
+                                       Input.Stretching_Factor_Jdir);
 
     /* Create the mesh for each block representing
        the complete grid. */
@@ -1746,10 +1745,10 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Pipe(Grid3D_Input_Parameters &Inp
     } /* endfor */
 
     /* Deallocate 2D grid. */
-    Grid2D_Pipe_XYplane = Deallocate_Multi_Block_Grid(
-                                   Grid2D_Pipe_XYplane,
-                                   numblk_idir_pipe,
-		                   numblk_jdir_pipe);
+
+    Grid2D_Pipe_XYplane = Deallocate_Multi_Block_Grid(Grid2D_Pipe_XYplane,
+                                                      numblk_idir_pipe,
+		                                      numblk_jdir_pipe);
 
 
    /* Call the function Find_Neighbours to obtain the neighbour block information
@@ -1880,52 +1879,48 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Bluff_Body_Burner(Grid3D_Input_Pa
     /* Creat 2D cross-section grids from which the 3D grid
        will be extruded. */
 
-    Grid2D_Fuel_Line_XYplane = Grid_Tube_2D(
-                                   Grid2D_Fuel_Line_XYplane,
-                                   numblk_idir_fuel,
-		                   numblk_jdir_fuel,
-                                   Input.Radius_Fuel_Line,
-                                   Input.NCells_Idir,
-                                   Input.NCells_Jdir,
-				   Input.Nghost,
-                                   STRETCHING_FCN_MAX_CLUSTERING,
-                                   1.25);
+    Grid2D_Fuel_Line_XYplane = Grid_Tube_2D(Grid2D_Fuel_Line_XYplane,
+                                            numblk_idir_fuel,
+		                            numblk_jdir_fuel,
+                                            Input.Radius_Fuel_Line,
+                                            Input.NCells_Idir,
+                                            Input.NCells_Jdir,
+		  		            Input.Nghost,
+                                            STRETCHING_FCN_MAX_CLUSTERING,
+                                            1.25);
 
-    Grid2D_Bluff_Body_Inner_XYplane = Grid_Annulus_2D(
-                                   Grid2D_Bluff_Body_Inner_XYplane,
-                                   numblk_idir_bluffbody,
-		                   numblk_jdir_bluffbody,
-                                   Input.Radius_Fuel_Line,
- 			           HALF*Input.Radius_Bluff_Body,
-                                   Input.NCells_Idir,
-                                   Input.NCells_Jdir,
-				   Input.Nghost,
-                                   STRETCHING_FCN_MIN_CLUSTERING,
-                                   1.10);
+    Grid2D_Bluff_Body_Inner_XYplane = Grid_Annulus_2D(Grid2D_Bluff_Body_Inner_XYplane,
+                                                      numblk_idir_bluffbody,
+		                                      numblk_jdir_bluffbody,
+                                                      Input.Radius_Fuel_Line,
+ 			                              HALF*Input.Radius_Bluff_Body,
+                                                      Input.NCells_Idir,
+                                                      Input.NCells_Jdir,
+                     				      Input.Nghost,
+                                                      STRETCHING_FCN_MIN_CLUSTERING,
+                                                      1.10);
 
-    Grid2D_Bluff_Body_Outer_XYplane = Grid_Annulus_2D(
-                                   Grid2D_Bluff_Body_Outer_XYplane,
-                                   numblk_idir_bluffbody,
-		                   numblk_jdir_bluffbody,
-                                   HALF*Input.Radius_Bluff_Body,
- 			           Input.Radius_Bluff_Body,
-                                   Input.NCells_Idir,
-                                   Input.NCells_Jdir,
-				   Input.Nghost,
-                                   STRETCHING_FCN_MAX_CLUSTERING,
-                                   1.10);
+    Grid2D_Bluff_Body_Outer_XYplane = Grid_Annulus_2D(Grid2D_Bluff_Body_Outer_XYplane,
+                                                      numblk_idir_bluffbody,
+		                                      numblk_jdir_bluffbody,
+                                                      HALF*Input.Radius_Bluff_Body,
+ 			                              Input.Radius_Bluff_Body,
+                                                      Input.NCells_Idir,
+                                                      Input.NCells_Jdir,
+                       				      Input.Nghost,
+                                                      STRETCHING_FCN_MAX_CLUSTERING,
+                                                      1.10);
 
-    Grid2D_Coflow_XYplane = Grid_Annulus_2D(
-                                   Grid2D_Coflow_XYplane,
-                                   numblk_idir_coflow,
-		                   numblk_jdir_coflow,
- 			           Input.Radius_Bluff_Body,
-                                   Input.Radius_Coflow_Inlet_Pipe,
-                                   Input.NCells_Idir,
-                                   Input.NCells_Jdir,
-				   Input.Nghost,
-                                   STRETCHING_FCN_MIN_CLUSTERING,
-                                   1.10);
+    Grid2D_Coflow_XYplane = Grid_Annulus_2D(Grid2D_Coflow_XYplane,
+                                            numblk_idir_coflow,
+		                            numblk_jdir_coflow,
+ 			                    Input.Radius_Bluff_Body,
+                                            Input.Radius_Coflow_Inlet_Pipe,
+                                            Input.NCells_Idir,
+                                            Input.NCells_Jdir,
+			   	            Input.Nghost,
+                                            STRETCHING_FCN_MIN_CLUSTERING,
+                                            1.10);
 
     /* Create the mesh for each block representing
        the complete grid. */
@@ -2098,26 +2093,21 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Bluff_Body_Burner(Grid3D_Input_Pa
 
     /* Deallocate 2D grids. */
 
-    Grid2D_Fuel_Line_XYplane = Deallocate_Multi_Block_Grid(
-                                   Grid2D_Fuel_Line_XYplane,
-                                   numblk_idir_fuel,
-		                   numblk_jdir_fuel);
+    Grid2D_Fuel_Line_XYplane = Deallocate_Multi_Block_Grid(Grid2D_Fuel_Line_XYplane,
+                                                           numblk_idir_fuel,
+		                                           numblk_jdir_fuel);
 
-    Grid2D_Bluff_Body_Inner_XYplane = Deallocate_Multi_Block_Grid(
-                                   Grid2D_Bluff_Body_Inner_XYplane,
-                                   numblk_idir_bluffbody,
-		                   numblk_jdir_bluffbody);
+    Grid2D_Bluff_Body_Inner_XYplane = Deallocate_Multi_Block_Grid(Grid2D_Bluff_Body_Inner_XYplane,
+                                                                  numblk_idir_bluffbody,
+		                                                  numblk_jdir_bluffbody);
 
-    Grid2D_Bluff_Body_Outer_XYplane = Deallocate_Multi_Block_Grid(
-                                   Grid2D_Bluff_Body_Outer_XYplane,
-                                   numblk_idir_bluffbody,
-		                   numblk_jdir_bluffbody);
+    Grid2D_Bluff_Body_Outer_XYplane = Deallocate_Multi_Block_Grid(Grid2D_Bluff_Body_Outer_XYplane,
+                                                                  numblk_idir_bluffbody,
+		                                                  numblk_jdir_bluffbody);
 
-    Grid2D_Coflow_XYplane = Deallocate_Multi_Block_Grid(
-                                   Grid2D_Coflow_XYplane,
-                                   numblk_idir_coflow,
-		                   numblk_jdir_coflow);
-
+    Grid2D_Coflow_XYplane = Deallocate_Multi_Block_Grid(Grid2D_Coflow_XYplane,
+                                                        numblk_idir_coflow,
+		                                        numblk_jdir_coflow);
 
    /* Call the function Find_Neighbours to obtain the neighbour block information
       and assign values to data members in the grid block connectivity data structure. */
@@ -3602,16 +3592,15 @@ void Grid3D_Hexa_Multi_Block::Create_Grid_Pipe(Grid3D_Input_Parameters &Input) {
     /* Creat 2D cross-section grids from which the 3D grid
        will be extruded. */
 
-    Grid2D_Pipe_XYplane = Grid_Tube_2D(
-                                   Grid2D_Pipe_XYplane,
-                                   numblk_idir_pipe,
-		                   numblk_jdir_pipe,
-                                   Input.Pipe_Radius,
-                                   Input.NCells_Idir,
-                                   Input.NCells_Jdir,
-				   Input.Nghost,
-                                   STRETCHING_FCN_MAX_CLUSTERING,
-                                   1.00001);
+    Grid2D_Pipe_XYplane = Grid_Tube_2D(Grid2D_Pipe_XYplane,
+                                       numblk_idir_pipe,
+		                       numblk_jdir_pipe,
+                                       Input.Pipe_Radius,
+                                       Input.NCells_Idir,
+                                       Input.NCells_Jdir,
+				       Input.Nghost,
+                                       STRETCHING_FCN_MAX_CLUSTERING,
+                                       1.00001);
 
     /* Create the mesh for each block representing
        the complete grid. */
@@ -3647,10 +3636,9 @@ void Grid3D_Hexa_Multi_Block::Create_Grid_Pipe(Grid3D_Input_Parameters &Input) {
 
     /* Deallocate 2D grid. */
 
-    Grid2D_Pipe_XYplane = Deallocate_Multi_Block_Grid(
-                                   Grid2D_Pipe_XYplane,
-                                   numblk_idir_pipe,
-		                   numblk_jdir_pipe);
+    Grid2D_Pipe_XYplane = Deallocate_Multi_Block_Grid(Grid2D_Pipe_XYplane,
+                                                      numblk_idir_pipe,
+		                                      numblk_jdir_pipe);
 
 }
 

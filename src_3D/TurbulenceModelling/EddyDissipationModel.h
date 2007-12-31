@@ -151,13 +151,10 @@ DenseMatrix Jacobian_eddydissipationmodel(SOLN_pSTATE &W) {
   switch(W.React.reactset_flag){
       //--------- ONE STEP CH4 ----------//
    case CH4_1STEP: 
-      
       if (c[0] > ZERO && c[1] > ZERO) {
          s = TWO*(W.specdata[1].Mol_mass()*THOUSAND)/
             (W.specdata[0].Mol_mass()*THOUSAND);
-         
-         if(c[0] < c[1]/s){
-
+         if (c[0] < c[1]/s){
             dSwdU(NUM_VAR, 0) =  model_constant*W.omega*c[0];
             dSwdU(NUM_VAR+1, 0) = TWO*M[1]/M[0]*model_constant*W.omega*c[0];
             dSwdU(NUM_VAR+2, 0) = -ONE*M[2]/M[0]*model_constant*W.omega*c[0];
@@ -172,8 +169,7 @@ DenseMatrix Jacobian_eddydissipationmodel(SOLN_pSTATE &W) {
             dSwdU(NUM_VAR+1,NUM_VAR) = -TWO*M[1]/M[0]*model_constant*W.omega;
             dSwdU(NUM_VAR+2,NUM_VAR) =  ONE*M[2]/M[0]*model_constant*W.omega;
             dSwdU(NUM_VAR+3,NUM_VAR) =  TWO*M[3]/M[0]*model_constant*W.omega;
-            
-         }else{
+         } else {
             dSwdU(NUM_VAR, 0) = model_constant*W.omega*c[1]/s;
             dSwdU(NUM_VAR+1, 0) = TWO*M[1]/M[0]*model_constant*W.omega*c[1]/s;
             dSwdU(NUM_VAR+2, 0) = -ONE*M[2]/M[0]*model_constant*W.omega*c[1]/s;
@@ -188,27 +184,20 @@ DenseMatrix Jacobian_eddydissipationmodel(SOLN_pSTATE &W) {
             dSwdU(NUM_VAR+1,NUM_VAR+1) = -TWO*M[1]/M[0]*model_constant*W.omega/s;
             dSwdU(NUM_VAR+2,NUM_VAR+1) =  ONE*M[2]/M[0]*model_constant*W.omega/s;
             dSwdU(NUM_VAR+3,NUM_VAR+1) =  TWO*M[3]/M[0]*model_constant*W.omega/s;
-         }
-
-
-         
-      }
-      
+         } /* endif */
+      } /* endif */
       break;
       
    default:
       break;
+
    } /* endswitch */
    
- //clean up memory
+  //clean up memory
   delete[] M; delete[] c;
 
   return dSdU;
-  
-   
+     
 }
-
-
-
-  
+ 
 #endif // _EDDY_DISSIPATION_MODELLING_INCLUDED 
