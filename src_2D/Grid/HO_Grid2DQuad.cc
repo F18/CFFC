@@ -2130,25 +2130,22 @@ void Grid2D_Quad_Block_HO::Broadcast_Quad_Block(void) {
         quadrilateral mesh block. */
 
     if (mesh_allocated && !CFFC_Primary_MPI_Processor()) {
-       Set_BCs(Grid);
-       Update_Exterior_Nodes(Grid);
-       Update_Cells(Grid);
+       Set_BCs();
+       Update_Exterior_Nodes();
+       Update_Cells();
     } /* endif */
 #endif
 
 }
 
 #ifdef _MPI_VERSION
-/********************************************************
- * Routine: Broadcast_Quad_Block                        *
- *                                                      *
- * Broadcast quadrilateral grid block to all processors *
- * associated with the specified communicator from the  *
- * specified processor using the MPI broadcast routine. *
- *                                                      *
- ********************************************************/
-void Grid2D_Quad_HO::Broadcast_Quad_Block(MPI::Intracomm &Communicator, 
-					  const int Source_CPU) {
+/*!
+ * Broadcast quadrilateral grid block to all processors 
+ * associated with the specified communicator from the  
+ * specified processor using the MPI broadcast routine. 
+ */
+void Grid2D_Quad_Block_HO::Broadcast_Quad_Block(MPI::Intracomm &Communicator, 
+						const int Source_CPU) {
   
   int Source_Rank = 0;
   int i, j, ni, nj, ng, mesh_allocated, buffer_size;
