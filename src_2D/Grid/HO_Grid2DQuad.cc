@@ -3223,9 +3223,9 @@ void Grid2D_Quad_Block_HO::Set_BCs(void) {
        } /* endfor */
     } else {
        BCtypeN[ICl-1] = BCtype(SminN,
-                                         BndNorthSpline);
+			       BndNorthSpline);
        BCtypeN[ICu+1] = BCtype(SmaxN,
-                                         BndNorthSpline);
+			       BndNorthSpline);
        for (int GCell=2; GCell<= Nghost; ++GCell){
 	 BCtypeN[ICl-GCell] = BCtypeN[ICl-GCell+1];
 	 BCtypeN[ICu+GCell] = BCtypeN[ICu+GCell-1];
@@ -3249,9 +3249,9 @@ void Grid2D_Quad_Block_HO::Set_BCs(void) {
        } /* endfor */
     } else {
        BCtypeS[ICl-1] = BCtype(SminS, 
-                                         BndSouthSpline);
+			       BndSouthSpline);
        BCtypeS[ICu+1] = BCtype(SmaxS, 
-                                         BndSouthSpline);
+			       BndSouthSpline);
        for (int GCell=2; GCell<= Nghost; ++GCell){
 	 BCtypeS[ICl-GCell] = BCtypeS[ICl-GCell+1];
 	 BCtypeS[ICu+GCell] = BCtypeS[ICu+GCell-1];
@@ -3275,9 +3275,9 @@ void Grid2D_Quad_Block_HO::Set_BCs(void) {
        } /* endfor */
     } else {
        BCtypeE[JCl-1] = BCtype(SminE,
-                                         BndEastSpline);
+			       BndEastSpline);
        BCtypeE[JCu+1] = BCtype(SmaxE, 
-                                         BndEastSpline);
+			       BndEastSpline);
        for (int GCell=2; GCell<= Nghost; ++GCell){
 	 BCtypeE[JCl-GCell] = BCtypeE[JCl-GCell+1];
 	 BCtypeE[JCu+GCell] = BCtypeE[JCu+GCell-1];
@@ -3301,9 +3301,9 @@ void Grid2D_Quad_Block_HO::Set_BCs(void) {
        } /* endfor */
     } else {
        BCtypeW[JCl-1] = BCtype(SminW, 
-                                         BndWestSpline);
+			       BndWestSpline);
        BCtypeW[JCu+1] = BCtype(SmaxW, 
-                                         BndWestSpline);
+			       BndWestSpline);
        for (int GCell=2; GCell<= Nghost; ++GCell){
 	 BCtypeW[JCl-GCell] = BCtypeW[JCl-GCell+1];
 	 BCtypeW[JCu+GCell] = BCtypeW[JCu+GCell-1];
@@ -3336,247 +3336,239 @@ void Grid2D_Quad_Block_HO::Update_Exterior_Nodes(void) {
 
     // Update West and East boundary nodes.
     for ( j = JNl ; j <= JNu ; ++j) {
-//         if (BCtypeW[j] == BC_NONE) {
-//         } else 
-	  if (BCtypeW[j] == BCtypeW[j-1] &&
-		   BCtypeW[j] != BC_REFLECTION &&
-		   BCtypeW[j] != BC_PERIODIC &&
-		   BCtypeW[j] != BC_NO_SLIP &&
-		   BCtypeW[j] != BC_WALL_VISCOUS_ISOTHERMAL &&
-		   BCtypeW[j] != BC_WALL_VISCOUS_HEATFLUX &&
-		   BCtypeW[j] != BC_MOVING_WALL &&
-		   BCtypeW[j] != BC_MOVING_WALL_ISOTHERMAL &&
-		   BCtypeW[j] != BC_MOVING_WALL_HEATFLUX &&
-		   BCtypeW[j] != BC_BURNING_SURFACE &&
-		   BCtypeW[j] != BC_MASS_INJECTION) {
+      if (BCtypeW[j] == BCtypeW[j-1] &&
+	  BCtypeW[j] != BC_REFLECTION &&
+	  BCtypeW[j] != BC_PERIODIC &&
+	  BCtypeW[j] != BC_NO_SLIP &&
+	  BCtypeW[j] != BC_WALL_VISCOUS_ISOTHERMAL &&
+	  BCtypeW[j] != BC_WALL_VISCOUS_HEATFLUX &&
+	  BCtypeW[j] != BC_MOVING_WALL &&
+	  BCtypeW[j] != BC_MOVING_WALL_ISOTHERMAL &&
+	  BCtypeW[j] != BC_MOVING_WALL_HEATFLUX &&
+	  BCtypeW[j] != BC_BURNING_SURFACE &&
+	  BCtypeW[j] != BC_MASS_INJECTION) {
+	for(int GCell=1; GCell<=Nghost; ++GCell){
+	  Node[INl-GCell][j].X = Node[INl][j].X -
+	    (Node[INl+GCell][j].X - 
+	     Node[INl][j].X);
+	}
+      } else if (BCtypeW[j] == BCtypeW[j-1] &&
+		 (BCtypeW[j] == BC_REFLECTION ||
+		  BCtypeW[j] == BC_NO_SLIP ||
+		  BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+		  BCtypeW[j] == BC_WALL_VISCOUS_HEATFLUX ||
+		  BCtypeW[j] == BC_MOVING_WALL ||
+		  BCtypeW[j] == BC_MOVING_WALL_ISOTHERMAL ||
+		  BCtypeW[j] == BC_MOVING_WALL_HEATFLUX ||
+		  BCtypeW[j] == BC_BURNING_SURFACE ||
+		  BCtypeW[j] == BC_MASS_INJECTION)) {
+	if (j > JNl && j < JNu) {
+	  norm_dir = - HALF*(nfaceW(ICl, j) + 
+			     nfaceW(ICl, j-1));
+	  for(int GCell=1; GCell<=Nghost; ++GCell){
+	    X_norm = ((Node[INl+GCell][j].X - 
+		       Node[INl][j].X) * norm_dir) * norm_dir;
+	    X_tan = (Node[INl+GCell][j].X - 
+		     Node[INl][j].X) - X_norm;
+	    Node[INl-GCell][j].X = Node[INl][j].X -
+	      X_norm + X_tan;
+	  }
+	} else if ( j == JNl ) {
+	  //norm_dir = - nfaceW(ICl, j);
 	  for(int GCell=1; GCell<=Nghost; ++GCell){
 	    Node[INl-GCell][j].X = Node[INl][j].X -
-	                                    (Node[INl+GCell][j].X - 
-                                             Node[INl][j].X);
+	      (Node[INl+GCell][j].X - 
+	       Node[INl][j].X);
 	  }
-        } else if (BCtypeW[j] == BCtypeW[j-1] &&
-                   (BCtypeW[j] == BC_REFLECTION ||
-		    BCtypeW[j] == BC_NO_SLIP ||
-		    BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
-		    BCtypeW[j] == BC_WALL_VISCOUS_HEATFLUX ||
-		    BCtypeW[j] == BC_MOVING_WALL ||
-		    BCtypeW[j] == BC_MOVING_WALL_ISOTHERMAL ||
-		    BCtypeW[j] == BC_MOVING_WALL_HEATFLUX ||
-		    BCtypeW[j] == BC_BURNING_SURFACE ||
-		    BCtypeW[j] == BC_MASS_INJECTION)) {
-	   if (j > JNl && j < JNu) {
- 	      norm_dir = - HALF*(nfaceW(ICl, j) + 
-                                 nfaceW(ICl, j-1));
-	      for(int GCell=1; GCell<=Nghost; ++GCell){
-		X_norm = ((Node[INl+GCell][j].X - 
-			   Node[INl][j].X) * norm_dir) * norm_dir;
-		X_tan = (Node[INl+GCell][j].X - 
-			 Node[INl][j].X) - X_norm;
-		Node[INl-GCell][j].X = Node[INl][j].X -
-		                                 X_norm + X_tan;
-	      }
-           } else if ( j == JNl ) {
-	      //norm_dir = - nfaceW(ICl, j);
-	      for(int GCell=1; GCell<=Nghost; ++GCell){
-		Node[INl-GCell][j].X = Node[INl][j].X -
-		                                 (Node[INl+GCell][j].X - 
-						  Node[INl][j].X);
-	      }
-           } else {
- 	      //norm_dir = - nfaceW(ICl, j-1);
-	     for(int GCell=1; GCell<=Nghost; ++GCell){
-	       Node[INl-GCell][j].X = Node[INl][j].X -
-                                               (Node[INl+GCell][j].X - 
-						Node[INl][j].X);
-	     }
-           } /* endif */
-        } else if (BCtypeW[j] == BCtypeW[j-1] &&
-                   BCtypeW[j] == BC_PERIODIC) {
-	     for(int GCell=1; GCell<=Nghost; ++GCell){
-	       Node[INl-GCell][j].X = Node[INl][j].X -
-                                               (Node[INu][j].X - 
-						Node[INu-GCell][j].X);
-	     }
-        } /* endif */
-
-//         if (BCtypeE[j] == BC_NONE) {
-//         } else 
-	  if (BCtypeE[j] == BCtypeE[j-1] &&
-		   BCtypeE[j] != BC_REFLECTION &&
-		   BCtypeE[j] != BC_PERIODIC &&
-		   BCtypeE[j] != BC_NO_SLIP &&
-		   BCtypeE[j] != BC_WALL_VISCOUS_ISOTHERMAL &&
-		   BCtypeE[j] != BC_WALL_VISCOUS_HEATFLUX &&
-		   BCtypeE[j] != BC_MOVING_WALL &&
-		   BCtypeE[j] != BC_MOVING_WALL_ISOTHERMAL &&
-		   BCtypeE[j] != BC_MOVING_WALL_HEATFLUX &&
-		   BCtypeE[j] != BC_BURNING_SURFACE &&
-		   BCtypeE[j] != BC_MASS_INJECTION) {
+	} else {
+	  //norm_dir = - nfaceW(ICl, j-1);
 	  for(int GCell=1; GCell<=Nghost; ++GCell){
-           Node[INu+GCell][j].X = Node[INu][j].X +
-                                           (Node[INu][j].X - 
-					    Node[INu-GCell][j].X);
+	    Node[INl-GCell][j].X = Node[INl][j].X -
+	      (Node[INl+GCell][j].X - 
+	       Node[INl][j].X);
 	  }
-        } else if (BCtypeE[j] == BCtypeE[j-1] &&
-                   (BCtypeE[j] == BC_REFLECTION ||	  
-		    BCtypeE[j] == BC_NO_SLIP ||
-		    BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
-		    BCtypeE[j] == BC_WALL_VISCOUS_HEATFLUX ||
-		    BCtypeE[j] == BC_MOVING_WALL ||
-		    BCtypeE[j] == BC_MOVING_WALL_ISOTHERMAL ||
-		    BCtypeE[j] == BC_MOVING_WALL_HEATFLUX ||
-		    BCtypeE[j] == BC_BURNING_SURFACE ||
-		    BCtypeE[j] == BC_MASS_INJECTION)) {
-	   if (j > JNl && j < JNu) {
- 	      norm_dir = HALF*(nfaceE(ICu, j) + 
-                               nfaceE(ICu, j-1));
-	      for(int GCell=1; GCell<=Nghost; ++GCell){
-		X_norm = ((Node[INu][j].X - 
-			   Node[INu-GCell][j].X) * norm_dir) * norm_dir;
-		X_tan = (Node[INu][j].X - 
-			 Node[INu-GCell][j].X) - X_norm;
-		Node[INu+GCell][j].X = Node[INu][j].X +
-		                                 X_norm - X_tan;
-	      }
-           } else if ( j == JNl ) {
-	      //norm_dir = nfaceE(ICu, j);
-	      for(int GCell=1; GCell<=Nghost; ++GCell){
-		Node[INu+GCell][j].X = Node[INu][j].X +
-		                                 (Node[INu][j].X - 
-						  Node[INu-GCell][j].X);
-	      }
-           } else {
-	      //norm_dir = nfaceE(ICu, j-1);
-	      for(int GCell=1; GCell<=Nghost; ++GCell){
-		Node[INu+GCell][j].X = Node[INu][j].X +
-                                                 (Node[INu][j].X - 
-						  Node[INu-GCell][j].X);
-	      }
-           } /* endif */
-        } else if (BCtypeE[j] == BCtypeE[j-1] &&
-                   BCtypeE[j] == BC_PERIODIC) {
-	      for(int GCell=1; GCell<=Nghost; ++GCell){
-		Node[INu+GCell][j].X = Node[INu][j].X +
-                                                 (Node[INl+GCell][j].X - 
-						  Node[INl][j].X);
-	      }
-        } /* endif */
-    } /* endfor */
+	} /* endif */
+      } else if (BCtypeW[j] == BCtypeW[j-1] &&
+		 BCtypeW[j] == BC_PERIODIC) {
+	for(int GCell=1; GCell<=Nghost; ++GCell){
+	  Node[INl-GCell][j].X = Node[INl][j].X -
+	    (Node[INu][j].X - 
+	     Node[INu-GCell][j].X);
+	}
+      } /* endif */
 
+      if (BCtypeE[j] == BCtypeE[j-1] &&
+	  BCtypeE[j] != BC_REFLECTION &&
+	  BCtypeE[j] != BC_PERIODIC &&
+	  BCtypeE[j] != BC_NO_SLIP &&
+	  BCtypeE[j] != BC_WALL_VISCOUS_ISOTHERMAL &&
+	  BCtypeE[j] != BC_WALL_VISCOUS_HEATFLUX &&
+	  BCtypeE[j] != BC_MOVING_WALL &&
+	  BCtypeE[j] != BC_MOVING_WALL_ISOTHERMAL &&
+	  BCtypeE[j] != BC_MOVING_WALL_HEATFLUX &&
+	  BCtypeE[j] != BC_BURNING_SURFACE &&
+	  BCtypeE[j] != BC_MASS_INJECTION) {
+	for(int GCell=1; GCell<=Nghost; ++GCell){
+	  Node[INu+GCell][j].X = ( Node[INu][j].X +
+				   (Node[INu][j].X - 
+				    Node[INu-GCell][j].X) );
+	}
+      } else if (BCtypeE[j] == BCtypeE[j-1] &&
+		 (BCtypeE[j] == BC_REFLECTION ||	  
+		  BCtypeE[j] == BC_NO_SLIP ||
+		  BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+		  BCtypeE[j] == BC_WALL_VISCOUS_HEATFLUX ||
+		  BCtypeE[j] == BC_MOVING_WALL ||
+		  BCtypeE[j] == BC_MOVING_WALL_ISOTHERMAL ||
+		  BCtypeE[j] == BC_MOVING_WALL_HEATFLUX ||
+		  BCtypeE[j] == BC_BURNING_SURFACE ||
+		  BCtypeE[j] == BC_MASS_INJECTION)) {
+	if (j > JNl && j < JNu) {
+	  norm_dir = HALF*(nfaceE(ICu, j) + 
+			   nfaceE(ICu, j-1));
+	  for(int GCell=1; GCell<=Nghost; ++GCell){
+	    X_norm = ((Node[INu][j].X - 
+		       Node[INu-GCell][j].X) * norm_dir) * norm_dir;
+	    X_tan = (Node[INu][j].X - 
+		     Node[INu-GCell][j].X) - X_norm;
+	    Node[INu+GCell][j].X = Node[INu][j].X +
+	      X_norm - X_tan;
+	  }
+	} else if ( j == JNl ) {
+	  //norm_dir = nfaceE(ICu, j);
+	  for(int GCell=1; GCell<=Nghost; ++GCell){
+	    Node[INu+GCell][j].X = Node[INu][j].X +
+	      (Node[INu][j].X - 
+	       Node[INu-GCell][j].X);
+	  }
+	} else {
+	  //norm_dir = nfaceE(ICu, j-1);
+	  for(int GCell=1; GCell<=Nghost; ++GCell){
+	    Node[INu+GCell][j].X = ( Node[INu][j].X +
+				     (Node[INu][j].X - 
+				      Node[INu-GCell][j].X) );
+	  }
+	} /* endif */
+      } else if (BCtypeE[j] == BCtypeE[j-1] &&
+		 BCtypeE[j] == BC_PERIODIC) {
+	for(int GCell=1; GCell<=Nghost; ++GCell){
+	  Node[INu+GCell][j].X = ( Node[INu][j].X +
+				   (Node[INl+GCell][j].X - 
+				    Node[INl][j].X) );
+	}
+      } /* endif */
+    } /* endfor */
+    
     // Update South and North boundary nodes.
     for ( i = INl ; i <= INu ; ++i) {
-//         if (BCtypeS[j] == BC_NONE) {
-//         } else 
 	  if (BCtypeS[i] == BCtypeS[i-1] &&
-		   BCtypeS[i] != BC_REFLECTION &&
-		   BCtypeS[i] != BC_PERIODIC &&
-		   BCtypeS[i] != BC_NO_SLIP &&
-		   BCtypeS[i] != BC_WALL_VISCOUS_ISOTHERMAL &&
-		   BCtypeS[i] != BC_WALL_VISCOUS_HEATFLUX &&
-		   BCtypeS[i] != BC_MOVING_WALL &&
-		   BCtypeS[i] != BC_MOVING_WALL_ISOTHERMAL &&
-		   BCtypeS[i] != BC_MOVING_WALL_HEATFLUX &&
-		   BCtypeS[i] != BC_BURNING_SURFACE &&
-		   BCtypeS[i] != BC_MASS_INJECTION &&
-		   BCtypeS[i] != BC_RINGLEB_FLOW) {
-	  for(int GCell=1; GCell<=Nghost; ++GCell){
-           Node[i][JNl-GCell].X = Node[i][JNl].X -
-                                            (Node[i][JNl+GCell].X - 
-					     Node[i][JNl].X);
-	  }
-        } else if (BCtypeS[i] == BCtypeS[i-1] &&
-                   (BCtypeS[i] == BC_REFLECTION ||  
-		    BCtypeS[i] == BC_NO_SLIP ||
-		    BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
-		    BCtypeS[i] == BC_WALL_VISCOUS_HEATFLUX ||
-		    BCtypeS[i] == BC_MOVING_WALL ||
-		    BCtypeS[i] == BC_MOVING_WALL_ISOTHERMAL ||
-		    BCtypeS[i] == BC_MOVING_WALL_HEATFLUX ||
-		    BCtypeS[i] == BC_BURNING_SURFACE ||
-		    BCtypeS[i] == BC_MASS_INJECTION ||
-		    BCtypeS[i] == BC_RINGLEB_FLOW)) {
-	   if (i > INl && i < INu) {
-//  	      norm_dir = - HALF*(nfaceS(i, JCl) + 
-//                                  nfaceS(i-1, JCl));
-// 	      for(int GCell=1; GCell<=Nghost; ++GCell){
-// 		X_norm = ((Node[i][JNl+GCell].X - 
-// 			   Node[i][JNl].X) * norm_dir) * norm_dir;
-// 		X_tan = (Node[i][JNl+GCell].X - 
-// 			 Node[i][JNl].X) - X_norm;
-// 		Node[i][JNl-GCell].X = Node[i][JNl].X -
-// 	                                         X_norm + X_tan;
-// 	      }
-	     if (lfaceS(i,JCl) > NANO &&
-		 lfaceS(i-1,JCl) > NANO) {
-	       norm_dir = - HALF*(nfaceS(i, JCl) + 
-                                  nfaceS(i-1, JCl));
-	     } else if (lfaceS(i,JCl) > NANO) {
-	       norm_dir = - nfaceS(i, JCl);
-	     } else if (lfaceS(i,JCl) > NANO) {
-	       norm_dir = - nfaceS(i-1, JCl);
-	     } else {
-	     }
-	     for(int GCell=1; GCell<=Nghost; ++GCell){
-	       X_norm = ((Node[i][JNl+GCell].X - 
-			  Node[i][JNl].X) * norm_dir) * norm_dir;
-	       X_tan = (Node[i][JNl+GCell].X - 
-			Node[i][JNl].X) - X_norm;
-	       Node[i][JNl-GCell].X = Node[i][JNl].X -
-		                                X_norm + X_tan;
-	     }
-           } else if ( i == INl ) {
+	      BCtypeS[i] != BC_REFLECTION &&
+	      BCtypeS[i] != BC_PERIODIC &&
+	      BCtypeS[i] != BC_NO_SLIP &&
+	      BCtypeS[i] != BC_WALL_VISCOUS_ISOTHERMAL &&
+	      BCtypeS[i] != BC_WALL_VISCOUS_HEATFLUX &&
+	      BCtypeS[i] != BC_MOVING_WALL &&
+	      BCtypeS[i] != BC_MOVING_WALL_ISOTHERMAL &&
+	      BCtypeS[i] != BC_MOVING_WALL_HEATFLUX &&
+	      BCtypeS[i] != BC_BURNING_SURFACE &&
+	      BCtypeS[i] != BC_MASS_INJECTION &&
+	      BCtypeS[i] != BC_RINGLEB_FLOW) {
+	    for(int GCell=1; GCell<=Nghost; ++GCell){
+	      Node[i][JNl-GCell].X = ( Node[i][JNl].X -
+				       (Node[i][JNl+GCell].X - 
+					Node[i][JNl].X) );
+	    }
+	  } else if (BCtypeS[i] == BCtypeS[i-1] &&
+		     (BCtypeS[i] == BC_REFLECTION ||  
+		      BCtypeS[i] == BC_NO_SLIP ||
+		      BCtypeS[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+		      BCtypeS[i] == BC_WALL_VISCOUS_HEATFLUX ||
+		      BCtypeS[i] == BC_MOVING_WALL ||
+		      BCtypeS[i] == BC_MOVING_WALL_ISOTHERMAL ||
+		      BCtypeS[i] == BC_MOVING_WALL_HEATFLUX ||
+		      BCtypeS[i] == BC_BURNING_SURFACE ||
+		      BCtypeS[i] == BC_MASS_INJECTION ||
+		      BCtypeS[i] == BC_RINGLEB_FLOW)) {
+	    if (i > INl && i < INu) {
+	      //  	      norm_dir = - HALF*(nfaceS(i, JCl) + 
+	      //                                  nfaceS(i-1, JCl));
+	      // 	      for(int GCell=1; GCell<=Nghost; ++GCell){
+	      // 		X_norm = ((Node[i][JNl+GCell].X - 
+	      // 			   Node[i][JNl].X) * norm_dir) * norm_dir;
+	      // 		X_tan = (Node[i][JNl+GCell].X - 
+	      // 			 Node[i][JNl].X) - X_norm;
+	      // 		Node[i][JNl-GCell].X = Node[i][JNl].X -
+	      // 	                                         X_norm + X_tan;
+	      // 	      }
+	      if (lfaceS(i,JCl) > NANO &&
+		  lfaceS(i-1,JCl) > NANO) {
+		norm_dir = - HALF*(nfaceS(i, JCl) + 
+				   nfaceS(i-1, JCl));
+	      } else if (lfaceS(i,JCl) > NANO) {
+		norm_dir = - nfaceS(i, JCl);
+	      } else if (lfaceS(i,JCl) > NANO) {
+		norm_dir = - nfaceS(i-1, JCl);
+	      } else {
+	      }
+	      for(int GCell=1; GCell<=Nghost; ++GCell){
+		X_norm = ((Node[i][JNl+GCell].X - 
+			   Node[i][JNl].X) * norm_dir) * norm_dir;
+		X_tan = (Node[i][JNl+GCell].X - 
+			 Node[i][JNl].X) - X_norm;
+		Node[i][JNl-GCell].X = ( Node[i][JNl].X -
+					 X_norm + X_tan );
+	      }
+	    } else if ( i == INl ) {
 	      //norm_dir = - nfaceS(i, JCl);
 	      for(int GCell=1; GCell<=Nghost; ++GCell){
-		Node[i][JNl-GCell].X = Node[i][JNl].X -
-		                                 (Node[i][JNl+GCell].X - 
-						  Node[i][JNl].X);
+		Node[i][JNl-GCell].X = ( Node[i][JNl].X -
+					 (Node[i][JNl+GCell].X - 
+					  Node[i][JNl].X) );
 	      }
-           } else {
+	    } else {
 	      //norm_dir = - nfaceS(i-1, JCl);
 	      for(int GCell=1; GCell<=Nghost; ++GCell){
-		Node[i][JNl-GCell].X = Node[i][JNl].X -
-              		                         (Node[i][JNl+GCell].X - 
-						  Node[i][JNl].X);
+		Node[i][JNl-GCell].X = ( Node[i][JNl].X -
+					 (Node[i][JNl+GCell].X - 
+					  Node[i][JNl].X) );
 	      }
-           } /* endif */
-        } else if (BCtypeS[i] == BCtypeS[i-1] &&
-                   BCtypeS[i] == BC_PERIODIC) {
-	  for(int GCell=1; GCell<=Nghost; ++GCell){
-           Node[i][JNl-GCell].X = Node[i][JNl].X -
-                                            (Node[i][JNu].X - 
-					     Node[i][JNu-GCell].X);
+	    } /* endif */
+	  } else if (BCtypeS[i] == BCtypeS[i-1] &&
+		     BCtypeS[i] == BC_PERIODIC) {
+	    for(int GCell=1; GCell<=Nghost; ++GCell){
+	      Node[i][JNl-GCell].X = ( Node[i][JNl].X -
+				       (Node[i][JNu].X - 
+					Node[i][JNu-GCell].X) );
 	  }
         } /* endif */
 
-//         if (BCtypeN[j] == BC_NONE) {
-//         } else 
 	  if (BCtypeN[i] == BCtypeN[i-1] &&
-		   BCtypeN[i] != BC_REFLECTION &&
-		   BCtypeN[i] != BC_PERIODIC &&
-		   BCtypeN[i] != BC_NO_SLIP &&
-		   BCtypeN[i] != BC_WALL_VISCOUS_ISOTHERMAL &&
-		   BCtypeN[i] != BC_WALL_VISCOUS_HEATFLUX &&
-		   BCtypeN[i] != BC_MOVING_WALL &&
-		   BCtypeN[i] != BC_MOVING_WALL_ISOTHERMAL &&
-		   BCtypeN[i] != BC_MOVING_WALL_HEATFLUX  &&
-		   BCtypeN[i] != BC_BURNING_SURFACE &&
-		   BCtypeN[i] != BC_MASS_INJECTION) {
-	  for(int GCell=1; GCell<=Nghost; ++GCell){
-	    Node[i][JNu+GCell].X = Node[i][JNu].X +
-                                             (Node[i][JNu].X - 
-					      Node[i][JNu-GCell].X);
-	  }
-        } else if (BCtypeN[i] == BCtypeN[i-1] &&
-                   (BCtypeN[i] == BC_REFLECTION || 
-		    BCtypeN[i] == BC_NO_SLIP ||
-		    BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
-		    BCtypeN[i] == BC_WALL_VISCOUS_HEATFLUX ||
-		    BCtypeN[i] == BC_MOVING_WALL ||
-		    BCtypeN[i] == BC_MOVING_WALL_ISOTHERMAL ||
-		    BCtypeN[i] == BC_MOVING_WALL_HEATFLUX ||
-		    BCtypeN[i] == BC_BURNING_SURFACE ||
-		    BCtypeN[i] == BC_MASS_INJECTION)) {
-	   if (i > INl && i < INu) {
+	      BCtypeN[i] != BC_REFLECTION &&
+	      BCtypeN[i] != BC_PERIODIC &&
+	      BCtypeN[i] != BC_NO_SLIP &&
+	      BCtypeN[i] != BC_WALL_VISCOUS_ISOTHERMAL &&
+	      BCtypeN[i] != BC_WALL_VISCOUS_HEATFLUX &&
+	      BCtypeN[i] != BC_MOVING_WALL &&
+	      BCtypeN[i] != BC_MOVING_WALL_ISOTHERMAL &&
+	      BCtypeN[i] != BC_MOVING_WALL_HEATFLUX  &&
+	      BCtypeN[i] != BC_BURNING_SURFACE &&
+	      BCtypeN[i] != BC_MASS_INJECTION) {
+	    for(int GCell=1; GCell<=Nghost; ++GCell){
+	      Node[i][JNu+GCell].X = ( Node[i][JNu].X +
+				       (Node[i][JNu].X - 
+					Node[i][JNu-GCell].X) );
+	    }
+	  } else if (BCtypeN[i] == BCtypeN[i-1] &&
+		     (BCtypeN[i] == BC_REFLECTION || 
+		      BCtypeN[i] == BC_NO_SLIP ||
+		      BCtypeN[i] == BC_WALL_VISCOUS_ISOTHERMAL ||
+		      BCtypeN[i] == BC_WALL_VISCOUS_HEATFLUX ||
+		      BCtypeN[i] == BC_MOVING_WALL ||
+		      BCtypeN[i] == BC_MOVING_WALL_ISOTHERMAL ||
+		      BCtypeN[i] == BC_MOVING_WALL_HEATFLUX ||
+		      BCtypeN[i] == BC_BURNING_SURFACE ||
+		      BCtypeN[i] == BC_MASS_INJECTION)) {
+	    if (i > INl && i < INu) {
  	      norm_dir = HALF*(nfaceN(i, JCu) + 
                                nfaceN(i-1, JCu));
 	      for(int GCell=1; GCell<=Nghost; ++GCell){
@@ -3584,234 +3576,226 @@ void Grid2D_Quad_Block_HO::Update_Exterior_Nodes(void) {
 			   Node[i][JNu-GCell].X) * norm_dir) * norm_dir;
 		X_tan = (Node[i][JNu].X - 
 			 Node[i][JNu-GCell].X) - X_norm;
-		Node[i][JNu+GCell].X = Node[i][JNu].X +
-		                                 X_norm - X_tan;
+		Node[i][JNu+GCell].X = ( Node[i][JNu].X +
+					 X_norm - X_tan );
 	      }
-           } else if ( i == INl ) {
+	    } else if ( i == INl ) {
 	      //norm_dir = nfaceN(i, JCu);
 	      for(int GCell=1; GCell<=Nghost; ++GCell){
-		Node[i][JNu+GCell].X = Node[i][JNu].X +
-                                                 (Node[i][JNu].X - 
-						  Node[i][JNu-GCell].X);
+		Node[i][JNu+GCell].X = ( Node[i][JNu].X +
+					 (Node[i][JNu].X - 
+					  Node[i][JNu-GCell].X) );
 	      }
-           } else {
+	    } else {
 	      //norm_dir = nfaceN(i-1, JCu);
-	     for(int GCell=1; GCell<=Nghost; ++GCell){
-	       Node[i][JNu+GCell].X = Node[i][JNu].X +
-                                                (Node[i][JNu].X - 
-						 Node[i][JNu-GCell].X);
-	     }
-           } /* endif */
-        } else if (BCtypeN[i] == BCtypeN[i-1] &&
-                   BCtypeN[i] == BC_PERIODIC) {
-	  for(int GCell=1; GCell<=Nghost; ++GCell){
-           Node[i][JNu+GCell].X = Node[i][JNu].X +
-                                            (Node[i][JNl+GCell].X - 
-					     Node[i][JNl].X);
-	  }
-        } /* endif */
+	      for(int GCell=1; GCell<=Nghost; ++GCell){
+		Node[i][JNu+GCell].X = ( Node[i][JNu].X +
+					 (Node[i][JNu].X - 
+					  Node[i][JNu-GCell].X) );
+	      }
+	    } /* endif */
+	  } else if (BCtypeN[i] == BCtypeN[i-1] &&
+		     BCtypeN[i] == BC_PERIODIC) {
+	    for(int GCell=1; GCell<=Nghost; ++GCell){
+	      Node[i][JNu+GCell].X = ( Node[i][JNu].X +
+				       (Node[i][JNl+GCell].X - 
+					Node[i][JNl].X) );
+	    }
+	  } /* endif */
     } /* endfor */
-
+    
     // Update SW and SE corner nodes.
     for (int j = JNl-Nghost ; j <= JNl ; ++j) {
-//         if (BCtypeW[j] == BC_NONE) {
-//         } else 
       if (BCtypeW[j] != BC_REFLECTION &&
-		   BCtypeW[j] != BC_PERIODIC &&  
-		   BCtypeW[j] != BC_NO_SLIP &&
-		   BCtypeW[j] != BC_WALL_VISCOUS_ISOTHERMAL &&
-		   BCtypeW[j] != BC_WALL_VISCOUS_HEATFLUX &&
-		   BCtypeW[j] != BC_MOVING_WALL &&
-		   BCtypeW[j] != BC_MOVING_WALL_ISOTHERMAL &&
-		   BCtypeW[j] != BC_MOVING_WALL_HEATFLUX &&
-		   BCtypeW[j] != BC_BURNING_SURFACE &&
-		   BCtypeW[j] != BC_MASS_INJECTION) {
-	  for(int GCell=1; GCell<=Nghost; ++GCell){
-           Node[INl-GCell][j].X = Node[INl][j].X -
-                                            (Node[INl+GCell][j].X - 
-					     Node[INl][j].X);
-	  }
-        } else if (BCtypeW[j] == BC_REFLECTION || 
-		   BCtypeW[j] == BC_NO_SLIP ||
-		   BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
-		   BCtypeW[j] == BC_WALL_VISCOUS_HEATFLUX ||
-		   BCtypeW[j] == BC_MOVING_WALL ||
-		   BCtypeW[j] == BC_MOVING_WALL_ISOTHERMAL ||
-		   BCtypeW[j] == BC_MOVING_WALL_HEATFLUX ||
-		   BCtypeW[j] == BC_BURNING_SURFACE ||
-		   BCtypeW[j] == BC_MASS_INJECTION) {
- 	   if (j != JNl-Nghost) {
-              norm_dir = - HALF*(nfaceW(ICl, j) + 
-                                 nfaceW(ICl, j-1));
-           } else {
-	      norm_dir = - nfaceW(ICl, j); 
-           } /* endif */
-	   for(int GCell=1; GCell<=Nghost; ++GCell){
-	     X_norm = ((Node[INl+GCell][j].X - 
-			Node[INl][j].X) * norm_dir) * norm_dir;
-	     X_tan = (Node[INl+GCell][j].X - 
-		      Node[INl][j].X) - X_norm;
-	     Node[INl-GCell][j].X = Node[INl][j].X -
-	                                  X_norm + X_tan;
-	   }
-        } else if (BCtypeW[j] == BC_PERIODIC) {
-	  for(int GCell=1; GCell<=Nghost; ++GCell){
-	    Node[INl-GCell][j].X = Node[INl][j].X -
-                                             (Node[INu][j].X - 
-					      Node[INu-GCell][j].X);
-	  }
-        } /* endif */
-
-//         if (BCtypeE[j] == BC_NONE) {
-//         } else 
+	  BCtypeW[j] != BC_PERIODIC &&  
+	  BCtypeW[j] != BC_NO_SLIP &&
+	  BCtypeW[j] != BC_WALL_VISCOUS_ISOTHERMAL &&
+	  BCtypeW[j] != BC_WALL_VISCOUS_HEATFLUX &&
+	  BCtypeW[j] != BC_MOVING_WALL &&
+	  BCtypeW[j] != BC_MOVING_WALL_ISOTHERMAL &&
+	  BCtypeW[j] != BC_MOVING_WALL_HEATFLUX &&
+	  BCtypeW[j] != BC_BURNING_SURFACE &&
+	  BCtypeW[j] != BC_MASS_INJECTION) {
+	for(int GCell=1; GCell<=Nghost; ++GCell){
+	  Node[INl-GCell][j].X = Node[INl][j].X -
+	    (Node[INl+GCell][j].X - 
+	     Node[INl][j].X);
+	}
+      } else if (BCtypeW[j] == BC_REFLECTION || 
+		 BCtypeW[j] == BC_NO_SLIP ||
+		 BCtypeW[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+		 BCtypeW[j] == BC_WALL_VISCOUS_HEATFLUX ||
+		 BCtypeW[j] == BC_MOVING_WALL ||
+		 BCtypeW[j] == BC_MOVING_WALL_ISOTHERMAL ||
+		 BCtypeW[j] == BC_MOVING_WALL_HEATFLUX ||
+		 BCtypeW[j] == BC_BURNING_SURFACE ||
+		 BCtypeW[j] == BC_MASS_INJECTION) {
+	if (j != JNl-Nghost) {
+	  norm_dir = - HALF*(nfaceW(ICl, j) + 
+			     nfaceW(ICl, j-1));
+	} else {
+	  norm_dir = - nfaceW(ICl, j); 
+	} /* endif */
+	for(int GCell=1; GCell<=Nghost; ++GCell){
+	  X_norm = ((Node[INl+GCell][j].X - 
+		     Node[INl][j].X) * norm_dir) * norm_dir;
+	  X_tan = (Node[INl+GCell][j].X - 
+		   Node[INl][j].X) - X_norm;
+	  Node[INl-GCell][j].X = ( Node[INl][j].X -
+				   X_norm + X_tan );
+	}
+      } else if (BCtypeW[j] == BC_PERIODIC) {
+	for(int GCell=1; GCell<=Nghost; ++GCell){
+	  Node[INl-GCell][j].X = ( Node[INl][j].X -
+				   (Node[INu][j].X - 
+				    Node[INu-GCell][j].X) );
+	}
+      } /* endif */
+      
       if (BCtypeE[j] != BC_REFLECTION &&
-		   BCtypeE[j] != BC_PERIODIC &&   
-		   BCtypeE[j] != BC_NO_SLIP &&
-		   BCtypeE[j] != BC_WALL_VISCOUS_ISOTHERMAL &&
-		   BCtypeE[j] != BC_WALL_VISCOUS_HEATFLUX &&
-		   BCtypeE[j] != BC_MOVING_WALL &&
-		   BCtypeE[j] != BC_MOVING_WALL_ISOTHERMAL &&
-		   BCtypeE[j] != BC_MOVING_WALL_HEATFLUX &&
-		   BCtypeE[j] != BC_BURNING_SURFACE &&
-		   BCtypeE[j] != BC_MASS_INJECTION) {
-	  for(int GCell=1; GCell<=Nghost; ++GCell){
-	    Node[INu+GCell][j].X = Node[INu][j].X +
-                                             (Node[INu][j].X - 
-					      Node[INu-GCell][j].X);
-	  }
-        } else if (BCtypeE[j] == BC_REFLECTION ||
-		   BCtypeE[j] == BC_NO_SLIP ||
-		   BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
-		   BCtypeE[j] == BC_WALL_VISCOUS_HEATFLUX ||
-		   BCtypeE[j] == BC_MOVING_WALL ||
-		   BCtypeE[j] == BC_MOVING_WALL_ISOTHERMAL ||
-		   BCtypeE[j] == BC_MOVING_WALL_HEATFLUX  ||
-		   BCtypeE[j] == BC_BURNING_SURFACE ||
-		   BCtypeE[j] == BC_MASS_INJECTION) {
- 	   if (j != JNl-Nghost) {
-              norm_dir = HALF*(nfaceE(ICu, j) + 
-                               nfaceE(ICu, j-1));
-           } else {
-	      norm_dir = nfaceE(ICu, j); 
-           } /* endif */
-	   for(int GCell=1; GCell<=Nghost; ++GCell){
-	     X_norm = ((Node[INu][j].X - 
-			Node[INu-GCell][j].X) * norm_dir) * norm_dir;
-	     X_tan = (Node[INu][j].X - 
-		      Node[INu-GCell][j].X) - X_norm;
-	     Node[INu+GCell][j].X = Node[INu][j].X +
-	                                      X_norm - X_tan;
-	   }
-        } else if (BCtypeE[j] == BC_PERIODIC) {
-	   for(int GCell=1; GCell<=Nghost; ++GCell){
-	     Node[INu+GCell][j].X = Node[INu][j].X +
-                                              (Node[INl+GCell][j].X - 
-					       Node[INl][j].X);
-	   }
-        } /* endif */
+	  BCtypeE[j] != BC_PERIODIC &&   
+	  BCtypeE[j] != BC_NO_SLIP &&
+	  BCtypeE[j] != BC_WALL_VISCOUS_ISOTHERMAL &&
+	  BCtypeE[j] != BC_WALL_VISCOUS_HEATFLUX &&
+	  BCtypeE[j] != BC_MOVING_WALL &&
+	  BCtypeE[j] != BC_MOVING_WALL_ISOTHERMAL &&
+	  BCtypeE[j] != BC_MOVING_WALL_HEATFLUX &&
+	  BCtypeE[j] != BC_BURNING_SURFACE &&
+	  BCtypeE[j] != BC_MASS_INJECTION) {
+	for(int GCell=1; GCell<=Nghost; ++GCell){
+	  Node[INu+GCell][j].X = ( Node[INu][j].X +
+				   (Node[INu][j].X - 
+				    Node[INu-GCell][j].X) );
+	}
+      } else if (BCtypeE[j] == BC_REFLECTION ||
+		 BCtypeE[j] == BC_NO_SLIP ||
+		 BCtypeE[j] == BC_WALL_VISCOUS_ISOTHERMAL ||
+		 BCtypeE[j] == BC_WALL_VISCOUS_HEATFLUX ||
+		 BCtypeE[j] == BC_MOVING_WALL ||
+		 BCtypeE[j] == BC_MOVING_WALL_ISOTHERMAL ||
+		 BCtypeE[j] == BC_MOVING_WALL_HEATFLUX  ||
+		 BCtypeE[j] == BC_BURNING_SURFACE ||
+		 BCtypeE[j] == BC_MASS_INJECTION) {
+	if (j != JNl-Nghost) {
+	  norm_dir = HALF*(nfaceE(ICu, j) + 
+			   nfaceE(ICu, j-1));
+	} else {
+	  norm_dir = nfaceE(ICu, j); 
+	} /* endif */
+	for(int GCell=1; GCell<=Nghost; ++GCell){
+	  X_norm = ((Node[INu][j].X - 
+		     Node[INu-GCell][j].X) * norm_dir) * norm_dir;
+	  X_tan = (Node[INu][j].X - 
+		   Node[INu-GCell][j].X) - X_norm;
+	  Node[INu+GCell][j].X = ( Node[INu][j].X +
+				   X_norm - X_tan );
+	}
+      } else if (BCtypeE[j] == BC_PERIODIC) {
+	for(int GCell=1; GCell<=Nghost; ++GCell){
+	  Node[INu+GCell][j].X = ( Node[INu][j].X +
+				   (Node[INl+GCell][j].X - 
+				    Node[INl][j].X) );
+	}
+      } /* endif */
     } /* endfor */
-
+    
     // Update NW and NE corner nodes.
     for (int j = JNu ; j <= JNu+Nghost ; ++j) {
-//         if (BCtypeW[j] == BC_NONE) {
-//         } else 
       if (BCtypeW[j-1] != BC_REFLECTION &&
-		   BCtypeW[j-1] != BC_PERIODIC &&  
-		   BCtypeW[j-1] != BC_NO_SLIP &&
-		   BCtypeW[j-1] != BC_WALL_VISCOUS_ISOTHERMAL &&
-		   BCtypeW[j-1] != BC_WALL_VISCOUS_HEATFLUX &&
-		   BCtypeW[j-1] != BC_MOVING_WALL &&
-		   BCtypeW[j-1] != BC_MOVING_WALL_ISOTHERMAL &&
-		   BCtypeW[j-1] != BC_MOVING_WALL_HEATFLUX &&
-		   BCtypeW[j-1] != BC_BURNING_SURFACE &&
-		   BCtypeW[j-1] != BC_MASS_INJECTION) {
-	  for(int GCell=1; GCell<=Nghost; ++GCell){
-	    Node[INl-GCell][j].X = Node[INl][j].X -
-                                            (Node[INl+GCell][j].X - 
-					     Node[INl][j].X);
-	  }
-        } else if (BCtypeW[j-1] == BC_REFLECTION || 
-		   BCtypeW[j-1] == BC_NO_SLIP ||
-		   BCtypeW[j-1] == BC_WALL_VISCOUS_ISOTHERMAL ||
-		   BCtypeW[j-1] == BC_WALL_VISCOUS_HEATFLUX ||
-		   BCtypeW[j-1] == BC_MOVING_WALL ||
-		   BCtypeW[j-1] == BC_MOVING_WALL_ISOTHERMAL ||
-		   BCtypeW[j-1] == BC_MOVING_WALL_HEATFLUX ||
-		   BCtypeW[j-1] == BC_BURNING_SURFACE ||
-		   BCtypeW[j-1] == BC_MASS_INJECTION) {
- 	   if (j != JNu+Nghost) {
-              norm_dir = - HALF*(nfaceW(ICl, j) + 
-                                 nfaceW(ICl, j-1));
-           } else {
-	      norm_dir = - nfaceW(ICl, j-1); 
-           } /* endif */
-	   for(int GCell=1; GCell<=Nghost; ++GCell){
-	     X_norm = ((Node[INl+GCell][j].X - 
-			Node[INl][j].X) * norm_dir) * norm_dir;
-	     X_tan = (Node[INl+GCell][j].X - 
-		      Node[INl][j].X) - X_norm;
-	     Node[INl-GCell][j].X = Node[INl][j].X -
-	                                      X_norm + X_tan;
-	   }
-        } else if (BCtypeW[j-1] == BC_PERIODIC) {
-	  for(int GCell=1; GCell<=Nghost; ++GCell){
-	    Node[INl-GCell][j].X = Node[INl][j].X -
-                                             (Node[INu][j].X - 
-					      Node[INu-GCell][j].X);
-	  }
-        } /* endif */
-
-//         if (BCtypeE[j] == BC_NONE) {
-//         } else 
+	  BCtypeW[j-1] != BC_PERIODIC &&  
+	  BCtypeW[j-1] != BC_NO_SLIP &&
+	  BCtypeW[j-1] != BC_WALL_VISCOUS_ISOTHERMAL &&
+	  BCtypeW[j-1] != BC_WALL_VISCOUS_HEATFLUX &&
+	  BCtypeW[j-1] != BC_MOVING_WALL &&
+	  BCtypeW[j-1] != BC_MOVING_WALL_ISOTHERMAL &&
+	  BCtypeW[j-1] != BC_MOVING_WALL_HEATFLUX &&
+	  BCtypeW[j-1] != BC_BURNING_SURFACE &&
+	  BCtypeW[j-1] != BC_MASS_INJECTION) {
+	for(int GCell=1; GCell<=Nghost; ++GCell){
+	  Node[INl-GCell][j].X = ( Node[INl][j].X -
+				   (Node[INl+GCell][j].X - 
+				    Node[INl][j].X) );
+	}
+      } else if (BCtypeW[j-1] == BC_REFLECTION || 
+		 BCtypeW[j-1] == BC_NO_SLIP ||
+		 BCtypeW[j-1] == BC_WALL_VISCOUS_ISOTHERMAL ||
+		 BCtypeW[j-1] == BC_WALL_VISCOUS_HEATFLUX ||
+		 BCtypeW[j-1] == BC_MOVING_WALL ||
+		 BCtypeW[j-1] == BC_MOVING_WALL_ISOTHERMAL ||
+		 BCtypeW[j-1] == BC_MOVING_WALL_HEATFLUX ||
+		 BCtypeW[j-1] == BC_BURNING_SURFACE ||
+		 BCtypeW[j-1] == BC_MASS_INJECTION) {
+	if (j != JNu+Nghost) {
+	  norm_dir = - HALF*(nfaceW(ICl, j) + 
+			     nfaceW(ICl, j-1));
+	} else {
+	  norm_dir = - nfaceW(ICl, j-1); 
+	} /* endif */
+	for(int GCell=1; GCell<=Nghost; ++GCell){
+	  X_norm = ((Node[INl+GCell][j].X - 
+		     Node[INl][j].X) * norm_dir) * norm_dir;
+	  X_tan = (Node[INl+GCell][j].X - 
+		   Node[INl][j].X) - X_norm;
+	  Node[INl-GCell][j].X = ( Node[INl][j].X -
+				   X_norm + X_tan );
+	}
+      } else if (BCtypeW[j-1] == BC_PERIODIC) {
+	for(int GCell=1; GCell<=Nghost; ++GCell){
+	  Node[INl-GCell][j].X = ( Node[INl][j].X -
+				   (Node[INu][j].X - 
+				    Node[INu-GCell][j].X) );
+	}
+      } /* endif */
+      
       if (BCtypeE[j-1] != BC_REFLECTION &&
-		   BCtypeE[j-1] != BC_PERIODIC && 
-		   BCtypeE[j-1] != BC_NO_SLIP &&
-		   BCtypeE[j-1] != BC_WALL_VISCOUS_ISOTHERMAL &&
-		   BCtypeE[j-1] != BC_WALL_VISCOUS_HEATFLUX &&
-		   BCtypeE[j-1] != BC_MOVING_WALL &&
-		   BCtypeE[j-1] != BC_MOVING_WALL_ISOTHERMAL &&
-		   BCtypeE[j-1] != BC_MOVING_WALL_HEATFLUX &&
-		   BCtypeE[j-1] != BC_BURNING_SURFACE &&
-		   BCtypeE[j-1] != BC_MASS_INJECTION) {
-	  for(int GCell=1; GCell<=Nghost; ++GCell){
-	    Node[INu+GCell][j].X = Node[INu][j].X +
-                                             (Node[INu][j].X - 
-					      Node[INu-GCell][j].X);
-	  }
-        } else if (BCtypeE[j-1] == BC_REFLECTION || 
-		   BCtypeE[j-1] == BC_NO_SLIP ||
-		   BCtypeE[j-1] == BC_WALL_VISCOUS_ISOTHERMAL ||
-		   BCtypeE[j-1] == BC_WALL_VISCOUS_HEATFLUX ||
-		   BCtypeE[j-1] == BC_MOVING_WALL ||
-		   BCtypeE[j-1] == BC_MOVING_WALL_ISOTHERMAL ||
-		   BCtypeE[j-1] == BC_MOVING_WALL_HEATFLUX ||
-		   BCtypeE[j-1] == BC_BURNING_SURFACE ||
-		   BCtypeE[j-1] == BC_MASS_INJECTION) {
- 	   if (j != JNu+Nghost) {
-              norm_dir = HALF*(nfaceE(ICu, j) + 
-                               nfaceE(ICu, j-1));
-           } else {
-	      norm_dir = nfaceE(ICu, j-1); 
-           } /* endif */
-	   for(int GCell=1; GCell<=Nghost; ++GCell){
-	     X_norm = ((Node[INu][j].X - 
-			Node[INu-GCell][j].X) * norm_dir) * norm_dir;
-	     X_tan = (Node[INu][j].X - 
-		      Node[INu-GCell][j].X) - X_norm;
-	     Node[INu+GCell][j].X = Node[INu][j].X +
-	                                      X_norm - X_tan;
-	   }
-        } else if (BCtypeE[j-1] == BC_PERIODIC) {
-	  for(int GCell=1; GCell<=Nghost; ++GCell){
-           Node[INu+GCell][j].X = Node[INu][j].X +
-                                            (Node[INl+GCell][j].X - 
-					     Node[INl][j].X);
-	  }
-        } /* endif */
+	  BCtypeE[j-1] != BC_PERIODIC && 
+	  BCtypeE[j-1] != BC_NO_SLIP &&
+	  BCtypeE[j-1] != BC_WALL_VISCOUS_ISOTHERMAL &&
+	  BCtypeE[j-1] != BC_WALL_VISCOUS_HEATFLUX &&
+	  BCtypeE[j-1] != BC_MOVING_WALL &&
+	  BCtypeE[j-1] != BC_MOVING_WALL_ISOTHERMAL &&
+	  BCtypeE[j-1] != BC_MOVING_WALL_HEATFLUX &&
+	  BCtypeE[j-1] != BC_BURNING_SURFACE &&
+	  BCtypeE[j-1] != BC_MASS_INJECTION) {
+	for(int GCell=1; GCell<=Nghost; ++GCell){
+	  Node[INu+GCell][j].X = ( Node[INu][j].X +
+				   (Node[INu][j].X - 
+				    Node[INu-GCell][j].X) );
+	}
+      } else if (BCtypeE[j-1] == BC_REFLECTION || 
+		 BCtypeE[j-1] == BC_NO_SLIP ||
+		 BCtypeE[j-1] == BC_WALL_VISCOUS_ISOTHERMAL ||
+		 BCtypeE[j-1] == BC_WALL_VISCOUS_HEATFLUX ||
+		 BCtypeE[j-1] == BC_MOVING_WALL ||
+		 BCtypeE[j-1] == BC_MOVING_WALL_ISOTHERMAL ||
+		 BCtypeE[j-1] == BC_MOVING_WALL_HEATFLUX ||
+		 BCtypeE[j-1] == BC_BURNING_SURFACE ||
+		 BCtypeE[j-1] == BC_MASS_INJECTION) {
+	if (j != JNu+Nghost) {
+	  norm_dir = HALF*(nfaceE(ICu, j) + 
+			   nfaceE(ICu, j-1));
+	} else {
+	  norm_dir = nfaceE(ICu, j-1); 
+	} /* endif */
+	for(int GCell=1; GCell<=Nghost; ++GCell){
+	  X_norm = ((Node[INu][j].X - 
+		     Node[INu-GCell][j].X) * norm_dir) * norm_dir;
+	  X_tan = (Node[INu][j].X - 
+		   Node[INu-GCell][j].X) - X_norm;
+	  Node[INu+GCell][j].X = ( Node[INu][j].X +
+				   X_norm - X_tan );
+	}
+      } else if (BCtypeE[j-1] == BC_PERIODIC) {
+	for(int GCell=1; GCell<=Nghost; ++GCell){
+	  Node[INu+GCell][j].X = ( Node[INu][j].X +
+				   (Node[INl+GCell][j].X - 
+				    Node[INl][j].X) );
+	}
+      } /* endif */
     } /* endfor */
-
+    
     Update_Corner_Ghost_Nodes();
-
+    
 }
 
 
@@ -3843,12 +3827,12 @@ void Grid2D_Quad_Block_HO::Update_Corner_Ghost_Nodes(void) {
     // Extrapolate cells south.
     for (int ng = 1; ng <= Nghost; ng++) {
       for (int i = INl-Nghost; i <= INl; i++) {
-	Node[i][JNl-ng].X = Node[i][JNl].X +
-                                      (Node[i][JNl].X - 
-				       Node[i][JNl+ng].X);
+	Node[i][JNl-ng].X = (Node[i][JNl].X +
+			     (Node[i][JNl].X - 
+			      Node[i][JNl+ng].X) );
       }
     }
-
+    
   } else if ((BCtypeS[INl-1] == BC_NONE ||
 	      (BCtypeS[INl-1] != BC_REFLECTION &&
 	       BCtypeS[INl-1] != BC_PERIODIC &&
@@ -3874,12 +3858,12 @@ void Grid2D_Quad_Block_HO::Update_Corner_Ghost_Nodes(void) {
     // Extrapolate cells west.
     for (int ng = 1; ng <= Nghost; ng++) {
       for (int j = JNl-Nghost; j <= JNl; j++) {
- 	Node[INl-ng][j].X = Node[INl][j].X -
- 	                              (Node[INl+ng][j].X - 
- 				       Node[INl][j].X);
+ 	Node[INl-ng][j].X = ( Node[INl][j].X -
+			      (Node[INl+ng][j].X - 
+			       Node[INl][j].X) );
       }
     }
-
+    
   } else if ((BCtypeS[INl-1] == BC_NONE ||
 	      (BCtypeS[INl-1] != BC_REFLECTION &&
 	       BCtypeS[INl-1] != BC_PERIODIC &&
@@ -3915,8 +3899,8 @@ void Grid2D_Quad_Block_HO::Update_Corner_Ghost_Nodes(void) {
 		   Node[INl][j].X)*norm_dir)*norm_dir;
 	X_tan = (Node[INl+ng][j].X -
 		 Node[INl][j].X) - X_norm;
-	Node[INl-ng][j].X = Node[INl][j].X -
-  	                              X_norm + X_tan;
+	Node[INl-ng][j].X = ( Node[INl][j].X -
+			      X_norm + X_tan );
       }
     }
 
@@ -3945,8 +3929,8 @@ void Grid2D_Quad_Block_HO::Update_Corner_Ghost_Nodes(void) {
 		   Node[i][JNl].X)*norm_dir)*norm_dir;
 	X_tan = (Node[i][JNl+ng].X - 
 		 Node[i][JNl].X) - X_norm;
-	Node[i][JNl-ng].X = Node[i][JNl].X -
-	                              X_norm + X_tan;
+	Node[i][JNl-ng].X = ( Node[i][JNl].X -
+			      X_norm + X_tan );
       }
     }
   }
@@ -3971,9 +3955,9 @@ void Grid2D_Quad_Block_HO::Update_Corner_Ghost_Nodes(void) {
     // Extrapolate cells south.
     for (int ng = 1; ng <= Nghost; ng++) {
       for (int i = INu; i <= INu+Nghost; i++) {
-	Node[i][JNl-ng].X = Node[i][JNl].X +
-                                      (Node[i][JNl].X - 
-				       Node[i][JNl+ng].X);
+	Node[i][JNl-ng].X = ( Node[i][JNl].X +
+			      (Node[i][JNl].X - 
+			       Node[i][JNl+ng].X) );
       }
     }
 
@@ -4002,9 +3986,9 @@ void Grid2D_Quad_Block_HO::Update_Corner_Ghost_Nodes(void) {
     // Extrapolate cells east.
     for (int ng = 1; ng <= Nghost; ng++) {
       for (int j = JNl-Nghost; j <= JNl; j++) {
-	Node[INu+ng][j].X = Node[INu][j].X +
-	                              (Node[INu][j].X - 
-				       Node[INu-ng][j].X);
+	Node[INu+ng][j].X = ( Node[INu][j].X +
+			      (Node[INu][j].X - 
+			       Node[INu-ng][j].X) );
       }
     }
 
@@ -4044,8 +4028,8 @@ void Grid2D_Quad_Block_HO::Update_Corner_Ghost_Nodes(void) {
 		   Node[INu-ng][j].X)*norm_dir)*norm_dir;
 	X_tan = (Node[INu][j].X - 
 		 Node[INu-ng][j].X) - X_norm;
-	Node[INu+ng][j].X = Node[INu][j].X +
-  	                              X_norm - X_tan;
+	Node[INu+ng][j].X = ( Node[INu][j].X +
+			      X_norm - X_tan );
       }
     }
 
@@ -4073,8 +4057,8 @@ void Grid2D_Quad_Block_HO::Update_Corner_Ghost_Nodes(void) {
  		   Node[i][JNl].X)*norm_dir)*norm_dir;
  	X_tan = (Node[i][JNl+ng].X - 
  		 Node[i][JNl].X) - X_norm;
-  	Node[i][JNl-ng].X = Node[i][JNl].X -
-  	                              X_norm + X_tan;
+  	Node[i][JNl-ng].X = ( Node[i][JNl].X -
+			      X_norm + X_tan );
       }
     }
   }
@@ -4098,9 +4082,9 @@ void Grid2D_Quad_Block_HO::Update_Corner_Ghost_Nodes(void) {
     // Extrapolate cells north.
     for (int ng = 1; ng <= Nghost; ng++) {
       for (int i = INl-Nghost; i <= INl; i++) {
-	Node[i][JNu+ng].X = Node[i][JNu].X +
-                                      (Node[i][JNu].X - 
-				       Node[i][JNu-ng].X);
+	Node[i][JNu+ng].X = ( Node[i][JNu].X +
+			      (Node[i][JNu].X - 
+			       Node[i][JNu-ng].X) );
       }
     }
 
@@ -4128,9 +4112,9 @@ void Grid2D_Quad_Block_HO::Update_Corner_Ghost_Nodes(void) {
     // Extrapolate cells west.
     for (int ng = 1; ng <= Nghost; ng++) {
       for (int j = JNu; j <= JNu+Nghost; j++) {
-	Node[INl-ng][j].X = Node[INl][j].X -
-	                              (Node[INl+ng][j].X - 
-				       Node[INl][j].X);
+	Node[INl-ng][j].X = ( Node[INl][j].X -
+			      (Node[INl+ng][j].X - 
+			       Node[INl][j].X) );
       }
     }
 
@@ -4168,8 +4152,8 @@ void Grid2D_Quad_Block_HO::Update_Corner_Ghost_Nodes(void) {
 		   Node[INl][j].X)*norm_dir)*norm_dir;
 	X_tan = (Node[INl+ng][j].X - 
 		 Node[INl][j].X) - X_norm;
-	Node[INl-ng][j].X = Node[INl][j].X -
-  	                              X_norm + X_tan;
+	Node[INl-ng][j].X = ( Node[INl][j].X -
+			      X_norm + X_tan );
       }
     }
 
@@ -4196,8 +4180,8 @@ void Grid2D_Quad_Block_HO::Update_Corner_Ghost_Nodes(void) {
 		   Node[i][JNu-ng].X) * norm_dir) * norm_dir;
 	X_tan = (Node[i][JNu].X - 
 		 Node[i][JNu-ng].X) - X_norm;
-	Node[i][JNu+ng].X = Node[i][JNu].X +
-		                      X_norm - X_tan;
+	Node[i][JNu+ng].X = ( Node[i][JNu].X +
+			      X_norm - X_tan );
       }
     }
   }
@@ -4221,9 +4205,9 @@ void Grid2D_Quad_Block_HO::Update_Corner_Ghost_Nodes(void) {
     // Extrapolate cells north.
     for (int ng = 1; ng <= Nghost; ng++) {
       for (int i = INu; i <= INu+Nghost; i++) {
-	Node[i][JNu+ng].X = Node[i][JNu].X +
-                                      (Node[i][JNu].X - 
-				       Node[i][JNu-ng].X);
+	Node[i][JNu+ng].X = ( Node[i][JNu].X +
+			      (Node[i][JNu].X - 
+			       Node[i][JNu-ng].X) );
       }
     }
 
@@ -4251,9 +4235,9 @@ void Grid2D_Quad_Block_HO::Update_Corner_Ghost_Nodes(void) {
     // Extrapolate cells east.
     for (int ng = 1; ng <= Nghost; ng++) {
       for (int j = JNu; j <= JNu+Nghost; j++) {
-	Node[INu+ng][j].X = Node[INu][j].X +
-	                              (Node[INu][j].X - 
-				       Node[INu-ng][j].X);
+	Node[INu+ng][j].X = ( Node[INu][j].X +
+			      (Node[INu][j].X - 
+			       Node[INu-ng][j].X) );
       }
     }
 
@@ -4291,8 +4275,8 @@ void Grid2D_Quad_Block_HO::Update_Corner_Ghost_Nodes(void) {
 		   Node[INu-ng][j].X)*norm_dir)*norm_dir;
 	X_tan = (Node[INu][j].X - 
 		 Node[INu-ng][j].X) - X_norm;
-	Node[INu+ng][j].X = Node[INu][j].X +
-  	                              X_norm - X_tan;
+	Node[INu+ng][j].X = ( Node[INu][j].X +
+			      X_norm - X_tan );
       }
     }
 
@@ -4319,8 +4303,8 @@ void Grid2D_Quad_Block_HO::Update_Corner_Ghost_Nodes(void) {
 		   Node[i][JNu-ng].X) * norm_dir) * norm_dir;
 	X_tan = (Node[i][JNu].X - 
 		 Node[i][JNu-ng].X) - X_norm;
-	Node[i][JNu+ng].X = Node[i][JNu].X +
-		                      X_norm - X_tan;
+	Node[i][JNu+ng].X = ( Node[i][JNu].X +
+			      X_norm - X_tan );
       }
     }
   }
@@ -4347,37 +4331,37 @@ void Grid2D_Quad_Block_HO::Update_Cells(void) {
         } /* endfor */
     } /* endfor */
 
-//   Vector2D X1, X2, X3, X4, Xc1, Xc2, X;
-//   double A1, A2;
-//   Polygon P;
-//   cout << setprecision(14);
-//     for ( j = JCl-Nghost ; j <= JCu+Nghost ; ++j) {
-//         for ( i = ICl-Nghost ; i <= ICu+Nghost ; ++i) {
-//   // Cell nodes in counter-clockwise order.
-//   X1 = Node[i  ][j  ].X;
-//   X2 = Node[i+1][j  ].X;
-//   X3 = Node[i+1][j+1].X;
-//   X4 = Node[i  ][j+1].X;
-//   P.convert(X1,X2,X3,X4);
-//   // Determine the centroid and area of the sub-triangles.
-//   Xc1 = (X1+X2+X3)/3.0;
-//   Xc2 = (X1+X3+X4)/3.0;
-// //   A1 = HALF*((X1^X2) + (X2^X3) + (X3^X1));
-// //   A2 = HALF*((X1^X3) + (X3^X4) + (X4^X1));
-//   A1 = HALF*((X2-X1)^(X3-X1));
-//   A2 = HALF*((X3-X4)^(X3-X2));
-//   X = (A1*Xc1 + A2*Xc2)/(A1+A2);
-// //   cout << endl << X1 << X2 << X3 << X4 << X << (A1*Xc1 + A2*Xc2) << " " << A1 << " " << A2 << 0.25*(X1+X2+X3+X4);
-// //   if (!P.point_in_polygon(X)) {
-// //     //cout << endl << X1 << X2 << X3 << X4 << Xc1 << Xc2 << X << 0.25*(X1+X2+X3+X4);
-// //     cout << " FUCK";
-// //   }
-//   if (A1 < ZERO || A2 < ZERO) {
-//     cout << endl << A1 << " " << A2 << X1 << X2 << X3 << X4 << X << 0.25*(X1+X2+X3+X4);
-//   }
-//   P.deallocate();
-//         }
-//     }
+    //   Vector2D X1, X2, X3, X4, Xc1, Xc2, X;
+    //   double A1, A2;
+    //   Polygon P;
+    //   cout << setprecision(14);
+    //     for ( j = JCl-Nghost ; j <= JCu+Nghost ; ++j) {
+    //         for ( i = ICl-Nghost ; i <= ICu+Nghost ; ++i) {
+    //   // Cell nodes in counter-clockwise order.
+    //   X1 = Node[i  ][j  ].X;
+    //   X2 = Node[i+1][j  ].X;
+    //   X3 = Node[i+1][j+1].X;
+    //   X4 = Node[i  ][j+1].X;
+    //   P.convert(X1,X2,X3,X4);
+    //   // Determine the centroid and area of the sub-triangles.
+    //   Xc1 = (X1+X2+X3)/3.0;
+    //   Xc2 = (X1+X3+X4)/3.0;
+    // //   A1 = HALF*((X1^X2) + (X2^X3) + (X3^X1));
+    // //   A2 = HALF*((X1^X3) + (X3^X4) + (X4^X1));
+    //   A1 = HALF*((X2-X1)^(X3-X1));
+    //   A2 = HALF*((X3-X4)^(X3-X2));
+    //   X = (A1*Xc1 + A2*Xc2)/(A1+A2);
+    // //   cout << endl << X1 << X2 << X3 << X4 << X << (A1*Xc1 + A2*Xc2) << " " << A1 << " " << A2 << 0.25*(X1+X2+X3+X4);
+    // //   if (!P.point_in_polygon(X)) {
+    // //     //cout << endl << X1 << X2 << X3 << X4 << Xc1 << Xc2 << X << 0.25*(X1+X2+X3+X4);
+    // //     cout << " FUCK";
+    // //   }
+    //   if (A1 < ZERO || A2 < ZERO) {
+    //     cout << endl << A1 << " " << A2 << X1 << X2 << X3 << X4 << X << 0.25*(X1+X2+X3+X4);
+    //   }
+    //   P.deallocate();
+    //         }
+    //     }
 
 }
 
@@ -5130,50 +5114,50 @@ void Grid2D_Quad_Block_HO::Rotate_Quad_Block(const double &Angle) {
  */
 void Grid2D_Quad_Block_HO::Reflect_Quad_Block(void) {
 
-    int i, j;
-    Vector2D *X;
-    Spline2D S;
+  int i, j;
+  Vector2D *X;
+  Spline2D S;
 
-    X = new Vector2D[NNi];
+  X = new Vector2D[NNi];
 
-    for ( j = JNl-Nghost ; j <= JNu+Nghost; ++j ) {
-       for ( i = INl-Nghost ; i <= INu+Nghost; ++i ) {
-	   X[NNi-1-i].x = Node[i][j].X.x;
-           X[NNi-1-i].y = - Node[i][j].X.y;
-       } /* endfor */
-       for ( i = INl-Nghost ; i <= INu+Nghost; ++i ) {
-	   Node[i][j].X = X[i];
-       } /* endfor */
+  for ( j = JNl-Nghost ; j <= JNu+Nghost; ++j ) {
+    for ( i = INl-Nghost ; i <= INu+Nghost; ++i ) {
+      X[NNi-1-i].x = Node[i][j].X.x;
+      X[NNi-1-i].y = - Node[i][j].X.y;
     } /* endfor */
-
-    delete []X;
-    X = NULL;
-
-    for ( j = JCl-Nghost ; j <= JCu+Nghost ; ++j) {
-        for ( i = ICl-Nghost ; i <= ICu+Nghost ; ++i) {
-  	    Cell[i][j].Xc = centroid(i, j);
-            Cell[i][j].A = area(i, j);
-        } /* endfor */
+    for ( i = INl-Nghost ; i <= INu+Nghost; ++i ) {
+      Node[i][j].X = X[i];
     } /* endfor */
+  } /* endfor */
 
-    if (BndNorthSpline.np != 0 ) 
-       Reflect_Spline(BndNorthSpline);
-    if (BndSouthSpline.np != 0 ) 
-       Reflect_Spline(BndSouthSpline);
-    if (BndEastSpline.np != 0 ) 
-       Reflect_Spline(BndEastSpline);
-    if (BndWestSpline.np != 0 ) {
-       Reflect_Spline(BndWestSpline);
-       Copy_Spline(S,BndEastSpline);
-       Copy_Spline(BndEastSpline,BndWestSpline);
-       Copy_Spline(BndWestSpline,S);
-       if (S.np != 0) S.deallocate();
-    } /* endif */
+  delete []X;
+  X = NULL;
+
+  for ( j = JCl-Nghost ; j <= JCu+Nghost ; ++j) {
+    for ( i = ICl-Nghost ; i <= ICu+Nghost ; ++i) {
+      Cell[i][j].Xc = centroid(i, j);
+      Cell[i][j].A = area(i, j);
+    } /* endfor */
+  } /* endfor */
+
+  if (BndNorthSpline.np != 0 ) 
+    Reflect_Spline(BndNorthSpline);
+  if (BndSouthSpline.np != 0 ) 
+    Reflect_Spline(BndSouthSpline);
+  if (BndEastSpline.np != 0 ) 
+    Reflect_Spline(BndEastSpline);
+  if (BndWestSpline.np != 0 ) {
+    Reflect_Spline(BndWestSpline);
+    Copy_Spline(S,BndEastSpline);
+    Copy_Spline(BndEastSpline,BndWestSpline);
+    Copy_Spline(BndWestSpline,S);
+    if (S.np != 0) S.deallocate();
+  } /* endif */
 
     /* Reset the boundary condition types at the quadrilateral 
        grid block boundaries. */
 
-    Set_BCs();
+  Set_BCs();
  
 }
 
@@ -5193,30 +5177,30 @@ void Grid2D_Quad_Block_HO::Output_Tecplot(const int Block_Number,
   Out_File << setprecision(14);
   if (Output_Title) {
     Out_File << "TITLE = \"" << CFFC_Name()
-                << ": 2D Structured Curvilinear Grid Block (Node Locations)"
-                << "\"" << "\n"
-	        << "VARIABLES = \"x\" \\ \n"
-                << "\"y\" \n"
-                << "ZONE T =  \"Block Number = " << Block_Number
-                << "\" \\ \n"
-                << "I = " << INu - INl + 1 << " \\ \n"
-                << "J = " << JNu - JNl + 1 << " \\ \n"
-                << "F = POINT \n";
+	     << ": 2D Structured Curvilinear Grid Block (Node Locations)"
+	     << "\"" << "\n"
+	     << "VARIABLES = \"x\" \\ \n"
+	     << "\"y\" \n"
+	     << "ZONE T =  \"Block Number = " << Block_Number
+	     << "\" \\ \n"
+	     << "I = " << INu - INl + 1 << " \\ \n"
+	     << "J = " << JNu - JNl + 1 << " \\ \n"
+	     << "F = POINT \n";
 
-    } else {
-       Out_File << "ZONE T =  \"Block Number = " << Block_Number
-                << "\" \\ \n"
-                << "I = " << INu - INl + 1 << " \\ \n"
-                << "J = " << JNu - JNl + 1 << " \\ \n"
-                << "F = POINT \n";
-    } /* endif */
+  } else {
+    Out_File << "ZONE T =  \"Block Number = " << Block_Number
+	     << "\" \\ \n"
+	     << "I = " << INu - INl + 1 << " \\ \n"
+	     << "J = " << JNu - JNl + 1 << " \\ \n"
+	     << "F = POINT \n";
+  } /* endif */
 
-    for (j  = JNl ; j <= JNu ; ++j ) {
-       for ( i = INl ; i <= INu ; ++i ) {
-	   Out_File << " " << Node[i][j].X << "\n";
-       } /* endfor */
+  for (j  = JNl ; j <= JNu ; ++j ) {
+    for ( i = INl ; i <= INu ; ++i ) {
+      Out_File << " " << Node[i][j].X << "\n";
     } /* endfor */
-    Out_File << setprecision(6);
+  } /* endfor */
+  Out_File << setprecision(6);
 
 }
 
@@ -5228,38 +5212,38 @@ void Grid2D_Quad_Block_HO::Output_Tecplot(const int Block_Number,
  * nodes.                                               
  */
 void Grid2D_Quad_Block_HO::Output_Nodes_Tecplot(const int Block_Number,
-                          const int Output_Title,
-	                  ostream &Out_File) {
+						const int Output_Title,
+						ostream &Out_File) {
 
-    int i, j;
+  int i, j;
 
-    Out_File << setprecision(14);
-    if (Output_Title) {
-       Out_File << "TITLE = \"" << CFFC_Name()
-                << ": 2D Structured Curvilinear Grid Block (Node Locations)"
-                << "\"" << "\n"
-	        << "VARIABLES = \"x\" \\ \n"
-                << "\"y\" \n"
-                << "ZONE T =  \"Block Number = " << Block_Number
-                << "\" \\ \n"
-                << "I = " << INu - INl + 1 + 2*Nghost << " \\ \n"
-                << "J = " << JNu - JNl + 1 + 2*Nghost << " \\ \n"
-                << "F = POINT \n";
+  Out_File << setprecision(14);
+  if (Output_Title) {
+    Out_File << "TITLE = \"" << CFFC_Name()
+	     << ": 2D Structured Curvilinear Grid Block (Node Locations)"
+	     << "\"" << "\n"
+	     << "VARIABLES = \"x\" \\ \n"
+	     << "\"y\" \n"
+	     << "ZONE T =  \"Block Number = " << Block_Number
+	     << "\" \\ \n"
+	     << "I = " << INu - INl + 1 + 2*Nghost << " \\ \n"
+	     << "J = " << JNu - JNl + 1 + 2*Nghost << " \\ \n"
+	     << "F = POINT \n";
 
-    } else {
-       Out_File << "ZONE T =  \"Block Number = " << Block_Number
-                << "\" \\ \n"
-                << "I = " << INu - INl + 1 + 2*Nghost << " \\ \n"
-                << "J = " << JNu - JNl + 1 + 2*Nghost << " \\ \n"
-                << "F = POINT \n";
-    } /* endif */
+  } else {
+    Out_File << "ZONE T =  \"Block Number = " << Block_Number
+	     << "\" \\ \n"
+	     << "I = " << INu - INl + 1 + 2*Nghost << " \\ \n"
+	     << "J = " << JNu - JNl + 1 + 2*Nghost << " \\ \n"
+	     << "F = POINT \n";
+  } /* endif */
 
-    for (j  = JNl-Nghost ; j <= JNu+Nghost ; ++j ) {
-       for ( i = INl-Nghost ; i <= INu+Nghost ; ++i ) {
-	   Out_File << " " << Node[i][j].X << "\n";
-       } /* endfor */
+  for (j  = JNl-Nghost ; j <= JNu+Nghost ; ++j ) {
+    for ( i = INl-Nghost ; i <= INu+Nghost ; ++i ) {
+      Out_File << " " << Node[i][j].X << "\n";
     } /* endfor */
-    Out_File << setprecision(6);
+  } /* endfor */
+  Out_File << setprecision(6);
 
 }
 
@@ -5269,38 +5253,38 @@ void Grid2D_Quad_Block_HO::Output_Nodes_Tecplot(const int Block_Number,
  * plotting the grid with TECPLOT.                      
  */
 void Grid2D_Quad_Block_HO::Output_Cells_Tecplot(const int Block_Number,
-                          const int Output_Title,
-	                  ostream &Out_File) {
+						const int Output_Title,
+						ostream &Out_File) {
 
-    int i, j;
+  int i, j;
 
-    Out_File << setprecision(14);
-    if (Output_Title) {
-       Out_File << "TITLE = \"" << CFFC_Name()
-                << ": 2D Structured Curvilinear Grid Block (Cell Locations)"
-                << "\"" << "\n"
-	        << "VARIABLES = \"x\" \\ \n"
-                << "\"y\" \n"
-                << "ZONE T =  \"Block Number = " << Block_Number
-                << "\" \\ \n"
-                << "I = " << ICu - ICl + 1 << " \\ \n"
-                << "J = " << JCu - JCl + 1 << " \\ \n"
-                << "F = POINT \n";
+  Out_File << setprecision(14);
+  if (Output_Title) {
+    Out_File << "TITLE = \"" << CFFC_Name()
+	     << ": 2D Structured Curvilinear Grid Block (Cell Locations)"
+	     << "\"" << "\n"
+	     << "VARIABLES = \"x\" \\ \n"
+	     << "\"y\" \n"
+	     << "ZONE T =  \"Block Number = " << Block_Number
+	     << "\" \\ \n"
+	     << "I = " << ICu - ICl + 1 << " \\ \n"
+	     << "J = " << JCu - JCl + 1 << " \\ \n"
+	     << "F = POINT \n";
 
-    } else {
-       Out_File << "ZONE T =  \"Block Number = " << Block_Number
-                << "\" \\ \n"
-                << "I = " << ICu - ICl + 1 << " \\ \n"
-                << "J = " << JCu - JCl + 1 << " \\ \n"
-                << "F = POINT \n";
-    } /* endif */
+  } else {
+    Out_File << "ZONE T =  \"Block Number = " << Block_Number
+	     << "\" \\ \n"
+	     << "I = " << ICu - ICl + 1 << " \\ \n"
+	     << "J = " << JCu - JCl + 1 << " \\ \n"
+	     << "F = POINT \n";
+  } /* endif */
 
-    for (j  = JCl ; j <= JCu ; ++j ) {
-       for ( i = ICl ; i <= ICu ; ++i ) {
-	   Out_File << " " << Cell[i][j].Xc << "\n";
-       } /* endfor */
+  for (j  = JCl ; j <= JCu ; ++j ) {
+    for ( i = ICl ; i <= ICu ; ++i ) {
+      Out_File << " " << Cell[i][j].Xc << "\n";
     } /* endfor */
-    Out_File << setprecision(6);
+  } /* endfor */
+  Out_File << setprecision(6);
 
 }
 
@@ -5310,32 +5294,32 @@ void Grid2D_Quad_Block_HO::Output_Cells_Tecplot(const int Block_Number,
  * plotting the grid with GNUPLOT.                      
  */
 void Grid2D_Quad_Block_HO::Output_Gnuplot(const int Block_Number,
-                    const int Output_Title,
-	            ostream &Out_File) {
+					  const int Output_Title,
+					  ostream &Out_File) {
 
-    int i, j;
+  int i, j;
 
-    Out_File << setprecision(14);
-    if (Output_Title) {
-       Out_File << "# " << CFFC_Name()
-                << ": 2D Structured Curvilinear Grid Block (Node Locations)"
-                << "\n"
-	        << "# x(m), y(m)\n";
-    } /* endif */
+  Out_File << setprecision(14);
+  if (Output_Title) {
+    Out_File << "# " << CFFC_Name()
+	     << ": 2D Structured Curvilinear Grid Block (Node Locations)"
+	     << "\n"
+	     << "# x(m), y(m)\n";
+  } /* endif */
 
-    for (j  = JNl ; j <= JNu ; ++j ) {
-       for ( i = INl ; i <= INu ; ++i ) {
-	   Out_File << " " << Node[i][j].X << "\n";
-       } /* endfor */
-       Out_File << "\n";
+  for (j  = JNl ; j <= JNu ; ++j ) {
+    for ( i = INl ; i <= INu ; ++i ) {
+      Out_File << " " << Node[i][j].X << "\n";
     } /* endfor */
-    for (i  = INl ; i <= INu ; ++i ) {
-       for ( j = JNl ; j <= JNu ; ++j ) {
-	   Out_File << " " << Node[i][j].X << "\n";
-       } /* endfor */
-       Out_File << "\n";
+    Out_File << "\n";
+  } /* endfor */
+  for (i  = INl ; i <= INu ; ++i ) {
+    for ( j = JNl ; j <= JNu ; ++j ) {
+      Out_File << " " << Node[i][j].X << "\n";
     } /* endfor */
-    Out_File << setprecision(6);
+    Out_File << "\n";
+  } /* endfor */
+  Out_File << setprecision(6);
 
 }
 
@@ -5348,197 +5332,197 @@ void Grid2D_Quad_Block_HO::Output_Gnuplot(const int Block_Number,
  */
 void Grid2D_Quad_Block_HO::Double_Mesh_Resolution(Grid2D_Quad_Block_HO &Grid_Original) {
 
-    int i, j, double_resolution_permitted;
-    double sp_l, sp_r, sp_m, ds_ratio;
+  int i, j, double_resolution_permitted;
+  double sp_l, sp_r, sp_m, ds_ratio;
  
-    /* Allocate memory for the cells and nodes of the 
-       quadrilateral mesh block with twice the resolution. */
+  /* Allocate memory for the cells and nodes of the 
+     quadrilateral mesh block with twice the resolution. */
 
-    if ( (Grid_Original.NCi-2*Grid_Original.Nghost-2*((Grid_Original.NCi-2*Grid_Original.Nghost)/2) != 0) || 
-         (Grid_Original.NCj-2*Grid_Original.Nghost-2*((Grid_Original.NCj-2*Grid_Original.Nghost)/2) != 0) ||
-         (Grid_Original.NCi-2*Grid_Original.Nghost < 2*Grid_Original.Nghost) ||
-         (Grid_Original.NCj-2*Grid_Original.Nghost < 2*Grid_Original.Nghost) ||
-         (Grid_Original.Node == NULL) ) { 
-      double_resolution_permitted = 0;
-    } else {
-      double_resolution_permitted = 1;
-      allocate(2*(Grid_Original.NCi-2*Grid_Original.Nghost), 
-	       2*(Grid_Original.NCj-2*Grid_Original.Nghost),
-	       Grid_Original.Nghost);
-    } /* endif */
+  if ( (Grid_Original.NCi-2*Grid_Original.Nghost-2*((Grid_Original.NCi-2*Grid_Original.Nghost)/2) != 0) || 
+       (Grid_Original.NCj-2*Grid_Original.Nghost-2*((Grid_Original.NCj-2*Grid_Original.Nghost)/2) != 0) ||
+       (Grid_Original.NCi-2*Grid_Original.Nghost < 2*Grid_Original.Nghost) ||
+       (Grid_Original.NCj-2*Grid_Original.Nghost < 2*Grid_Original.Nghost) ||
+       (Grid_Original.Node == NULL) ) { 
+    double_resolution_permitted = 0;
+  } else {
+    double_resolution_permitted = 1;
+    allocate(2*(Grid_Original.NCi-2*Grid_Original.Nghost), 
+	     2*(Grid_Original.NCj-2*Grid_Original.Nghost),
+	     Grid_Original.Nghost);
+  } /* endif */
 
     /* Copy boundary spline info to quadrilateral mesh block 
        with twice the resolution. */
 
-    if (double_resolution_permitted) {
+  if (double_resolution_permitted) {
 
-       if (Grid_Original.BndNorthSpline.np != 0) {
-          Copy_Spline(BndNorthSpline, 
-                      Grid_Original.BndNorthSpline);
-       } /* endif */
+    if (Grid_Original.BndNorthSpline.np != 0) {
+      Copy_Spline(BndNorthSpline, 
+		  Grid_Original.BndNorthSpline);
+    } /* endif */
 
-       if (Grid_Original.BndSouthSpline.np != 0) {
-          Copy_Spline(BndSouthSpline, 
-                      Grid_Original.BndSouthSpline);
-       } /* endif */
+    if (Grid_Original.BndSouthSpline.np != 0) {
+      Copy_Spline(BndSouthSpline, 
+		  Grid_Original.BndSouthSpline);
+    } /* endif */
 
-       if (Grid_Original.BndEastSpline.np != 0) {
-          Copy_Spline(BndEastSpline, 
-                      Grid_Original.BndEastSpline);
-       } /* endif */
+    if (Grid_Original.BndEastSpline.np != 0) {
+      Copy_Spline(BndEastSpline, 
+		  Grid_Original.BndEastSpline);
+    } /* endif */
   
-       if (Grid_Original.BndWestSpline.np != 0) {
-          Copy_Spline(BndWestSpline, 
-                      Grid_Original.BndWestSpline);
-       } /* endif */
+    if (Grid_Original.BndWestSpline.np != 0) {
+      Copy_Spline(BndWestSpline, 
+		  Grid_Original.BndWestSpline);
+    } /* endif */
 
     /* Copy boundary spline pathlength info to quadrilateral mesh block 
        with twice the resolution. */
 
-       SminN = Grid_Original.SminN;
-       SmaxN = Grid_Original.SmaxN;
-       SminS = Grid_Original.SminS;
-       SmaxS = Grid_Original.SmaxS;
-       SminE = Grid_Original.SminE;
-       SmaxE = Grid_Original.SmaxE;
-       SminW = Grid_Original.SminW;
-       SmaxW = Grid_Original.SmaxW;
+    SminN = Grid_Original.SminN;
+    SmaxN = Grid_Original.SmaxN;
+    SminS = Grid_Original.SminS;
+    SmaxS = Grid_Original.SmaxS;
+    SminE = Grid_Original.SminE;
+    SmaxE = Grid_Original.SmaxE;
+    SminW = Grid_Original.SminW;
+    SmaxW = Grid_Original.SmaxW;
 
     /* Copy node stretching info to quadrilateral mesh block 
        with twice the resolution. */
 
-       StretchI = Grid_Original.StretchI;
-       BetaI = Grid_Original.BetaI;
-       TauI = Grid_Original.TauI;
-       StretchJ = Grid_Original.StretchJ;
-       BetaJ = Grid_Original.BetaJ;
-       TauJ = Grid_Original.TauJ;
-       OrthogonalN = Grid_Original.OrthogonalN;
-       OrthogonalS = Grid_Original.OrthogonalS;
-       OrthogonalE = Grid_Original.OrthogonalE;
-       OrthogonalW = Grid_Original.OrthogonalW;
+    StretchI = Grid_Original.StretchI;
+    BetaI = Grid_Original.BetaI;
+    TauI = Grid_Original.TauI;
+    StretchJ = Grid_Original.StretchJ;
+    BetaJ = Grid_Original.BetaJ;
+    TauJ = Grid_Original.TauJ;
+    OrthogonalN = Grid_Original.OrthogonalN;
+    OrthogonalS = Grid_Original.OrthogonalS;
+    OrthogonalE = Grid_Original.OrthogonalE;
+    OrthogonalW = Grid_Original.OrthogonalW;
 
     /* Determine the node locations of quadrilateral mesh block 
        with twice the resolution. */
 
-       for (j  = Grid_Original.JCl ; j <= Grid_Original.JCu ; ++j ) {
-           for ( i = Grid_Original.ICl ; i <= Grid_Original.ICu ; ++i ) {
-    	       Node[2*(i-Grid_Original.INl)+Grid_Original.INl  ]
-                               [2*(j-Grid_Original.JNl)+Grid_Original.JNl  ].X 
-                  = Grid_Original.nodeSW(i, j).X;
-    	       Node[2*(i-Grid_Original.INl)+Grid_Original.INl+1]
-                               [2*(j-Grid_Original.JNl)+Grid_Original.JNl  ].X 
-                  = Grid_Original.xfaceS(i, j);
-    	       Node[2*(i-Grid_Original.INl)+Grid_Original.INl  ]
-                               [2*(j-Grid_Original.JNl)+Grid_Original.JNl+1].X 
-                  = Grid_Original.xfaceW(i, j);
-    	       Node[2*(i-Grid_Original.INl)+Grid_Original.INl+1]
-                               [2*(j-Grid_Original.JNl)+Grid_Original.JNl+1].X 
-                  = Grid_Original.Cell[i][j].Xc;
-               if (j == Grid_Original.JCu) {
-                  Node[2*(i-Grid_Original.INl)+Grid_Original.INl  ]
-                                  [2*(j-Grid_Original.JNl)+Grid_Original.JNl+2].X 
-                     = Grid_Original.nodeNW(i, j).X;
-                  Node[2*(i-Grid_Original.INl)+Grid_Original.INl+1]
-                                  [2*(j-Grid_Original.JNl)+Grid_Original.JNl+2].X 
-                     = Grid_Original.xfaceN(i, j);
-               } /* endif */
-               if (i == Grid_Original.ICu) {
-                  Node[2*(i-Grid_Original.INl)+Grid_Original.INl+2]
-                                  [2*(j-Grid_Original.JNl)+Grid_Original.JNl  ].X 
-                     = Grid_Original.nodeSE(i, j).X;
-                  Node[2*(i-Grid_Original.INl)+Grid_Original.INl+2]
-                                  [2*(j-Grid_Original.JNl)+Grid_Original.JNl+1].X 
-                     = Grid_Original.xfaceE(i, j);
-               } /* endif */
-               if (i == Grid_Original.ICu && j == Grid_Original.JCu) {
-                  Node[2*(i-Grid_Original.INl)+Grid_Original.INl+2]
-                                  [2*(j-Grid_Original.JNl)+Grid_Original.JNl+2].X 
-                  = Grid_Original.nodeNE(i, j).X;
-               } /* endif */
-           } /* endfor */
-       } /* endfor */
+    for (j  = Grid_Original.JCl ; j <= Grid_Original.JCu ; ++j ) {
+      for ( i = Grid_Original.ICl ; i <= Grid_Original.ICu ; ++i ) {
+	Node[2*(i-Grid_Original.INl)+Grid_Original.INl  ]
+	  [2*(j-Grid_Original.JNl)+Grid_Original.JNl  ].X 
+	  = Grid_Original.nodeSW(i, j).X;
+	Node[2*(i-Grid_Original.INl)+Grid_Original.INl+1]
+	  [2*(j-Grid_Original.JNl)+Grid_Original.JNl  ].X 
+	  = Grid_Original.xfaceS(i, j);
+	Node[2*(i-Grid_Original.INl)+Grid_Original.INl  ]
+	  [2*(j-Grid_Original.JNl)+Grid_Original.JNl+1].X 
+	  = Grid_Original.xfaceW(i, j);
+	Node[2*(i-Grid_Original.INl)+Grid_Original.INl+1]
+	  [2*(j-Grid_Original.JNl)+Grid_Original.JNl+1].X 
+	  = Grid_Original.Cell[i][j].Xc;
+	if (j == Grid_Original.JCu) {
+	  Node[2*(i-Grid_Original.INl)+Grid_Original.INl  ]
+	    [2*(j-Grid_Original.JNl)+Grid_Original.JNl+2].X 
+	    = Grid_Original.nodeNW(i, j).X;
+	  Node[2*(i-Grid_Original.INl)+Grid_Original.INl+1]
+	    [2*(j-Grid_Original.JNl)+Grid_Original.JNl+2].X 
+	    = Grid_Original.xfaceN(i, j);
+	} /* endif */
+	if (i == Grid_Original.ICu) {
+	  Node[2*(i-Grid_Original.INl)+Grid_Original.INl+2]
+	    [2*(j-Grid_Original.JNl)+Grid_Original.JNl  ].X 
+	    = Grid_Original.nodeSE(i, j).X;
+	  Node[2*(i-Grid_Original.INl)+Grid_Original.INl+2]
+	    [2*(j-Grid_Original.JNl)+Grid_Original.JNl+1].X 
+	    = Grid_Original.xfaceE(i, j);
+	} /* endif */
+	if (i == Grid_Original.ICu && j == Grid_Original.JCu) {
+	  Node[2*(i-Grid_Original.INl)+Grid_Original.INl+2]
+	    [2*(j-Grid_Original.JNl)+Grid_Original.JNl+2].X 
+	    = Grid_Original.nodeNE(i, j).X;
+	} /* endif */
+      } /* endfor */
+    } /* endfor */
 
-       if (BndWestSpline.np != 0) {
-          for (j  = JNl+1 ; j < JNu ; j += 2 ) {
- 	      sp_l = getS(Node[INl][j-1].X, 
-                          BndWestSpline);
- 	      sp_r = getS(Node[INl][j+1].X, 
-                          BndWestSpline);
-              ds_ratio = abs(Node[INl+1][j].X-
-                             Node[INl+1][j-1].X)/
-                         abs(Node[INl+1][j+1].X-
-                             Node[INl+1][j-1].X);
-              sp_m = sp_l + ds_ratio*(sp_r-sp_l);
-	      Node[INl][j].X = 
-                 Spline(sp_m, BndWestSpline);
-          } /* endfor */
-       } /* endif */
+    if (BndWestSpline.np != 0) {
+      for (j  = JNl+1 ; j < JNu ; j += 2 ) {
+	sp_l = getS(Node[INl][j-1].X, 
+		    BndWestSpline);
+	sp_r = getS(Node[INl][j+1].X, 
+		    BndWestSpline);
+	ds_ratio = abs(Node[INl+1][j].X-
+		       Node[INl+1][j-1].X)/
+	  abs(Node[INl+1][j+1].X-
+	      Node[INl+1][j-1].X);
+	sp_m = sp_l + ds_ratio*(sp_r-sp_l);
+	Node[INl][j].X = 
+	  Spline(sp_m, BndWestSpline);
+      } /* endfor */
+    } /* endif */
 
-       if (BndEastSpline.np != 0) {
-          for (j  = JNl+1 ; j < JNu ; j += 2 ) {
-   	      sp_l = getS(Node[INu][j-1].X, 
-                          BndEastSpline);
- 	      sp_r = getS(Node[INu][j+1].X, 
-                          BndEastSpline);
-              ds_ratio = abs(Node[INu-1][j].X-
-                             Node[INu-1][j-1].X)/
-                         abs(Node[INu-1][j+1].X-
-                             Node[INu-1][j-1].X);
-              sp_m = sp_l + ds_ratio*(sp_r-sp_l);
-    	      Node[INu][j].X = 
-	         Spline(sp_m, BndEastSpline);
-          } /* endfor */
-       } /* endif */
+    if (BndEastSpline.np != 0) {
+      for (j  = JNl+1 ; j < JNu ; j += 2 ) {
+	sp_l = getS(Node[INu][j-1].X, 
+		    BndEastSpline);
+	sp_r = getS(Node[INu][j+1].X, 
+		    BndEastSpline);
+	ds_ratio = abs(Node[INu-1][j].X-
+		       Node[INu-1][j-1].X)/
+	  abs(Node[INu-1][j+1].X-
+	      Node[INu-1][j-1].X);
+	sp_m = sp_l + ds_ratio*(sp_r-sp_l);
+	Node[INu][j].X = 
+	  Spline(sp_m, BndEastSpline);
+      } /* endfor */
+    } /* endif */
 
-       if (BndSouthSpline.np != 0) {
-          for ( i = INl+1 ; i < INu ; i += 2 ) {
- 	      sp_l = getS(Node[i-1][JNl].X, 
-                          BndSouthSpline);
-              sp_r = getS(Node[i+1][JNl].X, 
-                          BndSouthSpline);
-              ds_ratio = abs(Node[i][JNl+1].X-
-                             Node[i-1][JNl+1].X)/
-                         abs(Node[i+1][JNl+1].X-
-                             Node[i-1][JNl+1].X);
-              sp_m = sp_l + ds_ratio*(sp_r-sp_l);
-    	      Node[i][JNl].X =  
-	         Spline(sp_m, BndSouthSpline);
-          } /* endfor */
-       } /* endif */
+    if (BndSouthSpline.np != 0) {
+      for ( i = INl+1 ; i < INu ; i += 2 ) {
+	sp_l = getS(Node[i-1][JNl].X, 
+		    BndSouthSpline);
+	sp_r = getS(Node[i+1][JNl].X, 
+		    BndSouthSpline);
+	ds_ratio = abs(Node[i][JNl+1].X-
+		       Node[i-1][JNl+1].X)/
+	  abs(Node[i+1][JNl+1].X-
+	      Node[i-1][JNl+1].X);
+	sp_m = sp_l + ds_ratio*(sp_r-sp_l);
+	Node[i][JNl].X =  
+	  Spline(sp_m, BndSouthSpline);
+      } /* endfor */
+    } /* endif */
 
-       if (BndNorthSpline.np != 0) {
-          for ( i = INl+1 ; i < INu ; i += 2 ) {
-              sp_l = getS(Node[i-1][JNu].X, 
-                          BndNorthSpline);
- 	      sp_r = getS(Node[i+1][JNu].X, 
-                          BndNorthSpline);
-              ds_ratio = abs(Node[i][JNu-1].X-
-                             Node[i-1][JNu-1].X)/
-                         abs(Node[i+1][JNu-1].X-
-                             Node[i-1][JNu-1].X);
-              sp_m = sp_l + ds_ratio*(sp_r-sp_l);
-    	      Node[i][JNu].X =  
-	         Spline(sp_m, BndNorthSpline);
-          } /* endfor */
-       } /* endif */
+    if (BndNorthSpline.np != 0) {
+      for ( i = INl+1 ; i < INu ; i += 2 ) {
+	sp_l = getS(Node[i-1][JNu].X, 
+		    BndNorthSpline);
+	sp_r = getS(Node[i+1][JNu].X, 
+		    BndNorthSpline);
+	ds_ratio = abs(Node[i][JNu-1].X-
+		       Node[i-1][JNu-1].X)/
+	  abs(Node[i+1][JNu-1].X-
+	      Node[i-1][JNu-1].X);
+	sp_m = sp_l + ds_ratio*(sp_r-sp_l);
+	Node[i][JNu].X =  
+	  Spline(sp_m, BndNorthSpline);
+      } /* endfor */
+    } /* endif */
 
     /* Set the boundary condition types for quadrilateral mesh block 
        with twice the resolution. */
 
-       Set_BCs();
+    Set_BCs();
 
     /* Compute the exterior nodes for quadrilateral mesh block 
        with twice the resolution. */
 
-       Update_Exterior_Nodes();
+    Update_Exterior_Nodes();
 
     /* Compute the cells for quadrilateral mesh block 
        with twice the resolution. */
 
-       Update_Cells();
+    Update_Cells();
 
-    } /* endif */
+  } /* endif */
 
 }
 
@@ -5549,102 +5533,102 @@ void Grid2D_Quad_Block_HO::Double_Mesh_Resolution(Grid2D_Quad_Block_HO &Grid_Ori
  */
 void Grid2D_Quad_Block_HO::Half_Mesh_Resolution(Grid2D_Quad_Block_HO &Grid_Original) {
 
-    int i, j, half_resolution_permitted;
+  int i, j, half_resolution_permitted;
  
-    /* Allocate memory for the cells and nodes of the 
-       quadrilateral mesh block with half the resolution. */
+  /* Allocate memory for the cells and nodes of the 
+     quadrilateral mesh block with half the resolution. */
 
-    if ( (Grid_Original.NCi-2*Grid_Original.Nghost-2*((Grid_Original.NCi-2*Grid_Original.Nghost)/2) != 0) || 
-         (Grid_Original.NCj-2*Grid_Original.Nghost-2*((Grid_Original.NCj-2*Grid_Original.Nghost)/2) != 0) ||
-         (Grid_Original.NCi-2*Grid_Original.Nghost < 2*Grid_Original.Nghost) ||
-         (Grid_Original.NCj-2*Grid_Original.Nghost < 2*Grid_Original.Nghost) ||
-         (Grid_Original.Node == NULL) ) {
-       half_resolution_permitted = 0;
-    } else {
-       half_resolution_permitted = 1;
-       allocate((Grid_Original.NCi-2*Grid_Original.Nghost)/2, 
-		(Grid_Original.NCj-2*Grid_Original.Nghost)/2,
-		Grid_Original.Nghost);
-    } /* endif */
+  if ( (Grid_Original.NCi-2*Grid_Original.Nghost-2*((Grid_Original.NCi-2*Grid_Original.Nghost)/2) != 0) || 
+       (Grid_Original.NCj-2*Grid_Original.Nghost-2*((Grid_Original.NCj-2*Grid_Original.Nghost)/2) != 0) ||
+       (Grid_Original.NCi-2*Grid_Original.Nghost < 2*Grid_Original.Nghost) ||
+       (Grid_Original.NCj-2*Grid_Original.Nghost < 2*Grid_Original.Nghost) ||
+       (Grid_Original.Node == NULL) ) {
+    half_resolution_permitted = 0;
+  } else {
+    half_resolution_permitted = 1;
+    allocate((Grid_Original.NCi-2*Grid_Original.Nghost)/2, 
+	     (Grid_Original.NCj-2*Grid_Original.Nghost)/2,
+	     Grid_Original.Nghost);
+  } /* endif */
 
     /* Copy boundary spline info to quadrilateral mesh block 
        with half the resolution. */
 
-    if (half_resolution_permitted) {
+  if (half_resolution_permitted) {
 
-       if (Grid_Original.BndNorthSpline.np != 0) {
-          Copy_Spline(BndNorthSpline, 
-                      Grid_Original.BndNorthSpline);
-       } /* endif */
+    if (Grid_Original.BndNorthSpline.np != 0) {
+      Copy_Spline(BndNorthSpline, 
+		  Grid_Original.BndNorthSpline);
+    } /* endif */
 
-       if (Grid_Original.BndSouthSpline.np != 0) {
-          Copy_Spline(BndSouthSpline, 
-                      Grid_Original.BndSouthSpline);
-       } /* endif */
+    if (Grid_Original.BndSouthSpline.np != 0) {
+      Copy_Spline(BndSouthSpline, 
+		  Grid_Original.BndSouthSpline);
+    } /* endif */
 
-       if (Grid_Original.BndEastSpline.np != 0) {
-          Copy_Spline(BndEastSpline, 
-                      Grid_Original.BndEastSpline);
-       } /* endif */
+    if (Grid_Original.BndEastSpline.np != 0) {
+      Copy_Spline(BndEastSpline, 
+		  Grid_Original.BndEastSpline);
+    } /* endif */
   
-       if (Grid_Original.BndWestSpline.np != 0) {
-          Copy_Spline(BndWestSpline, 
-                      Grid_Original.BndWestSpline);
-       } /* endif */
+    if (Grid_Original.BndWestSpline.np != 0) {
+      Copy_Spline(BndWestSpline, 
+		  Grid_Original.BndWestSpline);
+    } /* endif */
 
     /* Copy boundary spline pathlength info to quadrilateral mesh block 
        with half the resolution. */
 
-       SminN = Grid_Original.SminN;
-       SmaxN = Grid_Original.SmaxN;
-       SminS = Grid_Original.SminS;
-       SmaxS = Grid_Original.SmaxS;
-       SminE = Grid_Original.SminE;
-       SmaxE = Grid_Original.SmaxE;
-       SminW = Grid_Original.SminW;
-       SmaxW = Grid_Original.SmaxW;
+    SminN = Grid_Original.SminN;
+    SmaxN = Grid_Original.SmaxN;
+    SminS = Grid_Original.SminS;
+    SmaxS = Grid_Original.SmaxS;
+    SminE = Grid_Original.SminE;
+    SmaxE = Grid_Original.SmaxE;
+    SminW = Grid_Original.SminW;
+    SmaxW = Grid_Original.SmaxW;
 
     /* Copy node stretching info to quadrilateral mesh block 
        with half the resolution. */
 
-       StretchI = Grid_Original.StretchI;
-       BetaI = Grid_Original.BetaI;
-       TauI = Grid_Original.TauI;
-       StretchJ = Grid_Original.StretchJ;
-       BetaJ = Grid_Original.BetaJ;
-       TauJ = Grid_Original.TauJ;
-       OrthogonalN = Grid_Original.OrthogonalN;
-       OrthogonalS = Grid_Original.OrthogonalS;
-       OrthogonalE = Grid_Original.OrthogonalE;
-       OrthogonalW = Grid_Original.OrthogonalW;
+    StretchI = Grid_Original.StretchI;
+    BetaI = Grid_Original.BetaI;
+    TauI = Grid_Original.TauI;
+    StretchJ = Grid_Original.StretchJ;
+    BetaJ = Grid_Original.BetaJ;
+    TauJ = Grid_Original.TauJ;
+    OrthogonalN = Grid_Original.OrthogonalN;
+    OrthogonalS = Grid_Original.OrthogonalS;
+    OrthogonalE = Grid_Original.OrthogonalE;
+    OrthogonalW = Grid_Original.OrthogonalW;
 
     /* Determine the node locations of quadrilateral mesh block 
        with half the resolution. */
 
-       for (j  = JNl ; j <= JNu ; ++j ) {
-           for ( i = INl ; i <= INu ; ++i ) {
-    	       Node[i][j].X = 
-                  Grid_Original.Node[2*(i-INl)+INl]
-                                    [2*(j-JNl)+JNl].X;
-           } /* endfor */
-       } /* endfor */
+    for (j  = JNl ; j <= JNu ; ++j ) {
+      for ( i = INl ; i <= INu ; ++i ) {
+	Node[i][j].X = 
+	  Grid_Original.Node[2*(i-INl)+INl]
+	  [2*(j-JNl)+JNl].X;
+      } /* endfor */
+    } /* endfor */
 
     /* Set the boundary condition types for quadrilateral mesh block 
        with half the resolution. */
 
-       Set_BCs();
+    Set_BCs();
 
     /* Compute the exterior nodes for quadrilateral mesh block 
        with half the resolution. */
 
-       Update_Exterior_Nodes();
+    Update_Exterior_Nodes();
 
     /* Compute the cells for quadrilateral mesh block 
        with half the resolution. */
 
-       Update_Cells();
+    Update_Cells();
 
-    } /* endif */
+  } /* endif */
 
 }
 
@@ -5657,389 +5641,389 @@ void Grid2D_Quad_Block_HO::Half_Mesh_Resolution(Grid2D_Quad_Block_HO &Grid_Origi
 void Grid2D_Quad_Block_HO::Refine_Mesh(Grid2D_Quad_Block_HO &Grid_Original,
 				       const int Sector) {
 
-    int i, j, i_min, i_max, j_min, j_max, mesh_refinement_permitted;
-    double sp_l, sp_r, sp_m, ds_ratio, dl, dr;
+  int i, j, i_min, i_max, j_min, j_max, mesh_refinement_permitted;
+  double sp_l, sp_r, sp_m, ds_ratio, dl, dr;
 
-    /* Allocate memory for the cells and nodes for the 
-       refined quadrilateral mesh block. */
+  /* Allocate memory for the cells and nodes for the 
+     refined quadrilateral mesh block. */
 
-    if ( (Grid_Original.NCi-2*Grid_Original.Nghost-2*((Grid_Original.NCi-2*Grid_Original.Nghost)/2) != 0) || 
-         (Grid_Original.NCj-2*Grid_Original.Nghost-2*((Grid_Original.NCj-2*Grid_Original.Nghost)/2) != 0) ||
-         (Grid_Original.NCi-2*Grid_Original.Nghost < 2*Grid_Original.Nghost) ||
-         (Grid_Original.NCj-2*Grid_Original.Nghost < 2*Grid_Original.Nghost) ||
-         (Grid_Original.Node == NULL) ) {
-       mesh_refinement_permitted = 0;
-    } else {
-       mesh_refinement_permitted = 1;
-       allocate(Grid_Original.NCi-2*Grid_Original.Nghost, 
-		Grid_Original.NCj-2*Grid_Original.Nghost,
-		Grid_Original.Nghost);
-    } /* endif */
+  if ( (Grid_Original.NCi-2*Grid_Original.Nghost-2*((Grid_Original.NCi-2*Grid_Original.Nghost)/2) != 0) || 
+       (Grid_Original.NCj-2*Grid_Original.Nghost-2*((Grid_Original.NCj-2*Grid_Original.Nghost)/2) != 0) ||
+       (Grid_Original.NCi-2*Grid_Original.Nghost < 2*Grid_Original.Nghost) ||
+       (Grid_Original.NCj-2*Grid_Original.Nghost < 2*Grid_Original.Nghost) ||
+       (Grid_Original.Node == NULL) ) {
+    mesh_refinement_permitted = 0;
+  } else {
+    mesh_refinement_permitted = 1;
+    allocate(Grid_Original.NCi-2*Grid_Original.Nghost, 
+	     Grid_Original.NCj-2*Grid_Original.Nghost,
+	     Grid_Original.Nghost);
+  } /* endif */
 
     /* Copy boundary spline info for the refined
        quadrilateral mesh block. */
 
-    if (mesh_refinement_permitted) {
+  if (mesh_refinement_permitted) {
 
-       if ((Sector == GRID2D_QUAD_BLOCK_SECTOR_NW ||
-            Sector == GRID2D_QUAD_BLOCK_SECTOR_NE) &&
-           Grid_Original.BndNorthSpline.np != 0) {
-          Copy_Spline(BndNorthSpline, 
-                      Grid_Original.BndNorthSpline);
-       } /* endif */
+    if ((Sector == GRID2D_QUAD_BLOCK_SECTOR_NW ||
+	 Sector == GRID2D_QUAD_BLOCK_SECTOR_NE) &&
+	Grid_Original.BndNorthSpline.np != 0) {
+      Copy_Spline(BndNorthSpline, 
+		  Grid_Original.BndNorthSpline);
+    } /* endif */
 
-       if ((Sector == GRID2D_QUAD_BLOCK_SECTOR_SE ||
-            Sector == GRID2D_QUAD_BLOCK_SECTOR_SW) &&
-           Grid_Original.BndSouthSpline.np != 0) {
-          Copy_Spline(BndSouthSpline, 
-                      Grid_Original.BndSouthSpline);
-       } /* endif */
+    if ((Sector == GRID2D_QUAD_BLOCK_SECTOR_SE ||
+	 Sector == GRID2D_QUAD_BLOCK_SECTOR_SW) &&
+	Grid_Original.BndSouthSpline.np != 0) {
+      Copy_Spline(BndSouthSpline, 
+		  Grid_Original.BndSouthSpline);
+    } /* endif */
 
-       if ((Sector == GRID2D_QUAD_BLOCK_SECTOR_NE ||
-            Sector == GRID2D_QUAD_BLOCK_SECTOR_SE) &&
-           Grid_Original.BndEastSpline.np != 0) {
-          Copy_Spline(BndEastSpline, 
-                      Grid_Original.BndEastSpline);
-       } /* endif */
+    if ((Sector == GRID2D_QUAD_BLOCK_SECTOR_NE ||
+	 Sector == GRID2D_QUAD_BLOCK_SECTOR_SE) &&
+	Grid_Original.BndEastSpline.np != 0) {
+      Copy_Spline(BndEastSpline, 
+		  Grid_Original.BndEastSpline);
+    } /* endif */
   
-       if ((Sector == GRID2D_QUAD_BLOCK_SECTOR_NW ||
-            Sector == GRID2D_QUAD_BLOCK_SECTOR_SW) &&
-           Grid_Original.BndWestSpline.np != 0) {
-          Copy_Spline(BndWestSpline, 
-                      Grid_Original.BndWestSpline);
-       } /* endif */
+    if ((Sector == GRID2D_QUAD_BLOCK_SECTOR_NW ||
+	 Sector == GRID2D_QUAD_BLOCK_SECTOR_SW) &&
+	Grid_Original.BndWestSpline.np != 0) {
+      Copy_Spline(BndWestSpline, 
+		  Grid_Original.BndWestSpline);
+    } /* endif */
 
     /* Assign boundary spline pathlength info for the refined
        quadrilateral mesh block. */
 
-       switch(Sector) {
-         case GRID2D_QUAD_BLOCK_SECTOR_NW :
-           if (Grid_Original.BndNorthSpline.np != 0) {
-              SminN = Grid_Original.SminN;
-              SmaxN = getS(Grid_Original.Node[Grid_Original.INl+
-                                                        (Grid_Original.INu-
-                                                         Grid_Original.INl)/2]
-                                                       [Grid_Original.JNu].X, 
-                                     Grid_Original.BndNorthSpline);
-           } else {
-              SminN = ZERO;
-              SmaxN = ZERO;
-           } /* endif */
-           SminS = ZERO;
-           SmaxS = ZERO;
-           SminE = ZERO;
-           SmaxE = ZERO;
-           if (Grid_Original.BndWestSpline.np != 0) {
-              SminW = getS(Grid_Original.Node[Grid_Original.INl]
-                                                       [Grid_Original.JNl+
-                                                        (Grid_Original.JNu-
-                                                         Grid_Original.JNl)/2].X, 
-                                     Grid_Original.BndWestSpline);
-              SmaxW = Grid_Original.SmaxW;
-           } else {
-              SminW = ZERO;
-              SmaxW = ZERO;
-           } /* endif */
-           break;
-         case GRID2D_QUAD_BLOCK_SECTOR_NE :
-           if (Grid_Original.BndNorthSpline.np != 0) {
-              SminN = getS(Grid_Original.Node[Grid_Original.INl+
-                                                        (Grid_Original.INu-
-                                                         Grid_Original.INl)/2]
-                                                       [Grid_Original.JNu].X, 
-                                     Grid_Original.BndNorthSpline);
-              SmaxN = Grid_Original.SmaxN;
-           } else {
-              SminN = ZERO;
-              SmaxN = ZERO;
-           } /* endif */
-           SminS = ZERO;
-           SmaxS = ZERO;
-           if (Grid_Original.BndEastSpline.np != 0) {
-              SminE = getS(Grid_Original.Node[Grid_Original.INu]
-                                                       [Grid_Original.JNl+
-                                                        (Grid_Original.JNu-
-                                                         Grid_Original.JNl)/2].X, 
-                                     Grid_Original.BndEastSpline);
-              SmaxE = Grid_Original.SmaxE;
-           } else {
-              SminE = ZERO;
-              SmaxE = ZERO;
-           } /* endif */
-           SminW = ZERO;
-           SmaxW = ZERO;
-           break;
-         case GRID2D_QUAD_BLOCK_SECTOR_SE :
-           SminN = ZERO;
-           SmaxN = ZERO;
-           if (Grid_Original.BndSouthSpline.np != 0) {
-              SminS = getS(Grid_Original.Node[Grid_Original.INl+
-                                                        (Grid_Original.INu-
-                                                         Grid_Original.INl)/2]
-                                                       [Grid_Original.JNl].X, 
-                                     Grid_Original.BndSouthSpline);
-              SmaxS = Grid_Original.SmaxS;
-           } else {
-              SminS = ZERO;
-              SmaxS = ZERO;
-           } /* endif */
-           if (Grid_Original.BndEastSpline.np != 0) {
-              SminE = Grid_Original.SminE;
-              SmaxE = getS(Grid_Original.Node[Grid_Original.INu]
-                                                       [Grid_Original.JNl+
-                                                        (Grid_Original.JNu-
-                                                         Grid_Original.JNl)/2].X, 
-                                     Grid_Original.BndEastSpline);
-              SmaxE = Grid_Original.SmaxE;
-           } else {
-              SminE = ZERO;
-              SmaxE = ZERO;
-           } /* endif */
-           SminW = ZERO;
-           SmaxW = ZERO;
-           break;
-         case GRID2D_QUAD_BLOCK_SECTOR_SW :
-           SminN = ZERO;
-           SmaxN = ZERO;
-           if (Grid_Original.BndSouthSpline.np != 0) {
-              SminS = Grid_Original.SminS;
-              SmaxS = getS(Grid_Original.Node[Grid_Original.INl+
-                                                        (Grid_Original.INu-
-                                                         Grid_Original.INl)/2]
-                                                       [Grid_Original.JNl].X, 
-                                     Grid_Original.BndSouthSpline);
-           } else {
-              SminS = ZERO;
-              SmaxS = ZERO;
-           } /* endif */
-           SminE = ZERO;
-           SmaxE = ZERO;
-           if (Grid_Original.BndWestSpline.np != 0) {
-              SminW = Grid_Original.SminW;
-              SmaxW = getS(Grid_Original.Node[Grid_Original.INl]
-                                                       [Grid_Original.JNl+
-                                                        (Grid_Original.JNu-
-                                                         Grid_Original.JNl)/2].X, 
-                                     Grid_Original.BndWestSpline);
-           } else {
-              SminW = ZERO;
-              SmaxW = ZERO;
-           } /* endif */
-           break;
-       } /* endswitch */
+    switch(Sector) {
+    case GRID2D_QUAD_BLOCK_SECTOR_NW :
+      if (Grid_Original.BndNorthSpline.np != 0) {
+	SminN = Grid_Original.SminN;
+	SmaxN = getS(Grid_Original.Node[Grid_Original.INl+
+					(Grid_Original.INu-
+					 Grid_Original.INl)/2]
+		     [Grid_Original.JNu].X, 
+		     Grid_Original.BndNorthSpline);
+      } else {
+	SminN = ZERO;
+	SmaxN = ZERO;
+      } /* endif */
+      SminS = ZERO;
+      SmaxS = ZERO;
+      SminE = ZERO;
+      SmaxE = ZERO;
+      if (Grid_Original.BndWestSpline.np != 0) {
+	SminW = getS(Grid_Original.Node[Grid_Original.INl]
+		     [Grid_Original.JNl+
+		      (Grid_Original.JNu-
+		       Grid_Original.JNl)/2].X, 
+		     Grid_Original.BndWestSpline);
+	SmaxW = Grid_Original.SmaxW;
+      } else {
+	SminW = ZERO;
+	SmaxW = ZERO;
+      } /* endif */
+      break;
+    case GRID2D_QUAD_BLOCK_SECTOR_NE :
+      if (Grid_Original.BndNorthSpline.np != 0) {
+	SminN = getS(Grid_Original.Node[Grid_Original.INl+
+					(Grid_Original.INu-
+					 Grid_Original.INl)/2]
+		     [Grid_Original.JNu].X, 
+		     Grid_Original.BndNorthSpline);
+	SmaxN = Grid_Original.SmaxN;
+      } else {
+	SminN = ZERO;
+	SmaxN = ZERO;
+      } /* endif */
+      SminS = ZERO;
+      SmaxS = ZERO;
+      if (Grid_Original.BndEastSpline.np != 0) {
+	SminE = getS(Grid_Original.Node[Grid_Original.INu]
+		     [Grid_Original.JNl+
+		      (Grid_Original.JNu-
+		       Grid_Original.JNl)/2].X, 
+		     Grid_Original.BndEastSpline);
+	SmaxE = Grid_Original.SmaxE;
+      } else {
+	SminE = ZERO;
+	SmaxE = ZERO;
+      } /* endif */
+      SminW = ZERO;
+      SmaxW = ZERO;
+      break;
+    case GRID2D_QUAD_BLOCK_SECTOR_SE :
+      SminN = ZERO;
+      SmaxN = ZERO;
+      if (Grid_Original.BndSouthSpline.np != 0) {
+	SminS = getS(Grid_Original.Node[Grid_Original.INl+
+					(Grid_Original.INu-
+					 Grid_Original.INl)/2]
+		     [Grid_Original.JNl].X, 
+		     Grid_Original.BndSouthSpline);
+	SmaxS = Grid_Original.SmaxS;
+      } else {
+	SminS = ZERO;
+	SmaxS = ZERO;
+      } /* endif */
+      if (Grid_Original.BndEastSpline.np != 0) {
+	SminE = Grid_Original.SminE;
+	SmaxE = getS(Grid_Original.Node[Grid_Original.INu]
+		     [Grid_Original.JNl+
+		      (Grid_Original.JNu-
+		       Grid_Original.JNl)/2].X, 
+		     Grid_Original.BndEastSpline);
+	SmaxE = Grid_Original.SmaxE;
+      } else {
+	SminE = ZERO;
+	SmaxE = ZERO;
+      } /* endif */
+      SminW = ZERO;
+      SmaxW = ZERO;
+      break;
+    case GRID2D_QUAD_BLOCK_SECTOR_SW :
+      SminN = ZERO;
+      SmaxN = ZERO;
+      if (Grid_Original.BndSouthSpline.np != 0) {
+	SminS = Grid_Original.SminS;
+	SmaxS = getS(Grid_Original.Node[Grid_Original.INl+
+					(Grid_Original.INu-
+					 Grid_Original.INl)/2]
+		     [Grid_Original.JNl].X, 
+		     Grid_Original.BndSouthSpline);
+      } else {
+	SminS = ZERO;
+	SmaxS = ZERO;
+      } /* endif */
+      SminE = ZERO;
+      SmaxE = ZERO;
+      if (Grid_Original.BndWestSpline.np != 0) {
+	SminW = Grid_Original.SminW;
+	SmaxW = getS(Grid_Original.Node[Grid_Original.INl]
+		     [Grid_Original.JNl+
+		      (Grid_Original.JNu-
+		       Grid_Original.JNl)/2].X, 
+		     Grid_Original.BndWestSpline);
+      } else {
+	SminW = ZERO;
+	SmaxW = ZERO;
+      } /* endif */
+      break;
+    } /* endswitch */
 
     /* Copy node stretching info to refined quadrilateral 
        mesh block. */
 
-       StretchI = Grid_Original.StretchI;
-       BetaI = Grid_Original.BetaI;
-       TauI = Grid_Original.TauI;
-       StretchJ = Grid_Original.StretchJ;
-       BetaJ = Grid_Original.BetaJ;
-       TauJ = Grid_Original.TauJ;
-       if (Grid_Original.BndNorthSpline.np != 0) {
-          OrthogonalN = Grid_Original.OrthogonalN;
-       } else {
-          OrthogonalN = ORTHOGONAL;
-       } /* endif */
-       if (Grid_Original.BndSouthSpline.np != 0) {
-          OrthogonalS = Grid_Original.OrthogonalS;
-       } else {
-          OrthogonalS = ORTHOGONAL;
-       } /* endif */
-       if (Grid_Original.BndEastSpline.np != 0) {
-          OrthogonalE = Grid_Original.OrthogonalE;
-       } else {
-          OrthogonalE = ORTHOGONAL;
-       } /* endif */
-       if (Grid_Original.BndWestSpline.np != 0) {
-          OrthogonalW = Grid_Original.OrthogonalW;
-       } else {
-          OrthogonalW = ORTHOGONAL;
-       } /* endif */
+    StretchI = Grid_Original.StretchI;
+    BetaI = Grid_Original.BetaI;
+    TauI = Grid_Original.TauI;
+    StretchJ = Grid_Original.StretchJ;
+    BetaJ = Grid_Original.BetaJ;
+    TauJ = Grid_Original.TauJ;
+    if (Grid_Original.BndNorthSpline.np != 0) {
+      OrthogonalN = Grid_Original.OrthogonalN;
+    } else {
+      OrthogonalN = ORTHOGONAL;
+    } /* endif */
+    if (Grid_Original.BndSouthSpline.np != 0) {
+      OrthogonalS = Grid_Original.OrthogonalS;
+    } else {
+      OrthogonalS = ORTHOGONAL;
+    } /* endif */
+    if (Grid_Original.BndEastSpline.np != 0) {
+      OrthogonalE = Grid_Original.OrthogonalE;
+    } else {
+      OrthogonalE = ORTHOGONAL;
+    } /* endif */
+    if (Grid_Original.BndWestSpline.np != 0) {
+      OrthogonalW = Grid_Original.OrthogonalW;
+    } else {
+      OrthogonalW = ORTHOGONAL;
+    } /* endif */
 
-       // Force orthogonality at all refined mesh boundaries.
-       OrthogonalN = ORTHOGONAL;
-       OrthogonalS = ORTHOGONAL;
-       OrthogonalE = ORTHOGONAL;
-       OrthogonalW = ORTHOGONAL;
+    // Force orthogonality at all refined mesh boundaries.
+    OrthogonalN = ORTHOGONAL;
+    OrthogonalS = ORTHOGONAL;
+    OrthogonalE = ORTHOGONAL;
+    OrthogonalW = ORTHOGONAL;
 
     /* Determine the node locations for refined 
        quadrilateral mesh block. */
 
-       switch(Sector) {
-         case GRID2D_QUAD_BLOCK_SECTOR_NW :
-           i_min = Grid_Original.ICl;
-	   i_max = Grid_Original.ICl+(Grid_Original.ICu-Grid_Original.ICl-1)/2;
-           j_min = Grid_Original.JCl+(Grid_Original.JCu-Grid_Original.JCl+1)/2; 
-           j_max = Grid_Original.JCu;
-           break;
-         case GRID2D_QUAD_BLOCK_SECTOR_NE :
-           i_min = Grid_Original.ICl+(Grid_Original.ICu-Grid_Original.ICl+1)/2;
-	   i_max = Grid_Original.ICu;
-           j_min = Grid_Original.JCl+(Grid_Original.JCu-Grid_Original.JCl+1)/2; 
-           j_max = Grid_Original.JCu;
-           break;
-         case GRID2D_QUAD_BLOCK_SECTOR_SE :
-           i_min = Grid_Original.ICl+(Grid_Original.ICu-Grid_Original.ICl+1)/2;
-	   i_max = Grid_Original.ICu;
-           j_min = Grid_Original.JCl; 
-           j_max = Grid_Original.JCl+(Grid_Original.JCu-Grid_Original.JCl-1)/2;
-           break;
-         case GRID2D_QUAD_BLOCK_SECTOR_SW :
-           i_min = Grid_Original.ICl;
-	   i_max = Grid_Original.ICl+(Grid_Original.ICu-Grid_Original.ICl-1)/2;
-           j_min = Grid_Original.JCl; 
-           j_max = Grid_Original.JCl+(Grid_Original.JCu-Grid_Original.JCl-1)/2;
-           break;
-         default:
-           i_min = Grid_Original.ICl;
-	   i_max = Grid_Original.ICl+(Grid_Original.ICu-Grid_Original.ICl-1)/2;
-           j_min = Grid_Original.JCl+(Grid_Original.JCu-Grid_Original.JCl+1)/2; 
-           j_max = Grid_Original.JCu;
-           break;
-       } /* endswitch */
+    switch(Sector) {
+    case GRID2D_QUAD_BLOCK_SECTOR_NW :
+      i_min = Grid_Original.ICl;
+      i_max = Grid_Original.ICl+(Grid_Original.ICu-Grid_Original.ICl-1)/2;
+      j_min = Grid_Original.JCl+(Grid_Original.JCu-Grid_Original.JCl+1)/2; 
+      j_max = Grid_Original.JCu;
+      break;
+    case GRID2D_QUAD_BLOCK_SECTOR_NE :
+      i_min = Grid_Original.ICl+(Grid_Original.ICu-Grid_Original.ICl+1)/2;
+      i_max = Grid_Original.ICu;
+      j_min = Grid_Original.JCl+(Grid_Original.JCu-Grid_Original.JCl+1)/2; 
+      j_max = Grid_Original.JCu;
+      break;
+    case GRID2D_QUAD_BLOCK_SECTOR_SE :
+      i_min = Grid_Original.ICl+(Grid_Original.ICu-Grid_Original.ICl+1)/2;
+      i_max = Grid_Original.ICu;
+      j_min = Grid_Original.JCl; 
+      j_max = Grid_Original.JCl+(Grid_Original.JCu-Grid_Original.JCl-1)/2;
+      break;
+    case GRID2D_QUAD_BLOCK_SECTOR_SW :
+      i_min = Grid_Original.ICl;
+      i_max = Grid_Original.ICl+(Grid_Original.ICu-Grid_Original.ICl-1)/2;
+      j_min = Grid_Original.JCl; 
+      j_max = Grid_Original.JCl+(Grid_Original.JCu-Grid_Original.JCl-1)/2;
+      break;
+    default:
+      i_min = Grid_Original.ICl;
+      i_max = Grid_Original.ICl+(Grid_Original.ICu-Grid_Original.ICl-1)/2;
+      j_min = Grid_Original.JCl+(Grid_Original.JCu-Grid_Original.JCl+1)/2; 
+      j_max = Grid_Original.JCu;
+      break;
+    } /* endswitch */
 
-       for ( j  = j_min; j <= j_max ; ++j ) {
-	   for ( i = i_min ; i <= i_max ; ++i ) {
-    	       Node[2*(i-i_min)+INl  ]
-                             [2*(j-j_min)+JNl  ].X 
-                  = Grid_Original.nodeSW(i, j).X;
-    	       Node[2*(i-i_min)+INl+1]
-                             [2*(j-j_min)+JNl  ].X 
-                  = Grid_Original.xfaceS(i, j);
-    	       Node[2*(i-i_min)+INl  ]
-                             [2*(j-j_min)+JNl+1].X 
-                  = Grid_Original.xfaceW(i, j);
-//     	       Node[2*(i-i_min)+INl+1]
-//                              [2*(j-j_min)+JNl+1].X 
-//                   = Grid_Original.Cell[i][j].Xc;
-    	       Node[2*(i-i_min)+INl+1]
-                             [2*(j-j_min)+JNl+1].X 
-                  = (Grid_Original.nodeSW(i,j).X +
-		     Grid_Original.nodeSE(i,j).X +
-		     Grid_Original.nodeNW(i,j).X +
-		     Grid_Original.nodeNE(i,j).X)/FOUR;
-               if (j == j_max) {
-                  Node[2*(i-i_min)+INl  ]
-                                [2*(j-j_min)+JNl+2].X 
-                  = Grid_Original.nodeNW(i, j).X;
-                  Node[2*(i-i_min)+INl+1]
-                                [2*(j-j_min)+JNl+2].X 
-                  = Grid_Original.xfaceN(i, j);
-               } /* endif */
-               if (i == i_max) {
-                  Node[2*(i-i_min)+INl+2]
-                                [2*(j-j_min)+JNl  ].X 
-                  = Grid_Original.nodeSE(i, j).X;
-                  Node[2*(i-i_min)+INl+2]
-                                [2*(j-j_min)+JNl+1].X 
-                  = Grid_Original.xfaceE(i, j);
-               } /* endif */
-               if (i == i_max && j == j_max) {
-                  Node[2*(i-i_min)+INl+2]
-                                [2*(j-j_min)+JNl+2].X 
-                  = Grid_Original.nodeNE(i, j).X;
-               } /* endif */
-           } /* endfor */
-       } /* endfor */
+    for ( j  = j_min; j <= j_max ; ++j ) {
+      for ( i = i_min ; i <= i_max ; ++i ) {
+	Node[2*(i-i_min)+INl  ]
+	  [2*(j-j_min)+JNl  ].X 
+	  = Grid_Original.nodeSW(i, j).X;
+	Node[2*(i-i_min)+INl+1]
+	  [2*(j-j_min)+JNl  ].X 
+	  = Grid_Original.xfaceS(i, j);
+	Node[2*(i-i_min)+INl  ]
+	  [2*(j-j_min)+JNl+1].X 
+	  = Grid_Original.xfaceW(i, j);
+	//     	       Node[2*(i-i_min)+INl+1]
+	//                              [2*(j-j_min)+JNl+1].X 
+	//                   = Grid_Original.Cell[i][j].Xc;
+	Node[2*(i-i_min)+INl+1]
+	  [2*(j-j_min)+JNl+1].X 
+	  = (Grid_Original.nodeSW(i,j).X +
+	     Grid_Original.nodeSE(i,j).X +
+	     Grid_Original.nodeNW(i,j).X +
+	     Grid_Original.nodeNE(i,j).X)/FOUR;
+	if (j == j_max) {
+	  Node[2*(i-i_min)+INl  ]
+	    [2*(j-j_min)+JNl+2].X 
+	    = Grid_Original.nodeNW(i, j).X;
+	  Node[2*(i-i_min)+INl+1]
+	    [2*(j-j_min)+JNl+2].X 
+	    = Grid_Original.xfaceN(i, j);
+	} /* endif */
+	if (i == i_max) {
+	  Node[2*(i-i_min)+INl+2]
+	    [2*(j-j_min)+JNl  ].X 
+	    = Grid_Original.nodeSE(i, j).X;
+	  Node[2*(i-i_min)+INl+2]
+	    [2*(j-j_min)+JNl+1].X 
+	    = Grid_Original.xfaceE(i, j);
+	} /* endif */
+	if (i == i_max && j == j_max) {
+	  Node[2*(i-i_min)+INl+2]
+	    [2*(j-j_min)+JNl+2].X 
+	    = Grid_Original.nodeNE(i, j).X;
+	} /* endif */
+      } /* endfor */
+    } /* endfor */
 
-       if (BndWestSpline.np != 0) {
-          for (j  = JNl+1 ; j < JNu ; j += 2 ) {
- 	      sp_l = getS(Node[INl][j-1].X, 
-                          BndWestSpline);
- 	      sp_r = getS(Node[INl][j+1].X, 
-                          BndWestSpline);
-              dl = abs(Node[INl][j  ].X - 
-                       Node[INl][j-1].X);
-              dr = abs(Node[INl][j+1].X - 
-                       Node[INl][j  ].X);
-              ds_ratio = dl/(dl+dr);
-              sp_m = sp_l + ds_ratio*(sp_r-sp_l);
-	      Node[INl][j].X = 
-                 Spline(sp_m, BndWestSpline);
-          } /* endfor */
-       } /* endif */
+    if (BndWestSpline.np != 0) {
+      for (j  = JNl+1 ; j < JNu ; j += 2 ) {
+	sp_l = getS(Node[INl][j-1].X, 
+		    BndWestSpline);
+	sp_r = getS(Node[INl][j+1].X, 
+		    BndWestSpline);
+	dl = abs(Node[INl][j  ].X - 
+		 Node[INl][j-1].X);
+	dr = abs(Node[INl][j+1].X - 
+		 Node[INl][j  ].X);
+	ds_ratio = dl/(dl+dr);
+	sp_m = sp_l + ds_ratio*(sp_r-sp_l);
+	Node[INl][j].X = 
+	  Spline(sp_m, BndWestSpline);
+      } /* endfor */
+    } /* endif */
 
-       if (BndEastSpline.np != 0) {
-          for (j  = JNl+1 ; j < JNu ; j += 2 ) {
-              sp_l = getS(Node[INu][j-1].X, 
-                          BndEastSpline);
- 	      sp_r = getS(Node[INu][j+1].X, 
-                          BndEastSpline);
-              dl = abs(Node[INu][j  ].X - 
-                       Node[INu][j-1].X);
-              dr = abs(Node[INu][j+1].X - 
-                       Node[INu][j  ].X);
-              ds_ratio = dl/(dl+dr);
-              sp_m = sp_l + ds_ratio*(sp_r-sp_l);
-    	      Node[INu][j].X = 
-	         Spline(sp_m, BndEastSpline);
-          } /* endfor */
-       } /* endif */
+    if (BndEastSpline.np != 0) {
+      for (j  = JNl+1 ; j < JNu ; j += 2 ) {
+	sp_l = getS(Node[INu][j-1].X, 
+		    BndEastSpline);
+	sp_r = getS(Node[INu][j+1].X, 
+		    BndEastSpline);
+	dl = abs(Node[INu][j  ].X - 
+		 Node[INu][j-1].X);
+	dr = abs(Node[INu][j+1].X - 
+		 Node[INu][j  ].X);
+	ds_ratio = dl/(dl+dr);
+	sp_m = sp_l + ds_ratio*(sp_r-sp_l);
+	Node[INu][j].X = 
+	  Spline(sp_m, BndEastSpline);
+      } /* endfor */
+    } /* endif */
 
-       if (BndSouthSpline.np != 0) {
-          for ( i = INl+1 ; i < INu ; i += 2 ) {
- 	      sp_l = getS(Node[i-1][JNl].X, 
-                          BndSouthSpline);
- 	      sp_r = getS(Node[i+1][JNl].X, 
-                          BndSouthSpline);
-              dl = abs(Node[i  ][JNl].X - 
-                       Node[i-1][JNl].X);
-              dr = abs(Node[i+1][JNl].X - 
-                       Node[i  ][JNl].X);
-              ds_ratio = dl/(dl+dr);
-              sp_m = sp_l + ds_ratio*(sp_r-sp_l);
-    	      Node[i][JNl].X =  
-	         Spline(sp_m, BndSouthSpline);
-          } /* endfor */
-       } /* endif */
+    if (BndSouthSpline.np != 0) {
+      for ( i = INl+1 ; i < INu ; i += 2 ) {
+	sp_l = getS(Node[i-1][JNl].X, 
+		    BndSouthSpline);
+	sp_r = getS(Node[i+1][JNl].X, 
+		    BndSouthSpline);
+	dl = abs(Node[i  ][JNl].X - 
+		 Node[i-1][JNl].X);
+	dr = abs(Node[i+1][JNl].X - 
+		 Node[i  ][JNl].X);
+	ds_ratio = dl/(dl+dr);
+	sp_m = sp_l + ds_ratio*(sp_r-sp_l);
+	Node[i][JNl].X =  
+	  Spline(sp_m, BndSouthSpline);
+      } /* endfor */
+    } /* endif */
 
-       if (BndNorthSpline.np != 0) {
-          for ( i = INl+1 ; i < INu ; i += 2 ) {
- 	      sp_l = getS(Node[i-1][JNu].X, 
-                          BndNorthSpline);
- 	      sp_r = getS(Node[i+1][JNu].X, 
-                          BndNorthSpline);
-              dl = abs(Node[i  ][JNu].X - 
-                       Node[i-1][JNu].X);
-              dr = abs(Node[i+1][JNu].X - 
-                       Node[i  ][JNu].X);
-              ds_ratio = dl/(dl+dr);
-              sp_m = sp_l + ds_ratio*(sp_r-sp_l);
-    	      Node[i][JNu].X =  
-	         Spline(sp_m, BndNorthSpline);
-          } /* endfor */
-// 	 for ( i = ICl; i <= ICu; i++) {
-// 	   if (area(i,JCu) <= ZERO) {
-// 	     Node[i][JNu-1].X = Node[i][JNu-3].X + (2.0/3.0)*(Node[i][JNu].X-
-// 												      Node[i][JNu-3].X);
-// 	     Node[i][JNu-2].X = Node[i][JNu-3].X + (1.0/3.0)*(Node[i][JNu].X-
-// 												      Node[i][JNu-3].X);
-// 	     Node[i+1][JNu-1].X = Node[i+1][JNu-3].X + (2.0/3.0)*(Node[i+1][JNu].X-
-// 												      Node[i+1][JNu-3].X);
-// 	     Node[i+1][JNu-2].X = Node[i+1][JNu-3].X + (1.0/3.0)*(Node[i+1][JNu].X-
-// 												      Node[i+1][JNu-3].X);
-// 	   }
-// 	 }
-       } /* endif */
+    if (BndNorthSpline.np != 0) {
+      for ( i = INl+1 ; i < INu ; i += 2 ) {
+	sp_l = getS(Node[i-1][JNu].X, 
+		    BndNorthSpline);
+	sp_r = getS(Node[i+1][JNu].X, 
+		    BndNorthSpline);
+	dl = abs(Node[i  ][JNu].X - 
+		 Node[i-1][JNu].X);
+	dr = abs(Node[i+1][JNu].X - 
+		 Node[i  ][JNu].X);
+	ds_ratio = dl/(dl+dr);
+	sp_m = sp_l + ds_ratio*(sp_r-sp_l);
+	Node[i][JNu].X =  
+	  Spline(sp_m, BndNorthSpline);
+      } /* endfor */
+      // 	 for ( i = ICl; i <= ICu; i++) {
+      // 	   if (area(i,JCu) <= ZERO) {
+      // 	     Node[i][JNu-1].X = Node[i][JNu-3].X + (2.0/3.0)*(Node[i][JNu].X-
+      // 												      Node[i][JNu-3].X);
+      // 	     Node[i][JNu-2].X = Node[i][JNu-3].X + (1.0/3.0)*(Node[i][JNu].X-
+      // 												      Node[i][JNu-3].X);
+      // 	     Node[i+1][JNu-1].X = Node[i+1][JNu-3].X + (2.0/3.0)*(Node[i+1][JNu].X-
+      // 												      Node[i+1][JNu-3].X);
+      // 	     Node[i+1][JNu-2].X = Node[i+1][JNu-3].X + (1.0/3.0)*(Node[i+1][JNu].X-
+      // 												      Node[i+1][JNu-3].X);
+      // 	   }
+      // 	 }
+    } /* endif */
 
     /* Set the boundary condition types for refined 
        quadrilateral mesh block. */
 
-       Set_BCs();
+    Set_BCs();
 
     /* Compute the exterior nodes for refined 
        quadrilateral mesh block. */
 
-       Update_Exterior_Nodes();
+    Update_Exterior_Nodes();
 
     /* Compute the cells for refined 
        quadrilateral mesh block. */
 
-       Update_Cells();
+    Update_Cells();
 
-    } /* endif */
+  } /* endif */
 
 }
 
@@ -6056,202 +6040,202 @@ void Grid2D_Quad_Block_HO::Coarsen_Mesh(Grid2D_Quad_Block_HO &Grid_Original_SW,
 					Grid2D_Quad_Block_HO &Grid_Original_NW,
 					Grid2D_Quad_Block_HO &Grid_Original_NE) {
 
-    int i, j, i_coarse, j_coarse, mesh_coarsening_permitted;
+  int i, j, i_coarse, j_coarse, mesh_coarsening_permitted;
  
-    /* Allocate memory for the cells and nodes for the 
-       coarsened quadrilateral mesh block. */
+  /* Allocate memory for the cells and nodes for the 
+     coarsened quadrilateral mesh block. */
 
-    if ( (Grid_Original_SW.NCi-2*Grid_Original_SW.Nghost-
-	  2*((Grid_Original_SW.NCi-2*Grid_Original_SW.Nghost)/2) != 0) || 
-         (Grid_Original_SW.NCj-2*Grid_Original_SW.Nghost-
-	  2*((Grid_Original_SW.NCj-2*Grid_Original_SW.Nghost)/2) != 0) ||
-         (Grid_Original_SW.NCi-2*Grid_Original_SW.Nghost < 2*Grid_Original_SW.Nghost) ||
-         (Grid_Original_SW.NCj-2*Grid_Original_SW.Nghost < 2*Grid_Original_SW.Nghost) ||
-         (Grid_Original_SE.NCi != Grid_Original_SW.NCi) ||
-         (Grid_Original_SE.NCj != Grid_Original_SW.NCj) ||
-         (Grid_Original_NW.NCi != Grid_Original_SW.NCi) ||
-         (Grid_Original_NW.NCj != Grid_Original_SW.NCj) ||
-         (Grid_Original_NE.NCi != Grid_Original_SW.NCi) ||
-         (Grid_Original_NE.NCj != Grid_Original_SW.NCj) ||
-         (Grid_Original_SW.Node == NULL) ||
-         (Grid_Original_SE.Node == NULL) ||
-         (Grid_Original_NW.Node == NULL) ||
-         (Grid_Original_NE.Node == NULL) ) {
-       mesh_coarsening_permitted = 0;
-    } else {
-       mesh_coarsening_permitted = 1;
-       allocate(Grid_Original_SW.NCi-2*Grid_Original_SW.Nghost, 
-		Grid_Original_SW.NCj-2*Grid_Original_SW.Nghost,
-		Grid_Original_SW.Nghost);
-    } /* endif */
+  if ( (Grid_Original_SW.NCi-2*Grid_Original_SW.Nghost-
+	2*((Grid_Original_SW.NCi-2*Grid_Original_SW.Nghost)/2) != 0) || 
+       (Grid_Original_SW.NCj-2*Grid_Original_SW.Nghost-
+	2*((Grid_Original_SW.NCj-2*Grid_Original_SW.Nghost)/2) != 0) ||
+       (Grid_Original_SW.NCi-2*Grid_Original_SW.Nghost < 2*Grid_Original_SW.Nghost) ||
+       (Grid_Original_SW.NCj-2*Grid_Original_SW.Nghost < 2*Grid_Original_SW.Nghost) ||
+       (Grid_Original_SE.NCi != Grid_Original_SW.NCi) ||
+       (Grid_Original_SE.NCj != Grid_Original_SW.NCj) ||
+       (Grid_Original_NW.NCi != Grid_Original_SW.NCi) ||
+       (Grid_Original_NW.NCj != Grid_Original_SW.NCj) ||
+       (Grid_Original_NE.NCi != Grid_Original_SW.NCi) ||
+       (Grid_Original_NE.NCj != Grid_Original_SW.NCj) ||
+       (Grid_Original_SW.Node == NULL) ||
+       (Grid_Original_SE.Node == NULL) ||
+       (Grid_Original_NW.Node == NULL) ||
+       (Grid_Original_NE.Node == NULL) ) {
+    mesh_coarsening_permitted = 0;
+  } else {
+    mesh_coarsening_permitted = 1;
+    allocate(Grid_Original_SW.NCi-2*Grid_Original_SW.Nghost, 
+	     Grid_Original_SW.NCj-2*Grid_Original_SW.Nghost,
+	     Grid_Original_SW.Nghost);
+  } /* endif */
 
     /* Copy boundary spline info for the coarsened
        quadrilateral mesh block. */
 
-    if (mesh_coarsening_permitted) {
+  if (mesh_coarsening_permitted) {
 
-       if (Grid_Original_NW.BndNorthSpline.np != 0 &&
-           Grid_Original_NE.BndNorthSpline.np != 0) {
-          Copy_Spline(BndNorthSpline, 
-                      Grid_Original_NW.BndNorthSpline);
-       } /* endif */
+    if (Grid_Original_NW.BndNorthSpline.np != 0 &&
+	Grid_Original_NE.BndNorthSpline.np != 0) {
+      Copy_Spline(BndNorthSpline, 
+		  Grid_Original_NW.BndNorthSpline);
+    } /* endif */
 
-       if (Grid_Original_SW.BndSouthSpline.np != 0 &&
-           Grid_Original_SE.BndSouthSpline.np != 0) {
-          Copy_Spline(BndSouthSpline, 
-                      Grid_Original_SW.BndSouthSpline);
-       } /* endif */
+    if (Grid_Original_SW.BndSouthSpline.np != 0 &&
+	Grid_Original_SE.BndSouthSpline.np != 0) {
+      Copy_Spline(BndSouthSpline, 
+		  Grid_Original_SW.BndSouthSpline);
+    } /* endif */
 
-       if (Grid_Original_SE.BndEastSpline.np != 0 &&
-           Grid_Original_NE.BndEastSpline.np != 0) {
-          Copy_Spline(BndEastSpline, 
-                      Grid_Original_SE.BndEastSpline);
-       } /* endif */
+    if (Grid_Original_SE.BndEastSpline.np != 0 &&
+	Grid_Original_NE.BndEastSpline.np != 0) {
+      Copy_Spline(BndEastSpline, 
+		  Grid_Original_SE.BndEastSpline);
+    } /* endif */
   
-       if (Grid_Original_SW.BndWestSpline.np != 0 &&
-           Grid_Original_NW.BndWestSpline.np != 0) {
-          Copy_Spline(BndWestSpline, 
-                      Grid_Original_SW.BndWestSpline);
-       } /* endif */
+    if (Grid_Original_SW.BndWestSpline.np != 0 &&
+	Grid_Original_NW.BndWestSpline.np != 0) {
+      Copy_Spline(BndWestSpline, 
+		  Grid_Original_SW.BndWestSpline);
+    } /* endif */
 
     /* Assign boundary spline pathlength info for the coarsened
        quadrilateral mesh block. */
 
-       if (Grid_Original_NW.BndNorthSpline.np != 0 &&
-           Grid_Original_NE.BndNorthSpline.np != 0) {
-          SminN = Grid_Original_NW.SminN;
-          SmaxN = Grid_Original_NE.SmaxN;
-       } else {
-          SminN = ZERO;
-          SmaxN = ZERO;
-       } /* endif */
+    if (Grid_Original_NW.BndNorthSpline.np != 0 &&
+	Grid_Original_NE.BndNorthSpline.np != 0) {
+      SminN = Grid_Original_NW.SminN;
+      SmaxN = Grid_Original_NE.SmaxN;
+    } else {
+      SminN = ZERO;
+      SmaxN = ZERO;
+    } /* endif */
 
-       if (Grid_Original_SW.BndSouthSpline.np != 0 &&
-           Grid_Original_SE.BndSouthSpline.np != 0) {
-          SminS = Grid_Original_SW.SminS;
-          SmaxS = Grid_Original_SE.SmaxS;
-       } else {
-          SminS = ZERO;
-          SmaxS = ZERO;
-       } /* endif */
+    if (Grid_Original_SW.BndSouthSpline.np != 0 &&
+	Grid_Original_SE.BndSouthSpline.np != 0) {
+      SminS = Grid_Original_SW.SminS;
+      SmaxS = Grid_Original_SE.SmaxS;
+    } else {
+      SminS = ZERO;
+      SmaxS = ZERO;
+    } /* endif */
 
-       if (Grid_Original_SE.BndEastSpline.np != 0 &&
-           Grid_Original_NE.BndEastSpline.np != 0) {
-          SminE = Grid_Original_SE.SmaxE;
-          SmaxE = Grid_Original_NE.SmaxE;
-       } else {
-          SminE = ZERO;
-          SmaxE = ZERO;
-       } /* endif */
+    if (Grid_Original_SE.BndEastSpline.np != 0 &&
+	Grid_Original_NE.BndEastSpline.np != 0) {
+      SminE = Grid_Original_SE.SmaxE;
+      SmaxE = Grid_Original_NE.SmaxE;
+    } else {
+      SminE = ZERO;
+      SmaxE = ZERO;
+    } /* endif */
 
-       if (Grid_Original_SW.BndWestSpline.np != 0 &&
-           Grid_Original_NW.BndWestSpline.np != 0) {
-          SminW = Grid_Original_SW.SminW;
-          SmaxW = Grid_Original_NW.SmaxW;
-       } else {
-          SminW = ZERO;
-          SmaxW = ZERO;
-       } /* endif */
+    if (Grid_Original_SW.BndWestSpline.np != 0 &&
+	Grid_Original_NW.BndWestSpline.np != 0) {
+      SminW = Grid_Original_SW.SminW;
+      SmaxW = Grid_Original_NW.SmaxW;
+    } else {
+      SminW = ZERO;
+      SmaxW = ZERO;
+    } /* endif */
 
     /* Copy node stretching info to coarsened quadrilateral 
        mesh block. */
 
-       StretchI = Grid_Original_SW.StretchI;
-       BetaI = Grid_Original_SW.BetaI;
-       TauI = Grid_Original_SW.TauI;
-       StretchJ = Grid_Original_SW.StretchJ;
-       BetaJ = Grid_Original_SW.BetaJ;
-       TauJ = Grid_Original_SW.TauJ;
-       if (Grid_Original_NW.BndNorthSpline.np != 0 &&
-           Grid_Original_NE.BndNorthSpline.np != 0) {
-          OrthogonalN = Grid_Original_NW.OrthogonalN;
-       } else {
-          OrthogonalN = ORTHOGONAL;
-       } /* endif */
-       if (Grid_Original_SW.BndSouthSpline.np != 0 &&
-           Grid_Original_SE.BndSouthSpline.np != 0) {
-          OrthogonalS = Grid_Original_SW.OrthogonalS;
-       } else {
-          OrthogonalS = ORTHOGONAL;
-       } /* endif */
-       if (Grid_Original_SE.BndEastSpline.np != 0 &&
-           Grid_Original_NE.BndEastSpline.np != 0) {
-          OrthogonalE = Grid_Original_SE.OrthogonalE;
-       } else {
-          OrthogonalE = ORTHOGONAL;
-       } /* endif */
-       if (Grid_Original_SW.BndWestSpline.np != 0 &&
-           Grid_Original_NW.BndWestSpline.np != 0) {
-          OrthogonalW = Grid_Original_SW.OrthogonalW;
-       } else {
-          OrthogonalW = ORTHOGONAL;
-       } /* endif */
+    StretchI = Grid_Original_SW.StretchI;
+    BetaI = Grid_Original_SW.BetaI;
+    TauI = Grid_Original_SW.TauI;
+    StretchJ = Grid_Original_SW.StretchJ;
+    BetaJ = Grid_Original_SW.BetaJ;
+    TauJ = Grid_Original_SW.TauJ;
+    if (Grid_Original_NW.BndNorthSpline.np != 0 &&
+	Grid_Original_NE.BndNorthSpline.np != 0) {
+      OrthogonalN = Grid_Original_NW.OrthogonalN;
+    } else {
+      OrthogonalN = ORTHOGONAL;
+    } /* endif */
+    if (Grid_Original_SW.BndSouthSpline.np != 0 &&
+	Grid_Original_SE.BndSouthSpline.np != 0) {
+      OrthogonalS = Grid_Original_SW.OrthogonalS;
+    } else {
+      OrthogonalS = ORTHOGONAL;
+    } /* endif */
+    if (Grid_Original_SE.BndEastSpline.np != 0 &&
+	Grid_Original_NE.BndEastSpline.np != 0) {
+      OrthogonalE = Grid_Original_SE.OrthogonalE;
+    } else {
+      OrthogonalE = ORTHOGONAL;
+    } /* endif */
+    if (Grid_Original_SW.BndWestSpline.np != 0 &&
+	Grid_Original_NW.BndWestSpline.np != 0) {
+      OrthogonalW = Grid_Original_SW.OrthogonalW;
+    } else {
+      OrthogonalW = ORTHOGONAL;
+    } /* endif */
 
-       // Force orthogonality at all coarsened mesh boundaries.
-       OrthogonalN = ORTHOGONAL;
-       OrthogonalS = ORTHOGONAL;
-       OrthogonalE = ORTHOGONAL;
-       OrthogonalW = ORTHOGONAL;
+    // Force orthogonality at all coarsened mesh boundaries.
+    OrthogonalN = ORTHOGONAL;
+    OrthogonalS = ORTHOGONAL;
+    OrthogonalE = ORTHOGONAL;
+    OrthogonalW = ORTHOGONAL;
 
     /* Determine the node locations for the coarsened
        quadrilateral mesh block. */
 
-       for ( j = Grid_Original_SW.JNl; j <= Grid_Original_SW.JNu ; j += 2 ) {
-	   for ( i = Grid_Original_SW.INl ; i <= Grid_Original_SW.INu ; i += 2 ) {
- 	      i_coarse = (i-Grid_Original_SW.INl)/2+
-                         INl;
-	      j_coarse = (j-Grid_Original_SW.JNl)/2+
-                         JNl;
-              Node[i_coarse][j_coarse].X = Grid_Original_SW.Node[i][j].X;
-           } /* endfor */
-       } /* endfor */
+    for ( j = Grid_Original_SW.JNl; j <= Grid_Original_SW.JNu ; j += 2 ) {
+      for ( i = Grid_Original_SW.INl ; i <= Grid_Original_SW.INu ; i += 2 ) {
+	i_coarse = (i-Grid_Original_SW.INl)/2+
+	  INl;
+	j_coarse = (j-Grid_Original_SW.JNl)/2+
+	  JNl;
+	Node[i_coarse][j_coarse].X = Grid_Original_SW.Node[i][j].X;
+      } /* endfor */
+    } /* endfor */
 
-       for ( j = Grid_Original_SE.JNl; j <= Grid_Original_SE.JNu ; j += 2 ) {
-	   for ( i = Grid_Original_SE.INl ; i <= Grid_Original_SE.INu ; i += 2 ) {
- 	      i_coarse = (i-Grid_Original_SE.INl)/2+
-                         (INu-INl)/2+INl;
-	      j_coarse = (j-Grid_Original_SE.JNl)/2+
-                         JNl;
-              Node[i_coarse][j_coarse].X = Grid_Original_SE.Node[i][j].X;
-           } /* endfor */
-       } /* endfor */
+    for ( j = Grid_Original_SE.JNl; j <= Grid_Original_SE.JNu ; j += 2 ) {
+      for ( i = Grid_Original_SE.INl ; i <= Grid_Original_SE.INu ; i += 2 ) {
+	i_coarse = (i-Grid_Original_SE.INl)/2+
+	  (INu-INl)/2+INl;
+	j_coarse = (j-Grid_Original_SE.JNl)/2+
+	  JNl;
+	Node[i_coarse][j_coarse].X = Grid_Original_SE.Node[i][j].X;
+      } /* endfor */
+    } /* endfor */
 
-       for ( j = Grid_Original_NW.JNl; j <= Grid_Original_NW.JNu ; j += 2 ) {
-	   for ( i = Grid_Original_NW.INl ; i <= Grid_Original_NW.INu ; i += 2 ) {
- 	      i_coarse = (i-Grid_Original_NW.INl)/2+
-                         INl;
-	      j_coarse = (j-Grid_Original_NW.JNl)/2+
-                         (JNu-JNl)/2+JNl;
-              Node[i_coarse][j_coarse].X = Grid_Original_NW.Node[i][j].X;
-           } /* endfor */
-       } /* endfor */
+    for ( j = Grid_Original_NW.JNl; j <= Grid_Original_NW.JNu ; j += 2 ) {
+      for ( i = Grid_Original_NW.INl ; i <= Grid_Original_NW.INu ; i += 2 ) {
+	i_coarse = (i-Grid_Original_NW.INl)/2+
+	  INl;
+	j_coarse = (j-Grid_Original_NW.JNl)/2+
+	  (JNu-JNl)/2+JNl;
+	Node[i_coarse][j_coarse].X = Grid_Original_NW.Node[i][j].X;
+      } /* endfor */
+    } /* endfor */
 
-       for ( j = Grid_Original_NE.JNl; j <= Grid_Original_NE.JNu ; j += 2 ) {
-	   for ( i = Grid_Original_NE.INl ; i <= Grid_Original_NE.INu ; i += 2 ) {
- 	      i_coarse = (i-Grid_Original_NE.INl)/2+
-                         (INu-INl)/2+INl;
-	      j_coarse = (j-Grid_Original_NE.JNl)/2+
-                         (JNu-JNl)/2+JNl;
-              Node[i_coarse][j_coarse].X = Grid_Original_NE.Node[i][j].X;
-           } /* endfor */
-       } /* endfor */
+    for ( j = Grid_Original_NE.JNl; j <= Grid_Original_NE.JNu ; j += 2 ) {
+      for ( i = Grid_Original_NE.INl ; i <= Grid_Original_NE.INu ; i += 2 ) {
+	i_coarse = (i-Grid_Original_NE.INl)/2+
+	  (INu-INl)/2+INl;
+	j_coarse = (j-Grid_Original_NE.JNl)/2+
+	  (JNu-JNl)/2+JNl;
+	Node[i_coarse][j_coarse].X = Grid_Original_NE.Node[i][j].X;
+      } /* endfor */
+    } /* endfor */
 
     /* Set the boundary condition types for newly coarsened
        quadrilateral mesh block. */
 
-       Set_BCs();
+    Set_BCs();
 
     /* Compute the exterior nodes for newly coarsened 
        quadrilateral mesh block. */
 
-       Update_Exterior_Nodes();
+    Update_Exterior_Nodes();
 
     /* Compute the cells for newly coarsened
        quadrilateral mesh block. */
 
-       Update_Cells();
+    Update_Cells();
 
-    } /* endif */
+  } /* endif */
 
 }
 
@@ -6268,89 +6252,89 @@ void Grid2D_Quad_Block_HO::Fix_Refined_Mesh_Boundaries(const int Fix_North_Bound
 						       const int Fix_East_Boundary,
 						       const int Fix_West_Boundary) {
 
-    int i, j;
-    double ds_ratio, dl, dr;
+  int i, j;
+  double ds_ratio, dl, dr;
  
-    /* Adjust the node locations of the north boundary
-       of the quadrilateral mesh block. */
+  /* Adjust the node locations of the north boundary
+     of the quadrilateral mesh block. */
 
-    if (Fix_North_Boundary) {
-       for ( i = INl+1 ; i <= INu-1 ; i+=2 ) {
-          dl = abs(Node[i  ][JNu].X - 
-                   Node[i-1][JNu].X);
-          dr = abs(Node[i+1][JNu].X - 
-                   Node[i  ][JNu].X);
-          ds_ratio = dl/(dl+dr);
-          Node[i][JNu].X = 
-             Node[i-1][JNu].X +
-             ds_ratio*(Node[i+1][JNu].X-
-                       Node[i-1][JNu].X);
-       } /* endfor */
-    } /* endif */
+  if (Fix_North_Boundary) {
+    for ( i = INl+1 ; i <= INu-1 ; i+=2 ) {
+      dl = abs(Node[i  ][JNu].X - 
+	       Node[i-1][JNu].X);
+      dr = abs(Node[i+1][JNu].X - 
+	       Node[i  ][JNu].X);
+      ds_ratio = dl/(dl+dr);
+      Node[i][JNu].X = 
+	Node[i-1][JNu].X +
+	ds_ratio*(Node[i+1][JNu].X-
+		  Node[i-1][JNu].X);
+    } /* endfor */
+  } /* endif */
 
     /* Adjust the node locations of the south boundary
        of the quadrilateral mesh block. */
 
-    if (Fix_South_Boundary) {
-       for ( i = INl+1 ; i <= INu-1 ; i+=2 ) {
-          dl = abs(Node[i  ][JNl].X - 
-                   Node[i-1][JNl].X);
-          dr = abs(Node[i+1][JNl].X - 
-                   Node[i  ][JNl].X);
-          ds_ratio = dl/(dl+dr);
-          Node[i][JNl].X = 
-             Node[i-1][JNl].X +
-             ds_ratio*(Node[i+1][JNl].X-
-                       Node[i-1][JNl].X);
-       } /* endfor */
-    } /* endif */
+  if (Fix_South_Boundary) {
+    for ( i = INl+1 ; i <= INu-1 ; i+=2 ) {
+      dl = abs(Node[i  ][JNl].X - 
+	       Node[i-1][JNl].X);
+      dr = abs(Node[i+1][JNl].X - 
+	       Node[i  ][JNl].X);
+      ds_ratio = dl/(dl+dr);
+      Node[i][JNl].X = 
+	Node[i-1][JNl].X +
+	ds_ratio*(Node[i+1][JNl].X-
+		  Node[i-1][JNl].X);
+    } /* endfor */
+  } /* endif */
 
     /* Adjust the node locations of the east boundary
        of the quadrilateral mesh block. */
 
-    if (Fix_East_Boundary) {
-       for ( j  = JNl+1; j <= JNu-1; j+=2 ) {
-          dl = abs(Node[INu][j  ].X - 
-                   Node[INu][j-1].X);
-          dr = abs(Node[INu][j+1].X - 
-                   Node[INu][j  ].X);
-          ds_ratio = dl/(dl+dr);
-          Node[INu][j].X = 
-             Node[INu][j-1].X +
-             ds_ratio*(Node[INu][j+1].X-
-                       Node[INu][j-1].X);
-       } /* endfor */
-    } /* endif */
+  if (Fix_East_Boundary) {
+    for ( j  = JNl+1; j <= JNu-1; j+=2 ) {
+      dl = abs(Node[INu][j  ].X - 
+	       Node[INu][j-1].X);
+      dr = abs(Node[INu][j+1].X - 
+	       Node[INu][j  ].X);
+      ds_ratio = dl/(dl+dr);
+      Node[INu][j].X = 
+	Node[INu][j-1].X +
+	ds_ratio*(Node[INu][j+1].X-
+		  Node[INu][j-1].X);
+    } /* endfor */
+  } /* endif */
 
     /* Adjust the node locations of the west boundary
        of the quadrilateral mesh block. */
 
-    if (Fix_West_Boundary) {
-       for ( j  = JNl+1; j <= JNu-1; j+=2 ) {
-          dl = abs(Node[INl][j  ].X - 
-                   Node[INl][j-1].X);
-          dr = abs(Node[INl][j+1].X - 
-                   Node[INl][j  ].X);
-          ds_ratio = dl/(dl+dr);
-          Node[INl][j].X = 
-             Node[INl][j-1].X +
-             ds_ratio*(Node[INl][j+1].X-
-                       Node[INl][j-1].X);
-       } /* endfor */
-    } /* endif */
+  if (Fix_West_Boundary) {
+    for ( j  = JNl+1; j <= JNu-1; j+=2 ) {
+      dl = abs(Node[INl][j  ].X - 
+	       Node[INl][j-1].X);
+      dr = abs(Node[INl][j+1].X - 
+	       Node[INl][j  ].X);
+      ds_ratio = dl/(dl+dr);
+      Node[INl][j].X = 
+	Node[INl][j-1].X +
+	ds_ratio*(Node[INl][j+1].X-
+		  Node[INl][j-1].X);
+    } /* endfor */
+  } /* endif */
 
     /* Reset the boundary condition types at the grid block
        boundaries. */
  
-    Set_BCs();
+  Set_BCs();
 
-    /* Recompute the exterior nodes for the quadrilateral mesh block. */
+  /* Recompute the exterior nodes for the quadrilateral mesh block. */
 
-    Update_Exterior_Nodes();
+  Update_Exterior_Nodes();
 
-    /* Recompute the cells for the quadrilateral mesh block. */
+  /* Recompute the cells for the quadrilateral mesh block. */
 
-    Update_Cells();
+  Update_Cells();
 
 }
 
@@ -6363,97 +6347,97 @@ void Grid2D_Quad_Block_HO::Fix_Refined_Mesh_Boundaries(const int Fix_North_Bound
  */
 void Grid2D_Quad_Block_HO::Unfix_Refined_Mesh_Boundaries(void) {
 
-    int i, j;
-    double sp_l, sp_r, sp_m, ds_ratio, dl, dr;
+  int i, j;
+  double sp_l, sp_r, sp_m, ds_ratio, dl, dr;
  
-    /* Return the nodes at the north boundary
-       to their original positions. */
+  /* Return the nodes at the north boundary
+     to their original positions. */
 
-    if (BndNorthSpline.np != 0) {
-       for ( i = INl+1 ; i < INu ; i += 2 ) {
-           sp_l = getS(Node[i-1][JNu].X, 
-                       BndNorthSpline);
-           sp_r = getS(Node[i+1][JNu].X, 
-                       BndNorthSpline);
-           dl = abs(Node[i  ][JNu].X - 
-                    Node[i-1][JNu].X);
-           dr = abs(Node[i+1][JNu].X - 
-                    Node[i  ][JNu].X);
-           ds_ratio = dl/(dl+dr);
-           sp_m = sp_l + ds_ratio*(sp_r-sp_l);
-           Node[i][JNu].X = Spline(sp_m, BndNorthSpline);
-       } /* endfor */
-    } /* endif */
+  if (BndNorthSpline.np != 0) {
+    for ( i = INl+1 ; i < INu ; i += 2 ) {
+      sp_l = getS(Node[i-1][JNu].X, 
+		  BndNorthSpline);
+      sp_r = getS(Node[i+1][JNu].X, 
+		  BndNorthSpline);
+      dl = abs(Node[i  ][JNu].X - 
+	       Node[i-1][JNu].X);
+      dr = abs(Node[i+1][JNu].X - 
+	       Node[i  ][JNu].X);
+      ds_ratio = dl/(dl+dr);
+      sp_m = sp_l + ds_ratio*(sp_r-sp_l);
+      Node[i][JNu].X = Spline(sp_m, BndNorthSpline);
+    } /* endfor */
+  } /* endif */
 
     /* Return the nodes at the south boundary
        to their original positions. */
 
-    if (BndSouthSpline.np != 0) {
-       for ( i = INl+1 ; i < INu ; i += 2 ) {
-           sp_l = getS(Node[i-1][JNl].X, 
-                       BndSouthSpline);
-           sp_r = getS(Node[i+1][JNl].X, 
-                       BndSouthSpline);
-           dl = abs(Node[i  ][JNl].X - 
-                    Node[i-1][JNl].X);
-           dr = abs(Node[i+1][JNl].X - 
-                    Node[i  ][JNl].X);
-           ds_ratio = dl/(dl+dr);
-           sp_m = sp_l + ds_ratio*(sp_r-sp_l);
-           Node[i][JNl].X = Spline(sp_m, BndSouthSpline);
-       } /* endfor */
-    } /* endif */
+  if (BndSouthSpline.np != 0) {
+    for ( i = INl+1 ; i < INu ; i += 2 ) {
+      sp_l = getS(Node[i-1][JNl].X, 
+		  BndSouthSpline);
+      sp_r = getS(Node[i+1][JNl].X, 
+		  BndSouthSpline);
+      dl = abs(Node[i  ][JNl].X - 
+	       Node[i-1][JNl].X);
+      dr = abs(Node[i+1][JNl].X - 
+	       Node[i  ][JNl].X);
+      ds_ratio = dl/(dl+dr);
+      sp_m = sp_l + ds_ratio*(sp_r-sp_l);
+      Node[i][JNl].X = Spline(sp_m, BndSouthSpline);
+    } /* endfor */
+  } /* endif */
 
     /* Return the nodes at the east boundary
        to their original positions. */
 
-    if (BndEastSpline.np != 0) {
-       for (j  = JNl+1 ; j < JNu ; j += 2 ) {
-           sp_l = getS(Node[INu][j-1].X, 
-                       BndEastSpline);
-           sp_r = getS(Node[INu][j+1].X, 
-                       BndEastSpline);
-           dl = abs(Node[INu][j  ].X - 
-                    Node[INu][j-1].X);
-           dr = abs(Node[INu][j+1].X - 
-                    Node[INu][j  ].X);
-           ds_ratio = dl/(dl+dr);
-           sp_m = sp_l + ds_ratio*(sp_r-sp_l);
-           Node[INu][j].X = Spline(sp_m, BndEastSpline);
-       } /* endfor */
-    } /* endif */
+  if (BndEastSpline.np != 0) {
+    for (j  = JNl+1 ; j < JNu ; j += 2 ) {
+      sp_l = getS(Node[INu][j-1].X, 
+		  BndEastSpline);
+      sp_r = getS(Node[INu][j+1].X, 
+		  BndEastSpline);
+      dl = abs(Node[INu][j  ].X - 
+	       Node[INu][j-1].X);
+      dr = abs(Node[INu][j+1].X - 
+	       Node[INu][j  ].X);
+      ds_ratio = dl/(dl+dr);
+      sp_m = sp_l + ds_ratio*(sp_r-sp_l);
+      Node[INu][j].X = Spline(sp_m, BndEastSpline);
+    } /* endfor */
+  } /* endif */
 
     /* Return the nodes at the west boundary
        to their original positions. */
 
-    if (BndWestSpline.np != 0) {
-       for (j  = JNl+1 ; j < JNu ; j += 2 ) {
-           sp_l = getS(Node[INl][j-1].X, 
-                       BndWestSpline);
-           sp_r = getS(Node[INl][j+1].X, 
-                       BndWestSpline);
-           dl = abs(Node[INl][j  ].X - 
-                    Node[INl][j-1].X);
-           dr = abs(Node[INl][j+1].X - 
-                    Node[INl][j  ].X);
-           ds_ratio = dl/(dl+dr);
-           sp_m = sp_l + ds_ratio*(sp_r-sp_l);
-           Node[INl][j].X = Spline(sp_m, BndWestSpline);
-       } /* endfor */
-    } /* endif */
+  if (BndWestSpline.np != 0) {
+    for (j  = JNl+1 ; j < JNu ; j += 2 ) {
+      sp_l = getS(Node[INl][j-1].X, 
+		  BndWestSpline);
+      sp_r = getS(Node[INl][j+1].X, 
+		  BndWestSpline);
+      dl = abs(Node[INl][j  ].X - 
+	       Node[INl][j-1].X);
+      dr = abs(Node[INl][j+1].X - 
+	       Node[INl][j  ].X);
+      ds_ratio = dl/(dl+dr);
+      sp_m = sp_l + ds_ratio*(sp_r-sp_l);
+      Node[INl][j].X = Spline(sp_m, BndWestSpline);
+    } /* endfor */
+  } /* endif */
 
     /* Reset the boundary condition types at the grid block
        boundaries. */
  
-    Set_BCs();
+  Set_BCs();
 
-    /* Recompute the exterior nodes for the quadrilateral mesh block. */
+  /* Recompute the exterior nodes for the quadrilateral mesh block. */
 
-    Update_Exterior_Nodes();
+  Update_Exterior_Nodes();
 
-    /* Recompute the cells for the quadrilateral mesh block. */
+  /* Recompute the cells for the quadrilateral mesh block. */
 
-    Update_Cells();
+  Update_Cells();
 
 }
 
