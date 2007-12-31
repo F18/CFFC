@@ -30,10 +30,65 @@ namespace tut
       
       set_test_suite_path("Grid/UnitTests/");
     }
+    //Initialize grid and set variables to certain predefined values in order to be verified.
+    void InitializeGrid_Algorithm1(Grid2D_Quad_Block_HO &Grid, int Ni, int Nj, int Ng);
 
   private:
     
   };
+
+  //Initialize grid and set variables to certain predefined values in order to be verified.
+  void Data_Grid2DQuad_HO::InitializeGrid_Algorithm1(Grid2D_Quad_Block_HO &Grid, int Ni, int Nj, int Ng){
+
+    // Initialize grid
+    Grid.allocate(Ni,Nj,Ng);
+           
+    Grid.SminN = 10; 
+    Grid.SmaxN = 9; 
+    Grid.SminS = 8; 
+    Grid.SmaxS = 7; 
+    Grid.SminW = 6; 
+    Grid.SmaxW = 5; 
+    Grid.SminE = 4; 
+    Grid.SmaxE = 3; 
+
+    Grid.StretchI = 10;
+    Grid.StretchJ = 10;
+    Grid.BetaI = 10;
+    Grid.TauI = 10;
+    Grid.BetaJ = 10;
+    Grid.TauJ = 10;
+    Grid.OrthogonalN = 10;
+    Grid.OrthogonalS = 10;
+    Grid.OrthogonalE = 10;
+    Grid.OrthogonalW = 10;
+
+    //Initialize all cells including ghost cells.
+    //The area for the [i,j] cell is i*10+j and the 
+    //location of the cell center is (i,j)
+    Vector2D CellLocation;
+    for (int i = 0; i < Ni+2*Ng; ++i){
+      for (int j = 0; j < Nj+2*Ng; ++j){
+	CellLocation = Vector2D(i,j);
+	Grid.Cell[i][j].Xc = CellLocation; 
+	Grid.Cell[i][j].A = (i*10+j);
+	Grid.Cell[i][j].I = i;
+	Grid.Cell[i][j].J = j;
+      }
+    }
+ 
+    //Initialize values for each node.
+    //The location of the node is (i,j).
+    Vector2D NodeLocation;
+    for (int i = 0; i < Ni+2*Ng+1; ++i){
+      for (int j = 0; j < Nj+2*Ng+1; ++j){
+	NodeLocation = Vector2D(i,j);
+	Grid.Node[i][j].X = NodeLocation; 
+      }
+    }
+    
+  }
+
 
   /**
    * This group of declarations is just to register
@@ -107,13 +162,19 @@ namespace tut
   template<>
   void Grid2DQuad_HO_object::test<2>()
   {
-
+    
+    
     set_test_name("operator = (assignment)");
 
     // Create block grid
     Grid2D_Quad_Block_HO Grid, Grid_Copy;
-    Grid.allocate(10,15,2);
     
+    int Ni = 10;
+    int Nj = 15;
+    int Nghost = 2;
+    InitializeGrid_Algorithm1(Grid, Ni, Nj, Nghost);
+
+
     // operation
     Grid_Copy = Grid;
 
@@ -131,6 +192,53 @@ namespace tut
     ensure_equals("INu", Grid_Copy.INu, 12);
     ensure_equals("JNl", Grid_Copy.JNl, 2);
     ensure_equals("JNu", Grid_Copy.JNu, 17);
+    
+    ensure_equals("SminN",Grid_Copy.SminN, 10);
+    ensure_equals("SmaxN",Grid_Copy.SmaxN, 9);
+    ensure_equals("SminS",Grid_Copy.SminS, 8);
+    ensure_equals("SmaxS",Grid_Copy.SmaxS, 7);
+    ensure_equals("SminW",Grid_Copy.SminW, 6);
+    ensure_equals("SmaxW",Grid_Copy.SmaxW, 5);
+    ensure_equals("SminE",Grid_Copy.SminE, 4);
+    ensure_equals("SmaxE",Grid_Copy.SmaxE, 3);
+
+    ensure_equals("StretchI",Grid_Copy.StretchI, 10);
+    ensure_equals("StretchJ",Grid_Copy.StretchJ, 10);
+    ensure_equals("BetaI",Grid_Copy.BetaI, 10);
+    ensure_equals("TauI",Grid_Copy.TauI, 10);
+    ensure_equals("BetaJ",Grid_Copy.BetaJ, 10);
+    ensure_equals("TauJ",Grid_Copy.TauJ, 10);
+    ensure_equals("OrthogonalN",Grid_Copy.OrthogonalN, 10);
+    ensure_equals("OrthogonalS",Grid_Copy.OrthogonalS, 10);
+    ensure_equals("OrthogonalE",Grid_Copy.OrthogonalE, 10);
+    ensure_equals("OrthogonalW",Grid_Copy.OrthogonalW, 10);
+
+    //Loop through all cells including the ghost cells to ensure
+    //that the values are copied correctly.
+    //The expected area for the [i,j] cell is i*10+j and the 
+    //location of the cell center is (i,j)
+    Vector2D CellLocation;
+    for (int i = 0; i < Ni+2*Nghost; ++i){
+      for (int j = 0; j < Nj+2*Nghost; ++j){
+	CellLocation = Vector2D(i,j);
+	ensure_equals("Cell.Xc", Grid_Copy.Cell[i][j].Xc, CellLocation);
+	ensure_equals("Cell.A", Grid_Copy.Cell[i][j].A, i*10+j);
+	ensure_equals("Cell.I", Grid_Copy.Cell[i][j].I, i);
+	ensure_equals("Cell.J", Grid_Copy.Cell[i][j].J, j);
+      }
+    }
+
+    //Loop through all nodes to ensure that the locations are 
+    //copied correctly.
+    //The expected location of the node is (i,j).
+    Vector2D NodeLocation;
+    for (int i = 0; i < Ni+2*Nghost+1; ++i){
+      for (int j = 0; j < Nj+2*Nghost+1; ++j){
+	NodeLocation = Vector2D(i,j);
+	ensure_equals("Node.X", Grid_Copy.Node[i][j].X, NodeLocation);
+      }
+    }
+
   }
 
   /* Test 3:*/
@@ -143,8 +251,8 @@ namespace tut
 
     // Create block grid
     Grid2D_Quad_Block_HO Grid;
-    Grid.allocate(10,15,2);
-    
+    InitializeGrid_Algorithm1(Grid, 10, 15, 2);
+
     // == check 
     Check_Input_Output_Operator("Grid variable", Grid);
   }
