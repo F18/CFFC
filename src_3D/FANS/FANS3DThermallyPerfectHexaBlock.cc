@@ -173,12 +173,12 @@ Output_Tecplot(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
       Out_File << "\"T\" \\ \n"
                << "\"M\" \\ \n";      
 
-      Out_File<< "ZONE T =  \"Block Number = " << Block_Number
-              << "\" \\ \n"
-              << "I = " << Grid.INu -  Grid.INl + 1 << " \\ \n"
-              << "J = " << Grid.JNu -  Grid.JNl + 1 << " \\ \n"
-              << "K = " << Grid.KNu -  Grid.KNl + 1 << " \\ \n"
-              << "DATAPACKING = POINT \n";
+      Out_File << "ZONE T =  \"Block Number = " << Block_Number
+               << "\" \\ \n"
+               << "I = " << Grid.INu - Grid.INl + 1 << " \\ \n"
+               << "J = " << Grid.JNu - Grid.JNl + 1 << " \\ \n"
+               << "K = " << Grid.KNu - Grid.KNl + 1 << " \\ \n"
+               << "DATAPACKING = POINT \n";
    } else {
       Out_File << "ZONE T =  \"Block Number = " << Block_Number
                << "\" \\ \n"
@@ -188,9 +188,9 @@ Output_Tecplot(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
                << "DATAPACKING = POINT \n";              
    } /* endif */
    
-   for (int k  =  Grid.KNl ; k <=  Grid.KNu ; ++k ) {
-      for (int j  =  Grid.JNl ; j <=  Grid.JNu ; ++j ) {
-         for (int i =  Grid.INl ; i <=  Grid.INu ; ++i ) {
+   for (int k = Grid.KNl ; k <= Grid.KNu ; ++k ) {
+      for (int j = Grid.JNl ; j <= Grid.JNu ; ++j) {
+         for (int i = Grid.INl ; i <= Grid.INu ; ++i) {
             W_node = Wn(i, j, k);
             Out_File << " "  << Grid.Node[i][j][k].X << W_node;
             Out_File.setf(ios::scientific);
@@ -275,22 +275,22 @@ Output_Cells_Tecplot(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
       
       Out_File << "ZONE T =  \"Block Number = " << Block_Number
                << "\" \\ \n"
-               << "I = " <<  ICu -  ICl + 2*Nghost +1 << " \\ \n"
-               << "J = " <<  JCu -  JCl + 2*Nghost +1 << " \\ \n"
-               << "K = " <<  KCu -  KCl + 2*Nghost +1 << " \\ \n"
+               << "I = " << ICu - ICl + 2*Nghost + 1 << " \\ \n"
+               << "J = " << JCu - JCl + 2*Nghost + 1 << " \\ \n"
+               << "K = " << KCu - KCl + 2*Nghost + 1 << " \\ \n"
                << "DATAPACKING = POINT \n";
    } else {
       Out_File << "ZONE T =  \"Block Number = " << Block_Number
                << "\" \\ \n"
-               << "I = " <<  Grid.ICu -  Grid.ICl + 2* Nghost + 1 << " \\ \n"
-               << "J = " <<  Grid.JCu -  Grid.JCl + 2* Nghost + 1 << " \\ \n"
-               << "K = " <<  Grid.KCu -  Grid.KCl + 2* Nghost + 1 << " \\ \n"
+               << "I = " << ICu - ICl + 2*Nghost + 1 << " \\ \n"
+               << "J = " << JCu - JCl + 2*Nghost + 1 << " \\ \n"
+               << "K = " << KCu - KCl + 2*Nghost + 1 << " \\ \n"
                << "DATAPACKING = POINT \n";
    } /* endif */
 
-   for (int k =  KCl- Nghost ; k <=  KCu+ Nghost ; ++k) {
-      for (int j  =  JCl- Nghost ; j <=  JCu+ Nghost ; ++j ) {
-         for (int i =  ICl- Nghost ; i <=  ICu+ Nghost ; ++i ) {
+   for (int k = KCl - Nghost ; k <= KCu + Nghost ; ++k) {
+      for (int j = JCl - Nghost ; j <= JCu + Nghost ; ++j) {
+         for (int i = ICl - Nghost ; i <= ICu + Nghost ; ++i) {
             Out_File << " " << Grid.Cell[i][j][k].Xc
                      << W[i][j][k];
             Out_File.setf(ios::scientific);
@@ -376,24 +376,24 @@ Output_Nodes_Tecplot(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
       Out_File << "\"T\" \\ \n"
                << "\"M\" \\ \n";
 
-      Out_File<< "ZONE T =  \"Block Number = " << Block_Number
-              << "\" \\ \n"
-              << "I = " << Grid.INu -  Grid.INl + 1 << " \\ \n"
-              << "J = " << Grid.JNu -  Grid.JNl + 1 << " \\ \n"
-              << "K = " << Grid.KNu -  Grid.KNl + 1 << " \\ \n"
-              << "DATAPACKING = POINT \n";
+      Out_File << "ZONE T =  \"Block Number = " << Block_Number
+               << "\" \\ \n"
+               << "I = " << Grid.INu - Grid.INl + 2 + 1 << " \\ \n"
+               << "J = " << Grid.JNu - Grid.JNl + 2 + 1 << " \\ \n"
+               << "K = " << Grid.KNu - Grid.KNl + 2 + 1 << " \\ \n"
+               << "DATAPACKING = POINT \n";
    } else {
       Out_File << "ZONE T =  \"Block Number = " << Block_Number
                << "\" \\ \n"
-               << "I = " << Grid.INu - Grid.INl + 1 << " \\ \n"
-               << "J = " << Grid.JNu - Grid.JNl + 1 << " \\ \n"
-               << "K = " << Grid.KNu - Grid.KNl + 1 << " \\ \n"
+               << "I = " << Grid.INu - Grid.INl + 2 + 1 << " \\ \n"
+               << "J = " << Grid.JNu - Grid.JNl + 2 + 1 << " \\ \n"
+               << "K = " << Grid.KNu - Grid.KNl + 2 + 1 << " \\ \n"
                << "DATAPACKING = POINT \n";              
    } /* endif */
    
-   for (int k  =  Grid.KNl ; k <=  Grid.KNu ; ++k ) {
-      for (int j  =  Grid.JNl ; j <=  Grid.JNu ; ++j ) {
-         for (int i =  Grid.INl ; i <=  Grid.INu ; ++i ) {
+   for (int k = Grid.KNl - 1 ; k <= Grid.KNu + 1; ++k) {
+      for (int j = Grid.JNl - 1; j <= Grid.JNu + 1; ++j) {
+         for (int i = Grid.INl - 1; i <= Grid.INu + 1; ++i) {
             W_node = Wn(i, j, k);
             Out_File << " "  << Grid.Node[i][j][k].X << W_node;
             Out_File.setf(ios::scientific);
@@ -751,7 +751,7 @@ ICs(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
                   WallData[i][j][k].tauw = fabs(-0.5*IPs.Grid_IP.Pipe_Radius*dpdz);
                   WallData[i][j][k].utau = sqrt(WallData[i][j][k].tauw/W[i][j][k].rho);
                   ke = WallData[i][j][k].utau*WallData[i][j][k].utau/
-                     sqrt(W[0][0][0].k_omega_model.beta_star);
+                       sqrt(W[0][0][0].k_omega_model.beta_star);
                   W[i][j][k].p = IPs.Wo.p - Grid.Cell[i][j][k].Xc.z*dpdz;	 
                   // setting the axial velocity in a turbulent pipe flow
                   // by using the power law of aixal velocity in a turbulent pipe flow

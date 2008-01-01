@@ -1,0 +1,71 @@
+Time_Integration_Type =
+Multistage_Optimal_Smoothing
+#Explicit_Runge_Kutta
+#Explicit_Euler
+N_Stage = 
+3
+Time_Accurate = 
+OFF
+Local_Time_Stepping =
+1
+Reconstruction_Type =
+Least_Squares
+Limiter_Type = 
+Barth_Jespersen
+Flux_Function_Type =
+Roe
+ICs_Type = 
+Uniform
+#Pipe_Flow
+#Restart
+Flow_Type = 
+Turbulent-k-omega
+Near_Wall_Boundary_Treatment =
+2
+Pressure_Gradient =
+0.00  0.00   23.13
+Reynolds_Number = 
+500000
+Schmidt=
+1.0
+Temperature = 
+298
+Grid_Type =
+Pipe
+Stretching_Factor_Jdir =
+1.001
+Number_of_Cells_Idir = 
+12
+Number_of_Cells_Jdir =
+12
+Number_of_Cells_Kdir =
+16
+###############################
+# Set time stepping parameters
+###############################
+CFL_Number =
+0.1
+Time_Max = 
+0.0
+Maximum_Number_of_Time_Steps =
+1
+Number_of_Blocks_Per_Processor =
+20
+Output_File_Name = 
+turbulent_pipe
+#######################
+# Execute program
+#######################
+Execute
+#######################
+# Write output
+#######################
+Write_Output
+Write_Output_Cells
+#Write_Output_Nodes
+Write_Restart
+#######################
+# Terminate program
+#######################
+Terminate
+#########################

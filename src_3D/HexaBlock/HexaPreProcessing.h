@@ -103,7 +103,7 @@ int Initial_Conditions(HexaSolver_Data &Data,
                              Solution_Data.Input);
     if (!Data.batch_flag && error_flag) {
       cout << "\n ERROR: Unable to open octree data file on processor "
-	   << Data.Local_Adaptive_Block_List.ThisCPU<< ".\n";
+	   << Data.Local_Adaptive_Block_List.ThisCPU << ".\n";
          cout.flush();
     } /* endif */
     error_flag = CFFC_OR_MPI(error_flag);
@@ -117,7 +117,7 @@ int Initial_Conditions(HexaSolver_Data &Data,
 									   Data.processor_cpu_time);
     if (!Data.batch_flag && error_flag) {
       cout << "\n ERROR: Unable to open restart input data file(s) "
-	   << "on processor "<< CFFC_MPI::This_Processor_Number<< ".\n";
+	   << "on processor "<< CFFC_MPI::This_Processor_Number << ".\n";
       cout.flush();
     } /* endif */ 
     error_flag = CFFC_OR_MPI(error_flag);
@@ -221,8 +221,7 @@ int Initial_Conditions(HexaSolver_Data &Data,
      Solution_Data.Local_Solution_Blocks.Correct_Grid_Exterior_Nodes(Data.Local_Adaptive_Block_List);
 
      // Fix corner ghost nodes for three-block abutting cases.
-     Solution_Data.Local_Solution_Blocks.Fix_Corner_Cells_for_3_Blks_Abutting(Data.Local_Adaptive_Block_List);
-     
+     Solution_Data.Local_Solution_Blocks.Fix_Corner_Cells_for_3_Blks_Abutting(Data.Local_Adaptive_Block_List);     
   } /* endif */
 
   // Now send solution information and data.
