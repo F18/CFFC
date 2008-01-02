@@ -435,6 +435,8 @@ inline char *Date_And_Time() {
 #define FLOWTYPE_TURBULENT_DNS                        11
 #define FLOWTYPE_TURBULENT_LES_C_FSD_K                12
 #define FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY      13
+#define FLOWTYPE_TURBULENT_LES_TF_K                   14
+#define FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY         15
 
 /**********************************************************************
  * CFD -- Particle-phase formulation.                                 *

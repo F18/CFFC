@@ -42,6 +42,10 @@ class HexaSolver_Data {
   // Residaul File Output Stream
   ofstream residual_file;
 
+  ofstream energy_file;
+
+  ofstream turbulence_progress_file;
+
   int total_number_of_time_steps() { return (number_of_explicit_time_steps+number_of_implicit_time_steps); }
  
   /*********************************/

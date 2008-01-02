@@ -102,6 +102,22 @@ int HexaSolver(char *Input_File_Name_ptr,int batch_flag){
 	cout << "\n ERROR: Unable to open residual file for the calculation.\n";
 	cout.flush(); return (error_flag);
       } /* endif */
+
+      error_flag = Open_Energy_File(Data.energy_file,
+			            Solution_Data.Input.Output_File_Name,
+				    Data.number_of_explicit_time_steps);
+      if (error_flag) {
+	cout << "\n ERROR: Unable to open energy file for the calculation.\n";
+	cout.flush(); return (error_flag);
+      } /* endif */
+
+      error_flag = Open_Turbulence_Progress_File(Data.turbulence_progress_file,
+	 		                         Solution_Data.Input.Output_File_Name,
+				                 Data.number_of_explicit_time_steps);
+      if (error_flag) {
+	cout << "\n ERROR: Unable to open turbulence progress file for the calculation.\n";
+	cout.flush(); return (error_flag);
+      } /* endif */
     } /* endif */
 
     /********************** EXPLICIT **********************************/  
@@ -123,6 +139,12 @@ int HexaSolver(char *Input_File_Name_ptr,int batch_flag){
     
     // Close Progress File 
     if (CFFC_Primary_MPI_Processor()) error_flag = Close_Progress_File(Data.residual_file);
+    if (error_flag) return (error_flag);
+
+    if (CFFC_Primary_MPI_Processor()) error_flag = Close_Energy_File(Data.energy_file);
+    if (error_flag) return (error_flag);
+
+    if (CFFC_Primary_MPI_Processor()) error_flag = Close_Turbulence_Progress_File(Data.turbulence_progress_file);
     if (error_flag) return (error_flag);
 
     /*! ************************** POST PROCESSSING *******************************

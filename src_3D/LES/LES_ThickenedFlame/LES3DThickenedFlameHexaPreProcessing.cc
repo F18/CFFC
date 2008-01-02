@@ -1,19 +1,19 @@
 
-#ifndef _LES3DFSD_INCLUDED
-#include "LES3DFsd.h"
-#endif // _LES3DFSD_INCLUDED
+#ifndef _LES3DTF_INCLUDED
+#include "LES3DThickenedFlame.h"
+#endif // _LES3DTF_INCLUDED
 
 /********************************************************
  * Routine: Pre_Processing_Specializations              *
  ********************************************************/
 template<>
 int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
-                                        HexaSolver_Solution_Data<LES3DFsd_pState, 
-                                                                 LES3DFsd_cState> &Solution_Data) {
+                                        HexaSolver_Solution_Data<LES3DTF_pState, 
+                                                                 LES3DTF_cState> &Solution_Data) {
 
   int error_flag(0);
   
-  RandomFieldRogallo<LES3DFsd_pState, LES3DFsd_cState>   Velocity_Field_Type(SPECTRUM_HAWORTH_POINSOT);
+  RandomFieldRogallo<LES3DTF_pState, LES3DTF_cState>   Velocity_Field_Type(SPECTRUM_HAWORTH_POINSOT);
   Turbulent_Velocity_Field_Multi_Block_List  Velocity_Field;
 
   Velocity_Field.Create(Data.Initial_Mesh, 
@@ -40,8 +40,8 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
  ********************************************************/
 template<>
 int Hexa_Post_Processing_Specializations(HexaSolver_Data &Data,
-		 	                 HexaSolver_Solution_Data<LES3DFsd_pState, 
-                                                                  LES3DFsd_cState>&Solution_Data) {
+		 	                 HexaSolver_Solution_Data<LES3DTF_pState, 
+                                                                  LES3DTF_cState>&Solution_Data) {
 
    int error_flag(0);
    double u_ave, v_ave, w_ave, sqr_u;

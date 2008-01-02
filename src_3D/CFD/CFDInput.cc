@@ -292,6 +292,10 @@ int CFD_Input_Parameters::Parse_Next_Input_Control_Parameter(void) {
 	 i_Flow_Type = FLOWTYPE_TURBULENT_LES_C_FSD_K;
        } else if (strcmp(Flow_Type, "Turbulent-LES-C-Fsd-Smagorinsky") == 0) {
 	 i_Flow_Type = FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY;
+       } else if (strcmp(Flow_Type, "Turbulent-LES-TF-k") == 0) {
+	 i_Flow_Type = FLOWTYPE_TURBULENT_LES_TF_K;
+       } else if (strcmp(Flow_Type, "Turbulent-LES-TF-Smagorinsky") == 0) {
+	 i_Flow_Type = FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY;
        } else if (strcmp(Flow_Type, "Turbulent-DES-k-omega") == 0) {
           i_Flow_Type = FLOWTYPE_TURBULENT_DES_K_OMEGA;
        } else if (strcmp(Flow_Type, "Turbulent-DNS") == 0) {

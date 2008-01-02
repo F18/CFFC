@@ -2604,7 +2604,7 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Reconstruction_Second_Derivatives(voi
 	    DZ = Grid.Cell[i][j][k].Xc.z - Grid.Cell[i][j][k-1].Xc.z;
 	    _d2Wdx2[i][j][k] = ( dWdx[i][j][k] - dWdx[i-1][j][k] )/ DX;
 	    _d2Wdy2[i][j][k] = ( dWdy[i][j][k] - dWdy[i][j-1][k] )/ DY;
-	    _d2Wdz2[i][j][k] = ( dWdz[i][j][k] - dWdz[i][j][k-1] )/ DZ;      
+	    _d2Wdz2[i][j][k] = ( dWdz[i][j][k] - dWdz[i][j][k-1] )/ DZ;
 	    _d2Wdxdy[i][j][k] = ( dWdx[i][j][k] - dWdx[i][j-1][k] )/ DY;
 	    _d2Wdxdz[i][j][k] = ( dWdx[i][j][k] - dWdx[i][j][k-1] )/ DZ;
 	    _d2Wdydz[i][j][k] = ( dWdy[i][j][k] - dWdy[i][j][k-1] )/ DZ;
@@ -2618,7 +2618,7 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Reconstruction_Second_Derivatives(voi
 	    _d2Wdy2[i][j][k] = ( dWdy[i][j+1][k] - dWdy[i][j][k] )/ DY;
 	    _d2Wdz2[i][j][k] = ( dWdz[i][j][k+1] - dWdz[i][j][k] )/ DZ;
 	    _d2Wdxdy[i][j][k] = ( dWdx[i][j+1][k] - dWdx[i][j][k] )/ DY;
-	    _d2Wdxdz[i][j][k] = ( dWdx[i][j][k+1] - dWdx[i][j][k] )/ DZ;	  
+	    _d2Wdxdz[i][j][k] = ( dWdx[i][j][k+1] - dWdx[i][j][k] )/ DZ;
             _d2Wdydz[i][j][k] = ( dWdy[i][j][k+1] - dWdy[i][j][k] )/ DZ;
 
 	  } else {
@@ -2626,7 +2626,7 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Reconstruction_Second_Derivatives(voi
 	    DX = Grid.Cell[i+1][j][k].Xc.x - Grid.Cell[i-1][j][k].Xc.x;
 	    DY = Grid.Cell[i][j+1][k].Xc.y - Grid.Cell[i][j-1][k].Xc.y;
 	    DZ = Grid.Cell[i][j][k+1].Xc.z - Grid.Cell[i][j][k-1].Xc.z;
-	    _d2Wdx2[i][j][k] = ( dWdx[i+1][j][k] - dWdx[i-1][j][k] )/ DX; 
+	    _d2Wdx2[i][j][k] = ( dWdx[i+1][j][k] - dWdx[i-1][j][k] )/ DX;
 	    _d2Wdy2[i][j][k] = ( dWdy[i][j+1][k] - dWdy[i][j-1][k] )/ DY;
 	    _d2Wdz2[i][j][k] = ( dWdz[i][j][k+1] - dWdz[i][j][k-1] )/ DZ;
 	    _d2Wdxdy[i][j][k] = ( dWdx[i][j+1][k] - dWdx[i][j-1][k] )/ DY;
@@ -2637,6 +2637,51 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Reconstruction_Second_Derivatives(voi
 	} /* endfor */
       } /* endfor */
     } /* endfor */
+
+/*     for (int  k  = KCl; k <= KCu; ++k ) { */
+/*       for (int j  = JCl; j <= JCu; ++j ) { */
+/* 	for (int i = ICl; i <= ICu; ++i ) { */
+
+/* 	  if (i == ICu || j == JCu || k == KCu) { */
+/* 	    //BFW */
+/*             DX = Grid.Cell[i][j][k].Xc.x - Grid.Cell[i-1][j][k].Xc.x; */
+/* 	    DY = Grid.Cell[i][j][k].Xc.y - Grid.Cell[i][j-1][k].Xc.y; */
+/* 	    DZ = Grid.Cell[i][j][k].Xc.z - Grid.Cell[i][j][k-1].Xc.z; */
+/*             _d2Wdx2[i][j][k] = dWdx[i][j][k];_d2Wdx2[i][j][k] -= dWdx[i-1][j][k];_d2Wdx2[i][j][k] /= DX; */
+/*             _d2Wdy2[i][j][k] = dWdy[i][j][k];_d2Wdy2[i][j][k] -= dWdy[i-1][j][k];_d2Wdy2[i][j][k] /= DY; */
+/*             _d2Wdz2[i][j][k] = dWdz[i][j][k];_d2Wdz2[i][j][k] -= dWdz[i-1][j][k];_d2Wdz2[i][j][k] /= DZ; */
+/*             _d2Wdxdy[i][j][k] = dWdx[i][j][k];_d2Wdxdy[i][j][k] -= dWdx[i][j-1][k];_d2Wdxdy[i][j][k] /= DY; */
+/*             _d2Wdxdz[i][j][k] = dWdx[i][j][k];_d2Wdxdz[i][j][k] -= dWdx[i][j][k-1];_d2Wdxdz[i][j][k] /= DZ; */
+/*             _d2Wdydz[i][j][k] = dWdy[i][j][k];_d2Wdydz[i][j][k] -= dWdy[i][j][k-1];_d2Wdydz[i][j][k] /= DZ; */
+
+/* 	  } else if (i == ICl || j == JCl || k == KCl){ */
+/* 	    //FFW */
+/* 	    DX = Grid.Cell[i+1][j][k].Xc.x - Grid.Cell[i][j][k].Xc.x; */
+/* 	    DY = Grid.Cell[i][j+1][k].Xc.y - Grid.Cell[i][j][k].Xc.y; */
+/* 	    DZ = Grid.Cell[i][j][k+1].Xc.z - Grid.Cell[i][j][k].Xc.z; */
+/*             _d2Wdx2[i][j][k] = dWdx[i+1][j][k];_d2Wdx2[i][j][k] -= dWdx[i][j][k];_d2Wdx2[i][j][k] /= DX; */
+/*             _d2Wdy2[i][j][k] = dWdy[i][j+1][k];_d2Wdy2[i][j][k] -= dWdy[i][j][k];_d2Wdy2[i][j][k] /= DY; */
+/*             _d2Wdz2[i][j][k] = dWdz[i][j][k+1];_d2Wdz2[i][j][k] -= dWdz[i][j][k];_d2Wdz2[i][j][k] /= DZ; */
+/*             _d2Wdxdy[i][j][k] = dWdx[i][j+1][k];_d2Wdxdy[i][j][k] -= dWdx[i][j][k];_d2Wdxdy[i][j][k] /= DY; */
+/*             _d2Wdxdz[i][j][k] = dWdx[i][j][k+1];_d2Wdxdz[i][j][k] -= dWdx[i][j][k];_d2Wdxdz[i][j][k] /= DZ; */
+/*             _d2Wdydz[i][j][k] = dWdy[i][j][k+1];_d2Wdydz[i][j][k] -= dWdy[i][j][k];_d2Wdydz[i][j][k] /= DZ; */
+
+/* 	  } else { */
+
+/* 	    DX = Grid.Cell[i+1][j][k].Xc.x - Grid.Cell[i-1][j][k].Xc.x; */
+/* 	    DY = Grid.Cell[i][j+1][k].Xc.y - Grid.Cell[i][j-1][k].Xc.y; */
+/* 	    DZ = Grid.Cell[i][j][k+1].Xc.z - Grid.Cell[i][j][k-1].Xc.z; */
+/*             _d2Wdx2[i][j][k] = dWdx[i+1][j][k];_d2Wdx2[i][j][k] -= dWdx[i-1][j][k];_d2Wdx2[i][j][k] /= DX; */
+/*             _d2Wdy2[i][j][k] = dWdy[i][j+1][k];_d2Wdy2[i][j][k] -= dWdy[i][j-1][k];_d2Wdy2[i][j][k] /= DY; */
+/*             _d2Wdz2[i][j][k] = dWdz[i][j][k+1];_d2Wdz2[i][j][k] -= dWdz[i][j][k-1];_d2Wdz2[i][j][k] /= DZ; */
+/*             _d2Wdxdy[i][j][k] = dWdx[i][j+1][k];_d2Wdxdy[i][j][k] -= dWdx[i][j-1][k];_d2Wdxdy[i][j][k] /= DY; */
+/*             _d2Wdxdz[i][j][k] = dWdx[i][j][k+1];_d2Wdxdz[i][j][k] -= dWdx[i][j][k-1];_d2Wdxdz[i][j][k] /= DZ; */
+/*             _d2Wdydz[i][j][k] = dWdy[i][j][k+1];_d2Wdydz[i][j][k] -= dWdy[i][j][k-1];_d2Wdydz[i][j][k] /= DZ; */
+
+/* 	  } /\* endif *\/ */
+/* 	} /\* endfor *\/ */
+/*       } /\* endfor *\/ */
+/*     } /\* endfor *\/ */
 
 }
 
