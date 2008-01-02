@@ -465,6 +465,7 @@ private:
   double& p(void) { return x[PRESS_]; }
 
   //!< Species mass fractions
+  double* c(void) { return &x[SPEC_]; }
   void c(const double *mfrac) { for (int i=0; i<ns; i++) x[SPEC_+i]=mfrac[i]; }
   void c(const double &val)  { for (int i=0; i<ns; i++) x[SPEC_+i]=val; }
   double& c(const int&i)  { return x[SPEC_+i]; }
@@ -514,6 +515,9 @@ public:
     Mix.setState_DHY(rho(), h, c()); 
     p() = rho()*Mix.gasConstant()*Mix.temperature();
   };
+  //!< Equilibrium composition
+  void equilibrate_HP(void) { Mix.equilibrate_HP(rho(), p(), c()); };
+  void equilibrate_TP(void) { Mix.equilibrate_TP(rho(), p(), c()); };
 
 private:
   void setGas(void) { Mix.setState_DPY(rho(), p(), c()); };
@@ -619,7 +623,8 @@ public:
 			  const int Axisymmetric,
 			  const Vector2D &X,
 			  Vector2D &qflux,
-			  Tensor2D &tau);
+			  Tensor2D &tau,
+			  Vector2D &Vcorr);
   double WallShearStress(const Vector2D &X1,
 			 const Vector2D &X2,
 			 const Vector2D &X3,
@@ -688,11 +693,13 @@ public:
   void Viscous_Flux_x(const Flame2D_State &dWdx,
 		      const Vector2D &qflux,
 		      const Tensor2D &tau,
+		      const Vector2D &Vcorr,
 		      Flame2D_State &Flux, 
 		      const double& mult=1.0) const;
   void Viscous_Flux_y(const Flame2D_State &dWdy,
 		      const Vector2D &qflux,
-		      const Tensor2D &tau, 
+		      const Tensor2D &tau,
+		      const Vector2D &Vcorr,
 		      Flame2D_State &Flux, 
 		      const double& mult=1.0) const;
 
@@ -1096,7 +1103,8 @@ inline void Flame2D_pState::Viscous_Quantities(const Flame2D_State &dWdx,
 					       const int Axisymmetric,
 					       const Vector2D &X,
 					       Vector2D &qflux,
-					       Tensor2D &tau) {
+					       Tensor2D &tau,
+					       Vector2D &Vcorr) {
 
   // declares
   static Vector2D grad_T;
@@ -1126,6 +1134,14 @@ inline void Flame2D_pState::Viscous_Quantities(const Flame2D_State &dWdx,
     tmp = rho() * h_i[i] * Diffusion_coef(i);
     qflux.x -= tmp * dWdx.c(i);
     qflux.y -= tmp * dWdy.c(i);
+  }
+  /****************** Diffusion Correction Velocity ****************/
+  //  Vc = \sum_{i=0}^N { D_k * dY_i/dx_i }
+  Vcorr.zero();
+  for(int i=0; i<ns; i++){
+    tmp = Diffusion_coef(i);
+    Vcorr.x += tmp*dWdx.c(i);
+    Vcorr.y += tmp*dWdy.c(i);
   }
 
 }

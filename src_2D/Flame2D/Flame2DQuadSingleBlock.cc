@@ -914,6 +914,7 @@ void Output_Tecplot(Flame2D_Quad_Block &SolnBlk,
   Flame2D_pState W_node;
   Vector2D qflux;
   Tensor2D tau;
+  Vector2D Vcorr;
 
   /* Ensure boundary conditions are updated before
      evaluating solution at the nodes. */
@@ -956,7 +957,9 @@ void Output_Tecplot(Flame2D_Quad_Block &SolnBlk,
 	     << "\"Tau_xx\" \\  \n"  //rr -axisymmetric
 	     << "\"Tau_xy\" \\  \n"  //rz
 	     << "\"Tau_yy\" \\  \n"  //zz
-	     << "\"Tau_zz\" \\  \n";
+	     << "\"Tau_zz\" \\  \n"
+	     << "\"Vcorr_x\" \\  \n"
+	     << "\"Vcorr_y\" \\  \n";
     // Zone details
     Out_File << "ZONE T =  \"Block Number = " << Block_Number
 	     << "\" \\ \n"
@@ -981,7 +984,7 @@ void Output_Tecplot(Flame2D_Quad_Block &SolnBlk,
       // update related transport properties -> kappa and D_i
       W_node.updateTransport();
       // Compute viscous quantities
-      SolnBlk.Viscous_Quantities_n( i, j, qflux, tau );
+      SolnBlk.Viscous_Quantities_n( i, j, qflux, tau, Vcorr );
       //coordinates 
       Out_File << " " << SolnBlk.Grid.Node[i][j].X<<endl;
       //cell properties
@@ -1000,7 +1003,8 @@ void Output_Tecplot(Flame2D_Quad_Block &SolnBlk,
 	       << " " << W_node.es();
       // viscous terms
       Out_File << " " << qflux
-	       << " " << tau;
+	       << " " << tau
+	       << " " << Vcorr;
       Out_File.unsetf(ios::scientific);
       Out_File << endl;
     } /* endfor */
@@ -1031,6 +1035,7 @@ void Output_Cells_Tecplot(Flame2D_Quad_Block &SolnBlk,
   double rho, p;
   Vector2D qflux;
   Tensor2D tau;
+  Vector2D Vcorr;
   Flame2D_State omega;
 
   BCs(SolnBlk,IP);
@@ -1075,7 +1080,9 @@ void Output_Cells_Tecplot(Flame2D_Quad_Block &SolnBlk,
 	     << "\"Tau_xx\" \\  \n"  //rr -axisymmetric
 	     << "\"Tau_xy\" \\  \n"  //rz
 	     << "\"Tau_yy\" \\  \n"  //zz
-	     << "\"Tau_zz\" \\  \n";
+	     << "\"Tau_zz\" \\  \n"
+	     << "\"Vcorr_x\" \\ \n"
+	     << "\"Vcorr_y\" \\ \n";
     // Reaction Rates
     for(int i =0; i<Flame2D_pState::NumSpecies(); i++){
       Out_File <<"\"omega_c"<<Flame2D_pState::speciesName(i)<<"\" \\ \n";
@@ -1134,7 +1141,7 @@ void Output_Cells_Tecplot(Flame2D_Quad_Block &SolnBlk,
       SolnBlk.W[i][j].Viscous_Quantities( SolnBlk.dWdx[i][j], SolnBlk.dWdy[i][j], 
 					  SolnBlk.Axisymmetric, 
 					  SolnBlk.Grid.Cell[i][j].Xc, 
-					  qflux, tau );
+					  qflux, tau, Vcorr );
       // compute reaction rates
       omega.Vacuum();
       if (Flame2D_pState::isReacting()) SolnBlk.W[i][j].Sw( omega );
@@ -1165,7 +1172,8 @@ void Output_Cells_Tecplot(Flame2D_Quad_Block &SolnBlk,
       }
       // viscous terms
       Out_File << " " << qflux
-	       << " " << tau;
+	       << " " << tau
+	       << " " << Vcorr;
       // reaction rates
       for(int k=0; k<Flame2D_pState::NumSpecies(); k++){
 	Out_File <<" "<<omega.rhoc(k) / rho;
@@ -1412,16 +1420,8 @@ void ICs(Flame2D_Quad_Block &SolnBlk,
     Flame2D_pState Wl = Wo[0]; // unburnt
     Flame2D_pState Wr = Wo[0]; // burnt
 
-    // get the unburned composition
-    const int nsp = Wo[0].NumSpecies();
-    double Temp = Wo[0].T();
-    double Press = Wo[0].p();
-    double* y = new double[nsp];
-    for (int i=0; i<nsp; i++) y[i] = Wo[0].c(i);
-
     // get equilibrium burned composition
-    Mixture::equilibrate_HP( Temp, Press, y );
-    Wr.setState_TPY( Temp, Press, y );
+    Wr.equilibrate_HP();
  
     // set laminar flame speed
     Wl.setVelocity( Input_Parameters.flame_speed, 0.0 );
@@ -1430,7 +1430,7 @@ void ICs(Flame2D_Quad_Block &SolnBlk,
     Wr.FlameJumpLowMach(Wl);
 
     // fix constant pressure
-    Wr.setState_TPY( Wr.T(), ((const Flame2D_pState&)Wl).p(), y );
+    Wr.setState_TPY( Wr.T(), ((const Flame2D_pState&)Wl).p(), ((const Flame2D_pState&)Wr).c() );
 
     // Set Initial condtions on 1D grid
     for (int j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
@@ -1443,9 +1443,6 @@ void ICs(Flame2D_Quad_Block &SolnBlk,
 	SolnBlk.W[i][j].getU(SolnBlk.U[i][j]);
       } 
     } 
-
-    // clean up
-    delete[] y;
 
     //--------------------------------------------------
     // 2D laminar coflow diffusion flame
@@ -1488,6 +1485,9 @@ void ICs(Flame2D_Quad_Block &SolnBlk,
     Wa.setState_TPY( air_temp_inlet, Press, y );
     Wa.setVelocity(0.0, 0.0);
 
+    // ignitor is equilibrium combustion producs
+    Wi.equilibrate_HP();
+
     //
     // Set the inital conditions everywhere
     //
@@ -1503,7 +1503,7 @@ void ICs(Flame2D_Quad_Block &SolnBlk,
 	    SolnBlk.W[i][j] = Wa;
 	    SolnBlk.W[i][j].setVelocityY( (ONE - pow((SolnBlk.Grid.Cell[i][j].Xc.x/fuel_spacing),TWO))*fuel_velocity );
 	  }
-	  //region for injected air parabolic profile
+	//region for injected air parabolic profile
 	} else if (SolnBlk.Grid.Cell[i][j].Xc.x > fuel_spacing+tube_thickness && 
 		   SolnBlk.Grid.Cell[i][j].Xc.x <= 0.05*air_spacing + fuel_spacing+tube_thickness ){		    
 	  SolnBlk.W[i][j] = Wa;
@@ -1511,12 +1511,12 @@ void ICs(Flame2D_Quad_Block &SolnBlk,
 						     fuel_spacing - tube_thickness -
 						     0.05*air_spacing) / 
 						    (0.05*air_spacing), TWO )) * air_velocity );
-	  //region for injected air
+	//region for injected air
 	} else if (SolnBlk.Grid.Cell[i][j].Xc.x > fuel_spacing+tube_thickness && 
 		   SolnBlk.Grid.Cell[i][j].Xc.x <= air_spacing ){	
 	  SolnBlk.W[i][j] = Wa;
 	  SolnBlk.W[i][j].setVelocityY( air_velocity );
-	  //region for quiesent air
+	//region for quiesent air
 	} else {
 	  SolnBlk.W[i][j] = Wa;	    	  	    	  
 	} 
@@ -1525,11 +1525,11 @@ void ICs(Flame2D_Quad_Block &SolnBlk,
 	if( SolnBlk.Grid.Cell[i][j].Xc.y < 0.006 && SolnBlk.Grid.Cell[i][j].Xc.y > 0.003){   	   
 	  if ( SolnBlk.Grid.Cell[i][j].Xc.x <= fuel_spacing && SolnBlk.Grid.Cell[i][j].Xc.y <0.011 && 
 	       SolnBlk.Grid.Cell[i][j].Xc.x > fuel_spacing*0.25){ 
-	    SolnBlk.W[i][j].setTemperature(ignition_temp);
+	    SolnBlk.W[i][j] = Wi;
 	  } else if (SolnBlk.Grid.Cell[i][j].Xc.x <= fuel_spacing){
-	    SolnBlk.W[i][j].setTemperature(ignition_temp);
+	    SolnBlk.W[i][j] = Wi;
 	  } else if (SolnBlk.Grid.Cell[i][j].Xc.x <= air_spacing*0.25){
-	    SolnBlk.W[i][j].setTemperature(ignition_temp);
+	    SolnBlk.W[i][j] = Wi;
 	  } else {
 	    //left at air
 	  }

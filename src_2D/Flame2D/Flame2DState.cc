@@ -306,6 +306,7 @@ void Flame2D_pState::dFIdW_FD(DenseMatrix &dFdW, const double &mult) const {
 void Flame2D_pState::Viscous_Flux_x(const Flame2D_State &dWdx,
 				    const Vector2D &qflux,
 				    const Tensor2D &tau,
+				    const Vector2D &Vcorr,
 				    Flame2D_State &Flux,
 				    const double& mult) const{
  
@@ -316,13 +317,15 @@ void Flame2D_pState::Viscous_Flux_x(const Flame2D_State &dWdx,
   //rho * Diffusion_Coef * grad cn 
   for( int i=0; i<ns; i++){
     Flux.rhoc(i) += mult * rho() * Diffusion_coef(i) * dWdx.c(i);
+    Flux.rhoc(i) -= mult * rho() * c(i) * Vcorr.x; // <- diffusion correction term
   }
 
 }
 
 void Flame2D_pState::Viscous_Flux_y(const Flame2D_State &dWdy,
 				    const Vector2D &qflux,
-				    const Tensor2D &tau, 
+				    const Tensor2D &tau,
+				    const Vector2D &Vcorr,
 				    Flame2D_State &Flux,
 				    const double& mult) const {
 
@@ -333,6 +336,7 @@ void Flame2D_pState::Viscous_Flux_y(const Flame2D_State &dWdy,
   //rho * Diffusion_Coef * grad cn 
   for( int i=0; i<ns; i++){
     Flux.rhoc(i) += mult * rho() * Diffusion_coef(i) * dWdy.c(i);
+    Flux.rhoc(i) -= mult * rho() * c(i) * Vcorr.y; // <- diffusion correction term
   }
 
 }
@@ -1125,7 +1129,8 @@ void Flame2D_pState::Sa_viscous(Flame2D_State &S,
   // compute laminar stresses and heat flux vector
   static Vector2D qflux;
   static Tensor2D tau;
-  Viscous_Quantities(dWdx, dWdy, Axisymmetric, X, qflux, tau);
+  static Vector2D Vcorr;
+  Viscous_Quantities(dWdx, dWdy, Axisymmetric, X, qflux, tau, Vcorr);
 
 
   // Determine axisymmetric source terms
@@ -1135,6 +1140,7 @@ void Flame2D_pState::Sa_viscous(Flame2D_State &S,
     S.E() += mult * (-qflux.x + vx()*tau.xx + vy()*tau.xy)/X.x;
     for(int i=0; i<ns;i++){
       S.rhoc(i) += mult * rho()*Diffusion_coef(i)*dWdx.c(i)/X.x;
+      S.rhoc(i) -= mult * rho() * c(i) * Vcorr.x / X.x; // <- diffusion correction term
     }
     
   } else if (Axisymmetric == AXISYMMETRIC_Y) {
@@ -1143,6 +1149,7 @@ void Flame2D_pState::Sa_viscous(Flame2D_State &S,
     S.E() += mult * (-qflux.y + vx()*tau.xy + vy()*tau.yy)/X.y;
     for(int i=0; i<ns;i++){
       S.rhoc(i) += mult * rho()*Diffusion_coef(i)*dWdy.c(i)/X.y;
+      S.rhoc(i) -= mult * rho() * c(i) * Vcorr.y / X.y; // <- diffusion correction term
     }
     
   } /* endif */
@@ -2396,23 +2403,24 @@ void Flame2D_State::Viscous_Flux_n(Flame2D_pState &W,
 
   static Vector2D qflux;
   static Tensor2D tau;
+  static Vector2D Vcorr;
 
   // the cosines
   static const Vector2D i(1,0), j(0,1);
   double nx( dot(i,norm_dir) ), ny( dot(j,norm_dir) );
 
   // compute the stress tensor and heat flux vector
-  W.Viscous_Quantities( dWdx, dWdy, Axisymmetric, X, qflux, tau );
+  W.Viscous_Quantities( dWdx, dWdy, Axisymmetric, X, qflux, tau, Vcorr );
   
   // Fn = (Fx*dot(i,norm_dir) + Fy*dot(j,norm_dir))
 
   // Fx Constribution
   if (fabs(nx)>TOLER) {
-    W.Viscous_Flux_x(dWdx, qflux, tau, *this, mult*nx);
+    W.Viscous_Flux_x(dWdx, qflux, tau, Vcorr, *this, mult*nx);
   }
   // Fy contribution
   if (fabs(ny)>TOLER) {
-    W.Viscous_Flux_y(dWdy, qflux, tau, *this, mult*ny);
+    W.Viscous_Flux_y(dWdy, qflux, tau, Vcorr, *this, mult*ny);
   }
 
 }
@@ -2444,6 +2452,7 @@ void Flame2D_State::Viscous_FluxHybrid_n(Flame2D_pState &W,
 
   static Vector2D qflux;
   static Tensor2D tau;
+  static Vector2D Vcorr;
 
   // the cosines
   static const Vector2D i(1,0), j(0,1);
@@ -2469,16 +2478,16 @@ void Flame2D_State::Viscous_FluxHybrid_n(Flame2D_pState &W,
   }
 
   // compute the stress tensor and heat flux vector
-  W.Viscous_Quantities( dWdx, dWdy, Axisymmetric, X, qflux, tau );
+  W.Viscous_Quantities( dWdx, dWdy, Axisymmetric, X, qflux, tau, Vcorr );
   
   // Fn = (Fx*dot(i,norm_dir) + Fy*dot(j,norm_dir))
   // Fx Constribution
   if (fabs(nx)>TOLER) {
-    W.Viscous_Flux_x(dWdx, qflux, tau, *this, mult*nx);
+    W.Viscous_Flux_x(dWdx, qflux, tau, Vcorr, *this, mult*nx);
   }
   // Fy contribution
   if (fabs(ny)>TOLER) {
-    W.Viscous_Flux_y(dWdy, qflux, tau, *this, mult*ny);
+    W.Viscous_Flux_y(dWdy, qflux, tau, Vcorr, *this, mult*ny);
   }
 
 }

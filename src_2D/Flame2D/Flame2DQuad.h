@@ -277,7 +277,9 @@ public:
 
   /* Return viscous quantities at node. */
   void Viscous_Quantities_n( const int &ii, const int &jj, 
-			     Vector2D &qflux, Tensor2D &tau );
+			     Vector2D &qflux, 
+			     Tensor2D &tau,
+			     Vector2D &Vcorr );
 
   /* Comput bilinear interpolation constants */
   int BiLinearInterpolationCoefficients(double &eta, double &zeta, const int &ii, const int &jj);
@@ -683,10 +685,12 @@ inline void Flame2D_Quad_Block::Update_Nodal_Values(void) {
 inline void Flame2D_Quad_Block::Viscous_Quantities_n( const int &ii, 
 						      const int &jj, 
 						      Vector2D &qflux, 
-						      Tensor2D &tau ) {
+						      Tensor2D &tau,
+						      Vector2D &Vcorr) {
   // declares
   static Vector2D q;
   static Tensor2D t;
+  static Vector2D V;
   int i, j;
 
   // get interpolation coefficients
@@ -703,37 +707,41 @@ inline void Flame2D_Quad_Block::Viscous_Quantities_n( const int &ii,
   W[i][j].Viscous_Quantities( dWdx[i][j], dWdy[i][j], 
 			      Axisymmetric, 
 			      Grid.Cell[i][j].Xc, 
-			      q, t );
+			      q, t, V );
   qflux  = a * q;
   tau    = a * t;
+  Vcorr  = a * V;
 
   // W[ii-1][jj][k]   ->     + zeta       - zeta*eta;
   i = ii-1; j = jj;
   W[i][j].Viscous_Quantities( dWdx[i][j], dWdy[i][j], 
 			      Axisymmetric, 
 			      Grid.Cell[i][j].Xc, 
-			      q, t );
+			      q, t, V );
   qflux += b * q;
   tau   += b * t;
+  Vcorr += b * V;
 
   // W[ii][jj-1][k]   ->            + eta - zeta*eta;
   i = ii; j = jj-1;
   W[i][j].Viscous_Quantities( dWdx[i][j], dWdy[i][j], 
 			      Axisymmetric, 
 			      Grid.Cell[i][j].Xc, 
-			      q, t );
+			      q, t, V );
   qflux += c * q;
   tau   += c * t;
+  Vcorr += c * V;
 
   // W[ii][jj][k]     ->                  + zeta*eta
   i = ii; j = jj;
   W[i][j].Viscous_Quantities( dWdx[i][j], dWdy[i][j], 
 			      Axisymmetric, 
 			      Grid.Cell[i][j].Xc, 
-			      q, t );
+			      q, t, V );
   qflux += d * q;
   tau   += d * t;
-  
+  Vcorr += d * V;
+
 }
 /**************************************************************************
  * Flame2D_Quad_Block -- Spacing for Preconditioner.                      *

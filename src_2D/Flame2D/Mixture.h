@@ -231,8 +231,8 @@ public:
     The following functions use CANTERA to compute    
     chemical reaction rates and equilibrium states.
   ****************************************************/
-  static void equilibrate_HP( double &Temp, double &Press, double* y );
-  static void equilibrate_TP( double &Temp, double &Press, double* y );
+  void equilibrate_HP( double &rho, double &Press, double* y );
+  void equilibrate_TP( double &rho, double &Press, double* y );
   void getRates( const double &Press, 
 		 const double* y, 
 		 double* rr ) const;
@@ -279,7 +279,7 @@ private:
   double  hf;      //!< heat of formation [J/kg]
   double  mu;      //!< Viscosity [kg/(m*s), N*s/m^2]
   double  kappa;   //!< Thermal Conductivity [N/(s*K), W.(m*K)]
-  double phi;      //!< The quantity phi
+  double  phi;     //!< The quantity phi
   bool mu_OK;      //!< Flag indicating whether viscosity is up-to-date
   bool kappa_OK;   //!< Flag indicating whether transport properties are up-to-date
   bool diff_OK;    //!< Flag indicating whether transport properties are up-to-date
@@ -751,30 +751,6 @@ inline void Mixture ::  updateDihdDic( const double &rho,
 }
 
 
-/************************************************************************
-  Calculates the concentration time rate of change of species from
-  primitive state W using the general law of mass action.
-  U is the conserved state container for passing back the 
-  source terms. ie. U.rhospec[i].c 
-
-  W.SpecCon:  is the  species mass fractions concentrations
-              of Chem2D_pState. (c_i*rho/M_i)   mol/m^3
-
-  Return units are  kg/m^3*s ie. rho*omega (kg/m^3)*(1/s)
-
-************************************************************************/
-inline void Mixture :: getRates( const double &Press, 
-				 const double* y, double* rr ) const {
-  ct_gas->setMassFractions_NoNorm(y);
-  ct_gas->setTemperature(T);
-  ct_gas->setPressure(Press);
-  //ct_gas->setState_TPY(T, Press, y);
-  ct_gas->getNetProductionRates(rr);
-  for (int i=0; i<ns; i++){
-    rr[i] = rr[i]*M[i];
-  }
-}
-
 
 /****************************************************
  * Mixture molecular mass [kg/mol]
@@ -944,6 +920,79 @@ inline double Mixture :: lewis(const double &rho,
     return kappa / ( Cp*rho*diff[i] );
   }
 }
+
+/************************************************************************
+  Calculates the concentration time rate of change of species from
+  primitive state W using the general law of mass action.
+  U is the conserved state container for passing back the 
+  source terms. ie. U.rhospec[i].c 
+
+  W.SpecCon:  is the  species mass fractions concentrations
+              of Chem2D_pState. (c_i*rho/M_i)   mol/m^3
+
+  Return units are  kg/m^3*s ie. rho*omega (kg/m^3)*(1/s)
+
+************************************************************************/
+inline void Mixture :: getRates( const double &Press, 
+				 const double* y, double* rr ) const {
+  ct_gas->setMassFractions_NoNorm(y);
+  ct_gas->setTemperature(T);
+  ct_gas->setPressure(Press);
+  //ct_gas->setState_TPY(T, Press, y);
+  ct_gas->getNetProductionRates(rr);
+  for (int i=0; i<ns; i++){
+    rr[i] = rr[i]*M[i];
+  }
+}
+
+
+/************************************************************************
+  Calculates the equilibrium composition given an unburnt mixture
+  using CANTERA.  This is only for CANTERA reaction types.  Here
+  we hold enthalpy and pressure fixed.
+************************************************************************/
+inline void Mixture::equilibrate_HP( double &rho, double &Press, double* y ) {
+
+  // set state and equilibrate
+  ct_gas->setMassFractions_NoNorm(y);
+  ct_gas->setTemperature(T);
+  ct_gas->setDensity(rho);
+  equilibrate( *ct_gas, "HP" );
+
+  //get burnt mass fractions
+  ct_gas->getMassFractions(y);
+
+  // the temperature
+  T = ct_gas->temperature();
+
+  // density and pressure
+  Press = ct_gas->pressure();
+  rho = ct_gas->density();
+  
+} // end of ct_equilibrate
+
+
+/************************************************************************
+  Calculates the equilibrium composition given an unburnt mixture
+  using CANTERA.  This is only for CANTERA reaction types.  Here 
+  we hold temperature and pressure fixed.
+************************************************************************/
+inline void Mixture::equilibrate_TP( double &rho, double &Press, double* y ) {
+
+  // set state and equilibrate
+  ct_gas->setMassFractions_NoNorm(y);
+  ct_gas->setTemperature(T);
+  ct_gas->setDensity(rho);
+  equilibrate( *ct_gas, "TP" );
+
+  //get burnt mass fractions
+  ct_gas->getMassFractions(y);
+
+  // density and pressure
+  Press = ct_gas->pressure();
+  rho = ct_gas->density();
+
+} // end of ct_equilibrate
 
 
 #endif // _MIXTURE_INCLUDED
