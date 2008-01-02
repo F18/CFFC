@@ -88,6 +88,7 @@ navierstokes3Dthermallyperfect
 fans3Dpolytropic
 fans3Dthermallyperfect
 les3Dfsd
+les3Dtf
 
 # unit testing directories
 journal.tut
