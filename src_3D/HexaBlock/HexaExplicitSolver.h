@@ -80,7 +80,8 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
 	       << " steps (iterations).";
 	  cout.flush();
 	} /* endif */
-	//error_flag = Write_Octree(Octree, Solution_Data.Input);
+	error_flag = Write_Octree(Data.Octree, 
+                                  Solution_Data.Input);
 	if (error_flag) {
 	  cout << "\n ERROR: Unable to open octree data file "
 	       << "on processor "<< CFFC_MPI::This_Processor_Number
@@ -129,6 +130,12 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
 				residual_l1_norm,
 				residual_l2_norm,
 				residual_max_norm);
+      } /* endif */
+
+      if (!first_step) {
+         error_flag = Output_Other_Solution_Progress_Specialization_Data(Data,
+                                                                         Solution_Data);
+         if (error_flag) return (error_flag);
       } /* endif */
       /****************************************************/
 

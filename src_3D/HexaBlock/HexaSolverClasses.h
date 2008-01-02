@@ -1,7 +1,7 @@
 #ifndef _HEXA_SOLVER_CLASSES_INCLUDED
 #define _HEXA_SOLVER_CLASSES_INCLUDED
 
-/*! **************************************************************
+/*****************************************************************
  * class:  HexaSolver_Data                                       *
  *                                                               *
  * This class contains the no solution specific data, ie grids,  *
@@ -39,8 +39,11 @@ class HexaSolver_Data {
   // Batch mode flag, deactivates STDOUT ie. cout
   int batch_flag;
 
-  // Residaul File Output Stream
+  // Residual file output stream
   ofstream residual_file;
+
+  // Other solution progress file output streams
+  ofstream other_solution_progress_files[10];
 
   int total_number_of_time_steps() { return (number_of_explicit_time_steps+number_of_implicit_time_steps); }
  
@@ -54,7 +57,7 @@ class HexaSolver_Data {
  
 };
 
-/*! **************************************************************
+/*****************************************************************
  * class:  HexaSolver_Solution_Data                              *
  *                                                               *
  * This class contains the solution specific data (based on      *
@@ -82,20 +85,22 @@ class HexaSolver_Solution_Data {
  
   // Constructor
   HexaSolver_Solution_Data(void) {} 
+
   // Destructor
   ~HexaSolver_Solution_Data() {}
 
+  // Get input parameters
   int Get_Input_Parameters(char *Input_File_Name, int batch);
 
 };
 
 
-/*! **************************************************************
+/*****************************************************************
  * class:  HexaSolver_Solution_Data                              *
  *****************************************************************/ 
 template<typename SOLN_pSTATE, typename SOLN_cSTATE>
 int HexaSolver_Solution_Data<SOLN_pSTATE,SOLN_cSTATE>::
-Get_Input_Parameters(char *Input_File_Name,int batch_flag){
+Get_Input_Parameters(char *Input_File_Name, int batch_flag) {
 
   int error_flag(0);
 
@@ -104,23 +109,26 @@ Get_Input_Parameters(char *Input_File_Name,int batch_flag){
     if (!batch_flag) {
       cout << "\n Reading input data file `"<< Input_File_Name << "'.";
       cout.flush();
-    }    
+    } /* endif */   
     // Reads Input & sets "command_flag"
     error_flag = Input.Process_Input_Control_Parameter_File(Input_File_Name,
 							    command_flag);
-  }
- 
-  // Broadcast input solution parameters to other MPI processors.
+  } /* endif */
+
+  // Barrier for synchronization of processors. 
   CFFC_Barrier_MPI(); 
+
+  // Broadcast error flag and command flag to other MPI processors.
   CFFC_Broadcast_MPI(&error_flag, 1);
   if (error_flag != 0) return (error_flag);
-
   CFFC_Broadcast_MPI(&command_flag, 1);
   if (command_flag == TERMINATE_CODE) return error_flag;
 
+  // Broadcast input solution parameters to other MPI processors.
   Input.Broadcast();
   
   return error_flag;
+
 }
 
 #endif //_HEXA_SOLVER_CLASSES_INCLUDED

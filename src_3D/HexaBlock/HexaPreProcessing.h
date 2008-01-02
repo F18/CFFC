@@ -2,7 +2,7 @@
 #ifndef _HEXA_PRE_PROCESSING_INCLUDED
 #define _HEXA_PRE_PROCESSING_INCLUDED
 
-/*! *****************************************************
+/********************************************************
  * Routine: Initialize_Solution_Blocks                  *
  *                                                      *
  * Create initial mesh and solution blocks.  The        *
@@ -58,7 +58,7 @@ int Initialize_Solution_Blocks(HexaSolver_Data &Data,
 
 } 
 
-/*! *****************************************************
+/********************************************************
  * Routine: Initial_Conditions                          *
  *                                                      *
  *                                                      *
@@ -95,7 +95,7 @@ int Initial_Conditions(HexaSolver_Data &Data,
       cout.flush();
     } /* endif */
 
-    // Read Restart Octree
+    // Read octree
     error_flag = Read_Octree(Data.Octree,
                              Data.Global_Adaptive_Block_List,
                              Data.Local_Adaptive_Block_List,
@@ -109,7 +109,7 @@ int Initial_Conditions(HexaSolver_Data &Data,
     error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return (error_flag);
     
-    // Read Restart Solution Files
+    // Read restart solution files
     error_flag = Solution_Data.Local_Solution_Blocks.Read_Restart_Solution(Solution_Data.Input,  
 									   Data.Local_Adaptive_Block_List,
 									   Data.number_of_explicit_time_steps,  
@@ -195,6 +195,7 @@ int Initial_Conditions(HexaSolver_Data &Data,
     } /* endif */
     error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return (error_flag);
+
   } /* endif */
 
   /* Send solution information between neighbouring blocks to complete
@@ -271,7 +272,7 @@ int Initial_Conditions(HexaSolver_Data &Data,
 
 }
 
-/*! *****************************************************
+/********************************************************
  * Routine: Pre_Processing_Specializations              *
  *                                                      *
  *                                                      *
@@ -286,6 +287,51 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
   error_flag = Solution_Data.Local_Solution_Blocks.ICs_Specializations(Solution_Data.Input);
   if (error_flag) return (error_flag);
 
+  return error_flag;
+
+}
+
+/*****************************************************************
+ * Routine: Open_Other_Solution_Progress_Specialization_Files    *
+ *                                                               *
+ *                                                               *
+ *****************************************************************/
+template<typename SOLN_pSTATE, typename SOLN_cSTATE>
+int Open_Other_Solution_Progress_Specialization_Files(HexaSolver_Data &Data,
+		                                      HexaSolver_Solution_Data<SOLN_pSTATE, SOLN_cSTATE> &Solution_Data) {
+
+  int error_flag(0);
+  
+  return error_flag;
+
+}
+
+/*****************************************************************
+ * Routine: Close_Other_Solution_Progress_Specialization_Files   *
+ *                                                               *
+ *                                                               *
+ *****************************************************************/
+template<typename SOLN_pSTATE, typename SOLN_cSTATE>
+int Close_Other_Solution_Progress_Specialization_Files(HexaSolver_Data &Data,
+                                                       HexaSolver_Solution_Data<SOLN_pSTATE, SOLN_cSTATE> &Solution_Data) {
+
+  int error_flag(0);
+  
+  return error_flag;
+
+}
+
+/*****************************************************************
+ * Routine: Output_Other_Solution_Progress_Specialization_Data   *
+ *                                                               *
+ *                                                               *
+ *****************************************************************/
+template<typename SOLN_pSTATE, typename SOLN_cSTATE>
+int Output_Other_Solution_Progress_Specialization_Data(HexaSolver_Data &Data,
+		                                       HexaSolver_Solution_Data<SOLN_pSTATE, SOLN_cSTATE> &Solution_Data) {
+
+  int error_flag(0);
+  
   return error_flag;
 
 }
