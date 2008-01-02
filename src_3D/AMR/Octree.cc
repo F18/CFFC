@@ -141,63 +141,51 @@ void Octree_DataStructure::Renumber_Solution_Blocks(Octree_DataStructure &Octree
     for (int iBLK = 0 ; iBLK <= LocalSolnBlockList.Nblk-1 ; ++iBLK ) {
        if (Octree.Blocks[iCPU][iBLK] != NULL) {
           if (Octree.Blocks[iCPU][iBLK]->block.used) {
-             LocalSolnBlockList.Block[iBLK].gblknum = 
-                Octree.Blocks[iCPU][iBLK]->block.gblknum;
+             LocalSolnBlockList.Block[iBLK].info.gblknum = 
+                Octree.Blocks[iCPU][iBLK]->block.info.gblknum;
           } /* endif */
        } /* endif */
     } /* endfor */    
 
 }
 
-
 /**********************************************************
- * Routine: Modify_Neighbours_of_Root_Solution_Blocks     *
+ * Routine: Reassign_Root_Neighbours                      *
  *                                                        *
- * Modifies the neigbours of all root solution blocks in  *
- * the octree adaptive block data structure, depending    *
- * on the multi-block grid type.                          *
+ * Reassigns the root neigbour information base on the    *
+ * global block numbers of all solution                   *
+ * blocks in the octree adaptive block data structure.    *
  *                                                        *
  **********************************************************/
-void Octree_DataStructure::Modify_Neighbours_of_Root_Solution_Blocks(Octree_DataStructure &Octree,
-                                                                     const int Grid_Type) {
+void Octree_DataStructure::Reassign_Root_Neighbours(Octree_DataStructure &Octree) {
 
-   switch(Grid_Type) {
-     case GRID_CUBE :
-       break;
-     case GRID_CHANNEL :
-       break;
-     case GRID_COUETTE :
-       break;
-     default:
-       break;
-   }  /* endswitch */
+   Octree.reassignRootNeighbours();
 
 }
 
 /**********************************************************
- * Routine: Modify_Neighbours_of_Root_Solution_Blocks     *
+ * Routine: Reassign_Root_Neighbours                      *
  *                                                        *
- * Modifies the neigbours of all root solution blocks in  *
- * the octree adaptive block data structure, depending  *
- * on the multi-block grid type.                          *
+ * Reassigns the root neigbour information base on the    *
+ * global block numbers of all solution                   *
+ * blocks in the octree adaptive block data structure.    *
  *                                                        *
  **********************************************************/
-void Octree_DataStructure::Modify_Neighbours_of_Root_Solution_Blocks(Octree_DataStructure &Octree,
-                                                                     AdaptiveBlock3D_List &LocalSolnBlockList,
-                                                                     const int Grid_Type) {
+void Octree_DataStructure::Reassign_Root_Neighbours(Octree_DataStructure &Octree,
+                                                    AdaptiveBlock3D_List &LocalSolnBlockList) {
 
-   Modify_Neighbours_of_Root_Solution_Blocks(Octree, Grid_Type);
+    int iCPU;
 
-   switch(Grid_Type) {
-     case GRID_CUBE :
-       break;
-     case GRID_CHANNEL :
-       break;
-     case GRID_COUETTE :
-       break;
-     default:
-       break;
-   }  /* endswitch */
+    Octree.reassignRootNeighbours();
+    iCPU = LocalSolnBlockList.ThisCPU;
+
+    for (int iBLK = 0 ; iBLK <= LocalSolnBlockList.Nblk-1 ; ++iBLK ) {
+       if (Octree.Blocks[iCPU][iBLK] != NULL) {
+          if (Octree.Blocks[iCPU][iBLK]->block.used) {
+             LocalSolnBlockList.Block[iBLK] = Octree.Blocks[iCPU][iBLK]->block;
+          } /* endif */
+       } /* endif */
+    } /* endfor */
 
 }
 
@@ -205,7 +193,7 @@ void Octree_DataStructure::Modify_Neighbours_of_Root_Solution_Blocks(Octree_Data
  * Routine: Find_Neighbours                               *
  *                                                        *
  * Determines and stores the neigbours of all solution    *
- * blocks in the octree adaptive block data structure.  *
+ * blocks in the octree adaptive block data structure.    *
  *                                                        *
  **********************************************************/
 void Octree_DataStructure::Find_Neighbours(Octree_DataStructure &Octree) {
@@ -218,7 +206,7 @@ void Octree_DataStructure::Find_Neighbours(Octree_DataStructure &Octree) {
  * Routine: Find_Neighbours                               *
  *                                                        *
  * Determines and stores the neigbours of all solution    *
- * blocks in the octree adaptive block data structure.  *
+ * blocks in the octree adaptive block data structure.    *
  *                                                        *
  **********************************************************/
 void Octree_DataStructure::Find_Neighbours(Octree_DataStructure &Octree,
@@ -232,8 +220,7 @@ void Octree_DataStructure::Find_Neighbours(Octree_DataStructure &Octree,
     for (int iBLK = 0 ; iBLK <= LocalSolnBlockList.Nblk-1 ; ++iBLK ) {
        if (Octree.Blocks[iCPU][iBLK] != NULL) {
           if (Octree.Blocks[iCPU][iBLK]->block.used) {
-             LocalSolnBlockList.Block[iBLK] = 
-                Octree.Blocks[iCPU][iBLK]->block;
+             LocalSolnBlockList.Block[iBLK] = Octree.Blocks[iCPU][iBLK]->block;
           } /* endif */
        } /* endif */
     } /* endfor */

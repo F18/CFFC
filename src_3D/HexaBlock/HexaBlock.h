@@ -195,7 +195,13 @@ class Hexa_Block {
    void Update_Grid_Cells(void);
 
    void Update_Grid_Ghost_Cells(void);
-    
+   
+   int Update_Corner_Cells_for_3_Blks_Abutting(const int i_elem, 
+                                               const int j_elem, 
+                                               const int k_elem, 
+                                               const int numNeigh,
+                                               const int be);
+
    void Set_Grid_BCs_Xdir(const int BCtype_east_boundary,
                           const int BCtype_west_boundary);
 
@@ -913,6 +919,32 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Update_Grid_Ghost_Cells(void) {
 
 }
 
+/**************************************************************
+ * Routine: Update_Corner_Cells_for_3_Blks_Abutting           *
+ *                                                            *
+ * For those three blocks abutting each other, each block     *
+ * has no corner nodes. The corner nodes geometry and         *
+ * solutons don't have real physical meaning. This situation  *
+ * will corrupte the gradient reconstruction. Also the        *
+ * output soluion will have these unphysical regions, which   *
+ * might confuse the analysis.  The most convenient way       *
+ * to fix those nodes are that just make them coincide with   *
+ * the nearest phyiscal ones, and all the reconstructions     *
+ * and outputs remain the general format.                     *
+ *                                                            *
+ **************************************************************/
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+int Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::
+Update_Corner_Cells_for_3_Blks_Abutting(const int i_elem, 
+                                        const int j_elem, 
+                                        const int k_elem, 
+                                        const int numNeigh,
+                                        const int be) {
+   
+   return 0;
+
+}
+
 /********************************************************
  * Routine: Set_Grid_BCs_Xdir                           *
  *                                                      *
@@ -1127,22 +1159,22 @@ Output_Cells_Tecplot(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs,
 
       Out_File << "ZONE T =  \"Block Number = " << Block_Number
                << "\" \\ \n"
-               << "I = " << Grid.ICu - Grid.ICl + 2*Grid.Nghost + 1 << " \\ \n"
-               << "J = " << Grid.JCu - Grid.JCl + 2*Grid.Nghost + 1 << " \\ \n"
-               << "K = " << Grid.KCu - Grid.KCl + 2*Grid.Nghost + 1 << " \\ \n"
+               << "I = " << ICu - ICl + 2*Nghost + 1 << " \\ \n"
+               << "J = " << JCu - JCl + 2*Nghost + 1 << " \\ \n"
+               << "K = " << KCu - KCl + 2*Nghost + 1 << " \\ \n"
                << "DATAPACKING = POINT \n";
    } else {
       Out_File << "ZONE T =  \"Block Number = " << Block_Number
                << "\" \\ \n"
-               << "I = " << Grid.ICu - Grid.ICl + 2*Grid.Nghost + 1 << " \\ \n"
-               << "J = " << Grid.JCu - Grid.JCl + 2*Grid.Nghost + 1 << " \\ \n"
-               << "K = " << Grid.KCu - Grid.KCl + 2*Grid.Nghost + 1 << " \\ \n"
+               << "I = " << ICu - ICl + 2*Nghost + 1 << " \\ \n"
+               << "J = " << JCu - JCl + 2*Nghost + 1 << " \\ \n"
+               << "K = " << KCu - KCl + 2*Nghost + 1 << " \\ \n"
                << "DATAPACKING = POINT \n";
    } /* endif */
 
-   for (int k = Grid.KCl-Grid.Nghost ; k <= Grid.KCu+Grid.Nghost ; ++k) {
-      for (int j  = Grid.JCl-Grid.Nghost ; j <= Grid.JCu+Grid.Nghost ; ++j) {
-         for (int i = Grid.ICl-Grid.Nghost ; i <= Grid.ICu+Grid.Nghost ; ++i) {
+   for (int k = KCl-Nghost ; k <= KCu+Nghost ; ++k) {
+      for (int j  = JCl-Nghost ; j <= JCu+Nghost ; ++j) {
+         for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i) {
             Out_File << " "  <<  Grid.Cell[i][j][k].Xc << W[i][j][k];
             Out_File.setf(ios::scientific);
             Out_File << " " <<  W[i][j][k].T() 
@@ -1215,8 +1247,8 @@ Output_Nodes_Tecplot(Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs,
                << "DATAPACKING = POINT \n";
    } /* endif */
    
-   for (int k  = Grid.KNl - 1; k <= Grid.KNu + 1; ++k) {
-      for (int j  = Grid.JNl - 1; j <= Grid.JNu + 1; ++j) {
+   for (int k = Grid.KNl - 1; k <= Grid.KNu + 1; ++k) {
+      for (int j = Grid.JNl - 1; j <= Grid.JNu + 1; ++j) {
          for (int i = Grid.INl - 1; i <= Grid.INu + 1; ++i) {
 	    W_node = Wn(i, j, k);
             Out_File << " "  << Grid.Node[i][j][k].X << W_node;

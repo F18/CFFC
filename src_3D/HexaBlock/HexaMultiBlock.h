@@ -93,6 +93,10 @@ class Hexa_Multi_Block {
 
    void Correct_Grid_Exterior_Nodes(AdaptiveBlock3D_List &Blk_List);
 
+   void Fix_Corner_Cells_for_3_Blks_Abutting(AdaptiveBlock3D_List &Blk_List);
+
+   void Update_Corner_Cells_for_3_Blks_Abutting(AdaptiveBlock3D_List &Blk_List);
+
    int Read_Restart_Solution(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
                                               typename HEXA_BLOCK::Soln_cState> &Input,
                              AdaptiveBlock3D_List &Soln_Block_List,
@@ -135,8 +139,6 @@ class Hexa_Multi_Block {
   
    void Freeze_Limiters(void);
 
-   void Set_Global_TimeStep(const double &Dt_min);
-
    int ICs(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
                             typename HEXA_BLOCK::Soln_cState> &Input);
 
@@ -150,10 +152,14 @@ class Hexa_Multi_Block {
    void BCs(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
                              typename HEXA_BLOCK::Soln_cState> &Input);
 
-   int WtoU(void);
-
    double CFL(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
                                typename HEXA_BLOCK::Soln_cState> &Input);
+
+   void Set_Global_TimeStep(const double &Dt_min);
+
+   int Wall_Shear(void);
+
+   int WtoU(void);
 
    int dUdt_Multistage_Explicit(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
                                 typename HEXA_BLOCK::Soln_cState> &Input,
@@ -405,7 +411,145 @@ void Hexa_Multi_Block<HEXA_BLOCK>::Correct_Grid_Exterior_Nodes(AdaptiveBlock3D_L
 
 }
 
-/********************************************************
+/**********************************************************
+ * Routine: Fix_Corner_Nodes_for_3_Blks_Abutting          *
+ *                                                        *
+ * Fix the ghost cells at corners for 3 blocks abbuting   *
+ * situation.                                             * 
+ *                                                        *
+ **********************************************************/
+template <class HEXA_BLOCK>
+void Hexa_Multi_Block<HEXA_BLOCK>::Fix_Corner_Cells_for_3_Blks_Abutting(AdaptiveBlock3D_List &Blk_List) {
+   
+   int number_neighbours[MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK];
+   int i_bound_elem;
+   int error_flag(0);  
+   
+   if (Allocated) {
+      for (int i_blk = 0 ; i_blk <= Blk_List.Nblk-1 ; ++i_blk ) {
+         if (Blk_List.Block[i_blk].used) {
+
+            /* Conversion of the indices for each solution block. */
+            // Assign the boundary element information
+
+            number_neighbours[BE::BSW] = Blk_List.Block[i_blk].nBSW;
+            number_neighbours[BE::SW] = Blk_List.Block[i_blk].nSW;
+            number_neighbours[BE::TSW] = Blk_List.Block[i_blk].nTSW;
+            number_neighbours[BE::BW] = Blk_List.Block[i_blk].nBW;
+            number_neighbours[BE::W] = Blk_List.Block[i_blk].nW;
+            number_neighbours[BE::TW] = Blk_List.Block[i_blk].nTW;
+            number_neighbours[BE::BNW] = Blk_List.Block[i_blk].nBNW;
+            number_neighbours[BE::NW] = Blk_List.Block[i_blk].nNW;
+            number_neighbours[BE::TNW] = Blk_List.Block[i_blk].nTNW;
+            number_neighbours[BE::BS] = Blk_List.Block[i_blk].nBS;
+            number_neighbours[BE::S] = Blk_List.Block[i_blk].nS;
+            number_neighbours[BE::TS] = Blk_List.Block[i_blk].nTS;
+            number_neighbours[BE::B] = Blk_List.Block[i_blk].nB;
+            number_neighbours[BE::T] = Blk_List.Block[i_blk].nT;
+            number_neighbours[BE::BN] = Blk_List.Block[i_blk].nBN;
+            number_neighbours[BE::N] = Blk_List.Block[i_blk].nN;
+            number_neighbours[BE::TN] = Blk_List.Block[i_blk].nTN;
+            number_neighbours[BE::BSE] = Blk_List.Block[i_blk].nBSE;
+            number_neighbours[BE::SE] = Blk_List.Block[i_blk].nSE;
+            number_neighbours[BE::TSE] = Blk_List.Block[i_blk].nTSE;
+            number_neighbours[BE::BE] = Blk_List.Block[i_blk].nBE;
+            number_neighbours[BE::E] = Blk_List.Block[i_blk].nE;
+            number_neighbours[BE::TE] = Blk_List.Block[i_blk].nTE;
+            number_neighbours[BE::BNE] = Blk_List.Block[i_blk].nBNE;
+            number_neighbours[BE::NE] = Blk_List.Block[i_blk].nNE;
+            number_neighbours[BE::TNE] = Blk_List.Block[i_blk].nTNE;
+        
+           for (int ii = -1; ii <= 1; ii++){
+              for (int jj = -1; jj <= 1; jj++){
+                 for (int kk = -1; kk <= 1; kk++){
+                    i_bound_elem = 9*(ii+1) + 3*(jj+1) + (kk+1);
+                    error_flag = Soln_Blks[i_blk].Grid.Fix_Corner_Cells_for_3_Blks_Abutting(
+                                       ii, 
+                                       jj, 
+                                       kk, 
+                                       number_neighbours[i_bound_elem],
+                                      Blk_List.Block[i_blk].info.be.on_grid_boundary[i_bound_elem]);
+                 }/* end for k */
+              }/* end for j */
+           }/* end for i */
+
+         }/* endif */
+      }  /* endfor */
+      
+   } /* endif */
+   
+}
+
+/**********************************************************
+ * Routine: pdate_Corner_Cells_for_3_Blks_Abutting        *
+ *                                                        *
+ * Fix the solution in ghost cells at corners for 3       *
+ * blocks abbuting situation.                             *
+ *                                                        *
+ **********************************************************/
+template <class HEXA_BLOCK>
+void Hexa_Multi_Block<HEXA_BLOCK>::Update_Corner_Cells_for_3_Blks_Abutting(AdaptiveBlock3D_List &Blk_List) {
+   
+   int number_neighbours[MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK];
+   int i_bound_elem;
+   int error_flag(0);
+   
+   if (Allocated) {
+      for (int i_blk = 0 ; i_blk <= Blk_List.Nblk-1 ; ++i_blk ) {
+         if (Blk_List.Block[i_blk].used) {
+
+            /* Conversion of the indices for each solution block. */
+            // Assign the boundary element information
+
+            number_neighbours[BE::BSW] = Blk_List.Block[i_blk].nBSW;
+            number_neighbours[BE::SW] = Blk_List.Block[i_blk].nSW;
+            number_neighbours[BE::TSW] = Blk_List.Block[i_blk].nTSW;
+            number_neighbours[BE::BW] = Blk_List.Block[i_blk].nBW;
+            number_neighbours[BE::W] = Blk_List.Block[i_blk].nW;
+            number_neighbours[BE::TW] = Blk_List.Block[i_blk].nTW;
+            number_neighbours[BE::BNW] = Blk_List.Block[i_blk].nBNW;
+            number_neighbours[BE::NW] = Blk_List.Block[i_blk].nNW;
+            number_neighbours[BE::TNW] = Blk_List.Block[i_blk].nTNW;
+            number_neighbours[BE::BS] = Blk_List.Block[i_blk].nBS;
+            number_neighbours[BE::S] = Blk_List.Block[i_blk].nS;
+            number_neighbours[BE::TS] = Blk_List.Block[i_blk].nTS;
+            number_neighbours[BE::B] = Blk_List.Block[i_blk].nB;
+            number_neighbours[BE::T] = Blk_List.Block[i_blk].nT;
+            number_neighbours[BE::BN] = Blk_List.Block[i_blk].nBN;
+            number_neighbours[BE::N] = Blk_List.Block[i_blk].nN;
+            number_neighbours[BE::TN] = Blk_List.Block[i_blk].nTN;
+            number_neighbours[BE::BSE] = Blk_List.Block[i_blk].nBSE;
+            number_neighbours[BE::SE] = Blk_List.Block[i_blk].nSE;
+            number_neighbours[BE::TSE] = Blk_List.Block[i_blk].nTSE;
+            number_neighbours[BE::BE] = Blk_List.Block[i_blk].nBE;
+            number_neighbours[BE::E] = Blk_List.Block[i_blk].nE;
+            number_neighbours[BE::TE] = Blk_List.Block[i_blk].nTE;
+            number_neighbours[BE::BNE] = Blk_List.Block[i_blk].nBNE;
+            number_neighbours[BE::NE] = Blk_List.Block[i_blk].nNE;
+            number_neighbours[BE::TNE] = Blk_List.Block[i_blk].nTNE;
+        
+           for (int ii = -1; ii <= 1; ii++){
+              for (int jj = -1; jj <= 1; jj++){
+                 for (int kk = -1; kk <= 1; kk++){
+                    i_bound_elem = 9*(ii+1) + 3*(jj+1) + (kk+1);
+                    error_flag = Soln_Blks[i_blk].Update_Corner_Cells_for_3_Blks_Abutting(
+                                               ii, 
+                                               jj, 
+                                               kk, 
+                                               number_neighbours[i_bound_elem],
+                                               Blk_List.Block[i_blk].info.be.on_grid_boundary[i_bound_elem]);
+                 }/* end for k */
+              }/* end for j */
+           }/* end for i */
+
+         }/* endif */
+      }  /* endfor */
+      
+   } /* endif */
+   
+}
+
+ /********************************************************
  * Routine: L1_Norm_Residual                            *
  *                                                      *
  * Determines the L1-norm of the solution residual for  *
@@ -663,6 +807,7 @@ double Hexa_Multi_Block<HEXA_BLOCK>::CFL(Input_Parameters<typename HEXA_BLOCK::S
    return (dtMin);
     
 }
+
 /********************************************************
  * Routine: Set_Global_TimeStep                         *
  *                                                      *
@@ -679,6 +824,30 @@ void Hexa_Multi_Block<HEXA_BLOCK>::Set_Global_TimeStep(const double &Dt_min) {
          Soln_Blks[nblk].Set_Global_TimeStep(Dt_min);
       } /* endif */
    }  /* endfor */
+
+}
+
+/********************************************************
+ * Routine: Wall_Shear                                  *
+ *                                                      *
+ * Evaluates the wall shear stress.                     *
+ *                                                      *
+ ********************************************************/
+template<class HEXA_BLOCK>
+int Hexa_Multi_Block<HEXA_BLOCK>::Wall_Shear(void) {
+   
+   int error_flag(0);
+   
+   /* Compute wall shear for each solution block. */
+   
+   for (int nblk = 0; nblk < Number_of_Soln_Blks; ++nblk) {
+      if (Block_Used[nblk]) {
+         error_flag = Soln_Blks[nblk].Wall_Shear();
+         if (error_flag) return (error_flag);
+      } /* endif */
+   }  /* endfor */
+
+   return(error_flag);
 
 }
 
@@ -819,7 +988,7 @@ Read_Restart_Solution(Input_Parameters<typename HEXA_BLOCK::Soln_pState,
 
    for (int nblk = 0; nblk < Local_Adaptive_Block_List.Nblk; ++nblk) { 
       if (Local_Adaptive_Block_List.Block[nblk].used == ADAPTIVEBLOCK3D_USED){
-         sprintf(extension, "%.6d", Local_Adaptive_Block_List.Block[nblk].gblknum);
+         sprintf(extension, "%.6d", Local_Adaptive_Block_List.Block[nblk].info.gblknum);
          strcat(extension, ".soln");
          strcpy(restart_file_name, prefix);
          strcat(restart_file_name, extension);
@@ -851,8 +1020,6 @@ Read_Restart_Solution(Input_Parameters<typename HEXA_BLOCK::Soln_pState,
          // Close restart file.
          restart_file.close();
 
-         Soln_Blks[nblk].Wall_Shear();
-       
        }  /* endif */
     } /* endfor */
     
@@ -904,7 +1071,7 @@ Write_Restart_Solution(Input_Parameters<typename HEXA_BLOCK::Soln_pState,
     
    for (int nblk = 0; nblk < Local_Adaptive_Block_List.Nblk; ++nblk){
       if (Local_Adaptive_Block_List.Block[nblk].used == ADAPTIVEBLOCK3D_USED){    
-         sprintf(extension, "%.6d", Local_Adaptive_Block_List.Block[nblk].gblknum);
+         sprintf(extension, "%.6d", Local_Adaptive_Block_List.Block[nblk].info.gblknum);
          strcat(extension, ".soln");
          strcpy(restart_file_name, prefix);
          strcat(restart_file_name, extension);
@@ -1001,7 +1168,7 @@ Output_Tecplot(Input_Parameters<typename HEXA_BLOCK::Soln_pState,
           Soln_Blks[nblk].Output_Tecplot(Input,
                                          Number_of_Time_Steps, 
                                          Time,
-                                         Local_Adaptive_Block_List.Block[nblk].gblknum,
+                                         Local_Adaptive_Block_List.Block[nblk].info.gblknum,
                                          i_output_title,
                                          output_file);
           if (i_output_title) i_output_title = 0;
@@ -1080,7 +1247,7 @@ Output_Cells_Tecplot(Input_Parameters<typename HEXA_BLOCK::Soln_pState,
          Soln_Blks[nblk].Output_Cells_Tecplot(Input,
                                               Number_of_Time_Steps, 
                                               Time,
-                                              Local_Adaptive_Block_List.Block[nblk].gblknum,
+                                              Local_Adaptive_Block_List.Block[nblk].info.gblknum,
                                               i_output_title,
                                               output_file);
          if (i_output_title) i_output_title = 0;
@@ -1159,7 +1326,7 @@ Output_Nodes_Tecplot(Input_Parameters<typename HEXA_BLOCK::Soln_pState,
          Soln_Blks[nblk].Output_Nodes_Tecplot(Input,
                                               Number_of_Time_Steps, 
                                               Time,
-                                              Local_Adaptive_Block_List.Block[nblk].gblknum,
+                                              Local_Adaptive_Block_List.Block[nblk].info.gblknum,
                                               i_output_title,
                                               output_file);
          if (i_output_title) i_output_title = 0;

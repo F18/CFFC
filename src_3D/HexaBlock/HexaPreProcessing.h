@@ -2,7 +2,7 @@
 #ifndef _HEXA_PRE_PROCESSING_INCLUDED
 #define _HEXA_PRE_PROCESSING_INCLUDED
 
-/*! *****************************************************
+/********************************************************
  * Routine: Initialize_Solution_Blocks                  *
  *                                                      *
  * Create initial mesh and solution blocks.  The        *
@@ -58,7 +58,7 @@ int Initialize_Solution_Blocks(HexaSolver_Data &Data,
 
 } 
 
-/*! *****************************************************
+/********************************************************
  * Routine: Initial_Conditions                          *
  *                                                      *
  *                                                      *
@@ -86,24 +86,30 @@ int Initial_Conditions(HexaSolver_Data &Data,
     cout << "\n Prescribing initial data.";  cout.flush();
   } /* endif */
   
+  //======================================================
   // Read solution from restart data files.
+  //======================================================
   if (Solution_Data.Input.i_ICs == IC_RESTART) {
     if (!Data.batch_flag){ 
       cout << "\n Reading solution from restart data files."; 
       cout.flush();
     } /* endif */
 
-    // Read Restart Octree
-    // error_flag = Read_Octree(Octree,Input);
+    // Read octree
+    error_flag = Read_Octree(Data.Octree,
+                             Data.Global_Adaptive_Block_List,
+                             Data.Local_Adaptive_Block_List,
+                             Solution_Data.Local_Solution_Blocks,
+                             Solution_Data.Input);
     if (!Data.batch_flag && error_flag) {
-      cout << "\n ERROR: Unable to open Octree data file on processor "
-	   << Data.Local_Adaptive_Block_List.ThisCPU<< ".\n";
+      cout << "\n ERROR: Unable to open octree data file on processor "
+	   << Data.Local_Adaptive_Block_List.ThisCPU << ".\n";
          cout.flush();
     } /* endif */
     error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return (error_flag);
     
-    // Read Restart Solution Files
+    // Read restart solution files
     error_flag = Solution_Data.Local_Solution_Blocks.Read_Restart_Solution(Solution_Data.Input,  
 									   Data.Local_Adaptive_Block_List,
 									   Data.number_of_explicit_time_steps,  
@@ -111,12 +117,36 @@ int Initial_Conditions(HexaSolver_Data &Data,
 									   Data.processor_cpu_time);
     if (!Data.batch_flag && error_flag) {
       cout << "\n ERROR: Unable to open restart input data file(s) "
-	   << "on processor "<< CFFC_MPI::This_Processor_Number<< ".\n";
+	   << "on processor "<< CFFC_MPI::This_Processor_Number << ".\n";
       cout.flush();
     } /* endif */ 
     error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return (error_flag);
     
+    // Calculate y+:
+    error_flag = Wall_Distance(Solution_Data.Local_Solution_Blocks.Soln_Blks, // Turbulence function in GENERIC TYPE????
+			       Data.Octree, 
+			       Data.Local_Adaptive_Block_List);
+    if (!Data.batch_flag && error_flag) {
+      cout << "\n ERROR: Difficulty determining the wall distance "
+	   << "on processor "<< CFFC_MPI::This_Processor_Number
+	   << ".\n";
+      cout.flush();
+    } /* endif */
+    error_flag = CFFC_OR_MPI(error_flag);
+    if (error_flag) return (error_flag);
+
+    // Calculate wall shear:
+    error_flag = Solution_Data.Local_Solution_Blocks.Wall_Shear();
+    if (!Data.batch_flag && error_flag) {
+      cout << "\n ERROR: Difficulty determining the wall shear "
+	   << "on processor "<< CFFC_MPI::This_Processor_Number
+	   << ".\n";
+      cout.flush();
+    } /* endif */
+    error_flag = CFFC_OR_MPI(error_flag);
+    if (error_flag) return (error_flag);
+
     // Ensure each processor has the correct number of steps and time!!!
     Data.number_of_explicit_time_steps = CFFC_Maximum_MPI(Data.number_of_explicit_time_steps); 
     Data.number_of_implicit_time_steps = CFFC_Maximum_MPI(Data.number_of_implicit_time_steps);
@@ -126,9 +156,12 @@ int Initial_Conditions(HexaSolver_Data &Data,
     Solution_Data.Input.Maximum_Number_of_Time_Steps = 
       CFFC_Maximum_MPI(Solution_Data.Input.Maximum_Number_of_Time_Steps);
    
+  //======================================================
   // Generate initial solution data to begin calculation. 
+  //======================================================
   } else {
-    error_flag = Wall_Distance(Solution_Data.Local_Solution_Blocks.Soln_Blks,  // Turbulence function in GENERIC TYPE????
+    // Calculate y+:
+    error_flag = Wall_Distance(Solution_Data.Local_Solution_Blocks.Soln_Blks, // Turbulence function in GENERIC TYPE????
 			       Data.Octree, 
 			       Data.Local_Adaptive_Block_List);
     if (!Data.batch_flag && error_flag) {
@@ -162,6 +195,7 @@ int Initial_Conditions(HexaSolver_Data &Data,
     } /* endif */
     error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return (error_flag);
+
   } /* endif */
 
   /* Send solution information between neighbouring blocks to complete
@@ -186,6 +220,9 @@ int Initial_Conditions(HexaSolver_Data &Data,
      if (error_flag) return (error_flag);
      // Correct exterior nodes to match with message passed geometry information.
      Solution_Data.Local_Solution_Blocks.Correct_Grid_Exterior_Nodes(Data.Local_Adaptive_Block_List);
+
+     // Fix corner ghost nodes for three-block abutting cases.
+     Solution_Data.Local_Solution_Blocks.Fix_Corner_Cells_for_3_Blks_Abutting(Data.Local_Adaptive_Block_List);     
   } /* endif */
 
   // Now send solution information and data.
@@ -206,13 +243,36 @@ int Initial_Conditions(HexaSolver_Data &Data,
 
   Solution_Data.Local_Solution_Blocks.BCs(Solution_Data.Input);
 
+  /* Output multi-block solution-adaptive quadrilateral mesh statistics. */
+
+  if (!Data.batch_flag) {
+     cout << "\n\n Multi-block solution-adaptive hexahedral mesh statistics: "; 
+     cout << "\n  -> Number of Root Blocks: "
+          << Data.Octree.NR;
+     cout << "\n  -> Number of Root Blocks i-direction: "
+          << Data.Octree.NRi;
+     cout << "\n  -> Number of Root Blocks j-direction: " 
+          << Data.Octree.NRj;
+     cout << "\n  -> Number of Root Blocks k-direction: " 
+          << Data.Octree.NRk;
+     cout << "\n  -> Total Number of Used Blocks: " 
+          << Data.Octree.countUsedBlocks();
+     cout << "\n  -> Total Number of Computational Cells: " 
+          << Data.Octree.countUsedCells();
+     cout << "\n  -> Number of Mesh Refinement Levels: " 
+	  << Data.Octree.highestRefinementLevel()+1;
+     cout << "\n  -> Refinement Efficiency: " 
+          << Data.Octree.efficiencyRefinement(); 
+     cout.flush();
+  } /* endif */
+
   /* End of prepocessing. */  
 
   return error_flag;
 
 }
 
-/*! *****************************************************
+/********************************************************
  * Routine: Pre_Processing_Specializations              *
  *                                                      *
  *                                                      *
@@ -227,6 +287,51 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
   error_flag = Solution_Data.Local_Solution_Blocks.ICs_Specializations(Solution_Data.Input);
   if (error_flag) return (error_flag);
 
+  return error_flag;
+
+}
+
+/*****************************************************************
+ * Routine: Open_Other_Solution_Progress_Specialization_Files    *
+ *                                                               *
+ *                                                               *
+ *****************************************************************/
+template<typename SOLN_pSTATE, typename SOLN_cSTATE>
+int Open_Other_Solution_Progress_Specialization_Files(HexaSolver_Data &Data,
+		                                      HexaSolver_Solution_Data<SOLN_pSTATE, SOLN_cSTATE> &Solution_Data) {
+
+  int error_flag(0);
+  
+  return error_flag;
+
+}
+
+/*****************************************************************
+ * Routine: Close_Other_Solution_Progress_Specialization_Files   *
+ *                                                               *
+ *                                                               *
+ *****************************************************************/
+template<typename SOLN_pSTATE, typename SOLN_cSTATE>
+int Close_Other_Solution_Progress_Specialization_Files(HexaSolver_Data &Data,
+                                                       HexaSolver_Solution_Data<SOLN_pSTATE, SOLN_cSTATE> &Solution_Data) {
+
+  int error_flag(0);
+  
+  return error_flag;
+
+}
+
+/*****************************************************************
+ * Routine: Output_Other_Solution_Progress_Specialization_Data   *
+ *                                                               *
+ *                                                               *
+ *****************************************************************/
+template<typename SOLN_pSTATE, typename SOLN_cSTATE>
+int Output_Other_Solution_Progress_Specialization_Data(HexaSolver_Data &Data,
+		                                       HexaSolver_Solution_Data<SOLN_pSTATE, SOLN_cSTATE> &Solution_Data) {
+
+  int error_flag(0);
+  
   return error_flag;
 
 }

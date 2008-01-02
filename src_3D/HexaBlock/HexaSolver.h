@@ -1,3 +1,4 @@
+
 #ifndef _HEXA_SOLVER_INCLUDED
 #define _HEXA_SOLVER_INCLUDED
 
@@ -35,7 +36,7 @@
 #include "../NewtonKrylovSchwarz/NKS.h"
 #endif //_NKS_INCLUDED
 
-/*! *****************************************************
+/********************************************************
  * Routine: HexaSolver                                  *
  *                                                      *
  * Computes solutions to the governing PDEs on          *
@@ -44,32 +45,31 @@
  *                                                      *
  ********************************************************/
 template<typename SOLN_pSTATE, typename SOLN_cSTATE>
-int HexaSolver(char *Input_File_Name_ptr,int batch_flag){
+int HexaSolver(char *Input_File_Name_ptr, int batch_flag) {
    
   int error_flag(0);
 
-  //Non Solution Specific
+  // Non Solution Specific
   HexaSolver_Data                                     Data(batch_flag);  
-  //Solution Specific 
+  // Solution Specific 
   HexaSolver_Solution_Data<SOLN_pSTATE, SOLN_cSTATE>  Solution_Data;   
 
-  /*! *************** INPUT PARAMETERS  **********************************
+  /******************* INPUT PARAMETERS  **********************************
     Set default values for the input solution parameters and then read user 
     specified input values from the specified input parameter file.               
   *************************************************************************/    
-  error_flag = Solution_Data.Get_Input_Parameters(Input_File_Name_ptr,batch_flag);  
-  error_flag = CFFC_OR_MPI(error_flag);
+  error_flag = Solution_Data.Get_Input_Parameters(Input_File_Name_ptr, batch_flag);  
   if(error_flag) return(error_flag);
   
   CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
   
-  /*! **************** SOLVER LOOP ****************************************
+  /******************* SOLVER LOOP ****************************************
     Loop until command_flag is set to TERMINATE_CODE, most likely by
     Input Parameters read in Post_Processing.
   *************************************************************************/  
   while (Solution_Data.command_flag != TERMINATE_CODE) {
    
-    /*! **************** INITIAL GRID & SOLUTION BLOCKS *********************************
+    /******************* INITIAL GRID & SOLUTION BLOCKS *********************************
       Create initial mesh and allocate solution variables for specified IBVP/BVP problem. 
     *************************************************************************************/    
     
@@ -77,24 +77,28 @@ int HexaSolver(char *Input_File_Name_ptr,int batch_flag){
     if (Solution_Data.command_flag == EXECUTE_CODE) { 
       CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization. 
 
-      error_flag = Initialize_Solution_Blocks(Data,Solution_Data);      
+      error_flag = Initialize_Solution_Blocks(Data,
+                                              Solution_Data);      
       error_flag = CFFC_OR_MPI(error_flag);
       if (error_flag) return (error_flag);
 
-      error_flag = Initial_Conditions(Data,Solution_Data);      
-      error_flag = CFFC_OR_MPI(error_flag);
+      error_flag = Initial_Conditions(Data,
+                                      Solution_Data);      
       if (error_flag) return (error_flag);
     } /* endif */
     
-    /*! *********************** MAIN SOLVER ****************************************
+    /********************** MAIN SOLVER ****************************************
       Solve IBVP or BVP for conservation form of equations on multi-block 
       solution-adaptive quadrilateral mesh.                                  
     ****************************************************************************/    
     CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.    
-    if (!Data.batch_flag) cout << "\n\n Initialization of mesh and solution data complete on " << Date_And_Time() << ".";
+    if (!Data.batch_flag) cout << "\n\n Initialization of mesh and solution data complete on " 
+                               << Date_And_Time() << ".";
     
-    // Open Progress File 
+    /****************** OPEN SOLUTION PROGRESS FILES ******************/  
+    // Open residual progress file 
     if (CFFC_Primary_MPI_Processor()) {    
+<<<<<<< HEAD:src_3D/HexaBlock/HexaSolver.h
       error_flag = Open_Progress_File(Data.residual_file,
 				      Solution_Data.Input.Output_File_Name,
 				      Data.number_of_explicit_time_steps);
@@ -102,7 +106,20 @@ int HexaSolver(char *Input_File_Name_ptr,int batch_flag){
 	cout << "\n ERROR: Unable to open residual file for the calculation.\n";
 	cout.flush(); return (error_flag);
       } /* endif */
+=======
+       error_flag = Open_Progress_File(Data.residual_file,
+	                               Solution_Data.Input.Output_File_Name,
+				       Data.number_of_explicit_time_steps);
+       if (error_flag && !Data.batch_flag) {
+	 cout << "\n ERROR: Unable to open residual progress file for the calculation.\n";
+	 cout.flush(); 
+       } /* endif */
+    } /* endif */
+    error_flag = CFFC_OR_MPI(error_flag);
+    if (error_flag) return (error_flag);
+>>>>>>> ae7d19f9b5041b96e1b43ea336ac8af48c89aced:src_3D/HexaBlock/HexaSolver.h
 
+<<<<<<< HEAD:src_3D/HexaBlock/HexaSolver.h
       error_flag = Open_Energy_File(Data.energy_file,
 			            Solution_Data.Input.Output_File_Name,
 				    Data.number_of_explicit_time_steps);
@@ -118,7 +135,19 @@ int HexaSolver(char *Input_File_Name_ptr,int batch_flag){
 	cout << "\n ERROR: Unable to open turbulence progress file for the calculation.\n";
 	cout.flush(); return (error_flag);
       } /* endif */
+=======
+    // Open other solution progress file(s) 
+    if (CFFC_Primary_MPI_Processor()) {    
+       error_flag = Open_Other_Solution_Progress_Specialization_Files(Data,
+                                                                      Solution_Data);
+       if (error_flag && !Data.batch_flag) {
+	 cout << "\n ERROR: Unable to open other solution progress file(s) for the calculation.\n";
+	 cout.flush(); 
+       } /* endif */
+>>>>>>> ae7d19f9b5041b96e1b43ea336ac8af48c89aced:src_3D/HexaBlock/HexaSolver.h
     } /* endif */
+    error_flag = CFFC_OR_MPI(error_flag);
+    if (error_flag) return (error_flag);
 
     /********************** EXPLICIT **********************************/  
     if ((Data.number_of_explicit_time_steps < Solution_Data.Input.Maximum_Number_of_Time_Steps) ||
@@ -137,10 +166,31 @@ int HexaSolver(char *Input_File_Name_ptr,int batch_flag){
       error_flag = NKS.Solve();
     } /* endif */
     
-    // Close Progress File 
-    if (CFFC_Primary_MPI_Processor()) error_flag = Close_Progress_File(Data.residual_file);
+    /****************** CLOSE SOLUTION PROGRESS FILES *****************/  
+    // Close residual progress file 
+    if (CFFC_Primary_MPI_Processor()) {
+       error_flag = Close_Progress_File(Data.residual_file);
+       if (error_flag && !Data.batch_flag) {
+	 cout << "\n ERROR: Unable to close residual progress file for the calculation.\n";
+	 cout.flush(); 
+       } /* endif */
+    } /* endif */
+    error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return (error_flag);
 
+    // Close other solution progress file(s) 
+    if (CFFC_Primary_MPI_Processor()) {    
+       error_flag = Close_Other_Solution_Progress_Specialization_Files(Data,
+                                                                       Solution_Data);
+       if (error_flag && !Data.batch_flag) {
+	 cout << "\n ERROR: Unable to close other solution progress file(s) for the calculation.\n";
+	 cout.flush(); 
+       } /* endif */
+    } /* endif */
+    error_flag = CFFC_OR_MPI(error_flag);
+    if (error_flag) return (error_flag);
+
+<<<<<<< HEAD:src_3D/HexaBlock/HexaSolver.h
     if (CFFC_Primary_MPI_Processor()) error_flag = Close_Energy_File(Data.energy_file);
     if (error_flag) return (error_flag);
 
@@ -148,6 +198,9 @@ int HexaSolver(char *Input_File_Name_ptr,int batch_flag){
     if (error_flag) return (error_flag);
 
     /*! ************************** POST PROCESSSING *******************************
+=======
+    /***************************** POST PROCESSSING *******************************
+>>>>>>> ae7d19f9b5041b96e1b43ea336ac8af48c89aced:src_3D/HexaBlock/HexaSolver.h
       Solution calculations complete. Write 3D solution to output and restart files  
       as required, reset solution parameters, and run other cases as specified 
       by input parameters.        
@@ -155,8 +208,8 @@ int HexaSolver(char *Input_File_Name_ptr,int batch_flag){
     CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.    
     if (!Data.batch_flag) cout << "\n";
 
-    error_flag = Hexa_Post_Processing(Data,Solution_Data);   
-    error_flag = CFFC_OR_MPI(error_flag);
+    error_flag = Hexa_Post_Processing(Data,
+                                      Solution_Data);   
     if (error_flag) return (error_flag);
 
   } //END while
@@ -165,6 +218,4 @@ int HexaSolver(char *Input_File_Name_ptr,int batch_flag){
   
 }
 
-
 #endif // _HEXA_SOLVER_INCLUDED
-

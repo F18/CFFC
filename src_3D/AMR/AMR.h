@@ -52,8 +52,8 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
                                    AdaptiveBlock3D_ResourceList                            &Global_Adaptive_Block_List,
                                    AdaptiveBlock3D_List                                    &Local_Adaptive_Block_List) {
    
-  int n_cpu, n_blk, neighbour_cpu, neighbour_blk, number_of_solution_variables; 
-   int *gridblk_cpu_number, *gridblk_blk_number;
+  int n_cpu, n_blk, n_grid_blks, neighbour_cpu, neighbour_blk, number_of_solution_variables; 
+  int *gridblk_cpu_number, *gridblk_blk_number;
    
    /* Create (allocate) octree data structure. */
 
@@ -88,11 +88,14 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
    gridblk_cpu_number = new int[Initial_Mesh.NBlk];
    gridblk_blk_number = new int[Initial_Mesh.NBlk];
 
+   n_grid_blks = 0;
+
    for (int nb = 0; nb <= Initial_Mesh.NBlk-1; ++nb) {
       if (Initial_Mesh.Grid_Blks[nb].Allocated) { // Mesh block is used!!!!
          // Get next free solution block from list of available
          // solution blocks.
          if (Global_Adaptive_Block_List.Nfree > 0) {
+	    n_grid_blks += 1;
             n_cpu = Global_Adaptive_Block_List.nextCPU();
             n_blk = Global_Adaptive_Block_List.nextBlock();
             Global_Adaptive_Block_List.update_next();
@@ -109,15 +112,18 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
    
    /* Loop over all initial mesh or grid blocks and assign octree root blocks. */
 
+   n_grid_blks = 0;
+
    for (int nb = 0; nb <= Initial_Mesh.NBlk-1; ++nb) {
       if (Initial_Mesh.Grid_Blks[nb].Allocated) { // Mesh block is used!!!!
 	 // Obtain CPU and block number.
+	 n_grid_blks += 1;
          n_cpu = gridblk_cpu_number[nb];
          n_blk = gridblk_blk_number[nb];
 
          // Assign block information to appropriate octree root solution block.
          Octree.Roots[nb].block.used = ADAPTIVEBLOCK3D_USED;
-         Octree.Roots[nb].block.gblknum = Global_Adaptive_Block_List.Nused-1;
+         Octree.Roots[nb].block.info.gblknum = n_grid_blks-1;
          Octree.Roots[nb].block.info.cpu = n_cpu;
          Octree.Roots[nb].block.info.blknum = n_blk;
          Octree.Roots[nb].block.info.dimen.i = Initial_Mesh.Grid_Blks[nb].NCi -
@@ -204,7 +210,7 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
             Octree.Roots[nb].block.infoE[0].blkorient = Initial_Mesh.Connectivity[nb].neighE_info;
          } /* endif */
 
-         if(Octree.Roots[nb].block.nW > 0) {
+         if (Octree.Roots[nb].block.nW > 0) {
             Octree.Roots[nb].block.infoW[0].blknum = gridblk_blk_number[Initial_Mesh.Connectivity[nb].neighW];
             Octree.Roots[nb].block.infoW[0].cpu = gridblk_cpu_number[Initial_Mesh.Connectivity[nb].neighW];
             Octree.Roots[nb].block.infoW[0].blkorient = Initial_Mesh.Connectivity[nb].neighW_info;
@@ -341,14 +347,15 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
    delete []gridblk_cpu_number;
    delete []gridblk_blk_number;
 
-   /* Now, assign missing neighbour block information for octree root blocls: 
-      dimensions, sector, level assignment, "on grid boundary" info. */
+   /* Now, assign missing neighbour block information for octree root blocks: 
+      global block number, dimensions, sector, level assignment, "on grid boundary" info. */
 
    for (int nr = 0; nr <= Octree.NR-1; ++nr) {
       if (Octree.Roots[nr].block.used) { // Adaptive root block is used!!!!
          if (Octree.Roots[nr].block.nT > 0) {
 	    neighbour_cpu = Octree.Roots[nr].block.infoT[0].cpu;
 	    neighbour_blk = Octree.Roots[nr].block.infoT[0].blknum;
+            Octree.Roots[nr].block.infoT[0].gblknum = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.gblknum;
             Octree.Roots[nr].block.infoT[0].dimen = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.dimen;
             Octree.Roots[nr].block.infoT[0].sector = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.sector;
             Octree.Roots[nr].block.infoT[0].level = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.level;
@@ -358,6 +365,7 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
          if (Octree.Roots[nr].block.nB > 0) {
 	    neighbour_cpu = Octree.Roots[nr].block.infoB[0].cpu;
 	    neighbour_blk = Octree.Roots[nr].block.infoB[0].blknum;
+            Octree.Roots[nr].block.infoB[0].gblknum = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.gblknum;
             Octree.Roots[nr].block.infoB[0].dimen = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.dimen;
             Octree.Roots[nr].block.infoB[0].sector = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.sector;
             Octree.Roots[nr].block.infoB[0].level = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.level;
@@ -367,6 +375,7 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
          if (Octree.Roots[nr].block.nN > 0) {
 	    neighbour_cpu = Octree.Roots[nr].block.infoN[0].cpu;
 	    neighbour_blk = Octree.Roots[nr].block.infoN[0].blknum;
+            Octree.Roots[nr].block.infoN[0].gblknum = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.gblknum;
             Octree.Roots[nr].block.infoN[0].dimen = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.dimen;
             Octree.Roots[nr].block.infoN[0].sector = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.sector;
             Octree.Roots[nr].block.infoN[0].level = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.level;
@@ -376,6 +385,7 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
          if (Octree.Roots[nr].block.nS > 0) {
 	    neighbour_cpu = Octree.Roots[nr].block.infoS[0].cpu;
 	    neighbour_blk = Octree.Roots[nr].block.infoS[0].blknum;
+            Octree.Roots[nr].block.infoS[0].gblknum = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.gblknum;
             Octree.Roots[nr].block.infoS[0].dimen = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.dimen;
             Octree.Roots[nr].block.infoS[0].sector = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.sector;
             Octree.Roots[nr].block.infoS[0].level = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.level;
@@ -385,6 +395,7 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
          if (Octree.Roots[nr].block.nE > 0) {
 	    neighbour_cpu = Octree.Roots[nr].block.infoE[0].cpu;
 	    neighbour_blk = Octree.Roots[nr].block.infoE[0].blknum;
+            Octree.Roots[nr].block.infoE[0].gblknum = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.gblknum;
             Octree.Roots[nr].block.infoE[0].dimen = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.dimen;
             Octree.Roots[nr].block.infoE[0].sector = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.sector;
             Octree.Roots[nr].block.infoE[0].level = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.level;
@@ -394,6 +405,7 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
          if (Octree.Roots[nr].block.nW > 0) {
 	    neighbour_cpu = Octree.Roots[nr].block.infoW[0].cpu;
 	    neighbour_blk = Octree.Roots[nr].block.infoW[0].blknum;
+            Octree.Roots[nr].block.infoW[0].gblknum = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.gblknum;
             Octree.Roots[nr].block.infoW[0].dimen = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.dimen;
             Octree.Roots[nr].block.infoW[0].sector = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.sector;
             Octree.Roots[nr].block.infoW[0].level = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.level;
@@ -403,6 +415,7 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
          if (Octree.Roots[nr].block.nNW > 0) {
 	    neighbour_cpu = Octree.Roots[nr].block.infoNW[0].cpu;
 	    neighbour_blk = Octree.Roots[nr].block.infoNW[0].blknum;
+            Octree.Roots[nr].block.infoNW[0].gblknum = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.gblknum;
             Octree.Roots[nr].block.infoNW[0].dimen = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.dimen;
             Octree.Roots[nr].block.infoNW[0].sector = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.sector;
             Octree.Roots[nr].block.infoNW[0].level = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.level;
@@ -412,6 +425,7 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
          if (Octree.Roots[nr].block.nNE > 0) {
 	    neighbour_cpu = Octree.Roots[nr].block.infoNE[0].cpu;
 	    neighbour_blk = Octree.Roots[nr].block.infoNE[0].blknum;
+            Octree.Roots[nr].block.infoNE[0].gblknum = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.gblknum;
             Octree.Roots[nr].block.infoNE[0].dimen = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.dimen;
             Octree.Roots[nr].block.infoNE[0].sector = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.sector;
             Octree.Roots[nr].block.infoNE[0].level = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.level;
@@ -421,6 +435,7 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
          if (Octree.Roots[nr].block.nSE > 0) {
 	    neighbour_cpu = Octree.Roots[nr].block.infoSE[0].cpu;
 	    neighbour_blk = Octree.Roots[nr].block.infoSE[0].blknum;
+            Octree.Roots[nr].block.infoSE[0].gblknum = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.gblknum;
             Octree.Roots[nr].block.infoSE[0].dimen = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.dimen;
             Octree.Roots[nr].block.infoSE[0].sector = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.sector;
             Octree.Roots[nr].block.infoSE[0].level = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.level;
@@ -430,6 +445,7 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
          if (Octree.Roots[nr].block.nSW > 0) {
 	    neighbour_cpu = Octree.Roots[nr].block.infoSW[0].cpu;
 	    neighbour_blk = Octree.Roots[nr].block.infoSW[0].blknum;
+            Octree.Roots[nr].block.infoSW[0].gblknum = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.gblknum;
             Octree.Roots[nr].block.infoSW[0].dimen = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.dimen;
             Octree.Roots[nr].block.infoSW[0].sector = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.sector;
             Octree.Roots[nr].block.infoSW[0].level = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.level;
@@ -439,6 +455,7 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
          if (Octree.Roots[nr].block.nTN > 0) {
 	    neighbour_cpu = Octree.Roots[nr].block.infoTN[0].cpu;
 	    neighbour_blk = Octree.Roots[nr].block.infoTN[0].blknum;
+            Octree.Roots[nr].block.infoTN[0].gblknum = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.gblknum;
             Octree.Roots[nr].block.infoTN[0].dimen = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.dimen;
             Octree.Roots[nr].block.infoTN[0].sector = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.sector;
             Octree.Roots[nr].block.infoTN[0].level = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.level;
@@ -448,16 +465,17 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
          if (Octree.Roots[nr].block.nTS > 0) {
 	    neighbour_cpu = Octree.Roots[nr].block.infoTS[0].cpu;
 	    neighbour_blk = Octree.Roots[nr].block.infoTS[0].blknum;
+            Octree.Roots[nr].block.infoTS[0].gblknum = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.gblknum;
             Octree.Roots[nr].block.infoTS[0].dimen = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.dimen;
             Octree.Roots[nr].block.infoTS[0].sector = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.sector;
             Octree.Roots[nr].block.infoTS[0].level = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.level;
-            Octree.Roots[nr].block.infoTS[0].be = 
-               Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.be;
+            Octree.Roots[nr].block.infoTS[0].be = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.be;
          } /* endif */
       
          if (Octree.Roots[nr].block.nTE > 0) {
 	    neighbour_cpu = Octree.Roots[nr].block.infoTE[0].cpu;
 	    neighbour_blk = Octree.Roots[nr].block.infoTE[0].blknum;
+            Octree.Roots[nr].block.infoTE[0].gblknum = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.gblknum;
             Octree.Roots[nr].block.infoTE[0].dimen = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.dimen;
             Octree.Roots[nr].block.infoTE[0].sector = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.sector;
             Octree.Roots[nr].block.infoTE[0].level = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.level;
@@ -467,6 +485,7 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
          if (Octree.Roots[nr].block.nTW > 0) {
 	    neighbour_cpu = Octree.Roots[nr].block.infoTW[0].cpu;
 	    neighbour_blk = Octree.Roots[nr].block.infoTW[0].blknum;
+            Octree.Roots[nr].block.infoTW[0].gblknum = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.gblknum;
             Octree.Roots[nr].block.infoTW[0].dimen = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.dimen;
             Octree.Roots[nr].block.infoTW[0].sector = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.sector;
             Octree.Roots[nr].block.infoTW[0].level = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.level;
@@ -476,6 +495,7 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
          if (Octree.Roots[nr].block.nBN > 0) {
 	    neighbour_cpu = Octree.Roots[nr].block.infoBN[0].cpu;
 	    neighbour_blk = Octree.Roots[nr].block.infoBN[0].blknum;
+            Octree.Roots[nr].block.infoBN[0].gblknum = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.gblknum;
             Octree.Roots[nr].block.infoBN[0].dimen = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.dimen;
             Octree.Roots[nr].block.infoBN[0].sector = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.sector;
             Octree.Roots[nr].block.infoBN[0].level = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.level;
@@ -485,6 +505,7 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
          if (Octree.Roots[nr].block.nBS > 0) {
 	    neighbour_cpu = Octree.Roots[nr].block.infoBS[0].cpu;
 	    neighbour_blk = Octree.Roots[nr].block.infoBS[0].blknum;
+            Octree.Roots[nr].block.infoBS[0].gblknum = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.gblknum;
             Octree.Roots[nr].block.infoBS[0].dimen = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.dimen;
             Octree.Roots[nr].block.infoBS[0].sector = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.sector;
             Octree.Roots[nr].block.infoBS[0].level = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.level;
@@ -494,6 +515,7 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
          if (Octree.Roots[nr].block.nBE > 0) {
 	    neighbour_cpu = Octree.Roots[nr].block.infoBE[0].cpu;
 	    neighbour_blk = Octree.Roots[nr].block.infoBE[0].blknum;
+            Octree.Roots[nr].block.infoBE[0].gblknum = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.gblknum;
             Octree.Roots[nr].block.infoBE[0].dimen = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.dimen;
             Octree.Roots[nr].block.infoBE[0].sector = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.sector;
             Octree.Roots[nr].block.infoBE[0].level = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.level;
@@ -503,6 +525,7 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
          if (Octree.Roots[nr].block.nBW > 0) {
 	    neighbour_cpu = Octree.Roots[nr].block.infoBW[0].cpu;
 	    neighbour_blk = Octree.Roots[nr].block.infoBW[0].blknum;
+            Octree.Roots[nr].block.infoBW[0].gblknum = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.gblknum;
             Octree.Roots[nr].block.infoBW[0].dimen = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.dimen;
             Octree.Roots[nr].block.infoBW[0].sector = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.sector;
             Octree.Roots[nr].block.infoBW[0].level = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.level;
@@ -512,6 +535,7 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
          if (Octree.Roots[nr].block.nTNW > 0) {
 	    neighbour_cpu = Octree.Roots[nr].block.infoTNW[0].cpu;
 	    neighbour_blk = Octree.Roots[nr].block.infoTNW[0].blknum;
+            Octree.Roots[nr].block.infoTNW[0].gblknum = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.gblknum;
             Octree.Roots[nr].block.infoTNW[0].dimen = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.dimen;   
             Octree.Roots[nr].block.infoTNW[0].sector = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.sector;
             Octree.Roots[nr].block.infoTNW[0].level = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.level;
@@ -521,6 +545,7 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
          if (Octree.Roots[nr].block.nTSW > 0) {
 	    neighbour_cpu = Octree.Roots[nr].block.infoTSW[0].cpu;
 	    neighbour_blk = Octree.Roots[nr].block.infoTSW[0].blknum;
+            Octree.Roots[nr].block.infoTSW[0].gblknum = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.gblknum;
             Octree.Roots[nr].block.infoTSW[0].dimen = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.dimen;
             Octree.Roots[nr].block.infoTSW[0].sector = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.sector;
             Octree.Roots[nr].block.infoTSW[0].level = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.level;
@@ -530,6 +555,7 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
          if (Octree.Roots[nr].block.nTNE > 0) {
 	    neighbour_cpu = Octree.Roots[nr].block.infoTNE[0].cpu;
 	    neighbour_blk = Octree.Roots[nr].block.infoTNE[0].blknum;
+            Octree.Roots[nr].block.infoTNE[0].gblknum = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.gblknum;
             Octree.Roots[nr].block.infoTNE[0].dimen = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.dimen;
             Octree.Roots[nr].block.infoTNE[0].sector = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.sector;
             Octree.Roots[nr].block.infoTNE[0].level = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.level;
@@ -539,6 +565,7 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
          if (Octree.Roots[nr].block.nTSE > 0) {
 	    neighbour_cpu = Octree.Roots[nr].block.infoTSE[0].cpu;
 	    neighbour_blk = Octree.Roots[nr].block.infoTSE[0].blknum;
+            Octree.Roots[nr].block.infoTSE[0].gblknum = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.gblknum;
             Octree.Roots[nr].block.infoTSE[0].dimen = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.dimen;
             Octree.Roots[nr].block.infoTSE[0].sector = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.sector;
             Octree.Roots[nr].block.infoTSE[0].level = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.level;
@@ -548,6 +575,7 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
          if (Octree.Roots[nr].block.nBNW > 0) {
 	    neighbour_cpu = Octree.Roots[nr].block.infoBNW[0].cpu;
 	    neighbour_blk = Octree.Roots[nr].block.infoBNW[0].blknum;
+            Octree.Roots[nr].block.infoBNW[0].gblknum = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.gblknum;
             Octree.Roots[nr].block.infoBNW[0].dimen = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.dimen;
             Octree.Roots[nr].block.infoBNW[0].sector = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.sector;
             Octree.Roots[nr].block.infoBNW[0].level = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.level;  
@@ -557,6 +585,7 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
          if (Octree.Roots[nr].block.nBSW > 0) {
 	    neighbour_cpu = Octree.Roots[nr].block.infoBSW[0].cpu;
 	    neighbour_blk = Octree.Roots[nr].block.infoBSW[0].blknum;
+            Octree.Roots[nr].block.infoBSW[0].gblknum = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.gblknum;
             Octree.Roots[nr].block.infoBSW[0].dimen = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.dimen;
             Octree.Roots[nr].block.infoBSW[0].sector = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.sector;
             Octree.Roots[nr].block.infoBSW[0].level = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.level;
@@ -566,6 +595,7 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
          if (Octree.Roots[nr].block.nBNE > 0) {
 	    neighbour_cpu = Octree.Roots[nr].block.infoBNE[0].cpu;
 	    neighbour_blk = Octree.Roots[nr].block.infoBNE[0].blknum;
+            Octree.Roots[nr].block.infoBNE[0].gblknum = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.gblknum;
             Octree.Roots[nr].block.infoBNE[0].dimen = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.dimen;
             Octree.Roots[nr].block.infoBNE[0].sector = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.sector;
             Octree.Roots[nr].block.infoBNE[0].level = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.level;
@@ -575,6 +605,7 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
          if (Octree.Roots[nr].block.nBSE > 0) {
 	    neighbour_cpu = Octree.Roots[nr].block.infoBSE[0].cpu;
 	    neighbour_blk = Octree.Roots[nr].block.infoBSE[0].blknum;
+            Octree.Roots[nr].block.infoBSE[0].gblknum = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.gblknum;
             Octree.Roots[nr].block.infoBSE[0].dimen = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.dimen;
             Octree.Roots[nr].block.infoBSE[0].sector = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.sector;
             Octree.Roots[nr].block.infoBSE[0].level = Octree.Blocks[neighbour_cpu][neighbour_blk]->block.info.level;
@@ -605,16 +636,10 @@ int Create_Initial_Solution_Blocks(Grid3D_Hexa_Multi_Block_List                 
    
    /* Renumber all solution blocks, assigning a unique global block number. */
 
-   Octree_DataStructure::Renumber_Solution_Blocks(Octree,
-                                                  Local_Adaptive_Block_List);
+/*    Octree_DataStructure::Renumber_Solution_Blocks(Octree, */
+/*                                                   Local_Adaptive_Block_List); */
 
-   /* Modify block neighbours for grid geometries with periodic boundaries, etc. */
-
-   Octree_DataStructure::Modify_Neighbours_of_Root_Solution_Blocks(Octree,
-                                                                   Local_Adaptive_Block_List,
-                                                                   Input.Grid_IP.i_Grid);
-
-   /* Allocates memory for all message passing buffers used to send
+   /* Allocate memory for all message passing buffers used to send
       solution information between neighbouring solution blocks. */
 
    // Get the number of variables.
@@ -645,15 +670,16 @@ template<typename SOLN_pSTATE, typename SOLN_cSTATE>
 int Read_Octree(Octree_DataStructure                       &Octree,
                 AdaptiveBlock3D_ResourceList               &Global_Adaptive_Block_List,
                 AdaptiveBlock3D_List                       &Local_Adaptive_Block_List,
+                Hexa_Multi_Block<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> > &Local_Solution_Blocks,
                 Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &Input) {
 
-    int i, nri, nrj, nrk, ncpu, nblk;
-    int iBLK, jBLK, kBLK, iCPU;
+    int i, nr, nri, nrj, nrk, ncpu, nblk, number_of_solution_variables;
+    int iCPU;
     char Octree_file_name[256];
     char *Octree_file_name_ptr;
     ifstream Octree_file;    
 
-    /* On primary processor, determine name of Octree input data file name. */
+    /* On primary processor, determine name of octree input data file name. */
 
     if (CFFC_Primary_MPI_Processor()) {
        i = 0;
@@ -665,11 +691,11 @@ int Read_Octree(Octree_DataStructure                       &Octree,
           if (i > strlen(Input.Restart_File_Name) ) break;
        } /* endwhile */
        Octree_file_name[i] = '\0';
-       strcat(Octree_file_name, "_Octree.tree");
+       strcat(Octree_file_name, "_octree.tree");
        Octree_file_name_ptr = Octree_file_name;
     } /* endif */
 
-    /* On primary processor, open the Octree data file. */
+    /* On primary processor, open the octree data file. */
 
     if (CFFC_Primary_MPI_Processor()) {
        Octree_file.open(Octree_file_name_ptr, ios::in);
@@ -681,34 +707,29 @@ int Read_Octree(Octree_DataStructure                       &Octree,
 
     if (CFFC_Primary_MPI_Processor()) {
        Octree_file.setf(ios::skipws);
-       Octree_file >> nri >> nrj >> nrk >> ncpu >> nblk;
-       
+       Octree_file >> nr >> nri >> nrj >> nrk >> ncpu >> nblk;
        Octree_file.unsetf(ios::skipws);
 
-       Create_Octree_Data_Structure(Octree,
-                                    nri,
-  	                            nrj,
-  	                            nrk,
-                                    Input.Number_of_Processors,
-                                    Input.Number_of_Blocks_Per_Processor);
+       Octree_DataStructure::Create_Octree_Data_Structure(Octree,
+                                                          nri,
+  	                                                  nrj,
+  	                                                  nrk,
+                                                          Input.AMR_IP.Number_of_Processors,
+                                                          Input.AMR_IP.Number_of_Blocks_Per_Processor);
     } /* endif */
 
     /* Re-create and re-initialize the block resource list. */
 
-    Create_Block_Resource_List(Global_Adaptive_Block_List,
-                               Input.Number_of_Processors, 
-	  		       Input.Number_of_Blocks_Per_Processor);
+    AdaptiveBlock3D_ResourceList::Create_Block_Resource_List(Global_Adaptive_Block_List,
+                                                             Input.AMR_IP.Number_of_Processors, 
+	  		                                     Input.AMR_IP.Number_of_Blocks_Per_Processor);
 
-    /* On primary processor, read the Octree data from the file. */
+    /* On primary processor, read the octree data from the file. */
 
     if (CFFC_Primary_MPI_Processor()) {
-       for ( kBLK = 0 ; kBLK <= Octree.NRk-1 ; ++kBLK ) {
-	 for ( jBLK = 0 ; jBLK <= Octree.NRj-1 ; ++jBLK ) {
-           for ( iBLK = 0 ; iBLK <= Octree.NRi-1 ; ++iBLK ) {
-	      Octree.Roots[iBLK*jBLK*kBLK].read(Octree_file,
-                                                Global_Adaptive_Block_List);
-           } /* endfor */
-           } /* endfor */
+       for (int nBlk = 0; nBlk <= Octree.NR-1; ++nBlk) {
+	  Octree.Roots[nBlk].read(Octree_file,
+                                  Global_Adaptive_Block_List);
        } /* endfor */
     } /* endif */
 
@@ -719,47 +740,51 @@ int Read_Octree(Octree_DataStructure                       &Octree,
 
     /* Set the maximum and minimum refinement levels. */
 
-    Octree.MaximumRefinementLevel = Input.Maximum_Refinement_Level-1;
-    Octree.MinimumRefinementLevel = Input.Minimum_Refinement_Level-1;
+    Octree.MaximumRefinementLevel = Input.AMR_IP.Maximum_Refinement_Level-1;
+    Octree.MinimumRefinementLevel = Input.AMR_IP.Minimum_Refinement_Level-1;
 
     /* Set the thresholds for refinement and coarsening of the mesh. */
 
-    Octree.RefineThreshold = Input.Threshold_for_Refinement;
-    Octree.CoarsenThreshold = Input.Threshold_for_Coarsening;
+    Octree.RefineThreshold = Input.AMR_IP.Threshold_for_Refinement;
+    Octree.CoarsenThreshold = Input.AMR_IP.Threshold_for_Coarsening;
 
-    /* Re-evaluate Octree block pointers. */
+    /* Re-evaluate the octree block pointers. */
 
     Octree.assign_block_pointers();
 
-    /* (Re-)Allocate memory for local processor solution block list. */
+    /* Re-allocate memory for local processor solution block list. */
 
     if (Local_Adaptive_Block_List.Nblk > 0) Local_Adaptive_Block_List.deallocate();
-    Local_Adaptive_Block_List.allocate(Input.Number_of_Blocks_Per_Processor);
+    Local_Adaptive_Block_List.allocate(Input.AMR_IP.Number_of_Blocks_Per_Processor);
     Local_Adaptive_Block_List.ThisCPU = Global_Adaptive_Block_List.ThisCPU;
 
-    /* Find the neighbours of the root blocks. */
+    /* Reassign the root neighbour block information for all root blocks
+       base on the global block numbers read in from the octree data
+       file.   This routine will also copy block information to local 
+       processor solution block list. */
 
-    //Octree_DataStructure::Find_Neighbours_of_Root_Solution_Blocks(Octree);
+    Octree_DataStructure::Reassign_Root_Neighbours(Octree,
+                                                   Local_Adaptive_Block_List);
 
-    /* Modify block neighbours for grid geometries with 
-       periodic boundaries, etc. */
+    /* Allocate memory for all message passing buffers used to send
+       solution information between neighbouring solution blocks. */
 
-    Octree_DataStructure::Modify_Neighbours_of_Root_Solution_Blocks(Octree,
-                                                                    Input.i_Grid);
+    // Get the number of variables.
+    for (int i_blk = 0 ; i_blk <= Local_Adaptive_Block_List.Nblk-1 ; ++i_blk) {
+       if (Local_Adaptive_Block_List.Block[i_blk].used) {
+          number_of_solution_variables = Local_Solution_Blocks.Soln_Blks[i_blk].NumVar();
+          break;
+       } /* endif */
+    } /* endif */
 
-    /* Determine the neighbouring blocks of all used (active)
-       solution blocks in the Octree data structure. This will
-       also copy block information to local processor solution block
-       list. */
+    AdaptiveBlock3D_List::Allocate_Message_Buffers(Local_Adaptive_Block_List,
+                                                   number_of_solution_variables);
 
-    Octree_DataStructure::Find_Neighbours(Octree,
-                                          Local_Adaptive_Block_List);
-
-    /* On primary processor, close Octree data file. */
+    /* On primary processor, close octree data file. */
 
     if (CFFC_Primary_MPI_Processor()) Octree_file.close();
 
-    /* Reading of Octree data file complete.  Return zero value. */
+    /* Reading of octree data file complete.  Return zero value. */
 
     return(0);
 
@@ -781,7 +806,7 @@ int Write_Octree(Octree_DataStructure                        &Octree,
     char *Octree_file_name_ptr;
     ofstream Octree_file;    
 
-    /* On primary processor, determine name of Octree output data file name. */
+    /* On primary processor, determine name of octree output data file name. */
 
     if (CFFC_Primary_MPI_Processor()) {
        i = 0;
@@ -793,7 +818,7 @@ int Write_Octree(Octree_DataStructure                        &Octree,
           if (i > strlen(Input.Restart_File_Name) ) break;
        } /* endwhile */
        Octree_file_name[i] = '\0';
-       strcat(Octree_file_name, "_Octree.tree");
+       strcat(Octree_file_name, "_octree.tree");
        Octree_file_name_ptr = Octree_file_name;
     } /* endif */
     /* On primary processor, ppen the Octree data file. */
@@ -803,7 +828,7 @@ int Write_Octree(Octree_DataStructure                        &Octree,
        if (Octree_file.fail()) return (1);
     } /* endif */
 
-    /* On primary processor, write the Octree data to the file. */
+    /* On primary processor, write the octree data to the file. */
 
     if (CFFC_Primary_MPI_Processor()) {
       Octree_file << Octree;
@@ -812,7 +837,7 @@ int Write_Octree(Octree_DataStructure                        &Octree,
 
     if (CFFC_Primary_MPI_Processor()) Octree_file.close();
 
-    /* Writing of Octree data file complete.  Return zero value. */
+    /* Writing of octree data file complete.  Return zero value. */
 
     return(0);
 

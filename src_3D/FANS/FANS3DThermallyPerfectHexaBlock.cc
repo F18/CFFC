@@ -3,6 +3,113 @@
 #include "FANS3DThermallyPerfectHexaBlock.h"
 #endif // _FANS3D_THERMALLYPERFECT_HEXA_BLOCK_INCLUDED
 
+/**************************************************************
+ * Routine: Update_Corner_Cells_for_3_Blks_Abutting           *
+ *                                                            *
+ * For those three blocks abutting each other, each block     *
+ * has no corner nodes. The corner nodes geometry and         *
+ * solutons don't have real physical meaning. This situation  *
+ * will corrupte the gradient reconstruction. Also the        *
+ * output soluion will have these unphysical regions, which   *
+ * might confuse the analysis.  The most convenient way       *
+ * to fix those nodes are that just make them coincide with   *
+ * the nearest phyiscal ones, and all the reconstructions     *
+ * and outputs remain the general format.                     *
+ *                                                            *
+ **************************************************************/
+template<>
+int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState, 
+               FANS3D_ThermallyPerfect_KOmega_cState>::
+Update_Corner_Cells_for_3_Blks_Abutting(const int i_elem, 
+                                        const int j_elem, 
+                                        const int k_elem, 
+                                        const int numNeigh,
+                                        const int be) {
+   
+   int execute_this_prog = 0;
+   
+   if( ((abs(i_elem) && abs(j_elem) && !(k_elem)) ||
+        (abs(i_elem) && abs(k_elem) && !(j_elem)) ||
+        (abs(j_elem) && abs(k_elem) && !(i_elem))) && (!numNeigh && !be) ) {
+      execute_this_prog = 1;
+   }
+   
+   if(!execute_this_prog) return 0;
+   
+   // execute this program for the true situation.
+   int i_nearest, j_nearest, k_nearest;
+   int i_inc, j_inc, k_inc;
+   
+   // default values
+   i_nearest = Nghost;
+   j_nearest = Nghost;
+   k_nearest = Nghost;
+   
+   i_inc = 0;
+   j_inc = 0;
+   k_inc = 0;
+   
+   // set the corner's nearest nodes based on where the element is located.
+   if(i_elem <0){
+      i_nearest = Nghost;
+      i_inc = -1;
+   }else{
+      i_nearest = ICu;
+      i_inc = 1;
+   }
+   if(j_elem <0){
+      j_nearest = Nghost;
+      j_inc = -1;
+   }else{
+      j_nearest = JCu;
+      j_inc = 1;
+   }
+   if(k_elem <0){
+      k_nearest = Nghost;
+      k_inc = -1;
+   }else{
+      k_nearest = KCu;
+      k_inc = 1;
+   }
+   
+   // coincide the ghost corners with the nearest physical ones.
+   if(abs(i_elem) && abs(j_elem) && !(k_elem)){
+      for (int kDir = KCl-Nghost; kDir<= KCu+Nghost-1; ++kDir){
+         for(int jDir = 1; jDir <= Nghost; ++jDir){
+            for(int iDir = 1; iDir <= Nghost; ++iDir){
+               W[i_nearest + i_inc*iDir][j_nearest + j_inc*jDir][kDir] = 
+                  W[i_nearest][j_nearest][kDir];
+            }
+         }
+      }
+   }
+
+  if(abs(i_elem) && abs(k_elem) && !(j_elem)){
+      for (int jDir = JCl-Nghost; jDir<= JCu+Nghost-1; ++jDir){
+         for(int iDir = 1; iDir <= Nghost; ++iDir){
+            for(int kDir = 1; kDir <= Nghost; ++kDir){
+               W[i_nearest + i_inc*iDir][jDir][k_nearest + k_inc*kDir] = 
+                  W[i_nearest][jDir][k_nearest];
+            }
+         }
+      }
+   }
+
+   if (abs(j_elem) && abs(k_elem) && !(i_elem)){
+      for (int iDir = ICl-Nghost; iDir<= ICu+Nghost-1; ++iDir){
+         for(int jDir = 1; jDir <= Nghost; ++jDir){
+            for(int kDir = 1; kDir <= Nghost; ++kDir){
+               W[iDir][j_nearest + j_inc*jDir][k_nearest + k_inc*kDir] = 
+                  W[iDir][j_nearest][k_nearest];
+            }
+         }
+      }
+   }
+   
+   return 0;
+
+}
+
 /********************************************************
  * Routine: Output_Tecplot                              *
  *                                                      *
@@ -55,16 +162,23 @@ Output_Tecplot(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
          Out_File << "\"c_" << W[0][0][0].specdata[i].Speciesname() 
                   << "\" \\ \n";
       } /* endfor */
+
+      Out_File << "\"lambda_xx\" \\  \n"  
+               << "\"lambda_xy\" \\  \n"  
+               << "\"lambda_xz\" \\  \n"  
+               << "\"lambda_yy\" \\  \n"  
+               << "\"lambda_yz\" \\  \n"  
+               << "\"lambda_zz\" \\  \n";   
       
       Out_File << "\"T\" \\ \n"
                << "\"M\" \\ \n";      
 
-      Out_File<< "ZONE T =  \"Block Number = " << Block_Number
-              << "\" \\ \n"
-              << "I = " << Grid.INu -  Grid.INl + 1 << " \\ \n"
-              << "J = " << Grid.JNu -  Grid.JNl + 1 << " \\ \n"
-              << "K = " << Grid.KNu -  Grid.KNl + 1 << " \\ \n"
-              << "DATAPACKING = POINT \n";
+      Out_File << "ZONE T =  \"Block Number = " << Block_Number
+               << "\" \\ \n"
+               << "I = " << Grid.INu - Grid.INl + 1 << " \\ \n"
+               << "J = " << Grid.JNu - Grid.JNl + 1 << " \\ \n"
+               << "K = " << Grid.KNu - Grid.KNl + 1 << " \\ \n"
+               << "DATAPACKING = POINT \n";
    } else {
       Out_File << "ZONE T =  \"Block Number = " << Block_Number
                << "\" \\ \n"
@@ -74,11 +188,13 @@ Output_Tecplot(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
                << "DATAPACKING = POINT \n";              
    } /* endif */
    
-   for (int k  =  Grid.KNl ; k <=  Grid.KNu ; ++k ) {
-      for (int j  =  Grid.JNl ; j <=  Grid.JNu ; ++j ) {
-         for (int i =  Grid.INl ; i <=  Grid.INu ; ++i ) {
+   for (int k = Grid.KNl ; k <= Grid.KNu ; ++k ) {
+      for (int j = Grid.JNl ; j <= Grid.JNu ; ++j) {
+         for (int i = Grid.INl ; i <= Grid.INu ; ++i) {
             W_node = Wn(i, j, k);
             Out_File << " "  << Grid.Node[i][j][k].X << W_node;
+            Out_File.setf(ios::scientific);
+            Out_File << " "  << W_node.tau_t(dWdx[i][j][k], dWdy[i][j][k], dWdz[i][j][k]);
             Out_File.setf(ios::scientific);
             Out_File << " " << W_node.T() 
                      << " " << W_node.M() << "\n";
@@ -143,6 +259,13 @@ Output_Cells_Tecplot(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
                   << "\" \\ \n";
       } /* endfor */
      
+      Out_File << "\"lambda_xx\" \\  \n"  
+               << "\"lambda_xy\" \\  \n"  
+               << "\"lambda_xz\" \\  \n"  
+               << "\"lambda_yy\" \\  \n"  
+               << "\"lambda_yz\" \\  \n"  
+               << "\"lambda_zz\" \\  \n";   
+
       Out_File <<"\"T\" \\ \n"
                <<"\"M\" \\ \n"
                << "\"ywall\" \\ \n"
@@ -152,24 +275,27 @@ Output_Cells_Tecplot(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
       
       Out_File << "ZONE T =  \"Block Number = " << Block_Number
                << "\" \\ \n"
-               << "I = " <<  ICu -  ICl + 2*Nghost +1 << " \\ \n"
-               << "J = " <<  JCu -  JCl + 2*Nghost +1 << " \\ \n"
-               << "K = " <<  KCu -  KCl + 2*Nghost +1 << " \\ \n"
+               << "I = " << ICu - ICl + 2*Nghost + 1 << " \\ \n"
+               << "J = " << JCu - JCl + 2*Nghost + 1 << " \\ \n"
+               << "K = " << KCu - KCl + 2*Nghost + 1 << " \\ \n"
                << "DATAPACKING = POINT \n";
    } else {
       Out_File << "ZONE T =  \"Block Number = " << Block_Number
                << "\" \\ \n"
-               << "I = " <<  Grid.ICu -  Grid.ICl + 2* Nghost + 1 << " \\ \n"
-               << "J = " <<  Grid.JCu -  Grid.JCl + 2* Nghost + 1 << " \\ \n"
-               << "K = " <<  Grid.KCu -  Grid.KCl + 2* Nghost + 1 << " \\ \n"
+               << "I = " << ICu - ICl + 2*Nghost + 1 << " \\ \n"
+               << "J = " << JCu - JCl + 2*Nghost + 1 << " \\ \n"
+               << "K = " << KCu - KCl + 2*Nghost + 1 << " \\ \n"
                << "DATAPACKING = POINT \n";
    } /* endif */
 
-   for (int k =  KCl- Nghost ; k <=  KCu+ Nghost ; ++k) {
-      for (int j  =  JCl- Nghost ; j <=  JCu+ Nghost ; ++j ) {
-         for (int i =  ICl- Nghost ; i <=  ICu+ Nghost ; ++i ) {
+   for (int k = KCl - Nghost ; k <= KCu + Nghost ; ++k) {
+      for (int j = JCl - Nghost ; j <= JCu + Nghost ; ++j) {
+         for (int i = ICl - Nghost ; i <= ICu + Nghost ; ++i) {
             Out_File << " " << Grid.Cell[i][j][k].Xc
                      << W[i][j][k];
+            Out_File.setf(ios::scientific);
+            Out_File << " "  << W[i][j][k].tau_t(dWdx[i][j][k], dWdy[i][j][k], dWdz[i][j][k]);
+            
             Out_File.setf(ios::scientific);
             Out_File << " " << W[i][j][k].T() 
                      << " " << W[i][j][k].M();
@@ -240,29 +366,38 @@ Output_Nodes_Tecplot(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
                   << "\" \\ \n";
       } /* endfor */
       
+      Out_File << "\"lambda_xx\" \\  \n"  
+               << "\"lambda_xy\" \\  \n"  
+               << "\"lambda_xz\" \\  \n"  
+               << "\"lambda_yy\" \\  \n"  
+               << "\"lambda_yz\" \\  \n"  
+               << "\"lambda_zz\" \\  \n";   
+      
       Out_File << "\"T\" \\ \n"
                << "\"M\" \\ \n";
 
-      Out_File<< "ZONE T =  \"Block Number = " << Block_Number
-              << "\" \\ \n"
-              << "I = " << Grid.INu -  Grid.INl + 1 << " \\ \n"
-              << "J = " << Grid.JNu -  Grid.JNl + 1 << " \\ \n"
-              << "K = " << Grid.KNu -  Grid.KNl + 1 << " \\ \n"
-              << "DATAPACKING = POINT \n";
+      Out_File << "ZONE T =  \"Block Number = " << Block_Number
+               << "\" \\ \n"
+               << "I = " << Grid.INu - Grid.INl + 2 + 1 << " \\ \n"
+               << "J = " << Grid.JNu - Grid.JNl + 2 + 1 << " \\ \n"
+               << "K = " << Grid.KNu - Grid.KNl + 2 + 1 << " \\ \n"
+               << "DATAPACKING = POINT \n";
    } else {
       Out_File << "ZONE T =  \"Block Number = " << Block_Number
                << "\" \\ \n"
-               << "I = " << Grid.INu - Grid.INl + 1 << " \\ \n"
-               << "J = " << Grid.JNu - Grid.JNl + 1 << " \\ \n"
-               << "K = " << Grid.KNu - Grid.KNl + 1 << " \\ \n"
+               << "I = " << Grid.INu - Grid.INl + 2 + 1 << " \\ \n"
+               << "J = " << Grid.JNu - Grid.JNl + 2 + 1 << " \\ \n"
+               << "K = " << Grid.KNu - Grid.KNl + 2 + 1 << " \\ \n"
                << "DATAPACKING = POINT \n";              
    } /* endif */
    
-   for (int k  =  Grid.KNl ; k <=  Grid.KNu ; ++k ) {
-      for (int j  =  Grid.JNl ; j <=  Grid.JNu ; ++j ) {
-         for (int i =  Grid.INl ; i <=  Grid.INu ; ++i ) {
+   for (int k = Grid.KNl - 1 ; k <= Grid.KNu + 1; ++k) {
+      for (int j = Grid.JNl - 1; j <= Grid.JNu + 1; ++j) {
+         for (int i = Grid.INl - 1; i <= Grid.INu + 1; ++i) {
             W_node = Wn(i, j, k);
             Out_File << " "  << Grid.Node[i][j][k].X << W_node;
+            Out_File.setf(ios::scientific);
+            Out_File << " "  << W_node.tau_t(dWdx[i][j][k], dWdy[i][j][k], dWdz[i][j][k]);
             Out_File.setf(ios::scientific);
             Out_File << " " << W_node.T()
                      << " " << W_node.M() << "\n";
@@ -289,7 +424,8 @@ ICs(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
                      FANS3D_ThermallyPerfect_KOmega_cState> &IPs) {
 
    double dpdx, dpdy, dpdz, delta_pres, delta_pres_x, delta_pres_y, delta_pres_z;
-   double zd, zz, di, Um, U_axi;
+   double r, zd, zz, di, Um, U_axi;
+   double exp_a, exp_b, ke;
    
    double Rprime, yprime, xn, yn, fc, tempvalue, r_fuel;
    Vector2D Xt;
@@ -600,6 +736,49 @@ ICs(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
 	 } /* endif */         
          break; 
 
+      case IC_TURBULENT_PIPE_FLOW :
+         // John Laufer, NACA case: 
+         // Investigation of Turbulent Flow in a Two-Dimensional Channel
+         // the pipe grid is extruding from 2D grid, so only one set-up,
+         // i.e. the z is the axial.
+         dpdz = IPs.Pressure_Gradient.z;  
+         delta_pres_z = dpdz*IPs.Grid_IP.Box_Length;
+         Um = IPs.Reynolds_Number*IPs.Wo.mu()/(IPs.Wo.rho*TWO*IPs.Grid_IP.Pipe_Radius);
+         for (int k  = KCl-Nghost ; k <= KCu+Nghost ; ++k) {
+            for (int j  = JCl-Nghost ; j <= JCu+Nghost ; ++j) {
+               for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i) {
+                  W[i][j][k] = IPs.Wo;
+                  WallData[i][j][k].tauw = fabs(-0.5*IPs.Grid_IP.Pipe_Radius*dpdz);
+                  WallData[i][j][k].utau = sqrt(WallData[i][j][k].tauw/W[i][j][k].rho);
+                  ke = WallData[i][j][k].utau*WallData[i][j][k].utau/
+                       sqrt(W[0][0][0].k_omega_model.beta_star);
+                  W[i][j][k].p = IPs.Wo.p - Grid.Cell[i][j][k].Xc.z*dpdz;	 
+                  // setting the axial velocity in a turbulent pipe flow
+                  // by using the power law of aixal velocity in a turbulent pipe flow
+                  r = sqrt(Grid.Cell[i][j][k].Xc.x*Grid.Cell[i][j][k].Xc.x 
+                           + Grid.Cell[i][j][k].Xc.y*Grid.Cell[i][j][k].Xc.y );
+                  
+                  zz = (1.0- r/IPs.Grid_IP.Pipe_Radius);
+                  if(zz > 0 && zz <= 1.0) W[i][j][k].v.z = Um*pow(zz, 0.133);
+                  
+                  exp_a = 1.43785171089353038809E+01;
+                  exp_b = -1.95126777548776608739E-01;
+                  // specifying a k profile as close as to that of a pipe flow
+                  W[i][j][k].k = exp(exp_a*r + exp_b);
+                  
+                  if (WallData[i][j][k].ywall !=0.0) {
+                     W[i][j][k].omega = WallData[i][j][k].utau/
+                        (sqrt(W[0][0][0].k_omega_model.beta_star)*
+                         W[0][0][0].k_omega_model.Karman_const*
+                         WallData[i][j][k].ywall); 
+                  } /* endif */
+                  //conservative solution state
+                  U[i][j][k] = W[i][j][k].U();
+               } /* endfor */
+            } /* endfor */
+         } /* endfor */
+         break; 
+
       case IC_SHOCK_BOX :
 	 Wl = FANS3D_ThermallyPerfect_KOmega_pState(IPs.Wo);
          Wl.rho = DENSITY_STDATM;
@@ -701,166 +880,45 @@ ICs(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
          break;
 
       case IC_TURBULENT_COFLOW:
-         for (int k  = KCl-Nghost ; k <= KCu+Nghost ; ++k) {
-            for (int j  = JCl-Nghost ; j <= JCu+Nghost ; ++j) {
-               for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i) {
-                  // Apply uniform solution state
+         // set default value, but will be overwrite by interpolation (interior cells).
+         // this way won't leave some ghost cells with unsigned values.
+         // automatically using the interpolation of 2D numerical solution to 3D.
+         for (int k = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
+            for (int j = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
+               for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
                   W[i][j][k] = IPs.Wo;
-                  W[i][j][k].v.z= ZERO;
-                  W[i][j][k].v.x = ZERO;
-                  W[i][j][k].v.y = ZERO;
-       
-                  W[i][j][k].rho = W[i][j][k].p/( W[i][j][k].Rtot()*300.0);
-                  tempvalue =  BluffBody_Coflow_Air_Velocity*(HALF*(IPs.Grid_IP.Radius_Coflow_Inlet_Pipe-
-                               IPs.Grid_IP.Radius_Bluff_Body))/(W[i][j][k].mu()/W[i][j][k].rho);
-                  WallData[i][j][k].tauw = 0.0228*W[i][j][k].rho* BluffBody_Coflow_Air_Velocity*
-                                           BluffBody_Coflow_Air_Velocity/pow(fabs(tempvalue), 0.25);
-                  WallData[i][j][k].utau = sqrt(WallData[i][j][k].tauw/W[i][j][k].rho);
-                  W[i][j][k].k = 0.5*WallData[i][j][k].utau*WallData[i][j][k].utau/
-                                 sqrt(W[0][0][0].k_omega_model.beta_star);
-                  WallData[i][j][k].yplus = WallData[i][j][k].ywall*WallData[i][j][k].utau/
-                                            (W[i][j][k].mu()/W[i][j][k].rho);
-                  if (WallData[i][j][k].ywall !=ZERO) {
-                     if (WallData[i][j][k].yplus<=W[0][0][0].k_omega_model.y_sublayer) {
-                        W[i][j][k].omega = 6.0*(W[i][j][k].mu()/W[i][j][k].rho)/
-                                           (W[0][0][0].k_omega_model.beta*WallData[i][j][k].ywall*WallData[i][j][k].ywall);
-		     } else {
-                        W[i][j][k].omega = sqrt(W[i][j][k].k)/(pow(W[0][0][0].k_omega_model.beta_star, 0.25)*
-                                           W[0][0][0].k_omega_model.Karman_const*WallData[i][j][k].ywall);
-		     }
-		  }
-                  // Specifying the velocity profiles in the annular pipe (coflowing air and jet)
-                  if ((fabs(Grid.Cell[i][j][k].Xc.y)>IPs.Grid_IP.Radius_Bluff_Body) && 
-                      (fabs(Grid.Cell[i][j][k].Xc.y)<IPs.Grid_IP.Radius_Coflow_Inlet_Pipe)) {
-                     if (Grid.Cell[i][j][k].Xc.z <=  0.5*IPs.Grid_IP.Length_Combustor_Tube) {
-                        Rprime = (IPs.Grid_IP.Radius_Coflow_Inlet_Pipe - IPs.Grid_IP.Radius_Bluff_Body)/2.0;
-                        if (fabs(Grid.Cell[i][j][k].Xc.y)<=(IPs.Grid_IP.Radius_Bluff_Body+ Rprime)) {
-                           yprime = fabs(Grid.Cell[i][j][k].Xc.y) -  IPs.Grid_IP.Radius_Bluff_Body;
-                           if (yprime !=0.0) {
-                              W[i][j][k].v.z =  BluffBody_Coflow_Air_Velocity*pow(fabs(yprime/Rprime), 0.143);
-                           } else {
-                              W[i][j][k].v.z =  BluffBody_Coflow_Air_Velocity;
-                           }
-                        } else {
-                           yprime = fabs(Grid.Cell[i][j][k].Xc.y) -  IPs.Grid_IP.Radius_Bluff_Body- Rprime;
-                           if (yprime !=0.0) {
-                              W[i][j][k].v.z =  BluffBody_Coflow_Air_Velocity*pow(fabs(1.0- fabs(yprime/Rprime)), 0.143);
-                           } else {
-                              W[i][j][k].v.z =  BluffBody_Coflow_Air_Velocity;
-                           }
-			}
-		     }
-		  }
-                  if ((fabs(Grid.Cell[i][j][k].Xc.x)>IPs.Grid_IP.Radius_Bluff_Body) && 
-                      (fabs(Grid.Cell[i][j][k].Xc.x)<IPs.Grid_IP.Radius_Coflow_Inlet_Pipe)) {
-                     if (Grid.Cell[i][j][k].Xc.z <=  0.5*IPs.Grid_IP.Length_Combustor_Tube) {
-                        Rprime = (IPs.Grid_IP.Radius_Coflow_Inlet_Pipe - IPs.Grid_IP.Radius_Bluff_Body)/2.0;
-                        if (fabs(Grid.Cell[i][j][k].Xc.x)<=(IPs.Grid_IP.Radius_Bluff_Body+ Rprime)) {
-                           yprime = fabs(Grid.Cell[i][j][k].Xc.x) -  IPs.Grid_IP.Radius_Bluff_Body;
-                           if (yprime !=0.0) {
-                              W[i][j][k].v.z =  BluffBody_Coflow_Air_Velocity*pow(fabs(yprime/Rprime), 0.143);
-                           } else {
-                              W[i][j][k].v.z =  BluffBody_Coflow_Air_Velocity;
-			   }
-			} else {
-                           yprime = fabs(Grid.Cell[i][j][k].Xc.x) -  IPs.Grid_IP.Radius_Bluff_Body- Rprime;
-                           if (yprime !=0.0) {
-                              W[i][j][k].v.z =  BluffBody_Coflow_Air_Velocity*pow(fabs(1.0- fabs(yprime/Rprime)), 0.143);
-                           } else {
-                              W[i][j][k].v.z =  BluffBody_Coflow_Air_Velocity;
-			   }
-			}
-		     }
-		  }
-                  if (fabs(Grid.Cell[i][j][k].Xc.y) <= IPs.Grid_IP.Radius_Fuel_Line) {
-                     if (Grid.Cell[i][j][k].Xc.z <=  0.5*IPs.Grid_IP.Length_Combustor_Tube) {
-                        Rprime = IPs.Grid_IP.Radius_Fuel_Line;
-                        if (Grid.Cell[i][j][k].Xc.y<0.0) {
-                           yprime = fabs(Grid.Cell[i][j][k].Xc.y);
-                           if (yprime !=0.0) {
-                              W[i][j][k].v.z =  BluffBody_Coflow_Fuel_Velocity*pow(fabs(yprime/Rprime), 0.143);
-                           } else {
-                              W[i][j][k].v.z =  BluffBody_Coflow_Fuel_Velocity;
-                           }
-                        } else {
-                           yprime = fabs(Grid.Cell[i][j][k].Xc.y) ;
-                           if (yprime !=0.0) {
-                              W[i][j][k].v.z =  BluffBody_Coflow_Fuel_Velocity*pow(fabs(1.0- fabs(yprime/Rprime)), 0.143);
-                           } else {
-                              W[i][j][k].v.z =  BluffBody_Coflow_Fuel_Velocity;
-                           }
-                        }
-                     }
-		  }
-                  if (fabs(Grid.Cell[i][j][k].Xc.x) <= IPs.Grid_IP.Radius_Fuel_Line) {
-                     if (Grid.Cell[i][j][k].Xc.z <=  0.5*IPs.Grid_IP.Length_Combustor_Tube) { 
-                        Rprime = IPs.Grid_IP.Radius_Fuel_Line;
-                        if (Grid.Cell[i][j][k].Xc.x<0.0) {
-                           yprime = fabs(Grid.Cell[i][j][k].Xc.x);
-                           if (yprime !=0.0) {
-                              W[i][j][k].v.z =  BluffBody_Coflow_Fuel_Velocity*pow(fabs(yprime/Rprime), 0.143);
-                           } else {
-                              W[i][j][k].v.z =  BluffBody_Coflow_Fuel_Velocity;
-                           }
-                        } else {
-                           yprime = fabs(Grid.Cell[i][j][k].Xc.x) ;
-                           if (yprime !=0.0) {
-                              W[i][j][k].v.z =  BluffBody_Coflow_Fuel_Velocity*pow(fabs(1.0- fabs(yprime/Rprime)), 0.143);
-                           } else {
-                              W[i][j][k].v.z =  BluffBody_Coflow_Fuel_Velocity;
-                           }
-                        }
-		     }
-		  }
-                  if (IPs.Species_IP.num_species == 3) { 
-                     if (fabs(Grid.Cell[i][j][k].Xc.x)<0.5*IPs.Grid_IP.Radius_Fuel_Line && 
-                         Grid.Cell[i][j][k].Xc.z>0.0 && 
-                         Grid.Cell[i][j][k].Xc.z<0.1*IPs.Grid_IP.Length_Combustor_Tube) {
-                        W[i][j][k].spec[0] = 1.0; //CH4
-                        W[i][j][k].spec[1] = 0.0;//O2
-                        W[i][j][k].spec[2] = 0.0; //N2
-                     }
-                     if (fabs(Grid.Cell[i][j][k].Xc.y)<0.5*IPs.Grid_IP.Radius_Fuel_Line && 
-                         Grid.Cell[i][j][k].Xc.z>0.0 && 
-                         Grid.Cell[i][j][k].Xc.z<0.1*IPs.Grid_IP.Length_Combustor_Tube) {
-                        W[i][j][k].spec[0] = 1.0; //CH4
-                        W[i][j][k].spec[1] = 0.0;//O2
-                        W[i][j][k].spec[2] = 0.0; //N2
-                     }
-		  }
-                  W[i][j][k].rho = W[i][j][k].p/( W[i][j][k].Rtot()*300.0);
-                  U[i][j][k] = W[i][j][k].U();
-	       } /* endfor */
-	    } /* endfor */
+                  U[i][j][k] = W[i][j][k].U( );
+               } /* endfor */
+            } /* endfor */
          } /* endfor */
          break;
 
-   case IC_TURBULENT_DIFFUSION_FLAME :  
-      // set default value, but will be overwrite by interpolation (interior cells).
-      // this way won't leave some ghost cells with unsigned values.
-      // automatically using the interpolation of 2D numerical solution to 3D.
-      for (int k = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
-         for (int j = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
-            for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
-               W[i][j][k] = IPs.Wo;
-               U[i][j][k] = W[i][j][k].U( );
+      case IC_TURBULENT_DIFFUSION_FLAME :  
+         // set default value, but will be overwrite by interpolation (interior cells).
+         // this way won't leave some ghost cells with unsigned values.
+         // automatically using the interpolation of 2D numerical solution to 3D.
+         for (int k = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
+            for (int j = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
+               for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
+                  W[i][j][k] = IPs.Wo;
+                  U[i][j][k] = W[i][j][k].U( );
+               } /* endfor */
             } /* endfor */
          } /* endfor */
-      } /* endfor */
-      break;
+         break;
       
-   case IC_UNIFORM :
-   default:
-      // Set the solution state everywhere to the initial state Wo[0].
-      for (int k = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
-         for (int j = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
-            for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
-               W[i][j][k] = IPs.Wo;
-               U[i][j][k] = W[i][j][k].U( );
+      case IC_UNIFORM :
+      default:
+         // Set the solution state everywhere to the initial state Wo[0].
+         for (int k = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
+            for (int j = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
+               for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
+                  W[i][j][k] = IPs.Wo;
+                  U[i][j][k] = W[i][j][k].U( );
+               } /* endfor */
             } /* endfor */
          } /* endfor */
-      } /* endfor */
-      break;
+         break;
       
    } /* endswitch */
 
@@ -985,22 +1043,24 @@ ICs(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
  ********************************************************/
 template<>
 int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState,
-                FANS3D_ThermallyPerfect_KOmega_cState>::
+               FANS3D_ThermallyPerfect_KOmega_cState>::
 Interpolate_2Dto3D(const FlowField_2D &Numflowfield2D) {
    
    FANS3D_ThermallyPerfect_KOmega_pState W_quad[5];
    Vector2D Xp[5];
    
-   const int end2d_i =  FlowField_2D::ni-2;
-   const int end2d_j =  FlowField_2D::nj-2;
+   const int end2d_i =  Numflowfield2D.ni-2;
+   const int end2d_j =  Numflowfield2D.nj-2;
    
    bool dbg = false;
 
+  
    for (int k = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
       for (int j = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
          for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
 
-            const double r = sqrt(std::pow(Grid.Cell[i][j][k].Xc.x, 2) + std::pow(Grid.Cell[i][j][k].Xc.y, 2));
+            const double r = sqrt(std::pow(Grid.Cell[i][j][k].Xc.x, 2) + 
+                                  std::pow(Grid.Cell[i][j][k].Xc.y, 2));
             const double d = Grid.Cell[i][j][k].Xc.z;
             const double sinalpha = Grid.Cell[i][j][k].Xc.y/r;
             const double cosalpha = Grid.Cell[i][j][k].Xc.x/r;
@@ -1008,20 +1068,14 @@ Interpolate_2Dto3D(const FlowField_2D &Numflowfield2D) {
             int iz ;
             
             // Find the correct zone.
-            for (iz = 0 ; iz != FlowField_2D::nzone; ++iz) {
+            for (iz = 0 ; iz != Numflowfield2D.nzone; ++iz) {
                if ((d>=Numflowfield2D.data(iz, 1, 1, 0) &&
                     d<Numflowfield2D.data(iz, end2d_i, end2d_j , 0)) &&
                    (r>=Numflowfield2D.data(iz, 1, 1, 1) &&
                     r<=Numflowfield2D.data(iz, end2d_i, end2d_j, 1)) ) break;
             } 
             
-            if (iz != FlowField_2D::nzone) {
-//                cout <<"\n FANS3DThermallyPerfectHexaBlock::Interpolate_2Dto3D, "
-//                     << "could not find the correct zone for interpolation."
-//                     << "\n i j k x y d r  " << i << "  " << j << "  " << k << "  " 
-//                     << Grid.Cell[i][j][k].Xc.x << " " << Grid.Cell[i][j][k].Xc.y << "  " 
-//                     << d << "  " << r << "  " << endl;
-//                exit(1);
+            if (iz != Numflowfield2D.nzone) {
 
                // find the correct indices for the location being interpolated in 2d zone.
                int i_2d = 1;
@@ -1068,16 +1122,16 @@ Interpolate_2Dto3D(const FlowField_2D &Numflowfield2D) {
                U[i][j][k] = W[i][j][k].U();
 
 	    } /* endif */
-            
+         
          } /* endfor */
       } /* endfor */
    } /* endfor */
-   
+ 
    // The Wall_Shear is needed for computing the y+ etc.;
    // This interpolator replaces the ICs, and it now has to be called here. 
  
    Wall_Shear();
-   
+
    return (0);
    
 }
@@ -2370,7 +2424,7 @@ Update_Solution_Multistage_Explicit(const int i_stage,
               } /* endif */
 
             } /* endif */
-            
+
             W[i][j][k] = U[i][j][k].W();
             
          } /* endfor */    	 

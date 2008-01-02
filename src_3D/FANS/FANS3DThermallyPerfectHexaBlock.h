@@ -29,6 +29,15 @@
 /* Define required specializations. */
 
 template<>
+int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState,
+	        FANS3D_ThermallyPerfect_KOmega_cState>::
+Update_Corner_Cells_for_3_Blks_Abutting(const int i_elem, 
+                                        const int j_elem, 
+                                        const int k_elem, 
+                                        const int numNeigh,
+                                        const int be);
+
+template<>
 void Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState,
 	        FANS3D_ThermallyPerfect_KOmega_cState>::
 Output_Tecplot(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,

@@ -394,7 +394,11 @@ Energy_Spectrum_Value(const double &abs_wave_num) const {
     /*****  Haworth and Poinsot paper  *****/
   case SPECTRUM_HAWORTH_POINSOT :
     //double EE, kp, 
+<<<<<<< HEAD:src_3D/TurbulenceModelling/TurbulentVelocityField.h
     u = 4.63;  Lp = TWO*PI/6.0;  // kp=4.0, u=2.5  kp=8
+=======
+    u = 7.1;  Lp = TWO*PI/6.0;  // kp=4.0, u=2.5  kp=8
+>>>>>>> ae7d19f9b5041b96e1b43ea336ac8af48c89aced:src_3D/TurbulenceModelling/TurbulentVelocityField.h
     kp = TWO*PI/Lp;
     EE = (32.0/3.0) * sqrt(2.0/PI)* (u*u/kp) * pow(k/kp, 4.0) * exp(-2.0*(k/kp)*(k/kp));
     break;
@@ -487,8 +491,8 @@ Create_Homogeneous_Turbulence_Velocity_Field(const Grid3D_Hexa_Multi_Block_List 
 
   if (CFFC_Primary_MPI_Processor()) {
     cout << "\n\n ==========================================================================\n"; 
-    cout << " Generating Homegeneous Turbulent Velocity Field"<<endl;
-    cout << " ==========================================================================" << endl;
+    cout << " Generating Homogeneous Isotropic Turbulent Velocity Field"<<endl;
+    cout << " ==========================================================================";
   }
 
   for (int i=0; i<Nx; ++i) {
@@ -711,9 +715,9 @@ void Assign_Homogeneous_Turbulence_Velocity_Field(HEXA_BLOCK *Solution_Block,
 
    for (int nBlk = 0 ; nBlk <= LocalSolnBlockList.Nblk-1 ; nBlk++) {
       if (LocalSolnBlockList.Block[nBlk].used == ADAPTIVEBLOCK3D_USED) {
-	 if (Velocity_Field.Vel_Blks[LocalSolnBlockList.Block[nBlk].gblknum].Allocated) {
+	 if (Velocity_Field.Vel_Blks[LocalSolnBlockList.Block[nBlk].info.gblknum].Allocated) {
   	    Assign_Homogeneous_Turbulence_Velocity_Field(Solution_Block[nBlk],
-                                                         Velocity_Field.Vel_Blks[LocalSolnBlockList.Block[nBlk].gblknum]);
+                                                         Velocity_Field.Vel_Blks[LocalSolnBlockList.Block[nBlk].info.gblknum]);
 	 } /* endif */
       } /* endif */
    }  /* endfor */
@@ -748,7 +752,7 @@ void Time_Averaging_of_Velocity_Field(HEXA_BLOCK *Solution_Block,
   double Yfuel_conditional = ZERO;
   Vector3D vel;  vel.zero();
   //Conditional average on fresh gas
-  Yfuel_conditional = 0.95*0.05518;//IPs.Fresh_Fuel_Mass_Fraction;
+  Yfuel_conditional = 0.95*0.05518;//Fresh_Fuel_Mass_Fraction;
   for (int p = 0 ; p <= LocalSolnBlockList.Nblk-1 ; p++ ) {
     if (LocalSolnBlockList.Block[p].used == ADAPTIVEBLOCK3D_USED) {
       for (int i = Solution_Block[p].ICl ; i <= Solution_Block[p].ICu ; i++) {
@@ -780,8 +784,8 @@ double Time_Averaging_of_Turbulent_Burning_Rate(HEXA_BLOCK *Solution_Block,
                                                 Grid3D_Input_Parameters &IPs){
 
   double local_vol, Yf_u, rho_u, Ly, Lz, burning_rate = ZERO;
-  Yf_u = 0.05518;//IPs.Fresh_Fuel_Mass_Fraction;
-  rho_u = 1.13;//IPs.Fresh_Density;
+  Yf_u = 0.05518;//Fresh_Fuel_Mass_Fraction;
+  rho_u = 1.13;//Fresh_Density;
   Ly = IPs.Box_Width;
   Lz = IPs.Box_Height;
   for (int p = 0 ; p <= LocalSolnBlockList.Nblk-1 ; p++ ) {
@@ -799,8 +803,12 @@ double Time_Averaging_of_Turbulent_Burning_Rate(HEXA_BLOCK *Solution_Block,
   } /* endfor */
 
   burning_rate = CFFC_Summation_MPI(burning_rate);
+<<<<<<< HEAD:src_3D/TurbulenceModelling/TurbulentVelocityField.h
 /*   burning_rate = burning_rate*0.3837/(Ly*Lz); */
   burning_rate = -burning_rate/(rho_u*Yf_u*Ly*Lz);
+=======
+  burning_rate = burning_rate*0.3837/(Ly*Lz);//laminar_flame_speed/Ly;//(rho_u*Ly);  //(rho_u*Yf_u*Ly);
+>>>>>>> ae7d19f9b5041b96e1b43ea336ac8af48c89aced:src_3D/TurbulenceModelling/TurbulentVelocityField.h
 
   return burning_rate;
 }
@@ -818,7 +826,7 @@ void Time_Averaging_of_Solution(HEXA_BLOCK *Solution_Block,
   double Yfuel_conditional = ZERO;
   
   //Conditional average on fresh gas
-  Yfuel_conditional = 0.95*0.05518;//IPs.Fresh_Fuel_Mass_Fraction;
+  Yfuel_conditional = 0.95*0.05518;//Fresh_Fuel_Mass_Fraction;
   u_ave = u_average;
   v_ave = v_average;  
   w_ave = w_average;  
@@ -906,7 +914,7 @@ void Time_Averaging_of_Solution(HEXA_BLOCK *Solution_Block,
 
   if (CFFC_Primary_MPI_Processor()) {
     cout << "\n ==========================================================================\n"; 
-    cout << " In physical space:\n";
+    cout << " Turbulent Statistics of Resolved Velocity Field (in Physical Space):\n";
     cout << "\n <u^2> = "<< u_p <<"  "<< "<v^2> = "<< v_p <<"  "<< "<v^2> = "<< w_p <<"  "
 	 << "u_rms  = " << u_rms <<"  "
 	 << "\n <u> = " << u_ave <<"  "<< "<v> = " << v_ave <<"  "<< "<w> = " << w_ave <<"  "
@@ -1037,7 +1045,11 @@ double Taylor_Scale(HEXA_BLOCK *Solution_Block,
     taylor_scale = ZERO;
   } else {
     taylor_scale = sqrt(TWO*u_prime*u_prime/(TWO*enstrophy));
+<<<<<<< HEAD:src_3D/TurbulenceModelling/TurbulentVelocityField.h
   } /* endif */
+=======
+  }
+>>>>>>> ae7d19f9b5041b96e1b43ea336ac8af48c89aced:src_3D/TurbulenceModelling/TurbulentVelocityField.h
 
   return taylor_scale;
 }
@@ -1061,8 +1073,12 @@ double Average_viscosity(HEXA_BLOCK *Solution_Block,
           if (Solution_Block[p].W[i][j][k].spec[0].c >= Yfuel_conditional) {
 	    local_vol = Solution_Block[p].Grid.volume(i,j,k);
 	    total_vol += local_vol;
+<<<<<<< HEAD:src_3D/TurbulenceModelling/TurbulentVelocityField.h
 /* 	    vis += Solution_Block[p].W[i][j][k].mu()*local_vol/Solution_Block[p].W[i][j][k].rho; */
 	    vis += Solution_Block[p].W[i][j][k].mu()*local_vol/(Solution_Block[p].W[i][j][k].rho);//*Solution_Block[p].W[i][j][k].flame.TF*Solution_Block[p].W[i][j][k].flame.WF);
+=======
+	    vis += Solution_Block[p].W[i][j][k].mu()*local_vol/Solution_Block[p].W[i][j][k].rho;
+>>>>>>> ae7d19f9b5041b96e1b43ea336ac8af48c89aced:src_3D/TurbulenceModelling/TurbulentVelocityField.h
 	   } /* endif */
 	  } /* endfor */
 	} /* endfor */
@@ -1079,6 +1095,7 @@ double Average_viscosity(HEXA_BLOCK *Solution_Block,
 }
 
 /********************************************************
+<<<<<<< HEAD:src_3D/TurbulenceModelling/TurbulentVelocityField.h
  *          Open_Energy_File                            *
  ********************************************************/
 inline Open_Energy_File(ofstream &Energy_File,
@@ -1190,11 +1207,19 @@ inline Output_Energy_to_File(ostream &Energy_File,
 
 
 /********************************************************
+=======
+>>>>>>> ae7d19f9b5041b96e1b43ea336ac8af48c89aced:src_3D/TurbulenceModelling/TurbulentVelocityField.h
  *          Open_Turbulence_Progress_File               *
  ********************************************************/
+<<<<<<< HEAD:src_3D/TurbulenceModelling/TurbulentVelocityField.h
 inline Open_Turbulence_Progress_File(ofstream &Turbulence_Progress_File,
 		  		     char *File_Name,
 				     const int Append_to_File) {
+=======
+inline int Open_Turbulence_Progress_File(ofstream &Turbulence_Progress_File,
+		    		         char *File_Name,
+				         const int Append_to_File) {
+>>>>>>> ae7d19f9b5041b96e1b43ea336ac8af48c89aced:src_3D/TurbulenceModelling/TurbulentVelocityField.h
 
     int i;
     char prefix[256], extension[256], 
@@ -1213,7 +1238,11 @@ inline Open_Turbulence_Progress_File(ofstream &Turbulence_Progress_File,
        if (i > strlen(File_Name) ) break;
     } /* endwhile */
     prefix[i] = '\0';
+<<<<<<< HEAD:src_3D/TurbulenceModelling/TurbulentVelocityField.h
     strcat(prefix, "_Turbulence");
+=======
+    strcat(prefix, "_turbulence_statistics");
+>>>>>>> ae7d19f9b5041b96e1b43ea336ac8af48c89aced:src_3D/TurbulenceModelling/TurbulentVelocityField.h
 
     strcpy(extension, ".dat");
     strcpy(turbulence_progress_file_name, prefix);
@@ -1244,16 +1273,38 @@ inline Open_Turbulence_Progress_File(ofstream &Turbulence_Progress_File,
 
     gnuplot_file << "set title \"Turbulence parameters progress \"\n"
                  << "set xlabel \"Time \"\n"
+<<<<<<< HEAD:src_3D/TurbulenceModelling/TurbulentVelocityField.h
                  << "set ylabel \"u_rms/Taylor/St\"\n" 
+=======
+                 << "set ylabel \"TKE/u_rms/enstrophy/Taylor/St\"\n" 
+>>>>>>> ae7d19f9b5041b96e1b43ea336ac8af48c89aced:src_3D/TurbulenceModelling/TurbulentVelocityField.h
                  << "set logscale xy\n"
                  << "plot \"" << turbulence_progress_file_name_ptr << "\""
+<<<<<<< HEAD:src_3D/TurbulenceModelling/TurbulentVelocityField.h
                  << " using 1:2 \"%lf%*lf%*lf%lf%*lf%*lf%*lf%*lf\" \\\n"
+=======
+                 << " using 1:2 \"%lf%*lf%*lf%lf%*lf%*lf%*lf%*lf%*lf\" \\\n"
+                 << "     title \"TKE\" with lines, \\\n"
+                 << "\"" << turbulence_progress_file_name_ptr << "\""
+                 << " using 1:2 \"%lf%*lf%*lf%*lf%lf%*lf%*lf%*lf%*lf\" \\\n"
+>>>>>>> ae7d19f9b5041b96e1b43ea336ac8af48c89aced:src_3D/TurbulenceModelling/TurbulentVelocityField.h
                  << "     title \"u_rms\" with lines, \\\n"
                  << "\"" << turbulence_progress_file_name_ptr << "\""
+<<<<<<< HEAD:src_3D/TurbulenceModelling/TurbulentVelocityField.h
 		 << " using 1:2 \"%lf%*lf%*lf%*lf%lf%*lf%*lf%*lf\" \\\n"
+=======
+                 << " using 1:2 \"%lf%*lf%*lf%*lf%*lf%lf%*lf%*lf%*lf\" \\\n"
+                 << "     title \"enstrophy\" with lines, \\\n"
+                 << "\"" << turbulence_progress_file_name_ptr << "\""
+		 << " using 1:2 \"%lf%*lf%*lf%*lf%*lf%*lf%lf%*lf%*lf\" \\\n"
+>>>>>>> ae7d19f9b5041b96e1b43ea336ac8af48c89aced:src_3D/TurbulenceModelling/TurbulentVelocityField.h
 	         << "     title \"Taylor_scale\" with lines, \\\n"
                  << "\"" << turbulence_progress_file_name_ptr << "\""
+<<<<<<< HEAD:src_3D/TurbulenceModelling/TurbulentVelocityField.h
                  << " using 1:2 \"%lf%*lf%*lf%*lf%*lf%*lf%lf%*lf\" \\\n"
+=======
+                 << " using 1:2 \"%lf%*lf%*lf%*lf%*lf%*lf%*lf%*lf%lf\" \\\n"
+>>>>>>> ae7d19f9b5041b96e1b43ea336ac8af48c89aced:src_3D/TurbulenceModelling/TurbulentVelocityField.h
                  << "     title \"St\" with lines\n"
                  << "pause -1  \"Hit return to continue\"\n";
 
@@ -1263,13 +1314,24 @@ inline Open_Turbulence_Progress_File(ofstream &Turbulence_Progress_File,
        Return zero value. */
 
     return(0);
+<<<<<<< HEAD:src_3D/TurbulenceModelling/TurbulentVelocityField.h
 }
+=======
+>>>>>>> ae7d19f9b5041b96e1b43ea336ac8af48c89aced:src_3D/TurbulenceModelling/TurbulentVelocityField.h
 
+<<<<<<< HEAD:src_3D/TurbulenceModelling/TurbulentVelocityField.h
+=======
+}
+>>>>>>> ae7d19f9b5041b96e1b43ea336ac8af48c89aced:src_3D/TurbulenceModelling/TurbulentVelocityField.h
 
 /********************************************************
  *          Close_Turbulence_Progress_File              *
  ********************************************************/
+<<<<<<< HEAD:src_3D/TurbulenceModelling/TurbulentVelocityField.h
 inline Close_Turbulence_Progress_File(ofstream &Turbulence_Progress_File) {
+=======
+inline int Close_Turbulence_Progress_File(ofstream &Turbulence_Progress_File) {
+>>>>>>> ae7d19f9b5041b96e1b43ea336ac8af48c89aced:src_3D/TurbulenceModelling/TurbulentVelocityField.h
 
     Turbulence_Progress_File.close();
 
@@ -1277,10 +1339,14 @@ inline Close_Turbulence_Progress_File(ofstream &Turbulence_Progress_File) {
 
 }
 
+<<<<<<< HEAD:src_3D/TurbulenceModelling/TurbulentVelocityField.h
 
+=======
+>>>>>>> ae7d19f9b5041b96e1b43ea336ac8af48c89aced:src_3D/TurbulenceModelling/TurbulentVelocityField.h
 /********************************************************
  *          Output_Turbulence_Progress_to_File          *
  ********************************************************/
+<<<<<<< HEAD:src_3D/TurbulenceModelling/TurbulentVelocityField.h
 inline Output_Turbulence_Progress_to_File(ostream &Turbulence_Progress_File,
 					  const int Number_of_Time_Steps,
 					  const double &Time,
@@ -1289,19 +1355,43 @@ inline Output_Turbulence_Progress_to_File(ostream &Turbulence_Progress_File,
 					  const double &Taylor_scale,
 					  const double &viscosity,
                                           const double &turbulent_burning_rate) {
+=======
+inline int Output_Turbulence_Progress_to_File(ostream &Turbulence_Progress_File,
+		 			      const int Number_of_Time_Steps,
+					      const double &Time,
+					      const CPUTime &CPU_Time,
+					      const double &Total_Energy,
+                                              const double &u_rms,
+                                              const double &Total_Enstrophy,
+					      const double &Taylor_scale,
+					      const double &viscosity,
+                                              const double &turbulent_burning_rate) {
+>>>>>>> ae7d19f9b5041b96e1b43ea336ac8af48c89aced:src_3D/TurbulenceModelling/TurbulentVelocityField.h
 
     Turbulence_Progress_File << setprecision(6);
     Turbulence_Progress_File << Time
                              << " " << Number_of_Time_Steps
                              << " " << CPU_Time.min();
     Turbulence_Progress_File.setf(ios::scientific);
+<<<<<<< HEAD:src_3D/TurbulenceModelling/TurbulentVelocityField.h
     Turbulence_Progress_File << " " << u_rms
+=======
+    Turbulence_Progress_File << " " << Total_Energy
+                             << " " << u_rms
+                             << " " << Total_Enstrophy
+>>>>>>> ae7d19f9b5041b96e1b43ea336ac8af48c89aced:src_3D/TurbulenceModelling/TurbulentVelocityField.h
                              << " " << Taylor_scale
 			     << " " << viscosity
 			     << " " << turbulent_burning_rate
                              << "\n";                       
     Turbulence_Progress_File.unsetf(ios::scientific);
     Turbulence_Progress_File.flush();
+<<<<<<< HEAD:src_3D/TurbulenceModelling/TurbulentVelocityField.h
+=======
+
+    return(0);
+
+>>>>>>> ae7d19f9b5041b96e1b43ea336ac8af48c89aced:src_3D/TurbulenceModelling/TurbulentVelocityField.h
 }
 
 template <typename HEXA_BLOCK>

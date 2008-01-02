@@ -722,16 +722,19 @@ Grid2D_Quad_Block** Grid_Rectangular_Box(Grid2D_Quad_Block **Grid_ptr,
       } else {
 	Bnd_Spline_North.setBCtype(BC_NONE);
       } /* endif */
+
       if (jBlk == 0) {
 	Bnd_Spline_South.setBCtype(BC_REFLECTION);
       } else {
 	Bnd_Spline_South.setBCtype(BC_NONE);
       } /* endif */
+
       if (iBlk == Number_of_Blocks_Idir-1) {
 	Bnd_Spline_East.setBCtype(BC_REFLECTION);
       } else {
 	Bnd_Spline_East.setBCtype(BC_NONE);
       } /* endif */
+
       if (iBlk == 0) {
 	Bnd_Spline_West.setBCtype(BC_REFLECTION);
       } else {
@@ -743,15 +746,30 @@ Grid2D_Quad_Block** Grid_Rectangular_Box(Grid2D_Quad_Block **Grid_ptr,
 
       if (Stretching_Flag) {
 	Stretch_I = Stretching_Type_Idir;
-	Stretch_J = Stretching_Type_Jdir;
 	Beta_I = Stretching_Factor_Idir;
-	Beta_J = Stretching_Factor_Jdir;
+
+        if (jBlk == Number_of_Blocks_Jdir-1 && jBlk == 0) {
+  	   Stretch_J = Stretching_Type_Jdir;
+	   Beta_J = Stretching_Factor_Jdir;
+        } else if (jBlk == Number_of_Blocks_Jdir-1) {
+  	   Stretch_J = STRETCHING_FCN_MAX_CLUSTERING;
+	   Beta_J = Stretching_Factor_Jdir;
+        } else if (jBlk == 0) {
+  	   Stretch_J = STRETCHING_FCN_MIN_CLUSTERING;
+	   Beta_J = Stretching_Factor_Jdir;
+        } else {
+  	   Stretch_J = STRETCHING_FCN_LINEAR;
+	   Beta_J = ZERO;
+        } /* endif */
+
       } else {
 	Stretch_I = STRETCHING_FCN_LINEAR;
-	Stretch_J = STRETCHING_FCN_LINEAR;
 	Beta_I = ZERO; 
+	Stretch_J = STRETCHING_FCN_LINEAR;
 	Beta_J = ZERO;
-      }
+
+      } /* endif */
+
       Tau_I = ZERO;
       Tau_J = ZERO;
       Orthogonal_North = 0;
@@ -764,6 +782,7 @@ Grid2D_Quad_Block** Grid_Rectangular_Box(Grid2D_Quad_Block **Grid_ptr,
 
       Create_Quad_Block(Grid_ptr[iBlk][jBlk],
 			Bnd_Spline_North,
+
 			Bnd_Spline_South,
 			Bnd_Spline_East,
 			Bnd_Spline_West,

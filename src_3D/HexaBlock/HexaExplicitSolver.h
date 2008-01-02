@@ -81,7 +81,8 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
 	       << " steps (iterations).";
 	  cout.flush();
 	} /* endif */
-	//error_flag = Write_Octree(Octree, Solution_Data.Input);
+	error_flag = Write_Octree(Data.Octree, 
+                                  Solution_Data.Input);
 	if (error_flag) {
 	  cout << "\n ERROR: Unable to open octree data file "
 	       << "on processor "<< CFFC_MPI::This_Processor_Number
@@ -158,6 +159,12 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
 					   viscosity,
 					   turb_burning_rate);
       } /* endif */
+
+      if (!first_step) {
+         error_flag = Output_Other_Solution_Progress_Specialization_Data(Data,
+                                                                         Solution_Data);
+         if (error_flag) return (error_flag);
+      } /* endif */
       /****************************************************/
 
       /**************************************************
@@ -207,6 +214,10 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
 	// 2. Apply boundary conditions for stage.
 	Solution_Data.Local_Solution_Blocks.BCs(Solution_Data.Input);
 	
+	 /*************** UPDATE CORNOR GHOST CELLS SOLUTION *****/
+        // For those 3 blocks abutting cases, this is to fix the gradient-recosntruction.
+        Solution_Data.Local_Solution_Blocks.Update_Corner_Cells_for_3_Blks_Abutting(Data.Local_Adaptive_Block_List);
+
 	 /*************** UPDATE SOLUTION **********************************/
 	// 3. Determine solution residuals for stage.
 	error_flag = Solution_Data.Local_Solution_Blocks.dUdt_Multistage_Explicit(Solution_Data.Input,
@@ -291,12 +302,12 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
 
   Solution_Data.Local_Solution_Blocks.BCs(Solution_Data.Input);
 
+  /*************** UPDATE CORNOR GHOST CELLS SOLUTION *****/
+  // For those 3 blocks abutting cases, this is to fix the gradient-recosntruction.
+  Solution_Data.Local_Solution_Blocks.Update_Corner_Cells_for_3_Blks_Abutting(Data.Local_Adaptive_Block_List);
+
   return error_flag;
 
 }
 
 #endif //_HEXA_EXPLICIT_SOLVER
-
-
-
-
