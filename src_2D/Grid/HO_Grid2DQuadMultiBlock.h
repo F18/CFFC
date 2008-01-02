@@ -553,28 +553,28 @@ void Grid_Free_Jet(int &_Number_of_Blocks_Idir_,
   //! @name Multi-grid operations based on input parameters
   //@{
   template<typename Input_Parameters_Type>
-  int Multi_Block_Grid(const Input_Parameters_Type &Input_Parameters);
+  int Multi_Block_Grid(Input_Parameters_Type &Input_Parameters);
 
   template<typename Input_Parameters_Type>
-  int Write_Multi_Block_Grid_Definition(const Input_Parameters_Type &Input_Parameters);
+  int Write_Multi_Block_Grid_Definition_Using_IP(const Input_Parameters_Type &Input_Parameters);
 
   template<typename Input_Parameters_Type>
-  void Read_Multi_Block_Grid_Definition(const Input_Parameters_Type &Input_Parameters);
+  void Read_Multi_Block_Grid_Definition_Using_IP(Input_Parameters_Type &Input_Parameters);
 
   template<typename Input_Parameters_Type>
-  int Write_Multi_Block_Grid(const Input_Parameters_Type &Input_Parameters);
+  int Write_Multi_Block_Grid_Using_IP(const Input_Parameters_Type &Input_Parameters);
 
   template<typename Input_Parameters_Type>
-  void Read_Multi_Block_Grid(const Input_Parameters_Type &Input_Parameters);
+  void Read_Multi_Block_Grid_Using_IP(Input_Parameters_Type &Input_Parameters);
 
   template<typename Input_Parameters_Type>
-  int Output_Tecplot(const Input_Parameters_Type &Input_Parameters);
+  int Output_Tecplot_Using_IP(const Input_Parameters_Type &Input_Parameters);
 
   template<typename Input_Parameters_Type>
-  int Output_Nodes_Tecplot(const Input_Parameters_Type &Input_Parameters);
+  int Output_Nodes_Tecplot_Using_IP(const Input_Parameters_Type &Input_Parameters);
 
   template<typename Input_Parameters_Type>
-  int Output_Cells_Tecplot(const Input_Parameters_Type &Input_Parameters);
+  int Output_Cells_Tecplot_Using_IP(const Input_Parameters_Type &Input_Parameters);
   //@}
 
 private:
@@ -594,7 +594,7 @@ private:
  * Generates multi-block quadilateral mesh.
  */
 template<typename Input_Parameters_Type>
-int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(const Input_Parameters_Type &Input_Parameters){
+int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Parameters){
 
   int iBlk, jBlk;
   int HiBlk, HjBlk;
@@ -603,7 +603,7 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(const Input_Parameters_Type &Inp
 
   switch(Input_Parameters.i_Grid) {
   case GRID_READ_FROM_DEFINITION_FILE :
-    Read_Multi_Block_Grid_Definition(Input_Parameters);
+    Read_Multi_Block_Grid_Definition_Using_IP(Input_Parameters);
 
     if (Grid_ptr == NULL) {
       cout << "\n " << CFFC_Name() 
@@ -612,7 +612,7 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(const Input_Parameters_Type &Inp
     } /* endif */
     break;
   case GRID_READ_FROM_GRID_DATA_FILE :
-    Read_Multi_Block_Grid(Input_Parameters);
+    Read_Multi_Block_Grid_Using_IP(Input_Parameters);
     if (Grid_ptr == NULL) {
       cout << "\n " << CFFC_Name() 
 	   << " AdvectDiffuse2D ERROR: Unable to open multi-block mesh data file "
@@ -887,6 +887,8 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(const Input_Parameters_Type &Inp
     break;
   case GRID_ICEMCFD :
     ICEMCFD_Read(Input_Parameters.ICEMCFD_FileNames,
+		 *this,
+		 Input_Parameters.Number_of_Ghost_Cells,
 		 &Input_Parameters.Number_of_Blocks_Idir,
 		 &Input_Parameters.Number_of_Blocks_Jdir);
     break;
@@ -951,7 +953,7 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(const Input_Parameters_Type &Inp
  * unable to write the grid definition file.            
  */
 template<typename Input_Parameters_Type>
-int Grid2D_Quad_MultiBlock_HO::Write_Multi_Block_Grid_Definition(const Input_Parameters_Type &Input_Parameters){
+int Grid2D_Quad_MultiBlock_HO::Write_Multi_Block_Grid_Definition_Using_IP(const Input_Parameters_Type &Input_Parameters){
 
   char *mesh_definition_file_name_ptr;
   ofstream mesh_definition_file;
@@ -987,7 +989,7 @@ int Grid2D_Quad_MultiBlock_HO::Write_Multi_Block_Grid_Definition(const Input_Par
  * specified input stream.                            
  */
 template<typename Input_Parameters_Type>
-void Grid2D_Quad_MultiBlock_HO::Read_Multi_Block_Grid_Definition(const Input_Parameters_Type &Input_Parameters){
+void Grid2D_Quad_MultiBlock_HO::Read_Multi_Block_Grid_Definition_Using_IP(Input_Parameters_Type &Input_Parameters){
   
   char buffer[256];
   char *mesh_definition_file_name_ptr;
@@ -996,7 +998,9 @@ void Grid2D_Quad_MultiBlock_HO::Read_Multi_Block_Grid_Definition(const Input_Par
   /* Open the grid definition file. */
   mesh_definition_file_name_ptr = Input_Parameters.Grid_Definition_File_Name;
   mesh_definition_file.open(mesh_definition_file_name_ptr, ios::in);
-  if (mesh_definition_file.fail()) return (NULL);
+  if (mesh_definition_file.fail()){
+    throw runtime_error("Grid2D_Quad_MultiBlock_HO::Read_Multi_Block_Grid_Definition() ERROR! Cannot open mesh definition file!");
+  }
   
   /* Read grid type information. */
   mesh_definition_file.getline(buffer, sizeof(buffer));
@@ -1019,7 +1023,7 @@ void Grid2D_Quad_MultiBlock_HO::Read_Multi_Block_Grid_Definition(const Input_Par
  * write the grid data file.                           
  */
 template<typename Input_Parameters_Type>
-int Grid2D_Quad_MultiBlock_HO::Write_Multi_Block_Grid(const Input_Parameters_Type &Input_Parameters){
+int Grid2D_Quad_MultiBlock_HO::Write_Multi_Block_Grid_Using_IP(const Input_Parameters_Type &Input_Parameters){
 
   char *mesh_file_name_ptr;
   ofstream mesh_file;
@@ -1041,11 +1045,11 @@ int Grid2D_Quad_MultiBlock_HO::Write_Multi_Block_Grid(const Input_Parameters_Typ
 }
 
 /*!
- * Reads multi-block quadilateral mesh from a grid data
- * file.  Returns a pointer to the mesh.               
+ * Reads multi-block quadilateral mesh from
+ * a grid data file.
  */
 template<typename Input_Parameters_Type>
-void Grid2D_Quad_MultiBlock_HO::Read_Multi_Block_Grid(const Input_Parameters_Type &Input_Parameters){
+void Grid2D_Quad_MultiBlock_HO::Read_Multi_Block_Grid_Using_IP(Input_Parameters_Type &Input_Parameters){
 
   char buffer[256];
   char *mesh_file_name_ptr;
@@ -1054,7 +1058,9 @@ void Grid2D_Quad_MultiBlock_HO::Read_Multi_Block_Grid(const Input_Parameters_Typ
   /* Open the grid data input file. */
   mesh_file_name_ptr = Input_Parameters.Grid_File_Name;
   mesh_file.open(mesh_file_name_ptr, ios::in);
-  if (mesh_file.fail()) return (NULL);
+  if (mesh_file.fail()){
+    throw runtime_error("Grid2D_Quad_MultiBlock_HO::Read_Multi_Block_Grid() ERROR! Cannot open grid data file!");
+  }
   
   /* Read grid type information. */
   mesh_file.getline(buffer, sizeof(buffer));
@@ -1075,7 +1081,7 @@ void Grid2D_Quad_MultiBlock_HO::Read_Multi_Block_Grid(const Input_Parameters_Typ
  * TECPLOT file.                                      
  */
 template<typename Input_Parameters_Type>
-int Grid2D_Quad_MultiBlock_HO::Output_Tecplot(const Input_Parameters_Type &Input_Parameters){
+int Grid2D_Quad_MultiBlock_HO::Output_Tecplot_Using_IP(const Input_Parameters_Type &Input_Parameters){
 
   int i, j;
   char prefix[256], extension[256], mesh_file_name[256];
@@ -1122,7 +1128,7 @@ int Grid2D_Quad_MultiBlock_HO::Output_Tecplot(const Input_Parameters_Type &Input
  * if unable to write the TECPLOT file.               
  */
 template<typename Input_Parameters_Type>
-int Grid2D_Quad_MultiBlock_HO::Output_Nodes_Tecplot(const Input_Parameters_Type &Input_Parameters){
+int Grid2D_Quad_MultiBlock_HO::Output_Nodes_Tecplot_Using_IP(const Input_Parameters_Type &Input_Parameters){
 
   int i, j;
   char prefix[256], extension[256], mesh_file_name[256];
@@ -1171,7 +1177,7 @@ int Grid2D_Quad_MultiBlock_HO::Output_Nodes_Tecplot(const Input_Parameters_Type 
  * TECPLOT file.                                      
  */
 template<typename Input_Parameters_Type>
-int Grid2D_Quad_MultiBlock_HO::Output_Cells_Tecplot(const Input_Parameters_Type &Input_Parameters){
+int Grid2D_Quad_MultiBlock_HO::Output_Cells_Tecplot_Using_IP(const Input_Parameters_Type &Input_Parameters){
 
   int i, j;
   char prefix[256], extension[256], mesh_file_name[256];

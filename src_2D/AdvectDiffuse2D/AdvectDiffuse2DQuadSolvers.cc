@@ -1249,7 +1249,7 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
          if (CFFC_Primary_MPI_Processor()) {
             if (!batch_flag) cout << "\n Writing AdvectDiffuse2D multi-block mesh to node data output file.";
 #ifdef USE_HIGH_ORDER_GRID
-            error_flag = MeshBlk.Output_Nodes_Tecplot(Input_Parameters);
+            error_flag = MeshBlk.Output_Nodes_Tecplot_Using_IP(Input_Parameters);
 #else
             error_flag = Output_Nodes_Tecplot(MeshBlk,
                                               Input_Parameters);
@@ -1267,7 +1267,7 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
          if (CFFC_Primary_MPI_Processor()) {
             if (!batch_flag) cout << "\n Writing AdvectDiffuse2D multi-block mesh to cell data output file.";
 #ifdef USE_HIGH_ORDER_GRID
-            error_flag = MeshBlk.Output_Cells_Tecplot(Input_Parameters);
+            error_flag = MeshBlk.Output_Cells_Tecplot_Using_IP(Input_Parameters);
 #else
             error_flag = Output_Cells_Tecplot(MeshBlk,
                                               Input_Parameters);
