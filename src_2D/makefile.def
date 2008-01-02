@@ -170,7 +170,7 @@ ifeq ($(PLATFORM),Linux_ia64)
   BLAS_LD_FLAGS   	  = -lblas -llapack -lg2c -lifcore
 endif	
 ifeq ($(PLATFORM),Linux_x86_64)
-  BLAS_LD_FLAGS           = -lblas -llapack -lg2c -lgcc
+  BLAS_LD_FLAGS           = -lblas -llapack -lgcc 
 endif
 
 #

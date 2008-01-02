@@ -63,7 +63,6 @@ using namespace std;
 #include "Euler1D/Euler1D.h"
 #include "Solvers1D/MHD1D.h"
 #include "AdvectDiffuse2D/AdvectDiffuse2DQuad.h"
-#include "AdvectDiffuse2D/AdvectDiffuse2DQuad_NKS.h"
 #include "Euler2D/Euler2DQuad.h"
 #include "NavierStokes2D/NavierStokes2DQuad.h"
 #include "Chem2D/Chem2DQuad.h"
