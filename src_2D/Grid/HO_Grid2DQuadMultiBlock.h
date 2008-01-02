@@ -136,7 +136,9 @@ public:
 			    const int Number_of_Cells_Jdir,
 			    const int Number_of_Ghost_Cells);
   
-  void Grid_Rectangular_Box(const double &Width,
+  void Grid_Rectangular_Box(int &_Number_of_Blocks_Idir_,
+			    int &_Number_of_Blocks_Jdir_,
+			    const double &Width,
 			    const double &Height,
 			    const int Stretching_Flag,
 			    const int Stretching_Type_Idir,
@@ -147,7 +149,9 @@ public:
 			    const int Number_of_Cells_Jdir,
 			    const int Number_of_Ghost_Cells);
 
-  void Grid_Flat_Plate(const double &Length,
+  void Grid_Flat_Plate(int &_Number_of_Blocks_Idir_,
+		       int &_Number_of_Blocks_Jdir_,
+		       const double &Length,
 		       const int Flat_Plate_BC_Type,
 		       const int Stretching_Flag,
 		       const double &Stretching_Factor_Idir,
@@ -156,7 +160,9 @@ public:
 		       const int Number_of_Cells_Jdir,
 		       const int Number_of_Ghost_Cells);
 
-  void Grid_Flat_Plate_NK(const double &Length,
+  void Grid_Flat_Plate_NK(int &_Number_of_Blocks_Idir_,
+			  int &_Number_of_Blocks_Jdir_,
+			  const double &Length,
 			  const int Stretching_Flag,
 			  const double &Stretching_Factor_Idir,
 			  const double &Stretching_Factor_Jdir,
@@ -164,7 +170,9 @@ public:
 			  const int Number_of_Cells_Jdir,
 			  const int Number_of_Ghost_Cells);
 
-  void Grid_Flat_Plate3(const double &Length,
+  void Grid_Flat_Plate3(int &_Number_of_Blocks_Idir_,
+			int &_Number_of_Blocks_Jdir_,
+			const double &Length,
 			const int &Stretching_Flag,
 			const double &Stretching_Factor_Idir,
 			const double &Stretching_Factor_Jdir,
@@ -172,14 +180,18 @@ public:
 			const int Number_of_Cells_Jdir,
 			const int Number_of_Ghost_Cells);
 
-  void Grid_Flat_Plate4(const double &Length,
+  void Grid_Flat_Plate4(int &_Number_of_Blocks_Idir_,
+			int &_Number_of_Blocks_Jdir_,
+			const double &Length,
 			const int &Stretching_Flag,
 			const double &Stretching_Factor_Idir,
 			const double &Stretching_Factor_Jdir,
 			const int Number_of_Cells_Idir,
 			const int Number_of_Cells_Jdir,
 			const int Number_of_Ghost_Cells);
-  void Grid_Flat_Plate9(const double &Length,
+  void Grid_Flat_Plate9(int &_Number_of_Blocks_Idir_,
+			int &_Number_of_Blocks_Jdir_,
+			const double &Length,
 			const int &Flat_Plate_BC_Type,
 			const int &Stretching_Flag,
 			const double &Stretching_Factor_Idir,
@@ -188,20 +200,26 @@ public:
 			const int Number_of_Cells_Jdir,
 			const int Number_of_Ghost_Cells);
 
-  void Grid_1D_Flame(const double &Length,
+  void Grid_1D_Flame(int &_Number_of_Blocks_Idir_,
+		     int &_Number_of_Blocks_Jdir_,
+		     const double &Length,
 		     const double &Heigth,
 		     const int Number_of_Cells_Idir,
 		     const int Number_of_Cells_Jdir,
 		     const int Number_of_Ghost_Cells);
   
-  void Grid_2D_Laminar_Flame(const double &Length,
+  void Grid_2D_Laminar_Flame(int &_Number_of_Blocks_Idir_,
+			     int &_Number_of_Blocks_Jdir_,
+			     const double &Length,
 			     const double &Heigth,
 			     const int Number_of_Cells_Idir,
 			     const int Number_of_Cells_Jdir, 
 			     const int Number_of_Ghost_Cells,
 			     const int Flame_Type_Flag);
 
-  void Grid_Pipe(const double &Length,
+  void Grid_Pipe(int &_Number_of_Blocks_Idir_,
+		 int &_Number_of_Blocks_Jdir_,
+		 const double &Length,
 		 const double &Radius,
 		 const int Stretching_Flag,
 		 const double Stretching_Factor,
@@ -209,20 +227,26 @@ public:
 		 const int Number_of_Cells_Jdir,
 		 const int Number_of_Ghost_Cells);  
 
-  void Grid_Pipe(const double &Length,
+  void Grid_Pipe(int &_Number_of_Blocks_Idir_,
+		 int &_Number_of_Blocks_Jdir_,
+		 const double &Length,
 		 const double &Radius,
 		 const int &Axisymmetric,
 		 const int Number_of_Cells_Idir,
 		 const int Number_of_Cells_Jdir,
 		 const int Number_of_Ghost_Cells);
   
-  void  Grid_Blunt_Body(const double &Radius,
+  void  Grid_Blunt_Body(int &_Number_of_Blocks_Idir_,
+			int &_Number_of_Blocks_Jdir_,
+			const double &Radius,
 			const double &Mach_Number,
 			const int Number_of_Cells_Idir,
 			const int Number_of_Cells_Jdir,
 			const int Number_of_Ghost_Cells);
 
-  void Grid_Rocket_Motor(const double &Length_Chamber,
+  void Grid_Rocket_Motor(int &_Number_of_Blocks_Idir_,
+			 int &_Number_of_Blocks_Jdir_,
+			 const double &Length_Chamber,
 			 const double &Radius_Chamber,
 			 const double &Length_Chamber_To_Throat,
 			 const double &Length_Nozzle,
@@ -239,7 +263,9 @@ public:
 			 const int Number_of_Cells_Jdir,
 			 const int Number_of_Ghost_Cells);
   
-  void Grid_Nozzleless_Rocket_Motor(const double &Length_Chamber,
+  void Grid_Nozzleless_Rocket_Motor(int &_Number_of_Blocks_Idir_,
+				    int &_Number_of_Blocks_Jdir_,
+				    const double &Length_Chamber,
 				    const double &Radius_Chamber,
 				    const double &Length_Nozzle,
 				    const double &Radius_Nozzle_Exit,
@@ -252,7 +278,9 @@ public:
 				    const int Number_of_Cells_Jdir,
 				    const int Number_of_Ghost_Cells);
 
-  void Grid_Nozzle(const double &Length_Nozzle,
+  void Grid_Nozzle(int &_Number_of_Blocks_Idir_,
+		   int &_Number_of_Blocks_Jdir_,
+		   const double &Length_Nozzle,
 		   const double &Radius_Chamber,
 		   const double &Radius_Nozzle_Exit,
 		   const double &Radius_Nozzle_Throat,
@@ -266,7 +294,9 @@ public:
 		   const int Number_of_Cells_Jdir,
 		   const int Number_of_Ghost_Cells);
   
-  void Grid_Circular_Cylinder(const double &Radius,
+  void Grid_Circular_Cylinder(int &_Number_of_Blocks_Idir_,
+			      int &_Number_of_Blocks_Jdir_,
+			      const double &Radius,
 			      const int Stretching_Type_Idir,
 			      const int Stretching_Type_Jdir,
 			      const double &Stretching_Factor_Idir,
@@ -275,7 +305,9 @@ public:
 			      const int Number_of_Cells_Jdir,
 			      const int Number_of_Ghost_Cells);
 
-  void Grid_Circular_Cylinder(const double &Inner_Radius,
+  void Grid_Circular_Cylinder(int &_Number_of_Blocks_Idir_,
+			      int &_Number_of_Blocks_Jdir_,
+			      const double &Inner_Radius,
 			      const double &Outer_Radius,
 			      const int Stretching_Type_Idir,
 			      const int Stretching_Type_Jdir,
@@ -283,9 +315,223 @@ public:
 			      const double &Stretching_Factor_Jdir,
 			      const int Number_of_Cells_Idir,
 			      const int Number_of_Cells_Jdir,
-			      const int Number_of_Ghost_Cells)
-  //@}
+			      const int Number_of_Ghost_Cells);
+
+  void Grid_Annulus(int &_Number_of_Blocks_Idir_,
+		    int &_Number_of_Blocks_Jdir_,
+		    const double &Inner_Radius,
+		    const double &Outer_Radius,
+		    const double &ThetaStart,
+		    const double &ThetaEnd,
+		    const int Stretching_Type_Idir,
+		    const int Stretching_Type_Jdir,
+		    const double &Stretching_Factor_Idir,
+		    const double &Stretching_Factor_Jdir,
+		    const int Number_of_Cells_Idir,
+		    const int Number_of_Cells_Jdir,
+		    const int Number_of_Ghost_Cells);
+
+  void Grid_Ellipse(int &_Number_of_Blocks_Idir_,
+		    int &_Number_of_Blocks_Jdir_,
+		    const double &A,
+		    const double &B,
+		    const int Number_of_Cells_Idir,
+		    const int Number_of_Cells_Jdir,
+		    const int Number_of_Ghost_Cells);
   
+  void Grid_NACA_Aerofoil(int &_Number_of_Blocks_Idir_,
+			  int &_Number_of_Blocks_Jdir_,
+			  char *NACA_Aerofoil_Type_ptr,
+			  const double &Chord_Length,
+			  const int Number_of_Cells_Idir,
+			  const int Number_of_Cells_Jdir,
+			  const int Number_of_Ghost_Cells);
+  
+void Grid_Free_Jet(int &_Number_of_Blocks_Idir_,
+		   int &_Number_of_Blocks_Jdir_,
+		   const double &Radius,
+		   const int Number_of_Cells_Idir,
+		   const int Number_of_Cells_Jdir,
+		   const int Number_of_Ghost_Cells) ;
+
+  void Grid_Wedge(int &_Number_of_Blocks_Idir_,
+		  int &_Number_of_Blocks_Jdir_,
+		  const double &Wedge_Angle,
+		  const double &Wedge_Length,
+		  const int &Wedge_BC_Type,
+		  const int &Stretching_Flag,
+		  const double &Stretching_Factor_Idir,
+		  const double &Stretching_Factor_Jdir,
+		  const int Number_of_Cells_Idir,
+		  const int Number_of_Cells_Jdir,
+		  const int Number_of_Ghost_Cells);
+
+  void Grid_Unsteady_Blunt_Body(int &_Number_of_Blocks_Idir_,
+				int &_Number_of_Blocks_Jdir_,
+				const double &Radius,
+				const double &Mach_Number,
+				const int Number_of_Cells_Idir,
+				const int Number_of_Cells_Jdir,
+				const int Number_of_Ghost_Cells);
+
+  void Grid_Ringleb_Flow(int &_Number_of_Blocks_Idir_,
+			 int &_Number_of_Blocks_Jdir_,
+			 const double &Inner_Streamline_Number,
+			 const double &Outer_Streamline_Number,
+			 const double &Isotach_Line,
+			 const int Number_of_Cells_Idir,
+			 const int Number_of_Cells_Jdir,
+			 const int Number_of_Ghost_Cells);
+  void Grid_Bump_Channel_Flow(int &_Number_of_Blocks_Idir_,
+			      int &_Number_of_Blocks_Jdir_,
+			      const int Smooth_Bump,
+			      const int Number_of_Cells_Idir,
+			      const int Number_of_Cells_Jdir,
+			      const int Number_of_Ghost_Cells) ;
+  void Grid_Jet_Flow(int &_Number_of_Blocks_Idir_,
+		     int &_Number_of_Blocks_Jdir_,
+		     const double &Radius,
+		     const double &Mach,
+		     const int &Stretching_Type_Idir,
+		     const int &Stretching_Type_Jdir,
+		     const double &Stretching_Factor_Idir,
+		     const double &Stretching_Factor_Jdir,
+		     const int Number_of_Cells_Idir,
+		     const int Number_of_Cells_Jdir,
+		     const int Number_of_Ghost_Cells);
+
+  void Grid_Mixing_Layer(int &_Number_of_Blocks_Idir_,
+			 int &_Number_of_Blocks_Jdir_,
+			 const double &Length,
+			 const double &Mach,
+			 const int &Stretching_Type_Idir,
+			 const int &Stretching_Type_Jdir,
+			 const double &Stretching_Factor_Idir,
+			 const double &Stretching_Factor_Jdir,
+			 const int Number_of_Cells_Idir,
+			 const int Number_of_Cells_Jdir,
+			 const int Number_of_Ghost_Cells);
+
+  void Grid_Backward_Facing_Step(int &_Number_of_Blocks_Idir_,
+				 int &_Number_of_Blocks_Jdir_,
+				 const double &Step_Height,
+				 const double &Top_Wall_Deflection,
+				 const double &Stretching_Factor_Idir,
+				 const double &Stretching_Factor_Jdir,
+				 const int Number_of_Cells_Idir,
+				 const int Number_of_Cells_Jdir,
+				 const int Number_of_Ghost_Cells);
+
+  void Grid_Forward_Facing_Step(int &_Number_of_Blocks_Idir_,
+				int &_Number_of_Blocks_Jdir_,
+				const double &Step_Height,
+				const double &Channel_Gap,
+				const double &Stretching_Factor_Idir,
+				const double &Stretching_Factor_Jdir,
+				const int Number_of_Cells_Idir,
+				const int Number_of_Cells_Jdir,
+				const int Number_of_Ghost_Cells);
+
+  void Grid_Desolvation_Chamber(const int &Chamber_BC_Type,
+				int &_Number_of_Blocks_Idir_,
+				int &_Number_of_Blocks_Jdir_,
+				const int Number_of_Cells_Idir,
+				const int Number_of_Cells_Jdir,
+				const int Number_of_Ghost_Cells) ;
+
+  void Grid_NASA_Rotor_37(int &_Number_of_Blocks_Idir_,
+			  int &_Number_of_Blocks_Jdir_,
+			  const double &Rotor_Percent_Span,
+			  const int Number_of_Cells_Idir,
+			  const int Number_of_Cells_Jdir,
+			  const int Number_of_Ghost_Cells);
+
+  void Grid_NASA_Rotor_67(int &_Number_of_Blocks_Idir_,
+			  int &_Number_of_Blocks_Jdir_,
+			  const double &Rotor_Percent_Span,
+			  const int Number_of_Cells_Idir,
+			  const int Number_of_Cells_Jdir,
+			  const int Number_of_Ghost_Cells);
+
+  void Grid_Driven_Cavity_Flow(int &_Number_of_Blocks_Idir_,
+			       int &_Number_of_Blocks_Jdir_,
+			       const double &Width,
+			       const double &Height,
+			       const int &Stretching_Type_Idir,
+			       const int &Stretching_Type_Jdir,
+			       const double &Stretching_Factor_Idir,
+			       const double &Stretching_Factor_Jdir,
+			       const int Number_of_Cells_Idir,
+			       const int Number_of_Cells_Jdir,
+			       const int Number_of_Ghost_Cells);
+
+  void Grid_Adiabatic_Flat_Plate(int &_Number_of_Blocks_Idir_,
+				 int &_Number_of_Blocks_Jdir_,
+				 const double &Length,
+				 const int Number_of_Cells_Idir,
+				 const int Number_of_Cells_Jdir,
+				 const int Number_of_Ghost_Cells);
+
+  void Grid_Adiabatic_Circular_Cylinder(int &_Number_of_Blocks_Idir_,
+					int &_Number_of_Blocks_Jdir_,
+					const double &Radius,
+					const int Number_of_Cells_Idir,
+					const int Number_of_Cells_Jdir,
+					const int Number_of_Ghost_Cells);
+
+  void Grid_Adiabatic_Circular_Cylinder(int &_Number_of_Blocks_Idir_,
+					int &_Number_of_Blocks_Jdir_,
+					const double &Inner_Radius,
+					const double &Outer_Radius,
+					const int Number_of_Cells_Idir,
+					const int Number_of_Cells_Jdir,
+					const int Number_of_Ghost_Cells);
+
+  void Grid_Adiabatic_Couette(int &_Number_of_Blocks_Idir_,
+			      int &_Number_of_Blocks_Jdir_,
+			      const double &Separation,
+			      const int Number_of_Cells_Idir,
+			      const int Number_of_Cells_Jdir,
+			      const int Number_of_Ghost_Cells);
+
+  void Grid_Cylindrical_Encl(int &_Number_of_Blocks_Idir_,
+			     int &_Number_of_Blocks_Jdir_,
+			     const double &Length,
+			     const double &Radius,
+			     const int &Axisymmetric,
+			     const int Number_of_Cells_Idir,
+			     const int Number_of_Cells_Jdir,
+			     const int Number_of_Ghost_Cells);
+
+  void Grid_Rectangular_Encl(int &_Number_of_Blocks_Idir_,
+			     int &_Number_of_Blocks_Jdir_,
+			     const double &Width,
+			     const double &Height,
+			     const int Number_of_Cells_Idir,
+			     const int Number_of_Cells_Jdir,
+			     const int Number_of_Ghost_Cells);
+
+  void Grid_Tube_2D(int &_Number_of_Blocks_Idir_,
+		    int &_Number_of_Blocks_Jdir_,
+		    const double &Radius,
+		    const int Number_of_Cells_Idir,
+		    const int Number_of_Cells_Jdir,
+		    const int Number_of_Ghost_Cells,
+		    const int i_Stretching_Radial_Dir,
+		    const double &Stretching_Radial_Dir) ;
+
+  void Grid_Annulus_2D(int &_Number_of_Blocks_Idir_,
+		       int &_Number_of_Blocks_Jdir_,
+		       const double &Radius_Inner,
+		       const double &Radius_Outer,
+		       const int Number_of_Cells_Idir,
+		       const int Number_of_Cells_Jdir,
+		       const int Number_of_Ghost_Cells,
+		       const int i_Stretching_Radial_Dir,
+		       const double &Stretching_Radial_Dir);
+  
+  //@}
+    
   //!@name AMR related functions
   //@{
   //@}

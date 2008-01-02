@@ -505,7 +505,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Rectangular_Box(int &_Number_of_Blocks_Idir
   /* Allocate memory for grid block. */
   
   if (_Number_of_Blocks_Idir_ < 0) _Number_of_Blocks_Idir_ = 1;
-  if (Number_of_Blocks_Jdir < 0) _Number_of_Blocks_Jdir_ = 1;
+  if (_Number_of_Blocks_Jdir_ < 0) _Number_of_Blocks_Jdir_ = 1;
   allocate(_Number_of_Blocks_Idir_, _Number_of_Blocks_Jdir_);
   
   /* Create the mesh for each block representing
@@ -607,7 +607,9 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Rectangular_Box(int &_Number_of_Blocks_Idir
   
 }
 
-void Grid2D_Quad_MultiBlock_HO::Grid_Rectangular_Box(const double &Width,
+void Grid2D_Quad_MultiBlock_HO::Grid_Rectangular_Box(int &_Number_of_Blocks_Idir_,
+						     int &_Number_of_Blocks_Jdir_,
+						     const double &Width,
 						     const double &Height,
 						     const int Stretching_Flag,
 						     const int Stretching_Type_Idir,
@@ -629,10 +631,9 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Rectangular_Box(const double &Width,
 
   /* Allocate memory for grid block. */
 
-  if (Number_of_Blocks_Idir < 0) Number_of_Blocks_Idir = 1;
-  if (Number_of_Blocks_Jdir < 0) Number_of_Blocks_Jdir = 1;
-  allocate(Number_of_Blocks_Idir, Number_of_Blocks_Jdir);
-
+  if (_Number_of_Blocks_Idir_ < 0) _Number_of_Blocks_Idir_ = 1;
+  if (_Number_of_Blocks_Jdir_ < 0) _Number_of_Blocks_Jdir_ = 1;
+  allocate(_Number_of_Blocks_Idir_, _Number_of_Blocks_Jdir_);
   /* Create the mesh for each block representing
      the complete grid. */
 
@@ -754,7 +755,9 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Rectangular_Box(const double &Width,
  *         		             2);                
  *                                                      
  */
-void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate(const double &Length,
+void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate(int &_Number_of_Blocks_Idir_,
+						int &_Number_of_Blocks_Jdir_,
+						const double &Length,
 						const int Flat_Plate_BC_Type,
 						const int Stretching_Flag,
 						const double &Stretching_Factor_Idir,
@@ -775,9 +778,9 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate(const double &Length,
   // Allocate memory for grid blocks.  There are two grid blocks for 
   // this mesh.
   if (Flat_Plate_BC_Type == BC_BURNING_SURFACE) Number_of_Blocks_Idir = 3;
-  else Number_of_Blocks_Idir = 2;
-  Number_of_Blocks_Jdir = 1;
-  allocate(Number_of_Blocks_Idir,Number_of_Blocks_Jdir);
+  else _Number_of_Blocks_Idir_ = 2;
+  _Number_of_Blocks_Jdir_ = 1;
+  allocate(_Number_of_Blocks_Idir_,_Number_of_Blocks_Jdir_);
 
   // Create the mesh for each block representing the complete grid.
   for (int iBlk = 0; iBlk < Number_of_Blocks_Idir; iBlk++) {
@@ -909,40 +912,42 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate(const double &Length,
  *         		                100);           
  *                                                      
  */
-void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate_NK(const double &Length,
-			const int Stretching_Flag,
-			const double &Stretching_Factor_Idir,
-			const double &Stretching_Factor_Jdir,
-			const int Number_of_Cells_Idir,
-			const int Number_of_Cells_Jdir,
-			const int Number_of_Ghost_Cells) {
+void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate_NK(int &_Number_of_Blocks_Idir_,
+						   int &_Number_of_Blocks_Jdir_,
+						   const double &Length,
+						   const int Stretching_Flag,
+						   const double &Stretching_Factor_Idir,
+						   const double &Stretching_Factor_Jdir,
+						   const int Number_of_Cells_Idir,
+						   const int Number_of_Cells_Jdir,
+						   const int Number_of_Ghost_Cells) {
   
-    int iBlk, n_cells_i, n_cells_j, 
-        Stretch_I, Stretch_J,
-        Orthogonal_North, Orthogonal_South,
-        Orthogonal_East, Orthogonal_West;
-    double Beta_I, Tau_I, Beta_J, Tau_J;
-    Vector2D xc_NW, xc_NE, xc_SE, xc_SW;
-    Spline2D Bnd_Spline_North, Bnd_Spline_South,
-             Bnd_Spline_East, Bnd_Spline_West;
-
-    /* Allocate memory for grid blocks.  There are three grid blocks for this mesh. */
-    Number_of_Blocks_Idir = 3;
-    Number_of_Blocks_Jdir = 1;
-    allocate(Number_of_Blocks_Idir,Number_of_Blocks_Jdir);
-
-    /* Create the mesh for each block representing  the complete grid. */
-    for ( iBlk = 0; iBlk < Number_of_Blocks_Idir; ++iBlk ) {
-
-        /* Assign values to the locations of the corners
-           of the rectangular box shaped domain representing
-           each of the blocks in the grid. */
-      if (iBlk == 0) {
-	xc_NW = FOUR*Vector2D(-Length,Length);
-	xc_NE = FOUR*Vector2D(ZERO,Length);
-	xc_SE = FOUR*Vector2D(ZERO,ZERO);
-	xc_SW = FOUR*Vector2D(-Length,ZERO);
-      } else if( iBlk == 1) {
+  int iBlk, n_cells_i, n_cells_j, 
+    Stretch_I, Stretch_J,
+    Orthogonal_North, Orthogonal_South,
+    Orthogonal_East, Orthogonal_West;
+  double Beta_I, Tau_I, Beta_J, Tau_J;
+  Vector2D xc_NW, xc_NE, xc_SE, xc_SW;
+  Spline2D Bnd_Spline_North, Bnd_Spline_South,
+    Bnd_Spline_East, Bnd_Spline_West;
+  
+  /* Allocate memory for grid blocks.  There are three grid blocks for this mesh. */
+  _Number_of_Blocks_Idir_ = 3;
+  _Number_of_Blocks_Jdir_ = 1;
+  allocate(_Number_of_Blocks_Idir_,_Number_of_Blocks_Jdir_);
+  
+  /* Create the mesh for each block representing  the complete grid. */
+  for ( iBlk = 0; iBlk < Number_of_Blocks_Idir; ++iBlk ) {
+    
+    /* Assign values to the locations of the corners
+       of the rectangular box shaped domain representing
+       each of the blocks in the grid. */
+    if (iBlk == 0) {
+      xc_NW = FOUR*Vector2D(-Length,Length);
+      xc_NE = FOUR*Vector2D(ZERO,Length);
+      xc_SE = FOUR*Vector2D(ZERO,ZERO);
+      xc_SW = FOUR*Vector2D(-Length,ZERO);
+    } else if( iBlk == 1) {
 	xc_NW = Vector2D(ZERO,FOUR*Length);
 	xc_NE = Vector2D(Length,FOUR*Length);
 	xc_SE = Vector2D(Length,ZERO);
@@ -1043,8 +1048,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate_NK(const double &Length,
 
         Bnd_Spline_North.deallocate();
         Bnd_Spline_South.deallocate();
-        Bnd_Spline_East.deallocate();const int &_Number_of_Blocks_Idir_,
-			    const 
+        Bnd_Spline_East.deallocate();
         Bnd_Spline_West.deallocate();
 
     } /* endfor */    
@@ -1069,7 +1073,9 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate_NK(const double &Length,
  *         		             2);                *
  *                                                      *
  ********************************************************/
-void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate3(const double &Length,
+void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate3(int &_Number_of_Blocks_Idir_,
+						 int &_Number_of_Blocks_Jdir_,
+						 const double &Length,
 						 const int &Stretching_Flag,
 						 const double &Stretching_Factor_Idir,
 						 const double &Stretching_Factor_Jdir,
@@ -1088,9 +1094,9 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate3(const double &Length,
 
   // Allocate memory for grid blocks.  There are two grid blocks for 
   // this mesh.
-  Number_of_Blocks_Idir = 2;
-  Number_of_Blocks_Jdir = 1;
-  allocate(Number_of_Blocks_Idir,Number_of_Blocks_Jdir);
+  _Number_of_Blocks_Idir_ = 2;
+  _Number_of_Blocks_Jdir_ = 1;
+  allocate(_Number_of_Blocks_Idir_,_Number_of_Blocks_Jdir_);
 
   // Create the mesh for each block representing the complete grid.
   for (int iBlk = 0; iBlk < Number_of_Blocks_Idir; iBlk++) {
@@ -1202,7 +1208,9 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate3(const double &Length,
  *         		             100,               
  *         		             2);                
  */
-void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate4(const double &Length,
+void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate4(int &_Number_of_Blocks_Idir_,
+						 int &_Number_of_Blocks_Jdir_,
+						 const double &Length,
 						 const int &Stretching_Flag,
 						 const double &Stretching_Factor_Idir,
 						 const double &Stretching_Factor_Jdir,
@@ -1221,9 +1229,9 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate4(const double &Length,
 
   // Allocate memory for grid blocks.  There are two grid blocks for 
   // this mesh.
-  Number_of_Blocks_Idir = 3;
-  Number_of_Blocks_Jdir = 1;
-  allocate(Number_of_Blocks_Idir,Number_of_Blocks_Jdir);
+  _Number_of_Blocks_Idir_ = 3;
+  _Number_of_Blocks_Jdir_ = 1;
+  allocate(_Number_of_Blocks_Idir_,_Number_of_Blocks_Jdir_);
 
   // Create the mesh for each block representing the complete grid.
   for (int iBlk = 0; iBlk < Number_of_Blocks_Idir; iBlk++) {
@@ -1299,8 +1307,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate4(const double &Length,
     Orthogonal_West = 0;
 
     // Create the 2D quadrilateral grid block.
-    Grid_ptr[iBlk][0].Create_Quad_Block(
-					Bnd_Spline_North,
+    Grid_ptr[iBlk][0].Create_Quad_Block(Bnd_Spline_North,
 					Bnd_Spline_South,
 					Bnd_Spline_East,
 					Bnd_Spline_West,
@@ -1345,29 +1352,31 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate4(const double &Length,
  *         		             100,               
  *         		             2);                
  */
-void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate9(const double &Length,
-		      const int &Flat_Plate_BC_Type,
-		      const int &Stretching_Flag,
-		      const double &Stretching_Factor_Idir,
-		      const double &Stretching_Factor_Jdir,
-		      const int Number_of_Cells_Idir,
-		      const int Number_of_Cells_Jdir,
-		      const int Number_of_Ghost_Cells) {
+void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate9(int &_Number_of_Blocks_Idir_,
+						 int &_Number_of_Blocks_Jdir_,
+						 const double &Length,
+						 const int &Flat_Plate_BC_Type,
+						 const int &Stretching_Flag,
+						 const double &Stretching_Factor_Idir,
+						 const double &Stretching_Factor_Jdir,
+						 const int Number_of_Cells_Idir,
+						 const int Number_of_Cells_Jdir,
+						 const int Number_of_Ghost_Cells) {
 
   int n_cells_i, n_cells_j, 
-      Stretch_I, Stretch_J,
-      Orthogonal_North, Orthogonal_South,
-      Orthogonal_East, Orthogonal_West;
+    Stretch_I, Stretch_J,
+    Orthogonal_North, Orthogonal_South,
+    Orthogonal_East, Orthogonal_West;
   double Beta_I, Tau_I, Beta_J, Tau_J;
   Vector2D xc_NW, xc_NE, xc_SE, xc_SW;
   Spline2D Bnd_Spline_North, Bnd_Spline_South,
-           Bnd_Spline_East, Bnd_Spline_West;
+    Bnd_Spline_East, Bnd_Spline_West;
 
   // Allocate memory for grid blocks.  There are two grid blocks for 
   // this mesh.
-  Number_of_Blocks_Idir = 2;
-  Number_of_Blocks_Jdir = 1;
-  allocate(Number_of_Blocks_Idir,Number_of_Blocks_Jdir);
+  _Number_of_Blocks_Idir_ = 2;
+  _Number_of_Blocks_Jdir_ = 1;
+  allocate(_Number_of_Blocks_Idir_,_Number_of_Blocks_Jdir_);
 
   // Create the mesh for each block representing the complete grid.
   for (int iBlk = 0; iBlk < Number_of_Blocks_Idir; iBlk++) {
@@ -1443,8 +1452,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate9(const double &Length,
     Orthogonal_West = 0;
 
     // Create the 2D quadrilateral grid block.
-    Grid_ptr[iBlk][0].Create_Quad_Block(
-					Bnd_Spline_North,
+    Grid_ptr[iBlk][0].Create_Quad_Block(Bnd_Spline_North,
 					Bnd_Spline_South,
 					Bnd_Spline_East,
 					Bnd_Spline_West,
@@ -1490,7 +1498,9 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate9(const double &Length,
  *                                   2);                
  *                                                      
  */
-void Grid2D_Quad_MultiBlock_HO::Grid_1D_Flame(const double &Length,
+void Grid2D_Quad_MultiBlock_HO::Grid_1D_Flame(int &_Number_of_Blocks_Idir_,
+					      int &_Number_of_Blocks_Jdir_,
+					      const double &Length,
 					      const double &Heigth,
 					      const int Number_of_Cells_Idir,
 					      const int Number_of_Cells_Jdir,
@@ -1508,9 +1518,9 @@ void Grid2D_Quad_MultiBlock_HO::Grid_1D_Flame(const double &Length,
   /* Allocate memory for grid blocks.  There are two grid
      blocks for this mesh. */
   
-  Number_of_Blocks_Idir = 1;
-  Number_of_Blocks_Jdir = 1;
-  allocate(Number_of_Blocks_Idir,Number_of_Blocks_Jdir);
+  _Number_of_Blocks_Idir_ = 1;
+  _Number_of_Blocks_Jdir_ = 1;
+  allocate(_Number_of_Blocks_Idir_,_Number_of_Blocks_Jdir_);
   
     /* Create the mesh for each block representing
        the complete grid. */
@@ -1565,8 +1575,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_1D_Flame(const double &Length,
     
     /* Create the 2D quadrilateral grid block. */
     
-    Grid_ptr[iBlk][0].Create_Quad_Block(
-					Bnd_Spline_North,
+    Grid_ptr[iBlk][0].Create_Quad_Block(Bnd_Spline_North,
 					Bnd_Spline_South,
 					Bnd_Spline_East,
 					Bnd_Spline_West,
@@ -1611,12 +1620,14 @@ void Grid2D_Quad_MultiBlock_HO::Grid_1D_Flame(const double &Length,
   *                                   2);                
   *                                                      
   */
-void Grid2D_Quad_MultiBlock_HO::Grid_2D_Laminar_Flame(const double &Length,
-			   const double &Heigth,
-			   const int Number_of_Cells_Idir,
-			   const int Number_of_Cells_Jdir, 
-			   const int Number_of_Ghost_Cells,
-			   const int Flame_Type_Flag) {
+void Grid2D_Quad_MultiBlock_HO::Grid_2D_Laminar_Flame(int &_Number_of_Blocks_Idir_,
+						      int &_Number_of_Blocks_Jdir_,
+						      const double &Length,
+						      const double &Heigth,
+						      const int Number_of_Cells_Idir,
+						      const int Number_of_Cells_Jdir, 
+						      const int Number_of_Ghost_Cells,
+						      const int Flame_Type_Flag) {
   
 
      int  n_cells_i, n_cells_j, Stretch_I, Stretch_J,
@@ -1634,7 +1645,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_2D_Laminar_Flame(const double &Length,
 
      /******************************************************/
      //Standard Core Flame  //Flame_Type_Flag == IC_RESTART
-     if( (Flame_Type_Flag == IC_RESTART || Flame_Type_Flag == IC_CHEM_CORE_FLAME) && Number_of_Blocks_Idir == 12 ){
+     if( (Flame_Type_Flag == IC_RESTART || Flame_Type_Flag == IC_CHEM_CORE_FLAME) && _Number_of_Blocks_Idir_ == 12 ){
         fuel_spacing = 0.002;                   //m 
         tube_spacing = fuel_spacing + 0.00038;  //m 
         air_spacing = 0.025 - tube_spacing;     //m 
@@ -1645,7 +1656,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_2D_Laminar_Flame(const double &Length,
         Number_of_Blocks_Air = 7;
         Number_of_Blocks_Free = 0;
 
-     } else if( (Flame_Type_Flag == IC_RESTART || Flame_Type_Flag == IC_CHEM_CORE_FLAME) && Number_of_Blocks_Idir == 3 ){
+     } else if( (Flame_Type_Flag == IC_RESTART || Flame_Type_Flag == IC_CHEM_CORE_FLAME) && _Number_of_Blocks_Idir_ == 3 ){
 
        fuel_spacing = 0.002;                   //m 
        tube_spacing = fuel_spacing;            //m 
@@ -1656,7 +1667,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_2D_Laminar_Flame(const double &Length,
        Number_of_Blocks_Air = 2;
        Number_of_Blocks_Free = 0;  
 
-     } else if( (Flame_Type_Flag == IC_RESTART || Flame_Type_Flag == IC_CHEM_CORE_FLAME) && Number_of_Blocks_Idir == 1 ){
+     } else if( (Flame_Type_Flag == IC_RESTART || Flame_Type_Flag == IC_CHEM_CORE_FLAME) && _Number_of_Blocks_Idir_ == 1 ){
 
        fuel_spacing = 0.002;                   //m 
        tube_spacing = fuel_spacing;            //m 
@@ -1667,7 +1678,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_2D_Laminar_Flame(const double &Length,
        Number_of_Blocks_Air = 0;
        Number_of_Blocks_Free = 0;
 
-     } else if( Flame_Type_Flag == IC_CHEM_INVERSE_FLAME && Number_of_Blocks_Idir == 8){
+     } else if( Flame_Type_Flag == IC_CHEM_INVERSE_FLAME && _Number_of_Blocks_Idir_ == 8){
   
      /******************************************************/
      //Inverse Flames 1
@@ -1698,15 +1709,15 @@ void Grid2D_Quad_MultiBlock_HO::Grid_2D_Laminar_Flame(const double &Length,
        exit(1);
      }
 
-     if( Number_of_Blocks_Idir != Number_of_Blocks_Fuel + Number_of_Blocks_Gap + Number_of_Blocks_Air + Number_of_Blocks_Free ){
+     if( _Number_of_Blocks_Idir_ != Number_of_Blocks_Fuel + Number_of_Blocks_Gap + Number_of_Blocks_Air + Number_of_Blocks_Free ){
        cout<<"\n WARNING: Grid_2D_Laminar_Flame has a fixed initial number of Blocks in the x-direction to insure proper BC's, ";
        cout<<" currently it is set to "<< Number_of_Blocks_Fuel + Number_of_Blocks_Gap + Number_of_Blocks_Air + Number_of_Blocks_Free; 
      }
 
-     Number_of_Blocks_Idir = Number_of_Blocks_Fuel + Number_of_Blocks_Gap + Number_of_Blocks_Air + Number_of_Blocks_Free;
+     _Number_of_Blocks_Idir_ = Number_of_Blocks_Fuel + Number_of_Blocks_Gap + Number_of_Blocks_Air + Number_of_Blocks_Free;
 
      /* Allocate memory for grid blocks. */
-     allocate(Number_of_Blocks_Idir, Number_of_Blocks_Jdir);
+     allocate(_Number_of_Blocks_Idir_, _Number_of_Blocks_Jdir_);
 
      /* Create the mesh for each block representing the complete grid. */
 
@@ -1877,13 +1888,15 @@ void Grid2D_Quad_MultiBlock_HO::Grid_2D_Laminar_Flame(const double &Length,
  *  	                       50,                      
  *                             2);                      
  */
-void Grid2D_Quad_MultiBlock_HO::Grid_Pipe(const double &Length,
-	       const double &Radius,
-	       const int Stretching_Flag,
-	       const double Stretching_Factor,
-	       const int Number_of_Cells_Idir,
-	       const int Number_of_Cells_Jdir,
-	       const int Number_of_Ghost_Cells) {
+void Grid2D_Quad_MultiBlock_HO::Grid_Pipe(int &_Number_of_Blocks_Idir_,
+					  int &_Number_of_Blocks_Jdir_,
+					  const double &Length,
+					  const double &Radius,
+					  const int Stretching_Flag,
+					  const double Stretching_Factor,
+					  const int Number_of_Cells_Idir,
+					  const int Number_of_Cells_Jdir,
+					  const int Number_of_Ghost_Cells) {
   
   int Stretch_I, Stretch_J,
     Orthogonal_North, Orthogonal_South,
@@ -1895,9 +1908,9 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Pipe(const double &Length,
 
   /* Allocate memory for grid block. */
   
-  Number_of_Blocks_Idir = 1;
-  Number_of_Blocks_Jdir = 1;
-  allocate(Number_of_Blocks_Idir,Number_of_Blocks_Jdir);
+  _Number_of_Blocks_Idir_ = 1;
+  _Number_of_Blocks_Jdir_ = 1;
+  allocate(_Number_of_Blocks_Idir_,_Number_of_Blocks_Jdir_);
   
   /* Assign values to the locations of the corners
      of the rectangular box defining the pipe geometry. */
@@ -1940,8 +1953,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Pipe(const double &Length,
 
   /* Create the 2D quadrilateral grid block representing
        the mesh. */
-  Grid_ptr[0][0].Create_Quad_Block(
-				   Bnd_Spline_North,
+  Grid_ptr[0][0].Create_Quad_Block(Bnd_Spline_North,
 				   Bnd_Spline_South,
 				   Bnd_Spline_East,
 				   Bnd_Spline_West,
@@ -1983,7 +1995,9 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Pipe(const double &Length,
  *  	                       50,                      
  *                             2);                      
  */
-void Grid2D_Quad_MultiBlock_HO::Grid_Pipe(const double &Length,
+void Grid2D_Quad_MultiBlock_HO::Grid_Pipe(int &_Number_of_Blocks_Idir_,
+					  int &_Number_of_Blocks_Jdir_,
+					  const double &Length,
 					  const double &Radius,
 					  const int &Axisymmetric,
 					  const int Number_of_Cells_Idir,
@@ -2000,9 +2014,9 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Pipe(const double &Length,
 
     /* Allocate memory for grid block. */
 
-    Number_of_Blocks_Idir = 1;
-    Number_of_Blocks_Jdir = 1;
-    allocate(Number_of_Blocks_Idir, Number_of_Blocks_Jdir);
+    _Number_of_Blocks_Idir_ = 1;
+    _Number_of_Blocks_Jdir_ = 1;
+    allocate(_Number_of_Blocks_Idir_, _Number_of_Blocks_Jdir_);
 
     /* Assign values to the locations of the corners
        of the rectangular box defining the pipe geometry. */
@@ -2070,25 +2084,24 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Pipe(const double &Length,
     /* Create the 2D quadrilateral grid block representing
        the mesh. */
 
-    Grid_ptr[0][0].Create_Quad_Block(
-                      Bnd_Spline_North,
-                      Bnd_Spline_South,
-                      Bnd_Spline_East,
-                      Bnd_Spline_West,
-                      Number_of_Cells_Idir,
-  	              Number_of_Cells_Jdir,
-		      Number_of_Ghost_Cells,
-                      GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-                      Stretch_I,
-                      Beta_I, 
-                      Tau_I,
-                      Stretch_J,
-                      Beta_J,
-                      Tau_J,
-                      Orthogonal_North,
-		      Orthogonal_South,
-     		      Orthogonal_East,
-                      Orthogonal_West);
+    Grid_ptr[0][0].Create_Quad_Block(Bnd_Spline_North,
+				     Bnd_Spline_South,
+				     Bnd_Spline_East,
+				     Bnd_Spline_West,
+				     Number_of_Cells_Idir,
+				     Number_of_Cells_Jdir,
+				     Number_of_Ghost_Cells,
+				     GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+				     Stretch_I,
+				     Beta_I, 
+				     Tau_I,
+				     Stretch_J,
+				     Beta_J,
+				     Tau_J,
+				     Orthogonal_North,
+				     Orthogonal_South,
+				     Orthogonal_East,
+				     Orthogonal_West);
 
     /* Deallocate the memory for the boundary splines. */
 
@@ -2098,7 +2111,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Pipe(const double &Length,
     Bnd_Spline_West.deallocate();
 
 }
-/*
+
+/*!
  * Generates a single block quadilateral mesh with      
  * clustering for predicting supersonic flow around     
  * a cirucular cylinder blunt body.                     
@@ -2113,11 +2127,13 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Pipe(const double &Length,
  *                                   2);                
  *                                                      
  */
-void  Grid2D_Quad_MultiBlock_HO::Grid_Blunt_Body(const double &Radius,
-		      const double &Mach_Number,
-		      const int Number_of_Cells_Idir,
-		      const int Number_of_Cells_Jdir,
-		      const int Number_of_Ghost_Cells) {
+void  Grid2D_Quad_MultiBlock_HO::Grid_Blunt_Body(int &_Number_of_Blocks_Idir_,
+						 int &_Number_of_Blocks_Jdir_,
+						 const double &Radius,
+						 const double &Mach_Number,
+						 const int Number_of_Cells_Idir,
+						 const int Number_of_Cells_Jdir,
+						 const int Number_of_Ghost_Cells) {
 
     int Stretch_I, Stretch_J,
         Orthogonal_North, Orthogonal_South,
@@ -2129,9 +2145,9 @@ void  Grid2D_Quad_MultiBlock_HO::Grid_Blunt_Body(const double &Radius,
 
     /* Allocate memory for grid block. */
 
-    Number_of_Blocks_Idir = 1;
-    Number_of_Blocks_Jdir = 1;
-    allocate(Number_of_Blocks_Idir, Number_of_Blocks_Jdir);
+    _Number_of_Blocks_Idir_ = 1;
+    _Number_of_Blocks_Jdir_ = 1;
+    allocate(_Number_of_Blocks_Idir_, _Number_of_Blocks_Jdir_);
 
     /* Create the splines defining the north, south,
        east, and west boundaries of the grid. */
@@ -2180,8 +2196,7 @@ void  Grid2D_Quad_MultiBlock_HO::Grid_Blunt_Body(const double &Radius,
     /* Create the 2D quadrilateral grid block representing
        the mesh. */
 
-    Grid_ptr[0][0].Create_Quad_Block(
-				     Bnd_Spline_North,
+    Grid_ptr[0][0].Create_Quad_Block(Bnd_Spline_North,
 				     Bnd_Spline_South,
 				     Bnd_Spline_East,
 				     Bnd_Spline_West,
@@ -2213,29 +2228,28 @@ void  Grid2D_Quad_MultiBlock_HO::Grid_Blunt_Body(const double &Radius,
 }
 
 
-/********************************************************
- * Routine: Grid_Rocket_Motor                           *
- *                                                      *
- * Generates a quadilateral mesh with clustering        *
- * consisting of two grid blocks for predicting the     *
- * axisymmetric core flow in a cylindrical grain solid  *
- * propellant rocket motor.                             *
- *                                                      *
- * Usage: Grid_ptr = Grid_Rocket_Motor(Grid_ptr,        *
- *                                     nblk_i,          *
- *                                     nblk_j,          *
- *                                     0.8350,          *
- *                                     0.0200,          *
- *                                     0.0500,          *
- *                                     0.1500,          *
- *                                     0.0300,          *
- *                                     0.0100,          *
- *         		               100,             *
- *         		               100,             *
- *                                     2);              *
- *                                                      *
- ********************************************************/
-void Grid2D_Quad_MultiBlock_HO::Grid_Rocket_Motor(const double &Length_Chamber,
+/*!
+ * Generates a quadilateral mesh with clustering        
+ * consisting of two grid blocks for predicting the     
+ * axisymmetric core flow in a cylindrical grain solid  
+ * propellant rocket motor.                             
+ *                                                      
+ * Usage: Grid_ptr = Grid_Rocket_Motor(Grid_ptr,        
+ *                                     nblk_i,          
+ *                                     nblk_j,          
+ *                                     0.8350,          
+ *                                     0.0200,          
+ *                                     0.0500,          
+ *                                     0.1500,          
+ *                                     0.0300,          
+ *                                     0.0100,          
+ *         		               100,             
+ *         		               100,             
+ *                                     2);              
+ */
+void Grid2D_Quad_MultiBlock_HO::Grid_Rocket_Motor(int &_Number_of_Blocks_Idir_,
+						  int &_Number_of_Blocks_Jdir_,
+						  const double &Length_Chamber,
 						  const double &Radius_Chamber,
 						  const double &Length_Chamber_To_Throat,
 						  const double &Length_Nozzle,
@@ -2267,17 +2281,17 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Rocket_Motor(const double &Length_Chamber,
   if (Radius_Grain > Radius_Chamber) return;
   if (Radius_Grain > ZERO) {
     iBlk_Nozzle = 2;
-    Number_of_Blocks_Jdir = 2;
+    _Number_of_Blocks_Jdir_ = 2;
   } else if (Radius_Grain < ZERO) {
     iBlk_Nozzle = 1;
-    Number_of_Blocks_Jdir = 2;
+    _Number_of_Blocks_Jdir_ = 2;
   } else {
     iBlk_Nozzle = 1;
-    Number_of_Blocks_Jdir = 1;
+    _Number_of_Blocks_Jdir_ = 1;
   }
   iBlk_Chamber = Number_of_Blocks_Idir-1;
   Number_of_Blocks_Idir = iBlk_Chamber + iBlk_Nozzle;
-  allocate(Number_of_Blocks_Idir,Number_of_Blocks_Jdir);
+  allocate(_Number_of_Blocks_Idir_,_Number_of_Blocks_Jdir_);
 
   // Create the mesh for each block representing the complete grid.
   for (int jBlk = 0; jBlk < Number_of_Blocks_Jdir; jBlk++) {
@@ -2546,25 +2560,24 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Rocket_Motor(const double &Length_Chamber,
       }
 
       if (block_flag) {
-	Grid_ptr[iBlk][jBlk].Create_Quad_Block(
-			  Bnd_Spline_North,
-			  Bnd_Spline_South,
-			  Bnd_Spline_East,
-			  Bnd_Spline_West,
-			  Number_of_Cells_Idir,
-			  Number_of_Cells_Jdir,
-			  Number_of_Ghost_Cells,
-			  GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-			  Stretch_I,
-			  Beta_I,
-			  Tau_I,
-			  Stretch_J,
-			  Beta_J,
-			  Tau_J,
-			  Orthogonal_North,
-			  Orthogonal_South,
-			  Orthogonal_East,
-			  Orthogonal_West);
+	Grid_ptr[iBlk][jBlk].Create_Quad_Block(Bnd_Spline_North,
+					       Bnd_Spline_South,
+					       Bnd_Spline_East,
+					       Bnd_Spline_West,
+					       Number_of_Cells_Idir,
+					       Number_of_Cells_Jdir,
+					       Number_of_Ghost_Cells,
+					       GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+					       Stretch_I,
+					       Beta_I,
+					       Tau_I,
+					       Stretch_J,
+					       Beta_J,
+					       Tau_J,
+					       Orthogonal_North,
+					       Orthogonal_South,
+					       Orthogonal_East,
+					       Orthogonal_West);
  	// Smooth the 2D quadrilateral grid block.
 // 	Smooth_Quad_Block(Grid_ptr[iBlk][jBlk],
 // 			  min(250,2*max(Number_of_Cells_Idir,
@@ -2601,11 +2614,12 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Rocket_Motor(const double &Length_Chamber,
 
 }
 
-/**********************************************************************
- * Routine: Grid_Nozzleless_Rocket_Motor                              *
- *                                                                    *
- **********************************************************************/
-void Grid2D_Quad_MultiBlock_HO::Grid_Nozzleless_Rocket_Motor(const double &Length_Chamber,
+/*!
+ * Routine: Grid_Nozzleless_Rocket_Motor                              
+ */
+void Grid2D_Quad_MultiBlock_HO::Grid_Nozzleless_Rocket_Motor(int &_Number_of_Blocks_Idir_,
+							     int &_Number_of_Blocks_Jdir_,
+							     const double &Length_Chamber,
 							     const double &Radius_Chamber,
 							     const double &Length_Nozzle,
 							     const double &Radius_Nozzle_Exit,
@@ -2627,8 +2641,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Nozzleless_Rocket_Motor(const double &Lengt
            Bnd_Spline_East, Bnd_Spline_West;
 
   // Allocate memory for grid blocks.
-  Number_of_Blocks_Jdir = 1;
-  allocate(Number_of_Blocks_Idir,Number_of_Blocks_Jdir);
+  _Number_of_Blocks_Jdir_ = 1;
+  allocate(_Number_of_Blocks_Idir_,_Number_of_Blocks_Jdir_);
 
   // Create the mesh for each block representing the complete grid.
   for (int jBlk = 0; jBlk < Number_of_Blocks_Jdir; jBlk++) {
@@ -2713,8 +2727,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Nozzleless_Rocket_Motor(const double &Lengt
       }
 
       // Create the quadrilateral solution block.
-      Grid_ptr[iBlk][jBlk].Create_Quad_Block(
-					     Bnd_Spline_North,
+      Grid_ptr[iBlk][jBlk].Create_Quad_Block(Bnd_Spline_North,
 					     Bnd_Spline_South,
 					     Bnd_Spline_East,
 					     Bnd_Spline_West,
@@ -2744,13 +2757,12 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Nozzleless_Rocket_Motor(const double &Lengt
 
 }
 
-/**********************************************************************
- * Routine: Grid_Nozzle                                               *
- *                                                                    *
- * Generates a two-block grid for a rocket motor nozzle.              *
- *                                                                    *
- **********************************************************************/
-void Grid2D_Quad_MultiBlock_HO::Grid_Nozzle(const double &Length_Nozzle,
+/*!
+ * Generates a two-block grid for a rocket motor nozzle.              
+ */
+void Grid2D_Quad_MultiBlock_HO::Grid_Nozzle(int &_Number_of_Blocks_Idir_,
+					    int &_Number_of_Blocks_Jdir_,
+					    const double &Length_Nozzle,
 					    const double &Radius_Chamber,
 					    const double &Radius_Nozzle_Exit,
 					    const double &Radius_Nozzle_Throat,
@@ -2774,10 +2786,10 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Nozzle(const double &Length_Nozzle,
            Bnd_Spline_East, Bnd_Spline_West;
 
   // Allocate memory for grid blocks.
-  if (!Nozzle_Type) Number_of_Blocks_Idir = 1;
-  else Number_of_Blocks_Idir = 2;
-  Number_of_Blocks_Jdir = 1;
-  allocate(Number_of_Blocks_Idir,Number_of_Blocks_Jdir);
+  if (!Nozzle_Type) _Number_of_Blocks_Idir_ = 1;
+  else _Number_of_Blocks_Idir_ = 2;
+  _Number_of_Blocks_Jdir_ = 1;
+  allocate(_Number_of_Blocks_Idir_,_Number_of_Blocks_Jdir_);
 
   // Create the mesh for each block representing the complete grid.
   for (int iBlk = 0; iBlk < Number_of_Blocks_Idir; iBlk++) {
@@ -2841,8 +2853,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Nozzle(const double &Length_Nozzle,
     Orthogonal_West = 1;
 
     // Create the 2D quadrilateral grid block.
-    Grid_ptr[iBlk][0].Create_Quad_Block(
-					Bnd_Spline_North,
+    Grid_ptr[iBlk][0].Create_Quad_Block(Bnd_Spline_North,
 					Bnd_Spline_South,
 					Bnd_Spline_East,
 					Bnd_Spline_West,
@@ -2890,16 +2901,20 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Nozzle(const double &Length_Nozzle,
  *                                          2);FIXME         
  */
 
-void Grid2D_Quad_MultiBlock_HO::Grid_Circular_Cylinder(const double &Radius,
-			    const int Stretching_Type_Idir,
-			    const int Stretching_Type_Jdir,
-			    const double &Stretching_Factor_Idir,
-			    const double &Stretching_Factor_Jdir,
-			    const int Number_of_Cells_Idir,
-			    const int Number_of_Cells_Jdir,
-			    const int Number_of_Ghost_Cells) {
-
-  Grid_Circular_Cylinder(Radius,
+void Grid2D_Quad_MultiBlock_HO::Grid_Circular_Cylinder(int &_Number_of_Blocks_Idir_,
+						       int &_Number_of_Blocks_Jdir_,
+						       const double &Radius,
+						       const int Stretching_Type_Idir,
+						       const int Stretching_Type_Jdir,
+						       const double &Stretching_Factor_Idir,
+						       const double &Stretching_Factor_Jdir,
+						       const int Number_of_Cells_Idir,
+						       const int Number_of_Cells_Jdir,
+						       const int Number_of_Ghost_Cells) {
+  
+  Grid_Circular_Cylinder(_Number_of_Blocks_Idir_,
+			 _Number_of_Blocks_Jdir_,
+			 Radius,
 			 32.00*Radius,
 			 Stretching_Type_Idir,
 			 Stretching_Type_Jdir,
@@ -2911,15 +2926,17 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Circular_Cylinder(const double &Radius,
 
 }
 
-void Grid_Circular_Cylinder(const double &Inner_Radius,
-			    const double &Outer_Radius,
-			    const int Stretching_Type_Idir,
-			    const int Stretching_Type_Jdir,
-			    const double &Stretching_Factor_Idir,
-			    const double &Stretching_Factor_Jdir,
-			    const int Number_of_Cells_Idir,
-			    const int Number_of_Cells_Jdir,
-			    const int Number_of_Ghost_Cells) {
+void Grid2D_Quad_MultiBlock_HO::Grid_Circular_Cylinder(int &_Number_of_Blocks_Idir_,
+						       int &_Number_of_Blocks_Jdir_,
+						       const double &Inner_Radius,
+						       const double &Outer_Radius,
+						       const int Stretching_Type_Idir,
+						       const int Stretching_Type_Jdir,
+						       const double &Stretching_Factor_Idir,
+						       const double &Stretching_Factor_Jdir,
+						       const int Number_of_Cells_Idir,
+						       const int Number_of_Cells_Jdir,
+						       const int Number_of_Ghost_Cells) {
   
   int iBlk, n_cells_i, n_cells_j, Stretch_I, Stretch_J,
     Orthogonal_North, Orthogonal_South,
@@ -2932,9 +2949,9 @@ void Grid_Circular_Cylinder(const double &Inner_Radius,
     /* Allocate memory for grid blocks.  There are two grid
        blocks for this mesh. */
     
-    Number_of_Blocks_Idir = 2;
-    Number_of_Blocks_Jdir = 1;
-    allocate(Number_of_Blocks_Idir,             Number_of_Blocks_Jdir);
+    _Number_of_Blocks_Idir_ = 2;
+    _Number_of_Blocks_Jdir_ = 1;
+    allocate(_Number_of_Blocks_Idir_, _Number_of_Blocks_Jdir_);
 
     /* Create the mesh for each block representing
        the complete grid. */
@@ -3032,25 +3049,24 @@ void Grid_Circular_Cylinder(const double &Inner_Radius,
 
         /* Create the 2D quadrilateral grid block. */
 
-        Create_Quad_Block(Grid_ptr[iBlk][0],
-                          Bnd_Spline_North,
-                          Bnd_Spline_South,
-                          Bnd_Spline_East,
-                          Bnd_Spline_West,
-                          n_cells_i,
-  	                  n_cells_j,
-			  Number_of_Ghost_Cells,
-                          GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-                          Stretch_I,
-                          Beta_I, 
-                          Tau_I,
-                          Stretch_J,
-                          Beta_J,
-                          Tau_J,
-                          Orthogonal_North,
-		          Orthogonal_South,
-     		          Orthogonal_East,
-                          Orthogonal_West);
+        Grid_ptr[iBlk][0].Create_Quad_Block(Bnd_Spline_North,
+					    Bnd_Spline_South,
+					    Bnd_Spline_East,
+					    Bnd_Spline_West,
+					    n_cells_i,
+					    n_cells_j,
+					    Number_of_Ghost_Cells,
+					    GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+					    Stretch_I,
+					    Beta_I, 
+					    Tau_I,
+					    Stretch_J,
+					    Beta_J,
+					    Tau_J,
+					    Orthogonal_North,
+					    Orthogonal_South,
+					    Orthogonal_East,
+					    Orthogonal_West);
 
         /* Deallocate the memory for the boundary splines. */
 
@@ -3061,37 +3077,28 @@ void Grid_Circular_Cylinder(const double &Inner_Radius,
 
     } /* endfor */
 
-    /* Return the grid. */
-
-    return(Grid_ptr);
-
 }
 
-#if 0
-
-/***********************************************************************************//*
- * Routine: Grid_Annulus                                
- *                                                         
+/*!
  * Generates a single-block O-type grid for predicting     
  * flow through an annulus of given inner and outer radii. 
  *                                                      
  * \param ThetaStart the start angle of the annulus (east edge) measured counterclockwise
  * \param ThetaEnd   the end angle of the annulus (west edge) measured counterclockwise
- ****************************************************************************************/
-Grid2D_Quad_Block** Grid_Annulus(Grid2D_Quad_Block **Grid_ptr,
-				 int &Number_of_Blocks_Idir,
-				 int &Number_of_Blocks_Jdir,
-				 const double &Inner_Radius,
-				 const double &Outer_Radius,
-				 const double &ThetaStart,
-				 const double &ThetaEnd,
-				 const int Stretching_Type_Idir,
-				 const int Stretching_Type_Jdir,
-				 const double &Stretching_Factor_Idir,
-				 const double &Stretching_Factor_Jdir,
-				 const int Number_of_Cells_Idir,
-				 const int Number_of_Cells_Jdir,
-				 const int Number_of_Ghost_Cells) {
+ */
+void Grid2D_Quad_MultiBlock_HO::Grid_Annulus(int &_Number_of_Blocks_Idir_,
+					     int &_Number_of_Blocks_Jdir_,
+					     const double &Inner_Radius,
+					     const double &Outer_Radius,
+					     const double &ThetaStart,
+					     const double &ThetaEnd,
+					     const int Stretching_Type_Idir,
+					     const int Stretching_Type_Jdir,
+					     const double &Stretching_Factor_Idir,
+					     const double &Stretching_Factor_Jdir,
+					     const int Number_of_Cells_Idir,
+					     const int Number_of_Cells_Jdir,
+					     const int Number_of_Ghost_Cells) {
   
   int n_cells_i, n_cells_j, Stretch_I, Stretch_J,
     Orthogonal_North, Orthogonal_South,
@@ -3104,11 +3111,9 @@ Grid2D_Quad_Block** Grid_Annulus(Grid2D_Quad_Block **Grid_ptr,
   /* Allocate memory for grid blocks.  There is one grid
      blocks for this mesh. */
 
-  Number_of_Blocks_Idir = 1;
-  Number_of_Blocks_Jdir = 1;
-  Grid_ptr = Allocate_Multi_Block_Grid(Grid_ptr, 
-				       Number_of_Blocks_Idir, 
-				       Number_of_Blocks_Jdir);
+  _Number_of_Blocks_Idir_ = 1;
+  _Number_of_Blocks_Jdir_ = 1;
+  allocate(_Number_of_Blocks_Idir_, _Number_of_Blocks_Jdir_);
 
   /* Create the mesh for the block. */
 
@@ -3162,25 +3167,24 @@ Grid2D_Quad_Block** Grid_Annulus(Grid2D_Quad_Block **Grid_ptr,
     
   /* Create the 2D quadrilateral grid block. */
 
-  Create_Quad_Block(Grid_ptr[0][0],
-		    Bnd_Spline_North,
-		    Bnd_Spline_South,
-		    Bnd_Spline_East,
-		    Bnd_Spline_West,
-		    n_cells_i,
-		    n_cells_j,
-		    Number_of_Ghost_Cells,
-		    GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-		    Stretch_I,
-		    Beta_I, 
-		    Tau_I,
-		    Stretch_J,
-		    Beta_J,
-		    Tau_J,
-		    Orthogonal_North,
-		    Orthogonal_South,
-		    Orthogonal_East,
-		    Orthogonal_West);
+  Grid_ptr[0][0].Create_Quad_Block(Bnd_Spline_North,
+				   Bnd_Spline_South,
+				   Bnd_Spline_East,
+				   Bnd_Spline_West,
+				   n_cells_i,
+				   n_cells_j,
+				   Number_of_Ghost_Cells,
+				   GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+				   Stretch_I,
+				   Beta_I, 
+				   Tau_I,
+				   Stretch_J,
+				   Beta_J,
+				   Tau_J,
+				   Orthogonal_North,
+				   Orthogonal_South,
+				   Orthogonal_East,
+				   Orthogonal_West);
 
   /* Deallocate the memory for the boundary splines. */
     
@@ -3189,36 +3193,29 @@ Grid2D_Quad_Block** Grid_Annulus(Grid2D_Quad_Block **Grid_ptr,
   Bnd_Spline_East.deallocate();
   Bnd_Spline_West.deallocate();
 
-  /* Return the grid. */
-    
-  return(Grid_ptr);
 }
 
-/********************************************************
- * Routine: Grid_Ellipse                                *
- *                                                      *
- * Generates a double-block O-type grid for predicting  *
- * flow past an ellipse.                                *
- *                                                      *
- * Usage: Grid_ptr = Grid_Ellipse(Grid_ptr,             *
- *                                nblk_i,               *
- *                                nblk_j,               *
- *                                FOUR,                 *
- *                                ONE,                  *
- *   		                  100,                  *
- *  		                  50,                   *
- *  		                  2);                   *
- *                                                      *
- ********************************************************/
-Grid2D_Quad_Block** Grid_Ellipse(Grid2D_Quad_Block **Grid_ptr,
-                                 int &Number_of_Blocks_Idir,
-                                 int &Number_of_Blocks_Jdir,
-                                 const double &A,
-                                 const double &B,
- 		                 const int Number_of_Cells_Idir,
-		                 const int Number_of_Cells_Jdir,
-				 const int Number_of_Ghost_Cells) {
-
+/*!
+ * Generates a double-block O-type grid for predicting  
+ * flow past an ellipse.                                
+ *                                                      
+ * Usage: Grid_ptr = Grid_Ellipse(Grid_ptr,             
+ *                                nblk_i,               
+ *                                nblk_j,               
+ *                                FOUR,                 
+ *                                ONE,                  
+ *   		                  100,                  
+ *  		                  50,                   
+ *  		                  2);                   
+ */
+void Grid2D_Quad_MultiBlock_HO::Grid_Ellipse(int &_Number_of_Blocks_Idir_,
+					     int &_Number_of_Blocks_Jdir_,
+					     const double &A,
+					     const double &B,
+					     const int Number_of_Cells_Idir,
+					     const int Number_of_Cells_Jdir,
+					     const int Number_of_Ghost_Cells) {
+  
     int iBlk, n_cells_i, n_cells_j, Stretch_I, Stretch_J,
         Orthogonal_North, Orthogonal_South,
         Orthogonal_East, Orthogonal_West;
@@ -3230,11 +3227,9 @@ Grid2D_Quad_Block** Grid_Ellipse(Grid2D_Quad_Block **Grid_ptr,
     /* Allocate memory for grid blocks.  There are two grid
        blocks for this mesh. */
 
-    Number_of_Blocks_Idir = 2;
-    Number_of_Blocks_Jdir = 1;
-    Grid_ptr = Allocate_Multi_Block_Grid(Grid_ptr, 
-                                         Number_of_Blocks_Idir, 
-                                         Number_of_Blocks_Jdir);
+    _Number_of_Blocks_Idir_ = 2;
+    _Number_of_Blocks_Jdir_ = 1;
+    allocate(_Number_of_Blocks_Idir_, _Number_of_Blocks_Jdir_);
 
     /* Create the mesh for each block representing
        the complete grid. */
@@ -3337,30 +3332,28 @@ Grid2D_Quad_Block** Grid_Ellipse(Grid2D_Quad_Block **Grid_ptr,
 
         /* Create the 2D quadrilateral grid block. */
 
-        Create_Quad_Block(Grid_ptr[iBlk][0],
-                          Bnd_Spline_North,
-                          Bnd_Spline_South,
-                          Bnd_Spline_East,
-                          Bnd_Spline_West,
-                          n_cells_i,
-  	                  n_cells_j,
-			  Number_of_Ghost_Cells,
-                          GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-                          Stretch_I,
-                          Beta_I, 
-                          Tau_I,
-                          Stretch_J,
-                          Beta_J,
-                          Tau_J,
-                          Orthogonal_North,
-		          Orthogonal_South,
-     		          Orthogonal_East,
-                          Orthogonal_West);
+	Grid_ptr[iBlk][0].Create_Quad_Block(Bnd_Spline_North,
+					    Bnd_Spline_South,
+					    Bnd_Spline_East,
+					    Bnd_Spline_West,
+					    n_cells_i,
+					    n_cells_j,
+					    Number_of_Ghost_Cells,
+					    GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+					    Stretch_I,
+					    Beta_I, 
+					    Tau_I,
+					    Stretch_J,
+					    Beta_J,
+					    Tau_J,
+					    Orthogonal_North,
+					    Orthogonal_South,
+					    Orthogonal_East,
+					    Orthogonal_West);
 
         /* Smooth the 2D quadrilateral grid block. */
 
-        Smooth_Quad_Block(Grid_ptr[iBlk][0],
-                          min(250, 2*max(n_cells_i,n_cells_j)));
+        Grid_ptr[iBlk][0].Smooth_Quad_Block(min(250, 2*max(n_cells_i,n_cells_j)));
 
         /* Deallocate the memory for the boundary splines. */
 
@@ -3371,38 +3364,31 @@ Grid2D_Quad_Block** Grid_Ellipse(Grid2D_Quad_Block **Grid_ptr,
 
     } /* endfor */
 
-    /* Return the grid. */
-
-    return(Grid_ptr);
 
 }
 
-/********************************************************
- * Routine: Grid_NACA_Aerofoil                          *
- *                                                      *
- * Generates a C-type grid consisting of four           *
- * quadrilateral grid blocks for predicting flow past   *
- * NACA 4-digit and 5-digit aerofoils.                  *
- *                                                      *
- * Usage:  Grid_ptr = Grid_NACA_Aerofoil(Grid_ptr,      *
- *                                       nblk_i,        *
- *                                       nblk_j,        *
- *                                       "4412",        *
- *                                       ONE,           *
- *		                         120,           *
- *		                         50,            *
- *                                       2);            *
- *                                                      *
- ********************************************************/
-Grid2D_Quad_Block** Grid_NACA_Aerofoil(Grid2D_Quad_Block **Grid_ptr,
-                                       int &Number_of_Blocks_Idir,
-                                       int &Number_of_Blocks_Jdir,
-                                       char *NACA_Aerofoil_Type_ptr,
-                                       const double &Chord_Length,
- 		                       const int Number_of_Cells_Idir,
-		                       const int Number_of_Cells_Jdir,
-				       const int Number_of_Ghost_Cells) {
-
+/*!
+ * Generates a C-type grid consisting of four           
+ * quadrilateral grid blocks for predicting flow past   
+ * NACA 4-digit and 5-digit aerofoils.                  
+ *                                                      
+ * Usage:  Grid_ptr = Grid_NACA_Aerofoil(Grid_ptr,      
+ *                                       nblk_i,        
+ *                                       nblk_j,        
+ *                                       "4412",        
+ *                                       ONE,           
+ *		                         120,           
+ *		                         50,            
+ *                                       2);            
+ */
+void Grid2D_Quad_MultiBlock_HO::Grid_NACA_Aerofoil(int &_Number_of_Blocks_Idir_,
+						   int &_Number_of_Blocks_Jdir_,
+						   char *NACA_Aerofoil_Type_ptr,
+						   const double &Chord_Length,
+						   const int Number_of_Cells_Idir,
+						   const int Number_of_Cells_Jdir,
+						   const int Number_of_Ghost_Cells) {
+  
     int iBlk, n_cells_i, n_cells_j,
         Stretch_I, Stretch_J,
         Orthogonal_North, Orthogonal_South,
@@ -3416,11 +3402,9 @@ Grid2D_Quad_Block** Grid_NACA_Aerofoil(Grid2D_Quad_Block **Grid_ptr,
     /* Allocate memory for grid blocks.  There are four grid
        blocks for this mesh. */
 
-    Number_of_Blocks_Idir = 4;
-    Number_of_Blocks_Jdir = 1;
-    Grid_ptr = Allocate_Multi_Block_Grid(Grid_ptr, 
-                                         Number_of_Blocks_Idir, 
-                                         Number_of_Blocks_Jdir);
+    _Number_of_Blocks_Idir_ = 4;
+    _Number_of_Blocks_Jdir_ = 1;
+    allocate(_Number_of_Blocks_Idir_, _Number_of_Blocks_Jdir_);
 
     /* Create the mesh for each block representing
        the complete grid. */
@@ -3596,30 +3580,29 @@ Grid2D_Quad_Block** Grid_NACA_Aerofoil(Grid2D_Quad_Block **Grid_ptr,
 
         /* Create the 2D quadrilateral grid block. */
 
-        Create_Quad_Block(Grid_ptr[iBlk][0],
-                          Bnd_Spline_North,
-                          Bnd_Spline_South,
-                          Bnd_Spline_East,
-                          Bnd_Spline_West,
-                          n_cells_i,
-  	                  n_cells_j,
-			  Number_of_Ghost_Cells,
-                          GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-                          Stretch_I,
-                          Beta_I, 
-                          Tau_I,
-                          Stretch_J,
-                          Beta_J,
-                          Tau_J,
-                          Orthogonal_North,
-		          Orthogonal_South,
-     		          Orthogonal_East,
-                          Orthogonal_West);
-
+        Grid_ptr[iBlk][0].Create_Quad_Block(Bnd_Spline_North,
+					    Bnd_Spline_South,
+					    Bnd_Spline_East,
+					    Bnd_Spline_West,
+					    n_cells_i,
+					    n_cells_j,
+					    Number_of_Ghost_Cells,
+					    GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+					    Stretch_I,
+					    Beta_I, 
+					    Tau_I,
+					    Stretch_J,
+					    Beta_J,
+					    Tau_J,
+					    Orthogonal_North,
+					    Orthogonal_South,
+					    Orthogonal_East,
+					    Orthogonal_West);
+	
         /* Smooth the 2D quadrilateral grid block. */
 
         if (iBlk == 1 || iBlk == 2) 
-           Smooth_Quad_Block(Grid_ptr[iBlk][0], min(250, 2*max(n_cells_i,n_cells_j)));
+           Grid_ptr[iBlk][0].Smooth_Quad_Block(min(250, 2*max(n_cells_i,n_cells_j)));
 
         /* Deallocate the memory for the boundary splines. */
 
@@ -3658,53 +3641,46 @@ Grid2D_Quad_Block** Grid_NACA_Aerofoil(Grid2D_Quad_Block **Grid_ptr,
 
     } /* endfor */
 
-    /* Return the grid. */
-
-    return(Grid_ptr);
-
 }
 
-/********************************************************
- * Routine: Grid_Free_Jet                               *
- *                                                      *
- * Generates a multi-block grid for predicting free-jet *
- * flows associated with expansion through an orifice.  *
- *                                                      *
- * Usage: Grid_ptr = Grid_Free_Jet(Grid_ptr,            *
- *                                 nblk_i,              *
- *                                 nblk_j,              *
- *                                 THREE,               *
- *   		                   100,                 *
- *  		                   50,                  *
- *                                 2);                  *
- *                                                      *
- ********************************************************/
-Grid2D_Quad_Block** Grid_Free_Jet(Grid2D_Quad_Block **Grid_ptr,
-                                  int &Number_of_Blocks_Idir,
-                                  int &Number_of_Blocks_Jdir,
-                                  const double &Radius,
- 		                  const int Number_of_Cells_Idir,
-		                  const int Number_of_Cells_Jdir,
-				  const int Number_of_Ghost_Cells) {
 
-    int iBlk, jBlk, n_cells_i, n_cells_j, Stretch_I, Stretch_J,
-        Orthogonal_North, Orthogonal_South,
-        Orthogonal_East, Orthogonal_West;
-    double Beta_I, Tau_I, Beta_J, Tau_J;
-    Vector2D x1, x2;
-    Spline2D Bnd_Spline_North, Bnd_Spline_South,
-             Bnd_Spline_East, Bnd_Spline_West;
 
-    double x_orifice_up, x_orifice_down, x_up, x_down, r_max;
+/*!
+ * Generates a multi-block grid for predicting free-jet 
+ * flows associated with expansion through an orifice.  
+ *                                                      
+ * Usage: Grid_ptr = Grid_Free_Jet(Grid_ptr,            
+ *                                 nblk_i,              
+ *                                 nblk_j,              
+ *                                 THREE,               
+ *   		                   100,                 
+ *  		                   50,                  
+ *                                 2);                  
+ *                                                      
+ */
+void Grid2D_Quad_MultiBlock_HO::Grid_Free_Jet(int &_Number_of_Blocks_Idir_,
+					      int &_Number_of_Blocks_Jdir_,
+					      const double &Radius,
+					      const int Number_of_Cells_Idir,
+					      const int Number_of_Cells_Jdir,
+					      const int Number_of_Ghost_Cells) {
+  
+  int iBlk, jBlk, n_cells_i, n_cells_j, Stretch_I, Stretch_J,
+    Orthogonal_North, Orthogonal_South,
+    Orthogonal_East, Orthogonal_West;
+  double Beta_I, Tau_I, Beta_J, Tau_J;
+  Vector2D x1, x2;
+  Spline2D Bnd_Spline_North, Bnd_Spline_South,
+    Bnd_Spline_East, Bnd_Spline_West;
+  
+  double x_orifice_up, x_orifice_down, x_up, x_down, r_max;
+  
+  /* Allocate memory for grid blocks.  There are two grid
+     blocks for this mesh. */
 
-    /* Allocate memory for grid blocks.  There are two grid
-       blocks for this mesh. */
-
-    Number_of_Blocks_Idir = 3;
-    Number_of_Blocks_Jdir = 2;
-    Grid_ptr = Allocate_Multi_Block_Grid(Grid_ptr, 
-                                         Number_of_Blocks_Idir, 
-                                         Number_of_Blocks_Jdir);
+    _Number_of_Blocks_Idir_ = 3;
+    _Number_of_Blocks_Jdir_ = 2;
+    allocate(_Number_of_Blocks_Idir_, _Number_of_Blocks_Jdir_);
 
     /* Create the mesh for each block representing
        the complete grid. */
@@ -3751,26 +3727,25 @@ Grid2D_Quad_Block** Grid_Free_Jet(Grid2D_Quad_Block **Grid_ptr,
               Orthogonal_East = 0;
               Orthogonal_West = 0;
 
-              Create_Quad_Block(Grid_ptr[iBlk][jBlk],
-                                Bnd_Spline_North,
-                                Bnd_Spline_South,
-                                Bnd_Spline_East,
-                                Bnd_Spline_West,
-                                n_cells_i,
-  	                        n_cells_j,
-				Number_of_Ghost_Cells,
-                                GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-                                Stretch_I,
-                                Beta_I, 
-                                Tau_I,
-                                Stretch_J,
-                                Beta_J,
-                                Tau_J,
-                                Orthogonal_North,
-		                Orthogonal_South,
-     		                Orthogonal_East,
-                                Orthogonal_West);
-
+              Grid_ptr[iBlk][jBlk].Create_Quad_Block(Bnd_Spline_North,
+						     Bnd_Spline_South,
+						     Bnd_Spline_East,
+						     Bnd_Spline_West,
+						     n_cells_i,
+						     n_cells_j,
+						     Number_of_Ghost_Cells,
+						     GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+						     Stretch_I,
+						     Beta_I, 
+						     Tau_I,
+						     Stretch_J,
+						     Beta_J,
+						     Tau_J,
+						     Orthogonal_North,
+						     Orthogonal_South,
+						     Orthogonal_East,
+						     Orthogonal_West);
+	      
               Bnd_Spline_North.deallocate();
               Bnd_Spline_South.deallocate();
               Bnd_Spline_East.deallocate();
@@ -3809,25 +3784,24 @@ Grid2D_Quad_Block** Grid_Free_Jet(Grid2D_Quad_Block **Grid_ptr,
               Orthogonal_East = 0;
               Orthogonal_West = 0;
 
-              Create_Quad_Block(Grid_ptr[iBlk][jBlk],
-                                Bnd_Spline_North,
-                                Bnd_Spline_South,
-                                Bnd_Spline_East,
-                                Bnd_Spline_West,
-                                n_cells_i,
-  	                        n_cells_j,
-				Number_of_Ghost_Cells,
-                                GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-                                Stretch_I,
-                                Beta_I, 
-                                Tau_I,
-                                Stretch_J,
-                                Beta_J,
-                                Tau_J,
-                                Orthogonal_North,
-		                Orthogonal_South,
-     		                Orthogonal_East,
-                                Orthogonal_West);
+              Grid_ptr[iBlk][jBlk].Create_Quad_Block(Bnd_Spline_North,
+						     Bnd_Spline_South,
+						     Bnd_Spline_East,
+						     Bnd_Spline_West,
+						     n_cells_i,
+						     n_cells_j,
+						     Number_of_Ghost_Cells,
+						     GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+						     Stretch_I,
+						     Beta_I, 
+						     Tau_I,
+						     Stretch_J,
+						     Beta_J,
+						     Tau_J,
+						     Orthogonal_North,
+						     Orthogonal_South,
+						     Orthogonal_East,
+						     Orthogonal_West);
 
               Bnd_Spline_North.deallocate();
               Bnd_Spline_South.deallocate();
@@ -3867,26 +3841,25 @@ Grid2D_Quad_Block** Grid_Free_Jet(Grid2D_Quad_Block **Grid_ptr,
               Orthogonal_East = 0;
               Orthogonal_West = 0;
 
-              Create_Quad_Block(Grid_ptr[iBlk][jBlk],
-                                Bnd_Spline_North,
-                                Bnd_Spline_South,
-                                Bnd_Spline_East,
-                                Bnd_Spline_West,
-                                n_cells_i,
-  	                        n_cells_j,
-				Number_of_Ghost_Cells,
-                                GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-                                Stretch_I,
-                                Beta_I, 
-                                Tau_I,
-                                Stretch_J,
-                                Beta_J,
-                                Tau_J,
-                                Orthogonal_North,
-		                Orthogonal_South,
-     		                Orthogonal_East,
-                                Orthogonal_West);
-
+              Grid_ptr[iBlk][jBlk].Create_Quad_Block(Bnd_Spline_North,
+						     Bnd_Spline_South,
+						     Bnd_Spline_East,
+						     Bnd_Spline_West,
+						     n_cells_i,
+						     n_cells_j,
+						     Number_of_Ghost_Cells,
+						     GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+						     Stretch_I,
+						     Beta_I, 
+						     Tau_I,
+						     Stretch_J,
+						     Beta_J,
+						     Tau_J,
+						     Orthogonal_North,
+						     Orthogonal_South,
+						     Orthogonal_East,
+						     Orthogonal_West);
+	      
               Bnd_Spline_North.deallocate();
               Bnd_Spline_South.deallocate();
               Bnd_Spline_East.deallocate();
@@ -3925,26 +3898,25 @@ Grid2D_Quad_Block** Grid_Free_Jet(Grid2D_Quad_Block **Grid_ptr,
               Orthogonal_East = 0;
               Orthogonal_West = 0;
 
-              Create_Quad_Block(Grid_ptr[iBlk][jBlk],
-                                Bnd_Spline_North,
-                                Bnd_Spline_South,
-                                Bnd_Spline_East,
-                                Bnd_Spline_West,
-                                n_cells_i,
-  	                        n_cells_j,
-				Number_of_Ghost_Cells,
-                                GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-                                Stretch_I,
-                                Beta_I, 
-                                Tau_I,
-                                Stretch_J,
-                                Beta_J,
-                                Tau_J,
-                                Orthogonal_North,
-		                Orthogonal_South,
-     		                Orthogonal_East,
-                                Orthogonal_West);
-
+	      Grid_ptr[iBlk][jBlk].Create_Quad_Block(Bnd_Spline_North,
+						     Bnd_Spline_South,
+						     Bnd_Spline_East,
+						     Bnd_Spline_West,
+						     n_cells_i,
+						     n_cells_j,
+						     Number_of_Ghost_Cells,
+						     GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+						     Stretch_I,
+						     Beta_I, 
+						     Tau_I,
+						     Stretch_J,
+						     Beta_J,
+						     Tau_J,
+						     Orthogonal_North,
+						     Orthogonal_South,
+						     Orthogonal_East,
+						     Orthogonal_West);
+	      
               Bnd_Spline_North.deallocate();
               Bnd_Spline_South.deallocate();
               Bnd_Spline_East.deallocate();
@@ -3985,26 +3957,25 @@ Grid2D_Quad_Block** Grid_Free_Jet(Grid2D_Quad_Block **Grid_ptr,
               Orthogonal_East = 0;
               Orthogonal_West = 0;
 
-              Create_Quad_Block(Grid_ptr[iBlk][jBlk],
-                                Bnd_Spline_North,
-                                Bnd_Spline_South,
-                                Bnd_Spline_East,
-                                Bnd_Spline_West,
-                                n_cells_i,
-  	                        n_cells_j,
-				Number_of_Ghost_Cells,
-                                GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-                                Stretch_I,
-                                Beta_I, 
-                                Tau_I,
-                                Stretch_J,
-                                Beta_J,
-                                Tau_J,
-                                Orthogonal_North,
-		                Orthogonal_South,
-     		                Orthogonal_East,
-                                Orthogonal_West);
-
+              Grid_ptr[iBlk][jBlk].Create_Quad_Block(Bnd_Spline_North,
+						     Bnd_Spline_South,
+						     Bnd_Spline_East,
+						     Bnd_Spline_West,
+						     n_cells_i,
+						     n_cells_j,
+						     Number_of_Ghost_Cells,
+						     GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+						     Stretch_I,
+						     Beta_I, 
+						     Tau_I,
+						     Stretch_J,
+						     Beta_J,
+						     Tau_J,
+						     Orthogonal_North,
+						     Orthogonal_South,
+						     Orthogonal_East,
+						     Orthogonal_West);
+	      
               Bnd_Spline_North.deallocate();
               Bnd_Spline_South.deallocate();
               Bnd_Spline_East.deallocate();
@@ -4014,42 +3985,38 @@ Grid2D_Quad_Block** Grid_Free_Jet(Grid2D_Quad_Block **Grid_ptr,
        } /* endfor */
     } /* endfor */
 
-    /* Return the grid. */
-
-    return(Grid_ptr);
 
 }
 
-/**********************************************************************
- * Routine: Grid_Wedge                                                *
- *                                                                    *
- * Generates a quadilateral mesh with clustering consisting of two    *
- * grid blocks for predicting a wedge flow for looking at shock wave  *
- * interactions at a wedge.                                           *
- *                                                                    *
- * Usage: Grid_ptr = Grid_Wedge(Grid_ptr,                             *
- *                              nblk_i,                               *
- *                              nblk_j,                               *
- *                              45.0,                                 *
- *                              0.50,                                 *
- *         		        100,                                  *
- *         		        100,                                  *
- *                              2);                                   *
- *                                                                    *
- **********************************************************************/
-Grid2D_Quad_Block** Grid_Wedge(Grid2D_Quad_Block **Grid_ptr,
-                               int &Number_of_Blocks_Idir,
-                               int &Number_of_Blocks_Jdir,
-			       const double &Wedge_Angle,
-			       const double &Wedge_Length,
-			       const int &Wedge_BC_Type,
-			       const int &Stretching_Flag,
-			       const double &Stretching_Factor_Idir,
-			       const double &Stretching_Factor_Jdir,
-			       const int Number_of_Cells_Idir,
-			       const int Number_of_Cells_Jdir,
-			       const int Number_of_Ghost_Cells) {
 
+/*!
+
+ * Generates a quadilateral mesh with clustering consisting of two    
+ * grid blocks for predicting a wedge flow for looking at shock wave  
+ * interactions at a wedge.                                           
+ *                                                                    
+ * Usage: Grid_ptr = Grid_Wedge(Grid_ptr,                             
+ *                              nblk_i,                               
+ *                              nblk_j,                               
+ *                              45.0,                                 
+ *                              0.50,                                 
+ *         		        100,                                  
+ *         		        100,                                  
+ *                              2);                                   
+ */
+
+void Grid2D_Quad_MultiBlock_HO::Grid_Wedge(int &_Number_of_Blocks_Idir_,
+		int &_Number_of_Blocks_Jdir_,
+		const double &Wedge_Angle,
+		const double &Wedge_Length,
+		const int &Wedge_BC_Type,
+		const int &Stretching_Flag,
+		const double &Stretching_Factor_Idir,
+		const double &Stretching_Factor_Jdir,
+		const int Number_of_Cells_Idir,
+		const int Number_of_Cells_Jdir,
+		const int Number_of_Ghost_Cells) {
+  
   int Stretch_I, Stretch_J,
       Orthogonal_North, Orthogonal_South,
       Orthogonal_East, Orthogonal_West;
@@ -4060,11 +4027,9 @@ Grid2D_Quad_Block** Grid_Wedge(Grid2D_Quad_Block **Grid_ptr,
 
   // Allocate memory for grid blocks.  There are two grid blocks for 
   // this mesh.
-  Number_of_Blocks_Idir = 2;
-  Number_of_Blocks_Jdir = 1;
-  Grid_ptr = Allocate_Multi_Block_Grid(Grid_ptr, 
-				       Number_of_Blocks_Idir, 
-				       Number_of_Blocks_Jdir);
+  _Number_of_Blocks_Idir_ = 2;
+  _Number_of_Blocks_Jdir_ = 1;
+  allocate(_Number_of_Blocks_Idir_, _Number_of_Blocks_Jdir_);
 
   // Create the mesh for each block representing the complete grid.
   for (int iBlk = 0; iBlk < Number_of_Blocks_Idir; iBlk++) {
@@ -4118,25 +4083,24 @@ Grid2D_Quad_Block** Grid_Wedge(Grid2D_Quad_Block **Grid_ptr,
     Orthogonal_East = 0;
     Orthogonal_West = 0;
     // Create the 2D quadrilateral grid block.
-    Create_Quad_Block(Grid_ptr[iBlk][0],
-		      Bnd_Spline_North,
-		      Bnd_Spline_South,
-		      Bnd_Spline_East,
-		      Bnd_Spline_West,
-		      Number_of_Cells_Idir,
-		      Number_of_Cells_Jdir,
-		      Number_of_Ghost_Cells,
-		      GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-		      Stretch_I,
-		      Beta_I, 
-		      Tau_I,
-		      Stretch_J,
-		      Beta_J,
-		      Tau_J,
-		      Orthogonal_North,
-		      Orthogonal_South,
-		      Orthogonal_East,
-		      Orthogonal_West);
+    Grid_ptr[iBlk][0].Create_Quad_Block(Bnd_Spline_North,
+					Bnd_Spline_South,
+					Bnd_Spline_East,
+					Bnd_Spline_West,
+					Number_of_Cells_Idir,
+					Number_of_Cells_Jdir,
+					Number_of_Ghost_Cells,
+					GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+					Stretch_I,
+					Beta_I, 
+					Tau_I,
+					Stretch_J,
+					Beta_J,
+					Tau_J,
+					Orthogonal_North,
+					Orthogonal_South,
+					Orthogonal_East,
+					Orthogonal_West);
     //Smooth_Quad_Block(Grid_ptr[iBlk][0], min(250, 2*max(Number_of_Cells_Idir,Number_of_Cells_Jdir)));
     // Deallocate the memory for the boundary splines.
     Bnd_Spline_North.deallocate();
@@ -4145,36 +4109,30 @@ Grid2D_Quad_Block** Grid_Wedge(Grid2D_Quad_Block **Grid_ptr,
     Bnd_Spline_West.deallocate();
   }
 
-  // Return the grid.
-  return Grid_ptr;
-
 }
 
-/**********************************************************************
- * Routine: Grid_Unsteady_Blunt_Body                                  *
- *                                                                    *
- * Generates a single block quadilateral mesh with clustering for     *
- * predicting supersonic flow around a cirucular cylinder blunt body. *
- *                                                                    *
- * Usage: Grid_ptr = Grid_Unsteady_Blunt_Body(Grid_ptr,               *
- *                                            nblk_i,                 *
- *                                            nblk_j,                 *
- *                                            ONE,                    *
- *                                            FOUR,                   *
- *   	                                      150,                    *
- *  	                                      50,                     *
- *                                            2);                     *
- *                                                                    *
- **********************************************************************/
-Grid2D_Quad_Block** Grid_Unsteady_Blunt_Body(Grid2D_Quad_Block **Grid_ptr,
-                                             int &Number_of_Blocks_Idir,
-                                             int &Number_of_Blocks_Jdir,
-					     const double &Radius,
-					     const double &Mach_Number,
-					     const int Number_of_Cells_Idir,
-					     const int Number_of_Cells_Jdir,
-					     const int Number_of_Ghost_Cells) {
+/*!
+ * Generates a single block quadilateral mesh with clustering for     
+ * predicting supersonic flow around a cirucular cylinder blunt body. 
+ *                                                                    
+ * Usage: Grid_ptr = Grid_Unsteady_Blunt_Body(Grid_ptr,               
+ *                                            nblk_i,                 
+ *                                            nblk_j,                 
+ *                                            ONE,                    
+ *                                            FOUR,                   
+ *   	                                      150,                    
+ *  	                                      50,                     
+ *                                            2);                    
+ */
 
+void Grid2D_Quad_MultiBlock_HO::Grid_Unsteady_Blunt_Body(int &_Number_of_Blocks_Idir_,
+							 int &_Number_of_Blocks_Jdir_,
+							 const double &Radius,
+							 const double &Mach_Number,
+							 const int Number_of_Cells_Idir,
+							 const int Number_of_Cells_Jdir,
+							 const int Number_of_Ghost_Cells) {
+  
   int Stretch_I, Stretch_J,
       Orthogonal_North, Orthogonal_South,
       Orthogonal_East, Orthogonal_West;
@@ -4184,11 +4142,9 @@ Grid2D_Quad_Block** Grid_Unsteady_Blunt_Body(Grid2D_Quad_Block **Grid_ptr,
            Bnd_Spline_East,  Bnd_Spline_West, Bow_Spline;
 
   // Allocate memory for grid block.
-  Number_of_Blocks_Idir = 1;
-  Number_of_Blocks_Jdir = 3;
-  Grid_ptr = Allocate_Multi_Block_Grid(Grid_ptr, 
-				       Number_of_Blocks_Idir, 
-				       Number_of_Blocks_Jdir);
+  _Number_of_Blocks_Idir_ = 1;
+  _Number_of_Blocks_Jdir_ = 3;
+  allocate(_Number_of_Blocks_Idir_, _Number_of_Blocks_Jdir_);
 
   // Create the mesh for each block representing the complete grid.
   for (int jBlk = 0; jBlk < Number_of_Blocks_Jdir; jBlk++) {
@@ -4283,64 +4239,55 @@ Grid2D_Quad_Block** Grid_Unsteady_Blunt_Body(Grid2D_Quad_Block **Grid_ptr,
       Orthogonal_West = 1;
     }
     // Create the 2D quadrilateral grid block.
-    Create_Quad_Block(Grid_ptr[0][jBlk],
-		      Bnd_Spline_North,
-		      Bnd_Spline_South,
-		      Bnd_Spline_East,
-		      Bnd_Spline_West,
-		      Number_of_Cells_Idir,
-		      Number_of_Cells_Jdir,
-		      Number_of_Ghost_Cells,
-		      GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-		      Stretch_I,
-		      Beta_I, 
-		      Tau_I,
-		      Stretch_J,
-		      Beta_J,
-		      Tau_J,
-		      Orthogonal_North,
-		      Orthogonal_South,
-		      Orthogonal_East,
-		      Orthogonal_West);
+    Grid_ptr[0][jBlk].Create_Quad_Block(Bnd_Spline_North,
+					Bnd_Spline_South,
+					Bnd_Spline_East,
+					Bnd_Spline_West,
+					Number_of_Cells_Idir,
+					Number_of_Cells_Jdir,
+					Number_of_Ghost_Cells,
+					GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+					Stretch_I,
+					Beta_I, 
+					Tau_I,
+					Stretch_J,
+					Beta_J,
+					Tau_J,
+					Orthogonal_North,
+					Orthogonal_South,
+					Orthogonal_East,
+					Orthogonal_West);
     // Deallocate the memory for the boundary splines.
     Bnd_Spline_North.deallocate();
     Bnd_Spline_South.deallocate();
     Bnd_Spline_East.deallocate();
     Bnd_Spline_West.deallocate();
     // Smooth the 2D quadrilateral grid block.
-    Smooth_Quad_Block(Grid_ptr[0][jBlk],
-		      min(250, 2*max(Number_of_Cells_Idir,Number_of_Cells_Jdir)));
+    Grid_ptr[0][jBlk].Smooth_Quad_Block(min(250, 2*max(Number_of_Cells_Idir,Number_of_Cells_Jdir)));
   }
-
+  
   if (Bow_Spline.np > 0) Bow_Spline.deallocate();
-
-  // Return the grid.
-  return Grid_ptr;
-
+  
 }
 
-/**********************************************************************
- * Routine: Grid_Ringleb_Flow                                         *
- *                                                                    *
- * Generates a uniform 2D mesh for Ringleb's flow.                    *
- *                                                                    *
- * Usage: Grid_ptr = Grid_Ringleb_Flow(Grid_ptr,                      *
- *                                     nblk_i,                        *
- *                                     nblk_j,                        *
- *   	                               ncells_i,                      *
- *  	                               ncells_j,                      *
- *                                     Nghost_Cells);                 *
- *                                                                    *
- **********************************************************************/
-Grid2D_Quad_Block** Grid_Ringleb_Flow(Grid2D_Quad_Block **Grid_ptr,
-                                      int &Number_of_Blocks_Idir,
-                                      int &Number_of_Blocks_Jdir,
-				      const double &Inner_Streamline_Number,
-				      const double &Outer_Streamline_Number,
-				      const double &Isotach_Line,
-				      const int Number_of_Cells_Idir,
-				      const int Number_of_Cells_Jdir,
-				      const int Number_of_Ghost_Cells) {
+/*!
+ * Generates a uniform 2D mesh for Ringleb's flow.                    
+ *                                                                    
+ * Usage: Grid_ptr = Grid_Ringleb_Flow(Grid_ptr,                      
+ *                                     nblk_i,                        
+ *                                     nblk_j,                        
+ *   	                               ncells_i,                      
+ *  	                               ncells_j,                      
+ *                                     Nghost_Cells);                 
+ */
+void Grid2D_Quad_MultiBlock_HO::Grid_Ringleb_Flow(int &_Number_of_Blocks_Idir_,
+						  int &_Number_of_Blocks_Jdir_,
+						  const double &Inner_Streamline_Number,
+						  const double &Outer_Streamline_Number,
+						  const double &Isotach_Line,
+						  const int Number_of_Cells_Idir,
+						  const int Number_of_Cells_Jdir,
+						  const int Number_of_Ghost_Cells) {
 
   assert(Inner_Streamline_Number > Outer_Streamline_Number);
   assert(Inner_Streamline_Number < 5.0/3.0);
@@ -4363,11 +4310,9 @@ Grid2D_Quad_Block** Grid_Ringleb_Flow(Grid2D_Quad_Block **Grid_ptr,
   Vector2D norm_dir, X_norm, X_tan;
 
   // Allocate memory for grid block.
-  Number_of_Blocks_Idir = 1;
-  Number_of_Blocks_Jdir = 1;
-  Grid_ptr = Allocate_Multi_Block_Grid(Grid_ptr, 
-				       Number_of_Blocks_Idir, 
-				       Number_of_Blocks_Jdir);
+  _Number_of_Blocks_Idir_ = 1;
+  _Number_of_Blocks_Jdir_ = 1;
+  allocate(_Number_of_Blocks_Idir_, _Number_of_Blocks_Jdir_);
 
 
   // Create the mesh for each block representing the complete grid.
@@ -4477,27 +4422,26 @@ Grid2D_Quad_Block** Grid_Ringleb_Flow(Grid2D_Quad_Block **Grid_ptr,
   Orthogonal_West = 1;
 
   // Create the 2D quadrilateral grid block representing the mesh.
-  Create_Quad_Block(Grid_ptr[0][0],
-		    Bnd_Spline_North,
-		    Bnd_Spline_South,
-		    Bnd_Spline_East,
-		    Bnd_Spline_West,
-		    Number_of_Cells_Idir,
-		    Number_of_Cells_Jdir,
-		    Number_of_Ghost_Cells,
-		    GRID2D_QUAD_BLOCK_INIT_PROCEDURE_EAST_WEST,
-		    Stretch_I,
-		    Beta_I,
-		    Tau_I,
-		    Stretch_J,
-		    Beta_J,
-		    Tau_J,
-		    Orthogonal_North,
-		    Orthogonal_South,
-		    Orthogonal_East,
-		    Orthogonal_West);
+  Grid_ptr[0][0].Create_Quad_Block(Bnd_Spline_North,
+				   Bnd_Spline_South,
+				   Bnd_Spline_East,
+				   Bnd_Spline_West,
+				   Number_of_Cells_Idir,
+				   Number_of_Cells_Jdir,
+				   Number_of_Ghost_Cells,
+				   GRID2D_QUAD_BLOCK_INIT_PROCEDURE_EAST_WEST,
+				   Stretch_I,
+				   Beta_I,
+				   Tau_I,
+				   Stretch_J,
+				   Beta_J,
+				   Tau_J,
+				   Orthogonal_North,
+				   Orthogonal_South,
+				   Orthogonal_East,
+				   Orthogonal_West);
 
-  Smooth_Quad_Block(Grid_ptr[0][0],min(250,2*max(Number_of_Cells_Idir,Number_of_Cells_Jdir)));
+  Grid_ptr[0][0].Smooth_Quad_Block(min(250,2*max(Number_of_Cells_Idir,Number_of_Cells_Jdir)));
 
   // Deallocate the memory for the boundary splines.
   Bnd_Spline_North.deallocate();
@@ -4515,34 +4459,27 @@ Grid2D_Quad_Block** Grid_Ringleb_Flow(Grid2D_Quad_Block **Grid_ptr,
   delete []q;   q   = NULL;
   delete []rho; rho = NULL;
 
-  // Return the grid.
-  return Grid_ptr;
-
 }
 
-/**********************************************************************
- * Routine: Grid_Bump_Channel_Flow                                    *
- *                                                                    *
- * Generates a single block quadilateral mesh with clustering for     *
- * predicting supersonic flow around a cirucular cylinder blunt body. *
- *                                                                    *
- * Usage: Grid_ptr = Grid_ump_Channel_Flow(Grid_ptr,                  *
- *                                         nblk_i,                    *
- *                                         nblk_j,                    *
- *                                         ONE,                       *
- *   	                                   150,                       *
- *  	                                   50,                        *
- *                                         2);                        *
- *                                                                    *
- **********************************************************************/
-Grid2D_Quad_Block** Grid_Bump_Channel_Flow(Grid2D_Quad_Block **Grid_ptr,
-					   int &Number_of_Blocks_Idir,
-					   int &Number_of_Blocks_Jdir,
-					   const int Smooth_Bump,
-					   const int Number_of_Cells_Idir,
-					   const int Number_of_Cells_Jdir,
-					   const int Number_of_Ghost_Cells) {
-
+/*!
+ * Generates a single block quadilateral mesh with clustering for     
+ * predicting supersonic flow around a cirucular cylinder blunt body. 
+ *                                                                    
+ * Usage: Grid_ptr = Grid_ump_Channel_Flow(Grid_ptr,                  
+ *                                         nblk_i,                    
+ *                                         nblk_j,                    
+ *                                         ONE,                       
+ *   	                                   150,                       
+ *  	                                   50,                        
+ *                                         2);                        
+ */
+void Grid2D_Quad_MultiBlock_HO::Grid_Bump_Channel_Flow(int &_Number_of_Blocks_Idir_,
+						       int &_Number_of_Blocks_Jdir_,
+						       const int Smooth_Bump,
+						       const int Number_of_Cells_Idir,
+						       const int Number_of_Cells_Jdir,
+						       const int Number_of_Ghost_Cells) {
+  
   int Stretch_I, Stretch_J,
       Orthogonal_North, Orthogonal_South,
       Orthogonal_East, Orthogonal_West;
@@ -4553,11 +4490,9 @@ Grid2D_Quad_Block** Grid_Bump_Channel_Flow(Grid2D_Quad_Block **Grid_ptr,
   double R, Theta;
 
   // Allocate memory for grid block.
-  Number_of_Blocks_Idir = 4;
-  Number_of_Blocks_Jdir = 2;
-  Grid_ptr = Allocate_Multi_Block_Grid(Grid_ptr, 
-				       Number_of_Blocks_Idir, 
-				       Number_of_Blocks_Jdir);
+  _Number_of_Blocks_Idir_ = 4;
+  _Number_of_Blocks_Jdir_ = 2;
+  allocate(_Number_of_Blocks_Idir_, _Number_of_Blocks_Jdir_);
 
   // Create the mesh for each block representing the complete grid.
   for (int jBlk = 0; jBlk < Number_of_Blocks_Jdir; jBlk++) {
@@ -4734,29 +4669,28 @@ Grid2D_Quad_Block** Grid_Bump_Channel_Flow(Grid2D_Quad_Block **Grid_ptr,
       Orthogonal_West = 1;
 
       // Create the 2D quadrilateral grid block representing the mesh.
-      Create_Quad_Block(Grid_ptr[iBlk][jBlk],
-			Bnd_Spline_North,
-			Bnd_Spline_South,
-			Bnd_Spline_East,
-			Bnd_Spline_West,
-			Number_of_Cells_Idir,
-			Number_of_Cells_Jdir,
-			Number_of_Ghost_Cells,
-			GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-			Stretch_I,
-			Beta_I, 
-			Tau_I,
-			Stretch_J,
-			Beta_J,
-			Tau_J,
-			Orthogonal_North,
-			Orthogonal_South,
-			Orthogonal_East,
-			Orthogonal_West);
+      Grid_ptr[iBlk][jBlk].Create_Quad_Block(Bnd_Spline_North,
+					     Bnd_Spline_South,
+					     Bnd_Spline_East,
+					     Bnd_Spline_West,
+					     Number_of_Cells_Idir,
+					     Number_of_Cells_Jdir,
+					     Number_of_Ghost_Cells,
+					     GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+					     Stretch_I,
+					     Beta_I, 
+					     Tau_I,
+					     Stretch_J,
+					     Beta_J,
+					     Tau_J,
+					     Orthogonal_North,
+					     Orthogonal_South,
+					     Orthogonal_East,
+					     Orthogonal_West);
 
       // Smooth the 2D quadrilateral grid block.
-      Smooth_Quad_Block(Grid_ptr[iBlk][jBlk],min(250,2*max(Number_of_Cells_Idir,Number_of_Cells_Jdir)));
-
+      Grid_ptr[iBlk][jBlk].Smooth_Quad_Block(min(250,2*max(Number_of_Cells_Idir,Number_of_Cells_Jdir)));
+      
       // Deallocate the memory for the boundary splines.
       Bnd_Spline_North.deallocate();
       Bnd_Spline_South.deallocate();
@@ -4766,44 +4700,37 @@ Grid2D_Quad_Block** Grid_Bump_Channel_Flow(Grid2D_Quad_Block **Grid_ptr,
     }
   }
 
-  // Return the grid.
-  return Grid_ptr;
-
 }
 
-/**********************************************************************
- * Routine: Grid_Jet_Flow                                             *
- *                                                                    *
- * Generates a quadilateral mesh with for predicting jet flow coming  *
- * out through an orifice.                                            *
- *                                                                    *
- * Usage: Grid_ptr = Grid_Jet_Flow(Grid_ptr,                          *
- *                                 nblk_i,                            *
- *                                 nblk_j,                            *
- *                                 plate_length,                      *
- *				   Stretching_Type_Idir,              *
- *				   Stretching_Type_Jdir,              *
- *				   Stretching_Factor_Idir,            *  
- *				   Stretching_Factor_Jdir,            *
- *                                 Number_of_Cells_Idir,              *
- *                                 Number_of_Cells_Jdir,              *
- *                                 2)                                 *
- *                                                                    *
- **********************************************************************/
+/*!
+ * Generates a quadilateral mesh with for predicting jet flow coming  
+ * out through an orifice.                                            
+ *                                                                    
+ * Usage: Grid_ptr = Grid_Jet_Flow(Grid_ptr,                          
+ *                                 nblk_i,                            
+ *                                 nblk_j,                            
+ *                                 plate_length,                      
+ *				   Stretching_Type_Idir,              
+ *				   Stretching_Type_Jdir,              
+ *				   Stretching_Factor_Idir,              
+ *				   Stretching_Factor_Jdir,            
+ *                                 Number_of_Cells_Idir,              
+ *                                 Number_of_Cells_Jdir,              
+ *                                 2)                                 
+ */
 
-Grid2D_Quad_Block** Grid_Jet_Flow(Grid2D_Quad_Block **Grid_ptr,
-                                  int &Number_of_Blocks_Idir,
-                                  int &Number_of_Blocks_Jdir,
-				  const double &Radius,
-				  const double &Mach,
-				  const int &Stretching_Type_Idir,
-				  const int &Stretching_Type_Jdir,
-				  const double &Stretching_Factor_Idir,
-				  const double &Stretching_Factor_Jdir,
-                                  const int Number_of_Cells_Idir,
-                                  const int Number_of_Cells_Jdir,
-				  const int Number_of_Ghost_Cells){
-              
+void Grid2D_Quad_MultiBlock_HO::Grid_Jet_Flow(int &_Number_of_Blocks_Idir_,
+					      int &_Number_of_Blocks_Jdir_,
+					      const double &Radius,
+					      const double &Mach,
+					      const int &Stretching_Type_Idir,
+					      const int &Stretching_Type_Jdir,
+					      const double &Stretching_Factor_Idir,
+					      const double &Stretching_Factor_Jdir,
+					      const int Number_of_Cells_Idir,
+					      const int Number_of_Cells_Jdir,
+					      const int Number_of_Ghost_Cells){
+  
   int block_flag,
       BCtypeN, BCtypeS, BCtypeE, BCtypeW,
       Stretch_I, Stretch_J,
@@ -4817,9 +4744,7 @@ Grid2D_Quad_Block** Grid_Jet_Flow(Grid2D_Quad_Block **Grid_ptr,
   // Allocate memory for grid blocks. There are two grid blocks for 
   // this mesh.
 
-  Grid_ptr = Allocate_Multi_Block_Grid(Grid_ptr,
-                                       Number_of_Blocks_Idir,
-                                       Number_of_Blocks_Jdir);
+  allocate(_Number_of_Blocks_Idir_,_Number_of_Blocks_Jdir_);
   // Create the mesh for each block representing the complete grid.
   for (int jBlk = 0 ; jBlk < Number_of_Blocks_Jdir ; jBlk++) {
     for (int iBlk = 0; iBlk < Number_of_Blocks_Idir ; iBlk++) {
@@ -4972,26 +4897,25 @@ Grid2D_Quad_Block** Grid_Jet_Flow(Grid2D_Quad_Block **Grid_ptr,
 	Bnd_Spline_West.setBCtype(BCtypeW);
     
 	// Create the 2D quadrilateral grid block.
-	Create_Quad_Block(Grid_ptr[iBlk][jBlk],
-			  Bnd_Spline_North,
-			  Bnd_Spline_South,
-			  Bnd_Spline_East,
-			  Bnd_Spline_West,
-			  Number_of_Cells_Idir,
-			  Number_of_Cells_Jdir,
-			  Number_of_Ghost_Cells,
-			  GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-			  Stretch_I,
-			  Beta_I,
-			  Tau_I,
-			  Stretch_J,
-			  Beta_J,
-			  Tau_J,
-			  Orthogonal_North,
-			  Orthogonal_South,
-			  Orthogonal_East,
-			  Orthogonal_West);
-
+	Grid_ptr[iBlk][jBlk].Create_Quad_Block(Bnd_Spline_North,
+					       Bnd_Spline_South,
+					       Bnd_Spline_East,
+					       Bnd_Spline_West,
+					       Number_of_Cells_Idir,
+					       Number_of_Cells_Jdir,
+					       Number_of_Ghost_Cells,
+					       GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+					       Stretch_I,
+					       Beta_I,
+					       Tau_I,
+					       Stretch_J,
+					       Beta_J,
+					       Tau_J,
+					       Orthogonal_North,
+					       Orthogonal_South,
+					       Orthogonal_East,
+					       Orthogonal_West);
+	
 	// Deallocate the memory for the boundary splines.
 	Bnd_Spline_North.deallocate();
 	Bnd_Spline_South.deallocate();
@@ -5003,42 +4927,36 @@ Grid2D_Quad_Block** Grid_Jet_Flow(Grid2D_Quad_Block **Grid_ptr,
     }    
   }
 
-  // Return the grid.
-  return Grid_ptr;
 }
 
-/**********************************************************************
- * Routine: Grid_Mixing_Layer                                         *
- *                                                                    *
- * Generates a quadilateral mesh with for predicting Mixing Layer flow*
- * coming out through an orifice.                                     *
- *                                                                    *
- * Usage: Grid_ptr = Grid_Mixing_Layer(Grid_ptr,                      *
- *                                 nblk_i,                            *
- *                                 nblk_j,                            *
- *                                 plate_length,                      *
- *				   Stretching_Type_Idir,              *
- *				   Stretching_Type_Jdir,              *
- *				   Stretching_Factor_Idir,            *  
- *				   Stretching_Factor_Jdir,            *
- *                                 Number_of_Cells_Idir,              *
- *                                 2)                                 *
- *                                                                    *
- **********************************************************************/
+/*!
+ * Generates a quadilateral mesh with for predicting Mixing Layer flow
+ * coming out through an orifice.                                     
+ *                                                                    
+ * Usage: Grid_ptr = Grid_Mixing_Layer(Grid_ptr,                      
+ *                                 nblk_i,                            
+ *                                 nblk_j,                            
+ *                                 plate_length,                      
+ *				   Stretching_Type_Idir,              
+ *				   Stretching_Type_Jdir,              
+ *				   Stretching_Factor_Idir,              
+ *				   Stretching_Factor_Jdir,            
+ *                                 Number_of_Cells_Idir,              
+ *                                 2)                                 
+ */
 
-Grid2D_Quad_Block** Grid_Mixing_Layer(Grid2D_Quad_Block **Grid_ptr,
-				      int &Number_of_Blocks_Idir,
-				      int &Number_of_Blocks_Jdir,
-				      const double &Length,
-				      const double &Mach,
-				      const int &Stretching_Type_Idir,
-				      const int &Stretching_Type_Jdir,
-				      const double &Stretching_Factor_Idir,
-				      const double &Stretching_Factor_Jdir,
-				      const int Number_of_Cells_Idir,
-				      const int Number_of_Cells_Jdir,
-				      const int Number_of_Ghost_Cells){
-              
+void Grid2D_Quad_MultiBlock_HO::Grid_Mixing_Layer(int &_Number_of_Blocks_Idir_,
+						  int &_Number_of_Blocks_Jdir_,
+						  const double &Length,
+						  const double &Mach,
+						  const int &Stretching_Type_Idir,
+						  const int &Stretching_Type_Jdir,
+						  const double &Stretching_Factor_Idir,
+						  const double &Stretching_Factor_Jdir,
+						  const int Number_of_Cells_Idir,
+						  const int Number_of_Cells_Jdir,
+						  const int Number_of_Ghost_Cells){
+  
   int block_flag,
       BCtypeN, BCtypeS, BCtypeE, BCtypeW,
       Stretch_I, Stretch_J,
@@ -5065,9 +4983,7 @@ Grid2D_Quad_Block** Grid_Mixing_Layer(Grid2D_Quad_Block **Grid_ptr,
   len = 2.0;
   width = 1.0;
 
-  Grid_ptr = Allocate_Multi_Block_Grid(Grid_ptr,
-                                       Number_of_Blocks_Idir,
-                                       Number_of_Blocks_Jdir) ;
+  allocate(_Number_of_Blocks_Idir_,_Number_of_Blocks_Jdir_);
   // Create the mesh for each block representing the complete grid.
 
   for (int jBlk = 0; jBlk < Number_of_Blocks_Jdir; jBlk++) {
@@ -5190,26 +5106,25 @@ Grid2D_Quad_Block** Grid_Mixing_Layer(Grid2D_Quad_Block **Grid_ptr,
 	Bnd_Spline_West.setBCtype(BCtypeW);
     
 	// Create the 2D quadrilateral grid block.
-	Create_Quad_Block(Grid_ptr[iBlk][jBlk],
-			  Bnd_Spline_North,
-			  Bnd_Spline_South,
-			  Bnd_Spline_East,
-			  Bnd_Spline_West,
-			  Number_of_Cells_Idir,
-			  Number_of_Cells_Jdir,
-			  Number_of_Ghost_Cells,
-			  GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-			  Stretch_I,
-			  Beta_I,
-			  Tau_I,
-			  Stretch_J,
-			  Beta_J,
-			  Tau_J,
-			  Orthogonal_North,
-			  Orthogonal_South,
-			  Orthogonal_East,
-			  Orthogonal_West);
-
+	Grid_ptr[iBlk][jBlk].Create_Quad_Block(Bnd_Spline_North,
+					       Bnd_Spline_South,
+					       Bnd_Spline_East,
+					       Bnd_Spline_West,
+					       Number_of_Cells_Idir,
+					       Number_of_Cells_Jdir,
+					       Number_of_Ghost_Cells,
+					       GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+					       Stretch_I,
+					       Beta_I,
+					       Tau_I,
+					       Stretch_J,
+					       Beta_J,
+					       Tau_J,
+					       Orthogonal_North,
+					       Orthogonal_South,
+					       Orthogonal_East,
+					       Orthogonal_West);
+	
 	// Deallocate the memory for the boundary splines.
 	Bnd_Spline_North.deallocate();
 	Bnd_Spline_South.deallocate();
@@ -5221,27 +5136,21 @@ Grid2D_Quad_Block** Grid_Mixing_Layer(Grid2D_Quad_Block **Grid_ptr,
     }    
   }
 
-  // Return the grid.
-  return Grid_ptr;
 }
 
-/**********************************************************************
- * Routine: Grid_Backward_Facing_Step                                 *
- *                                                                    *
- * Generates a quadilateral mesh with clustering consisting of five   *
- * grid blocks for predicting flow over a backward facing step.       *
- *                                                                    *
- **********************************************************************/
-Grid2D_Quad_Block** Grid_Backward_Facing_Step(Grid2D_Quad_Block **Grid_ptr,
-					      int &Number_of_Blocks_Idir,
-					      int &Number_of_Blocks_Jdir,
-					      const double &Step_Height,
-					      const double &Top_Wall_Deflection,
-					      const double &Stretching_Factor_Idir,
-					      const double &Stretching_Factor_Jdir,
-					      const int Number_of_Cells_Idir,
-					      const int Number_of_Cells_Jdir,
-					      const int Number_of_Ghost_Cells) {
+/*!
+ * Generates a quadilateral mesh with clustering consisting of five   
+ * grid blocks for predicting flow over a backward facing step.       
+ **/
+void Grid2D_Quad_MultiBlock_HO::Grid_Backward_Facing_Step(int &_Number_of_Blocks_Idir_,
+							  int &_Number_of_Blocks_Jdir_,
+							  const double &Step_Height,
+							  const double &Top_Wall_Deflection,
+							  const double &Stretching_Factor_Idir,
+							  const double &Stretching_Factor_Jdir,
+							  const int Number_of_Cells_Idir,
+							  const int Number_of_Cells_Jdir,
+							  const int Number_of_Ghost_Cells) {
 
   int block_flag,
       BCtypeN, BCtypeS, BCtypeE, BCtypeW,
@@ -5261,9 +5170,9 @@ Grid2D_Quad_Block** Grid_Backward_Facing_Step(Grid2D_Quad_Block **Grid_ptr,
 
   // Allocate memory for grid blocks.  There are two grid blocks for 
   // this mesh.
-  Number_of_Blocks_Idir = 7;
-  Number_of_Blocks_Jdir = 3;
-  allocate(Number_of_Blocks_Idir,Number_of_Blocks_Jdir);
+  _Number_of_Blocks_Idir_ = 7;
+  _Number_of_Blocks_Jdir_ = 3;
+  allocate(_Number_of_Blocks_Idir_,_Number_of_Blocks_Jdir_);
 
   // Create the mesh for each block representing the complete grid.
   for (int jBlk = 0; jBlk < Number_of_Blocks_Jdir; jBlk++) {
@@ -5482,25 +5391,24 @@ Grid2D_Quad_Block** Grid_Backward_Facing_Step(Grid2D_Quad_Block **Grid_ptr,
 	Bnd_Spline_West.setBCtype(BCtypeW);
     
 	// Create the 2D quadrilateral grid block.
-	Create_Quad_Block(Grid_ptr[iBlk][jBlk],
-			  Bnd_Spline_North,
-			  Bnd_Spline_South,
-			  Bnd_Spline_East,
-			  Bnd_Spline_West,
-			  Number_of_Cells_Idir,
-			  Number_of_Cells_Jdir,
-			  Number_of_Ghost_Cells,
-			  GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-			  Stretch_I,
-			  Beta_I,
-			  Tau_I,
-			  Stretch_J,
-			  Beta_J,
-			  Tau_J,
-			  Orthogonal_North,
-			  Orthogonal_South,
-			  Orthogonal_East,
-			  Orthogonal_West);
+	Grid_ptr[iBlk][jBlk].Create_Quad_Block(Bnd_Spline_North,
+					       Bnd_Spline_South,
+					       Bnd_Spline_East,
+					       Bnd_Spline_West,
+					       Number_of_Cells_Idir,
+					       Number_of_Cells_Jdir,
+					       Number_of_Ghost_Cells,
+					       GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+					       Stretch_I,
+					       Beta_I,
+					       Tau_I,
+					       Stretch_J,
+					       Beta_J,
+					       Tau_J,
+					       Orthogonal_North,
+					       Orthogonal_South,
+					       Orthogonal_East,
+					       Orthogonal_West);
 
 	// Deallocate the memory for the boundary splines.
 	Bnd_Spline_North.deallocate();
@@ -5513,29 +5421,22 @@ Grid2D_Quad_Block** Grid_Backward_Facing_Step(Grid2D_Quad_Block **Grid_ptr,
     }    
   }
 
-  // Return the grid.
-  return Grid_ptr;
-
 }
 
-/**********************************************************************
- * Routine: Grid_Forward_Facing_Step                                  *
- *                                                                    *
- * Generates a quadilateral mesh with clustering consisting of five   *
- * grid blocks for predicting flow over a forward facing step.        *
- *                                                                    *
- **********************************************************************/
-Grid2D_Quad_Block** Grid_Forward_Facing_Step(Grid2D_Quad_Block **Grid_ptr,
-					      int &Number_of_Blocks_Idir,
-					      int &Number_of_Blocks_Jdir,
-					      const double &Step_Height,
-					      const double &Channel_Gap,
-					      const double &Stretching_Factor_Idir,
-					      const double &Stretching_Factor_Jdir,
-					      const int Number_of_Cells_Idir,
-					      const int Number_of_Cells_Jdir,
-					      const int Number_of_Ghost_Cells) {
-
+/*!
+ * Generates a quadilateral mesh with clustering consisting of five   
+ * grid blocks for predicting flow over a forward facing step.        
+ */
+void Grid2D_Quad_MultiBlock_HO::Grid_Forward_Facing_Step(int &_Number_of_Blocks_Idir_,
+							 int &_Number_of_Blocks_Jdir_,
+							 const double &Step_Height,
+							 const double &Channel_Gap,
+							 const double &Stretching_Factor_Idir,
+							 const double &Stretching_Factor_Jdir,
+							 const int Number_of_Cells_Idir,
+							 const int Number_of_Cells_Jdir,
+							 const int Number_of_Ghost_Cells) {
+  
   int BCtypeN, BCtypeS, BCtypeE, BCtypeW;
   Vector2D xNW, xNE, xSE, xSW;
   Spline2D Bnd_Spline_North, Bnd_Spline_South,
@@ -5549,9 +5450,9 @@ Grid2D_Quad_Block** Grid_Forward_Facing_Step(Grid2D_Quad_Block **Grid_ptr,
       Orthogonal_West = 1;
   double Beta_I=0.0, Tau_I=0.0, Beta_J=0.0, Tau_J=0.0;
 
-  Number_of_Blocks_Idir = 5;
-  Number_of_Blocks_Jdir = 5;
-  allocate(Number_of_Blocks_Idir, Number_of_Blocks_Jdir);
+  _Number_of_Blocks_Idir_ = 5;
+  _Number_of_Blocks_Jdir_ = 5;
+  allocate(_Number_of_Blocks_Idir_, _Number_of_Blocks_Jdir_);
 
   for (int jBlk = 0; jBlk < Number_of_Blocks_Jdir; jBlk++) {
     for (int iBlk = 0; iBlk < Number_of_Blocks_Idir; iBlk++) {
@@ -5598,26 +5499,25 @@ Grid2D_Quad_Block** Grid_Forward_Facing_Step(Grid2D_Quad_Block **Grid_ptr,
       Bnd_Spline_West.setBCtype(BCtypeW);
     
       // Create the 2D quadrilateral grid block.
-      Create_Quad_Block(Grid_ptr[iBlk][jBlk],
-			Bnd_Spline_North,
-			Bnd_Spline_South,
-			Bnd_Spline_East,
-			Bnd_Spline_West,
-			Number_of_Cells_Idir,
-			Number_of_Cells_Jdir,
-			Number_of_Ghost_Cells,
-			GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-			Stretch_I,
-			Beta_I,
-			Tau_I,
-			Stretch_J,
-			Beta_J,
-			Tau_J,
-			Orthogonal_North,
-			Orthogonal_South,
-			Orthogonal_East,
-			Orthogonal_West);
-
+      Grid_ptr[iBlk][jBlk].Create_Quad_Block(Bnd_Spline_North,
+					     Bnd_Spline_South,
+					     Bnd_Spline_East,
+					     Bnd_Spline_West,
+					     Number_of_Cells_Idir,
+					     Number_of_Cells_Jdir,
+					     Number_of_Ghost_Cells,
+					     GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+					     Stretch_I,
+					     Beta_I,
+					     Tau_I,
+					     Stretch_J,
+					     Beta_J,
+					     Tau_J,
+					     Orthogonal_North,
+					     Orthogonal_South,
+					     Orthogonal_East,
+					     Orthogonal_West);
+      
       // Deallocate the memory for the boundary splines.
       Bnd_Spline_North.deallocate();
       Bnd_Spline_South.deallocate();
@@ -5627,25 +5527,19 @@ Grid2D_Quad_Block** Grid_Forward_Facing_Step(Grid2D_Quad_Block **Grid_ptr,
     } /* endfor */    
   } /* endfor */
 
-  return Grid_ptr;
-
 }
 
-/**********************************************************************
- * Routine: Grid_Desolvation_Chamber                                  *
- *                                                                    *
- * This routine creates a mesh corresponding to a simplified          *
- * desolvation chamber designed by MDS-SCIEX.                         *
- *                                                                    *
- **********************************************************************/
-Grid2D_Quad_Block** Grid_Desolvation_Chamber(Grid2D_Quad_Block **Grid_ptr,
-					     const int &Chamber_BC_Type,
-					     int &Number_of_Blocks_Idir,
-					     int &Number_of_Blocks_Jdir,
-					     const int Number_of_Cells_Idir,
-					     const int Number_of_Cells_Jdir,
-					     const int Number_of_Ghost_Cells) {
-
+/*!
+ * This routine creates a mesh corresponding to a simplified          
+ * desolvation chamber designed by MDS-SCIEX.                         
+ */
+void Grid2D_Quad_MultiBlock_HO::Grid_Desolvation_Chamber(const int &Chamber_BC_Type,
+							 int &_Number_of_Blocks_Idir_,
+							 int &_Number_of_Blocks_Jdir_,
+							 const int Number_of_Cells_Idir,
+							 const int Number_of_Cells_Jdir,
+							 const int Number_of_Ghost_Cells) {
+  
   int block_flag,
       BCtypeN, BCtypeS, BCtypeE, BCtypeW,
       Stretch_I, Stretch_J,
@@ -5657,12 +5551,9 @@ Grid2D_Quad_Block** Grid_Desolvation_Chamber(Grid2D_Quad_Block **Grid_ptr,
            Bnd_Spline_East,  Bnd_Spline_West, Bow_Spline;
 
   // Allocate memory for grid block.
-  Number_of_Blocks_Idir = 7;
-  Number_of_Blocks_Jdir = 6;
-  Grid_ptr = Allocate_Multi_Block_Grid(Grid_ptr, 
-				       Number_of_Blocks_Idir, 
-				       Number_of_Blocks_Jdir);
-
+  _Number_of_Blocks_Idir_ = 7;
+  _Number_of_Blocks_Jdir_ = 6;
+  allocate(_Number_of_Blocks_Idir_, _Number_of_Blocks_Jdir_);
 
   // Create the mesh for each block representing the complete grid.
   for (int jBlk = 0; jBlk < Number_of_Blocks_Jdir; jBlk++) {
@@ -5951,26 +5842,25 @@ Grid2D_Quad_Block** Grid_Desolvation_Chamber(Grid2D_Quad_Block **Grid_ptr,
 	Bnd_Spline_West.setBCtype(BCtypeW);
 
 	// Create the 2D quadrilateral grid block.
-	Create_Quad_Block(Grid_ptr[iBlk][jBlk],
-			  Bnd_Spline_North,
-			  Bnd_Spline_South,
-			  Bnd_Spline_East,
-			  Bnd_Spline_West,
-			  Number_of_Cells_Idir,
-			  Number_of_Cells_Jdir,
-			  Number_of_Ghost_Cells,
-			  GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-			  Stretch_I,
-			  Beta_I,
-			  Tau_I,
-			  Stretch_J,
-			  Beta_J,
-			  Tau_J,
-			  Orthogonal_North,
-			  Orthogonal_South,
-			  Orthogonal_East,
-			  Orthogonal_West);
-
+	Grid_ptr[iBlk][jBlk].Create_Quad_Block(Bnd_Spline_North,
+					       Bnd_Spline_South,
+					       Bnd_Spline_East,
+					       Bnd_Spline_West,
+					       Number_of_Cells_Idir,
+					       Number_of_Cells_Jdir,
+					       Number_of_Ghost_Cells,
+					       GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+					       Stretch_I,
+					       Beta_I,
+					       Tau_I,
+					       Stretch_J,
+					       Beta_J,
+					       Tau_J,
+					       Orthogonal_North,
+					       Orthogonal_South,
+					       Orthogonal_East,
+					       Orthogonal_West);
+	
 	// Deallocate the memory for the boundary splines.
 	Bnd_Spline_North.deallocate();
 	Bnd_Spline_South.deallocate();
@@ -5982,41 +5872,36 @@ Grid2D_Quad_Block** Grid_Desolvation_Chamber(Grid2D_Quad_Block **Grid_ptr,
     }
   }
 
-  // Return the grid.
-  return Grid_ptr;
 
 }
 
-/**********************************************************************
- * Routine: Grid_NASA_Rotor_37                                        *
- *                                                                    *
- * This routine creates a mesh to be used in conjunction with and     *
- * embedded interface representing a section of a NASA rotor 37 blade *
- * at a given percent span.                                           *
- *                                                                    *
- *  +---------------+-------------------+---------------+             *
- *  |               |                   |               |             *
- *  |               |                   |               |             *
- *  |  Block (0,1)  |    Block (1,1)    |  Block (2,1)  |             *
- *  |               |                   |               |             *
- *  |               |                   |               |             *
- *  +---------------<<<<<<<<BLADE>>>>>>>>---------------+             *
- *  |               |                   |               |             *
- *  |               |                   |               |             *
- *  |  Block (0,0)  |    Block (1,0)    |  Block (2,0)  |             *
- *  |               |                   |               |             *
- *  |               |                   |               |             *
- *  +---------------+-------------------+---------------+             *
- *                                                                    *
- **********************************************************************/
-Grid2D_Quad_Block** Grid_NASA_Rotor_37(Grid2D_Quad_Block **Grid_ptr,
-				       int &Number_of_Blocks_Idir,
-				       int &Number_of_Blocks_Jdir,
-				       const double &Rotor_Percent_Span,
-				       const int Number_of_Cells_Idir,
-				       const int Number_of_Cells_Jdir,
-				       const int Number_of_Ghost_Cells) {
 
+/*!
+ * This routine creates a mesh to be used in conjunction with and     
+ * embedded interface representing a section of a NASA rotor 37 blade 
+ * at a given percent span.                                           
+ *                                                                    
+ *  +---------------+-------------------+---------------+             
+ *  |               |                   |               |             
+ *  |               |                   |               |             
+ *  |  Block (0,1)  |    Block (1,1)    |  Block (2,1)  |             
+ *  |               |                   |               |             
+ *  |               |                   |               |             
+ *  +---------------<<<<<<<<BLADE>>>>>>>>---------------+             
+ *  |               |                   |               |             
+ *  |               |                   |               |             
+ *  |  Block (0,0)  |    Block (1,0)    |  Block (2,0)  |             
+ *  |               |                   |               |             
+ *  |               |                   |               |             
+ *  +---------------+-------------------+---------------+             
+ */
+void Grid2D_Quad_MultiBlock_HO::Grid_NASA_Rotor_37(int &_Number_of_Blocks_Idir_,
+						   int &_Number_of_Blocks_Jdir_,
+						   const double &Rotor_Percent_Span,
+						   const int Number_of_Cells_Idir,
+						   const int Number_of_Cells_Jdir,
+						   const int Number_of_Ghost_Cells) {
+  
   int error_flag;
   Spline2D upperB, lowerB, upperMiddleB, lowerMiddleB, camberTrail, camberLead, camberBlade, Rotor_Spline;
   int iTrail, iLead, pos, mIndex;
@@ -6036,11 +5921,9 @@ Grid2D_Quad_Block** Grid_NASA_Rotor_37(Grid2D_Quad_Block **Grid_ptr,
   NASA_Rotor_37.init(Rotor_Flow_Type, NASA_Rotor_Data_Directory);
 
   // Allocate memory for grid block.
-  Number_of_Blocks_Idir = 3;
-  Number_of_Blocks_Jdir = 2;
-  Grid_ptr = Allocate_Multi_Block_Grid(Grid_ptr, 
-				       Number_of_Blocks_Idir, 
-				       Number_of_Blocks_Jdir);
+  _Number_of_Blocks_Idir_ = 3;
+  _Number_of_Blocks_Jdir_ = 2;
+  allocate(_Number_of_Blocks_Idir_,_Number_of_Blocks_Jdir_);
 
   // 'Hard-wire' stretching parameters.
   if (Number_of_Cells_Idir/2 < 10) {
@@ -6280,29 +6163,28 @@ Grid2D_Quad_Block** Grid_NASA_Rotor_37(Grid2D_Quad_Block **Grid_ptr,
   Grid_ptr[1][1].BndWestSpline.tp[5] = SPLINE2D_POINT_SHARP_CORNER;
   Grid_ptr[1][1].BndWestSpline.pathlength();
   // Create quad block (1,1).
-  Create_Quad_Block(Grid_ptr[1][1],
-		    Grid_ptr[1][1].BndNorthSpline,
-		    Grid_ptr[1][1].BndSouthSpline,
-		    Grid_ptr[1][1].BndEastSpline,
-		    Grid_ptr[1][1].BndWestSpline,
-		    Number_of_Cells_Idir,
-		    Number_of_Cells_Jdir,
-		    Number_of_Ghost_Cells,
-		    GRID2D_QUAD_BLOCK_INIT_PROCEDURE_TRANS_FINITE_XY,
-		    STRETCHING_FCN_MINMAX_CLUSTERING,
-		    ONE + (beta_i-ONE)/ONE,
-		    0,
-		    STRETCHING_FCN_MIN_CLUSTERING,
-		    beta_j,
-		    0,
-		    ORTHOGONAL,
-		    ORTHOGONAL,
-		    ORTHOGONAL,
-		    ORTHOGONAL);
+  Grid_ptr[1][1].Create_Quad_Block(Grid_ptr[1][1].BndNorthSpline,
+				   Grid_ptr[1][1].BndSouthSpline,
+				   Grid_ptr[1][1].BndEastSpline,
+				   Grid_ptr[1][1].BndWestSpline,
+				   Number_of_Cells_Idir,
+				   Number_of_Cells_Jdir,
+				   Number_of_Ghost_Cells,
+				   GRID2D_QUAD_BLOCK_INIT_PROCEDURE_TRANS_FINITE_XY,
+				   STRETCHING_FCN_MINMAX_CLUSTERING,
+				   ONE + (beta_i-ONE)/ONE,
+				   0,
+				   STRETCHING_FCN_MIN_CLUSTERING,
+				   beta_j,
+				   0,
+				   ORTHOGONAL,
+				   ORTHOGONAL,
+				   ORTHOGONAL,
+				   ORTHOGONAL);
   // Smooth quad block (1,1).
-  Smooth_Quad_Block(Grid_ptr[1][1],
-		    min(250,2*max(Number_of_Cells_Idir,
-				  Number_of_Cells_Jdir)));
+  Grid_ptr[1][1].Smooth_Quad_Block(
+				   min(250,2*max(Number_of_Cells_Idir,
+						 Number_of_Cells_Jdir)));
 
   /////////////////
   // BLOCK (1,0) //
@@ -6378,29 +6260,28 @@ Grid2D_Quad_Block** Grid_NASA_Rotor_37(Grid2D_Quad_Block **Grid_ptr,
   Grid_ptr[1][0].BndEastSpline.tp[5] = SPLINE2D_POINT_SHARP_CORNER;
   Grid_ptr[1][0].BndEastSpline.pathlength();
   // Create quad block (1,0).
-  Create_Quad_Block(Grid_ptr[1][0],
-		    Grid_ptr[1][0].BndNorthSpline,
-		    Grid_ptr[1][0].BndSouthSpline,
-		    Grid_ptr[1][0].BndEastSpline,
-		    Grid_ptr[1][0].BndWestSpline,
-		    Number_of_Cells_Idir,
-		    Number_of_Cells_Jdir,
-		    Number_of_Ghost_Cells,
-		    GRID2D_QUAD_BLOCK_INIT_PROCEDURE_TRANS_FINITE_XY,
-		    STRETCHING_FCN_MINMAX_CLUSTERING,
-		    ONE + (beta_i-ONE)/ONE,
-		    0,
-		    STRETCHING_FCN_MAX_CLUSTERING,
-		    beta_j,
-		    0,
-		    ORTHOGONAL,
-		    ORTHOGONAL,
-		    ORTHOGONAL,
-		    ORTHOGONAL);
+  Grid_ptr[1][0].Create_Quad_Block(Grid_ptr[1][0].BndNorthSpline,
+				   Grid_ptr[1][0].BndSouthSpline,
+				   Grid_ptr[1][0].BndEastSpline,
+				   Grid_ptr[1][0].BndWestSpline,
+				   Number_of_Cells_Idir,
+				   Number_of_Cells_Jdir,
+				   Number_of_Ghost_Cells,
+				   GRID2D_QUAD_BLOCK_INIT_PROCEDURE_TRANS_FINITE_XY,
+				   STRETCHING_FCN_MINMAX_CLUSTERING,
+				   ONE + (beta_i-ONE)/ONE,
+				   0,
+				   STRETCHING_FCN_MAX_CLUSTERING,
+				   beta_j,
+				   0,
+				   ORTHOGONAL,
+				   ORTHOGONAL,
+				   ORTHOGONAL,
+				   ORTHOGONAL);
   // Smooth quad block (1,0).
-  Smooth_Quad_Block(Grid_ptr[1][0],
-		    min(250,2*max(Number_of_Cells_Idir,
-				  Number_of_Cells_Jdir)));
+  Grid_ptr[1][0].Smooth_Quad_Block(
+				   min(250,2*max(Number_of_Cells_Idir,
+						 Number_of_Cells_Jdir)));
 
   /////////////////
   // BLOCK (0,0) //
@@ -6446,30 +6327,29 @@ Grid2D_Quad_Block** Grid_NASA_Rotor_37(Grid2D_Quad_Block **Grid_ptr,
   Grid_ptr[0][0].BndWestSpline.tp[1] = SPLINE2D_POINT_SHARP_CORNER;
   Grid_ptr[0][0].BndWestSpline.pathlength();
   // Create quad block (0,0).
-  Create_Quad_Block(Grid_ptr[0][0],
-		    Grid_ptr[0][0].BndNorthSpline,
-		    Grid_ptr[0][0].BndSouthSpline,
-		    Grid_ptr[0][0].BndEastSpline,
-		    Grid_ptr[0][0].BndWestSpline,
-		    Number_of_Cells_Idir,
-		    Number_of_Cells_Jdir,
-		    Number_of_Ghost_Cells,
-		    GRID2D_QUAD_BLOCK_INIT_PROCEDURE_EAST_WEST,
-		    STRETCHING_FCN_MAX_CLUSTERING,
-		    beta_i,
-		    0,
-		    STRETCHING_FCN_MAX_CLUSTERING,
-		    beta_j,
-		    0,
-		    ORTHOGONAL,
-		    ORTHOGONAL,
-		    ORTHOGONAL,
-		    NOT_ORTHOGONAL);
+  Grid_ptr[0][0].Create_Quad_Block(Grid_ptr[0][0].BndNorthSpline,
+				   Grid_ptr[0][0].BndSouthSpline,
+				   Grid_ptr[0][0].BndEastSpline,
+				   Grid_ptr[0][0].BndWestSpline,
+				   Number_of_Cells_Idir,
+				   Number_of_Cells_Jdir,
+				   Number_of_Ghost_Cells,
+				   GRID2D_QUAD_BLOCK_INIT_PROCEDURE_EAST_WEST,
+				   STRETCHING_FCN_MAX_CLUSTERING,
+				   beta_i,
+				   0,
+				   STRETCHING_FCN_MAX_CLUSTERING,
+				   beta_j,
+				   0,
+				   ORTHOGONAL,
+				   ORTHOGONAL,
+				   ORTHOGONAL,
+				   NOT_ORTHOGONAL);
   // Smooth quad block (0,0).
-  Smooth_Quad_Block(Grid_ptr[0][0],
-		    min(250,2*max(Number_of_Cells_Idir,
-				  Number_of_Cells_Jdir)));
-
+  Grid_ptr[0][0].Smooth_Quad_Block(
+				   min(250,2*max(Number_of_Cells_Idir,
+						 Number_of_Cells_Jdir)));
+  
   /////////////////
   // BLOCK (2,0) //
   /////////////////
@@ -6517,30 +6397,29 @@ Grid2D_Quad_Block** Grid_NASA_Rotor_37(Grid2D_Quad_Block **Grid_ptr,
   // West spline.
   Copy_Spline(Grid_ptr[2][0].BndWestSpline,Grid_ptr[1][0].BndEastSpline); 
   // Create quad block (2,0).
-  Create_Quad_Block(Grid_ptr[2][0],
-		    Grid_ptr[2][0].BndNorthSpline,
-		    Grid_ptr[2][0].BndSouthSpline,
-		    Grid_ptr[2][0].BndEastSpline,
-		    Grid_ptr[2][0].BndWestSpline,
-		    Number_of_Cells_Idir,
-		    Number_of_Cells_Jdir,
-		    Number_of_Ghost_Cells,
-		    GRID2D_QUAD_BLOCK_INIT_PROCEDURE_EAST_WEST,
-		    STRETCHING_FCN_MIN_CLUSTERING,
-		    beta_i,
-		    0,
-		    STRETCHING_FCN_MAX_CLUSTERING,
-		    beta_j,
-		    0,
-		    ORTHOGONAL,//NOT_
-		    ORTHOGONAL,
-		    NOT_ORTHOGONAL,
-		    ORTHOGONAL);
+  Grid_ptr[2][0].Create_Quad_Block(Grid_ptr[2][0].BndNorthSpline,
+				   Grid_ptr[2][0].BndSouthSpline,
+				   Grid_ptr[2][0].BndEastSpline,
+				   Grid_ptr[2][0].BndWestSpline,
+				   Number_of_Cells_Idir,
+				   Number_of_Cells_Jdir,
+				   Number_of_Ghost_Cells,
+				   GRID2D_QUAD_BLOCK_INIT_PROCEDURE_EAST_WEST,
+				   STRETCHING_FCN_MIN_CLUSTERING,
+				   beta_i,
+				   0,
+				   STRETCHING_FCN_MAX_CLUSTERING,
+				   beta_j,
+				   0,
+				   ORTHOGONAL,//NOT_
+				   ORTHOGONAL,
+				   NOT_ORTHOGONAL,
+				   ORTHOGONAL);
   // Smooth quad block (2,0).
-  Smooth_Quad_Block(Grid_ptr[2][0],
-		    min(250,2*max(Number_of_Cells_Idir,
-				  Number_of_Cells_Jdir)));
-
+  Grid_ptr[2][0].Smooth_Quad_Block(
+				   min(250,2*max(Number_of_Cells_Idir,
+						 Number_of_Cells_Jdir)));
+  
   /////////////////
   // BLOCK (0,1) //
   /////////////////
@@ -6577,30 +6456,29 @@ Grid2D_Quad_Block** Grid_NASA_Rotor_37(Grid2D_Quad_Block **Grid_ptr,
   Grid_ptr[0][1].BndWestSpline.tp[1] = SPLINE2D_POINT_SHARP_CORNER;
   Grid_ptr[0][1].BndWestSpline.pathlength();
   // Create quad block (0,1).
-  Create_Quad_Block(Grid_ptr[0][1],
-		    Grid_ptr[0][1].BndNorthSpline,
-		    Grid_ptr[0][1].BndSouthSpline,
-		    Grid_ptr[0][1].BndEastSpline,
-		    Grid_ptr[0][1].BndWestSpline,
-		    Number_of_Cells_Idir,
-		    Number_of_Cells_Jdir,
-		    Number_of_Ghost_Cells,
-		    GRID2D_QUAD_BLOCK_INIT_PROCEDURE_EAST_WEST,
-		    STRETCHING_FCN_MAX_CLUSTERING,
-		    beta_i,
-		    0,
-		    STRETCHING_FCN_MIN_CLUSTERING,
-		    beta_j,
-		    0,
-		    ORTHOGONAL,
-		    ORTHOGONAL,
-		    ORTHOGONAL,
-		    NOT_ORTHOGONAL);
+  Grid_ptr[0][1].Create_Quad_Block(Grid_ptr[0][1].BndNorthSpline,
+				   Grid_ptr[0][1].BndSouthSpline,
+				   Grid_ptr[0][1].BndEastSpline,
+				   Grid_ptr[0][1].BndWestSpline,
+				   Number_of_Cells_Idir,
+				   Number_of_Cells_Jdir,
+				   Number_of_Ghost_Cells,
+				   GRID2D_QUAD_BLOCK_INIT_PROCEDURE_EAST_WEST,
+				   STRETCHING_FCN_MAX_CLUSTERING,
+				   beta_i,
+				   0,
+				   STRETCHING_FCN_MIN_CLUSTERING,
+				   beta_j,
+				   0,
+				   ORTHOGONAL,
+				   ORTHOGONAL,
+				   ORTHOGONAL,
+				   NOT_ORTHOGONAL);
   // Smooth quad block (0,1).
-  Smooth_Quad_Block(Grid_ptr[0][1],
-		    min(250,2*max(Number_of_Cells_Idir,
-				  Number_of_Cells_Jdir)));
-
+  Grid_ptr[0][1].Smooth_Quad_Block(
+				   min(250,2*max(Number_of_Cells_Idir,
+						 Number_of_Cells_Jdir)));
+  
   /////////////////
   // BLOCK (2,1) //
   /////////////////
@@ -6641,30 +6519,29 @@ Grid2D_Quad_Block** Grid_NASA_Rotor_37(Grid2D_Quad_Block **Grid_ptr,
   // West spline.
   Copy_Spline(Grid_ptr[2][1].BndWestSpline,Grid_ptr[1][1].BndEastSpline);
   // Create quad block (2,1).
-  Create_Quad_Block(Grid_ptr[2][1],
-		    Grid_ptr[2][1].BndNorthSpline,
-		    Grid_ptr[2][1].BndSouthSpline,
-		    Grid_ptr[2][1].BndEastSpline,
-		    Grid_ptr[2][1].BndWestSpline,
-		    Number_of_Cells_Idir,
-		    Number_of_Cells_Jdir,
-		    Number_of_Ghost_Cells,
-		    GRID2D_QUAD_BLOCK_INIT_PROCEDURE_EAST_WEST,
-		    STRETCHING_FCN_MIN_CLUSTERING,
-		    beta_i,
-		    0,
-		    STRETCHING_FCN_MIN_CLUSTERING,
-		    beta_j,
-		    0,
-		    ORTHOGONAL,
-		    ORTHOGONAL,
-		    NOT_ORTHOGONAL,
-		    ORTHOGONAL);
+  Grid_ptr[2][1].Create_Quad_Block(Grid_ptr[2][1].BndNorthSpline,
+				   Grid_ptr[2][1].BndSouthSpline,
+				   Grid_ptr[2][1].BndEastSpline,
+				   Grid_ptr[2][1].BndWestSpline,
+				   Number_of_Cells_Idir,
+				   Number_of_Cells_Jdir,
+				   Number_of_Ghost_Cells,
+				   GRID2D_QUAD_BLOCK_INIT_PROCEDURE_EAST_WEST,
+				   STRETCHING_FCN_MIN_CLUSTERING,
+				   beta_i,
+				   0,
+				   STRETCHING_FCN_MIN_CLUSTERING,
+				   beta_j,
+				   0,
+				   ORTHOGONAL,
+				   ORTHOGONAL,
+				   NOT_ORTHOGONAL,
+				   ORTHOGONAL);
   // Smooth quad block (2,1).
-  Smooth_Quad_Block(Grid_ptr[2][1],
-		    min(250,2*max(Number_of_Cells_Idir,
-				  Number_of_Cells_Jdir)));
-
+  Grid_ptr[2][1].Smooth_Quad_Block(
+				   min(250,2*max(Number_of_Cells_Idir,
+						 Number_of_Cells_Jdir)));
+  
   // Deallocate splines.
   upperB.deallocate();
   lowerB.deallocate();
@@ -6675,40 +6552,33 @@ Grid2D_Quad_Block** Grid_NASA_Rotor_37(Grid2D_Quad_Block **Grid_ptr,
   camberBlade.deallocate();
   Rotor_Spline.deallocate();
 
-  // Return the grid.
-  return Grid_ptr;
-
 }
 
-/**********************************************************************
- * Routine: Grid_NASA_Rotor_67                                        *
- *                                                                    *
- * This routine creates a mesh to be used in conjunction with and     *
- * embedded interface representing a section of a NASA rotor 67 blade *
- * at a given percent span.                                           *
- *                                                                    *
- *  +---------------+-------------------+---------------+             *
- *  |               |                   |               |             *
- *  |               |                   |               |             *
- *  |  Block (0,1)  |    Block (1,1)    |  Block (2,1)  |             *
- *  |               |                   |               |             *
- *  |               |                   |               |             *
- *  +---------------<<<<<<<<BLADE>>>>>>>>---------------+             *
- *  |               |                   |               |             *
- *  |               |                   |               |             *
- *  |  Block (0,0)  |    Block (1,0)    |  Block (2,0)  |             *
- *  |               |                   |               |             *
- *  |               |                   |               |             *
- *  +---------------+-------------------+---------------+             *
- *                                                                    *
- **********************************************************************/
-Grid2D_Quad_Block** Grid_NASA_Rotor_67(Grid2D_Quad_Block **Grid_ptr,
-				       int &Number_of_Blocks_Idir,
-				       int &Number_of_Blocks_Jdir,
-				       const double &Rotor_Percent_Span,
-				       const int Number_of_Cells_Idir,
-				       const int Number_of_Cells_Jdir,
-				       const int Number_of_Ghost_Cells) {
+/*!
+ * This routine creates a mesh to be used in conjunction with and     
+ * embedded interface representing a section of a NASA rotor 67 blade 
+ * at a given percent span.                                           
+ *                                                                    
+ *  +---------------+-------------------+---------------+             
+ *  |               |                   |               |             
+ *  |               |                   |               |             
+ *  |  Block (0,1)  |    Block (1,1)    |  Block (2,1)  |             
+ *  |               |                   |               |             
+ *  |               |                   |               |             
+ *  +---------------<<<<<<<<BLADE>>>>>>>>---------------+             
+ *  |               |                   |               |             
+ *  |               |                   |               |             
+ *  |  Block (0,0)  |    Block (1,0)    |  Block (2,0)  |             
+ *  |               |                   |               |             
+ *  |               |                   |               |             
+ *  +---------------+-------------------+---------------+             
+ */
+void Grid2D_Quad_MultiBlock_HO::Grid_NASA_Rotor_67(int &_Number_of_Blocks_Idir_,
+						   int &_Number_of_Blocks_Jdir_,
+						   const double &Rotor_Percent_Span,
+						   const int Number_of_Cells_Idir,
+						   const int Number_of_Cells_Jdir,
+						   const int Number_of_Ghost_Cells) {
 
   int error_flag;
   Spline2D upperB, lowerB, upperMiddleB, lowerMiddleB, camberTrail, camberLead, camberBlade, Rotor_Spline;
@@ -6736,11 +6606,9 @@ Grid2D_Quad_Block** Grid_NASA_Rotor_67(Grid2D_Quad_Block **Grid_ptr,
   NASA_Rotor_67.init(Rotor_Flow_Type,NASA_Rotor_Data_Directory);
 
   // Allocate memory for grid block.
-  Number_of_Blocks_Idir = 3;
-  Number_of_Blocks_Jdir = 2;
-  Grid_ptr = Allocate_Multi_Block_Grid(Grid_ptr, 
-				       Number_of_Blocks_Idir, 
-				       Number_of_Blocks_Jdir);
+  _Number_of_Blocks_Idir_ = 3;
+  _Number_of_Blocks_Jdir_ = 2;
+  allocate(_Number_of_Blocks_Idir_,_Number_of_Blocks_Jdir_);
 
   // Find the index for the leading and trailing edge.
   NASA_Rotor_67.findLT(Rotor_Percent_Span,iTrail,iLead);
@@ -7127,29 +6995,28 @@ Grid2D_Quad_Block** Grid_NASA_Rotor_67(Grid2D_Quad_Block **Grid_ptr,
       Bnd_Spline_West.tp[1] = SPLINE2D_POINT_SHARP_CORNER;
       Bnd_Spline_West.pathlength();
       // Create the 2D quadrilateral grid block representing the mesh.
-      Create_Quad_Block(Grid_ptr[iBlk][jBlk],
-			Bnd_Spline_North,
-			Bnd_Spline_South,
-			Bnd_Spline_East,
-			Bnd_Spline_West,
-			Number_of_Cells_Idir,
-			Number_of_Cells_Jdir,
-			Number_of_Ghost_Cells,
-			GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-			Stretch_I,
-			Beta_I, 
-			Tau_I,
-			Stretch_J,
-			Beta_J,
-			Tau_J,
-			Orthogonal_North,
-			Orthogonal_South,
-			Orthogonal_East,
-			Orthogonal_West);
+      Grid_ptr[iBlk][jBlk].Create_Quad_Block(Bnd_Spline_North,
+					     Bnd_Spline_South,
+					     Bnd_Spline_East,
+					     Bnd_Spline_West,
+					     Number_of_Cells_Idir,
+					     Number_of_Cells_Jdir,
+					     Number_of_Ghost_Cells,
+					     GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+					     Stretch_I,
+					     Beta_I, 
+					     Tau_I,
+					     Stretch_J,
+					     Beta_J,
+					     Tau_J,
+					     Orthogonal_North,
+					     Orthogonal_South,
+					     Orthogonal_East,
+					     Orthogonal_West);
       // Smooth the 2D quadrilateral grid block.
-      Smooth_Quad_Block(Grid_ptr[iBlk][jBlk],
-			min(250,2*max(Number_of_Cells_Idir,
-				      Number_of_Cells_Jdir)));
+      Grid_ptr[iBlk][jBlk].Smooth_Quad_Block(
+					     min(250,2*max(Number_of_Cells_Idir,
+							   Number_of_Cells_Jdir)));
       // Deallocate the memory for the boundary splines.
       Bnd_Spline_North.deallocate();
       Bnd_Spline_South.deallocate();
@@ -7172,38 +7039,32 @@ Grid2D_Quad_Block** Grid_NASA_Rotor_67(Grid2D_Quad_Block **Grid_ptr,
   BndEastSpline.deallocate();
   BndWestSpline.deallocate();
 
-  // Return the grid.
-  return Grid_ptr;
-
 }
 
-/**********************************************************************
- * Routine: Grid_Driven_Cavity_Flow                                   *
- *                                                                    *
- * Generates a mesh for the driven cavity flow.                       *
- *                                                                    *
- * Usage: Grid_ptr = Grid_Driven_Cavity(Grid_ptr,                     *
- *                                      nblk_i,                       *
- *                                      nblk_j,                       *
- *                                      TEN,                          *
- *                                      FIVE,                         *
- *   	                                100,                          *
- *  	                                50,                           *
- *                                      2);                           *
- *                                                                    *
- **********************************************************************/
-Grid2D_Quad_Block** Grid_Driven_Cavity_Flow(Grid2D_Quad_Block **Grid_ptr,
-					    int &Number_of_Blocks_Idir,
-					    int &Number_of_Blocks_Jdir,
-					    const double &Width,
-					    const double &Height,
-					    const int &Stretching_Type_Idir,
-					    const int &Stretching_Type_Jdir,
-					    const double &Stretching_Factor_Idir,
-					    const double &Stretching_Factor_Jdir,
-					    const int Number_of_Cells_Idir,
-					    const int Number_of_Cells_Jdir,
-					    const int Number_of_Ghost_Cells) {
+
+/*!
+ * Generates a mesh for the driven cavity flow.                       
+ *                                                                    
+ * Usage: Grid_ptr = Grid_Driven_Cavity(Grid_ptr,                     
+ *                                      nblk_i,                       
+ *                                      nblk_j,                       
+ *                                      TEN,                          
+ *                                      FIVE,                         
+ *   	                                100,                          
+ *  	                                50,                           
+ *                                      2);                           
+ */
+void Grid2D_Quad_MultiBlock_HO::Grid_Driven_Cavity_Flow(int &_Number_of_Blocks_Idir_,
+							int &_Number_of_Blocks_Jdir_,
+							const double &Width,
+							const double &Height,
+							const int &Stretching_Type_Idir,
+							const int &Stretching_Type_Jdir,
+							const double &Stretching_Factor_Idir,
+							const double &Stretching_Factor_Jdir,
+							const int Number_of_Cells_Idir,
+							const int Number_of_Cells_Jdir,
+							const int Number_of_Ghost_Cells) {
 
   int n_cells_i, n_cells_j,
       Stretch_I, Stretch_J,
@@ -7216,11 +7077,9 @@ Grid2D_Quad_Block** Grid_Driven_Cavity_Flow(Grid2D_Quad_Block **Grid_ptr,
 
   // Allocate memory for grid block.
 
-  Number_of_Blocks_Idir = 1;
-  Number_of_Blocks_Jdir = 1;
-  Grid_ptr = Allocate_Multi_Block_Grid(Grid_ptr, 
-				       Number_of_Blocks_Idir, 
-				       Number_of_Blocks_Jdir);
+  _Number_of_Blocks_Idir_ = 1;
+  _Number_of_Blocks_Jdir_ = 1;
+  allocate(_Number_of_Blocks_Idir_, _Number_of_Blocks_Jdir_);
 
   // Create the mesh for each block representing the complete grid.
 
@@ -7281,26 +7140,25 @@ Grid2D_Quad_Block** Grid_Driven_Cavity_Flow(Grid2D_Quad_Block **Grid_ptr,
       Orthogonal_West = 0;
 
       // Create the 2D quadrilateral grid block representing the mesh.
-      Create_Quad_Block(Grid_ptr[iBlk][jBlk],
-			Bnd_Spline_North,
-			Bnd_Spline_South,
-			Bnd_Spline_East,
-			Bnd_Spline_West,
-			Number_of_Cells_Idir/Number_of_Blocks_Idir,
-			Number_of_Cells_Jdir/Number_of_Blocks_Jdir,
-			Number_of_Ghost_Cells,
-			GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-			Stretch_I,
-			Beta_I, 
-			Tau_I,
-			Stretch_J,
-			Beta_J,
-			Tau_J,
-			Orthogonal_North,
-			Orthogonal_South,
-			Orthogonal_East,
-			Orthogonal_West);
-
+      Grid_ptr[iBlk][jBlk].Create_Quad_Block(Bnd_Spline_North,
+					     Bnd_Spline_South,
+					     Bnd_Spline_East,
+					     Bnd_Spline_West,
+					     Number_of_Cells_Idir/Number_of_Blocks_Idir,
+					     Number_of_Cells_Jdir/Number_of_Blocks_Jdir,
+					     Number_of_Ghost_Cells,
+					     GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+					     Stretch_I,
+					     Beta_I, 
+					     Tau_I,
+					     Stretch_J,
+					     Beta_J,
+					     Tau_J,
+					     Orthogonal_North,
+					     Orthogonal_South,
+					     Orthogonal_East,
+					     Orthogonal_West);
+      
       // Deallocate the memory for the boundary splines.
       Bnd_Spline_North.deallocate();
       Bnd_Spline_South.deallocate();
@@ -7310,57 +7168,48 @@ Grid2D_Quad_Block** Grid_Driven_Cavity_Flow(Grid2D_Quad_Block **Grid_ptr,
     }
   }
 
-  // Return the grid.
-  return Grid_ptr;
-
 }
 
 
-/********************************************************
- * Routine: Grid_Adiabatic_Flat_Plate                   *
- *                                                      *
- * Generates a quadilateral mesh with clustering        *
- * consisting of two grid blocks for predicting viscous *
- * flow and boundary layer development over a flat      *
- * plate with adiabatic BCs.                            *
- *                                                      *
- * Usage: Grid_ptr = Grid_Adiabatic_Flat_Plate(Grid_ptr,*
- *                                             nblk_i,  *
- *                                             nblk_j,  *
- *                                             TWO,     *
- *         		                       100,     *
- *         		                       100,     *
- *                                             2);      *
- *                                                      *
- ********************************************************/
-Grid2D_Quad_Block** Grid_Adiabatic_Flat_Plate(Grid2D_Quad_Block **Grid_ptr,
-                                              int &Number_of_Blocks_Idir,
-                                              int &Number_of_Blocks_Jdir,
-                                              const double &Length,
- 		                              const int Number_of_Cells_Idir,
-		                              const int Number_of_Cells_Jdir,
-					      const int Number_of_Ghost_Cells) {
-
-    int iBlk, n_cells_i, n_cells_j, 
+/*!
+ * Generates a quadilateral mesh with clustering        
+ * consisting of two grid blocks for predicting viscous 
+ * flow and boundary layer development over a flat      
+ * plate with adiabatic BCs.                            
+ *                                                      
+ * Usage: Grid_ptr = Grid_Adiabatic_Flat_Plate(Grid_ptr,
+ *                                             nblk_i,  
+ *                                             nblk_j,  
+ *                                             TWO,     
+ *         		                       100,     
+ *         		                       100,     
+ *                                             2);      
+ */
+void Grid2D_Quad_MultiBlock_HO::Grid_Adiabatic_Flat_Plate(int &_Number_of_Blocks_Idir_,
+							  int &_Number_of_Blocks_Jdir_,
+							  const double &Length,
+							  const int Number_of_Cells_Idir,
+							  const int Number_of_Cells_Jdir,
+							  const int Number_of_Ghost_Cells) {
+  
+  int iBlk, n_cells_i, n_cells_j, 
         Stretch_I, Stretch_J,
-        Orthogonal_North, Orthogonal_South,
-        Orthogonal_East, Orthogonal_West;
-    double Beta_I, Tau_I, Beta_J, Tau_J;
-    Vector2D xc_NW, xc_NE, xc_SE, xc_SW;
-    Spline2D Bnd_Spline_North, Bnd_Spline_South,
-             Bnd_Spline_East, Bnd_Spline_West;
-
-    double distance = TEN;//HUNDRED;
-    double height = TEN;//HUNDRED;
+    Orthogonal_North, Orthogonal_South,
+    Orthogonal_East, Orthogonal_West;
+  double Beta_I, Tau_I, Beta_J, Tau_J;
+  Vector2D xc_NW, xc_NE, xc_SE, xc_SW;
+  Spline2D Bnd_Spline_North, Bnd_Spline_South,
+    Bnd_Spline_East, Bnd_Spline_West;
+  
+  double distance = TEN;//HUNDRED;
+  double height = TEN;//HUNDRED;
 
     /* Allocate memory for grid blocks.  There are two grid
        blocks for this mesh. */
 
-    Number_of_Blocks_Idir = 3;
-    Number_of_Blocks_Jdir = 1;
-    Grid_ptr = Allocate_Multi_Block_Grid(Grid_ptr, 
-                                         Number_of_Blocks_Idir, 
-                                         Number_of_Blocks_Jdir);
+    _Number_of_Blocks_Idir_ = 3;
+    _Number_of_Blocks_Jdir_ = 1;
+    allocate(_Number_of_Blocks_Idir_, _Number_of_Blocks_Jdir_);
 
     /* Create the mesh for each block representing
        the complete grid. */
@@ -7461,26 +7310,25 @@ Grid2D_Quad_Block** Grid_Adiabatic_Flat_Plate(Grid2D_Quad_Block **Grid_ptr,
 
         /* Create the 2D quadrilateral grid block. */
 
-        Create_Quad_Block(Grid_ptr[iBlk][0],
-                          Bnd_Spline_North,
-                          Bnd_Spline_South,
-                          Bnd_Spline_East,
-                          Bnd_Spline_West,
-                          n_cells_i,
-  	                  n_cells_j,
-			  Number_of_Ghost_Cells,
-                          GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-                          Stretch_I,
-                          Beta_I, 
-                          Tau_I,
-                          Stretch_J,
-                          Beta_J,
-                          Tau_J,
-                          Orthogonal_North,
-		          Orthogonal_South,
-     		          Orthogonal_East,
-                          Orthogonal_West);
-
+        Grid_ptr[iBlk][0].Create_Quad_Block(Bnd_Spline_North,
+					    Bnd_Spline_South,
+					    Bnd_Spline_East,
+					    Bnd_Spline_West,
+					    n_cells_i,
+					    n_cells_j,
+					    Number_of_Ghost_Cells,
+					    GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+					    Stretch_I,
+					    Beta_I, 
+					    Tau_I,
+					    Stretch_J,
+					    Beta_J,
+					    Tau_J,
+					    Orthogonal_North,
+					    Orthogonal_South,
+					    Orthogonal_East,
+					    Orthogonal_West);
+	
         /* Deallocate the memory for the boundary splines. */
 
         Bnd_Spline_North.deallocate();
@@ -7490,54 +7338,45 @@ Grid2D_Quad_Block** Grid_Adiabatic_Flat_Plate(Grid2D_Quad_Block **Grid_ptr,
 
     } /* endfor */    
 
-    /* Return the grid. */
-
-    return(Grid_ptr);
-
 }
 
-/******************************************************************
- * Routine: Grid_Adiabatic_Circular_Cylinder                      *
- *                                                                *
- * Generates a double-block O-type grid for predicting            *
- * flow past a circular cylinder with adiabatic BCs.              *
- *                                                                *
- * Usage: Grid_ptr = Grid_Adiabatic_Circular_Cylinder(Grid_ptr,   *
- *                                                    nblk_i,     *
- *                                                    nblk_j,     *
- *                                                    THREE,      *
- *   		                                      100,        *
- *  		                                      50);        *
- *                                                                *
- *****************************************************************/
-Grid2D_Quad_Block** Grid_Adiabatic_Circular_Cylinder(Grid2D_Quad_Block **Grid_ptr,
-                                                     int &Number_of_Blocks_Idir,
-                                                     int &Number_of_Blocks_Jdir,
-                                                     const double &Radius,
- 		                                     const int Number_of_Cells_Idir,
-		                                     const int Number_of_Cells_Jdir,
-						     const int Number_of_Ghost_Cells) {
+/*!
+ * Generates a double-block O-type grid for predicting            
+ * flow past a circular cylinder with adiabatic BCs.              
+ *                                                                
+ * Usage: Grid_ptr = Grid_Adiabatic_Circular_Cylinder(Grid_ptr,   
+ *                                                    nblk_i,     
+ *                                                    nblk_j,     
+ *                                                    THREE,      
+ *   		                                      100,        
+ *  		                                      50);        
+ */
+void Grid2D_Quad_MultiBlock_HO::Grid_Adiabatic_Circular_Cylinder(int &_Number_of_Blocks_Idir_,
+				      int &_Number_of_Blocks_Jdir_,
+				      const double &Radius,
+				      const int Number_of_Cells_Idir,
+				      const int Number_of_Cells_Jdir,
+				      const int Number_of_Ghost_Cells) {
 
-  return Grid_Adiabatic_Circular_Cylinder(Grid_ptr,
-                                          Number_of_Blocks_Idir,
-                                          Number_of_Blocks_Jdir,
-                                          Radius,
-					  96.0*Radius,
-					  Number_of_Cells_Idir,
-		                          Number_of_Cells_Jdir,
-					  Number_of_Ghost_Cells);
+  Grid_Adiabatic_Circular_Cylinder(_Number_of_Blocks_Idir_,
+				   _Number_of_Blocks_Jdir_,
+				   Radius,
+				   96.0*Radius,
+				   Number_of_Cells_Idir,
+				   Number_of_Cells_Jdir,
+				   Number_of_Ghost_Cells);
 }
 
-Grid2D_Quad_Block** Grid_Adiabatic_Circular_Cylinder(Grid2D_Quad_Block **Grid_ptr,
-                                                     int &Number_of_Blocks_Idir,
-                                                     int &Number_of_Blocks_Jdir,
-                                                     const double &Inner_Radius,
-                                                     const double &Outer_Radius,
- 		                                     const int Number_of_Cells_Idir,
-		                                     const int Number_of_Cells_Jdir,
-						     const int Number_of_Ghost_Cells) {
 
-
+void Grid2D_Quad_MultiBlock_HO::Grid_Adiabatic_Circular_Cylinder(int &_Number_of_Blocks_Idir_,
+								 int &_Number_of_Blocks_Jdir_,
+								 const double &Inner_Radius,
+								 const double &Outer_Radius,
+								 const int Number_of_Cells_Idir,
+								 const int Number_of_Cells_Jdir,
+								 const int Number_of_Ghost_Cells) {
+  
+  
     int iBlk, n_cells_i, n_cells_j, Stretch_I, Stretch_J,
         Orthogonal_North, Orthogonal_South,
         Orthogonal_East, Orthogonal_West;
@@ -7549,11 +7388,9 @@ Grid2D_Quad_Block** Grid_Adiabatic_Circular_Cylinder(Grid2D_Quad_Block **Grid_pt
     /* Allocate memory for grid blocks.  There are two grid
        blocks for this mesh. */
 
-    Number_of_Blocks_Idir = 2;
-    Number_of_Blocks_Jdir = 1;
-    Grid_ptr = Allocate_Multi_Block_Grid(Grid_ptr, 
-                                         Number_of_Blocks_Idir, 
-                                         Number_of_Blocks_Jdir);
+    _Number_of_Blocks_Idir_ = 2;
+    _Number_of_Blocks_Jdir_ = 1;
+    allocate(_Number_of_Blocks_Idir_,_Number_of_Blocks_Jdir_);
 
     /* Create the mesh for each block representing
        the complete grid. */
@@ -7654,26 +7491,25 @@ Grid2D_Quad_Block** Grid_Adiabatic_Circular_Cylinder(Grid2D_Quad_Block **Grid_pt
 
         /* Create the 2D quadrilateral grid block. */
 
-        Create_Quad_Block(Grid_ptr[iBlk][0],
-                          Bnd_Spline_North,
-                          Bnd_Spline_South,
-                          Bnd_Spline_East,
-                          Bnd_Spline_West,
-                          n_cells_i,
-  	                  n_cells_j,
-			  Number_of_Ghost_Cells,
-                          GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-                          Stretch_I,
-                          Beta_I, 
-                          Tau_I,
-                          Stretch_J,
-                          Beta_J,
-                          Tau_J,
-                          Orthogonal_North,
-		          Orthogonal_South,
-     		          Orthogonal_East,
-                          Orthogonal_West);
-
+        Grid_ptr[iBlk][0].Create_Quad_Block(Bnd_Spline_North,
+					    Bnd_Spline_South,
+					    Bnd_Spline_East,
+					    Bnd_Spline_West,
+					    n_cells_i,
+					    n_cells_j,
+					    Number_of_Ghost_Cells,
+					    GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+					    Stretch_I,
+					    Beta_I, 
+					    Tau_I,
+					    Stretch_J,
+					    Beta_J,
+					    Tau_J,
+					    Orthogonal_North,
+					    Orthogonal_South,
+					    Orthogonal_East,
+					    Orthogonal_West);
+	
         /* Deallocate the memory for the boundary splines. */
 
         Bnd_Spline_North.deallocate();
@@ -7683,35 +7519,28 @@ Grid2D_Quad_Block** Grid_Adiabatic_Circular_Cylinder(Grid2D_Quad_Block **Grid_pt
 
     } /* endfor */
 
-    /* Return the grid. */
-
-    return(Grid_ptr);
-
 }
 
-/********************************************************
- * Routine: Grid_Adiabatic_Couette                      *
- *                                                      *
- * Generates a quadilateral mesh with clustering        *
- * consisting of two grid blocks for predicting viscous *
- * flow between two adiabatic plates.                   *
- *                                                      *
- * Usage: Grid_ptr = Grid_Adiabatic_Couette(Grid_ptr,   *
- *                                          nblk_i,     *
- *                                          nblk_j,     *
- *                                          TWO,        *
- *         		                    100,        *
- *         		                    100);       *
- *                                                      *
- ********************************************************/
-Grid2D_Quad_Block** Grid_Adiabatic_Couette(Grid2D_Quad_Block **Grid_ptr,
-                                           int &Number_of_Blocks_Idir,
-                                           int &Number_of_Blocks_Jdir,
-                                           const double &Separation,
- 		                           const int Number_of_Cells_Idir,
-		                           const int Number_of_Cells_Jdir,
-					   const int Number_of_Ghost_Cells) {
+/*!
+ * Generates a quadilateral mesh with clustering        
+ * consisting of two grid blocks for predicting viscous 
+ * flow between two adiabatic plates.                   
+ *                                                      
+ * Usage: Grid_ptr = Grid_Adiabatic_Couette(Grid_ptr,   
+ *                                          nblk_i,     
+ *                                          nblk_j,     
+ *                                          TWO,        
+ *         		                    100,        
+ *         		                    100);       
+ */
 
+void Grid2D_Quad_MultiBlock_HO::Grid_Adiabatic_Couette(int &_Number_of_Blocks_Idir_,
+						       int &_Number_of_Blocks_Jdir_,
+						       const double &Separation,
+						       const int Number_of_Cells_Idir,
+						       const int Number_of_Cells_Jdir,
+						       const int Number_of_Ghost_Cells) {
+  
     int jBlk, n_cells_i, n_cells_j, 
         Stretch_I, Stretch_J,
         Orthogonal_North, Orthogonal_South,
@@ -7724,20 +7553,18 @@ Grid2D_Quad_Block** Grid_Adiabatic_Couette(Grid2D_Quad_Block **Grid_ptr,
     /* Allocate memory for grid blocks.  There are two grid
        blocks for this mesh. */
 
-    Number_of_Blocks_Idir = 1;
-    Number_of_Blocks_Jdir = 2;
-    Grid_ptr = Allocate_Multi_Block_Grid(Grid_ptr, 
-                                         Number_of_Blocks_Idir, 
-                                         Number_of_Blocks_Jdir);
+    _Number_of_Blocks_Idir_ = 1;
+    _Number_of_Blocks_Jdir_ = 2;
+    allocate(_Number_of_Blocks_Idir_, _Number_of_Blocks_Jdir_);
 
     /* Create the mesh for each block representing
        the complete grid. */
 
     for ( jBlk = 0; jBlk <= Number_of_Blocks_Jdir-1; ++jBlk ) {
-
-        /* Assign values to the locations of the corners
-           of the rectangular box shaped domain representing
-           each of the blocks in the grid. */
+      
+      /* Assign values to the locations of the corners
+	 of the rectangular box shaped domain representing
+	 each of the blocks in the grid. */
 
         if (jBlk == 0) {
            xc_NW = Vector2D(-Separation/8.0, ZERO);
@@ -7808,26 +7635,25 @@ Grid2D_Quad_Block** Grid_Adiabatic_Couette(Grid2D_Quad_Block **Grid_ptr,
 
         /* Create the 2D quadrilateral grid block. */
 
-        Create_Quad_Block(Grid_ptr[0][jBlk],
-                          Bnd_Spline_North,
-                          Bnd_Spline_South,
-                          Bnd_Spline_East,
-                          Bnd_Spline_West,
-                          n_cells_i,
-  	                  n_cells_j,
-			  Number_of_Ghost_Cells,
-                          GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-                          Stretch_I,
-                          Beta_I, 
-                          Tau_I,
-                          Stretch_J,
-                          Beta_J,
-                          Tau_J,
-                          Orthogonal_North,
-		          Orthogonal_South,
-     		          Orthogonal_East,
-                          Orthogonal_West);
-
+        Grid_ptr[0][jBlk].Create_Quad_Block(Bnd_Spline_North,
+					    Bnd_Spline_South,
+					    Bnd_Spline_East,
+					    Bnd_Spline_West,
+					    n_cells_i,
+					    n_cells_j,
+					    Number_of_Ghost_Cells,
+					    GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+					    Stretch_I,
+					    Beta_I, 
+					    Tau_I,
+					    Stretch_J,
+					    Beta_J,
+					    Tau_J,
+					    Orthogonal_North,
+					    Orthogonal_South,
+					    Orthogonal_East,
+					    Orthogonal_West);
+	
         /* Deallocate the memory for the boundary splines. */
 
         Bnd_Spline_North.deallocate();
@@ -7837,56 +7663,47 @@ Grid2D_Quad_Block** Grid_Adiabatic_Couette(Grid2D_Quad_Block **Grid_ptr,
 
     } /* endfor */    
 
-    /* Return the grid. */
-
-    return(Grid_ptr);
-
 }
 
 
 
-/********************************************************
- * Routine: Grid_Pipe                                   *
- *                                                      *
- * Generates a single block quadilateral mesh with      *
- * clustering for predicting radiation heat transfer in *
- * a cylindrical duct or pipe.                          *
- *                                                      *
- * Usage: Grid_ptr = Grid_Pipe(Grid_ptr,                *
- *                             nblk_i,                  *
- *                             nblk_j,                  *
- *                             TEN,                     *
- *                             HALF,                    *
- *   	                       100,                     *
- *  	                       50,                      *
- *                             2);                      *
- *                                                      *
- ********************************************************/
-Grid2D_Quad_Block** Grid_Cylindrical_Encl(Grid2D_Quad_Block **Grid_ptr,
-					  int &Number_of_Blocks_Idir,
-					  int &Number_of_Blocks_Jdir,
-					  const double &Length,
-					  const double &Radius,
-					  const int &Axisymmetric,
-					  const int Number_of_Cells_Idir,
-					  const int Number_of_Cells_Jdir,
-					  const int Number_of_Ghost_Cells) {
+/*!
+ * Generates a single block quadilateral mesh with      
+ * clustering for predicting radiation heat transfer in 
+ * a cylindrical duct or pipe.                          
+ *                                                      
+ * Usage: Grid_ptr = Grid_Pipe(Grid_ptr,                
+ *                             nblk_i,                  
+ *                             nblk_j,                  
+ *                             TEN,                     
+ *                             HALF,                    
+ *   	                       100,                     
+ *  	                       50,                      
+ *                             2);FIXME
+ *                                                      
+ */
+void Grid2D_Quad_MultiBlock_HO::Grid_Cylindrical_Encl(int &_Number_of_Blocks_Idir_,
+						      int &_Number_of_Blocks_Jdir_,
+						      const double &Length,
+						      const double &Radius,
+						      const int &Axisymmetric,
+						      const int Number_of_Cells_Idir,
+						      const int Number_of_Cells_Jdir,
+						      const int Number_of_Ghost_Cells) {
 
     int Stretch_I, Stretch_J,
-        Orthogonal_North, Orthogonal_South,
-        Orthogonal_East, Orthogonal_West;
+      Orthogonal_North, Orthogonal_South,
+      Orthogonal_East, Orthogonal_West;
     double Beta_I, Tau_I, Beta_J, Tau_J;
     Vector2D xc_NW, xc_NE, xc_SE, xc_SW;
     Spline2D Bnd_Spline_North, Bnd_Spline_South,
-             Bnd_Spline_East, Bnd_Spline_West;
+      Bnd_Spline_East, Bnd_Spline_West;
 
     /* Allocate memory for grid block. */
 
-    if (Number_of_Blocks_Idir < 0) Number_of_Blocks_Idir = 1;
-    if (Number_of_Blocks_Jdir < 0) Number_of_Blocks_Jdir = 1;
-    Grid_ptr = Allocate_Multi_Block_Grid(Grid_ptr, 
-                                         Number_of_Blocks_Idir, 
-                                         Number_of_Blocks_Jdir);
+    if (_Number_of_Blocks_Idir_ < 0) _Number_of_Blocks_Idir_ = 1;
+    if (_Number_of_Blocks_Jdir_ < 0) _Number_of_Blocks_Jdir_ = 1;
+    allocate(_Number_of_Blocks_Idir_, _Number_of_Blocks_Jdir_);
 
     /* Assign values to the locations of the corners
        of the rectangular box defining the pipe geometry. */
@@ -7953,26 +7770,25 @@ Grid2D_Quad_Block** Grid_Cylindrical_Encl(Grid2D_Quad_Block **Grid_ptr,
     /* Create the 2D quadrilateral grid block representing
        the mesh. */
 
-    Create_Quad_Block(Grid_ptr[0][0],
-                      Bnd_Spline_North,
-                      Bnd_Spline_South,
-                      Bnd_Spline_East,
-                      Bnd_Spline_West,
-                      Number_of_Cells_Idir,
-  	              Number_of_Cells_Jdir,
-		      Number_of_Ghost_Cells,
-                      GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-                      Stretch_I,
-                      Beta_I, 
-                      Tau_I,
-                      Stretch_J,
-                      Beta_J,
-                      Tau_J,
-                      Orthogonal_North,
-		      Orthogonal_South,
-     		      Orthogonal_East,
-                      Orthogonal_West);
-
+    Grid_ptr[0][0].Create_Quad_Block(Bnd_Spline_North,
+				     Bnd_Spline_South,
+				     Bnd_Spline_East,
+				     Bnd_Spline_West,
+				     Number_of_Cells_Idir,
+				     Number_of_Cells_Jdir,
+				     Number_of_Ghost_Cells,
+				     GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+				     Stretch_I,
+				     Beta_I, 
+				     Tau_I,
+				     Stretch_J,
+				     Beta_J,
+				     Tau_J,
+				     Orthogonal_North,
+				     Orthogonal_South,
+				     Orthogonal_East,
+				     Orthogonal_West);
+    
     /* Deallocate the memory for the boundary splines. */
 
     Bnd_Spline_North.deallocate();
@@ -7980,36 +7796,28 @@ Grid2D_Quad_Block** Grid_Cylindrical_Encl(Grid2D_Quad_Block **Grid_ptr,
     Bnd_Spline_East.deallocate();
     Bnd_Spline_West.deallocate();
 
-    /* Return the grid. */
-
-    return(Grid_ptr);
-
 }
 
-/********************************************************
- * Routine: Grid_Rectangular_Encl                       *
- *                                                      *
- * Generates a uniform 2D Cartesian mesh for a          *
- * rectangular box shaped domain.                       *
- *                                                      *
- * Usage: Grid_ptr = Grid_Rectangular_Box(Grid_ptr,     *
- *                                        nblk_i,       *
- *                                        nblk_j,       *
- *                                        TEN,          *
- *                                        FIVE,         *
- *   	                                  100,          *
- *  	                                  50,           *
- *                                        2);           *
- *                                                      *
- ********************************************************/
-Grid2D_Quad_Block** Grid_Rectangular_Encl(Grid2D_Quad_Block **Grid_ptr,
-					  int &Number_of_Blocks_Idir,
-					  int &Number_of_Blocks_Jdir,
-					  const double &Width,
-					  const double &Height,
-					  const int Number_of_Cells_Idir,
-					  const int Number_of_Cells_Jdir,
-					  const int Number_of_Ghost_Cells) {
+/*!
+ * Generates a uniform 2D Cartesian mesh for a          
+ * rectangular box shaped domain.                       
+ *                                                      
+ * Usage: Grid_ptr = Grid_Rectangular_Box(Grid_ptr,     
+ *                                        nblk_i,       
+ *                                        nblk_j,       
+ *                                        TEN,          
+ *                                        FIVE,         
+ *   	                                  100,          
+ *  	                                  50,           
+ *                                        2);           
+ */
+void Grid2D_Quad_MultiBlock_HO::Grid_Rectangular_Encl(int &_Number_of_Blocks_Idir_,
+						      int &_Number_of_Blocks_Jdir_,
+						      const double &Width,
+						      const double &Height,
+						      const int Number_of_Cells_Idir,
+						      const int Number_of_Cells_Jdir,
+						      const int Number_of_Ghost_Cells) {
 
     int iBlk, jBlk, n_cells_i, n_cells_j, 
         Stretch_I, Stretch_J,
@@ -8022,11 +7830,9 @@ Grid2D_Quad_Block** Grid_Rectangular_Encl(Grid2D_Quad_Block **Grid_ptr,
 
     /* Allocate memory for grid block. */
 
-    if (Number_of_Blocks_Idir < 0) Number_of_Blocks_Idir = 1;
-    if (Number_of_Blocks_Jdir < 0) Number_of_Blocks_Jdir = 1;
-    Grid_ptr = Allocate_Multi_Block_Grid(Grid_ptr, 
-                                         Number_of_Blocks_Idir, 
-                                         Number_of_Blocks_Jdir);
+    if (_Number_of_Blocks_Idir_ < 0) _Number_of_Blocks_Idir_ = 1;
+    if (_Number_of_Blocks_Jdir_ < 0) _Number_of_Blocks_Jdir_ = 1;
+    allocate(_Number_of_Blocks_Idir_,_Number_of_Blocks_Jdir_);
 
     /* Create the mesh for each block representing
        the complete grid. */
@@ -8095,25 +7901,24 @@ Grid2D_Quad_Block** Grid_Rectangular_Encl(Grid2D_Quad_Block **Grid_ptr,
           /* Create the 2D quadrilateral grid block representing
              the mesh. */
 
-          Create_Quad_Block(Grid_ptr[iBlk][jBlk],
-                            Bnd_Spline_North,
-                            Bnd_Spline_South,
-                            Bnd_Spline_East,
-                            Bnd_Spline_West,
-                            Number_of_Cells_Idir/Number_of_Blocks_Idir,
-  	                    Number_of_Cells_Jdir/Number_of_Blocks_Jdir,
-			    Number_of_Ghost_Cells,
-                            GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-                            Stretch_I,
-                            Beta_I, 
-                            Tau_I,
-                            Stretch_J,
-                            Beta_J,
-                            Tau_J,
-                            Orthogonal_North,
-	      	            Orthogonal_South,
-     		            Orthogonal_East,
-                            Orthogonal_West);
+          Grid_ptr[iBlk][jBlk].Create_Quad_Block(Bnd_Spline_North,
+						 Bnd_Spline_South,
+						 Bnd_Spline_East,
+						 Bnd_Spline_West,
+						 Number_of_Cells_Idir/Number_of_Blocks_Idir,
+						 Number_of_Cells_Jdir/Number_of_Blocks_Jdir,
+						 Number_of_Ghost_Cells,
+						 GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+						 Stretch_I,
+						 Beta_I, 
+						 Tau_I,
+						 Stretch_J,
+						 Beta_J,
+						 Tau_J,
+						 Orthogonal_North,
+						 Orthogonal_South,
+						 Orthogonal_East,
+						 Orthogonal_West);
 
           /* Deallocate the memory for the boundary splines. */
 
@@ -8125,23 +7930,19 @@ Grid2D_Quad_Block** Grid_Rectangular_Encl(Grid2D_Quad_Block **Grid_ptr,
        } /* endfor */
     } /* endfor */
 
-    /* Return the grid. */
-    return(Grid_ptr);
-
 }
 
-/********************************************************
- * Routine: Grid_Tube_2D                                *
- ********************************************************/
-Grid2D_Quad_Block** Grid_Tube_2D(Grid2D_Quad_Block **Grid_ptr,
-                                 int &Number_of_Blocks_Idir,
-                                 int &Number_of_Blocks_Jdir,
-                                 const double &Radius,
- 		                 const int Number_of_Cells_Idir,
-		                 const int Number_of_Cells_Jdir,
-			         const int Number_of_Ghost_Cells,
-                                 const int i_Stretching_Radial_Dir,
-                                 const double &Stretching_Radial_Dir) {
+/*!
+ * Routine: Grid_Tube_2D                                
+ */
+void Grid2D_Quad_MultiBlock_HO::Grid_Tube_2D(int &_Number_of_Blocks_Idir_,
+					     int &_Number_of_Blocks_Jdir_,
+					     const double &Radius,
+					     const int Number_of_Cells_Idir,
+					     const int Number_of_Cells_Jdir,
+					     const int Number_of_Ghost_Cells,
+					     const int i_Stretching_Radial_Dir,
+					     const double &Stretching_Radial_Dir) {
 
     int iBlk, Stretch_I, Stretch_J,
         Orthogonal_North, Orthogonal_South,
@@ -8152,12 +7953,10 @@ Grid2D_Quad_Block** Grid_Tube_2D(Grid2D_Quad_Block **Grid_ptr,
     Spline2D Bnd_Spline_North, Bnd_Spline_South,
              Bnd_Spline_East, Bnd_Spline_West;
 
-    Number_of_Blocks_Idir = 5;
-    Number_of_Blocks_Jdir = 1;
-    Grid_ptr = Allocate_Multi_Block_Grid(Grid_ptr, 
-                                         Number_of_Blocks_Idir, 
-                                         Number_of_Blocks_Jdir);
-
+    _Number_of_Blocks_Idir_ = 5;
+    _Number_of_Blocks_Jdir_ = 1;
+    allocate(_Number_of_Blocks_Idir_,_Number_of_Blocks_Jdir_);
+    
     /* Create the mesh for each block representing
        the complete grid. */
 
@@ -8270,26 +8069,25 @@ Grid2D_Quad_Block** Grid_Tube_2D(Grid2D_Quad_Block **Grid_ptr,
 
         /* Create the 2D quadrilateral grid block. */
 
-        Create_Quad_Block(Grid_ptr[iBlk][0],
-                          Bnd_Spline_North,
-                          Bnd_Spline_South,
-                          Bnd_Spline_East,
-                          Bnd_Spline_West,
-                          Number_of_Cells_Idir,
-  	                  Number_of_Cells_Jdir,
-			  Number_of_Ghost_Cells,
-                          GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-                          Stretch_I,
-                          Beta_I, 
-                          Tau_I,
-                          Stretch_J,
-                          Beta_J,
-                          Tau_J,
-                          Orthogonal_North,
-		          Orthogonal_South,
-     		          Orthogonal_East,
-                          Orthogonal_West);
-
+        Grid_ptr[iBlk][0].Create_Quad_Block(Bnd_Spline_North,
+					    Bnd_Spline_South,
+					    Bnd_Spline_East,
+					    Bnd_Spline_West,
+					    Number_of_Cells_Idir,
+					    Number_of_Cells_Jdir,
+					    Number_of_Ghost_Cells,
+					    GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+					    Stretch_I,
+					    Beta_I, 
+					    Tau_I,
+					    Stretch_J,
+					    Beta_J,
+					    Tau_J,
+					    Orthogonal_North,
+					    Orthogonal_South,
+					    Orthogonal_East,
+					    Orthogonal_West);
+	
         /* Deallocate the memory for the boundary splines. */
 
         Bnd_Spline_North.deallocate();
@@ -8299,39 +8097,32 @@ Grid2D_Quad_Block** Grid_Tube_2D(Grid2D_Quad_Block **Grid_ptr,
 
     } /* endfor */
 
-    /* Return the grid. */
-
-    return(Grid_ptr);
-
 }
+ 
+/*!
+ * Routine: Grid_Annulus_2D                             
+ */
+void Grid2D_Quad_MultiBlock_HO::Grid_Annulus_2D(int &_Number_of_Blocks_Idir_,
+						int &_Number_of_Blocks_Jdir_,
+						const double &Radius_Inner,
+						const double &Radius_Outer,
+						const int Number_of_Cells_Idir,
+						const int Number_of_Cells_Jdir,
+						const int Number_of_Ghost_Cells,
+						const int i_Stretching_Radial_Dir,
+						const double &Stretching_Radial_Dir) {
+  
+  int iBlk, Stretch_I, Stretch_J,
+      Orthogonal_North, Orthogonal_South,
+      Orthogonal_East, Orthogonal_West;
+  double Beta_I, Tau_I, Beta_J, Tau_J;
+  Vector2D x1, x2;
+  Spline2D Bnd_Spline_North, Bnd_Spline_South,
+    Bnd_Spline_East, Bnd_Spline_West;
 
-/********************************************************
- * Routine: Grid_Annulus_2D                             *
- ********************************************************/
-Grid2D_Quad_Block** Grid_Annulus_2D(Grid2D_Quad_Block **Grid_ptr,
-                                    int &Number_of_Blocks_Idir,
-                                    int &Number_of_Blocks_Jdir,
-                                    const double &Radius_Inner,
-                                    const double &Radius_Outer,
- 		                    const int Number_of_Cells_Idir,
-		                    const int Number_of_Cells_Jdir,
-			            const int Number_of_Ghost_Cells,
-                                    const int i_Stretching_Radial_Dir,
-				    const double &Stretching_Radial_Dir) {
-
-    int iBlk, Stretch_I, Stretch_J,
-        Orthogonal_North, Orthogonal_South,
-        Orthogonal_East, Orthogonal_West;
-    double Beta_I, Tau_I, Beta_J, Tau_J;
-    Vector2D x1, x2;
-    Spline2D Bnd_Spline_North, Bnd_Spline_South,
-             Bnd_Spline_East, Bnd_Spline_West;
-
-    Number_of_Blocks_Idir = 4;
-    Number_of_Blocks_Jdir = 1;
-    Grid_ptr = Allocate_Multi_Block_Grid(Grid_ptr, 
-                                         Number_of_Blocks_Idir, 
-                                         Number_of_Blocks_Jdir);
+    _Number_of_Blocks_Idir_ = 4;
+    _Number_of_Blocks_Jdir_ = 1;
+    allocate(_Number_of_Blocks_Idir_, _Number_of_Blocks_Jdir_);
 
     /* Create the mesh for each block representing
        the complete grid. */
@@ -8451,26 +8242,25 @@ Grid2D_Quad_Block** Grid_Annulus_2D(Grid2D_Quad_Block **Grid_ptr,
 
         /* Create the 2D quadrilateral grid block. */
 
-        Create_Quad_Block(Grid_ptr[iBlk][0],
-                          Bnd_Spline_North,
-                          Bnd_Spline_South,
-                          Bnd_Spline_East,
-                          Bnd_Spline_West,
-                          Number_of_Cells_Idir,
-  	                  Number_of_Cells_Jdir,
-			  Number_of_Ghost_Cells,
-                          GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-                          Stretch_I,
-                          Beta_I, 
-                          Tau_I,
-                          Stretch_J,
-                          Beta_J,
-                          Tau_J,
-                          Orthogonal_North,
-		          Orthogonal_South,
-     		          Orthogonal_East,
-                          Orthogonal_West);
-
+        Grid_ptr[iBlk][0].Create_Quad_Block(Bnd_Spline_North,
+					    Bnd_Spline_South,
+					    Bnd_Spline_East,
+					    Bnd_Spline_West,
+					    Number_of_Cells_Idir,
+					    Number_of_Cells_Jdir,
+					    Number_of_Ghost_Cells,
+					    GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+					    Stretch_I,
+					    Beta_I, 
+					    Tau_I,
+					    Stretch_J,
+					    Beta_J,
+					    Tau_J,
+					    Orthogonal_North,
+					    Orthogonal_South,
+					    Orthogonal_East,
+					    Orthogonal_West);
+	
         /* Deallocate the memory for the boundary splines. */
 
         Bnd_Spline_North.deallocate();
@@ -8480,13 +8270,7 @@ Grid2D_Quad_Block** Grid_Annulus_2D(Grid2D_Quad_Block **Grid_ptr,
 
     } /* endfor */
 
-    /* Return the grid. */
-
-    return(Grid_ptr);
-
 }
-
-#endif
 
 #if 0
 
