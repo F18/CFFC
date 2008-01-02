@@ -1,5 +1,5 @@
 /*!\file AdvectDiffuse2DQuad.h
-  \brief Temporary header file defining 2D Advection Diffusion Equation Quadrilateral Mesh Solution Classes. */
+  \brief Header file defining 2D Advection Diffusion Equation Quadrilateral Mesh Solution Classes. */
 
 #ifndef _ADVECTDIFFUSE2D_QUAD_INCLUDED
 #define _ADVECTDIFFUSE2D_QUAD_INCLUDED
@@ -14,6 +14,7 @@
 #include "AdvectDiffuse2DState.h"      /* Include 2D advection diffusion equation solution state header file */
 #include "../Grid/Cell2D.h"            /* Include 2D cell header file */
 #include "../Grid/Grid2DQuad.h"        /* Include 2D quadrilateral multiblock grid header file */
+#include "../Grid/HO_Grid2DQuad.h"     /* Include 2D quadrilateral block grid header file */
 #include "../AMR/QuadTree.h"           /* Include quadtree header file */
 #include "../AMR/AMR.h"                /* Include AMR header file */
 #include "AdvectDiffuse2DInput.h"      /* Include 2D advection diffusion equation header file */
@@ -24,6 +25,8 @@
 /* Define the structures and classes. */
 
 #define	NUMBER_OF_RESIDUAL_VECTORS_ADVECTDIFFUSE2D    3
+
+#define USE_HIGH_ORDER_GRID
 
 /*!
  * Class: AdvectDiffuse2D_Quad_Block
@@ -146,7 +149,12 @@ public:
                            JCl, //!< First j-direction non-ghost cell counter.
                            JCu; //!< Final j-direction non-ghost cell counter.
   int                   Nghost; //!< Number of ghost cells.
+
+#ifdef USE_HIGH_ORDER_GRID
+  Grid2D_Quad_Block_HO    Grid; //!< 2D quadrilateral grid geometry.
+#else
   Grid2D_Quad_Block       Grid; //!< 2D quadrilateral grid geometry.
+#endif
   //@}
 
   //! @name Residual and time-stepping arrays:

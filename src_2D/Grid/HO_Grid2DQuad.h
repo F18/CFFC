@@ -465,6 +465,10 @@ public:
   //! @name Smooth quad grid
   //@{
   void Smooth_Quad_Block(const int Number_of_Iterations);
+  friend void Smooth_Quad_Block(Grid2D_Quad_Block_HO &Grid,
+				const int Number_of_Iterations){
+    return Grid.Smooth_Quad_Block(Number_of_Iterations);
+  }
   
   void Smooth_Rocket_Motor(const double &Length_Chamber,
 			   const double &Radius_Chamber,
@@ -486,17 +490,22 @@ public:
   //!@name Set Boundary Conditions.
   //@{
   void Set_BCs(void);
+  friend void Set_BCs(Grid2D_Quad_Block_HO &Grid){ return Grid.Set_BCs(); }
   //@}
   
   //!@name Update geometry and geometric properties.
   //@{
   void Update_Exterior_Nodes(void);
+  friend void Update_Exterior_Nodes(Grid2D_Quad_Block_HO &Grid){ return Grid.Update_Exterior_Nodes(); }
   
   void Update_Corner_Ghost_Nodes(void);
+  friend void Update_Corner_Ghost_Nodes(Grid2D_Quad_Block_HO &Grid){ return Grid.Update_Corner_Ghost_Nodes(); }
   
   void Update_Cells(void);
+  friend void Update_Cells(Grid2D_Quad_Block_HO &Grid){ return Grid.Update_Cells(); }
   
   int Check_Quad_Block(void);
+  friend int Check_Quad_Block(Grid2D_Quad_Block_HO &Grid){ return Grid.Check_Quad_Block(); }
   //@}
   
   //!@name Input/Output functions
@@ -512,7 +521,11 @@ public:
 
   //!@name Copy block
   //@{
-  void Copy_Quad_Block(const Grid2D_Quad_Block_HO &Grid2){ *this = Grid2; };
+  //! Another way of copying a grid
+  void Copy_Quad_Block(const Grid2D_Quad_Block_HO &Grid2){ *this = Grid2; }
+  //! Copy Grid2 into Grid1
+  friend void Copy_Quad_Block(Grid2D_Quad_Block_HO &Grid1,
+			      const Grid2D_Quad_Block_HO &Grid2){ Grid1 = Grid2; }
   //@}
   
   //!@name Block manipulation
@@ -530,34 +543,82 @@ public:
   //@{
   void Output_Tecplot(const int Block_Number,
 		      const int Output_Title,
-		      ostream &Out_File);
+		      ostream &Out_File) const;
+  friend void Output_Tecplot(const Grid2D_Quad_Block_HO &Grid,
+			     const int Block_Number,
+			     const int Output_Title,
+			     ostream &Out_File){
+    return Grid.Output_Tecplot(Block_Number, Output_Title, Out_File);
+  }
   
   void Output_Nodes_Tecplot(const int Block_Number,
 			    const int Output_Title,
-			    ostream &Out_File);
+			    ostream &Out_File) const;
+  friend void Output_Nodes_Tecplot(const Grid2D_Quad_Block_HO &Grid,
+				   const int Block_Number,
+				   const int Output_Title,
+				   ostream &Out_File){
+    return Grid.Output_Nodes_Tecplot(Block_Number, Output_Title, Out_File);
+  }
   
   void Output_Cells_Tecplot(const int Block_Number,
 			    const int Output_Title,
-			    ostream &Out_File);
+			    ostream &Out_File) const;
+  friend void Output_Cells_Tecplot(const Grid2D_Quad_Block_HO &Grid,
+				   const int Block_Number,
+				   const int Output_Title,
+				   ostream &Out_File){
+    return Grid.Output_Cells_Tecplot(Block_Number, Output_Title, Out_File);
+  }
   
   void Output_Gnuplot(const int Block_Number,
 		      const int Output_Title,
-		      ostream &Out_File);
+		      ostream &Out_File) const;
+  friend void Output_Gnuplot(const Grid2D_Quad_Block_HO &Grid,
+			     const int Block_Number,
+			     const int Output_Title,
+			     ostream &Out_File){
+    return Grid.Output_Gnuplot(Block_Number, Output_Title, Out_File);
+  }
   //@}
   
   //!@name AMR related functions
   //@{
-  void Double_Mesh_Resolution(Grid2D_Quad_Block_HO &Grid_Original);
+  void Double_Mesh_Resolution(const Grid2D_Quad_Block_HO &Grid_Original);
+  //! Generate Grid_Double with double the mesh resolution of Grid_Original
+  friend void Double_Mesh_Resolution(Grid2D_Quad_Block_HO &Grid_Double,
+				     const Grid2D_Quad_Block_HO &Grid_Original){
+    return Grid_Double.Double_Mesh_Resolution(Grid_Original);
+  }
+
+  void Half_Mesh_Resolution(const Grid2D_Quad_Block_HO &Grid_Original);
+  //! Generate Grid_Half with half the mesh resolution of Grid_Original
+  friend void Half_Mesh_Resolution(Grid2D_Quad_Block_HO &Grid_Half,
+				   const Grid2D_Quad_Block_HO &Grid_Original){
+    return Grid_Half.Half_Mesh_Resolution(Grid_Original);
+  }
   
-  void Half_Mesh_Resolution(Grid2D_Quad_Block_HO &Grid_Original);
-  
-  void Refine_Mesh(Grid2D_Quad_Block_HO &Grid_Original,
+  void Refine_Mesh(const Grid2D_Quad_Block_HO &Grid_Original,
 		   const int Sector);
+  //! Assign the Sector of the refined Grid_Original to Grid_Fine
+  friend void Refine_Mesh(Grid2D_Quad_Block_HO &Grid_Fine,
+			  const Grid2D_Quad_Block_HO &Grid_Original,
+			  const int Sector){
+    return Grid_Fine.Refine_Mesh(Grid_Original,Sector);
+  }
   
-  void Coarsen_Mesh(Grid2D_Quad_Block_HO &Grid_Original_SW,
-		    Grid2D_Quad_Block_HO &Grid_Original_SE,
-		    Grid2D_Quad_Block_HO &Grid_Original_NW,
-		    Grid2D_Quad_Block_HO &Grid_Original_NE);
+  void Coarsen_Mesh(const Grid2D_Quad_Block_HO &Grid_Original_SW,
+		    const Grid2D_Quad_Block_HO &Grid_Original_SE,
+		    const Grid2D_Quad_Block_HO &Grid_Original_NW,
+		    const Grid2D_Quad_Block_HO &Grid_Original_NE);
+  //! Generate a coarsen mesh (Grid_Coarse) with the 4 sector grids (SW,SE,NW,NE)
+  friend void Coarsen_Mesh(Grid2D_Quad_Block_HO &Grid_Coarse,
+			   const Grid2D_Quad_Block_HO &Grid_Original_SW,
+			   const Grid2D_Quad_Block_HO &Grid_Original_SE,
+			   const Grid2D_Quad_Block_HO &Grid_Original_NW,
+			   const Grid2D_Quad_Block_HO &Grid_Original_NE){
+    return Grid_Coarse.Coarsen_Mesh(Grid_Original_SW,Grid_Original_SE,Grid_Original_NW,Grid_Original_NE);
+  }
   
   void Fix_Refined_Mesh_Boundaries(const int Fix_North_Boundary,
 				   const int Fix_South_Boundary,

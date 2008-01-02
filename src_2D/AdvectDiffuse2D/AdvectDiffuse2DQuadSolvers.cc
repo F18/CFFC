@@ -9,6 +9,7 @@
 
 /* Include CFFC header files */
 #include "AdvectDiffuse2DQuad.h" /* Include 2D advection diffusion equation quadrilateral mesh solution header file. */
+#include "../Grid/HO_Grid2DQuadMultiBlock.h" /* Include 2D quadrilateral multiblock grid header file */
 #include "AdvectDiffuse2DQuadFASMultigrid.h" /* Include the multigrid header file. */
 #include "AdvectDiffuse2DQuadNKS.h"          /* Include 2D Newton-Krylov-Schwarz solver header file for advection-diffusion. */
 #include "../HighOrderReconstruction/AccuracyAssessment2DMultiBlock.h" /* Include 2D accuracy assessment for multi-block level. */
@@ -33,8 +34,13 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
 
   /* Multi-block solution-adaptive quadrilateral mesh 
      solution variables. */
- 
+
+#ifdef USE_HIGH_ORDER_GRID 
+  Grid2D_Quad_MultiBlock_HO     MeshBlk;
+#else
   Grid2D_Quad_Block           **MeshBlk;
+#endif
+
   QuadTreeBlock_DataStructure   QuadTree;
   AdaptiveBlockResourceList     List_of_Global_Solution_Blocks;
   AdaptiveBlock2D_List          List_of_Local_Solution_Blocks;
@@ -105,6 +111,52 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
   /* Create initial mesh.  Read mesh from grid definition or data files 
      when specified by input parameters. */
 
+#ifdef USE_HIGH_ORDER_GRID
+  // The primary MPI processor creates the mesh.
+  if (CFFC_Primary_MPI_Processor()) {
+    if (!batch_flag) cout << "\n Creating (or reading) initial quadrilateral multi-block mesh.";
+    error_flag = MeshBlk.Multi_Block_Grid(Input_Parameters);
+
+    // Incorporate the lines below in Multi_Block_Grid() function
+    //     if (MeshBlk == NULL) {
+    //       error_flag = 1;
+    //     } else if (Check_Multi_Block_Grid(MeshBlk,
+    // 				      Input_Parameters.Number_of_Blocks_Idir,
+    // 				      Input_Parameters.Number_of_Blocks_Jdir)) {
+    //       error_flag = 1;
+    //     } else {
+    //       error_flag = 0;
+    //     } /* endif */
+    
+    if (error_flag) {
+      cout << "\n AdvectDiffuse2D ERROR: Unable to create valid AdvectDiffuse2D multi-block mesh.\n";
+      cout.flush();
+    } /* endif */
+  }
+
+  // Broadcast the mesh to other MPI processors.
+  CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+  CFFC_Broadcast_MPI(&error_flag, 1); // Broadcast mesh error flag.
+  if (error_flag) return (error_flag);
+  MeshBlk.Broadcast_Multi_Block_Grid();
+
+  /* Create (allocate) multi-block quadtree data structure, create
+     (allocate) array of local 2D advection diffusion equation solution blocks, 
+     assign and create (allocate) 2D advection diffusion equation solution blocks
+     corresponding to the initial mesh. */
+
+  if (!batch_flag) cout << "\n Creating multi-block quadtree data structure and assigning"
+                        << "\n  AdvectDiffuse2D solution blocks corresponding to initial mesh.";
+  Local_SolnBlk = Create_Initial_Solution_Blocks(MeshBlk.Grid_ptr,
+                                                 Local_SolnBlk,
+                                                 Input_Parameters,
+                                                 QuadTree,
+                                                 List_of_Global_Solution_Blocks,
+                                                 List_of_Local_Solution_Blocks);
+  if (Local_SolnBlk == NULL) return (1);
+
+#else
+
   // The primary MPI processor creates the mesh.
   if (CFFC_Primary_MPI_Processor()) {
     if (!batch_flag) cout << "\n Creating (or reading) initial quadrilateral multi-block mesh.";
@@ -151,6 +203,7 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
                                                  List_of_Global_Solution_Blocks,
                                                  List_of_Local_Solution_Blocks);
   if (Local_SolnBlk == NULL) return (1);
+#endif
 
   /* Output multi-block solution-adaptive quadrilateral mesh statistics. */
 
@@ -930,9 +983,11 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
          List_of_Local_Solution_Blocks.deallocate();
          List_of_Global_Solution_Blocks.deallocate();
          QuadTree.deallocate();
+#ifndef USE_HIGH_ORDER_GRID
          MeshBlk = Deallocate_Multi_Block_Grid(MeshBlk, 
                                                Input_Parameters.Number_of_Blocks_Idir, 
                                                Input_Parameters.Number_of_Blocks_Jdir);
+#endif
          // Output input parameters for new caluculation.
          if (!batch_flag)  {
             cout << "\n\n Starting a new calculation.";
@@ -953,9 +1008,11 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
          List_of_Local_Solution_Blocks.deallocate();
          List_of_Global_Solution_Blocks.deallocate();
          QuadTree.deallocate();
+#ifndef USE_HIGH_ORDER_GRID
          MeshBlk = Deallocate_Multi_Block_Grid(MeshBlk, 
                                                Input_Parameters.Number_of_Blocks_Idir, 
                                                Input_Parameters.Number_of_Blocks_Jdir);
+#endif
          // Close input data file.
          if (!batch_flag) cout << "\n\n Closing AdvectDiffuse2D input data file.";
          if (CFFC_Primary_MPI_Processor()) Close_Input_File(Input_Parameters);
@@ -1153,8 +1210,12 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
          // Output multi-block solution-adaptive mesh data file.
          if (CFFC_Primary_MPI_Processor()) {
             if (!batch_flag) cout << "\n Writing AdvectDiffuse2D multi-block mesh to grid data output file.";
+#ifdef USE_HIGH_ORDER_GRID
+	    //	    error_flag = MeshBlk.Output_Tecplot();
+#else
             error_flag = Output_Tecplot(MeshBlk,
                                         Input_Parameters);
+#endif
             if (error_flag) {
                cout << "\n AdvectDiffuse2D ERROR: Unable to open AdvectDiffuse2D mesh data output file.\n";
                cout.flush();
@@ -1167,10 +1228,14 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
          // Write multi-block solution-adaptive mesh definition files.
          if (CFFC_Primary_MPI_Processor()) {
             if (!batch_flag) cout << "\n Writing AdvectDiffuse2D multi-block mesh to grid definition files.";
+#ifdef USE_HIGH_ORDER_GRID
+
+#else
             error_flag = Write_Multi_Block_Grid_Definition(MeshBlk,
                                                            Input_Parameters);
             error_flag = Write_Multi_Block_Grid(MeshBlk,
                                                 Input_Parameters);
+#endif
             if (error_flag) {
                cout << "\n AdvectDiffuse2D ERROR: Unable to open AdvectDiffuse2D multi-block mesh definition files.\n";
                cout.flush();
@@ -1183,8 +1248,12 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
          // Output multi-block solution-adaptive mesh node data file.
          if (CFFC_Primary_MPI_Processor()) {
             if (!batch_flag) cout << "\n Writing AdvectDiffuse2D multi-block mesh to node data output file.";
+#ifdef USE_HIGH_ORDER_GRID
+            error_flag = MeshBlk.Output_Nodes_Tecplot(Input_Parameters);
+#else
             error_flag = Output_Nodes_Tecplot(MeshBlk,
                                               Input_Parameters);
+#endif
             if (error_flag) {
                cout << "\n AdvectDiffuse2D ERROR: Unable to open AdvectDiffuse2D mesh node data output file.\n";
                cout.flush();
@@ -1197,8 +1266,12 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
          // Output multi-block solution-adaptive mesh cell data file.
          if (CFFC_Primary_MPI_Processor()) {
             if (!batch_flag) cout << "\n Writing AdvectDiffuse2D multi-block mesh to cell data output file.";
+#ifdef USE_HIGH_ORDER_GRID
+            error_flag = MeshBlk.Output_Cells_Tecplot(Input_Parameters);
+#else
             error_flag = Output_Cells_Tecplot(MeshBlk,
                                               Input_Parameters);
+#endif
             if (error_flag) {
                cout << "\n AdvectDiffuse2D ERROR: Unable to open AdvectDiffuse2D mesh cell data output file.\n";
                cout.flush();

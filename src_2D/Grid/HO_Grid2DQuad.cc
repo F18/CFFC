@@ -1937,83 +1937,6 @@ void Grid2D_Quad_Block_HO::Create_Quad_Block(Spline2D &Bnd_Spline_North,
 
 }
 
-
-/*!
- * Output operators.
- */
-ostream &operator << (ostream &out_file, 
-		      const Grid2D_Quad_Block_HO &G) {
-  int i, j;
-  out_file << G.NNi << " " << G.INl << " " << G.INu << "\n";
-  out_file << G.NNj << " " << G.JNl << " " << G.JNu << "\n";
-  out_file << G.Nghost << "\n";
-  if (G.NNi == 0 || G.NNj == 0) return(out_file);
-  out_file << G.NCi << " " << G.ICl << " " << G.ICu << "\n";
-  out_file << G.NCj << " " << G.JCl << " " << G.JCu << "\n";
-
-  // Output node data
-  for ( j = G.JNl-G.Nghost ; j <= G.JNu+G.Nghost; ++j ) {
-    for ( i = G.INl-G.Nghost ; i <= G.INu+G.Nghost; ++i ) {
-      out_file << G.Node[i][j].X << "\n";
-    } /* endfor */
-  } /* endfor */
-
-  for ( i = G.ICl-G.Nghost ; i <= G.ICu+G.Nghost ; ++i) {
-    out_file << G.BCtypeN[i] << " " << G.BCtypeS[i] << "\n";
-  } /* endfor */
-  for ( j = G.JCl-G.Nghost ; j <= G.JCu+G.Nghost ; ++j) {
-    out_file << G.BCtypeE[j] << " " << G.BCtypeW[j] << "\n";
-  } /* endfor */
-
-  // Output North boundary spline information
-  if (G.BndNorthSpline.np != 0 ) {
-    out_file << G.BndNorthSpline.np   << " " 
-	     << G.BndNorthSpline.type << "\n"; 
-    out_file << G.BndNorthSpline;
-  } else {
-    out_file << G.BndNorthSpline.np << "\n";
-  } /* endif */
-
-  // Output South boundary spline information
-  if (G.BndSouthSpline.np != 0 ) {
-    out_file << G.BndSouthSpline.np   << " " 
-	     << G.BndSouthSpline.type << "\n"; 
-    out_file << G.BndSouthSpline;
-  } else {
-    out_file << G.BndSouthSpline.np << "\n";
-  } /* endif */
-
-  // Output East boundary spline information
-  if (G.BndEastSpline.np != 0 ) {
-    out_file << G.BndEastSpline.np   << " " 
-	     << G.BndEastSpline.type << "\n"; 
-    out_file << G.BndEastSpline;
-  } else {
-    out_file << G.BndEastSpline.np << "\n";
-  } /* endif */
-
-  // Output West boundary spline information
-  if (G.BndWestSpline.np != 0 ) {
-    out_file << G.BndWestSpline.np   << " " 
-	     << G.BndWestSpline.type << "\n"; 
-    out_file << G.BndWestSpline;
-  } else {
-    out_file << G.BndWestSpline.np << "\n";
-  } /* endif */
-
-  out_file.setf(ios::scientific);
-  out_file << G.SminN << " " << G.SmaxN << " " << G.SminS << " " << G.SmaxS << "\n"; 
-  out_file << G.SminE << " " << G.SmaxE << " " << G.SminW << " " << G.SmaxW << "\n";
-  out_file << G.StretchI << " " << G.BetaI << " " << G.TauI << "\n";
-  out_file << G.StretchJ << " " << G.BetaJ << " " << G.TauJ << "\n";
-  out_file.unsetf(ios::scientific);
-  out_file << G.OrthogonalN << " "  << G.OrthogonalS << " "  
-           << G.OrthogonalE << " "  << G.OrthogonalW << "\n";
-  return (out_file);
-}
-
-
-
 /*!
  * Broadcast quadrilateral grid block to all            
  * processors involved in the calculation from the      
@@ -5167,7 +5090,7 @@ void Grid2D_Quad_Block_HO::Reflect_Quad_Block(void) {
  */
 void Grid2D_Quad_Block_HO::Output_Tecplot(const int Block_Number,
 					  const int Output_Title,
-					  ostream &Out_File) {
+					  ostream &Out_File) const {
   
   int i, j;
   
@@ -5210,7 +5133,7 @@ void Grid2D_Quad_Block_HO::Output_Tecplot(const int Block_Number,
  */
 void Grid2D_Quad_Block_HO::Output_Nodes_Tecplot(const int Block_Number,
 						const int Output_Title,
-						ostream &Out_File) {
+						ostream &Out_File) const {
 
   int i, j;
 
@@ -5251,7 +5174,7 @@ void Grid2D_Quad_Block_HO::Output_Nodes_Tecplot(const int Block_Number,
  */
 void Grid2D_Quad_Block_HO::Output_Cells_Tecplot(const int Block_Number,
 						const int Output_Title,
-						ostream &Out_File) {
+						ostream &Out_File) const {
 
   int i, j;
 
@@ -5292,7 +5215,7 @@ void Grid2D_Quad_Block_HO::Output_Cells_Tecplot(const int Block_Number,
  */
 void Grid2D_Quad_Block_HO::Output_Gnuplot(const int Block_Number,
 					  const int Output_Title,
-					  ostream &Out_File) {
+					  ostream &Out_File) const {
 
   int i, j;
 
@@ -5327,7 +5250,7 @@ void Grid2D_Quad_Block_HO::Output_Gnuplot(const int Block_Number,
  * the mesh resolution of the input grid block.         
  *                                                      
  */
-void Grid2D_Quad_Block_HO::Double_Mesh_Resolution(Grid2D_Quad_Block_HO &Grid_Original) {
+void Grid2D_Quad_Block_HO::Double_Mesh_Resolution(const Grid2D_Quad_Block_HO &Grid_Original) {
 
   int i, j, double_resolution_permitted;
   double sp_l, sp_r, sp_m, ds_ratio;
@@ -5528,7 +5451,7 @@ void Grid2D_Quad_Block_HO::Double_Mesh_Resolution(Grid2D_Quad_Block_HO &Grid_Ori
  * mesh resolution of the input grid block.             
  *                                                      
  */
-void Grid2D_Quad_Block_HO::Half_Mesh_Resolution(Grid2D_Quad_Block_HO &Grid_Original) {
+void Grid2D_Quad_Block_HO::Half_Mesh_Resolution(const Grid2D_Quad_Block_HO &Grid_Original) {
 
   int i, j, half_resolution_permitted;
  
@@ -5635,7 +5558,7 @@ void Grid2D_Quad_Block_HO::Half_Mesh_Resolution(Grid2D_Quad_Block_HO &Grid_Origi
  * block with twice the mesh resolution.                
  *                                                      
  */
-void Grid2D_Quad_Block_HO::Refine_Mesh(Grid2D_Quad_Block_HO &Grid_Original,
+void Grid2D_Quad_Block_HO::Refine_Mesh(const Grid2D_Quad_Block_HO &Grid_Original,
 				       const int Sector) {
 
   int i, j, i_min, i_max, j_min, j_max, mesh_refinement_permitted;
@@ -6032,10 +5955,10 @@ void Grid2D_Quad_Block_HO::Refine_Mesh(Grid2D_Quad_Block_HO &Grid_Original,
  * with half the original mesh resolution.              *
  *                                                      *
  ********************************************************/
-void Grid2D_Quad_Block_HO::Coarsen_Mesh(Grid2D_Quad_Block_HO &Grid_Original_SW,
-					Grid2D_Quad_Block_HO &Grid_Original_SE,
-					Grid2D_Quad_Block_HO &Grid_Original_NW,
-					Grid2D_Quad_Block_HO &Grid_Original_NE) {
+void Grid2D_Quad_Block_HO::Coarsen_Mesh(const Grid2D_Quad_Block_HO &Grid_Original_SW,
+					const Grid2D_Quad_Block_HO &Grid_Original_SE,
+					const Grid2D_Quad_Block_HO &Grid_Original_NW,
+					const Grid2D_Quad_Block_HO &Grid_Original_NE) {
 
   int i, j, i_coarse, j_coarse, mesh_coarsening_permitted;
  
@@ -6438,7 +6361,83 @@ void Grid2D_Quad_Block_HO::Unfix_Refined_Mesh_Boundaries(void) {
 
 }
 
+/*!
+ * Output operator.
+ */
+ostream &operator << (ostream &out_file, 
+		      const Grid2D_Quad_Block_HO &G) {
+  int i, j;
+  out_file << G.NNi << " " << G.INl << " " << G.INu << "\n";
+  out_file << G.NNj << " " << G.JNl << " " << G.JNu << "\n";
+  out_file << G.Nghost << "\n";
+  if (G.NNi == 0 || G.NNj == 0) return(out_file);
+  out_file << G.NCi << " " << G.ICl << " " << G.ICu << "\n";
+  out_file << G.NCj << " " << G.JCl << " " << G.JCu << "\n";
 
+  // Output node data
+  for ( j = G.JNl-G.Nghost ; j <= G.JNu+G.Nghost; ++j ) {
+    for ( i = G.INl-G.Nghost ; i <= G.INu+G.Nghost; ++i ) {
+      out_file << G.Node[i][j].X << "\n";
+    } /* endfor */
+  } /* endfor */
+
+  for ( i = G.ICl-G.Nghost ; i <= G.ICu+G.Nghost ; ++i) {
+    out_file << G.BCtypeN[i] << " " << G.BCtypeS[i] << "\n";
+  } /* endfor */
+  for ( j = G.JCl-G.Nghost ; j <= G.JCu+G.Nghost ; ++j) {
+    out_file << G.BCtypeE[j] << " " << G.BCtypeW[j] << "\n";
+  } /* endfor */
+
+  // Output North boundary spline information
+  if (G.BndNorthSpline.np != 0 ) {
+    out_file << G.BndNorthSpline.np   << " " 
+	     << G.BndNorthSpline.type << "\n"; 
+    out_file << G.BndNorthSpline;
+  } else {
+    out_file << G.BndNorthSpline.np << "\n";
+  } /* endif */
+
+  // Output South boundary spline information
+  if (G.BndSouthSpline.np != 0 ) {
+    out_file << G.BndSouthSpline.np   << " " 
+	     << G.BndSouthSpline.type << "\n"; 
+    out_file << G.BndSouthSpline;
+  } else {
+    out_file << G.BndSouthSpline.np << "\n";
+  } /* endif */
+
+  // Output East boundary spline information
+  if (G.BndEastSpline.np != 0 ) {
+    out_file << G.BndEastSpline.np   << " " 
+	     << G.BndEastSpline.type << "\n"; 
+    out_file << G.BndEastSpline;
+  } else {
+    out_file << G.BndEastSpline.np << "\n";
+  } /* endif */
+
+  // Output West boundary spline information
+  if (G.BndWestSpline.np != 0 ) {
+    out_file << G.BndWestSpline.np   << " " 
+	     << G.BndWestSpline.type << "\n"; 
+    out_file << G.BndWestSpline;
+  } else {
+    out_file << G.BndWestSpline.np << "\n";
+  } /* endif */
+
+  out_file.setf(ios::scientific);
+  out_file << G.SminN << " " << G.SmaxN << " " << G.SminS << " " << G.SmaxS << "\n"; 
+  out_file << G.SminE << " " << G.SmaxE << " " << G.SminW << " " << G.SmaxW << "\n";
+  out_file << G.StretchI << " " << G.BetaI << " " << G.TauI << "\n";
+  out_file << G.StretchJ << " " << G.BetaJ << " " << G.TauJ << "\n";
+  out_file.unsetf(ios::scientific);
+  out_file << G.OrthogonalN << " "  << G.OrthogonalS << " "  
+           << G.OrthogonalE << " "  << G.OrthogonalW << "\n";
+  return (out_file);
+}
+
+/*!
+ * Input operator.
+ */
 istream &operator >> (istream &in_file, 
 		      Grid2D_Quad_Block_HO &G) {
   int i, j, ni, il, iu, nj, jl, ju, ng;

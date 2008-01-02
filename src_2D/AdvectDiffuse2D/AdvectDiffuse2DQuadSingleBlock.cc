@@ -2773,16 +2773,13 @@ void Fix_Refined_Block_Boundaries(AdvectDiffuse2D_Quad_Block &SolnBlk,
     } /* endfor */
   } /* endif */
 
-    /* Reset the boundary condition types at the block boundaries. */
- 
+  /* Reset the boundary condition types at the block boundaries. */
   Set_BCs(SolnBlk.Grid);
 
   /* Recompute the exterior nodes for the block quadrilateral mesh. */
-
   Update_Exterior_Nodes(SolnBlk.Grid);
 
   /* Recompute the cells for the block quadrilateral mesh. */
-
   Update_Cells(SolnBlk.Grid);
 
 }
@@ -2892,16 +2889,13 @@ void Unfix_Refined_Block_Boundaries(AdvectDiffuse2D_Quad_Block &SolnBlk) {
     } /* endfor */
   } /* endif */
 
-    /* Reset the boundary condition types at the block boundaries. */
- 
+  /* Reset the boundary condition types at the block boundaries. */
   Set_BCs(SolnBlk.Grid);
 
   /* Recompute the exterior nodes for the block quadrilateral mesh. */
-
   Update_Exterior_Nodes(SolnBlk.Grid);
 
   /* Recompute the cells for the block quadrilateral mesh. */
-
   Update_Cells(SolnBlk.Grid);
 
 }

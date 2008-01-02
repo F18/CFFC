@@ -550,6 +550,33 @@ void Grid_Free_Jet(int &_Number_of_Blocks_Idir_,
   friend istream &operator >> (istream &in_file, Grid2D_Quad_MultiBlock_HO &G){};
   //@}
 
+  //! @name Multi-grid operations based on input parameters
+  //@{
+  template<typename Input_Parameters_Type>
+  int Multi_Block_Grid(const Input_Parameters_Type &Input_Parameters);
+
+  template<typename Input_Parameters_Type>
+  int Write_Multi_Block_Grid_Definition(const Input_Parameters_Type &Input_Parameters);
+
+  template<typename Input_Parameters_Type>
+  void Read_Multi_Block_Grid_Definition(const Input_Parameters_Type &Input_Parameters);
+
+  template<typename Input_Parameters_Type>
+  int Write_Multi_Block_Grid(const Input_Parameters_Type &Input_Parameters);
+
+  template<typename Input_Parameters_Type>
+  void Read_Multi_Block_Grid(const Input_Parameters_Type &Input_Parameters);
+
+  template<typename Input_Parameters_Type>
+  int Output_Tecplot(const Input_Parameters_Type &Input_Parameters);
+
+  template<typename Input_Parameters_Type>
+  int Output_Nodes_Tecplot(const Input_Parameters_Type &Input_Parameters);
+
+  template<typename Input_Parameters_Type>
+  int Output_Cells_Tecplot(const Input_Parameters_Type &Input_Parameters);
+  //@}
+
 private:
   //! @name Mesh indexes
   //@{ 
@@ -562,5 +589,626 @@ private:
 
 };
 
+
+/*!
+ * Generates multi-block quadilateral mesh.
+ */
+template<typename Input_Parameters_Type>
+int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(const Input_Parameters_Type &Input_Parameters){
+
+  int iBlk, jBlk;
+  int HiBlk, HjBlk;
+
+  /* Generate appropriate mesh. */
+
+  switch(Input_Parameters.i_Grid) {
+  case GRID_READ_FROM_DEFINITION_FILE :
+    Read_Multi_Block_Grid_Definition(Input_Parameters);
+
+    if (Grid_ptr == NULL) {
+      cout << "\n " << CFFC_Name() 
+	   << " AdvectDiffuse2D ERROR: Unable to open multi-block mesh definition file "
+	   << Input_Parameters.Grid_Definition_File_Name << ".\n";
+    } /* endif */
+    break;
+  case GRID_READ_FROM_GRID_DATA_FILE :
+    Read_Multi_Block_Grid(Input_Parameters);
+    if (Grid_ptr == NULL) {
+      cout << "\n " << CFFC_Name() 
+	   << " AdvectDiffuse2D ERROR: Unable to open multi-block mesh data file "
+	   << Input_Parameters.Grid_File_Name << ".\n";
+    } /* endif */
+    break;
+  case GRID_SQUARE :
+    Grid_Rectangular_Box(Input_Parameters.Number_of_Blocks_Idir,
+			 Input_Parameters.Number_of_Blocks_Jdir,
+			 Input_Parameters.Box_Width,
+			 Input_Parameters.Box_Width,
+			 Input_Parameters.Number_of_Cells_Idir,
+			 Input_Parameters.Number_of_Cells_Jdir,
+			 Input_Parameters.Number_of_Ghost_Cells);
+    break;
+  case GRID_RECTANGULAR_BOX :
+    if (!Input_Parameters.i_Mesh_Stretching) {
+      Grid_Rectangular_Box(Input_Parameters.Number_of_Blocks_Idir,
+			   Input_Parameters.Number_of_Blocks_Jdir,
+			   Input_Parameters.Box_Width,
+			   Input_Parameters.Box_Height,
+			   Input_Parameters.Number_of_Cells_Idir,
+			   Input_Parameters.Number_of_Cells_Jdir,
+			   Input_Parameters.Number_of_Ghost_Cells);
+    } else {
+      Grid_Rectangular_Box(Input_Parameters.Number_of_Blocks_Idir,
+			   Input_Parameters.Number_of_Blocks_Jdir,
+			   Input_Parameters.Box_Width,
+			   Input_Parameters.Box_Height,
+			   Input_Parameters.i_Mesh_Stretching,
+			   Input_Parameters.Mesh_Stretching_Type_Idir,
+			   Input_Parameters.Mesh_Stretching_Type_Jdir,
+			   Input_Parameters.Mesh_Stretching_Factor_Idir,
+			   Input_Parameters.Mesh_Stretching_Factor_Jdir,
+			   Input_Parameters.Number_of_Cells_Idir,
+			   Input_Parameters.Number_of_Cells_Jdir,
+			   Input_Parameters.Number_of_Ghost_Cells);
+    }
+    break;
+  case GRID_PERIODIC_BOX :
+    Grid_Rectangular_Box(Input_Parameters.Number_of_Blocks_Idir,
+			 Input_Parameters.Number_of_Blocks_Jdir,
+			 Input_Parameters.Box_Width,
+			 Input_Parameters.Box_Height,
+			 Input_Parameters.i_Mesh_Stretching,
+			 Input_Parameters.Mesh_Stretching_Type_Idir,
+			 Input_Parameters.Mesh_Stretching_Type_Jdir,
+			 Input_Parameters.Mesh_Stretching_Factor_Idir,
+			 Input_Parameters.Mesh_Stretching_Factor_Jdir,
+			 Input_Parameters.Number_of_Cells_Idir,
+			 Input_Parameters.Number_of_Cells_Jdir,
+			 Input_Parameters.Number_of_Ghost_Cells);
+
+    // Impose the proper boundary conditions for periodic grid
+    for ( jBlk = 0; jBlk <= Input_Parameters.Number_of_Blocks_Jdir-1; ++jBlk ) {
+      for ( iBlk = 0; iBlk <= Input_Parameters.Number_of_Blocks_Idir-1; ++iBlk ) {
+	// North
+	if (jBlk == Input_Parameters.Number_of_Blocks_Jdir-1) {
+	  if (Input_Parameters.Number_of_Blocks_Jdir==1) {
+	    Grid_ptr[iBlk][jBlk].BndNorthSpline.setBCtype(BC_PERIODIC);
+	  } else {
+	    Grid_ptr[iBlk][jBlk].BndNorthSpline.setBCtype(BC_NONE);
+	  }
+	} else {
+	  Grid_ptr[iBlk][jBlk].BndNorthSpline.setBCtype(BC_NONE);
+	} 
+	// South
+	if (jBlk == 0) {
+	  if (Input_Parameters.Number_of_Blocks_Jdir==1) {  
+	    Grid_ptr[iBlk][jBlk].BndSouthSpline.setBCtype(BC_PERIODIC);
+	  } else {
+	    Grid_ptr[iBlk][jBlk].BndSouthSpline.setBCtype(BC_NONE);  
+	  }
+	} else {
+	  Grid_ptr[iBlk][jBlk].BndSouthSpline.setBCtype(BC_NONE);
+	}
+	// East
+	if (iBlk == Input_Parameters.Number_of_Blocks_Idir-1) {
+	  if (Input_Parameters.Number_of_Blocks_Idir==1) {  
+	    Grid_ptr[iBlk][jBlk].BndEastSpline.setBCtype(BC_PERIODIC);
+	  } else {
+	    Grid_ptr[iBlk][jBlk].BndEastSpline.setBCtype(BC_NONE);
+	  }
+	} else {
+	  Grid_ptr[iBlk][jBlk].BndEastSpline.setBCtype(BC_NONE);
+	}
+	// West
+	if (iBlk == 0) {
+	  if (Input_Parameters.Number_of_Blocks_Idir==1) {  
+	    Grid_ptr[iBlk][jBlk].BndWestSpline.setBCtype(BC_PERIODIC);
+	  } else {
+	    Grid_ptr[iBlk][jBlk].BndWestSpline.setBCtype(BC_NONE);
+	  }
+	} else {
+	  Grid_ptr[iBlk][jBlk].BndWestSpline.setBCtype(BC_NONE);
+	}
+	Set_BCs(Grid_ptr[iBlk][jBlk]);
+	Update_Exterior_Nodes(Grid_ptr[iBlk][jBlk]);
+	Update_Cells(Grid_ptr[iBlk][jBlk]);
+      } 
+    }  
+    
+    break;   
+  case GRID_INTERIOR_INFLOW_OUTFLOW_BOX :
+    // This grid has a "cut" along the positive x axis, starting from (0,0).
+    // Along this cut an inflow BC is specified on the upper edge and an outflow BC
+    // is imposed on the lower edge.
+    
+    // Ensure that the grid is generated with an even
+    //  number of blocks in order to obtain symmetry.
+    Input_Parameters.Number_of_Blocks_Idir += Input_Parameters.Number_of_Blocks_Idir % 2;
+    Input_Parameters.Number_of_Blocks_Jdir += Input_Parameters.Number_of_Blocks_Jdir % 2;
+
+    // Generate a rectangular box
+    Grid_Rectangular_Box(Input_Parameters.Number_of_Blocks_Idir,
+			 Input_Parameters.Number_of_Blocks_Jdir,
+			 Input_Parameters.Box_Width,
+			 Input_Parameters.Box_Height,
+			 Input_Parameters.i_Mesh_Stretching,
+			 Input_Parameters.Mesh_Stretching_Type_Idir,
+			 Input_Parameters.Mesh_Stretching_Type_Jdir,
+			 Input_Parameters.Mesh_Stretching_Factor_Idir,
+			 Input_Parameters.Mesh_Stretching_Factor_Jdir,
+			 Input_Parameters.Number_of_Cells_Idir,
+			 Input_Parameters.Number_of_Cells_Jdir,
+			 Input_Parameters.Number_of_Ghost_Cells);
+
+    // Impose the proper boundary conditions for the current grid type.
+    HiBlk = Input_Parameters.Number_of_Blocks_Idir/2;
+    HjBlk = Input_Parameters.Number_of_Blocks_Jdir/2;
+
+    for (iBlk = HiBlk; iBlk <= Input_Parameters.Number_of_Blocks_Idir-1; ++iBlk ){
+
+      // Impose the inflow BC on the upper edge of the cut to all affected blocks
+      Grid_ptr[iBlk][HjBlk  ].BndSouthSpline.setBCtype(BC_INFLOW);
+
+      // Update BCs and geometry
+      Set_BCs(Grid_ptr[iBlk][HjBlk ]);
+      Update_Exterior_Nodes(Grid_ptr[iBlk][HjBlk ]);
+      Update_Cells(Grid_ptr[iBlk][HjBlk ]);
+
+      // Impose the outflow BC on the lower edge of the cut to all affected blocks
+      Grid_ptr[iBlk][HjBlk-1].BndNorthSpline.setBCtype(BC_OUTFLOW);
+
+      // Update BCs and geometry
+      Set_BCs(Grid_ptr[iBlk][HjBlk-1]);
+      Update_Exterior_Nodes(Grid_ptr[iBlk][HjBlk-1]);
+      Update_Cells(Grid_ptr[iBlk][HjBlk-1]);
+    }
+    break;   
+  case GRID_FLAT_PLATE :
+    Grid_Flat_Plate(Input_Parameters.Number_of_Blocks_Idir,
+		    Input_Parameters.Number_of_Blocks_Jdir,
+		    Input_Parameters.Plate_Length,
+		    BC_DIRICHLET,
+		    Input_Parameters.i_Mesh_Stretching,
+		    Input_Parameters.Mesh_Stretching_Factor_Idir,
+		    Input_Parameters.Mesh_Stretching_Factor_Jdir,
+		    Input_Parameters.Number_of_Cells_Idir,
+		    Input_Parameters.Number_of_Cells_Jdir,
+		    Input_Parameters.Number_of_Ghost_Cells);
+    break;
+  case GRID_PIPE :
+    Grid_Pipe(Input_Parameters.Number_of_Blocks_Idir,
+	      Input_Parameters.Number_of_Blocks_Jdir,
+	      Input_Parameters.Pipe_Length,
+	      Input_Parameters.Pipe_Radius,
+	      Input_Parameters.i_Mesh_Stretching,
+	      Input_Parameters.Mesh_Stretching_Factor_Jdir,
+	      Input_Parameters.Number_of_Cells_Idir,
+	      Input_Parameters.Number_of_Cells_Jdir,
+	      Input_Parameters.Number_of_Ghost_Cells);
+    break;
+  case GRID_BLUNT_BODY :
+    Grid_Blunt_Body(Input_Parameters.Number_of_Blocks_Idir,
+		    Input_Parameters.Number_of_Blocks_Jdir,
+		    Input_Parameters.Blunt_Body_Radius,
+		    Input_Parameters.Blunt_Body_Mach_Number,
+		    Input_Parameters.Number_of_Cells_Idir,
+		    Input_Parameters.Number_of_Cells_Jdir,
+		    Input_Parameters.Number_of_Ghost_Cells);
+    break;
+  case GRID_ROCKET_MOTOR :
+    Grid_Rocket_Motor(Input_Parameters.Number_of_Blocks_Idir,
+		      Input_Parameters.Number_of_Blocks_Jdir,
+		      Input_Parameters.Chamber_Length,
+		      Input_Parameters.Chamber_Radius,
+		      Input_Parameters.Chamber_To_Throat_Length,
+		      Input_Parameters.Nozzle_Length,
+		      Input_Parameters.Nozzle_Radius_Exit,
+		      Input_Parameters.Nozzle_Radius_Throat,
+		      Input_Parameters.Grain_Radius,
+		      Input_Parameters.Nozzle_Type,
+		      Input_Parameters.BC_North,
+		      Input_Parameters.i_Mesh_Stretching,
+		      Input_Parameters.Mesh_Stretching_Type_Jdir,
+		      Input_Parameters.Mesh_Stretching_Factor_Idir,
+		      Input_Parameters.Mesh_Stretching_Factor_Jdir,
+		      Input_Parameters.Number_of_Cells_Idir,
+		      Input_Parameters.Number_of_Cells_Jdir,
+		      Input_Parameters.Number_of_Ghost_Cells);
+    break;
+  case GRID_NOZZLELESS_ROCKET_MOTOR :
+    Grid_Nozzleless_Rocket_Motor(Input_Parameters.Number_of_Blocks_Idir,
+				 Input_Parameters.Number_of_Blocks_Jdir,
+				 Input_Parameters.Chamber_Length,
+				 Input_Parameters.Chamber_Radius,
+				 Input_Parameters.Nozzle_Length,
+				 Input_Parameters.Nozzle_Radius_Exit,
+				 BC_REFLECTION,
+				 Input_Parameters.i_Mesh_Stretching,
+				 Input_Parameters.Mesh_Stretching_Type_Jdir,
+				 Input_Parameters.Mesh_Stretching_Factor_Idir,
+				 Input_Parameters.Mesh_Stretching_Factor_Jdir,
+				 Input_Parameters.Number_of_Cells_Idir,
+				 Input_Parameters.Number_of_Cells_Jdir,
+				 Input_Parameters.Number_of_Ghost_Cells);
+    break;
+  case GRID_CIRCULAR_CYLINDER :
+    Grid_Circular_Cylinder(Input_Parameters.Number_of_Blocks_Idir,
+			   Input_Parameters.Number_of_Blocks_Jdir,
+			   Input_Parameters.Cylinder_Radius,
+			   Input_Parameters.Cylinder_Radius2,
+			   Input_Parameters.Mesh_Stretching_Type_Idir,
+			   Input_Parameters.Mesh_Stretching_Type_Jdir,
+			   Input_Parameters.Mesh_Stretching_Factor_Idir,
+			   Input_Parameters.Mesh_Stretching_Factor_Jdir,
+			   Input_Parameters.Number_of_Cells_Idir,
+			   Input_Parameters.Number_of_Cells_Jdir,
+			   Input_Parameters.Number_of_Ghost_Cells);
+    break;
+  case GRID_ANNULUS :
+    Grid_Annulus(Input_Parameters.Number_of_Blocks_Idir,
+		 Input_Parameters.Number_of_Blocks_Jdir,
+		 Input_Parameters.Cylinder_Radius,
+		 Input_Parameters.Cylinder_Radius2,
+		 Input_Parameters.Annulus_Theta_Start,
+		 Input_Parameters.Annulus_Theta_End,
+		 Input_Parameters.Mesh_Stretching_Type_Idir,
+		 Input_Parameters.Mesh_Stretching_Type_Jdir,
+		 Input_Parameters.Mesh_Stretching_Factor_Idir,
+		 Input_Parameters.Mesh_Stretching_Factor_Jdir,
+		 Input_Parameters.Number_of_Cells_Idir,
+		 Input_Parameters.Number_of_Cells_Jdir,
+		 Input_Parameters.Number_of_Ghost_Cells);
+    break;
+  case GRID_ELLIPSE :
+    Grid_Ellipse(Input_Parameters.Number_of_Blocks_Idir,
+		 Input_Parameters.Number_of_Blocks_Jdir,
+		 Input_Parameters.Ellipse_Length_X_Axis,
+		 Input_Parameters.Ellipse_Length_Y_Axis,
+		 Input_Parameters.Number_of_Cells_Idir,
+		 Input_Parameters.Number_of_Cells_Jdir,
+		 Input_Parameters.Number_of_Ghost_Cells);
+    break;
+  case GRID_NACA_AEROFOIL :
+    Grid_NACA_Aerofoil(Input_Parameters.Number_of_Blocks_Idir,
+		       Input_Parameters.Number_of_Blocks_Jdir,
+		       Input_Parameters.NACA_Aerofoil_Type,
+		       Input_Parameters.Chord_Length,
+		       Input_Parameters.Number_of_Cells_Idir,
+		       Input_Parameters.Number_of_Cells_Jdir,
+		       Input_Parameters.Number_of_Ghost_Cells);
+    break;
+  case GRID_FREE_JET :
+    Grid_Free_Jet(Input_Parameters.Number_of_Blocks_Idir,
+		  Input_Parameters.Number_of_Blocks_Jdir,
+		  Input_Parameters.Orifice_Radius,
+		  Input_Parameters.Number_of_Cells_Idir,
+		  Input_Parameters.Number_of_Cells_Jdir,
+		  Input_Parameters.Number_of_Ghost_Cells);
+    break;
+  case GRID_ICEMCFD :
+    ICEMCFD_Read(Input_Parameters.ICEMCFD_FileNames,
+		 &Input_Parameters.Number_of_Blocks_Idir,
+		 &Input_Parameters.Number_of_Blocks_Jdir);
+    break;
+  default:
+    Grid_Rectangular_Box(Input_Parameters.Number_of_Blocks_Idir,
+			 Input_Parameters.Number_of_Blocks_Jdir,
+			 Input_Parameters.Box_Width,
+			 Input_Parameters.Box_Height,
+			 Input_Parameters.Number_of_Cells_Idir,
+			 Input_Parameters.Number_of_Cells_Jdir,
+			 Input_Parameters.Number_of_Ghost_Cells);
+    break;
+  } /* endswitch */
+
+    /* Reset boundary conditions if required. */
+
+  if (Input_Parameters.BCs_Specified) {
+    for (jBlk = 0; jBlk < Input_Parameters.Number_of_Blocks_Jdir; ++jBlk) {
+      for ( iBlk = 0; iBlk < Input_Parameters.Number_of_Blocks_Idir; ++iBlk) {
+	if (jBlk == Input_Parameters.Number_of_Blocks_Jdir-1)
+	  Grid_ptr[iBlk][jBlk].BndNorthSpline.setBCtype(Input_Parameters.BC_North);
+	if (jBlk == 0)
+	  Grid_ptr[iBlk][jBlk].BndSouthSpline.setBCtype(Input_Parameters.BC_South);
+	if (iBlk == Input_Parameters.Number_of_Blocks_Idir-1)
+	  Grid_ptr[iBlk][jBlk].BndEastSpline.setBCtype(Input_Parameters.BC_East);
+	if (iBlk == 0)
+	  Grid_ptr[iBlk][jBlk].BndWestSpline.setBCtype(Input_Parameters.BC_West);
+	Set_BCs(Grid_ptr[iBlk][jBlk]);
+	Update_Exterior_Nodes(Grid_ptr[iBlk][jBlk]);
+	Update_Cells(Grid_ptr[iBlk][jBlk]);
+      }
+    }
+  }
+  
+  /* First translate quadrilateral mesh as specified by input parameters. */
+
+  if (abs(Input_Parameters.X_Shift) > TOLER) {
+    Translate_Multi_Block_Grid(Input_Parameters.X_Shift);
+  } /* endif */
+
+    /* Next scale quadrilateral mesh as specified by input parameters. */
+
+  if (fabs(Input_Parameters.X_Scale-ONE) > TOLER) {
+    Scale_Multi_Block_Grid(Input_Parameters.X_Scale);
+  } /* endif */
+
+    /* Finally rotate quadrilateral mesh as specified by input parameters. */
+
+  if (fabs(Input_Parameters.X_Rotate) > TOLER) {
+    Rotate_Multi_Block_Grid(TWO*PI*Input_Parameters.X_Rotate/360.00);
+  } /* endif */
+
+
+  return 0;
+
+}
+
+/*!
+ * Writes a grid definition file for a multi-block      
+ * quadilateral mesh in a format suitable for retrieval 
+ * and re-use purposes.  Returns a non-zero value if    
+ * unable to write the grid definition file.            
+ */
+template<typename Input_Parameters_Type>
+int Grid2D_Quad_MultiBlock_HO::Write_Multi_Block_Grid_Definition(const Input_Parameters_Type &Input_Parameters){
+
+  char *mesh_definition_file_name_ptr;
+  ofstream mesh_definition_file;
+
+  /* Open the grid definition file. */
+
+  mesh_definition_file_name_ptr = Input_Parameters.Grid_Definition_File_Name;
+  mesh_definition_file.open(mesh_definition_file_name_ptr, ios::out);
+  if (mesh_definition_file.fail()) return (1);
+
+  /* Write grid type information. */
+
+  mesh_definition_file << Input_Parameters.Grid_Type << "\n" 
+		       << Input_Parameters.i_Grid << "\n";
+
+  /* Write the grid definition information for each 
+     quadrilateral grid block. */
+
+  Write_Multi_Block_Grid_Definition(mesh_definition_file);
+
+  /* Close the grid definition file. */
+
+  mesh_definition_file.close();
+
+  /* Writing of grid definition file complete.  Return zero value. */
+
+  return(0);
+}
+
+/*!
+ * Reads definition file information for a 2D array of
+ * 2D quadrilateral multi-block grids from the        
+ * specified input stream.                            
+ */
+template<typename Input_Parameters_Type>
+void Grid2D_Quad_MultiBlock_HO::Read_Multi_Block_Grid_Definition(const Input_Parameters_Type &Input_Parameters){
+  
+  char buffer[256];
+  char *mesh_definition_file_name_ptr;
+  ifstream mesh_definition_file;
+  
+  /* Open the grid definition file. */
+  mesh_definition_file_name_ptr = Input_Parameters.Grid_Definition_File_Name;
+  mesh_definition_file.open(mesh_definition_file_name_ptr, ios::in);
+  if (mesh_definition_file.fail()) return (NULL);
+  
+  /* Read grid type information. */
+  mesh_definition_file.getline(buffer, sizeof(buffer));
+  strcpy(Input_Parameters.Grid_Type, buffer);
+  mesh_definition_file >> Input_Parameters.i_Grid;
+
+  /* Read the grid definition information for each 
+     quadrilateral grid block. */
+
+  Read_Multi_Block_Grid_Definition(mesh_definition_file);
+
+  /* Close the grid definition file. */
+  mesh_definition_file.close();
+}
+
+/*!
+ * Writes multi-block quadilateral mesh to a grid data 
+ * file in a format suitable for retrieval and re-use  
+ * purposes.  Returns a non-zero value if unable to    
+ * write the grid data file.                           
+ */
+template<typename Input_Parameters_Type>
+int Grid2D_Quad_MultiBlock_HO::Write_Multi_Block_Grid(const Input_Parameters_Type &Input_Parameters){
+
+  char *mesh_file_name_ptr;
+  ofstream mesh_file;
+
+  /* Open the grid data output file. */
+  mesh_file_name_ptr = Input_Parameters.Grid_File_Name;
+  mesh_file.open(mesh_file_name_ptr, ios::out);
+  if (mesh_file.fail()) return (1);
+
+  /* Write grid type information. */
+  mesh_file << Input_Parameters.Grid_Type << "\n" 
+	    << Input_Parameters.i_Grid << "\n";
+
+  /* Write the grid data for each quadrilateral grid block. */
+  Write_Multi_Block_Grid(mesh_file);
+
+  /* Close the grid data output file. */
+  mesh_file.close();
+}
+
+/*!
+ * Reads multi-block quadilateral mesh from a grid data
+ * file.  Returns a pointer to the mesh.               
+ */
+template<typename Input_Parameters_Type>
+void Grid2D_Quad_MultiBlock_HO::Read_Multi_Block_Grid(const Input_Parameters_Type &Input_Parameters){
+
+  char buffer[256];
+  char *mesh_file_name_ptr;
+  ifstream mesh_file;
+
+  /* Open the grid data input file. */
+  mesh_file_name_ptr = Input_Parameters.Grid_File_Name;
+  mesh_file.open(mesh_file_name_ptr, ios::in);
+  if (mesh_file.fail()) return (NULL);
+  
+  /* Read grid type information. */
+  mesh_file.getline(buffer, sizeof(buffer));
+  strcpy(Input_Parameters.Grid_Type, buffer);
+  mesh_file >> Input_Parameters.i_Grid;
+
+  /* Read the grid data for each quadrilateral grid block. */
+  Read_Multi_Block_Grid(mesh_file);
+
+  /* Close the grid data input file. */
+  mesh_file.close();
+}
+
+/*!
+ * Writes the nodes of a multi-block quadilateral mesh
+ * in a format suitable for plotting with TECPLOT.    
+ * Returns a non-zero value if unable to write the    
+ * TECPLOT file.                                      
+ */
+template<typename Input_Parameters_Type>
+int Grid2D_Quad_MultiBlock_HO::Output_Tecplot(const Input_Parameters_Type &Input_Parameters){
+
+  int i, j;
+  char prefix[256], extension[256], mesh_file_name[256];
+  char *mesh_file_name_ptr;
+  ofstream mesh_file;  
+  
+  /* Determine prefix of grid data output file name. */
+
+  i = 0;
+  while (1) {
+    if (Input_Parameters.Output_File_Name[i] == ' ' ||
+	Input_Parameters.Output_File_Name[i] == '.') break;
+    prefix[i]=Input_Parameters.Output_File_Name[i];
+    i = i + 1;
+    if (i > strlen(Input_Parameters.Output_File_Name) ) break;
+  } /* endwhile */
+  prefix[i] = '\0';
+  strcat(prefix, "_mesh");
+
+  /* Determine grid data output file name. */
+
+  strcpy(extension, ".dat");
+  strcpy(mesh_file_name, prefix);
+  strcat(mesh_file_name, extension);
+  mesh_file_name_ptr = mesh_file_name;
+
+  /* Open the grid data output file. */
+
+  mesh_file.open(mesh_file_name_ptr, ios::out);
+  if (mesh_file.fail()) return (1);
+
+  /* Write the node locations for each quadrilateral grid block. */
+  Output_Tecplot(mesh_file);
+
+  /* Close the grid data output file. */
+  mesh_file.close();
+
+}
+
+/*!
+ * Writes the nodes of a multi-block quadilateral mesh
+ * in a format suitable for plotting with TECPLOT.    
+ * Includes boundary nodes.  Returns a non-zero value 
+ * if unable to write the TECPLOT file.               
+ */
+template<typename Input_Parameters_Type>
+int Grid2D_Quad_MultiBlock_HO::Output_Nodes_Tecplot(const Input_Parameters_Type &Input_Parameters){
+
+  int i, j;
+  char prefix[256], extension[256], mesh_file_name[256];
+  char *mesh_file_name_ptr;
+  ofstream mesh_file;  
+
+  /* Determine prefix of grid data output file name. */
+
+  i = 0;
+  while (1) {
+    if (Input_Parameters.Output_File_Name[i] == ' ' ||
+	Input_Parameters.Output_File_Name[i] == '.') break;
+    prefix[i]=Input_Parameters.Output_File_Name[i];
+    i = i + 1;
+    if (i > strlen(Input_Parameters.Output_File_Name) ) break;
+  } /* endwhile */
+  prefix[i] = '\0';
+  strcat(prefix, "_mesh_nodes");
+
+  /* Determine grid data output file name. */
+
+  strcpy(extension, ".dat");
+  strcpy(mesh_file_name, prefix);
+  strcat(mesh_file_name, extension);
+  mesh_file_name_ptr = mesh_file_name;
+
+  /* Open the grid data output file. */
+
+  mesh_file.open(mesh_file_name_ptr, ios::out);
+  if (mesh_file.fail()) return (1);
+
+  /* Write the node locations for each quadrilateral grid block. */
+
+  Output_Nodes_Tecplot(mesh_file);
+
+  /* Close the grid data output file. */
+
+  mesh_file.close();
+
+}
+
+/*!
+ * Writes the cells of a multi-block quadilateral mesh
+ * in a format suitable for plotting with TECPLOT.    
+ * Returns a non-zero value if unable to write the    
+ * TECPLOT file.                                      
+ */
+template<typename Input_Parameters_Type>
+int Grid2D_Quad_MultiBlock_HO::Output_Cells_Tecplot(const Input_Parameters_Type &Input_Parameters){
+
+  int i, j;
+  char prefix[256], extension[256], mesh_file_name[256];
+  char *mesh_file_name_ptr;
+  ofstream mesh_file;  
+
+  /* Determine prefix of grid data output file name. */
+  
+  i = 0;
+  while (1) {
+    if (Input_Parameters.Output_File_Name[i] == ' ' ||
+	Input_Parameters.Output_File_Name[i] == '.') break;
+    prefix[i]=Input_Parameters.Output_File_Name[i];
+    i = i + 1;
+    if (i > strlen(Input_Parameters.Output_File_Name) ) break;
+  } /* endwhile */
+  prefix[i] = '\0';
+  strcat(prefix, "_mesh_cells");
+
+  /* Determine grid data output file name. */
+
+  strcpy(extension, ".dat");
+  strcpy(mesh_file_name, prefix);
+  strcat(mesh_file_name, extension);
+  mesh_file_name_ptr = mesh_file_name;
+
+  /* Open the grid data output file. */
+
+  mesh_file.open(mesh_file_name_ptr, ios::out);
+  if (mesh_file.fail()) return (1);
+
+  /* Write the node locations for each quadrilateral grid block. */
+  Output_Cells_Tecplot(mesh_file);
+
+  /* Close the grid data output file. */
+  mesh_file.close();
+
+}
 
 #endif	// _HO_GRID2D_QUAD_MULTIBLOCK_INCLUDED
