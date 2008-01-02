@@ -1600,42 +1600,74 @@ Vector2D FANS3D_ThermallyPerfect_KOmega_pState::HLLE_wavespeeds(const FANS3D_The
  ************************************************************************************************/
 FANS3D_ThermallyPerfect_KOmega_pState FANS3D_ThermallyPerfect_KOmega_pState::Rotate(const Vector3D &norm_dir) const {
 
-  // for a 3D unit normal rotated to align with the x-axis
-  double Ct = norm_dir.x;  //cos_angle
-  double St = sqrt( norm_dir.y*norm_dir.y + norm_dir.z*norm_dir.z); //sin_angle
-  Vector3D rt(0,norm_dir.z,-norm_dir.y);  //rotation axis  
+   double cos_psi, sin_psi, cos_phi, sin_phi, cos_theta, sin_theta;
+   cos_phi = ONE;
+   sin_phi = ZERO;
+   if (fabs(norm_dir.x)-ONE < TOLER) {
+      cos_psi = norm_dir.x/fabs(norm_dir.x);
+      sin_psi = ZERO;
+      cos_theta = ONE;
+      sin_theta = ZERO;
+   } else {
+      cos_psi = norm_dir.x;
+      sin_psi = sqrt(norm_dir.y*norm_dir.y + norm_dir.z*norm_dir.z);
+      cos_theta = norm_dir.y/sqrt(norm_dir.y*norm_dir.y + norm_dir.z*norm_dir.z);
+      sin_theta = norm_dir.z/sqrt(norm_dir.y*norm_dir.y + norm_dir.z*norm_dir.z);
+   } /* endif */
 
-  return FANS3D_ThermallyPerfect_KOmega_pState(rho,
-                                               v.x*Ct - v.y*rt.z*St + v.z*rt.y*St,
-                                               v.x*rt.z*St + v.y*(rt.y*rt.y*(ONE-Ct)+Ct) + v.z*(rt.y*rt.z*(ONE-Ct)),
-                                               -v.x*rt.y*St +  v.y*(rt.y*rt.z*(ONE-Ct)) + v.z*(rt.z*rt.z*(ONE-Ct)+Ct),
-                                               p,
-                                               k,
-                                               omega,
-                                               spec);
+   return FANS3D_ThermallyPerfect_KOmega_pState(rho,
+                                                (cos_psi*cos_phi-cos_theta*sin_phi*sin_psi)*v.x + 
+                                                (cos_psi*sin_phi+cos_theta*cos_phi*sin_psi)*v.y + 
+                                                (sin_psi*sin_theta)*v.z,
+                                                (-sin_psi*cos_phi-cos_theta*sin_phi*cos_psi)*v.x + 
+                                                (-sin_psi*sin_phi+cos_theta*cos_phi*cos_psi)*v.y + 
+                                                (cos_psi*sin_theta)*v.z,
+                                                (sin_theta*sin_phi)*v.x + 
+                                                (-sin_theta*cos_phi)*v.y + 
+                                                (cos_theta)*v.z,
+                                                p,
+                                                k,
+                                                omega,
+                                                spec);
 
 }
 
 /************************************************************************************************
- * FANS3D_ThermallyPerfect_KOmega_pState::Rotate -- Returns an un-rotated primitive state       *
+ * FANS3D_ThermallyPerfect_KOmega_pState::RotateBack -- Returns an un-rotated primitive state   *
  *                                            re-alinged from the x-axis of the global          *
  *                                            problem.                                          *
  ************************************************************************************************/
 FANS3D_ThermallyPerfect_KOmega_pState FANS3D_ThermallyPerfect_KOmega_pState::RotateBack(const Vector3D &norm_dir) const {
 
-  // for a 3D unit normal rotated to align with the x-axis
-  double Ct = norm_dir.x;  //cos_angle
-  double St = sqrt( norm_dir.y*norm_dir.y + norm_dir.z*norm_dir.z); //sin_angle
-  Vector3D rt(0,norm_dir.z,-norm_dir.y);  //rotation axis  
+   double cos_psi, sin_psi, cos_phi, sin_phi, cos_theta, sin_theta;
+   cos_phi = ONE;
+   sin_phi = ZERO;
+   if (fabs(norm_dir.x)-ONE < TOLER) {
+      cos_psi = norm_dir.x/fabs(norm_dir.x);
+      sin_psi = ZERO;
+      cos_theta = ONE;
+      sin_theta = ZERO;
+   } else {
+      cos_psi = norm_dir.x;
+      sin_psi = sqrt(norm_dir.y*norm_dir.y + norm_dir.z*norm_dir.z);
+      cos_theta = norm_dir.y/sqrt(norm_dir.y*norm_dir.y + norm_dir.z*norm_dir.z);
+      sin_theta = norm_dir.z/sqrt(norm_dir.y*norm_dir.y + norm_dir.z*norm_dir.z);
+   } /* endif */
 
-  return FANS3D_ThermallyPerfect_KOmega_pState(rho,
-                                               v.x*Ct + v.y*rt.z*St - v.z*rt.y*St,
-                                               -v.x*rt.z*St + v.y*(rt.y*rt.y*(ONE-Ct)+Ct) + v.z*(rt.y*rt.z*(ONE-Ct)),
-                                               + v.x*rt.y*St +  v.y*(rt.y*rt.z*(ONE-Ct)) + v.z*(rt.z*rt.z*(ONE-Ct)+Ct),
-                                               p,
-                                               k,
-                                               omega,
-                                               spec);
+   return FANS3D_ThermallyPerfect_KOmega_pState(rho,
+                                                (cos_psi*cos_phi-cos_theta*sin_phi*sin_psi)*v.x + 
+                                                (-sin_psi*cos_phi-cos_theta*sin_phi*cos_psi)*v.y + 
+                                                (sin_theta*sin_phi)*v.z,
+                                                (cos_psi*sin_phi+cos_theta*cos_phi*sin_psi)*v.x + 
+                                                (-sin_psi*sin_phi+cos_theta*cos_phi*cos_psi)*v.y + 
+                                                (-sin_theta*cos_phi)*v.z,
+                                                (sin_theta*sin_psi)*v.x + 
+                                                (sin_theta*cos_psi)*v.y + 
+                                                (cos_theta)*v.z,
+                                                p,
+                                                k,
+                                                omega,
+                                                spec);
 
 }
 
@@ -2125,41 +2157,73 @@ W(const FANS3D_ThermallyPerfect_KOmega_cState &U) const {
  ************************************************************************************************/
 FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_cState::Rotate(const Vector3D &norm_dir) const {
 
-  // for a 3D unit normal rotated to align with the x-axis
-  double Ct = norm_dir.x;  //cos_angle
-  double St = sqrt( norm_dir.y*norm_dir.y + norm_dir.z*norm_dir.z); //sin_angle
-  Vector3D rt(0,norm_dir.z,-norm_dir.y);  //rotation axis  
+   double cos_psi, sin_psi, cos_phi, sin_phi, cos_theta, sin_theta;
+   cos_phi = ONE;
+   sin_phi = ZERO;
+   if (fabs(norm_dir.x)-ONE < TOLER) {
+      cos_psi = norm_dir.x/fabs(norm_dir.x);
+      sin_psi = ZERO;
+      cos_theta = ONE;
+      sin_theta = ZERO;
+   } else {
+      cos_psi = norm_dir.x;
+      sin_psi = sqrt(norm_dir.y*norm_dir.y + norm_dir.z*norm_dir.z);
+      cos_theta = norm_dir.y/sqrt(norm_dir.y*norm_dir.y + norm_dir.z*norm_dir.z);
+      sin_theta = norm_dir.z/sqrt(norm_dir.y*norm_dir.y + norm_dir.z*norm_dir.z);
+   } /* endif */
 
-  return FANS3D_ThermallyPerfect_KOmega_cState(rho,
-                                               rhov.x*Ct - rhov.y*rt.z*St + rhov.z*rt.y*St,
-                                               rhov.x*rt.z*St + rhov.y*(rt.y*rt.y*(ONE-Ct)+Ct) + rhov.z*(rt.y*rt.z*(ONE-Ct)),
-                                               -rhov.x*rt.y*St +  rhov.y*(rt.y*rt.z*(ONE-Ct)) + rhov.z*(rt.z*rt.z*(ONE-Ct)+Ct),
-                                               E,
-                                               rhok,
-                                               rhoomega,
-                                               rhospec);
+   return FANS3D_ThermallyPerfect_KOmega_cState(rho,
+                                                (cos_psi*cos_phi-cos_theta*sin_phi*sin_psi)*rhov.x + 
+                                                (cos_psi*sin_phi+cos_theta*cos_phi*sin_psi)*rhov.y + 
+                                                (sin_psi*sin_theta)*rhov.z,
+                                                (-sin_psi*cos_phi-cos_theta*sin_phi*cos_psi)*rhov.x + 
+                                                (-sin_psi*sin_phi+cos_theta*cos_phi*cos_psi)*rhov.y + 
+                                                (cos_psi*sin_theta)*rhov.z,
+                                                (sin_theta*sin_phi)*rhov.x + 
+                                                (-sin_theta*cos_phi)*rhov.y + 
+                                                (cos_theta)*rhov.z,
+                                                E,
+                                                rhok,
+                                                rhoomega,
+                                                rhospec);
 
 }
 
 /************************************************************************************************
- * FANS3D_ThermallyPerfect_KOmega_cState::Rotate -- Returns an un-rotated primitive state       *
+ * FANS3D_ThermallyPerfect_KOmega_cState::RotateBack -- Returns an un-rotated primitive state   *
  *                                            re-alinged from the x-axis of the global          *
  *                                            problem.                                          *
  ************************************************************************************************/
 FANS3D_ThermallyPerfect_KOmega_cState FANS3D_ThermallyPerfect_KOmega_cState::RotateBack(const Vector3D &norm_dir) const {
 
-  // for a 3D unit normal rotated to align with the x-axis
-  double Ct = norm_dir.x;  //cos_angle
-  double St = sqrt( norm_dir.y*norm_dir.y + norm_dir.z*norm_dir.z); //sin_angle
-  Vector3D rt(0,norm_dir.z,-norm_dir.y);  //rotation axis  
+   double cos_psi, sin_psi, cos_phi, sin_phi, cos_theta, sin_theta;
+   cos_phi = ONE;
+   sin_phi = ZERO;
+   if (fabs(norm_dir.x)-ONE < TOLER) {
+      cos_psi = norm_dir.x/fabs(norm_dir.x);
+      sin_psi = ZERO;
+      cos_theta = ONE;
+      sin_theta = ZERO;
+   } else {
+      cos_psi = norm_dir.x;
+      sin_psi = sqrt(norm_dir.y*norm_dir.y + norm_dir.z*norm_dir.z);
+      cos_theta = norm_dir.y/sqrt(norm_dir.y*norm_dir.y + norm_dir.z*norm_dir.z);
+      sin_theta = norm_dir.z/sqrt(norm_dir.y*norm_dir.y + norm_dir.z*norm_dir.z);
+   } /* endif */
 
-  return FANS3D_ThermallyPerfect_KOmega_cState(rho,
-                                               rhov.x*Ct + rhov.y*rt.z*St - rhov.z*rt.y*St,
-                                               -rhov.x*rt.z*St + rhov.y*(rt.y*rt.y*(ONE-Ct)+Ct) + rhov.z*(rt.y*rt.z*(ONE-Ct)),
-                                               + rhov.x*rt.y*St +  rhov.y*(rt.y*rt.z*(ONE-Ct)) + rhov.z*(rt.z*rt.z*(ONE-Ct)+Ct),
-                                               E,
-                                               rhok,
-                                               rhoomega,
-                                               rhospec);
+   return FANS3D_ThermallyPerfect_KOmega_cState(rho,
+                                                (cos_psi*cos_phi-cos_theta*sin_phi*sin_psi)*rhov.x + 
+                                                (-sin_psi*cos_phi-cos_theta*sin_phi*cos_psi)*rhov.y + 
+                                                (sin_theta*sin_phi)*rhov.z,
+                                                (cos_psi*sin_phi+cos_theta*cos_phi*sin_psi)*rhov.x + 
+                                                (-sin_psi*sin_phi+cos_theta*cos_phi*cos_psi)*rhov.y + 
+                                                (-sin_theta*cos_phi)*rhov.z,
+                                                (sin_theta*sin_psi)*rhov.x + 
+                                                (sin_theta*cos_psi)*rhov.y + 
+                                                (cos_theta)*rhov.z,
+                                                E,
+                                                rhok,
+                                                rhoomega,
+                                                rhospec);
 
 }
