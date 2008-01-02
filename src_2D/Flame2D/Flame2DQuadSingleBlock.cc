@@ -3849,7 +3849,7 @@ int Update_Solution_Multistage_Explicit(Flame2D_Quad_Block &SolnBlk,
 
   int k_residual;
   double omega, delta_n;
-  const int NUM_VAR_FLAME2D( Flame2D_State::NumEqn() );
+  const int NUM_VAR_FLAME2D( SolnBlk.NumVar() );
   static Flame2D_pState Wo;
   bool isGoodState;
 

@@ -45,7 +45,7 @@ void SemiImplicitBlockJacobi(DenseMatrix &dSdU,
   if (SolnBlk.Axisymmetric && SolnBlk.Flow_Type != FLOWTYPE_INVISCID) { 
 
     // declares
-    int n = dSdU.get_n(); 
+    int n = SolnBlk.NumVar(); 
     static DenseMatrix dRdW(n,n); dRdW.zero();
     static DenseMatrix dWdU(n,n); dWdU.zero();
     
@@ -185,7 +185,7 @@ void dFIdW_Inviscid_ROE(DenseMatrix& dRdW,
    
   // declares
   const int overlap = Input_Parameters.NKS_IP.GMRES_Overlap;
-  const int NUM_VAR = dRdW.get_n();
+  const int NUM_VAR = SolnBlk.NumVar(); 
   static Vector2D nface;
   double lface;
   static DenseMatrix dFidW(NUM_VAR, NUM_VAR);
@@ -335,7 +335,7 @@ void dFIdW_Inviscid_ROE_FD(DenseMatrix& dRdW,
    
   // declares
   const int overlap = Input_Parameters.NKS_IP.GMRES_Overlap;
-  const int NUM_VAR = dRdW.get_n();   
+  const int NUM_VAR = SolnBlk.NumVar();   
   static Vector2D nface;
   double lface;
   static DenseMatrix dFidW(NUM_VAR, NUM_VAR);
@@ -458,7 +458,7 @@ void dFIdW_Inviscid_AUSM_plus_up(DenseMatrix& dRdW,
    
   // declares
   const int overlap = Input_Parameters.NKS_IP.GMRES_Overlap;
-  const int NUM_VAR = dRdW.get_n();
+  const int NUM_VAR = SolnBlk.NumVar();
   static Vector2D nface;
   double lface;
   static DenseMatrix dFidW(NUM_VAR, NUM_VAR);
@@ -764,8 +764,8 @@ void dWfdWc_Diamond(DenseMatrix &dWfdWc_x,
   dWfdWc_y(8,2) = mult_y * d_dWdy_dW;
   dWfdWc_y(9,3) = mult_y * d_dWdy_dW;
   /**************************************************************/      
-  const int ns = Flame2D_State::NumSpeciesEqn();
-  for(int Num=0; Num<(ns); Num++){
+  const int ns = Flame2D_State::NumSpecies();
+  for(int Num=0; Num<ns; Num++){
     dWfdWc_x(10+Num,4+Num) = mult_x * d_dWdx_dW;
     dWfdWc_y(10+Num,4+Num) = mult_y * d_dWdy_dW;
   }

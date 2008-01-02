@@ -10,12 +10,6 @@
 
 /****************************************************************/
 
-/*! *************************************************************
- * Flame2D Specialization of blocksize to use N-1 not N         *
- * variables                                                    *
- ****************************************************************/
-template <> int set_blocksize(Flame2D_Quad_Block &SolnBlk)
-{ return (Flame2D_State::NumEqn()); }
 
 
 /*! *************************************************************
@@ -36,7 +30,7 @@ int Newton_Update(Flame2D_Quad_Block *SolnBlk,
 		  double Relaxation_multiplier) {
 
   // declares
-  const int Num_Var = Flame2D_pState::NumEqn();  	
+  const int Num_Var = SolnBlk[0].NumVar();  	
   int error_flag = 0;
   bool isGoodState;
   
@@ -98,7 +92,7 @@ int Newton_Update(Flame2D_Quad_Block *SolnBlk,
 	
       for (int j = SolnBlk[Bcount].JCl-SolnBlk[Bcount].Nghost; j <= SolnBlk[Bcount].JCu+SolnBlk[Bcount].Nghost; j++){
 	for (int i = SolnBlk[Bcount].ICl-SolnBlk[Bcount].Nghost; i <= SolnBlk[Bcount].ICu+SolnBlk[Bcount].Nghost; i++){
-	  for(int varindex =1; varindex < Num_Var; varindex++){	  	   
+	  for(int varindex =1; varindex <= Num_Var; varindex++){	  	   
 	    //SolnBlk[Bcount].dUdt[i][j][0][varindex] = GMRES.deltaU_test(Bcount,i,j,varindex-1);
 	    SolnBlk[Bcount].dUdt[i][j][0][varindex] = GMRES.b_test(Bcount,i,j,varindex-1);
 	    //norm[varindex-1] += sqr(SolnBlk[Bcount].dUdt[i][j][0][varindex]);
@@ -527,7 +521,7 @@ Preconditioner_dFVdU(DenseMatrix &dFvdU,
   static Vector2D nface;
 
   // solution size
-  const int ns = SolnBlk->W[Rii][Rjj].NumSpeciesEqn();
+  const int ns = SolnBlk->W[Rii][Rjj].NumSpecies();
   const int Matrix_size = 10 + ns; // rho, u, v, p, drho, du/dx, du/dy, 
                                    // dv/dx, dv/dy, dp/dx, dcn/dx
 
@@ -754,7 +748,7 @@ Preconditioner_dSdU(int ii, int jj, DenseMatrix &dRdU){
  ****************************************************************/
 void normalize_Preconditioner(DenseMatrix &dFdU) 
 { 
-  int nsp( Flame2D_pState::NumSpeciesEqn() );
+  int nsp( Flame2D_pState::NumSpecies() );
   static const Flame2D_pState W_STD_ATM;
   static double ao( W_STD_ATM.a() );
   static double rho( W_STD_ATM.rho() );
@@ -839,7 +833,6 @@ SubcellReconstruction(const int i,
   double DxDx_ave, DxDy_ave, DyDy_ave, DU;
   static Vector2D dX, dXe, dXw, dXn, dXs;
   static Flame2D_State U0, DUDx_ave, DUDy_ave;
-  const int NUM_VAR(Flame2D_State::NumVar());
 
   /* Carry out the limited solution reconstruction in
      each cell of the computational mesh. */
@@ -900,7 +893,7 @@ SubcellReconstruction(const int i,
       // DxDy_ave = DxDy_ave/double(n_pts);
       // DyDy_ave = DyDy_ave/double(n_pts);
 
-    for (k=1; k<=NUM_VAR; k++) {
+    for (k=1; k<=blocksize; k++) {
       SolnBlk->dWdx[i][j][k] = ( (DUDx_ave[k]*DyDy_ave-DUDy_ave[k]*DxDy_ave)/
 				 (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave) );
       SolnBlk->dWdy[i][j][k] = ( (DUDy_ave[k]*DxDx_ave-DUDx_ave[k]*DxDy_ave)/

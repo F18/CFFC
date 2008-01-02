@@ -17,7 +17,6 @@
 #ifndef STATIC_NUMBER_OF_SPECIES
 int Flame2D_State :: n = 0;
 int Flame2D_State :: ns = 0;
-int Flame2D_State :: ns_eqn = 0;
 #endif
 bool    Flame2D_State  :: reacting = false;
 double  Flame2D_State  :: Mref = 0.5;
@@ -44,7 +43,6 @@ void Flame2D_pState::setMixture(const string &mech_name,
 #ifndef STATIC_NUMBER_OF_SPECIES
   ns = Mixture::nSpecies();
   n = ns + NUM_FLAME2D_VAR_SANS_SPECIES;
-  ns_eqn = ns - NSm1;
 #endif
 
   // determine if this is a reacting case
@@ -170,7 +168,7 @@ void Flame2D_pState::dFIdU(DenseMatrix &dFdU) {
   dFdU(3,3) = vx()*A/denominator;
   //Species
   const int NUM_VAR = NUM_FLAME2D_VAR_SANS_SPECIES;
-  for(int i = 0; i<ns_eqn; i++){ 
+  for(int i = 0; i<ns; i++){ 
     dFdU(1,NUM_VAR+i) = - dihdic(i)/denominator; 
     dFdU(3,NUM_VAR+i) = - vx()*dihdic(i)/denominator;    
     dFdU(NUM_VAR+i, 0) = - c(i)*vx() ;
@@ -254,7 +252,7 @@ void Flame2D_pState::dFIdW(DenseMatrix &dFdW,
     
   //Species
   const int NUM_VAR = NUM_FLAME2D_VAR_SANS_SPECIES;
-  for(int i = 0; i<ns_eqn; i++){ 
+  for(int i = 0; i<ns; i++){ 
     dFdW(3,NUM_VAR+i) = mult * rho_vx*dihdic(i);    
       
     dFdW(NUM_VAR+i, 0) = mult * c(i)*vx();
@@ -424,7 +422,7 @@ void Flame2D_pState :: dFvdWf_dGvdWf( DenseMatrix &dFvdWf,
   }
  
   //multispecies
-  for(int Num = 0; Num<ns_eqn; Num++){
+  for(int Num = 0; Num<ns; Num++){
     dFvdWf(3,10+Num) = rho_*Diffusion_coef(Num)*h[Num];  //+  H3???
     dFvdWf(4+Num, 10+Num) = rho_*Diffusion_coef(Num);
   }
@@ -465,7 +463,7 @@ void Flame2D_pState :: dFvdWf_dGvdWf( DenseMatrix &dFvdWf,
   }
 
   //multispecies
-  for(int Num = 0; Num<ns_eqn; Num++){
+  for(int Num = 0; Num<ns; Num++){
     dGvdWf(3,10+Num) = rho_*Diffusion_coef(Num)*h[Num];
     dGvdWf(4+Num, 10+Num) = rho_*Diffusion_coef(Num);
   }
@@ -637,8 +635,7 @@ void Flame2D_pState::Flux_Dissipation_Jac(DenseMatrix &Jac,
 					  const double &mult) {
 
   // NOTE:  dihdic needs to be loaded first outside
-  const int NUM_VAR = Jac.get_n();
-    
+
   //declares
   static Flame2D_State lp;
   static Flame2D_State rc;
@@ -646,15 +643,15 @@ void Flame2D_pState::Flux_Dissipation_Jac(DenseMatrix &Jac,
   //
   // Loop through each wavespeed and each element of Jacobian(i,j)        
   //
-  for (int i=1; i <= NUM_VAR; i++) { 
+  for (int i=1; i <= n; i++) { 
       
     // compute left and right eigenvectors
     lp_x(i, lp);
     rc_x(i, rc);
       
     // compute i,j element
-    for(int irow =0; irow< NUM_VAR; irow++)
-      for(int jcol =0; jcol< NUM_VAR; jcol++)
+    for(int irow =0; irow< n; irow++)
+      for(int jcol =0; jcol< n; jcol++)
 	Jac(irow, jcol) -= mult*wavespeeds[i]*lp[jcol+1]*rc[irow+1];
   } 
       
@@ -807,7 +804,6 @@ void Flame2D_pState::Flux_Dissipation_Jac_precon(DenseMatrix &Jac,
 						 const double &mult) {
 
   // NOTE:  dihdic needs to be loaded first outside
-  const int NUM_VAR = Jac.get_n();
     
   //declares
   static Flame2D_State lp;
@@ -821,15 +817,15 @@ void Flame2D_pState::Flux_Dissipation_Jac_precon(DenseMatrix &Jac,
   //
   // Calculate the preconditioned upwind dissipation flux.
   //
-  for (int i=1; i <=  NUM_VAR; i++) {
+  for (int i=1; i <= n; i++) {
       
     // compute left and right eigenvectors
     lp_x_precon(i, MR2, uprimed, cprimed, lp);
     rc_x_precon(i, MR2, uprimed, cprimed, rc);
       
     // compute i,j element
-    for(int irow =0; irow < NUM_VAR; irow++)
-      for(int jcol =0; jcol < NUM_VAR; jcol++)	   
+    for(int irow =0; irow < n; irow++)
+      for(int jcol =0; jcol < n; jcol++)	   
 	Jac(irow, jcol) -= HALF*wavespeeds[i]*lp[jcol+1]*rc[irow+1];
   }
     
@@ -928,13 +924,13 @@ void Flame2D_pState::Low_Mach_Number_Preconditioner(DenseMatrix &P,
   int NUM_VAR = NUM_FLAME2D_VAR_SANS_SPECIES;
 
   //Multispecies
-  for(int j=0; j<ns_eqn; j++){  
+  for(int j=0; j<ns; j++){  
      
     P(0,j+NUM_VAR) = dihdic(j)*alpham1/Omega;
     P(1,j+NUM_VAR) = vx()*dihdic(j)*alpham1/Omega;
     P(2,j+NUM_VAR) = vy()*dihdic(j)*alpham1/Omega;
     P(3,j+NUM_VAR) = dihdic(j)*(V+enthalpy)*alpham1/Omega;	
-    for(int i=0; i<ns_eqn; i++){ 
+    for(int i=0; i<ns; i++){ 
       if(i==j){ 
 	P(i+NUM_VAR,0) = (c(i))*(beta-V)*alpham1/Omega;
 	P(i+NUM_VAR,1) = (c(i))*vx()*alpham1/Omega;
@@ -998,12 +994,12 @@ void Flame2D_pState::Low_Mach_Number_Preconditioner_Inverse(DenseMatrix &Pinv,
   int NUM_VAR = NUM_FLAME2D_VAR_SANS_SPECIES;
   
   //Multispecies
-  for(int j=0; j<ns_eqn; j++){   
+  for(int j=0; j<ns; j++){   
     Pinv(0,j+NUM_VAR) = -dihdic(j)*BB/AA;
     Pinv(1,j+NUM_VAR) = -vx()*dihdic(j)*BB/AA;
     Pinv(2,j+NUM_VAR) = -vy()*dihdic(j)*BB/AA;
     Pinv(3,j+NUM_VAR) = -dihdic(j)*BB*DD/AA;
-    for(int i=0; i<ns_eqn; i++){  
+    for(int i=0; i<ns; i++){  
       if(i==j){
 	Pinv(i+NUM_VAR,0) = (c(i))*CC*BB/AA;
 	Pinv(i+NUM_VAR,1) = -(c(i))*vx()*BB/AA;
@@ -1104,7 +1100,7 @@ void Flame2D_pState::dSa_idU( DenseMatrix &dSa_IdU,
     //Multispecies terms
     const int NUM_VAR = NUM_FLAME2D_VAR_SANS_SPECIES;
     double d( CP/RTOT - ONE );
-    for(int i=0; i<ns_eqn;i++){
+    for(int i=0; i<ns;i++){
       dSa_IdU(3,i+NUM_VAR) += vx()*dihdic(i)/d/X.x; 
       dSa_IdU(NUM_VAR+i,0) += vx()*c(i)/X.x;
       dSa_IdU(NUM_VAR+i,1) -= c(i)/X.x;
@@ -1217,7 +1213,7 @@ void Flame2D_pState::dSa_vdW(DenseMatrix &dSa_VdW,
    
     //Multispecies
     double rhoD;
-    for(int i = 0; i<ns_eqn; i++){ 
+    for(int i = 0; i<ns; i++){ 
       rhoD = rho_*Diffusion_coef(i);
       dSa_VdW(3,NUM_VAR+i) += ( rhoD * h_i[i] * d_dWdx_dW ) / radius;  
       //- specdata[Num].Rs()*Sum_dhi)/radius; // <- For full NS-1 consistency
@@ -1241,14 +1237,14 @@ void Flame2D_pState::dSa_vdW(DenseMatrix &dSa_VdW,
 void Flame2D_pState::Sw(Flame2D_State &S, 
 			const double& mult) const {
   Mix.getRates( p(), c(), r );
-  for(int i=0; i<ns_eqn; i++) S.rhoc(i) += mult*r[i];
+  for(int i=0; i<ns; i++) S.rhoc(i) += mult*r[i];
 }
 
 /****************************************************
  * Chemistry source term jacobian
  ****************************************************/  
 void Flame2D_pState::dSwdU( DenseMatrix &dSdU ) const {
-  Mix.dSwdU( dSdU, rho(), p(), c(), NUM_FLAME2D_VAR_SANS_SPECIES, NSm1 );
+  Mix.dSwdU( dSdU, rho(), p(), c(), NUM_FLAME2D_VAR_SANS_SPECIES );
 }
 
 
@@ -1314,7 +1310,7 @@ void Flame2D_pState::dWdU(DenseMatrix &dWdQ) {
   int NUM_VAR = NUM_FLAME2D_VAR_SANS_SPECIES;
 
   //Species
-  for(int i=0; i<ns_eqn; i++){   
+  for(int i=0; i<ns; i++){   
     dWdQ(3, NUM_VAR+i) = - dihdic(i)/denominator;
     dWdQ(NUM_VAR+i, 0) = - c(i)/rho();
     dWdQ(NUM_VAR+i, NUM_VAR+i) = ONE/rho();
@@ -2110,7 +2106,7 @@ void Flame2D_State :: FluxRoe_x(Flame2D_pState &Wl,
 			       lambdas_l,
 			       lambdas_r);
       
-      for (int i=0 ; i < NumEqn(); i++) {
+      for (int i=0 ; i < n; i++) {
 	if (wavespeeds[i+1] < ZERO) {
 	  //*this += wavespeeds[i+1]*((Waa.lp_x(i+1)*dWrl)*Waa.rc_x(i+1));
 	  Wa.Flux_Dissipation(i+1, dWrl, wavespeeds[i+1], *this, 1.0);
@@ -2121,7 +2117,7 @@ void Flame2D_State :: FluxRoe_x(Flame2D_pState &Wl,
       wavespeeds.HartenFix_Pos(lambdas_a,
 			       lambdas_l,
 			       lambdas_r);
-      for (int i=0; i < NumEqn(); i++) {
+      for (int i=0; i < n; i++) {
 	if (wavespeeds[i+1] > ZERO) {
 	  //*this -= wavespeeds[i+1]*((Waa.lp_x(i+1)*dWrl)*Waa.rc_x(i+1));
 	  Wa.Flux_Dissipation(i+1, dWrl, wavespeeds[i+1], *this, -1.0);
@@ -2148,7 +2144,7 @@ void Flame2D_State :: FluxRoe_x(Flame2D_pState &Wl,
 			     lambdas_r);
      
     // Evaluate the low-Mach-number local preconditioner for the Roe-averaged state.
-    static DenseMatrix P(NumEqn(),NumEqn(),ZERO);
+    static DenseMatrix P(n,n,ZERO);
     //P.zero(); // <- no need, always writing to the same spot
     Wa.Low_Mach_Number_Preconditioner(P, flow_type_flag, deltax);
     
@@ -2161,8 +2157,8 @@ void Flame2D_State :: FluxRoe_x(Flame2D_pState &Wl,
     Wa.Flux_Dissipation_precon( MR2a, dWrl, wavespeeds, Flux_dissipation);
     
     // Add preconditioned upwind dissipation flux.
-    for ( int i = 0 ; i < NumEqn() ; i++ ) {
-      for ( int j = 0 ; j < NumEqn() ; j++ ) {
+    for ( int i = 0 ; i < n ; i++ ) {
+      for ( int j = 0 ; j < n ; j++ ) {
 	(*this)[i+1] += P(i,j)*Flux_dissipation[j+1];
       } 
     } 

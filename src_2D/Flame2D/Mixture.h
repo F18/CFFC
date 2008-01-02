@@ -196,8 +196,7 @@ public:
   void updateTransport(const double &rho, const double* y);
   //! update dihdiy and phi
   void updateDihdDic( const double &rho, 
-		      const double* y, 
-		      const int NSm1 );
+		      const double* y );
 
   /***************** Mixing Rules ********************
     The following constructors return "total" physical
@@ -240,8 +239,7 @@ public:
 	      const double &rho,
 	      const double &Press,
 	      const double* y,
-	      const int offset,
-	      const int NSm1) const;
+	      const int offset) const;
   double dSwdU_max_diagonal( const double &rho,
 			     const double &Press,
 			     const double* y) const;
@@ -719,8 +717,7 @@ inline void Mixture :: updateTransport(const double &rho,
  * wrt the mass fractions.
  ****************************************************/
 inline void Mixture ::  updateDihdDic( const double &rho, 
-				       const double* y, 
-				       const int NSm1 ) {
+				       const double* y ) {
     
   if (!dhdy_OK) {
 	
@@ -730,17 +727,11 @@ inline void Mixture ::  updateDihdDic( const double &rho,
     ct_gas->setDensity(rho);
     ct_gas->getEnthalpy_RT(dhdy); // -> h = hs + hf
 
-    // get last species value
-    // for h_k - h_N
-    double hN( 0.0 );
-    if (NSm1) hN = ( dhdy[ns-1]*(Cantera::GasConstant/M[ns-1])*T -
-		     Cp*T*MW/M[ns-1] );
-	
     // compute the rest and phi at the same time
     phi = 0.0;
-    for(int i=0; i<ns-NSm1; i++) {
-      dhdy[i] = ( ( dhdy[i]*(Cantera::GasConstant/M[i])*T -
-		    Cp*T*MW/M[i] ) - hN );
+    for(int i=0; i<ns; i++) {
+      dhdy[i] = ( dhdy[i]*(Cantera::GasConstant/M[i])*T -
+		  Cp*T*MW/M[i] );
       phi += y[i] * dhdy[i];
     }
 

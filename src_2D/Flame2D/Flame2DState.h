@@ -57,10 +57,6 @@ enum INDICES { RHO_ = 0,
 #define STATIC_NUM_FLAME2D_VAR   NUM_FLAME2D_VAR_SANS_SPECIES+STATIC_NUMBER_OF_SPECIES
 #endif
 
-//DEBUGGING FLAG FOR FIGUREING OUT proper NS-1 setup.
-#undef _NS_MINUS_ONE
-#define _NS_MINUS_ONE
-
 /////////////////////////////////////////////////////////////////////
 /// Class Definitions
 /////////////////////////////////////////////////////////////////////
@@ -173,14 +169,8 @@ public:
   // return the number of variables
   static int NumVar() { return n; }
 
-  // return the actual number of equations we are solving
-  static int NumEqn() { return n-NSm1; }
-
   // return the number of species
   static int NumSpecies() { return ns; }
-
-  // return the number of species equations
-  static int NumSpeciesEqn() { return ns_eqn; }
 
   // is the mixture reacting
   static bool isReacting() { return reacting; }
@@ -299,21 +289,13 @@ public:
    */
 protected:
 
-#ifdef _NS_MINUS_ONE
-  static const int  NSm1 = 1;
-#else
-  static const int  NSm1 = 0;
-#endif
-
 #ifdef STATIC_NUMBER_OF_SPECIES
   static const int      n = STATIC_NUM_FLAME2D_VAR;
   static const int     ns = STATIC_NUMBER_OF_SPECIES;
-  static const int ns_eqn = ns-NSm1;
-  double            x[n];
+  double                x[n];
 #else
   static int        n; //!< Total number of vars
   static int       ns; //!< Number of species
-  static int   ns_eqn; //!< Number of species equations
   double           *x;
 #endif
   static bool      reacting; //!< boolean indicating whether gas is reacting
@@ -605,7 +587,7 @@ public:
   //! update related transport properties -> kappa and D_i
   void updateTransport(void) { Mix.updateTransport(rho(), c()); };
   //! update derivative of species enthalpies wrt mass fracs
-  double updateDihdDic(void) { Mix.updateDihdDic( rho(), c(), NSm1 ); };
+  double updateDihdDic(void) { Mix.updateDihdDic( rho(), c() ); };
 
   /************ Strain rate tensor, laminar stress tensor ***********/
   void Strain_Rate(const Flame2D_State &dWdx,
@@ -1162,79 +1144,81 @@ inline void Flame2D_pState::Viscous_Quantities(const Flame2D_State &dWdx,
   currently only set to give warnings, but still 
   continues.
 
-  * This is meant for a conserved state only
+  This is meant for a conserved state only
 
-  ***************************************************************/
+***************************************************************/
 inline bool Flame2D_State::speciesOK(const int &harshness) {
+
+  // declares
   double yi;
   double sum(ZERO);
+  const double &rho_ = rho();
 
-  //-------- Negative Check ------------//     
-  for(int i=0; i<ns_eqn; i++){
-    yi = rhoc(i)/rho();
+  //
+  // Loop over the species
+  //
+  for(int i=0; i<ns; i++){
 
-    //
-    //  -> check for > 1.0
-    //
-    if(yi > ONE){
-      rhoc(i) = rho();
-      yi = ONE; 
 
-      //
-      //  -> check for -ve
-      //
-    } else if(yi < ZERO){
+    yi = rhoc(i)/rho_;
 
-      //check for small -ve and set to ZERO 
+    //=================================================================
+    // check for -ve
+    //=================================================================
+    if(yi < ZERO){
+
+      //---------------------------------------------------------------
+      // a. -> check for small -ve and set to ZERO 
+      //---------------------------------------------------------------
       if(yi > -SPEC_TOLERANCE){
 	rhoc(i) = ZERO;
 	yi = ZERO;
 
-	// else, report error depending upon harshness 
+      //---------------------------------------------------------------
+      // b. ->  report error depending upon harshness 
+      //---------------------------------------------------------------
       } else {
 	
+	// display error
 #ifdef _DEBUG
 	cout<<"\ncState -ve mass fraction in "<<speciesName(i)<<" "<<temp
 	    <<" greater than allowed tolerance of "<<-SPEC_TOLERANCE; 
 #endif
 
+	// if harshness less than ten, return in error
 	if( harshness < 10){
 	  return false;
-	} else { 
 
+	// else, just force to zero
+	} else { 
+	  rhoc(i) = ZERO;
+	  yi = ZERO;
+
+	  // display error
 #ifdef _DEBUG
 	  cout<<"\ncState rhospec["<<i<<"] = "<<rhoc(i)<<" -ve mass fraction larger than tolerance,"
 	      <<" but setting to zero and continuing anyway. ";
 #endif
+	} // endif - harshness
 
-	  rhoc(i) = ZERO;
-	  yi = ZERO;
+      //---------------------------------------------------------------
+      } // endif - yi<-TOL
+      //---------------------------------------------------------------
 
-	}
-      }
-
-
+      
+    //=================================================================
     } // endif - y<0
+    //=================================================================
 
-      // add the contribution to the sum
+    // add the contribution to the sum
     sum += yi;
 
   } // enfor - species
 
-    // Distribute error according to number of species
-    // equations solved.
-#ifdef _NS_MINUS_ONE
-  yi = max(ONE - sum, ZERO);
-  sum += yi;
-  rhoc(ns-1) = rho()*yi;
-  for(int i=0; i<ns; i++){
-    rhoc(i) *= (ONE/sum);
-  } 
-#else
-  for(int i=0; i<ns; i++){
-    rhoc(i) *= (ONE/sum);
-  } 
-#endif
+  // Distribute error over all the species
+  for(int i=0; i<ns; i++) rhoc(i) /= sum;
+
+  // SUCCESS!
   return true;
 }
 
