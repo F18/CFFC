@@ -333,7 +333,7 @@ Update_Solution_Multistage_Explicit(const int i_stage,
                //N-1 species
                U[i][j][k][num_vars] = U[i][j][k].rho*(ONE - U[i][j][k].sum_species());
             } /* endif */
-            
+
             // Check physical validity of update solution state
             if (IPs.Local_Time_Stepping == GLOBAL_TIME_STEPPING) {
 	      if (!U[i][j][k].Realizable_Solution_Check()) {

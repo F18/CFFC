@@ -1542,7 +1542,7 @@ Euler3D_ThermallyPerfect_pState Euler3D_ThermallyPerfect_pState::Rotate(const Ve
    double cos_psi, sin_psi, cos_phi, sin_phi, cos_theta, sin_theta;
    cos_phi = ONE;
    sin_phi = ZERO;
-   if (fabs(norm_dir.x)-ONE < TOLER) {
+   if (fabs(fabs(norm_dir.x)-ONE) < TOLER) {
       cos_psi = norm_dir.x/fabs(norm_dir.x);
       sin_psi = ZERO;
       cos_theta = ONE;
@@ -1579,7 +1579,7 @@ Euler3D_ThermallyPerfect_pState Euler3D_ThermallyPerfect_pState::RotateBack(cons
    double cos_psi, sin_psi, cos_phi, sin_phi, cos_theta, sin_theta;
    cos_phi = ONE;
    sin_phi = ZERO;
-   if (fabs(norm_dir.x)-ONE < TOLER) {
+   if (fabs(fabs(norm_dir.x)-ONE) < TOLER) {
       cos_psi = norm_dir.x/fabs(norm_dir.x);
       sin_psi = ZERO;
       cos_theta = ONE;
@@ -2216,7 +2216,7 @@ Euler3D_ThermallyPerfect_cState Euler3D_ThermallyPerfect_cState::Rotate(const Ve
    double cos_psi, sin_psi, cos_phi, sin_phi, cos_theta, sin_theta;
    cos_phi = ONE;
    sin_phi = ZERO;
-   if (fabs(norm_dir.x)-ONE < TOLER) {
+   if (fabs(fabs(norm_dir.x)-ONE) < TOLER) {
       cos_psi = norm_dir.x/fabs(norm_dir.x);
       sin_psi = ZERO;
       cos_theta = ONE;
@@ -2253,7 +2253,7 @@ Euler3D_ThermallyPerfect_cState Euler3D_ThermallyPerfect_cState::RotateBack(cons
    double cos_psi, sin_psi, cos_phi, sin_phi, cos_theta, sin_theta;
    cos_phi = ONE;
    sin_phi = ZERO;
-   if (fabs(norm_dir.x)-ONE < TOLER) {
+   if (fabs(fabs(norm_dir.x)-ONE) < TOLER) {
       cos_psi = norm_dir.x/fabs(norm_dir.x);
       sin_psi = ZERO;
       cos_theta = ONE;

@@ -2217,7 +2217,7 @@ LES3DFsd_pState LES3DFsd_pState::Rotate(const Vector3D &norm_dir) const {
    double cos_psi, sin_psi, cos_phi, sin_phi, cos_theta, sin_theta;
    cos_phi = ONE;
    sin_phi = ZERO;
-   if (fabs(norm_dir.x)-ONE < TOLER) {
+   if (fabs(fabs(norm_dir.x)-ONE) < TOLER) {
       cos_psi = norm_dir.x/fabs(norm_dir.x);
       sin_psi = ZERO;
       cos_theta = ONE;
@@ -2256,7 +2256,7 @@ LES3DFsd_pState LES3DFsd_pState::RotateBack(const Vector3D &norm_dir) const {
    double cos_psi, sin_psi, cos_phi, sin_phi, cos_theta, sin_theta;
    cos_phi = ONE;
    sin_phi = ZERO;
-   if (fabs(norm_dir.x)-ONE < TOLER) {
+   if (fabs(fabs(norm_dir.x)-ONE) < TOLER) {
       cos_psi = norm_dir.x/fabs(norm_dir.x);
       sin_psi = ZERO;
       cos_theta = ONE;
@@ -3771,7 +3771,7 @@ LES3DFsd_cState LES3DFsd_cState::Rotate(const Vector3D &norm_dir) const {
    double cos_psi, sin_psi, cos_phi, sin_phi, cos_theta, sin_theta;
    cos_phi = ONE;
    sin_phi = ZERO;
-   if (fabs(norm_dir.x)-ONE < TOLER) {
+   if (fabs(fabs(norm_dir.x)-ONE) < TOLER) {
       cos_psi = norm_dir.x/fabs(norm_dir.x);
       sin_psi = ZERO;
       cos_theta = ONE;
@@ -3810,7 +3810,7 @@ LES3DFsd_cState LES3DFsd_cState::RotateBack(const Vector3D &norm_dir) const {
    double cos_psi, sin_psi, cos_phi, sin_phi, cos_theta, sin_theta;
    cos_phi = ONE;
    sin_phi = ZERO;
-   if (fabs(norm_dir.x)-ONE < TOLER) {
+   if (fabs(fabs(norm_dir.x)-ONE) < TOLER) {
       cos_psi = norm_dir.x/fabs(norm_dir.x);
       sin_psi = ZERO;
       cos_theta = ONE;

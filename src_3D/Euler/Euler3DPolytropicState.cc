@@ -2162,7 +2162,7 @@ Euler3D_Polytropic_pState Euler3D_Polytropic_pState::Rotate(const Vector3D &norm
    double cos_psi, sin_psi, cos_phi, sin_phi, cos_theta, sin_theta;
    cos_phi = ONE;
    sin_phi = ZERO;
-   if (fabs(norm_dir.x)-ONE < TOLER) {
+   if (fabs(fabs(norm_dir.x)-ONE) < TOLER) {
       cos_psi = norm_dir.x/fabs(norm_dir.x);
       sin_psi = ZERO;
       cos_theta = ONE;
@@ -2200,7 +2200,7 @@ Euler3D_Polytropic_pState Euler3D_Polytropic_pState::RotateBack(const Vector3D &
    double cos_psi, sin_psi, cos_phi, sin_phi, cos_theta, sin_theta;
    cos_phi = ONE;
    sin_phi = ZERO;
-   if (fabs(norm_dir.x)-ONE < TOLER) {
+   if (fabs(fabs(norm_dir.x)-ONE) < TOLER) {
       cos_psi = norm_dir.x/fabs(norm_dir.x);
       sin_psi = ZERO;
       cos_theta = ONE;
@@ -2721,7 +2721,7 @@ Euler3D_Polytropic_cState Euler3D_Polytropic_cState::Rotate(const Vector3D &norm
    double cos_psi, sin_psi, cos_phi, sin_phi, cos_theta, sin_theta;
    cos_phi = ONE;
    sin_phi = ZERO;
-   if (fabs(norm_dir.x)-ONE < TOLER) {
+   if (fabs(fabs(norm_dir.x)-ONE) < TOLER) {
       cos_psi = norm_dir.x/fabs(norm_dir.x);
       sin_psi = ZERO;
       cos_theta = ONE;
@@ -2759,7 +2759,7 @@ Euler3D_Polytropic_cState Euler3D_Polytropic_cState::RotateBack(const Vector3D &
    double cos_psi, sin_psi, cos_phi, sin_phi, cos_theta, sin_theta;
    cos_phi = ONE;
    sin_phi = ZERO;
-   if (fabs(norm_dir.x)-ONE < TOLER) {
+   if (fabs(fabs(norm_dir.x)-ONE) < TOLER) {
       cos_psi = norm_dir.x/fabs(norm_dir.x);
       sin_psi = ZERO;
       cos_theta = ONE;
