@@ -42,14 +42,8 @@ class HexaSolver_Data {
   // Residual file output stream
   ofstream residual_file;
 
-<<<<<<< HEAD:src_3D/HexaBlock/HexaSolverClasses.h
-  ofstream energy_file;
-
-  ofstream turbulence_progress_file;
-=======
   // Other solution progress file output streams
   ofstream other_solution_progress_files[10];
->>>>>>> ae7d19f9b5041b96e1b43ea336ac8af48c89aced:src_3D/HexaBlock/HexaSolverClasses.h
 
   int total_number_of_time_steps() { return (number_of_explicit_time_steps+number_of_implicit_time_steps); }
  

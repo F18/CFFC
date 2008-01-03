@@ -98,15 +98,6 @@ int HexaSolver(char *Input_File_Name_ptr, int batch_flag) {
     /****************** OPEN SOLUTION PROGRESS FILES ******************/  
     // Open residual progress file 
     if (CFFC_Primary_MPI_Processor()) {    
-<<<<<<< HEAD:src_3D/HexaBlock/HexaSolver.h
-      error_flag = Open_Progress_File(Data.residual_file,
-				      Solution_Data.Input.Output_File_Name,
-				      Data.number_of_explicit_time_steps);
-      if (error_flag) {
-	cout << "\n ERROR: Unable to open residual file for the calculation.\n";
-	cout.flush(); return (error_flag);
-      } /* endif */
-=======
        error_flag = Open_Progress_File(Data.residual_file,
 	                               Solution_Data.Input.Output_File_Name,
 				       Data.number_of_explicit_time_steps);
@@ -117,25 +108,7 @@ int HexaSolver(char *Input_File_Name_ptr, int batch_flag) {
     } /* endif */
     error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return (error_flag);
->>>>>>> ae7d19f9b5041b96e1b43ea336ac8af48c89aced:src_3D/HexaBlock/HexaSolver.h
 
-<<<<<<< HEAD:src_3D/HexaBlock/HexaSolver.h
-      error_flag = Open_Energy_File(Data.energy_file,
-			            Solution_Data.Input.Output_File_Name,
-				    Data.number_of_explicit_time_steps);
-      if (error_flag) {
-	cout << "\n ERROR: Unable to open energy file for the calculation.\n";
-	cout.flush(); return (error_flag);
-      } /* endif */
-
-      error_flag = Open_Turbulence_Progress_File(Data.turbulence_progress_file,
-	 		                         Solution_Data.Input.Output_File_Name,
-				                 Data.number_of_explicit_time_steps);
-      if (error_flag) {
-	cout << "\n ERROR: Unable to open turbulence progress file for the calculation.\n";
-	cout.flush(); return (error_flag);
-      } /* endif */
-=======
     // Open other solution progress file(s) 
     if (CFFC_Primary_MPI_Processor()) {    
        error_flag = Open_Other_Solution_Progress_Specialization_Files(Data,
@@ -144,7 +117,6 @@ int HexaSolver(char *Input_File_Name_ptr, int batch_flag) {
 	 cout << "\n ERROR: Unable to open other solution progress file(s) for the calculation.\n";
 	 cout.flush(); 
        } /* endif */
->>>>>>> ae7d19f9b5041b96e1b43ea336ac8af48c89aced:src_3D/HexaBlock/HexaSolver.h
     } /* endif */
     error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return (error_flag);
@@ -190,17 +162,7 @@ int HexaSolver(char *Input_File_Name_ptr, int batch_flag) {
     error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return (error_flag);
 
-<<<<<<< HEAD:src_3D/HexaBlock/HexaSolver.h
-    if (CFFC_Primary_MPI_Processor()) error_flag = Close_Energy_File(Data.energy_file);
-    if (error_flag) return (error_flag);
-
-    if (CFFC_Primary_MPI_Processor()) error_flag = Close_Turbulence_Progress_File(Data.turbulence_progress_file);
-    if (error_flag) return (error_flag);
-
-    /*! ************************** POST PROCESSSING *******************************
-=======
     /***************************** POST PROCESSSING *******************************
->>>>>>> ae7d19f9b5041b96e1b43ea336ac8af48c89aced:src_3D/HexaBlock/HexaSolver.h
       Solution calculations complete. Write 3D solution to output and restart files  
       as required, reset solution parameters, and run other cases as specified 
       by input parameters.        

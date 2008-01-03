@@ -14,7 +14,6 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
   double dTime;
   double residual_l2norm_first, residual_ratio;
   double residual_l1_norm, residual_l2_norm, residual_max_norm;
-  double total_TKE, total_enstrophy, u_prime, Taylor_scale, viscosity, turb_burning_rate;
 
   int first_step(1);
   int limiter_freezing_off(ON);
@@ -115,19 +114,6 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
       residual_l2_norm = CFFC_Summation_MPI(residual_l2_norm); 
       residual_max_norm = Solution_Data.Local_Solution_Blocks.Max_Norm_Residual(Solution_Data.Input.Residual_Norm);
       residual_max_norm = CFFC_Maximum_MPI(residual_max_norm);
-      total_TKE =  Total_TKE<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >(Solution_Data.Local_Solution_Blocks.Soln_Blks,
-					                            Data.Local_Adaptive_Block_List);
-      total_enstrophy =  Total_Enstrophy<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >(Solution_Data.Local_Solution_Blocks.Soln_Blks,
-			 			                                Data.Local_Adaptive_Block_List);
-      u_prime =  u_rms<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >(Solution_Data.Local_Solution_Blocks.Soln_Blks,
-					                      Data.Local_Adaptive_Block_List);
-      Taylor_scale =  Taylor_Scale<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >(Solution_Data.Local_Solution_Blocks.Soln_Blks,
-					                                  Data.Local_Adaptive_Block_List);
-      viscosity =  Average_viscosity<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >(Solution_Data.Local_Solution_Blocks.Soln_Blks,
-					                                    Data.Local_Adaptive_Block_List);
-      turb_burning_rate =  Time_Averaging_of_Turbulent_Burning_Rate<Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> >(Solution_Data.Local_Solution_Blocks.Soln_Blks,
-					                                                                   Data.Local_Adaptive_Block_List,
-                                                                                                           Solution_Data.Input.Grid_IP);
 
       /* Output progress information for the calculation. */
       if (!Data.batch_flag) Output_Progress_L2norm(Data.number_of_explicit_time_steps,
@@ -144,20 +130,6 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
 				residual_l1_norm,
 				residual_l2_norm,
 				residual_max_norm);
-        Output_Energy_to_File(Data.energy_file,
-	 		      Data.number_of_explicit_time_steps,
-			      Data.Time*THOUSAND,
-			      Data.total_cpu_time,
-			      total_TKE,
-                              total_enstrophy);
-        Output_Turbulence_Progress_to_File(Data.turbulence_progress_file,
-					   Data.number_of_explicit_time_steps,
-					   Data.Time*THOUSAND,
-					   Data.total_cpu_time,
-					   u_prime,
-					   Taylor_scale,
-					   viscosity,
-					   turb_burning_rate);
       } /* endif */
 
       if (!first_step) {
