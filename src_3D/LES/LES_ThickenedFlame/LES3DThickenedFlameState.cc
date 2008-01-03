@@ -1932,7 +1932,7 @@ LES3DTF_pState LES3DTF_pState::Rotate(const Vector3D &norm_dir) const {
       sin_theta = norm_dir.z/sqrt(norm_dir.y*norm_dir.y + norm_dir.z*norm_dir.z);
    } /* endif */
 
-   return LES3DFsd_pState(rho,
+   return LES3DTF_pState(rho,
                           (cos_psi*cos_phi-cos_theta*sin_phi*sin_psi)*v.x + 
                           (cos_psi*sin_phi+cos_theta*cos_phi*sin_psi)*v.y + 
                           (sin_psi*sin_theta)*v.z,
@@ -1969,7 +1969,7 @@ LES3DTF_pState LES3DTF_pState::RotateBack(const Vector3D &norm_dir) const {
       sin_theta = norm_dir.z/sqrt(norm_dir.y*norm_dir.y + norm_dir.z*norm_dir.z);
    } /* endif */
 
-   return LES3DFsd_pState(rho,
+   return LES3DTF_pState(rho,
                           (cos_psi*cos_phi-cos_theta*sin_phi*sin_psi)*v.x + 
                           (-sin_psi*cos_phi-cos_theta*sin_phi*cos_psi)*v.y + 
                           (sin_theta*sin_phi)*v.z,
