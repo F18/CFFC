@@ -8121,10 +8121,10 @@ Grid2D_Quad_Block** Grid_Adiabatic_Flat_Plate(Grid2D_Quad_Block **Grid_ptr,
 
         if (iBlk == 0) {
  	   Stretch_I = STRETCHING_FCN_MAX_CLUSTERING;
-           Beta_I = 1.001; 
+           Beta_I = 1.01;
            Tau_I = ZERO;
            Stretch_J = STRETCHING_FCN_MIN_CLUSTERING;
-           Beta_J = 1.00001;
+           Beta_J = 1.0001;
            Tau_J = ZERO;
            Orthogonal_North = 0;
            Orthogonal_South = 0;
@@ -8132,10 +8132,10 @@ Grid2D_Quad_Block** Grid_Adiabatic_Flat_Plate(Grid2D_Quad_Block **Grid_ptr,
            Orthogonal_West = 0;
         } else if (iBlk == 1) {
 	   Stretch_I = STRETCHING_FCN_MINMAX_CLUSTERING;
-           Beta_I = 1.005; 
+           Beta_I = 1.05;
            Tau_I = ZERO;
            Stretch_J = STRETCHING_FCN_MIN_CLUSTERING;
-           Beta_J = 1.00001;
+           Beta_J = 1.0001;
            Tau_J = ZERO;
            Orthogonal_North = 0;
            Orthogonal_South = 0;
@@ -8143,10 +8143,10 @@ Grid2D_Quad_Block** Grid_Adiabatic_Flat_Plate(Grid2D_Quad_Block **Grid_ptr,
            Orthogonal_West = 0;
         } else {
  	   Stretch_I = STRETCHING_FCN_MIN_CLUSTERING;
-           Beta_I = 1.001; 
+           Beta_I = 1.01;
            Tau_I = ZERO;
            Stretch_J = STRETCHING_FCN_MIN_CLUSTERING;
-           Beta_J = 1.00001;
+           Beta_J = 1.0001;
            Tau_J = ZERO;
            Orthogonal_North = 0;
            Orthogonal_South = 0;
