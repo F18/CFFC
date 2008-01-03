@@ -1917,18 +1917,33 @@ Vector2D LES3DTF_pState::HLLE_wavespeeds(const LES3DTF_pState &Wl,
  **************************************************************************/
 LES3DTF_pState LES3DTF_pState::Rotate(const Vector3D &norm_dir) const {
 
-  // for a 3D unit normal rotated to align with the x-axis
-  double Ct = norm_dir.x;  //cos_angle
-  double St = sqrt( norm_dir.y*norm_dir.y + norm_dir.z*norm_dir.z); //sin_angle
-  Vector3D rt(0,norm_dir.z,-norm_dir.y);  //rotation axis  
+   double cos_psi, sin_psi, cos_phi, sin_phi, cos_theta, sin_theta;
+   cos_phi = ONE;
+   sin_phi = ZERO;
+   if (fabs(fabs(norm_dir.x)-ONE) < TOLER) {
+      cos_psi = norm_dir.x/fabs(norm_dir.x);
+      sin_psi = ZERO;
+      cos_theta = ONE;
+      sin_theta = ZERO;
+   } else {
+      cos_psi = norm_dir.x;
+      sin_psi = sqrt(norm_dir.y*norm_dir.y + norm_dir.z*norm_dir.z);
+      cos_theta = norm_dir.y/sqrt(norm_dir.y*norm_dir.y + norm_dir.z*norm_dir.z);
+      sin_theta = norm_dir.z/sqrt(norm_dir.y*norm_dir.y + norm_dir.z*norm_dir.z);
+   } /* endif */
 
-  return LES3DTF_pState(rho,
-                         v.x*Ct - v.y*rt.z*St + v.z*rt.y*St,
-                         v.x*rt.z*St + v.y*(rt.y*rt.y*(ONE-Ct)+Ct) + v.z*(rt.y*rt.z*(ONE-Ct)),
-                         - v.x*rt.y*St + v.y*(rt.y*rt.z*(ONE-Ct)) + v.z*(rt.z*rt.z*(ONE-Ct)+Ct),
-                         p,
-  			k,
-                        spec);
+   return LES3DFsd_pState(rho,
+                          (cos_psi*cos_phi-cos_theta*sin_phi*sin_psi)*v.x + 
+                          (cos_psi*sin_phi+cos_theta*cos_phi*sin_psi)*v.y + 
+                          (sin_psi*sin_theta)*v.z,
+                          (-sin_psi*cos_phi-cos_theta*sin_phi*cos_psi)*v.x + 
+                          (-sin_psi*sin_phi+cos_theta*cos_phi*cos_psi)*v.y + 
+                          (cos_psi*sin_theta)*v.z,
+                          (sin_theta*sin_phi)*v.x + 
+                          (-sin_theta*cos_phi)*v.y + 
+                          (cos_theta)*v.z,
+                          p,
+                          k);
 
 }
 
@@ -1939,18 +1954,33 @@ LES3DTF_pState LES3DTF_pState::Rotate(const Vector3D &norm_dir) const {
  **************************************************************************/
 LES3DTF_pState LES3DTF_pState::RotateBack(const Vector3D &norm_dir) const {
 
-  // for a 3D unit normal rotated to align with the x-axis
-  double Ct = norm_dir.x;  //cos_angle
-  double St = sqrt( norm_dir.y*norm_dir.y + norm_dir.z*norm_dir.z); //sin_angle
-  Vector3D rt(0,norm_dir.z,-norm_dir.y);  //rotation axis  
+   double cos_psi, sin_psi, cos_phi, sin_phi, cos_theta, sin_theta;
+   cos_phi = ONE;
+   sin_phi = ZERO;
+   if (fabs(fabs(norm_dir.x)-ONE) < TOLER) {
+      cos_psi = norm_dir.x/fabs(norm_dir.x);
+      sin_psi = ZERO;
+      cos_theta = ONE;
+      sin_theta = ZERO;
+   } else {
+      cos_psi = norm_dir.x;
+      sin_psi = sqrt(norm_dir.y*norm_dir.y + norm_dir.z*norm_dir.z);
+      cos_theta = norm_dir.y/sqrt(norm_dir.y*norm_dir.y + norm_dir.z*norm_dir.z);
+      sin_theta = norm_dir.z/sqrt(norm_dir.y*norm_dir.y + norm_dir.z*norm_dir.z);
+   } /* endif */
 
-  return LES3DTF_pState(rho,
-                         v.x*Ct + v.y*rt.z*St - v.z*rt.y*St,
-                         - v.x*rt.z*St + v.y*(rt.y*rt.y*(ONE-Ct)+Ct) + v.z*(rt.y*rt.z*(ONE-Ct)),
-                         + v.x*rt.y*St + v.y*(rt.y*rt.z*(ONE-Ct)) + v.z*(rt.z*rt.z*(ONE-Ct)+Ct),
-                         p,
-			k,
-                        spec);
+   return LES3DFsd_pState(rho,
+                          (cos_psi*cos_phi-cos_theta*sin_phi*sin_psi)*v.x + 
+                          (-sin_psi*cos_phi-cos_theta*sin_phi*cos_psi)*v.y + 
+                          (sin_theta*sin_phi)*v.z,
+                          (cos_psi*sin_phi+cos_theta*cos_phi*sin_psi)*v.x + 
+                          (-sin_psi*sin_phi+cos_theta*cos_phi*cos_psi)*v.y + 
+                          (-sin_theta*cos_phi)*v.z,
+                          (sin_theta*sin_psi)*v.x + 
+                          (sin_theta*cos_psi)*v.y + 
+                          (cos_theta)*v.z,
+                          p,
+                          k);
 
 }
 
