@@ -43,8 +43,7 @@ Diamond_Path_Green_Gauss
 #########################
 # ShockBox, Mix, Core_Flame, Restart, 1DPremixedFlame
 ICs_Type= 
-Restart
-#Core_Flame
+Core_Flame
 Mach_Number_Reference=
 0.1
 ###########################
@@ -107,7 +106,7 @@ CFL_Number=
 Source_Term_Multiplyer=
 1.E+03
 Maximum_Number_of_Time_Steps=
-10000
+1000
 #################################
 Output_File_Name= 
 2DLaminar_CH4

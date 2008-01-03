@@ -611,6 +611,9 @@ public:
 			 const Vector2D &X2,
 			 const Vector2D &X3,
 			 const Vector2D &norm_dir);
+  Vector2D DiffusionVel( const double &dcdx,
+			 const double &dcdy,
+			 const int &k ) const;
 
   /***************** Helper Functions *******************/
   void Reconstruct( const Flame2D_pState &Wc, const Flame2D_State &phi, 
@@ -789,6 +792,13 @@ public:
 		 double &fpp);
 
   /***************** Checking ***************************/
+  //! compute sum of mass fractions
+  double SpecSum(void) const;
+  //! compute sum of reaction rates
+  double OmegaSum(void) const;
+  //! compute sum of diffusion velocities
+  Vector2D DiffSum(const double* dcdx, 
+		   const double* dcdy) const;
 private:
   // overload so can't be used
   bool isPhysical(const int &harshness)  {assert(0);};
@@ -1128,9 +1138,56 @@ inline void Flame2D_pState::Viscous_Quantities(const Flame2D_State &dWdx,
 
 }
 
+/******************************************************
+ * Compute diffusion velocities for individual species
+ ******************************************************/
+inline Vector2D Flame2D_pState::DiffusionVel( const double &dcdx,
+					      const double &dcdy,
+					      const int &k ) const {
+  Vector2D Vk;
+  Vk.x = - Diffusion_coef(k) * dcdx;
+  Vk.y = - Diffusion_coef(k) * dcdy;
+  return Vk;
+}
+
+
+
 /////////////////////////////////////////////////////////////////////
 /// Checks
 /////////////////////////////////////////////////////////////////////
+
+/**************************************************************
+ * Check the sum of the species mass factions, sum(Y_k) = 1
+ **************************************************************/
+inline double Flame2D_pState::SpecSum(void) const {
+  double sum( 0.0 );
+  for ( int i=0; i<ns; i++) sum += c(i);
+  return sum;
+}
+
+/**************************************************************
+ * Check the sum of the species reaction rates, sum(omega_k) = 0
+ **************************************************************/
+inline double Flame2D_pState::OmegaSum(void) const { 
+  double sum( 0.0 );
+  Mix.getRates( p(), c(), r );
+  for ( int i=0; i<ns; i++) sum += r[i];
+  return sum;
+}
+
+/**************************************************************
+ * Check the sum of the species diffusion velocities, sum(Y_k*V_k) = 0
+ **************************************************************/
+inline Vector2D Flame2D_pState::DiffSum(const double* dcdx, 
+					const double* dcdy) const { 
+  Vector2D Vsum(0.0, 0.0);
+  for ( int i=0; i<ns; i++) { 
+    Vsum += DiffusionVel( dcdx[i], dcdy[i], i );
+  }
+  return Vsum;
+}
+
+
 
 /**************************************************************
   Check for -ve mass fractions and set small -ve values
@@ -1214,6 +1271,7 @@ inline bool Flame2D_State::speciesOK(const int &harshness) {
     sum += yi;
 
   } // enfor - species
+
 
   // Distribute error over all the species
   for(int i=0; i<ns; i++) rhoc(i) /= sum;

@@ -1056,8 +1056,14 @@ void Output_Cells_Tecplot(Flame2D_Quad_Block &SolnBlk,
     for(int i =0; i<Flame2D_pState::NumSpecies(); i++){
       Out_File <<"\"c"<<Flame2D_pState::speciesName(i)<<"\" \\ \n";
     }
+    // momentum
     Out_File << "\"rho*u\" \\ \n"
 	     << "\"rho*v\" \\ \n";
+    // checks
+    Out_File << "\"Sum Yi\" \\ \n"
+      	     << "\"Sum omega\" \\ \n"
+	     << "\"Sum Vk_x\" \\ \n"
+	     << "\"Sum Vk_y\" \\ \n";
     //Calculated values
     Out_File << "\"T\" \\ \n"
 	     << "\"M\" \\ \n"
@@ -1151,8 +1157,14 @@ void Output_Cells_Tecplot(Flame2D_Quad_Block &SolnBlk,
       Out_File << " "  << SolnBlk.Grid.Cell[i][j].Xc;
       // cell value
       Out_File << SolnBlk.W[i][j];
+      // momentum
       Out_File << " " << SolnBlk.U[i][j].rhovx()
 	       << " " << SolnBlk.U[i][j].rhovy();
+      // checks
+      Out_File << " " << SolnBlk.W[i][j].SpecSum()
+	       << " " << SolnBlk.W[i][j].OmegaSum()
+	       << " " << SolnBlk.W[i][j].DiffSum(SolnBlk.dWdx[i][j].c(), 
+						 SolnBlk.dWdy[i][j].c()) + Vcorr;
       // Calculated Values
       Out_File.setf(ios::scientific);
       Out_File << " " << SolnBlk.W[i][j].T()
