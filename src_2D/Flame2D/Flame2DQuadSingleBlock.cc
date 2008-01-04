@@ -3311,9 +3311,9 @@ int dUdt_Residual_Evaluation(Flame2D_Quad_Block &SolnBlk,
 	  } // endswitch
 	} // endif - viscous
 	
-	  //-----------------------------------------------------------
+	//-----------------------------------------------------------
 
-	  // Evaluate cell-averaged solution changes.
+	// Evaluate cell-averaged solution changes.
 	SolnBlk.dUdt[i][j][0].add(Flux, -SolnBlk.Grid.lfaceE(i, j)/SolnBlk.Grid.Cell[i][j].A);
 	SolnBlk.dUdt[i+1][j][0].add(Flux, SolnBlk.Grid.lfaceW(i+1, j)/SolnBlk.Grid.Cell[i+1][j].A);
 	
@@ -3605,7 +3605,7 @@ int dUdt_Multistage_Explicit(Flame2D_Quad_Block &SolnBlk,
 
       } // endif - stage
 
-	//-----------------------------------------------------------
+      //-----------------------------------------------------------
 
       if ( j >= SolnBlk.JCl && j <= SolnBlk.JCu ) {
 	 
@@ -3674,9 +3674,9 @@ int dUdt_Multistage_Explicit(Flame2D_Quad_Block &SolnBlk,
 	  } // endswitch
 	} // endif - viscous
 
-	  //-----------------------------------------------------------
+	//-----------------------------------------------------------
 
-	  // Evaluate cell-averaged solution changes
+	// Evaluate cell-averaged solution changes
 	SolnBlk.dUdt[i][j][k_residual].add( Flux, -(Input_Parameters.CFL_Number*
 						    SolnBlk.dt[i][j]*SolnBlk.Grid.lfaceE(i, j)/
 						    SolnBlk.Grid.Cell[i][j].A) );
@@ -3702,8 +3702,8 @@ int dUdt_Multistage_Explicit(Flame2D_Quad_Block &SolnBlk,
 	  }
 	} // endif
 
-	  // Include source terms associated with the finite-rate chemistry
-	  //rho*omega_dot
+	// Include source terms associated with the finite-rate chemistry
+	//rho*omega_dot
 	SolnBlk.W[i][j].Sw(SolnBlk.dUdt[i][j][k_residual], 
 			   Input_Parameters.CFL_Number*SolnBlk.dt[i][j]);
  

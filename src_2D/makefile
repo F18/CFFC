@@ -373,7 +373,7 @@ SRC_SYSTEM = $(SYSTEM_DIR)System_Linux.cc
 
 # Base and CFFC sources:
 SRC_BASE = $(SRC_MATH) $(SRC_CFD) $(SRC_MPI) $(SRC_GRID) $(SRC_AMR) \
-           $(SRC_SYSTEM) $(SRC_HIGH_ORDER_RECONSTRUCTION)
+           $(SRC_SYSTEM)
 ifeq ($(TUT_TESTING),ON) 
   SRC_BASE += $(SRC_TUT)
 endif

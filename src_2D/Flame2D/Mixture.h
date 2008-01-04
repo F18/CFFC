@@ -83,13 +83,9 @@ using namespace std;
 
 class Mixture {
 
-  /**
-   * Public members
-   */
 public:
 
-
-  /************** Constructors/Destructors ***********/
+  /************************ Constructors/Destructors ****************/
 
   //@{ @name constructors/destructors
   Mixture() : T(T_SDATM), MW(MW_AIR_SDATM), 
@@ -120,24 +116,34 @@ public:
   }
   //@}
 
-  /************ Accessors ****************************/
+  /************************ Accessors *******************************/
 
   //@{ @name Public accessors
+  //! Temperature [K]
   double temperature(void) const { return T; };
+  //! mixture molar mass [kg/kmole]
   double molarMass(void) const { return MW; };
+  //! Mixture constant pressure specific heat [J/(kg K)]
   double heatCapacity_p(void) const { return Cp; };
+  //! Sensible enthalpy
   double enthalpySens(void) const { return hs; };
+  //! Heat of formation
   double heatFormation(void) const { return hf; };
+  //! Bulk viscosity [ kg m^-1 s^-1]
   double viscosity(void) const { assert(mu_OK); return mu; };
+  //! Mixture Thermal conducitivity [W/(m K)]
   double thermalCond(void) const { assert(kappa_OK); return kappa; };
+  //! Mixture-averaged diffusion coefficients [m^2/s].
   double speciesDiffCoef( const int &i ) const 
   { assert(diff_OK); return diff[i]; };
   void getDiffCoefs( double *d ) const 
   { assert(diff_OK); for (int i=0; i<ns; i++) d[i] = diff[i]; };
+  //! Species dhi/dY_i
   double DihdDiy( const int &i ) const 
   { assert(dhdy_OK); return dhdy[i]; };
   void getDihdDiy( double* dh ) const 
   { assert(dhdy_OK); for (int i=0; i<ns; i++) dh[i] = dhdy[i]; };
+  //! Wilkes mixture rule ratio
   double Phi(void) const { assert(dhdy_OK); return phi; };
   //@}
 
@@ -149,10 +155,12 @@ public:
   static double heatFormation(const int&i) {return Hform[i];};
   static double LowTempRange(void) {return Tmin;};
   static double HighTempRange(void) {return Tmax;};
-  //@}
+  static string mechName(void) { return ct_mech_name; };
+  static string speciesName(const int &i) { return names[i]; };
+ //@}
 
 
-  /************ Setup Functions **********************/
+  /********************* Static Utility Functions *******************/
   //! allocate / deallocate for static memory
   static void AllocateStatic();
   static void DeallocateStatic();
@@ -166,7 +174,7 @@ public:
 			 const string &mech_file);
   static void setConstantSchmidt(const double* Sc);
 
-  //! static cantera setup functions
+  //! static utility functions
   static void parse_mass_string( const string& massFracStr, 
 				 double* massFracs);
   static void parse_schmidt_string( const string& schmidtStr, 
@@ -174,13 +182,13 @@ public:
   static void parse_mole_string( const string& moleFracStr, 
 				 double* moleFracs);
   static int speciesIndex(const string &sp);
-  static string speciesName(const int &i) { return names[i]; };
   static void composition( const string& fuel_species, 
 			   const double &phi,
 			   double* massFracs);
-  static string mechName(void) { return ct_mech_name; };
 
-  //! set the mixture state
+  /*********************** State Setup Functions ********************/
+  //! set the mixture state through various means
+public:
   void setState_TPY(const double &T, const double &Press, const double* Y);
   void setState_DPY(const double &rho, const double &Press, const double* Y);
   void setState_DEY(const double &rho, const double &e, const double* Y);
@@ -198,40 +206,57 @@ public:
   void updateDihdDic( const double &rho, 
 		      const double* y );
 
-  /***************** Mixing Rules ********************
+  /*************************** Mixing Rules *************************
     The following constructors return "total" physical
     parameters based on mixture rules for each.
-  ****************************************************/
+  *******************************************************************/
+  //! Mixture molar mass
   static double molarMass( const double* Y );
+  //! Mixture heat of formation
   static double heatFormation( const double* Y );
-  double gasConstant(void) const;   
+  //! Micture gas constant [J/(kg k)]
+  double gasConstant(void) const;
+  // Mixture constant pressure heat capacity [J/(kg k)]
   static double heatCapacity_p(const double &Temp, const double &Press, 
 			       const double* y);
+  // Species constant pressure heat capacities [J/(kg k)]
   void getHeatCapacity_p( const double &Press, 
 			  const double* y, 
 			  double*cp ) const;
+  // Mixture Constant volume heat capacity [J/(kg k)]
   double heatCapacity_v(void) const;
+  // Mixture specific heat ratio
   double heatRatio(void) const;
-  double internalEnergy() const;
-  double internalEnergySens() const;
+  // Mixture Total internal energy (et = es + echem) [J/kg]
+  double internalEnergy(void) const;
+  // Mixture Sensible energy [J/kg]
+  double internalEnergySens(void ) const;
+  // Mixture total enthalpy (ht = hs + hf) [J/kg]
   double enthalpy(void) const;
   static double enthalpy(const double &Temp, const double &Press, 
 			 const double* y);
+  // Species total enthalpies (ht = hs + hf) [J/kg]
   void getEnthalpy( const double &Press, const double* y, double*h ) const;
+  // Species specific heats [J/(kg K)] and total enthalpies (ht = hs + hf) [J/kg]
   void get_cp_and_h( const double &Press, 
 		     const double* y, 
 		     double*cp,
 		     double*h) const;
+  // Species Schmidt number
   double schmidt(const double &rho, const int &i) const;
+  // Mixture Prandlt number
   double prandtl(void) const;
+  // Mixture Lewis number
   double lewis(const double &rho, const int &i) const;
 
-  /***************** Reaction Rates ******************
+  /************************* Reaction Rates *************************
     The following functions use CANTERA to compute    
     chemical reaction rates and equilibrium states.
-  ****************************************************/
+  *******************************************************************/
+  //! Equilibrium compositions
   void equilibrate_HP( double &rho, double &Press, double* y );
   void equilibrate_TP( double &rho, double &Press, double* y );
+  //! Finite rate kinetics
   void getRates( const double &Press, 
 		 const double* y, 
 		 double* rr ) const;
@@ -244,19 +269,17 @@ public:
 			     const double &Press,
 			     const double* y) const;
 
-  /**************** Output Functions *************************/
+  /********************* Output Functions ***************************/
   void output (ostream &out) const;
 
-  /**************** Operators Overloading ********************/
+  /********************* Operators Overloading **********************/
   // Input-output operators.
   friend ostream& operator << (ostream &out_file, const Mixture &Mix) {
     Mix.output(out_file);
     return out_file;
   }
 
-  /**
-   * Private members
-   */
+  /******************** Allocators / Deallocators *******************/
 private:
   
   //! allocate / deallocate for objects
@@ -265,9 +288,7 @@ private:
   void Nullify();
 
 
-  /**
-   * Private Objects
-   */
+  /********************** Private Members ***************************/
 private:
   
   double   T;      //!< Temperature [K]
@@ -284,11 +305,11 @@ private:
   bool dhdy_OK;    //!< Flag indicating whether dihdic is up-to-date
 
 #ifdef STATIC_NUMBER_OF_SPECIES
-  double  diff[STATIC_NUMBER_OF_SPECIES]; //!< species diffusion coefficient [m^2/s]
-  double  dhdy[STATIC_NUMBER_OF_SPECIES]; //!< derivative of enthalpy wrt to mass fracs
+  double  diff[STATIC_NUMBER_OF_SPECIES];
+  double  dhdy[STATIC_NUMBER_OF_SPECIES];
 #else 
-  double* diff;
-  double* dhdy;
+  double* diff;    //!< species diffusion coefficient [m^2/s]
+  double* dhdy;    //!< derivative of enthalpy wrt to mass fracs
 #endif
 
   //@{ @name Static Variaables
