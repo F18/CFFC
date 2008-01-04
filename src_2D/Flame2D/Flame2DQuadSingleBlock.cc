@@ -1150,7 +1150,7 @@ void Output_Cells_Tecplot(Flame2D_Quad_Block &SolnBlk,
 					  qflux, tau, Vcorr );
       // compute reaction rates
       omega.Vacuum();
-      if (Flame2D_pState::isReacting()) SolnBlk.W[i][j].Sw( omega );
+      SolnBlk.W[i][j].Sw( omega );
       rho = ((const Flame2D_pState&)SolnBlk.W[i][j]).rho();
       p = ((const Flame2D_pState&)SolnBlk.W[i][j]).p();
       // grid location
@@ -2445,7 +2445,7 @@ double CFL(Flame2D_Quad_Block &SolnBlk,
 	dt_chem = HALF/SolnBlk.W[i][j].dSwdU_max_diagonal();
 	dt_chem *= Input_Parameters.Source_Term_Multiplyer; // scale source term
 	SolnBlk.dt[i][j] = min(dt_chem, SolnBlk.dt[i][j]);	  
-	
+
 	/************ Global Minimum ********************************/
 	dtMin = min(dtMin, SolnBlk.dt[i][j]);
 	
@@ -3335,9 +3335,7 @@ int dUdt_Residual_Evaluation(Flame2D_Quad_Block &SolnBlk,
 	}
 		
 	// Include source terms associated with the finite-rate chemistry
-	if (Flame2D_State::isReacting()) {	  
-	  SolnBlk.W[i][j].Sw(SolnBlk.dUdt[i][j][0]);
-	}
+	SolnBlk.W[i][j].Sw(SolnBlk.dUdt[i][j][0]);
 	
 		
 	// Include source terms associated with gravity
@@ -3705,11 +3703,9 @@ int dUdt_Multistage_Explicit(Flame2D_Quad_Block &SolnBlk,
 	} // endif
 
 	  // Include source terms associated with the finite-rate chemistry
-	if (Flame2D_State::isReacting()) {
 	  //rho*omega_dot
-	  SolnBlk.W[i][j].Sw(SolnBlk.dUdt[i][j][k_residual], 
-			     Input_Parameters.CFL_Number*SolnBlk.dt[i][j]);
-	}
+	SolnBlk.W[i][j].Sw(SolnBlk.dUdt[i][j][k_residual], 
+			   Input_Parameters.CFL_Number*SolnBlk.dt[i][j]);
  
 	// Include source terms associated with gravity
 	if (SolnBlk.Gravity) {	 

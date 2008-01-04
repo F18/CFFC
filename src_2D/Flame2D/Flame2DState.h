@@ -1268,13 +1268,18 @@ inline bool Flame2D_State::speciesOK(const int &harshness) {
     //=================================================================
 
     // add the contribution to the sum
-    sum += yi;
+    // sum += yi;
+    sum += rhoc(i);
 
   } // enfor - species
 
 
   // Distribute error over all the species
-  for(int i=0; i<ns; i++) rhoc(i) /= sum;
+  // for(int i=0; i<ns; i++) rhoc(i) /= sum;
+
+  // Give error to density
+  // if ( fabs(sum-rho_)>TOLER ) rho() = sum;
+  rho() = sum;
 
   // SUCCESS!
   return true;

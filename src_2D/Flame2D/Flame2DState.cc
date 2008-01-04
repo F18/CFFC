@@ -1236,15 +1236,19 @@ void Flame2D_pState::dSa_vdW(DenseMatrix &dSa_VdW,
  ****************************************************/  
 void Flame2D_pState::Sw(Flame2D_State &S, 
 			const double& mult) const {
-  Mix.getRates( p(), c(), r );
-  for(int i=0; i<ns; i++) S.rhoc(i) += mult*r[i];
+  if (reacting) {
+    Mix.getRates( p(), c(), r );
+    for(int i=0; i<ns; i++) S.rhoc(i) += mult*r[i];
+  }
 }
 
 /****************************************************
  * Chemistry source term jacobian
  ****************************************************/  
 void Flame2D_pState::dSwdU( DenseMatrix &dSdU ) const {
-  Mix.dSwdU( dSdU, rho(), p(), c(), NUM_FLAME2D_VAR_SANS_SPECIES );
+  if (reacting) {
+    Mix.dSwdU( dSdU, rho(), p(), c(), NUM_FLAME2D_VAR_SANS_SPECIES );
+  }
 }
 
 
@@ -1252,7 +1256,11 @@ void Flame2D_pState::dSwdU( DenseMatrix &dSdU ) const {
  * Max diagonal of chemistry source jacobian
  ****************************************************/  
 double Flame2D_pState::dSwdU_max_diagonal(void) const {
-  return Mix.dSwdU_max_diagonal( rho(), p(), c() );
+  if (reacting) {
+    return Mix.dSwdU_max_diagonal( rho(), p(), c() );
+  } else {
+    return MILLION;
+  }
 }
 
 

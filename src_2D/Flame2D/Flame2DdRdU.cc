@@ -118,7 +118,7 @@ void SemiImplicitBlockJacobi_dSdU(DenseMatrix &dSdU,
   }
   
   //Add Jacobian for finite-rate chemistry source terms  
-  if (Flame2D_pState::isReacting()) Wo.dSwdU(dSdU);  
+  Wo.dSwdU(dSdU);  
 
   //Add Jacobian for gravitational source terms
   if (SolnBlk.Gravity){

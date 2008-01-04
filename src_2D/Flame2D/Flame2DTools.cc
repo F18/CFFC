@@ -120,7 +120,7 @@ void Output_to_Time_Accurate_File(ostream &Time_Accurate_File,
   // compute reaction rates
   Flame2D_State omega;
   omega.Vacuum();
-  if (Flame2D_pState::isReacting()) Soln.Sw( omega );
+  Soln.Sw( omega );
 
   Soln.updateViscosity();
 
