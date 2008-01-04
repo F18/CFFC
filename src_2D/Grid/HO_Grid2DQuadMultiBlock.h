@@ -546,8 +546,8 @@ void Grid_Free_Jet(int &_Number_of_Blocks_Idir_,
 
   //! @name Input-output operators.
   //@{
-  friend ostream &operator << (ostream &out_file, const Grid2D_Quad_MultiBlock_HO &G){};
-  friend istream &operator >> (istream &in_file, Grid2D_Quad_MultiBlock_HO &G){};
+  friend ostream &operator << (ostream &Out_File, const Grid2D_Quad_MultiBlock_HO &G);
+  friend istream &operator >> (istream &In_File, Grid2D_Quad_MultiBlock_HO &G);
   //@}
 
   //! @name Multi-grid operations based on input parameters

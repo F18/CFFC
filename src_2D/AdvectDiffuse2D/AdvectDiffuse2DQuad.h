@@ -26,6 +26,8 @@
 
 #define	NUMBER_OF_RESIDUAL_VECTORS_ADVECTDIFFUSE2D    3
 
+// Switch between the high-order grid and the regular one.
+// Define the macro below to use the high-order grid
 #define USE_HIGH_ORDER_GRID
 
 /*!

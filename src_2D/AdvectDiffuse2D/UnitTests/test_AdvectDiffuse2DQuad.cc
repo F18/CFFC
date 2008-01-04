@@ -254,7 +254,7 @@ namespace tut
       CurrentFile = "Current_Circular_Advection_In_Rectangular_Box_cpu000000.dat";
       
       // check
-      RunRegressionTest("Multiblock Tecplot Output", CurrentFile, MasterFile, 5.0e-12, 5.0e-12);
+      RunRegressionTest("Multiblock Tecplot Output", CurrentFile, MasterFile, 5.0e-7, 5.0e-7);
     }
   }
 
@@ -298,7 +298,7 @@ namespace tut
       Print_File(SolnBlk[3],out());
 
       // === check data
-      RunRegressionTest("operator <<", CurrentFile, MasterFile, 5.0e-12, 5.0e-12);
+      RunRegressionTest("operator <<", CurrentFile, MasterFile, 5.0e-7, 5.0e-7);
 
 
       // === check input-output operator
@@ -347,9 +347,9 @@ namespace tut
 
     // == check errors
     ensure_equals("Number of cells", AccuracyAssessment2D_MultiBlock::TotalNumberOfCells(), 144);
-    ensure_distance("L1_Norm", AccuracyAssessment2D_MultiBlock::L1(), 0.06550436942, AcceptedError(0.06550436942,1.0e-10) );
-    ensure_distance("L2_Norm", AccuracyAssessment2D_MultiBlock::L2(), 0.1153247286, AcceptedError(0.1153247286,1.0e-10) );
-    ensure_distance("LMax_Norm", AccuracyAssessment2D_MultiBlock::LMax(), 0.1961452823, AcceptedError(0.1961452823,1.0e-10) );
+    ensure_distance("L1_Norm", AccuracyAssessment2D_MultiBlock::L1(), 0.06550436942, AcceptedError(0.06550436942,1.0e-7) );
+    ensure_distance("L2_Norm", AccuracyAssessment2D_MultiBlock::L2(), 0.1153247286, AcceptedError(0.1153247286,1.0e-7) );
+    ensure_distance("LMax_Norm", AccuracyAssessment2D_MultiBlock::LMax(), 0.1961452823, AcceptedError(0.1961452823,1.0e-7) );
   }
 
   /* Test 4:*/

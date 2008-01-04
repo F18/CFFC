@@ -151,7 +151,7 @@ void Grid2D_Quad_Block_HO::allocate(const int Ni, const int Nj, const int Ng) {
   assert( Ni > 1 && Nj > 1 && Ng >= 2);
 
   // Check if the new required memory has dimensions different than the currently allocated ones
-  if ( Ni != (NCi-2*Nghost)  ||  Nj != (NCj-2*Nghost) ){
+  if ( Ni != (NCi-2*Nghost)  ||  Nj != (NCj-2*Nghost) || Ng != Nghost ){
 
     // free the memory if there is memory allocated
     deallocate();
@@ -4391,12 +4391,8 @@ void Grid2D_Quad_Block_HO::Read_Quad_Block_Definition(istream &In_File) {
   if (i != 0 && j != 0 && ng != 0) {
     /* Allocate (re-allocate) memory for the cells and nodes 
        of the quadrilateral mesh block as required. */
-
-    if (NCi != i || NCj != j || Nghost != ng) { 
-      deallocate();
-      allocate(i, j, ng);
-    } /* endif */
-
+    allocate(i, j, ng);
+    
     /* For each of the north, south, east, and west boundaries
        of this mesh block, read in the number of spline points, 
        allocate memory for the boundary splines, read in the 
@@ -6454,9 +6450,7 @@ istream &operator >> (istream &in_file,
   if (ni == 0 || nj == 0) {
     if (G.Node != NULL) G.deallocate(); return(in_file);
   } /* endif */
-  if (G.Node == NULL || G.Cell == NULL || G.NNi != ni || G.NNj != nj) {
-    G.allocate(ni-2*ng-1, nj-2*ng-1, ng);
-  } /* endif */
+  G.allocate(ni-2*ng-1, nj-2*ng-1, ng);
 
   // Read indexes for cells
   in_file.setf(ios::skipws);
