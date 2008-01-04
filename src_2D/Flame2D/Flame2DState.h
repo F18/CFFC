@@ -1253,7 +1253,8 @@ inline bool Flame2D_State::speciesOK(const int &harshness) {
 
 	  // display error
 #ifdef _DEBUG
-	  cout<<"\ncState rhospec["<<i<<"] = "<<rhoc(i)<<" -ve mass fraction larger than tolerance,"
+	  cout<<"\ncState rhospec["<<i<<"] = " << rhoc(i) 
+	      << " -ve mass fraction larger than tolerance,"
 	      <<" but setting to zero and continuing anyway. ";
 #endif
 	} // endif - harshness
@@ -1268,18 +1269,18 @@ inline bool Flame2D_State::speciesOK(const int &harshness) {
     //=================================================================
 
     // add the contribution to the sum
-    // sum += yi;
     sum += rhoc(i);
 
   } // enfor - species
 
 
   // Distribute error over all the species
+  // sum /= rho_;
   // for(int i=0; i<ns; i++) rhoc(i) /= sum;
 
   // Give error to density
-  // if ( fabs(sum-rho_)>TOLER ) rho() = sum;
-  rho() = sum;
+  if ( fabs(sum-rho_)>NANO ) rho() = sum;
+  // rho() = rho_ - ( rho_ - sum );
 
   // SUCCESS!
   return true;
