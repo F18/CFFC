@@ -174,7 +174,8 @@ SRC_LESFSD_EXE = $(LESFSD_DIR)LES3DFsd.cc
 SRC_LESTF = $(LESTF_DIR)LES3DThickenedFlameInput.cc \
             $(LESTF_DIR)LES3DThickenedFlameState.cc \
             $(LESTF_DIR)LES3DThickenedFlameHexaBlock.cc \
-            $(LESTF_DIR)LES3DThickenedFlameHexaPreProcessing.cc
+            $(LESTF_DIR)LES3DThickenedFlameHexaPreProcessing.cc \
+	    $(LESTF_DIR)PowerLaw.cc
 
 SRC_LESTF_EXE = $(LESTF_DIR)LES3DThickenedFlame.cc
 
@@ -336,8 +337,8 @@ help:
 	@echo "|             compile fans3Dthermallyperfect stand alone program                    |"
 	@echo "|        make les3Dfsd                                                              |"
 	@echo "|             compile les3Dfsd stand alone program                                  |"
-	@echo "|        make les3Dtf                                                              |"
-	@echo "|             compile les3Dtf stand alone program                                  |"
+	@echo "|        make les3Dtf                                                               |"
+	@echo "|             compile les3Dtf stand alone program                                   |"
 	@echo "|        make install              copies cffc3D executable to bin directory        |"
 	@echo "|        make install-all          copies all executables to bin directory          |"
 	@echo "|        make uninstall            removes cffc3D executable from bin directory     |"

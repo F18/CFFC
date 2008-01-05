@@ -299,7 +299,7 @@ ICs(Input_Parameters<LES3DTF_pState,LES3DTF_cState> &IPs){
 	Wl.spec[4] = 0.72467;
 	Wl.p = 101325.0;
 	Wl.rho = 1.13; //2234
-	Wl.flame.TF = 5.0;
+	Wl.flame.TF = 1.0;
 	Wl.flame.WF =1.0;
 
 	Wr.spec[0] = ZERO;       //CH4
@@ -309,7 +309,7 @@ ICs(Input_Parameters<LES3DTF_pState,LES3DTF_cState> &IPs){
 	Wr.spec[4] = 0.72467;
 	Wr.p = 101325.0;
 	Wr.rho = Wr.p/(Wr.Rtot()*2320); //2234
-	Wr.flame.TF = 5.0;
+	Wr.flame.TF = 1.0;
 	Wr.flame.WF =1.0;
  
       }	else if (IPs.Wo.React.reactset_flag == CH4_2STEP){ 
@@ -1630,7 +1630,8 @@ dUdt_Multistage_Explicit(const int i_stage,
                                               Flux*Grid.AfaceW(i+1,j,k)/Grid.volume(i+1,j,k);
 
                /* Include source terms associated with modelled turbulence-chemistry interactions. */
-               dUdt[i][j][k][k_residual] += (IPs.CFL_Number*dt[i][j][k])*LES3DTF_pState::Sw(W[i][j][k].React.reactset_flag);
+	       dUdt[i][j][k][k_residual] += (IPs.CFL_Number*dt[i][j][k])*W[i][j][k].Sw(W[i][j][k].React.reactset_flag);
+	       //dUdt[i][j][k][k_residual] += (IPs.CFL_Number*dt[i][j][k])*LES3DTF_pState::Sw(W[i][j][k].React.reactset_flag);
 
                dUdt[i][j][k][k_residual] += (IPs.CFL_Number*dt[i][j][k])*
                                             LES3DTF_pState::Sturbchem(W[i][j][k],
@@ -1639,6 +1640,8 @@ dUdt_Multistage_Explicit(const int i_stage,
                                                                       dWdz[i][j][k],
                                                                       Flow_Type,
                                                                       Grid.volume(i,j,k));
+
+
                /* Include physical time derivative for dual time stepping. */
 //                if (IPs.Dual_Time_Stepping) {
 //                   dUdt[i][j][k][k_residual] -= (IPs.CFL_Number*dt[i][j][k])*
@@ -2043,7 +2046,7 @@ Update_Solution_Multistage_Explicit(const int i_stage,
         local_progress_variable = (Yf - Yf_u)/(Yf_b - Yf_u);
 
 
-//         if(local_progress_variable > 0.03  &&  local_progress_variable < 0.97)  {	  
+	if(local_progress_variable > 0.02  &&  local_progress_variable < 0.98)  {	  
 
 // 	  U[i][j][k].flame.TF_function(U[i][j][k].rhospec[0].c/U[i][j][k].rho,
 // 				       U[i][j][k].rhospec[1].c/U[i][j][k].rho,
@@ -2056,23 +2059,26 @@ Update_Solution_Multistage_Explicit(const int i_stage,
 // 	  U[i][j][k].flame.thickening_factor(Grid.volume(i,j,k), U[i][j][k]._laminar_flame_thickness);
 
 
-// 	  U[i][j][k].flame.TF = U[i][j][k]._TFactor; // Maximum thickening factor
+//	  U[i][j][k].flame.TF = U[i][j][k]._TFactor; // Maximum thickening factor
 
-// 	  double lapl_vor, cell_size;
-// 	  cell_size = U[i][j][k].filter_width(Grid.volume(i,j,k));
-// // 	  lapl_vor = Laplacian_of_Vorticity(SolnBlk, i, j);
-// 	  U[i][j][k].flame.wrinkling_factor(U[i][j][k]._laminar_flame_speed,
-// 					    U[i][j][k]._laminar_flame_thickness,
-// 					    cell_size,
-// 					    lapl_vor,
-// 					    U[i][j][k].rho,
-// 					    U[i][j][k].mu());
+	  U[i][j][k].flame.TF = 5.0;
 
-// 	} else {
+	  double lapl_vor, cell_size;
+	  cell_size = U[i][j][k].filter_width(Grid.volume(i,j,k));
+ 	  lapl_vor = Laplacian_of_Vorticity(*this, i, j, k);
+	  U[i][j][k].flame.wrinkling_factor(U[i][j][k]._laminar_flame_speed,
+					    U[i][j][k]._laminar_flame_thickness,
+					    cell_size,
+					    lapl_vor,
+					    U[i][j][k].rho,
+					    U[i][j][k].mu());
+	  //U[i][j][k].flame.WF = ONE;
+
+ 	} else {
 	  U[i][j][k].flame.WF = ONE;
 	  U[i][j][k].flame.TF = ONE;
 
-// 	} /*endif */
+ 	} /*endif */
 
 //       /* Update power-law variables from the conserved solution */
 // 	U[i][j][k].flame.unphysical_check(U[i][j][k]._TFactor);

@@ -71,11 +71,11 @@ public:
      which is greater than, and different from, the LES filter.
   ********************************************************************/  
   double filter_size(const double &lam_thickness) const;
-  double mesh_size(const double &cell_area) const;  
+  double mesh_size(const double &cell_volume) const;  
 
 
   /*******************  Thickening factor ****************************/
-  void thickening_factor(const double &cell_area,
+  void thickening_factor(const double &cell_volume,
 			 const double &lam_thickness);
 
   void TF_function(const double &TFactor,
@@ -195,10 +195,10 @@ inline void PowerLaw::unphysical_check(const double &TFactor) {
 
 
 //Thickening factor in terms of the mesh size and number of cells across the flame front
-inline  void PowerLaw::thickening_factor(const double &cell_area,
+inline  void PowerLaw::thickening_factor(const double &cell_volume,
 					 const double &lam_thickness) {
   
-  TF = ceil(double(n)*mesh_size(cell_area)/lam_thickness);
+  TF = ceil(double(n)*mesh_size(cell_volume)/lam_thickness);
   if (TF >= TEN) cout << "\n WARNING: TF = " << TF << " greater than 10." << flush;
   //cout << "\n In PowerLaw n = " << n << "\t TF = " << TF << flush;
 }
@@ -268,8 +268,8 @@ inline double PowerLaw::sensor_omega(const double &fuel_mass_fraction,
 
 
 // Mesh size
-inline double PowerLaw::mesh_size(const double &cell_area) const {
-  return sqrt(cell_area);
+inline double PowerLaw::mesh_size(const double &cell_volume) const {
+  return pow(cell_volume, 1.0/3.0);
 }
 
 

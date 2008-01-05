@@ -13,7 +13,7 @@ double PowerLaw::efficiency_function(const double &lam_speed,
 				     const double &mu) const {
 
   double fu, fdelta, fRe, a, b, Delta, u_p, sfs_Re, nu;
-  nu = (mu/rho)/(TF*WF);  // Original viscosity, unmodified by the thickening 
+  nu = (mu/rho)/*/(TF*WF)*/;  // Original viscosity, unmodified by the thickening 
   Delta = filter_size(lam_thickness);
   u_p = u_prime( cell_size /*lam_thickness*/, lapl_vor);
   sfs_Re = u_p*Delta/nu; 

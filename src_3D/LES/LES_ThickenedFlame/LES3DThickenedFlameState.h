@@ -150,12 +150,13 @@ class LES3DTF_pState;
  *  \nosubgrouping
  */
 class LES3DTF_pState : public NavierStokes3D_ThermallyPerfect_pState {
-  protected:
+  //protected:
+  public:
    static double           _laminar_flame_speed;  //!< Propagation speed of laminar premixed flame
    static double       _laminar_flame_thickness;  //!< Thickness of laminar premixed flame
    static double                       _TFactor;  //!< Maximum thickening factor
 
-  public:
+   //public:
    double                     k; //!< Subfilter scale turbulent kinetic energy (m^2/s^2)
 
    PowerLaw               flame; //!< Object containing the thickening and wrinkling factors. 
@@ -283,6 +284,11 @@ class LES3DTF_pState : public NavierStokes3D_ThermallyPerfect_pState {
    void Vacuum(void) { 
      rho = ZERO, v.zero(); p = ZERO; k = ZERO;
      for(int i=0; i<ns; ++i)  spec[i].Vacuum();
+   }
+
+   //! Check for physical validity of scalars
+   void Realizable_Scalar_Check(void) {
+     if ( k < ZERO ) { k = ZERO; }
    }
 
    //! Check for physical validity of the solution vector
@@ -476,6 +482,32 @@ class LES3DTF_pState : public NavierStokes3D_ThermallyPerfect_pState {
                   const LES3DTF_pState &dWdz,
                   const int Flow_Type, 
                   const double &Volume);
+
+//! Returns subfilter thermal diffusion flux vector (due to species diffusion processes) 
+   Vector3D thermal_diffusion_t(const double &mu_t_temp,
+				const LES3DTF_pState &dWdx, 
+				const LES3DTF_pState &dWdy,
+				const LES3DTF_pState &dWdz);
+
+   //! Returns components of subfilter thermal diffusion flux vector in x-direction (due to species diffusion processes) 
+   Vector3D thermal_diffusion_t_x(const double &mu_t_temp,
+				  const LES3DTF_pState &dWdx, 
+				  const LES3DTF_pState &dWdy,
+				  const LES3DTF_pState &dWdz);
+
+   //! Returns components of subfilter thermal diffusion flux vector in y-direction (due to species diffusion processes) 
+   Vector3D thermal_diffusion_t_y(const double &mu_t_temp,
+				  const LES3DTF_pState &dWdx, 
+				  const LES3DTF_pState &dWdy,
+				  const LES3DTF_pState &dWdz);
+
+   //! Returns components of subfilter thermal diffusion flux vector in z-direction (due to species diffusion processes) 
+   Vector3D thermal_diffusion_t_z(const double &mu_t_temp,
+				  const LES3DTF_pState &dWdx, 
+				  const LES3DTF_pState &dWdy,
+				  const LES3DTF_pState &dWdz);
+
+
 //@}
 
 /** @name Conserved solution state */ 
@@ -741,7 +773,7 @@ class LES3DTF_pState : public NavierStokes3D_ThermallyPerfect_pState {
                              const double &Volume);
 
    //! Source terms associated with finite-rate chemistry 
-   static LES3DTF_cState Sw(const int &REACT_SET_FLAG);
+   /*static*/ LES3DTF_cState Sw(const int &REACT_SET_FLAG);
    double dSwdU_max_diagonal(void) const;
 
    //! Soure term for k-equation
@@ -859,12 +891,13 @@ class LES3DTF_pState : public NavierStokes3D_ThermallyPerfect_pState {
  *  \nosubgrouping
  */
 class LES3DTF_cState : public NavierStokes3D_ThermallyPerfect_cState {
-  protected:
+  //protected:
+  public:
    static double           _laminar_flame_speed;  //!< Propagation speed of laminar premixed flame
    static double       _laminar_flame_thickness;  //!< Thickness of laminar premixed flame
    static double                       _TFactor;  //!< Maximum thickening factor
 
-  public:
+   //public:
    double                  rhok; //!< Subfilter scale turbulent kinetic energy (kg/m-s^2)
 
    PowerLaw               flame; //!< Object containing the thickening and wrinkling factors. 
@@ -975,6 +1008,11 @@ class LES3DTF_cState : public NavierStokes3D_ThermallyPerfect_cState {
    void Vacuum(void) { 
      rho = ZERO; rhov.zero(); E=ZERO; rhok = ZERO;
      for(int i=0; i<ns; ++i) rhospec[i].Vacuum();
+   }
+
+   //! Check for physical validity of scalars
+   void Realizable_Scalar_Check(void) {
+     if ( rhok < ZERO ) { rhok = ZERO; }
    }
 
    //! Check for physical validity of the solution vector
@@ -1159,8 +1197,9 @@ inline double& LES3DTF_pState::operator[](int index) {
    case 6:
       return k;
    default :
-      return spec[index-(NUM_EULER3D_VAR_SANS_SPECIES+NUM_LES3DTF_VAR_EXTRA+1)].c;
-      if (index == num_vars+1) {
+     if (index <= num_vars) {
+        return spec[index-(NUM_EULER3D_VAR_SANS_SPECIES+NUM_LES3DTF_VAR_EXTRA+1)].c;
+      } else if (index == num_vars+1) {
 	return flame.WF;
       } else {
 	return flame.TF;
@@ -1183,8 +1222,9 @@ inline const double& LES3DTF_pState::operator[](int index) const {
    case 6:
       return k;
    default :
-      return spec[index-(NUM_EULER3D_VAR_SANS_SPECIES+NUM_LES3DTF_VAR_EXTRA+1)].c;     
-      if (index == num_vars+1) {
+     if (index <= num_vars) {
+        return spec[index-(NUM_EULER3D_VAR_SANS_SPECIES+NUM_LES3DTF_VAR_EXTRA+1)].c;     
+      } else if (index == num_vars+1) {
 	return flame.WF;
       } else {
 	return flame.TF;
@@ -1431,8 +1471,9 @@ inline double& LES3DTF_cState::operator[](int index) {
    case 6:
       return rhok;
    default :
-      return rhospec[index-(NUM_EULER3D_VAR_SANS_SPECIES+NUM_LES3DTF_VAR_EXTRA+1)].c;     
-      if (index == num_vars+1) {
+     if (index <= num_vars) {
+        return rhospec[index-(NUM_EULER3D_VAR_SANS_SPECIES+NUM_LES3DTF_VAR_EXTRA+1)].c;     
+      } else if (index == num_vars+1) {
 	return flame.WF;
       } else {
 	return flame.TF;
@@ -1455,8 +1496,9 @@ inline const double& LES3DTF_cState::operator[](int index) const {
    case 6:
       return rhok;
    default :
-      return rhospec[index-(NUM_EULER3D_VAR_SANS_SPECIES+NUM_LES3DTF_VAR_EXTRA+1)].c; 
-      if (index == num_vars+1) {
+     if (index <= num_vars) {
+        return rhospec[index-(NUM_EULER3D_VAR_SANS_SPECIES+NUM_LES3DTF_VAR_EXTRA+1)].c; 
+      } else if (index == num_vars+1) {
 	return flame.WF;
       } else {
 	return flame.TF;
