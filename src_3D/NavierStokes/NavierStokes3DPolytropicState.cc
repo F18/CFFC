@@ -89,7 +89,7 @@ void NavierStokes3D_Polytropic_pState::setgas(char *str_ptr) {
  */
 // x- direction viscous flux and heat flux
 /*! \f[
-        Gx = \left( \begin{array}{c}
+        Fv_x = \left( \begin{array}{c}
                     0 \\ \tau_{xx} \\ \tau_{xy} \\ \tau_{xz} \\
                     u \tau_{xx} + v \tau_{xy} + w \tau_{xz} \end{array} \right)
            + \left( \begin{array}{c} 0 \\ 0 \\ 0 \\ 0 \\ -q_x \end{array} \right)
@@ -114,7 +114,7 @@ NavierStokes3D_Polytropic_cState NavierStokes3D_Polytropic_pState::Fv(const Navi
 
 // y-direction viscous flux and heat flux
 /*! \f[
-Gy = \left( \begin{array}{c}
+Fv_y = \left( \begin{array}{c}
             0 \\ \tau_{xy} \\ \tau_{yy} \\ \tau_{yz} \\
             u \tau_{xy} + v \tau_{yy} + w \tau_{yz} \end{array} \right)
 + \left( \begin{array}{c} 0 \\ 0 \\ 0 \\ 0 \\ -q_y \end{array} \right)
@@ -131,7 +131,7 @@ NavierStokes3D_Polytropic_cState NavierStokes3D_Polytropic_pState::Fvy(const Nav
 
 // z-direction viscous flux and heat flux
 /*! \f[
-Gz = \left( \begin{array}{c}
+Fv_z = \left( \begin{array}{c}
             0 \\ \tau_{xz} \\ \tau_{yz} \\ \tau_{zz} \\
             u \tau_{xz} + v \tau_{yz} + w \tau_{zz} \end{array} \right)
 + \left( \begin{array}{c} 0 \\ 0 \\ 0 \\ 0 \\ -q_z \end{array} \right)
@@ -236,7 +236,7 @@ double NavierStokes3D_Polytropic_pState::nu(void) {
 // thermal conductivity
 /*!
  * Thermal conductivity calculated using a curve fit depending on temperature
- * k = kappa_gottlieb(v1,v2,v3,v4,v5,T,g,Cp) defined in GasConstants.h
+ * kappa = kappa_gottlieb(v1,v2,v3,v4,v5,T,g,Cp) defined in GasConstants.h
  */
 double NavierStokes3D_Polytropic_pState::kappa(void) {
 	return kappa_gottlieb(v1,v2,v3,v4,v5,T(),g,Cp);
@@ -299,9 +299,13 @@ Tensor3D NavierStokes3D_Polytropic_pState::tau_z(const NavierStokes3D_Polytropic
 
 // Heat flux vector
 /*!
- * q.x = -k dT/dx
- * q.y = -k dT/dy
- * q.z = -k dT/dz
+ * \f[
+ \begin{array}{l}
+ q_x = - \kappa \frac{d T}{d x} \\ \\
+ q_y = - \kappa \frac{d T}{d y} \\ \\
+ q_z = - \kappa \frac{d T}{d z}
+ \end{array}
+ \f]
  */
 Vector3D NavierStokes3D_Polytropic_pState::q(const NavierStokes3D_Polytropic_pState &dWdx, 
                                              const NavierStokes3D_Polytropic_pState &dWdy,

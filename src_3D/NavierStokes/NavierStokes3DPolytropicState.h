@@ -25,7 +25,8 @@ class NavierStokes3D_Polytropic_cState;
  *        governing flows of polytropic gases.
  *
  
- * Member functions
+ * Member functions: \n
+ * Inherited:
  *  - rho           -- Return density.
  *  - v             -- Return flow velocity.
  *  - p             -- Return pressure.
@@ -84,6 +85,7 @@ class NavierStokes3D_Polytropic_cState;
  *  - Reflect       -- Return reflected solution state after application of reflection BC
  *  - MovingWall    -- Return wall solution state after application of moving wall BC
  *  - NoSlip        -- Return wall solution state after application of no-slip BC
+ *
  * Extra in NavierStokes:
  *  - Cp            -- Return specific heat at constant pressure (J/(kg*K))
  *  - Cv            -- Return specific heat at constant volume (J/(kg*K))
@@ -134,48 +136,46 @@ class NavierStokes3D_Polytropic_cState;
 class NavierStokes3D_Polytropic_pState: public Euler3D_Polytropic_pState {
 public :
     
-    /*
-     * Constructors
-     * ------------
-     */
-	NavierStokes3D_Polytropic_pState() : Euler3D_Polytropic_pState() { }
-	NavierStokes3D_Polytropic_pState(const double &rho, 
-									 const Vector3D &v, 
-									 const double &p) : Euler3D_Polytropic_pState(rho,v,p) { }
-	NavierStokes3D_Polytropic_pState(const double &rho, 
-									 const double &vx, const double &vy, const double &vz, 
-									 const double &p) : Euler3D_Polytropic_pState(rho,vx,vy,vz,p) { }
+/** @name Constructors */
+/*        ------------ */
+//@{
+    NavierStokes3D_Polytropic_pState() : Euler3D_Polytropic_pState() { }
+    NavierStokes3D_Polytropic_pState(const double &rho, 
+                                     const Vector3D &v, 
+                                     const double &p) : Euler3D_Polytropic_pState(rho,v,p) { }
+    NavierStokes3D_Polytropic_pState(const double &rho, 
+                                     const double &vx, const double &vy, const double &vz, 
+                                     const double &p) : Euler3D_Polytropic_pState(rho,vx,vy,vz,p) { }
     NavierStokes3D_Polytropic_pState(const double &value) : Euler3D_Polytropic_pState(value) { }
     
-	NavierStokes3D_Polytropic_pState(const Euler3D_Polytropic_pState &W) : Euler3D_Polytropic_pState(W) { }
-//    NavierStokes3D_Polytropic_pState(const Euler3D_Polytropic_cState &U) : Euler3D_Polytropic_pState(U) { }
-	
-    /*
-     * Gas specific constants
-     * ----------------------
-     */
-	static double v1;	//!< Viscosity law coefficient (only for Navier-Stokes)
+    NavierStokes3D_Polytropic_pState(const Euler3D_Polytropic_pState &W) : Euler3D_Polytropic_pState(W) { }
+//@}
+
+/** @name Gas specific constants */
+/*        ---------------------- */
+//@{
+    static double v1;	//!< Viscosity law coefficient (only for Navier-Stokes)
     static double v2;	//!< Viscosity law coefficient (only for Navier-Stokes)
-	static double v3;	//!< Viscosity law coefficient (only for Navier-Stokes)
-	static double v4;	//!< Viscosity law coefficient (only for Navier-Stokes)
+    static double v3;	//!< Viscosity law coefficient (only for Navier-Stokes)
+    static double v4;	//!< Viscosity law coefficient (only for Navier-Stokes)
     static double v5;	//!< Viscosity law coefficient (only for Navier-Stokes)
-	static double Cp;   //!< Heat capacity with constant pressure
-	static double Cv;   //!< Heat capacity with constant volume
-    
-    /* 
-     * Set gas specific constants
-     * --------------------------
-     */
+    static double Cp;   //!< Heat capacity with constant pressure
+    static double Cv;   //!< Heat capacity with constant volume
+//@}    
+
+/** @name Set gas specific constants */
+/*        -------------------------- */
+//@{
     void setgas(void);              //!< Set gas to air
-	void setgas(char *str_ptr);     //!< Set gas constants
+    void setgas(char *str_ptr);     //!< Set gas constants
+//@}
 	
-	/*
-     * Viscous- and Heat Fluxes
-     * ------------------------
-     */
-    
+
+/** @name Viscous- and Heat Fluxes */
+/*        ------------------------ */
+//@{    
     //! Viscous flux and Heat flux in x-direction
-	NavierStokes3D_Polytropic_cState Fvx(const NavierStokes3D_Polytropic_pState &dWdx,
+    NavierStokes3D_Polytropic_cState Fvx(const NavierStokes3D_Polytropic_pState &dWdx,
                                          const NavierStokes3D_Polytropic_pState &dWdy,
                                          const NavierStokes3D_Polytropic_pState &dWdz);
     
@@ -184,73 +184,74 @@ public :
                                         const NavierStokes3D_Polytropic_pState &dWdz);
 
     //! Viscous flux and Heat flux in y-direction
-	NavierStokes3D_Polytropic_cState Fvy(const NavierStokes3D_Polytropic_pState &dWdx,
+    NavierStokes3D_Polytropic_cState Fvy(const NavierStokes3D_Polytropic_pState &dWdx,
                                          const NavierStokes3D_Polytropic_pState &dWdy,
                                          const NavierStokes3D_Polytropic_pState &dWdz);
 
     //! Viscous flux and Heat flux in z-direction
-	NavierStokes3D_Polytropic_cState Fvz(const NavierStokes3D_Polytropic_pState &dWdx,
-										const NavierStokes3D_Polytropic_pState &dWdy,
-										const NavierStokes3D_Polytropic_pState &dWdz);
+    NavierStokes3D_Polytropic_cState Fvz(const NavierStokes3D_Polytropic_pState &dWdx,
+                                         const NavierStokes3D_Polytropic_pState &dWdy,
+                                         const NavierStokes3D_Polytropic_pState &dWdz);
     
     //! Viscous flux and Heat flux in n-direction
-	static NavierStokes3D_Polytropic_cState FluxViscous_n(const NavierStokes3D_Polytropic_pState &Wl,
-												   const NavierStokes3D_Polytropic_pState &Wr,
-												   const NavierStokes3D_Polytropic_pState &W1 ,
-												   const NavierStokes3D_Polytropic_pState &W2,
-												   const NavierStokes3D_Polytropic_pState &dWdx1,
-												   const NavierStokes3D_Polytropic_pState &dWdy1,
-												   const NavierStokes3D_Polytropic_pState &dWdz1,
-												   const NavierStokes3D_Polytropic_pState &dWdx2,
-												   const NavierStokes3D_Polytropic_pState &dWdy2,
-												   const NavierStokes3D_Polytropic_pState &dWdz2,
-												   const Vector3D &norm, 
-												   const Vector3D &ts, 
-												   const double &deltad, 
-												   const double &Volume, 
-												   const double &Volume_Neigbour);
-	/*
-     * Navier-Stokes related functions
-     * -------------------------------
-     */
+    static NavierStokes3D_Polytropic_cState FluxViscous_n(const NavierStokes3D_Polytropic_pState &Wl,
+                                                          const NavierStokes3D_Polytropic_pState &Wr,
+                                                          const NavierStokes3D_Polytropic_pState &W1 ,
+                                                          const NavierStokes3D_Polytropic_pState &W2,
+                                                          const NavierStokes3D_Polytropic_pState &dWdx1,
+                                                          const NavierStokes3D_Polytropic_pState &dWdy1,
+                                                          const NavierStokes3D_Polytropic_pState &dWdz1,
+                                                          const NavierStokes3D_Polytropic_pState &dWdx2,
+                                                          const NavierStokes3D_Polytropic_pState &dWdy2,
+                                                          const NavierStokes3D_Polytropic_pState &dWdz2,
+                                                          const Vector3D &norm, 
+                                                          const Vector3D &ts, 
+                                                          const double &deltad, 
+                                                          const double &Volume, 
+                                                          const double &Volume_Neigbour);
+//@}
     
+/** @name Navier-Stokes related functions */
+/*        ------------------------------- */
+//@{    
     double mu(void);        //!< Dynamic Viscosity
     double nu(void);        //!< Kinematic Viscosity
-	double kappa(void);     //!< Thermal Conductivity
+    double kappa(void);     //!< Thermal Conductivity
     
-	//! Molecular stress tensor
-	Tensor3D tau(const NavierStokes3D_Polytropic_pState &dWdx, 
+    //! Molecular stress tensor
+    Tensor3D tau(const NavierStokes3D_Polytropic_pState &dWdx, 
                  const NavierStokes3D_Polytropic_pState &dWdy,
                  const NavierStokes3D_Polytropic_pState &dWdz);
 	
-	Tensor3D tau_x(const NavierStokes3D_Polytropic_pState &dWdx, 
+    Tensor3D tau_x(const NavierStokes3D_Polytropic_pState &dWdx, 
                    const NavierStokes3D_Polytropic_pState &dWdy,
                    const NavierStokes3D_Polytropic_pState &dWdz);
 	
-	Tensor3D tau_y(const NavierStokes3D_Polytropic_pState &dWdx, 
+    Tensor3D tau_y(const NavierStokes3D_Polytropic_pState &dWdx, 
                    const NavierStokes3D_Polytropic_pState &dWdy,
                    const NavierStokes3D_Polytropic_pState &dWdz);
 
-	Tensor3D tau_z(const NavierStokes3D_Polytropic_pState &dWdx, 
+    Tensor3D tau_z(const NavierStokes3D_Polytropic_pState &dWdx, 
                    const NavierStokes3D_Polytropic_pState &dWdy,
                    const NavierStokes3D_Polytropic_pState &dWdz);
 	
-	//! Heat flux vector 
-	Vector3D q(const NavierStokes3D_Polytropic_pState &dWdx, 
+    //! Heat flux vector 
+    Vector3D q(const NavierStokes3D_Polytropic_pState &dWdx, 
                const NavierStokes3D_Polytropic_pState &dWdy,
                const NavierStokes3D_Polytropic_pState &dWdz);
 	
-	Vector3D q_x(const NavierStokes3D_Polytropic_pState &dWdx, 
-                 const NavierStokes3D_Polytropic_pState &dWdy,
-                const NavierStokes3D_Polytropic_pState &dWdz);
-	
-	Vector3D q_y(const NavierStokes3D_Polytropic_pState &dWdx, 
+    Vector3D q_x(const NavierStokes3D_Polytropic_pState &dWdx, 
                  const NavierStokes3D_Polytropic_pState &dWdy,
                  const NavierStokes3D_Polytropic_pState &dWdz);
 	
-	Vector3D q_z(const NavierStokes3D_Polytropic_pState &dWdx, 
+    Vector3D q_y(const NavierStokes3D_Polytropic_pState &dWdx, 
                  const NavierStokes3D_Polytropic_pState &dWdy,
                  const NavierStokes3D_Polytropic_pState &dWdz);
+	
+    Vector3D q_z(const NavierStokes3D_Polytropic_pState &dWdx, 
+                 const NavierStokes3D_Polytropic_pState &dWdy,
+                 const NavierStokes3D_Polytropic_pState &dWdz);
+//@}
 };
 
 
@@ -276,41 +277,39 @@ public :
 class NavierStokes3D_Polytropic_cState: public Euler3D_Polytropic_cState {
 public :
     
-    /*
-     * Constructors
-     * ------------
-     */
-	NavierStokes3D_Polytropic_cState() : Euler3D_Polytropic_cState() { }
-	NavierStokes3D_Polytropic_cState(const double &rho, 
-									 const Vector3D &rhov, 
-									 const double &E) : Euler3D_Polytropic_cState(rho,rhov,E) { }
-	NavierStokes3D_Polytropic_cState(const double &rho, 
-									 const double &rhovx, const double &rhovy, const double &rhovz, 
-									 const double &E) : Euler3D_Polytropic_cState(rho,rhovx,rhovy,rhovz,E) { }
+/** @name Constructors */
+/*        ------------ */
+//@{
+    NavierStokes3D_Polytropic_cState() : Euler3D_Polytropic_cState() { }
+    NavierStokes3D_Polytropic_cState(const double &rho, 
+                                     const Vector3D &rhov, 
+                                     const double &E) : Euler3D_Polytropic_cState(rho,rhov,E) { }
+    NavierStokes3D_Polytropic_cState(const double &rho, 
+                                     const double &rhovx, const double &rhovy, const double &rhovz, 
+                                     const double &E) : Euler3D_Polytropic_cState(rho,rhovx,rhovy,rhovz,E) { }
     NavierStokes3D_Polytropic_cState(const double &value) : Euler3D_Polytropic_cState(value) { }
     
-	NavierStokes3D_Polytropic_cState(const Euler3D_Polytropic_cState &U) : Euler3D_Polytropic_cState(U) { }
- //   NavierStokes3D_Polytropic_cState(const Euler3D_Polytropic_pState &W) : Euler3D_Polytropic_cState(W) { }
+    NavierStokes3D_Polytropic_cState(const Euler3D_Polytropic_cState &U) : Euler3D_Polytropic_cState(U) { }
+//@}
 	
-    /*
-     * Gas specific constants
-     * ----------------------
-     */
-	static double v1;	//!< Viscosity law coefficient (only for Navier-Stokes)
+/** @name Gas specific constants */
+/*        ---------------------- */
+//@{
+    static double v1;	//!< Viscosity law coefficient (only for Navier-Stokes)
     static double v2;	//!< Viscosity law coefficient (only for Navier-Stokes)
-	static double v3;	//!< Viscosity law coefficient (only for Navier-Stokes)
-	static double v4;	//!< Viscosity law coefficient (only for Navier-Stokes)
+    static double v3;	//!< Viscosity law coefficient (only for Navier-Stokes)
+    static double v4;	//!< Viscosity law coefficient (only for Navier-Stokes)
     static double v5;	//!< Viscosity law coefficient (only for Navier-Stokes)
-	static double Cp;   //!< Heat capacity with constant pressure
-	static double Cv;   //!< Heat capacity with constant volume
+    static double Cp;   //!< Heat capacity with constant pressure
+    static double Cv;   //!< Heat capacity with constant volume
+ //@}
     
-    /* 
-     * Set gas specific constants
-     * --------------------------
-     */
+/** @name Set gas specific constants */
+/*        -------------------------- */
+//@{
     void setgas(void);              //!< Set gas to air
-	void setgas(char *str_ptr);     //!< Set gas constants
-		
+    void setgas(char *str_ptr);     //!< Set gas constants
+//@}
 };
 
 #endif // _NAVIERSTOKES3D_POLYTROPIC_STATE_INCLUDED
