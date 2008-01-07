@@ -805,6 +805,8 @@ void Broadcast_Input_Parameters(Flame2D_Input_Parameters &IP) {
   /*********************************************************
    ******************* FLAME2D SPECIFIC *********************
    *********************************************************/
+  // Soot Parameters
+  IP.Soot_IP.Broadcast_Input_Parameters();
   // Radiation parameters:
   MPI::COMM_WORLD.Bcast(IP.Rte_Input_File_Name, 
 			INPUT_PARAMETER_LENGTH_FLAME2D, 
@@ -1612,17 +1614,17 @@ int Parse_Next_Input_Control_Parameter(Flame2D_Input_Parameters &IP) {
     IP.Input_File.getline(buffer, sizeof(buffer));
     if (IP.Max_Number_Sequential_Solves < 0) i_command = INVALID_INPUT_VALUE;
 
-    /***********************************************************************
-     ************************ FLAME2D SPECIFIC ******************************
+   /***********************************************************************
+    ************************ FLAME2D SPECIFIC ******************************
         For Flame2D the following input parameters are added:
-             "Reaction_Mechanism" is 
+        "Reaction_Mechanism" is 
 
-             "User_Reaciton_Mechanism"
+        "User_Reaciton_Mechanism"
  
-             "Species"
+        "Species"
 
-	     *************************************************************************
-	     *************************************************************************/
+    *************************************************************************
+    *************************************************************************/
 
        
     /*************************************/
@@ -2887,6 +2889,10 @@ int Parse_Next_Input_Control_Parameter(Flame2D_Input_Parameters &IP) {
     //      cout << "\n\n***\n";
     //       }
     //       i_command = COMMENT_CODE; // sure why not
+  }
+
+  if (i_command == INVALID_INPUT_CODE) {   
+    i_command = IP.Soot_IP.Parse_Next_Input_Control_Parameter(buffer, IP.Next_Control_Parameter);
   }
     
   if (!IP.Input_File.good()) { i_command = INVALID_INPUT_VALUE; }

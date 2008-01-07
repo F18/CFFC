@@ -223,13 +223,14 @@ SRC_CHEM_EXE = $(CHEM_DIR)Chem2D.cc
 SRC_FLAME = $(FLAME_DIR)Flame2DState.cc \
 	    $(FLAME_DIR)Mixture.cc \
 	    $(FLAME_DIR)Flame2DTools.cc \
- 	    $(FLAME_DIR)Flame2DInput.cc \
+	    $(FLAME_DIR)Flame2DInput.cc \
 	    $(FLAME_DIR)Flame2DQuad.cc \
 	    $(FLAME_DIR)Flame2DQuadGrid.cc \
 	    $(FLAME_DIR)Flame2DdRdU.cc \
 	    $(FLAME_DIR)Flame2DQuadMultiBlock.cc \
 	    $(FLAME_DIR)Flame2DQuadSingleBlock.cc \
-	    $(FLAME_DIR)Flame2DQuadSolvers.cc
+	    $(FLAME_DIR)Flame2DQuadSolvers.cc \
+	    $(FLAME_DIR)Soot2DState.cc
 SRC_FLAME_EXE = $(FLAME_DIR)Flame2D.cc  
 
 # HighTemp2D:

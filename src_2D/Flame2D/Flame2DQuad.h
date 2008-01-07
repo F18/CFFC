@@ -27,7 +27,6 @@
 
 /* Define the structures and classes. */
 
-#undef NUMBER_OF_RESIDUAL_VECTORS_FLAME2D
 #define	NUMBER_OF_RESIDUAL_VECTORS_FLAME2D    3  //K for dUdt[i][j][K]
 
 

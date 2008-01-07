@@ -929,15 +929,8 @@ void Output_Tecplot(Flame2D_Quad_Block &SolnBlk,
 	     << ", Time = " << Time
 	     << "\"" << "\n"
 	     << "VARIABLES = \"x\" \\ \n"
-	     << "\"y\" \\ \n"
-	     << "\"rho\" \\ \n"
-	     << "\"u\" \\ \n"
-	     << "\"v\" \\ \n"
-	     << "\"p\" \\ \n";
-    //n species mass fractions names
-    for(int i =0; i<Flame2D_pState::NumSpecies(); i++){
-      Out_File <<"\"c_"<<Flame2D_pState::speciesName(i)<<"\" \\ \n";
-    }  
+	     << "\"y\" \\ \n";
+    Flame2D_pState::outputTecplotVarList(Out_File, "W");
     //  Calculated values
     Out_File<< "\"T\" \\  \n" 
 	    << "\"R\" \\  \n"
@@ -1047,15 +1040,8 @@ void Output_Cells_Tecplot(Flame2D_Quad_Block &SolnBlk,
 	     << ", Time = " << Time
 	     << "\"" << "\n"
 	     << "VARIABLES = \"x\" \\ \n"
-	     << "\"y\" \\ \n"
-	     << "\"rho\" \\ \n"
-	     << "\"u\" \\ \n"
-	     << "\"v\" \\ \n"
-	     << "\"p\" \\ \n";
-    //n species mass fractions names
-    for(int i =0; i<Flame2D_pState::NumSpecies(); i++){
-      Out_File <<"\"c"<<Flame2D_pState::speciesName(i)<<"\" \\ \n";
-    }
+	     << "\"y\" \\ \n";
+    Flame2D_pState::outputTecplotVarList(Out_File, "W");
     // momentum
     Out_File << "\"rho*u\" \\ \n"
 	     << "\"rho*v\" \\ \n";
@@ -1094,35 +1080,11 @@ void Output_Cells_Tecplot(Flame2D_Quad_Block &SolnBlk,
       Out_File <<"\"omega_c"<<Flame2D_pState::speciesName(i)<<"\" \\ \n";
     }
     // Gradients
-    Out_File << "\"dWdx_rho\" \\ \n"
-	     << "\"dWdx_u\" \\ \n"
-	     << "\"dWdx_v\" \\ \n"
-	     << "\"dWdx_p\" \\ \n";
-    for(int i =0; i<Flame2D_pState::NumSpecies(); i++){
-      Out_File <<"\"dWdx_c"<<Flame2D_pState::speciesName(i)<<"\" \\ \n";
-    }
-    Out_File << "\"dWdy_rho\" \\ \n"
-	     << "\"dWdy_u\" \\ \n"
-	     << "\"dWdy_v\" \\ \n"
-	     << "\"dWdy_p\" \\ \n";
-    for(int i =0; i<Flame2D_pState::NumSpecies(); i++){
-      Out_File <<"\"dWdy_c"<<Flame2D_pState::speciesName(i)<<"\" \\ \n";
-    }
-    Out_File << "\"phi_rho\" \\ \n"
-	     << "\"phi_u\" \\ \n"
-	     << "\"phi_v\" \\ \n"
-	     << "\"phi_p\" \\ \n";
-    for(int i =0; i<Flame2D_pState::NumSpecies(); i++){
-      Out_File <<"\"phi_c"<<Flame2D_pState::speciesName(i)<<"\" \\ \n";
-    }
+    Flame2D_pState::outputTecplotVarList(Out_File, "W", "dWdx_");
+    Flame2D_pState::outputTecplotVarList(Out_File, "W", "dWdy_");
+    Flame2D_pState::outputTecplotVarList(Out_File, "W", "phi_");
     // dUdt
-    Out_File << "\"dUdt_rho\" \\ \n"
-	     << "\"dUdt_rhou\" \\ \n"
-	     << "\"dUdt_rhov\" \\ \n"
-	     << "\"dUdt_E\" \\ \n";
-    for(int i =0; i<Flame2D_pState::NumSpecies(); i++){
-      Out_File <<"\"dUdt_rhoc"<<Flame2D_pState::speciesName(i)<<"\" \\ \n";
-    }
+    Flame2D_pState::outputTecplotVarList(Out_File, "U", "dUdt_");
 
     // Zone details
     Out_File<< "ZONE T =  \"Block Number = " << Block_Number
@@ -3345,7 +3307,10 @@ int dUdt_Residual_Evaluation(Flame2D_Quad_Block &SolnBlk,
 	
 	// Include source terms associated with radiation
 	SolnBlk.dUdt[i][j][0].E() += SolnBlk.Srad[i][j];
-	
+
+	// include source terms associated with soot
+	SolnBlk.W[i][j].Ssoot(SolnBlk.dUdt[i][j][0]);
+
 	//-----------------------------------------------------------
 	
 	// Save west and east face boundary flux.
@@ -3716,6 +3681,10 @@ int dUdt_Multistage_Explicit(Flame2D_Quad_Block &SolnBlk,
 	// Include source terms associated with radiation
 	SolnBlk.dUdt[i][j][k_residual].E() += 
 	  (Input_Parameters.CFL_Number*SolnBlk.dt[i][j])*SolnBlk.Srad[i][j];
+
+	// include source terms associated with soot
+	SolnBlk.W[i][j].Ssoot(SolnBlk.dUdt[i][j][k_residual],
+			      Input_Parameters.CFL_Number*SolnBlk.dt[i][j]);
 
 	//-----------------------------------------------------------
 

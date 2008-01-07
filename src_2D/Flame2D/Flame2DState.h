@@ -26,35 +26,23 @@ using namespace std;
 
 // FLAME2D Specific headers
 #include "Mixture.h"
+#include "Soot2DState.h"
 
 /////////////////////////////////////////////////////////////////////
 /// Defines
 /////////////////////////////////////////////////////////////////////
 
 // Used in negative_speccheck for species round off (was MICRO)
-#undef SPEC_TOLERANCE
 #define SPEC_TOLERANCE  1e-8
 
 // number of fixed variables in the Flame2D class
-#undef NUM_FLAME2D_VAR_SANS_SPECIES
 #define NUM_FLAME2D_VAR_SANS_SPECIES 4  //rho, v(2), p
 
-// define the index locations
-#undef RHO_
-#undef VX_
-#undef VY_
-#undef PRESS_
-#undef SPEC_
-enum INDICES { RHO_ = 0,
-	       VX_ = 1,
-	       VY_ = 2,
-	       PRESS_ = 3,
-	       SPEC_ = 4 };
-
-// if static species, the total number of variables
-#undef STATIC_NUM_FLAME2D_VAR
+// if static species && static soot var, the total number of variables
 #ifdef STATIC_NUMBER_OF_SPECIES
-#define STATIC_NUM_FLAME2D_VAR   NUM_FLAME2D_VAR_SANS_SPECIES+STATIC_NUMBER_OF_SPECIES
+#ifdef STATIC_NUM_SOOT2D_VAR
+#define STATIC_NUM_FLAME2D_VAR NUM_FLAME2D_VAR_SANS_SPECIES + STATIC_NUMBER_OF_SPECIES + STATIC_NUM_SOOT2D_VAR
+#endif
 #endif
 
 /////////////////////////////////////////////////////////////////////
@@ -80,20 +68,12 @@ public:
   Flame2D_State(const double &d, const double &vvx, const double &vvy,
 		const double &pre, const double &val) { 
     Nullify(); Allocate(); 
-    x[RHO_] = d;
-    x[VX_] = vvx;
-    x[VY_] = vvy;
-    x[PRESS_] = pre;
-    for (int i=0; i<ns; i++) x[SPEC_+i] = val; 
+    rho()=d; p()=pre; vx()=vvx; vy()=vvy; c(val); sc(0.0);
   }
   Flame2D_State(const double &d, const double &vvx, const double &vvy,
 		const double &pre, const double* val) {
     Nullify(); Allocate(); 
-    x[RHO_] = d;
-    x[VX_] = vvx;
-    x[VY_] = vvy;
-    x[PRESS_] = pre;
-    for (int i=0; i<ns; i++) x[SPEC_+i] = val[i]; 
+    rho()=d; p()=pre; vx()=vvx; vy()=vvy; c(val); sc(0.0);
   }
   Flame2D_State(const Flame2D_State &X) { Nullify(); Allocate(); Copy(X);  }
   ~Flame2D_State() { Deallocate(); }
@@ -112,70 +92,97 @@ public:
   /************************* Accessors ******************************/
   //@{ @name Primitive variables:
   //!< Density.
-  double rho(void) const { return x[RHO_]; }
-  double& rho(void) { return x[RHO_]; }
+  double rho(void) const { return x[iRho]; }
+  double& rho(void) { return x[iRho]; }
 
   //!< Flow velocity (2D)
-  double vx(void) const { return x[VX_]; }
-  double& vx(void) { return x[VX_]; }
-  double vy(void) const { return x[VY_]; }
-  double& vy(void) { return x[VY_]; }
-  void v(const Vector2D &V) { x[VX_]=V.x; x[VY_]=V.y; };
-  double vsqr(void) const { return x[VX_]*x[VX_] + x[VY_]*x[VY_]; };
-  double vabs(void) const { return sqrt(x[VX_]*x[VX_] + x[VY_]*x[VY_]); };
-  Vector2D v(void) const { return Vector2D(x[VX_], x[VY_]); };
+  double vx(void) const { return x[iVx]; }
+  double& vx(void) { return x[iVx]; }
+  double vy(void) const { return x[iVy]; }
+  double& vy(void) { return x[iVy]; }
+  void v(const Vector2D &V) { x[iVx]=V.x; x[iVy]=V.y; };
+  double vsqr(void) const { return x[iVx]*x[iVx] + x[iVy]*x[iVy]; };
+  double vabs(void) const { return sqrt(x[iVx]*x[iVx] + x[iVy]*x[iVy]); };
+  Vector2D v(void) const { return Vector2D(x[iVx], x[iVy]); };
 
   //!< Pressure.
-  double p(void) const { return x[PRESS_]; }
-  double& p(void) { return x[PRESS_]; }
+  double p(void) const { return x[iPress]; }
+  double& p(void) { return x[iPress]; }
 
   //!< Species mass fractions
-  const double* c(void) const { return &x[SPEC_]; }
-  double c(const int&i) const { return x[SPEC_+i]; }
-  void c(const double *mfrac) { for (int i=0; i<ns; i++) x[SPEC_+i]=mfrac[i]; }
-  void c(const double &val)  { for (int i=0; i<ns; i++) x[SPEC_+i]=val; }
-  double& c(const int&i)  { return x[SPEC_+i]; }
+  const double* c(void) const { return &x[iSpec]; }
+  double c(const int&i) const { return x[iSpec+i]; }
+  double* c(void) { return &x[iSpec]; }
+  void c(const double *mfrac) { for (int i=0; i<ns; i++) x[iSpec+i]=mfrac[i]; }
+  void c(const double &val)  { for (int i=0; i<ns; i++) x[iSpec+i]=val; }
+  double& c(const int&i)  { return x[iSpec+i]; }
+
+  //!< Soot scalars
+  const double* sc(void) const { return &x[iSoot]; }
+  double sc(const int&i) const { return x[iSoot+i]; }
+  double* sc(void) { return &x[iSoot]; }
+  void sc(const double *s) { for (int i=0; i<nsc; i++) x[iSoot+i]=s[i]; }
+  void sc(const double &val)  { for (int i=0; i<nsc; i++) x[iSoot+i]=val; }
+  double& sc(const int&i)  { return x[iSoot+i]; }
   //@}
 
   //@{ @name Conserved variables:
   //!< Momentum (2D)
-  double rhovx(void) const { return x[VX_]; }
-  double& rhovx(void) { return x[VX_]; }
-  double rhovy(void) const { return x[VY_]; }
-  double& rhovy(void) { return x[VY_]; }
-  void rhov(const Vector2D &rhoV) { x[VX_]=rhoV.x; x[VY_]=rhoV.y; };
-  double rhovsqr(void) const { return (x[VX_]*x[VX_] + x[VY_]*x[VY_]); };
-  Vector2D rhov(void) const { return Vector2D(x[VX_], x[VY_]); };
+  double rhovx(void) const { return x[iVx]; }
+  double& rhovx(void) { return x[iVx]; }
+  double rhovy(void) const { return x[iVy]; }
+  double& rhovy(void) { return x[iVy]; }
+  void rhov(const Vector2D &rhoV) { x[iVx]=rhoV.x; x[iVy]=rhoV.y; };
+  double rhovsqr(void) const { return (x[iVx]*x[iVx] + x[iVy]*x[iVy]); };
+  Vector2D rhov(void) const { return Vector2D(x[iVx], x[iVy]); };
 
   //!< Total Energy (rho *(e + HALF*v^2))
-  double E(void) const { return x[PRESS_]; }
-  double& E(void) { return x[PRESS_]; }
+  double E(void) const { return x[iPress]; }
+  double& E(void) { return x[iPress]; }
 
   //!< Species mass fractions times density
-  double rhoc(const int&i) const { return x[SPEC_+i]; }
-  void rhoc(const double *mfrac) { for (int i=0; i<ns; i++) x[SPEC_+i]=mfrac[i]; }
-  void rhoc(const double &val)  { for (int i=0; i<ns; i++) x[SPEC_+i]=val; }
-  double& rhoc(const int&i)  { return x[SPEC_+i]; }
+  const double* rhoc(void) const { return &x[iSpec]; }
+  double rhoc(const int&i) const { return x[iSpec+i]; }
+  double* rhoc(void) { return &x[iSpec]; }
+  void rhoc(const double *mfrac) { for (int i=0; i<ns; i++) x[iSpec+i]=mfrac[i]; }
+  void rhoc(const double &val)  { for (int i=0; i<ns; i++) x[iSpec+i]=val; }
+  double& rhoc(const int&i)  { return x[iSpec+i]; }
+
+  //!< Soot scalars times density
+  const double* rhosc(void) const { return &x[iSoot]; }
+  double rhosc(const int&i) const { return x[iSoot+i]; }
+  double* rhosc(void) { return &x[iSoot]; }
+  void rhosc(const double *s) { for (int i=0; i<nsc; i++) x[iSoot+i]=s[i]; }
+  void rhosc(const double &val)  { for (int i=0; i<nsc; i++) x[iSoot+i]=val; }
+  double& rhosc(const int&i)  { return x[iSoot+i]; }
   //@}
 
 
   /******************** Static Functions ****************************/
   //! return the number of variables - number of species
-  static int NumVarSansSpecies() { return NUM_FLAME2D_VAR_SANS_SPECIES; }
+  static int NumVarSansSpecies(void) { return NUM_FLAME2D_VAR_SANS_SPECIES; }
 
   //! return the number of variables
-  static int NumVar() { return n; }
+  static int NumVar(void) { return n; }
 
   //! return the number of species
-  static int NumSpecies() { return ns; }
+  static int NumSpecies(void) { return ns; }
 
   //! is the mixture reacting
-  static bool isReacting() { return reacting; }
+  static bool isReacting(void) { return reacting; }
+
+  //! is the mixture sooting
+  static bool isSooting(void) { return soot_flag; }
 
   //! set static variables
   static void setNonReacting(void) { reacting = false; };
   static void set_gravity(const double &g);
   static void set_Mref(const double &Ma) { Mref = Ma; };
+
+  //! print var list
+  static void outputTecplotVarList(ostream &out,
+				   const string &who, 
+				   const string &prefix = "");
 
   /************************ Helper Functions ************************/
   void add( const Flame2D_State &U, const double &mult=1.0);
@@ -248,10 +255,11 @@ public:
 			    const int &Axisymmetric,
 			    const Vector2D &norm_dir,
 			    const double &mult=1.0);
-    
+
   /*********************** Checking *********************************/
   bool isPhysical(const int &harshness);
   bool speciesOK(const int &harshness);
+  void Adjust_Density(void);
 
   /********************* Operators Overloading **********************/
   // Index operator
@@ -286,20 +294,29 @@ public:
   /********************* Private Objects ****************************/
 protected:
 
-#ifdef STATIC_NUMBER_OF_SPECIES
-  static const int      n = STATIC_NUM_FLAME2D_VAR;
-  static const int     ns = STATIC_NUMBER_OF_SPECIES;
-  double                x[n];
+#ifdef STATIC_NUM_FLAME2D_VAR
+  double                  x[STATIC_NUM_FLAME2D_VAR];
 #else
-  static int        n; //!< Total number of vars
-  static int       ns; //!< Number of species
-  double           *x; //!< solution state array
+  double                 *x; //!< solution state array
 #endif
+  static int              n; //!< Total number of vars
+  static int             ns; //!< Number of species
+  static int            nsc; //!< Number of soot scalars
+  static int           ngas; //!< Number of variables associated with the gas phase
   static bool      reacting; //!< boolean indicating whether gas is reacting
   static double        Mref; //!< Mref for Precondtioning (normally set to incoming freestream Mach)
   static double   gravity_z; //!< m/s^2 acceleration due to gravity  
+  static int      soot_flag; //!< flag indicating soot model
   static double*          y; //!< temporary storage for mass fractions
 
+  //! solution state array indices
+  static const int iRho   = 0; //!< density
+  static const int iVx    = 1; //!< vx / rhovx 
+  static const int iVy    = 2; //!< vy / rhovy
+  static const int iPress = 3; //!< Pressure / energy
+  static const int iSpec  = 4; //!< species array index
+  static       int iSoot;      //!< soot scalar array index
+    
 };
 
 
@@ -344,6 +361,7 @@ private:
   static double* r;    //!< Temporary storage for reaction rates
   static double* h_i;  //!< Temporary storage for h(i)
   static double* cp_i; //!< Temporary storage for cp(i)
+  static Soot2D_State  soot; //!< soot model object
 
   /********************** Constructors/Destructors ******************/
 public:
@@ -354,27 +372,29 @@ public:
   }
 
   Flame2D_pState(const double &d, const Vector2D &V, 
-		 const double &pre)
-  { rho()=d; p()=pre; v(V); c(1.0/ns); setGas(); }
+		 const double &pre) 
+  { rho()=d; p()=pre; v(V); c(1.0/ns); sc(0.0); setGas(); }
 
   Flame2D_pState(const double &d, const double &vvx, 
 		 const double &vvy, const double &pre)
-  { rho()=d; p()=pre; vx()=vvx; vy()=vvy; c(1.0/ns); setGas(); }
+  { rho()=d; p()=pre; vx()=vvx; vy()=vvy; c(1.0/ns); sc(0.0); setGas(); }
   
   Flame2D_pState(const double &d, const double &vvx, 
 		 const double &vvy, const double &pre, 
-		 const double *mfrac)
-  { rho()=d; p()=pre; vx()=vvx; vy()=vvy; c(mfrac); setGas(); }
+		 const double *mfrac) 
+  { rho()=d; p()=pre; vx()=vvx; vy()=vvy; c(mfrac); sc(0.0); setGas(); }
   
   Flame2D_pState(const double &d, const Vector2D &V, 
-		 const double &pre, const double *mfrac)
-  { rho()=d; p()=pre; v(V); c(mfrac); setGas(); }
+		 const double &pre, const double *mfrac) 
+  { rho()=d; p()=pre; v(V); c(mfrac); sc(0.0); setGas(); }
 
   Flame2D_pState(const Flame2D_pState &W) { Copy(W); }
 
-  Flame2D_pState(const Flame2D_State &W) { Copy(W);  }
+  Flame2D_pState(const Flame2D_State &W) { 
+    Copy(W);
+  }
 
-  ~Flame2D_pState() { }
+  ~Flame2D_pState() { Deallocate(); }
 
   void Copy( const Flame2D_pState &W ) { 
     for (int i=0; i<n; i++) x[i] = W.x[i];
@@ -390,7 +410,8 @@ public:
 
   //! initial mixture setup function
   static void setMixture(const string &mech_name,
-			 const string &mech_file);
+			 const string &mech_file,
+			 const int soot_model=0);
   //! set constant schmidt number
   static void setConstantSchmidt(const double* Sc) { Mixture::setConstantSchmidt(Sc); };
   //! Static memory allocator/deallocator  
@@ -398,6 +419,7 @@ public:
   static void DeallocateStatic(void);
   //! The species names
   static string speciesName(const int&i) { return Mixture::speciesName(i); };
+  static void speciesNames(string *names) { Mixture::getSpeciesNames(names); };
   //! The species index
   static int speciesIndex(const string&name) { return Mixture::speciesIndex(name); };
   //! The mechanism name
@@ -408,21 +430,25 @@ public:
 public:
 
   //!< Density.
-  double rho(void) const { return x[RHO_]; }
+  double rho(void) const { return x[iRho]; }
 
   //!< Flow velocity (2D)
-  double vx(void) const { return x[VX_]; }
-  double vy(void) const { return x[VY_]; }
-  double vsqr(void) const { return x[VX_]*x[VX_] + x[VY_]*x[VY_]; };
-  double vabs(void) const { return sqrt(x[VX_]*x[VX_] + x[VY_]*x[VY_]); };
-  Vector2D v(void) const { return Vector2D(x[VX_], x[VY_]); };
+  double vx(void) const { return x[iVx]; }
+  double vy(void) const { return x[iVy]; }
+  double vsqr(void) const { return x[iVx]*x[iVx] + x[iVy]*x[iVy]; };
+  double vabs(void) const { return sqrt(x[iVx]*x[iVx] + x[iVy]*x[iVy]); };
+  Vector2D v(void) const { return Vector2D(x[iVx], x[iVy]); };
 
   //!< Pressure.
-  double p(void) const { return x[PRESS_]; }
+  double p(void) const { return x[iPress]; }
 
   //!< Species mass fractions
-  const double* c(void) const { return &x[SPEC_]; }
-  double c(const int&i) const { return x[SPEC_+i]; }
+  const double* c(void) const { return &x[iSpec]; }
+  double c(const int&i) const { return x[iSpec+i]; }
+
+  //!< Soot scalars
+  const double* sc(void) const { return &x[iSoot]; }
+  double sc(const int&i) const { return x[iSoot+i]; }
 
   //!< Momentum (2D)
   double rhovx(void) const { return rho()*vx(); };
@@ -433,24 +459,33 @@ public:
   //!< Species mass fractions times density
   double rhoc(const int&i) const { return rho()*c(i); };
 
+  //!< Soot scalars times density
+  double rhosc(const int&i) const { return rho()*sc(i); }
+
 private:
 
   //!< Density.
-  double& rho(void) { return x[RHO_]; }
-  double& vx(void) { return x[VX_]; }
+  double& rho(void) { return x[iRho]; }
+  double& vx(void) { return x[iVx]; }
 
   //!< Flow velocity (2D)
-  double& vy(void) { return x[VY_]; }
-  void v(const Vector2D &V) { x[VX_]=V.x; x[VY_]=V.y; };
+  double& vy(void) { return x[iVy]; }
+  void v(const Vector2D &V) { x[iVx]=V.x; x[iVy]=V.y; };
 
   //!< Pressure.
-  double& p(void) { return x[PRESS_]; }
+  double& p(void) { return x[iPress]; }
 
   //!< Species mass fractions
-  double* c(void) { return &x[SPEC_]; }
-  void c(const double *mfrac) { for (int i=0; i<ns; i++) x[SPEC_+i]=mfrac[i]; }
-  void c(const double &val)  { for (int i=0; i<ns; i++) x[SPEC_+i]=val; }
-  double& c(const int&i)  { return x[SPEC_+i]; }
+  double* c(void) { return &x[iSpec]; }
+  void c(const double *mfrac) { for (int i=0; i<ns; i++) x[iSpec+i]=mfrac[i]; }
+  void c(const double &val)  { for (int i=0; i<ns; i++) x[iSpec+i]=val; }
+  double& c(const int&i)  { return x[iSpec+i]; }
+
+  //!< Soot scalars
+  double* sc(void) { return &x[iSoot]; }
+  void sc(const double *s) { for (int i=0; i<nsc; i++) x[iSoot+i]=s[i]; }
+  void sc(const double &val)  { for (int i=0; i<nsc; i++) x[iSoot+i]=val; }
+  double& sc(const int&i)  { return x[iSoot+i]; }
 
   //@{ @name Conserved variables:
   //!< Note: override these so they don't work:
@@ -463,9 +498,19 @@ private:
   double& E(void) { assert(0); }
 
   //!< Species mass fractions times density
+  const double* rhoc(void) const { assert(0); }
+  double* rhoc(void) { assert(0); }
   void rhoc(const double *mfrac) { assert(0); }
   void rhoc(const double &val)  { assert(0); }
   double& rhoc(const int&i)  { assert(0); }
+
+  //!< Soot scalars times density
+  const double* rhosc(void) const { assert(0); }
+  double* rhosc(void) { assert(0); }
+  void rhosc(const double *s) { assert(0); }
+  void rhosc(const double &val)  { assert(0); }
+  double& rhosc(const int&i)  { assert(0); }
+
   //@}
 
   /******************** State Setup Functions ***********************/
@@ -514,6 +559,9 @@ public:
   /****************** Mixture Object Wrappers ***********************/
   //!< Temperature [K]
   double T(void) const { return Mix.temperature(); };
+  //!< Molar mass [kg/kmole]
+  double MW(void) const { return Mix.molarMass(); };
+  static void MW(double*MWs) { Mixture::getMolarMasses(MWs); };
   //!< Gas constant [ J/(kg K) ]
   double Rtot(void) const { return Mix.gasConstant(); };
   //!< Internal Energy (et = es + echem) [ J/kg ]
@@ -631,8 +679,7 @@ public:
 
   /*********************** Fluxes ***********************************/
   //! Inviscid flux functions
-  void Fx(Flame2D_State &FluxX) const;
-  void Fx(Flame2D_State &FluxX, const double& mult) const;
+  void Fx(Flame2D_State &FluxX, const double& mult=1.0) const;
   Flame2D_State Fx(void) const;
   void addFx(Flame2D_State &FluxX, const double& mult=1.0) const;
   //! Roe Average state
@@ -700,6 +747,9 @@ public:
   //! Source terms associated with gravitational forces
   void Sg(Flame2D_State &S, const double& mult=1.0) const;
   void dSgdU(DenseMatrix &dSgdU) const;
+
+  //! Source terms associated with soot
+  void Ssoot(Flame2D_State &S, const double& mult=1.0) const;
 
   /********************* Preconditioning ****************************/
   double u_plus_aprecon(const double &u,const int &flow_type_flag,
@@ -797,20 +847,20 @@ public:
  * Allocator/deallocator for object memory.
  ****************************************************/
 inline void Flame2D_State :: Allocate() {
-#ifndef STATIC_NUMBER_OF_SPECIES
+#ifndef STATIC_NUM_FLAME2D_VAR
   Deallocate();
   if (n>0) { x = new double[n]; }
 #endif
 };
 
 inline void Flame2D_State :: Deallocate() { 
-#ifndef STATIC_NUMBER_OF_SPECIES
+#ifndef STATIC_NUM_FLAME2D_VAR
   if (x!=NULL) { delete[] x; x = NULL; } 
 #endif
 };
 
 inline void Flame2D_State :: Nullify() { 
-#ifndef STATIC_NUMBER_OF_SPECIES
+#ifndef STATIC_NUM_FLAME2D_VAR
   x = NULL;
 #endif
 };
@@ -1015,6 +1065,7 @@ inline void Flame2D_State::DeltaU(const Flame2D_pState& Wr,
   rhovy() = Wr.rhovy() - Wl.rhovy();
   E() = Wr.E() - Wl.E();
   for (int i=0; i<ns; i++) rhoc(i) = Wr.rhoc(i) - Wl.rhoc(i);
+  for (int i=0; i<nsc; i++) rhosc(i) = Wr.rhosc(i) - Wl.rhosc(i);
 }
 
 /********************************************************
@@ -1141,6 +1192,7 @@ inline void Flame2D_pState::setU(const Flame2D_State &U) {
   vx() = U.rhovx()/U.rho();
   vy() = U.rhovy()/U.rho();
   for(int i=0; i<ns; i++) c(i) = U.rhoc(i)/U.rho();
+  for(int i=0; i<nsc; i++) sc(i) = U.rhosc(i)/U.rho();
   double e( U.E()/U.rho() - 0.5*vsqr() );
   setEnergy(e);
 }
@@ -1157,6 +1209,7 @@ inline void Flame2D_pState::getU(Flame2D_State &U) const {
   U.rhovy() = rhovy();
   U.E() = E();
   for(int i=0; i<ns; i++) U.rhoc(i) = rhoc(i);
+  for(int i=0; i<nsc; i++) U.rhosc(i) = rhosc(i);
 }
 
 inline Flame2D_State Flame2D_pState::U(void) const {
@@ -1281,9 +1334,8 @@ inline void Flame2D_pState::Viscous_Quantities(const Flame2D_State &dWdx,
 inline Vector2D Flame2D_pState::DiffusionVel( const double &dcdx,
 					      const double &dcdy,
 					      const int &k ) const {
-  Vector2D Vk;
-  Vk.x = - Diffusion_coef(k) * dcdx;
-  Vk.y = - Diffusion_coef(k) * dcdy;
+  Vector2D Vk( - Diffusion_coef(k) * dcdx, 
+	       - Diffusion_coef(k) * dcdy );
   return Vk;
 }
 
@@ -1455,5 +1507,123 @@ inline bool Flame2D_State::isPhysical(const int &harshness) {
   return true;
 
 }
+
+/****************************************************
+ * Adjust density to be consistent
+ ****************************************************/
+inline void Flame2D_State::Adjust_Density(void) { 
+  double sum(0.0); 
+  for (int i=0; i<ns; i++) sum += rhoc(i);
+  rho() = sum;
+}
+
+/////////////////////////////////////////////////////////////////////
+/// Static Functions
+/////////////////////////////////////////////////////////////////////
+
+/****************************************************
+ * Setup mixture data
+ ****************************************************/
+inline void Flame2D_pState::setMixture(const string &mech_name,
+				       const string &mech_file,
+				       const int soot_model) {
+
+  // deallocate first
+  DeallocateStatic();
+
+  // call mixture object setup functin
+  Mixture::setMixture(mech_name, mech_file);
+
+  // determine the total number of varibles associated with the gas phase
+  ns = Mixture::nSpecies();
+  ngas = NUM_FLAME2D_VAR_SANS_SPECIES + ns;
+
+  //
+  // if there is soot, set the relevant parameters
+  //
+  if ( soot_flag = soot_model ) { 
+
+    // get the molar masses, species names, and set the soot object
+    double *MWs   = new double[ns];
+    string *names = new string[ns];
+    MW( MWs );
+    speciesNames( names );
+    soot.setGasPhase( MWs, ns, names);
+    soot.setModelParams( soot_flag );
+
+    // set the relevant Flame2D object params
+    iSoot = ngas;
+    nsc = soot.NumVar();
+
+  //
+  // No soot
+  //
+  } else {
+    iSoot = -1;
+    nsc = 0;
+  }
+
+  // the total number state variables
+  n = ngas + nsc;
+
+  // determine if this is a reacting case
+  if (Mixture::nReactions()>0) reacting = true;
+  else reacting = false;
+
+  //allocate static memory and load the species data  
+  AllocateStatic();
+
+}
+
+/**********************************************************************
+ * Flame2D_State::set_gravity -- Set the acceleration due to gravity  *
+ *                               in m/s^2.  It acts downwards in the  *
+ *                               z-dir (g <= 0)                       *
+ **********************************************************************/
+inline void Flame2D_State::set_gravity(const double &g) { // [m/s^2]
+
+  // if gravity is acting upwards (wrong way)
+  if (g>0) {
+    cerr<<"\n Flame2D_pState::set_gravity() - Gravity acting upwards!!!! \n";
+    exit(1);
+    
+  // gravity acting downwards (-ve), OK
+  } else {
+    gravity_z = g;
+  }
+}
+
+/****************************************************
+ * Print tecplot variable list
+ ****************************************************/
+inline void Flame2D_State::outputTecplotVarList(ostream &out,
+						const string &who, 
+						const string &prefix) {
+
+  // Print out U - conserved var list
+  if (who == "U") {
+    out << "\"" << prefix << "rho\" \\ \n"
+	<< "\"" << prefix << "rhou\" \\ \n"
+	<< "\"" << prefix << "rhov\" \\ \n"
+	<< "\"" << prefix << "rhoE\" \\ \n";
+    for(int i =0; i<ns; i++) 
+      out <<"\"" << prefix << "rhoc"<<Flame2D_pState::speciesName(i)<<"\" \\ \n";
+    for(int i =0; i<nsc; i++) 
+      out <<"\"" << prefix << "rhosc" <<i<<"\" \\ \n";
+
+  // or print out W - primitive var list
+  } else {
+    out << "\"" << prefix << "rho\" \\ \n"
+	<< "\"" << prefix << "u\" \\ \n"
+	<< "\"" << prefix << "v\" \\ \n"
+	<< "\"" << prefix << "p\" \\ \n";
+    for(int i =0; i<ns; i++) 
+      out <<"\"" << prefix << "c"<<Flame2D_pState::speciesName(i)<<"\" \\ \n";
+    for(int i =0; i<nsc; i++) 
+      out <<"\"" << prefix << "sc"<<i<<"\" \\ \n";
+  }
+
+}
+
 
 #endif //end _FLAME2D_STATE_INCLUDED 

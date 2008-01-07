@@ -14,9 +14,7 @@
 /**
  * Initialization of static variables.
  */
-#ifndef STATIC_NUMBER_OF_SPECIES
-int     Mixture :: ns = 0;
-#endif
+int     Mixture :: ns = 1;
 int     Mixture :: nr = 0;
 double  Mixture :: Tmin = 0.0;
 double  Mixture :: Tmax = 0.0;
@@ -82,16 +80,15 @@ void Mixture :: setMixture(const string &mech_name,
 
   // ascertain the number of species
 #ifdef STATIC_NUMBER_OF_SPECIES
-  if( STATIC_NUMBER_OF_SPECIES != ct_gas->nSpecies()) {
+  if( STATIC_NUMBER_OF_SPECIES < ct_gas->nSpecies()) {
     cerr << "\n ERROR, Mixture::setMixture() - Built using static species with "
 	 << STATIC_NUMBER_OF_SPECIES 
 	 << " species predefined, asking for " <<  ct_gas->nSpecies()
 	 << endl; 
     exit(-1); 
   }
-#else
-  ns = ct_gas->nSpecies();
 #endif
+  ns = ct_gas->nSpecies();
 
   // set the number of reactions
   nr = ct_gas->nReactions();

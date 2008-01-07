@@ -26,6 +26,7 @@ NEW
    grid, and NASA rotor header files. */
 #include "../Grid/Cell2D.h"
 #include "../Grid/Grid2DQuad.h"
+#include "Flame2DState.h"
 
 /* Also include multigrid input header file. */
 #include "../FASMultigrid2D/FASMultigrid2DInput.h"
@@ -33,18 +34,17 @@ NEW
 /* Also include NKS  input header file. */
 #include "../NewtonKrylovSchwarz2D/NKSInput2D.h"
 
-#include "Flame2DState.h"
+/* Also include soot  input header file. */
+#include "Soot2DInput.h"
 
 /////////////////////////////////////////////////////////////////////
 /// Defines
 /////////////////////////////////////////////////////////////////////
 
 /* Define the structures and classes. */
-#undef INPUT_PARAMETER_LENGTH_FLAME2D
 #define	INPUT_PARAMETER_LENGTH_FLAME2D    128
 
 //Enviroment Flag 
-#undef PATHVAR
 #define PATHVAR "CFFC_Path"
 
 //! Composition flag:
@@ -212,6 +212,11 @@ public:
   //! Number of sequential solves
   int Max_Number_Sequential_Solves;
   //@}
+
+  //@{ @name Soot related input parameters.
+  Soot2D_Input_Parameters  Soot_IP;
+  //@}
+
 
   //@{ @name Grid type indicator and related input parameters:
   char Grid_Type[INPUT_PARAMETER_LENGTH_FLAME2D];
@@ -382,9 +387,15 @@ inline void Flame2D_Input_Parameters::Deallocate() {
  *************************************************************/
 inline void Flame2D_Input_Parameters::setRefSolutionState(void) {
 
+  // Deallocate reference state first
+  Wo.Deallocate();
+
   // load the mechanism
-  Flame2D_pState::setMixture(ct_mech_name, ct_mech_file);
+  Flame2D_pState::setMixture(ct_mech_name, ct_mech_file, Soot_IP.sootModel);
   
+  // Reallocate reference state
+  Wo.Allocate();
+
   // setup static
   Flame2D_pState::set_Mref(Mach_Number_Reference );
   Flame2D_pState::set_gravity(gravity_z);
@@ -593,6 +604,7 @@ inline ostream &operator << (ostream &out_file,
       out_file << IP.Schmidt[i]<<", ";
     }
   }
+  IP.Soot_IP.Output( out_file );
   /*********************************************/ 
   out_file << "\n  -> Initial Conditions: " 
 	   << IP.ICs_Type;

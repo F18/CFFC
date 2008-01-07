@@ -30,30 +30,21 @@ using namespace std;
 /// Defines
 /////////////////////////////////////////////////////////////////////
 //Reference temperature for polytropic heat ratio mixture gamma [K]
-#undef TREF
 #define TREF 298.15
-#undef PREF
 #define PREF 101325.0
 
 // Properties of air at reference state (TREF and )
-#undef  T_SDATM
 #define T_SDATM       288.1600      // K
-#undef  H_AIR_SDATM
 #define H_AIR_SDATM  -10044.3039815 // J/kg ( 0 @ TREF, PREF )
-#undef  HF_AIR_SDATM
 #define HF_AIR_SDATM  0.0           // J/kg ( 0 @ TREF, PREF )
-#undef  MW_AIR_SDATM
 #define MW_AIR_SDATM  28.8507321008 // kg/kmole
-#undef  CP_AIR_SDATM
 #define CP_AIR_SDATM  1008.8401778  // J/(kg K)
 
 
 // Temperature convergence tolerance
 // For explicit -> TOL ~ 1.0E-08 is good
 // For implicit -> TOL ~ 1.0E-10 is necessary 
-#undef CONV_TOLERANCE
 #define CONV_TOLERANCE  1e-8
-#undef NUM_ITERATIONS
 #define NUM_ITERATIONS  25
 
 // If you define this variable, the number of species will be
@@ -94,9 +85,8 @@ public:
 	      diff_OK(false), dhdy_OK(false)
   { Nullify(); Allocate(); }
   
-  Mixture(const Mixture &M) : T(M.temperature()),
-			      MW(M.molarMass()), Cp(M.heatCapacity_p()), 
-			      hs(M.enthalpySens()), hf(M.heatFormation()), 
+  Mixture(const Mixture &M) : T(M.T), MW(M.MW), Cp(M.Cp), 
+			      hs(M.hs), hf(M.hf), 
 			      mu_OK(false), kappa_OK(false),
 			      diff_OK(false), dhdy_OK(false)
   { Nullify(); Allocate(); }
@@ -104,11 +94,11 @@ public:
   ~Mixture() { Deallocate(); }
 
   void Copy( const Mixture &M ) {
-    T = M.temperature();
-    MW = M.molarMass();
-    Cp = M.heatCapacity_p();
-    hs = M.enthalpySens();
-    hf = M.heatFormation();
+    T = M.T;
+    MW = M.MW;
+    Cp = M.Cp;
+    hs = M.hs;
+    hf = M.hf;
     mu_OK = false;
     kappa_OK = false;
     diff_OK = false;
@@ -152,11 +142,15 @@ public:
   static int nSpecies(void) {return ns;};
   static int nReactions(void) {return nr;};
   static double molarMass(const int&i) {return M[i];};
+  static void getMolarMasses( double *MWs )
+  { for (int i=0; i<ns; i++) MWs[i] = M[i]; };
   static double heatFormation(const int&i) {return Hform[i];};
   static double LowTempRange(void) {return Tmin;};
   static double HighTempRange(void) {return Tmax;};
   static string mechName(void) { return ct_mech_name; };
   static string speciesName(const int &i) { return names[i]; };
+  static void getSpeciesNames( string *nms )
+  { for (int i=0; i<ns; i++) nms[i] = names[i]; };
  //@}
 
 
@@ -274,10 +268,10 @@ public:
 
   /********************* Operators Overloading **********************/
   // Input-output operators.
-  friend ostream& operator << (ostream &out_file, const Mixture &Mix) {
-    Mix.output(out_file);
-    return out_file;
-  }
+  friend ostream& operator << (ostream &out_file, const Mixture &Mix);
+
+  // Assignment Operator.
+  Mixture& operator =(const Mixture &M); 
 
   /******************** Allocators / Deallocators *******************/
 private:
@@ -313,11 +307,7 @@ private:
 #endif
 
   //@{ @name Static Variaables
-#ifdef STATIC_NUMBER_OF_SPECIES
-  static const int ns = STATIC_NUMBER_OF_SPECIES;
-#else
-  static int       ns; //!< Number of species
-#endif
+  static int      ns;              //!< Number of species
   static int      nr;              //!< Number of reactions
   static double Tmin;              //!< min temperature [k]
   static double Tmax;              //!< max temperature [k]
@@ -342,7 +332,7 @@ private:
 
 
 /////////////////////////////////////////////////////////////////////
-/// Member Functions
+/// Allocators / Deallocators
 /////////////////////////////////////////////////////////////////////
 
 /****************************************************
@@ -399,6 +389,10 @@ inline void Mixture :: DeallocateStatic() {
   if (c!=NULL) { delete[] c; c = NULL; } 
 };
 
+/////////////////////////////////////////////////////////////////////
+/// Operator Overloads
+/////////////////////////////////////////////////////////////////////
+
 /****************************************************
  * Output functions.
  ****************************************************/
@@ -415,6 +409,22 @@ inline void Mixture :: output (ostream &out) const {
     out << speciesName(i) << " = " << diff[i] << endl;
 }
 
+/****************************************************
+ * Input-output operators.
+ ****************************************************/
+inline ostream& operator << (ostream &out_file, const Mixture &Mix) {
+  Mix.output(out_file);
+  return out_file;
+}
+
+/****************************************************
+ * Assignment Operator.
+ ****************************************************/
+inline Mixture& Mixture :: operator =(const Mixture &M) {
+  //self assignment protection
+  if( this != &M) Copy(M);
+  return (*this);
+}
 
 /////////////////////////////////////////////////////////////////////
 /// LOCAL MEMBER FUNCTIONS

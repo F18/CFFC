@@ -14,63 +14,20 @@
 /**
  * Initialization of static variables.
  */
-#ifndef STATIC_NUMBER_OF_SPECIES
-int Flame2D_State :: n = 0;
-int Flame2D_State :: ns = 0;
-#endif
+int     Flame2D_State  :: ns = 1;
+int     Flame2D_State  :: ngas = NUM_FLAME2D_VAR_SANS_SPECIES + ns;
+int     Flame2D_State  :: nsc = 0;
+int     Flame2D_State  :: n = ngas + nsc;
 bool    Flame2D_State  :: reacting = false;
 double  Flame2D_State  :: Mref = 0.5;
 double  Flame2D_State  :: gravity_z = -9.81;
+int     Flame2D_State  :: soot_flag = 0;
+int     Flame2D_State  :: iSoot = 0;
 double* Flame2D_State  :: y = NULL;
 double* Flame2D_pState :: r = NULL;
 double* Flame2D_pState :: h_i = NULL;
 double* Flame2D_pState :: cp_i = NULL;
-
-/////////////////////////////////////////////////////////////////////
-/// Static Setup Functions
-/////////////////////////////////////////////////////////////////////
-
-/****************************************************
- * Mixture molecular mass [kg/mol]
- ****************************************************/
-void Flame2D_pState::setMixture(const string &mech_name,
-				const string &mech_file) {
-
-  // call mixture object setup functin
-  Mixture::setMixture(mech_name, mech_file);
-
-  // assign static values
-#ifndef STATIC_NUMBER_OF_SPECIES
-  ns = Mixture::nSpecies();
-  n = ns + NUM_FLAME2D_VAR_SANS_SPECIES;
-#endif
-
-  // determine if this is a reacting case
-  if (Mixture::nReactions()>0) reacting = true;
-  else reacting = false;
-
-  //allocate static memory and load the species data  
-  AllocateStatic();
-
-}
-
-/**********************************************************************
- * Flame2D_State::set_gravity -- Set the acceleration due to gravity  *
- *                               in m/s^2.  It acts downwards in the  *
- *                               z-dir (g <= 0)                       *
- **********************************************************************/
-void Flame2D_State::set_gravity(const double &g) { // [m/s^2]
-
-  // if gravity is acting upwards (wrong way)
-  if (g>0) {
-    cerr<<"\n Flame2D_pState::set_gravity() - Gravity acting upwards!!!! \n";
-    exit(1);
-    
-    // gravity acting downwards (-ve), OK
-  } else {
-    gravity_z = g;
-  }
-}
+Soot2D_State Flame2D_pState :: soot = Soot2D_State();
 
 
 /////////////////////////////////////////////////////////////////////
@@ -80,18 +37,6 @@ void Flame2D_State::set_gravity(const double &g) { // [m/s^2]
 /****************************************************
  * X-Dir Conserved Flux
  ****************************************************/  
-void Flame2D_pState::Fx(Flame2D_State &FluxX) const {
-  FluxX.rho() = rho()*vx();
-  FluxX.rhovx() = rho()*sqr(vx()) + p();
-  FluxX.rhovy() = rho()*vx()*vy();
-  FluxX.E() = vx()*H();
-  
-  //multispecies transport
-  for(int i=0; i<ns; i++){
-    FluxX.rhoc(i) = rho()*vx()*c(i);
-  }
-}
-
 void Flame2D_pState::Fx(Flame2D_State &FluxX, const double& mult) const {
   FluxX.rho() = mult * rho()*vx();
   FluxX.rhovx() = mult * (rho()*sqr(vx()) + p());
@@ -99,9 +44,10 @@ void Flame2D_pState::Fx(Flame2D_State &FluxX, const double& mult) const {
   FluxX.E() = mult * vx()*H();
   
   //multispecies transport
-  for(int i=0; i<ns; i++){
-    FluxX.rhoc(i) = mult * rho()*vx()*c(i);
-  }
+  for(int i=0; i<ns; i++) FluxX.rhoc(i) = mult * rho()*vx()*c(i);
+
+  //soot scalar transport
+  for(int i=0; i<nsc; i++) FluxX.rhosc(i) = mult * rho()*vx()*sc(i);
 }
 
 void Flame2D_pState::addFx(Flame2D_State &FluxX, const double& mult) const {
@@ -111,23 +57,15 @@ void Flame2D_pState::addFx(Flame2D_State &FluxX, const double& mult) const {
   FluxX.E() += mult * vx()*H();
   
   //multispecies transport
-  for(int i=0; i<ns; i++){
-    FluxX.rhoc(i) += mult*rho()*vx()*c(i);
-  }
+  for(int i=0; i<ns; i++) FluxX.rhoc(i) += mult*rho()*vx()*c(i);
+
+  //soot scalar transport
+  for(int i=0; i<nsc; i++) FluxX.rhosc(i) += mult * rho()*vx()*sc(i);
 }
 
 Flame2D_State Flame2D_pState::Fx(void) const {
   Flame2D_State FluxX;
-  FluxX.rho() = rho()*vx();
-  FluxX.rhovx() = rho()*sqr(vx()) + p();
-  FluxX.rhovy() = rho()*vx()*vy();
-  FluxX.E() = vx()*H();
-  
-  //multispecies transport
-  for(int i=0; i<ns; i++){
-    FluxX.rhoc(i) = rho()*vx()*c(i);
-  }
-
+  Fx(FluxX);
   return FluxX;
 }
 
@@ -167,13 +105,12 @@ void Flame2D_pState::dFIdU(DenseMatrix &dFdU) {
   dFdU(3,2) = - vx_vy/denominator;
   dFdU(3,3) = vx()*A/denominator;
   //Species
-  const int NUM_VAR = NUM_FLAME2D_VAR_SANS_SPECIES;
   for(int i = 0; i<ns; i++){ 
-    dFdU(1,NUM_VAR+i) = - dihdic(i)/denominator; 
-    dFdU(3,NUM_VAR+i) = - vx()*dihdic(i)/denominator;    
-    dFdU(NUM_VAR+i, 0) = - c(i)*vx() ;
-    dFdU(NUM_VAR+i, 1) = c(i);
-    dFdU(NUM_VAR+i,NUM_VAR+i) = vx();        
+    dFdU(1,iSpec+i) = - dihdic(i)/denominator; 
+    dFdU(3,iSpec+i) = - vx()*dihdic(i)/denominator;    
+    dFdU(iSpec+i, 0) = - c(i)*vx() ;
+    dFdU(iSpec+i, 1) = c(i);
+    dFdU(iSpec+i,iSpec+i) = vx();        
   }
  
 }
@@ -251,13 +188,12 @@ void Flame2D_pState::dFIdW(DenseMatrix &dFdW,
   dFdW(3,3) = mult * vx()*C_p/Rt;
     
   //Species
-  const int NUM_VAR = NUM_FLAME2D_VAR_SANS_SPECIES;
   for(int i = 0; i<ns; i++){ 
-    dFdW(3,NUM_VAR+i) = mult * rho_vx*dihdic(i);    
+    dFdW(3,iSpec+i) = mult * rho_vx*dihdic(i);    
       
-    dFdW(NUM_VAR+i, 0) = mult * c(i)*vx();
-    dFdW(NUM_VAR+i, 1) = mult * rho()*c(i);
-    dFdW(NUM_VAR+i,NUM_VAR+i) = mult * rho_vx;        
+    dFdW(iSpec+i, 0) = mult * c(i)*vx();
+    dFdW(iSpec+i, 1) = mult * rho()*c(i);
+    dFdW(iSpec+i,iSpec+i) = mult * rho_vx;        
   }
 
 }
@@ -305,6 +241,7 @@ void Flame2D_pState::Viscous_Flux_x(const Flame2D_State &dWdx,
 				    const Vector2D &qflux,
 				    const Tensor2D &tau,
 				    const Vector2D &Vcorr,
+// 				    const Vector2D &Vsoot,
 				    Flame2D_State &Flux,
 				    const double& mult) const{
  
@@ -317,6 +254,9 @@ void Flame2D_pState::Viscous_Flux_x(const Flame2D_State &dWdx,
     Flux.rhoc(i) += mult * rho() * Diffusion_coef(i) * dWdx.c(i);
     Flux.rhoc(i) -= mult * rho() * c(i) * Vcorr.x; // <- diffusion correction term
   }
+  //rho * sc_i * Vsoot 
+//   for( int i=0; i<nsc; i++) 
+//     Flux.rhosc(i) += mult * rho()*sc(i)*Vsoot.x;
 
 }
 
@@ -324,6 +264,7 @@ void Flame2D_pState::Viscous_Flux_y(const Flame2D_State &dWdy,
 				    const Vector2D &qflux,
 				    const Tensor2D &tau,
 				    const Vector2D &Vcorr,
+// 				    const Vector2D &Vsoot,
 				    Flame2D_State &Flux,
 				    const double& mult) const {
 
@@ -336,6 +277,9 @@ void Flame2D_pState::Viscous_Flux_y(const Flame2D_State &dWdy,
     Flux.rhoc(i) += mult * rho() * Diffusion_coef(i) * dWdy.c(i);
     Flux.rhoc(i) -= mult * rho() * c(i) * Vcorr.y; // <- diffusion correction term
   }
+  //rho * sc_i * Vsoot
+//   for( int i=0; i<nsc; i++)
+//     Flux.rhosc(i) += mult * rho()*sc(i)*Vsoot.y;
 
 }
 
@@ -485,6 +429,7 @@ void Flame2D_pState::lambda_x(Flame2D_State &lambdas) const {
   lambdas.vy() = vx();
   lambdas.p() = vx() + aa;
   for(int i=0; i<ns; i++) lambdas.c(i) = vx();
+  for(int i=0; i<nsc; i++) lambdas.sc(i) = vx();
 }
 
 
@@ -503,9 +448,8 @@ void Flame2D_pState::lambda_preconditioned_x(Flame2D_State &lambdas,
   lambdas.vx() = vx();
   lambdas.vy() = vx();
   lambdas.p() = uprimed + cprimed;
-  for(int i=0; i<ns; i++){
-    lambdas.c(i) = vx();
-  }
+  for(int i=0; i<ns; i++) lambdas.c(i) = vx();
+  for(int i=0; i<nsc; i++) lambdas.sc(i) = vx();
 }
 
 
@@ -525,32 +469,45 @@ void  Flame2D_pState::lp_x(const int &i, Flame2D_State& lp) const {
     lp.vy() = ZERO;
     lp.p() =  HALF/(aa*aa);
     lp.c(ZERO);
+    lp.sc(ZERO);
   } else if(i == 2) {
     lp.rho() = ONE;
     lp.vx() = ZERO;
     lp.vy() = ZERO;
     lp.p() = -ONE/(aa*aa);
     lp.c(ZERO);
+    lp.sc(ZERO);
   } else if(i == 3) {
     lp.rho() = ZERO;
     lp.vx() = ZERO;
     lp.vy() = ONE;
     lp.p() = ZERO;
     lp.c(ZERO);
+    lp.sc(ZERO);
   } else if(i == 4) {  
     lp.rho() = ZERO;
     lp.vx() = HALF*rho()/aa;
     lp.vy() = ZERO;
     lp.p() = HALF/(aa*aa);
     lp.c(ZERO);
-  } else{ 
+    lp.sc(ZERO);
+  } else if (i <= ngas) { 
     lp.rho() = ZERO;
     lp.vx() = ZERO;
     lp.vy() = ZERO;
     lp.p() = ZERO;
     lp.c(ZERO);
-    lp.c(i-NUM_FLAME2D_VAR_SANS_SPECIES-1) = ONE;
-  } 
+    lp.c(i-1-iSpec) = ONE;
+    lp.sc(ZERO);
+  } else {
+    lp.rho() = ZERO;
+    lp.vx() = ZERO;
+    lp.vy() = ZERO;
+    lp.p() = ZERO;
+    lp.c(ZERO);
+    lp.sc(ZERO);
+    lp.sc(i-1-iSoot) = ONE;
+  }
 }
 
 /****************************************************
@@ -567,31 +524,44 @@ void Flame2D_pState::rc_x(const int &i,
     rc.rhovy() = vy();
     rc.E() = H()/rho()-vx()*aa;
     rc.rhoc(c());
+    rc.rhosc(ZERO);
   } else if(i == 2) {
     rc.rho() = ONE;
     rc.rhovx() = vx();
     rc.rhovy() = vy();
     rc.E() = H()/rho()-Cp()*T();
     rc.rhoc(c());
+    rc.rhosc(ZERO);
   } else if(i == 3) {
     rc.rho() = ZERO;
     rc.rhovx() = ZERO;
     rc.rhovy() = rho();
     rc.E() = rho()*vy();
     rc.rhoc(ZERO);
+    rc.rhosc(ZERO);
   } else if(i == 4) {  
     rc.rho() = ONE;
     rc.rhovx() = vx()+aa;
     rc.rhovy() = vy();
     rc.E() = H()/rho()+vx()*aa;
     rc.rhoc(c());
-  } else{ 
+    rc.rhosc(ZERO);
+  } else if (i <= ngas) { 
     rc.rho() = ZERO;
     rc.rhovx() = ZERO;
     rc.rhovy() = ZERO;
-    rc.E() = rho()*dihdic(i-NUM_FLAME2D_VAR_SANS_SPECIES-1);
+    rc.E() = rho()*dihdic(i-1-iSpec);
     rc.rhoc(ZERO);
-    rc.rhoc(i-NUM_FLAME2D_VAR_SANS_SPECIES-1) = rho();
+    rc.rhoc(i-1-iSpec) = rho();
+    rc.rhosc(ZERO);
+  } else { 
+    rc.rho() = ZERO;
+    rc.rhovx() = ZERO;
+    rc.rhovy() = ZERO;
+    rc.E() = ZERO;
+    rc.rhoc(ZERO);
+    rc.rhosc(ZERO);
+    rc.rhoc(i-1-iSoot) = rho();
   } 
 }
 
@@ -677,32 +647,45 @@ void Flame2D_pState::lp_x_precon(const int &i,
     lp.vy() = ZERO;
     lp.p() = (-uprimed+cprimed + vx())/(TWO*cprimed*aa*aa);
     lp.c(ZERO);
+    lp.sc(ZERO);
   } else if(i == 2) {
     lp.rho() = ONE;
     lp.vx() = ZERO;
     lp.vy() = ZERO;
     lp.p() = -ONE/(aa*aa);
     lp.c(ZERO);
+    lp.sc(ZERO);
   } else if(i == 3) {
     lp.rho() = ZERO;
     lp.vx() = ZERO;
     lp.vy() = ONE;
     lp.p() = ZERO;
     lp.c(ZERO);
+    lp.sc(ZERO);
   } else if(i == 4) {  
     lp.rho() = ZERO;
     lp.vx() = HALF*rho()*MR2/cprimed;
     lp.vy() = ZERO;
     lp.p() = (uprimed+cprimed - vx())/(TWO*cprimed*aa*aa);
     lp.c(ZERO);
-  } else{ 
+    lp.sc(ZERO);
+  } else if (i <= ngas) { 
     lp.rho() = ZERO;
     lp.vx() = ZERO;
     lp.vy() = ZERO;
     lp.p() = ZERO;
     lp.c(ZERO);
-    lp.c(i-NUM_FLAME2D_VAR_SANS_SPECIES-1) = ONE;
-  } 
+    lp.c(i-1-iSpec) = ONE;
+    lp.sc(ZERO);
+  } else { 
+    lp.rho() = ZERO;
+    lp.vx() = ZERO;
+    lp.vy() = ZERO;
+    lp.p() = ZERO;
+    lp.c(ZERO);
+    lp.sc(ZERO);
+    lp.sc(i-1-iSoot) = ONE;
+  }
 }
 
 /****************************************************
@@ -722,32 +705,44 @@ void Flame2D_pState::rc_x_precon(const int &i,
     rc.rhovy() = vy();
     rc.E() = h()+HALF*(vsqr()/MR2) - (vx()*cprimed)/MR2;
     rc.rhoc(c());
+    rc.rhosc(ZERO);
   } else if(i == 2) {
     rc.rho() = ONE;
     rc.rhovx() = vx();
     rc.rhovy() = vy();
     rc.E() = (h()-Cp()*T()) + HALF*vsqr();
     rc.rhoc(c());
+    rc.rhosc(ZERO);
   } else if(i == 3) {
     rc.rho() = ZERO;
     rc.rhovx() = ZERO;
     rc.rhovy() = rho();
     rc.E() = rho()*vy();
     rc.rhoc(ZERO);
+    rc.rhosc(ZERO);
   } else if(i == 4) {  
     rc.rho() = ONE;
     rc.rhovx() = (uprimed+cprimed)/MR2;
     rc.rhovy() = vy();
     rc.E() = h()+HALF*(vsqr()/MR2) + (vx()*cprimed)/MR2;
     rc.rhoc(c());
-  } else{ 
+    rc.rhosc(ZERO);
+  } else if (i <= ngas) { 
     rc.rho() = ZERO;
     rc.rhovx() = ZERO;
     rc.rhovy() = ZERO;
-    rc.E() = rho()*dihdic(i-NUM_FLAME2D_VAR_SANS_SPECIES-1);
+    rc.E() = rho()*dihdic(i-1-iSpec);
     rc.rhoc(ZERO);
-    rc.rhoc(i-NUM_FLAME2D_VAR_SANS_SPECIES-1) = rho();
-  } 
+    rc.rhoc(i-1-iSpec) = rho();
+    rc.rhosc(ZERO);
+  } else {
+    rc.rho() = ZERO;
+    rc.rhovx() = ZERO;
+    rc.rhovy() = ZERO;
+    rc.rhoc(ZERO);
+    rc.rhosc(ZERO);
+    rc.rhosc(i-1-iSoot) = rho();
+  }
 }
 
 
@@ -921,26 +916,24 @@ void Flame2D_pState::Low_Mach_Number_Preconditioner(DenseMatrix &P,
   P(3,2) = vy()*(enthalpy+V)*alpham1/Omega;
   P(3,3) = -(alpha*(enthalpy+V)-V-Rmix*Temp-beta-phi)/Omega;
 
-  int NUM_VAR = NUM_FLAME2D_VAR_SANS_SPECIES;
-
   //Multispecies
   for(int j=0; j<ns; j++){  
      
-    P(0,j+NUM_VAR) = dihdic(j)*alpham1/Omega;
-    P(1,j+NUM_VAR) = vx()*dihdic(j)*alpham1/Omega;
-    P(2,j+NUM_VAR) = vy()*dihdic(j)*alpham1/Omega;
-    P(3,j+NUM_VAR) = dihdic(j)*(V+enthalpy)*alpham1/Omega;	
+    P(0,j+iSpec) = dihdic(j)*alpham1/Omega;
+    P(1,j+iSpec) = vx()*dihdic(j)*alpham1/Omega;
+    P(2,j+iSpec) = vy()*dihdic(j)*alpham1/Omega;
+    P(3,j+iSpec) = dihdic(j)*(V+enthalpy)*alpham1/Omega;	
     for(int i=0; i<ns; i++){ 
       if(i==j){ 
-	P(i+NUM_VAR,0) = (c(i))*(beta-V)*alpham1/Omega;
-	P(i+NUM_VAR,1) = (c(i))*vx()*alpham1/Omega;
-	P(i+NUM_VAR,2) = (c(i))*vy()*alpham1/Omega;
-	P(i+NUM_VAR,3) = -(c(i))*alpham1/Omega;
+	P(i+iSpec,0) = (c(i))*(beta-V)*alpham1/Omega;
+	P(i+iSpec,1) = (c(i))*vx()*alpham1/Omega;
+	P(i+iSpec,2) = (c(i))*vy()*alpham1/Omega;
+	P(i+iSpec,3) = -(c(i))*alpham1/Omega;
 	//diagonal
-	P(i+NUM_VAR,j+NUM_VAR) = c(i)*dihdic(j)*alpham1/Omega+ONE;
+	P(i+iSpec,j+iSpec) = c(i)*dihdic(j)*alpham1/Omega+ONE;
       }
       else {
-	P(i+NUM_VAR,j+NUM_VAR) = c(i)*dihdic(j)*alpham1/Omega;
+	P(i+iSpec,j+iSpec) = c(i)*dihdic(j)*alpham1/Omega;
       }
     }       
   }
@@ -991,25 +984,23 @@ void Flame2D_pState::Low_Mach_Number_Preconditioner_Inverse(DenseMatrix &Pinv,
   Pinv(4,4) = ONE; //fixes so it can work without Turbulence !!!
   Pinv(5,5) = ONE;
 
-  int NUM_VAR = NUM_FLAME2D_VAR_SANS_SPECIES;
-  
   //Multispecies
   for(int j=0; j<ns; j++){   
-    Pinv(0,j+NUM_VAR) = -dihdic(j)*BB/AA;
-    Pinv(1,j+NUM_VAR) = -vx()*dihdic(j)*BB/AA;
-    Pinv(2,j+NUM_VAR) = -vy()*dihdic(j)*BB/AA;
-    Pinv(3,j+NUM_VAR) = -dihdic(j)*BB*DD/AA;
+    Pinv(0,j+iSpec) = -dihdic(j)*BB/AA;
+    Pinv(1,j+iSpec) = -vx()*dihdic(j)*BB/AA;
+    Pinv(2,j+iSpec) = -vy()*dihdic(j)*BB/AA;
+    Pinv(3,j+iSpec) = -dihdic(j)*BB*DD/AA;
     for(int i=0; i<ns; i++){  
       if(i==j){
-	Pinv(i+NUM_VAR,0) = (c(i))*CC*BB/AA;
-	Pinv(i+NUM_VAR,1) = -(c(i))*vx()*BB/AA;
-	Pinv(i+NUM_VAR,2) = -(c(i))*vy()*BB/AA;
-	Pinv(i+NUM_VAR,3) = (c(i))*BB/AA;
+	Pinv(i+iSpec,0) = (c(i))*CC*BB/AA;
+	Pinv(i+iSpec,1) = -(c(i))*vx()*BB/AA;
+	Pinv(i+iSpec,2) = -(c(i))*vy()*BB/AA;
+	Pinv(i+iSpec,3) = (c(i))*BB/AA;
 	//diagonal	
-	Pinv(i+NUM_VAR,j+NUM_VAR) = 1.0 - c(i)*dihdic(j)*BB/AA ;
+	Pinv(i+iSpec,j+iSpec) = 1.0 - c(i)*dihdic(j)*BB/AA ;
       }
       else {
-	Pinv(i+NUM_VAR,j+NUM_VAR) = -c(i)*dihdic(j)*BB/AA;
+	Pinv(i+iSpec,j+iSpec) = -c(i)*dihdic(j)*BB/AA;
       } 
     }   
   }  
@@ -1038,20 +1029,20 @@ void Flame2D_pState::Sa_inviscid(Flame2D_State &S,
     S.rhovy() -= mult*rho()*vx()*vy()/X.x;
     S.E() -= mult*vx()*H()/X.x;
     //species contributions
-    for(int i=0; i<ns;i++){
-      S.rhoc(i) -= mult*rho()*vx()*c(i)/X.x;         //correct for ns-1 ????
-    }
+    for(int i=0; i<ns;i++) S.rhoc(i) -= mult*rho()*vx()*c(i)/X.x;
+    // soot contribution
+    for(int i=0; i<nsc;i++) S.rhosc(i) -= mult*rho()*vx()*sc(i)/X.x;
 
-    //y is radial
+  //y is radial
   } else if (Axisymmetric == AXISYMMETRIC_Y) {
     S.rho() -= mult*rho()*vy()/X.y;
     S.rhovx() -= mult*rho()*vx()*vy()/X.y; 
     S.rhovy() -= mult*rho()*vy()*vy()/X.y;
     S.E() -= mult*vy()*H()/X.y;
     //species contributions
-    for(int i=0; i<ns; i++){
-      S.rhoc(i) -= mult*rho()*vy()*c(i)/X.y;
-    }
+    for(int i=0; i<ns; i++) S.rhoc(i) -= mult*rho()*vy()*c(i)/X.y;
+    // soot contribution
+    for(int i=0; i<nsc; i++) S.rhosc(i) -= mult*rho()*vy()*sc(i)/X.y;
   }
 
 
@@ -1098,13 +1089,12 @@ void Flame2D_pState::dSa_idU( DenseMatrix &dSa_IdU,
     dSa_IdU(3,3) -= b*vx()/X.x;      
     
     //Multispecies terms
-    const int NUM_VAR = NUM_FLAME2D_VAR_SANS_SPECIES;
     double d( CP/RTOT - ONE );
     for(int i=0; i<ns;i++){
-      dSa_IdU(3,i+NUM_VAR) += vx()*dihdic(i)/d/X.x; 
-      dSa_IdU(NUM_VAR+i,0) += vx()*c(i)/X.x;
-      dSa_IdU(NUM_VAR+i,1) -= c(i)/X.x;
-      dSa_IdU(NUM_VAR+i,NUM_VAR+i) -= vx()/X.x;
+      dSa_IdU(3,i+iSpec) += vx()*dihdic(i)/d/X.x; 
+      dSa_IdU(iSpec+i,0) += vx()*c(i)/X.x;
+      dSa_IdU(iSpec+i,1) -= c(i)/X.x;
+      dSa_IdU(iSpec+i,iSpec+i) -= vx()/X.x;
     }
     
   }
@@ -1138,7 +1128,9 @@ void Flame2D_pState::Sa_viscous(Flame2D_State &S,
       S.rhoc(i) += mult * rho()*Diffusion_coef(i)*dWdx.c(i)/X.x;
       S.rhoc(i) -= mult * rho() * c(i) * Vcorr.x / X.x; // <- diffusion correction term
     }
-    
+//     for(int i=0; i<nsc;i++) S.rhosc(i) += mult * rho()*sc(i)*Vsoot.x/X.x;
+
+
   } else if (Axisymmetric == AXISYMMETRIC_Y) {
     S.rhovx() += mult * tau.xy/X.y;
     S.rhovy() += mult * (tau.xx - tau.zz)/X.y;
@@ -1147,7 +1139,8 @@ void Flame2D_pState::Sa_viscous(Flame2D_State &S,
       S.rhoc(i) += mult * rho()*Diffusion_coef(i)*dWdy.c(i)/X.y;
       S.rhoc(i) -= mult * rho() * c(i) * Vcorr.y / X.y; // <- diffusion correction term
     }
-    
+//     for(int i=0; i<nsc;i++) S.rhosc(i) += mult * rho()*sc(i)*Vsoot.y/X.y;
+
   } /* endif */
   
 }
@@ -1165,7 +1158,6 @@ void Flame2D_pState::dSa_vdW(DenseMatrix &dSa_VdW,
 			     const double &d_dWdy_dW) {
 
   updateTransport();
-  const int NUM_VAR = NUM_FLAME2D_VAR_SANS_SPECIES;
   double Rmix( Rtot() );
   double Temp( T() );
   double Mu( mu() );
@@ -1215,9 +1207,9 @@ void Flame2D_pState::dSa_vdW(DenseMatrix &dSa_VdW,
     double rhoD;
     for(int i = 0; i<ns; i++){ 
       rhoD = rho_*Diffusion_coef(i);
-      dSa_VdW(3,NUM_VAR+i) += ( rhoD * h_i[i] * d_dWdx_dW ) / radius;  
+      dSa_VdW(3,iSpec+i) += ( rhoD * h_i[i] * d_dWdx_dW ) / radius;  
       //- specdata[Num].Rs()*Sum_dhi)/radius; // <- For full NS-1 consistency
-      dSa_VdW(NUM_VAR+i,NUM_VAR+i) += rhoD*d_dWdx_dW/radius;
+      dSa_VdW(iSpec+i,iSpec+i) += rhoD*d_dWdx_dW/radius;
     }
     
 
@@ -1247,7 +1239,7 @@ void Flame2D_pState::Sw(Flame2D_State &S,
  ****************************************************/  
 void Flame2D_pState::dSwdU( DenseMatrix &dSdU ) const {
   if (reacting) {
-    Mix.dSwdU( dSdU, rho(), p(), c(), NUM_FLAME2D_VAR_SANS_SPECIES );
+    Mix.dSwdU( dSdU, rho(), p(), c(), iSpec );
   }
 }
 
@@ -1259,7 +1251,7 @@ double Flame2D_pState::dSwdU_max_diagonal(void) const {
   if (reacting) {
     return Mix.dSwdU_max_diagonal( rho(), p(), c() );
   } else {
-    return MILLION;
+    return NANO;
   }
 }
 
@@ -1286,6 +1278,19 @@ void Flame2D_pState::dSgdU(DenseMatrix &dSgdU) const {
   dSgdU(2,0) += gravity_z;
   dSgdU(3,2) += gravity_z;
 }
+
+/****************************************************
+ * Source terms associated with soot
+ ****************************************************/
+void Flame2D_pState::Ssoot(Flame2D_State &S, const double& mult) const {
+  if (soot_flag) {
+    soot.getRates( T(), rho(), 
+		   c(), sc(), 
+		   S.rhoc(), S.rhosc(), 
+		   mult );
+  }
+}
+
 
 /////////////////////////////////////////////////////////////////////
 /// Inviscid Flux Jacobians
@@ -1315,13 +1320,11 @@ void Flame2D_pState::dWdU(DenseMatrix &dWdQ) {
   dWdQ(3,2) = -vy()/denominator;
   dWdQ(3,3) = ONE/denominator;
 
-  int NUM_VAR = NUM_FLAME2D_VAR_SANS_SPECIES;
-
   //Species
   for(int i=0; i<ns; i++){   
-    dWdQ(3, NUM_VAR+i) = - dihdic(i)/denominator;
-    dWdQ(NUM_VAR+i, 0) = - c(i)/rho();
-    dWdQ(NUM_VAR+i, NUM_VAR+i) = ONE/rho();
+    dWdQ(3, iSpec+i) = - dihdic(i)/denominator;
+    dWdQ(iSpec+i, 0) = - c(i)/rho();
+    dWdQ(iSpec+i, iSpec+i) = ONE/rho();
   }
 
 }
@@ -1690,9 +1693,12 @@ void Flame2D_State :: HartenFix_Pos(const Flame2D_State &lambdas_a,
   vy() = HALF*(lambdas_a[3]+fabs(lambdas_a[3]));
   p() = HartenFixPos(lambdas_a[4],lambdas_l[4],lambdas_r[4]);
   
-  for( int i=0; i<ns; i++){
+  for( int i=0; i<ns; i++) 
     c(i) = HALF*(lambdas_a.c(i)+fabs(lambdas_a.c(i)));
-  }
+
+  for( int i=0; i<nsc; i++) 
+    sc(i) = HALF*(lambdas_a.sc(i)+fabs(lambdas_a.sc(i)));
+
 }
 
 /********************************************************
@@ -1711,9 +1717,12 @@ void Flame2D_State :: HartenFix_Neg(const Flame2D_State &lambdas_a,
   vy() = HALF*(lambdas_a[3]-fabs(lambdas_a[3]));
   p() = HartenFixNeg(lambdas_a[4],lambdas_l[4],lambdas_r[4]);
   
-  for( int i=0; i<ns; i++){
+  for( int i=0; i<ns; i++)
     c(i) = HALF*(lambdas_a.c(i)-fabs(lambdas_a.c(i)));
-  }
+
+  for( int i=0; i<nsc; i++)
+    sc(i) = HALF*(lambdas_a.sc(i)-fabs(lambdas_a.sc(i)));
+
 }
 
 /********************************************************
@@ -1732,9 +1741,12 @@ void Flame2D_State :: HartenFix_Abs(const Flame2D_State &lambdas_a,
   vy() = fabs(lambdas_a[3]);
   p() = HartenFixAbs(lambdas_a[4],lambdas_l[4],lambdas_r[4]);
   
-  for( int i=0; i<ns; i++){
+  for( int i=0; i<ns; i++)
     c(i) = fabs(lambdas_a.c(i));
-  }
+
+  for( int i=0; i<nsc; i++)
+    sc(i) = fabs(lambdas_a.sc(i));
+
 }
 
 
@@ -1820,9 +1832,11 @@ void Flame2D_pState :: RoeAverage(const Flame2D_pState &Wl,
   rho() = srhol*srhor;
   vx() = (srhol*Wl.vx()+srhor*Wr.vx())/(srhol+srhor);
   vy() = (srhol*Wl.vy()+srhor*Wr.vy())/(srhol+srhor);
-  for(int i=0; i<ns; i++){
+  for(int i=0; i<ns; i++)
     c(i) = (srhol*Wl.c(i) + srhor*Wr.c(i))/(srhol+srhor);
-  }
+  for(int i=0; i<nsc; i++)
+    sc(i) = (srhol*Wl.sc(i) + srhor*Wr.sc(i))/(srhol+srhor);
+
  
   double Ha( (srhol*Hl+srhor*Hr)/(srhol+srhor) );
   double ha( Ha - HALF*(sqr(vx())+sqr(vy())) );
@@ -2311,22 +2325,20 @@ void Flame2D_State::FluxAUSMplus_up(const Flame2D_pState &Wl,
     rhovx() = Wl.vx(); 
     rhovy() = Wl.vy(); 
     E() = Wl.H()/Wl.rho();
-    for(int i=0; i<ns; ++i){
-      rhoc(i) = Wl.c(i);
-    }
+    for(int i=0; i<ns; ++i) rhoc(i) = Wl.c(i);
+    for(int i=0; i<nsc; ++i) rhosc(i) = Wl.sc(i);
     
   } else {
     rho() = ONE;
     rhovx() = Wr.vx(); 
     rhovy() = Wr.vy(); 
     E() = Wr.H()/Wr.rho();
-    for(int i=0; i<ns; ++i){
-      rhoc(i) = Wr.c(i);
-    }
+    for(int i=0; i<ns; ++i) rhoc(i) = Wr.c(i);
+    for(int i=0; i<nsc; ++i) rhosc(i) = Wr.sc(i);
 
   } //end if
 
-    // scale the flux
+  // scale the flux
   for(int i=0; i<n; ++i) x[i] *= mass_flux_half;
 
   // Add the pressure contribution to the intermediate state solution flux:
