@@ -23,6 +23,14 @@ PlanckMean* Flame2D_Quad_Block::PlanckMean_data=NULL;
 /////////////////////////////////////////////////////////////////////
 
 
+/********************************************************
+ * Routine: Evaluate_Limiter                            *
+ *                                                      *
+ * Compute the slope limiters that correspond to the    *
+ * unlimited  solution gradients.  Several slope        *
+ * limiters may be used.                                *
+ *                                                      *
+ ********************************************************/
 void Flame2D_Quad_Block::Evaluate_Limiter(const int i, 
 					  const int j,
 					  const int Limiter, 
@@ -31,7 +39,8 @@ void Flame2D_Quad_Block::Evaluate_Limiter(const int i,
 					  const int*j_index) {
 
   // declares
-  double u0Min, u0Max, uQuad[4], phi_;
+  const int n_quad = 4;
+  double u0Min, u0Max, uQuad[n_quad], phi_;
   static Vector2D dXe, dXw, dXn, dXs;
 
   const int NUM_VAR_FLAME2D = NumVar();
@@ -42,24 +51,32 @@ void Flame2D_Quad_Block::Evaluate_Limiter(const int i,
   //
   if (!Freeze_Limiter) {
 
+    // compute face-center distances
     dXe = Grid.xfaceE(i, j) - Grid.Cell[i][j].Xc;
     dXw = Grid.xfaceW(i, j) - Grid.Cell[i][j].Xc;
     dXn = Grid.xfaceN(i, j) - Grid.Cell[i][j].Xc;
     dXs = Grid.xfaceS(i, j) - Grid.Cell[i][j].Xc;
 
+    //
+    // loop over each variable
+    //
     for ( int n = 1 ; n <= NUM_VAR_FLAME2D ; ++n ) {
+
+      // compute max and min values
       u0Min = W[i][j][n];
       u0Max = u0Min;
-      for ( int n2 = 0 ; n2 <= n_pts-1 ; ++n2 ) {
+      for ( int n2 = 0 ; n2 < n_pts ; ++n2 ) {
 	u0Min = min(u0Min, W[ i_index[n2] ][ j_index[n2] ][n]);
 	u0Max = max(u0Max, W[ i_index[n2] ][ j_index[n2] ][n]);
       } /* endfor */
 
+      // compute quadrature points
       uQuad[0] = W[i][j][n] + dWdx[i][j][n]*dXe.x + dWdy[i][j][n]*dXe.y ;
       uQuad[1] = W[i][j][n] + dWdx[i][j][n]*dXw.x + dWdy[i][j][n]*dXw.y ;
       uQuad[2] = W[i][j][n] + dWdx[i][j][n]*dXn.x + dWdy[i][j][n]*dXn.y ;
       uQuad[3] = W[i][j][n] + dWdx[i][j][n]*dXs.x + dWdy[i][j][n]*dXs.y ;
 	    
+      // evaluate limiter
       switch(Limiter) {
       case LIMITER_ONE :
 	phi_ = ONE;
@@ -69,23 +86,23 @@ void Flame2D_Quad_Block::Evaluate_Limiter(const int i,
 	break;
       case LIMITER_BARTH_JESPERSEN :
 	phi_ = Limiter_BarthJespersen(uQuad, W[i][j][n], 
-				      u0Min, u0Max, 4);
+				      u0Min, u0Max, n_quad);
 	break;
       case LIMITER_VENKATAKRISHNAN :
 	phi_ = Limiter_Venkatakrishnan(uQuad, W[i][j][n], 
-				       u0Min, u0Max, 4);
+				       u0Min, u0Max, n_quad);
 	break;
       case LIMITER_VANLEER :
 	phi_ = Limiter_VanLeer(uQuad, W[i][j][n], 
-			       u0Min, u0Max, 4);
+			       u0Min, u0Max, n_quad);
 	break;
       case LIMITER_VANALBADA :
 	phi_ = Limiter_VanAlbada(uQuad, W[i][j][n], 
-				 u0Min, u0Max, 4);
+				 u0Min, u0Max, n_quad);
 	break;
       default:
 	phi_ = Limiter_BarthJespersen(uQuad, W[i][j][n], 
-				      u0Min, u0Max, 4);
+				      u0Min, u0Max, n_quad);
 	break;
       } /* endswitch */
 	    
@@ -93,6 +110,66 @@ void Flame2D_Quad_Block::Evaluate_Limiter(const int i,
     } /* endfor */
 
   } // end limiter if
+
+}
+
+/********************************************************
+ * Routine: LeastSquares                                *
+ *                                                      *
+ * Compute the least squares unlimited solution         *
+ * gradients                                            *
+ *                                                      *
+ ********************************************************/
+void LeastSquares( Flame2D_State &dWdx,
+		   Flame2D_State &dWdy,
+		   const Vector2D*dX, 
+		   const Flame2D_State*DU, 
+		   const int&n_pts, 
+		   const int&n_var ) {
+
+  // declares
+  double DxDx_ave, DxDy_ave, DyDy_ave;
+  static Flame2D_State DUDx_ave, DUDy_ave;
+  
+  // zero
+  DUDx_ave.Vacuum();
+  DUDy_ave.Vacuum();
+  DxDx_ave = ZERO;
+  DxDy_ave = ZERO;
+  DyDy_ave = ZERO;
+  
+  //
+  // loop over the points
+  //
+  for ( int n=0 ; n<n_pts ; n++ ) {
+
+    // compute least squares coefficients
+    DxDx_ave += dX[n].x*dX[n].x;
+    DxDy_ave += dX[n].x*dX[n].y;
+    DyDy_ave += dX[n].y*dX[n].y;
+
+    // compute averages
+    for (int k=1; k<=n_var; k++) {
+      DUDx_ave[k] += DU[n][k]*dX[n].x;
+      DUDy_ave[k] += DU[n][k]*dX[n].y;
+    }
+
+  } /* endfor */
+  
+  // don't need to do this, it will cancel out
+  // DUDx_ave /= double(n_pts);
+  // DUDy_ave /= double(n_pts);
+  // DxDx_ave /= double(n_pts);
+  // DxDy_ave /= double(n_pts);
+  // DyDy_ave /= double(n_pts);
+
+  // compute gradients
+  for (int k=1; k<=n_var; k++) {
+    dWdx[k] = ( (DUDx_ave[k]*DyDy_ave-DUDy_ave[k]*DxDy_ave)/
+		(DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave) );
+    dWdy[k] = ( (DUDy_ave[k]*DxDx_ave-DUDx_ave[k]*DxDy_ave)/
+		(DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave) );
+  }
 
 }
 
@@ -112,7 +189,7 @@ void Flame2D_Quad_Block::Linear_Reconstruction_GreenGauss(const int i,
 							  const int j,
 							  const int Limiter) {
 
-  int n_pts, i_index[8], j_index[8];
+  int n_pts, i_index[MAX_QUADPOINTS], j_index[MAX_QUADPOINTS];
   double DxDx_ave, DxDy_ave, DyDy_ave;
   double l_north, l_south, l_east, l_west;
   static Vector2D n_north, n_south, n_east, n_west;
@@ -230,11 +307,10 @@ void Flame2D_Quad_Block::Linear_Reconstruction_LeastSquares(const int i,
 							    const int j,
 							    const int Limiter) {
 
-  int n2, n_pts, i_index[8], j_index[8];
-  double DxDx_ave, DxDy_ave, DyDy_ave, DU;
-  static Vector2D dX, dXe, dXw, dXn, dXs;
-  static Flame2D_State DUDx_ave, DUDy_ave;
-    
+  int n_pts, i_index[MAX_QUADPOINTS], j_index[MAX_QUADPOINTS];
+  static Vector2D dX[MAX_QUADPOINTS], dXe, dXw, dXn, dXs;
+  static Flame2D_State DU[MAX_QUADPOINTS];
+
   const int NUM_VAR_FLAME2D(NumVar());
 
   /* Carry out the limited solution reconstruction in
@@ -259,37 +335,17 @@ void Flame2D_Quad_Block::Linear_Reconstruction_LeastSquares(const int i,
   /****************************************************************/
     
   if (n_pts > 0) {
-    DUDx_ave.Vacuum();
-    DUDy_ave.Vacuum();
-    DxDx_ave = ZERO;
-    DxDy_ave = ZERO;
-    DyDy_ave = ZERO;
-     
-    for ( n2 = 0 ; n2 <= n_pts-1 ; ++n2 ) {
-      dX = Grid.Cell[ i_index[n2] ][ j_index[n2] ].Xc;
-      dX -= Grid.Cell[i][j].Xc;
-      DxDx_ave += dX.x*dX.x;
-      DxDy_ave += dX.x*dX.y;
-      DyDy_ave += dX.y*dX.y;
-      for (int k=1; k<=NUM_VAR_FLAME2D; k++) {
-	DU = W[ i_index[n2] ][ j_index[n2] ][k] - W[i][j][k];
-	DUDx_ave[k] += DU*dX.x;
-	DUDy_ave[k] += DU*dX.y;
-      }
+
+    // compute differences
+    for ( int n = 0 ; n < n_pts ; ++n ) {
+      dX[n].x = Grid.Cell[ i_index[n] ][ j_index[n] ].Xc.x - Grid.Cell[i][j].Xc.x;
+      dX[n].y = Grid.Cell[ i_index[n] ][ j_index[n] ].Xc.y - Grid.Cell[i][j].Xc.y;
+      for (int k=1; k<=NUM_VAR_FLAME2D; k++)
+	DU[n][k] = W[ i_index[n] ][ j_index[n] ][k] - W[i][j][k];
     } /* endfor */
       
-      // don't need to do this, it will cancel out
-      // DUDx_ave /= double(n_pts);
-      // DUDy_ave /= double(n_pts);
-      // DxDx_ave /= double(n_pts);
-      // DxDy_ave /= double(n_pts);
-      // DyDy_ave /= double(n_pts);
-    for (int k=1; k<=NUM_VAR_FLAME2D; k++) {
-      dWdx[i][j][k] = ( (DUDx_ave[k]*DyDy_ave-DUDy_ave[k]*DxDy_ave)/
-			(DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave) );
-      dWdy[i][j][k] = ( (DUDy_ave[k]*DxDx_ave-DUDx_ave[k]*DxDy_ave)/
-			(DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave) );
-    }
+    // perform least squares reconstruction
+    LeastSquares( dWdx[i][j], dWdy[i][j], dX, DU, n_pts, NUM_VAR_FLAME2D );
 
     // Calculate slope limiters.    
     Evaluate_Limiter(i, j, Limiter, n_pts, i_index, j_index);
@@ -346,10 +402,9 @@ void Flame2D_Quad_Block::Linear_Reconstruction_LeastSquares_2(const int i,
 							      const int j,
 							      const int Limiter) {
 
-  int n2, n_pts, i_index[8], j_index[8];
-  double DU, DxDx_ave, DxDy_ave, DyDy_ave;
-  static Vector2D dX, dXe, dXw, dXn, dXs;
-  static Flame2D_State DUDx_ave, DUDy_ave;
+  int n_pts, i_index[MAX_QUADPOINTS], j_index[MAX_QUADPOINTS];
+  static Vector2D dX[MAX_QUADPOINTS], dXe, dXw, dXn, dXs;
+  static Flame2D_State DU[MAX_QUADPOINTS];
    
   const int NUM_VAR_FLAME2D(NumVar());
 
@@ -605,37 +660,17 @@ void Flame2D_Quad_Block::Linear_Reconstruction_LeastSquares_2(const int i,
   } /* endif */
     
   if (n_pts > 0) {
-    DUDx_ave.Vacuum();
-    DUDy_ave.Vacuum();
-    DxDx_ave = ZERO;
-    DxDy_ave = ZERO;
-    DyDy_ave = ZERO;
-    
-    for ( n2 = 0 ; n2 <= n_pts-1 ; ++n2 ) {
-      dX = Grid.Cell[ i_index[n2] ][ j_index[n2] ].Xc;
-      dX -= Grid.Cell[i][j].Xc;
-      DxDx_ave += dX.x*dX.x;
-      DxDy_ave += dX.x*dX.y;
-      DyDy_ave += dX.y*dX.y;
-      for (int k=1; k<=NUM_VAR_FLAME2D; k++) {
-	DU = W[ i_index[n2] ][ j_index[n2] ][k] - W[i][j][k];
-	DUDx_ave[k] += DU*dX.x;
-	DUDy_ave[k] += DU*dX.y;
-      }
+
+    // compute differences
+    for ( int n = 0 ; n < n_pts ; ++n ) {
+      dX[n].x = Grid.Cell[ i_index[n] ][ j_index[n] ].Xc.x - Grid.Cell[i][j].Xc.x;
+      dX[n].y = Grid.Cell[ i_index[n] ][ j_index[n] ].Xc.y - Grid.Cell[i][j].Xc.y;
+      for (int k=1; k<=NUM_VAR_FLAME2D; k++)
+	DU[n][k] = W[ i_index[n] ][ j_index[n] ][k] - W[i][j][k];
     } /* endfor */
-    					    
-    // don't need to do this, it will cancel out
-    // DUDx_ave /= double(n_pts);
-    // DUDy_ave /= double(n_pts);
-    // DxDx_ave /= double(n_pts);
-    // DxDy_ave /= double(n_pts);
-    // DyDy_ave /= double(n_pts);
-    for (int k=1; k<=NUM_VAR_FLAME2D; k++) {
-      dWdx[i][j][k] = ( (DUDx_ave[k]*DyDy_ave-DUDy_ave[k]*DxDy_ave)/
-			(DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave) );
-      dWdy[i][j][k] = ( (DUDy_ave[k]*DxDx_ave-DUDx_ave[k]*DxDy_ave)/
-			(DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave) );
-    }
+      
+    // perform least squares reconstruction
+    LeastSquares( dWdx[i][j], dWdy[i][j], dX, DU, n_pts, NUM_VAR_FLAME2D );
 
     // Calculate slope limiters.    
     Evaluate_Limiter(i, j, Limiter, n_pts, i_index, j_index);
@@ -689,17 +724,14 @@ void Flame2D_Quad_Block::Linear_Reconstruction_LeastSquares_Diamond(const int i,
 								    const int Limiter) {
 
 
-  int n2, n_pts, i_index[8], j_index[8];
-  int n_neigbour;
-  double DxDx_ave, DxDy_ave, DyDy_ave;
-  double area[4];
-
-  static Vector2D dXe, dXw, dXn, dXs, dX[4];  
-  static Flame2D_State DU[4], DUDx_ave, DUDy_ave;
+  int n_pts, n_neigbour, i_index[MAX_QUADPOINTS], j_index[MAX_QUADPOINTS];
+  double area[MAX_QUADPOINTS];
   double QuadraturePoint_N, 
     QuadraturePoint_E, 
     QuadraturePoint_S, 
     QuadraturePoint_W;  
+  static Vector2D dXe, dXw, dXn, dXs, dX[MAX_QUADPOINTS];  
+  static Flame2D_State DU[MAX_QUADPOINTS];
   const Flame2D_State *TopVertex, *BottomVertex;
 
   const int NUM_VAR_FLAME2D = NumVar();
@@ -738,24 +770,16 @@ void Flame2D_Quad_Block::Linear_Reconstruction_LeastSquares_Diamond(const int i,
  
     /*************** NORTH ****************************/
     /*Formulate the gradients of primitive parameters on the north face of cell (i, j)*/
-    DUDx_ave.Vacuum();
-    DUDy_ave.Vacuum();
-    DxDx_ave = ZERO;
-    DxDy_ave = ZERO;
-    DyDy_ave = ZERO;
- 
 
+    //needs to assign topvertex and bottomvertex information
     TopVertex = &Wnd[i][j+1];
     BottomVertex = &Wnd[i+1][j+1];
 
+    // compute differences
     dX[0] = Grid.Cell[i][j].Xc - Grid.xfaceN(i,j);
     dX[1] = Grid.Cell[i][j+1].Xc - Grid.xfaceN(i,j);
     dX[2] = Grid.Node[i][j+1].X -  Grid.xfaceN(i,j);
-    dX[3] = Grid.Node[i+1][j+1].X -  Grid.xfaceN(i,j);
-    //The calculation of this area is used to weight the gradient at the cell center      
-    area[0] = HALF*(Grid.Node[i+1][j+1].X - Grid.Node[i][j+1].X )^
-      (Grid.xfaceN(i,j)- Grid.Cell[i][j].Xc);
-  
+    dX[3] = Grid.Node[i+1][j+1].X -  Grid.xfaceN(i,j);  
     for (int k=1; k<=NUM_VAR_FLAME2D; k++) {
       QuadraturePoint_N = HALF*( (*TopVertex)[k] + (*BottomVertex)[k]);
       //Left state cell (i,j)
@@ -768,50 +792,26 @@ void Flame2D_Quad_Block::Linear_Reconstruction_LeastSquares_Diamond(const int i,
       DU[3][k] = (*BottomVertex)[k] - QuadraturePoint_N;
     }
 
+    // perform least squares reconstruction
+    LeastSquares( dWdx_faceN[i][j], dWdy_faceN[i][j], dX, DU, n_neigbour, NUM_VAR_FLAME2D );
+
+    //The calculation of this area is used to weight the gradient at the cell center      
+    area[0] = HALF*(Grid.Node[i+1][j+1].X - Grid.Node[i][j+1].X )^
+      (Grid.xfaceN(i,j)- Grid.Cell[i][j].Xc);
  
-    for ( n2 = 0 ; n2 <= n_neigbour -1 ; ++n2 ) {
-      DxDx_ave += dX[n2].x*dX[n2].x;
-      DxDy_ave += dX[n2].x*dX[n2].y;
-      DyDy_ave += dX[n2].y*dX[n2].y;
-      for (int k=1; k<=NUM_VAR_FLAME2D; k++) {
-	DUDx_ave[k] += DU[n2][k]*dX[n2].x;
-	DUDy_ave[k] += DU[n2][k]*dX[n2].y;
-      }
-    } /* endfor */
- 
-    // don't need to do this, it will cancel out
-    // DUDx_ave = DUDx_ave/double(n_neigbour);
-    // DUDy_ave = DUDy_ave/double(n_neigbour);
-    // DxDx_ave = DxDx_ave/double(n_neigbour);
-    // DxDy_ave = DxDy_ave/double(n_neigbour);
-    // DyDy_ave = DyDy_ave/double(n_neigbour);
-    for (int k=1; k<=NUM_VAR_FLAME2D; k++) {
-      dWdx_faceN[i][j][k] = ( (DUDx_ave[k]*DyDy_ave-DUDy_ave[k]*DxDy_ave)/
-			      (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave) );
-      dWdy_faceN[i][j][k] = ( (DUDy_ave[k]*DxDx_ave-DUDx_ave[k]*DxDy_ave)/
-			      (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave) );
-    }
      
     /*************** EAST *****************************/
     /*Formulate the gradients of primitive parameters on the east face of cell (i, j)*/
-    DUDx_ave.Vacuum();
-    DUDy_ave.Vacuum();
-    DxDx_ave = ZERO;
-    DxDy_ave = ZERO;
-    DyDy_ave = ZERO;
    
     //needs to assign topvertex and bottomvertex information
     TopVertex = &Wnd[i+1][j+1];
     BottomVertex =  &Wnd[i+1][j];
 
+    // compute differences
     dX[0] = Grid.Cell[i][j].Xc - Grid.xfaceE(i, j);
     dX[1] = Grid.Cell[i+1][j].Xc - Grid.xfaceE(i,j);
     dX[2] = Grid.Node[i+1][j+1].X - Grid.xfaceE(i,j);
     dX[3] = Grid.Node[i+1][j].X - Grid.xfaceE(i,j);
-    //The calculation of this area is used to weight the gradient at the cell center      
-    area[1] = HALF*(Grid.Node[i+1][j+1].X - Grid.Node[i+1][j].X )^
-      (Grid.Cell[i][j].Xc - Grid.xfaceE(i,j));
-
     for (int k=1; k<=NUM_VAR_FLAME2D; k++) {
       QuadraturePoint_E = HALF*( (*TopVertex)[k] + (*BottomVertex)[k]);
       //Left state cell (i,j)
@@ -824,48 +824,26 @@ void Flame2D_Quad_Block::Linear_Reconstruction_LeastSquares_Diamond(const int i,
       DU[3][k] = (*BottomVertex)[k] - QuadraturePoint_E;
     }
  
-    for ( n2 = 0 ; n2 <=  n_neigbour-1 ; ++n2 ) {
-      DxDx_ave += dX[n2].x*dX[n2].x;
-      DxDy_ave += dX[n2].x*dX[n2].y;
-      DyDy_ave += dX[n2].y*dX[n2].y;
-      for (int k=1; k<=NUM_VAR_FLAME2D; k++) {
-	DUDx_ave[k] += DU[n2][k]*dX[n2].x;
-	DUDy_ave[k] += DU[n2][k]*dX[n2].y;
-      }      
-    } /* endfor */
- 
-    // don't need to do this, it will cancel out
-    // DUDx_ave = DUDx_ave/double(n_neigbour);
-    // DUDy_ave = DUDy_ave/double(n_neigbour);
-    // DxDx_ave = DxDx_ave/double(n_neigbour);
-    // DxDy_ave = DxDy_ave/double(n_neigbour);
-    // DyDy_ave = DyDy_ave/double(n_neigbour);
-    for (int k=1; k<=NUM_VAR_FLAME2D; k++) {
-      dWdx_faceE[i][j][k] = ( (DUDx_ave[k]*DyDy_ave-DUDy_ave[k]*DxDy_ave)/
-			      (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave) );
-      dWdy_faceE[i][j][k] = ( (DUDy_ave[k]*DxDx_ave-DUDx_ave[k]*DxDy_ave)/
-			      (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave) );
-    }
+    // perform least squares reconstruction
+    LeastSquares( dWdx_faceE[i][j], dWdy_faceE[i][j], dX, DU, n_neigbour, NUM_VAR_FLAME2D );
+
+    //The calculation of this area is used to weight the gradient at the cell center      
+    area[1] = HALF*(Grid.Node[i+1][j+1].X - Grid.Node[i+1][j].X )^
+      (Grid.Cell[i][j].Xc - Grid.xfaceE(i,j));
+
      
     /*************** WEST *****************************/
     /*Formulate the gradients of primitive parameters on the west face of cell (i, j)*/
-    DUDx_ave.Vacuum();
-    DUDy_ave.Vacuum();
-    DxDx_ave = ZERO;
-    DxDy_ave = ZERO;
-    DyDy_ave = ZERO;
 
+    //needs to assign topvertex and bottomvertex information
     TopVertex = &Wnd[i][j];
     BottomVertex =  &Wnd[i][j+1];
 
+    // compute differences
     dX[0] = Grid.Cell[i][j].Xc - Grid.xfaceW(i,j);
     dX[1] = Grid.Cell[i-1][j].Xc - Grid.xfaceW(i,j);
     dX[2] = Grid.Node[i][j].X - Grid.xfaceW(i,j);
     dX[3] = Grid.Node[i][j+1].X - Grid.xfaceW(i,j);
-    //The calculation of this area is used to weight the gradient at the cell center      
-    area[2] = HALF*(Grid.Node[i][j+1].X - Grid.Node[i][j].X )^
-      ( Grid.xfaceW(i, j) - Grid.Cell[i][j].Xc );
-
     for (int k=1; k<=NUM_VAR_FLAME2D; k++) {
       QuadraturePoint_W = HALF*( (*TopVertex)[k] + (*BottomVertex)[k]);
       //Left state cell (i,j)
@@ -878,48 +856,26 @@ void Flame2D_Quad_Block::Linear_Reconstruction_LeastSquares_Diamond(const int i,
       DU[3][k] = (*BottomVertex)[k] - QuadraturePoint_W;
     }
 
-    for ( n2 = 0 ; n2 <=  n_neigbour-1 ; ++n2 ) {
-      DxDx_ave += dX[n2].x*dX[n2].x;
-      DxDy_ave += dX[n2].x*dX[n2].y;
-      DyDy_ave += dX[n2].y*dX[n2].y;
-      for (int k=1; k<=NUM_VAR_FLAME2D; k++) {      
-	DUDx_ave[k] += DU[n2][k]*dX[n2].x;
-	DUDy_ave[k] += DU[n2][k]*dX[n2].y;
-      }
-    } /* endfor */
- 
-    // don't need to do this, it will cancel out
-    // DUDx_ave = DUDx_ave/double(n_neigbour);
-    // DUDy_ave = DUDy_ave/double(n_neigbour);
-    // DxDx_ave = DxDx_ave/double(n_neigbour);
-    // DxDy_ave = DxDy_ave/double(n_neigbour);
-    // DyDy_ave = DyDy_ave/double(n_neigbour);
-    for (int k=1; k<=NUM_VAR_FLAME2D; k++) {
-      dWdx_faceW[i][j][k] = ( (DUDx_ave[k]*DyDy_ave-DUDy_ave[k]*DxDy_ave)/
-			      (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave) );
-      dWdy_faceW[i][j][k] = ( (DUDy_ave[k]*DxDx_ave-DUDx_ave[k]*DxDy_ave)/
-			      (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave) );
-    }
+    // perform least squares reconstruction
+    LeastSquares( dWdx_faceW[i][j], dWdy_faceW[i][j], dX, DU, n_neigbour, NUM_VAR_FLAME2D );
+
+    //The calculation of this area is used to weight the gradient at the cell center      
+    area[2] = HALF*(Grid.Node[i][j+1].X - Grid.Node[i][j].X )^
+      ( Grid.xfaceW(i, j) - Grid.Cell[i][j].Xc );
+
 
     /*************** SOUTH ****************************/
     /*Formulate the gradients of primitive parameters on the south face of cell (i, j)*/
-    DUDx_ave.Vacuum();
-    DUDy_ave.Vacuum();
-    DxDx_ave = ZERO;
-    DxDy_ave = ZERO;
-    DyDy_ave = ZERO;
 
+    //needs to assign topvertex and bottomvertex information
     TopVertex = &Wnd[i+1][j];
     BottomVertex =  &Wnd[i][j];
 
+    // compute differences
     dX[0] = Grid.Cell[i][j].Xc - Grid.xfaceS(i, j);
     dX[1] = Grid.Cell[i][j-1].Xc - Grid.xfaceS(i, j);
     dX[2] = Grid.Node[i+1][j].X - Grid.xfaceS(i, j);
     dX[3] = Grid.Node[i][j].X - Grid.xfaceS(i, j);
-    //The calculation of this area is used to weight the gradient at the cell center      
-    area[3] = HALF*(Grid.Node[i+1][j].X - Grid.Node[i][j].X )^
-      (Grid.Cell[i][j].Xc - Grid.xfaceS(i,j) );
-
     for (int k=1; k<=NUM_VAR_FLAME2D; k++) {
       QuadraturePoint_S = HALF*((*TopVertex)[k] + (*BottomVertex)[k]);
       //Left state cell (i,j)
@@ -932,28 +888,12 @@ void Flame2D_Quad_Block::Linear_Reconstruction_LeastSquares_Diamond(const int i,
       DU[3][k] = (*BottomVertex)[k] - QuadraturePoint_S;
     }
 
-    for ( n2 = 0 ; n2 <=  n_neigbour-1 ; ++n2 ) {
-      DxDx_ave += dX[n2].x*dX[n2].x;
-      DxDy_ave += dX[n2].x*dX[n2].y;
-      DyDy_ave += dX[n2].y*dX[n2].y;
-      for (int k=1; k<=NUM_VAR_FLAME2D; k++) {
-	DUDx_ave[k] += DU[n2][k]*dX[n2].x;
-	DUDy_ave[k] += DU[n2][k]*dX[n2].y;
-      }      
-    } /* endfor */
- 
-    // don't need to do this, it will cancel out
-    // DUDx_ave = DUDx_ave/double(n_neigbour);
-    // DUDy_ave = DUDy_ave/double(n_neigbour);
-    // DxDx_ave = DxDx_ave/double(n_neigbour);
-    // DxDy_ave = DxDy_ave/double(n_neigbour);
-    // DyDy_ave = DyDy_ave/double(n_neigbour);
-    for (int k=1; k<=NUM_VAR_FLAME2D; k++) {
-      dWdx_faceS[i][j][k] = ( (DUDx_ave[k]*DyDy_ave-DUDy_ave[k]*DxDy_ave)/
-			      (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave) );
-      dWdy_faceS[i][j][k] = ( (DUDy_ave[k]*DxDx_ave-DUDx_ave[k]*DxDy_ave)/
-			      (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave) );
-    }
+    // perform least squares reconstruction
+    LeastSquares( dWdx_faceS[i][j], dWdy_faceS[i][j], dX, DU, n_neigbour, NUM_VAR_FLAME2D );
+
+    //The calculation of this area is used to weight the gradient at the cell center      
+    area[3] = HALF*(Grid.Node[i+1][j].X - Grid.Node[i][j].X )^
+      (Grid.Cell[i][j].Xc - Grid.xfaceS(i,j) );
 
     /**************************************************/
     //Area weighted gradients at cell centers
@@ -1012,10 +952,10 @@ void Flame2D_Quad_Block::Linear_Reconstruction_GreenGauss_Diamond(const int i,
 								  const int j,
 								  const int Limiter) {
   
-  int n_pts, i_index[8], j_index[8];
-  double area[4], AREA;
-  double W_average[4];
-  static Vector2D norm[4]; 
+  int n_pts, i_index[MAX_QUADPOINTS], j_index[MAX_QUADPOINTS];
+  double area[MAX_QUADPOINTS], AREA;
+  double W_average[MAX_QUADPOINTS];
+  static Vector2D norm[MAX_QUADPOINTS]; 
   const int NUM_VAR_FLAME2D = NumVar();
 
   if (i == ICl-Nghost || i == ICu+Nghost ||

@@ -29,6 +29,7 @@
 
 #define	NUMBER_OF_RESIDUAL_VECTORS_FLAME2D    3  //K for dUdt[i][j][K]
 
+#define MAX_QUADPOINTS                        8
 
 /*!
  * Class: Flame2D_Quad_Block
