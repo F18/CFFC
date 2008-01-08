@@ -23,6 +23,79 @@ PlanckMean* Flame2D_Quad_Block::PlanckMean_data=NULL;
 /////////////////////////////////////////////////////////////////////
 
 
+void Flame2D_Quad_Block::Evaluate_Limiter(const int i, 
+					  const int j,
+					  const int Limiter, 
+					  const int n_pts,
+					  const int*i_index,
+					  const int*j_index) {
+
+  // declares
+  double u0Min, u0Max, uQuad[4], phi_;
+  static Vector2D dXe, dXw, dXn, dXs;
+
+  const int NUM_VAR_FLAME2D = NumVar();
+
+
+  // 
+  // If the limiters aren't frozen, evaluate them
+  //
+  if (!Freeze_Limiter) {
+
+    dXe = Grid.xfaceE(i, j) - Grid.Cell[i][j].Xc;
+    dXw = Grid.xfaceW(i, j) - Grid.Cell[i][j].Xc;
+    dXn = Grid.xfaceN(i, j) - Grid.Cell[i][j].Xc;
+    dXs = Grid.xfaceS(i, j) - Grid.Cell[i][j].Xc;
+
+    for ( int n = 1 ; n <= NUM_VAR_FLAME2D ; ++n ) {
+      u0Min = W[i][j][n];
+      u0Max = u0Min;
+      for ( int n2 = 0 ; n2 <= n_pts-1 ; ++n2 ) {
+	u0Min = min(u0Min, W[ i_index[n2] ][ j_index[n2] ][n]);
+	u0Max = max(u0Max, W[ i_index[n2] ][ j_index[n2] ][n]);
+      } /* endfor */
+
+      uQuad[0] = W[i][j][n] + dWdx[i][j][n]*dXe.x + dWdy[i][j][n]*dXe.y ;
+      uQuad[1] = W[i][j][n] + dWdx[i][j][n]*dXw.x + dWdy[i][j][n]*dXw.y ;
+      uQuad[2] = W[i][j][n] + dWdx[i][j][n]*dXn.x + dWdy[i][j][n]*dXn.y ;
+      uQuad[3] = W[i][j][n] + dWdx[i][j][n]*dXs.x + dWdy[i][j][n]*dXs.y ;
+	    
+      switch(Limiter) {
+      case LIMITER_ONE :
+	phi_ = ONE;
+	break;
+      case LIMITER_ZERO :
+	phi_ = ZERO;
+	break;
+      case LIMITER_BARTH_JESPERSEN :
+	phi_ = Limiter_BarthJespersen(uQuad, W[i][j][n], 
+				      u0Min, u0Max, 4);
+	break;
+      case LIMITER_VENKATAKRISHNAN :
+	phi_ = Limiter_Venkatakrishnan(uQuad, W[i][j][n], 
+				       u0Min, u0Max, 4);
+	break;
+      case LIMITER_VANLEER :
+	phi_ = Limiter_VanLeer(uQuad, W[i][j][n], 
+			       u0Min, u0Max, 4);
+	break;
+      case LIMITER_VANALBADA :
+	phi_ = Limiter_VanAlbada(uQuad, W[i][j][n], 
+				 u0Min, u0Max, 4);
+	break;
+      default:
+	phi_ = Limiter_BarthJespersen(uQuad, W[i][j][n], 
+				      u0Min, u0Max, 4);
+	break;
+      } /* endswitch */
+	    
+      phi[i][j][n] = phi_;
+    } /* endfor */
+
+  } // end limiter if
+
+}
+
 /********************************************************
  * Routine: Linear_Reconstruction_GreenGauss            *
  *                                                      *
@@ -39,12 +112,10 @@ void Flame2D_Quad_Block::Linear_Reconstruction_GreenGauss(const int i,
 							  const int j,
 							  const int Limiter) {
 
-  int n, n2, n_pts, i_index[8], j_index[8];
-  double u0Min, u0Max, uQuad[4], phi_;
+  int n_pts, i_index[8], j_index[8];
   double DxDx_ave, DxDy_ave, DyDy_ave;
   double l_north, l_south, l_east, l_west;
   static Vector2D n_north, n_south, n_east, n_west;
-  static Vector2D dXe, dXw, dXn, dXs;
   double W_face;
     
   const int NUM_VAR_FLAME2D = NumVar();
@@ -115,60 +186,9 @@ void Flame2D_Quad_Block::Linear_Reconstruction_GreenGauss(const int i,
       }
 	
     } /* endif */
-	   
+
     // Calculate slope limiters.    
-    if (!Freeze_Limiter) {
-
-      dXe = Grid.xfaceE(i, j) - Grid.Cell[i][j].Xc;
-      dXw = Grid.xfaceW(i, j) - Grid.Cell[i][j].Xc;
-      dXn = Grid.xfaceN(i, j) - Grid.Cell[i][j].Xc;
-      dXs = Grid.xfaceS(i, j) - Grid.Cell[i][j].Xc;
-
-      for ( n = 1 ; n <= NUM_VAR_FLAME2D ; ++n ) {
-	u0Min = W[i][j][n];
-	u0Max = u0Min;
-	for ( n2 = 0 ; n2 <= n_pts-1 ; ++n2 ) {
-	  u0Min = min(u0Min, W[ i_index[n2] ][ j_index[n2] ][n]);
-	  u0Max = max(u0Max, W[ i_index[n2] ][ j_index[n2] ][n]);
-	} /* endfor */
-
-	uQuad[0] = W[i][j][n] + dWdx[i][j][n]*dXe.x + dWdy[i][j][n]*dXe.y ;
-	uQuad[1] = W[i][j][n] + dWdx[i][j][n]*dXw.x + dWdy[i][j][n]*dXw.y ;
-	uQuad[2] = W[i][j][n] + dWdx[i][j][n]*dXn.x + dWdy[i][j][n]*dXn.y ;
-	uQuad[3] = W[i][j][n] + dWdx[i][j][n]*dXs.x + dWdy[i][j][n]*dXs.y ;
-	    
-	switch(Limiter) {
-	case LIMITER_ONE :
-	  phi_ = ONE;
-	  break;
-	case LIMITER_ZERO :
-	  phi_ = ZERO;
-	  break;
-	case LIMITER_BARTH_JESPERSEN :
-	  phi_ = Limiter_BarthJespersen(uQuad, W[i][j][n], 
-					u0Min, u0Max, 4);
-	  break;
-	case LIMITER_VENKATAKRISHNAN :
-	  phi_ = Limiter_Venkatakrishnan(uQuad, W[i][j][n], 
-					 u0Min, u0Max, 4);
-	  break;
-	case LIMITER_VANLEER :
-	  phi_ = Limiter_VanLeer(uQuad, W[i][j][n], 
-				 u0Min, u0Max, 4);
-	  break;
-	case LIMITER_VANALBADA :
-	  phi_ = Limiter_VanAlbada(uQuad, W[i][j][n], 
-				   u0Min, u0Max, 4);
-	  break;
-	default:
-	  phi_ = Limiter_BarthJespersen(uQuad, W[i][j][n], 
-					u0Min, u0Max, 4);
-	  break;
-	} /* endswitch */
-	    
-	phi[i][j][n] = phi_;
-      } /* endfor */
-    } // end limiter if
+    Evaluate_Limiter(i, j, Limiter, n_pts, i_index, j_index);
 	  
   } else {
     dWdx[i][j].Vacuum();
@@ -210,8 +230,7 @@ void Flame2D_Quad_Block::Linear_Reconstruction_LeastSquares(const int i,
 							    const int j,
 							    const int Limiter) {
 
-  int n, n2, n_pts, i_index[8], j_index[8];
-  double u0Min, u0Max, uQuad[4], phi_;
+  int n2, n_pts, i_index[8], j_index[8];
   double DxDx_ave, DxDy_ave, DyDy_ave, DU;
   static Vector2D dX, dXe, dXw, dXn, dXs;
   static Flame2D_State DUDx_ave, DUDy_ave;
@@ -272,66 +291,9 @@ void Flame2D_Quad_Block::Linear_Reconstruction_LeastSquares(const int i,
 			(DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave) );
     }
 
-    if (!Freeze_Limiter) {
+    // Calculate slope limiters.    
+    Evaluate_Limiter(i, j, Limiter, n_pts, i_index, j_index);
 
-      dXe = Grid.xfaceE(i, j) - Grid.Cell[i][j].Xc;
-      dXw = Grid.xfaceW(i, j) - Grid.Cell[i][j].Xc;
-      dXn = Grid.xfaceN(i, j) - Grid.Cell[i][j].Xc;
-      dXs = Grid.xfaceS(i, j) - Grid.Cell[i][j].Xc;
-
-      for ( n = 1 ; n <= NUM_VAR_FLAME2D ; ++n ) {
-	u0Min = W[i][j][n];
-	u0Max = u0Min;
-	for ( n2 = 0 ; n2 <= n_pts-1 ; ++n2 ) {
-	  u0Min = min(u0Min, W[ i_index[n2] ][ j_index[n2] ][n]);
-	  u0Max = max(u0Max, W[ i_index[n2] ][ j_index[n2] ][n]);
-	} /* endfor */
-	  
-	uQuad[0] = W[i][j][n] + 
-	  dWdx[i][j][n]*dXe.x +
-	  dWdy[i][j][n]*dXe.y ;
-	uQuad[1] = W[i][j][n] + 
-	  dWdx[i][j][n]*dXw.x +
-	  dWdy[i][j][n]*dXw.y ;
-	uQuad[2] = W[i][j][n] + 
-	  dWdx[i][j][n]*dXn.x +
-	  dWdy[i][j][n]*dXn.y ;
-	uQuad[3] = W[i][j][n] + 
-	  dWdx[i][j][n]*dXs.x +
-	  dWdy[i][j][n]*dXs.y ;
-	  
-	switch(Limiter) {
-	case LIMITER_ONE :
-	  phi_ = ONE;
-	  break;
-	case LIMITER_ZERO :
-	  phi_ = ZERO;
-	  break;
-	case LIMITER_BARTH_JESPERSEN :
-	  phi_ = Limiter_BarthJespersen(uQuad, W[i][j][n], 
-					u0Min, u0Max, 4);
-	  break;
-	case LIMITER_VENKATAKRISHNAN :
-	  phi_ = Limiter_Venkatakrishnan(uQuad, W[i][j][n], 
-					 u0Min, u0Max, 4);
-	  break;
-	case LIMITER_VANLEER :
-	  phi_ = Limiter_VanLeer(uQuad, W[i][j][n], 
-				 u0Min, u0Max, 4);
-	  break;
-	case LIMITER_VANALBADA :
-	  phi_ = Limiter_VanAlbada(uQuad, W[i][j][n], 
-				   u0Min, u0Max, 4);
-	  break;
-	default:
-	  phi_ = Limiter_BarthJespersen(uQuad, W[i][j][n], 
-					u0Min, u0Max, 4);
-	  break;
-	} /* endswitch */
-	    
-	phi[i][j][n] = phi_;
-      } /* endfor */
-    }//end limiter if
   } else {
     dWdx[i][j].Vacuum();
     dWdy[i][j].Vacuum();
@@ -384,8 +346,7 @@ void Flame2D_Quad_Block::Linear_Reconstruction_LeastSquares_2(const int i,
 							      const int j,
 							      const int Limiter) {
 
-  int n, n2, n_pts, i_index[8], j_index[8];
-  double u0Min, u0Max, uQuad[4], phi_;
+  int n2, n_pts, i_index[8], j_index[8];
   double DU, DxDx_ave, DxDy_ave, DyDy_ave;
   static Vector2D dX, dXe, dXw, dXn, dXs;
   static Flame2D_State DUDx_ave, DUDy_ave;
@@ -663,12 +624,12 @@ void Flame2D_Quad_Block::Linear_Reconstruction_LeastSquares_2(const int i,
       }
     } /* endfor */
     					    
-      // don't need to do this, it will cancel out
-      // DUDx_ave /= double(n_pts);
-      // DUDy_ave /= double(n_pts);
-      // DxDx_ave /= double(n_pts);
-      // DxDy_ave /= double(n_pts);
-      // DyDy_ave /= double(n_pts);
+    // don't need to do this, it will cancel out
+    // DUDx_ave /= double(n_pts);
+    // DUDy_ave /= double(n_pts);
+    // DxDx_ave /= double(n_pts);
+    // DxDy_ave /= double(n_pts);
+    // DyDy_ave /= double(n_pts);
     for (int k=1; k<=NUM_VAR_FLAME2D; k++) {
       dWdx[i][j][k] = ( (DUDx_ave[k]*DyDy_ave-DUDy_ave[k]*DxDy_ave)/
 			(DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave) );
@@ -676,67 +637,8 @@ void Flame2D_Quad_Block::Linear_Reconstruction_LeastSquares_2(const int i,
 			(DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave) );
     }
 
-    // Calculate slope limiters. 
-    if (!Freeze_Limiter) {
-
-      dXe = Grid.xfaceE(i, j) - Grid.Cell[i][j].Xc;
-      dXw = Grid.xfaceW(i, j) - Grid.Cell[i][j].Xc;
-      dXn = Grid.xfaceN(i, j) - Grid.Cell[i][j].Xc;
-      dXs = Grid.xfaceS(i, j) - Grid.Cell[i][j].Xc;
-
-      for ( n = 1 ; n <= NUM_VAR_FLAME2D ; ++n ) {
-	u0Min = W[i][j][n];
-	u0Max = u0Min;
-	for ( n2 = 0 ; n2 <= n_pts-1 ; ++n2 ) {
-	  u0Min = min(u0Min, W[ i_index[n2] ][ j_index[n2] ][n]);
-	  u0Max = max(u0Max, W[ i_index[n2] ][ j_index[n2] ][n]);
-	} /* endfor */
-	    
-	uQuad[0] = W[i][j][n] + 
-	  dWdx[i][j][n]*dXe.x +
-	  dWdy[i][j][n]*dXe.y ;
-	uQuad[1] = W[i][j][n] + 
-	  dWdx[i][j][n]*dXw.x +
-	  dWdy[i][j][n]*dXw.y ;
-	uQuad[2] = W[i][j][n] + 
-	  dWdx[i][j][n]*dXn.x +
-	  dWdy[i][j][n]*dXn.y ;
-	uQuad[3] = W[i][j][n] + 
-	  dWdx[i][j][n]*dXs.x +
-	  dWdy[i][j][n]*dXs.y ;
-	    
-	switch(Limiter) {
-	case LIMITER_ONE :
-	  phi_ = ONE;
-	  break;
-	case LIMITER_ZERO :
-	  phi_ = ZERO;
-	  break;
-	case LIMITER_BARTH_JESPERSEN :
-	  phi_ = Limiter_BarthJespersen(uQuad, W[i][j][n], 
-					u0Min, u0Max, 4);
-	  break;
-	case LIMITER_VENKATAKRISHNAN :
-	  phi_ = Limiter_Venkatakrishnan(uQuad, W[i][j][n], 
-					 u0Min, u0Max, 4);	  
-	  break;
-	case LIMITER_VANLEER :
-	  phi_ = Limiter_VanLeer(uQuad, W[i][j][n], 
-				 u0Min, u0Max, 4);
-	  break;
-	case LIMITER_VANALBADA :
-	  phi_ = Limiter_VanAlbada(uQuad, W[i][j][n], 
-				   u0Min, u0Max, 4);
-	  break;
-	default:
-	  phi_ = Limiter_BarthJespersen(uQuad, W[i][j][n], 
-					u0Min, u0Max, 4);
-	  break;
-	} /* endswitch */
-	    
-	phi[i][j][n] = phi_;
-      } /* endfor */
-    } //end limiter if
+    // Calculate slope limiters.    
+    Evaluate_Limiter(i, j, Limiter, n_pts, i_index, j_index);
 
   } else {
     dWdx[i][j].Vacuum();
@@ -787,9 +689,8 @@ void Flame2D_Quad_Block::Linear_Reconstruction_LeastSquares_Diamond(const int i,
 								    const int Limiter) {
 
 
-  int n, n2, n_pts, i_index[8], j_index[8];
+  int n2, n_pts, i_index[8], j_index[8];
   int n_neigbour;
-  double u0Min, u0Max, uQuad[4], phi_;
   double DxDx_ave, DxDy_ave, DyDy_ave;
   double area[4];
 
@@ -878,13 +779,12 @@ void Flame2D_Quad_Block::Linear_Reconstruction_LeastSquares_Diamond(const int i,
       }
     } /* endfor */
  
-      // don't need to do this, it will cancel out
-      // DUDx_ave = DUDx_ave/double(n_neigbour);
-      // DUDy_ave = DUDy_ave/double(n_neigbour);
-      // DxDx_ave = DxDx_ave/double(n_neigbour);
-      // DxDy_ave = DxDy_ave/double(n_neigbour);
-      // DyDy_ave = DyDy_ave/double(n_neigbour);
- 
+    // don't need to do this, it will cancel out
+    // DUDx_ave = DUDx_ave/double(n_neigbour);
+    // DUDy_ave = DUDy_ave/double(n_neigbour);
+    // DxDx_ave = DxDx_ave/double(n_neigbour);
+    // DxDy_ave = DxDy_ave/double(n_neigbour);
+    // DyDy_ave = DyDy_ave/double(n_neigbour);
     for (int k=1; k<=NUM_VAR_FLAME2D; k++) {
       dWdx_faceN[i][j][k] = ( (DUDx_ave[k]*DyDy_ave-DUDy_ave[k]*DxDy_ave)/
 			      (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave) );
@@ -934,12 +834,12 @@ void Flame2D_Quad_Block::Linear_Reconstruction_LeastSquares_Diamond(const int i,
       }      
     } /* endfor */
  
-      // don't need to do this, it will cancel out
-      // DUDx_ave = DUDx_ave/double(n_neigbour);
-      // DUDy_ave = DUDy_ave/double(n_neigbour);
-      // DxDx_ave = DxDx_ave/double(n_neigbour);
-      // DxDy_ave = DxDy_ave/double(n_neigbour);
-      // DyDy_ave = DyDy_ave/double(n_neigbour);
+    // don't need to do this, it will cancel out
+    // DUDx_ave = DUDx_ave/double(n_neigbour);
+    // DUDy_ave = DUDy_ave/double(n_neigbour);
+    // DxDx_ave = DxDx_ave/double(n_neigbour);
+    // DxDy_ave = DxDy_ave/double(n_neigbour);
+    // DyDy_ave = DyDy_ave/double(n_neigbour);
     for (int k=1; k<=NUM_VAR_FLAME2D; k++) {
       dWdx_faceE[i][j][k] = ( (DUDx_ave[k]*DyDy_ave-DUDy_ave[k]*DxDy_ave)/
 			      (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave) );
@@ -988,12 +888,12 @@ void Flame2D_Quad_Block::Linear_Reconstruction_LeastSquares_Diamond(const int i,
       }
     } /* endfor */
  
-      // don't need to do this, it will cancel out
-      // DUDx_ave = DUDx_ave/double(n_neigbour);
-      // DUDy_ave = DUDy_ave/double(n_neigbour);
-      // DxDx_ave = DxDx_ave/double(n_neigbour);
-      // DxDy_ave = DxDy_ave/double(n_neigbour);
-      // DyDy_ave = DyDy_ave/double(n_neigbour);
+    // don't need to do this, it will cancel out
+    // DUDx_ave = DUDx_ave/double(n_neigbour);
+    // DUDy_ave = DUDy_ave/double(n_neigbour);
+    // DxDx_ave = DxDx_ave/double(n_neigbour);
+    // DxDy_ave = DxDy_ave/double(n_neigbour);
+    // DyDy_ave = DyDy_ave/double(n_neigbour);
     for (int k=1; k<=NUM_VAR_FLAME2D; k++) {
       dWdx_faceW[i][j][k] = ( (DUDx_ave[k]*DyDy_ave-DUDy_ave[k]*DxDy_ave)/
 			      (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave) );
@@ -1042,12 +942,12 @@ void Flame2D_Quad_Block::Linear_Reconstruction_LeastSquares_Diamond(const int i,
       }      
     } /* endfor */
  
-      // don't need to do this, it will cancel out
-      // DUDx_ave = DUDx_ave/double(n_neigbour);
-      // DUDy_ave = DUDy_ave/double(n_neigbour);
-      // DxDx_ave = DxDx_ave/double(n_neigbour);
-      // DxDy_ave = DxDy_ave/double(n_neigbour);
-      // DyDy_ave = DyDy_ave/double(n_neigbour);
+    // don't need to do this, it will cancel out
+    // DUDx_ave = DUDx_ave/double(n_neigbour);
+    // DUDy_ave = DUDy_ave/double(n_neigbour);
+    // DxDx_ave = DxDx_ave/double(n_neigbour);
+    // DxDy_ave = DxDy_ave/double(n_neigbour);
+    // DyDy_ave = DyDy_ave/double(n_neigbour);
     for (int k=1; k<=NUM_VAR_FLAME2D; k++) {
       dWdx_faceS[i][j][k] = ( (DUDx_ave[k]*DyDy_ave-DUDy_ave[k]*DxDy_ave)/
 			      (DxDx_ave*DyDy_ave-DxDy_ave*DxDy_ave) );
@@ -1072,66 +972,9 @@ void Flame2D_Quad_Block::Linear_Reconstruction_LeastSquares_Diamond(const int i,
     }
     /**************************************************/
    
-    if (!Freeze_Limiter) {
+    // Calculate slope limiters.    
+    Evaluate_Limiter(i, j, Limiter, n_pts, i_index, j_index);
 
-      dXe = Grid.xfaceE(i, j) - Grid.Cell[i][j].Xc;
-      dXw = Grid.xfaceW(i, j) - Grid.Cell[i][j].Xc;
-      dXn = Grid.xfaceN(i, j) - Grid.Cell[i][j].Xc;
-      dXs = Grid.xfaceS(i, j) - Grid.Cell[i][j].Xc;
-   
-      for ( n = 1 ; n <= NUM_VAR_FLAME2D ; ++n ) {
-	u0Min = W[i][j][n];
-	u0Max = u0Min;
-	for(n2 = 0 ; n2 <= n_pts-1 ; ++n2){
-	  u0Min = min(u0Min, W[ i_index[n2] ][ j_index[n2] ][n]);
-	  u0Max = max(u0Max, W[ i_index[n2] ][ j_index[n2] ][n]); 
-	  
-	}	
-	uQuad[0] = W[i][j][n] + 
-	  dWdx[i][j][n]*dXe.x +
-	  dWdy[i][j][n]*dXe.y ;
-	uQuad[1] = W[i][j][n] + 
-	  dWdx[i][j][n]*dXw.x +
-	  dWdy[i][j][n]*dXw.y ;
-	uQuad[2] = W[i][j][n] + 
-	  dWdx[i][j][n]*dXn.x +
-	  dWdy[i][j][n]*dXn.y ;
-	uQuad[3] = W[i][j][n] + 
-	  dWdx[i][j][n]*dXs.x +
-	  dWdy[i][j][n]*dXs.y ;
-	  
-	switch(Limiter) {
-	case LIMITER_ONE :
-	  phi_ = ONE;
-	  break;
-	case LIMITER_ZERO :
-	  phi_ = ZERO;
-	  break;
-	case LIMITER_BARTH_JESPERSEN :
-	  phi_ = Limiter_BarthJespersen(uQuad, W[i][j][n], 
-					u0Min, u0Max, 4);
-	  break;
-	case LIMITER_VENKATAKRISHNAN :
-	  phi_ = Limiter_Venkatakrishnan(uQuad, W[i][j][n], 
-					 u0Min, u0Max, 4);
-	  break;
-	case LIMITER_VANLEER :
-	  phi_ = Limiter_VanLeer(uQuad, W[i][j][n], 
-				 u0Min, u0Max, 4);
-	  break;
-	case LIMITER_VANALBADA :
-	  phi_ = Limiter_VanAlbada(uQuad, W[i][j][n], 
-				   u0Min, u0Max, 4);
-	  break;
-	default:
-	  phi_ = Limiter_BarthJespersen(uQuad, W[i][j][n], 
-					u0Min, u0Max, 4);
-	  break;
-	} /* endswitch */
-	
-	phi[i][j][n] = phi_;
-      } /* endfor */
-    }//end limiter if 
   } else {
     dWdx_faceN[i][j].Vacuum();
     dWdx_faceS[i][j].Vacuum();
@@ -1376,72 +1219,10 @@ void Flame2D_Quad_Block::Linear_Reconstruction_GreenGauss_Diamond(const int i,
       dWdy[i][j][k] /= Grid.Cell[i][j].A; 
     }
     /****************************************************/
-        
-    double u0Min, u0Max, uQuad[4], phi_;
-    double DxDx_ave, DxDy_ave, DyDy_ave;
-    static Vector2D dXe, dXw, dXn, dXs;
-    
-    // Calculate slope limiters.  
-    if (!Freeze_Limiter) {
 
-      dXe = Grid.xfaceE(i, j) - Grid.Cell[i][j].Xc;
-      dXw = Grid.xfaceW(i, j) - Grid.Cell[i][j].Xc;
-      dXn = Grid.xfaceN(i, j) - Grid.Cell[i][j].Xc;
-      dXs = Grid.xfaceS(i, j) - Grid.Cell[i][j].Xc;
+    // Calculate slope limiters.    
+    Evaluate_Limiter(i, j, Limiter, n_pts, i_index, j_index);
 
-      for ( int n=1 ; n <= NumVar(); n++ ) {
-	u0Min = W[i][j][n];
-	u0Max = u0Min;
-	for(int n2 = 0 ; n2 <= n_pts-1 ; ++n2){
-	  u0Min = min(u0Min, W[ i_index[n2] ][ j_index[n2] ][n]);
-	  u0Max = max(u0Max, W[ i_index[n2] ][ j_index[n2] ][n]); 
-	}
-	
-	uQuad[0] = W[i][j][n] + 
-	  dWdx[i][j][n]*dXe.x +
-	  dWdy[i][j][n]*dXe.y ;
-	uQuad[1] = W[i][j][n] + 
-	  dWdx[i][j][n]*dXw.x +
-	  dWdy[i][j][n]*dXw.y ;
-	uQuad[2] = W[i][j][n] + 
-	  dWdx[i][j][n]*dXn.x +
-	  dWdy[i][j][n]*dXn.y ;
-	uQuad[3] = W[i][j][n] + 
-	  dWdx[i][j][n]*dXs.x +
-	  dWdy[i][j][n]*dXs.y ;
-	  
-	switch(Limiter) {
-	case LIMITER_ONE :
-	  phi_ = ONE;
-	  break;
-	case LIMITER_ZERO :
-	  phi_ = ZERO;
-	  break;
-	case LIMITER_BARTH_JESPERSEN :
-	  phi_ = Limiter_BarthJespersen(uQuad, W[i][j][n], 
-					u0Min, u0Max, 4);
-	  break;
-	case LIMITER_VENKATAKRISHNAN :
-	  phi_ = Limiter_Venkatakrishnan(uQuad, W[i][j][n], 
-					 u0Min, u0Max, 4);
-	  break;
-	case LIMITER_VANLEER :
-	  phi_ = Limiter_VanLeer(uQuad, W[i][j][n], 
-				 u0Min, u0Max, 4);
-	  break;
-	case LIMITER_VANALBADA :
-	  phi_ = Limiter_VanAlbada(uQuad, W[i][j][n], 
-				   u0Min, u0Max, 4);
-	  break;
-	default:
-	  phi_ = Limiter_BarthJespersen(uQuad, W[i][j][n], 
-					u0Min, u0Max, 4);
-	  break;
-	} /* endswitch */
-	
-	phi[i][j][n] = phi_;
-      } /* endfor */
-    }//end limiter if 
   } else {
     dWdx_faceN[i][j].Vacuum();
     dWdx_faceS[i][j].Vacuum();

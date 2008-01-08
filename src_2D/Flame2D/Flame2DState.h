@@ -192,6 +192,9 @@ public:
   void DeltaU(const Flame2D_pState& Wr, const Flame2D_pState& Wl);
   void Rotate(const Vector2D &norm_dir);
   void RotateBack(const Vector2D &norm_dir);
+  void AdjustDensity(void);
+  void ForceSpecSumToZero(void);
+  void ForceSpecMin(void);
 
   /************************* Fluxes *********************************/
   //! Harten entropy fixes
@@ -259,7 +262,6 @@ public:
   /*********************** Checking *********************************/
   bool isPhysical(const int &harshness);
   bool speciesOK(const int &harshness);
-  void Adjust_Density(void);
 
   /********************* Operators Overloading **********************/
   // Index operator
@@ -466,9 +468,9 @@ private:
 
   //!< Density.
   double& rho(void) { return x[iRho]; }
-  double& vx(void) { return x[iVx]; }
 
   //!< Flow velocity (2D)
+  double& vx(void) { return x[iVx]; }
   double& vy(void) { return x[iVy]; }
   void v(const Vector2D &V) { x[iVx]=V.x; x[iVy]=V.y; };
 
@@ -1114,6 +1116,35 @@ inline void Flame2D_pState::Average( const Flame2D_pState &W1, const Flame2D_pSt
   setGas();
 }
 
+/****************************************************
+ * Adjust density to be consistent
+ ****************************************************/
+inline void Flame2D_State::AdjustDensity(void) { 
+  double sum(0.0); 
+  for (int i=0; i<ns; i++) sum += rhoc(i);
+  rho() = sum;
+}
+
+/****************************************************
+ * Divide error among species, forcing sum to zero.
+ ****************************************************/
+inline void Flame2D_State::ForceSpecSumToZero(void) { 
+  double sum( 0.0 );
+  for (int i=0; i<ns; i++) sum += c(i);
+  sum /= ns;
+  for (int i=0; i<ns; i++) c(i) -= sum;
+}
+
+
+/****************************************************
+ * Set species values to minimum.
+ ****************************************************/
+inline void Flame2D_State::ForceSpecMin(void) { 
+  double cmin( MILLION );
+  for (int i=0; i<ns; i++) cmin = min( cmin, c(i) );
+  for (int i=0; i<ns; i++) c(i) = cmin;
+}
+
 
 /////////////////////////////////////////////////////////////////////
 /// Primitive State Setup Functions
@@ -1468,7 +1499,7 @@ inline bool Flame2D_State::speciesOK(const int &harshness) {
   // for(int i=0; i<ns; i++) rhoc(i) /= sum;
 
   // Give error to density
-  if ( fabs(sum-rho_)>NANO ) rho() = sum;
+  // if ( fabs(sum-rho_)>NANO ) rho() = sum;
   // rho() = rho_ - ( rho_ - sum );
 
   // SUCCESS!
@@ -1508,14 +1539,6 @@ inline bool Flame2D_State::isPhysical(const int &harshness) {
 
 }
 
-/****************************************************
- * Adjust density to be consistent
- ****************************************************/
-inline void Flame2D_State::Adjust_Density(void) { 
-  double sum(0.0); 
-  for (int i=0; i<ns; i++) sum += rhoc(i);
-  rho() = sum;
-}
 
 /////////////////////////////////////////////////////////////////////
 /// Static Functions

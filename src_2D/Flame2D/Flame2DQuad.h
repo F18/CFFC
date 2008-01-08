@@ -392,6 +392,14 @@ public:
 				   const int j_max,
 				   const int j_inc);
 
+  // Evaluate limiters
+  void Evaluate_Limiter(const int i, 
+			const int j,
+			const int Limiter, 
+			const int n_pts,
+			const int*i_index,
+			const int*j_index);
+
   // Reconstruction Methods
   void Linear_Reconstruction_LeastSquares(const int Limiter);
   void Linear_Reconstruction_LeastSquares(const int i,
