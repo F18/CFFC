@@ -1429,7 +1429,6 @@ inline bool Flame2D_State::speciesOK(const int &harshness) {
   // declares
   double yi;
   double sum(ZERO);
-  const double &rho_ = rho();
 
   //
   // Loop over the species
@@ -1437,7 +1436,7 @@ inline bool Flame2D_State::speciesOK(const int &harshness) {
   for(int i=0; i<ns; i++){
 
 
-    yi = rhoc(i)/rho_;
+    yi = rhoc(i)/rho();
 
     //=================================================================
     // check for -ve
@@ -1495,12 +1494,12 @@ inline bool Flame2D_State::speciesOK(const int &harshness) {
 
 
   // Distribute error over all the species
-  // sum /= rho_;
+  // sum /= rho();
   // for(int i=0; i<ns; i++) rhoc(i) /= sum;
 
   // Give error to density
   // if ( fabs(sum-rho_)>NANO ) rho() = sum;
-  // rho() = rho_ - ( rho_ - sum );
+  rho() = sum;
 
   // SUCCESS!
   return true;

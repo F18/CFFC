@@ -109,6 +109,11 @@ void Flame2D_Quad_Block::Evaluate_Limiter(const int i,
       phi[i][j][n] = phi_;
     } /* endfor */
 
+    // To ensure that the reconstructed species mass fractions sum to unity,
+    // we must use the same limiter value for all species.  Here we use
+    // the minimum value for all species.
+    phi[i][j].ForceSpecMin();
+
   } // end limiter if
 
 }
