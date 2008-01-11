@@ -161,8 +161,7 @@ NavierStokes3D_Polytropic_cState  NavierStokes3D_Polytropic_pState::FluxViscous_
 			  const NavierStokes3D_Polytropic_pState &dWdz_Neighbour,
 			  const Vector3D &norm, const Vector3D &ts, const double &deltad,
 			  const double &Volume, const double &Volume_Neighbour){
-
-																				  	
+    
 	// construct the gradients on the cell interface (surface) 
 	// based on Hybrid Average Gradient-Diamond-Path Approach
 	// Grad Phi = (Phi_c_neigbor - Phi_c)/ds *norm/(norm . ts)
@@ -170,7 +169,6 @@ NavierStokes3D_Polytropic_cState  NavierStokes3D_Polytropic_pState::FluxViscous_
 	
 	// weighted factor based on volume
 	double alpha = Volume/(Volume + Volume_Neighbour);
-	
 	
 	NavierStokes3D_Polytropic_pState dWdx_Weighted, 
 		dWdy_Weighted, dWdz_Weighted, dWdx_face, 
@@ -182,18 +180,18 @@ NavierStokes3D_Polytropic_cState  NavierStokes3D_Polytropic_pState::FluxViscous_
 	dWdy_Weighted = alpha*dWdy + (1.0 - alpha)*dWdy_Neighbour;
 	dWdz_Weighted = alpha*dWdz + (1.0 - alpha)*dWdz_Neighbour;
 	
+    // Evaluate a weighted term for solution gradients  
+	Grad_middle_term = dWdx_Weighted*ts.x + dWdy_Weighted*ts.y + dWdz_Weighted*ts.z;
 	
-	// a weighted term  
-	Grad_middle_term = dWdx_Weighted*ts.x + dWdy_Weighted*ts.y +
-		dWdz_Weighted*ts.z;
-	
-	// gradients of primitive variables on the face
+    // Evaluate gradients of primitive variables on the face
 	dWdx_face = (Wc_Neighbour - Wc)/deltad *norm.x/dot(norm, ts) + (dWdx_Weighted -  Grad_middle_term*norm.x/dot(norm, ts));
 	dWdy_face = (Wc_Neighbour - Wc)/deltad *norm.y/dot(norm, ts) + (dWdy_Weighted -  Grad_middle_term*norm.y/dot(norm, ts));
 	dWdz_face = (Wc_Neighbour - Wc)/deltad *norm.z/dot(norm, ts) + (dWdz_Weighted -  Grad_middle_term*norm.z/dot(norm, ts));
 	
-	W_face = HALF*(Wl + Wr);
+    // Determine face solution state.   
+    W_face = HALF*(Wl + Wr);
 	
+    // Evaluate viscous flux
     if (fabs(norm.y) < TOLER && fabs(norm.z) < TOLER) {
         return (W_face.Fvx(dWdx_face, dWdy_face, dWdz_face)*norm.x);
         
