@@ -332,15 +332,15 @@ inline void Rte2D_Input_Parameters::SetupInputState()
   Uo.Allocate();
   
   // initialize
-  Mo.SetInitialValues(Pressure,
-		      Temperature,
-		      xco,
-		      xh2o,
-		      xco2,
-		      xo2,
-		      fsoot,
-		      AbsorptionCoef,
-		      ScatteringCoef);
+  Mo.SetInitialValues( RadiatingGas( Pressure/PRESSURE_STDATM,
+				     Temperature,
+				     xco,
+				     xh2o,
+				     xco2,
+				     xo2,
+				     fsoot ), 
+		       AbsorptionCoef,
+		       ScatteringCoef);
   Uo.SetInitialValues(Intensity);
 
   //

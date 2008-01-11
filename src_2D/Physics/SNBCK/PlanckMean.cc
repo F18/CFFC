@@ -134,11 +134,7 @@ void PlanckMean :: Setup( const char *CFFC_PATH ) // Current path
  *                                                                   *
  * Placnk mean in [m^-1]                                             *
  *********************************************************************/
-double PlanckMean :: EvalPlanckMean( const double p,        // pressure [atm]
-				     const double T,        // temperature [K]
-				     const double xco,      // mole fraction of CO
-				     const double xh2o,     // mole fraction of H2O
-				     const double xco2 )    // mole fraction of CO2
+double PlanckMean :: EvalPlanckMean( const RadiatingGas &gas )
 {
   // declares
   double kp, kkp_CO, kkp_CO2, kkp_H2O;
@@ -153,10 +149,10 @@ double PlanckMean :: EvalPlanckMean( const double p,        // pressure [atm]
   }
 
   // check to make sure T within bounds
-  if ( (T<Tmin || T>Tmax) && err_cnt<5 ) {
+  if ( (gas.T<Tmin || gas.T>Tmax) && err_cnt<5 ) {
     err_cnt++;
     cerr << "\nError in PlanckMean::EvalPlanckMean() : Temperature "
-	 << "out of bounds. Tmin=" << Tmin << " < T=" << T 
+	 << "out of bounds. Tmin=" << Tmin << " < T=" << gas.T 
 	 << " < Tmax=" << Tmax << "\n";
     if (err_cnt==5) 
       cerr << "PlanckMean::EvalPlanckMean(): Suppressing error output from now on.\n";
@@ -165,21 +161,21 @@ double PlanckMean :: EvalPlanckMean( const double p,        // pressure [atm]
 
   // interpolate using the cubic spline
 #ifdef PLANCKMEAN_USE_SPLINES
-  splint( Tn,  kp_CO,  kp2_CO, dT, Ninterp, T,  kkp_CO );
-  splint( Tn, kp_CO2, kp2_CO2, dT, Ninterp, T, kkp_CO2 );
-  splint( Tn, kp_H2O, kp2_H2O, dT, Ninterp, T, kkp_H2O );
+  splint( Tn,  kp_CO,  kp2_CO, dT, Ninterp, gas.T,  kkp_CO );
+  splint( Tn, kp_CO2, kp2_CO2, dT, Ninterp, gas.T, kkp_CO2 );
+  splint( Tn, kp_H2O, kp2_H2O, dT, Ninterp, gas.T, kkp_H2O );
 
   //Polynomial
 #else //PLANCKMEAN_USE_POLY
-  polval(  kp2_CO, Ninterp, T,  kkp_CO );
-  polval( kp2_CO2, Ninterp, T, kkp_CO2 );
-  polval( kp2_H2O, Ninterp, T, kkp_H2O );
+  polval(  kp2_CO, Ninterp, gas.T,  kkp_CO );
+  polval( kp2_CO2, Ninterp, gas.T, kkp_CO2 );
+  polval( kp2_H2O, Ninterp, gas.T, kkp_H2O );
 #endif
 
   // compute planck mean using uncorrelated approximation
   // See Ju et al. in J Fluid Mech (1999)
-  kp = kkp_CO*xco + kkp_CO2*xco2 + kkp_H2O*xh2o;
-  kp *= p;
+  kp = kkp_CO*gas.xco + kkp_CO2*gas.xco2 + kkp_H2O*gas.xh2o;
+  kp *= gas.p;
 
   // return value
   return kp;
@@ -202,32 +198,27 @@ double PlanckMean :: EvalPlanckMean( const double p,        // pressure [atm]
  *                                                                   *
  * Radiation source in [W/m^3]                                       *
  *********************************************************************/
-double PlanckMean :: RadSourceOptThin( const double p,        // pressure [atm]
-				       const double T,        // temperature [K]
-				       const double xco,      // mole fraction of CO
-				       const double xh2o,     // mole fraction of H2O
-				       const double xco2,     // mole fraction of CO2
-				       const double xsoot )   // volume fraction of soot 
+double PlanckMean :: RadSourceOptThin( const RadiatingGas &gas )
 {
 
   //
   // compute planck mean for gas band radiation
   // See Ju et al. in J Fluid Mech (1999)
   //
-  double kp = EvalPlanckMean( p, T, xco, xh2o, xco2 );
+  double kp = EvalPlanckMean( gas );
 
   //
   // Add gas band radiation.
   // See Liu, Guo, Smallwood, Gulder, J QSRT 73 (2002) pp. 409-421. 
   //
-  double Srad = kp*FOUR*STEFFAN_BOLTZMANN*pow(T,4);
+  double Srad = kp*FOUR*STEFFAN_BOLTZMANN*pow(gas.T,4);
 
   //
   // Add soot radiation.
   // See Liu, Guo, Smallwood, Gulder, J QSRT 73 (2002) pp. 409-421. 
   //
   static const double C = 3.337E-4; // [W/(m^3 K^5)]
-  Srad += C * xsoot * pow(T,5);
+  Srad += C * gas.fsoot * pow(gas.T,5);
 
   // return value
   return -Srad;

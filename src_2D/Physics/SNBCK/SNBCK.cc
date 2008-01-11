@@ -294,19 +294,21 @@ void EM2C :: Interp( const double T, double &slope, int &index) {
  * pressure.  See Liu and Smallwood (2004).                          *
  * Piecewise linear interpolants are used.                           *
  *********************************************************************/
-void EM2C :: ComputeRefSNB( const double p,       // pressure [atm]
-			    const double T,       // temperature [K]
-			    const double xCO,     // mole fraction oh CO
-			    const double xH2O,    // mole fraction oh H2O
-			    const double xCO2,    // mole fraction oh CO2
-			    const double xO2 )    // mole fraction oh O2
+void EM2C :: ComputeRefSNB( const RadiatingGas &gas )
 {
    
   // declares
   int index;
-  double slope;
-  double gamma, k, delta_inv, beta;
+  double slope, gamma, k, delta_inv, beta;
   static int err_cnt(0);
+
+  // pointers for readability
+  const double &T = gas.T;
+  const double &p = gas.p;
+  const double &xCO = gas.xco;
+  const double &xCO2 = gas.xco2;
+  const double &xH2O = gas.xh2o;
+  const double &xO2 = gas.xo2;
 
   // check if temperature is within range
   if ( (T<Tmin || T>Tmax) && err_cnt<5 ) {
@@ -323,10 +325,10 @@ void EM2C :: ComputeRefSNB( const double p,       // pressure [atm]
   Interp( T, slope, index);
 
   // some coeffients
-  double T296=296.0/T;
-  double T273=273.0/T;
-  double T900=900.0/T;
-  double xN2 = ONE-xCO-xCO2-xH2O;
+  const double T296=296.0/T;
+  const double T273=273.0/T;
+  const double T900=900.0/T;
+  const double xN2 = ONE-xCO-xCO2-xH2O;
 
   //
   // loop over the number of bands
@@ -455,16 +457,21 @@ void EM2C :: ComputeRefSNB( const double p,       // pressure [atm]
  * Compute SNB model parameters (S and B) for a specified mixture    *
  * (mole fractions of CO, CO2, H2O), temperature, and pressure.      *
  *********************************************************************/
-void EM2C :: ComputeSNB( const double p,       // pressure [atm]
-			 const double T,       // temperature [K]
-			 const double xCO,     // mole fraction oh CO
-			 const double xH2O,    // mole fraction oh H2O
-			 const double xCO2,    // mole fraction oh CO2
-			 const double xO2 ) {  // mole fraction oh O2
+void EM2C :: ComputeSNB( const RadiatingGas &gas ) {
+
+  // declares
   bool flag;
 
+  // pointers for readability
+  const double &T = gas.T;
+  const double &p = gas.p;
+  const double &xCO = gas.xco;
+  const double &xCO2 = gas.xco2;
+  const double &xH2O = gas.xh2o;
+  const double &xO2 = gas.xo2;
+
   // compute normalized parameters
-  ComputeRefSNB( p, T, xCO, xH2O, xCO2, xO2 );
+  ComputeRefSNB( gas );
 
   //
   // now multiply by species concentration and pressure
@@ -486,7 +493,7 @@ void EM2C :: ComputeSNB( const double p,       // pressure [atm]
     // optically thin approximation proposed by Liu et al. (2001) 
     // and the optically thick approximation described by Liu et al. (2001) 
     // by treating the overlapping bands to be an approximate Malkmus band.
-     S_Thin[i] = TOLER;  B_Thin[i] = TOLER;
+    S_Thin[i] = TOLER;  B_Thin[i] = TOLER;
     S_Thick[i] = TOLER; B_Thick[i] = TOLER;
     flag = false;
     if (liH2O[i] && xH2O>MICRO) {
@@ -530,15 +537,12 @@ void EM2C :: ComputeSNB( const double p,       // pressure [atm]
  * evaluate 'gamma' at one reference state and then compute the SNB  *
  * model parameters B and S at another state '0'.                    *
  *********************************************************************/
-void EM2C :: MultiplySNB( const double p_0,         // pressure [atm]
-			  const double xCO_0,       // mole fraction of CO
-			  const double xH2O_0,      // mole fraction of H2O
-			  const double xCO2_0 )     // mole fraction of CO2
+void EM2C :: MultiplySNB( const RadiatingGas &gas_0 )
 {
   for (int i=0; i<Nbands; i++) {
-    S_CO[i]  *=  xCO_0*p_0;
-    S_CO2[i] *= xCO2_0*p_0;
-    S_H2O[i] *= xH2O_0*p_0;
+    S_CO[i]  *=  gas_0.xco * gas_0.p;
+    S_CO2[i] *= gas_0.xco2 * gas_0.p;
+    S_H2O[i] *= gas_0.xh2o * gas_0.p;
   } // end for 
 }
 
@@ -902,8 +906,7 @@ void SNBCK :: Setup( const SNBCK_Input_Parameters &IP,  // input parameters
 
   // we are precalculating the absorbsion coefficient
   if (IP.EvaluationType == SNBCK_EVAL_PRECALC)
-    PreCalculateAbsorb( IP.p_ref, IP.xco_ref, IP.xh2o_ref, 
-			IP.xco2_ref, IP.xo2_ref, IP.IntPoints);
+    PreCalculateAbsorb( IP.gas_ref, IP.IntPoints);
 
   // setup the index
   AllocateIndex();  
@@ -1108,20 +1111,14 @@ void SNBCK :: SetupBands( const int Nlump,      // number of narrow bands lumped
 //
 // Pass with 1D array version
 //
-void SNBCK :: CalculateAbsorb( const double p,        // pressure [atm]
-			       const double T,        // temperature [K]
-			       const double xco,      // mole fraction oh CO
-			       const double xh2o,     // mole fraction oh H2O
-			       const double xco2,     // mole fraction oh CO2
-			       const double xo2,      // mole fraction of O2
-			       const double xsoot,    // volume fraction of soot  
-			       double *ka )            // absorbsion coefficient array [m^-1]
+void SNBCK :: CalculateAbsorb( const RadiatingGas &gas, // 
+			       double *ka )             // absorbsion coefficient array [m^-1]
 {
 
   //------------------------------------------------
   // compute absorbsion coefficient in [cm^-1]
   //------------------------------------------------
-  CalculateAbsorb( p, T, xco, xh2o, xco2, xo2, xsoot );
+  CalculateAbsorb( gas );
 
 
   //------------------------------------------------
@@ -1137,13 +1134,7 @@ void SNBCK :: CalculateAbsorb( const double p,        // pressure [atm]
 //
 // Use internal storage version
 //
-void SNBCK :: CalculateAbsorb( const double p,        // pressure [atm]
-			       const double T,        // temperature [K]
-			       const double xco,      // mole fraction oh CO
-			       const double xh2o,     // mole fraction oh H2O
-			       const double xco2,     // mole fraction oh CO2
-			       const double xo2,      // mole fraction of O2
-			       const double xsoot )   // volume fraction of soot  
+void SNBCK :: CalculateAbsorb( const RadiatingGas &gas )
 {
   
   //------------------------------------------------
@@ -1153,12 +1144,12 @@ void SNBCK :: CalculateAbsorb( const double p,        // pressure [atm]
 
     // if we are doing online inversion
   case SNBCK_EVAL_ONLINE:
-    CalculateAbsorb_Direct( p, T, xco, xh2o, xco2, xo2, xsoot ); 
+    CalculateAbsorb_Direct( gas ); 
     break;
 
     // if we are precalculating the absorbsion coefficient
   case SNBCK_EVAL_PRECALC:
-    CalculateAbsorb_Interp( p, T, xco, xh2o, xco2, xo2, xsoot ); 
+    CalculateAbsorb_Interp( gas ); 
     break;
 
   default:
@@ -1186,20 +1177,23 @@ void SNBCK :: CalculateAbsorb( const double p,        // pressure [atm]
  *         press  - atm                                              *
  *         temp   - K                                                *
  *********************************************************************/
-void SNBCK :: CalculateAbsorb_Direct( const double p,        // pressure [atm]
-				      const double T,        // temperature [K]
-				      const double xco,      // mole fraction oh CO
-				      const double xh2o,     // mole fraction oh H2O
-				      const double xco2,     // mole fraction oh CO2
-				      const double xo2,      // mole fraction of O2
-				      const double xsoot )   // volume fraction of soot  
+void SNBCK :: CalculateAbsorb_Direct( const RadiatingGas &gas )
 {
 
   // declares
   int cnt;
 
+  // pointers for readability
+  const double &T = gas.T;
+  const double &p = gas.p;
+  const double &xco = gas.xco;
+  const double &xco2 = gas.xco2;
+  const double &xh2o = gas.xh2o;
+  const double &xsoot = gas.fsoot;
+
+
   // get SNB model parameters for gas mixture (units: cm, atm, K)
-  SNB.ComputeSNB( p, T, xco, xh2o, xco2, xo2 );
+  SNB.ComputeSNB( gas );
 
  
   //
@@ -1438,12 +1432,8 @@ void SNBCK :: CalculateAbsorb_Direct( const double p,        // pressure [atm]
  *         press  - atm                                              *
  *         temp   - K                                                *
  *********************************************************************/
-void SNBCK :: PreCalculateAbsorb( const double p_ref,    // pressure [atm]
-				  const double xco_ref,  // mole fraction oh CO
-				  const double xh2o_ref, // mole fraction oh H2O
-				  const double xco2_ref, // mole fraction oh CO2
-				  const double xo2_ref,  // mole fraction of O2
-				  const int Nint )       // number of interpolation points 
+void SNBCK :: PreCalculateAbsorb( const RadiatingGas &gas_ref,  // ref gas state
+				  const int Nint )              // number of interpolation points 
 {
   //------------------------------------------------
   // Declares
@@ -1452,7 +1442,11 @@ void SNBCK :: PreCalculateAbsorb( const double p_ref,    // pressure [atm]
   // and renormalize to get pressure/concentration independant
   // absorbsion coefficient.  This is performed based on
   // private communication with Dr. Fengshan Liu.
-  double x0_H2O(1.0), x0_CO2(0.2), x0_CO(0.5), p0(1.0);
+  RadiatingGas gas_0;
+  gas_0.xh2o = 1.0; gas_0.xco2 = 0.2; gas_0.xco = 0.5; gas_0.p = 1.0;
+
+  // our gas object
+  RadiatingGas gas( gas_ref );
 
   //------------------------------------------------
   // Initialize
@@ -1478,14 +1472,15 @@ void SNBCK :: PreCalculateAbsorb( const double p_ref,    // pressure [atm]
 
     // compute temperautre
     Tn[n] = Tmin + double(n)*dT;
+    gas.T = Tn[n];
 
     // get SNB model parameters for gas mixture (units: cm, atm, K)
     // and normalize by the reference state
-    SNB.ComputeRefSNB( p_ref, Tn[n], xco_ref, xh2o_ref, xco2_ref, xo2_ref );
+    SNB.ComputeRefSNB( gas );
 
     // Compute S @ X0 and P0. The result will be renormalized so that
     // k_xxx = k/(X_xxx * p)
-    SNB.MultiplySNB(p0, x0_CO, x0_H2O, x0_CO2);
+    SNB.MultiplySNB(gas_0);
       
     //
     // loop over each wide band, inverting the 
@@ -1499,15 +1494,15 @@ void SNBCK :: PreCalculateAbsorb( const double p_ref,    // pressure [atm]
 	if (iH2O[v])
 	  k_H2O[v][i][n] += 
 	    AbsorptionCoeffSNBCK( g[i], SNB.B_H2O, SNB.S_H2O, 
-				  istart[v], iend[v] ) / ( x0_H2O * p0 );
+				  istart[v], iend[v] ) / ( gas_0.xh2o * gas_0.p );
 	if (iCO2[v])
 	  k_CO2[v][i][n] += 
 	    AbsorptionCoeffSNBCK( g[i], SNB.B_CO2, SNB.S_CO2, 
-				  istart[v], iend[v] ) / ( x0_CO2 * p0 );
+				  istart[v], iend[v] ) / ( gas_0.xco2 * gas_0.p );
 	if (iCO[v])
 	  k_CO[v][i][n] += 
 	    AbsorptionCoeffSNBCK( g[i],  SNB.B_CO,  SNB.S_CO,  
-				  istart[v], iend[v] ) / ( x0_CO * p0 );
+				  istart[v], iend[v] ) / ( gas_0.xco * gas_0.p );
       }  // endfor - bands, quad points
 
 
@@ -1559,18 +1554,20 @@ void SNBCK :: PreCalculateAbsorb( const double p_ref,    // pressure [atm]
  *         press  - atm                                              *
  *         temp   - K                                                *
  *********************************************************************/
-void SNBCK :: CalculateAbsorb_Interp( const double p,        // pressure [atm]
-				      const double T,        // temperature [K]
-				      const double xco,      // mole fraction oh CO
-				      const double xh2o,     // mole fraction oh H2O
-				      const double xco2,     // mole fraction oh CO2
-				      const double xo2,      // mole fraction of O2
-				      const double xsoot )   // volume fraction of soot  
+void SNBCK :: CalculateAbsorb_Interp( const RadiatingGas &gas )
 {
 
   // declares
   double kk_CO, kk_CO2, kk_H2O;
   static int err_cnt(0);
+
+  // pointers for readability
+  const double &T = gas.T;
+  const double &p = gas.p;
+  const double &xco = gas.xco;
+  const double &xco2 = gas.xco2;
+  const double &xh2o = gas.xh2o;
+  const double &xsoot = gas.fsoot;
 
   // check to make sure everything allocated
   if (k_CO == NULL) {
@@ -1670,26 +1667,21 @@ void SNBCK :: CalculatePlanck( const double T, double* Ib ) {
  *                                                                   *
  * Radiation source in [W/m^3]                                       *
  *********************************************************************/
-double SNBCK :: RadSourceOptThin( const double p,        // pressure [atm]
-				  const double T,        // temperature [K]
-				  const double xco,      // mole fraction oh CO
-				  const double xh2o,     // mole fraction oh H2O
-				  const double xco2,     // mole fraction oh CO2
-				  const double xo2,      // mole fraction oh O2
-				  const double xsoot )   // volume fraction oh soot 
+double SNBCK :: RadSourceOptThin( const RadiatingGas &gas )
 {
   // declates
   double Srad(0.0);
-  
+
   // compute the absorbsion coeffcient
-  CalculateAbsorb( p, T, xco, xh2o, xco2, xo2, /*xsoot*/0.0 );
+  RadiatingGas gas_nosoot( gas ); gas_nosoot.fsoot = 0.0;
+  CalculateAbsorb( gas_nosoot );
   
   //
   // compute gas band contribution by integrating over the wavenumber spectrum
   //
   for (int v=0; v<Nbands; v++)
     for (int i=0; i<nquad[v]; i++)
-      Srad += (k[v][i]/CM_TO_M) * BlackBody(T, WaveNo[v]) * BandWidth[v] * Weight(v,i);
+      Srad += (k[v][i]/CM_TO_M) * BlackBody(gas.T, WaveNo[v]) * BandWidth[v] * Weight(v,i);
   Srad *= FOUR*PI;
 
   //
@@ -1697,7 +1689,7 @@ double SNBCK :: RadSourceOptThin( const double p,        // pressure [atm]
   // See Liu, Guo, Smallwood, Gulder, J QSRT 73 (2002) pp. 409-421. 
   //
   static const double C = 3.337E-4; // [W/(m^3 K^5)]
-  Srad += C * xsoot * pow(T,5);
+  Srad += C * gas.fsoot * pow(gas.T,5);
 
   // return the value
   return -Srad;
@@ -1718,25 +1710,19 @@ double SNBCK :: RadSourceOptThin( const double p,        // pressure [atm]
  *                                                                   *
  * Placnk mean in [m^-1]                                             *
  *********************************************************************/
-double SNBCK :: PlanckMean( const double p,        // pressure [atm]
-			    const double T,        // temperature [K]
-			    const double xco,      // mole fraction of CO
-			    const double xh2o,     // mole fraction of H2O
-			    const double xco2,     // mole fraction of CO2
-			    const double xo2,      // mole fraction of O2
-			    const double xsoot )   // volume fraction of soot 
+double SNBCK :: PlanckMean( const RadiatingGas &gas )
 {
 
   // check to make sure T not negative
-  if (T<=ZERO) {
+  if (gas.T<=ZERO) {
     cerr << "\nError in SNBCK::PlanckMean() : Negative or zero temperature"
-	 << " of T=" << T << " detected.\n";
+	 << " of T=" << gas.T << " detected.\n";
     exit(-1);
   } // endif - check
 
 
   // compute the absorbsion coeffcient
-  CalculateAbsorb( p, T, xco, xh2o, xco2, xo2, xsoot );
+  CalculateAbsorb( gas );
   
   //
   // compute gas band contribution by integrating over the wavenumber spectrum
@@ -1744,9 +1730,9 @@ double SNBCK :: PlanckMean( const double p,        // pressure [atm]
   double kp(ZERO);
   for (int v=0; v<Nbands; v++)
     for (int i=0; i<nquad[v]; i++)
-      kp += k[v][i] * BlackBody(T, WaveNo[v]) * BandWidth[v] * Weight(v,i);
+      kp += k[v][i] * BlackBody(gas.T, WaveNo[v]) * BandWidth[v] * Weight(v,i);
   kp *= PI;
-  kp /= STEFFAN_BOLTZMANN*pow(T,4);
+  kp /= STEFFAN_BOLTZMANN*pow(gas.T,4);
 
   //
   // return the value in [m^-1]
@@ -1782,21 +1768,7 @@ void SNBCK_Input_Parameters :: Broadcast_Input_Parameters() {
   MPI::COMM_WORLD.Bcast(&(OptimizedLumping), 
 			1, 
 			MPI::INT, 0);
-  MPI::COMM_WORLD.Bcast(&(p_ref), 
-			1, 
-			MPI::DOUBLE, 0);
-  MPI::COMM_WORLD.Bcast(&(xco_ref), 
-			1, 
-			MPI::DOUBLE, 0);
-  MPI::COMM_WORLD.Bcast(&(xh2o_ref), 
-			1, 
-			MPI::DOUBLE, 0);
-  MPI::COMM_WORLD.Bcast(&(xco2_ref), 
-			1, 
-			MPI::DOUBLE, 0);
-  MPI::COMM_WORLD.Bcast(&(xo2_ref), 
-			1, 
-			MPI::DOUBLE, 0);
+  gas_ref.Broadcast();
 #endif
 }
 
@@ -1827,21 +1799,7 @@ void SNBCK_Input_Parameters :: Broadcast_Input_Parameters(MPI::Intracomm &Commun
   Communicator.Bcast(&(OptimizedLumping), 
 		     1, 
 		     MPI::INT, Source_Rank);
-  Communicator.Bcast(&(p_ref), 
-		     1, 
-		     MPI::DOUBLE, Source_Rank);
-  Communicator.Bcast(&(xco_ref), 
-		     1, 
-		     MPI::DOUBLE, Source_Rank);
-  Communicator.Bcast(&(xh2o_ref), 
-		     1, 
-		     MPI::DOUBLE, Source_Rank);
-  Communicator.Bcast(&(xco2_ref), 
-		     1, 
-		     MPI::DOUBLE, Source_Rank);
-  Communicator.Bcast(&(xo2_ref), 
-		     1, 
-		     MPI::DOUBLE, Source_Rank);
+  gas_ref.Broadcast( Communicator, Source_Rank );
 }
 #endif
 
@@ -1918,27 +1876,27 @@ Parse_Next_Input_Control_Parameter(char *code, char *value)
 
   } else if (strcmp(code, "p_ref") == 0) {
     i_command = 8007;
-    p_ref = strtod(value, &ptr);
+    gas_ref.p = strtod(value, &ptr);
     if (*ptr != '\0') { i_command = INVALID_INPUT_VALUE; }
 
   } else if (strcmp(code, "xco_ref") == 0) {
     i_command = 8008;
-    xco_ref = strtod(value, &ptr);
+    gas_ref.xco = strtod(value, &ptr);
     if (*ptr != '\0') { i_command = INVALID_INPUT_VALUE; }
 
   } else if (strcmp(code, "xh2o_ref") == 0) {
     i_command = 8009;
-    xh2o_ref = strtod(value, &ptr);
+    gas_ref.xh2o = strtod(value, &ptr);
     if (*ptr != '\0') { i_command = INVALID_INPUT_VALUE; }
 
   } else if (strcmp(code, "xco2_ref") == 0) {
     i_command = 8010;
-    xco2_ref = strtod(value, &ptr);
+    gas_ref.xco2 = strtod(value, &ptr);
     if (*ptr != '\0') { i_command = INVALID_INPUT_VALUE; }
 
   } else if (strcmp(code, "xo2_ref") == 0) {
     i_command = 8011;
-    xo2_ref = strtod(value, &ptr);
+    gas_ref.xo2 = strtod(value, &ptr);
     if (*ptr != '\0') { i_command = INVALID_INPUT_VALUE; }
 
   } else {
@@ -1994,11 +1952,11 @@ void SNBCK_Input_Parameters::Output(ostream& out) const{
 
   if (EvaluationType == SNBCK_EVAL_PRECALC) {     
     out <<" No. Interpolation Pts   ====> " << IntPoints << endl;
-    out <<" Reference P [atm]       ====> " << p_ref << endl;
-    out <<" Reference xCO           ====> " << xco_ref << endl;
-    out <<" Reference xH2O          ====> " << xh2o_ref << endl;
-    out <<" Reference xCO2          ====> " << xco2_ref << endl;
-    out <<" Reference xO2           ====> " << xo2_ref << endl;
+    out <<" Reference P [atm]       ====> " << gas_ref.p << endl;
+    out <<" Reference xCO           ====> " << gas_ref.xco << endl;
+    out <<" Reference xH2O          ====> " << gas_ref.xh2o << endl;
+    out <<" Reference xCO2          ====> " << gas_ref.xco2 << endl;
+    out <<" Reference xO2           ====> " << gas_ref.xo2 << endl;
   }
  
   

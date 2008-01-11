@@ -96,6 +96,7 @@ using namespace std;
 #include "../../CFD/CFD.h"
 #include "../../MPI/MPI.h"
 #include "../Planck.h"
+#include "RadiatingGas.h"
 
 
 // Use cubic splines or polynomial interpolants
@@ -263,24 +264,11 @@ class EM2C{
   void LoadParams(const char *PATH);
 
   // compute SNB parameters
-  void ComputeRefSNB( const double p,      // pressure [atm]
-		      const double T,      // temperature [K]
-		      const double xCO,    // mole fraction oh CO
-		      const double xH2O,   // mole fraction oh H2O
-		      const double xCO2,   // mole fraction oh CO2
-		      const double xO2 );  // mole fraction oh O2
-  void ComputeSNB( const double p,      // pressure [atm]
-		   const double T,      // temperature [K]
-		   const double xCO,    // mole fraction oh CO
-		   const double xH2O,   // mole fraction oh H2O
-		   const double xCO2,   // mole fraction oh CO2
-		   const double xO2 );  // mole fraction oh O2
+  void ComputeRefSNB( const RadiatingGas &gas );
+  void ComputeSNB( const RadiatingGas &gas );
 
   // multiply S by arbitrary state
-  void MultiplySNB( const double p_0,         // pressure [atm]
-		    const double xCO_0,       // mole fraction of CO
-		    const double xH2O_0,      // mole fraction of H2O
-		    const double xCO2_0 );    // mole fraction of CO2
+  void MultiplySNB( const RadiatingGas &gas_0 );
 
   // compute planck mean absorbsion coefficient
   void PlanckMean( const double T,   // temperature [K]
@@ -458,21 +446,9 @@ public:
 
 
   // compute SNB model parameters
-  void CalculateAbsorb( const double p,        // pressure [atm]
-			const double T,        // temperature [K]
-			const double xco,      // mole fraction oh CO
-			const double xh2o,     // mole fraction oh H2O
-			const double xco2,     // mole fraction oh CO2
-			const double o2,       // mole fraction oh O2
-			const double xsoot );  // volume fraction oh soot 
-  void CalculateAbsorb( const double p,        // pressure [atm]
-			const double T,        // temperature [K]
-			const double xco,      // mole fraction oh CO
-			const double xh2o,     // mole fraction oh H2O
-			const double xco2,     // mole fraction oh CO2
-			const double o2,       // mole fraction oh O2
-			const double xsoot,    // volume fraction oh soot 
-			double *ka );          // absorbsion coefficient array  [m^-1]
+  void CalculateAbsorb( const RadiatingGas &gas );
+  void CalculateAbsorb( const RadiatingGas &gas,  // relevant gas properties 
+			double *ka );             // absorbsion coefficient array  [m^-1]
 			          
   // return band averaged property
   double BandAverage( const double *phi, const int v );
@@ -484,22 +460,10 @@ public:
   void CalculatePlanck( const double T, double* Ib );
 
   // calculate the radiation source based on the optically thin approximation
-  double RadSourceOptThin( const double p,        // pressure [atm]
-			   const double T,        // temperature [K]
-			   const double xco,      // mole fraction oh CO
-			   const double xh2o,     // mole fraction oh H2O
-			   const double xco2,     // mole fraction oh CO2
-			   const double o2,       // mole fraction oh O2
-			   const double xsoot );  // volume fraction oh soot 
+  double RadSourceOptThin( const RadiatingGas &gas );
 
   // calculate the planck mean absorbsion coefficient based on the optically thin approximation
-  double PlanckMean( const double p,        // pressure [atm]
-		     const double T,        // temperature [K]
-		     const double xco,      // mole fraction oh CO
-		     const double xh2o,     // mole fraction oh H2O
-		     const double xco2,     // mole fraction oh CO2
-		     const double o2,       // mole fraction oh O2
-		     const double xsoot );  // volume fraction oh soot 
+  double PlanckMean( const RadiatingGas &gas );
 
 private:
 
@@ -513,30 +477,14 @@ private:
 
 
   // precalculate SNB model parameters at the rerference state - precalculated case
-  void PreCalculateAbsorb( const double p_ref,    // pressure [atm]
-			   const double xco_ref,  // mole fraction oh CO
-			   const double xh2o_ref, // mole fraction oh H2O
-			   const double xco2_ref, // mole fraction oh CO2
-			   const double xo2_ref,  // mole fraction of O2
+  void PreCalculateAbsorb( const RadiatingGas &gas_ref,
 			   const int Nint );      // number of interpolation points
 
   // compute absorbsion coeffient - online iversion
-  void CalculateAbsorb_Direct( const double p,        // pressure [atm]
-			       const double T,        // temperature [K]
-			       const double xco,      // mole fraction oh CO
-			       const double xh2o,     // mole fraction oh H2O
-			       const double xco2,     // mole fraction oh CO2
-			       const double xo2,      // mole fraction oh O2
-			       const double fsoot );  // volume fraction oh soot 
+  void CalculateAbsorb_Direct( const RadiatingGas &gas );
 
   // compute absorbsion coeffient - precalculated interpolation
-  void CalculateAbsorb_Interp( const double p,        // pressure [atm]
-			       const double T,        // temperature [K]
-			       const double xco,      // mole fraction oh CO
-			       const double xh2o,     // mole fraction oh H2O
-			       const double xco2,     // mole fraction oh CO2
-			       const double xo2,      // mole fraction oh O2
-			       const double fsoot );  // volume fraction oh soot 
+  void CalculateAbsorb_Interp( const RadiatingGas &gas );
 
   // allocate and deallocate the arrays
   void AllocateQuad();
@@ -584,12 +532,8 @@ class SNBCK_Input_Parameters{
   int OverlapModel;
   
   // Precalculated absorbsion coefficients parameters
-  int IntPoints;   // number of temperature interpolation points (0 for default)
-  double p_ref;    // Reference pressure [atm]
-  double xco_ref;  // Reference mole fraction CO
-  double xh2o_ref; // Reference mole fraction H2O
-  double xco2_ref; // Reference mole fraction CO2
-  double xo2_ref;  // Reference mole fraction O2
+  int IntPoints;        // number of temperature interpolation points (0 for default)
+  RadiatingGas gas_ref; // Reference gas state
 
   //* Default Constructor */
   SNBCK_Input_Parameters() {
@@ -602,11 +546,11 @@ class SNBCK_Input_Parameters{
     IntPoints        = 0; // use points correspoding to EM2C database (14 points)
 
     // ref state proposed by Liu and Smallwood (2004).
-    p_ref            = 1.0; //[atm]
-    xco_ref          = 0.0;
-    xh2o_ref         = 0.2;
-    xco2_ref         = 0.1;
-    xo2_ref          = 0.0;
+    gas_ref.p            = 1.0; //[atm]
+    gas_ref.xco          = 0.0;
+    gas_ref.xh2o         = 0.2;
+    gas_ref.xco2         = 0.1;
+    gas_ref.xo2          = 0.0;
   };
 
   // output parameters

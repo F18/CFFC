@@ -16,6 +16,7 @@
  ********************************************************/
 #include "Flame2DQuad.h"
 #include "../Rte2D/Rte2DQuadSolvers.h"
+#include "../Physics/SNBCK/RadiatingGas.h"
 
 /****************************************************************/
 /****** RTE REQUIRED SPECIALIZATIONS & FUNCTIONS ****************/
@@ -65,7 +66,7 @@ inline void Rte2DSolver::Copy_SRC_Solution_Vars(Flame2D_Quad_Block *Flame2D_Soln
 	      j++ ) {
 
 	  // first, get radiating species concentrations
-	  Flame2D_SolnBlk[n].W[i][j].getRadGasQuatities( x );
+	  Flame2D_SolnBlk[n].W[i][j].RadGas_Quantities( x );
 
 	  // compute the new state
  	  Rte2D_SolnBlk[n].M[i][j].SetState( x );

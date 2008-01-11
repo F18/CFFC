@@ -39,6 +39,7 @@ using namespace std;
 #include "../Math/Vector2D.h"
 #include "../CFD/CFD.h"
 #include "../Physics/SNBCK/SNBCK.h"
+#include "../Physics/SNBCK/RadiatingGas.h"
 #include "Scatter.h"
 #include "Vector2D_Function.h"
 
@@ -145,13 +146,7 @@ class Medium2D_State {
   void Zero();  
 
   //! Initialer
-  void SetInitialValues( const double &Pressure,
-			 const double &Temperature,
-			 const double &xco,
-			 const double &xh2o,
-			 const double &xco2,
-			 const double &xo2,
-			 const double &fsoot,
+  void SetInitialValues( const RadiatingGas &gas,
 			 const double &AbsorptionCoef,
 			 const double &ScatteringCoef);
   //@}
@@ -178,13 +173,7 @@ class Medium2D_State {
   static Medium2D_State GetState(const Vector2D &r);
 
   //! Compute a new state dependant upon gas state
-  void ComputeNewState( const double &Pressure,
-			const double &Temperature,
-			const double &xco,
-			const double &xh2o,
-			const double &xco2,
-			const double &xo2,
-			const double &fsoot );
+  void SetState( const RadiatingGas &gas );
   //@}
 
 

@@ -42,6 +42,7 @@ using namespace std;
 #include "../../Math/SplineFit.h"
 #include "../Planck.h"
 #include "SNBCK.h"
+#include "RadiatingGas.h"
 
 // Use cubic splines or polynomial interpolants
 #define PLANCKMEAN_USE_SPLINES
@@ -174,20 +175,11 @@ public:
   ~PlanckMean() {  Deallocate(); }
 
   // calculate the planck mean absorbsion coefficient [m^-1]
-  double EvalPlanckMean( const double p,        // pressure [atm]
-			 const double T,        // temperature [K]
-			 const double xco,      // mole fraction of CO
-			 const double xh2o,     // mole fraction of H2O
-			 const double xco2 );   // mole fraction of CO2
+  double EvalPlanckMean( const RadiatingGas &gas );
   
   // calculate the volumetric radiation source based on the 
   // optically thin approximation in W/m^3
-  double RadSourceOptThin( const double p,        // pressure [atm]
-			   const double T,        // temperature [K]
-			   const double xco,      // mole fraction of CO
-			   const double xh2o,     // mole fraction of H2O
-			   const double xco2,     // mole fraction of CO2
-			   const double xsoot );  // volume fraction of soot 
+  double RadSourceOptThin( const RadiatingGas &gas );
     
 
 private:

@@ -32,13 +32,7 @@ Vector2D_Function<Medium2D_State>* Medium2D_State :: Field = NULL;   // functor 
 /********************************************************
  * Compute values and initialize state.                 *
  ********************************************************/
-void Medium2D_State :: SetInitialValues( const double &Pressure,
-					 const double &Temperature,
-					 const double &xco,
-					 const double &xh2o,
-					 const double &xco2,
-					 const double &xo2,
-					 const double &fsoot,
+void Medium2D_State :: SetInitialValues( const RadiatingGas &gas,
 					 const double &AbsorptionCoef,
 					 const double &ScatteringCoef)
 {
@@ -48,21 +42,14 @@ void Medium2D_State :: SetInitialValues( const double &Pressure,
   //------------------------------------------------
   // Use SNBCK
   if (Absorb_Type == MEDIUM2D_ABSORB_SNBCK) {
-    SNBCKdata->CalculateAbsorb( Pressure/PRESSURE_STDATM, //[atm]
-				Temperature,              //[K]
-				xco,
-				xh2o,
-				xco2,
-				xo2,
-				fsoot,
-				kappa );
-    SNBCKdata->CalculatePlanck( Temperature, Ib );
+    SNBCKdata->CalculateAbsorb( gas, kappa );
+    SNBCKdata->CalculatePlanck( gas.T, Ib );
 
   // Use Gray Gas (ie. constant)
   } else if (Absorb_Type == MEDIUM2D_ABSORB_GRAY) {
     for (int v=0; v<Nband; v++) {
       kappa[v] = AbsorptionCoef;
-      Ib   [v] = BlackBody(Temperature);
+      Ib   [v] = BlackBody(gas.T);
     } // endfor
 
   // error
@@ -181,13 +168,7 @@ void Medium2D_State :: SetDiscontinuousField( const Medium2D_State &inner,
  * Compute NEW values for the medium state dependent on *
  * relevant paremters.                                  *
  ********************************************************/
-void Medium2D_State :: ComputeNewState( const double &Pressure,
-					const double &Temperature,
-					const double &xco,
-					const double &xh2o,
-					const double &xco2,
-					const double &xo2,
-					const double &fsoot )
+void Medium2D_State :: SetState( const RadiatingGas &gas )
 {
 
   //------------------------------------------------
@@ -195,21 +176,14 @@ void Medium2D_State :: ComputeNewState( const double &Pressure,
   //------------------------------------------------
   // Use SNBCK
   if (Absorb_Type == MEDIUM2D_ABSORB_SNBCK) {
-    SNBCKdata->CalculateAbsorb( Pressure/PRESSURE_STDATM, //[atm]
-				Temperature,              //[K]
-				xco,
-				xh2o,
-				xco2,
-				xo2,
-				fsoot,
-				kappa );
-    SNBCKdata->CalculatePlanck( Temperature, Ib );
+    SNBCKdata->CalculateAbsorb( gas, kappa );
+    SNBCKdata->CalculatePlanck( gas.T, Ib );
 
   // Use Gray Gas (ie. constant)
   } else if (Absorb_Type == MEDIUM2D_ABSORB_GRAY) {
     for (int v=0; v<Nband; v++) {
       //kappa[v] = AbsorptionCoef; // <-- it is a treated as a specified constant
-      Ib[v] = BlackBody(Temperature);
+      Ib[v] = BlackBody(gas.T);
     } // endfor
 
   // error

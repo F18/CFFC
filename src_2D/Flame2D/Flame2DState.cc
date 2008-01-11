@@ -1423,23 +1423,9 @@ void Flame2D_pState::dSgdU(DenseMatrix &dSgdU) const {
  ****************************************************/
 double Flame2D_pState::Srad(void) const {
   if (radiating) {
-
-    // declares
-    double xCO(0.0), xH2O(0.0), xCO2(0.0);
-    static const double fsoot = ZERO;  // no soot for now
-    
-    // Compute the molar fractions, if the species exist
-    if (kCO  > -1) xCO  = moleFrac(kCO);
-    if (kH2O > -1) xH2O = moleFrac(kH2O);
-    if (kCO2 > -1) xCO2 = moleFrac(kCO2);
-    
-    // evaluate
-    return rad->RadSourceOptThin( p()/PRESSURE_STDATM, //[atm]
-				  T(),                 //[K]
-				  xCO,
-				  xH2O,
-				  xCO2,
-				  fsoot );
+    static RadiatingGas gas;
+    RadGas_Quantities(gas);
+    return rad->RadSourceOptThin( gas );
   }
 }
 

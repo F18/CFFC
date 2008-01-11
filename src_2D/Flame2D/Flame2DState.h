@@ -29,6 +29,7 @@ using namespace std;
 #include "Mixture.h"
 #include "Soot2DState.h"
 #include "../Physics/SNBCK/PlanckMean.h"
+#include "../Physics/SNBCK/RadiatingGas.h"
 
 
 /////////////////////////////////////////////////////////////////////
@@ -656,6 +657,8 @@ public:
   Vector2D DiffusionVel( const double &dcdx,
 			 const double &dcdy,
 			 const int &k ) const;
+
+  void RadGas_Quantities(RadiatingGas &gas) const;
 
   /*********************** Helper Functions *************************/
   void Reconstruct( const Flame2D_pState &Wc, 
@@ -1399,6 +1402,30 @@ inline Vector2D Flame2D_pState::DiffusionVel( const double &dcdx,
   return Vk;
 }
 
+
+/******************************************************
+ * Compute the necessary quantities for the description
+ * or a radiating gas.
+ ******************************************************/
+inline void Flame2D_pState::RadGas_Quantities(RadiatingGas &gas) const {
+
+  // Compute the molar fractions, if the species exist
+  if (kCO  > -1) gas.xco  = moleFrac(kCO);
+  else gas.xco = 0.0;
+  if (kH2O > -1) gas.xh2o = moleFrac(kH2O);
+  else gas.xh2o = 0.0;
+  if (kCO2 > -1) gas.xco2 = moleFrac(kCO2);
+  else gas.xco2 = 0.0;
+  if (kO2 > -1) gas.xo2 = moleFrac(kO2);
+  else gas.xo2 = 0.0;
+
+  // no soot for now
+  gas.fsoot = 0.0;
+
+  // the pressure in [atm] and temperature [K]
+  gas.p = p()/PRESSURE_STDATM;
+  gas.T = T();
+}
 
 
 /////////////////////////////////////////////////////////////////////
