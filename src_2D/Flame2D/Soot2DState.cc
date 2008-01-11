@@ -18,6 +18,13 @@
 ///
 /////////////////////////////////////////////////////////////////////
 #include "Soot2DState.h"
+#include "Flame2DState.h"
+
+/**
+ * Initialization of static variables.
+ */
+const int Soot2D_State :: iN;
+const int Soot2D_State :: iY;
 
 /////////////////////////////////////////////////////////////////////
 /// Member Functions
@@ -32,11 +39,12 @@
  *
  * \return Mean diameter in [m].
  ********************************************************************/
-double Soot2D_State :: meanDiameter( const double*sc ) const
+double Soot2D_State :: meanDiameter( const Flame2D_pState &W ) const
 {
+
   // soot properties
-  double Y(sc[0]);  // mass fraction
-  double N(sc[1]);  // number density (particles / kg)
+  const double &N = W.sc(iN);  // number density (particles / kg)
+  const double &Y = W.sc(iY);  // mass fraction
 
   // diameter
   if (Y<TOLER && N<TOLER) return 0.0;
@@ -66,12 +74,8 @@ double Soot2D_State :: meanDiameter( const double*sc ) const
  *
  * \return Return error flag, 0 for success, !=0 for error.
  ********************************************************************/
-int Soot2D_State :: getRates( const double T, 
-			      const double rho_gas,
-			      const double* y_gas,
-			      const double*sc,
-			      double* ydot_gas,
-			      double* ydot_soot,
+int Soot2D_State :: getRates( const Flame2D_pState &W,
+			      Flame2D_State &dUdt,
 			      const double &mult ) const
 {
   //------------------------------------------------
@@ -80,21 +84,24 @@ int Soot2D_State :: getRates( const double T,
   // Check for necessary species. If one does not exist, error.
   // if ( iO2<0 || iC2H2<0 || iH2<0 || iCO<0 ) return -1;
 
+  // temperature [K]
+  const double &T = W.T();
+
   // soot properties
-  const double& Y = sc[0];  // mass fraction
-  const double& N = sc[1];  // number density (particles / kg)
+  const double &N = W.sc(iN);  // number density (particles / kg)
+  const double &Y = W.sc(iY);  // mass fraction
 
   // approximate mixture density with gas phase density
-  const double& rho_mix = rho_gas; // [kg/m^3]
+  const double& rho_mix = W.rho(); // [kg/m^3]
 
   // all gasesous rates are corrected for gas mixture without soot
-  // const double fact = 1.0 / (1.0-Y);
+  const double fact = 1.0 / (1.0-Y);
 
   // Compute relevant concentrations (note we must correct gas phase 
   // concentrations to include soot mass fraction)
-  double X_C2H2 = y_gas[iC2H2]*(1.0-Y) * rho_mix / MW_gas[iC2H2];// [kmol/m^3]
-  double X_O2   = y_gas[iO2]  *(1.0-Y) * rho_mix / MW_gas[iO2];  // [kmol/m^3]
-  double X_SOOT = Y                    * rho_mix / MW;           // [kmol/m^3]
+  double X_C2H2 = W.c(iC2H2)*(1.0-Y) * rho_mix / MW_gas[iC2H2];// [kmol/m^3]
+  double X_O2   = W.c(iO2)  *(1.0-Y) * rho_mix / MW_gas[iO2];  // [kmol/m^3]
+  double X_SOOT = Y                  * rho_mix / MW;           // [kmol/m^3]
  
   //------------------------------------------------
   // Nucleation rate
@@ -105,11 +112,11 @@ int Soot2D_State :: getRates( const double T,
   // rate [kmol/m^3/s]
   double R1 = k1 * X_C2H2;
   // C(s)
-  ydot_soot[0]    +=        mult * 2.0*MW*R1; // [kg/(m^3 s)]
+  dUdt.rhosc(iY)   +=               mult * 2.0*MW*R1; // [kg/(m^3 s)]
   // H2
-  ydot_gas[iH2]   +=   mult * MW_gas[iH2]*R1; // [kg/(m^3 s)]
+  dUdt.rhoc(iH2)   +=   mult * MW_gas[iH2]*R1 * fact; // [kg/(m^3 s)]
   // C2H2
-  ydot_gas[iC2H2] -= mult * MW_gas[iC2H2]*R1; // [kg/(m^3 s)]
+  dUdt.rhoc(iC2H2) -= mult * MW_gas[iC2H2]*R1 * fact; // [kg/(m^3 s)]
 
 
   //------------------------------------------------
@@ -131,11 +138,11 @@ int Soot2D_State :: getRates( const double T,
   double R2 = k2 * X_C2H2 * sqrt( PI*pow(ratio, 2.0/3.0) ) *
               pow(X_SOOT, 1.0/3.0) * pow(rho_mix*N, 1.0/6.0);
   // C(s)
-  ydot_soot[0]    +=        mult * 2.0*MW*R2; // [kg/(m^3 s)]
+  dUdt.rhosc(iY)   +=               mult * 2.0*MW*R2; // [kg/(m^3 s)]
   // H2
-  ydot_gas[iH2]   +=   mult * MW_gas[iH2]*R2; // [kg/(m^3 s)]
+  dUdt.rhoc(iH2)   +=   mult * MW_gas[iH2]*R2 * fact; // [kg/(m^3 s)]
   // C2H2
-  ydot_gas[iC2H2] -= mult * MW_gas[iC2H2]*R2; // [kg/(m^3 s)]
+  dUdt.rhoc(iC2H2) -= mult * MW_gas[iC2H2]*R2 * fact; // [kg/(m^3 s)]
 
   //------------------------------------------------
   // Oxidation
@@ -147,11 +154,11 @@ int Soot2D_State :: getRates( const double T,
   // rate [kmol/m^3/s]
   double R3 = k3 * S * X_O2;
   // CO
-  ydot_gas[iCO] += mult * 2.0*MW_gas[iCO]*R3; // [kg/(m^3 s)]
+  dUdt.rhoc(iCO) += mult * 2.0*MW_gas[iCO]*R3 * fact; // [kg/(m^3 s)]
   // C(s)
-  ydot_soot[0]  -=          mult * 2.0*MW*R3; // [kg/(m^3 s)]
+  dUdt.rhosc(iY) -=                 mult * 2.0*MW*R3; // [kg/(m^3 s)]
   // O2
-  ydot_gas[iO2] -=     mult * MW_gas[iO2]*R3; // [kg/(m^3 s)]
+  dUdt.rhoc(iO2) -=     mult * MW_gas[iO2]*R3 * fact; // [kg/(m^3 s)]
 
   //------------------------------------------------
   // Agglomeration
@@ -165,7 +172,7 @@ int Soot2D_State :: getRates( const double T,
   // rate [kmol/m^3/s]
   double R4 = k4 * X_SOOT * pow(rho_mix*N, 11.0/6.0);
   // dN/dt
-  ydot_soot[1] = mult * ( 2.0*AVOGADRO*R1/Cmin - R4 ); // [particles/m^3/s]
+  dUdt.rhosc(iN) = mult * ( 2.0*AVOGADRO*R1/Cmin - R4 ); // [particles/m^3/s]
 
   // success
   return 0;

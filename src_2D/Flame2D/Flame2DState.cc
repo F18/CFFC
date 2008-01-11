@@ -14,21 +14,155 @@
 /**
  * Initialization of static variables.
  */
+//! State variable counters
 int     Flame2D_State  :: ns = 1;
 int     Flame2D_State  :: ngas = NUM_FLAME2D_VAR_SANS_SPECIES + ns;
 int     Flame2D_State  :: nsc = 0;
 int     Flame2D_State  :: n = ngas + nsc;
+
+//! model flags
 bool    Flame2D_State  :: reacting = false;
+bool    Flame2D_State  :: radiating = false;
 double  Flame2D_State  :: Mref = 0.5;
 double  Flame2D_State  :: gravity_z = -9.81;
 int     Flame2D_State  :: soot_flag = 0;
-int     Flame2D_State  :: iSoot = 0;
+
+//! indices
+int     Flame2D_State   :: iSoot = 0;
+int     Flame2D_pState  :: kCO   = -1;
+int     Flame2D_pState  :: kH2O  = -1;
+int     Flame2D_pState  :: kCO2  = -1;
+int     Flame2D_pState  :: kO2   = -1;
+
+//! Temporary storage
 double* Flame2D_State  :: y = NULL;
 double* Flame2D_pState :: r = NULL;
 double* Flame2D_pState :: h_i = NULL;
 double* Flame2D_pState :: cp_i = NULL;
-Soot2D_State Flame2D_pState :: soot = Soot2D_State();
 
+//! Model data objects
+Soot2D_State*  Flame2D_pState :: soot = NULL;
+PlanckMean*    Flame2D_pState :: rad  = NULL;
+
+
+/////////////////////////////////////////////////////////////////////
+/// Static Functions
+/////////////////////////////////////////////////////////////////////
+
+/****************************************************
+ * Setup mixture data
+ ****************************************************/
+void Flame2D_pState::setMixture(const string &mech_name,
+				const string &mech_file,
+				const bool radiation,
+				const int soot_model,
+				const char* CFFC_Path) {
+
+  // deallocate first
+  DeallocateStatic();
+
+  // call mixture object setup functin
+  Mixture::setMixture(mech_name, mech_file);
+
+  // determine the total number of varibles associated with the gas phase
+  ns = Mixture::nSpecies();
+  ngas = NUM_FLAME2D_VAR_SANS_SPECIES + ns;
+
+  //-------------------------------------------------------
+  // Soot
+  //-------------------------------------------------------
+  // if there is soot, set the relevant parameters
+  iSoot = -1;  nsc = 0;  // reset
+  if ( soot_flag = soot_model ) {     
+
+    // get the molar masses, species names, and set the soot object
+    double *MWs   = new double[ns];
+    string *names = new string[ns];
+    MW( MWs );
+    speciesNames( names );
+
+    // create a soot model object
+    soot = new Soot2D_State( soot_flag, MWs, names, ns );
+
+    // set the relevant Flame2D object params
+    iSoot = ngas;
+    nsc = soot->NumVar();
+  }
+
+  //-------------------------------------------------------
+  // Radiation
+  //-------------------------------------------------------
+  // if the optically thin radiation model is to be used
+  if ( radiating = radiation ) {
+    rad = new PlanckMean( CFFC_Path );
+    kCO  = speciesIndex("CO",  false); // don't exit on error
+    kH2O = speciesIndex("H2O", false);
+    kCO2 = speciesIndex("CO2", false);
+    kCO2 = speciesIndex("O2",  false);
+  }
+
+
+  // the total number state variables
+  n = ngas + nsc;
+
+  // determine if this is a reacting case
+  if (Mixture::nReactions()>0) reacting = true;
+  else reacting = false;
+
+  //allocate static memory and load the species data  
+  AllocateStatic();
+
+}
+
+/**********************************************************************
+ * Flame2D_State::set_gravity -- Set the acceleration due to gravity  *
+ *                               in m/s^2.  It acts downwards in the  *
+ *                               z-dir (g <= 0)                       *
+ **********************************************************************/
+void Flame2D_State::set_gravity(const double &g) { // [m/s^2]
+
+  // if gravity is acting upwards (wrong way)
+  if (g>0) {
+    cerr<<"\n Flame2D_pState::set_gravity() - Gravity acting upwards!!!! \n";
+    exit(1);
+    
+  // gravity acting downwards (-ve), OK
+  } else {
+    gravity_z = g;
+  }
+}
+
+/****************************************************
+ * Print tecplot variable list
+ ****************************************************/
+void Flame2D_State::outputTecplotVarList(ostream &out,
+					 const string &who, 
+					 const string &prefix) {
+
+  // Print out U - conserved var list
+  if (who == "U") {
+    out << "\"" << prefix << "rho\" \\ \n"
+	<< "\"" << prefix << "rhou\" \\ \n"
+	<< "\"" << prefix << "rhov\" \\ \n"
+	<< "\"" << prefix << "rhoE\" \\ \n";
+    for(int i =0; i<ns; i++) 
+      out <<"\"" << prefix << "rhoc"<<Flame2D_pState::speciesName(i)<<"\" \\ \n";
+    for(int i =0; i<nsc; i++) 
+      out <<"\"" << prefix << "rhosc" <<i<<"\" \\ \n";
+
+  // or print out W - primitive var list
+  } else {
+    out << "\"" << prefix << "rho\" \\ \n"
+	<< "\"" << prefix << "u\" \\ \n"
+	<< "\"" << prefix << "v\" \\ \n"
+	<< "\"" << prefix << "p\" \\ \n";
+    for(int i =0; i<ns; i++) 
+      out <<"\"" << prefix << "c"<<Flame2D_pState::speciesName(i)<<"\" \\ \n";
+    for(int i =0; i<nsc; i++) 
+      out <<"\"" << prefix << "sc"<<i<<"\" \\ \n";
+  }
+
+}
 
 /////////////////////////////////////////////////////////////////////
 /// Flux Functions
@@ -1279,16 +1413,42 @@ void Flame2D_pState::dSgdU(DenseMatrix &dSgdU) const {
   dSgdU(3,2) += gravity_z;
 }
 
+
+/****************************************************
+ * Compute the radiation source term in the energy 
+ * equation, i.e. the divergence of the radiative 
+ * heat flux vector.
+ * Currently it is evaluated using the optically 
+ * thin approximation.
+ ****************************************************/
+double Flame2D_pState::Srad(void) const {
+  if (radiating) {
+
+    // declares
+    double xCO(0.0), xH2O(0.0), xCO2(0.0);
+    static const double fsoot = ZERO;  // no soot for now
+    
+    // Compute the molar fractions, if the species exist
+    if (kCO  > -1) xCO  = moleFrac(kCO);
+    if (kH2O > -1) xH2O = moleFrac(kH2O);
+    if (kCO2 > -1) xCO2 = moleFrac(kCO2);
+    
+    // evaluate
+    return rad->RadSourceOptThin( p()/PRESSURE_STDATM, //[atm]
+				  T(),                 //[K]
+				  xCO,
+				  xH2O,
+				  xCO2,
+				  fsoot );
+  }
+}
+
+
 /****************************************************
  * Source terms associated with soot
  ****************************************************/
 void Flame2D_pState::Ssoot(Flame2D_State &S, const double& mult) const {
-  if (soot_flag) {
-    soot.getRates( T(), rho(), 
-		   c(), sc(), 
-		   S.rhoc(), S.rhosc(), 
-		   mult );
-  }
+  if (soot_flag) soot->getRates( *this,  S, mult );
 }
 
 
@@ -1768,7 +1928,6 @@ void Flame2D_pState :: HLLE_wavespeeds(Flame2D_pState &Wl,
   // declares
   static Flame2D_pState Wa;
   static Flame2D_State lambdas_l, lambdas_r, lambdas_a;
-  int NUM_VAR_CHEM2D = ( NumVar() );
 
   // temporary storage
   double ur( ((const Flame2D_pState&)Wr).vx() ), 

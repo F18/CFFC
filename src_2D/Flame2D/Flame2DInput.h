@@ -391,7 +391,16 @@ inline void Flame2D_Input_Parameters::setRefSolutionState(void) {
   Wo.Deallocate();
 
   // load the mechanism
-  Flame2D_pState::setMixture(ct_mech_name, ct_mech_file, Soot_IP.sootModel);
+  // -> If the optically thin radiation model is to be used, then
+  //    set the mixture radiating.
+  // -> If the full RTE is to be solved, then don't set a raditing mixture,
+  //    as the radiation will be handled elsewhere
+  bool internally_model_rad = (Radiation == RADIATION_OPTICALLY_THIN);
+  Flame2D_pState::setMixture(ct_mech_name, 
+			     ct_mech_file, 
+			     internally_model_rad, 
+			     Soot_IP.sootModel, 
+			     CFFC_Path);
   
   // Reallocate reference state
   Wo.Allocate();
@@ -441,9 +450,9 @@ inline void Flame2D_Input_Parameters::setRefSolutionState(void) {
   } // endif - composition
     
 
-    //-----------------------------------------------------------------
-    // set the solution state
-    //-----------------------------------------------------------------
+  //-----------------------------------------------------------------
+  // set the solution state
+  //-----------------------------------------------------------------
   Wo.setState_TPY(Temperature, Pressure, mass_fractions);
   Wo.setVelocity( Mach_Number*Wo.a()*cos(TWO*PI*Flow_Angle/360.00),
 		  Mach_Number*Wo.a()*sin(TWO*PI*Flow_Angle/360.00) );

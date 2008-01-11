@@ -21,6 +21,7 @@ double  Mixture :: Tmax = 0.0;
 double* Mixture :: Sc_ref = NULL;
 double* Mixture :: M = NULL;
 double* Mixture :: Hform = NULL;
+double* Mixture :: Hzero = NULL;
 string* Mixture :: names = NULL;
 double* Mixture :: r = NULL;
 double* Mixture :: r0 = NULL;
@@ -100,10 +101,16 @@ void Mixture :: setMixture(const string &mech_name,
   //allocate static memory  
   AllocateStatic();
 
-  // get non-dimensional heats of formation
+  // get non-dimensional heats of formation, h @ Tref, Pref
   ct_gas->setTemperature(TREF);
   ct_gas->setPressure(PREF);
   ct_gas->getEnthalpy_RT( Hform );
+
+  // get non-dimensional total enthalpies at T approx 0 K
+  double Tzero = 1.E-0;
+  ct_gas->setTemperature(Tzero);
+  ct_gas->setPressure(PREF);
+  ct_gas->getEnthalpy_RT( Hzero );
 
   // load the species data
   for(int i=0; i<ns; i++){
@@ -111,6 +118,7 @@ void Mixture :: setMixture(const string &mech_name,
     M[i] = ct_gas->molarMass(i);
     names[i] = ct_gas->speciesName(i);
     Hform[i] *= (Cantera::GasConstant/M[i]) * TREF;
+    Hzero[i] *= (Cantera::GasConstant/M[i]) * Tzero;
   }
   
 }   
@@ -286,19 +294,20 @@ void Mixture::parse_schmidt_string( const string& schmidtStr,
   Use cantera to return the species index.  Exits in error if an
   unidentified species is requested.
 ***********************************************************************/
-int Mixture::speciesIndex(const string &sp) {
+int Mixture::speciesIndex(const string &sp, const bool exit_on_error) {
 
   // get index
   int index = ct_gas->speciesIndex(sp);
 
   // if index==-1, species not found
-  if (index<0) {
+  // only exit in error if 'exit_on_error' has been set
+  if (index<0 && exit_on_error) {
     cerr<<"\n Reaction_set::ct_get_species_index() - Index of unkown species, "
 	<<sp<<", requested.\n";
     exit(-1);
   } // endif
 
-    // return index
+  // return index
   return index;
 
 

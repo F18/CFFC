@@ -22,9 +22,6 @@
 #include "Flame2DState.h"
 #include "Flame2DInput.h"
 
-// include SNBCK for optically thin radiation 
-#include "../Physics/SNBCK/PlanckMean.h"
-
 /* Define the structures and classes. */
 
 #define	NUMBER_OF_RESIDUAL_VECTORS_FLAME2D    3  //K for dUdt[i][j][K]
@@ -220,7 +217,6 @@ public:
 
   //@{ @name Radiation source term and static data:
   double                       **Srad; //!< radiant source term (divergence of rad. heat flux)
-  static PlanckMean  *PlanckMean_data; //!< planck mean data object
   //@}
 
 
@@ -260,7 +256,7 @@ public:
   
   /* Deallocate memory for structured quadrilateral solution block. */
   void deallocate(void);
-  static void deallocate_static(void);
+  static void deallocate_static(void) {};
 
   /* Update all the nodal values for Wnd */
   void Update_Nodal_Values(void);
@@ -430,6 +426,9 @@ public:
 					 const int &i, const int &j,
 					 const int& dir) const;
 
+  // reconstructed higher order left and right solution states
+  void Evaluate_Radiation_Source( const Flame2D_Input_Parameters &IP );
+
 };
 
 /**************************************************************************
@@ -530,13 +529,6 @@ inline void Flame2D_Quad_Block::deallocate(void) {
   delete []Wnd; Wnd = NULL;
 
   NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0; Nghost = 0;
-}
-
-/**************************************************************************
- * Flame2D_Quad_Block::deallocate_static -- Deallocate static memory.      *
- **************************************************************************/
-inline void Flame2D_Quad_Block::deallocate_static(void) {
-  if(PlanckMean_data != NULL) { delete PlanckMean_data; PlanckMean_data = NULL; }
 }
 
 
@@ -1807,10 +1799,6 @@ extern int dUdt_Multistage_Explicit(Flame2D_Quad_Block &SolnBlk,
 extern int Update_Solution_Multistage_Explicit(Flame2D_Quad_Block &SolnBlk,
 					       const int i_stage,
 					       Flame2D_Input_Parameters &Input_Parameters);
-
-// optically thin radiation source term evaluation
-extern void Radiation_Source_Eval( Flame2D_Quad_Block &SolnBlk,
-				   Flame2D_Input_Parameters &Input_Parameters );
 
 /**************************************************************************
  * Flame2D_Quad_Block -- Multiple Block External Subroutines.              *

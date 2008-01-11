@@ -43,11 +43,8 @@
 template <>
 inline void Rte2DSolver::Copy_SRC_Solution_Vars(Flame2D_Quad_Block *Flame2D_SolnBlk) 
 { 
-  // defines
-  double xCO, xH2O, xCO2, xO2;
-  static const double fsoot = ZERO;  // no soot for now
-  
-  // make some pointers to help readability
+  // declares
+  RadiatingGas x;
   Rte2D_Quad_Block *Rte2D_SolnBlk = Local_SolnBlk;
   AdaptiveBlock2D_List *Rte2D_Soln_Block_List = &List_of_Local_Solution_Blocks;
 
@@ -68,16 +65,10 @@ inline void Rte2DSolver::Copy_SRC_Solution_Vars(Flame2D_Quad_Block *Flame2D_Soln
 	      j++ ) {
 
 	  // first, get radiating species concentrations
-	  Flame2D_SolnBlk[n].W[i][j].MoleFracOfRadSpec( xCO,  xH2O, xCO2, xO2 );
+	  Flame2D_SolnBlk[n].W[i][j].getRadGasQuatities( x );
 
 	  // compute the new state
- 	  Rte2D_SolnBlk[n].M[i][j].ComputeNewState( Flame2D_SolnBlk[n].W[i][j].p,
-						    Flame2D_SolnBlk[n].W[i][j].T(),
-						    xCO,
-						    xH2O,
-						    xCO2,
-						    xO2,
-						    fsoot );
+ 	  Rte2D_SolnBlk[n].M[i][j].SetState( x );
 
 	} // endfor - i
       } // endfor - j

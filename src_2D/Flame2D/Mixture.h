@@ -175,7 +175,7 @@ public:
 				    double* schmidt);
   static void parse_mole_string( const string& moleFracStr, 
 				 double* moleFracs);
-  static int speciesIndex(const string &sp);
+  static int speciesIndex(const string &sp, const bool exit_on_error=true);
   static void composition( const string& fuel_species, 
 			   const double &phi,
 			   double* massFracs);
@@ -208,6 +208,8 @@ public:
   static double molarMass( const double* Y );
   //! Mixture heat of formation
   static double heatFormation( const double* Y );
+  //! Mixture enthalpy @ T=0, P=Pref
+  static double enthalpyZero( const double* Y );
   //! Micture gas constant [J/(kg k)]
   double gasConstant(void) const;
   // Mixture constant pressure heat capacity [J/(kg k)]
@@ -314,6 +316,7 @@ private:
   static double* Sc_ref;           //!< reference species schmidt numbers
   static double* M;                //!< species molar masses [kg/kmole]
   static double* Hform;            //!< species heats of formation [J/kg]
+  static double* Hzero;            //!< species total enthalpies at 0 K [J/kg]
   static string* names;            //!< species names
   static bool isConstSchmidt;      //!< flag indicating whether constant schmidt
 
@@ -371,6 +374,7 @@ inline void Mixture :: AllocateStatic() {
     names = new string[ns]; 
     M = new double[ns]; 
     Hform = new double[ns]; 
+    Hzero = new double[ns]; 
     r = new double[ns]; 
     r0 = new double[ns]; 
     c = new double[ns]; 
@@ -384,6 +388,7 @@ inline void Mixture :: DeallocateStatic() {
   if (names!=NULL) { delete[] names; names = NULL; } 
   if (M!=NULL) { delete[] M; M = NULL; } 
   if (Hform!=NULL) { delete[] Hform; Hform = NULL; } 
+  if (Hzero!=NULL) { delete[] Hzero; Hzero = NULL; } 
   if (r!=NULL) { delete[] r; r = NULL; } 
   if (r0!=NULL) { delete[] r0; r0 = NULL; } 
   if (c!=NULL) { delete[] c; c = NULL; } 
@@ -779,9 +784,7 @@ inline void Mixture ::  updateDihdDic( const double &rho,
  ****************************************************/
 inline double Mixture :: molarMass( const double* y ) {
   double sum( 0.0 );
-  for(int i=0; i<ns; i++){
-    sum += y[i]/M[i];
-  }
+  for(int i=0; i<ns; i++) sum += y[i]/M[i];
   return 1.0/sum;
 }
 
@@ -790,8 +793,17 @@ inline double Mixture :: molarMass( const double* y ) {
  ****************************************************/
 inline double Mixture :: heatFormation( const double* y ) {
   double sum( 0.0 );
-  for(int i=0; i<ns; i++){
-    sum += y[i]*Hform[i];
+  for(int i=0; i<ns; i++) sum += y[i]*Hform[i];
+  return sum;
+}
+
+/****************************************************
+ * Mixture total enthalpy at T=0 K, P=Pref [J/kg]
+ ****************************************************/
+inline double Mixture :: enthalpyZero( const double* y ) {
+  double sum( 0.0 );
+  for(int i=0; i<ns; i++) {
+    sum += y[i]*Hzero[i];
   }
   return sum;
 }

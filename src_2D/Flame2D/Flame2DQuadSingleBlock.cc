@@ -3187,10 +3187,9 @@ int dUdt_Residual_Evaluation(Flame2D_Quad_Block &SolnBlk,
   
   //-----------------------------------------------------------
 
-  // radiation evaluation if using optically thin approx
-  if ( Input_Parameters.Radiation == RADIATION_OPTICALLY_THIN )
-    Radiation_Source_Eval( SolnBlk, Input_Parameters );
-  
+  // Evaluate Radiation source term if necessary
+  SolnBlk.Evaluate_Radiation_Source( Input_Parameters );
+
 
   // Evaluate the time rate of change of the solution
   // (i.e., the solution residuals) using a second-order
@@ -3509,9 +3508,8 @@ int dUdt_Multistage_Explicit(Flame2D_Quad_Block &SolnBlk,
 
   //-----------------------------------------------------------
 
-  // radiation evaluation if using opticallyt htin approx
-  if ( Input_Parameters.Radiation == RADIATION_OPTICALLY_THIN )
-    Radiation_Source_Eval( SolnBlk, Input_Parameters );
+  // Evaluate Radiation source term if necessary
+  SolnBlk.Evaluate_Radiation_Source( Input_Parameters );
 
   //-----------------------------------------------------------
 
@@ -4102,18 +4100,3 @@ int Update_Solution_Multistage_Explicit(Flame2D_Quad_Block &SolnBlk,
   
 }
 
-
-
-/**********************************************************************
- * Radiation_Source_Eval                                              *
- *                                                                    *
- * Optically thin radiation source term evaluation.  The radiation    *
- * source term is the divergence of the radiative flux vector.        *
- * Here it is evaluated using the optically thin approximation.       *
- *                                                                    *
- **********************************************************************/
-void Radiation_Source_Eval( Flame2D_Quad_Block &SolnBlk,
-			    Flame2D_Input_Parameters &Input_Parameters ) {
-
-
-} // end Radiation_Source_Eval()

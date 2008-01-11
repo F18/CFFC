@@ -187,7 +187,6 @@ public:
 			   const double xco,      // mole fraction of CO
 			   const double xh2o,     // mole fraction of H2O
 			   const double xco2,     // mole fraction of CO2
-			   const double xo2,      // mole fraction of O2
 			   const double xsoot );  // volume fraction of soot 
     
 

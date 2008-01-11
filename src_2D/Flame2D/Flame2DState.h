@@ -17,6 +17,7 @@
 #include <cstdlib> 
 using namespace std;
 
+// CFFC includes
 #include "../Math/Math.h"
 #include "../Math/Matrix.h"
 #include "../CFD/CFD.h"
@@ -27,6 +28,8 @@ using namespace std;
 // FLAME2D Specific headers
 #include "Mixture.h"
 #include "Soot2DState.h"
+#include "../Physics/SNBCK/PlanckMean.h"
+
 
 /////////////////////////////////////////////////////////////////////
 /// Defines
@@ -48,7 +51,8 @@ using namespace std;
 /////////////////////////////////////////////////////////////////////
 /// Class Definitions
 /////////////////////////////////////////////////////////////////////
-// define early so can be used in other classes
+
+// Forward declarations
 class Flame2D_State;
 class Flame2D_pState;
 
@@ -306,6 +310,7 @@ protected:
   static int            nsc; //!< Number of soot scalars
   static int           ngas; //!< Number of variables associated with the gas phase
   static bool      reacting; //!< boolean indicating whether gas is reacting
+  static bool     radiating; //!< boolean indicating whether gas participates in radiation
   static double        Mref; //!< Mref for Precondtioning (normally set to incoming freestream Mach)
   static double   gravity_z; //!< m/s^2 acceleration due to gravity  
   static int      soot_flag; //!< flag indicating soot model
@@ -356,14 +361,23 @@ protected:
  */
 class Flame2D_pState : public Flame2D_State {
 
-
   /********************* Private Objects ****************************/
 private:
-  Mixture Mix;         //!< Mixture Object
+
+  //!< Mixture Object
+  Mixture Mix;
+
+  //!< Species array indices
+  static int kCO, kH2O, kCO2, kO2;
+
+  //! temporary storage
   static double* r;    //!< Temporary storage for reaction rates
   static double* h_i;  //!< Temporary storage for h(i)
   static double* cp_i; //!< Temporary storage for cp(i)
-  static Soot2D_State  soot; //!< soot model object
+
+  //! Optional data objects
+  static PlanckMean    *rad;    //!< optically thin radiation model object
+  static Soot2D_State  *soot;   //!< soot model object
 
   /********************** Constructors/Destructors ******************/
 public:
@@ -413,7 +427,9 @@ public:
   //! initial mixture setup function
   static void setMixture(const string &mech_name,
 			 const string &mech_file,
-			 const int soot_model=0);
+			 const bool radiation,
+			 const int soot_model,
+			 const char* CFFC_Path);
   //! set constant schmidt number
   static void setConstantSchmidt(const double* Sc) { Mixture::setConstantSchmidt(Sc); };
   //! Static memory allocator/deallocator  
@@ -423,7 +439,8 @@ public:
   static string speciesName(const int&i) { return Mixture::speciesName(i); };
   static void speciesNames(string *names) { Mixture::getSpeciesNames(names); };
   //! The species index
-  static int speciesIndex(const string&name) { return Mixture::speciesIndex(name); };
+  static int speciesIndex(const string&name, const bool exit_on_error=true) 
+  { return Mixture::speciesIndex(name, exit_on_error); };
   //! The mechanism name
   static string mechName(void) { return Mixture::mechName(); };
 
@@ -557,6 +574,8 @@ public:
   double Hs(void) const { return (rho()*(hs() + 0.5*vsqr())); };
   //!< Speed of sound 
   double a(void) const { return sqrt(g()*Rtot()*T()); }
+  //!< Species molar concentration
+  double moleFrac( const int&i ) const { return c(i)*MW()/MW(i); }
 
   /****************** Mixture Object Wrappers ***********************/
   //!< Temperature [K]
@@ -564,11 +583,14 @@ public:
   //!< Molar mass [kg/kmole]
   double MW(void) const { return Mix.molarMass(); };
   static void MW(double*MWs) { Mixture::getMolarMasses(MWs); };
+  static double MW(const int&i) { return Mixture::molarMass(i); }
   //!< Gas constant [ J/(kg K) ]
   double Rtot(void) const { return Mix.gasConstant(); };
   //!< Internal Energy (et = es + echem) [ J/kg ]
   double e(void) const { return Mix.internalEnergy(); };
   double es(void) const { return Mix.internalEnergySens(); };
+  //!< total internal energy @ T=0K, P=Pref [ J/kg ]
+  static double e_zero(double*mfrac) { return Mixture::enthalpyZero(mfrac); };
   //!< enthalpy  (ht = hs + hf) [ J/kg ]
   double h(void) const { return Mix.enthalpy(); };
   double h(const double &Temp) const { return Mix.enthalpy(Temp, p(), c()); };
@@ -750,6 +772,10 @@ public:
   void Sg(Flame2D_State &S, const double& mult=1.0) const;
   void dSgdU(DenseMatrix &dSgdU) const;
 
+  //! Source terms associated with radiation
+  double Srad(void) const;
+
+
   //! Source terms associated with soot
   void Ssoot(Flame2D_State &S, const double& mult=1.0) const;
 
@@ -886,6 +912,8 @@ inline void Flame2D_pState :: DeallocateStatic() {
   if (cp_i!=NULL) { delete[] cp_i; cp_i = NULL; } 
   if (y!=NULL) { delete[] y; y = NULL; } 
   Mixture::DeallocateStatic();
+  if (soot!=NULL) { delete soot; soot = NULL; } 
+  if (rad!=NULL) { delete rad; rad = NULL; } 
 };
 
 
@@ -1098,6 +1126,7 @@ inline void Flame2D_pState::Reconstruct( const Flame2D_pState &Wc,
 					 const double &mult) {
   for (int i=0; i<n; i++)
     x[i] = Wc.x[i] + mult*(phi[i+1]*dWdx[i+1]*dX.x + phi[i+1]*dWdy[i+1]*dX.y);
+  // assert( fabs(SpecSum()-1.0)<1.E-9 );
   setGas();
 }
 
@@ -1427,8 +1456,7 @@ inline Vector2D Flame2D_pState::DiffSum(const double* dcdx,
 inline bool Flame2D_State::speciesOK(const int &harshness) {
 
   // declares
-  double yi;
-  double sum(ZERO);
+  double yi, sum( ZERO );
 
   //
   // Loop over the species
@@ -1448,7 +1476,6 @@ inline bool Flame2D_State::speciesOK(const int &harshness) {
       //---------------------------------------------------------------
       if(yi > -SPEC_TOLERANCE){
 	rhoc(i) = ZERO;
-	yi = ZERO;
 
       //---------------------------------------------------------------
       // b. ->  report error depending upon harshness 
@@ -1468,7 +1495,6 @@ inline bool Flame2D_State::speciesOK(const int &harshness) {
 	// else, just force to zero
 	} else { 
 	  rhoc(i) = ZERO;
-	  yi = ZERO;
 
 	  // display error
 #ifdef _DEBUG
@@ -1501,6 +1527,7 @@ inline bool Flame2D_State::speciesOK(const int &harshness) {
   // if ( fabs(sum-rho_)>NANO ) rho() = sum;
   rho() = sum;
 
+
   // SUCCESS!
   return true;
 }
@@ -1520,16 +1547,15 @@ inline bool Flame2D_State::isPhysical(const int &harshness) {
   }
 #endif
 
-  // Get sensible internal energy
+
+  // Get total internal energy
   // E = rho*(e + HALF*v.sqr()); 
-  //   double e_sens(ZERO);
-  //   if (rho()>ZERO) {
-  //     for (int i=0; i<ns; i++) y[i] = rhoc(i)/rho();
-  //     e_sens = (E()/rho() - HALF*rhovsqr()/rho()/rho()) -  Mixture::heatFormation(y);
-  //   }
+  double e_tot;
+  e_tot = E()/rho() - HALF*rhovsqr()/rho()/rho();
+  for (int i=0; i<ns; i++) y[i] = rhoc(i)/rho();
 
   // check properties
-  if (rho() <= ZERO || !speciesOK(harshness) /*|| e_sens <= ZERO*/) {
+  if (rho() <= ZERO || !speciesOK(harshness) || e_tot <= Flame2D_pState::e_zero(y)) {
     cout << "\n " << CFFC_Name() 
 	 << " Flame2D ERROR: Negative Density || Energy || mass fractions: \n" << *this <<endl;
     return false;
@@ -1537,115 +1563,5 @@ inline bool Flame2D_State::isPhysical(const int &harshness) {
   return true;
 
 }
-
-
-/////////////////////////////////////////////////////////////////////
-/// Static Functions
-/////////////////////////////////////////////////////////////////////
-
-/****************************************************
- * Setup mixture data
- ****************************************************/
-inline void Flame2D_pState::setMixture(const string &mech_name,
-				       const string &mech_file,
-				       const int soot_model) {
-
-  // deallocate first
-  DeallocateStatic();
-
-  // call mixture object setup functin
-  Mixture::setMixture(mech_name, mech_file);
-
-  // determine the total number of varibles associated with the gas phase
-  ns = Mixture::nSpecies();
-  ngas = NUM_FLAME2D_VAR_SANS_SPECIES + ns;
-
-  //
-  // if there is soot, set the relevant parameters
-  //
-  if ( soot_flag = soot_model ) { 
-
-    // get the molar masses, species names, and set the soot object
-    double *MWs   = new double[ns];
-    string *names = new string[ns];
-    MW( MWs );
-    speciesNames( names );
-    soot.setGasPhase( MWs, ns, names);
-    soot.setModelParams( soot_flag );
-
-    // set the relevant Flame2D object params
-    iSoot = ngas;
-    nsc = soot.NumVar();
-
-  //
-  // No soot
-  //
-  } else {
-    iSoot = -1;
-    nsc = 0;
-  }
-
-  // the total number state variables
-  n = ngas + nsc;
-
-  // determine if this is a reacting case
-  if (Mixture::nReactions()>0) reacting = true;
-  else reacting = false;
-
-  //allocate static memory and load the species data  
-  AllocateStatic();
-
-}
-
-/**********************************************************************
- * Flame2D_State::set_gravity -- Set the acceleration due to gravity  *
- *                               in m/s^2.  It acts downwards in the  *
- *                               z-dir (g <= 0)                       *
- **********************************************************************/
-inline void Flame2D_State::set_gravity(const double &g) { // [m/s^2]
-
-  // if gravity is acting upwards (wrong way)
-  if (g>0) {
-    cerr<<"\n Flame2D_pState::set_gravity() - Gravity acting upwards!!!! \n";
-    exit(1);
-    
-  // gravity acting downwards (-ve), OK
-  } else {
-    gravity_z = g;
-  }
-}
-
-/****************************************************
- * Print tecplot variable list
- ****************************************************/
-inline void Flame2D_State::outputTecplotVarList(ostream &out,
-						const string &who, 
-						const string &prefix) {
-
-  // Print out U - conserved var list
-  if (who == "U") {
-    out << "\"" << prefix << "rho\" \\ \n"
-	<< "\"" << prefix << "rhou\" \\ \n"
-	<< "\"" << prefix << "rhov\" \\ \n"
-	<< "\"" << prefix << "rhoE\" \\ \n";
-    for(int i =0; i<ns; i++) 
-      out <<"\"" << prefix << "rhoc"<<Flame2D_pState::speciesName(i)<<"\" \\ \n";
-    for(int i =0; i<nsc; i++) 
-      out <<"\"" << prefix << "rhosc" <<i<<"\" \\ \n";
-
-  // or print out W - primitive var list
-  } else {
-    out << "\"" << prefix << "rho\" \\ \n"
-	<< "\"" << prefix << "u\" \\ \n"
-	<< "\"" << prefix << "v\" \\ \n"
-	<< "\"" << prefix << "p\" \\ \n";
-    for(int i =0; i<ns; i++) 
-      out <<"\"" << prefix << "c"<<Flame2D_pState::speciesName(i)<<"\" \\ \n";
-    for(int i =0; i<nsc; i++) 
-      out <<"\"" << prefix << "sc"<<i<<"\" \\ \n";
-  }
-
-}
-
 
 #endif //end _FLAME2D_STATE_INCLUDED 

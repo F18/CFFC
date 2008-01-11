@@ -15,8 +15,6 @@ int Flame2D_Quad_Block::residual_variable = 1;
 int Flame2D_Quad_Block::Number_of_Residual_Norms = 4;
 //int Flame2D_Quad_Block::Flow_Type = FLOWTYPE_INVISCID;
 
-//SNBCK data object
-PlanckMean* Flame2D_Quad_Block::PlanckMean_data=NULL;
 
 /////////////////////////////////////////////////////////////////////
 /// Reconstruction Methods
@@ -1512,3 +1510,33 @@ void Flame2D_Quad_Block::Reconstructed_LeftandRight_States(Flame2D_pState &Wl,
   } // end switch
 
 }
+
+/////////////////////////////////////////////////////////////////////
+/// Miscilaneous functions
+/////////////////////////////////////////////////////////////////////
+
+/**********************************************************************
+ * Radiation_Source_Eval                                              *
+ *                                                                    *
+ * Optically thin radiation source term evaluation.  The radiation    *
+ * source term is the divergence of the radiative flux vector.        *
+ * Here it is evaluated using the optically thin approximation.       *
+ *                                                                    *
+ **********************************************************************/
+void Flame2D_Quad_Block::Evaluate_Radiation_Source( const Flame2D_Input_Parameters &IP ) {
+
+
+  // If radiation is specified and the full RTE is not solved 
+  // (i.e. Srad is not alread evaluated), then calculate the 
+  // divergence of the radiation heat flux.
+  if ( IP.Radiation != RADIATION_RTE ||
+       IP.Radiation != OFF ) {
+
+    // loop over the block, computing the source term
+    for (int j = JCl-1; j <= JCu+1; j++)
+      for (int i = ICl-1; i <= ICu+1; i++)
+	Srad[i][j] = W[i][j].Srad();
+
+  } // endif - radiation
+
+} // end Radiation_Source_Eval()

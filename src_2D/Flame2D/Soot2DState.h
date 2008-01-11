@@ -31,7 +31,6 @@ using namespace std;
 #include "../Math/Math.h"
 #include "../Physics/GasConstants.h"
 
-
 /////////////////////////////////////////////////////////////////////
 /// Defines
 /////////////////////////////////////////////////////////////////////
@@ -54,6 +53,11 @@ const int NUM_SOOT_MODELS = 2;
 /////////////////////////////////////////////////////////////////////
 /// CLASS DEFINITIONS
 /////////////////////////////////////////////////////////////////////
+
+// Forward Declarations
+class Flame2D_State;
+class Flame2D_pState;
+
 
 /**
  * \class Soot_State
@@ -93,6 +97,9 @@ private:
   //! species array indices
   int iC2H2, iO2, iH2, iCO;
 
+  // soot scalar array indexes
+  static const int iN = 0;
+  static const int iY = 1;
 
 public:
 
@@ -106,8 +113,21 @@ public:
     // setup a N2 gas mixture
     double WT[] = {MOLE_WT_N2};
     setGasPhase( WT, 1);
-
   };
+
+  //! Constructor with values
+  Soot2D_State( const int model_flag, 
+		const double* MWgas, 
+		const string* names, 
+		const int nsp) : MW_gas(NULL) {
+    
+    // setup model
+    setModelParams(model_flag);
+
+    // setup a N2 gas mixture
+    setGasPhase( MWgas, nsp, names);
+  };
+
 
   //! Destructor
   ~Soot2D_State() { Deallocate(); };
@@ -122,7 +142,7 @@ public:
 
   /******************* Miscillaneous Functions **********************/
   //! mean soot diameter
-  double meanDiameter( const double*sc ) const;
+  double meanDiameter( const Flame2D_pState &W ) const;
 
   //! set model params
   void setModelParams(const int model_flag);
@@ -133,12 +153,8 @@ public:
 
   /*********************** Source Terms *****************************/
   //! Computation of source terms
-  int getRates( const double T, 
-		const double rho_gas,
-		const double* y_gas,
-		const double*sc,
-		double* ydot_gas,
-		double* ydot_soot,
+  int getRates( const Flame2D_pState &W,
+		Flame2D_State &dUdt,
 		const double& mult=1.0 ) const;
 
   /******************** Operator Overloads **************************/
@@ -228,6 +244,5 @@ inline void Soot2D_State::setGasPhase( const double* MWgas,
 
   }
 }
-
 
 #endif // _SOOT2D_STATE_INCLUDED

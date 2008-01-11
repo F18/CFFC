@@ -801,12 +801,12 @@ $(EXE_CHEM2D): $(OBJ_CHEM_EXE) $(OBJ_BASE) $(OBJ_NASADATA) $(OBJ_REACTIONS) $(OB
 	@echo '--------------------------------------------------'
 	@echo ' '
 
-$(EXE_FLAME2D): $(OBJ_FLAME_EXE) $(OBJ_BASE) $(OBJ_NASADATA) $(OBJ_SNBCK) $(OBJ_FLAME)
+$(EXE_FLAME2D): $(OBJ_FLAME_EXE) $(OBJ_BASE) $(OBJ_NASADATA) $(OBJ_SNBCK) $(OBJ_FLAME) $(OBJ_ICEMCFD)
 	@echo ' '
 	@echo Building program $(EXE_FLAME2D) for a $(PLATFORM) platform.
 	@echo '----------------------------------------------------------'
 	@echo ' '
-	$(LD) -o $(EXE_FLAME2D) $(OBJ_FLAME_EXE) $(OBJ_BASE) $(OBJ_NASADATA) $(OBJ_SNBCK) $(OBJ_FLAME)$(LDFLAGS)
+	$(LD) -o $(EXE_FLAME2D) $(OBJ_FLAME_EXE) $(OBJ_BASE) $(OBJ_NASADATA) $(OBJ_SNBCK) $(OBJ_FLAME) $(OBJ_ICEMCFD) $(LDFLAGS)
 	@echo ' '
 	@echo Program $(EXE_FLAME2D) has been brought up to date.
 	@echo '--------------------------------------------------'
