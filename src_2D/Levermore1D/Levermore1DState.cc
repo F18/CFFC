@@ -124,7 +124,7 @@ double Levermore1D_cState::moment(int n, const Levermore1D_weights &A) const {
   double _moment(0.0); //underscore to differentiate from function name
   int L(length);
 
-  while(fabs(A[L])<1e-6) {L -=2;}  //There must be something better than this.
+  //while(fabs(A[L])<1e-6) {L -=2;}  //There must be something better than this.
 
   _moment += (double)(n-L+2)*moment(n-L+1,A);
 
@@ -211,11 +211,14 @@ void Levermore1D_weights::set_from_U(const Levermore1D_cState &U) {
     rhs[i] = U[i+1]-U_temp[i+1];
   }
 
-  while(fabs(rhs[1]) > 1e-8) { //fix tolerance later
+  while(fabs(rhs[1]) > 1e-10) { //fix tolerance later
     d2hda2_inv =U_temp.d2hda2(*this).pseudo_inverse();
     A_step = d2hda2_inv*rhs;
     *this += A_step;
-    assert((*this).m_values[get_length()-1] < 0);
+    while( (*this).m_values[get_length()-1] > 0 ) {
+      A_step = A_step*0.5;
+      *this -= A_step;
+    }
     U_temp.set_from_A(*this);
     for(int i=0; i < Levermore1D_Vector::get_length(); ++i) {
       rhs[i] = U[i+1]-U_temp[i+1];

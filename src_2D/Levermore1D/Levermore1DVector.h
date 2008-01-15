@@ -62,6 +62,7 @@ class Levermore1D_Vector {
   Levermore1D_Vector operator-(const Levermore1D_Vector &L) const;
   Levermore1D_Vector& operator-=(const Levermore1D_Vector &L);
   double operator*(const Levermore1D_Vector &L) const;
+  Levermore1D_Vector operator*(const double &d) const;
   Levermore1D_Vector operator^(const Levermore1D_Vector &L) const;
 
   /* Functions */
@@ -147,6 +148,14 @@ inline double Levermore1D_Vector::operator*(const Levermore1D_Vector &L) const{
   double temp(0.0);
   for(int i=0;i<length;++i) {
     temp += m_values[i] * L.m_values[i];
+  }
+  return temp;
+}
+
+inline Levermore1D_Vector Levermore1D_Vector::operator*(const double &d) const{
+  Levermore1D_Vector temp;
+  for(int i=0;i<length;++i) {
+    temp.m_values[i] = m_values[i] * d;
   }
   return temp;
 }
