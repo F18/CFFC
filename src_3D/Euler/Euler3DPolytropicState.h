@@ -483,7 +483,6 @@ public:
 /** @name Numerical Flux Functions */
 /*        ------------------------ */
 //@{
-//@{
     //! HLLE flux function in x-direction given 2 primitive states
     static Euler3D_Polytropic_cState FluxHLLE_x(const Euler3D_Polytropic_pState &Wl,
                                                 const Euler3D_Polytropic_pState &Wr);
@@ -838,14 +837,13 @@ public:
 /** @name Numerical Flux Functions */
 /*        ------------------------ */
 //@{
-//@{
     //! Returns rotated conserved state aligned with a local x-direction
     Euler3D_Polytropic_cState Rotate(const Vector3D &norm_dir) const;
 
     //! Returns un-rotated conserved state aligned with x-direction for global problem
     Euler3D_Polytropic_cState RotateBack(const Vector3D &norm_dir) const;
 //@}
-
+    
 /** @name Operators. */
 /*        ---------- */
 //@{
