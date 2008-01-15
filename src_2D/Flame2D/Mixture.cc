@@ -366,7 +366,8 @@ void Mixture::dSwdU( DenseMatrix &dSdU,
 		     const double &rho,
 		     const double &Press,
 		     const double* y,
-		     const int offset) const {
+		     const int offset,
+		     const int NSm1 ) const {
   
 
   // perturbation factor
@@ -397,7 +398,7 @@ void Mixture::dSwdU( DenseMatrix &dSdU,
   //
   // iterate over the species (jac columns)
   //
-  for (int j=0; j<ns; j++) {
+  for (int j=0; j<ns-NSm1; j++) {
     
     // compute perturbation factor
     eps = abs_tol + fabs(c[j])*rel_tol;
@@ -413,7 +414,7 @@ void Mixture::dSwdU( DenseMatrix &dSdU,
     //
     // iterate over the species (jac rows)
     //
-    for (int i=0; i<ns; i++) {
+    for (int i=0; i<ns-NSm1; i++) {
       
       // the i,j element of jacobian
       dSdU(offset+i,offset+j) += M[i]*(r[i]-r0[i]) / (rho*eps);

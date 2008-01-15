@@ -233,6 +233,10 @@ public:
   //@}
 
   /****************** MEMBER FUNCTIONS ****************************************************/  
+  /* Number of solution state variables. */
+  int NumVar(void) { return Flame2D_State::NumVar(); };
+  int NumEqn(void) { return Flame2D_State::NumEqn(); };
+
   /* Creation, copy, and assignment constructors. */
   Flame2D_Quad_Block(void) {
     NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0; Nghost = 0;
@@ -304,8 +308,6 @@ public:
 			       &Soln);
 
   /* MEMBER FUNCTIONS REQUIRED FOR MESSAGE PASSING. */
-  /* Number of solution state variables. */
-  int NumVar(void);
   /* Load send message passing buffer. */
   int LoadSendBuffer(double *buffer,
 		     int &buffer_count,
@@ -852,13 +854,6 @@ inline istream &operator >> (istream &in_file,
  * MEMBER FUNCTIONS REQUIRED FOR MESSAGE PASSING.                              *
  *                                                                             *
  *******************************************************************************/
-
-/*******************************************************************************
- * Flame2D_Quad_Block::NumVar -- Returns number of state variables.            *
- *******************************************************************************/
-inline int Flame2D_Quad_Block::NumVar(void) {
-  return (Flame2D_State::NumVar());    
-}
 
 /*******************************************************************************
  * Flame2D_Quad_Block::LoadSendBuffer -- Loads send message buffer.            *

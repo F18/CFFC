@@ -15,10 +15,14 @@
  * Initialization of static variables.
  */
 //! State variable counters
+const int Flame2D_State :: NSm1;
 int     Flame2D_State  :: ns = 1;
+int     Flame2D_State  :: ns_eqn = ns;
 int     Flame2D_State  :: ngas = NUM_FLAME2D_VAR_SANS_SPECIES + ns;
 int     Flame2D_State  :: nsc = 0;
 int     Flame2D_State  :: n = ngas + nsc;
+int     Flame2D_State  :: n_eqn = n;
+int*    Flame2D_State  :: eqnIndex = NULL;
 
 //! model flags
 bool    Flame2D_State  :: reacting = false;
@@ -66,6 +70,7 @@ void Flame2D_pState::setMixture(const string &mech_name,
 
   // determine the total number of varibles associated with the gas phase
   ns = Mixture::nSpecies();
+  ns_eqn = ns - NSm1;
   ngas = NUM_FLAME2D_VAR_SANS_SPECIES + ns;
 
   //-------------------------------------------------------
@@ -104,6 +109,7 @@ void Flame2D_pState::setMixture(const string &mech_name,
 
   // the total number state variables
   n = ngas + nsc;
+  n_eqn = n - NSm1;
 
   // determine if this is a reacting case
   if (Mixture::nReactions()>0) reacting = true;
@@ -211,7 +217,7 @@ void Flame2D_pState::dFIdU(DenseMatrix &dFdU) {
   //cout<<"\n USING DFIDU \n";
   
   // Note: make sure you loaded the dihdic array and phi outside
-  updateDihdDic();
+  updateDihDic();
   const double phi( Phi() );
   const double Temp( T() );
   const double Rt( Rtot() );
@@ -239,7 +245,7 @@ void Flame2D_pState::dFIdU(DenseMatrix &dFdU) {
   dFdU(3,2) = - vx_vy/denominator;
   dFdU(3,3) = vx()*A/denominator;
   //Species
-  for(int i = 0; i<ns; i++){ 
+  for(int i = 0; i<ns_eqn; i++){ 
     dFdU(1,iSpec+i) = - dihdic(i)/denominator; 
     dFdU(3,iSpec+i) = - vx()*dihdic(i)/denominator;    
     dFdU(iSpec+i, 0) = - c(i)*vx() ;
@@ -247,45 +253,6 @@ void Flame2D_pState::dFIdU(DenseMatrix &dFdU) {
     dFdU(iSpec+i,iSpec+i) = vx();        
   }
  
-}
-
-/********************************************************
- * Chem2D_pState::dFIdU -- Invisicd Flux Jacobian       *
- ********************************************************/
-// Finite differnece check of dFxdU
-void Flame2D_pState::dFIdU_FD(DenseMatrix &dFdU) const {
-
-  // declares
-  const int NUM_VAR = dFdU.get_n();
-  static Flame2D_State UU;
-  static Flame2D_State A,C;
-  static Flame2D_pState B,D;
-  const double perturb = 5e-6;
-  double a;
-
-  // set UU
-  getU(UU);
-
-  // finitie differences
-  for(int jcol=0; jcol<NUM_VAR; jcol++){    
-    A = UU;  C = UU;
-    if( jcol <NUM_FLAME2D_VAR_SANS_SPECIES) {
-      A[jcol+1] += perturb*max(ONE,UU[jcol+1]); 
-      C[jcol+1] -= perturb*max(ONE,UU[jcol+1]);
-    } else {                                       //enforce sum(ci) = 1;
-      a = perturb*max(ONE,UU[jcol+1]); 
-      A[jcol+1] += a;
-      A[NUM_VAR+1] -= a;      
-      C[jcol+1] -= a;
-      C[NUM_VAR+1] += a;
-    }   
-    B.setU(A);   D.setU(C);    
-    B.Fx(A);     D.Fx(C);
-    for(int irow=0; irow<NUM_VAR; irow++){
-      dFdU(irow,jcol) = ( A[irow+1] - C[irow+1])/(TWO*perturb*max(ONE, UU[jcol+1]));      
-    }
-  } 
-
 }
 
 
@@ -296,7 +263,7 @@ void Flame2D_pState::dFIdW(DenseMatrix &dFdW,
 			   const double& mult) {
     
   // Note: make sure you loaded the dihdic array and phi outside
-  updateDihdDic();
+  updateDihDic();
   double Temp( T() );
   double Rt( Rtot() );
   double C_p( Cp() );
@@ -322,7 +289,7 @@ void Flame2D_pState::dFIdW(DenseMatrix &dFdW,
   dFdW(3,3) = mult * vx()*C_p/Rt;
     
   //Species
-  for(int i = 0; i<ns; i++){ 
+  for(int i = 0; i<ns_eqn; i++){ 
     dFdW(3,iSpec+i) = mult * rho_vx*dihdic(i);    
       
     dFdW(iSpec+i, 0) = mult * c(i)*vx();
@@ -332,41 +299,6 @@ void Flame2D_pState::dFIdW(DenseMatrix &dFdW,
 
 }
 
-/********************************************************
- * Chem2D_pState::dFIdW -- Invisicd Flux Jacobian       *
- ********************************************************/
-// Finite differnece check of dFxdW
-void Flame2D_pState::dFIdW_FD(DenseMatrix &dFdW, const double &mult) const {
-
-  // declares
-  const int NUM_VAR = dFdW.get_n();
-  static Flame2D_pState A,C;
-  static Flame2D_State B,D;
-  const double perturb = 5e-6;
-  double a;
-
-  // finitie differences
-  for(int jcol=0; jcol<NUM_VAR; jcol++){    
-    A.Copy(*this);  C.Copy(*this);
-    if( jcol <NUM_FLAME2D_VAR_SANS_SPECIES) {
-      A[jcol+1] += perturb*max(ONE,(*this)[jcol+1]); 
-      C[jcol+1] -= perturb*max(ONE,(*this)[jcol+1]);
-    } else {                                       //enforce sum(ci) = 1;
-      a = perturb*max(ONE,(*this)[jcol+1]); 
-      A[jcol+1] += a;
-      A[NUM_VAR+1] -= a;      
-      C[jcol+1] -= a;
-      C[NUM_VAR+1] += a;
-    }   
-    A.Fx(B);   C.Fx(D);
-    for(int irow=0; irow<NUM_VAR; irow++){
-      dFdW(irow,jcol) = mult*( B[irow+1] - D[irow+1])/(TWO*perturb*max(ONE, (*this)[jcol+1]));      
-    }
-  } 
-
-}
-
-  
 /*****************************************************************
  * Viscous fluxes  (laminar flow)                                * 
  * Viscous fluxes  (turbulent flows) are defined in single block * 
@@ -500,7 +432,7 @@ void Flame2D_pState :: dFvdWf_dGvdWf( DenseMatrix &dFvdWf,
   }
  
   //multispecies
-  for(int Num = 0; Num<ns; Num++){
+  for(int Num = 0; Num<ns_eqn; Num++){
     dFvdWf(3,10+Num) = rho_*Diffusion_coef(Num)*h[Num];  //+  H3???
     dFvdWf(4+Num, 10+Num) = rho_*Diffusion_coef(Num);
   }
@@ -541,7 +473,7 @@ void Flame2D_pState :: dFvdWf_dGvdWf( DenseMatrix &dFvdWf,
   }
 
   //multispecies
-  for(int Num = 0; Num<ns; Num++){
+  for(int Num = 0; Num<ns_eqn; Num++){
     dGvdWf(3,10+Num) = rho_*Diffusion_coef(Num)*h[Num];
     dGvdWf(4+Num, 10+Num) = rho_*Diffusion_coef(Num);
   }
@@ -650,7 +582,7 @@ void  Flame2D_pState::lp_x(const int &i, Flame2D_State& lp) const {
 void Flame2D_pState::rc_x(const int &i, 
 			  Flame2D_State& rc) {
   double aa(a());
-  updateDihdDic();
+  updateDihDic();
   // Compute the right conserved eigenvector
   if(i == 1){
     rc.rho() = ONE;
@@ -747,16 +679,16 @@ void Flame2D_pState::Flux_Dissipation_Jac(DenseMatrix &Jac,
   //
   // Loop through each wavespeed and each element of Jacobian(i,j)        
   //
-  for (int i=1; i <= n; i++) { 
+  for (int i=1; i <= n_eqn; i++) { 
       
     // compute left and right eigenvectors
     lp_x(i, lp);
     rc_x(i, rc);
       
     // compute i,j element
-    for(int irow =0; irow< n; irow++)
-      for(int jcol =0; jcol< n; jcol++)
-	Jac(irow, jcol) -= mult*wavespeeds[i]*lp[jcol+1]*rc[irow+1];
+    for(int irow =0; irow<n_eqn; irow++)
+      for(int jcol =0; jcol<n_eqn; jcol++)
+	Jac(irow, jcol) -= mult*wavespeeds.eqnVar(i)*lp.eqnVar(jcol+1)*rc.eqnVar(irow+1);
   } 
       
 }
@@ -831,7 +763,7 @@ void Flame2D_pState::rc_x_precon(const int &i,
 				 const double &cprimed, 
 				 Flame2D_State& rc) {
   double aa(a());
-  updateDihdDic();
+  updateDihDic();
   // Compute the right conserved eigenvector
   if(i == 1){
     rc.rho() = ONE;
@@ -946,16 +878,16 @@ void Flame2D_pState::Flux_Dissipation_Jac_precon(DenseMatrix &Jac,
   //
   // Calculate the preconditioned upwind dissipation flux.
   //
-  for (int i=1; i <= n; i++) {
+  for (int i=1; i <= n_eqn; i++) {
       
     // compute left and right eigenvectors
     lp_x_precon(i, MR2, uprimed, cprimed, lp);
     rc_x_precon(i, MR2, uprimed, cprimed, rc);
       
     // compute i,j element
-    for(int irow =0; irow < n; irow++)
-      for(int jcol =0; jcol < n; jcol++)	   
-	Jac(irow, jcol) -= HALF*wavespeeds[i]*lp[jcol+1]*rc[irow+1];
+    for(int irow =0; irow < n_eqn; irow++)
+      for(int jcol =0; jcol < n_eqn; jcol++)	   
+	Jac(irow, jcol) -= HALF*wavespeeds.eqnVar(i)*lp.eqnVar(jcol+1)*rc.eqnVar(irow+1);
   }
     
 }
@@ -1018,7 +950,7 @@ void Flame2D_pState::Low_Mach_Number_Preconditioner(DenseMatrix &P,
 						    const int &Viscous_flag, 
 						    const double &deltax ) {  
   // Note: make sure you loaded the dihdic array and phi outside
-  updateDihdDic();
+  updateDihDic();
   double phi( Phi() );
   double Temp( T() );
   double Rmix( Rtot() );
@@ -1051,13 +983,13 @@ void Flame2D_pState::Low_Mach_Number_Preconditioner(DenseMatrix &P,
   P(3,3) = -(alpha*(enthalpy+V)-V-Rmix*Temp-beta-phi)/Omega;
 
   //Multispecies
-  for(int j=0; j<ns; j++){  
+  for(int j=0; j<ns_eqn; j++){  
      
     P(0,j+iSpec) = dihdic(j)*alpham1/Omega;
     P(1,j+iSpec) = vx()*dihdic(j)*alpham1/Omega;
     P(2,j+iSpec) = vy()*dihdic(j)*alpham1/Omega;
     P(3,j+iSpec) = dihdic(j)*(V+enthalpy)*alpham1/Omega;	
-    for(int i=0; i<ns; i++){ 
+    for(int i=0; i<ns_eqn; i++){ 
       if(i==j){ 
 	P(i+iSpec,0) = (c(i))*(beta-V)*alpham1/Omega;
 	P(i+iSpec,1) = (c(i))*vx()*alpham1/Omega;
@@ -1083,7 +1015,7 @@ void Flame2D_pState::Low_Mach_Number_Preconditioner_Inverse(DenseMatrix &Pinv,
 							    const int &Viscous_flag, 
 							    const double &deltax ) {  
   // Note: make sure you loaded the dihdic array and phi outside
-  updateDihdDic();
+  updateDihDic();
   double phi( Phi() );
   double Temp( T() );
   double Rmix( Rtot() );
@@ -1119,12 +1051,12 @@ void Flame2D_pState::Low_Mach_Number_Preconditioner_Inverse(DenseMatrix &Pinv,
   Pinv(5,5) = ONE;
 
   //Multispecies
-  for(int j=0; j<ns; j++){   
+  for(int j=0; j<ns_eqn; j++){   
     Pinv(0,j+iSpec) = -dihdic(j)*BB/AA;
     Pinv(1,j+iSpec) = -vx()*dihdic(j)*BB/AA;
     Pinv(2,j+iSpec) = -vy()*dihdic(j)*BB/AA;
     Pinv(3,j+iSpec) = -dihdic(j)*BB*DD/AA;
-    for(int i=0; i<ns; i++){  
+    for(int i=0; i<ns_eqn; i++){  
       if(i==j){
 	Pinv(i+iSpec,0) = (c(i))*CC*BB/AA;
 	Pinv(i+iSpec,1) = -(c(i))*vx()*BB/AA;
@@ -1191,7 +1123,7 @@ void Flame2D_pState::dSa_idU( DenseMatrix &dSa_IdU,
 			      const int Axisymmetric ) {
 
   // Note: make sure you loaded the dihdic array and phi outside
-  updateDihdDic();
+  updateDihDic();
   double phi( Phi() );
   double enthalpy( h() );
   double CP( Cp() );
@@ -1224,7 +1156,7 @@ void Flame2D_pState::dSa_idU( DenseMatrix &dSa_IdU,
     
     //Multispecies terms
     double d( CP/RTOT - ONE );
-    for(int i=0; i<ns;i++){
+    for(int i=0; i<ns_eqn; i++){
       dSa_IdU(3,i+iSpec) += vx()*dihdic(i)/d/X.x; 
       dSa_IdU(iSpec+i,0) += vx()*c(i)/X.x;
       dSa_IdU(iSpec+i,1) -= c(i)/X.x;
@@ -1339,7 +1271,7 @@ void Flame2D_pState::dSa_vdW(DenseMatrix &dSa_VdW,
    
     //Multispecies
     double rhoD;
-    for(int i = 0; i<ns; i++){ 
+    for(int i = 0; i<ns_eqn; i++){ 
       rhoD = rho_*Diffusion_coef(i);
       dSa_VdW(3,iSpec+i) += ( rhoD * h_i[i] * d_dWdx_dW ) / radius;  
       //- specdata[Num].Rs()*Sum_dhi)/radius; // <- For full NS-1 consistency
@@ -1373,7 +1305,7 @@ void Flame2D_pState::Sw(Flame2D_State &S,
  ****************************************************/  
 void Flame2D_pState::dSwdU( DenseMatrix &dSdU ) const {
   if (reacting) {
-    Mix.dSwdU( dSdU, rho(), p(), c(), iSpec );
+    Mix.dSwdU( dSdU, rho(), p(), c(), iSpec,  NSm1);
   }
 }
 
@@ -1448,7 +1380,7 @@ void Flame2D_pState::Ssoot(Flame2D_State &S, const double& mult) const {
 void Flame2D_pState::dWdU(DenseMatrix &dWdQ) {
 
   // Note: make sure you loaded the dihdic array and phi outside
-  updateDihdDic();
+  updateDihDic();
   double phi( Phi() );
   double Temp( T() );
   double Rt( Rtot() );
@@ -1467,7 +1399,7 @@ void Flame2D_pState::dWdU(DenseMatrix &dWdQ) {
   dWdQ(3,3) = ONE/denominator;
 
   //Species
-  for(int i=0; i<ns; i++){   
+  for(int i=0; i<ns_eqn; i++){   
     dWdQ(3, iSpec+i) = - dihdic(i)/denominator;
     dWdQ(iSpec+i, 0) = - c(i)/rho();
     dWdQ(iSpec+i, iSpec+i) = ONE/rho();
@@ -1475,43 +1407,6 @@ void Flame2D_pState::dWdU(DenseMatrix &dWdQ) {
 
 }
 
-/************************************************************************
- * Chem2D_pState::dWdU -- Primitive/Conserved transformation Jacobian   *
- ************************************************************************/
-// Finite differnece check of dWdU
-// shows error in (3,0) ie dp/rho due to pertubing rho and cState T() calc.
-void Flame2D_pState::dWdU_FD(DenseMatrix &dWdQ) const {
-
-  // declares
-  const int NUM_VAR = dWdQ.get_n();
-  static Flame2D_State UU;
-  static Flame2D_State A,C;
-  static Flame2D_pState B,D;
-  const double perturb = 5e-6;
-  double a;
-
-  // set UU
-  getU(UU);
-
-  for(int jcol=0; jcol<NUM_VAR; jcol++){    
-    A = UU;    C = UU;
-    if( jcol <NUM_FLAME2D_VAR_SANS_SPECIES) {
-      A[jcol+1] += perturb*max(ONE,A[jcol+1]); 
-      C[jcol+1] -= perturb*max(ONE,C[jcol+1]);
-    } else {                                       //enforce sum(ci) = 1;
-      a =  perturb*max(ONE,A[jcol+1]); 
-      A[jcol+1] += a;
-      A[NUM_VAR+1] -= a;      
-      C[jcol+1] -= a;
-      C[NUM_VAR+1] += a;
-    }
-    B.setU(A);   D.setU(C);    
-    for(int irow=0; irow<NUM_VAR; irow++){
-      dWdQ(irow,jcol) = ( B[irow+1] - D[irow+1])/(TWO*perturb*max(ONE,UU[jcol+1]));     
-    }
-  } 
-
-}
 
 /////////////////////////////////////////////////////////////////////
 /// Boundary Conditions
@@ -2167,7 +2062,7 @@ void Flame2D_State :: FluxLinde(const Flame2D_pState &Wl,
       
     } /* endif */
     
-      // compute the flux
+    // compute the flux
     double a(wavespeed_l*wavespeed_r), 
       b(wavespeed_r-wavespeed_l),
       c(ONE-(ONE-max(wavespeed_m/wavespeed_r, wavespeed_m/wavespeed_l))*alpha);
@@ -2311,7 +2206,7 @@ void Flame2D_State :: FluxRoe_x(Flame2D_pState &Wl,
 			     lambdas_r);
      
     // Evaluate the low-Mach-number local preconditioner for the Roe-averaged state.
-    static DenseMatrix P(n,n,ZERO);
+    static DenseMatrix P(n_eqn,n_eqn,ZERO);
     //P.zero(); // <- no need, always writing to the same spot
     Wa.Low_Mach_Number_Preconditioner(P, flow_type_flag, deltax);
     
@@ -2324,9 +2219,9 @@ void Flame2D_State :: FluxRoe_x(Flame2D_pState &Wl,
     Wa.Flux_Dissipation_precon( MR2a, dWrl, wavespeeds, Flux_dissipation);
     
     // Add preconditioned upwind dissipation flux.
-    for ( int i = 0 ; i < n ; i++ ) {
-      for ( int j = 0 ; j < n ; j++ ) {
-	(*this)[i+1] += P(i,j)*Flux_dissipation[j+1];
+    for ( int i = 0 ; i < n_eqn ; i++ ) {
+      for ( int j = 0 ; j < n_eqn ; j++ ) {
+	(*this).eqnVar(i+1) += P(i,j)*Flux_dissipation.eqnVar(j+1);
       } 
     } 
      

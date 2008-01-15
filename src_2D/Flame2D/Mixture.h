@@ -129,9 +129,9 @@ public:
   void getDiffCoefs( double *d ) const 
   { assert(diff_OK); for (int i=0; i<ns; i++) d[i] = diff[i]; };
   //! Species dhi/dY_i
-  double DihdDiy( const int &i ) const 
+  double DihDiy( const int &i ) const 
   { assert(dhdy_OK); return dhdy[i]; };
-  void getDihdDiy( double* dh ) const 
+  void getDihDiy( double* dh ) const 
   { assert(dhdy_OK); for (int i=0; i<ns; i++) dh[i] = dhdy[i]; };
   //! Wilkes mixture rule ratio
   double Phi(void) const { assert(dhdy_OK); return phi; };
@@ -197,8 +197,9 @@ public:
   //! update thermal conductivity and diffusion coefficients
   void updateTransport(const double &rho, const double* y);
   //! update dihdiy and phi
-  void updateDihdDic( const double &rho, 
-		      const double* y );
+  void updateDihDic( const double &rho, 
+		     const double* y,
+		     const int NSm1 );
 
   /*************************** Mixing Rules *************************
     The following constructors return "total" physical
@@ -260,7 +261,8 @@ public:
 	      const double &rho,
 	      const double &Press,
 	      const double* y,
-	      const int offset) const;
+	      const int offset,
+	      const int NSm1 ) const;
   double dSwdU_max_diagonal( const double &rho,
 			     const double &Press,
 			     const double* y) const;
@@ -752,8 +754,9 @@ inline void Mixture :: updateTransport(const double &rho,
  * Compute the derivative of the species enthalpies
  * wrt the mass fractions.
  ****************************************************/
-inline void Mixture ::  updateDihdDic( const double &rho, 
-				       const double* y ) {
+inline void Mixture ::  updateDihDic( const double &rho, 
+				      const double* y,
+				      const int NSm1 ) {
     
   if (!dhdy_OK) {
 	
@@ -763,11 +766,17 @@ inline void Mixture ::  updateDihdDic( const double &rho,
     ct_gas->setDensity(rho);
     ct_gas->getEnthalpy_RT(dhdy); // -> h = hs + hf
 
+    // get last species value
+    // for h_k - h_N
+    double dhdyN( 0.0 );
+    if (NSm1) dhdyN = ( dhdy[ns-1]*(Cantera::GasConstant/M[ns-1])*T -
+			Cp*T*MW/M[ns-1] );
+
     // compute the rest and phi at the same time
     phi = 0.0;
     for(int i=0; i<ns; i++) {
-      dhdy[i] = ( dhdy[i]*(Cantera::GasConstant/M[i])*T -
-		  Cp*T*MW/M[i] );
+      dhdy[i] = ( ( dhdy[i]*(Cantera::GasConstant/M[i])*T -
+		    Cp*T*MW/M[i] ) - dhdyN );
       phi += y[i] * dhdy[i];
     }
 

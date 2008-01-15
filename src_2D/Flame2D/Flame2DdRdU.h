@@ -61,11 +61,6 @@ void d_dWd_dW_Center(double &d_dWdx_dW_C, double &d_dWdy_dW_C,
 void dFIdW_Inviscid_ROE(DenseMatrix& dRdW, Flame2D_Quad_Block &SolnBlk,  
 			Flame2D_Input_Parameters &Input_Parameters,
 			const int &ii, const int &jj, const int Orient);
-void dFIdW_Inviscid_ROE_FD(DenseMatrix& dRdW, 
-			   Flame2D_Quad_Block &SolnBlk,  
-			   Flame2D_Input_Parameters &Input_Parameters,
-			   const int &ii, const int &jj, 
-			   const int Orient);
 
 void dFIdW_Inviscid_AUSM_plus_up(DenseMatrix& dRdW, 
 				 Flame2D_Quad_Block &SolnBlk,  

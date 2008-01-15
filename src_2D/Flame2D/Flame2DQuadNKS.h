@@ -11,6 +11,13 @@
 /****************************************************************/
 
 
+/*! *************************************************************
+ * Flame2D Specialization of blocksize to use N-1 not N         *
+ * variables                                                    *
+ ****************************************************************/
+template <> int set_blocksize(Flame2D_Quad_Block &SolnBlk)
+{ return (Flame2D_State::NumEqn()); }
+
 
 /*! *************************************************************
  *  Specialization of Newton_Update                             *
@@ -30,7 +37,7 @@ int Newton_Update(Flame2D_Quad_Block *SolnBlk,
 		  double Relaxation_multiplier) {
 
   // declares
-  const int Num_Var = SolnBlk[0].NumVar();  	
+  const int Num_Var = SolnBlk[0].NumEqn();  	
   int error_flag = 0;
   bool isGoodState;
   
@@ -45,7 +52,7 @@ int Newton_Update(Flame2D_Quad_Block *SolnBlk,
 	  // Update solutions in conserved variables  
 	  // U = Uo + RELAXATION*deltaU = Uo + denormalized(x)
 	  for(int varindex =1; varindex <= Num_Var; varindex++){	                       
-	    SolnBlk[Bcount].U[i][j][varindex] = SolnBlk[Bcount].Uo[i][j][varindex]  +  
+	    SolnBlk[Bcount].U[i][j].eqnVar(varindex) = SolnBlk[Bcount].Uo[i][j].eqnVar(varindex) +
 	      Relaxation_multiplier*GMRES.deltaU(Bcount,i,j,varindex-1);
 	  } 	      	  
 	  
@@ -61,7 +68,7 @@ int Newton_Update(Flame2D_Quad_Block *SolnBlk,
 	    for (int n_update_reduction = 1; n_update_reduction <= 10; ++n_update_reduction) {
 	      update_reduction_factor = HALF*update_reduction_factor;		  		  
 	      for(int varindex = 1; varindex <= Num_Var; varindex++){
-		SolnBlk[Bcount].U[i][j][varindex] = SolnBlk[Bcount].Uo[i][j][varindex] 
+		SolnBlk[Bcount].U[i][j].eqnVar(varindex) = SolnBlk[Bcount].Uo[i][j].eqnVar(varindex)
 		  + GMRES.deltaU(Bcount,i,j,varindex-1)*update_reduction_factor;
 	      }   
 	      cout<<"\n Applying Reduction to solution in NKS "<<n_update_reduction;
@@ -94,7 +101,7 @@ int Newton_Update(Flame2D_Quad_Block *SolnBlk,
 	for (int i = SolnBlk[Bcount].ICl-SolnBlk[Bcount].Nghost; i <= SolnBlk[Bcount].ICu+SolnBlk[Bcount].Nghost; i++){
 	  for(int varindex =1; varindex <= Num_Var; varindex++){	  	   
 	    //SolnBlk[Bcount].dUdt[i][j][0][varindex] = GMRES.deltaU_test(Bcount,i,j,varindex-1);
-	    SolnBlk[Bcount].dUdt[i][j][0][varindex] = GMRES.b_test(Bcount,i,j,varindex-1);
+	    SolnBlk[Bcount].dUdt[i][j][0].eqnVar(varindex) = GMRES.b_test(Bcount,i,j,varindex-1);
 	    //norm[varindex-1] += sqr(SolnBlk[Bcount].dUdt[i][j][0][varindex]);
 	    // norm[varindex-1] = max(norm[varindex-1],fabs(SolnBlk[Bcount].dUdt[i][j][0][varindex]));
 	  }
@@ -521,7 +528,7 @@ Preconditioner_dFVdU(DenseMatrix &dFvdU,
   static Vector2D nface;
 
   // solution size
-  const int ns = SolnBlk->W[Rii][Rjj].NumSpecies();
+  const int ns = SolnBlk->W[Rii][Rjj].NumSpeciesEqn();
   const int Matrix_size = 10 + ns; // rho, u, v, p, drho, du/dx, du/dy, 
                                    // dv/dx, dv/dy, dp/dx, dcn/dx
 
@@ -748,7 +755,7 @@ Preconditioner_dSdU(int ii, int jj, DenseMatrix &dRdU){
  ****************************************************************/
 void normalize_Preconditioner(DenseMatrix &dFdU) 
 { 
-  int nsp( Flame2D_pState::NumSpecies() );
+  int nsp( Flame2D_pState::NumSpeciesEqn() );
   static const Flame2D_pState W_STD_ATM;
   static double ao( W_STD_ATM.a() );
   static double rho( W_STD_ATM.rho() );

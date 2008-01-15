@@ -1529,7 +1529,7 @@ void Flame2D_Quad_Block::Evaluate_Radiation_Source( const Flame2D_Input_Paramete
   // If radiation is specified and the full RTE is not solved 
   // (i.e. Srad is not alread evaluated), then calculate the 
   // divergence of the radiation heat flux.
-  if ( IP.Radiation != RADIATION_RTE ||
+  if ( IP.Radiation == RADIATION_RTE ||
        IP.Radiation != OFF ) {
 
     // loop over the block, computing the source term

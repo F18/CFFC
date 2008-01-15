@@ -49,6 +49,10 @@ using namespace std;
 #endif
 #endif
 
+//DEBUGGING FLAG FOR FIGUREING OUT proper NS-1 setup.
+#undef _NS_MINUS_ONE
+#define _NS_MINUS_ONE
+
 /////////////////////////////////////////////////////////////////////
 /// Class Definitions
 /////////////////////////////////////////////////////////////////////
@@ -167,11 +171,17 @@ public:
   //! return the number of variables - number of species
   static int NumVarSansSpecies(void) { return NUM_FLAME2D_VAR_SANS_SPECIES; }
 
-  //! return the number of variables
+  //! return the total number of solution variables
   static int NumVar(void) { return n; }
+
+  //! return the number of equations
+  static int NumEqn(void) { return n_eqn; }
 
   //! return the number of species
   static int NumSpecies(void) { return ns; }
+
+  // return the number of species equations
+  static int NumSpeciesEqn() { return ns_eqn; }
 
   //! is the mixture reacting
   static bool isReacting(void) { return reacting; }
@@ -269,9 +279,13 @@ public:
   bool speciesOK(const int &harshness);
 
   /********************* Operators Overloading **********************/
-  // Index operator
+  // Index operator - for each solution var -> includes last species
   double &operator[](int index) { return x[index-1]; };
   const double &operator[](int index) const { return x[index-1]; };
+
+  // Index operator - for each equation var -> doesn't include last species
+  double &eqnVar(int index) { return x[ eqnIndex[index-1] ]; };
+  const double &eqnVar(int index) const { return x[ eqnIndex[index-1] ]; };
 
   // Binary arithmetic operators.
   Flame2D_State operator +(const Flame2D_State &X) const;
@@ -301,15 +315,25 @@ public:
   /********************* Private Objects ****************************/
 protected:
 
+  //!< Flag indicating 0 or solving full ns, 1 for solving ns-1
+#ifdef _NS_MINUS_ONE
+  static const int  NSm1 = 1;
+#else
+  static const int  NSm1 = 0;
+#endif
+
 #ifdef STATIC_NUM_FLAME2D_VAR
   double                  x[STATIC_NUM_FLAME2D_VAR];
 #else
   double                 *x; //!< solution state array
 #endif
   static int              n; //!< Total number of vars
+  static int          n_eqn; //!< Total number of equations
   static int             ns; //!< Number of species
+  static int         ns_eqn; //!< Number of species equations (ns or ns-1)
   static int            nsc; //!< Number of soot scalars
   static int           ngas; //!< Number of variables associated with the gas phase
+  static int*      eqnIndex; //!< array of indexes for location of independant (equation) variable in total solution variable array, x.
   static bool      reacting; //!< boolean indicating whether gas is reacting
   static bool     radiating; //!< boolean indicating whether gas participates in radiation
   static double        Mref; //!< Mref for Precondtioning (normally set to incoming freestream Mach)
@@ -623,14 +647,14 @@ public:
   //!< Derivatives
   double diedip() const { return (hprime() - Rtot())/(rho()*Rtot()); };
   double diedirho() const { return -p()*(hprime() - Rtot())/(rho()*rho()*Rtot()); };
-  double dihdic(const int &i) const { return Mix.DihdDiy(i); };
+  double dihdic(const int &i) const { return Mix.DihDiy(i); };
   double Phi(void) const { return Mix.Phi(); };
   //! update viscosity
   void updateViscosity(void) { Mix.updateViscosity(rho(), c()); };
   //! update related transport properties -> kappa and D_i
   void updateTransport(void) { Mix.updateTransport(rho(), c()); };
   //! update derivative of species enthalpies wrt mass fracs
-  double updateDihdDic(void) { Mix.updateDihdDic( rho(), c() ); };
+  double updateDihDic(void) { Mix.updateDihDic( rho(), c(), NSm1 ); };
 
   /************ Strain rate tensor, laminar stress tensor ***********/
   void Strain_Rate(const Flame2D_State &dWdx,
@@ -732,11 +756,8 @@ public:
 
   /************************ Flux Jacobians **************************/
   void dWdU(DenseMatrix &dWdQ);
-  void dWdU_FD(DenseMatrix &dWdQ) const;
   void dFIdU(DenseMatrix &dFdU);
-  void dFIdU_FD(DenseMatrix &dFdU) const;
   void dFIdW(DenseMatrix &dFdW, const double& mult=1.0);
-  void dFIdW_FD(DenseMatrix &dFdW, const double& mult=1.0) const;
   void dFvdWf_dGvdWf( DenseMatrix &dFvdWf, 
 		      DenseMatrix &dGvdWf, 
 		      const Flame2D_State &dWdx, 
@@ -907,6 +928,13 @@ inline void Flame2D_pState :: AllocateStatic() {
     cp_i = new double[ns];
     y = new double[ns];
   }
+  if (n_eqn>0) { 
+    // build index array - skipping Nth species
+    //  eqnIndex[ equation number ] => returns solution variable number
+    eqnIndex = new int[n_eqn];
+    for (int i=0; i<ngas-NSm1; i++) eqnIndex[i] = i;
+    for (int i=0; i<nsc; i++) eqnIndex[ngas-NSm1+i] = ngas+i;
+  };
 };
 
 inline void Flame2D_pState :: DeallocateStatic() { 
@@ -914,6 +942,7 @@ inline void Flame2D_pState :: DeallocateStatic() {
   if (h_i!=NULL) { delete[] h_i; h_i = NULL; } 
   if (cp_i!=NULL) { delete[] cp_i; cp_i = NULL; } 
   if (y!=NULL) { delete[] y; y = NULL; } 
+  if (eqnIndex!=NULL) { delete[] eqnIndex; eqnIndex = NULL; } 
   Mixture::DeallocateStatic();
   if (soot!=NULL) { delete soot; soot = NULL; } 
   if (rad!=NULL) { delete rad; rad = NULL; } 
@@ -1488,7 +1517,7 @@ inline bool Flame2D_State::speciesOK(const int &harshness) {
   //
   // Loop over the species
   //
-  for(int i=0; i<ns; i++){
+  for(int i=0; i<ns_eqn; i++){
 
 
     yi = rhoc(i)/rho();
@@ -1546,6 +1575,16 @@ inline bool Flame2D_State::speciesOK(const int &harshness) {
   } // enfor - species
 
 
+  // Distribute error according to number of species
+  // equations solved.
+#ifdef _NS_MINUS_ONE
+  sum /= rho();
+  yi = max(ONE - sum, ZERO);
+  sum += yi;
+  rhoc(ns-1) = rho()*yi;
+  if ( fabs(sum-1.0)!=0.0 ) for(int i=0; i<ns; i++) rhoc(i) /= sum;
+
+#else
   // Distribute error over all the species
   // sum /= rho();
   // for(int i=0; i<ns; i++) rhoc(i) /= sum;
@@ -1553,7 +1592,7 @@ inline bool Flame2D_State::speciesOK(const int &harshness) {
   // Give error to density
   // if ( fabs(sum-rho_)>NANO ) rho() = sum;
   rho() = sum;
-
+#endif
 
   // SUCCESS!
   return true;
@@ -1580,7 +1619,7 @@ inline bool Flame2D_State::isPhysical(const int &harshness) {
   double e_tot;
   e_tot = E()/rho() - HALF*rhovsqr()/rho()/rho();
   for (int i=0; i<ns; i++) y[i] = rhoc(i)/rho();
-
+  
   // check properties
   if (rho() <= ZERO || !speciesOK(harshness) || e_tot <= Flame2D_pState::e_zero(y)) {
     cout << "\n " << CFFC_Name() 

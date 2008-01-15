@@ -3599,7 +3599,7 @@ int dUdt_Multistage_Explicit(Flame2D_Quad_Block &SolnBlk,
 	  break;
 	} // endswitch
 	  	
-	  // Determine EAST face VISCOUS flux.
+	// Determine EAST face VISCOUS flux.
 	if(SolnBlk.Flow_Type != FLOWTYPE_INVISCID){ // -ve as on RHS 	  
 	  switch(Input_Parameters.i_Viscous_Flux_Evaluation){
 	  case VISCOUS_RECONSTRUCTION_DIAMONDPATH_LEAST_SQUARES :	      
@@ -3647,7 +3647,7 @@ int dUdt_Multistage_Explicit(Flame2D_Quad_Block &SolnBlk,
 	SolnBlk.dUdt[i+1][j][k_residual].add( Flux, (Input_Parameters.CFL_Number*
 						     SolnBlk.dt[i+1][j]*SolnBlk.Grid.lfaceW(i+1, j)/
 						     SolnBlk.Grid.Cell[i+1][j].A) );
-	  
+
 	// Include axisymmetric source terms as required.
 	if (SolnBlk.Axisymmetric) {
 	  SolnBlk.W[i][j].Sa_inviscid(SolnBlk.dUdt[i][j][k_residual],
@@ -3669,7 +3669,7 @@ int dUdt_Multistage_Explicit(Flame2D_Quad_Block &SolnBlk,
 	//rho*omega_dot
 	SolnBlk.W[i][j].Sw(SolnBlk.dUdt[i][j][k_residual], 
 			   Input_Parameters.CFL_Number*SolnBlk.dt[i][j]);
- 
+
 	// Include source terms associated with gravity
 	if (SolnBlk.Gravity) {	 
 	  SolnBlk.W[i][j].Sg(SolnBlk.dUdt[i][j][k_residual],
@@ -3824,7 +3824,7 @@ int Update_Solution_Multistage_Explicit(Flame2D_Quad_Block &SolnBlk,
 
   int k_residual;
   double omega, delta_n;
-  const int NUM_VAR_FLAME2D( SolnBlk.NumVar() );
+  const int NUM_VAR_FLAME2D( SolnBlk.NumEqn() );
   static Flame2D_pState Wo;
   bool isGoodState;
 
@@ -4022,14 +4022,14 @@ int Update_Solution_Multistage_Explicit(Flame2D_Quad_Block &SolnBlk,
 	 ******************************************************************/
 	// omega*(dt*RHS)
 	for (int k = 0; k < NUM_VAR_FLAME2D; k++) {
-	  LinSys.b(k) = omega*SolnBlk.dUdt[i][j][k_residual][k+1];
+	  LinSys.b(k) = omega*SolnBlk.dUdt[i][j][k_residual].eqnVar(k+1);
 	}
 	/* Solve system of equations using LU decomposition Gaussian elimination procedure. */
 	LinSys.solve(LU_DECOMPOSITION);
 	
 	/* Update the conserved solution variables. */
 	for (int k = 0; k < NUM_VAR_FLAME2D; k++) {
-	  SolnBlk.U[i][j][k+1] = SolnBlk.Uo[i][j][k+1] + LinSys.x(k);
+	  SolnBlk.U[i][j].eqnVar(k+1) = SolnBlk.Uo[i][j].eqnVar(k+1) + LinSys.x(k);
 	} 
 
 
@@ -4066,14 +4066,14 @@ int Update_Solution_Multistage_Explicit(Flame2D_Quad_Block &SolnBlk,
 	    }
 
 	    for (int k = 0; k < NUM_VAR_FLAME2D; k++) {
-	      LinSys.b(k) = omega*SolnBlk.dUdt[i][j][k_residual][k+1];
+	      LinSys.b(k) = omega*SolnBlk.dUdt[i][j][k_residual].eqnVar(k+1);
 	    } 
 	    
 	    LinSys.solve(LU_DECOMPOSITION);
 	    
 	    /* Update the conserved Solution */
 	    for (int k = 0; k < NUM_VAR_FLAME2D; k++) {
-	      SolnBlk.U[i][j][k+1] = SolnBlk.Uo[i][j][k+1] + LinSys.x(k);
+	      SolnBlk.U[i][j].eqnVar(k+1) = SolnBlk.Uo[i][j].eqnVar(k+1) + LinSys.x(k);
 	    } 
 	    	    
 	    isGoodState = SolnBlk.U[i][j].isPhysical(n_residual_reduction);
