@@ -21,6 +21,10 @@ using namespace std;
 #include "Levermore1DVector.h"
 #endif //_LEVERMORE1D_VECTOR_INCLUDED
 
+#ifndef _MATRIX_INCLUDED
+#include "../Math/Matrix.h"
+#endif //_MATRIX_INCLUDED
+
 /* Define the classes. */
 class Levermore1D_cState;
 class Levermore1D_weights;
@@ -68,6 +72,7 @@ class Levermore1D_cState : public Levermore1D_Vector{
   void set_from_W(const Levermore1D_pState &W);
   void set_from_A(const Levermore1D_weights &A);
   double moment(int n, const Levermore1D_weights &A) const;
+  DenseMatrix d2hda2(const Levermore1D_weights &A) const;
 
 };
 
@@ -80,8 +85,8 @@ class Levermore1D_weights : public Levermore1D_Vector{
 
   Levermore1D_weights(void){}
   Levermore1D_weights(const Levermore1D_weights &A) : Levermore1D_Vector(A) {}
-  explicit Levermore1D_weights(const Levermore1D_pState &W) {set_from_W(W);}
-  explicit Levermore1D_weights(const Levermore1D_cState &U) {set_from_U(U);}
+  explicit Levermore1D_weights(const Levermore1D_pState &W) {initialize(); set_from_W(W);}
+  explicit Levermore1D_weights(const Levermore1D_cState &U) {initialize(); set_from_U(U);}
 
   /* Functions. */
   Levermore1D_Vector& operator=(const Levermore1D_Vector &V) {return Levermore1D_Vector::operator=(V);}
@@ -114,6 +119,13 @@ class Levermore1D_weights : public Levermore1D_Vector{
     } else {
       return m_values[i];
     }
+  }
+
+  void initialize() {
+    zero();
+    m_values[2] = -6.04491e-06;
+    m_values[1] = 0.0;
+    m_values[0] = 39.5685;
   }
 
 };

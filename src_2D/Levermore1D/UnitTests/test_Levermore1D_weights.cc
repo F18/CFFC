@@ -108,6 +108,28 @@ namespace tut
   void Levermore1D_weights_object::test<3>()
   {
     set_test_name("Constructor from cState");
+    double rho(1.225);
+    double u(132.22);
+    double p(101325.0);
+    double m = Levermore1D_weights::m();
+    double n(rho/m); //number density
+    double B(rho/(2.0*p));
+
+    Levermore1D_weights A1;
+
+    A1.zero();
+    A1[1] = -B*u*u+log(n*sqrt(B/PI));
+    A1[2] = 2.0*B*u;
+    A1[3] = -B;
+
+    Levermore1D_cState U(A1);
+    Levermore1D_weights A2(U);
+
+    for(int i=1;i<=Levermore1D_Vector::get_length();++i) {
+      ensure_distance("alpha2=alpha1",A2[i],A1[i],fabs(A1[i])*1e-6);
+    }
+
+
   }
 
   /* Test 4:*/

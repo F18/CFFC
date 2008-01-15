@@ -15,6 +15,11 @@
 
 using namespace std;
 
+/* Include Headers */
+#ifndef _MATRIX_INCLUDED
+#include "../Math/Matrix.h"
+#endif //_MATRIX_INCLUDED
+
 /********************************************************
  * Class: Levermore1D_Vector                            *
  ********************************************************/
@@ -34,6 +39,15 @@ class Levermore1D_Vector {
   Levermore1D_Vector(const Levermore1D_Vector &L) {
     m_values = new double[length];
     copy_from(L);
+  }
+
+  /* Constructor from column vector */
+  Levermore1D_Vector(const ColumnVector &CV) {
+    assert(length == CV.size());
+    m_values = new double[length];
+    for(int i=0;i<length;++i) {
+      m_values[i] = CV[i];
+    }
   }
 
   /* Destructor */

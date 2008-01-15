@@ -1,6 +1,8 @@
 /* Levermore1DState.cc:  Source file for Levermore1D_XState classes. */
 
+#ifndef _LEVERMORE1D_STATE_INCLUDED
 #include "Levermore1DState.h"
+#endif //_LEVERMORE1D_STATE_INCLUDED
 
 /********************************************************
  * Static member variables                              *
@@ -189,3 +191,56 @@ double Levermore1D_weights::integrate_random_moment(int i, double u) const {
 
   return sum;
 }
+
+
+/********************************************************
+ * Function: Levermore1D_weights::set_from_U            *
+ *                                                      *
+ * Convert a weigths vector into a primitive one.       *
+ *                                                      *
+ ********************************************************/
+void Levermore1D_weights::set_from_U(const Levermore1D_cState &U) {
+
+  Levermore1D_cState U_temp(*this);
+  Levermore1D_weights A_step;
+  ColumnVector rhs(Levermore1D_Vector::get_length());
+  DenseMatrix d2hda2_inv(Levermore1D_Vector::get_length(),
+			 Levermore1D_Vector::get_length());
+
+  for(int i=0; i < Levermore1D_Vector::get_length(); ++i) {
+    rhs[i] = U[i+1]-U_temp[i+1];
+  }
+
+  while(fabs(rhs[1]) > 1e-8) { //fix tolerance later
+    d2hda2_inv =U_temp.d2hda2(*this).pseudo_inverse();
+    A_step = d2hda2_inv*rhs;
+    *this += A_step;
+    assert((*this).m_values[get_length()-1] < 0);
+    U_temp.set_from_A(*this);
+    for(int i=0; i < Levermore1D_Vector::get_length(); ++i) {
+      rhs[i] = U[i+1]-U_temp[i+1];
+    }
+  }
+
+  return;
+}
+
+/********************************************************
+ * Function: Levermore1D_cState::d2hda2                 *
+ *                                                      *
+ * Calculate Hessian of density potential.              *
+ *                                                      *
+ ********************************************************/
+DenseMatrix Levermore1D_cState::d2hda2(const Levermore1D_weights &A) const {
+
+  DenseMatrix dm(Levermore1D_Vector::get_length(),
+		 Levermore1D_Vector::get_length() );
+
+  for(int i = 0; i < Levermore1D_Vector::get_length(); ++i) {
+    for(int j = 0; j < Levermore1D_Vector::get_length(); ++j) {
+      dm(i,j) = moment(i+j,A);
+    }
+  }
+  return dm;
+}
+
