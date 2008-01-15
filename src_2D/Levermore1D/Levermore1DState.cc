@@ -196,7 +196,7 @@ double Levermore1D_weights::integrate_random_moment(int i, double u) const {
 /********************************************************
  * Function: Levermore1D_weights::set_from_U            *
  *                                                      *
- * Convert a weigths vector into a primitive one.       *
+ * Convert a conserved vector into weights.             *
  *                                                      *
  ********************************************************/
 void Levermore1D_weights::set_from_U(const Levermore1D_cState &U) {
@@ -222,6 +222,18 @@ void Levermore1D_weights::set_from_U(const Levermore1D_cState &U) {
     }
   }
 
+  return;
+}
+
+/********************************************************
+ * Function: Levermore1D_weights::set_from_W            *
+ *                                                      *
+ * Convert a primitive vector into weights.             *
+ *                                                      *
+ ********************************************************/
+void Levermore1D_weights::set_from_W(const Levermore1D_pState &W) {
+  Levermore1D_cState U(W);
+  set_from_U(U);
   return;
 }
 
