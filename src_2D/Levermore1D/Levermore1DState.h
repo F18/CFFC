@@ -85,8 +85,9 @@ class Levermore1D_weights : public Levermore1D_Vector{
 
   Levermore1D_weights(void){}
   Levermore1D_weights(const Levermore1D_weights &A) : Levermore1D_Vector(A) {}
-  explicit Levermore1D_weights(const Levermore1D_pState &W) {initialize(); set_from_W(W);}
-  explicit Levermore1D_weights(const Levermore1D_cState &U) {initialize(); set_from_U(U);}
+  Levermore1D_weights(const double &d, const double &u, const double &p) {MaxBoltz(d,u,p);}
+  explicit Levermore1D_weights(const Levermore1D_pState &W) {MaxBoltz(W); set_from_W(W);}
+  explicit Levermore1D_weights(const Levermore1D_cState &U) {MaxBoltz(U); set_from_U(U);}
 
   /* Functions. */
   Levermore1D_Vector& operator=(const Levermore1D_Vector &V) {return Levermore1D_Vector::operator=(V);}
@@ -121,11 +122,15 @@ class Levermore1D_weights : public Levermore1D_Vector{
     }
   }
 
-  void initialize() {
+  void MaxBoltz(const Levermore1D_pState &W) {MaxBoltz(W[1], W[2], W[3]);}
+  void MaxBoltz(const Levermore1D_cState &U) {MaxBoltz(U[1], U[2]/U[1], U[3]-U[2]*U[2]/U[1]);}
+  void MaxBoltz(double rho, double u, double p) {
+    double n(rho/m()); //number density
+    double B(rho/(2.0*p));
     zero();
-    m_values[2] = -6.04491e-06;
-    m_values[1] = 0.0;
-    m_values[0] = 39.5685;
+    m_values[0] = -B*u*u+log(n*sqrt(B/PI));
+    m_values[1] = 2.0*B*u;
+    m_values[2] = -B;
   }
 
 };
