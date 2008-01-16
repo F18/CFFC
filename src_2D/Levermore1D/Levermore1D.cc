@@ -816,7 +816,7 @@ void Linear_Reconstruction_LeastSquares(Levermore1D_UniformMesh *Soln,
 }
 
 /******************************************************//**
- * Routine: dUdt_explicitLevermore_upwind                   
+ * Routine: dUdt_explicitEuler_upwind
  *                                                      
  * This routine updates the solution using a 1st-order  
  * explicit Levermore time integration and 1st-order upwind 
@@ -825,7 +825,7 @@ void Linear_Reconstruction_LeastSquares(Levermore1D_UniformMesh *Soln,
  * HLLC flux functions.                                 
  *                                                      
  ********************************************************/
-int dUdt_explicitLevermore_upwind(Levermore1D_UniformMesh *Soln,
+int dUdt_explicitEuler_upwind(Levermore1D_UniformMesh *Soln,
 	                      const int Number_of_Cells,
 			      double &dtMin,
 			      const double &CFL_Number,
