@@ -347,12 +347,12 @@ public:
 			  const int Number_of_Cells_Jdir,
 			  const int Number_of_Ghost_Cells);
   
-void Grid_Free_Jet(int &_Number_of_Blocks_Idir_,
-		   int &_Number_of_Blocks_Jdir_,
-		   const double &Radius,
-		   const int Number_of_Cells_Idir,
-		   const int Number_of_Cells_Jdir,
-		   const int Number_of_Ghost_Cells) ;
+  void Grid_Free_Jet(int &_Number_of_Blocks_Idir_,
+		     int &_Number_of_Blocks_Jdir_,
+		     const double &Radius,
+		     const int Number_of_Cells_Idir,
+		     const int Number_of_Cells_Jdir,
+		     const int Number_of_Ghost_Cells) ;
 
   void Grid_Wedge(int &_Number_of_Blocks_Idir_,
 		  int &_Number_of_Blocks_Jdir_,

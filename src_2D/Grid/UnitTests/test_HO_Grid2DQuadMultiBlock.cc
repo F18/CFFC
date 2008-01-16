@@ -244,6 +244,424 @@ namespace tut
     Check_Input_Output_Operator("MultiBlockGrid variable", MultiBlockGrid);
   }
 
+  /* Test 6:*/
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<6>()
+  {
+
+    set_test_name("Grid rectangular box");
+    set_local_output_path("HO_MultiBlockQuadGrids");
+
+    RunRegression = ON;
+    
+    // Create block grid
+    Grid2D_Quad_MultiBlock_HO MultiBlockGrid;
+
+    // Input parameters
+    int Number_of_Blocks_Idir = 5;
+    int Number_of_Blocks_Jdir = 3;
+    double Width = 2.0;
+    double Height = 3.0;
+    int Number_of_Cells_Idir = 40;
+    int Number_of_Cells_Jdir = 30;
+    int Number_of_Ghost_Cells = 2;
+
+    // Build grid
+    MultiBlockGrid.Grid_Rectangular_Box(Number_of_Blocks_Idir,
+                                        Number_of_Blocks_Jdir,
+                                        Width,
+                                        Height,
+                                        Number_of_Cells_Idir,
+					Number_of_Cells_Jdir,
+					Number_of_Ghost_Cells);
+
+    MultiBlockGrid.Translate_Multi_Block_Grid(Vector2D(1.0,2.0));
+    MultiBlockGrid.Scale_Multi_Block_Grid(2.0);
+    MultiBlockGrid.Reflect_Multi_Block_Grid();
+    MultiBlockGrid.Rotate_Multi_Block_Grid(0.785398163);
+  
+    if (RunRegression){
+
+      //open file for output
+      CurrentFile = "Current_RectangularBox.dat";
+      MasterFile  = "RectangularBox.dat";
+      Open_Output_File(CurrentFile);
+      MultiBlockGrid.Output_Tecplot(out());
+      RunRegressionTest("Rectangular Box", CurrentFile, MasterFile, 5.0e-12, 5.0e-12);
+      
+      //open file for all mesh node output
+      CurrentFile  = "Current_RectangularBox_node.dat";
+      MasterFile  = "RectangularBox_node.dat";
+      Open_Output_File(CurrentFile);
+      MultiBlockGrid.Output_Nodes_Tecplot(out());
+      RunRegressionTest("Rectangular Box node", CurrentFile, MasterFile, 5.0e-12, 5.0e-12);
+
+      //open file for all mesh cell output
+      CurrentFile  = "Current_RectangularBox_cell.dat";
+      MasterFile  = "RectangularBox_cell.dat";
+      Open_Output_File(CurrentFile);
+      MultiBlockGrid.Output_Cells_Tecplot(out());
+      RunRegressionTest("Rectangular Box cell", CurrentFile, MasterFile, 5.0e-12, 5.0e-12);
+
+    } else {
+      //open file for interior node output
+      MasterFile  = "RectangularBox.dat";
+      Open_Output_File(MasterFile);
+      MultiBlockGrid.Output_Tecplot(out());
+
+      //open file for all mesh node output
+      MasterFile  = "RectangularBox_node.dat";
+      Open_Output_File(MasterFile);
+      MultiBlockGrid.Output_Nodes_Tecplot(out());
+
+      //open file for all mesh cell output
+      MasterFile  = "RectangularBox_cell.dat";
+      Open_Output_File(MasterFile);
+      MultiBlockGrid.Output_Cells_Tecplot(out());
+    }
+
+  }
+
+  /* Test 7:*/
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<7>()
+  {
+
+    set_test_name("Grid flat plate");
+    set_local_output_path("HO_MultiBlockQuadGrids");
+
+    RunRegression = ON;
+    
+    // Create block grid
+    Grid2D_Quad_MultiBlock_HO MultiBlockGrid;
+
+    // Input parameters
+    int Number_of_Blocks_Idir = 5;
+    int Number_of_Blocks_Jdir = 3;
+    double Length = 2.5;
+    int Flat_Plate_Type = 1;
+    int Stretching_Flag = 1;
+    double Stretching_Factor_Idir = 2.0;
+    double Stretching_Factor_Jdir = 3.0;
+    int Number_of_Cells_Idir = 40;
+    int Number_of_Cells_Jdir = 30;
+    int Number_of_Ghost_Cells = 2;
+
+    // Build grid
+    MultiBlockGrid.Grid_Flat_Plate(Number_of_Blocks_Idir,
+				   Number_of_Blocks_Jdir,
+				   Length,
+				   Flat_Plate_Type,
+				   Stretching_Flag,
+				   Stretching_Factor_Idir,
+				   Stretching_Factor_Jdir,
+				   Number_of_Cells_Idir,
+				   Number_of_Cells_Jdir,
+				   Number_of_Ghost_Cells);
+
+    MultiBlockGrid.Translate_Multi_Block_Grid(Vector2D(1.0,2.0));
+    MultiBlockGrid.Scale_Multi_Block_Grid(2.0);
+    MultiBlockGrid.Reflect_Multi_Block_Grid();
+    MultiBlockGrid.Rotate_Multi_Block_Grid(0.785398163);
+  
+    if (RunRegression){
+
+      //open file for output
+      CurrentFile = "Current_FlatPlate.dat";
+      MasterFile  = "FlatPlate.dat";
+      Open_Output_File(CurrentFile);
+      MultiBlockGrid.Output_Tecplot(out());
+      RunRegressionTest("Flat Plate", CurrentFile, MasterFile, 5.0e-12, 5.0e-12);
+      
+      //open file for all mesh node output
+      CurrentFile  = "Current_FlatPlate_node.dat";
+      MasterFile  = "FlatPlate_node.dat";
+      Open_Output_File(CurrentFile);
+      MultiBlockGrid.Output_Nodes_Tecplot(out());
+      RunRegressionTest("Flat Plate node", CurrentFile, MasterFile, 5.0e-12, 5.0e-12);
+
+      //open file for all mesh cell output
+      CurrentFile  = "Current_FlatPlate_cell.dat";
+      MasterFile  = "FlatPlate_cell.dat";
+      Open_Output_File(CurrentFile);
+      MultiBlockGrid.Output_Cells_Tecplot(out());
+      RunRegressionTest("Flat Plate cell", CurrentFile, MasterFile, 5.0e-12, 5.0e-12);
+
+    } else {
+      //open file for interior node output
+      MasterFile  = "FlatPlate.dat";
+      Open_Output_File(MasterFile);
+      MultiBlockGrid.Output_Tecplot(out());
+
+      //open file for all mesh node output
+      MasterFile  = "FlatPlate_node.dat";
+      Open_Output_File(MasterFile);
+      MultiBlockGrid.Output_Nodes_Tecplot(out());
+
+      //open file for all mesh cell output
+      MasterFile  = "FlatPlate_cell.dat";
+      Open_Output_File(MasterFile);
+      MultiBlockGrid.Output_Cells_Tecplot(out());
+    }
+
+  }
+
+  /* Test 8:*/
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<8>()
+  {
+
+    set_test_name("Grid 2D Laminar Flame");
+    set_local_output_path("HO_MultiBlockQuadGrids");
+
+    RunRegression = ON;
+    
+    // Create block grid
+    Grid2D_Quad_MultiBlock_HO MultiBlockGrid;
+
+    // Input parameters
+    int Number_of_Blocks_Idir = 12;
+    int Number_of_Blocks_Jdir = 3;
+    double Height = 2.0;
+    double Length = 3.0;
+    int Number_of_Cells_Idir = 40;
+    int Number_of_Cells_Jdir = 30;
+    int Number_of_Ghost_Cells = 2;
+    int Flame_Type_Flag = IC_RESTART;
+
+    // Build grid
+    MultiBlockGrid.Grid_2D_Laminar_Flame(Number_of_Blocks_Idir,
+					 Number_of_Blocks_Jdir,
+					 Length,
+					 Height,
+					 Number_of_Cells_Idir,
+					 Number_of_Cells_Jdir,
+					 Number_of_Ghost_Cells,
+					 Flame_Type_Flag);
+
+    MultiBlockGrid.Translate_Multi_Block_Grid(Vector2D(1.0,2.0));
+    MultiBlockGrid.Scale_Multi_Block_Grid(2.0);
+    MultiBlockGrid.Reflect_Multi_Block_Grid();
+    MultiBlockGrid.Rotate_Multi_Block_Grid(0.785398163);
+  
+    if (RunRegression){
+
+      //open file for output
+      CurrentFile = "Current_2D_Laminar_Flame.dat";
+      MasterFile  = "2D_Laminar_Flame.dat";
+      Open_Output_File(CurrentFile);
+      MultiBlockGrid.Output_Tecplot(out());
+      RunRegressionTest("2D Laminar Flame", CurrentFile, MasterFile, 5.0e-12, 5.0e-12);
+      
+      //open file for all mesh node output
+      CurrentFile  = "Current_2D_Laminar_Flame_node.dat";
+      MasterFile  = "2D_Laminar_Flame_node.dat";
+      Open_Output_File(CurrentFile);
+      MultiBlockGrid.Output_Nodes_Tecplot(out());
+      RunRegressionTest("2D Laminar Flame node", CurrentFile, MasterFile, 5.0e-12, 5.0e-12);
+
+      //open file for all mesh cell output
+      CurrentFile  = "Current_2D_Laminar_Flame_cell.dat";
+      MasterFile  = "2D_Laminar_Flame_cell.dat";
+      Open_Output_File(CurrentFile);
+      MultiBlockGrid.Output_Cells_Tecplot(out());
+      RunRegressionTest("2D Laminar Flame cell", CurrentFile, MasterFile, 5.0e-12, 5.0e-12);
+
+    } else {
+      //open file for interior node output
+      MasterFile  = "2D_Laminar_Flame.dat";
+      Open_Output_File(MasterFile);
+      MultiBlockGrid.Output_Tecplot(out());
+
+      //open file for all mesh node output
+      MasterFile  = "2D_Laminar_Flame_node.dat";
+      Open_Output_File(MasterFile);
+      MultiBlockGrid.Output_Nodes_Tecplot(out());
+
+      //open file for all mesh cell output
+      MasterFile  = "2D_Laminar_Flame_cell.dat";
+      Open_Output_File(MasterFile);
+      MultiBlockGrid.Output_Cells_Tecplot(out());
+    }
+
+  }
+
+  /* Test 9:*/
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<9>()
+  {
+
+    set_test_name("Grid NACA AirFoil");
+    set_local_output_path("HO_MultiBlockQuadGrids");
+
+    RunRegression = ON;
+    
+    // Create block grid
+    Grid2D_Quad_MultiBlock_HO MultiBlockGrid;
+
+    // Input parameters
+    int Number_of_Blocks_Idir = 12;
+    int Number_of_Blocks_Jdir = 3;
+    char NACA_Aerofoil_Type_ptr[6] = "23015";
+    double Chord_Length = 2.0;
+    int Number_of_Cells_Idir = 40;
+    int Number_of_Cells_Jdir = 30;
+    int Number_of_Ghost_Cells = 5;
+    
+    // Build grid
+    MultiBlockGrid.Grid_NACA_Aerofoil(Number_of_Blocks_Idir,
+				      Number_of_Blocks_Jdir,
+				      NACA_Aerofoil_Type_ptr,
+				      Chord_Length,
+				      Number_of_Cells_Idir,
+				      Number_of_Cells_Jdir,
+				      Number_of_Ghost_Cells);
+
+    MultiBlockGrid.Translate_Multi_Block_Grid(Vector2D(1.0,2.0));
+    MultiBlockGrid.Scale_Multi_Block_Grid(2.0);
+    MultiBlockGrid.Reflect_Multi_Block_Grid();
+  
+    if (RunRegression){
+
+      //open file for output
+      CurrentFile = "Current_NACA_Aerofoil.dat";
+      MasterFile  = "NACA_Aerofoil.dat";
+      Open_Output_File(CurrentFile);
+      MultiBlockGrid.Output_Tecplot(out());
+      RunRegressionTest("NACA Aerofoil", CurrentFile, MasterFile, 5.0e-12, 5.0e-12);
+      
+      //open file for all mesh node output
+      CurrentFile  = "Current_NACA_Aerofoil_node.dat";
+      MasterFile  = "NACA_Aerofoil_node.dat";
+      Open_Output_File(CurrentFile);
+      MultiBlockGrid.Output_Nodes_Tecplot(out());
+      RunRegressionTest("NACA Aerofoil node", CurrentFile, MasterFile, 5.0e-12, 5.0e-12);
+
+      //open file for all mesh cell output
+      CurrentFile  = "Current_NACA_Aerofoil_cell.dat";
+      MasterFile  = "NACA_Aerofoil_cell.dat";
+      Open_Output_File(CurrentFile);
+      MultiBlockGrid.Output_Cells_Tecplot(out());
+      RunRegressionTest("NACA Aerofoil cell", CurrentFile, MasterFile, 5.0e-12, 5.0e-12);
+
+    } else {
+      //open file for interior node output
+      MasterFile  = "NACA_Aerofoil.dat";
+      Open_Output_File(MasterFile);
+      MultiBlockGrid.Output_Tecplot(out());
+
+      //open file for all mesh node output
+      MasterFile  = "NACA_Aerofoil_node.dat";
+      Open_Output_File(MasterFile);
+      MultiBlockGrid.Output_Nodes_Tecplot(out());
+
+      //open file for all mesh cell output
+      MasterFile  = "NACA_Aerofoil_cell.dat";
+      Open_Output_File(MasterFile);
+      MultiBlockGrid.Output_Cells_Tecplot(out());
+    }
+
+  }
+
+  /* Test 10:*/
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<10>()
+  {
+
+    set_test_name("Grid Nozzle");
+    set_local_output_path("HO_MultiBlockQuadGrids");
+
+    RunRegression = ON;
+    
+    // Create block grid
+    Grid2D_Quad_MultiBlock_HO MultiBlockGrid;
+
+    // Input parameters
+    int Number_of_Blocks_Idir = 12;
+    int Number_of_Blocks_Jdir = 3;
+    double Length_Nozzle = 10.0;
+    double Radius_Chamber = 2;
+    double Radius_Nozzle_Exit = 4;
+    double Radius_Nozzle_Throat = 1;
+    int Nozzle_Type = 1;
+    int Stretching_Flag = 1;
+    int Stretching_Type_Idir = 1;
+    int Stretching_Type_Jdir = 1;
+    double Stretching_Factor_Idir = 1.9;
+    double Stretching_Factor_Jdir = 2.1;
+    int Number_of_Cells_Idir = 40;
+    int Number_of_Cells_Jdir = 30;
+    int Number_of_Ghost_Cells = 5;
+    
+    // Build grid
+    MultiBlockGrid.Grid_Nozzle(Number_of_Blocks_Idir,
+			       Number_of_Blocks_Jdir,
+			       Length_Nozzle,
+			       Radius_Chamber,
+			       Radius_Nozzle_Exit,
+			       Radius_Nozzle_Throat,
+			       Nozzle_Type,
+			       Stretching_Flag,
+			       Stretching_Type_Idir,
+			       Stretching_Type_Jdir,
+			       Stretching_Factor_Idir,
+			       Stretching_Factor_Jdir,
+			       Number_of_Cells_Idir,
+			       Number_of_Cells_Jdir,
+			       Number_of_Ghost_Cells);
+
+    MultiBlockGrid.Translate_Multi_Block_Grid(Vector2D(1.0,2.0));
+    MultiBlockGrid.Scale_Multi_Block_Grid(2.0);
+    MultiBlockGrid.Reflect_Multi_Block_Grid();
+  
+    if (RunRegression){
+
+      //open file for output
+      CurrentFile = "Current_Nozzle.dat";
+      MasterFile  = "Nozzle.dat";
+      Open_Output_File(CurrentFile);
+      MultiBlockGrid.Output_Tecplot(out());
+      RunRegressionTest("Nozzle", CurrentFile, MasterFile, 5.0e-12, 5.0e-12);
+      
+      //open file for all mesh node output
+      CurrentFile  = "Current_Nozzle_node.dat";
+      MasterFile  = "Nozzle_node.dat";
+      Open_Output_File(CurrentFile);
+      MultiBlockGrid.Output_Nodes_Tecplot(out());
+      RunRegressionTest("Nozzle node", CurrentFile, MasterFile, 5.0e-12, 5.0e-12);
+
+      //open file for all mesh cell output
+      CurrentFile  = "Current_Nozzle_cell.dat";
+      MasterFile  = "Nozzle_cell.dat";
+      Open_Output_File(CurrentFile);
+      MultiBlockGrid.Output_Cells_Tecplot(out());
+      RunRegressionTest("Nozzle cell", CurrentFile, MasterFile, 5.0e-12, 5.0e-12);
+
+    } else {
+      //open file for interior node output
+      MasterFile  = "Nozzle.dat";
+      Open_Output_File(MasterFile);
+      MultiBlockGrid.Output_Tecplot(out());
+
+      //open file for all mesh node output
+      MasterFile  = "Nozzle_node.dat";
+      Open_Output_File(MasterFile);
+      MultiBlockGrid.Output_Nodes_Tecplot(out());
+
+      //open file for all mesh cell output
+      MasterFile  = "Nozzle_cell.dat";
+      Open_Output_File(MasterFile);
+      MultiBlockGrid.Output_Cells_Tecplot(out());
+    }
+
+  }
+
+
 
 }
 
