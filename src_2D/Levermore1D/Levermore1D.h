@@ -21,27 +21,27 @@
 /* Define the classes. */
 
 /******************************************************//**
- * Class: Levermore1D_UniformMesh  
- * 
+ * Class: Levermore1D_UniformMesh
+ *
  * @brief Class definition of the 1D Levermore computational cell (i.e. solution + geometry)
- *                                                      
- * Member functions                                     
- * -     W       -- Return primitive solution state.     
- * -     U       -- Return conserved solution state.     
- * -     A       -- Return closure weights.     
- * -     X       -- Return cell geometry.                
- * -     dt      -- Return local time step.              
- * -   dUdt      -- Return the solution residual.        
- * -   dUdx      -- Return the unlimited solution        
- * -                gradient.                            
- * -    phi      -- Return the solution slope limiters.  
- * -     Uo      -- Return initial solution state.       
- * - Nghost      -- Number of ghost cells (!= 1 for      
- * -                high-order)                          
- *                                                      
- * - cout << S; (output function)                         
- * - cin  >> S; (input function)                          
- *                                                      
+ *
+ * Member functions
+ * -     W       -- Return primitive solution state.
+ * -     U       -- Return conserved solution state.
+ * -     A       -- Return closure weights.
+ * -     X       -- Return cell geometry.
+ * -     dt      -- Return local time step.
+ * -   dUdt      -- Return the solution residual.
+ * -   dUdx      -- Return the unlimited solution
+ * -                gradient.
+ * -    phi      -- Return the solution slope limiters.
+ * -     Uo      -- Return initial solution state.
+ * - Nghost      -- Number of ghost cells (!= 1 for
+ * -                high-order)
+ *
+ * - cout << S; (output function)
+ * - cin  >> S; (input function)
+ *
  ********************************************************/
 class Levermore1D_UniformMesh{
 public:
@@ -64,7 +64,7 @@ public:
   /* Creation, copy, and assignment constructors. */
   Levermore1D_UniformMesh(void);
   Levermore1D_UniformMesh(const Levermore1D_UniformMesh &Soln);
-  Levermore1D_UniformMesh(const Levermore1D_pState &W0, const Levermore1D_cState &U0, 
+  Levermore1D_UniformMesh(const Levermore1D_pState &W0, const Levermore1D_cState &U0,
 			  const Levermore1D_weights &A0, const Cell1D_Uniform &X0);
   Levermore1D_UniformMesh(const Levermore1D_pState &W0, const Cell1D_Uniform &X0);
   Levermore1D_UniformMesh(const Levermore1D_cState &U0, const Cell1D_Uniform &X0);
@@ -79,7 +79,7 @@ public:
   const double & CellSolutionPrimVar(int & VarPosition) const { return W[VarPosition];}
   double & CellSolutionPrimVar(int & VarPosition){ return W[VarPosition];} //!< return component of the primitive solution state
   /* Conservative variables */
-  const Levermore1D_cState & CellSolutionConsVar(void) const {return U;} 
+  const Levermore1D_cState & CellSolutionConsVar(void) const {return U;}
   Levermore1D_cState & CellSolutionConsVar(void) {return U;} //!< return the conserved solution state
   const double & CellSolutionConsVar(int & VarPosition) const { return U[VarPosition];}
   double & CellSolutionConsVar(int & VarPosition) { return U[VarPosition];} //!< return component of the conserved solution state
@@ -94,13 +94,13 @@ public:
 
   /* Operating functions */
 //  double SolutionAtCoordinates_PWL (const double & X_Coord, const unsigned parameter) ;
-    
+
 //  /* Relational operators. */
 //  friend int operator ==(const Levermore1D_UniformMesh &Soln1,
 //			 const Levermore1D_UniformMesh &Soln2);
 //  friend int operator !=(const Levermore1D_UniformMesh &Soln1,
 //			 const Levermore1D_UniformMesh &Soln2);
-    
+
   /* Set gas state */
   void set_state(const Levermore1D_pState &W0) {
     W = W0; U = Levermore1D_cState(W); A = Levermore1D_weights(U);
@@ -120,7 +120,7 @@ public:
 
 private:
 //  HighOrderType   HO_dWdx; //!< High-order derivatives container for the primitive solution state
-  
+
 };
 
 /*******************************************************
@@ -152,7 +152,7 @@ inline Levermore1D_UniformMesh::Levermore1D_UniformMesh(const Levermore1D_pState
 
 inline Levermore1D_UniformMesh::Levermore1D_UniformMesh(const Levermore1D_pState &W0,
 							const Cell1D_Uniform &X0) {
-  W = W0; U = Levermore1D_cState(W0); A = Levermore1D_weights(W0); 
+  W = W0; U = Levermore1D_cState(W0); A = Levermore1D_weights(W0);
   X = X0; dt = ZERO; dUdt.zero();
   dWdx.zero(); phi.zero(); Uo.zero();
 }
@@ -181,7 +181,7 @@ inline Levermore1D_UniformMesh::Levermore1D_UniformMesh(const Levermore1D_cState
 //  return (Soln1.W == Soln2.W && Soln1.U == Soln2.U &&
 //	  Soln1.X == Soln2.X && Soln1.dt == Soln2.dt &&
 //	  Soln1.dUdt == Soln2.dUdt && Soln1.dWdx == Soln2.dWdx &&
-//	  Soln1.phi == Soln2.phi && Soln1.Uo == Soln2.Uo && 
+//	  Soln1.phi == Soln2.phi && Soln1.Uo == Soln2.Uo &&
 //	  Soln1.CellSolutionCharactVar() == Soln2.CellSolutionCharactVar() &&
 //	  Soln1.CellHighOrder() == Soln2.CellHighOrder() );
 //}

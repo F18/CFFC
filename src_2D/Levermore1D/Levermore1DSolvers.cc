@@ -16,7 +16,7 @@
 int Levermore1DSolver(char *Input_File_Name_ptr,
 	          int batch_flag) {
 
-  /********************************************************  
+  /********************************************************
    * Local variable declarations.                         *
    ********************************************************/
 
@@ -46,7 +46,7 @@ int Levermore1DSolver(char *Input_File_Name_ptr,
 
   double time, dtime;
 
-  /********************************************************  
+  /********************************************************
    * Set default values for the input solution parameters *
    * and then read user specified input values from the   *
    * specified input file.                                *
@@ -58,7 +58,7 @@ int Levermore1DSolver(char *Input_File_Name_ptr,
   if (batch_flag){
     Input_Parameters.Verbose() = OFF;
   }
- 
+
   strcpy(Input_Parameters.Input_File_Name, Input_File_Name_ptr);
   Open_Input_File(Input_Parameters);
   if (Input_Parameters.Input_File.fail()) {
@@ -106,7 +106,7 @@ int Levermore1DSolver(char *Input_File_Name_ptr,
      cout.flush();
   } /* endif */
 
-  /*********************************************************  
+  /*********************************************************
    * Create mesh and allocate Levermore1D solution variables.  *
    *********************************************************/
 
@@ -134,12 +134,12 @@ int Levermore1DSolver(char *Input_File_Name_ptr,
     cout << "\n Creating uniform mesh.";
     cout.flush();
   }
-  Grid(Soln_ptr, 
-       Input_Parameters.X_Min, 
-       Input_Parameters.X_Max, 
+  Grid(Soln_ptr,
+       Input_Parameters.X_Min,
+       Input_Parameters.X_Max,
        Input_Parameters.Number_of_Cells);
 
-  /********************************************************  
+  /********************************************************
    * Initialize Levermore1D solution variables.               *
    ********************************************************/
 
@@ -147,22 +147,22 @@ int Levermore1DSolver(char *Input_File_Name_ptr,
 
   time = ZERO;
   number_of_time_steps = 0;
-  
+
   /* Initialize the conserved and primitive state
      solution variables. */
-  
+
   if (! batch_flag){
     cout << "\n Prescribing Levermore1D initial data.";
     cout.flush();
   }
-  ICs(Soln_ptr, 
-      "AIR", 
-      Input_Parameters.i_ICs, 
+  ICs(Soln_ptr,
+      "AIR",
+      Input_Parameters.i_ICs,
       Input_Parameters.Number_of_Cells,
       Input_Parameters);
-  
 
-  /********************************************************  
+
+  /********************************************************
    * Solve conservation form of 1D Levermore equations for    *
    * specified IBVP or BVP on uniform mesh.               *
    ********************************************************/
@@ -179,9 +179,9 @@ int Levermore1DSolver(char *Input_File_Name_ptr,
     }
      while (1) {
          /* Determine local and global time steps. */
-         dtime = CFL(Soln_ptr, 
+         dtime = CFL(Soln_ptr,
                      Input_Parameters.Number_of_Cells);
-         if (time + Input_Parameters.CFL_Number*dtime > 
+         if (time + Input_Parameters.CFL_Number*dtime >
              Input_Parameters.Time_Max) {
             dtime = (Input_Parameters.Time_Max-time)/Input_Parameters.CFL_Number;
          } /* endif */
@@ -191,12 +191,12 @@ int Levermore1DSolver(char *Input_File_Name_ptr,
              cout << " Time Step = " << number_of_time_steps
 	          << " Time = " << time*THOUSAND << "\n .";
 	     cout.flush();
-         } else if (! batch_flag && 
+         } else if (! batch_flag &&
                     number_of_time_steps-100*(number_of_time_steps/100) == 0 ) {
 	     cout << "\n" << " Time Step = " << number_of_time_steps
 	          << " Time = " << time*THOUSAND << "\n .";
 	     cout.flush();
-         } else if (! batch_flag && 
+         } else if (! batch_flag &&
                     number_of_time_steps-50*(number_of_time_steps/50) == 0 ) {
 	     cout << "\n .";
 	     cout.flush();
@@ -207,7 +207,7 @@ int Levermore1DSolver(char *Input_File_Name_ptr,
 
          /* Check to see if calculations are complete. */
          if (Input_Parameters.Local_Time_Stepping &&
-             number_of_time_steps >= 
+             number_of_time_steps >=
              Input_Parameters.Maximum_Number_of_Time_Steps) break;
          if (!Input_Parameters.Local_Time_Stepping &&
              time >= Input_Parameters.Time_Max) break;
@@ -235,7 +235,7 @@ int Levermore1DSolver(char *Input_File_Name_ptr,
 						      dtime,
 						      Input_Parameters.CFL_Number,
 						      Input_Parameters.i_Reconstruction,
-						      Input_Parameters.i_Limiter, 
+						      Input_Parameters.i_Limiter,
 						      Input_Parameters.i_Flux_Function,
 						      Input_Parameters.Local_Time_Stepping);
              break;
@@ -279,7 +279,7 @@ int Levermore1DSolver(char *Input_File_Name_ptr,
 //				       Input_Parameters.Number_of_Cells,
 //				       dtime,
 //				       Input_Parameters.CFL_Number,
-//				       Input_Parameters.i_Limiter, 
+//				       Input_Parameters.i_Limiter,
 //				       Input_Parameters.i_Flux_Function,
 //				       Input_Parameters.Local_Time_Stepping);
 //             break;
@@ -304,7 +304,7 @@ int Levermore1DSolver(char *Input_File_Name_ptr,
              } /* endif */
              return (error_flag);
          } /* endif */
-      
+
          /* Update time and time step counter. */
          number_of_time_steps = number_of_time_steps + 1;
          time = time + Input_Parameters.CFL_Number*dtime;
@@ -316,7 +316,7 @@ int Levermore1DSolver(char *Input_File_Name_ptr,
      }
   } /* endif */
 
-  /**************************************************  
+  /**************************************************
    * Reconstruct the final solution (high-order or  *
    * limited linear reconstruction)                 *
    *************************************************/
@@ -332,7 +332,7 @@ int Levermore1DSolver(char *Input_File_Name_ptr,
     LimitedLinearReconstructionOverDomain(Soln_ptr,Input_Parameters);
 //  }
 
-  /********************************************************  
+  /********************************************************
    * Write 1D Levermore solution to output file.              *
    ********************************************************/
 
@@ -442,7 +442,7 @@ int Levermore1DSolver(char *Input_File_Name_ptr,
 
             Gnuplot_File.close();
          } /* endif */
-	 
+
 //     } else if (command_flag == WRITE_OUTPUT_ACCURACY_CODE) {
 //       // Output error norms to tecplot file
 //       AccuracyAssessment1D::OutputErrorNormsTecplot(Soln_ptr,Input_Parameters);
@@ -466,10 +466,10 @@ int Levermore1DSolver(char *Input_File_Name_ptr,
      } /* endif */
   } /* endwhile */
 
-  /********************************************************  
+  /********************************************************
    * End of all Levermore1DSolver computations and I/O.   *
    ********************************************************/
 
   return (0);
-  
+
 }

@@ -5,23 +5,23 @@
 #include "Levermore1D.h"
 
 /******************************************************//**
- * Routine: Allocate                                    
- *                                                      
- * Allocate memory for 1D Levermore equation solution.      
- *                                                      
+ * Routine: Allocate
+ *
+ * Allocate memory for 1D Levermore equation solution.
+ *
  ********************************************************/
 Levermore1D_UniformMesh* Allocate(Levermore1D_UniformMesh *Soln_ptr,
 				  const CFD1D_Input_Parameters &IP) {
 
   int NC;                       // number of cells in the computational domain
   int Nghost; 			// number of ghost cells
-  
+
   /* Calculate the total number of computational cells */
   // IP.Nghost() : calculates the number of ghost cells based on the order and the method of reconstruction.
   Nghost = IP.Nghost();
   NC = IP.Number_of_Cells + 2 * Nghost;
 
-  /* Allocate memory. */  
+  /* Allocate memory. */
   Soln_ptr = new Levermore1D_UniformMesh[NC];
 
   /* Set preliminary mesh parameters */
@@ -33,15 +33,15 @@ Levermore1D_UniformMesh* Allocate(Levermore1D_UniformMesh *Soln_ptr,
   }//endfor
 
   /* Return memory location. */
-  
+
   return(Soln_ptr);
 }
 
 /******************************************************//**
- * Routine: Deallocate                                  
- *                                                      
- * Deallocate memory for 1D Levermore equation solution.    
- *                                                      
+ * Routine: Deallocate
+ *
+ * Deallocate memory for 1D Levermore equation solution.
+ *
  ********************************************************/
 Levermore1D_UniformMesh* Deallocate(Levermore1D_UniformMesh *Soln_ptr) {
 
@@ -55,11 +55,11 @@ Levermore1D_UniformMesh* Deallocate(Levermore1D_UniformMesh *Soln_ptr) {
 }
 
 /******************************************************//**
- * Routine: Output_Gnuplot                              
- *                                                      
- * Writes the solution to specified output stream       
- * suitable for plotting with GNUPLOT.                  
- *                                                      
+ * Routine: Output_Gnuplot
+ *
+ * Writes the solution to specified output stream
+ * suitable for plotting with GNUPLOT.
+ *
  ********************************************************/
 void Output_Gnuplot(Levermore1D_UniformMesh *Soln,
                     const int Number_of_Cells,
@@ -86,15 +86,15 @@ void Output_Gnuplot(Levermore1D_UniformMesh *Soln,
   } /* endfor */
 
   out_file << "\n";
-    
+
 }
 
 /******************************************************//**
- * Routine: Output_Tecplot                              
- *                                                      
- * Writes the solution to specified output stream       
- * suitable for plotting with TECPLOT.                  
- *                                                      
+ * Routine: Output_Tecplot
+ *
+ * Writes the solution to specified output stream
+ * suitable for plotting with TECPLOT.
+ *
  ********************************************************/
 void Output_Tecplot(Levermore1D_UniformMesh *Soln,
                     const CFD1D_Input_Parameters &IP,
@@ -113,15 +113,15 @@ void Output_Tecplot(Levermore1D_UniformMesh *Soln,
 		   Number_of_Time_Steps,
 		   Time,
 		   out_file);
-//  } 
+//  }
 }
 
 /******************************************************//**
- * Routine: Output_Tecplot                              
- *                                                      
- * Writes the solution to specified output stream       
- * suitable for plotting with TECPLOT.                  
- *                                                      
+ * Routine: Output_Tecplot
+ *
+ * Writes the solution to specified output stream
+ * suitable for plotting with TECPLOT.
+ *
  ********************************************************/
 void Output_Tecplot(Levermore1D_UniformMesh *Soln,
                     const int Number_of_Cells,
@@ -148,21 +148,21 @@ void Output_Tecplot(Levermore1D_UniformMesh *Soln,
     out_file << "\"random_moment" << i << "\" \\ \n";
   }
   out_file << "ZONE \n";
-    
+
   for ( i = ICl ; i <= ICu ; ++i ) {
     out_file << " " << Soln[i] << "\n";
   } /* endfor */
 
   out_file << "\n";
-    
+
 }
 
 ///******************************************************//**
-// * Routine: Output_Tecplot_HighOrder                    
-// *                                                      
-// * Writes the solution to specified output stream       
-// * suitable for plotting with TECPLOT.                  
-// *                                                      
+// * Routine: Output_Tecplot_HighOrder
+// *
+// * Writes the solution to specified output stream
+// * suitable for plotting with TECPLOT.
+// *
 // ********************************************************/
 //void Output_Tecplot_HighOrder(Levermore1D_UniformMesh *Soln,
 //			      const int Number_of_Cells,
@@ -172,11 +172,11 @@ void Output_Tecplot(Levermore1D_UniformMesh *Soln,
 //
 //
 //  int ICl, ICu;
-//  
+//
 //  // Set the limits of the plotted domain
 //  ICl = Soln[0].ICl;
 //  ICu = Soln[0].ICu;
-//  
+//
 //  int i;
 //  out_file << "TITLE = \"" << CFFC_Name() << ": 1D Levermore Solution, "
 //	   << "Time Step/Iteration Level = "
@@ -205,17 +205,17 @@ void Output_Tecplot(Levermore1D_UniformMesh *Soln,
 //	     << Soln[i].CellHighOrder().CellSmoothnessIndicator(3) <<" "
 //	     << Soln[i].CellHighOrder().CellInadequateFit(3) <<" " << "\n";
 //  } /* endfor */
-//  
+//
 //  out_file << "\n";
-// 
+//
 //}
 
 /******************************************************//**
- * Routine: Grid                                        
- *                                                      
- * Generates a uniform mesh and assign the locations of 
- * the cell centers to appropriate solution variables.  
- *                                                      
+ * Routine: Grid
+ *
+ * Generates a uniform mesh and assign the locations of
+ * the cell centers to appropriate solution variables.
+ *
  ********************************************************/
 void Grid(Levermore1D_UniformMesh *Soln,
           const double &xMin,
@@ -226,7 +226,7 @@ void Grid(Levermore1D_UniformMesh *Soln,
   double delta_x;
 
   int TC;
-  
+
   TC = Number_of_Cells+2*Soln[0].Nghost; // total number of cells
 
   /* Determine the mesh spacing. */
@@ -238,23 +238,23 @@ void Grid(Levermore1D_UniformMesh *Soln,
 
   Soln[0].X.x = xMin - (Soln[0].Nghost - HALF)*delta_x;
 //  Soln[0].CellHighOrder().AssociateGeometry(Soln[0].X);   // Associate geometry with high-order solution variables
-  
+
 
   for ( i = 1 ; i <= TC-1 ; ++i ) {
     // Initialize the coordinate of the centroids
     Soln[i].X.x =  Soln[0].X.x + double(i)*delta_x;
-    
+
 //    // Associate geometry with high-order solution variables
 //    Soln[i].CellHighOrder().AssociateGeometry(Soln[i].X);
   } /* endfor */
 }
 
 /******************************************************//**
- * Routine: ICs                                         
- *                                                      
- * Assigns initial conditions and data to the           
- * solution variables.                                  
- *                                                      
+ * Routine: ICs
+ *
+ * Assigns initial conditions and data to the
+ * solution variables.
+ *
  ********************************************************/
 void ICs(Levermore1D_UniformMesh *Soln,
          char *gas_ptr,
@@ -286,7 +286,7 @@ void ICs(Levermore1D_UniformMesh *Soln,
     Al = Levermore1D_weights(DENSITY_STDATM, ZERO, PRESSURE_STDATM);
     Ar = Levermore1D_weights(DENSITY_STDATM/EIGHT,
 			     ZERO,
-			     PRESSURE_STDATM/TEN); 
+			     PRESSURE_STDATM/TEN);
     for ( i = 0 ; i <= TC-1 ; ++i ) {
       if (Soln[i].X.x <= ZERO) {
 	Soln[i].set_state(Al);
@@ -302,7 +302,7 @@ void ICs(Levermore1D_UniformMesh *Soln,
 //      if (Soln[i].X.x <= ZERO) {
 //	Soln[i].W = Wl;
 //      } else {
-//	Soln[i].W = Wr;	     
+//	Soln[i].W = Wr;
 //      } /* end if */
 //      Soln[i].U = U(Soln[i].W);
 //    } /* endfor */
@@ -314,7 +314,7 @@ void ICs(Levermore1D_UniformMesh *Soln,
 //      if (Soln[i].X.x <= ZERO) {
 //	Soln[i].W = Wl;
 //      } else {
-//	Soln[i].W = Wr;	     
+//	Soln[i].W = Wr;
 //      } /* end if */
 //      Soln[i].U = U(Soln[i].W);
 //    } /* endfor */
@@ -326,7 +326,7 @@ void ICs(Levermore1D_UniformMesh *Soln,
 //      if (Soln[i].X.x <= ZERO) {
 //	Soln[i].W = Wl;
 //      } else {
-//	Soln[i].W = Wr;	     
+//	Soln[i].W = Wr;
 //      } /* end if */
 //      Soln[i].U = U(Soln[i].W);
 //    } /* endfor */
@@ -338,7 +338,7 @@ void ICs(Levermore1D_UniformMesh *Soln,
 //      if (Soln[i].X.x <= ZERO) {
 //	Soln[i].W = Wl;
 //      } else {
-//	Soln[i].W = Wr;	     
+//	Soln[i].W = Wr;
 //      } /* end if */
 //      Soln[i].U = U(Soln[i].W);
 //    } /* endfor */
@@ -350,7 +350,7 @@ void ICs(Levermore1D_UniformMesh *Soln,
 //      if (Soln[i].X.x <= ZERO) {
 //	Soln[i].W = Wl;
 //      } else {
-//	Soln[i].W = Wr;	     
+//	Soln[i].W = Wr;
 //      } /* end if */
 //      Soln[i].U = U(Soln[i].W);
 //    } /* endfor */
@@ -362,7 +362,7 @@ void ICs(Levermore1D_UniformMesh *Soln,
 //      if (Soln[i].X.x <= ZERO) {
 //	Soln[i].W = Wl;
 //      } else {
-//	Soln[i].W = Wr;	     
+//	Soln[i].W = Wr;
 //      } /* end if */
 //      Soln[i].U = U(Soln[i].W);
 //    } /* endfor */
@@ -417,7 +417,7 @@ void ICs(Levermore1D_UniformMesh *Soln,
 //      } else {
 //	density = 1 + 0.2*sin(5*Soln[i].X.x);
 //	Wr = Levermore1D_pState(density, ZERO, ONE);
-//	Soln[i].W = Wr;	     
+//	Soln[i].W = Wr;
 //      } /* end if */
 //      Soln[i].U = U(Soln[i].W);
 //    } /* endfor */
@@ -465,16 +465,16 @@ void ICs(Levermore1D_UniformMesh *Soln,
     } /* endfor */
     break;
   } /* endswitch */
-  
+
 }
 
 /******************************************************//**
- * Routine: CFL                                         
- *                                                      
- * Determines the allowable global and local time steps 
- * (for explicit Levermore time stepping scheme) according  
- * to the Courant-Friedrichs-Lewy condition.            
- *                                                      
+ * Routine: CFL
+ *
+ * Determines the allowable global and local time steps
+ * (for explicit Levermore time stepping scheme) according
+ * to the Courant-Friedrichs-Lewy condition.
+ *
  ********************************************************/
 double CFL(Levermore1D_UniformMesh *Soln,
            const int Number_of_Cells) {
@@ -499,13 +499,13 @@ double CFL(Levermore1D_UniformMesh *Soln,
 }
 
 /******************************************************//**
- * Routine: Linear_Reconstruction_MUSCL                 
- *                                                      
- * Peforms the reconstruction of a limited piecewise    
- * linear solution state within each cell of the        
- * computational mesh.  The MUSCL approach of Van Leer  
- * (1978) is used.  Several slope limiters may be used. 
- *                                                      
+ * Routine: Linear_Reconstruction_MUSCL
+ *
+ * Peforms the reconstruction of a limited piecewise
+ * linear solution state within each cell of the
+ * computational mesh.  The MUSCL approach of Van Leer
+ * (1978) is used.  Several slope limiters may be used.
+ *
  ********************************************************/
 void Linear_Reconstruction_MUSCL(Levermore1D_UniformMesh *Soln,
                                  const int Number_of_Cells,
@@ -535,23 +535,23 @@ void Linear_Reconstruction_MUSCL(Levermore1D_UniformMesh *Soln,
                break;
              case LIMITER_MINMOD :
 	       phi = minmod(a[n], b[n])/(Soln[i].dWdx[n]+sgn(Soln[i].dWdx[n])*TOLER*TOLER);
-               break; 
+               break;
              case LIMITER_UMIST :
-               phi = minmod(TWO*a[n], 
+               phi = minmod(TWO*a[n],
                             TWO*b[n],
                             (a[n]+THREE*b[n])/FOUR,
                             (THREE*a[n]+b[n])/FOUR)/
                      (Soln[i].dWdx[n]+sgn(Soln[i].dWdx[n])*TOLER*TOLER);
                break;
              case LIMITER_DOUBLE_MINMOD :
-               phi = minmod(HALF*(a[n]+b[n]), 
-	                    TWO*a[n], 
+               phi = minmod(HALF*(a[n]+b[n]),
+	                    TWO*a[n],
 	                    TWO*b[n])/(Soln[i].dWdx[n]+sgn(Soln[i].dWdx[n])*TOLER*TOLER);
                break;
              case LIMITER_SUPERBEE :
                phi = superbee(a[n], b[n])/
                      (Soln[i].dWdx[n]+sgn(Soln[i].dWdx[n])*TOLER*TOLER);
-               break; 
+               break;
              case LIMITER_PHI :
                phi = philimiter(a[n], b[n], 1.50)/
                      (Soln[i].dWdx[n]+sgn(Soln[i].dWdx[n])*TOLER*TOLER);
@@ -584,14 +584,14 @@ void Linear_Reconstruction_MUSCL(Levermore1D_UniformMesh *Soln,
 }
 
 /******************************************************//**
- * Routine: Linear_Reconstruction_GreenGauss            
- *                                                      
- * Peforms the reconstruction of a limited piecewise    
- * linear solution state within each cell of the        
- * computational mesh.  A Green-Gauss approach is used  
- * in the evaluation of the unlimited solution          
- * gradients.  Several slope limiters may be used.      
- *                                                      
+ * Routine: Linear_Reconstruction_GreenGauss
+ *
+ * Peforms the reconstruction of a limited piecewise
+ * linear solution state within each cell of the
+ * computational mesh.  A Green-Gauss approach is used
+ * in the evaluation of the unlimited solution
+ * gradients.  Several slope limiters may be used.
+ *
  ********************************************************/
 void Linear_Reconstruction_GreenGauss(Levermore1D_UniformMesh *Soln,
                                       const int Number_of_Cells,
@@ -653,13 +653,13 @@ void Linear_Reconstruction_GreenGauss(Levermore1D_UniformMesh *Soln,
 }
 
 ///******************************************************//**
-// * Routine: Linear_Reconstruction_Characteristic        
-// *                                                      
-// * Peforms the reconstruction of a limited piecewise    
-// * linear solution state within each cell of the        
-// * computational mesh.  Characteristic reconstruction   
-// * is used and several slope limiters may be applied.   
-// *                                                      
+// * Routine: Linear_Reconstruction_Characteristic
+// *
+// * Peforms the reconstruction of a limited piecewise
+// * linear solution state within each cell of the
+// * computational mesh.  Characteristic reconstruction
+// * is used and several slope limiters may be applied.
+// *
 // ********************************************************/
 //void Linear_Reconstruction_Characteristic(Levermore1D_UniformMesh *Soln,
 //                                          const int Number_of_Cells,
@@ -677,7 +677,7 @@ void Linear_Reconstruction_GreenGauss(Levermore1D_UniformMesh *Soln,
 //
 //    for ( i = 1 ; i <= Number_of_Cells ; ++i ) {
 //
-//        Cl = Cm;       
+//        Cl = Cm;
 //        Cm = Cr;
 //        Cr = Soln[i+1].W.C();
 //        Soln[i].dWdx = HALF*(Cr-Cl)/Soln[i].X.dx;
@@ -697,7 +697,7 @@ void Linear_Reconstruction_GreenGauss(Levermore1D_UniformMesh *Soln,
 //               phi = Limiter_VanLeer(uQuad, Soln[i].W[n], u0Min, u0Max, 2);
 //               //phi = Limiter_VanAlbada(uQuad, Soln[i].W[n], u0Min, u0Max, 2);
 //	       Soln[i].phi.d = phi;
-//               break; 
+//               break;
 //             case 2 :
 //               //phi = Limiter_BarthJespersen(uQuad, Soln[i].W[n], u0Min, u0Max, 2);
 //               //phi = Limiter_Venkatakrishnan(uQuad, Cm[n], u0Min, u0Max, 2);
@@ -726,14 +726,14 @@ void Linear_Reconstruction_GreenGauss(Levermore1D_UniformMesh *Soln,
 //}
 
 /******************************************************//**
- * Routine: Linear_Reconstruction_LeastSquares          
- *                                                      
- * Peforms the reconstruction of a limited piecewise    
- * linear solution state within each cell of the        
- * computational mesh.  A least squares approach is     
- * used in the evaluation of the unlimited solution     
- * gradients.  Several slope limiters may be used.      
- *                                                      
+ * Routine: Linear_Reconstruction_LeastSquares
+ *
+ * Peforms the reconstruction of a limited piecewise
+ * linear solution state within each cell of the
+ * computational mesh.  A least squares approach is
+ * used in the evaluation of the unlimited solution
+ * gradients.  Several slope limiters may be used.
+ *
  ********************************************************/
 void Linear_Reconstruction_LeastSquares(Levermore1D_UniformMesh *Soln,
                                         const int Number_of_Cells,
@@ -750,18 +750,18 @@ void Linear_Reconstruction_LeastSquares(Levermore1D_UniformMesh *Soln,
     for ( i = 1 ; i <= Number_of_Cells ; ++i ) {
         n_pts = 2;
         index[0] = i-1;
-        index[1] = i+1; 
+        index[1] = i+1;
 
         DUDx_ave.zero();
         DxDx_ave = ZERO;
-    
+
         for ( n2 = 0 ; n2 <= n_pts-1 ; ++n2 ) {
             Dx = Soln[ index[n2] ].X.x - Soln[i].X.x;
             DU = Soln[ index[n2] ].W - Soln[i].W;
             DUDx_ave += DU*Dx;
             DxDx_ave += Dx*Dx;
         } /* endfor */
-    					    
+
         DUDx_ave = DUDx_ave/double(n_pts);
         DxDx_ave = DxDx_ave/double(n_pts);
 
@@ -817,13 +817,13 @@ void Linear_Reconstruction_LeastSquares(Levermore1D_UniformMesh *Soln,
 
 /******************************************************//**
  * Routine: dUdt_explicitEuler_upwind
- *                                                      
- * This routine updates the solution using a 1st-order  
- * explicit Levermore time integration and 1st-order upwind 
- * spatial discretization scheme in conjunction with    
- * either the Godunov, Roe, Rusanov, HLLE, Linde, or    
- * HLLC flux functions.                                 
- *                                                      
+ *
+ * This routine updates the solution using a 1st-order
+ * explicit Levermore time integration and 1st-order upwind
+ * spatial discretization scheme in conjunction with
+ * either the Godunov, Roe, Rusanov, HLLE, Linde, or
+ * HLLC flux functions.
+ *
  ********************************************************/
 int dUdt_explicitEuler_upwind(Levermore1D_UniformMesh *Soln,
 	                      const int Number_of_Cells,
@@ -880,9 +880,9 @@ int dUdt_explicitEuler_upwind(Levermore1D_UniformMesh *Soln,
 
     for ( i = 1 ; i <= Number_of_Cells ; ++i ) {
         if ( !Local_Time_Stepping ) Soln[i].dt = dtMin;
-	
+
         Soln[i].U += Soln[i].dUdt*(CFL_Number*Soln[i].dt);
-	
+
 //	if (Soln[i].U.d   <= ZERO ||
 //	    Soln[i].U.E   <= ZERO ||
 //	    Soln[i].U.e() <= ZERO ) {
@@ -891,7 +891,7 @@ int dUdt_explicitEuler_upwind(Levermore1D_UniformMesh *Soln,
 //	         << Soln[i].dUdt << "\n";
 //	    return (i);
 //	}
-	
+
 	Soln[i].W = Levermore1D_pState(Soln[i].U);
     } /* endfor */
 
@@ -909,16 +909,16 @@ int dUdt_explicitEuler_upwind(Levermore1D_UniformMesh *Soln,
     /* Solution successfully updated. */
 
     return (0);
-    
+
 }
 
 ///******************************************************//**
-// * Routine: dUdt_LaxFriedrichs                          
-// *                                                      
-// * This routine updates the solution using the          
-// * first-order single-stage Lax-Friedrichs scheme.      
-// * See Lax (1954).                                      
-// *                                                      
+// * Routine: dUdt_LaxFriedrichs
+// *
+// * This routine updates the solution using the
+// * first-order single-stage Lax-Friedrichs scheme.
+// * See Lax (1954).
+// *
 // ********************************************************/
 //int dUdt_LaxFriedrichs(Levermore1D_UniformMesh *Soln,
 //	               const int Number_of_Cells,
@@ -953,7 +953,7 @@ int dUdt_explicitEuler_upwind(Levermore1D_UniformMesh *Soln,
 //
 //    for ( i = 1 ; i <= Number_of_Cells ; ++i ) {
 //        Soln[i].U += Soln[i].dUdt*(CFL_Number*Soln[i].dt);
-//	
+//
 ////	if (Soln[i].U.d   <= ZERO ||
 ////	    Soln[i].U.E   <= ZERO ||
 ////	    Soln[i].U.e() <= ZERO ) {
@@ -962,7 +962,7 @@ int dUdt_explicitEuler_upwind(Levermore1D_UniformMesh *Soln,
 ////	         << Soln[i].dUdt << "\n";
 ////	    return (i);
 ////	}
-//	
+//
 //	Soln[i].W = Levermore1D_pState(Soln[i].U);
 //    } /* endfor */
 //
@@ -980,16 +980,16 @@ int dUdt_explicitEuler_upwind(Levermore1D_UniformMesh *Soln,
 //    /* Solution successfully updated. */
 //
 //    return (0);
-//    
+//
 //}
 
 /******************************************************//**
- * Routine: dUdt_LaxWendroff                            
- *                                                      
- * This routine updates the solution using the          
- * second-order two-step Lax-Wendroff scheme.           
- * See Lax and Wendroff (1960, 1964).                   
- *                                                      
+ * Routine: dUdt_LaxWendroff
+ *
+ * This routine updates the solution using the
+ * second-order two-step Lax-Wendroff scheme.
+ * See Lax and Wendroff (1960, 1964).
+ *
  ********************************************************/
 //int dUdt_LaxWendroff(Levermore1D_UniformMesh *Soln,
 //	             const int Number_of_Cells,
@@ -1000,7 +1000,7 @@ int dUdt_explicitEuler_upwind(Levermore1D_UniformMesh *Soln,
 //    int i;
 //    double delta_x;
 //    Levermore1D_cState Ul, Ur;
-//    
+//
 //    /* Assign the mesh space to local variable. */
 //
 //    delta_x = Soln[0].X.dx;
@@ -1035,7 +1035,7 @@ int dUdt_explicitEuler_upwind(Levermore1D_UniformMesh *Soln,
 //
 //    for ( i = 1 ; i <= Number_of_Cells ; ++i ) {
 //        Soln[i].U += Soln[i].dUdt*(CFL_Number*Soln[i].dt);
-//	
+//
 ////	if (Soln[i].U.d   <= ZERO ||
 ////	    Soln[i].U.E   <= ZERO ||
 ////	    Soln[i].U.e() <= ZERO ) {
@@ -1044,7 +1044,7 @@ int dUdt_explicitEuler_upwind(Levermore1D_UniformMesh *Soln,
 ////	         << Soln[i].dUdt << "\n";
 ////	    return (i);
 ////	}
-//	
+//
 //	Soln[i].W = Levermore1D_pState(Soln[i].U);
 //    } /* endfor */
 //
@@ -1060,18 +1060,18 @@ int dUdt_explicitEuler_upwind(Levermore1D_UniformMesh *Soln,
 //    /* Solution successfully updated. */
 //
 //    return (0);
-//    
+//
 //}
 
 ///******************************************************//**
-// * Routine: dUdt_MacCormack                             
-// *                                                      
-// * This routine updates the solution using the          
-// * second-order predictor-corrector scheme of           
-// * MacCormack (1969, 1971).  Artificial viscosity of    
-// * the type devised by Harten and Zwas (1972) is        
-// * added to smooth the solution near discontinuities.   
-// *                                                      
+// * Routine: dUdt_MacCormack
+// *
+// * This routine updates the solution using the
+// * second-order predictor-corrector scheme of
+// * MacCormack (1969, 1971).  Artificial viscosity of
+// * the type devised by Harten and Zwas (1972) is
+// * added to smooth the solution near discontinuities.
+// *
 // ********************************************************/
 //int dUdt_MacCormack(Levermore1D_UniformMesh *Soln,
 //	            const int Number_of_Cells,
@@ -1081,13 +1081,13 @@ int dUdt_explicitEuler_upwind(Levermore1D_UniformMesh *Soln,
 //
 //    int i;
 //    static int Order=1;
-//    double delta_x, delta_l, delta_r, 
-//           theta, theta_r, theta_l, 
+//    double delta_x, delta_l, delta_r,
+//           theta, theta_r, theta_l,
 //           switch_l, switch_r;
 //    Levermore1D_cState Ul, Ur;
 //
 //    /* Detemine order of first-order spatial operators. */
-//    
+//
 //    if (Order) {
 //       Order = 0;
 //    } else {
@@ -1134,7 +1134,7 @@ int dUdt_explicitEuler_upwind(Levermore1D_UniformMesh *Soln,
 //	/* Add artificial dissipation of Harten and Zwas. */
 //	if (i == 1) {
 //            theta_l = ZERO;
-//	    
+//
 //	    delta_l = fabs(Soln[i].U.d-Soln[i-1].U.d)/Soln[i].U.d;
 //	    delta_r = fabs(Soln[i+1].U.d-Soln[i].U.d)/Soln[i].U.d;
 //            if (delta_l + delta_r < TOLER) {
@@ -1142,7 +1142,7 @@ int dUdt_explicitEuler_upwind(Levermore1D_UniformMesh *Soln,
 //	    } else {
 //	        theta = fabs((delta_r - delta_l)/(delta_l + delta_r));
 //            } /* endif */
-//	    
+//
 //	    delta_l = fabs(Soln[i+1].U.d-Soln[i].U.d)/Soln[i+1].U.d;
 //	    delta_r = fabs(Soln[i+2].U.d-Soln[i+1].U.d)/Soln[i+1].U.d;
 //            if (delta_l + delta_r < TOLER) {
@@ -1153,7 +1153,7 @@ int dUdt_explicitEuler_upwind(Levermore1D_UniformMesh *Soln,
 //	} else if (i < Number_of_Cells) {
 //	    theta_l = theta;
 //	    theta = theta_r;
-//	    
+//
 //	    delta_l = fabs(Soln[i+1].U.d-Soln[i].U.d)/Soln[i+1].U.d;
 //	    delta_r = fabs(Soln[i+2].U.d-Soln[i+1].U.d)/Soln[i+1].U.d;
 //            if (delta_l + delta_r < TOLER) {
@@ -1168,7 +1168,7 @@ int dUdt_explicitEuler_upwind(Levermore1D_UniformMesh *Soln,
 //        } /* endif */
 //        switch_r = max(theta,theta_r);
 //        switch_l = max(theta,theta_l);
-//	
+//
 //	Soln[i].dUdt += ((Soln[i+1].U-Soln[i].U)*switch_r -
 //		   	 (Soln[i].U-Soln[i-1].U)*switch_l)/
 //	                (EIGHT*CFL_Number*Soln[i].dt);
@@ -1180,7 +1180,7 @@ int dUdt_explicitEuler_upwind(Levermore1D_UniformMesh *Soln,
 //
 //        /* Update the conserved variable solution state. */
 //	Soln[i].U += Soln[i].dUdt*(CFL_Number*Soln[i].dt);
-//	
+//
 //	if (Soln[i].U.d   <= ZERO ||
 //	    Soln[i].U.E   <= ZERO ||
 //	    Soln[i].U.e() <= ZERO ) {
@@ -1207,16 +1207,16 @@ int dUdt_explicitEuler_upwind(Levermore1D_UniformMesh *Soln,
 //    /* Solution successfully updated. */
 //
 //    return (0);
-//    
+//
 //}
 
 ///******************************************************//**
-// * Routine: dUdt_Hancock                                
-// *                                                      
-// * This routine updates the solution using the          
-// * second-order predictor-corrector TVD scheme of       
-// * Hancock (19??).  Various flux functions may be used. 
-// *                                                      
+// * Routine: dUdt_Hancock
+// *
+// * This routine updates the solution using the
+// * second-order predictor-corrector TVD scheme of
+// * Hancock (19??).  Various flux functions may be used.
+// *
 // ********************************************************/
 //int dUdt_Hancock(Levermore1D_UniformMesh *Soln,
 //	         const int Number_of_Cells,
@@ -1230,7 +1230,7 @@ int dUdt_explicitEuler_upwind(Levermore1D_UniformMesh *Soln,
 //    Levermore1D_pState Wl, Wr, A[Levermore1D_Vector::get_length()];
 //    Levermore1D_cState Flux;
 //
-//    /* Perform second-order Hancock predictor-corrector 
+//    /* Perform second-order Hancock predictor-corrector
 //       update of solution varibles for new time level. */
 //
 //    for ( n_stage = 1 ; n_stage <= 2 ; ++n_stage ) {
@@ -1241,11 +1241,11 @@ int dUdt_explicitEuler_upwind(Levermore1D_UniformMesh *Soln,
 //        /* Perform the linear reconstruction within each cell
 //           of the computational grid in the predictor step. */
 //
-//        if ( n_stage == 1 ) Linear_Reconstruction_MUSCL(Soln, 
+//        if ( n_stage == 1 ) Linear_Reconstruction_MUSCL(Soln,
 //                            Number_of_Cells, Limiter_Type);
 //
 //        /* Evaluate the time rate of change of the solution
-//           (i.e., the solution residuals) using 
+//           (i.e., the solution residuals) using
 //           1) a limited central discretization of the
 //              non-conservative form of the equations in
 //              the predictor step, and
@@ -1273,7 +1273,7 @@ int dUdt_explicitEuler_upwind(Levermore1D_UniformMesh *Soln,
 //                  A[3] = Levermore1D_pState(ZERO, Soln[i].W.g*Soln[i].W.p,
 //                                        Soln[i].W.v);
 //                  Soln[i].W.d -= HALF*(CFL_Number*Soln[i].dt)*A[1]*
-//                                 (Soln[i].phi^Soln[i].dWdx); 
+//                                 (Soln[i].phi^Soln[i].dWdx);
 //                  Soln[i].W.v -= HALF*(CFL_Number*Soln[i].dt)*A[2]*
 //                                 (Soln[i].phi^Soln[i].dWdx);
 //                  Soln[i].W.p -= HALF*(CFL_Number*Soln[i].dt)*A[3]*
@@ -1346,18 +1346,18 @@ int dUdt_explicitEuler_upwind(Levermore1D_UniformMesh *Soln,
 //    /* Solution successfully updated. */
 //
 //    return (0);
-//    
+//
 //}
 
 /******************************************************//**
- * Routine: dUdt_2stage_2ndOrder_upwind                 
- *                                                      
- * This routine updates the solution using a two-stage  
- * second-order explicit time integration scheme        
- * and a 2nd-ororder limited upwind spatial             
- * discretization scheme with either the Godunov, Roe,  
- * Rusanov, HLLE, Linde, or HLLC flux functions.        
- *                                                      
+ * Routine: dUdt_2stage_2ndOrder_upwind
+ *
+ * This routine updates the solution using a two-stage
+ * second-order explicit time integration scheme
+ * and a 2nd-ororder limited upwind spatial
+ * discretization scheme with either the Godunov, Roe,
+ * Rusanov, HLLE, Linde, or HLLC flux functions.
+ *
  ********************************************************/
 int dUdt_2stage_2ndOrder_upwind(Levermore1D_UniformMesh *Soln,
 	                        const CFD1D_Input_Parameters &IP,
@@ -1385,37 +1385,37 @@ int dUdt_2stage_2ndOrder_upwind(Levermore1D_UniformMesh *Soln,
 	if ( IP.Reconstruction_In_Each_Stage == true || n_stage == 1 ){
 
 	  /* Perform the linear reconstruction within each cell
-	     of the computational grid for the current stage if 
-	     Reconstruction_In_Each_Stage is true, or only in 
+	     of the computational grid for the current stage if
+	     Reconstruction_In_Each_Stage is true, or only in
 	     the first stage if Reconstruction_In_Each_Stage is false */
-	  
+
 	  /* Apply boundary conditions for stage. */
 	  //BCs(Soln,IP);  I may need BCs at some point
-	  
+
 	  switch(Reconstruction_Type) {
 	  case RECONSTRUCTION_MUSCL :
-	    Linear_Reconstruction_MUSCL(Soln, 
-					IP.Number_of_Cells, 
+	    Linear_Reconstruction_MUSCL(Soln,
+					IP.Number_of_Cells,
 					Limiter_Type);
 	    break;
 	  case RECONSTRUCTION_GREEN_GAUSS :
-	    Linear_Reconstruction_GreenGauss(Soln, 
-					     IP.Number_of_Cells, 
+	    Linear_Reconstruction_GreenGauss(Soln,
+					     IP.Number_of_Cells,
 					     Limiter_Type);
 	    break;
 	  case RECONSTRUCTION_LEAST_SQUARES :
-	    Linear_Reconstruction_LeastSquares(Soln, 
-					       IP.Number_of_Cells, 
+	    Linear_Reconstruction_LeastSquares(Soln,
+					       IP.Number_of_Cells,
 					       Limiter_Type);
 	    break;
 //	  case RECONSTRUCTION_CHARACTERISTIC :
-//	    Linear_Reconstruction_Characteristic(Soln, 
-//						 IP.Number_of_Cells, 
+//	    Linear_Reconstruction_Characteristic(Soln,
+//						 IP.Number_of_Cells,
 //						 Limiter_Type);
 //	    break;
 	  default:
-	    Linear_Reconstruction_MUSCL(Soln, 
-					IP.Number_of_Cells, 
+	    Linear_Reconstruction_MUSCL(Soln,
+					IP.Number_of_Cells,
 					Limiter_Type);
 	    break;
 	  } /* endswitch */
@@ -1440,14 +1440,14 @@ int dUdt_2stage_2ndOrder_upwind(Levermore1D_UniformMesh *Soln,
 
             /* Evaluate the cell interface flux. */
             if (Reconstruction_Type != RECONSTRUCTION_CHARACTERISTIC) {
-               Wl = Soln[i].W + 
+               Wl = Soln[i].W +
                     (Soln[i].phi^Soln[i].dWdx)*HALF*Soln[i].X.dx;
-               Wr = Soln[i+1].W - 
+               Wr = Soln[i+1].W -
                     (Soln[i+1].phi^Soln[i+1].dWdx)*HALF*Soln[i+1].X.dx;
             } else {
-//               Wl = CtoW(Soln[i].W.C() + 
+//               Wl = CtoW(Soln[i].W.C() +
 //                    (Soln[i].phi^Soln[i].dWdx)*Soln[i].X.dx)*HALF;
-//               Wr = CtoW(Soln[i+1].W.C() - 
+//               Wr = CtoW(Soln[i+1].W.C() -
 //                    (Soln[i+1].phi^Soln[i+1].dWdx)*Soln[i+1].X.dx)*HALF;
             } /* endif */
 
@@ -1456,35 +1456,35 @@ int dUdt_2stage_2ndOrder_upwind(Levermore1D_UniformMesh *Soln,
 	    if (i == 0){
 	      // extrapolation BC (by default)
 	      Wl = Wr;
-	      
+
 	      // wall BCs
 	      if (IP.i_ICs == IC_BLAST_WAVE_INTERACTION){
-		Wl[2] = -Wl[2];      // change velocity sign	  
+		Wl[2] = -Wl[2];      // change velocity sign
 	      }
-	      
+
 	      // periodic BCs
 	      if ((IP.i_ICs == IC_SIN_WAVE) || (IP.i_ICs == IC_JIANG_WAVE) ||
 		  (IP.i_ICs == IC_DENSITY_STEP_WAVE) || (IP.i_ICs == IC_CONVECTION_OF_DIFFERENT_SHAPES)){
-		Wl = Soln[IP.Number_of_Cells].W + 
+		Wl = Soln[IP.Number_of_Cells].W +
 		     (Soln[IP.Number_of_Cells].phi^Soln[IP.Number_of_Cells].dWdx)*HALF*Soln[IP.Number_of_Cells].X.dx;
 	      }
-	      
+
 	    }
-	    
+
 	    // *****  Right boundary *********
 	    if (i == IP.Number_of_Cells){
 	      // extrapolation BC (by default)
 	      Wr = Wl;
-	      
+
 	      // wall BCs
 	      if (IP.i_ICs == IC_BLAST_WAVE_INTERACTION){
 		Wr[2] = -Wr[2];      // change velocity sign
 	      }
-	      
+
 	      // periodic BCs
 	      if ((IP.i_ICs == IC_SIN_WAVE) || (IP.i_ICs == IC_JIANG_WAVE) ||
 		  (IP.i_ICs == IC_DENSITY_STEP_WAVE) || (IP.i_ICs == IC_CONVECTION_OF_DIFFERENT_SHAPES)){
-		Wr = Soln[1].W - 
+		Wr = Soln[1].W -
 		     (Soln[1].phi^Soln[1].dWdx)*HALF*Soln[1].X.dx;
 	      }
 	    }
@@ -1552,36 +1552,36 @@ int dUdt_2stage_2ndOrder_upwind(Levermore1D_UniformMesh *Soln,
 }
 
 /******************************************************//**
- * Routine:  LimitedLinearReconstructionOverDomain         
- *                                                      
- * Peforms the reconstruction of a limited piecewise    
- * linear solution state within each cell of the        
+ * Routine:  LimitedLinearReconstructionOverDomain
+ *
+ * Peforms the reconstruction of a limited piecewise
+ * linear solution state within each cell of the
  * computational mesh. The input parameters object specifies
  * all the parameters necessary to perform the reconstruction
  * (e.g. method, limiter etc.).
- *                                                      
+ *
  ********************************************************/
 void LimitedLinearReconstructionOverDomain(Levermore1D_UniformMesh *Soln, const CFD1D_Input_Parameters &IP){
 
   switch(IP.i_Reconstruction) {
   case RECONSTRUCTION_MUSCL :
-    Linear_Reconstruction_MUSCL(Soln, 
-				IP.Number_of_Cells, 
+    Linear_Reconstruction_MUSCL(Soln,
+				IP.Number_of_Cells,
 				IP.i_Limiter);
     break;
   case RECONSTRUCTION_GREEN_GAUSS :
-    Linear_Reconstruction_GreenGauss(Soln, 
-				     IP.Number_of_Cells, 
+    Linear_Reconstruction_GreenGauss(Soln,
+				     IP.Number_of_Cells,
 				     IP.i_Limiter);
     break;
   case RECONSTRUCTION_LEAST_SQUARES :
-    Linear_Reconstruction_LeastSquares(Soln, 
-				       IP.Number_of_Cells, 
+    Linear_Reconstruction_LeastSquares(Soln,
+				       IP.Number_of_Cells,
 				       IP.i_Limiter);
     break;
 //  case RECONSTRUCTION_CHARACTERISTIC :
-//    Linear_Reconstruction_Characteristic(Soln, 
-//					 IP.Number_of_Cells, 
+//    Linear_Reconstruction_Characteristic(Soln,
+//					 IP.Number_of_Cells,
 //					 IP.i_Limiter);
 //    break;
   default:
