@@ -28,6 +28,7 @@ using namespace std;
 
 // Include CFFC header files.
 #include "Levermore1DState.h"
+#include "Levermore1D.h"
 #include "../UnitTesting/UnitTesting1D.h"
 
 /* Begin Levermore1D program. */
@@ -222,8 +223,8 @@ int main(int num_arg, char *arg_ptr[]) {
    * PERFORM REQUIRED CALCULATIONS.                          *
    ***********************************************************/
 
-//  error_flag = Levermore1DSolver(Input_File_Name_ptr,
-//			     batch_flag);
+  error_flag = Levermore1DSolver(Input_File_Name_ptr,
+			     batch_flag);
 
   if (error_flag) {
      return (error_flag);
