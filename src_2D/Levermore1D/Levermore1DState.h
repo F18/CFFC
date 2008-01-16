@@ -25,6 +25,10 @@ using namespace std;
 #include "../Math/Matrix.h"
 #endif //_MATRIX_INCLUDED
 
+#ifndef _GAS_CONSTANTS_INCLUDED
+#include "../Physics/GasConstants.h"
+#endif // _GAS_CONSTANTS_INCLUDED
+
 /* Define the classes. */
 class Levermore1D_cState;
 class Levermore1D_weights;
@@ -134,5 +138,33 @@ class Levermore1D_weights : public Levermore1D_Vector{
   }
 
 };
+
+/********************************************************
+ *              External  Functions                     *
+ ********************************************************/
+inline ostream& operator<<(ostream &out, const Levermore1D_pState &W) {
+  W.output(out);
+  return out;
+}
+inline ostream& operator<<(ostream &out, const Levermore1D_cState &U) {
+  U.output(out);
+  return out;
+}
+inline ostream& operator<<(ostream &out, const Levermore1D_weights &A) {
+  A.output(out);
+  return out;
+}
+inline istream& operator<<(istream &in, const Levermore1D_pState &W) {
+  W.input(in);
+  return in;
+}
+inline istream& operator<<(istream &in, const Levermore1D_cState &U) {
+  U.input(in);
+  return in;
+}
+inline istream& operator<<(istream &in, const Levermore1D_weights &A) {
+  A.input(in);
+  return in;
+}
 
 #endif

@@ -63,6 +63,7 @@ class Levermore1D_Vector {
   Levermore1D_Vector& operator-=(const Levermore1D_Vector &L);
   double operator*(const Levermore1D_Vector &L) const;
   Levermore1D_Vector operator*(const double &d) const;
+  Levermore1D_Vector operator/(const double &d) const;
   Levermore1D_Vector operator^(const Levermore1D_Vector &L) const;
 
   /* Functions */
@@ -71,6 +72,7 @@ class Levermore1D_Vector {
   void one() {set_all(1.0);}
   void set_all(double in);
   void output(ostream &out) const;
+  void input(istream &in) const;
 
   /* Static Functions */
   static void set_length(int l){
@@ -160,6 +162,14 @@ inline Levermore1D_Vector Levermore1D_Vector::operator*(const double &d) const{
   return temp;
 }
 
+inline Levermore1D_Vector Levermore1D_Vector::operator/(const double &d) const{
+  Levermore1D_Vector temp;
+  for(int i=0;i<length;++i) {
+    temp.m_values[i] = m_values[i] / d;
+  }
+  return temp;
+}
+
 inline Levermore1D_Vector Levermore1D_Vector::operator^(const Levermore1D_Vector &L) const{
   Levermore1D_Vector temp;
   for(int i=0;i<length;++i) {
@@ -189,12 +199,23 @@ inline void Levermore1D_Vector::output(ostream &out) const{
   }
 }
 
+inline void Levermore1D_Vector::input(istream &in) const{
+  for(int i=0; i<length; ++i) {
+    in >> m_values[i];
+  }
+}
+
 /********************************************************
  *              External  Functions                     *
  ********************************************************/
 inline ostream& operator<<(ostream &out, const Levermore1D_Vector &L) {
   L.output(out);
   return out;
+}
+
+inline istream& operator>>(istream &in, const Levermore1D_Vector &L) {
+  L.input(in);
+  return in;
 }
 
 #endif
