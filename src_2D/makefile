@@ -202,7 +202,8 @@ SRC_ADVECTDIFFUSE_EXE = $(ADVECTDIFFUSE_DIR)AdvectDiffuse2D.cc
 SRC_ADVECTDIFFUSE_TESTS = test_AdvectDiffuse2DState.cc \
                           test_SourceTermFields.cc \
                           test_AdvectDiffuse2DQuad.cc \
-			  test_AdvectDiffuse2DExactSolutions.cc
+			  test_AdvectDiffuse2DExactSolutions.cc \
+			  test_AdvectDiffuse2D_Simulations.cc
 SRC_ADVECTDIFFUSE_TESTS := $(addprefix $(ADVECTDIFFUSE_DIR)UnitTests/, $(SRC_ADVECTDIFFUSE_TESTS))
 ifeq ($(TUT_TESTING),ON) 
   SRC_ADVECTDIFFUSE += $(SRC_ADVECTDIFFUSE_TESTS)
