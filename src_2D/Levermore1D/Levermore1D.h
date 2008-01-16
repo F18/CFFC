@@ -85,7 +85,7 @@ public:
   double & CellSolutionConsVar(int & VarPosition) { return U[VarPosition];} //!< return component of the conserved solution state
   /* Closure Weights */
   const Levermore1D_weights & CellSolutionWeights(void) const {return A;}
-  Levermore1D_pState & CellSolutionWeights(void) {return A;} //!< return the characteristic solution state
+  Levermore1D_weights & CellSolutionWeights(void) {return A;} //!< return the characteristic solution state
   const double & CellSolutionWeights(int & VarPosition) const { return A[VarPosition];}
   double & CellSolutionWeights(int & VarPosition) { return A[VarPosition];} //!< return component of the characteristic solution state
 //  /* High-order variables */
@@ -146,7 +146,7 @@ inline Levermore1D_UniformMesh::Levermore1D_UniformMesh(const Levermore1D_pState
 							const Levermore1D_weights &A0,
 							const Cell1D_Uniform &X0) {
   W = W0; U = U0; A = A0; X = X0;
-  dt = ZERO; dUdt.zero;
+  dt = ZERO; dUdt.zero();
   dWdx.zero(); phi.zero(); Uo.zero();
 }
 
