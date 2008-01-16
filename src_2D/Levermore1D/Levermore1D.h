@@ -101,6 +101,17 @@ public:
 //  friend int operator !=(const Levermore1D_UniformMesh &Soln1,
 //			 const Levermore1D_UniformMesh &Soln2);
     
+  /* Set gas state */
+  void set_state(const Levermore1D_pState &W0) {
+    W = W0; U = Levermore1D_cState(W); A = Levermore1D_weights(U);
+  }
+  void set_state(const Levermore1D_cState &U0) {
+    U = U0; W = Levermore1D_pState(U); A = Levermore1D_weights(U);
+  }
+  void set_state(const Levermore1D_weights &A0) {
+    A = A0; U = Levermore1D_cState(A); W = Levermore1D_pState(U);
+  }
+
   /* Input-output operators. */
   friend ostream &operator << (ostream &out_file,
 			       const Levermore1D_UniformMesh &Soln);
