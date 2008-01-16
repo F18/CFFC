@@ -112,6 +112,7 @@ class Levermore1D_weights : public Levermore1D_Vector{
   /* Static Functions. */
   static double m() {return particle_mass;}
   static void set_particle_mass(double m) {particle_mass=m;}
+  static void setgas(char* gas){/*do something?  Should set particle_mass I guess.*/}
 
   protected:
 

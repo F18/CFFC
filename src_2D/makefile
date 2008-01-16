@@ -219,7 +219,8 @@ SRC_SOLVERS1D_SOLVER = $(SRC_SOLVERS1D_EXE) $(SRC_SOLVERS1D)
 
 # Levermore 1D:
 SRC_LEVERMORE1D = Levermore1DVector.cc \
-                  Levermore1DState.cc
+                  Levermore1DState.cc \
+                  Levermore1D.cc
 SRC_LEVERMORE1D := $(addprefix $(LEVERMORE_1D_DIR), $(SRC_LEVERMORE1D))
 
 # Add Levermore 1D Testing If Required:
@@ -235,8 +236,11 @@ endif
 SRC_LEVERMORE1D_EXE = $(LEVERMORE_1D_DIR)Levermore1DMain.cc
 
 # Levermore 1D:
-SRC_LEVERMORE1D_SOLVER = $(SRC_MATH) $(SRC_CFD) $(SRC_GRID_1D) \
-                         $(SRC_SYSTEM) $(SRC_LEVERMORE1D) $(SRC_LEVERMORE1D_EXE)
+SRC_LEVERMORE1D_SOLVER = $(SRC_MATH) $(SRC_CFD) $(SRC_CFD1D_INPUT) $(SRC_GRID_1D) \
+                         $(SRC_SYSTEM) $(SRC_LEVERMORE1D) $(SRC_HIGH_ORDER_RECONSTRUCTION_COMMON) \
+	                 $(SRC_HIGH_ORDER_RECONSTRUCTION_1D)\
+                         $(SRC_LEVERMORE1D_EXE) $(SRC_MPI) Euler1D/ExactSolutions/ExactSolutions.cc
+
 # Add Unit Testing to Levermore 1D:
 ifeq ($(TUT_TESTING),ON)
   SRC_LEVERMORE1D_SOLVER += $(SRC_TUT)
