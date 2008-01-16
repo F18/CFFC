@@ -17,6 +17,7 @@
 *.tree
 *.log
 *.gplt
+*_residual.dat
 *.plt
 tecplot.phy
 *.e*

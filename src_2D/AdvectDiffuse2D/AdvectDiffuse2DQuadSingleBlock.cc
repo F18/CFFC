@@ -834,12 +834,12 @@ void Output_Tecplot(AdvectDiffuse2D_Quad_Block &SolnBlk,
 	     << "VARIABLES = \"x\" \\ \n"
 	     << "\"y\" \\ \n"
 	     << "\"u\" \\ \n"
-	     << "\"Vx\" \n"
-	     << "\"Vy\" \n"
-	     << "\"k\" \n"
-	     << "\"s\" \n";
+	     << "\"Vx\" \\ \n"
+	     << "\"Vy\" \\ \n"
+	     << "\"k\" \\ \n"
+	     << "\"s\" \\ \n";
     if (SolnBlk.ExactSoln->IsExactSolutionSet()){
-      Out_File << "\"ExactSoln\" \n";
+      Out_File << "\"ExactSoln\" \\ \n";
     }
  
     Out_File << "ZONE T =  \"Block Number = " << Block_Number
@@ -905,10 +905,10 @@ void Output_Cells_Tecplot(AdvectDiffuse2D_Quad_Block &SolnBlk,
 	     << "\"u\" \\ \n"
 	     << "\"Vx\" \\ \n"
 	     << "\"Vy\" \\ \n"
-	     << "\"k\" \n"
-	     << "\"s\" \n";
+	     << "\"k\" \\ \n"
+	     << "\"s\" \\ \n";
     if (SolnBlk.ExactSoln->IsExactSolutionSet()){
-      Out_File << "\"ExactSoln\" \n";
+      Out_File << "\"ExactSoln\" \\ \n";
     }
     Out_File << "ZONE T =  \"Block Number = " << Block_Number
 	     << "\" \\ \n"

@@ -9,6 +9,7 @@
 
 /* Include CFFC header files */
 #include "TestData.h"
+#include "../AdvectDiffuse2DQuad.h"
 
 namespace tut
 {
@@ -19,6 +20,9 @@ namespace tut
 
     // Local variables
   public:
+    int error_flag;
+
+    // Member functions
 
     // Constructor
     Data_AdvectDiffuse2DSolver(){
@@ -30,9 +34,27 @@ namespace tut
       set_test_suite_path("AdvectDiffuse2D/UnitTests/");
     }
 
+    ~Data_AdvectDiffuse2DSolver(){};
+
+    // Solve Problem --> run AdvectDiffuse2DQuadSolver() subroutine with the proper input_file_name
+    //                   and analyze the returned error_flag
+    void Solve_Problem(int batch_flag = 1);
+
   private:
     
   };
+
+  void Data_AdvectDiffuse2DSolver::Solve_Problem(int batch_flag){
+    // Call solver
+    error_flag = AdvectDiffuse2DQuadSolver(input_file_name,
+					   batch_flag);
+      
+    // Check error_flag
+    if (error_flag) {
+      throw runtime_error("AdvectDiffuse2DQuadSolver() ERROR: Runtime error! For details, run verbose the regression test.");
+    } /* endif */
+  }
+
 
   /**
    * This group of declarations is just to register
@@ -79,10 +101,169 @@ namespace tut
   void AdvectDiffuse2DSolver_object::test<1>()
   {
 
-    set_test_name("Name of the test");
+    set_test_name("2nd-order advection-diffusion in rectangular channel");
+    set_local_output_path("SimulationsData/AdvectionDiffusionInRectangularChannel/");
+    set_local_input_path("SimulationsData/AdvectionDiffusionInRectangularChannel/");
 
+    RunRegression = ON;
+    
+    // Set input file name
+    Open_Input_File("AdvectionDiffusionInRectangularChannel.in");
+
+    // call solver
+    Solve_Problem();
+
+    if (RunRegression){
+
+      //===== Check nodal solution
+      MasterFile  = "AdvectionDiffusionInRectangularChannel_cpu000000.dat";
+      CurrentFile = "Current_AdvectionDiffusionInRectangularChannel_cpu000000.dat";
+
+      // check
+      RunRegressionTest("Nodal Solution", CurrentFile, MasterFile, 5.0e-9, 5.0e-9);
+
+      //===== Check cell solution
+      MasterFile  = "AdvectionDiffusionInRectangularChannel_cells_cpu000000.dat";
+      CurrentFile = "Current_AdvectionDiffusionInRectangularChannel_cells_cpu000000.dat";
+
+      // check
+      RunRegressionTest("Cell Solution", CurrentFile, MasterFile, 5.0e-9, 5.0e-9);
+    }
   }
 
+  /* Test 2:*/
+  template<>
+  template<>
+  void AdvectDiffuse2DSolver_object::test<2>()
+  {
+
+    set_test_name("2nd-order heat transfer in rectangular box");
+    set_local_output_path("SimulationsData/HeatTransferInRectangularBox/");
+    set_local_input_path("SimulationsData/HeatTransferInRectangularBox/");
+
+    RunRegression = ON;
+    
+    // Set input file name
+    Open_Input_File("StationaryHeatTransferWithLinearSource.in");
+
+    // call solver
+    Solve_Problem();
+
+    if (RunRegression){
+
+      //===== Check nodal solution 00
+      MasterFile  = "StationaryHeatTransferWithLinearSource_00_cpu000000.dat";
+      CurrentFile = "Current_StationaryHeatTransferWithLinearSource_00_cpu000000.dat";
+      RunRegressionTest("Nodal solution 00", CurrentFile, MasterFile, 5.0e-9, 5.0e-9);
+
+      //===== Check nodal solution 01
+      MasterFile  = "StationaryHeatTransferWithLinearSource_01_cpu000000.dat";
+      CurrentFile = "Current_StationaryHeatTransferWithLinearSource_01_cpu000000.dat";
+      RunRegressionTest("Nodal solution 01", CurrentFile, MasterFile, 5.0e-9, 5.0e-9);
+
+      //===== Check nodal solution 02
+      MasterFile  = "StationaryHeatTransferWithLinearSource_02_cpu000000.dat";
+      CurrentFile = "Current_StationaryHeatTransferWithLinearSource_02_cpu000000.dat";
+      RunRegressionTest("Nodal solution 02", CurrentFile, MasterFile, 5.0e-9, 5.0e-9);
+
+      //===== Check nodal solution 03
+      MasterFile  = "StationaryHeatTransferWithLinearSource_03_cpu000000.dat";
+      CurrentFile = "Current_StationaryHeatTransferWithLinearSource_03_cpu000000.dat";
+      RunRegressionTest("Nodal solution 03", CurrentFile, MasterFile, 5.0e-9, 5.0e-9);
+
+      //===== Check cell solution 00
+      MasterFile  = "StationaryHeatTransferWithLinearSource_cells_00_cpu000000.dat";
+      CurrentFile = "Current_StationaryHeatTransferWithLinearSource_cells_00_cpu000000.dat";
+      RunRegressionTest("Cell solution 00", CurrentFile, MasterFile, 5.0e-9, 5.0e-9);
+
+      //===== Check cell solution 01
+      MasterFile  = "StationaryHeatTransferWithLinearSource_cells_01_cpu000000.dat";
+      CurrentFile = "Current_StationaryHeatTransferWithLinearSource_cells_01_cpu000000.dat";
+      RunRegressionTest("Cell solution 01", CurrentFile, MasterFile, 5.0e-9, 5.0e-9);
+
+      //===== Check cell solution 02
+      MasterFile  = "StationaryHeatTransferWithLinearSource_cells_02_cpu000000.dat";
+      CurrentFile = "Current_StationaryHeatTransferWithLinearSource_cells_02_cpu000000.dat";
+      RunRegressionTest("Cell solution 02", CurrentFile, MasterFile, 5.0e-9, 5.0e-9);
+
+      //===== Check cell solution 03
+      MasterFile  = "StationaryHeatTransferWithLinearSource_cells_03_cpu000000.dat";
+      CurrentFile = "Current_StationaryHeatTransferWithLinearSource_cells_03_cpu000000.dat";
+      RunRegressionTest("Cell solution 03", CurrentFile, MasterFile, 5.0e-9, 5.0e-9);
+    }
+  }
+
+  /* Test 3:*/
+  template<>
+  template<>
+  void AdvectDiffuse2DSolver_object::test<3>()
+  {
+
+    set_test_name("2nd-order periodic advection in rectangular channel");
+    set_local_output_path("SimulationsData/PeriodicAdvectionInRectangularBox/");
+    set_local_input_path("SimulationsData/PeriodicAdvectionInRectangularBox/");
+
+    RunRegression = ON;
+    
+    // Set input file name
+    Open_Input_File("PeriodicWaveAdvection.in");
+
+    // call solver
+    Solve_Problem();
+
+    if (RunRegression){
+
+      //===== Check nodal solution
+      MasterFile  = "PeriodicWaveAdvection_cpu000000.dat";
+      CurrentFile = "Current_PeriodicWaveAdvection_cpu000000.dat";
+
+      // check
+      RunRegressionTest("Nodal solution", CurrentFile, MasterFile, 5.0e-9, 5.0e-9);
+
+      //===== Check cell solution
+      MasterFile  = "PeriodicWaveAdvection_cells_cpu000000.dat";
+      CurrentFile = "Current_PeriodicWaveAdvection_cells_cpu000000.dat";
+
+      // check
+      RunRegressionTest("Cell solution", CurrentFile, MasterFile, 5.0e-9, 5.0e-9);
+    }
+  }
+
+  /* Test 4:*/
+  template<>
+  template<>
+  void AdvectDiffuse2DSolver_object::test<4>()
+  {
+
+    set_test_name("2nd-order circular advection in rectangular box");
+    set_local_output_path("SimulationsData/CircularAdvectionInRectangularBox/");
+    set_local_input_path("SimulationsData/CircularAdvectionInRectangularBox/");
+
+    RunRegression = ON;
+    
+    // Set input file name
+    Open_Input_File("CircularAdvectionInRectangularBox.in");
+
+    // call solver
+    Solve_Problem();
+
+    if (RunRegression){
+
+      //===== Check nodal solution
+      MasterFile  = "CircularAdvectionInRectangularBox_cpu000000.dat";
+      CurrentFile = "Current_CircularAdvectionInRectangularBox_cpu000000.dat";
+
+      // check
+      RunRegressionTest("Nodal solution", CurrentFile, MasterFile, 5.0e-9, 5.0e-9);
+
+      //===== Check cell solution
+      MasterFile  = "CircularAdvectionInRectangularBox_cells_cpu000000.dat";
+      CurrentFile = "Current_CircularAdvectionInRectangularBox_cells_cpu000000.dat";
+
+      // check
+      RunRegressionTest("Cell solution", CurrentFile, MasterFile, 5.0e-9, 5.0e-9);
+    }
+  }
 
 }
 

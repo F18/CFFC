@@ -1,0 +1,258 @@
+						##############################
+						# AdvectDiffuse2D input file #
+						##############################
+
+#
+# SOLVED PROBLEM: Stationary heart transfer with a linear source term
+#                 in a rectangular box.
+# 
+
+			###########################
+			# SET EQUATION PARAMETERS #
+			###########################
+
+	#####################
+	#  DEFINE GEOMETRY  #
+	#####################
+Flow_Geometry_Type = 
+		Planar
+Grid_Type =
+	 Rectangular_Box
+Box_Width =
+	1.00
+Box_Height =
+	1.00
+
+	###############################
+	#  VELOCITY FIELD PARAMETERS  #
+	###############################
+Velocity_Field =
+	 Quiescent
+
+	################################
+	#  DIFFUSION FIELD PARAMETERS  #
+	################################
+Diffusion_Field = 
+	Constant
+Diffusion_Coefficient =
+	1.0
+
+	############################
+	#  SOURCE TERM PARAMETERS  #
+	############################
+Source_Field =
+	Linear_Variation
+Source_Linear_Tau_Coeff =
+	-0.16666666666666666667        # 1/6
+
+
+	#########################
+	# SET INITIAL CONDITION #
+	#########################
+ICs_Type =
+	 Riemann_Xdir
+	# Uniform_Interior_Exact_Ghost_Cells
+	# Uniform
+        # Exact_Solution
+	# Restart
+
+
+	################################
+	#  DEFINE BOUNDARY CONDITIONS  #
+	################################
+Boundary_Conditions_Specified =
+		 On
+		# Off
+BC_North =
+	# Exact_Solution
+	# Frozen
+	# Dirichlet
+	Neumann
+Ref_State_North =
+	    0.0
+
+BC_South =
+	# Exact_Solution
+	# Frozen
+	# Dirichlet
+	 Neumann
+Ref_State_South =
+	    0.0
+
+BC_East =
+	# Exact_Solution
+	# Frozen
+	 Dirichlet
+Ref_State_East =
+	    1.0
+
+BC_West =
+	# Exact_Solution
+	# Frozen
+	 Dirichlet
+Ref_State_West =
+	    0.0
+
+	###########################
+	#  DEFINE EXACT SOLUTION  #
+	###########################
+Exact_Solution =
+		 Heat_Diffusion_With_Linear_Source
+Direction_Of_Variation =
+	 x-axis
+lambda_Coeff =
+	 -6.0 
+CoordA_Coeff =
+	-0.5
+SolnA_Coeff =
+	0.0
+CoordB_Coeff =
+	0.5
+SolnB_Coeff =
+	1.0
+
+			###########################################
+			# SET NUMERICAL DISCRETIZATION PARAMETERS #
+			##########################################
+
+
+	#########################
+	#  SET MESH PARAMETERS  #
+	#########################
+
+Number_of_Cells_Idir = 
+	88
+Number_of_Cells_Jdir =
+	40
+Number_of_Blocks_Idir = 
+	1
+Number_of_Blocks_Jdir =
+	1
+Number_of_Ghost_Cells =
+	2
+Number_of_Blocks_Per_Processor =
+	100
+
+
+	###########################################
+	#  SET SPATIAL DISCRETIZATION PARAMETERS  #
+	###########################################
+Reconstruction_Type =
+	Least_Squares 
+
+Limiter_Type = 
+	# One
+	 Barth_Jespersen
+	# Venkatakrishnan
+	# Zero
+
+
+	################################
+	# SET TIME STEPPING PARAMETERS #
+	################################
+Time_Integration_Type =
+	# Explicit_Predictor_Corrector
+	 Multigrid
+
+Time_Accurate = 
+		0
+
+Local_Time_Stepping =
+		0
+CFL_Number =
+	0.50
+
+Maximum_Number_of_Time_Steps =
+        250
+Time_Max = 
+	1.00
+
+Full_Multigrid =
+	50
+
+Multigrid_Smoothing_Type =
+	Explicit_Predictor_Corrector
+
+# MULTIGRID PARAMETERS:
+Multigrid_Levels =
+    4
+Multigrid_Cycle_Type =
+    V
+Multigrid_Number_of_Smooths_on_Finest_Level =
+    2
+Multigrid_Number_of_Pre_Smooths =
+    2
+Multigrid_Number_of_Post_Smooths =
+    2
+Multigrid_Number_of_Smooths_on_Coarsest_Level =
+    4
+
+Maximum_Number_of_NKS_Iterations = 
+    0
+
+
+	######################
+	# SET AMR PARAMETERS #
+	######################
+
+# INITIAL AMR PARAMETERS:
+Number_of_Initial_Mesh_Refinements =
+    0
+Number_of_Uniform_Mesh_Refinements =
+    0
+Number_of_Boundary_Mesh_Refinements =
+    0
+
+# UNSTEADY AMR PARAMETERS:
+AMR =
+     OFF
+#
+# AMR PARAMETERS:
+Maximum_Refinement_Level =
+    5
+Minimum_Refinement_Level =
+    2
+Threshold_for_Refinement =
+    0.80
+Threshold_for_Coarsening =
+    0.50
+AMR_Frequency =
+    500
+
+	#########################
+	# SET OUTPUT PARAMETERS #
+	#########################
+Output_File_Name = 
+	AdvectDiffuse2D/UnitTests/SimulationsData/HeatTransferInRectangularBox/Current_StationaryHeatTransferWithLinearSource
+
+Restart_Solution_Save_Frequency = 
+	6000
+
+	#########################
+	#  ACCURACY ASSESSMENT  #
+	#########################
+Accuracy_Assessment_Exact_Digits =
+         8
+
+
+	#######################
+	#   Execute program   #
+	#######################
+Execute
+
+#######################
+# Write output
+#######################
+Write_Output
+Write_Output_Cells
+#Write_Restart
+Print_Accuracy
+#Write_Output_Mesh
+#Write_Output_Mesh_Cells
+#Write_Output_Mesh_Nodes
+##Write_Mesh_Definition
+
+#######################
+# Terminate program
+#######################
+Terminate

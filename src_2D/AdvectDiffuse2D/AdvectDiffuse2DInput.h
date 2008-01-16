@@ -22,6 +22,7 @@
 /* Define the structures and classes. */
 
 #define	INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D    128
+#define	LONG_INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D    256
 
 // Enviroment flag for CFFC root directory path
 #define PATHVAR_ADVECTDIFFUSE2D "CFFC_Path"
@@ -40,7 +41,7 @@ public:
   //! CFFC root directory path:
   char CFFC_Path[INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
   //! Input file name:
-  char Input_File_Name[INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
+  char Input_File_Name[LONG_INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
   //! Input file stream:
   ifstream Input_File;
   //! Input file line number:
@@ -202,14 +203,14 @@ public:
   //! @name Output parameters:
   //@{
   //! Output file name:
-  char Output_File_Name[INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
+  char Output_File_Name[LONG_INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
   //! Multi-block mesh definition input file names:
-  char Grid_File_Name[INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
-  char Grid_Definition_File_Name[INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
+  char Grid_File_Name[LONG_INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
+  char Grid_Definition_File_Name[LONG_INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
   //! Restart file name:
-  char Restart_File_Name[INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
+  char Restart_File_Name[LONG_INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
   //! Gnuplot file name:
-  char Gnuplot_File_Name[INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
+  char Gnuplot_File_Name[LONG_INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
   //! Next_Control_Parameter:
   char Next_Control_Parameter[INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
   //! Output format type indicator:
