@@ -466,6 +466,11 @@ void ICs(Levermore1D_UniformMesh *Soln,
     break;
   } /* endswitch */
 
+  //Calculate Hessians
+  for ( i = 0 ; i <= TC-1 ; ++i ) {
+    Soln[i].calculate_Hessians();
+  }
+
 }
 
 /******************************************************//**

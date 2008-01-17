@@ -29,6 +29,10 @@
  * -     W       -- Return primitive solution state.
  * -     U       -- Return conserved solution state.
  * -     A       -- Return closure weights.
+ * -   dUdA      -- Return Hessian of density potential
+ * - dUdA_inv    -- Return inverse Hessian of density potential
+ * -   dFdA      -- Return Hessian of flux potential
+ * -   dFdU      -- Return Flux Jacobian
  * -     X       -- Return cell geometry.
  * -     dt      -- Return local time step.
  * -   dUdt      -- Return the solution residual.
@@ -49,6 +53,10 @@ public:
   Levermore1D_pState    W;   //!< Primitive solution state.
   Levermore1D_cState    U;   //!< Conserved solution state.
   Levermore1D_weights   A;   //!< Closure weights
+  DenseMatrix        dUdA;   //!< Hessian of density potential.
+  DenseMatrix    dUdA_inv;   //!< Inverse Hessian of density potential.
+  DenseMatrix        dFdA;   //!< Hessian of flux potential.
+  DenseMatrix        dFdU;   //!< Flux Jacobian
   Cell1D_Uniform        X;   //!< Cell geometry.
   double               dt;   //!< Local time step.
   Levermore1D_cState dUdt;   //!< Solution residual.
@@ -110,6 +118,13 @@ public:
   }
   void set_state(const Levermore1D_weights &A0) {
     A = A0; U = Levermore1D_cState(A); W = Levermore1D_pState(U);
+  }
+  void calculate_Hessians() {
+    dUdA = U.d2hda2(A);
+    dFdA = U.d2jda2(A);
+    dUdA_inv = dUdA.pseudo_inverse(); //Use Lucian's "pseudo_inverse"
+                                      //function for now.
+    dFdU = dFdA*dUdA_inv;
   }
 
   /* Input-output operators. */
