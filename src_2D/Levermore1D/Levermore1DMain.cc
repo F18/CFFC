@@ -224,7 +224,7 @@ int main(int num_arg, char *arg_ptr[]) {
    ***********************************************************/
 
   error_flag = Levermore1DSolver(Input_File_Name_ptr,
-			     batch_flag);
+				 batch_flag);
 
   if (error_flag) {
      return (error_flag);

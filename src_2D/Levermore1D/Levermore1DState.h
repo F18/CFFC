@@ -112,7 +112,7 @@ class Levermore1D_weights : public Levermore1D_Vector{
   /* Static Functions. */
   static double m() {return particle_mass;}
   static void set_particle_mass(double m) {particle_mass=m;}
-  static void setgas(char* gas){/*do something?  Should set particle_mass I guess.*/}
+  static void setgas(char* gas);
 
   protected:
 
@@ -168,4 +168,14 @@ inline istream& operator<<(istream &in, const Levermore1D_weights &A) {
   return in;
 }
 
+/********************************************************
+ *                Inline  Functions                     *
+ ********************************************************/
+inline void Levermore1D_weights::setgas(char* gas) {
+   if (strcmp(gas, "Zb") != 0) {
+     cout << endl << "levermore1D cannot use gas: " << gas
+	  << ". Using Zoidbergium instead." << endl;
+   }
+   set_particle_mass(MOLE_WT_ZB/(AVOGADRO*THOUSAND));
+}
 #endif

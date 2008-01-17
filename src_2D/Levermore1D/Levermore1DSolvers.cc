@@ -156,7 +156,7 @@ int Levermore1DSolver(char *Input_File_Name_ptr,
     cout.flush();
   }
   ICs(Soln_ptr,
-      "AIR",
+      "ZOIDBERGIUM",
       Input_Parameters.i_ICs,
       Input_Parameters.Number_of_Cells,
       Input_Parameters);

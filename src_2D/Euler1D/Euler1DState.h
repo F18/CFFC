@@ -612,6 +612,9 @@ inline void Euler1D_pState::setgas(char *string_ptr) {
    } else if (strcmp(string_ptr, "e") == 0) {
      g = GAMMA_e;
      R = R_UNIVERSAL/(MOLE_WT_e*MILLI);
+   } else if (strcmp(string_ptr, "ZB") == 0) {
+     g = GAMMA_ZB;
+     R = R_UNIVERSAL/(MOLE_WT_ZB*MILLI);
    } else {
      g = GAMMA_AIR;
      R = R_UNIVERSAL/(MOLE_WT_AIR*MILLI);
@@ -929,6 +932,9 @@ inline void Euler1D_cState::setgas(char *string_ptr) {
    } else if (strcmp(string_ptr, "e") == 0) {
      g = GAMMA_e;
      R = R_UNIVERSAL/(MOLE_WT_e*MILLI);
+   } else if (strcmp(string_ptr, "ZB") == 0) {
+     g = GAMMA_ZB;
+     R = R_UNIVERSAL/(MOLE_WT_ZB*MILLI);
    } else {
      g = GAMMA_AIR;
      R = R_UNIVERSAL/(MOLE_WT_AIR*MILLI);

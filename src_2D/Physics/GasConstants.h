@@ -42,6 +42,7 @@
 #define GAS_O2            1012
 #define GAS_APHTPB        1013        // For solid propellent rocket motor gas.
 #define GAS_e             2000
+#define GAS_ZB            4000        // "Zoidbergium": a fictional 1D gas used for levermore1D
 
 #define ION_H             2001
 #define ION_HE            2002
@@ -76,6 +77,7 @@
 #define GAMMA_O2            1.395
 #define GAMMA_e             1.6666666667
 #define GAMMA_APHTPB        1.208        // For solid propellent rocket motor gas.
+#define GAMMA_ZB            3.00         // Gamma for fake 1D gas
 
 #define GAMMA_ION_LOW_MASS   1.20
 #define GAMMA_ION_MED_MASS   1.10
@@ -100,6 +102,7 @@
 #define MOLE_WT_O2          32.0000
 #define MOLE_WT_e           5.485802621e-04
 #define MOLE_WT_APHTPB      26.14626101
+#define MOLE_WT_ZB          42.00        //Why not? 42 is the answer to life, the universe and everything.
 
 #define MOLE_WT_ION_LOW_MASS   105.00
 #define MOLE_WT_ION_MED_MASS   228.00
