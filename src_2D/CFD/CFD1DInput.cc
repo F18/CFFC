@@ -260,6 +260,10 @@ void Set_Default_Input_Parameters(CFD1D_Input_Parameters &IP) {
 
     // set output to verbose
     IP.Verbose() = ON;
+
+    // levermore1D-specific inputs
+    IP.number_of_moments = 3;
+
 }
 
 /********************************************************
@@ -681,6 +685,17 @@ int Parse_Next_Input_Control_Parameter(CFD1D_Input_Parameters &IP) {
       } else {
 	IP.Reconstruction_In_Each_Stage = false;
       } /* endif */
+
+      /********************** levermore1D-specific inputs **************************/
+    } else if (strcmp(IP.Next_Control_Parameter, "Number_Of_Moments") == 0) {
+       i_command = 30;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.number_of_moments;
+       IP.Input_File.getline(buffer, sizeof(buffer));
+       if (IP.number_of_moments < 3 || IP.number_of_moments%2 ==0 ){
+	 cout << "\n Error! Invalid number of moments.";
+	 i_command = INVALID_INPUT_VALUE;
+       }/* endif */
       
     } else if (strcmp(IP.Next_Control_Parameter, "Execute") == 0) {
        i_command = EXECUTE_CODE;

@@ -114,6 +114,13 @@ int Levermore1DSolver(char *Input_File_Name_ptr,
 
   /* Allocate memory for 1D Levermore equation solution on
      uniform mesh. */
+  if (! batch_flag){
+    cout << "\n Setting number of moments.";
+    cout.flush();
+  }
+
+  Levermore1D_Vector::set_length(Input_Parameters.number_of_moments);
+
 
   if (! batch_flag){
     cout << "\n Creating memory for Levermore1D solution variables.";

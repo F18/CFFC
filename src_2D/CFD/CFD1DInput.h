@@ -67,6 +67,9 @@ class CFD1D_Input_Parameters{
   // Diffusion coefficient, wave speed, and relaxation time:
   double Kappa, a, Tau;
 
+  // levermore1D-specific input parameters
+  int number_of_moments;
+
   // Output file name:
   char Output_File_Name[INPUT_PARAMETER_LENGTH_CFD1D];
 
@@ -240,7 +243,9 @@ inline ostream &operator << (ostream &out_file,
              << IP.Output_File_Name;
     out_file << "\n  -> Output Format: " 
              << IP.Output_Format_Type;
-
+    out_file << "\n  ------------- levermore1D-specific inputs ------------"
+	     << "\n  -> Number of Moments: "
+	     << IP.number_of_moments;
     return (out_file);
 }
 
