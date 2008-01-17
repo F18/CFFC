@@ -112,15 +112,16 @@ int Levermore1DSolver(char *Input_File_Name_ptr,
 
   execute_new_calculation: ;
 
-  /* Allocate memory for 1D Levermore equation solution on
-     uniform mesh. */
+  /* Set number of moments used in calculation. */
   if (! batch_flag){
-    cout << "\n Setting number of moments.";
+    cout << "\n Setting number of moments to " << Input_Parameters.number_of_moments << ".";
     cout.flush();
   }
 
   Levermore1D_Vector::set_length(Input_Parameters.number_of_moments);
 
+  /* Allocate memory for 1D Levermore equation solution on
+     uniform mesh. */
 
   if (! batch_flag){
     cout << "\n Creating memory for Levermore1D solution variables.";
@@ -163,11 +164,10 @@ int Levermore1DSolver(char *Input_File_Name_ptr,
     cout.flush();
   }
   ICs(Soln_ptr,
-      "ZOIDBERGIUM",
+      "ZB",
       Input_Parameters.i_ICs,
       Input_Parameters.Number_of_Cells,
       Input_Parameters);
-
 
   /********************************************************
    * Solve conservation form of 1D Levermore equations for    *
@@ -198,13 +198,11 @@ int Levermore1DSolver(char *Input_File_Name_ptr,
              cout << " Time Step = " << number_of_time_steps
 	          << " Time = " << time*THOUSAND << "\n .";
 	     cout.flush();
-         } else if (! batch_flag &&
-                    number_of_time_steps-100*(number_of_time_steps/100) == 0 ) {
+         } else if (! batch_flag && number_of_time_steps%100 == 0 ) {
 	     cout << "\n" << " Time Step = " << number_of_time_steps
 	          << " Time = " << time*THOUSAND << "\n .";
 	     cout.flush();
-         } else if (! batch_flag &&
-                    number_of_time_steps-50*(number_of_time_steps/50) == 0 ) {
+         } else if (! batch_flag && number_of_time_steps%50 == 0 ) {
 	     cout << "\n .";
 	     cout.flush();
          } else if (! batch_flag) {
@@ -302,11 +300,11 @@ int Levermore1DSolver(char *Input_File_Name_ptr,
 
          if (error_flag) {
              if (batch_flag) {
-                 cout << "\nPDES++ ERROR: Levermore1D solution error.\n\n";
+                 cout << "\nCFFC ERROR: Levermore1D solution error.\n\n";
 		 cout.flush();
              } else {
-                 cout << "\n PDES++ ERROR: Levermore1D solution error.";
-                 cout << "\n\nPDES++: Execution terminated.\n";
+                 cout << "\n CFFC ERROR: Levermore1D solution error.";
+                 cout << "\n\nCFFC: Execution terminated.\n";
 		 cout.flush();
              } /* endif */
              return (error_flag);
@@ -327,16 +325,16 @@ int Levermore1DSolver(char *Input_File_Name_ptr,
    * Reconstruct the final solution (high-order or  *
    * limited linear reconstruction)                 *
    *************************************************/
-  if (Input_Parameters.Verbose()){
-    cout << '\n'
-	 << " Reconstruct the final solution. "
-	 << "\n";
-    cout.flush();
-  }
+//  if (Input_Parameters.Verbose()){
+//    cout << '\n'
+//	 << " Reconstruct the final solution. "
+//	 << "\n";
+//    cout.flush();
+//  }
 //  if(Input_Parameters.i_Reconstruction == RECONSTRUCTION_HIGH_ORDER){
 //    HighOrderSolutionReconstructionOverDomain(Soln_ptr,Input_Parameters,&Levermore1D_UniformMesh::CellHighOrder);
 //  } else {
-    LimitedLinearReconstructionOverDomain(Soln_ptr,Input_Parameters);
+//    LimitedLinearReconstructionOverDomain(Soln_ptr,Input_Parameters);
 //  }
 
   /********************************************************
@@ -391,10 +389,10 @@ int Levermore1DSolver(char *Input_File_Name_ptr,
          Output_File.open(Output_File_Name_ptr, ios::out);
          if (Output_File.fail()) {
             if (batch_flag) {
-               cout << "\nPDES++ ERROR: Unable to open Levermore1D output data file.\n\n";
+               cout << "\nCFFC ERROR: Unable to open Levermore1D output data file.\n\n";
             } else {
-               cout << "\n PDES++ ERROR: Unable to open Levermore1D output data file.";
-               cout << "\n\nPDES++: Execution terminated.\n";
+               cout << "\n CFFC ERROR: Unable to open Levermore1D output data file.";
+               cout << "\n\nCFFC: Execution terminated.\n";
             } /* endif */
             return (1);
          } /* endif */
@@ -420,15 +418,15 @@ int Levermore1DSolver(char *Input_File_Name_ptr,
             Gnuplot_File.open(Gnuplot_File_Name_ptr, ios::out);
             if (Gnuplot_File.fail()) {
                if (batch_flag) {
-                  cout << "\nPDES++ ERROR: Unable to open Levermore1D Gnuplot macro file.\n\n";
+                  cout << "\nCFFC ERROR: Unable to open Levermore1D Gnuplot macro file.\n\n";
                } else {
-                  cout << "\n PDES++ ERROR: Unable to open Levermore1D Gnuplot macro file.";
-                  cout << "\n\nPDES++: Execution terminated.\n";
+                  cout << "\n CFFC ERROR: Unable to open Levermore1D Gnuplot macro file.";
+                  cout << "\n\nCFFC: Execution terminated.\n";
                } /* endif */
                return (2);
             } /* endif */
 
-            Gnuplot_File << "set title \"PDES++: 1D Levermore Solution\"\n"
+            Gnuplot_File << "set title \"CFFC: 1D Levermore Solution\"\n"
                          << "set xlabel \"x\"\n"
 	                 << "plot \"" << Output_File_Name_ptr << "\""
                          << " using 1:2 \"%*lf%lf%*lf%lf%*lf%*lf%*lf\" \\\n"
@@ -467,7 +465,7 @@ int Levermore1DSolver(char *Input_File_Name_ptr,
          } else {
              cout << "\nLevermore1D ERROR: Error reading Levermore1D data at line #"
 	          << -line_number  << " of input data file.";
-             cout << "\n\nPDES++: Execution terminated.\n";
+             cout << "\n\nCFFC: Execution terminated.\n";
          } /* end if */
          return (line_number);
      } /* endif */

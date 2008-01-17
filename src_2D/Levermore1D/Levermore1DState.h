@@ -172,7 +172,7 @@ inline istream& operator<<(istream &in, const Levermore1D_weights &A) {
  *                Inline  Functions                     *
  ********************************************************/
 inline void Levermore1D_weights::setgas(char* gas) {
-   if (strcmp(gas, "Zb") != 0) {
+   if (strcmp(gas, "ZB") != 0) {
      cout << endl << "levermore1D cannot use gas: " << gas
 	  << ". Using Zoidbergium instead." << endl;
    }
