@@ -77,6 +77,7 @@ class Levermore1D_cState : public Levermore1D_Vector{
   void set_from_A(const Levermore1D_weights &A);
   double moment(int n, const Levermore1D_weights &A) const;
   DenseMatrix d2hda2(const Levermore1D_weights &A) const;
+  DenseMatrix d2jda2(const Levermore1D_weights &A) const;
 
 };
 

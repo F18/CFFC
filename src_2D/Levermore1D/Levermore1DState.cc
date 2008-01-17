@@ -259,3 +259,22 @@ DenseMatrix Levermore1D_cState::d2hda2(const Levermore1D_weights &A) const {
   return dm;
 }
 
+/********************************************************
+ * Function: Levermore1D_cState::d2jda2                 *
+ *                                                      *
+ * Calculate Hessian of flux potential.                 *
+ *                                                      *
+ ********************************************************/
+DenseMatrix Levermore1D_cState::d2jda2(const Levermore1D_weights &A) const {
+
+  DenseMatrix dm(Levermore1D_Vector::get_length(),
+		 Levermore1D_Vector::get_length() );
+
+  for(int i = 0; i < Levermore1D_Vector::get_length(); ++i) {
+    for(int j = 0; j < Levermore1D_Vector::get_length(); ++j) {
+      dm(i,j) = moment(i+j+1,A);
+    }
+  }
+  return dm;
+}
+
