@@ -117,17 +117,6 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
     if (!batch_flag) cout << "\n Creating (or reading) initial quadrilateral multi-block mesh.";
     error_flag = MeshBlk.Multi_Block_Grid(Input_Parameters);
 
-    // Incorporate the lines below in Multi_Block_Grid() function
-    //     if (MeshBlk == NULL) {
-    //       error_flag = 1;
-    //     } else if (Check_Multi_Block_Grid(MeshBlk,
-    // 				      Input_Parameters.Number_of_Blocks_Idir,
-    // 				      Input_Parameters.Number_of_Blocks_Jdir)) {
-    //       error_flag = 1;
-    //     } else {
-    //       error_flag = 0;
-    //     } /* endif */
-    
     if (error_flag) {
       cout << "\n AdvectDiffuse2D ERROR: Unable to create valid AdvectDiffuse2D multi-block mesh.\n";
       cout.flush();

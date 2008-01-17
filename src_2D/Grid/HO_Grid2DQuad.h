@@ -455,10 +455,17 @@ public:
   //! @name Broadcast functions (MPI)
   //@{
   void Broadcast_Quad_Block(void);
+  friend void Broadcast_Quad_Block(Grid2D_Quad_Block_HO &Grid){ return Grid.Broadcast_Quad_Block(); }
   
 #ifdef _MPI_VERSION
   void Broadcast_Quad_Block(MPI::Intracomm &Communicator, 
 			    const int Source_CPU);
+  friend void Broadcast_Quad_Block(Grid2D_Quad_Block_HO &Grid,
+				   MPI::Intracomm &Communicator, 
+				   const int Source_CPU){
+    return Grid.Broadcast_Quad_Block(Communicator, Source_CPU);
+  }
+
 #endif
   //@}
   

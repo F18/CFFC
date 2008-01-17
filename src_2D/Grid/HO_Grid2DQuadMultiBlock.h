@@ -596,6 +596,7 @@ private:
 template<typename Input_Parameters_Type>
 int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Parameters){
 
+  int error_flag(0);
   int iBlk, jBlk;
   int HiBlk, HjBlk;
 
@@ -941,9 +942,16 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
     Rotate_Multi_Block_Grid(TWO*PI*Input_Parameters.X_Rotate/360.00);
   } /* endif */
 
+    /* Check the validity of the generated mesh. */
+  if (Grid_ptr == NULL){
+    error_flag = 1;
+  } else if (Check_Multi_Block_Grid()){
+    error_flag = 1;
+  } else {
+    error_flag = 0;
+  }
 
-  return 0;
-
+  return error_flag;
 }
 
 /*!
