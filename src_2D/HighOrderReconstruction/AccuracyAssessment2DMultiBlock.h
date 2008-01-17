@@ -51,6 +51,18 @@ public:
   static void OutputErrorNormsTecplot(Quad_Soln_Block *SolnBlk,
 				      const Input_Parameters_Type &IP);
 
+  /*! @brief Print the error norms to the output file specified in the input parameters */
+  template<typename Quad_Soln_Block, typename Input_Parameters_Type>
+  static int WriteErrorNormsToOutputFile(Quad_Soln_Block *SolnBlk,
+					 const AdaptiveBlock2D_List &Soln_Block_List,
+					 const Input_Parameters_Type &IP);
+
+  /*! @brief Append the error norms to the output file specified in the input parameters */
+  template<typename Quad_Soln_Block, typename Input_Parameters_Type>
+  static int AppendErrorNormsToOutputFile(Quad_Soln_Block *SolnBlk,
+					  const AdaptiveBlock2D_List &Soln_Block_List,
+					  const Input_Parameters_Type &IP);
+
   //! @name Access to the error data:
   //@{
   static double & L1(void) {return LNorms[0]; }                 //!< return the L1 component of the error-norm vector
@@ -155,6 +167,102 @@ int AccuracyAssessment2D_MultiBlock::PrintErrorNorms(Quad_Soln_Block *SolnBlk,
 
     return 0;
   } // endif
+}
+
+/*!
+ * Write the error norms to an output file which has the 
+ * base name specified in the input parameters.
+ * This function overrides any previous entries in the file.
+ */
+template<typename Quad_Soln_Block, typename Input_Parameters_Type>
+int AccuracyAssessment2D_MultiBlock::WriteErrorNormsToOutputFile(Quad_Soln_Block *SolnBlk,
+								 const AdaptiveBlock2D_List &Soln_Block_List,
+								 const Input_Parameters_Type &IP){
+
+  int i, i_output_title;
+  char prefix[256], extension[256], output_file_name[256];
+  ofstream output_file;    
+
+  /* Determine prefix of output data file names. */
+
+  i = 0;
+  while (1) {
+    if (IP.Output_File_Name[i] == ' ' ||
+	IP.Output_File_Name[i] == '.') break;
+    prefix[i]=IP.Output_File_Name[i];
+    i = i + 1;
+    if (i > strlen(IP.Output_File_Name) ) break;
+  } /* endwhile */
+  prefix[i] = '\0';
+
+  /* Determine output data file name. */
+  strcpy(extension, "_ErrorNorms.dat");
+  strcpy(output_file_name, prefix);
+  strcat(output_file_name, extension);
+
+  /* Open the output data file. */
+  output_file.open(output_file_name, ios::out);
+  if (output_file.fail()) return (1);
+
+  /* Write the error norms to the output stream. */
+  PrintErrorNorms(SolnBlk,
+		  Soln_Block_List,
+		  IP,
+		  output_file);
+
+  /* Close the output data file. */
+  output_file.close();
+
+  /* Writing of output data files complete.  Return zero value. */
+  return(0);
+}
+
+/*!
+ * Append the error norms to an output file which has the 
+ * base name specified in the input parameters.
+ */
+template<typename Quad_Soln_Block, typename Input_Parameters_Type>
+int AccuracyAssessment2D_MultiBlock::AppendErrorNormsToOutputFile(Quad_Soln_Block *SolnBlk,
+								  const AdaptiveBlock2D_List &Soln_Block_List,
+								  const Input_Parameters_Type &IP){
+
+  int i, i_output_title;
+  char prefix[256], extension[256], output_file_name[256];
+  ofstream output_file;    
+
+  /* Determine prefix of output data file names. */
+
+  i = 0;
+  while (1) {
+    if (IP.Output_File_Name[i] == ' ' ||
+	IP.Output_File_Name[i] == '.') break;
+    prefix[i]=IP.Output_File_Name[i];
+    i = i + 1;
+    if (i > strlen(IP.Output_File_Name) ) break;
+  } /* endwhile */
+  prefix[i] = '\0';
+
+  /* Determine output data file name. */
+  strcpy(extension, "_ErrorNorms.dat");
+  strcpy(output_file_name, prefix);
+  strcat(output_file_name, extension);
+
+  /* Open the output data file. */
+  output_file.open(output_file_name, ios::app);
+  if (output_file.fail()) return (1);
+
+  /* Write the error norms to the output stream. */
+  PrintErrorNorms(SolnBlk,
+		  Soln_Block_List,
+		  IP,
+		  output_file);
+
+  /* Close the output data file. */
+  output_file.close();
+
+  /* Writing of output data files complete.  Return zero value. */
+  return(0);
+
 }
 
 /*!

@@ -1293,6 +1293,52 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
 	 cout.flush();
        }
 
+     } else if (command_flag == WRITE_ERROR_NORMS_TO_FILE) {
+       if (CFFC_Primary_MPI_Processor() && (!batch_flag)) {
+	 cout << "\n\n ---------------------------------------\n" 
+	      << " Writing error norms to output file ...\n";
+	 cout.flush();
+       }
+
+       error_flag = AccuracyAssessment2D_MultiBlock::WriteErrorNormsToOutputFile(Local_SolnBlk, 
+										 List_of_Local_Solution_Blocks, 
+										 Input_Parameters);
+       
+       if (CFFC_Primary_MPI_Processor() && error_flag) {
+	 cout << "\n AdvectDiffuse2D ERROR: Unable to write AdvectDiffuse2D error norms data.\n"; cout.flush();
+       } // endif
+
+       CFFC_Broadcast_MPI(&error_flag, 1);
+       if (error_flag) return (error_flag);
+
+       if (CFFC_Primary_MPI_Processor() && (!batch_flag)) {
+	 cout << "\n ---------------------------------------\n";       
+	 cout.flush();
+       }
+
+     } else if (command_flag == APPEND_ERROR_NORMS_TO_FILE) {
+       if (CFFC_Primary_MPI_Processor() && (!batch_flag)) {
+	 cout << "\n\n ---------------------------------------\n" 
+	      << " Appending error norms to output file ...\n";
+	 cout.flush();
+       }
+
+       error_flag = AccuracyAssessment2D_MultiBlock::AppendErrorNormsToOutputFile(Local_SolnBlk, 
+										  List_of_Local_Solution_Blocks, 
+										  Input_Parameters);
+       
+       if (CFFC_Primary_MPI_Processor() && error_flag) {
+	 cout << "\n AdvectDiffuse2D ERROR: Unable to write AdvectDiffuse2D error norms data.\n"; cout.flush();
+       } // endif
+
+       CFFC_Broadcast_MPI(&error_flag, 1);
+       if (error_flag) return (error_flag);
+
+       if (CFFC_Primary_MPI_Processor() && (!batch_flag)) {
+	 cout << "\n ---------------------------------------\n";       
+	 cout.flush();
+       }
+
      } else if (command_flag == INVALID_INPUT_CODE ||
                 command_flag == INVALID_INPUT_VALUE) {
          line_number = -line_number;

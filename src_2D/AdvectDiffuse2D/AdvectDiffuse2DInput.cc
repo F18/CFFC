@@ -2710,6 +2710,12 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
   } else if (strcmp(IP.Next_Control_Parameter,"Print_Accuracy") == 0) {
     i_command = WRITE_ERROR_NORMS_TO_SCREEN;
 
+  } else if (strcmp(IP.Next_Control_Parameter,"Write_Accuracy_To_File") == 0) {
+    i_command = WRITE_ERROR_NORMS_TO_FILE;
+
+  } else if (strcmp(IP.Next_Control_Parameter,"Append_Accuracy_To_File") == 0) {
+    i_command = APPEND_ERROR_NORMS_TO_FILE;
+
   } else if (strcmp(IP.Next_Control_Parameter, "Refine_Grid") == 0) {
     i_command = REFINE_GRID_CODE;
 
