@@ -152,7 +152,7 @@ int AccuracyAssessment2D_MultiBlock::PrintErrorNorms(Quad_Soln_Block *SolnBlk,
     return error_flag;
   } else {
     // output error norms to the os stream
-    if(Verbose){
+    if( CFFC_Primary_MPI_Processor() && (os != cout || Verbose) ){
       os << endl
 	 << " ==================================================================== "
 	 << endl

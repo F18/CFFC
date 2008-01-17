@@ -118,16 +118,20 @@ namespace tut
       //===== Check nodal solution
       MasterFile  = "AdvectionDiffusionInRectangularChannel_cpu000000.dat";
       CurrentFile = "Current_AdvectionDiffusionInRectangularChannel_cpu000000.dat";
-
       // check
       RunRegressionTest("Nodal Solution", CurrentFile, MasterFile, 5.0e-9, 5.0e-9);
 
       //===== Check cell solution
       MasterFile  = "AdvectionDiffusionInRectangularChannel_cells_cpu000000.dat";
       CurrentFile = "Current_AdvectionDiffusionInRectangularChannel_cells_cpu000000.dat";
-
       // check
       RunRegressionTest("Cell Solution", CurrentFile, MasterFile, 5.0e-9, 5.0e-9);
+
+      //===== Check solution error norms
+      MasterFile  = "AdvectionDiffusionInRectangularChannel_ErrorNorms.dat";
+      CurrentFile = "Current_AdvectionDiffusionInRectangularChannel_ErrorNorms.dat";
+      // check
+      RunRegressionTest("Solution Errors", CurrentFile, MasterFile, 5.0e-9, 5.0e-9);
     }
   }
 
@@ -190,6 +194,11 @@ namespace tut
       MasterFile  = "StationaryHeatTransferWithLinearSource_cells_03_cpu000000.dat";
       CurrentFile = "Current_StationaryHeatTransferWithLinearSource_cells_03_cpu000000.dat";
       RunRegressionTest("Cell solution 03", CurrentFile, MasterFile, 5.0e-9, 5.0e-9);
+
+      //===== Check solution error norms
+      MasterFile  = "StationaryHeatTransferWithLinearSource_ErrorNorms.dat";
+      CurrentFile = "Current_StationaryHeatTransferWithLinearSource_ErrorNorms.dat";
+      RunRegressionTest("Solution Errors", CurrentFile, MasterFile, 5.0e-9, 5.0e-9);
     }
   }
 
@@ -216,16 +225,20 @@ namespace tut
       //===== Check nodal solution
       MasterFile  = "PeriodicWaveAdvection_cpu000000.dat";
       CurrentFile = "Current_PeriodicWaveAdvection_cpu000000.dat";
-
       // check
       RunRegressionTest("Nodal solution", CurrentFile, MasterFile, 5.0e-9, 5.0e-9);
 
       //===== Check cell solution
       MasterFile  = "PeriodicWaveAdvection_cells_cpu000000.dat";
       CurrentFile = "Current_PeriodicWaveAdvection_cells_cpu000000.dat";
-
       // check
       RunRegressionTest("Cell solution", CurrentFile, MasterFile, 5.0e-9, 5.0e-9);
+
+      //===== Check solution erros
+      MasterFile  = "PeriodicWaveAdvection_ErrorNorms.dat";
+      CurrentFile = "Current_PeriodicWaveAdvection_ErrorNorms.dat";
+      // check
+      RunRegressionTest("Solution Errors", CurrentFile, MasterFile, 5.0e-9, 5.0e-9);
     }
   }
 
@@ -252,16 +265,20 @@ namespace tut
       //===== Check nodal solution
       MasterFile  = "CircularAdvectionInRectangularBox_cpu000000.dat";
       CurrentFile = "Current_CircularAdvectionInRectangularBox_cpu000000.dat";
-
       // check
       RunRegressionTest("Nodal solution", CurrentFile, MasterFile, 5.0e-9, 5.0e-9);
 
       //===== Check cell solution
       MasterFile  = "CircularAdvectionInRectangularBox_cells_cpu000000.dat";
       CurrentFile = "Current_CircularAdvectionInRectangularBox_cells_cpu000000.dat";
-
       // check
       RunRegressionTest("Cell solution", CurrentFile, MasterFile, 5.0e-9, 5.0e-9);
+
+      //===== Check solution errors
+      MasterFile  = "CircularAdvectionInRectangularBox_ErrorNorms.dat";
+      CurrentFile = "Current_CircularAdvectionInRectangularBox_ErrorNorms.dat";
+      // check
+      RunRegressionTest("Solution Errors", CurrentFile, MasterFile, 5.0e-9, 5.0e-9);
     }
   }
 
