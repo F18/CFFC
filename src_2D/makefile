@@ -105,9 +105,9 @@ SRC_GRID = $(GRID_DIR)Cell1D.cc \
            $(GRID_DIR)Grid3DHexaSingleBlock.cc \
            $(GRID_DIR)Grid3DHexaMultiBlock.cc \
            $(GRID_DIR)HO_Cell2D.cc \
+           $(GRID_DIR)HO_Spline2D.cc \
 	   $(GRID_DIR)HO_Grid2DQuad.cc \
            $(GRID_DIR)HO_Grid2DQuadMultiBlock.cc 
-#           $(GRID_DIR)HO_Grid2DQuadSingleBlock.cc
 SRC_ICEMCFD = $(ICEMCFD_DIR)ICEMCFD.cc \
 	      $(ICEMCFD_DIR)ICEMCFD_ctype.c
 # Add Grid Testing If Required:
