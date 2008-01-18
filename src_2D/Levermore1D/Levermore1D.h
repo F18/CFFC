@@ -57,6 +57,7 @@ public:
   DenseMatrix    dUdA_inv;   //!< Inverse Hessian of density potential.
   DenseMatrix        dFdA;   //!< Hessian of flux potential.
   DenseMatrix        dFdU;   //!< Flux Jacobian
+  ColumnVector     Lambda;   //!< Vector containing Eigenvalues.
   Cell1D_Uniform        X;   //!< Cell geometry.
   double               dt;   //!< Local time step.
   Levermore1D_cState dUdt;   //!< Solution residual.
@@ -125,6 +126,7 @@ public:
     dUdA_inv = dUdA.pseudo_inverse(); //Use Lucian's "pseudo_inverse"
                                       //function for now.
     dFdU = dFdA*dUdA_inv;
+    Lambda = dFdU.eigenvalues();
   }
 
   /* Input-output operators. */
@@ -139,7 +141,7 @@ private:
 };
 
 /*******************************************************
- *  Levermore1D_UniformMesh::MemberFunctions()             *
+ *  Levermore1D_UniformMesh::MemberFunctions()         *
  ******************************************************/
 /* Constructor */
 inline Levermore1D_UniformMesh::Levermore1D_UniformMesh(void){

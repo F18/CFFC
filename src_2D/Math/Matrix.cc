@@ -97,3 +97,37 @@ void DenseMatrix::pseudo_inverse_override(void){
   delete [] WORK; WORK = NULL;
 
 }
+
+/*************************************************************
+ * eigenvalues -- Return a ColumnVector containng the        *
+ *                eigenvalues of an NxN matrix.              *
+ *             (Original Matrix is over-written!)            *
+ *************************************************************/
+ColumnVector DenseMatrix::eigenvalues_overwrite(void) {
+
+  assert(size(0)==size(1));
+
+  ColumnVector REAL(size(0)), IMAG(size(0));
+  char JOBVL('N'), JOBVR('N');
+  integer N(size(0));
+  integer LDA(N), LDVL(N), LDVR(N);
+  double dummy;
+  double *WORK;
+  integer LWORK;
+  integer INFO;
+
+  LWORK = 10*N;   //how big should this thing be?
+  WORK = new double[LWORK];
+
+  /* Call Fortran subroutine */
+  F77NAME(dgeev)(&JOBVL, &JOBVR,
+		 &N, &v_(0), &LDA,
+		 &REAL(0), &IMAG(0),
+		 &dummy, &LDVL, &dummy, &LDVR,
+		 WORK, &LWORK, &INFO);
+
+
+  delete [] WORK; WORK=NULL;
+
+  return REAL;
+}

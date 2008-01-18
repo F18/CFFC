@@ -729,6 +729,9 @@ inline RowVector transpose(const ColumnVector &CVec) {
  * pseudo_inverse -- Returns the pseudo-inverse of      *
  *                   a dense matrix MxN.                *
  *                                                      *
+ *  eigenvalues   -- Return a vector containnig the     *
+ *                   eigenvalues of an NxN matrix.      *
+ *                                                      *
  * Member operators                                     *
  *      M  -- a regular mxn dense matrix                *
  *      RV -- a row vector                              *
@@ -814,6 +817,10 @@ class DenseMatrix: public MV_ColMat_double{
     friend DenseMatrix pseudo_inverse(const DenseMatrix &A);
     void pseudo_inverse_override(void);
     friend void pseudo_inverse_override(DenseMatrix &A);
+
+    /* Get a vector containing the eigenvalues of an NxN matrix */
+    ColumnVector eigenvalues(void) const;
+    ColumnVector eigenvalues_overwrite(void);
 
     /* Compute the Frobenious norm of the matrix ||A|| = sqrt(SUM_i SUM_j (A(i,j)^2) ) */
     double NormFro (void) const;
@@ -990,6 +997,15 @@ inline DenseMatrix pseudo_inverse(const DenseMatrix &A){
  *******************************************************************/
 inline void pseudo_inverse_override(DenseMatrix &A){
   return A.pseudo_inverse_override();
+}
+
+/*************************************************************
+ * eigenvalues -- Return a ColumnVector containng the        *
+ *                eigenvalues of an NxN matrix.              *
+ *************************************************************/
+inline ColumnVector DenseMatrix::eigenvalues(void) const{
+  DenseMatrix Copy(*this);
+  return Copy.eigenvalues_overwrite();
 }
 
 /****************************************************************
