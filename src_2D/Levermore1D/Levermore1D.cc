@@ -484,23 +484,22 @@ void ICs(Levermore1D_UniformMesh *Soln,
 double CFL(Levermore1D_UniformMesh *Soln,
            const int Number_of_Cells) {
 
-//    int i;
-//    double dtMin;
-//
-//    /* Determine local and global time steps. */
-//
-//    dtMin = MILLION;
-//
-//    for ( i = Soln[0].ICl; i <= Soln[0].ICu ; ++i ) {
-//        Soln[i].dt = Soln[i].X.dx/
-//	             (Soln[i].W.a()+fabs(Soln[i].W.v));
-//        dtMin = min(dtMin, Soln[i].dt);
-//    } /* endfor */
-//
-//    /* Return the global time step. */
-//
-//    return (dtMin);
-  return 0.0; //for now
+  int i;
+  double dtMin;
+
+  /* Determine local and global time steps. */
+
+  dtMin = MILLION;
+
+  for ( i = Soln[0].ICl; i <= Soln[0].ICu ; ++i ) {
+    Soln[i].dt = Soln[i].X.dx/
+      (Soln[i].lambda_max);
+    dtMin = min(dtMin, Soln[i].dt);
+  } /* endfor */
+
+    /* Return the global time step. */
+
+  return (dtMin);
 }
 
 /******************************************************//**

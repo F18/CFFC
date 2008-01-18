@@ -58,6 +58,7 @@ public:
   DenseMatrix        dFdA;   //!< Hessian of flux potential.
   DenseMatrix        dFdU;   //!< Flux Jacobian
   ColumnVector     Lambda;   //!< Vector containing Eigenvalues.
+  double       lambda_max;   //!< Eigenvalue with max modulus.
   Cell1D_Uniform        X;   //!< Cell geometry.
   double               dt;   //!< Local time step.
   Levermore1D_cState dUdt;   //!< Solution residual.
@@ -127,6 +128,10 @@ public:
                                       //function for now.
     dFdU = dFdA*dUdA_inv;
     Lambda = dFdU.eigenvalues();
+    lambda_max = fabs(Lambda(0));
+    for(int i=1; i<Levermore1D_Vector::get_length();++i) {
+      lambda_max = max(lambda_max,fabs(Lambda(i)));
+    }
   }
 
   /* Input-output operators. */
