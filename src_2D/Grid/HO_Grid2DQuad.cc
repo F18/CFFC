@@ -10,6 +10,16 @@
 /* Include CFFC header files */
 #include "HO_Grid2DQuad.h"	// Include 2D high-order block grid
 
+// ===== Member variables =====
+
+/*!
+ * This switch is used to determine whether the geometric properties
+ * (i.e. centroid, area etc.) of the cells closed to boundaries are
+ * determined using a high-order or a low-order representation of the boundary.
+ * If ON, the boundary splines are used to compute the geometric properties (i.e. high-order accuracy).
+ * If OFF, a linear representation between 2 consecutive nodes is considered (i.e. 2nd-order accuracy).
+ */
+int Grid2D_Quad_Block_HO::HighOrderBoundaryRepresentation = OFF;
 
 // ===== Member functions =====
 
@@ -27,7 +37,9 @@ Grid2D_Quad_Block_HO::Grid2D_Quad_Block_HO(void)
     SminE(ZERO), SmaxE(ZERO), SminW(ZERO), SmaxW(ZERO),
     StretchI(0), StretchJ(0), BetaI(ONE), TauI(ONE),
     BetaJ(ONE), TauJ(ONE),
-    OrthogonalN(1), OrthogonalS(1), OrthogonalE(1), OrthogonalW(1)
+    OrthogonalN(1), OrthogonalS(1), OrthogonalE(1), OrthogonalW(1),
+    // Initialize mesh update flags to OFF (i.e. no update scheduled)
+    InteriorMeshUpdate(OFF), GhostCellsUpdate(OFF), CornerGhostCellsUpdate(OFF)
 {
   // 
 }
@@ -47,7 +59,9 @@ Grid2D_Quad_Block_HO::Grid2D_Quad_Block_HO(const Grid2D_Quad_Block_HO &G)
    StretchI(0), StretchJ(0),
    BetaI(ONE), TauI(ONE),
    BetaJ(ONE), TauJ(ONE),
-   OrthogonalN(1), OrthogonalS(1), OrthogonalE(1), OrthogonalW(1)
+   OrthogonalN(1), OrthogonalS(1), OrthogonalE(1), OrthogonalW(1),
+   // Initialize mesh update flags to OFF (i.e. no update scheduled)
+   InteriorMeshUpdate(OFF), GhostCellsUpdate(OFF), CornerGhostCellsUpdate(OFF)
 {
   int Ni, Nj;
   int i,j;
@@ -135,6 +149,10 @@ Grid2D_Quad_Block_HO::Grid2D_Quad_Block_HO(const Grid2D_Quad_Block_HO &G)
   OrthogonalS = G.OrthogonalS;
   OrthogonalE = G.OrthogonalE;
   OrthogonalW = G.OrthogonalW;
+
+  /* No mesh update is required for this operation
+     since all geometric values are copied directly. */
+  Reset_Mesh_Update_Flags();
 }
 
 /*!
@@ -319,6 +337,10 @@ Grid2D_Quad_Block_HO& Grid2D_Quad_Block_HO::operator=(const Grid2D_Quad_Block_HO
   OrthogonalS = Grid.OrthogonalS;
   OrthogonalE = Grid.OrthogonalE;
   OrthogonalW = Grid.OrthogonalW;
+
+  /* No mesh update is required for this operation
+     since all geometric values are copied directly. */
+  Reset_Mesh_Update_Flags();
 }
 
 /*!
@@ -921,10 +943,13 @@ void Grid2D_Quad_Block_HO::Create_Quad_Block(const int Number_of_Cells_Idir,
       } /* endif */
       
     } /* endfor */
-  } /* endfor */
+  }/* endfor */
   
-    /* Set the boundary condition types at the grid block
-       boundaries. */
+  /* Require update of the interior cells geometric properties. */
+  Schedule_Interior_Mesh_Update();
+  
+  /* Set the boundary condition types at the grid block
+     boundaries. */
   
   Set_BCs();
   
@@ -1445,7 +1470,10 @@ void Grid2D_Quad_Block_HO::Create_Quad_Block(char *Bnd_Spline_File_Name_ptr,
       } /* endif */
 
     } /* endfor */
-  } /* endfor */
+  }/* endfor */
+
+  /* Require update of the interior cells geometric properties. */
+  Schedule_Interior_Mesh_Update();
 
   /* Set the boundary condition types at the quadrilateral 
      grid block boundaries. */
@@ -1920,10 +1948,13 @@ void Grid2D_Quad_Block_HO::Create_Quad_Block(Spline2D &Bnd_Spline_North,
       } /* endif */
 
     } /* endfor */
-  } /* endfor */
+  }/* endfor */
 
-    /* Set the boundary condition types at the quadrilateral 
-       grid block boundaries. */
+  /* Require update of the interior cells geometric properties. */
+  Schedule_Interior_Mesh_Update();
+
+  /* Set the boundary condition types at the quadrilateral 
+     grid block boundaries. */
 
   Set_BCs();
 
@@ -2053,9 +2084,13 @@ void Grid2D_Quad_Block_HO::Broadcast_Quad_Block(void) {
         quadrilateral mesh block. */
 
     if (mesh_allocated && !CFFC_Primary_MPI_Processor()) {
-       Set_BCs();
-       Update_Exterior_Nodes();
-       Update_Cells();
+      /* Require update of the whole mesh */
+      Schedule_Interior_Mesh_Update();
+      Schedule_Ghost_Cells_Update();
+
+      Set_BCs();
+      Update_Exterior_Nodes();
+      Update_Cells();
     } /* endif */
 #endif
 
@@ -2178,6 +2213,11 @@ void Grid2D_Quad_Block_HO::Broadcast_Quad_Block(MPI::Intracomm &Communicator,
   
   if (mesh_allocated && 
       !(CFFC_MPI::This_Processor_Number == Source_CPU)) {
+    
+    /* Require update of the whole mesh */
+    Schedule_Interior_Mesh_Update();
+    Schedule_Ghost_Cells_Update();
+    
     Set_BCs();
     Update_Exterior_Nodes();
     Update_Cells();
@@ -3010,9 +3050,12 @@ void Grid2D_Quad_Block_HO::Smooth_Quad_Block(const int Number_of_Iterations) {
       Node[i][j].X.x = xij[ii][jj];
       Node[i][j].X.y = yij[ii][jj];
     } /* endfor */
-  } /* endfor */
+  }/* endfor */
 
-    /* Re-compute the exterior nodes for the quadrilateral mesh block. */
+  /* Require update of the interior cells geometric properties. */
+  Schedule_Interior_Mesh_Update();
+
+  /* Re-compute the exterior nodes for the quadrilateral mesh block. */
 
   Update_Exterior_Nodes();
 
@@ -3242,8 +3285,6 @@ void Grid2D_Quad_Block_HO::Set_BCs(void) {
     } /* endif */
 
 }
-
-
 
 /*!
  * Updates the exterior nodes for the quadrilateral     
@@ -3713,9 +3754,12 @@ void Grid2D_Quad_Block_HO::Update_Exterior_Nodes(void) {
 	}
       } /* endif */
     } /* endfor */
+
+    // Require update of the ghost cells geometric properties.
+    Schedule_Ghost_Cells_Update();
     
+    // Update corners
     Update_Corner_Ghost_Nodes();
-    
 }
 
 
@@ -4229,62 +4273,178 @@ void Grid2D_Quad_Block_HO::Update_Corner_Ghost_Nodes(void) {
     }
   }
 
+  // Require the update of the corner ghost cells' geometric properties
+  Schedule_Corner_Ghost_Cells_Update();
+
   // Update cell info.
   Update_Cells();
 }
 
 
 /*!
- * Updates the cell information for the quadrilateral   
- * mesh block.                                         
+ * Updates the cell information for the quadrilateral
+ * mesh block. Different levels of update are possible
+ * based on the corresponding flag values.
+ * If all the flags are OFF this subroutine does nothing.
  */
 void Grid2D_Quad_Block_HO::Update_Cells(void) {
 
-    int i, j;
+  // Decide which level of update is required
+  if (InteriorMeshUpdate == ON && GhostCellsUpdate == ON ){
+    // Update all the cells and the boundary spline information
+    Update_All_Cells();
+  } else if (InteriorMeshUpdate == ON) {
+    // Update only the information of the interior cells and the boundary spline information
+    Update_Interior_Cells();
+  } else if (GhostCellsUpdate == ON) {
+    // Update only the information of the ghost cells
+    Update_Ghost_Cells();
+  } else if (CornerGhostCellsUpdate == ON){
+    // Update only the information of the corner ghost cells
+    Update_Corner_Ghost_Cells();
+  }
+}
 
-    for ( j = JCl-Nghost ; j <= JCu+Nghost ; ++j) {
-        for ( i = ICl-Nghost ; i <= ICu+Nghost ; ++i) {
-	  Cell[i][j].I = i;
-	  Cell[i][j].J = j;
-	  Cell[i][j].Xc = centroid(i, j);
-	  Cell[i][j].A = area(i, j);
-        } /* endfor */
+/*!
+ * Updates the cell information for the quadrilateral mesh block.
+ * (i.e. all cells).
+ */
+void Grid2D_Quad_Block_HO::Update_All_Cells(void) {
+
+  int i,j;
+
+  // Update cell information assuming straight boundaries (i.e. every edge of the cell is a line segment)
+  for ( j = JCl-Nghost ; j <= JCu+Nghost ; ++j) {
+    for ( i = ICl-Nghost ; i <= ICu+Nghost ; ++i) {
+      Update_Cell(i,j);
     } /* endfor */
+  } /* endfor */
 
-    //   Vector2D X1, X2, X3, X4, Xc1, Xc2, X;
-    //   double A1, A2;
-    //   Polygon P;
-    //   cout << setprecision(14);
-    //     for ( j = JCl-Nghost ; j <= JCu+Nghost ; ++j) {
-    //         for ( i = ICl-Nghost ; i <= ICu+Nghost ; ++i) {
-    //   // Cell nodes in counter-clockwise order.
-    //   X1 = Node[i  ][j  ].X;
-    //   X2 = Node[i+1][j  ].X;
-    //   X3 = Node[i+1][j+1].X;
-    //   X4 = Node[i  ][j+1].X;
-    //   P.convert(X1,X2,X3,X4);
-    //   // Determine the centroid and area of the sub-triangles.
-    //   Xc1 = (X1+X2+X3)/3.0;
-    //   Xc2 = (X1+X3+X4)/3.0;
-    // //   A1 = HALF*((X1^X2) + (X2^X3) + (X3^X1));
-    // //   A2 = HALF*((X1^X3) + (X3^X4) + (X4^X1));
-    //   A1 = HALF*((X2-X1)^(X3-X1));
-    //   A2 = HALF*((X3-X4)^(X3-X2));
-    //   X = (A1*Xc1 + A2*Xc2)/(A1+A2);
-    // //   cout << endl << X1 << X2 << X3 << X4 << X << (A1*Xc1 + A2*Xc2) << " " << A1 << " " << A2 << 0.25*(X1+X2+X3+X4);
-    // //   if (!P.point_in_polygon(X)) {
-    // //     //cout << endl << X1 << X2 << X3 << X4 << Xc1 << Xc2 << X << 0.25*(X1+X2+X3+X4);
-    // //     cout << " FUCK";
-    // //   }
-    //   if (A1 < ZERO || A2 < ZERO) {
-    //     cout << endl << A1 << " " << A2 << X1 << X2 << X3 << X4 << X << 0.25*(X1+X2+X3+X4);
-    //   }
-    //   P.deallocate();
-    //         }
-    //     }
+  if ( HighOrderBoundaryRepresentation == OFF ){
+    // Confirm the update
+    Confirm_Mesh_Update_Everywhere();
+    return;
+  }
 
 }
 
+/*!
+ * Updates the cell information for the quadrilateral mesh block 
+ * interior cells (i.e. no ghost cells).
+ */
+void Grid2D_Quad_Block_HO::Update_Interior_Cells(void) {
+
+  int i,j;
+
+  // Update cell information assuming straight boundaries (i.e. every edge of the cell is a line segment)
+  for ( j = JCl; j <= JCu ; ++j) {
+    for ( i = ICl; i <= ICu; ++i) {
+      Update_Cell(i,j);
+    } /* endfor */
+  } /* endfor */
+  
+  if ( HighOrderBoundaryRepresentation == OFF ){
+    // Confirm the update
+    Confirm_Mesh_Update_Everywhere();
+    return;
+  }
+
+}
+
+/*!
+ * Updates the cell information for the quadrilateral mesh block 
+ * ghost cells (i.e. no interior cells and no boundary splines).
+ */
+void Grid2D_Quad_Block_HO::Update_Ghost_Cells(void) {
+
+  int i,j;
+
+  // Update cell information assuming straight boundaries (i.e. every edge of the cell is a line segment)
+  for ( j = JCl-Nghost ; j <= JCu+Nghost ; ++j) {
+    // Update the West face ghost cells
+    for (i = ICl-Nghost; i <= ICl-1; ++i){
+      Update_Cell(i,j);
+    } // endif (i)
+
+    // Update the East face ghost cells
+    for (i = ICu+1; i <= ICu+Nghost; ++i){
+      Update_Cell(i,j);
+    } // endif (i)
+  } // endif(j)
+
+  for (i = ICl; i <= ICu; ++i){
+    // Update the South face ghost cells
+    for (j = JCl-Nghost; j<=JCl-1; ++j){
+      Update_Cell(i,j);
+    } // endif(j)
+    
+    // Update the North face ghost cells
+    for (j = JCu+1; j<=JCu+Nghost; ++j){
+      Update_Cell(i,j);
+    } // endif(j)
+  } // endif(i)
+  
+  if ( HighOrderBoundaryRepresentation == OFF ){
+    // Confirm the update
+    Confirm_Mesh_Update_Everywhere();
+    return;
+  }
+
+  if ( (BndNorthSpline.Xp == NULL || BndNorthSpline.bc[0] == BC_NONE || BndNorthSpline.bc[0] == BC_PERIODIC) &&
+       (BndSouthSpline.Xp == NULL || BndSouthSpline.bc[0] == BC_NONE || BndSouthSpline.bc[0] == BC_PERIODIC) &&
+       (BndEastSpline.Xp == NULL  || BndEastSpline.bc[0] == BC_NONE || BndEastSpline.bc[0] == BC_PERIODIC) && 
+       (BndWestSpline.Xp == NULL  || BndWestSpline.bc[0] == BC_NONE || BndWestSpline.bc[0] == BC_PERIODIC) ){   
+    // No curved boundaries
+
+    // Confirm the update
+    Confirm_Mesh_Update_Everywhere();
+    return;
+  }
+
+  /* Recompute the geometric properties of those interior cells that are near a curved boundary.
+     Obs1. The "SPLINE2D_LINEAR" is also considered a curved boundary because it might have a 
+     sharp point between two nodes.
+  */
+
+}
+
+/*!
+ * Updates the cell information for the quadrilateral mesh block 
+ * corner ghost cells (i.e. no interior cells, no ghost cells other
+ * than the corner ones, no boundary splines).
+ */
+void Grid2D_Quad_Block_HO::Update_Corner_Ghost_Cells(void) {
+
+  int i,j;
+
+  // Update cell information with straight boundaries (i.e. every edge of the cell is a line segment)
+  for ( j = JCl-Nghost ; j <= JCl-1 ; ++j) {
+    // Update the South-West corner
+    for (i = ICl-Nghost; i <= ICl-1; ++i){
+      Update_Cell(i,j);
+    } // endif (i)
+
+    // Update the South-East corner
+    for (i = ICu+1; i <= ICu+Nghost; ++i){
+      Update_Cell(i,j);
+    } // endif (i)
+  } // endif(j)
+
+  for ( j = JCu+1 ; j <= JCu+Nghost ; ++j) {
+    // Update the North-West corner
+    for (i = ICl-Nghost; i <= ICl-1; ++i){
+      Update_Cell(i,j);
+    } // endif (i)
+
+    // Update the North-East corner
+    for (i = ICu+1; i <= ICu+Nghost; ++i){
+      Update_Cell(i,j);
+    } // endif (i)
+  } // endif(j)
+
+  // Confirm the update
+  Confirm_Ghost_Cells_Update();
+}
 
 /*!
  * Check the validity of the quadrilateral mesh block.  
@@ -4862,7 +5022,10 @@ void Grid2D_Quad_Block_HO::Read_Quad_Block_Definition(istream &In_File) {
 	} /* endif */
 
       } /* endfor */
-    } /* endfor */
+    }/* endfor */
+
+    /* Require update of the interior cells geometric properties. */
+    Schedule_Interior_Mesh_Update();
 
     /* Set the boundary condition types at the quadrilateral 
        grid block boundaries. */
@@ -5068,13 +5231,20 @@ void Grid2D_Quad_Block_HO::Reflect_Quad_Block(void) {
     Copy_Spline(BndEastSpline,BndWestSpline);
     Copy_Spline(BndWestSpline,S);
     if (S.np != 0) S.deallocate();
-  } /* endif */
+  }/* endif */
 
-    /* Reset the boundary condition types at the quadrilateral 
-       grid block boundaries. */
+  /* Require update of the whole mesh */
+  Schedule_Interior_Mesh_Update();
+  Schedule_Ghost_Cells_Update();
 
+  /* Reset the boundary condition types at the quadrilateral 
+     grid block boundaries. */
+  
   Set_BCs();
- 
+
+  /* Compute the cells for the quadrilateral mesh block. */
+
+  Update_Cells();
 }
 
 
@@ -5423,6 +5593,9 @@ void Grid2D_Quad_Block_HO::Double_Mesh_Resolution(const Grid2D_Quad_Block_HO &Gr
       } /* endfor */
     } /* endif */
 
+    /* Require update of the interior cells geometric properties. */
+    Schedule_Interior_Mesh_Update();
+
     /* Set the boundary condition types for quadrilateral mesh block 
        with twice the resolution. */
 
@@ -5528,6 +5701,9 @@ void Grid2D_Quad_Block_HO::Half_Mesh_Resolution(const Grid2D_Quad_Block_HO &Grid
 	  [2*(j-JNl)+JNl].X;
       } /* endfor */
     } /* endfor */
+
+    /* Require update of the interior cells geometric properties. */
+    Schedule_Interior_Mesh_Update();
 
     /* Set the boundary condition types for quadrilateral mesh block 
        with half the resolution. */
@@ -5924,6 +6100,9 @@ void Grid2D_Quad_Block_HO::Refine_Mesh(const Grid2D_Quad_Block_HO &Grid_Original
       // 	 }
     } /* endif */
 
+    /* Require update of the interior cells geometric properties. */
+    Schedule_Interior_Mesh_Update();
+
     /* Set the boundary condition types for refined 
        quadrilateral mesh block. */
 
@@ -6136,6 +6315,10 @@ void Grid2D_Quad_Block_HO::Coarsen_Mesh(const Grid2D_Quad_Block_HO &Grid_Origina
       } /* endfor */
     } /* endfor */
 
+    /* Require update of the interior cells geometric properties
+       for newly coarsed quadrilateral mesh block. */
+    Schedule_Interior_Mesh_Update();
+
     /* Set the boundary condition types for newly coarsened
        quadrilateral mesh block. */
 
@@ -6237,10 +6420,13 @@ void Grid2D_Quad_Block_HO::Fix_Refined_Mesh_Boundaries(const int Fix_North_Bound
 	ds_ratio*(Node[INl][j+1].X-
 		  Node[INl][j-1].X);
     } /* endfor */
-  } /* endif */
+  }/* endif */
+  
+  /* Require update of the interior cells geometric properties. */
+  Schedule_Interior_Mesh_Update();
 
-    /* Reset the boundary condition types at the grid block
-       boundaries. */
+  /* Reset the boundary condition types at the grid block
+     boundaries. */
  
   Set_BCs();
 
@@ -6340,10 +6526,13 @@ void Grid2D_Quad_Block_HO::Unfix_Refined_Mesh_Boundaries(void) {
       sp_m = sp_l + ds_ratio*(sp_r-sp_l);
       Node[INl][j].X = Spline(sp_m, BndWestSpline);
     } /* endfor */
-  } /* endif */
+  }/* endif */
 
-    /* Reset the boundary condition types at the grid block
-       boundaries. */
+  /* Require update of the interior cells geometric properties. */
+  Schedule_Interior_Mesh_Update();
+
+  /* Reset the boundary condition types at the grid block
+     boundaries. */
  
   Set_BCs();
 
@@ -6548,3 +6737,97 @@ istream &operator >> (istream &in_file,
   return (in_file);
 }
 
+/*
+ * Determine the minimum distance between the Node[i][j] 
+ * and all the neighbour edges and cell diagonals,
+ * for a quadrilateral mesh. 
+ * \verbatim
+ *
+ * For the quadrilateral mesh there are 8 edges and 4 diagonals 
+ * that must be checked for determining the min distance.
+ *
+ *          6      5       
+ *       o-----o------o    
+ *       |            |    
+ *     7 |   (i,j)    | 4  
+ *       o     o      o    
+ *       |            |    
+ *     8 |            | 3  
+ *       o-----o------o    
+ *          1     2        
+ *
+ * \endverbatim
+ *
+ * \param [in] i i-index of the node
+ * \param [in] j j-index of the node
+ */
+double Grid2D_Quad_Block_HO::MinimumNodeEdgeDistance(const int &i, const int &j) const {
+
+  double MinDistance;
+
+  // Edge 1
+  MinDistance = DistanceFromPointToLine(Node[i][j].X, Node[i-1][j-1].X, Node[i][j-1].X);
+  // Edge 2
+  MinDistance = min(MinDistance, DistanceFromPointToLine(Node[i][j].X, Node[i][j-1].X, Node[i+1][j-1].X));
+  // Edge 3
+  MinDistance = min(MinDistance, DistanceFromPointToLine(Node[i][j].X, Node[i+1][j-1].X, Node[i+1][j].X));
+  // Edge 4
+  MinDistance = min(MinDistance, DistanceFromPointToLine(Node[i][j].X, Node[i+1][j].X, Node[i+1][j+1].X));
+  // Edge 5
+  MinDistance = min(MinDistance, DistanceFromPointToLine(Node[i][j].X, Node[i+1][j+1].X, Node[i][j+1].X));
+  // Edge 6
+  MinDistance = min(MinDistance, DistanceFromPointToLine(Node[i][j].X, Node[i][j+1].X, Node[i-1][j+1].X));
+  // Edge 7
+  MinDistance = min(MinDistance, DistanceFromPointToLine(Node[i][j].X, Node[i-1][j+1].X, Node[i-1][j].X));
+  // Edge 8
+  MinDistance = min(MinDistance, DistanceFromPointToLine(Node[i][j].X, Node[i-1][j].X, Node[i-1][j-1].X));
+
+  // Diagonal 1
+  MinDistance = min(MinDistance, DistanceFromPointToLine(Node[i][j].X, Node[i][j-1].X, Node[i+1][j].X));
+  // Diagonal 2
+  MinDistance = min(MinDistance, DistanceFromPointToLine(Node[i][j].X, Node[i+1][j].X, Node[i][j+1].X));
+  // Diagonal 3
+  MinDistance = min(MinDistance, DistanceFromPointToLine(Node[i][j].X, Node[i][j+1].X, Node[i-1][j].X));
+  // Diagonal 4
+  MinDistance = min(MinDistance, DistanceFromPointToLine(Node[i][j].X, Node[i-1][j].X, Node[i][j-1].X));
+
+  return MinDistance;
+}
+
+/*
+ * Determines the distance between the point of interest
+ * and a line defined by the two points. 
+ *
+ * \param Point the position vector of the point of interest
+ * \param LinePoint1 the position vector of one line end 
+ * \param LinePoint2 the position vector of the other line end
+ */
+double Grid2D_Quad_Block_HO::DistanceFromPointToLine(const Vector2D &Point,
+						     const Vector2D &LinePoint1,
+						     const Vector2D &LinePoint2) const {
+
+  double DeltaX, DeltaY, X_Dis, Y_Dis;
+
+  // X_Dis, Y_Dis -> the X and Y coordinates of the point which is used to measure the distance
+
+  DeltaX = LinePoint2.x - LinePoint1.x;
+  DeltaY = LinePoint2.y - LinePoint1.y;
+
+  // Determine X_Dis
+  X_Dis = DeltaX*DeltaX*Point.x + DeltaX*DeltaY*(Point.y - LinePoint1.y) + DeltaY*DeltaY*LinePoint1.x;
+  X_Dis /= (DeltaX*DeltaX + DeltaY*DeltaY);
+
+  if ( (fabs(X_Dis - LinePoint1.x) <= 1.0e-14) && (fabs(X_Dis - LinePoint2.x) <= 1.0e-14) ){
+    // the line defined by the two points is parallel to Oy
+    return fabs(Point.x - LinePoint1.x);
+  }
+
+  // Determine Y_Dis
+  Y_Dis = LinePoint1.y + DeltaY*(X_Dis - LinePoint1.x)/DeltaX;
+
+  // Return the distance value
+  DeltaX = Point.x - X_Dis;
+  DeltaY = Point.y - Y_Dis;
+
+  return sqrt( DeltaX*DeltaX + DeltaY*DeltaY );
+}

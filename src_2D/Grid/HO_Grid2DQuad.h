@@ -500,19 +500,42 @@ public:
   friend void Set_BCs(Grid2D_Quad_Block_HO &Grid){ return Grid.Set_BCs(); }
   //@}
   
-  //!@name Update geometry and geometric properties.
+  //!@name Update geometry and geometric properties on different levels of update.
   //@{
+  //! Set the interior mesh update flag to require update of the geoemtric properties of the interior cells.
+  void Schedule_Interior_Mesh_Update(void){ InteriorMeshUpdate = ON; }
+  //! Set the ghost cells update flag to require update of the geometric properties of these cells.
+  void Schedule_Ghost_Cells_Update(void){ GhostCellsUpdate = ON; }
+  //! Set the corner ghost cells update flag to require update of the geometric properties of these cells.
+  void Schedule_Corner_Ghost_Cells_Update(void){ CornerGhostCellsUpdate = ON; }
+  //! Confirm that the update of interior cells has been done and reset the flag accordingly
+  void Confirm_Interior_Mesh_Update(void){ InteriorMeshUpdate = OFF; }
+  //! Confirm that the update of ghost cells has been done and reset the flag accordingly
+  void Confirm_Ghost_Cells_Update(void){ GhostCellsUpdate = OFF; }
+  //! Confirm that the update of corner ghost cells has been done and reset the flag accordingly
+  void Confirm_Corner_Ghost_Cells_Update(void){ CornerGhostCellsUpdate = OFF; }
+  //! Confirm that the update of ALL cells has been done and reset the flags accordingly
+  void Confirm_Mesh_Update_Everywhere(void){ Reset_Mesh_Update_Flags(); }
+
   void Update_Exterior_Nodes(void);
   friend void Update_Exterior_Nodes(Grid2D_Quad_Block_HO &Grid){ return Grid.Update_Exterior_Nodes(); }
   
   void Update_Corner_Ghost_Nodes(void);
   friend void Update_Corner_Ghost_Nodes(Grid2D_Quad_Block_HO &Grid){ return Grid.Update_Corner_Ghost_Nodes(); }
   
+  void Update_Cell(const int & iCell, const int & jCell);
+
   void Update_Cells(void);
   friend void Update_Cells(Grid2D_Quad_Block_HO &Grid){ return Grid.Update_Cells(); }
+
+  void Update_All_Cells(void);
+  void Update_Interior_Cells(void);
+  void Update_Ghost_Cells(void);
+  void Update_Corner_Ghost_Cells(void);
   
   int Check_Quad_Block(void);
   friend int Check_Quad_Block(Grid2D_Quad_Block_HO &Grid){ return Grid.Check_Quad_Block(); }
+
   //@}
   
   //!@name Input/Output functions
@@ -634,6 +657,14 @@ public:
   
   void Unfix_Refined_Mesh_Boundaries(void);
   //@}
+
+  //! @name Measurement functions.
+  //@{
+  double MinimumNodeEdgeDistance(const int &i, const int &j) const;
+  double DistanceFromPointToLine(const Vector2D &Point,
+				 const Vector2D &LinePoint1,
+				 const Vector2D &LinePoint2) const;
+  //@}
   
   //! @name Binary arithmetic operators.
   //@{
@@ -657,6 +688,23 @@ public:
 
 private:
   Grid2D_Quad_Block_HO(const Grid2D_Quad_Block_HO &G);     //! Private copy constructor.
+
+
+  //! Switch for computing with high-order or low-order accuracy the geometric properties 
+  static int HighOrderBoundaryRepresentation;
+
+  //! @name Flags to define different levels of mesh update.
+  //@{
+  //! Controls the update of the geometric properties of the interior cells.
+  int InteriorMeshUpdate;
+  //! Controls the update of the geometric properties of all the ghost cells.
+  int GhostCellsUpdate;    
+  //! Controls the update of the geometric properties of the corner ghost cells.
+  int CornerGhostCellsUpdate; 
+
+  //! Reset to NO update all the mesh update flags.
+  void Reset_Mesh_Update_Flags(void){ InteriorMeshUpdate = OFF; GhostCellsUpdate = OFF; CornerGhostCellsUpdate = OFF;}
+  //@}
 
 };
 
@@ -1103,5 +1151,22 @@ inline Vector2D Grid2D_Quad_Block_HO::nfaceW(const int ii, const int jj) const {
     return ihat;
   }
 }
+
+/*!
+ * Update cell information assuming straight boundaries
+ * (i.e. every edge of the cell is a line segment)
+ *
+ * \param iCell i-index of the cell
+ * \param jCell j-index of the cell
+ */
+inline void Grid2D_Quad_Block_HO::Update_Cell(const int & iCell, const int & jCell){
+
+  Cell[iCell][jCell].I = iCell;
+  Cell[iCell][jCell].J = jCell;
+  Cell[iCell][jCell].Xc = centroid(iCell, jCell);
+  Cell[iCell][jCell].A = area(iCell, jCell);
+  //  ComputeGeometricCoefficients(iCell,jCell); //Geometric Moments
+}
+
 
 #endif /* _GRID2D_QUAD_BLOCK_INCLUDED  */
