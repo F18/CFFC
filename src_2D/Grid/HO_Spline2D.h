@@ -224,7 +224,66 @@ public:
   const Spline2D_HO & scale(const double &a);
   void Reflect_Spline(void);
   void Reverse_Spline(void);
+  //@}
 
+  //! @name Create spline functions.
+  //@{
+  void Create_Spline_Line(const Vector2D &V1,
+			  const Vector2D &V2,
+			  const int Number_of_Spline_Points);
+
+  void Create_Spline_Line_Polar_Coordinates(const double &Inner_Radius,
+					    const double &Outer_Radius,
+					    const double &Theta,
+					    const int Number_of_Spline_Points);
+
+  void Create_Spline_Circular_Arc(const Vector2D &Origin,
+				  const double &Radius,
+				  const double &Angle1,
+				  const double &Angle2,
+				  const int Number_of_Spline_Points);
+
+  void Create_Spline_Ellipsoidal_Arc(const Vector2D &Origin,
+				     const double &A,
+				     const double &B,
+				     const double &Angle1,
+				     const double &Angle2,
+				     const int Number_of_Spline_Points);
+
+  void Create_Spline_NACA_Aerofoil(char *NACA_Aerofoil_Type_ptr,
+				   const double &Chord_Length,
+				   const int i_Up_All_Low,
+				   const int Number_of_Spline_Points);
+  
+  void Create_Spline_Bow_Shock(const double &Radius,
+			       const double &Mach_Number,
+			       const int i_Up_All_Low,
+			       const int Number_of_Spline_Points);
+
+  void Create_Spline_Area_Variation(const double &Xup,
+				    const double &Xthroat,
+				    const double &Xdown,
+				    const double &Rup,
+				    const double &Rthroat,
+				    const double &Rdown,
+				    const int &Nozzle_Type,
+				    const int Number_of_Spline_Points);
+
+  void Create_Spline_Converging_Nozzle(const double &Xup,
+				       const double &Xthroat,
+				       const double &Rup,
+				       const double &Rthroat,
+				       const int Number_of_Spline_Points);
+  
+  void Create_Spline_Diverging_Nozzle(const double &Xthroat,
+				      const double &Xdown,
+				      const double &Rthroat,
+				      const double &Rdown,
+				      const int Number_of_Spline_Points);
+  
+  void Create_Spline_Rectangle(const Vector2D &Origin,
+			       const double &Length,
+			       const double &Width);
   //@}
 
   //! @name Binary arithmetic operators.
@@ -623,84 +682,5 @@ inline istream &operator >> (istream &in_file, Spline2D_HO &S) {
   S.pathlength();
   return (in_file);
 }
-
-#if 0
-
-/********************************************************
- * Spline2D_HO -- External subroutines.                    *
- ********************************************************/
-
-
-
-
-extern void Create_Spline_Line(Spline2D_HO &Line_Spline,
-                               const Vector2D &V1,
-			       const Vector2D &V2,
-  	                       const int Number_of_Spline_Points);
-
-extern void Create_Spline_Line_Polar_Coordinates(Spline2D_HO &Line_Spline,
-						 const double &Inner_Radius,
-						 const double &Outer_Radius,
-						 const double &Theta,
-						 const int Number_of_Spline_Points);
-
-extern void Create_Spline_Circular_Arc(Spline2D_HO &Circle_Spline,
-			               const Vector2D &Origin,
-				       const double &Radius,
-                                       const double &Angle1,
-			               const double &Angle2,
-  	                               const int Number_of_Spline_Points);
-
-extern void Create_Spline_Ellipsoidal_Arc(Spline2D_HO &Ellipse_Spline,
-			                  const Vector2D &Origin,
-				          const double &A,
-				          const double &B,
-                                          const double &Angle1,
-			                  const double &Angle2,
-  	                                  const int Number_of_Spline_Points);
-
-extern void Create_Spline_NACA_Aerofoil(Spline2D_HO &NACA_Spline,
-                                        char *NACA_Aerofoil_Type_ptr,
-                                        const double &Chord_Length,
-					const int i_Up_All_Low,
-  	                                const int Number_of_Spline_Points);
-
-extern void Create_Spline_Bow_Shock(Spline2D_HO &Shock_Spline,
-                                    const double &Radius,
-				    const double &Mach_Number,
-				    const int i_Up_All_Low,
-  	                            const int Number_of_Spline_Points);
-
-extern void Create_Spline_Area_Variation(Spline2D_HO &Radius_Spline,
-                                         const double &Xup,
-				         const double &Xthroat,
-                                         const double &Xdown,
-				         const double &Rup,
-				         const double &Rthroat,
-				         const double &Rdown,
-					 const int &Nozzle_Type,
-  	                                 const int Number_of_Spline_Points);
-
-extern void Create_Spline_Converging_Nozzle(Spline2D_HO &Radius_Spline,
-					    const double &Xup,
-					    const double &Xthroat,
-					    const double &Rup,
-					    const double &Rthroat,
-					    const int Number_of_Spline_Points);
-
-extern void Create_Spline_Diverging_Nozzle(Spline2D_HO &Radius_Spline,
-					   const double &Xthroat,
-					   const double &Xdown,
-					   const double &Rthroat,
-					   const double &Rdown,
-					   const int Number_of_Spline_Points);
-
-extern void Create_Spline_Rectangle(Spline2D_HO &Rectangle_Spline,
-				    const Vector2D &Origin,
-				    const double &Length,
-				    const double &Width);
-
-
-#endif
 
 #endif /* _SPLINE2D_INCLUDED  */

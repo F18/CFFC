@@ -1311,7 +1311,7 @@ void Spline2D_HO::Reverse_Spline(void) {
    int i, tp_current, bc_current;
    double sp_current;
    Vector2D Xp_current;
-
+   
    /* Reverse the order of the spline points. */
    for ( i = 0; i <= (np-1)/2; ++i ) {
       Xp_current = Xp[i];  Xp[i] = Xp[np-1-i];  Xp[np-1-i] = Xp_current;
@@ -1321,54 +1321,23 @@ void Spline2D_HO::Reverse_Spline(void) {
    } /* endfor */
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#if 0
-
-
-/********************************************************
- * Spline2D_HO -- Spline fits in 2 space dimensions.       *
- ********************************************************/
-
-
-
-
-
-/********************************************************
- * Routine: Create_Spline_Line                          *
- *                                                      *
- * This routine calculates and returns a 2D spline      *
- * representing a straight line between two points.     *
- *                                                      *
- ********************************************************/
-void Create_Spline_Line(Spline2D_HO &Line_Spline,
-                        const Vector2D &V1,
-			const Vector2D &V2,
-  	                const int Number_of_Spline_Points) {
+/*
+ * This routine calculates and returns a 2D spline 
+ * representing a straight line between two points.
+ */
+void Spline2D_HO::Create_Spline_Line(const Vector2D &V1,
+				     const Vector2D &V2,
+				     const int Number_of_Spline_Points) {
 
     int i;
     Vector2D dX;
 
     /* Allocate memory for the straight line spline. */
-
-    if (Line_Spline.np != 0) Line_Spline.deallocate();
-    Line_Spline.allocate(Number_of_Spline_Points);
+    allocate(Number_of_Spline_Points);
 
     /* Set the spline type. */
 
-    Line_Spline.settype(SPLINE2D_LINEAR);
+    settype(SPLINE2D_LINEAR);
 
     /* Compute the locations of the spline points on the 
        straight line between points V1 and V2. */
@@ -1376,38 +1345,37 @@ void Create_Spline_Line(Spline2D_HO &Line_Spline,
     dX = (V2-V1)/double(Number_of_Spline_Points-1);
 
     for (i = 0; i <= Number_of_Spline_Points-1; i++) {
-        Line_Spline.Xp[i] = V1 + double(i)*dX;
+        Xp[i] = V1 + double(i)*dX;
 
         if (i == 0 || i == Number_of_Spline_Points - 1) {
-           Line_Spline.tp[i] = SPLINE2D_POINT_SHARP_CORNER;
+           tp[i] = SPLINE2D_POINT_SHARP_CORNER;
         } else {
-           Line_Spline.tp[i] = SPLINE2D_POINT_NORMAL;
+           tp[i] = SPLINE2D_POINT_NORMAL;
         } /* endif */
 
-        Line_Spline.bc[i] = BC_NONE;
+        bc[i] = BC_NONE;
     } /* endfor */
 
     /* Calculate the spline pathlengths. */
 
-    Line_Spline.pathlength();
+    pathlength();
 
 }
 
-/******************************************************//**
+/*
  * This routine calculates and returns a 2D spline      
  * representing a straight line between two points.
  * The start and end points are determined based on 
  * the polar coordinates (Inner_Radius,Theta) and (Outer_Radius,Theta).     
  * The angle Theta is considered to be given in degrees.                                                       
- ********************************************************/
-void Create_Spline_Line_Polar_Coordinates(Spline2D_HO &Line_Spline,
-					  const double &Inner_Radius,
-					  const double &Outer_Radius,
-					  const double &Theta,
-					  const int Number_of_Spline_Points){
+ */
+void Spline2D_HO::Create_Spline_Line_Polar_Coordinates(const double &Inner_Radius,
+						       const double &Outer_Radius,
+						       const double &Theta,
+						       const int Number_of_Spline_Points){
   
   Vector2D V1, V2;		// the Cartesian coordinates of the start and end points of the line.
-
+  
   // Set V1
   V1.setWithPolarCoord(Inner_Radius,Theta);
 
@@ -1415,612 +1383,581 @@ void Create_Spline_Line_Polar_Coordinates(Spline2D_HO &Line_Spline,
   V2.setWithPolarCoord(Outer_Radius,Theta);
 
   // Generate the line
-  Create_Spline_Line(Line_Spline,V1,V2,Number_of_Spline_Points);
+  Create_Spline_Line(V1,V2,Number_of_Spline_Points);
 }
 
-/********************************************************
- * Routine: Create_Spline_Circular_Arc                  *
- *                                                      *
- * This routine calculates and returns a 2D spline      *
- * representing a segment of a circular arc.            *
- *                                                      *
- ********************************************************/
-void Create_Spline_Circular_Arc(Spline2D_HO &Circle_Spline,
-			        const Vector2D &Origin,
-				const double &Radius,
-                                const double &Angle1,
-			        const double &Angle2,
-  	                        const int Number_of_Spline_Points) {
+/*
+ * This routine calculates and returns a 2D spline
+ * representing a segment of a circular arc.      
+ */
+void Spline2D_HO::Create_Spline_Circular_Arc(const Vector2D &Origin,
+					     const double &Radius,
+					     const double &Angle1,
+					     const double &Angle2,
+					     const int Number_of_Spline_Points) {
 
-    int i;
-    double theta;
+  int i;
+  double theta;
 
-    /* Allocate memory for the circular arc spline. */
+  /* Allocate memory for the circular arc spline. */
+  allocate(Number_of_Spline_Points);
 
-    if (Circle_Spline.np != 0) Circle_Spline.deallocate();
-    Circle_Spline.allocate(Number_of_Spline_Points);
+  /* Set the spline type. */
 
-    /* Set the spline type. */
+  settype(SPLINE2D_QUINTIC);
 
-    Circle_Spline.settype(SPLINE2D_QUINTIC);
+  /* Compute the locations of the spline points on the 
+     circular arc. */
 
-    /* Compute the locations of the spline points on the 
-       circular arc. */
+  for (i = 0; i <= Number_of_Spline_Points-1; i++) {
+    theta = Angle1+
+      (Angle2-Angle1)*double(i)/double(Number_of_Spline_Points-1);
+    theta = TWO*PI*theta/360.0;
 
-    for (i = 0; i <= Number_of_Spline_Points-1; i++) {
-        theta = Angle1+
-                (Angle2-Angle1)*double(i)/double(Number_of_Spline_Points-1);
-        theta = TWO*PI*theta/360.0;
+    Xp[i].x = Radius*cos(theta);
+    Xp[i].y = Radius*sin(theta);
 
-        Circle_Spline.Xp[i].x = Radius*cos(theta);
-        Circle_Spline.Xp[i].y = Radius*sin(theta);
+    Xp[i] += Origin;        
 
-        Circle_Spline.Xp[i] += Origin;        
+    if (i == 0 || i == Number_of_Spline_Points - 1) {
+      tp[i] = SPLINE2D_POINT_SHARP_CORNER;
+    } else {
+      tp[i] = SPLINE2D_POINT_NORMAL;
+    } /* endif */
 
-        if (i == 0 || i == Number_of_Spline_Points - 1) {
-           Circle_Spline.tp[i] = SPLINE2D_POINT_SHARP_CORNER;
-        } else {
-           Circle_Spline.tp[i] = SPLINE2D_POINT_NORMAL;
-        } /* endif */
-
-        Circle_Spline.bc[i] = BC_NONE;
-    } /* endfor */
+    bc[i] = BC_NONE;
+  } /* endfor */
 
     /* Ensure that arc closes on itself if it is a
        complete circle. */
 
-    if ( fabs(fabs(Angle2-Angle1)-360.00) < TOLER ) {
-       Circle_Spline.Xp[Circle_Spline.np-1] = Circle_Spline.Xp[0];
-       Circle_Spline.tp[0] = SPLINE2D_POINT_NORMAL;
-       Circle_Spline.tp[Circle_Spline.np-1] = SPLINE2D_POINT_NORMAL;
-    } /* endif */
+  if ( fabs(fabs(Angle2-Angle1)-360.00) < TOLER ) {
+    Xp[np-1] = Xp[0];
+    tp[0] = SPLINE2D_POINT_NORMAL;
+    tp[np-1] = SPLINE2D_POINT_NORMAL;
+  } /* endif */
 
     /* Calculate the spline pathlengths. */
 
-    Circle_Spline.pathlength();
+  pathlength();
 
 }
 
-/********************************************************
- * Routine: Create_Spline_Ellipsoidal_Arc               *
- *                                                      *
- * This routine calculates and returns a 2D spline      *
- * representing a segment of an ellipsoidal arc.        *
- *                                                      *
- ********************************************************/
-void Create_Spline_Ellipsoidal_Arc(Spline2D_HO &Ellipse_Spline,
-			           const Vector2D &Origin,
-				   const double &A,
-				   const double &B,
-                                   const double &Angle1,
-			           const double &Angle2,
-  	                           const int Number_of_Spline_Points) {
+/*
+ * This routine calculates and returns a 2D spline
+ * representing a segment of an ellipsoidal arc.  
+ */
+void Spline2D_HO::Create_Spline_Ellipsoidal_Arc(const Vector2D &Origin,
+						const double &A,
+						const double &B,
+						const double &Angle1,
+						const double &Angle2,
+						const int Number_of_Spline_Points) {
 
     int i;
     double theta;
 
     /* Allocate memory for the ellipsoidal arc spline. */
 
-    if (Ellipse_Spline.np != 0) Ellipse_Spline.deallocate();
-    Ellipse_Spline.allocate(Number_of_Spline_Points);
-
+    allocate(Number_of_Spline_Points);
+    
     /* Set the spline type. */
 
-    Ellipse_Spline.settype(SPLINE2D_QUINTIC);
-
+    settype(SPLINE2D_QUINTIC);
+    
     /* Compute the locations of the spline points on the 
        ellipsoidal arc. */
-
+    
     for (i = 0; i <= Number_of_Spline_Points-1; i++) {
-        theta = Angle1+
-                (Angle2-Angle1)*double(i)/double(Number_of_Spline_Points-1);
-        theta = TWO*PI*theta/360.0;
-
-        Ellipse_Spline.Xp[i].x = A*cos(theta);
-        Ellipse_Spline.Xp[i].y = B*sin(theta);
-
-        Ellipse_Spline.Xp[i] += Origin;        
-
-        if (i == 0 || i == Number_of_Spline_Points - 1) {
-           Ellipse_Spline.tp[i] = SPLINE2D_POINT_SHARP_CORNER;
-        } else {
-           Ellipse_Spline.tp[i] = SPLINE2D_POINT_NORMAL;
-        } /* endif */
-
-        Ellipse_Spline.bc[i] = BC_NONE;
+      theta = Angle1 + (Angle2-Angle1)*double(i)/double(Number_of_Spline_Points-1);
+      theta = TWO*PI*theta/360.0;
+      
+      Xp[i].x = A*cos(theta);
+      Xp[i].y = B*sin(theta);
+      
+      Xp[i] += Origin;        
+      
+      if (i == 0 || i == Number_of_Spline_Points - 1) {
+	tp[i] = SPLINE2D_POINT_SHARP_CORNER;
+      } else {
+	tp[i] = SPLINE2D_POINT_NORMAL;
+      } /* endif */
+      
+      bc[i] = BC_NONE;
     } /* endfor */
-
+    
     /* Ensure that arc closes on itself if it is a
        complete ellipse. */
-
+    
     if ( fabs(fabs(Angle2-Angle1)-360.00) < TOLER ) {
-       Ellipse_Spline.Xp[Ellipse_Spline.np-1] = Ellipse_Spline.Xp[0];
-       Ellipse_Spline.tp[0] = SPLINE2D_POINT_NORMAL;
-       Ellipse_Spline.tp[Ellipse_Spline.np-1] = SPLINE2D_POINT_NORMAL;
+      Xp[np-1] = Xp[0];
+      tp[0] = SPLINE2D_POINT_NORMAL;
+      tp[np-1] = SPLINE2D_POINT_NORMAL;
     } /* endif */
-
+    
     /* Calculate the spline pathlengths. */
-
-    Ellipse_Spline.pathlength();
-
+    
+    pathlength();
+    
 }
 
-/********************************************************
- * Routine: Create_Spline_NACA_Aerofoil                 *
- *                                                      *
- * This routine calculates and returns a 2D spline for  *
- * both NACA 4- and 5-digit aerofoil sections.  The     *
- * algorithm for calculating the splines is straight    *
- * out of Abbott and von Doenhoff, with a little        *
- * Reigels mixed in.                                    *
- *                                                      *
- * Basically, a NACA aerofoil is composed of a camber   *
- * line and a thickness distribution.  The thickness    *
- * distribution is a single equation, while the camber  *
- * is usually two joined quadratics.                    *
- *                                                      *
- * The equations for the upper and lower coordinates    *
- * are:                                                 *
- *                                                      *
- *  x(upper) =                                          *
- *    x - yt*sin(theta)  y(upper) = yc + yt*cos(theta)  *
- *  x(lower) =                                          *
- *    x + yt*sin(theta)  y(lower) = yc - yt*cos(theta)  *
- *                                                      *
- * where tan(theta) = d(yc)/dx.  In these equations, yc *
- * is the camber line, yt is the thickness distribution.*
- * A common approximation (small-angle) is to assume    *
- * theta is small, so that sin(theta) is approx. 0 and  *
- * cos(theta) is approx. 1.  The equations become:      *
- *                                                      *
- * 	  x(upper) = x     y(upper) = yc + yt           *
- * 	  x(lower) = x     y(lower) = yc - yt           *
- *                                                      *
- * For 4-digit aerofoils, the camber lines and          *
- * thickness:                                           *
- *                                                      *
- * (yc/c) = (f/c)*(1/(x1^2))*(2*x1*(x/c) - (x/c)^2)     *
- *              for 0<=(x/c)<=x1                        *
- *                                                      *
- * and                                                  *
- *                                                      *
- * (yc/c) = (f/c)*(1/(1-x1)^2)*((1-2x1)+2x1*(x/c)-      *
- *          (x/c)^2)                                    *
- *              for x1<=(x/c)<=1 with x1=(xf/c)         *
- *                                                      *
- * (yt/c) = 5t*(0.29690*x^0.5 - 0.12600X - 0.35160*x^2  *
- *         + 0.28430*x^3 - 0.10150*x^4)                 *
- *                                                      *
- * where t = thickness/chord,                           *
- * x = position along x-axis,                           *
- * xf = position of maximum camber,                     *
- * f = maximum camber.                                  *
- *                                                      *
- * For 5-digit aerofoils the thickness distribution is  *
- * the same, only the camber line is changed.  There are*
- * two types, based on the third digit.  The majority   *
- * of 5-digit aerofoils are 'type 0' (i.e.,             *
- * NACA 23015) hand have a camber line given by:        *
- *                                                      *
- * (yc/c) = (k1/6)*(x^3 - 3*x1*x^2 + x1^2*(3-x1)*x)     *
- *               for 0<=x<=x1                           *
- *                                                      *
- * and                                                  *
- *                                                      *
- * (yc/c) = (k1*x1^3 / 6) * (1 - x)                     *
- *        for x1<=x<=1 with x1 = (x1/c) and x = (x/c),  *
- * and x1 is related to xf, which is the position of    *
+/*
+ * This routine calculates and returns a 2D spline for  
+ * both NACA 4- and 5-digit aerofoil sections.  The     
+ * algorithm for calculating the splines is straight    
+ * out of Abbott and von Doenhoff, with a little        
+ * Reigels mixed in.                                    
+ *                                                      
+ * Basically, a NACA aerofoil is composed of a camber   
+ * line and a thickness distribution.  The thickness    
+ * distribution is a single equation, while the camber  
+ * is usually two joined quadratics.                    
+ *                                                      
+ * The equations for the upper and lower coordinates    
+ * are:                                                 
+ *                                                      
+ *  x(upper) =                                          
+ *    x - yt*sin(theta)  y(upper) = yc + yt*cos(theta)  
+ *  x(lower) =                                          
+ *    x + yt*sin(theta)  y(lower) = yc - yt*cos(theta)  
+ *                                                      
+ * where tan(theta) = d(yc)/dx.  In these equations, yc 
+ * is the camber line, yt is the thickness distribution.
+ * A common approximation (small-angle) is to assume    
+ * theta is small, so that sin(theta) is approx. 0 and  
+ * cos(theta) is approx. 1.  The equations become:      
+ *                                                      
+ * 	  x(upper) = x     y(upper) = yc + yt           
+ * 	  x(lower) = x     y(lower) = yc - yt           
+ *                                                      
+ * For 4-digit aerofoils, the camber lines and          
+ * thickness:                                           
+ *                                                      
+ * (yc/c) = (f/c)*(1/(x1^2))*(2*x1*(x/c) - (x/c)^2)     
+ *              for 0<=(x/c)<=x1                        
+ *                                                      
+ * and                                                  
+ *                                                      
+ * (yc/c) = (f/c)*(1/(1-x1)^2)*((1-2x1)+2x1*(x/c)-      
+ *          (x/c)^2)                                    
+ *              for x1<=(x/c)<=1 with x1=(xf/c)         
+ *                                                      
+ * (yt/c) = 5t*(0.29690*x^0.5 - 0.12600X - 0.35160*x^2  
+ *         + 0.28430*x^3 - 0.10150*x^4)                 
+ *                                                      
+ * where t = thickness/chord,                           
+ * x = position along x-axis,                           
+ * xf = position of maximum camber,                     
+ * f = maximum camber.                                  
+ *                                                      
+ * For 5-digit aerofoils the thickness distribution is  
+ * the same, only the camber line is changed.  There are
+ * two types, based on the third digit.  The majority   
+ * of 5-digit aerofoils are 'type 0' (i.e.,             
+ * NACA 23015) hand have a camber line given by:        
+ *                                                      
+ * (yc/c) = (k1/6)*(x^3 - 3*x1*x^2 + x1^2*(3-x1)*x)     
+ *               for 0<=x<=x1                           
+ *                                                      
+ * and                                                  
+ *                                                      
+ * (yc/c) = (k1*x1^3 / 6) * (1 - x)                     
+ *        for x1<=x<=1 with x1 = (x1/c) and x = (x/c),  
+ * and x1 is related to xf, which is the position of    
  * maximum camber.
- *                                                      * 
- * The constants x1 and k1 are determined from the      *
- * following table:                                     *
- *                                                      *
- * xf           0.05    0.10    0.15     0.20    0.25   *
- * x1           0.0580  0.1260  0.2025   0.2900  0.3910 *
- * (Cl* /(f/c)) 26.9    19.6    16.4     14.5    11.3   *
- * (k1/Cl*)     1205    172.1   53.2     22.13   10.77  *
- *                                                      *
- * The 'type 1' aerofoil camber line is not provided    *
- * here.                                                *
- *                                                      *
- * Breakdown of the NACA designations:                  *
- *                                                      *
- * In a 4-digit aerofoil, the first digit is the value  *
- * of the maximum camber (in percent of the chord), the *
- * second digit is the position of the maximum camber   *
- * from the leading edge in tenths of the chord, and    *
- * the last two digits denote the maximum thickness of  *
- * the aerofoil in percent.  For the NACA 2415 aerofoil,*
- * the maximum camber is 2%, the position of the        *
- * maximum camber is 0.4c, and the thickness is 15%.    *
- * This example is displayed in below.                  *
- *                                                      *
- * NACA    2415                                         *
- *                                                      *
- * 24      mean line (24)                               *
- * 2       maximum camber, (2%)                         *
- * 4       10 * position of maximum camber, (0.4c)      *
- * 15      thickness, (15%)                             *
- *                                                      *
- * The NACA 5-digit aerofoils are set up in a similar   *
- * manner to the 4-digit aerofoils.  The primary        *
- * difference is the use of a different camber line.    *
- * In a 5-digit aerofoil, 1.5 times the first digit is  *
- * the design lift coefficient in tenths, the second    *
- * and third digits are one-half the distance from the  *
- * leading edge to the location of maximum camber in    *
- * percent of the chord, and the fourth and fifth       *
- * digits are the thickness in percent of the chord.    *
- * For example, a NACA 23015 aerofoil has a design lift *
- * coefficient of 0.3, has the maximum camber at 0.15c, *
- * and is 15% thick.  Additionally, the first three     *
- * digits indicate the mean line used.  In this case,   *
- * the mean line designation is 230.  The 5-digit       *
- * aerofoils use the same thickness distribution as the *
- * 4-digit aerofoils.  This example is displayed below. *
- *                                                      *
- * NACA    23015                                        *
- *                                                      *
- * 230     mean line (230)                              *
- * 2       (design lift coefficient * 10) / 1.5, (0.3)  *
- * 30      2 * (position of maximum camber),            *
- *         (0.30 / 2 = 0.15c)                           *
- * 0       type of camber line used                     *
- * 15      thickness, (15%)                             *
- *                                                      *
- * References:                                          *
- *                                                      *
- * I. H. Abbot and von A. E. Doenhoff, "Theory of       *
- * Wing Sections", Dover Publications, 1959.            *
- *                                                      *
- * F. W. Reigels, "Aerofoil Sections", Butterworth &    *
- * Co., 1961.                                           *
- *                                                      *
- ********************************************************/
-void Create_Spline_NACA_Aerofoil(Spline2D_HO &NACA_Spline,
-                                 char *NACA_Aerofoil_Type_ptr,
-                                 const double &Chord_Length,
-                                 const int i_Up_All_Low,
-  	                         const int Number_of_Spline_Points) {
+ *                                                       
+ * The constants x1 and k1 are determined from the      
+ * following table:                                     
+ *                                                      
+ * xf           0.05    0.10    0.15     0.20    0.25   
+ * x1           0.0580  0.1260  0.2025   0.2900  0.3910 
+ * (Cl* /(f/c)) 26.9    19.6    16.4     14.5    11.3   
+ * (k1/Cl*)     1205    172.1   53.2     22.13   10.77  
+ *                                                      
+ * The 'type 1' aerofoil camber line is not provided    
+ * here.                                                
+ *                                                      
+ * Breakdown of the NACA designations:                  
+ *                                                      
+ * In a 4-digit aerofoil, the first digit is the value  
+ * of the maximum camber (in percent of the chord), the 
+ * second digit is the position of the maximum camber   
+ * from the leading edge in tenths of the chord, and    
+ * the last two digits denote the maximum thickness of  
+ * the aerofoil in percent.  For the NACA 2415 aerofoil,
+ * the maximum camber is 2%, the position of the        
+ * maximum camber is 0.4c, and the thickness is 15%.    
+ * This example is displayed in below.                  
+ *                                                      
+ * NACA    2415                                         
+ *                                                      
+ * 24      mean line (24)                               
+ * 2       maximum camber, (2%)                         
+ * 4       10 * position of maximum camber, (0.4c)      
+ * 15      thickness, (15%)                             
+ *                                                      
+ * The NACA 5-digit aerofoils are set up in a similar   
+ * manner to the 4-digit aerofoils.  The primary        
+ * difference is the use of a different camber line.    
+ * In a 5-digit aerofoil, 1.5 times the first digit is  
+ * the design lift coefficient in tenths, the second    
+ * and third digits are one-half the distance from the  
+ * leading edge to the location of maximum camber in    
+ * percent of the chord, and the fourth and fifth       
+ * digits are the thickness in percent of the chord.    
+ * For example, a NACA 23015 aerofoil has a design lift 
+ * coefficient of 0.3, has the maximum camber at 0.15c, 
+ * and is 15% thick.  Additionally, the first three     
+ * digits indicate the mean line used.  In this case,   
+ * the mean line designation is 230.  The 5-digit       
+ * aerofoils use the same thickness distribution as the 
+ * 4-digit aerofoils.  This example is displayed below. 
+ *                                                      
+ * NACA    23015                                        
+ *                                                      
+ * 230     mean line (230)                              
+ * 2       (design lift coefficient * 10) / 1.5, (0.3)  
+ * 30      2 * (position of maximum camber),            
+ *         (0.30 / 2 = 0.15c)                           
+ * 0       type of camber line used                     
+ * 15      thickness, (15%)                             
+ *                                                      
+ * References:                                          
+ *                                                      
+ * I. H. Abbot and von A. E. Doenhoff, "Theory of       
+ * Wing Sections", Dover Publications, 1959.            
+ *                                                      
+ * F. W. Reigels, "Aerofoil Sections", Butterworth &    
+ * Co., 1961.                                           
+ *                                                      
+ */
+void Spline2D_HO::Create_Spline_NACA_Aerofoil(char *NACA_Aerofoil_Type_ptr,
+					      const double &Chord_Length,
+					      const int i_Up_All_Low,
+					      const int Number_of_Spline_Points) {
 
-    int i, number_of_digits;
-    char camber_max_indicator[2], x_camber_max_indicator[3], 
-         thickness_max_indicator[3], design_lift_indicator[2];
-    double camber_max, x_camber_max, thickness_max, design_lift,
-           x1, k1, x_thickness_scaling_factor=1.008930411356;
-    double theta, x, y, xt, yt, yc;
+  int i, number_of_digits;
+  char camber_max_indicator[2], x_camber_max_indicator[3], 
+    thickness_max_indicator[3], design_lift_indicator[2];
+  double camber_max, x_camber_max, thickness_max, design_lift,
+    x1, k1, x_thickness_scaling_factor=1.008930411356;
+  double theta, x, y, xt, yt, yc;
 
-    /* Allocate memory for the NACA aerofoil spline. */
+  /* Allocate memory for the NACA aerofoil spline. */
+  allocate(Number_of_Spline_Points);
 
-    if (NACA_Spline.np != 0) NACA_Spline.deallocate();
-    NACA_Spline.allocate(Number_of_Spline_Points);
+  /* Set the spline type. */
 
-    /* Set the spline type. */
+  settype(SPLINE2D_QUINTIC);
 
-    NACA_Spline.settype(SPLINE2D_QUINTIC);
+  /* Determine the number of digits in the NACA Aerofoil
+     type designator. */
 
-    /* Determine the number of digits in the NACA Aerofoil
-       type designator. */
+  number_of_digits = strlen(NACA_Aerofoil_Type_ptr);
 
-    number_of_digits = strlen(NACA_Aerofoil_Type_ptr);
+  /* Determine the aerofoil chamber line and thickness 
+     distribution parameters. */
 
-    /* Determine the aerofoil chamber line and thickness 
-       distribution parameters. */
-
-    if (number_of_digits == 4) {
-      camber_max_indicator[0] = NACA_Aerofoil_Type_ptr[0];
-      camber_max_indicator[1] = '\n';
-      camber_max = double(atof(camber_max_indicator)/HUNDRED);
-      x_camber_max_indicator[0] = NACA_Aerofoil_Type_ptr[1];
-      x_camber_max_indicator[1] = '\n';
-      x_camber_max = double(atof(x_camber_max_indicator)/TEN);
-      thickness_max_indicator[0] = NACA_Aerofoil_Type_ptr[2];
-      thickness_max_indicator[1] = NACA_Aerofoil_Type_ptr[3];
-      thickness_max_indicator[2] = '\n';
-      thickness_max = double(atof(thickness_max_indicator)/HUNDRED);
-    } else if (number_of_digits == 5) {
-      design_lift_indicator[0] = NACA_Aerofoil_Type_ptr[0];
-      design_lift_indicator[1] = '\n';
-      design_lift = double(1.50*atof(design_lift_indicator)/TEN);
-      x_camber_max_indicator[0] = NACA_Aerofoil_Type_ptr[1];
-      x_camber_max_indicator[1] = NACA_Aerofoil_Type_ptr[2];
-      x_camber_max_indicator[2] = '\n';
-      x_camber_max = double(HALF*atof(x_camber_max_indicator)/HUNDRED);
-      thickness_max_indicator[0] = NACA_Aerofoil_Type_ptr[3];
-      thickness_max_indicator[1] = NACA_Aerofoil_Type_ptr[4];
-      thickness_max_indicator[2] = '\n';
-      thickness_max = double(atof(thickness_max_indicator)/HUNDRED);
-      if (fabs(x_camber_max-0.05) < TOLER) {
-        x1 = 0.0580;
-	k1 = 1205.0*design_lift;
-      } else if (fabs(x_camber_max-0.10) < TOLER) {
-        x1 = 0.1260;
-	k1 = 172.1*design_lift;
-      } else if (fabs(x_camber_max-0.15) < TOLER) {
-        x1 = 0.2025;
-	k1 = 53.2*design_lift;
-      } else if (fabs(x_camber_max-0.20) < TOLER) {
-        x1 = 0.2900;
-	k1 = 22.13*design_lift;
-      } else if (fabs(x_camber_max-0.25) < TOLER) {
-        x1 = 0.3910;
-	k1 = 10.77*design_lift;
-      } else {
-        x1 = 0.3910;
-	k1 = 10.77*design_lift;
-      } /* endif */
+  if (number_of_digits == 4) {
+    camber_max_indicator[0] = NACA_Aerofoil_Type_ptr[0];
+    camber_max_indicator[1] = '\n';
+    camber_max = double(atof(camber_max_indicator)/HUNDRED);
+    x_camber_max_indicator[0] = NACA_Aerofoil_Type_ptr[1];
+    x_camber_max_indicator[1] = '\n';
+    x_camber_max = double(atof(x_camber_max_indicator)/TEN);
+    thickness_max_indicator[0] = NACA_Aerofoil_Type_ptr[2];
+    thickness_max_indicator[1] = NACA_Aerofoil_Type_ptr[3];
+    thickness_max_indicator[2] = '\n';
+    thickness_max = double(atof(thickness_max_indicator)/HUNDRED);
+  } else if (number_of_digits == 5) {
+    design_lift_indicator[0] = NACA_Aerofoil_Type_ptr[0];
+    design_lift_indicator[1] = '\n';
+    design_lift = double(1.50*atof(design_lift_indicator)/TEN);
+    x_camber_max_indicator[0] = NACA_Aerofoil_Type_ptr[1];
+    x_camber_max_indicator[1] = NACA_Aerofoil_Type_ptr[2];
+    x_camber_max_indicator[2] = '\n';
+    x_camber_max = double(HALF*atof(x_camber_max_indicator)/HUNDRED);
+    thickness_max_indicator[0] = NACA_Aerofoil_Type_ptr[3];
+    thickness_max_indicator[1] = NACA_Aerofoil_Type_ptr[4];
+    thickness_max_indicator[2] = '\n';
+    thickness_max = double(atof(thickness_max_indicator)/HUNDRED);
+    if (fabs(x_camber_max-0.05) < TOLER) {
+      x1 = 0.0580;
+      k1 = 1205.0*design_lift;
+    } else if (fabs(x_camber_max-0.10) < TOLER) {
+      x1 = 0.1260;
+      k1 = 172.1*design_lift;
+    } else if (fabs(x_camber_max-0.15) < TOLER) {
+      x1 = 0.2025;
+      k1 = 53.2*design_lift;
+    } else if (fabs(x_camber_max-0.20) < TOLER) {
+      x1 = 0.2900;
+      k1 = 22.13*design_lift;
+    } else if (fabs(x_camber_max-0.25) < TOLER) {
+      x1 = 0.3910;
+      k1 = 10.77*design_lift;
     } else {
-    } /* end if */
+      x1 = 0.3910;
+      k1 = 10.77*design_lift;
+    } /* endif */
+  } else {
+  } /* end if */
 
     /* Compute the locations of the spline points on the surface
        of the aerofoil. */
 
-    for (i = 0; i <= Number_of_Spline_Points-1; i++) {
-        // Calculate theta.
-        if ( i_Up_All_Low == 0 ) {
-           theta = TWO*PI*double(i)/double(Number_of_Spline_Points-1);
-	} else if ( i_Up_All_Low > 0 ) {
-           theta = PI + PI*double(i)/double(Number_of_Spline_Points-1);
-        } else {
-           theta = PI*double(i)/double(Number_of_Spline_Points-1);
-        } /* endif */
+  for (i = 0; i <= Number_of_Spline_Points-1; i++) {
+    // Calculate theta.
+    if ( i_Up_All_Low == 0 ) {
+      theta = TWO*PI*double(i)/double(Number_of_Spline_Points-1);
+    } else if ( i_Up_All_Low > 0 ) {
+      theta = PI + PI*double(i)/double(Number_of_Spline_Points-1);
+    } else {
+      theta = PI*double(i)/double(Number_of_Spline_Points-1);
+    } /* endif */
 
-        // Calculate x location.
-        x = HALF*(ONE+cos(theta));
+    // Calculate x location.
+    x = HALF*(ONE+cos(theta));
 
-        // Determine the y position of the cord line, yc.
-        if (number_of_digits == 4) {
-           if (x < x_camber_max && x_camber_max != ZERO) {
-	      yc = camber_max*x*(TWO*x_camber_max-x)/sqr(x_camber_max);
-           } else {
-              yc = camber_max*(ONE-TWO*x_camber_max+x*(TWO*x_camber_max-x))/
-	           sqr(ONE-x_camber_max);
-           } /* endif */
-        } else if (number_of_digits == 5) {
-           if (x < x1) {
-	      yc = (k1/SIX)*(x*x*x - THREE*x1*x*x + 
-		   x1*x1*(THREE-x1)*x); 
-           } else {
-	      yc = (k1/SIX)*x1*x1*x1*(ONE-x); 
-           } /* endif */
-        } else {
-        } /* end if */
+    // Determine the y position of the cord line, yc.
+    if (number_of_digits == 4) {
+      if (x < x_camber_max && x_camber_max != ZERO) {
+	yc = camber_max*x*(TWO*x_camber_max-x)/sqr(x_camber_max);
+      } else {
+	yc = camber_max*(ONE-TWO*x_camber_max+x*(TWO*x_camber_max-x))/
+	  sqr(ONE-x_camber_max);
+      } /* endif */
+    } else if (number_of_digits == 5) {
+      if (x < x1) {
+	yc = (k1/SIX)*(x*x*x - THREE*x1*x*x + 
+		       x1*x1*(THREE-x1)*x); 
+      } else {
+	yc = (k1/SIX)*x1*x1*x1*(ONE-x); 
+      } /* endif */
+    } else {
+    } /* end if */
 
-        // Determine the local aerofoil thickness, yt.
-        xt = x_thickness_scaling_factor*x;
-        yt = FIVE*thickness_max*(0.29690*sqrt(xt) - 
-                                 0.12600*xt -
-                                 0.35160*xt*xt + 
-	                         0.28430*xt*xt*xt - 
-                                 0.10150*xt*xt*xt*xt);
+    // Determine the local aerofoil thickness, yt.
+    xt = x_thickness_scaling_factor*x;
+    yt = FIVE*thickness_max*(0.29690*sqrt(xt) - 
+			     0.12600*xt -
+			     0.35160*xt*xt + 
+			     0.28430*xt*xt*xt - 
+			     0.10150*xt*xt*xt*xt);
 
-        // Evaluate the coordinates of the points on the aerofoil surface.
-        if ( theta >= PI ) {
-	   y = yc + yt;
-	} else {
-           y = yc - yt;
-        } /* endif */
+    // Evaluate the coordinates of the points on the aerofoil surface.
+    if ( theta >= PI ) {
+      y = yc + yt;
+    } else {
+      y = yc - yt;
+    } /* endif */
 
-        // Ensure closure on trailing edge.
-        if ( ( i_Up_All_Low == 0 && 
-             (i == 0 || i == Number_of_Spline_Points - 1) ) ||
-             ( i_Up_All_Low > 0 && i == Number_of_Spline_Points - 1 ) ||
-             ( i_Up_All_Low < 0 && i == 0 ) ) {
-           x = ONE;
-           y = ZERO; 
-        } /* endif */
+    // Ensure closure on trailing edge.
+    if ( ( i_Up_All_Low == 0 && 
+	   (i == 0 || i == Number_of_Spline_Points - 1) ) ||
+	 ( i_Up_All_Low > 0 && i == Number_of_Spline_Points - 1 ) ||
+	 ( i_Up_All_Low < 0 && i == 0 ) ) {
+      x = ONE;
+      y = ZERO; 
+    } /* endif */
 
-        // Scale the resulting aerofoil coordinates.
-        x = Chord_Length*x;
-        y = Chord_Length*y;
+    // Scale the resulting aerofoil coordinates.
+    x = Chord_Length*x;
+    y = Chord_Length*y;
 
-        // Assign values to the spline variables.
-        NACA_Spline.Xp[i].x = x;
-        NACA_Spline.Xp[i].y = y;
+    // Assign values to the spline variables.
+    Xp[i].x = x;
+    Xp[i].y = y;
 
-        if (i == 0 || i == Number_of_Spline_Points - 1) {
-           NACA_Spline.tp[i] = SPLINE2D_POINT_SHARP_CORNER;
-        } else {
-           NACA_Spline.tp[i] = SPLINE2D_POINT_NORMAL;
-        } /* endif */
+    if (i == 0 || i == Number_of_Spline_Points - 1) {
+      tp[i] = SPLINE2D_POINT_SHARP_CORNER;
+    } else {
+      tp[i] = SPLINE2D_POINT_NORMAL;
+    } /* endif */
 
-        NACA_Spline.bc[i] = BC_NONE;
-    } /* endfor */
-
-    /* Calculate the spline pathlengths. */
-
-    NACA_Spline.pathlength();
-
-}
-
-/********************************************************
- * Routine: Create_Spline_Bow_Shock                     *
- *                                                      *
- * This routine calculates and returns a 2D spline      *
- * representing the approximate position of the bow     *
- * shock for supersonic flow over a circular cylinder.  *
- *                                                      *
- ********************************************************/
-void Create_Spline_Bow_Shock(Spline2D_HO &Shock_Spline,
-                             const double &Radius,
-			     const double &Mach_Number,
-			     const int i_Up_All_Low,
-  	                     const int Number_of_Spline_Points) {
-
-    int i;
-    double theta, x, y, d, rs, b, y_shock_max;
-
-    /* Allocate memory for the bow shock spline. */
-
-    if (Shock_Spline.np != 0) Shock_Spline.deallocate();
-    Shock_Spline.allocate(Number_of_Spline_Points);
-
-    /* Set the spline type. */
-
-    Shock_Spline.settype(SPLINE2D_QUINTIC);
-
-    /* Compute the locations of the spline points which
-       define the position of the bow shock. */
-
-    d  = 0.386*Radius*exp(4.67/(Mach_Number*Mach_Number));
-    rs = 1.386*Radius*exp(1.89/pow(Mach_Number-ONE, 0.75));
-    b  = asin(ONE/Mach_Number);
-    y_shock_max = (rs/tan(b))*sqrt(sqr(ONE+(Radius+d)*tan(b)*tan(b)/rs)-ONE);
-
-    for (i = 0; i <= Number_of_Spline_Points-1; i++) {
-        // Calculate theta.
-        if ( i_Up_All_Low == 0 ) {
-           theta = -HALF*PI + PI*double(i)/double(Number_of_Spline_Points-1);
-	} else if ( i_Up_All_Low > 0 ) {
-           theta = HALF*PI*double(i)/double(Number_of_Spline_Points-1);
-        } else {
-           theta = -HALF*PI + HALF*PI*double(i)/double(Number_of_Spline_Points-1);
-        } /* endif */
-
-        y = y_shock_max*sin(theta);
-        x = -(Radius+d-(rs/(tan(b)*tan(b)))*(sqrt(ONE+sqr(y*tan(b)/rs))-ONE));
-
-        Shock_Spline.Xp[i].x = x;
-        Shock_Spline.Xp[i].y = y;
-
-        if (i == 0 || i == Number_of_Spline_Points - 1) {
-           Shock_Spline.tp[i] = SPLINE2D_POINT_SHARP_CORNER;
-        } else {
-           Shock_Spline.tp[i] = SPLINE2D_POINT_NORMAL;
-        } /* endif */
-
-        Shock_Spline.bc[i] = BC_NONE;
-    } /* endfor */
+    bc[i] = BC_NONE;
+  } /* endfor */
 
     /* Calculate the spline pathlengths. */
 
-    Shock_Spline.pathlength();
+  pathlength();
 
 }
 
-/********************************************************
- * Routine: Create_Spline_Area_Variation                *
- *                                                      *
- * This routine calculates and returns a 2D spline      *
- * representing the radius as a function of axial       *
- * position for a duct with a smoothly varying change   *
- * in cross-sectional area.                             *
- *                                                      *
- ********************************************************/
-void Create_Spline_Area_Variation(Spline2D_HO &Radius_Spline,
-                                  const double &Xup,
-				  const double &Xthroat,
-                                  const double &Xdown,
-				  const double &Rup,
-				  const double &Rthroat,
-				  const double &Rdown,
-				  const int &Nozzle_Type,
-  	                          const int Number_of_Spline_Points) {
+/*
+ * This routine calculates and returns a 2D spline     
+ * representing the approximate position of the bow    
+ * shock for supersonic flow over a circular cylinder. 
+ */
+void Spline2D_HO::Create_Spline_Bow_Shock(const double &Radius,
+					  const double &Mach_Number,
+					  const int i_Up_All_Low,
+					  const int Number_of_Spline_Points) {
 
-    int i;
-    double x, radius, Aup, Athroat, Adown, drdx, r, beta;
+  int i;
+  double theta, x, y, d, rs, b, y_shock_max;
 
-    /* Allocate memory for the area variation spline. */
+  /* Allocate memory for the bow shock spline. */
+  allocate(Number_of_Spline_Points);
 
-    if (Radius_Spline.np != 0) Radius_Spline.deallocate();
-    Radius_Spline.allocate(Number_of_Spline_Points);
+  /* Set the spline type. */
 
-    /* Set the spline type. */
+  settype(SPLINE2D_QUINTIC);
 
-    Radius_Spline.settype(SPLINE2D_QUINTIC);
+  /* Compute the locations of the spline points which
+     define the position of the bow shock. */
 
-    /* Compute the locations of the spline points which
-       define the radius of the duct as a function of the
-       axial postion. */
+  d  = 0.386*Radius*exp(4.67/(Mach_Number*Mach_Number));
+  rs = 1.386*Radius*exp(1.89/pow(Mach_Number-ONE, 0.75));
+  b  = asin(ONE/Mach_Number);
+  y_shock_max = (rs/tan(b))*sqrt(sqr(ONE+(Radius+d)*tan(b)*tan(b)/rs)-ONE);
 
-    Aup = PI*Rup*Rup;
-    Athroat = PI*Rthroat*Rthroat;
-    Adown = PI*Rdown*Rdown;
+  for (i = 0; i <= Number_of_Spline_Points-1; i++) {
+    // Calculate theta.
+    if ( i_Up_All_Low == 0 ) {
+      theta = -HALF*PI + PI*double(i)/double(Number_of_Spline_Points-1);
+    } else if ( i_Up_All_Low > 0 ) {
+      theta = HALF*PI*double(i)/double(Number_of_Spline_Points-1);
+    } else {
+      theta = -HALF*PI + HALF*PI*double(i)/double(Number_of_Spline_Points-1);
+    } /* endif */
 
-    if (Nozzle_Type == NOZZLE_HYBRID_CONICAL_FUNCTION) {
-      beta = 0.30;
-      x = Xthroat + beta*(Xdown-Xthroat);
-      r = Athroat*exp(0.50*log(Adown/Athroat)*(ONE-cos(PI*(x-Xthroat)/(Xdown-Xthroat))));
-      r = sqrt(r/PI);
-      drdx = 0.25*Athroat*log(Adown/Athroat)*sin(PI*(x-Xthroat)/(Xdown-Xthroat))*
-	exp(0.5*log(Adown/Athroat)*(ONE-cos(PI*(x-Xthroat)/(Xdown-Xthroat))))/
-	(sqrt((Athroat/PI)*exp(0.5*log(Adown/Athroat)*(ONE-cos(PI*(x-Xthroat)/(Xdown-Xthroat)))))*
-	 (Xdown-Xthroat));
-    }
+    y = y_shock_max*sin(theta);
+    x = -(Radius+d-(rs/(tan(b)*tan(b)))*(sqrt(ONE+sqr(y*tan(b)/rs))-ONE));
 
-    for (i = 0; i <= Number_of_Spline_Points-1; i++) {
-        x = (Xdown-Xup)*double(i)/double(Number_of_Spline_Points-1);
+    Xp[i].x = x;
+    Xp[i].y = y;
 
-	if (Nozzle_Type == NOZZLE_CONICAL) {
-	  if (x <= Xthroat) {
-	    radius = Rup + (Rthroat-Rup)*(x-Xup)/(Xthroat-Xup);
-	  } else {
-	    radius = Rthroat + (Rdown-Rthroat)*(x-Xthroat)/(Xdown-Xthroat);
-	  }
+    if (i == 0 || i == Number_of_Spline_Points - 1) {
+      tp[i] = SPLINE2D_POINT_SHARP_CORNER;
+    } else {
+      tp[i] = SPLINE2D_POINT_NORMAL;
+    } /* endif */
 
-	} else {
-	  if (x <= Xthroat) {
-	    radius = Aup*exp(HALF*log(Athroat/Aup)*
-			     (ONE-cos(PI*(x-Xup)/(Xthroat-Xup))));
+    bc[i] = BC_NONE;
+  } /* endfor */
+
+    /* Calculate the spline pathlengths. */
+
+  pathlength();
+
+}
+
+/*
+ * This routine calculates and returns a 2D spline    
+ * representing the radius as a function of axial     
+ * position for a duct with a smoothly varying change 
+ * in cross-sectional area.                           
+ */
+void Spline2D_HO::Create_Spline_Area_Variation(const double &Xup,
+					       const double &Xthroat,
+					       const double &Xdown,
+					       const double &Rup,
+					       const double &Rthroat,
+					       const double &Rdown,
+					       const int &Nozzle_Type,
+					       const int Number_of_Spline_Points) {
+
+  int i;
+  double x, radius, Aup, Athroat, Adown, drdx, r, beta;
+
+  /* Allocate memory for the area variation spline. */
+  allocate(Number_of_Spline_Points);
+
+  /* Set the spline type. */
+
+  settype(SPLINE2D_QUINTIC);
+
+  /* Compute the locations of the spline points which
+     define the radius of the duct as a function of the
+     axial postion. */
+
+  Aup = PI*Rup*Rup;
+  Athroat = PI*Rthroat*Rthroat;
+  Adown = PI*Rdown*Rdown;
+
+  if (Nozzle_Type == NOZZLE_HYBRID_CONICAL_FUNCTION) {
+    beta = 0.30;
+    x = Xthroat + beta*(Xdown-Xthroat);
+    r = Athroat*exp(0.50*log(Adown/Athroat)*(ONE-cos(PI*(x-Xthroat)/(Xdown-Xthroat))));
+    r = sqrt(r/PI);
+    drdx = 0.25*Athroat*log(Adown/Athroat)*sin(PI*(x-Xthroat)/(Xdown-Xthroat))*
+      exp(0.5*log(Adown/Athroat)*(ONE-cos(PI*(x-Xthroat)/(Xdown-Xthroat))))/
+      (sqrt((Athroat/PI)*exp(0.5*log(Adown/Athroat)*(ONE-cos(PI*(x-Xthroat)/(Xdown-Xthroat)))))*
+       (Xdown-Xthroat));
+  }
+
+  for (i = 0; i <= Number_of_Spline_Points-1; i++) {
+    x = (Xdown-Xup)*double(i)/double(Number_of_Spline_Points-1);
+
+    if (Nozzle_Type == NOZZLE_CONICAL) {
+      if (x <= Xthroat) {
+	radius = Rup + (Rthroat-Rup)*(x-Xup)/(Xthroat-Xup);
+      } else {
+	radius = Rthroat + (Rdown-Rthroat)*(x-Xthroat)/(Xdown-Xthroat);
+      }
+
+    } else {
+      if (x <= Xthroat) {
+	radius = Aup*exp(HALF*log(Athroat/Aup)*
+			 (ONE-cos(PI*(x-Xup)/(Xthroat-Xup))));
+	radius = sqrt(radius/PI);
+      } else {
+	switch(Nozzle_Type) {
+	case NOZZLE_GOTTLIEB_FUNCTION :
+	  radius = Athroat*exp(HALF*log(Adown/Athroat)*
+			       (ONE-cos(PI*(x-Xthroat)/(Xdown-Xthroat))));
+	  radius = sqrt(radius/PI);
+	  break;
+	case NOZZLE_QUARTIC_FUNCTION :
+	  radius = Athroat + (Adown-Athroat)*pow((x-Xthroat)/(Xdown-Xthroat),4.0);
+	  radius = sqrt(radius/PI);
+	  break;
+	case NOZZLE_HYBRID_CONICAL_FUNCTION :
+	  if (x <= Xthroat + beta*(Xdown-Xthroat)) {
+	    radius = Athroat*exp(HALF*log(Adown/Athroat)*
+				 (ONE-cos(PI*(x-Xthroat)/(Xdown-Xthroat))));
 	    radius = sqrt(radius/PI);
 	  } else {
-	    switch(Nozzle_Type) {
-	    case NOZZLE_GOTTLIEB_FUNCTION :
-	      radius = Athroat*exp(HALF*log(Adown/Athroat)*
-				   (ONE-cos(PI*(x-Xthroat)/(Xdown-Xthroat))));
-	      radius = sqrt(radius/PI);
-	      break;
-	    case NOZZLE_QUARTIC_FUNCTION :
-	      radius = Athroat + (Adown-Athroat)*pow((x-Xthroat)/(Xdown-Xthroat),4.0);
-	      radius = sqrt(radius/PI);
-	      break;
-	    case NOZZLE_HYBRID_CONICAL_FUNCTION :
-	      if (x <= Xthroat + beta*(Xdown-Xthroat)) {
-		radius = Athroat*exp(HALF*log(Adown/Athroat)*
-				     (ONE-cos(PI*(x-Xthroat)/(Xdown-Xthroat))));
-		radius = sqrt(radius/PI);
-	      } else {
-		radius = drdx*(x - Xthroat - beta*(Xdown-Xthroat)) + r;
-	      }
-	      break;
-	    };
- 	  } /* endif */
+	    radius = drdx*(x - Xthroat - beta*(Xdown-Xthroat)) + r;
+	  }
+	  break;
+	};
+      } /* endif */
 
- 	}
+    }
 
-        Radius_Spline.Xp[i].x = x;
-        Radius_Spline.Xp[i].y = radius;
+    Xp[i].x = x;
+    Xp[i].y = radius;
 
-        if (i == 0 || i == Number_of_Spline_Points - 1) {
-           Radius_Spline.tp[i] = SPLINE2D_POINT_SHARP_CORNER;
-        } else {
-           Radius_Spline.tp[i] = SPLINE2D_POINT_NORMAL;
-        } /* endif */
+    if (i == 0 || i == Number_of_Spline_Points - 1) {
+      tp[i] = SPLINE2D_POINT_SHARP_CORNER;
+    } else {
+      tp[i] = SPLINE2D_POINT_NORMAL;
+    } /* endif */
 
-        Radius_Spline.bc[i] = BC_NONE;
-    } /* endfor */
+    bc[i] = BC_NONE;
+  } /* endfor */
 
     /* Calculate the spline pathlengths. */
 
-    Radius_Spline.pathlength();
+  pathlength();
 
 }
 
-void Create_Spline_Converging_Nozzle(Spline2D_HO &Radius_Spline,
-				     const double &Xup,
-				     const double &Xthroat,
-				     const double &Rup,
-				     const double &Rthroat,
-				     const int Number_of_Spline_Points) {
+void Spline2D_HO::Create_Spline_Converging_Nozzle(const double &Xup,
+						  const double &Xthroat,
+						  const double &Rup,
+						  const double &Rthroat,
+						  const int Number_of_Spline_Points) {
 
   double x, radius, Aup, Athroat;
 
   // Allocate memory for the area variation spline.
-  if (Radius_Spline.np != 0) Radius_Spline.deallocate();
-  Radius_Spline.allocate(Number_of_Spline_Points);
+  allocate(Number_of_Spline_Points);
 
   // Set the spline type.
-  Radius_Spline.settype(SPLINE2D_QUINTIC);
+  settype(SPLINE2D_QUINTIC);
 
   // Compute the locations of the spline points which define the radius
   // of the duct as a function of the axial postion.
@@ -2033,38 +1970,36 @@ void Create_Spline_Converging_Nozzle(Spline2D_HO &Radius_Spline,
     radius = Aup*exp(HALF*log(Athroat/Aup)*(ONE-cos(PI*(x-Xup)/(Xthroat-Xup))));
     radius = sqrt(radius/PI);
 
-    Radius_Spline.Xp[i].x = x;
-    Radius_Spline.Xp[i].y = radius;
+    Xp[i].x = x;
+    Xp[i].y = radius;
 
     if (i == 0 || i == Number_of_Spline_Points - 1) {
-      Radius_Spline.tp[i] = SPLINE2D_POINT_SHARP_CORNER;
+      tp[i] = SPLINE2D_POINT_SHARP_CORNER;
     } else {
-      Radius_Spline.tp[i] = SPLINE2D_POINT_NORMAL;
+      tp[i] = SPLINE2D_POINT_NORMAL;
     }
 
-    Radius_Spline.bc[i] = BC_NONE;
+    bc[i] = BC_NONE;
   }
 
   // Calculate the spline pathlengths.
-  Radius_Spline.pathlength();
+  pathlength();
 
 }
 
-void Create_Spline_Diverging_Nozzle(Spline2D_HO &Radius_Spline,
-				    const double &Xthroat,
-				    const double &Xdown,
-				    const double &Rthroat,
-				    const double &Rdown,
-				    const int Number_of_Spline_Points) {
+void Spline2D_HO::Create_Spline_Diverging_Nozzle(const double &Xthroat,
+						 const double &Xdown,
+						 const double &Rthroat,
+						 const double &Rdown,
+						 const int Number_of_Spline_Points) {
 
   double x, radius, Athroat, Adown;
 
   // Allocate memory for the area variation spline.
-  if (Radius_Spline.np != 0) Radius_Spline.deallocate();
-  Radius_Spline.allocate(Number_of_Spline_Points);
+  allocate(Number_of_Spline_Points);
 
   // Set the spline type.
-  Radius_Spline.settype(SPLINE2D_QUINTIC);
+  settype(SPLINE2D_QUINTIC);
 
   // Compute the locations of the spline points which define the radius
   // of the duct as a function of the axial postion.
@@ -2077,71 +2012,63 @@ void Create_Spline_Diverging_Nozzle(Spline2D_HO &Radius_Spline,
     radius = Athroat*exp(0.50*log(Adown/Athroat)*(ONE-cos(PI*(x-Xthroat)/(Xdown-Xthroat))));
     radius = sqrt(radius/PI);
 
-    Radius_Spline.Xp[i].x = x;
-    Radius_Spline.Xp[i].y = radius;
+    Xp[i].x = x;
+    Xp[i].y = radius;
 
     if (i == 0 || i == Number_of_Spline_Points - 1) {
-      Radius_Spline.tp[i] = SPLINE2D_POINT_SHARP_CORNER;
+      tp[i] = SPLINE2D_POINT_SHARP_CORNER;
     } else {
-      Radius_Spline.tp[i] = SPLINE2D_POINT_NORMAL;
+      tp[i] = SPLINE2D_POINT_NORMAL;
     }
 
-    Radius_Spline.bc[i] = BC_NONE;
+    bc[i] = BC_NONE;
   }
 
   // Calculate the spline pathlengths.
-  Radius_Spline.pathlength();
+  pathlength();
 
 }
 
-/********************************************************
- * Routine: Create_Spline_Rectangle                     *
- *                                                      *
- * This routine calculates and returns a 2D spline      *
- * representing a rectangle.                            *
- *                                                      *
- ********************************************************/
-void Create_Spline_Rectangle(Spline2D_HO &Rectangle_Spline,
-			     const Vector2D &Origin,
-			     const double &Length,
-			     const double &Width) {
+/*
+ * This routine calculates and returns a 2D spline 
+ * representing a rectangle.                       
+ */
+void Spline2D_HO::Create_Spline_Rectangle(const Vector2D &Origin,
+					  const double &Length,
+					  const double &Width) {
 
-    int i;
+  int i;
 
-    /* Allocate memory for the rectangular spline. */
+  /* Allocate memory for the rectangular spline. */
+  allocate(5);
 
-    if (Rectangle_Spline.np != 0) Rectangle_Spline.deallocate();
-    Rectangle_Spline.allocate(5);
+  /* Set the spline type. */
 
-    /* Set the spline type. */
+  settype(SPLINE2D_LINEAR);
 
-    Rectangle_Spline.settype(SPLINE2D_LINEAR);
+  /* Compute the locations of the spline points on the 
+     rectangle. */
 
-    /* Compute the locations of the spline points on the 
-       rectangle. */
+  Xp[0].x = Origin.x - HALF*Width;
+  Xp[0].y = Origin.y - HALF*Length;
+  Xp[1].x = Origin.x + HALF*Width;
+  Xp[1].y = Origin.y - HALF*Length;
+  Xp[2].x = Origin.x + HALF*Width;
+  Xp[2].y = Origin.y + HALF*Length;
+  Xp[3].x = Origin.x - HALF*Width;
+  Xp[3].y = Origin.y + HALF*Length;
+  Xp[4]   = Xp[0];
 
-    Rectangle_Spline.Xp[0].x = Origin.x - HALF*Width;
-    Rectangle_Spline.Xp[0].y = Origin.y - HALF*Length;
-    Rectangle_Spline.Xp[1].x = Origin.x + HALF*Width;
-    Rectangle_Spline.Xp[1].y = Origin.y - HALF*Length;
-    Rectangle_Spline.Xp[2].x = Origin.x + HALF*Width;
-    Rectangle_Spline.Xp[2].y = Origin.y + HALF*Length;
-    Rectangle_Spline.Xp[3].x = Origin.x - HALF*Width;
-    Rectangle_Spline.Xp[3].y = Origin.y + HALF*Length;
-    Rectangle_Spline.Xp[4]   = Rectangle_Spline.Xp[0];
+  /* Set the point and boundary condition type. */
 
-    /* Set the point and boundary condition type. */
+  for (i = 0; i < 5; i++) {
+    tp[i] = SPLINE2D_POINT_SHARP_CORNER;
+    bc[i] = BC_NONE;
+  }
 
-    for (i = 0; i < 5; i++) {
-      Rectangle_Spline.tp[i] = SPLINE2D_POINT_SHARP_CORNER;
-      Rectangle_Spline.bc[i] = BC_NONE;
-    }
+  /* Calculate the spline pathlengths. */
 
-    /* Calculate the spline pathlengths. */
-
-    Rectangle_Spline.pathlength();
+  pathlength();
 
 }
 
-
-#endif
