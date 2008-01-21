@@ -493,7 +493,7 @@ double CFL(Levermore1D_UniformMesh *Soln,
 
   for ( i = Soln[0].ICl; i <= Soln[0].ICu ; ++i ) {
     Soln[i].dt = Soln[i].X.dx/
-      (Soln[i].lambda_max);
+      max(fabs(Soln[i].lambda_max),fabs(Soln[i].lambda_min));
     dtMin = min(dtMin, Soln[i].dt);
   } /* endfor */
 

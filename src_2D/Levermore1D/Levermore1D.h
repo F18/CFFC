@@ -58,7 +58,8 @@ public:
   DenseMatrix        dFdA;   //!< Hessian of flux potential.
   DenseMatrix        dFdU;   //!< Flux Jacobian
   ColumnVector     Lambda;   //!< Vector containing Eigenvalues.
-  double       lambda_max;   //!< Eigenvalue with max modulus.
+  double       lambda_max;   //!< Max eigenvalue.
+  double       lambda_min;   //!< Min eigenvalue.
   Cell1D_Uniform        X;   //!< Cell geometry.
   double               dt;   //!< Local time step.
   Levermore1D_cState dUdt;   //!< Solution residual.
@@ -128,9 +129,11 @@ public:
                                       //function for now.
     dFdU = dFdA*dUdA_inv;
     Lambda = dFdU.eigenvalues();
-    lambda_max = fabs(Lambda(0));
+    lambda_max = Lambda(0);
+    lambda_min = Lambda(0);
     for(int i=1; i<Levermore1D_Vector::get_length();++i) {
-      lambda_max = max(lambda_max,fabs(Lambda(i)));
+      lambda_max = max(lambda_max,Lambda(i));
+      lambda_max = min(lambda_min,Lambda(i));
     }
   }
 
@@ -161,6 +164,8 @@ inline Levermore1D_UniformMesh::Levermore1D_UniformMesh(const Levermore1D_Unifor
   dt = Soln.dt; dUdt = Soln.dUdt; dWdx = Soln.dWdx;
   phi = Soln.phi; Uo = Soln.Uo;
   Nghost = Soln.Nghost; ICl = Soln.ICl; ICu = Soln.ICu;
+  lambda_max = Soln.lambda_max;
+  lambda_min = Soln.lambda_min;
 }
 
 inline Levermore1D_UniformMesh::Levermore1D_UniformMesh(const Levermore1D_pState &W0,
