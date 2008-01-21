@@ -668,11 +668,11 @@ public:
   
   //! @name Binary arithmetic operators.
   //@{
-  void operator +(const Vector2D &V){}; // Translate grid with +V
-  void operator -(const Vector2D &V){}; // Translate grid with -V
-  void operator *(const double &a){};   // Scale grid
+  void operator +(const Vector2D &V); // Translate grid with +V
+  void operator -(const Vector2D &V); // Translate grid with -V
+  void operator *(const double &a);   // Scale grid
   void operator /(const double &a){ return *this * (1.0/a); }  // Scale grid with 1/a
-  void operator ^(const double &a){};   // Rotate grid
+  void operator ^(const double &a);   // Rotate grid
   //@}
 
   //! @name Friend binary arithmetic operators.
@@ -1158,6 +1158,7 @@ inline Vector2D Grid2D_Quad_Block_HO::nfaceW(const int ii, const int jj) const {
  *
  * \param iCell i-index of the cell
  * \param jCell j-index of the cell
+ * \todo Uncomment computation of the geometric coefficients!
  */
 inline void Grid2D_Quad_Block_HO::Update_Cell(const int & iCell, const int & jCell){
 
@@ -1166,6 +1167,101 @@ inline void Grid2D_Quad_Block_HO::Update_Cell(const int & iCell, const int & jCe
   Cell[iCell][jCell].Xc = centroid(iCell, jCell);
   Cell[iCell][jCell].A = area(iCell, jCell);
   //  ComputeGeometricCoefficients(iCell,jCell); //Geometric Moments
+}
+
+/*!
+ * Positive shift operator.
+ * \todo Uncomment translation of the splines!
+ */
+inline void Grid2D_Quad_Block_HO::operator +(const Vector2D &V) {
+
+  int i, j;
+  for ( j = JNl-Nghost ; j <= JNu+Nghost; ++j ) {
+    for ( i = INl-Nghost ; i <= INu+Nghost; ++i ) {
+      Node[i][j].X += V;
+    } /* endfor */
+  } /* endfor */
+
+  //   if (BndNorthSpline.np != 0 ) BndNorthSpline.translate(V);
+  //   if (BndSouthSpline.np != 0 ) BndSouthSpline.translate(V);
+  //   if (BndEastSpline.np != 0 ) BndEastSpline.translate(V);
+  //   if (BndWestSpline.np != 0 ) BndWestSpline.translate(V);
+
+  /* Require update of the whole mesh */
+  Schedule_Interior_Mesh_Update();
+  Schedule_Ghost_Cells_Update();
+}
+
+/*!
+ * Negative shift operator.
+ */
+inline void Grid2D_Quad_Block_HO::operator -(const Vector2D &V) {
+  return (*this + (-V));
+}
+
+/*!
+ * Scaling operators.
+ * \todo Uncomment scaling of the splines!
+ */
+inline void Grid2D_Quad_Block_HO::operator *(const double &a) {
+
+  int i, j;
+  for ( j = JNl-Nghost ; j <= JNu+Nghost; ++j ) {
+    for ( i = INl-Nghost ; i <= INu+Nghost; ++i ) {
+      Node[i][j].X = Node[i][j].X*a;
+    } /* endfor */
+  } /* endfor */
+
+  //   if (BndNorthSpline.np != 0 ) BndNorthSpline.scale(a);
+  //   if (BndSouthSpline.np != 0 ) BndSouthSpline.scale(a);
+  //   if (BndEastSpline.np != 0 ) BndEastSpline.scale(a);
+  //   if (BndWestSpline.np != 0 ) BndWestSpline.scale(a);
+
+  SminN *= a;
+  SmaxN *= a;
+  SminS *= a;
+  SmaxS *= a;
+  SminE *= a;
+  SmaxE *= a;
+  SminW *= a;
+  SmaxW *= a;
+
+  /* Require update of the whole mesh */
+  Schedule_Interior_Mesh_Update();
+  Schedule_Ghost_Cells_Update();
+}
+
+/*!
+ * Rotation operators.
+ * \todo Uncomment rotation of the splines!
+ */
+inline void Grid2D_Quad_Block_HO::operator ^(const double &a) {
+
+  int i, j;
+  double cos_angle, sin_angle;
+  Vector2D X;
+
+  cos_angle = cos(-a);
+  sin_angle = sin(-a);
+
+  for ( j = JNl-Nghost ; j <= JNu+Nghost; ++j ) {
+    for ( i = INl-Nghost ; i <= INu+Nghost; ++i ) {
+      X.x = ( Node[i][j].X.x*cos_angle +
+	      Node[i][j].X.y*sin_angle );
+      X.y = (- Node[i][j].X.x*sin_angle +
+	     Node[i][j].X.y*cos_angle );
+      Node[i][j].X = X;
+    } /* endfor */
+  } /* endfor */
+
+  //   if (BndNorthSpline.np != 0 ) BndNorthSpline.rotate(a);
+  //   if (BndSouthSpline.np != 0 ) BndSouthSpline.rotate(a);
+  //   if (BndEastSpline.np != 0 ) BndEastSpline.rotate(a);
+  //   if (BndWestSpline.np != 0 ) BndWestSpline.rotate(a);
+
+  /* Require update of the whole mesh */
+  Schedule_Interior_Mesh_Update();
+  Schedule_Ghost_Cells_Update();
 }
 
 

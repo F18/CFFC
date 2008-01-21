@@ -175,7 +175,7 @@ public:
 			      const int &digits) const;
   double ZeroOrderIntegration(const Vector2D &StartPoint,
 			      const Vector2D &EndPoint,
-			      const int &digits);
+			      const int &digits) const;
   //@}
 
   //! @name Normal and tangential vectors at a specified location on the spline
@@ -334,7 +334,7 @@ private:
 
 };
 
-/*
+/*!
  * Default constructor.
  */ 
 inline Spline2D_HO::Spline2D_HO(void)
@@ -407,7 +407,7 @@ inline void Spline2D_HO::allocate(const int &N, const int &TypeOfAllPoints) {
   }
 }
 
-/*
+/*!
  * Deallocate memory.
  */
 void Spline2D_HO::deallocate(void) {
@@ -423,14 +423,14 @@ void Spline2D_HO::deallocate(void) {
   }
 }
 
-/*
+/*!
  * Set the spline type.
  */
 inline void Spline2D_HO::settype(const int &spline_type) {
   type = spline_type;
 }
 
-/*
+/*!
  * Set boundary condition type. 
  */
 inline void Spline2D_HO::setBCtype(const int & bc_type) {
@@ -441,7 +441,7 @@ inline void Spline2D_HO::setBCtype(const int & bc_type) {
    }
 }
 
-/*
+/*!
  * Set point type.
  */
 inline void Spline2D_HO::settptype(const int &tp_type) {
@@ -452,7 +452,7 @@ inline void Spline2D_HO::settptype(const int &tp_type) {
   }
 }
 
-/*
+/*!
  * Determine path lengths, sp.
  */
 inline void Spline2D_HO::pathlength(void) {
@@ -464,7 +464,7 @@ inline void Spline2D_HO::pathlength(void) {
   }
 }
 
-/*
+/*!
  * Assignment operator
  */
 inline Spline2D_HO & Spline2D_HO::operator=(const Spline2D_HO &S){
@@ -489,7 +489,7 @@ inline Spline2D_HO & Spline2D_HO::operator=(const Spline2D_HO &S){
   return *this;
 }
 
-/*
+/*!
  * Determine the spline subinterval
  * containing the point (position) of interest.
  * The interval is defined by the indexes
@@ -519,7 +519,7 @@ void Spline2D_HO::find_subinterval(const double &s, int & il, int & ir) const{
 }
 
 
-/*
+/*!
  * Equal operator
  */
 inline bool operator== (const Spline2D_HO &left, const Spline2D_HO &right){
@@ -538,49 +538,49 @@ inline bool operator== (const Spline2D_HO &left, const Spline2D_HO &right){
   return answer;
 }
  
-/*
+/*!
  * Not equal operator
  */
 inline bool operator!= (const Spline2D_HO &left, const Spline2D_HO &right){
   return !(left == right);
 }
 
-/*
- * Shift operators.
+/*!
+ * Positive shift operators.
  */
 const Spline2D_HO Spline2D_HO::operator + (const Vector2D &V) const {
   return Spline2D_HO(*this).translate(V);
 }
 
-/*
- * Shift operator with negative vector
+/*!
+ * Negative shift operator.
  */
 const Spline2D_HO Spline2D_HO::operator - (const Vector2D &V) const{
   return Spline2D_HO(*this).translate(-V);
 }
 
-/*
+/*!
  * Scaling operator.
  */
 const Spline2D_HO Spline2D_HO::operator * (const double &a) const{
   return Spline2D_HO(*this).scale(a);
 }
 
-/*
+/*!
  * Scaling with invers number
  */
 const Spline2D_HO Spline2D_HO::operator / (const double &a) const{
   return Spline2D_HO(*this).scale(1.0/a);
 }
 
-/*
+/*!
  * Rotation operator.
  */
 const Spline2D_HO Spline2D_HO::operator ^ (const double &a) const{
   return Spline2D_HO(*this).rotate(a);
 }
 
-/*
+/*!
  * This wrapper gets the unit normal 
  * vector at a given location.
  *
@@ -594,7 +594,7 @@ inline const Vector2D Spline2D_HO::nSpline(const Vector2D &Point) const {
   return nSpline(Point,dxds,dyds);
 }
 
-/*
+/*!
  * Get the unit normal vector at a given 
  * location based on the value of the tangent.
  */
@@ -610,7 +610,7 @@ inline const Vector2D Spline2D_HO::nSpline(const Vector2D &Point,
   return Vector2D(Tangent.y,-Tangent.x);
 }
 
-/*
+/*!
  * This wrapper gets the unit tangent vector
  *  at a given location Point.              
  */
@@ -620,7 +620,7 @@ inline const Vector2D Spline2D_HO::tSpline(const Vector2D &Point, const PolynomO
   return tSpline(Point,Order,dxds,dyds);
 }
 
-/*
+/*!
  * Determine the unit normal vector to the line segment
  * specified by the end points. The order in which the 
  * end points are passed is important, because it 
@@ -628,7 +628,7 @@ inline const Vector2D Spline2D_HO::tSpline(const Vector2D &Point, const PolynomO
  *
  * \param StartPoint the first segment end point
  * \param EndPoint the second segment end point
-*/
+ */
 inline const Vector2D Spline2D_HO::NormalVector(const Vector2D &StartPoint,
 						const Vector2D &EndPoint) const {
 
@@ -640,6 +640,59 @@ inline const Vector2D Spline2D_HO::NormalVector(const Vector2D &StartPoint,
   } else {
     return Vector2D(0.0,0.0);
   }
+}
+
+/*!
+ * Wrapper for PolynomOrderIntegration() when StartPoint and EndPoint
+ * are specified by the corresponding path lengths.
+ */
+inline double Spline2D_HO::PolynomOrderIntegration(const double &SplinePathStart, const double &SplinePathEnd,
+						   const Vector2D &Centroid, const int &digits,
+						   const int &OrderX, const int &OrderY) const {
+  return PolynomOrderIntegration(Spline(SplinePathStart), Spline(SplinePathEnd),
+				 Centroid, digits,
+				 OrderX,OrderY);
+}
+
+/*!
+ * Wrapper for PolynomOrderIntegration() when StartPoint and EndPoint
+ * are given as 2D nodes.
+ */
+inline double Spline2D_HO::PolynomOrderIntegration(const Node2D_HO &StartPoint, const Node2D_HO &EndPoint,
+						   const Vector2D &Centroid, const int &digits,
+						   const int &OrderX, const int &OrderY) const {
+  return PolynomOrderIntegration(StartPoint.X,EndPoint.X,Centroid,digits,OrderX,OrderY);
+}
+
+/*
+ * Compute the value of the contour integral Int(x*dy) between  
+ * the points "StartPoint" and "EndPoint" with an accuracy given by the   
+ * number of required exact "digits".                                     
+ */
+inline double Spline2D_HO::ZeroOrderIntegration(const Vector2D &StartPoint,
+						const Vector2D &EndPoint,
+						const int &digits) const {
+  return PolynomOrderIntegration(StartPoint, EndPoint, Vector2D(0.0,0.0), digits, 0, 0);
+}
+
+/*
+ * Wrapper for ZeroOrderIntegration() when StartPoint and EndPoint are
+ * given as 2D nodes.
+ */
+inline double Spline2D_HO::ZeroOrderIntegration(const Node2D_HO &StartPoint,
+						const Node2D_HO &EndPoint, 
+						const int &digits) const {
+  return ZeroOrderIntegration(StartPoint.X,EndPoint.X,digits);
+}
+
+/*
+ * Wrapper for ZeroOrderIntegration() when StartPoint and EndPoint are
+ * specified by the corresponding path lengths.
+ */
+inline double Spline2D_HO::ZeroOrderIntegration(const double &SplinePathStart,
+						const double &SplinePathEnd,
+						const int &digits) const {
+  return ZeroOrderIntegration( Spline(SplinePathStart), Spline(SplinePathEnd), digits);
 }
 
 

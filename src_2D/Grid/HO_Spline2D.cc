@@ -2075,3 +2075,121 @@ void Spline2D_HO::Create_Spline_Rectangle(const Vector2D &Origin,
 
 }
 
+#if 0
+/*!
+ * Computes the contour integral of the polynomial function 
+ *  $ p(x,y) = \oint (x-xc)^(OrderX+1) * (y-yc)^(OrderY) dy  along the spline                 
+ * between the points "StartPoint" and "EndPoint" with an accuracy given     
+ * by the number of required exact "digits".                                 
+ * Algorithm: The path integration (the spline) is divided into segments     
+ * which contain no other spline control points. The integral is computed    
+ * as a sum of the individual integrals on each segments.                    
+ * Obs. 1. This division is neccessary for the computation of curve integrals
+ *         along splines with sharp points.                                  
+ */
+double Spline2D::PolynomOrderIntegration(const Vector2D &StartPoint, const Vector2D &EndPoint, const Vector2D &Centroid,
+					 const int digits, const int OrderX, const int OrderY){
+
+  double S_StartPoint, S_EndPoint;
+  int i;
+  vector<int> IndexCP;
+  double Sol(0.0);
+
+  // Get the pathlength for StartPoint and EndPoint
+  S_StartPoint = getS(StartPoint, *this);
+  S_EndPoint   = getS(EndPoint, *this); 
+
+  // Determine whether there are spline control points between StartPoint and EndPoint
+  // and whether they are far enough apart numerically in order to generate a sub-interval
+  if (S_StartPoint < S_EndPoint){
+    for(i=0; i<=np-1; ++i){
+      if( ((sp[i] - S_StartPoint)*(sp[i] - S_EndPoint) < 0.0 ) &&
+	  (fabs(S_StartPoint - sp[i])/(1.0 + fabs(sp[i])) >= 1.0e-14) &&
+	  (fabs(  S_EndPoint - sp[i])/(1.0 + fabs(sp[i])) >= 1.0e-14) ){
+	IndexCP.push_back(i);
+      }
+    }
+  } else {
+    for(i=np-1; i>=0; --i){
+      if( (sp[i] - S_StartPoint)*(sp[i] - S_EndPoint) < 0.0 ){
+	IndexCP.push_back(i);
+      }
+    }
+  }
+
+  // Divide the integral along the path into smaller integrals
+  switch(IndexCP.size()){
+  case 0: 			// no other control points in between
+    return BasicOrderIntegration(StartPoint,EndPoint,Centroid,digits,OrderX,OrderY);
+
+  case 1:			// one control point in between
+    return ( BasicOrderIntegration(StartPoint,Xp[IndexCP[0]],Centroid,digits,OrderX,OrderY) + 
+	     BasicOrderIntegration(Xp[IndexCP[0]],EndPoint,Centroid,digits,OrderX,OrderY) ) ;
+
+  case 2:			// two control points in between
+    return ( BasicOrderIntegration(StartPoint,Xp[IndexCP[0]],Centroid,digits,OrderX,OrderY) + 
+	     BasicOrderIntegration(Xp[IndexCP[0]],Xp[IndexCP[1]],Centroid,digits,OrderX,OrderY)   +
+	     BasicOrderIntegration(Xp[IndexCP[1]],EndPoint,Centroid,digits,OrderX,OrderY) ) ;
+
+  default:			// more than two control points in between
+    Sol = ( BasicOrderIntegration(StartPoint,Xp[IndexCP[0]],Centroid,digits,OrderX,OrderY) + 
+	    BasicOrderIntegration(Xp[IndexCP[IndexCP.size()-1]],EndPoint,Centroid,digits,OrderX,OrderY) );
+
+    for (i=0; i<(int)IndexCP.size()-1; ++i){
+      Sol += BasicOrderIntegration(Xp[IndexCP[i]],Xp[IndexCP[i+1]],Centroid,digits,OrderX,OrderY);
+    }
+    return Sol;
+  } // endswitch
+
+}
+
+/* Integrate between two points with the required accuracy
+   Obs. There is no control point between StartPoint and EndPoint. */
+double Spline2D::BasicOrderIntegration(const Vector2D &StartPoint, const Vector2D &EndPoint, const Vector2D &Centroid,
+				       const int digits, const int OrderX, const int OrderY){
+
+  long double TOL(0.5*pow(10.0,-digits)); // accuracy: --> based on precision 
+                                          // i.e exact number of digits 
+  const double EPS_MACHINE(numeric_limits<double>::epsilon());
+
+  double S1(getS(StartPoint,*this)), S2(getS(EndPoint,*this));
+  int Divisions(2),i;
+  const int MaxDivisions = 1000;
+
+  double IntLessAccurate, IntMoreAccurate, RelError(10.0), Length(S2 - S1), DeltaS;
+  Vector2D InterP1, InterP2;	// intermediate points
+
+  if (fabs(Length) <= EPS_MACHINE){
+    return 0.0;
+  }
+
+  // get a first estimation of the integral using StartPoint and EndPoint
+  IntLessAccurate = PolynomLineIntegration(StartPoint.x, StartPoint.y, EndPoint.x, EndPoint.y,
+					   Centroid.x ,Centroid.y,
+					   OrderX, OrderY);
+
+  while( (RelError > TOL) && (Divisions<MaxDivisions) ){
+    Divisions *= 2;		// double the resolution
+    DeltaS = Length/Divisions;
+
+    // get a more accurate estimation of the integral
+    IntMoreAccurate = 0.0;
+    InterP1 = StartPoint;	// initialize the start of the first interval
+    for (i=1; i<=Divisions; ++i){
+      InterP2 = Spline(S1 + i*DeltaS,*this);
+      IntMoreAccurate += PolynomLineIntegration(InterP1.x,InterP1.y,InterP2.x,InterP2.y,
+						Centroid.x ,Centroid.y,
+						OrderX, OrderY);
+
+      InterP1 = InterP2;	// set the new value for InterP1
+    }
+
+    // compute the relative error
+    RelError = fabs(IntMoreAccurate - IntLessAccurate)/(1.0 + fabs(IntMoreAccurate));
+
+    IntLessAccurate = IntMoreAccurate;
+  }
+
+  return IntMoreAccurate;
+}
+#endif
