@@ -23,6 +23,7 @@ using namespace std;
 #include "../Utilities/EpsilonTol.h" // Include error tolerances header file
 #include "../MPI/MPI.h"             // Include MPI header file
 #include "HO_Node2D.h"		    // Include high-order 2D node header file
+#include "../Utilities/Utilities.h" // Include utilities header file
 
 
 /* Define the 2D spline types. */
@@ -191,7 +192,7 @@ public:
 			 double & dxds, double & dyds) const;
   //@}
 
-  //! @name Spline manipulation functions.
+  //! @name Get spline information functions.
   //@{
   //! Determine the position vector corresponding to a specified path length s along the defined spline.
   const Vector2D Spline(const double &s) const;
@@ -202,6 +203,16 @@ public:
   //! Get path length for a given position vector
   double getS(const Vector2D &X) const;
   friend double getS(const Vector2D &X, const Spline2D_HO &S){ return S.getS(X); }
+
+  LinkedList<Vector2D> getX(const double &y) const;
+  LinkedList<Vector2D> getY(const double &x) const;
+
+  //! Get the BC type at the given location
+  int getBCtype(const Vector2D &X) const;
+
+  Vector2D getminX(const Vector2D &X) const;
+  Vector2D getminY(const Vector2D &X) const;
+  Vector2D getnormal(const Vector2D &X) const;
   //@}
 
   //! @name Spline translation, rotation and scaling.
@@ -675,19 +686,6 @@ extern void Create_Spline_Rectangle(Spline2D_HO &Rectangle_Spline,
 				    const double &Length,
 				    const double &Width);
 
-extern LinkedList<Vector2D> getX(const double &y, const Spline2D_HO &S);
-
-extern LinkedList<Vector2D> getY(const double &x, const Spline2D_HO &S);
-
-
-
-extern int getBCtype(const Vector2D &X, const Spline2D_HO &S);
-
-extern Vector2D getminX(const Vector2D &X, const Spline2D_HO &S);
-
-extern Vector2D getminY(const Vector2D &X, const Spline2D_HO &S);
-
-extern Vector2D getnormal(const Vector2D &X, const Spline2D_HO &S);
 
 #endif
 

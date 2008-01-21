@@ -760,6 +760,359 @@ double Spline2D_HO::getS(const Vector2D &X) const {
   
 }
 
+/*
+ * This routine returns the splined value of Y given X.      
+ *                                                           
+ * Returns a VECTOR2D LINKED LIST containing all the vectors 
+ * on the spline with the desired X value.                   
+ */
+LinkedList<Vector2D> Spline2D_HO::getY(const double &x) const {
+
+  int i, iNext, found, icount;
+  double s1, s2, s3, s3_old, x1, x2, x3;
+  LinkedList<Vector2D> LL;
+
+  iNext=0;
+
+  while (0<1) {
+		  
+    /* Do incremental search to find interval. */
+
+    found=0;
+    for (i=iNext; i<=np-2; ++i) {
+      x1=Xp[i].x;
+      x2=Xp[i+1].x;
+      s1=sp[i];
+      s2=sp[i+1];
+      if ((x>=x1 && x<=x2) || (x<=x1 && x>=x2)) {
+	iNext=i+1;
+	found=1;
+	break;
+      } /* endif */
+    } /* endfor */
+    
+    if (found==0) break;
+
+    /* Use method of false position to find 
+       value of 's' that will give 'x'. */
+
+    s3_old = s1;
+    s3 = s2;
+    icount = 0;
+    while ( fabs(s3-s3_old) > TOLER*TOLER*s3) {
+      s3_old = s3;
+      s3 = (s1*(x2-x) - s2*(x1-x))/(x2-x1);
+      x3=Spline(s3).x;
+     
+      if ((x1-x)*(x3-x) < ZERO) {
+	x2=x3;
+	s2=s3;
+      } else {
+	x1=x3;
+	s1=s3;
+      } /* endif */
+      icount += 1;
+      if (icount > 1000) break;
+    } /* endwhile */
+    
+      /* Check for duplicate. */
+
+    if (LL.np==0) {
+      LL.add( Vector2D(x,Spline(s3).y) );
+    } else if (LL[LL.np-1].y!=Spline(s3).y) {
+      LL.add( Vector2D(x,Spline(s3).y) );
+    } /* endif */ 
+
+  } /* endwhile */
+  
+  return(LL);
+}
+
+/*
+ * This routine returns the splined value of X given Y.      
+ *                                                           
+ * Returns a VECTOR2D LINKED LIST containing all the vectors 
+ * on the spline with the desired Y value.                   
+ *                                                           
+ */
+LinkedList<Vector2D> Spline2D_HO::getX(const double &y) const {
+
+  int i, iNext, found, icount;
+  double s1, s2, s3, s3_old, y1, y2, y3;
+  LinkedList<Vector2D> LL;
+  
+  iNext=0;
+  
+  while (0<1) {
+    
+    /* Do incremental search to find interval. */
+    
+    found=0;
+    for (i=iNext; i<=np-2; ++i) {
+      y1=Xp[i].y;
+      y2=Xp[i+1].y;
+      s1=sp[i];
+      s2=sp[i+1];
+      if ((y>=y1 && y<=y2) || (y<=y1 && y>=y2)) {
+	iNext=i+1;
+	found=1;
+	break;
+      } /* endif */
+    } /* endfor */
+    
+    if (found==0) break;
+    
+    /* Use method of false position to find 
+       value of 's' that will give 'y'. */
+    
+    s3_old = s1;
+    s3 = s2;
+    icount = 0;
+    while ( fabs(s3-s3_old) > TOLER*TOLER*s3 ) {
+      s3_old = s3;
+      s3 = (s1*(y2-y) - s2*(y1-y))/(y2-y1);
+      y3=Spline(s3).y;
+      
+      if ((y1-y)*(y3-y) < ZERO) {
+	y2=y3;
+	s2=s3;
+      } else {
+	y1=y3;
+	s1=s3;
+      } /* endif */
+      icount += 1;
+      if (icount > 1000) break;
+    }/* endwhile */
+    
+    /* Check for duplicates. */
+    
+    if (LL.np==0) {
+      LL.add( Vector2D(Spline(s3).x, y) ); 
+    } else if(LL[LL.np-1].x!=Spline(s3).x) {
+      LL.add( Vector2D(Spline(s3).x, y) );
+    } /* endif */
+    
+  } /* endwhile */
+  
+  return(LL);
+}
+
+
+/*
+ * This routine returns the boundary condition of vector 
+ * location X on spline S.                               
+ */
+int Spline2D_HO::getBCtype(const Vector2D &X) const {
+
+  int bctype, np, subinterval_found;
+  Vector2D X1, X2;
+
+  subinterval_found = 0;
+  np = 0;
+  while (!subinterval_found && np < np-1) {
+    X1 = Xp[np];
+    X2 = Xp[np+1];
+    if (((X.x-X1.x)*(X.x-X2.x) <= ZERO) && ((X.y-X1.y)*(X.y-X2.y) <= ZERO)) {
+      subinterval_found = 1;
+      //       if (abs(X-X1) < abs(X-X2)) bctype = bc[np];
+      //       else bctype = bc[np+1];
+      bctype = max(bc[np],bc[np+1]);
+    } else {
+      np++;
+    }
+  }
+  if (!subinterval_found) {
+    subinterval_found = 0;
+    np = 0;
+    while (!subinterval_found && np < np-2) {
+      X1 = Xp[np];
+      X2 = Xp[np+2];
+      if (((X.x-X1.x)*(X.x-X2.x) <= ZERO) && ((X.y-X1.y)*(X.y-X2.y) <= ZERO)) {
+	subinterval_found = 1;
+	bctype = bc[np+1];
+      } else {
+	np++;
+      }
+    }
+  }
+  if (!subinterval_found) {
+    np = 0;
+    for (int n = 0; n < np; n++)
+      if (abs(Xp[n]-X) < abs(Xp[np]-X)) np = n;
+    bctype = bc[np];
+  }
+
+  // Return the boundary condition type.
+  return bctype;
+  
+}
+
+/*
+ * This routine returns the nearest splined value of y given x. 
+ */
+Vector2D Spline2D_HO::getminY(const Vector2D &X) const {
+
+  int iNext, found, icount;
+  double s1, s2, s3, s3_old, x1, x2, x3;
+  Vector2D Xpoint;
+
+  iNext = 0;
+  Xpoint = Vector2D(MILLION,MILLION);
+
+  while (0 < 1) {
+		  
+    // Do incremental search to find interval.
+    found = 0;
+    for (int i = iNext; i < np-1; i++) {
+      x1 = Xp[i].x;
+      x2 = Xp[i+1].x;
+      s1 = sp[i];
+      s2 = sp[i+1];
+      if ((X.x >= x1 && X.x <= x2) || (X.x <= x1 && X.x >= x2)) {
+	iNext = i+1;
+	found = 1;
+	break;
+      }
+    }
+
+    if (found==0) break;
+
+    // Use method of false position to find value of 's' that will give 'x'.
+    s3_old = s1;
+    s3 = s2;
+    icount = 0;
+    while (fabs(s3-s3_old) > TOLER*TOLER*s3) {
+      s3_old = s3;
+      s3 = (s1*(x2-X.x) - s2*(x1-X.x))/(x2-x1+NANO);
+      x3 = Spline(s3).x;
+      if ((x1-X.x)*(x3-X.x) < ZERO) {
+	x2 = x3;
+	s2 = s3;
+      } else {
+	x1 = x3;
+	s1 = s3;
+      }
+      icount++;
+      if (icount > 1000) break;
+    }
+
+    // Choose nearest point.
+    if (abs(X-Vector2D(X.x,Spline(s3).y)) < abs(X-Xpoint)) 
+      Xpoint = Vector2D(X.x,Spline(s3).y);
+
+  }
+
+  // Return the nearest spline point.
+  return Xpoint;
+}
+
+/*
+ * This routine returns the nearest splined value of x given y.
+ */
+Vector2D Spline2D_HO::getminX(const Vector2D &X) const {
+
+  int iNext, found, icount;
+  double s1, s2, s3, s3_old, y1, y2, y3;
+  Vector2D Xpoint;
+
+  iNext = 0;
+  Xpoint = Vector2D(MILLION,MILLION);
+
+  while (0 < 1) {
+		  
+    // Do incremental search to find interval.
+    found = 0;
+    for (int i = iNext; i < np-1; i++) {
+      y1 = Xp[i].y;
+      y2 = Xp[i+1].y;
+      s1 = sp[i];
+      s2 = sp[i+1];
+      if ((X.y >= y1 && X.y <= y2) || (X.y <= y1 && X.y >= y2)) {
+	iNext = i+1;
+	found = 1;
+	break;
+      }
+    }
+    
+    if (found == 0) break;
+
+    // Use method of false position to find value of 's' that will give 'y'.
+    s3_old = s1;
+    s3 = s2;
+    icount = 0;
+    while (fabs(s3-s3_old) > TOLER*TOLER*s3) {
+      s3_old = s3;
+      s3 = (s1*(y2-X.y) - s2*(y1-X.y))/(y2-y1+NANO);
+      y3 = Spline(s3).y;
+      if ((y1-X.y)*(y3-X.y) < ZERO) {
+	y2 = y3;
+	s2 = s3;
+      } else {
+	y1 = y3;
+	s1 = s3;
+      }
+      icount++;
+      if (icount > 1000) break;
+    }
+
+    // Choose nearest point.
+    if (abs(X-Vector2D(Spline(s3).x,X.y)) < abs(X-Xpoint)) 
+      Xpoint = Vector2D(Spline(s3).x,X.y);
+
+  }
+
+  // Return the nearest spline point.
+  return Xpoint;
+}
+
+/*
+ * Get the normal at the specified location
+ */
+Vector2D Spline2D_HO::getnormal(const Vector2D &X) const {
+
+  int np, subinterval_found;
+  Vector2D X1, X2;
+
+  subinterval_found = 0;
+  np = 0;
+  while (!subinterval_found && np < np-1) {
+    X1 = Xp[np];
+    X2 = Xp[np+1];
+    if ((X.x-X1.x)*(X.x-X2.x) <= ZERO) {
+      subinterval_found = 1;
+    } else {
+      np++;
+    }
+  }
+  if (!subinterval_found) {
+    subinterval_found = 0;
+    np = 0;
+    while (!subinterval_found && np < np-2) {
+      X1 = Xp[np];
+      X2 = Xp[np+2];
+      if ((X.x-X1.x)*(X.x-X2.x) <= ZERO) {
+	subinterval_found = 1;
+      } else {
+	np++;
+      }
+    }
+  }
+  if (!subinterval_found) {
+    np = 0;
+    for (int n = 0; n < np; n++) {
+      if (abs(Xp[n]-X) < abs(Xp[np]-X)) {
+	np = n;
+	if (np == 0) { X1 = Xp[0]; X2 = Xp[1]; }
+	else if (np == np) { X1 = Xp[np-2]; X2 = Xp[np-1]; }
+	else { X1 = Xp[np-1]; X2 = Xp[np+1]; }
+      }
+    }
+  }
+
+  // Return the unit normal.
+  return Vector2D((X2.y - X1.y),-(X2.x - X1.x))/abs(X2 - X1);
+  
+}
 
 
 
@@ -1988,375 +2341,5 @@ void Create_Spline_Rectangle(Spline2D_HO &Rectangle_Spline,
 
 }
 
-/****************************************************************
- * Routine: getY                                                *
- *                                                              *
- *   This routine returns the splined value of Y given X.       *
- *                                                              *
- *   Returns a VECTOR2D LINKED LIST containing all the vectors  *
- *   on the spline with the desired X value.                    *
- *                                                              *
- ****************************************************************/
-LinkedList<Vector2D> getY(const double &x, const Spline2D_HO &S) {
-    int i, iNext, found, icount;
-    double s1, s2, s3, s3_old, x1, x2, x3;
-    LinkedList<Vector2D> LL;
-
-    iNext=0;
-
-    while (0<1) {
-		  
-      /* Do incremental search to find interval. */
-
-      found=0;
-      for (i=iNext; i<=S.np-2; ++i) {
-        x1=S.Xp[i].x;
-        x2=S.Xp[i+1].x;
-        s1=S.sp[i];
-        s2=S.sp[i+1];
-        if ((x>=x1 && x<=x2) || (x<=x1 && x>=x2)) {
-	  iNext=i+1;
-	  found=1;
-  	  break;
-        } /* endif */
-      } /* endfor */
-    
-      if (found==0) break;
-
-      /* Use method of false position to find 
-         value of 's' that will give 'x'. */
-
-      s3_old = s1;
-      s3 = s2;
-      icount = 0;
-      while ( fabs(s3-s3_old) > TOLER*TOLER*s3) {
-        s3_old = s3;
-        s3 = (s1*(x2-x) - s2*(x1-x))/(x2-x1);
-        x3=Spline(s3,S).x;
-     
-        if ((x1-x)*(x3-x) < ZERO) {
-	  x2=x3;
-  	  s2=s3;
-        } else {
-	  x1=x3;
-	  s1=s3;
-        } /* endif */
-        icount += 1;
-        if (icount > 1000) break;
-      } /* endwhile */
-    
-      /* Check for duplicate. */
-
-      if (LL.np==0) {
-        LL.add( Vector2D(x,Spline(s3,S).y) );
-      } else if (LL[LL.np-1].y!=Spline(s3,S).y) {
-        LL.add( Vector2D(x,Spline(s3,S).y) );
-      } /* endif */ 
-
-    } /* endwhile */
-  
-    return(LL);
-  
-}
-
-/****************************************************************
- * Routine: getX                                                *
- *                                                              *
- *   This routine returns the splined value of X given Y.       *
- *                                                              *
- *   Returns a VECTOR2D LINKED LIST containing all the vectors  *
- *   on the spline with the desired Y value.                    *
- *                                                              *
- ****************************************************************/
-LinkedList<Vector2D> getX(const double &y, const Spline2D_HO &S) {
-    int i, iNext, found, icount;
-    double s1, s2, s3, s3_old, y1, y2, y3;
-    LinkedList<Vector2D> LL;
-
-    iNext=0;
-
-    while (0<1) {
-		  
-      /* Do incremental search to find interval. */
-
-      found=0;
-      for (i=iNext; i<=S.np-2; ++i) {
-        y1=S.Xp[i].y;
-        y2=S.Xp[i+1].y;
-        s1=S.sp[i];
-        s2=S.sp[i+1];
-        if ((y>=y1 && y<=y2) || (y<=y1 && y>=y2)) {
-	  iNext=i+1;
-	  found=1;
-	  break;
-        } /* endif */
-      } /* endfor */
-    
-      if (found==0) break;
-
-      /* Use method of false position to find 
-         value of 's' that will give 'y'. */
-
-      s3_old = s1;
-      s3 = s2;
-      icount = 0;
-      while ( fabs(s3-s3_old) > TOLER*TOLER*s3 ) {
-        s3_old = s3;
-        s3 = (s1*(y2-y) - s2*(y1-y))/(y2-y1);
-        y3=Spline(s3,S).y;
-     
-        if ((y1-y)*(y3-y) < ZERO) {
-	  y2=y3;
-	  s2=s3;
-        } else {
-	  y1=y3;
-	  s1=s3;
-        } /* endif */
-        icount += 1;
-        if (icount > 1000) break;
-      } /* endwhile */
-
-      /* Check for duplicates. */
-
-      if (LL.np==0) {
-        LL.add( Vector2D(Spline(s3,S).x, y) ); 
-      } else if(LL[LL.np-1].x!=Spline(s3,S).x) {
-        LL.add( Vector2D(Spline(s3,S).x, y) );
-      } /* endif */
-
-    } /* endwhile */
-
-    return(LL);
-  
-}
-
-
-/****************************************************************
- * Routine: getBCtype                                           *
- *                                                              *
- *   This routine returns the boundary condition of vector      *
- *   location X on spline S.                                    *
- *                                                              *
- ****************************************************************/
-int getBCtype(const Vector2D &X, const Spline2D_HO &S) {
-
-  int bctype, np, subinterval_found;
-  Vector2D X1, X2;
-
-  subinterval_found = 0;
-  np = 0;
-  while (!subinterval_found && np < S.np-1) {
-    X1 = S.Xp[np];
-    X2 = S.Xp[np+1];
-    if (((X.x-X1.x)*(X.x-X2.x) <= ZERO) && ((X.y-X1.y)*(X.y-X2.y) <= ZERO)) {
-      subinterval_found = 1;
-//       if (abs(X-X1) < abs(X-X2)) bctype = S.bc[np];
-//       else bctype = S.bc[np+1];
-      bctype = max(S.bc[np],S.bc[np+1]);
-    } else {
-      np++;
-    }
-  }
-  if (!subinterval_found) {
-    subinterval_found = 0;
-    np = 0;
-    while (!subinterval_found && np < S.np-2) {
-      X1 = S.Xp[np];
-      X2 = S.Xp[np+2];
-      if (((X.x-X1.x)*(X.x-X2.x) <= ZERO) && ((X.y-X1.y)*(X.y-X2.y) <= ZERO)) {
-	subinterval_found = 1;
-	bctype = S.bc[np+1];
-      } else {
-	np++;
-      }
-    }
-  }
-  if (!subinterval_found) {
-    np = 0;
-    for (int n = 0; n < S.np; n++)
-      if (abs(S.Xp[n]-X) < abs(S.Xp[np]-X)) np = n;
-    bctype = S.bc[np];
-  }
-
-  // Return the boundary condition type.
-  return bctype;
-  
-}
-
-/**********************************************************************
- * Routine: getminY                                                   *
- *                                                                    *
- * This routine returns the nearest splined value of y given x.       *
- *                                                                    *
- **********************************************************************/
-Vector2D getminY(const Vector2D &X, const Spline2D_HO &S) {
-
-  int iNext, found, icount;
-  double s1, s2, s3, s3_old, x1, x2, x3;
-  Vector2D Xp;
-
-  iNext = 0;
-  Xp = Vector2D(MILLION,MILLION);
-
-  while (0 < 1) {
-		  
-    // Do incremental search to find interval.
-    found = 0;
-    for (int i = iNext; i < S.np-1; i++) {
-      x1 = S.Xp[i].x;
-      x2 = S.Xp[i+1].x;
-      s1 = S.sp[i];
-      s2 = S.sp[i+1];
-      if ((X.x >= x1 && X.x <= x2) || (X.x <= x1 && X.x >= x2)) {
-	iNext = i+1;
-	found = 1;
-	break;
-      }
-    }
-
-    if (found==0) break;
-
-    // Use method of false position to find value of 's' that will give 'x'.
-    s3_old = s1;
-    s3 = s2;
-    icount = 0;
-    while (fabs(s3-s3_old) > TOLER*TOLER*s3) {
-      s3_old = s3;
-      s3 = (s1*(x2-X.x) - s2*(x1-X.x))/(x2-x1+NANO);
-      x3 = Spline(s3,S).x;
-      if ((x1-X.x)*(x3-X.x) < ZERO) {
-	x2 = x3;
-	s2 = s3;
-      } else {
-	x1 = x3;
-	s1 = s3;
-      }
-      icount++;
-      if (icount > 1000) break;
-    }
-
-    // Choose nearest point.
-    if (abs(X-Vector2D(X.x,Spline(s3,S).y)) < abs(X-Xp)) 
-      Xp = Vector2D(X.x,Spline(s3,S).y);
-
-  }
-
-  // Return the nearest spline point.
-  return Xp;
-  
-}
-
-/**********************************************************************
- * Routine: getminX                                                   *
- *                                                                    *
- * This routine returns the nearest splined value of x given y.       *
- *                                                                    *
-v **********************************************************************/
-Vector2D getminX(const Vector2D &X, const Spline2D_HO &S) {
-
-  int iNext, found, icount;
-  double s1, s2, s3, s3_old, y1, y2, y3;
-  Vector2D Xp;
-
-  iNext = 0;
-  Xp = Vector2D(MILLION,MILLION);
-
-  while (0 < 1) {
-		  
-    // Do incremental search to find interval.
-    found = 0;
-    for (int i = iNext; i < S.np-1; i++) {
-      y1 = S.Xp[i].y;
-      y2 = S.Xp[i+1].y;
-      s1 = S.sp[i];
-      s2 = S.sp[i+1];
-      if ((X.y >= y1 && X.y <= y2) || (X.y <= y1 && X.y >= y2)) {
-	iNext = i+1;
-	found = 1;
-	break;
-      }
-    }
-    
-    if (found == 0) break;
-
-    // Use method of false position to find value of 's' that will give 'y'.
-    s3_old = s1;
-    s3 = s2;
-    icount = 0;
-    while (fabs(s3-s3_old) > TOLER*TOLER*s3) {
-      s3_old = s3;
-      s3 = (s1*(y2-X.y) - s2*(y1-X.y))/(y2-y1+NANO);
-      y3 = Spline(s3,S).y;
-      if ((y1-X.y)*(y3-X.y) < ZERO) {
-	y2 = y3;
-	s2 = s3;
-      } else {
-	y1 = y3;
-	s1 = s3;
-      }
-      icount++;
-      if (icount > 1000) break;
-    }
-
-    // Choose nearest point.
-    if (abs(X-Vector2D(Spline(s3,S).x,X.y)) < abs(X-Xp)) 
-      Xp = Vector2D(Spline(s3,S).x,X.y);
-
-  }
-
-  // Return the nearest spline point.
-  return Xp;
-  
-}
-
-/****************************************************************
- * Routine: getnormal                                           *
- *                                                              *
- ****************************************************************/
-Vector2D getnormal(const Vector2D &X, const Spline2D_HO &S) {
-
-  int np, subinterval_found;
-  Vector2D X1, X2;
-
-  subinterval_found = 0;
-  np = 0;
-  while (!subinterval_found && np < S.np-1) {
-    X1 = S.Xp[np];
-    X2 = S.Xp[np+1];
-    if ((X.x-X1.x)*(X.x-X2.x) <= ZERO) {
-      subinterval_found = 1;
-    } else {
-      np++;
-    }
-  }
-  if (!subinterval_found) {
-    subinterval_found = 0;
-    np = 0;
-    while (!subinterval_found && np < S.np-2) {
-      X1 = S.Xp[np];
-      X2 = S.Xp[np+2];
-      if ((X.x-X1.x)*(X.x-X2.x) <= ZERO) {
-	subinterval_found = 1;
-      } else {
-	np++;
-      }
-    }
-  }
-  if (!subinterval_found) {
-    np = 0;
-    for (int n = 0; n < S.np; n++) {
-      if (abs(S.Xp[n]-X) < abs(S.Xp[np]-X)) {
-	np = n;
-	if (np == 0) { X1 = S.Xp[0]; X2 = S.Xp[1]; }
-	else if (np == S.np) { X1 = S.Xp[S.np-2]; X2 = S.Xp[np-1]; }
-	else { X1 = S.Xp[np-1]; X2 = S.Xp[np+1]; }
-      }
-    }
-  }
-
-  // Return the unit normal.
-  return Vector2D((X2.y - X1.y),-(X2.x - X1.x))/abs(X2 - X1);
-  
-}
 
 #endif
