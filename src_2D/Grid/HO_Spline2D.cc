@@ -266,34 +266,6 @@ const Vector2D Spline2D_HO::Spline(const double &s) const {
   return Vector2D(0);
 }
 
-/*
- * Determine the spline subinterval
- * containing the point (position) of interest.
- * The interval is defined by the indexes
- * (il,ir) ==> (left_index, right_index)
- *
- * \param [in] s the spline path length of the point of interest
- * \param [out] il the index of the left interval node
- * \param [out] ir the index of the right  interval node
- */
-void Spline2D_HO::find_subinterval(const double &s, int & il, int & ir) const{
-  int subinterval_found(0), i(0);
-
-  if (s < sp[0] || s > sp[np-1]){
-    il = ir = 0;
-    return;
-  }
-
-  while (subinterval_found == 0 && i < np-1) {
-    if ((s-sp[i])*(s-sp[i+1]) <= ZERO) {
-      subinterval_found = 1;
-    } else {
-      ++i;
-    } /* endif */
-  } /* endwhile */
-  il = i;
-  ir = i+1;
-}
 
 /*
  * Get the unit tangential vector at the point of interest,
@@ -1115,9 +1087,239 @@ Vector2D Spline2D_HO::getnormal(const Vector2D &X) const {
 }
 
 
+/*
+ * This routine returns the boundary condition type 
+ * given the path length s along the spline and the 
+ * the set of np boundary types (bc) that have been 
+ * defined for each spline point.                   
+ */
+int Spline2D_HO::BCtype(const double &s) const {
+
+  int i, il, ir, subinterval_found;
+
+  /* Determine the subinterval of the spline
+     containing the point (position) of interest. */
+  
+  if (s <= sp[0]) return(bc[0]);
+  if (s >= sp[np-1]) return(bc[np-1]);      
+
+  /* Determine the subinterval of the spline
+     which contains the point (position) of interest. */
+  find_subinterval(s,il,ir);
+
+  /* Determine the boundary condition type. */
+
+  if (bc[il] == bc[ir]) {
+    return(bc[il]);
+  } else {
+    return(bc[il]);
+  } /* endif */
+ 
+}
 
 
+/*
+ * Broadcasts a spline to all processors involved in  
+ * the calculation from the primary processor using   
+ * the MPI broadcast routine.                         
+ */
+void Spline2D_HO::Broadcast_Spline(void) {
 
+#ifdef _MPI_VERSION
+    int i, npts, buffer_size, i_buffer_size;
+    int *i_buffer;
+    double *buffer;
+ 
+    /* Broadcast the number of spline points. */
+
+    if (CFFC_Primary_MPI_Processor()) {
+      npts = np;
+    } /* endif */
+
+    MPI::COMM_WORLD.Bcast(&npts, 1, MPI::INT, 0);
+
+    /* On non-primary MPI processors, allocate (re-allocate) 
+       memory for the spline as necessary. */
+
+    if (!CFFC_Primary_MPI_Processor()) {
+      if (npts >= 2){
+	allocate(npts);
+       } /* endif */
+    } /* endif */
+
+    /* Broadcast the spline type. */
+
+    MPI::COMM_WORLD.Bcast(&(type), 1, MPI::INT, 0);
+
+    /* Broadcast the the spline coordinates, pathlength, 
+       point type, and boundary condition information. */
+
+    if (npts >= 2) {
+       buffer = new double[3*npts];
+       i_buffer = new int[2*npts];
+
+       if (CFFC_Primary_MPI_Processor()) {
+          buffer_size = 0;
+          i_buffer_size = 0;
+          for ( i = 0; i <= np-1; ++i ) {
+              buffer[buffer_size] = Xp[i].x;
+              buffer[buffer_size+1] = Xp[i].y;
+              buffer[buffer_size+2] = sp[i];
+              i_buffer[i_buffer_size] = tp[i];
+              i_buffer[i_buffer_size+1] = bc[i];
+              buffer_size = buffer_size + 3;
+              i_buffer_size = i_buffer_size + 2;
+          } /* endfor */
+       } /* endif */
+
+       buffer_size = 3*npts;
+       i_buffer_size = 2*npts;
+       MPI::COMM_WORLD.Bcast(buffer, buffer_size, MPI::DOUBLE, 0);
+       MPI::COMM_WORLD.Bcast(i_buffer, i_buffer_size, MPI::INT, 0);
+
+       if (!CFFC_Primary_MPI_Processor()) {
+          buffer_size = 0;
+          i_buffer_size = 0;
+          for ( i = 0; i <= np-1; ++i ) {
+              Xp[i].x = buffer[buffer_size];
+              Xp[i].y = buffer[buffer_size+1];
+              sp[i] = buffer[buffer_size+2];
+              tp[i] = i_buffer[i_buffer_size];
+              bc[i] = i_buffer[i_buffer_size+1];
+              buffer_size = buffer_size + 3;
+              i_buffer_size = i_buffer_size + 2;
+          } /* endfor */
+       } /* endif */
+
+       delete []buffer; 
+       buffer = NULL;
+       delete []i_buffer; 
+       i_buffer = NULL;
+    } /* endif */
+#endif
+}
+
+#ifdef _MPI_VERSION
+/*
+ * Broadcasts a spline to all processors associated   
+ * with the specified communicator from the specified 
+ * processor using the MPI broadcast routine.         
+ */
+void Spline2D_HO::Broadcast_Spline(MPI::Intracomm &Communicator, 
+				   const int Source_CPU) {
+
+    int Source_Rank = 0;
+    int i, npts, buffer_size, i_buffer_size;
+    int *i_buffer;
+    double *buffer;
+ 
+    /* Broadcast the number of spline points. */
+
+    if (CFFC_MPI::This_Processor_Number == Source_CPU) {
+      npts = np;
+    } /* endif */
+
+    Communicator.Bcast(&npts, 1, MPI::INT, Source_Rank);
+
+    /* On non-source MPI processors, allocate (re-allocate) 
+       memory for the spline as necessary. */
+
+    if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
+      if (npts >= 2) {
+	allocate(npts);
+      } /* endif */
+    } /* endif */
+
+    /* Broadcast the spline type. */
+
+    Communicator.Bcast(&(type), 1, MPI::INT, Source_Rank);
+
+    /* Broadcast the the spline coordinates, pathlength, 
+       point type, and boundary condition information. */
+
+    if (npts >= 2) {
+       buffer = new double[3*npts];
+       i_buffer = new int[2*npts];
+
+       if (CFFC_MPI::This_Processor_Number == Source_CPU) {
+          buffer_size = 0;
+          i_buffer_size = 0;
+          for ( i = 0; i <= np-1; ++i ) {
+              buffer[buffer_size] = Xp[i].x;
+              buffer[buffer_size+1] = Xp[i].y;
+              buffer[buffer_size+2] = sp[i];
+              i_buffer[i_buffer_size] = tp[i];
+              i_buffer[i_buffer_size+1] = bc[i];
+              buffer_size = buffer_size + 3;
+              i_buffer_size = i_buffer_size + 2;
+          } /* endfor */
+       } /* endif */
+
+       buffer_size = 3*npts;
+       i_buffer_size = 2*npts;
+       Communicator.Bcast(buffer, buffer_size, MPI::DOUBLE, Source_Rank);
+       Communicator.Bcast(i_buffer, i_buffer_size, MPI::INT, Source_Rank);
+
+       if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
+          buffer_size = 0;
+          i_buffer_size = 0;
+          for ( i = 0; i <= np-1; ++i ) {
+              Xp[i].x = buffer[buffer_size];
+              Xp[i].y = buffer[buffer_size+1];
+              sp[i] = buffer[buffer_size+2];
+              tp[i] = i_buffer[i_buffer_size];
+              bc[i] = i_buffer[i_buffer_size+1];
+              buffer_size = buffer_size + 3;
+              i_buffer_size = i_buffer_size + 2;
+          } /* endfor */
+       } /* endif */
+
+       delete []buffer; 
+       buffer = NULL;
+       delete []i_buffer; 
+       i_buffer = NULL;
+    } /* endif */
+
+}
+#endif
+
+/*
+ * Apply a mirror reflection about the y=0 axis and
+ * recompute the positions of all of the points in 
+ * the spline accordingly.                         
+ */
+void Spline2D_HO::Reflect_Spline(void) {
+
+  int i;
+  Vector2D X;
+ 
+  /* Apply a mirror reflection about the y=0 axis. */
+
+  for ( i = 0; i <= np-1; ++i ) {
+    X.x = Xp[i].x;
+    X.y = - Xp[i].y;
+    Xp[i] = X;
+  } /* endfor */
+
+}
+
+/*
+ * Reverses the order of the spline points.
+ */
+void Spline2D_HO::Reverse_Spline(void) {
+
+   int i, tp_current, bc_current;
+   double sp_current;
+   Vector2D Xp_current;
+
+   /* Reverse the order of the spline points. */
+   for ( i = 0; i <= (np-1)/2; ++i ) {
+      Xp_current = Xp[i];  Xp[i] = Xp[np-1-i];  Xp[np-1-i] = Xp_current;
+      tp_current = tp[i];  tp[i] = tp[np-1-i];  tp[np-1-i] = tp_current;
+      bc_current = bc[i];  bc[i] = bc[np-1-i];  bc[np-1-i] = bc_current;
+      sp_current = sp[i];  sp[i] = sp[np-1-i];  sp[np-1-i] = sp_current;
+   } /* endfor */
+}
 
 
 
@@ -1141,408 +1343,8 @@ Vector2D Spline2D_HO::getnormal(const Vector2D &X) const {
  ********************************************************/
 
 
-/********************************************************
- * Routine: BCtype                                      *
- *                                                      *
- *    This routine returns the boundary condition type  *
- * given the path length s along the spline and the     *
- * the set of np boundary types (bc) that have been     *
- * defined for each spline point.                       *
- *                                                      *
- ********************************************************/
-int BCtype(const double &s,
-           const Spline2D_HO &S) {
 
-    int i, il, ir, subinterval_found;
 
-    /* Determine the subinterval of the spline
-       containing the point (position) of interest. */
-
-    if (s <= S.sp[0]) return(S.bc[0]);
-    if (s >= S.sp[S.np-1]) return(S.bc[S.np-1]);      
-
-    subinterval_found = 0;
-    i = 0;
-    while (subinterval_found == 0 && i < S.np-1) {
-      if ((s-S.sp[i])*(s-S.sp[i+1]) <= ZERO) {
-        subinterval_found = 1;
-      } else {
-        i += 1;
-      } /* endif */
-    } /* endwhile */
-    il = i;
-    ir = i+1;
-
-    /* Determine the boundary condition type. */
-
-    if (S.bc[il] == S.bc[ir]) {
-        return(S.bc[il]);
-    } else {
-        return(S.bc[il]);
-    } /* endif */
- 
-}
-
-/********************************************************
- * Routine: Copy_Spline                                 *
- *                                                      *
- * Copies the spline S2 to spline S1.                   *
- *                                                      *
- ********************************************************/
-void Copy_Spline(Spline2D_HO &S1,
-	      	 const Spline2D_HO &S2) {
-
-    int i;
- 
-    /* Allocate (re-allocate) memory for the spline S1 
-       as necessary. */
-
-    if (S1.np != S2.np) {
-       if (S1.np != 0) S1.deallocate();
-       if (S2.np >= 2) S1.allocate(S2.np);
-    } /* endif */
-
-    /* Set spline type for spline S1. */
-
-    S1.settype(S2.type);
-
-    /* Copy the spline coordinates, pathlength, point type, and boundary 
-       condition information from spline S2 to spline S1. */
-
-    if (S2.np >= 2) { 
-       for ( i = 0; i <= S1.np-1; ++i ) {
-           S1.Xp[i] = S2.Xp[i];
-           S1.sp[i] = S2.sp[i];
-           S1.tp[i] = S2.tp[i];
-           S1.bc[i] = S2.bc[i];
-       } /* endfor */
-    } /* endif */
-
-}
-
-void Copy_Spline(Spline2D_HO &S1,
-	      	 Spline2D_HO &S2) {
-
-    int i;
- 
-    /* Allocate (re-allocate) memory for the spline S1 
-       as necessary. */
-
-    if (S1.np != S2.np) {
-       if (S1.np != 0) S1.deallocate();
-       if (S2.np >= 2) S1.allocate(S2.np);
-    } /* endif */
-
-    /* Set spline type for spline S1. */
-
-    S1.settype(S2.type);
-
-    /* Copy the spline coordinates, pathlength, point type, and boundary 
-       condition information from spline S2 to spline S1. */
-
-    if (S2.np >= 2) { 
-       for ( i = 0; i <= S1.np-1; ++i ) {
-           S1.Xp[i] = S2.Xp[i];
-           S1.sp[i] = S2.sp[i];
-           S1.tp[i] = S2.tp[i];
-           S1.bc[i] = S2.bc[i];
-       } /* endfor */
-    } /* endif */
-
-}
-
-/********************************************************
- * Routine: Broadcast_Spline                            *
- *                                                      *
- * Broadcasts a spline to all processors involved in    *
- * the calculation from the primary processor using     *
- * the MPI broadcast routine.                           *
- *                                                      *
- ********************************************************/
-void Broadcast_Spline(Spline2D_HO &S) {
-
-#ifdef _MPI_VERSION
-    int i, npts, buffer_size, i_buffer_size;
-    int *i_buffer;
-    double *buffer;
- 
-    /* Broadcast the number of spline points. */
-
-    if (CFFC_Primary_MPI_Processor()) {
-      npts = S.np;
-    } /* endif */
-
-    MPI::COMM_WORLD.Bcast(&npts, 1, MPI::INT, 0);
-
-    /* On non-primary MPI processors, allocate (re-allocate) 
-       memory for the spline as necessary. */
-
-    if (!CFFC_Primary_MPI_Processor()) {
-       if (S.np != npts) {
-          if (S.np != 0) S.deallocate();
-          if (npts >= 2) S.allocate(npts);
-       } /* endif */
-    } /* endif */
-
-    /* Broadcast the spline type. */
-
-    MPI::COMM_WORLD.Bcast(&(S.type), 1, MPI::INT, 0);
-
-    /* Broadcast the the spline coordinates, pathlength, 
-       point type, and boundary condition information. */
-
-    if (npts >= 2) {
-       buffer = new double[3*npts];
-       i_buffer = new int[2*npts];
-
-       if (CFFC_Primary_MPI_Processor()) {
-          buffer_size = 0;
-          i_buffer_size = 0;
-          for ( i = 0; i <= S.np-1; ++i ) {
-              buffer[buffer_size] = S.Xp[i].x;
-              buffer[buffer_size+1] = S.Xp[i].y;
-              buffer[buffer_size+2] = S.sp[i];
-              i_buffer[i_buffer_size] = S.tp[i];
-              i_buffer[i_buffer_size+1] = S.bc[i];
-              buffer_size = buffer_size + 3;
-              i_buffer_size = i_buffer_size + 2;
-          } /* endfor */
-       } /* endif */
-
-       buffer_size = 3*npts;
-       i_buffer_size = 2*npts;
-       MPI::COMM_WORLD.Bcast(buffer, buffer_size, MPI::DOUBLE, 0);
-       MPI::COMM_WORLD.Bcast(i_buffer, i_buffer_size, MPI::INT, 0);
-
-       if (!CFFC_Primary_MPI_Processor()) {
-          buffer_size = 0;
-          i_buffer_size = 0;
-          for ( i = 0; i <= S.np-1; ++i ) {
-              S.Xp[i].x = buffer[buffer_size];
-              S.Xp[i].y = buffer[buffer_size+1];
-              S.sp[i] = buffer[buffer_size+2];
-              S.tp[i] = i_buffer[i_buffer_size];
-              S.bc[i] = i_buffer[i_buffer_size+1];
-              buffer_size = buffer_size + 3;
-              i_buffer_size = i_buffer_size + 2;
-          } /* endfor */
-       } /* endif */
-
-       delete []buffer; 
-       buffer = NULL;
-       delete []i_buffer; 
-       i_buffer = NULL;
-    } /* endif */
-#endif
-
-}
-
-#ifdef _MPI_VERSION
-/********************************************************
- * Routine: Broadcast_Spline                            *
- *                                                      *
- * Broadcasts a spline to all processors associated     *
- * with the specified communicator from the specified   *
- * processor using the MPI broadcast routine.           *
- *                                                      *
- ********************************************************/
-void Broadcast_Spline(Spline2D_HO &S,
-                      MPI::Intracomm &Communicator, 
-                      const int Source_CPU) {
-
-    int Source_Rank = 0;
-    int i, npts, buffer_size, i_buffer_size;
-    int *i_buffer;
-    double *buffer;
- 
-    /* Broadcast the number of spline points. */
-
-    if (CFFC_MPI::This_Processor_Number == Source_CPU) {
-      npts = S.np;
-    } /* endif */
-
-    Communicator.Bcast(&npts, 1, MPI::INT, Source_Rank);
-
-    /* On non-source MPI processors, allocate (re-allocate) 
-       memory for the spline as necessary. */
-
-    if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
-       if (S.np != npts) {
-          if (S.np != 0) S.deallocate();
-          if (npts >= 2) S.allocate(npts);
-       } /* endif */
-    } /* endif */
-
-    /* Broadcast the spline type. */
-
-    Communicator.Bcast(&(S.type), 1, MPI::INT, Source_Rank);
-
-    /* Broadcast the the spline coordinates, pathlength, 
-       point type, and boundary condition information. */
-
-    if (npts >= 2) {
-       buffer = new double[3*npts];
-       i_buffer = new int[2*npts];
-
-       if (CFFC_MPI::This_Processor_Number == Source_CPU) {
-          buffer_size = 0;
-          i_buffer_size = 0;
-          for ( i = 0; i <= S.np-1; ++i ) {
-              buffer[buffer_size] = S.Xp[i].x;
-              buffer[buffer_size+1] = S.Xp[i].y;
-              buffer[buffer_size+2] = S.sp[i];
-              i_buffer[i_buffer_size] = S.tp[i];
-              i_buffer[i_buffer_size+1] = S.bc[i];
-              buffer_size = buffer_size + 3;
-              i_buffer_size = i_buffer_size + 2;
-          } /* endfor */
-       } /* endif */
-
-       buffer_size = 3*npts;
-       i_buffer_size = 2*npts;
-       Communicator.Bcast(buffer, buffer_size, MPI::DOUBLE, Source_Rank);
-       Communicator.Bcast(i_buffer, i_buffer_size, MPI::INT, Source_Rank);
-
-       if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
-          buffer_size = 0;
-          i_buffer_size = 0;
-          for ( i = 0; i <= S.np-1; ++i ) {
-              S.Xp[i].x = buffer[buffer_size];
-              S.Xp[i].y = buffer[buffer_size+1];
-              S.sp[i] = buffer[buffer_size+2];
-              S.tp[i] = i_buffer[i_buffer_size];
-              S.bc[i] = i_buffer[i_buffer_size+1];
-              buffer_size = buffer_size + 3;
-              i_buffer_size = i_buffer_size + 2;
-          } /* endfor */
-       } /* endif */
-
-       delete []buffer; 
-       buffer = NULL;
-       delete []i_buffer; 
-       i_buffer = NULL;
-    } /* endif */
-
-}
-#endif
-
-/********************************************************
- * Routine: Translate_Spline                            *
- *                                                      *
- * Translates or shifts the positions of all of the     *
- * points defining the spline.                          *
- *                                                      *
- ********************************************************/
-void Translate_Spline(Spline2D_HO &S,
-	              const Vector2D &V) {
-
-    int i;
- 
-    /* Translate each point defining the spline. */
-
-    for ( i = 0; i <= S.np-1; ++i ) {
-        S.Xp[i] += V;
-    } /* endfor */
-
-}
-
-/********************************************************
- * Routine: Scale_Spline                                *
- *                                                      *
- * Scale the positions of all of the points defining    *
- * the spline.                                          *
- *                                                      *
- ********************************************************/
-void Scale_Spline(Spline2D_HO &S,
-	          const double &Scaling_Factor) {
-
-    int i;
- 
-    /* Scale each point defining the spline. */
-
-    for ( i = 0; i <= S.np-1; ++i ) {
-        S.Xp[i] = S.Xp[i]*Scaling_Factor;
-        S.sp[i] = S.sp[i]*Scaling_Factor;
-    } /* endfor */
-
-}
-
-/********************************************************
- * Routine: Rotate_Spline                               *
- *                                                      *
- * Apply a solid body rotation about the origin and     *
- * recompute the positions of all of the points in      *
- * the spline accordingly.                              *
- *                                                      *
- ********************************************************/
-void Rotate_Spline(Spline2D_HO &S,
-	           const double &Angle) {
-
-    int i;
-    double cos_angle, sin_angle;
-    Vector2D X;
- 
-    /* Apply the rotation to each point defining the spline. */
-
-    cos_angle = cos(-Angle); 
-    sin_angle = sin(-Angle);
-
-    for ( i = 0; i <= S.np-1; ++i ) {
-        X.x = S.Xp[i].x*cos_angle +
-              S.Xp[i].y*sin_angle;
-        X.y = - S.Xp[i].x*sin_angle +
-                S.Xp[i].y*cos_angle;
-
-        S.Xp[i] = X;
-    } /* endfor */
-
-}
-
-/********************************************************
- * Routine: Reflect_Spline                              *
- *                                                      *
- * Apply a mirror reflection about the y=0 axis and     *
- * recompute the positions of all of the points in      *
- * the spline accordingly.                              *
- *                                                      *
- ********************************************************/
-void Reflect_Spline(Spline2D_HO &S) {
-
-    int i;
-    Vector2D X;
- 
-    /* Apply a mirror reflection about the y=0 axis. */
-
-    for ( i = 0; i <= S.np-1; ++i ) {
-        X.x = S.Xp[i].x;
-        X.y = - S.Xp[i].y;
-        S.Xp[i] = X;
-    } /* endfor */
-
-}
-
-/********************************************************
- * Routine: Reverse_Spline                              *
- *                                                      *
- * Reverses the order of the spline points.             *
- *                                                      *
- ********************************************************/
-void Reverse_Spline(Spline2D_HO &S) {
-
-   int i, tp, bc;
-   double sp;
-   Vector2D Xp;
-
-   /* Reverse the order of the spline points. */
-
-   for ( i = 0; i <= (S.np-1)/2; ++i ) {
-      Xp = S.Xp[i];  S.Xp[i] = S.Xp[S.np-1-i];  S.Xp[S.np-1-i] = Xp;
-      tp = S.tp[i];  S.tp[i] = S.tp[S.np-1-i];  S.tp[S.np-1-i] = tp;
-      bc = S.bc[i];  S.bc[i] = S.bc[S.np-1-i];  S.bc[S.np-1-i] = bc;
-      sp = S.sp[i];  S.sp[i] = S.sp[S.np-1-i];  S.sp[S.np-1-i] = sp;
-   } /* endfor */
-
-}
 
 /********************************************************
  * Routine: Create_Spline_Line                          *

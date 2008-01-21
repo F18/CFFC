@@ -209,17 +209,22 @@ public:
 
   //! Get the BC type at the given location
   int getBCtype(const Vector2D &X) const;
+  //! Get the BC type at a given path length s
+  int BCtype(const double &s) const;
 
   Vector2D getminX(const Vector2D &X) const;
   Vector2D getminY(const Vector2D &X) const;
   Vector2D getnormal(const Vector2D &X) const;
   //@}
 
-  //! @name Spline translation, rotation and scaling.
+  //! @name Spline geometric manipulation functions.
   //@{
   const Spline2D_HO & translate(const Vector2D &V);
   const Spline2D_HO & rotate(const double &a);
   const Spline2D_HO & scale(const double &a);
+  void Reflect_Spline(void);
+  void Reverse_Spline(void);
+
   //@}
 
   //! @name Binary arithmetic operators.
@@ -250,6 +255,15 @@ public:
   friend ostream &operator << (ostream &out_file, const Spline2D_HO &S);
   friend istream &operator >> (istream &in_file, Spline2D_HO &S);
   //@}
+
+  //! @name MPI operation functions.
+  void Broadcast_Spline(void);
+
+#ifdef _MPI_VERSION
+  void Broadcast_Spline(MPI::Intracomm &Communicator,
+			const int Source_CPU);
+#endif
+
 
 private:
   Spline2D_HO(const Spline2D_HO &S); //! Private copy constructor
@@ -415,6 +429,36 @@ inline Spline2D_HO & Spline2D_HO::operator=(const Spline2D_HO &S){
   }
   return *this;
 }
+
+/*
+ * Determine the spline subinterval
+ * containing the point (position) of interest.
+ * The interval is defined by the indexes
+ * (il,ir) ==> (left_index, right_index)
+ *
+ * \param [in] s the spline path length of the point of interest
+ * \param [out] il the index of the left interval node
+ * \param [out] ir the index of the right  interval node
+ */
+void Spline2D_HO::find_subinterval(const double &s, int & il, int & ir) const{
+  int subinterval_found(0), i(0);
+
+  if (s < sp[0] || s > sp[np-1]){
+    il = ir = 0;
+    return;
+  }
+
+  while (subinterval_found == 0 && i < np-1) {
+    if ((s-sp[i])*(s-sp[i+1]) <= ZERO) {
+      subinterval_found = 1;
+    } else {
+      ++i;
+    } /* endif */
+  } /* endwhile */
+  il = i;
+  ir = i+1;
+}
+
 
 /*
  * Equal operator
@@ -586,38 +630,8 @@ inline istream &operator >> (istream &in_file, Spline2D_HO &S) {
  * Spline2D_HO -- External subroutines.                    *
  ********************************************************/
 
-extern Vector2D Spline(const double &s,
-	      	       const Spline2D_HO &S);
 
-extern int BCtype(const double &s,
-	          const Spline2D_HO &S);
 
-extern void Copy_Spline(Spline2D_HO &S1,
-	      	        Spline2D_HO &S2);
-
-extern void Copy_Spline(Spline2D_HO &S1,
-	      	        const Spline2D_HO &S2);
-
-extern void Broadcast_Spline(Spline2D_HO &S);
-
-#ifdef _MPI_VERSION
-extern void Broadcast_Spline(Spline2D_HO &S,
-                             MPI::Intracomm &Communicator,
-                             const int Source_CPU);
-#endif
-
-extern void Translate_Spline(Spline2D_HO &S,
-	      	             const Vector2D &V);
-
-extern void Scale_Spline(Spline2D_HO &S,
-	      	         const double &Scaling_Factor);
-
-extern void Rotate_Spline(Spline2D_HO &S,
-	      	          const double &Angle);
-
-extern void Reflect_Spline(Spline2D_HO &S);
-
-extern void Reverse_Spline(Spline2D_HO &S);
 
 extern void Create_Spline_Line(Spline2D_HO &Line_Spline,
                                const Vector2D &V1,
