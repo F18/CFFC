@@ -11,199 +11,782 @@
 #include "HO_Spline2D.h"	// Include 2D high-order spline header file
 
 
-/********************************************************
- * Spline2D_HO -- Spline fits in 2 space dimensions.       *
- ********************************************************/
+// ===== Member variables =====
 
-/********************************************************
- * Routine: Spline                                      *
- *                                                      *
- *    This routine performs a piecewise linear,         *
- * quadratic, cubic, or quintic blended spline          *
- * interpolation to return the 2D position vector on    *
- * the splined surface (body or boundary) of interest   *
- * given the path length s along the spline and the     *
- * set of np discrete points (Xp.x,Xp.y) that define    *
- * the spline geometry.                                 *
- *                                                      *
- ********************************************************/
-Vector2D Spline(const double &s,
-                const Spline2D_HO &S) {
+// ===== Member functions =====
 
-    int i, il, ir, subinterval_found, npts_used;
-    double sp_used[4];
-    double ds0, ds1, ds2, ds3,
-           ds01, ds02, ds12, ds13, ds23,
-           a0, a1, a2, a3, a_blend;
-    Vector2D Xp_used[4], Xl, Xr; 
+/*
+ * Concatenation operator.
+ */
+const Spline2D_HO Spline2D_HO::operator + (const Spline2D_HO &S) const{
+  int i, npts; Spline2D_HO Sc;
+  npts = np + S.np - 1;
+  Sc.allocate(npts); Sc.settype(type);
+  Sc.setFluxCalcMethod(getFluxCalcMethod());
+  for ( i = 0; i <= np-1; ++i ) {
+    Sc.Xp[i] = Xp[i];
+    Sc.tp[i] = tp[i];
+    Sc.bc[i] = bc[i];
+  } /* endfor */
+  Sc.tp[np-1] = SPLINE2D_POINT_SHARP_CORNER;
+  for ( i = 1; i <= S.np-1; ++i ) {
+    Sc.Xp[i+np-1] = S.Xp[i] + (Xp[np-1]-S.Xp[0]);
+    Sc.tp[i+np-1] = S.tp[i];
+    Sc.bc[i+np-1] = S.bc[i];
+  } /* endfor */
+  Sc.pathlength();
+  return (Sc);
+}
+
+/*
+ * Translates or shifts the positions of all of the 
+ * points defining the spline.                      
+ *                                                  
+ */
+const Spline2D_HO& Spline2D_HO::translate(const Vector2D &V){
+  int i;
+  for ( i = 0; i <= np-1; ++i ) {
+    Xp[i] += V;
+  } /* endfor */
+  return (*this);
+}
+
+/*
+ * Apply a solid body rotation about the origin and 
+ * recompute the positions of all of the points in  
+ * the spline accordingly.                          
+ */
+const Spline2D_HO& Spline2D_HO::rotate(const double &a){
+  int i;
+  double cos_angle, sin_angle;
+  Vector2D X;
+
+  cos_angle = cos(-a); sin_angle = sin(-a);
+  for ( i = 0; i <= np-1; ++i ) {
+    X.x = ( Xp[i].x*cos_angle +
+	    Xp[i].y*sin_angle );
+    X.y = ( - Xp[i].x*sin_angle +
+	    Xp[i].y*cos_angle );
+    Xp[i] = X;
+  } /* endfor */
+  return (*this);
+}
+ 
+/*
+ * Scale the positions of all of 
+ * the points defining the spline.
+ */
+const Spline2D_HO& Spline2D_HO::scale(const double &a){
+  int i;
+  for ( i = 0; i <= np-1; ++i ) {
+    Xp[i] = Xp[i]*a;
+    sp[i] *= a;
+  } /* endfor */
+  return (*this);
+}
+
+/*
+ * Performa a piecewise linear, quadratic, cubic
+ * or quintic blended spline interpolation to 
+ * return the 2D position vector on  
+ * the splined surface (body or boundary) of interest 
+ * given the path length s along the spline and 
+ * the set of np discrete points (Xp.x,Xp.y) 
+ * that define the spline geometry.  
+ */
+const Vector2D Spline2D_HO::Spline(const double &s) const {
+
+  int il, ir, npts_used;
+  double sp_used[4];
+  double ds0, ds1, ds2, ds3,
+         ds01, ds02, ds12, ds13, ds23,
+         a0, a1, a2, a3, a_blend;
+  Vector2D Xp_used[4], Xl, Xr; 
+  
+  // Check for domain of existance
+  if (s <= sp[0]) return(Xp[0]);
+  if (s >= sp[np-1]) return(Xp[np-1]);      
+  
+  /* Determine the subinterval of the spline
+     containing the point (position) of interest. */
+  find_subinterval(s,il,ir);
+
+  /* Determine number and which points to use in the 
+     blended spline interpolation. */
+
+  if (type == SPLINE2D_CONSTANT) return(Xp[il]);
+  if (type == SPLINE2D_LINEAR) {
+    npts_used = 2;
+  } else if (tp[il] == SPLINE2D_POINT_SHARP_CORNER &&
+	     tp[ir] == SPLINE2D_POINT_SHARP_CORNER) {
+    npts_used = 2;
+  } else if (tp[il] == SPLINE2D_POINT_NORMAL &&
+	     tp[ir] == SPLINE2D_POINT_SHARP_CORNER) {
+    npts_used = 3;
+    if (il == 0) {
+      Xp_used[0]=Xp[np-2];
+      sp_used[0]=sp[0]-(sp[np-1]-sp[np-2]);
+      Xp_used[1]=Xp[il];
+      sp_used[1]=sp[il];
+      Xp_used[2]=Xp[ir];
+      sp_used[2]=sp[ir];
+    } else {
+      Xp_used[0]=Xp[il-1];
+      sp_used[0]=sp[il-1];
+      Xp_used[1]=Xp[il];
+      sp_used[1]=sp[il];
+      Xp_used[2]=Xp[ir];
+      sp_used[2]=sp[ir];
+    } /* endif */
+  } else if (tp[il] == SPLINE2D_POINT_SHARP_CORNER &&
+	     tp[ir] == SPLINE2D_POINT_NORMAL) {
+    npts_used = 3;
+    if (il == np-2) {
+      Xp_used[0]=Xp[il];
+      sp_used[0]=sp[il];
+      Xp_used[1]=Xp[ir];
+      sp_used[1]=sp[ir];
+      Xp_used[2]=Xp[1];
+      sp_used[2]=sp[np-1]+(sp[1]-sp[0]);
+    } else {
+      Xp_used[0]=Xp[il];
+      sp_used[0]=sp[il];
+      Xp_used[1]=Xp[ir];
+      sp_used[1]=sp[ir];
+      Xp_used[2]=Xp[ir+1];
+      sp_used[2]=sp[ir+1];
+    } /* endif */
+  } else if (tp[il] == SPLINE2D_POINT_NORMAL &&
+	     tp[ir] == SPLINE2D_POINT_NORMAL) {
+    npts_used = 4;
+    if (il == 0) {
+      Xp_used[0]=Xp[np-2];
+      sp_used[0]=sp[0]-(sp[np-1]-sp[np-2]);
+      Xp_used[1]=Xp[il];
+      sp_used[1]=sp[il];
+      Xp_used[2]=Xp[ir];
+      sp_used[2]=sp[ir];
+      Xp_used[3]=Xp[ir+1];
+      sp_used[3]=sp[ir+1];
+    } else if (il == np-2) {
+      Xp_used[0]=Xp[il-1];
+      sp_used[0]=sp[il-1];
+      Xp_used[1]=Xp[il];
+      sp_used[1]=sp[il];
+      Xp_used[2]=Xp[ir];
+      sp_used[2]=sp[ir];
+      Xp_used[3]=Xp[1];
+      sp_used[3]=sp[np-1]+(sp[1]-sp[0]);
+    } else {
+      Xp_used[0]=Xp[il-1];
+      sp_used[0]=sp[il-1];
+      Xp_used[1]=Xp[il];
+      sp_used[1]=sp[il];
+      Xp_used[2]=Xp[ir];
+      sp_used[2]=sp[ir];
+      Xp_used[3]=Xp[ir+1];
+      sp_used[3]=sp[ir+1];
+    } /* endif */
+  } /* endif */
+
+    /* Perform the interpolation. */
+
+  switch(npts_used){
+
+  case 4:		// four points
+    ds0 = s - sp_used[0];
+    ds1 = s - sp_used[1];
+    ds2 = s - sp_used[2];
+    ds3 = s - sp_used[3];
+       
+    ds01 = sp_used[0] - sp_used[1];
+    ds02 = sp_used[0] - sp_used[2];
+    ds12 = sp_used[1] - sp_used[2];
+    ds13 = sp_used[1] - sp_used[3];
+    ds23 = sp_used[2] - sp_used[3];
+       
+    a0 =  ds1*ds2/(ds01*ds02);
+    a1 = -ds0*ds2/(ds01*ds12);
+    a2 =  ds0*ds1/(ds02*ds12);
+
+    Xl = a0*Xp_used[0] + a1*Xp_used[1] +
+      a2*Xp_used[2];
+
+    a1 =  ds2*ds3/(ds12*ds13);
+    a2 = -ds1*ds3/(ds12*ds23);
+    a3 =  ds1*ds2/(ds13*ds23);
+
+    Xr = a1*Xp_used[1] + a2*Xp_used[2] +
+      a3*Xp_used[3];
+
+    switch(type) {
+    case SPLINE2D_QUADRATIC :
+      Xl = HALF*(Xl+Xr);
+      break; 
+    case SPLINE2D_CUBIC :
+      a_blend = ds1/ds12;
+      Xl = (ONE+a_blend)*Xl - a_blend*Xr;
+      break;
+    case SPLINE2D_QUINTIC :
+      a_blend = ds1/ds12;
+      a_blend =-a_blend*a_blend*(THREE+TWO*a_blend);
+      Xl = (ONE+a_blend)*Xl - a_blend*Xr;
+      break;
+    default:
+      Xl = HALF*(Xl+Xr);
+      break;
+    } /* endswitch */
+
+    return(Xl);
+
+  case 3:		// three points
+    ds0 = s - sp_used[0];
+    ds1 = s - sp_used[1];
+    ds2 = s - sp_used[2];
+       
+    ds01 = sp_used[0] - sp_used[1];
+    ds02 = sp_used[0] - sp_used[2];
+    ds12 = sp_used[1] - sp_used[2];
+       
+    a0 =  ds1*ds2/(ds01*ds02);
+    a1 = -ds0*ds2/(ds01*ds12);
+    a2 =  ds0*ds1/(ds02*ds12);
+         
+    Xl = a0*Xp_used[0] + a1*Xp_used[1] +
+      a2*Xp_used[2];
+    return(Xl);
+
+  case 2:		// two points
+    Xl = Xp[il]+(s-sp[il])*(Xp[ir]-Xp[il])/
+      (sp[ir]-sp[il]);
+    return(Xl);
+
+  }/* endswitch */
+
+  return Vector2D(0);
+}
+
+/*
+ * Determine the spline subinterval
+ * containing the point (position) of interest.
+ * The interval is defined by the indexes
+ * (il,ir) ==> (left_index, right_index)
+ *
+ * \param [in] s the spline path length of the point of interest
+ * \param [out] il the index of the left interval node
+ * \param [out] ir the index of the right  interval node
+ */
+void Spline2D_HO::find_subinterval(const double &s, int & il, int & ir) const{
+  int subinterval_found(0), i(0);
+
+  if (s < sp[0] || s > sp[np-1]){
+    il = ir = 0;
+    return;
+  }
+
+  while (subinterval_found == 0 && i < np-1) {
+    if ((s-sp[i])*(s-sp[i+1]) <= ZERO) {
+      subinterval_found = 1;
+    } else {
+      ++i;
+    } /* endif */
+  } /* endwhile */
+  il = i;
+  ir = i+1;
+}
+
+/*
+ * Get the unit tangential vector at the point of interest,
+ * based on the point position vector.
+ *
+ * \param [in] Point the position vector
+ * \param [in] Order the order of the spline interpolant
+ * \param [out] dxds the derivative of x-coordinate with respect to the spline path length
+ * \param [out] dyds the derivative of y-coordinate with respect to the spline path length
+ */
+const Vector2D Spline2D_HO::tSpline(const Vector2D &Point, const PolynomOrder Order,
+				    double & dxds, double & dyds) const {
+
+  int NumOfPoints(Order+1);	// Set the number of point used to determine the polynom based on Order
+  int il, ir;
+  Vector2D *Xp_used = new Vector2D [NumOfPoints];
+  double *sp_used = new double [NumOfPoints];
+  Vector2D Tangent;
+  double s;
+
+  /* Step1. Find the path length for Point */
+  s = getS(Point);
+
+  /* Step2. Analyse the pathlength */
+  if ( (s>sp[np-1]) && ((s - sp[np-1])/(1.0 + sp[np-1]) < EpsilonTol::epsilon_relative) ) {
+    s = sp[np-1];
+  }
+
+  if ( (s < sp[0]) || ( s > sp[np-1]) ){
+    return Vector2D(0.0,0.0);	// if the point is not on the Spline the normal vector is Zero
+  }
+
+  /* Step3. Determine the subinterval of the spline
+     which contains the point (position) of interest. */
+  find_subinterval(s,il,ir);
+
+  // Step4. Set the vector of points used to compute the tangent
+  switch(NumOfPoints){
+  case 4:
+    // use a 3rd-order polynom
+    sp_used[0] = sp[il];                             Xp_used[0] = Xp[il];
+    sp_used[1] = sp[il] + 0.3*(sp[ir] - sp[il]);     Xp_used[1] = Spline(sp_used[1]);
+    sp_used[2] = sp[il] + 0.7*(sp[ir] - sp[il]);     Xp_used[2] = Spline(sp_used[2]);
+    sp_used[3] = sp[ir];                             Xp_used[3] = Xp[ir];
+
+    break;
+  case 3:
+    // use a 2nd-order polynom
+    sp_used[0] = sp[il];                             Xp_used[0] = Xp[il];
+    sp_used[1] = sp[il] + 0.5*(sp[ir] - sp[il]);     Xp_used[1] = Spline(sp_used[1]);
+    sp_used[2] = sp[ir];                             Xp_used[2] = Xp[ir];
+
+    break;
+
+  default:
+    // use a 1st-order polynom
+    sp_used[0] = sp[il];                    Xp_used[0] = Xp[il];
+    sp_used[1] = sp[ir];                    Xp_used[1] = Xp[ir];
+  }
+
+  // Step5. Compute the tangent
+  Tangent = tSpline(s,Xp_used,sp_used,NumOfPoints,dxds,dyds);
+
+  // Deallocate the memory
+  delete [] Xp_used; Xp_used = NULL;
+  delete [] sp_used; sp_used = NULL;
+
+  // Return
+  return Tangent;
+}
+
+/*
+ * Get the unit tangential vector at the point of interest
+ * based on the point path coordinate.
+ *
+ * \param [in] s the point path coordinate
+ * \param [in] Xp_used the vector of used spline nodes
+ * \param [in] s_used
+ * \param [in] NumOfControlPoints the dimension of Xp_used
+ * \param [out] dxds the derivative of x-coordinate with respect to the spline path length
+ * \param [out] dyds the derivative of y-coordinate with respect to the spline path length
+ */
+const Vector2D Spline2D_HO::tSpline(const double & s, const Vector2D * Xp_used,
+				    const double * s_used, const int & NumOfControlPoints,
+				    double & dxds, double & dyds) const {
+
+  double ds21, ds32, ds31, ds41, ds42, ds43;	        // coordinate differences in the path length space
+  Vector2D DD12, DD23, DD34, DD123, DD234, DD1234;	// divided differences
+
+  Vector2D Tangent;
+
+  switch(NumOfControlPoints){
+
+  case 4:
+    ds21 = s_used[1] - s_used[0];
+    ds32 = s_used[2] - s_used[1];
+    ds31 = s_used[2] - s_used[0];
+    ds41 = s_used[3] - s_used[0];
+    ds42 = s_used[3] - s_used[1];
+    ds43 = s_used[3] - s_used[2];
+
+    // First divided differences
+    DD12  = (Xp_used[1] - Xp_used[0])/ds21;
+    DD23  = (Xp_used[2] - Xp_used[1])/ds32;
+    DD34  = (Xp_used[3] - Xp_used[2])/ds43;
+
+    // Second divided differences
+    DD123 = (DD23 - DD12)/ds31;
+    DD234 = (DD34 - DD23)/ds42;
+
+    // Third divided differences
+    DD1234 = (DD234 - DD123)/ds41;
+
+    Tangent = (3.0*DD1234*s*s + 2.0*(DD123 - (s_used[0]+s_used[1]+s_used[2])*DD1234)*s +
+	       (DD12 - (s_used[0]+s_used[1])*DD123 + (s_used[0]*s_used[1] + 
+						      s_used[0]*s_used[2] +
+						      s_used[1]*s_used[2])*DD1234) );
+
+    // Set the derivative of x and y with respect to the pathlength
+    dxds = Tangent.x;
+    dyds = Tangent.y;
+
+    // Normalize the tangent vector
+    return Tangent/abs(Tangent);
+
+  case 3:			// quadratic approximation
+
+    ds21 = s_used[1] - s_used[0];
+    ds32 = s_used[2] - s_used[1];
+    ds31 = s_used[2] - s_used[0];
+    
+    // First divided differences
+    DD12  = (Xp_used[1] - Xp_used[0])/ds21;
+    DD23  = (Xp_used[2] - Xp_used[1])/ds32;
+
+    // Second divided differences
+    DD123 = (DD23 - DD12)/ds31;
+
+    Tangent = (2.0*s - s_used[0] - s_used[1])*DD123 + DD12;
+
+    // Set the derivative of x and y with respect to the pathlength
+    dxds = Tangent.x;
+    dyds = Tangent.y;
+
+    // Normalize the tangent vector
+    return Tangent/abs(Tangent);
+
+  case 2:			// linear approximation
+
+    Tangent = (Xp_used[1] - Xp_used[0])/(s_used[1] - s_used[0]);
+
+    // Set the derivative of x and y with respect to the pathlength
+    dxds = Tangent.x;
+    dyds = Tangent.y;
+
+    // Normalize the tangent vector
+    return Tangent/abs(Tangent);
+
+  default:
+    // return a ZERO tangent
+    return Vector2D(0.0,0.0);
+  }
+}
+
+/*
+ * Get the normal unit vector at the point of interest
+ * by approximating the spline in the vicinity of Point 
+ * with a straight segment. 
+ *
+ * \param [in] Point the position vector
+ */
+const Vector2D Spline2D_HO::nSpline_SegmentBased(const Vector2D &Point) const {
+
+  double s;
+  int il, ir;
+  Vector2D StartPoint, EndPoint;
+  double VDist;
+  static const double Multiplier(1.0e-5);
+
+  /*Step1. Find the path length for Point */
+  s = getS(Point);
+
+  /*Step2. Analyse the pathlength */
+  if ( (s>sp[np-1]) && ((s - sp[np-1])/(1.0 + sp[np-1]) < EpsilonTol::epsilon_relative) ) {
+    s = sp[np-1];
+  }
+
+  if ( (s < sp[0]) || ( s > sp[np-1]) ){
+    return Vector2D(0.0,0.0);	// if the point is not on the Spline the normal vector is Zero
+  }
+
+  /*Step3. Determine the subinterval of the spline
+    which contains the point (position) of interest. */
+  find_subinterval(s,il,ir);
+
+  /*Step4. Determine the vicinity distance as the minimum distance among the neighbours. */
+  if ( il==0 ){
+    if (np > 2){
+      VDist = Multiplier*min( (sp[ir] - sp[il]), (sp[ir+1]-sp[ir]));
+    } else {
+      VDist = Multiplier*(sp[ir] - sp[il]);
+    }
+  } else if ( ir==(np-1) ){
+    VDist = Multiplier*min( (sp[il] - sp[il-1]), (sp[ir]-sp[il]));
+  } else {
+    VDist = Multiplier*min( (sp[il] - sp[il-1]), min((sp[ir] - sp[il]),(sp[ir+1]-sp[ir]) ));
+  }
+
+  /*Step5. Pick the two points used for determining the normal */
+  if ( (s>sp[il]) && (s<sp[ir]) ){ // interior point
+
+    // StartPoint
+    if ( (s-VDist <= sp[il]) && (tp[il] == SPLINE2D_POINT_SHARP_CORNER) ){
+      StartPoint = Xp[il];
+    } else {
+      StartPoint = Spline(s-VDist);
+    }
+
+    // EndPoint
+    if ( (s+VDist >= sp[ir]) && (tp[il] == SPLINE2D_POINT_SHARP_CORNER) ){
+      EndPoint = Xp[ir];
+    } else {
+      EndPoint = Spline(s+VDist);
+    }
+
+  } else if (s == sp[il]){	   // left end
+
+    if (tp[il] == SPLINE2D_POINT_SHARP_CORNER ){
+      /* sharp corner point -> use the one sided normal based on the segment (il-ir)
+	 Obs. This approach might not give the best result for all situations
+       */
+      // StartPoint
+      StartPoint = Xp[il];
+      // EndPoint
+      EndPoint = Spline(s+VDist);
+
+
+    } else {			
+      /* normal point */
+
+      // StartPoint
+      StartPoint = Spline(s-VDist);
+      // EndPoint
+      EndPoint = Spline(s+VDist);
+
+    }
+
+  } else {	   // right end -> (s == sp[ir])
+
+    if (tp[ir] == SPLINE2D_POINT_SHARP_CORNER ){
+      /* sharp corner point -> use the one sided normal based on the segment (il-ir)
+	 Obs. This approach might not give the best result for all situations
+       */
+
+      // StartPoint
+      StartPoint = Spline(s-VDist);
+      // EndPoint
+      EndPoint = Xp[ir];
+
+    } else {
+      /* normal point */
+
+      // StartPoint
+      StartPoint = Spline(s-VDist);
+      // EndPoint
+      EndPoint = Spline(s+VDist);
+
+    }
+  }
+
+  /*Step6. Analyze the chosen points 
+    Obs. Because they might be undistingushed numerically, this step is a must! */
+  if ( (fabs(EndPoint.x - StartPoint.x) < 1.0e-14 ) && (fabs(EndPoint.y - StartPoint.y) < 1.0e-14 ) ){
+    StartPoint = Xp[il];
+    EndPoint = Xp[ir];
+  }
+
+  /*Step7. Compute the normal vector */
+  return NormalVector(StartPoint,EndPoint);
+}
+
+/*
+ * Output the spline to a stream in a format 
+ * suitable for plotting with Tecplot.
+ *
+ * \param output_file the output stream
+ * \param NumberOfPoints the number of point used for plotting the spline.
+ */
+void Spline2D_HO::OutputTecplot(std::ostream &output_file, const int NumberOfPoints){
+
+  int SplinePoints, NumberOfInteriorPoints;
+
+  output_file << setprecision(14);
+  output_file << "TITLE = Spline2D Representation\n ";
+  output_file << "VARIABLES = \"x\" \\ \n"
+	      << "\"y\" \n"
+	      << "ZONE \n";
+
+  if (NumberOfPoints <= np){
+    SplinePoints = np; 		// The number of points used to represent the spline
+                                // cannot be smaller than the number of control points
+  } else {
+    SplinePoints = NumberOfPoints;
+  }
+
+  // Generate the curvilinear coordinates of the points used to define the spline
+  NumberOfInteriorPoints = SplinePoints - np;
+
+  double DeltaS;
+  if(NumberOfInteriorPoints != 0){
+    DeltaS = sp[np-1]/(NumberOfInteriorPoints + 2);
+  } else {
+    // Write the coordinates of the control points and Return
+    for(int i = 0; i<=np-1; ++i){
+      output_file << Xp[i].x << "\t" << Xp[i].y << "\n";
+    }
+    return;
+  }
+
+  double CurrentPath = 0.0;
+  Vector2D PointOnCurve;
+
+  for(int i=0, j=0; (i+j)<=SplinePoints; ){
+
+    // Update the CurrentPath
+    CurrentPath = sp[0] + (i+1)*DeltaS;
+
+    if( CurrentPath<sp[j] && (i+j)<SplinePoints ){
+      // Get the value of (x,y) coordinates for the CurrentPath
+      PointOnCurve = Spline(CurrentPath);
+
+      // Write the coordinates of PointOnCurve
+      output_file << PointOnCurve.x << "\t" << PointOnCurve.y << "\n";
+      ++i;
+    } else {
+      output_file << Xp[j].x << "\t" << Xp[j].y << "\n";
+      ++j;
+    }
+  }
+}
+
+/*
+ * This routine returns the pathlength of vector location X 
+ * on spline S.                                             
+ */
+double Spline2D_HO::getS(const Vector2D &X) const {
+    int i, subinterval_found, icount;
+    double s1, s2, s3, s3_old, x1, x2, x3, y1, y2, y3;
 
     /* Determine the subinterval of the spline
-       containing the point (position) of interest. */
-
-    if (s <= S.sp[0]) return(S.Xp[0]);
-    if (s >= S.sp[S.np-1]) return(S.Xp[S.np-1]);      
+       containing the point, X, of interest. */
 
     subinterval_found = 0;
     i = 0;
-    while (subinterval_found == 0 && i < S.np-1) {
-      if ((s-S.sp[i])*(s-S.sp[i+1]) <= ZERO) {
+    while (subinterval_found == 0 && i < np-1) {
+      x1=Xp[i].x;
+      x2=Xp[i+1].x;
+      y1=Xp[i].y;
+      y2=Xp[i+1].y;
+      s1=sp[i];
+      s2=sp[i+1];
+////////////////////////////////////////////////////////////////////////
+      if (abs(X-Vector2D(x1,y1)) < NANO) return s1;
+      if (abs(X-Vector2D(x2,y2)) < NANO) return s2;
+////////////////////////////////////////////////////////////////////////
+      if ( ((X.x-x1)*(X.x-x2) <= ZERO) &&
+           ((X.y-y1)*(X.y-y2) <= ZERO) ) {
         subinterval_found = 1;
       } else {
         i += 1;
       } /* endif */
     } /* endwhile */
-    il = i;
-    ir = i+1;
 
-    /* Determine number and which points to use in the 
-       blended spline interpolation. */
+    if (!subinterval_found) {
+       subinterval_found = 0;
+       i = 0;
+       while (subinterval_found == 0 && i < np-1) {
+          x1=Xp[i].x;
+          x2=Xp[i+1].x;
+          y1=Xp[i].y;
+          y2=Xp[i+1].y;
+          s1=sp[i];
+          s2=sp[i+1];
+          if ( ((X.x-x1)*(X.x-x2) <= sqr(TOLER*max(fabs(X.x),TOLER))) &&
+               ((X.y-y1)*(X.y-y2) <= sqr(TOLER*max(fabs(X.y),TOLER))) ) {
+            subinterval_found = 1;
+          } else {
+            i += 1;
+          } /* endif */
+       } /* endwhile */
 
-    if (S.type == SPLINE2D_CONSTANT) return(S.Xp[il]);
-    if (S.type == SPLINE2D_LINEAR) {
-       npts_used = 2;
-    } else if (S.tp[il] == SPLINE2D_POINT_SHARP_CORNER &&
-               S.tp[ir] == SPLINE2D_POINT_SHARP_CORNER) {
-       npts_used = 2;
-    } else if (S.tp[il] == SPLINE2D_POINT_NORMAL &&
-               S.tp[ir] == SPLINE2D_POINT_SHARP_CORNER) {
-       npts_used = 3;
-       if (il == 0) {
-          Xp_used[0]=S.Xp[S.np-2];
-          sp_used[0]=S.sp[0]-(S.sp[S.np-1]-S.sp[S.np-2]);
-          Xp_used[1]=S.Xp[il];
-          sp_used[1]=S.sp[il];
-          Xp_used[2]=S.Xp[ir];
-          sp_used[2]=S.sp[ir];
-       } else {
-          Xp_used[0]=S.Xp[il-1];
-          sp_used[0]=S.sp[il-1];
-          Xp_used[1]=S.Xp[il];
-          sp_used[1]=S.sp[il];
-          Xp_used[2]=S.Xp[ir];
-          sp_used[2]=S.sp[ir];
-       } /* endif */
-    } else if (S.tp[il] == SPLINE2D_POINT_SHARP_CORNER &&
-               S.tp[ir] == SPLINE2D_POINT_NORMAL) {
-       npts_used = 3;
-       if (il == S.np-2) {
-          Xp_used[0]=S.Xp[il];
-          sp_used[0]=S.sp[il];
-          Xp_used[1]=S.Xp[ir];
-          sp_used[1]=S.sp[ir];
-          Xp_used[2]=S.Xp[1];
-          sp_used[2]=S.sp[S.np-1]+(S.sp[1]-S.sp[0]);
-       } else {
-          Xp_used[0]=S.Xp[il];
-          sp_used[0]=S.sp[il];
-          Xp_used[1]=S.Xp[ir];
-          sp_used[1]=S.sp[ir];
-          Xp_used[2]=S.Xp[ir+1];
-          sp_used[2]=S.sp[ir+1];
-       } /* endif */
-    } else if (S.tp[il] == SPLINE2D_POINT_NORMAL &&
-               S.tp[ir] == SPLINE2D_POINT_NORMAL) {
-       npts_used = 4;
-       if (il == 0) {
-          Xp_used[0]=S.Xp[S.np-2];
-          sp_used[0]=S.sp[0]-(S.sp[S.np-1]-S.sp[S.np-2]);
-          Xp_used[1]=S.Xp[il];
-          sp_used[1]=S.sp[il];
-          Xp_used[2]=S.Xp[ir];
-          sp_used[2]=S.sp[ir];
-          Xp_used[3]=S.Xp[ir+1];
-          sp_used[3]=S.sp[ir+1];
-       } else if (il == S.np-2) {
-          Xp_used[0]=S.Xp[il-1];
-          sp_used[0]=S.sp[il-1];
-          Xp_used[1]=S.Xp[il];
-          sp_used[1]=S.sp[il];
-          Xp_used[2]=S.Xp[ir];
-          sp_used[2]=S.sp[ir];
-          Xp_used[3]=S.Xp[1];
-          sp_used[3]=S.sp[S.np-1]+(S.sp[1]-S.sp[0]);
-       } else {
-          Xp_used[0]=S.Xp[il-1];
-          sp_used[0]=S.sp[il-1];
-          Xp_used[1]=S.Xp[il];
-          sp_used[1]=S.sp[il];
-          Xp_used[2]=S.Xp[ir];
-          sp_used[2]=S.sp[ir];
-          Xp_used[3]=S.Xp[ir+1];
-          sp_used[3]=S.sp[ir+1];
+       if (!subinterval_found) {
+          subinterval_found = 0;
+          i = 0;
+          while (subinterval_found == 0 && i < np-1) {
+             x1=Xp[i].x;
+             x2=Xp[i+1].x;
+             y1=Xp[i].y;
+             y2=Xp[i+1].y;
+             s1=sp[i];
+             s2=sp[i+1];
+             if ( ((X.x-x1)*(X.x-x2) <= sqr(TOLER*max(fabs(X.x),TOLER))) ||
+                  ((X.y-y1)*(X.y-y2) <= sqr(TOLER*max(fabs(X.y),TOLER))) )  {
+               subinterval_found = 1;
+             } else {
+               i += 1;
+             } /* endif */
+          } /* endwhile */
+          if (!subinterval_found) {
+             return(sp[0]);
+          } /* endif */
        } /* endif */
     } /* endif */
 
-    /* Perform the interpolation. */
+    /* Use method of false position to find value of S
+       that will yield vector position X. */
 
-    if (npts_used == 2) {
-       Xl = S.Xp[il]+(s-S.sp[il])*(S.Xp[ir]-S.Xp[il])/
-	    (S.sp[ir]-S.sp[il]);
-       return(Xl);
-    } else if (npts_used == 3) {
-       ds0 = s - sp_used[0];
-       ds1 = s - sp_used[1];
-       ds2 = s - sp_used[2];
-       
-       ds01 = sp_used[0] - sp_used[1];
-       ds02 = sp_used[0] - sp_used[2];
-       ds12 = sp_used[1] - sp_used[2];
-       
-       a0 =  ds1*ds2/(ds01*ds02);
-       a1 = -ds0*ds2/(ds01*ds12);
-       a2 =  ds0*ds1/(ds02*ds12);
-         
-       Xl = a0*Xp_used[0] + a1*Xp_used[1] +
-	    a2*Xp_used[2];
-       return(Xl);
-    } else if (npts_used == 4) {
-       ds0 = s - sp_used[0];
-       ds1 = s - sp_used[1];
-       ds2 = s - sp_used[2];
-       ds3 = s - sp_used[3];
-       
-       ds01 = sp_used[0] - sp_used[1];
-       ds02 = sp_used[0] - sp_used[2];
-       ds12 = sp_used[1] - sp_used[2];
-       ds13 = sp_used[1] - sp_used[3];
-       ds23 = sp_used[2] - sp_used[3];
-       
-       a0 =  ds1*ds2/(ds01*ds02);
-       a1 = -ds0*ds2/(ds01*ds12);
-       a2 =  ds0*ds1/(ds02*ds12);
+    if ( (fabs(y2-y1) > fabs(x2-x1)) &&
+         ((X.y-y1)*(X.y-y2) <= sqr(TOLER*X.y)) ) { 
+       s3_old = s1;
+       s3 = s2;
+       icount = 0;
+       while ( fabs(s3-s3_old) > TOLER*TOLER*s3 ) {
+         s3_old = s3;
+         s3 = (s1*(y2-X.y) - s2*(y1-X.y))/(y2-y1);
+         y3=Spline(s3).y;
 
-       Xl = a0*Xp_used[0] + a1*Xp_used[1] +
-	    a2*Xp_used[2];
+         if ((y1-X.y)*(y3-X.y) < ZERO) {
+	   y2=y3;
+   	   s2=s3;
+         } else {
+	   y1=y3;
+	   s1=s3;
+         } /* endif */
 
-       a1 =  ds2*ds3/(ds12*ds13);
-       a2 = -ds1*ds3/(ds12*ds23);
-       a3 =  ds1*ds2/(ds13*ds23);
+         icount += 1;
+         if (icount > 1000) break;
+       } /* endwhile */
+    } else {
+       s3_old = s1;
+       s3 = s2;
+       icount = 0;
+       while ( fabs(s3-s3_old) > TOLER*TOLER*s3 ) {
+         s3_old = s3;
+         s3 = (s1*(x2-X.x) - s2*(x1-X.x))/(x2-x1);
+         x3=Spline(s3).x;
 
-       Xr = a1*Xp_used[1] + a2*Xp_used[2] +
-	    a3*Xp_used[3];
+         if ((x1-X.x)*(x3-X.x) < ZERO) {
+	   x2=x3;
+   	   s2=s3;
+         } else {
+	   x1=x3;
+	   s1=s3;
+         } /* endif */
 
-       switch(S.type) {
-         case SPLINE2D_QUADRATIC :
-           Xl = HALF*(Xl+Xr);
-           break; 
-         case SPLINE2D_CUBIC :
-           a_blend = ds1/ds12;
-	   Xl = (ONE+a_blend)*Xl - a_blend*Xr;
-           break;
-         case SPLINE2D_QUINTIC :
-           a_blend = ds1/ds12;
-           a_blend =-a_blend*a_blend*(THREE+TWO*a_blend);
-	   Xl = (ONE+a_blend)*Xl - a_blend*Xr;
-           break;
-         default:
-           Xl = HALF*(Xl+Xr);
-           break;
-       } /* endswitch */
-
-       return(Xl);
-
+         icount += 1;
+         if (icount > 1000) break;
+       } /* endwhile */
     } /* endif */
 
+    /* Return pathlength. */
+
+    return(s3);
+  
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if 0
+
+
+/********************************************************
+ * Spline2D_HO -- Spline fits in 2 space dimensions.       *
+ ********************************************************/
+
 
 /********************************************************
  * Routine: BCtype                                      *
@@ -605,65 +1188,6 @@ void Reverse_Spline(Spline2D_HO &S) {
       bc = S.bc[i];  S.bc[i] = S.bc[S.np-1-i];  S.bc[S.np-1-i] = bc;
       sp = S.sp[i];  S.sp[i] = S.sp[S.np-1-i];  S.sp[S.np-1-i] = sp;
    } /* endfor */
-
-}
-
-/********************************************************
- * Routine: Concatenate_Splines                         *
- *                                                      *
- * Concatenate (combines) spline S1 and S2 and returns  *
- * a new spline which is a combination of both.         *
- *                                                      *
- ********************************************************/
-Spline2D_HO Concatenate_Splines(const Spline2D_HO &S1,
-	      	             const Spline2D_HO &S2) {
-
-    int i, npts;
-    Spline2D_HO Sc;
-
-    /* Set number of points for concatenated spline. */
-
-    npts = S1.np + S2.np - 1;
- 
-    /* Allocate memory for concatenated spline. */ 
-
-    Sc.allocate(npts);
-
-    /* Set spline type for the concatenated spline. */
-
-    Sc.settype(S1.type);
-
-    /* Copy the spline coordinates, point type, and boundary 
-       condition information from spline S1 to the new 
-       concatenated spline Sc. */
-
-    for ( i = 0; i <= S1.np-1; ++i ) {
-        Sc.Xp[i] = S1.Xp[i];
-        Sc.tp[i] = S1.tp[i];
-        Sc.bc[i] = S1.bc[i];
-    } /* endfor */
-
-    Sc.tp[S1.np-1] = SPLINE2D_POINT_SHARP_CORNER;
-
-    /* Copy the spline coordinates, point type, and boundary 
-       condition information from spline S2 to the new 
-       concatenated spline Sc. A translation is applied to
-       ensure the first point of spline S2 is the same as
-       the last point of spline S1. */
-
-    for ( i = 1; i <= S2.np-1; ++i ) {
-        Sc.Xp[i+S1.np-1] = S2.Xp[i] + (S1.Xp[S1.np-1]-S2.Xp[0]);
-        Sc.tp[i+S1.np-1] = S2.tp[i];
-        Sc.bc[i+S1.np-1] = S2.bc[i];
-    } /* endfor */
-
-    /* Calculate the concatenated spline pathlengths. */
-
-    Sc.pathlength();
-
-    /* Return the concatenated spline. */
-
-    return(Sc);
 
 }
 
@@ -1606,133 +2130,6 @@ LinkedList<Vector2D> getX(const double &y, const Spline2D_HO &S) {
   
 }
 
-/****************************************************************
- * Routine: getS                                                *
- *                                                              *
- *   This routine returns the pathlength of vector location X   *
- *   on spline S.                                               *
- *                                                              *
- ****************************************************************/
-double getS(const Vector2D &X, const Spline2D_HO &S) {
-    int i, subinterval_found, icount;
-    double s1, s2, s3, s3_old, x1, x2, x3, y1, y2, y3;
-
-    /* Determine the subinterval of the spline
-       containing the point, X, of interest. */
-
-    subinterval_found = 0;
-    i = 0;
-    while (subinterval_found == 0 && i < S.np-1) {
-      x1=S.Xp[i].x;
-      x2=S.Xp[i+1].x;
-      y1=S.Xp[i].y;
-      y2=S.Xp[i+1].y;
-      s1=S.sp[i];
-      s2=S.sp[i+1];
-////////////////////////////////////////////////////////////////////////
-      if (abs(X-Vector2D(x1,y1)) < NANO) return s1;
-      if (abs(X-Vector2D(x2,y2)) < NANO) return s2;
-////////////////////////////////////////////////////////////////////////
-      if ( ((X.x-x1)*(X.x-x2) <= ZERO) &&
-           ((X.y-y1)*(X.y-y2) <= ZERO) ) {
-        subinterval_found = 1;
-      } else {
-        i += 1;
-      } /* endif */
-    } /* endwhile */
-
-    if (!subinterval_found) {
-       subinterval_found = 0;
-       i = 0;
-       while (subinterval_found == 0 && i < S.np-1) {
-          x1=S.Xp[i].x;
-          x2=S.Xp[i+1].x;
-          y1=S.Xp[i].y;
-          y2=S.Xp[i+1].y;
-          s1=S.sp[i];
-          s2=S.sp[i+1];
-          if ( ((X.x-x1)*(X.x-x2) <= sqr(TOLER*max(fabs(X.x),TOLER))) &&
-               ((X.y-y1)*(X.y-y2) <= sqr(TOLER*max(fabs(X.y),TOLER))) ) {
-            subinterval_found = 1;
-          } else {
-            i += 1;
-          } /* endif */
-       } /* endwhile */
-
-       if (!subinterval_found) {
-          subinterval_found = 0;
-          i = 0;
-          while (subinterval_found == 0 && i < S.np-1) {
-             x1=S.Xp[i].x;
-             x2=S.Xp[i+1].x;
-             y1=S.Xp[i].y;
-             y2=S.Xp[i+1].y;
-             s1=S.sp[i];
-             s2=S.sp[i+1];
-             if ( ((X.x-x1)*(X.x-x2) <= sqr(TOLER*max(fabs(X.x),TOLER))) ||
-                  ((X.y-y1)*(X.y-y2) <= sqr(TOLER*max(fabs(X.y),TOLER))) )  {
-               subinterval_found = 1;
-             } else {
-               i += 1;
-             } /* endif */
-          } /* endwhile */
-          if (!subinterval_found) {
-             return(S.sp[0]);
-          } /* endif */
-       } /* endif */
-    } /* endif */
-
-    /* Use method of false position to find value of S
-       that will yield vector position X. */
-
-    if ( (fabs(y2-y1) > fabs(x2-x1)) &&
-         ((X.y-y1)*(X.y-y2) <= sqr(TOLER*X.y)) ) { 
-       s3_old = s1;
-       s3 = s2;
-       icount = 0;
-       while ( fabs(s3-s3_old) > TOLER*TOLER*s3 ) {
-         s3_old = s3;
-         s3 = (s1*(y2-X.y) - s2*(y1-X.y))/(y2-y1);
-         y3=Spline(s3,S).y;
-
-         if ((y1-X.y)*(y3-X.y) < ZERO) {
-	   y2=y3;
-   	   s2=s3;
-         } else {
-	   y1=y3;
-	   s1=s3;
-         } /* endif */
-
-         icount += 1;
-         if (icount > 1000) break;
-       } /* endwhile */
-    } else {
-       s3_old = s1;
-       s3 = s2;
-       icount = 0;
-       while ( fabs(s3-s3_old) > TOLER*TOLER*s3 ) {
-         s3_old = s3;
-         s3 = (s1*(x2-X.x) - s2*(x1-X.x))/(x2-x1);
-         x3=Spline(s3,S).x;
-
-         if ((x1-X.x)*(x3-X.x) < ZERO) {
-	   x2=x3;
-   	   s2=s3;
-         } else {
-	   x1=x3;
-	   s1=s3;
-         } /* endif */
-
-         icount += 1;
-         if (icount > 1000) break;
-       } /* endwhile */
-    } /* endif */
-
-    /* Return pathlength. */
-
-    return(s3);
-  
-}
 
 /****************************************************************
  * Routine: getBCtype                                           *
@@ -1854,7 +2251,7 @@ Vector2D getminY(const Vector2D &X, const Spline2D_HO &S) {
  *                                                                    *
  * This routine returns the nearest splined value of x given y.       *
  *                                                                    *
- **********************************************************************/
+v **********************************************************************/
 Vector2D getminX(const Vector2D &X, const Spline2D_HO &S) {
 
   int iNext, found, icount;
@@ -1962,3 +2359,4 @@ Vector2D getnormal(const Vector2D &X, const Spline2D_HO &S) {
   
 }
 
+#endif
