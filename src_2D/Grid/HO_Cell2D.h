@@ -1,4 +1,4 @@
-/* \file HO_Cell2D.h
+/*!\file HO_Cell2D.h
    \brief Header file defining 2D high-order cell types. */
 
 #ifndef _HO_CELL2D_INCLUDED

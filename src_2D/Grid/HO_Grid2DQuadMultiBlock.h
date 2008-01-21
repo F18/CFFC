@@ -1,4 +1,4 @@
-/* \file HO_Grid2DQuadMultiBlock.h
+/*!\file HO_Grid2DQuadMultiBlock.h
    \brief Header file defining high-order 2D quadrilateral multi-block grid type. */
 
 #ifndef _HO_GRID2D_QUAD_MULTIBLOCK_INCLUDED

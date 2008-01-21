@@ -1,4 +1,4 @@
-/* \file HO_Spline2D.cc
+/*!\file HO_Spline2D.cc
    \brief Source file initializing/implementing member variables/functions that belong to classes defined in HO_Spline2D.h */
 
 /* Include required C++ libraries. */
@@ -15,7 +15,7 @@
 
 // ===== Member functions =====
 
-/*
+/*!
  * Concatenation operator.
  */
 const Spline2D_HO Spline2D_HO::operator + (const Spline2D_HO &S) const{
@@ -38,7 +38,7 @@ const Spline2D_HO Spline2D_HO::operator + (const Spline2D_HO &S) const{
   return (Sc);
 }
 
-/*
+/*!
  * Translates or shifts the positions of all of the 
  * points defining the spline.                      
  *                                                  
@@ -51,7 +51,7 @@ const Spline2D_HO& Spline2D_HO::translate(const Vector2D &V){
   return (*this);
 }
 
-/*
+/*!
  * Apply a solid body rotation about the origin and 
  * recompute the positions of all of the points in  
  * the spline accordingly.                          
@@ -72,7 +72,7 @@ const Spline2D_HO& Spline2D_HO::rotate(const double &a){
   return (*this);
 }
  
-/*
+/*!
  * Scale the positions of all of 
  * the points defining the spline.
  */
@@ -85,7 +85,7 @@ const Spline2D_HO& Spline2D_HO::scale(const double &a){
   return (*this);
 }
 
-/*
+/*!
  * Performa a piecewise linear, quadratic, cubic
  * or quintic blended spline interpolation to 
  * return the 2D position vector on  
@@ -267,7 +267,7 @@ const Vector2D Spline2D_HO::Spline(const double &s) const {
 }
 
 
-/*
+/*!
  * Get the unit tangential vector at the point of interest,
  * based on the point position vector.
  *
@@ -337,7 +337,7 @@ const Vector2D Spline2D_HO::tSpline(const Vector2D &Point, const PolynomOrder Or
   return Tangent;
 }
 
-/*
+/*!
  * Get the unit tangential vector at the point of interest
  * based on the point path coordinate.
  *
@@ -430,7 +430,7 @@ const Vector2D Spline2D_HO::tSpline(const double & s, const Vector2D * Xp_used,
   }
 }
 
-/*
+/*!
  * Get the normal unit vector at the point of interest
  * by approximating the spline in the vicinity of Point 
  * with a straight segment. 
@@ -547,7 +547,7 @@ const Vector2D Spline2D_HO::nSpline_SegmentBased(const Vector2D &Point) const {
   return NormalVector(StartPoint,EndPoint);
 }
 
-/*
+/*!
  * Output the spline to a stream in a format 
  * suitable for plotting with Tecplot.
  *
@@ -607,7 +607,7 @@ void Spline2D_HO::OutputTecplot(std::ostream &output_file, const int NumberOfPoi
   }
 }
 
-/*
+/*!
  * This routine returns the pathlength of vector location X 
  * on spline S.                                             
  */
@@ -732,7 +732,7 @@ double Spline2D_HO::getS(const Vector2D &X) const {
   
 }
 
-/*
+/*!
  * This routine returns the splined value of Y given X.      
  *                                                           
  * Returns a VECTOR2D LINKED LIST containing all the vectors 
@@ -800,7 +800,7 @@ LinkedList<Vector2D> Spline2D_HO::getY(const double &x) const {
   return(LL);
 }
 
-/*
+/*!
  * This routine returns the splined value of X given Y.      
  *                                                           
  * Returns a VECTOR2D LINKED LIST containing all the vectors 
@@ -870,7 +870,7 @@ LinkedList<Vector2D> Spline2D_HO::getX(const double &y) const {
 }
 
 
-/*
+/*!
  * This routine returns the boundary condition of vector 
  * location X on spline S.                               
  */
@@ -919,7 +919,7 @@ int Spline2D_HO::getBCtype(const Vector2D &X) const {
   
 }
 
-/*
+/*!
  * This routine returns the nearest splined value of y given x. 
  */
 Vector2D Spline2D_HO::getminY(const Vector2D &X) const {
@@ -978,7 +978,7 @@ Vector2D Spline2D_HO::getminY(const Vector2D &X) const {
   return Xpoint;
 }
 
-/*
+/*!
  * This routine returns the nearest splined value of x given y.
  */
 Vector2D Spline2D_HO::getminX(const Vector2D &X) const {
@@ -1037,7 +1037,7 @@ Vector2D Spline2D_HO::getminX(const Vector2D &X) const {
   return Xpoint;
 }
 
-/*
+/*!
  * Get the normal at the specified location
  */
 Vector2D Spline2D_HO::getnormal(const Vector2D &X) const {
@@ -1087,7 +1087,7 @@ Vector2D Spline2D_HO::getnormal(const Vector2D &X) const {
 }
 
 
-/*
+/*!
  * This routine returns the boundary condition type 
  * given the path length s along the spline and the 
  * the set of np boundary types (bc) that have been 
@@ -1118,7 +1118,7 @@ int Spline2D_HO::BCtype(const double &s) const {
 }
 
 
-/*
+/*!
  * Broadcasts a spline to all processors involved in  
  * the calculation from the primary processor using   
  * the MPI broadcast routine.                         
@@ -1200,7 +1200,7 @@ void Spline2D_HO::Broadcast_Spline(void) {
 }
 
 #ifdef _MPI_VERSION
-/*
+/*!
  * Broadcasts a spline to all processors associated   
  * with the specified communicator from the specified 
  * processor using the MPI broadcast routine.         
@@ -1283,7 +1283,7 @@ void Spline2D_HO::Broadcast_Spline(MPI::Intracomm &Communicator,
 }
 #endif
 
-/*
+/*!
  * Apply a mirror reflection about the y=0 axis and
  * recompute the positions of all of the points in 
  * the spline accordingly.                         
@@ -1303,7 +1303,7 @@ void Spline2D_HO::Reflect_Spline(void) {
 
 }
 
-/*
+/*!
  * Reverses the order of the spline points.
  */
 void Spline2D_HO::Reverse_Spline(void) {
@@ -1321,7 +1321,7 @@ void Spline2D_HO::Reverse_Spline(void) {
    } /* endfor */
 }
 
-/*
+/*!
  * This routine calculates and returns a 2D spline 
  * representing a straight line between two points.
  */
@@ -1362,7 +1362,7 @@ void Spline2D_HO::Create_Spline_Line(const Vector2D &V1,
 
 }
 
-/*
+/*!
  * This routine calculates and returns a 2D spline      
  * representing a straight line between two points.
  * The start and end points are determined based on 
@@ -1386,7 +1386,7 @@ void Spline2D_HO::Create_Spline_Line_Polar_Coordinates(const double &Inner_Radiu
   Create_Spline_Line(V1,V2,Number_of_Spline_Points);
 }
 
-/*
+/*!
  * This routine calculates and returns a 2D spline
  * representing a segment of a circular arc.      
  */
@@ -1443,7 +1443,7 @@ void Spline2D_HO::Create_Spline_Circular_Arc(const Vector2D &Origin,
 
 }
 
-/*
+/*!
  * This routine calculates and returns a 2D spline
  * representing a segment of an ellipsoidal arc.  
  */
@@ -1501,7 +1501,9 @@ void Spline2D_HO::Create_Spline_Ellipsoidal_Arc(const Vector2D &Origin,
     
 }
 
-/*
+/*!
+ * \verbatim
+ *
  * This routine calculates and returns a 2D spline for  
  * both NACA 4- and 5-digit aerofoil sections.  The     
  * algorithm for calculating the splines is straight    
@@ -1629,7 +1631,8 @@ void Spline2D_HO::Create_Spline_Ellipsoidal_Arc(const Vector2D &Origin,
  *                                                      
  * F. W. Reigels, "Aerofoil Sections", Butterworth &    
  * Co., 1961.                                           
- *                                                      
+ *
+ * \endverbatim                                                      
  */
 void Spline2D_HO::Create_Spline_NACA_Aerofoil(char *NACA_Aerofoil_Type_ptr,
 					      const double &Chord_Length,
@@ -1784,7 +1787,7 @@ void Spline2D_HO::Create_Spline_NACA_Aerofoil(char *NACA_Aerofoil_Type_ptr,
 
 }
 
-/*
+/*!
  * This routine calculates and returns a 2D spline     
  * representing the approximate position of the bow    
  * shock for supersonic flow over a circular cylinder. 
@@ -1843,7 +1846,7 @@ void Spline2D_HO::Create_Spline_Bow_Shock(const double &Radius,
 
 }
 
-/*
+/*!
  * This routine calculates and returns a 2D spline    
  * representing the radius as a function of axial     
  * position for a duct with a smoothly varying change 
@@ -2029,7 +2032,7 @@ void Spline2D_HO::Create_Spline_Diverging_Nozzle(const double &Xthroat,
 
 }
 
-/*
+/*!
  * This routine calculates and returns a 2D spline 
  * representing a rectangle.                       
  */

@@ -1,4 +1,5 @@
-/* Cell2D.cc:  Subroutines and data for 2D cells. */
+/*!\file Cell2D.cc
+  \brief Subroutines and data for high-order 2D cell class. */
 
 /* Include 2D cell header file. */
 

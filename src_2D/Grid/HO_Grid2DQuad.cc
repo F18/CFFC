@@ -1,4 +1,4 @@
-/* \file HO_Grid2DQuad.cc
+/*!\file HO_Grid2DQuad.cc
    \brief Source file initializing/implementing member variables/functions that belong to classes defined in HO_Grid2DQuad.h */
 
 /* Include required C++ libraries. */

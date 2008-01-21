@@ -1,4 +1,4 @@
-/* \file HO_Spline2D.h
+/*!\file HO_Spline2D.h
    \brief Header file defining high-order 2D Spline classes. */
 
 #ifndef _HO_SPLINE2D_INCLUDED
@@ -322,10 +322,10 @@ public:
   void Broadcast_Spline(MPI::Intracomm &Communicator,
 			const int Source_CPU);
 #endif
-
+  //@}
 
 private:
-  Spline2D_HO(const Spline2D_HO &S); //! Private copy constructor
+  Spline2D_HO(const Spline2D_HO &S); //!< Private copy constructor
 
   int FluxMethod;   //!< variable to set the flux calculation method through the boundary spline
 

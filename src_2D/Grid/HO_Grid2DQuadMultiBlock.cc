@@ -1,4 +1,4 @@
-/* \file HO_Grid2DQuadMultiBlock.cc
+/*!\file HO_Grid2DQuadMultiBlock.cc
    \brief Multi-block subroutines for high-order 2D quadrilateral multi-block grid class. */
 
 /* Include required C++ libraries. */
