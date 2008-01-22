@@ -2075,20 +2075,28 @@ void Spline2D_HO::Create_Spline_Rectangle(const Vector2D &Origin,
 
 }
 
-#if 0
 /*!
- * Computes the contour integral of the polynomial function 
- *  $ p(x,y) = \oint (x-xc)^(OrderX+1) * (y-yc)^(OrderY) dy  along the spline                 
- * between the points "StartPoint" and "EndPoint" with an accuracy given     
- * by the number of required exact "digits".                                 
- * Algorithm: The path integration (the spline) is divided into segments     
- * which contain no other spline control points. The integral is computed    
- * as a sum of the individual integrals on each segments.                    
- * Obs. 1. This division is neccessary for the computation of curve integrals
- *         along splines with sharp points.                                  
+ * Compute the contour integral of the polynomial function 
+ * \f$ p(x,y) = \oint (x-xc)^{(OrderX+1)} * (y-yc)^{(OrderY)} dy \f$   
+ * between the path lengths corresponding to the "StartPoint" 
+ * and "EndPoint" points with an accuracy given by the number 
+ * of required exact "digits". 
+ * Algorithm: The path integration (i.e. the spline) is divided into segments     
+ * which contain only the end spline control points (i.e. no control points in between).
+ * This division is neccessary for computations of curve integrals
+ * along splines with sharp points.                                  
+ * The integral is computed as a sum of the individual integrals on each individual segment.
+ *
+ * \param StartPoint the first point defining the integration domain
+ * \param EndPoint the second point defining the integration domain
+ * \param Centroid the point defining (xc,yc) in the expression above.
+ * \param digits the number of exact digits with which the integration is sought
+ * \param OrderX the power of the x-term in the polynomial expression
+ * \param OrderY the power of the y-term in the polynomial expression
  */
-double Spline2D::PolynomOrderIntegration(const Vector2D &StartPoint, const Vector2D &EndPoint, const Vector2D &Centroid,
-					 const int digits, const int OrderX, const int OrderY){
+double Spline2D_HO::PolynomOrderIntegration(const Vector2D &StartPoint, const Vector2D &EndPoint,
+					    const Vector2D &Centroid, const int &digits,
+					    const int &OrderX, const int &OrderY) const {
 
   double S_StartPoint, S_EndPoint;
   int i;
@@ -2096,8 +2104,8 @@ double Spline2D::PolynomOrderIntegration(const Vector2D &StartPoint, const Vecto
   double Sol(0.0);
 
   // Get the pathlength for StartPoint and EndPoint
-  S_StartPoint = getS(StartPoint, *this);
-  S_EndPoint   = getS(EndPoint, *this); 
+  S_StartPoint = getS(StartPoint);
+  S_EndPoint   = getS(EndPoint); 
 
   // Determine whether there are spline control points between StartPoint and EndPoint
   // and whether they are far enough apart numerically in order to generate a sub-interval
@@ -2143,23 +2151,30 @@ double Spline2D::PolynomOrderIntegration(const Vector2D &StartPoint, const Vecto
 
 }
 
-/* Integrate between two points with the required accuracy
-   Obs. There is no control point between StartPoint and EndPoint. */
-double Spline2D::BasicOrderIntegration(const Vector2D &StartPoint, const Vector2D &EndPoint, const Vector2D &Centroid,
-				       const int digits, const int OrderX, const int OrderY){
+/*!
+ * Compute the contour integral of the polynomial function 
+ * \f$ p(x,y) = \oint (x-xc)^{(OrderX+1)} * (y-yc)^{(OrderY)} dy \f$ 
+ * between the path lengths corresponding to the "StartPoint" 
+ * and "EndPoint" points with an accuracy given by the number 
+ * of required exact "digits". 
+ * It is assumed that there are no other spline control points 
+ * between the end points.
+ */
+double Spline2D_HO::BasicOrderIntegration(const Vector2D &StartPoint, const Vector2D &EndPoint,
+					  const Vector2D &Centroid, const int &digits,
+					  const int &OrderX, const int &OrderY) const {
 
-  long double TOL(0.5*pow(10.0,-digits)); // accuracy: --> based on precision 
-                                          // i.e exact number of digits 
-  const double EPS_MACHINE(numeric_limits<double>::epsilon());
+  // determine the accuracy based on the required precision (i.e the number of exact digits)
+  double TOL(EpsilonTol::getAccuracyBasedOnExactDigits(digits));
 
-  double S1(getS(StartPoint,*this)), S2(getS(EndPoint,*this));
+  double S1(getS(StartPoint)), S2(getS(EndPoint));
   int Divisions(2),i;
-  const int MaxDivisions = 1000;
+  const int MaxDivisions(1000);
 
   double IntLessAccurate, IntMoreAccurate, RelError(10.0), Length(S2 - S1), DeltaS;
   Vector2D InterP1, InterP2;	// intermediate points
 
-  if (fabs(Length) <= EPS_MACHINE){
+  if (fabs(Length) <= EpsilonTol::MachineEps){
     return 0.0;
   }
 
@@ -2176,7 +2191,7 @@ double Spline2D::BasicOrderIntegration(const Vector2D &StartPoint, const Vector2
     IntMoreAccurate = 0.0;
     InterP1 = StartPoint;	// initialize the start of the first interval
     for (i=1; i<=Divisions; ++i){
-      InterP2 = Spline(S1 + i*DeltaS,*this);
+      InterP2 = Spline(S1 + i*DeltaS);
       IntMoreAccurate += PolynomLineIntegration(InterP1.x,InterP1.y,InterP2.x,InterP2.y,
 						Centroid.x ,Centroid.y,
 						OrderX, OrderY);
@@ -2189,7 +2204,6 @@ double Spline2D::BasicOrderIntegration(const Vector2D &StartPoint, const Vector2
 
     IntLessAccurate = IntMoreAccurate;
   }
-
+  
   return IntMoreAccurate;
 }
-#endif

@@ -11,19 +11,19 @@ using std::complex;
 /* Include CFFC header files */
 #include "NumericalLibrary.h"
 
-/*************************************************************************
- * ZeroLineIntegration(StartPoint,EndPoint)                              *
- * Computes the analytical integral of the function with the form (x dy) *
- * along a segment line. This function arises in the computation of area *
- * of plan figures with curved boundaries when the curves are            *
- * approximated by segment lines. For the double (area) integral, the    *
- * powers of the general polynomial function in "x" and "y" are ZERO.    *
- * Input data:                                                           *
- *    - StartPoint.X (N1x)                                               *
- *    - StartPoint.Y (N1y)                                               *
- *    - EndPoint.X (N2x)                                                 *
- *    - EndPoint.Y (N2y)                                                 *
- * Returned data: -the value of the integral                             *
+/***********************************************************************//**
+ * Compute the integral \f$ I = \int x dy \f$ along a segment line.
+ * This integral is computed with an analytic expression.
+ * This function arises in the area computation of plan figures 
+ * with curved boundaries when the curves are approximated by segment lines.
+ * For the double (area) integral, the powers of the general polynomial
+ * function in "x" and "y" are ZERO.    
+ *
+ * \param N1x the x-coordinate of the segment first end point.
+ * \param N1y the y-coordinate of the segment first end point.
+ * \param N2x the x-coordinate of the segment second end point.
+ * \param N2y the y-coordinate of the segment second end point.
+ * \return the value of the integral
  ************************************************************************/
 double ZeroLineIntegration(const double & N1x, const double & N1y,
 			   const double & N2x, const double & N2y){
@@ -31,26 +31,23 @@ double ZeroLineIntegration(const double & N1x, const double & N1y,
   return (N2y - N1y)*(N1x + 0.5*(N2x - N1x));
 }
 
-/*************************************************************************
- * PolynomLineIntegration(StartPoint,EndPoint,Centroid)                  *
- * Computes the analytical integral of polynomial functions with the     *
- * form (x - Centroid.X)^(OrderX+1) * (y - Centroid.Y)^OrderY along a    *
- * segment line.                                                         *
- * Input data:                                                           *
- *    - StartPoint.X (N1x)                                               *
- *    - StartPoint.Y (N1y)                                               *
- *    - EndPoint.X (N2x)                                                 *
- *    - EndPoint.Y (N2y)                                                 *
- *    - Centroid.X (xCC)                                                 *
- *    - Centroid.Y (yCC)                                                 *
- * Returned data: -the values of the integrals up to 3rd order           *
- *                 i.e. OrderX + OrderY <= 3                             *
- * Obs. Use P1&P2 of the geom. coeff. as OrderX and OrderY               *
- ************************************************************************/
+/***********************************************************************//**
+ * Compute the integral \f$ I = \int (x - xc)^{(OrderX+1)} * (y - yc)^OrderY dy \f$
+ * along a segment line.
+ * The result of this polynomial function integration is determined with an analytic expression.
+ *
+ * \param N1x the x-coordinate of the line first end point
+ * \param N1y the y-coordinate of the line first end point
+ * \param N2x the x-coordinate of the line second end point
+ * \param N2y the y-coordinate of the line second end point
+ * \param xCC the xc-coordinate
+ * \param yCC the yc-coordinate
+ * \return the value of the integrals up to 3rd-order (i.e. OrderX + OrderY <= 3)
+ *********************************************************************************/
 double PolynomLineIntegration(const double & N1x, const double & N1y,
 			      const double & N2x, const double & N2y,
 			      const double & xCC, const double & yCC,
-			      const int OrderX,   const int OrderY){
+			      const int &OrderX,   const int &OrderY){
   
   double DX = N2x - N1x;
   double DY = N2y - N1y;

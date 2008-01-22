@@ -24,6 +24,7 @@ using namespace std;
 #include "../MPI/MPI.h"             // Include MPI header file
 #include "HO_Node2D.h"		    // Include high-order 2D node header file
 #include "../Utilities/Utilities.h" // Include utilities header file
+#include "../Math/NumericalLibrary.h" // Include numerical library header file
 
 
 /* Define the 2D spline types. */

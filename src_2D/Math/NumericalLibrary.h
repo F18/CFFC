@@ -1275,10 +1275,10 @@ inline ReturnType Gauss5PointQuadrilateralQuadrature(FunctionType func,
 			       0.0,1.0,0.0,1.0,dummy);
 }
 
-/******************************************************************************************
- * Generalized polynomial function of ONE-variable                                        *
- * is a class of functions which have the form (x-xi)^n                                   *
- ******************************************************************************************/
+/**
+ * Generalized polynomial function of ONE-variable                                        
+ * is a class of functions which have the form (x-xi)^n                                   
+ ********************************************************/
 class GeneralizedPolynomialFunctionOfOneVariable{
  private:
   double xi;
@@ -1297,10 +1297,10 @@ class GeneralizedPolynomialFunctionOfOneVariable{
     }
 };
 
-/******************************************************************************************
- * Generalized polynomial function of TWO-variables                                       *
- * is a class of functions which have the form (x-xi)^n * (y-yi)^m                        *
- ******************************************************************************************/
+/**
+ * Generalized polynomial function of TWO-variables                                      
+ * is a class of functions which have the form (x-xi)^n * (y-yi)^m                       
+ ********************************************************************/
 class GeneralizedPolynomialFunctionOfTwoVariables{
  private:
   double xi, yi;
@@ -1344,7 +1344,7 @@ inline double ZeroLineIntegration(const Node& StartNode, const Node& EndNode){
 double PolynomLineIntegration(const double & N1x, const double & N1y,
 			      const double & N2x, const double & N2y,
 			      const double & xCC, const double & yCC,
-			      const int OrderX,   const int OrderY);
+			      const int &OrderX, const int &OrderY);
 
 
 /**************** Function Prototypes ********************/
