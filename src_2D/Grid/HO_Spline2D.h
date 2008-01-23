@@ -25,6 +25,7 @@ using namespace std;
 #include "HO_Node2D.h"		    // Include high-order 2D node header file
 #include "../Utilities/Utilities.h" // Include utilities header file
 #include "../Math/NumericalLibrary.h" // Include numerical library header file
+#include "../Math/Spline2D.h"	      // Include spline 2D header file 
 
 
 /* Define the 2D spline types. */
@@ -116,6 +117,9 @@ public:
 
   //! Assignment operator.
   Spline2D_HO& operator= (const Spline2D_HO &S);
+
+  //! Assignment operator with regular 2D spline
+  Spline2D_HO& operator= (const Spline2D &S);
   //@}
 
   //! @name Allocation and deallocation.
@@ -200,6 +204,7 @@ public:
   //@{
   //! Determine the position vector corresponding to a specified path length s along the defined spline.
   const Vector2D Spline(const double &s) const;
+  friend Vector2D Spline(const double &s, const Spline2D_HO &S){ return S.Spline(s); }
 
   //! Determine the subinterval containing the point of interest
   void find_subinterval(const double &s, int & il, int & ir) const;
@@ -209,12 +214,15 @@ public:
   friend double getS(const Vector2D &X, const Spline2D_HO &S){ return S.getS(X); }
 
   LinkedList<Vector2D> getX(const double &y) const;
+  friend LinkedList<Vector2D> getX(const double &y, const Spline2D_HO &S) { return S.getX(y); }
   LinkedList<Vector2D> getY(const double &x) const;
+  friend LinkedList<Vector2D> getY(const double &x, const Spline2D_HO &S) { return S.getY(x); }
 
   //! Get the BC type at the given location
   int getBCtype(const Vector2D &X) const;
   //! Get the BC type at a given path length s
   int BCtype(const double &s) const;
+  friend int BCtype(const double &s, const Spline2D_HO &S){ return S.BCtype(s); }
 
   Vector2D getminX(const Vector2D &X) const;
   Vector2D getminY(const Vector2D &X) const;
@@ -504,6 +512,30 @@ inline Spline2D_HO & Spline2D_HO::operator=(const Spline2D_HO &S){
 }
 
 /*!
+ * Assignment operator with regular 2D spline
+ */
+inline Spline2D_HO & Spline2D_HO::operator=(const Spline2D &S){
+
+  /* Allocate memory if there is not enough */
+  allocate(S.np);
+
+  /* assign the same type as S */
+  type = S.type;
+
+  /* leave the flux method unchanged*/
+  // 
+
+  /* Copy the values from S */
+  for (int i=0; i<=np-1; ++i){
+    Xp[i] = S.Xp[i];
+    sp[i] = S.sp[i];
+    tp[i] = S.tp[i];
+    bc[i] = S.bc[i];
+  }
+  return *this;
+}
+
+/*!
  * Determine the spline subinterval
  * containing the point (position) of interest.
  * The interval is defined by the indexes
@@ -715,15 +747,22 @@ inline double Spline2D_HO::ZeroOrderIntegration(const double &SplinePathStart,
  */
 inline ostream &operator << (ostream &out_file, const Spline2D_HO &S) {
   int i;
-  out_file << S.getFluxCalcMethod() << endl;   // output FluxMethod
-  out_file << S.type << endl;
-  out_file << S.np << endl;
-  for ( i = 0; i <= S.np-1; ++i ) {
-    out_file << S.Xp[i];
-    out_file.setf(ios::scientific);
-    out_file << " " << S.tp[i] << " " << S.bc[i] << "\n";
-    out_file.unsetf(ios::scientific);
-  } /* endfor */
+
+  if (S.np != 0){
+    // output more information if the spline has control points defined
+    out_file << S.np << " "
+	     << S.type << " "
+	     << S.getFluxCalcMethod() << endl;   // output FluxMethod
+    for ( i = 0; i <= S.np-1; ++i ) {
+      out_file << S.Xp[i];
+      out_file.setf(ios::scientific);
+      out_file << " " << S.tp[i] << " " << S.bc[i] << "\n";
+      out_file.unsetf(ios::scientific);
+    } /* endfor */
+  } else {
+    // output only ZERO
+    out_file << S.np << "\n";
+  }
   return (out_file);
 }
 
@@ -733,20 +772,32 @@ inline ostream &operator << (ostream &out_file, const Spline2D_HO &S) {
 inline istream &operator >> (istream &in_file, Spline2D_HO &S) {
   int i;
   in_file.setf(ios::skipws);
-  in_file >> i; S.setFluxCalcMethod(i);   // read FluxMethod
-  in_file >> i; S.settype(i);
+
+  // Read the number of control points
   in_file >> i;
-  /* allocate memory if there isn't enough */
-  S.allocate(i);
-  in_file.unsetf(ios::skipws);
-  for ( i = 0; i <= S.np-1; ++i ) {
-    in_file >> S.Xp[i];
-    in_file.setf(ios::skipws); 
-    in_file >> S.tp[i] >> S.bc[i];
+
+  if (i != 0) {
+    /* allocate memory if there isn't enough */
+    S.allocate(i);
+
+    in_file >> i; S.settype(i);
+    in_file >> i; S.setFluxCalcMethod(i);   // read FluxMethod
+
     in_file.unsetf(ios::skipws);
-  } /* endfor */
-  /* update pathlength */
-  S.pathlength();
+    for ( i = 0; i <= S.np-1; ++i ) {
+      in_file >> S.Xp[i];
+      in_file.setf(ios::skipws); 
+      in_file >> S.tp[i] >> S.bc[i];
+      in_file.unsetf(ios::skipws);
+    } /* endfor */
+
+    /* update pathlength */
+    S.pathlength();
+  } else {
+    // deallocate the current spline
+    S.deallocate();
+  }
+
   return (in_file);
 }
 

@@ -483,8 +483,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Rectangular_Box(int &_Number_of_Blocks_Idir
     Orthogonal_East, Orthogonal_West;
   double Beta_I, Tau_I, Beta_J, Tau_J;
   Vector2D xc_NW, xc_NE, xc_SE, xc_SW;
-  Spline2D Bnd_Spline_North, Bnd_Spline_South,
-    Bnd_Spline_East, Bnd_Spline_West;
+  Spline2D_HO Bnd_Spline_North, Bnd_Spline_South,
+              Bnd_Spline_East, Bnd_Spline_West;
   
   /* Allocate memory for grid block. */
   
@@ -513,10 +513,10 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Rectangular_Box(int &_Number_of_Blocks_Idir
       /* Create the splines defining the north, south,
 	 east, and west boundaries of the rectangular box. */
       
-      Create_Spline_Line(Bnd_Spline_North, xc_NW, xc_NE, 2);
-      Create_Spline_Line(Bnd_Spline_South, xc_SW, xc_SE, 2);
-      Create_Spline_Line(Bnd_Spline_East, xc_SE, xc_NE, 2);
-      Create_Spline_Line(Bnd_Spline_West, xc_SW, xc_NW, 2);
+      Bnd_Spline_North.Create_Spline_Line(xc_NW, xc_NE, 2);
+      Bnd_Spline_South.Create_Spline_Line(xc_SW, xc_SE, 2);
+      Bnd_Spline_East.Create_Spline_Line(xc_SE, xc_NE, 2);
+      Bnd_Spline_West.Create_Spline_Line(xc_SW, xc_NW, 2);
       
       /* Set the boundary condition types for each of the
 	 boundary splines. */
@@ -610,8 +610,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Rectangular_Box(int &_Number_of_Blocks_Idir
       Orthogonal_East, Orthogonal_West;
   double Beta_I, Tau_I, Beta_J, Tau_J;
   Vector2D xc_NW, xc_NE, xc_SE, xc_SW;
-  Spline2D Bnd_Spline_North, Bnd_Spline_South,
-           Bnd_Spline_East, Bnd_Spline_West;
+  Spline2D_HO Bnd_Spline_North, Bnd_Spline_South,
+              Bnd_Spline_East, Bnd_Spline_West;
 
   /* Allocate memory for grid block. */
 
@@ -639,10 +639,10 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Rectangular_Box(int &_Number_of_Blocks_Idir
       /* Create the splines defining the north, south,
 	 east, and west boundaries of the rectangular box. */
       
-      Create_Spline_Line(Bnd_Spline_North, xc_NW, xc_NE, 2);
-      Create_Spline_Line(Bnd_Spline_South, xc_SW, xc_SE, 2);
-      Create_Spline_Line(Bnd_Spline_East, xc_SE, xc_NE, 2);
-      Create_Spline_Line(Bnd_Spline_West, xc_SW, xc_NW, 2);
+      Bnd_Spline_North.Create_Spline_Line(xc_NW, xc_NE, 2);
+      Bnd_Spline_South.Create_Spline_Line(xc_SW, xc_SE, 2);
+      Bnd_Spline_East.Create_Spline_Line(xc_SE, xc_NE, 2);
+      Bnd_Spline_West.Create_Spline_Line(xc_SW, xc_NW, 2);
 
       /* Set the boundary condition types for each of the
 	 boundary splines. */
@@ -756,8 +756,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate(int &_Number_of_Blocks_Idir_,
       Orthogonal_East, Orthogonal_West;
   double Beta_I, Tau_I, Beta_J, Tau_J;
   Vector2D xc_NW, xc_NE, xc_SE, xc_SW;
-  Spline2D Bnd_Spline_North, Bnd_Spline_South,
-           Bnd_Spline_East, Bnd_Spline_West;
+  Spline2D_HO Bnd_Spline_North, Bnd_Spline_South,
+              Bnd_Spline_East, Bnd_Spline_West;
 
   // Allocate memory for grid blocks.  There are two grid blocks for 
   // this mesh.
@@ -794,10 +794,10 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate(int &_Number_of_Blocks_Idir_,
 
     // Create the splines defining the north, south, east, and west 
     // boundaries of the rectangular boxes.
-    Create_Spline_Line(Bnd_Spline_North,xc_NW,xc_NE,2);
-    Create_Spline_Line(Bnd_Spline_South,xc_SW,xc_SE,2);
-    Create_Spline_Line(Bnd_Spline_East,xc_SE,xc_NE,2);
-    Create_Spline_Line(Bnd_Spline_West,xc_SW,xc_NW,2);
+    Bnd_Spline_North.Create_Spline_Line(xc_NW,xc_NE,2);
+    Bnd_Spline_South.Create_Spline_Line(xc_SW,xc_SE,2);
+    Bnd_Spline_East.Create_Spline_Line(xc_SE,xc_NE,2);
+    Bnd_Spline_West.Create_Spline_Line(xc_SW,xc_NW,2);
 
     // Set the boundary condition types for each of the boundary splines.
     if (iBlk == 0) {
@@ -915,8 +915,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate_NK(int &_Number_of_Blocks_Idir_,
     Orthogonal_East, Orthogonal_West;
   double Beta_I, Tau_I, Beta_J, Tau_J;
   Vector2D xc_NW, xc_NE, xc_SE, xc_SW;
-  Spline2D Bnd_Spline_North, Bnd_Spline_South,
-    Bnd_Spline_East, Bnd_Spline_West;
+  Spline2D_HO Bnd_Spline_North, Bnd_Spline_South,
+              Bnd_Spline_East, Bnd_Spline_West;
   
   /* Allocate memory for grid blocks.  There are three grid blocks for this mesh. */
   _Number_of_Blocks_Idir_ = 3;
@@ -949,10 +949,10 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate_NK(int &_Number_of_Blocks_Idir_,
       /* Create the splines defining the north, south,
 	 east, and west boundaries of the rectangular boxes. */
       
-      Create_Spline_Line(Bnd_Spline_North, xc_NW, xc_NE, 2);
-      Create_Spline_Line(Bnd_Spline_South, xc_SW, xc_SE, 2);
-      Create_Spline_Line(Bnd_Spline_East, xc_SE, xc_NE, 2);
-      Create_Spline_Line(Bnd_Spline_West, xc_SW, xc_NW, 2);
+      Bnd_Spline_North.Create_Spline_Line(xc_NW, xc_NE, 2);
+      Bnd_Spline_South.Create_Spline_Line(xc_SW, xc_SE, 2);
+      Bnd_Spline_East.Create_Spline_Line(xc_SE, xc_NE, 2);
+      Bnd_Spline_West.Create_Spline_Line(xc_SW, xc_NW, 2);
       
       /* Set the boundary condition types for each of the
 	 boundary splines. */
@@ -1076,8 +1076,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate3(int &_Number_of_Blocks_Idir_,
       Orthogonal_East, Orthogonal_West;
   double Beta_I, Tau_I, Beta_J, Tau_J;
   Vector2D xc_NW, xc_NE, xc_SE, xc_SW;
-  Spline2D Bnd_Spline_North, Bnd_Spline_South,
-           Bnd_Spline_East, Bnd_Spline_West;
+  Spline2D_HO Bnd_Spline_North, Bnd_Spline_South,
+              Bnd_Spline_East, Bnd_Spline_West;
 
   // Allocate memory for grid blocks.  There are two grid blocks for 
   // this mesh.
@@ -1105,10 +1105,10 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate3(int &_Number_of_Blocks_Idir_,
 
     // Create the splines defining the north, south, east, and west 
     // boundaries of the rectangular boxes.
-    Create_Spline_Line(Bnd_Spline_North,xc_NW,xc_NE,2);
-    Create_Spline_Line(Bnd_Spline_South,xc_SW,xc_SE,2);
-    Create_Spline_Line(Bnd_Spline_East,xc_SE,xc_NE,2);
-    Create_Spline_Line(Bnd_Spline_West,xc_SW,xc_NW,2);
+    Bnd_Spline_North.Create_Spline_Line(xc_NW,xc_NE,2);
+    Bnd_Spline_South.Create_Spline_Line(xc_SW,xc_SE,2);
+    Bnd_Spline_East.Create_Spline_Line(xc_SE,xc_NE,2);
+    Bnd_Spline_West.Create_Spline_Line(xc_SW,xc_NW,2);
 
     // Set the boundary condition types for each of the boundary splines.
     if (iBlk == 0) {
@@ -1211,8 +1211,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate4(int &_Number_of_Blocks_Idir_,
       Orthogonal_East, Orthogonal_West;
   double Beta_I, Tau_I, Beta_J, Tau_J;
   Vector2D xc_NW, xc_NE, xc_SE, xc_SW;
-  Spline2D Bnd_Spline_North, Bnd_Spline_South,
-           Bnd_Spline_East, Bnd_Spline_West;
+  Spline2D_HO Bnd_Spline_North, Bnd_Spline_South,
+              Bnd_Spline_East, Bnd_Spline_West;
 
   // Allocate memory for grid blocks.  There are two grid blocks for 
   // this mesh.
@@ -1245,10 +1245,10 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate4(int &_Number_of_Blocks_Idir_,
 
     // Create the splines defining the north, south, east, and west 
     // boundaries of the rectangular boxes.
-    Create_Spline_Line(Bnd_Spline_North,xc_NW,xc_NE,2);
-    Create_Spline_Line(Bnd_Spline_South,xc_SW,xc_SE,2);
-    Create_Spline_Line(Bnd_Spline_East,xc_SE,xc_NE,2);
-    Create_Spline_Line(Bnd_Spline_West,xc_SW,xc_NW,2);
+    Bnd_Spline_North.Create_Spline_Line(xc_NW,xc_NE,2);
+    Bnd_Spline_South.Create_Spline_Line(xc_SW,xc_SE,2);
+    Bnd_Spline_East.Create_Spline_Line(xc_SE,xc_NE,2);
+    Bnd_Spline_West.Create_Spline_Line(xc_SW,xc_NW,2);
 
     // Set the boundary condition types for each of the boundary splines.
     if (iBlk == 0) {
@@ -1356,8 +1356,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate9(int &_Number_of_Blocks_Idir_,
     Orthogonal_East, Orthogonal_West;
   double Beta_I, Tau_I, Beta_J, Tau_J;
   Vector2D xc_NW, xc_NE, xc_SE, xc_SW;
-  Spline2D Bnd_Spline_North, Bnd_Spline_South,
-    Bnd_Spline_East, Bnd_Spline_West;
+  Spline2D_HO Bnd_Spline_North, Bnd_Spline_South,
+              Bnd_Spline_East, Bnd_Spline_West;
 
   // Allocate memory for grid blocks.  There are two grid blocks for 
   // this mesh.
@@ -1385,10 +1385,10 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate9(int &_Number_of_Blocks_Idir_,
 
     // Create the splines defining the north, south, east, and west 
     // boundaries of the rectangular boxes.
-    Create_Spline_Line(Bnd_Spline_North,xc_NW,xc_NE,2);
-    Create_Spline_Line(Bnd_Spline_South,xc_SW,xc_SE,2);
-    Create_Spline_Line(Bnd_Spline_East,xc_SE,xc_NE,2);
-    Create_Spline_Line(Bnd_Spline_West,xc_SW,xc_NW,2);
+    Bnd_Spline_North.Create_Spline_Line(xc_NW,xc_NE,2);
+    Bnd_Spline_South.Create_Spline_Line(xc_SW,xc_SE,2);
+    Bnd_Spline_East.Create_Spline_Line(xc_SE,xc_NE,2);
+    Bnd_Spline_West.Create_Spline_Line(xc_SW,xc_NW,2);
 
     // Set the boundary condition types for each of the boundary splines.
     if (iBlk == 0) {
@@ -1499,8 +1499,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_1D_Flame(int &_Number_of_Blocks_Idir_,
     Orthogonal_East, Orthogonal_West;
   double Beta_I, Tau_I, Beta_J, Tau_J;
   Vector2D xc_NW, xc_NE, xc_SE, xc_SW;
-  Spline2D Bnd_Spline_North, Bnd_Spline_South,
-    Bnd_Spline_East, Bnd_Spline_West;
+  Spline2D_HO Bnd_Spline_North, Bnd_Spline_South,
+              Bnd_Spline_East, Bnd_Spline_West;
   
   /* Allocate memory for grid blocks.  There are two grid
      blocks for this mesh. */
@@ -1526,10 +1526,10 @@ void Grid2D_Quad_MultiBlock_HO::Grid_1D_Flame(int &_Number_of_Blocks_Idir_,
     /* Create the splines defining the north, south,
        east, and west boundaries of the rectangular boxes. */
     
-    Create_Spline_Line(Bnd_Spline_North, xc_NW, xc_NE, 2);
-    Create_Spline_Line(Bnd_Spline_South, xc_SW, xc_SE, 2);
-    Create_Spline_Line(Bnd_Spline_East, xc_SE, xc_NE, 2);
-    Create_Spline_Line(Bnd_Spline_West, xc_SW, xc_NW, 2);
+    Bnd_Spline_North.Create_Spline_Line(xc_NW, xc_NE, 2);
+    Bnd_Spline_South.Create_Spline_Line(xc_SW, xc_SE, 2);
+    Bnd_Spline_East.Create_Spline_Line(xc_SE, xc_NE, 2);
+    Bnd_Spline_West.Create_Spline_Line(xc_SW, xc_NW, 2);
     
     /* Set the boundary condition types for each of the
        boundary splines. */
@@ -1627,8 +1627,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_2D_Laminar_Flame(int &_Number_of_Blocks_Idi
     fuel_spacing,  tube_spacing, air_spacing;
   
   Vector2D xc_NW, xc_NE, xc_SE, xc_SW;
-  Spline2D Bnd_Spline_North, Bnd_Spline_South,
-    Bnd_Spline_East, Bnd_Spline_West;
+  Spline2D_HO Bnd_Spline_North, Bnd_Spline_South,
+              Bnd_Spline_East, Bnd_Spline_West;
 
   /******************************************************/
   //Standard Core Flame  //Flame_Type_Flag == IC_RESTART
@@ -1775,10 +1775,10 @@ void Grid2D_Quad_MultiBlock_HO::Grid_2D_Laminar_Flame(int &_Number_of_Blocks_Idi
 			  * (Length - air_spacing - tube_spacing)/double(Number_of_Blocks_Free), Bot*Heigth);	
       }
 	
-      Create_Spline_Line(Bnd_Spline_North, xc_NW, xc_NE, 2);
-      Create_Spline_Line(Bnd_Spline_South, xc_SW, xc_SE, 2);
-      Create_Spline_Line(Bnd_Spline_East, xc_SE, xc_NE, 2);
-      Create_Spline_Line(Bnd_Spline_West, xc_SW, xc_NW, 2);
+      Bnd_Spline_North.Create_Spline_Line(xc_NW, xc_NE, 2);
+      Bnd_Spline_South.Create_Spline_Line(xc_SW, xc_SE, 2);
+      Bnd_Spline_East.Create_Spline_Line(xc_SE, xc_NE, 2);
+      Bnd_Spline_West.Create_Spline_Line(xc_SW, xc_NW, 2);
 	
       /* Set the boundary condition types for each of the  boundary splines. */
       if( Number_of_Blocks_Idir == 1 && Number_of_Blocks_Jdir ==1 ) {
@@ -1890,8 +1890,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Pipe(int &_Number_of_Blocks_Idir_,
     Orthogonal_East, Orthogonal_West;
   double Beta_I, Tau_I, Beta_J, Tau_J;
   Vector2D xc_NW, xc_NE, xc_SE, xc_SW;
-  Spline2D Bnd_Spline_North, Bnd_Spline_South,
-    Bnd_Spline_East, Bnd_Spline_West;
+  Spline2D_HO Bnd_Spline_North, Bnd_Spline_South,
+              Bnd_Spline_East, Bnd_Spline_West;
   
   /* Allocate memory for grid block. */
   
@@ -1909,10 +1909,10 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Pipe(int &_Number_of_Blocks_Idir_,
   /* Create the splines defining the north, south,
      east, and west boundaries of the grid. */
   
-  Create_Spline_Line(Bnd_Spline_North, xc_NW, xc_NE, 2);
-  Create_Spline_Line(Bnd_Spline_South, xc_SW, xc_SE, 2);
-  Create_Spline_Line(Bnd_Spline_East, xc_SE, xc_NE, 2);
-  Create_Spline_Line(Bnd_Spline_West, xc_SW, xc_NW, 2);
+  Bnd_Spline_North.Create_Spline_Line(xc_NW, xc_NE, 2);
+  Bnd_Spline_South.Create_Spline_Line(xc_SW, xc_SE, 2);
+  Bnd_Spline_East.Create_Spline_Line(xc_SE, xc_NE, 2);
+  Bnd_Spline_West.Create_Spline_Line(xc_SW, xc_NW, 2);
   
   /* Set the boundary condition types for each of the
      boundary splines. */
@@ -1996,8 +1996,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Pipe(int &_Number_of_Blocks_Idir_,
       Orthogonal_East, Orthogonal_West;
   double Beta_I, Tau_I, Beta_J, Tau_J;
   Vector2D xc_NW, xc_NE, xc_SE, xc_SW;
-  Spline2D Bnd_Spline_North, Bnd_Spline_South,
-           Bnd_Spline_East, Bnd_Spline_West;
+  Spline2D_HO Bnd_Spline_North, Bnd_Spline_South,
+              Bnd_Spline_East, Bnd_Spline_West;
 
   /* Allocate memory for grid block. */
   
@@ -2023,10 +2023,10 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Pipe(int &_Number_of_Blocks_Idir_,
   /* Create the splines defining the north, south,
      east, and west boundaries of the grid. */
 
-  Create_Spline_Line(Bnd_Spline_North, xc_NW, xc_NE, 2);
-  Create_Spline_Line(Bnd_Spline_South, xc_SW, xc_SE, 2);
-  Create_Spline_Line(Bnd_Spline_East, xc_SE, xc_NE, 2);
-  Create_Spline_Line(Bnd_Spline_West, xc_SW, xc_NW, 2);
+  Bnd_Spline_North.Create_Spline_Line(xc_NW, xc_NE, 2);
+  Bnd_Spline_South.Create_Spline_Line(xc_SW, xc_SE, 2);
+  Bnd_Spline_East.Create_Spline_Line(xc_SE, xc_NE, 2);
+  Bnd_Spline_West.Create_Spline_Line(xc_SW, xc_NW, 2);
 
   /* Set the boundary condition types for each of the
      boundary splines. */
@@ -2127,8 +2127,8 @@ void  Grid2D_Quad_MultiBlock_HO::Grid_Blunt_Body(int &_Number_of_Blocks_Idir_,
     Orthogonal_East, Orthogonal_West;
   double Beta_I, Tau_I, Beta_J, Tau_J;
   Vector2D x1, x2;
-  Spline2D Bnd_Spline_North, Bnd_Spline_South,
-    Bnd_Spline_East, Bnd_Spline_West;
+  Spline2D_HO Bnd_Spline_North, Bnd_Spline_South,
+              Bnd_Spline_East, Bnd_Spline_West;
 
   /* Allocate memory for grid block. */
 
@@ -2139,24 +2139,22 @@ void  Grid2D_Quad_MultiBlock_HO::Grid_Blunt_Body(int &_Number_of_Blocks_Idir_,
   /* Create the splines defining the north, south,
      east, and west boundaries of the grid. */
 
-  Create_Spline_Bow_Shock(Bnd_Spline_North,
-			  Radius,
-			  Mach_Number,
-			  1,
-			  181);
+  Bnd_Spline_North.Create_Spline_Bow_Shock(Radius,
+					   Mach_Number,
+					   1,
+					   181);
   x1 = Vector2D(ZERO , ZERO);
-  Create_Spline_Circular_Arc(Bnd_Spline_South,
-			     x1,
-			     Radius,
-			     180.00,
-			     90.00,
-			     181);
+  Bnd_Spline_South.Create_Spline_Circular_Arc(x1,
+					      Radius,
+					      180.00,
+					      90.00,
+					      181);
   x1 = Bnd_Spline_South.Xp[0];
   x2 = Bnd_Spline_North.Xp[0];
-  Create_Spline_Line(Bnd_Spline_West, x1, x2, 2);
+  Bnd_Spline_West.Create_Spline_Line(x1, x2, 2);
   x1 = Bnd_Spline_South.Xp[Bnd_Spline_South.np-1];
   x2 = Bnd_Spline_North.Xp[Bnd_Spline_North.np-1];
-  Create_Spline_Line(Bnd_Spline_East, x1, x2, 2);
+  Bnd_Spline_East.Create_Spline_Line(x1, x2, 2);
 
   /* Set the boundary condition types for each of the
      boundary splines. */
@@ -2259,8 +2257,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Rocket_Motor(int &_Number_of_Blocks_Idir_,
     Orthogonal_East, Orthogonal_West;
   double Beta_I, Tau_I, Beta_J, Tau_J;
   Vector2D xc_NW, xc_NE, xc_SE, xc_SW;
-  Spline2D Bnd_Spline_North, Bnd_Spline_South,
-    Bnd_Spline_East, Bnd_Spline_West;
+  Spline2D_HO Bnd_Spline_North, Bnd_Spline_South,
+              Bnd_Spline_East, Bnd_Spline_West;
   double num1 = ZERO, num2 = ZERO;
   int iBlk_Chamber, iBlk_Nozzle;
 
@@ -2319,10 +2317,10 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Rocket_Motor(int &_Number_of_Blocks_Idir_,
 	  xc_NW = Vector2D(-Length_Chamber+num1,Radius_Grain);
 	  xc_NE = Vector2D(-Length_Chamber+num2,Radius_Grain);
 	}
-	Create_Spline_Line(Bnd_Spline_North,xc_NW,xc_NE,2);
-	Create_Spline_Line(Bnd_Spline_South,xc_SW,xc_SE,2);
-	Create_Spline_Line(Bnd_Spline_East,xc_SE,xc_NE,2);
-	Create_Spline_Line(Bnd_Spline_West,xc_SW,xc_NW,2);
+	Bnd_Spline_North.Create_Spline_Line(xc_NW,xc_NE,2);
+	Bnd_Spline_South.Create_Spline_Line(xc_SW,xc_SE,2);
+	Bnd_Spline_East.Create_Spline_Line(xc_SE,xc_NE,2);
+	Bnd_Spline_West.Create_Spline_Line(xc_SW,xc_NW,2);
 	if (iBlk_Nozzle == 1 && Radius_Grain < ZERO) Bnd_Spline_North.setBCtype(BC_NONE); 
 	else Bnd_Spline_North.setBCtype(BC_BURNING_SURFACE);
 	Bnd_Spline_South.setBCtype(BC_REFLECTION);
@@ -2359,10 +2357,10 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Rocket_Motor(int &_Number_of_Blocks_Idir_,
 	xc_NE = Vector2D(-Length_Chamber+num2,Radius_Chamber-Radius_Grain);
 	xc_SE = Vector2D(-Length_Chamber+num2,Radius_Chamber);
 	xc_SW = Vector2D(-Length_Chamber+num1,Radius_Chamber);
-	Create_Spline_Line(Bnd_Spline_North,xc_NW,xc_NE,2);
-	Create_Spline_Line(Bnd_Spline_South,xc_SW,xc_SE,2);
-	Create_Spline_Line(Bnd_Spline_East,xc_SE,xc_NE,2);
-	Create_Spline_Line(Bnd_Spline_West,xc_SW,xc_NW,2);
+	Bnd_Spline_North.Create_Spline_Line(xc_NW,xc_NE,2);
+	Bnd_Spline_South.Create_Spline_Line(xc_SW,xc_SE,2);
+	Bnd_Spline_East.Create_Spline_Line(xc_SE,xc_NE,2);
+	Bnd_Spline_West.Create_Spline_Line(xc_SW,xc_NW,2);
 	Bnd_Spline_North.setBCtype(BC_BURNING_SURFACE);
 	Bnd_Spline_South.setBCtype(BC_NONE);
 	Bnd_Spline_East.setBCtype(BC_NONE);
@@ -2388,22 +2386,21 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Rocket_Motor(int &_Number_of_Blocks_Idir_,
 	block_flag = ON;
 
       } else if (jBlk == 0 && iBlk >= iBlk_Chamber && iBlk_Nozzle == 1) {
-	Create_Spline_Area_Variation(Bnd_Spline_North,
-				     ZERO,
-				     Length_Chamber_To_Throat,
-				     Length_Nozzle,
-				     Radius_Chamber,
-				     Radius_Nozzle_Throat,
-				     Radius_Nozzle_Exit,
-				     Nozzle_Type,
-				     501);
+	Bnd_Spline_North.Create_Spline_Area_Variation(ZERO,
+						      Length_Chamber_To_Throat,
+						      Length_Nozzle,
+						      Radius_Chamber,
+						      Radius_Nozzle_Throat,
+						      Radius_Nozzle_Exit,
+						      Nozzle_Type,
+						      501);
 	xc_NW = Vector2D(ZERO,Radius_Chamber);
 	xc_NE = Bnd_Spline_North.Xp[500];
 	xc_SE = Vector2D(Length_Nozzle,ZERO);
 	xc_SW = Vector2D(ZERO,ZERO);
-	Create_Spline_Line(Bnd_Spline_East,xc_SE,xc_NE,2);
-	Create_Spline_Line(Bnd_Spline_West,xc_SW,xc_NW,2);
-	Create_Spline_Line(Bnd_Spline_South,xc_SW,xc_SE,2);
+	Bnd_Spline_East.Create_Spline_Line(xc_SE,xc_NE,2);
+	Bnd_Spline_West.Create_Spline_Line(xc_SW,xc_NW,2);
+	Bnd_Spline_South.Create_Spline_Line(xc_SW,xc_SE,2);
 	Bnd_Spline_North.setBCtype(Chamber_BC_Type);
 	Bnd_Spline_South.setBCtype(BC_REFLECTION);
 	Bnd_Spline_East.setBCtype(BC_CONSTANT_EXTRAPOLATION);
@@ -2422,15 +2419,14 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Rocket_Motor(int &_Number_of_Blocks_Idir_,
 	xc_SE = Vector2D(Length_Chamber_To_Throat,ZERO);
 	xc_NE = Vector2D(Length_Chamber_To_Throat,HALF*Radius_Nozzle_Throat);
 	xc_NW = Vector2D(ZERO,Radius_Grain);
-	Create_Spline_Line(Bnd_Spline_East,xc_SE,xc_NE,2);
-	Create_Spline_Line(Bnd_Spline_West,xc_SW,xc_NW,2);
-	Create_Spline_Line(Bnd_Spline_South,xc_SW,xc_SE,2);
-	Create_Spline_Converging_Nozzle(Bnd_Spline_North,
-					ZERO,
-					Length_Chamber_To_Throat,
-					Radius_Grain,
-					HALF*Radius_Nozzle_Throat,
-					251);
+	Bnd_Spline_East.Create_Spline_Line(xc_SE,xc_NE,2);
+	Bnd_Spline_West.Create_Spline_Line(xc_SW,xc_NW,2);
+	Bnd_Spline_South.Create_Spline_Line(xc_SW,xc_SE,2);
+	Bnd_Spline_North.Create_Spline_Converging_Nozzle(ZERO,
+							 Length_Chamber_To_Throat,
+							 Radius_Grain,
+							 HALF*Radius_Nozzle_Throat,
+							 251);
 	Bnd_Spline_North.setBCtype(BC_NONE);
 	Bnd_Spline_South.setBCtype(BC_REFLECTION);
 	Bnd_Spline_East.setBCtype(BC_NONE);
@@ -2450,15 +2446,14 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Rocket_Motor(int &_Number_of_Blocks_Idir_,
 	xc_SE = Vector2D(Length_Nozzle,ZERO);
 	xc_NE = Vector2D(Length_Nozzle,HALF*Radius_Nozzle_Exit);
 	xc_NW = Vector2D(Length_Chamber_To_Throat,HALF*Radius_Nozzle_Throat);
-	Create_Spline_Line(Bnd_Spline_East,xc_SE,xc_NE,2);
-	Create_Spline_Line(Bnd_Spline_West,xc_SW,xc_NW,2);
-	Create_Spline_Line(Bnd_Spline_South,xc_SW,xc_SE,2);
-	Create_Spline_Diverging_Nozzle(Bnd_Spline_North,
-				       Length_Chamber_To_Throat,
-				       Length_Nozzle,
-				       HALF*Radius_Nozzle_Throat,
-				       HALF*Radius_Nozzle_Exit,
-				       251);
+	Bnd_Spline_East.Create_Spline_Line(xc_SE,xc_NE,2);
+	Bnd_Spline_West.Create_Spline_Line(xc_SW,xc_NW,2);
+	Bnd_Spline_South.Create_Spline_Line(xc_SW,xc_SE,2);
+	Bnd_Spline_North.Create_Spline_Diverging_Nozzle(Length_Chamber_To_Throat,
+							Length_Nozzle,
+							HALF*Radius_Nozzle_Throat,
+							HALF*Radius_Nozzle_Exit,
+							251);
 	Bnd_Spline_North.setBCtype(BC_NONE);
 	Bnd_Spline_South.setBCtype(BC_REFLECTION);
 	Bnd_Spline_East.setBCtype(BC_CONSTANT_EXTRAPOLATION);
@@ -2479,20 +2474,18 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Rocket_Motor(int &_Number_of_Blocks_Idir_,
 	xc_SE = Vector2D(Length_Chamber_To_Throat,HALF*Radius_Nozzle_Throat);
 	xc_NE = Vector2D(Length_Chamber_To_Throat,Radius_Nozzle_Throat);
 	xc_NW = Vector2D(ZERO,Radius_Chamber);
-	Create_Spline_Line(Bnd_Spline_East,xc_SE,xc_NE,2);
-	Create_Spline_Line(Bnd_Spline_West,xc_SW,xc_NW,2);
-	Create_Spline_Converging_Nozzle(Bnd_Spline_South,
-					ZERO,
-					Length_Chamber_To_Throat,
-					Radius_Grain,
-					HALF*Radius_Nozzle_Throat,
-					251);
-	Create_Spline_Converging_Nozzle(Bnd_Spline_North,
-					ZERO,
-					Length_Chamber_To_Throat,
-					Radius_Chamber,
-					Radius_Nozzle_Throat,
-					251);
+	Bnd_Spline_East.Create_Spline_Line(xc_SE,xc_NE,2);
+	Bnd_Spline_West.Create_Spline_Line(xc_SW,xc_NW,2);
+	Bnd_Spline_South.Create_Spline_Converging_Nozzle(ZERO,
+							 Length_Chamber_To_Throat,
+							 Radius_Grain,
+							 HALF*Radius_Nozzle_Throat,
+							 251);
+	Bnd_Spline_North.Create_Spline_Converging_Nozzle(ZERO,
+							 Length_Chamber_To_Throat,
+							 Radius_Chamber,
+							 Radius_Nozzle_Throat,
+							 251);
 	Bnd_Spline_North.setBCtype(Chamber_BC_Type);
 	Bnd_Spline_South.setBCtype(BC_NONE);
 	Bnd_Spline_East.setBCtype(BC_NONE);
@@ -2512,20 +2505,18 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Rocket_Motor(int &_Number_of_Blocks_Idir_,
 	xc_SE = Vector2D(Length_Nozzle,HALF*Radius_Nozzle_Exit);
 	xc_NE = Vector2D(Length_Nozzle,Radius_Nozzle_Exit);
 	xc_NW = Vector2D(Length_Chamber_To_Throat,Radius_Nozzle_Throat);
-	Create_Spline_Line(Bnd_Spline_East,xc_SE,xc_NE,2);
-	Create_Spline_Line(Bnd_Spline_West,xc_SW,xc_NW,2);
-	Create_Spline_Diverging_Nozzle(Bnd_Spline_South,
-				       Length_Chamber_To_Throat,
-				       Length_Nozzle,
-				       HALF*Radius_Nozzle_Throat,
-				       HALF*Radius_Nozzle_Exit,
-				       251);
-	Create_Spline_Diverging_Nozzle(Bnd_Spline_North,
-				       Length_Chamber_To_Throat,
-				       Length_Nozzle,
-				       Radius_Nozzle_Throat,
-				       Radius_Nozzle_Exit,
-				       251);
+	Bnd_Spline_East.Create_Spline_Line(xc_SE,xc_NE,2);
+	Bnd_Spline_West.Create_Spline_Line(xc_SW,xc_NW,2);
+	Bnd_Spline_South.Create_Spline_Diverging_Nozzle(Length_Chamber_To_Throat,
+							Length_Nozzle,
+							HALF*Radius_Nozzle_Throat,
+							HALF*Radius_Nozzle_Exit,
+							251);
+	Bnd_Spline_North.Create_Spline_Diverging_Nozzle(Length_Chamber_To_Throat,
+							Length_Nozzle,
+							Radius_Nozzle_Throat,
+							Radius_Nozzle_Exit,
+							251);
 	Bnd_Spline_North.setBCtype(Chamber_BC_Type);
 	Bnd_Spline_South.setBCtype(BC_NONE);
 	Bnd_Spline_East.setBCtype(BC_CONSTANT_EXTRAPOLATION);
@@ -2623,8 +2614,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Nozzleless_Rocket_Motor(int &_Number_of_Blo
       Orthogonal_East, Orthogonal_West;
   double Beta_I, Tau_I, Beta_J, Tau_J;
   Vector2D xc_NW, xc_NE, xc_SE, xc_SW;
-  Spline2D Bnd_Spline_North, Bnd_Spline_South,
-           Bnd_Spline_East, Bnd_Spline_West;
+  Spline2D_HO Bnd_Spline_North, Bnd_Spline_South,
+              Bnd_Spline_East, Bnd_Spline_West;
 
   // Allocate memory for grid blocks.
   _Number_of_Blocks_Jdir_ = 1;
@@ -2657,10 +2648,10 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Nozzleless_Rocket_Motor(int &_Number_of_Blo
 	xc_SE = Vector2D(Length_Chamber*double(iBlk+1)/double(Number_of_Blocks_Idir-1),ZERO);
 	xc_NW = Vector2D(Length_Chamber*double(iBlk)/double(Number_of_Blocks_Idir-1),Radius_Chamber);
 	xc_NE = Vector2D(Length_Chamber*double(iBlk+1)/double(Number_of_Blocks_Idir-1),Radius_Chamber);
-	Create_Spline_Line(Bnd_Spline_North,xc_NW,xc_NE,2);
-	Create_Spline_Line(Bnd_Spline_South,xc_SW,xc_SE,2);
-	Create_Spline_Line(Bnd_Spline_East,xc_SE,xc_NE,2);
-	Create_Spline_Line(Bnd_Spline_West,xc_SW,xc_NW,2);
+	Bnd_Spline_North.Create_Spline_Line(xc_NW,xc_NE,2);
+	Bnd_Spline_South.Create_Spline_Line(xc_SW,xc_SE,2);
+	Bnd_Spline_East.Create_Spline_Line(xc_SE,xc_NE,2);
+	Bnd_Spline_West.Create_Spline_Line(xc_SW,xc_NW,2);
 	Bnd_Spline_North.setBCtype(BC_MASS_INJECTION);
 	Bnd_Spline_South.setBCtype(BC_REFLECTION);
 	Bnd_Spline_East.setBCtype(BC_NONE);
@@ -2685,10 +2676,10 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Nozzleless_Rocket_Motor(int &_Number_of_Blo
 	xc_SE = Vector2D(Length_Chamber+Length_Nozzle,ZERO);
 	xc_NW = Vector2D(Length_Chamber,Radius_Chamber);
 	xc_NE = Vector2D(Length_Chamber+Length_Nozzle,Radius_Nozzle_Exit);
-	Create_Spline_Line(Bnd_Spline_North,xc_NW,xc_NE,2);
-	Create_Spline_Line(Bnd_Spline_South,xc_SW,xc_SE,2);
-	Create_Spline_Line(Bnd_Spline_East,xc_SE,xc_NE,2);
-	Create_Spline_Line(Bnd_Spline_West,xc_SW,xc_NW,2);
+	Bnd_Spline_North.Create_Spline_Line(xc_NW,xc_NE,2);
+	Bnd_Spline_South.Create_Spline_Line(xc_SW,xc_SE,2);
+	Bnd_Spline_East.Create_Spline_Line(xc_SE,xc_NE,2);
+	Bnd_Spline_West.Create_Spline_Line(xc_SW,xc_NW,2);
 	Bnd_Spline_North.setBCtype(Chamber_BC_Type);
 	Bnd_Spline_South.setBCtype(BC_REFLECTION);
 	//Bnd_Spline_East.setBCtype(BC_CHARACTERISTIC);
@@ -2768,8 +2759,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Nozzle(int &_Number_of_Blocks_Idir_,
       Orthogonal_East, Orthogonal_West;
   double Beta_I, Tau_I, Beta_J, Tau_J;
   Vector2D xc_NW, xc_NE, xc_SE, xc_SW;
-  Spline2D Bnd_Spline_North, Bnd_Spline_South,
-           Bnd_Spline_East, Bnd_Spline_West;
+  Spline2D_HO Bnd_Spline_North, Bnd_Spline_South,
+              Bnd_Spline_East, Bnd_Spline_West;
 
   // Allocate memory for grid blocks.
   if (!Nozzle_Type) _Number_of_Blocks_Idir_ = 1;
@@ -2786,15 +2777,14 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Nozzle(int &_Number_of_Blocks_Idir_,
       xc_SE = Vector2D(HALF*Length_Nozzle,ZERO);
       xc_NE = Vector2D(HALF*Length_Nozzle,Radius_Nozzle_Throat);
       xc_NW = Vector2D(ZERO,Radius_Chamber);
-      Create_Spline_Converging_Nozzle(Bnd_Spline_North,
-				      ZERO,
-				      HALF*Length_Nozzle,
-				      Radius_Chamber,
-				      Radius_Nozzle_Throat,
-				      251);
-      Create_Spline_Line(Bnd_Spline_South,xc_SW,xc_SE,2);
-      Create_Spline_Line(Bnd_Spline_East,xc_SE,xc_NE,2);
-      Create_Spline_Line(Bnd_Spline_West,xc_SW,xc_NW,2);
+      Bnd_Spline_North.Create_Spline_Converging_Nozzle(ZERO,
+						       HALF*Length_Nozzle,
+						       Radius_Chamber,
+						       Radius_Nozzle_Throat,
+						       251);
+      Bnd_Spline_South.Create_Spline_Line(xc_SW,xc_SE,2);
+      Bnd_Spline_East.Create_Spline_Line(xc_SE,xc_NE,2);
+      Bnd_Spline_West.Create_Spline_Line(xc_SW,xc_NW,2);
       Bnd_Spline_North.setBCtype(BC_REFLECTION);
       Bnd_Spline_South.setBCtype(BC_REFLECTION);
       Bnd_Spline_East.setBCtype(BC_NONE);
@@ -2805,15 +2795,14 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Nozzle(int &_Number_of_Blocks_Idir_,
       xc_SE = Vector2D(Length_Nozzle,ZERO);
       xc_NE = Vector2D(Length_Nozzle,Radius_Nozzle_Exit);
       xc_NW = Vector2D(HALF*Length_Nozzle,Radius_Nozzle_Throat);
-      Create_Spline_Diverging_Nozzle(Bnd_Spline_North,
-				     HALF*Length_Nozzle,
-				     Length_Nozzle,
-				     Radius_Nozzle_Throat,
-				     Radius_Nozzle_Exit,
-				     251);
-      Create_Spline_Line(Bnd_Spline_South,xc_SW,xc_SE,2);
-      Create_Spline_Line(Bnd_Spline_East,xc_SE,xc_NE,2);
-      Create_Spline_Line(Bnd_Spline_West,xc_SW,xc_NW,2);
+      Bnd_Spline_North.Create_Spline_Diverging_Nozzle(HALF*Length_Nozzle,
+						      Length_Nozzle,
+						      Radius_Nozzle_Throat,
+						      Radius_Nozzle_Exit,
+						      251);
+      Bnd_Spline_South.Create_Spline_Line(xc_SW,xc_SE,2);
+      Bnd_Spline_East.Create_Spline_Line(xc_SE,xc_NE,2);
+      Bnd_Spline_West.Create_Spline_Line(xc_SW,xc_NW,2);
       Bnd_Spline_North.setBCtype(BC_REFLECTION);
       Bnd_Spline_South.setBCtype(BC_REFLECTION);
       Bnd_Spline_East.setBCtype(BC_FIXED);
@@ -2925,8 +2914,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Circular_Cylinder(int &_Number_of_Blocks_Id
     Orthogonal_East, Orthogonal_West;
   double Beta_I, Tau_I, Beta_J, Tau_J;
   Vector2D x1, x2;
-  Spline2D Bnd_Spline_North, Bnd_Spline_South,
-    Bnd_Spline_East, Bnd_Spline_West;
+  Spline2D_HO Bnd_Spline_North, Bnd_Spline_South,
+              Bnd_Spline_East, Bnd_Spline_West;
   
   /* Allocate memory for grid blocks.  There are two grid
      blocks for this mesh. */
@@ -2944,44 +2933,40 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Circular_Cylinder(int &_Number_of_Blocks_Id
 
     if (iBlk == 0) {
       x1 = Vector2D(ZERO,ZERO);
-      Create_Spline_Circular_Arc(Bnd_Spline_North,
-				 x1,
-				 Outer_Radius,
-				 360.00,
-				 180.00,
-				 361);
-      Create_Spline_Circular_Arc(Bnd_Spline_South,
-				 x1,
-				 Inner_Radius,
-				 360.00,
-				 180.00,
-				 361);
+      Bnd_Spline_North.Create_Spline_Circular_Arc(x1,
+						  Outer_Radius,
+						  360.00,
+						  180.00,
+						  361);
+      Bnd_Spline_South.Create_Spline_Circular_Arc(x1,
+						  Inner_Radius,
+						  360.00,
+						  180.00,
+						  361);
       x1 = Vector2D(Inner_Radius, ZERO);
       x2 = Vector2D(Outer_Radius, ZERO);
-      Create_Spline_Line(Bnd_Spline_West, x1, x2, 2);
+      Bnd_Spline_West.Create_Spline_Line(x1, x2, 2);
       x1 = Vector2D(-Inner_Radius, ZERO);
       x2 = Vector2D(-Outer_Radius, ZERO);
-      Create_Spline_Line(Bnd_Spline_East, x1, x2, 2);
+      Bnd_Spline_East.Create_Spline_Line(x1, x2, 2);
     } else {
       x1 = Vector2D(ZERO,ZERO);
-      Create_Spline_Circular_Arc(Bnd_Spline_North,
-				 x1,
-				 Outer_Radius,
-				 180.00,
-				 ZERO,
-				 361);
-      Create_Spline_Circular_Arc(Bnd_Spline_South,
-				 x1,
-				 Inner_Radius,
-				 180.00,
-				 ZERO,
-				 361);
+      Bnd_Spline_North.Create_Spline_Circular_Arc(x1,
+						  Outer_Radius,
+						  180.00,
+						  ZERO,
+						  361);
+      Bnd_Spline_South.Create_Spline_Circular_Arc(x1,
+						  Inner_Radius,
+						  180.00,
+						  ZERO,
+						  361);
       x1 = Vector2D(-Inner_Radius, ZERO);
       x2 = Vector2D(-Outer_Radius, ZERO);
-      Create_Spline_Line(Bnd_Spline_West, x1, x2, 2);
+      Bnd_Spline_West.Create_Spline_Line(x1, x2, 2);
       x1 = Vector2D(Inner_Radius, ZERO);
       x2 = Vector2D(Outer_Radius, ZERO);
-      Create_Spline_Line(Bnd_Spline_East, x1, x2, 2);
+      Bnd_Spline_East.Create_Spline_Line(x1, x2, 2);
     } /* endif */
 
     /* Set the boundary condition types for each of the
@@ -3086,8 +3071,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Annulus(int &_Number_of_Blocks_Idir_,
     Orthogonal_East, Orthogonal_West;
   double Beta_I, Tau_I, Beta_J, Tau_J;
   Vector2D x1, x2;
-  Spline2D Bnd_Spline_North, Bnd_Spline_South,
-    Bnd_Spline_East, Bnd_Spline_West;
+  Spline2D_HO Bnd_Spline_North, Bnd_Spline_South,
+              Bnd_Spline_East, Bnd_Spline_West;
 
   /* Allocate memory for grid blocks.  There is one grid
      blocks for this mesh. */
@@ -3102,21 +3087,19 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Annulus(int &_Number_of_Blocks_Idir_,
      east, and west boundaries of the grid. */
   
   x1 = Vector2D(ZERO,ZERO);
-  Create_Spline_Circular_Arc(Bnd_Spline_North,
-			     x1,
-			     Outer_Radius,
-			     ThetaEnd,
-			     ThetaStart,
-			     int(2*fabs(ThetaEnd-ThetaStart)+1)); // consider 2 points per degree
-  Create_Spline_Circular_Arc(Bnd_Spline_South,
-			     x1,
-			     Inner_Radius,
-			     ThetaEnd,
-			     ThetaStart,
-			     int(2*fabs(ThetaEnd-ThetaStart)+1)); // consider 2 points per degree
+  Bnd_Spline_North.Create_Spline_Circular_Arc(x1,
+					      Outer_Radius,
+					      ThetaEnd,
+					      ThetaStart,
+					      int(2*fabs(ThetaEnd-ThetaStart)+1)); // consider 2 points per degree
+  Bnd_Spline_South.Create_Spline_Circular_Arc(x1,
+					      Inner_Radius,
+					      ThetaEnd,
+					      ThetaStart,
+					      int(2*fabs(ThetaEnd-ThetaStart)+1)); // consider 2 points per degree
 
-  Create_Spline_Line_Polar_Coordinates(Bnd_Spline_East, Inner_Radius, Outer_Radius, ThetaStart, 2);
-  Create_Spline_Line_Polar_Coordinates(Bnd_Spline_West, Inner_Radius, Outer_Radius, ThetaEnd, 2);
+  Bnd_Spline_East.Create_Spline_Line_Polar_Coordinates(Inner_Radius, Outer_Radius, ThetaStart, 2);
+  Bnd_Spline_West.Create_Spline_Line_Polar_Coordinates(Inner_Radius, Outer_Radius, ThetaEnd, 2);
 
   /* Set the boundary condition types for each of the
      boundary splines. */
@@ -3202,8 +3185,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Ellipse(int &_Number_of_Blocks_Idir_,
     Orthogonal_East, Orthogonal_West;
   double Beta_I, Tau_I, Beta_J, Tau_J;
   Vector2D x1, x2;
-  Spline2D Bnd_Spline_North, Bnd_Spline_South,
-    Bnd_Spline_East, Bnd_Spline_West;
+  Spline2D_HO Bnd_Spline_North, Bnd_Spline_South,
+              Bnd_Spline_East, Bnd_Spline_West;
 
   /* Allocate memory for grid blocks.  There are two grid
      blocks for this mesh. */
@@ -3222,46 +3205,42 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Ellipse(int &_Number_of_Blocks_Idir_,
     
     if (iBlk == 0) {
       x1 = Vector2D(ZERO , ZERO);
-      Create_Spline_Circular_Arc(Bnd_Spline_North,
-				 x1,
-				 32.00*A,
-				 360.00,
-				 180.00,
-				 361);
-      Create_Spline_Ellipsoidal_Arc(Bnd_Spline_South,
-				    x1,
-				    A,
-				    B,
-				    360.00,
-				    180.00,
-				    361);
+      Bnd_Spline_North.Create_Spline_Circular_Arc(x1,
+						  32.00*A,
+						  360.00,
+						  180.00,
+						  361);
+      Bnd_Spline_South.Create_Spline_Ellipsoidal_Arc(x1,
+						     A,
+						     B,
+						     360.00,
+						     180.00,
+						     361);
       x1 = Vector2D(A, ZERO);
       x2 = Vector2D(32.00*A, ZERO);
-      Create_Spline_Line(Bnd_Spline_West, x1, x2, 2);
+      Bnd_Spline_West.Create_Spline_Line(x1, x2, 2);
       x1 = Vector2D(-A, ZERO);
       x2 = Vector2D(-32.00*A, ZERO);
-      Create_Spline_Line(Bnd_Spline_East, x1, x2, 2);
+      Bnd_Spline_East.Create_Spline_Line(x1, x2, 2);
     } else {
       x1 = Vector2D(ZERO , ZERO);
-      Create_Spline_Circular_Arc(Bnd_Spline_North,
-				 x1,
-				 32.00*A,
-				 180.00,
-				 ZERO,
-				 361);
-      Create_Spline_Ellipsoidal_Arc(Bnd_Spline_South,
-				    x1,
-				    A,
-				    B,
-				    180.00,
-				    ZERO,
-				    361);
+      Bnd_Spline_North.Create_Spline_Circular_Arc(x1,
+						  32.00*A,
+						  180.00,
+						  ZERO,
+						  361);
+      Bnd_Spline_South.Create_Spline_Ellipsoidal_Arc(x1,
+						     A,
+						     B,
+						     180.00,
+						     ZERO,
+						     361);
       x1 = Vector2D(-A, ZERO);
       x2 = Vector2D(-32.00*A, ZERO);
-      Create_Spline_Line(Bnd_Spline_West, x1, x2, 2);
+      Bnd_Spline_West.Create_Spline_Line(x1, x2, 2);
       x1 = Vector2D(A, ZERO);
       x2 = Vector2D(32.00*A, ZERO);
-      Create_Spline_Line(Bnd_Spline_East, x1, x2, 2);
+      Bnd_Spline_East.Create_Spline_Line(x1, x2, 2);
     } /* endif */
 
     /* Set the boundary condition types for each of the
@@ -3374,9 +3353,9 @@ void Grid2D_Quad_MultiBlock_HO::Grid_NACA_Aerofoil(int &_Number_of_Blocks_Idir_,
     Orthogonal_East, Orthogonal_West;
   double Beta_I, Tau_I, Beta_J, Tau_J;
   Vector2D x1, x2;
-  Spline2D Bnd_Spline_North, Bnd_Spline_South,
-    Bnd_Spline_East, Bnd_Spline_West,
-    s_tmp1, s_tmp2;
+  Spline2D_HO Bnd_Spline_North, Bnd_Spline_South,
+              Bnd_Spline_East, Bnd_Spline_West,
+              s_tmp1, s_tmp2;
 
   /* Allocate memory for grid blocks.  There are four grid
      blocks for this mesh. */
@@ -3396,79 +3375,75 @@ void Grid2D_Quad_MultiBlock_HO::Grid_NACA_Aerofoil(int &_Number_of_Blocks_Idir_,
     if (iBlk == 0) {
       x1 = Vector2D(32.00*Chord_Length, -32.00*Chord_Length);
       x2 = Vector2D(Chord_Length, -32.00*Chord_Length);
-      Create_Spline_Line(Bnd_Spline_North, x1, x2, 2);
+      Bnd_Spline_North.Create_Spline_Line(x1, x2, 2);
       x1 = Vector2D(32.00*Chord_Length, ZERO);
       x2 = Vector2D(Chord_Length, ZERO);
-      Create_Spline_Line(Bnd_Spline_South, x1, x2, 2);
+      Bnd_Spline_South.Create_Spline_Line(x1, x2, 2);
       x1 = Vector2D(32.00*Chord_Length, ZERO);
       x2 = Vector2D(32.00*Chord_Length, -32.00*Chord_Length);
-      Create_Spline_Line(Bnd_Spline_West, x1, x2, 2);
+      Bnd_Spline_West.Create_Spline_Line(x1, x2, 2);
       x1 = Vector2D(Chord_Length, ZERO);
       x2 = Vector2D(Chord_Length, -32.00*Chord_Length);
-      Create_Spline_Line(Bnd_Spline_East, x1, x2, 2);
+      Bnd_Spline_East.Create_Spline_Line(x1, x2, 2);
     } else if (iBlk == 1) {
       x1 = Vector2D(Chord_Length, -32.00*Chord_Length);
       x2 = Vector2D(ZERO, -32.00*Chord_Length);
-      Create_Spline_Line(s_tmp1, x1, x2, 2);
+      s_tmp1.Create_Spline_Line(x1, x2, 2);
       x1 = Vector2D(ZERO , ZERO);
-      Create_Spline_Circular_Arc(s_tmp2,
-				 x1,
-				 32.00*Chord_Length,
-				 270.00,
-				 180.00,
-				 181);
+      s_tmp2.Create_Spline_Circular_Arc(x1,
+					32.00*Chord_Length,
+					270.00,
+					180.00,
+					181);
       Bnd_Spline_North = Concatenate_Splines(s_tmp1, s_tmp2);
       s_tmp1.deallocate();
       s_tmp2.deallocate();
-      Create_Spline_NACA_Aerofoil(Bnd_Spline_South,
-				  NACA_Aerofoil_Type_ptr,
-				  Chord_Length,
-				  -1,
-				  501);
+      Bnd_Spline_South.Create_Spline_NACA_Aerofoil(NACA_Aerofoil_Type_ptr,
+						   Chord_Length,
+						   -1,
+						   501);
       x1 = Vector2D(Chord_Length, ZERO);
       x2 = Vector2D(Chord_Length, -32.00*Chord_Length);
-      Create_Spline_Line(Bnd_Spline_West, x1, x2, 2);
+      Bnd_Spline_West.Create_Spline_Line(x1, x2, 2);
       x1 = Vector2D(ZERO, ZERO);
       x2 = Vector2D(-32.00*Chord_Length, ZERO);
-      Create_Spline_Line(Bnd_Spline_East, x1, x2, 2);
+      Bnd_Spline_East.Create_Spline_Line(x1, x2, 2);
     } else if (iBlk == 2) {
       x1 = Vector2D(ZERO , ZERO);
-      Create_Spline_Circular_Arc(s_tmp1,
-				 x1,
-				 32.00*Chord_Length,
-				 180.00,
-				 90.00,
-				 181);
+      s_tmp1.Create_Spline_Circular_Arc(x1,
+					32.00*Chord_Length,
+					180.00,
+					90.00,
+					181);
       x1 = Vector2D(ZERO, 32.00*Chord_Length);
       x2 = Vector2D(Chord_Length, 32.00*Chord_Length);
-      Create_Spline_Line(s_tmp2, x1, x2, 2);
+      s_tmp2.Create_Spline_Line(x1, x2, 2);
       Bnd_Spline_North = Concatenate_Splines(s_tmp1, s_tmp2);
       s_tmp1.deallocate();
       s_tmp2.deallocate();
-      Create_Spline_NACA_Aerofoil(Bnd_Spline_South,
-				  NACA_Aerofoil_Type_ptr,
-				  Chord_Length,
-				  1,
-				  501);
+      Bnd_Spline_South.Create_Spline_NACA_Aerofoil(NACA_Aerofoil_Type_ptr,
+						   Chord_Length,
+						   1,
+						   501);
       x1 = Vector2D(ZERO, ZERO);
       x2 = Vector2D(-32.00*Chord_Length, ZERO);
-      Create_Spline_Line(Bnd_Spline_West, x1, x2, 2);
+      Bnd_Spline_West.Create_Spline_Line(x1, x2, 2);
       x1 = Vector2D(Chord_Length, ZERO);
       x2 = Vector2D(Chord_Length, 32.00*Chord_Length);
-      Create_Spline_Line(Bnd_Spline_East, x1, x2, 2);
+      Bnd_Spline_East.Create_Spline_Line(x1, x2, 2);
     } else {
       x1 = Vector2D(Chord_Length, 32.00*Chord_Length);
       x2 = Vector2D(32.00*Chord_Length, 32.00*Chord_Length);
-      Create_Spline_Line(Bnd_Spline_North, x1, x2, 2);
+      Bnd_Spline_North.Create_Spline_Line(x1, x2, 2);
       x1 = Vector2D(Chord_Length, ZERO);
       x2 = Vector2D(32.00*Chord_Length, ZERO);
-      Create_Spline_Line(Bnd_Spline_South, x1, x2, 2);
+      Bnd_Spline_South.Create_Spline_Line(x1, x2, 2);
       x1 = Vector2D(Chord_Length, ZERO);
       x2 = Vector2D(Chord_Length, 32.00*Chord_Length);
-      Create_Spline_Line(Bnd_Spline_West, x1, x2, 2);
+      Bnd_Spline_West.Create_Spline_Line(x1, x2, 2);
       x1 = Vector2D(32.00*Chord_Length, ZERO);
       x2 = Vector2D(32.00*Chord_Length, 32.00*Chord_Length);
-      Create_Spline_Line(Bnd_Spline_East, x1, x2, 2);
+      Bnd_Spline_East.Create_Spline_Line(x1, x2, 2);
     } /* endif */
 
     /* Set the boundary condition types for each of the
@@ -3648,8 +3623,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Free_Jet(int &_Number_of_Blocks_Idir_,
     Orthogonal_East, Orthogonal_West;
   double Beta_I, Tau_I, Beta_J, Tau_J;
   Vector2D x1, x2;
-  Spline2D Bnd_Spline_North, Bnd_Spline_South,
-    Bnd_Spline_East, Bnd_Spline_West;
+  Spline2D_HO Bnd_Spline_North, Bnd_Spline_South,
+              Bnd_Spline_East, Bnd_Spline_West;
   
   double x_orifice_up, x_orifice_down, x_up, x_down, r_max;
   
@@ -3675,16 +3650,16 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Free_Jet(int &_Number_of_Blocks_Idir_,
       if (iBlk == 0 && jBlk == 0) {
 	x1 = Vector2D(x_up, Radius);
 	x2 = Vector2D(x_orifice_up, Radius);
-	Create_Spline_Line(Bnd_Spline_North, x1, x2, 2);
+	Bnd_Spline_North.Create_Spline_Line(x1, x2, 2);
 	x1 = Vector2D(x_up, ZERO);
 	x2 = Vector2D(x_orifice_up, ZERO);
-	Create_Spline_Line(Bnd_Spline_South, x1, x2, 2);
+	Bnd_Spline_South.Create_Spline_Line(x1, x2, 2);
 	x1 = Vector2D(x_up, ZERO);
 	x2 = Vector2D(x_up, Radius);
-	Create_Spline_Line(Bnd_Spline_West, x1, x2, 2);
+	Bnd_Spline_West.Create_Spline_Line(x1, x2, 2);
 	x1 = Vector2D(x_orifice_up, ZERO);
 	x2 = Vector2D(x_orifice_up, Radius);
-	Create_Spline_Line(Bnd_Spline_East, x1, x2, 2);
+	Bnd_Spline_East.Create_Spline_Line(x1, x2, 2);
 
 	Bnd_Spline_North.setBCtype(BC_NONE);
 	Bnd_Spline_South.setBCtype(BC_REFLECTION);
@@ -3732,16 +3707,16 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Free_Jet(int &_Number_of_Blocks_Idir_,
       } else if (iBlk == 1 && jBlk == 0) {
 	x1 = Vector2D(x_orifice_up, Radius);
 	x2 = Vector2D(x_orifice_down, Radius);
-	Create_Spline_Line(Bnd_Spline_North, x1, x2, 2);
+	Bnd_Spline_North.Create_Spline_Line(x1, x2, 2);
 	x1 = Vector2D(x_orifice_up, ZERO);
 	x2 = Vector2D(x_orifice_down, ZERO);
-	Create_Spline_Line(Bnd_Spline_South, x1, x2, 2);
+	Bnd_Spline_South.Create_Spline_Line(x1, x2, 2);
 	x1 = Vector2D(x_orifice_up, ZERO);
 	x2 = Vector2D(x_orifice_up, Radius);
-	Create_Spline_Line(Bnd_Spline_West, x1, x2, 2);
+	Bnd_Spline_West.Create_Spline_Line(x1, x2, 2);
 	x1 = Vector2D(x_orifice_down, ZERO);
 	x2 = Vector2D(x_orifice_down, Radius);
-	Create_Spline_Line(Bnd_Spline_East, x1, x2, 2);
+	Bnd_Spline_East.Create_Spline_Line(x1, x2, 2);
 
 	Bnd_Spline_North.setBCtype(BC_REFLECTION);
 	Bnd_Spline_South.setBCtype(BC_REFLECTION);
@@ -3789,16 +3764,16 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Free_Jet(int &_Number_of_Blocks_Idir_,
       } else if (iBlk == 2 && jBlk == 0) {
 	x1 = Vector2D(x_orifice_down, Radius);
 	x2 = Vector2D(x_down, Radius);
-	Create_Spline_Line(Bnd_Spline_North, x1, x2, 2);
+	Bnd_Spline_North.Create_Spline_Line(x1, x2, 2);
 	x1 = Vector2D(x_orifice_down, ZERO);
 	x2 = Vector2D(x_down, ZERO);
-	Create_Spline_Line(Bnd_Spline_South, x1, x2, 2);
+	Bnd_Spline_South.Create_Spline_Line(x1, x2, 2);
 	x1 = Vector2D(x_orifice_down, ZERO);
 	x2 = Vector2D(x_orifice_down, Radius);
-	Create_Spline_Line(Bnd_Spline_West, x1, x2, 2);
+	Bnd_Spline_West.Create_Spline_Line(x1, x2, 2);
 	x1 = Vector2D(x_down, ZERO);
 	x2 = Vector2D(x_down, Radius);
-	Create_Spline_Line(Bnd_Spline_East, x1, x2, 2);
+	Bnd_Spline_East.Create_Spline_Line(x1, x2, 2);
 
 	Bnd_Spline_North.setBCtype(BC_NONE);
 	Bnd_Spline_South.setBCtype(BC_REFLECTION);
@@ -3846,16 +3821,16 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Free_Jet(int &_Number_of_Blocks_Idir_,
       } else if (iBlk == 0 && jBlk == 1) {
 	x1 = Vector2D(x_up, r_max);
 	x2 = Vector2D(x_orifice_up, r_max);
-	Create_Spline_Line(Bnd_Spline_North, x1, x2, 2);
+	Bnd_Spline_North.Create_Spline_Line(x1, x2, 2);
 	x1 = Vector2D(x_up, Radius);
 	x2 = Vector2D(x_orifice_up, Radius);
-	Create_Spline_Line(Bnd_Spline_South, x1, x2, 2);
+	Bnd_Spline_South.Create_Spline_Line(x1, x2, 2);
 	x1 = Vector2D(x_up, Radius);
 	x2 = Vector2D(x_up, r_max);
-	Create_Spline_Line(Bnd_Spline_West, x1, x2, 2);
+	Bnd_Spline_West.Create_Spline_Line(x1, x2, 2);
 	x1 = Vector2D(x_orifice_up, Radius);
 	x2 = Vector2D(x_orifice_up, r_max);
-	Create_Spline_Line(Bnd_Spline_East, x1, x2, 2);
+	Bnd_Spline_East.Create_Spline_Line(x1, x2, 2);
 
 	Bnd_Spline_North.setBCtype(BC_FIXED);
 	Bnd_Spline_South.setBCtype(BC_NONE);
@@ -3905,16 +3880,16 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Free_Jet(int &_Number_of_Blocks_Idir_,
       } else if (iBlk == 2 && jBlk == 1) {
 	x1 = Vector2D(x_orifice_down, r_max);
 	x2 = Vector2D(x_down, r_max);
-	Create_Spline_Line(Bnd_Spline_North, x1, x2, 2);
+	Bnd_Spline_North.Create_Spline_Line(x1, x2, 2);
 	x1 = Vector2D(x_orifice_down, Radius);
 	x2 = Vector2D(x_down, Radius);
-	Create_Spline_Line(Bnd_Spline_South, x1, x2, 2);
+	Bnd_Spline_South.Create_Spline_Line(x1, x2, 2);
 	x1 = Vector2D(x_orifice_down, Radius);
 	x2 = Vector2D(x_orifice_down, r_max);
-	Create_Spline_Line(Bnd_Spline_West, x1, x2, 2);
+	Bnd_Spline_West.Create_Spline_Line(x1, x2, 2);
 	x1 = Vector2D(x_down, Radius);
 	x2 = Vector2D(x_down, r_max);
-	Create_Spline_Line(Bnd_Spline_East, x1, x2, 2);
+	Bnd_Spline_East.Create_Spline_Line(x1, x2, 2);
 
 	Bnd_Spline_North.setBCtype(BC_FIXED);
 	Bnd_Spline_South.setBCtype(BC_NONE);
@@ -3996,8 +3971,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Wedge(int &_Number_of_Blocks_Idir_,
     Orthogonal_East, Orthogonal_West;
   double Beta_I, Tau_I, Beta_J, Tau_J;
   Vector2D xc_NW, xc_NE, xc_SE, xc_SW;
-  Spline2D Bnd_Spline_North, Bnd_Spline_South,
-    Bnd_Spline_East, Bnd_Spline_West;
+  Spline2D_HO Bnd_Spline_North, Bnd_Spline_South,
+              Bnd_Spline_East, Bnd_Spline_West;
 
   // Allocate memory for grid blocks.  There are two grid blocks for 
   // this mesh.
@@ -4021,10 +3996,10 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Wedge(int &_Number_of_Blocks_Idir_,
     }
     // Create the splines defining the north, south, east, and west 
     // boundaries of the rectangular box.
-    Create_Spline_Line(Bnd_Spline_North, xc_NW, xc_NE, 2);
-    Create_Spline_Line(Bnd_Spline_South, xc_SW, xc_SE, 2);
-    Create_Spline_Line(Bnd_Spline_East, xc_SE, xc_NE, 2);
-    Create_Spline_Line(Bnd_Spline_West, xc_SW, xc_NW, 2);
+    Bnd_Spline_North.Create_Spline_Line(xc_NW, xc_NE, 2);
+    Bnd_Spline_South.Create_Spline_Line(xc_SW, xc_SE, 2);
+    Bnd_Spline_East.Create_Spline_Line(xc_SE, xc_NE, 2);
+    Bnd_Spline_West.Create_Spline_Line(xc_SW, xc_NW, 2);
     // Set the boundary condition types for each of the boundary splines.
     Bnd_Spline_North.setBCtype(BC_REFLECTION);
     Bnd_Spline_South.setBCtype(Wedge_BC_Type);
@@ -4111,8 +4086,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Unsteady_Blunt_Body(int &_Number_of_Blocks_
     Orthogonal_East, Orthogonal_West;
   double Beta_I, Tau_I, Beta_J, Tau_J;
   Vector2D xc_NW, xc_NE, xc_SE, xc_SW;
-  Spline2D Bnd_Spline_North, Bnd_Spline_South,
-    Bnd_Spline_East,  Bnd_Spline_West, Bow_Spline;
+  Spline2D_HO Bnd_Spline_North, Bnd_Spline_South,
+              Bnd_Spline_East,  Bnd_Spline_West, Bow_Spline;
   
   // Allocate memory for grid block.
   _Number_of_Blocks_Idir_ = 1;
@@ -4124,50 +4099,46 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Unsteady_Blunt_Body(int &_Number_of_Blocks_
     // Create the splines defining the north, south, east, and west 
     // boundaries of the rectangular box.
     if (jBlk == 2) {
-      Create_Spline_Bow_Shock(Bow_Spline,
-			      Radius,
-			      Mach_Number,
-			      1,
-			      181);
+      Bow_Spline.Create_Spline_Bow_Shock(Radius,
+					 Mach_Number,
+					 1,
+					 181);
       xc_SW = Bow_Spline.Xp[0] - Vector2D(TWO*Radius,ZERO);
       xc_SE = Vector2D(xc_SW.x,Bow_Spline.Xp[180].y);
       xc_NW = Bow_Spline.Xp[0] - Vector2D(FOUR*Radius,ZERO);
       xc_NE = Vector2D(xc_NW.x,Bow_Spline.Xp[180].y);
-      Create_Spline_Line(Bnd_Spline_North,xc_NW,xc_NE,2);
-      Create_Spline_Line(Bnd_Spline_South,xc_SW,xc_SE,2);
-      Create_Spline_Line(Bnd_Spline_East, xc_SE,xc_NE,2);
-      Create_Spline_Line(Bnd_Spline_West, xc_SW,xc_NW,2);
+      Bnd_Spline_North.Create_Spline_Line(xc_NW,xc_NE,2);
+      Bnd_Spline_South.Create_Spline_Line(xc_SW,xc_SE,2);
+      Bnd_Spline_East.Create_Spline_Line(xc_SE,xc_NE,2);
+      Bnd_Spline_West.Create_Spline_Line(xc_SW,xc_NW,2);
     } else if (jBlk == 1) {
-      Create_Spline_Bow_Shock(Bnd_Spline_South,
-			      Radius,
-			      Mach_Number,
-			      1,
-			      181);
+      Bnd_Spline_South.Create_Spline_Bow_Shock(Radius,
+					       Mach_Number,
+					       1,
+					       181);
       xc_SW = Bnd_Spline_South.Xp[0];
       xc_SE = Bnd_Spline_South.Xp[180];
       xc_NW = Bnd_Spline_South.Xp[0] - Vector2D(TWO*Radius,ZERO);
       xc_NE = Vector2D(xc_NW.x,Bnd_Spline_South.Xp[180].y);
-      Create_Spline_Line(Bnd_Spline_North,xc_NW,xc_NE,2);
-      Create_Spline_Line(Bnd_Spline_East,xc_SE,xc_NE,2);
-      Create_Spline_Line(Bnd_Spline_West,xc_SW,xc_NW,2);
+      Bnd_Spline_North.Create_Spline_Line(xc_NW,xc_NE,2);
+      Bnd_Spline_East.Create_Spline_Line(xc_SE,xc_NE,2);
+      Bnd_Spline_West.Create_Spline_Line(xc_SW,xc_NW,2);
     } else if (jBlk == 0) {
-      Create_Spline_Bow_Shock(Bnd_Spline_North,
-			      Radius,
-			      Mach_Number,
-			      1,
-			      181);
-      Create_Spline_Circular_Arc(Bnd_Spline_South,
-				 Vector2D(ZERO,ZERO),
-				 Radius,
-				 180.00,
-				 90.00,
-				 181);
+      Bnd_Spline_North.Create_Spline_Bow_Shock(Radius,
+					       Mach_Number,
+					       1,
+					       181);
+      Bnd_Spline_South.Create_Spline_Circular_Arc(Vector2D(ZERO,ZERO),
+						  Radius,
+						  180.00,
+						  90.00,
+						  181);
       xc_SW = Bnd_Spline_South.Xp[0];
       xc_NW = Bnd_Spline_North.Xp[0];
-      Create_Spline_Line(Bnd_Spline_West, xc_SW, xc_NW, 2);
+      Bnd_Spline_West.Create_Spline_Line(xc_SW, xc_NW, 2);
       xc_SE = Bnd_Spline_South.Xp[Bnd_Spline_South.np-1];
       xc_NE = Bnd_Spline_North.Xp[Bnd_Spline_North.np-1];
-      Create_Spline_Line(Bnd_Spline_East, xc_SE, xc_NE, 2);
+      Bnd_Spline_East.Create_Spline_Line(xc_SE, xc_NE, 2);
     }
     // Set the boundary condition types for each of the boundary splines.
     if (jBlk == 2) {
@@ -4272,7 +4243,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Ringleb_Flow(int &_Number_of_Blocks_Idir_,
     Orthogonal_East, Orthogonal_West;
   double Beta_I, Tau_I, Beta_J, Tau_J;
   Vector2D xc_NW, xc_NE, xc_SE, xc_SW;
-  Spline2D Bnd_Spline_North, Bnd_Spline_South,
+  Spline2D_HO Bnd_Spline_North, Bnd_Spline_South,
     Bnd_Spline_East, Bnd_Spline_West;
   double **rho;
   double delta_q;
@@ -4458,7 +4429,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Bump_Channel_Flow(int &_Number_of_Blocks_Id
       Orthogonal_East, Orthogonal_West;
   double Beta_I, Tau_I, Beta_J, Tau_J;
   Vector2D x1, x2;
-  Spline2D Bnd_Spline_North, Bnd_Spline_South,
+  Spline2D_HO Bnd_Spline_North, Bnd_Spline_South,
            Bnd_Spline_East, Bnd_Spline_West;
   double R, Theta;
 
@@ -4476,34 +4447,33 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Bump_Channel_Flow(int &_Number_of_Blocks_Id
 	// boundaries of the grid.
 	x1 = Vector2D(-1.0,1.0);
 	x2 = Vector2D( 0.0,1.0);
-	Create_Spline_Line(Bnd_Spline_North,x1,x2,2);
+	Bnd_Spline_North.Create_Spline_Line(x1,x2,2);
 	x1 = Vector2D(-1.0,0.0);
 	x2 = Vector2D( 0.0,0.0);
-	Create_Spline_Line(Bnd_Spline_South,x1,x2,2);
+	Bnd_Spline_South.Create_Spline_Line(x1,x2,2);
 	x1 = Vector2D( 0.0,0.0);
 	x2 = Vector2D( 0.0,1.0);
-	Create_Spline_Line(Bnd_Spline_East,x1,x2,2);
+	Bnd_Spline_East.Create_Spline_Line(x1,x2,2);
 	x1 = Vector2D(-1.0,0.0);
 	x2 = Vector2D(-1.0,1.0);
-	Create_Spline_Line(Bnd_Spline_West,x1,x2,2);
+	Bnd_Spline_West.Create_Spline_Line(x1,x2,2);
       } else if (iBlk == 1 && jBlk == 0) {
 	// Create the splines defining the north, south, east, and west 
 	// boundaries of the grid.
 	x1 = Vector2D( 0.0,1.0);
 	x2 = Vector2D( 1.0,1.0);
-	Create_Spline_Line(Bnd_Spline_North,x1,x2,2);
+	Bnd_Spline_North.Create_Spline_Line(x1,x2,2);
 	if (!Smooth_Bump) {
 	  // Non-smooth circular bump.
 	  R = (0.25 + 0.042*0.042)/(TWO*0.042);
 	  Theta = acos((R - 0.042)/R);
-	  Create_Spline_Circular_Arc(Bnd_Spline_South,
-				     Vector2D_ZERO,
-				     R,
-				     ZERO,
-				     -TWO*Theta*180.0/PI,
-				     31);
-	  Rotate_Spline(Bnd_Spline_South,HALF*PI+Theta);
-	  Translate_Spline(Bnd_Spline_South,Vector2D(HALF,0.042-R));
+	  Bnd_Spline_South.Create_Spline_Circular_Arc(Vector2D_ZERO,
+						      R,
+						      ZERO,
+						      -TWO*Theta*180.0/PI,
+						      31);
+	  Bnd_Spline_South.Rotate_Spline(HALF*PI+Theta);
+	  Bnd_Spline_South.Translate_Spline(Vector2D(HALF,0.042-R));
 	} else {
 	  // Smooth sin^2 bump.
 	  Bnd_Spline_South.allocate(31);
@@ -4520,100 +4490,100 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Bump_Channel_Flow(int &_Number_of_Blocks_Id
 	}
 	x1 = Vector2D( 1.0,0.0);
 	x2 = Vector2D( 1.0,1.0);
-	Create_Spline_Line(Bnd_Spline_East,x1,x2,2);
+	Bnd_Spline_East.Create_Spline_Line(x1,x2,2);
 	x1 = Vector2D( 0.0,0.0);
 	x2 = Vector2D( 0.0,1.0);
-	Create_Spline_Line(Bnd_Spline_West,x1,x2,2);
+	Bnd_Spline_West.Create_Spline_Line(x1,x2,2);
       } else if (iBlk == 2 && jBlk == 0) {
 	// Create the splines defining the north, south, east, and west 
 	// boundaries of the grid.
 	x1 = Vector2D( 1.00,1.00);
 	x2 = Vector2D( 2.75,1.00);
-	Create_Spline_Line(Bnd_Spline_North,x1,x2,2);
+	Bnd_Spline_North.Create_Spline_Line(x1,x2,2);
 	x1 = Vector2D( 1.00,0.00);
 	x2 = Vector2D( 2.75,0.00);
-	Create_Spline_Line(Bnd_Spline_South,x1,x2,2);
+	Bnd_Spline_South.Create_Spline_Line(x1,x2,2);
 	x1 = Vector2D( 2.75,0.00);
 	x2 = Vector2D( 2.75,1.00);
-	Create_Spline_Line(Bnd_Spline_East,x1,x2,2);
+	Bnd_Spline_East.Create_Spline_Line(x1,x2,2);
 	x1 = Vector2D( 1.00,0.00);
 	x2 = Vector2D( 1.00,1.00);
-	Create_Spline_Line(Bnd_Spline_West,x1,x2,2);
+	Bnd_Spline_West.Create_Spline_Line(x1,x2,2);
       } else if (iBlk == 3 && jBlk == 0) {
 	// Create the splines defining the north, south, east, and west 
 	// boundaries of the grid.
 	x1 = Vector2D( 2.75,1.00);
 	x2 = Vector2D( 4.50,1.00);
-	Create_Spline_Line(Bnd_Spline_North,x1,x2,2);
+	Bnd_Spline_North.Create_Spline_Line(x1,x2,2);
 	x1 = Vector2D( 2.75,0.00);
 	x2 = Vector2D( 4.50,0.00);
-	Create_Spline_Line(Bnd_Spline_South,x1,x2,2);
+	Bnd_Spline_South.Create_Spline_Line(x1,x2,2);
 	x1 = Vector2D( 4.50,0.00);
 	x2 = Vector2D( 4.50,1.00);
-	Create_Spline_Line(Bnd_Spline_East,x1,x2,2);
+	Bnd_Spline_East.Create_Spline_Line(x1,x2,2);
 	x1 = Vector2D( 2.75,0.00);
 	x2 = Vector2D( 2.75,1.00);
-	Create_Spline_Line(Bnd_Spline_West,x1,x2,2);
+	Bnd_Spline_West.Create_Spline_Line(x1,x2,2);
       } else if (iBlk == 0 && jBlk == 1) {
 	// Create the splines defining the north, south, east, and west 
 	// boundaries of the grid.
 	x1 = Vector2D(-1.00,2.00);
 	x2 = Vector2D( 0.00,2.00);
-	Create_Spline_Line(Bnd_Spline_North,x1,x2,2);
+	Bnd_Spline_North.Create_Spline_Line(x1,x2,2);
 	x1 = Vector2D(-1.00,1.00);
 	x2 = Vector2D( 0.00,1.00);
-	Create_Spline_Line(Bnd_Spline_South,x1,x2,2);
+	Bnd_Spline_South.Create_Spline_Line(x1,x2,2);
 	x1 = Vector2D( 0.00,1.00);
 	x2 = Vector2D( 0.00,2.00);
-	Create_Spline_Line(Bnd_Spline_East,x1,x2,2);
+	Bnd_Spline_East.Create_Spline_Line(x1,x2,2);
 	x1 = Vector2D(-1.00,1.00);
 	x2 = Vector2D(-1.00,2.00);
-	Create_Spline_Line(Bnd_Spline_West,x1,x2,2);
+	Bnd_Spline_West.Create_Spline_Line(x1,x2,2);
       } else if (iBlk == 1 && jBlk == 1) {
 	// Create the splines defining the north, south, east, and west 
 	// boundaries of the grid.
 	x1 = Vector2D( 0.00,2.00);
 	x2 = Vector2D( 1.00,2.00);
-	Create_Spline_Line(Bnd_Spline_North,x1,x2,2);
+	Bnd_Spline_North.Create_Spline_Line(x1,x2,2);
 	x1 = Vector2D( 0.00,1.00);
 	x2 = Vector2D( 1.00,1.00);
-	Create_Spline_Line(Bnd_Spline_South,x1,x2,2);
+	Bnd_Spline_South.Create_Spline_Line(x1,x2,2);
 	x1 = Vector2D( 1.00,1.00);
 	x2 = Vector2D( 1.00,2.00);
-	Create_Spline_Line(Bnd_Spline_East,x1,x2,2);
+	Bnd_Spline_East.Create_Spline_Line(x1,x2,2);
 	x1 = Vector2D( 0.00,1.00);
 	x2 = Vector2D( 0.00,2.00);
-	Create_Spline_Line(Bnd_Spline_West,x1,x2,2);
+	Bnd_Spline_West.Create_Spline_Line(x1,x2,2);
       } else if (iBlk == 2 && jBlk == 1) {
 	// Create the splines defining the north, south, east, and west 
 	// boundaries of the grid.
 	x1 = Vector2D( 1.00,2.00);
 	x2 = Vector2D( 2.75,2.00);
-	Create_Spline_Line(Bnd_Spline_North,x1,x2,2);
+	Bnd_Spline_North.Create_Spline_Line(x1,x2,2);
 	x1 = Vector2D( 1.00,1.00);
 	x2 = Vector2D( 2.75,1.00);
-	Create_Spline_Line(Bnd_Spline_South,x1,x2,2);
+	Bnd_Spline_South.Create_Spline_Line(x1,x2,2);
 	x1 = Vector2D( 2.75,1.00);
 	x2 = Vector2D( 2.75,2.00);
-	Create_Spline_Line(Bnd_Spline_East,x1,x2,2);
+	Bnd_Spline_East.Create_Spline_Line(x1,x2,2);
 	x1 = Vector2D( 1.00,1.00);
 	x2 = Vector2D( 1.00,2.00);
-	Create_Spline_Line(Bnd_Spline_West,x1,x2,2);
+	Bnd_Spline_West.Create_Spline_Line(x1,x2,2);
       } else if (iBlk == 3 && jBlk == 1) {
 	// Create the splines defining the north, south, east, and west 
 	// boundaries of the grid.
 	x1 = Vector2D( 2.75,2.00);
 	x2 = Vector2D( 4.50,2.00);
-	Create_Spline_Line(Bnd_Spline_North,x1,x2,2);
+	Bnd_Spline_North.Create_Spline_Line(x1,x2,2);
 	x1 = Vector2D( 2.75,1.00);
 	x2 = Vector2D( 4.50,1.00);
-	Create_Spline_Line(Bnd_Spline_South,x1,x2,2);
+	Bnd_Spline_South.Create_Spline_Line(x1,x2,2);
 	x1 = Vector2D( 4.50,1.00);
 	x2 = Vector2D( 4.50,2.00);
-	Create_Spline_Line(Bnd_Spline_East,x1,x2,2);
+	Bnd_Spline_East.Create_Spline_Line(x1,x2,2);
 	x1 = Vector2D( 2.75,1.00);
 	x2 = Vector2D( 2.75,2.00);
-	Create_Spline_Line(Bnd_Spline_West,x1,x2,2);
+	Bnd_Spline_West.Create_Spline_Line(x1,x2,2);
       }
 
       // Set the boundary condition types for each of the boundary splines.
@@ -4710,7 +4680,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Jet_Flow(int &_Number_of_Blocks_Idir_,
       Orthogonal_East, Orthogonal_West;
   double Beta_I, Tau_I, Beta_J, Tau_J;
   Vector2D xNW, xNE, xSE, xSW;
-  Spline2D Bnd_Spline_North, Bnd_Spline_South,
+  Spline2D_HO Bnd_Spline_North, Bnd_Spline_South,
            Bnd_Spline_East, Bnd_Spline_West;
  
   // Allocate memory for grid blocks. There are two grid blocks for 
@@ -4856,10 +4826,10 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Jet_Flow(int &_Number_of_Blocks_Idir_,
 	
 	// Create the splines defining the north, south, east, and west 
 	// boundaries of the rectangular boxes.
-	Create_Spline_Line(Bnd_Spline_North,xNW,xNE,2);
-	Create_Spline_Line(Bnd_Spline_South,xSW,xSE,2);
-	Create_Spline_Line(Bnd_Spline_East,xSE,xNE,2);
-	Create_Spline_Line(Bnd_Spline_West,xSW,xNW,2);
+	Bnd_Spline_North.Create_Spline_Line(xNW,xNE,2);
+	Bnd_Spline_South.Create_Spline_Line(xSW,xSE,2);
+	Bnd_Spline_East.Create_Spline_Line(xSE,xNE,2);
+	Bnd_Spline_West.Create_Spline_Line(xSW,xNW,2);
 	
 	// Set the boundary condition types for each of the boundary
 	// splines:
@@ -4935,7 +4905,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Mixing_Layer(int &_Number_of_Blocks_Idir_,
       Orthogonal_East, Orthogonal_West;
   double Beta_I, Tau_I, Beta_J, Tau_J;
   Vector2D xNW, xNE, xSE, xSW;
-  Spline2D Bnd_Spline_North, Bnd_Spline_South,
+  Spline2D_HO Bnd_Spline_North, Bnd_Spline_South,
            Bnd_Spline_East, Bnd_Spline_West;
 
   double factor = ONE; // this factor increases the length of the domain calculated
@@ -5064,10 +5034,10 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Mixing_Layer(int &_Number_of_Blocks_Idir_,
 	
 	// Create the splines defining the north, south, east, and west 
 	// boundaries of the rectangular boxes.
-	Create_Spline_Line(Bnd_Spline_North,xNW,xNE,2);
-	Create_Spline_Line(Bnd_Spline_South,xSW,xSE,2);
-	Create_Spline_Line(Bnd_Spline_East,xSE,xNE,2);
-	Create_Spline_Line(Bnd_Spline_West,xSW,xNW,2);
+	Bnd_Spline_North.Create_Spline_Line(xNW,xNE,2);
+	Bnd_Spline_South.Create_Spline_Line(xSW,xSE,2);
+	Bnd_Spline_East.Create_Spline_Line(xSE,xNE,2);
+	Bnd_Spline_West.Create_Spline_Line(xSW,xNW,2);
 
 	// Set the boundary condition types for each of the boundary
 	// splines:
@@ -5130,7 +5100,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Backward_Facing_Step(int &_Number_of_Blocks
       Orthogonal_East, Orthogonal_West;
   double Beta_I, Tau_I, Beta_J, Tau_J;
   Vector2D xNW, xNE, xSE, xSW;
-  Spline2D Bnd_Spline_North, Bnd_Spline_South,
+  Spline2D_HO Bnd_Spline_North, Bnd_Spline_South,
            Bnd_Spline_East, Bnd_Spline_West;
   double Inlet_Height, Inlet_Length, Outlet_Length;
 
@@ -5349,10 +5319,10 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Backward_Facing_Step(int &_Number_of_Blocks
 
 	// Create the splines defining the north, south, east, and west 
 	// boundaries of the rectangular boxes.
-	Create_Spline_Line(Bnd_Spline_North,xNW,xNE,2);
-	Create_Spline_Line(Bnd_Spline_South,xSW,xSE,2);
-	Create_Spline_Line(Bnd_Spline_East,xSE,xNE,2);
-	Create_Spline_Line(Bnd_Spline_West,xSW,xNW,2);
+	Bnd_Spline_North.Create_Spline_Line(xNW,xNE,2);
+	Bnd_Spline_South.Create_Spline_Line(xSW,xSE,2);
+	Bnd_Spline_East.Create_Spline_Line(xSE,xNE,2);
+	Bnd_Spline_West.Create_Spline_Line(xSW,xNW,2);
 
 	// Set the boundary condition types for each of the boundary
 	// splines:
@@ -5410,7 +5380,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Forward_Facing_Step(int &_Number_of_Blocks_
   
   int BCtypeN, BCtypeS, BCtypeE, BCtypeW;
   Vector2D xNW, xNE, xSE, xSW;
-  Spline2D Bnd_Spline_North, Bnd_Spline_South,
+  Spline2D_HO Bnd_Spline_North, Bnd_Spline_South,
            Bnd_Spline_East, Bnd_Spline_West;
 
   int Stretch_I = STRETCHING_FCN_LINEAR,
@@ -5459,10 +5429,10 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Forward_Facing_Step(int &_Number_of_Blocks_
       // The step:
       if (iBlk == 0 && jBlk == 0) { BCtypeE = BC_REFLECTION; }
 
-      Create_Spline_Line(Bnd_Spline_North,xNW,xNE,2);
-      Create_Spline_Line(Bnd_Spline_South,xSW,xSE,2);
-      Create_Spline_Line(Bnd_Spline_East,xSE,xNE,2);
-      Create_Spline_Line(Bnd_Spline_West,xSW,xNW,2);
+      Bnd_Spline_North.Create_Spline_Line(xNW,xNE,2);
+      Bnd_Spline_South.Create_Spline_Line(xSW,xSE,2);
+      Bnd_Spline_East.Create_Spline_Line(xSE,xNE,2);
+      Bnd_Spline_West.Create_Spline_Line(xSW,xNW,2);
 
       Bnd_Spline_North.setBCtype(BCtypeN);
       Bnd_Spline_South.setBCtype(BCtypeS);
@@ -5517,7 +5487,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Desolvation_Chamber(const int &Chamber_BC_T
       Orthogonal_East, Orthogonal_West;
   double Beta_I, Tau_I, Beta_J, Tau_J;
   Vector2D xNW, xNE, xSE, xSW;
-  Spline2D Bnd_Spline_North, Bnd_Spline_South,
+  Spline2D_HO Bnd_Spline_North, Bnd_Spline_South,
            Bnd_Spline_East,  Bnd_Spline_West, Bow_Spline;
 
   // Allocate memory for grid block.
@@ -5799,10 +5769,10 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Desolvation_Chamber(const int &Chamber_BC_T
 
 	// Create the splines defining the north, south, east, and west 
 	// boundaries of the current block:
-	Create_Spline_Line(Bnd_Spline_North,xNW,xNE,2);
-	Create_Spline_Line(Bnd_Spline_South,xSW,xSE,2);
-	Create_Spline_Line(Bnd_Spline_East,xSE,xNE,2);
-	Create_Spline_Line(Bnd_Spline_West,xSW,xNW,2);
+	Bnd_Spline_North.Create_Spline_Line(xNW,xNE,2);
+	Bnd_Spline_South.Create_Spline_Line(xSW,xSE,2);
+	Bnd_Spline_East.Create_Spline_Line(xSE,xNE,2);
+	Bnd_Spline_West.Create_Spline_Line(xSW,xNW,2);
 
 	// Set the boundary condition types for each of the boundary
 	// splines:
@@ -5872,7 +5842,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_NASA_Rotor_37(int &_Number_of_Blocks_Idir_,
 						   const int Number_of_Ghost_Cells) {
   
   int error_flag;
-  Spline2D upperB, lowerB, upperMiddleB, lowerMiddleB, camberTrail, camberLead, camberBlade, Rotor_Spline;
+  Spline2D_HO upperB, lowerB, upperMiddleB, lowerMiddleB, camberTrail, camberLead, camberBlade, Rotor_Spline;
   int iTrail, iLead, pos, mIndex;
   Vector2D swap, leadV, trailV, x_temp;
   double zlU, zlL, zrU, zrL, mLead, mTrail, mLeadc, mTrailc, 
@@ -6284,7 +6254,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_NASA_Rotor_37(int &_Number_of_Blocks_Idir_,
   }
   Grid_ptr[0][0].BndSouthSpline.pathlength();
   // East spline.
-  Copy_Spline(Grid_ptr[0][0].BndEastSpline,Grid_ptr[1][0].BndWestSpline);
+  Grid_ptr[0][0].BndEastSpline = Grid_ptr[1][0].BndWestSpline;
   // West spline.
   Grid_ptr[0][0].BndWestSpline.allocate(2);
   Grid_ptr[0][0].BndWestSpline.settype(SPLINE2D_LINEAR);
@@ -6363,7 +6333,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_NASA_Rotor_37(int &_Number_of_Blocks_Idir_,
   Grid_ptr[2][0].BndEastSpline.tp[1] = SPLINE2D_POINT_SHARP_CORNER;
   Grid_ptr[2][0].BndEastSpline.pathlength();
   // West spline.
-  Copy_Spline(Grid_ptr[2][0].BndWestSpline,Grid_ptr[1][0].BndEastSpline); 
+  Grid_ptr[2][0].BndWestSpline = Grid_ptr[1][0].BndEastSpline; 
   // Create quad block (2,0).
   Grid_ptr[2][0].Create_Quad_Block(Grid_ptr[2][0].BndNorthSpline,
 				   Grid_ptr[2][0].BndSouthSpline,
@@ -6409,9 +6379,9 @@ void Grid2D_Quad_MultiBlock_HO::Grid_NASA_Rotor_37(int &_Number_of_Blocks_Idir_,
   }
   Grid_ptr[0][1].BndNorthSpline.pathlength();
   // South spline.
-  Copy_Spline(Grid_ptr[0][1].BndSouthSpline,Grid_ptr[0][0].BndNorthSpline);
+  Grid_ptr[0][1].BndSouthSpline = Grid_ptr[0][0].BndNorthSpline;
   // East spline.
-  Copy_Spline(Grid_ptr[0][1].BndEastSpline,Grid_ptr[1][1].BndWestSpline);
+  Grid_ptr[0][1].BndEastSpline = Grid_ptr[1][1].BndWestSpline;
   // West spline.
   Grid_ptr[0][1].BndWestSpline.allocate(2);
   Grid_ptr[0][1].BndWestSpline.settype(SPLINE2D_LINEAR);
@@ -6471,7 +6441,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_NASA_Rotor_37(int &_Number_of_Blocks_Idir_,
   }
   Grid_ptr[2][1].BndNorthSpline.pathlength();
   // South spline.
-  Copy_Spline(Grid_ptr[2][1].BndSouthSpline,Grid_ptr[2][0].BndNorthSpline);
+  Grid_ptr[2][1].BndSouthSpline = Grid_ptr[2][0].BndNorthSpline;
   // East spline.
   Grid_ptr[2][1].BndEastSpline.allocate(2);
   Grid_ptr[2][1].BndEastSpline.settype(SPLINE2D_LINEAR);
@@ -6483,7 +6453,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_NASA_Rotor_37(int &_Number_of_Blocks_Idir_,
   Grid_ptr[2][1].BndEastSpline.tp[1] = SPLINE2D_POINT_SHARP_CORNER;
   Grid_ptr[2][1].BndEastSpline.pathlength();
   // West spline.
-  Copy_Spline(Grid_ptr[2][1].BndWestSpline,Grid_ptr[1][1].BndEastSpline);
+  Grid_ptr[2][1].BndWestSpline = Grid_ptr[1][1].BndEastSpline;
   // Create quad block (2,1).
   Grid_ptr[2][1].Create_Quad_Block(Grid_ptr[2][1].BndNorthSpline,
 				   Grid_ptr[2][1].BndSouthSpline,
@@ -6546,18 +6516,18 @@ void Grid2D_Quad_MultiBlock_HO::Grid_NASA_Rotor_67(int &_Number_of_Blocks_Idir_,
 						   const int Number_of_Ghost_Cells) {
 
   int error_flag;
-  Spline2D upperB, lowerB, upperMiddleB, lowerMiddleB, camberTrail, camberLead, camberBlade, Rotor_Spline;
+  Spline2D_HO upperB, lowerB, upperMiddleB, lowerMiddleB, camberTrail, camberLead, camberBlade, Rotor_Spline;
   int iTrail, iLead, pos, mIndex;
   Vector2D swap, leadV, trailV, x_temp;
   double zlU, zlL, zrU, zrL, mLead, mTrail, mLeadc, mTrailc, 
          mTop, mBot, m1, m2, z, dz, A, m, zLead, zTrail, dm, swapm;
-  Spline2D BndNorthSpline, tempBndNorthSpline, BndSouthSpline, tempBndSouthSpline, BndEastSpline, BndWestSpline;
+  Spline2D_HO BndNorthSpline, tempBndNorthSpline, BndSouthSpline, tempBndSouthSpline, BndEastSpline, BndWestSpline;
   int Stretch_I, Stretch_J,
       Orthogonal_North, Orthogonal_South,
       Orthogonal_East, Orthogonal_West;
   double Beta_I, Tau_I, Beta_J, Tau_J;
   Vector2D xNW, xNE, xSE, xSW;
-  Spline2D Bnd_Spline_North, Bnd_Spline_South,
+  Spline2D_HO Bnd_Spline_North, Bnd_Spline_South,
            Bnd_Spline_East,  Bnd_Spline_West, Bow_Spline;
 
   // NASA Rotor 67 variables.
@@ -7036,7 +7006,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Driven_Cavity_Flow(int &_Number_of_Blocks_I
       Orthogonal_East, Orthogonal_West;
   double Beta_I, Tau_I, Beta_J, Tau_J;
   Vector2D xc_NW, xc_NE, xc_SE, xc_SW;
-  Spline2D Bnd_Spline_North, Bnd_Spline_South,
+  Spline2D_HO Bnd_Spline_North, Bnd_Spline_South,
            Bnd_Spline_East, Bnd_Spline_West;
 
   // Allocate memory for grid block.
@@ -7063,10 +7033,10 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Driven_Cavity_Flow(int &_Number_of_Blocks_I
 
       // Create the splines defining the north, south, east, and west
       // boundaries of the rectangular box.
-      Create_Spline_Line(Bnd_Spline_North, xc_NW, xc_NE, 2);
-      Create_Spline_Line(Bnd_Spline_South, xc_SW, xc_SE, 2);
-      Create_Spline_Line(Bnd_Spline_East, xc_SE, xc_NE, 2);
-      Create_Spline_Line(Bnd_Spline_West, xc_SW, xc_NW, 2);
+      Bnd_Spline_North.Create_Spline_Line(xc_NW, xc_NE, 2);
+      Bnd_Spline_South.Create_Spline_Line(xc_SW, xc_SE, 2);
+      Bnd_Spline_East.Create_Spline_Line(xc_SE, xc_NE, 2);
+      Bnd_Spline_West.Create_Spline_Line(xc_SW, xc_NW, 2);
 
       // Set the boundary condition types for each of the boundary
       // splines.
@@ -7161,7 +7131,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Adiabatic_Flat_Plate(int &_Number_of_Blocks
     Orthogonal_East, Orthogonal_West;
   double Beta_I, Tau_I, Beta_J, Tau_J;
   Vector2D xc_NW, xc_NE, xc_SE, xc_SW;
-  Spline2D Bnd_Spline_North, Bnd_Spline_South,
+  Spline2D_HO Bnd_Spline_North, Bnd_Spline_South,
     Bnd_Spline_East, Bnd_Spline_West;
   
   double distance = TEN;//HUNDRED;
@@ -7203,10 +7173,10 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Adiabatic_Flat_Plate(int &_Number_of_Blocks
     /* Create the splines defining the north, south,
        east, and west boundaries of the rectangular boxes. */
 
-    Create_Spline_Line(Bnd_Spline_North, xc_NW, xc_NE, 2);
-    Create_Spline_Line(Bnd_Spline_South, xc_SW, xc_SE, 2);
-    Create_Spline_Line(Bnd_Spline_East, xc_SE, xc_NE, 2);
-    Create_Spline_Line(Bnd_Spline_West, xc_SW, xc_NW, 2);
+    Bnd_Spline_North.Create_Spline_Line(xc_NW, xc_NE, 2);
+    Bnd_Spline_South.Create_Spline_Line(xc_SW, xc_SE, 2);
+    Bnd_Spline_East.Create_Spline_Line(xc_SE, xc_NE, 2);
+    Bnd_Spline_West.Create_Spline_Line(xc_SW, xc_NW, 2);
 
     /* Set the boundary condition types for each of the
        boundary splines. */
@@ -7345,7 +7315,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Adiabatic_Circular_Cylinder(int &_Number_of
     Orthogonal_East, Orthogonal_West;
   double Beta_I, Tau_I, Beta_J, Tau_J;
   Vector2D x1, x2;
-  Spline2D Bnd_Spline_North, Bnd_Spline_South,
+  Spline2D_HO Bnd_Spline_North, Bnd_Spline_South,
     Bnd_Spline_East, Bnd_Spline_West;
 
   /* Allocate memory for grid blocks.  There are two grid
@@ -7365,44 +7335,40 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Adiabatic_Circular_Cylinder(int &_Number_of
 
     if (iBlk == 0) {
       x1 = Vector2D(ZERO , ZERO);
-      Create_Spline_Circular_Arc(Bnd_Spline_North,
-				 x1,
-				 Outer_Radius,   //was 96*R
-				 360.00,
-				 180.00,
-				 361);
-      Create_Spline_Circular_Arc(Bnd_Spline_South,
-				 x1,
-				 Inner_Radius,
-				 360.00,
-				 180.00,
-				 361);
+      Bnd_Spline_North.Create_Spline_Circular_Arc(x1,
+						  Outer_Radius,   //was 96*R
+						  360.00,
+						  180.00,
+						  361);
+      Bnd_Spline_South.Create_Spline_Circular_Arc(x1,
+						  Inner_Radius,
+						  360.00,
+						  180.00,
+						  361);
       x1 = Vector2D(Inner_Radius, ZERO);
       x2 = Vector2D(Outer_Radius, ZERO);
-      Create_Spline_Line(Bnd_Spline_West, x1, x2, 2);
+      Bnd_Spline_West.Create_Spline_Line(x1, x2, 2);
       x1 = Vector2D(-Inner_Radius, ZERO);
       x2 = Vector2D(-Outer_Radius, ZERO);
-      Create_Spline_Line(Bnd_Spline_East, x1, x2, 2);
+      Bnd_Spline_East.Create_Spline_Line(x1, x2, 2);
     } else {
       x1 = Vector2D(ZERO , ZERO);
-      Create_Spline_Circular_Arc(Bnd_Spline_North,
-				 x1,
-				 Outer_Radius,
-				 180.00,
-				 ZERO,
-				 361);
-      Create_Spline_Circular_Arc(Bnd_Spline_South,
-				 x1,
-				 Inner_Radius,
-				 180.00,
-				 ZERO,
-				 361);
+      Bnd_Spline_North.Create_Spline_Circular_Arc(x1,
+						  Outer_Radius,
+						  180.00,
+						  ZERO,
+						  361);
+      Bnd_Spline_South.Create_Spline_Circular_Arc(x1,
+						  Inner_Radius,
+						  180.00,
+						  ZERO,
+						  361);
       x1 = Vector2D(-Inner_Radius, ZERO);
       x2 = Vector2D(-Outer_Radius, ZERO);
-      Create_Spline_Line(Bnd_Spline_West, x1, x2, 2);
+      Bnd_Spline_West.Create_Spline_Line(x1, x2, 2);
       x1 = Vector2D(Inner_Radius, ZERO);
       x2 = Vector2D(Outer_Radius, ZERO);
-      Create_Spline_Line(Bnd_Spline_East, x1, x2, 2);
+      Bnd_Spline_East.Create_Spline_Line(x1, x2, 2);
     } /* endif */
 
     /* Set the boundary condition types for each of the
@@ -7508,7 +7474,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Adiabatic_Couette(int &_Number_of_Blocks_Id
     Orthogonal_East, Orthogonal_West;
   double Beta_I, Tau_I, Beta_J, Tau_J;
   Vector2D xc_NW, xc_NE, xc_SE, xc_SW;
-  Spline2D Bnd_Spline_North, Bnd_Spline_South,
+  Spline2D_HO Bnd_Spline_North, Bnd_Spline_South,
     Bnd_Spline_East, Bnd_Spline_West;
 
   /* Allocate memory for grid blocks.  There are two grid
@@ -7542,10 +7508,10 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Adiabatic_Couette(int &_Number_of_Blocks_Id
     /* Create the splines defining the north, south,
        east, and west boundaries of the rectangular boxes. */
 
-    Create_Spline_Line(Bnd_Spline_North, xc_NW, xc_NE, 200);
-    Create_Spline_Line(Bnd_Spline_South, xc_SW, xc_SE, 200);
-    Create_Spline_Line(Bnd_Spline_East, xc_SE, xc_NE, 200);
-    Create_Spline_Line(Bnd_Spline_West, xc_SW, xc_NW, 200);
+    Bnd_Spline_North.Create_Spline_Line(xc_NW, xc_NE, 200);
+    Bnd_Spline_South.Create_Spline_Line(xc_SW, xc_SE, 200);
+    Bnd_Spline_East.Create_Spline_Line(xc_SE, xc_NE, 200);
+    Bnd_Spline_West.Create_Spline_Line(xc_SW, xc_NW, 200);
 
     /* Set the boundary condition types for each of the
        boundary splines. */
@@ -7655,7 +7621,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Cylindrical_Encl(int &_Number_of_Blocks_Idi
     Orthogonal_East, Orthogonal_West;
   double Beta_I, Tau_I, Beta_J, Tau_J;
   Vector2D xc_NW, xc_NE, xc_SE, xc_SW;
-  Spline2D Bnd_Spline_North, Bnd_Spline_South,
+  Spline2D_HO Bnd_Spline_North, Bnd_Spline_South,
     Bnd_Spline_East, Bnd_Spline_West;
 
   /* Allocate memory for grid block. */
@@ -7682,10 +7648,10 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Cylindrical_Encl(int &_Number_of_Blocks_Idi
   /* Create the splines defining the north, south,
      east, and west boundaries of the grid. */
 
-  Create_Spline_Line(Bnd_Spline_North, xc_NW, xc_NE, 2);
-  Create_Spline_Line(Bnd_Spline_South, xc_SW, xc_SE, 2);
-  Create_Spline_Line(Bnd_Spline_East, xc_SE, xc_NE, 2);
-  Create_Spline_Line(Bnd_Spline_West, xc_SW, xc_NW, 2);
+  Bnd_Spline_North.Create_Spline_Line(xc_NW, xc_NE, 2);
+  Bnd_Spline_South.Create_Spline_Line(xc_SW, xc_SE, 2);
+  Bnd_Spline_East.Create_Spline_Line(xc_SE, xc_NE, 2);
+  Bnd_Spline_West.Create_Spline_Line(xc_SW, xc_NW, 2);
 
   /* Set the boundary condition types for each of the
      boundary splines. */
@@ -7784,7 +7750,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Rectangular_Encl(int &_Number_of_Blocks_Idi
     Orthogonal_East, Orthogonal_West;
   double Beta_I, Tau_I, Beta_J, Tau_J;
   Vector2D xc_NW, xc_NE, xc_SE, xc_SW;
-  Spline2D Bnd_Spline_North, Bnd_Spline_South,
+  Spline2D_HO Bnd_Spline_North, Bnd_Spline_South,
     Bnd_Spline_East, Bnd_Spline_West;
 
   /* Allocate memory for grid block. */
@@ -7814,10 +7780,10 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Rectangular_Encl(int &_Number_of_Blocks_Idi
       /* Create the splines defining the north, south,
 	 east, and west boundaries of the rectangular box. */
 
-      Create_Spline_Line(Bnd_Spline_North, xc_NW, xc_NE, 2);
-      Create_Spline_Line(Bnd_Spline_South, xc_SW, xc_SE, 2);
-      Create_Spline_Line(Bnd_Spline_East, xc_SE, xc_NE, 2);
-      Create_Spline_Line(Bnd_Spline_West, xc_SW, xc_NW, 2);
+      Bnd_Spline_North.Create_Spline_Line(xc_NW, xc_NE, 2);
+      Bnd_Spline_South.Create_Spline_Line(xc_SW, xc_SE, 2);
+      Bnd_Spline_East.Create_Spline_Line(xc_SE, xc_NE, 2);
+      Bnd_Spline_West.Create_Spline_Line(xc_SW, xc_NW, 2);
 
       /* Set the boundary condition types for each of the
 	 boundary splines. */
@@ -7909,7 +7875,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Tube_2D(int &_Number_of_Blocks_Idir_,
   double Beta_I, Tau_I, Beta_J, Tau_J;
   Vector2D x1, x2;
   Vector2D xc_NW, xc_NE, xc_SE, xc_SW;
-  Spline2D Bnd_Spline_North, Bnd_Spline_South,
+  Spline2D_HO Bnd_Spline_North, Bnd_Spline_South,
     Bnd_Spline_East, Bnd_Spline_West;
 
   _Number_of_Blocks_Idir_ = 5;
@@ -7929,66 +7895,62 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Tube_2D(int &_Number_of_Blocks_Idir_,
        east, and west boundaries of the grid. */
 
     if (iBlk == 0) {
-      Create_Spline_Line(Bnd_Spline_North, xc_NW, xc_NE, 2);
-      Create_Spline_Line(Bnd_Spline_South, xc_SW, xc_SE, 2);
-      Create_Spline_Line(Bnd_Spline_East, xc_SE, xc_NE, 2);
-      Create_Spline_Line(Bnd_Spline_West, xc_SW, xc_NW, 2);
+      Bnd_Spline_North.Create_Spline_Line(xc_NW, xc_NE, 2);
+      Bnd_Spline_South.Create_Spline_Line(xc_SW, xc_SE, 2);
+      Bnd_Spline_East.Create_Spline_Line(xc_SE, xc_NE, 2);
+      Bnd_Spline_West.Create_Spline_Line(xc_SW, xc_NW, 2);
 
     } else if (iBlk == 1) {
       x1 = Vector2D(ZERO,ZERO);
-      Create_Spline_Circular_Arc(Bnd_Spline_North,
-				 x1,
-				 Radius,
-				 135.00,
-				 45.00,
-				 181);
-      Create_Spline_Line(Bnd_Spline_South, xc_NW, xc_NE, 2);
+      Bnd_Spline_North.Create_Spline_Circular_Arc(x1,
+						  Radius,
+						  135.00,
+						  45.00,
+						  181);
+      Bnd_Spline_South.Create_Spline_Line(xc_NW, xc_NE, 2);
       x2 = Bnd_Spline_North.Xp[0];
-      Create_Spline_Line(Bnd_Spline_West, xc_NW, x2, 2);
+      Bnd_Spline_West.Create_Spline_Line(xc_NW, x2, 2);
       x2 = Bnd_Spline_North.Xp[Bnd_Spline_North.np-1];
-      Create_Spline_Line(Bnd_Spline_East, xc_NE, x2, 2);
+      Bnd_Spline_East.Create_Spline_Line(xc_NE, x2, 2);
 
     } else if (iBlk == 2) {
       x1 = Vector2D(ZERO,ZERO);
-      Create_Spline_Circular_Arc(Bnd_Spline_North,
-				 x1,
-				 Radius,
-				 45.00,
-				 -45.00,
-				 181);
-      Create_Spline_Line(Bnd_Spline_South, xc_NE, xc_SE, 2);
+      Bnd_Spline_North.Create_Spline_Circular_Arc(x1,
+						  Radius,
+						  45.00,
+						  -45.00,
+						  181);
+      Bnd_Spline_South.Create_Spline_Line(xc_NE, xc_SE, 2);
       x2 = Bnd_Spline_North.Xp[0];
-      Create_Spline_Line(Bnd_Spline_West, xc_NE, x2, 2);
+      Bnd_Spline_West.Create_Spline_Line(xc_NE, x2, 2);
       x2 = Bnd_Spline_North.Xp[Bnd_Spline_North.np-1];
-      Create_Spline_Line(Bnd_Spline_East, xc_SE, x2, 2);
+      Bnd_Spline_East.Create_Spline_Line(xc_SE, x2, 2);
 
     } else if (iBlk == 3) {
       x1 = Vector2D(ZERO,ZERO);
-      Create_Spline_Circular_Arc(Bnd_Spline_North,
-				 x1,
-				 Radius,
-				 -45.00,
-				 -135.00,
-				 181);
-      Create_Spline_Line(Bnd_Spline_South, xc_SE, xc_SW, 2);
+      Bnd_Spline_North.Create_Spline_Circular_Arc(x1,
+						  Radius,
+						  -45.00,
+						  -135.00,
+						  181);
+      Bnd_Spline_South.Create_Spline_Line(xc_SE, xc_SW, 2);
       x2 = Bnd_Spline_North.Xp[0];
-      Create_Spline_Line(Bnd_Spline_West, xc_SE, x2, 2);
+      Bnd_Spline_West.Create_Spline_Line(xc_SE, x2, 2);
       x2 = Bnd_Spline_North.Xp[Bnd_Spline_North.np-1];
-      Create_Spline_Line(Bnd_Spline_East, xc_SW, x2, 2);
+      Bnd_Spline_East.Create_Spline_Line(xc_SW, x2, 2);
 
     } else if (iBlk == 4) {
       x1 = Vector2D(ZERO,ZERO);
-      Create_Spline_Circular_Arc(Bnd_Spline_North,
-				 x1,
-				 Radius,
-				 -135.00,
-				 -225.00,
-				 181);
-      Create_Spline_Line(Bnd_Spline_South, xc_SW, xc_NW, 2);
+      Bnd_Spline_North.Create_Spline_Circular_Arc(x1,
+						  Radius,
+						  -135.00,
+						  -225.00,
+						  181);
+      Bnd_Spline_South.Create_Spline_Line(xc_SW, xc_NW, 2);
       x2 = Bnd_Spline_North.Xp[0];
-      Create_Spline_Line(Bnd_Spline_West, xc_SW, x2, 2);
+      Bnd_Spline_West.Create_Spline_Line(xc_SW, x2, 2);
       x2 = Bnd_Spline_North.Xp[Bnd_Spline_North.np-1];
-      Create_Spline_Line(Bnd_Spline_East, xc_NW, x2, 2);
+      Bnd_Spline_East.Create_Spline_Line(xc_NW, x2, 2);
 
     } /* endif */
 
@@ -8076,7 +8038,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Annulus_2D(int &_Number_of_Blocks_Idir_,
     Orthogonal_East, Orthogonal_West;
   double Beta_I, Tau_I, Beta_J, Tau_J;
   Vector2D x1, x2;
-  Spline2D Bnd_Spline_North, Bnd_Spline_South,
+  Spline2D_HO Bnd_Spline_North, Bnd_Spline_South,
     Bnd_Spline_East, Bnd_Spline_West;
 
   _Number_of_Blocks_Idir_ = 4;
@@ -8092,87 +8054,79 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Annulus_2D(int &_Number_of_Blocks_Idir_,
 
     if (iBlk == 0) {
       x1 = Vector2D(ZERO,ZERO);
-      Create_Spline_Circular_Arc(Bnd_Spline_North,
-				 x1,
-				 Radius_Outer,
-				 135.00,
-				 45.00,
-				 181);
-      Create_Spline_Circular_Arc(Bnd_Spline_South,
-				 x1,
-				 Radius_Inner,
-				 135.00,
-				 45.00,
-				 181);
+      Bnd_Spline_North.Create_Spline_Circular_Arc(x1,
+						  Radius_Outer,
+						  135.00,
+						  45.00,
+						  181);
+      Bnd_Spline_South.Create_Spline_Circular_Arc(x1,
+						  Radius_Inner,
+						  135.00,
+						  45.00,
+						  181);
       x1 = Bnd_Spline_South.Xp[0];
       x2 = Bnd_Spline_North.Xp[0];
-      Create_Spline_Line(Bnd_Spline_West, x1, x2, 2);
+      Bnd_Spline_West.Create_Spline_Line(x1, x2, 2);
       x1 = Bnd_Spline_South.Xp[Bnd_Spline_South.np-1];
       x2 = Bnd_Spline_North.Xp[Bnd_Spline_North.np-1];
-      Create_Spline_Line(Bnd_Spline_East, x1, x2, 2);
+      Bnd_Spline_East.Create_Spline_Line(x1, x2, 2);
 
     } else if (iBlk == 1) {
       x1 = Vector2D(ZERO,ZERO);
-      Create_Spline_Circular_Arc(Bnd_Spline_North,
-				 x1,
-				 Radius_Outer,
-				 45.00,
-				 -45.00,
-				 181);
-      Create_Spline_Circular_Arc(Bnd_Spline_South,
-				 x1,
-				 Radius_Inner,
-				 45.00,
-				 -45.00,
-				 181);
+      Bnd_Spline_North.Create_Spline_Circular_Arc(x1,
+						  Radius_Outer,
+						  45.00,
+						  -45.00,
+						  181);
+      Bnd_Spline_South.Create_Spline_Circular_Arc(x1,
+						  Radius_Inner,
+						  45.00,
+						  -45.00,
+						  181);
       x1 = Bnd_Spline_South.Xp[0];
       x2 = Bnd_Spline_North.Xp[0];
-      Create_Spline_Line(Bnd_Spline_West, x1, x2, 2);
+      Bnd_Spline_West.Create_Spline_Line(x1, x2, 2);
       x1 = Bnd_Spline_South.Xp[Bnd_Spline_South.np-1];
       x2 = Bnd_Spline_North.Xp[Bnd_Spline_North.np-1];
-      Create_Spline_Line(Bnd_Spline_East, x1, x2, 2);
+      Bnd_Spline_East.Create_Spline_Line(x1, x2, 2);
 
     } else if (iBlk == 2) {
       x1 = Vector2D(ZERO,ZERO);
-      Create_Spline_Circular_Arc(Bnd_Spline_North,
-				 x1,
-				 Radius_Outer,
-				 -45.00,
-				 -135.00,
-				 181);
-      Create_Spline_Circular_Arc(Bnd_Spline_South,
-				 x1,
-				 Radius_Inner,
-				 -45.00,
-				 -135.00,
-				 181);
+      Bnd_Spline_North.Create_Spline_Circular_Arc(x1,
+						  Radius_Outer,
+						  -45.00,
+						  -135.00,
+						  181);
+      Bnd_Spline_South.Create_Spline_Circular_Arc(x1,
+						  Radius_Inner,
+						  -45.00,
+						  -135.00,
+						  181);
       x1 = Bnd_Spline_South.Xp[0];
       x2 = Bnd_Spline_North.Xp[0];
-      Create_Spline_Line(Bnd_Spline_West, x1, x2, 2);
+      Bnd_Spline_West.Create_Spline_Line(x1, x2, 2);
       x1 = Bnd_Spline_South.Xp[Bnd_Spline_South.np-1];
       x2 = Bnd_Spline_North.Xp[Bnd_Spline_North.np-1];
-      Create_Spline_Line(Bnd_Spline_East, x1, x2, 2);
+      Bnd_Spline_East.Create_Spline_Line(x1, x2, 2);
 
     } else if (iBlk == 3) {
       x1 = Vector2D(ZERO,ZERO);
-      Create_Spline_Circular_Arc(Bnd_Spline_North,
-				 x1,
-				 Radius_Outer,
-				 -135.00,
-				 -225.00,
-				 181);
-      Create_Spline_Circular_Arc(Bnd_Spline_South,
-				 x1,
-				 Radius_Inner,
-				 -135.00,
-				 -225.00,
-				 181);
+      Bnd_Spline_North.Create_Spline_Circular_Arc(x1,
+						  Radius_Outer,
+						  -135.00,
+						  -225.00,
+						  181);
+      Bnd_Spline_South.Create_Spline_Circular_Arc(x1,
+						  Radius_Inner,
+						  -135.00,
+						  -225.00,
+						  181);
       x1 = Bnd_Spline_South.Xp[0];
       x2 = Bnd_Spline_North.Xp[0];
-      Create_Spline_Line(Bnd_Spline_West, x1, x2, 2);
+      Bnd_Spline_West.Create_Spline_Line(x1, x2, 2);
       x1 = Bnd_Spline_South.Xp[Bnd_Spline_South.np-1];
       x2 = Bnd_Spline_North.Xp[Bnd_Spline_North.np-1];
-      Create_Spline_Line(Bnd_Spline_East, x1, x2, 2);
+      Bnd_Spline_East.Create_Spline_Line(x1, x2, 2);
 
     } /* endif */
 

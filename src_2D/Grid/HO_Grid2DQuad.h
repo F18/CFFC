@@ -19,7 +19,7 @@ using namespace std;
 #include "../Math/Math.h"	    // Include math macro header file.
 #include "../CFD/CFD.h"		    // Include CFD header file
 #include "../Math/Vector2D.h"	    // Include 2D vector header file
-#include "../Math/Spline2D.h"	    // Include 2D spline header file
+#include "HO_Spline2D.h"            // Include high-order 2D spline header file
 #include "HO_Cell2D.h"		    // Include 2D cell header file
 #include "HO_Node2D.h"		    // Include 2D node header file
 #include "../MPI/MPI.h"		    // Include MPI header file
@@ -254,7 +254,7 @@ public:
 
   //! @name Block geometry parameters
   //@{ 
-  Spline2D      BndNorthSpline, //!< North boundary 2D spline.
+  Spline2D_HO   BndNorthSpline, //!< North boundary 2D spline.
                 BndSouthSpline, //!< South boundary 2D spline.
                 BndEastSpline,  //!< East boundary 2D spline.
                 BndWestSpline;  //!< West boundary 2D spline.
@@ -432,10 +432,10 @@ public:
 			 const int Number_of_Cells_Idir,
 			 const int Number_of_Cells_Jdir,
 			 const int Number_of_Ghost_Cells);
-  void Create_Quad_Block(Spline2D &Bnd_Spline_North,
-			 Spline2D &Bnd_Spline_South,
-			 Spline2D &Bnd_Spline_East,
-			 Spline2D &Bnd_Spline_West,
+  void Create_Quad_Block(Spline2D_HO &Bnd_Spline_North,
+			 Spline2D_HO &Bnd_Spline_South,
+			 Spline2D_HO &Bnd_Spline_East,
+			 Spline2D_HO &Bnd_Spline_West,
 			 const int Number_of_Cells_Idir,
 			 const int Number_of_Cells_Jdir,
 			 const int Number_of_Ghost_Cells,

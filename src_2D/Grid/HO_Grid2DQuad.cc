@@ -105,25 +105,25 @@ Grid2D_Quad_Block_HO::Grid2D_Quad_Block_HO(const Grid2D_Quad_Block_HO &G)
 
   // Copy boundary spline info of grid block G.
   if (G.BndNorthSpline.np != 0) {
-    Copy_Spline(BndNorthSpline, G.BndNorthSpline);
+    BndNorthSpline = G.BndNorthSpline;
   } else if (BndNorthSpline.np != 0) {
     BndNorthSpline.deallocate();
   } /* endif */
 
   if (G.BndSouthSpline.np != 0) {
-    Copy_Spline(BndSouthSpline, G.BndSouthSpline);
+    BndSouthSpline = G.BndSouthSpline;
   } else if (BndSouthSpline.np != 0) {
     BndSouthSpline.deallocate();
   } /* endif */
   
   if (G.BndEastSpline.np != 0) {
-    Copy_Spline(BndEastSpline, G.BndEastSpline);
+    BndEastSpline = G.BndEastSpline;
   } else if (BndEastSpline.np != 0) {
     BndEastSpline.deallocate();
   } /* endif */
   
   if (G.BndWestSpline.np != 0) {
-    Copy_Spline(BndWestSpline, G.BndWestSpline);
+    BndWestSpline = G.BndWestSpline;
   } else if (BndWestSpline.np != 0) {
     BndWestSpline.deallocate();
   } /* endif */
@@ -293,25 +293,25 @@ Grid2D_Quad_Block_HO& Grid2D_Quad_Block_HO::operator=(const Grid2D_Quad_Block_HO
 
   // Copy boundary spline info of grid block Grid.
   if (Grid.BndNorthSpline.np != 0) {
-    Copy_Spline(BndNorthSpline, Grid.BndNorthSpline);
+    BndNorthSpline = Grid.BndNorthSpline;
   } else if (BndNorthSpline.np != 0) {
     BndNorthSpline.deallocate();
   } /* endif */
 
   if (Grid.BndSouthSpline.np != 0) {
-    Copy_Spline(BndSouthSpline, Grid.BndSouthSpline);
+    BndSouthSpline = Grid.BndSouthSpline;
   } else if (BndSouthSpline.np != 0) {
     BndSouthSpline.deallocate();
   } /* endif */
   
   if (Grid.BndEastSpline.np != 0) {
-    Copy_Spline(BndEastSpline, Grid.BndEastSpline);
+    BndEastSpline = Grid.BndEastSpline;
   } else if (BndEastSpline.np != 0) {
     BndEastSpline.deallocate();
   } /* endif */
   
   if (Grid.BndWestSpline.np != 0) {
-    Copy_Spline(BndWestSpline, Grid.BndWestSpline);
+    BndWestSpline = Grid.BndWestSpline;
   } else if (BndWestSpline.np != 0) {
     BndWestSpline.deallocate();
   } /* endif */
@@ -987,7 +987,7 @@ void Grid2D_Quad_Block_HO::Create_Quad_Block(char *Bnd_Spline_File_Name_ptr,
   double smax_S1_NS, smax_S2_NS, smax_S1_EW, smax_S2_EW,
     S1_i, S2_i, S1_j, S2_j, dS_i, dS_j;
   Vector2D x_north, x_south, x_east, x_west;
-  Spline2D S1_NS, S2_NS, S1_EW, S2_EW;
+  Spline2D_HO S1_NS, S2_NS, S1_EW, S2_EW;
   
   /* Allocate (re-allocate) memory for the cells and nodes 
      of the quadrilateral mesh block. */
@@ -1182,7 +1182,7 @@ void Grid2D_Quad_Block_HO::Create_Quad_Block(char *Bnd_Spline_File_Name_ptr,
 	    smax_S1_NS = S1_NS.sp[S1_NS.np-1]-
 	      S1_NS.sp[0];
 	  } else {
-	    Copy_Spline(S1_NS, BndWestSpline);
+	    S1_NS = BndWestSpline;
 	    smax_S1_NS = S1_NS.sp[S1_NS.np-1]-
 	      S1_NS.sp[0];
 	  } /* endif */
@@ -1203,7 +1203,7 @@ void Grid2D_Quad_Block_HO::Create_Quad_Block(char *Bnd_Spline_File_Name_ptr,
 	    smax_S2_NS = S2_NS.sp[S2_NS.np-1]-
 	      S2_NS.sp[0];
 	  } else {
-	    Copy_Spline(S2_NS, BndEastSpline);
+	    S2_NS = BndEastSpline;
 	    smax_S2_NS = S2_NS.sp[S2_NS.np-1]-
 	      S2_NS.sp[0];
 	  } /* endif */
@@ -1238,7 +1238,7 @@ void Grid2D_Quad_Block_HO::Create_Quad_Block(char *Bnd_Spline_File_Name_ptr,
 	    smax_S1_EW = S1_EW.sp[S1_EW.np-1]-
 	      S1_EW.sp[0];
 	  } else {
-	    Copy_Spline(S1_EW, BndSouthSpline);
+	    S1_EW = BndSouthSpline;
 	    smax_S1_EW = S1_EW.sp[S1_EW.np-1]-
 	      S1_EW.sp[0];
 	  } /* endif */
@@ -1273,7 +1273,7 @@ void Grid2D_Quad_Block_HO::Create_Quad_Block(char *Bnd_Spline_File_Name_ptr,
 	    smax_S2_EW = S2_EW.sp[S2_EW.np-1]-
 	      S2_EW.sp[0];
 	  } else {
-	    Copy_Spline(S2_EW, BndNorthSpline);
+	    S2_EW = BndNorthSpline;
 	    smax_S2_EW = S2_EW.sp[S2_EW.np-1]-
 	      S2_EW.sp[0];
 	  } /* endif */
@@ -1349,7 +1349,7 @@ void Grid2D_Quad_Block_HO::Create_Quad_Block(char *Bnd_Spline_File_Name_ptr,
 	    smax_S1_NS = S1_NS.sp[S1_NS.np-1]-
 	      S1_NS.sp[0];
 	  } else {
-	    Copy_Spline(S1_NS, BndWestSpline);
+	    S1_NS = BndWestSpline;
 	    smax_S1_NS = S1_NS.sp[S1_NS.np-1]-
 	      S1_NS.sp[0];
 	  } /* endif */
@@ -1384,7 +1384,7 @@ void Grid2D_Quad_Block_HO::Create_Quad_Block(char *Bnd_Spline_File_Name_ptr,
 	    smax_S2_NS = S2_NS.sp[S2_NS.np-1]-
 	      S2_NS.sp[0];
 	  } else {
-	    Copy_Spline(S2_NS, BndEastSpline);
+	    S2_NS = BndEastSpline;
 	    smax_S2_NS = S2_NS.sp[S2_NS.np-1]-
 	      S2_NS.sp[0];
 	  } /* endif */
@@ -1405,7 +1405,7 @@ void Grid2D_Quad_Block_HO::Create_Quad_Block(char *Bnd_Spline_File_Name_ptr,
 	    smax_S1_EW = S1_EW.sp[S1_EW.np-1]-
 	      S1_EW.sp[0];
 	  } else {
-	    Copy_Spline(S1_EW, BndSouthSpline);
+	    S1_EW = BndSouthSpline;
 	    smax_S1_EW = S1_EW.sp[S1_EW.np-1]-
 	      S1_EW.sp[0];
 	  } /* endif */
@@ -1426,7 +1426,7 @@ void Grid2D_Quad_Block_HO::Create_Quad_Block(char *Bnd_Spline_File_Name_ptr,
 	    smax_S2_EW = S2_EW.sp[S2_EW.np-1]-
 	      S2_EW.sp[0];
 	  } else {
-	    Copy_Spline(S2_EW, BndNorthSpline);
+	    S2_EW = BndNorthSpline;
 	    smax_S2_EW = S2_EW.sp[S2_EW.np-1]-
 	      S2_EW.sp[0];
 	  } /* endif */
@@ -1496,10 +1496,10 @@ void Grid2D_Quad_Block_HO::Create_Quad_Block(char *Bnd_Spline_File_Name_ptr,
  * which are given as input arguments to the routine.   
  *                                                      
  */
-void Grid2D_Quad_Block_HO::Create_Quad_Block(Spline2D &Bnd_Spline_North,
-					     Spline2D &Bnd_Spline_South,
-					     Spline2D &Bnd_Spline_East,
-					     Spline2D &Bnd_Spline_West,
+void Grid2D_Quad_Block_HO::Create_Quad_Block(Spline2D_HO &Bnd_Spline_North,
+					     Spline2D_HO &Bnd_Spline_South,
+					     Spline2D_HO &Bnd_Spline_East,
+					     Spline2D_HO &Bnd_Spline_West,
 					     const int Number_of_Cells_Idir,
 					     const int Number_of_Cells_Jdir,
 					     const int Number_of_Ghost_Cells,
@@ -1524,7 +1524,7 @@ void Grid2D_Quad_Block_HO::Create_Quad_Block(Spline2D &Bnd_Spline_North,
   double smax_S1_NS, smax_S2_NS, smax_S1_EW, smax_S2_EW,
     S1_i, S2_i, S1_j, S2_j, dS_i, dS_j;
   Vector2D x_north, x_south, x_east, x_west;
-  Spline2D S1_NS, S2_NS, S1_EW, S2_EW;
+  Spline2D_HO S1_NS, S2_NS, S1_EW, S2_EW;
 
   /* Allocate (re-allocate) memory for the cells and nodes 
      of the quadrilateral mesh block. */
@@ -1535,10 +1535,10 @@ void Grid2D_Quad_Block_HO::Create_Quad_Block(Spline2D &Bnd_Spline_North,
      of this mesh block, assign the boundary splines specified
      by the subroutine input parameters. */
 
-  Copy_Spline(BndNorthSpline, Bnd_Spline_North);
-  Copy_Spline(BndSouthSpline, Bnd_Spline_South);
-  Copy_Spline(BndEastSpline, Bnd_Spline_East);
-  Copy_Spline(BndWestSpline, Bnd_Spline_West);
+  BndNorthSpline = Bnd_Spline_North;
+  BndSouthSpline = Bnd_Spline_South;
+  BndEastSpline  = Bnd_Spline_East;
+  BndWestSpline  = Bnd_Spline_West;
 
   SminN = BndNorthSpline.sp[0];
   SmaxN = BndNorthSpline.sp[BndNorthSpline.np-1];
@@ -1659,7 +1659,7 @@ void Grid2D_Quad_Block_HO::Create_Quad_Block(Spline2D &Bnd_Spline_North,
 	    smax_S1_NS = S1_NS.sp[S1_NS.np-1]-
 	      S1_NS.sp[0];
 	  } else {
-	    Copy_Spline(S1_NS, BndWestSpline);
+	    S1_NS = BndWestSpline;
 	    smax_S1_NS = S1_NS.sp[S1_NS.np-1]-
 	      S1_NS.sp[0];
 	  } /* endif */
@@ -1680,7 +1680,7 @@ void Grid2D_Quad_Block_HO::Create_Quad_Block(Spline2D &Bnd_Spline_North,
 	    smax_S2_NS = S2_NS.sp[S2_NS.np-1]-
 	      S2_NS.sp[0];
 	  } else {
-	    Copy_Spline(S2_NS, BndEastSpline);
+	    S2_NS = BndEastSpline;
 	    smax_S2_NS = S2_NS.sp[S2_NS.np-1]-
 	      S2_NS.sp[0];
 	  } /* endif */
@@ -1715,7 +1715,7 @@ void Grid2D_Quad_Block_HO::Create_Quad_Block(Spline2D &Bnd_Spline_North,
 	    smax_S1_EW = S1_EW.sp[S1_EW.np-1]-
 	      S1_EW.sp[0];
 	  } else {
-	    Copy_Spline(S1_EW, BndSouthSpline);
+	    S1_EW = BndSouthSpline;
 	    smax_S1_EW = S1_EW.sp[S1_EW.np-1]-
 	      S1_EW.sp[0];
 	  } /* endif */
@@ -1750,7 +1750,7 @@ void Grid2D_Quad_Block_HO::Create_Quad_Block(Spline2D &Bnd_Spline_North,
 	    smax_S2_EW = S2_EW.sp[S2_EW.np-1]-
 	      S2_EW.sp[0];
 	  } else {
-	    Copy_Spline(S2_EW, BndNorthSpline);
+	    S2_EW = BndNorthSpline;
 	    smax_S2_EW = S2_EW.sp[S2_EW.np-1]-
 	      S2_EW.sp[0];
 	  } /* endif */
@@ -1826,7 +1826,7 @@ void Grid2D_Quad_Block_HO::Create_Quad_Block(Spline2D &Bnd_Spline_North,
 	    smax_S1_NS = S1_NS.sp[S1_NS.np-1]-
 	      S1_NS.sp[0];
 	  } else {
-	    Copy_Spline(S1_NS, BndWestSpline);
+	    S1_NS = BndWestSpline;
 	    smax_S1_NS = S1_NS.sp[S1_NS.np-1]-
 	      S1_NS.sp[0];
 	  } /* endif */
@@ -1861,7 +1861,7 @@ void Grid2D_Quad_Block_HO::Create_Quad_Block(Spline2D &Bnd_Spline_North,
 	    smax_S2_NS = S2_NS.sp[S2_NS.np-1]-
 	      S2_NS.sp[0];
 	  } else {
-	    Copy_Spline(S2_NS, BndEastSpline);
+	    S2_NS = BndEastSpline;
 	    smax_S2_NS = S2_NS.sp[S2_NS.np-1]-
 	      S2_NS.sp[0];
 	  } /* endif */
@@ -1882,7 +1882,7 @@ void Grid2D_Quad_Block_HO::Create_Quad_Block(Spline2D &Bnd_Spline_North,
 	    smax_S1_EW = S1_EW.sp[S1_EW.np-1]-
 	      S1_EW.sp[0];
 	  } else {
-	    Copy_Spline(S1_EW, BndSouthSpline);
+	    S1_EW = BndSouthSpline;
 	    smax_S1_EW = S1_EW.sp[S1_EW.np-1]-
 	      S1_EW.sp[0];
 	  } /* endif */
@@ -1903,7 +1903,7 @@ void Grid2D_Quad_Block_HO::Create_Quad_Block(Spline2D &Bnd_Spline_North,
 	    smax_S2_EW = S2_EW.sp[S2_EW.np-1]-
 	      S2_EW.sp[0];
 	  } else {
-	    Copy_Spline(S2_EW, BndNorthSpline);
+	    S2_EW = BndNorthSpline;
 	    smax_S2_EW = S2_EW.sp[S2_EW.np-1]-
 	      S2_EW.sp[0];
 	  } /* endif */
@@ -2012,10 +2012,10 @@ void Grid2D_Quad_Block_HO::Broadcast_Quad_Block(void) {
     /* Broadcast the north, south, east, and west 
        boundary splines. */
 
-    Broadcast_Spline(BndNorthSpline);
-    Broadcast_Spline(BndSouthSpline);
-    Broadcast_Spline(BndEastSpline);
-    Broadcast_Spline(BndWestSpline);
+    BndNorthSpline.Broadcast_Spline();
+    BndSouthSpline.Broadcast_Spline();
+    BndEastSpline.Broadcast_Spline();
+    BndWestSpline.Broadcast_Spline();
 
    /* Broadcast min/max pathlengths for boundary splines. */
 
@@ -4542,7 +4542,7 @@ void Grid2D_Quad_Block_HO::Read_Quad_Block_Definition(istream &In_File) {
   double smax_S1_NS, smax_S2_NS, smax_S1_EW, smax_S2_EW,
     S1_i, S2_i, S1_j, S2_j, dS_i, dS_j;
   Vector2D x_north, x_south, x_east, x_west;
-  Spline2D S1_NS, S2_NS, S1_EW, S2_EW;
+  Spline2D_HO S1_NS, S2_NS, S1_EW, S2_EW;
 
   In_File.setf(ios::skipws);
   In_File >> i >> j >> ng;
@@ -4733,7 +4733,7 @@ void Grid2D_Quad_Block_HO::Read_Quad_Block_Definition(istream &In_File) {
 	      smax_S1_NS = S1_NS.sp[S1_NS.np-1]-
 		S1_NS.sp[0];
 	    } else {
-	      Copy_Spline(S1_NS, BndWestSpline);
+	      S1_NS = BndWestSpline;
 	      smax_S1_NS = S1_NS.sp[S1_NS.np-1]-
 		S1_NS.sp[0];
 	    } /* endif */
@@ -4754,7 +4754,7 @@ void Grid2D_Quad_Block_HO::Read_Quad_Block_Definition(istream &In_File) {
 	      smax_S2_NS = S2_NS.sp[S2_NS.np-1]-
 		S2_NS.sp[0];
 	    } else {
-	      Copy_Spline(S2_NS, BndEastSpline);
+	      S2_NS = BndEastSpline;
 	      smax_S2_NS = S2_NS.sp[S2_NS.np-1]-
 		S2_NS.sp[0];
 	    } /* endif */
@@ -4789,7 +4789,7 @@ void Grid2D_Quad_Block_HO::Read_Quad_Block_Definition(istream &In_File) {
 	      smax_S1_EW = S1_EW.sp[S1_EW.np-1]-
 		S1_EW.sp[0];
 	    } else {
-	      Copy_Spline(S1_EW, BndSouthSpline);
+	      S1_EW = BndSouthSpline;
 	      smax_S1_EW = S1_EW.sp[S1_EW.np-1]-
 		S1_EW.sp[0];
 	    } /* endif */
@@ -4824,7 +4824,7 @@ void Grid2D_Quad_Block_HO::Read_Quad_Block_Definition(istream &In_File) {
 	      smax_S2_EW = S2_EW.sp[S2_EW.np-1]-
 		S2_EW.sp[0];
 	    } else {
-	      Copy_Spline(S2_EW, BndNorthSpline);
+	      S2_EW = BndNorthSpline;
 	      smax_S2_EW = S2_EW.sp[S2_EW.np-1]-
 		S2_EW.sp[0];
 	    } /* endif */
@@ -4900,7 +4900,7 @@ void Grid2D_Quad_Block_HO::Read_Quad_Block_Definition(istream &In_File) {
 	      smax_S1_NS = S1_NS.sp[S1_NS.np-1]-
 		S1_NS.sp[0];
 	    } else {
-	      Copy_Spline(S1_NS, BndWestSpline);
+	      S1_NS = BndWestSpline;
 	      smax_S1_NS = S1_NS.sp[S1_NS.np-1]-
 		S1_NS.sp[0];
 	    } /* endif */
@@ -4935,7 +4935,7 @@ void Grid2D_Quad_Block_HO::Read_Quad_Block_Definition(istream &In_File) {
 	      smax_S2_NS = S2_NS.sp[S2_NS.np-1]-
 		S2_NS.sp[0];
 	    } else {
-	      Copy_Spline(S2_NS, BndEastSpline);
+	      S2_NS = BndEastSpline;
 	      smax_S2_NS = S2_NS.sp[S2_NS.np-1]-
 		S2_NS.sp[0];
 	    } /* endif */
@@ -4956,7 +4956,7 @@ void Grid2D_Quad_Block_HO::Read_Quad_Block_Definition(istream &In_File) {
 	      smax_S1_EW = S1_EW.sp[S1_EW.np-1]-
 		S1_EW.sp[0];
 	    } else {
-	      Copy_Spline(S1_EW, BndSouthSpline);
+	      S1_EW = BndSouthSpline;
 	      smax_S1_EW = S1_EW.sp[S1_EW.np-1]-
 		S1_EW.sp[0];
 	    } /* endif */
@@ -4977,7 +4977,7 @@ void Grid2D_Quad_Block_HO::Read_Quad_Block_Definition(istream &In_File) {
 	      smax_S2_EW = S2_EW.sp[S2_EW.np-1]-
 		S2_EW.sp[0];
 	    } else {
-	      Copy_Spline(S2_EW, BndNorthSpline);
+	      S2_EW = BndNorthSpline;
 	      smax_S2_EW = S2_EW.sp[S2_EW.np-1]-
 		S2_EW.sp[0];
 	    } /* endif */
@@ -5089,13 +5089,13 @@ void Grid2D_Quad_Block_HO::Translate_Quad_Block(const Vector2D &V) {
     } /* endfor */
 
     if (BndNorthSpline.np != 0 ) 
-       Translate_Spline(BndNorthSpline, V);
+       BndNorthSpline.Translate_Spline(V);
     if (BndSouthSpline.np != 0 ) 
-       Translate_Spline(BndSouthSpline, V);
+       BndSouthSpline.Translate_Spline(V);
     if (BndEastSpline.np != 0 ) 
-       Translate_Spline(BndEastSpline, V);
+       BndEastSpline.Translate_Spline(V);
     if (BndWestSpline.np != 0 )
-       Translate_Spline(BndWestSpline, V);
+       BndWestSpline.Translate_Spline(V);
  
 }
 
@@ -5122,13 +5122,13 @@ void Grid2D_Quad_Block_HO::Scale_Quad_Block(const double &Scaling_Factor) {
     } /* endfor */
 
     if (BndNorthSpline.np != 0 ) 
-       Scale_Spline(BndNorthSpline, Scaling_Factor);
+       BndNorthSpline.Scale_Spline(Scaling_Factor);
     if (BndSouthSpline.np != 0 ) 
-       Scale_Spline(BndSouthSpline, Scaling_Factor);
+       BndSouthSpline.Scale_Spline(Scaling_Factor);
     if (BndEastSpline.np != 0 ) 
-       Scale_Spline(BndEastSpline, Scaling_Factor);
+       BndEastSpline.Scale_Spline(Scaling_Factor);
     if (BndWestSpline.np != 0 )
-       Scale_Spline(BndWestSpline, Scaling_Factor);
+       BndWestSpline.Scale_Spline(Scaling_Factor);
 
     SminN = SminN*Scaling_Factor;
     SmaxN = SmaxN*Scaling_Factor;
@@ -5173,13 +5173,13 @@ void Grid2D_Quad_Block_HO::Rotate_Quad_Block(const double &Angle) {
     } /* endfor */
 
     if (BndNorthSpline.np != 0 ) 
-       Rotate_Spline(BndNorthSpline, Angle);
+       BndNorthSpline.Rotate_Spline(Angle);
     if (BndSouthSpline.np != 0 ) 
-       Rotate_Spline(BndSouthSpline, Angle);
+       BndSouthSpline.Rotate_Spline(Angle);
     if (BndEastSpline.np != 0 ) 
-       Rotate_Spline(BndEastSpline, Angle);
+       BndEastSpline.Rotate_Spline(Angle);
     if (BndWestSpline.np != 0 )
-       Rotate_Spline(BndWestSpline, Angle);
+       BndWestSpline.Rotate_Spline(Angle);
  
 }
 
@@ -5195,7 +5195,7 @@ void Grid2D_Quad_Block_HO::Reflect_Quad_Block(void) {
 
   int i, j;
   Vector2D *X;
-  Spline2D S;
+  Spline2D_HO S;
 
   X = new Vector2D[NNi];
 
@@ -5220,16 +5220,16 @@ void Grid2D_Quad_Block_HO::Reflect_Quad_Block(void) {
   } /* endfor */
 
   if (BndNorthSpline.np != 0 ) 
-    Reflect_Spline(BndNorthSpline);
+    BndNorthSpline.Reflect_Spline();
   if (BndSouthSpline.np != 0 ) 
-    Reflect_Spline(BndSouthSpline);
+    BndSouthSpline.Reflect_Spline();
   if (BndEastSpline.np != 0 ) 
-    Reflect_Spline(BndEastSpline);
+    BndEastSpline.Reflect_Spline();
   if (BndWestSpline.np != 0 ) {
-    Reflect_Spline(BndWestSpline);
-    Copy_Spline(S,BndEastSpline);
-    Copy_Spline(BndEastSpline,BndWestSpline);
-    Copy_Spline(BndWestSpline,S);
+    BndWestSpline.Reflect_Spline();
+    S = BndEastSpline;
+    BndEastSpline = BndWestSpline;
+    BndWestSpline = S;
     if (S.np != 0) S.deallocate();
   }/* endif */
 
@@ -5443,23 +5443,19 @@ void Grid2D_Quad_Block_HO::Double_Mesh_Resolution(const Grid2D_Quad_Block_HO &Gr
   if (double_resolution_permitted) {
 
     if (Grid_Original.BndNorthSpline.np != 0) {
-      Copy_Spline(BndNorthSpline, 
-		  Grid_Original.BndNorthSpline);
+      BndNorthSpline = Grid_Original.BndNorthSpline;
     } /* endif */
 
     if (Grid_Original.BndSouthSpline.np != 0) {
-      Copy_Spline(BndSouthSpline, 
-		  Grid_Original.BndSouthSpline);
+      BndSouthSpline = Grid_Original.BndSouthSpline;
     } /* endif */
 
     if (Grid_Original.BndEastSpline.np != 0) {
-      Copy_Spline(BndEastSpline, 
-		  Grid_Original.BndEastSpline);
+      BndEastSpline = Grid_Original.BndEastSpline;
     } /* endif */
   
     if (Grid_Original.BndWestSpline.np != 0) {
-      Copy_Spline(BndWestSpline, 
-		  Grid_Original.BndWestSpline);
+      BndWestSpline = Grid_Original.BndWestSpline;
     } /* endif */
 
     /* Copy boundary spline pathlength info to quadrilateral mesh block 
@@ -5646,23 +5642,19 @@ void Grid2D_Quad_Block_HO::Half_Mesh_Resolution(const Grid2D_Quad_Block_HO &Grid
   if (half_resolution_permitted) {
 
     if (Grid_Original.BndNorthSpline.np != 0) {
-      Copy_Spline(BndNorthSpline, 
-		  Grid_Original.BndNorthSpline);
+      BndNorthSpline = Grid_Original.BndNorthSpline;
     } /* endif */
 
     if (Grid_Original.BndSouthSpline.np != 0) {
-      Copy_Spline(BndSouthSpline, 
-		  Grid_Original.BndSouthSpline);
+      BndSouthSpline = Grid_Original.BndSouthSpline;
     } /* endif */
 
     if (Grid_Original.BndEastSpline.np != 0) {
-      Copy_Spline(BndEastSpline, 
-		  Grid_Original.BndEastSpline);
+      BndEastSpline = Grid_Original.BndEastSpline;
     } /* endif */
   
     if (Grid_Original.BndWestSpline.np != 0) {
-      Copy_Spline(BndWestSpline, 
-		  Grid_Original.BndWestSpline);
+      BndWestSpline = Grid_Original.BndWestSpline;
     } /* endif */
 
     /* Copy boundary spline pathlength info to quadrilateral mesh block 
@@ -5760,29 +5752,25 @@ void Grid2D_Quad_Block_HO::Refine_Mesh(const Grid2D_Quad_Block_HO &Grid_Original
     if ((Sector == GRID2D_QUAD_BLOCK_SECTOR_NW ||
 	 Sector == GRID2D_QUAD_BLOCK_SECTOR_NE) &&
 	Grid_Original.BndNorthSpline.np != 0) {
-      Copy_Spline(BndNorthSpline, 
-		  Grid_Original.BndNorthSpline);
+      BndNorthSpline = Grid_Original.BndNorthSpline;
     } /* endif */
 
     if ((Sector == GRID2D_QUAD_BLOCK_SECTOR_SE ||
 	 Sector == GRID2D_QUAD_BLOCK_SECTOR_SW) &&
 	Grid_Original.BndSouthSpline.np != 0) {
-      Copy_Spline(BndSouthSpline, 
-		  Grid_Original.BndSouthSpline);
+      BndSouthSpline = Grid_Original.BndSouthSpline;
     } /* endif */
 
     if ((Sector == GRID2D_QUAD_BLOCK_SECTOR_NE ||
 	 Sector == GRID2D_QUAD_BLOCK_SECTOR_SE) &&
 	Grid_Original.BndEastSpline.np != 0) {
-      Copy_Spline(BndEastSpline, 
-		  Grid_Original.BndEastSpline);
+      BndEastSpline = Grid_Original.BndEastSpline;
     } /* endif */
   
     if ((Sector == GRID2D_QUAD_BLOCK_SECTOR_NW ||
 	 Sector == GRID2D_QUAD_BLOCK_SECTOR_SW) &&
 	Grid_Original.BndWestSpline.np != 0) {
-      Copy_Spline(BndWestSpline, 
-		  Grid_Original.BndWestSpline);
+      BndWestSpline = Grid_Original.BndWestSpline;
     } /* endif */
 
     /* Assign boundary spline pathlength info for the refined
@@ -6171,26 +6159,22 @@ void Grid2D_Quad_Block_HO::Coarsen_Mesh(const Grid2D_Quad_Block_HO &Grid_Origina
 
     if (Grid_Original_NW.BndNorthSpline.np != 0 &&
 	Grid_Original_NE.BndNorthSpline.np != 0) {
-      Copy_Spline(BndNorthSpline, 
-		  Grid_Original_NW.BndNorthSpline);
+      BndNorthSpline = Grid_Original_NW.BndNorthSpline;
     } /* endif */
 
     if (Grid_Original_SW.BndSouthSpline.np != 0 &&
 	Grid_Original_SE.BndSouthSpline.np != 0) {
-      Copy_Spline(BndSouthSpline, 
-		  Grid_Original_SW.BndSouthSpline);
+      BndSouthSpline = Grid_Original_SW.BndSouthSpline;
     } /* endif */
 
     if (Grid_Original_SE.BndEastSpline.np != 0 &&
 	Grid_Original_NE.BndEastSpline.np != 0) {
-      Copy_Spline(BndEastSpline, 
-		  Grid_Original_SE.BndEastSpline);
+      BndEastSpline = Grid_Original_SE.BndEastSpline;
     } /* endif */
   
     if (Grid_Original_SW.BndWestSpline.np != 0 &&
 	Grid_Original_NW.BndWestSpline.np != 0) {
-      Copy_Spline(BndWestSpline, 
-		  Grid_Original_SW.BndWestSpline);
+      BndWestSpline = Grid_Original_SW.BndWestSpline;
     } /* endif */
 
     /* Assign boundary spline pathlength info for the coarsened
@@ -6575,8 +6559,6 @@ ostream &operator << (ostream &out_file,
 
   // Output North boundary spline information
   if (G.BndNorthSpline.np != 0 ) {
-    out_file << G.BndNorthSpline.np   << " " 
-	     << G.BndNorthSpline.type << "\n"; 
     out_file << G.BndNorthSpline;
   } else {
     out_file << G.BndNorthSpline.np << "\n";
@@ -6584,8 +6566,6 @@ ostream &operator << (ostream &out_file,
 
   // Output South boundary spline information
   if (G.BndSouthSpline.np != 0 ) {
-    out_file << G.BndSouthSpline.np   << " " 
-	     << G.BndSouthSpline.type << "\n"; 
     out_file << G.BndSouthSpline;
   } else {
     out_file << G.BndSouthSpline.np << "\n";
@@ -6593,8 +6573,6 @@ ostream &operator << (ostream &out_file,
 
   // Output East boundary spline information
   if (G.BndEastSpline.np != 0 ) {
-    out_file << G.BndEastSpline.np   << " " 
-	     << G.BndEastSpline.type << "\n"; 
     out_file << G.BndEastSpline;
   } else {
     out_file << G.BndEastSpline.np << "\n";
@@ -6602,8 +6580,6 @@ ostream &operator << (ostream &out_file,
 
   // Output West boundary spline information
   if (G.BndWestSpline.np != 0 ) {
-    out_file << G.BndWestSpline.np   << " " 
-	     << G.BndWestSpline.type << "\n"; 
     out_file << G.BndWestSpline;
   } else {
     out_file << G.BndWestSpline.np << "\n";
@@ -6674,57 +6650,16 @@ istream &operator >> (istream &in_file,
   } /* endfor */
 
   // Read the North boundary spline
-  in_file.setf(ios::skipws);
-  in_file >> ni;
-  in_file.unsetf(ios::skipws);
-  if (G.BndNorthSpline.np != 0) G.BndNorthSpline.deallocate(); 
-  if (ni != 0 ) {
-    G.BndNorthSpline.allocate(ni);
-    in_file.setf(ios::skipws);
-    in_file >> i; G.BndNorthSpline.settype(i);
-    in_file.unsetf(ios::skipws);
-    in_file >> G.BndNorthSpline; G.BndNorthSpline.pathlength();
-  } /* endif */
+  in_file >> G.BndNorthSpline;
 
   // Read the South boundary spline
-  in_file.setf(ios::skipws);
-  in_file >> ni;
-  in_file.unsetf(ios::skipws);
-  if (G.BndSouthSpline.np != 0) G.BndSouthSpline.deallocate(); 
-  if (ni != 0 ) {
-    G.BndSouthSpline.allocate(ni);
-    in_file.setf(ios::skipws);
-    in_file >> i; G.BndSouthSpline.settype(i);
-    in_file.unsetf(ios::skipws);
-    in_file >> G.BndSouthSpline; G.BndSouthSpline.pathlength();
-  } /* endif */
+  in_file >> G.BndSouthSpline;
 
   // Read the East boundary spline
-  in_file.setf(ios::skipws);
-  in_file >> nj;
-  in_file.unsetf(ios::skipws);
-  if (G.BndEastSpline.np != 0) G.BndEastSpline.deallocate(); 
-  if (nj != 0 ) {
-    G.BndEastSpline.allocate(nj);
-    in_file.setf(ios::skipws);
-    in_file >> j; G.BndEastSpline.settype(j);
-    in_file.unsetf(ios::skipws);
-    in_file >> G.BndEastSpline; G.BndEastSpline.pathlength();
-  } /* endif */
+  in_file >> G.BndEastSpline;
 
   // Read the West boundary spline
-  in_file.setf(ios::skipws);
-  in_file >> nj;
-  in_file.unsetf(ios::skipws);
-  if (G.BndWestSpline.np != 0) G.BndWestSpline.deallocate(); 
-  if (nj != 0 ) {
-    G.BndWestSpline.allocate(nj);
-    in_file.setf(ios::skipws);
-    in_file >> j; G.BndWestSpline.settype(j);
-    in_file.unsetf(ios::skipws);
-    in_file >> G.BndWestSpline; G.BndWestSpline.pathlength();
-  } /* endif */
-
+  in_file >> G.BndWestSpline;
 
   in_file.setf(ios::skipws);
   in_file >> G.SminN >> G.SmaxN >> G.SminS >> G.SmaxS; 
