@@ -114,7 +114,8 @@ SRC_ICEMCFD = $(ICEMCFD_DIR)ICEMCFD.cc \
 SRC_GRID_TESTS := test_Grid2DQuadIntegration.cc \
 		  test_HO_Grid2DQuad.cc \
 		  test_HO_Grid2DQuadMultiBlock.cc \
-		  test_HO_Spline2D.cc
+		  test_HO_Spline2D.cc \
+		  test_HO_Spline2D_Integration.cc
 SRC_GRID_TESTS := $(addprefix $(GRID_DIR)UnitTests/,$(SRC_GRID_TESTS))
 ifeq ($(TUT_TESTING),ON) 
   SRC_GRID += $(SRC_GRID_TESTS)
