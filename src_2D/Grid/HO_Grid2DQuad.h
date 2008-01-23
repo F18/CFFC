@@ -1171,7 +1171,6 @@ inline void Grid2D_Quad_Block_HO::Update_Cell(const int & iCell, const int & jCe
 
 /*!
  * Positive shift operator.
- * \todo Uncomment translation of the splines!
  */
 inline void Grid2D_Quad_Block_HO::operator +(const Vector2D &V) {
 
@@ -1182,10 +1181,10 @@ inline void Grid2D_Quad_Block_HO::operator +(const Vector2D &V) {
     } /* endfor */
   } /* endfor */
 
-  //   if (BndNorthSpline.np != 0 ) BndNorthSpline.translate(V);
-  //   if (BndSouthSpline.np != 0 ) BndSouthSpline.translate(V);
-  //   if (BndEastSpline.np != 0 ) BndEastSpline.translate(V);
-  //   if (BndWestSpline.np != 0 ) BndWestSpline.translate(V);
+  if (BndNorthSpline.np != 0 ) BndNorthSpline.Translate_Spline(V);
+  if (BndSouthSpline.np != 0 ) BndSouthSpline.Translate_Spline(V);
+  if (BndEastSpline.np != 0 ) BndEastSpline.Translate_Spline(V);
+  if (BndWestSpline.np != 0 ) BndWestSpline.Translate_Spline(V);
 
   /* Require update of the whole mesh */
   Schedule_Interior_Mesh_Update();
@@ -1201,7 +1200,6 @@ inline void Grid2D_Quad_Block_HO::operator -(const Vector2D &V) {
 
 /*!
  * Scaling operators.
- * \todo Uncomment scaling of the splines!
  */
 inline void Grid2D_Quad_Block_HO::operator *(const double &a) {
 
@@ -1212,10 +1210,10 @@ inline void Grid2D_Quad_Block_HO::operator *(const double &a) {
     } /* endfor */
   } /* endfor */
 
-  //   if (BndNorthSpline.np != 0 ) BndNorthSpline.scale(a);
-  //   if (BndSouthSpline.np != 0 ) BndSouthSpline.scale(a);
-  //   if (BndEastSpline.np != 0 ) BndEastSpline.scale(a);
-  //   if (BndWestSpline.np != 0 ) BndWestSpline.scale(a);
+  if (BndNorthSpline.np != 0 ) BndNorthSpline.Scale_Spline(a);
+  if (BndSouthSpline.np != 0 ) BndSouthSpline.Scale_Spline(a);
+  if (BndEastSpline.np != 0 ) BndEastSpline.Scale_Spline(a);
+  if (BndWestSpline.np != 0 ) BndWestSpline.Scale_Spline(a);
 
   SminN *= a;
   SmaxN *= a;
@@ -1233,7 +1231,6 @@ inline void Grid2D_Quad_Block_HO::operator *(const double &a) {
 
 /*!
  * Rotation operators.
- * \todo Uncomment rotation of the splines!
  */
 inline void Grid2D_Quad_Block_HO::operator ^(const double &a) {
 
@@ -1254,10 +1251,10 @@ inline void Grid2D_Quad_Block_HO::operator ^(const double &a) {
     } /* endfor */
   } /* endfor */
 
-  //   if (BndNorthSpline.np != 0 ) BndNorthSpline.rotate(a);
-  //   if (BndSouthSpline.np != 0 ) BndSouthSpline.rotate(a);
-  //   if (BndEastSpline.np != 0 ) BndEastSpline.rotate(a);
-  //   if (BndWestSpline.np != 0 ) BndWestSpline.rotate(a);
+  if (BndNorthSpline.np != 0 ) BndNorthSpline.Rotate_Spline(a);
+  if (BndSouthSpline.np != 0 ) BndSouthSpline.Rotate_Spline(a);
+  if (BndEastSpline.np != 0 ) BndEastSpline.Rotate_Spline(a);
+  if (BndWestSpline.np != 0 ) BndWestSpline.Rotate_Spline(a);
 
   /* Require update of the whole mesh */
   Schedule_Interior_Mesh_Update();

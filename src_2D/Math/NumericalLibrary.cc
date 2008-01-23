@@ -43,6 +43,8 @@ double ZeroLineIntegration(const double & N1x, const double & N1y,
  * \param xCC the xc-coordinate
  * \param yCC the yc-coordinate
  * \return the value of the integrals up to 3rd-order (i.e. OrderX + OrderY <= 3)
+ *
+ * \todo extend the procedure up to 4th-order (required for viscous terms)!
  *********************************************************************************/
 double PolynomLineIntegration(const double & N1x, const double & N1y,
 			      const double & N2x, const double & N2y,
