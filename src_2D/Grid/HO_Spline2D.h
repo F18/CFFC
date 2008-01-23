@@ -108,6 +108,9 @@ public:
   //! Default constructor.
   Spline2D_HO(void);
 
+  //!< Copy constructor
+  Spline2D_HO(const Spline2D_HO &S);
+
   //! Destructor.
   ~Spline2D_HO(void){ deallocate(); }
 
@@ -220,9 +223,9 @@ public:
 
   //! @name Spline geometric manipulation functions.
   //@{
-  const Spline2D_HO & translate(const Vector2D &V);
-  const Spline2D_HO & rotate(const double &a);
-  const Spline2D_HO & scale(const double &a);
+  const Spline2D_HO & Translate_Spline(const Vector2D &V);
+  const Spline2D_HO & Rotate_Spline(const double &a);
+  const Spline2D_HO & Scale_Spline(const double &a);
   void Reflect_Spline(void);
   void Reverse_Spline(void);
   //@}
@@ -247,6 +250,13 @@ public:
   void Create_Spline_Ellipsoidal_Arc(const Vector2D &Origin,
 				     const double &A,
 				     const double &B,
+				     const double &Angle1,
+				     const double &Angle2,
+				     const int Number_of_Spline_Points);
+
+  void Create_Spline_Sinusoidal_Line(const Vector2D &Origin,
+				     const double &Radius,
+				     const double &Length,
 				     const double &Angle1,
 				     const double &Angle2,
 				     const int Number_of_Spline_Points);
@@ -285,6 +295,11 @@ public:
   void Create_Spline_Rectangle(const Vector2D &Origin,
 			       const double &Length,
 			       const double &Width);
+
+  void Create_Spline_Zalesaks_Disk(const Vector2D &Origin,
+				   const double &Radius);
+  
+  void Create_Spline_Ringleb_Flow(void);
   //@}
 
   //! @name Binary arithmetic operators.
@@ -326,8 +341,6 @@ public:
   //@}
 
 private:
-  Spline2D_HO(const Spline2D_HO &S); //!< Private copy constructor
-
   int FluxMethod;   //!< variable to set the flux calculation method through the boundary spline
 
   //! Calculate the normal vector for a defined segment
@@ -346,7 +359,7 @@ inline Spline2D_HO::Spline2D_HO(void)
 }
 
 /*!
- * Copy constructor. It is declared private
+ * Copy constructor.
  */
 inline Spline2D_HO::Spline2D_HO(const Spline2D_HO &S)
   : type(SPLINE2D_CONSTANT), np(0), Xp(NULL),
@@ -411,7 +424,7 @@ inline void Spline2D_HO::allocate(const int &N, const int &TypeOfAllPoints) {
 /*!
  * Deallocate memory.
  */
-void Spline2D_HO::deallocate(void) {
+inline void Spline2D_HO::deallocate(void) {
 
   if(Xp != NULL){		/* Check if memory is allocated */
     delete []Xp; Xp = NULL;
@@ -500,7 +513,7 @@ inline Spline2D_HO & Spline2D_HO::operator=(const Spline2D_HO &S){
  * \param [out] il the index of the left interval node
  * \param [out] ir the index of the right  interval node
  */
-void Spline2D_HO::find_subinterval(const double &s, int & il, int & ir) const{
+inline void Spline2D_HO::find_subinterval(const double &s, int & il, int & ir) const{
   int subinterval_found(0), i(0);
 
   if (s < sp[0] || s > sp[np-1]){
@@ -549,36 +562,36 @@ inline bool operator!= (const Spline2D_HO &left, const Spline2D_HO &right){
 /*!
  * Positive shift operators.
  */
-const Spline2D_HO Spline2D_HO::operator + (const Vector2D &V) const {
-  return Spline2D_HO(*this).translate(V);
+inline const Spline2D_HO Spline2D_HO::operator + (const Vector2D &V) const {
+  return Spline2D_HO(*this).Translate_Spline(V);
 }
 
 /*!
  * Negative shift operator.
  */
-const Spline2D_HO Spline2D_HO::operator - (const Vector2D &V) const{
-  return Spline2D_HO(*this).translate(-V);
+inline const Spline2D_HO Spline2D_HO::operator - (const Vector2D &V) const{
+  return Spline2D_HO(*this).Translate_Spline(-V);
 }
 
 /*!
  * Scaling operator.
  */
-const Spline2D_HO Spline2D_HO::operator * (const double &a) const{
-  return Spline2D_HO(*this).scale(a);
+inline const Spline2D_HO Spline2D_HO::operator * (const double &a) const{
+  return Spline2D_HO(*this).Scale_Spline(a);
 }
 
 /*!
  * Scaling with invers number
  */
-const Spline2D_HO Spline2D_HO::operator / (const double &a) const{
-  return Spline2D_HO(*this).scale(1.0/a);
+inline const Spline2D_HO Spline2D_HO::operator / (const double &a) const{
+  return Spline2D_HO(*this).Scale_Spline(1.0/a);
 }
 
 /*!
  * Rotation operator.
  */
-const Spline2D_HO Spline2D_HO::operator ^ (const double &a) const{
-  return Spline2D_HO(*this).rotate(a);
+inline const Spline2D_HO Spline2D_HO::operator ^ (const double &a) const{
+  return Spline2D_HO(*this).Rotate_Spline(a);
 }
 
 /*!

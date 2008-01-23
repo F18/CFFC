@@ -43,7 +43,7 @@ const Spline2D_HO Spline2D_HO::operator + (const Spline2D_HO &S) const{
  * points defining the spline.                      
  *                                                  
  */
-const Spline2D_HO& Spline2D_HO::translate(const Vector2D &V){
+const Spline2D_HO& Spline2D_HO::Translate_Spline(const Vector2D &V){
   int i;
   for ( i = 0; i <= np-1; ++i ) {
     Xp[i] += V;
@@ -56,7 +56,7 @@ const Spline2D_HO& Spline2D_HO::translate(const Vector2D &V){
  * recompute the positions of all of the points in  
  * the spline accordingly.                          
  */
-const Spline2D_HO& Spline2D_HO::rotate(const double &a){
+const Spline2D_HO& Spline2D_HO::Rotate_Spline(const double &a){
   int i;
   double cos_angle, sin_angle;
   Vector2D X;
@@ -76,7 +76,7 @@ const Spline2D_HO& Spline2D_HO::rotate(const double &a){
  * Scale the positions of all of 
  * the points defining the spline.
  */
-const Spline2D_HO& Spline2D_HO::scale(const double &a){
+const Spline2D_HO& Spline2D_HO::Scale_Spline(const double &a){
   int i;
   for ( i = 0; i <= np-1; ++i ) {
     Xp[i] = Xp[i]*a;
@@ -1317,8 +1317,10 @@ void Spline2D_HO::Reverse_Spline(void) {
       Xp_current = Xp[i];  Xp[i] = Xp[np-1-i];  Xp[np-1-i] = Xp_current;
       tp_current = tp[i];  tp[i] = tp[np-1-i];  tp[np-1-i] = tp_current;
       bc_current = bc[i];  bc[i] = bc[np-1-i];  bc[np-1-i] = bc_current;
-      sp_current = sp[i];  sp[i] = sp[np-1-i];  sp[np-1-i] = sp_current;
    } /* endfor */
+
+   // redetermine the path lengths
+   pathlength();
 }
 
 /*!
@@ -1499,6 +1501,55 @@ void Spline2D_HO::Create_Spline_Ellipsoidal_Arc(const Vector2D &Origin,
     
     pathlength();
     
+}
+
+/*!
+ * This routine calculates and returns a 2D spline
+ * representing a segment of a sinusoidal line.   
+ */
+void Spline2D_HO::Create_Spline_Sinusoidal_Line(const Vector2D &Origin,
+						const double &Radius,
+						const double &Length,
+						const double &Angle1,
+						const double &Angle2,
+						const int Number_of_Spline_Points) {
+
+  int i;
+  double theta;
+  
+  /* Allocate memory for the circular arc spline. */
+  allocate(Number_of_Spline_Points);
+
+  /* Set the spline type. */
+
+  settype(SPLINE2D_QUINTIC);
+
+  /* Compute the locations of the spline points on the 
+     circular arc. */
+
+  for (i = 0; i <= Number_of_Spline_Points-1; i++) {
+    theta = Angle1+
+      (Angle2-Angle1)*double(i)/double(Number_of_Spline_Points-1);
+    theta = TWO*PI*theta/360.0;
+
+    Xp[i].x = Length*theta/(TWO*PI*(Angle2-Angle1)/360.0);
+    Xp[i].y = Radius*sin(theta);
+
+    Xp[i] += Origin;        
+
+    if (i == 0 || i == Number_of_Spline_Points - 1) {
+      tp[i] = SPLINE2D_POINT_SHARP_CORNER;
+    } else {
+      tp[i] = SPLINE2D_POINT_NORMAL;
+    } /* endif */
+
+    bc[i] = BC_NONE;
+  } /* endfor */
+
+    /* Calculate the spline pathlengths. */
+
+  pathlength();
+
 }
 
 /*!
@@ -2074,6 +2125,191 @@ void Spline2D_HO::Create_Spline_Rectangle(const Vector2D &Origin,
   pathlength();
 
 }
+
+/*!
+ * This routine calculates and returns a 2D spline 
+ * representing Zalesak's disk.                    
+ */
+void Spline2D_HO::Create_Spline_Zalesaks_Disk(const Vector2D &Origin,
+					      const double &Radius) {
+
+  int npts;
+  int i;
+  double theta, theta1, theta2;
+
+  /* Set the number of spline points. */
+
+  npts = 341 + 3;
+
+  /* Set the angles. */
+
+  theta1 = 10.0;
+  theta2 = 350.0;
+
+  /* Allocate memory for the circular arc spline. */
+  allocate(npts);
+
+  /* Set the spline type. */
+
+  settype(SPLINE2D_LINEAR);
+
+  /* Compute the locations of the spline points on the 
+     spline and the point and boundary condition types. */
+
+  for (i = 0; i < npts-3; i++) {
+    theta = theta1 + (theta2 - theta1)*double(i)/double(npts-4);
+    theta = TWO*PI*theta/360.0;
+    Xp[i].x = Origin.x + Radius*cos(theta);
+    Xp[i].y = Origin.y + Radius*sin(theta);
+    bc[i]   = BC_NONE;
+    tp[i]   = SPLINE2D_POINT_NORMAL;
+    if (i == 0 || i == npts - 4)
+      tp[i] = SPLINE2D_POINT_SHARP_CORNER;
+  }
+  Xp[npts-3] = Xp[npts-4] - Vector2D(1.5*Radius,ZERO);
+  bc[npts-3] = BC_NONE;
+  tp[npts-3] = SPLINE2D_POINT_SHARP_CORNER;
+  Xp[npts-2] = Xp[0] - Vector2D(1.5*Radius,ZERO);
+  bc[npts-2] = BC_NONE;
+  tp[npts-2] = SPLINE2D_POINT_SHARP_CORNER;
+
+  /* Last point must be the same as the first point. */
+
+  Xp[npts-1] = Xp[0];
+  bc[npts-1] = bc[0];
+  tp[npts-1] = tp[0];
+
+  /* Calculate the spline pathlengths. */
+
+  pathlength();
+
+  /* Rotate the spline. */
+  Rotate_Spline(-HALF*PI);
+}
+
+/*!
+ * This routine calculates and returns a 2D spline representing 
+ * Ringleb's flow domain.                                       
+ */
+void Spline2D_HO::Create_Spline_Ringleb_Flow(void) {
+
+  int nk, nq;
+  double **rho;
+  double delta_k, delta_q;
+  double k_init, q_init, q_final;
+  double **q, **k, qo, ko, c, J;
+  double g = 1.40;
+  Spline2D_HO Spline_North, Spline_East, Spline_West, Spline_Reflection;
+
+  // Allocate memory.
+  nk = 32;
+  nq = 50;
+  k = new double*[nk];
+  for (int i = 0; i < nk; i++) k[i] = new double[nq];
+  q = new double*[nk];
+  for (int i = 0; i < nk; i++) q[i] = new double[nq];
+  rho = new double*[nk];
+  for (int i = 0; i < nk; i++) rho[i] = new double[nq];
+
+  // Determine q, k.
+  delta_k = (1.50-0.75)/double(nk-1);
+  k_init = 0.75;
+  q_init = 0.50;
+  for (int i = 0; i < nk; i++) {
+    ko = k_init + double(i)*delta_k;
+    q_final = ko; // condition y = 0
+    delta_q = (q_final - q_init)/double(nq-1);
+    for (int j = 0; j < nq; j++) {
+      qo = q_init + double(j)*delta_q;
+      k[i][j] = ko;
+      q[i][j] = qo;
+    }
+  }
+
+  // Allocate memory for the interface splines.
+  Spline_North.allocate(nk);  Spline_North.settype(SPLINE2D_QUINTIC);
+  Spline_East.allocate(nq);   Spline_East.settype(SPLINE2D_QUINTIC);
+  Spline_West.allocate(nq);   Spline_West.settype(SPLINE2D_QUINTIC);
+
+  // Determine the spline points.
+  for (int i = 0; i < nk; i++) {
+    for (int j = 0; j < nq; j++) {
+
+      c = sqrt(ONE - ((g-ONE)/TWO)*q[i][j]*q[i][j]);
+      rho[i][j] = pow(c,TWO/(g-ONE));
+      J = ONE/c + ONE/(THREE*pow(c,THREE)) + ONE/(FIVE*pow(c,FIVE)) - HALF*log((ONE+c)/(ONE-c));
+      // NORTH spline.
+      if (j == 0) {
+	Spline_North.Xp[nk-1-i].x = (HALF/rho[i][j])*(TWO/(k[i][j]*k[i][j]) - ONE/(q[i][j]*q[i][j])) - HALF*J;
+	Spline_North.Xp[nk-1-i].y = (ONE/(k[i][j]*rho[i][j]*q[i][j]))*sqrt(ONE - (q[i][j]*q[i][j])/(k[i][j]*k[i][j]));
+	Spline_North.bc[nk-1-i] = BC_RINGLEB_FLOW;
+	if (i == 0 || i == nk-1) Spline_North.tp[nk-1-i] = SPLINE2D_POINT_SHARP_CORNER;
+	else Spline_North.tp[nk-1-i] = SPLINE2D_POINT_NORMAL;
+      }
+      // EAST spline.
+      if (i == 0) {
+	Spline_East.Xp[j].x = (HALF/rho[i][j])*(TWO/(k[i][j]*k[i][j]) - ONE/(q[i][j]*q[i][j])) - HALF*J;
+	Spline_East.Xp[j].y = (ONE/(k[i][j]*rho[i][j]*q[i][j]))*sqrt(ONE - (q[i][j]*q[i][j])/(k[i][j]*k[i][j]));
+	Spline_East.bc[j] = BC_FIXED;
+	if (j == 0 || j == nq-1) Spline_East.tp[j] = SPLINE2D_POINT_SHARP_CORNER;
+	else Spline_East.tp[j] = SPLINE2D_POINT_NORMAL;
+      }
+      // WEST spline.
+      if (i == nk-1) {
+	Spline_West.Xp[nq-1-j].x = (HALF/rho[i][j])*(TWO/(k[i][j]*k[i][j]) - ONE/(q[i][j]*q[i][j])) - HALF*J;
+	Spline_West.Xp[nq-1-j].y = (ONE/(k[i][j]*rho[i][j]*q[i][j]))*sqrt(ONE - (q[i][j]*q[i][j])/(k[i][j]*k[i][j]));
+	Spline_West.bc[nq-1-j] = BC_REFLECTION;
+	if (j == 0 || j == nq-1) Spline_West.tp[nq-1-j] = SPLINE2D_POINT_SHARP_CORNER;
+	else Spline_West.tp[nq-1-j] = SPLINE2D_POINT_NORMAL;
+      }
+
+    }
+  }
+
+  // Calculate spline path lengths.
+  Spline_North.pathlength();
+  Spline_East.pathlength();
+  Spline_West.pathlength();
+
+  // Set the boundary condition types for each of the interface splines.
+  Spline_North.setBCtype(BC_RINGLEB_FLOW);
+  Spline_East.setBCtype(BC_FIXED);
+  Spline_West.setBCtype(BC_REFLECTION);
+
+  // Reflect Spline_West and concatenate to Spline_West.
+  Spline_Reflection = Spline_West;
+  Spline_Reflection.Reflect_Spline();
+  Spline_Reflection.Reverse_Spline();
+  Spline_Reflection = Spline_Reflection + Spline_West;
+  Spline_West = Spline_Reflection;
+
+  // Reflect Spline_East and concatenate to Spline_East.
+  Spline_Reflection = Spline_East;
+  Spline_Reflection.Reflect_Spline();
+  Spline_Reflection.Reverse_Spline();
+  Spline_East = Spline_East + Spline_Reflection;
+
+  // Concatenate sub-splines to the Ringleb spline.
+  *this = Spline_West + Spline_North;
+  *this = *this + Spline_East;
+
+  // Deallocate the memory for the interface splines.
+  Spline_North.deallocate();
+  Spline_East.deallocate();
+  Spline_West.deallocate();
+
+  // Deallocate memory for k, q, and rho.
+  for (int i = 0; i < nk; i++) {
+    delete []k[i];   k[i]   = NULL;
+    delete []q[i];   q[i]   = NULL;
+    delete []rho[i]; rho[i] = NULL;
+  }
+  delete []k;   k   = NULL;
+  delete []q;   q   = NULL;
+  delete []rho; rho = NULL;
+
+}
+
 
 /*!
  * Compute the contour integral of the polynomial function 
