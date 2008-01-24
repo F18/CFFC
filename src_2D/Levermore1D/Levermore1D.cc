@@ -477,7 +477,7 @@ void ICs(Levermore1D_UniformMesh *Soln,
  * Routine: CFL
  *
  * Determines the allowable global and local time steps
- * (for explicit Levermore time stepping scheme) according
+ * (for explicit Euler time stepping scheme) according
  * to the Courant-Friedrichs-Lewy condition.
  *
  ********************************************************/
@@ -835,9 +835,9 @@ int dUdt_explicitEuler_upwind(Levermore1D_UniformMesh *Soln,
 			      const double &CFL_Number,
                               const int Flux_Function_Type,
 			      const int Local_Time_Stepping) {
-
     int i;
     Levermore1D_cState Flux;
+    Levermore1D_cState Update;
 
     /* Evaluate the time rate of change of the solution
        (i.e., the solution residuals) using the first-order
@@ -848,29 +848,17 @@ int dUdt_explicitEuler_upwind(Levermore1D_UniformMesh *Soln,
         Soln[i+1].dUdt.zero();
 
         switch(Flux_Function_Type) {
-          case FLUX_FUNCTION_GODUNOV :
-            //Flux = FluxGodunov(Soln[i].W, Soln[i+1].W);
-            break;
-          case FLUX_FUNCTION_ROE :
-            //Flux = FluxRoe(Soln[i].W, Soln[i+1].W);
-            break;
-          case FLUX_FUNCTION_RUSANOV :
-            //Flux = FluxRusanov(Soln[i].W, Soln[i+1].W);
-            break;
           case FLUX_FUNCTION_HLLE :
-            //Flux = FluxHLLE(Soln[i].W, Soln[i+1].W);
-            break;
-          case FLUX_FUNCTION_LINDE :
-            //Flux = FluxLinde(Soln[i].W, Soln[i+1].W);
-            break;
-          case FLUX_FUNCTION_HLLC :
-            //Flux = FluxHLLC(Soln[i].W, Soln[i+1].W);
-            break;
-          case FLUX_FUNCTION_OSHER :
-            //Flux = FluxOsher(Soln[i].W, Soln[i+1].W);
+            Flux = FluxHLLE(Soln[i].U,
+			    Soln[i].A,
+			    Soln[i].lambda_min,
+			    Soln[i+1].U,
+			    Soln[i+1].A,
+			    Soln[i+1].lambda_max);
             break;
 	  default:
-            //Flux = FluxRoe(Soln[i].W, Soln[i+1].W);
+	    cout << "Error, bad flux function." << endl;
+	    return(1);
             break;
         } /* endswitch */
 
@@ -879,24 +867,21 @@ int dUdt_explicitEuler_upwind(Levermore1D_UniformMesh *Soln,
     } /* endfor */
     Soln[Number_of_Cells+1].dUdt.zero();
 
-    /* Update both conserved and primitive solution
-       variables using explicit Levermore method. */
+    /* Update conserved and primitive solution and closure weights
+       using explicit Euler method. */
 
     for ( i = 1 ; i <= Number_of_Cells ; ++i ) {
-        if ( !Local_Time_Stepping ) Soln[i].dt = dtMin;
-
-        Soln[i].U += Soln[i].dUdt*(CFL_Number*Soln[i].dt);
-
-//	if (Soln[i].U.d   <= ZERO ||
-//	    Soln[i].U.E   <= ZERO ||
-//	    Soln[i].U.e() <= ZERO ) {
-//	    cout << "\n " << CFFC_Name() << " ERROR: Negative Density and/or Energy: \n"
-//	         << " node = " << i << "\n U = " << Soln[i].U << "\n dUdt = "
-//	         << Soln[i].dUdt << "\n";
-//	    return (i);
-//	}
-
-	Soln[i].W = Levermore1D_pState(Soln[i].U);
+      if ( !Local_Time_Stepping ) Soln[i].dt = dtMin;
+      Update = Soln[i].dUdt*(CFL_Number*Soln[i].dt);
+      Soln[i].U += Update;
+      Soln[i].A += Soln[i].dUdA_inv * Update;
+      if ( fabs((2.0*Soln[i].A[3]*Soln[i].U[2] + Soln[i].A[2]*Soln[i].U[1])*(Soln[i].U[2]/Soln[i].U[1])) > 1.0e-4 ||
+	   fabs((2.0*Soln[i].A[3]*Soln[i].U[3] + Soln[i].A[2]*Soln[i].U[2] + Soln[i].U[1])/Soln[i].U[1]) > 1.0e-4) {
+	Soln[i].A = Levermore1D_weights(Soln[i].U);
+	cout << "%";
+      }
+      Soln[i].W = Levermore1D_pState(Soln[i].U);
+      Soln[i].calculate_Hessians();
     } /* endfor */
 
     /* By default, constant extrapolation boundary

@@ -78,6 +78,7 @@ class Levermore1D_cState : public Levermore1D_Vector{
   double moment(int n, const Levermore1D_weights &A) const;
   DenseMatrix d2hda2(const Levermore1D_weights &A) const;
   DenseMatrix d2jda2(const Levermore1D_weights &A) const;
+  Levermore1D_Vector F(const Levermore1D_weights &A) const;
 
 };
 
@@ -92,7 +93,7 @@ class Levermore1D_weights : public Levermore1D_Vector{
   Levermore1D_weights(const Levermore1D_weights &A) : Levermore1D_Vector(A) {}
   Levermore1D_weights(const double &d, const double &u, const double &p) {MaxBoltz(d,u,p);}
   explicit Levermore1D_weights(const Levermore1D_pState &W) {MaxBoltz(W); set_from_W(W);}
-  explicit Levermore1D_weights(const Levermore1D_cState &U) {MaxBoltz(U); set_from_U(U);}
+  explicit Levermore1D_weights(const Levermore1D_cState &U) {MaxBoltz(U);/* set_from_U(U);*/} //Don't need to iterate for euler.
 
   /* Functions. */
   Levermore1D_Vector& operator=(const Levermore1D_Vector &V) {return Levermore1D_Vector::operator=(V);}
@@ -172,6 +173,14 @@ inline istream& operator<<(istream &in, const Levermore1D_weights &A) {
 /********************************************************
  *                Inline  Functions                     *
  ********************************************************/
+inline Levermore1D_Vector Levermore1D_cState::F(const Levermore1D_weights &A) const {
+  Levermore1D_Vector Flux;
+  for(int i=1; i<=length; ++i) {
+    Flux[i] = moment(i,A);
+  }
+  return Flux;
+}
+
 inline void Levermore1D_weights::setgas(char* gas) {
    if (strcmp(gas, "ZB") != 0) {
      cout << endl << "levermore1D cannot use gas: " << gas
@@ -179,4 +188,18 @@ inline void Levermore1D_weights::setgas(char* gas) {
    }
    set_particle_mass(MOLE_WT_ZB/(AVOGADRO*THOUSAND));
 }
+
+
+/********************************************************
+ *          External Function Declarations              *
+ ********************************************************/
+extern Levermore1D_Vector FluxHLLE(const Levermore1D_cState &Ul,
+				   const Levermore1D_weights &Al,
+				   const double &wavespeed_l,
+				   const Levermore1D_cState &Ur,
+				   const Levermore1D_weights &Ar,
+				   const double &wavespeed_r);
+
+
+
 #endif

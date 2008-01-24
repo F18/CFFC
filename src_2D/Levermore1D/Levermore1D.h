@@ -133,7 +133,7 @@ public:
     lambda_min = Lambda(0);
     for(int i=1; i<Levermore1D_Vector::get_length();++i) {
       lambda_max = max(lambda_max,Lambda(i));
-      lambda_max = min(lambda_min,Lambda(i));
+      lambda_min = min(lambda_min,Lambda(i));
     }
   }
 

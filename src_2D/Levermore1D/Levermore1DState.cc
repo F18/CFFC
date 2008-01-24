@@ -278,3 +278,30 @@ DenseMatrix Levermore1D_cState::d2jda2(const Levermore1D_weights &A) const {
   return dm;
 }
 
+/********************************************************
+ * Function: FluxHLLE                                   *
+ *                                                      *
+ * Calculate HLLE flux function.                        *
+ *                                                      *
+ ********************************************************/
+extern Levermore1D_Vector FluxHLLE(const Levermore1D_cState &Ul,
+				   const Levermore1D_weights &Al,
+				   const double &wavespeed_l,
+				   const Levermore1D_cState &Ur,
+				   const Levermore1D_weights &Ar,
+				   const double &wavespeed_r) {
+  Levermore1D_Vector Flux;
+
+  if (wavespeed_l >= ZERO) {
+    Flux = Ul.F(Al);
+  } else if (wavespeed_r <= ZERO) {
+    Flux = Ur.F(Ar);
+  } else {
+    Flux =   ((Ul.F(Al)*wavespeed_r-Ur.F(Ar)*wavespeed_l)
+	      +(Ur-Ul)*(wavespeed_l*wavespeed_r))/
+             (wavespeed_r-wavespeed_l);
+  } /* endif */
+
+  return Flux;
+}
+

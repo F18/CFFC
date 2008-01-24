@@ -179,6 +179,21 @@ inline Levermore1D_Vector Levermore1D_Vector::operator^(const Levermore1D_Vector
 }
 
 /********************************************************
+ *                 External Operators                   *
+ ********************************************************/
+inline Levermore1D_Vector operator *(const DenseMatrix &M, const Levermore1D_Vector &LVec) {
+  assert(M.size(0) ==  LVec.get_length() &&
+	 M.size(0) == M.size(1));
+  int i, j; Levermore1D_Vector lv;
+  lv.zero();
+  for ( i = 0; i <= M.size(0)-1; ++i ) {
+    for ( j = 0 ; j <= M.size(1)-1; ++j ) lv[i+1]+=M(i,j)*LVec[j+1];
+  } /* endfor */
+  return (lv);
+}
+
+
+/********************************************************
  *                  Functions                           *
  ********************************************************/
 inline void Levermore1D_Vector::copy_from(const Levermore1D_Vector &L) {
