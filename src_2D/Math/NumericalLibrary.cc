@@ -303,3 +303,23 @@ double AGQf1(const double x){
   return AdaptiveGaussianQuadrature(f2,yy1,yy2,DummyParam,NbDigitsAGQ);
 }
 
+// ===  Static member variables GaussQuadratureData class ===
+const double GaussQuadratureData::GQ1_Abscissa[1] = {0.5};	//!< Abscissa for 1-point Gaussian
+const double GaussQuadratureData::GQ1_Weight[1] = {1.0};      //!< Weight for 1-point Gaussian
+
+//! Abscissae for 2-point Gaussian (i.e. 0.5*(1 - 1/sqrt(3)), 0.5*(1 + 1/sqrt(3)))
+const double GaussQuadratureData::GQ2_Abscissa[2] = {0.2113248654051871177454256,
+						     0.7886751345948128822545744};
+//! Weights for 2-point Gaussian
+const double GaussQuadratureData::GQ2_Weight[2] = {0.5,
+						   0.5};
+
+//! Abscissae for 3-point Gaussian (i.e. 0.5*(1 - sqrt(3)/sqrt(5)), 0 , 0.5*(1 + 1/sqrt(3)) )
+const double GaussQuadratureData::GQ3_Abscissa[3] = {0.1127016653792583114820736,
+						     0.0 ,
+						     0.8872983346207416885179264};
+//! Weights for 3-point Gaussian (i.e. 5/9, 8/9, 5/9)
+const double GaussQuadratureData::GQ3_Weight[3] = {5.5555555555555555555556e-1,
+						   8.8888888888888888888889e-1,
+						   5.5555555555555555555556e-1};
+

@@ -1346,6 +1346,35 @@ double PolynomLineIntegration(const double & N1x, const double & N1y,
 			      const double & xCC, const double & yCC,
 			      const int &OrderX, const int &OrderY);
 
+/*!
+ * \class GaussQuadratureData
+ *
+ * @brief Collection of absissae and weights 
+ *        for n-point Gauss quadrature formula
+ * 
+ *************************************************/
+class GaussQuadratureData{
+public:
+  // Abscissae and weights for 1-point Gaussian method
+  static const double GQ1_Abscissa[1];
+  static const double GQ1_Weight[1];
+
+  // Abscissae and weights for 2-point Gaussian method
+  static const double GQ2_Abscissa[2];
+  static const double GQ2_Weight[2];
+
+  // Abscissae and weights for 3-point Gaussian method
+  static const double GQ3_Abscissa[3];
+  static const double GQ3_Weight[3];
+
+protected:
+  GaussQuadratureData(void); //!< Private default constructor
+  GaussQuadratureData(const GaussQuadratureData&); //!< Private copy constructor
+  GaussQuadratureData& operator=(const GaussQuadratureData&); //!< Private assignment operator
+  
+};
+
+
 
 /**************** Function Prototypes ********************/
 

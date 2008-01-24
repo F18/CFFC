@@ -726,6 +726,21 @@ namespace tut
   }
 
 
+  /* Test 33:*/
+  template<>
+  template<>
+  void GLQ_Object::test<33>()
+  {
+ 
+    // Check
+    ensure_equals("GQ2 abscissa 1", GaussQuadratureData::GQ2_Abscissa[0], 0.2113248654051871177454256);
+    ensure_equals("GQ2 abscissa 2", GaussQuadratureData::GQ2_Abscissa[1], 0.7886751345948128822545744);
+
+    ensure_equals("GQ2 weight 1", GaussQuadratureData::GQ2_Weight[0], 0.5);
+    ensure_equals("GQ2 weight 2", GaussQuadratureData::GQ2_Weight[1], 0.5);
+  }
+
+
   // **********************************************
   //                 TEST SUITE: AGQ_TestSuite
   // **********************************************
