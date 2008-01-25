@@ -589,8 +589,8 @@ int dUdt_explicitEuler_upwind(Levermore1D_UniformMesh *Soln,
       Update = Soln[i].dUdt*(CFL_Number*Soln[i].dt);
       Soln[i].U += Update;
       Soln[i].A += Soln[i].dUdA_inv * Update;
-      if ( fabs((2.0*Soln[i].A[3]*Soln[i].U[2] + Soln[i].A[2]*Soln[i].U[1])*(Soln[i].U[2]/Soln[i].U[1])) > 1.0e-4 ||
-	   fabs((2.0*Soln[i].A[3]*Soln[i].U[3] + Soln[i].A[2]*Soln[i].U[2] + Soln[i].U[1])/Soln[i].U[1]) > 1.0e-4) {
+      if ( fabs((2.0*Soln[i].A[3]*Soln[i].U[2] + Soln[i].A[2]*Soln[i].U[1])*(Soln[i].U[2]/Soln[i].U[1])) > 1.0e-3 ||
+	   fabs((2.0*Soln[i].A[3]*Soln[i].U[3] + Soln[i].A[2]*Soln[i].U[2] + Soln[i].U[1])/Soln[i].U[1]) > 1.0e-3) {
 	Soln[i].A = Levermore1D_weights(Soln[i].U);
 	cout << "%";
       }
@@ -902,8 +902,8 @@ int dUdt_2stage_2ndOrder_upwind(Levermore1D_UniformMesh *Soln,
 	  Update = Soln[i].dUdt*(CFL_Number*Soln[i].dt);
 	  Soln[i].U = Soln[i].Uo + Update;
 	  Soln[i].A = Soln[i].Ao + Soln[i].dUdA_inv * Update;
-	  if ( fabs((2.0*Soln[i].A[3]*Soln[i].U[2] + Soln[i].A[2]*Soln[i].U[1])*(Soln[i].U[2]/Soln[i].U[1])) > 1.0e-4 ||
-	       fabs((2.0*Soln[i].A[3]*Soln[i].U[3] + Soln[i].A[2]*Soln[i].U[2] + Soln[i].U[1])/Soln[i].U[1]) > 1.0e-4) {
+	  if ( fabs((2.0*Soln[i].A[3]*Soln[i].U[2] + Soln[i].A[2]*Soln[i].U[1])*(Soln[i].U[2]/Soln[i].U[1])) > 1.0e-3 ||
+	       fabs((2.0*Soln[i].A[3]*Soln[i].U[3] + Soln[i].A[2]*Soln[i].U[2] + Soln[i].U[1])/Soln[i].U[1]) > 1.0e-3) {
 	    Soln[i].A = Levermore1D_weights(Soln[i].U);
 	    cout << "%";
 	  }
