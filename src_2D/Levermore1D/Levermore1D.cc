@@ -777,7 +777,9 @@ int dUdt_2stage_2ndOrder_upwind(Levermore1D_UniformMesh *Soln,
     int i, n_stage;
     double omega;
     Levermore1D_pState Wl, Wr;
-    Levermore1D_cState Flux;
+    Levermore1D_cState Ul, Ur;
+    Levermore1D_cState Flux, Update;
+    Levermore1D_weights Al, Ar;
 
     /* Perform second-order two-stage semi-implicit update of solution
        varibles for new time level. */
@@ -814,15 +816,9 @@ int dUdt_2stage_2ndOrder_upwind(Levermore1D_UniformMesh *Soln,
 					       IP.Number_of_Cells,
 					       Limiter_Type);
 	    break;
-//	  case RECONSTRUCTION_CHARACTERISTIC :
-//	    Linear_Reconstruction_Characteristic(Soln,
-//						 IP.Number_of_Cells,
-//						 Limiter_Type);
-//	    break;
 	  default:
-	    Linear_Reconstruction_MUSCL(Soln,
-					IP.Number_of_Cells,
-					Limiter_Type);
+	    cout << "Bad reconstruction type chosen";
+	    return 1;
 	    break;
 	  } /* endswitch */
 	}
@@ -832,100 +828,68 @@ int dUdt_2stage_2ndOrder_upwind(Levermore1D_UniformMesh *Soln,
            limited upwind scheme with a variety of flux functions. */
 
         if ( !Local_Time_Stepping && n_stage == 1 ) Soln[0].dt = dtMin;
-        if ( n_stage == 1 ) Soln[0].Uo = Soln[0].U;
-        Soln[0].dUdt.zero();
+        if ( n_stage == 1 ) {
+	  Soln[0].Uo = Soln[0].U;
+	  Soln[0].Ao = Soln[0].A;
+	  Soln[0].dUdt.zero();
+	}
 
         for ( i = 0 ; i <= IP.Number_of_Cells ; ++i ) {
             if ( !Local_Time_Stepping && n_stage == 1 ) Soln[i+1].dt = dtMin;
             if ( n_stage == 1 ) {
                Soln[i+1].Uo = Soln[i+1].U;
+               Soln[i+1].Ao = Soln[i+1].A;
                Soln[i+1].dUdt.zero();
             } else {
                Soln[i+1].dUdt = Soln[i+1].dUdt*HALF;
             } /* endif */
 
             /* Evaluate the cell interface flux. */
-            if (Reconstruction_Type != RECONSTRUCTION_CHARACTERISTIC) {
-               Wl = Soln[i].W +
-                    (Soln[i].phi^Soln[i].dWdx)*HALF*Soln[i].X.dx;
-               Wr = Soln[i+1].W -
-                    (Soln[i+1].phi^Soln[i+1].dWdx)*HALF*Soln[i+1].X.dx;
-            } else {
-//               Wl = CtoW(Soln[i].W.C() +
-//                    (Soln[i].phi^Soln[i].dWdx)*Soln[i].X.dx)*HALF;
-//               Wr = CtoW(Soln[i+1].W.C() -
-//                    (Soln[i+1].phi^Soln[i+1].dWdx)*Soln[i+1].X.dx)*HALF;
-            } /* endif */
+	    Wl = Soln[i].W +
+	      (Soln[i].phi^Soln[i].dWdx)*HALF*Soln[i].X.dx;
+	    Wr = Soln[i+1].W -
+	      (Soln[i+1].phi^Soln[i+1].dWdx)*HALF*Soln[i+1].X.dx;
+
+	    Ul = Levermore1D_cState(Wl);
+	    Ur = Levermore1D_cState(Wr);
+
+	    Al = Soln[i].A + Soln[i].dUdA_inv * (Ul-Soln[i].U);
+	    Ar = Soln[i+1].A + Soln[i+1].dUdA_inv * (Ur-Soln[i+1].U);
 
 	    /* Apply the BCs before the flux evaluation */
 	    // ***** Left boundary **********
 	    if (i == 0){
 	      // extrapolation BC (by default)
 	      Wl = Wr;
-
-	      // wall BCs
-	      if (IP.i_ICs == IC_BLAST_WAVE_INTERACTION){
-		Wl[2] = -Wl[2];      // change velocity sign
-	      }
-
-	      // periodic BCs
-	      if ((IP.i_ICs == IC_SIN_WAVE) || (IP.i_ICs == IC_JIANG_WAVE) ||
-		  (IP.i_ICs == IC_DENSITY_STEP_WAVE) || (IP.i_ICs == IC_CONVECTION_OF_DIFFERENT_SHAPES)){
-		Wl = Soln[IP.Number_of_Cells].W +
-		     (Soln[IP.Number_of_Cells].phi^Soln[IP.Number_of_Cells].dWdx)*HALF*Soln[IP.Number_of_Cells].X.dx;
-	      }
-
+	      Al = Ar;
 	    }
 
 	    // *****  Right boundary *********
 	    if (i == IP.Number_of_Cells){
 	      // extrapolation BC (by default)
 	      Wr = Wl;
-
-	      // wall BCs
-	      if (IP.i_ICs == IC_BLAST_WAVE_INTERACTION){
-		Wr[2] = -Wr[2];      // change velocity sign
-	      }
-
-	      // periodic BCs
-	      if ((IP.i_ICs == IC_SIN_WAVE) || (IP.i_ICs == IC_JIANG_WAVE) ||
-		  (IP.i_ICs == IC_DENSITY_STEP_WAVE) || (IP.i_ICs == IC_CONVECTION_OF_DIFFERENT_SHAPES)){
-		Wr = Soln[1].W -
-		     (Soln[1].phi^Soln[1].dWdx)*HALF*Soln[1].X.dx;
-	      }
+	      Ar = Al;
 	    }
 
-            switch(Flux_Function_Type) {
-              case FLUX_FUNCTION_GODUNOV :
-                //Flux = FluxGodunov(Wl, Wr);
-                break;
-              case FLUX_FUNCTION_ROE :
-                //Flux = FluxRoe(Wl, Wr);
-                break;
-              case FLUX_FUNCTION_RUSANOV :
-                //Flux = FluxRusanov(Wl, Wr);
-                break;
-              case FLUX_FUNCTION_HLLE :
-                //Flux = FluxHLLE(Wl, Wr);
-                break;
-              case FLUX_FUNCTION_LINDE :
-                //Flux = FluxLinde(Wl, Wr);
-                break;
-              case FLUX_FUNCTION_HLLC :
-                //Flux = FluxHLLC(Wl, Wr);
-                break;
-              case FLUX_FUNCTION_OSHER :
-                //Flux = FluxOsher(Wl, Wr);
-                break;
-	      default:
-                //Flux = FluxRoe(Wl, Wr);
-                break;
+	    switch(Flux_Function_Type) {
+	    case FLUX_FUNCTION_HLLE :
+	      Flux = FluxHLLE(Ul,
+			      Al,
+			      Soln[i].lambda_min,
+			      Ur,
+			      Ar,
+			      Soln[i+1].lambda_max);
+	      break;
+	    default:
+	      cout << "Error, bad flux function." << endl;
+	      return(1);
+	      break;
             } /* endswitch */
 
             /* Evaluate cell-averaged solution changes. */
 
-            Soln[i].dUdt -= Flux*(omega*CFL_Number*Soln[i].dt)/Soln[i].X.dx;
-            Soln[i+1].dUdt += Flux*(omega*CFL_Number*Soln[i+1].dt)/Soln[i+1].X.dx;
+            Soln[i].dUdt -= Flux*omega/Soln[i].X.dx;
+            Soln[i+1].dUdt += Flux*omega/Soln[i+1].X.dx;
 
         } /* endfor */
 
@@ -935,19 +899,16 @@ int dUdt_2stage_2ndOrder_upwind(Levermore1D_UniformMesh *Soln,
         /* Update solution variables for this stage. */
 
         for ( i = 1 ; i <= IP.Number_of_Cells ; ++i ) {
-            Soln[i].U = Soln[i].Uo + Soln[i].dUdt;
-
-//  	    if (Soln[i].U.d   <= ZERO ||
-//	        Soln[i].U.E   <= ZERO ||
-//	        Soln[i].U.e() <= ZERO ) {
-//	        cout << "\n " << CFFC_Name() << " ERROR: Negative Density and/or Energy: \n"
-//	             << " node = " << i << "\n U = " << Soln[i].U << "\n dUdt = "
-//	             << Soln[i].dUdt << "\n";
-//	        return (i);
-//	    }
-
-            /* Update the primitive variable solution state. */
-	    Soln[i].W = Levermore1D_pState(Soln[i].U);
+	  Update = Soln[i].dUdt*(CFL_Number*Soln[i].dt);
+	  Soln[i].U = Soln[i].Uo + Update;
+	  Soln[i].A = Soln[i].Ao + Soln[i].dUdA_inv * Update;
+	  if ( fabs((2.0*Soln[i].A[3]*Soln[i].U[2] + Soln[i].A[2]*Soln[i].U[1])*(Soln[i].U[2]/Soln[i].U[1])) > 1.0e-4 ||
+	       fabs((2.0*Soln[i].A[3]*Soln[i].U[3] + Soln[i].A[2]*Soln[i].U[2] + Soln[i].U[1])/Soln[i].U[1]) > 1.0e-4) {
+	    Soln[i].A = Levermore1D_weights(Soln[i].U);
+	    cout << "%";
+	  }
+	  Soln[i].W = Levermore1D_pState(Soln[i].U);
+	  Soln[i].calculate_Hessians();
         } /* endfor */
 
     } /* endfor */

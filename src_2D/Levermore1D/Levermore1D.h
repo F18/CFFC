@@ -40,6 +40,7 @@
  * -                gradient.
  * -    phi      -- Return the solution slope limiters.
  * -     Uo      -- Return initial solution state.
+ * -     Uo      -- Return initial weights.
  * - Nghost      -- Number of ghost cells (!= 1 for
  * -                high-order)
  *
@@ -67,6 +68,7 @@ public:
   Levermore1D_pState dWdx;   //!< Unlimited solution gradient.
   Levermore1D_pState  phi;   //!< Solution slope limiter.
   Levermore1D_cState   Uo;   //!< Initial solution state.
+  Levermore1D_weights  Ao;   //!< Initial weights.
   // Made public so can access them.
 
   int Nghost;            //!< Number of ghost cells(!= 1 for high-order)
@@ -156,13 +158,13 @@ inline Levermore1D_UniformMesh::Levermore1D_UniformMesh(void){
   W.zero(); U.zero(); A.zero();
   X = Cell1D_Uniform_ONE; dt = ZERO;
   dUdt.zero(); dWdx.zero(); phi.zero();
-  Uo.zero();
+  Uo.zero(); Ao.zero();
 }
 
 inline Levermore1D_UniformMesh::Levermore1D_UniformMesh(const Levermore1D_UniformMesh &Soln) {
   W = Soln.W; U = Soln.U; X = Soln.X;
   dt = Soln.dt; dUdt = Soln.dUdt; dWdx = Soln.dWdx;
-  phi = Soln.phi; Uo = Soln.Uo;
+  phi = Soln.phi; Uo = Soln.Uo; Ao = Soln.Ao;
   Nghost = Soln.Nghost; ICl = Soln.ICl; ICu = Soln.ICu;
   lambda_max = Soln.lambda_max;
   lambda_min = Soln.lambda_min;
@@ -174,21 +176,21 @@ inline Levermore1D_UniformMesh::Levermore1D_UniformMesh(const Levermore1D_pState
 							const Cell1D_Uniform &X0) {
   W = W0; U = U0; A = A0; X = X0;
   dt = ZERO; dUdt.zero();
-  dWdx.zero(); phi.zero(); Uo.zero();
+  dWdx.zero(); phi.zero(); Uo.zero(); Ao.zero();
 }
 
 inline Levermore1D_UniformMesh::Levermore1D_UniformMesh(const Levermore1D_pState &W0,
 							const Cell1D_Uniform &X0) {
   W = W0; U = Levermore1D_cState(W0); A = Levermore1D_weights(W0);
   X = X0; dt = ZERO; dUdt.zero();
-  dWdx.zero(); phi.zero(); Uo.zero();
+  dWdx.zero(); phi.zero(); Uo.zero(); Ao.zero();
 }
 
 inline Levermore1D_UniformMesh::Levermore1D_UniformMesh(const Levermore1D_cState &U0,
 							const Cell1D_Uniform &X0) {
   W = Levermore1D_pState(U0); U = U0; A = Levermore1D_weights(U0);
   X = X0; dt = ZERO; dUdt.zero();
-  dWdx.zero(); phi.zero(); Uo.zero();
+  dWdx.zero(); phi.zero(); Uo.zero(); Ao.zero();
 }
 
 ////! Return the solution of the piecewise limited linear reconstruction at the coordinate X_Coord,
