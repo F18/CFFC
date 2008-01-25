@@ -227,13 +227,6 @@ int Levermore1DSolver(char *Input_File_Name_ptr,
 						    Input_Parameters.i_Flux_Function,
 						    Input_Parameters.Local_Time_Stepping);
              break;
-//	   case TIME_STEPPING_EXPLICIT_EULER_HIGH_ORDER:
-//	     error_flag = dUdt_explicitEuler_upwind(Soln_ptr,
-//						    Input_Parameters,
-//						    dtime,
-//						    Input_Parameters.Local_Time_Stepping,
-//						    &Levermore1D_UniformMesh::CellHighOrder);
-//	     break;
            case TIME_STEPPING_EXPLICIT_PREDICTOR_CORRECTOR:
              error_flag = dUdt_2stage_2ndOrder_upwind(Soln_ptr,
 						      Input_Parameters,
@@ -244,41 +237,6 @@ int Levermore1DSolver(char *Input_File_Name_ptr,
 						      Input_Parameters.i_Flux_Function,
 						      Input_Parameters.Local_Time_Stepping);
              break;
-//	   case TIME_STEPPING_EXPLICIT_PREDICTOR_CORRECTOR_HIGH_ORDER:
-//	     error_flag = dUdt_2stage_HighOrder_upwind(Soln_ptr,
-//						       Input_Parameters,
-//						       dtime,
-//						       Input_Parameters.Local_Time_Stepping,
-//						       &Levermore1D_UniformMesh::CellHighOrder);
-//	     break;
-//	   case TIME_STEPPING_EXPLICIT_RUNGE_KUTTA_4_HIGH_ORDER:
-//	     error_flag = dUdt_4stage_HighOrder_upwind(Soln_ptr,
-//						       Input_Parameters,
-//						       dtime,
-//						       Input_Parameters.Local_Time_Stepping,
-//						       &Levermore1D_UniformMesh::CellHighOrder);
-//	     break;
-//           case TIME_STEPPING_LAX_FRIEDRICHS:
-//             error_flag = dUdt_LaxFriedrichs(Soln_ptr,
-//					     Input_Parameters.Number_of_Cells,
-//					     dtime,
-//					     Input_Parameters.CFL_Number,
-//					     Input_Parameters.Local_Time_Stepping);
-//             break;
-//           case TIME_STEPPING_LAX_WENDROFF:
-//             error_flag = dUdt_LaxWendroff(Soln_ptr,
-//					   Input_Parameters.Number_of_Cells,
-//					   dtime,
-//					   Input_Parameters.CFL_Number,
-//					   Input_Parameters.Local_Time_Stepping);
-//             break;
-//           case TIME_STEPPING_MACCORMACK:
-//             error_flag = dUdt_MacCormack(Soln_ptr,
-//					  Input_Parameters.Number_of_Cells,
-//					  dtime,
-//					  Input_Parameters.CFL_Number,
-//					  Input_Parameters.Local_Time_Stepping);
-//             break;
 //           case TIME_STEPPING_HANCOCK:
 //             error_flag = dUdt_Hancock(Soln_ptr,
 //				       Input_Parameters.Number_of_Cells,
@@ -289,12 +247,8 @@ int Levermore1DSolver(char *Input_File_Name_ptr,
 //				       Input_Parameters.Local_Time_Stepping);
 //             break;
            default:
-             error_flag = dUdt_explicitEuler_upwind(Soln_ptr,
-						    Input_Parameters.Number_of_Cells,
-						    dtime,
-						    Input_Parameters.CFL_Number,
-						    Input_Parameters.i_Flux_Function,
-						    Input_Parameters.Local_Time_Stepping);
+	     cout << "Invalid time marching chosen!" << endl;
+	     return (1);
              break;
          } /* endswitch */
 
