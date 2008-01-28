@@ -145,12 +145,18 @@ void Output_Tecplot(Levermore1D_UniformMesh *Soln,
 	   << "VARIABLES = \"x\" \\ \n"
 	   << "\"dx\" \\ \n";
   for(i = 0; i < Levermore1D_Vector::get_length(); ++i) {
-    out_file << "\"random_moment" << i << "\" \\ \n";
+    out_file << "\"W" << i << "\" \\ \n";
+  }
+  for(i = 0; i < Levermore1D_Vector::get_length(); ++i) {
+    out_file << "\"U" << i << "\" \\ \n";
+  }
+  for(i = 0; i < Levermore1D_Vector::get_length(); ++i) {
+    out_file << "\"A" << i << "\" \\ \n";
   }
   out_file << "ZONE \n";
 
   for ( i = ICl ; i <= ICu ; ++i ) {
-    out_file << " " << Soln[i] << "\n";
+    out_file << " " << Soln[i] << " " << Soln[i].U << " " << Soln[i].A << "\n";
   } /* endfor */
 
   out_file << "\n";
