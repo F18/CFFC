@@ -120,20 +120,31 @@ void Levermore1D_pState::set_from_A(const Levermore1D_weights &A) {
  ********************************************************/
 double Levermore1D_cState::moment(int n, const Levermore1D_weights &A) const {
   if(n<length) return m_values[n];
+  //else
+  return moment(n,A,length);
+}
 
+double Levermore1D_cState::moment(int n, const Levermore1D_weights &A, int real_L) const {
   double _moment(0.0); //underscore to differentiate from function name
-  int L(length);
+  double term, max_term(0.0);
 
-  //while(fabs(A[L])<1e-6) {L -=2;}  //There must be something better than this.
+  term = (double)(n-real_L+2)*moment(n-real_L+1,A);
+  max_term = fabs(term);
 
-  _moment += (double)(n-L+2)*moment(n-L+1,A);
+  _moment += term;
 
-  for(int i=1; i<L-1; ++i) {
-    _moment += (double)(i) * A[i+1]*moment(n-L+i+1,A);
+  for(int i=1; i<real_L-1; ++i) {
+    term = (double)(i) * A[i+1]*moment(n-real_L+i+1,A);
+    if(fabs(term) > max_term) max_term = fabs(term);
+    _moment += term;
   }
 
-  _moment /= -(double)(L-1)*A[L];
-  return _moment;
+  if(fabs(_moment) > 1e-8 * max_term) {
+    return (_moment/(-(double)(real_L-1)*A[real_L]));
+  } else {
+    return moment(n, A, real_L-2);
+  }
+
 }
 
 /********************************************************
