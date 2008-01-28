@@ -94,7 +94,7 @@ class Levermore1D_weights : public Levermore1D_Vector{
   Levermore1D_weights(const Levermore1D_weights &A) : Levermore1D_Vector(A) {}
   Levermore1D_weights(const double &d, const double &u, const double &p) {MaxBoltz(d,u,p);}
   explicit Levermore1D_weights(const Levermore1D_pState &W) {MaxBoltz(W); set_from_W(W);}
-  explicit Levermore1D_weights(const Levermore1D_cState &U) {MaxBoltz(U);/* set_from_U(U);*/} //Don't need to iterate for euler.
+  explicit Levermore1D_weights(const Levermore1D_cState &U) {MaxBoltz(U); set_from_U(U);}
 
   /* Functions. */
   Levermore1D_Vector& operator=(const Levermore1D_Vector &V) {return Levermore1D_Vector::operator=(V);}
