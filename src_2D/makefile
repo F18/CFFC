@@ -106,6 +106,7 @@ SRC_GRID = $(GRID_DIR)Cell1D.cc \
            $(GRID_DIR)Grid3DHexaMultiBlock.cc \
            $(GRID_DIR)HO_Cell2D.cc \
            $(GRID_DIR)HO_Spline2D.cc \
+           $(GRID_DIR)HO_Spline2DInterval.cc \
 	   $(GRID_DIR)HO_Grid2DQuad.cc \
            $(GRID_DIR)HO_Grid2DQuadMultiBlock.cc 
 SRC_ICEMCFD = $(ICEMCFD_DIR)ICEMCFD.cc \
