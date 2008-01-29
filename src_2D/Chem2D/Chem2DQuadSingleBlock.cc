@@ -960,18 +960,18 @@ void Output_Tecplot(Chem2D_Quad_Block &SolnBlk,
       Out_File <<"\"c_"<<SolnBlk.W[0][0].specdata[i].Speciesname()<<"\" \\ \n";
     }  
     //   Viscous Terms 
-    Out_File << "\"qflux_x\" \\ \n"  
-	     << "\"qflux_y\" \\  \n"   
-	     << "\"Tau_xx\" \\  \n"  //rr -axisymmetric
-	     << "\"Tau_xy\" \\  \n"  //rz
-	     << "\"Tau_yy\" \\  \n"  //zz
-	     << "\"Tau_zz\" \\  \n"
-	     << "\"theta_x\" \\  \n"  
-	     << "\"theta_y\" \\  \n"   
-	     << "\"lambda_xx\" \\  \n"  //rr -axisymmetric
-	     << "\"lambda_xy\" \\  \n"  //rz
-	     << "\"lambda_yy\" \\  \n"  //zz
-	     << "\"lambda_zz\" \\  \n";   
+//     Out_File << "\"qflux_x\" \\ \n"                         
+// 	     << "\"qflux_y\" \\  \n"   
+// 	     << "\"Tau_xx\" \\  \n"  //rr -axisymmetric
+// 	     << "\"Tau_xy\" \\  \n"  //rz
+// 	     << "\"Tau_yy\" \\  \n"  //zz
+// 	     << "\"Tau_zz\" \\  \n"
+// 	     << "\"theta_x\" \\  \n"  
+// 	     << "\"theta_y\" \\  \n"   
+// 	     << "\"lambda_xx\" \\  \n"  //rr -axisymmetric
+// 	     << "\"lambda_xy\" \\  \n"  //rz
+// 	     << "\"lambda_yy\" \\  \n"  //zz
+// 	     << "\"lambda_zz\" \\  \n";   
     //  Calculated values
     Out_File<< "\"T\" \\  \n" 
 	    << "\"R\" \\  \n"
@@ -1012,8 +1012,8 @@ void Output_Tecplot(Chem2D_Quad_Block &SolnBlk,
       Out_File << " " << SolnBlk.Grid.Node[i][j].X<<endl<<W_node;
       //T,M,H,s, and all the rest of the calcuatated parameters
       Out_File.setf(ios::scientific);
-      Out_File << " " << W_node.qflux<< " " <<W_node.tau
-	       << " " << W_node.theta<< " " <<W_node.lambda
+      Out_File /*<< " " << W_node.qflux<< " " <<W_node.tau                //THESE NEED TO BE FIXED TO OUTPUT FROM U 
+		 << " " << W_node.theta<< " " <<W_node.lambda */          //AS NOT "stored" in W anymore 
 	       << " " << W_node.T()<< " " << W_node.Rtot()
 	       << " " << W_node.v.abs()/W_node.a() 
 	       << " " << W_node.mu() <<" "<< W_node.kappa()
@@ -1124,28 +1124,32 @@ void Output_Cells_Tecplot(Chem2D_Quad_Block &SolnBlk,
 // 		  <<"\"Dif_coef_"<<SolnBlk.W[0][0].specdata[i].Speciesname()<<"\" \\ \n"; 
 //        }       
 //        //gradients
-//        Out_File<< "\"dx_rho\" \\ \n"
-// 	       << "\"dx_u\" \\ \n"
-// 	       << "\"dx_v\" \\ \n"
-// 	       << "\"dx_p\" \\ \n";
-//        //n species mass fractions names
-//        for(int i =0 ;i<SolnBlk.W[0][0].ns ;i++){
-// 	     Out_File <<"\"dx_c"<<SolnBlk.W[0][0].specdata[i].Speciesname()<<"\" \\ \n";
-//        }  
+       Out_File<< "\"dx_rho\" \\ \n"
+	       << "\"dx_u\" \\ \n"
+	       << "\"dx_v\" \\ \n"
+	       << "\"dx_p\" \\ \n"
+               << "\"dx_k\" \\ \n"
+	       << "\"dx_omega\" \\ \n";
+       //n species mass fractions names
+       for(int i =0 ;i<SolnBlk.W[0][0].ns ;i++){
+	     Out_File <<"\"dx_c"<<SolnBlk.W[0][0].specdata[i].Speciesname()<<"\" \\ \n";
+       }  
 //        Out_File<< "\"dx_q_x\" \n"  
 // 	       << "\"dx_q_y\" \n"  
 // 	       << "\"dx_Tau_xx\" \n"  //rr -axisymmetric
 // 	       << "\"dx_Tau_xy\" \n"  //rz
 // 	       << "\"dx_Tau_yy\" \n"  //zz
 // 	       << "\"dx_Tau_zz\" \n"; //thetatheta       
-//        Out_File<< "\"dy_rho\" \\ \n"
-// 	       << "\"dy_u\" \\ \n"
-// 	       << "\"dy_v\" \\ \n"
-// 	       << "\"dy_p\" \\ \n";
-//        //n species mass fractions names
-//        for(int i =0 ;i<SolnBlk.W[0][0].ns ;i++){
-//  	     Out_File <<"\"dy_c"<<SolnBlk.W[0][0].specdata[i].Speciesname()<<"\" \\ \n";
-//        }  
+       Out_File<< "\"dy_rho\" \\ \n"
+	       << "\"dy_u\" \\ \n"
+	       << "\"dy_v\" \\ \n"
+	       << "\"dy_p\" \\ \n"
+               << "\"dy_k\" \\ \n"
+	       << "\"dy_omega\" \\ \n";
+       //n species mass fractions names
+       for(int i =0 ;i<SolnBlk.W[0][0].ns ;i++){
+ 	     Out_File <<"\"dy_c"<<SolnBlk.W[0][0].specdata[i].Speciesname()<<"\" \\ \n";
+       }  
 //        Out_File<< "\"dy_q_x\" \n"  
 // 	       << "\"dy_q_y\" \n"   
 // 	       << "\"dy_Tau_xx\" \n"  //rr -axisymmetric
@@ -1173,18 +1177,18 @@ void Output_Cells_Tecplot(Chem2D_Quad_Block &SolnBlk,
                     << SolnBlk.W[i][j];
            Out_File.setf(ios::scientific);
 	   //Temperature
-	   Out_File << " " << SolnBlk.W[i][j].qflux<< " " << SolnBlk.W[i][j].tau
-		    << " " << SolnBlk.W[i][j].theta<< " " << SolnBlk.W[i][j].lambda
+	   Out_File << " " << SolnBlk.U[i][j].qflux<< " " << SolnBlk.U[i][j].tau
+		    << " " << SolnBlk.U[i][j].theta<< " " << SolnBlk.U[i][j].lambda
 		    << " " << SolnBlk.W[i][j].T()
 		    << " " << SolnBlk.W[i][j].v.abs()/SolnBlk.W[i][j].a() 
 		    << " " << SolnBlk.W[i][j].Rtot()
 		    << " " << SolnBlk.W[i][j].mu()
 		    << " " << SolnBlk.W[i][j].kappa()
-		    << " " << SolnBlk.W[i][j].Prandtl(); 
+		    << " " << SolnBlk.U[i][j].Prandtl(); 
 	   //Prandtl, Schmidt, Lewis   
 	   for(int k =0 ;k<SolnBlk.W[0][0].ns ;k++){	  
- 	       Out_File<<" "<<SolnBlk.W[i][j].Schmidt_No(k) 
-		       <<" "<<SolnBlk.W[i][j].Lewis(k);  
+ 	       Out_File<<" "<<SolnBlk.U[i][j].Schmidt_No(k) 
+		       <<" "<<SolnBlk.U[i][j].Lewis(k);  
 	   }
 	   //Residuals
 	   Out_File << " " << SolnBlk.dUdt[i][j][0];
@@ -1198,9 +1202,9 @@ void Output_Cells_Tecplot(Chem2D_Quad_Block &SolnBlk,
 // 	     Out_File <<SolnBlk.W[i][j].spec[k].gradc<<" "
 // 		      <<SolnBlk.W[i][j].spec[k].diffusion_coef;
 // 	   }
-// 	   //gradients
-// 	   Out_File <<SolnBlk.dWdx[i][j]
-// 		    <<SolnBlk.dWdy[i][j];
+	   //gradients
+	   Out_File <<SolnBlk.dWdx[i][j]
+		    <<SolnBlk.dWdy[i][j];
 	   Out_File<< "\n";
            Out_File.unsetf(ios::scientific);
        } /* endfor */
@@ -2134,6 +2138,116 @@ void ICs(Chem2D_Quad_Block &SolnBlk,
 	} 
       } 
       break;
+   
+      /**************************************************************************
+       The Premixed Flame Initial Conditions sets up a premixed 
+       flame in the axisymmetric coordinate system, with the axis of symmetry
+       being the left or west boundary y-axis.
+      **************************************************************************/
+
+    case IC_CHEM_PREMIXED_FLAME :           
+
+      if(Wo[0].React.reactset_flag == CH4_2STEP || Wo[0].React.reactset_flag == CH4_1STEP){
+	fuel_spacing = 0.011;      //m
+	fuel_velocity = 1.10;     //m/s  
+	fuel_temp_inlet = 298.0;  //K 
+	tube_thickness =  0.001;    //m delta	
+
+	air_spacing = 0.030;       //m   
+	air_velocity = 0.0;        //m/s 
+	air_temp_inlet = 298.0;    //K
+	ignition_temp = 1200.0;    //K
+	
+	Wr = Wo[0];
+	Wl = Wo[0];
+	
+        //phi=0.95
+// 	Wl.spec[0] = 0.054;   //CH4
+//  	Wl.spec[1] = 0.2213;   //O2
+//  	Wl.spec[Wl.ns-1] = 0.7247; //N2
+
+	//Premixed FUEL phi=1.05 CH4 & AIR (O2 &N2)
+	Wl.spec[0] = 0.05766;   //CH4
+	Wl.spec[1] = 0.21966;   //O2
+	Wl.spec[Wl.ns-1] = 0.72268; //N2
+
+	// phi=1.0
+ // 	Wl.spec[0] = 0.0551;   //CH4
+//  	Wl.spec[1] = 0.2202;   //O2
+//  	Wl.spec[Wl.ns-1] = 0.7247; //N2
+	for(int q=2; q < Wl.ns-1; q++){
+	  Wl.spec[q].c =ZERO;
+	}
+	Wl.rho = Wl.p/(Wl.Rtot()*fuel_temp_inlet);
+	Wl.v.zero();
+
+	//PRODUCTS
+// 	Wr.spec[0] = 0.0;   //CH4
+//  	Wr.spec[1] = 0.0;   //O2
+// 	Wr.spec[2] = 0.1511;     //CO2
+// 	Wr.spec[3] = 0.1242;     //H2O 
+// 	Wr.spec[Wl.ns-1] = 0.7247; //N2
+// 	Wr.rho = Wr.p/(Wr.Rtot()*2320); //2234
+// 	Wr.v.zero();
+
+	//air 21% O2 & 79% N2
+	for(int q=0; q < Wr.ns; q++){
+	  if(q ==1 || q == Wr.ns-1){
+	    Wr.spec[1] = 0.232;
+	    Wr.spec[Wr.ns-1] = 0.768;
+	  } else {
+	    Wr.spec[q] = ZERO;
+	  }
+	}
+	Wr.rho = Wr.p/(Wr.Rtot()*air_temp_inlet);
+	Wr.v.zero();
+      }
+
+
+      for (int j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
+	for ( int i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
+  	  //region for injected fuel 
+ 	  if (SolnBlk.Grid.Cell[i][j].Xc.x <= fuel_spacing ){ 
+    	    if (SolnBlk.Grid.Cell[i][j].Xc.y <0.035 ){
+	      SolnBlk.W[i][j] = Wl;
+	      SolnBlk.W[i][j].rho = Wl.p/(Wl.Rtot()*fuel_temp_inlet);  //set BC value to proper inlet temp
+	      SolnBlk.W[i][j].v.y = fuel_velocity;
+ 	      SolnBlk.W[i][j].v.x = ZERO;
+	    } else {
+	      SolnBlk.W[i][j] = Wr;
+	      SolnBlk.W[i][j].rho = Wr.p/(Wr.Rtot()*air_temp_inlet);
+	      SolnBlk.W[i][j].v.y = fuel_velocity;
+	      SolnBlk.W[i][j].v.x = ZERO;
+	    }
+	    //region for injected air 
+	  } else if (SolnBlk.Grid.Cell[i][j].Xc.x > fuel_spacing+tube_thickness && 
+		     SolnBlk.Grid.Cell[i][j].Xc.x <= air_spacing ){	
+	      SolnBlk.W[i][j] = Wr;
+	      SolnBlk.W[i][j].rho = Wr.p/(Wr.Rtot()*air_temp_inlet);
+	      SolnBlk.W[i][j].v.y = air_velocity;	  
+	      SolnBlk.W[i][j].v.x = ZERO;
+ 	    //region for quiesent air
+	  } else {
+	    SolnBlk.W[i][j] = Wr;	    	  	    	  
+	    SolnBlk.W[i][j].v.zero(); 	   	    
+ 	  } 
+
+	  //IGNITOR across fuel and air inlets   
+	  if( SolnBlk.Grid.Cell[i][j].Xc.y < 0.035 && SolnBlk.Grid.Cell[i][j].Xc.y > 0.03){   	    
+	    if ( SolnBlk.Grid.Cell[i][j].Xc.x <= 1.0*fuel_spacing && SolnBlk.Grid.Cell[i][j].Xc.x > fuel_spacing*0.9){ 
+	      SolnBlk.W[i][j].rho = Wl.p/(Wl.Rtot()*ignition_temp);
+// 	    } else if (SolnBlk.Grid.Cell[i][j].Xc.x <= fuel_spacing){
+// 	      SolnBlk.W[i][j].rho = Wr.p/(Wr.Rtot()*ignition_temp);
+// 	    } else if (SolnBlk.Grid.Cell[i][j].Xc.x <= air_spacing*0.5){
+// 	      SolnBlk.W[i][j].rho = Wr.p/(Wr.Rtot()*ignition_temp);
+// 	    } else {
+// 	      //left at air
+	    }
+	  }
+	  SolnBlk.U[i][j] = U(SolnBlk.W[i][j]);
+	} 
+      } 
+      break;
 
       /******************** DEFAULT *******************/
     default:
@@ -2441,7 +2555,9 @@ void BCs(Chem2D_Quad_Block &SolnBlk,
 	 SolnBlk.W[SolnBlk.ICl-1][j] = 
 	   BC_2DFlame_Inflow(SolnBlk.W[SolnBlk.ICl][j],
 			     SolnBlk.WoW[j],
-			     SolnBlk.Grid.nfaceW(SolnBlk.ICl,j)); 
+			     SolnBlk.Grid.nfaceW(SolnBlk.ICl,j),
+			     SolnBlk.Grid.Cell[SolnBlk.ICl][j].Xc.x,
+			     IP.NKS_IP.Total_Physical_Time); 
 	 SolnBlk.U[SolnBlk.ICl-1][j] = U(SolnBlk.W[SolnBlk.ICl-1][j]);
 	 for( int ghost = 2; ghost <= SolnBlk.Nghost; ghost++){
 	   SolnBlk.W[SolnBlk.ICl-ghost][j] = SolnBlk.W[SolnBlk.ICl-ghost+1][j];
@@ -2675,7 +2791,9 @@ void BCs(Chem2D_Quad_Block &SolnBlk,
 	 SolnBlk.W[SolnBlk.ICu+1][j] = 
 	   BC_2DFlame_Inflow(SolnBlk.W[SolnBlk.ICu][j],
 			     SolnBlk.WoE[j], 		
-			     SolnBlk.Grid.nfaceE(SolnBlk.ICu,j)); 	
+			     SolnBlk.Grid.nfaceE(SolnBlk.ICu,j),
+			     SolnBlk.Grid.Cell[SolnBlk.ICu][j].Xc.x,
+			     IP.NKS_IP.Total_Physical_Time); 	
 	 SolnBlk.U[SolnBlk.ICu+1][j] = U(SolnBlk.W[SolnBlk.ICu+1][j]);
 	 for( int ghost = 2; ghost <= SolnBlk.Nghost; ghost++){
 	   SolnBlk.W[SolnBlk.ICu+ghost][j] = SolnBlk.W[SolnBlk.ICu+ghost-1][j];
@@ -2837,8 +2955,10 @@ void BCs(Chem2D_Quad_Block &SolnBlk,
      case BC_2DFLAME_INFLOW :       
        SolnBlk.W[i][SolnBlk.JCl-1] = 
 	 BC_2DFlame_Inflow(SolnBlk.W[i][SolnBlk.JCl],
-			 SolnBlk.WoS[i], 
-			 SolnBlk.Grid.nfaceS(i,SolnBlk.JCl)); 
+			   SolnBlk.WoS[i], 
+			   SolnBlk.Grid.nfaceS(i,SolnBlk.JCl),
+			   SolnBlk.Grid.Cell[i][SolnBlk.JCl].Xc.x,
+			   IP.NKS_IP.Total_Physical_Time); 
        SolnBlk.U[i][SolnBlk.JCl-1] = U(SolnBlk.W[i][SolnBlk.JCl-1]);
        for( int ghost = 2; ghost <= SolnBlk.Nghost; ghost++){
 	 SolnBlk.W[i][SolnBlk.JCl-ghost] = SolnBlk.W[i][SolnBlk.JCl-ghost+1];
@@ -5499,7 +5619,7 @@ void Calculate_Refinement_Criteria(double *refinement_criteria,
     for ( j  = SolnBlk.JCl-1 ; j <= SolnBlk.JCu+1 ; ++j ) {
        for ( i = SolnBlk.ICl-1 ; i <= SolnBlk.ICu+1 ; ++i ) {
 	 // Reconstruct the solution within the cell.
-	 //Linear_Reconstruction_GreenGauss(SolnBlk, i, j, LIMITER_UNLIMITED);
+	 // Linear_Reconstruction_GreenGauss(SolnBlk, i, j, LIMITER_UNLIMITED);
 	 //Linear_Reconstruction_LeastSquares(SolnBlk, i, j, LIMITER_UNLIMITED);
 	 //Required if initial refinement, ie. 0 iterations 
 	 Linear_Reconstruction_LeastSquares_2(SolnBlk, i, j, LIMITER_UNLIMITED);
@@ -5574,7 +5694,7 @@ void Calculate_Refinement_Criteria(double *refinement_criteria,
       refinement_criteria_number++;
     }
     if (IP.Refinement_Criteria_Divergence_Velocity) {
-      refinement_criteria[refinement_criteria_number] = div_V_criteria_max;
+      refinement_criteria[refinement_criteria_number] = ONE; //div_V_criteria_max;  //HACK FOR UNIFORM REFINEMENT !!!!!!!
       refinement_criteria_number++;
     }
     if (IP.Refinement_Criteria_Curl_Velocity) {
@@ -5586,7 +5706,7 @@ void Calculate_Refinement_Criteria(double *refinement_criteria,
       refinement_criteria_number++;
     }
     if (IP.Refinement_Criteria_Gradient_CH4){
-      refinement_criteria[refinement_criteria_number] = grad_CO2_criteria_max;
+      refinement_criteria[refinement_criteria_number] = grad_CH4_criteria_max;
       refinement_criteria_number++;
     }
     if (IP.Refinement_Criteria_Gradient_CO2){
@@ -6164,7 +6284,11 @@ int dUdt_Residual_Evaluation(Chem2D_Quad_Block &SolnBlk,
 	    Wr = BC_1DFlame_Outflow(Wl, 
 				    SolnBlk.WoE[j],
 				    SolnBlk.W[SolnBlk.ICl][j], 
-				    SolnBlk.Grid.nfaceE(i, j));
+				    SolnBlk.Grid.nfaceE(i, j));	 
+	  } else if (SolnBlk.Grid.BCtypeE[i] == BC_2DFLAME_OUTFLOW){
+	    Wr = BC_2DFlame_Outflow(Wl, 
+				    SolnBlk.WoE[i], 
+				    SolnBlk.Grid.nfaceE(i, j));	    
 	  } else if (SolnBlk.Grid.BCtypeE[j] == BC_CHARACTERISTIC) { 
 	    Wr = BC_Characteristic_Pressure(Wl, 
 					    SolnBlk.WoE[j], 
@@ -6411,7 +6535,9 @@ int dUdt_Residual_Evaluation(Chem2D_Quad_Block &SolnBlk,
 	  } else if (SolnBlk.Grid.BCtypeS[i] == BC_2DFLAME_INFLOW){
 	    Wl = BC_2DFlame_Inflow(Wr, 
 				   SolnBlk.WoS[i], 
-				   SolnBlk.Grid.nfaceS(i, j+1));
+				   SolnBlk.Grid.nfaceS(i, j+1),
+				   SolnBlk.Grid.Cell[i][j+1].Xc.x,
+				   Input_Parameters.NKS_IP.Total_Physical_Time);
 	  } else if (SolnBlk.Grid.BCtypeS[i] == BC_1DFLAME_OUTFLOW){
 	    Wl = BC_1DFlame_Outflow(Wr, 
 				    SolnBlk.WoS[i], 
@@ -6490,8 +6616,7 @@ int dUdt_Residual_Evaluation(Chem2D_Quad_Block &SolnBlk,
 	} /* endif */
 	  
 	// Spacing for Preconditioner 
-	if(SolnBlk.Flow_Type != FLOWTYPE_INVISCID && 
-           Input_Parameters.Preconditioning){
+	if(Input_Parameters.Preconditioning){
 	  delta_n = min( TWO*(SolnBlk.Grid.Cell[i][j].A/
 			      (SolnBlk.Grid.lfaceE(i, j)+SolnBlk.Grid.lfaceW(i, j))),
 			 TWO*(SolnBlk.Grid.Cell[i][j].A/
@@ -6886,7 +7011,11 @@ int dUdt_Multistage_Explicit(Chem2D_Quad_Block &SolnBlk,
 	    Wr = BC_1DFlame_Outflow(Wl, 
 				    SolnBlk.WoE[j],
 				    SolnBlk.W[SolnBlk.ICl][j], 
-				    SolnBlk.Grid.nfaceE(i, j));
+				    SolnBlk.Grid.nfaceE(i, j));  
+	  } else if (SolnBlk.Grid.BCtypeE[i] == BC_2DFLAME_OUTFLOW){
+	    Wr = BC_2DFlame_Outflow(Wl, 
+				    SolnBlk.WoE[i], 
+				    SolnBlk.Grid.nfaceE(i, j));	    
 	  } else if (SolnBlk.Grid.BCtypeE[j] == BC_CHARACTERISTIC) { 
 	    Wr = BC_Characteristic_Pressure(Wl, 
 					    SolnBlk.WoE[j], 
@@ -7134,7 +7263,9 @@ int dUdt_Multistage_Explicit(Chem2D_Quad_Block &SolnBlk,
 	  } else if (SolnBlk.Grid.BCtypeS[i] == BC_2DFLAME_INFLOW){
 	    Wl = BC_2DFlame_Inflow(Wr, 
 				   SolnBlk.WoS[i], 
-				   SolnBlk.Grid.nfaceS(i, j+1));
+				   SolnBlk.Grid.nfaceS(i, j+1),
+				   SolnBlk.Grid.Cell[i][j+1].Xc.x,
+				   Input_Parameters.NKS_IP.Total_Physical_Time);
 	  } else if (SolnBlk.Grid.BCtypeS[i] == BC_1DFLAME_OUTFLOW){
 	    Wl = BC_1DFlame_Outflow(Wr, 
 				    SolnBlk.WoS[i], 
@@ -7213,8 +7344,7 @@ int dUdt_Multistage_Explicit(Chem2D_Quad_Block &SolnBlk,
 	} /* endif */
 		
 	// Spacing for Preconditioner 
-	if(SolnBlk.Flow_Type != FLOWTYPE_INVISCID && 
-           Input_Parameters.Preconditioning){
+	if(Input_Parameters.Preconditioning){
 	  delta_n = min( TWO*(SolnBlk.Grid.Cell[i][j].A/
 			      (SolnBlk.Grid.lfaceE(i, j)+SolnBlk.Grid.lfaceW(i, j))),
 			 TWO*(SolnBlk.Grid.Cell[i][j].A/
@@ -7515,10 +7645,9 @@ int Update_Solution_Multistage_Explicit(Chem2D_Quad_Block &SolnBlk,
 	}
 	
 	// Spacing for preconditioner and viscous 
-	if (SolnBlk.Flow_Type != FLOWTYPE_INVISCID && 
-	    (Input_Parameters.Local_Time_Stepping == LOW_MACH_NUMBER_WEISS_SMITH_PRECONDITIONER || 
-	     Input_Parameters.Local_Time_Stepping == SEMI_IMPLICIT_LOW_MACH_NUMBER_PRECONDITIONER ||
-	     Input_Parameters.Local_Time_Stepping == MATRIX_WITH_LOW_MACH_NUMBER_PRECONDITIONER) ){	     
+	if (Input_Parameters.Local_Time_Stepping == LOW_MACH_NUMBER_WEISS_SMITH_PRECONDITIONER || 
+	    Input_Parameters.Local_Time_Stepping == SEMI_IMPLICIT_LOW_MACH_NUMBER_PRECONDITIONER ||
+	    Input_Parameters.Local_Time_Stepping == MATRIX_WITH_LOW_MACH_NUMBER_PRECONDITIONER) {	     
 	  delta_n = min( TWO*(SolnBlk.Grid.Cell[i][j].A/
 			      (SolnBlk.Grid.lfaceE(i, j)+SolnBlk.Grid.lfaceW(i, j))),
 			 TWO*(SolnBlk.Grid.Cell[i][j].A/
@@ -7725,7 +7854,6 @@ int Update_Dual_Solution_States(Chem2D_Quad_Block &SolnBlk) {
  *       -> U.qflux                                                   *
  *	 -> U.tau                                                     *
  *	 -> U.rhospec[i].diffusion                                    *
- *	 -> U.rhospec[i].gradc                                        *
  *	 -> local grad Temperature                                    *
  *                                                                    *
  **********************************************************************/
@@ -7769,9 +7897,6 @@ void Viscous_Calculations(Chem2D_Quad_Block &SolnBlk) {
 	/***************** Diffusion coefficients **********************/
 	// using global Schmidt number relation Sc = mu/rho*Ds
 	SolnBlk.U[i][j].rhospec[k].diffusion_coef = mu/SolnBlk.W[i][j].Schmidt[k];
-	/***************** mass fraction gradients *********************/
-	SolnBlk.U[i][j].rhospec[k].gradc.x = SolnBlk.U[i][j].rho * SolnBlk.dWdx[i][j].spec[k].c;
-	SolnBlk.U[i][j].rhospec[k].gradc.y = SolnBlk.U[i][j].rho * SolnBlk.dWdy[i][j].spec[k].c;
       }
       X = SolnBlk.Grid.Cell[i][j].Xc;
       /***************** Molecular (Laminar) Stresses ******************/
@@ -7793,7 +7918,9 @@ void Viscous_Calculations(Chem2D_Quad_Block &SolnBlk) {
       SolnBlk.U[i][j].qflux = - kappa*grad_T;
       /****************** Thermal Diffusion ****************************/
       // q -= rho * sum ( hs * Ds *gradcs)  
-      SolnBlk.U[i][j].qflux -= SolnBlk.U[i][j].rho*SolnBlk.U[i][j].thermal_diffusion(Temperature);  
+      SolnBlk.U[i][j].qflux -= SolnBlk.U[i][j].rho*SolnBlk.U[i][j].thermal_diffusion(Temperature,
+										     SolnBlk.dWdx[i][j], 
+										     SolnBlk.dWdy[i][j]);  
       
       /**************** Turbulent Heat flux Vector *********************/
       /****************** Thermal Conduction ***************************
@@ -7804,12 +7931,9 @@ void Viscous_Calculations(Chem2D_Quad_Block &SolnBlk) {
       /****************** Thermal Diffusion ****************************/
       // q -= rho * sum ( hs * Ds *gradcs)   
 	for( int k=0; k<SolnBlk.U[i][j].ns; k++){
-	  SolnBlk.U[i][j].theta -= Dm_t*SolnBlk.U[i][j].rhospec[k].gradc*
-	    (SolnBlk.U[i][j].specdata[k].Enthalpy(Temperature)+
-	     SolnBlk.U[i][j].specdata[k].Heatofform());
-	  
-
-         }
+	  SolnBlk.U[i][j].theta -= Dm_t*Vector2D(SolnBlk.dWdx[i][j].spec[k].c,SolnBlk.dWdy[i][j].spec[k].c)*
+	    (SolnBlk.U[i][j].specdata[k].Enthalpy(Temperature)+ SolnBlk.U[i][j].specdata[k].Heatofform());
+        }
       } /* endif */
       /****** Set Primitive *******/
       SolnBlk.W[i][j] = W(SolnBlk.U[i][j]);

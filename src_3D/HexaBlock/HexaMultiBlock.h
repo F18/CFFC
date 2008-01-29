@@ -564,13 +564,11 @@ double Hexa_Multi_Block<HEXA_BLOCK>::L1_Norm_Residual(const int &var) {
   double l1_norm(ZERO);
   
   /* Calculate the L1-norm. Sum the L1-norm for each solution block. */   
-
   for (int nblk = 0; nblk < Number_of_Soln_Blks; ++nblk) {
     if (Block_Used[nblk]) {
       l1_norm += Soln_Blks[nblk].L1_Norm_Residual(var);
     } 
   }  
-
   return (l1_norm);
    
 }
@@ -590,19 +588,17 @@ double Hexa_Multi_Block<HEXA_BLOCK>::L2_Norm_Residual(const int &var) {
   double l2_norm(ZERO);
    
   /* Sum the square of the L2-norm for each solution block. */  
-
   for (int nblk = 0; nblk < Number_of_Soln_Blks; ++nblk) {
     if (Block_Used[nblk]) {
       l2_norm += sqr(Soln_Blks[nblk].L2_Norm_Residual(var));
     } 
   }  
-
-  /* Calculate the L2-norm for all blocks. */  
+  
+/* Calculate the L2-norm for all blocks. */  
 
   l2_norm = sqrt(l2_norm);
   
   return (l2_norm);  
-
 }
 
 /********************************************************
@@ -695,7 +691,40 @@ int Hexa_Multi_Block<HEXA_BLOCK>::ICs(Input_Parameters<typename HEXA_BLOCK::Soln
    /* Initializations complete, return. */
 
    return (error_flag);
-   
+}
+
+/********************************************************
+ * Routine: Evaluate_Limiters                           *
+ *                                                      *
+ * Set conditions to evaluate the limiters for a        *
+ * 1D array of 3D hexahedral multi-block solution       *
+ * blocks.                                              *
+ *                                                      *
+ ********************************************************/
+template<class HEXA_BLOCK>
+void Hexa_Multi_Block<HEXA_BLOCK>::Evaluate_Limiters(void) {
+  for (int nblk = 0; nblk < Number_of_Soln_Blks; ++nblk) {
+    if(Block_Used[nblk]){
+      Soln_Blks[nblk].Evaluate_Limiters();  
+    } 
+  }  
+}
+
+/********************************************************
+ * Routine: Freeze_Limiters                             *
+ *                                                      *
+ * Set conditions to freeze the limiters for a          *
+ * 1D array of 3D hexahedral multi-block solution       *
+ * blocks.                                              *
+ *                                                      *
+ ********************************************************/
+template<class HEXA_BLOCK>
+void Hexa_Multi_Block<HEXA_BLOCK>::Freeze_Limiters(void) {
+  for (int nblk = 0; nblk < Number_of_Soln_Blks; ++nblk) {
+    if(Block_Used[nblk]){
+      Soln_Blks[nblk].Freeze_Limiters();  
+    } 
+  }    
 }
 
 /********************************************************

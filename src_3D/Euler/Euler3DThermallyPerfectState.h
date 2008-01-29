@@ -1201,6 +1201,7 @@ class Euler3D_ThermallyPerfect_cState {
    friend istream& operator >> (istream &in_file,  
                                 Euler3D_ThermallyPerfect_cState &U);
 //@}   
+
 };
 
 /***************************************************************************************

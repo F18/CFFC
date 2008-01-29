@@ -2235,11 +2235,11 @@ extern void Output_Tecplot(Chem2D_Quad_Block &SolnBlk,
 
 extern void Output_Cells_Tecplot(Chem2D_Quad_Block &SolnBlk,
 				 Chem2D_Input_Parameters &IP,
-		                 const int Number_of_Time_Steps,
+				 const int Number_of_Time_Steps,
                                  const double &Time,
                                  const int Block_Number,
                                  const int Output_Title,
-	                         ostream &Out_File);
+				 ostream &Out_File);
 
 extern void Output_Nodes_Tecplot(Chem2D_Quad_Block &SolnBlk,
 		                 const int Number_of_Time_Steps,
@@ -2405,18 +2405,24 @@ extern int Output_Tecplot(Chem2D_Quad_Block *Soln_ptr,
 		          const int Number_of_Time_Steps,
                           const double &Time);
 
+extern int Output_Tecplot_Periodic(Chem2D_Quad_Block *Soln_ptr,
+				   AdaptiveBlock2D_List &Soln_Block_List,
+				   Chem2D_Input_Parameters &Input_Parameters,
+				   const int Number_of_Time_Steps,
+				   const double &Time);
+
 extern int Output_RHS(Chem2D_Quad_Block *Soln_ptr,
 		      AdaptiveBlock2D_List &Soln_Block_List,
 		      Chem2D_Input_Parameters &Input_Parameters,
 		      const int Number_of_Time_Steps,
 		      const double &Time);
 
-int Output_PERTURB(Chem2D_Quad_Block *Soln_ptr,
-		   AdaptiveBlock2D_List &Soln_Block_List,
-		   Chem2D_Input_Parameters &Input_Parameters,
-		   const int Number_of_Time_Steps,
-		   const double &Time,
-		   const CPUTime &CPU_Time);
+extern int Output_PERTURB(Chem2D_Quad_Block *Soln_ptr,
+			  AdaptiveBlock2D_List &Soln_Block_List,
+			  Chem2D_Input_Parameters &Input_Parameters,
+			  const int Number_of_Time_Steps,
+			  const double &Time,
+			  const CPUTime &CPU_Time);
 
 extern int Output_Cells_Tecplot(Chem2D_Quad_Block *Soln_ptr,
                                 AdaptiveBlock2D_List &Soln_Block_List,

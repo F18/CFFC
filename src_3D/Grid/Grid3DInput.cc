@@ -240,7 +240,6 @@ int Grid3D_Input_Parameters::Parse_Next_Input_Control_Parameter(char *code,
 
      } else if (strcmp(Grid_Type, "Bump_Channel_Flow") == 0) {
        i_Grid = GRID_BUMP_CHANNEL_FLOW;
-
      } else if (strcmp(Grid_Type, "Bluff_Body_Burner") == 0) {
         i_Grid = GRID_BLUFF_BODY_BURNER;
 

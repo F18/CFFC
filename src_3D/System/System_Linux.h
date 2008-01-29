@@ -16,6 +16,7 @@
 #include <fstream>
 #include <sys/stat.h> 
 #include <stdexcept>
+#include <unistd.h>
 
 //=====End of Includes=====//
 

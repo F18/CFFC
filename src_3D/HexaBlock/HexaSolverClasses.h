@@ -82,7 +82,7 @@ class HexaSolver_Solution_Data {
 
   // Control Flag 
   int command_flag;
- 
+
   // Constructor
   HexaSolver_Solution_Data(void) {} 
 
@@ -132,3 +132,4 @@ Get_Input_Parameters(char *Input_File_Name, int batch_flag) {
 }
 
 #endif //_HEXA_SOLVER_CLASSES_INCLUDED
+
