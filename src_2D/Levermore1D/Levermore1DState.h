@@ -158,15 +158,15 @@ inline ostream& operator<<(ostream &out, const Levermore1D_weights &A) {
   A.output(out);
   return out;
 }
-inline istream& operator<<(istream &in, const Levermore1D_pState &W) {
+inline istream& operator>>(istream &in, const Levermore1D_pState &W) {
   W.input(in);
   return in;
 }
-inline istream& operator<<(istream &in, const Levermore1D_cState &U) {
+inline istream& operator>>(istream &in, const Levermore1D_cState &U) {
   U.input(in);
   return in;
 }
-inline istream& operator<<(istream &in, const Levermore1D_weights &A) {
+inline istream& operator>>(istream &in, const Levermore1D_weights &A) {
   A.input(in);
   return in;
 }
