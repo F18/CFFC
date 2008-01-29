@@ -316,10 +316,10 @@ const double GaussQuadratureData::GQ2_Weight[2] = {0.5,
 
 //! Abscissae for 3-point Gaussian (i.e. 0.5*(1 - sqrt(3)/sqrt(5)), 0 , 0.5*(1 + 1/sqrt(3)) )
 const double GaussQuadratureData::GQ3_Abscissa[3] = {0.1127016653792583114820736,
-						     0.0 ,
+						     0.5 ,
 						     0.8872983346207416885179264};
-//! Weights for 3-point Gaussian (i.e. 5/9, 8/9, 5/9)
-const double GaussQuadratureData::GQ3_Weight[3] = {5.5555555555555555555556e-1,
-						   8.8888888888888888888889e-1,
-						   5.5555555555555555555556e-1};
+//! Weights for 3-point Gaussian (i.e. 0.5*5/9, 0.5*8/9, 0.5*5/9)
+const double GaussQuadratureData::GQ3_Weight[3] = {2.77777777777778e-1,
+						   4.44444444444444e-1,
+						   2.77777777777778e-1};
 

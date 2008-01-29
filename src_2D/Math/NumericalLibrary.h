@@ -1352,7 +1352,17 @@ double PolynomLineIntegration(const double & N1x, const double & N1y,
  * @brief Collection of absissae and weights 
  *        for n-point Gauss quadrature formula
  * 
- *************************************************/
+ * The integral that can be computed with this data
+ * is defined as follows:
+ * 
+ * \f$ I = \int_{a}^{b} f(x) dx = m \int_{-1}^{+1}f(c+mt) dt \f$
+ * where \f$x=c+mt\f$, \f$c=\frac{1}{2}(b+a)\f$ and \f$m=\frac{1}{2}(b-a)\f$ ,
+ *        'a' and 'b' are the integration limits. \n
+ *
+ * This integral can be writen as follows: \n
+ * \f$ I = m \int_{-1}^{+1}f(c+mt) dt = m \sum_{i=i}^{n} \omega_{i} 
+ *         f(c+mt_{i}) = (b-a) \sum_{i=i}^{n} GQn\_Weight[i]* f(a + GQn\_Abscissa[i]*(b-a)) \f$
+ ***********************************************************************************************/
 class GaussQuadratureData{
 public:
   // Abscissae and weights for 1-point Gaussian method
