@@ -111,6 +111,10 @@ namespace tut
     A1[1] = -B*u*u+log(n*sqrt(B/PI));
     A1[2] = 2.0*B*u;
     A1[3] = -B;
+    if(Levermore1D_Vector::get_length() > 3) {
+      A1[4] = B*B*u;  //anything
+      A1[5] = -B*B; //anything negative
+    }
 
     Levermore1D_pState W(A1);
     Levermore1D_weights A2(W);
@@ -140,6 +144,10 @@ namespace tut
     A1[1] = -B*u*u+log(n*sqrt(B/PI));
     A1[2] = 2.0*B*u;
     A1[3] = -B;
+    if(Levermore1D_Vector::get_length() > 3) {
+      A1[4] = -B*B*u;  //anything
+      A1[5] = -B*B; //anything negative
+    }
 
     Levermore1D_cState U(A1);
     Levermore1D_weights A2(U);

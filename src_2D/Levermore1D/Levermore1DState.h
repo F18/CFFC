@@ -25,6 +25,10 @@ using namespace std;
 #include "../Math/Matrix.h"
 #endif //_MATRIX_INCLUDED
 
+#ifndef _LINEARSYSTEMS_INCLUDED
+#include "../Math/LinearSystems.h"
+#endif //_LINEARSYSTEMS_INCLUDED
+
 #ifndef _GAS_CONSTANTS_INCLUDED
 #include "../Physics/GasConstants.h"
 #endif // _GAS_CONSTANTS_INCLUDED
@@ -80,7 +84,7 @@ class Levermore1D_cState : public Levermore1D_Vector{
   DenseMatrix d2hda2(const Levermore1D_weights &A) const;
   DenseMatrix d2jda2(const Levermore1D_weights &A) const;
   Levermore1D_Vector F(const Levermore1D_weights &A) const;
-
+  int in_sync_with(const Levermore1D_weights &A) const;
 };
 
 /********************************************************

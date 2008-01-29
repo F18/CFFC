@@ -595,9 +595,8 @@ int dUdt_explicitEuler_upwind(Levermore1D_UniformMesh *Soln,
       Update = Soln[i].dUdt*(CFL_Number*Soln[i].dt);
       Soln[i].U += Update;
       Soln[i].A += Soln[i].dUdA_inv * Update;
-      if ( fabs((2.0*Soln[i].A[3]*Soln[i].U[2] + Soln[i].A[2]*Soln[i].U[1])*(Soln[i].U[2]/Soln[i].U[1])) > 1.0e-3 ||
-	   fabs((2.0*Soln[i].A[3]*Soln[i].U[3] + Soln[i].A[2]*Soln[i].U[2] + Soln[i].U[1])/Soln[i].U[1]) > 1.0e-3) {
-	Soln[i].A = Levermore1D_weights(Soln[i].U);
+      if ( ! Soln[i].U.in_sync_with(Soln[i].A) ) {
+	Soln[i].A.set_from_U(Soln[i].U);
 	cout << "%";
       }
       Soln[i].W = Levermore1D_pState(Soln[i].U);
@@ -779,7 +778,6 @@ int dUdt_2stage_2ndOrder_upwind(Levermore1D_UniformMesh *Soln,
                                 const int Limiter_Type,
                                 const int Flux_Function_Type,
 			        const int Local_Time_Stepping) {
-
     int i, n_stage;
     double omega;
     Levermore1D_pState Wl, Wr;
@@ -908,9 +906,8 @@ int dUdt_2stage_2ndOrder_upwind(Levermore1D_UniformMesh *Soln,
 	  Update = Soln[i].dUdt*(CFL_Number*Soln[i].dt);
 	  Soln[i].U = Soln[i].Uo + Update;
 	  Soln[i].A = Soln[i].Ao + Soln[i].dUdA_inv * Update;
-	  if ( fabs((2.0*Soln[i].A[3]*Soln[i].U[2] + Soln[i].A[2]*Soln[i].U[1])*(Soln[i].U[2]/Soln[i].U[1])) > 1.0e-3 ||
-	       fabs((2.0*Soln[i].A[3]*Soln[i].U[3] + Soln[i].A[2]*Soln[i].U[2] + Soln[i].U[1])/Soln[i].U[1]) > 1.0e-3) {
-	    Soln[i].A = Levermore1D_weights(Soln[i].U);
+	  if ( ! Soln[i].U.in_sync_with(Soln[i].A) ) {
+	    Soln[i].A.set_from_U(Soln[i].U);
 	    cout << "%";
 	  }
 	  Soln[i].W = Levermore1D_pState(Soln[i].U);

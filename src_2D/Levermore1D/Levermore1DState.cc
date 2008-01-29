@@ -149,6 +149,30 @@ double Levermore1D_cState::moment(int n, const Levermore1D_weights &A, int real_
 }
 
 /********************************************************
+ * Function: Levermore1D_cState::in_sync_with           *
+ *                                                      *
+ * Use Known relations to determine if U and A are      *
+ * close to being syncronized.                          *
+ *                                                      *
+ ********************************************************/
+int Levermore1D_cState::in_sync_with(const Levermore1D_weights &A) const {
+  double test1(0.0), test2( (*this)[1] );
+
+  for(int i=1; i < length; ++i) {
+    test1 += (double)i * A[i+1] * (*this)[i];
+    test2 += (double)i * A[i+1] * (*this)[i+1];
+  }
+
+  //scale 'em
+
+  test1 = fabs(test1 * ((*this)[2]/(*this)[1]) );
+  test2 = fabs(test2 / (*this)[1] );
+
+  return ( test1 < 1.0e-3 &&
+	   test2 < 1.0e-3 && A[length] < 0.0);
+}
+
+/********************************************************
  * Function: Levermore1D_weights::                      *
  *                integrate_conserved_moment            *
  *                                                      *
@@ -213,25 +237,29 @@ double Levermore1D_weights::integrate_random_moment(int i, double u) const {
  ********************************************************/
 void Levermore1D_weights::set_from_U(const Levermore1D_cState &U) {
 
+  if(m_values[length-1] > 0) {MaxBoltz(U);}
+
   Levermore1D_cState U_temp(*this);
-  Levermore1D_weights A_step;
+  ColumnVector A_step(Levermore1D_Vector::get_length());
   ColumnVector rhs(Levermore1D_Vector::get_length());
-  DenseMatrix d2hda2_inv(Levermore1D_Vector::get_length(),
+  DenseMatrix d2hda2(Levermore1D_Vector::get_length(),
 			 Levermore1D_Vector::get_length());
 
   for(int i=0; i < Levermore1D_Vector::get_length(); ++i) {
     rhs[i] = U[i+1]-U_temp[i+1];
   }
 
-  while(fabs(rhs[1]) > 1e-10) { //fix tolerance later
-    d2hda2_inv =U_temp.d2hda2(*this).pseudo_inverse();
-    A_step = d2hda2_inv*rhs;
+  while(fabs(rhs[length-1]/U[length]) > 1e-10) { //fix tolerance later
+    d2hda2 = U_temp.d2hda2(*this);
+    Solve_LU_Decomposition(d2hda2,rhs,A_step);
     *this += A_step;
-    while( (*this).m_values[get_length()-1] > 0 ) {
-      A_step = A_step*0.5;
+    while( (*this)[get_length()] > 0) {
+      A_step *= 0.5;
       *this -= A_step;
     }
+
     U_temp.set_from_A(*this);
+
     for(int i=0; i < Levermore1D_Vector::get_length(); ++i) {
       rhs[i] = U[i+1]-U_temp[i+1];
     }
