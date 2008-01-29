@@ -139,7 +139,8 @@ double Levermore1D_cState::moment(int n, const Levermore1D_weights &A, int real_
     _moment += term;
   }
 
-  if(fabs(_moment) > 1e-8 * max_term) {
+  if( fabs(A[real_L]) > 1e-8 * fabs(A[real_L-2]) ||   //there must be a better way than this.
+      real_L<=3) {
     return (_moment/(-(double)(real_L-1)*A[real_L]));
   } else {
     return moment(n, A, real_L-2);
