@@ -481,6 +481,8 @@ namespace tut
 
     double B(rho/(2.0*p));
 
+    double reference_moment;
+
     Levermore1D_weights A;
     A.zero();
 
@@ -497,7 +499,8 @@ namespace tut
       sprintf(testname, "Integrate moment %d.", i);
       momentU = U.moment(i,A);
       momentA = A.integrate_conserved_moment(i);
-      ensure_distance(testname, momentU, momentA, fabs(momentU)*1e-10+1e-10);
+      if(i%2 == 0) reference_moment = fabs(momentU);
+      ensure_distance(testname, momentU, momentA, reference_moment*1e-10+1e-10);
     }
 
   }
