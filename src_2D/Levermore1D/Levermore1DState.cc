@@ -7,7 +7,7 @@
 /********************************************************
  * Static member variables                              *
  ********************************************************/
-double Levermore1D_weights::particle_mass = 1.0e-20; //something small?
+double Levermore1D_weights::particle_mass = (MOLE_WT_ZB/(AVOGADRO*THOUSAND));
 
 /********************************************************
  * Function: Levermore1D_pState::set_from_U             *
