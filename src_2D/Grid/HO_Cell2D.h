@@ -16,6 +16,7 @@ using namespace std;
 /* Include CFFC header files */
 #include "../Math/Math.h"	/* Include math macro header files. */
 #include "../Math/Vector2D.h"   /* Include vector header files. */
+#include "../HighOrderReconstruction/TaylorDerivatives.h"   /* Include Taylor derivatives container header files. */
 
 
 /* Define the classes. */
@@ -32,6 +33,7 @@ using namespace std;
  *     A        -- Return the area of the cell.
  *     setloc   -- Set cell center location (position).
  *     setindex -- Set cell (i,j) indices.
+ *     GeomCoeff-- Area integrals of geometric moments
  *
  * Member operators
  *      C -- a cell
@@ -45,10 +47,22 @@ using namespace std;
  */
 class Cell2D_HO{
 public:
+
+  //! @name Public data types.
+  //@{
+  //! The type of the container for all geometric moments
+  typedef TaylorDerivativesContainer<TwoD,double> GeometricMoments;
+  //! The type of an individual geometric moment
+  typedef GeometricMoments::Derivative GeomMoment;
+  //@}
+
+  //! @name Public variables.
+  //@{
   Vector2D     Xc;    //!< Location of cell center.
   int        I, J;    //!< (i,j) indices for cell.
   double        A;    //!< Cell area.
-		  
+  //@}
+
 
   //! @name Creation and copy constructors.
   //@{
@@ -63,6 +77,9 @@ public:
 
   //! Constructor with centroid locations
   Cell2D_HO(const double &xx, const double &yy);
+
+  //! Constructor with reconstruction order specified
+  Cell2D_HO(const int &OrderOfReconstruction);
   //@}
     
   //! @name Set cell center location.
@@ -80,6 +97,29 @@ public:
   void setindex(const int II, const int JJ);
   //@}
 
+  //! @name Field access functions.
+  //@{
+  //! Get access to the array of geometric coefficients
+  const GeometricMoments & GeomCoeff(void) const { return _GeomCoeff_;}
+  //! Get access to the array of geometric coefficients
+  GeometricMoments & GeomCoeff(void) {return _GeomCoeff_;}
+  //! Get access to the value of the geometric coefficient with x-power 'p1' and y-power 'p2'
+  const double & GeomCoeffValue(const int &p1, const int &p2) const {return _GeomCoeff_(p1,p2);}
+  //! Get access to the value of the geometric coefficient with x-power p1 and y-power p2
+  double & GeomCoeffValue(const int &p1, const int &p2) {return _GeomCoeff_(p1,p2);}
+  //! Get access to the value of the geometric coefficient which is store in the 'position' place
+  const double & GeomCoeffValue(const int &position) const {return _GeomCoeff_(position,true,true,true).D();}
+  //! Get access to the value of the geometric coefficient which is store in the 'position' place
+  double & GeomCoeffValue(const int &position){return _GeomCoeff_(position,true,true,true).D();}
+  //! Get access to the geometric coefficient (i.e. powers and values) which is store in the 'position' place
+  GeomMoment & GeomCoeff(const int &position){return _GeomCoeff_(position,true,true,true);}
+  //@}
+
+  //! Set the container of the cell geometric coefficients for usage.
+  void SetGeomCoeffContainerSize(const int OrderOfReconstruction){
+    return _GeomCoeff_.GenerateContainer(OrderOfReconstruction);
+  }
+
   //! @name Relational operators.
   //@{
   friend bool operator ==(const Cell2D_HO &Cell1, const Cell2D_HO &Cell2);
@@ -93,13 +133,15 @@ public:
   //@}
 
 private:    
+  //! Area integrals of cell geometric moments with respect to the cell centroid 
+  GeometricMoments _GeomCoeff_;  // 
 };
 
 
 /*!
  * Default constructor
  */
-inline Cell2D_HO::Cell2D_HO(void): Xc(ONE), I(0), J(0), A(ONE)
+inline Cell2D_HO::Cell2D_HO(void): Xc(ONE), I(0), J(0), A(ONE), _GeomCoeff_(0)
 {
   // 
 }
@@ -108,7 +150,7 @@ inline Cell2D_HO::Cell2D_HO(void): Xc(ONE), I(0), J(0), A(ONE)
  * Copy constructor
  */
 inline Cell2D_HO::Cell2D_HO(const Cell2D_HO &Cell):
-  Xc(Cell.Xc), I(Cell.I), J(Cell.J), A(Cell.A)
+  Xc(Cell.Xc), I(Cell.I), J(Cell.J), A(Cell.A), _GeomCoeff_(Cell._GeomCoeff_)
 {
   // 
 }
@@ -116,7 +158,7 @@ inline Cell2D_HO::Cell2D_HO(const Cell2D_HO &Cell):
 /*!
  * Constructor with centroid location
  */
-inline Cell2D_HO::Cell2D_HO(const Vector2D &V): Xc(V), I(0), J(0), A(ONE)
+inline Cell2D_HO::Cell2D_HO(const Vector2D &V): Xc(V), I(0), J(0), A(ONE), _GeomCoeff_(0)
 {
   // 
 }
@@ -125,11 +167,24 @@ inline Cell2D_HO::Cell2D_HO(const Vector2D &V): Xc(V), I(0), J(0), A(ONE)
  * Constructor with centroid locations
  */
 inline Cell2D_HO::Cell2D_HO(const double &xx, const double &yy):
-  I(0), J(0), A(ONE)
+  I(0), J(0), A(ONE), _GeomCoeff_(0)
 {
   Xc.x = xx; 
   Xc.y = yy;
 }
+
+/*!
+ * Constructor with reconstruction order.
+ * The reconstruction order determines the size of the geometric moments container.
+ * If high-order reconstructions of different orders are used,
+ * the OrderOfReconstruction should be the highest value of them.
+ */
+inline Cell2D_HO::Cell2D_HO(const int &OrderOfReconstruction):
+  Xc(ONE), I(0), J(0), A(ONE),
+  _GeomCoeff_(OrderOfReconstruction)
+{
+  // 
+};
 
 /*!
  * Set cell center location
@@ -185,7 +240,7 @@ inline void Cell2D_HO::setindex(const int II, const int JJ) {
  */
 inline bool operator ==(const Cell2D_HO &Cell1,
 			const Cell2D_HO &Cell2) {
-  return (Cell1.Xc == Cell2.Xc && Cell1.A == Cell2.A);
+  return (Cell1.Xc == Cell2.Xc && Cell1.A == Cell2.A && Cell1._GeomCoeff_ == Cell2._GeomCoeff_);
 }
 
 /*!
@@ -193,7 +248,7 @@ inline bool operator ==(const Cell2D_HO &Cell1,
  */
 inline bool operator !=(const Cell2D_HO &Cell1,
 			const Cell2D_HO &Cell2) {
-  return (Cell1.Xc != Cell2.Xc || Cell1.A != Cell2.A);
+  return (Cell1.Xc != Cell2.Xc || Cell1.A != Cell2.A || Cell1._GeomCoeff_ != Cell2._GeomCoeff_);
 }
 
 /*!
@@ -203,8 +258,9 @@ inline ostream &operator << (ostream &out_file,
 			     const Cell2D_HO &Cell) {
   out_file << " " << Cell.I << " " << Cell.J << Cell.Xc;
   out_file.setf(ios::scientific);
-  out_file << " " << Cell.A;
+  out_file << " " << Cell.A << "\n";
   out_file.unsetf(ios::scientific);
+  out_file << " " << Cell.GeomCoeff();
   return (out_file);
 }
 
@@ -220,6 +276,7 @@ inline istream &operator >> (istream &in_file,
   in_file.setf(ios::skipws);
   in_file >> Cell.A;
   in_file.unsetf(ios::skipws);
+  in_file >> Cell.GeomCoeff();
   return (in_file);
 }
 
