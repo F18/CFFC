@@ -87,7 +87,7 @@ public:
   //! Get the total number of Gauss quadrate points used for flux evaluation
   int NumGQPoints(void) const {return N_GQP*N_SubIntervals; }
   //! Get the total number of Gauss quadrate points used for contour integration
-  int NumGQPoints_ContourIntegral(void) const {return N_GQP*N_SubIntervals; }
+  int NumGQPoints_ContourIntegral(void) const {return 3*N_SubIntervals; }
 
   //! Get the array of subinterval length
   const double* IntLength(void) const {return SubIntervalLength; }
@@ -274,7 +274,7 @@ inline std::istream &operator >> (std::istream &is, Spline2DInterval_HO &S) {
   }
   is.unsetf(ios::skipws);
   
-  // Read the Gauss quadrature points and the normals used for flux evaluation
+  // Read the Gauss quadrature points an		  test_HO_Spline2D.cc \d the normals used for flux evaluation
   for (i=1; i<=S.NumGQPoints(); ++i){
     is >> S.GQPoint(i) ;
     is >> S.NormalGQPoint(i);
@@ -283,7 +283,9 @@ inline std::istream &operator >> (std::istream &is, Spline2DInterval_HO &S) {
   // Read the Gauss quadrature points and the y-coordinate derivatives used for contour integration
   for (i=1; i<=S.NumGQPoints_ContourIntegral(); ++i){
     is >> S.GQPointContourIntegral(i) ;
+    is.setf(ios::skipws);
     is >> S.dYdS(i);
+    is.unsetf(ios::skipws);
   }
   
   return is;
@@ -305,9 +307,9 @@ inline double Spline2DInterval_HO::IntegratePolynomialTerm(const Vector2D & Cent
 
   for (int i=0; i<NumOfSubIntervals(); ++i){
     // Calculate the contribution of each subinterval
-    Result +=  IntLength(i)*( GaussQuadratureData::GQ3_Weight[0] * BasicTermIntegration(Centroid,OrderX,OrderY,3*i + 1) + 
-			      GaussQuadratureData::GQ3_Weight[1] * BasicTermIntegration(Centroid,OrderX,OrderY,3*i + 2) +
-			      GaussQuadratureData::GQ3_Weight[2] * BasicTermIntegration(Centroid,OrderX,OrderY,3*i + 3) );
+    Result +=  IntLength(i+1)*( GaussQuadratureData::GQ3_Weight[0] * BasicTermIntegration(Centroid,OrderX,OrderY,3*i + 1) + 
+				GaussQuadratureData::GQ3_Weight[1] * BasicTermIntegration(Centroid,OrderX,OrderY,3*i + 2) +
+				GaussQuadratureData::GQ3_Weight[2] * BasicTermIntegration(Centroid,OrderX,OrderY,3*i + 3) );
   }
 
   return Result/(OrderX + 1.0);
