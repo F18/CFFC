@@ -737,7 +737,7 @@ namespace tut
     set_test_name("Circle area");
 
     // Accepted tolerance
-    tol = 1.0e-2;
+    tol = 5.0e-2;
 
     Radius = 100.0;
     double CircleArea = 0.0;
@@ -768,7 +768,7 @@ namespace tut
     dYdS = cos(alpha);
 
     ensure_distance("GQP1", SInfo.GQPointContourIntegral(1), GQP1, AcceptedError(GQP1,1.0e-12));
-    ensure_distance("dYdS 1", SInfo.dYdS(1), dYdS, AcceptedError(dYdS,1.0e-7));
+    ensure_distance("dYdS 1", SInfo.dYdS(1), dYdS, AcceptedError(dYdS,1.0e-5));
 
     // GQP2
     l = L*GaussQuadratureData::GQ3_Abscissa[1];
@@ -791,17 +791,6 @@ namespace tut
 
     ensure_distance("GQP3", SInfo.GQPointContourIntegral(3), GQP3, AcceptedError(GQP3,1.0e-12));
     ensure_distance("dYdS 3", SInfo.dYdS(3), dYdS, AcceptedError(dYdS,1.0e-5));
-
-    double Error;
-
-    Error = fabs(SInfo.IntLength(1) - PI*Radius)/(1.0 + PI*Radius);
-
-    Print_(Error);
-
-    Error = fabs(SInfo1.IntLength(1) - PI*Radius)/(1.0 + PI*Radius);
-    Print_(Error)
-
-      
 
     // Check results
     ensure_distance("CircleArea",CircleArea,AnalyticResult,AcceptedError(AnalyticResult,tol));

@@ -345,6 +345,7 @@ void Spline2DInterval_HO::DetermineSubIntervalProperties(const Spline2D_HO & Sup
     }//endwhile
   }//endfor
 
+  // Deallocate the memory
   delete [] Length; Length = NULL;
   delete [] PathLength; PathLength = NULL;
   delete [] GQP_Abscissa; GQP_Abscissa = NULL;
