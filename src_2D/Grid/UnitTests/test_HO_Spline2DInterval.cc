@@ -835,6 +835,46 @@ namespace tut
     ensure_distance("Centroid", Centroid, AnalyticCentroid, AcceptedError(AnalyticCentroid,tol));
 
   }
+
+  /* Test 18: */
+  template<>
+  template<>
+  void Spline2DInterval_HO_object::test<18>()
+  {
+
+    set_test_name("Circle area for splines with sharp corners");
+
+    // Accepted tolerance
+    tol = 5.0e-7;
+
+    Radius = 100.0;
+    double CircleArea = 0.0;
+
+    // Analytic result
+    AnalyticResult = PI * Radius * Radius;
+
+    // Create circle
+    S.Create_Spline_Circular_Arc(Vector2D(0.0,0.0),Radius,0.0,180.0,400);
+    S1.Create_Spline_Circular_Arc(Vector2D(0.0,0.0),Radius,180.0,360.0,400);
+
+    // Switch some of the smooth control points to sharp corners
+    S.tp[100] = SPLINE2D_POINT_SHARP_CORNER;
+    S.tp[200] = SPLINE2D_POINT_SHARP_CORNER;
+    S.tp[300] = SPLINE2D_POINT_SHARP_CORNER;
+
+    S1.tp[100] = SPLINE2D_POINT_SHARP_CORNER;
+    S1.tp[200] = SPLINE2D_POINT_SHARP_CORNER;
+    S1.tp[300] = SPLINE2D_POINT_SHARP_CORNER;
+
+    // Initialize intervals
+    SInfo.InitializeInterval(S,S.Xp[0],S.Xp[S.np-1],1);
+    SInfo1.InitializeInterval(S1,S1.Xp[0],S1.Xp[S1.np-1],1);
+
+    CircleArea = SInfo.AreaContribution() + SInfo1.AreaContribution();
+
+    // Check results
+    ensure_distance("CircleArea",CircleArea,AnalyticResult,AcceptedError(AnalyticResult,tol));
+  }
  
 }
 

@@ -156,19 +156,84 @@ void Spline2DInterval_HO::deallocate(void){
 void Spline2DInterval_HO::InitializeInterval(const Spline2D_HO & SupportCurve, const Vector2D & StartPoint,
 					     const Vector2D & EndPoint, const int &NumGQPoints){
 
-  int num_sub_intervals(1);
 
-  if (StartPoint != EndPoint){
+  int num_sub_intervals(1), i;
+  int il_SP, ir_SP, il_EP, ir_EP; // left and right indexes for StartPoint(SP) and EndPoint(EP)
+  double s_SP, s_EP;		  // pathlength for StartPoint(SP) and EndPoint(EP)
+  vector<int> IndexSharpCP;	  // Index for the sharp control points
 
-    // Allocate memory 
-    allocate(NumGQPoints, num_sub_intervals);
+  // Determine the pathlengths
+  s_SP = SupportCurve.getS(StartPoint);
+  s_EP = SupportCurve.getS(EndPoint);
 
-    // no sharp control points between StartPoint and EndPoint
-    DetermineSubIntervalProperties(SupportCurve,StartPoint,EndPoint,1);	// Obs. "1" -- first interval
-    
-  } else {			// ERROR !!!
+  // == check if the StartPoint and EndPoint are distinguishable based on the pathlength coordinate.
+  if (s_SP == s_EP){
+    // ERROR !!!
     throw runtime_error("Spline2DInterval_HO::InitializeInterval() ERROR! Zero length interval!\n");
-  } // endif
+  }
+
+  // Determine the corresponding indexes
+  SupportCurve.find_subinterval(s_SP, il_SP, ir_SP);
+  SupportCurve.find_subinterval(s_EP, il_EP, ir_EP);
+
+  // ==== Determine the number of subintervals  ====
+  // These entities are spline segments which don't have any sharp control points in between
+  // Check whether there are spline control points between StartPoint and EndPoint
+  // and whether they are far enough apart numerically to generate a sub-interval.
+  if ( s_SP < s_EP){
+    for(i=il_SP; i<=ir_EP; ++i){
+      if( ((SupportCurve.sp[i] - s_SP)*(SupportCurve.sp[i] - s_EP) < 0.0 ) &&
+	  (fabs(s_SP - SupportCurve.sp[i])/(1.0 + fabs(SupportCurve.sp[i])) >= EpsilonTol::epsilon_relative) &&
+	  (fabs(s_EP - SupportCurve.sp[i])/(1.0 + fabs(SupportCurve.sp[i])) >= EpsilonTol::epsilon_relative) ){
+	
+	if(SupportCurve.tp[i] == SPLINE2D_POINT_SHARP_CORNER){
+	  IndexSharpCP.push_back(i);
+	  ++num_sub_intervals;	// increase the number of sub-intervals
+	}//endif
+	
+      }//endif
+    }//endfor
+  } else {
+    for(i=ir_SP; i>=il_EP; --i){
+      if( (SupportCurve.sp[i] - s_SP)*(SupportCurve.sp[i] - s_EP) < 0.0 &&
+	  (fabs(s_SP - SupportCurve.sp[i])/(1.0 + fabs(SupportCurve.sp[i])) >= EpsilonTol::epsilon_relative) &&
+	  (fabs(s_EP - SupportCurve.sp[i])/(1.0 + fabs(SupportCurve.sp[i])) >= EpsilonTol::epsilon_relative) ){
+	
+	if(SupportCurve.tp[i] == SPLINE2D_POINT_SHARP_CORNER){
+	  IndexSharpCP.push_back(i);
+	  ++num_sub_intervals;	// increase the number of sub-intervals
+	}//endif
+	
+      }//endif
+    }//endfor
+  }//endif ( s_SP < s_EP)
+  
+  // Allocate memory 
+  allocate(NumGQPoints, num_sub_intervals);
+
+  // Compute the geometric proprieties for each sub-interval
+  switch(IndexSharpCP.size()){
+  case 0:			// no sharp control points between StartPoint and EndPoint
+    DetermineSubIntervalProperties(SupportCurve,StartPoint,EndPoint,1);	// Obs. "1" -- first interval
+    break;
+
+  case 1: 			// 1 sharp control point between StartPoint and EndPoint
+    // Obs. "1" -- first interval
+    DetermineSubIntervalProperties(SupportCurve,StartPoint,SupportCurve.Xp[IndexSharpCP[0]],1);	
+    // Obs. "2" -- second interval
+    DetermineSubIntervalProperties(SupportCurve,SupportCurve.Xp[IndexSharpCP[0]],EndPoint,2);
+    break;
+
+  default:			// more than 1 sharp control point
+    DetermineSubIntervalProperties(SupportCurve,StartPoint,SupportCurve.Xp[IndexSharpCP[0]],1);
+    DetermineSubIntervalProperties(SupportCurve,SupportCurve.Xp[IndexSharpCP[IndexSharpCP.size()-1]],
+				   EndPoint,num_sub_intervals);
+
+    for(i=2; i<num_sub_intervals; ++i){
+      DetermineSubIntervalProperties(SupportCurve,SupportCurve.Xp[IndexSharpCP[i-2]],
+				     SupportCurve.Xp[IndexSharpCP[i-1]],i);
+    }
+  } // endswitch
 }
 
 /*!
@@ -351,30 +416,6 @@ void Spline2DInterval_HO::DetermineSubIntervalProperties(const Spline2D_HO & Sup
   delete [] GQP_Abscissa; GQP_Abscissa = NULL;
   delete [] GQP_ContourInt_Abscissa; GQP_ContourInt_Abscissa = NULL;
 }
-
-/*!
- * Update all interval properties with the input parameters 
- */
-void Spline2DInterval_HO::UpdateInterval(const Spline2D_HO & SupportCurve,
-					 const Vector2D & StartPoint, const Vector2D & EndPoint,
-					 const int &NumGQPoints){
-
-  // Determine the number of sub-intervals
-  int num_sub_intervals(1);
-
-  if (StartPoint != EndPoint){
-
-    // Allocate memory if required
-    allocate(NumGQPoints, num_sub_intervals);
-    
-    // Determine the interval properties when there are no sharp control points between StartPoint and EndPoint
-    DetermineSubIntervalProperties(SupportCurve,StartPoint,EndPoint,1);	// Obs. "1" -- first interval
-
-  } else {			// ERROR !!!
-    throw runtime_error("Spline2DInterval_HO::UpdateInterval() ERROR! Zero length interval!");
-  } // endif
-}
-
 
 /*!
  * Compute the contribution of an individual Gauss quadrature point to 

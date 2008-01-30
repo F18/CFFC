@@ -315,4 +315,14 @@ inline double Spline2DInterval_HO::IntegratePolynomialTerm(const Vector2D & Cent
   return Result/(OrderX + 1.0);
 }
 
+/*!
+ * Update all interval properties with the input parameters 
+ */
+inline void Spline2DInterval_HO::UpdateInterval(const Spline2D_HO & SupportCurve,
+						const Vector2D & StartPoint, const Vector2D & EndPoint,
+						const int &NumGQPoints){
+  InitializeInterval(SupportCurve,StartPoint,EndPoint,NumGQPoints);
+}
+
+
 #endif /* _HO_SPLINE2DINTERVAL_INCLUDED  */
