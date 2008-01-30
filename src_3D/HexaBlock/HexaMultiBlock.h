@@ -628,44 +628,6 @@ double Hexa_Multi_Block<HEXA_BLOCK>::Max_Norm_Residual(const int &var) {
 }
 
 /********************************************************
- * Routine: Evaluate_Limiters                           *
- *                                                      *
- * Set conditions to evaluate the limiters for a        *
- * 1D array of 3D hexahedral multi-block solution       *
- * blocks.                                              *
- *                                                      *
- ********************************************************/
-template<class HEXA_BLOCK>
-void Hexa_Multi_Block<HEXA_BLOCK>::Evaluate_Limiters(void) {
-
-  for (int nblk = 0; nblk < Number_of_Soln_Blks; ++nblk) {
-    if(Block_Used[nblk]){
-      Soln_Blks[nblk].Evaluate_Limiters();  
-    } 
-  }  
-
-}
-
-/********************************************************
- * Routine: Freeze_Limiters                             *
- *                                                      *
- * Set conditions to freeze the limiters for a          *
- * 1D array of 3D hexahedral multi-block solution       *
- * blocks.                                              *
- *                                                      *
- ********************************************************/
-template<class HEXA_BLOCK>
-void Hexa_Multi_Block<HEXA_BLOCK>::Freeze_Limiters(void) {
-
-  for (int nblk = 0; nblk < Number_of_Soln_Blks; ++nblk) {
-    if(Block_Used[nblk]){
-      Soln_Blks[nblk].Freeze_Limiters();  
-    } 
-  }    
-
-}
-
-/********************************************************
  * Routine: ICs                                         *
  *                                                      *
  * Assigns initial conditions and data to the           *

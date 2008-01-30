@@ -130,7 +130,7 @@ class NKS_Input_Parameters{
     Physical_Time_CFL_Number = 1.0 ;
     Physical_Time_Step = 0.0;
     Maximum_Number_of_DTS_Steps = 0;
-    Time_Accurate_Plot_Frequency = 1e9;
+    Time_Accurate_Plot_Frequency = 10000000;
     Total_Physical_Time = 0.0;
 
     Finite_Time_Step = true;
