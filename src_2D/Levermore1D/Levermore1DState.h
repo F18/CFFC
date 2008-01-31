@@ -85,6 +85,8 @@ class Levermore1D_cState : public Levermore1D_Vector{
   DenseMatrix d2jda2(const Levermore1D_weights &A) const;
   Levermore1D_Vector F(const Levermore1D_weights &A) const;
   int in_sync_with(const Levermore1D_weights &A) const;
+  int find_real_L(const Levermore1D_weights &A) const;
+
 };
 
 /********************************************************

@@ -118,13 +118,35 @@ void Levermore1D_pState::set_from_A(const Levermore1D_weights &A) {
  * Return value of velocity moment              .       *
  *                                                      *
  ********************************************************/
+int Levermore1D_cState::find_real_L(const Levermore1D_weights &A) const {
+  double moment_test(0.0), min_diff(MILLION*m_values[length-1]);
+  int real_L(3);
+
+  for(int i=3; i <= length; i = i+2) {
+    moment_test = moment(length-1,A,i);
+    if( fabs(m_values[length-1]-moment_test) < min_diff) {
+      min_diff = fabs(m_values[length-1]-moment_test);
+      real_L = i;
+    }
+  }
+  return real_L;
+}
+
+/********************************************************
+ * Function: Levermore1D_cState::moment                 *
+ *                                                      *
+ * Return value of velocity moment              .       *
+ *                                                      *
+ ********************************************************/
 double Levermore1D_cState::moment(int n, const Levermore1D_weights &A) const {
   if(n<length) return m_values[n];
-  //else
-  return moment(n,A,length);
+  //else determine real_L (ie if the higher order coefficients are zero or not)
+  return moment(n,A,find_real_L(A));
 }
 
 double Levermore1D_cState::moment(int n, const Levermore1D_weights &A, int real_L) const {
+  if(n<length) return m_values[n];
+
   double _moment(0.0); //underscore to differentiate from function name
   double term, max_term(0.0);
 
@@ -139,13 +161,16 @@ double Levermore1D_cState::moment(int n, const Levermore1D_weights &A, int real_
     _moment += term;
   }
 
-  if( fabs(A[real_L]) > 1e-8 * fabs(A[real_L-2]) ||   //there must be a better way than this.
-      real_L<=3) {
-    return (_moment/(-(double)(real_L-1)*A[real_L]));
-  } else {
-    return moment(n, A, real_L-2);
-  }
+  _moment /= (-(double)(real_L-1)*A[real_L]);
 
+//  if(n%2==0 && _moment < 0.0) {
+//    cout << endl << "error!  Used real_L = " << real_L << endl;
+//    cout << "U = " << (*this) << endl << "A = " << A << endl;
+//    cout << "Moment #" << n << " = " << _moment << endl;
+//    cout << "Moment using L = 3 is " << moment(n,A,3) << endl;
+//  }
+
+  return _moment;
 }
 
 /********************************************************
@@ -288,12 +313,21 @@ void Levermore1D_weights::set_from_W(const Levermore1D_pState &W) {
  ********************************************************/
 DenseMatrix Levermore1D_cState::d2hda2(const Levermore1D_weights &A) const {
 
+  int real_L;
   DenseMatrix dm(Levermore1D_Vector::get_length(),
 		 Levermore1D_Vector::get_length() );
 
+  real_L = find_real_L(A);
+
   for(int i = 0; i < Levermore1D_Vector::get_length(); ++i) {
     for(int j = 0; j < Levermore1D_Vector::get_length(); ++j) {
-      dm(i,j) = moment(i+j,A);
+
+      if(i+j < length) {
+	dm(i,j) = m_values[i+j];
+      } else {
+	dm(i,j) = moment(i+j,A,real_L);
+      }
+
     }
   }
   return dm;
