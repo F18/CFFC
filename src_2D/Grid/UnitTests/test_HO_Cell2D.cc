@@ -167,6 +167,51 @@ namespace tut
     Check_Input_Output_Operator(Cell);
   }
 
+  /* Test 4:*/
+  template<>
+  template<>
+  void Cell2D_HO_object::test<4>()
+  {
+
+    set_test_name("Copy constructor");
+
+    Cell2D_HO Cell(3);
+
+    // Initialize Cell
+    Cell.I = 1; Cell.J = 2; Cell.A = 12.1212;
+    Cell.Xc.x = 0.1212; Cell.Xc.y = 1.2323;
+    for(int i = 0; i<=Cell.GeomCoeff().LastElem(); ++i){
+      Cell.GeomCoeffValue(i) = (i+3)*0.34;
+    }
+
+    Cell2D_HO Cell_Copy(Cell);
+
+    ensure_equals("Copy constructor", Cell_Copy, Cell);
+  }
+
+  /* Test 5:*/
+  template<>
+  template<>
+  void Cell2D_HO_object::test<5>()
+  {
+
+    set_test_name("Assignment operator");
+
+    Cell2D_HO Cell(3), Cell_Copy;
+
+    // Initialize Cell
+    Cell.I = 1; Cell.J = 2; Cell.A = 12.1212;
+    Cell.Xc.x = 0.1212; Cell.Xc.y = 1.2323;
+    for(int i = 0; i<=Cell.GeomCoeff().LastElem(); ++i){
+      Cell.GeomCoeffValue(i) = (i+3)*0.34;
+    }
+
+    Cell_Copy = Cell;
+
+    ensure_equals("operator =", Cell_Copy, Cell);
+  }
+
+
 
 
 }

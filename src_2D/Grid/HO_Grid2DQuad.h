@@ -20,6 +20,7 @@ using namespace std;
 #include "../CFD/CFD.h"		    // Include CFD header file
 #include "../Math/Vector2D.h"	    // Include 2D vector header file
 #include "HO_Spline2D.h"            // Include high-order 2D spline header file
+#include "HO_Spline2DInterval.h"    // Include high-order 2D spline interval header file
 #include "HO_Cell2D.h"		    // Include 2D cell header file
 #include "HO_Node2D.h"		    // Include 2D node header file
 #include "../MPI/MPI.h"		    // Include MPI header file
@@ -219,8 +220,10 @@ public:
   //! @name Defined datatypes
   //@{
   typedef Node2D_HO NodeType;
+  typedef Cell2D_HO::GeometricMoments GeometricMoments;
+  typedef GeometricMoments::Derivative  GeomMoment;
   //@}
-
+  
   //! @name Mesh indexes
   //@{ 
   int                   NNi, //!< Number of nodes in i-direction (zeta-direction).
@@ -258,6 +261,12 @@ public:
                 BndSouthSpline, //!< South boundary 2D spline.
                 BndEastSpline,  //!< East boundary 2D spline.
                 BndWestSpline;  //!< West boundary 2D spline.
+
+  Spline2DInterval_HO *BndNorthSplineInfo, //!< North boundary 2D spline info.
+                      *BndSouthSplineInfo, //!< South boundary 2D spline info.
+                      *BndEastSplineInfo,  //!< East boundary 2D spline info.
+                      *BndWestSplineInfo;  //!< West boundary 2D spline info.
+
   double                SminN,  //!< Minimum value of north face pathlength.
                         SmaxN,  //!< Maximum value of north face pathlength.
                         SminS,  //!< Minimum value of south face pathlength.
@@ -304,10 +313,16 @@ public:
   //! @name Memory allocation and deallocation
   //@{
   //! Allocate memory for structured quadrilateral grid block.
-  void allocate(const int Ni, const int Nj, const int Ng);
+  void allocate(const int &Ni, const int &Nj, const int &Ng);
+
+  //! Allocate memory for structured quadrilateral grid block with reconstruction order.
+  void allocate(const int &Ni, const int &Nj, const int &Ng, const int &HighestRecOrder);
 
   //! Deallocate memory for structured quadrilateral grid block.
   void deallocate(void);
+
+  //! Deallocate memory for spline info(s) of structured quadrilateral grid block.
+  void deallocateBndSplineInfo(void);
   //@}
 
   //! @name Calculate cell centroid.
@@ -399,6 +414,21 @@ public:
 
   Vector2D nfaceW(const Cell2D_HO &Cell) const;
   Vector2D nfaceW(const int ii, const int jj) const;
+  //@}
+
+  //! @name Functions to get Gauss quadrature points for each straight cell face
+  //@{
+  void getGaussQuadPointsFaceN(const Cell2D_HO &Cell, Vector2D * GQPoints, const int & NumberOfGQPs) const;
+  void getGaussQuadPointsFaceN(const int &ii, const int &jj, Vector2D * GQPoints, const int & NumberOfGQPs) const;
+
+  void getGaussQuadPointsFaceS(const Cell2D_HO &Cell, Vector2D * GQPoints, const int & NumberOfGQPs) const;
+  void getGaussQuadPointsFaceS(const int &ii, const int &jj, Vector2D * GQPoints, const int & NumberOfGQPs) const;
+
+  void getGaussQuadPointsFaceE(const Cell2D_HO &Cell, Vector2D * GQPoints, const int & NumberOfGQPs) const;
+  void getGaussQuadPointsFaceE(const int &ii, const int &jj, Vector2D * GQPoints, const int & NumberOfGQPs) const;
+
+  void getGaussQuadPointsFaceW(const Cell2D_HO &Cell, Vector2D * GQPoints, const int & NumberOfGQPs) const;
+  void getGaussQuadPointsFaceW(const int &ii, const int &jj, Vector2D * GQPoints, const int & NumberOfGQPs) const;
   //@}
 
   //! @name Bilinear interplation (Zingg & Yarrow) and diamond path reconstruction.
@@ -693,6 +723,9 @@ private:
   //! Switch for computing with high-order or low-order accuracy the geometric properties 
   static int HighOrderBoundaryRepresentation;
 
+  //! Switch for applying or not the smoothing subroutine
+  static int Smooth_Quad_Block_Flag; 
+
   //! @name Flags to define different levels of mesh update.
   //@{
   //! Controls the update of the geometric properties of the interior cells.
@@ -708,6 +741,28 @@ private:
 
 };
 
+/*!
+ * Allocate memory.
+ * This is a short version of the main allocation subroutine.
+ * To get high-order one should always use the main allocation subroutine.
+ *
+ * \param Ni number of cells in i-direction
+ * \param Nj number of cells in j-direction
+ * \param Ng number of ghost cells
+ */
+inline void Grid2D_Quad_Block_HO::allocate(const int &Ni, const int &Nj, const int &Ng) {
+  return allocate(Ni,Nj,Ng,0);
+}
+
+/*!
+ * Deallocate spline info memory.
+ */
+inline void Grid2D_Quad_Block_HO::deallocateBndSplineInfo(void) {
+  delete []BndNorthSplineInfo; BndNorthSplineInfo = NULL;
+  delete []BndSouthSplineInfo; BndSouthSplineInfo = NULL;
+  delete []BndEastSplineInfo;  BndEastSplineInfo = NULL;
+  delete []BndWestSplineInfo;  BndWestSplineInfo = NULL;
+}
 
 /*!
  * Get centroid of Cell
@@ -1149,6 +1204,225 @@ inline Vector2D Grid2D_Quad_Block_HO::nfaceW(const int ii, const int jj) const {
 	    abs(Node[ii][jj].X - Node[ii][jj+1].X));
   } else {
     return ihat;
+  }
+}
+
+/*!
+ * Get the number of Gauss quadrature points for the North face.
+ */
+inline void Grid2D_Quad_Block_HO::getGaussQuadPointsFaceN(const Cell2D_HO &Cell,
+							  Vector2D * GQPoints,
+							  const int & NumberOfGQPs) const{
+  return getGaussQuadPointsFaceN(Cell.I, Cell.J, GQPoints, NumberOfGQPs);
+}
+
+/*!
+ * Get the number of Gauss quadrature points for the South face.
+ */
+inline void Grid2D_Quad_Block_HO::getGaussQuadPointsFaceS(const Cell2D_HO &Cell,
+							  Vector2D * GQPoints,
+							  const int & NumberOfGQPs) const{
+  return getGaussQuadPointsFaceS(Cell.I, Cell.J, GQPoints, NumberOfGQPs);
+}
+
+/*!
+ * Get the number of Gauss quadrature points for the East face.
+ */
+inline void Grid2D_Quad_Block_HO::getGaussQuadPointsFaceE(const Cell2D_HO &Cell,
+							  Vector2D * GQPoints,
+							  const int & NumberOfGQPs) const {
+  return getGaussQuadPointsFaceE(Cell.I, Cell.J, GQPoints, NumberOfGQPs);
+}
+
+/*!
+ * Get the number of Gauss quadrature points for the West face.
+ */
+inline void Grid2D_Quad_Block_HO::getGaussQuadPointsFaceW(const Cell2D_HO &Cell, 
+							  Vector2D * GQPoints,
+							  const int & NumberOfGQPs) const {
+  return getGaussQuadPointsFaceW(Cell.I, Cell.J, GQPoints, NumberOfGQPs);
+}
+
+/*!
+ * Get the number of Gauss quadrature points for the North face.
+ * 
+ * \param ii i-index of the cell
+ * \param jj j-index of the cell
+ * \param GQPoints storage array for the Gauss quadrature points. This memory is overwritten!
+ * \param NumberOfGQPs specifies how many points are returned. This number is typically dictated 
+ *                     by the accuracy of the flux calculation.
+ */
+inline void Grid2D_Quad_Block_HO::getGaussQuadPointsFaceN(const int &ii, const int &jj,
+							  Vector2D * GQPoints, const int & NumberOfGQPs) const{
+  switch (NumberOfGQPs){
+  case 1:
+    GQPoints[0] = xfaceN(ii,jj);
+    break;
+
+  case 2:
+    GQPoints[0] = GQPoints[1] = Node[ii][jj+1].X-Node[ii+1][jj+1].X;
+    
+    /* final value GQPoints[0] */
+    GQPoints[0] = Node[ii+1][jj+1].X + GaussQuadratureData::GQ2_Abscissa[0]*GQPoints[0];
+    
+    /* final value GQPoints[1] */
+    GQPoints[1] = Node[ii+1][jj+1].X + GaussQuadratureData::GQ2_Abscissa[1]*GQPoints[1];
+    break;
+
+  case 3:
+    GQPoints[0] = GQPoints[1] = GQPoints[2] = Node[ii][jj+1].X-Node[ii+1][jj+1].X;
+    
+    /* final value GQPoints[0] */
+    GQPoints[0] = Node[ii+1][jj+1].X + GaussQuadratureData::GQ3_Abscissa[0]*GQPoints[0];
+   
+    /* final value GQPoints[1] */
+    GQPoints[1] = Node[ii+1][jj+1].X + GaussQuadratureData::GQ3_Abscissa[1]*GQPoints[1];
+
+    /* final value GQPoints[2] */
+    GQPoints[2] = Node[ii+1][jj+1].X + GaussQuadratureData::GQ3_Abscissa[2]*GQPoints[2];
+    break;
+
+  default:
+    throw runtime_error("Grid2D_Quad_Block_HO::getGaussQuadPointsFaceN() ERROR! \
+                         Not implemented number of Gauss quadrature points!");
+  }
+}
+
+/*!
+ * Get the number of Gauss quadrature points for the South face.
+ * 
+ * \param ii i-index of the cell
+ * \param jj j-index of the cell
+ * \param GQPoints storage array for the Gauss quadrature points. This memory is overwritten!
+ * \param NumberOfGQPs specifies how many points are returned. This number is typically dictated 
+ *                     by the accuracy of the flux calculation.
+ */							  
+inline void Grid2D_Quad_Block_HO::getGaussQuadPointsFaceS(const int &ii, const int &jj,
+							  Vector2D * GQPoints, const int & NumberOfGQPs) const {
+
+  switch (NumberOfGQPs){
+  case 1:
+    GQPoints[0] = xfaceS(ii,jj);
+    break;
+
+  case 2:
+    GQPoints[0] = GQPoints[1] = Node[ii+1][jj].X-Node[ii][jj].X;
+    
+    /* final value GQPoints[0] */
+    GQPoints[0] = Node[ii][jj].X + GaussQuadratureData::GQ2_Abscissa[0]*GQPoints[0];
+    
+    /* final value GQPoints[1] */
+    GQPoints[1] = Node[ii][jj].X + GaussQuadratureData::GQ2_Abscissa[1]*GQPoints[1];
+    break;
+
+  case 3:
+    GQPoints[0] = GQPoints[1] = GQPoints[2] = Node[ii+1][jj].X-Node[ii][jj].X;
+    
+    /* final value GQPoints[0] */
+    GQPoints[0] = Node[ii][jj].X + GaussQuadratureData::GQ3_Abscissa[0]*GQPoints[0];
+    
+    /* final value GQPoints[1] */
+    GQPoints[1] = Node[ii][jj].X + GaussQuadratureData::GQ3_Abscissa[1]*GQPoints[1];
+
+    /* final value GQPoints[2] */
+    GQPoints[2] = Node[ii][jj].X + GaussQuadratureData::GQ3_Abscissa[2]*GQPoints[2];
+    break;
+
+  default:
+    throw runtime_error("Grid2D_Quad_Block_HO::getGaussQuadPointsFaceS() ERROR! \
+                         Not implemented number of Gauss quadrature points!");
+  }
+}
+
+/*!
+ * Get the number of Gauss quadrature points for the East face.
+ * 
+ * \param ii i-index of the cell
+ * \param jj j-index of the cell
+ * \param GQPoints storage array for the Gauss quadrature points. This memory is overwritten!
+ * \param NumberOfGQPs specifies how many points are returned. This number is typically dictated 
+ *                     by the accuracy of the flux calculation.
+ */
+inline void Grid2D_Quad_Block_HO::getGaussQuadPointsFaceE(const int &ii, const int &jj,
+							  Vector2D * GQPoints, const int & NumberOfGQPs) const {
+
+  switch (NumberOfGQPs){
+  case 1:
+    GQPoints[0] = xfaceE(ii,jj);
+    break;
+
+  case 2:
+    GQPoints[0] = GQPoints[1] = Node[ii+1][jj+1].X-Node[ii+1][jj].X;
+    
+    /* final value GQPoints[0] */
+    GQPoints[0] = Node[ii+1][jj].X + GaussQuadratureData::GQ2_Abscissa[0]*GQPoints[0];
+    
+    /* final value GQPoints[1] */
+    GQPoints[1] = Node[ii+1][jj].X + GaussQuadratureData::GQ2_Abscissa[1]*GQPoints[1];
+    break;
+
+  case 3:
+    GQPoints[0] = GQPoints[1] = GQPoints[2] = Node[ii+1][jj+1].X-Node[ii+1][jj].X;
+    
+    /* final value GQPoints[0] */
+    GQPoints[0] = Node[ii+1][jj].X + GaussQuadratureData::GQ3_Abscissa[0]*GQPoints[0];
+    
+    /* final value GQPoints[1] */
+    GQPoints[1] = Node[ii+1][jj].X + GaussQuadratureData::GQ3_Abscissa[1]*GQPoints[1];
+
+    /* final value GQPoints[2] */
+    GQPoints[2] = Node[ii+1][jj].X + GaussQuadratureData::GQ3_Abscissa[2]*GQPoints[2];
+    break;
+
+  default:
+    throw runtime_error("Grid2D_Quad_Block_HO::getGaussQuadPointsFaceE() ERROR! \
+                         Not implemented number of Gauss quadrature points!");
+  }
+}
+
+/*!
+ * Get the number of Gauss quadrature points for the West face.
+ * 
+ * \param ii i-index of the cell
+ * \param jj j-index of the cell
+ * \param GQPoints storage array for the Gauss quadrature points. This memory is overwritten!
+ * \param NumberOfGQPs specifies how many points are returned. This number is typically dictated 
+ *                     by the accuracy of the flux calculation.
+ */
+inline void Grid2D_Quad_Block_HO::getGaussQuadPointsFaceW(const int &ii, const int &jj,
+							  Vector2D * GQPoints, const int & NumberOfGQPs) const {
+
+  switch (NumberOfGQPs){
+  case 1:
+    GQPoints[0] = xfaceW(ii,jj);
+    break;
+
+  case 2:
+    GQPoints[0] = GQPoints[1] = Node[ii][jj].X-Node[ii][jj+1].X;
+    
+    /* final value GQPoints[0] */
+    GQPoints[0] = Node[ii][jj+1].X + GaussQuadratureData::GQ2_Abscissa[0]*GQPoints[0];
+    
+    /* final value GQPoints[1] */
+    GQPoints[1] = Node[ii][jj+1].X + GaussQuadratureData::GQ2_Abscissa[1]*GQPoints[1];
+    break;
+
+  case 3:
+    GQPoints[0] = GQPoints[1] = GQPoints[2] = Node[ii][jj].X-Node[ii][jj+1].X;
+    
+    /* final value GQPoints[0] */
+    GQPoints[0] = Node[ii][jj+1].X + GaussQuadratureData::GQ3_Abscissa[0]*GQPoints[0];
+    
+    /* final value GQPoints[1] */
+    GQPoints[1] = Node[ii][jj+1].X + GaussQuadratureData::GQ3_Abscissa[1]*GQPoints[1];
+
+    /* final value GQPoints[2] */
+    GQPoints[2] = Node[ii][jj+1].X + GaussQuadratureData::GQ3_Abscissa[2]*GQPoints[2];
+    break;
+
+  default:
+    throw runtime_error("Grid2D_Quad_Block_HO::getGaussQuadPointsFaceW() ERROR! \
+                         Not implemented number of Gauss quadrature points!");
   }
 }
 

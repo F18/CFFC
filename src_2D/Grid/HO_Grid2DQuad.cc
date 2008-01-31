@@ -21,6 +21,15 @@
  */
 int Grid2D_Quad_Block_HO::HighOrderBoundaryRepresentation = OFF;
 
+/*!
+ * This switch is used to determine whether the smoothing 
+ * subroutine is applied or not. 
+ * This flag acts globally, that is, on all quad blocks.
+ * If ON, the smoother is applied.
+ * If OFF, the smoother is not applied so a call to the smoothing subroutine leaves the mesh unchanged.
+ */
+int Grid2D_Quad_Block_HO::Smooth_Quad_Block_Flag = ON;
+
 // ===== Member functions =====
 
 /*!
@@ -33,6 +42,9 @@ Grid2D_Quad_Block_HO::Grid2D_Quad_Block_HO(void)
     Nghost(0),
     Node(NULL), Cell(NULL),
     BCtypeN(NULL), BCtypeS(NULL), BCtypeE(NULL), BCtypeW(NULL),
+    BndNorthSpline(), BndSouthSpline(), BndEastSpline(), BndWestSpline(),
+    BndNorthSplineInfo(NULL), BndSouthSplineInfo(NULL),
+    BndEastSplineInfo(NULL), BndWestSplineInfo(NULL),
     SminN(ZERO), SmaxN(ZERO), SminS(ZERO), SmaxS(ZERO), 
     SminE(ZERO), SmaxE(ZERO), SminW(ZERO), SmaxW(ZERO),
     StretchI(0), StretchJ(0), BetaI(ONE), TauI(ONE),
@@ -54,6 +66,9 @@ Grid2D_Quad_Block_HO::Grid2D_Quad_Block_HO(const Grid2D_Quad_Block_HO &G)
    Nghost(0),
    Node(NULL), Cell(NULL),
    BCtypeN(NULL), BCtypeS(NULL), BCtypeE(NULL), BCtypeW(NULL),
+   BndNorthSpline(), BndSouthSpline(), BndEastSpline(), BndWestSpline(),
+   BndNorthSplineInfo(NULL), BndSouthSplineInfo(NULL),
+   BndEastSplineInfo(NULL), BndWestSplineInfo(NULL),
    SminN(ZERO), SmaxN(ZERO), SminS(ZERO), SmaxS(ZERO), 
    SminE(ZERO), SmaxE(ZERO), SminW(ZERO), SmaxW(ZERO),
    StretchI(0), StretchJ(0),
@@ -84,10 +99,7 @@ Grid2D_Quad_Block_HO::Grid2D_Quad_Block_HO(const Grid2D_Quad_Block_HO &G)
     // Copy the cell values of grid block G.
     for ( j = G.JCl-G.Nghost; j <= G.JCu+G.Nghost ; ++j) {
       for ( i = G.ICl-G.Nghost ; i <= G.ICu+G.Nghost ; ++i) {
-	Cell[i][j].I  = G.Cell[i][j].I;
-	Cell[i][j].J  = G.Cell[i][j].J;
-	Cell[i][j].Xc = G.Cell[i][j].Xc;
-	Cell[i][j].A  = G.Cell[i][j].A;
+	Cell[i][j] = G.Cell[i][j];
       } /* endfor */
     } /* endfor */
 
@@ -161,15 +173,16 @@ Grid2D_Quad_Block_HO::Grid2D_Quad_Block_HO(const Grid2D_Quad_Block_HO &G)
  * \param Ni number of cells in i-direction
  * \param Nj number of cells in j-direction
  * \param Ng number of ghost cells
+ * \param HighestRecOrder the highest reconstruction order used during the computation.
  */
-void Grid2D_Quad_Block_HO::allocate(const int Ni, const int Nj, const int Ng) {
-  int i;
+void Grid2D_Quad_Block_HO::allocate(const int &Ni, const int &Nj, const int &Ng, const int &HighestRecOrder) {
+  int i,j;
 
   // Check conditions
-  assert( Ni > 1 && Nj > 1 && Ng >= 2);
+  assert( Ni > 1 && Nj > 1 && Ng >= 2 && HighestRecOrder >= 0);
 
   // Check if the new required memory has dimensions different than the currently allocated ones
-  if ( Ni != (NCi-2*Nghost)  ||  Nj != (NCj-2*Nghost) || Ng != Nghost ){
+  if ( Ni != (NCi-2*Nghost) || Nj != (NCj-2*Nghost) || Ng != Nghost ){
 
     // free the memory if there is memory allocated
     deallocate();
@@ -185,8 +198,29 @@ void Grid2D_Quad_Block_HO::allocate(const int Ni, const int Nj, const int Ng) {
     for ( i = 0; i <= NNi-1 ; ++i ) Node[i] = new Node2D_HO[NNj];
     Cell = new Cell2D_HO*[NCi];
     for ( i = 0; i <= NCi-1 ; ++i ) Cell[i] = new Cell2D_HO[NCj];
+
+    // allocate memory for the container of geometric moments
+    for ( i = 0; i <NCi ; ++i ){
+      for ( j = 0; j <NCj ; ++j ){
+	Cell[i][j].SetGeomCoeffContainerSize(HighestRecOrder);       
+      }
+    }
+
     BCtypeN = new int[NCi]; BCtypeS = new int[NCi];
     BCtypeE = new int[NCj]; BCtypeW = new int[NCj];
+
+    // Complete memory allocation
+    return;
+    
+  } else if (HighestRecOrder != Cell[0][0].GeomCoeff().RecOrder()){
+    // Check if the highest reconstruction order is different than the current one.
+    
+    // re-allocate memory for the container of geometric moments
+    for ( i = 0; i <NCi ; ++i ){
+      for ( j = 0; j <NCj ; ++j ){
+	Cell[i][j].SetGeomCoeffContainerSize(HighestRecOrder);       
+      }
+    }    
   }
 }
 
@@ -233,6 +267,9 @@ void Grid2D_Quad_Block_HO::deallocate(void) {
   BndNorthSpline.deallocate(); BndSouthSpline.deallocate();
   BndEastSpline.deallocate(); BndWestSpline.deallocate();
 
+  // Deallocate boundary spline info
+  deallocateBndSplineInfo();
+
   // Reset mesh indexes
   NNi = 0; INl = 0; INu = 0; NNj = 0; JNl = 0; JNu = 0;
   NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0;
@@ -272,10 +309,7 @@ Grid2D_Quad_Block_HO& Grid2D_Quad_Block_HO::operator=(const Grid2D_Quad_Block_HO
     // Copy the cell values of grid block Grid.
     for ( j = Grid.JCl-Grid.Nghost; j <= Grid.JCu+Grid.Nghost ; ++j) {
       for ( i = Grid.ICl-Grid.Nghost ; i <= Grid.ICu+Grid.Nghost ; ++i) {
-	Cell[i][j].I  = Grid.Cell[i][j].I;
-	Cell[i][j].J  = Grid.Cell[i][j].J;
-	Cell[i][j].Xc = Grid.Cell[i][j].Xc;
-	Cell[i][j].A  = Grid.Cell[i][j].A;
+	Cell[i][j] = Grid.Cell[i][j];
       } /* endfor */
     } /* endfor */
 
@@ -2241,348 +2275,351 @@ void Grid2D_Quad_Block_HO::Broadcast_Quad_Block(MPI::Intracomm &Communicator,
  *                                                      
  */
 void Grid2D_Quad_Block_HO::Smooth_Quad_Block(const int Number_of_Iterations) {
+
+  // Run smoother only is Smooth_Quad_Block_Flag is ON
+  if (Smooth_Quad_Block_Flag){
   
-  /*!
-   * \verbatim
-   *  Local Variable description:
-   * 
-   *  xij, yij                  Two-dimensional arrays containing
-   *                            the coordinates of the nodes for
-   *                            the grid block in physical (x,y) space.
-   *
-   *  deltas_b, deltas_t,       One-dimensional arrays containing the
-   *  deltas_l, deltas_r        node spacing in the normal direction
-   *                            between the first two nodes at the upper
-   *                            and lower boundaries of the grid block.
-   *
-   *  xz_b, yz_b, xe_b, ye_b,   One-dimensional arrays containing the
-   *  xzz_b, yzz_b, xee_b,      partial derivatives of x and y
-   *  yee_b, xze_b, yze_b       coordinates of the physical space
-   *                            with respect to the zeta and eta
-   *  xz_t, yz_t, xe_t, ye_t,   coordinates of the computational space,
-   *  xzz_t, yzz_t, xee_t,      all evaluated at the bottom (south),
-   *  yee_t, xze_t, yze_t       top (north), left (west), and right 
-   *                            (east) boundaries of the grid block.
-   *
-   *  xz_l, yz_l, xe_l, ye_l,
-   *  xzz_l, yzz_l, xee_l,   
-   *  yee_l, xze_l, yze_l
-   *
-   *  xz_r, yz_r, xe_r, ye_r,
-   *  xzz_r, yzz_r, xee_r,   
-   *  yee_r, xze_r, yze_r
-   *
-   *  jacob_b, jacob_t,         One-dimensional arrays containing the
-   *  jacob_l, jacob_r          Jacobian of the coordinate transformation
-   *                            evaluated at the bottom (south), top 
-   *                            (north), left (west), and right (east)
-   *                            boundaries of the grid block.
-   *
-   *  pb, pt, pl, pr,           One-dimensional arrays containing the
-   *  qb, qt, ql, qr            values of the source terms of the
-   *                            transformed Poisson's equations at the
-   *                            bottom (south), top (north), left (west), 
-   *                            and right (east) boundaries of the grid 
-   *                            block.
-   *
-   *  norm_b, norm_t,           Integer parameters indicating whether 
-   *  norm_l, norm_r            orthogonality at the bottom (south), top
-   *                            (north), left (west), and right (east) 
-   *                            boundaries is to be enforced.  If value 
-   *                            is zero then orthogonality is not enforced 
-   *                            and any other value causes the orthogonality 
-   *                            condition to be applied.
-   *
-   *  wsor, wsur                SOR and successive under-relaxation (SUR)
-   *                            iteration parameters.  wsor is used to
-   *                            over-relax the solution for x and y and
-   *                            wsur is used to under-relax the solution
-   *                            for p, q, r, and s.  Typically, 
-   *                            wsor=1.5-1.8 and wsur=0.30-0.70.
-   *
-   *  a, b,                     Exponential decay parameters defining the
-   *  c, d,                     effects of the source terms away from the
-   *  e                         bottom (south), top (north), left (west), 
-   *                            and right (east) boundaries, as well as the 
-   *                            corners.  If a (or b, c, d, e) is small 
-   *                            (i.e., a = 0.2) source terms have effects far 
-   *                            from boundary.  If a (or b, c, d, e) is large
-   *                            (i.e., a = 0.7) source terms have less 
-   *                            effects far from boundary.
-   *
-   *  n_zeta, n_eta             Number of nodes in the zeta and eta
-   *                            directions of the computational domain for 
-   *                            grid block.
-   *
-   * alpha, beta, gamma        Parameters used in the transformed Poisson's
-   *                            equations.
-   * r1, r2, r3, r4            Parameters used to evaluate the source terms
-   *                            of the transformed Poisson's equations at
-   *                            the bottom (south), top (north), left (west), 
-   *                            and right (east) boundaries of the grid block.
-   *
-   * dpb, dpt, dpl, dpr,       Changes in pb, pt, pl, pr, qb, qt, ql, and qr
-   * dqb, dqt, dql, dqr        before the under-relaxation and limiting
-   *                           algorithm is applied.
-   *
-   * dpmax, dqmax              Maximum permitted changes in p and q at the
-   *                           bottom, top, left, and right boundaries.
-   *
-   * xzij, yzij, xeij, yeij,   Local values of the transformation metrics
-   * jacobij                   and Jacobian.
-   *
-   * pij, qij                  Local values of the source terms.
-   *
-   * dxij, dyij                Changes in xij and yij for on step in the
-   *                           iteration technique before the over-
-   *                           relaxation algorithm is applied.
-   *
-   * fb, ft, fl, fr,           Exponentials use to evaluate the local
-   * fbl, fbr, ftl, ftr        values of the source terms. 
-   *
-   * \endverbatim
-   */
+    /*!
+     * \verbatim
+     *  Local Variable description:
+     * 
+     *  xij, yij                  Two-dimensional arrays containing
+     *                            the coordinates of the nodes for
+     *                            the grid block in physical (x,y) space.
+     *
+     *  deltas_b, deltas_t,       One-dimensional arrays containing the
+     *  deltas_l, deltas_r        node spacing in the normal direction
+     *                            between the first two nodes at the upper
+     *                            and lower boundaries of the grid block.
+     *
+     *  xz_b, yz_b, xe_b, ye_b,   One-dimensional arrays containing the
+     *  xzz_b, yzz_b, xee_b,      partial derivatives of x and y
+     *  yee_b, xze_b, yze_b       coordinates of the physical space
+     *                            with respect to the zeta and eta
+     *  xz_t, yz_t, xe_t, ye_t,   coordinates of the computational space,
+     *  xzz_t, yzz_t, xee_t,      all evaluated at the bottom (south),
+     *  yee_t, xze_t, yze_t       top (north), left (west), and right 
+     *                            (east) boundaries of the grid block.
+     *
+     *  xz_l, yz_l, xe_l, ye_l,
+     *  xzz_l, yzz_l, xee_l,   
+     *  yee_l, xze_l, yze_l
+     *
+     *  xz_r, yz_r, xe_r, ye_r,
+     *  xzz_r, yzz_r, xee_r,   
+     *  yee_r, xze_r, yze_r
+     *
+     *  jacob_b, jacob_t,         One-dimensional arrays containing the
+     *  jacob_l, jacob_r          Jacobian of the coordinate transformation
+     *                            evaluated at the bottom (south), top 
+     *                            (north), left (west), and right (east)
+     *                            boundaries of the grid block.
+     *
+     *  pb, pt, pl, pr,           One-dimensional arrays containing the
+     *  qb, qt, ql, qr            values of the source terms of the
+     *                            transformed Poisson's equations at the
+     *                            bottom (south), top (north), left (west), 
+     *                            and right (east) boundaries of the grid 
+     *                            block.
+     *
+     *  norm_b, norm_t,           Integer parameters indicating whether 
+     *  norm_l, norm_r            orthogonality at the bottom (south), top
+     *                            (north), left (west), and right (east) 
+     *                            boundaries is to be enforced.  If value 
+     *                            is zero then orthogonality is not enforced 
+     *                            and any other value causes the orthogonality 
+     *                            condition to be applied.
+     *
+     *  wsor, wsur                SOR and successive under-relaxation (SUR)
+     *                            iteration parameters.  wsor is used to
+     *                            over-relax the solution for x and y and
+     *                            wsur is used to under-relax the solution
+     *                            for p, q, r, and s.  Typically, 
+     *                            wsor=1.5-1.8 and wsur=0.30-0.70.
+     *
+     *  a, b,                     Exponential decay parameters defining the
+     *  c, d,                     effects of the source terms away from the
+     *  e                         bottom (south), top (north), left (west), 
+     *                            and right (east) boundaries, as well as the 
+     *                            corners.  If a (or b, c, d, e) is small 
+     *                            (i.e., a = 0.2) source terms have effects far 
+     *                            from boundary.  If a (or b, c, d, e) is large
+     *                            (i.e., a = 0.7) source terms have less 
+     *                            effects far from boundary.
+     *
+     *  n_zeta, n_eta             Number of nodes in the zeta and eta
+     *                            directions of the computational domain for 
+     *                            grid block.
+     *
+     * alpha, beta, gamma        Parameters used in the transformed Poisson's
+     *                            equations.
+     * r1, r2, r3, r4            Parameters used to evaluate the source terms
+     *                            of the transformed Poisson's equations at
+     *                            the bottom (south), top (north), left (west), 
+     *                            and right (east) boundaries of the grid block.
+     *
+     * dpb, dpt, dpl, dpr,       Changes in pb, pt, pl, pr, qb, qt, ql, and qr
+     * dqb, dqt, dql, dqr        before the under-relaxation and limiting
+     *                           algorithm is applied.
+     *
+     * dpmax, dqmax              Maximum permitted changes in p and q at the
+     *                           bottom, top, left, and right boundaries.
+     *
+     * xzij, yzij, xeij, yeij,   Local values of the transformation metrics
+     * jacobij                   and Jacobian.
+     *
+     * pij, qij                  Local values of the source terms.
+     *
+     * dxij, dyij                Changes in xij and yij for on step in the
+     *                           iteration technique before the over-
+     *                           relaxation algorithm is applied.
+     *
+     * fb, ft, fl, fr,           Exponentials use to evaluate the local
+     * fbl, fbr, ftl, ftr        values of the source terms. 
+     *
+     * \endverbatim
+     */
 
-  double **xij, **yij,
-    *deltas_b, *deltas_t, *deltas_l, *deltas_r,
-    *xz_b, *yz_b, *xe_b, *ye_b, 
-    *xzz_b, *yzz_b, *xee_b, *yee_b, *xze_b, *yze_b,
-    *xz_t, *yz_t, *xe_t, *ye_t,
-    *xzz_t, *yzz_t, *xee_t, *yee_t, *xze_t, *yze_t,
-    *xz_l, *yz_l, *xe_l, *ye_l,
-    *xzz_l, *yzz_l, *xee_l, *yee_l, *xze_l, *yze_l,
-    *xz_r, *yz_r, *xe_r, *ye_r,
-    *xzz_r, *yzz_r, *xee_r, *yee_r, *xze_r, *yze_r,
-    *pb, *pt, *pl, *pr,
-    *qb, *qt, *ql, *qr,
-    *jacob_b, *jacob_t, *jacob_l, *jacob_r;
+    double **xij, **yij,
+      *deltas_b, *deltas_t, *deltas_l, *deltas_r,
+      *xz_b, *yz_b, *xe_b, *ye_b, 
+      *xzz_b, *yzz_b, *xee_b, *yee_b, *xze_b, *yze_b,
+      *xz_t, *yz_t, *xe_t, *ye_t,
+      *xzz_t, *yzz_t, *xee_t, *yee_t, *xze_t, *yze_t,
+      *xz_l, *yz_l, *xe_l, *ye_l,
+      *xzz_l, *yzz_l, *xee_l, *yee_l, *xze_l, *yze_l,
+      *xz_r, *yz_r, *xe_r, *ye_r,
+      *xzz_r, *yzz_r, *xee_r, *yee_r, *xze_r, *yze_r,
+      *pb, *pt, *pl, *pr,
+      *qb, *qt, *ql, *qr,
+      *jacob_b, *jacob_t, *jacob_l, *jacob_r;
 
-  int num_iter, i_poisson, 
-    norm_b, norm_t, norm_l, norm_r,
-    n_zeta, n_eta;
-  double wsor, wsur, a, b, c, d, e, l_damping;
+    int num_iter, i_poisson, 
+      norm_b, norm_t, norm_l, norm_r,
+      n_zeta, n_eta;
+    double wsor, wsur, a, b, c, d, e, l_damping;
 
-  int i, j, i_step, ii, jj;
-  double alpha, beta, gamma;
-  double r1, r2, r3, r4;
-  double dpb, dpt, dpl, dpr, dqb, dqt, dql, dqr;
-  double dpmax, dqmax;
-  double xzij, yzij, xeij, yeij, jacobij, pij, qij, dxij, dyij;
-  double fb, ft, fl, fr, fbl, fbr, ftl, ftr;
+    int i, j, i_step, ii, jj;
+    double alpha, beta, gamma;
+    double r1, r2, r3, r4;
+    double dpb, dpt, dpl, dpr, dqb, dqt, dql, dqr;
+    double dpmax, dqmax;
+    double xzij, yzij, xeij, yeij, jacobij, pij, qij, dxij, dyij;
+    double fb, ft, fl, fr, fbl, fbr, ftl, ftr;
 
-  /* Determine the size of and create the Poisson equation solution 
-     variables for the elliptic smoothing algorithm. */
+    /* Determine the size of and create the Poisson equation solution 
+       variables for the elliptic smoothing algorithm. */
 
-  n_zeta = INu - INl + 1;
-  n_eta = JNu - JNl + 1;
+    n_zeta = INu - INl + 1;
+    n_eta = JNu - JNl + 1;
 
-  xij = new double*[n_zeta];
-  yij = new double*[n_zeta];
-  for ( i = 0; i <= n_zeta-1 ; ++i ) {
-    xij[i] = new double[n_eta];
-    yij[i] = new double[n_eta];
-  } /* endfor */
-
-  deltas_b = new double[n_zeta];
-  deltas_t = new double[n_zeta];
-  deltas_l = new double[n_eta];
-  deltas_r = new double[n_eta];
-
-  xz_b = new double[n_zeta]; 
-  yz_b = new double[n_zeta];
-  xe_b = new double[n_zeta];
-  ye_b = new double[n_zeta];
-  xzz_b = new double[n_zeta];
-  yzz_b = new double[n_zeta];
-  xee_b = new double[n_zeta];
-  yee_b = new double[n_zeta];
-  xze_b = new double[n_zeta];
-  yze_b = new double[n_zeta];
-
-  xz_t = new double[n_zeta];
-  yz_t = new double[n_zeta];
-  xe_t = new double[n_zeta]; 
-  ye_t = new double[n_zeta];
-  xzz_t = new double[n_zeta];
-  yzz_t = new double[n_zeta];
-  xee_t = new double[n_zeta];
-  yee_t = new double[n_zeta];
-  xze_t = new double[n_zeta];
-  yze_t = new double[n_zeta];
-
-  xz_l = new double[n_eta];
-  yz_l = new double[n_eta];
-  xe_l = new double[n_eta];
-  ye_l = new double[n_eta];
-  xzz_l = new double[n_eta];
-  yzz_l = new double[n_eta];
-  xee_l = new double[n_eta];
-  yee_l = new double[n_eta];
-  xze_l = new double[n_eta];
-  yze_l = new double[n_eta];
-
-  xz_r = new double[n_eta]; 
-  yz_r = new double[n_eta];
-  xe_r = new double[n_eta];
-  ye_r = new double[n_eta];
-  xzz_r = new double[n_eta];
-  yzz_r = new double[n_eta];
-  xee_r = new double[n_eta];
-  yee_r = new double[n_eta];
-  xze_r = new double[n_eta];
-  yze_r = new double[n_eta];
-
-  pb = new double[n_zeta];
-  pt = new double[n_zeta];
-  pl = new double[n_eta];
-  pr = new double[n_eta];
-
-  qb = new double[n_zeta]; 
-  qt = new double[n_zeta]; 
-  ql = new double[n_eta];
-  qr = new double[n_eta];
-
-  jacob_b = new double[n_zeta];
-  jacob_t = new double[n_zeta];
-  jacob_l = new double[n_eta];
-  jacob_r = new double[n_eta];
-
-  /* Assign initial values to the Poisson equation solution
-     variables using the current node locations for the nodes
-     in the quadrilateral grid block. */
-
-  for (j  = JNl ; j <= JNu ; ++j ) {
-    for ( i = INl ; i <= INu ; ++i ) {
-      ii = i - INl;
-      jj = j - JNl;
-      xij[ii][jj] = Node[i][j].X.x;
-      yij[ii][jj] = Node[i][j].X.y;
+    xij = new double*[n_zeta];
+    yij = new double*[n_zeta];
+    for ( i = 0; i <= n_zeta-1 ; ++i ) {
+      xij[i] = new double[n_eta];
+      yij[i] = new double[n_eta];
     } /* endfor */
-  } /* endfor */
+
+    deltas_b = new double[n_zeta];
+    deltas_t = new double[n_zeta];
+    deltas_l = new double[n_eta];
+    deltas_r = new double[n_eta];
+
+    xz_b = new double[n_zeta]; 
+    yz_b = new double[n_zeta];
+    xe_b = new double[n_zeta];
+    ye_b = new double[n_zeta];
+    xzz_b = new double[n_zeta];
+    yzz_b = new double[n_zeta];
+    xee_b = new double[n_zeta];
+    yee_b = new double[n_zeta];
+    xze_b = new double[n_zeta];
+    yze_b = new double[n_zeta];
+
+    xz_t = new double[n_zeta];
+    yz_t = new double[n_zeta];
+    xe_t = new double[n_zeta]; 
+    ye_t = new double[n_zeta];
+    xzz_t = new double[n_zeta];
+    yzz_t = new double[n_zeta];
+    xee_t = new double[n_zeta];
+    yee_t = new double[n_zeta];
+    xze_t = new double[n_zeta];
+    yze_t = new double[n_zeta];
+
+    xz_l = new double[n_eta];
+    yz_l = new double[n_eta];
+    xe_l = new double[n_eta];
+    ye_l = new double[n_eta];
+    xzz_l = new double[n_eta];
+    yzz_l = new double[n_eta];
+    xee_l = new double[n_eta];
+    yee_l = new double[n_eta];
+    xze_l = new double[n_eta];
+    yze_l = new double[n_eta];
+
+    xz_r = new double[n_eta]; 
+    yz_r = new double[n_eta];
+    xe_r = new double[n_eta];
+    ye_r = new double[n_eta];
+    xzz_r = new double[n_eta];
+    yzz_r = new double[n_eta];
+    xee_r = new double[n_eta];
+    yee_r = new double[n_eta];
+    xze_r = new double[n_eta];
+    yze_r = new double[n_eta];
+
+    pb = new double[n_zeta];
+    pt = new double[n_zeta];
+    pl = new double[n_eta];
+    pr = new double[n_eta];
+
+    qb = new double[n_zeta]; 
+    qt = new double[n_zeta]; 
+    ql = new double[n_eta];
+    qr = new double[n_eta];
+
+    jacob_b = new double[n_zeta];
+    jacob_t = new double[n_zeta];
+    jacob_l = new double[n_eta];
+    jacob_r = new double[n_eta];
+
+    /* Assign initial values to the Poisson equation solution
+       variables using the current node locations for the nodes
+       in the quadrilateral grid block. */
+
+    for (j  = JNl ; j <= JNu ; ++j ) {
+      for ( i = INl ; i <= INu ; ++i ) {
+	ii = i - INl;
+	jj = j - JNl;
+	xij[ii][jj] = Node[i][j].X.x;
+	yij[ii][jj] = Node[i][j].X.y;
+      } /* endfor */
+    } /* endfor */
 
     /* Set the Poisson equation solution parameters. */
 
-  norm_b = OrthogonalS;
-  norm_t = OrthogonalN;
-  norm_l = OrthogonalW;
-  norm_r = OrthogonalE;
+    norm_b = OrthogonalS;
+    norm_t = OrthogonalN;
+    norm_l = OrthogonalW;
+    norm_r = OrthogonalE;
 
-  wsor = 1.25;
-  wsur = 0.10;
-  l_damping = 1.00;
+    wsor = 1.25;
+    wsur = 0.10;
+    l_damping = 1.00;
 
-  if (norm_b == 0 && norm_t == 0 &&
-      norm_l == 0 && norm_r == 0) {
-    i_poisson = 0;
-    a = ONE;
-    b = ONE;
-    c = ONE;
-    d = ONE;
-    e = HALF;
-  } else if (norm_b != 0 && norm_t == 0 &&
-	     norm_l == 0 && norm_r == 0) {
-    i_poisson = 1;
-    a = l_damping;
-    b = ONE;
-    c = ONE;
-    d = ONE;
-    e = HALF;
-  } else if (norm_b == 0 && norm_t != 0 &&
-	     norm_l == 0 && norm_r == 0) {
-    i_poisson = 1;
-    a = ONE;
-    b = l_damping;
-    c = ONE;
-    d = ONE;
-    e = HALF;
-  } else if (norm_b == 0 && norm_t == 0 &&
-	     norm_l != 0 && norm_r == 0) {
-    i_poisson = 1;
-    a = ONE;
-    b = ONE;
-    c = l_damping;
-    d = ONE;
-    e = HALF;
-  } else if (norm_b == 0 && norm_t == 0 &&
-	     norm_l == 0 && norm_r != 0) {
-    i_poisson = 1;
-    a = ONE;
-    b = ONE;
-    c = ONE;
-    d = l_damping;
-    e = HALF;
-  } else if (norm_b != 0 && norm_t != 0 &&
-	     norm_l == 0 && norm_r == 0) {
-    i_poisson = 1;
-    a = l_damping;
-    b = l_damping;
-    c = ONE;
-    d = ONE;
-    e = HALF;
-  } else if (norm_b == 0 && norm_t == 0 &&
-	     norm_l != 0 && norm_r != 0) {
-    i_poisson = 1;
-    a = ONE;
-    b = ONE;
-    c = l_damping;
-    d = l_damping;
-    e = HALF;
-  } else if (norm_b != 0 && norm_t == 0 &&
-	     norm_l != 0 && norm_r == 0) {
-    i_poisson = 1;
-    a = l_damping;
-    b = ONE;
-    c = l_damping;
-    d = ONE;
-    e = HALF;
-  } else if (norm_b == 0 && norm_t != 0 &&
-	     norm_l == 0 && norm_r != 0) {
-    i_poisson = 1;
-    a = ONE;
-    b = l_damping;
-    c = ONE;
-    d = l_damping;
-    e = HALF;
-  } else if (norm_b == 0 && norm_t != 0 &&
-	     norm_l != 0 && norm_r != 0) {
-    i_poisson = 1;
-    a = ONE;
-    b = l_damping;
-    c = l_damping;
-    d = l_damping;
-    e = HALF;
-  } else if (norm_b != 0 && norm_t == 0 &&
-	     norm_l != 0 && norm_r != 0) {
-    i_poisson = 1;
-    a = l_damping;
-    b = ONE;
-    c = l_damping;
-    d = l_damping;
-    e = HALF;
-  } else if (norm_b != 0 && norm_t != 0 &&
-	     norm_l == 0 && norm_r != 0) {
-    i_poisson = 1;
-    a = l_damping;
-    b = l_damping;
-    c = ONE;
-    d = l_damping;
-    e = HALF;
-  } else if (norm_b != 0 && norm_t != 0 &&
-	     norm_l != 0 && norm_r == 0) {
-    i_poisson = 1;
-    a = l_damping;
-    b = l_damping;
-    c = l_damping;
-    d = ONE;
-    e = HALF;
-  } else {
-    i_poisson = 1;
-    a = l_damping;
-    b = l_damping;
-    c = l_damping;
-    d = l_damping;
-    e = HALF;
-  } /* endif */
+    if (norm_b == 0 && norm_t == 0 &&
+	norm_l == 0 && norm_r == 0) {
+      i_poisson = 0;
+      a = ONE;
+      b = ONE;
+      c = ONE;
+      d = ONE;
+      e = HALF;
+    } else if (norm_b != 0 && norm_t == 0 &&
+	       norm_l == 0 && norm_r == 0) {
+      i_poisson = 1;
+      a = l_damping;
+      b = ONE;
+      c = ONE;
+      d = ONE;
+      e = HALF;
+    } else if (norm_b == 0 && norm_t != 0 &&
+	       norm_l == 0 && norm_r == 0) {
+      i_poisson = 1;
+      a = ONE;
+      b = l_damping;
+      c = ONE;
+      d = ONE;
+      e = HALF;
+    } else if (norm_b == 0 && norm_t == 0 &&
+	       norm_l != 0 && norm_r == 0) {
+      i_poisson = 1;
+      a = ONE;
+      b = ONE;
+      c = l_damping;
+      d = ONE;
+      e = HALF;
+    } else if (norm_b == 0 && norm_t == 0 &&
+	       norm_l == 0 && norm_r != 0) {
+      i_poisson = 1;
+      a = ONE;
+      b = ONE;
+      c = ONE;
+      d = l_damping;
+      e = HALF;
+    } else if (norm_b != 0 && norm_t != 0 &&
+	       norm_l == 0 && norm_r == 0) {
+      i_poisson = 1;
+      a = l_damping;
+      b = l_damping;
+      c = ONE;
+      d = ONE;
+      e = HALF;
+    } else if (norm_b == 0 && norm_t == 0 &&
+	       norm_l != 0 && norm_r != 0) {
+      i_poisson = 1;
+      a = ONE;
+      b = ONE;
+      c = l_damping;
+      d = l_damping;
+      e = HALF;
+    } else if (norm_b != 0 && norm_t == 0 &&
+	       norm_l != 0 && norm_r == 0) {
+      i_poisson = 1;
+      a = l_damping;
+      b = ONE;
+      c = l_damping;
+      d = ONE;
+      e = HALF;
+    } else if (norm_b == 0 && norm_t != 0 &&
+	       norm_l == 0 && norm_r != 0) {
+      i_poisson = 1;
+      a = ONE;
+      b = l_damping;
+      c = ONE;
+      d = l_damping;
+      e = HALF;
+    } else if (norm_b == 0 && norm_t != 0 &&
+	       norm_l != 0 && norm_r != 0) {
+      i_poisson = 1;
+      a = ONE;
+      b = l_damping;
+      c = l_damping;
+      d = l_damping;
+      e = HALF;
+    } else if (norm_b != 0 && norm_t == 0 &&
+	       norm_l != 0 && norm_r != 0) {
+      i_poisson = 1;
+      a = l_damping;
+      b = ONE;
+      c = l_damping;
+      d = l_damping;
+      e = HALF;
+    } else if (norm_b != 0 && norm_t != 0 &&
+	       norm_l == 0 && norm_r != 0) {
+      i_poisson = 1;
+      a = l_damping;
+      b = l_damping;
+      c = ONE;
+      d = l_damping;
+      e = HALF;
+    } else if (norm_b != 0 && norm_t != 0 &&
+	       norm_l != 0 && norm_r == 0) {
+      i_poisson = 1;
+      a = l_damping;
+      b = l_damping;
+      c = l_damping;
+      d = ONE;
+      e = HALF;
+    } else {
+      i_poisson = 1;
+      a = l_damping;
+      b = l_damping;
+      c = l_damping;
+      d = l_damping;
+      e = HALF;
+    } /* endif */
 
     /* Initialize the partial derivatives and source terms at the 
        bottom (south), top (north), left (west), and right (east) 
@@ -2592,173 +2629,173 @@ void Grid2D_Quad_Block_HO::Smooth_Quad_Block(const int Number_of_Iterations) {
 
     /* BOTTOM AND TOP */
 
-  xz_b[0] = HALF * (xij[1][0] - xij[0][0]);
-  xz_t[0] = HALF * (xij[1][n_eta-1] - xij[0][n_eta-1]);
+    xz_b[0] = HALF * (xij[1][0] - xij[0][0]);
+    xz_t[0] = HALF * (xij[1][n_eta-1] - xij[0][n_eta-1]);
 
-  yz_b[0] = HALF * (yij[1][0] - yij[0][0]);
-  yz_t[0] = HALF * (yij[1][n_eta-1] - yij[0][n_eta-1]);
+    yz_b[0] = HALF * (yij[1][0] - yij[0][0]);
+    yz_t[0] = HALF * (yij[1][n_eta-1] - yij[0][n_eta-1]);
 
-  xe_b[0] = ZERO;
-  xe_t[0] = ZERO;
+    xe_b[0] = ZERO;
+    xe_t[0] = ZERO;
 
-  ye_b[0] = ZERO;
-  ye_t[0] = ZERO;
+    ye_b[0] = ZERO;
+    ye_t[0] = ZERO;
 
-  for ( i = 1; i < n_zeta - 1; ++i ) {
-    xz_b[i] = HALF * (xij[i+1][0] - xij[i-1][0]);
-    xz_t[i] = HALF * (xij[i+1][n_eta-1] - xij[i-1][n_eta-1]);
+    for ( i = 1; i < n_zeta - 1; ++i ) {
+      xz_b[i] = HALF * (xij[i+1][0] - xij[i-1][0]);
+      xz_t[i] = HALF * (xij[i+1][n_eta-1] - xij[i-1][n_eta-1]);
  
-    yz_b[i] = HALF * (yij[i+1][0] - yij[i-1][0]);
-    yz_t[i] = HALF * (yij[i+1][n_eta-1] - yij[i-1][n_eta-1]);
+      yz_b[i] = HALF * (yij[i+1][0] - yij[i-1][0]);
+      yz_t[i] = HALF * (yij[i+1][n_eta-1] - yij[i-1][n_eta-1]);
 
-    xzz_b[i] = xij[i+1][0] - TWO * xij[i][0] + xij[i-1][0];
-    xzz_t[i] = xij[i+1][n_eta-1] - TWO * xij[i][n_eta-1] +
-      xij[i-1][n_eta-1];
+      xzz_b[i] = xij[i+1][0] - TWO * xij[i][0] + xij[i-1][0];
+      xzz_t[i] = xij[i+1][n_eta-1] - TWO * xij[i][n_eta-1] +
+	xij[i-1][n_eta-1];
 
-    yzz_b[i] = yij[i+1][0] - TWO * yij[i][0] + yij[i-1][0];
-    yzz_t[i] = yij[i+1][n_eta-1] - TWO * yij[i][n_eta-1] +
-      yij[i-1][n_eta-1];
+      yzz_b[i] = yij[i+1][0] - TWO * yij[i][0] + yij[i-1][0];
+      yzz_t[i] = yij[i+1][n_eta-1] - TWO * yij[i][n_eta-1] +
+	yij[i-1][n_eta-1];
  
-    if (norm_b == 0) {
-      xe_b[i] = xij[i][1] - xij[i][0];
-      ye_b[i] = yij[i][1] - yij[i][0];
-    } else {
-      deltas_b[i] = hypot( (xij[i][1]-xij[i][0]),
-			   (yij[i][1]-yij[i][0]) );
-      xe_b[i] = - deltas_b[i] * yz_b[i] /
-	hypot( xz_b[i], yz_b[i] );
-      ye_b[i] = deltas_b[i] * xz_b[i] /
-	hypot( xz_b[i], yz_b[i] );
-    } /* endif */
+      if (norm_b == 0) {
+	xe_b[i] = xij[i][1] - xij[i][0];
+	ye_b[i] = yij[i][1] - yij[i][0];
+      } else {
+	deltas_b[i] = hypot( (xij[i][1]-xij[i][0]),
+			     (yij[i][1]-yij[i][0]) );
+	xe_b[i] = - deltas_b[i] * yz_b[i] /
+	  hypot( xz_b[i], yz_b[i] );
+	ye_b[i] = deltas_b[i] * xz_b[i] /
+	  hypot( xz_b[i], yz_b[i] );
+      } /* endif */
 
-    if (norm_t == 0) {
-      xe_t[i] = xij[i][n_eta-1] - xij[i][n_eta-2];
-      ye_t[i] = yij[i][n_eta-1] - yij[i][n_eta-2];
-    } else {
-      deltas_t[i] = hypot( (xij[i][n_eta-1]-xij[i][n_eta-2]),
-			   (yij[i][n_eta-1]-yij[i][n_eta-2]) );
-      xe_t[i] = - deltas_t[i] * yz_t[i] /
-	hypot( xz_t[i], yz_t[i] );
-      ye_t[i] = deltas_t[i] * xz_t[i] /
-	hypot( xz_t[i], yz_t[i] );
-    } /* endif */      
+      if (norm_t == 0) {
+	xe_t[i] = xij[i][n_eta-1] - xij[i][n_eta-2];
+	ye_t[i] = yij[i][n_eta-1] - yij[i][n_eta-2];
+      } else {
+	deltas_t[i] = hypot( (xij[i][n_eta-1]-xij[i][n_eta-2]),
+			     (yij[i][n_eta-1]-yij[i][n_eta-2]) );
+	xe_t[i] = - deltas_t[i] * yz_t[i] /
+	  hypot( xz_t[i], yz_t[i] );
+	ye_t[i] = deltas_t[i] * xz_t[i] /
+	  hypot( xz_t[i], yz_t[i] );
+      } /* endif */      
 
-    jacob_b[i] = xz_b[i] * ye_b[i] - xe_b[i] * yz_b[i];
-    jacob_t[i] = xz_t[i] * ye_t[i] - xe_t[i] * yz_t[i];
+      jacob_b[i] = xz_b[i] * ye_b[i] - xe_b[i] * yz_b[i];
+      jacob_t[i] = xz_t[i] * ye_t[i] - xe_t[i] * yz_t[i];
 
-    pb[i] = ZERO;
-    pt[i] = ZERO;
+      pb[i] = ZERO;
+      pt[i] = ZERO;
 
-    qb[i] = ZERO;
-    qt[i] = ZERO;
-  } /* endfor */
+      qb[i] = ZERO;
+      qt[i] = ZERO;
+    } /* endfor */
 
-  xz_b[n_zeta-1] = HALF * (xij[n_zeta-1][0] - xij[n_zeta-2][0]);
-  xz_t[n_zeta-1] = HALF * (xij[n_zeta-1][n_eta-1] -
-			   xij[n_zeta-2][n_eta-1]);
+    xz_b[n_zeta-1] = HALF * (xij[n_zeta-1][0] - xij[n_zeta-2][0]);
+    xz_t[n_zeta-1] = HALF * (xij[n_zeta-1][n_eta-1] -
+			     xij[n_zeta-2][n_eta-1]);
 
-  yz_b[n_zeta-1] = HALF * (yij[n_zeta-1][0] - yij[n_zeta-2][0]);
-  yz_t[n_zeta-1] = HALF * (yij[n_zeta-1][n_eta-1] -
-			   yij[n_zeta-2][n_eta-1]);
+    yz_b[n_zeta-1] = HALF * (yij[n_zeta-1][0] - yij[n_zeta-2][0]);
+    yz_t[n_zeta-1] = HALF * (yij[n_zeta-1][n_eta-1] -
+			     yij[n_zeta-2][n_eta-1]);
 
-  xe_b[n_zeta-1] = ZERO;
-  xe_t[n_zeta-1] = ZERO;
+    xe_b[n_zeta-1] = ZERO;
+    xe_t[n_zeta-1] = ZERO;
 
-  ye_b[n_zeta-1] = ZERO;
-  ye_t[n_zeta-1] = ZERO;
+    ye_b[n_zeta-1] = ZERO;
+    ye_t[n_zeta-1] = ZERO;
 
-  for ( i = 1; i < n_zeta - 1; ++i ) {
-    xze_b[i] = HALF * (xe_b[i+1] - xe_b[i-1]);
-    xze_t[i] = HALF * (xe_t[i+1] - xe_t[i-1]);
+    for ( i = 1; i < n_zeta - 1; ++i ) {
+      xze_b[i] = HALF * (xe_b[i+1] - xe_b[i-1]);
+      xze_t[i] = HALF * (xe_t[i+1] - xe_t[i-1]);
  
-    yze_b[i] = HALF * (ye_b[i+1] - ye_b[i-1]);
-    yze_t[i] = HALF * (ye_t[i+1] - ye_t[i-1]);
-  } /* endfor */
+      yze_b[i] = HALF * (ye_b[i+1] - ye_b[i-1]);
+      yze_t[i] = HALF * (ye_t[i+1] - ye_t[i-1]);
+    } /* endfor */
 
     /* LEFT AND RIGHT */
 
-  xe_l[0] = HALF * (xij[0][1] - xij[0][0]);
-  xe_r[0] = HALF * (xij[n_zeta-1][1] - xij[n_zeta-1][0]);
+    xe_l[0] = HALF * (xij[0][1] - xij[0][0]);
+    xe_r[0] = HALF * (xij[n_zeta-1][1] - xij[n_zeta-1][0]);
 
-  ye_l[0] = HALF * (yij[0][1] - yij[0][0]);
-  ye_r[0] = HALF * (yij[n_zeta-1][1] - yij[n_zeta-1][0]);
+    ye_l[0] = HALF * (yij[0][1] - yij[0][0]);
+    ye_r[0] = HALF * (yij[n_zeta-1][1] - yij[n_zeta-1][0]);
 
-  xz_l[0] = ZERO;
-  xz_r[0] = ZERO;
+    xz_l[0] = ZERO;
+    xz_r[0] = ZERO;
 
-  yz_l[0] = ZERO;
-  yz_r[0] = ZERO;
+    yz_l[0] = ZERO;
+    yz_r[0] = ZERO;
 
-  for ( j = 1; j < n_eta - 1; ++j ) {
-    xe_l[j] = HALF * (xij[0][j+1] - xij[0][j-1]);
-    xe_r[j] = HALF * (xij[n_zeta-1][j+1] - xij[n_zeta-1][j-1]);
+    for ( j = 1; j < n_eta - 1; ++j ) {
+      xe_l[j] = HALF * (xij[0][j+1] - xij[0][j-1]);
+      xe_r[j] = HALF * (xij[n_zeta-1][j+1] - xij[n_zeta-1][j-1]);
 
-    ye_l[j] = HALF * (yij[0][j+1] - yij[0][j-1]);
-    ye_r[j] = HALF * (yij[n_zeta-1][j+1] - yij[n_zeta-1][j-1]);
+      ye_l[j] = HALF * (yij[0][j+1] - yij[0][j-1]);
+      ye_r[j] = HALF * (yij[n_zeta-1][j+1] - yij[n_zeta-1][j-1]);
 
-    xee_l[j] = xij[0][j+1] - TWO * xij[0][j] + xij[0][j-1];
-    xee_r[j] = xij[n_zeta-1][j+1] - TWO * xij[n_zeta-1][j] +
-      xij[n_zeta-1][j-1];
+      xee_l[j] = xij[0][j+1] - TWO * xij[0][j] + xij[0][j-1];
+      xee_r[j] = xij[n_zeta-1][j+1] - TWO * xij[n_zeta-1][j] +
+	xij[n_zeta-1][j-1];
 
-    yee_l[j] = yij[0][j+1] - TWO * yij[0][j] + yij[0][j-1];
-    yee_r[j] = yij[n_zeta-1][j+1] - TWO * yij[n_zeta-1][j] +
-      yij[n_zeta-1][j-1];
+      yee_l[j] = yij[0][j+1] - TWO * yij[0][j] + yij[0][j-1];
+      yee_r[j] = yij[n_zeta-1][j+1] - TWO * yij[n_zeta-1][j] +
+	yij[n_zeta-1][j-1];
 
-    if (norm_l == 0) {
-      xz_l[j] = xij[1][j] - xij[0][j];
-      yz_l[j] = yij[1][j] - yij[0][j];
-    } else {
-      deltas_l[j] = hypot( (xij[1][j]-xij[0][j]),
-			   (yij[1][j]-yij[0][j]) );
-      xz_l[j] = deltas_l[j] * ye_l[j] /
-	hypot( xe_l[j], ye_l[j] );
-      yz_l[j] = - deltas_l[j] * xe_l[j] /
-	hypot( xe_l[j], ye_l[j] );
-    } /* endif */
+      if (norm_l == 0) {
+	xz_l[j] = xij[1][j] - xij[0][j];
+	yz_l[j] = yij[1][j] - yij[0][j];
+      } else {
+	deltas_l[j] = hypot( (xij[1][j]-xij[0][j]),
+			     (yij[1][j]-yij[0][j]) );
+	xz_l[j] = deltas_l[j] * ye_l[j] /
+	  hypot( xe_l[j], ye_l[j] );
+	yz_l[j] = - deltas_l[j] * xe_l[j] /
+	  hypot( xe_l[j], ye_l[j] );
+      } /* endif */
 
-    if (norm_r == 0) {
-      xz_r[j] = xij[n_zeta-1][j] - xij[n_zeta-2][j];
-      yz_r[j] = yij[n_zeta-1][j] - yij[n_zeta-2][j];
-    } else {
-      deltas_r[j] = hypot( (xij[n_zeta-1][j]-xij[n_zeta-2][j]),
-			   (yij[n_zeta-1][j]-yij[n_zeta-2][j]) );
-      xz_r[j] = deltas_r[j] * ye_r[j] /
-	hypot( xe_r[j], ye_r[j] );
-      yz_r[j] = -deltas_r[j] * xe_r[j] /
-	hypot( xe_r[j], ye_r[j] );
-    } /* endif */
+      if (norm_r == 0) {
+	xz_r[j] = xij[n_zeta-1][j] - xij[n_zeta-2][j];
+	yz_r[j] = yij[n_zeta-1][j] - yij[n_zeta-2][j];
+      } else {
+	deltas_r[j] = hypot( (xij[n_zeta-1][j]-xij[n_zeta-2][j]),
+			     (yij[n_zeta-1][j]-yij[n_zeta-2][j]) );
+	xz_r[j] = deltas_r[j] * ye_r[j] /
+	  hypot( xe_r[j], ye_r[j] );
+	yz_r[j] = -deltas_r[j] * xe_r[j] /
+	  hypot( xe_r[j], ye_r[j] );
+      } /* endif */
 
-    jacob_l[j] = xz_l[j] * ye_l[j] - xe_l[j] * yz_l[j];
-    jacob_r[j] = xz_r[j] * ye_r[j] - xe_r[j] * yz_r[j];
+      jacob_l[j] = xz_l[j] * ye_l[j] - xe_l[j] * yz_l[j];
+      jacob_r[j] = xz_r[j] * ye_r[j] - xe_r[j] * yz_r[j];
 
-    pl[j] = ZERO;
-    pr[j] = ZERO;
+      pl[j] = ZERO;
+      pr[j] = ZERO;
 
-    ql[j] = ZERO;
-    qr[j] = ZERO;
-  } /* endfor */
+      ql[j] = ZERO;
+      qr[j] = ZERO;
+    } /* endfor */
 
-  xe_l[n_eta-1] = HALF * (xij[0][n_eta-1] - xij[0][n_eta-2]);
-  xe_r[n_eta-1] = HALF * (xij[n_zeta-1][n_eta-1] -
-			  xij[n_zeta-1][n_eta-2]);
+    xe_l[n_eta-1] = HALF * (xij[0][n_eta-1] - xij[0][n_eta-2]);
+    xe_r[n_eta-1] = HALF * (xij[n_zeta-1][n_eta-1] -
+			    xij[n_zeta-1][n_eta-2]);
 
-  ye_l[n_eta-1] = HALF * (yij[0][n_eta-1] - yij[0][n_eta-2]);
-  ye_r[n_eta-1] = HALF * (yij[n_zeta-1][n_eta-1] -
-			  yij[n_zeta-1][n_eta-2]);
+    ye_l[n_eta-1] = HALF * (yij[0][n_eta-1] - yij[0][n_eta-2]);
+    ye_r[n_eta-1] = HALF * (yij[n_zeta-1][n_eta-1] -
+			    yij[n_zeta-1][n_eta-2]);
 
-  xz_l[n_eta-1] = ZERO;
-  xz_r[n_eta-1] = ZERO;
+    xz_l[n_eta-1] = ZERO;
+    xz_r[n_eta-1] = ZERO;
 
-  yz_l[n_eta-1] = ZERO;
-  yz_r[n_eta-1] = ZERO;
+    yz_l[n_eta-1] = ZERO;
+    yz_r[n_eta-1] = ZERO;
 
-  for ( j = 1; j < n_eta - 1; ++j ) {
-    xze_l[j] = HALF * (xz_l[j+1] - xz_l[j-1]);
-    xze_r[j] = HALF * (xz_r[j+1] - xz_r[j-1]);
+    for ( j = 1; j < n_eta - 1; ++j ) {
+      xze_l[j] = HALF * (xz_l[j+1] - xz_l[j-1]);
+      xze_r[j] = HALF * (xz_r[j+1] - xz_r[j-1]);
 
-    yze_l[j] = HALF * (yz_l[j+1] - yz_l[j-1]);
-    yze_r[j] = HALF * (yz_r[j+1] - yz_r[j-1]);
-  } /* endfor */
+      yze_l[j] = HALF * (yz_l[j+1] - yz_l[j-1]);
+      yze_r[j] = HALF * (yz_r[j+1] - yz_r[j-1]);
+    } /* endfor */
 
     /* Begin a new iteration cycle and use the current values of xij
        and yij to determine the derivatives xee and yee at the bottom
@@ -2767,375 +2804,376 @@ void Grid2D_Quad_Block_HO::Smooth_Quad_Block(const int Number_of_Iterations) {
        repectively.  These values may then be used to determine pb, 
        pt, pl, pr, qb, qt, ql, and qr.  */
 
-  num_iter = 0;
+    num_iter = 0;
 
- next_iteration: ;
+  next_iteration: ;
 
-  num_iter = num_iter + 1;
+    num_iter = num_iter + 1;
 
-  if (i_poisson == 0) goto no_source_term_boundary_evaluation;
+    if (i_poisson == 0) goto no_source_term_boundary_evaluation;
 
-  /* BOTTOM AND TOP */
+    /* BOTTOM AND TOP */
 
-  for ( i = 1; i < n_zeta - 1; ++i ) {
-    xee_b[i] = HALF * (-SEVEN*xij[i][0] + EIGHT*xij[i][1] -
-		       xij[i][2]) - THREE * xe_b[i];
-    xee_t[i] = HALF * (-SEVEN*xij[i][n_eta-1] + 
-		       EIGHT*xij[i][n_eta-2] -
-		       xij[i][n_eta-3]) + THREE * xe_t[i];
+    for ( i = 1; i < n_zeta - 1; ++i ) {
+      xee_b[i] = HALF * (-SEVEN*xij[i][0] + EIGHT*xij[i][1] -
+			 xij[i][2]) - THREE * xe_b[i];
+      xee_t[i] = HALF * (-SEVEN*xij[i][n_eta-1] + 
+			 EIGHT*xij[i][n_eta-2] -
+			 xij[i][n_eta-3]) + THREE * xe_t[i];
 
-    yee_b[i] = HALF * (-SEVEN*yij[i][0] + EIGHT*yij[i][1] -
-		       yij[i][2]) - THREE * ye_b[i];
-    yee_t[i] = HALF * (-SEVEN*yij[i][n_eta-1] + 
-		       EIGHT*yij[i][n_eta-2] -
-		       yij[i][n_eta-3]) + THREE * ye_t[i];
+      yee_b[i] = HALF * (-SEVEN*yij[i][0] + EIGHT*yij[i][1] -
+			 yij[i][2]) - THREE * ye_b[i];
+      yee_t[i] = HALF * (-SEVEN*yij[i][n_eta-1] + 
+			 EIGHT*yij[i][n_eta-2] -
+			 yij[i][n_eta-3]) + THREE * ye_t[i];
 
-    alpha = xe_b[i] * xe_b[i] + ye_b[i] * ye_b[i];
-    beta  = xz_b[i] * xe_b[i] + yz_b[i] * ye_b[i];
-    gamma = xz_b[i] * xz_b[i] + yz_b[i] * yz_b[i];
-    r1 = - ONE * (alpha * xzz_b[i] - TWO * beta * xze_b[i] +
-		  gamma * xee_b[i]) / (jacob_b[i] * jacob_b[i]);
-    r2 = - ONE * (alpha * yzz_b[i] - TWO * beta * yze_b[i] +
-		  gamma * yee_b[i]) / (jacob_b[i] * jacob_b[i]);
+      alpha = xe_b[i] * xe_b[i] + ye_b[i] * ye_b[i];
+      beta  = xz_b[i] * xe_b[i] + yz_b[i] * ye_b[i];
+      gamma = xz_b[i] * xz_b[i] + yz_b[i] * yz_b[i];
+      r1 = - ONE * (alpha * xzz_b[i] - TWO * beta * xze_b[i] +
+		    gamma * xee_b[i]) / (jacob_b[i] * jacob_b[i]);
+      r2 = - ONE * (alpha * yzz_b[i] - TWO * beta * yze_b[i] +
+		    gamma * yee_b[i]) / (jacob_b[i] * jacob_b[i]);
 
-    dpb = (ye_b[i] * r1 - xe_b[i] * r2) / jacob_b[i] - pb[i];
-    if (fabs(pb[i]) <= ONE ) {
-      dpmax = HALF;
-    } else {
-      dpmax = HALF * fabs(pb[i]);
-    } /* endif */
-    if (wsur * fabs(dpb) <= dpmax) {
-      pb[i] = pb[i] + wsur * dpb;
-    } else {
-      if (dpb >= ZERO) {
-	pb[i] = pb[i] + dpmax;
+      dpb = (ye_b[i] * r1 - xe_b[i] * r2) / jacob_b[i] - pb[i];
+      if (fabs(pb[i]) <= ONE ) {
+	dpmax = HALF;
       } else {
-	pb[i] = pb[i] - dpmax;
+	dpmax = HALF * fabs(pb[i]);
       } /* endif */
-    } /* endif */
-
-    dqb = (xz_b[i] * r2 - yz_b[i] * r1) / jacob_b[i] - qb[i];
-    if (fabs(qb[i]) <= ONE ) {
-      dqmax = HALF;
-    } else {
-      dqmax = HALF * fabs(qb[i]);
-    } /* endif */
-    if (wsur * fabs(dqb) <= dqmax) {
-      qb[i] = qb[i] + wsur * dqb;
-    } else {
-      if (dqb >= ZERO) {
-	qb[i] = qb[i] + dqmax;
+      if (wsur * fabs(dpb) <= dpmax) {
+	pb[i] = pb[i] + wsur * dpb;
       } else {
-	qb[i] = qb[i] - dqmax;
+	if (dpb >= ZERO) {
+	  pb[i] = pb[i] + dpmax;
+	} else {
+	  pb[i] = pb[i] - dpmax;
+	} /* endif */
       } /* endif */
-    } /* endif */
 
-    alpha = xe_t[i] * xe_t[i] + ye_t[i] * ye_t[i];
-    beta  = xz_t[i] * xe_t[i] + yz_t[i] * ye_t[i];
-    gamma = xz_t[i] * xz_t[i] + yz_t[i] * yz_t[i];
-    r3 = - ONE * (alpha * xzz_t[i] - TWO * beta * xze_t[i] +
-		  gamma * xee_t[i]) / (jacob_t[i] * jacob_t[i]);
-    r4 = - ONE * (alpha * yzz_t[i] - TWO * beta * yze_t[i] +
-		  gamma * yee_t[i]) / (jacob_t[i] * jacob_t[i]);
-
-    dpt = (ye_t[i] * r3 - xe_t[i] * r4) / jacob_t[i] - pt[i];
-    if (fabs(pt[i]) <= ONE ) {
-      dpmax = HALF;
-    } else {
-      dpmax = HALF * fabs(pt[i]);
-    } /* endif */
-    if (wsur * fabs(dpt) <= dpmax) {
-      pt[i] = pt[i] + wsur * dpt;
-    } else {
-      if (dpt >= ZERO) {
-	pt[i] = pt[i] + dpmax;
+      dqb = (xz_b[i] * r2 - yz_b[i] * r1) / jacob_b[i] - qb[i];
+      if (fabs(qb[i]) <= ONE ) {
+	dqmax = HALF;
       } else {
-	pt[i] = pt[i] - dpmax;
+	dqmax = HALF * fabs(qb[i]);
       } /* endif */
-    } /* endif */
-
-    dqt = (xz_t[i] * r4 - yz_t[i] * r3) / jacob_t[i] - qt[i];
-    if (fabs(qt[i]) <= ONE ) {
-      dqmax = HALF;
-    } else {
-      dqmax = HALF * fabs(qt[i]);
-    } /* endif */
-    if (wsur * fabs(dqt) <= dqmax) {
-      qt[i] = qt[i] + wsur * dqt;
-    } else {
-      if (dqt >= ZERO) {
-	qt[i] = qt[i] + dqmax;
+      if (wsur * fabs(dqb) <= dqmax) {
+	qb[i] = qb[i] + wsur * dqb;
       } else {
-	qt[i] = qt[i] - dqmax;
+	if (dqb >= ZERO) {
+	  qb[i] = qb[i] + dqmax;
+	} else {
+	  qb[i] = qb[i] - dqmax;
+	} /* endif */
       } /* endif */
-    } /* endif */
-  } /* endfor */
+
+      alpha = xe_t[i] * xe_t[i] + ye_t[i] * ye_t[i];
+      beta  = xz_t[i] * xe_t[i] + yz_t[i] * ye_t[i];
+      gamma = xz_t[i] * xz_t[i] + yz_t[i] * yz_t[i];
+      r3 = - ONE * (alpha * xzz_t[i] - TWO * beta * xze_t[i] +
+		    gamma * xee_t[i]) / (jacob_t[i] * jacob_t[i]);
+      r4 = - ONE * (alpha * yzz_t[i] - TWO * beta * yze_t[i] +
+		    gamma * yee_t[i]) / (jacob_t[i] * jacob_t[i]);
+
+      dpt = (ye_t[i] * r3 - xe_t[i] * r4) / jacob_t[i] - pt[i];
+      if (fabs(pt[i]) <= ONE ) {
+	dpmax = HALF;
+      } else {
+	dpmax = HALF * fabs(pt[i]);
+      } /* endif */
+      if (wsur * fabs(dpt) <= dpmax) {
+	pt[i] = pt[i] + wsur * dpt;
+      } else {
+	if (dpt >= ZERO) {
+	  pt[i] = pt[i] + dpmax;
+	} else {
+	  pt[i] = pt[i] - dpmax;
+	} /* endif */
+      } /* endif */
+
+      dqt = (xz_t[i] * r4 - yz_t[i] * r3) / jacob_t[i] - qt[i];
+      if (fabs(qt[i]) <= ONE ) {
+	dqmax = HALF;
+      } else {
+	dqmax = HALF * fabs(qt[i]);
+      } /* endif */
+      if (wsur * fabs(dqt) <= dqmax) {
+	qt[i] = qt[i] + wsur * dqt;
+      } else {
+	if (dqt >= ZERO) {
+	  qt[i] = qt[i] + dqmax;
+	} else {
+	  qt[i] = qt[i] - dqmax;
+	} /* endif */
+      } /* endif */
+    } /* endfor */
 
     /* LEFT AND RIGHT */
 
-  for ( j = 1; j < n_eta - 1; ++j ) {
-    xzz_l[j] = HALF * (-SEVEN*xij[0][j] + EIGHT*xij[1][j] -
-		       xij[2][j]) - THREE * xz_l[j];
-    xzz_r[j] = HALF * (-SEVEN*xij[n_zeta-1][j] + 
-		       EIGHT*xij[n_zeta-2][j] -
-		       xij[n_zeta-3][j]) + THREE * xz_r[j];
+    for ( j = 1; j < n_eta - 1; ++j ) {
+      xzz_l[j] = HALF * (-SEVEN*xij[0][j] + EIGHT*xij[1][j] -
+			 xij[2][j]) - THREE * xz_l[j];
+      xzz_r[j] = HALF * (-SEVEN*xij[n_zeta-1][j] + 
+			 EIGHT*xij[n_zeta-2][j] -
+			 xij[n_zeta-3][j]) + THREE * xz_r[j];
 
-    yzz_l[j] = HALF * (-SEVEN*yij[0][j] + EIGHT*yij[1][j] -
-		       yij[2][j]) - THREE * yz_l[j];
-    yzz_r[j] = HALF * (-SEVEN*yij[n_zeta-1][j] + 
-		       EIGHT*yij[n_zeta-2][j] -
-		       yij[n_zeta-3][j]) + THREE * yz_r[j];
+      yzz_l[j] = HALF * (-SEVEN*yij[0][j] + EIGHT*yij[1][j] -
+			 yij[2][j]) - THREE * yz_l[j];
+      yzz_r[j] = HALF * (-SEVEN*yij[n_zeta-1][j] + 
+			 EIGHT*yij[n_zeta-2][j] -
+			 yij[n_zeta-3][j]) + THREE * yz_r[j];
 
-    alpha = xe_l[j] * xe_l[j] + ye_l[j] * ye_l[j];
-    beta  = xz_l[j] * xe_l[j] + yz_l[j] * ye_l[j];
-    gamma = xz_l[j] * xz_l[j] + yz_l[j] * yz_l[j];
-    r1 = - ONE * (alpha * xzz_l[j] - TWO * beta * xze_l[j] +
-		  gamma * xee_l[j]) / (jacob_l[j] * jacob_l[j]);
-    r2 = - ONE * (alpha * yzz_l[j] - TWO * beta * yze_l[j] +
-		  gamma * yee_l[j]) / (jacob_l[j] * jacob_l[j]);
+      alpha = xe_l[j] * xe_l[j] + ye_l[j] * ye_l[j];
+      beta  = xz_l[j] * xe_l[j] + yz_l[j] * ye_l[j];
+      gamma = xz_l[j] * xz_l[j] + yz_l[j] * yz_l[j];
+      r1 = - ONE * (alpha * xzz_l[j] - TWO * beta * xze_l[j] +
+		    gamma * xee_l[j]) / (jacob_l[j] * jacob_l[j]);
+      r2 = - ONE * (alpha * yzz_l[j] - TWO * beta * yze_l[j] +
+		    gamma * yee_l[j]) / (jacob_l[j] * jacob_l[j]);
 
-    dpl = (ye_l[j] * r1 - xe_l[j] * r2) / jacob_l[j] - pl[j];
-    if (fabs(pl[j]) <= ONE ) {
-      dpmax = HALF;
-    } else {
-      dpmax = HALF * fabs(pl[j]);
-    } /* endif */
-    if (wsur * fabs(dpl) <= dpmax) {
-      pl[j] = pl[j] + wsur * dpl;
-    } else {
-      if (dpl >= ZERO) {
-	pl[j] = pl[j] + dpmax;
+      dpl = (ye_l[j] * r1 - xe_l[j] * r2) / jacob_l[j] - pl[j];
+      if (fabs(pl[j]) <= ONE ) {
+	dpmax = HALF;
       } else {
-	pl[j] = pl[j] - dpmax;
+	dpmax = HALF * fabs(pl[j]);
       } /* endif */
-    } /* endif */
-
-    dql = (xz_l[j] * r2 - yz_l[j] * r1) / jacob_l[j] - ql[j];
-    if (fabs(ql[j]) <= ONE ) {
-      dqmax = HALF;
-    } else {
-      dqmax = HALF * fabs(ql[j]);
-    } /* endif */
-    if (wsur * fabs(dql) <= dqmax) {
-      ql[j] = ql[j] + wsur * dql;
-    } else {
-      if (dql >= ZERO) {
-	ql[j] = ql[j] + dqmax;
+      if (wsur * fabs(dpl) <= dpmax) {
+	pl[j] = pl[j] + wsur * dpl;
       } else {
-	ql[j] = ql[j] - dqmax;
+	if (dpl >= ZERO) {
+	  pl[j] = pl[j] + dpmax;
+	} else {
+	  pl[j] = pl[j] - dpmax;
+	} /* endif */
       } /* endif */
-    } /* endif */
 
-    alpha = xe_r[j] * xe_r[j] + ye_r[j] * ye_r[j];
-    beta  = xz_r[j] * xe_r[j] + yz_r[j] * ye_r[j];
-    gamma = xz_r[j] * xz_r[j] + yz_r[j] * yz_r[j];
-    r3 = - ONE * (alpha * xzz_r[j] - TWO * beta * xze_r[j] +
-		  gamma * xee_r[j]) / (jacob_r[j] * jacob_r[j]);
-    r4 = - ONE * (alpha * yzz_r[j] - TWO * beta * yze_r[j] +
-		  gamma * yee_r[j]) / (jacob_r[j] * jacob_r[j]);
-
-    dpr = (ye_r[j] * r3 - xe_r[j] * r4) / jacob_r[j] - pr[j];
-    if (fabs(pr[j]) <= ONE ) {
-      dpmax = HALF;
-    } else {
-      dpmax = HALF * fabs(pr[j]);
-    } /* endif */
-    if (wsur * fabs(dpr) <= dpmax) {
-      pr[j] = pr[j] + wsur * dpr;
-    } else {
-      if (dpr >= ZERO) {
-	pr[j] = pr[j] + dpmax;
+      dql = (xz_l[j] * r2 - yz_l[j] * r1) / jacob_l[j] - ql[j];
+      if (fabs(ql[j]) <= ONE ) {
+	dqmax = HALF;
       } else {
-	pr[j] = pr[j] - dpmax;
+	dqmax = HALF * fabs(ql[j]);
       } /* endif */
-    } /* endif */
-
-    dqr = (xz_r[j] * r4 - yz_r[j] * r3) / jacob_r[j] - qr[j];
-    if (fabs(qr[j]) <= ONE ) {
-      dqmax = HALF;
-    } else {
-      dqmax = HALF * fabs(qr[j]);
-    } /* endif */
-    if (wsur * fabs(dqr) <= dqmax) {
-      qr[j] = qr[j] + wsur * dqr;
-    } else {
-      if (dqr >= ZERO) {
-	qr[j] = qr[j] + dqmax;
+      if (wsur * fabs(dql) <= dqmax) {
+	ql[j] = ql[j] + wsur * dql;
       } else {
-	qr[j] = qr[j] - dqmax;
+	if (dql >= ZERO) {
+	  ql[j] = ql[j] + dqmax;
+	} else {
+	  ql[j] = ql[j] - dqmax;
+	} /* endif */
       } /* endif */
-    } /* endif */
-  } /* endfor */
+
+      alpha = xe_r[j] * xe_r[j] + ye_r[j] * ye_r[j];
+      beta  = xz_r[j] * xe_r[j] + yz_r[j] * ye_r[j];
+      gamma = xz_r[j] * xz_r[j] + yz_r[j] * yz_r[j];
+      r3 = - ONE * (alpha * xzz_r[j] - TWO * beta * xze_r[j] +
+		    gamma * xee_r[j]) / (jacob_r[j] * jacob_r[j]);
+      r4 = - ONE * (alpha * yzz_r[j] - TWO * beta * yze_r[j] +
+		    gamma * yee_r[j]) / (jacob_r[j] * jacob_r[j]);
+
+      dpr = (ye_r[j] * r3 - xe_r[j] * r4) / jacob_r[j] - pr[j];
+      if (fabs(pr[j]) <= ONE ) {
+	dpmax = HALF;
+      } else {
+	dpmax = HALF * fabs(pr[j]);
+      } /* endif */
+      if (wsur * fabs(dpr) <= dpmax) {
+	pr[j] = pr[j] + wsur * dpr;
+      } else {
+	if (dpr >= ZERO) {
+	  pr[j] = pr[j] + dpmax;
+	} else {
+	  pr[j] = pr[j] - dpmax;
+	} /* endif */
+      } /* endif */
+
+      dqr = (xz_r[j] * r4 - yz_r[j] * r3) / jacob_r[j] - qr[j];
+      if (fabs(qr[j]) <= ONE ) {
+	dqmax = HALF;
+      } else {
+	dqmax = HALF * fabs(qr[j]);
+      } /* endif */
+      if (wsur * fabs(dqr) <= dqmax) {
+	qr[j] = qr[j] + wsur * dqr;
+      } else {
+	if (dqr >= ZERO) {
+	  qr[j] = qr[j] + dqmax;
+	} else {
+	  qr[j] = qr[j] - dqmax;
+	} /* endif */
+      } /* endif */
+    } /* endfor */
 
     /* Perform one step in the SOR Gauss-Seidel centred 
        finite-difference solution technique. */
 
- no_source_term_boundary_evaluation: ;
+  no_source_term_boundary_evaluation: ;
 
-  for ( j = 1; j < n_eta - 1; ++j ) {
-    if (i_poisson != 0) {
-      fb = exp ( - a * double(j) );
-      ft = exp ( b * (double(j) - double(n_eta) + ONE) );
-    } /* endfor */
-
-    for ( i = 1; i < n_zeta - 1; ++i ) { 
+    for ( j = 1; j < n_eta - 1; ++j ) {
       if (i_poisson != 0) {
-	fl = exp ( - c * double(i) );
-	fr = exp ( d * (double(i) - double(n_zeta) + ONE) );
+	fb = exp ( - a * double(j) );
+	ft = exp ( b * (double(j) - double(n_eta) + ONE) );
+      } /* endfor */
+
+      for ( i = 1; i < n_zeta - 1; ++i ) { 
+	if (i_poisson != 0) {
+	  fl = exp ( - c * double(i) );
+	  fr = exp ( d * (double(i) - double(n_zeta) + ONE) );
  
-	fbl = ONE -
-	  exp ( -e * sqrt( double(i)*double(i) +
-			   double(j)*double(j) ) );
-	fbr = ONE -
-	  exp ( -e * sqrt( (double(i) - double(n_zeta) + ONE) *
-			   (double(i) - double(n_zeta) + ONE) +
-			   double(j)*double(j) ) );
-	ftl = ONE -
-	  exp ( -e * sqrt( double(i)*double(i) +
-			   (double(j) - double(n_eta) + ONE) *
-			   (double(j) - double(n_eta) + ONE) ) );
-	ftr = ONE -
-	  exp ( -e * sqrt( (double(i) - double(n_zeta) + ONE) *
-			   (double(i) - double(n_zeta) + ONE) +
-			   (double(j) - double(n_eta) + ONE) *
-			   (double(j) - double(n_eta) + ONE) ) );
-	pij = (pb[i] * fb + pt[i] * ft + pl[j] * fl + pr[j] * fr) *
-	  (fbl * fbr * ftl * ftr);
-	qij = (qb[i] * fb + qt[i] * ft + ql[j] * fl + qr[j] * fr) *
-	  (fbl * fbr * ftl * ftr);
-      } else {
-	pij = ZERO;
-	qij = ZERO;
-      } /* endif */
+	  fbl = ONE -
+	    exp ( -e * sqrt( double(i)*double(i) +
+			     double(j)*double(j) ) );
+	  fbr = ONE -
+	    exp ( -e * sqrt( (double(i) - double(n_zeta) + ONE) *
+			     (double(i) - double(n_zeta) + ONE) +
+			     double(j)*double(j) ) );
+	  ftl = ONE -
+	    exp ( -e * sqrt( double(i)*double(i) +
+			     (double(j) - double(n_eta) + ONE) *
+			     (double(j) - double(n_eta) + ONE) ) );
+	  ftr = ONE -
+	    exp ( -e * sqrt( (double(i) - double(n_zeta) + ONE) *
+			     (double(i) - double(n_zeta) + ONE) +
+			     (double(j) - double(n_eta) + ONE) *
+			     (double(j) - double(n_eta) + ONE) ) );
+	  pij = (pb[i] * fb + pt[i] * ft + pl[j] * fl + pr[j] * fr) *
+	    (fbl * fbr * ftl * ftr);
+	  qij = (qb[i] * fb + qt[i] * ft + ql[j] * fl + qr[j] * fr) *
+	    (fbl * fbr * ftl * ftr);
+	} else {
+	  pij = ZERO;
+	  qij = ZERO;
+	} /* endif */
 
-      xzij = HALF * (xij[i+1][j] - xij[i-1][j]);
-      yzij = HALF * (yij[i+1][j] - yij[i-1][j]);
-      xeij = HALF * (xij[i][j+1] - xij[i][j-1]);
-      yeij = HALF * (yij[i][j+1] - yij[i][j-1]);
+	xzij = HALF * (xij[i+1][j] - xij[i-1][j]);
+	yzij = HALF * (yij[i+1][j] - yij[i-1][j]);
+	xeij = HALF * (xij[i][j+1] - xij[i][j-1]);
+	yeij = HALF * (yij[i][j+1] - yij[i][j-1]);
 
-      jacobij = xzij * yeij - xeij * yzij;
+	jacobij = xzij * yeij - xeij * yzij;
 
-      alpha = xeij * xeij + yeij * yeij;
-      beta  = xzij * xeij + yzij * yeij;
-      gamma = xzij * xzij + yzij * yzij;
+	alpha = xeij * xeij + yeij * yeij;
+	beta  = xzij * xeij + yzij * yeij;
+	gamma = xzij * xzij + yzij * yzij;
 
-      dxij = HALF * (jacobij * jacobij * (xzij * pij +
-					  xeij * qij) + alpha * (xij[i+1][j] + xij[i-1][j]) +
-		     gamma * (xij[i][j+1] + xij[i][j-1]) - HALF * beta *
-		     (xij[i+1][j+1] - xij[i+1][j-1] - xij[i-1][j+1] +
-		      xij[i-1][j-1])) / (alpha + gamma) - xij[i][j];
-      xij[i][j] = xij[i][j] + wsor * dxij;
+	dxij = HALF * (jacobij * jacobij * (xzij * pij +
+					    xeij * qij) + alpha * (xij[i+1][j] + xij[i-1][j]) +
+		       gamma * (xij[i][j+1] + xij[i][j-1]) - HALF * beta *
+		       (xij[i+1][j+1] - xij[i+1][j-1] - xij[i-1][j+1] +
+			xij[i-1][j-1])) / (alpha + gamma) - xij[i][j];
+	xij[i][j] = xij[i][j] + wsor * dxij;
           
-      dyij = HALF * (jacobij * jacobij * (yzij * pij +
-					  yeij * qij) + alpha * (yij[i+1][j] + yij[i-1][j]) +
-		     gamma * (yij[i][j+1] + yij[i][j-1]) - HALF * beta *
-		     (yij[i+1][j+1] - yij[i+1][j-1] - yij[i-1][j+1] +
-		      yij[i-1][j-1])) / (alpha + gamma) - yij[i][j];
-      yij[i][j] = yij[i][j] + wsor * dyij;
+	dyij = HALF * (jacobij * jacobij * (yzij * pij +
+					    yeij * qij) + alpha * (yij[i+1][j] + yij[i-1][j]) +
+		       gamma * (yij[i][j+1] + yij[i][j-1]) - HALF * beta *
+		       (yij[i+1][j+1] - yij[i+1][j-1] - yij[i-1][j+1] +
+			yij[i-1][j-1])) / (alpha + gamma) - yij[i][j];
+	yij[i][j] = yij[i][j] + wsor * dyij;
+      } /* endfor */
     } /* endfor */
-  } /* endfor */
 
     /* Check to see if the grid block smoothing is complete.
        If not go to next_iteration. */
 
-  if (num_iter < Number_of_Iterations) goto next_iteration;
+    if (num_iter < Number_of_Iterations) goto next_iteration;
 
-  /* Save the newly computed interior node locations for 
-     the quadrilateral grid block. */
+    /* Save the newly computed interior node locations for 
+       the quadrilateral grid block. */
 
-  for (j  = JNl ; j <= JNu ; ++j ) {
-    for ( i = INl ; i <= INu ; ++i ) {
-      ii = i - INl;
-      jj = j - JNl;
-      Node[i][j].X.x = xij[ii][jj];
-      Node[i][j].X.y = yij[ii][jj];
+    for (j  = JNl ; j <= JNu ; ++j ) {
+      for ( i = INl ; i <= INu ; ++i ) {
+	ii = i - INl;
+	jj = j - JNl;
+	Node[i][j].X.x = xij[ii][jj];
+	Node[i][j].X.y = yij[ii][jj];
+      } /* endfor */
+    }/* endfor */
+
+    /* Require update of the interior cells geometric properties. */
+    Schedule_Interior_Mesh_Update();
+
+    /* Re-compute the exterior nodes for the quadrilateral mesh block. */
+
+    Update_Exterior_Nodes();
+
+    /* Re-compute the cell values for the quadrilateral mesh block. */
+
+    Update_Cells();
+
+    /* Delete (deallocate) the Poisson equation solution variables. */
+
+    for ( i = 0; i <= n_zeta-1 ; ++i ) {
+      delete []xij[i]; xij[i] = NULL;
+      delete []yij[i]; yij[i] = NULL;
     } /* endfor */
-  }/* endfor */
+    delete []xij; xij = NULL;
+    delete []yij; yij = NULL;
 
-  /* Require update of the interior cells geometric properties. */
-  Schedule_Interior_Mesh_Update();
+    delete []deltas_b; deltas_b = NULL;
+    delete []deltas_t; deltas_t = NULL;
+    delete []deltas_l; deltas_l = NULL; 
+    delete []deltas_r; deltas_r = NULL;
 
-  /* Re-compute the exterior nodes for the quadrilateral mesh block. */
+    delete []xz_b; xz_b = NULL; 
+    delete []yz_b; yz_b = NULL;
+    delete []xe_b; xe_b = NULL;
+    delete []ye_b; ye_b = NULL;
+    delete []xzz_b; xzz_b = NULL;
+    delete []yzz_b; yzz_b = NULL;
+    delete []xee_b; xee_b = NULL;
+    delete []yee_b; yee_b = NULL;
+    delete []xze_b; xze_b = NULL;
+    delete []yze_b; yze_b = NULL;
 
-  Update_Exterior_Nodes();
+    delete []xz_t; xz_t = NULL;
+    delete []yz_t; yz_t = NULL;
+    delete []xe_t; xe_t = NULL; 
+    delete []ye_t; ye_t = NULL;
+    delete []xzz_t; xzz_t = NULL;
+    delete []yzz_t; yzz_t = NULL;
+    delete []xee_t; xee_t = NULL;
+    delete []yee_t; yee_t = NULL;
+    delete []xze_t; xze_t = NULL;
+    delete []yze_t; yze_t = NULL;
 
-  /* Re-compute the cell values for the quadrilateral mesh block. */
+    delete []xz_l; xz_l = NULL;
+    delete []yz_l; yz_l = NULL;
+    delete []xe_l; xe_l = NULL;
+    delete []ye_l; ye_l = NULL;
+    delete []xzz_l; xzz_l = NULL;
+    delete []yzz_l; yzz_l = NULL;
+    delete []xee_l; xee_l = NULL;
+    delete []yee_l; yee_l = NULL;
+    delete []xze_l; xze_l = NULL;
+    delete []yze_l; yze_l = NULL;
 
-  Update_Cells();
+    delete []xz_r; xz_r = NULL;
+    delete []yz_r; yz_r = NULL;
+    delete []xe_r; xe_r = NULL;
+    delete []ye_r; ye_r = NULL;
+    delete []xzz_r; xzz_r = NULL;
+    delete []yzz_r; yzz_r = NULL;
+    delete []xee_r; xee_r = NULL;
+    delete []yee_r; yee_r = NULL;
+    delete []xze_r; xze_r = NULL;
+    delete []yze_r; yze_r = NULL;
 
-  /* Delete (deallocate) the Poisson equation solution variables. */
+    delete []pb; pb = NULL;
+    delete []pt; pt = NULL;
+    delete []pl; pl = NULL;
+    delete []pr; pr = NULL;
 
-  for ( i = 0; i <= n_zeta-1 ; ++i ) {
-    delete []xij[i]; xij[i] = NULL;
-    delete []yij[i]; yij[i] = NULL;
-  } /* endfor */
-  delete []xij; xij = NULL;
-  delete []yij; yij = NULL;
+    delete []qb; qb = NULL;
+    delete []qt; qt = NULL;
+    delete []ql; ql = NULL;
+    delete []qr; qr = NULL;
 
-  delete []deltas_b; deltas_b = NULL;
-  delete []deltas_t; deltas_t = NULL;
-  delete []deltas_l; deltas_l = NULL; 
-  delete []deltas_r; deltas_r = NULL;
+    delete []jacob_b; jacob_b = NULL;
+    delete []jacob_t; jacob_t = NULL;
+    delete []jacob_l; jacob_l = NULL;
+    delete []jacob_r; jacob_r = NULL;
 
-  delete []xz_b; xz_b = NULL; 
-  delete []yz_b; yz_b = NULL;
-  delete []xe_b; xe_b = NULL;
-  delete []ye_b; ye_b = NULL;
-  delete []xzz_b; xzz_b = NULL;
-  delete []yzz_b; yzz_b = NULL;
-  delete []xee_b; xee_b = NULL;
-  delete []yee_b; yee_b = NULL;
-  delete []xze_b; xze_b = NULL;
-  delete []yze_b; yze_b = NULL;
-
-  delete []xz_t; xz_t = NULL;
-  delete []yz_t; yz_t = NULL;
-  delete []xe_t; xe_t = NULL; 
-  delete []ye_t; ye_t = NULL;
-  delete []xzz_t; xzz_t = NULL;
-  delete []yzz_t; yzz_t = NULL;
-  delete []xee_t; xee_t = NULL;
-  delete []yee_t; yee_t = NULL;
-  delete []xze_t; xze_t = NULL;
-  delete []yze_t; yze_t = NULL;
-
-  delete []xz_l; xz_l = NULL;
-  delete []yz_l; yz_l = NULL;
-  delete []xe_l; xe_l = NULL;
-  delete []ye_l; ye_l = NULL;
-  delete []xzz_l; xzz_l = NULL;
-  delete []yzz_l; yzz_l = NULL;
-  delete []xee_l; xee_l = NULL;
-  delete []yee_l; yee_l = NULL;
-  delete []xze_l; xze_l = NULL;
-  delete []yze_l; yze_l = NULL;
-
-  delete []xz_r; xz_r = NULL;
-  delete []yz_r; yz_r = NULL;
-  delete []xe_r; xe_r = NULL;
-  delete []ye_r; ye_r = NULL;
-  delete []xzz_r; xzz_r = NULL;
-  delete []yzz_r; yzz_r = NULL;
-  delete []xee_r; xee_r = NULL;
-  delete []yee_r; yee_r = NULL;
-  delete []xze_r; xze_r = NULL;
-  delete []yze_r; yze_r = NULL;
-
-  delete []pb; pb = NULL;
-  delete []pt; pt = NULL;
-  delete []pl; pl = NULL;
-  delete []pr; pr = NULL;
-
-  delete []qb; qb = NULL;
-  delete []qt; qt = NULL;
-  delete []ql; ql = NULL;
-  delete []qr; qr = NULL;
-
-  delete []jacob_b; jacob_b = NULL;
-  delete []jacob_t; jacob_t = NULL;
-  delete []jacob_l; jacob_l = NULL;
-  delete []jacob_r; jacob_r = NULL;
-
+  }
 }
 
 
