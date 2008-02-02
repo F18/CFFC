@@ -323,6 +323,14 @@ public:
 
   //! Deallocate memory for spline info(s) of structured quadrilateral grid block.
   void deallocateBndSplineInfo(void);
+  //! Deallocate memory for North spline info
+  void deallocate_BndNorthSplineInfo(void){ delete [] BndNorthSplineInfo; BndNorthSplineInfo = NULL; }
+  //! Deallocate memory for South spline info
+  void deallocate_BndSouthSplineInfo(void){ delete [] BndSouthSplineInfo; BndSouthSplineInfo = NULL; }
+  //! Deallocate memory for North spline info
+  void deallocate_BndEastSplineInfo(void){ delete [] BndEastSplineInfo; BndEastSplineInfo = NULL; }
+  //! Deallocate memory for North spline info
+  void deallocate_BndWestSplineInfo(void){ delete [] BndWestSplineInfo; BndWestSplineInfo = NULL; }
   //@}
 
   //! @name Calculate cell centroid.
@@ -416,7 +424,7 @@ public:
   Vector2D nfaceW(const int ii, const int jj) const;
   //@}
 
-  //! @name Functions to get Gauss quadrature points for each straight cell face
+  //! @name Get Gauss quadrature points for each straight cell face
   //@{
   void getGaussQuadPointsFaceN(const Cell2D_HO &Cell, Vector2D * GQPoints, const int & NumberOfGQPs) const;
   void getGaussQuadPointsFaceN(const int &ii, const int &jj, Vector2D * GQPoints, const int & NumberOfGQPs) const;
@@ -429,6 +437,26 @@ public:
 
   void getGaussQuadPointsFaceW(const Cell2D_HO &Cell, Vector2D * GQPoints, const int & NumberOfGQPs) const;
   void getGaussQuadPointsFaceW(const int &ii, const int &jj, Vector2D * GQPoints, const int & NumberOfGQPs) const;
+  //@}
+
+  //! @name Get cell geometric moments and related information.
+  //@{
+  //! Get the current highest(i.e. maximum) reconstruction order
+  const int & MaxRecOrder(void) const { return HighestReconstructionOrder; }
+  //! Get the geometric coefficient array of cell (ii,jj).
+  const GeometricMoments & CellGeomCoeff(const int &ii, const int &jj) const { return Cell[ii][jj].GeomCoeff(); }
+  //! Get the value of cell (ii,jj) geometric coefficient with x-power 'p1' and y-power 'p2'.
+  const double & CellGeomCoeffValue(const int &ii, const int &jj, const int &p1, const int &p2) {
+    return Cell[ii][jj].GeomCoeffValue(p1,p2);
+  }
+  //! Get the value of cell (ii,jj) geometric coefficient which is store in the 'position' place 
+  const double & CellGeomCoeffValue(const int &ii, const int &jj, const int &position) const {
+    return Cell[ii][jj].GeomCoeffValue(position);
+  }
+  //! Get the cell (ii,jj) geometric coefficient which is store in the 'position' place (i.e. powers and value) 
+  GeomMoment & CellGeomCoeff(const int &ii, const int &jj, const int &position) {
+    return Cell[ii][jj].GeomCoeff(position);
+  }
   //@}
 
   //! @name Bilinear interplation (Zingg & Yarrow) and diamond path reconstruction.
@@ -710,6 +738,20 @@ public:
   friend void operator *(const double &a, Grid2D_Quad_Block_HO &G) { return G*a;}
   //@}
 
+  //! @name Geometric boundary representation related functions.
+  //@{
+  //! Set the designated switch to require high-order representation of the cell geometric boundaries
+  void setHighOrderBoundaryRepresentation(void){ HighOrderBoundaryRepresentation = ON; }
+  //! Set the designated switch to require treatment of cell geometric boundaries as straight lines
+  void setLowOrderBoundaryRepresentation(void){ HighOrderBoundaryRepresentation = OFF; }
+  //! Set the boundary representation designated switch to the default value (i.e. low-order representation)
+  void setDefaultBoundaryRepresentation(void){ HighOrderBoundaryRepresentation = OFF; }
+  //! Return true if geometric boundary representation is high-order otherwise return false.
+  bool IsHighOrderBoundary(void) const { return HighOrderBoundaryRepresentation == ON? true:false; }
+  //! Get the value of the HighOrderBoundaryRepresentation variable.
+  int getHighOrderBoundaryValue(void) const {return HighOrderBoundaryRepresentation; }
+  //@}
+
   //! @name Input-output operators.
   //@{
   friend ostream &operator << (ostream &out_file, const Grid2D_Quad_Block_HO &G);
@@ -719,12 +761,14 @@ public:
 private:
   Grid2D_Quad_Block_HO(const Grid2D_Quad_Block_HO &G);     //! Private copy constructor.
 
-
   //! Switch for computing with high-order or low-order accuracy the geometric properties 
   static int HighOrderBoundaryRepresentation;
 
   //! Switch for applying or not the smoothing subroutine
   static int Smooth_Quad_Block_Flag; 
+
+  //! Highest order of reconstruction that might occur in calculations with the current grid.
+  int HighestReconstructionOrder;
 
   //! @name Flags to define different levels of mesh update.
   //@{
@@ -740,6 +784,30 @@ private:
   //@}
 
 };
+
+/*!
+ * Default constructor.
+ */
+inline Grid2D_Quad_Block_HO::Grid2D_Quad_Block_HO(void)
+  : Integration(this),
+    NNi(0), INl(0), INu(0), NNj(0), JNl(0), JNu(0),
+    NCi(0), ICl(0), ICu(0), NCj(0), JCl(0), JCu(0),
+    Nghost(0), HighestReconstructionOrder(0),
+    Node(NULL), Cell(NULL),
+    BCtypeN(NULL), BCtypeS(NULL), BCtypeE(NULL), BCtypeW(NULL),
+    BndNorthSpline(), BndSouthSpline(), BndEastSpline(), BndWestSpline(),
+    BndNorthSplineInfo(NULL), BndSouthSplineInfo(NULL),
+    BndEastSplineInfo(NULL), BndWestSplineInfo(NULL),
+    SminN(ZERO), SmaxN(ZERO), SminS(ZERO), SmaxS(ZERO), 
+    SminE(ZERO), SmaxE(ZERO), SminW(ZERO), SmaxW(ZERO),
+    StretchI(0), StretchJ(0), BetaI(ONE), TauI(ONE),
+    BetaJ(ONE), TauJ(ONE),
+    OrthogonalN(1), OrthogonalS(1), OrthogonalE(1), OrthogonalW(1),
+    // Initialize mesh update flags to OFF (i.e. no update scheduled)
+    InteriorMeshUpdate(OFF), GhostCellsUpdate(OFF), CornerGhostCellsUpdate(OFF)
+{
+  // 
+}
 
 /*!
  * Allocate memory.

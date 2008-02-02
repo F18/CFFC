@@ -33,37 +33,13 @@ int Grid2D_Quad_Block_HO::Smooth_Quad_Block_Flag = ON;
 // ===== Member functions =====
 
 /*!
- * Default constructor.
- */
-Grid2D_Quad_Block_HO::Grid2D_Quad_Block_HO(void)
-  : Integration(this),
-    NNi(0), INl(0), INu(0), NNj(0), JNl(0), JNu(0),
-    NCi(0), ICl(0), ICu(0), NCj(0), JCl(0), JCu(0),
-    Nghost(0),
-    Node(NULL), Cell(NULL),
-    BCtypeN(NULL), BCtypeS(NULL), BCtypeE(NULL), BCtypeW(NULL),
-    BndNorthSpline(), BndSouthSpline(), BndEastSpline(), BndWestSpline(),
-    BndNorthSplineInfo(NULL), BndSouthSplineInfo(NULL),
-    BndEastSplineInfo(NULL), BndWestSplineInfo(NULL),
-    SminN(ZERO), SmaxN(ZERO), SminS(ZERO), SmaxS(ZERO), 
-    SminE(ZERO), SmaxE(ZERO), SminW(ZERO), SmaxW(ZERO),
-    StretchI(0), StretchJ(0), BetaI(ONE), TauI(ONE),
-    BetaJ(ONE), TauJ(ONE),
-    OrthogonalN(1), OrthogonalS(1), OrthogonalE(1), OrthogonalW(1),
-    // Initialize mesh update flags to OFF (i.e. no update scheduled)
-    InteriorMeshUpdate(OFF), GhostCellsUpdate(OFF), CornerGhostCellsUpdate(OFF)
-{
-  // 
-}
-
-/*!
  * Copy constructor. It is declared private
  */
 Grid2D_Quad_Block_HO::Grid2D_Quad_Block_HO(const Grid2D_Quad_Block_HO &G)
   :Integration(this),
    NNi(0), INl(0), INu(0), NNj(0), JNl(0), JNu(0),
    NCi(0), ICl(0), ICu(0), NCj(0), JCl(0), JCu(0),
-   Nghost(0),
+   Nghost(0), HighestReconstructionOrder(0),
    Node(NULL), Cell(NULL),
    BCtypeN(NULL), BCtypeS(NULL), BCtypeE(NULL), BCtypeW(NULL),
    BndNorthSpline(), BndSouthSpline(), BndEastSpline(), BndWestSpline(),
@@ -84,7 +60,7 @@ Grid2D_Quad_Block_HO::Grid2D_Quad_Block_HO(const Grid2D_Quad_Block_HO &G)
   // allocate memory for the new container
   Ni = G.NCi - 2*G.Nghost;
   Nj = G.NCj - 2*G.Nghost;
-  allocate(Ni,Nj,G.Nghost);
+  allocate(Ni,Nj,G.Nghost,G.MaxRecOrder());
 
   // Set the grid values by copying from the grid block G.
   if (G.Node != NULL) {
@@ -193,6 +169,7 @@ void Grid2D_Quad_Block_HO::allocate(const int &Ni, const int &Nj, const int &Ng,
     NCi = Ni+2*Ng;   ICl = Ng; ICu = Ni+Ng-1;
     NCj = Nj+2*Ng;   JCl = Ng; JCu = Nj+Ng-1;
     Nghost = Ng;
+    HighestReconstructionOrder = HighestRecOrder;
     
     Node = new Node2D_HO*[NNi];
     for ( i = 0; i <= NNi-1 ; ++i ) Node[i] = new Node2D_HO[NNj];
@@ -202,7 +179,7 @@ void Grid2D_Quad_Block_HO::allocate(const int &Ni, const int &Nj, const int &Ng,
     // allocate memory for the container of geometric moments
     for ( i = 0; i <NCi ; ++i ){
       for ( j = 0; j <NCj ; ++j ){
-	Cell[i][j].SetGeomCoeffContainerSize(HighestRecOrder);       
+	Cell[i][j].SetGeomCoeffContainerSize(HighestReconstructionOrder);       
       }
     }
 
@@ -212,13 +189,14 @@ void Grid2D_Quad_Block_HO::allocate(const int &Ni, const int &Nj, const int &Ng,
     // Complete memory allocation
     return;
     
-  } else if (HighestRecOrder != Cell[0][0].GeomCoeff().RecOrder()){
+  } else if (HighestRecOrder != HighestReconstructionOrder){
     // Check if the highest reconstruction order is different than the current one.
+    HighestReconstructionOrder = HighestRecOrder;
     
     // re-allocate memory for the container of geometric moments
     for ( i = 0; i <NCi ; ++i ){
       for ( j = 0; j <NCj ; ++j ){
-	Cell[i][j].SetGeomCoeffContainerSize(HighestRecOrder);       
+	Cell[i][j].SetGeomCoeffContainerSize(HighestReconstructionOrder);       
       }
     }    
   }
@@ -274,6 +252,7 @@ void Grid2D_Quad_Block_HO::deallocate(void) {
   NNi = 0; INl = 0; INu = 0; NNj = 0; JNl = 0; JNu = 0;
   NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0;
   Nghost = 0;
+  HighestReconstructionOrder = 0;
   StretchI = 0; StretchJ = 0; BetaI = ONE; TauI = ONE;
   BetaJ = ONE; TauJ = ONE;
   OrthogonalN = 1; OrthogonalS = 1; OrthogonalE = 1; OrthogonalW = 1;
@@ -294,7 +273,7 @@ Grid2D_Quad_Block_HO& Grid2D_Quad_Block_HO::operator=(const Grid2D_Quad_Block_HO
   // re-allocate memory if there isn't enough
   Ni = Grid.NCi - 2*Grid.Nghost;
   Nj = Grid.NCj - 2*Grid.Nghost;
-  allocate(Ni,Nj,Grid.Nghost);
+  allocate(Ni,Nj,Grid.Nghost,Grid.MaxRecOrder());
 
   // Set the grid values by copying from the grid block Grid.
   if (Grid.Node != NULL) {
@@ -4527,11 +4506,13 @@ void Grid2D_Quad_Block_HO::Write_Quad_Block_Definition(ostream &Out_File) {
     if (NNi == 0 || NNj == 0) {
        Out_File << NCi << " " 
 	        << NCj << " "
-		<< Nghost << "\n";
+		<< Nghost << " "
+		<< HighestReconstructionOrder << "\n";
     } else {
        Out_File << NCi << " " 
 	        << NCj << " "
-		<< Nghost << "\n" 
+		<< Nghost << " "
+		<< HighestReconstructionOrder << "\n" 
                 << BndNorthSpline.np << "\n"
                 << BndNorthSpline.type << "\n"
                 << BndNorthSpline 
@@ -4570,7 +4551,7 @@ void Grid2D_Quad_Block_HO::Write_Quad_Block_Definition(ostream &Out_File) {
  */
 void Grid2D_Quad_Block_HO::Read_Quad_Block_Definition(istream &In_File) {
   
-  int i, j, ng, k, kx, ky, kx_max, ky_max, npts, spline_type;
+  int i, j, ng, HighestRecOrder, k, kx, ky, kx_max, ky_max, npts, spline_type;
   int node_init_procedure;
   double S_i, S_j, 
     s_north, s_south, s_east, s_west,
@@ -4583,13 +4564,13 @@ void Grid2D_Quad_Block_HO::Read_Quad_Block_Definition(istream &In_File) {
   Spline2D_HO S1_NS, S2_NS, S1_EW, S2_EW;
 
   In_File.setf(ios::skipws);
-  In_File >> i >> j >> ng;
+  In_File >> i >> j >> ng >> HighestRecOrder;
   In_File.unsetf(ios::skipws);
 
   if (i != 0 && j != 0 && ng != 0) {
     /* Allocate (re-allocate) memory for the cells and nodes 
        of the quadrilateral mesh block as required. */
-    allocate(i, j, ng);
+    allocate(i, j, ng, HighestRecOrder);
     
     /* For each of the north, south, east, and west boundaries
        of this mesh block, read in the number of spline points, 
@@ -4600,7 +4581,6 @@ void Grid2D_Quad_Block_HO::Read_Quad_Block_Definition(istream &In_File) {
     In_File.setf(ios::skipws);
     In_File >> npts;
     In_File.unsetf(ios::skipws);
-    if (BndNorthSpline.np != 0) BndNorthSpline.deallocate();
     BndNorthSpline.allocate(npts);
     In_File.setf(ios::skipws);
     In_File >> spline_type;
@@ -4614,7 +4594,6 @@ void Grid2D_Quad_Block_HO::Read_Quad_Block_Definition(istream &In_File) {
     In_File.setf(ios::skipws);
     In_File >> npts;
     In_File.unsetf(ios::skipws);
-    if (BndSouthSpline.np != 0) BndSouthSpline.deallocate();
     BndSouthSpline.allocate(npts);
     In_File.setf(ios::skipws);
     In_File >> spline_type;
@@ -4628,7 +4607,6 @@ void Grid2D_Quad_Block_HO::Read_Quad_Block_Definition(istream &In_File) {
     In_File.setf(ios::skipws);
     In_File >> npts;
     In_File.unsetf(ios::skipws);
-    if (BndEastSpline.np != 0) BndEastSpline.deallocate();
     BndEastSpline.allocate(npts);
     In_File.setf(ios::skipws);
     In_File >> spline_type;
@@ -4642,7 +4620,6 @@ void Grid2D_Quad_Block_HO::Read_Quad_Block_Definition(istream &In_File) {
     In_File.setf(ios::skipws);
     In_File >> npts;
     In_File.unsetf(ios::skipws);
-    if (BndWestSpline.np != 0) BndWestSpline.deallocate();
     BndWestSpline.allocate(npts);
     In_File.setf(ios::skipws);
     In_File >> spline_type;
@@ -5472,11 +5449,12 @@ void Grid2D_Quad_Block_HO::Double_Mesh_Resolution(const Grid2D_Quad_Block_HO &Gr
     double_resolution_permitted = 1;
     allocate(2*(Grid_Original.NCi-2*Grid_Original.Nghost), 
 	     2*(Grid_Original.NCj-2*Grid_Original.Nghost),
-	     Grid_Original.Nghost);
-  } /* endif */
+	     Grid_Original.Nghost,
+	     Grid_Original.MaxRecOrder());
+  }/* endif */
 
-    /* Copy boundary spline info to quadrilateral mesh block 
-       with twice the resolution. */
+  /* Copy boundary spline info to quadrilateral mesh block 
+     with twice the resolution. */
 
   if (double_resolution_permitted) {
 
@@ -5671,7 +5649,8 @@ void Grid2D_Quad_Block_HO::Half_Mesh_Resolution(const Grid2D_Quad_Block_HO &Grid
     half_resolution_permitted = 1;
     allocate((Grid_Original.NCi-2*Grid_Original.Nghost)/2, 
 	     (Grid_Original.NCj-2*Grid_Original.Nghost)/2,
-	     Grid_Original.Nghost);
+	     Grid_Original.Nghost,
+	     Grid_Original.MaxRecOrder());
   } /* endif */
 
     /* Copy boundary spline info to quadrilateral mesh block 
@@ -5779,7 +5758,8 @@ void Grid2D_Quad_Block_HO::Refine_Mesh(const Grid2D_Quad_Block_HO &Grid_Original
     mesh_refinement_permitted = 1;
     allocate(Grid_Original.NCi-2*Grid_Original.Nghost, 
 	     Grid_Original.NCj-2*Grid_Original.Nghost,
-	     Grid_Original.Nghost);
+	     Grid_Original.Nghost,
+	     Grid_Original.MaxRecOrder());
   } /* endif */
 
     /* Copy boundary spline info for the refined
@@ -6013,9 +5993,6 @@ void Grid2D_Quad_Block_HO::Refine_Mesh(const Grid2D_Quad_Block_HO &Grid_Original
 	Node[2*(i-i_min)+INl  ]
 	  [2*(j-j_min)+JNl+1].X 
 	  = Grid_Original.xfaceW(i, j);
-	//     	       Node[2*(i-i_min)+INl+1]
-	//                              [2*(j-j_min)+JNl+1].X 
-	//                   = Grid_Original.Cell[i][j].Xc;
 	Node[2*(i-i_min)+INl+1]
 	  [2*(j-j_min)+JNl+1].X 
 	  = (Grid_Original.nodeSW(i,j).X +
@@ -6112,18 +6089,6 @@ void Grid2D_Quad_Block_HO::Refine_Mesh(const Grid2D_Quad_Block_HO &Grid_Original
 	Node[i][JNu].X =  
 	  Spline(sp_m, BndNorthSpline);
       } /* endfor */
-      // 	 for ( i = ICl; i <= ICu; i++) {
-      // 	   if (area(i,JCu) <= ZERO) {
-      // 	     Node[i][JNu-1].X = Node[i][JNu-3].X + (2.0/3.0)*(Node[i][JNu].X-
-      // 												      Node[i][JNu-3].X);
-      // 	     Node[i][JNu-2].X = Node[i][JNu-3].X + (1.0/3.0)*(Node[i][JNu].X-
-      // 												      Node[i][JNu-3].X);
-      // 	     Node[i+1][JNu-1].X = Node[i+1][JNu-3].X + (2.0/3.0)*(Node[i+1][JNu].X-
-      // 												      Node[i+1][JNu-3].X);
-      // 	     Node[i+1][JNu-2].X = Node[i+1][JNu-3].X + (1.0/3.0)*(Node[i+1][JNu].X-
-      // 												      Node[i+1][JNu-3].X);
-      // 	   }
-      // 	 }
     } /* endif */
 
     /* Require update of the interior cells geometric properties. */
@@ -6187,11 +6152,14 @@ void Grid2D_Quad_Block_HO::Coarsen_Mesh(const Grid2D_Quad_Block_HO &Grid_Origina
     mesh_coarsening_permitted = 1;
     allocate(Grid_Original_SW.NCi-2*Grid_Original_SW.Nghost, 
 	     Grid_Original_SW.NCj-2*Grid_Original_SW.Nghost,
-	     Grid_Original_SW.Nghost);
-  } /* endif */
+	     Grid_Original_SW.Nghost,
+	     max(Grid_Original_SW.MaxRecOrder(),
+		 max(Grid_Original_SE.MaxRecOrder(),
+		     max(Grid_Original_NW.MaxRecOrder(), Grid_Original_NE.MaxRecOrder() ))) );
+  }/* endif */
 
-    /* Copy boundary spline info for the coarsened
-       quadrilateral mesh block. */
+  /* Copy boundary spline info for the coarsened
+     quadrilateral mesh block. */
 
   if (mesh_coarsening_permitted) {
 
@@ -6577,17 +6545,26 @@ ostream &operator << (ostream &out_file,
   out_file << G.NNi << " " << G.INl << " " << G.INu << "\n";
   out_file << G.NNj << " " << G.JNl << " " << G.JNu << "\n";
   out_file << G.Nghost << "\n";
+  out_file << G.MaxRecOrder() << "\n"; // used for setting GeomCoeff
+  out_file << G.getHighOrderBoundaryValue() << "\n";
   if (G.NNi == 0 || G.NNj == 0) return(out_file);
   out_file << G.NCi << " " << G.ICl << " " << G.ICu << "\n";
   out_file << G.NCj << " " << G.JCl << " " << G.JCu << "\n";
 
+  out_file.precision(15);
   // Output node data
   for ( j = G.JNl-G.Nghost ; j <= G.JNu+G.Nghost; ++j ) {
     for ( i = G.INl-G.Nghost ; i <= G.INu+G.Nghost; ++i ) {
       out_file << G.Node[i][j].X << "\n";
     } /* endfor */
   } /* endfor */
-
+  // Output cell data
+  for ( j = G.JCl-G.Nghost ; j <= G.JCu+G.Nghost; ++j ) {
+    for ( i = G.ICl-G.Nghost ; i <= G.ICu+G.Nghost; ++i ) {
+      out_file << G.Cell[i][j] << "\n";
+    } /* endfor */
+  } /* endfor */
+  out_file.precision(15);
   for ( i = G.ICl-G.Nghost ; i <= G.ICu+G.Nghost ; ++i) {
     out_file << G.BCtypeN[i] << " " << G.BCtypeS[i] << "\n";
   } /* endfor */
@@ -6601,6 +6578,15 @@ ostream &operator << (ostream &out_file,
   } else {
     out_file << G.BndNorthSpline.np << "\n";
   } /* endif */
+  if (G.BndNorthSplineInfo != NULL){
+    out_file << G.NCi << "\n"; 	// number of SplineInterval2D elements
+    // Output each active component of BndNorthSplineInfo (no ghost cells)
+    for ( i = G.ICl; i <= G.ICu; ++i) {
+      out_file << G.BndNorthSplineInfo[i] << "\n";
+    }   
+  } else {
+    out_file << 0 << "\n"; // zero SplineInterval2D elements
+  }
 
   // Output South boundary spline information
   if (G.BndSouthSpline.np != 0 ) {
@@ -6608,6 +6594,15 @@ ostream &operator << (ostream &out_file,
   } else {
     out_file << G.BndSouthSpline.np << "\n";
   } /* endif */
+  if (G.BndSouthSplineInfo != NULL){
+    out_file << G.NCi << "\n"; 	// number of SplineInterval2D elements
+    // Output each active component of BndSouthSplineInfo (no ghost cells)
+    for ( i = G.ICl; i <= G.ICu; ++i) {
+      out_file << G.BndSouthSplineInfo[i] << "\n";
+    }   
+  } else {
+    out_file << 0 << "\n"; // zero SplineInterval2D elements
+  }
 
   // Output East boundary spline information
   if (G.BndEastSpline.np != 0 ) {
@@ -6615,6 +6610,15 @@ ostream &operator << (ostream &out_file,
   } else {
     out_file << G.BndEastSpline.np << "\n";
   } /* endif */
+  if (G.BndEastSplineInfo != NULL){
+    out_file << G.NCj << "\n"; 	// number of SplineInterval2D elements
+    // Output each active component of BndEastSplineInfo (no ghost cells)
+    for ( i = G.JCl; i <= G.JCu; ++i) {
+      out_file << G.BndEastSplineInfo[i] << "\n";
+    }   
+  } else {
+    out_file << 0 << "\n"; // zero SplineInterval2D elements
+  }
 
   // Output West boundary spline information
   if (G.BndWestSpline.np != 0 ) {
@@ -6622,6 +6626,15 @@ ostream &operator << (ostream &out_file,
   } else {
     out_file << G.BndWestSpline.np << "\n";
   } /* endif */
+  if (G.BndWestSplineInfo != NULL){
+    out_file << G.NCj << "\n"; 	// number of SplineInterval2D elements
+    // Output each active component of BndWestSplineInfo (no ghost cells)
+    for ( i = G.JCl; i <= G.JCu; ++i) {
+      out_file << G.BndWestSplineInfo[i] << "\n";
+    }   
+  } else {
+    out_file << 0 << "\n"; // zero SplineInterval2D elements
+  }
 
   out_file.setf(ios::scientific);
   out_file << G.SminN << " " << G.SmaxN << " " << G.SminS << " " << G.SmaxS << "\n"; 
@@ -6639,7 +6652,7 @@ ostream &operator << (ostream &out_file,
  */
 istream &operator >> (istream &in_file, 
 		      Grid2D_Quad_Block_HO &G) {
-  int i, j, ni, il, iu, nj, jl, ju, ng;
+  int i, j, ni, il, iu, nj, jl, ju, ng, RecOrder, BoundaryRepresentationFlag;
 
   // Read mesh parameters
   in_file.setf(ios::skipws);
@@ -6647,13 +6660,15 @@ istream &operator >> (istream &in_file,
   in_file >> ni >> il >> iu;
   in_file >> nj >> jl >> ju;
   in_file >> ng;
+  in_file >> RecOrder;	// added for GeomCoeff
+  in_file >> BoundaryRepresentationFlag;
   in_file.unsetf(ios::skipws);
 
   // Provide enough memory for the new mesh
   if (ni == 0 || nj == 0) {
     if (G.Node != NULL) G.deallocate(); return(in_file);
   } /* endif */
-  G.allocate(ni-2*ng-1, nj-2*ng-1, ng);
+  G.allocate(ni-2*ng-1, nj-2*ng-1, ng, RecOrder);
 
   // Read indexes for cells
   in_file.setf(ios::skipws);
@@ -6667,11 +6682,10 @@ istream &operator >> (istream &in_file,
     } /* endfor */
   } /* endfor */
 
-  for ( j = G.JCl-G.Nghost ; j <= G.JCu+G.Nghost ; ++j) {
-    for ( i = G.ICl-G.Nghost ; i <= G.ICu+G.Nghost ; ++i) {
-      G.Cell[i][j].I = i; G.Cell[i][j].J = j;
-      G.Cell[i][j].Xc = G.centroid(i, j);
-      G.Cell[i][j].A = G.area(i, j);
+  // Read the cell parameters
+  for ( j = G.JCl-G.Nghost ; j <= G.JCu+G.Nghost; ++j ) {
+    for ( i = G.ICl-G.Nghost ; i <= G.ICu+G.Nghost; ++i ) {
+      in_file >> G.Cell[i][j];
     } /* endfor */
   } /* endfor */
 
@@ -6689,15 +6703,71 @@ istream &operator >> (istream &in_file,
 
   // Read the North boundary spline
   in_file >> G.BndNorthSpline;
+  // Read the North boundary spline info
+  in_file.setf(ios::skipws);
+  in_file >> ni;
+  in_file.unsetf(ios::skipws);
+  if (ni > 0){
+    // allocate memory
+    G.BndNorthSplineInfo = new Spline2DInterval_HO [ni];
+    // Read spline info
+    for(i=G.ICl; i<=G.ICu; ++i) {
+      in_file >> G.BndNorthSplineInfo[i];
+    }
+  } else {
+    G.deallocate_BndNorthSplineInfo();
+  }
 
   // Read the South boundary spline
   in_file >> G.BndSouthSpline;
+  // Read the South boundary spline info
+  in_file.setf(ios::skipws);
+  in_file >> ni;
+  in_file.unsetf(ios::skipws);
+  if (ni > 0){
+    // allocate memory
+    G.BndSouthSplineInfo = new Spline2DInterval_HO [ni];
+    // Read spline info
+    for(i=G.ICl; i<=G.ICu; ++i) {
+      in_file >> G.BndSouthSplineInfo[i];
+    }
+  } else {
+    G.deallocate_BndSouthSplineInfo();
+  }
 
   // Read the East boundary spline
   in_file >> G.BndEastSpline;
+  // Read the East boundary spline info
+  in_file.setf(ios::skipws);
+  in_file >> nj; 
+  in_file.unsetf(ios::skipws);
+  if (nj > 0){
+    // allocate memory
+    G.BndEastSplineInfo = new Spline2DInterval_HO [nj];
+    // Read spline info
+    for(j=G.JCl; j<=G.JCu; ++j) {
+      in_file >> G.BndEastSplineInfo[j];
+    }
+  } else {
+    G.deallocate_BndEastSplineInfo();
+  }
 
   // Read the West boundary spline
   in_file >> G.BndWestSpline;
+  // Read the West boundary spline info
+  in_file.setf(ios::skipws);
+  in_file >> nj; 
+  in_file.unsetf(ios::skipws);
+  if (nj > 0){
+    // allocate memory
+    G.BndWestSplineInfo = new Spline2DInterval_HO [nj];
+    // Read spline info
+    for(j=G.JCl; j<=G.JCu; ++j) {
+      in_file >> G.BndWestSplineInfo[j];
+    }
+  } else {
+    G.deallocate_BndWestSplineInfo();
+  }
 
   in_file.setf(ios::skipws);
   in_file >> G.SminN >> G.SmaxN >> G.SminS >> G.SmaxS; 
@@ -6707,6 +6777,18 @@ istream &operator >> (istream &in_file,
   in_file >> G.OrthogonalN >> G.OrthogonalS 
           >> G.OrthogonalE >> G.OrthogonalW;
   in_file.unsetf(ios::skipws);
+
+  if (BoundaryRepresentationFlag == ON) {
+    // set high-order geometric boundaries
+    G.setHighOrderBoundaryRepresentation();
+  } else {
+    // set low-order geometric boundaries
+    G.setLowOrderBoundaryRepresentation();
+  }//endif
+
+  // No geometric properties update is required because everything was read.
+  G.Confirm_Mesh_Update_Everywhere();
+
   return (in_file);
 }
 
