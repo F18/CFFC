@@ -829,7 +829,8 @@ void Grid2D_Quad_Block_HO::set_BCs(const int& FACE, const int& BC){
  */
 void Grid2D_Quad_Block_HO::Create_Quad_Block(const int Number_of_Cells_Idir,
 					     const int Number_of_Cells_Jdir,
-					     const int Number_of_Ghost_Cells){
+					     const int Number_of_Ghost_Cells,
+					     const int Highest_Order_of_Reconstruction){
   
   int i, j;
   double S_i, S_j, 
@@ -841,7 +842,8 @@ void Grid2D_Quad_Block_HO::Create_Quad_Block(const int Number_of_Cells_Idir,
  
   /* Allocate (re-allocate) memory for the cells and nodes 
      of the quadrilateral mesh block. */
-  allocate(Number_of_Cells_Idir, Number_of_Cells_Jdir, Number_of_Ghost_Cells);
+  allocate(Number_of_Cells_Idir, Number_of_Cells_Jdir,
+	   Number_of_Ghost_Cells, Highest_Order_of_Reconstruction);
   
   /* Allocate (re-allocate) memory for the boundary splines 
      defining this quadrilateral mesh block. */
@@ -987,7 +989,8 @@ void Grid2D_Quad_Block_HO::Create_Quad_Block(const int Number_of_Cells_Idir,
 void Grid2D_Quad_Block_HO::Create_Quad_Block(char *Bnd_Spline_File_Name_ptr,
 					     const int Number_of_Cells_Idir,
 					     const int Number_of_Cells_Jdir,
-					     const int Number_of_Ghost_Cells) {
+					     const int Number_of_Ghost_Cells,
+					     const int Highest_Order_of_Reconstruction) {
   
   ifstream bnd_spline_file;
   int i, j, k, kx, ky, kx_max, ky_max, npts, spline_type;
@@ -1005,7 +1008,8 @@ void Grid2D_Quad_Block_HO::Create_Quad_Block(char *Bnd_Spline_File_Name_ptr,
   /* Allocate (re-allocate) memory for the cells and nodes 
      of the quadrilateral mesh block. */
 
-  allocate(Number_of_Cells_Idir, Number_of_Cells_Jdir, Number_of_Ghost_Cells);
+  allocate(Number_of_Cells_Idir, Number_of_Cells_Jdir,
+	   Number_of_Ghost_Cells, Highest_Order_of_Reconstruction);
 
   /* Open the data file containing the boundary splines. */
 
@@ -1516,6 +1520,7 @@ void Grid2D_Quad_Block_HO::Create_Quad_Block(Spline2D_HO &Bnd_Spline_North,
 					     const int Number_of_Cells_Idir,
 					     const int Number_of_Cells_Jdir,
 					     const int Number_of_Ghost_Cells,
+					     const int Highest_Order_of_Reconstruction,
 					     const int Node_Init_Procedure,
 					     const int Stretch_I,
 					     const double &Beta_I, 
@@ -1542,7 +1547,8 @@ void Grid2D_Quad_Block_HO::Create_Quad_Block(Spline2D_HO &Bnd_Spline_North,
   /* Allocate (re-allocate) memory for the cells and nodes 
      of the quadrilateral mesh block. */
 
-  allocate(Number_of_Cells_Idir, Number_of_Cells_Jdir, Number_of_Ghost_Cells);
+  allocate(Number_of_Cells_Idir, Number_of_Cells_Jdir,
+	   Number_of_Ghost_Cells, Highest_Order_of_Reconstruction);
 
   /* For each of the north, south, east, and west boundaries
      of this mesh block, assign the boundary splines specified
@@ -1991,7 +1997,7 @@ void Grid2D_Quad_Block_HO::Broadcast_Quad_Block(void) {
 
 #ifdef _MPI_VERSION
 
-    int i, j, ni, nj, ng, mesh_allocated, buffer_size;
+  int i, j, ni, nj, ng, Highest_Order_of_Reconstruction, mesh_allocated, buffer_size;
     double *buffer;
  
     /* Broadcast the number of cells in each direction. */
@@ -2000,6 +2006,7 @@ void Grid2D_Quad_Block_HO::Broadcast_Quad_Block(void) {
       ni = NCi;
       nj = NCj;
       ng = Nghost;
+      Highest_Order_of_Reconstruction = HighestReconstructionOrder;
       if (Node != NULL) {
          mesh_allocated = 1;
       } else {
@@ -2011,15 +2018,14 @@ void Grid2D_Quad_Block_HO::Broadcast_Quad_Block(void) {
     MPI::COMM_WORLD.Bcast(&nj, 1, MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&ng, 1, MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&mesh_allocated, 1, MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&Highest_Order_of_Reconstruction, 1, MPI::INT, 0);
 
     /* On non-primary MPI processors, allocate (re-allocate) 
        memory for the cells and nodes of the quadrilateral 
        mesh block as necessary. */
 
     if (!CFFC_Primary_MPI_Processor()) {
-       if (NCi != ni || NCj != nj || Nghost != ng) { 
-          if (mesh_allocated) allocate(ni-2*ng, nj-2*ng, ng); 
-       } /* endif */
+      if (mesh_allocated) allocate(ni-2*ng, nj-2*ng, ng, Highest_Order_of_Reconstruction); 
     } /* endif */
 
     /* Broadcast the north, south, east, and west 
@@ -2119,7 +2125,7 @@ void Grid2D_Quad_Block_HO::Broadcast_Quad_Block(MPI::Intracomm &Communicator,
 						const int Source_CPU) {
   
   int Source_Rank = 0;
-  int i, j, ni, nj, ng, mesh_allocated, buffer_size;
+  int i, j, ni, nj, ng, Highest_Order_of_Reconstruction, mesh_allocated, buffer_size;
   double *buffer;
   
   /* Broadcast the number of cells in each direction. */
@@ -2128,6 +2134,7 @@ void Grid2D_Quad_Block_HO::Broadcast_Quad_Block(MPI::Intracomm &Communicator,
     ni = NCi;
     nj = NCj;
     ng = Nghost;
+    Highest_Order_of_Reconstruction = HighestReconstructionOrder;
     if (Node != NULL) {
       mesh_allocated = 1;
     } else {
@@ -2139,19 +2146,18 @@ void Grid2D_Quad_Block_HO::Broadcast_Quad_Block(MPI::Intracomm &Communicator,
   Communicator.Bcast(&nj, 1, MPI::INT, Source_Rank);
   Communicator.Bcast(&ng, 1, MPI::INT, Source_Rank);
   Communicator.Bcast(&mesh_allocated, 1, MPI::INT, Source_Rank);
+  Communicator.Bcast(&Highest_Order_of_Reconstruction, 1, MPI::INT, Source_Rank);
   
   /* On non-source MPI processors, allocate (re-allocate) 
      memory for the cells and nodes of the quadrilateral 
      mesh block as necessary. */
   
   if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
-    if (NCi != ni || NCj != nj || Nghost != ng) { 
-      if (mesh_allocated) allocate(ni-2*ng, nj-2*ng, ng); 
-    } /* endif */
-  } /* endif */
+    if (mesh_allocated) allocate(ni-2*ng, nj-2*ng, ng, Highest_Order_of_Reconstruction); 
+  }/* endif */
   
-    /* Broadcast the north, south, east, and west 
-       boundary splines. */
+  /* Broadcast the north, south, east, and west 
+     boundary splines. */
   
   Broadcast_Spline(BndNorthSpline, Communicator, Source_CPU);
   Broadcast_Spline(BndSouthSpline, Communicator, Source_CPU);
@@ -3199,7 +3205,7 @@ void Grid2D_Quad_Block_HO::Set_BCs(void) {
 
     if (BndNorthSpline.np == 0) {
        for ( i = ICl-Nghost; i <= ICu+Nghost; ++i) {
-	   BCtypeN[i] = BC_NONE;
+	 BCtypeN[i] = BC_NONE;
        } /* endfor */
     } else {
        BCtypeN[ICl-1] = BCtype(SminN,
@@ -3468,16 +3474,6 @@ void Grid2D_Quad_Block_HO::Update_Exterior_Nodes(void) {
 		      BCtypeS[i] == BC_MASS_INJECTION ||
 		      BCtypeS[i] == BC_RINGLEB_FLOW)) {
 	    if (i > INl && i < INu) {
-	      //  	      norm_dir = - HALF*(nfaceS(i, JCl) + 
-	      //                                  nfaceS(i-1, JCl));
-	      // 	      for(int GCell=1; GCell<=Nghost; ++GCell){
-	      // 		X_norm = ((Node[i][JNl+GCell].X - 
-	      // 			   Node[i][JNl].X) * norm_dir) * norm_dir;
-	      // 		X_tan = (Node[i][JNl+GCell].X - 
-	      // 			 Node[i][JNl].X) - X_norm;
-	      // 		Node[i][JNl-GCell].X = Node[i][JNl].X -
-	      // 	                                         X_norm + X_tan;
-	      // 	      }
 	      if (lfaceS(i,JCl) > NANO &&
 		  lfaceS(i-1,JCl) > NANO) {
 		norm_dir = - HALF*(nfaceS(i, JCl) + 

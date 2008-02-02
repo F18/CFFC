@@ -149,6 +149,7 @@ extern Grid2D_Quad_Block** ICEMCFD_Read(char **filenames,
 extern void ICEMCFD_Read(char **filenames,
 			 Grid2D_Quad_MultiBlock_HO &MeshBlk,
 			 const int & Nghost,
+			 const int & HighestRecOrder,
 			 int *domx_buf,
 			 int *domy_buf);
 

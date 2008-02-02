@@ -485,11 +485,13 @@ public:
   //@{
   void Create_Quad_Block(const int Number_of_Cells_Idir,
 			 const int Number_of_Cells_Jdir,
-			 const int Number_of_Ghost_Cells);
+			 const int Number_of_Ghost_Cells,
+			 const int Highest_Order_of_Reconstruction);
   void Create_Quad_Block(char *Bnd_Spline_File_Name_ptr,
 			 const int Number_of_Cells_Idir,
 			 const int Number_of_Cells_Jdir,
-			 const int Number_of_Ghost_Cells);
+			 const int Number_of_Ghost_Cells,
+			 const int Highest_Order_of_Reconstruction);
   void Create_Quad_Block(Spline2D_HO &Bnd_Spline_North,
 			 Spline2D_HO &Bnd_Spline_South,
 			 Spline2D_HO &Bnd_Spline_East,
@@ -497,6 +499,7 @@ public:
 			 const int Number_of_Cells_Idir,
 			 const int Number_of_Cells_Jdir,
 			 const int Number_of_Ghost_Cells,
+			 const int Highest_Order_of_Reconstruction,
 			 const int Node_Init_Procedure,
 			 const int Stretch_I,
 			 const double &Beta_I, 

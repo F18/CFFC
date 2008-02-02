@@ -475,7 +475,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Rectangular_Box(int &_Number_of_Blocks_Idir
 						     const double &Height,
 						     const int Number_of_Cells_Idir,
 						     const int Number_of_Cells_Jdir,
-						     const int Number_of_Ghost_Cells) {
+						     const int Number_of_Ghost_Cells,
+						     const int Highest_Order_of_Reconstruction) {
   
   int iBlk, jBlk, n_cells_i, n_cells_j, 
     Stretch_I, Stretch_J,
@@ -566,6 +567,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Rectangular_Box(int &_Number_of_Blocks_Idir
 					     Number_of_Cells_Idir/Number_of_Blocks_Idir,
 					     Number_of_Cells_Jdir/Number_of_Blocks_Jdir,
 					     Number_of_Ghost_Cells,
+					     Highest_Order_of_Reconstruction,
 					     GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
 					     Stretch_I,
 					     Beta_I, 
@@ -602,7 +604,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Rectangular_Box(int &_Number_of_Blocks_Idir
 						     const double &Stretching_Factor_Jdir,
 						     const int Number_of_Cells_Idir,
 						     const int Number_of_Cells_Jdir,
-						     const int Number_of_Ghost_Cells) {
+						     const int Number_of_Ghost_Cells,
+						     const int Highest_Order_of_Reconstruction) {
 
   int iBlk, jBlk, n_cells_i, n_cells_j,
       Stretch_I, Stretch_J,
@@ -699,6 +702,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Rectangular_Box(int &_Number_of_Blocks_Idir
 					     Number_of_Cells_Idir/Number_of_Blocks_Idir,
 					     Number_of_Cells_Jdir/Number_of_Blocks_Jdir,
 					     Number_of_Ghost_Cells,
+					     Highest_Order_of_Reconstruction,
 					     GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
 					     Stretch_I,
 					     Beta_I, 
@@ -748,7 +752,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate(int &_Number_of_Blocks_Idir_,
 						const double &Stretching_Factor_Jdir,
 						const int Number_of_Cells_Idir,
 						const int Number_of_Cells_Jdir,
-						const int Number_of_Ghost_Cells) {
+						const int Number_of_Ghost_Cells,
+						const int Highest_Order_of_Reconstruction) {
   
   int n_cells_i, n_cells_j, 
       Stretch_I, Stretch_J,
@@ -863,6 +868,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate(int &_Number_of_Blocks_Idir_,
 					n_cells_i,
 					n_cells_j,
 					Number_of_Ghost_Cells,
+					Highest_Order_of_Reconstruction,
 					GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
 					Stretch_I,
 					Beta_I,
@@ -907,7 +913,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate_NK(int &_Number_of_Blocks_Idir_,
 						   const double &Stretching_Factor_Jdir,
 						   const int Number_of_Cells_Idir,
 						   const int Number_of_Cells_Jdir,
-						   const int Number_of_Ghost_Cells) {
+						   const int Number_of_Ghost_Cells,
+						   const int Highest_Order_of_Reconstruction) {
   
   int iBlk, n_cells_i, n_cells_j, 
     Stretch_I, Stretch_J,
@@ -1019,6 +1026,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate_NK(int &_Number_of_Blocks_Idir_,
 					    n_cells_i,
 					    n_cells_j,
 					    Number_of_Ghost_Cells,
+					    Highest_Order_of_Reconstruction,
 					    GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
 					    Stretch_I,
 					    Beta_I, 
@@ -1068,7 +1076,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate3(int &_Number_of_Blocks_Idir_,
 						 const double &Stretching_Factor_Jdir,
 						 const int Number_of_Cells_Idir,
 						 const int Number_of_Cells_Jdir,
-						 const int Number_of_Ghost_Cells) {
+						 const int Number_of_Ghost_Cells,
+						 const int Highest_Order_of_Reconstruction) {
 
   int n_cells_i, n_cells_j, 
       Stretch_I, Stretch_J,
@@ -1159,6 +1168,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate3(int &_Number_of_Blocks_Idir_,
 					n_cells_i,
 					n_cells_j,
 					Number_of_Ghost_Cells,
+					Highest_Order_of_Reconstruction,
 					GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
 					Stretch_I,
 					Beta_I,
@@ -1203,7 +1213,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate4(int &_Number_of_Blocks_Idir_,
 						 const double &Stretching_Factor_Jdir,
 						 const int Number_of_Cells_Idir,
 						 const int Number_of_Cells_Jdir,
-						 const int Number_of_Ghost_Cells) {
+						 const int Number_of_Ghost_Cells,
+						 const int Highest_Order_of_Reconstruction) {
   
   int n_cells_i, n_cells_j, 
       Stretch_I, Stretch_J,
@@ -1301,6 +1312,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate4(int &_Number_of_Blocks_Idir_,
 					n_cells_i,
 					n_cells_j,
 					Number_of_Ghost_Cells,
+					Highest_Order_of_Reconstruction,
 					GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
 					Stretch_I,
 					Beta_I,
@@ -1348,7 +1360,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate9(int &_Number_of_Blocks_Idir_,
 						 const double &Stretching_Factor_Jdir,
 						 const int Number_of_Cells_Idir,
 						 const int Number_of_Cells_Jdir,
-						 const int Number_of_Ghost_Cells) {
+						 const int Number_of_Ghost_Cells,
+						 const int Highest_Order_of_Reconstruction) {
 
   int n_cells_i, n_cells_j, 
     Stretch_I, Stretch_J,
@@ -1446,6 +1459,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate9(int &_Number_of_Blocks_Idir_,
 					n_cells_i,
 					n_cells_j,
 					Number_of_Ghost_Cells,
+					Highest_Order_of_Reconstruction,
 					GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
 					Stretch_I,
 					Beta_I,
@@ -1491,7 +1505,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_1D_Flame(int &_Number_of_Blocks_Idir_,
 					      const double &Heigth,
 					      const int Number_of_Cells_Idir,
 					      const int Number_of_Cells_Jdir,
-					      const int Number_of_Ghost_Cells) {
+					      const int Number_of_Ghost_Cells,
+					      const int Highest_Order_of_Reconstruction) {
   
   int iBlk, n_cells_i, n_cells_j, 
     Stretch_I, Stretch_J,
@@ -1569,6 +1584,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_1D_Flame(int &_Number_of_Blocks_Idir_,
 					n_cells_i,
 					n_cells_j,
 					Number_of_Ghost_Cells,
+					Highest_Order_of_Reconstruction,
 					GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
 					Stretch_I,
 					Beta_I, 
@@ -1614,6 +1630,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_2D_Laminar_Flame(int &_Number_of_Blocks_Idi
 						      const int Number_of_Cells_Idir,
 						      const int Number_of_Cells_Jdir, 
 						      const int Number_of_Ghost_Cells,
+						      const int Highest_Order_of_Reconstruction,
 						      const int Flame_Type_Flag) {
   
 
@@ -1838,6 +1855,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_2D_Laminar_Flame(int &_Number_of_Blocks_Idi
 					     n_cells_i,
 					     n_cells_j,
 					     Number_of_Ghost_Cells,
+					     Highest_Order_of_Reconstruction,
 					     GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
 					     Stretch_I,
 					     Beta_I, 
@@ -1883,7 +1901,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Pipe(int &_Number_of_Blocks_Idir_,
 					  const double Stretching_Factor,
 					  const int Number_of_Cells_Idir,
 					  const int Number_of_Cells_Jdir,
-					  const int Number_of_Ghost_Cells) {
+					  const int Number_of_Ghost_Cells,
+					  const int Highest_Order_of_Reconstruction) {
   
   int Stretch_I, Stretch_J,
     Orthogonal_North, Orthogonal_South,
@@ -1947,6 +1966,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Pipe(int &_Number_of_Blocks_Idir_,
 				   Number_of_Cells_Idir,
 				   Number_of_Cells_Jdir,
 				   Number_of_Ghost_Cells,
+				   Highest_Order_of_Reconstruction,
 				   GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
 				   Stretch_I,
 				   Beta_I, 
@@ -1989,7 +2009,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Pipe(int &_Number_of_Blocks_Idir_,
 					  const int &Axisymmetric,
 					  const int Number_of_Cells_Idir,
 					  const int Number_of_Cells_Jdir,
-					  const int Number_of_Ghost_Cells) {
+					  const int Number_of_Ghost_Cells,
+					  const int Highest_Order_of_Reconstruction) {
   
   int Stretch_I, Stretch_J,
       Orthogonal_North, Orthogonal_South,
@@ -2078,6 +2099,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Pipe(int &_Number_of_Blocks_Idir_,
 				   Number_of_Cells_Idir,
 				   Number_of_Cells_Jdir,
 				   Number_of_Ghost_Cells,
+				   Highest_Order_of_Reconstruction,
 				   GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
 				   Stretch_I,
 				   Beta_I, 
@@ -2120,7 +2142,8 @@ void  Grid2D_Quad_MultiBlock_HO::Grid_Blunt_Body(int &_Number_of_Blocks_Idir_,
 						 const double &Mach_Number,
 						 const int Number_of_Cells_Idir,
 						 const int Number_of_Cells_Jdir,
-						 const int Number_of_Ghost_Cells) {
+						 const int Number_of_Ghost_Cells,
+						 const int Highest_Order_of_Reconstruction) {
 
   int Stretch_I, Stretch_J,
     Orthogonal_North, Orthogonal_South,
@@ -2188,6 +2211,7 @@ void  Grid2D_Quad_MultiBlock_HO::Grid_Blunt_Body(int &_Number_of_Blocks_Idir_,
 				   Number_of_Cells_Idir,
 				   Number_of_Cells_Jdir,
 				   Number_of_Ghost_Cells,
+				   Highest_Order_of_Reconstruction,
 				   GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
 				   Stretch_I,
 				   Beta_I, 
@@ -2249,7 +2273,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Rocket_Motor(int &_Number_of_Blocks_Idir_,
 						  const double &Stretching_Factor_Jdir,
 						  const int Number_of_Cells_Idir,
 						  const int Number_of_Cells_Jdir,
-						  const int Number_of_Ghost_Cells) {
+						  const int Number_of_Ghost_Cells,
+						  const int Highest_Order_of_Reconstruction) {
   
   int error_flag, block_flag;
   int Stretch_I, Stretch_J,
@@ -2545,6 +2570,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Rocket_Motor(int &_Number_of_Blocks_Idir_,
 					       Number_of_Cells_Idir,
 					       Number_of_Cells_Jdir,
 					       Number_of_Ghost_Cells,
+					       Highest_Order_of_Reconstruction,
 					       GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
 					       Stretch_I,
 					       Beta_I,
@@ -2607,7 +2633,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Nozzleless_Rocket_Motor(int &_Number_of_Blo
 							     const double &Stretching_Factor_Jdir,
 							     const int Number_of_Cells_Idir,
 							     const int Number_of_Cells_Jdir,
-							     const int Number_of_Ghost_Cells) {
+							     const int Number_of_Ghost_Cells,
+							     const int Highest_Order_of_Reconstruction) {
   
   int Stretch_I, Stretch_J,
       Orthogonal_North, Orthogonal_South,
@@ -2711,6 +2738,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Nozzleless_Rocket_Motor(int &_Number_of_Blo
 					     Number_of_Cells_Idir,
 					     Number_of_Cells_Jdir,
 					     Number_of_Ghost_Cells,
+					     Highest_Order_of_Reconstruction,
 					     GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
 					     Stretch_I,
 					     Beta_I,
@@ -2751,7 +2779,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Nozzle(int &_Number_of_Blocks_Idir_,
 					    const double &Stretching_Factor_Jdir,
 					    const int Number_of_Cells_Idir,
 					    const int Number_of_Cells_Jdir,
-					    const int Number_of_Ghost_Cells) {
+					    const int Number_of_Ghost_Cells,
+					    const int Highest_Order_of_Reconstruction) {
   
   int error_flag, block_flag;
   int Stretch_I, Stretch_J,
@@ -2835,6 +2864,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Nozzle(int &_Number_of_Blocks_Idir_,
 					Number_of_Cells_Idir,
 					Number_of_Cells_Jdir,
 					Number_of_Ghost_Cells,
+					Highest_Order_of_Reconstruction,
 					GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
 					Stretch_I,
 					Beta_I,
@@ -2881,7 +2911,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Circular_Cylinder(int &_Number_of_Blocks_Id
 						       const double &Stretching_Factor_Jdir,
 						       const int Number_of_Cells_Idir,
 						       const int Number_of_Cells_Jdir,
-						       const int Number_of_Ghost_Cells) {
+						       const int Number_of_Ghost_Cells,
+						       const int Highest_Order_of_Reconstruction) {
   
   Grid_Circular_Cylinder(_Number_of_Blocks_Idir_,
 			 _Number_of_Blocks_Jdir_,
@@ -2893,7 +2924,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Circular_Cylinder(int &_Number_of_Blocks_Id
 			 Stretching_Factor_Jdir,
 			 Number_of_Cells_Idir,
 			 Number_of_Cells_Jdir,
-			 Number_of_Ghost_Cells);
+			 Number_of_Ghost_Cells,
+			 Highest_Order_of_Reconstruction);
   
 }
 
@@ -2907,7 +2939,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Circular_Cylinder(int &_Number_of_Blocks_Id
 						       const double &Stretching_Factor_Jdir,
 						       const int Number_of_Cells_Idir,
 						       const int Number_of_Cells_Jdir,
-						       const int Number_of_Ghost_Cells) {
+						       const int Number_of_Ghost_Cells,
+						       const int Highest_Order_of_Reconstruction) {
   
   int iBlk, n_cells_i, n_cells_j, Stretch_I, Stretch_J,
     Orthogonal_North, Orthogonal_South,
@@ -3022,6 +3055,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Circular_Cylinder(int &_Number_of_Blocks_Id
 					n_cells_i,
 					n_cells_j,
 					Number_of_Ghost_Cells,
+					Highest_Order_of_Reconstruction,
 					GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
 					Stretch_I,
 					Beta_I, 
@@ -3064,7 +3098,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Annulus(int &_Number_of_Blocks_Idir_,
 					     const double &Stretching_Factor_Jdir,
 					     const int Number_of_Cells_Idir,
 					     const int Number_of_Cells_Jdir,
-					     const int Number_of_Ghost_Cells) {
+					     const int Number_of_Ghost_Cells,
+					     const int Highest_Order_of_Reconstruction) {
   
   int n_cells_i, n_cells_j, Stretch_I, Stretch_J,
     Orthogonal_North, Orthogonal_South,
@@ -3138,6 +3173,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Annulus(int &_Number_of_Blocks_Idir_,
 				   n_cells_i,
 				   n_cells_j,
 				   Number_of_Ghost_Cells,
+				   Highest_Order_of_Reconstruction,
 				   GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
 				   Stretch_I,
 				   Beta_I, 
@@ -3178,7 +3214,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Ellipse(int &_Number_of_Blocks_Idir_,
 					     const double &B,
 					     const int Number_of_Cells_Idir,
 					     const int Number_of_Cells_Jdir,
-					     const int Number_of_Ghost_Cells) {
+					     const int Number_of_Ghost_Cells,
+					     const int Highest_Order_of_Reconstruction) {
   
   int iBlk, n_cells_i, n_cells_j, Stretch_I, Stretch_J,
     Orthogonal_North, Orthogonal_South,
@@ -3299,6 +3336,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Ellipse(int &_Number_of_Blocks_Idir_,
 					n_cells_i,
 					n_cells_j,
 					Number_of_Ghost_Cells,
+					Highest_Order_of_Reconstruction,
 					GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
 					Stretch_I,
 					Beta_I, 
@@ -3345,7 +3383,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_NACA_Aerofoil(int &_Number_of_Blocks_Idir_,
 						   const double &Chord_Length,
 						   const int Number_of_Cells_Idir,
 						   const int Number_of_Cells_Jdir,
-						   const int Number_of_Ghost_Cells) {
+						   const int Number_of_Ghost_Cells,
+						   const int Highest_Order_of_Reconstruction) {
   
   int iBlk, n_cells_i, n_cells_j,
     Stretch_I, Stretch_J,
@@ -3541,6 +3580,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_NACA_Aerofoil(int &_Number_of_Blocks_Idir_,
 					n_cells_i,
 					n_cells_j,
 					Number_of_Ghost_Cells,
+					Highest_Order_of_Reconstruction,
 					GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
 					Stretch_I,
 					Beta_I, 
@@ -3616,7 +3656,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Free_Jet(int &_Number_of_Blocks_Idir_,
 					      const double &Radius,
 					      const int Number_of_Cells_Idir,
 					      const int Number_of_Cells_Jdir,
-					      const int Number_of_Ghost_Cells) {
+					      const int Number_of_Ghost_Cells,
+					      const int Highest_Order_of_Reconstruction) {
   
   int iBlk, jBlk, n_cells_i, n_cells_j, Stretch_I, Stretch_J,
     Orthogonal_North, Orthogonal_South,
@@ -3687,6 +3728,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Free_Jet(int &_Number_of_Blocks_Idir_,
 					       n_cells_i,
 					       n_cells_j,
 					       Number_of_Ghost_Cells,
+					       Highest_Order_of_Reconstruction,
 					       GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
 					       Stretch_I,
 					       Beta_I, 
@@ -3744,6 +3786,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Free_Jet(int &_Number_of_Blocks_Idir_,
 					       n_cells_i,
 					       n_cells_j,
 					       Number_of_Ghost_Cells,
+					       Highest_Order_of_Reconstruction,
 					       GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
 					       Stretch_I,
 					       Beta_I, 
@@ -3801,6 +3844,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Free_Jet(int &_Number_of_Blocks_Idir_,
 					       n_cells_i,
 					       n_cells_j,
 					       Number_of_Ghost_Cells,
+					       Highest_Order_of_Reconstruction,
 					       GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
 					       Stretch_I,
 					       Beta_I, 
@@ -3858,6 +3902,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Free_Jet(int &_Number_of_Blocks_Idir_,
 					       n_cells_i,
 					       n_cells_j,
 					       Number_of_Ghost_Cells,
+					       Highest_Order_of_Reconstruction,
 					       GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
 					       Stretch_I,
 					       Beta_I, 
@@ -3917,6 +3962,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Free_Jet(int &_Number_of_Blocks_Idir_,
 					       n_cells_i,
 					       n_cells_j,
 					       Number_of_Ghost_Cells,
+					       Highest_Order_of_Reconstruction,
 					       GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
 					       Stretch_I,
 					       Beta_I, 
@@ -3964,7 +4010,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Wedge(int &_Number_of_Blocks_Idir_,
 					   const double &Stretching_Factor_Jdir,
 					   const int Number_of_Cells_Idir,
 					   const int Number_of_Cells_Jdir,
-					   const int Number_of_Ghost_Cells) {
+					   const int Number_of_Ghost_Cells,
+					   const int Highest_Order_of_Reconstruction) {
   
   int Stretch_I, Stretch_J,
     Orthogonal_North, Orthogonal_South,
@@ -4039,6 +4086,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Wedge(int &_Number_of_Blocks_Idir_,
 					Number_of_Cells_Idir,
 					Number_of_Cells_Jdir,
 					Number_of_Ghost_Cells,
+					Highest_Order_of_Reconstruction,
 					GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
 					Stretch_I,
 					Beta_I, 
@@ -4079,7 +4127,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Unsteady_Blunt_Body(int &_Number_of_Blocks_
 							 const double &Mach_Number,
 							 const int Number_of_Cells_Idir,
 							 const int Number_of_Cells_Jdir,
-							 const int Number_of_Ghost_Cells) {
+							 const int Number_of_Ghost_Cells,
+							 const int Highest_Order_of_Reconstruction) {
   
   int Stretch_I, Stretch_J,
     Orthogonal_North, Orthogonal_South,
@@ -4190,6 +4239,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Unsteady_Blunt_Body(int &_Number_of_Blocks_
 					Number_of_Cells_Idir,
 					Number_of_Cells_Jdir,
 					Number_of_Ghost_Cells,
+					Highest_Order_of_Reconstruction,
 					GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
 					Stretch_I,
 					Beta_I, 
@@ -4231,7 +4281,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Ringleb_Flow(int &_Number_of_Blocks_Idir_,
 						  const double &Isotach_Line,
 						  const int Number_of_Cells_Idir,
 						  const int Number_of_Cells_Jdir,
-						  const int Number_of_Ghost_Cells) {
+						  const int Number_of_Ghost_Cells,
+						  const int Highest_Order_of_Reconstruction) {
 
   assert(Inner_Streamline_Number > Outer_Streamline_Number);
   assert(Inner_Streamline_Number < 5.0/3.0);
@@ -4373,6 +4424,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Ringleb_Flow(int &_Number_of_Blocks_Idir_,
 				   Number_of_Cells_Idir,
 				   Number_of_Cells_Jdir,
 				   Number_of_Ghost_Cells,
+				   Highest_Order_of_Reconstruction,
 				   GRID2D_QUAD_BLOCK_INIT_PROCEDURE_EAST_WEST,
 				   Stretch_I,
 				   Beta_I,
@@ -4422,7 +4474,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Bump_Channel_Flow(int &_Number_of_Blocks_Id
 						       const int Smooth_Bump,
 						       const int Number_of_Cells_Idir,
 						       const int Number_of_Cells_Jdir,
-						       const int Number_of_Ghost_Cells) {
+						       const int Number_of_Ghost_Cells,
+						       const int Highest_Order_of_Reconstruction) {
   
   int Stretch_I, Stretch_J,
       Orthogonal_North, Orthogonal_South,
@@ -4619,6 +4672,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Bump_Channel_Flow(int &_Number_of_Blocks_Id
 					     Number_of_Cells_Idir,
 					     Number_of_Cells_Jdir,
 					     Number_of_Ghost_Cells,
+					     Highest_Order_of_Reconstruction,
 					     GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
 					     Stretch_I,
 					     Beta_I, 
@@ -4671,7 +4725,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Jet_Flow(int &_Number_of_Blocks_Idir_,
 					      const double &Stretching_Factor_Jdir,
 					      const int Number_of_Cells_Idir,
 					      const int Number_of_Cells_Jdir,
-					      const int Number_of_Ghost_Cells){
+					      const int Number_of_Ghost_Cells,
+					      const int Highest_Order_of_Reconstruction){
   
   int block_flag,
       BCtypeN, BCtypeS, BCtypeE, BCtypeW,
@@ -4846,6 +4901,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Jet_Flow(int &_Number_of_Blocks_Idir_,
 					       Number_of_Cells_Idir,
 					       Number_of_Cells_Jdir,
 					       Number_of_Ghost_Cells,
+					       Highest_Order_of_Reconstruction,
 					       GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
 					       Stretch_I,
 					       Beta_I,
@@ -4896,7 +4952,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Mixing_Layer(int &_Number_of_Blocks_Idir_,
 						  const double &Stretching_Factor_Jdir,
 						  const int Number_of_Cells_Idir,
 						  const int Number_of_Cells_Jdir,
-						  const int Number_of_Ghost_Cells){
+						  const int Number_of_Ghost_Cells,
+						  const int Highest_Order_of_Reconstruction){
   
   int block_flag,
       BCtypeN, BCtypeS, BCtypeE, BCtypeW,
@@ -5054,6 +5111,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Mixing_Layer(int &_Number_of_Blocks_Idir_,
 					       Number_of_Cells_Idir,
 					       Number_of_Cells_Jdir,
 					       Number_of_Ghost_Cells,
+					       Highest_Order_of_Reconstruction,
 					       GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
 					       Stretch_I,
 					       Beta_I,
@@ -5091,7 +5149,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Backward_Facing_Step(int &_Number_of_Blocks
 							  const double &Stretching_Factor_Jdir,
 							  const int Number_of_Cells_Idir,
 							  const int Number_of_Cells_Jdir,
-							  const int Number_of_Ghost_Cells) {
+							  const int Number_of_Ghost_Cells,
+							  const int Highest_Order_of_Reconstruction) {
 
   int block_flag,
       BCtypeN, BCtypeS, BCtypeE, BCtypeW,
@@ -5339,6 +5398,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Backward_Facing_Step(int &_Number_of_Blocks
 					       Number_of_Cells_Idir,
 					       Number_of_Cells_Jdir,
 					       Number_of_Ghost_Cells,
+					       Highest_Order_of_Reconstruction,
 					       GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
 					       Stretch_I,
 					       Beta_I,
@@ -5376,7 +5436,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Forward_Facing_Step(int &_Number_of_Blocks_
 							 const double &Stretching_Factor_Jdir,
 							 const int Number_of_Cells_Idir,
 							 const int Number_of_Cells_Jdir,
-							 const int Number_of_Ghost_Cells) {
+							 const int Number_of_Ghost_Cells,
+							 const int Highest_Order_of_Reconstruction) {
   
   int BCtypeN, BCtypeS, BCtypeE, BCtypeW;
   Vector2D xNW, xNE, xSE, xSW;
@@ -5447,6 +5508,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Forward_Facing_Step(int &_Number_of_Blocks_
 					     Number_of_Cells_Idir,
 					     Number_of_Cells_Jdir,
 					     Number_of_Ghost_Cells,
+					     Highest_Order_of_Reconstruction,
 					     GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
 					     Stretch_I,
 					     Beta_I,
@@ -5478,7 +5540,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Desolvation_Chamber(const int &Chamber_BC_T
 							 int &_Number_of_Blocks_Jdir_,
 							 const int Number_of_Cells_Idir,
 							 const int Number_of_Cells_Jdir,
-							 const int Number_of_Ghost_Cells) {
+							 const int Number_of_Ghost_Cells,
+							 const int Highest_Order_of_Reconstruction) {
   
   int block_flag,
       BCtypeN, BCtypeS, BCtypeE, BCtypeW,
@@ -5789,6 +5852,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Desolvation_Chamber(const int &Chamber_BC_T
 					       Number_of_Cells_Idir,
 					       Number_of_Cells_Jdir,
 					       Number_of_Ghost_Cells,
+					       Highest_Order_of_Reconstruction,
 					       GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
 					       Stretch_I,
 					       Beta_I,
@@ -5839,7 +5903,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_NASA_Rotor_37(int &_Number_of_Blocks_Idir_,
 						   const double &Rotor_Percent_Span,
 						   const int Number_of_Cells_Idir,
 						   const int Number_of_Cells_Jdir,
-						   const int Number_of_Ghost_Cells) {
+						   const int Number_of_Ghost_Cells,
+						   const int Highest_Order_of_Reconstruction) {
   
   int error_flag;
   Spline2D_HO upperB, lowerB, upperMiddleB, lowerMiddleB, camberTrail, camberLead, camberBlade, Rotor_Spline;
@@ -6109,6 +6174,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_NASA_Rotor_37(int &_Number_of_Blocks_Idir_,
 				   Number_of_Cells_Idir,
 				   Number_of_Cells_Jdir,
 				   Number_of_Ghost_Cells,
+				   Highest_Order_of_Reconstruction,
 				   GRID2D_QUAD_BLOCK_INIT_PROCEDURE_TRANS_FINITE_XY,
 				   STRETCHING_FCN_MINMAX_CLUSTERING,
 				   ONE + (beta_i-ONE)/ONE,
@@ -6206,6 +6272,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_NASA_Rotor_37(int &_Number_of_Blocks_Idir_,
 				   Number_of_Cells_Idir,
 				   Number_of_Cells_Jdir,
 				   Number_of_Ghost_Cells,
+				   Highest_Order_of_Reconstruction,
 				   GRID2D_QUAD_BLOCK_INIT_PROCEDURE_TRANS_FINITE_XY,
 				   STRETCHING_FCN_MINMAX_CLUSTERING,
 				   ONE + (beta_i-ONE)/ONE,
@@ -6273,6 +6340,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_NASA_Rotor_37(int &_Number_of_Blocks_Idir_,
 				   Number_of_Cells_Idir,
 				   Number_of_Cells_Jdir,
 				   Number_of_Ghost_Cells,
+				   Highest_Order_of_Reconstruction,
 				   GRID2D_QUAD_BLOCK_INIT_PROCEDURE_EAST_WEST,
 				   STRETCHING_FCN_MAX_CLUSTERING,
 				   beta_i,
@@ -6342,6 +6410,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_NASA_Rotor_37(int &_Number_of_Blocks_Idir_,
 				   Number_of_Cells_Idir,
 				   Number_of_Cells_Jdir,
 				   Number_of_Ghost_Cells,
+				   Highest_Order_of_Reconstruction,
 				   GRID2D_QUAD_BLOCK_INIT_PROCEDURE_EAST_WEST,
 				   STRETCHING_FCN_MIN_CLUSTERING,
 				   beta_i,
@@ -6400,6 +6469,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_NASA_Rotor_37(int &_Number_of_Blocks_Idir_,
 				   Number_of_Cells_Idir,
 				   Number_of_Cells_Jdir,
 				   Number_of_Ghost_Cells,
+				   Highest_Order_of_Reconstruction,
 				   GRID2D_QUAD_BLOCK_INIT_PROCEDURE_EAST_WEST,
 				   STRETCHING_FCN_MAX_CLUSTERING,
 				   beta_i,
@@ -6462,6 +6532,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_NASA_Rotor_37(int &_Number_of_Blocks_Idir_,
 				   Number_of_Cells_Idir,
 				   Number_of_Cells_Jdir,
 				   Number_of_Ghost_Cells,
+				   Highest_Order_of_Reconstruction,
 				   GRID2D_QUAD_BLOCK_INIT_PROCEDURE_EAST_WEST,
 				   STRETCHING_FCN_MIN_CLUSTERING,
 				   beta_i,
@@ -6513,7 +6584,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_NASA_Rotor_67(int &_Number_of_Blocks_Idir_,
 						   const double &Rotor_Percent_Span,
 						   const int Number_of_Cells_Idir,
 						   const int Number_of_Cells_Jdir,
-						   const int Number_of_Ghost_Cells) {
+						   const int Number_of_Ghost_Cells,
+						   const int Highest_Order_of_Reconstruction) {
 
   int error_flag;
   Spline2D_HO upperB, lowerB, upperMiddleB, lowerMiddleB, camberTrail, camberLead, camberBlade, Rotor_Spline;
@@ -6937,6 +7009,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_NASA_Rotor_67(int &_Number_of_Blocks_Idir_,
 					     Number_of_Cells_Idir,
 					     Number_of_Cells_Jdir,
 					     Number_of_Ghost_Cells,
+					     Highest_Order_of_Reconstruction,
 					     GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
 					     Stretch_I,
 					     Beta_I, 
@@ -6998,7 +7071,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Driven_Cavity_Flow(int &_Number_of_Blocks_I
 							const double &Stretching_Factor_Jdir,
 							const int Number_of_Cells_Idir,
 							const int Number_of_Cells_Jdir,
-							const int Number_of_Ghost_Cells) {
+							const int Number_of_Ghost_Cells,
+							const int Highest_Order_of_Reconstruction) {
 
   int n_cells_i, n_cells_j,
       Stretch_I, Stretch_J,
@@ -7080,6 +7154,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Driven_Cavity_Flow(int &_Number_of_Blocks_I
 					     Number_of_Cells_Idir/Number_of_Blocks_Idir,
 					     Number_of_Cells_Jdir/Number_of_Blocks_Jdir,
 					     Number_of_Ghost_Cells,
+					     Highest_Order_of_Reconstruction,
 					     GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
 					     Stretch_I,
 					     Beta_I, 
@@ -7123,7 +7198,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Adiabatic_Flat_Plate(int &_Number_of_Blocks
 							  const double &Length,
 							  const int Number_of_Cells_Idir,
 							  const int Number_of_Cells_Jdir,
-							  const int Number_of_Ghost_Cells) {
+							  const int Number_of_Ghost_Cells,
+							  const int Highest_Order_of_Reconstruction) {
   
   int iBlk, n_cells_i, n_cells_j, 
         Stretch_I, Stretch_J,
@@ -7250,6 +7326,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Adiabatic_Flat_Plate(int &_Number_of_Blocks
 					n_cells_i,
 					n_cells_j,
 					Number_of_Ghost_Cells,
+					Highest_Order_of_Reconstruction,
 					GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
 					Stretch_I,
 					Beta_I, 
@@ -7289,7 +7366,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Adiabatic_Circular_Cylinder(int &_Number_of
 								 const double &Radius,
 								 const int Number_of_Cells_Idir,
 								 const int Number_of_Cells_Jdir,
-								 const int Number_of_Ghost_Cells) {
+								 const int Number_of_Ghost_Cells,
+								 const int Highest_Order_of_Reconstruction) {
 
   Grid_Adiabatic_Circular_Cylinder(_Number_of_Blocks_Idir_,
 				   _Number_of_Blocks_Jdir_,
@@ -7297,7 +7375,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Adiabatic_Circular_Cylinder(int &_Number_of
 				   96.0*Radius,
 				   Number_of_Cells_Idir,
 				   Number_of_Cells_Jdir,
-				   Number_of_Ghost_Cells);
+				   Number_of_Ghost_Cells,
+				   Highest_Order_of_Reconstruction);
 }
 
 
@@ -7307,7 +7386,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Adiabatic_Circular_Cylinder(int &_Number_of
 								 const double &Outer_Radius,
 								 const int Number_of_Cells_Idir,
 								 const int Number_of_Cells_Jdir,
-								 const int Number_of_Ghost_Cells) {
+								 const int Number_of_Ghost_Cells,
+								 const int Highest_Order_of_Reconstruction) {
   
   
   int iBlk, n_cells_i, n_cells_j, Stretch_I, Stretch_J,
@@ -7427,6 +7507,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Adiabatic_Circular_Cylinder(int &_Number_of
 					n_cells_i,
 					n_cells_j,
 					Number_of_Ghost_Cells,
+					Highest_Order_of_Reconstruction,
 					GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
 					Stretch_I,
 					Beta_I, 
@@ -7466,7 +7547,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Adiabatic_Couette(int &_Number_of_Blocks_Id
 						       const double &Separation,
 						       const int Number_of_Cells_Idir,
 						       const int Number_of_Cells_Jdir,
-						       const int Number_of_Ghost_Cells) {
+						       const int Number_of_Ghost_Cells,
+						       const int Highest_Order_of_Reconstruction) {
   
   int jBlk, n_cells_i, n_cells_j, 
     Stretch_I, Stretch_J,
@@ -7569,6 +7651,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Adiabatic_Couette(int &_Number_of_Blocks_Id
 					n_cells_i,
 					n_cells_j,
 					Number_of_Ghost_Cells,
+					Highest_Order_of_Reconstruction,
 					GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
 					Stretch_I,
 					Beta_I, 
@@ -7614,7 +7697,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Cylindrical_Encl(int &_Number_of_Blocks_Idi
 						      const int &Axisymmetric,
 						      const int Number_of_Cells_Idir,
 						      const int Number_of_Cells_Jdir,
-						      const int Number_of_Ghost_Cells) {
+						      const int Number_of_Ghost_Cells,
+						      const int Highest_Order_of_Reconstruction) {
 
   int Stretch_I, Stretch_J,
     Orthogonal_North, Orthogonal_South,
@@ -7702,6 +7786,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Cylindrical_Encl(int &_Number_of_Blocks_Idi
 				   Number_of_Cells_Idir,
 				   Number_of_Cells_Jdir,
 				   Number_of_Ghost_Cells,
+				   Highest_Order_of_Reconstruction,
 				   GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
 				   Stretch_I,
 				   Beta_I, 
@@ -7742,7 +7827,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Rectangular_Encl(int &_Number_of_Blocks_Idi
 						      const double &Height,
 						      const int Number_of_Cells_Idir,
 						      const int Number_of_Cells_Jdir,
-						      const int Number_of_Ghost_Cells) {
+						      const int Number_of_Ghost_Cells,
+						      const int Highest_Order_of_Reconstruction) {
 
   int iBlk, jBlk, n_cells_i, n_cells_j, 
     Stretch_I, Stretch_J,
@@ -7833,6 +7919,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Rectangular_Encl(int &_Number_of_Blocks_Idi
 					     Number_of_Cells_Idir/Number_of_Blocks_Idir,
 					     Number_of_Cells_Jdir/Number_of_Blocks_Jdir,
 					     Number_of_Ghost_Cells,
+					     Highest_Order_of_Reconstruction,
 					     GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
 					     Stretch_I,
 					     Beta_I, 
@@ -7866,6 +7953,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Tube_2D(int &_Number_of_Blocks_Idir_,
 					     const int Number_of_Cells_Idir,
 					     const int Number_of_Cells_Jdir,
 					     const int Number_of_Ghost_Cells,
+					     const int Highest_Order_of_Reconstruction,
 					     const int i_Stretching_Radial_Dir,
 					     const double &Stretching_Radial_Dir) {
 
@@ -7997,6 +8085,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Tube_2D(int &_Number_of_Blocks_Idir_,
 					Number_of_Cells_Idir,
 					Number_of_Cells_Jdir,
 					Number_of_Ghost_Cells,
+					Highest_Order_of_Reconstruction,
 					GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
 					Stretch_I,
 					Beta_I, 
@@ -8030,6 +8119,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Annulus_2D(int &_Number_of_Blocks_Idir_,
 						const int Number_of_Cells_Idir,
 						const int Number_of_Cells_Jdir,
 						const int Number_of_Ghost_Cells,
+						const int Highest_Order_of_Reconstruction,
 						const int i_Stretching_Radial_Dir,
 						const double &Stretching_Radial_Dir) {
   
@@ -8162,6 +8252,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Annulus_2D(int &_Number_of_Blocks_Idir_,
 					Number_of_Cells_Idir,
 					Number_of_Cells_Jdir,
 					Number_of_Ghost_Cells,
+					Highest_Order_of_Reconstruction,
 					GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
 					Stretch_I,
 					Beta_I, 

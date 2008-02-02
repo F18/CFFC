@@ -67,33 +67,15 @@ public:
   //! Index of the last block in j-direction
   int Last_jBlock(void) const {return Number_of_Blocks_Jdir-1;}
 
-
   //! @name Bracket operator.
   //@{
   Grid2D_Quad_Block_HO & operator()(const int &iBlk, const int &jBlk){ return Grid_ptr[iBlk][jBlk];}
   const Grid2D_Quad_Block_HO & operator()(const int &iBlk, const int &jBlk) const { return Grid_ptr[iBlk][jBlk];}
   //@}
 
-  //! Create quad block
-  //@{
-  //@}
-
   //! @name Broadcast functions (MPI)
   //@{
   void Broadcast_Multi_Block_Grid(void);
-  
-  //@}
-  
-  //! @name Smooth quad grid
-  //@{
-  //@}
-    
-  //!@name Set Boundary Conditions.
-  //@{
-  //@}
-  
-  //!@name Update geometry and geometric properties.
-  //@{
   //@}
   
   //!@name Input/Output functions
@@ -104,10 +86,6 @@ public:
   void Read_Multi_Block_Grid(istream &In_File);
   //@}
 
-  //!@name Copy block
-  //@{
-  //@}
-  
   //!@name Block manipulation
   //@{
   void Translate_Multi_Block_Grid(const Vector2D &V);
@@ -125,7 +103,6 @@ public:
   void Output_Gnuplot(ostream &Out_File);
   //@}
   
-
   //!@name Uniform 2D Cartesian mesh for different shapes.
   //@{
   void Grid_Rectangular_Box(int &_Number_of_Blocks_Idir_,
@@ -134,7 +111,8 @@ public:
 			    const double &Height,
 			    const int Number_of_Cells_Idir,
 			    const int Number_of_Cells_Jdir,
-			    const int Number_of_Ghost_Cells);
+			    const int Number_of_Ghost_Cells,
+			    const int Highest_Order_of_Reconstruction);
   
   void Grid_Rectangular_Box(int &_Number_of_Blocks_Idir_,
 			    int &_Number_of_Blocks_Jdir_,
@@ -147,7 +125,8 @@ public:
 			    const double &Stretching_Factor_Jdir,
 			    const int Number_of_Cells_Idir,
 			    const int Number_of_Cells_Jdir,
-			    const int Number_of_Ghost_Cells);
+			    const int Number_of_Ghost_Cells,
+			    const int Highest_Order_of_Reconstruction);
 
   void Grid_Flat_Plate(int &_Number_of_Blocks_Idir_,
 		       int &_Number_of_Blocks_Jdir_,
@@ -158,7 +137,8 @@ public:
 		       const double &Stretching_Factor_Jdir,
 		       const int Number_of_Cells_Idir,
 		       const int Number_of_Cells_Jdir,
-		       const int Number_of_Ghost_Cells);
+		       const int Number_of_Ghost_Cells,
+		       const int Highest_Order_of_Reconstruction);
 
   void Grid_Flat_Plate_NK(int &_Number_of_Blocks_Idir_,
 			  int &_Number_of_Blocks_Jdir_,
@@ -168,7 +148,8 @@ public:
 			  const double &Stretching_Factor_Jdir,
 			  const int Number_of_Cells_Idir,
 			  const int Number_of_Cells_Jdir,
-			  const int Number_of_Ghost_Cells);
+			  const int Number_of_Ghost_Cells,
+			  const int Highest_Order_of_Reconstruction);
 
   void Grid_Flat_Plate3(int &_Number_of_Blocks_Idir_,
 			int &_Number_of_Blocks_Jdir_,
@@ -178,7 +159,8 @@ public:
 			const double &Stretching_Factor_Jdir,
 			const int Number_of_Cells_Idir,
 			const int Number_of_Cells_Jdir,
-			const int Number_of_Ghost_Cells);
+			const int Number_of_Ghost_Cells,
+			const int Highest_Order_of_Reconstruction);
 
   void Grid_Flat_Plate4(int &_Number_of_Blocks_Idir_,
 			int &_Number_of_Blocks_Jdir_,
@@ -188,7 +170,9 @@ public:
 			const double &Stretching_Factor_Jdir,
 			const int Number_of_Cells_Idir,
 			const int Number_of_Cells_Jdir,
-			const int Number_of_Ghost_Cells);
+			const int Number_of_Ghost_Cells,
+			const int Highest_Order_of_Reconstruction);
+
   void Grid_Flat_Plate9(int &_Number_of_Blocks_Idir_,
 			int &_Number_of_Blocks_Jdir_,
 			const double &Length,
@@ -198,7 +182,8 @@ public:
 			const double &Stretching_Factor_Jdir,
 			const int Number_of_Cells_Idir,
 			const int Number_of_Cells_Jdir,
-			const int Number_of_Ghost_Cells);
+			const int Number_of_Ghost_Cells,
+			const int Highest_Order_of_Reconstruction);
 
   void Grid_1D_Flame(int &_Number_of_Blocks_Idir_,
 		     int &_Number_of_Blocks_Jdir_,
@@ -206,7 +191,8 @@ public:
 		     const double &Heigth,
 		     const int Number_of_Cells_Idir,
 		     const int Number_of_Cells_Jdir,
-		     const int Number_of_Ghost_Cells);
+		     const int Number_of_Ghost_Cells,
+		     const int Highest_Order_of_Reconstruction);
   
   void Grid_2D_Laminar_Flame(int &_Number_of_Blocks_Idir_,
 			     int &_Number_of_Blocks_Jdir_,
@@ -215,6 +201,7 @@ public:
 			     const int Number_of_Cells_Idir,
 			     const int Number_of_Cells_Jdir, 
 			     const int Number_of_Ghost_Cells,
+			     const int Highest_Order_of_Reconstruction,
 			     const int Flame_Type_Flag);
 
   void Grid_Pipe(int &_Number_of_Blocks_Idir_,
@@ -225,7 +212,8 @@ public:
 		 const double Stretching_Factor,
 		 const int Number_of_Cells_Idir,
 		 const int Number_of_Cells_Jdir,
-		 const int Number_of_Ghost_Cells);  
+		 const int Number_of_Ghost_Cells,
+		 const int Highest_Order_of_Reconstruction);  
 
   void Grid_Pipe(int &_Number_of_Blocks_Idir_,
 		 int &_Number_of_Blocks_Jdir_,
@@ -234,7 +222,8 @@ public:
 		 const int &Axisymmetric,
 		 const int Number_of_Cells_Idir,
 		 const int Number_of_Cells_Jdir,
-		 const int Number_of_Ghost_Cells);
+		 const int Number_of_Ghost_Cells,
+		 const int Highest_Order_of_Reconstruction);
   
   void  Grid_Blunt_Body(int &_Number_of_Blocks_Idir_,
 			int &_Number_of_Blocks_Jdir_,
@@ -242,7 +231,8 @@ public:
 			const double &Mach_Number,
 			const int Number_of_Cells_Idir,
 			const int Number_of_Cells_Jdir,
-			const int Number_of_Ghost_Cells);
+			const int Number_of_Ghost_Cells,
+			const int Highest_Order_of_Reconstruction);
 
   void Grid_Rocket_Motor(int &_Number_of_Blocks_Idir_,
 			 int &_Number_of_Blocks_Jdir_,
@@ -261,7 +251,8 @@ public:
 			 const double &Stretching_Factor_Jdir,
 			 const int Number_of_Cells_Idir,
 			 const int Number_of_Cells_Jdir,
-			 const int Number_of_Ghost_Cells);
+			 const int Number_of_Ghost_Cells,
+			 const int Highest_Order_of_Reconstruction);
   
   void Grid_Nozzleless_Rocket_Motor(int &_Number_of_Blocks_Idir_,
 				    int &_Number_of_Blocks_Jdir_,
@@ -276,7 +267,8 @@ public:
 				    const double &Stretching_Factor_Jdir,
 				    const int Number_of_Cells_Idir,
 				    const int Number_of_Cells_Jdir,
-				    const int Number_of_Ghost_Cells);
+				    const int Number_of_Ghost_Cells,
+				    const int Highest_Order_of_Reconstruction);
 
   void Grid_Nozzle(int &_Number_of_Blocks_Idir_,
 		   int &_Number_of_Blocks_Jdir_,
@@ -292,7 +284,8 @@ public:
 		   const double &Stretching_Factor_Jdir,
 		   const int Number_of_Cells_Idir,
 		   const int Number_of_Cells_Jdir,
-		   const int Number_of_Ghost_Cells);
+		   const int Number_of_Ghost_Cells,
+		   const int Highest_Order_of_Reconstruction);
   
   void Grid_Circular_Cylinder(int &_Number_of_Blocks_Idir_,
 			      int &_Number_of_Blocks_Jdir_,
@@ -303,7 +296,8 @@ public:
 			      const double &Stretching_Factor_Jdir,
 			      const int Number_of_Cells_Idir,
 			      const int Number_of_Cells_Jdir,
-			      const int Number_of_Ghost_Cells);
+			      const int Number_of_Ghost_Cells,
+			      const int Highest_Order_of_Reconstruction);
 
   void Grid_Circular_Cylinder(int &_Number_of_Blocks_Idir_,
 			      int &_Number_of_Blocks_Jdir_,
@@ -315,7 +309,8 @@ public:
 			      const double &Stretching_Factor_Jdir,
 			      const int Number_of_Cells_Idir,
 			      const int Number_of_Cells_Jdir,
-			      const int Number_of_Ghost_Cells);
+			      const int Number_of_Ghost_Cells,
+			      const int Highest_Order_of_Reconstruction);
 
   void Grid_Annulus(int &_Number_of_Blocks_Idir_,
 		    int &_Number_of_Blocks_Jdir_,
@@ -329,7 +324,8 @@ public:
 		    const double &Stretching_Factor_Jdir,
 		    const int Number_of_Cells_Idir,
 		    const int Number_of_Cells_Jdir,
-		    const int Number_of_Ghost_Cells);
+		    const int Number_of_Ghost_Cells,
+		    const int Highest_Order_of_Reconstruction);
 
   void Grid_Ellipse(int &_Number_of_Blocks_Idir_,
 		    int &_Number_of_Blocks_Jdir_,
@@ -337,7 +333,8 @@ public:
 		    const double &B,
 		    const int Number_of_Cells_Idir,
 		    const int Number_of_Cells_Jdir,
-		    const int Number_of_Ghost_Cells);
+		    const int Number_of_Ghost_Cells,
+		    const int Highest_Order_of_Reconstruction);
   
   void Grid_NACA_Aerofoil(int &_Number_of_Blocks_Idir_,
 			  int &_Number_of_Blocks_Jdir_,
@@ -345,14 +342,16 @@ public:
 			  const double &Chord_Length,
 			  const int Number_of_Cells_Idir,
 			  const int Number_of_Cells_Jdir,
-			  const int Number_of_Ghost_Cells);
+			  const int Number_of_Ghost_Cells,
+			  const int Highest_Order_of_Reconstruction);
   
   void Grid_Free_Jet(int &_Number_of_Blocks_Idir_,
 		     int &_Number_of_Blocks_Jdir_,
 		     const double &Radius,
 		     const int Number_of_Cells_Idir,
 		     const int Number_of_Cells_Jdir,
-		     const int Number_of_Ghost_Cells) ;
+		     const int Number_of_Ghost_Cells,
+		     const int Highest_Order_of_Reconstruction) ;
 
   void Grid_Wedge(int &_Number_of_Blocks_Idir_,
 		  int &_Number_of_Blocks_Jdir_,
@@ -364,7 +363,8 @@ public:
 		  const double &Stretching_Factor_Jdir,
 		  const int Number_of_Cells_Idir,
 		  const int Number_of_Cells_Jdir,
-		  const int Number_of_Ghost_Cells);
+		  const int Number_of_Ghost_Cells,
+		  const int Highest_Order_of_Reconstruction);
 
   void Grid_Unsteady_Blunt_Body(int &_Number_of_Blocks_Idir_,
 				int &_Number_of_Blocks_Jdir_,
@@ -372,7 +372,8 @@ public:
 				const double &Mach_Number,
 				const int Number_of_Cells_Idir,
 				const int Number_of_Cells_Jdir,
-				const int Number_of_Ghost_Cells);
+				const int Number_of_Ghost_Cells,
+				const int Highest_Order_of_Reconstruction);
 
   void Grid_Ringleb_Flow(int &_Number_of_Blocks_Idir_,
 			 int &_Number_of_Blocks_Jdir_,
@@ -381,13 +382,17 @@ public:
 			 const double &Isotach_Line,
 			 const int Number_of_Cells_Idir,
 			 const int Number_of_Cells_Jdir,
-			 const int Number_of_Ghost_Cells);
+			 const int Number_of_Ghost_Cells,
+			 const int Highest_Order_of_Reconstruction);
+
   void Grid_Bump_Channel_Flow(int &_Number_of_Blocks_Idir_,
 			      int &_Number_of_Blocks_Jdir_,
 			      const int Smooth_Bump,
 			      const int Number_of_Cells_Idir,
 			      const int Number_of_Cells_Jdir,
-			      const int Number_of_Ghost_Cells) ;
+			      const int Number_of_Ghost_Cells,
+			      const int Highest_Order_of_Reconstruction) ;
+
   void Grid_Jet_Flow(int &_Number_of_Blocks_Idir_,
 		     int &_Number_of_Blocks_Jdir_,
 		     const double &Radius,
@@ -398,7 +403,8 @@ public:
 		     const double &Stretching_Factor_Jdir,
 		     const int Number_of_Cells_Idir,
 		     const int Number_of_Cells_Jdir,
-		     const int Number_of_Ghost_Cells);
+		     const int Number_of_Ghost_Cells,
+		     const int Highest_Order_of_Reconstruction);
 
   void Grid_Mixing_Layer(int &_Number_of_Blocks_Idir_,
 			 int &_Number_of_Blocks_Jdir_,
@@ -410,7 +416,8 @@ public:
 			 const double &Stretching_Factor_Jdir,
 			 const int Number_of_Cells_Idir,
 			 const int Number_of_Cells_Jdir,
-			 const int Number_of_Ghost_Cells);
+			 const int Number_of_Ghost_Cells,
+			 const int Highest_Order_of_Reconstruction);
 
   void Grid_Backward_Facing_Step(int &_Number_of_Blocks_Idir_,
 				 int &_Number_of_Blocks_Jdir_,
@@ -420,7 +427,8 @@ public:
 				 const double &Stretching_Factor_Jdir,
 				 const int Number_of_Cells_Idir,
 				 const int Number_of_Cells_Jdir,
-				 const int Number_of_Ghost_Cells);
+				 const int Number_of_Ghost_Cells,
+				 const int Highest_Order_of_Reconstruction);
 
   void Grid_Forward_Facing_Step(int &_Number_of_Blocks_Idir_,
 				int &_Number_of_Blocks_Jdir_,
@@ -430,28 +438,32 @@ public:
 				const double &Stretching_Factor_Jdir,
 				const int Number_of_Cells_Idir,
 				const int Number_of_Cells_Jdir,
-				const int Number_of_Ghost_Cells);
+				const int Number_of_Ghost_Cells,
+				const int Highest_Order_of_Reconstruction);
 
   void Grid_Desolvation_Chamber(const int &Chamber_BC_Type,
 				int &_Number_of_Blocks_Idir_,
 				int &_Number_of_Blocks_Jdir_,
 				const int Number_of_Cells_Idir,
 				const int Number_of_Cells_Jdir,
-				const int Number_of_Ghost_Cells) ;
+				const int Number_of_Ghost_Cells,
+				const int Highest_Order_of_Reconstruction) ;
 
   void Grid_NASA_Rotor_37(int &_Number_of_Blocks_Idir_,
 			  int &_Number_of_Blocks_Jdir_,
 			  const double &Rotor_Percent_Span,
 			  const int Number_of_Cells_Idir,
 			  const int Number_of_Cells_Jdir,
-			  const int Number_of_Ghost_Cells);
+			  const int Number_of_Ghost_Cells,
+			  const int Highest_Order_of_Reconstruction);
 
   void Grid_NASA_Rotor_67(int &_Number_of_Blocks_Idir_,
 			  int &_Number_of_Blocks_Jdir_,
 			  const double &Rotor_Percent_Span,
 			  const int Number_of_Cells_Idir,
 			  const int Number_of_Cells_Jdir,
-			  const int Number_of_Ghost_Cells);
+			  const int Number_of_Ghost_Cells,
+			  const int Highest_Order_of_Reconstruction);
 
   void Grid_Driven_Cavity_Flow(int &_Number_of_Blocks_Idir_,
 			       int &_Number_of_Blocks_Jdir_,
@@ -463,21 +475,24 @@ public:
 			       const double &Stretching_Factor_Jdir,
 			       const int Number_of_Cells_Idir,
 			       const int Number_of_Cells_Jdir,
-			       const int Number_of_Ghost_Cells);
+			       const int Number_of_Ghost_Cells,
+			       const int Highest_Order_of_Reconstruction);
 
   void Grid_Adiabatic_Flat_Plate(int &_Number_of_Blocks_Idir_,
 				 int &_Number_of_Blocks_Jdir_,
 				 const double &Length,
 				 const int Number_of_Cells_Idir,
 				 const int Number_of_Cells_Jdir,
-				 const int Number_of_Ghost_Cells);
+				 const int Number_of_Ghost_Cells,
+				 const int Highest_Order_of_Reconstruction);
 
   void Grid_Adiabatic_Circular_Cylinder(int &_Number_of_Blocks_Idir_,
 					int &_Number_of_Blocks_Jdir_,
 					const double &Radius,
 					const int Number_of_Cells_Idir,
 					const int Number_of_Cells_Jdir,
-					const int Number_of_Ghost_Cells);
+					const int Number_of_Ghost_Cells,
+					const int Highest_Order_of_Reconstruction);
 
   void Grid_Adiabatic_Circular_Cylinder(int &_Number_of_Blocks_Idir_,
 					int &_Number_of_Blocks_Jdir_,
@@ -485,14 +500,16 @@ public:
 					const double &Outer_Radius,
 					const int Number_of_Cells_Idir,
 					const int Number_of_Cells_Jdir,
-					const int Number_of_Ghost_Cells);
+					const int Number_of_Ghost_Cells,
+					const int Highest_Order_of_Reconstruction);
 
   void Grid_Adiabatic_Couette(int &_Number_of_Blocks_Idir_,
 			      int &_Number_of_Blocks_Jdir_,
 			      const double &Separation,
 			      const int Number_of_Cells_Idir,
 			      const int Number_of_Cells_Jdir,
-			      const int Number_of_Ghost_Cells);
+			      const int Number_of_Ghost_Cells,
+			      const int Highest_Order_of_Reconstruction);
 
   void Grid_Cylindrical_Encl(int &_Number_of_Blocks_Idir_,
 			     int &_Number_of_Blocks_Jdir_,
@@ -501,7 +518,8 @@ public:
 			     const int &Axisymmetric,
 			     const int Number_of_Cells_Idir,
 			     const int Number_of_Cells_Jdir,
-			     const int Number_of_Ghost_Cells);
+			     const int Number_of_Ghost_Cells,
+			     const int Highest_Order_of_Reconstruction);
 
   void Grid_Rectangular_Encl(int &_Number_of_Blocks_Idir_,
 			     int &_Number_of_Blocks_Jdir_,
@@ -509,7 +527,8 @@ public:
 			     const double &Height,
 			     const int Number_of_Cells_Idir,
 			     const int Number_of_Cells_Jdir,
-			     const int Number_of_Ghost_Cells);
+			     const int Number_of_Ghost_Cells,
+			     const int Highest_Order_of_Reconstruction);
 
   void Grid_Tube_2D(int &_Number_of_Blocks_Idir_,
 		    int &_Number_of_Blocks_Jdir_,
@@ -517,6 +536,7 @@ public:
 		    const int Number_of_Cells_Idir,
 		    const int Number_of_Cells_Jdir,
 		    const int Number_of_Ghost_Cells,
+		    const int Highest_Order_of_Reconstruction,
 		    const int i_Stretching_Radial_Dir,
 		    const double &Stretching_Radial_Dir) ;
 
@@ -527,23 +547,12 @@ public:
 		       const int Number_of_Cells_Idir,
 		       const int Number_of_Cells_Jdir,
 		       const int Number_of_Ghost_Cells,
+		       const int Highest_Order_of_Reconstruction,
 		       const int i_Stretching_Radial_Dir,
 		       const double &Stretching_Radial_Dir);
   
   //@}
     
-  //!@name AMR related functions
-  //@{
-  //@}
-  
-  //! @name Binary arithmetic operators.
-  //@{
-  //@}
-
-  //! @name Friend binary arithmetic operators.
-  //@{
-  //@}
-
   //! @name Input-output operators.
   //@{
   friend ostream &operator << (ostream &Out_File, const Grid2D_Quad_MultiBlock_HO &G);
@@ -627,7 +636,8 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
 			 Input_Parameters.Box_Width,
 			 Input_Parameters.Number_of_Cells_Idir,
 			 Input_Parameters.Number_of_Cells_Jdir,
-			 Input_Parameters.Number_of_Ghost_Cells);
+			 Input_Parameters.Number_of_Ghost_Cells,
+			 Input_Parameters.ReconstructionOrder());
     break;
   case GRID_RECTANGULAR_BOX :
     if (!Input_Parameters.i_Mesh_Stretching) {
@@ -637,7 +647,8 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
 			   Input_Parameters.Box_Height,
 			   Input_Parameters.Number_of_Cells_Idir,
 			   Input_Parameters.Number_of_Cells_Jdir,
-			   Input_Parameters.Number_of_Ghost_Cells);
+			   Input_Parameters.Number_of_Ghost_Cells,
+			   Input_Parameters.ReconstructionOrder());
     } else {
       Grid_Rectangular_Box(Input_Parameters.Number_of_Blocks_Idir,
 			   Input_Parameters.Number_of_Blocks_Jdir,
@@ -650,7 +661,8 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
 			   Input_Parameters.Mesh_Stretching_Factor_Jdir,
 			   Input_Parameters.Number_of_Cells_Idir,
 			   Input_Parameters.Number_of_Cells_Jdir,
-			   Input_Parameters.Number_of_Ghost_Cells);
+			   Input_Parameters.Number_of_Ghost_Cells,
+			   Input_Parameters.ReconstructionOrder());
     }
     break;
   case GRID_PERIODIC_BOX :
@@ -665,7 +677,8 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
 			 Input_Parameters.Mesh_Stretching_Factor_Jdir,
 			 Input_Parameters.Number_of_Cells_Idir,
 			 Input_Parameters.Number_of_Cells_Jdir,
-			 Input_Parameters.Number_of_Ghost_Cells);
+			 Input_Parameters.Number_of_Ghost_Cells,
+			 Input_Parameters.ReconstructionOrder());
 
     // Impose the proper boundary conditions for periodic grid
     for ( jBlk = 0; jBlk <= Input_Parameters.Number_of_Blocks_Jdir-1; ++jBlk ) {
@@ -739,7 +752,8 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
 			 Input_Parameters.Mesh_Stretching_Factor_Jdir,
 			 Input_Parameters.Number_of_Cells_Idir,
 			 Input_Parameters.Number_of_Cells_Jdir,
-			 Input_Parameters.Number_of_Ghost_Cells);
+			 Input_Parameters.Number_of_Ghost_Cells,
+			 Input_Parameters.ReconstructionOrder());
 
     // Impose the proper boundary conditions for the current grid type.
     HiBlk = Input_Parameters.Number_of_Blocks_Idir/2;
@@ -774,7 +788,8 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
 		    Input_Parameters.Mesh_Stretching_Factor_Jdir,
 		    Input_Parameters.Number_of_Cells_Idir,
 		    Input_Parameters.Number_of_Cells_Jdir,
-		    Input_Parameters.Number_of_Ghost_Cells);
+		    Input_Parameters.Number_of_Ghost_Cells,
+		    Input_Parameters.ReconstructionOrder());
     break;
   case GRID_PIPE :
     Grid_Pipe(Input_Parameters.Number_of_Blocks_Idir,
@@ -785,7 +800,8 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
 	      Input_Parameters.Mesh_Stretching_Factor_Jdir,
 	      Input_Parameters.Number_of_Cells_Idir,
 	      Input_Parameters.Number_of_Cells_Jdir,
-	      Input_Parameters.Number_of_Ghost_Cells);
+	      Input_Parameters.Number_of_Ghost_Cells,
+	      Input_Parameters.ReconstructionOrder());
     break;
   case GRID_BLUNT_BODY :
     Grid_Blunt_Body(Input_Parameters.Number_of_Blocks_Idir,
@@ -794,7 +810,8 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
 		    Input_Parameters.Blunt_Body_Mach_Number,
 		    Input_Parameters.Number_of_Cells_Idir,
 		    Input_Parameters.Number_of_Cells_Jdir,
-		    Input_Parameters.Number_of_Ghost_Cells);
+		    Input_Parameters.Number_of_Ghost_Cells,
+		    Input_Parameters.ReconstructionOrder());
     break;
   case GRID_ROCKET_MOTOR :
     Grid_Rocket_Motor(Input_Parameters.Number_of_Blocks_Idir,
@@ -814,7 +831,8 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
 		      Input_Parameters.Mesh_Stretching_Factor_Jdir,
 		      Input_Parameters.Number_of_Cells_Idir,
 		      Input_Parameters.Number_of_Cells_Jdir,
-		      Input_Parameters.Number_of_Ghost_Cells);
+		      Input_Parameters.Number_of_Ghost_Cells,
+		      Input_Parameters.ReconstructionOrder());
     break;
   case GRID_NOZZLELESS_ROCKET_MOTOR :
     Grid_Nozzleless_Rocket_Motor(Input_Parameters.Number_of_Blocks_Idir,
@@ -830,7 +848,8 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
 				 Input_Parameters.Mesh_Stretching_Factor_Jdir,
 				 Input_Parameters.Number_of_Cells_Idir,
 				 Input_Parameters.Number_of_Cells_Jdir,
-				 Input_Parameters.Number_of_Ghost_Cells);
+				 Input_Parameters.Number_of_Ghost_Cells,
+				 Input_Parameters.ReconstructionOrder());
     break;
   case GRID_CIRCULAR_CYLINDER :
     Grid_Circular_Cylinder(Input_Parameters.Number_of_Blocks_Idir,
@@ -843,7 +862,8 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
 			   Input_Parameters.Mesh_Stretching_Factor_Jdir,
 			   Input_Parameters.Number_of_Cells_Idir,
 			   Input_Parameters.Number_of_Cells_Jdir,
-			   Input_Parameters.Number_of_Ghost_Cells);
+			   Input_Parameters.Number_of_Ghost_Cells,
+			   Input_Parameters.ReconstructionOrder());
     break;
   case GRID_ANNULUS :
     Grid_Annulus(Input_Parameters.Number_of_Blocks_Idir,
@@ -858,7 +878,8 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
 		 Input_Parameters.Mesh_Stretching_Factor_Jdir,
 		 Input_Parameters.Number_of_Cells_Idir,
 		 Input_Parameters.Number_of_Cells_Jdir,
-		 Input_Parameters.Number_of_Ghost_Cells);
+		 Input_Parameters.Number_of_Ghost_Cells,
+		 Input_Parameters.ReconstructionOrder());
     break;
   case GRID_ELLIPSE :
     Grid_Ellipse(Input_Parameters.Number_of_Blocks_Idir,
@@ -867,7 +888,8 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
 		 Input_Parameters.Ellipse_Length_Y_Axis,
 		 Input_Parameters.Number_of_Cells_Idir,
 		 Input_Parameters.Number_of_Cells_Jdir,
-		 Input_Parameters.Number_of_Ghost_Cells);
+		 Input_Parameters.Number_of_Ghost_Cells,
+		 Input_Parameters.ReconstructionOrder());
     break;
   case GRID_NACA_AEROFOIL :
     Grid_NACA_Aerofoil(Input_Parameters.Number_of_Blocks_Idir,
@@ -876,7 +898,8 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
 		       Input_Parameters.Chord_Length,
 		       Input_Parameters.Number_of_Cells_Idir,
 		       Input_Parameters.Number_of_Cells_Jdir,
-		       Input_Parameters.Number_of_Ghost_Cells);
+		       Input_Parameters.Number_of_Ghost_Cells,
+		       Input_Parameters.ReconstructionOrder());
     break;
   case GRID_FREE_JET :
     Grid_Free_Jet(Input_Parameters.Number_of_Blocks_Idir,
@@ -884,12 +907,14 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
 		  Input_Parameters.Orifice_Radius,
 		  Input_Parameters.Number_of_Cells_Idir,
 		  Input_Parameters.Number_of_Cells_Jdir,
-		  Input_Parameters.Number_of_Ghost_Cells);
+		  Input_Parameters.Number_of_Ghost_Cells,
+		  Input_Parameters.ReconstructionOrder());
     break;
   case GRID_ICEMCFD :
     ICEMCFD_Read(Input_Parameters.ICEMCFD_FileNames,
 		 *this,
 		 Input_Parameters.Number_of_Ghost_Cells,
+		 Input_Parameters.ReconstructionOrder(),
 		 &Input_Parameters.Number_of_Blocks_Idir,
 		 &Input_Parameters.Number_of_Blocks_Jdir);
     break;
@@ -900,7 +925,8 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
 			 Input_Parameters.Box_Height,
 			 Input_Parameters.Number_of_Cells_Idir,
 			 Input_Parameters.Number_of_Cells_Jdir,
-			 Input_Parameters.Number_of_Ghost_Cells);
+			 Input_Parameters.Number_of_Ghost_Cells,
+			 Input_Parameters.ReconstructionOrder());
     break;
   } /* endswitch */
 

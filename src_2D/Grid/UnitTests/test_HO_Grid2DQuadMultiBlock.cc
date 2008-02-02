@@ -274,7 +274,8 @@ namespace tut
                                         Height,
                                         Number_of_Cells_Idir,
 					Number_of_Cells_Jdir,
-					Number_of_Ghost_Cells);
+					Number_of_Ghost_Cells,
+					0);
 
     MultiBlockGrid.Translate_Multi_Block_Grid(Vector2D(1.0,2.0));
     MultiBlockGrid.Scale_Multi_Block_Grid(2.0);
@@ -359,7 +360,8 @@ namespace tut
 				   Stretching_Factor_Jdir,
 				   Number_of_Cells_Idir,
 				   Number_of_Cells_Jdir,
-				   Number_of_Ghost_Cells);
+				   Number_of_Ghost_Cells,
+				   0);
 
     MultiBlockGrid.Translate_Multi_Block_Grid(Vector2D(1.0,2.0));
     MultiBlockGrid.Scale_Multi_Block_Grid(2.0);
@@ -440,6 +442,7 @@ namespace tut
 					 Number_of_Cells_Idir,
 					 Number_of_Cells_Jdir,
 					 Number_of_Ghost_Cells,
+					 0,
 					 Flame_Type_Flag);
 
     MultiBlockGrid.Translate_Multi_Block_Grid(Vector2D(1.0,2.0));
@@ -519,7 +522,8 @@ namespace tut
 				      Chord_Length,
 				      Number_of_Cells_Idir,
 				      Number_of_Cells_Jdir,
-				      Number_of_Ghost_Cells);
+				      Number_of_Ghost_Cells,
+				      0);
 
     MultiBlockGrid.Translate_Multi_Block_Grid(Vector2D(1.0,2.0));
     MultiBlockGrid.Scale_Multi_Block_Grid(2.0);
@@ -613,7 +617,8 @@ namespace tut
 			       Stretching_Factor_Jdir,
 			       Number_of_Cells_Idir,
 			       Number_of_Cells_Jdir,
-			       Number_of_Ghost_Cells);
+			       Number_of_Ghost_Cells,
+			       0);
 
     MultiBlockGrid.Translate_Multi_Block_Grid(Vector2D(1.0,2.0));
     MultiBlockGrid.Scale_Multi_Block_Grid(2.0);
