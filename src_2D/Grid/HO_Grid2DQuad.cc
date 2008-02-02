@@ -2159,10 +2159,10 @@ void Grid2D_Quad_Block_HO::Broadcast_Quad_Block(MPI::Intracomm &Communicator,
   /* Broadcast the north, south, east, and west 
      boundary splines. */
   
-  Broadcast_Spline(BndNorthSpline, Communicator, Source_CPU);
-  Broadcast_Spline(BndSouthSpline, Communicator, Source_CPU);
-  Broadcast_Spline(BndEastSpline, Communicator, Source_CPU);
-  Broadcast_Spline(BndWestSpline, Communicator, Source_CPU);
+  BndNorthSpline.Broadcast_Spline(Communicator, Source_CPU);
+  BndSouthSpline.Broadcast_Spline(Communicator, Source_CPU);
+  BndEastSpline.Broadcast_Spline(Communicator, Source_CPU);
+  BndWestSpline.Broadcast_Spline(Communicator, Source_CPU);
   
   /* Broadcast min/max pathlengths for boundary splines. */
   
