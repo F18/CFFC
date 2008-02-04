@@ -27,8 +27,8 @@ namespace tut
     Grid2DTesting_Input_Parameters IP;
 
     int error_flag;
-    Vector2D GQPoint1, GQPoint2; // Gauss Quadrature Points
-    int iCell,jCell;		// cell coordinates
+    Vector2D* GQPoints; // Gauss Quadrature Points
+    int iCell,jCell;   // cell coordinates
 
     Spline2DInterval_HO * SInfoNULL;
     
@@ -74,6 +74,9 @@ namespace tut
     IP.Set_Default_Input_Parameters();
     set_local_output_path("HO_MultiBlockQuadGrids");
     set_local_input_path("HO_MultiBlockQuadGrids");
+
+    // allocate memory for the GQPs
+    GQPoints = new Vector2D [3];
   }
 
   Data_Grid2DQuadMultiBlock_HO::~Data_Grid2DQuadMultiBlock_HO(void){
@@ -140,13 +143,11 @@ namespace tut
 	for (iCell=MeshBlk(iBlock,jBlock).ICl; iCell<=MeshBlk(iBlock,jBlock).ICu; ++iCell){
 	  for (jCell=MeshBlk(iBlock,jBlock).JCl; jCell<=MeshBlk(iBlock,jBlock).JCu; ++jCell){
 
-
-#if 0
 	    if (jCell == MeshBlk(iBlock,jBlock).JCu){
 	      // check cells with boundary at North
 
 	      ostmClear();
-	      ostm() << "NorthBnd Check, Block [" << iBlock << "," << jBlock << "], cell[" << iCell << "," << jCell << "]";
+	      ostm() << "NorthBnd Check, Block (" << iBlock << "," << jBlock << "), cell[" << iCell << "," << jCell << "]";
 	    
 	      if (MeshBlk(iBlock,jBlock).BndNorthSpline.getFluxCalcMethod() == ReconstructionBasedFlux){
 		ensure_equals(ostm().str(), MeshBlk(iBlock,jBlock).NumOfConstrainedGaussQuadPoints_North(iCell,jCell) ,
@@ -162,7 +163,7 @@ namespace tut
 	      // check cells with boundary at South
 
 	      ostmClear();
-	      ostm() << "SouthBnd Check, Block [" << iBlock << "," << jBlock << "], cell[" << iCell << "," << jCell << "]";
+	      ostm() << "SouthBnd Check, Block (" << iBlock << "," << jBlock << "), cell[" << iCell << "," << jCell << "]";
 	      
 	      if (MeshBlk(iBlock,jBlock).BndSouthSpline.getFluxCalcMethod() == ReconstructionBasedFlux){
 		ensure_equals(ostm().str(), MeshBlk(iBlock,jBlock).NumOfConstrainedGaussQuadPoints_South(iCell,jCell) ,
@@ -178,7 +179,7 @@ namespace tut
 	      // check cells with boundary at East
 
 	      ostmClear();
-	      ostm() << "EastBnd Check, Block [" << iBlock << "," << jBlock << "], cell[" << iCell << "," << jCell << "]";
+	      ostm() << "EastBnd Check, Block (" << iBlock << "," << jBlock << "), cell[" << iCell << "," << jCell << "]";
 
 	      if (MeshBlk(iBlock,jBlock).BndEastSpline.getFluxCalcMethod() == ReconstructionBasedFlux){
 		ensure_equals(ostm().str(), MeshBlk(iBlock,jBlock).NumOfConstrainedGaussQuadPoints_East(iCell,jCell) ,
@@ -194,7 +195,7 @@ namespace tut
 	      // check cells with boundary at West
 	      
 	      ostmClear();
-	      ostm() << "WestBnd Check, Block [" << iBlock << "," << jBlock << "], cell[" << iCell << "," << jCell << "]";
+	      ostm() << "WestBnd Check, Block (" << iBlock << "," << jBlock << "), cell[" << iCell << "," << jCell << "]";
 	      
 	      if (MeshBlk(iBlock,jBlock).BndWestSpline.getFluxCalcMethod() == ReconstructionBasedFlux){
 		ensure_equals(ostm().str(), MeshBlk(iBlock,jBlock).NumOfConstrainedGaussQuadPoints_West(iCell,jCell) ,
@@ -211,22 +212,21 @@ namespace tut
 	      // check interior cells 
 
 	      ostmClear();
-	      ostm() << "InteriorCell North, Block [" << iBlock << "," << jBlock << "], cell[" << iCell << "," << jCell << "]";
+	      ostm() << "InteriorCell North, Block (" << iBlock << "," << jBlock << "), cell[" << iCell << "," << jCell << "]";
 	      ensure_equals(ostm().str(), MeshBlk(iBlock,jBlock).NumOfConstrainedGaussQuadPoints_North(iCell,jCell), 0);
 
 	      ostmClear();
-	      ostm() << "InteriorCell South, Block [" << iBlock << "," << jBlock << "], cell[" << iCell << "," << jCell << "]";
+	      ostm() << "InteriorCell South, Block (" << iBlock << "," << jBlock << "), cell[" << iCell << "," << jCell << "]";
 	      ensure_equals(ostm().str(), MeshBlk(iBlock,jBlock).NumOfConstrainedGaussQuadPoints_South(iCell,jCell), 0);
 
 	      ostmClear();
-	      ostm() << "InteriorCell East, Block [" << iBlock << "," << jBlock << "], cell[" << iCell << "," << jCell << "]";
+	      ostm() << "InteriorCell East, Block (" << iBlock << "," << jBlock << "), cell[" << iCell << "," << jCell << "]";
 	      ensure_equals(ostm().str(), MeshBlk(iBlock,jBlock).NumOfConstrainedGaussQuadPoints_East(iCell,jCell), 0);
 
 	      ostmClear();
-	      ostm() << "InteriorCell West, Block [" << iBlock << "," << jBlock << "], cell[" << iCell << "," << jCell << "]";
+	      ostm() << "InteriorCell West, Block (" << iBlock << "," << jBlock << "), cell[" << iCell << "," << jCell << "]";
 	      ensure_equals(ostm().str(), MeshBlk(iBlock,jBlock).NumOfConstrainedGaussQuadPoints_West(iCell,jCell), 0);
 	    }
-#endif
 
 	  } // endfor
 	}// endfor
@@ -919,6 +919,1739 @@ namespace tut
 
   }
 
+  // Test 12:
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<12>()
+  {
+    set_test_name("Grid_Rectangular_Box()");
+    RunRegression = ON;
+ 
+    // Add test particular input parameters
+    IP.i_Grid = GRID_RECTANGULAR_BOX;
+    IP.Number_of_Blocks_Jdir = 1;
+    IP.Number_of_Blocks_Idir = 2;
+    IP.Number_of_Cells_Idir = 10;
+    IP.Number_of_Cells_Jdir = 10;
+    IP.Number_of_Ghost_Cells = 2;
+    IP.Space_Accuracy = 4;
+    IP.Box_Width = 2;
+    IP.Box_Height = 2;
+    IP.X_Shift.x = 6;
+    IP.X_Shift.y = 6;
+    IP.X_Scale = 2.0;
+    IP.X_Rotate = 10.0;
+    IP.IncludeHighOrderBoundariesRepresentation = OFF;
+    IP.i_Smooth_Quad_Block = ON;
+    strcpy(IP.BC_North_Type, "Reflection");
+    strcpy(IP.BC_East_Type, "Reflection");
+    strcpy(IP.BC_South_Type, "Reflection");
+    strcpy(IP.BC_West_Type, "Reflection");
+    IP.BCs_Specified = ON;
+    IP.BC_North = BC_REFLECTION;
+    IP.BC_South = BC_REFLECTION;
+    IP.BC_East = BC_REFLECTION;
+    IP.BC_West = BC_REFLECTION;
+
+    // Build the mesh
+    CreateMesh(MeshBlk,IP);
+
+    MasterFile = "GridRectangularBox_TecplotNodes.dat";
+    CurrentFile = "Current_GridRectangularBox_TecplotNodes.dat";
+
+    if (RunRegression){
+      Open_Output_File(CurrentFile);
+
+      // OutputMeshTecplot
+      MeshBlk.Output_Nodes_Tecplot(out());
+
+      // check
+      RunRegressionTest("Nodes_Tecplot", CurrentFile, MasterFile, 1.0e-9, 1.0e-9);
+
+    } else {
+      Open_Output_File(MasterFile);
+      
+      // write data
+      MeshBlk.Output_Nodes_Tecplot(out());
+    }
+  }
+
+  // Test 13:
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<13>()
+  {
+    set_test_name("Grid_Rectangular_Box()");
+    RunRegression = ON;
+ 
+    // Add test particular input parameters
+    IP.i_Grid = GRID_RECTANGULAR_BOX;
+    IP.Number_of_Blocks_Jdir = 1;
+    IP.Number_of_Blocks_Idir = 2;
+    IP.Number_of_Cells_Idir = 10;
+    IP.Number_of_Cells_Jdir = 10;
+    IP.Number_of_Ghost_Cells = 2;
+    IP.Space_Accuracy = 4;
+    IP.Box_Width = 2;
+    IP.Box_Height = 2;
+    IP.X_Shift.x = 6;
+    IP.X_Shift.y = 6;
+    IP.X_Scale = 2.0;
+    IP.X_Rotate = 10.0;
+    IP.IncludeHighOrderBoundariesRepresentation = OFF;
+    IP.i_Smooth_Quad_Block = ON;
+    strcpy(IP.BC_North_Type, "Reflection");
+    strcpy(IP.BC_East_Type, "Reflection");
+    strcpy(IP.BC_South_Type, "Reflection");
+    strcpy(IP.BC_West_Type, "Reflection");
+    IP.BCs_Specified = ON;
+    IP.BC_North = BC_REFLECTION;
+    IP.BC_South = BC_REFLECTION;
+    IP.BC_East = BC_REFLECTION;
+    IP.BC_West = BC_REFLECTION;
+
+    // Build the mesh
+    CreateMesh(MeshBlk,IP);
+
+    MasterFile = "GridRectangularBox_Tecplot.dat";
+    CurrentFile = "Current_GridRectangularBox_Tecplot.dat";
+
+    if (RunRegression){
+      Open_Output_File(CurrentFile);
+
+      // OutputMeshTecplot
+      MeshBlk.Output_Tecplot(out());
+
+      // check
+      RunRegressionTest("Output_Tecplot", CurrentFile, MasterFile, 1.0e-9, 1.0e-9);
+
+    } else {
+      Open_Output_File(MasterFile);
+      
+      // write data
+      MeshBlk.Output_Tecplot(out());
+    }
+  }
+
+  // Test 14:
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<14>()
+  {
+    set_test_name("Grid_Rectangular_Box(), Cell properties");
+    RunRegression = ON;
+ 
+    // Add test particular input parameters
+    IP.i_Grid = GRID_RECTANGULAR_BOX;
+    IP.Number_of_Blocks_Jdir = 1;
+    IP.Number_of_Blocks_Idir = 2;
+    IP.Number_of_Cells_Idir = 10;
+    IP.Number_of_Cells_Jdir = 10;
+    IP.Number_of_Ghost_Cells = 2;
+    IP.Space_Accuracy = 4;
+    IP.Box_Width = 2;
+    IP.Box_Height = 2;
+    IP.X_Shift.x = 6;
+    IP.X_Shift.y = 6;
+    IP.X_Scale = 2.0;
+    IP.X_Rotate = 10.0;
+    IP.IncludeHighOrderBoundariesRepresentation = OFF;
+    IP.i_Smooth_Quad_Block = ON;
+    strcpy(IP.BC_North_Type, "Reflection");
+    strcpy(IP.BC_East_Type, "Reflection");
+    strcpy(IP.BC_South_Type, "Reflection");
+    strcpy(IP.BC_West_Type, "Reflection");
+    IP.BCs_Specified = ON;
+    IP.BC_North = BC_REFLECTION;
+    IP.BC_South = BC_REFLECTION;
+    IP.BC_East = BC_REFLECTION;
+    IP.BC_West = BC_REFLECTION;
+
+    // Build the mesh
+    CreateMesh(MeshBlk,IP);
+
+    MasterFile = "GridRectangularBox_GeomProperties.dat";
+    CurrentFile = "Current_GridRectangularBox_GeomProperties.dat";
+
+    // Checked cell --> Block(0,0), Cell (ICl,JCu)
+    iCell = MeshBlk(0,0).ICl; jCell = MeshBlk(0,0).JCl;
+
+
+    if (RunRegression){
+      Open_Output_File(CurrentFile);
+
+      // Cell Nodes
+      Print_File(MeshBlk(0,0).nodeSW(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).nodeNW(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).nodeSE(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).nodeNE(iCell,jCell), out());
+
+      // Centroid
+      Print_File(MeshBlk(0,0).CellCentroid(iCell,jCell), out());
+
+      // Centroid, area, cell indexes, geometric moments
+      Print_File(MeshBlk(0,0).Cell[iCell][jCell], out());
+
+      // Cell face midpoints
+      Print_File(MeshBlk(0,0).xfaceN(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).xfaceS(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).xfaceE(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).xfaceW(iCell,jCell), out());
+
+      // Cell Gauss Points
+      MeshBlk(0,0).getGaussQuadPointsFaceN(iCell,jCell, GQPoints, 1);   Print_File(GQPoints[0], out());
+      MeshBlk(0,0).getGaussQuadPointsFaceS(iCell,jCell, GQPoints, 1);   Print_File(GQPoints[0], out());
+      MeshBlk(0,0).getGaussQuadPointsFaceE(iCell,jCell, GQPoints, 1);   Print_File(GQPoints[0], out());
+      MeshBlk(0,0).getGaussQuadPointsFaceW(iCell,jCell, GQPoints, 1);   Print_File(GQPoints[0], out());
+
+      MeshBlk(0,0).getGaussQuadPointsFaceN(iCell,jCell, GQPoints, 2); 
+      Print_File(GQPoints[0], out()); Print_File(GQPoints[1], out());
+
+      MeshBlk(0,0).getGaussQuadPointsFaceS(iCell,jCell, GQPoints, 2);
+      Print_File(GQPoints[0], out()); Print_File(GQPoints[1], out());
+
+      MeshBlk(0,0).getGaussQuadPointsFaceE(iCell,jCell, GQPoints, 2);
+      Print_File(GQPoints[0], out()); Print_File(GQPoints[1], out());
+
+      MeshBlk(0,0).getGaussQuadPointsFaceW(iCell,jCell, GQPoints, 2);
+      Print_File(GQPoints[0], out()); Print_File(GQPoints[1], out());
+
+      // Face Lengths
+      Print_File(MeshBlk(0,0).lfaceN(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).lfaceS(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).lfaceE(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).lfaceW(iCell,jCell), out());
+
+      // Normals
+      Print_File(MeshBlk(0,0).nfaceN(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).nfaceS(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).nfaceE(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).nfaceW(iCell,jCell), out());
+
+
+      // check geometry
+      RunRegressionTest("Output_Tecplot", CurrentFile, MasterFile, 1.0e-9, 1.0e-9);
+
+
+      // Check boundaries
+      ensure_equals("BndNorthSplineInfo",MeshBlk(0,0).BndNorthSplineInfo, SInfoNULL);
+      ensure_equals("BndSouthSplineInfo",MeshBlk(0,0).BndSouthSplineInfo, SInfoNULL);
+      ensure_equals("BndEastSplineInfo",MeshBlk(0,0).BndEastSplineInfo, SInfoNULL);
+      ensure_equals("BndWestSplineInfo",MeshBlk(0,0).BndWestSplineInfo, SInfoNULL);
+
+      ensure_equals("Constaints North", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_North(iCell,jCell), 0);
+      ensure_equals("Constaints South", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_South(iCell,jCell), 0);
+      ensure_equals("Constaints East", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_East(iCell,jCell), 0);
+      ensure_equals("Constaints West", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_West(iCell,jCell), 0);
+      ensure_equals("Total Constaints", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints(iCell,jCell), 0);
+
+      // Check boundary conditions
+      ensure_equals("BCtypeS", MeshBlk(0,0).BCtypeS[iCell], BC_REFLECTION);
+      ensure_equals("BCtypeW", MeshBlk(0,0).BCtypeW[jCell], BC_REFLECTION);
+
+      // Check update state
+      ensure_equals("InteriorMesh", MeshBlk(0,0).Value_InteriorMeshUpdate_Flag(), OFF);
+      ensure_equals("GhostCells", MeshBlk(0,0).Value_GhostCellsUpdate_Flag(), OFF);
+      ensure_equals("CornerGhostCells", MeshBlk(0,0).Value_CornerGhostCellsUpdate_Flag(), OFF);
+
+    } else {
+      Open_Output_File(MasterFile);
+      
+      // write data
+
+      // Cell Nodes
+      Print_File(MeshBlk(0,0).nodeSW(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).nodeNW(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).nodeSE(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).nodeNE(iCell,jCell), out());
+
+      // Centroid
+      Print_File(MeshBlk(0,0).CellCentroid(iCell,jCell), out());
+
+      // Centroid, area, cell indexes, geometric moments
+      Print_File(MeshBlk(0,0).Cell[iCell][jCell], out());
+
+      // Cell face midpoints
+      Print_File(MeshBlk(0,0).xfaceN(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).xfaceS(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).xfaceE(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).xfaceW(iCell,jCell), out());
+
+      // Cell Gauss Points
+      MeshBlk(0,0).getGaussQuadPointsFaceN(iCell,jCell, GQPoints, 1);   Print_File(GQPoints[0], out());
+      MeshBlk(0,0).getGaussQuadPointsFaceS(iCell,jCell, GQPoints, 1);   Print_File(GQPoints[0], out());
+      MeshBlk(0,0).getGaussQuadPointsFaceE(iCell,jCell, GQPoints, 1);   Print_File(GQPoints[0], out());
+      MeshBlk(0,0).getGaussQuadPointsFaceW(iCell,jCell, GQPoints, 1);   Print_File(GQPoints[0], out());
+
+      MeshBlk(0,0).getGaussQuadPointsFaceN(iCell,jCell, GQPoints, 2); 
+      Print_File(GQPoints[0], out()); Print_File(GQPoints[1], out());
+
+      MeshBlk(0,0).getGaussQuadPointsFaceS(iCell,jCell, GQPoints, 2);
+      Print_File(GQPoints[0], out()); Print_File(GQPoints[1], out());
+
+      MeshBlk(0,0).getGaussQuadPointsFaceE(iCell,jCell, GQPoints, 2);
+      Print_File(GQPoints[0], out()); Print_File(GQPoints[1], out());
+
+      MeshBlk(0,0).getGaussQuadPointsFaceW(iCell,jCell, GQPoints, 2);
+      Print_File(GQPoints[0], out()); Print_File(GQPoints[1], out());
+
+      // Face Lengths
+      Print_File(MeshBlk(0,0).lfaceN(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).lfaceS(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).lfaceE(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).lfaceW(iCell,jCell), out());
+
+      // Normals
+      Print_File(MeshBlk(0,0).nfaceN(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).nfaceS(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).nfaceE(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).nfaceW(iCell,jCell), out());
+
+    }
+  }
+
+  // Test 15:
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<15>()
+  {
+    set_test_name("Grid_Circular_Cylinder()");
+    RunRegression = ON;
+
+    // Add test particular input parameters
+    IP.i_Grid = GRID_CIRCULAR_CYLINDER;
+    IP.Cylinder_Radius = 1;
+    IP.Cylinder_Radius2 = 32;
+    IP.Number_of_Blocks_Jdir = 1;
+    IP.Number_of_Blocks_Idir = 2;
+    IP.Number_of_Cells_Idir = 40;
+    IP.Number_of_Cells_Jdir = 20;
+    IP.Number_of_Ghost_Cells = 5;
+    IP.Space_Accuracy = 4;
+    IP.IncludeHighOrderBoundariesRepresentation = OFF;
+    IP.i_Smooth_Quad_Block = OFF;
+
+    IP.i_Mesh_Stretching = ON;
+    IP.Mesh_Stretching_Type_Idir = STRETCHING_FCN_MINMAX_CLUSTERING;
+    IP.Mesh_Stretching_Type_Jdir = STRETCHING_FCN_MIN_CLUSTERING;
+    IP.Mesh_Stretching_Factor_Idir = 1.025;
+    IP.Mesh_Stretching_Factor_Jdir = 1.001;
+    
+    // Build the mesh
+    CreateMesh(MeshBlk,IP);
+    
+    MasterFile = "Grid_CircularCylinder_Tecplot.dat";
+    CurrentFile = "Current_Grid_CircularCylinder_Tecplot.dat";
+
+    if (RunRegression){
+      Open_Output_File(CurrentFile);
+
+      // OutputMeshTecplot
+      MeshBlk.Output_Tecplot(out());
+
+      // check
+      RunRegressionTest("Output_Tecplot", CurrentFile, MasterFile, 1.0e-9, 1.0e-9);
+
+    } else {
+      Open_Output_File(MasterFile);
+      
+      // write data
+      MeshBlk.Output_Tecplot(out());
+    }
+  }
+
+  // Test 16:
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<16>()
+  {
+    set_test_name("Grid_Circular_Cylinder()");
+    RunRegression = ON;
+ 
+    // Add test particular input parameters
+    IP.i_Grid = GRID_CIRCULAR_CYLINDER;
+    IP.Cylinder_Radius = 1;
+    IP.Cylinder_Radius2 = 32;
+    IP.Number_of_Blocks_Jdir = 1;
+    IP.Number_of_Blocks_Idir = 2;
+    IP.Number_of_Cells_Idir = 40;
+    IP.Number_of_Cells_Jdir = 20;
+    IP.Number_of_Ghost_Cells = 5;
+    IP.Space_Accuracy = 4;
+    IP.IncludeHighOrderBoundariesRepresentation = OFF;
+    IP.i_Smooth_Quad_Block = OFF;
+
+    IP.i_Mesh_Stretching = ON;
+    IP.Mesh_Stretching_Type_Idir = STRETCHING_FCN_MINMAX_CLUSTERING;
+    IP.Mesh_Stretching_Type_Jdir = STRETCHING_FCN_MIN_CLUSTERING;
+    IP.Mesh_Stretching_Factor_Idir = 1.025;
+    IP.Mesh_Stretching_Factor_Jdir = 1.001;
+
+    // Build the mesh
+    CreateMesh(MeshBlk,IP);
+
+    MasterFile = "Grid_CircularCylinder_CellsTecplot.dat";
+    CurrentFile = "Current_Grid_CircularCylinder_CellsTecplot.dat";
+
+    if (RunRegression){
+      Open_Output_File(CurrentFile);
+
+      // OutputMeshTecplot
+      MeshBlk.Output_Cells_Tecplot(out());
+
+      // check
+      RunRegressionTest("Output_Cells_Tecplot", CurrentFile, MasterFile, 1.0e-9, 1.0e-9);
+
+    } else {
+      Open_Output_File(MasterFile);
+      
+      // write data
+      MeshBlk.Output_Cells_Tecplot(out());
+    }
+  }
+
+  // Test 17:
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<17>()
+  {
+    set_test_name("Grid_Circular_Cylinder()");
+    RunRegression = ON;
+ 
+    // Add test particular input parameters
+    IP.i_Grid = GRID_CIRCULAR_CYLINDER;
+    IP.Cylinder_Radius = 1;
+    IP.Cylinder_Radius2 = 32;
+    IP.Number_of_Blocks_Jdir = 1;
+    IP.Number_of_Blocks_Idir = 2;
+    IP.Number_of_Cells_Idir = 40;
+    IP.Number_of_Cells_Jdir = 20;
+    IP.Number_of_Ghost_Cells = 5;
+    IP.Space_Accuracy = 4;
+    IP.IncludeHighOrderBoundariesRepresentation = OFF;
+    IP.i_Smooth_Quad_Block = OFF;
+
+    IP.i_Mesh_Stretching = ON;
+    IP.Mesh_Stretching_Type_Idir = STRETCHING_FCN_MINMAX_CLUSTERING;
+    IP.Mesh_Stretching_Type_Jdir = STRETCHING_FCN_MIN_CLUSTERING;
+    IP.Mesh_Stretching_Factor_Idir = 1.025;
+    IP.Mesh_Stretching_Factor_Jdir = 1.001;
+
+    // Build the mesh
+    CreateMesh(MeshBlk,IP);
+
+    MasterFile = "Grid_CircularCylinder_NodesTecplot.dat";
+    CurrentFile = "Current_Grid_CircularCylinder_NodesTecplot.dat";
+
+    if (RunRegression){
+      Open_Output_File(CurrentFile);
+
+      // OutputMeshTecplot
+      MeshBlk.Output_Nodes_Tecplot(out());
+
+      // check
+      RunRegressionTest("Output_Nodes_Tecplot", CurrentFile, MasterFile, 1.0e-9, 1.0e-9);
+
+    } else {
+      Open_Output_File(MasterFile);
+      
+      // write data
+      MeshBlk.Output_Nodes_Tecplot(out());
+    }
+  }
+
+  // Test 18:
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<18>()
+  {
+    set_test_name("Grid_Circular_Cylinder(), Interior cell properties");
+    RunRegression = ON;
+ 
+    // Add test particular input parameters
+    IP.i_Grid = GRID_CIRCULAR_CYLINDER;
+    IP.Cylinder_Radius = 1;
+    IP.Cylinder_Radius2 = 32;
+    IP.Number_of_Blocks_Jdir = 1;
+    IP.Number_of_Blocks_Idir = 2;
+    IP.Number_of_Cells_Idir = 40;
+    IP.Number_of_Cells_Jdir = 20;
+    IP.Number_of_Ghost_Cells = 5;
+    IP.Space_Accuracy = 4;
+    IP.IncludeHighOrderBoundariesRepresentation = OFF;
+    IP.i_Smooth_Quad_Block = OFF;
+
+    IP.i_Mesh_Stretching = ON;
+    IP.Mesh_Stretching_Type_Idir = STRETCHING_FCN_MINMAX_CLUSTERING;
+    IP.Mesh_Stretching_Type_Jdir = STRETCHING_FCN_MIN_CLUSTERING;
+    IP.Mesh_Stretching_Factor_Idir = 1.025;
+    IP.Mesh_Stretching_Factor_Jdir = 1.001;
+
+    // Build the mesh
+    CreateMesh(MeshBlk,IP);
+
+    MasterFile = "GridCircularCylinder_GeomProperties_InteriorCell.dat";
+    CurrentFile = "Current_GridCircularCylinder_GeomProperties_InteriorCell.dat";
+
+    // Checked cell --> Block(0,0), Cell (16,25)
+    iCell = 16; jCell = 25;
+
+    if (RunRegression){
+      Open_Output_File(CurrentFile);
+
+      // Cell Nodes
+      Print_File(MeshBlk(0,0).nodeSW(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).nodeNW(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).nodeSE(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).nodeNE(iCell,jCell), out());
+
+      // Centroid
+      Print_File(MeshBlk(0,0).CellCentroid(iCell,jCell), out());
+
+      // Centroid, area, cell indexes, geometric moments
+      Print_File(MeshBlk(0,0).Cell[iCell][jCell], out());
+
+      // Cell face midpoints
+      Print_File(MeshBlk(0,0).xfaceN(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).xfaceS(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).xfaceE(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).xfaceW(iCell,jCell), out());
+
+      // Cell Gauss Points
+      MeshBlk(0,0).getGaussQuadPointsFaceN(iCell,jCell, GQPoints, 1);   Print_File(GQPoints[0], out());
+      MeshBlk(0,0).getGaussQuadPointsFaceS(iCell,jCell, GQPoints, 1);   Print_File(GQPoints[0], out());
+      MeshBlk(0,0).getGaussQuadPointsFaceE(iCell,jCell, GQPoints, 1);   Print_File(GQPoints[0], out());
+      MeshBlk(0,0).getGaussQuadPointsFaceW(iCell,jCell, GQPoints, 1);   Print_File(GQPoints[0], out());
+
+      MeshBlk(0,0).getGaussQuadPointsFaceN(iCell,jCell, GQPoints, 2); 
+      Print_File(GQPoints[0], out()); Print_File(GQPoints[1], out());
+
+      MeshBlk(0,0).getGaussQuadPointsFaceS(iCell,jCell, GQPoints, 2);
+      Print_File(GQPoints[0], out()); Print_File(GQPoints[1], out());
+
+      MeshBlk(0,0).getGaussQuadPointsFaceE(iCell,jCell, GQPoints, 2);
+      Print_File(GQPoints[0], out()); Print_File(GQPoints[1], out());
+
+      MeshBlk(0,0).getGaussQuadPointsFaceW(iCell,jCell, GQPoints, 2);
+      Print_File(GQPoints[0], out()); Print_File(GQPoints[1], out());
+
+      // Face Lengths
+      Print_File(MeshBlk(0,0).lfaceN(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).lfaceS(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).lfaceE(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).lfaceW(iCell,jCell), out());
+
+      // Normals
+      Print_File(MeshBlk(0,0).nfaceN(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).nfaceS(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).nfaceE(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).nfaceW(iCell,jCell), out());
+
+
+      // check geometry
+      RunRegressionTest("Cell Geom Properties", CurrentFile, MasterFile, 1.0e-9, 1.0e-9);
+
+      // Check boundaries
+      ensure_equals("BndNorthSplineInfo",MeshBlk(0,0).BndNorthSplineInfo, SInfoNULL);
+      ensure_equals("BndSouthSplineInfo",MeshBlk(0,0).BndSouthSplineInfo, SInfoNULL);
+      ensure_equals("BndEastSplineInfo",MeshBlk(0,0).BndEastSplineInfo, SInfoNULL);
+      ensure_equals("BndWestSplineInfo",MeshBlk(0,0).BndWestSplineInfo, SInfoNULL);
+
+      ensure_equals("Constaints North", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_North(iCell,jCell), 0);
+      ensure_equals("Constaints South", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_South(iCell,jCell), 0);
+      ensure_equals("Constaints East", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_East(iCell,jCell), 0);
+      ensure_equals("Constaints West", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_West(iCell,jCell), 0);
+      ensure_equals("Total Constaints", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints(iCell,jCell), 0);
+
+      // Check update state
+      ensure_equals("InteriorMesh", MeshBlk(0,0).Value_InteriorMeshUpdate_Flag(), OFF);
+      ensure_equals("GhostCells", MeshBlk(0,0).Value_GhostCellsUpdate_Flag(), OFF);
+      ensure_equals("CornerGhostCells", MeshBlk(0,0).Value_CornerGhostCellsUpdate_Flag(), OFF);
+
+    } else {
+      Open_Output_File(MasterFile);
+      
+      // write data
+
+      // Cell Nodes
+      Print_File(MeshBlk(0,0).nodeSW(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).nodeNW(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).nodeSE(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).nodeNE(iCell,jCell), out());
+
+      // Centroid
+      Print_File(MeshBlk(0,0).CellCentroid(iCell,jCell), out());
+
+      // Centroid, area, cell indexes, geometric moments
+      Print_File(MeshBlk(0,0).Cell[iCell][jCell], out());
+
+      // Cell face midpoints
+      Print_File(MeshBlk(0,0).xfaceN(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).xfaceS(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).xfaceE(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).xfaceW(iCell,jCell), out());
+
+      // Cell Gauss Points
+      MeshBlk(0,0).getGaussQuadPointsFaceN(iCell,jCell, GQPoints, 1);   Print_File(GQPoints[0], out());
+      MeshBlk(0,0).getGaussQuadPointsFaceS(iCell,jCell, GQPoints, 1);   Print_File(GQPoints[0], out());
+      MeshBlk(0,0).getGaussQuadPointsFaceE(iCell,jCell, GQPoints, 1);   Print_File(GQPoints[0], out());
+      MeshBlk(0,0).getGaussQuadPointsFaceW(iCell,jCell, GQPoints, 1);   Print_File(GQPoints[0], out());
+
+      MeshBlk(0,0).getGaussQuadPointsFaceN(iCell,jCell, GQPoints, 2); 
+      Print_File(GQPoints[0], out()); Print_File(GQPoints[1], out());
+
+      MeshBlk(0,0).getGaussQuadPointsFaceS(iCell,jCell, GQPoints, 2);
+      Print_File(GQPoints[0], out()); Print_File(GQPoints[1], out());
+
+      MeshBlk(0,0).getGaussQuadPointsFaceE(iCell,jCell, GQPoints, 2);
+      Print_File(GQPoints[0], out()); Print_File(GQPoints[1], out());
+
+      MeshBlk(0,0).getGaussQuadPointsFaceW(iCell,jCell, GQPoints, 2);
+      Print_File(GQPoints[0], out()); Print_File(GQPoints[1], out());
+
+      // Face Lengths
+      Print_File(MeshBlk(0,0).lfaceN(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).lfaceS(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).lfaceE(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).lfaceW(iCell,jCell), out());
+
+      // Normals
+      Print_File(MeshBlk(0,0).nfaceN(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).nfaceS(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).nfaceE(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).nfaceW(iCell,jCell), out());
+
+    }
+  }
+
+  // Test 19:
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<19>()
+  {
+    set_test_name("Grid_Circular_Cylinder(), Boundary cell properties");
+    RunRegression = ON;
+ 
+    // Add test particular input parameters
+    IP.i_Grid = GRID_CIRCULAR_CYLINDER;
+    IP.Cylinder_Radius = 1;
+    IP.Cylinder_Radius2 = 32;
+    IP.Number_of_Blocks_Jdir = 1;
+    IP.Number_of_Blocks_Idir = 2;
+    IP.Number_of_Cells_Idir = 40;
+    IP.Number_of_Cells_Jdir = 20;
+    IP.Number_of_Ghost_Cells = 5;
+    IP.Space_Accuracy = 4;
+    IP.IncludeHighOrderBoundariesRepresentation = ON;
+    IP.i_Smooth_Quad_Block = OFF;
+
+    IP.i_Mesh_Stretching = ON;
+    IP.Mesh_Stretching_Type_Idir = STRETCHING_FCN_MINMAX_CLUSTERING;
+    IP.Mesh_Stretching_Type_Jdir = STRETCHING_FCN_MIN_CLUSTERING;
+    IP.Mesh_Stretching_Factor_Idir = 1.025;
+    IP.Mesh_Stretching_Factor_Jdir = 1.001;
+
+    // Build the mesh
+    CreateMesh(MeshBlk,IP);
+
+    MasterFile = "GridCircularCylinder_GeomProperties_BoundaryCell.dat";
+    CurrentFile = "Current_GridCircularCylinder_GeomProperties_BoundaryCell.dat";
+
+    // Checked cell --> Block(0,0), Cell (16,5)
+    iCell = 16; jCell = 5;
+
+    if (RunRegression){
+      Open_Output_File(CurrentFile);
+
+      // Cell Nodes
+      Print_File(MeshBlk(0,0).nodeSW(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).nodeNW(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).nodeSE(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).nodeNE(iCell,jCell), out());
+
+      // Centroid
+      Print_File(MeshBlk(0,0).CellCentroid(iCell,jCell), out());
+
+      // Centroid, area, cell indexes, geometric moments
+      Print_File(MeshBlk(0,0).Cell[iCell][jCell], out());
+
+      // Cell Gauss Points
+      if (MeshBlk(0,0).BndSouthSplineInfo != NULL){
+	Print_File(MeshBlk(0,0).BndSouthSplineInfo[iCell].NumOfSubIntervals(), out());
+
+	Print_File(MeshBlk(0,0).BndSouthSplineInfo[iCell].GQPoint(1), out());
+	Print_File(MeshBlk(0,0).BndSouthSplineInfo[iCell].NormalGQPoint(1), out());
+
+	Print_File(MeshBlk(0,0).BndSouthSplineInfo[iCell].GQPoint(2), out());
+	Print_File(MeshBlk(0,0).BndSouthSplineInfo[iCell].NormalGQPoint(2), out());
+
+	Print_File(MeshBlk(0,0).BndSouthSplineInfo[iCell].IntLength(1), out());
+      }
+
+      if (MeshBlk(0,0).BndNorthSplineInfo != NULL){
+	Print_File(MeshBlk(0,0).BndNorthSplineInfo[iCell].NumOfSubIntervals(), out());
+
+	Print_File(MeshBlk(0,0).BndNorthSplineInfo[iCell].GQPoint(1), out());
+	Print_File(MeshBlk(0,0).BndNorthSplineInfo[iCell].NormalGQPoint(1), out());
+
+	Print_File(MeshBlk(0,0).BndNorthSplineInfo[iCell].GQPoint(2), out());
+	Print_File(MeshBlk(0,0).BndNorthSplineInfo[iCell].NormalGQPoint(2), out());
+
+	Print_File(MeshBlk(0,0).BndNorthSplineInfo[iCell].IntLength(1), out());
+      }
+
+      if (MeshBlk(0,0).BndEastSplineInfo != NULL){
+	Print_File(MeshBlk(0,0).BndEastSplineInfo[jCell].NumOfSubIntervals(), out());
+
+	Print_File(MeshBlk(0,0).BndEastSplineInfo[jCell].GQPoint(1), out());
+	Print_File(MeshBlk(0,0).BndEastSplineInfo[jCell].NormalGQPoint(1), out());
+
+	Print_File(MeshBlk(0,0).BndEastSplineInfo[jCell].GQPoint(2), out());
+	Print_File(MeshBlk(0,0).BndEastSplineInfo[jCell].NormalGQPoint(2), out());
+
+	Print_File(MeshBlk(0,0).BndEastSplineInfo[jCell].IntLength(1), out());
+      }
+
+      if (MeshBlk(0,0).BndWestSplineInfo != NULL){
+	Print_File(MeshBlk(0,0).BndWestSplineInfo[jCell].NumOfSubIntervals(), out());
+
+	Print_File(MeshBlk(0,0).BndWestSplineInfo[jCell].GQPoint(1), out());
+	Print_File(MeshBlk(0,0).BndWestSplineInfo[jCell].NormalGQPoint(1), out());
+
+	Print_File(MeshBlk(0,0).BndWestSplineInfo[jCell].GQPoint(2), out());
+	Print_File(MeshBlk(0,0).BndWestSplineInfo[jCell].NormalGQPoint(2), out());
+
+	Print_File(MeshBlk(0,0).BndWestSplineInfo[jCell].IntLength(1), out());
+      }
+
+
+      // check geometry
+      RunRegressionTest("Cell Geom Properties", CurrentFile, MasterFile, 1.0e-9, 1.0e-9);
+
+      // Check boundaries
+      ensure_equals("BndNorthSplineInfo",MeshBlk(0,0).BndNorthSplineInfo == SInfoNULL, 0);
+      ensure_equals("BndSouthSplineInfo",MeshBlk(0,0).BndSouthSplineInfo == SInfoNULL, 0);
+      ensure_equals("BndEastSplineInfo",MeshBlk(0,0).BndEastSplineInfo == SInfoNULL, 1);
+      ensure_equals("BndWestSplineInfo",MeshBlk(0,0).BndWestSplineInfo == SInfoNULL, 1);
+
+      ensure_equals("Constaints North", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_North(iCell,jCell), 0);
+      ensure_equals("Constaints South", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_South(iCell,jCell), 2);
+      ensure_equals("Constaints East", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_East(iCell,jCell), 0);
+      ensure_equals("Constaints West", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_West(iCell,jCell), 0);
+      ensure_equals("Total Constaints", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints(iCell,jCell), 2);
+
+      // Check update state
+      ensure_equals("InteriorMesh", MeshBlk(0,0).Value_InteriorMeshUpdate_Flag(), OFF);
+      ensure_equals("GhostCells", MeshBlk(0,0).Value_GhostCellsUpdate_Flag(), OFF);
+      ensure_equals("CornerGhostCells", MeshBlk(0,0).Value_CornerGhostCellsUpdate_Flag(), OFF);
+
+      fail("The test was good so far!\n However, not all geometric properties were checked against the analytic solution");
+
+    } else {
+      Open_Output_File(MasterFile);
+      
+      // write data
+
+      // Cell Nodes
+      Print_File(MeshBlk(0,0).nodeSW(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).nodeNW(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).nodeSE(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).nodeNE(iCell,jCell), out());
+
+      // Centroid
+      Print_File(MeshBlk(0,0).CellCentroid(iCell,jCell), out());
+
+      // Centroid, area, cell indexes, geometric moments
+      Print_File(MeshBlk(0,0).Cell[iCell][jCell], out());
+
+      // Cell Gauss Points
+      if (MeshBlk(0,0).BndSouthSplineInfo != NULL){
+	Print_File(MeshBlk(0,0).BndSouthSplineInfo[iCell].NumOfSubIntervals(), out());
+
+	Print_File(MeshBlk(0,0).BndSouthSplineInfo[iCell].GQPoint(1), out());
+	Print_File(MeshBlk(0,0).BndSouthSplineInfo[iCell].NormalGQPoint(1), out());
+
+	Print_File(MeshBlk(0,0).BndSouthSplineInfo[iCell].GQPoint(2), out());
+	Print_File(MeshBlk(0,0).BndSouthSplineInfo[iCell].NormalGQPoint(2), out());
+
+	Print_File(MeshBlk(0,0).BndSouthSplineInfo[iCell].IntLength(1), out());
+      }
+
+      if (MeshBlk(0,0).BndNorthSplineInfo != NULL){
+	Print_File(MeshBlk(0,0).BndNorthSplineInfo[iCell].NumOfSubIntervals(), out());
+
+	Print_File(MeshBlk(0,0).BndNorthSplineInfo[iCell].GQPoint(1), out());
+	Print_File(MeshBlk(0,0).BndNorthSplineInfo[iCell].NormalGQPoint(1), out());
+
+	Print_File(MeshBlk(0,0).BndNorthSplineInfo[iCell].GQPoint(2), out());
+	Print_File(MeshBlk(0,0).BndNorthSplineInfo[iCell].NormalGQPoint(2), out());
+
+	Print_File(MeshBlk(0,0).BndNorthSplineInfo[iCell].IntLength(1), out());
+      }
+
+      if (MeshBlk(0,0).BndEastSplineInfo != NULL){
+	Print_File(MeshBlk(0,0).BndEastSplineInfo[jCell].NumOfSubIntervals(), out());
+
+	Print_File(MeshBlk(0,0).BndEastSplineInfo[jCell].GQPoint(1), out());
+	Print_File(MeshBlk(0,0).BndEastSplineInfo[jCell].NormalGQPoint(1), out());
+
+	Print_File(MeshBlk(0,0).BndEastSplineInfo[jCell].GQPoint(2), out());
+	Print_File(MeshBlk(0,0).BndEastSplineInfo[jCell].NormalGQPoint(2), out());
+
+	Print_File(MeshBlk(0,0).BndEastSplineInfo[jCell].IntLength(1), out());
+      }
+
+      if (MeshBlk(0,0).BndWestSplineInfo != NULL){
+	Print_File(MeshBlk(0,0).BndWestSplineInfo[jCell].NumOfSubIntervals(), out());
+
+	Print_File(MeshBlk(0,0).BndWestSplineInfo[jCell].GQPoint(1), out());
+	Print_File(MeshBlk(0,0).BndWestSplineInfo[jCell].NormalGQPoint(1), out());
+
+	Print_File(MeshBlk(0,0).BndWestSplineInfo[jCell].GQPoint(2), out());
+	Print_File(MeshBlk(0,0).BndWestSplineInfo[jCell].NormalGQPoint(2), out());
+
+	Print_File(MeshBlk(0,0).BndWestSplineInfo[jCell].IntLength(1), out());
+      }
+    }
+  }
+
+  // Test 20:
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<20>()
+  {
+    set_test_name("Check output operator");
+    RunRegression = ON;
+ 
+    // Add test particular input parameters
+    IP.i_Grid = GRID_CIRCULAR_CYLINDER;
+    IP.Cylinder_Radius = 1;
+    IP.Cylinder_Radius2 = 32;
+    IP.Number_of_Blocks_Jdir = 1;
+    IP.Number_of_Blocks_Idir = 2;
+    IP.Number_of_Cells_Idir = 40;
+    IP.Number_of_Cells_Jdir = 20;
+    IP.Number_of_Ghost_Cells = 5;
+    IP.Space_Accuracy = 4;
+    IP.IncludeHighOrderBoundariesRepresentation = ON;
+    IP.i_Smooth_Quad_Block = OFF;
+
+    IP.i_Mesh_Stretching = ON;
+    IP.Mesh_Stretching_Type_Idir = STRETCHING_FCN_MINMAX_CLUSTERING;
+    IP.Mesh_Stretching_Type_Jdir = STRETCHING_FCN_MIN_CLUSTERING;
+    IP.Mesh_Stretching_Factor_Idir = 1.025;
+    IP.Mesh_Stretching_Factor_Jdir = 1.001;
+
+    // Build the mesh
+    CreateMesh(MeshBlk,IP);
+
+    MasterFile = "Grid_Output_Operator.dat";
+    CurrentFile = "Current_Grid_Output_Operator.dat";
+
+    if (RunRegression){
+      Open_Output_File(CurrentFile);
+
+      out() << MeshBlk(0,0) << endl << endl;
+      out() << MeshBlk(1,0) << endl << endl;
+
+      // check operator <<
+      RunRegressionTest("operator <<", CurrentFile, MasterFile, 5.0e-10, 5.0e-10);
+
+    } else {
+      Open_Output_File(MasterFile);
+
+      out() << MeshBlk(0,0) << endl << endl;
+      out() << MeshBlk(1,0) << endl << endl;
+    }
+  }
+
+  // Test 21:
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<21>()
+  {
+    set_test_name("Check operator << & >>, with curved boundaries");
+ 
+    // Add test particular input parameters
+    IP.i_Grid = GRID_CIRCULAR_CYLINDER;
+    IP.Cylinder_Radius = 1;
+    IP.Cylinder_Radius2 = 32;
+    IP.Number_of_Blocks_Jdir = 1;
+    IP.Number_of_Blocks_Idir = 2;
+    IP.Number_of_Cells_Idir = 40;
+    IP.Number_of_Cells_Jdir = 20;
+    IP.Number_of_Ghost_Cells = 5;
+    IP.Space_Accuracy = 4;
+    IP.IncludeHighOrderBoundariesRepresentation = ON;
+    IP.i_Smooth_Quad_Block = OFF;
+
+    IP.i_Mesh_Stretching = ON;
+    IP.Mesh_Stretching_Type_Idir = STRETCHING_FCN_MINMAX_CLUSTERING;
+    IP.Mesh_Stretching_Type_Jdir = STRETCHING_FCN_MIN_CLUSTERING;
+    IP.Mesh_Stretching_Factor_Idir = 1.025;
+    IP.Mesh_Stretching_Factor_Jdir = 1.001;
+
+    // Build the mesh
+    CreateMesh(MeshBlk,IP);
+
+    // Check output input operation
+    Check_Input_Output_Operator("Grid, Block 1", MeshBlk(0,0));
+    Check_Input_Output_Operator("Grid, Block 2", MeshBlk(1,0));
+  }
+
+  // Test 22:
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<22>()
+  {
+    set_test_name("Check operator << & >>, without curved boundaries");
+ 
+    // Add test particular input parameters
+    IP.i_Grid = GRID_CIRCULAR_CYLINDER;
+    IP.Cylinder_Radius = 1;
+    IP.Cylinder_Radius2 = 32;
+    IP.Number_of_Blocks_Jdir = 1;
+    IP.Number_of_Blocks_Idir = 2;
+    IP.Number_of_Cells_Idir = 40;
+    IP.Number_of_Cells_Jdir = 20;
+    IP.Number_of_Ghost_Cells = 5;
+    IP.Space_Accuracy = 4;
+    IP.IncludeHighOrderBoundariesRepresentation = OFF;
+    IP.i_Smooth_Quad_Block = OFF;
+
+    IP.i_Mesh_Stretching = ON;
+    IP.Mesh_Stretching_Type_Idir = STRETCHING_FCN_MINMAX_CLUSTERING;
+    IP.Mesh_Stretching_Type_Jdir = STRETCHING_FCN_MIN_CLUSTERING;
+    IP.Mesh_Stretching_Factor_Idir = 1.025;
+    IP.Mesh_Stretching_Factor_Jdir = 1.001;
+
+    // Build the mesh
+    CreateMesh(MeshBlk,IP);
+
+    // Check output input operation
+    Check_Input_Output_Operator("Grid, Block 1", MeshBlk(0,0));
+    Check_Input_Output_Operator("Grid, Block 2", MeshBlk(1,0));
+  }
+
+
+  // Test 23:
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<23>()
+  {
+    set_test_name("Translate Rotate Grid, -V");
+    RunRegression = ON;
+ 
+    // Add test particular input parameters
+    IP.i_Grid = GRID_RECTANGULAR_BOX;
+    IP.Number_of_Blocks_Jdir = 1;
+    IP.Number_of_Blocks_Idir = 2;
+    IP.Number_of_Cells_Idir = 10;
+    IP.Number_of_Cells_Jdir = 10;
+    IP.Number_of_Ghost_Cells = 2;
+    IP.Space_Accuracy = 4;
+    IP.Box_Width = 2;
+    IP.Box_Height = 2;
+    IP.X_Shift.x = -6;
+    IP.X_Shift.y = -6;
+    IP.X_Scale = 1.0;
+    IP.X_Rotate = 45.0;
+    IP.IncludeHighOrderBoundariesRepresentation = ON;
+    IP.i_Smooth_Quad_Block = ON;
+    strcpy(IP.BC_North_Type, "Reflection");
+    strcpy(IP.BC_East_Type, "Reflection");
+    strcpy(IP.BC_South_Type, "Reflection");
+    strcpy(IP.BC_West_Type, "Reflection");
+    IP.BCs_Specified = ON;
+    IP.BC_North = BC_REFLECTION;
+    IP.BC_South = BC_REFLECTION;
+    IP.BC_East = BC_REFLECTION;
+    IP.BC_West = BC_REFLECTION;
+
+    // Build the mesh
+    CreateMesh(MeshBlk,IP);
+
+    MasterFile = "GridRectangularBox_Translate.dat";
+    CurrentFile = "Current_GridRectangularBox_Translate.dat";
+
+    if (RunRegression){
+      Open_Output_File(CurrentFile);
+
+      // OutputMeshTecplot
+      MeshBlk.Output_Nodes_Tecplot(out());
+
+      // check
+      RunRegressionTest("Translate Grid", CurrentFile, MasterFile, 1.0e-9, 1.0e-9);
+
+    } else {
+      Open_Output_File(MasterFile);
+      
+      // write data
+      MeshBlk.Output_Nodes_Tecplot(out());
+    }
+
+  }
+
+  // Test 24:
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<24>()
+  {
+    set_test_name("Copy_Quad_Block()");
+    RunRegression = ON;
+ 
+    // Add test particular input parameters
+    IP.i_Grid = GRID_NACA_AEROFOIL;
+    IP.Number_of_Blocks_Jdir = 1;
+    IP.Number_of_Blocks_Idir = 1;
+    IP.Number_of_Cells_Idir = 40;
+    IP.Number_of_Cells_Jdir = 40;
+    IP.Number_of_Ghost_Cells = 5;
+    IP.Space_Accuracy = 3;
+    strcpy(IP.NACA_Aerofoil_Type, "0012");
+    IP.Chord_Length = ONE;
+    IP.IncludeHighOrderBoundariesRepresentation = OFF;
+    IP.i_Smooth_Quad_Block = ON;
+
+    // Build the mesh
+    CreateMesh(MeshBlk,IP);
+
+    MasterFile = "CopyGrid_NACA0012.dat";
+    CurrentFile = "Current_CopyGrid_NACA0012.dat";
+    
+    if (RunRegression){
+      Open_Output_File(CurrentFile);
+
+      // Copy block 0
+      Copy_Quad_Block(Grid, MeshBlk(2,0));
+
+      out() << Grid << endl;
+
+      // check
+#if 0
+      RunRegressionTest("Copy Grid", CurrentFile, MasterFile, 1.0e-12, 1.0e-12);
+#endif
+
+    } else {
+      Open_Output_File(MasterFile);
+      
+      // write data
+      out() << MeshBlk(2,0) << endl;
+    }
+
+  }
+
+  // Test 25:
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<25>()
+  {
+    set_test_name("Copy_Quad_Block(), HighOrder boundaries");
+    RunRegression = ON;
+
+    // Add test particular input parameters
+    IP.i_Grid = GRID_RECTANGULAR_BOX;
+    IP.Number_of_Blocks_Jdir = 1;
+    IP.Number_of_Blocks_Idir = 2;
+    IP.Number_of_Cells_Idir = 10;
+    IP.Number_of_Cells_Jdir = 10;
+    IP.Number_of_Ghost_Cells = 2;
+    IP.Space_Accuracy = 4;
+    IP.Box_Width = 2;
+    IP.Box_Height = 2;
+    IP.X_Shift.x = -6;
+    IP.X_Shift.y = -6;
+    IP.X_Scale = 1.0;
+    IP.X_Rotate = 45.0;
+    IP.IncludeHighOrderBoundariesRepresentation = ON;
+    IP.i_Smooth_Quad_Block = ON;
+    strcpy(IP.BC_North_Type, "Reflection");
+    strcpy(IP.BC_East_Type, "Reflection");
+    strcpy(IP.BC_South_Type, "Reflection");
+    strcpy(IP.BC_West_Type, "Reflection");
+    IP.BCs_Specified = ON;
+    IP.BC_North = BC_REFLECTION;
+    IP.BC_South = BC_REFLECTION;
+    IP.BC_East = BC_REFLECTION;
+    IP.BC_West = BC_REFLECTION;
+ 
+    // Build the mesh
+    CreateMesh(MeshBlk,IP);
+
+    MasterFile = "CopyGrid_HighOrder_Boundaries.dat";
+    CurrentFile = "Current_CopyGrid_HighOrder_Boundaries.dat";
+
+    if (RunRegression){
+      Open_Output_File(CurrentFile);
+
+      // Copy block 0
+      Copy_Quad_Block(Grid, MeshBlk(1,0));
+
+      out() << Grid << endl;
+
+      // check
+#if 0
+      RunRegressionTest("Copy Grid", CurrentFile, MasterFile, 1.0e-9, 1.0e-9);
+#endif
+
+    } else {
+      Open_Output_File(MasterFile);
+      
+      // write data
+      out() << MeshBlk(1,0) << endl;
+    }
+
+  }
+
+
+  // Test 26:
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<26>()
+  {
+    set_test_name("Check_Quad_Block()");
+ 
+    // Add test particular input parameters
+    IP.i_Grid = GRID_CIRCULAR_CYLINDER;
+    IP.Cylinder_Radius = 1;
+    IP.Cylinder_Radius2 = 32;
+    IP.Number_of_Blocks_Jdir = 1;
+    IP.Number_of_Blocks_Idir = 2;
+    IP.Number_of_Cells_Idir = 20;
+    IP.Number_of_Cells_Jdir = 20;
+    IP.Number_of_Ghost_Cells = 5;
+    IP.Space_Accuracy = 4;
+    IP.IncludeHighOrderBoundariesRepresentation = OFF;
+    IP.i_Smooth_Quad_Block = ON;
+
+    IP.i_Mesh_Stretching = ON;
+    IP.Mesh_Stretching_Type_Idir = STRETCHING_FCN_MINMAX_CLUSTERING;
+    IP.Mesh_Stretching_Type_Jdir = STRETCHING_FCN_MIN_CLUSTERING;
+    IP.Mesh_Stretching_Factor_Idir = 1.025;
+    IP.Mesh_Stretching_Factor_Jdir = 1.001;
+
+    // Build the mesh
+    CreateMesh(MeshBlk,IP);
+
+    int error_flag;
+    error_flag = MeshBlk.Check_Multi_Block_Grid();
+
+    ensure_equals("Check_Quad_Block", error_flag, 0);
+
+  }
+
+  // Test 27:
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<27>()
+  {
+    set_test_name("Number of constrained GQPs, 'SolveRiemannProblem' boundaries, Low-order Boundaries");
+ 
+    // Add test particular input parameters
+    IP.i_Grid = GRID_RECTANGULAR_BOX;
+    IP.Number_of_Blocks_Idir = 1;
+    IP.Number_of_Blocks_Jdir = 2;
+    IP.Number_of_Cells_Idir = 10;
+    IP.Number_of_Cells_Jdir = 10;
+    IP.Number_of_Ghost_Cells = 5;
+    IP.Space_Accuracy = 4;
+    IP.Box_Width = 2;
+    IP.Box_Height = 2;
+    IP.X_Shift.x = 6;
+    IP.X_Shift.y = 6;
+    IP.X_Scale = 2.0;
+    IP.X_Rotate = 10.0;
+    IP.IncludeHighOrderBoundariesRepresentation = OFF;
+    IP.i_Smooth_Quad_Block = ON;
+    strcpy(IP.BC_North_Type, "Reflection");
+    strcpy(IP.BC_East_Type, "Reflection");
+    strcpy(IP.BC_South_Type, "Reflection");
+    strcpy(IP.BC_West_Type, "Reflection");
+    IP.BCs_Specified = ON;
+    IP.BC_North = BC_REFLECTION;
+    IP.BC_South = BC_REFLECTION;
+    IP.BC_East = BC_REFLECTION;
+    IP.BC_West = BC_REFLECTION;
+
+    // Build the mesh
+    CreateMesh(MeshBlk,IP);
+
+    // Reset the method of computing the fluxes for all the splines
+    SetFluxCalculationMethod(MeshBlk,SolveRiemannProblem,IP);
+
+    // check --> The Result is ZERO GQP/Edge
+    CheckNumberOfConstrainedGQP(MeshBlk,IP,
+				0);
+  }
+
+  // Test 28:
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<28>()
+  {
+    set_test_name("Number of constrained GQPs, 'ReconstructionBasedFlux' && Low-order boundaries, 2 GQPs/edge");
+ 
+    // Add test particular input parameters
+    IP.i_Grid = GRID_RECTANGULAR_BOX;
+    IP.Number_of_Blocks_Idir = 2;
+    IP.Number_of_Blocks_Jdir = 1;
+    IP.Number_of_Cells_Idir = 10;
+    IP.Number_of_Cells_Jdir = 10;
+    IP.Number_of_Ghost_Cells = 5;
+    IP.Space_Accuracy = 4;
+    IP.Box_Width = 2;
+    IP.Box_Height = 2;
+    IP.X_Shift.x = 6;
+    IP.X_Shift.y = 6;
+    IP.X_Scale = 2.0;
+    IP.X_Rotate = 10.0;
+    IP.IncludeHighOrderBoundariesRepresentation = OFF;
+    IP.i_Smooth_Quad_Block = ON;
+    strcpy(IP.BC_North_Type, "Reflection");
+    strcpy(IP.BC_East_Type, "Reflection");
+    strcpy(IP.BC_South_Type, "Reflection");
+    strcpy(IP.BC_West_Type, "Reflection");
+    IP.BCs_Specified = ON;
+    IP.BC_North = BC_REFLECTION;
+    IP.BC_South = BC_REFLECTION;
+    IP.BC_East = BC_REFLECTION;
+    IP.BC_West = BC_REFLECTION;
+
+    // Build the mesh
+    CreateMesh(MeshBlk,IP);
+
+    // Reset the method of computing the fluxes for all the splines
+    SetFluxCalculationMethod(MeshBlk,ReconstructionBasedFlux,IP);
+
+    // check --> The Result is TWO GQP/Edge
+    CheckNumberOfConstrainedGQP(MeshBlk,IP,
+				2);
+  }
+
+  // Test 29:
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<29>()
+  {
+    set_test_name("Number of constrained GQPs, 'ReconstructionBasedFlux' && Low-order boundaries, 1 GQP/edge");
+ 
+    // Add test particular input parameters
+    IP.i_Grid = GRID_RECTANGULAR_BOX;
+    IP.Number_of_Blocks_Idir = 2;
+    IP.Number_of_Blocks_Jdir = 1;
+    IP.Number_of_Cells_Idir = 10;
+    IP.Number_of_Cells_Jdir = 10;
+    IP.Number_of_Ghost_Cells = 5;
+    IP.Space_Accuracy = 2;
+    IP.Box_Width = 2;
+    IP.Box_Height = 2;
+    IP.X_Shift.x = 6;
+    IP.X_Shift.y = 6;
+    IP.X_Scale = 2.0;
+    IP.X_Rotate = 10.0;
+    IP.IncludeHighOrderBoundariesRepresentation = OFF;
+    IP.i_Smooth_Quad_Block = ON;
+    strcpy(IP.BC_North_Type, "Reflection");
+    strcpy(IP.BC_East_Type, "Reflection");
+    strcpy(IP.BC_South_Type, "Reflection");
+    strcpy(IP.BC_West_Type, "Reflection");
+    IP.BCs_Specified = ON;
+    IP.BC_North = BC_REFLECTION;
+    IP.BC_South = BC_REFLECTION;
+    IP.BC_East = BC_REFLECTION;
+    IP.BC_West = BC_REFLECTION;
+
+    // Build the mesh
+    CreateMesh(MeshBlk,IP);
+
+    // Reset the method of computing the fluxes for all the splines
+    SetFluxCalculationMethod(MeshBlk,ReconstructionBasedFlux,IP);
+
+    // check --> The Result is ONE GQP/Edge
+    CheckNumberOfConstrainedGQP(MeshBlk,IP,
+				1);
+  }
+
+  // Test 30:
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<30>()
+  {
+    set_test_name("Number of constrained GQPs, 'ReconstructionBasedFlux' && High-order boundaries, 2 GQPs/edge");
+ 
+    // Add test particular input parameters
+    IP.i_Grid = GRID_RECTANGULAR_BOX;
+    IP.Number_of_Blocks_Idir = 2;
+    IP.Number_of_Blocks_Jdir = 1;
+    IP.Number_of_Cells_Idir = 10;
+    IP.Number_of_Cells_Jdir = 10;
+    IP.Number_of_Ghost_Cells = 5;
+    IP.Space_Accuracy = 4;
+    IP.Box_Width = 2;
+    IP.Box_Height = 2;
+    IP.X_Shift.x = 6;
+    IP.X_Shift.y = 6;
+    IP.X_Scale = 2.0;
+    IP.X_Rotate = 10.0;
+    IP.IncludeHighOrderBoundariesRepresentation = ON;
+    IP.i_Smooth_Quad_Block = ON;
+    strcpy(IP.BC_North_Type, "Reflection");
+    strcpy(IP.BC_East_Type, "Reflection");
+    strcpy(IP.BC_South_Type, "Reflection");
+    strcpy(IP.BC_West_Type, "Reflection");
+    IP.BCs_Specified = ON;
+    IP.BC_North = BC_REFLECTION;
+    IP.BC_South = BC_REFLECTION;
+    IP.BC_East = BC_REFLECTION;
+    IP.BC_West = BC_REFLECTION;
+
+    // Build the mesh
+    CreateMesh(MeshBlk,IP);
+
+    // Reset the method of computing the fluxes for all the splines
+    SetFluxCalculationMethod(MeshBlk,ReconstructionBasedFlux,IP);
+
+    // check --> The Result is TWO GQP/Edge
+    CheckNumberOfConstrainedGQP(MeshBlk,IP,
+				2);
+  }
+
+  // Test 31:
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<31>()
+  {
+    set_test_name("Number of constrained GQPs, 'ReconstructionBasedFlux' && High-order boundaries, 1 GQP/edge");
+ 
+    // Add test particular input parameters
+    IP.i_Grid = GRID_RECTANGULAR_BOX;
+    IP.Number_of_Blocks_Idir = 2;
+    IP.Number_of_Blocks_Jdir = 1;
+    IP.Number_of_Cells_Idir = 10;
+    IP.Number_of_Cells_Jdir = 10;
+    IP.Number_of_Ghost_Cells = 5;
+    IP.Space_Accuracy = 2;
+    IP.Box_Width = 2;
+    IP.Box_Height = 2;
+    IP.X_Shift.x = 6;
+    IP.X_Shift.y = 6;
+    IP.X_Scale = 2.0;
+    IP.X_Rotate = 10.0;
+    IP.IncludeHighOrderBoundariesRepresentation = ON;
+    IP.i_Smooth_Quad_Block = ON;
+    strcpy(IP.BC_North_Type, "Reflection");
+    strcpy(IP.BC_East_Type, "Reflection");
+    strcpy(IP.BC_South_Type, "Reflection");
+    strcpy(IP.BC_West_Type, "Reflection");
+    IP.BCs_Specified = ON;
+    IP.BC_North = BC_REFLECTION;
+    IP.BC_South = BC_REFLECTION;
+    IP.BC_East = BC_REFLECTION;
+    IP.BC_West = BC_REFLECTION;
+
+    // Build the mesh
+    CreateMesh(MeshBlk,IP);
+
+    // Reset the method of computing the fluxes for all the splines
+    SetFluxCalculationMethod(MeshBlk,ReconstructionBasedFlux,IP);
+
+    // check --> The Result is ONE GQP/Edge
+    CheckNumberOfConstrainedGQP(MeshBlk,IP,
+				1);
+
+  }
+
+  // Test 32:
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<32>()
+  {
+    set_test_name("Number of constrained GQPs, 'SolveRiemannProblem' boundaries, High-order Boundaries");
+ 
+    // Add test particular input parameters
+    IP.i_Grid = GRID_RECTANGULAR_BOX;
+    IP.Number_of_Blocks_Idir = 1;
+    IP.Number_of_Blocks_Jdir = 2;
+    IP.Number_of_Cells_Idir = 10;
+    IP.Number_of_Cells_Jdir = 10;
+    IP.Number_of_Ghost_Cells = 5;
+    IP.Space_Accuracy = 4;
+    IP.Box_Width = 2;
+    IP.Box_Height = 2;
+    IP.X_Shift.x = 6;
+    IP.X_Shift.y = 6;
+    IP.X_Scale = 2.0;
+    IP.X_Rotate = 10.0;
+    IP.IncludeHighOrderBoundariesRepresentation = ON;
+    IP.i_Smooth_Quad_Block = ON;
+    strcpy(IP.BC_North_Type, "Reflection");
+    strcpy(IP.BC_East_Type, "Reflection");
+    strcpy(IP.BC_South_Type, "Reflection");
+    strcpy(IP.BC_West_Type, "Reflection");
+    IP.BCs_Specified = ON;
+    IP.BC_North = BC_REFLECTION;
+    IP.BC_South = BC_REFLECTION;
+    IP.BC_East = BC_REFLECTION;
+    IP.BC_West = BC_REFLECTION;
+
+    // Build the mesh
+    CreateMesh(MeshBlk,IP);
+
+    // Reset the method of computing the fluxes for all the splines
+    SetFluxCalculationMethod(MeshBlk,SolveRiemannProblem,IP);
+
+    // check --> The Result is ZERO GQP
+    CheckNumberOfConstrainedGQP(MeshBlk,IP,
+				0);
+  }
+
+  // Test 33:
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<33>()
+  {
+    set_test_name("Number of constrained GQPs, Mixed methods in corners , Low-order Boundaries");
+ 
+    // Add test particular input parameters
+    IP.i_Grid = GRID_RECTANGULAR_BOX;
+    IP.Number_of_Blocks_Idir = 1;
+    IP.Number_of_Blocks_Jdir = 1;
+    IP.Number_of_Cells_Idir = 10;
+    IP.Number_of_Cells_Jdir = 10;
+    IP.Number_of_Ghost_Cells = 5;
+    IP.Space_Accuracy = 4;
+    IP.Box_Width = 2;
+    IP.Box_Height = 2;
+    IP.X_Shift.x = 6;
+    IP.X_Shift.y = 6;
+    IP.X_Scale = 2.0;
+    IP.X_Rotate = 10.0;
+    IP.IncludeHighOrderBoundariesRepresentation = OFF;
+    IP.i_Smooth_Quad_Block = ON;
+    strcpy(IP.BC_North_Type, "Reflection");
+    strcpy(IP.BC_East_Type, "Reflection");
+    strcpy(IP.BC_South_Type, "Reflection");
+    strcpy(IP.BC_West_Type, "Reflection");
+    IP.BCs_Specified = ON;
+    IP.BC_North = BC_REFLECTION;
+    IP.BC_South = BC_REFLECTION;
+    IP.BC_East = BC_REFLECTION;
+    IP.BC_West = BC_REFLECTION;
+
+    // Build the mesh
+    CreateMesh(MeshBlk,IP);
+
+    // Reset the method of computing the fluxes for all the splines
+    SetFluxCalculationMethod(MeshBlk,SolveRiemannProblem,IP);
+
+    // Change the method of computing the fluxes for North and South splines
+    MeshBlk(0,0).BndNorthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    MeshBlk(0,0).BndSouthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+
+    // check corners
+    ostmClear();
+    ostm() << "SW Corner, South";
+    ensure_equals(ostm().str(), MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_South(5,5) , 2);
+    ostmClear();
+    ostm() << "SW Corner, West";
+    ensure_equals(ostm().str(), MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_West(5,5) , 0);
+    ostmClear();
+    ostm() << "SW Corner, Total";
+    ensure_equals(ostm().str(), MeshBlk(0,0).NumOfConstrainedGaussQuadPoints(5,5) , 2);
+
+    ostmClear();
+    ostm() << "SE Corner, South";
+    ensure_equals(ostm().str(), MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_South(14,5) , 2);
+    ostmClear();
+    ostm() << "SE Corner, East";
+    ensure_equals(ostm().str(), MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_East(14,5) , 0);
+    ostmClear();
+    ostm() << "SE Corner, Total";
+    ensure_equals(ostm().str(), MeshBlk(0,0).NumOfConstrainedGaussQuadPoints(14,5) , 2);
+
+    ostmClear();
+    ostm() << "NW Corner, North";
+    ensure_equals(ostm().str(), MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_North(5,14) , 2);
+    ostmClear();
+    ostm() << "NW Corner, West";
+    ensure_equals(ostm().str(), MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_West(5,14) , 0);
+    ostmClear();
+    ostm() << "NW Corner, Total";
+    ensure_equals(ostm().str(), MeshBlk(0,0).NumOfConstrainedGaussQuadPoints(5,14) , 2);
+
+    ostmClear();
+    ostm() << "NE Corner, North";
+    ensure_equals(ostm().str(), MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_North(14,14) , 2);
+    ostmClear();
+    ostm() << "NE Corner, East";
+    ensure_equals(ostm().str(), MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_East(14,14) , 0);
+    ostmClear();
+    ostm() << "NE Corner, Total";
+    ensure_equals(ostm().str(), MeshBlk(0,0).NumOfConstrainedGaussQuadPoints(14,14) , 2);
+
+  }
+
+  // Test 34:
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<34>()
+  {
+    set_test_name("Number of constrained GQPs, Mixed methods in corners , High-order Boundaries");
+ 
+    // Add test particular input parameters
+    IP.i_Grid = GRID_RECTANGULAR_BOX;
+    IP.Number_of_Blocks_Idir = 1;
+    IP.Number_of_Blocks_Jdir = 1;
+    IP.Number_of_Cells_Idir = 10;
+    IP.Number_of_Cells_Jdir = 10;
+    IP.Number_of_Ghost_Cells = 5;
+    IP.Space_Accuracy = 3;
+    IP.Box_Width = 2;
+    IP.Box_Height = 2;
+    IP.X_Shift.x = 6;
+    IP.X_Shift.y = 6;
+    IP.X_Scale = 2.0;
+    IP.X_Rotate = 10.0;
+    IP.IncludeHighOrderBoundariesRepresentation = ON;
+    IP.i_Smooth_Quad_Block = ON;
+    strcpy(IP.BC_North_Type, "Reflection");
+    strcpy(IP.BC_East_Type, "Reflection");
+    strcpy(IP.BC_South_Type, "Reflection");
+    strcpy(IP.BC_West_Type, "Reflection");
+    IP.BCs_Specified = ON;
+    IP.BC_North = BC_REFLECTION;
+    IP.BC_South = BC_REFLECTION;
+    IP.BC_East = BC_REFLECTION;
+    IP.BC_West = BC_REFLECTION;
+
+    // Build the mesh
+    CreateMesh(MeshBlk,IP);
+
+    // Reset the method of computing the fluxes for all the splines
+    SetFluxCalculationMethod(MeshBlk,SolveRiemannProblem,IP);
+
+    // Change the method of computing the fluxes for North and South splines
+    MeshBlk(0,0).BndNorthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    MeshBlk(0,0).BndSouthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+
+    // check corners
+    ostmClear();
+    ostm() << "SW Corner, South";
+    ensure_equals(ostm().str(), MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_South(5,5) , 2);
+    ostmClear();
+    ostm() << "SW Corner, West";
+    ensure_equals(ostm().str(), MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_West(5,5) , 0);
+    ostmClear();
+    ostm() << "SW Corner, Total";
+    ensure_equals(ostm().str(), MeshBlk(0,0).NumOfConstrainedGaussQuadPoints(5,5) , 2);
+
+    ostmClear();
+    ostm() << "SE Corner, South";
+    ensure_equals(ostm().str(), MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_South(14,5) , 2);
+    ostmClear();
+    ostm() << "SE Corner, East";
+    ensure_equals(ostm().str(), MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_East(14,5) , 0);
+    ostmClear();
+    ostm() << "SE Corner, Total";
+    ensure_equals(ostm().str(), MeshBlk(0,0).NumOfConstrainedGaussQuadPoints(14,5) , 2);
+
+    ostmClear();
+    ostm() << "NW Corner, North";
+    ensure_equals(ostm().str(), MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_North(5,14) , 2);
+    ostmClear();
+    ostm() << "NW Corner, West";
+    ensure_equals(ostm().str(), MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_West(5,14) , 0);
+    ostmClear();
+    ostm() << "NW Corner, Total";
+    ensure_equals(ostm().str(), MeshBlk(0,0).NumOfConstrainedGaussQuadPoints(5,14) , 2);
+
+    ostmClear();
+    ostm() << "NE Corner, North";
+    ensure_equals(ostm().str(), MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_North(14,14) , 2);
+    ostmClear();
+    ostm() << "NE Corner, East";
+    ensure_equals(ostm().str(), MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_East(14,14) , 0);
+    ostmClear();
+    ostm() << "NE Corner, Total";
+    ensure_equals(ostm().str(), MeshBlk(0,0).NumOfConstrainedGaussQuadPoints(14,14) , 2);
+  }
+
+  // Test 35:
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<35>()
+  {
+    set_test_name("Grid_Rectangular_Box(), Cell properties for 5th-order");
+    RunRegression = ON;
+ 
+    // Add test particular input parameters
+    IP.i_Grid = GRID_RECTANGULAR_BOX;
+    IP.Number_of_Blocks_Jdir = 1;
+    IP.Number_of_Blocks_Idir = 2;
+    IP.Number_of_Cells_Idir = 10;
+    IP.Number_of_Cells_Jdir = 10;
+    IP.Number_of_Ghost_Cells = 2;
+    IP.Space_Accuracy = 5;
+    IP.Box_Width = 2;
+    IP.Box_Height = 2;
+    IP.X_Shift.x = 6;
+    IP.X_Shift.y = 6;
+    IP.X_Scale = 2.0;
+    IP.X_Rotate = 10.0;
+    IP.IncludeHighOrderBoundariesRepresentation = OFF;
+    IP.i_Smooth_Quad_Block = ON;
+    strcpy(IP.BC_North_Type, "Reflection");
+    strcpy(IP.BC_East_Type, "Reflection");
+    strcpy(IP.BC_South_Type, "Reflection");
+    strcpy(IP.BC_West_Type, "Reflection");
+    IP.BCs_Specified = ON;
+    IP.BC_North = BC_REFLECTION;
+    IP.BC_South = BC_REFLECTION;
+    IP.BC_East = BC_REFLECTION;
+    IP.BC_West = BC_REFLECTION;
+
+    // Build the mesh
+    CreateMesh(MeshBlk,IP);
+
+    MasterFile = "GridRectangularBox_GeomProperties_5thOrder.dat";
+    CurrentFile = "Current_GridRectangularBox_GeomProperties_5thOrder.dat";
+
+    // Checked cell --> Block(0,0), Cell (ICl,JCu)
+    iCell = MeshBlk(0,0).ICl; jCell = MeshBlk(0,0).JCl;
+
+
+    if (RunRegression){
+      Open_Output_File(CurrentFile);
+
+      // Cell Nodes
+      Print_File(MeshBlk(0,0).nodeSW(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).nodeNW(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).nodeSE(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).nodeNE(iCell,jCell), out());
+
+      // Centroid
+      Print_File(MeshBlk(0,0).CellCentroid(iCell,jCell), out());
+
+      // Centroid, area, cell indexes, geometric moments
+      Print_File(MeshBlk(0,0).Cell[iCell][jCell], out());
+
+      // Cell face midpoints
+      Print_File(MeshBlk(0,0).xfaceN(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).xfaceS(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).xfaceE(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).xfaceW(iCell,jCell), out());
+
+      // Cell Gauss Points
+      MeshBlk(0,0).getGaussQuadPointsFaceN(iCell,jCell, GQPoints, 1);   Print_File(GQPoints[0], out());
+      MeshBlk(0,0).getGaussQuadPointsFaceS(iCell,jCell, GQPoints, 1);   Print_File(GQPoints[0], out());
+      MeshBlk(0,0).getGaussQuadPointsFaceE(iCell,jCell, GQPoints, 1);   Print_File(GQPoints[0], out());
+      MeshBlk(0,0).getGaussQuadPointsFaceW(iCell,jCell, GQPoints, 1);   Print_File(GQPoints[0], out());
+
+      MeshBlk(0,0).getGaussQuadPointsFaceN(iCell,jCell, GQPoints, 2); 
+      Print_File(GQPoints[0], out()); Print_File(GQPoints[1], out());
+
+      MeshBlk(0,0).getGaussQuadPointsFaceS(iCell,jCell, GQPoints, 2);
+      Print_File(GQPoints[0], out()); Print_File(GQPoints[1], out());
+
+      MeshBlk(0,0).getGaussQuadPointsFaceE(iCell,jCell, GQPoints, 2);
+      Print_File(GQPoints[0], out()); Print_File(GQPoints[1], out());
+
+      MeshBlk(0,0).getGaussQuadPointsFaceW(iCell,jCell, GQPoints, 2);
+      Print_File(GQPoints[0], out()); Print_File(GQPoints[1], out());
+
+      // Face Lengths
+      Print_File(MeshBlk(0,0).lfaceN(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).lfaceS(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).lfaceE(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).lfaceW(iCell,jCell), out());
+
+      // Normals
+      Print_File(MeshBlk(0,0).nfaceN(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).nfaceS(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).nfaceE(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).nfaceW(iCell,jCell), out());
+
+
+      // check geometry
+      RunRegressionTest("Output_Tecplot", CurrentFile, MasterFile, 1.0e-9, 1.0e-9);
+
+
+      // Check boundaries
+      ensure_equals("BndNorthSplineInfo",MeshBlk(0,0).BndNorthSplineInfo, SInfoNULL);
+      ensure_equals("BndSouthSplineInfo",MeshBlk(0,0).BndSouthSplineInfo, SInfoNULL);
+      ensure_equals("BndEastSplineInfo",MeshBlk(0,0).BndEastSplineInfo, SInfoNULL);
+      ensure_equals("BndWestSplineInfo",MeshBlk(0,0).BndWestSplineInfo, SInfoNULL);
+
+      ensure_equals("Constaints North", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_North(iCell,jCell), 0);
+      ensure_equals("Constaints South", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_South(iCell,jCell), 0);
+      ensure_equals("Constaints East", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_East(iCell,jCell), 0);
+      ensure_equals("Constaints West", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_West(iCell,jCell), 0);
+      ensure_equals("Total Constaints", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints(iCell,jCell), 0);
+
+      // Check boundary conditions
+      ensure_equals("BCtypeS", MeshBlk(0,0).BCtypeS[iCell], BC_REFLECTION);
+      ensure_equals("BCtypeW", MeshBlk(0,0).BCtypeW[jCell], BC_REFLECTION);
+
+      // Check update state
+      ensure_equals("InteriorMesh", MeshBlk(0,0).Value_InteriorMeshUpdate_Flag(), OFF);
+      ensure_equals("GhostCells", MeshBlk(0,0).Value_GhostCellsUpdate_Flag(), OFF);
+      ensure_equals("CornerGhostCells", MeshBlk(0,0).Value_CornerGhostCellsUpdate_Flag(), OFF);
+
+    } else {
+      Open_Output_File(MasterFile);
+      
+      // write data
+
+      // Cell Nodes
+      Print_File(MeshBlk(0,0).nodeSW(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).nodeNW(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).nodeSE(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).nodeNE(iCell,jCell), out());
+
+      // Centroid
+      Print_File(MeshBlk(0,0).CellCentroid(iCell,jCell), out());
+
+      // Centroid, area, cell indexes, geometric moments
+      Print_File(MeshBlk(0,0).Cell[iCell][jCell], out());
+
+      // Cell face midpoints
+      Print_File(MeshBlk(0,0).xfaceN(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).xfaceS(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).xfaceE(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).xfaceW(iCell,jCell), out());
+
+      // Cell Gauss Points
+      MeshBlk(0,0).getGaussQuadPointsFaceN(iCell,jCell, GQPoints, 1);   Print_File(GQPoints[0], out());
+      MeshBlk(0,0).getGaussQuadPointsFaceS(iCell,jCell, GQPoints, 1);   Print_File(GQPoints[0], out());
+      MeshBlk(0,0).getGaussQuadPointsFaceE(iCell,jCell, GQPoints, 1);   Print_File(GQPoints[0], out());
+      MeshBlk(0,0).getGaussQuadPointsFaceW(iCell,jCell, GQPoints, 1);   Print_File(GQPoints[0], out());
+
+      MeshBlk(0,0).getGaussQuadPointsFaceN(iCell,jCell, GQPoints, 2); 
+      Print_File(GQPoints[0], out()); Print_File(GQPoints[1], out());
+
+      MeshBlk(0,0).getGaussQuadPointsFaceS(iCell,jCell, GQPoints, 2);
+      Print_File(GQPoints[0], out()); Print_File(GQPoints[1], out());
+
+      MeshBlk(0,0).getGaussQuadPointsFaceE(iCell,jCell, GQPoints, 2);
+      Print_File(GQPoints[0], out()); Print_File(GQPoints[1], out());
+
+      MeshBlk(0,0).getGaussQuadPointsFaceW(iCell,jCell, GQPoints, 2);
+      Print_File(GQPoints[0], out()); Print_File(GQPoints[1], out());
+
+      // Face Lengths
+      Print_File(MeshBlk(0,0).lfaceN(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).lfaceS(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).lfaceE(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).lfaceW(iCell,jCell), out());
+
+      // Normals
+      Print_File(MeshBlk(0,0).nfaceN(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).nfaceS(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).nfaceE(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).nfaceW(iCell,jCell), out());
+
+    }
+  }
 
 }
 

@@ -439,6 +439,31 @@ public:
   void getGaussQuadPointsFaceW(const int &ii, const int &jj, Vector2D * GQPoints, const int & NumberOfGQPs) const;
   //@}
 
+  //! @name Get number of constrained Gauss quadrature points for each cell.
+  //@{
+  int NumOfConstrainedGaussQuadPoints_North(const Cell2D_HO &Cell){
+    return NumOfConstrainedGaussQuadPoints_North(Cell.I,Cell.J);
+  }
+  int NumOfConstrainedGaussQuadPoints_North(const int &ii, const int &jj);
+
+  int NumOfConstrainedGaussQuadPoints_South(const Cell2D_HO &Cell){
+    return NumOfConstrainedGaussQuadPoints_South(Cell.I,Cell.J);
+  }
+  int NumOfConstrainedGaussQuadPoints_South(const int &ii, const int &jj);
+
+  int NumOfConstrainedGaussQuadPoints_East(const Cell2D_HO &Cell){
+    return NumOfConstrainedGaussQuadPoints_East(Cell.I,Cell.J);
+  }
+  int NumOfConstrainedGaussQuadPoints_East(const int &ii, const int &jj);
+
+  int NumOfConstrainedGaussQuadPoints_West(const Cell2D_HO &Cell){
+    return NumOfConstrainedGaussQuadPoints_West(Cell.I,Cell.J);
+  }
+  int NumOfConstrainedGaussQuadPoints_West(const int &ii, const int &jj);
+
+  int NumOfConstrainedGaussQuadPoints(const Cell2D_HO &Cell){ return NumOfConstrainedGaussQuadPoints(Cell.I,Cell.J);}
+  int NumOfConstrainedGaussQuadPoints(const int &ii, const int &jj);
+
   //! @name Get cell geometric moments and related information.
   //@{
   //! Get the current highest(i.e. maximum) reconstruction order
@@ -597,6 +622,9 @@ public:
   int Check_Quad_Block(void);
   friend int Check_Quad_Block(Grid2D_Quad_Block_HO &Grid){ return Grid.Check_Quad_Block(); }
 
+  const int & Value_InteriorMeshUpdate_Flag(void) const { return InteriorMeshUpdate; }
+  const int & Value_GhostCellsUpdate_Flag(void) const { return GhostCellsUpdate; }
+  const int & Value_CornerGhostCellsUpdate_Flag(void) const { return CornerGhostCellsUpdate; }
   //@}
   
   //!@name Input/Output functions
@@ -782,6 +810,12 @@ private:
   //! Controls the update of the geometric properties of the corner ghost cells.
   int CornerGhostCellsUpdate; 
 
+  /*!
+   * Number of Gauss quadrature points require for flux calculation on interior edges or low-order exterior boundaries.
+   * \todo Set this number accordingly.
+   */
+  int NumGQP;	
+
   //! Reset to NO update all the mesh update flags.
   void Reset_Mesh_Update_Flags(void){ InteriorMeshUpdate = OFF; GhostCellsUpdate = OFF; CornerGhostCellsUpdate = OFF;}
   //@}
@@ -807,7 +841,8 @@ inline Grid2D_Quad_Block_HO::Grid2D_Quad_Block_HO(void)
     BetaJ(ONE), TauJ(ONE),
     OrthogonalN(1), OrthogonalS(1), OrthogonalE(1), OrthogonalW(1),
     // Initialize mesh update flags to OFF (i.e. no update scheduled)
-    InteriorMeshUpdate(OFF), GhostCellsUpdate(OFF), CornerGhostCellsUpdate(OFF)
+    InteriorMeshUpdate(OFF), GhostCellsUpdate(OFF), CornerGhostCellsUpdate(OFF),
+    NumGQP(0)
 {
   // 
 }
@@ -1606,5 +1641,77 @@ inline void Grid2D_Quad_Block_HO::operator ^(const double &a) {
   Schedule_Ghost_Cells_Update();
 }
 
+/*!
+ * Return the number of Gauss quadrature points on the North
+ * cell face which have boundary conditions enforced by constraints.
+ */
+inline int Grid2D_Quad_Block_HO::NumOfConstrainedGaussQuadPoints_North(const int &ii, const int &jj){
+  if (jj != JCu || BndNorthSpline.getFluxCalcMethod() == SolveRiemannProblem ){
+    /* cell is not on the interior North boundary
+       OR
+       the North boundary flux is computed by solving a Riemann problem at the interface with the ghost cell */
+    return 0;
+  } else if (BndNorthSplineInfo != NULL){
+    /* use high-order boundary info */
+    return BndNorthSplineInfo[ii].NumGQPoints();
+  } else {
+    /* return the number of points based on the order of accuracy
+       (This situation corresponds to "Low-order boundaries + ReconstructionBasedFlux" ) */
+    return NumGQP;
+  }
+}
+
+inline int Grid2D_Quad_Block_HO::NumOfConstrainedGaussQuadPoints_South(const int &ii, const int &jj){
+  if (jj != JCl || BndSouthSpline.getFluxCalcMethod() == SolveRiemannProblem ){
+    /* cell is not on the interior South boundary
+       OR
+       the South boundary flux is computed by solving a Riemann problem at the interface with the ghost cell */
+    return 0;
+  } else if (BndSouthSplineInfo != NULL){
+    /* use high-order boundary info */
+    return BndSouthSplineInfo[ii].NumGQPoints();
+  } else {
+    /* return the number of points based on the order of accuracy
+       (This situation corresponds to "Low-order boundaries + ReconstructionBasedFlux") */
+    return NumGQP;
+  }
+}
+
+inline int Grid2D_Quad_Block_HO::NumOfConstrainedGaussQuadPoints_East(const int &ii, const int &jj){
+  if (ii != ICu || BndEastSpline.getFluxCalcMethod() == SolveRiemannProblem ){
+    /* cell is not on the interior East boundary
+       OR
+       the East boundary flux is computed by solving a Riemann problem at the interface with the ghost cell */
+    return 0;
+  } else if (BndEastSplineInfo != NULL){
+    /* use high-order boundary info */
+    return BndEastSplineInfo[ii].NumGQPoints();
+  } else {
+    /* return the number of points based on the order of accuracy
+       (This situation corresponds to "Low-order boundaries + ReconstructionBasedFlux") */
+    return NumGQP;
+  }
+}
+
+inline int Grid2D_Quad_Block_HO::NumOfConstrainedGaussQuadPoints_West(const int &ii, const int &jj){
+  if (ii != ICl || BndWestSpline.getFluxCalcMethod() == SolveRiemannProblem ){
+    /* cell is not on the interior West boundary
+       OR
+       the West boundary flux is computed by solving a Riemann problem at the interface with the ghost cell */
+    return 0;
+  } else if (BndWestSplineInfo != NULL){
+    /* use high-order boundary info */
+    return BndWestSplineInfo[ii].NumGQPoints();
+  } else {
+    /* return the number of points based on the order of accuracy
+       (This situation corresponds to "Low-order boundaries + ReconstructionBasedFlux") */
+    return NumGQP;
+  }
+}
+
+inline int Grid2D_Quad_Block_HO::NumOfConstrainedGaussQuadPoints(const int &ii, const int &jj){
+  return ( NumOfConstrainedGaussQuadPoints_North(ii,jj) + NumOfConstrainedGaussQuadPoints_South(ii,jj) +
+	   NumOfConstrainedGaussQuadPoints_West(ii,jj) + NumOfConstrainedGaussQuadPoints_East(ii,jj));
+}
 
 #endif /* _GRID2D_QUAD_BLOCK_INCLUDED  */
