@@ -118,7 +118,8 @@ SRC_GRID_TESTS := test_Grid2DQuadIntegration.cc \
 		  test_HO_Spline2D.cc \
 		  test_HO_Spline2D_Integration.cc \
 		  test_HO_Spline2DInterval.cc \
-		  test_HO_Cell2D.cc
+		  test_HO_Cell2D.cc \
+		  HO_Grid2DQuadMultiBlock_InputForTesting.cc
 SRC_GRID_TESTS := $(addprefix $(GRID_DIR)UnitTests/,$(SRC_GRID_TESTS))
 ifeq ($(TUT_TESTING),ON) 
   SRC_GRID += $(SRC_GRID_TESTS)

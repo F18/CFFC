@@ -744,11 +744,11 @@ public:
   //! @name Geometric boundary representation related functions.
   //@{
   //! Set the designated switch to require high-order representation of the cell geometric boundaries
-  void setHighOrderBoundaryRepresentation(void){ HighOrderBoundaryRepresentation = ON; }
+  static void setHighOrderBoundaryRepresentation(void){ HighOrderBoundaryRepresentation = ON; }
   //! Set the designated switch to require treatment of cell geometric boundaries as straight lines
-  void setLowOrderBoundaryRepresentation(void){ HighOrderBoundaryRepresentation = OFF; }
+  static void setLowOrderBoundaryRepresentation(void){ HighOrderBoundaryRepresentation = OFF; }
   //! Set the boundary representation designated switch to the default value (i.e. low-order representation)
-  void setDefaultBoundaryRepresentation(void){ HighOrderBoundaryRepresentation = OFF; }
+  static void setDefaultBoundaryRepresentation(void){ HighOrderBoundaryRepresentation = OFF; }
   //! Return true if geometric boundary representation is high-order otherwise return false.
   bool IsHighOrderBoundary(void) const { return HighOrderBoundaryRepresentation == ON? true:false; }
   //! Get the value of the HighOrderBoundaryRepresentation variable.

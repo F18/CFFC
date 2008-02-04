@@ -12,7 +12,6 @@
 
 /* Include CFFC header files */
 #include "AdvectDiffuse2DState.h" // Include 2D advection diffusion equation solution state header file
-#include "../Grid/Grid2DQuad.h"   // Include 2D quadrilateral multiblock grid header file
 #include "../FASMultigrid2D/FASMultigrid2DInput.h" // Include multigrid input header file.
 #include "../ICEM/ICEMCFD.h"      // Include ICEMCFD input header file.
 #include "../Utilities/TypeDefinition.h" // Include TypeDefinition header file.

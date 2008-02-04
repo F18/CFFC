@@ -10,6 +10,7 @@
 /* Include CFFC header files */
 #include "TestData.h"
 #include "../HO_Grid2DQuadMultiBlock.h"
+#include "HO_Grid2DQuadMultiBlock_InputForTesting.h"
 
 namespace tut
 {
@@ -20,20 +21,219 @@ namespace tut
 
     // Local variables
   public:
+    Grid2D_Quad_MultiBlock_HO   MeshBlk, MeshBlk_Fine; // the mesh
+    Grid2D_Quad_Block_HO   Grid;
+
+    Grid2DTesting_Input_Parameters IP;
+
+    int error_flag;
+    Vector2D GQPoint1, GQPoint2; // Gauss Quadrature Points
+    int iCell,jCell;		// cell coordinates
+
+    Spline2DInterval_HO * SInfoNULL;
+    
+    // Member functions
 
     // Constructor
-    Data_Grid2DQuadMultiBlock_HO(){
-      /* Set the global path for this test suite. 
-	 It's a good practice to put it in the constructor of the data class in order to be set
-	 automatically for each individual test. Declare it relative to the /src_2D directory,
-	 otherwise the framework might not find the input and output files. */
-      
-      set_test_suite_path("Grid/UnitTests/");
-    }
+    Data_Grid2DQuadMultiBlock_HO(void);
+
+    // Destructor
+    ~Data_Grid2DQuadMultiBlock_HO(void);
+
+    // Create Mesh
+    template<class Input_Parameters>
+    void CreateMesh(Grid2D_Quad_MultiBlock_HO & _MeshBlk_, Input_Parameters & IP) throw(std::runtime_error);
+
+    // Set flux calculation method in all the mesh blocks
+    template<class Input_Parameters>
+    void SetFluxCalculationMethod(Grid2D_Quad_MultiBlock_HO & _MeshBlk_,
+				  int FluxMethod, Input_Parameters & IP);
+
+    // Verify the number of constrained Gauss quadrature points per edge for all the interior mesh cells
+    // Ghost cells are not used for constrained reconstruction and therefore they are not checked.
+    template<class Input_Parameters>
+    void CheckNumberOfConstrainedGQP(Grid2D_Quad_MultiBlock_HO & MeshBlk,
+				     Input_Parameters & IP,
+				     int Result);
 
   private:
     
   };
+
+  // Constructor
+  Data_Grid2DQuadMultiBlock_HO::Data_Grid2DQuadMultiBlock_HO(void){
+    /* Set the global path for this test suite. 
+       It's a good practice to put it in the constructor of the data class in order to be set
+       automatically for each individual test. Declare it relative to the /src_2D directory,
+       otherwise the framework might not find the input and output files. */
+    
+    set_test_suite_path("Grid/UnitTests/");
+
+    SInfoNULL = NULL;
+
+    IP.Set_Default_Input_Parameters();
+    set_local_output_path("HO_MultiBlockQuadGrids");
+    set_local_input_path("HO_MultiBlockQuadGrids");
+  }
+
+  Data_Grid2DQuadMultiBlock_HO::~Data_Grid2DQuadMultiBlock_HO(void){
+    // reset to default value
+    Grid2D_Quad_Block_HO::setDefaultBoundaryRepresentation();
+  }
+
+  template<class Input_Parameters>
+  void Data_Grid2DQuadMultiBlock_HO::CreateMesh(Grid2D_Quad_MultiBlock_HO & _MeshBlk_,
+						Input_Parameters & IP) throw(std::runtime_error){
+
+    /* Initialize all static variables within the class */
+    if (IP.IncludeHighOrderBoundariesRepresentation == ON){
+      Grid2D_Quad_Block_HO::setHighOrderBoundaryRepresentation();
+    } else {
+      Grid2D_Quad_Block_HO::setLowOrderBoundaryRepresentation();
+    }
+
+    error_flag = _MeshBlk_.Multi_Block_Grid(IP);
+    
+    if (error_flag) {
+      throw runtime_error("CreateMesh() ERROR: Unable to create valid Euler2D multi-block mesh.");
+    }
+   
+  }
+
+  template<class Input_Parameters>
+  void Data_Grid2DQuadMultiBlock_HO::SetFluxCalculationMethod(Grid2D_Quad_MultiBlock_HO & MeshBlk,
+							      int FluxMethod, Input_Parameters & IP){
+
+    int iBlock, jBlock;
+
+    for (iBlock = 0; iBlock < IP.Number_of_Blocks_Idir ; ++iBlock){
+      for (jBlock = 0; jBlock < IP.Number_of_Blocks_Jdir ; ++jBlock){
+
+	if(MeshBlk(iBlock,jBlock).BndNorthSpline.bc[0] != BC_NONE){
+	  MeshBlk(iBlock,jBlock).BndNorthSpline.setFluxCalcMethod(FluxMethod);
+	}
+	if(MeshBlk(iBlock,jBlock).BndSouthSpline.bc[0] != BC_NONE){
+	  MeshBlk(iBlock,jBlock).BndSouthSpline.setFluxCalcMethod(FluxMethod);
+	}
+	if(MeshBlk(iBlock,jBlock).BndEastSpline.bc[0] != BC_NONE){
+	  MeshBlk(iBlock,jBlock).BndEastSpline.setFluxCalcMethod(FluxMethod);
+	}
+	if(MeshBlk(iBlock,jBlock).BndWestSpline.bc[0] != BC_NONE){
+	  MeshBlk(iBlock,jBlock).BndWestSpline.setFluxCalcMethod(FluxMethod);
+	}
+      }	// endfor
+    } // endfor
+
+  }
+
+  template<class Input_Parameters>
+  void Data_Grid2DQuadMultiBlock_HO::CheckNumberOfConstrainedGQP(Grid2D_Quad_MultiBlock_HO & MeshBlk,
+								 Input_Parameters & IP,
+								 int Result){
+
+    int iBlock, jBlock;
+
+
+    for (iBlock = 0; iBlock < IP.Number_of_Blocks_Idir ; ++iBlock){
+      for (jBlock = 0; jBlock < IP.Number_of_Blocks_Jdir ; ++jBlock){
+
+	for (iCell=MeshBlk(iBlock,jBlock).ICl; iCell<=MeshBlk(iBlock,jBlock).ICu; ++iCell){
+	  for (jCell=MeshBlk(iBlock,jBlock).JCl; jCell<=MeshBlk(iBlock,jBlock).JCu; ++jCell){
+
+
+#if 0
+	    if (jCell == MeshBlk(iBlock,jBlock).JCu){
+	      // check cells with boundary at North
+
+	      ostmClear();
+	      ostm() << "NorthBnd Check, Block [" << iBlock << "," << jBlock << "], cell[" << iCell << "," << jCell << "]";
+	    
+	      if (MeshBlk(iBlock,jBlock).BndNorthSpline.getFluxCalcMethod() == ReconstructionBasedFlux){
+		ensure_equals(ostm().str(), MeshBlk(iBlock,jBlock).NumOfConstrainedGaussQuadPoints_North(iCell,jCell) ,
+			      Result);
+	      } else {
+		// zero constrained GQP
+		ensure_equals(ostm().str(), MeshBlk(iBlock,jBlock).NumOfConstrainedGaussQuadPoints_North(iCell,jCell) ,
+			      0);
+	      }
+	    } 
+	    
+	    if (jCell == MeshBlk(iBlock,jBlock).JCl){
+	      // check cells with boundary at South
+
+	      ostmClear();
+	      ostm() << "SouthBnd Check, Block [" << iBlock << "," << jBlock << "], cell[" << iCell << "," << jCell << "]";
+	      
+	      if (MeshBlk(iBlock,jBlock).BndSouthSpline.getFluxCalcMethod() == ReconstructionBasedFlux){
+		ensure_equals(ostm().str(), MeshBlk(iBlock,jBlock).NumOfConstrainedGaussQuadPoints_South(iCell,jCell) ,
+			      Result);
+	      } else {
+		// zero constrained GQP
+		ensure_equals(ostm().str(), MeshBlk(iBlock,jBlock).NumOfConstrainedGaussQuadPoints_South(iCell,jCell) ,
+			      0);
+	      }
+	    } 
+
+	    if (iCell == MeshBlk(iBlock,jBlock).ICu){
+	      // check cells with boundary at East
+
+	      ostmClear();
+	      ostm() << "EastBnd Check, Block [" << iBlock << "," << jBlock << "], cell[" << iCell << "," << jCell << "]";
+
+	      if (MeshBlk(iBlock,jBlock).BndEastSpline.getFluxCalcMethod() == ReconstructionBasedFlux){
+		ensure_equals(ostm().str(), MeshBlk(iBlock,jBlock).NumOfConstrainedGaussQuadPoints_East(iCell,jCell) ,
+			      Result);
+	      } else {
+		// zero constrained GQP
+		ensure_equals(ostm().str(), MeshBlk(iBlock,jBlock).NumOfConstrainedGaussQuadPoints_East(iCell,jCell) ,
+			      0);
+	      }
+	    } 
+	    
+	    if (iCell == MeshBlk(iBlock,jBlock).ICl){
+	      // check cells with boundary at West
+	      
+	      ostmClear();
+	      ostm() << "WestBnd Check, Block [" << iBlock << "," << jBlock << "], cell[" << iCell << "," << jCell << "]";
+	      
+	      if (MeshBlk(iBlock,jBlock).BndWestSpline.getFluxCalcMethod() == ReconstructionBasedFlux){
+		ensure_equals(ostm().str(), MeshBlk(iBlock,jBlock).NumOfConstrainedGaussQuadPoints_West(iCell,jCell) ,
+			      Result);
+	      } else {
+		// zero constrained GQP
+		ensure_equals(ostm().str(), MeshBlk(iBlock,jBlock).NumOfConstrainedGaussQuadPoints_West(iCell,jCell) ,
+			      0);
+	      }
+	    }
+
+	    if (iCell != MeshBlk(iBlock,jBlock).ICl && iCell != MeshBlk(iBlock,jBlock).ICu &&
+		jCell != MeshBlk(iBlock,jBlock).JCl && jCell != MeshBlk(iBlock,jBlock).JCu){
+	      // check interior cells 
+
+	      ostmClear();
+	      ostm() << "InteriorCell North, Block [" << iBlock << "," << jBlock << "], cell[" << iCell << "," << jCell << "]";
+	      ensure_equals(ostm().str(), MeshBlk(iBlock,jBlock).NumOfConstrainedGaussQuadPoints_North(iCell,jCell), 0);
+
+	      ostmClear();
+	      ostm() << "InteriorCell South, Block [" << iBlock << "," << jBlock << "], cell[" << iCell << "," << jCell << "]";
+	      ensure_equals(ostm().str(), MeshBlk(iBlock,jBlock).NumOfConstrainedGaussQuadPoints_South(iCell,jCell), 0);
+
+	      ostmClear();
+	      ostm() << "InteriorCell East, Block [" << iBlock << "," << jBlock << "], cell[" << iCell << "," << jCell << "]";
+	      ensure_equals(ostm().str(), MeshBlk(iBlock,jBlock).NumOfConstrainedGaussQuadPoints_East(iCell,jCell), 0);
+
+	      ostmClear();
+	      ostm() << "InteriorCell West, Block [" << iBlock << "," << jBlock << "], cell[" << iCell << "," << jCell << "]";
+	      ensure_equals(ostm().str(), MeshBlk(iBlock,jBlock).NumOfConstrainedGaussQuadPoints_West(iCell,jCell), 0);
+	    }
+#endif
+
+	  } // endfor
+	}// endfor
+
+      }// endfor
+    }// endfor
+  }
 
   /**
    * This group of declarations is just to register
@@ -251,7 +451,6 @@ namespace tut
   {
 
     set_test_name("Grid rectangular box");
-    set_local_output_path("HO_MultiBlockQuadGrids");
 
     RunRegression = ON;
     
@@ -331,7 +530,6 @@ namespace tut
   {
 
     set_test_name("Grid flat plate");
-    set_local_output_path("HO_MultiBlockQuadGrids");
 
     RunRegression = ON;
     
@@ -417,7 +615,6 @@ namespace tut
   {
 
     set_test_name("Grid 2D Laminar Flame");
-    set_local_output_path("HO_MultiBlockQuadGrids");
 
     RunRegression = ON;
     
@@ -499,7 +696,6 @@ namespace tut
   {
 
     set_test_name("Grid NACA AirFoil");
-    set_local_output_path("HO_MultiBlockQuadGrids");
 
     RunRegression = ON;
     
@@ -578,7 +774,6 @@ namespace tut
   {
 
     set_test_name("Grid Nozzle");
-    set_local_output_path("HO_MultiBlockQuadGrids");
 
     RunRegression = ON;
     
@@ -666,6 +861,63 @@ namespace tut
 
   }
 
+  /* Test 11:*/
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<11>()
+  {
+    set_test_name("Grid_Rectangular_Box()");
+    RunRegression = ON;
+ 
+    // Add test particular input parameters
+    IP.i_Grid = GRID_RECTANGULAR_BOX;
+    IP.Number_of_Blocks_Jdir = 1;
+    IP.Number_of_Blocks_Idir = 2;
+    IP.Number_of_Cells_Idir = 10;
+    IP.Number_of_Cells_Jdir = 10;
+    IP.Number_of_Ghost_Cells = 2;
+    IP.Space_Accuracy = 4;
+    IP.Box_Width = 2;
+    IP.Box_Height = 2;
+    IP.X_Shift.x = 6;
+    IP.X_Shift.y = 6;
+    IP.X_Scale = 2.0;
+    IP.X_Rotate = 10.0;
+    IP.IncludeHighOrderBoundariesRepresentation = OFF;
+    IP.i_Smooth_Quad_Block = ON;
+    strcpy(IP.BC_North_Type, "Reflection");
+    strcpy(IP.BC_East_Type, "Reflection");
+    strcpy(IP.BC_South_Type, "Reflection");
+    strcpy(IP.BC_West_Type, "Reflection");
+    IP.BCs_Specified = ON;
+    IP.BC_North = BC_REFLECTION;
+    IP.BC_South = BC_REFLECTION;
+    IP.BC_East = BC_REFLECTION;
+    IP.BC_West = BC_REFLECTION;
+
+    // Build the mesh
+    CreateMesh(MeshBlk,IP);
+
+    MasterFile = "GridRectangularBox_TecplotCells.dat";
+    CurrentFile = "Current_GridRectangularBox_TecplotCells.dat";
+
+    if (RunRegression){
+      Open_Output_File(CurrentFile);
+
+      // OutputMeshTecplot
+      MeshBlk.Output_Cells_Tecplot(out());
+
+      // check
+      RunRegressionTest("Cells_Tecplot", CurrentFile, MasterFile, 1.0e-9, 1.0e-9);
+
+    } else {
+      Open_Output_File(MasterFile);
+      
+      // write data
+      MeshBlk.Output_Cells_Tecplot(out());
+    }
+
+  }
 
 
 }
