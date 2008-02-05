@@ -512,11 +512,20 @@ public:
 			 const int Number_of_Cells_Jdir,
 			 const int Number_of_Ghost_Cells,
 			 const int Highest_Order_of_Reconstruction);
+  void Create_Quad_Block_Without_Update(const int &Number_of_Cells_Idir,
+					const int &Number_of_Cells_Jdir,
+					const int &Number_of_Ghost_Cells,
+					const int &Highest_Order_of_Reconstruction);
   void Create_Quad_Block(char *Bnd_Spline_File_Name_ptr,
 			 const int Number_of_Cells_Idir,
 			 const int Number_of_Cells_Jdir,
 			 const int Number_of_Ghost_Cells,
 			 const int Highest_Order_of_Reconstruction);
+  void Create_Quad_Block_Without_Update(char *Bnd_Spline_File_Name_ptr,
+					const int &Number_of_Cells_Idir,
+					const int &Number_of_Cells_Jdir,
+					const int &Number_of_Ghost_Cells,
+					const int &Highest_Order_of_Reconstruction);
   void Create_Quad_Block(Spline2D_HO &Bnd_Spline_North,
 			 Spline2D_HO &Bnd_Spline_South,
 			 Spline2D_HO &Bnd_Spline_East,
@@ -536,6 +545,25 @@ public:
 			 const int Orthogonal_South,
 			 const int Orthogonal_East,
 			 const int Orthogonal_West);
+  void Create_Quad_Block_Without_Update(Spline2D_HO &Bnd_Spline_North,
+					Spline2D_HO &Bnd_Spline_South,
+					Spline2D_HO &Bnd_Spline_East,
+					Spline2D_HO &Bnd_Spline_West,
+					const int &Number_of_Cells_Idir,
+					const int &Number_of_Cells_Jdir,
+					const int &Number_of_Ghost_Cells,
+					const int &Highest_Order_of_Reconstruction,
+					const int &Node_Init_Procedure,
+					const int &Stretch_I,
+					const double &Beta_I, 
+					const double &Tau_I,
+					const int &Stretch_J,
+					const double &Beta_J,
+					const double &Tau_J,
+					const int &Orthogonal_North,
+					const int &Orthogonal_South,
+					const int &Orthogonal_East,
+					const int &Orthogonal_West);
   //@}
 
   //! @name Broadcast functions (MPI)
@@ -650,12 +678,16 @@ public:
   //!@name Block manipulation
   //@{
   void Translate_Quad_Block(const Vector2D &V);
+  void Translate_Quad_Block_Without_Update(const Vector2D &V);
   
   void Scale_Quad_Block(const double &Scaling_Factor);
+  void Scale_Quad_Block_Without_Update(const double &Scaling_Factor);
   
   void Rotate_Quad_Block(const double &Angle);
+  void Rotate_Quad_Block_Without_Update(const double &Angle);
   
   void Reflect_Quad_Block(void);
+  void Reflect_Quad_Block_Without_Update(void);
   //@}
   
   //!@ Output functions for plotting.
@@ -1661,6 +1693,10 @@ inline int Grid2D_Quad_Block_HO::NumOfConstrainedGaussQuadPoints_North(const int
   }
 }
 
+/*!
+ * Return the number of Gauss quadrature points on the South
+ * cell face which have boundary conditions enforced by constraints.
+ */
 inline int Grid2D_Quad_Block_HO::NumOfConstrainedGaussQuadPoints_South(const int &ii, const int &jj){
   if (jj != JCl || BndSouthSpline.getFluxCalcMethod() == SolveRiemannProblem ){
     /* cell is not on the interior South boundary
@@ -1677,6 +1713,10 @@ inline int Grid2D_Quad_Block_HO::NumOfConstrainedGaussQuadPoints_South(const int
   }
 }
 
+/*!
+ * Return the number of Gauss quadrature points on the East
+ * cell face which have boundary conditions enforced by constraints.
+ */
 inline int Grid2D_Quad_Block_HO::NumOfConstrainedGaussQuadPoints_East(const int &ii, const int &jj){
   if (ii != ICu || BndEastSpline.getFluxCalcMethod() == SolveRiemannProblem ){
     /* cell is not on the interior East boundary
@@ -1693,6 +1733,10 @@ inline int Grid2D_Quad_Block_HO::NumOfConstrainedGaussQuadPoints_East(const int 
   }
 }
 
+/*!
+ * Return the number of Gauss quadrature points on the West
+ * cell face which have boundary conditions enforced by constraints.
+ */
 inline int Grid2D_Quad_Block_HO::NumOfConstrainedGaussQuadPoints_West(const int &ii, const int &jj){
   if (ii != ICl || BndWestSpline.getFluxCalcMethod() == SolveRiemannProblem ){
     /* cell is not on the interior West boundary
@@ -1709,9 +1753,175 @@ inline int Grid2D_Quad_Block_HO::NumOfConstrainedGaussQuadPoints_West(const int 
   }
 }
 
+/*!
+ * Return the total number of Gauss quadrature points for the specified cell
+ * which have boundary conditions enforced by constraints.
+ */
 inline int Grid2D_Quad_Block_HO::NumOfConstrainedGaussQuadPoints(const int &ii, const int &jj){
   return ( NumOfConstrainedGaussQuadPoints_North(ii,jj) + NumOfConstrainedGaussQuadPoints_South(ii,jj) +
 	   NumOfConstrainedGaussQuadPoints_West(ii,jj) + NumOfConstrainedGaussQuadPoints_East(ii,jj));
+}
+
+/*!
+ * Create quadrilateral grid block for a Cartesian      
+ * mesh defined on a square box with four corner        
+ * coordinates (X,Y): (-1,1), (1,1), (1,-1), (-1,1).    
+ */
+inline void Grid2D_Quad_Block_HO::Create_Quad_Block(const int Number_of_Cells_Idir,
+						    const int Number_of_Cells_Jdir,
+						    const int Number_of_Ghost_Cells,
+						    const int Highest_Order_of_Reconstruction){
+
+
+  /* Create the 2D quadrilateral grid block without update.
+     (i.e. generate the interior nodes and set the boundary condition types)*/
+  Create_Quad_Block_Without_Update(Number_of_Cells_Idir,
+				   Number_of_Cells_Jdir,
+				   Number_of_Ghost_Cells,
+				   Highest_Order_of_Reconstruction);
+
+  /* Compute the exterior nodes for the quadrilateral mesh block. */
+  Update_Exterior_Nodes();
+  
+  /* Compute the cells for the quadrilateral mesh block. */
+  Update_Cells();
+}
+
+/*!
+ * Create a 2D quadrilateral grid block with the four   
+ * boundaries of the block defined by blended splines   
+ * which are given in the input boundary spline file:   
+ *                                                      
+ * Bnd_Spline_File_Name_ptr. 
+ *                           
+ */
+inline void Grid2D_Quad_Block_HO::Create_Quad_Block(char *Bnd_Spline_File_Name_ptr,
+						    const int Number_of_Cells_Idir,
+						    const int Number_of_Cells_Jdir,
+						    const int Number_of_Ghost_Cells,
+						    const int Highest_Order_of_Reconstruction){
+
+  /* Create the 2D quadrilateral grid block without update.
+     (i.e. generate the interior nodes and set the boundary condition types)*/
+  Create_Quad_Block_Without_Update(Bnd_Spline_File_Name_ptr,
+				   Number_of_Cells_Idir,
+				   Number_of_Cells_Jdir,
+				   Number_of_Ghost_Cells,
+				   Highest_Order_of_Reconstruction);
+
+  /* Compute the exterior nodes for the quadrilateral mesh block. */
+  Update_Exterior_Nodes();
+  
+  /* Compute the cells for the quadrilateral mesh block. */
+  Update_Cells();
+
+}
+
+/*!
+ * Create a 2D quadrilateral grid block with the four   
+ * boundaries of the block defined by blended splines   
+ * which are given as input arguments to the routine.   
+ */
+inline void Grid2D_Quad_Block_HO::Create_Quad_Block(Spline2D_HO &Bnd_Spline_North,
+						    Spline2D_HO &Bnd_Spline_South,
+						    Spline2D_HO &Bnd_Spline_East,
+						    Spline2D_HO &Bnd_Spline_West,
+						    const int Number_of_Cells_Idir,
+						    const int Number_of_Cells_Jdir,
+						    const int Number_of_Ghost_Cells,
+						    const int Highest_Order_of_Reconstruction,
+						    const int Node_Init_Procedure,
+						    const int Stretch_I,
+						    const double &Beta_I, 
+						    const double &Tau_I,
+						    const int Stretch_J,
+						    const double &Beta_J,
+						    const double &Tau_J,
+						    const int Orthogonal_North,
+						    const int Orthogonal_South,
+						    const int Orthogonal_East,
+						    const int Orthogonal_West){
+
+  /* Create the 2D quadrilateral grid block without update.
+     (i.e. generate the interior nodes and set the boundary condition types)*/
+  Create_Quad_Block_Without_Update(Bnd_Spline_North,
+				   Bnd_Spline_South, 
+				   Bnd_Spline_East,
+				   Bnd_Spline_West,
+				   Number_of_Cells_Idir,
+				   Number_of_Cells_Jdir,
+				   Number_of_Ghost_Cells,
+				   Highest_Order_of_Reconstruction,
+				   Node_Init_Procedure,
+				   Stretch_I,
+				   Beta_I,
+				   Tau_I,
+				   Stretch_J,
+				   Beta_J,
+				   Tau_J,
+				   Orthogonal_North,
+				   Orthogonal_South,
+				   Orthogonal_East,
+				   Orthogonal_West);
+
+  /* Compute the exterior nodes for the quadrilateral mesh block. */
+  Update_Exterior_Nodes();
+  
+  /* Compute the cells for the quadrilateral mesh block. */
+  Update_Cells();
+
+}
+
+/*!
+ * Translates or shifts the positions of the nodes of a 
+ * quadrilateral grid block.                            
+ */
+inline void Grid2D_Quad_Block_HO::Translate_Quad_Block(const Vector2D &V) {
+  
+  // Translate without update
+  Translate_Quad_Block_Without_Update(V);
+
+  /* Compute the cells for the quadrilateral mesh block. */
+  Update_Cells();
+}
+
+/*!
+ * Scales the quadrilateral grid block.                 
+ */
+inline void Grid2D_Quad_Block_HO::Scale_Quad_Block(const double &Scaling_Factor) {
+
+  // Scale without update
+  Scale_Quad_Block_Without_Update(Scaling_Factor);
+
+  /* Compute the cells for the quadrilateral mesh block. */
+  Update_Cells();
+}
+
+/*!
+ * Rotates the quadrilateral grid block.                
+ */
+inline void Grid2D_Quad_Block_HO::Rotate_Quad_Block(const double &Angle) {
+  
+  // Rotate without update
+  Rotate_Quad_Block_Without_Update(Angle);
+
+  /* Compute the cells for the quadrilateral mesh block. */
+  Update_Cells();
+}
+
+/*!
+ * Re-computes the locations of the nodes and cells of  
+ * the quadrilateral grid block based on a mirror       
+ * reflection about the y=0 axis.  The cells and nodes  
+ * are also re-ordered in the i-direction.              
+ */
+inline void Grid2D_Quad_Block_HO::Reflect_Quad_Block(void) {
+
+  // Reflect without update
+  Reflect_Quad_Block_Without_Update();
+
+  /* Compute the cells for the quadrilateral mesh block. */
+  Update_Cells();
 }
 
 #endif /* _GRID2D_QUAD_BLOCK_INCLUDED  */
