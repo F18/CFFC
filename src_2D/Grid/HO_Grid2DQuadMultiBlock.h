@@ -92,9 +92,21 @@ public:
   void Scale_Multi_Block_Grid(const double &Scaling_Factor);
   void Rotate_Multi_Block_Grid(const double &Angle);
   void Reflect_Multi_Block_Grid(void);
+
+  void Translate_Multi_Block_Grid_Without_Update(const Vector2D &V);
+  void Scale_Multi_Block_Grid_Without_Update(const double &Scaling_Factor);
+  void Rotate_Multi_Block_Grid_Without_Update(const double &Angle);
+  void Reflect_Multi_Block_Grid_Without_Update(void);
+
   int Check_Multi_Block_Grid(void);
   //@}
   
+  //!@name Update exterior nodes and cell geometric properties
+  //@{
+  void Update_All_Exterior_Nodes(void);
+  void Update_All_Cells(void);
+  //@}
+
   //!@name Output functions for plotting.
   //@{
   void Output_Tecplot(ostream &Out_File);
@@ -552,6 +564,457 @@ public:
 		       const double &Stretching_Radial_Dir);
   
   //@}
+
+
+  //!@name Uniform 2D Cartesian mesh for different shapes without geometry update
+  //@{
+  void Grid_Rectangular_Box_Without_Update(int &_Number_of_Blocks_Idir_,
+					   int &_Number_of_Blocks_Jdir_,
+					   const double &Width,
+					   const double &Height,
+					   const int Number_of_Cells_Idir,
+					   const int Number_of_Cells_Jdir,
+					   const int Number_of_Ghost_Cells,
+					   const int Highest_Order_of_Reconstruction);
+  
+  void Grid_Rectangular_Box_Without_Update(int &_Number_of_Blocks_Idir_,
+					   int &_Number_of_Blocks_Jdir_,
+					   const double &Width,
+					   const double &Height,
+					   const int Stretching_Flag,
+					   const int Stretching_Type_Idir,
+					   const int Stretching_Type_Jdir,
+					   const double &Stretching_Factor_Idir,
+					   const double &Stretching_Factor_Jdir,
+					   const int Number_of_Cells_Idir,
+					   const int Number_of_Cells_Jdir,
+					   const int Number_of_Ghost_Cells,
+					   const int Highest_Order_of_Reconstruction);
+
+  void Grid_Flat_Plate_Without_Update(int &_Number_of_Blocks_Idir_,
+				      int &_Number_of_Blocks_Jdir_,
+				      const double &Length,
+				      const int Flat_Plate_BC_Type,
+				      const int Stretching_Flag,
+				      const double &Stretching_Factor_Idir,
+				      const double &Stretching_Factor_Jdir,
+				      const int Number_of_Cells_Idir,
+				      const int Number_of_Cells_Jdir,
+				      const int Number_of_Ghost_Cells,
+				      const int Highest_Order_of_Reconstruction);
+
+  void Grid_Flat_Plate_NK_Without_Update(int &_Number_of_Blocks_Idir_,
+					 int &_Number_of_Blocks_Jdir_,
+					 const double &Length,
+					 const int Stretching_Flag,
+					 const double &Stretching_Factor_Idir,
+					 const double &Stretching_Factor_Jdir,
+					 const int Number_of_Cells_Idir,
+					 const int Number_of_Cells_Jdir,
+					 const int Number_of_Ghost_Cells,
+					 const int Highest_Order_of_Reconstruction);
+
+  void Grid_Flat_Plate3_Without_Update(int &_Number_of_Blocks_Idir_,
+				       int &_Number_of_Blocks_Jdir_,
+				       const double &Length,
+				       const int &Stretching_Flag,
+				       const double &Stretching_Factor_Idir,
+				       const double &Stretching_Factor_Jdir,
+				       const int Number_of_Cells_Idir,
+				       const int Number_of_Cells_Jdir,
+				       const int Number_of_Ghost_Cells,
+				       const int Highest_Order_of_Reconstruction);
+
+  void Grid_Flat_Plate4_Without_Update(int &_Number_of_Blocks_Idir_,
+				       int &_Number_of_Blocks_Jdir_,
+				       const double &Length,
+				       const int &Stretching_Flag,
+				       const double &Stretching_Factor_Idir,
+				       const double &Stretching_Factor_Jdir,
+				       const int Number_of_Cells_Idir,
+				       const int Number_of_Cells_Jdir,
+				       const int Number_of_Ghost_Cells,
+				       const int Highest_Order_of_Reconstruction);
+
+  void Grid_Flat_Plate9_Without_Update(int &_Number_of_Blocks_Idir_,
+				       int &_Number_of_Blocks_Jdir_,
+				       const double &Length,
+				       const int &Flat_Plate_BC_Type,
+				       const int &Stretching_Flag,
+				       const double &Stretching_Factor_Idir,
+				       const double &Stretching_Factor_Jdir,
+				       const int Number_of_Cells_Idir,
+				       const int Number_of_Cells_Jdir,
+				       const int Number_of_Ghost_Cells,
+				       const int Highest_Order_of_Reconstruction);
+
+  void Grid_1D_Flame_Without_Update(int &_Number_of_Blocks_Idir_,
+				    int &_Number_of_Blocks_Jdir_,
+				    const double &Length,
+				    const double &Heigth,
+				    const int Number_of_Cells_Idir,
+				    const int Number_of_Cells_Jdir,
+				    const int Number_of_Ghost_Cells,
+				    const int Highest_Order_of_Reconstruction);
+  
+  void Grid_2D_Laminar_Flame_Without_Update(int &_Number_of_Blocks_Idir_,
+					    int &_Number_of_Blocks_Jdir_,
+					    const double &Length,
+					    const double &Heigth,
+					    const int Number_of_Cells_Idir,
+					    const int Number_of_Cells_Jdir, 
+					    const int Number_of_Ghost_Cells,
+					    const int Highest_Order_of_Reconstruction,
+					    const int Flame_Type_Flag);
+
+  void Grid_Pipe_Without_Update(int &_Number_of_Blocks_Idir_,
+				int &_Number_of_Blocks_Jdir_,
+				const double &Length,
+				const double &Radius,
+				const int Stretching_Flag,
+				const double Stretching_Factor,
+				const int Number_of_Cells_Idir,
+				const int Number_of_Cells_Jdir,
+				const int Number_of_Ghost_Cells,
+				const int Highest_Order_of_Reconstruction);  
+
+  void Grid_Pipe_Without_Update(int &_Number_of_Blocks_Idir_,
+				int &_Number_of_Blocks_Jdir_,
+				const double &Length,
+				const double &Radius,
+				const int &Axisymmetric,
+				const int Number_of_Cells_Idir,
+				const int Number_of_Cells_Jdir,
+				const int Number_of_Ghost_Cells,
+				const int Highest_Order_of_Reconstruction);
+  
+  void  Grid_Blunt_Body_Without_Update(int &_Number_of_Blocks_Idir_,
+				       int &_Number_of_Blocks_Jdir_,
+				       const double &Radius,
+				       const double &Mach_Number,
+				       const int Number_of_Cells_Idir,
+				       const int Number_of_Cells_Jdir,
+				       const int Number_of_Ghost_Cells,
+				       const int Highest_Order_of_Reconstruction);
+
+  void Grid_Rocket_Motor_Without_Update(int &_Number_of_Blocks_Idir_,
+					int &_Number_of_Blocks_Jdir_,
+					const double &Length_Chamber,
+					const double &Radius_Chamber,
+					const double &Length_Chamber_To_Throat,
+					const double &Length_Nozzle,
+					const double &Radius_Nozzle_Exit,
+					const double &Radius_Nozzle_Throat,
+					const double &Radius_Grain,
+					const int &Nozzle_Type,
+					const int &Chamber_BC_Type,
+					const int &Stretching_Flag,
+					const int Stretching_Type_Jdir,
+					const double &Stretching_Factor_Idir,
+					const double &Stretching_Factor_Jdir,
+					const int Number_of_Cells_Idir,
+					const int Number_of_Cells_Jdir,
+					const int Number_of_Ghost_Cells,
+					const int Highest_Order_of_Reconstruction);
+  
+  void Grid_Nozzleless_Rocket_Motor_Without_Update(int &_Number_of_Blocks_Idir_,
+						   int &_Number_of_Blocks_Jdir_,
+						   const double &Length_Chamber,
+						   const double &Radius_Chamber,
+						   const double &Length_Nozzle,
+						   const double &Radius_Nozzle_Exit,
+						   const int &Chamber_BC_Type,
+						   const int &Stretching_Flag,
+						   const int Stretching_Type_Jdir,
+						   const double &Stretching_Factor_Idir,
+						   const double &Stretching_Factor_Jdir,
+						   const int Number_of_Cells_Idir,
+						   const int Number_of_Cells_Jdir,
+						   const int Number_of_Ghost_Cells,
+						   const int Highest_Order_of_Reconstruction);
+
+  void Grid_Nozzle_Without_Update(int &_Number_of_Blocks_Idir_,
+				  int &_Number_of_Blocks_Jdir_,
+				  const double &Length_Nozzle,
+				  const double &Radius_Chamber,
+				  const double &Radius_Nozzle_Exit,
+				  const double &Radius_Nozzle_Throat,
+				  const int &Nozzle_Type,
+				  const int &Stretching_Flag,
+				  const int &Stretching_Type_Idir,
+				  const int &Stretching_Type_Jdir,
+				  const double &Stretching_Factor_Idir,
+				  const double &Stretching_Factor_Jdir,
+				  const int Number_of_Cells_Idir,
+				  const int Number_of_Cells_Jdir,
+				  const int Number_of_Ghost_Cells,
+				  const int Highest_Order_of_Reconstruction);
+  
+  void Grid_Circular_Cylinder_Without_Update(int &_Number_of_Blocks_Idir_,
+					     int &_Number_of_Blocks_Jdir_,
+					     const double &Radius,
+					     const int Stretching_Type_Idir,
+					     const int Stretching_Type_Jdir,
+					     const double &Stretching_Factor_Idir,
+					     const double &Stretching_Factor_Jdir,
+					     const int Number_of_Cells_Idir,
+					     const int Number_of_Cells_Jdir,
+					     const int Number_of_Ghost_Cells,
+					     const int Highest_Order_of_Reconstruction);
+
+  void Grid_Circular_Cylinder_Without_Update(int &_Number_of_Blocks_Idir_,
+					     int &_Number_of_Blocks_Jdir_,
+					     const double &Inner_Radius,
+					     const double &Outer_Radius,
+					     const int Stretching_Type_Idir,
+					     const int Stretching_Type_Jdir,
+					     const double &Stretching_Factor_Idir,
+					     const double &Stretching_Factor_Jdir,
+					     const int Number_of_Cells_Idir,
+					     const int Number_of_Cells_Jdir,
+					     const int Number_of_Ghost_Cells,
+					     const int Highest_Order_of_Reconstruction);
+
+  void Grid_Annulus_Without_Update(int &_Number_of_Blocks_Idir_,
+				   int &_Number_of_Blocks_Jdir_,
+				   const double &Inner_Radius,
+				   const double &Outer_Radius,
+				   const double &ThetaStart,
+				   const double &ThetaEnd,
+				   const int Stretching_Type_Idir,
+				   const int Stretching_Type_Jdir,
+				   const double &Stretching_Factor_Idir,
+				   const double &Stretching_Factor_Jdir,
+				   const int Number_of_Cells_Idir,
+				   const int Number_of_Cells_Jdir,
+				   const int Number_of_Ghost_Cells,
+				   const int Highest_Order_of_Reconstruction);
+
+  void Grid_Ellipse_Without_Update(int &_Number_of_Blocks_Idir_,
+				   int &_Number_of_Blocks_Jdir_,
+				   const double &A,
+				   const double &B,
+				   const int Number_of_Cells_Idir,
+				   const int Number_of_Cells_Jdir,
+				   const int Number_of_Ghost_Cells,
+				   const int Highest_Order_of_Reconstruction);
+  
+  void Grid_NACA_Aerofoil_Without_Update(int &_Number_of_Blocks_Idir_,
+					 int &_Number_of_Blocks_Jdir_,
+					 char *NACA_Aerofoil_Type_ptr,
+					 const double &Chord_Length,
+					 const int Number_of_Cells_Idir,
+					 const int Number_of_Cells_Jdir,
+					 const int Number_of_Ghost_Cells,
+					 const int Highest_Order_of_Reconstruction);
+  
+  void Grid_Free_Jet_Without_Update(int &_Number_of_Blocks_Idir_,
+				    int &_Number_of_Blocks_Jdir_,
+				    const double &Radius,
+				    const int Number_of_Cells_Idir,
+				    const int Number_of_Cells_Jdir,
+				    const int Number_of_Ghost_Cells,
+				    const int Highest_Order_of_Reconstruction) ;
+
+  void Grid_Wedge_Without_Update(int &_Number_of_Blocks_Idir_,
+				 int &_Number_of_Blocks_Jdir_,
+				 const double &Wedge_Angle,
+				 const double &Wedge_Length,
+				 const int &Wedge_BC_Type,
+				 const int &Stretching_Flag,
+				 const double &Stretching_Factor_Idir,
+				 const double &Stretching_Factor_Jdir,
+				 const int Number_of_Cells_Idir,
+				 const int Number_of_Cells_Jdir,
+				 const int Number_of_Ghost_Cells,
+				 const int Highest_Order_of_Reconstruction);
+
+  void Grid_Unsteady_Blunt_Body_Without_Update(int &_Number_of_Blocks_Idir_,
+					       int &_Number_of_Blocks_Jdir_,
+					       const double &Radius,
+					       const double &Mach_Number,
+					       const int Number_of_Cells_Idir,
+					       const int Number_of_Cells_Jdir,
+					       const int Number_of_Ghost_Cells,
+					       const int Highest_Order_of_Reconstruction);
+
+  void Grid_Ringleb_Flow_Without_Update(int &_Number_of_Blocks_Idir_,
+					int &_Number_of_Blocks_Jdir_,
+					const double &Inner_Streamline_Number,
+					const double &Outer_Streamline_Number,
+					const double &Isotach_Line,
+					const int Number_of_Cells_Idir,
+					const int Number_of_Cells_Jdir,
+					const int Number_of_Ghost_Cells,
+					const int Highest_Order_of_Reconstruction);
+
+  void Grid_Bump_Channel_Flow_Without_Update(int &_Number_of_Blocks_Idir_,
+					     int &_Number_of_Blocks_Jdir_,
+					     const int Smooth_Bump,
+					     const int Number_of_Cells_Idir,
+					     const int Number_of_Cells_Jdir,
+					     const int Number_of_Ghost_Cells,
+					     const int Highest_Order_of_Reconstruction) ;
+
+  void Grid_Jet_Flow_Without_Update(int &_Number_of_Blocks_Idir_,
+				    int &_Number_of_Blocks_Jdir_,
+				    const double &Radius,
+				    const double &Mach,
+				    const int &Stretching_Type_Idir,
+				    const int &Stretching_Type_Jdir,
+				    const double &Stretching_Factor_Idir,
+				    const double &Stretching_Factor_Jdir,
+				    const int Number_of_Cells_Idir,
+				    const int Number_of_Cells_Jdir,
+				    const int Number_of_Ghost_Cells,
+				    const int Highest_Order_of_Reconstruction);
+
+  void Grid_Mixing_Layer_Without_Update(int &_Number_of_Blocks_Idir_,
+					int &_Number_of_Blocks_Jdir_,
+					const double &Length,
+					const double &Mach,
+					const int &Stretching_Type_Idir,
+					const int &Stretching_Type_Jdir,
+					const double &Stretching_Factor_Idir,
+					const double &Stretching_Factor_Jdir,
+					const int Number_of_Cells_Idir,
+					const int Number_of_Cells_Jdir,
+					const int Number_of_Ghost_Cells,
+					const int Highest_Order_of_Reconstruction);
+
+  void Grid_Backward_Facing_Step_Without_Update(int &_Number_of_Blocks_Idir_,
+						int &_Number_of_Blocks_Jdir_,
+						const double &Step_Height,
+						const double &Top_Wall_Deflection,
+						const double &Stretching_Factor_Idir,
+						const double &Stretching_Factor_Jdir,
+						const int Number_of_Cells_Idir,
+						const int Number_of_Cells_Jdir,
+						const int Number_of_Ghost_Cells,
+						const int Highest_Order_of_Reconstruction);
+
+  void Grid_Forward_Facing_Step_Without_Update(int &_Number_of_Blocks_Idir_,
+					       int &_Number_of_Blocks_Jdir_,
+					       const double &Step_Height,
+					       const double &Channel_Gap,
+					       const double &Stretching_Factor_Idir,
+					       const double &Stretching_Factor_Jdir,
+					       const int Number_of_Cells_Idir,
+					       const int Number_of_Cells_Jdir,
+					       const int Number_of_Ghost_Cells,
+					       const int Highest_Order_of_Reconstruction);
+
+  void Grid_Desolvation_Chamber_Without_Update(const int &Chamber_BC_Type,
+					       int &_Number_of_Blocks_Idir_,
+					       int &_Number_of_Blocks_Jdir_,
+					       const int Number_of_Cells_Idir,
+					       const int Number_of_Cells_Jdir,
+					       const int Number_of_Ghost_Cells,
+					       const int Highest_Order_of_Reconstruction) ;
+
+  void Grid_NASA_Rotor_37_Without_Update(int &_Number_of_Blocks_Idir_,
+					 int &_Number_of_Blocks_Jdir_,
+					 const double &Rotor_Percent_Span,
+					 const int Number_of_Cells_Idir,
+					 const int Number_of_Cells_Jdir,
+					 const int Number_of_Ghost_Cells,
+					 const int Highest_Order_of_Reconstruction);
+
+  void Grid_NASA_Rotor_67_Without_Update(int &_Number_of_Blocks_Idir_,
+					 int &_Number_of_Blocks_Jdir_,
+					 const double &Rotor_Percent_Span,
+					 const int Number_of_Cells_Idir,
+					 const int Number_of_Cells_Jdir,
+					 const int Number_of_Ghost_Cells,
+					 const int Highest_Order_of_Reconstruction);
+
+  void Grid_Driven_Cavity_Flow_Without_Update(int &_Number_of_Blocks_Idir_,
+					      int &_Number_of_Blocks_Jdir_,
+					      const double &Width,
+					      const double &Height,
+					      const int &Stretching_Type_Idir,
+					      const int &Stretching_Type_Jdir,
+					      const double &Stretching_Factor_Idir,
+					      const double &Stretching_Factor_Jdir,
+					      const int Number_of_Cells_Idir,
+					      const int Number_of_Cells_Jdir,
+					      const int Number_of_Ghost_Cells,
+					      const int Highest_Order_of_Reconstruction);
+
+  void Grid_Adiabatic_Flat_Plate_Without_Update(int &_Number_of_Blocks_Idir_,
+						int &_Number_of_Blocks_Jdir_,
+						const double &Length,
+						const int Number_of_Cells_Idir,
+						const int Number_of_Cells_Jdir,
+						const int Number_of_Ghost_Cells,
+						const int Highest_Order_of_Reconstruction);
+
+  void Grid_Adiabatic_Circular_Cylinder_Without_Update(int &_Number_of_Blocks_Idir_,
+						       int &_Number_of_Blocks_Jdir_,
+						       const double &Radius,
+						       const int Number_of_Cells_Idir,
+						       const int Number_of_Cells_Jdir,
+						       const int Number_of_Ghost_Cells,
+						       const int Highest_Order_of_Reconstruction);
+
+  void Grid_Adiabatic_Circular_Cylinder_Without_Update(int &_Number_of_Blocks_Idir_,
+						       int &_Number_of_Blocks_Jdir_,
+						       const double &Inner_Radius,
+						       const double &Outer_Radius,
+						       const int Number_of_Cells_Idir,
+						       const int Number_of_Cells_Jdir,
+						       const int Number_of_Ghost_Cells,
+						       const int Highest_Order_of_Reconstruction);
+
+  void Grid_Adiabatic_Couette_Without_Update(int &_Number_of_Blocks_Idir_,
+					     int &_Number_of_Blocks_Jdir_,
+					     const double &Separation,
+					     const int Number_of_Cells_Idir,
+					     const int Number_of_Cells_Jdir,
+					     const int Number_of_Ghost_Cells,
+					     const int Highest_Order_of_Reconstruction);
+
+  void Grid_Cylindrical_Encl_Without_Update(int &_Number_of_Blocks_Idir_,
+					    int &_Number_of_Blocks_Jdir_,
+					    const double &Length,
+					    const double &Radius,
+					    const int &Axisymmetric,
+					    const int Number_of_Cells_Idir,
+					    const int Number_of_Cells_Jdir,
+					    const int Number_of_Ghost_Cells,
+					    const int Highest_Order_of_Reconstruction);
+
+  void Grid_Rectangular_Encl_Without_Update(int &_Number_of_Blocks_Idir_,
+					    int &_Number_of_Blocks_Jdir_,
+					    const double &Width,
+					    const double &Height,
+					    const int Number_of_Cells_Idir,
+					    const int Number_of_Cells_Jdir,
+					    const int Number_of_Ghost_Cells,
+					    const int Highest_Order_of_Reconstruction);
+
+  void Grid_Tube_2D_Without_Update(int &_Number_of_Blocks_Idir_,
+				   int &_Number_of_Blocks_Jdir_,
+				   const double &Radius,
+				   const int Number_of_Cells_Idir,
+				   const int Number_of_Cells_Jdir,
+				   const int Number_of_Ghost_Cells,
+				   const int Highest_Order_of_Reconstruction,
+				   const int i_Stretching_Radial_Dir,
+				   const double &Stretching_Radial_Dir) ;
+
+  void Grid_Annulus_2D_Without_Update(int &_Number_of_Blocks_Idir_,
+				      int &_Number_of_Blocks_Jdir_,
+				      const double &Radius_Inner,
+				      const double &Radius_Outer,
+				      const int Number_of_Cells_Idir,
+				      const int Number_of_Cells_Jdir,
+				      const int Number_of_Ghost_Cells,
+				      const int Highest_Order_of_Reconstruction,
+				      const int i_Stretching_Radial_Dir,
+				      const double &Stretching_Radial_Dir);
+  
+  //@}
     
   //! @name Input-output operators.
   //@{
@@ -724,8 +1187,6 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
 	  Grid_ptr[iBlk][jBlk].BndWestSpline.setBCtype(BC_NONE);
 	}
 	Set_BCs(Grid_ptr[iBlk][jBlk]);
-	Update_Exterior_Nodes(Grid_ptr[iBlk][jBlk]);
-	Update_Cells(Grid_ptr[iBlk][jBlk]);
       } 
     }  
     
@@ -766,16 +1227,12 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
 
       // Update BCs and geometry
       Set_BCs(Grid_ptr[iBlk][HjBlk ]);
-      Update_Exterior_Nodes(Grid_ptr[iBlk][HjBlk ]);
-      Update_Cells(Grid_ptr[iBlk][HjBlk ]);
 
       // Impose the outflow BC on the lower edge of the cut to all affected blocks
       Grid_ptr[iBlk][HjBlk-1].BndNorthSpline.setBCtype(BC_OUTFLOW);
 
       // Update BCs and geometry
       Set_BCs(Grid_ptr[iBlk][HjBlk-1]);
-      Update_Exterior_Nodes(Grid_ptr[iBlk][HjBlk-1]);
-      Update_Cells(Grid_ptr[iBlk][HjBlk-1]);
     }
     break;   
   case GRID_FLAT_PLATE :
@@ -944,8 +1401,6 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
 	if (iBlk == 0)
 	  Grid_ptr[iBlk][jBlk].BndWestSpline.setBCtype(Input_Parameters.BC_West);
 	Set_BCs(Grid_ptr[iBlk][jBlk]);
-	Update_Exterior_Nodes(Grid_ptr[iBlk][jBlk]);
-	Update_Cells(Grid_ptr[iBlk][jBlk]);
       }
     }
   }
@@ -953,22 +1408,28 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
   /* First translate quadrilateral mesh as specified by input parameters. */
 
   if (abs(Input_Parameters.X_Shift) > TOLER) {
-    Translate_Multi_Block_Grid(Input_Parameters.X_Shift);
-  } /* endif */
+    Translate_Multi_Block_Grid_Without_Update(Input_Parameters.X_Shift);
+  }/* endif */
 
-    /* Next scale quadrilateral mesh as specified by input parameters. */
+  /* Next scale quadrilateral mesh as specified by input parameters. */
 
   if (fabs(Input_Parameters.X_Scale-ONE) > TOLER) {
-    Scale_Multi_Block_Grid(Input_Parameters.X_Scale);
-  } /* endif */
+    Scale_Multi_Block_Grid_Without_Update(Input_Parameters.X_Scale);
+  }/* endif */
 
-    /* Finally rotate quadrilateral mesh as specified by input parameters. */
+  /* Finally rotate quadrilateral mesh as specified by input parameters. */
 
   if (fabs(Input_Parameters.X_Rotate) > TOLER) {
-    Rotate_Multi_Block_Grid(TWO*PI*Input_Parameters.X_Rotate/360.00);
-  } /* endif */
+    Rotate_Multi_Block_Grid_Without_Update(TWO*PI*Input_Parameters.X_Rotate/360.00);
+  }/* endif */
 
-    /* Check the validity of the generated mesh. */
+  /* Update multi-block quadrilateral mesh exterior nodes. */
+  Update_All_Exterior_Nodes();
+
+  /* Update geometric properties of multi-block quadrilateral mesh cells. */
+  Update_All_Cells();
+
+  /* Check the validity of the generated mesh. */
   if (Grid_ptr == NULL){
     error_flag = 1;
   } else if (Check_Multi_Block_Grid()){
@@ -979,6 +1440,1266 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
 
   return error_flag;
 }
+
+inline void Grid2D_Quad_MultiBlock_HO::Grid_Rectangular_Box(int &_Number_of_Blocks_Idir_,
+							    int &_Number_of_Blocks_Jdir_,
+							    const double &Width,
+							    const double &Height,
+							    const int Number_of_Cells_Idir,
+							    const int Number_of_Cells_Jdir,
+							    const int Number_of_Ghost_Cells,
+							    const int Highest_Order_of_Reconstruction){
+
+  /* Create multi-block quadrilateral mesh without update. */
+  Grid_Rectangular_Box_Without_Update(_Number_of_Blocks_Idir_,
+				      _Number_of_Blocks_Jdir_,
+				      Width,
+				      Height,
+				      Number_of_Cells_Idir,
+				      Number_of_Cells_Jdir,
+				      Number_of_Ghost_Cells,
+				      Highest_Order_of_Reconstruction);
+
+  /* Update multi-block quadrilateral mesh exterior nodes. */
+  Update_All_Exterior_Nodes();
+  
+  /* Update geometric properties of multi-block quadrilateral mesh cells. */
+  Update_All_Cells();
+}
+  
+inline void Grid2D_Quad_MultiBlock_HO::Grid_Rectangular_Box(int &_Number_of_Blocks_Idir_,
+							    int &_Number_of_Blocks_Jdir_,
+							    const double &Width,
+							    const double &Height,
+							    const int Stretching_Flag,
+							    const int Stretching_Type_Idir,
+							    const int Stretching_Type_Jdir,
+							    const double &Stretching_Factor_Idir,
+							    const double &Stretching_Factor_Jdir,
+							    const int Number_of_Cells_Idir,
+							    const int Number_of_Cells_Jdir,
+							    const int Number_of_Ghost_Cells,
+							    const int Highest_Order_of_Reconstruction){
+
+  /* Create multi-block quadrilateral mesh without update. */
+  Grid_Rectangular_Box_Without_Update(_Number_of_Blocks_Idir_,
+				      _Number_of_Blocks_Jdir_,
+				      Width,
+				      Height,
+				      Stretching_Flag,
+				      Stretching_Type_Idir,
+				      Stretching_Type_Jdir,
+				      Stretching_Factor_Idir,
+				      Stretching_Factor_Jdir,
+				      Number_of_Cells_Idir,
+				      Number_of_Cells_Jdir,
+				      Number_of_Ghost_Cells,
+				      Highest_Order_of_Reconstruction);
+
+  /* Update multi-block quadrilateral mesh exterior nodes. */
+  Update_All_Exterior_Nodes();
+  
+  /* Update geometric properties of multi-block quadrilateral mesh cells. */
+  Update_All_Cells();
+}
+
+inline void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate(int &_Number_of_Blocks_Idir_,
+						       int &_Number_of_Blocks_Jdir_,
+						       const double &Length,
+						       const int Flat_Plate_BC_Type,
+						       const int Stretching_Flag,
+						       const double &Stretching_Factor_Idir,
+						       const double &Stretching_Factor_Jdir,
+						       const int Number_of_Cells_Idir,
+						       const int Number_of_Cells_Jdir,
+						       const int Number_of_Ghost_Cells,
+						       const int Highest_Order_of_Reconstruction){
+
+  /* Create multi-block quadrilateral mesh without update. */
+  Grid_Flat_Plate_Without_Update(_Number_of_Blocks_Idir_,
+				 _Number_of_Blocks_Jdir_,
+				 Length,
+				 Flat_Plate_BC_Type,
+				 Stretching_Flag,
+				 Stretching_Factor_Idir,
+				 Stretching_Factor_Jdir,
+				 Number_of_Cells_Idir,
+				 Number_of_Cells_Jdir,
+				 Number_of_Ghost_Cells,
+				 Highest_Order_of_Reconstruction);
+
+  /* Update multi-block quadrilateral mesh exterior nodes. */
+  Update_All_Exterior_Nodes();
+  
+  /* Update geometric properties of multi-block quadrilateral mesh cells. */
+  Update_All_Cells();
+
+}
+
+inline void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate_NK(int &_Number_of_Blocks_Idir_,
+							  int &_Number_of_Blocks_Jdir_,
+							  const double &Length,
+							  const int Stretching_Flag,
+							  const double &Stretching_Factor_Idir,
+							  const double &Stretching_Factor_Jdir,
+							  const int Number_of_Cells_Idir,
+							  const int Number_of_Cells_Jdir,
+							  const int Number_of_Ghost_Cells,
+							  const int Highest_Order_of_Reconstruction){
+
+  /* Create multi-block quadrilateral mesh without update. */
+  Grid_Flat_Plate_NK_Without_Update(_Number_of_Blocks_Idir_,
+				    _Number_of_Blocks_Jdir_,
+				    Length,
+				    Stretching_Flag,
+				    Stretching_Factor_Idir,
+				    Stretching_Factor_Jdir,
+				    Number_of_Cells_Idir,
+				    Number_of_Cells_Jdir,
+				    Number_of_Ghost_Cells,
+				    Highest_Order_of_Reconstruction);
+
+  /* Update multi-block quadrilateral mesh exterior nodes. */
+  Update_All_Exterior_Nodes();
+  
+  /* Update geometric properties of multi-block quadrilateral mesh cells. */
+  Update_All_Cells();
+
+}
+
+inline void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate3(int &_Number_of_Blocks_Idir_,
+							int &_Number_of_Blocks_Jdir_,
+							const double &Length,
+							const int &Stretching_Flag,
+							const double &Stretching_Factor_Idir,
+							const double &Stretching_Factor_Jdir,
+							const int Number_of_Cells_Idir,
+							const int Number_of_Cells_Jdir,
+							const int Number_of_Ghost_Cells,
+							const int Highest_Order_of_Reconstruction){
+
+  /* Create multi-block quadrilateral mesh without update. */
+  Grid_Flat_Plate3_Without_Update(_Number_of_Blocks_Idir_,
+				  _Number_of_Blocks_Jdir_,
+				  Length,
+				  Stretching_Flag,
+				  Stretching_Factor_Idir,
+				  Stretching_Factor_Jdir,
+				  Number_of_Cells_Idir,
+				  Number_of_Cells_Jdir,
+				  Number_of_Ghost_Cells,
+				  Highest_Order_of_Reconstruction);
+
+  /* Update multi-block quadrilateral mesh exterior nodes. */
+  Update_All_Exterior_Nodes();
+  
+  /* Update geometric properties of multi-block quadrilateral mesh cells. */
+  Update_All_Cells();
+
+}
+
+inline void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate4(int &_Number_of_Blocks_Idir_,
+							int &_Number_of_Blocks_Jdir_,
+							const double &Length,
+							const int &Stretching_Flag,
+							const double &Stretching_Factor_Idir,
+							const double &Stretching_Factor_Jdir,
+							const int Number_of_Cells_Idir,
+							const int Number_of_Cells_Jdir,
+							const int Number_of_Ghost_Cells,
+							const int Highest_Order_of_Reconstruction){
+
+  /* Create multi-block quadrilateral mesh without update. */
+  Grid_Flat_Plate4_Without_Update(_Number_of_Blocks_Idir_,
+				  _Number_of_Blocks_Jdir_,
+				  Length,
+				  Stretching_Flag,
+				  Stretching_Factor_Idir,
+				  Stretching_Factor_Jdir,
+				  Number_of_Cells_Idir,
+				  Number_of_Cells_Jdir,
+				  Number_of_Ghost_Cells,
+				  Highest_Order_of_Reconstruction);
+
+  /* Update multi-block quadrilateral mesh exterior nodes. */
+  Update_All_Exterior_Nodes();
+  
+  /* Update geometric properties of multi-block quadrilateral mesh cells. */
+  Update_All_Cells();
+
+}
+
+inline void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate9(int &_Number_of_Blocks_Idir_,
+							int &_Number_of_Blocks_Jdir_,
+							const double &Length,
+							const int &Flat_Plate_BC_Type,
+							const int &Stretching_Flag,
+							const double &Stretching_Factor_Idir,
+							const double &Stretching_Factor_Jdir,
+							const int Number_of_Cells_Idir,
+							const int Number_of_Cells_Jdir,
+							const int Number_of_Ghost_Cells,
+							const int Highest_Order_of_Reconstruction){
+
+  /* Create multi-block quadrilateral mesh without update. */
+  Grid_Flat_Plate9_Without_Update(_Number_of_Blocks_Idir_,
+				  _Number_of_Blocks_Jdir_,
+				  Length,
+				  Flat_Plate_BC_Type,
+				  Stretching_Flag,
+				  Stretching_Factor_Idir,
+				  Stretching_Factor_Jdir,
+				  Number_of_Cells_Idir,
+				  Number_of_Cells_Jdir,
+				  Number_of_Ghost_Cells,
+				  Highest_Order_of_Reconstruction);
+
+  /* Update multi-block quadrilateral mesh exterior nodes. */
+  Update_All_Exterior_Nodes();
+  
+  /* Update geometric properties of multi-block quadrilateral mesh cells. */
+  Update_All_Cells();
+
+}
+
+inline void Grid2D_Quad_MultiBlock_HO::Grid_1D_Flame(int &_Number_of_Blocks_Idir_,
+						     int &_Number_of_Blocks_Jdir_,
+						     const double &Length,
+						     const double &Heigth,
+						     const int Number_of_Cells_Idir,
+						     const int Number_of_Cells_Jdir,
+						     const int Number_of_Ghost_Cells,
+						     const int Highest_Order_of_Reconstruction){
+
+  /* Create multi-block quadrilateral mesh without update. */
+  Grid_1D_Flame_Without_Update(_Number_of_Blocks_Idir_,
+			       _Number_of_Blocks_Jdir_,
+			       Length,
+			       Heigth,
+			       Number_of_Cells_Idir,
+			       Number_of_Cells_Jdir,
+			       Number_of_Ghost_Cells,
+			       Highest_Order_of_Reconstruction);
+
+  /* Update multi-block quadrilateral mesh exterior nodes. */
+  Update_All_Exterior_Nodes();
+  
+  /* Update geometric properties of multi-block quadrilateral mesh cells. */
+  Update_All_Cells();
+
+}
+  
+inline void Grid2D_Quad_MultiBlock_HO::Grid_2D_Laminar_Flame(int &_Number_of_Blocks_Idir_,
+							     int &_Number_of_Blocks_Jdir_,
+							     const double &Length,
+							     const double &Heigth,
+							     const int Number_of_Cells_Idir,
+							     const int Number_of_Cells_Jdir, 
+							     const int Number_of_Ghost_Cells,
+							     const int Highest_Order_of_Reconstruction,
+							     const int Flame_Type_Flag){
+
+  /* Create multi-block quadrilateral mesh without update. */
+  Grid_2D_Laminar_Flame_Without_Update(_Number_of_Blocks_Idir_,
+				       _Number_of_Blocks_Jdir_,
+				       Length,
+				       Heigth,
+				       Number_of_Cells_Idir,
+				       Number_of_Cells_Jdir, 
+				       Number_of_Ghost_Cells,
+				       Highest_Order_of_Reconstruction,
+				       Flame_Type_Flag);
+
+  /* Update multi-block quadrilateral mesh exterior nodes. */
+  Update_All_Exterior_Nodes();
+  
+  /* Update geometric properties of multi-block quadrilateral mesh cells. */
+  Update_All_Cells();
+
+}
+
+inline void Grid2D_Quad_MultiBlock_HO::Grid_Pipe(int &_Number_of_Blocks_Idir_,
+						 int &_Number_of_Blocks_Jdir_,
+						 const double &Length,
+						 const double &Radius,
+						 const int Stretching_Flag,
+						 const double Stretching_Factor,
+						 const int Number_of_Cells_Idir,
+						 const int Number_of_Cells_Jdir,
+						 const int Number_of_Ghost_Cells,
+						 const int Highest_Order_of_Reconstruction){
+
+  /* Create multi-block quadrilateral mesh without update. */
+  Grid_Pipe_Without_Update(_Number_of_Blocks_Idir_,
+			   _Number_of_Blocks_Jdir_,
+			   Length,
+			   Radius,
+			   Stretching_Flag,
+			   Stretching_Factor,
+			   Number_of_Cells_Idir,
+			   Number_of_Cells_Jdir,
+			   Number_of_Ghost_Cells,
+			   Highest_Order_of_Reconstruction);
+
+  /* Update multi-block quadrilateral mesh exterior nodes. */
+  Update_All_Exterior_Nodes();
+  
+  /* Update geometric properties of multi-block quadrilateral mesh cells. */
+  Update_All_Cells();
+}  
+
+inline void Grid2D_Quad_MultiBlock_HO::Grid_Pipe(int &_Number_of_Blocks_Idir_,
+						 int &_Number_of_Blocks_Jdir_,
+						 const double &Length,
+						 const double &Radius,
+						 const int &Axisymmetric,
+						 const int Number_of_Cells_Idir,
+						 const int Number_of_Cells_Jdir,
+						 const int Number_of_Ghost_Cells,
+						 const int Highest_Order_of_Reconstruction){
+
+  /* Create multi-block quadrilateral mesh without update. */
+  Grid_Pipe_Without_Update(_Number_of_Blocks_Idir_,
+			   _Number_of_Blocks_Jdir_,
+			   Length,
+			   Radius,
+			   Axisymmetric,
+			   Number_of_Cells_Idir,
+			   Number_of_Cells_Jdir,
+			   Number_of_Ghost_Cells,
+			   Highest_Order_of_Reconstruction);
+
+  /* Update multi-block quadrilateral mesh exterior nodes. */
+  Update_All_Exterior_Nodes();
+  
+  /* Update geometric properties of multi-block quadrilateral mesh cells. */
+  Update_All_Cells();
+
+}
+  
+inline void Grid2D_Quad_MultiBlock_HO::Grid_Blunt_Body(int &_Number_of_Blocks_Idir_,
+						       int &_Number_of_Blocks_Jdir_,
+						       const double &Radius,
+						       const double &Mach_Number,
+						       const int Number_of_Cells_Idir,
+						       const int Number_of_Cells_Jdir,
+						       const int Number_of_Ghost_Cells,
+						       const int Highest_Order_of_Reconstruction){
+
+  /* Create multi-block quadrilateral mesh without update. */
+  Grid_Blunt_Body_Without_Update(_Number_of_Blocks_Idir_,
+				 _Number_of_Blocks_Jdir_,
+				 Radius,
+				 Mach_Number,
+				 Number_of_Cells_Idir,
+				 Number_of_Cells_Jdir,
+				 Number_of_Ghost_Cells,
+				 Highest_Order_of_Reconstruction);
+
+  /* Update multi-block quadrilateral mesh exterior nodes. */
+  Update_All_Exterior_Nodes();
+  
+  /* Update geometric properties of multi-block quadrilateral mesh cells. */
+  Update_All_Cells();
+
+}
+
+inline void Grid2D_Quad_MultiBlock_HO::Grid_Rocket_Motor(int &_Number_of_Blocks_Idir_,
+							 int &_Number_of_Blocks_Jdir_,
+							 const double &Length_Chamber,
+							 const double &Radius_Chamber,
+							 const double &Length_Chamber_To_Throat,
+							 const double &Length_Nozzle,
+							 const double &Radius_Nozzle_Exit,
+							 const double &Radius_Nozzle_Throat,
+							 const double &Radius_Grain,
+							 const int &Nozzle_Type,
+							 const int &Chamber_BC_Type,
+							 const int &Stretching_Flag,
+							 const int Stretching_Type_Jdir,
+							 const double &Stretching_Factor_Idir,
+							 const double &Stretching_Factor_Jdir,
+							 const int Number_of_Cells_Idir,
+							 const int Number_of_Cells_Jdir,
+							 const int Number_of_Ghost_Cells,
+							 const int Highest_Order_of_Reconstruction){
+
+  /* Create multi-block quadrilateral mesh without update. */
+  Grid_Rocket_Motor_Without_Update(_Number_of_Blocks_Idir_,
+				   _Number_of_Blocks_Jdir_,
+				   Length_Chamber,
+				   Radius_Chamber,
+				   Length_Chamber_To_Throat,
+				   Length_Nozzle,
+				   Radius_Nozzle_Exit,
+				   Radius_Nozzle_Throat,
+				   Radius_Grain,
+				   Nozzle_Type,
+				   Chamber_BC_Type,
+				   Stretching_Flag,
+				   Stretching_Type_Jdir,
+				   Stretching_Factor_Idir,
+				   Stretching_Factor_Jdir,
+				   Number_of_Cells_Idir,
+				   Number_of_Cells_Jdir,
+				   Number_of_Ghost_Cells,
+				   Highest_Order_of_Reconstruction);
+
+  /* Update multi-block quadrilateral mesh exterior nodes. */
+  Update_All_Exterior_Nodes();
+  
+  /* Update geometric properties of multi-block quadrilateral mesh cells. */
+  Update_All_Cells();
+
+}
+  
+inline void Grid2D_Quad_MultiBlock_HO::Grid_Nozzleless_Rocket_Motor(int &_Number_of_Blocks_Idir_,
+								    int &_Number_of_Blocks_Jdir_,
+								    const double &Length_Chamber,
+								    const double &Radius_Chamber,
+								    const double &Length_Nozzle,
+								    const double &Radius_Nozzle_Exit,
+								    const int &Chamber_BC_Type,
+								    const int &Stretching_Flag,
+								    const int Stretching_Type_Jdir,
+								    const double &Stretching_Factor_Idir,
+								    const double &Stretching_Factor_Jdir,
+								    const int Number_of_Cells_Idir,
+								    const int Number_of_Cells_Jdir,
+								    const int Number_of_Ghost_Cells,
+								    const int Highest_Order_of_Reconstruction){
+
+  /* Create multi-block quadrilateral mesh without update. */
+
+  Grid_Nozzleless_Rocket_Motor_Without_Update(_Number_of_Blocks_Idir_,
+					      _Number_of_Blocks_Jdir_,
+					      Length_Chamber,
+					      Radius_Chamber,
+					      Length_Nozzle,
+					      Radius_Nozzle_Exit,
+					      Chamber_BC_Type,
+					      Stretching_Flag,
+					      Stretching_Type_Jdir,
+					      Stretching_Factor_Idir,
+					      Stretching_Factor_Jdir,
+					      Number_of_Cells_Idir,
+					      Number_of_Cells_Jdir,
+					      Number_of_Ghost_Cells,
+					      Highest_Order_of_Reconstruction);
+
+  /* Update multi-block quadrilateral mesh exterior nodes. */
+  Update_All_Exterior_Nodes();
+  
+  /* Update geometric properties of multi-block quadrilateral mesh cells. */
+  Update_All_Cells();
+
+}
+
+inline void Grid2D_Quad_MultiBlock_HO::Grid_Nozzle(int &_Number_of_Blocks_Idir_,
+						   int &_Number_of_Blocks_Jdir_,
+						   const double &Length_Nozzle,
+						   const double &Radius_Chamber,
+						   const double &Radius_Nozzle_Exit,
+						   const double &Radius_Nozzle_Throat,
+						   const int &Nozzle_Type,
+						   const int &Stretching_Flag,
+						   const int &Stretching_Type_Idir,
+						   const int &Stretching_Type_Jdir,
+						   const double &Stretching_Factor_Idir,
+						   const double &Stretching_Factor_Jdir,
+						   const int Number_of_Cells_Idir,
+						   const int Number_of_Cells_Jdir,
+						   const int Number_of_Ghost_Cells,
+						   const int Highest_Order_of_Reconstruction){
+
+  /* Create multi-block quadrilateral mesh without update. */
+  Grid_Nozzle_Without_Update(_Number_of_Blocks_Idir_,
+			     _Number_of_Blocks_Jdir_,
+			     Length_Nozzle,
+			     Radius_Chamber,
+			     Radius_Nozzle_Exit,
+			     Radius_Nozzle_Throat,
+			     Nozzle_Type,
+			     Stretching_Flag,
+			     Stretching_Type_Idir,
+			     Stretching_Type_Jdir,
+			     Stretching_Factor_Idir,
+			     Stretching_Factor_Jdir,
+			     Number_of_Cells_Idir,
+			     Number_of_Cells_Jdir,
+			     Number_of_Ghost_Cells,
+			     Highest_Order_of_Reconstruction);
+
+  /* Update multi-block quadrilateral mesh exterior nodes. */
+  Update_All_Exterior_Nodes();
+  
+  /* Update geometric properties of multi-block quadrilateral mesh cells. */
+  Update_All_Cells();
+
+}
+  
+inline void Grid2D_Quad_MultiBlock_HO::Grid_Circular_Cylinder(int &_Number_of_Blocks_Idir_,
+							      int &_Number_of_Blocks_Jdir_,
+							      const double &Radius,
+							      const int Stretching_Type_Idir,
+							      const int Stretching_Type_Jdir,
+							      const double &Stretching_Factor_Idir,
+							      const double &Stretching_Factor_Jdir,
+							      const int Number_of_Cells_Idir,
+							      const int Number_of_Cells_Jdir,
+							      const int Number_of_Ghost_Cells,
+							      const int Highest_Order_of_Reconstruction){
+
+  /* Create multi-block quadrilateral mesh without update. */
+  Grid_Circular_Cylinder_Without_Update(_Number_of_Blocks_Idir_,
+					_Number_of_Blocks_Jdir_,
+					Radius,
+					Stretching_Type_Idir,
+					Stretching_Type_Jdir,
+					Stretching_Factor_Idir,
+					Stretching_Factor_Jdir,
+					Number_of_Cells_Idir,
+					Number_of_Cells_Jdir,
+					Number_of_Ghost_Cells,
+					Highest_Order_of_Reconstruction);
+
+  /* Update multi-block quadrilateral mesh exterior nodes. */
+  Update_All_Exterior_Nodes();
+  
+  /* Update geometric properties of multi-block quadrilateral mesh cells. */
+  Update_All_Cells();
+
+}
+
+inline void Grid2D_Quad_MultiBlock_HO::Grid_Circular_Cylinder(int &_Number_of_Blocks_Idir_,
+							      int &_Number_of_Blocks_Jdir_,
+							      const double &Inner_Radius,
+							      const double &Outer_Radius,
+							      const int Stretching_Type_Idir,
+							      const int Stretching_Type_Jdir,
+							      const double &Stretching_Factor_Idir,
+							      const double &Stretching_Factor_Jdir,
+							      const int Number_of_Cells_Idir,
+							      const int Number_of_Cells_Jdir,
+							      const int Number_of_Ghost_Cells,
+							      const int Highest_Order_of_Reconstruction){
+
+  /* Create multi-block quadrilateral mesh without update. */
+  Grid_Circular_Cylinder_Without_Update(_Number_of_Blocks_Idir_,
+					_Number_of_Blocks_Jdir_,
+					Inner_Radius,
+					Outer_Radius,
+					Stretching_Type_Idir,
+					Stretching_Type_Jdir,
+					Stretching_Factor_Idir,
+					Stretching_Factor_Jdir,
+					Number_of_Cells_Idir,
+					Number_of_Cells_Jdir,
+					Number_of_Ghost_Cells,
+					Highest_Order_of_Reconstruction);
+
+  /* Update multi-block quadrilateral mesh exterior nodes. */
+  Update_All_Exterior_Nodes();
+  
+  /* Update geometric properties of multi-block quadrilateral mesh cells. */
+  Update_All_Cells();
+
+}
+
+inline void Grid2D_Quad_MultiBlock_HO::Grid_Annulus(int &_Number_of_Blocks_Idir_,
+						    int &_Number_of_Blocks_Jdir_,
+						    const double &Inner_Radius,
+						    const double &Outer_Radius,
+						    const double &ThetaStart,
+						    const double &ThetaEnd,
+						    const int Stretching_Type_Idir,
+						    const int Stretching_Type_Jdir,
+						    const double &Stretching_Factor_Idir,
+						    const double &Stretching_Factor_Jdir,
+						    const int Number_of_Cells_Idir,
+						    const int Number_of_Cells_Jdir,
+						    const int Number_of_Ghost_Cells,
+						    const int Highest_Order_of_Reconstruction){
+
+  /* Create multi-block quadrilateral mesh without update. */
+  Grid_Annulus_Without_Update(_Number_of_Blocks_Idir_,
+			      _Number_of_Blocks_Jdir_,
+			      Inner_Radius,
+			      Outer_Radius,
+			      ThetaStart,
+			      ThetaEnd,
+			      Stretching_Type_Idir,
+			      Stretching_Type_Jdir,
+			      Stretching_Factor_Idir,
+			      Stretching_Factor_Jdir,
+			      Number_of_Cells_Idir,
+			      Number_of_Cells_Jdir,
+			      Number_of_Ghost_Cells,
+			      Highest_Order_of_Reconstruction);
+
+  /* Update multi-block quadrilateral mesh exterior nodes. */
+  Update_All_Exterior_Nodes();
+  
+  /* Update geometric properties of multi-block quadrilateral mesh cells. */
+  Update_All_Cells();
+
+}
+
+inline void Grid2D_Quad_MultiBlock_HO::Grid_Ellipse(int &_Number_of_Blocks_Idir_,
+						    int &_Number_of_Blocks_Jdir_,
+						    const double &A,
+						    const double &B,
+						    const int Number_of_Cells_Idir,
+						    const int Number_of_Cells_Jdir,
+						    const int Number_of_Ghost_Cells,
+						    const int Highest_Order_of_Reconstruction){
+
+  /* Create multi-block quadrilateral mesh without update. */
+  Grid_Ellipse_Without_Update(_Number_of_Blocks_Idir_,
+			      _Number_of_Blocks_Jdir_,
+			      A,
+			      B,
+			      Number_of_Cells_Idir,
+			      Number_of_Cells_Jdir,
+			      Number_of_Ghost_Cells,
+			      Highest_Order_of_Reconstruction);
+
+  /* Update multi-block quadrilateral mesh exterior nodes. */
+  Update_All_Exterior_Nodes();
+  
+  /* Update geometric properties of multi-block quadrilateral mesh cells. */
+  Update_All_Cells();
+
+}
+  
+inline void Grid2D_Quad_MultiBlock_HO::Grid_NACA_Aerofoil(int &_Number_of_Blocks_Idir_,
+							  int &_Number_of_Blocks_Jdir_,
+							  char *NACA_Aerofoil_Type_ptr,
+							  const double &Chord_Length,
+							  const int Number_of_Cells_Idir,
+							  const int Number_of_Cells_Jdir,
+							  const int Number_of_Ghost_Cells,
+							  const int Highest_Order_of_Reconstruction){
+
+  /* Create multi-block quadrilateral mesh without update. */
+  Grid_NACA_Aerofoil_Without_Update(_Number_of_Blocks_Idir_,
+				    _Number_of_Blocks_Jdir_,
+				    NACA_Aerofoil_Type_ptr,
+				    Chord_Length,
+				    Number_of_Cells_Idir,
+				    Number_of_Cells_Jdir,
+				    Number_of_Ghost_Cells,
+				    Highest_Order_of_Reconstruction);
+
+  /* Update multi-block quadrilateral mesh exterior nodes. */
+  Update_All_Exterior_Nodes();
+  
+  /* Update geometric properties of multi-block quadrilateral mesh cells. */
+  Update_All_Cells();
+
+}
+  
+inline void Grid2D_Quad_MultiBlock_HO::Grid_Free_Jet(int &_Number_of_Blocks_Idir_,
+						     int &_Number_of_Blocks_Jdir_,
+						     const double &Radius,
+						     const int Number_of_Cells_Idir,
+						     const int Number_of_Cells_Jdir,
+						     const int Number_of_Ghost_Cells,
+						     const int Highest_Order_of_Reconstruction) {
+
+  /* Create multi-block quadrilateral mesh without update. */
+  Grid_Free_Jet_Without_Update(_Number_of_Blocks_Idir_,
+			       _Number_of_Blocks_Jdir_,
+			       Radius,
+			       Number_of_Cells_Idir,
+			       Number_of_Cells_Jdir,
+			       Number_of_Ghost_Cells,
+			       Highest_Order_of_Reconstruction);
+
+  /* Update multi-block quadrilateral mesh exterior nodes. */
+  Update_All_Exterior_Nodes();
+  
+  /* Update geometric properties of multi-block quadrilateral mesh cells. */
+  Update_All_Cells();
+
+}
+
+inline void Grid2D_Quad_MultiBlock_HO::Grid_Wedge(int &_Number_of_Blocks_Idir_,
+						  int &_Number_of_Blocks_Jdir_,
+						  const double &Wedge_Angle,
+						  const double &Wedge_Length,
+						  const int &Wedge_BC_Type,
+						  const int &Stretching_Flag,
+						  const double &Stretching_Factor_Idir,
+						  const double &Stretching_Factor_Jdir,
+						  const int Number_of_Cells_Idir,
+						  const int Number_of_Cells_Jdir,
+						  const int Number_of_Ghost_Cells,
+						  const int Highest_Order_of_Reconstruction){
+
+  /* Create multi-block quadrilateral mesh without update. */
+  Grid_Wedge_Without_Update(_Number_of_Blocks_Idir_,
+			    _Number_of_Blocks_Jdir_,
+			    Wedge_Angle,
+			    Wedge_Length,
+			    Wedge_BC_Type,
+			    Stretching_Flag,
+			    Stretching_Factor_Idir,
+			    Stretching_Factor_Jdir,
+			    Number_of_Cells_Idir,
+			    Number_of_Cells_Jdir,
+			    Number_of_Ghost_Cells,
+			    Highest_Order_of_Reconstruction);
+
+  /* Update multi-block quadrilateral mesh exterior nodes. */
+  Update_All_Exterior_Nodes();
+  
+  /* Update geometric properties of multi-block quadrilateral mesh cells. */
+  Update_All_Cells();
+
+}
+
+inline void Grid2D_Quad_MultiBlock_HO::Grid_Unsteady_Blunt_Body(int &_Number_of_Blocks_Idir_,
+								int &_Number_of_Blocks_Jdir_,
+								const double &Radius,
+								const double &Mach_Number,
+								const int Number_of_Cells_Idir,
+								const int Number_of_Cells_Jdir,
+								const int Number_of_Ghost_Cells,
+								const int Highest_Order_of_Reconstruction){
+
+  /* Create multi-block quadrilateral mesh without update. */
+  Grid_Unsteady_Blunt_Body_Without_Update(_Number_of_Blocks_Idir_,
+					  _Number_of_Blocks_Jdir_,
+					  Radius,
+					  Mach_Number,
+					  Number_of_Cells_Idir,
+					  Number_of_Cells_Jdir,
+					  Number_of_Ghost_Cells,
+					  Highest_Order_of_Reconstruction);
+
+  /* Update multi-block quadrilateral mesh exterior nodes. */
+  Update_All_Exterior_Nodes();
+  
+  /* Update geometric properties of multi-block quadrilateral mesh cells. */
+  Update_All_Cells();
+
+}
+
+inline void Grid2D_Quad_MultiBlock_HO::Grid_Ringleb_Flow(int &_Number_of_Blocks_Idir_,
+							 int &_Number_of_Blocks_Jdir_,
+							 const double &Inner_Streamline_Number,
+							 const double &Outer_Streamline_Number,
+							 const double &Isotach_Line,
+							 const int Number_of_Cells_Idir,
+							 const int Number_of_Cells_Jdir,
+							 const int Number_of_Ghost_Cells,
+							 const int Highest_Order_of_Reconstruction){
+
+  /* Create multi-block quadrilateral mesh without update. */
+  Grid_Ringleb_Flow_Without_Update(_Number_of_Blocks_Idir_,
+				   _Number_of_Blocks_Jdir_,
+				   Inner_Streamline_Number,
+				   Outer_Streamline_Number,
+				   Isotach_Line,
+				   Number_of_Cells_Idir,
+				   Number_of_Cells_Jdir,
+				   Number_of_Ghost_Cells,
+				   Highest_Order_of_Reconstruction);
+
+  /* Update multi-block quadrilateral mesh exterior nodes. */
+  Update_All_Exterior_Nodes();
+  
+  /* Update geometric properties of multi-block quadrilateral mesh cells. */
+  Update_All_Cells();
+
+}
+
+inline void Grid2D_Quad_MultiBlock_HO::Grid_Bump_Channel_Flow(int &_Number_of_Blocks_Idir_,
+							      int &_Number_of_Blocks_Jdir_,
+							      const int Smooth_Bump,
+							      const int Number_of_Cells_Idir,
+							      const int Number_of_Cells_Jdir,
+							      const int Number_of_Ghost_Cells,
+							      const int Highest_Order_of_Reconstruction) {
+
+  /* Create multi-block quadrilateral mesh without update. */
+  Grid_Bump_Channel_Flow_Without_Update(_Number_of_Blocks_Idir_,
+					_Number_of_Blocks_Jdir_,
+					Smooth_Bump,
+					Number_of_Cells_Idir,
+					Number_of_Cells_Jdir,
+					Number_of_Ghost_Cells,
+					Highest_Order_of_Reconstruction);
+
+  /* Update multi-block quadrilateral mesh exterior nodes. */
+  Update_All_Exterior_Nodes();
+  
+  /* Update geometric properties of multi-block quadrilateral mesh cells. */
+  Update_All_Cells();
+
+}
+
+inline void Grid2D_Quad_MultiBlock_HO::Grid_Jet_Flow(int &_Number_of_Blocks_Idir_,
+						     int &_Number_of_Blocks_Jdir_,
+						     const double &Radius,
+						     const double &Mach,
+						     const int &Stretching_Type_Idir,
+						     const int &Stretching_Type_Jdir,
+						     const double &Stretching_Factor_Idir,
+						     const double &Stretching_Factor_Jdir,
+						     const int Number_of_Cells_Idir,
+						     const int Number_of_Cells_Jdir,
+						     const int Number_of_Ghost_Cells,
+						     const int Highest_Order_of_Reconstruction){
+
+  /* Create multi-block quadrilateral mesh without update. */
+  Grid_Jet_Flow_Without_Update(_Number_of_Blocks_Idir_,
+			       _Number_of_Blocks_Jdir_,
+			       Radius,
+			       Mach,
+			       Stretching_Type_Idir,
+			       Stretching_Type_Jdir,
+			       Stretching_Factor_Idir,
+			       Stretching_Factor_Jdir,
+			       Number_of_Cells_Idir,
+			       Number_of_Cells_Jdir,
+			       Number_of_Ghost_Cells,
+			       Highest_Order_of_Reconstruction);
+
+  /* Update multi-block quadrilateral mesh exterior nodes. */
+  Update_All_Exterior_Nodes();
+  
+  /* Update geometric properties of multi-block quadrilateral mesh cells. */
+  Update_All_Cells();
+
+}
+
+inline void Grid2D_Quad_MultiBlock_HO::Grid_Mixing_Layer(int &_Number_of_Blocks_Idir_,
+							 int &_Number_of_Blocks_Jdir_,
+							 const double &Length,
+							 const double &Mach,
+							 const int &Stretching_Type_Idir,
+							 const int &Stretching_Type_Jdir,
+							 const double &Stretching_Factor_Idir,
+							 const double &Stretching_Factor_Jdir,
+							 const int Number_of_Cells_Idir,
+							 const int Number_of_Cells_Jdir,
+							 const int Number_of_Ghost_Cells,
+							 const int Highest_Order_of_Reconstruction){
+
+  /* Create multi-block quadrilateral mesh without update. */
+  Grid_Mixing_Layer_Without_Update(_Number_of_Blocks_Idir_,
+				   _Number_of_Blocks_Jdir_,
+				   Length,
+				   Mach,
+				   Stretching_Type_Idir,
+				   Stretching_Type_Jdir,
+				   Stretching_Factor_Idir,
+				   Stretching_Factor_Jdir,
+				   Number_of_Cells_Idir,
+				   Number_of_Cells_Jdir,
+				   Number_of_Ghost_Cells,
+				   Highest_Order_of_Reconstruction);
+
+  /* Update multi-block quadrilateral mesh exterior nodes. */
+  Update_All_Exterior_Nodes();
+  
+  /* Update geometric properties of multi-block quadrilateral mesh cells. */
+  Update_All_Cells();
+
+}
+
+inline void Grid2D_Quad_MultiBlock_HO::Grid_Backward_Facing_Step(int &_Number_of_Blocks_Idir_,
+								 int &_Number_of_Blocks_Jdir_,
+								 const double &Step_Height,
+								 const double &Top_Wall_Deflection,
+								 const double &Stretching_Factor_Idir,
+								 const double &Stretching_Factor_Jdir,
+								 const int Number_of_Cells_Idir,
+								 const int Number_of_Cells_Jdir,
+								 const int Number_of_Ghost_Cells,
+								 const int Highest_Order_of_Reconstruction){
+
+  /* Create multi-block quadrilateral mesh without update. */
+  Grid_Backward_Facing_Step_Without_Update(_Number_of_Blocks_Idir_,
+					   _Number_of_Blocks_Jdir_,
+					   Step_Height,
+					   Top_Wall_Deflection,
+					   Stretching_Factor_Idir,
+					   Stretching_Factor_Jdir,
+					   Number_of_Cells_Idir,
+					   Number_of_Cells_Jdir,
+					   Number_of_Ghost_Cells,
+					   Highest_Order_of_Reconstruction);
+
+  /* Update multi-block quadrilateral mesh exterior nodes. */
+  Update_All_Exterior_Nodes();
+  
+  /* Update geometric properties of multi-block quadrilateral mesh cells. */
+  Update_All_Cells();
+
+}
+
+inline void Grid2D_Quad_MultiBlock_HO::Grid_Forward_Facing_Step(int &_Number_of_Blocks_Idir_,
+								int &_Number_of_Blocks_Jdir_,
+								const double &Step_Height,
+								const double &Channel_Gap,
+								const double &Stretching_Factor_Idir,
+								const double &Stretching_Factor_Jdir,
+								const int Number_of_Cells_Idir,
+								const int Number_of_Cells_Jdir,
+								const int Number_of_Ghost_Cells,
+								const int Highest_Order_of_Reconstruction){
+
+  /* Create multi-block quadrilateral mesh without update. */
+  Grid_Forward_Facing_Step_Without_Update(_Number_of_Blocks_Idir_,
+					  _Number_of_Blocks_Jdir_,
+					  Step_Height,
+					  Channel_Gap,
+					  Stretching_Factor_Idir,
+					  Stretching_Factor_Jdir,
+					  Number_of_Cells_Idir,
+					  Number_of_Cells_Jdir,
+					  Number_of_Ghost_Cells,
+					  Highest_Order_of_Reconstruction);
+
+  /* Update multi-block quadrilateral mesh exterior nodes. */
+  Update_All_Exterior_Nodes();
+  
+  /* Update geometric properties of multi-block quadrilateral mesh cells. */
+  Update_All_Cells();
+
+}
+
+inline void Grid2D_Quad_MultiBlock_HO::Grid_Desolvation_Chamber(const int &Chamber_BC_Type,
+								int &_Number_of_Blocks_Idir_,
+								int &_Number_of_Blocks_Jdir_,
+								const int Number_of_Cells_Idir,
+								const int Number_of_Cells_Jdir,
+								const int Number_of_Ghost_Cells,
+								const int Highest_Order_of_Reconstruction) {
+
+  /* Create multi-block quadrilateral mesh without update. */
+  Grid_Desolvation_Chamber(Chamber_BC_Type,
+			   _Number_of_Blocks_Idir_,
+			   _Number_of_Blocks_Jdir_,
+			   Number_of_Cells_Idir,
+			   Number_of_Cells_Jdir,
+			   Number_of_Ghost_Cells,
+			   Highest_Order_of_Reconstruction);
+
+  /* Update multi-block quadrilateral mesh exterior nodes. */
+  Update_All_Exterior_Nodes();
+  
+  /* Update geometric properties of multi-block quadrilateral mesh cells. */
+  Update_All_Cells();
+
+}
+
+inline void Grid2D_Quad_MultiBlock_HO::Grid_NASA_Rotor_37(int &_Number_of_Blocks_Idir_,
+							  int &_Number_of_Blocks_Jdir_,
+							  const double &Rotor_Percent_Span,
+							  const int Number_of_Cells_Idir,
+							  const int Number_of_Cells_Jdir,
+							  const int Number_of_Ghost_Cells,
+							  const int Highest_Order_of_Reconstruction){
+
+  /* Create multi-block quadrilateral mesh without update. */
+  Grid_NASA_Rotor_37_Without_Update(_Number_of_Blocks_Idir_,
+				    _Number_of_Blocks_Jdir_,
+				    Rotor_Percent_Span,
+				    Number_of_Cells_Idir,
+				    Number_of_Cells_Jdir,
+				    Number_of_Ghost_Cells,
+				    Highest_Order_of_Reconstruction);
+
+  /* Update multi-block quadrilateral mesh exterior nodes. */
+  Update_All_Exterior_Nodes();
+  
+  /* Update geometric properties of multi-block quadrilateral mesh cells. */
+  Update_All_Cells();
+
+}
+
+inline void Grid2D_Quad_MultiBlock_HO::Grid_NASA_Rotor_67(int &_Number_of_Blocks_Idir_,
+							  int &_Number_of_Blocks_Jdir_,
+							  const double &Rotor_Percent_Span,
+							  const int Number_of_Cells_Idir,
+							  const int Number_of_Cells_Jdir,
+							  const int Number_of_Ghost_Cells,
+							  const int Highest_Order_of_Reconstruction){
+
+  /* Create multi-block quadrilateral mesh without update. */
+  Grid_NASA_Rotor_67_Without_Update(_Number_of_Blocks_Idir_,
+				    _Number_of_Blocks_Jdir_,
+				    Rotor_Percent_Span,
+				    Number_of_Cells_Idir,
+				    Number_of_Cells_Jdir,
+				    Number_of_Ghost_Cells,
+				    Highest_Order_of_Reconstruction);
+
+  /* Update multi-block quadrilateral mesh exterior nodes. */
+  Update_All_Exterior_Nodes();
+  
+  /* Update geometric properties of multi-block quadrilateral mesh cells. */
+  Update_All_Cells();
+
+}
+
+inline void Grid2D_Quad_MultiBlock_HO::Grid_Driven_Cavity_Flow(int &_Number_of_Blocks_Idir_,
+							       int &_Number_of_Blocks_Jdir_,
+							       const double &Width,
+							       const double &Height,
+							       const int &Stretching_Type_Idir,
+							       const int &Stretching_Type_Jdir,
+							       const double &Stretching_Factor_Idir,
+							       const double &Stretching_Factor_Jdir,
+							       const int Number_of_Cells_Idir,
+							       const int Number_of_Cells_Jdir,
+							       const int Number_of_Ghost_Cells,
+							       const int Highest_Order_of_Reconstruction){
+
+  /* Create multi-block quadrilateral mesh without update. */
+  Grid_Driven_Cavity_Flow_Without_Update(_Number_of_Blocks_Idir_,
+					 _Number_of_Blocks_Jdir_,
+					 Width,
+					 Height,
+					 Stretching_Type_Idir,
+					 Stretching_Type_Jdir,
+					 Stretching_Factor_Idir,
+					 Stretching_Factor_Jdir,
+					 Number_of_Cells_Idir,
+					 Number_of_Cells_Jdir,
+					 Number_of_Ghost_Cells,
+					 Highest_Order_of_Reconstruction);
+
+  /* Update multi-block quadrilateral mesh exterior nodes. */
+  Update_All_Exterior_Nodes();
+  
+  /* Update geometric properties of multi-block quadrilateral mesh cells. */
+  Update_All_Cells();
+
+}
+
+inline void Grid2D_Quad_MultiBlock_HO::Grid_Adiabatic_Flat_Plate(int &_Number_of_Blocks_Idir_,
+								 int &_Number_of_Blocks_Jdir_,
+								 const double &Length,
+								 const int Number_of_Cells_Idir,
+								 const int Number_of_Cells_Jdir,
+								 const int Number_of_Ghost_Cells,
+								 const int Highest_Order_of_Reconstruction){
+
+  /* Create multi-block quadrilateral mesh without update. */
+  Grid_Adiabatic_Flat_Plate_Without_Update(_Number_of_Blocks_Idir_,
+					   _Number_of_Blocks_Jdir_,
+					   Length,
+					   Number_of_Cells_Idir,
+					   Number_of_Cells_Jdir,
+					   Number_of_Ghost_Cells,
+					   Highest_Order_of_Reconstruction);
+
+  /* Update multi-block quadrilateral mesh exterior nodes. */
+  Update_All_Exterior_Nodes();
+  
+  /* Update geometric properties of multi-block quadrilateral mesh cells. */
+  Update_All_Cells();
+
+}
+
+inline void Grid2D_Quad_MultiBlock_HO::Grid_Adiabatic_Circular_Cylinder(int &_Number_of_Blocks_Idir_,
+									int &_Number_of_Blocks_Jdir_,
+									const double &Radius,
+									const int Number_of_Cells_Idir,
+									const int Number_of_Cells_Jdir,
+									const int Number_of_Ghost_Cells,
+									const int Highest_Order_of_Reconstruction){
+
+  /* Create multi-block quadrilateral mesh without update. */
+  Grid_Adiabatic_Circular_Cylinder_Without_Update(_Number_of_Blocks_Idir_,
+						  _Number_of_Blocks_Jdir_,
+						  Radius,
+						  Number_of_Cells_Idir,
+						  Number_of_Cells_Jdir,
+						  Number_of_Ghost_Cells,
+						  Highest_Order_of_Reconstruction);
+
+  /* Update multi-block quadrilateral mesh exterior nodes. */
+  Update_All_Exterior_Nodes();
+  
+  /* Update geometric properties of multi-block quadrilateral mesh cells. */
+  Update_All_Cells();
+
+}
+
+inline void Grid2D_Quad_MultiBlock_HO::Grid_Adiabatic_Circular_Cylinder(int &_Number_of_Blocks_Idir_,
+									int &_Number_of_Blocks_Jdir_,
+									const double &Inner_Radius,
+									const double &Outer_Radius,
+									const int Number_of_Cells_Idir,
+									const int Number_of_Cells_Jdir,
+									const int Number_of_Ghost_Cells,
+									const int Highest_Order_of_Reconstruction){
+
+  /* Create multi-block quadrilateral mesh without update. */
+  Grid_Adiabatic_Circular_Cylinder_Without_Update(_Number_of_Blocks_Idir_,
+						  _Number_of_Blocks_Jdir_,
+						  Inner_Radius,
+						  Outer_Radius,
+						  Number_of_Cells_Idir,
+						  Number_of_Cells_Jdir,
+						  Number_of_Ghost_Cells,
+						  Highest_Order_of_Reconstruction);
+
+  /* Update multi-block quadrilateral mesh exterior nodes. */
+  Update_All_Exterior_Nodes();
+  
+  /* Update geometric properties of multi-block quadrilateral mesh cells. */
+  Update_All_Cells();
+
+}
+
+inline void Grid2D_Quad_MultiBlock_HO::Grid_Adiabatic_Couette(int &_Number_of_Blocks_Idir_,
+							      int &_Number_of_Blocks_Jdir_,
+							      const double &Separation,
+							      const int Number_of_Cells_Idir,
+							      const int Number_of_Cells_Jdir,
+							      const int Number_of_Ghost_Cells,
+							      const int Highest_Order_of_Reconstruction){
+
+  /* Create multi-block quadrilateral mesh without update. */
+  Grid_Adiabatic_Couette_Without_Update(_Number_of_Blocks_Idir_,
+					_Number_of_Blocks_Jdir_,
+					Separation,
+					Number_of_Cells_Idir,
+					Number_of_Cells_Jdir,
+					Number_of_Ghost_Cells,
+					Highest_Order_of_Reconstruction);
+
+  /* Update multi-block quadrilateral mesh exterior nodes. */
+  Update_All_Exterior_Nodes();
+  
+  /* Update geometric properties of multi-block quadrilateral mesh cells. */
+  Update_All_Cells();
+
+}
+
+inline void Grid2D_Quad_MultiBlock_HO::Grid_Cylindrical_Encl(int &_Number_of_Blocks_Idir_,
+							     int &_Number_of_Blocks_Jdir_,
+							     const double &Length,
+							     const double &Radius,
+							     const int &Axisymmetric,
+							     const int Number_of_Cells_Idir,
+							     const int Number_of_Cells_Jdir,
+							     const int Number_of_Ghost_Cells,
+							     const int Highest_Order_of_Reconstruction){
+
+  /* Create multi-block quadrilateral mesh without update. */
+  Grid_Cylindrical_Encl_Without_Update(_Number_of_Blocks_Idir_,
+				       _Number_of_Blocks_Jdir_,
+				       Length,
+				       Radius,
+				       Axisymmetric,
+				       Number_of_Cells_Idir,
+				       Number_of_Cells_Jdir,
+				       Number_of_Ghost_Cells,
+				       Highest_Order_of_Reconstruction);
+
+  /* Update multi-block quadrilateral mesh exterior nodes. */
+  Update_All_Exterior_Nodes();
+  
+  /* Update geometric properties of multi-block quadrilateral mesh cells. */
+  Update_All_Cells();
+
+}
+
+inline void Grid2D_Quad_MultiBlock_HO::Grid_Rectangular_Encl(int &_Number_of_Blocks_Idir_,
+							     int &_Number_of_Blocks_Jdir_,
+							     const double &Width,
+							     const double &Height,
+							     const int Number_of_Cells_Idir,
+							     const int Number_of_Cells_Jdir,
+							     const int Number_of_Ghost_Cells,
+							     const int Highest_Order_of_Reconstruction){
+
+  /* Create multi-block quadrilateral mesh without update. */
+  Grid_Rectangular_Encl_Without_Update(_Number_of_Blocks_Idir_,
+				       _Number_of_Blocks_Jdir_,
+				       Width,
+				       Height,
+				       Number_of_Cells_Idir,
+				       Number_of_Cells_Jdir,
+				       Number_of_Ghost_Cells,
+				       Highest_Order_of_Reconstruction);
+
+  /* Update multi-block quadrilateral mesh exterior nodes. */
+  Update_All_Exterior_Nodes();
+  
+  /* Update geometric properties of multi-block quadrilateral mesh cells. */
+  Update_All_Cells();
+
+}
+
+inline void Grid2D_Quad_MultiBlock_HO::Grid_Tube_2D(int &_Number_of_Blocks_Idir_,
+						    int &_Number_of_Blocks_Jdir_,
+						    const double &Radius,
+						    const int Number_of_Cells_Idir,
+						    const int Number_of_Cells_Jdir,
+						    const int Number_of_Ghost_Cells,
+						    const int Highest_Order_of_Reconstruction,
+						    const int i_Stretching_Radial_Dir,
+						    const double &Stretching_Radial_Dir) {
+
+  /* Create multi-block quadrilateral mesh without update. */
+  Grid_Tube_2D_Without_Update(_Number_of_Blocks_Idir_,
+			      _Number_of_Blocks_Jdir_,
+			      Radius,
+			      Number_of_Cells_Idir,
+			      Number_of_Cells_Jdir,
+			      Number_of_Ghost_Cells,
+			      Highest_Order_of_Reconstruction,
+			      i_Stretching_Radial_Dir,
+			      Stretching_Radial_Dir);
+
+  /* Update multi-block quadrilateral mesh exterior nodes. */
+  Update_All_Exterior_Nodes();
+  
+  /* Update geometric properties of multi-block quadrilateral mesh cells. */
+  Update_All_Cells();
+
+}
+
+inline void Grid2D_Quad_MultiBlock_HO::Grid_Annulus_2D(int &_Number_of_Blocks_Idir_,
+						       int &_Number_of_Blocks_Jdir_,
+						       const double &Radius_Inner,
+						       const double &Radius_Outer,
+						       const int Number_of_Cells_Idir,
+						       const int Number_of_Cells_Jdir,
+						       const int Number_of_Ghost_Cells,
+						       const int Highest_Order_of_Reconstruction,
+						       const int i_Stretching_Radial_Dir,
+						       const double &Stretching_Radial_Dir){
+
+  /* Create multi-block quadrilateral mesh without update. */
+  Grid_Annulus_2D_Without_Update(_Number_of_Blocks_Idir_,
+				 _Number_of_Blocks_Jdir_,
+				 Radius_Inner,
+				 Radius_Outer,
+				 Number_of_Cells_Idir,
+				 Number_of_Cells_Jdir,
+				 Number_of_Ghost_Cells,
+				 Highest_Order_of_Reconstruction,
+				 i_Stretching_Radial_Dir,
+				 Stretching_Radial_Dir);
+  
+  /* Update multi-block quadrilateral mesh exterior nodes. */
+  Update_All_Exterior_Nodes();
+  
+  /* Update geometric properties of multi-block quadrilateral mesh cells. */
+  Update_All_Cells();
+
+}
+
 
 /*!
  * Writes a grid definition file for a multi-block      

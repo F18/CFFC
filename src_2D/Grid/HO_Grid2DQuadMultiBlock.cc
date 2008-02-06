@@ -270,9 +270,29 @@ void Grid2D_Quad_MultiBlock_HO::Translate_Multi_Block_Grid(const Vector2D &V) {
 
 }
 
+/*!
+ * Translate the nodes of a 2D array of 2D              
+ * quadrilateral multi-block grids.   
+ * This subroutine DOESN'T update the geometric properties
+ * of the block cells.                  
+ */
+void Grid2D_Quad_MultiBlock_HO::Translate_Multi_Block_Grid_Without_Update(const Vector2D &V) {
+
+  int i, j;
+  
+  for ( j = 0 ; j <= Number_of_Blocks_Jdir-1 ; ++j ) {
+    for ( i = 0; i <= Number_of_Blocks_Idir-1 ; ++i ) {
+      if (Grid_ptr[i][j].Node != NULL) {
+	Grid_ptr[i][j].Translate_Quad_Block_Without_Update(V);
+      } /* endif */
+    }  /* endfor */
+  }  /* endfor */
+
+}
+
 /*
  * Scales 2D array of 2D quadrilateral multi-block      
- * grids.                                               
+ * grids.
  */
 void Grid2D_Quad_MultiBlock_HO::Scale_Multi_Block_Grid(const double &Scaling_Factor) {
 
@@ -282,6 +302,26 @@ void Grid2D_Quad_MultiBlock_HO::Scale_Multi_Block_Grid(const double &Scaling_Fac
     for ( i = 0; i <= Number_of_Blocks_Idir-1 ; ++i ) {
       if (Grid_ptr[i][j].Node != NULL) {
 	Grid_ptr[i][j].Scale_Quad_Block(Scaling_Factor);
+      } /* endif */
+    }  /* endfor */
+  }  /* endfor */
+
+}
+
+/*
+ * Scales 2D array of 2D quadrilateral multi-block      
+ * grids.                               
+ * This subroutine DOESN'T update the geometric properties
+ * of the block cells.                                  
+ */
+void Grid2D_Quad_MultiBlock_HO::Scale_Multi_Block_Grid_Without_Update(const double &Scaling_Factor) {
+
+  int i, j;
+  
+  for ( j = 0 ; j <= Number_of_Blocks_Jdir-1 ; ++j ) {
+    for ( i = 0; i <= Number_of_Blocks_Idir-1 ; ++i ) {
+      if (Grid_ptr[i][j].Node != NULL) {
+	Grid_ptr[i][j].Scale_Quad_Block_Without_Update(Scaling_Factor);
       } /* endif */
     }  /* endfor */
   }  /* endfor */
@@ -306,6 +346,26 @@ void Grid2D_Quad_MultiBlock_HO::Rotate_Multi_Block_Grid(const double &Angle) {
   
 }
 
+/*
+ * Rotates 2D array of 2D quadrilateral multi-block     
+ * grids.                                               
+ * This subroutine DOESN'T update the geometric properties
+ * of the block cells.                                                                 
+ */
+void Grid2D_Quad_MultiBlock_HO::Rotate_Multi_Block_Grid_Without_Update(const double &Angle) {
+
+  int i, j;
+
+  for ( j = 0 ; j <= Number_of_Blocks_Jdir-1 ; ++j ) {
+    for ( i = 0; i <= Number_of_Blocks_Idir-1 ; ++i ) {
+      if (Grid_ptr[i][j].Node != NULL) {
+	Grid_ptr[i][j].Rotate_Quad_Block_Without_Update(Angle);
+      } /* endif */
+    }  /* endfor */
+  }  /* endfor */
+  
+}
+
 /*!
  * Reflects 2D array of 2D quadrilateral multi-block    
  * grids about y=0 axis.                                
@@ -318,6 +378,25 @@ void Grid2D_Quad_MultiBlock_HO::Reflect_Multi_Block_Grid(void) {
     for ( i = 0; i <= Number_of_Blocks_Idir-1 ; ++i ) {
       if (Grid_ptr[i][j].Node != NULL) {
 	Grid_ptr[i][j].Reflect_Quad_Block();
+      } /* endif */
+    }  /* endfor */
+  }  /* endfor */
+}
+
+/*!
+ * Reflects 2D array of 2D quadrilateral multi-block    
+ * grids about y=0 axis.                                
+ * This subroutine DOESN'T update the geometric properties
+ * of the block cells.
+ */
+void Grid2D_Quad_MultiBlock_HO::Reflect_Multi_Block_Grid_Without_Update(void) {
+
+  int i, j;
+  
+  for ( j = 0 ; j <= Number_of_Blocks_Jdir-1 ; ++j ) {
+    for ( i = 0; i <= Number_of_Blocks_Idir-1 ; ++i ) {
+      if (Grid_ptr[i][j].Node != NULL) {
+	Grid_ptr[i][j].Reflect_Quad_Block_Without_Update();
       } /* endif */
     }  /* endfor */
   }  /* endfor */
@@ -344,6 +423,37 @@ int Grid2D_Quad_MultiBlock_HO::Check_Multi_Block_Grid(void) {
 
 }
 
+/*!
+ * Update the exterior nodes in all 
+ * mesh blocks.
+ */
+void Grid2D_Quad_MultiBlock_HO::Update_All_Exterior_Nodes(void){
+  int i, j;
+  
+  for ( j = 0 ; j <= Number_of_Blocks_Jdir-1 ; ++j ) {
+    for ( i = 0; i <= Number_of_Blocks_Idir-1 ; ++i ) {
+      if (Grid_ptr[i][j].Node != NULL) {
+	Grid_ptr[i][j].Update_Exterior_Nodes();
+      } /* endif */
+    }  /* endfor */
+  }  /* endfor */  
+}
+
+/*!
+ * Update cell geometric properties in all
+ * mesh blocks.
+ */
+void Grid2D_Quad_MultiBlock_HO::Update_All_Cells(void){
+  int i, j;
+  
+  for ( j = 0 ; j <= Number_of_Blocks_Jdir-1 ; ++j ) {
+    for ( i = 0; i <= Number_of_Blocks_Idir-1 ; ++i ) {
+      if (Grid_ptr[i][j].Node != NULL) {
+	Grid_ptr[i][j].Update_Cells();
+      } /* endif */
+    }  /* endfor */
+  }  /* endfor */  
+}
 
 /*!
  * Writes the nodes of a 2D array of 2D quadrilateral   
@@ -468,15 +578,17 @@ void Grid2D_Quad_MultiBlock_HO::Output_Gnuplot(ostream &Out_File) {
  *  	                                  50,           
  *                                        2);           
  *                                                      
+ * This subroutine DOESN'T update the ghost cells or
+ * the geometric properties of the grid cells.
  */
-void Grid2D_Quad_MultiBlock_HO::Grid_Rectangular_Box(int &_Number_of_Blocks_Idir_,
-						     int &_Number_of_Blocks_Jdir_,
-						     const double &Width,
-						     const double &Height,
-						     const int Number_of_Cells_Idir,
-						     const int Number_of_Cells_Jdir,
-						     const int Number_of_Ghost_Cells,
-						     const int Highest_Order_of_Reconstruction) {
+void Grid2D_Quad_MultiBlock_HO::Grid_Rectangular_Box_Without_Update(int &_Number_of_Blocks_Idir_,
+								    int &_Number_of_Blocks_Jdir_,
+								    const double &Width,
+								    const double &Height,
+								    const int Number_of_Cells_Idir,
+								    const int Number_of_Cells_Jdir,
+								    const int Number_of_Ghost_Cells,
+								    const int Highest_Order_of_Reconstruction) {
   
   int iBlk, jBlk, n_cells_i, n_cells_j, 
     Stretch_I, Stretch_J,
@@ -560,25 +672,25 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Rectangular_Box(int &_Number_of_Blocks_Idir
       /* Create the 2D quadrilateral grid block representing
 	 the mesh. */
       
-      Grid_ptr[iBlk][jBlk].Create_Quad_Block(Bnd_Spline_North,
-					     Bnd_Spline_South,
-					     Bnd_Spline_East,
-					     Bnd_Spline_West,
-					     Number_of_Cells_Idir/Number_of_Blocks_Idir,
-					     Number_of_Cells_Jdir/Number_of_Blocks_Jdir,
-					     Number_of_Ghost_Cells,
-					     Highest_Order_of_Reconstruction,
-					     GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-					     Stretch_I,
-					     Beta_I, 
-					     Tau_I,
-					     Stretch_J,
-					     Beta_J,
-					     Tau_J,
-					     Orthogonal_North,
-					     Orthogonal_South,
-					     Orthogonal_East,
-					     Orthogonal_West);
+      Grid_ptr[iBlk][jBlk].Create_Quad_Block_Without_Update(Bnd_Spline_North,
+							    Bnd_Spline_South,
+							    Bnd_Spline_East,
+							    Bnd_Spline_West,
+							    Number_of_Cells_Idir/Number_of_Blocks_Idir,
+							    Number_of_Cells_Jdir/Number_of_Blocks_Jdir,
+							    Number_of_Ghost_Cells,
+							    Highest_Order_of_Reconstruction,
+							    GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+							    Stretch_I,
+							    Beta_I, 
+							    Tau_I,
+							    Stretch_J,
+							    Beta_J,
+							    Tau_J,
+							    Orthogonal_North,
+							    Orthogonal_South,
+							    Orthogonal_East,
+							    Orthogonal_West);
       
       /* Deallocate the memory for the boundary splines. */
       
@@ -593,19 +705,19 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Rectangular_Box(int &_Number_of_Blocks_Idir
   
 }
 
-void Grid2D_Quad_MultiBlock_HO::Grid_Rectangular_Box(int &_Number_of_Blocks_Idir_,
-						     int &_Number_of_Blocks_Jdir_,
-						     const double &Width,
-						     const double &Height,
-						     const int Stretching_Flag,
-						     const int Stretching_Type_Idir,
-						     const int Stretching_Type_Jdir,
-						     const double &Stretching_Factor_Idir,
-						     const double &Stretching_Factor_Jdir,
-						     const int Number_of_Cells_Idir,
-						     const int Number_of_Cells_Jdir,
-						     const int Number_of_Ghost_Cells,
-						     const int Highest_Order_of_Reconstruction) {
+void Grid2D_Quad_MultiBlock_HO::Grid_Rectangular_Box_Without_Update(int &_Number_of_Blocks_Idir_,
+								    int &_Number_of_Blocks_Jdir_,
+								    const double &Width,
+								    const double &Height,
+								    const int Stretching_Flag,
+								    const int Stretching_Type_Idir,
+								    const int Stretching_Type_Jdir,
+								    const double &Stretching_Factor_Idir,
+								    const double &Stretching_Factor_Jdir,
+								    const int Number_of_Cells_Idir,
+								    const int Number_of_Cells_Jdir,
+								    const int Number_of_Ghost_Cells,
+								    const int Highest_Order_of_Reconstruction) {
 
   int iBlk, jBlk, n_cells_i, n_cells_j,
       Stretch_I, Stretch_J,
@@ -695,25 +807,25 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Rectangular_Box(int &_Number_of_Blocks_Idir
       /* Create the 2D quadrilateral grid block representing
 	 the mesh. */
 
-      Grid_ptr[iBlk][jBlk].Create_Quad_Block(Bnd_Spline_North,
-					     Bnd_Spline_South,
-					     Bnd_Spline_East,
-					     Bnd_Spline_West,
-					     Number_of_Cells_Idir/Number_of_Blocks_Idir,
-					     Number_of_Cells_Jdir/Number_of_Blocks_Jdir,
-					     Number_of_Ghost_Cells,
-					     Highest_Order_of_Reconstruction,
-					     GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-					     Stretch_I,
-					     Beta_I, 
-					     Tau_I,
-					     Stretch_J,
-					     Beta_J,
-					     Tau_J,
-					     Orthogonal_North,
-					     Orthogonal_South,
-					     Orthogonal_East,
-					     Orthogonal_West);
+      Grid_ptr[iBlk][jBlk].Create_Quad_Block_Without_Update(Bnd_Spline_North,
+							    Bnd_Spline_South,
+							    Bnd_Spline_East,
+							    Bnd_Spline_West,
+							    Number_of_Cells_Idir/Number_of_Blocks_Idir,
+							    Number_of_Cells_Jdir/Number_of_Blocks_Jdir,
+							    Number_of_Ghost_Cells,
+							    Highest_Order_of_Reconstruction,
+							    GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+							    Stretch_I,
+							    Beta_I, 
+							    Tau_I,
+							    Stretch_J,
+							    Beta_J,
+							    Tau_J,
+							    Orthogonal_North,
+							    Orthogonal_South,
+							    Orthogonal_East,
+							    Orthogonal_West);
 
       /* Deallocate the memory for the boundary splines. */
 
@@ -741,19 +853,21 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Rectangular_Box(int &_Number_of_Blocks_Idir
  *         		             100,               
  *         		             100,               
  *         		             2);                
- *                                                      
+ *             
+ * This subroutine DOESN'T update the ghost cells or
+ * the geometric properties of the grid cells.                                         
  */
-void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate(int &_Number_of_Blocks_Idir_,
-						int &_Number_of_Blocks_Jdir_,
-						const double &Length,
-						const int Flat_Plate_BC_Type,
-						const int Stretching_Flag,
-						const double &Stretching_Factor_Idir,
-						const double &Stretching_Factor_Jdir,
-						const int Number_of_Cells_Idir,
-						const int Number_of_Cells_Jdir,
-						const int Number_of_Ghost_Cells,
-						const int Highest_Order_of_Reconstruction) {
+void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate_Without_Update(int &_Number_of_Blocks_Idir_,
+							       int &_Number_of_Blocks_Jdir_,
+							       const double &Length,
+							       const int Flat_Plate_BC_Type,
+							       const int Stretching_Flag,
+							       const double &Stretching_Factor_Idir,
+							       const double &Stretching_Factor_Jdir,
+							       const int Number_of_Cells_Idir,
+							       const int Number_of_Cells_Jdir,
+							       const int Number_of_Ghost_Cells,
+							       const int Highest_Order_of_Reconstruction) {
   
   int n_cells_i, n_cells_j, 
       Stretch_I, Stretch_J,
@@ -861,25 +975,25 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate(int &_Number_of_Blocks_Idir_,
     Orthogonal_West = 0;
 
     // Create the 2D quadrilateral grid block.
-    Grid_ptr[iBlk][0].Create_Quad_Block(Bnd_Spline_North,
-					Bnd_Spline_South,
-					Bnd_Spline_East,
-					Bnd_Spline_West,
-					n_cells_i,
-					n_cells_j,
-					Number_of_Ghost_Cells,
-					Highest_Order_of_Reconstruction,
-					GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-					Stretch_I,
-					Beta_I,
-					Tau_I,
-					Stretch_J,
-					Beta_J,
-					Tau_J,
-					Orthogonal_North,
-					Orthogonal_South,
-					Orthogonal_East,
-					Orthogonal_West);
+    Grid_ptr[iBlk][0].Create_Quad_Block_Without_Update(Bnd_Spline_North,
+						       Bnd_Spline_South,
+						       Bnd_Spline_East,
+						       Bnd_Spline_West,
+						       n_cells_i,
+						       n_cells_j,
+						       Number_of_Ghost_Cells,
+						       Highest_Order_of_Reconstruction,
+						       GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+						       Stretch_I,
+						       Beta_I,
+						       Tau_I,
+						       Stretch_J,
+						       Beta_J,
+						       Tau_J,
+						       Orthogonal_North,
+						       Orthogonal_South,
+						       Orthogonal_East,
+						       Orthogonal_West);
 
     // Deallocate the memory for the boundary splines.
     Bnd_Spline_North.deallocate();
@@ -903,18 +1017,20 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate(int &_Number_of_Blocks_Idir_,
  *                                      TWO,            
  *         		                100,            
  *         		                100);           
- *                                                      
+ *             
+ * This subroutine DOESN'T update the ghost cells or
+ * the geometric properties of the grid cells.                                         
  */
-void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate_NK(int &_Number_of_Blocks_Idir_,
-						   int &_Number_of_Blocks_Jdir_,
-						   const double &Length,
-						   const int Stretching_Flag,
-						   const double &Stretching_Factor_Idir,
-						   const double &Stretching_Factor_Jdir,
-						   const int Number_of_Cells_Idir,
-						   const int Number_of_Cells_Jdir,
-						   const int Number_of_Ghost_Cells,
-						   const int Highest_Order_of_Reconstruction) {
+void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate_NK_Without_Update(int &_Number_of_Blocks_Idir_,
+								  int &_Number_of_Blocks_Jdir_,
+								  const double &Length,
+								  const int Stretching_Flag,
+								  const double &Stretching_Factor_Idir,
+								  const double &Stretching_Factor_Jdir,
+								  const int Number_of_Cells_Idir,
+								  const int Number_of_Cells_Jdir,
+								  const int Number_of_Ghost_Cells,
+								  const int Highest_Order_of_Reconstruction) {
   
   int iBlk, n_cells_i, n_cells_j, 
     Stretch_I, Stretch_J,
@@ -1019,25 +1135,25 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate_NK(int &_Number_of_Blocks_Idir_,
 	
         /* Create the 2D quadrilateral grid block. */
 
-        Grid_ptr[iBlk][0].Create_Quad_Block(Bnd_Spline_North,
-					    Bnd_Spline_South,
-					    Bnd_Spline_East,
-					    Bnd_Spline_West,
-					    n_cells_i,
-					    n_cells_j,
-					    Number_of_Ghost_Cells,
-					    Highest_Order_of_Reconstruction,
-					    GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-					    Stretch_I,
-					    Beta_I, 
-					    Tau_I,
-					    Stretch_J,
-					    Beta_J,
-					    Tau_J,
-					    Orthogonal_North,
-					    Orthogonal_South,
-					    Orthogonal_East,
-					    Orthogonal_West);
+        Grid_ptr[iBlk][0].Create_Quad_Block_Without_Update(Bnd_Spline_North,
+							   Bnd_Spline_South,
+							   Bnd_Spline_East,
+							   Bnd_Spline_West,
+							   n_cells_i,
+							   n_cells_j,
+							   Number_of_Ghost_Cells,
+							   Highest_Order_of_Reconstruction,
+							   GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+							   Stretch_I,
+							   Beta_I, 
+							   Tau_I,
+							   Stretch_J,
+							   Beta_J,
+							   Tau_J,
+							   Orthogonal_North,
+							   Orthogonal_South,
+							   Orthogonal_East,
+							   Orthogonal_West);
 	
         /* Deallocate the memory for the boundary splines. */
 
@@ -1051,33 +1167,33 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate_NK(int &_Number_of_Blocks_Idir_,
 
 }
 
-/********************************************************
- * Routine: Grid_Flat_Plate3                            *
- *                                                      *
- * Generates a quadilateral mesh with clustering        *
- * consisting of two grid blocks for predicting viscous *
- * flow and boundary layer development over a flat      *
- * plate.                                               *
- *                                                      *
- * Usage: Grid_ptr = Grid_Flat_Plate3(Grid_ptr,         *
- *                                   nblk_i,            *
- *                                   nblk_j,            *
- *                                   TWO,               *
- *         		             100,               *
- *         		             100,               *
- *         		             2);                *
- *                                                      *
- ********************************************************/
-void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate3(int &_Number_of_Blocks_Idir_,
-						 int &_Number_of_Blocks_Jdir_,
-						 const double &Length,
-						 const int &Stretching_Flag,
-						 const double &Stretching_Factor_Idir,
-						 const double &Stretching_Factor_Jdir,
-						 const int Number_of_Cells_Idir,
-						 const int Number_of_Cells_Jdir,
-						 const int Number_of_Ghost_Cells,
-						 const int Highest_Order_of_Reconstruction) {
+/*!
+ * Generates a quadilateral mesh with clustering        
+ * consisting of two grid blocks for predicting viscous 
+ * flow and boundary layer development over a flat      
+ * plate.                                               
+ *                                                      
+ * Usage: Grid_ptr = Grid_Flat_Plate3(Grid_ptr,         
+ *                                   nblk_i,            
+ *                                   nblk_j,            
+ *                                   TWO,               
+ *         		             100,               
+ *         		             100,               
+ *         		             2);                
+ *                                                      
+ * This subroutine DOESN'T update the ghost cells or
+ * the geometric properties of the grid cells.                                         
+ */
+void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate3_Without_Update(int &_Number_of_Blocks_Idir_,
+								int &_Number_of_Blocks_Jdir_,
+								const double &Length,
+								const int &Stretching_Flag,
+								const double &Stretching_Factor_Idir,
+								const double &Stretching_Factor_Jdir,
+								const int Number_of_Cells_Idir,
+								const int Number_of_Cells_Jdir,
+								const int Number_of_Ghost_Cells,
+								const int Highest_Order_of_Reconstruction) {
 
   int n_cells_i, n_cells_j, 
       Stretch_I, Stretch_J,
@@ -1161,25 +1277,25 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate3(int &_Number_of_Blocks_Idir_,
     Orthogonal_West = 0;
 
     // Create the 2D quadrilateral grid block.
-    Grid_ptr[iBlk][0].Create_Quad_Block(Bnd_Spline_North,
-					Bnd_Spline_South,
-					Bnd_Spline_East,
-					Bnd_Spline_West,
-					n_cells_i,
-					n_cells_j,
-					Number_of_Ghost_Cells,
-					Highest_Order_of_Reconstruction,
-					GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-					Stretch_I,
-					Beta_I,
-					Tau_I,
-					Stretch_J,
-					Beta_J,
-					Tau_J,
-					Orthogonal_North,
-					Orthogonal_South,
-					Orthogonal_East,
-					Orthogonal_West);
+    Grid_ptr[iBlk][0].Create_Quad_Block_Without_Update(Bnd_Spline_North,
+						       Bnd_Spline_South,
+						       Bnd_Spline_East,
+						       Bnd_Spline_West,
+						       n_cells_i,
+						       n_cells_j,
+						       Number_of_Ghost_Cells,
+						       Highest_Order_of_Reconstruction,
+						       GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+						       Stretch_I,
+						       Beta_I,
+						       Tau_I,
+						       Stretch_J,
+						       Beta_J,
+						       Tau_J,
+						       Orthogonal_North,
+						       Orthogonal_South,
+						       Orthogonal_East,
+						       Orthogonal_West);
     
     // Deallocate the memory for the boundary splines.
     Bnd_Spline_North.deallocate();
@@ -1204,17 +1320,19 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate3(int &_Number_of_Blocks_Idir_,
  *         		             100,               
  *         		             100,               
  *         		             2);                
+ * This subroutine DOESN'T update the ghost cells or
+ * the geometric properties of the grid cells.
  */
-void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate4(int &_Number_of_Blocks_Idir_,
-						 int &_Number_of_Blocks_Jdir_,
-						 const double &Length,
-						 const int &Stretching_Flag,
-						 const double &Stretching_Factor_Idir,
-						 const double &Stretching_Factor_Jdir,
-						 const int Number_of_Cells_Idir,
-						 const int Number_of_Cells_Jdir,
-						 const int Number_of_Ghost_Cells,
-						 const int Highest_Order_of_Reconstruction) {
+void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate4_Without_Update(int &_Number_of_Blocks_Idir_,
+								int &_Number_of_Blocks_Jdir_,
+								const double &Length,
+								const int &Stretching_Flag,
+								const double &Stretching_Factor_Idir,
+								const double &Stretching_Factor_Jdir,
+								const int Number_of_Cells_Idir,
+								const int Number_of_Cells_Jdir,
+								const int Number_of_Ghost_Cells,
+								const int Highest_Order_of_Reconstruction) {
   
   int n_cells_i, n_cells_j, 
       Stretch_I, Stretch_J,
@@ -1305,25 +1423,25 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate4(int &_Number_of_Blocks_Idir_,
     Orthogonal_West = 0;
 
     // Create the 2D quadrilateral grid block.
-    Grid_ptr[iBlk][0].Create_Quad_Block(Bnd_Spline_North,
-					Bnd_Spline_South,
-					Bnd_Spline_East,
-					Bnd_Spline_West,
-					n_cells_i,
-					n_cells_j,
-					Number_of_Ghost_Cells,
-					Highest_Order_of_Reconstruction,
-					GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-					Stretch_I,
-					Beta_I,
-					Tau_I,
-					Stretch_J,
-					Beta_J,
-					Tau_J,
-					Orthogonal_North,
-					Orthogonal_South,
-					Orthogonal_East,
-					Orthogonal_West);
+    Grid_ptr[iBlk][0].Create_Quad_Block_Without_Update(Bnd_Spline_North,
+						       Bnd_Spline_South,
+						       Bnd_Spline_East,
+						       Bnd_Spline_West,
+						       n_cells_i,
+						       n_cells_j,
+						       Number_of_Ghost_Cells,
+						       Highest_Order_of_Reconstruction,
+						       GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+						       Stretch_I,
+						       Beta_I,
+						       Tau_I,
+						       Stretch_J,
+						       Beta_J,
+						       Tau_J,
+						       Orthogonal_North,
+						       Orthogonal_South,
+						       Orthogonal_East,
+						       Orthogonal_West);
     
     // Deallocate the memory for the boundary splines.
     Bnd_Spline_North.deallocate();
@@ -1350,19 +1468,21 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate4(int &_Number_of_Blocks_Idir_,
  *         		             100,               
  *         		             100,               
  *         		             2);                
+ * This subroutine DOESN'T update the ghost cells or
+ * the geometric properties of the grid cells.
  */
-void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate9(int &_Number_of_Blocks_Idir_,
-						 int &_Number_of_Blocks_Jdir_,
-						 const double &Length,
-						 const int &Flat_Plate_BC_Type,
-						 const int &Stretching_Flag,
-						 const double &Stretching_Factor_Idir,
-						 const double &Stretching_Factor_Jdir,
-						 const int Number_of_Cells_Idir,
-						 const int Number_of_Cells_Jdir,
-						 const int Number_of_Ghost_Cells,
-						 const int Highest_Order_of_Reconstruction) {
-
+void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate9_Without_Update(int &_Number_of_Blocks_Idir_,
+								int &_Number_of_Blocks_Jdir_,
+								const double &Length,
+								const int &Flat_Plate_BC_Type,
+								const int &Stretching_Flag,
+								const double &Stretching_Factor_Idir,
+								const double &Stretching_Factor_Jdir,
+								const int Number_of_Cells_Idir,
+								const int Number_of_Cells_Jdir,
+								const int Number_of_Ghost_Cells,
+								const int Highest_Order_of_Reconstruction) {
+  
   int n_cells_i, n_cells_j, 
     Stretch_I, Stretch_J,
     Orthogonal_North, Orthogonal_South,
@@ -1452,25 +1572,25 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate9(int &_Number_of_Blocks_Idir_,
     Orthogonal_West = 0;
 
     // Create the 2D quadrilateral grid block.
-    Grid_ptr[iBlk][0].Create_Quad_Block(Bnd_Spline_North,
-					Bnd_Spline_South,
-					Bnd_Spline_East,
-					Bnd_Spline_West,
-					n_cells_i,
-					n_cells_j,
-					Number_of_Ghost_Cells,
-					Highest_Order_of_Reconstruction,
-					GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-					Stretch_I,
-					Beta_I,
-					Tau_I,
-					Stretch_J,
-					Beta_J,
-					Tau_J,
-					Orthogonal_North,
-					Orthogonal_South,
-					Orthogonal_East,
-					Orthogonal_West);
+    Grid_ptr[iBlk][0].Create_Quad_Block_Without_Update(Bnd_Spline_North,
+						       Bnd_Spline_South,
+						       Bnd_Spline_East,
+						       Bnd_Spline_West,
+						       n_cells_i,
+						       n_cells_j,
+						       Number_of_Ghost_Cells,
+						       Highest_Order_of_Reconstruction,
+						       GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+						       Stretch_I,
+						       Beta_I,
+						       Tau_I,
+						       Stretch_J,
+						       Beta_J,
+						       Tau_J,
+						       Orthogonal_North,
+						       Orthogonal_South,
+						       Orthogonal_East,
+						       Orthogonal_West);
     
     // Deallocate the memory for the boundary splines.
     Bnd_Spline_North.deallocate();
@@ -1497,16 +1617,17 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate9(int &_Number_of_Blocks_Idir_,
  *         		             100,               
  *         		             10,                
  *                                   2);                
- *                                                      
+ * This subroutine DOESN'T update the ghost cells or
+ * the geometric properties of the grid cells.                                                      
  */
-void Grid2D_Quad_MultiBlock_HO::Grid_1D_Flame(int &_Number_of_Blocks_Idir_,
-					      int &_Number_of_Blocks_Jdir_,
-					      const double &Length,
-					      const double &Heigth,
-					      const int Number_of_Cells_Idir,
-					      const int Number_of_Cells_Jdir,
-					      const int Number_of_Ghost_Cells,
-					      const int Highest_Order_of_Reconstruction) {
+void Grid2D_Quad_MultiBlock_HO::Grid_1D_Flame_Without_Update(int &_Number_of_Blocks_Idir_,
+							     int &_Number_of_Blocks_Jdir_,
+							     const double &Length,
+							     const double &Heigth,
+							     const int Number_of_Cells_Idir,
+							     const int Number_of_Cells_Jdir,
+							     const int Number_of_Ghost_Cells,
+							     const int Highest_Order_of_Reconstruction) {
   
   int iBlk, n_cells_i, n_cells_j, 
     Stretch_I, Stretch_J,
@@ -1577,25 +1698,25 @@ void Grid2D_Quad_MultiBlock_HO::Grid_1D_Flame(int &_Number_of_Blocks_Idir_,
     
     /* Create the 2D quadrilateral grid block. */
     
-    Grid_ptr[iBlk][0].Create_Quad_Block(Bnd_Spline_North,
-					Bnd_Spline_South,
-					Bnd_Spline_East,
-					Bnd_Spline_West,
-					n_cells_i,
-					n_cells_j,
-					Number_of_Ghost_Cells,
-					Highest_Order_of_Reconstruction,
-					GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-					Stretch_I,
-					Beta_I, 
-					Tau_I,
-					Stretch_J,
-					Beta_J,
-					Tau_J,
-					Orthogonal_North,
-					Orthogonal_South,
-					Orthogonal_East,
-					Orthogonal_West);
+    Grid_ptr[iBlk][0].Create_Quad_Block_Without_Update(Bnd_Spline_North,
+						       Bnd_Spline_South,
+						       Bnd_Spline_East,
+						       Bnd_Spline_West,
+						       n_cells_i,
+						       n_cells_j,
+						       Number_of_Ghost_Cells,
+						       Highest_Order_of_Reconstruction,
+						       GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+						       Stretch_I,
+						       Beta_I, 
+						       Tau_I,
+						       Stretch_J,
+						       Beta_J,
+						       Tau_J,
+						       Orthogonal_North,
+						       Orthogonal_South,
+						       Orthogonal_East,
+						       Orthogonal_West);
     
     /* Deallocate the memory for the boundary splines. */
     Bnd_Spline_North.deallocate();
@@ -1621,17 +1742,19 @@ void Grid2D_Quad_MultiBlock_HO::Grid_1D_Flame(int &_Number_of_Blocks_Idir_,
  *         		             100,               
  *         		             10,                
  *                                   2);                
- *                                                      
+ *
+ * This subroutine DOESN'T update the ghost cells or
+ * the geometric properties of the grid cells.                                                      
  */
-void Grid2D_Quad_MultiBlock_HO::Grid_2D_Laminar_Flame(int &_Number_of_Blocks_Idir_,
-						      int &_Number_of_Blocks_Jdir_,
-						      const double &Length,
-						      const double &Heigth,
-						      const int Number_of_Cells_Idir,
-						      const int Number_of_Cells_Jdir, 
-						      const int Number_of_Ghost_Cells,
-						      const int Highest_Order_of_Reconstruction,
-						      const int Flame_Type_Flag) {
+void Grid2D_Quad_MultiBlock_HO::Grid_2D_Laminar_Flame_Without_Update(int &_Number_of_Blocks_Idir_,
+								     int &_Number_of_Blocks_Jdir_,
+								     const double &Length,
+								     const double &Heigth,
+								     const int Number_of_Cells_Idir,
+								     const int Number_of_Cells_Jdir, 
+								     const int Number_of_Ghost_Cells,
+								     const int Highest_Order_of_Reconstruction,
+								     const int Flame_Type_Flag) {
   
 
   int  n_cells_i, n_cells_j, Stretch_I, Stretch_J,
@@ -1848,25 +1971,25 @@ void Grid2D_Quad_MultiBlock_HO::Grid_2D_Laminar_Flame(int &_Number_of_Blocks_Idi
       n_cells_j = Number_of_Cells_Jdir/Number_of_Blocks_Jdir;
 	
       /* Create the 2D quadrilateral grid block. */
-      Grid_ptr[iBlk][jBlk].Create_Quad_Block(Bnd_Spline_North,
-					     Bnd_Spline_South,
-					     Bnd_Spline_East,
-					     Bnd_Spline_West,
-					     n_cells_i,
-					     n_cells_j,
-					     Number_of_Ghost_Cells,
-					     Highest_Order_of_Reconstruction,
-					     GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-					     Stretch_I,
-					     Beta_I, 
-					     Tau_I,
-					     Stretch_J,
-					     Beta_J,
-					     Tau_J,
-					     Orthogonal_North,
-					     Orthogonal_South,
-					     Orthogonal_East,
-					     Orthogonal_West);
+      Grid_ptr[iBlk][jBlk].Create_Quad_Block_Without_Update(Bnd_Spline_North,
+							    Bnd_Spline_South,
+							    Bnd_Spline_East,
+							    Bnd_Spline_West,
+							    n_cells_i,
+							    n_cells_j,
+							    Number_of_Ghost_Cells,
+							    Highest_Order_of_Reconstruction,
+							    GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+							    Stretch_I,
+							    Beta_I, 
+							    Tau_I,
+							    Stretch_J,
+							    Beta_J,
+							    Tau_J,
+							    Orthogonal_North,
+							    Orthogonal_South,
+							    Orthogonal_East,
+							    Orthogonal_West);
 
       /* Deallocate the memory for the boundary splines. */
       Bnd_Spline_North.deallocate();
@@ -1892,17 +2015,19 @@ void Grid2D_Quad_MultiBlock_HO::Grid_2D_Laminar_Flame(int &_Number_of_Blocks_Idi
  *   	                       100,                     
  *  	                       50,                      
  *                             2);                      
+ * This subroutine DOESN'T update the ghost cells or
+ * the geometric properties of the grid cells.
  */
-void Grid2D_Quad_MultiBlock_HO::Grid_Pipe(int &_Number_of_Blocks_Idir_,
-					  int &_Number_of_Blocks_Jdir_,
-					  const double &Length,
-					  const double &Radius,
-					  const int Stretching_Flag,
-					  const double Stretching_Factor,
-					  const int Number_of_Cells_Idir,
-					  const int Number_of_Cells_Jdir,
-					  const int Number_of_Ghost_Cells,
-					  const int Highest_Order_of_Reconstruction) {
+void Grid2D_Quad_MultiBlock_HO::Grid_Pipe_Without_Update(int &_Number_of_Blocks_Idir_,
+							 int &_Number_of_Blocks_Jdir_,
+							 const double &Length,
+							 const double &Radius,
+							 const int Stretching_Flag,
+							 const double Stretching_Factor,
+							 const int Number_of_Cells_Idir,
+							 const int Number_of_Cells_Jdir,
+							 const int Number_of_Ghost_Cells,
+							 const int Highest_Order_of_Reconstruction) {
   
   int Stretch_I, Stretch_J,
     Orthogonal_North, Orthogonal_South,
@@ -1959,25 +2084,25 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Pipe(int &_Number_of_Blocks_Idir_,
 
   /* Create the 2D quadrilateral grid block representing
        the mesh. */
-  Grid_ptr[0][0].Create_Quad_Block(Bnd_Spline_North,
-				   Bnd_Spline_South,
-				   Bnd_Spline_East,
-				   Bnd_Spline_West,
-				   Number_of_Cells_Idir,
-				   Number_of_Cells_Jdir,
-				   Number_of_Ghost_Cells,
-				   Highest_Order_of_Reconstruction,
-				   GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-				   Stretch_I,
-				   Beta_I, 
-				   Tau_I,
-				   Stretch_J,
-				   Beta_J,
-				   Tau_J,
-				   Orthogonal_North,
-				   Orthogonal_South,
-				   Orthogonal_East,
-				   Orthogonal_West);
+  Grid_ptr[0][0].Create_Quad_Block_Without_Update(Bnd_Spline_North,
+						  Bnd_Spline_South,
+						  Bnd_Spline_East,
+						  Bnd_Spline_West,
+						  Number_of_Cells_Idir,
+						  Number_of_Cells_Jdir,
+						  Number_of_Ghost_Cells,
+						  Highest_Order_of_Reconstruction,
+						  GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+						  Stretch_I,
+						  Beta_I, 
+						  Tau_I,
+						  Stretch_J,
+						  Beta_J,
+						  Tau_J,
+						  Orthogonal_North,
+						  Orthogonal_South,
+						  Orthogonal_East,
+						  Orthogonal_West);
   
   /* Deallocate the memory for the boundary splines. */
   
@@ -2001,16 +2126,18 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Pipe(int &_Number_of_Blocks_Idir_,
  *   	                       100,                     
  *  	                       50,                      
  *                             2);                      
+ * This subroutine DOESN'T update the ghost cells or
+ * the geometric properties of the grid cells.
  */
-void Grid2D_Quad_MultiBlock_HO::Grid_Pipe(int &_Number_of_Blocks_Idir_,
-					  int &_Number_of_Blocks_Jdir_,
-					  const double &Length,
-					  const double &Radius,
-					  const int &Axisymmetric,
-					  const int Number_of_Cells_Idir,
-					  const int Number_of_Cells_Jdir,
-					  const int Number_of_Ghost_Cells,
-					  const int Highest_Order_of_Reconstruction) {
+void Grid2D_Quad_MultiBlock_HO::Grid_Pipe_Without_Update(int &_Number_of_Blocks_Idir_,
+							 int &_Number_of_Blocks_Jdir_,
+							 const double &Length,
+							 const double &Radius,
+							 const int &Axisymmetric,
+							 const int Number_of_Cells_Idir,
+							 const int Number_of_Cells_Jdir,
+							 const int Number_of_Ghost_Cells,
+							 const int Highest_Order_of_Reconstruction) {
   
   int Stretch_I, Stretch_J,
       Orthogonal_North, Orthogonal_South,
@@ -2092,25 +2219,25 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Pipe(int &_Number_of_Blocks_Idir_,
   /* Create the 2D quadrilateral grid block representing
      the mesh. */
 
-  Grid_ptr[0][0].Create_Quad_Block(Bnd_Spline_North,
-				   Bnd_Spline_South,
-				   Bnd_Spline_East,
-				   Bnd_Spline_West,
-				   Number_of_Cells_Idir,
-				   Number_of_Cells_Jdir,
-				   Number_of_Ghost_Cells,
-				   Highest_Order_of_Reconstruction,
-				   GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-				   Stretch_I,
-				   Beta_I, 
-				   Tau_I,
-				   Stretch_J,
-				   Beta_J,
-				   Tau_J,
-				   Orthogonal_North,
-				   Orthogonal_South,
-				   Orthogonal_East,
-				   Orthogonal_West);
+  Grid_ptr[0][0].Create_Quad_Block_Without_Update(Bnd_Spline_North,
+						  Bnd_Spline_South,
+						  Bnd_Spline_East,
+						  Bnd_Spline_West,
+						  Number_of_Cells_Idir,
+						  Number_of_Cells_Jdir,
+						  Number_of_Ghost_Cells,
+						  Highest_Order_of_Reconstruction,
+						  GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+						  Stretch_I,
+						  Beta_I, 
+						  Tau_I,
+						  Stretch_J,
+						  Beta_J,
+						  Tau_J,
+						  Orthogonal_North,
+						  Orthogonal_South,
+						  Orthogonal_East,
+						  Orthogonal_West);
 
   /* Deallocate the memory for the boundary splines. */
 
@@ -2135,15 +2262,17 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Pipe(int &_Number_of_Blocks_Idir_,
  *  	                             50,                
  *                                   2);                
  *                                                      
+ * This subroutine DOESN'T update the ghost cells or
+ * the geometric properties of the grid cells.
  */
-void  Grid2D_Quad_MultiBlock_HO::Grid_Blunt_Body(int &_Number_of_Blocks_Idir_,
-						 int &_Number_of_Blocks_Jdir_,
-						 const double &Radius,
-						 const double &Mach_Number,
-						 const int Number_of_Cells_Idir,
-						 const int Number_of_Cells_Jdir,
-						 const int Number_of_Ghost_Cells,
-						 const int Highest_Order_of_Reconstruction) {
+void  Grid2D_Quad_MultiBlock_HO::Grid_Blunt_Body_Without_Update(int &_Number_of_Blocks_Idir_,
+								int &_Number_of_Blocks_Jdir_,
+								const double &Radius,
+								const double &Mach_Number,
+								const int Number_of_Cells_Idir,
+								const int Number_of_Cells_Jdir,
+								const int Number_of_Ghost_Cells,
+								const int Highest_Order_of_Reconstruction) {
 
   int Stretch_I, Stretch_J,
     Orthogonal_North, Orthogonal_South,
@@ -2204,25 +2333,25 @@ void  Grid2D_Quad_MultiBlock_HO::Grid_Blunt_Body(int &_Number_of_Blocks_Idir_,
   /* Create the 2D quadrilateral grid block representing
      the mesh. */
 
-  Grid_ptr[0][0].Create_Quad_Block(Bnd_Spline_North,
-				   Bnd_Spline_South,
-				   Bnd_Spline_East,
-				   Bnd_Spline_West,
-				   Number_of_Cells_Idir,
-				   Number_of_Cells_Jdir,
-				   Number_of_Ghost_Cells,
-				   Highest_Order_of_Reconstruction,
-				   GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-				   Stretch_I,
-				   Beta_I, 
-				   Tau_I,
-				   Stretch_J,
-				   Beta_J,
-				   Tau_J,
-				   Orthogonal_North,
-				   Orthogonal_South,
-				   Orthogonal_East,
-				   Orthogonal_West);
+  Grid_ptr[0][0].Create_Quad_Block_Without_Update(Bnd_Spline_North,
+						  Bnd_Spline_South,
+						  Bnd_Spline_East,
+						  Bnd_Spline_West,
+						  Number_of_Cells_Idir,
+						  Number_of_Cells_Jdir,
+						  Number_of_Ghost_Cells,
+						  Highest_Order_of_Reconstruction,
+						  GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+						  Stretch_I,
+						  Beta_I, 
+						  Tau_I,
+						  Stretch_J,
+						  Beta_J,
+						  Tau_J,
+						  Orthogonal_North,
+						  Orthogonal_South,
+						  Orthogonal_East,
+						  Orthogonal_West);
     
   /* Smooth the 2D quadrilateral grid block. */
 
@@ -2255,26 +2384,28 @@ void  Grid2D_Quad_MultiBlock_HO::Grid_Blunt_Body(int &_Number_of_Blocks_Idir_,
  *         		               100,             
  *         		               100,             
  *                                     2);              
+ * This subroutine DOESN'T update the ghost cells or
+ * the geometric properties of the grid cells.
  */
-void Grid2D_Quad_MultiBlock_HO::Grid_Rocket_Motor(int &_Number_of_Blocks_Idir_,
-						  int &_Number_of_Blocks_Jdir_,
-						  const double &Length_Chamber,
-						  const double &Radius_Chamber,
-						  const double &Length_Chamber_To_Throat,
-						  const double &Length_Nozzle,
-						  const double &Radius_Nozzle_Exit,
-						  const double &Radius_Nozzle_Throat,
-						  const double &Radius_Grain,
-						  const int &Nozzle_Type,
-						  const int &Chamber_BC_Type,
-						  const int &Stretching_Flag,
-						  const int Stretching_Type_Jdir,
-						  const double &Stretching_Factor_Idir,
-						  const double &Stretching_Factor_Jdir,
-						  const int Number_of_Cells_Idir,
-						  const int Number_of_Cells_Jdir,
-						  const int Number_of_Ghost_Cells,
-						  const int Highest_Order_of_Reconstruction) {
+void Grid2D_Quad_MultiBlock_HO::Grid_Rocket_Motor_Without_Update(int &_Number_of_Blocks_Idir_,
+								 int &_Number_of_Blocks_Jdir_,
+								 const double &Length_Chamber,
+								 const double &Radius_Chamber,
+								 const double &Length_Chamber_To_Throat,
+								 const double &Length_Nozzle,
+								 const double &Radius_Nozzle_Exit,
+								 const double &Radius_Nozzle_Throat,
+								 const double &Radius_Grain,
+								 const int &Nozzle_Type,
+								 const int &Chamber_BC_Type,
+								 const int &Stretching_Flag,
+								 const int Stretching_Type_Jdir,
+								 const double &Stretching_Factor_Idir,
+								 const double &Stretching_Factor_Jdir,
+								 const int Number_of_Cells_Idir,
+								 const int Number_of_Cells_Jdir,
+								 const int Number_of_Ghost_Cells,
+								 const int Highest_Order_of_Reconstruction) {
   
   int error_flag, block_flag;
   int Stretch_I, Stretch_J,
@@ -2563,25 +2694,26 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Rocket_Motor(int &_Number_of_Blocks_Idir_,
       }
 
       if (block_flag) {
-	Grid_ptr[iBlk][jBlk].Create_Quad_Block(Bnd_Spline_North,
-					       Bnd_Spline_South,
-					       Bnd_Spline_East,
-					       Bnd_Spline_West,
-					       Number_of_Cells_Idir,
-					       Number_of_Cells_Jdir,
-					       Number_of_Ghost_Cells,
-					       Highest_Order_of_Reconstruction,
-					       GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-					       Stretch_I,
-					       Beta_I,
-					       Tau_I,
-					       Stretch_J,
-					       Beta_J,
-					       Tau_J,
-					       Orthogonal_North,
-					       Orthogonal_South,
-					       Orthogonal_East,
-					       Orthogonal_West);
+	Grid_ptr[iBlk][jBlk].Create_Quad_Block_Without_Update(Bnd_Spline_North,
+							      Bnd_Spline_South,
+							      Bnd_Spline_East,
+							      Bnd_Spline_West,
+							      Number_of_Cells_Idir,
+							      Number_of_Cells_Jdir,
+							      Number_of_Ghost_Cells,
+							      Highest_Order_of_Reconstruction,
+							      GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+							      Stretch_I,
+							      Beta_I,
+							      Tau_I,
+							      Stretch_J,
+							      Beta_J,
+							      Tau_J,
+							      Orthogonal_North,
+							      Orthogonal_South,
+							      Orthogonal_East,
+							      Orthogonal_West);
+
  	// Smooth the 2D quadrilateral grid block.
 	// 	Smooth_Quad_Block(Grid_ptr[iBlk][jBlk],
 	// 			  min(250,2*max(Number_of_Cells_Idir,
@@ -2619,22 +2751,24 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Rocket_Motor(int &_Number_of_Blocks_Idir_,
 
 /*!
  * Routine: Grid_Nozzleless_Rocket_Motor                              
+ * This subroutine DOESN'T update the ghost cells or
+ * the geometric properties of the grid cells.
  */
-void Grid2D_Quad_MultiBlock_HO::Grid_Nozzleless_Rocket_Motor(int &_Number_of_Blocks_Idir_,
-							     int &_Number_of_Blocks_Jdir_,
-							     const double &Length_Chamber,
-							     const double &Radius_Chamber,
-							     const double &Length_Nozzle,
-							     const double &Radius_Nozzle_Exit,
-							     const int &Chamber_BC_Type,
-							     const int &Stretching_Flag,
-							     const int Stretching_Type_Jdir,
-							     const double &Stretching_Factor_Idir,
-							     const double &Stretching_Factor_Jdir,
-							     const int Number_of_Cells_Idir,
-							     const int Number_of_Cells_Jdir,
-							     const int Number_of_Ghost_Cells,
-							     const int Highest_Order_of_Reconstruction) {
+void Grid2D_Quad_MultiBlock_HO::Grid_Nozzleless_Rocket_Motor_Without_Update(int &_Number_of_Blocks_Idir_,
+									    int &_Number_of_Blocks_Jdir_,
+									    const double &Length_Chamber,
+									    const double &Radius_Chamber,
+									    const double &Length_Nozzle,
+									    const double &Radius_Nozzle_Exit,
+									    const int &Chamber_BC_Type,
+									    const int &Stretching_Flag,
+									    const int Stretching_Type_Jdir,
+									    const double &Stretching_Factor_Idir,
+									    const double &Stretching_Factor_Jdir,
+									    const int Number_of_Cells_Idir,
+									    const int Number_of_Cells_Jdir,
+									    const int Number_of_Ghost_Cells,
+									    const int Highest_Order_of_Reconstruction) {
   
   int Stretch_I, Stretch_J,
       Orthogonal_North, Orthogonal_South,
@@ -2731,25 +2865,25 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Nozzleless_Rocket_Motor(int &_Number_of_Blo
       }
       
       // Create the quadrilateral solution block.
-      Grid_ptr[iBlk][jBlk].Create_Quad_Block(Bnd_Spline_North,
-					     Bnd_Spline_South,
-					     Bnd_Spline_East,
-					     Bnd_Spline_West,
-					     Number_of_Cells_Idir,
-					     Number_of_Cells_Jdir,
-					     Number_of_Ghost_Cells,
-					     Highest_Order_of_Reconstruction,
-					     GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-					     Stretch_I,
-					     Beta_I,
-					     Tau_I,
-					     Stretch_J,
-					     Beta_J,
-					     Tau_J,
-					     Orthogonal_North,
-					     Orthogonal_South,
-					     Orthogonal_East,
-					     Orthogonal_West);
+      Grid_ptr[iBlk][jBlk].Create_Quad_Block_Without_Update(Bnd_Spline_North,
+							    Bnd_Spline_South,
+							    Bnd_Spline_East,
+							    Bnd_Spline_West,
+							    Number_of_Cells_Idir,
+							    Number_of_Cells_Jdir,
+							    Number_of_Ghost_Cells,
+							    Highest_Order_of_Reconstruction,
+							    GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+							    Stretch_I,
+							    Beta_I,
+							    Tau_I,
+							    Stretch_J,
+							    Beta_J,
+							    Tau_J,
+							    Orthogonal_North,
+							    Orthogonal_South,
+							    Orthogonal_East,
+							    Orthogonal_West);
 
       // Deallocate the memory for the boundary splines.
       Bnd_Spline_North.deallocate();
@@ -2764,23 +2898,25 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Nozzleless_Rocket_Motor(int &_Number_of_Blo
 
 /*!
  * Generates a two-block grid for a rocket motor nozzle.              
+ * This subroutine DOESN'T update the ghost cells or
+ * the geometric properties of the grid cells.
  */
-void Grid2D_Quad_MultiBlock_HO::Grid_Nozzle(int &_Number_of_Blocks_Idir_,
-					    int &_Number_of_Blocks_Jdir_,
-					    const double &Length_Nozzle,
-					    const double &Radius_Chamber,
-					    const double &Radius_Nozzle_Exit,
-					    const double &Radius_Nozzle_Throat,
-					    const int &Nozzle_Type,
-					    const int &Stretching_Flag,
-					    const int &Stretching_Type_Idir,
-					    const int &Stretching_Type_Jdir,
-					    const double &Stretching_Factor_Idir,
-					    const double &Stretching_Factor_Jdir,
-					    const int Number_of_Cells_Idir,
-					    const int Number_of_Cells_Jdir,
-					    const int Number_of_Ghost_Cells,
-					    const int Highest_Order_of_Reconstruction) {
+void Grid2D_Quad_MultiBlock_HO::Grid_Nozzle_Without_Update(int &_Number_of_Blocks_Idir_,
+							   int &_Number_of_Blocks_Jdir_,
+							   const double &Length_Nozzle,
+							   const double &Radius_Chamber,
+							   const double &Radius_Nozzle_Exit,
+							   const double &Radius_Nozzle_Throat,
+							   const int &Nozzle_Type,
+							   const int &Stretching_Flag,
+							   const int &Stretching_Type_Idir,
+							   const int &Stretching_Type_Jdir,
+							   const double &Stretching_Factor_Idir,
+							   const double &Stretching_Factor_Jdir,
+							   const int Number_of_Cells_Idir,
+							   const int Number_of_Cells_Jdir,
+							   const int Number_of_Ghost_Cells,
+							   const int Highest_Order_of_Reconstruction) {
   
   int error_flag, block_flag;
   int Stretch_I, Stretch_J,
@@ -2857,25 +2993,25 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Nozzle(int &_Number_of_Blocks_Idir_,
     Orthogonal_West = 1;
 
     // Create the 2D quadrilateral grid block.
-    Grid_ptr[iBlk][0].Create_Quad_Block(Bnd_Spline_North,
-					Bnd_Spline_South,
-					Bnd_Spline_East,
-					Bnd_Spline_West,
-					Number_of_Cells_Idir,
-					Number_of_Cells_Jdir,
-					Number_of_Ghost_Cells,
-					Highest_Order_of_Reconstruction,
-					GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-					Stretch_I,
-					Beta_I,
-					Tau_I,
-					Stretch_J,
-					Beta_J,
-					Tau_J,
-					Orthogonal_North,
-					Orthogonal_South,
-					Orthogonal_East,
-					Orthogonal_West);
+    Grid_ptr[iBlk][0].Create_Quad_Block_Without_Update(Bnd_Spline_North,
+						       Bnd_Spline_South,
+						       Bnd_Spline_East,
+						       Bnd_Spline_West,
+						       Number_of_Cells_Idir,
+						       Number_of_Cells_Jdir,
+						       Number_of_Ghost_Cells,
+						       Highest_Order_of_Reconstruction,
+						       GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+						       Stretch_I,
+						       Beta_I,
+						       Tau_I,
+						       Stretch_J,
+						       Beta_J,
+						       Tau_J,
+						       Orthogonal_North,
+						       Orthogonal_South,
+						       Orthogonal_East,
+						       Orthogonal_West);
 
     // Smooth the 2D quadrilateral grid block.
     Grid_ptr[iBlk][0].Smooth_Quad_Block(min(250,2*max(Number_of_Cells_Idir,
@@ -2901,18 +3037,20 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Nozzle(int &_Number_of_Blocks_Idir_,
  *   		                            100,        
  *  		                            50,         
  *                                          2);FIXME         
+ * This subroutine DOESN'T update the ghost cells or
+ * the geometric properties of the grid cells.
  */
-void Grid2D_Quad_MultiBlock_HO::Grid_Circular_Cylinder(int &_Number_of_Blocks_Idir_,
-						       int &_Number_of_Blocks_Jdir_,
-						       const double &Radius,
-						       const int Stretching_Type_Idir,
-						       const int Stretching_Type_Jdir,
-						       const double &Stretching_Factor_Idir,
-						       const double &Stretching_Factor_Jdir,
-						       const int Number_of_Cells_Idir,
-						       const int Number_of_Cells_Jdir,
-						       const int Number_of_Ghost_Cells,
-						       const int Highest_Order_of_Reconstruction) {
+void Grid2D_Quad_MultiBlock_HO::Grid_Circular_Cylinder_Without_Update(int &_Number_of_Blocks_Idir_,
+								      int &_Number_of_Blocks_Jdir_,
+								      const double &Radius,
+								      const int Stretching_Type_Idir,
+								      const int Stretching_Type_Jdir,
+								      const double &Stretching_Factor_Idir,
+								      const double &Stretching_Factor_Jdir,
+								      const int Number_of_Cells_Idir,
+								      const int Number_of_Cells_Jdir,
+								      const int Number_of_Ghost_Cells,
+								      const int Highest_Order_of_Reconstruction) {
   
   Grid_Circular_Cylinder(_Number_of_Blocks_Idir_,
 			 _Number_of_Blocks_Jdir_,
@@ -2929,18 +3067,18 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Circular_Cylinder(int &_Number_of_Blocks_Id
   
 }
 
-void Grid2D_Quad_MultiBlock_HO::Grid_Circular_Cylinder(int &_Number_of_Blocks_Idir_,
-						       int &_Number_of_Blocks_Jdir_,
-						       const double &Inner_Radius,
-						       const double &Outer_Radius,
-						       const int Stretching_Type_Idir,
-						       const int Stretching_Type_Jdir,
-						       const double &Stretching_Factor_Idir,
-						       const double &Stretching_Factor_Jdir,
-						       const int Number_of_Cells_Idir,
-						       const int Number_of_Cells_Jdir,
-						       const int Number_of_Ghost_Cells,
-						       const int Highest_Order_of_Reconstruction) {
+void Grid2D_Quad_MultiBlock_HO::Grid_Circular_Cylinder_Without_Update(int &_Number_of_Blocks_Idir_,
+								      int &_Number_of_Blocks_Jdir_,
+								      const double &Inner_Radius,
+								      const double &Outer_Radius,
+								      const int Stretching_Type_Idir,
+								      const int Stretching_Type_Jdir,
+								      const double &Stretching_Factor_Idir,
+								      const double &Stretching_Factor_Jdir,
+								      const int Number_of_Cells_Idir,
+								      const int Number_of_Cells_Jdir,
+								      const int Number_of_Ghost_Cells,
+								      const int Highest_Order_of_Reconstruction) {
   
   int iBlk, n_cells_i, n_cells_j, Stretch_I, Stretch_J,
     Orthogonal_North, Orthogonal_South,
@@ -3048,25 +3186,25 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Circular_Cylinder(int &_Number_of_Blocks_Id
 
     /* Create the 2D quadrilateral grid block. */
 
-    Grid_ptr[iBlk][0].Create_Quad_Block(Bnd_Spline_North,
-					Bnd_Spline_South,
-					Bnd_Spline_East,
-					Bnd_Spline_West,
-					n_cells_i,
-					n_cells_j,
-					Number_of_Ghost_Cells,
-					Highest_Order_of_Reconstruction,
-					GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-					Stretch_I,
-					Beta_I, 
-					Tau_I,
-					Stretch_J,
-					Beta_J,
-					Tau_J,
-					Orthogonal_North,
-					Orthogonal_South,
-					Orthogonal_East,
-					Orthogonal_West);
+    Grid_ptr[iBlk][0].Create_Quad_Block_Without_Update(Bnd_Spline_North,
+						       Bnd_Spline_South,
+						       Bnd_Spline_East,
+						       Bnd_Spline_West,
+						       n_cells_i,
+						       n_cells_j,
+						       Number_of_Ghost_Cells,
+						       Highest_Order_of_Reconstruction,
+						       GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+						       Stretch_I,
+						       Beta_I, 
+						       Tau_I,
+						       Stretch_J,
+						       Beta_J,
+						       Tau_J,
+						       Orthogonal_North,
+						       Orthogonal_South,
+						       Orthogonal_East,
+						       Orthogonal_West);
 
     /* Deallocate the memory for the boundary splines. */
 
@@ -3082,24 +3220,26 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Circular_Cylinder(int &_Number_of_Blocks_Id
 /*!
  * Generates a single-block O-type grid for predicting     
  * flow through an annulus of given inner and outer radii. 
+ * This subroutine DOESN'T update the ghost cells or
+ * the geometric properties of the grid cells.
  *                                                      
  * \param ThetaStart the start angle of the annulus (east edge) measured counterclockwise
  * \param ThetaEnd   the end angle of the annulus (west edge) measured counterclockwise
  */
-void Grid2D_Quad_MultiBlock_HO::Grid_Annulus(int &_Number_of_Blocks_Idir_,
-					     int &_Number_of_Blocks_Jdir_,
-					     const double &Inner_Radius,
-					     const double &Outer_Radius,
-					     const double &ThetaStart,
-					     const double &ThetaEnd,
-					     const int Stretching_Type_Idir,
-					     const int Stretching_Type_Jdir,
-					     const double &Stretching_Factor_Idir,
-					     const double &Stretching_Factor_Jdir,
-					     const int Number_of_Cells_Idir,
-					     const int Number_of_Cells_Jdir,
-					     const int Number_of_Ghost_Cells,
-					     const int Highest_Order_of_Reconstruction) {
+void Grid2D_Quad_MultiBlock_HO::Grid_Annulus_Without_Update(int &_Number_of_Blocks_Idir_,
+							    int &_Number_of_Blocks_Jdir_,
+							    const double &Inner_Radius,
+							    const double &Outer_Radius,
+							    const double &ThetaStart,
+							    const double &ThetaEnd,
+							    const int Stretching_Type_Idir,
+							    const int Stretching_Type_Jdir,
+							    const double &Stretching_Factor_Idir,
+							    const double &Stretching_Factor_Jdir,
+							    const int Number_of_Cells_Idir,
+							    const int Number_of_Cells_Jdir,
+							    const int Number_of_Ghost_Cells,
+							    const int Highest_Order_of_Reconstruction) {
   
   int n_cells_i, n_cells_j, Stretch_I, Stretch_J,
     Orthogonal_North, Orthogonal_South,
@@ -3166,25 +3306,25 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Annulus(int &_Number_of_Blocks_Idir_,
     
   /* Create the 2D quadrilateral grid block. */
 
-  Grid_ptr[0][0].Create_Quad_Block(Bnd_Spline_North,
-				   Bnd_Spline_South,
-				   Bnd_Spline_East,
-				   Bnd_Spline_West,
-				   n_cells_i,
-				   n_cells_j,
-				   Number_of_Ghost_Cells,
-				   Highest_Order_of_Reconstruction,
-				   GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-				   Stretch_I,
-				   Beta_I, 
-				   Tau_I,
-				   Stretch_J,
-				   Beta_J,
-				   Tau_J,
-				   Orthogonal_North,
-				   Orthogonal_South,
-				   Orthogonal_East,
-				   Orthogonal_West);
+  Grid_ptr[0][0].Create_Quad_Block_Without_Update(Bnd_Spline_North,
+						  Bnd_Spline_South,
+						  Bnd_Spline_East,
+						  Bnd_Spline_West,
+						  n_cells_i,
+						  n_cells_j,
+						  Number_of_Ghost_Cells,
+						  Highest_Order_of_Reconstruction,
+						  GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+						  Stretch_I,
+						  Beta_I, 
+						  Tau_I,
+						  Stretch_J,
+						  Beta_J,
+						  Tau_J,
+						  Orthogonal_North,
+						  Orthogonal_South,
+						  Orthogonal_East,
+						  Orthogonal_West);
 
   /* Deallocate the memory for the boundary splines. */
     
@@ -3207,15 +3347,17 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Annulus(int &_Number_of_Blocks_Idir_,
  *   		                  100,                  
  *  		                  50,                   
  *  		                  2);                   
+ * This subroutine DOESN'T update the ghost cells or
+ * the geometric properties of the grid cells.
  */
-void Grid2D_Quad_MultiBlock_HO::Grid_Ellipse(int &_Number_of_Blocks_Idir_,
-					     int &_Number_of_Blocks_Jdir_,
-					     const double &A,
-					     const double &B,
-					     const int Number_of_Cells_Idir,
-					     const int Number_of_Cells_Jdir,
-					     const int Number_of_Ghost_Cells,
-					     const int Highest_Order_of_Reconstruction) {
+void Grid2D_Quad_MultiBlock_HO::Grid_Ellipse_Without_Update(int &_Number_of_Blocks_Idir_,
+							    int &_Number_of_Blocks_Jdir_,
+							    const double &A,
+							    const double &B,
+							    const int Number_of_Cells_Idir,
+							    const int Number_of_Cells_Jdir,
+							    const int Number_of_Ghost_Cells,
+							    const int Highest_Order_of_Reconstruction) {
   
   int iBlk, n_cells_i, n_cells_j, Stretch_I, Stretch_J,
     Orthogonal_North, Orthogonal_South,
@@ -3329,25 +3471,25 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Ellipse(int &_Number_of_Blocks_Idir_,
 
     /* Create the 2D quadrilateral grid block. */
 
-    Grid_ptr[iBlk][0].Create_Quad_Block(Bnd_Spline_North,
-					Bnd_Spline_South,
-					Bnd_Spline_East,
-					Bnd_Spline_West,
-					n_cells_i,
-					n_cells_j,
-					Number_of_Ghost_Cells,
-					Highest_Order_of_Reconstruction,
-					GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-					Stretch_I,
-					Beta_I, 
-					Tau_I,
-					Stretch_J,
-					Beta_J,
-					Tau_J,
-					Orthogonal_North,
-					Orthogonal_South,
-					Orthogonal_East,
-					Orthogonal_West);
+    Grid_ptr[iBlk][0].Create_Quad_Block_Without_Update(Bnd_Spline_North,
+						       Bnd_Spline_South,
+						       Bnd_Spline_East,
+						       Bnd_Spline_West,
+						       n_cells_i,
+						       n_cells_j,
+						       Number_of_Ghost_Cells,
+						       Highest_Order_of_Reconstruction,
+						       GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+						       Stretch_I,
+						       Beta_I, 
+						       Tau_I,
+						       Stretch_J,
+						       Beta_J,
+						       Tau_J,
+						       Orthogonal_North,
+						       Orthogonal_South,
+						       Orthogonal_East,
+						       Orthogonal_West);
 
     /* Smooth the 2D quadrilateral grid block. */
 
@@ -3376,15 +3518,17 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Ellipse(int &_Number_of_Blocks_Idir_,
  *		                         120,           
  *		                         50,            
  *                                       2);            
+ * This subroutine DOESN'T update the ghost cells or
+ * the geometric properties of the grid cells.
  */
-void Grid2D_Quad_MultiBlock_HO::Grid_NACA_Aerofoil(int &_Number_of_Blocks_Idir_,
-						   int &_Number_of_Blocks_Jdir_,
-						   char *NACA_Aerofoil_Type_ptr,
-						   const double &Chord_Length,
-						   const int Number_of_Cells_Idir,
-						   const int Number_of_Cells_Jdir,
-						   const int Number_of_Ghost_Cells,
-						   const int Highest_Order_of_Reconstruction) {
+void Grid2D_Quad_MultiBlock_HO::Grid_NACA_Aerofoil_Without_Update(int &_Number_of_Blocks_Idir_,
+								  int &_Number_of_Blocks_Jdir_,
+								  char *NACA_Aerofoil_Type_ptr,
+								  const double &Chord_Length,
+								  const int Number_of_Cells_Idir,
+								  const int Number_of_Cells_Jdir,
+								  const int Number_of_Ghost_Cells,
+								  const int Highest_Order_of_Reconstruction) {
   
   int iBlk, n_cells_i, n_cells_j,
     Stretch_I, Stretch_J,
@@ -3573,25 +3717,25 @@ void Grid2D_Quad_MultiBlock_HO::Grid_NACA_Aerofoil(int &_Number_of_Blocks_Idir_,
 
     /* Create the 2D quadrilateral grid block. */
 
-    Grid_ptr[iBlk][0].Create_Quad_Block(Bnd_Spline_North,
-					Bnd_Spline_South,
-					Bnd_Spline_East,
-					Bnd_Spline_West,
-					n_cells_i,
-					n_cells_j,
-					Number_of_Ghost_Cells,
-					Highest_Order_of_Reconstruction,
-					GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-					Stretch_I,
-					Beta_I, 
-					Tau_I,
-					Stretch_J,
-					Beta_J,
-					Tau_J,
-					Orthogonal_North,
-					Orthogonal_South,
-					Orthogonal_East,
-					Orthogonal_West);
+    Grid_ptr[iBlk][0].Create_Quad_Block_Without_Update(Bnd_Spline_North,
+						       Bnd_Spline_South,
+						       Bnd_Spline_East,
+						       Bnd_Spline_West,
+						       n_cells_i,
+						       n_cells_j,
+						       Number_of_Ghost_Cells,
+						       Highest_Order_of_Reconstruction,
+						       GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+						       Stretch_I,
+						       Beta_I, 
+						       Tau_I,
+						       Stretch_J,
+						       Beta_J,
+						       Tau_J,
+						       Orthogonal_North,
+						       Orthogonal_South,
+						       Orthogonal_East,
+						       Orthogonal_West);
 	
     /* Smooth the 2D quadrilateral grid block. */
 
@@ -3650,14 +3794,16 @@ void Grid2D_Quad_MultiBlock_HO::Grid_NACA_Aerofoil(int &_Number_of_Blocks_Idir_,
  *  		                   50,                  
  *                                 2);                  
  *                                                      
+ * This subroutine DOESN'T update the ghost cells or
+ * the geometric properties of the grid cells.
  */
-void Grid2D_Quad_MultiBlock_HO::Grid_Free_Jet(int &_Number_of_Blocks_Idir_,
-					      int &_Number_of_Blocks_Jdir_,
-					      const double &Radius,
-					      const int Number_of_Cells_Idir,
-					      const int Number_of_Cells_Jdir,
-					      const int Number_of_Ghost_Cells,
-					      const int Highest_Order_of_Reconstruction) {
+void Grid2D_Quad_MultiBlock_HO::Grid_Free_Jet_Without_Update(int &_Number_of_Blocks_Idir_,
+							     int &_Number_of_Blocks_Jdir_,
+							     const double &Radius,
+							     const int Number_of_Cells_Idir,
+							     const int Number_of_Cells_Jdir,
+							     const int Number_of_Ghost_Cells,
+							     const int Highest_Order_of_Reconstruction) {
   
   int iBlk, jBlk, n_cells_i, n_cells_j, Stretch_I, Stretch_J,
     Orthogonal_North, Orthogonal_South,
@@ -3721,25 +3867,25 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Free_Jet(int &_Number_of_Blocks_Idir_,
 	Orthogonal_East = 0;
 	Orthogonal_West = 0;
 
-	Grid_ptr[iBlk][jBlk].Create_Quad_Block(Bnd_Spline_North,
-					       Bnd_Spline_South,
-					       Bnd_Spline_East,
-					       Bnd_Spline_West,
-					       n_cells_i,
-					       n_cells_j,
-					       Number_of_Ghost_Cells,
-					       Highest_Order_of_Reconstruction,
-					       GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-					       Stretch_I,
-					       Beta_I, 
-					       Tau_I,
-					       Stretch_J,
-					       Beta_J,
-					       Tau_J,
-					       Orthogonal_North,
-					       Orthogonal_South,
-					       Orthogonal_East,
-					       Orthogonal_West);
+	Grid_ptr[iBlk][jBlk].Create_Quad_Block_Without_Update(Bnd_Spline_North,
+							      Bnd_Spline_South,
+							      Bnd_Spline_East,
+							      Bnd_Spline_West,
+							      n_cells_i,
+							      n_cells_j,
+							      Number_of_Ghost_Cells,
+							      Highest_Order_of_Reconstruction,
+							      GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+							      Stretch_I,
+							      Beta_I, 
+							      Tau_I,
+							      Stretch_J,
+							      Beta_J,
+							      Tau_J,
+							      Orthogonal_North,
+							      Orthogonal_South,
+							      Orthogonal_East,
+							      Orthogonal_West);
 	      
 	Bnd_Spline_North.deallocate();
 	Bnd_Spline_South.deallocate();
@@ -3779,25 +3925,25 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Free_Jet(int &_Number_of_Blocks_Idir_,
 	Orthogonal_East = 0;
 	Orthogonal_West = 0;
 
-	Grid_ptr[iBlk][jBlk].Create_Quad_Block(Bnd_Spline_North,
-					       Bnd_Spline_South,
-					       Bnd_Spline_East,
-					       Bnd_Spline_West,
-					       n_cells_i,
-					       n_cells_j,
-					       Number_of_Ghost_Cells,
-					       Highest_Order_of_Reconstruction,
-					       GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-					       Stretch_I,
-					       Beta_I, 
-					       Tau_I,
-					       Stretch_J,
-					       Beta_J,
-					       Tau_J,
-					       Orthogonal_North,
-					       Orthogonal_South,
-					       Orthogonal_East,
-					       Orthogonal_West);
+	Grid_ptr[iBlk][jBlk].Create_Quad_Block_Without_Update(Bnd_Spline_North,
+							      Bnd_Spline_South,
+							      Bnd_Spline_East,
+							      Bnd_Spline_West,
+							      n_cells_i,
+							      n_cells_j,
+							      Number_of_Ghost_Cells,
+							      Highest_Order_of_Reconstruction,
+							      GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+							      Stretch_I,
+							      Beta_I, 
+							      Tau_I,
+							      Stretch_J,
+							      Beta_J,
+							      Tau_J,
+							      Orthogonal_North,
+							      Orthogonal_South,
+							      Orthogonal_East,
+							      Orthogonal_West);
 
 	Bnd_Spline_North.deallocate();
 	Bnd_Spline_South.deallocate();
@@ -3837,25 +3983,25 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Free_Jet(int &_Number_of_Blocks_Idir_,
 	Orthogonal_East = 0;
 	Orthogonal_West = 0;
 
-	Grid_ptr[iBlk][jBlk].Create_Quad_Block(Bnd_Spline_North,
-					       Bnd_Spline_South,
-					       Bnd_Spline_East,
-					       Bnd_Spline_West,
-					       n_cells_i,
-					       n_cells_j,
-					       Number_of_Ghost_Cells,
-					       Highest_Order_of_Reconstruction,
-					       GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-					       Stretch_I,
-					       Beta_I, 
-					       Tau_I,
-					       Stretch_J,
-					       Beta_J,
-					       Tau_J,
-					       Orthogonal_North,
-					       Orthogonal_South,
-					       Orthogonal_East,
-					       Orthogonal_West);
+	Grid_ptr[iBlk][jBlk].Create_Quad_Block_Without_Update(Bnd_Spline_North,
+							      Bnd_Spline_South,
+							      Bnd_Spline_East,
+							      Bnd_Spline_West,
+							      n_cells_i,
+							      n_cells_j,
+							      Number_of_Ghost_Cells,
+							      Highest_Order_of_Reconstruction,
+							      GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+							      Stretch_I,
+							      Beta_I, 
+							      Tau_I,
+							      Stretch_J,
+							      Beta_J,
+							      Tau_J,
+							      Orthogonal_North,
+							      Orthogonal_South,
+							      Orthogonal_East,
+							      Orthogonal_West);
 	      
 	Bnd_Spline_North.deallocate();
 	Bnd_Spline_South.deallocate();
@@ -3895,25 +4041,25 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Free_Jet(int &_Number_of_Blocks_Idir_,
 	Orthogonal_East = 0;
 	Orthogonal_West = 0;
 
-	Grid_ptr[iBlk][jBlk].Create_Quad_Block(Bnd_Spline_North,
-					       Bnd_Spline_South,
-					       Bnd_Spline_East,
-					       Bnd_Spline_West,
-					       n_cells_i,
-					       n_cells_j,
-					       Number_of_Ghost_Cells,
-					       Highest_Order_of_Reconstruction,
-					       GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-					       Stretch_I,
-					       Beta_I, 
-					       Tau_I,
-					       Stretch_J,
-					       Beta_J,
-					       Tau_J,
-					       Orthogonal_North,
-					       Orthogonal_South,
-					       Orthogonal_East,
-					       Orthogonal_West);
+	Grid_ptr[iBlk][jBlk].Create_Quad_Block_Without_Update(Bnd_Spline_North,
+							      Bnd_Spline_South,
+							      Bnd_Spline_East,
+							      Bnd_Spline_West,
+							      n_cells_i,
+							      n_cells_j,
+							      Number_of_Ghost_Cells,
+							      Highest_Order_of_Reconstruction,
+							      GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+							      Stretch_I,
+							      Beta_I, 
+							      Tau_I,
+							      Stretch_J,
+							      Beta_J,
+							      Tau_J,
+							      Orthogonal_North,
+							      Orthogonal_South,
+							      Orthogonal_East,
+							      Orthogonal_West);
 	      
 	Bnd_Spline_North.deallocate();
 	Bnd_Spline_South.deallocate();
@@ -3955,25 +4101,25 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Free_Jet(int &_Number_of_Blocks_Idir_,
 	Orthogonal_East = 0;
 	Orthogonal_West = 0;
 
-	Grid_ptr[iBlk][jBlk].Create_Quad_Block(Bnd_Spline_North,
-					       Bnd_Spline_South,
-					       Bnd_Spline_East,
-					       Bnd_Spline_West,
-					       n_cells_i,
-					       n_cells_j,
-					       Number_of_Ghost_Cells,
-					       Highest_Order_of_Reconstruction,
-					       GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-					       Stretch_I,
-					       Beta_I, 
-					       Tau_I,
-					       Stretch_J,
-					       Beta_J,
-					       Tau_J,
-					       Orthogonal_North,
-					       Orthogonal_South,
-					       Orthogonal_East,
-					       Orthogonal_West);
+	Grid_ptr[iBlk][jBlk].Create_Quad_Block_Without_Update(Bnd_Spline_North,
+							      Bnd_Spline_South,
+							      Bnd_Spline_East,
+							      Bnd_Spline_West,
+							      n_cells_i,
+							      n_cells_j,
+							      Number_of_Ghost_Cells,
+							      Highest_Order_of_Reconstruction,
+							      GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+							      Stretch_I,
+							      Beta_I, 
+							      Tau_I,
+							      Stretch_J,
+							      Beta_J,
+							      Tau_J,
+							      Orthogonal_North,
+							      Orthogonal_South,
+							      Orthogonal_East,
+							      Orthogonal_West);
 	      
 	Bnd_Spline_North.deallocate();
 	Bnd_Spline_South.deallocate();
@@ -3999,19 +4145,21 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Free_Jet(int &_Number_of_Blocks_Idir_,
  *         		        100,                                  
  *         		        100,                                  
  *                              2);                                   
+ * This subroutine DOESN'T update the ghost cells or
+ * the geometric properties of the grid cells.
  */
-void Grid2D_Quad_MultiBlock_HO::Grid_Wedge(int &_Number_of_Blocks_Idir_,
-					   int &_Number_of_Blocks_Jdir_,
-					   const double &Wedge_Angle,
-					   const double &Wedge_Length,
-					   const int &Wedge_BC_Type,
-					   const int &Stretching_Flag,
-					   const double &Stretching_Factor_Idir,
-					   const double &Stretching_Factor_Jdir,
-					   const int Number_of_Cells_Idir,
-					   const int Number_of_Cells_Jdir,
-					   const int Number_of_Ghost_Cells,
-					   const int Highest_Order_of_Reconstruction) {
+void Grid2D_Quad_MultiBlock_HO::Grid_Wedge_Without_Update(int &_Number_of_Blocks_Idir_,
+							  int &_Number_of_Blocks_Jdir_,
+							  const double &Wedge_Angle,
+							  const double &Wedge_Length,
+							  const int &Wedge_BC_Type,
+							  const int &Stretching_Flag,
+							  const double &Stretching_Factor_Idir,
+							  const double &Stretching_Factor_Jdir,
+							  const int Number_of_Cells_Idir,
+							  const int Number_of_Cells_Jdir,
+							  const int Number_of_Ghost_Cells,
+							  const int Highest_Order_of_Reconstruction) {
   
   int Stretch_I, Stretch_J,
     Orthogonal_North, Orthogonal_South,
@@ -4079,25 +4227,25 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Wedge(int &_Number_of_Blocks_Idir_,
     Orthogonal_East = 0;
     Orthogonal_West = 0;
     // Create the 2D quadrilateral grid block.
-    Grid_ptr[iBlk][0].Create_Quad_Block(Bnd_Spline_North,
-					Bnd_Spline_South,
-					Bnd_Spline_East,
-					Bnd_Spline_West,
-					Number_of_Cells_Idir,
-					Number_of_Cells_Jdir,
-					Number_of_Ghost_Cells,
-					Highest_Order_of_Reconstruction,
-					GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-					Stretch_I,
-					Beta_I, 
-					Tau_I,
-					Stretch_J,
-					Beta_J,
-					Tau_J,
-					Orthogonal_North,
-					Orthogonal_South,
-					Orthogonal_East,
-					Orthogonal_West);
+    Grid_ptr[iBlk][0].Create_Quad_Block_Without_Update(Bnd_Spline_North,
+						       Bnd_Spline_South,
+						       Bnd_Spline_East,
+						       Bnd_Spline_West,
+						       Number_of_Cells_Idir,
+						       Number_of_Cells_Jdir,
+						       Number_of_Ghost_Cells,
+						       Highest_Order_of_Reconstruction,
+						       GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+						       Stretch_I,
+						       Beta_I, 
+						       Tau_I,
+						       Stretch_J,
+						       Beta_J,
+						       Tau_J,
+						       Orthogonal_North,
+						       Orthogonal_South,
+						       Orthogonal_East,
+						       Orthogonal_West);
     //Smooth_Quad_Block(Grid_ptr[iBlk][0], min(250, 2*max(Number_of_Cells_Idir,Number_of_Cells_Jdir)));
     // Deallocate the memory for the boundary splines.
     Bnd_Spline_North.deallocate();
@@ -4120,15 +4268,17 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Wedge(int &_Number_of_Blocks_Idir_,
  *   	                                      150,                    
  *  	                                      50,                     
  *                                            2);                    
+ * This subroutine DOESN'T update the ghost cells or
+ * the geometric properties of the grid cells.
  */
-void Grid2D_Quad_MultiBlock_HO::Grid_Unsteady_Blunt_Body(int &_Number_of_Blocks_Idir_,
-							 int &_Number_of_Blocks_Jdir_,
-							 const double &Radius,
-							 const double &Mach_Number,
-							 const int Number_of_Cells_Idir,
-							 const int Number_of_Cells_Jdir,
-							 const int Number_of_Ghost_Cells,
-							 const int Highest_Order_of_Reconstruction) {
+void Grid2D_Quad_MultiBlock_HO::Grid_Unsteady_Blunt_Body_Without_Update(int &_Number_of_Blocks_Idir_,
+									int &_Number_of_Blocks_Jdir_,
+									const double &Radius,
+									const double &Mach_Number,
+									const int Number_of_Cells_Idir,
+									const int Number_of_Cells_Jdir,
+									const int Number_of_Ghost_Cells,
+									const int Highest_Order_of_Reconstruction) {
   
   int Stretch_I, Stretch_J,
     Orthogonal_North, Orthogonal_South,
@@ -4232,25 +4382,25 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Unsteady_Blunt_Body(int &_Number_of_Blocks_
       Orthogonal_West = 1;
     }
     // Create the 2D quadrilateral grid block.
-    Grid_ptr[0][jBlk].Create_Quad_Block(Bnd_Spline_North,
-					Bnd_Spline_South,
-					Bnd_Spline_East,
-					Bnd_Spline_West,
-					Number_of_Cells_Idir,
-					Number_of_Cells_Jdir,
-					Number_of_Ghost_Cells,
-					Highest_Order_of_Reconstruction,
-					GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-					Stretch_I,
-					Beta_I, 
-					Tau_I,
-					Stretch_J,
-					Beta_J,
-					Tau_J,
-					Orthogonal_North,
-					Orthogonal_South,
-					Orthogonal_East,
-					Orthogonal_West);
+    Grid_ptr[0][jBlk].Create_Quad_Block_Without_Update(Bnd_Spline_North,
+						       Bnd_Spline_South,
+						       Bnd_Spline_East,
+						       Bnd_Spline_West,
+						       Number_of_Cells_Idir,
+						       Number_of_Cells_Jdir,
+						       Number_of_Ghost_Cells,
+						       Highest_Order_of_Reconstruction,
+						       GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+						       Stretch_I,
+						       Beta_I, 
+						       Tau_I,
+						       Stretch_J,
+						       Beta_J,
+						       Tau_J,
+						       Orthogonal_North,
+						       Orthogonal_South,
+						       Orthogonal_East,
+						       Orthogonal_West);
     // Deallocate the memory for the boundary splines.
     Bnd_Spline_North.deallocate();
     Bnd_Spline_South.deallocate();
@@ -4273,16 +4423,18 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Unsteady_Blunt_Body(int &_Number_of_Blocks_
  *   	                               ncells_i,                      
  *  	                               ncells_j,                      
  *                                     Nghost_Cells);                 
+ * This subroutine DOESN'T update the ghost cells or
+ * the geometric properties of the grid cells.
  */
-void Grid2D_Quad_MultiBlock_HO::Grid_Ringleb_Flow(int &_Number_of_Blocks_Idir_,
-						  int &_Number_of_Blocks_Jdir_,
-						  const double &Inner_Streamline_Number,
-						  const double &Outer_Streamline_Number,
-						  const double &Isotach_Line,
-						  const int Number_of_Cells_Idir,
-						  const int Number_of_Cells_Jdir,
-						  const int Number_of_Ghost_Cells,
-						  const int Highest_Order_of_Reconstruction) {
+void Grid2D_Quad_MultiBlock_HO::Grid_Ringleb_Flow_Without_Update(int &_Number_of_Blocks_Idir_,
+								 int &_Number_of_Blocks_Jdir_,
+								 const double &Inner_Streamline_Number,
+								 const double &Outer_Streamline_Number,
+								 const double &Isotach_Line,
+								 const int Number_of_Cells_Idir,
+								 const int Number_of_Cells_Jdir,
+								 const int Number_of_Ghost_Cells,
+								 const int Highest_Order_of_Reconstruction) {
 
   assert(Inner_Streamline_Number > Outer_Streamline_Number);
   assert(Inner_Streamline_Number < 5.0/3.0);
@@ -4417,25 +4569,25 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Ringleb_Flow(int &_Number_of_Blocks_Idir_,
   Orthogonal_West = 1;
 
   // Create the 2D quadrilateral grid block representing the mesh.
-  Grid_ptr[0][0].Create_Quad_Block(Bnd_Spline_North,
-				   Bnd_Spline_South,
-				   Bnd_Spline_East,
-				   Bnd_Spline_West,
-				   Number_of_Cells_Idir,
-				   Number_of_Cells_Jdir,
-				   Number_of_Ghost_Cells,
-				   Highest_Order_of_Reconstruction,
-				   GRID2D_QUAD_BLOCK_INIT_PROCEDURE_EAST_WEST,
-				   Stretch_I,
-				   Beta_I,
-				   Tau_I,
-				   Stretch_J,
-				   Beta_J,
-				   Tau_J,
-				   Orthogonal_North,
-				   Orthogonal_South,
-				   Orthogonal_East,
-				   Orthogonal_West);
+  Grid_ptr[0][0].Create_Quad_Block_Without_Update(Bnd_Spline_North,
+						  Bnd_Spline_South,
+						  Bnd_Spline_East,
+						  Bnd_Spline_West,
+						  Number_of_Cells_Idir,
+						  Number_of_Cells_Jdir,
+						  Number_of_Ghost_Cells,
+						  Highest_Order_of_Reconstruction,
+						  GRID2D_QUAD_BLOCK_INIT_PROCEDURE_EAST_WEST,
+						  Stretch_I,
+						  Beta_I,
+						  Tau_I,
+						  Stretch_J,
+						  Beta_J,
+						  Tau_J,
+						  Orthogonal_North,
+						  Orthogonal_South,
+						  Orthogonal_East,
+						  Orthogonal_West);
 
   Grid_ptr[0][0].Smooth_Quad_Block(min(250,2*max(Number_of_Cells_Idir,Number_of_Cells_Jdir)));
 
@@ -4468,14 +4620,16 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Ringleb_Flow(int &_Number_of_Blocks_Idir_,
  *   	                                   150,                       
  *  	                                   50,                        
  *                                         2);                        
+ * This subroutine DOESN'T update the ghost cells or
+ * the geometric properties of the grid cells.
  */
-void Grid2D_Quad_MultiBlock_HO::Grid_Bump_Channel_Flow(int &_Number_of_Blocks_Idir_,
-						       int &_Number_of_Blocks_Jdir_,
-						       const int Smooth_Bump,
-						       const int Number_of_Cells_Idir,
-						       const int Number_of_Cells_Jdir,
-						       const int Number_of_Ghost_Cells,
-						       const int Highest_Order_of_Reconstruction) {
+void Grid2D_Quad_MultiBlock_HO::Grid_Bump_Channel_Flow_Without_Update(int &_Number_of_Blocks_Idir_,
+								      int &_Number_of_Blocks_Jdir_,
+								      const int Smooth_Bump,
+								      const int Number_of_Cells_Idir,
+								      const int Number_of_Cells_Jdir,
+								      const int Number_of_Ghost_Cells,
+								      const int Highest_Order_of_Reconstruction) {
   
   int Stretch_I, Stretch_J,
       Orthogonal_North, Orthogonal_South,
@@ -4665,25 +4819,25 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Bump_Channel_Flow(int &_Number_of_Blocks_Id
       Orthogonal_West = 1;
 
       // Create the 2D quadrilateral grid block representing the mesh.
-      Grid_ptr[iBlk][jBlk].Create_Quad_Block(Bnd_Spline_North,
-					     Bnd_Spline_South,
-					     Bnd_Spline_East,
-					     Bnd_Spline_West,
-					     Number_of_Cells_Idir,
-					     Number_of_Cells_Jdir,
-					     Number_of_Ghost_Cells,
-					     Highest_Order_of_Reconstruction,
-					     GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-					     Stretch_I,
-					     Beta_I, 
-					     Tau_I,
-					     Stretch_J,
-					     Beta_J,
-					     Tau_J,
-					     Orthogonal_North,
-					     Orthogonal_South,
-					     Orthogonal_East,
-					     Orthogonal_West);
+      Grid_ptr[iBlk][jBlk].Create_Quad_Block_Without_Update(Bnd_Spline_North,
+							    Bnd_Spline_South,
+							    Bnd_Spline_East,
+							    Bnd_Spline_West,
+							    Number_of_Cells_Idir,
+							    Number_of_Cells_Jdir,
+							    Number_of_Ghost_Cells,
+							    Highest_Order_of_Reconstruction,
+							    GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+							    Stretch_I,
+							    Beta_I, 
+							    Tau_I,
+							    Stretch_J,
+							    Beta_J,
+							    Tau_J,
+							    Orthogonal_North,
+							    Orthogonal_South,
+							    Orthogonal_East,
+							    Orthogonal_West);
 
       // Smooth the 2D quadrilateral grid block.
       Grid_ptr[iBlk][jBlk].Smooth_Quad_Block(min(250,2*max(Number_of_Cells_Idir,Number_of_Cells_Jdir)));
@@ -4714,19 +4868,21 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Bump_Channel_Flow(int &_Number_of_Blocks_Id
  *                                 Number_of_Cells_Idir,              
  *                                 Number_of_Cells_Jdir,              
  *                                 2)                                 
+ * This subroutine DOESN'T update the ghost cells or
+ * the geometric properties of the grid cells.
  */
-void Grid2D_Quad_MultiBlock_HO::Grid_Jet_Flow(int &_Number_of_Blocks_Idir_,
-					      int &_Number_of_Blocks_Jdir_,
-					      const double &Radius,
-					      const double &Mach,
-					      const int &Stretching_Type_Idir,
-					      const int &Stretching_Type_Jdir,
-					      const double &Stretching_Factor_Idir,
-					      const double &Stretching_Factor_Jdir,
-					      const int Number_of_Cells_Idir,
-					      const int Number_of_Cells_Jdir,
-					      const int Number_of_Ghost_Cells,
-					      const int Highest_Order_of_Reconstruction){
+void Grid2D_Quad_MultiBlock_HO::Grid_Jet_Flow_Without_Update(int &_Number_of_Blocks_Idir_,
+							     int &_Number_of_Blocks_Jdir_,
+							     const double &Radius,
+							     const double &Mach,
+							     const int &Stretching_Type_Idir,
+							     const int &Stretching_Type_Jdir,
+							     const double &Stretching_Factor_Idir,
+							     const double &Stretching_Factor_Jdir,
+							     const int Number_of_Cells_Idir,
+							     const int Number_of_Cells_Jdir,
+							     const int Number_of_Ghost_Cells,
+							     const int Highest_Order_of_Reconstruction){
   
   int block_flag,
       BCtypeN, BCtypeS, BCtypeE, BCtypeW,
@@ -4894,25 +5050,25 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Jet_Flow(int &_Number_of_Blocks_Idir_,
 	Bnd_Spline_West.setBCtype(BCtypeW);
 	
 	// Create the 2D quadrilateral grid block.
-	Grid_ptr[iBlk][jBlk].Create_Quad_Block(Bnd_Spline_North,
-					       Bnd_Spline_South,
-					       Bnd_Spline_East,
-					       Bnd_Spline_West,
-					       Number_of_Cells_Idir,
-					       Number_of_Cells_Jdir,
-					       Number_of_Ghost_Cells,
-					       Highest_Order_of_Reconstruction,
-					       GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-					       Stretch_I,
-					       Beta_I,
-					       Tau_I,
-					       Stretch_J,
-					       Beta_J,
-					       Tau_J,
-					       Orthogonal_North,
-					       Orthogonal_South,
-					       Orthogonal_East,
-					       Orthogonal_West);
+	Grid_ptr[iBlk][jBlk].Create_Quad_Block_Without_Update(Bnd_Spline_North,
+							      Bnd_Spline_South,
+							      Bnd_Spline_East,
+							      Bnd_Spline_West,
+							      Number_of_Cells_Idir,
+							      Number_of_Cells_Jdir,
+							      Number_of_Ghost_Cells,
+							      Highest_Order_of_Reconstruction,
+							      GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+							      Stretch_I,
+							      Beta_I,
+							      Tau_I,
+							      Stretch_J,
+							      Beta_J,
+							      Tau_J,
+							      Orthogonal_North,
+							      Orthogonal_South,
+							      Orthogonal_East,
+							      Orthogonal_West);
 	
 	// Deallocate the memory for the boundary splines.
 	Bnd_Spline_North.deallocate();
@@ -4941,19 +5097,21 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Jet_Flow(int &_Number_of_Blocks_Idir_,
  *				   Stretching_Factor_Jdir,            
  *                                 Number_of_Cells_Idir,              
  *                                 2)                                 
+ * This subroutine DOESN'T update the ghost cells or
+ * the geometric properties of the grid cells.
  */
-void Grid2D_Quad_MultiBlock_HO::Grid_Mixing_Layer(int &_Number_of_Blocks_Idir_,
-						  int &_Number_of_Blocks_Jdir_,
-						  const double &Length,
-						  const double &Mach,
-						  const int &Stretching_Type_Idir,
-						  const int &Stretching_Type_Jdir,
-						  const double &Stretching_Factor_Idir,
-						  const double &Stretching_Factor_Jdir,
-						  const int Number_of_Cells_Idir,
-						  const int Number_of_Cells_Jdir,
-						  const int Number_of_Ghost_Cells,
-						  const int Highest_Order_of_Reconstruction){
+void Grid2D_Quad_MultiBlock_HO::Grid_Mixing_Layer_Without_Update(int &_Number_of_Blocks_Idir_,
+								 int &_Number_of_Blocks_Jdir_,
+								 const double &Length,
+								 const double &Mach,
+								 const int &Stretching_Type_Idir,
+								 const int &Stretching_Type_Jdir,
+								 const double &Stretching_Factor_Idir,
+								 const double &Stretching_Factor_Jdir,
+								 const int Number_of_Cells_Idir,
+								 const int Number_of_Cells_Jdir,
+								 const int Number_of_Ghost_Cells,
+								 const int Highest_Order_of_Reconstruction){
   
   int block_flag,
       BCtypeN, BCtypeS, BCtypeE, BCtypeW,
@@ -5104,25 +5262,25 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Mixing_Layer(int &_Number_of_Blocks_Idir_,
 	Bnd_Spline_West.setBCtype(BCtypeW);
     
 	// Create the 2D quadrilateral grid block.
-	Grid_ptr[iBlk][jBlk].Create_Quad_Block(Bnd_Spline_North,
-					       Bnd_Spline_South,
-					       Bnd_Spline_East,
-					       Bnd_Spline_West,
-					       Number_of_Cells_Idir,
-					       Number_of_Cells_Jdir,
-					       Number_of_Ghost_Cells,
-					       Highest_Order_of_Reconstruction,
-					       GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-					       Stretch_I,
-					       Beta_I,
-					       Tau_I,
-					       Stretch_J,
-					       Beta_J,
-					       Tau_J,
-					       Orthogonal_North,
-					       Orthogonal_South,
-					       Orthogonal_East,
-					       Orthogonal_West);
+	Grid_ptr[iBlk][jBlk].Create_Quad_Block_Without_Update(Bnd_Spline_North,
+							      Bnd_Spline_South,
+							      Bnd_Spline_East,
+							      Bnd_Spline_West,
+							      Number_of_Cells_Idir,
+							      Number_of_Cells_Jdir,
+							      Number_of_Ghost_Cells,
+							      Highest_Order_of_Reconstruction,
+							      GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+							      Stretch_I,
+							      Beta_I,
+							      Tau_I,
+							      Stretch_J,
+							      Beta_J,
+							      Tau_J,
+							      Orthogonal_North,
+							      Orthogonal_South,
+							      Orthogonal_East,
+							      Orthogonal_West);
 	
 	// Deallocate the memory for the boundary splines.
 	Bnd_Spline_North.deallocate();
@@ -5140,17 +5298,19 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Mixing_Layer(int &_Number_of_Blocks_Idir_,
 /*!
  * Generates a quadilateral mesh with clustering consisting of five   
  * grid blocks for predicting flow over a backward facing step.       
+ * This subroutine DOESN'T update the ghost cells or
+ * the geometric properties of the grid cells.
  **/
-void Grid2D_Quad_MultiBlock_HO::Grid_Backward_Facing_Step(int &_Number_of_Blocks_Idir_,
-							  int &_Number_of_Blocks_Jdir_,
-							  const double &Step_Height,
-							  const double &Top_Wall_Deflection,
-							  const double &Stretching_Factor_Idir,
-							  const double &Stretching_Factor_Jdir,
-							  const int Number_of_Cells_Idir,
-							  const int Number_of_Cells_Jdir,
-							  const int Number_of_Ghost_Cells,
-							  const int Highest_Order_of_Reconstruction) {
+void Grid2D_Quad_MultiBlock_HO::Grid_Backward_Facing_Step_Without_Update(int &_Number_of_Blocks_Idir_,
+									 int &_Number_of_Blocks_Jdir_,
+									 const double &Step_Height,
+									 const double &Top_Wall_Deflection,
+									 const double &Stretching_Factor_Idir,
+									 const double &Stretching_Factor_Jdir,
+									 const int Number_of_Cells_Idir,
+									 const int Number_of_Cells_Jdir,
+									 const int Number_of_Ghost_Cells,
+									 const int Highest_Order_of_Reconstruction) {
 
   int block_flag,
       BCtypeN, BCtypeS, BCtypeE, BCtypeW,
@@ -5391,25 +5551,25 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Backward_Facing_Step(int &_Number_of_Blocks
 	Bnd_Spline_West.setBCtype(BCtypeW);
     
 	// Create the 2D quadrilateral grid block.
-	Grid_ptr[iBlk][jBlk].Create_Quad_Block(Bnd_Spline_North,
-					       Bnd_Spline_South,
-					       Bnd_Spline_East,
-					       Bnd_Spline_West,
-					       Number_of_Cells_Idir,
-					       Number_of_Cells_Jdir,
-					       Number_of_Ghost_Cells,
-					       Highest_Order_of_Reconstruction,
-					       GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-					       Stretch_I,
-					       Beta_I,
-					       Tau_I,
-					       Stretch_J,
-					       Beta_J,
-					       Tau_J,
-					       Orthogonal_North,
-					       Orthogonal_South,
-					       Orthogonal_East,
-					       Orthogonal_West);
+	Grid_ptr[iBlk][jBlk].Create_Quad_Block_Without_Update(Bnd_Spline_North,
+							      Bnd_Spline_South,
+							      Bnd_Spline_East,
+							      Bnd_Spline_West,
+							      Number_of_Cells_Idir,
+							      Number_of_Cells_Jdir,
+							      Number_of_Ghost_Cells,
+							      Highest_Order_of_Reconstruction,
+							      GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+							      Stretch_I,
+							      Beta_I,
+							      Tau_I,
+							      Stretch_J,
+							      Beta_J,
+							      Tau_J,
+							      Orthogonal_North,
+							      Orthogonal_South,
+							      Orthogonal_East,
+							      Orthogonal_West);
 
 	// Deallocate the memory for the boundary splines.
 	Bnd_Spline_North.deallocate();
@@ -5427,17 +5587,19 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Backward_Facing_Step(int &_Number_of_Blocks
 /*!
  * Generates a quadilateral mesh with clustering consisting of five   
  * grid blocks for predicting flow over a forward facing step.        
+ * This subroutine DOESN'T update the ghost cells or
+ * the geometric properties of the grid cells.
  */
-void Grid2D_Quad_MultiBlock_HO::Grid_Forward_Facing_Step(int &_Number_of_Blocks_Idir_,
-							 int &_Number_of_Blocks_Jdir_,
-							 const double &Step_Height,
-							 const double &Channel_Gap,
-							 const double &Stretching_Factor_Idir,
-							 const double &Stretching_Factor_Jdir,
-							 const int Number_of_Cells_Idir,
-							 const int Number_of_Cells_Jdir,
-							 const int Number_of_Ghost_Cells,
-							 const int Highest_Order_of_Reconstruction) {
+void Grid2D_Quad_MultiBlock_HO::Grid_Forward_Facing_Step_Without_Update(int &_Number_of_Blocks_Idir_,
+									int &_Number_of_Blocks_Jdir_,
+									const double &Step_Height,
+									const double &Channel_Gap,
+									const double &Stretching_Factor_Idir,
+									const double &Stretching_Factor_Jdir,
+									const int Number_of_Cells_Idir,
+									const int Number_of_Cells_Jdir,
+									const int Number_of_Ghost_Cells,
+									const int Highest_Order_of_Reconstruction) {
   
   int BCtypeN, BCtypeS, BCtypeE, BCtypeW;
   Vector2D xNW, xNE, xSE, xSW;
@@ -5501,25 +5663,25 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Forward_Facing_Step(int &_Number_of_Blocks_
       Bnd_Spline_West.setBCtype(BCtypeW);
     
       // Create the 2D quadrilateral grid block.
-      Grid_ptr[iBlk][jBlk].Create_Quad_Block(Bnd_Spline_North,
-					     Bnd_Spline_South,
-					     Bnd_Spline_East,
-					     Bnd_Spline_West,
-					     Number_of_Cells_Idir,
-					     Number_of_Cells_Jdir,
-					     Number_of_Ghost_Cells,
-					     Highest_Order_of_Reconstruction,
-					     GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-					     Stretch_I,
-					     Beta_I,
-					     Tau_I,
-					     Stretch_J,
-					     Beta_J,
-					     Tau_J,
-					     Orthogonal_North,
-					     Orthogonal_South,
-					     Orthogonal_East,
-					     Orthogonal_West);
+      Grid_ptr[iBlk][jBlk].Create_Quad_Block_Without_Update(Bnd_Spline_North,
+							    Bnd_Spline_South,
+							    Bnd_Spline_East,
+							    Bnd_Spline_West,
+							    Number_of_Cells_Idir,
+							    Number_of_Cells_Jdir,
+							    Number_of_Ghost_Cells,
+							    Highest_Order_of_Reconstruction,
+							    GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+							    Stretch_I,
+							    Beta_I,
+							    Tau_I,
+							    Stretch_J,
+							    Beta_J,
+							    Tau_J,
+							    Orthogonal_North,
+							    Orthogonal_South,
+							    Orthogonal_East,
+							    Orthogonal_West);
       
       // Deallocate the memory for the boundary splines.
       Bnd_Spline_North.deallocate();
@@ -5534,14 +5696,16 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Forward_Facing_Step(int &_Number_of_Blocks_
 /*!
  * This routine creates a mesh corresponding to a simplified          
  * desolvation chamber designed by MDS-SCIEX.                         
+ * This subroutine DOESN'T update the ghost cells or
+ * the geometric properties of the grid cells.
  */
-void Grid2D_Quad_MultiBlock_HO::Grid_Desolvation_Chamber(const int &Chamber_BC_Type,
-							 int &_Number_of_Blocks_Idir_,
-							 int &_Number_of_Blocks_Jdir_,
-							 const int Number_of_Cells_Idir,
-							 const int Number_of_Cells_Jdir,
-							 const int Number_of_Ghost_Cells,
-							 const int Highest_Order_of_Reconstruction) {
+void Grid2D_Quad_MultiBlock_HO::Grid_Desolvation_Chamber_Without_Update(const int &Chamber_BC_Type,
+									int &_Number_of_Blocks_Idir_,
+									int &_Number_of_Blocks_Jdir_,
+									const int Number_of_Cells_Idir,
+									const int Number_of_Cells_Jdir,
+									const int Number_of_Ghost_Cells,
+									const int Highest_Order_of_Reconstruction) {
   
   int block_flag,
       BCtypeN, BCtypeS, BCtypeE, BCtypeW,
@@ -5845,25 +6009,25 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Desolvation_Chamber(const int &Chamber_BC_T
 	Bnd_Spline_West.setBCtype(BCtypeW);
 
 	// Create the 2D quadrilateral grid block.
-	Grid_ptr[iBlk][jBlk].Create_Quad_Block(Bnd_Spline_North,
-					       Bnd_Spline_South,
-					       Bnd_Spline_East,
-					       Bnd_Spline_West,
-					       Number_of_Cells_Idir,
-					       Number_of_Cells_Jdir,
-					       Number_of_Ghost_Cells,
-					       Highest_Order_of_Reconstruction,
-					       GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-					       Stretch_I,
-					       Beta_I,
-					       Tau_I,
-					       Stretch_J,
-					       Beta_J,
-					       Tau_J,
-					       Orthogonal_North,
-					       Orthogonal_South,
-					       Orthogonal_East,
-					       Orthogonal_West);
+	Grid_ptr[iBlk][jBlk].Create_Quad_Block_Without_Update(Bnd_Spline_North,
+							      Bnd_Spline_South,
+							      Bnd_Spline_East,
+							      Bnd_Spline_West,
+							      Number_of_Cells_Idir,
+							      Number_of_Cells_Jdir,
+							      Number_of_Ghost_Cells,
+							      Highest_Order_of_Reconstruction,
+							      GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+							      Stretch_I,
+							      Beta_I,
+							      Tau_I,
+							      Stretch_J,
+							      Beta_J,
+							      Tau_J,
+							      Orthogonal_North,
+							      Orthogonal_South,
+							      Orthogonal_East,
+							      Orthogonal_West);
 	
 	// Deallocate the memory for the boundary splines.
 	Bnd_Spline_North.deallocate();
@@ -5883,7 +6047,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Desolvation_Chamber(const int &Chamber_BC_T
  * This routine creates a mesh to be used in conjunction with and     
  * embedded interface representing a section of a NASA rotor 37 blade 
  * at a given percent span.                                           
- *                                                                    
+ *
+ * \verbatim                                                         
  *  +---------------+-------------------+---------------+             
  *  |               |                   |               |             
  *  |               |                   |               |             
@@ -5897,14 +6062,19 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Desolvation_Chamber(const int &Chamber_BC_T
  *  |               |                   |               |             
  *  |               |                   |               |             
  *  +---------------+-------------------+---------------+             
+ *
+ * \endverbatim
+ *
+ * This subroutine DOESN'T update the ghost cells or
+ * the geometric properties of the grid cells.
  */
-void Grid2D_Quad_MultiBlock_HO::Grid_NASA_Rotor_37(int &_Number_of_Blocks_Idir_,
-						   int &_Number_of_Blocks_Jdir_,
-						   const double &Rotor_Percent_Span,
-						   const int Number_of_Cells_Idir,
-						   const int Number_of_Cells_Jdir,
-						   const int Number_of_Ghost_Cells,
-						   const int Highest_Order_of_Reconstruction) {
+void Grid2D_Quad_MultiBlock_HO::Grid_NASA_Rotor_37_Without_Update(int &_Number_of_Blocks_Idir_,
+								  int &_Number_of_Blocks_Jdir_,
+								  const double &Rotor_Percent_Span,
+								  const int Number_of_Cells_Idir,
+								  const int Number_of_Cells_Jdir,
+								  const int Number_of_Ghost_Cells,
+								  const int Highest_Order_of_Reconstruction) {
   
   int error_flag;
   Spline2D_HO upperB, lowerB, upperMiddleB, lowerMiddleB, camberTrail, camberLead, camberBlade, Rotor_Spline;
@@ -6167,25 +6337,25 @@ void Grid2D_Quad_MultiBlock_HO::Grid_NASA_Rotor_37(int &_Number_of_Blocks_Idir_,
   Grid_ptr[1][1].BndWestSpline.tp[5] = SPLINE2D_POINT_SHARP_CORNER;
   Grid_ptr[1][1].BndWestSpline.pathlength();
   // Create quad block (1,1).
-  Grid_ptr[1][1].Create_Quad_Block(Grid_ptr[1][1].BndNorthSpline,
-				   Grid_ptr[1][1].BndSouthSpline,
-				   Grid_ptr[1][1].BndEastSpline,
-				   Grid_ptr[1][1].BndWestSpline,
-				   Number_of_Cells_Idir,
-				   Number_of_Cells_Jdir,
-				   Number_of_Ghost_Cells,
-				   Highest_Order_of_Reconstruction,
-				   GRID2D_QUAD_BLOCK_INIT_PROCEDURE_TRANS_FINITE_XY,
-				   STRETCHING_FCN_MINMAX_CLUSTERING,
-				   ONE + (beta_i-ONE)/ONE,
-				   0,
-				   STRETCHING_FCN_MIN_CLUSTERING,
-				   beta_j,
-				   0,
-				   ORTHOGONAL,
-				   ORTHOGONAL,
-				   ORTHOGONAL,
-				   ORTHOGONAL);
+  Grid_ptr[1][1].Create_Quad_Block_Without_Update(Grid_ptr[1][1].BndNorthSpline,
+						  Grid_ptr[1][1].BndSouthSpline,
+						  Grid_ptr[1][1].BndEastSpline,
+						  Grid_ptr[1][1].BndWestSpline,
+						  Number_of_Cells_Idir,
+						  Number_of_Cells_Jdir,
+						  Number_of_Ghost_Cells,
+						  Highest_Order_of_Reconstruction,
+						  GRID2D_QUAD_BLOCK_INIT_PROCEDURE_TRANS_FINITE_XY,
+						  STRETCHING_FCN_MINMAX_CLUSTERING,
+						  ONE + (beta_i-ONE)/ONE,
+						  0,
+						  STRETCHING_FCN_MIN_CLUSTERING,
+						  beta_j,
+						  0,
+						  ORTHOGONAL,
+						  ORTHOGONAL,
+						  ORTHOGONAL,
+						  ORTHOGONAL);
   // Smooth quad block (1,1).
   Grid_ptr[1][1].Smooth_Quad_Block(
 				   min(250,2*max(Number_of_Cells_Idir,
@@ -6265,25 +6435,25 @@ void Grid2D_Quad_MultiBlock_HO::Grid_NASA_Rotor_37(int &_Number_of_Blocks_Idir_,
   Grid_ptr[1][0].BndEastSpline.tp[5] = SPLINE2D_POINT_SHARP_CORNER;
   Grid_ptr[1][0].BndEastSpline.pathlength();
   // Create quad block (1,0).
-  Grid_ptr[1][0].Create_Quad_Block(Grid_ptr[1][0].BndNorthSpline,
-				   Grid_ptr[1][0].BndSouthSpline,
-				   Grid_ptr[1][0].BndEastSpline,
-				   Grid_ptr[1][0].BndWestSpline,
-				   Number_of_Cells_Idir,
-				   Number_of_Cells_Jdir,
-				   Number_of_Ghost_Cells,
-				   Highest_Order_of_Reconstruction,
-				   GRID2D_QUAD_BLOCK_INIT_PROCEDURE_TRANS_FINITE_XY,
-				   STRETCHING_FCN_MINMAX_CLUSTERING,
-				   ONE + (beta_i-ONE)/ONE,
-				   0,
-				   STRETCHING_FCN_MAX_CLUSTERING,
-				   beta_j,
-				   0,
-				   ORTHOGONAL,
-				   ORTHOGONAL,
-				   ORTHOGONAL,
-				   ORTHOGONAL);
+  Grid_ptr[1][0].Create_Quad_Block_Without_Update(Grid_ptr[1][0].BndNorthSpline,
+						  Grid_ptr[1][0].BndSouthSpline,
+						  Grid_ptr[1][0].BndEastSpline,
+						  Grid_ptr[1][0].BndWestSpline,
+						  Number_of_Cells_Idir,
+						  Number_of_Cells_Jdir,
+						  Number_of_Ghost_Cells,
+						  Highest_Order_of_Reconstruction,
+						  GRID2D_QUAD_BLOCK_INIT_PROCEDURE_TRANS_FINITE_XY,
+						  STRETCHING_FCN_MINMAX_CLUSTERING,
+						  ONE + (beta_i-ONE)/ONE,
+						  0,
+						  STRETCHING_FCN_MAX_CLUSTERING,
+						  beta_j,
+						  0,
+						  ORTHOGONAL,
+						  ORTHOGONAL,
+						  ORTHOGONAL,
+						  ORTHOGONAL);
   // Smooth quad block (1,0).
   Grid_ptr[1][0].Smooth_Quad_Block(
 				   min(250,2*max(Number_of_Cells_Idir,
@@ -6333,25 +6503,25 @@ void Grid2D_Quad_MultiBlock_HO::Grid_NASA_Rotor_37(int &_Number_of_Blocks_Idir_,
   Grid_ptr[0][0].BndWestSpline.tp[1] = SPLINE2D_POINT_SHARP_CORNER;
   Grid_ptr[0][0].BndWestSpline.pathlength();
   // Create quad block (0,0).
-  Grid_ptr[0][0].Create_Quad_Block(Grid_ptr[0][0].BndNorthSpline,
-				   Grid_ptr[0][0].BndSouthSpline,
-				   Grid_ptr[0][0].BndEastSpline,
-				   Grid_ptr[0][0].BndWestSpline,
-				   Number_of_Cells_Idir,
-				   Number_of_Cells_Jdir,
-				   Number_of_Ghost_Cells,
-				   Highest_Order_of_Reconstruction,
-				   GRID2D_QUAD_BLOCK_INIT_PROCEDURE_EAST_WEST,
-				   STRETCHING_FCN_MAX_CLUSTERING,
-				   beta_i,
-				   0,
-				   STRETCHING_FCN_MAX_CLUSTERING,
-				   beta_j,
-				   0,
-				   ORTHOGONAL,
-				   ORTHOGONAL,
-				   ORTHOGONAL,
-				   NOT_ORTHOGONAL);
+  Grid_ptr[0][0].Create_Quad_Block_Without_Update(Grid_ptr[0][0].BndNorthSpline,
+						  Grid_ptr[0][0].BndSouthSpline,
+						  Grid_ptr[0][0].BndEastSpline,
+						  Grid_ptr[0][0].BndWestSpline,
+						  Number_of_Cells_Idir,
+						  Number_of_Cells_Jdir,
+						  Number_of_Ghost_Cells,
+						  Highest_Order_of_Reconstruction,
+						  GRID2D_QUAD_BLOCK_INIT_PROCEDURE_EAST_WEST,
+						  STRETCHING_FCN_MAX_CLUSTERING,
+						  beta_i,
+						  0,
+						  STRETCHING_FCN_MAX_CLUSTERING,
+						  beta_j,
+						  0,
+						  ORTHOGONAL,
+						  ORTHOGONAL,
+						  ORTHOGONAL,
+						  NOT_ORTHOGONAL);
   // Smooth quad block (0,0).
   Grid_ptr[0][0].Smooth_Quad_Block(min(250,2*max(Number_of_Cells_Idir,
 						 Number_of_Cells_Jdir)));
@@ -6403,25 +6573,25 @@ void Grid2D_Quad_MultiBlock_HO::Grid_NASA_Rotor_37(int &_Number_of_Blocks_Idir_,
   // West spline.
   Grid_ptr[2][0].BndWestSpline = Grid_ptr[1][0].BndEastSpline; 
   // Create quad block (2,0).
-  Grid_ptr[2][0].Create_Quad_Block(Grid_ptr[2][0].BndNorthSpline,
-				   Grid_ptr[2][0].BndSouthSpline,
-				   Grid_ptr[2][0].BndEastSpline,
-				   Grid_ptr[2][0].BndWestSpline,
-				   Number_of_Cells_Idir,
-				   Number_of_Cells_Jdir,
-				   Number_of_Ghost_Cells,
-				   Highest_Order_of_Reconstruction,
-				   GRID2D_QUAD_BLOCK_INIT_PROCEDURE_EAST_WEST,
-				   STRETCHING_FCN_MIN_CLUSTERING,
-				   beta_i,
-				   0,
-				   STRETCHING_FCN_MAX_CLUSTERING,
-				   beta_j,
-				   0,
-				   ORTHOGONAL,//NOT_
-				   ORTHOGONAL,
-				   NOT_ORTHOGONAL,
-				   ORTHOGONAL);
+  Grid_ptr[2][0].Create_Quad_Block_Without_Update(Grid_ptr[2][0].BndNorthSpline,
+						  Grid_ptr[2][0].BndSouthSpline,
+						  Grid_ptr[2][0].BndEastSpline,
+						  Grid_ptr[2][0].BndWestSpline,
+						  Number_of_Cells_Idir,
+						  Number_of_Cells_Jdir,
+						  Number_of_Ghost_Cells,
+						  Highest_Order_of_Reconstruction,
+						  GRID2D_QUAD_BLOCK_INIT_PROCEDURE_EAST_WEST,
+						  STRETCHING_FCN_MIN_CLUSTERING,
+						  beta_i,
+						  0,
+						  STRETCHING_FCN_MAX_CLUSTERING,
+						  beta_j,
+						  0,
+						  ORTHOGONAL,//NOT_
+						  ORTHOGONAL,
+						  NOT_ORTHOGONAL,
+						  ORTHOGONAL);
   // Smooth quad block (2,0).
   Grid_ptr[2][0].Smooth_Quad_Block(min(250,2*max(Number_of_Cells_Idir,
 						 Number_of_Cells_Jdir)));
@@ -6462,25 +6632,25 @@ void Grid2D_Quad_MultiBlock_HO::Grid_NASA_Rotor_37(int &_Number_of_Blocks_Idir_,
   Grid_ptr[0][1].BndWestSpline.tp[1] = SPLINE2D_POINT_SHARP_CORNER;
   Grid_ptr[0][1].BndWestSpline.pathlength();
   // Create quad block (0,1).
-  Grid_ptr[0][1].Create_Quad_Block(Grid_ptr[0][1].BndNorthSpline,
-				   Grid_ptr[0][1].BndSouthSpline,
-				   Grid_ptr[0][1].BndEastSpline,
-				   Grid_ptr[0][1].BndWestSpline,
-				   Number_of_Cells_Idir,
-				   Number_of_Cells_Jdir,
-				   Number_of_Ghost_Cells,
-				   Highest_Order_of_Reconstruction,
-				   GRID2D_QUAD_BLOCK_INIT_PROCEDURE_EAST_WEST,
-				   STRETCHING_FCN_MAX_CLUSTERING,
-				   beta_i,
-				   0,
-				   STRETCHING_FCN_MIN_CLUSTERING,
-				   beta_j,
-				   0,
-				   ORTHOGONAL,
-				   ORTHOGONAL,
-				   ORTHOGONAL,
-				   NOT_ORTHOGONAL);
+  Grid_ptr[0][1].Create_Quad_Block_Without_Update(Grid_ptr[0][1].BndNorthSpline,
+						  Grid_ptr[0][1].BndSouthSpline,
+						  Grid_ptr[0][1].BndEastSpline,
+						  Grid_ptr[0][1].BndWestSpline,
+						  Number_of_Cells_Idir,
+						  Number_of_Cells_Jdir,
+						  Number_of_Ghost_Cells,
+						  Highest_Order_of_Reconstruction,
+						  GRID2D_QUAD_BLOCK_INIT_PROCEDURE_EAST_WEST,
+						  STRETCHING_FCN_MAX_CLUSTERING,
+						  beta_i,
+						  0,
+						  STRETCHING_FCN_MIN_CLUSTERING,
+						  beta_j,
+						  0,
+						  ORTHOGONAL,
+						  ORTHOGONAL,
+						  ORTHOGONAL,
+						  NOT_ORTHOGONAL);
   // Smooth quad block (0,1).
   Grid_ptr[0][1].Smooth_Quad_Block(min(250,2*max(Number_of_Cells_Idir,
 						 Number_of_Cells_Jdir)));
@@ -6525,25 +6695,25 @@ void Grid2D_Quad_MultiBlock_HO::Grid_NASA_Rotor_37(int &_Number_of_Blocks_Idir_,
   // West spline.
   Grid_ptr[2][1].BndWestSpline = Grid_ptr[1][1].BndEastSpline;
   // Create quad block (2,1).
-  Grid_ptr[2][1].Create_Quad_Block(Grid_ptr[2][1].BndNorthSpline,
-				   Grid_ptr[2][1].BndSouthSpline,
-				   Grid_ptr[2][1].BndEastSpline,
-				   Grid_ptr[2][1].BndWestSpline,
-				   Number_of_Cells_Idir,
-				   Number_of_Cells_Jdir,
-				   Number_of_Ghost_Cells,
-				   Highest_Order_of_Reconstruction,
-				   GRID2D_QUAD_BLOCK_INIT_PROCEDURE_EAST_WEST,
-				   STRETCHING_FCN_MIN_CLUSTERING,
-				   beta_i,
-				   0,
-				   STRETCHING_FCN_MIN_CLUSTERING,
-				   beta_j,
-				   0,
-				   ORTHOGONAL,
-				   ORTHOGONAL,
-				   NOT_ORTHOGONAL,
-				   ORTHOGONAL);
+  Grid_ptr[2][1].Create_Quad_Block_Without_Update(Grid_ptr[2][1].BndNorthSpline,
+						  Grid_ptr[2][1].BndSouthSpline,
+						  Grid_ptr[2][1].BndEastSpline,
+						  Grid_ptr[2][1].BndWestSpline,
+						  Number_of_Cells_Idir,
+						  Number_of_Cells_Jdir,
+						  Number_of_Ghost_Cells,
+						  Highest_Order_of_Reconstruction,
+						  GRID2D_QUAD_BLOCK_INIT_PROCEDURE_EAST_WEST,
+						  STRETCHING_FCN_MIN_CLUSTERING,
+						  beta_i,
+						  0,
+						  STRETCHING_FCN_MIN_CLUSTERING,
+						  beta_j,
+						  0,
+						  ORTHOGONAL,
+						  ORTHOGONAL,
+						  NOT_ORTHOGONAL,
+						  ORTHOGONAL);
   // Smooth quad block (2,1).
   Grid_ptr[2][1].Smooth_Quad_Block(min(250,2*max(Number_of_Cells_Idir,
 						 Number_of_Cells_Jdir)));
@@ -6564,7 +6734,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_NASA_Rotor_37(int &_Number_of_Blocks_Idir_,
  * This routine creates a mesh to be used in conjunction with and     
  * embedded interface representing a section of a NASA rotor 67 blade 
  * at a given percent span.                                           
- *                                                                    
+ *
+ * \verbatim                                                         
  *  +---------------+-------------------+---------------+             
  *  |               |                   |               |             
  *  |               |                   |               |             
@@ -6578,14 +6749,18 @@ void Grid2D_Quad_MultiBlock_HO::Grid_NASA_Rotor_37(int &_Number_of_Blocks_Idir_,
  *  |               |                   |               |             
  *  |               |                   |               |             
  *  +---------------+-------------------+---------------+             
+ * \endverbatim
+ *
+ * This subroutine DOESN'T update the ghost cells or
+ * the geometric properties of the grid cells.
  */
-void Grid2D_Quad_MultiBlock_HO::Grid_NASA_Rotor_67(int &_Number_of_Blocks_Idir_,
-						   int &_Number_of_Blocks_Jdir_,
-						   const double &Rotor_Percent_Span,
-						   const int Number_of_Cells_Idir,
-						   const int Number_of_Cells_Jdir,
-						   const int Number_of_Ghost_Cells,
-						   const int Highest_Order_of_Reconstruction) {
+void Grid2D_Quad_MultiBlock_HO::Grid_NASA_Rotor_67_Without_Update(int &_Number_of_Blocks_Idir_,
+								  int &_Number_of_Blocks_Jdir_,
+								  const double &Rotor_Percent_Span,
+								  const int Number_of_Cells_Idir,
+								  const int Number_of_Cells_Jdir,
+								  const int Number_of_Ghost_Cells,
+								  const int Highest_Order_of_Reconstruction) {
 
   int error_flag;
   Spline2D_HO upperB, lowerB, upperMiddleB, lowerMiddleB, camberTrail, camberLead, camberBlade, Rotor_Spline;
@@ -7002,25 +7177,25 @@ void Grid2D_Quad_MultiBlock_HO::Grid_NASA_Rotor_67(int &_Number_of_Blocks_Idir_,
       Bnd_Spline_West.tp[1] = SPLINE2D_POINT_SHARP_CORNER;
       Bnd_Spline_West.pathlength();
       // Create the 2D quadrilateral grid block representing the mesh.
-      Grid_ptr[iBlk][jBlk].Create_Quad_Block(Bnd_Spline_North,
-					     Bnd_Spline_South,
-					     Bnd_Spline_East,
-					     Bnd_Spline_West,
-					     Number_of_Cells_Idir,
-					     Number_of_Cells_Jdir,
-					     Number_of_Ghost_Cells,
-					     Highest_Order_of_Reconstruction,
-					     GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-					     Stretch_I,
-					     Beta_I, 
-					     Tau_I,
-					     Stretch_J,
-					     Beta_J,
-					     Tau_J,
-					     Orthogonal_North,
-					     Orthogonal_South,
-					     Orthogonal_East,
-					     Orthogonal_West);
+      Grid_ptr[iBlk][jBlk].Create_Quad_Block_Without_Update(Bnd_Spline_North,
+							    Bnd_Spline_South,
+							    Bnd_Spline_East,
+							    Bnd_Spline_West,
+							    Number_of_Cells_Idir,
+							    Number_of_Cells_Jdir,
+							    Number_of_Ghost_Cells,
+							    Highest_Order_of_Reconstruction,
+							    GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+							    Stretch_I,
+							    Beta_I, 
+							    Tau_I,
+							    Stretch_J,
+							    Beta_J,
+							    Tau_J,
+							    Orthogonal_North,
+							    Orthogonal_South,
+							    Orthogonal_East,
+							    Orthogonal_West);
       // Smooth the 2D quadrilateral grid block.
       Grid_ptr[iBlk][jBlk].Smooth_Quad_Block(min(250,2*max(Number_of_Cells_Idir,
 							   Number_of_Cells_Jdir)));
@@ -7060,19 +7235,21 @@ void Grid2D_Quad_MultiBlock_HO::Grid_NASA_Rotor_67(int &_Number_of_Blocks_Idir_,
  *   	                                100,                          
  *  	                                50,                           
  *                                      2);                           
+ * This subroutine DOESN'T update the ghost cells or
+ * the geometric properties of the grid cells.
  */
-void Grid2D_Quad_MultiBlock_HO::Grid_Driven_Cavity_Flow(int &_Number_of_Blocks_Idir_,
-							int &_Number_of_Blocks_Jdir_,
-							const double &Width,
-							const double &Height,
-							const int &Stretching_Type_Idir,
-							const int &Stretching_Type_Jdir,
-							const double &Stretching_Factor_Idir,
-							const double &Stretching_Factor_Jdir,
-							const int Number_of_Cells_Idir,
-							const int Number_of_Cells_Jdir,
-							const int Number_of_Ghost_Cells,
-							const int Highest_Order_of_Reconstruction) {
+void Grid2D_Quad_MultiBlock_HO::Grid_Driven_Cavity_Flow_Without_Update(int &_Number_of_Blocks_Idir_,
+								       int &_Number_of_Blocks_Jdir_,
+								       const double &Width,
+								       const double &Height,
+								       const int &Stretching_Type_Idir,
+								       const int &Stretching_Type_Jdir,
+								       const double &Stretching_Factor_Idir,
+								       const double &Stretching_Factor_Jdir,
+								       const int Number_of_Cells_Idir,
+								       const int Number_of_Cells_Jdir,
+								       const int Number_of_Ghost_Cells,
+								       const int Highest_Order_of_Reconstruction) {
 
   int n_cells_i, n_cells_j,
       Stretch_I, Stretch_J,
@@ -7147,25 +7324,25 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Driven_Cavity_Flow(int &_Number_of_Blocks_I
       Orthogonal_West = 0;
 
       // Create the 2D quadrilateral grid block representing the mesh.
-      Grid_ptr[iBlk][jBlk].Create_Quad_Block(Bnd_Spline_North,
-					     Bnd_Spline_South,
-					     Bnd_Spline_East,
-					     Bnd_Spline_West,
-					     Number_of_Cells_Idir/Number_of_Blocks_Idir,
-					     Number_of_Cells_Jdir/Number_of_Blocks_Jdir,
-					     Number_of_Ghost_Cells,
-					     Highest_Order_of_Reconstruction,
-					     GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-					     Stretch_I,
-					     Beta_I, 
-					     Tau_I,
-					     Stretch_J,
-					     Beta_J,
-					     Tau_J,
-					     Orthogonal_North,
-					     Orthogonal_South,
-					     Orthogonal_East,
-					     Orthogonal_West);
+      Grid_ptr[iBlk][jBlk].Create_Quad_Block_Without_Update(Bnd_Spline_North,
+							    Bnd_Spline_South,
+							    Bnd_Spline_East,
+							    Bnd_Spline_West,
+							    Number_of_Cells_Idir/Number_of_Blocks_Idir,
+							    Number_of_Cells_Jdir/Number_of_Blocks_Jdir,
+							    Number_of_Ghost_Cells,
+							    Highest_Order_of_Reconstruction,
+							    GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+							    Stretch_I,
+							    Beta_I, 
+							    Tau_I,
+							    Stretch_J,
+							    Beta_J,
+							    Tau_J,
+							    Orthogonal_North,
+							    Orthogonal_South,
+							    Orthogonal_East,
+							    Orthogonal_West);
       
       // Deallocate the memory for the boundary splines.
       Bnd_Spline_North.deallocate();
@@ -7192,14 +7369,16 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Driven_Cavity_Flow(int &_Number_of_Blocks_I
  *         		                       100,     
  *         		                       100,     
  *                                             2);      
+ * This subroutine DOESN'T update the ghost cells or
+ * the geometric properties of the grid cells.
  */
-void Grid2D_Quad_MultiBlock_HO::Grid_Adiabatic_Flat_Plate(int &_Number_of_Blocks_Idir_,
-							  int &_Number_of_Blocks_Jdir_,
-							  const double &Length,
-							  const int Number_of_Cells_Idir,
-							  const int Number_of_Cells_Jdir,
-							  const int Number_of_Ghost_Cells,
-							  const int Highest_Order_of_Reconstruction) {
+void Grid2D_Quad_MultiBlock_HO::Grid_Adiabatic_Flat_Plate_Without_Update(int &_Number_of_Blocks_Idir_,
+									 int &_Number_of_Blocks_Jdir_,
+									 const double &Length,
+									 const int Number_of_Cells_Idir,
+									 const int Number_of_Cells_Jdir,
+									 const int Number_of_Ghost_Cells,
+									 const int Highest_Order_of_Reconstruction) {
   
   int iBlk, n_cells_i, n_cells_j, 
         Stretch_I, Stretch_J,
@@ -7319,25 +7498,25 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Adiabatic_Flat_Plate(int &_Number_of_Blocks
 
     /* Create the 2D quadrilateral grid block. */
 
-    Grid_ptr[iBlk][0].Create_Quad_Block(Bnd_Spline_North,
-					Bnd_Spline_South,
-					Bnd_Spline_East,
-					Bnd_Spline_West,
-					n_cells_i,
-					n_cells_j,
-					Number_of_Ghost_Cells,
-					Highest_Order_of_Reconstruction,
-					GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-					Stretch_I,
-					Beta_I, 
-					Tau_I,
-					Stretch_J,
-					Beta_J,
-					Tau_J,
-					Orthogonal_North,
-					Orthogonal_South,
-					Orthogonal_East,
-					Orthogonal_West);
+    Grid_ptr[iBlk][0].Create_Quad_Block_Without_Update(Bnd_Spline_North,
+						       Bnd_Spline_South,
+						       Bnd_Spline_East,
+						       Bnd_Spline_West,
+						       n_cells_i,
+						       n_cells_j,
+						       Number_of_Ghost_Cells,
+						       Highest_Order_of_Reconstruction,
+						       GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+						       Stretch_I,
+						       Beta_I, 
+						       Tau_I,
+						       Stretch_J,
+						       Beta_J,
+						       Tau_J,
+						       Orthogonal_North,
+						       Orthogonal_South,
+						       Orthogonal_East,
+						       Orthogonal_West);
 	
     /* Deallocate the memory for the boundary splines. */
 
@@ -7360,15 +7539,17 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Adiabatic_Flat_Plate(int &_Number_of_Blocks
  *                                                    THREE,      
  *   		                                      100,        
  *  		                                      50);        
+ * This subroutine DOESN'T update the ghost cells or
+ * the geometric properties of the grid cells.
  */
-void Grid2D_Quad_MultiBlock_HO::Grid_Adiabatic_Circular_Cylinder(int &_Number_of_Blocks_Idir_,
-								 int &_Number_of_Blocks_Jdir_,
-								 const double &Radius,
-								 const int Number_of_Cells_Idir,
-								 const int Number_of_Cells_Jdir,
-								 const int Number_of_Ghost_Cells,
-								 const int Highest_Order_of_Reconstruction) {
-
+void Grid2D_Quad_MultiBlock_HO::Grid_Adiabatic_Circular_Cylinder_Without_Update(int &_Number_of_Blocks_Idir_,
+										int &_Number_of_Blocks_Jdir_,
+										const double &Radius,
+										const int Number_of_Cells_Idir,
+										const int Number_of_Cells_Jdir,
+										const int Number_of_Ghost_Cells,
+										const int Highest_Order_of_Reconstruction) {
+  
   Grid_Adiabatic_Circular_Cylinder(_Number_of_Blocks_Idir_,
 				   _Number_of_Blocks_Jdir_,
 				   Radius,
@@ -7380,14 +7561,14 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Adiabatic_Circular_Cylinder(int &_Number_of
 }
 
 
-void Grid2D_Quad_MultiBlock_HO::Grid_Adiabatic_Circular_Cylinder(int &_Number_of_Blocks_Idir_,
-								 int &_Number_of_Blocks_Jdir_,
-								 const double &Inner_Radius,
-								 const double &Outer_Radius,
-								 const int Number_of_Cells_Idir,
-								 const int Number_of_Cells_Jdir,
-								 const int Number_of_Ghost_Cells,
-								 const int Highest_Order_of_Reconstruction) {
+void Grid2D_Quad_MultiBlock_HO::Grid_Adiabatic_Circular_Cylinder_Without_Update(int &_Number_of_Blocks_Idir_,
+										int &_Number_of_Blocks_Jdir_,
+										const double &Inner_Radius,
+										const double &Outer_Radius,
+										const int Number_of_Cells_Idir,
+										const int Number_of_Cells_Jdir,
+										const int Number_of_Ghost_Cells,
+										const int Highest_Order_of_Reconstruction) {
   
   
   int iBlk, n_cells_i, n_cells_j, Stretch_I, Stretch_J,
@@ -7500,25 +7681,25 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Adiabatic_Circular_Cylinder(int &_Number_of
 
     /* Create the 2D quadrilateral grid block. */
 
-    Grid_ptr[iBlk][0].Create_Quad_Block(Bnd_Spline_North,
-					Bnd_Spline_South,
-					Bnd_Spline_East,
-					Bnd_Spline_West,
-					n_cells_i,
-					n_cells_j,
-					Number_of_Ghost_Cells,
-					Highest_Order_of_Reconstruction,
-					GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-					Stretch_I,
-					Beta_I, 
-					Tau_I,
-					Stretch_J,
-					Beta_J,
-					Tau_J,
-					Orthogonal_North,
-					Orthogonal_South,
-					Orthogonal_East,
-					Orthogonal_West);
+    Grid_ptr[iBlk][0].Create_Quad_Block_Without_Update(Bnd_Spline_North,
+						       Bnd_Spline_South,
+						       Bnd_Spline_East,
+						       Bnd_Spline_West,
+						       n_cells_i,
+						       n_cells_j,
+						       Number_of_Ghost_Cells,
+						       Highest_Order_of_Reconstruction,
+						       GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+						       Stretch_I,
+						       Beta_I, 
+						       Tau_I,
+						       Stretch_J,
+						       Beta_J,
+						       Tau_J,
+						       Orthogonal_North,
+						       Orthogonal_South,
+						       Orthogonal_East,
+						       Orthogonal_West);
 	
     /* Deallocate the memory for the boundary splines. */
 
@@ -7541,14 +7722,16 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Adiabatic_Circular_Cylinder(int &_Number_of
  *                                          TWO,        
  *         		                    100,        
  *         		                    100);       
+ * This subroutine DOESN'T update the ghost cells or
+ * the geometric properties of the grid cells.
  */
-void Grid2D_Quad_MultiBlock_HO::Grid_Adiabatic_Couette(int &_Number_of_Blocks_Idir_,
-						       int &_Number_of_Blocks_Jdir_,
-						       const double &Separation,
-						       const int Number_of_Cells_Idir,
-						       const int Number_of_Cells_Jdir,
-						       const int Number_of_Ghost_Cells,
-						       const int Highest_Order_of_Reconstruction) {
+void Grid2D_Quad_MultiBlock_HO::Grid_Adiabatic_Couette_Without_Update(int &_Number_of_Blocks_Idir_,
+								      int &_Number_of_Blocks_Jdir_,
+								      const double &Separation,
+								      const int Number_of_Cells_Idir,
+								      const int Number_of_Cells_Jdir,
+								      const int Number_of_Ghost_Cells,
+								      const int Highest_Order_of_Reconstruction) {
   
   int jBlk, n_cells_i, n_cells_j, 
     Stretch_I, Stretch_J,
@@ -7644,25 +7827,25 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Adiabatic_Couette(int &_Number_of_Blocks_Id
 
     /* Create the 2D quadrilateral grid block. */
 
-    Grid_ptr[0][jBlk].Create_Quad_Block(Bnd_Spline_North,
-					Bnd_Spline_South,
-					Bnd_Spline_East,
-					Bnd_Spline_West,
-					n_cells_i,
-					n_cells_j,
-					Number_of_Ghost_Cells,
-					Highest_Order_of_Reconstruction,
-					GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-					Stretch_I,
-					Beta_I, 
-					Tau_I,
-					Stretch_J,
-					Beta_J,
-					Tau_J,
-					Orthogonal_North,
-					Orthogonal_South,
-					Orthogonal_East,
-					Orthogonal_West);
+    Grid_ptr[0][jBlk].Create_Quad_Block_Without_Update(Bnd_Spline_North,
+						       Bnd_Spline_South,
+						       Bnd_Spline_East,
+						       Bnd_Spline_West,
+						       n_cells_i,
+						       n_cells_j,
+						       Number_of_Ghost_Cells,
+						       Highest_Order_of_Reconstruction,
+						       GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+						       Stretch_I,
+						       Beta_I, 
+						       Tau_I,
+						       Stretch_J,
+						       Beta_J,
+						       Tau_J,
+						       Orthogonal_North,
+						       Orthogonal_South,
+						       Orthogonal_East,
+						       Orthogonal_West);
 	
     /* Deallocate the memory for the boundary splines. */
 
@@ -7689,16 +7872,18 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Adiabatic_Couette(int &_Number_of_Blocks_Id
  *  	                       50,                      
  *                             2);FIXME
  *                                                      
+ * This subroutine DOESN'T update the ghost cells or
+ * the geometric properties of the grid cells.
  */
-void Grid2D_Quad_MultiBlock_HO::Grid_Cylindrical_Encl(int &_Number_of_Blocks_Idir_,
-						      int &_Number_of_Blocks_Jdir_,
-						      const double &Length,
-						      const double &Radius,
-						      const int &Axisymmetric,
-						      const int Number_of_Cells_Idir,
-						      const int Number_of_Cells_Jdir,
-						      const int Number_of_Ghost_Cells,
-						      const int Highest_Order_of_Reconstruction) {
+void Grid2D_Quad_MultiBlock_HO::Grid_Cylindrical_Encl_Without_Update(int &_Number_of_Blocks_Idir_,
+								     int &_Number_of_Blocks_Jdir_,
+								     const double &Length,
+								     const double &Radius,
+								     const int &Axisymmetric,
+								     const int Number_of_Cells_Idir,
+								     const int Number_of_Cells_Jdir,
+								     const int Number_of_Ghost_Cells,
+								     const int Highest_Order_of_Reconstruction) {
 
   int Stretch_I, Stretch_J,
     Orthogonal_North, Orthogonal_South,
@@ -7779,25 +7964,25 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Cylindrical_Encl(int &_Number_of_Blocks_Idi
   /* Create the 2D quadrilateral grid block representing
      the mesh. */
 
-  Grid_ptr[0][0].Create_Quad_Block(Bnd_Spline_North,
-				   Bnd_Spline_South,
-				   Bnd_Spline_East,
-				   Bnd_Spline_West,
-				   Number_of_Cells_Idir,
-				   Number_of_Cells_Jdir,
-				   Number_of_Ghost_Cells,
-				   Highest_Order_of_Reconstruction,
-				   GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-				   Stretch_I,
-				   Beta_I, 
-				   Tau_I,
-				   Stretch_J,
-				   Beta_J,
-				   Tau_J,
-				   Orthogonal_North,
-				   Orthogonal_South,
-				   Orthogonal_East,
-				   Orthogonal_West);
+  Grid_ptr[0][0].Create_Quad_Block_Without_Update(Bnd_Spline_North,
+						  Bnd_Spline_South,
+						  Bnd_Spline_East,
+						  Bnd_Spline_West,
+						  Number_of_Cells_Idir,
+						  Number_of_Cells_Jdir,
+						  Number_of_Ghost_Cells,
+						  Highest_Order_of_Reconstruction,
+						  GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+						  Stretch_I,
+						  Beta_I, 
+						  Tau_I,
+						  Stretch_J,
+						  Beta_J,
+						  Tau_J,
+						  Orthogonal_North,
+						  Orthogonal_South,
+						  Orthogonal_East,
+						  Orthogonal_West);
     
   /* Deallocate the memory for the boundary splines. */
 
@@ -7820,16 +8005,18 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Cylindrical_Encl(int &_Number_of_Blocks_Idi
  *   	                                  100,          
  *  	                                  50,           
  *                                        2);           
+ * This subroutine DOESN'T update the ghost cells or
+ * the geometric properties of the grid cells.
  */
-void Grid2D_Quad_MultiBlock_HO::Grid_Rectangular_Encl(int &_Number_of_Blocks_Idir_,
-						      int &_Number_of_Blocks_Jdir_,
-						      const double &Width,
-						      const double &Height,
-						      const int Number_of_Cells_Idir,
-						      const int Number_of_Cells_Jdir,
-						      const int Number_of_Ghost_Cells,
-						      const int Highest_Order_of_Reconstruction) {
-
+void Grid2D_Quad_MultiBlock_HO::Grid_Rectangular_Encl_Without_Update(int &_Number_of_Blocks_Idir_,
+								     int &_Number_of_Blocks_Jdir_,
+								     const double &Width,
+								     const double &Height,
+								     const int Number_of_Cells_Idir,
+								     const int Number_of_Cells_Jdir,
+								     const int Number_of_Ghost_Cells,
+								     const int Highest_Order_of_Reconstruction) {
+  
   int iBlk, jBlk, n_cells_i, n_cells_j, 
     Stretch_I, Stretch_J,
     Orthogonal_North, Orthogonal_South,
@@ -7912,25 +8099,25 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Rectangular_Encl(int &_Number_of_Blocks_Idi
       /* Create the 2D quadrilateral grid block representing
 	 the mesh. */
 
-      Grid_ptr[iBlk][jBlk].Create_Quad_Block(Bnd_Spline_North,
-					     Bnd_Spline_South,
-					     Bnd_Spline_East,
-					     Bnd_Spline_West,
-					     Number_of_Cells_Idir/Number_of_Blocks_Idir,
-					     Number_of_Cells_Jdir/Number_of_Blocks_Jdir,
-					     Number_of_Ghost_Cells,
-					     Highest_Order_of_Reconstruction,
-					     GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-					     Stretch_I,
-					     Beta_I, 
-					     Tau_I,
-					     Stretch_J,
-					     Beta_J,
-					     Tau_J,
-					     Orthogonal_North,
-					     Orthogonal_South,
-					     Orthogonal_East,
-					     Orthogonal_West);
+      Grid_ptr[iBlk][jBlk].Create_Quad_Block_Without_Update(Bnd_Spline_North,
+							    Bnd_Spline_South,
+							    Bnd_Spline_East,
+							    Bnd_Spline_West,
+							    Number_of_Cells_Idir/Number_of_Blocks_Idir,
+							    Number_of_Cells_Jdir/Number_of_Blocks_Jdir,
+							    Number_of_Ghost_Cells,
+							    Highest_Order_of_Reconstruction,
+							    GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+							    Stretch_I,
+							    Beta_I, 
+							    Tau_I,
+							    Stretch_J,
+							    Beta_J,
+							    Tau_J,
+							    Orthogonal_North,
+							    Orthogonal_South,
+							    Orthogonal_East,
+							    Orthogonal_West);
 
       /* Deallocate the memory for the boundary splines. */
 
@@ -7946,16 +8133,18 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Rectangular_Encl(int &_Number_of_Blocks_Idi
 
 /*!
  * Routine: Grid_Tube_2D                                
+ * This subroutine DOESN'T update the ghost cells or
+ * the geometric properties of the grid cells.
  */
-void Grid2D_Quad_MultiBlock_HO::Grid_Tube_2D(int &_Number_of_Blocks_Idir_,
-					     int &_Number_of_Blocks_Jdir_,
-					     const double &Radius,
-					     const int Number_of_Cells_Idir,
-					     const int Number_of_Cells_Jdir,
-					     const int Number_of_Ghost_Cells,
-					     const int Highest_Order_of_Reconstruction,
-					     const int i_Stretching_Radial_Dir,
-					     const double &Stretching_Radial_Dir) {
+void Grid2D_Quad_MultiBlock_HO::Grid_Tube_2D_Without_Update(int &_Number_of_Blocks_Idir_,
+							    int &_Number_of_Blocks_Jdir_,
+							    const double &Radius,
+							    const int Number_of_Cells_Idir,
+							    const int Number_of_Cells_Jdir,
+							    const int Number_of_Ghost_Cells,
+							    const int Highest_Order_of_Reconstruction,
+							    const int i_Stretching_Radial_Dir,
+							    const double &Stretching_Radial_Dir) {
 
   int iBlk, Stretch_I, Stretch_J,
     Orthogonal_North, Orthogonal_South,
@@ -8078,25 +8267,25 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Tube_2D(int &_Number_of_Blocks_Idir_,
 
     /* Create the 2D quadrilateral grid block. */
 
-    Grid_ptr[iBlk][0].Create_Quad_Block(Bnd_Spline_North,
-					Bnd_Spline_South,
-					Bnd_Spline_East,
-					Bnd_Spline_West,
-					Number_of_Cells_Idir,
-					Number_of_Cells_Jdir,
-					Number_of_Ghost_Cells,
-					Highest_Order_of_Reconstruction,
-					GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-					Stretch_I,
-					Beta_I, 
-					Tau_I,
-					Stretch_J,
-					Beta_J,
-					Tau_J,
-					Orthogonal_North,
-					Orthogonal_South,
-					Orthogonal_East,
-					Orthogonal_West);
+    Grid_ptr[iBlk][0].Create_Quad_Block_Without_Update(Bnd_Spline_North,
+						       Bnd_Spline_South,
+						       Bnd_Spline_East,
+						       Bnd_Spline_West,
+						       Number_of_Cells_Idir,
+						       Number_of_Cells_Jdir,
+						       Number_of_Ghost_Cells,
+						       Highest_Order_of_Reconstruction,
+						       GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+						       Stretch_I,
+						       Beta_I, 
+						       Tau_I,
+						       Stretch_J,
+						       Beta_J,
+						       Tau_J,
+						       Orthogonal_North,
+						       Orthogonal_South,
+						       Orthogonal_East,
+						       Orthogonal_West);
 	
     /* Deallocate the memory for the boundary splines. */
 
@@ -8111,17 +8300,19 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Tube_2D(int &_Number_of_Blocks_Idir_,
  
 /*!
  * Routine: Grid_Annulus_2D                             
+ * This subroutine DOESN'T update the ghost cells or
+ * the geometric properties of the grid cells.
  */
-void Grid2D_Quad_MultiBlock_HO::Grid_Annulus_2D(int &_Number_of_Blocks_Idir_,
-						int &_Number_of_Blocks_Jdir_,
-						const double &Radius_Inner,
-						const double &Radius_Outer,
-						const int Number_of_Cells_Idir,
-						const int Number_of_Cells_Jdir,
-						const int Number_of_Ghost_Cells,
-						const int Highest_Order_of_Reconstruction,
-						const int i_Stretching_Radial_Dir,
-						const double &Stretching_Radial_Dir) {
+void Grid2D_Quad_MultiBlock_HO::Grid_Annulus_2D_Without_Update(int &_Number_of_Blocks_Idir_,
+							       int &_Number_of_Blocks_Jdir_,
+							       const double &Radius_Inner,
+							       const double &Radius_Outer,
+							       const int Number_of_Cells_Idir,
+							       const int Number_of_Cells_Jdir,
+							       const int Number_of_Ghost_Cells,
+							       const int Highest_Order_of_Reconstruction,
+							       const int i_Stretching_Radial_Dir,
+							       const double &Stretching_Radial_Dir) {
   
   int iBlk, Stretch_I, Stretch_J,
     Orthogonal_North, Orthogonal_South,
@@ -8245,25 +8436,25 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Annulus_2D(int &_Number_of_Blocks_Idir_,
 
     /* Create the 2D quadrilateral grid block. */
 
-    Grid_ptr[iBlk][0].Create_Quad_Block(Bnd_Spline_North,
-					Bnd_Spline_South,
-					Bnd_Spline_East,
-					Bnd_Spline_West,
-					Number_of_Cells_Idir,
-					Number_of_Cells_Jdir,
-					Number_of_Ghost_Cells,
-					Highest_Order_of_Reconstruction,
-					GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
-					Stretch_I,
-					Beta_I, 
-					Tau_I,
-					Stretch_J,
-					Beta_J,
-					Tau_J,
-					Orthogonal_North,
-					Orthogonal_South,
-					Orthogonal_East,
-					Orthogonal_West);
+    Grid_ptr[iBlk][0].Create_Quad_Block_Without_Update(Bnd_Spline_North,
+						       Bnd_Spline_South,
+						       Bnd_Spline_East,
+						       Bnd_Spline_West,
+						       Number_of_Cells_Idir,
+						       Number_of_Cells_Jdir,
+						       Number_of_Ghost_Cells,
+						       Highest_Order_of_Reconstruction,
+						       GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+						       Stretch_I,
+						       Beta_I, 
+						       Tau_I,
+						       Stretch_J,
+						       Beta_J,
+						       Tau_J,
+						       Orthogonal_North,
+						       Orthogonal_South,
+						       Orthogonal_East,
+						       Orthogonal_West);
 	
     /* Deallocate the memory for the boundary splines. */
 
