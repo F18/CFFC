@@ -132,7 +132,7 @@ Grid2D_Quad_MultiBlock_HO& Grid2D_Quad_MultiBlock_HO::operator=(const Grid2D_Qua
  * using the MPI broadcast routine.
  */
 void Grid2D_Quad_MultiBlock_HO::Broadcast_Multi_Block_Grid(void) {
-    
+
 #ifdef _MPI_VERSION
   int i, j;
   int Num_iBlocks(0), Num_jBlocks(0);
@@ -702,7 +702,6 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Rectangular_Box_Without_Update(int &_Number
     } /* endfor */
   } /* endfor */
 
-  
 }
 
 void Grid2D_Quad_MultiBlock_HO::Grid_Rectangular_Box_Without_Update(int &_Number_of_Blocks_Idir_,

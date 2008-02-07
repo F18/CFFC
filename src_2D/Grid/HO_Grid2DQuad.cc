@@ -1523,7 +1523,7 @@ void Grid2D_Quad_Block_HO::Create_Quad_Block_Without_Update(Spline2D_HO &Bnd_Spl
 							    const int &Orthogonal_South,
 							    const int &Orthogonal_East,
 							    const int &Orthogonal_West) {
-  
+
   int i, j, k, kx, ky, kx_max, ky_max, npts, spline_type;
   double S_i, S_j, 
     s_north, s_south, s_east, s_west,
@@ -3294,7 +3294,9 @@ void Grid2D_Quad_Block_HO::Set_BCs(void) {
 
 /*!
  * Updates the exterior nodes for the quadrilateral     
- * mesh block.                                          
+ * mesh block.
+ *
+ * \note This subroutine DOESN'T update the cell information.
  */
 void Grid2D_Quad_Block_HO::Update_Exterior_Nodes(void) {
 
@@ -3753,15 +3755,18 @@ void Grid2D_Quad_Block_HO::Update_Exterior_Nodes(void) {
 
     // Require update of the ghost cells geometric properties.
     Schedule_Ghost_Cells_Update();
-    
+
     // Update corners
     Update_Corner_Ghost_Nodes();
+
 }
 
 
 /*!
  * Updates the corner ghost nodes for the quadrilateral 
- * mesh block.                                                                                                
+ * mesh block.
+ *
+ * \note This subroutine DOESN'T update the cell information.
  */
 void Grid2D_Quad_Block_HO::Update_Corner_Ghost_Nodes(void) {
   
@@ -4272,10 +4277,1049 @@ void Grid2D_Quad_Block_HO::Update_Corner_Ghost_Nodes(void) {
   // Require the update of the corner ghost cells' geometric properties
   Schedule_Corner_Ghost_Cells_Update();
 
-  // Update cell info.
-  Update_Cells();
 }
 
+double Grid2D_Quad_Block_HO::area_CurvedBoundaries(const int &CellIndex, const int &Boundary) const{
+
+  // Obs. The sides of the cell that are not curved are treated as line segments and therefore
+  //      the line integral is computed exactly based on the Nodes.
+  // The edges are covered from left to right (i.e. right-hand rule applied)
+
+  switch(Boundary){
+
+  case NORTH_SPLINE:          // Use only the North Spline -> (iCell,jCell)=(CellIndex,JCu)
+    return (// cell North side
+	    BndNorthSpline.ZeroOrderIntegration(Node[CellIndex+1][JNu], Node[CellIndex  ][JNu], 15) +
+	    // cell West side
+	    ZeroLineIntegration(Node[CellIndex  ][JNu].x(),Node[CellIndex  ][JNu].y(),
+				Node[CellIndex  ][JCu].x(),Node[CellIndex  ][JCu].y()) + 
+	    // cell South side
+	    ZeroLineIntegration(Node[CellIndex  ][JCu].x(),Node[CellIndex  ][JCu].y(),
+				Node[CellIndex+1][JCu].x(),Node[CellIndex+1][JCu].y()) + 
+	    // cell East side
+	    ZeroLineIntegration(Node[CellIndex+1][JCu].x(),Node[CellIndex+1][JCu].y(),
+				Node[CellIndex+1][JNu].x(),Node[CellIndex+1][JNu].y()) ); 
+
+  case NORTH_WEST_SPLINE:     // Use the North Spline and the West Spline
+    return (// cell North side
+	    BndNorthSpline.ZeroOrderIntegration(Node[CellIndex+1][JNu], Node[CellIndex  ][JNu], 15) +
+	    // cell West side 
+	    BndWestSpline.ZeroOrderIntegration(Node[CellIndex ][JNu], Node[CellIndex  ][JCu], 15) + 
+	    // cell South side
+	    ZeroLineIntegration(Node[CellIndex  ][JCu].x(),Node[CellIndex  ][JCu].y(),
+				Node[CellIndex+1][JCu].x(),Node[CellIndex+1][JCu].y()) +
+	    // cell East side
+	    ZeroLineIntegration(Node[CellIndex+1][JCu].x(),Node[CellIndex+1][JCu].y(),
+				Node[CellIndex+1][JNu].x(),Node[CellIndex+1][JNu].y()) ); 
+
+  case NORTH_EAST_SPLINE:    // Use the North Spline and the East Spline
+    return (// cell North side
+	    BndNorthSpline.ZeroOrderIntegration(Node[CellIndex+1][JNu], Node[CellIndex  ][JNu], 15) + 
+	    // cell West side
+	    ZeroLineIntegration(Node[CellIndex  ][JNu].x(),Node[CellIndex  ][JNu].y(),
+				Node[CellIndex  ][JCu].x(),Node[CellIndex  ][JCu].y()) + 
+	    // cell South side
+	    ZeroLineIntegration(Node[CellIndex  ][JCu].x(),Node[CellIndex  ][JCu].y(),
+				Node[CellIndex+1][JCu].x(),Node[CellIndex+1][JCu].y()) + 
+	    // cell East side
+	    BndEastSpline.ZeroOrderIntegration(Node[CellIndex+1][JCu], Node[CellIndex+1][JNu], 15) ); 
+      
+  case SOUTH_SPLINE:        // Use only the South Spline
+    return (// cell North side
+	    ZeroLineIntegration(Node[CellIndex+1][JCl+1].x(),Node[CellIndex+1][JCl+1].y(),
+				Node[CellIndex  ][JCl+1].x(),Node[CellIndex  ][JCl+1].y()) +
+	    // cell West side
+	    ZeroLineIntegration(Node[CellIndex  ][JCl+1].x(),Node[CellIndex  ][JCl+1].y(),
+				Node[CellIndex  ][JCl  ].x(),Node[CellIndex  ][JCl  ].y()) +
+	    // cell South side
+	    BndSouthSpline.ZeroOrderIntegration(Node[CellIndex ][JCl], Node[CellIndex+1][JCl], 15) +
+
+	    // cell East side
+	    ZeroLineIntegration(Node[CellIndex+1][JCl  ].x(),Node[CellIndex+1][JCl  ].y(),
+				Node[CellIndex+1][JCl+1].x(),Node[CellIndex+1][JCl+1].y()) ); 
+
+  case SOUTH_WEST_SPLINE:   // Use the South Spline and the West Spline
+    return (// cell North side
+	    ZeroLineIntegration(Node[CellIndex+1][JCl+1].x(),Node[CellIndex+1][JCl+1].y(),
+				Node[CellIndex  ][JCl+1].x(),Node[CellIndex  ][JCl+1].y()) + 
+	    // cell West side
+	    ZeroLineIntegration(Node[CellIndex  ][JCl+1].x(),Node[CellIndex  ][JCl+1].y(),
+				Node[CellIndex  ][JCl  ].x(),Node[CellIndex  ][JCl  ].y()) + 
+	    // cell South side
+	    BndSouthSpline.ZeroOrderIntegration(Node[CellIndex ][JCl], Node[CellIndex+1][JCl], 15) + 
+	    // cell East side
+	    ZeroLineIntegration(Node[CellIndex+1][JCl  ].x(),Node[CellIndex+1][JCl  ].y(),
+				Node[CellIndex+1][JCl+1].x(),Node[CellIndex+1][JCl+1].y()) ); 
+
+  case SOUTH_EAST_SPLINE:   // Use the South Spline and the East Spline
+    return ( // cell North side
+	    ZeroLineIntegration(Node[CellIndex+1][JCl+1].x(),Node[CellIndex+1][JCl+1].y(),
+				Node[CellIndex  ][JCl+1].x(),Node[CellIndex  ][JCl+1].y()) +
+	    // cell West side
+	    ZeroLineIntegration(Node[CellIndex  ][JCl+1].x(),Node[CellIndex  ][JCl+1].y(),
+				Node[CellIndex  ][JCl  ].x(),Node[CellIndex  ][JCl  ].y()) +
+	    // cell South side
+	    BndSouthSpline.ZeroOrderIntegration(Node[CellIndex ][JCl], Node[CellIndex+1][JCl], 15) + 
+	    // cell East side
+	    BndEastSpline.ZeroOrderIntegration(Node[CellIndex+1][JCl], Node[CellIndex+1][JCl+1], 15) ); 
+
+  case WEST_SPLINE:       // Use only the West Spline
+    return (// cell North side
+	    ZeroLineIntegration(Node[ICl+1][CellIndex+1].x(),Node[ICl+1][CellIndex+1].y(),
+				Node[ICl  ][CellIndex+1].x(),Node[ICl  ][CellIndex+1].y()) + 
+	    // cell West side
+	    BndWestSpline.ZeroOrderIntegration(Node[ICl][CellIndex+1], Node[ICl][CellIndex], 15) + 
+	    // cell South side
+	    ZeroLineIntegration(Node[ICl  ][CellIndex  ].x(),Node[ICl  ][CellIndex  ].y(),
+				Node[ICl+1][CellIndex  ].x(),Node[ICl+1][CellIndex  ].y()) + 
+	    // cell East side
+	    ZeroLineIntegration(Node[ICl+1][CellIndex  ].x(),Node[ICl+1][CellIndex  ].y(),
+				Node[ICl+1][CellIndex+1].x(),Node[ICl+1][CellIndex+1].y()) ); 
+
+  case EAST_SPLINE:      // Use only the East Spline
+    return (// cell North side
+	    ZeroLineIntegration(Node[ICu+1][CellIndex+1].x(),Node[ICu+1][CellIndex+1].y(),
+				Node[ICu  ][CellIndex+1].x(),Node[ICu  ][CellIndex+1].y()) + 
+	    // cell West side
+	    ZeroLineIntegration(Node[ICu  ][CellIndex+1].x(),Node[ICu  ][CellIndex+1].y(),
+				Node[ICu  ][CellIndex  ].x(),Node[ICu  ][CellIndex  ].y()) + 
+	    // cell South side
+	    ZeroLineIntegration(Node[ICu  ][CellIndex  ].x(),Node[ICu  ][CellIndex  ].y(),
+				Node[ICu+1][CellIndex  ].x(),Node[ICu+1][CellIndex  ].y()) + 
+	    // cell East side
+	    BndEastSpline.ZeroOrderIntegration(Node[ICu+1][CellIndex], Node[ICu+1][CellIndex+1], 15) ); 
+
+  default:
+    return 0.0;
+  } // endswitch
+}
+
+double Grid2D_Quad_Block_HO::area_GhostCell_CurvedBoundaries(const int &CellIndex, const int &Boundary) const{
+
+  // Obs. The sides of the cell that are not curved are treated as line segments and therefore
+  //      the line integral is computed exactly based on the Nodes.
+  // The edges are covered from left to right (i.e. right-hand rule applied)
+  // ***! This subroutine is for the first row of ghost cells and therefore only one boundary can be curved at a time
+
+  switch(Boundary){
+
+  case NORTH_SPLINE:          // Use only the North Spline -> (iCell,jCell)=(CellIndex,JCu+1)
+    return (// cell North side
+	    ZeroLineIntegration(Node[CellIndex+1][JNu+1].x(),Node[CellIndex+1][JNu+1].y(),
+				Node[CellIndex  ][JNu+1].x(),Node[CellIndex  ][JNu+1].y()) +
+	    // cell West side
+	    ZeroLineIntegration(Node[CellIndex  ][JNu+1].x(),Node[CellIndex  ][JNu+1].y(),
+				Node[CellIndex  ][JNu  ].x(),Node[CellIndex  ][JNu  ].y()) +   
+	    // cell South side
+	    BndNorthSpline.ZeroOrderIntegration(Node[CellIndex][JNu], Node[CellIndex+1][JNu], 15) + 
+	    // cell East side
+	    ZeroLineIntegration(Node[CellIndex+1][JNu  ].x(),Node[CellIndex+1][JNu  ].y(),
+				Node[CellIndex+1][JNu+1].x(),Node[CellIndex+1][JNu+1].y()) );  
+ 
+  case SOUTH_SPLINE:        // Use only the South Spline
+    return ( // cell North side
+	    BndSouthSpline.ZeroOrderIntegration(Node[CellIndex+1][JNl], Node[CellIndex][JNl], 15) +
+	    // cell West side
+	    ZeroLineIntegration(Node[CellIndex  ][JNl  ].x(),Node[CellIndex  ][JNl  ].y(),
+				Node[CellIndex  ][JNl-1].x(),Node[CellIndex  ][JNl-1].y()) + 
+	    // cell South side
+	    ZeroLineIntegration(Node[CellIndex  ][JNl-1].x(),Node[CellIndex  ][JNl-1].y(),
+				Node[CellIndex+1][JNl-1].x(),Node[CellIndex+1][JNl-1].y()) + 
+	    // cell East side
+	    ZeroLineIntegration(Node[CellIndex+1][JNl-1].x(),Node[CellIndex+1][JNl-1].y(),
+				Node[CellIndex+1][JNl  ].x(),Node[CellIndex+1][JNl  ].y()) ); 
+
+  case WEST_SPLINE:       // Use only the West Spline
+    return (// cell North side
+	    ZeroLineIntegration(Node[INl  ][CellIndex+1].x(),Node[INl  ][CellIndex+1].y(),
+				Node[INl-1][CellIndex+1].x(),Node[INl-1][CellIndex+1].y()) + 
+	    // cell West side
+	    ZeroLineIntegration(Node[INl-1][CellIndex+1].x(),Node[INl-1][CellIndex+1].y(),
+				Node[INl-1][CellIndex  ].x(),Node[INl-1][CellIndex  ].y()) + 
+	    // cell South side
+	    ZeroLineIntegration(Node[INl-1][CellIndex  ].x(),Node[INl-1][CellIndex  ].y(),
+				Node[INl  ][CellIndex  ].x(),Node[INl  ][CellIndex  ].y()) + 
+	    // cell East side
+	    BndWestSpline.ZeroOrderIntegration(Node[INl][CellIndex], Node[INl][CellIndex+1], 15) ); 
+
+  case EAST_SPLINE:      // Use only the East Spline
+    return (// cell North side
+	    ZeroLineIntegration(Node[INu+1][CellIndex+1].x(),Node[INu+1][CellIndex+1].y(),
+				Node[INu  ][CellIndex+1].x(),Node[INu  ][CellIndex+1].y()) + 
+	    // cell West side
+	    BndEastSpline.ZeroOrderIntegration(Node[INu][CellIndex+1], Node[INu][CellIndex], 15) + 
+	    // cell South side
+	    ZeroLineIntegration(Node[INu  ][CellIndex  ].x(),Node[INu  ][CellIndex  ].y(),
+				Node[INu+1][CellIndex  ].x(),Node[INu+1][CellIndex  ].y()) + 
+	    // cell East side
+	    ZeroLineIntegration(Node[INu+1][CellIndex  ].x(),Node[INu+1][CellIndex  ].y(),
+				Node[INu+1][CellIndex+1].x(),Node[INu+1][CellIndex+1].y()) ); 
+  default:
+    return 0.0;
+  } // endswitch
+}
+
+
+Vector2D Grid2D_Quad_Block_HO::centroid_CurvedBoundaries(const int &CellIndex, const int &Boundary) const{
+
+  // Obs. The sides of the cell that are not curved are treated as line segments and therefore
+  //      the line integral is computed exactly based on the Nodes.
+  // The edges are covered from left to right (i.e. right-hand rule applied)
+
+  switch(Boundary){
+
+  case NORTH_SPLINE:          // Use only the North Spline -> (iCell,jCell)=(CellIndex,JCu)
+    return Vector2D(( // cell North side 
+		     BndNorthSpline.PolynomOrderIntegration(Node[CellIndex+1][JNu], Node[CellIndex  ][JNu], 
+							     Vector2D(0.0,0.0),15,1,0) +
+		     // cell West side
+		     PolynomLineIntegration(Node[CellIndex  ][JNu].x(),Node[CellIndex  ][JNu].y(),
+					    Node[CellIndex  ][JCu].x(),Node[CellIndex  ][JCu].y(),
+					    0.0, 0.0, 1, 0) +
+		     // cell South side
+		     PolynomLineIntegration(Node[CellIndex  ][JCu].x(),Node[CellIndex  ][JCu].y(),
+					    Node[CellIndex+1][JCu].x(),Node[CellIndex+1][JCu].y(),
+					    0.0, 0.0, 1, 0) +               
+		     // cell East side & Division by (OrderX+1)            
+		     PolynomLineIntegration(Node[CellIndex+1][JCu].x(),Node[CellIndex+1][JCu].y(),
+					    Node[CellIndex+1][JNu].x(),Node[CellIndex+1][JNu].y(),
+					    0.0, 0.0, 1, 0) )*0.5,         
+		    // cell North side
+		    (BndNorthSpline.PolynomOrderIntegration(Node[CellIndex+1][JNu], Node[CellIndex  ][JNu],
+							    Vector2D(0.0,0.0), 15, 0, 1) +
+		     // cell West side  
+		     PolynomLineIntegration(Node[CellIndex  ][JNu].x(),Node[CellIndex  ][JNu].y(),
+					    Node[CellIndex  ][JCu].x(),Node[CellIndex  ][JCu].y(),
+					    0.0, 0.0, 0, 1) +                            
+		     // cell South side 
+		     PolynomLineIntegration(Node[CellIndex  ][JCu].x(),Node[CellIndex  ][JCu].y(),
+					    Node[CellIndex+1][JCu].x(),Node[CellIndex+1][JCu].y(),
+					    0.0, 0.0, 0, 1) +                            
+		     // cell East side & Division by A
+		     PolynomLineIntegration(Node[CellIndex+1][JCu].x(),Node[CellIndex+1][JCu].y(),
+					    Node[CellIndex+1][JNu].x(),Node[CellIndex+1][JNu].y(),
+					    0.0, 0.0, 0, 1)) ) /Cell[CellIndex][JCu].A;    
+    
+
+  case NORTH_WEST_SPLINE:     // Use the North Spline and the West Spline
+    return Vector2D( (// cell North side
+		      BndNorthSpline.PolynomOrderIntegration(Node[CellIndex+1][JNu], Node[CellIndex  ][JNu],
+							  Vector2D(0.0,0.0),15,1,0) +       
+		      // cell West side
+		      BndWestSpline.PolynomOrderIntegration(Node[CellIndex ][JNu], Node[CellIndex  ][JCu],
+							 Vector2D(0.0,0.0),15,1,0) +        
+		      // cell South side
+		      PolynomLineIntegration(Node[CellIndex  ][JCu].x(),Node[CellIndex  ][JCu].y(),
+					     Node[CellIndex+1][JCu].x(),Node[CellIndex+1][JCu].y(),
+					     0.0, 0.0, 1, 0) +              
+		      // cell East side & Division by (OrderX+1)                
+		      PolynomLineIntegration(Node[CellIndex+1][JCu].x(),Node[CellIndex+1][JCu].y(),
+					     Node[CellIndex+1][JNu].x(),Node[CellIndex+1][JNu].y(),
+					     0.0, 0.0, 1, 0) )*0.5,         
+		     // cell North side
+		     (BndNorthSpline.PolynomOrderIntegration(Node[CellIndex+1][JNu], Node[CellIndex  ][JNu],
+							  Vector2D(0.0,0.0), 15, 0, 1) +    
+		      // cell West side
+		      BndWestSpline.PolynomOrderIntegration(Node[CellIndex ][JNu], Node[CellIndex  ][JCu],
+							 Vector2D(0.0,0.0), 15, 0, 1) +    
+		      // cell South side 
+		      PolynomLineIntegration(Node[CellIndex  ][JCu].x(),Node[CellIndex  ][JCu].y(),
+					     Node[CellIndex+1][JCu].x(),Node[CellIndex+1][JCu].y(),
+					     0.0, 0.0, 0, 1) +                             
+		      // cell East side & Division by A
+		      PolynomLineIntegration(Node[CellIndex+1][JCu].x(),Node[CellIndex+1][JCu].y(),
+					     Node[CellIndex+1][JNu].x(),Node[CellIndex+1][JNu].y(),
+					     0.0, 0.0, 0, 1) ) ) /Cell[ICl][JCu].A;        
+
+  case NORTH_EAST_SPLINE:    // Use the North Spline and the East Spline
+    return Vector2D( (// cell North side
+		      BndNorthSpline.PolynomOrderIntegration(Node[CellIndex+1][JNu], Node[CellIndex  ][JNu],
+							  Vector2D(0.0,0.0),15,1,0) +                 
+		      // cell West side
+		      PolynomLineIntegration(Node[CellIndex  ][JNu].x(),Node[CellIndex  ][JNu].y(),
+					     Node[CellIndex  ][JCu].x(),Node[CellIndex  ][JCu].y(),
+					     0.0, 0.0, 1, 0) +                                        
+		      // cell South side
+		      PolynomLineIntegration(Node[CellIndex  ][JCu].x(),Node[CellIndex  ][JCu].y(),
+					     Node[CellIndex+1][JCu].x(),Node[CellIndex+1][JCu].y(),
+					     0.0, 0.0, 1, 0) +                               
+		      // cell East side & Division by (OrderX+1)         
+		      BndEastSpline.PolynomOrderIntegration(Node[CellIndex+1][JCu], Node[CellIndex+1][JNu],
+							    Vector2D(0.0,0.0),15,1,0) )*0.5, 
+		     // cell North side
+		     (BndNorthSpline.PolynomOrderIntegration(Node[CellIndex+1][JNu], Node[CellIndex  ][JNu],
+							     Vector2D(0.0,0.0),15,0,1) +              
+		      // cell West side
+		      PolynomLineIntegration(Node[CellIndex  ][JNu].x(),Node[CellIndex  ][JNu].y(),
+					     Node[CellIndex  ][JCu].x(),Node[CellIndex  ][JCu].y(),
+					     0.0, 0.0, 0, 1) +                                       
+		      // cell South side 
+		      PolynomLineIntegration(Node[CellIndex  ][JCu].x(),Node[CellIndex  ][JCu].y(),
+					     Node[CellIndex+1][JCu].x(),Node[CellIndex+1][JCu].y(),
+					     0.0, 0.0, 0, 1) +                                       
+		      // cell East side & Division by A
+		      BndEastSpline.PolynomOrderIntegration(Node[CellIndex+1][JCu], Node[CellIndex+1][JNu],
+							    Vector2D(0.0,0.0),15,0,1) ) ) /Cell[ICu][JCu].A; 
+  case SOUTH_SPLINE:        // Use only the South Spline
+    return Vector2D( (// cell North side
+		      PolynomLineIntegration(Node[CellIndex+1][JCl+1].x(),Node[CellIndex+1][JCl+1].y(),
+					     Node[CellIndex  ][JCl+1].x(),Node[CellIndex  ][JCl+1].y(),
+					     0.0, 0.0, 1, 0) +                                        
+		      // cell West side
+		      PolynomLineIntegration(Node[CellIndex  ][JCl+1].x(),Node[CellIndex  ][JCl+1].y(),
+					     Node[CellIndex  ][JCl  ].x(),Node[CellIndex  ][JCl  ].y(),
+					     0.0, 0.0, 1, 0) +                                        
+		      // cell South side
+		      BndSouthSpline.PolynomOrderIntegration(Node[CellIndex ][JCl], Node[CellIndex+1][JCl],
+							     Vector2D(0.0,0.0),15,1,0) +              
+		      // cell East side & Division by (OrderX+1)
+		      PolynomLineIntegration(Node[CellIndex+1][JCl  ].x(),Node[CellIndex+1][JCl  ].y(),
+					     Node[CellIndex+1][JCl+1].x(),Node[CellIndex+1][JCl+1].y(),
+					     0.0, 0.0, 1, 0) )*0.5,                
+		     // cell North side
+		     (PolynomLineIntegration(Node[CellIndex+1][JCl+1].x(),Node[CellIndex+1][JCl+1].y(),
+					     Node[CellIndex  ][JCl+1].x(),Node[CellIndex  ][JCl+1].y(),
+					     0.0, 0.0, 0, 1) +                                        
+		      // cell West side
+		      PolynomLineIntegration(Node[CellIndex  ][JCl+1].x(),Node[CellIndex  ][JCl+1].y(),
+					     Node[CellIndex  ][JCl  ].x(),Node[CellIndex  ][JCl  ].y(),
+					     0.0, 0.0, 0, 1) +                                       
+		      // cell South side 
+		      BndSouthSpline.PolynomOrderIntegration(Node[CellIndex ][JCl], Node[CellIndex+1][JCl],
+							     Vector2D(0.0,0.0),15,0,1) + 
+		      // cell East side & Division by A              
+		      PolynomLineIntegration(Node[CellIndex+1][JCl  ].x(),Node[CellIndex+1][JCl  ].y(),
+					     Node[CellIndex+1][JCl+1].x(),Node[CellIndex+1][JCl+1].y(),
+					     0.0, 0.0, 0, 1) )) /Cell[CellIndex][JCl].A; 
+
+  case SOUTH_WEST_SPLINE:   // Use the South Spline and the West Spline
+    return Vector2D( (// cell North side
+		      PolynomLineIntegration(Node[CellIndex+1][JCl+1].x(),Node[CellIndex+1][JCl+1].y(),
+					     Node[CellIndex  ][JCl+1].x(),Node[CellIndex  ][JCl+1].y(),
+					     0.0, 0.0, 1, 0) +                                       
+		      // cell West side
+		      PolynomLineIntegration(Node[CellIndex  ][JCl+1].x(),Node[CellIndex  ][JCl+1].y(),
+					     Node[CellIndex  ][JCl  ].x(),Node[CellIndex  ][JCl  ].y(),
+					     0.0, 0.0, 1, 0) +                                       
+		      // cell South side
+		      BndSouthSpline.PolynomOrderIntegration(Node[CellIndex ][JCl], Node[CellIndex+1][JCl],
+							     Vector2D(0.0,0.0),15,1,0) +              
+		      // cell East side & Division by (OrderX+1)
+		      PolynomLineIntegration(Node[CellIndex+1][JCl  ].x(),Node[CellIndex+1][JCl  ].y(),
+					     Node[CellIndex+1][JCl+1].x(),Node[CellIndex+1][JCl+1].y(),
+					     0.0, 0.0, 1, 0) )*0.5,                
+		     // cell North side
+		     (PolynomLineIntegration(Node[CellIndex+1][JCl+1].x(),Node[CellIndex+1][JCl+1].y(),
+					     Node[CellIndex  ][JCl+1].x(),Node[CellIndex  ][JCl+1].y(),
+					     0.0, 0.0, 0, 1) +                                       
+		      // cell West side
+		      PolynomLineIntegration(Node[CellIndex  ][JCl+1].x(),Node[CellIndex  ][JCl+1].y(),
+					     Node[CellIndex  ][JCl  ].x(),Node[CellIndex  ][JCl  ].y(),
+					     0.0, 0.0, 0, 1) +                                        
+		      // cell South side
+		      BndSouthSpline.PolynomOrderIntegration(Node[CellIndex ][JCl], Node[CellIndex+1][JCl],
+							     Vector2D(0.0,0.0),15,0,1) +              
+		      // cell East side & Division by A
+		      PolynomLineIntegration(Node[CellIndex+1][JCl  ].x(),Node[CellIndex+1][JCl  ].y(),
+					     Node[CellIndex+1][JCl+1].x(),Node[CellIndex+1][JCl+1].y(),
+					     0.0, 0.0, 0, 1) )) /Cell[ICl][JCl].A; 
+
+  case SOUTH_EAST_SPLINE:   // Use the South Spline and the East Spline
+    return Vector2D( (// cell North side
+		      PolynomLineIntegration(Node[CellIndex+1][JCl+1].x(),Node[CellIndex+1][JCl+1].y(),
+					     Node[CellIndex  ][JCl+1].x(),Node[CellIndex  ][JCl+1].y(),
+					     0.0, 0.0, 1, 0) +                                       
+		      // cell West side 
+		      PolynomLineIntegration(Node[CellIndex  ][JCl+1].x(),Node[CellIndex  ][JCl+1].y(),
+					     Node[CellIndex  ][JCl  ].x(),Node[CellIndex  ][JCl  ].y(),
+					     0.0, 0.0, 1, 0) +                                       
+		      // cell South side
+		      BndSouthSpline.PolynomOrderIntegration(Node[CellIndex ][JCl], Node[CellIndex+1][JCl],
+							     Vector2D(0.0,0.0),15,1,0) +       
+		      // cell East side & Division by (OrderX+1)       
+		      BndEastSpline.PolynomOrderIntegration(Node[CellIndex+1][JCl], Node[CellIndex+1][JCl+1],
+							    Vector2D(0.0,0.0),15,1,0) )*0.5,   
+		     // cell North side
+		     (PolynomLineIntegration(Node[CellIndex+1][JCl+1].x(),Node[CellIndex+1][JCl+1].y(),
+					     Node[CellIndex  ][JCl+1].x(),Node[CellIndex  ][JCl+1].y(),
+					     0.0, 0.0, 0, 1) +                                       
+		      // cell West side
+		      PolynomLineIntegration(Node[CellIndex  ][JCl+1].x(),Node[CellIndex  ][JCl+1].y(),
+					     Node[CellIndex  ][JCl  ].x(),Node[CellIndex  ][JCl  ].y(),
+					     0.0, 0.0, 0, 1) +                                        
+		      // cell South side
+		      BndSouthSpline.PolynomOrderIntegration(Node[CellIndex ][JCl], Node[CellIndex+1][JCl],
+							     Vector2D(0.0,0.0),15,0,1) +              
+		      // cell East side & Division by A
+		      BndEastSpline.PolynomOrderIntegration(Node[CellIndex+1][JCl], Node[CellIndex+1][JCl+1],
+							    Vector2D(0.0,0.0),15,0,1) )) /Cell[ICu][JCl].A; 
+
+  case WEST_SPLINE:       // Use only the West Spline
+    return Vector2D( ( // cell North side
+		      PolynomLineIntegration(Node[ICl+1][CellIndex+1].x(),Node[ICl+1][CellIndex+1].y(),
+					     Node[ICl  ][CellIndex+1].x(),Node[ICl  ][CellIndex+1].y(),
+					     0.0, 0.0, 1, 0) +                                       
+		      // cell West side
+		      BndWestSpline.PolynomOrderIntegration(Node[ICl][CellIndex+1], Node[ICl][CellIndex],
+							    Vector2D(0.0,0.0),15,1,0) +              
+		      // cell South side
+		      PolynomLineIntegration(Node[ICl  ][CellIndex  ].x(),Node[ICl  ][CellIndex  ].y(),
+					     Node[ICl+1][CellIndex  ].x(),Node[ICl+1][CellIndex  ].y(),
+					     0.0, 0.0, 1, 0) +                        
+		      // cell East side & Division by (OrderX+1)                
+		      PolynomLineIntegration(Node[ICl+1][CellIndex  ].x(),Node[ICl+1][CellIndex  ].y(),
+					     Node[ICl+1][CellIndex+1].x(),Node[ICl+1][CellIndex+1].y(),
+					     0.0, 0.0, 1, 0) ) *0.5,                  
+		     // cell North side
+		     (PolynomLineIntegration(Node[ICl+1][CellIndex+1].x(),Node[ICl+1][CellIndex+1].y(),
+					     Node[ICl  ][CellIndex+1].x(),Node[ICl  ][CellIndex+1].y(),
+					     0.0, 0.0, 0, 1) +                                       
+		      // cell West side 
+		      BndWestSpline.PolynomOrderIntegration(Node[ICl][CellIndex+1], Node[ICl][CellIndex],
+							    Vector2D(0.0,0.0),15,0,1) +              
+		      // cell South side
+		      PolynomLineIntegration(Node[ICl  ][CellIndex  ].x(),Node[ICl  ][CellIndex  ].y(),
+					     Node[ICl+1][CellIndex  ].x(),Node[ICl+1][CellIndex  ].y(),
+					     0.0, 0.0, 0, 1) +                              
+		      // cell East side & Division by A         
+		      PolynomLineIntegration(Node[ICl+1][CellIndex  ].x(),Node[ICl+1][CellIndex  ].y(),
+					     Node[ICl+1][CellIndex+1].x(),Node[ICl+1][CellIndex+1].y(),
+					     0.0, 0.0, 0, 1) )) /Cell[ICl][CellIndex].A;    
+
+  case EAST_SPLINE:      // Use only the East Spline
+    return Vector2D( (// cell North side
+		      PolynomLineIntegration(Node[ICu+1][CellIndex+1].x(),Node[ICu+1][CellIndex+1].y(),
+					     Node[ICu  ][CellIndex+1].x(),Node[ICu  ][CellIndex+1].y(),
+					     0.0, 0.0, 1, 0) +                                        
+		      // cell West side
+		      PolynomLineIntegration(Node[ICu  ][CellIndex+1].x(),Node[ICu  ][CellIndex+1].y(),
+					     Node[ICu  ][CellIndex  ].x(),Node[ICu  ][CellIndex  ].y(),
+					     0.0, 0.0, 1, 0) +                                        
+		      // cell South side 
+		      PolynomLineIntegration(Node[ICu  ][CellIndex  ].x(),Node[ICu  ][CellIndex  ].y(),
+					     Node[ICu+1][CellIndex  ].x(),Node[ICu+1][CellIndex  ].y(),
+					     0.0, 0.0, 1, 0) +                                
+		      // cell East side & Division by (OrderX+1)        
+		      BndEastSpline.PolynomOrderIntegration(Node[ICu+1][CellIndex], Node[ICu+1][CellIndex+1],
+							    Vector2D(0.0,0.0),15,1,0) ) *0.5, 
+		     // cell North side
+		     (PolynomLineIntegration(Node[ICu+1][CellIndex+1].x(),Node[ICu+1][CellIndex+1].y(),
+					     Node[ICu  ][CellIndex+1].x(),Node[ICu  ][CellIndex+1].y(),
+					     0.0, 0.0, 0, 1) +                                        
+		      // cell West side
+		      PolynomLineIntegration(Node[ICu  ][CellIndex+1].x(),Node[ICu  ][CellIndex+1].y(),
+					     Node[ICu  ][CellIndex  ].x(),Node[ICu  ][CellIndex  ].y(),
+					     0.0, 0.0, 0, 1) +                                        
+		      // cell South side
+		      PolynomLineIntegration(Node[ICu  ][CellIndex  ].x(),Node[ICu  ][CellIndex  ].y(),
+					     Node[ICu+1][CellIndex  ].x(),Node[ICu+1][CellIndex  ].y(),
+					     0.0, 0.0, 0, 1) +                                        
+		      // cell East side & Division by A
+		      BndEastSpline.PolynomOrderIntegration(Node[ICu+1][CellIndex], Node[ICu+1][CellIndex+1],
+							    Vector2D(0.0,0.0),15,0,1) )) /Cell[ICu][CellIndex].A; 
+
+  default:
+    return 0.0;
+  } // endswitch
+}
+
+Vector2D Grid2D_Quad_Block_HO::centroid_GhostCell_CurvedBoundaries(const int &CellIndex, const int &Boundary) const{
+
+  // Obs. The sides of the cell that are not curved are treated as line segments and therefore
+  //      the line integral is computed exactly based on the Nodes.
+  // The edges are covered from left to right (i.e. right-hand rule applied)
+  // ***! This subroutine is for the first row of ghost cells and therefore only one boundary can be curved at a time
+
+  switch(Boundary){
+
+  case NORTH_SPLINE:          // Use only the North Spline -> (iCell,jCell)=(CellIndex,JCu+1)
+    return Vector2D(( PolynomLineIntegration(Node[CellIndex+1][JNu+1].x(),Node[CellIndex+1][JNu+1].y(),
+					     Node[CellIndex  ][JNu+1].x(),Node[CellIndex  ][JNu+1].y(),
+					     0.0, 0.0, 1, 0) +                           // cell North side
+		      PolynomLineIntegration(Node[CellIndex  ][JNu+1].x(),Node[CellIndex  ][JNu+1].y(),
+					     Node[CellIndex  ][JNu  ].x(),Node[CellIndex  ][JNu  ].y(),
+					     0.0, 0.0, 1, 0) +                           // cell West side
+		      BndNorthSpline.PolynomOrderIntegration(Node[CellIndex ][JNu], Node[CellIndex+1][JNu], 
+							     Vector2D(0.0,0.0),15,1,0) + // cell South side
+		      PolynomLineIntegration(Node[CellIndex+1][JNu  ].x(),Node[CellIndex+1][JNu  ].y(),
+					     Node[CellIndex+1][JNu+1].x(),Node[CellIndex+1][JNu+1].y(),
+					     0.0, 0.0, 1, 0) )*0.5,         // cell East side & Division by (OrderX+1)
+		     (PolynomLineIntegration(Node[CellIndex+1][JNu+1].x(),Node[CellIndex+1][JNu+1].y(),
+					     Node[CellIndex  ][JNu+1].x(),Node[CellIndex  ][JNu+1].y(),
+					     0.0, 0.0, 0, 1) +                             // cell North side
+		      PolynomLineIntegration(Node[CellIndex  ][JNu+1].x(),Node[CellIndex  ][JNu+1].y(),
+					     Node[CellIndex  ][JNu  ].x(),Node[CellIndex  ][JNu  ].y(),
+					     0.0, 0.0, 0, 1) +                             // cell West side
+		      BndNorthSpline.PolynomOrderIntegration(Node[CellIndex ][JNu], Node[CellIndex+1][JNu],
+							     Vector2D(0.0,0.0), 15, 0, 1)+ // cell South side
+		      PolynomLineIntegration(Node[CellIndex+1][JNu  ].x(),Node[CellIndex+1][JNu  ].y(),
+					     Node[CellIndex+1][JNu+1].x(),Node[CellIndex+1][JNu+1].y(),
+					     0.0, 0.0, 0, 1)) ) /Cell[CellIndex][JCu+1].A;    // cell East side & Division by A
+    
+  case SOUTH_SPLINE:        // Use only the South Spline
+    return Vector2D( (BndSouthSpline.PolynomOrderIntegration(Node[CellIndex+1][JNl], Node[CellIndex][JNl],
+							     Vector2D(0.0,0.0),15,1,0) +              // cell North side
+		      PolynomLineIntegration(Node[CellIndex  ][JNl  ].x(),Node[CellIndex  ][JNl  ].y(),
+					     Node[CellIndex  ][JNl-1].x(),Node[CellIndex  ][JNl-1].y(),
+					     0.0, 0.0, 1, 0) +                                        // cell West side
+		      PolynomLineIntegration(Node[CellIndex  ][JNl-1].x(),Node[CellIndex  ][JNl-1].y(),
+					     Node[CellIndex+1][JNl-1].x(),Node[CellIndex+1][JNl-1].y(),
+					     0.0, 0.0, 1, 0) +                                        // cell South side
+		      PolynomLineIntegration(Node[CellIndex+1][JNl-1].x(),Node[CellIndex+1][JNl-1].y(),
+					     Node[CellIndex+1][JNl  ].x(),Node[CellIndex+1][JNl  ].y(),
+					     0.0, 0.0, 1, 0) )*0.5,                // cell East side & Division by (OrderX+1)
+		     (BndSouthSpline.PolynomOrderIntegration(Node[CellIndex+1][JNl], Node[CellIndex][JNl],
+							     Vector2D(0.0,0.0),15,0,1) +              // cell North side
+		      PolynomLineIntegration(Node[CellIndex  ][JNl  ].x(),Node[CellIndex  ][JNl  ].y(),
+					     Node[CellIndex  ][JNl-1].x(),Node[CellIndex  ][JNl-1].y(),
+					     0.0, 0.0, 0, 1) +                                        // cell West side
+		      PolynomLineIntegration(Node[CellIndex  ][JNl-1].x(),Node[CellIndex  ][JNl-1].y(),
+					     Node[CellIndex+1][JNl-1].x(),Node[CellIndex+1][JNl-1].y(),
+					     0.0, 0.0, 0, 1) +                                        // cell South side
+		      PolynomLineIntegration(Node[CellIndex+1][JNl-1].x(),Node[CellIndex+1][JNl-1].y(),
+					     Node[CellIndex+1][JNl  ].x(),Node[CellIndex+1][JNl  ].y(),
+					     0.0, 0.0, 0, 1) )) /Cell[CellIndex][JCl-1].A; // cell East side & Division by A  
+
+  case WEST_SPLINE:       // Use only the West Spline
+    return Vector2D( (PolynomLineIntegration(Node[INl  ][CellIndex+1].x(),Node[INl  ][CellIndex+1].y(),
+					     Node[INl-1][CellIndex+1].x(),Node[INl-1][CellIndex+1].y(),
+					     0.0, 0.0, 1, 0) +                                        // cell North side
+		      PolynomLineIntegration(Node[INl-1][CellIndex+1].x(),Node[INl-1][CellIndex+1].y(),
+					     Node[INl-1][CellIndex  ].x(),Node[INl-1][CellIndex  ].y(),
+					     0.0, 0.0, 1, 0) +                                        // cell West side
+		      PolynomLineIntegration(Node[INl-1][CellIndex  ].x(),Node[INl-1][CellIndex  ].y(),
+					     Node[INl  ][CellIndex  ].x(),Node[INl  ][CellIndex  ].y(),
+					     0.0, 0.0, 1, 0) +                                        // cell South side
+		      BndWestSpline.PolynomOrderIntegration(Node[INl][CellIndex], Node[INl][CellIndex+1],
+						    Vector2D(0.0,0.0),15,1,0) ) *0.5, // cell East side & Division by (OrderX+1)
+		     (PolynomLineIntegration(Node[INl  ][CellIndex+1].x(),Node[INl  ][CellIndex+1].y(),
+					     Node[INl-1][CellIndex+1].x(),Node[INl-1][CellIndex+1].y(),
+					     0.0, 0.0, 0, 1) +                                        // cell North side
+		      PolynomLineIntegration(Node[INl-1][CellIndex+1].x(),Node[INl-1][CellIndex+1].y(),
+					     Node[INl-1][CellIndex  ].x(),Node[INl-1][CellIndex  ].y(),
+					     0.0, 0.0, 0, 1) +                                        // cell West side
+		      PolynomLineIntegration(Node[INl-1][CellIndex  ].x(),Node[INl-1][CellIndex  ].y(),
+					     Node[INl  ][CellIndex  ].x(),Node[INl  ][CellIndex  ].y(),
+					     0.0, 0.0, 0, 1) +                                        // cell South side
+		      BndWestSpline.PolynomOrderIntegration(Node[INl][CellIndex], Node[INl][CellIndex+1],
+							    Vector2D(0.0,0.0),15,0,1) )) /Cell[ICl-1][CellIndex].A;
+                                                                                         // cell East side & Division by A
+
+  case EAST_SPLINE:      // Use only the East Spline
+    return Vector2D( (PolynomLineIntegration(Node[INu+1][CellIndex+1].x(),Node[INu+1][CellIndex+1].y(),
+					     Node[INu  ][CellIndex+1].x(),Node[INu  ][CellIndex+1].y(),
+					     0.0, 0.0, 1, 0) +                                         // cell North side
+		      BndEastSpline.PolynomOrderIntegration(Node[INu][CellIndex+1], Node[INu][CellIndex],
+							    Vector2D(0.0,0.0),15,1,0) +                // cell West side
+		      PolynomLineIntegration(Node[INu  ][CellIndex  ].x(),Node[INu  ][CellIndex  ].y(),
+					     Node[INu+1][CellIndex  ].x(),Node[INu+1][CellIndex  ].y(),
+					     0.0, 0.0, 1, 0) +                                         // cell South side
+		      PolynomLineIntegration(Node[INu+1][CellIndex  ].x(),Node[INu+1][CellIndex  ].y(),
+					     Node[INu+1][CellIndex+1].x(),Node[INu+1][CellIndex+1].y(),
+					     0.0, 0.0, 1, 0) ) *0.5, // cell East side & Division by (OrderX+1)
+		     (PolynomLineIntegration(Node[INu+1][CellIndex+1].x(),Node[INu+1][CellIndex+1].y(),
+					     Node[INu  ][CellIndex+1].x(),Node[INu  ][CellIndex+1].y(),
+					     0.0, 0.0, 0, 1) +                                         // cell North side
+		      BndEastSpline.PolynomOrderIntegration(Node[INu][CellIndex+1], Node[INu][CellIndex],
+							    Vector2D(0.0,0.0),15,0,1) +                // cell West side
+		      PolynomLineIntegration(Node[INu  ][CellIndex  ].x(),Node[INu  ][CellIndex  ].y(),
+					     Node[INu+1][CellIndex  ].x(),Node[INu+1][CellIndex  ].y(),
+					     0.0, 0.0, 0, 1) +                                         // cell South side
+		      PolynomLineIntegration(Node[INu+1][CellIndex  ].x(),Node[INu+1][CellIndex  ].y(),
+					     Node[INu+1][CellIndex+1].x(),Node[INu+1][CellIndex+1].y(),
+					     0.0, 0.0, 0, 1) )) /Cell[ICu+1][CellIndex].A; // cell East side & Division by A
+
+  default:
+    return 0.0;
+  } // endswitch
+}
+
+void Grid2D_Quad_Block_HO::ComputeGeometricCoefficients(const int &ii, const int &jj){
+
+  /***************************************************************************** 
+   * Subroutine for computing the geometric moments up to 3rd order            *
+   * with respect to the cell centroid(xCC,yCC).                               *
+   * These moments are integrals over the domain of the cell of the            *
+   * polynomial function having the form ((x-xCC)^n)*((y-yCC)^m) and divided   *
+   * by aria A.                                                                *
+   ****************************************************************************/
+
+  /* Moments for quadrilateral cells with straight boundaries */
+
+  // Compute the coefficients of the bilinear interpolation for transforming
+  // a quadrilatral cell into a unit lenght square
+
+  /* determine the coefficients of the transformation */
+  double a0C = nodeSW(ii,jj).x() - Cell[ii][jj].Xc.x;
+  double a1  = nodeSE(ii,jj).x() - nodeSW(ii,jj).x();
+  double a2  = nodeNW(ii,jj).x() - nodeSW(ii,jj).x();
+  double a3  = nodeSW(ii,jj).x() + nodeNE(ii,jj).x() - nodeNW(ii,jj).x() - nodeSE(ii,jj).x();
+  
+  double b0C = nodeSW(ii,jj).y() - Cell[ii][jj].Xc.y;
+  double b1  = nodeSE(ii,jj).y() - nodeSW(ii,jj).y();
+  double b2  = nodeNW(ii,jj).y() - nodeSW(ii,jj).y();
+  double b3  = nodeSW(ii,jj).y() + nodeNE(ii,jj).y() - nodeNW(ii,jj).y() - nodeSE(ii,jj).y();
+
+  double J0  = a1*b2 - a2*b1;
+  double J1  = a1*b3 - a3*b1;
+  double J2  = b2*a3 - a2*b3;
+
+  double DummyParam;
+
+  /* Create the polynomial function for the cell */
+  GeneralizedPolynomialFunctionOfTwoVariables Polynom(0,0,XCellCentroid(ii,jj),YCellCentroid(ii,jj));
+
+  switch(HighestReconstructionOrder){
+
+  case 4:  // Quartic moments
+
+    // coefficient (4,0)
+    Polynom.ChangePowersTo(4,0);
+    Cell[ii][jj].GeomCoeffValue(4,0) = Integration.IntegratePolynomialOverCell(ii,jj,Polynom,DummyParam) /Cell[ii][jj].A;
+
+    // coefficient (3,1)
+    Polynom.ChangePowersTo(3,1);
+    Cell[ii][jj].GeomCoeffValue(3,1) = Integration.IntegratePolynomialOverCell(ii,jj,Polynom,DummyParam) /Cell[ii][jj].A;
+
+    // coefficient (2,2)
+    Polynom.ChangePowersTo(2,2);
+    Cell[ii][jj].GeomCoeffValue(2,2) = Integration.IntegratePolynomialOverCell(ii,jj,Polynom,DummyParam) /Cell[ii][jj].A;
+
+    // coefficient (1,3)
+    Polynom.ChangePowersTo(1,3);
+    Cell[ii][jj].GeomCoeffValue(1,3) = Integration.IntegratePolynomialOverCell(ii,jj,Polynom,DummyParam) /Cell[ii][jj].A;
+
+    // coefficient (0,4)
+    Polynom.ChangePowersTo(0,4);
+    Cell[ii][jj].GeomCoeffValue(0,4) = Integration.IntegratePolynomialOverCell(ii,jj,Polynom,DummyParam) /Cell[ii][jj].A;
+
+  case 3:   // Cubic moments
+    // coefficient (3,0)
+    Cell[ii][jj].GeomCoeffValue(3,0) = ( ((240*J0 + 120*J1 + 120*J2)*a0C*a0C*a0C + (360*J0 + 240*J1 + 180*J2)*a0C*a0C*a1  + 
+					  (360*J0 + 180*J1 + 240*J2)*a0C*a0C*a2  + (180*J0 + 120*J1 + 120*J2)*a0C*a0C*a3  + 
+					  (240*J0 + 180*J1 + 120*J2)*a0C*a1*a1  + (360*J0 + 240*J1 + 240*J2)*a0C*a1*a2  + 
+					  (240*J0 + 180*J1 + 160*J2)*a0C*a1*a3  + (240*J0 + 120*J1 + 180*J2)*a0C*a2*a2  + 
+					  (240*J0 + 160*J1 + 180*J2)*a0C*a2*a3  + (80*J0 + 60*J1 + 60*J2)*a0C*a3*a3  + 
+					  (60*J0 + 48*J1 + 30*J2)*a1*a1*a1  + (120*J0 + 90*J1 + 80*J2)*a1*a1*a2  + 
+					  (90*J0 + 72*J1 + 60*J2)*a1*a1*a3  + (120*J0 + 80*J1 + 90*J2)*a1*a2*a2  + 
+					  (160*J0 + 120*J1 + 120*J2)*a1*a2*a3  + (60*J0 + 48*J1 + 45*J2)*a1*a3*a3  + 
+					  (60*J0 + 30*J1 + 48*J2)*a2*a2*a2 + (90*J0 + 60*J1 + 72*J2)*a2*a2*a3  + 
+					  (60*J0 + 45*J1 + 48*J2)*a2*a3*a3  + (15*J0 + 12*J1 + 12*J2)*a3*a3*a3) 
+					 /Cell[ii][jj].A /0.240e3 );
+
+    // coefficient (2,1)
+    Cell[ii][jj].GeomCoeffValue(2,1) = ( (((360*J0 + 180*J1 + 240*J2)*b2*a0C*a0C)  + ((360*J0 + 240*J1 + 240*J2)*b2*a0C*a1)  + 
+					  ((480*J0 + 240*J1 + 360*J2)*b2*a0C*a2)  + ((240*J0 + 160*J1 + 180*J2)*b2*a0C*a3)  + 
+					  ((120*J0 + 90*J1 + 80*J2)*b2*a1*a1)  + ((240*J0 + 160*J1 + 180*J2)*b2*a1*a2)  + 
+					  ((160*J0 + 120*J1 + 120*J2)*b2*a1*a3)  + ((180*J0 + 90*J1 + 144*J2)*b2*a2*a2)  + 
+					  ((180*J0 + 120*J1 + 144*J2)*b2*a2*a3)  + ((60*J0 + 45*J1 + 48*J2)*b2*a3*a3)  + 
+					  ((720*J0 + 360*J1 + 360*J2)*a0C*a0C*b0C)  + ((360*J0 + 240*J1 + 180*J2)*a0C*a0C*b1)  + 
+					  ((180*J0 + 120*J1 + 120*J2)*a0C*a0C*b3)  + ((720*J0 + 480*J1 + 360*J2)*a0C*a1*b0C)  + 
+					  ((480*J0 + 360*J1 + 240*J2)*a0C*a1*b1)  + ((240*J0 + 180*J1 + 160*J2)*a0C*a1*b3)  + 
+					  ((720*J0 + 360*J1 + 480*J2)*a0C*a2*b0C)  + ((360*J0 + 240*J1 + 240*J2)*a0C*a2*b1)  + 
+					  ((240*J0 + 160*J1 + 180*J2)*a0C*a2*b3)  + ((360*J0 + 240*J1 + 240*J2)*a0C*a3*b0C)  + 
+					  ((240*J0 + 180*J1 + 160*J2)*a0C*a3*b1)  + ((160*J0 + 120*J1 + 120*J2)*a0C*a3*b3)  + 
+					  ((240*J0 + 180*J1 + 120*J2)*a1*a1*b0C)  + ((180*J0 + 144*J1 + 90*J2)*a1*a1*b1)  + 
+					  ((90*J0 + 72*J1 + 60*J2)*a1*a1*b3)  + ((360*J0 + 240*J1 + 240*J2)*a1*a2*b0C)  + 
+					  ((240*J0 + 180*J1 + 160*J2)*a1*a2*b1)  + ((160*J0 + 120*J1 + 120*J2)*a1*a2*b3)  + 
+					  ((240*J0 + 180*J1 + 160*J2)*a1*a3*b0C)  + ((180*J0 + 144*J1 + 120*J2)*a1*a3*b1)  + 
+					  ((120*J0 + 96*J1 + 90*J2)*a1*a3*b3)  + ((240*J0 + 120*J1 + 180*J2)*a2*a2*b0C)  + 
+					  ((120*J0 + 80*J1 + 90*J2)*a2*a2*b1)  + ((90*J0 + 60*J1 + 72*J2)*a2*a2*b3)  + 
+					  ((240*J0 + 160*J1 + 180*J2)*a2*a3*b0C)  + ((160*J0 + 120*J1 + 120*J2)*a2*a3*b1)  + 
+					  ((120*J0 + 90*J1 + 96*J2)*a2*a3*b3)  + ((80*J0 + 60*J1 + 60*J2)*a3*a3*b0C)  + 
+					  ((60*J0 + 48*J1 + 45*J2)*a3*a3*b1) + (45*J0 + 36*J1 + 36*J2)*a3*a3*b3)
+					 /Cell[ii][jj].A /0.720e3 );
+
+    // coefficient (1,2)
+    Cell[ii][jj].GeomCoeffValue(1,2) = ( (((240*J0 + 120*J1 + 180*J2)*b2*b2*a0C) + ((120*J0 + 80*J1 + 90*J2)*b2*b2*a1) + 
+					  ((180*J0 + 90*J1 + 144*J2)*b2*b2*a2) + ((90*J0 + 60*J1 + 72*J2)*b2*b2*a3) + 
+					  ((720*J0 + 360*J1 + 480*J2)*b2*a0C*b0C) + ((360*J0 + 240*J1 + 240*J2)*b2*a0C*b1) + 
+					  ((240*J0 + 160*J1 + 180*J2)*b2*a0C*b3) + ((360*J0 + 240*J1 + 240*J2)*b2*a1*b0C) + 
+					  ((240*J0 + 180*J1 + 160*J2)*b2*a1*b1) + ((160*J0 + 120*J1 + 120*J2)*b2*a1*b3) + 
+					  ((480*J0 + 240*J1 + 360*J2)*b2*a2*b0C) + ((240*J0 + 160*J1 + 180*J2)*b2*a2*b1) + 
+					  ((180*J0 + 120*J1 + 144*J2)*b2*a2*b3) + ((240*J0 + 160*J1 + 180*J2)*b2*a3*b0C) + 
+					  ((160*J0 + 120*J1 + 120*J2)*b2*a3*b1) + ((120*J0 + 90*J1 + 96*J2)*b2*a3*b3) + 
+					  ((720*J0 + 360*J1 + 360*J2)*a0C*b0C*b0C) + ((720*J0 + 480*J1 + 360*J2)*a0C*b0C*b1) + 
+					  ((360*J0 + 240*J1 + 240*J2)*a0C*b0C*b3) + ((240*J0 + 180*J1 + 120*J2)*a0C*b1*b1) + 
+					  ((240*J0 + 180*J1 + 160*J2)*a0C*b1*b3) + ((80*J0 + 60*J1 + 60*J2)*a0C*b3*b3) + 
+					  ((360*J0 + 240*J1 + 180*J2)*a1*b0C*b0C) + ((480*J0 + 360*J1 + 240*J2)*a1*b0C*b1) + 
+					  ((240*J0 + 180*J1 + 160*J2)*a1*b0C*b3) + ((180*J0 + 144*J1 + 90*J2)*a1*b1*b1) + 
+					  ((180*J0 + 144*J1 + 120*J2)*a1*b1*b3) + ((60*J0 + 48*J1 + 45*J2)*a1*b3*b3) + 
+					  ((360*J0 + 180*J1 + 240*J2)*a2*b0C*b0C) + ((360*J0 + 240*J1 + 240*J2)*a2*b0C*b1) + 
+					  ((240*J0 + 160*J1 + 180*J2)*a2*b0C*b3) + ((120*J0 + 90*J1 + 80*J2)*a2*b1*b1) + 
+					  ((160*J0 + 120*J1 + 120*J2)*a2*b1*b3) + ((60*J0 + 45*J1 + 48*J2)*a2*b3*b3) + 
+					  ((180*J0 + 120*J1 + 120*J2)*a3*b0C*b0C) + ((240*J0 + 180*J1 + 160*J2)*a3*b0C*b1) + 
+					  ((160*J0 + 120*J1 + 120*J2)*a3*b0C*b3) + ((90*J0 + 72*J1 + 60*J2)*a3*b1*b1) + 
+					  ((120*J0 + 96*J1 + 90*J2)*a3*b1*b3) + (45*J0 + 36*J1 + 36*J2)*a3*b3*b3) 
+					 /Cell[ii][jj].A /0.720e3 );
+
+    // coefficient (0,3)
+    Cell[ii][jj].GeomCoeffValue(0,3) = ( ((60*J0 + 30*J1 + 48*J2)*b2*b2*b2 + (240*J0 + 120*J1 + 180*J2)*b2*b2*b0C +
+					  (120*J0 + 80*J1 + 90*J2)*b2*b2*b1 + (90*J0 + 60*J1 + 72*J2)*b2*b2*b3 + 
+					  (360*J0 + 180*J1 + 240*J2)*b2*b0C*b0C + (360*J0 + 240*J1 + 240*J2)*b2*b0C*b1 + 
+					  (240*J0 + 160*J1 + 180*J2)*b2*b0C*b3 + (120*J0 + 90*J1 + 80*J2)*b2*b1*b1 +
+					  (160*J0 + 120*J1 + 120*J2)*b2*b1*b3 + (60*J0 + 45*J1 + 48*J2)*b2*b3*b3 + 
+					  (240*J0 + 120*J1 + 120*J2)*b0C*b0C*b0C + (360*J0 + 240*J1 + 180*J2)*b0C*b0C*b1 + 
+					  (180*J0 + 120*J1 + 120*J2)*b0C*b0C*b3 + (240*J0 + 180*J1 + 120*J2)*b0C*b1*b1 +
+					  (240*J0 + 180*J1 + 160*J2)*b0C*b1*b3 + (80*J0 + 60*J1 + 60*J2)*b0C*b3*b3 + 
+					  (60*J0 + 48*J1 + 30*J2)*b1*b1*b1 + (90*J0 + 72*J1 + 60*J2)*b1*b1*b3 + 
+					  (60*J0 + 48*J1 + 45*J2)*b1*b3*b3 + (15*J0 + 12*J1 + 12*J2)*b3*b3*b3) 
+					 /Cell[ii][jj].A /0.240e3 );
+
+  case 2:   // Quadratic moments
+    // coefficient (2,0)
+    Cell[ii][jj].GeomCoeffValue(2,0) = ( (((36*J0 + 18*J1 + 18*J2)*a0C*a0C) + ((36*J0 + 24*J1 + 18*J2)*a0C*a1) + 
+					  ((36*J0 + 18*J1 + 24*J2)*a0C*a2) + ((18*J0 + 12*J1 + 12*J2)*a0C*a3) +
+					  ((12*J0 + 9*J1 + 6*J2)*a1*a1) + ((18*J0 + 12*J1 + 12*J2)*a1*a2) + 
+					  ((12*J0 + 9*J1 + 8*J2)*a1*a3) + ((12*J0 + 6*J1 + 9*J2)*a2*a2) + 
+					  ((12*J0 + 8*J1 + 9*J2)*a2*a3) + ((4*J0 + 3*J1 + 3*J2)*a3*a3)) 
+					 /Cell[ii][jj].A /0.36e2 );
+
+    // coefficient (0,2)
+    Cell[ii][jj].GeomCoeffValue(0,2) = ( (((12*J0 + 6*J1 + 9*J2)*b2*b2) + ((36*J0 + 18*J1 + 24*J2)*b2*b0C) +
+					  ((18*J0 + 12*J1 + 12*J2)*b2*b1) + ((12*J0 + 8*J1 + 9*J2)*b2*b3) + 
+					  ((36*J0 + 18*J1 + 18*J2)*b0C*b0C) + ((36*J0 + 24*J1 + 18*J2)*b0C*b1) + 
+					  ((18*J0 + 12*J1 + 12*J2)*b0C*b3) + ((12*J0 + 9*J1 + 6*J2)*b1*b1) + 
+					  ((12*J0 + 9*J1 + 8*J2)*b1*b3) + ((4*J0 + 3*J1 + 3*J2)*b3*b3)) 
+					 /Cell[ii][jj].A /0.36e2 );
+
+    // coefficient (1,1)
+    Cell[ii][jj].GeomCoeffValue(1,1) = ( (((36*J0 + 18*J1 + 24*J2)*b2*a0C) + ((18*J0 + 12*J1 + 12*J2)*b2*a1) + 
+					  ((24*J0 + 12*J1 + 18*J2)*b2*a2) + ((12*J0 + 8*J1 + 9*J2)*b2*a3) + 
+					  ((72*J0 + 36*J1 + 36*J2)*a0C*b0C) + ((36*J0 + 24*J1 + 18*J2)*a0C*b1) +
+					  ((18*J0 + 12*J1 + 12*J2)*a0C*b3) + ((36*J0 + 24*J1 + 18*J2)*a1*b0C) + 
+					  ((24*J0 + 18*J1 + 12*J2)*a1*b1) + ((12*J0 + 9*J1 + 8*J2)*a1*b3) +
+					  ((36*J0 + 18*J1 + 24*J2)*a2*b0C) + ((18*J0 + 12*J1 + 12*J2)*a2*b1) +
+					  ((12*J0 + 8*J1 + 9*J2)*a2*b3) + ((18*J0 + 12*J1 + 12*J2)*a3*b0C) + 
+					  ((12*J0 + 9*J1 + 8*J2)*a3*b1) + ((8*J0 + 6*J1 + 6*J2)*a3*b3)) 
+					 / Cell[ii][jj].A /0.72e2 );
+
+  case 1:   // Linear moments
+    Cell[ii][jj].GeomCoeffValue(1,0) = 0.0;
+    Cell[ii][jj].GeomCoeffValue(0,1) = 0.0;
+    
+  case 0:   // Zero moment 
+    Cell[ii][jj].GeomCoeffValue(0,0) = 1.0;
+    break;
+
+  default: 
+    throw runtime_error("Grid2D_Quad_Block_HO::ComputeGeometricCoefficients() ERROR! Geometric moments for this order have not been set up.");
+  }
+}
+
+void Grid2D_Quad_Block_HO::ComputeGeometricCoefficients_CurvedBoundaries(const int &CellIndexI, const int &CellIndexJ,
+									 const int &Boundary){
+
+  /***************************************************************************** 
+   * Subroutine for computing the geometric moments up to 3rd order            *
+   * with respect to the cell centroid(xCC,yCC).                               *
+   * These moments are integrals over the domain of the cell of the            *
+   * polynomial function having the form ((x-xCC)^n)*((y-yCC)^m) and divided   *
+   * by aria A.                                                                *
+   ****************************************************************************/
+
+  /* Moments for quadrilateral cells with curved boundaries */
+
+  switch(HighestReconstructionOrder){
+
+  case 3:   // Cubic moments
+    // coefficient (3,0)
+    Cell[CellIndexI][CellIndexJ].GeomCoeffValue(3,0) = GeometricMoment_CurvedBoundaries(CellIndexI, CellIndexJ, Boundary, 3, 0);
+
+    // coefficient (2,1)
+    Cell[CellIndexI][CellIndexJ].GeomCoeffValue(2,1) = GeometricMoment_CurvedBoundaries(CellIndexI, CellIndexJ, Boundary, 2, 1);
+
+    // coefficient (1,2)
+    Cell[CellIndexI][CellIndexJ].GeomCoeffValue(1,2) = GeometricMoment_CurvedBoundaries(CellIndexI, CellIndexJ, Boundary, 1, 2);
+    // coefficient (0,3)
+    Cell[CellIndexI][CellIndexJ].GeomCoeffValue(0,3) = GeometricMoment_CurvedBoundaries(CellIndexI, CellIndexJ, Boundary, 0, 3);
+
+  case 2:   // Quadratic moments
+    // coefficient (2,0)
+    Cell[CellIndexI][CellIndexJ].GeomCoeffValue(2,0) = GeometricMoment_CurvedBoundaries(CellIndexI, CellIndexJ, Boundary, 2, 0);
+
+    // coefficient (0,2)
+    Cell[CellIndexI][CellIndexJ].GeomCoeffValue(0,2) = GeometricMoment_CurvedBoundaries(CellIndexI, CellIndexJ, Boundary, 0, 2);
+
+    // coefficient (1,1)
+    Cell[CellIndexI][CellIndexJ].GeomCoeffValue(1,1) = GeometricMoment_CurvedBoundaries(CellIndexI, CellIndexJ, Boundary, 1, 1);
+
+  case 1:   // Linear moments
+    Cell[CellIndexI][CellIndexJ].GeomCoeffValue(1,0) = 0.0;
+    Cell[CellIndexI][CellIndexJ].GeomCoeffValue(0,1) = 0.0;
+    
+  case 0:   // Zero moment 
+    Cell[CellIndexI][CellIndexJ].GeomCoeffValue(0,0) = 1.0;
+    
+  }
+}
+
+void Grid2D_Quad_Block_HO::ComputeGeometricCoefficients_GhostCell_CurvedBoundaries(const int &CellIndexI, const int &CellIndexJ,
+										   const int &Boundary){
+
+  /***************************************************************************** 
+   * Subroutine for computing the geometric moments up to 3rd order            *
+   * with respect to the cell centroid(xCC,yCC).                               *
+   * These moments are integrals over the domain of the cell of the            *
+   * polynomial function having the form ((x-xCC)^n)*((y-yCC)^m) and divided   *
+   * by aria A.                                                                *
+   * This subroutine is for Ghost Cells                                        *
+   ****************************************************************************/
+
+  /* Moments for quadrilateral cells with curved boundaries */
+
+  switch(HighestReconstructionOrder){
+
+  case 3:   // Cubic moments
+    // coefficient (3,0)
+    Cell[CellIndexI][CellIndexJ].GeomCoeffValue(3,0) = GeometricMoment_GhostCell_CurvedBoundaries(CellIndexI, CellIndexJ,
+												  Boundary, 3, 0);
+    // coefficient (2,1)
+    Cell[CellIndexI][CellIndexJ].GeomCoeffValue(2,1) = GeometricMoment_GhostCell_CurvedBoundaries(CellIndexI, CellIndexJ,
+												  Boundary, 2, 1);
+    // coefficient (1,2)
+    Cell[CellIndexI][CellIndexJ].GeomCoeffValue(1,2) = GeometricMoment_GhostCell_CurvedBoundaries(CellIndexI, CellIndexJ,
+												  Boundary, 1, 2);
+    // coefficient (0,3)
+    Cell[CellIndexI][CellIndexJ].GeomCoeffValue(0,3) = GeometricMoment_GhostCell_CurvedBoundaries(CellIndexI, CellIndexJ,
+												  Boundary, 0, 3);
+
+  case 2:   // Quadratic moments
+    // coefficient (2,0)
+    Cell[CellIndexI][CellIndexJ].GeomCoeffValue(2,0) = GeometricMoment_GhostCell_CurvedBoundaries(CellIndexI, CellIndexJ,
+												  Boundary, 2, 0);
+    // coefficient (0,2)
+    Cell[CellIndexI][CellIndexJ].GeomCoeffValue(0,2) = GeometricMoment_GhostCell_CurvedBoundaries(CellIndexI, CellIndexJ,
+												  Boundary, 0, 2);
+    // coefficient (1,1)
+    Cell[CellIndexI][CellIndexJ].GeomCoeffValue(1,1) = GeometricMoment_GhostCell_CurvedBoundaries(CellIndexI, CellIndexJ,
+												  Boundary, 1, 1);
+
+  case 1:   // Linear moments
+    Cell[CellIndexI][CellIndexJ].GeomCoeffValue(1,0) = 0.0;
+    Cell[CellIndexI][CellIndexJ].GeomCoeffValue(0,1) = 0.0;
+    
+  case 0:   // Zero moment 
+    Cell[CellIndexI][CellIndexJ].GeomCoeffValue(0,0) = 1.0;
+    
+  }
+}
+
+double Grid2D_Quad_Block_HO::GeometricMoment_CurvedBoundaries(const int &CellIndexI, const int &CellIndexJ,
+							      const int &Boundary,
+							      const int &OrderX, const int &OrderY){
+
+  // Obs. The sides of the cell that are not curved are treated as line segments and therefore
+  //      the line integral is computed exactly based on the Nodes.
+  // The edges are covered from left to right (i.e. right-hand rule applied)
+
+  switch(Boundary){
+
+  case NORTH_SPLINE:          // Use only the North Spline -> (iCell,jCell)=(CellIndexI,JCu)
+    return ( (BndNorthSpline.PolynomOrderIntegration(Node[CellIndexI+1][JNu], Node[CellIndexI  ][JNu], 
+						     Cell[CellIndexI][JCu].Xc, 15, OrderX, OrderY) +          // cell North side
+	      PolynomLineIntegration(Node[CellIndexI  ][JNu].x(),Node[CellIndexI  ][JNu].y(),
+				     Node[CellIndexI  ][JCu].x(),Node[CellIndexI  ][JCu].y(),
+				     Cell[CellIndexI][JCu].Xc.x, Cell[CellIndexI][JCu].Xc.y, OrderX, OrderY) + // cell West side
+	      PolynomLineIntegration(Node[CellIndexI  ][JCu].x(),Node[CellIndexI  ][JCu].y(),
+				     Node[CellIndexI+1][JCu].x(),Node[CellIndexI+1][JCu].y(),
+				     Cell[CellIndexI][JCu].Xc.x, Cell[CellIndexI][JCu].Xc.y, OrderX, OrderY) + // cell South side
+	      PolynomLineIntegration(Node[CellIndexI+1][JCu].x(),Node[CellIndexI+1][JCu].y(),
+				     Node[CellIndexI+1][JNu].x(),Node[CellIndexI+1][JNu].y(),
+				     Cell[CellIndexI][JCu].Xc.x, Cell[CellIndexI][JCu].Xc.y, OrderX, OrderY) ) // cell East side
+	     /(OrderX+1)/Cell[CellIndexI][JCu].A);  // Division by (OrderX+1) & Division by A
+    
+
+  case NORTH_WEST_SPLINE:     // Use the North Spline and the West Spline
+    return ( (BndNorthSpline.PolynomOrderIntegration(Node[CellIndexI+1][JNu], Node[CellIndexI  ][JNu],
+						     Cell[ICl][JCu].Xc, 15, OrderX, OrderY) +                 // cell North side
+	      BndWestSpline.PolynomOrderIntegration(Node[CellIndexI ][JNu], Node[CellIndexI  ][JCu],
+						    Cell[ICl][JCu].Xc, 15, OrderX, OrderY) +                  // cell West side
+	      PolynomLineIntegration(Node[CellIndexI  ][JCu].x(),Node[CellIndexI  ][JCu].y(),
+				     Node[CellIndexI+1][JCu].x(),Node[CellIndexI+1][JCu].y(),
+				     Cell[ICl][JCu].Xc.x, Cell[ICl][JCu].Xc.y, OrderX, OrderY) +              // cell South side
+	      PolynomLineIntegration(Node[CellIndexI+1][JCu].x(),Node[CellIndexI+1][JCu].y(),
+				     Node[CellIndexI+1][JNu].x(),Node[CellIndexI+1][JNu].y(),
+				     Cell[ICl][JCu].Xc.x, Cell[ICl][JCu].Xc.y, OrderX, OrderY) )              // cell East side
+	     /(OrderX+1)/Cell[ICl][JCu].A);        // Division by (OrderX+1) & Division by A
+
+
+  case NORTH_EAST_SPLINE:    // Use the North Spline and the East Spline
+    return ( (BndNorthSpline.PolynomOrderIntegration(Node[CellIndexI+1][JNu], Node[CellIndexI  ][JNu],
+							  Cell[ICu][JCu].Xc, 15, OrderX, OrderY) +            // cell North side
+		      PolynomLineIntegration(Node[CellIndexI  ][JNu].x(),Node[CellIndexI  ][JNu].y(),
+					     Node[CellIndexI  ][JCu].x(),Node[CellIndexI  ][JCu].y(),
+					     Cell[ICu][JCu].Xc.x, Cell[ICu][JCu].Xc.y, OrderX, OrderY) +      // cell West side
+		      PolynomLineIntegration(Node[CellIndexI  ][JCu].x(),Node[CellIndexI  ][JCu].y(),
+					     Node[CellIndexI+1][JCu].x(),Node[CellIndexI+1][JCu].y(),
+					     Cell[ICu][JCu].Xc.x, Cell[ICu][JCu].Xc.y, OrderX, OrderY) +      // cell South side
+		      BndEastSpline.PolynomOrderIntegration(Node[CellIndexI+1][JCu], Node[CellIndexI+1][JNu],
+							    Cell[ICu][JCu].Xc, 15, OrderX, OrderY) )          // cell East side
+	     /(OrderX+1)/Cell[ICu][JCu].A);        // Division by (OrderX+1) & Division by A 
+
+  case SOUTH_SPLINE:        // Use only the South Spline
+    return ( (PolynomLineIntegration(Node[CellIndexI+1][JCl+1].x(),Node[CellIndexI+1][JCl+1].y(),
+				     Node[CellIndexI  ][JCl+1].x(),Node[CellIndexI  ][JCl+1].y(),
+				     Cell[CellIndexI][JCl].Xc.x,Cell[CellIndexI][JCl].Xc.y, OrderX, OrderY) +   // cell North side
+	      PolynomLineIntegration(Node[CellIndexI  ][JCl+1].x(),Node[CellIndexI  ][JCl+1].y(),
+				     Node[CellIndexI  ][JCl  ].x(),Node[CellIndexI  ][JCl  ].y(),
+				     Cell[CellIndexI][JCl].Xc.x,Cell[CellIndexI][JCl].Xc.y, OrderX, OrderY) +   // cell West side
+	      BndSouthSpline.PolynomOrderIntegration(Node[CellIndexI ][JCl], Node[CellIndexI+1][JCl],
+						     Cell[CellIndexI][JCl].Xc, 15, OrderX, OrderY) +           // cell South side
+	      PolynomLineIntegration(Node[CellIndexI+1][JCl  ].x(),Node[CellIndexI+1][JCl  ].y(),
+				     Node[CellIndexI+1][JCl+1].x(),Node[CellIndexI+1][JCl+1].y(),
+				     Cell[CellIndexI][JCl].Xc.x,Cell[CellIndexI][JCl].Xc.y, OrderX, OrderY) )   // cell East side
+	     /(OrderX+1)/Cell[CellIndexI][JCl].A);        // Division by (OrderX+1) & Division by A 
+
+  case SOUTH_WEST_SPLINE:   // Use the South Spline and the West Spline
+    return ( (PolynomLineIntegration(Node[CellIndexI+1][JCl+1].x(),Node[CellIndexI+1][JCl+1].y(),
+				     Node[CellIndexI  ][JCl+1].x(),Node[CellIndexI  ][JCl+1].y(),
+				     Cell[ICl][JCl].Xc.x,Cell[ICl][JCl].Xc.y, OrderX, OrderY) +               // cell North side
+	      PolynomLineIntegration(Node[CellIndexI  ][JCl+1].x(),Node[CellIndexI  ][JCl+1].y(),
+				     Node[CellIndexI  ][JCl  ].x(),Node[CellIndexI  ][JCl  ].y(),
+				     Cell[ICl][JCl].Xc.x,Cell[ICl][JCl].Xc.y, OrderX, OrderY) +               // cell West side
+	      BndSouthSpline.PolynomOrderIntegration(Node[CellIndexI ][JCl], Node[CellIndexI+1][JCl],
+						     Cell[ICl][JCl].Xc, 15, OrderX, OrderY) +                 // cell South side
+	      PolynomLineIntegration(Node[CellIndexI+1][JCl  ].x(),Node[CellIndexI+1][JCl  ].y(),
+				     Node[CellIndexI+1][JCl+1].x(),Node[CellIndexI+1][JCl+1].y(),
+				     Cell[ICl][JCl].Xc.x,Cell[ICl][JCl].Xc.y, OrderX, OrderY) )               // cell East side
+	     /(OrderX+1)/Cell[ICl][JCl].A);        // Division by (OrderX+1) & Division by A
+
+  case SOUTH_EAST_SPLINE:   // Use the South Spline and the East Spline
+    return ( (PolynomLineIntegration(Node[CellIndexI+1][JCl+1].x(),Node[CellIndexI+1][JCl+1].y(),
+				     Node[CellIndexI  ][JCl+1].x(),Node[CellIndexI  ][JCl+1].y(),
+				     Cell[ICu][JCl].Xc.x,Cell[ICu][JCl].Xc.y, OrderX, OrderY) +               // cell North side
+	      PolynomLineIntegration(Node[CellIndexI  ][JCl+1].x(),Node[CellIndexI  ][JCl+1].y(),
+				     Node[CellIndexI  ][JCl  ].x(),Node[CellIndexI  ][JCl  ].y(),
+				     Cell[ICu][JCl].Xc.x,Cell[ICu][JCl].Xc.y, OrderX, OrderY) +               // cell West side
+	      BndSouthSpline.PolynomOrderIntegration(Node[CellIndexI ][JCl], Node[CellIndexI+1][JCl],
+						     Cell[ICu][JCl].Xc, 15, OrderX, OrderY) +                 // cell South side
+	      BndEastSpline.PolynomOrderIntegration(Node[CellIndexI+1][JCl], Node[CellIndexI+1][JCl+1],
+						    Cell[ICu][JCl].Xc, 15, OrderX, OrderY) )                  // cell East side
+	     /(OrderX+1)/Cell[ICu][JCl].A);        // Division by (OrderX+1) & Division by A
+
+  case WEST_SPLINE:       // Use only the West Spline
+    return ( (PolynomLineIntegration(Node[ICl+1][CellIndexJ+1].x(),Node[ICl+1][CellIndexJ+1].y(),
+				     Node[ICl  ][CellIndexJ+1].x(),Node[ICl  ][CellIndexJ+1].y(),
+				     Cell[ICl][CellIndexJ].Xc.x,Cell[ICl][CellIndexJ].Xc.y, OrderX, OrderY) + // cell North side
+	      BndWestSpline.PolynomOrderIntegration(Node[ICl][CellIndexJ+1], Node[ICl][CellIndexJ],
+						    Cell[ICl][CellIndexJ].Xc, 15, OrderX, OrderY) +           // cell West side
+	      PolynomLineIntegration(Node[ICl  ][CellIndexJ  ].x(),Node[ICl  ][CellIndexJ  ].y(),
+				     Node[ICl+1][CellIndexJ  ].x(),Node[ICl+1][CellIndexJ  ].y(),
+				     Cell[ICl][CellIndexJ].Xc.x,Cell[ICl][CellIndexJ].Xc.y, OrderX, OrderY) + // cell South side
+	      PolynomLineIntegration(Node[ICl+1][CellIndexJ  ].x(),Node[ICl+1][CellIndexJ  ].y(),
+				     Node[ICl+1][CellIndexJ+1].x(),Node[ICl+1][CellIndexJ+1].y(),
+				     Cell[ICl][CellIndexJ].Xc.x,Cell[ICl][CellIndexJ].Xc.y, OrderX, OrderY) ) // cell East side
+	     /(OrderX+1)/Cell[ICl][CellIndexJ].A);        // Division by (OrderX+1) & Division by A
+
+  case EAST_SPLINE:      // Use only the East Spline
+    return ( (PolynomLineIntegration(Node[ICu+1][CellIndexJ+1].x(),Node[ICu+1][CellIndexJ+1].y(),
+				     Node[ICu  ][CellIndexJ+1].x(),Node[ICu  ][CellIndexJ+1].y(),
+				     Cell[ICu][CellIndexJ].Xc.x,Cell[ICu][CellIndexJ].Xc.y, OrderX, OrderY) + // cell North side
+	      PolynomLineIntegration(Node[ICu  ][CellIndexJ+1].x(),Node[ICu  ][CellIndexJ+1].y(),
+				     Node[ICu  ][CellIndexJ  ].x(),Node[ICu  ][CellIndexJ  ].y(),
+				     Cell[ICu][CellIndexJ].Xc.x,Cell[ICu][CellIndexJ].Xc.y, OrderX, OrderY) + // cell West side
+	      PolynomLineIntegration(Node[ICu  ][CellIndexJ  ].x(),Node[ICu  ][CellIndexJ  ].y(),
+				     Node[ICu+1][CellIndexJ  ].x(),Node[ICu+1][CellIndexJ  ].y(),
+				     Cell[ICu][CellIndexJ].Xc.x,Cell[ICu][CellIndexJ].Xc.y, OrderX, OrderY) + // cell South side
+	      BndEastSpline.PolynomOrderIntegration(Node[ICu+1][CellIndexJ], Node[ICu+1][CellIndexJ+1],
+						    Cell[ICu][CellIndexJ].Xc, 15, OrderX, OrderY) )           // cell East side
+	     /(OrderX+1)/Cell[ICu][CellIndexJ].A);        // Division by (OrderX+1) & Division by A
+
+  default:
+    return 0.0;
+  } // endswitch
+
+}
+
+double Grid2D_Quad_Block_HO::GeometricMoment_GhostCell_CurvedBoundaries(const int &CellIndexI, const int &CellIndexJ,
+									const int &Boundary,
+									const int &OrderX, const int &OrderY){
+
+  // Obs. The sides of the cell that are not curved are treated as line segments and therefore
+  //      the line integral is computed exactly based on the Nodes.
+  // The edges are covered from left to right (i.e. right-hand rule applied)
+  // ***! This subroutine is for the first row of ghost cells and therefore only one boundary can be curved at a time
+
+  switch(Boundary){
+
+  case NORTH_SPLINE:          // Use only the North Spline -> (iCell,jCell)=(CellIndexI,JCu)
+    return ( (// cell North side
+	      PolynomLineIntegration(Node[CellIndexI+1][JNu+1].x(),Node[CellIndexI+1][JNu+1].y(),
+				     Node[CellIndexI  ][JNu+1].x(),Node[CellIndexI  ][JNu+1].y(),
+				     Cell[CellIndexI][JCu+1].Xc.x, Cell[CellIndexI][JCu+1].Xc.y, OrderX, OrderY) +
+	      // cell West side
+	      PolynomLineIntegration(Node[CellIndexI  ][JNu+1].x(),Node[CellIndexI  ][JNu+1].y(),
+				     Node[CellIndexI  ][JNu  ].x(),Node[CellIndexI  ][JNu  ].y(),
+				     Cell[CellIndexI][JCu+1].Xc.x, Cell[CellIndexI][JCu+1].Xc.y, OrderX, OrderY) + 
+	      // cell South side
+	      BndNorthSpline.PolynomOrderIntegration(Node[CellIndexI][JNu], Node[CellIndexI+1][JNu], 
+						     Cell[CellIndexI][JCu+1].Xc, 15, OrderX, OrderY) + 
+	      // cell East side
+	      PolynomLineIntegration(Node[CellIndexI+1][JNu  ].x(),Node[CellIndexI+1][JNu  ].y(),
+				     Node[CellIndexI+1][JNu+1].x(),Node[CellIndexI+1][JNu+1].y(),
+				     Cell[CellIndexI][JCu+1].Xc.x, Cell[CellIndexI][JCu+1].Xc.y, OrderX, OrderY) )
+	     /(OrderX+1)/Cell[CellIndexI][JCu+1].A);  // Division by (OrderX+1) & Division by A
+    
+  case SOUTH_SPLINE:        // Use only the South Spline
+    return ( (// cell North side
+	      BndSouthSpline.PolynomOrderIntegration(Node[CellIndexI+1][JNl], Node[CellIndexI][JNl],
+						     Cell[CellIndexI][JCl-1].Xc, 15, OrderX, OrderY) +   
+	      // cell West side
+	      PolynomLineIntegration(Node[CellIndexI  ][JNl  ].x(),Node[CellIndexI  ][JNl  ].y(),
+				     Node[CellIndexI  ][JNl-1].x(),Node[CellIndexI  ][JNl-1].y(),
+				     Cell[CellIndexI][JCl-1].Xc.x,Cell[CellIndexI][JCl-1].Xc.y, OrderX, OrderY) +   
+	      // cell South side
+	      PolynomLineIntegration(Node[CellIndexI  ][JNl-1].x(),Node[CellIndexI  ][JNl-1].y(),
+				     Node[CellIndexI+1][JNl-1].x(),Node[CellIndexI+1][JNl-1].y(),
+				     Cell[CellIndexI][JCl-1].Xc.x,Cell[CellIndexI][JCl-1].Xc.y, OrderX, OrderY) +   
+	      // cell East side
+	      PolynomLineIntegration(Node[CellIndexI+1][JNl-1].x(),Node[CellIndexI+1][JNl-1].y(),
+				     Node[CellIndexI+1][JNl  ].x(),Node[CellIndexI+1][JNl  ].y(),
+				     Cell[CellIndexI][JCl-1].Xc.x,Cell[CellIndexI][JCl-1].Xc.y, OrderX, OrderY) )   
+	     /(OrderX+1)/Cell[CellIndexI][JCl-1].A);        // Division by (OrderX+1) & Division by A 
+
+  case WEST_SPLINE:       // Use only the West Spline
+    return ( (// cell North side
+	      PolynomLineIntegration(Node[INl  ][CellIndexJ+1].x(),Node[INl  ][CellIndexJ+1].y(),
+				     Node[INl-1][CellIndexJ+1].x(),Node[INl-1][CellIndexJ+1].y(),
+				     Cell[ICl-1][CellIndexJ].Xc.x,Cell[ICl-1][CellIndexJ].Xc.y, OrderX, OrderY) + 
+	      // cell West side
+	      PolynomLineIntegration(Node[INl-1][CellIndexJ+1].x(),Node[INl-1][CellIndexJ+1].y(),
+				     Node[INl-1][CellIndexJ  ].x(),Node[INl-1][CellIndexJ  ].y(),
+				     Cell[ICl-1][CellIndexJ].Xc.x,Cell[ICl-1][CellIndexJ].Xc.y, OrderX, OrderY) + 
+	      // cell South side
+	      PolynomLineIntegration(Node[INl-1][CellIndexJ  ].x(),Node[INl-1][CellIndexJ  ].y(),
+				     Node[INl  ][CellIndexJ  ].x(),Node[INl  ][CellIndexJ  ].y(),
+				     Cell[ICl-1][CellIndexJ].Xc.x,Cell[ICl-1][CellIndexJ].Xc.y, OrderX, OrderY) + 
+	      // cell East side
+	      BndWestSpline.PolynomOrderIntegration(Node[INl][CellIndexJ], Node[INl][CellIndexJ+1],
+						    Cell[ICl-1][CellIndexJ].Xc, 15, OrderX, OrderY) ) 
+	     /(OrderX+1)/Cell[ICl-1][CellIndexJ].A);        // Division by (OrderX+1) & Division by A
+
+  case EAST_SPLINE:      // Use only the East Spline
+    return ( (// cell North side
+	      PolynomLineIntegration(Node[INu+1][CellIndexJ+1].x(),Node[INu+1][CellIndexJ+1].y(),
+				     Node[INu  ][CellIndexJ+1].x(),Node[INu  ][CellIndexJ+1].y(),
+				     Cell[ICu+1][CellIndexJ].Xc.x,Cell[ICu+1][CellIndexJ].Xc.y, OrderX, OrderY) + 
+	      // cell West side
+	      BndEastSpline.PolynomOrderIntegration(Node[INu][CellIndexJ+1], Node[INu][CellIndexJ],
+						    Cell[ICu+1][CellIndexJ].Xc, 15, OrderX, OrderY) + 
+	      // cell South side
+	      PolynomLineIntegration(Node[INu  ][CellIndexJ  ].x(),Node[INu  ][CellIndexJ  ].y(),
+				     Node[INu+1][CellIndexJ  ].x(),Node[INu+1][CellIndexJ  ].y(),
+				     Cell[ICu+1][CellIndexJ].Xc.x,Cell[ICu+1][CellIndexJ].Xc.y, OrderX, OrderY) + 
+	      // cell East side
+	      PolynomLineIntegration(Node[INu+1][CellIndexJ  ].x(),Node[INu+1][CellIndexJ  ].y(),
+				     Node[INu+1][CellIndexJ+1].x(),Node[INu+1][CellIndexJ+1].y(),
+				     Cell[ICu+1][CellIndexJ].Xc.x,Cell[ICu+1][CellIndexJ].Xc.y, OrderX, OrderY) ) 
+	     /(OrderX+1)/Cell[ICu+1][CellIndexJ].A);        // Division by (OrderX+1) & Division by A
+
+  default:
+    return 0.0;
+  } // endswitch
+
+}
 
 /*!
  * Updates the cell information for the quadrilateral
@@ -5063,8 +6107,9 @@ void Grid2D_Quad_Block_HO::Read_Quad_Block(istream &In_File) {
 /*!
  * Translates or shifts the positions of the nodes of a 
  * quadrilateral grid block.                            
- * This subroutine DOESN'T update the geometric properties
- * of the grid cells.
+ * 
+ * \note This subroutine DOESN'T update the geometric properties
+ *       of the new grid cells!!!                                                     
  */
 void Grid2D_Quad_Block_HO::Translate_Quad_Block_Without_Update(const Vector2D &V) {
 
@@ -5088,14 +6133,14 @@ void Grid2D_Quad_Block_HO::Translate_Quad_Block_Without_Update(const Vector2D &V
     /* Require update of the whole mesh */
     Schedule_Interior_Mesh_Update();
     Schedule_Ghost_Cells_Update();
-    
 }
 
 
 /*!
- * Scales the quadrilateral grid block.
- * This subroutine DOESN'T update the geometric properties
- * of the grid cells.
+ * Scales the quadrilateral grid block.                 
+ *                                                      
+ * \note This subroutine DOESN'T update the geometric properties
+ *       of the new grid cells!!!                                                     
  */
 void Grid2D_Quad_Block_HO::Scale_Quad_Block_Without_Update(const double &Scaling_Factor) {
 
@@ -5127,14 +6172,15 @@ void Grid2D_Quad_Block_HO::Scale_Quad_Block_Without_Update(const double &Scaling
 
     /* Require update of the whole mesh */
     Schedule_Interior_Mesh_Update();
-    Schedule_Ghost_Cells_Update();
+    Schedule_Ghost_Cells_Update(); 
 }
 
  
 /*!
- * Rotates the quadrilateral grid block.
- * This subroutine DOESN'T update the geometric properties
- * of the grid cells.
+ * Rotates the quadrilateral grid block.                
+ *
+ * \note This subroutine DOESN'T update the geometric properties
+ *       of the new grid cells!!!                               
  */
 void Grid2D_Quad_Block_HO::Rotate_Quad_Block_Without_Update(const double &Angle) {
 
@@ -5175,8 +6221,9 @@ void Grid2D_Quad_Block_HO::Rotate_Quad_Block_Without_Update(const double &Angle)
  * the quadrilateral grid block based on a mirror       
  * reflection about the y=0 axis.  The cells and nodes  
  * are also re-ordered in the i-direction.              
- * This subroutine DOESN'T update the geometric properties
- * of the grid cells.               
+ *
+ * \note This subroutine DOESN'T update the geometric properties
+ *       of the new grid cells!!!                               
  */
 void Grid2D_Quad_Block_HO::Reflect_Quad_Block_Without_Update(void) {
 

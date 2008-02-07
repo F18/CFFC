@@ -49,7 +49,20 @@ using namespace std;
 #define ORTHOGONAL 1
 #define NOT_ORTHOGONAL 0
 
+/* Define possible positions for a cell
+   in the 2D quadrilateral block. */
 
+#define INTERIOR_CELL                   0
+/* Corner Boundary Cells (i.e. bounded to the specified directions by 2 splines) */
+#define NORTH_WEST_SPLINE               1
+#define NORTH_EAST_SPLINE               2
+#define SOUTH_WEST_SPLINE               3
+#define SOUTH_EAST_SPLINE               4
+/* Boundary Cells (i.e. bounded to the specified direction by 1 spline) */
+#define SOUTH_SPLINE                    5
+#define NORTH_SPLINE                    6
+#define EAST_SPLINE                     7
+#define WEST_SPLINE                     8
 
 
 /* Define the high-order quadrilateral 2D grid block class. */
@@ -341,6 +354,8 @@ public:
   Vector2D centroidSE(const int ii, const int jj) const;
   Vector2D centroidNW(const int ii, const int jj) const;
   Vector2D centroidNE(const int ii, const int jj) const;
+  Vector2D centroid_CurvedBoundaries(const int &CellIndex, const int &Boundary) const;
+  Vector2D centroid_GhostCell_CurvedBoundaries(const int &CellIndex, const int &Boundary) const;
   //@}
 
   //! @name Get cell centroid.
@@ -356,7 +371,9 @@ public:
   //! @name Calculate cell area.
   //@{
   double area(const Cell2D_HO &Cell) const;
-  double area(const int ii, const int jj) const;
+  double area(const int &ii, const int &jj) const;
+  double area_CurvedBoundaries(const int &CellIndex, const int &Boundary) const;
+  double area_GhostCell_CurvedBoundaries(const int &CellIndex, const int &Boundary) const;
   //@}
 
   //! @name Get cell nodes.
@@ -463,6 +480,7 @@ public:
 
   int NumOfConstrainedGaussQuadPoints(const Cell2D_HO &Cell){ return NumOfConstrainedGaussQuadPoints(Cell.I,Cell.J);}
   int NumOfConstrainedGaussQuadPoints(const int &ii, const int &jj);
+  //@}
 
   //! @name Get cell geometric moments and related information.
   //@{
@@ -482,6 +500,22 @@ public:
   GeomMoment & CellGeomCoeff(const int &ii, const int &jj, const int &position) {
     return Cell[ii][jj].GeomCoeff(position);
   }
+  //@}
+
+  //! @name Calculate cell geometric moments and related information.
+  //@{
+  void ComputeGeometricCoefficients(const Cell2D_HO &Cell){ ComputeGeometricCoefficients(Cell.I,Cell.J);}
+  void ComputeGeometricCoefficients(const int &ii, const int &jj);
+  void ComputeGeometricCoefficients_CurvedBoundaries(const int &CellIndexI, const int &CellIndexJ,
+						     const int &Boundary);
+  void ComputeGeometricCoefficients_GhostCell_CurvedBoundaries(const int &CellIndexI, const int &CellIndexJ,
+							       const int &Boundary);
+  double GeometricMoment_CurvedBoundaries(const int &CellIndexI, const int &CellIndexJ,
+					  const int &Boundary,
+					  const int &OrderX, const int &OrderY);
+  double GeometricMoment_GhostCell_CurvedBoundaries(const int &CellIndexI, const int &CellIndexJ,
+						    const int &Boundary,
+						    const int &OrderX, const int &OrderY);
   //@}
 
   //! @name Bilinear interplation (Zingg & Yarrow) and diamond path reconstruction.
@@ -919,6 +953,7 @@ inline Vector2D Grid2D_Quad_Block_HO::centroid(const Cell2D_HO &Cell) const {
  * sub-triangles.                                                    
  */
 inline Vector2D Grid2D_Quad_Block_HO::centroid(const int ii, const int jj) const {
+
   Vector2D X1, X2, X3, X4, Xc1, Xc2, X;
   double A1, A2;
   // Cell nodes in counter-clockwise order.
@@ -960,7 +995,7 @@ inline Vector2D Grid2D_Quad_Block_HO::centroidSW(const int ii, const int jj) con
   // Return the area-weighted average of the centroids of the sub-triangles:
   if (A1 > ZERO && A2 > ZERO) return (A1*Xc1 + A2*Xc2)/(A1+A2);
   // Average of four nodes (not always correct):
-  return (X1 + X2 + X3 + X4)/4.0;
+  return 0.25*(X1 + X2 + X3 + X4);
 }
 
 /*!
@@ -984,7 +1019,7 @@ inline Vector2D Grid2D_Quad_Block_HO::centroidSE(const int ii, const int jj) con
   // Return the area-weighted average of the centroids of the sub-triangles:
   if (A1 > ZERO && A2 > ZERO) return (A1*Xc1 + A2*Xc2)/(A1+A2);
   // Average of four nodes (not always correct):
-  return (X1 + X2 + X3 + X4)/4.0;
+  return 0.25*(X1 + X2 + X3 + X4);
 }
 
 /*!
@@ -1008,7 +1043,7 @@ inline Vector2D Grid2D_Quad_Block_HO::centroidNW(const int ii, const int jj) con
   // Return the area-weighted average of the centroids of the sub-triangles:
   if (A1 > ZERO && A2 > ZERO) return (A1*Xc1 + A2*Xc2)/(A1+A2);
   // Average of four nodes (not always correct):
-  return (X1 + X2 + X3 + X4)/4.0;
+  return 0.25*(X1 + X2 + X3 + X4);
 }
 
 /*!
@@ -1048,7 +1083,7 @@ inline double Grid2D_Quad_Block_HO::area(const Cell2D_HO &Cell) const {
  * \param ii i-index of the cell
  * \param jj j-index of the cell
  */
-inline double Grid2D_Quad_Block_HO::area(const int ii, const int jj) const {
+inline double Grid2D_Quad_Block_HO::area(const int &ii, const int &jj) const {
   return HALF*( ((Node[ii+1][jj].X-Node[ii][jj].X)^(Node[ii][jj+1].X-Node[ii][jj].X)) +
 		((Node[ii+1][jj+1].X-Node[ii][jj+1].X)^(Node[ii+1][jj+1].X-Node[ii+1][jj].X)) );
 }
@@ -1570,7 +1605,6 @@ inline void Grid2D_Quad_Block_HO::getGaussQuadPointsFaceW(const int &ii, const i
  *
  * \param iCell i-index of the cell
  * \param jCell j-index of the cell
- * \todo Uncomment computation of the geometric coefficients!
  */
 inline void Grid2D_Quad_Block_HO::Update_Cell(const int & iCell, const int & jCell){
 
@@ -1578,7 +1612,7 @@ inline void Grid2D_Quad_Block_HO::Update_Cell(const int & iCell, const int & jCe
   Cell[iCell][jCell].J = jCell;
   Cell[iCell][jCell].Xc = centroid(iCell, jCell);
   Cell[iCell][jCell].A = area(iCell, jCell);
-  //  ComputeGeometricCoefficients(iCell,jCell); //Geometric Moments
+  ComputeGeometricCoefficients(iCell,jCell); //Geometric Moments
 }
 
 /*!

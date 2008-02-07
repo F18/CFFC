@@ -1076,7 +1076,6 @@ namespace tut
     // Checked cell --> Block(0,0), Cell (ICl,JCu)
     iCell = MeshBlk(0,0).ICl; jCell = MeshBlk(0,0).JCl;
 
-
     if (RunRegression){
       Open_Output_File(CurrentFile);
 
@@ -1928,9 +1927,7 @@ namespace tut
       out() << Grid << endl;
 
       // check
-#if 0
-      RunRegressionTest("Copy Grid", CurrentFile, MasterFile, 1.0e-12, 1.0e-12);
-#endif
+      RunRegressionTest("Copy Grid", CurrentFile, MasterFile, 1.0e-9, 1.0e-9);
 
     } else {
       Open_Output_File(MasterFile);
@@ -1990,9 +1987,7 @@ namespace tut
       out() << Grid << endl;
 
       // check
-#if 0
       RunRegressionTest("Copy Grid", CurrentFile, MasterFile, 1.0e-9, 1.0e-9);
-#endif
 
     } else {
       Open_Output_File(MasterFile);

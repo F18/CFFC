@@ -1093,55 +1093,55 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
     } /* endif */
     break;
   case GRID_SQUARE :
-    Grid_Rectangular_Box(Input_Parameters.Number_of_Blocks_Idir,
-			 Input_Parameters.Number_of_Blocks_Jdir,
-			 Input_Parameters.Box_Width,
-			 Input_Parameters.Box_Width,
-			 Input_Parameters.Number_of_Cells_Idir,
-			 Input_Parameters.Number_of_Cells_Jdir,
-			 Input_Parameters.Number_of_Ghost_Cells,
-			 Input_Parameters.ReconstructionOrder());
+    Grid_Rectangular_Box_Without_Update(Input_Parameters.Number_of_Blocks_Idir,
+					Input_Parameters.Number_of_Blocks_Jdir,
+					Input_Parameters.Box_Width,
+					Input_Parameters.Box_Width,
+					Input_Parameters.Number_of_Cells_Idir,
+					Input_Parameters.Number_of_Cells_Jdir,
+					Input_Parameters.Number_of_Ghost_Cells,
+					Input_Parameters.ReconstructionOrder());
     break;
   case GRID_RECTANGULAR_BOX :
     if (!Input_Parameters.i_Mesh_Stretching) {
-      Grid_Rectangular_Box(Input_Parameters.Number_of_Blocks_Idir,
-			   Input_Parameters.Number_of_Blocks_Jdir,
-			   Input_Parameters.Box_Width,
-			   Input_Parameters.Box_Height,
-			   Input_Parameters.Number_of_Cells_Idir,
-			   Input_Parameters.Number_of_Cells_Jdir,
-			   Input_Parameters.Number_of_Ghost_Cells,
-			   Input_Parameters.ReconstructionOrder());
+      Grid_Rectangular_Box_Without_Update(Input_Parameters.Number_of_Blocks_Idir,
+					  Input_Parameters.Number_of_Blocks_Jdir,
+					  Input_Parameters.Box_Width,
+					  Input_Parameters.Box_Height,
+					  Input_Parameters.Number_of_Cells_Idir,
+					  Input_Parameters.Number_of_Cells_Jdir,
+					  Input_Parameters.Number_of_Ghost_Cells,
+					  Input_Parameters.ReconstructionOrder());
     } else {
-      Grid_Rectangular_Box(Input_Parameters.Number_of_Blocks_Idir,
-			   Input_Parameters.Number_of_Blocks_Jdir,
-			   Input_Parameters.Box_Width,
-			   Input_Parameters.Box_Height,
-			   Input_Parameters.i_Mesh_Stretching,
-			   Input_Parameters.Mesh_Stretching_Type_Idir,
-			   Input_Parameters.Mesh_Stretching_Type_Jdir,
-			   Input_Parameters.Mesh_Stretching_Factor_Idir,
-			   Input_Parameters.Mesh_Stretching_Factor_Jdir,
-			   Input_Parameters.Number_of_Cells_Idir,
-			   Input_Parameters.Number_of_Cells_Jdir,
-			   Input_Parameters.Number_of_Ghost_Cells,
-			   Input_Parameters.ReconstructionOrder());
+      Grid_Rectangular_Box_Without_Update(Input_Parameters.Number_of_Blocks_Idir,
+					  Input_Parameters.Number_of_Blocks_Jdir,
+					  Input_Parameters.Box_Width,
+					  Input_Parameters.Box_Height,
+					  Input_Parameters.i_Mesh_Stretching,
+					  Input_Parameters.Mesh_Stretching_Type_Idir,
+					  Input_Parameters.Mesh_Stretching_Type_Jdir,
+					  Input_Parameters.Mesh_Stretching_Factor_Idir,
+					  Input_Parameters.Mesh_Stretching_Factor_Jdir,
+					  Input_Parameters.Number_of_Cells_Idir,
+					  Input_Parameters.Number_of_Cells_Jdir,
+					  Input_Parameters.Number_of_Ghost_Cells,
+					  Input_Parameters.ReconstructionOrder());
     }
     break;
   case GRID_PERIODIC_BOX :
-    Grid_Rectangular_Box(Input_Parameters.Number_of_Blocks_Idir,
-			 Input_Parameters.Number_of_Blocks_Jdir,
-			 Input_Parameters.Box_Width,
-			 Input_Parameters.Box_Height,
-			 Input_Parameters.i_Mesh_Stretching,
-			 Input_Parameters.Mesh_Stretching_Type_Idir,
-			 Input_Parameters.Mesh_Stretching_Type_Jdir,
-			 Input_Parameters.Mesh_Stretching_Factor_Idir,
-			 Input_Parameters.Mesh_Stretching_Factor_Jdir,
-			 Input_Parameters.Number_of_Cells_Idir,
-			 Input_Parameters.Number_of_Cells_Jdir,
-			 Input_Parameters.Number_of_Ghost_Cells,
-			 Input_Parameters.ReconstructionOrder());
+    Grid_Rectangular_Box_Without_Update(Input_Parameters.Number_of_Blocks_Idir,
+					Input_Parameters.Number_of_Blocks_Jdir,
+					Input_Parameters.Box_Width,
+					Input_Parameters.Box_Height,
+					Input_Parameters.i_Mesh_Stretching,
+					Input_Parameters.Mesh_Stretching_Type_Idir,
+					Input_Parameters.Mesh_Stretching_Type_Jdir,
+					Input_Parameters.Mesh_Stretching_Factor_Idir,
+					Input_Parameters.Mesh_Stretching_Factor_Jdir,
+					Input_Parameters.Number_of_Cells_Idir,
+					Input_Parameters.Number_of_Cells_Jdir,
+					Input_Parameters.Number_of_Ghost_Cells,
+					Input_Parameters.ReconstructionOrder());
 
     // Impose the proper boundary conditions for periodic grid
     for ( jBlk = 0; jBlk <= Input_Parameters.Number_of_Blocks_Jdir-1; ++jBlk ) {
@@ -1202,20 +1202,20 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
     Input_Parameters.Number_of_Blocks_Jdir += Input_Parameters.Number_of_Blocks_Jdir % 2;
 
     // Generate a rectangular box
-    Grid_Rectangular_Box(Input_Parameters.Number_of_Blocks_Idir,
-			 Input_Parameters.Number_of_Blocks_Jdir,
-			 Input_Parameters.Box_Width,
-			 Input_Parameters.Box_Height,
-			 Input_Parameters.i_Mesh_Stretching,
-			 Input_Parameters.Mesh_Stretching_Type_Idir,
-			 Input_Parameters.Mesh_Stretching_Type_Jdir,
-			 Input_Parameters.Mesh_Stretching_Factor_Idir,
-			 Input_Parameters.Mesh_Stretching_Factor_Jdir,
-			 Input_Parameters.Number_of_Cells_Idir,
-			 Input_Parameters.Number_of_Cells_Jdir,
-			 Input_Parameters.Number_of_Ghost_Cells,
-			 Input_Parameters.ReconstructionOrder());
-
+    Grid_Rectangular_Box_Without_Update(Input_Parameters.Number_of_Blocks_Idir,
+					Input_Parameters.Number_of_Blocks_Jdir,
+					Input_Parameters.Box_Width,
+					Input_Parameters.Box_Height,
+					Input_Parameters.i_Mesh_Stretching,
+					Input_Parameters.Mesh_Stretching_Type_Idir,
+					Input_Parameters.Mesh_Stretching_Type_Jdir,
+					Input_Parameters.Mesh_Stretching_Factor_Idir,
+					Input_Parameters.Mesh_Stretching_Factor_Jdir,
+					Input_Parameters.Number_of_Cells_Idir,
+					Input_Parameters.Number_of_Cells_Jdir,
+					Input_Parameters.Number_of_Ghost_Cells,
+					Input_Parameters.ReconstructionOrder());
+    
     // Impose the proper boundary conditions for the current grid type.
     HiBlk = Input_Parameters.Number_of_Blocks_Idir/2;
     HjBlk = Input_Parameters.Number_of_Blocks_Jdir/2;
@@ -1236,136 +1236,136 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
     }
     break;   
   case GRID_FLAT_PLATE :
-    Grid_Flat_Plate(Input_Parameters.Number_of_Blocks_Idir,
-		    Input_Parameters.Number_of_Blocks_Jdir,
-		    Input_Parameters.Plate_Length,
-		    BC_DIRICHLET,
-		    Input_Parameters.i_Mesh_Stretching,
-		    Input_Parameters.Mesh_Stretching_Factor_Idir,
-		    Input_Parameters.Mesh_Stretching_Factor_Jdir,
-		    Input_Parameters.Number_of_Cells_Idir,
-		    Input_Parameters.Number_of_Cells_Jdir,
-		    Input_Parameters.Number_of_Ghost_Cells,
-		    Input_Parameters.ReconstructionOrder());
+    Grid_Flat_Plate_Without_Update(Input_Parameters.Number_of_Blocks_Idir,
+				   Input_Parameters.Number_of_Blocks_Jdir,
+				   Input_Parameters.Plate_Length,
+				   BC_DIRICHLET,
+				   Input_Parameters.i_Mesh_Stretching,
+				   Input_Parameters.Mesh_Stretching_Factor_Idir,
+				   Input_Parameters.Mesh_Stretching_Factor_Jdir,
+				   Input_Parameters.Number_of_Cells_Idir,
+				   Input_Parameters.Number_of_Cells_Jdir,
+				   Input_Parameters.Number_of_Ghost_Cells,
+				   Input_Parameters.ReconstructionOrder());
     break;
   case GRID_PIPE :
-    Grid_Pipe(Input_Parameters.Number_of_Blocks_Idir,
-	      Input_Parameters.Number_of_Blocks_Jdir,
-	      Input_Parameters.Pipe_Length,
-	      Input_Parameters.Pipe_Radius,
-	      Input_Parameters.i_Mesh_Stretching,
-	      Input_Parameters.Mesh_Stretching_Factor_Jdir,
-	      Input_Parameters.Number_of_Cells_Idir,
-	      Input_Parameters.Number_of_Cells_Jdir,
-	      Input_Parameters.Number_of_Ghost_Cells,
-	      Input_Parameters.ReconstructionOrder());
+    Grid_Pipe_Without_Update(Input_Parameters.Number_of_Blocks_Idir,
+			     Input_Parameters.Number_of_Blocks_Jdir,
+			     Input_Parameters.Pipe_Length,
+			     Input_Parameters.Pipe_Radius,
+			     Input_Parameters.i_Mesh_Stretching,
+			     Input_Parameters.Mesh_Stretching_Factor_Jdir,
+			     Input_Parameters.Number_of_Cells_Idir,
+			     Input_Parameters.Number_of_Cells_Jdir,
+			     Input_Parameters.Number_of_Ghost_Cells,
+			     Input_Parameters.ReconstructionOrder());
     break;
   case GRID_BLUNT_BODY :
-    Grid_Blunt_Body(Input_Parameters.Number_of_Blocks_Idir,
-		    Input_Parameters.Number_of_Blocks_Jdir,
-		    Input_Parameters.Blunt_Body_Radius,
-		    Input_Parameters.Blunt_Body_Mach_Number,
-		    Input_Parameters.Number_of_Cells_Idir,
-		    Input_Parameters.Number_of_Cells_Jdir,
-		    Input_Parameters.Number_of_Ghost_Cells,
-		    Input_Parameters.ReconstructionOrder());
+    Grid_Blunt_Body_Without_Update(Input_Parameters.Number_of_Blocks_Idir,
+				   Input_Parameters.Number_of_Blocks_Jdir,
+				   Input_Parameters.Blunt_Body_Radius,
+				   Input_Parameters.Blunt_Body_Mach_Number,
+				   Input_Parameters.Number_of_Cells_Idir,
+				   Input_Parameters.Number_of_Cells_Jdir,
+				   Input_Parameters.Number_of_Ghost_Cells,
+				   Input_Parameters.ReconstructionOrder());
     break;
   case GRID_ROCKET_MOTOR :
-    Grid_Rocket_Motor(Input_Parameters.Number_of_Blocks_Idir,
-		      Input_Parameters.Number_of_Blocks_Jdir,
-		      Input_Parameters.Chamber_Length,
-		      Input_Parameters.Chamber_Radius,
-		      Input_Parameters.Chamber_To_Throat_Length,
-		      Input_Parameters.Nozzle_Length,
-		      Input_Parameters.Nozzle_Radius_Exit,
-		      Input_Parameters.Nozzle_Radius_Throat,
-		      Input_Parameters.Grain_Radius,
-		      Input_Parameters.Nozzle_Type,
-		      Input_Parameters.BC_North,
-		      Input_Parameters.i_Mesh_Stretching,
-		      Input_Parameters.Mesh_Stretching_Type_Jdir,
-		      Input_Parameters.Mesh_Stretching_Factor_Idir,
-		      Input_Parameters.Mesh_Stretching_Factor_Jdir,
-		      Input_Parameters.Number_of_Cells_Idir,
-		      Input_Parameters.Number_of_Cells_Jdir,
-		      Input_Parameters.Number_of_Ghost_Cells,
-		      Input_Parameters.ReconstructionOrder());
+    Grid_Rocket_Motor_Without_Update(Input_Parameters.Number_of_Blocks_Idir,
+				     Input_Parameters.Number_of_Blocks_Jdir,
+				     Input_Parameters.Chamber_Length,
+				     Input_Parameters.Chamber_Radius,
+				     Input_Parameters.Chamber_To_Throat_Length,
+				     Input_Parameters.Nozzle_Length,
+				     Input_Parameters.Nozzle_Radius_Exit,
+				     Input_Parameters.Nozzle_Radius_Throat,
+				     Input_Parameters.Grain_Radius,
+				     Input_Parameters.Nozzle_Type,
+				     Input_Parameters.BC_North,
+				     Input_Parameters.i_Mesh_Stretching,
+				     Input_Parameters.Mesh_Stretching_Type_Jdir,
+				     Input_Parameters.Mesh_Stretching_Factor_Idir,
+				     Input_Parameters.Mesh_Stretching_Factor_Jdir,
+				     Input_Parameters.Number_of_Cells_Idir,
+				     Input_Parameters.Number_of_Cells_Jdir,
+				     Input_Parameters.Number_of_Ghost_Cells,
+				     Input_Parameters.ReconstructionOrder());
     break;
   case GRID_NOZZLELESS_ROCKET_MOTOR :
-    Grid_Nozzleless_Rocket_Motor(Input_Parameters.Number_of_Blocks_Idir,
+    Grid_Nozzleless_Rocket_Motor_Without_Update(Input_Parameters.Number_of_Blocks_Idir,
+						Input_Parameters.Number_of_Blocks_Jdir,
+						Input_Parameters.Chamber_Length,
+						Input_Parameters.Chamber_Radius,
+						Input_Parameters.Nozzle_Length,
+						Input_Parameters.Nozzle_Radius_Exit,
+						BC_REFLECTION,
+						Input_Parameters.i_Mesh_Stretching,
+						Input_Parameters.Mesh_Stretching_Type_Jdir,
+						Input_Parameters.Mesh_Stretching_Factor_Idir,
+						Input_Parameters.Mesh_Stretching_Factor_Jdir,
+						Input_Parameters.Number_of_Cells_Idir,
+						Input_Parameters.Number_of_Cells_Jdir,
+						Input_Parameters.Number_of_Ghost_Cells,
+						Input_Parameters.ReconstructionOrder());
+    break;
+  case GRID_CIRCULAR_CYLINDER :
+    Grid_Circular_Cylinder_Without_Update(Input_Parameters.Number_of_Blocks_Idir,
+					  Input_Parameters.Number_of_Blocks_Jdir,
+					  Input_Parameters.Cylinder_Radius,
+					  Input_Parameters.Cylinder_Radius2,
+					  Input_Parameters.Mesh_Stretching_Type_Idir,
+					  Input_Parameters.Mesh_Stretching_Type_Jdir,
+					  Input_Parameters.Mesh_Stretching_Factor_Idir,
+					  Input_Parameters.Mesh_Stretching_Factor_Jdir,
+					  Input_Parameters.Number_of_Cells_Idir,
+					  Input_Parameters.Number_of_Cells_Jdir,
+					  Input_Parameters.Number_of_Ghost_Cells,
+					  Input_Parameters.ReconstructionOrder());
+    break;
+  case GRID_ANNULUS :
+    Grid_Annulus_Without_Update(Input_Parameters.Number_of_Blocks_Idir,
+				Input_Parameters.Number_of_Blocks_Jdir,
+				Input_Parameters.Cylinder_Radius,
+				Input_Parameters.Cylinder_Radius2,
+				Input_Parameters.Annulus_Theta_Start,
+				Input_Parameters.Annulus_Theta_End,
+				Input_Parameters.Mesh_Stretching_Type_Idir,
+				Input_Parameters.Mesh_Stretching_Type_Jdir,
+				Input_Parameters.Mesh_Stretching_Factor_Idir,
+				Input_Parameters.Mesh_Stretching_Factor_Jdir,
+				Input_Parameters.Number_of_Cells_Idir,
+				Input_Parameters.Number_of_Cells_Jdir,
+				Input_Parameters.Number_of_Ghost_Cells,
+				Input_Parameters.ReconstructionOrder());
+    break;
+  case GRID_ELLIPSE :
+    Grid_Ellipse_Without_Update(Input_Parameters.Number_of_Blocks_Idir,
+				Input_Parameters.Number_of_Blocks_Jdir,
+				Input_Parameters.Ellipse_Length_X_Axis,
+				Input_Parameters.Ellipse_Length_Y_Axis,
+				Input_Parameters.Number_of_Cells_Idir,
+				Input_Parameters.Number_of_Cells_Jdir,
+				Input_Parameters.Number_of_Ghost_Cells,
+				Input_Parameters.ReconstructionOrder());
+    break;
+  case GRID_NACA_AEROFOIL :
+    Grid_NACA_Aerofoil_Without_Update(Input_Parameters.Number_of_Blocks_Idir,
+				      Input_Parameters.Number_of_Blocks_Jdir,
+				      Input_Parameters.NACA_Aerofoil_Type,
+				      Input_Parameters.Chord_Length,
+				      Input_Parameters.Number_of_Cells_Idir,
+				      Input_Parameters.Number_of_Cells_Jdir,
+				      Input_Parameters.Number_of_Ghost_Cells,
+				      Input_Parameters.ReconstructionOrder());
+    break;
+  case GRID_FREE_JET :
+    Grid_Free_Jet_Without_Update(Input_Parameters.Number_of_Blocks_Idir,
 				 Input_Parameters.Number_of_Blocks_Jdir,
-				 Input_Parameters.Chamber_Length,
-				 Input_Parameters.Chamber_Radius,
-				 Input_Parameters.Nozzle_Length,
-				 Input_Parameters.Nozzle_Radius_Exit,
-				 BC_REFLECTION,
-				 Input_Parameters.i_Mesh_Stretching,
-				 Input_Parameters.Mesh_Stretching_Type_Jdir,
-				 Input_Parameters.Mesh_Stretching_Factor_Idir,
-				 Input_Parameters.Mesh_Stretching_Factor_Jdir,
+				 Input_Parameters.Orifice_Radius,
 				 Input_Parameters.Number_of_Cells_Idir,
 				 Input_Parameters.Number_of_Cells_Jdir,
 				 Input_Parameters.Number_of_Ghost_Cells,
 				 Input_Parameters.ReconstructionOrder());
-    break;
-  case GRID_CIRCULAR_CYLINDER :
-    Grid_Circular_Cylinder(Input_Parameters.Number_of_Blocks_Idir,
-			   Input_Parameters.Number_of_Blocks_Jdir,
-			   Input_Parameters.Cylinder_Radius,
-			   Input_Parameters.Cylinder_Radius2,
-			   Input_Parameters.Mesh_Stretching_Type_Idir,
-			   Input_Parameters.Mesh_Stretching_Type_Jdir,
-			   Input_Parameters.Mesh_Stretching_Factor_Idir,
-			   Input_Parameters.Mesh_Stretching_Factor_Jdir,
-			   Input_Parameters.Number_of_Cells_Idir,
-			   Input_Parameters.Number_of_Cells_Jdir,
-			   Input_Parameters.Number_of_Ghost_Cells,
-			   Input_Parameters.ReconstructionOrder());
-    break;
-  case GRID_ANNULUS :
-    Grid_Annulus(Input_Parameters.Number_of_Blocks_Idir,
-		 Input_Parameters.Number_of_Blocks_Jdir,
-		 Input_Parameters.Cylinder_Radius,
-		 Input_Parameters.Cylinder_Radius2,
-		 Input_Parameters.Annulus_Theta_Start,
-		 Input_Parameters.Annulus_Theta_End,
-		 Input_Parameters.Mesh_Stretching_Type_Idir,
-		 Input_Parameters.Mesh_Stretching_Type_Jdir,
-		 Input_Parameters.Mesh_Stretching_Factor_Idir,
-		 Input_Parameters.Mesh_Stretching_Factor_Jdir,
-		 Input_Parameters.Number_of_Cells_Idir,
-		 Input_Parameters.Number_of_Cells_Jdir,
-		 Input_Parameters.Number_of_Ghost_Cells,
-		 Input_Parameters.ReconstructionOrder());
-    break;
-  case GRID_ELLIPSE :
-    Grid_Ellipse(Input_Parameters.Number_of_Blocks_Idir,
-		 Input_Parameters.Number_of_Blocks_Jdir,
-		 Input_Parameters.Ellipse_Length_X_Axis,
-		 Input_Parameters.Ellipse_Length_Y_Axis,
-		 Input_Parameters.Number_of_Cells_Idir,
-		 Input_Parameters.Number_of_Cells_Jdir,
-		 Input_Parameters.Number_of_Ghost_Cells,
-		 Input_Parameters.ReconstructionOrder());
-    break;
-  case GRID_NACA_AEROFOIL :
-    Grid_NACA_Aerofoil(Input_Parameters.Number_of_Blocks_Idir,
-		       Input_Parameters.Number_of_Blocks_Jdir,
-		       Input_Parameters.NACA_Aerofoil_Type,
-		       Input_Parameters.Chord_Length,
-		       Input_Parameters.Number_of_Cells_Idir,
-		       Input_Parameters.Number_of_Cells_Jdir,
-		       Input_Parameters.Number_of_Ghost_Cells,
-		       Input_Parameters.ReconstructionOrder());
-    break;
-  case GRID_FREE_JET :
-    Grid_Free_Jet(Input_Parameters.Number_of_Blocks_Idir,
-		  Input_Parameters.Number_of_Blocks_Jdir,
-		  Input_Parameters.Orifice_Radius,
-		  Input_Parameters.Number_of_Cells_Idir,
-		  Input_Parameters.Number_of_Cells_Jdir,
-		  Input_Parameters.Number_of_Ghost_Cells,
-		  Input_Parameters.ReconstructionOrder());
     break;
   case GRID_ICEMCFD :
     ICEMCFD_Read(Input_Parameters.ICEMCFD_FileNames,
@@ -1376,14 +1376,14 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
 		 &Input_Parameters.Number_of_Blocks_Jdir);
     break;
   default:
-    Grid_Rectangular_Box(Input_Parameters.Number_of_Blocks_Idir,
-			 Input_Parameters.Number_of_Blocks_Jdir,
-			 Input_Parameters.Box_Width,
-			 Input_Parameters.Box_Height,
-			 Input_Parameters.Number_of_Cells_Idir,
-			 Input_Parameters.Number_of_Cells_Jdir,
-			 Input_Parameters.Number_of_Ghost_Cells,
-			 Input_Parameters.ReconstructionOrder());
+    Grid_Rectangular_Box_Without_Update(Input_Parameters.Number_of_Blocks_Idir,
+					Input_Parameters.Number_of_Blocks_Jdir,
+					Input_Parameters.Box_Width,
+					Input_Parameters.Box_Height,
+					Input_Parameters.Number_of_Cells_Idir,
+					Input_Parameters.Number_of_Cells_Jdir,
+					Input_Parameters.Number_of_Ghost_Cells,
+					Input_Parameters.ReconstructionOrder());
     break;
   } /* endswitch */
 
@@ -1404,27 +1404,24 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
       }
     }
   }
+
+  /* Update multi-block quadrilateral mesh exterior nodes.*/
+  Update_All_Exterior_Nodes();
   
   /* First translate quadrilateral mesh as specified by input parameters. */
-
   if (abs(Input_Parameters.X_Shift) > TOLER) {
     Translate_Multi_Block_Grid_Without_Update(Input_Parameters.X_Shift);
   }/* endif */
 
   /* Next scale quadrilateral mesh as specified by input parameters. */
-
   if (fabs(Input_Parameters.X_Scale-ONE) > TOLER) {
     Scale_Multi_Block_Grid_Without_Update(Input_Parameters.X_Scale);
   }/* endif */
 
   /* Finally rotate quadrilateral mesh as specified by input parameters. */
-
   if (fabs(Input_Parameters.X_Rotate) > TOLER) {
     Rotate_Multi_Block_Grid_Without_Update(TWO*PI*Input_Parameters.X_Rotate/360.00);
   }/* endif */
-
-  /* Update multi-block quadrilateral mesh exterior nodes. */
-  Update_All_Exterior_Nodes();
 
   /* Update geometric properties of multi-block quadrilateral mesh cells. */
   Update_All_Cells();
