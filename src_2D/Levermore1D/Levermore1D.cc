@@ -143,7 +143,7 @@ void Output_Tecplot(Levermore1D_UniformMesh *Soln,
 	   << Number_of_Time_Steps
 	   << ", Time = " << Time*THOUSAND << " (ms)\"" << "\n"
 	   << "VARIABLES = \"x\" \\ \n"
-	   << "\"dx\" \\ \n";
+	   << "\"dx\" \n";
   for(i = 0; i < Levermore1D_Vector::get_length(); ++i) {
     out_file << "\"W" << i << "\" \\ \n";
   }
@@ -597,7 +597,7 @@ int dUdt_explicitEuler_upwind(Levermore1D_UniformMesh *Soln,
       Soln[i].A += Soln[i].dUdA_inv * Update;
       if ( ! Soln[i].U.in_sync_with(Soln[i].A) ) {
 	Soln[i].A.set_from_U(Soln[i].U);
-	cout << "%";
+	cout << "%";cout.flush();
       }
       Soln[i].W = Levermore1D_pState(Soln[i].U);
       Soln[i].calculate_Hessians();
