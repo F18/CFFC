@@ -209,9 +209,11 @@ inline void Levermore1D_Vector::set_all(double in) {
 }
 
 inline void Levermore1D_Vector::output(ostream &out) const{
+  out.precision(16);
   for(int i=0; i<length; ++i) {
     out << " " << m_values[i];
   }
+  out.precision(6);
 }
 
 inline void Levermore1D_Vector::input(istream &in) const{

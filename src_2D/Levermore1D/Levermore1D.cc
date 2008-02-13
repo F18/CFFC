@@ -596,7 +596,11 @@ int dUdt_explicitEuler_upwind(Levermore1D_UniformMesh *Soln,
       Soln[i].U += Update;
       Soln[i].A += Soln[i].dUdA_inv * Update;
       if ( ! Soln[i].U.in_sync_with(Soln[i].A) ) {
-	Soln[i].A.set_from_U(Soln[i].U);
+	if(Soln[i].A.set_from_U(Soln[i].U)) { //returns 1 if fail
+	  cout << endl << "Error, Cannot resync:" << endl
+	       << "U = " << Soln[i].U << endl;
+	  return 1;
+	}
 	cout << "%";cout.flush();
       }
       Soln[i].W = Levermore1D_pState(Soln[i].U);
@@ -907,7 +911,11 @@ int dUdt_2stage_2ndOrder_upwind(Levermore1D_UniformMesh *Soln,
 	  Soln[i].U = Soln[i].Uo + Update;
 	  Soln[i].A = Soln[i].Ao + Soln[i].dUdA_inv * Update;
 	  if ( ! Soln[i].U.in_sync_with(Soln[i].A) ) {
-	    Soln[i].A.set_from_U(Soln[i].U);
+	    if(Soln[i].A.set_from_U(Soln[i].U)) { //returns 1 if fail
+	      cout << endl << "Error, Cannot resync:" << endl
+		   << "U = " << Soln[i].U << endl;
+	      return 1;
+	    }
 	    cout << "%";
 	  }
 	  Soln[i].W = Levermore1D_pState(Soln[i].U);
