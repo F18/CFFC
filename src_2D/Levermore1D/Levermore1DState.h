@@ -81,11 +81,13 @@ class Levermore1D_cState : public Levermore1D_Vector{
   void set_from_A(const Levermore1D_weights &A);
   double moment(int n, const Levermore1D_weights &A) const;
   double moment(int n, const Levermore1D_weights &A, int real_L) const;
+  double moment_series(int n, const Levermore1D_weights &A, int real_L) const;
   DenseMatrix d2hda2(const Levermore1D_weights &A) const;
   DenseMatrix d2jda2(const Levermore1D_weights &A) const;
   Levermore1D_Vector F(const Levermore1D_weights &A) const;
   int in_sync_with(const Levermore1D_weights &A) const;
   int find_real_L(const Levermore1D_weights &A) const;
+  double relative_error(const Levermore1D_cState &U2) const;
 
 };
 
@@ -105,7 +107,7 @@ class Levermore1D_weights : public Levermore1D_Vector{
   /* Functions. */
   Levermore1D_Vector& operator=(const Levermore1D_Vector &V) {return Levermore1D_Vector::operator=(V);}
   void set_from_W(const Levermore1D_pState &W);
-  void set_from_U(const Levermore1D_cState &U);
+  int set_from_U(const Levermore1D_cState &U);
   double integrate_conserved_moment(int i) const;
   double integrate_random_moment(int i, double u) const;
 
@@ -116,6 +118,16 @@ class Levermore1D_weights : public Levermore1D_Vector{
   }
   double random_velocity_weighted_value_at(double v, double u, int i) const {
     return pow(v-u,(double)i)*particle_mass*exp(exponent_value_recursive(v,0));
+  }
+  void MaxBoltz(const Levermore1D_pState &W) {MaxBoltz(W[1], W[2], W[3]);}
+  void MaxBoltz(const Levermore1D_cState &U) {MaxBoltz(U[1], U[2]/U[1], U[3]-U[2]*U[2]/U[1]);}
+  void MaxBoltz(double rho, double u, double p) {
+    double n(rho/m()); //number density
+    double B(rho/(2.0*p));
+    zero();
+    m_values[0] = -B*u*u+log(n*sqrt(B/PI));
+    m_values[1] = 2.0*B*u;
+    m_values[2] = -B;
   }
 
   /* Static Functions. */
@@ -134,17 +146,6 @@ class Levermore1D_weights : public Levermore1D_Vector{
     } else {
       return m_values[i];
     }
-  }
-
-  void MaxBoltz(const Levermore1D_pState &W) {MaxBoltz(W[1], W[2], W[3]);}
-  void MaxBoltz(const Levermore1D_cState &U) {MaxBoltz(U[1], U[2]/U[1], U[3]-U[2]*U[2]/U[1]);}
-  void MaxBoltz(double rho, double u, double p) {
-    double n(rho/m()); //number density
-    double B(rho/(2.0*p));
-    zero();
-    m_values[0] = -B*u*u+log(n*sqrt(B/PI));
-    m_values[1] = 2.0*B*u;
-    m_values[2] = -B;
   }
 
 };

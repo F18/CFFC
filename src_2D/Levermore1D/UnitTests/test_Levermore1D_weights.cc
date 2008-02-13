@@ -120,7 +120,7 @@ namespace tut
     Levermore1D_weights A2(W);
 
     for(int i=1;i<=Levermore1D_Vector::get_length();++i) {
-      ensure_distance("alpha2=alpha1",A2[i],A1[i],fabs(A1[i])*1e-6);
+      ensure_distance("alpha2=alpha1",A2[i],A1[i],fabs(A1[i])*1e-6+1e-16);
     }
 
 
@@ -139,11 +139,12 @@ namespace tut
     double n(rho/m); //number density
     double B(rho/(2.0*p));
 
-    Levermore1D_weights A1;
+    Levermore1D_weights A1, A1b;
     A1.zero();
     A1[1] = -B*u*u+log(n*sqrt(B/PI));
     A1[2] = 2.0*B*u;
     A1[3] = -B;
+    A1b = A1;
     if(Levermore1D_Vector::get_length() > 3) {
       A1[4] = -B*B*u;  //anything
       A1[5] = -B*B; //anything negative
@@ -153,9 +154,8 @@ namespace tut
     Levermore1D_weights A2(U);
 
     for(int i=1;i<=Levermore1D_Vector::get_length();++i) {
-      ensure_distance("alpha2=alpha1",A2[i],A1[i],fabs(A1[i])*1e-6);
+      ensure_distance("alpha2=alpha1",A2[i],A1[i],fabs(A1[i])*1e-6+1e-16);
     }
-
 
   }
 
@@ -431,6 +431,178 @@ namespace tut
 
     ensure_distance("value_at",expected,alpha.value_at(v),fabs(expected)*tol);
 
+  }
+
+  /* Test 14:*/
+  template<>
+  template<>
+  void Levermore1D_weights_object::test<14>()
+  {
+    set_test_name("Generate domain of realizability for 5-moment system");
+
+//    if(Levermore1D_Vector::get_length() == 5) {
+//
+//      ofstream fout;
+//      fout.open("L1D_5M_realizability.dat");
+//      fout.precision(16);
+//
+//      char output[4];
+//      output[0] = '|';
+//      output[1] = '/';
+//      output[2] = '-';
+//      output[3] = '\\';
+//      int out_count(0);
+//      cout << output[out_count%4]; cout.flush();
+//      out_count++;
+//
+//      double rho(1.0), p(1.0), q, r, r_min;
+//      double step(0.005), factor(1.05);
+//
+//      Levermore1D_cState U;
+//      Levermore1D_weights A;
+//      U.zero();
+//      U[1] = rho;
+//      U[3] = p;
+//
+//      for(q = -2.0; q<=2.0; q+=step) {
+//	r_min = factor*(p*p/rho+q*q/p);
+//	r = r_min;
+//	U[4] = q;
+//	U[5] = r;
+//	A.MaxBoltz(U);
+//	while( ! A.set_from_U(U) ) {
+//	  r += step;
+//	  U[5] = r;
+//	  A.MaxBoltz(U);
+//	}
+//	if(r!=r_min) r -= step;
+//	fout << q << "   " << r_min << "   " << r << endl;
+//	cout << "\b" << output[out_count%4]; cout.flush();
+//	out_count++;
+//      }
+//      cout << "\b";
+//    }
+  }
+
+  /* Test 15:*/
+  template<>
+  template<>
+  void Levermore1D_weights_object::test<15>()
+  {
+//    set_test_name("Set from U.");
+//    double rho(1.225);
+//    double u(132.22);
+//    double p(101325.0);
+//    double m = Levermore1D_weights::m();
+//    double n(rho/m); //number density
+//    double B(rho/(2.0*p));
+//
+//    Levermore1D_weights A1, A1b;
+//    A1.zero();
+//    A1[1] = -B*u*u+log(n*sqrt(B/PI));
+//    A1[2] = 2.0*B*u;
+//    A1[3] = -B;
+//    A1b = A1;
+//    if(Levermore1D_Vector::get_length() > 3) {
+//      A1[4] = -B*B*u;  //anything
+//      A1[5] = -B*B; //anything negative
+//    }
+//
+//    Levermore1D_cState U(A1), Ub(A1b);
+//    Levermore1D_weights A2(U), A2b;
+//
+//    A2b=A2;
+//    A2b.set_from_U(Ub);
+//
+//    for(int i=1;i<=Levermore1D_Vector::get_length();++i) {
+//      ensure_distance("alpha2b=alpha1b (euler)",A2b[i],A1b[i],fabs(A1b[i])*1e-6+1e-16);
+//    }
+
+  }
+
+  /* Test 16:*/
+  template<>
+  template<>
+  void Levermore1D_weights_object::test<16>()
+  {
+    set_test_name("Generate output (temporary test).");
+//    int i(0), j(0);
+//    double Func(0.0), diff(0.0);
+//    Levermore1D_weights A;
+//    Levermore1D_cState U, Ud; //Ud = U desired
+//    ofstream fout;
+//    fout.open("Levermore.out");
+//    fout.precision(16);
+//
+//    Ud.zero();
+//    Ud[1] = 1.0;
+//    Ud[3] = 1.0;
+//    Ud[5] = 5.5;
+//
+//    for(double C1=-0.01; fabs(C1)<1.0e0; C1-=0.01) {
+//      j++;
+//    }
+//    for(double C2=-0.01; fabs(C2)<1.0e1; C2-=0.01) {
+//      i++;
+//    }
+//
+//    fout << "TITLE = \"" << CFFC_Name() << ": 1D Levermore Solution "
+//	 << "VARIABLES = \"C1\" \\ \n"
+//	 << "\"C2\" \\ \n"
+//	 << "\"Func\" \\ \n"
+//	 << "\"Diff\" \\ \n"
+//	 << "\"rho\" \\ \n"
+//	 << "\"p\" \\ \n"
+//	 << "\"r\" \n"
+//	 << "ZONE T =  Zone1 \\ \n"
+//	 << "I = " << i << " \\ \n"
+//	 << "J = " << j << " \\ \n"
+//	 << "F = POINT \n";
+//
+//    for(double C1=-0.01; fabs(C1)<1.0e0; C1-=0.01) {
+//      for(double C2=-0.01; fabs(C2)<1.0e1; C2-=0.01) {
+//	A.zero();
+//	A[3] = C2;
+//	A[5] = C1;
+//
+//	U = Levermore1D_cState(A);
+//	A[1] = -log(U[1]);
+//	U = Levermore1D_cState(A);
+//
+//	Func = U[1]-Ud[1]*A[1]-Ud[3]*A[3]-Ud[5]*A[5];
+//	diff = fabs( (U[1]-Ud[1])/Ud[1]) +
+//	  fabs( (U[3]-Ud[3])/Ud[3]) +
+//	  fabs( (U[5]-Ud[5])/Ud[5]);
+//	fout << C1 << "  " << C2 << "  " << Func << "  " << diff << " " << U[1] << "  " << U[3] << "  " << U[5] << endl;
+//
+//      }
+//    }
+//
+//    fout << endl << "ZONE T =  Zone2 \\ \n"
+//	 << "I = " << i << " \\ \n"
+//	 << "J = " << j << " \\ \n"
+//	 << "F = POINT \n";
+//
+//    for(double C1=-0.01; fabs(C1)<1.0e0; C1-=0.01) {
+//      for(double C2=0.01; fabs(C2)<1.0e1; C2+=0.01) {
+//	A.zero();
+//	A[3] = C2;
+//	A[5] = C1;
+//
+//	U = Levermore1D_cState(A);
+//	A[1] = -log(U[1]);
+//	U = Levermore1D_cState(A);
+//
+//	Func = U[1]-Ud[1]*A[1]-Ud[3]*A[3]-Ud[5]*A[5];
+//	diff = fabs( (U[1]-Ud[1])/Ud[1]) +
+//	  fabs( (U[3]-Ud[3])/Ud[3]) +
+//	  fabs( (U[5]-Ud[5])/Ud[5]);
+//	fout << C1 << "  " << C2 << "  " << Func << "  " << diff << " " << U[1] << "  " << U[3] << "  " << U[5] << endl;
+//
+//      }
+//    }
+//
+//
   }
 
   //end tests

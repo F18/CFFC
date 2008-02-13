@@ -113,20 +113,26 @@ void Levermore1D_pState::set_from_A(const Levermore1D_weights &A) {
 }
 
 /********************************************************
- * Function: Levermore1D_cState::moment                 *
+ * Function: Levermore1D_cState::find_real_L            *
  *                                                      *
- * Return value of velocity moment              .       *
+ * For high-order closure, the highest order            *
+ * coefficients may be zero when the distribution       *
+ * distribution function is actually of lower-order.    *
+ * This function finds the "true" length of the weights *
+ * vector.                                              *
  *                                                      *
  ********************************************************/
 int Levermore1D_cState::find_real_L(const Levermore1D_weights &A) const {
   double moment_test(0.0), min_diff(MILLION*m_values[length-1]);
-  int real_L(3);
+  int real_L;
 
   for(int i=3; i <= length; i = i+2) {
-    moment_test = moment(length-1,A,i);
-    if( fabs(m_values[length-1]-moment_test) < min_diff) {
-      min_diff = fabs(m_values[length-1]-moment_test);
-      real_L = i;
+    if(A[i] != 0.0) {
+      moment_test = moment_series(length-1,A,i);
+      if( fabs(m_values[length-1]-moment_test) < min_diff) {
+	min_diff = fabs(m_values[length-1]-moment_test);
+	real_L = i;
+      }
     }
   }
   return real_L;
@@ -141,12 +147,16 @@ int Levermore1D_cState::find_real_L(const Levermore1D_weights &A) const {
 double Levermore1D_cState::moment(int n, const Levermore1D_weights &A) const {
   if(n<length) return m_values[n];
   //else determine real_L (ie if the higher order coefficients are zero or not)
-  return moment(n,A,find_real_L(A));
+  return moment_series(n,A,find_real_L(A));
 }
 
 double Levermore1D_cState::moment(int n, const Levermore1D_weights &A, int real_L) const {
   if(n<length) return m_values[n];
+  //else
+  return moment_series(n,A,real_L);
+}
 
+double Levermore1D_cState::moment_series(int n, const Levermore1D_weights &A, int real_L) const {
   double _moment(0.0); //underscore to differentiate from function name
   double term, max_term(0.0);
 
@@ -162,13 +172,6 @@ double Levermore1D_cState::moment(int n, const Levermore1D_weights &A, int real_
   }
 
   _moment /= (-(double)(real_L-1)*A[real_L]);
-
-//  if(n%2==0 && _moment < 0.0) {
-//    cout << endl << "error!  Used real_L = " << real_L << endl;
-//    cout << "U = " << (*this) << endl << "A = " << A << endl;
-//    cout << "Moment #" << n << " = " << _moment << endl;
-//    cout << "Moment using L = 3 is " << moment(n,A,3) << endl;
-//  }
 
   return _moment;
 }
@@ -194,7 +197,24 @@ int Levermore1D_cState::in_sync_with(const Levermore1D_weights &A) const {
   test2 = fabs(test2 / (*this)[1] );
 
   return ( test1 < 1.0e-3 &&
-	   test2 < 1.0e-3 && A[length] < 0.0);
+	   test2 < 1.0e-3 && A[length] <= 0.0);
+}
+
+/********************************************************
+ * Function: Levermore1D_cState::relative_error         *
+ *                                                      *
+ * Find the relative error between two conserved        *
+ * states.                                              *
+ *                                                      *
+ ********************************************************/
+double Levermore1D_cState::relative_error(const Levermore1D_cState &U2) const {
+  double error(sqr( ((*this)[1] - U2[1])/(*this)[1] ));
+  for(int i = 3; i <= length; i=i+2) {
+    error += sqr( ((*this)[i] - U2[i])/(*this)[i] );
+    error += sqr( ((*this)[i-1] - U2[i-1])/
+		  (*this)[i]*(*this)[1]/(*this)[3]);
+  }
+  return sqrt(error)/(double)length;
 }
 
 /********************************************************
@@ -260,37 +280,56 @@ double Levermore1D_weights::integrate_random_moment(int i, double u) const {
  * Convert a conserved vector into weights.             *
  *                                                      *
  ********************************************************/
-void Levermore1D_weights::set_from_U(const Levermore1D_cState &U) {
+int Levermore1D_weights::set_from_U(const Levermore1D_cState &U) {
+  if(m_values[length-1] >= 0) {MaxBoltz(U);}
 
-  if(m_values[length-1] > 0) {MaxBoltz(U);}
-
+  double rel_err, precon;
   Levermore1D_cState U_temp(*this);
   ColumnVector A_step(Levermore1D_Vector::get_length());
   ColumnVector rhs(Levermore1D_Vector::get_length());
+  ColumnVector Plambda(Levermore1D_Vector::get_length());
   DenseMatrix d2hda2(Levermore1D_Vector::get_length(),
 			 Levermore1D_Vector::get_length());
+  int count(0);
 
   for(int i=0; i < Levermore1D_Vector::get_length(); ++i) {
     rhs[i] = U[i+1]-U_temp[i+1];
   }
+  rel_err = U_temp.relative_error(U);
 
-  while(fabs(rhs[length-1]/U[length]) > 1e-10) { //fix tolerance later
+  while( rel_err > 1e-10) { //fix tolerance later
     d2hda2 = U_temp.d2hda2(*this);
+//    //precondition d2hda2 & rhs
+//    for(int i=0;i<length;++i) {
+//      precon = d2hda2( ((i+1)/2)*2 ,0);
+//      precon = 1.0;
+//      for(int j=0;j<length;++j) {
+//    	d2hda2(i,j) /= precon;
+//      }
+//      rhs(i) /= precon;
+//    }
     Solve_LU_Decomposition(d2hda2,rhs,A_step);
+    //A_step = rhs;
+    //Solve_LS_Householder_F77(d2hda2,A_step,junk,length,length);
+    //Solve_LAPACK_dgesv(d2hda2,A_step);
     *this += A_step;
-    while( (*this)[get_length()] > 0) {
-      A_step *= 0.5;
-      *this -= A_step;
+    for(int L = length; L > 1; L = L-2) {
+      if(L==3 && (*this)[L] > 0.0 ) return 1;
+      if( (*this)[L] < 0.0) break;
+      //else
+      (*this)[L] = 0.0; (*this)[L-1] = 0.0;
     }
-
     U_temp.set_from_A(*this);
+    rel_err = U_temp.relative_error(U);
 
     for(int i=0; i < Levermore1D_Vector::get_length(); ++i) {
       rhs[i] = U[i+1]-U_temp[i+1];
     }
+    ++count;
+    if(count > 50) return 1;
   }
 
-  return;
+  return 0;
 }
 
 /********************************************************
@@ -321,15 +360,10 @@ DenseMatrix Levermore1D_cState::d2hda2(const Levermore1D_weights &A) const {
 
   for(int i = 0; i < Levermore1D_Vector::get_length(); ++i) {
     for(int j = 0; j < Levermore1D_Vector::get_length(); ++j) {
-
-      if(i+j < length) {
-	dm(i,j) = m_values[i+j];
-      } else {
-	dm(i,j) = moment(i+j,A,real_L);
-      }
-
+      dm(i,j) = moment(i+j,A,real_L);
     }
   }
+
   return dm;
 }
 
@@ -341,14 +375,18 @@ DenseMatrix Levermore1D_cState::d2hda2(const Levermore1D_weights &A) const {
  ********************************************************/
 DenseMatrix Levermore1D_cState::d2jda2(const Levermore1D_weights &A) const {
 
+  int real_L;
   DenseMatrix dm(Levermore1D_Vector::get_length(),
 		 Levermore1D_Vector::get_length() );
 
+  real_L = find_real_L(A);
+
   for(int i = 0; i < Levermore1D_Vector::get_length(); ++i) {
     for(int j = 0; j < Levermore1D_Vector::get_length(); ++j) {
-      dm(i,j) = moment(i+j+1,A);
+      dm(i,j) = moment(i+j+1,A,real_L);
     }
   }
+
   return dm;
 }
 
