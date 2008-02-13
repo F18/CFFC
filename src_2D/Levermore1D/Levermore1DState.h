@@ -109,7 +109,11 @@ class Levermore1D_weights : public Levermore1D_Vector{
   void set_from_W(const Levermore1D_pState &W);
   int set_from_U(const Levermore1D_cState &U);
   double integrate_conserved_moment(int i) const;
+  double integrate_conserved_moment_pos(int i) const;
+  double integrate_conserved_moment_neg(int i) const;
   double integrate_random_moment(int i, double u) const;
+  double integrate_random_moment_pos(int i, double u) const;
+  double integrate_random_moment_neg(int i, double u) const;
 
   /* Inline Functions. */
   double value_at(double v) const {return exp(exponent_value_recursive(v,0));}

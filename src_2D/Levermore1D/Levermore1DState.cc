@@ -225,16 +225,25 @@ double Levermore1D_cState::relative_error(const Levermore1D_cState &U2) const {
  *                                                      *
  ********************************************************/
 double Levermore1D_weights::integrate_conserved_moment(int i) const {
+  return integrate_conserved_moment_pos(i) + integrate_conserved_moment_neg(i);
+}
+
+double Levermore1D_weights::integrate_conserved_moment_neg(int i) const {
   double temp(0.0), sum(0.0), pos(0.0), v(0.0);
   double dx = 0.1;
   v = -dx/2.0;
-
   do{
     v += dx;
     temp = velocity_weighted_value_at(v, i)*dx;
     sum += temp;
   } while(value_at(v) > 1e-14*dx);
 
+  return sum;
+}
+
+double Levermore1D_weights::integrate_conserved_moment_pos(int i) const {
+  double temp(0.0), sum(0.0), pos(0.0), v(0.0);
+  double dx = 0.1;
   v = dx/2.0;
   do{
     v -= dx;
@@ -253,16 +262,25 @@ double Levermore1D_weights::integrate_conserved_moment(int i) const {
  *                                                      *
  ********************************************************/
 double Levermore1D_weights::integrate_random_moment(int i, double u) const {
+  return integrate_random_moment_pos(i,u) + integrate_random_moment_neg(i,u);
+}
+
+double Levermore1D_weights::integrate_random_moment_neg(int i, double u) const {
   double temp(0.0), sum(0.0), pos(0.0), v(0.0);
   double dx = 0.1;
   v = -dx/2.0;
-
   do{
     v += dx;
     temp = random_velocity_weighted_value_at(v, u, i)*dx;
     sum += temp;
   } while(value_at(v) > 1e-14*dx);
 
+  return sum;
+}
+
+double Levermore1D_weights::integrate_random_moment_pos(int i, double u) const {
+  double temp(0.0), sum(0.0), pos(0.0), v(0.0);
+  double dx = 0.1;
   v = dx/2.0;
   do{
     v -= dx;
