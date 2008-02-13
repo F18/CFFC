@@ -414,12 +414,12 @@ DenseMatrix Levermore1D_cState::d2jda2(const Levermore1D_weights &A) const {
  * Calculate HLLE flux function.                        *
  *                                                      *
  ********************************************************/
-extern Levermore1D_Vector FluxHLLE(const Levermore1D_cState &Ul,
-				   const Levermore1D_weights &Al,
-				   const double &wavespeed_l,
-				   const Levermore1D_cState &Ur,
-				   const Levermore1D_weights &Ar,
-				   const double &wavespeed_r) {
+Levermore1D_Vector FluxHLLE(const Levermore1D_cState &Ul,
+			    const Levermore1D_weights &Al,
+			    const double &wavespeed_l,
+			    const Levermore1D_cState &Ur,
+			    const Levermore1D_weights &Ar,
+			    const double &wavespeed_r) {
   Levermore1D_Vector Flux;
 
   if (wavespeed_l >= ZERO) {
@@ -435,3 +435,20 @@ extern Levermore1D_Vector FluxHLLE(const Levermore1D_cState &Ul,
   return Flux;
 }
 
+/********************************************************
+ * Function: FluxKinetic                                *
+ *                                                      *
+ * Calculate "Kinetic" flux function.                   *
+ *                                                      *
+ ********************************************************/
+Levermore1D_Vector FluxKinetic(const Levermore1D_weights &Al,
+			       const Levermore1D_weights &Ar) {
+  Levermore1D_Vector Flux;
+
+  for(int i=1; i<=Levermore1D_Vector::get_length(); ++i) {
+    Flux[i] = Al.integrate_conserved_moment_pos(i);
+    Flux[i] = Ar.integrate_conserved_moment_neg(i);
+  }
+
+  return Flux;
+}

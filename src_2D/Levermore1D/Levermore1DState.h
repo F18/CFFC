@@ -212,6 +212,7 @@ extern Levermore1D_Vector FluxHLLE(const Levermore1D_cState &Ul,
 				   const Levermore1D_weights &Ar,
 				   const double &wavespeed_r);
 
-
+extern Levermore1D_Vector FluxKinetic(const Levermore1D_weights &Al,
+				      const Levermore1D_weights &Ar);
 
 #endif
