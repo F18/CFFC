@@ -1079,6 +1079,8 @@ void Output_Cells_Tecplot(Flame2D_Quad_Block &SolnBlk,
     for(int i =0; i<Flame2D_pState::NumSpecies(); i++){
       Out_File <<"\"omega_c"<<Flame2D_pState::speciesName(i)<<"\" \\ \n";
     }
+    // Raditation
+    Out_File << "\"div_qrad\" \\ \n";
     // Gradients
     Flame2D_pState::outputTecplotVarList(Out_File, "W", "dWdx_");
     Flame2D_pState::outputTecplotVarList(Out_File, "W", "dWdy_");
@@ -1152,6 +1154,8 @@ void Output_Cells_Tecplot(Flame2D_Quad_Block &SolnBlk,
       for(int k=0; k<Flame2D_pState::NumSpecies(); k++){
 	Out_File <<" "<<omega.rhoc(k) / rho;
       }
+      // Raditation
+      Out_File << " " << SolnBlk.Srad[i][j];
 
       Out_File.unsetf(ios::scientific);
       // Gradients
@@ -2761,9 +2765,8 @@ void Fix_Refined_Block_Boundaries(Flame2D_Quad_Block &SolnBlk,
 		  SolnBlk.Grid.Node[i-1][SolnBlk.Grid.JNu].X);
     } /* endfor */
     for ( i = SolnBlk.ICl ; i <= SolnBlk.ICu ; ++i ) {
-      SolnBlk.U[i][SolnBlk.JCu].set( SolnBlk.U[i][SolnBlk.JCu], 
-				     (SolnBlk.Grid.Cell[i][SolnBlk.JCu].A/
-				      SolnBlk.Grid.area(i, SolnBlk.JCu)) );
+      SolnBlk.U[i][SolnBlk.JCu] *= ( SolnBlk.Grid.Cell[i][SolnBlk.JCu].A/
+				     SolnBlk.Grid.area(i, SolnBlk.JCu) );
       SolnBlk.W[i][SolnBlk.JCu].setU(SolnBlk.U[i][SolnBlk.JCu]);
     } /* endfor */
   } /* endif */
@@ -2783,9 +2786,8 @@ void Fix_Refined_Block_Boundaries(Flame2D_Quad_Block &SolnBlk,
 		  SolnBlk.Grid.Node[i-1][SolnBlk.Grid.JNl].X);
     } /* endfor */
     for ( i = SolnBlk.ICl ; i <= SolnBlk.ICu ; ++i ) {
-      SolnBlk.U[i][SolnBlk.JCl].set( SolnBlk.U[i][SolnBlk.JCl],
-				     (SolnBlk.Grid.Cell[i][SolnBlk.JCl].A/
-				      SolnBlk.Grid.area(i, SolnBlk.JCl)) );
+      SolnBlk.U[i][SolnBlk.JCl] *= ( SolnBlk.Grid.Cell[i][SolnBlk.JCl].A/
+				     SolnBlk.Grid.area(i, SolnBlk.JCl) );
       SolnBlk.W[i][SolnBlk.JCl].setU(SolnBlk.U[i][SolnBlk.JCl]);
     } /* endfor */
   } /* endif */
@@ -2805,9 +2807,8 @@ void Fix_Refined_Block_Boundaries(Flame2D_Quad_Block &SolnBlk,
 		  SolnBlk.Grid.Node[SolnBlk.Grid.INu][j-1].X);
     } /* endfor */
     for ( j = SolnBlk.JCl ; j <= SolnBlk.JCu ; ++j ) {
-      SolnBlk.U[SolnBlk.ICu][j].set( SolnBlk.U[SolnBlk.ICu][j],
-				     (SolnBlk.Grid.Cell[SolnBlk.ICu][j].A/
-				      SolnBlk.Grid.area(SolnBlk.ICu, j)) );
+      SolnBlk.U[SolnBlk.ICu][j] *= ( SolnBlk.Grid.Cell[SolnBlk.ICu][j].A/
+				     SolnBlk.Grid.area(SolnBlk.ICu, j) );
       SolnBlk.W[SolnBlk.ICu][j].setU(SolnBlk.U[SolnBlk.ICu][j]);
     } /* endfor */
   } /* endif */
@@ -2827,9 +2828,8 @@ void Fix_Refined_Block_Boundaries(Flame2D_Quad_Block &SolnBlk,
 		  SolnBlk.Grid.Node[SolnBlk.Grid.INl][j-1].X);
     } /* endfor */
     for ( j = SolnBlk.JCl ; j <= SolnBlk.JCu ; ++j ) {
-      SolnBlk.U[SolnBlk.ICl][j].set( SolnBlk.U[SolnBlk.ICl][j],
-				     (SolnBlk.Grid.Cell[SolnBlk.ICl][j].A/
-				      SolnBlk.Grid.area(SolnBlk.ICl, j)) );
+      SolnBlk.U[SolnBlk.ICl][j] *= ( SolnBlk.Grid.Cell[SolnBlk.ICl][j].A/
+				     SolnBlk.Grid.area(SolnBlk.ICl, j) );
       SolnBlk.W[SolnBlk.ICl][j].setU(SolnBlk.U[SolnBlk.ICl][j]);
     } /* endfor */
   } /* endif */
@@ -2879,9 +2879,8 @@ void Unfix_Refined_Block_Boundaries(Flame2D_Quad_Block &SolnBlk) {
       SolnBlk.Grid.Node[i][SolnBlk.Grid.JNu].X = Spline(sp_m, SolnBlk.Grid.BndNorthSpline);
     } /* endfor */
     for ( i = SolnBlk.ICl ; i <= SolnBlk.ICu ; ++i ) {
-      SolnBlk.U[i][SolnBlk.JCu].set( SolnBlk.U[i][SolnBlk.JCu],
-				     (SolnBlk.Grid.Cell[i][SolnBlk.JCu].A/
-				      SolnBlk.Grid.area(i, SolnBlk.JCu)) );
+      SolnBlk.U[i][SolnBlk.JCu] *= ( SolnBlk.Grid.Cell[i][SolnBlk.JCu].A/
+				     SolnBlk.Grid.area(i, SolnBlk.JCu) );
       SolnBlk.W[i][SolnBlk.JCu].setU(SolnBlk.U[i][SolnBlk.JCu]);
     } /* endfor */
   } /* endif */
@@ -2904,9 +2903,8 @@ void Unfix_Refined_Block_Boundaries(Flame2D_Quad_Block &SolnBlk) {
       SolnBlk.Grid.Node[i][SolnBlk.Grid.JNl].X = Spline(sp_m, SolnBlk.Grid.BndSouthSpline);
     } /* endfor */
     for ( i = SolnBlk.ICl ; i <= SolnBlk.ICu ; ++i ) {
-      SolnBlk.U[i][SolnBlk.JCl].set( SolnBlk.U[i][SolnBlk.JCl],
-				     (SolnBlk.Grid.Cell[i][SolnBlk.JCl].A/
-				      SolnBlk.Grid.area(i, SolnBlk.JCl)) );
+      SolnBlk.U[i][SolnBlk.JCl] *= ( SolnBlk.Grid.Cell[i][SolnBlk.JCl].A/
+				     SolnBlk.Grid.area(i, SolnBlk.JCl) );
       SolnBlk.W[i][SolnBlk.JCl].setU(SolnBlk.U[i][SolnBlk.JCl]);
     } /* endfor */
   } /* endif */
@@ -2929,9 +2927,8 @@ void Unfix_Refined_Block_Boundaries(Flame2D_Quad_Block &SolnBlk) {
       SolnBlk.Grid.Node[SolnBlk.Grid.INu][j].X = Spline(sp_m, SolnBlk.Grid.BndEastSpline);
     } /* endfor */
     for ( j = SolnBlk.JCl ; j <= SolnBlk.JCu ; ++j ) {
-      SolnBlk.U[SolnBlk.ICu][j].set( SolnBlk.U[SolnBlk.ICu][j],
-				     (SolnBlk.Grid.Cell[SolnBlk.ICu][j].A/
-				      SolnBlk.Grid.area(SolnBlk.ICu, j)) );
+      SolnBlk.U[SolnBlk.ICu][j] *= ( SolnBlk.Grid.Cell[SolnBlk.ICu][j].A/
+				     SolnBlk.Grid.area(SolnBlk.ICu, j) );
       SolnBlk.W[SolnBlk.ICu][j].setU(SolnBlk.U[SolnBlk.ICu][j]);
     } /* endfor */
   } /* endif */
@@ -2954,9 +2951,8 @@ void Unfix_Refined_Block_Boundaries(Flame2D_Quad_Block &SolnBlk) {
       SolnBlk.Grid.Node[SolnBlk.Grid.INl][j].X = Spline(sp_m, SolnBlk.Grid.BndWestSpline);
     } /* endfor */
     for ( j = SolnBlk.JCl ; j <= SolnBlk.JCu ; ++j ) {
-      SolnBlk.U[SolnBlk.ICl][j].set( SolnBlk.U[SolnBlk.ICl][j],
-				     (SolnBlk.Grid.Cell[SolnBlk.ICl][j].A/
-				      SolnBlk.Grid.area(SolnBlk.ICl, j)) );
+      SolnBlk.U[SolnBlk.ICl][j] *= ( SolnBlk.Grid.Cell[SolnBlk.ICl][j].A/
+				     SolnBlk.Grid.area(SolnBlk.ICl, j) );
       SolnBlk.W[SolnBlk.ICl][j].setU(SolnBlk.U[SolnBlk.ICl][j]);
     } /* endfor */
   } /* endif */

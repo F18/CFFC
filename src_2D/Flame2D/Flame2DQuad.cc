@@ -20,6 +20,58 @@ int Flame2D_Quad_Block::Number_of_Residual_Norms = 4;
 /// Reconstruction Methods
 /////////////////////////////////////////////////////////////////////
 
+/********************************************************
+ * Routine: FixSpecGrad                                 *
+ *                                                      *
+ * Recompute the gradient of the last species to ensure *
+ * the gradients sum to zero.                           *
+ *                                                      *
+ ********************************************************/
+void Flame2D_Quad_Block::FixSpecGrad(const int i,const int j, const bool&visc) {
+
+  double sumX(0.0), sumY(0.0), 
+         sumX_faceN(0.0), sumY_faceN(0.0),
+         sumX_faceS(0.0), sumY_faceS(0.0),
+         sumX_faceE(0.0), sumY_faceE(0.0),
+         sumX_faceW(0.0), sumY_faceW(0.0);
+
+  int nsp( Flame2D_State::NumSpecies() );
+
+  // For inviscid case
+  if (!visc) {
+    for (int k=0; k<nsp-1; k++) {
+      sumX += dWdx[i][j].c(k);
+      sumY += dWdy[i][j].c(k);
+    }
+    dWdx[i][j].c(nsp-1) = -sumX;
+    dWdy[i][j].c(nsp-1) = -sumY;
+
+  // For viscous case
+  } else {
+    for (int k=0; k<nsp-1; k++) {
+      sumX += dWdx[i][j].c(k);
+      sumY += dWdy[i][j].c(k);
+      sumX_faceN += dWdx_faceN[i][j].c(k);
+      sumX_faceS += dWdx_faceS[i][j].c(k);
+      sumX_faceE += dWdx_faceE[i][j].c(k);
+      sumX_faceW += dWdx_faceW[i][j].c(k);
+      sumY_faceN += dWdy_faceN[i][j].c(k);
+      sumY_faceS += dWdy_faceS[i][j].c(k);
+      sumY_faceE += dWdy_faceE[i][j].c(k);
+      sumY_faceW += dWdy_faceW[i][j].c(k);
+    }
+    dWdx[i][j].c(nsp-1) = -sumX;
+    dWdy[i][j].c(nsp-1) = -sumY;
+    dWdx_faceN[i][j].c(nsp-1) = -sumX_faceN;
+    dWdx_faceS[i][j].c(nsp-1) = -sumX_faceS;
+    dWdx_faceE[i][j].c(nsp-1) = -sumX_faceE;
+    dWdx_faceW[i][j].c(nsp-1) = -sumX_faceW;
+    dWdy_faceN[i][j].c(nsp-1) = -sumY_faceN;
+    dWdy_faceS[i][j].c(nsp-1) = -sumY_faceS;
+    dWdy_faceE[i][j].c(nsp-1) = -sumY_faceE;
+    dWdy_faceW[i][j].c(nsp-1) = -sumY_faceW;
+  }
+}
 
 /********************************************************
  * Routine: Evaluate_Limiter                            *
@@ -110,7 +162,7 @@ void Flame2D_Quad_Block::Evaluate_Limiter(const int i,
     // To ensure that the reconstructed species mass fractions sum to unity,
     // we must use the same limiter value for all species.  Here we use
     // the minimum value for all species.
-    phi[i][j].ForceSpecMin();
+    // phi[i][j].ForceSpecMin();
 
   } // end limiter if
 
@@ -267,6 +319,9 @@ void Flame2D_Quad_Block::Linear_Reconstruction_GreenGauss(const int i,
 	
     } /* endif */
 
+    // recompute last species gradient
+    FixSpecGrad(i, j, false);
+
     // Calculate slope limiters.    
     Evaluate_Limiter(i, j, Limiter, n_pts, i_index, j_index);
 	  
@@ -349,6 +404,9 @@ void Flame2D_Quad_Block::Linear_Reconstruction_LeastSquares(const int i,
       
     // perform least squares reconstruction
     LeastSquares( dWdx[i][j], dWdy[i][j], dX, DU, n_pts, NUM_VAR_FLAME2D );
+
+    // recompute last species gradient
+    FixSpecGrad(i, j, false);
 
     // Calculate slope limiters.    
     Evaluate_Limiter(i, j, Limiter, n_pts, i_index, j_index);
@@ -675,6 +733,9 @@ void Flame2D_Quad_Block::Linear_Reconstruction_LeastSquares_2(const int i,
     // perform least squares reconstruction
     LeastSquares( dWdx[i][j], dWdy[i][j], dX, DU, n_pts, NUM_VAR_FLAME2D );
 
+    // recompute last species gradient
+    FixSpecGrad(i, j, false);
+
     // Calculate slope limiters.    
     Evaluate_Limiter(i, j, Limiter, n_pts, i_index, j_index);
 
@@ -915,6 +976,9 @@ void Flame2D_Quad_Block::Linear_Reconstruction_LeastSquares_Diamond(const int i,
     }
     /**************************************************/
    
+    // recompute last species gradient
+    FixSpecGrad(i, j, true);
+
     // Calculate slope limiters.    
     Evaluate_Limiter(i, j, Limiter, n_pts, i_index, j_index);
 
@@ -1162,6 +1226,9 @@ void Flame2D_Quad_Block::Linear_Reconstruction_GreenGauss_Diamond(const int i,
       dWdy[i][j][k] /= Grid.Cell[i][j].A; 
     }
     /****************************************************/
+
+    // recompute last species gradient
+    FixSpecGrad(i, j, true);
 
     // Calculate slope limiters.    
     Evaluate_Limiter(i, j, Limiter, n_pts, i_index, j_index);

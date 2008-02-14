@@ -30,26 +30,26 @@ using namespace std;
 /// Defines
 /////////////////////////////////////////////////////////////////////
 //Reference temperature for polytropic heat ratio mixture gamma [K]
-#define TREF 298.15
-#define PREF 101325.0
+const double TREF = 298.15;   // K
+const double PREF = 101325.0; // Pa
 
 // Properties of air at reference state (TREF and )
-#define T_SDATM       288.1600      // K
-#define H_AIR_SDATM  -10044.3039815 // J/kg ( 0 @ TREF, PREF )
-#define HF_AIR_SDATM  0.0           // J/kg ( 0 @ TREF, PREF )
-#define MW_AIR_SDATM  28.8507321008 // kg/kmole
-#define CP_AIR_SDATM  1008.8401778  // J/(kg K)
+const double T_SDATM      =  288.1600;      // K
+const double H_AIR_SDATM  = -10044.3039815; // J/kg ( 0 @ TREF, PREF )
+const double HF_AIR_SDATM =  0.0;           // J/kg ( 0 @ TREF, PREF )
+const double MW_AIR_SDATM =  28.8507321008; // kg/kmole
+const double CP_AIR_SDATM =  1008.8401778;  // J/(kg K)
 
 
 // Temperature convergence tolerance
 // For explicit -> TOL ~ 1.0E-08 is good
 // For implicit -> TOL ~ 1.0E-10 is necessary 
-#define CONV_TOLERANCE  1e-8
-#define NUM_ITERATIONS  25
+const double CONV_TOLERANCE  = 1e-8;
+const double NUM_ITERATIONS  = 25;
 
 // If you define this variable, the number of species will be
 // predetermined for faster calculations.., however it is not as general 
-#define STATIC_NUMBER_OF_SPECIES 5 //2 AIR, 6 2STEP_CH4
+#define STATIC_NUMBER_OF_SPECIES 53 //2 AIR, 6 2STEP_CH4
 
 /////////////////////////////////////////////////////////////////////
 /// CLASS DEFINITIONS

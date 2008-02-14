@@ -45,7 +45,7 @@ using namespace std;
 // if static species && static soot var, the total number of variables
 #ifdef STATIC_NUMBER_OF_SPECIES
 #ifdef STATIC_NUM_SOOT2D_VAR
-#define STATIC_NUM_FLAME2D_VAR NUM_FLAME2D_VAR_SANS_SPECIES + STATIC_NUMBER_OF_SPECIES + STATIC_NUM_SOOT2D_VAR
+#define STATIC_NUM_FLAME2D_VAR (NUM_FLAME2D_VAR_SANS_SPECIES+STATIC_NUMBER_OF_SPECIES+STATIC_NUM_SOOT2D_VAR)
 #endif
 #endif
 
@@ -208,7 +208,7 @@ public:
   void Rotate(const Vector2D &norm_dir);
   void RotateBack(const Vector2D &norm_dir);
   void AdjustDensity(void);
-  void ForceSpecSumToZero(void);
+  void ForceSpecSumTo(const double&d);
   void ForceSpecMin(void);
 
   /************************* Fluxes *********************************/
@@ -300,6 +300,7 @@ public:
   Flame2D_State& operator =(const Flame2D_State &X); 
 
   // Shortcut arithmetic operators.
+  Flame2D_State& operator *=(const double &d);
   Flame2D_State& operator +=(const Flame2D_State &X);
   Flame2D_State& operator -=(const Flame2D_State &X);
  
@@ -1024,6 +1025,11 @@ inline Flame2D_pState& Flame2D_pState::operator =(const Flame2D_State &W){
 /********************************************************
  * Flame2D_pState -- Shortcut arithmetic operators.     *
  ********************************************************/
+inline Flame2D_State& Flame2D_State::operator *=(const double &d){
+  for( int i=0; i<n; i++)  x[i] *= d;
+  return (*this);
+}
+
 inline Flame2D_State& Flame2D_State::operator +=(const Flame2D_State &X){
   for( int i=0; i<n; i++)  x[i] += X.x[i];
   return (*this);
@@ -1159,6 +1165,14 @@ inline void Flame2D_pState::Reconstruct( const Flame2D_pState &Wc,
   for (int i=0; i<n; i++)
     x[i] = Wc.x[i] + mult*(phi[i+1]*dWdx[i+1]*dX.x + phi[i+1]*dWdy[i+1]*dX.y);
   // assert( fabs(SpecSum()-1.0)<1.E-9 );
+
+  // force sum to 1
+  double sum(0.0);
+  for (int i=0; i<ns-1; i++) sum += c(i);
+  c(ns-1) = max(1.0 - sum, 0.0);
+  sum += c(ns-1);
+  if ( fabs(sum-1.0)>0.0 ) for (int i=0; i<ns; i++) c(i) /= sum;
+
   setGas();
 }
 
@@ -1189,11 +1203,10 @@ inline void Flame2D_State::AdjustDensity(void) {
 /****************************************************
  * Divide error among species, forcing sum to zero.
  ****************************************************/
-inline void Flame2D_State::ForceSpecSumToZero(void) { 
+inline void Flame2D_State::ForceSpecSumTo(const double&d) { 
   double sum( 0.0 );
-  for (int i=0; i<ns; i++) sum += c(i);
-  sum /= ns;
-  for (int i=0; i<ns; i++) c(i) -= sum;
+  for (int i=0; i<ns-1; i++) sum += c(i);
+  c(ns-1) = d - sum;
 }
 
 

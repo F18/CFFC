@@ -372,7 +372,7 @@ void Mixture::dSwdU( DenseMatrix &dSdU,
 
   // perturbation factor
   const double abs_tol( 1.E-6 ); // absolute tolerance (sqrt(machine eps))
-  const double rel_tol( 1.E-6 ); // relative tolerance
+  const double rel_tol( 1.E-5 ); // relative tolerance (1e-5)
   double eps;
   
   //------------------------------------------------
@@ -440,7 +440,7 @@ double Mixture::dSwdU_max_diagonal( const double &rho,
 
   // perturbation factor
   const double abs_tol( 1.E-6 ); // absolute tolerance (sqrt(machine eps))
-  const double rel_tol( 1.E-6 ); // relative tolerance
+  const double rel_tol( 1.E-5 ); // relative tolerance (1e-5)
   double eps;
   
   //------------------------------------------------

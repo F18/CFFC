@@ -399,6 +399,9 @@ public:
 			const int*i_index,
 			const int*j_index);
 
+  // recompute last species gradient
+  void FixSpecGrad(const int i,const int j, const bool&visc);
+
   // Reconstruction Methods
   void Linear_Reconstruction_LeastSquares(const int Limiter);
   void Linear_Reconstruction_LeastSquares(const int i,
