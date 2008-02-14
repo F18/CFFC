@@ -15,6 +15,18 @@
 namespace tut
 {
 
+  double Function_XCentroid(const double &x, const double &y){
+    return x;
+  }
+
+  double Function_YCentroid(const double &x, const double &y){
+    return y;
+  }
+
+  double Function_area(const double &x, const double &y){
+    return 1;
+  }
+
   /* Define the test-specific data class and add data members 
      when tests have complex or repeating creation phase. */
   class Data_Grid2DQuadMultiBlock_HO : public TestData {
@@ -668,7 +680,7 @@ namespace tut
       MasterFile  = "2D_Laminar_Flame_cell.dat";
       Open_Output_File(CurrentFile);
       MultiBlockGrid.Output_Cells_Tecplot(out());
-      RunRegressionTest("2D Laminar Flame cell", CurrentFile, MasterFile, 5.0e-12, 5.0e-12);
+      RunRegressionTest("2D Laminar Flame cell", CurrentFile, MasterFile, 5.0e-11, 5.0e-11);
 
     } else {
       //open file for interior node output
@@ -1553,6 +1565,8 @@ namespace tut
     // Build the mesh
     CreateMesh(MeshBlk,IP);
 
+    MeshBlk(0,0).BndSouthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+
     MasterFile = "GridCircularCylinder_GeomProperties_BoundaryCell.dat";
     CurrentFile = "Current_GridCircularCylinder_GeomProperties_BoundaryCell.dat";
 
@@ -1643,8 +1657,6 @@ namespace tut
       ensure_equals("InteriorMesh", MeshBlk(0,0).Value_InteriorMeshUpdate_Flag(), OFF);
       ensure_equals("GhostCells", MeshBlk(0,0).Value_GhostCellsUpdate_Flag(), OFF);
       ensure_equals("CornerGhostCells", MeshBlk(0,0).Value_CornerGhostCellsUpdate_Flag(), OFF);
-
-      fail("The test was good so far!\n However, not all geometric properties were checked against the analytic solution");
 
     } else {
       Open_Output_File(MasterFile);
@@ -1902,7 +1914,7 @@ namespace tut
     // Add test particular input parameters
     IP.i_Grid = GRID_NACA_AEROFOIL;
     IP.Number_of_Blocks_Jdir = 1;
-    IP.Number_of_Blocks_Idir = 1;
+    IP.Number_of_Blocks_Idir = 2;
     IP.Number_of_Cells_Idir = 40;
     IP.Number_of_Cells_Jdir = 40;
     IP.Number_of_Ghost_Cells = 5;
@@ -1927,7 +1939,7 @@ namespace tut
       out() << Grid << endl;
 
       // check
-      RunRegressionTest("Copy Grid", CurrentFile, MasterFile, 1.0e-9, 1.0e-9);
+      RunRegressionTest("Copy Grid", CurrentFile, MasterFile, 1.0e-10, 1.0e-10);
 
     } else {
       Open_Output_File(MasterFile);
@@ -2646,6 +2658,80 @@ namespace tut
       Print_File(MeshBlk(0,0).nfaceW(iCell,jCell), out());
 
     }
+  }
+
+  // Test 36:
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<36>()
+  {
+    set_test_name("Centroid and Area for concave quadrilateral");
+
+    // Add test particular input parameters
+    IP.i_Grid = GRID_NACA_AEROFOIL;
+    IP.Number_of_Blocks_Jdir = 1;
+    IP.Number_of_Blocks_Idir = 2;
+    IP.Number_of_Cells_Idir = 40;
+    IP.Number_of_Cells_Jdir = 40;
+    IP.Number_of_Ghost_Cells = 5;
+    IP.Space_Accuracy = 3;
+    strcpy(IP.NACA_Aerofoil_Type, "0012");
+    IP.Chord_Length = ONE;
+    IP.IncludeHighOrderBoundariesRepresentation = OFF;
+    IP.i_Smooth_Quad_Block = ON;
+
+    Vector2D X[4], Centroid, CentroidResult;
+    double area, areaResult;
+    int Info;
+    int iCell, jCell; 
+    iCell = 11;
+    jCell = 46;
+
+    // Define results
+    CentroidResult = Vector2D(2.333333333333333333,2.25);
+    areaResult = 0.375;
+
+    // Build the mesh
+    CreateMesh(MeshBlk,IP);
+
+    // Copy block 0
+    Copy_Quad_Block(Grid, MeshBlk(2,0));
+    
+    Grid.Node[iCell  ][jCell  ].X = Vector2D(1.0,1.0);
+    Grid.Node[iCell+1][jCell  ].X = Vector2D(2.0,2.75);
+    Grid.Node[iCell+1][jCell+1].X = Vector2D(4.0,1.0);
+    Grid.Node[iCell  ][jCell+1].X = Vector2D(2.0,3.0);
+
+    // Use the grid functions
+    Centroid = Grid.centroid(iCell,jCell);
+    area = Grid.area(iCell,jCell);
+
+    // == check
+    ensure_distance("Grid Centroid function", Centroid, CentroidResult, AcceptedError(CentroidResult));
+    ensure_distance("Grid Area function", area, areaResult, AcceptedError(areaResult));
+    
+    
+    // Use the numeric integration subroutine
+    area = Grid.Integration.IntegrateFunctionOverCell(iCell,jCell,Function_area,14,area);
+    Centroid = Vector2D( Grid.Integration.IntegrateFunctionOverCell(iCell,jCell,Function_XCentroid,14,area),
+ 			 Grid.Integration.IntegrateFunctionOverCell(iCell,jCell,Function_YCentroid,14,area) )/area;
+
+    // == check
+    ensure_distance("Grid Centroid function", Centroid, CentroidResult, AcceptedError(CentroidResult));
+    ensure_distance("Grid Area function", area, areaResult, AcceptedError(areaResult));
+
+    // Use the polyCentroid subroutine directly
+    X[0] = Grid.nodeSW(iCell,jCell).X;
+    X[1] = Grid.nodeSE(iCell,jCell).X;
+    X[2] = Grid.nodeNE(iCell,jCell).X;
+    X[3] = Grid.nodeNW(iCell,jCell).X;
+
+    Info = Grid2D_Quad_Block_HO::polyCentroid(X, 4, Centroid, area);
+
+    // == check
+    ensure_equals("Error check", Info, 0); //< Zero value corresponds to no error
+    ensure_distance("Grid Centroid function", Centroid, CentroidResult, AcceptedError(CentroidResult));
+    ensure_distance("Grid Area function", area, areaResult, AcceptedError(areaResult));
   }
 
 }

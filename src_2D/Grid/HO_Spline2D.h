@@ -213,6 +213,10 @@ public:
   double getS(const Vector2D &X) const;
   friend double getS(const Vector2D &X, const Spline2D_HO &S){ return S.getS(X); }
 
+  //! Get path length for a given 2D node location
+  double getS(const Node2D_HO &Node) const { return getS(Node.X); }
+  friend double getS(const Node2D_HO &Node, const Spline2D_HO &S){ return S.getS(Node); } 
+
   LinkedList<Vector2D> getX(const double &y) const;
   friend LinkedList<Vector2D> getX(const double &y, const Spline2D_HO &S) { return S.getX(y); }
   LinkedList<Vector2D> getY(const double &x) const;
