@@ -350,6 +350,8 @@ public:
   //@{
   static int polyCentroid(const Vector2D * Vertices, const int &n,
 			  Vector2D &Centroid, double &area);
+  int quadAreaAndCentroid(const int &ii, const int &jj) const;
+  Vector2D quadConvexCentroid(const int &ii, const int &jj) const;
   Vector2D centroid(const Cell2D_HO &Cell) const;
   Vector2D centroid(const int &ii, const int &jj) const;
   Vector2D centroidSW(const int &ii, const int &jj) const;
@@ -969,6 +971,7 @@ inline void Grid2D_Quad_Block_HO::deallocateBndSplineInfo(void) {
  * This implementation is based on the one suggested in chapter I.1 
  * (Centroid of a Polygon) of "Graphics Gems IV" by Paul S. Heckbert.
  * It gives correct results for concave polygons too.
+ * If edge crossing occurs the area might still be positive!
  *
  * \param [in]  Vertices the array of vertices in x-y plane.
  * \param [in]   n       the number of entries in the vertices array.
@@ -1007,6 +1010,99 @@ inline int Grid2D_Quad_Block_HO::polyCentroid(const Vector2D * Vertices, const i
 }
 
 /*!
+ * Calculate the centroid and the area of a quadrilateral 
+ * cell (ii,jj) and store them in the designated variables.
+ * This subroutine gives correct results for both concave 
+ * and convex quadrilaterals.
+ * However, the subroutine doesn't check for successful
+ * execution (i.e. occurrence of negative area)!
+ * 
+ * \return 0 for normal execution;
+ *         2 if area = zero (i.e. the centroid is undefined).
+ */
+inline int Grid2D_Quad_Block_HO::quadAreaAndCentroid(const int &ii, const int &jj) const {
+
+  // Cell nodes in counterclockwise order (SW, SE, NE, NW).
+  /*
+   * The X array is shown only for easier understanding of the algorithm.
+   * Vector2D X[4] = { Node[ii  ][jj  ].X,
+   *  	               Node[ii+1][jj  ].X,
+   *	               Node[ii+1][jj+1].X,
+   *	               Node[ii  ][jj+1].X };
+  */
+  
+  // Local variables
+  double ai, atmp(0), xtmp(0), ytmp(0);
+
+  // First edge between X[3] and X[0]
+  ai = Node[ii][jj+1].X.x * Node[ii][jj].X.y - Node[ii][jj].X.x * Node[ii][jj+1].X.y;
+  atmp += ai;
+  xtmp += (Node[ii][jj].X.x + Node[ii][jj+1].X.x) * ai;
+  ytmp += (Node[ii][jj].X.y + Node[ii][jj+1].X.y) * ai;
+
+  // Second edge between X[0] and X[1]
+  ai = Node[ii][jj].X.x * Node[ii+1][jj].X.y - Node[ii+1][jj].X.x * Node[ii][jj].X.y;
+  atmp += ai;
+  xtmp += (Node[ii+1][jj].X.x + Node[ii][jj].X.x) * ai;
+  ytmp += (Node[ii+1][jj].X.y + Node[ii][jj].X.y) * ai;
+
+  // Third edge between X[1] and X[2]
+  ai = Node[ii+1][jj].X.x * Node[ii+1][jj+1].X.y - Node[ii+1][jj+1].X.x * Node[ii+1][jj].X.y;
+  atmp += ai;
+  xtmp += (Node[ii+1][jj+1].X.x + Node[ii+1][jj].X.x) * ai;
+  ytmp += (Node[ii+1][jj+1].X.y + Node[ii+1][jj].X.y) * ai;
+
+  // Fourth edge between X[2] and X[3]
+  ai = Node[ii+1][jj+1].X.x * Node[ii][jj+1].X.y - Node[ii][jj+1].X.x * Node[ii+1][jj+1].X.y;
+  atmp += ai;
+  xtmp += (Node[ii][jj+1].X.x + Node[ii+1][jj+1].X.x) * ai;
+  ytmp += (Node[ii][jj+1].X.y + Node[ii+1][jj+1].X.y) * ai;
+
+  // Calculate the centroid and area of cell (ii,jj)
+  Cell[ii][jj].A = 0.5* atmp;
+
+  if (atmp != 0){
+    Cell[ii][jj].Xc.x = xtmp / (3*atmp);
+    Cell[ii][jj].Xc.y = ytmp / (3*atmp);
+    return 0;
+  }
+
+  return 2;  
+}
+
+/*!
+ * Alternative approach to get the centroid of a convex quadrilateral.
+ * If the quadrilateral is concave this subroutine gives an incorrect answer!
+ * However, this approach is fast for convex quadrilateral.
+ */
+inline Vector2D Grid2D_Quad_Block_HO::quadConvexCentroid(const int &ii, const int &jj) const{
+
+  Vector2D X1, X2, X3, X4, Xc1, Xc2, X;
+  double A1, A2;
+  // Cell nodes in counter-clockwise order.
+  X1 = Node[ii  ][jj  ].X;
+  X2 = Node[ii+1][jj  ].X;
+  X3 = Node[ii+1][jj+1].X;
+  X4 = Node[ii  ][jj+1].X;
+  // Determine the centroid of the sub-triangles.
+  Xc1 = (X1+X2+X3)/3.0;
+  Xc2 = (X1+X3+X4)/3.0;
+
+  // Determine the area of the sub-triangles.
+  //   A1 = HALF*((X1^X2) + (X2^X3) + (X3^X1));
+  //   A2 = HALF*((X1^X3) + (X3^X4) + (X4^X1));
+
+  // These relationships are equivalent with the ones shown above.
+  A1 = HALF*((X2-X1)^(X3-X1));
+  A2 = HALF*((X3-X4)^(X3-X1));
+
+  // Return the area-weighted average of the centroids of the sub-triangles:
+  if (A1 > ZERO && A2 > ZERO) return (A1*Xc1 + A2*Xc2)/(A1+A2);
+  // Average of four nodes (not always correct):
+  return 0.25*(Node[ii][jj].X + Node[ii+1][jj].X + Node[ii+1][jj+1].X + Node[ii][jj+1].X);
+}
+
+/*!
  * Get centroid of Cell
  */
 inline Vector2D Grid2D_Quad_Block_HO::centroid(const Cell2D_HO &Cell) const {
@@ -1015,6 +1111,7 @@ inline Vector2D Grid2D_Quad_Block_HO::centroid(const Cell2D_HO &Cell) const {
 
 /*!
  * Calculate the centroid of cell (ii,jj).
+ * This is a slower subroutine because it checks for negative area.
  */
 inline Vector2D Grid2D_Quad_Block_HO::centroid(const int &ii, const int &jj) const {
 
@@ -1030,13 +1127,12 @@ inline Vector2D Grid2D_Quad_Block_HO::centroid(const int &ii, const int &jj) con
   
   Info = polyCentroid(X,4,Centroid,area);
   
-  if (Info != 0){
+  if (Info == 2){
     throw runtime_error("Grid2D_Quad_Block_HO::centroid() ERROR! Negative area encountered!");
   }
   
   // Return the centroid
   return Centroid;
-
 }
 
 /*!
@@ -1678,15 +1774,7 @@ inline void Grid2D_Quad_Block_HO::Update_Cell(const int & iCell, const int & jCe
   Cell[iCell][jCell].J = jCell;
 
   // Compute cell area and centroid
-  // Cell nodes in counterclockwise order (SW, SE, NE, NW).
-  static Vector2D X[4];
-  
-  X[0] = Node[iCell  ][jCell  ].X;
-  X[1] = Node[iCell+1][jCell  ].X;
-  X[2] = Node[iCell+1][jCell+1].X;
-  X[3] = Node[iCell  ][jCell+1].X;
-
-  polyCentroid(X,4,Cell[iCell][jCell].Xc,Cell[iCell][jCell].A);
+  quadAreaAndCentroid(iCell,jCell);
 
   // Compute geometric moments 
   ComputeGeometricCoefficients(iCell,jCell);

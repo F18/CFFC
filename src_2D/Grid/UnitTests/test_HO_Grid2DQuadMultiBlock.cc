@@ -2717,8 +2717,8 @@ namespace tut
  			 Grid.Integration.IntegrateFunctionOverCell(iCell,jCell,Function_YCentroid,14,area) )/area;
 
     // == check
-    ensure_distance("Grid Centroid function", Centroid, CentroidResult, AcceptedError(CentroidResult));
-    ensure_distance("Grid Area function", area, areaResult, AcceptedError(areaResult));
+    ensure_distance("Integration Centroid function", Centroid, CentroidResult, AcceptedError(CentroidResult));
+    ensure_distance("Integration Area function", area, areaResult, AcceptedError(areaResult));
 
     // Use the polyCentroid subroutine directly
     X[0] = Grid.nodeSW(iCell,jCell).X;
@@ -2730,8 +2730,65 @@ namespace tut
 
     // == check
     ensure_equals("Error check", Info, 0); //< Zero value corresponds to no error
-    ensure_distance("Grid Centroid function", Centroid, CentroidResult, AcceptedError(CentroidResult));
-    ensure_distance("Grid Area function", area, areaResult, AcceptedError(areaResult));
+    ensure_distance("polyCentroid() function", Centroid, CentroidResult, AcceptedError(CentroidResult));
+    ensure_distance("Area with polyCentroid() function", area, areaResult, AcceptedError(areaResult));
+  }
+
+  // Test 37:
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<37>()
+  {
+    set_test_name("Centroid and Area for concave quadrilateral with quadAreaAndCentroid");
+
+    // Add test particular input parameters
+    IP.i_Grid = GRID_NACA_AEROFOIL;
+    IP.Number_of_Blocks_Jdir = 1;
+    IP.Number_of_Blocks_Idir = 2;
+    IP.Number_of_Cells_Idir = 40;
+    IP.Number_of_Cells_Jdir = 40;
+    IP.Number_of_Ghost_Cells = 5;
+    IP.Space_Accuracy = 3;
+    strcpy(IP.NACA_Aerofoil_Type, "0012");
+    IP.Chord_Length = ONE;
+    IP.IncludeHighOrderBoundariesRepresentation = OFF;
+    IP.i_Smooth_Quad_Block = ON;
+
+    Vector2D X[4], Centroid, CentroidResult;
+    double area, areaResult;
+    int Info;
+    int iCell, jCell; 
+    iCell = 11;
+    jCell = 46;
+
+    // Define results
+    CentroidResult = Vector2D(2.333333333333333333,2.25);
+    areaResult = 0.375;
+
+    // Build the mesh
+    CreateMesh(MeshBlk,IP);
+
+    // Copy block 0
+    Copy_Quad_Block(Grid, MeshBlk(2,0));
+    
+    // Create a concave quadrilateral
+    Grid.Node[iCell  ][jCell  ].X = Vector2D(1.0,1.0);
+    Grid.Node[iCell+1][jCell  ].X = Vector2D(2.0,2.75);
+    Grid.Node[iCell+1][jCell+1].X = Vector2D(4.0,1.0);
+    Grid.Node[iCell  ][jCell+1].X = Vector2D(2.0,3.0);
+
+    // Update the cell centroid and area
+    Grid.Update_Cell(iCell,jCell);
+
+    // == check 
+    ensure_distance("Centroid with quadAreaAndCentroid()",
+		    Grid.Cell[iCell][jCell].Xc,
+		    CentroidResult,
+		    AcceptedError(CentroidResult));
+    ensure_distance("Area with quadAreaAndCentroid()",
+		    Grid.Cell[iCell][jCell].A,
+		    areaResult,
+		    AcceptedError(areaResult));
   }
 
 }
