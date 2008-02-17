@@ -348,8 +348,6 @@ public:
 
   //! @name Calculate cell centroid.
   //@{
-  static int polyCentroid(const Vector2D * Vertices, const int &n,
-			  Vector2D &Centroid, double &area);
   int quadAreaAndCentroid(const int &ii, const int &jj) const;
   Vector2D quadConvexCentroid(const int &ii, const int &jj) const;
   Vector2D centroid(const Cell2D_HO &Cell) const;
@@ -358,6 +356,10 @@ public:
   Vector2D centroidSE(const int &ii, const int &jj) const;
   Vector2D centroidNW(const int &ii, const int &jj) const;
   Vector2D centroidNE(const int &ii, const int &jj) const;
+  Vector2D centroidSW_ConvexQuad(const int &ii, const int &jj) const;
+  Vector2D centroidSE_ConvexQuad(const int &ii, const int &jj) const;
+  Vector2D centroidNW_ConvexQuad(const int &ii, const int &jj) const;
+  Vector2D centroidNE_ConvexQuad(const int &ii, const int &jj) const;
   Vector2D centroid_CurvedBoundaries(const int &CellIndex, const int &Boundary) const;
   Vector2D centroid_GhostCell_CurvedBoundaries(const int &CellIndex, const int &Boundary) const;
   //@}
@@ -694,7 +696,7 @@ public:
   void Update_Interior_Cells(void);
   void Update_Ghost_Cells(void);
   void Update_Corner_Ghost_Cells(void);
-  
+
   int Check_Quad_Block(void);
   friend int Check_Quad_Block(Grid2D_Quad_Block_HO &Grid){ return Grid.Check_Quad_Block(); }
 
@@ -901,6 +903,7 @@ private:
 
   //! Check for curved boundaries.
   bool CheckExistenceOfCurvedBoundaries(void);
+
 };
 
 /*!
@@ -952,64 +955,6 @@ inline void Grid2D_Quad_Block_HO::deallocateBndSplineInfo(void) {
 }
 
 /*!
- * Calculate the centroid and the area of a polygon defined by its vertices.
- * The centroid determined by this function is for the case when 
- * the polygon is treated as a sheet of uniform density.
- * If the polygon is a quadrilateral, this centroid type has the property 
- * that the value of a linear function at this location is equal to the 
- * average value of the linear function over the quadrilateral domain.
- * Note that there are 2 more other possibilities of defining the 
- * centroid of a polygon and the resultant centroids are all 
- * different for a quadrilateral.
- * The first alternative case is to consider the point masses at 
- * the vertices of the polygon whereas the second one is to represent
- * the sides of the polygon as wire rods of uniform density.
- * To find centers of gravity of uniform density sheets, 
- * one can simply divide the polygon into non-overlapping triangles and 
- * treat the system as a set of point masses at the centroids of these 
- * triangles with a mass equal to the area of the triangle.
- * This implementation is based on the one suggested in chapter I.1 
- * (Centroid of a Polygon) of "Graphics Gems IV" by Paul S. Heckbert.
- * It gives correct results for concave polygons too.
- * If edge crossing occurs the area might still be positive!
- *
- * \param [in]  Vertices the array of vertices in x-y plane.
- * \param [in]   n       the number of entries in the vertices array.
- * \param [out] Centroid the value of the centroid is written here.
- * \param [out] area     the value of the polygon area is written here.
- *                       The algebraic sign of the area is positive for counterclockwise
- *                       ordering of vertices in x-y plane; otherwise negative.
- *
- * \return 0 for normal execution;
- *         1 if the polygon is degenerated (i.e. number of vertices less than 3);
- *         2 if area = zero and the centroid is undefined.
- */
-inline int Grid2D_Quad_Block_HO::polyCentroid(const Vector2D * Vertices, const int &n,
-					      Vector2D &Centroid, double &area){
-
-  int i,j;
-
-  double ai, atmp(0), xtmp(0), ytmp(0);
-
-  if (n < 3) return 1;
-  for (i=n-1, j=0; j < n; i=j, ++j){
-    ai = Vertices[i].x * Vertices[j].y - Vertices[j].x * Vertices[i].y;
-    atmp += ai;
-    xtmp += (Vertices[j].x + Vertices[i].x) * ai;
-    ytmp += (Vertices[j].y + Vertices[i].y) * ai;
-  }
-  area = 0.5* atmp;
-
-  if (atmp != 0){
-    Centroid.x = xtmp / (3*atmp);
-    Centroid.y = ytmp / (3*atmp);
-    return 0;
-  }
-
-  return 2;
-}
-
-/*!
  * Calculate the centroid and the area of a quadrilateral 
  * cell (ii,jj) and store them in the designated variables.
  * This subroutine gives correct results for both concave 
@@ -1023,51 +968,10 @@ inline int Grid2D_Quad_Block_HO::polyCentroid(const Vector2D * Vertices, const i
 inline int Grid2D_Quad_Block_HO::quadAreaAndCentroid(const int &ii, const int &jj) const {
 
   // Cell nodes in counterclockwise order (SW, SE, NE, NW).
-  /*
-   * The X array is shown only for easier understanding of the algorithm.
-   * Vector2D X[4] = { Node[ii  ][jj  ].X,
-   *  	               Node[ii+1][jj  ].X,
-   *	               Node[ii+1][jj+1].X,
-   *	               Node[ii  ][jj+1].X };
-  */
   
-  // Local variables
-  double ai, atmp(0), xtmp(0), ytmp(0);
-
-  // First edge between X[3] and X[0]
-  ai = Node[ii][jj+1].X.x * Node[ii][jj].X.y - Node[ii][jj].X.x * Node[ii][jj+1].X.y;
-  atmp += ai;
-  xtmp += (Node[ii][jj].X.x + Node[ii][jj+1].X.x) * ai;
-  ytmp += (Node[ii][jj].X.y + Node[ii][jj+1].X.y) * ai;
-
-  // Second edge between X[0] and X[1]
-  ai = Node[ii][jj].X.x * Node[ii+1][jj].X.y - Node[ii+1][jj].X.x * Node[ii][jj].X.y;
-  atmp += ai;
-  xtmp += (Node[ii+1][jj].X.x + Node[ii][jj].X.x) * ai;
-  ytmp += (Node[ii+1][jj].X.y + Node[ii][jj].X.y) * ai;
-
-  // Third edge between X[1] and X[2]
-  ai = Node[ii+1][jj].X.x * Node[ii+1][jj+1].X.y - Node[ii+1][jj+1].X.x * Node[ii+1][jj].X.y;
-  atmp += ai;
-  xtmp += (Node[ii+1][jj+1].X.x + Node[ii+1][jj].X.x) * ai;
-  ytmp += (Node[ii+1][jj+1].X.y + Node[ii+1][jj].X.y) * ai;
-
-  // Fourth edge between X[2] and X[3]
-  ai = Node[ii+1][jj+1].X.x * Node[ii][jj+1].X.y - Node[ii][jj+1].X.x * Node[ii+1][jj+1].X.y;
-  atmp += ai;
-  xtmp += (Node[ii][jj+1].X.x + Node[ii+1][jj+1].X.x) * ai;
-  ytmp += (Node[ii][jj+1].X.y + Node[ii+1][jj+1].X.y) * ai;
-
-  // Calculate the centroid and area of cell (ii,jj)
-  Cell[ii][jj].A = 0.5* atmp;
-
-  if (atmp != 0){
-    Cell[ii][jj].Xc.x = xtmp / (3*atmp);
-    Cell[ii][jj].Xc.y = ytmp / (3*atmp);
-    return 0;
-  }
-
-  return 2;  
+  return quadCentroid(Node[ii  ][jj  ].X, Node[ii+1][jj  ].X,
+		      Node[ii+1][jj+1].X, Node[ii  ][jj+1].X,
+		      Cell[ii][jj].Xc, Cell[ii][jj].A);
 }
 
 /*!
@@ -1139,6 +1043,27 @@ inline Vector2D Grid2D_Quad_Block_HO::centroid(const int &ii, const int &jj) con
  * Calculate the centroid of the South-West quarter of cell (ii,jj)
  */
 inline Vector2D Grid2D_Quad_Block_HO::centroidSW(const int &ii, const int &jj) const {
+
+  Vector2D X1,X2,X3,X4, Centroid;
+  double area;
+
+  // Cell nodes in counter-clockwise order.
+  X1 = Node[ii][jj].X;
+  X2 = HALF*(Node[ii][jj].X + Node[ii+1][jj].X);
+  X3 = 0.25*(Node[ii][jj].X + Node[ii+1][jj].X + Node[ii][jj+1].X + Node[ii+1][jj+1].X);
+  X4 = HALF*(Node[ii][jj].X + Node[ii][jj+1].X);
+
+  // Determine the centroid
+  quadCentroid(X1,X2,X3,X4,Centroid,area);
+
+  return Centroid;
+}
+
+/*!
+ * Alternative approach to calculate the centroid of the South-West 
+ * quarter of cell (ii,jj), when the formed quadrilateral is convex.
+ */
+inline Vector2D Grid2D_Quad_Block_HO::centroidSW_ConvexQuad(const int &ii, const int &jj) const {
   Vector2D X1, X2, X3, X4, Xc1, Xc2;
   double A1, A2;
   // Cell nodes in counter-clockwise order.
@@ -1163,6 +1088,25 @@ inline Vector2D Grid2D_Quad_Block_HO::centroidSW(const int &ii, const int &jj) c
  * Calculate the centroid of the South-East quarter of cell (ii,jj)
  */
 inline Vector2D Grid2D_Quad_Block_HO::centroidSE(const int &ii, const int &jj) const {
+  Vector2D X1, X2, X3, X4, Centroid;
+  double area;
+
+  // Cell nodes in counter-clockwise order.
+  X1 = HALF*(Node[ii][jj].X + Node[ii+1][jj].X);
+  X2 = Node[ii+1][jj].X;
+  X3 = HALF*(Node[ii+1][jj].X + Node[ii+1][jj+1].X);
+  X4 = 0.25*(Node[ii][jj].X + Node[ii+1][jj].X + Node[ii][jj+1].X + Node[ii+1][jj+1].X);
+
+  // Determine the centroid
+  quadCentroid(X1,X2,X3,X4,Centroid,area);
+
+  return Centroid;
+}
+
+/*!
+ * Calculate the centroid of the South-East quarter of cell (ii,jj)
+ */
+inline Vector2D Grid2D_Quad_Block_HO::centroidSE_ConvexQuad(const int &ii, const int &jj) const {
   Vector2D X1, X2, X3, X4, Xc1, Xc2;
   double A1, A2;
   // Cell nodes in counter-clockwise order.
@@ -1187,6 +1131,26 @@ inline Vector2D Grid2D_Quad_Block_HO::centroidSE(const int &ii, const int &jj) c
  * Calculate the centroid of the North-West quarter of cell (ii,jj)
  */
 inline Vector2D Grid2D_Quad_Block_HO::centroidNW(const int &ii, const int &jj) const {
+
+  Vector2D X1, X2, X3, X4, Centroid;
+  double area;
+
+  // Cell nodes in counter-clockwise order.
+  X1 = HALF*(Node[ii][jj].X + Node[ii][jj+1].X);
+  X2 = 0.25*(Node[ii][jj].X + Node[ii+1][jj].X + Node[ii][jj+1].X + Node[ii+1][jj+1].X);
+  X3 = HALF*(Node[ii][jj+1].X + Node[ii+1][jj+1].X);
+  X4 = Node[ii][jj+1].X;
+
+  // Determine the centroid.
+  quadCentroid(X1,X2,X3,X4,Centroid,area);
+
+  return Centroid;
+}
+
+/*!
+ * Calculate the centroid of the North-West quarter of cell (ii,jj)
+ */
+inline Vector2D Grid2D_Quad_Block_HO::centroidNW_ConvexQuad(const int &ii, const int &jj) const {
   Vector2D X1, X2, X3, X4, Xc1, Xc2;
   double A1, A2;
   // Cell nodes in counter-clockwise order.
@@ -1211,6 +1175,26 @@ inline Vector2D Grid2D_Quad_Block_HO::centroidNW(const int &ii, const int &jj) c
  * Calculate the centroid of the North-East quarter of cell (ii,jj)
  */
 inline Vector2D Grid2D_Quad_Block_HO::centroidNE(const int &ii, const int &jj) const {
+
+  Vector2D X1, X2, X3, X4, Centroid;
+  double area;
+
+  // Cell nodes in counter-clockwise order.
+  X1 = 0.25*(Node[ii][jj].X + Node[ii+1][jj].X + Node[ii][jj+1].X + Node[ii+1][jj+1].X);
+  X2 = HALF*(Node[ii+1][jj].X + Node[ii+1][jj+1].X);
+  X3 = Node[ii+1][jj+1].X;
+  X4 = HALF*(Node[ii][jj+1].X + Node[ii+1][jj+1].X);
+
+  // Determine the centroid.
+  quadCentroid(X1,X2,X3,X4,Centroid,area);
+
+  return Centroid;
+}
+
+/*!
+ * Calculate the centroid of the North-East quarter of cell (ii,jj)
+ */
+inline Vector2D Grid2D_Quad_Block_HO::centroidNE_ConvexQuad(const int &ii, const int &jj) const {
   Vector2D X1, X2, X3, X4, Xc1, Xc2;
   double A1, A2;
   // Cell nodes in counter-clockwise order.
@@ -2196,5 +2180,6 @@ inline bool Grid2D_Quad_Block_HO::CheckExistenceOfCurvedBoundaries(void){
   // Confirm existence of curved boundaries.
   return true;
 }
+
 
 #endif /* _GRID2D_QUAD_BLOCK_INCLUDED  */

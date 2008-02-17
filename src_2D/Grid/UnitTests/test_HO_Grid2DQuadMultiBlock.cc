@@ -2726,14 +2726,14 @@ namespace tut
     X[2] = Grid.nodeNE(iCell,jCell).X;
     X[3] = Grid.nodeNW(iCell,jCell).X;
 
-    Info = Grid2D_Quad_Block_HO::polyCentroid(X, 4, Centroid, area);
+    Info = polyCentroid(X, 4, Centroid, area);
 
     // == check
     ensure_equals("Error check", Info, 0); //< Zero value corresponds to no error
     ensure_distance("polyCentroid() function", Centroid, CentroidResult, AcceptedError(CentroidResult));
     ensure_distance("Area with polyCentroid() function", area, areaResult, AcceptedError(areaResult));
   }
-
+  
   // Test 37:
   template<>
   template<>
@@ -2789,6 +2789,69 @@ namespace tut
 		    Grid.Cell[iCell][jCell].A,
 		    areaResult,
 		    AcceptedError(areaResult));
+  }
+
+  // Test 38:
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<38>()
+  {
+    set_test_name("Detect convex quadrilateral");
+
+    // Add test particular input parameters
+    Vector2D X[4];
+    int Info;
+
+    X[0] = Vector2D(1,1);    
+    X[1] = Vector2D(1.5,0.0);
+    X[2] = Vector2D(4,1);
+    X[3] = Vector2D(2,3);
+
+    // Determine quadrilateral type
+    ensure_equals("Find_Quadrilateral_Type() for convex quad I" , Find_Quadrilateral_Type(X[0],X[1],X[2],X[3]), 1);
+    ensure_equals("Find_Quadrilateral_Type() for convex quad II", Find_Quadrilateral_Type(X[1],X[2],X[3],X[0]), 1);
+  }
+
+  // Test 39:
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<39>()
+  {
+    set_test_name("Detect concave quadrilateral");
+
+    // Add test particular input parameters
+    Vector2D X[4];
+    int Info;
+
+    X[0] = Vector2D(1.0,1.0);
+    X[1] = Vector2D(2.0,2.75);
+    X[2] = Vector2D(4.0,1.0);
+    X[3] = Vector2D(2.0,3.0);
+
+    // Determine quadrilateral type
+    ensure_equals("Find_Quadrilateral_Type() for concave quad I" , Find_Quadrilateral_Type(X[0],X[1],X[2],X[3]), 2);
+    ensure_equals("Find_Quadrilateral_Type() for concave quad II", Find_Quadrilateral_Type(X[1],X[2],X[3],X[0]), 3);
+  }
+
+  // Test 40:
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<40>()
+  {
+    set_test_name("Detect crossed quadrilateral");
+
+    // Add test particular input parameters
+    Vector2D X[4];
+    int Info;
+
+    X[0] = Vector2D(1.0,1.0);
+    X[1] = Vector2D(3.0,2.75);
+    X[2] = Vector2D(4.0,1.0);
+    X[3] = Vector2D(2.0,3.0);
+
+    // Determine quadrilateral type
+    ensure_equals("Find_Quadrilateral_Type() for crossed quad I" , Find_Quadrilateral_Type(X[0],X[1],X[2],X[3]), 4);
+    ensure_equals("Find_Quadrilateral_Type() for crossed quad II", Find_Quadrilateral_Type(X[1],X[2],X[3],X[0]), 4);
   }
 
 }

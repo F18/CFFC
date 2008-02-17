@@ -2348,8 +2348,7 @@ void Grid2D_Quad_Block_HO::Smooth_Quad_Block(const int Number_of_Iterations) {
   // Run smoother only is Smooth_Quad_Block_Flag is ON
   if (Smooth_Quad_Block_Flag){
   
-    /*!
-     * \verbatim
+    /*
      *  Local Variable description:
      * 
      *  xij, yij                  Two-dimensional arrays containing
@@ -2446,7 +2445,6 @@ void Grid2D_Quad_Block_HO::Smooth_Quad_Block(const int Number_of_Iterations) {
      * fb, ft, fl, fr,           Exponentials use to evaluate the local
      * fbl, fbr, ftl, ftr        values of the source terms. 
      *
-     * \endverbatim
      */
 
     double **xij, **yij,
@@ -8539,3 +8537,4 @@ double Grid2D_Quad_Block_HO::DistanceFromPointToLine(const Vector2D &Point,
 
   return sqrt( DeltaX*DeltaX + DeltaY*DeltaY );
 }
+

@@ -484,10 +484,6 @@ extern int Line_Intersection(const Vector2D Xa1,
 			     const Vector2D Xb1,
 			     const Vector2D Xb3);
 
-extern int Point_On_Line(const Vector2D X1,
-			 const Vector2D X2,
-			 const Vector2D Xp);
-
 extern double Triangle_Area(const Vector2D X1,
 			    const Vector2D X2,
 			    const Vector2D X3);
@@ -496,5 +492,20 @@ extern double Quadrilateral_Area(const Vector2D X1,
 				 const Vector2D X2,
 				 const Vector2D X3,
 				 const Vector2D X4);
+
+/*
+ * This routine check whether a given point, Xp, is contained
+ * on a line segment defined by X1 and X2.
+ *
+ * \return 1 if the point is contained.
+ *         0 if the point is not on the line segment.
+ */
+inline int Point_On_Line(const Vector2D &X1,
+			 const Vector2D &X2,
+			 const Vector2D &Xp){
+
+  if (fabs(abs(X2-X1) - abs(Xp-X1) - abs(Xp-X2)) < TOLER*TOLER) return 1;
+  return 0;
+}
 
 #endif /* _VECTOR2D_INCLUDED  */
