@@ -110,6 +110,8 @@ namespace tut
     error_flag = _MeshBlk_.Multi_Block_Grid(IP);
     
     if (error_flag) {
+      // try to output the nodes
+      _MeshBlk_.Output_Nodes_Tecplot_Using_IP(IP);
       throw runtime_error("CreateMesh() ERROR: Unable to create valid Euler2D multi-block mesh.");
     }
    

@@ -6129,34 +6129,82 @@ void Grid2D_Quad_Block_HO::Update_Corner_Ghost_Cells(void) {
 }
 
 /*!
- * Check the validity of the quadrilateral mesh block.  
- * Returns a non-zero result if mesh is not valid.      
- *                                                      
+ * Check the validity of the interior cells of the 
+ * quadrilateral mesh block.
+ * Returns a non-zero result if the interior mesh
+ * is not valid. 
  */
 int Grid2D_Quad_Block_HO::Check_Quad_Block(void) {
 
-    int i, j;
+  int i, j;
+  int QuadType;
 
-    for ( j = JCl ; j <= JCu ; ++j) {
-        for ( i = ICl ; i <= ICu ; ++i) {
-	  if (Cell[i][j].A <= ZERO) {
-	    cout << endl << i << " " << j;
-	    cout << endl << ICl << " " << ICu;
-	    cout << endl << JCl << " " << JCu;
-	    cout << endl << Cell[i][j].A;
-	    cout << endl << Cell[i][j].Xc;
-	    cout << endl << Node[i][j].X;
-	    cout << endl << Node[i+1][j].X;
-	    cout << endl << Node[i][j+1].X;
-	    cout << endl << Node[i+1][j+1].X;
-	    cout.flush();
-   	    return(1);
-          } /* endif */
-        } /* endfor */
+  for ( j = JCl ; j <= JCu ; ++j) {
+    for ( i = ICl ; i <= ICu ; ++i) {
+      // Determine the type of the quadrilateral cell
+      QuadType = Find_Quadrilateral_Type(Node[i  ][j  ].X,
+					 Node[i+1][j  ].X,
+					 Node[i+1][j+1].X,
+					 Node[i  ][j+1].X);
+      
+      // Test the geometry of each cell for crossed or degenerated quadrilateral
+      if ( QuadType == 4 || QuadType == 0 ){
+	cout << endl << i << " " << j;
+	cout << endl << ICl << " " << ICu;
+	cout << endl << JCl << " " << JCu;
+	cout << endl << Cell[i][j].A;
+	cout << endl << Cell[i][j].Xc;
+	cout << endl << Node[i][j].X;
+	cout << endl << Node[i+1][j].X;
+	cout << endl << Node[i+1][j+1].X;
+	cout << endl << Node[i][j+1].X;
+	cout.flush();
+	return(1);
+      } /* endif */
     } /* endfor */
+  } /* endfor */
 
-    return(0);
+  return(0);
+}
 
+/*!
+ * Check the validity of all cells
+ * (i.e. including ghost cells) of 
+ * the quadrilateral mesh block.
+ * Returns a non-zero result if the mesh
+ * is not valid. 
+ */
+int Grid2D_Quad_Block_HO::Check_Quad_Block_Completely(void) {
+
+  int i, j;
+  int QuadType;
+
+  for ( j = JCl-Nghost ; j <= JCu+Nghost ; ++j) {
+    for ( i = ICl-Nghost ; i <= ICu+Nghost ; ++i) {
+      // Determine the type of the quadrilateral cell
+      QuadType = Find_Quadrilateral_Type(Node[i  ][j  ].X,
+					 Node[i+1][j  ].X,
+					 Node[i+1][j+1].X,
+					 Node[i  ][j+1].X);
+
+      // Test the geometry of each cell for crossed or degenerated quadrilateral
+      if ( QuadType == 4 || QuadType == 0 ){
+	cout << endl << i << " " << j;
+	cout << endl << ICl << " " << ICu;
+	cout << endl << JCl << " " << JCu;
+	cout << endl << Cell[i][j].A;
+	cout << endl << Cell[i][j].Xc;
+	cout << endl << Node[i][j].X;
+	cout << endl << Node[i+1][j].X;
+	cout << endl << Node[i+1][j+1].X;
+	cout << endl << Node[i][j+1].X;
+	cout.flush();
+	return(1);
+      } /* endif */
+    } /* endfor */
+  } /* endfor */
+
+  return(0);
 }
 
 /*!

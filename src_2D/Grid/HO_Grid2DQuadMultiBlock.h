@@ -99,6 +99,7 @@ public:
   void Reflect_Multi_Block_Grid_Without_Update(void);
 
   int Check_Multi_Block_Grid(void);
+  int Check_Multi_Block_Grid_Completely(void);
   //@}
   
   //!@name Update exterior nodes and cell geometric properties
@@ -1425,16 +1426,17 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
     Rotate_Multi_Block_Grid_Without_Update(TWO*PI*Input_Parameters.X_Rotate/360.00);
   }/* endif */
 
-  /* Update geometric properties of multi-block quadrilateral mesh cells. */
-  Update_All_Cells();
-
   /* Check the validity of the generated mesh. */
   if (Grid_ptr == NULL){
     error_flag = 1;
   } else if (Check_Multi_Block_Grid()){
     error_flag = 1;
   } else {
+    // This is a valid mesh (i.e. it doesn't contain any crossed quadrilateral cells)
     error_flag = 0;
+    
+    /* Update geometric properties of multi-block quadrilateral mesh cells. */
+    Update_All_Cells();
   }
 
   return error_flag;

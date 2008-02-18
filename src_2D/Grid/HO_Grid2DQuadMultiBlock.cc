@@ -424,6 +424,28 @@ int Grid2D_Quad_MultiBlock_HO::Check_Multi_Block_Grid(void) {
 }
 
 /*!
+ * Check the validity of 2D array of 2D quadrilateral   
+ * multi-block grids.  Returns a non-zero result if     
+ * mesh is not valid.
+ * This subroutine checks the validity of the ghost cells too.                                   
+ */
+int Grid2D_Quad_MultiBlock_HO::Check_Multi_Block_Grid_Completely(void) {
+
+  int i, j;
+  
+  for ( j = 0 ; j <= Number_of_Blocks_Jdir-1 ; ++j ) {
+    for ( i = 0; i <= Number_of_Blocks_Idir-1 ; ++i ) {
+      if (Grid_ptr[i][j].Node != NULL) {
+	if (Grid_ptr[i][j].Check_Quad_Block_Completely()) return(1);
+      } /* endif */
+    }  /* endfor */
+  }  /* endfor */
+  
+  return(0);
+
+}
+
+/*!
  * Update the exterior nodes in all 
  * mesh blocks.
  */

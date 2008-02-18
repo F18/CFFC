@@ -700,6 +700,8 @@ public:
   int Check_Quad_Block(void);
   friend int Check_Quad_Block(Grid2D_Quad_Block_HO &Grid){ return Grid.Check_Quad_Block(); }
 
+  int Check_Quad_Block_Completely(void);
+
   const int & Value_InteriorMeshUpdate_Flag(void) const { return InteriorMeshUpdate; }
   const int & Value_GhostCellsUpdate_Flag(void) const { return GhostCellsUpdate; }
   const int & Value_CornerGhostCellsUpdate_Flag(void) const { return CornerGhostCellsUpdate; }
@@ -1029,7 +1031,7 @@ inline Vector2D Grid2D_Quad_Block_HO::centroid(const int &ii, const int &jj) con
 		    Node[ii+1][jj+1].X,
 		    Node[ii  ][jj+1].X };
   
-  Info = polyCentroid(X,4,Centroid,area);
+  Info = quadCentroid(X[0],X[1],X[2],X[3],Centroid,area);
   
   if (Info == 2){
     throw runtime_error("Grid2D_Quad_Block_HO::centroid() ERROR! Negative area encountered!");
