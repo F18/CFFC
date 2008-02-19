@@ -698,8 +698,6 @@ public:
   void Update_Corner_Ghost_Cells(void);
 
   int Check_Quad_Block(void);
-  friend int Check_Quad_Block(Grid2D_Quad_Block_HO &Grid){ return Grid.Check_Quad_Block(); }
-
   int Check_Quad_Block_Completely(void);
 
   const int & Value_InteriorMeshUpdate_Flag(void) const { return InteriorMeshUpdate; }
