@@ -882,12 +882,12 @@ $(EXE_RTE2D): $(OBJ_RTE_EXE) $(OBJ_BASE) $(OBJ_RTE) $(OBJ_ICEMCFD)
 	@echo '---------------------------------------------------'
 	@echo ' '
 
-$(EXE_LEVELSET2D): $(OBJ_LEVELSET_EXE) $(OBJ_BASE) $(OBJ_LEVELSET) $(OBJ_INTERFACE)
+$(EXE_LEVELSET2D): $(OBJ_LEVELSET_EXE) $(OBJ_BASE) $(OBJ_LEVELSET) $(OBJ_INTERFACE) $(OBJ_ICEMCFD)
 	@echo ' '
 	@echo Building program $(EXE_LEVELSET2D) for a $(PLATFORM) platform.
 	@echo '------------------------------------------------------------------------'
 	@echo ' '
-	$(LD) -o $(EXE_LEVELSET2D) $(OBJ_LEVELSET_EXE) $(OBJ_BASE) $(OBJ_LEVELSET) $(OBJ_INTERFACE) $(LDFLAGS)
+	$(LD) -o $(EXE_LEVELSET2D) $(OBJ_LEVELSET_EXE) $(OBJ_BASE) $(OBJ_LEVELSET) $(OBJ_INTERFACE) $(OBJ_ICEMCFD) $(LDFLAGS)
 	@echo ' '
 	@echo Program $(EXE_LEVELSET2D) has been brought up to date.
 	@echo '------------------------------------------------------------------------'

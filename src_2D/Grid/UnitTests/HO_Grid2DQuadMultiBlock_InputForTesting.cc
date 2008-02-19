@@ -9,8 +9,6 @@
 
 /* Include CFFC header files */
 #include "HO_Grid2DQuadMultiBlock_InputForTesting.h"	      // Include definition class header file
-#include "../../HighOrderReconstruction/CENO_ExecutionMode.h" // Include high-order CENO execution mode header file
-#include "../../HighOrderReconstruction/CENO_Tolerances.h"	   // Include high-order CENO tolerances header file
 
 /*************************************************************
  * AdvectDiffuse2D_Input_Parameters -- Member functions.     *
@@ -216,10 +214,6 @@ ostream &operator << (ostream &out_file,
     }
     out_file << "\n  -> Reconstruction: " 
              << IP.Reconstruction_Type;
-    if (IP.i_ReconstructionMethod == RECONSTRUCTION_CENO){
-      CENO_Execution_Mode::Print_Info(out_file);
-      CENO_Tolerances::Print_Info(out_file);
-    }
     if (IP.i_ReconstructionMethod != RECONSTRUCTION_CENO ){
       out_file << "\n  -> Elliptic Flux Evaluation: " << IP.Viscous_Reconstruction_Type;
     }
@@ -1441,12 +1435,6 @@ int Grid2DTesting_Input_Parameters::Parse_Next_Input_Control_Parameter(void) {
     i_command = INVALID_INPUT_CODE;
 
   } /* endif */
-
-  /* Parse next control parameter with CENO_Execution_Mode parser */
-  CENO_Execution_Mode::Parse_Next_Input_Control_Parameter(*this,i_command);
-  
-  /* Parse next control parameter with CENO_Tolerances parser */
-  CENO_Tolerances::Parse_Next_Input_Control_Parameter(*this,i_command);
 
   /* Return the parser command type indicator. */
 

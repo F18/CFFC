@@ -11,7 +11,6 @@
 // None
 
 /* Include CFFC header files */
-//#include "../HO_Grid2DQuad.h"      // Include high-order 2D quadrilateral multiblock grid header file
 #include "../../ICEM/ICEMCFD.h"    // Include ICEMCFD input header file.
 #include "../../Utilities/TypeDefinition.h" // Include TypeDefinition header file.
 
