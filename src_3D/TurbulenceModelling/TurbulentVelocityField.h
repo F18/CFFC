@@ -59,11 +59,15 @@ const complex<double>  I(0.0, 1.0);      // sqrt(-1.0)
  */
 class Turbulent_Velocity_Field_Block {
   public:
-    int           NCi,ICl,ICu; // i-direction turbulent velocity field cell counters
-    int           NCj,JCl,JCu; // j-direction turbulent velocity field cell counters
-    int           NCk,KCl,KCu; // k-direction turbulent velocity field cell counters
-    int                Nghost; // number of ghost cells
-    Vector3D      ***Velocity; // array of turbulent velocity field vectors
+    int             NCi,ICl,ICu; // i-direction turbulent velocity field cell counters
+    int             NCj,JCl,JCu; // j-direction turbulent velocity field cell counters
+    int             NCk,KCl,KCu; // k-direction turbulent velocity field cell counters
+    int                  Nghost; // number of ghost cells
+    Vector3D        ***Velocity; // array of turbulent velocity field vectors
+    Vector3D        ***Position; // array of turbulent velocity field position vectors
+    Vector3D   Node_INl_JNl_KNl, // diagonally opposite corners of the block 
+               Node_INu_JNu_KNu;
+
 
     int Allocated; // Indicates whether or not the turbulent velocity field data has been allocated.
     
@@ -74,7 +78,8 @@ class Turbulent_Velocity_Field_Block {
        NCk = 0; KCl = 0; KCu = 0;
        Nghost = 0;
        Allocated = TURBULENT_VELOCITY_FIELD_DATA_NOT_USED;
-       Velocity = NULL; 
+       Velocity = NULL;
+       Position = NULL;
     }
 
     Turbulent_Velocity_Field_Block(const int Ni, 
@@ -97,6 +102,14 @@ class Turbulent_Velocity_Field_Block {
     
     /* Deallocate memory for velocity field data. */
     void deallocate(void);
+
+    /* Reconstruct velocity field data. */
+    void LeastSquares_Reconstruction(const int i,
+				     const int j,
+				     const int k,
+				     Vector3D &dVdx,
+				     Vector3D &dVdy,
+				     Vector3D &dVdz);
     
     /* Input-output operators. */
     friend ostream &operator << (ostream &out_file, 
@@ -128,10 +141,13 @@ inline void Turbulent_Velocity_Field_Block::allocate(const int Ni,
    Allocated = TURBULENT_VELOCITY_FIELD_DATA_USED;
 
    Velocity = new Vector3D**[NCi];
+   Position = new Vector3D**[NCi];
    for (int i = 0; i <= NCi-1; ++i ){
       Velocity[i] = new Vector3D*[NCj];
+      Position[i] = new Vector3D*[NCj];
       for (int j = 0; j <= NCj-1; ++j ){
          Velocity[i][j] = new Vector3D[NCk];
+	 Position[i][j] = new Vector3D[NCk];
       } /* endfor */
    } /* endfor */
 }
@@ -145,10 +161,13 @@ inline void Turbulent_Velocity_Field_Block::deallocate(void) {
       for (int i = 0; i <= NCi-1 ; ++i ) {
          for ( int j = 0 ; j <= NCj-1 ; ++j) {
             delete []Velocity[i][j]; Velocity[i][j] = NULL;
+	    delete []Position[i][j]; Position[i][j] = NULL;
          } /* endfor */
          delete []Velocity[i]; Velocity[i] = NULL;
+	 delete []Position[i]; Position[i] = NULL;
       }/*endfor*/
       delete []Velocity; Velocity = NULL;
+      delete []Position; Position = NULL;
   
       NCi = 0; ICl = 0; ICu = 0; 
       NCj = 0; JCl = 0; JCu = 0; 
@@ -157,6 +176,383 @@ inline void Turbulent_Velocity_Field_Block::deallocate(void) {
       Allocated = TURBULENT_VELOCITY_FIELD_DATA_NOT_USED;
    } /* endif */
 }
+
+/***********************************************************************
+ * Turbulent_Velocity_Field_Block::LeastSquares_Reconstruction         *
+ *                                 -- Reconstruct the velocity field.  *
+ ***********************************************************************/
+inline void Turbulent_Velocity_Field_Block::LeastSquares_Reconstruction(const int i,
+									const int j,
+									const int k,
+									Vector3D &dVdx,
+									Vector3D &dVdy,
+									Vector3D &dVdz) {
+
+   int n, n2, n_pts, i_index[26], j_index[26], k_index[26];
+   double DxDx_ave, DxDy_ave, DyDy_ave, DxDz_ave, DyDz_ave, DzDz_ave;
+   double D;
+   
+   Vector3D  DU, DUDx_ave, DUDy_ave, DUDz_ave;
+   Vector3D  D1, D2, D3;
+   Vector3D  dX;
+
+
+   if (i != ICl  &&  i != ICu &&
+       j != JCl  &&  j != JCu &&
+       k != KCl  &&  k != KCu) {
+
+     n_pts = 26;
+     // k plane
+     i_index[0] = i-1; j_index[0] = j-1; k_index[0] = k;
+     i_index[1] = i  ; j_index[1] = j-1; k_index[1] = k;
+     i_index[2] = i+1; j_index[2] = j-1; k_index[2] = k;
+     i_index[3] = i-1; j_index[3] = j  ; k_index[3] = k;
+     i_index[4] = i+1; j_index[4] = j  ; k_index[4] = k;
+     i_index[5] = i-1; j_index[5] = j+1; k_index[5] = k;
+     i_index[6] = i  ; j_index[6] = j+1; k_index[6] = k;
+     i_index[7] = i+1; j_index[7] = j+1; k_index[7] = k;
+     //k-1 plane
+     i_index[8] = i-1; j_index[8] = j-1; k_index[8] = k-1;
+     i_index[9] = i  ; j_index[9] = j-1; k_index[9] = k-1;
+     i_index[10] = i+1; j_index[10] = j-1; k_index[10] = k-1;
+     i_index[11] = i-1; j_index[11] = j  ; k_index[11] = k-1;
+     i_index[12] = i  ; j_index[12] = j  ; k_index[12] = k-1;
+     i_index[13] = i+1; j_index[13] = j  ; k_index[13] = k-1;
+     i_index[14] = i-1; j_index[14] = j+1; k_index[14] = k-1;
+     i_index[15] = i  ; j_index[15] = j+1; k_index[15] = k-1;
+     i_index[16] = i+1; j_index[16] = j+1; k_index[16] = k-1;
+     //k+1 plane
+     i_index[17] = i-1; j_index[17] = j-1; k_index[17] = k+1;
+     i_index[18] = i  ; j_index[18] = j-1; k_index[18] = k+1;
+     i_index[19] = i+1; j_index[19] = j-1; k_index[19] = k+1;
+     i_index[20] = i-1; j_index[20] = j  ; k_index[20] = k+1;
+     i_index[21] = i  ; j_index[21] = j  ; k_index[21] = k+1;
+     i_index[22] = i+1; j_index[22] = j  ; k_index[22] = k+1;
+     i_index[23] = i-1; j_index[23] = j+1; k_index[23] = k+1;
+     i_index[24] = i  ; j_index[24] = j+1; k_index[24] = k+1;
+     i_index[25] = i+1; j_index[25] = j+1; k_index[25] = k+1;
+
+   } else {
+
+     if (i == ICl) {
+
+       if (j == JCl) {
+	 // corner ICl, JCl, KCl
+	 if (k == KCl) {
+	   n_pts = 7;
+	   // k plane
+	   i_index[0] = i+1; j_index[0] = j  ; k_index[0] = k;
+	   i_index[1] = i  ; j_index[1] = j+1; k_index[1] = k;
+	   i_index[2] = i+1; j_index[2] = j+1; k_index[2] = k;
+	   // k+1 plane
+	   i_index[3] = i  ; j_index[3] = j  ; k_index[3] = k+1;
+	   i_index[4] = i+1; j_index[4] = j  ; k_index[4] = k+1;
+	   i_index[5] = i  ; j_index[5] = j+1; k_index[5] = k+1;
+	   i_index[6] = i+1; j_index[6] = j+1; k_index[6] = k+1;
+
+	   // corner ICl, JCl, KCu
+	 } else if (k == KCu) {
+	   n_pts = 7;
+	   // k plane
+	   i_index[0] = i+1; j_index[0] = j  ; k_index[0] = k;
+	   i_index[1] = i  ; j_index[1] = j+1; k_index[1] = k;
+	   i_index[2] = i+1; j_index[2] = j+1; k_index[2] = k;
+	   //k-1 plane
+	   i_index[3] = i  ; j_index[3] = j  ; k_index[3] = k-1;
+	   i_index[4] = i+1; j_index[4] = j  ; k_index[4] = k-1;
+	   i_index[5] = i  ; j_index[5] = j+1; k_index[5] = k-1;
+	   i_index[6] = i+1; j_index[6] = j+1; k_index[6] = k-1;
+
+	   // outer ICl, JCl
+	 } else {
+	   n_pts = 11;
+	   // k plane
+	   i_index[0] = i+1; j_index[0] = j  ; k_index[0] = k;
+	   i_index[1] = i  ; j_index[1] = j+1; k_index[1] = k;
+	   i_index[2] = i+1; j_index[2] = j+1; k_index[2] = k;
+	   //k-1 plane	 
+	   i_index[3] = i  ; j_index[3] = j  ; k_index[3] = k-1;
+	   i_index[4] = i+1; j_index[4] = j  ; k_index[4] = k-1;
+	   i_index[5] = i  ; j_index[5] = j+1; k_index[5] = k-1;
+	   i_index[6] = i+1; j_index[6] = j+1; k_index[6] = k-1;
+	   //k+1 plane	 
+	   i_index[7] = i  ; j_index[7] = j  ; k_index[7] = k+1;
+	   i_index[8] = i+1; j_index[8] = j  ; k_index[8] = k+1;
+	   i_index[9] = i  ; j_index[9] = j+1; k_index[9] = k+1;
+	   i_index[10] = i+1; j_index[10] = j+1; k_index[10] = k+1;
+	 }
+
+       } else if (j == JCu) {
+	 // corner ICl, JCu, KCl
+	 if (k == KCl) {
+	   n_pts = 7;
+	   // k plane
+	   i_index[0] = i  ; j_index[0] = j-1; k_index[0] = k;
+	   i_index[1] = i+1; j_index[1] = j-1; k_index[1] = k;
+	   i_index[2] = i+1; j_index[2] = j  ; k_index[2] = k;
+	   //k+1 plane 
+	   i_index[3] = i  ; j_index[3] = j-1; k_index[3] = k+1;
+	   i_index[4] = i+1; j_index[4] = j-1; k_index[4] = k+1;
+	   i_index[5] = i  ; j_index[5] = j  ; k_index[5] = k+1;
+	   i_index[6] = i+1; j_index[6] = j  ; k_index[6] = k+1;
+      
+	   // corner ICl, JCu, KCu
+	 } else if (k == KCu) {
+	   n_pts = 7;
+	   // k plane
+	   i_index[0] = i  ; j_index[0] = j-1; k_index[0] = k;
+	   i_index[1] = i+1; j_index[1] = j-1; k_index[1] = k;
+	   i_index[2] = i+1; j_index[2] = j  ; k_index[2] = k;
+	   //k-1 plane
+	   i_index[3] = i  ; j_index[3] = j-1; k_index[3] = k-1;
+	   i_index[4] = i+1; j_index[4] = j-1; k_index[4] = k-1;
+	   i_index[5] = i  ; j_index[5] = j  ; k_index[5] = k-1;
+	   i_index[6] = i+1; j_index[6] = j  ; k_index[6] = k-1;
+
+	   // outer ICl, JCu
+	 } else {
+	   n_pts = 11;
+	   // k plane
+	   i_index[0] = i  ; j_index[0] = j-1; k_index[0] = k;
+	   i_index[1] = i+1; j_index[1] = j-1; k_index[1] = k;
+	   i_index[2] = i+1; j_index[2] = j  ; k_index[2] = k;
+	   //k-1 plane
+	   i_index[3] = i  ; j_index[3] = j-1; k_index[3] = k-1;
+	   i_index[4] = i+1; j_index[4] = j-1; k_index[4] = k-1;
+	   i_index[5] = i  ; j_index[5] = j  ; k_index[5] = k-1;
+	   i_index[6] = i+1; j_index[6] = j  ; k_index[6] = k-1;
+	   //k+1 plane
+	   i_index[7] = i  ; j_index[7] = j-1; k_index[7] = k+1;
+	   i_index[8] = i+1; j_index[8] = j-1; k_index[8] = k+1;
+	   i_index[9] = i  ; j_index[9] = j  ; k_index[9] = k+1;
+	   i_index[10] = i+1; j_index[10] = j  ; k_index[10] = k+1;
+	 }
+
+	 // inner ICl, != JCl, != JCu, != KCl, != KCu
+       } else {
+	 n_pts = 17;
+	 // k plane
+	 i_index[0] = i  ; j_index[0] = j-1; k_index[0] = k;
+	 i_index[1] = i+1; j_index[1] = j-1; k_index[1] = k;
+	 i_index[2] = i+1; j_index[2] = j  ; k_index[2] = k;
+	 i_index[3] = i  ; j_index[3] = j+1; k_index[3] = k;
+	 i_index[4] = i+1; j_index[4] = j+1; k_index[4] = k;
+	 //k-1 plane
+	 i_index[5] = i  ; j_index[5] = j-1; k_index[5] = k-1;
+	 i_index[6] = i+1; j_index[6] = j-1; k_index[6] = k-1;
+	 i_index[7] = i  ; j_index[7] = j  ; k_index[7] = k-1;
+	 i_index[8] = i+1; j_index[8] = j  ; k_index[8] = k-1;
+	 i_index[9] = i  ; j_index[9] = j+1; k_index[9] = k-1;
+	 i_index[10] = i+1; j_index[10] = j+1; k_index[10] = k-1;
+	 //k+1 plane
+	 i_index[11] = i  ; j_index[11] = j-1; k_index[11] = k+1;
+	 i_index[12] = i+1; j_index[12] = j-1; k_index[12] = k+1;
+	 i_index[13] = i  ; j_index[13] = j  ; k_index[13] = k+1;
+	 i_index[14] = i+1; j_index[14] = j  ; k_index[14] = k+1;
+	 i_index[15] = i  ; j_index[15] = j+1; k_index[15] = k+1;
+	 i_index[16] = i+1; j_index[16] = j+1; k_index[16] = k+1;
+       }
+
+
+     } else if (i == ICu) {
+
+       if (j == JCl) {
+
+	 // corner ICu, JCl, KCl
+	 if (k == KCl) {
+	   n_pts = 7;
+	   // k plane
+	   i_index[0] = i-1; j_index[0] = j  ; k_index[0] = k;
+	   i_index[1] = i-1; j_index[1] = j+1; k_index[1] = k;
+	   i_index[2] = i  ; j_index[2] = j+1; k_index[2] = k;
+	   //k+1 plane
+	   i_index[3] = i-1; j_index[3] = j  ; k_index[3] = k+1;
+	   i_index[4] = i  ; j_index[4] = j  ; k_index[4] = k+1;
+	   i_index[5] = i-1; j_index[5] = j+1; k_index[5] = k+1;
+	   i_index[6] = i  ; j_index[6] = j+1; k_index[6] = k+1;
+
+	   // corner ICu, JCl, KCu
+	 } else if (k == KCu) {
+	   n_pts = 7;
+	   // k plane
+	   i_index[0] = i-1; j_index[0] = j  ; k_index[0] = k;
+	   i_index[1] = i-1; j_index[1] = j+1; k_index[1] = k;
+	   i_index[2] = i  ; j_index[2] = j+1; k_index[2] = k;
+	   //k-1 plane      
+	   i_index[3] = i-1; j_index[3] = j  ; k_index[3] = k-1;
+	   i_index[4] = i  ; j_index[4] = j  ; k_index[4] = k-1;
+	   i_index[5] = i-1; j_index[5] = j+1; k_index[5] = k-1;
+	   i_index[6] = i  ; j_index[6] = j+1; k_index[6] = k-1;
+
+	   // outer ICu, JCl
+	 } else {
+	   n_pts = 11;
+	   // k plane 
+	   i_index[0] = i-1; j_index[0] = j  ; k_index[0] = k;
+	   i_index[1] = i-1; j_index[1] = j+1; k_index[1] = k;
+	   i_index[2] = i  ; j_index[2] = j+1; k_index[2] = k;
+	   //k-1 plane
+	   i_index[3] = i-1; j_index[3] = j  ; k_index[3] = k-1;
+	   i_index[4] = i  ; j_index[4] = j  ; k_index[4] = k-1;
+	   i_index[5] = i-1; j_index[5] = j+1; k_index[5] = k-1;
+	   i_index[6] = i  ; j_index[6] = j+1; k_index[6] = k-1;
+	   //k+1 plane
+	   i_index[7] = i-1; j_index[7] = j  ; k_index[7] = k+1;
+	   i_index[8] = i  ; j_index[8] = j  ; k_index[8] = k+1;
+	   i_index[9] = i-1; j_index[9] = j+1; k_index[9] = k+1;
+	   i_index[10] = i  ; j_index[10] = j+1; k_index[10] = k+1;
+	 }
+
+
+       } else if (j == JCu) {
+	 // corner ICu, JCu, KCl
+	 if (k == KCl) {
+	   n_pts = 7;
+	   // k plane
+	   i_index[0] = i-1; j_index[0] = j-1; k_index[0] = k;
+	   i_index[1] = i  ; j_index[1] = j-1; k_index[1] = k;
+	   i_index[2] = i-1; j_index[2] = j  ; k_index[2] = k;
+	   //k+1 plane
+	   i_index[3] = i-1; j_index[3] = j-1; k_index[3] = k+1;
+	   i_index[4] = i  ; j_index[4] = j-1; k_index[4] = k+1;
+	   i_index[5] = i-1; j_index[5] = j  ; k_index[5] = k+1;
+	   i_index[6] = i  ; j_index[6] = j  ; k_index[6] = k+1; 
+
+	   // corner ICu, JCu, KCu
+	 } else if (k == KCu) {
+	   n_pts = 7;
+	   // k plane
+	   i_index[0] = i-1; j_index[0] = j-1; k_index[0] = k;
+	   i_index[1] = i  ; j_index[1] = j-1; k_index[1] = k;
+	   i_index[2] = i-1; j_index[2] = j  ; k_index[2] = k;
+	   //k-1 plane
+	   i_index[3] = i-1; j_index[3] = j-1; k_index[3] = k-1;
+	   i_index[4] = i  ; j_index[4] = j-1; k_index[4] = k-1;
+	   i_index[5] = i-1; j_index[5] = j  ; k_index[5] = k-1;
+	   i_index[6] = i  ; j_index[6] = j  ; k_index[6] = k-1;
+
+	   // outer ICu, JCu
+	 } else {
+	   n_pts = 11;
+	   // k plane
+	   i_index[0] = i-1; j_index[0] = j-1; k_index[0] = k;
+	   i_index[1] = i  ; j_index[1] = j-1; k_index[1] = k;
+	   i_index[2] = i-1; j_index[2] = j  ; k_index[2] = k;
+	   //k-1 plane
+	   i_index[3] = i-1; j_index[3] = j-1; k_index[3] = k-1;
+	   i_index[4] = i  ; j_index[4] = j-1; k_index[4] = k-1;
+	   i_index[5] = i-1; j_index[5] = j  ; k_index[5] = k-1;
+	   i_index[6] = i  ; j_index[6] = j  ; k_index[6] = k-1;
+	   //k+1 plane
+	   i_index[7] = i-1; j_index[7] = j-1; k_index[7] = k+1;
+	   i_index[8] = i  ; j_index[8] = j-1; k_index[8] = k+1;      
+	   i_index[9] = i-1; j_index[9] = j  ; k_index[9] = k+1;
+	   i_index[10] = i  ; j_index[10] = j  ; k_index[10] = k+1;
+	 }
+
+	 // inner ICu, != JCl, != JCu, != KCl, != KCu
+       } else {
+	 n_pts = 17;
+	 // k plane
+	 i_index[0] = i-1; j_index[0] = j-1; k_index[0] = k;
+	 i_index[1] = i  ; j_index[1] = j-1; k_index[1] = k;
+	 i_index[2] = i-1; j_index[2] = j  ; k_index[2] = k;
+	 i_index[3] = i-1; j_index[3] = j+1; k_index[3] = k;
+	 i_index[4] = i  ; j_index[4] = j+1; k_index[4] = k;
+	 //k-1 plane
+	 i_index[5] = i-1; j_index[5] = j-1; k_index[5] = k-1;
+	 i_index[6] = i  ; j_index[6] = j-1; k_index[6] = k-1;
+	 i_index[7] = i-1; j_index[7] = j  ; k_index[7] = k-1;
+	 i_index[8] = i  ; j_index[8] = j  ; k_index[8] = k-1;
+	 i_index[9] = i-1; j_index[9] = j+1; k_index[9] = k-1;
+	 i_index[10] = i  ; j_index[10] = j+1; k_index[10] = k-1;
+	 //k+1 plane
+	 i_index[11] = i-1; j_index[11] = j-1; k_index[11] = k+1;
+	 i_index[12] = i  ; j_index[12] = j-1; k_index[12] = k+1;
+	 i_index[13] = i-1; j_index[13] = j  ; k_index[13] = k+1;
+	 i_index[14] = i  ; j_index[14] = j  ; k_index[14] = k+1;
+	 i_index[15] = i-1; j_index[15] = j+1; k_index[15] = k+1;
+	 i_index[16] = i  ; j_index[16] = j+1; k_index[16] = k+1;
+       }
+
+     }
+    
+   } /* end if */  
+     
+
+   if (n_pts > 0) {
+      DUDx_ave.zero();
+      DUDy_ave.zero();
+      DUDz_ave.zero();
+      D1.zero();
+      D2.zero();
+      D3.zero();
+      DxDx_ave = ZERO;
+      DxDy_ave = ZERO;
+      DxDz_ave = ZERO;
+      DyDy_ave = ZERO;
+      DyDz_ave = ZERO;
+      DzDz_ave = ZERO;
+      D = ZERO;
+      
+      for ( n2 = 0 ; n2 <= n_pts-1 ; ++n2 ) {
+         dX = Position[ i_index[n2] ][ j_index[n2] ][ k_index[n2] ] - Position[i][j][k];
+         DU = Velocity[ i_index[n2] ][ j_index[n2] ][ k_index[n2] ] - Velocity[i][j][k];
+         
+         DUDx_ave += DU*dX.x;
+         DUDy_ave += DU*dX.y;
+         DUDz_ave += DU*dX.z;
+         DxDx_ave += dX.x*dX.x;
+         DxDy_ave += dX.x*dX.y;
+         DxDz_ave += dX.x*dX.z;
+         DyDy_ave += dX.y*dX.y;
+         DyDz_ave += dX.y*dX.z;
+         DzDz_ave += dX.z*dX.z;
+         
+      } /* endfor */
+      
+      DUDx_ave = DUDx_ave/double(n_pts);
+      DUDy_ave = DUDy_ave/double(n_pts);
+      DUDz_ave = DUDz_ave/double(n_pts);
+      DxDx_ave = DxDx_ave/double(n_pts);
+      DxDy_ave = DxDy_ave/double(n_pts);
+      DxDz_ave = DxDz_ave/double(n_pts);
+      DyDy_ave = DyDy_ave/double(n_pts);
+      DyDz_ave = DyDz_ave/double(n_pts);
+      DzDz_ave = DzDz_ave/double(n_pts);
+     
+   
+      // use cramer's rule for this simple system
+
+      D = DxDx_ave*(DyDy_ave* DzDz_ave - DyDz_ave*DyDz_ave) +
+          DxDy_ave*(DxDz_ave*DyDz_ave - DxDy_ave*DzDz_ave)+
+          DxDz_ave*(DxDy_ave*DyDz_ave - DxDz_ave*DyDy_ave);
+      
+      D1 = DUDx_ave*(DyDy_ave* DzDz_ave - DyDz_ave*DyDz_ave) +
+           DUDy_ave*(DxDz_ave*DyDz_ave - DxDy_ave*DzDz_ave)+
+           DUDz_ave*(DxDy_ave*DyDz_ave - DxDz_ave*DyDy_ave);
+      
+      D2 =DxDx_ave*(DUDy_ave* DzDz_ave - DUDz_ave*DyDz_ave) +
+          DxDy_ave*(DxDz_ave*DUDz_ave - DUDx_ave*DzDz_ave)+
+          DxDz_ave*(DUDx_ave*DyDz_ave - DxDz_ave*DUDy_ave);
+
+      D3 =DxDx_ave*(DyDy_ave* DUDz_ave - DyDz_ave*DUDy_ave) +
+          DxDy_ave*(DUDx_ave*DyDz_ave - DxDy_ave*DUDz_ave)+
+          DxDz_ave*(DxDy_ave*DUDy_ave - DUDx_ave*DyDy_ave);
+
+      dVdx = D1/D;
+      dVdy = D2/D;
+      dVdz = D3/D;  
+
+   } else {
+      dVdx.zero();
+      dVdy.zero();
+      dVdz.zero();
+   } /* endif */
+    
+}
+
+
 
 /*!
  * Class: Turbulent_Velocity_Field_Multi_Block
@@ -167,12 +563,12 @@ inline void Turbulent_Velocity_Field_Block::deallocate(void) {
  */
 class Turbulent_Velocity_Field_Multi_Block_List {
   public:
-    Turbulent_Velocity_Field_Block  *Vel_Blks; // one dimensional array of grid block.
+    Turbulent_Velocity_Field_Block  *Vel_Blks; // one dimensional array of velocity block.
     int                                  NBlk;
     int                             NBlk_Idir, 
                                     NBlk_Jdir, 
                                     NBlk_Kdir; // Number of blocks in i, j and k directions.
-    int                             Allocated; // Indicates if the grid blocks have been allocated or not.
+    int                             Allocated; // Indicates if the velocity blocks have been allocated or not.
  
     /* Creation constructors. */
     Turbulent_Velocity_Field_Multi_Block_List(void) : 
@@ -203,6 +599,10 @@ class Turbulent_Velocity_Field_Multi_Block_List {
 
     void Create(const Grid3D_Hexa_Multi_Block_List &Initial_Mesh,
                 const Grid3D_Input_Parameters &Input);
+
+    void Interpolate_Turbulent_Field(const Grid3D_Hexa_Multi_Block_List &Initial_Mesh,
+				     Turbulent_Velocity_Field_Multi_Block_List &Interpolated_Velocity_Field);
+    
 
   private:
     //copy and assignment are not permitted
@@ -241,7 +641,7 @@ inline void Turbulent_Velocity_Field_Multi_Block_List::Allocate(const int N) {
 }
 
 /*****************************************************************************
- * Turbulent_Velocity_Field_Multi_Block_List::Allocate -- Deallocate memory.   *
+ * Turbulent_Velocity_Field_Multi_Block_List::Allocate -- Deallocate memory. *
  *****************************************************************************/
 inline void Turbulent_Velocity_Field_Multi_Block_List::Deallocate(void) {
    if (NBlk >= 1 && Allocated) {
@@ -274,6 +674,131 @@ inline void Turbulent_Velocity_Field_Multi_Block_List::Create(const Grid3D_Hexa_
       } /* endfor */
    } /* endif */
 }
+
+/*****************************************************************************
+ * Turbulent_Velocity_Field_Multi_Block_List::Interpolate_Turbulent_Field    *
+ *       -- Interpolate velocity field onto another grid.                    *
+ *****************************************************************************/
+inline void Turbulent_Velocity_Field_Multi_Block_List::
+Interpolate_Turbulent_Field(const Grid3D_Hexa_Multi_Block_List &Initial_Mesh,
+			    Turbulent_Velocity_Field_Multi_Block_List &Interpolated_Velocity_Field) {
+
+  int nnBlk, ii, jj, kk, n;
+  double delta, dmin;
+  double xmax, xmin, ymax, ymin, zmax, zmin;
+  Vector3D dVdx, dVdy, dVdz, dX;
+
+  int counter(0);  
+
+  for (int nBlk = 0; nBlk <= Initial_Mesh.NBlk-1; ++nBlk ) {
+    for (int i = Initial_Mesh.Grid_Blks[nBlk].ICl; i <= Initial_Mesh.Grid_Blks[nBlk].ICu; ++i) {
+      for (int j = Initial_Mesh.Grid_Blks[nBlk].JCl; j <= Initial_Mesh.Grid_Blks[nBlk].JCu; ++j) {
+	for (int k = Initial_Mesh.Grid_Blks[nBlk].KCl; k <= Initial_Mesh.Grid_Blks[nBlk].KCu; ++k) {
+
+	  Interpolated_Velocity_Field.Vel_Blks[nBlk].Position[i][j][k] = Initial_Mesh.Grid_Blks[nBlk].Cell[i][j][k].Xc;
+
+	  //---------------------------
+	  //   Cartesian box
+	  //---------------------------
+
+	  // find  nnBlk, ii, jj and kk to perform the interpolation/reconstruction
+	  for (nnBlk = 0; nnBlk < NBlk; ++nnBlk) {
+	    xmax = max(Vel_Blks[nnBlk].Node_INl_JNl_KNl.x, Vel_Blks[nnBlk].Node_INu_JNu_KNu.x);
+	    xmin = min(Vel_Blks[nnBlk].Node_INl_JNl_KNl.x, Vel_Blks[nnBlk].Node_INu_JNu_KNu.x);
+
+	    ymax = max(Vel_Blks[nnBlk].Node_INl_JNl_KNl.y, Vel_Blks[nnBlk].Node_INu_JNu_KNu.y);
+	    ymin = min(Vel_Blks[nnBlk].Node_INl_JNl_KNl.y, Vel_Blks[nnBlk].Node_INu_JNu_KNu.y);
+
+	    zmax = max(Vel_Blks[nnBlk].Node_INl_JNl_KNl.z, Vel_Blks[nnBlk].Node_INu_JNu_KNu.z);
+	    zmin = min(Vel_Blks[nnBlk].Node_INl_JNl_KNl.z, Vel_Blks[nnBlk].Node_INu_JNu_KNu.z);
+
+	    if ( (Interpolated_Velocity_Field.Vel_Blks[nBlk].Position[i][j][k].x >= xmin  && 
+		  Interpolated_Velocity_Field.Vel_Blks[nBlk].Position[i][j][k].x <= xmax)  &&
+		 (Interpolated_Velocity_Field.Vel_Blks[nBlk].Position[i][j][k].y >= ymin  && 
+		  Interpolated_Velocity_Field.Vel_Blks[nBlk].Position[i][j][k].y <= ymax) &&
+		 (Interpolated_Velocity_Field.Vel_Blks[nBlk].Position[i][j][k].z >= zmin && 
+		  Interpolated_Velocity_Field.Vel_Blks[nBlk].Position[i][j][k].z <= zmax) ) {
+
+	      counter++;
+	      break;
+	    }
+
+	  } /* end for*/   
+
+	  
+	  
+	  // search in X-direction
+	  dmin = 1E9;
+	  for (n = Vel_Blks[nnBlk].ICl; n <= Vel_Blks[nnBlk].ICu; ++n) {
+	    delta = fabs(Vel_Blks[nnBlk].Position[n][Vel_Blks[nnBlk].JCl][Vel_Blks[nnBlk].KCl].x -
+			 Interpolated_Velocity_Field.Vel_Blks[nBlk].Position[i][j][k].x);
+	    if ( delta < dmin )  { 
+	      dmin = delta;
+	      ii = n;
+	    }
+	    if (dmin == 0.0) break;
+	  } /* end for */
+
+
+	  // search in Y-direction
+	  dmin = 1E9; 
+	  for (n = Vel_Blks[nnBlk].JCl; n <= Vel_Blks[nnBlk].JCu; ++n) {
+	    delta = fabs(Vel_Blks[nnBlk].Position[Vel_Blks[nnBlk].ICl][n][Vel_Blks[nnBlk].KCl].y -
+			 Interpolated_Velocity_Field.Vel_Blks[nBlk].Position[i][j][k].y);
+	    if ( delta < dmin )  { 
+	      dmin = delta;
+	      jj = n;
+	    }
+	    if (dmin == 0.0) break;
+	  } /* end for */
+
+
+	  // search Z-direction
+	  dmin = 1E9; 
+	  for (n = Vel_Blks[nnBlk].KCl; n <= Vel_Blks[nnBlk].KCu; ++n) {
+	    delta = fabs(Vel_Blks[nnBlk].Position[Vel_Blks[nnBlk].ICl][Vel_Blks[nnBlk].JCl][n].z - 
+			 Interpolated_Velocity_Field.Vel_Blks[nBlk].Position[i][j][k].z);
+	    if ( delta < dmin )  { 
+	      dmin = delta;
+	      kk = n;
+	    }
+	    if (dmin == 0.0) break;
+	  } /* end for */
+
+
+	  if (ii < Vel_Blks[nnBlk].ICl || ii > Vel_Blks[nnBlk].ICu || 
+	      jj < Vel_Blks[nnBlk].JCl || jj > Vel_Blks[nnBlk].JCu || 
+	      kk < Vel_Blks[nnBlk].KCl || kk > Vel_Blks[nnBlk].KCu) {
+	    cout << "\n Index out of bound!!! -> ii = " << ii 
+		 << "  jj = " << jj << "  kk = " << kk
+		 << "\nICu = " << Vel_Blks[nnBlk].ICu 
+		 << "  JCu = " << Vel_Blks[nnBlk].JCu 
+		 << "  KCu = " << Vel_Blks[nnBlk].KCu; 
+	  }
+
+
+	  // use least squares to reconstruct the turbulent velocity field 
+	  Vel_Blks[nnBlk].LeastSquares_Reconstruction(ii, jj, kk, 
+						      dVdx, dVdy, dVdz);
+
+	  dX = Interpolated_Velocity_Field.Vel_Blks[nBlk].Position[i][j][k] - 
+	    Vel_Blks[nnBlk].Position[ii][jj][kk];
+
+	  Interpolated_Velocity_Field.Vel_Blks[nBlk].Velocity[i][j][k] = 
+	    Vel_Blks[nnBlk].Velocity[ii][jj][kk] + dVdx*dX.x + dVdy*dX.y + dVdz*dX.z;
+
+
+	} /* endfor */
+      } /* endfor */
+    } /* endfor */
+  } /* endfor */
+
+  //cout << "\nInterpolation of turbulent field complete";
+  //cout << "\n counter = " << counter; 
+
+}
+
+
 
 /*!
  * Class: RandomFieldRogallo
@@ -394,7 +919,7 @@ Energy_Spectrum_Value(const double &abs_wave_num) const {
     /*****  Haworth and Poinsot paper  *****/
   case SPECTRUM_HAWORTH_POINSOT :
     //double EE, kp, 
-    u = 7.1;  Lp = TWO*PI/6.0;  // kp=4.0, u=2.5  kp=8
+    u = 7.1;  Lp = TWO*PI/6.0;  // u=14.1
     kp = TWO*PI/Lp;
     EE = (32.0/3.0) * sqrt(2.0/PI)* (u*u/kp) * pow(k/kp, 4.0) * exp(-2.0*(k/kp)*(k/kp));
     break;
@@ -451,16 +976,17 @@ Create_Homogeneous_Turbulence_Velocity_Field(const Grid3D_Hexa_Multi_Block_List 
   L1 = IPs.Box_Length;
   L2 = IPs.Box_Width;
   L3 = IPs.Box_Height;
-
+  
   int Nx, Ny, Nz;
-  Nx = IPs.NCells_Idir * Initial_Mesh.NBlk_Idir;
-  Ny = IPs.NCells_Jdir * Initial_Mesh.NBlk_Jdir;
-  Nz = IPs.NCells_Kdir * Initial_Mesh.NBlk_Kdir;
+  Nx = IPs.NCells_Turbulence_Idir*Initial_Mesh.NBlk_Idir;
+  Ny = IPs.NCells_Turbulence_Jdir*Initial_Mesh.NBlk_Jdir;
+  Nz = IPs.NCells_Turbulence_Kdir*Initial_Mesh.NBlk_Kdir;
 
+  
   double scaling_factor = 1.0/double(Nx*Ny*Nz);  // Scaling factor for the complex to real transform
 
   double        *u, *v, *w;        // Arrays to store the velocity fluctuations in physical space
-  fftw_complex  *uu, *vv, *ww;     // Arrays to store the velocity fluctuations in Fourier space
+  fftw_complex  *uu, *vv, *ww;     // Arrays to store the velocity fluctuations in spectral space
   fftw_plan      physical;
 
   int index;
@@ -478,7 +1004,7 @@ Create_Homogeneous_Turbulence_Velocity_Field(const Grid3D_Hexa_Multi_Block_List 
   int seed = 1; 
   //int seed = time(NULL);   // assigns the current time to the seed
   srand48(seed);             // changes the seed for drand48()
-  int iconj, jconj;          // Position of the conjugate complex for the i index
+  int iconj, jconj;          // Position of the conjugate complex for the i and j indeces
   double k1, k2, k3;         // Wave numbers
   
   double theta1, theta2, phi;
@@ -517,7 +1043,7 @@ Create_Homogeneous_Turbulence_Velocity_Field(const Grid3D_Hexa_Multi_Block_List 
 	//Rogallo's function  
 	theta1 = 2.0*PI*random_double();  // Random number (0, 2*PI)
 	theta2 = 2.0*PI*random_double();  // Random number (0, 2*PI)
-	phi = 2.0*PI*random_double();      // Random number (0, 2*PI)
+	phi = 2.0*PI*random_double();     // Random number (0, 2*PI)
 
 	if ( theta1 == theta2  && theta2 == phi ) {
 	  cerr << "\n theta1, theta2 and phi are all equal.";
@@ -578,15 +1104,15 @@ Create_Homogeneous_Turbulence_Velocity_Field(const Grid3D_Hexa_Multi_Block_List 
     } /* end for */
   } /* end for */
   
-  physical = fftw_plan_dft_c2r_3d(Nx, Ny, Nz, uu, u, /*FFTW_BACKWARD,*/ FFTW_ESTIMATE);
+  physical = fftw_plan_dft_c2r_3d(Nx, Ny, Nz, uu, u, FFTW_ESTIMATE);
   fftw_execute(physical); 
   fftw_destroy_plan(physical);
  
-  physical = fftw_plan_dft_c2r_3d(Nx, Ny, Nz, vv, v, /*FFTW_BACKWARD,*/ FFTW_ESTIMATE);
+  physical = fftw_plan_dft_c2r_3d(Nx, Ny, Nz, vv, v, FFTW_ESTIMATE);
   fftw_execute(physical); 
   fftw_destroy_plan(physical);
   
-  physical = fftw_plan_dft_c2r_3d(Nx, Ny, Nz, ww, w, /*FFTW_BACKWARD,*/ FFTW_ESTIMATE);
+  physical = fftw_plan_dft_c2r_3d(Nx, Ny, Nz, ww, w, FFTW_ESTIMATE);
   fftw_execute(physical); 
   fftw_destroy_plan(physical);
   
@@ -600,34 +1126,46 @@ Create_Homogeneous_Turbulence_Velocity_Field(const Grid3D_Hexa_Multi_Block_List 
       } /* endfor */
     } /* endfor */
   } /* endfor */
-
+  
   // Assign turbulent velocity field
   int nBlk, ix, iy, iz;
+  int INl, INu, JNl, JNu, KNl, KNu;
   for (int kBlk = 0; kBlk <= Initial_Mesh.NBlk_Kdir-1; ++kBlk) {
      for (int jBlk = 0; jBlk <= Initial_Mesh.NBlk_Jdir-1; ++jBlk) {
         for (int iBlk = 0; iBlk <= Initial_Mesh.NBlk_Idir-1; ++iBlk) {
-            nBlk = iBlk + 
-                   jBlk*Initial_Mesh.NBlk_Idir + 
+            nBlk = iBlk +
+                   jBlk*Initial_Mesh.NBlk_Idir +
                    kBlk*Initial_Mesh.NBlk_Idir*Initial_Mesh.NBlk_Jdir;
             for (int i = Initial_Mesh.Grid_Blks[nBlk].ICl; i <= Initial_Mesh.Grid_Blks[nBlk].ICu; ++i) {
                for (int j = Initial_Mesh.Grid_Blks[nBlk].JCl; j <= Initial_Mesh.Grid_Blks[nBlk].JCu; ++j) {
                   for (int k = Initial_Mesh.Grid_Blks[nBlk].KCl; k <= Initial_Mesh.Grid_Blks[nBlk].KCu; ++k) {
-		     ix = iBlk*IPs.NCells_Idir+(i-Initial_Mesh.Grid_Blks[nBlk].ICl);
-		     iy = jBlk*IPs.NCells_Jdir+(j-Initial_Mesh.Grid_Blks[nBlk].JCl);
-		     iz = kBlk*IPs.NCells_Kdir+(k-Initial_Mesh.Grid_Blks[nBlk].KCl);
+		     ix = iBlk*IPs.NCells_Turbulence_Idir+(i-Initial_Mesh.Grid_Blks[nBlk].ICl);
+		     iy = jBlk*IPs.NCells_Turbulence_Jdir+(j-Initial_Mesh.Grid_Blks[nBlk].JCl);
+		     iz = kBlk*IPs.NCells_Turbulence_Kdir+(k-Initial_Mesh.Grid_Blks[nBlk].KCl);
 	             index = iz + 
                              iy*Nz + 
                              ix*Ny*Nz;
                      Initial_Velocity_Field.Vel_Blks[nBlk].Velocity[i][j][k].x = u[index];
                      Initial_Velocity_Field.Vel_Blks[nBlk].Velocity[i][j][k].y = v[index];
                      Initial_Velocity_Field.Vel_Blks[nBlk].Velocity[i][j][k].z = w[index];
+		     Initial_Velocity_Field.Vel_Blks[nBlk].Position[i][j][k] = Initial_Mesh.Grid_Blks[nBlk].Cell[i][j][k].Xc;	     
+                     
 		  } /* endfor */
 	       } /* endfor */
-	    } /* endfor */
+	    } /* endfor */  
+	    INl = Initial_Mesh.Grid_Blks[nBlk].INl; 
+	    INu = Initial_Mesh.Grid_Blks[nBlk].INu; 
+	    JNl = Initial_Mesh.Grid_Blks[nBlk].JNl; 
+	    JNu = Initial_Mesh.Grid_Blks[nBlk].JNu; 
+	    KNl = Initial_Mesh.Grid_Blks[nBlk].KNl; 
+	    KNu = Initial_Mesh.Grid_Blks[nBlk].KNu;
+	    Initial_Velocity_Field.Vel_Blks[nBlk].Node_INl_JNl_KNl = Initial_Mesh.Grid_Blks[nBlk].Node[INl][JNl][KNl].X; 
+	    Initial_Velocity_Field.Vel_Blks[nBlk].Node_INu_JNu_KNu = Initial_Mesh.Grid_Blks[nBlk].Node[INu][JNu][KNu].X;
+
 	} /* endfor */
      } /* endfor */
   } /* endfor */
-
+  
   // Deallocations   
   fftw_free(u);
   fftw_free(v);
@@ -737,343 +1275,8 @@ void Assign_Homogeneous_Turbulence_Velocity_Field(HEXA_BLOCK &Solution_Block,
 
 }
 
-template<typename HEXA_BLOCK>
-void Time_Averaging_of_Velocity_Field(HEXA_BLOCK *Solution_Block,
-                                      AdaptiveBlock3D_List &LocalSolnBlockList,
-                                      double &u_average,
-                                      double &v_average,
-                                      double &w_average) {
-
-  double local_vol, Volume = ZERO;
-  double Yfuel_conditional = ZERO;
-  Vector3D vel;  vel.zero();
-  //Conditional average on fresh gas
-  Yfuel_conditional = 0.95*0.05518;//Fresh_Fuel_Mass_Fraction;
-  for (int p = 0 ; p <= LocalSolnBlockList.Nblk-1 ; p++ ) {
-    if (LocalSolnBlockList.Block[p].used == ADAPTIVEBLOCK3D_USED) {
-      for (int i = Solution_Block[p].ICl ; i <= Solution_Block[p].ICu ; i++) {
-        for (int j = Solution_Block[p].JCl ; j <= Solution_Block[p].JCu ; j++) {
-           for (int k = Solution_Block[p].KCl ; k <= Solution_Block[p].KCu ; k++) {
-          if (Solution_Block[p].W[i][j][k].spec[0].c >= Yfuel_conditional) {
-	    local_vol = Solution_Block[p].Grid.volume(i,j,k);
-	    vel += Solution_Block[p].W[i][j][k].v * local_vol;
-            Volume += Solution_Block[p].Grid.volume(i,j,k);//Total_Block_Volume(Solution_Block[p]);
-	      } /* endif */
-	   } /* endfor */
-	} /* endfor */
-      } /* endfor*/
-    } /* endif */
-  } /* endfor */
-
-  Volume = CFFC_Summation_MPI(Volume);
-  vel.x = CFFC_Summation_MPI(vel.x);
-  vel.y = CFFC_Summation_MPI(vel.y);
-  vel.z = CFFC_Summation_MPI(vel.z);
-  u_average = vel.x/Volume;
-  v_average = vel.y/Volume;
-  w_average = vel.z/Volume;
-}
-
-template<typename HEXA_BLOCK>
-double Time_Averaging_of_Turbulent_Burning_Rate(HEXA_BLOCK *Solution_Block,
-                                                AdaptiveBlock3D_List &LocalSolnBlockList,
-                                                Grid3D_Input_Parameters &IPs){
-
-  double local_vol, Yf_u, rho_u, Ly, Lz, burning_rate = ZERO;
-  Yf_u = 0.05518;//Fresh_Fuel_Mass_Fraction;
-  rho_u = 1.13;//Fresh_Density;
-  Ly = IPs.Box_Width;
-  Lz = IPs.Box_Height;
-  for (int p = 0 ; p <= LocalSolnBlockList.Nblk-1 ; p++ ) {
-    if (LocalSolnBlockList.Block[p].used == ADAPTIVEBLOCK3D_USED) {
-      for (int i = Solution_Block[p].ICl ; i <= Solution_Block[p].ICu ; i++) {
-        for (int j = Solution_Block[p].JCl ; j <= Solution_Block[p].JCu ; j++) {
-           for (int k = Solution_Block[p].KCl ; k <= Solution_Block[p].KCu ; k++) {
-	    local_vol = Solution_Block[p].Grid.volume(i,j,k);
-	    burning_rate += Solution_Block[p].W[i][j][k].Sw(Solution_Block[p].W[i][j][k].React.reactset_flag).rhospec[0].c*local_vol;
-	    /* 	    burning_rate +=  Solution_Block[p].W[i][j][k].Fsd*local_vol*Solution_Block[p].W[i][j][k].rho; */
-        }
-      }
-    }
-  }
-}
-  burning_rate = CFFC_Summation_MPI(burning_rate);
-  //burning_rate = burning_rate*0.3837/(Ly*Lz); //laminar_flame_speed/Ly;//(rho_u*Ly);  //(rho_u*Yf_u*Ly);
-  burning_rate = -burning_rate/(rho_u*Yf_u*Ly*Lz);
-
-  return burning_rate;
-}
-
-template<typename HEXA_BLOCK>
-void Time_Averaging_of_Solution(HEXA_BLOCK *Solution_Block,
-                                AdaptiveBlock3D_List &LocalSolnBlockList,
-                                const double &u_average, 
-                                const double &v_average,
-                                const double &w_average,
-                                double &sqr_u) {
-
-  double vis, u_ave, v_ave, w_ave, local_vol, total_vol = ZERO, vis_ave = ZERO;
-  double u_p=ZERO, v_p=ZERO, w_p=ZERO, ens=ZERO, eps_w=ZERO, eps_ss=ZERO;
-  double Yfuel_conditional = ZERO;
-  
-  //Conditional average on fresh gas
-  Yfuel_conditional = 0.95*0.05518;//Fresh_Fuel_Mass_Fraction;
-  u_ave = u_average;
-  v_ave = v_average;  
-  w_ave = w_average;  
-    
-  for (int p = 0; p < LocalSolnBlockList.Nblk; p++) {
-    if (LocalSolnBlockList.Block[p].used == ADAPTIVEBLOCK3D_USED) {
-      for (int i = Solution_Block[p].ICl; i <= Solution_Block[p].ICu; ++i) {
-        for (int j  = Solution_Block[p].JCl; j <= Solution_Block[p].JCu; ++j) {
-           for (int k  = Solution_Block[p].KCl; k <= Solution_Block[p].KCu; ++k) {
-              if (Solution_Block[p].W[i][j][k].spec[0].c >= Yfuel_conditional) {
-                local_vol = Solution_Block[p].Grid.volume(i,j,k);
-                total_vol += local_vol;
-                u_p += sqr(Solution_Block[p].W[i][j][k].v.x - u_ave) * local_vol;
-                v_p += sqr(Solution_Block[p].W[i][j][k].v.y - v_ave) * local_vol;
-                w_p += sqr(Solution_Block[p].W[i][j][k].v.z - w_ave) * local_vol;
-                vis = Solution_Block[p].W[i][j][k].mu()/Solution_Block[p].W[i][j][k].rho;
-/*              vis = Solution_Block[p].W[i][j][k].mu_t(Solution_Block[p].dWdx[i][j][k],
-                                                        Solution_Block[p].dWdy[i][j][k],
-                                                        Solution_Block[p].dWdz[i][j][k],
-                                                        Solution_Block[p].Flow_Type,Solution_Block[p].Grid.volume(i,j,k))/
-                      (Solution_Block[p].W[i][j][k].rho); */
-                vis_ave += vis*local_vol;
-                ens += Solution_Block[p].W[i][j][k].Enstrophy(Solution_Block[p].dWdx[i][j][k],
-                                                              Solution_Block[p].dWdy[i][j][k],
-                                                              Solution_Block[p].dWdz[i][j][k]) * local_vol;
-                eps_w += 2.0*vis* Solution_Block[p].W[i][j][k].Enstrophy(Solution_Block[p].dWdx[i][j][k],
-                                                                         Solution_Block[p].dWdy[i][j][k],
-                                                                         Solution_Block[p].dWdz[i][j][k])*local_vol;
-                eps_ss += 2.0*vis*(sqr(Solution_Block[p].W[i][j][k].abs_strain_rate(Solution_Block[p].dWdx[i][j][k],
-                                                                                    Solution_Block[p].dWdy[i][j][k],
-                                                                                    Solution_Block[p].dWdz[i][j][k]))/ 
-                          2.0)*local_vol;
-	      } /* endif */
-	   } /* endfor */
-	} /* endfor */
-      } /* endfor*/
-    } /* endif */
-  } /* endfor */
-
-  total_vol = CFFC_Summation_MPI(total_vol);
-  vis_ave = CFFC_Summation_MPI(vis_ave);
-  u_p = CFFC_Summation_MPI(u_p);
-  v_p = CFFC_Summation_MPI(v_p);
-  w_p = CFFC_Summation_MPI(w_p);
-  ens = CFFC_Summation_MPI(ens);
-  eps_w = CFFC_Summation_MPI(eps_w);
-  eps_ss = CFFC_Summation_MPI(eps_ss);
-
-  sqr_u = u_p/total_vol;
-  vis_ave = vis_ave/total_vol;
-  u_p = u_p/total_vol;
-  v_p = v_p/total_vol;
-  w_p = w_p/total_vol;
-  ens = ens/total_vol;
-  eps_w = eps_w/total_vol;
-  eps_ss = eps_ss/total_vol;
-  
-  double u_rms = sqrt((u_p + v_p + w_p)/3.0);
-  double Taylor_scale, Kolmogorov_scale, Re_Taylor, L11; 
-  double l_1, l_2;
-
-  Kolmogorov_scale = pow(pow(vis_ave, THREE)/eps_w, 0.25);
-
-  if (ens == ZERO) {
-    Taylor_scale = ZERO;
-  } else {
-    Taylor_scale = u_rms*sqrt(15.0)*Kolmogorov_scale;
-  }
-
-  Re_Taylor = u_rms*Taylor_scale/vis_ave;
-  L11= 0.09*pow(0.5*u_rms*u_rms, 1.5)/eps_w;
-
-  if (eps_w > 0.0) {
-    l_1 = 0.42*pow(u_rms, 3.0)/eps_w;
-  } else {
-    l_1 = 0.0;
-  }
-
-  if (eps_ss > 0.0) {
-    l_2 = 0.42*pow(u_rms, 3.0)/eps_ss;
-  } else {
-    l_2 = 0.0;
-  }
-
-  if (CFFC_Primary_MPI_Processor()) {
-    cout << "\n ==========================================================================\n"; 
-    cout << " Turbulent Statistics of Resolved Velocity Field (in Physical Space):\n";
-    cout << "\n <u^2> = "<< u_p <<"  "<< "<v^2> = "<< v_p <<"  "<< "<v^2> = "<< w_p <<"  "
-	 << "u_rms  = " << u_rms <<"  "
-	 << "\n <u> = " << u_ave <<"  "<< "<v> = " << v_ave <<"  "<< "<w> = " << w_ave <<"  "
-	 << "ens = "<< ens <<"  " 
-	 << "\n eps_w = "<< eps_w <<"  "<< "eps_ss = "<< eps_ss <<"  "
-	 << "l_1 = "<< l_1 <<"  "<< "l_2 = " << l_2 <<"  "
-	 << "\n vis = "<< vis_ave << "  Re_Taylor = " << Re_Taylor <<"  "
-	 << "\n Taylor_scale = " << Taylor_scale <<"  " 
-	 << "Kolmogorov_scale = " << Kolmogorov_scale <<" "
-         << "\n L11 = " << L11 <<  endl;
-    cout << " ==========================================================================" << endl;
-  } /* endif */
-
-}
-
-// Total turbulence kinetic energy
-template<typename HEXA_BLOCK>
-double Total_TKE(HEXA_BLOCK *Solution_Block,
-                 AdaptiveBlock3D_List &LocalSolnBlockList) {
-
-  double local_vol, total_vol = ZERO, u_p = ZERO, v_p = ZERO, w_p = ZERO;
-  double u_ave, v_ave, w_ave, u_rms;
-  double Yfuel_conditional = ZERO; 
-
-   //Conditional average on fresh gas
-    Yfuel_conditional = 0.95*0.05518;
-
-  Time_Averaging_of_Velocity_Field(Solution_Block, LocalSolnBlockList, u_ave, v_ave, w_ave);
-
-  for (int p = 0 ; p <= LocalSolnBlockList.Nblk-1 ; p++ ) {
-    if (LocalSolnBlockList.Block[p].used == ADAPTIVEBLOCK3D_USED) {
-      for (int i = Solution_Block[p].ICl ; i <= Solution_Block[p].ICu ; i++) {
-        for (int j = Solution_Block[p].JCl ; j <= Solution_Block[p].JCu ; j++) {
-           for (int k = Solution_Block[p].KCl ; k <= Solution_Block[p].KCu ; k++) {
-          if (Solution_Block[p].W[i][j][k].spec[0].c >= Yfuel_conditional) {
-	    local_vol = Solution_Block[p].Grid.volume(i,j,k);
-	    total_vol += local_vol;
-	    u_p += sqr(Solution_Block[p].W[i][j][k].v.x - u_ave) * local_vol;
-	    v_p += sqr(Solution_Block[p].W[i][j][k].v.y - v_ave) * local_vol;
-	    w_p += sqr(Solution_Block[p].W[i][j][k].v.z - w_ave) * local_vol;
-	   } /* endif */
-	  } /* endfor */
-	} /* endfor */
-      } /* endfor */
-    } /* endif */
-  } /* endfor */
-  
-  total_vol = CFFC_Summation_MPI(total_vol);
-  u_p = CFFC_Summation_MPI(u_p);
-  v_p = CFFC_Summation_MPI(v_p);
-  w_p = CFFC_Summation_MPI(w_p);
-      
-  u_p = u_p/total_vol;
-  v_p = v_p/total_vol;
-  w_p = w_p/total_vol;
-
-  u_rms = sqrt((u_p + v_p + w_p)/3.0);
-  
-  // In 3D: k =  sqr(u_rms)/2
-  return (u_rms*u_rms/2.0); 
-}
 
 
-
-// Total enstrophy
-template <typename HEXA_BLOCK>
-double Total_Enstrophy(HEXA_BLOCK *Solution_Block,
-                       AdaptiveBlock3D_List &LocalSolnBlockList) {
-
-  double local_vol, total_vol = ZERO, ens = ZERO;
-  double Yfuel_conditional = ZERO;
-   
-  //Conditional average on fresh gas
-    Yfuel_conditional = 0.95*0.05518;
-
-  for (int p = 0 ; p <= LocalSolnBlockList.Nblk-1 ; p++ ) {
-    if (LocalSolnBlockList.Block[p].used == ADAPTIVEBLOCK3D_USED) {
-      for (int i = Solution_Block[p].ICl ; i <= Solution_Block[p].ICu ; i++) {
-        for (int j = Solution_Block[p].JCl ; j <= Solution_Block[p].JCu ; j++) {
-           for (int k = Solution_Block[p].KCl ; k <= Solution_Block[p].KCu ; k++) {
-          if (Solution_Block[p].W[i][j][k].spec[0].c >= Yfuel_conditional) {
-	    local_vol = Solution_Block[p].Grid.volume(i,j,k);
-	    total_vol += local_vol;
-            ens += Solution_Block[p].W[i][j][k].Enstrophy(Solution_Block[p].dWdx[i][j][k],
-                                                          Solution_Block[p].dWdy[i][j][k],
-                                                          Solution_Block[p].dWdz[i][j][k]) * local_vol;
-	   } /* endif */
-	  } /* endfor */
-	} /* endfor */
-      } /* endfor */
-    } /* endif */
-  } /* endfor */
-
-  total_vol = CFFC_Summation_MPI(total_vol);
-  ens = CFFC_Summation_MPI(ens);
- 
-  //CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
-  ens = ens/total_vol;
-  
-  return ens;
-}
-
-
-
-// Root mean square velocity (turbulence intensity)
-template <typename HEXA_BLOCK>
-double u_rms(HEXA_BLOCK *Solution_Block,
-             AdaptiveBlock3D_List &LocalSolnBlockList) {
-
-  double TKE;
-  TKE = Total_TKE(Solution_Block, LocalSolnBlockList);
-
-  return sqrt(2.0*TKE); // 3D
-}
-
-
-// Taylor scale of turbulence
-template <typename HEXA_BLOCK>
-double Taylor_Scale(HEXA_BLOCK *Solution_Block,
-                    AdaptiveBlock3D_List &LocalSolnBlockList) {
-
-  double enstrophy, taylor_scale, u_prime;
-  enstrophy = Total_Enstrophy(Solution_Block, LocalSolnBlockList);
-
-  u_prime = u_rms(Solution_Block, LocalSolnBlockList);
- 
-  if (enstrophy == ZERO) {
-    taylor_scale = ZERO;
-  } else {
-    taylor_scale = sqrt(TWO*u_prime*u_prime/(TWO*enstrophy));
-  }
-
-  return taylor_scale;
-}
-
-// Obtain the area-averaged kinematic viscosity
-template <typename HEXA_BLOCK>
-double Average_viscosity(HEXA_BLOCK *Solution_Block,
-                         AdaptiveBlock3D_List &LocalSolnBlockList) {
-
-  double local_vol, total_vol = ZERO, vis = ZERO;
-  double Yfuel_conditional = ZERO;
-  
-   //Conditional average on fresh gas
-    Yfuel_conditional = 0.95*0.05518;
-
-  for (int p = 0 ; p <= LocalSolnBlockList.Nblk-1 ; p++ ) {
-    if (LocalSolnBlockList.Block[p].used == ADAPTIVEBLOCK3D_USED) {
-      for (int i = Solution_Block[p].ICl ; i <= Solution_Block[p].ICu ; i++) {
-        for (int j = Solution_Block[p].JCl ; j <= Solution_Block[p].JCu ; j++) {
-           for (int k = Solution_Block[p].KCl ; k <= Solution_Block[p].KCu ; k++) {
-          if (Solution_Block[p].W[i][j][k].spec[0].c >= Yfuel_conditional) {
-	    local_vol = Solution_Block[p].Grid.volume(i,j,k);
-	    total_vol += local_vol;
-	    vis += Solution_Block[p].W[i][j][k].mu()*local_vol/Solution_Block[p].W[i][j][k].rho;
-	   } /* endif */
-	  } /* endfor */
-	} /* endfor */
-      } /* endfor */
-    } /* endif */
-  } /* endfor */
-
-  total_vol = CFFC_Summation_MPI(total_vol);
-  vis = CFFC_Summation_MPI(vis);
-    
-  vis = vis/total_vol;
-
-  return vis;
-}
 
 /********************************************************
  *          Open_Turbulence_Progress_File               *
@@ -1472,5 +1675,6 @@ int Longitudinal_Correlation(Octree_DataStructure &OcTree,
        
   return (error_flag);
 }
+
 
 #endif // _TURBULENT_VELOCITY_FIELD_INCLUDED 

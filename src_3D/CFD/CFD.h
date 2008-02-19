@@ -218,6 +218,10 @@ inline char *Date_And_Time() {
 #define GRID_BLUFF_BODY_BURNER               30
 #define GRID_PERIODIC_BOX                    31
 #define GRID_PERIODIC_BOX_WITH_INFLOW        32
+#define GRID_BUNSEN_BURNER                   33
+#define GRID_BUNSEN_BOX                      34
+#define GRID_BUNSEN_INFLOW                   35
+#define GRID_TURBULENCE_BOX                  36
 
 #define GRID_ICEMCFD                       1000
 #define GRID_READ_FROM_DEFINITION_FILE    10000
@@ -594,6 +598,8 @@ inline char *Date_And_Time() {
 #define IC_ELECTRIC_FIELD_DOUBLE_OCTAPOLE    204
 
 #define IC_TURBULENT_PREMIXED_FLAME   300
+#define IC_TURBULENT_BUNSEN_FLAME     301
+#define IC_TURBULENT_BUNSEN_BOX       302
 
 /********************************************************
  * CFD -- Time Integration (Time-Stepping) Types.       *

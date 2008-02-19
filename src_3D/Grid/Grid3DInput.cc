@@ -45,6 +45,15 @@ void Grid3D_Input_Parameters::Broadcast(void) {
    MPI::COMM_WORLD.Bcast(&(Nghost),
                          1,
                          MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(&(NCells_Turbulence_Idir),
+                         1,
+                         MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(&(NCells_Turbulence_Jdir),
+                         1,
+                         MPI::INT, 0);
+   MPI::COMM_WORLD.Bcast(&(NCells_Turbulence_Kdir),
+                         1,
+                         MPI::INT, 0);
    MPI::COMM_WORLD.Bcast(&(Box_Length),
                          1,
                          MPI::DOUBLE, 0);
@@ -124,6 +133,17 @@ void Grid3D_Input_Parameters::Broadcast(void) {
                          1,
                          MPI::DOUBLE, 0);
 
+   // Bunsen burner parameters:
+   MPI::COMM_WORLD.Bcast(&(Radius_Bunsen_Burner_Fuel_Line),
+                          1,
+                          MPI::DOUBLE, 0);
+   MPI::COMM_WORLD.Bcast(&(Radius_Bunsen_Burner),
+                          1,
+                          MPI::DOUBLE, 0);
+   MPI::COMM_WORLD.Bcast(&(Height_Bunsen_Burner),
+                          1,
+                          MPI::DOUBLE, 0);
+
    //ICEM Filenames:
    MPI::COMM_WORLD.Bcast(ICEMCFD_FileNames[0],
                          20,
@@ -177,6 +197,27 @@ int Grid3D_Input_Parameters::Parse_Next_Input_Control_Parameter(char *code,
 
      } else if (strcmp(Grid_Type, "Periodic_Box_With_Inflow") == 0) {
         i_Grid = GRID_PERIODIC_BOX_WITH_INFLOW;
+        Box_Length = ONE;
+        Box_Width = ONE;
+        Box_Height = ONE;
+
+     } else if (strcmp(Grid_Type, "Bunsen_Burner") == 0) {
+        i_Grid = GRID_BUNSEN_BURNER;
+        Radius_Bunsen_Burner_Fuel_Line = 0.0056;
+        Radius_Bunsen_Burner = 0.07;
+        Height_Bunsen_Burner = 0.2;
+	Box_Length = 0.2;
+        Box_Width = 0.14;
+        Box_Height = 0.14;
+
+     } else if (strcmp(Grid_Type, "Bunsen_Box") == 0) {
+        i_Grid = GRID_BUNSEN_BOX;
+        Box_Length = 0.2;
+        Box_Width = 0.2;
+        Box_Height = 0.2;
+
+     } else if (strcmp(Grid_Type, "Turbulence_Box") == 0) {
+        i_Grid = GRID_TURBULENCE_BOX;
         Box_Length = ONE;
         Box_Width = ONE;
         Box_Height = ONE;
@@ -394,6 +435,36 @@ int Grid3D_Input_Parameters::Parse_Next_Input_Control_Parameter(char *code,
      i_command = 3030;
      value >> Box_Height;
      if (Box_Height <= ZERO) i_command = INVALID_INPUT_VALUE;
+
+  } else if (strcmp(code, "Radius_Bunsen_Burner_Fuel_Line") == 0) {
+     i_command = 3031;
+     value >> Radius_Bunsen_Burner;
+     if (Radius_Bunsen_Burner <ZERO) i_command = INVALID_INPUT_VALUE;
+
+  } else if (strcmp(code, "Radius_Bunsen_Burner") == 0) {
+     i_command = 3032;
+     value >> Radius_Bunsen_Burner;
+     if (Radius_Bunsen_Burner <ZERO) i_command = INVALID_INPUT_VALUE;
+
+  } else if (strcmp(code, "Height_Bunsen_Burner") == 0) {
+     i_command = 3033;
+     value >> Height_Bunsen_Burner;
+     if (Height_Bunsen_Burner <ZERO) i_command = INVALID_INPUT_VALUE;
+
+  } else if (strcmp(code, "Number_of_Cells_Turbulence_Idir") == 0) {
+     i_command = 3034;
+     value >> NCells_Turbulence_Idir;
+     if (NCells_Turbulence_Idir < 1) i_command = INVALID_INPUT_VALUE;
+
+  } else if (strcmp(code, "Number_of_Cells_Turbulence_Jdir") == 0) {
+     i_command = 3035;
+     value >> NCells_Turbulence_Jdir;
+     if (NCells_Turbulence_Jdir <1) i_command = INVALID_INPUT_VALUE;
+
+  } else if (strcmp(code, "Number_of_Cells_Turbulence_Kdir") == 0) {
+     i_command = 3036;
+     value >> NCells_Turbulence_Kdir;
+     if (NCells_Turbulence_Kdir < 1) i_command = INVALID_INPUT_VALUE;
     
   } else {
      i_command = INVALID_INPUT_CODE;
@@ -449,6 +520,28 @@ void Grid3D_Input_Parameters::Output(ostream &out_file) const {
      case GRID_CUBE : 
      case GRID_PERIODIC_BOX : 
      case GRID_PERIODIC_BOX_WITH_INFLOW : 
+        out_file << "\n  -> Length of Solution Domain (m): "
+                 << Box_Length;
+        out_file << "\n  -> Width of Solution Domain (m): "
+                 << Box_Width;
+        out_file << "\n  -> Height of Solution Domain (m): "
+                 << Box_Height;
+        break;
+     case GRID_BUNSEN_BURNER : 
+        out_file << "\n  -> Radius of Bunsen Burner Fuel Domain (m): "
+                 << Radius_Bunsen_Burner_Fuel_Line;
+        out_file << "\n  -> Radius of Bunsen Burner Solution Domain (m): "
+                 << Radius_Bunsen_Burner;
+        out_file << "\n  -> Height of Bunsen Burner Solution Domain (m): "
+                 << Height_Bunsen_Burner;
+        out_file << "\n  -> Length of Bunsen Box Turbulence Domain (m): "
+                 << Box_Length;
+        out_file << "\n  -> Width of Bunsen Box Turbulence Domain (m): "
+                 << Box_Width;
+        out_file << "\n  -> Height of Bunsen Box Turbulence Domain (m): "
+                 << Box_Height;
+        break;
+     case GRID_BUNSEN_BOX : 
         out_file << "\n  -> Length of Solution Domain (m): "
                  << Box_Length;
         out_file << "\n  -> Width of Solution Domain (m): "

@@ -417,6 +417,22 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid(Grid3D_Input_Parameters &Input) {
        Create_Grid_Periodic_Box(Input);
        break;
 
+     case GRID_TURBULENCE_BOX :
+       Create_Grid_Turbulence_Box(Input);
+       break;
+
+     case GRID_BUNSEN_INFLOW :
+       Create_Grid_Bunsen_Inflow(Input);
+       break;
+
+     case GRID_BUNSEN_BOX :
+       Create_Grid_Bunsen_Box(Input);
+       break;
+
+     case GRID_BUNSEN_BURNER :
+       Create_Grid_Bunsen_Burner(Input);
+       break;
+
      case GRID_CHANNEL_XDIR :
      case GRID_CHANNEL_YDIR:
      case GRID_CHANNEL_ZDIR:
@@ -1297,6 +1313,608 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Periodic_Box(Grid3D_Input_Paramet
          } /* endfor */
       } /* endfor */
    } /* endfor */
+
+}
+
+/**************************************************************
+ * Routine: Create_Grid_Turbulence_Box                        *
+ *                                                            *
+ * Generates a 3D Cartesian multiblock mesh for a             * 
+ * turbulence box.                                            *
+ *                                                            *
+ **************************************************************/
+void Grid3D_Hexa_Multi_Block_List::Create_Grid_Turbulence_Box(Grid3D_Input_Parameters &Input) {
+
+   int count_blocks;
+   int BC_east, BC_west, BC_north, BC_south, BC_top, BC_bottom;
+   Grid2D_Quad_Block **Grid2D_Box_XYplane;
+
+   
+
+   int NBlk_Idir, NBlk_Jdir, NBlk_Kdir;
+   NBlk_Idir = Input.NBlk_Idir;
+   NBlk_Jdir = Input.NBlk_Jdir;
+   NBlk_Kdir = Input.NBlk_Kdir;
+
+   Input.NBlk_Idir = 1;
+   Input.NBlk_Jdir = 1;
+   Input.NBlk_Kdir = 1;
+
+   /* Allocate required memory. */
+
+   Allocate(Input.NBlk_Idir, Input.NBlk_Jdir, Input.NBlk_Kdir);
+
+
+   /* Creat 2D cross-section grids from which the 3D grid
+      will be extruded. */
+   
+   Grid2D_Box_XYplane = Grid_Rectangular_Box(Grid2D_Box_XYplane,
+                                             Input.NBlk_Idir, 
+                                             Input.NBlk_Jdir,
+                                             Input.Box_Width,
+                                             Input.Box_Height,
+                                             ON,
+					     Input.Stretching_Type_Idir,
+					     Input.Stretching_Type_Jdir,
+					     Input.Stretching_Factor_Idir,
+					     Input.Stretching_Factor_Jdir,
+                                             Input.NCells_Turbulence_Idir,
+                                             Input.NCells_Turbulence_Jdir,
+					     Input.Nghost);
+   
+   /* Create the mesh for each block representing
+      the complete grid. */
+
+   count_blocks = 0;
+
+   for (int kBlk = 0; kBlk <= Input.NBlk_Kdir-1; ++kBlk) {
+      for (int jBlk = 0; jBlk <= Input.NBlk_Jdir-1; ++jBlk) {
+         for (int iBlk = 0; iBlk <= Input.NBlk_Idir-1; ++iBlk) {
+
+            /* Extrude each of the grid blocks from the
+               appropriate 2D grid in XY-plane. */
+
+            Grid_Blks[count_blocks].Extrude(Grid2D_Box_XYplane[iBlk][jBlk],
+                                            Input.NCells_Turbulence_Kdir,
+           	                            Input.Stretching_Type_Kdir,
+				            Input.Stretching_Factor_Kdir,
+                                            ZERO*Input.Box_Length+  
+                                            (double(kBlk)/double(Input.NBlk_Kdir))*Input.Box_Length,
+                                            ZERO*Input.Box_Length+  
+                                            (double(kBlk+1)/double(Input.NBlk_Kdir))*Input.Box_Length);
+
+
+   	        if (iBlk == Input.NBlk_Idir-1) {
+		  BC_east = BC_REFLECTION;
+                } else {
+                   BC_east = BC_NONE;
+                } /* endif */
+                if (iBlk == 0) {
+		  BC_west = BC_REFLECTION;
+                } else {
+                   BC_west = BC_NONE;
+                } /* endif */
+
+	        if (jBlk == Input.NBlk_Jdir-1) {
+		  BC_north = BC_REFLECTION;
+                } else {
+                   BC_north = BC_NONE;
+                } /* endif */
+                if (jBlk == 0) {
+		  BC_south = BC_REFLECTION;
+                } else {
+                   BC_south = BC_NONE;
+                } /* endif */
+
+            /* Assign top and bottom boundary conditions. */
+
+            if (kBlk == Input.NBlk_Kdir-1) {
+               BC_top = BC_FIXED_PRESSURE;
+            } else {
+               BC_top = BC_NONE;
+            } /* endif */
+            if (kBlk == 0) {
+               BC_bottom = BC_DIRICHLET;
+            } else {
+               BC_bottom = BC_NONE;
+            } /* endif */
+
+             Grid_Blks[count_blocks].Set_BCs(BC_east, 
+                                             BC_west, 
+                                             BC_north, 
+                                             BC_south, 
+                                             BC_top, 
+                                             BC_bottom);
+
+            /* Update block counter. */
+
+            count_blocks++;
+
+         } /* endfor */
+      } /* endfor */
+   } /* endfor */
+
+   /* Deallocate 2D grid. */
+
+   Grid2D_Box_XYplane = Deallocate_Multi_Block_Grid(Grid2D_Box_XYplane,
+                                                    Input.NBlk_Idir, 
+                                                    Input.NBlk_Jdir);
+
+
+   /* Call the function Find_Neighbours to obtain the neighbour block information
+      and assign values to data members in the grid block connectivity data structure. */
+   
+   //Find_Neighbours(Input);
+   
+   Input.NBlk_Idir = NBlk_Idir;
+   Input.NBlk_Jdir = NBlk_Jdir;
+   Input.NBlk_Kdir = NBlk_Kdir;
+
+}
+
+/********************************************************
+ * Routine: Create_Grid_Bunsen_Inflow                   *
+ *                                                      *
+ * Generates a 3D Cartesian multiblock mesh for a       *
+ * Bunsen inflow turbulence field.                      *
+ *                                                      *
+ ********************************************************/
+void Grid3D_Hexa_Multi_Block_List::Create_Grid_Bunsen_Inflow(Grid3D_Input_Parameters &Input) {
+
+    int nBlk, numblk_idir_fuel, numblk_jdir_fuel;
+    Grid2D_Quad_Block **Grid2D_Fuel_Line_XYplane;
+ 
+
+    int NBlk_Idir, NBlk_Jdir, NBlk_Kdir;
+    NBlk_Idir = 5;
+    NBlk_Jdir = 1;
+    NBlk_Kdir = 1;
+
+    /* Allocate required memory. */
+
+    Allocate(NBlk_Idir, NBlk_Jdir, NBlk_Kdir);
+
+
+    /* Creat 2D cross-section grids from which the 3D grid
+       will be extruded. */
+    
+    Grid2D_Fuel_Line_XYplane = Grid_Tube_2D(Grid2D_Fuel_Line_XYplane,
+                                            numblk_idir_fuel,
+		                            numblk_jdir_fuel,
+                                            Input.Radius_Bunsen_Burner_Fuel_Line,
+                                            Input.NCells_Idir,
+                                            Input.NCells_Jdir,
+		  		            Input.Nghost,
+                                            STRETCHING_FCN_MAX_CLUSTERING,
+                                            1.25);
+
+    /* Create the mesh for each block representing
+       the complete grid. */
+
+          for (int iBlk = 0; iBlk <= NBlk_Idir-1; ++iBlk) {
+
+             /* Extrude each of the grid blocks from the
+                appropriate 2D grid in XY-plane. */
+
+             Grid_Blks[iBlk].Extrude(Grid2D_Fuel_Line_XYplane[iBlk][0],
+				     Input.NCells_Kdir,
+				     STRETCHING_FCN_MIN_CLUSTERING,
+				     1.25,
+				     ZERO*Input.Height_Bunsen_Burner,
+				     0.25*Input.Height_Bunsen_Burner);
+
+	      Grid_Blks[iBlk].Set_BCs(BC_NONE,
+		                      BC_NONE,
+                                      BC_NONE,
+		                      BC_NONE,
+                                      BC_NONE,
+                                      BC_NONE);
+
+       } /* endfor */
+
+    /* Deallocate 2D grid. */
+
+    Grid2D_Fuel_Line_XYplane = Deallocate_Multi_Block_Grid(Grid2D_Fuel_Line_XYplane,
+                                                           numblk_idir_fuel,
+		                                           numblk_jdir_fuel);
+
+   /* Call the function Find_Neighbours to obtain the neighbour block information
+      and assign values to data members in the grid block connectivity data structure. */
+    
+   //Find_Neighbours(Input);
+
+}
+
+/**************************************************************
+ * Routine: Create_Grid_Bunsen_Box                            *
+ *                                                            *
+ * Generates a 3D Cartesian multiblock mesh for a Bunsen box. *
+ *                                                            *
+ **************************************************************/
+void Grid3D_Hexa_Multi_Block_List::Create_Grid_Bunsen_Box(Grid3D_Input_Parameters &Input) {
+
+   int count_blocks;
+   int BC_east, BC_west, BC_north, BC_south, BC_top, BC_bottom;
+   Grid2D_Quad_Block **Grid2D_Box_XYplane;
+
+   /* Allocate required memory. */
+
+   Allocate(Input.NBlk_Idir, Input.NBlk_Jdir, Input.NBlk_Kdir);
+
+
+   /* Creat 2D cross-section grids from which the 3D grid
+      will be extruded. */
+
+   Grid2D_Box_XYplane = Grid_Rectangular_Box(Grid2D_Box_XYplane,
+                                             Input.NBlk_Idir, 
+                                             Input.NBlk_Jdir,
+                                             Input.Box_Width,
+                                             Input.Box_Height,
+                                             ON,
+					     Input.Stretching_Type_Idir,
+					     Input.Stretching_Type_Jdir,
+					     Input.Stretching_Factor_Idir,
+					     Input.Stretching_Factor_Jdir,
+                                             Input.NCells_Idir,
+                                             Input.NCells_Jdir,
+					     Input.Nghost);
+
+   /* Create the mesh for each block representing
+      the complete grid. */
+
+   count_blocks = 0;
+
+   for (int kBlk = 0; kBlk <= Input.NBlk_Kdir-1; ++kBlk) {
+      for (int jBlk = 0; jBlk <= Input.NBlk_Jdir-1; ++jBlk) {
+         for (int iBlk = 0; iBlk <= Input.NBlk_Idir-1; ++iBlk) {
+
+            /* Extrude each of the grid blocks from the
+               appropriate 2D grid in XY-plane. */
+
+            Grid_Blks[count_blocks].Extrude(Grid2D_Box_XYplane[iBlk][jBlk],
+                                            Input.NCells_Kdir,
+           	                            Input.Stretching_Type_Kdir,
+				            Input.Stretching_Factor_Kdir,
+                                            -HALF*Input.Box_Length+
+                                            (double(kBlk)/double(Input.NBlk_Kdir))*Input.Box_Length,
+                                            -HALF*Input.Box_Length+
+                                            (double(kBlk+1)/double(Input.NBlk_Kdir))*Input.Box_Length);
+
+
+   	        if (iBlk == Input.NBlk_Idir-1) {
+		  BC_east = BC_REFLECTION;
+                } else {
+                   BC_east = BC_NONE;
+                } /* endif */
+                if (iBlk == 0) {
+		  BC_west = BC_REFLECTION;
+                } else {
+                   BC_west = BC_NONE;
+                } /* endif */
+
+	        if (jBlk == Input.NBlk_Jdir-1) {
+		  BC_north = BC_REFLECTION;
+                } else {
+                   BC_north = BC_NONE;
+                } /* endif */
+                if (jBlk == 0) {
+		  BC_south = BC_REFLECTION;
+                } else {
+                   BC_south = BC_NONE;
+                } /* endif */
+
+            /* Assign top and bottom boundary conditions. */
+
+            if (kBlk == Input.NBlk_Kdir-1) {
+               BC_top = BC_FIXED_PRESSURE;
+            } else {
+               BC_top = BC_NONE;
+            } /* endif */
+            if (kBlk == 0) {
+               BC_bottom = BC_DIRICHLET;
+            } else {
+               BC_bottom = BC_NONE;
+            } /* endif */
+
+             Grid_Blks[count_blocks].Set_BCs(BC_east, 
+                                             BC_west, 
+                                             BC_north, 
+                                             BC_south, 
+                                             BC_top, 
+                                             BC_bottom);
+
+            /* Update block counter. */
+
+            count_blocks++;
+
+         } /* endfor */
+      } /* endfor */
+   } /* endfor */
+
+   /* Deallocate 2D grid. */
+
+   Grid2D_Box_XYplane = Deallocate_Multi_Block_Grid(Grid2D_Box_XYplane,
+                                                    Input.NBlk_Idir, 
+                                                    Input.NBlk_Jdir);
+
+
+   /* Call the function Find_Neighbours to obtain the neighbour block information
+      and assign values to data members in the grid block connectivity data structure. */
+   
+   Find_Neighbours(Input);
+   
+}
+
+/********************************************************
+ * Routine: Create_Grid_Bunsen_Burner                   *
+ *                                                      *
+ * Generates a 3D Cartesian multiblock mesh for a       *
+ * Bunsen burner.                                       *
+ *                                                      *
+ ********************************************************/
+void Grid3D_Hexa_Multi_Block_List::Create_Grid_Bunsen_Burner(Grid3D_Input_Parameters &Input) {
+
+    int BC_east, BC_west, BC_north, BC_south, BC_top, BC_bottom;
+    int nBlk, numblk_idir_fuel, numblk_jdir_fuel,
+        numblk_idir_bunsenburner, numblk_jdir_bunsenburner,
+        numblk_idir_coflow, numblk_jdir_coflow;
+    Grid2D_Quad_Block **Grid2D_Fuel_Line_XYplane,
+                      **Grid2D_Bunsen_Burner_Inner_XYplane,
+                      **Grid2D_Bunsen_Burner_Outer_XYplane;
+
+    /* Allocate required memory. */
+
+    Allocate(Input.NBlk_Idir, Input.NBlk_Jdir, Input.NBlk_Kdir);
+
+    /* Creat 2D cross-section grids from which the 3D grid
+       will be extruded. */
+    
+    Grid2D_Fuel_Line_XYplane = Grid_Tube_2D(Grid2D_Fuel_Line_XYplane,
+                                            numblk_idir_fuel,
+		                            numblk_jdir_fuel,
+                                            Input.Radius_Bunsen_Burner_Fuel_Line,
+                                            Input.NCells_Idir,
+                                            Input.NCells_Jdir,
+		  		            Input.Nghost,
+                                            STRETCHING_FCN_MAX_CLUSTERING,
+                                            1.25);
+
+    Grid2D_Bunsen_Burner_Inner_XYplane = Grid_Annulus_2D(Grid2D_Bunsen_Burner_Inner_XYplane,
+							 numblk_idir_bunsenburner,
+							 numblk_jdir_bunsenburner,
+							 Input.Radius_Bunsen_Burner_Fuel_Line,
+							 HALF*Input.Radius_Bunsen_Burner,
+							 Input.NCells_Idir,
+							 Input.NCells_Jdir,
+							 Input.Nghost,
+							 STRETCHING_FCN_MIN_CLUSTERING,
+							 1.10);
+
+    Grid2D_Bunsen_Burner_Outer_XYplane = Grid_Annulus_2D(Grid2D_Bunsen_Burner_Outer_XYplane,
+							 numblk_idir_bunsenburner,
+							 numblk_jdir_bunsenburner,
+							 HALF*Input.Radius_Bunsen_Burner,
+							 Input.Radius_Bunsen_Burner,
+							 Input.NCells_Idir,
+							 Input.NCells_Jdir,
+							 Input.Nghost,
+							 STRETCHING_FCN_MAX_CLUSTERING,
+							 1.10);
+    /* Create the mesh for each block representing
+       the complete grid. */
+
+    for (int iBlk = 0; iBlk <= Input.NBlk_Idir-1; ++iBlk) {
+
+             /* Extrude each of the grid blocks from the
+                appropriate 2D grid in XY-plane. */
+
+	    /* fuel lines */
+
+          if (iBlk <= 4) {
+             Grid_Blks[iBlk].Extrude(Grid2D_Fuel_Line_XYplane[iBlk][0],
+				     Input.NCells_Kdir,
+				     STRETCHING_FCN_MIN_CLUSTERING,
+				     1.25,
+				     ZERO*Input.Height_Bunsen_Burner,
+				     0.25*Input.Height_Bunsen_Burner);
+
+	      Grid_Blks[iBlk].Set_BCs(BC_NONE,
+		                      BC_NONE,
+                                      BC_NONE,
+		                      BC_NONE,
+                                      BC_NONE,
+                                      BC_DIRICHLET);
+
+           } else if (iBlk >= 5 && iBlk <= 9) {
+             Grid_Blks[iBlk].Extrude(Grid2D_Fuel_Line_XYplane[iBlk-5][0],
+				     Input.NCells_Kdir,
+				     STRETCHING_FCN_MIN_CLUSTERING,
+				     1.25,
+				     0.25*Input.Height_Bunsen_Burner,
+				     0.5*Input.Height_Bunsen_Burner);
+
+               Grid_Blks[iBlk].Set_BCs(BC_NONE,
+				       BC_NONE,
+				       BC_NONE,
+				       BC_NONE,
+				       BC_NONE,
+				       BC_NONE);
+
+           } else if (iBlk >= 10 && iBlk <= 14) {
+             Grid_Blks[iBlk].Extrude(Grid2D_Fuel_Line_XYplane[iBlk-10][0],
+				     Input.NCells_Kdir,
+				     STRETCHING_FCN_MIN_CLUSTERING,
+				     1.25,
+				     0.5*Input.Height_Bunsen_Burner,
+				     0.75*Input.Height_Bunsen_Burner);
+
+               Grid_Blks[iBlk].Set_BCs(BC_NONE,
+				       BC_NONE,
+				       BC_NONE,
+				       BC_NONE,
+				       BC_NONE,
+				       BC_NONE);
+
+           } else if (iBlk >= 15 && iBlk <= 19) {
+             Grid_Blks[iBlk].Extrude(Grid2D_Fuel_Line_XYplane[iBlk-15][0],
+				     Input.NCells_Kdir,
+				     STRETCHING_FCN_MIN_CLUSTERING,
+				     1.25,
+				     0.75*Input.Height_Bunsen_Burner,
+				     Input.Height_Bunsen_Burner);
+
+               Grid_Blks[iBlk].Set_BCs(BC_NONE,
+				       BC_NONE,
+				       BC_NONE,
+				       BC_NONE,
+				       BC_FIXED_PRESSURE,
+				       BC_NONE);
+
+	      /* first ring for air */
+
+           } else if (iBlk >= 20 && iBlk <= 23) {
+              Grid_Blks[iBlk].Extrude(Grid2D_Bunsen_Burner_Inner_XYplane[iBlk-20][0],
+				      Input.NCells_Kdir,
+				      STRETCHING_FCN_MIN_CLUSTERING,
+				      1.25,
+				      ZERO*Input.Height_Bunsen_Burner,
+				      0.25*Input.Height_Bunsen_Burner);
+
+	      Grid_Blks[iBlk].Set_BCs(BC_NONE,
+		                      BC_NONE,
+                                      BC_NONE,
+		                      BC_NONE,
+                                      BC_NONE,
+                                      BC_DIRICHLET);
+
+	   } else if (iBlk >= 24 && iBlk <= 27) {
+              Grid_Blks[iBlk].Extrude(Grid2D_Bunsen_Burner_Inner_XYplane[iBlk-24][0],
+				      Input.NCells_Kdir,
+				      STRETCHING_FCN_LINEAR,
+				      1.25,
+				      0.25*Input.Height_Bunsen_Burner,
+				      0.5*Input.Height_Bunsen_Burner);
+
+               Grid_Blks[iBlk].Set_BCs(BC_NONE,
+				       BC_NONE,
+				       BC_NONE,
+				       BC_NONE,
+				       BC_NONE,
+				       BC_NONE);
+
+	   } else if (iBlk >= 28 && iBlk <= 31) {
+              Grid_Blks[iBlk].Extrude(Grid2D_Bunsen_Burner_Inner_XYplane[iBlk-28][0],
+				      Input.NCells_Kdir,
+				      STRETCHING_FCN_LINEAR,
+				      1.25,
+				      0.5*Input.Height_Bunsen_Burner,
+				      0.75*Input.Height_Bunsen_Burner);
+
+               Grid_Blks[iBlk].Set_BCs(BC_NONE,
+				       BC_NONE,
+				       BC_NONE,
+				       BC_NONE,
+				       BC_NONE,
+				       BC_NONE);
+
+	   } else if (iBlk >= 32 && iBlk <= 35) {
+              Grid_Blks[iBlk].Extrude(Grid2D_Bunsen_Burner_Inner_XYplane[iBlk-32][0],
+				      Input.NCells_Kdir,
+				      STRETCHING_FCN_LINEAR,
+				      1.25,
+				      0.75*Input.Height_Bunsen_Burner,
+				      Input.Height_Bunsen_Burner);
+
+               Grid_Blks[iBlk].Set_BCs(BC_NONE,
+				       BC_NONE,
+				       BC_NONE,
+				       BC_NONE,
+				       BC_FIXED_PRESSURE,
+				       BC_NONE);
+
+	      /* second ring for air */
+
+           } else if (iBlk >= 36 && iBlk <= 39) {
+              Grid_Blks[iBlk].Extrude(Grid2D_Bunsen_Burner_Outer_XYplane[iBlk-36][0],
+				      Input.NCells_Kdir,
+				      STRETCHING_FCN_MIN_CLUSTERING,
+				      1.25,
+				      ZERO*Input.Height_Bunsen_Burner,
+				      0.25*Input.Height_Bunsen_Burner);
+
+               Grid_Blks[iBlk].Set_BCs(BC_NONE,
+				       BC_NONE,
+				       BC_REFLECTION,
+				       BC_NONE,
+				       BC_NONE,
+				       BC_DIRICHLET);
+
+           } else if (iBlk >= 40 && iBlk <= 43) {
+              Grid_Blks[iBlk].Extrude(Grid2D_Bunsen_Burner_Outer_XYplane[iBlk-40][0],
+				      Input.NCells_Kdir,
+				      STRETCHING_FCN_LINEAR,
+				      1.25,
+				      0.25*Input.Height_Bunsen_Burner,
+				      0.5*Input.Height_Bunsen_Burner);
+
+               Grid_Blks[iBlk].Set_BCs(BC_NONE,
+				       BC_NONE,
+				       BC_REFLECTION,
+				       BC_NONE,
+				       BC_NONE,
+				       BC_NONE);
+
+           } else if (iBlk >= 44 && iBlk <= 47) {
+              Grid_Blks[iBlk].Extrude(Grid2D_Bunsen_Burner_Outer_XYplane[iBlk-44][0],
+				      Input.NCells_Kdir,
+				      STRETCHING_FCN_LINEAR,
+				      1.25,
+				      0.5*Input.Height_Bunsen_Burner,
+				      0.75*Input.Height_Bunsen_Burner);
+
+               Grid_Blks[iBlk].Set_BCs(BC_NONE,
+				       BC_NONE,
+				       BC_REFLECTION,
+				       BC_NONE,
+				       BC_NONE,
+				       BC_NONE);
+
+           } else if (iBlk >= 48 && iBlk <= 51) {
+              Grid_Blks[iBlk].Extrude(Grid2D_Bunsen_Burner_Outer_XYplane[iBlk-48][0],
+				      Input.NCells_Kdir,
+				      STRETCHING_FCN_LINEAR,
+				      1.25,
+				      0.75*Input.Height_Bunsen_Burner,
+				      Input.Height_Bunsen_Burner);
+
+               Grid_Blks[iBlk].Set_BCs(BC_NONE,
+				       BC_NONE,
+				       BC_REFLECTION,
+				       BC_NONE,
+				       BC_FIXED_PRESSURE,
+				       BC_NONE);
+
+	  } /* endif */
+    } /* endfor */
+
+    /* Deallocate 2D grid. */
+
+    Grid2D_Fuel_Line_XYplane = Deallocate_Multi_Block_Grid(Grid2D_Fuel_Line_XYplane,
+                                                           numblk_idir_fuel,
+		                                           numblk_jdir_fuel);
+
+    Grid2D_Bunsen_Burner_Inner_XYplane = Deallocate_Multi_Block_Grid(Grid2D_Bunsen_Burner_Inner_XYplane,
+								     numblk_idir_bunsenburner,
+								     numblk_jdir_bunsenburner);
+
+    Grid2D_Bunsen_Burner_Outer_XYplane = Deallocate_Multi_Block_Grid(Grid2D_Bunsen_Burner_Outer_XYplane,
+								     numblk_idir_bunsenburner,
+								     numblk_jdir_bunsenburner);
+
+   /* Call the function Find_Neighbours to obtain the neighbour block information
+      and assign values to data members in the grid block connectivity data structure. */
+    
+   Find_Neighbours(Input);
 
 }
 

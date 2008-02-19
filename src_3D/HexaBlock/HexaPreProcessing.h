@@ -22,6 +22,13 @@ int Initialize_Solution_Blocks(HexaSolver_Data &Data,
 
   if (CFFC_Primary_MPI_Processor()) {
     Data.Initial_Mesh.Create_Grid(Solution_Data.Input.Grid_IP);
+
+    if (Solution_Data.Input.Grid_IP.i_Grid == GRID_BUNSEN_BURNER) {
+      Solution_Data.Input.Grid_IP.i_Grid = GRID_TURBULENCE_BOX;
+      Data.Auxiliary_Mesh.Create_Grid(Solution_Data.Input.Grid_IP);
+      Solution_Data.Input.Grid_IP.i_Grid = GRID_BUNSEN_BURNER;
+    }
+    
     //Outputting solution input parameters
     if (!Data.batch_flag) {
       cout << Solution_Data.Input << "\n";
@@ -32,7 +39,13 @@ int Initialize_Solution_Blocks(HexaSolver_Data &Data,
   
   /* Broadcast the mesh to other MPI processors. */
 
-  Data.Initial_Mesh.Broadcast();                    
+  Data.Initial_Mesh.Broadcast();
+  if (Solution_Data.Input.Grid_IP.i_Grid == GRID_BUNSEN_BURNER) {
+    Solution_Data.Input.Grid_IP.i_Grid = GRID_TURBULENCE_BOX;
+    Data.Auxiliary_Mesh.Broadcast();
+    Solution_Data.Input.Grid_IP.i_Grid = GRID_BUNSEN_BURNER;
+  }
+                    
   
   /* Create (allocate) list of hexahedral solution blocks on each processor. */
 

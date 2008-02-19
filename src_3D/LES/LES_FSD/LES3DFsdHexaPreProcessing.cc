@@ -59,9 +59,9 @@ int Hexa_Post_Processing_Specializations(HexaSolver_Data &Data,
                               w_ave,
                               sqr_u);
 
-   Time_Averaging_of_Turbulent_Burning_Rate(Solution_Data.Local_Solution_Blocks.Soln_Blks,
-                                            Data.Local_Adaptive_Block_List,
-                                            Solution_Data.Input.Grid_IP);
+   Turbulent_Burning_Rate(Solution_Data.Local_Solution_Blocks.Soln_Blks,
+			  Data.Local_Adaptive_Block_List,
+			  Solution_Data.Input.Grid_IP);
 
    return error_flag;
 
@@ -127,10 +127,9 @@ int Output_Other_Solution_Progress_Specialization_Data(HexaSolver_Data &Data,
    viscosity = Average_viscosity<Hexa_Block<LES3DFsd_pState, LES3DFsd_cState> >(Solution_Data.Local_Solution_Blocks.Soln_Blks,
    					                                        Data.Local_Adaptive_Block_List);
 
-   turb_burning_rate = Time_Averaging_of_Turbulent_Burning_Rate<Hexa_Block<LES3DFsd_pState, LES3DFsd_cState> >
-                            (Solution_Data.Local_Solution_Blocks.Soln_Blks,
-			     Data.Local_Adaptive_Block_List,
-                             Solution_Data.Input.Grid_IP);
+   turb_burning_rate = Turbulent_Burning_Rate<Hexa_Block<LES3DFsd_pState, LES3DFsd_cState> >(Solution_Data.Local_Solution_Blocks.Soln_Blks,
+											     Data.Local_Adaptive_Block_List,
+											     Solution_Data.Input.Grid_IP);
 
    // Output turbulence statistics data to turbulence progress variable file
    if (CFFC_Primary_MPI_Processor()) {

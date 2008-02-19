@@ -787,7 +787,7 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Copy(Hexa_Block<SOLN_pSTATE, SOLN_cST
       Flow_Type = Block2.Flow_Type;
 
       // Copy the freeze limite indicator.
-      Freeze_Limiter = Block2.Freeze_Limter;
+      Freeze_Limiter = Block2.Freeze_Limiter;
 
       // Copy the solution, solutioon residuals, gradients, limiters, and 
       // other stored values.
@@ -805,6 +805,16 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Copy(Hexa_Block<SOLN_pSTATE, SOLN_cST
                dWdz[i][j][k] = Block2.dWdz[i][j][k]; 
                phi[i][j][k] = Block2.phi[i][j][k]; 
                dt[i][j][k] = Block2.dt[i][j][k];
+
+	       if (_Allocated) {
+		 _d2Wdx2[i][j][k] = Block2._d2Wdx2[i][j][k];
+		 _d2Wdy2[i][j][k] = Block2._d2Wdy2[i][j][k];
+		 _d2Wdz2[i][j][k] = Block2._d2Wdz2[i][j][k];
+		 _d2Wdxdy[i][j][k] = Block2._d2Wdxdy[i][j][k];
+		 _d2Wdxdz[i][j][k] = Block2._d2Wdxdz[i][j][k];
+		 _d2Wdydz[i][j][k] = Block2._d2Wdydz[i][j][k];
+	       } 
+
             } /* endfor */
          } /* endfor */
       } /* endfor */

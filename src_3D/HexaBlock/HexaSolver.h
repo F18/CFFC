@@ -76,9 +76,10 @@ int HexaSolver(char *Input_File_Name_ptr, int batch_flag) {
     // New Calculation (  != CONTINUE_CODE )
     if (Solution_Data.command_flag == EXECUTE_CODE) { 
       CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization. 
-
+      
       error_flag = Initialize_Solution_Blocks(Data,
-                                              Solution_Data);      
+                                              Solution_Data);
+      
       error_flag = CFFC_OR_MPI(error_flag);
       if (error_flag) return (error_flag);
 
