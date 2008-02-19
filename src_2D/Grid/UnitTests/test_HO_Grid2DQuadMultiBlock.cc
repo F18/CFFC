@@ -2856,6 +2856,27 @@ namespace tut
     ensure_equals("Find_Quadrilateral_Type() for crossed quad II", Find_Quadrilateral_Type(X[1],X[2],X[3],X[0]), 4);
   }
 
+  // Test 41:
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<41>()
+  {
+    set_test_name("Detect quadrilateral degenerated into a triangle");
+
+    // Add test particular input parameters
+    Vector2D X[4];
+    int Info;
+
+    X[0] = Vector2D(1.0,1.0);
+    X[1] = Vector2D(3.0,2.75);
+    X[2] = Vector2D(3.0,2.75);
+    X[3] = Vector2D(2.0,3.0);
+
+    // Determine quadrilateral type
+    ensure_equals("Find_Quadrilateral_Type() for triangle I" , Find_Quadrilateral_Type(X[0],X[1],X[2],X[3]), 1);
+    ensure_equals("Find_Quadrilateral_Type() for triangle II", Find_Quadrilateral_Type(X[1],X[2],X[3],X[0]), 1);
+  }
+
 }
 
 

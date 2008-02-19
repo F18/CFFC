@@ -5481,6 +5481,33 @@ void Grid2D_Quad_Block_HO::Update_All_Cells(void) {
 
     // Check the North boundary
     if (BndNorthSpline.Xp != NULL && BndNorthSpline.bc[0] != BC_NONE && BndNorthSpline.bc[0] != BC_PERIODIC){
+
+      // Determine the geometric properties along the splines (e.g. Gauss Quadrature point locations, normals, etc.)
+      // Update BndNorthSplineInfo[]
+      // Check if memory is allocated for BndNorthSplineInfo
+      if(BndNorthSplineInfo == NULL){ // allocate array
+	BndNorthSplineInfo = new Spline2DInterval_HO [NCi];
+      }
+      
+      // Check if the North Spline is defined such that the normals at the GaussQuadratures point outside of the domain 
+      // (i.e The spline pathlength increases from INu to INl)
+      if ( BndNorthSpline.getS(Node[INl][JNu]) > BndNorthSpline.getS(Node[INu][JNu]) ){
+	// Update the geometric information 
+	for(i=ICl; i<=ICu; ++i){
+	  BndNorthSplineInfo[i].UpdateInterval(BndNorthSpline,Node[i][JNu],Node[i+1][JNu],NumGQP);
+	}
+      } else {
+	// Copy the spline
+	SplineCopy = BndNorthSpline;
+	// Change the direction of increasing the pathlength
+	SplineCopy.Reverse_Spline();
+
+	// Update the geometric information 
+	for(i=ICl; i<=ICu; ++i){
+	  BndNorthSplineInfo[i].UpdateInterval(SplineCopy,Node[i][JNu],Node[i+1][JNu],NumGQP);
+	}
+      }//endif
+
       for(i=ICl+1; i<=ICu-1; ++i){
 	// Update the interior north cells
 	Cell[i][JCu].A = area_CurvedBoundaries(i,NORTH_SPLINE);
@@ -5525,36 +5552,36 @@ void Grid2D_Quad_Block_HO::Update_All_Cells(void) {
 	Cell[ICu][JCu].Xc = centroid_CurvedBoundaries(ICu,NORTH_SPLINE);
 	ComputeGeometricCoefficients_CurvedBoundaries(ICu,JCu,NORTH_SPLINE);
       }
+    } // endif (North Boundary)
 
-      // Determine the geometric properties along the splines (e.g. Gauss Quadrature point locations, normals, etc.)
-      // Update BndNorthSplineInfo[]
-      // Check if memory is allocated for BndNorthSplineInfo
-      if(BndNorthSplineInfo == NULL){ // allocate array
-	BndNorthSplineInfo = new Spline2DInterval_HO [NCi];
+    // Check the South boundary
+    if (BndSouthSpline.Xp != NULL && BndSouthSpline.bc[0] != BC_NONE && BndSouthSpline.bc[0] != BC_PERIODIC){
+
+      // Update BndSouthSplineInfo[]
+      // Check if memory is allocated for BndSouthSplineInfo
+      if(BndSouthSplineInfo == NULL){ // allocate array
+	BndSouthSplineInfo = new Spline2DInterval_HO [NCi];
       }
 
-      // Check if the North Spline is defined such that the normals at the GaussQuadratures point outside of the domain 
-      // (i.e The spline pathlength increases from INu to INl)
-      if ( BndNorthSpline.getS(Node[INl][JNu]) > BndNorthSpline.getS(Node[INu][JNu]) ){
+      // Check if the South Spline is defined such that the normals at the GaussQuadratures point outside of the domain 
+      // (i.e The spline pathlength increases from INl to INu)
+      if ( BndSouthSpline.getS(Node[INl][JNl]) < BndSouthSpline.getS(Node[INu][JNl]) ){
 	// Update the geometric information 
 	for(i=ICl; i<=ICu; ++i){
-	  BndNorthSplineInfo[i].UpdateInterval(BndNorthSpline,Node[i][JNu],Node[i+1][JNu],NumGQP);
+	  BndSouthSplineInfo[i].UpdateInterval(BndSouthSpline,Node[i][JNl],Node[i+1][JNl],NumGQP);
 	}
       } else {
 	// Copy the spline
-	SplineCopy = BndNorthSpline;
+	SplineCopy = BndSouthSpline;
 	// Change the direction of increasing the pathlength
 	SplineCopy.Reverse_Spline();
 
 	// Update the geometric information 
 	for(i=ICl; i<=ICu; ++i){
-	  BndNorthSplineInfo[i].UpdateInterval(SplineCopy,Node[i][JNu],Node[i+1][JNu],NumGQP);
+	  BndSouthSplineInfo[i].UpdateInterval(SplineCopy,Node[i][JNl],Node[i+1][JNl],NumGQP);
 	}
       }//endif
-    } // endif (North Boundary)
 
-    // Check the South boundary
-    if (BndSouthSpline.Xp != NULL && BndSouthSpline.bc[0] != BC_NONE && BndSouthSpline.bc[0] != BC_PERIODIC){
       for(i=ICl+1; i<=ICu-1; ++i){
 	// Update the interior south cells
 	Cell[i][JCl].A = area_CurvedBoundaries(i,SOUTH_SPLINE);
@@ -5599,55 +5626,10 @@ void Grid2D_Quad_Block_HO::Update_All_Cells(void) {
 	Cell[ICu][JCl].Xc = centroid_CurvedBoundaries(ICu,SOUTH_SPLINE);
 	ComputeGeometricCoefficients_CurvedBoundaries(ICu,JCl,SOUTH_SPLINE);
       }
-
-      // Update BndSouthSplineInfo[]
-      // Check if memory is allocated for BndSouthSplineInfo
-      if(BndSouthSplineInfo == NULL){ // allocate array
-	BndSouthSplineInfo = new Spline2DInterval_HO [NCi];
-      }
-
-      // Check if the South Spline is defined such that the normals at the GaussQuadratures point outside of the domain 
-      // (i.e The spline pathlength increases from INl to INu)
-      if ( BndSouthSpline.getS(Node[INl][JNl]) < BndSouthSpline.getS(Node[INu][JNl]) ){
-	// Update the geometric information 
-	for(i=ICl; i<=ICu; ++i){
-	  BndSouthSplineInfo[i].UpdateInterval(BndSouthSpline,Node[i][JNl],Node[i+1][JNl],NumGQP);
-	}
-      } else {
-	// Copy the spline
-	SplineCopy = BndSouthSpline;
-	// Change the direction of increasing the pathlength
-	SplineCopy.Reverse_Spline();
-
-	// Update the geometric information 
-	for(i=ICl; i<=ICu; ++i){
-	  BndSouthSplineInfo[i].UpdateInterval(SplineCopy,Node[i][JNl],Node[i+1][JNl],NumGQP);
-	}
-      }//endif
     } // endif (South Boundary)
 
     // Check the East boundary
     if (BndEastSpline.Xp != NULL && BndEastSpline.bc[0] != BC_NONE && BndEastSpline.bc[0] != BC_PERIODIC){
-      for(j=JCl+1; j<=JCu-1; ++j){
-	// Update the interior east cells
-	Cell[ICu][j].A = area_CurvedBoundaries(j,EAST_SPLINE);
-	Cell[ICu][j].Xc = centroid_CurvedBoundaries(j,EAST_SPLINE);
-	ComputeGeometricCoefficients_CurvedBoundaries(ICu,j,EAST_SPLINE);
-
-	// Update the ghost cells
-	Cell[ICu+1][j].A = area_GhostCell_CurvedBoundaries(j,EAST_SPLINE);
-	Cell[ICu+1][j].Xc = centroid_GhostCell_CurvedBoundaries(j,EAST_SPLINE);
-	ComputeGeometricCoefficients_GhostCell_CurvedBoundaries(ICu+1,j,EAST_SPLINE);
-      }
-
-      // Update the first and last ghost cells on the East boundary
-      Cell[ICu+1][JCl].A = area_GhostCell_CurvedBoundaries(JCl,EAST_SPLINE);
-      Cell[ICu+1][JCl].Xc = centroid_GhostCell_CurvedBoundaries(JCl,EAST_SPLINE);
-      ComputeGeometricCoefficients_GhostCell_CurvedBoundaries(ICu+1,JCl,EAST_SPLINE);
-
-      Cell[ICu+1][JCu].A = area_GhostCell_CurvedBoundaries(JCu,EAST_SPLINE);
-      Cell[ICu+1][JCu].Xc = centroid_GhostCell_CurvedBoundaries(JCu,EAST_SPLINE);
-      ComputeGeometricCoefficients_GhostCell_CurvedBoundaries(ICu+1,JCu,EAST_SPLINE);
 
       // Update BndEastSplineInfo[]
       // Check if memory is allocated for BndEastSplineInfo
@@ -5673,30 +5655,31 @@ void Grid2D_Quad_Block_HO::Update_All_Cells(void) {
 	  BndEastSplineInfo[i].UpdateInterval(SplineCopy,Node[INu][i],Node[INu][i+1],NumGQP);
 	}
       }//endif
+
+      for(j=JCl+1; j<=JCu-1; ++j){
+	// Update the interior east cells
+	Cell[ICu][j].A = area_CurvedBoundaries(j,EAST_SPLINE);
+	Cell[ICu][j].Xc = centroid_CurvedBoundaries(j,EAST_SPLINE);
+	ComputeGeometricCoefficients_CurvedBoundaries(ICu,j,EAST_SPLINE);
+
+	// Update the ghost cells
+	Cell[ICu+1][j].A = area_GhostCell_CurvedBoundaries(j,EAST_SPLINE);
+	Cell[ICu+1][j].Xc = centroid_GhostCell_CurvedBoundaries(j,EAST_SPLINE);
+	ComputeGeometricCoefficients_GhostCell_CurvedBoundaries(ICu+1,j,EAST_SPLINE);
+      }
+
+      // Update the first and last ghost cells on the East boundary
+      Cell[ICu+1][JCl].A = area_GhostCell_CurvedBoundaries(JCl,EAST_SPLINE);
+      Cell[ICu+1][JCl].Xc = centroid_GhostCell_CurvedBoundaries(JCl,EAST_SPLINE);
+      ComputeGeometricCoefficients_GhostCell_CurvedBoundaries(ICu+1,JCl,EAST_SPLINE);
+
+      Cell[ICu+1][JCu].A = area_GhostCell_CurvedBoundaries(JCu,EAST_SPLINE);
+      Cell[ICu+1][JCu].Xc = centroid_GhostCell_CurvedBoundaries(JCu,EAST_SPLINE);
+      ComputeGeometricCoefficients_GhostCell_CurvedBoundaries(ICu+1,JCu,EAST_SPLINE);
     } // endif (East Boundary)
 
     // Check the West boundary
     if (BndWestSpline.Xp != NULL && BndWestSpline.bc[0] != BC_NONE && BndWestSpline.bc[0] != BC_PERIODIC){
-      for(j=JCl+1; j<=JCu-1; ++j){
-	// Update the interior west cells
-	Cell[ICl][j].A = area_CurvedBoundaries(j,WEST_SPLINE);
-	Cell[ICl][j].Xc = centroid_CurvedBoundaries(j,WEST_SPLINE);
-	ComputeGeometricCoefficients_CurvedBoundaries(ICl,j,WEST_SPLINE);
-
-	// Update the ghost cells
-	Cell[ICl-1][j].A = area_GhostCell_CurvedBoundaries(j,WEST_SPLINE);
-	Cell[ICl-1][j].Xc = centroid_GhostCell_CurvedBoundaries(j,WEST_SPLINE);
-	ComputeGeometricCoefficients_GhostCell_CurvedBoundaries(ICl-1,j,WEST_SPLINE);
-      }
-
-      // Update the first and last ghost cells on the West boundary
-      Cell[ICl-1][JCl].A = area_GhostCell_CurvedBoundaries(JCl,WEST_SPLINE);
-      Cell[ICl-1][JCl].Xc = centroid_GhostCell_CurvedBoundaries(JCl,WEST_SPLINE);
-      ComputeGeometricCoefficients_GhostCell_CurvedBoundaries(ICl-1,JCl,WEST_SPLINE);
-
-      Cell[ICl-1][JCu].A = area_GhostCell_CurvedBoundaries(JCu,WEST_SPLINE);
-      Cell[ICl-1][JCu].Xc = centroid_GhostCell_CurvedBoundaries(JCu,WEST_SPLINE);
-      ComputeGeometricCoefficients_GhostCell_CurvedBoundaries(ICl-1,JCu,WEST_SPLINE);
 
       // Update BndWestSplineInfo[]
       // Check if memory is allocated for BndWestSplineInfo
@@ -5722,6 +5705,27 @@ void Grid2D_Quad_Block_HO::Update_All_Cells(void) {
 	  BndWestSplineInfo[i].UpdateInterval(SplineCopy,Node[INl][i],Node[INl][i+1],NumGQP);
 	}
       }//endif
+
+      for(j=JCl+1; j<=JCu-1; ++j){
+	// Update the interior west cells
+	Cell[ICl][j].A = area_CurvedBoundaries(j,WEST_SPLINE);
+	Cell[ICl][j].Xc = centroid_CurvedBoundaries(j,WEST_SPLINE);
+	ComputeGeometricCoefficients_CurvedBoundaries(ICl,j,WEST_SPLINE);
+
+	// Update the ghost cells
+	Cell[ICl-1][j].A = area_GhostCell_CurvedBoundaries(j,WEST_SPLINE);
+	Cell[ICl-1][j].Xc = centroid_GhostCell_CurvedBoundaries(j,WEST_SPLINE);
+	ComputeGeometricCoefficients_GhostCell_CurvedBoundaries(ICl-1,j,WEST_SPLINE);
+      }
+
+      // Update the first and last ghost cells on the West boundary
+      Cell[ICl-1][JCl].A = area_GhostCell_CurvedBoundaries(JCl,WEST_SPLINE);
+      Cell[ICl-1][JCl].Xc = centroid_GhostCell_CurvedBoundaries(JCl,WEST_SPLINE);
+      ComputeGeometricCoefficients_GhostCell_CurvedBoundaries(ICl-1,JCl,WEST_SPLINE);
+
+      Cell[ICl-1][JCu].A = area_GhostCell_CurvedBoundaries(JCu,WEST_SPLINE);
+      Cell[ICl-1][JCu].Xc = centroid_GhostCell_CurvedBoundaries(JCu,WEST_SPLINE);
+      ComputeGeometricCoefficients_GhostCell_CurvedBoundaries(ICl-1,JCu,WEST_SPLINE);
     } // endif (West Boundary)
 
     // Confirm the update
@@ -5767,6 +5771,32 @@ void Grid2D_Quad_Block_HO::Update_Interior_Cells(void) {
     // Check the North boundary
     if (BndNorthSpline.Xp != NULL && BndNorthSpline.bc[0] != BC_NONE && BndNorthSpline.bc[0] != BC_PERIODIC){
 
+      // Determine the geometric properties along the splines (e.g. Gauss Quadrature point locations, normals, etc.)
+      // Update BndNorthSplineInfo[]
+      // Check if memory is allocated for BndNorthSplineInfo
+      if(BndNorthSplineInfo == NULL){ // allocate array
+	BndNorthSplineInfo = new Spline2DInterval_HO [NCi];
+      }
+
+      // Check if the North Spline is defined such that the normals at the GaussQuadratures point outside of the domain 
+      // (i.e The spline pathlength increases from INu to INl)
+      if ( BndNorthSpline.getS(Node[INl][JNu]) > BndNorthSpline.getS(Node[INu][JNu]) ){
+	// Update the geometric information 
+	for(i=ICl; i<=ICu; ++i){
+	  BndNorthSplineInfo[i].UpdateInterval(BndNorthSpline,Node[i][JNu],Node[i+1][JNu],NumGQP);
+	}
+      } else {
+	// Copy the spline
+	SplineCopy = BndNorthSpline;
+	// Change the direction of increasing the pathlength
+	SplineCopy.Reverse_Spline();
+
+	// Update the geometric information 
+	for(i=ICl; i<=ICu; ++i){
+	  BndNorthSplineInfo[i].UpdateInterval(SplineCopy,Node[i][JNu],Node[i+1][JNu],NumGQP);
+	}
+      }//endif
+
       // Update the interior north cells
       for(i=ICl+1; i<=ICu-1; ++i){
 	Cell[i][JCu].A = area_CurvedBoundaries(i,NORTH_SPLINE);
@@ -5797,36 +5827,36 @@ void Grid2D_Quad_Block_HO::Update_Interior_Cells(void) {
 	Cell[ICu][JCu].Xc = centroid_CurvedBoundaries(ICu,NORTH_SPLINE);
 	ComputeGeometricCoefficients_CurvedBoundaries(ICu,JCu,NORTH_SPLINE);
       }
+    } // endif (North Boundary)
 
-      // Determine the geometric properties along the splines (e.g. Gauss Quadrature point locations, normals, etc.)
-      // Update BndNorthSplineInfo[]
-      // Check if memory is allocated for BndNorthSplineInfo
-      if(BndNorthSplineInfo == NULL){ // allocate array
-	BndNorthSplineInfo = new Spline2DInterval_HO [NCi];
+    // Check the South boundary
+    if (BndSouthSpline.Xp != NULL && BndSouthSpline.bc[0] != BC_NONE && BndSouthSpline.bc[0] != BC_PERIODIC){
+
+      // Update BndSouthSplineInfo[]
+      // Check if memory is allocated for BndSouthSplineInfo
+      if(BndSouthSplineInfo == NULL){ // allocate array
+	BndSouthSplineInfo = new Spline2DInterval_HO [NCi];
       }
 
-      // Check if the North Spline is defined such that the normals at the GaussQuadratures point outside of the domain 
-      // (i.e The spline pathlength increases from INu to INl)
-      if ( BndNorthSpline.getS(Node[INl][JNu]) > BndNorthSpline.getS(Node[INu][JNu]) ){
+      // Check if the South Spline is defined such that the normals at the GaussQuadratures point outside of the domain 
+      // (i.e The spline pathlength increases from INl to INu)
+      if ( BndSouthSpline.getS(Node[INl][JNl]) < BndSouthSpline.getS(Node[INu][JNl]) ){
 	// Update the geometric information 
 	for(i=ICl; i<=ICu; ++i){
-	  BndNorthSplineInfo[i].UpdateInterval(BndNorthSpline,Node[i][JNu],Node[i+1][JNu],NumGQP);
+	  BndSouthSplineInfo[i].UpdateInterval(BndSouthSpline,Node[i][JNl],Node[i+1][JNl],NumGQP);
 	}
       } else {
 	// Copy the spline
-	SplineCopy = BndNorthSpline;
+	SplineCopy = BndSouthSpline;
 	// Change the direction of increasing the pathlength
 	SplineCopy.Reverse_Spline();
 
 	// Update the geometric information 
 	for(i=ICl; i<=ICu; ++i){
-	  BndNorthSplineInfo[i].UpdateInterval(SplineCopy,Node[i][JNu],Node[i+1][JNu],NumGQP);
+	  BndSouthSplineInfo[i].UpdateInterval(SplineCopy,Node[i][JNl],Node[i+1][JNl],NumGQP);
 	}
       }//endif
-    } // endif (North Boundary)
 
-    // Check the South boundary
-    if (BndSouthSpline.Xp != NULL && BndSouthSpline.bc[0] != BC_NONE && BndSouthSpline.bc[0] != BC_PERIODIC){
       // Update the interior south cells
       for(i=ICl+1; i<=ICu-1; ++i){
 	Cell[i][JCl].A = area_CurvedBoundaries(i,SOUTH_SPLINE);
@@ -5857,41 +5887,10 @@ void Grid2D_Quad_Block_HO::Update_Interior_Cells(void) {
 	Cell[ICu][JCl].Xc = centroid_CurvedBoundaries(ICu,SOUTH_SPLINE);
 	ComputeGeometricCoefficients_CurvedBoundaries(ICu,JCl,SOUTH_SPLINE);
       }
-
-      // Update BndSouthSplineInfo[]
-      // Check if memory is allocated for BndSouthSplineInfo
-      if(BndSouthSplineInfo == NULL){ // allocate array
-	BndSouthSplineInfo = new Spline2DInterval_HO [NCi];
-      }
-
-      // Check if the South Spline is defined such that the normals at the GaussQuadratures point outside of the domain 
-      // (i.e The spline pathlength increases from INl to INu)
-      if ( BndSouthSpline.getS(Node[INl][JNl]) < BndSouthSpline.getS(Node[INu][JNl]) ){
-	// Update the geometric information 
-	for(i=ICl; i<=ICu; ++i){
-	  BndSouthSplineInfo[i].UpdateInterval(BndSouthSpline,Node[i][JNl],Node[i+1][JNl],NumGQP);
-	}
-      } else {
-	// Copy the spline
-	SplineCopy = BndSouthSpline;
-	// Change the direction of increasing the pathlength
-	SplineCopy.Reverse_Spline();
-
-	// Update the geometric information 
-	for(i=ICl; i<=ICu; ++i){
-	  BndSouthSplineInfo[i].UpdateInterval(SplineCopy,Node[i][JNl],Node[i+1][JNl],NumGQP);
-	}
-      }//endif
     } // endif (South Boundary)
 
     // Check the East boundary
     if (BndEastSpline.Xp != NULL && BndEastSpline.bc[0] != BC_NONE && BndEastSpline.bc[0] != BC_PERIODIC){
-      // Update the interior east cells
-      for(j=JCl+1; j<=JCu-1; ++j){
-	Cell[ICu][j].A = area_CurvedBoundaries(j,EAST_SPLINE);
-	Cell[ICu][j].Xc = centroid_CurvedBoundaries(j,EAST_SPLINE);
-	ComputeGeometricCoefficients_CurvedBoundaries(ICu,j,EAST_SPLINE);
-      }
 
       // Update BndEastSplineInfo[]
       // Check if memory is allocated for BndEastSplineInfo
@@ -5917,16 +5916,17 @@ void Grid2D_Quad_Block_HO::Update_Interior_Cells(void) {
 	  BndEastSplineInfo[i].UpdateInterval(SplineCopy,Node[INu][i],Node[INu][i+1],NumGQP);
 	}
       }//endif
+
+      // Update the interior east cells
+      for(j=JCl+1; j<=JCu-1; ++j){
+	Cell[ICu][j].A = area_CurvedBoundaries(j,EAST_SPLINE);
+	Cell[ICu][j].Xc = centroid_CurvedBoundaries(j,EAST_SPLINE);
+	ComputeGeometricCoefficients_CurvedBoundaries(ICu,j,EAST_SPLINE);
+      }
     } // endif (East Boundary)
 
     // Check the West boundary
     if (BndWestSpline.Xp != NULL && BndWestSpline.bc[0] != BC_NONE && BndWestSpline.bc[0] != BC_PERIODIC){
-      // Update the interior west cells
-      for(j=JCl+1; j<=JCu-1; ++j){
-	Cell[ICl][j].A = area_CurvedBoundaries(j,WEST_SPLINE);
-	Cell[ICl][j].Xc = centroid_CurvedBoundaries(j,WEST_SPLINE);
-	ComputeGeometricCoefficients_CurvedBoundaries(ICl,j,WEST_SPLINE);
-      }
 
       // Update BndWestSplineInfo[]
       // Check if memory is allocated for BndWestSplineInfo
@@ -5952,6 +5952,13 @@ void Grid2D_Quad_Block_HO::Update_Interior_Cells(void) {
 	  BndWestSplineInfo[i].UpdateInterval(SplineCopy,Node[INl][i],Node[INl][i+1],NumGQP);
 	}
       }//endif
+
+      // Update the interior west cells
+      for(j=JCl+1; j<=JCu-1; ++j){
+	Cell[ICl][j].A = area_CurvedBoundaries(j,WEST_SPLINE);
+	Cell[ICl][j].Xc = centroid_CurvedBoundaries(j,WEST_SPLINE);
+	ComputeGeometricCoefficients_CurvedBoundaries(ICl,j,WEST_SPLINE);
+      }
     } // endif (West Boundary)
 
     // Confirm the update
