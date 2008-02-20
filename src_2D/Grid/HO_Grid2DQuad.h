@@ -878,7 +878,10 @@ private:
   static int HighOrderBoundaryRepresentation;
 
   //! Switch for applying or not the smoothing subroutine
-  static int Smooth_Quad_Block_Flag; 
+  static int Smooth_Quad_Block_Flag;
+
+  //! Switch for how to compute the curvilinear path integrals along curved edges.
+  static int Gauss_Quad_Curvilinear_Integration;
 
   //! Highest order of reconstruction that might occur in calculations with the current grid.
   int HighestReconstructionOrder;
