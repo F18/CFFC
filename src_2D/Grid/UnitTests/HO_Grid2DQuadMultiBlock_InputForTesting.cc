@@ -237,6 +237,16 @@ ostream &operator << (ostream &out_file,
         out_file << "\n     -> Height of Solution Domain: " 
                  << IP.Box_Height;
         break;
+      case GRID_DEFORMED_BOX :
+        out_file << "\n     -> SW Corner: " 
+                 << IP.VertexSW;
+        out_file << "\n     -> SE Corner: " 
+                 << IP.VertexSE;
+        out_file << "\n     -> NE Corner: " 
+                 << IP.VertexNE;
+        out_file << "\n     -> NW Corner: " 
+                 << IP.VertexNW;
+        break;
       case GRID_FLAT_PLATE :
         out_file << "\n     -> Plate Length: " 
                  << IP.Plate_Length;
@@ -488,6 +498,10 @@ void Grid2DTesting_Input_Parameters::Set_Default_Input_Parameters(void) {
     Ellipse_Length_Y_Axis = HALF;
     Chord_Length = ONE;
     Orifice_Radius = ONE;
+    VertexSW = Vector2D(-0.5,-0.5);
+    VertexSE = Vector2D( 0.5,-0.5);
+    VertexNE = Vector2D( 0.5, 0.5);
+    VertexNW = Vector2D(-0.5, 0.5);
     X_Shift = Vector2D_ZERO;
     X_Scale = ONE;
     X_Rotate = ZERO;
@@ -624,6 +638,8 @@ int Grid2DTesting_Input_Parameters::Parse_Next_Input_Control_Parameter(void) {
       i_Grid = GRID_RECTANGULAR_BOX;
       Box_Width = ONE;
       Box_Height = ONE;
+    } else if (strcmp(Grid_Type, "Deformed_Box") == 0) {
+      i_Grid = GRID_DEFORMED_BOX;
     } else if (strcmp(Grid_Type, "Periodic_Box") == 0) {
       i_Grid = GRID_PERIODIC_BOX;
     } else if (strcmp(Grid_Type, "Interior_Inflow_Outflow_Box") == 0) {
@@ -933,6 +949,34 @@ int Grid2DTesting_Input_Parameters::Parse_Next_Input_Control_Parameter(void) {
     Line_Number = Line_Number + 1;
     Input_File >> Grain_Radius;
     Input_File.getline(buffer,sizeof(buffer));
+
+  } else if (strcmp(Next_Control_Parameter, "VertexSW") == 0) {
+    i_command = 0;
+    Line_Number = Line_Number + 1;
+    Input_File >> VertexSW;
+    Input_File.setf(ios::skipws);
+    Input_File.getline(buffer, sizeof(buffer));
+
+  } else if (strcmp(Next_Control_Parameter, "VertexSE") == 0) {
+    i_command = 0;
+    Line_Number = Line_Number + 1;
+    Input_File >> VertexSE;
+    Input_File.setf(ios::skipws);
+    Input_File.getline(buffer, sizeof(buffer));
+
+  } else if (strcmp(Next_Control_Parameter, "VertexNE") == 0) {
+    i_command = 0;
+    Line_Number = Line_Number + 1;
+    Input_File >> VertexNE;
+    Input_File.setf(ios::skipws);
+    Input_File.getline(buffer, sizeof(buffer));
+
+  } else if (strcmp(Next_Control_Parameter, "VertexNW") == 0) {
+    i_command = 0;
+    Line_Number = Line_Number + 1;
+    Input_File >> VertexNW;
+    Input_File.setf(ios::skipws);
+    Input_File.getline(buffer, sizeof(buffer));
 
   } else if (strcmp(Next_Control_Parameter, "Number_of_Blocks_Per_Processor") == 0) {
     i_command = 44;

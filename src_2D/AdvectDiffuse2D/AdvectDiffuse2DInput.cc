@@ -333,6 +333,16 @@ ostream &operator << (ostream &out_file,
         out_file << "\n     -> Height of Solution Domain: " 
                  << IP.Box_Height;
         break;
+      case GRID_DEFORMED_BOX :
+        out_file << "\n     -> SW Corner: " 
+                 << IP.VertexSW;
+        out_file << "\n     -> SE Corner: " 
+                 << IP.VertexSE;
+        out_file << "\n     -> NE Corner: " 
+                 << IP.VertexNE;
+        out_file << "\n     -> NW Corner: " 
+                 << IP.VertexNW;
+        break;
       case GRID_FLAT_PLATE :
         out_file << "\n     -> Plate Length: " 
                  << IP.Plate_Length;
@@ -625,6 +635,10 @@ void Set_Default_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
     IP.Ellipse_Length_Y_Axis = HALF;
     IP.Chord_Length = ONE;
     IP.Orifice_Radius = ONE;
+    IP.VertexSW = Vector2D(-0.5,-0.5);
+    IP.VertexSE = Vector2D( 0.5,-0.5);
+    IP.VertexNE = Vector2D( 0.5, 0.5);
+    IP.VertexNW = Vector2D(-0.5, 0.5);
     IP.X_Shift = Vector2D_ZERO;
     IP.X_Scale = ONE;
     IP.X_Rotate = ZERO;
@@ -905,6 +919,30 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
                           1, 
                           MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&(IP.Orifice_Radius), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.VertesSW.x), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.VertexSW.y), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.VertesSE.x), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.VertexSE.y), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.VertesNW.x), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.VertexNW.y), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.VertesNE.x), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.VertexNE.y), 
                           1, 
                           MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&(IP.X_Shift.x), 
@@ -1332,6 +1370,30 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.Orifice_Radius), 
                        1, 
                        MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.VertexSW.x), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.VertexSW.y), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.VertexSE.x), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.VertexSE.y), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.VertexNE.x), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.VertexNE.y), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.VertexNW.x), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.VertexNW.y), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
     Communicator.Bcast(&(IP.X_Shift.x), 
                        1, 
                        MPI::DOUBLE, Source_Rank);
@@ -1686,6 +1748,8 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
       IP.i_Grid = GRID_RECTANGULAR_BOX;
       IP.Box_Width = ONE;
       IP.Box_Height = ONE;
+    } else if (strcmp(IP.Grid_Type, "Deformed_Box") == 0) {
+      IP.i_Grid = GRID_DEFORMED_BOX;
     } else if (strcmp(IP.Grid_Type, "Periodic_Box") == 0) {
       IP.i_Grid = GRID_PERIODIC_BOX;
     } else if (strcmp(IP.Grid_Type, "Interior_Inflow_Outflow_Box") == 0) {
@@ -2038,6 +2102,34 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
     IP.Line_Number = IP.Line_Number + 1;
     IP.Input_File >> IP.Grain_Radius;
     IP.Input_File.getline(buffer,sizeof(buffer));
+
+  } else if (strcmp(IP.Next_Control_Parameter, "VertexSW") == 0) {
+    i_command = 0;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.VertexSW;
+    IP.Input_File.setf(ios::skipws);
+    IP.Input_File.getline(buffer, sizeof(buffer));
+
+  } else if (strcmp(IP.Next_Control_Parameter, "VertexSE") == 0) {
+    i_command = 0;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.VertexSE;
+    IP.Input_File.setf(ios::skipws);
+    IP.Input_File.getline(buffer, sizeof(buffer));
+
+  } else if (strcmp(IP.Next_Control_Parameter, "VertexNE") == 0) {
+    i_command = 0;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.VertexNE;
+    IP.Input_File.setf(ios::skipws);
+    IP.Input_File.getline(buffer, sizeof(buffer));
+
+  } else if (strcmp(IP.Next_Control_Parameter, "VertexNW") == 0) {
+    i_command = 0;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.VertexNW;
+    IP.Input_File.setf(ios::skipws);
+    IP.Input_File.getline(buffer, sizeof(buffer));
 
   } else if (strcmp(IP.Next_Control_Parameter, "Time_Max") == 0) {
     i_command = 39;

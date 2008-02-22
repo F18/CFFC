@@ -714,13 +714,6 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Rectangular_Box_Without_Update(int &_Number
 							    Orthogonal_East,
 							    Orthogonal_West);
       
-      /* Deallocate the memory for the boundary splines. */
-      
-      Bnd_Spline_North.deallocate();
-      Bnd_Spline_South.deallocate();
-      Bnd_Spline_East.deallocate();
-      Bnd_Spline_West.deallocate();
-      
     } /* endfor */
   } /* endfor */
 
@@ -848,16 +841,236 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Rectangular_Box_Without_Update(int &_Number
 							    Orthogonal_East,
 							    Orthogonal_West);
 
-      /* Deallocate the memory for the boundary splines. */
-
-      Bnd_Spline_North.deallocate();
-      Bnd_Spline_South.deallocate();
-      Bnd_Spline_East.deallocate();
-      Bnd_Spline_West.deallocate();
-
     } /* endfor */
   } /* endfor */
 
+
+}
+
+/*!
+ * Generates a uniform 2D mesh for a deformed
+ * box shaped domain. 
+ *
+ * \param VertexSW the SW corner of the mesh
+ * \param VertexSE the SE corner of the mesh
+ * \param VertexNE the NE corner of the mesh
+ * \param VertexNW the NW corner of the mesh
+ *                                                      
+ * This subroutine DOESN'T update the ghost cells or
+ * the geometric properties of the grid cells.
+ */
+void Grid2D_Quad_MultiBlock_HO::Grid_Deformed_Box_Without_Update(int &_Number_of_Blocks_Idir_,
+								 int &_Number_of_Blocks_Jdir_,
+								 const Vector2D &VertexSW,
+								 const Vector2D &VertexSE,
+								 const Vector2D &VertexNE,
+								 const Vector2D &VertexNW,     
+								 const int Stretching_Flag,
+								 const int Stretching_Type_Idir,
+								 const int Stretching_Type_Jdir,
+								 const double &Stretching_Factor_Idir,
+								 const double &Stretching_Factor_Jdir,
+								 const int Number_of_Cells_Idir,
+								 const int Number_of_Cells_Jdir,
+								 const int Number_of_Ghost_Cells,
+								 const int Highest_Order_of_Reconstruction){
+
+  int iBlk, jBlk, n_cells_i, n_cells_j,
+      Stretch_I, Stretch_J,
+      Orthogonal_North, Orthogonal_South,
+      Orthogonal_East, Orthogonal_West;
+  int INl, JNl;
+  double Beta_I, Tau_I, Beta_J, Tau_J;
+  Vector2D xc_NW, xc_NE, xc_SE, xc_SW;
+  Spline2D_HO Bnd_Spline_North, Bnd_Spline_South,
+              Bnd_Spline_East, Bnd_Spline_West;
+  int InfoQuad, InfoBlocks;
+
+  Grid2D_Quad_Block_HO CornersMultiBlockMesh;
+
+  // Check if it's possible to form a valid mesh with the given vertices.
+  
+  InfoQuad = Find_Quadrilateral_Type(VertexSW,VertexSE,VertexNE,VertexNW);
+
+  if (InfoQuad == 0 || InfoQuad == 4){
+    // The vertices form a degenerated or crossed quadrilateral
+    return;
+  }
+
+  /* Allocate memory for grid block. */
+
+  if (_Number_of_Blocks_Idir_ < 0) _Number_of_Blocks_Idir_ = 1;
+  if (_Number_of_Blocks_Jdir_ < 0) _Number_of_Blocks_Jdir_ = 1;
+
+  /* Check consistency of the number of blocks. */
+  if ( _Number_of_Blocks_Idir_ == 1 && _Number_of_Blocks_Jdir_ == 1 ){
+    // 1x1 blocks
+    InfoBlocks = 1;
+  } else {
+    // nxm blocks (n and m are even numbers)
+    _Number_of_Blocks_Idir_ += _Number_of_Blocks_Idir_ % 2;
+    _Number_of_Blocks_Jdir_ += _Number_of_Blocks_Jdir_ % 2;
+    InfoBlocks = 2;
+  }
+  allocate(_Number_of_Blocks_Idir_, _Number_of_Blocks_Jdir_);
+
+
+  /* Assign values to the stretching function parameters
+     and boundary grid line orthogonality parameters. */
+  
+  if (Stretching_Flag) {
+    Stretch_I = Stretching_Type_Idir;
+    Stretch_J = Stretching_Type_Jdir;
+    Beta_I = Stretching_Factor_Idir;
+    Beta_J = Stretching_Factor_Jdir;
+  } else {
+    Stretch_I = STRETCHING_FCN_LINEAR;
+    Stretch_J = STRETCHING_FCN_LINEAR;
+    Beta_I = ZERO; 
+    Beta_J = ZERO;
+  }
+  Tau_I = ZERO;
+  Tau_J = ZERO;
+  Orthogonal_North = 0;
+  Orthogonal_South = 0;
+  Orthogonal_East = 0;
+  Orthogonal_West = 0;
+
+  // Create the boundaries of the multiblock mesh.
+  Bnd_Spline_North.Create_Spline_Line(VertexNW,VertexNE,2);
+  Bnd_Spline_South.Create_Spline_Line(VertexSW,VertexSE,2);
+  Bnd_Spline_East.Create_Spline_Line(VertexSE,VertexNE,2);
+  Bnd_Spline_West.Create_Spline_Line(VertexSW,VertexNW,2);
+
+  if (InfoBlocks == 1){
+    /* Set the boundary condition types for each of the
+       boundary splines. */
+    Bnd_Spline_North.setBCtype(BC_REFLECTION);
+    Bnd_Spline_South.setBCtype(BC_REFLECTION);
+    Bnd_Spline_East.setBCtype(BC_REFLECTION);
+    Bnd_Spline_West.setBCtype(BC_REFLECTION);
+    
+    /* Create the 2D quadrilateral grid block representing
+       the mesh. */
+    
+    Grid_ptr[0][0].Create_Quad_Block_Without_Update(Bnd_Spline_North,
+						    Bnd_Spline_South,
+						    Bnd_Spline_East,
+						    Bnd_Spline_West,
+						    Number_of_Cells_Idir,
+						    Number_of_Cells_Jdir,
+						    Number_of_Ghost_Cells,
+						    Highest_Order_of_Reconstruction,
+						    GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+						    Stretch_I,
+						    Beta_I, 
+						    Tau_I,
+						    Stretch_J,
+						    Beta_J,
+						    Tau_J,
+						    Orthogonal_North,
+						    Orthogonal_South,
+						    Orthogonal_East,
+						    Orthogonal_West);
+    
+  } else {
+
+    // Obtain the corner locations of the multiblock mesh.
+    CornersMultiBlockMesh.Create_Quad_Block_Without_Update(Bnd_Spline_North,
+							   Bnd_Spline_South,
+							   Bnd_Spline_East,
+							   Bnd_Spline_West,
+							   Number_of_Blocks_Idir,
+							   Number_of_Blocks_Jdir,
+							   2,
+							   0,
+							   GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+							   STRETCHING_FCN_LINEAR,
+							   0, 
+							   0,
+							   STRETCHING_FCN_LINEAR,
+							   0, 
+							   0,
+							   0,
+							   0,
+							   0,
+							   0);
+
+    INl = CornersMultiBlockMesh.INl;
+    JNl = CornersMultiBlockMesh.JNl;
+
+    /* Create the mesh for each block representing
+       the complete grid. */
+    
+    for ( jBlk = 0; jBlk <= Number_of_Blocks_Jdir-1; ++jBlk ) {
+      for ( iBlk = 0; iBlk <= Number_of_Blocks_Idir-1; ++iBlk ) {
+
+	/* Assign values to the locations of the corners
+	   of the rectangular box shaped domain. */
+
+	xc_SW = CornersMultiBlockMesh.Node[iBlk+INl  ][jBlk+JNl  ].X;
+	xc_SE = CornersMultiBlockMesh.Node[iBlk+INl+1][jBlk+JNl  ].X;
+	xc_NE = CornersMultiBlockMesh.Node[iBlk+INl+1][jBlk+JNl+1].X;
+	xc_NW = CornersMultiBlockMesh.Node[iBlk+INl  ][jBlk+JNl+1].X;
+
+	/* Create the splines defining the north, south,
+	   east, and west boundaries of the rectangular box. */
+      
+	Bnd_Spline_North.Create_Spline_Line(xc_NW, xc_NE, 2);
+	Bnd_Spline_South.Create_Spline_Line(xc_SW, xc_SE, 2);
+	Bnd_Spline_East.Create_Spline_Line(xc_SE, xc_NE, 2);
+	Bnd_Spline_West.Create_Spline_Line(xc_SW, xc_NW, 2);
+
+	/* Set the boundary condition types for each of the
+	   boundary splines. */
+
+	if (jBlk == Number_of_Blocks_Jdir-1) {
+	  Bnd_Spline_North.setBCtype(BC_REFLECTION);
+	} else {
+	  Bnd_Spline_North.setBCtype(BC_NONE);
+	} /* endif */
+	if (jBlk == 0) {
+	  Bnd_Spline_South.setBCtype(BC_REFLECTION);
+	} else {
+	  Bnd_Spline_South.setBCtype(BC_NONE);
+	} /* endif */
+	if (iBlk == Number_of_Blocks_Idir-1) {
+	  Bnd_Spline_East.setBCtype(BC_REFLECTION);
+	} else {
+	  Bnd_Spline_East.setBCtype(BC_NONE);
+	} /* endif */
+	if (iBlk == 0) {
+	  Bnd_Spline_West.setBCtype(BC_REFLECTION);
+	} else {
+	  Bnd_Spline_West.setBCtype(BC_NONE);
+	} /* endif */
+
+
+	/* Create the 2D quadrilateral grid block representing
+	   the mesh. */
+
+	Grid_ptr[iBlk][jBlk].Create_Quad_Block_Without_Update(Bnd_Spline_North,
+							      Bnd_Spline_South,
+							      Bnd_Spline_East,
+							      Bnd_Spline_West,
+							      Number_of_Cells_Idir/Number_of_Blocks_Idir,
+							      Number_of_Cells_Jdir/Number_of_Blocks_Jdir,
+							      Number_of_Ghost_Cells,
+							      Highest_Order_of_Reconstruction,
+							      GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+							      Stretch_I,
+							      Beta_I, 
+							      Tau_I,
+							      Stretch_J,
+							      Beta_J,
+							      Tau_J,
+							      Orthogonal_North,
+							      Orthogonal_South,
+							      Orthogonal_East,
+							      Orthogonal_West);
+      } /* endfor */
+    } /* endfor */
+  }// endif 
 
 }
 
@@ -1016,12 +1229,6 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate_Without_Update(int &_Number_of_B
 						       Orthogonal_East,
 						       Orthogonal_West);
 
-    // Deallocate the memory for the boundary splines.
-    Bnd_Spline_North.deallocate();
-    Bnd_Spline_South.deallocate();
-    Bnd_Spline_East.deallocate();
-    Bnd_Spline_West.deallocate();
-    
   }
 }
 
@@ -1176,13 +1383,6 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate_NK_Without_Update(int &_Number_o
 							   Orthogonal_East,
 							   Orthogonal_West);
 	
-        /* Deallocate the memory for the boundary splines. */
-
-        Bnd_Spline_North.deallocate();
-        Bnd_Spline_South.deallocate();
-        Bnd_Spline_East.deallocate();
-        Bnd_Spline_West.deallocate();
-
     } /* endfor */    
 
 
@@ -1317,12 +1517,6 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate3_Without_Update(int &_Number_of_
 						       Orthogonal_South,
 						       Orthogonal_East,
 						       Orthogonal_West);
-    
-    // Deallocate the memory for the boundary splines.
-    Bnd_Spline_North.deallocate();
-    Bnd_Spline_South.deallocate();
-    Bnd_Spline_East.deallocate();
-    Bnd_Spline_West.deallocate();
     
   }
 
@@ -1463,12 +1657,6 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate4_Without_Update(int &_Number_of_
 						       Orthogonal_South,
 						       Orthogonal_East,
 						       Orthogonal_West);
-    
-    // Deallocate the memory for the boundary splines.
-    Bnd_Spline_North.deallocate();
-    Bnd_Spline_South.deallocate();
-    Bnd_Spline_East.deallocate();
-    Bnd_Spline_West.deallocate();
     
   }
 
@@ -1613,12 +1801,6 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Flat_Plate9_Without_Update(int &_Number_of_
 						       Orthogonal_East,
 						       Orthogonal_West);
     
-    // Deallocate the memory for the boundary splines.
-    Bnd_Spline_North.deallocate();
-    Bnd_Spline_South.deallocate();
-    Bnd_Spline_East.deallocate();
-    Bnd_Spline_West.deallocate();
-
   }
 
 
@@ -1738,12 +1920,6 @@ void Grid2D_Quad_MultiBlock_HO::Grid_1D_Flame_Without_Update(int &_Number_of_Blo
 						       Orthogonal_South,
 						       Orthogonal_East,
 						       Orthogonal_West);
-    
-    /* Deallocate the memory for the boundary splines. */
-    Bnd_Spline_North.deallocate();
-    Bnd_Spline_South.deallocate();
-    Bnd_Spline_East.deallocate();
-    Bnd_Spline_West.deallocate();
     
   }
 
@@ -2012,11 +2188,6 @@ void Grid2D_Quad_MultiBlock_HO::Grid_2D_Laminar_Flame_Without_Update(int &_Numbe
 							    Orthogonal_East,
 							    Orthogonal_West);
 
-      /* Deallocate the memory for the boundary splines. */
-      Bnd_Spline_North.deallocate();
-      Bnd_Spline_South.deallocate();
-      Bnd_Spline_East.deallocate();
-      Bnd_Spline_West.deallocate();
     } 
   }
 
@@ -2124,13 +2295,6 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Pipe_Without_Update(int &_Number_of_Blocks_
 						  Orthogonal_South,
 						  Orthogonal_East,
 						  Orthogonal_West);
-  
-  /* Deallocate the memory for the boundary splines. */
-  
-  Bnd_Spline_North.deallocate();
-  Bnd_Spline_South.deallocate();
-  Bnd_Spline_East.deallocate();
-  Bnd_Spline_West.deallocate();
   
 }
 
@@ -2260,13 +2424,6 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Pipe_Without_Update(int &_Number_of_Blocks_
 						  Orthogonal_East,
 						  Orthogonal_West);
 
-  /* Deallocate the memory for the boundary splines. */
-
-  Bnd_Spline_North.deallocate();
-  Bnd_Spline_South.deallocate();
-  Bnd_Spline_East.deallocate();
-  Bnd_Spline_West.deallocate();
-
 }
 
 /*!
@@ -2378,12 +2535,6 @@ void  Grid2D_Quad_MultiBlock_HO::Grid_Blunt_Body_Without_Update(int &_Number_of_
 
   Grid_ptr[0][0].Smooth_Quad_Block(min(250, 2*max(Number_of_Cells_Idir,Number_of_Cells_Jdir)));
 
-  /* Deallocate the memory for the boundary splines. */
-
-  Bnd_Spline_North.deallocate();
-  Bnd_Spline_South.deallocate();
-  Bnd_Spline_East.deallocate();
-  Bnd_Spline_West.deallocate();
 }
 
 
@@ -2756,12 +2907,6 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Rocket_Motor_Without_Update(int &_Number_of
 						 Number_of_Blocks_Idir,
 						 Number_of_Blocks_Jdir);
 
-	// Deallocate the memory for the boundary splines.
-	Bnd_Spline_North.deallocate();
-	Bnd_Spline_South.deallocate();
-	Bnd_Spline_East.deallocate();
-	Bnd_Spline_West.deallocate();
-
       }
 
     }
@@ -2906,12 +3051,6 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Nozzleless_Rocket_Motor_Without_Update(int 
 							    Orthogonal_East,
 							    Orthogonal_West);
 
-      // Deallocate the memory for the boundary splines.
-      Bnd_Spline_North.deallocate();
-      Bnd_Spline_South.deallocate();
-      Bnd_Spline_East.deallocate();
-      Bnd_Spline_West.deallocate();
-      
     }
   }
 
@@ -3038,12 +3177,6 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Nozzle_Without_Update(int &_Number_of_Block
     Grid_ptr[iBlk][0].Smooth_Quad_Block(min(250,2*max(Number_of_Cells_Idir,
 						      Number_of_Cells_Jdir)));
     
-    // Deallocate the memory for the boundary splines.
-    Bnd_Spline_North.deallocate();
-    Bnd_Spline_South.deallocate();
-    Bnd_Spline_East.deallocate();
-    Bnd_Spline_West.deallocate();
-
   }
 }
 
@@ -3227,13 +3360,6 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Circular_Cylinder_Without_Update(int &_Numb
 						       Orthogonal_East,
 						       Orthogonal_West);
 
-    /* Deallocate the memory for the boundary splines. */
-
-    Bnd_Spline_North.deallocate();
-    Bnd_Spline_South.deallocate();
-    Bnd_Spline_East.deallocate();
-    Bnd_Spline_West.deallocate();
-
   } /* endfor */
 
 }
@@ -3346,13 +3472,6 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Annulus_Without_Update(int &_Number_of_Bloc
 						  Orthogonal_South,
 						  Orthogonal_East,
 						  Orthogonal_West);
-
-  /* Deallocate the memory for the boundary splines. */
-    
-  Bnd_Spline_North.deallocate();
-  Bnd_Spline_South.deallocate();
-  Bnd_Spline_East.deallocate();
-  Bnd_Spline_West.deallocate();
 
 }
 
@@ -3515,13 +3634,6 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Ellipse_Without_Update(int &_Number_of_Bloc
     /* Smooth the 2D quadrilateral grid block. */
 
     Grid_ptr[iBlk][0].Smooth_Quad_Block(min(250, 2*max(n_cells_i,n_cells_j)));
-
-    /* Deallocate the memory for the boundary splines. */
-
-    Bnd_Spline_North.deallocate();
-    Bnd_Spline_South.deallocate();
-    Bnd_Spline_East.deallocate();
-    Bnd_Spline_West.deallocate();
 
   } /* endfor */
 }
@@ -3762,13 +3874,6 @@ void Grid2D_Quad_MultiBlock_HO::Grid_NACA_Aerofoil_Without_Update(int &_Number_o
 
     if (iBlk == 1 || iBlk == 2) 
       Grid_ptr[iBlk][0].Smooth_Quad_Block(min(250, 2*max(n_cells_i,n_cells_j)));
-
-    /* Deallocate the memory for the boundary splines. */
-
-    Bnd_Spline_North.deallocate();
-    Bnd_Spline_South.deallocate();
-    Bnd_Spline_East.deallocate();
-    Bnd_Spline_West.deallocate();
 
     /* Force the mesh to be symmetric. */
 
@@ -4267,12 +4372,7 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Wedge_Without_Update(int &_Number_of_Blocks
 						       Orthogonal_South,
 						       Orthogonal_East,
 						       Orthogonal_West);
-    //Smooth_Quad_Block(Grid_ptr[iBlk][0], min(250, 2*max(Number_of_Cells_Idir,Number_of_Cells_Jdir)));
-    // Deallocate the memory for the boundary splines.
-    Bnd_Spline_North.deallocate();
-    Bnd_Spline_South.deallocate();
-    Bnd_Spline_East.deallocate();
-    Bnd_Spline_West.deallocate();
+    Smooth_Quad_Block(Grid_ptr[iBlk][0], min(250, 2*max(Number_of_Cells_Idir,Number_of_Cells_Jdir)));
   }
 
 }
@@ -4422,16 +4522,9 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Unsteady_Blunt_Body_Without_Update(int &_Nu
 						       Orthogonal_South,
 						       Orthogonal_East,
 						       Orthogonal_West);
-    // Deallocate the memory for the boundary splines.
-    Bnd_Spline_North.deallocate();
-    Bnd_Spline_South.deallocate();
-    Bnd_Spline_East.deallocate();
-    Bnd_Spline_West.deallocate();
     // Smooth the 2D quadrilateral grid block.
     Grid_ptr[0][jBlk].Smooth_Quad_Block(min(250, 2*max(Number_of_Cells_Idir,Number_of_Cells_Jdir)));
   }
-  
-  if (Bow_Spline.np > 0) Bow_Spline.deallocate();
   
 }
 
@@ -4611,12 +4704,6 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Ringleb_Flow_Without_Update(int &_Number_of
 						  Orthogonal_West);
 
   Grid_ptr[0][0].Smooth_Quad_Block(min(250,2*max(Number_of_Cells_Idir,Number_of_Cells_Jdir)));
-
-  // Deallocate the memory for the boundary splines.
-  Bnd_Spline_North.deallocate();
-  Bnd_Spline_South.deallocate();
-  Bnd_Spline_East.deallocate();
-  Bnd_Spline_West.deallocate();
 
   // Deallocate memory for point, kq, and rho.
   for (int i = 0; i < nk; i++) {
@@ -4863,12 +4950,6 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Bump_Channel_Flow_Without_Update(int &_Numb
       // Smooth the 2D quadrilateral grid block.
       Grid_ptr[iBlk][jBlk].Smooth_Quad_Block(min(250,2*max(Number_of_Cells_Idir,Number_of_Cells_Jdir)));
       
-      // Deallocate the memory for the boundary splines.
-      Bnd_Spline_North.deallocate();
-      Bnd_Spline_South.deallocate();
-      Bnd_Spline_East.deallocate();
-      Bnd_Spline_West.deallocate();
-
     }
   }
 
@@ -5091,12 +5172,6 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Jet_Flow_Without_Update(int &_Number_of_Blo
 							      Orthogonal_East,
 							      Orthogonal_West);
 	
-	// Deallocate the memory for the boundary splines.
-	Bnd_Spline_North.deallocate();
-	Bnd_Spline_South.deallocate();
-	Bnd_Spline_East.deallocate();
-	Bnd_Spline_West.deallocate();
-	
       }
       
     }    
@@ -5303,12 +5378,6 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Mixing_Layer_Without_Update(int &_Number_of
 							      Orthogonal_East,
 							      Orthogonal_West);
 	
-	// Deallocate the memory for the boundary splines.
-	Bnd_Spline_North.deallocate();
-	Bnd_Spline_South.deallocate();
-	Bnd_Spline_East.deallocate();
-	Bnd_Spline_West.deallocate();
-
       }
 
     }    
@@ -5592,12 +5661,6 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Backward_Facing_Step_Without_Update(int &_N
 							      Orthogonal_East,
 							      Orthogonal_West);
 
-	// Deallocate the memory for the boundary splines.
-	Bnd_Spline_North.deallocate();
-	Bnd_Spline_South.deallocate();
-	Bnd_Spline_East.deallocate();
-	Bnd_Spline_West.deallocate();
-
       }
 
     }    
@@ -5704,12 +5767,6 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Forward_Facing_Step_Without_Update(int &_Nu
 							    Orthogonal_East,
 							    Orthogonal_West);
       
-      // Deallocate the memory for the boundary splines.
-      Bnd_Spline_North.deallocate();
-      Bnd_Spline_South.deallocate();
-      Bnd_Spline_East.deallocate();
-      Bnd_Spline_West.deallocate();
-
     } /* endfor */    
   } /* endfor */
 }
@@ -6050,12 +6107,6 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Desolvation_Chamber_Without_Update(const in
 							      Orthogonal_East,
 							      Orthogonal_West);
 	
-	// Deallocate the memory for the boundary splines.
-	Bnd_Spline_North.deallocate();
-	Bnd_Spline_South.deallocate();
-	Bnd_Spline_East.deallocate();
-	Bnd_Spline_West.deallocate();
-
       }
 
     }
@@ -6739,16 +6790,6 @@ void Grid2D_Quad_MultiBlock_HO::Grid_NASA_Rotor_37_Without_Update(int &_Number_o
   Grid_ptr[2][1].Smooth_Quad_Block(min(250,2*max(Number_of_Cells_Idir,
 						 Number_of_Cells_Jdir)));
   
-  // Deallocate splines.
-  upperB.deallocate();
-  lowerB.deallocate();
-  upperMiddleB.deallocate();
-  lowerMiddleB.deallocate();
-  camberTrail.deallocate();
-  camberLead.deallocate();
-  camberBlade.deallocate();
-  Rotor_Spline.deallocate();
-
 }
 
 /*!
@@ -6986,7 +7027,6 @@ void Grid2D_Quad_MultiBlock_HO::Grid_NASA_Rotor_67_Without_Update(int &_Number_o
   // Concatenate first and second segments.
   BndNorthSpline = Concatenate_Splines(BndNorthSpline,tempBndNorthSpline);
   // Final segment.
-  tempBndNorthSpline.deallocate();
   tempBndNorthSpline.allocate(30);
   tempBndNorthSpline.settype(SPLINE2D_QUINTIC);
   zLead = (zrL+zrU)/2;
@@ -7002,7 +7042,6 @@ void Grid2D_Quad_MultiBlock_HO::Grid_NASA_Rotor_67_Without_Update(int &_Number_o
   tempBndNorthSpline.pathlength();
   // Concatenate first and final segments.
   BndNorthSpline = Concatenate_Splines(BndNorthSpline,tempBndNorthSpline);
-  tempBndNorthSpline.deallocate();
   for (int i = 0; i < BndNorthSpline.np; i++) {
     BndNorthSpline.bc[i] = BC_NONE;
     if (i == 0 || i == BndNorthSpline.np-1) {
@@ -7043,7 +7082,6 @@ void Grid2D_Quad_MultiBlock_HO::Grid_NASA_Rotor_67_Without_Update(int &_Number_o
   BndSouthSpline.pathlength();
   // Concatenate first and second segments.
   BndSouthSpline = Concatenate_Splines(BndSouthSpline,tempBndSouthSpline);
-  tempBndSouthSpline.deallocate();
   // Final segment.
   tempBndSouthSpline.allocate(30);
   tempBndSouthSpline.settype(SPLINE2D_QUINTIC);
@@ -7059,7 +7097,6 @@ void Grid2D_Quad_MultiBlock_HO::Grid_NASA_Rotor_67_Without_Update(int &_Number_o
   tempBndSouthSpline.pathlength();
   // Concatenate first and final segments.
   BndSouthSpline = Concatenate_Splines(BndSouthSpline,tempBndSouthSpline);
-  tempBndSouthSpline.deallocate();
   for (int i = 0; i < BndSouthSpline.np; i++) {
     BndSouthSpline.bc[i] = BC_NONE;
     if (i == 0 || i == BndSouthSpline.np-1) {
@@ -7220,27 +7257,8 @@ void Grid2D_Quad_MultiBlock_HO::Grid_NASA_Rotor_67_Without_Update(int &_Number_o
       // Smooth the 2D quadrilateral grid block.
       Grid_ptr[iBlk][jBlk].Smooth_Quad_Block(min(250,2*max(Number_of_Cells_Idir,
 							   Number_of_Cells_Jdir)));
-      // Deallocate the memory for the boundary splines.
-      Bnd_Spline_North.deallocate();
-      Bnd_Spline_South.deallocate();
-      Bnd_Spline_East.deallocate();
-      Bnd_Spline_West.deallocate();
     }
   }
-
-  // Deallocate splines.
-  upperB.deallocate();
-  lowerB.deallocate();
-  upperMiddleB.deallocate();
-  lowerMiddleB.deallocate();
-  camberTrail.deallocate();
-  camberLead.deallocate();
-  camberBlade.deallocate();
-  Rotor_Spline.deallocate();
-  BndNorthSpline.deallocate();
-  BndSouthSpline.deallocate();
-  BndEastSpline.deallocate();
-  BndWestSpline.deallocate();
 
 }
 
@@ -7365,12 +7383,6 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Driven_Cavity_Flow_Without_Update(int &_Num
 							    Orthogonal_East,
 							    Orthogonal_West);
       
-      // Deallocate the memory for the boundary splines.
-      Bnd_Spline_North.deallocate();
-      Bnd_Spline_South.deallocate();
-      Bnd_Spline_East.deallocate();
-      Bnd_Spline_West.deallocate();
-
     }
   }
 
@@ -7539,13 +7551,6 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Adiabatic_Flat_Plate_Without_Update(int &_N
 						       Orthogonal_East,
 						       Orthogonal_West);
 	
-    /* Deallocate the memory for the boundary splines. */
-
-    Bnd_Spline_North.deallocate();
-    Bnd_Spline_South.deallocate();
-    Bnd_Spline_East.deallocate();
-    Bnd_Spline_West.deallocate();
-
   } /* endfor */    
 
 }
@@ -7722,13 +7727,6 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Adiabatic_Circular_Cylinder_Without_Update(
 						       Orthogonal_East,
 						       Orthogonal_West);
 	
-    /* Deallocate the memory for the boundary splines. */
-
-    Bnd_Spline_North.deallocate();
-    Bnd_Spline_South.deallocate();
-    Bnd_Spline_East.deallocate();
-    Bnd_Spline_West.deallocate();
-
   } /* endfor */
 }
 
@@ -7868,13 +7866,6 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Adiabatic_Couette_Without_Update(int &_Numb
 						       Orthogonal_East,
 						       Orthogonal_West);
 	
-    /* Deallocate the memory for the boundary splines. */
-
-    Bnd_Spline_North.deallocate();
-    Bnd_Spline_South.deallocate();
-    Bnd_Spline_East.deallocate();
-    Bnd_Spline_West.deallocate();
-
   } /* endfor */    
 
 }
@@ -8005,13 +7996,6 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Cylindrical_Encl_Without_Update(int &_Numbe
 						  Orthogonal_East,
 						  Orthogonal_West);
     
-  /* Deallocate the memory for the boundary splines. */
-
-  Bnd_Spline_North.deallocate();
-  Bnd_Spline_South.deallocate();
-  Bnd_Spline_East.deallocate();
-  Bnd_Spline_West.deallocate();
-
 }
 
 /*!
@@ -8139,13 +8123,6 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Rectangular_Encl_Without_Update(int &_Numbe
 							    Orthogonal_South,
 							    Orthogonal_East,
 							    Orthogonal_West);
-
-      /* Deallocate the memory for the boundary splines. */
-
-      Bnd_Spline_North.deallocate();
-      Bnd_Spline_South.deallocate();
-      Bnd_Spline_East.deallocate();
-      Bnd_Spline_West.deallocate();
 
     } /* endfor */
   } /* endfor */
@@ -8308,13 +8285,6 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Tube_2D_Without_Update(int &_Number_of_Bloc
 						       Orthogonal_East,
 						       Orthogonal_West);
 	
-    /* Deallocate the memory for the boundary splines. */
-
-    Bnd_Spline_North.deallocate();
-    Bnd_Spline_South.deallocate();
-    Bnd_Spline_East.deallocate();
-    Bnd_Spline_West.deallocate();
-
   } /* endfor */
 
 }
@@ -8477,13 +8447,6 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Annulus_2D_Without_Update(int &_Number_of_B
 						       Orthogonal_East,
 						       Orthogonal_West);
 	
-    /* Deallocate the memory for the boundary splines. */
-
-    Bnd_Spline_North.deallocate();
-    Bnd_Spline_South.deallocate();
-    Bnd_Spline_East.deallocate();
-    Bnd_Spline_West.deallocate();
-
   } /* endfor */
 
 }

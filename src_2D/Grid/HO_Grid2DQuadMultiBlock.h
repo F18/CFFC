@@ -592,6 +592,22 @@ public:
 					   const int Number_of_Ghost_Cells,
 					   const int Highest_Order_of_Reconstruction);
 
+  void Grid_Deformed_Box_Without_Update(int &_Number_of_Blocks_Idir_,
+					int &_Number_of_Blocks_Jdir_,
+					const Vector2D &VertexSW,
+					const Vector2D &VertexSE,
+					const Vector2D &VertexNE,
+					const Vector2D &VertexNW,					
+					const int Stretching_Flag,
+					const int Stretching_Type_Idir,
+					const int Stretching_Type_Jdir,
+					const double &Stretching_Factor_Idir,
+					const double &Stretching_Factor_Jdir,
+					const int Number_of_Cells_Idir,
+					const int Number_of_Cells_Jdir,
+					const int Number_of_Ghost_Cells,
+					const int Highest_Order_of_Reconstruction);
+  
   void Grid_Flat_Plate_Without_Update(int &_Number_of_Blocks_Idir_,
 				      int &_Number_of_Blocks_Jdir_,
 				      const double &Length,
@@ -1130,6 +1146,23 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
 					  Input_Parameters.Number_of_Ghost_Cells,
 					  Input_Parameters.ReconstructionOrder());
     }
+    break;
+  case GRID_DEFORMED_BOX :
+    Grid_Deformed_Box_Without_Update(Input_Parameters.Number_of_Blocks_Idir,
+				     Input_Parameters.Number_of_Blocks_Jdir,
+				     Input_Parameters.VertexSW,
+				     Input_Parameters.VertexSE,
+				     Input_Parameters.VertexNE,
+				     Input_Parameters.VertexNW,
+				     Input_Parameters.i_Mesh_Stretching,
+				     Input_Parameters.Mesh_Stretching_Type_Idir,
+				     Input_Parameters.Mesh_Stretching_Type_Jdir,
+				     Input_Parameters.Mesh_Stretching_Factor_Idir,
+				     Input_Parameters.Mesh_Stretching_Factor_Jdir,
+				     Input_Parameters.Number_of_Cells_Idir,
+				     Input_Parameters.Number_of_Cells_Jdir,
+				     Input_Parameters.Number_of_Ghost_Cells,
+				     Input_Parameters.ReconstructionOrder());
     break;
   case GRID_PERIODIC_BOX :
     Grid_Rectangular_Box_Without_Update(Input_Parameters.Number_of_Blocks_Idir,

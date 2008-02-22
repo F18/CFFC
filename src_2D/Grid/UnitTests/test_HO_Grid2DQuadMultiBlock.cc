@@ -2877,6 +2877,45 @@ namespace tut
     ensure_equals("Find_Quadrilateral_Type() for triangle II", Find_Quadrilateral_Type(X[1],X[2],X[3],X[0]), 1);
   }
 
+  // Test 42:
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<42>()
+  {
+    set_test_name("Deformed Box");
+
+    // Add test particular input parameters
+    IP.i_Grid = GRID_DEFORMED_BOX;
+    IP.Number_of_Blocks_Jdir = 1;
+    IP.Number_of_Blocks_Idir = 1;
+    IP.Number_of_Cells_Idir = 40;
+    IP.Number_of_Cells_Jdir = 40;
+    IP.Number_of_Ghost_Cells = 5;
+    IP.Space_Accuracy = 3;
+    IP.IncludeHighOrderBoundariesRepresentation = OFF;
+    IP.i_Smooth_Quad_Block = OFF;
+    IP.BCs_Specified = ON;
+    IP.BC_North = BC_CONSTANT_EXTRAPOLATION;
+    IP.BC_South = BC_CONSTANT_EXTRAPOLATION;
+    IP.BC_East = BC_CONSTANT_EXTRAPOLATION;
+    IP.BC_West = BC_CONSTANT_EXTRAPOLATION;
+
+    IP.VertexSW = Vector2D(0.0,0.0);
+    IP.VertexSE = Vector2D(4.0,1.0);
+    IP.VertexNE = Vector2D(2.5,4.0);
+    IP.VertexNW = Vector2D(0.5,5.0);
+
+    // Build the mesh
+    CreateMesh(MeshBlk,IP);
+
+    MeshBlk.Check_Multi_Block_Grid_Completely();
+    
+
+    Open_Output_File("Deformed_Box.dat");
+    MeshBlk.Output_Nodes_Tecplot(out());
+
+  }
+
 }
 
 

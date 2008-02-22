@@ -76,6 +76,7 @@ public:
          Ellipse_Length_Y_Axis, Chord_Length, Orifice_Radius,
          Annulus_Theta_Start, Annulus_Theta_End;
   int Nozzle_Type;
+  Vector2D VertexSW, VertexSE, VertexNE, VertexNW;
   double X_Scale, X_Rotate;
   Vector2D X_Shift;
   char **ICEMCFD_FileNames;
