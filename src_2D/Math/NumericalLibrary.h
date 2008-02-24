@@ -1377,6 +1377,10 @@ public:
   static const double GQ3_Abscissa[3];
   static const double GQ3_Weight[3];
 
+  // Abscissae and weights for 5-point Gaussian method
+  static const double GQ5_Abscissa[5];
+  static const double GQ5_Weight[5];  
+
 protected:
   GaussQuadratureData(void); //!< Private default constructor
   GaussQuadratureData(const GaussQuadratureData&); //!< Private copy constructor

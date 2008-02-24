@@ -89,6 +89,8 @@ namespace tut
 
     // allocate memory for the GQPs
     GQPoints = new Vector2D [3];
+
+    Grid2D_Quad_Block_HO::setContourIntegrationBasedOnGaussQuadratures();
   }
 
   Data_Grid2DQuadMultiBlock_HO::~Data_Grid2DQuadMultiBlock_HO(void){
@@ -1557,6 +1559,7 @@ namespace tut
     IP.Space_Accuracy = 4;
     IP.IncludeHighOrderBoundariesRepresentation = ON;
     IP.i_Smooth_Quad_Block = OFF;
+    Grid2D_Quad_Block_HO::setContourIntegrationBasedOnLinearSegments();
 
     IP.i_Mesh_Stretching = ON;
     IP.Mesh_Stretching_Type_Idir = STRETCHING_FCN_MINMAX_CLUSTERING;
@@ -1748,6 +1751,7 @@ namespace tut
     IP.Space_Accuracy = 4;
     IP.IncludeHighOrderBoundariesRepresentation = ON;
     IP.i_Smooth_Quad_Block = OFF;
+    Grid2D_Quad_Block_HO::setContourIntegrationBasedOnLinearSegments();
 
     IP.i_Mesh_Stretching = ON;
     IP.Mesh_Stretching_Type_Idir = STRETCHING_FCN_MINMAX_CLUSTERING;
@@ -2884,6 +2888,8 @@ namespace tut
   {
     set_test_name("Deformed Box");
 
+    RunRegression = ON;
+
     // Add test particular input parameters
     IP.i_Grid = GRID_DEFORMED_BOX;
     IP.Number_of_Blocks_Jdir = 1;
@@ -2891,7 +2897,71 @@ namespace tut
     IP.Number_of_Cells_Idir = 40;
     IP.Number_of_Cells_Jdir = 40;
     IP.Number_of_Ghost_Cells = 5;
-    IP.Space_Accuracy = 3;
+    IP.Space_Accuracy = 4;
+    IP.IncludeHighOrderBoundariesRepresentation = OFF;
+    IP.i_Smooth_Quad_Block = OFF;
+    IP.BCs_Specified = ON;
+    IP.BC_North = BC_CONSTANT_EXTRAPOLATION;
+    IP.BC_South = BC_CONSTANT_EXTRAPOLATION;
+    IP.BC_East = BC_CONSTANT_EXTRAPOLATION;
+    IP.BC_West = BC_CONSTANT_EXTRAPOLATION;
+    IP.IterationsOfInteriorNodesDisturbances = 300;
+
+    IP.VertexSW = Vector2D(0.0,0.0);
+    IP.VertexSE = Vector2D(4.0,1.0);
+    IP.VertexNE = Vector2D(2.5,4.0);
+    IP.VertexNW = Vector2D(0.5,5.0);
+
+    MasterFile = "Deformed_Box.dat";
+    CurrentFile = "Current_Deformed_Box.dat";
+    
+    if (RunRegression){
+      IP.IncludeHighOrderBoundariesRepresentation = ON;
+      Grid2D_Quad_Block_HO::setContourIntegrationBasedOnGaussQuadratures();
+
+      // Build the mesh
+      CreateMesh(MeshBlk,IP);
+      MeshBlk.Check_Multi_Block_Grid_Completely();
+
+      // open CurrentFile
+      Open_Output_File(CurrentFile);
+
+      // output cell data
+      MeshBlk.Output_Cells_Data(out());
+
+      // == check geometric properties
+      RunRegressionTest("Deformed Box", CurrentFile, MasterFile, 5.0e-11, 5.0e-11);
+
+    } else {
+      // Build the mesh
+      CreateMesh(MeshBlk,IP);
+      MeshBlk.Check_Multi_Block_Grid_Completely();
+
+      // open MasterFile
+      Open_Output_File(MasterFile);
+
+      // output cell data
+      MeshBlk.Output_Cells_Data(out());
+    }
+  }
+
+  // Test 43:
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<43>()
+  {
+    set_test_name("Rectangular Box");
+
+    RunRegression = ON;
+
+    // Add test particular input parameters
+    IP.i_Grid = GRID_RECTANGULAR_BOX;
+    IP.Number_of_Blocks_Jdir = 1;
+    IP.Number_of_Blocks_Idir = 1;
+    IP.Number_of_Cells_Idir = 40;
+    IP.Number_of_Cells_Jdir = 40;
+    IP.Number_of_Ghost_Cells = 5;
+    IP.Space_Accuracy = 4;
     IP.IncludeHighOrderBoundariesRepresentation = OFF;
     IP.i_Smooth_Quad_Block = OFF;
     IP.BCs_Specified = ON;
@@ -2900,20 +2970,35 @@ namespace tut
     IP.BC_East = BC_CONSTANT_EXTRAPOLATION;
     IP.BC_West = BC_CONSTANT_EXTRAPOLATION;
 
-    IP.VertexSW = Vector2D(0.0,0.0);
-    IP.VertexSE = Vector2D(4.0,1.0);
-    IP.VertexNE = Vector2D(2.5,4.0);
-    IP.VertexNW = Vector2D(0.5,5.0);
-
-    // Build the mesh
-    CreateMesh(MeshBlk,IP);
-
-    MeshBlk.Check_Multi_Block_Grid_Completely();
+    MasterFile = "CurvedBoundaries_For_RectangularBox.dat";
+    CurrentFile = "Current_CurvedBoundaries_For_RectangularBox.dat";
     
+    if (RunRegression){
+      IP.IncludeHighOrderBoundariesRepresentation = ON;
+      Grid2D_Quad_Block_HO::setContourIntegrationBasedOnGaussQuadratures();
 
-    Open_Output_File("Deformed_Box.dat");
-    MeshBlk.Output_Nodes_Tecplot(out());
+      // Build the mesh
+      CreateMesh(MeshBlk,IP);
 
+      // open CurrentFile
+      Open_Output_File(CurrentFile);
+
+      // output cell data
+      MeshBlk.Output_Cells_Data(out());
+
+      // == check geometric properties
+      RunRegressionTest("Rectangular Box with Curved Bnds", CurrentFile, MasterFile, 5.0e-11, 5.0e-11);
+
+    } else {
+      // Build the mesh
+      CreateMesh(MeshBlk,IP);
+
+      // open MasterFile
+      Open_Output_File(MasterFile);
+
+      // output cell data
+      MeshBlk.Output_Cells_Data(out());
+    }
   }
 
 }

@@ -100,6 +100,9 @@ public:
 
   int Check_Multi_Block_Grid(void);
   int Check_Multi_Block_Grid_Completely(void);
+
+  void Disturb_Interior_Nodes_Without_Update(const int &Number_of_Iterations);
+  void Disturb_Interior_Nodes(const int &Number_of_Iterations);
   //@}
   
   //!@name Update exterior nodes and cell geometric properties
@@ -1033,6 +1036,9 @@ public:
   
   //@}
     
+  //! Output only the cell data
+  void Output_Cells_Data(ostream &Out_File);
+
   //! @name Input-output operators.
   //@{
   friend ostream &operator << (ostream &Out_File, const Grid2D_Quad_MultiBlock_HO &G);
@@ -1454,10 +1460,15 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
     Scale_Multi_Block_Grid_Without_Update(Input_Parameters.X_Scale);
   }/* endif */
 
-  /* Finally rotate quadrilateral mesh as specified by input parameters. */
+  /* Next rotate quadrilateral mesh as specified by input parameters. */
   if (fabs(Input_Parameters.X_Rotate) > TOLER) {
     Rotate_Multi_Block_Grid_Without_Update(TWO*PI*Input_Parameters.X_Rotate/360.00);
   }/* endif */
+
+  /* Finally disturb the interior nodes as specified by input parameters. */
+  if (Input_Parameters.IterationsOfInteriorNodesDisturbances > 0){
+    Disturb_Interior_Nodes_Without_Update(Input_Parameters.IterationsOfInteriorNodesDisturbances);
+  }
 
   /* Check the validity of the generated mesh. */
   if (Grid_ptr == NULL){

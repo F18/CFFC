@@ -536,7 +536,7 @@ namespace tut
 
     int i;
     for (i=0; i<=9 ; ++i){
-      GeomCoeff(i).D() = SInfo.IntegratePolynomialTerm(Centroid,GeomCoeff(i).P1(), GeomCoeff(i).P2());
+      GeomCoeff(i).D() = SInfo.IntegratePolynomialTermAndDivide(Centroid,GeomCoeff(i).P1(), GeomCoeff(i).P2());
       ensure_distance("Check integration", GeomCoeff(i).D(), MapleSolution[i], AcceptedError(MapleSolution[i],tol));
     }
   }
@@ -578,8 +578,8 @@ namespace tut
     SI2.InitializeInterval(S,P,P2,2);
 
     for (int i=0; i<=9 ; ++i){
-      LineInt1(i).D() = SI1.IntegratePolynomialTerm(Centroid,LineInt1(i).P1(),LineInt1(i).P2());
-      LineInt2(i).D() = SI2.IntegratePolynomialTerm(Centroid,LineInt2(i).P1(),LineInt2(i).P2());
+      LineInt1(i).D() = SI1.IntegratePolynomialTermAndDivide(Centroid,LineInt1(i).P1(),LineInt1(i).P2());
+      LineInt2(i).D() = SI2.IntegratePolynomialTermAndDivide(Centroid,LineInt2(i).P1(),LineInt2(i).P2());
     }
     
     LineIntTotal = LineInt1 + LineInt2;
@@ -663,7 +663,7 @@ namespace tut
 
     int i;
     for (i=0; i<=9 ; ++i){
-      GeomCoeff(i).D() = SInfo.IntegratePolynomialTerm(Centroid,GeomCoeff(i).P1(), GeomCoeff(i).P2());
+      GeomCoeff(i).D() = SInfo.IntegratePolynomialTermAndDivide(Centroid,GeomCoeff(i).P1(), GeomCoeff(i).P2());
     }
 
     ensure_distance("Check Coeff 0", GeomCoeff(0).D(), MapleSolution[0], AcceptedError(MapleSolution[0],tol));
@@ -712,7 +712,7 @@ namespace tut
 
     int i;
     for (i=0; i<=9 ; ++i){
-      GeomCoeff(i).D() = SInfo.IntegratePolynomialTerm(Centroid,GeomCoeff(i).P1(), GeomCoeff(i).P2());
+      GeomCoeff(i).D() = SInfo.IntegratePolynomialTermAndDivide(Centroid,GeomCoeff(i).P1(), GeomCoeff(i).P2());
     }
 
     ensure_distance("Check Coeff 0", GeomCoeff(0).D(), MapleSolution[0], AcceptedError(MapleSolution[0],tol));
@@ -827,7 +827,7 @@ namespace tut
     CircleArea = SInfo.AreaContribution() + SInfo1.AreaContribution();
 
     // Calculation of the centroid coordinates
-    Centroid.x = ( SInfo.XCentroidContribution() + SInfo1.XCentroidContribution() )/CircleArea;
+    Centroid.x = ( SInfo.XCentroidContribution() + SInfo1.XCentroidContribution() )*0.5/CircleArea;
 
     Centroid.y = ( SInfo.YCentroidContribution() + SInfo1.YCentroidContribution() ) /CircleArea;
 

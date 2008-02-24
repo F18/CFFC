@@ -10,6 +10,13 @@
 /* Include CFFC header files */
 #include "HO_Spline2DInterval.h"
 
+/*!
+ * Set the number of Gauss quadrature points used to 
+ * evaluate contour integrals along the spline 2D interval.
+ * The current implementation allows for either 3- or 5-point
+ * Gauss quadratures.
+ */
+int Spline2DInterval_HO::NUMBER_OF_GQP_CONTOURINT = 3;
 
 /*!
  * Copy Constructor
@@ -37,7 +44,7 @@ Spline2DInterval_HO::Spline2DInterval_HO(const Spline2DInterval_HO &rhs ): N_Sub
   }
   
   // Copy the Gauss quadrature points for contour integration
-  for(iter = 1; iter <= 3; ++iter){
+  for(iter = 1; iter <= NUMBER_OF_GQP_CONTOURINT; ++iter){
     GQP_ContourInt[iter-1] = rhs.GQPointContourIntegral(iter);
     DyDs[iter - 1] = rhs.dYdS(iter);
   }
@@ -69,7 +76,7 @@ Spline2DInterval_HO& Spline2DInterval_HO::operator=(const Spline2DInterval_HO &r
   }
   
   // Copy the Gauss quadrature points for contour integration
-  for(iter = 1; iter <= 3; ++iter){
+  for(iter = 1; iter <= NUMBER_OF_GQP_CONTOURINT; ++iter){
     GQP_ContourInt[iter-1] = rhs.GQPointContourIntegral(iter);
     DyDs[iter - 1] = rhs.dYdS(iter);
   }
@@ -89,7 +96,7 @@ void Spline2DInterval_HO::allocate(const int _N_GQP_, const int __N_SubIntervals
 
   assert(__N_SubIntervals__ >= 1 && _N_GQP_ >= 1);
   int TotalEntries(_N_GQP_*__N_SubIntervals__); // total number of points along the spline interval
-  int Total_MomentGQP_Entries(3 * __N_SubIntervals__);
+  int Total_MomentGQP_Entries(NUMBER_OF_GQP_CONTOURINT * __N_SubIntervals__);
 
   if ( (_N_GQP_ != GQPointsPerSubInterval()) || (__N_SubIntervals__ != NumOfSubIntervals()) ){
     // Deallocate the allocated memory
@@ -262,7 +269,7 @@ void Spline2DInterval_HO::DetermineSubIntervalProperties(const Spline2D_HO & Sup
   int Divisions(1);
   double *Length(NULL), *PathLength(NULL);
   double* GQP_Abscissa = new double [N_GQP];
-  double* GQP_ContourInt_Abscissa = new double [3];
+  double* GQP_ContourInt_Abscissa = new double [NUMBER_OF_GQP_CONTOURINT];
 
   // Determine the pathlength coordinate of the StartPoint and the EndPoint
   double S1(SupportCurve.getS(StartPoint)),
@@ -378,12 +385,28 @@ void Spline2DInterval_HO::DetermineSubIntervalProperties(const Spline2D_HO & Sup
 
 
   // Get the lengths to the Gauss quadrature points (GQP_ContourInt) for contour integration
-  GQP_ContourInt_Abscissa[0] = GaussQuadratureData::GQ3_Abscissa[0]*IntLength(SubIntervalIndex);
-  GQP_ContourInt_Abscissa[1] = GaussQuadratureData::GQ3_Abscissa[1]*IntLength(SubIntervalIndex);
-  GQP_ContourInt_Abscissa[2] = GaussQuadratureData::GQ3_Abscissa[2]*IntLength(SubIntervalIndex);
+  switch(NUMBER_OF_GQP_CONTOURINT){
 
+  case 3:			// Three Gauss Quad Points
+    GQP_ContourInt_Abscissa[0] = GaussQuadratureData::GQ3_Abscissa[0]*IntLength(SubIntervalIndex);
+    GQP_ContourInt_Abscissa[1] = GaussQuadratureData::GQ3_Abscissa[1]*IntLength(SubIntervalIndex);
+    GQP_ContourInt_Abscissa[2] = GaussQuadratureData::GQ3_Abscissa[2]*IntLength(SubIntervalIndex);
+    break;
+
+  case 5:
+    GQP_ContourInt_Abscissa[0] = GaussQuadratureData::GQ5_Abscissa[0]*IntLength(SubIntervalIndex);
+    GQP_ContourInt_Abscissa[1] = GaussQuadratureData::GQ5_Abscissa[1]*IntLength(SubIntervalIndex);
+    GQP_ContourInt_Abscissa[2] = GaussQuadratureData::GQ5_Abscissa[2]*IntLength(SubIntervalIndex);    
+    GQP_ContourInt_Abscissa[3] = GaussQuadratureData::GQ5_Abscissa[3]*IntLength(SubIntervalIndex);
+    GQP_ContourInt_Abscissa[4] = GaussQuadratureData::GQ5_Abscissa[4]*IntLength(SubIntervalIndex); 
+    break;
+
+  default:
+    throw runtime_error("Spline2DInterval_HO::DetermineSubIntervalProperties() ERROR!\n\
+                         The current implementation allows only 3 or 5 Gauss quadrature points for contour integration.\n"); 
+  }
   // Identify the corresponding position for each GQP_ContourInt
-  for (GQP_Iter=0; GQP_Iter<3; ++GQP_Iter){
+  for (GQP_Iter=0; GQP_Iter<NUMBER_OF_GQP_CONTOURINT; ++GQP_Iter){
     i=0; subinterval_found = 0;
     while ( i<Divisions && subinterval_found==0 ){
       // check the position
@@ -396,13 +419,13 @@ void Spline2DInterval_HO::DetermineSubIntervalProperties(const Spline2D_HO & Sup
 	// determine the (x,y) coordinates for the current GQP_PathLength
 	InterP1 = SupportCurve.Spline(GQP_PathLength);
 	// set the location of the current GQP_ContourInt
-	GQP_ContourInt[GQP_Iter + (SubIntervalIndex-1)*3] = InterP1;
+	GQP_ContourInt[GQP_Iter + (SubIntervalIndex-1)*NUMBER_OF_GQP_CONTOURINT] = InterP1;
 
  	// determine DyDs at the current GQP_ContourInt
 	SupportCurve.nSpline(InterP1, dXdS_GQP, dYdS_GQP);
 
 	// store DyDs at the current GQP
-	DyDs[GQP_Iter + (SubIntervalIndex-1)*3] = dYdS_GQP;
+	DyDs[GQP_Iter + (SubIntervalIndex-1)*NUMBER_OF_GQP_CONTOURINT] = dYdS_GQP;
       }	// endif
 
       // Advance to the next subinterval

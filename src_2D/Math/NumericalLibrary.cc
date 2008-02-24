@@ -314,7 +314,7 @@ const double GaussQuadratureData::GQ2_Abscissa[2] = {0.2113248654051871177454256
 const double GaussQuadratureData::GQ2_Weight[2] = {0.5,
 						   0.5};
 
-//! Abscissae for 3-point Gaussian (i.e. 0.5*(1 - sqrt(3)/sqrt(5)), 0 , 0.5*(1 + 1/sqrt(3)) )
+//! Abscissae for 3-point Gaussian (i.e. 0.5*(1 - sqrt(3)/sqrt(5)), 0.5*(1-0) , 0.5*(1 + sqrt(3)/sqrt(5)) )
 const double GaussQuadratureData::GQ3_Abscissa[3] = {0.1127016653792583114820736,
 						     0.5 ,
 						     0.8872983346207416885179264};
@@ -322,4 +322,26 @@ const double GaussQuadratureData::GQ3_Abscissa[3] = {0.1127016653792583114820736
 const double GaussQuadratureData::GQ3_Weight[3] = {2.77777777777778e-1,
 						   4.44444444444444e-1,
 						   2.77777777777778e-1};
+
+//! Abscissae for 5-point Gaussian (i.e. 0.5*(1 - 0.90617984593866396),
+//                                       0.5*(1 - 0.53846931010568311),
+//                                       0.5*(1 - 0),
+//                                       0.5*(1 + 0.53846931010568311),
+//                                       0.5*(1 + 0.90617984593866396) )
+const double GaussQuadratureData::GQ5_Abscissa[5] = {4.6910077030668e-2,
+						     2.30765344947158e-1,
+						     0.5,
+						     7.69234655052842e-1,
+						     9.53089922969332e-1};
+//! Weights for 5-point Gaussian (i.e. 0.5*0.23692688505618917,
+//                                     0.5*0.56888888888888889,
+//                                     0.5*0.47862867049936647,
+//                                     0.5*0.56888888888888889,
+//                                     0.5*0.23692688505618917)
+const double GaussQuadratureData::GQ5_Weight[5] = {1.18463442528095e-1,
+						   2.84444444444444e-1,
+						   2.39314335249683e-1,
+						   2.84444444444444e-1,
+						   1.18463442528095e-1};
+
 

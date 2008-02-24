@@ -738,6 +738,9 @@ public:
   
   void Reflect_Quad_Block(void);
   void Reflect_Quad_Block_Without_Update(void);
+
+  void Disturb_Interior_Nodes(const int &Number_of_Iterations);
+  void Disturb_Interior_Nodes_Without_Update(const int &Number_of_Iterations);
   //@}
   
   //!@ Output functions for plotting.
@@ -863,7 +866,14 @@ public:
   bool IsHighOrderBoundary(void) const { return HighOrderBoundaryRepresentation == ON? true:false; }
   //! Get the value of the HighOrderBoundaryRepresentation variable.
   int getHighOrderBoundaryValue(void) const {return HighOrderBoundaryRepresentation; }
+  //! Set the designated switch to require the use of Gauss quadratures for evaluating curvilinear path integrals.
+  static void setContourIntegrationBasedOnGaussQuadratures(void) { Gauss_Quad_Curvilinear_Integration = ON; }
+  //! Set the designated switch to require the use of summation on line segments to approximate curvilinear path integrals.
+  static void setContourIntegrationBasedOnLinearSegments(void) { Gauss_Quad_Curvilinear_Integration = OFF; }
   //@}
+
+  //! Output only the cell data
+  void Output_Cells_Data(const int &block_number, ostream &out_file);
 
   //! @name Input-output operators.
   //@{
@@ -2109,6 +2119,22 @@ inline void Grid2D_Quad_Block_HO::Reflect_Quad_Block(void) {
   /* Compute the cells for the quadrilateral mesh block. */
   Update_Cells();
 }
+
+/*
+ * Disturb randomly the interior nodes for the         
+ * quadrilateral mesh block. This routine uses the      
+ * default seed of the random number generator in order 
+ * to determine the angle to which the node is moved.   
+ */
+inline void Grid2D_Quad_Block_HO::Disturb_Interior_Nodes(const int &Number_of_Iterations) {
+  
+  // Disturb interior nodes with update
+  Disturb_Interior_Nodes_Without_Update(Number_of_Iterations);
+
+  /* Compute the cells for the quadrilateral mesh block. */
+  Update_Cells();  
+}
+
 
 /*!
  * Set the number of Gauss quadrature points used for 

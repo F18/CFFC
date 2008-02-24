@@ -36,7 +36,7 @@ int Grid2D_Quad_Block_HO::Smooth_Quad_Block_Flag = ON;
  * on an adaptive algorithm that approximates the spline geometry
  * with an increasing number of line segments until the desired
  * accuracy is obtained. 
- * If ON, the 3 point Gauss quadrature integration is used.
+ * If ON, the n-point Gauss quadrature integration is used.
  * If OFF, the adaptive integration based on line segments is used.
  */
 int Grid2D_Quad_Block_HO::Gauss_Quad_Curvilinear_Integration = ON;
@@ -4757,7 +4757,7 @@ Vector2D Grid2D_Quad_Block_HO::centroid_CurvedBoundaries(const int &CellIndex, c
 		       PolynomLineIntegration(Node[CellIndex+1][JCu].x(),Node[CellIndex+1][JCu].y(),
 					      Node[CellIndex+1][JNu].x(),Node[CellIndex+1][JNu].y(),
 					      0.0, 0.0, 0, 1)) ) /Cell[CellIndex][JCu].A;    
-    
+
     case NORTH_WEST_SPLINE:     // Use the North Spline and the West Spline
       return Vector2D( (// cell North side
 			BndNorthSplineInfo[CellIndex].XCentroidContribution() +
@@ -4912,7 +4912,7 @@ Vector2D Grid2D_Quad_Block_HO::centroid_CurvedBoundaries(const int &CellIndex, c
 					       Node[ICl  ][CellIndex+1].x(),Node[ICl  ][CellIndex+1].y(),
 					       0.0, 0.0, 0, 1) +                                       
 			// cell West side 
-			BndWestSplineInfo[CellIndex].YCentroidContribution() + 
+			BndWestSplineInfo[CellIndex].YCentroidContribution() +
 			// cell South side
 			PolynomLineIntegration(Node[ICl  ][CellIndex  ].x(),Node[ICl  ][CellIndex  ].y(),
 					       Node[ICl+1][CellIndex  ].x(),Node[ICl+1][CellIndex  ].y(),
@@ -5235,7 +5235,7 @@ Vector2D Grid2D_Quad_Block_HO::centroid_GhostCell_CurvedBoundaries(const int &Ce
 					       0.0, 0.0, 1, 0) +                           // cell North side
 			PolynomLineIntegration(Node[CellIndex  ][JNu+1].x(),Node[CellIndex  ][JNu+1].y(),
 					       Node[CellIndex  ][JNu  ].x(),Node[CellIndex  ][JNu  ].y(),
-					       0.0, 0.0, 1, 0) +                           // cell West side
+					       0.0, 0.0, 1, 0) -                           // cell West side
 			BndNorthSplineInfo[CellIndex].XCentroidContribution() + // cell South side
 			PolynomLineIntegration(Node[CellIndex+1][JNu  ].x(),Node[CellIndex+1][JNu  ].y(),
 					       Node[CellIndex+1][JNu+1].x(),Node[CellIndex+1][JNu+1].y(),
@@ -5245,14 +5245,14 @@ Vector2D Grid2D_Quad_Block_HO::centroid_GhostCell_CurvedBoundaries(const int &Ce
 					      0.0, 0.0, 0, 1) +                             // cell North side
 		       PolynomLineIntegration(Node[CellIndex  ][JNu+1].x(),Node[CellIndex  ][JNu+1].y(),
 					      Node[CellIndex  ][JNu  ].x(),Node[CellIndex  ][JNu  ].y(),
-					      0.0, 0.0, 0, 1) +                             // cell West side
+					      0.0, 0.0, 0, 1) -                             // cell West side
 		       BndNorthSplineInfo[CellIndex].YCentroidContribution() + // cell South side
 		       PolynomLineIntegration(Node[CellIndex+1][JNu  ].x(),Node[CellIndex+1][JNu  ].y(),
 					      Node[CellIndex+1][JNu+1].x(),Node[CellIndex+1][JNu+1].y(),
 					      0.0, 0.0, 0, 1)) ) /Cell[CellIndex][JCu+1].A;    // cell East side & Division by A
     
     case SOUTH_SPLINE:        // Use only the South Spline
-      return Vector2D( (BndSouthSplineInfo[CellIndex].XCentroidContribution() +              // cell North side
+      return Vector2D( (-BndSouthSplineInfo[CellIndex].XCentroidContribution() +              // cell North side
 			PolynomLineIntegration(Node[CellIndex  ][JNl  ].x(),Node[CellIndex  ][JNl  ].y(),
 					       Node[CellIndex  ][JNl-1].x(),Node[CellIndex  ][JNl-1].y(),
 					       0.0, 0.0, 1, 0) +                                        // cell West side
@@ -5262,7 +5262,7 @@ Vector2D Grid2D_Quad_Block_HO::centroid_GhostCell_CurvedBoundaries(const int &Ce
 			PolynomLineIntegration(Node[CellIndex+1][JNl-1].x(),Node[CellIndex+1][JNl-1].y(),
 					       Node[CellIndex+1][JNl  ].x(),Node[CellIndex+1][JNl  ].y(),
 					       0.0, 0.0, 1, 0) )*0.5,                // cell East side & Division by (OrderX+1)
-		       (BndSouthSplineInfo[CellIndex].YCentroidContribution() +              // cell North side
+		       (-BndSouthSplineInfo[CellIndex].YCentroidContribution() +              // cell North side
 			PolynomLineIntegration(Node[CellIndex  ][JNl  ].x(),Node[CellIndex  ][JNl  ].y(),
 					       Node[CellIndex  ][JNl-1].x(),Node[CellIndex  ][JNl-1].y(),
 					       0.0, 0.0, 0, 1) +                                        // cell West side
@@ -5282,7 +5282,7 @@ Vector2D Grid2D_Quad_Block_HO::centroid_GhostCell_CurvedBoundaries(const int &Ce
 					       0.0, 0.0, 1, 0) +                                        // cell West side
 			PolynomLineIntegration(Node[INl-1][CellIndex  ].x(),Node[INl-1][CellIndex  ].y(),
 					       Node[INl  ][CellIndex  ].x(),Node[INl  ][CellIndex  ].y(),
-					       0.0, 0.0, 1, 0) +                                        // cell South side
+					       0.0, 0.0, 1, 0) -                                        // cell South side
 			BndWestSplineInfo[CellIndex].XCentroidContribution() ) *0.5, // cell East side & Division by (OrderX+1)
 		       (PolynomLineIntegration(Node[INl  ][CellIndex+1].x(),Node[INl  ][CellIndex+1].y(),
 					       Node[INl-1][CellIndex+1].x(),Node[INl-1][CellIndex+1].y(),
@@ -5292,14 +5292,14 @@ Vector2D Grid2D_Quad_Block_HO::centroid_GhostCell_CurvedBoundaries(const int &Ce
 					       0.0, 0.0, 0, 1) +                                        // cell West side
 			PolynomLineIntegration(Node[INl-1][CellIndex  ].x(),Node[INl-1][CellIndex  ].y(),
 					       Node[INl  ][CellIndex  ].x(),Node[INl  ][CellIndex  ].y(),
-					       0.0, 0.0, 0, 1) +                                        // cell South side
+					       0.0, 0.0, 0, 1) -                                        // cell South side
 			BndWestSplineInfo[CellIndex].YCentroidContribution() )) /Cell[ICl-1][CellIndex].A;
       // cell East side & Division by A
 
     case EAST_SPLINE:      // Use only the East Spline
       return Vector2D( (PolynomLineIntegration(Node[INu+1][CellIndex+1].x(),Node[INu+1][CellIndex+1].y(),
 					       Node[INu  ][CellIndex+1].x(),Node[INu  ][CellIndex+1].y(),
-					       0.0, 0.0, 1, 0) +                                         // cell North side
+					       0.0, 0.0, 1, 0) -                                         // cell North side
 			BndEastSplineInfo[CellIndex].XCentroidContribution() +                // cell West side
 			PolynomLineIntegration(Node[INu  ][CellIndex  ].x(),Node[INu  ][CellIndex  ].y(),
 					       Node[INu+1][CellIndex  ].x(),Node[INu+1][CellIndex  ].y(),
@@ -5309,7 +5309,7 @@ Vector2D Grid2D_Quad_Block_HO::centroid_GhostCell_CurvedBoundaries(const int &Ce
 					       0.0, 0.0, 1, 0) ) *0.5, // cell East side & Division by (OrderX+1)
 		       (PolynomLineIntegration(Node[INu+1][CellIndex+1].x(),Node[INu+1][CellIndex+1].y(),
 					       Node[INu  ][CellIndex+1].x(),Node[INu  ][CellIndex+1].y(),
-					       0.0, 0.0, 0, 1) +                                         // cell North side
+					       0.0, 0.0, 0, 1) -                                         // cell North side
 			BndEastSplineInfo[CellIndex].YCentroidContribution() +                // cell West side
 			PolynomLineIntegration(Node[INu  ][CellIndex  ].x(),Node[INu  ][CellIndex  ].y(),
 					       Node[INu+1][CellIndex  ].x(),Node[INu+1][CellIndex  ].y(),
@@ -5734,7 +5734,7 @@ double Grid2D_Quad_Block_HO::GeometricMoment_CurvedBoundaries(const int &CellInd
     
     case NORTH_WEST_SPLINE:     // Use the North Spline and the West Spline
       return ( (BndNorthSplineInfo[CellIndexI].IntegratePolynomialTerm(Cell[ICl][JCu].Xc,
-								       OrderX, OrderY) +                        // cell North side
+								       OrderX, OrderY) +                       // cell North side
 		BndWestSplineInfo[JCu].IntegratePolynomialTerm(Cell[ICl][JCu].Xc, 
 							       OrderX, OrderY) +                               // cell West side
 		PolynomLineIntegration(Node[CellIndexI  ][JCu].x(),Node[CellIndexI  ][JCu].y(),
@@ -5744,7 +5744,7 @@ double Grid2D_Quad_Block_HO::GeometricMoment_CurvedBoundaries(const int &CellInd
 				       Node[CellIndexI+1][JNu].x(),Node[CellIndexI+1][JNu].y(),
 				       Cell[ICl][JCu].Xc.x, Cell[ICl][JCu].Xc.y, OrderX, OrderY) )              // cell East side
 	       /(OrderX+1)/Cell[ICl][JCu].A);        // Division by (OrderX+1) & Division by A
-    
+      
     
     case NORTH_EAST_SPLINE:    // Use the North Spline and the East Spline
       return ( (BndNorthSplineInfo[CellIndexI].IntegratePolynomialTerm(Cell[ICu][JCu].Xc, 
@@ -5758,7 +5758,7 @@ double Grid2D_Quad_Block_HO::GeometricMoment_CurvedBoundaries(const int &CellInd
 		BndEastSplineInfo[JCu].IntegratePolynomialTerm(Cell[ICu][JCu].Xc,
 							       OrderX, OrderY) )                                // cell East side
 	       /(OrderX+1)/Cell[ICu][JCu].A);        // Division by (OrderX+1) & Division by A 
-
+      
     case SOUTH_SPLINE:        // Use only the South Spline
       return ( (PolynomLineIntegration(Node[CellIndexI+1][JCl+1].x(),Node[CellIndexI+1][JCl+1].y(),
 				       Node[CellIndexI  ][JCl+1].x(),Node[CellIndexI  ][JCl+1].y(),
@@ -5785,7 +5785,7 @@ double Grid2D_Quad_Block_HO::GeometricMoment_CurvedBoundaries(const int &CellInd
 				       Node[CellIndexI+1][JCl+1].x(),Node[CellIndexI+1][JCl+1].y(),
 				       Cell[ICl][JCl].Xc.x,Cell[ICl][JCl].Xc.y, OrderX, OrderY) )               // cell East side
 	       /(OrderX+1)/Cell[ICl][JCl].A);        // Division by (OrderX+1) & Division by A
-
+      
     case SOUTH_EAST_SPLINE:   // Use the South Spline and the East Spline
       return ( (PolynomLineIntegration(Node[CellIndexI+1][JCl+1].x(),Node[CellIndexI+1][JCl+1].y(),
 				       Node[CellIndexI  ][JCl+1].x(),Node[CellIndexI  ][JCl+1].y(),
@@ -5794,7 +5794,7 @@ double Grid2D_Quad_Block_HO::GeometricMoment_CurvedBoundaries(const int &CellInd
 				       Node[CellIndexI  ][JCl  ].x(),Node[CellIndexI  ][JCl  ].y(),
 				       Cell[ICu][JCl].Xc.x,Cell[ICu][JCl].Xc.y, OrderX, OrderY) +               // cell West side
 		BndSouthSplineInfo[CellIndexI].IntegratePolynomialTerm(Cell[ICu][JCl].Xc, 
-								       OrderX, OrderY) +                         // cell South side
+								       OrderX, OrderY) +                        // cell South side
 		BndEastSplineInfo[JCl].IntegratePolynomialTerm(Cell[ICu][JCl].Xc, 
 							       OrderX, OrderY) )                                // cell East side
 	       /(OrderX+1)/Cell[ICu][JCl].A);        // Division by (OrderX+1) & Division by A
@@ -5978,7 +5978,7 @@ double Grid2D_Quad_Block_HO::GeometricMoment_GhostCell_CurvedBoundaries(const in
 		// cell West side
 		PolynomLineIntegration(Node[CellIndexI  ][JNu+1].x(),Node[CellIndexI  ][JNu+1].y(),
 				       Node[CellIndexI  ][JNu  ].x(),Node[CellIndexI  ][JNu  ].y(),
-				       Cell[CellIndexI][JCu+1].Xc.x, Cell[CellIndexI][JCu+1].Xc.y, OrderX, OrderY) + 
+				       Cell[CellIndexI][JCu+1].Xc.x, Cell[CellIndexI][JCu+1].Xc.y, OrderX, OrderY) - 
 		// cell South side
 		BndNorthSplineInfo[CellIndexI].IntegratePolynomialTerm(Cell[CellIndexI][JCu+1].Xc,
 								       OrderX, OrderY) + 
@@ -5990,8 +5990,8 @@ double Grid2D_Quad_Block_HO::GeometricMoment_GhostCell_CurvedBoundaries(const in
     
     case SOUTH_SPLINE:        // Use only the South Spline
       return ( (// cell North side
-		BndSouthSplineInfo[CellIndexI].IntegratePolynomialTerm(Cell[CellIndexI][JCl-1].Xc,
-								       OrderX, OrderY) +   
+		-BndSouthSplineInfo[CellIndexI].IntegratePolynomialTerm(Cell[CellIndexI][JCl-1].Xc,
+									OrderX, OrderY) +   
 		// cell West side
 		PolynomLineIntegration(Node[CellIndexI  ][JNl  ].x(),Node[CellIndexI  ][JNl  ].y(),
 				       Node[CellIndexI  ][JNl-1].x(),Node[CellIndexI  ][JNl-1].y(),
@@ -6018,7 +6018,7 @@ double Grid2D_Quad_Block_HO::GeometricMoment_GhostCell_CurvedBoundaries(const in
 		// cell South side
 		PolynomLineIntegration(Node[INl-1][CellIndexJ  ].x(),Node[INl-1][CellIndexJ  ].y(),
 				       Node[INl  ][CellIndexJ  ].x(),Node[INl  ][CellIndexJ  ].y(),
-				       Cell[ICl-1][CellIndexJ].Xc.x,Cell[ICl-1][CellIndexJ].Xc.y, OrderX, OrderY) + 
+				       Cell[ICl-1][CellIndexJ].Xc.x,Cell[ICl-1][CellIndexJ].Xc.y, OrderX, OrderY) - 
 		// cell East side
 		BndWestSplineInfo[CellIndexJ].IntegratePolynomialTerm(Cell[ICl-1][CellIndexJ].Xc, 
 								      OrderX, OrderY) ) 
@@ -6028,7 +6028,7 @@ double Grid2D_Quad_Block_HO::GeometricMoment_GhostCell_CurvedBoundaries(const in
       return ( (// cell North side
 		PolynomLineIntegration(Node[INu+1][CellIndexJ+1].x(),Node[INu+1][CellIndexJ+1].y(),
 				       Node[INu  ][CellIndexJ+1].x(),Node[INu  ][CellIndexJ+1].y(),
-				       Cell[ICu+1][CellIndexJ].Xc.x,Cell[ICu+1][CellIndexJ].Xc.y, OrderX, OrderY) + 
+				       Cell[ICu+1][CellIndexJ].Xc.x,Cell[ICu+1][CellIndexJ].Xc.y, OrderX, OrderY) - 
 		// cell West side
 		BndEastSplineInfo[CellIndexJ].IntegratePolynomialTerm(Cell[ICu+1][CellIndexJ].Xc, 
 								      OrderX, OrderY) + 
@@ -7700,6 +7700,45 @@ void Grid2D_Quad_Block_HO::Reflect_Quad_Block_Without_Update(void) {
 
 }
 
+/*
+ * Disturb randomly the interior nodes for the         
+ * quadrilateral mesh block. This routine uses the      
+ * default seed of the random number generator in order 
+ * to determine the angle to which the node is moved.   
+ *
+ * \note This subroutine DOESN'T update the geometric properties
+ *       of the new grid cells!!!                               
+ */
+void Grid2D_Quad_Block_HO::Disturb_Interior_Nodes_Without_Update(const int &Number_of_Iterations) {
+
+  int i,j;
+  double MinDistance, Angle, Displacement;
+
+  /* Displace the interior nodes of the quadrilateral mesh block without affecting the boundary nodes */
+  for (int num_iter=1; num_iter<=Number_of_Iterations; ++num_iter){
+
+    for ( j = JNl+1 ; j <= JNu-1 ; ++j) {
+      for ( i = INl+1 ; i <= INu-1 ; ++i) {
+
+	// Determine the minimum distance between the Node[i][j] and all the neighbour edges
+	MinDistance = MinimumNodeEdgeDistance(i,j);
+
+	// Generate a random angle for the displacement direction
+	Angle = 2.0*PI*drand48();
+
+	// Calculate the displacement -> 10% of the MinDistance
+	Displacement = 0.1 * MinDistance;
+
+	// Calculate the new node location
+	Node[i][j].setloc(Node[i][j].x() + Displacement*cos(Angle),
+			  Node[i][j].y() + Displacement*sin(Angle)); 
+      }	// endfor (i)
+    } // endfor (j)
+  } //endfor (num_iter)
+
+  /* Require update of the interior cells geometric properties. */
+  Schedule_Interior_Mesh_Update();
+}
 
 /*!
  * Writes the nodes of the quadrilateral mesh to the    
@@ -9323,5 +9362,31 @@ double Grid2D_Quad_Block_HO::DistanceFromPointToLine(const Vector2D &Point,
   DeltaY = Point.y - Y_Dis;
 
   return sqrt( DeltaX*DeltaX + DeltaY*DeltaY );
+}
+
+/*
+ * Output the cell data to the specified output stream.
+ */
+void Grid2D_Quad_Block_HO::Output_Cells_Data(const int &block_number, ostream &out_file){
+
+  int i,j;
+
+  out_file << "Block " << block_number << "\n";
+
+  out_file << NCi << " " << ICl << " " << ICu << "\n";
+  out_file << NCj << " " << JCl << " " << JCu << "\n";
+
+  out_file.precision(15);
+  // Output cell data
+  if (Cell != NULL){
+    for ( j = JCl-Nghost ; j <= JCu+Nghost; ++j ) {
+      for ( i = ICl-Nghost ; i <= ICu+Nghost; ++i ) {
+	out_file << Cell[i][j] << "\n";
+      } /* endfor */
+    } /* endfor */
+  } else {
+    out_file << 0 << "\n";
+  }
+  out_file.precision(15);
 }
 

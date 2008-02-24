@@ -446,6 +446,42 @@ int Grid2D_Quad_MultiBlock_HO::Check_Multi_Block_Grid_Completely(void) {
 }
 
 /*!
+ * Disturb randomly the interior nodes of 2D array of 2D quadrilateral   
+ * multi-block grids.
+ * This subroutine DOESN'T update the geometric properties
+ * of the block cells.
+ */
+void Grid2D_Quad_MultiBlock_HO::Disturb_Interior_Nodes_Without_Update(const int &Number_of_Iterations){
+
+  int i, j;
+  
+  for ( j = 0 ; j <= Number_of_Blocks_Jdir-1 ; ++j ) {
+    for ( i = 0; i <= Number_of_Blocks_Idir-1 ; ++i ) {
+      if (Grid_ptr[i][j].Node != NULL) {
+	Grid_ptr[i][j].Disturb_Interior_Nodes_Without_Update(Number_of_Iterations);
+      } /* endif */
+    }  /* endfor */
+  }  /* endfor */
+}
+
+/*!
+ * Disturb randomly the interior nodes of 2D array of 2D quadrilateral   
+ * multi-block grids.
+ */
+void Grid2D_Quad_MultiBlock_HO::Disturb_Interior_Nodes(const int &Number_of_Iterations){
+
+  int i, j;
+  
+  for ( j = 0 ; j <= Number_of_Blocks_Jdir-1 ; ++j ) {
+    for ( i = 0; i <= Number_of_Blocks_Idir-1 ; ++i ) {
+      if (Grid_ptr[i][j].Node != NULL) {
+	Grid_ptr[i][j].Disturb_Interior_Nodes(Number_of_Iterations);
+      } /* endif */
+    }  /* endfor */
+  }  /* endfor */
+}
+
+/*!
  * Update the exterior nodes in all 
  * mesh blocks.
  */
@@ -8451,6 +8487,23 @@ void Grid2D_Quad_MultiBlock_HO::Grid_Annulus_2D_Without_Update(int &_Number_of_B
 
 }
 
+/*
+ * Output the cell data to the specified output stream.
+ */
+void Grid2D_Quad_MultiBlock_HO::Output_Cells_Data(ostream &Out_File){
+
+  int i, j, block_number;
+  
+  block_number = 0;
+  
+  for ( j = 0 ; j <= Number_of_Blocks_Jdir-1 ; ++j ) {
+    for ( i = 0; i <= Number_of_Blocks_Idir-1 ; ++i ) {
+      Grid_ptr[i][j].Output_Cells_Data(block_number,
+				       Out_File);
+      block_number = block_number + 1;
+    }  /* endfor */
+  }  /* endfor */
+}
 
 /*!
  * Output operator

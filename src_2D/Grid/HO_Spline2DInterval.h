@@ -87,7 +87,7 @@ public:
   //! Get the total number of Gauss quadrate points used for flux evaluation
   int NumGQPoints(void) const {return N_GQP*N_SubIntervals; }
   //! Get the total number of Gauss quadrate points used for contour integration
-  int NumGQPoints_ContourIntegral(void) const {return 3*N_SubIntervals; }
+  int NumGQPoints_ContourIntegral(void) const {return NUMBER_OF_GQP_CONTOURINT * N_SubIntervals; }
 
   //! Get the array of subinterval length
   const double* IntLength(void) const {return SubIntervalLength; }
@@ -177,6 +177,7 @@ public:
   //! @name Contour integration functions
   //@{
   double IntegratePolynomialTerm(const Vector2D & Centroid, const int &OrderX, const int &OrderY);
+  double IntegratePolynomialTermAndDivide(const Vector2D & Centroid, const int &OrderX, const int &OrderY);
   double BasicTermIntegration(const Vector2D & Centroid, const int &OrderX, const int &OrderY, const int &GQP);
   double AreaContribution(void){ return IntegratePolynomialTerm(Vector2D(0.0), 0, 0); }
   double XCentroidContribution(void){ return IntegratePolynomialTerm(Vector2D(0.0), 1, 0); }
@@ -188,6 +189,7 @@ public:
   friend std::istream &operator >> (std::istream &is, Spline2DInterval_HO &S);
 
 private:
+  static int NUMBER_OF_GQP_CONTOURINT; //!< Number of Gauss Quadrature Points per subinterval for curvilinear integration
   int N_SubIntervals; 		//!< Number of regions for which sharp control points can exist only at extremities.
   double* SubIntervalLength;	//!< Array for storing the lengths of all subintervals.
   int N_GQP;                    //!< Number of Gauss quadrature points per subinterval (depends on the order of accuracy).
@@ -200,7 +202,7 @@ private:
 				  N.B. The number of GQP is not always
 				  sufficient for obtaining the exact solution of the curvilinear integrals of polynomial 
 				  functions that currently arise in the calculation of geometric moments.
-				  Therefore, this variable stores 3 Gauss integration points per subinterval.
+				  Therefore, this variable stores NUMBER_OF_GQP_CONTOURINT Gauss integration points per subinterval.
 				  This number of points is enough to integrate exactly polynomials up to fifth-order. */
   double* DyDs;			//!< Array for storing the values of the derivatives dyds at each Gauss Quadrature Point
 
@@ -292,27 +294,57 @@ inline std::istream &operator >> (std::istream &is, Spline2DInterval_HO &S) {
 }
 
 /*!
- * Compute the expression \f$ I = \frac{1}{n + 1} \oint (x - x_i)^{n+1} (y - y_i)^m dy \f$ .
- * This is a typical expression that arises in the calculation of geometric moments 
- * for curved boundaries. 
+ * Compute the expression \f$ I = \oint (x - x_i)^{n+1} (y - y_i)^m dy \f$ .
+ * This integral is part of the typical expression 
+ * \f$ I_{C} = \frac{1}{n + 1} \oint (x - x_i)^{n+1} (y - y_i)^m dy \f$ 
+ * which arises in the calculation of geometric moments for curved boundaries.
  * To evaluate this expression numerically, a Gauss quadrature integration is performed along 
  * the spline interval, based on the following values: GQP_ContourInt, SubIntervalLength and DyDs.
  * The expression is rewritten only as a function of the curvilinear coordinate:
- * \f$ I = \frac{1}{n + 1} \oint (x - x_i)^{n+1} (y - y_i)^m \frac{\partial y(s)}{ds} ds \f$
+ * \f$ I = \oint (x - x_i)^{n+1} (y - y_i)^m \frac{\partial y(s)}{ds} ds \f$
+ * Multiplication with the factor \f$ \frac{1}{n + 1} \f$ is done after all the contour 
+ * component integrals have been summed up.
  */
 inline double Spline2DInterval_HO::IntegratePolynomialTerm(const Vector2D & Centroid,
 							   const int &OrderX, const int &OrderY){
 
   double Result(0.0);
 
-  for (int i=0; i<NumOfSubIntervals(); ++i){
-    // Calculate the contribution of each subinterval
-    Result +=  IntLength(i+1)*( GaussQuadratureData::GQ3_Weight[0] * BasicTermIntegration(Centroid,OrderX,OrderY,3*i + 1) + 
-				GaussQuadratureData::GQ3_Weight[1] * BasicTermIntegration(Centroid,OrderX,OrderY,3*i + 2) +
-				GaussQuadratureData::GQ3_Weight[2] * BasicTermIntegration(Centroid,OrderX,OrderY,3*i + 3) );
+  switch(NUMBER_OF_GQP_CONTOURINT){
+
+  case 3:
+    for (int i=0; i<NumOfSubIntervals(); ++i){
+      // Calculate the contribution of each subinterval
+      Result +=  IntLength(i+1)*( GaussQuadratureData::GQ3_Weight[0] * BasicTermIntegration(Centroid,OrderX,OrderY,3*i + 1) + 
+				  GaussQuadratureData::GQ3_Weight[1] * BasicTermIntegration(Centroid,OrderX,OrderY,3*i + 2) +
+				  GaussQuadratureData::GQ3_Weight[2] * BasicTermIntegration(Centroid,OrderX,OrderY,3*i + 3) );
+    }
+    break;
+
+  case 5:
+    for (int i=0; i<NumOfSubIntervals(); ++i){
+      // Calculate the contribution of each subinterval
+      Result +=  IntLength(i+1)*( GaussQuadratureData::GQ5_Weight[0] * BasicTermIntegration(Centroid,OrderX,OrderY,5*i + 1) + 
+				  GaussQuadratureData::GQ5_Weight[1] * BasicTermIntegration(Centroid,OrderX,OrderY,5*i + 2) +
+				  GaussQuadratureData::GQ5_Weight[2] * BasicTermIntegration(Centroid,OrderX,OrderY,5*i + 3) + 
+				  GaussQuadratureData::GQ5_Weight[3] * BasicTermIntegration(Centroid,OrderX,OrderY,5*i + 4) +
+				  GaussQuadratureData::GQ5_Weight[4] * BasicTermIntegration(Centroid,OrderX,OrderY,5*i + 5) );
+    }
+    break;
   }
 
-  return Result/(OrderX + 1.0);
+  return Result;
+}
+
+/*!
+ * Compute the expression \f$ I = \frac{1}{n + 1} \oint (x - x_i)^{n+1} (y - y_i)^m dy \f$ .
+ * This integral arises typically in the calculation of geometric moments for curved boundaries.
+ * This subroutine divide the integral I with the factor (OrderX+1).
+ */
+inline double Spline2DInterval_HO::IntegratePolynomialTermAndDivide(const Vector2D & Centroid,
+								    const int &OrderX, const int &OrderY){
+
+  return IntegratePolynomialTerm(Centroid,OrderX,OrderY)/(OrderX+1);
 }
 
 /*!
