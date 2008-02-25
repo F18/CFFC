@@ -921,25 +921,25 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.Orifice_Radius), 
                           1, 
                           MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.VertesSW.x), 
+    MPI::COMM_WORLD.Bcast(&(IP.VertexSW.x), 
                           1, 
                           MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&(IP.VertexSW.y), 
                           1, 
                           MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.VertesSE.x), 
+    MPI::COMM_WORLD.Bcast(&(IP.VertexSE.x), 
                           1, 
                           MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&(IP.VertexSE.y), 
                           1, 
                           MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.VertesNW.x), 
+    MPI::COMM_WORLD.Bcast(&(IP.VertexNW.x), 
                           1, 
                           MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&(IP.VertexNW.y), 
                           1, 
                           MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.VertesNE.x), 
+    MPI::COMM_WORLD.Bcast(&(IP.VertexNE.x), 
                           1, 
                           MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&(IP.VertexNE.y), 
