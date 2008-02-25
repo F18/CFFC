@@ -12,6 +12,7 @@
 #include "AdvectDiffuse2DQuad.h"  /* Include AdvectDiffuse2D_Quad_Block header file. */
 #include "../HighOrderReconstruction/CENO_ExecutionMode.h" // Include high-order CENO execution mode header file
 #include "../HighOrderReconstruction/CENO_Tolerances.h"	   // Include high-order CENO tolerances header file
+#include "../Grid/HO_Grid2DQuad_ExecutionMode.h" // Include high-order 2D grid execution mode header file
 
 /*************************************************************
  * AdvectDiffuse2D_Input_Parameters -- Member functions.     *
@@ -313,11 +314,8 @@ ostream &operator << (ostream &out_file,
     if (IP.i_ReconstructionMethod != RECONSTRUCTION_CENO ){
       out_file << "\n  -> Elliptic Flux Evaluation: " << IP.Viscous_Reconstruction_Type;
     }
-    if (IP.IncludeHighOrderBoundariesRepresentation == OFF){
-      out_file << "\n  -> Boundary Accuracy: " << "2nd-Order";
-    } else {
-      out_file << "\n  -> Boundary Accuracy: " << "high-order";
-    }
+    // output information related to the treatment of curved boundaries.
+    HO_Grid2D_Execution_Mode::Print_Info(out_file);
 
     // ==== Grid parameters ====
     out_file << "\n  -> Grid: " 
@@ -1159,6 +1157,9 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
 
     // Inflow field variables
     IP.Inflow->Broadcast();
+
+    // HO_Grid2D_Execution_Mode variables
+    HO_Grid2D_Execution_Mode::Broadcast();
 
 #endif
 
@@ -2748,17 +2749,6 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
 	   << "Space Accuracy set to 1" << endl;
     }/* endif */
 
-  } else if (strcmp(IP.Next_Control_Parameter, "High_Order_Boundary") == 0) {
-    i_command = 0;
-    Get_Next_Input_Control_Parameter(IP);
-    if (strcmp(IP.Next_Control_Parameter,"ON") == 0 || strcmp(IP.Next_Control_Parameter,"On") == 0) {
-      IP.IncludeHighOrderBoundariesRepresentation = ON;
-    } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0 || strcmp(IP.Next_Control_Parameter,"Off") == 0) {
-      IP.IncludeHighOrderBoundariesRepresentation = OFF;
-    } else {
-      i_command = INVALID_INPUT_VALUE;
-    }
-
   } else if (strcmp(IP.Next_Control_Parameter, "Accuracy_Assessment_Exact_Digits") == 0) {
     i_command = 0;
     IP.Line_Number = IP.Line_Number + 1;
@@ -2841,6 +2831,9 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
   
   /* Parse next control parameter with CENO_Tolerances parser */
   CENO_Tolerances::Parse_Next_Input_Control_Parameter(IP,i_command);
+
+  /* Parse next control parameter with HO_Grid2D_Execution_Mode parser */
+  HO_Grid2D_Execution_Mode::Parse_Next_Input_Control_Parameter(IP,i_command);
 
   if (i_command == INVALID_INPUT_CODE){
     // that is, we have an input line which:
