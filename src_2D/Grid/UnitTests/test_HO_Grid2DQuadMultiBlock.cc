@@ -3362,7 +3362,7 @@ namespace tut
       MeshBlk.Output_Cells_Data(out());
 
       // == check geometric properties
-      RunRegressionTest("Large Deformed Box", CurrentFile, MasterFile, 5.0e-7, 5.0e-7);
+      RunRegressionTest("Large Deformed Box", CurrentFile, MasterFile, 9.0e-7, 9.0e-7);
 
     } else {
       // Build the mesh
