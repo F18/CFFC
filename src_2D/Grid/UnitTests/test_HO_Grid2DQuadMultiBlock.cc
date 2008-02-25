@@ -748,21 +748,21 @@ namespace tut
       MasterFile  = "NACA_Aerofoil.dat";
       Open_Output_File(CurrentFile);
       MultiBlockGrid.Output_Tecplot(out());
-      RunRegressionTest("NACA Aerofoil", CurrentFile, MasterFile, 5.0e-12, 5.0e-12);
+      RunRegressionTest("NACA Aerofoil", CurrentFile, MasterFile, 5.0e-10, 5.0e-10);
       
       //open file for all mesh node output
       CurrentFile  = "Current_NACA_Aerofoil_node.dat";
       MasterFile  = "NACA_Aerofoil_node.dat";
       Open_Output_File(CurrentFile);
       MultiBlockGrid.Output_Nodes_Tecplot(out());
-      RunRegressionTest("NACA Aerofoil node", CurrentFile, MasterFile, 5.0e-12, 5.0e-12);
+      RunRegressionTest("NACA Aerofoil node", CurrentFile, MasterFile, 5.0e-10, 5.0e-10);
 
       //open file for all mesh cell output
       CurrentFile  = "Current_NACA_Aerofoil_cell.dat";
       MasterFile  = "NACA_Aerofoil_cell.dat";
       Open_Output_File(CurrentFile);
       MultiBlockGrid.Output_Cells_Tecplot(out());
-      RunRegressionTest("NACA Aerofoil cell", CurrentFile, MasterFile, 5.0e-12, 5.0e-12);
+      RunRegressionTest("NACA Aerofoil cell", CurrentFile, MasterFile, 5.0e-10, 5.0e-10);
 
     } else {
       //open file for interior node output
@@ -2976,6 +2976,7 @@ namespace tut
     if (RunRegression){
       IP.IncludeHighOrderBoundariesRepresentation = ON;
       Grid2D_Quad_Block_HO::setContourIntegrationBasedOnGaussQuadratures();
+      Spline2DInterval_HO::setFivePointGaussQuadContourIntegration();
 
       // Build the mesh
       CreateMesh(MeshBlk,IP);
@@ -2992,6 +2993,445 @@ namespace tut
     } else {
       // Build the mesh
       CreateMesh(MeshBlk,IP);
+
+      // open MasterFile
+      Open_Output_File(MasterFile);
+
+      // output cell data
+      MeshBlk.Output_Cells_Data(out());
+    }
+  }
+
+  // Test 44:
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<44>()
+  {
+    set_test_name("Grid_Circular_Cylinder(), Boundary cell properties, 5-point Gauss quad");
+    RunRegression = ON;
+ 
+    // Add test particular input parameters
+    IP.i_Grid = GRID_CIRCULAR_CYLINDER;
+    IP.Cylinder_Radius = 1;
+    IP.Cylinder_Radius2 = 32;
+    IP.Number_of_Blocks_Jdir = 1;
+    IP.Number_of_Blocks_Idir = 2;
+    IP.Number_of_Cells_Idir = 40;
+    IP.Number_of_Cells_Jdir = 20;
+    IP.Number_of_Ghost_Cells = 5;
+    IP.Space_Accuracy = 4;
+    IP.IncludeHighOrderBoundariesRepresentation = ON;
+    IP.i_Smooth_Quad_Block = OFF;
+    Grid2D_Quad_Block_HO::setContourIntegrationBasedOnLinearSegments();
+    Spline2DInterval_HO::setFivePointGaussQuadContourIntegration();
+
+    IP.i_Mesh_Stretching = ON;
+    IP.Mesh_Stretching_Type_Idir = STRETCHING_FCN_MINMAX_CLUSTERING;
+    IP.Mesh_Stretching_Type_Jdir = STRETCHING_FCN_MIN_CLUSTERING;
+    IP.Mesh_Stretching_Factor_Idir = 1.025;
+    IP.Mesh_Stretching_Factor_Jdir = 1.001;
+
+    MasterFile = "GaussQuad_For_GridCircularCylinder_GeomProperties_BoundaryCell.dat";
+    CurrentFile = "Current_GaussQuad_For_GridCircularCylinder_GeomProperties_BoundaryCell.dat";
+
+    // Checked cell --> Block(0,0), Cell (16,5)
+    iCell = 16; jCell = 5;
+
+    if (RunRegression){
+      Grid2D_Quad_Block_HO::setContourIntegrationBasedOnGaussQuadratures();
+
+      // Build the mesh
+      CreateMesh(MeshBlk,IP);
+      
+      MeshBlk(0,0).BndSouthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+      
+      Open_Output_File(CurrentFile);
+
+      // Cell Nodes
+      Print_File(MeshBlk(0,0).nodeSW(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).nodeNW(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).nodeSE(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).nodeNE(iCell,jCell), out());
+
+      // Centroid
+      Print_File(MeshBlk(0,0).CellCentroid(iCell,jCell), out());
+
+      // Centroid, area, cell indexes, geometric moments
+      Print_File(MeshBlk(0,0).Cell[iCell][jCell], out());
+
+      // Cell Gauss Points
+      if (MeshBlk(0,0).BndSouthSplineInfo != NULL){
+	Print_File(MeshBlk(0,0).BndSouthSplineInfo[iCell].NumOfSubIntervals(), out());
+
+	Print_File(MeshBlk(0,0).BndSouthSplineInfo[iCell].GQPoint(1), out());
+	Print_File(MeshBlk(0,0).BndSouthSplineInfo[iCell].NormalGQPoint(1), out());
+
+	Print_File(MeshBlk(0,0).BndSouthSplineInfo[iCell].GQPoint(2), out());
+	Print_File(MeshBlk(0,0).BndSouthSplineInfo[iCell].NormalGQPoint(2), out());
+
+	Print_File(MeshBlk(0,0).BndSouthSplineInfo[iCell].IntLength(1), out());
+      }
+
+      if (MeshBlk(0,0).BndNorthSplineInfo != NULL){
+	Print_File(MeshBlk(0,0).BndNorthSplineInfo[iCell].NumOfSubIntervals(), out());
+
+	Print_File(MeshBlk(0,0).BndNorthSplineInfo[iCell].GQPoint(1), out());
+	Print_File(MeshBlk(0,0).BndNorthSplineInfo[iCell].NormalGQPoint(1), out());
+
+	Print_File(MeshBlk(0,0).BndNorthSplineInfo[iCell].GQPoint(2), out());
+	Print_File(MeshBlk(0,0).BndNorthSplineInfo[iCell].NormalGQPoint(2), out());
+
+	Print_File(MeshBlk(0,0).BndNorthSplineInfo[iCell].IntLength(1), out());
+      }
+
+      if (MeshBlk(0,0).BndEastSplineInfo != NULL){
+	Print_File(MeshBlk(0,0).BndEastSplineInfo[jCell].NumOfSubIntervals(), out());
+
+	Print_File(MeshBlk(0,0).BndEastSplineInfo[jCell].GQPoint(1), out());
+	Print_File(MeshBlk(0,0).BndEastSplineInfo[jCell].NormalGQPoint(1), out());
+
+	Print_File(MeshBlk(0,0).BndEastSplineInfo[jCell].GQPoint(2), out());
+	Print_File(MeshBlk(0,0).BndEastSplineInfo[jCell].NormalGQPoint(2), out());
+
+	Print_File(MeshBlk(0,0).BndEastSplineInfo[jCell].IntLength(1), out());
+      }
+
+      if (MeshBlk(0,0).BndWestSplineInfo != NULL){
+	Print_File(MeshBlk(0,0).BndWestSplineInfo[jCell].NumOfSubIntervals(), out());
+
+	Print_File(MeshBlk(0,0).BndWestSplineInfo[jCell].GQPoint(1), out());
+	Print_File(MeshBlk(0,0).BndWestSplineInfo[jCell].NormalGQPoint(1), out());
+
+	Print_File(MeshBlk(0,0).BndWestSplineInfo[jCell].GQPoint(2), out());
+	Print_File(MeshBlk(0,0).BndWestSplineInfo[jCell].NormalGQPoint(2), out());
+
+	Print_File(MeshBlk(0,0).BndWestSplineInfo[jCell].IntLength(1), out());
+      }
+
+
+      // check geometry
+      RunRegressionTest("Cell Geom Properties", CurrentFile, MasterFile, 1.0e-4, 1.0e-4);
+
+      // Check boundaries
+      ensure_equals("BndNorthSplineInfo",MeshBlk(0,0).BndNorthSplineInfo == SInfoNULL, 0);
+      ensure_equals("BndSouthSplineInfo",MeshBlk(0,0).BndSouthSplineInfo == SInfoNULL, 0);
+      ensure_equals("BndEastSplineInfo",MeshBlk(0,0).BndEastSplineInfo == SInfoNULL, 1);
+      ensure_equals("BndWestSplineInfo",MeshBlk(0,0).BndWestSplineInfo == SInfoNULL, 1);
+
+      ensure_equals("Constaints North", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_North(iCell,jCell), 0);
+      ensure_equals("Constaints South", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_South(iCell,jCell), 2);
+      ensure_equals("Constaints East", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_East(iCell,jCell), 0);
+      ensure_equals("Constaints West", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_West(iCell,jCell), 0);
+      ensure_equals("Total Constaints", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints(iCell,jCell), 2);
+
+      // Check update state
+      ensure_equals("InteriorMesh", MeshBlk(0,0).Value_InteriorMeshUpdate_Flag(), OFF);
+      ensure_equals("GhostCells", MeshBlk(0,0).Value_GhostCellsUpdate_Flag(), OFF);
+      ensure_equals("CornerGhostCells", MeshBlk(0,0).Value_CornerGhostCellsUpdate_Flag(), OFF);
+
+    } else {
+
+      // Build the mesh
+      CreateMesh(MeshBlk,IP);
+
+      MeshBlk(0,0).BndSouthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+
+      Open_Output_File(MasterFile);
+      
+      // write data
+
+      // Cell Nodes
+      Print_File(MeshBlk(0,0).nodeSW(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).nodeNW(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).nodeSE(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).nodeNE(iCell,jCell), out());
+
+      // Centroid
+      Print_File(MeshBlk(0,0).CellCentroid(iCell,jCell), out());
+
+      // Centroid, area, cell indexes, geometric moments
+      Print_File(MeshBlk(0,0).Cell[iCell][jCell], out());
+
+      // Cell Gauss Points
+      if (MeshBlk(0,0).BndSouthSplineInfo != NULL){
+	Print_File(MeshBlk(0,0).BndSouthSplineInfo[iCell].NumOfSubIntervals(), out());
+
+	Print_File(MeshBlk(0,0).BndSouthSplineInfo[iCell].GQPoint(1), out());
+	Print_File(MeshBlk(0,0).BndSouthSplineInfo[iCell].NormalGQPoint(1), out());
+
+	Print_File(MeshBlk(0,0).BndSouthSplineInfo[iCell].GQPoint(2), out());
+	Print_File(MeshBlk(0,0).BndSouthSplineInfo[iCell].NormalGQPoint(2), out());
+
+	Print_File(MeshBlk(0,0).BndSouthSplineInfo[iCell].IntLength(1), out());
+      }
+
+      if (MeshBlk(0,0).BndNorthSplineInfo != NULL){
+	Print_File(MeshBlk(0,0).BndNorthSplineInfo[iCell].NumOfSubIntervals(), out());
+
+	Print_File(MeshBlk(0,0).BndNorthSplineInfo[iCell].GQPoint(1), out());
+	Print_File(MeshBlk(0,0).BndNorthSplineInfo[iCell].NormalGQPoint(1), out());
+
+	Print_File(MeshBlk(0,0).BndNorthSplineInfo[iCell].GQPoint(2), out());
+	Print_File(MeshBlk(0,0).BndNorthSplineInfo[iCell].NormalGQPoint(2), out());
+
+	Print_File(MeshBlk(0,0).BndNorthSplineInfo[iCell].IntLength(1), out());
+      }
+
+      if (MeshBlk(0,0).BndEastSplineInfo != NULL){
+	Print_File(MeshBlk(0,0).BndEastSplineInfo[jCell].NumOfSubIntervals(), out());
+
+	Print_File(MeshBlk(0,0).BndEastSplineInfo[jCell].GQPoint(1), out());
+	Print_File(MeshBlk(0,0).BndEastSplineInfo[jCell].NormalGQPoint(1), out());
+
+	Print_File(MeshBlk(0,0).BndEastSplineInfo[jCell].GQPoint(2), out());
+	Print_File(MeshBlk(0,0).BndEastSplineInfo[jCell].NormalGQPoint(2), out());
+
+	Print_File(MeshBlk(0,0).BndEastSplineInfo[jCell].IntLength(1), out());
+      }
+
+      if (MeshBlk(0,0).BndWestSplineInfo != NULL){
+	Print_File(MeshBlk(0,0).BndWestSplineInfo[jCell].NumOfSubIntervals(), out());
+
+	Print_File(MeshBlk(0,0).BndWestSplineInfo[jCell].GQPoint(1), out());
+	Print_File(MeshBlk(0,0).BndWestSplineInfo[jCell].NormalGQPoint(1), out());
+
+	Print_File(MeshBlk(0,0).BndWestSplineInfo[jCell].GQPoint(2), out());
+	Print_File(MeshBlk(0,0).BndWestSplineInfo[jCell].NormalGQPoint(2), out());
+
+	Print_File(MeshBlk(0,0).BndWestSplineInfo[jCell].IntLength(1), out());
+      }
+    }
+  }
+
+  // Test 45:
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<45>()
+  {
+    set_test_name("Check output operator, 5-point Gauss quad");
+    RunRegression = ON;
+ 
+    // Add test particular input parameters
+    IP.i_Grid = GRID_CIRCULAR_CYLINDER;
+    IP.Cylinder_Radius = 1;
+    IP.Cylinder_Radius2 = 32;
+    IP.Number_of_Blocks_Jdir = 1;
+    IP.Number_of_Blocks_Idir = 2;
+    IP.Number_of_Cells_Idir = 40;
+    IP.Number_of_Cells_Jdir = 20;
+    IP.Number_of_Ghost_Cells = 5;
+    IP.Space_Accuracy = 4;
+    IP.IncludeHighOrderBoundariesRepresentation = ON;
+    IP.i_Smooth_Quad_Block = OFF;
+    Grid2D_Quad_Block_HO::setContourIntegrationBasedOnLinearSegments();
+    Spline2DInterval_HO::setFivePointGaussQuadContourIntegration();
+
+    IP.i_Mesh_Stretching = ON;
+    IP.Mesh_Stretching_Type_Idir = STRETCHING_FCN_MINMAX_CLUSTERING;
+    IP.Mesh_Stretching_Type_Jdir = STRETCHING_FCN_MIN_CLUSTERING;
+    IP.Mesh_Stretching_Factor_Idir = 1.025;
+    IP.Mesh_Stretching_Factor_Jdir = 1.001;
+
+    MasterFile = "GaussQuad_For_Grid_Output_Operator.dat";
+    CurrentFile = "Current_GaussQuad_For_Grid_Output_Operator.dat";
+
+    if (RunRegression){
+      Grid2D_Quad_Block_HO::setContourIntegrationBasedOnGaussQuadratures();
+
+      // Build the mesh
+      CreateMesh(MeshBlk,IP);
+
+      Open_Output_File(CurrentFile);
+
+      out() << MeshBlk(0,0) << endl << endl;
+      out() << MeshBlk(1,0) << endl << endl;
+
+      // check operator <<
+      RunRegressionTest("operator <<", CurrentFile, MasterFile, 5.0e-3, 5.0e-3);
+
+    } else {
+      // Build the mesh
+      CreateMesh(MeshBlk,IP);
+
+      Open_Output_File(MasterFile);
+
+      out() << MeshBlk(0,0) << endl << endl;
+      out() << MeshBlk(1,0) << endl << endl;
+    }
+  }
+
+  // Test 46:
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<46>()
+  {
+    set_test_name("Check output operator, 3-point Gauss quad");
+    RunRegression = ON;
+ 
+    // Add test particular input parameters
+    IP.i_Grid = GRID_CIRCULAR_CYLINDER;
+    IP.Cylinder_Radius = 1;
+    IP.Cylinder_Radius2 = 32;
+    IP.Number_of_Blocks_Jdir = 1;
+    IP.Number_of_Blocks_Idir = 2;
+    IP.Number_of_Cells_Idir = 40;
+    IP.Number_of_Cells_Jdir = 20;
+    IP.Number_of_Ghost_Cells = 5;
+    IP.Space_Accuracy = 4;
+    IP.IncludeHighOrderBoundariesRepresentation = ON;
+    IP.i_Smooth_Quad_Block = OFF;
+    Grid2D_Quad_Block_HO::setContourIntegrationBasedOnLinearSegments();
+    Spline2DInterval_HO::setThreePointGaussQuadContourIntegration();
+
+    IP.i_Mesh_Stretching = ON;
+    IP.Mesh_Stretching_Type_Idir = STRETCHING_FCN_MINMAX_CLUSTERING;
+    IP.Mesh_Stretching_Type_Jdir = STRETCHING_FCN_MIN_CLUSTERING;
+    IP.Mesh_Stretching_Factor_Idir = 1.025;
+    IP.Mesh_Stretching_Factor_Jdir = 1.001;
+
+    MasterFile = "GaussQuad_3Points_For_Grid_Output_Operator.dat";
+    CurrentFile = "Current_GaussQuad_3Points_For_Grid_Output_Operator.dat";
+
+    if (RunRegression){
+      Grid2D_Quad_Block_HO::setContourIntegrationBasedOnGaussQuadratures();
+
+      // Build the mesh
+      CreateMesh(MeshBlk,IP);
+
+      Open_Output_File(CurrentFile);
+
+      out() << MeshBlk(0,0) << endl << endl;
+      out() << MeshBlk(1,0) << endl << endl;
+
+      // check operator <<
+      RunRegressionTest("operator <<", CurrentFile, MasterFile, 5.0e-2, 5.0e-2);
+
+    } else {
+      // Build the mesh
+      CreateMesh(MeshBlk,IP);
+
+      Open_Output_File(MasterFile);
+
+      out() << MeshBlk(0,0) << endl << endl;
+      out() << MeshBlk(1,0) << endl << endl;
+    }
+  }
+
+  // Test 47:
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<47>()
+  {
+    set_test_name("Check output operator, 5-point Gauss quad");
+    RunRegression = ON;
+ 
+    // Add test particular input parameters
+    IP.i_Grid = GRID_CIRCULAR_CYLINDER;
+    IP.Cylinder_Radius = 1;
+    IP.Cylinder_Radius2 = 32;
+    IP.Number_of_Blocks_Jdir = 1;
+    IP.Number_of_Blocks_Idir = 2;
+    IP.Number_of_Cells_Idir = 160;
+    IP.Number_of_Cells_Jdir = 80;
+    IP.Number_of_Ghost_Cells = 5;
+    IP.Space_Accuracy = 4;
+    IP.IncludeHighOrderBoundariesRepresentation = ON;
+    IP.i_Smooth_Quad_Block = OFF;
+    Grid2D_Quad_Block_HO::setContourIntegrationBasedOnLinearSegments();
+    Spline2DInterval_HO::setFivePointGaussQuadContourIntegration();
+
+    IP.i_Mesh_Stretching = ON;
+    IP.Mesh_Stretching_Type_Idir = STRETCHING_FCN_MINMAX_CLUSTERING;
+    IP.Mesh_Stretching_Type_Jdir = STRETCHING_FCN_MIN_CLUSTERING;
+    IP.Mesh_Stretching_Factor_Idir = 1.025;
+    IP.Mesh_Stretching_Factor_Jdir = 1.001;
+
+    MasterFile = "GaussQuad_5Points_For_Grid_Output_Operator_LargeMesh.dat";
+    CurrentFile = "Current_GaussQuad_5Points_For_Grid_Output_Operator_LargeMesh.dat";
+
+    if (RunRegression){
+      Grid2D_Quad_Block_HO::setContourIntegrationBasedOnGaussQuadratures();
+
+      // Build the mesh
+      CreateMesh(MeshBlk,IP);
+
+      Open_Output_File(CurrentFile);
+
+      out() << MeshBlk(0,0) << endl << endl;
+      out() << MeshBlk(1,0) << endl << endl;
+
+      // check operator <<
+      RunRegressionTest("operator <<", CurrentFile, MasterFile, 5.0e-3, 5.0e-3);
+
+    } else {
+      // Build the mesh
+      CreateMesh(MeshBlk,IP);
+
+      Open_Output_File(MasterFile);
+
+      out() << MeshBlk(0,0) << endl << endl;
+      out() << MeshBlk(1,0) << endl << endl;
+    }
+  }
+
+  // Test 48:
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<48>()
+  {
+    set_test_name("Large Deformed Box");
+
+    RunRegression = ON;
+
+    // Add test particular input parameters
+    IP.i_Grid = GRID_DEFORMED_BOX;
+    IP.Number_of_Blocks_Jdir = 1;
+    IP.Number_of_Blocks_Idir = 1;
+    IP.Number_of_Cells_Idir = 40;
+    IP.Number_of_Cells_Jdir = 40;
+    IP.Number_of_Ghost_Cells = 5;
+    IP.Space_Accuracy = 4;
+    IP.IncludeHighOrderBoundariesRepresentation = OFF;
+    IP.i_Smooth_Quad_Block = OFF;
+    IP.BCs_Specified = ON;
+    IP.BC_North = BC_CONSTANT_EXTRAPOLATION;
+    IP.BC_South = BC_CONSTANT_EXTRAPOLATION;
+    IP.BC_East = BC_CONSTANT_EXTRAPOLATION;
+    IP.BC_West = BC_CONSTANT_EXTRAPOLATION;
+    IP.IterationsOfInteriorNodesDisturbances = 300;
+
+    IP.VertexSW = Vector2D(0.0,0.0);
+    IP.VertexSE = Vector2D(4.0,1.0);
+    IP.VertexNE = Vector2D(2.5,4.0);
+    IP.VertexNW = Vector2D(0.5,5.0);
+
+    IP.X_Scale = 50;
+
+    MasterFile = "Large_Deformed_Box.dat";
+    CurrentFile = "Current_Large_Deformed_Box.dat";
+    
+    if (RunRegression){
+      IP.IncludeHighOrderBoundariesRepresentation = ON;
+      Grid2D_Quad_Block_HO::setContourIntegrationBasedOnGaussQuadratures();
+      Spline2DInterval_HO::setFivePointGaussQuadContourIntegration();
+
+      // Build the mesh
+      CreateMesh(MeshBlk,IP);
+      MeshBlk.Check_Multi_Block_Grid_Completely();
+
+      // open CurrentFile
+      Open_Output_File(CurrentFile);
+
+      // output cell data
+      MeshBlk.Output_Cells_Data(out());
+
+      // == check geometric properties
+      RunRegressionTest("Large Deformed Box", CurrentFile, MasterFile, 5.0e-7, 5.0e-7);
+
+    } else {
+      // Build the mesh
+      CreateMesh(MeshBlk,IP);
+      MeshBlk.Check_Multi_Block_Grid_Completely();
 
       // open MasterFile
       Open_Output_File(MasterFile);

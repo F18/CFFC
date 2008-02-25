@@ -184,6 +184,13 @@ public:
   double YCentroidContribution(void){ return IntegratePolynomialTerm(Vector2D(0.0), 0, 1); }
   //@}
 
+  //! @name Set the number of Gauss quadrature points for contour integration
+  //@{
+  static void Set_Default_Parameters(void){ NUMBER_OF_GQP_CONTOURINT = 3; }
+  static void setThreePointGaussQuadContourIntegration(void){ NUMBER_OF_GQP_CONTOURINT = 3; }
+  static void setFivePointGaussQuadContourIntegration(void){ NUMBER_OF_GQP_CONTOURINT = 5; }
+  //@}
+
   /* Operators */
   friend std::ostream &operator << (std::ostream &os, const Spline2DInterval_HO &S);
   friend std::istream &operator >> (std::istream &is, Spline2DInterval_HO &S);
