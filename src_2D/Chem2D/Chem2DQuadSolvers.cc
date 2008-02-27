@@ -19,12 +19,6 @@
 #include "Chem2DQuadNKS.h"
 #endif // _CHEM2D_NKS_INCLUDED 
 
-/* Include Rte2D solver Sepcialization header file. */
-#ifdef _CHEM2D_WITH_RTE
-#include "Chem2DQuadRte.h"
-#endif
-
-
 /********************************************************
  * Routine: Chem2DQuadSolver                            *
  *                                                      *
@@ -54,14 +48,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
   FAS_Multigrid2D_Solver<Chem2D_cState, 
                          Chem2D_Quad_Block, 
                          Chem2D_Input_Parameters> MGSolver;
-  
-  // Radiation solver object pointer and parameters
-#ifdef _CHEM2D_WITH_RTE
-  Rte2DSolver *RteSolver(NULL);     // object pointer
-#endif
-  bool Rte_PostProcess(false);      // don't post process radiation solution after solve
-  int Rte_batch_flag(1);            // don't print out information
-  int number_sequential_solves(0);  // current sequential solve number
+
 
   /* Define residual file and cpu time variables. */
   ofstream residual_file;
@@ -74,8 +61,6 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
     command_flag, error_flag, line_number, 
     i_stage, limiter_freezing_off;
   
-  int Max_Number_Global_Steps;
-
   double Time, dTime, initial_residual_l2_norm;
 
   /* Variables used for dual time stepping. */
@@ -197,7 +182,6 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
   /* Set the initial time level. */
   Time = ZERO;
   number_of_time_steps = 0;
-  Max_Number_Global_Steps = 0;
 
   /* Set the CPU time to zero. */
   processor_cpu_time.zero();
@@ -407,66 +391,6 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 			      List_of_Local_Solution_Blocks);
   } 
   
-  /***********************************************************************	
-   RADIATION SOLVER setup of initial grid, solution blocks, quadtree,
-   initial conditions.                                                      
-  ************************************************************************/
-  if (Input_Parameters.Radiation == RADIATION_RTE){
-
-#ifdef _CHEM2D_WITH_RTE
-
-    if (!batch_flag) cout << "\n Setting up radiation solver.";
-
-    // deallocate radiation solver just in case
-    if (RteSolver != NULL) delete RteSolver;
-
-    // allocate a new radiation object
-    RteSolver = new Rte2DSolver;
-
-    // Pass the chem2D input parameters, quadtree data structure, and mesh
-    // to initialize the radiation solver.  Note that the radiation solver
-    // uses a copy of the same grid and quadtree.  All AMR is performed first
-    // on the Chem2D mesh (by Chem2D), and the resulting refinement flags 
-    // are passed to the radation solver and applied.  This keeps the meshes 
-    // in sync.
-    RteSolver->SetupSequentialSolve(Rte_batch_flag, 
-				    Input_Parameters.Rte_Input_File_Name,
-				    MeshBlk, 
-				    Input_Parameters);
-
-    // We need to initialize the radiation field. There are several cases 
-    // here:
-    //  1 -> Chem2D is being restarted but Rte2D is not (ie. changing 
-    //       radiation parameters or turning on radiation for first time).
-    //       |-> Read Chem2D solution from restart, compute initial Rte2D solution,
-    //           variables to Chem2D
-    //  2 -> Chem2D and Rte2D are both being restarted.
-    //       |-> Read both solutions from restarts and copy over Rte2D solution
-    //           variables to Chem2D
-    //  3 -> Completely new simulation (Neither are being restarted).
-    //       |-> No initialization required
-    if (Input_Parameters.i_ICs == IC_RESTART && 
-	RteSolver->Input_Parameters.i_ICs == IC_RESTART) {
-
-      // Copy over computed Rte2D solution variables only
-      //RteSolver->Copy_SRC_Solution_Vars(Local_SolnBlk); // set medium state using Chem2D data
-      RteSolver->Copy_Rte2D_Solution_Vars(Local_SolnBlk); // compute Chem2D rad source using Rte2D data
-
-    } // endif - restart
-
-    // set the current number of sequential solves and the update frequency
-    number_sequential_solves = 0;
-
-#else
-
-    cerr << " \nCoupled Chem2D / Rte2D solver requested."
-	 << " Recompile code with _CHEM2D_WITH_RTE #define.\n";
-    exit(-1);
-
-#endif //_CHEM2D_WITH_RTE
-
-  } // endif
-
   /****************************************************************************
    *********************** MAIN SOLVER ****************************************
    Solve IBVP or BVP for conservation form of 2D Axisymmetric multispecies 
@@ -477,16 +401,6 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
   continue_existing_calculation: ;
   CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
  
-
-  // print out a header for sequential solver
-  if (!batch_flag && Input_Parameters.Radiation == RADIATION_RTE &&
-      Input_Parameters.Max_Number_Sequential_Solves > 0) {
-    cout << endl << endl << string(70,'=');
-    cout << "\n Sequential Solver Step = " << number_sequential_solves+1;
-    cout << endl << string(70,'=');
-  }
-
-
   /******************* MULTIGRID SETUP ****************************************/
   if (Input_Parameters.i_Time_Integration == TIME_STEPPING_MULTIGRID) {
  
@@ -549,7 +463,8 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
      Perform required number of iterations (time steps). 
     **************************************************************************/ 
     if ((!Input_Parameters.Time_Accurate && 
-	 Input_Parameters.Maximum_Number_of_Time_Steps > 0) ||
+	 Input_Parameters.Maximum_Number_of_Time_Steps > 0 &&
+	 number_of_time_steps < Input_Parameters.Maximum_Number_of_Time_Steps) ||
 	(Input_Parameters.Time_Accurate && Input_Parameters.Time_Max > Time)) {
      
       if (!batch_flag) { cout << "\n\n Beginning Explicit Chem2D computations on "
@@ -557,10 +472,9 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 
      last_step = 0;
      int i=1; //markthis
-     double number_explicit_steps = 0;
 
      while ((!Input_Parameters.Time_Accurate &&
-	     number_explicit_steps < Input_Parameters.Maximum_Number_of_Time_Steps) ||
+	     number_of_time_steps < Input_Parameters.Maximum_Number_of_Time_Steps) ||
 	    (Input_Parameters.Time_Accurate && Time < Input_Parameters.Time_Max)) {
 
        /***********************************************************************	
@@ -688,10 +602,10 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
             } 
 	  } 	 
 	  
- 	  if (!Input_Parameters.Local_Time_Stepping) { 
+	  if (!Input_Parameters.Local_Time_Stepping) { 
 	    // Set global time step.	
 	    Set_Global_TimeStep(Local_SolnBlk, List_of_Local_Solution_Blocks,dTime);
- 	  } 
+	  } 
 
 	  /************************ NORMS *****************************************
            Determine the L1, L2, and max norms of the solution residual. 
@@ -798,7 +712,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	  ***************************************************************************/
  
 	if (!Input_Parameters.Time_Accurate &&
- 	    number_explicit_steps >= 
+ 	    number_of_time_steps >= 
  	    Input_Parameters.Maximum_Number_of_Time_Steps) break;
  	if (Input_Parameters.Time_Accurate && 
  	    Time >= Input_Parameters.Time_Max) break;
@@ -913,6 +827,20 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	  n_inner++;
 	} while (Input_Parameters.Dual_Time_Stepping && 
                  (n_inner < Input_Parameters.Max_Inner_Steps+1  || first_step)); 
+
+	/********** UPDATE STATES FOR DUAL TIME STEPPING ***************************  
+         Update solution states, at different times, required by dual time stepping.
+        ****************************************************************************/
+        if (Input_Parameters.Dual_Time_Stepping) {
+	  error_flag = Update_Dual_Solution_States(Local_SolnBlk, 
+						 List_of_Local_Solution_Blocks);
+	  if (error_flag) {
+	    cout << "\n Chem2D ERROR: Chem2D solution states update error on processor "
+		 << List_of_Local_Solution_Blocks.ThisCPU
+		 << ".\n";
+	    cout.flush();
+	  }
+	}
 	
 	/******************* UPDATE TIMER & COUNTER *******************************
           Update time and time step counter. 
@@ -922,12 +850,11 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
 	  Input_Parameters.first_step = 0;
 	}
 
-	number_of_time_steps++;
-	number_explicit_steps++;
+	number_of_time_steps = number_of_time_steps + 1;
 
 	// check for last step
         if (!Input_Parameters.Time_Accurate &&
-	    number_explicit_steps == Input_Parameters.Maximum_Number_of_Time_Steps) {
+	    number_of_time_steps == Input_Parameters.Maximum_Number_of_Time_Steps) {
           last_step = 1;
 	}
 		
@@ -1073,57 +1000,6 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
   /*************************************************************************************************************************/
   /*************************************************************************************************************************/
 
-
-  /***********************************************************************	
-   RADIATION SOLVER solution of equation of radiation transfer to obtain
-   the radiation heat flux term.
-  ************************************************************************/
-  if (Input_Parameters.Radiation == RADIATION_RTE &&
-      Input_Parameters.Max_Number_Sequential_Solves > 0) {
-
-#ifdef _CHEM2D_WITH_RTE
-
-    if (!batch_flag) cout << "\n Solving radiation transfer equation...";
-
-    // perform sequential solve
-    RteSolver->SequentialSolve(Local_SolnBlk, Rte_PostProcess);
-    
-    if (!batch_flag) cout << "\n ...Done";
-
-    // output some radiation solver stats
-    if (!batch_flag) RteSolver->OutputSolverStats(cout);
-
-
-    // increment sequential solve number
-    number_sequential_solves++;
-
-    //
-    // Check for last step.
-    // If it is not, continue an existing calculation.
-    // This is not the nicest way of doing this... should be a for loop.
-    //
-    if (number_sequential_solves < Input_Parameters.Max_Number_Sequential_Solves) {
-
-      // Continue existing calculation.     
-      //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      goto continue_existing_calculation;
-      //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-    //
-    // print out finalstats for sequential solver
-    } else if (!batch_flag) {
-      cout << endl << endl << string(70,'=');
-      cout << "\n Sequential Solver Finished on " << Date_And_Time();
-      cout << "\n Total Sequential Solves = " << number_sequential_solves;
-      cout << "\n Total CPU Time          = " << total_cpu_time.min() << " min";
-      cout << endl << string(70,'=') << endl;
-    } // endif - continue
-
-#endif // _CHEM2D_WITH_RTE
-
-  } // endif - radiation
-
-
   /***************************************************************************
    ************************** POST PROCESSSING *******************************
     Solution calculations complete. Write 2D solution to output and restart files  
@@ -1170,8 +1046,6 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
       MeshBlk = Deallocate_Multi_Block_Grid(MeshBlk, 
 					    Input_Parameters.Number_of_Blocks_Idir, 
 					    Input_Parameters.Number_of_Blocks_Jdir);
-      Chem2D_Quad_Block::deallocate_static();
-
       // Output input parameters for new caluculation.
       if (!batch_flag)  {
 	cout << "\n\n Starting a new calculation.";
@@ -1203,16 +1077,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
       MeshBlk = Deallocate_Multi_Block_Grid(MeshBlk, 
 					    Input_Parameters.Number_of_Blocks_Idir, 
 					    Input_Parameters.Number_of_Blocks_Jdir);
-      Chem2D_Quad_Block::deallocate_static();
-
-      // deallocate radiation solver
-#ifdef _CHEM2D_WITH_RTE
-      if (RteSolver != NULL) {
-	delete RteSolver;
-	RteSolver = NULL;
-      } //endif
-#endif // _CHEM2D_WITH_RTE
-
+   
       // Close input data file.
       if (!batch_flag) cout << "\n\n Closing Chem2D input data file.";
       if (CFFC_Primary_MPI_Processor()) Close_Input_File(Input_Parameters);
@@ -1224,8 +1089,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
     *************************************************************************/
     else if (command_flag == CONTINUE_CODE) {
       // Reset maximum time step counter.
-      // Input_Parameters.Maximum_Number_of_Time_Steps += number_of_time_steps;
-
+      Input_Parameters.Maximum_Number_of_Time_Steps += number_of_time_steps;
       // Output input parameters for continuing calculation.
       if (!batch_flag)  {
 	cout << "\n\n Continuing existing calculation.";
@@ -1375,7 +1239,7 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
     /************************************************************************
      ********************* WRITE OUTPUT RightHandSide ***********************
      *************************************************************************/
-    else if (command_flag == WRITE_OUTPUT_RHS_CODE) {
+	 else if (command_flag == WRITE_OUTPUT_RHS_CODE) {
       // Output the RHS
       if (!batch_flag) cout << "\n Writing right hand side to output data file(s).";
       
@@ -1639,34 +1503,6 @@ int Chem2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
       CFFC_Broadcast_MPI(&error_flag,1);
       if (error_flag) return error_flag;      
     }
-
-
-    /*************************************************************************
-     **************** POSTPROCESS RADIATION CODE *****************************
-     *************************************************************************/ 
-    else if (command_flag == POSTPROCESS_RADIATION_CODE) {
-
-#ifdef _CHEM2D_WITH_RTE
-
-      // Output solution data.
-      if (!batch_flag) cout << "\n Postprocessing Rte2D solution.";
-      
-      error_flag = RteSolver->PostProcess(command_flag);
-      if (error_flag) {
-	cout << "\n Chem2D ERROR: Unable to postprocess Rte2D data."
-	     << "on processor "
-	     << List_of_Local_Solution_Blocks.ThisCPU
-	     << ".\n";
-	cout.flush();
-      } /* endif */
-      error_flag = CFFC_OR_MPI(error_flag);
-      if (error_flag) return (error_flag);
-
-#endif //_CHEM2D_WITH_RTE
-
-    }
- 
-
     /*************************************************************************
      **************** NOT A VALID INPUT_CODE  ********************************
      *************************************************************************/  

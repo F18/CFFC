@@ -31,7 +31,6 @@ using namespace std;
 #ifdef _CANTERA_VERSION
 #include <cantera/Cantera.h>      // main include
 #include <cantera/IdealGasMix.h>  // reacting, ideal gas mixture class
-#include <cantera/equilibrium.h>  // canteraequilibrium solver
 #endif //_CANTERA_VERSION
 
 //Calorie to Joule conversion
@@ -245,7 +244,7 @@ private:
   double *M; 
   double *c; 
   double *c_denom; 
-  double *r, *r0, *e; 
+  double *r; 
   cplx   *cc;
   cplx   *rc;
 
@@ -263,17 +262,14 @@ public:
   string ct_mech_name;     //Reaction mechanism file path
   string ct_mech_file;     //Reaction mechanism file path
 #ifdef _CANTERA_VERSION
-  Cantera::IdealGasMix* ct_gas; //the Cantera IdealGasMix object
+  Cantera::IdealGasMix* ct_gas;     //the Cantera IdealGasMix object
 #endif
-
-  // indexes of specific species
-  static int iCO, iCO2, iH2O, iO2;
 
   Reaction_set(){ 
     reactset_flag=0; num_reactions=0; num_species=0; 
     num_react_species=0; reactions = NULL; species = NULL; 
     kf=NULL; kb=NULL; M=NULL; c=NULL; c_denom=NULL; r=NULL;
-    cc=NULL; rc=NULL; r0=NULL;
+    cc=NULL; rc=NULL;
 #ifdef _CANTERA_VERSION
     ct_gas=NULL;
 #endif
@@ -286,42 +282,11 @@ public:
   void set_species(string *, int);
   void set_reactions(int &,string*,double*,double*,double*);
 
-  //
   // cantera member functions
-  //
-  void ct_load_mechanism(string &mechanism_file_name, 
-			 string &mechanism_name);
-  void ct_parse_mass_string( const string& massFracStr, 
-			     double* massFracs);
-  void ct_parse_schmidt_string( const string& schmidtStr, 
-				double* schmidt);
-  void ct_parse_mole_string( const string& moleFracStr, 
-			     double* moleFracs);
-  int ct_get_species_index(const string &sp);
-  // compute equilibrium concetration with cantera
-  template<class SOLN_pSTATE>
-  void ct_equilibrium_HP( SOLN_pSTATE &W ) const;
-  template<class SOLN_pSTATE>
-  void ct_equilibrium_TP( SOLN_pSTATE &W ) const;
-  // compute composition from equivalence ratio
-  void ct_composition( const string& fuel_species, const double &phi,
-		       double* massFracs) const;
-  // compute analytical chemical source jacobian with cantera
-  template<class SOLN_pSTATE>
-  void ct_dSwdU(DenseMatrix &dSwdU, 
-		const SOLN_pSTATE &W,
-		const double& Temp, 
-		const double& Press) const;
-  // compute finite diff chemical source jacobian with cantera
-  template<class SOLN_pSTATE>
-  void ct_dSwdU_FiniteDiff(DenseMatrix &dSwdU, 
-		const SOLN_pSTATE &W,
-		const double& Temp, 
-		const double& Press) const;
+  void ct_load_mechanism(string &, string &);
+  void ct_parse_mass_string( const string&, double* );
+  void ct_parse_schmidt_string( const string&, double*);
 
-  //
-  // gneral member functions
-  //
   //setup storage after num_reactions & num_species set.
   void set_storage(void){
     kf = new double[num_reactions];        
@@ -330,14 +295,9 @@ public:
     c  = new double[num_react_species];
     c_denom = new double[num_react_species]; 
     r  = new double[num_react_species]; 
-    r0  = new double[num_react_species]; 
-    e  = new double[num_react_species]; 
     cc = new cplx[num_react_species];
     rc = new cplx[num_react_species]; 
   }
-
-  // determine species index
-  int SpeciesIndex( const string& name ) const;
 
   //Operator Overloading 
   Reaction_set& operator =(const Reaction_set &W);
@@ -348,12 +308,12 @@ public:
 
   // time rate change of the species concentration 
   template<class SOLN_pSTATE, class SOLN_cSTATE>
-  void omega( SOLN_cSTATE &U, const SOLN_pSTATE &W ) const;
+  void omega( SOLN_cSTATE &U, const SOLN_pSTATE &W, const int Flow_Type ) const;
 
   //Jacobian ( flag true for cfl calc)
   template<class SOLN_pSTATE, class SOLN_cSTATE>
   void dSwdU(DenseMatrix &dSwdU,const SOLN_pSTATE &W, const bool &CFL_flag, 
-	     const int Solver_type) const;
+	     const int Flow_Type, const int Solver_type) const;
 
   //Jacobian computed using complex step method
   template<class SOLN_pSTATE>
@@ -361,7 +321,8 @@ public:
 
   // jacobian 
   template<class SOLN_pSTATE, class SOLN_cSTATE>
-  void Finite_Difference_dSwdU(DenseMatrix &dSwdU, const SOLN_pSTATE &W) const;
+  void Finite_Difference_dSwdU(DenseMatrix &dSwdU, const SOLN_pSTATE &W,
+			       const int Flow_Type) const;
 
   void Deallocate();
 
@@ -382,8 +343,6 @@ inline void Reaction_set::Deallocate(){
   if(c != NULL){  delete[] c; c = NULL;}
   if(c_denom != NULL){  delete[] c_denom; c_denom = NULL;}
   if(r != NULL){  delete[] r; r = NULL;}
-  if(r0 != NULL){  delete[] r0; r0 = NULL;}
-  if(e  != NULL){  delete[] e; e = NULL;}
   if(cc!= NULL){ delete[] cc; cc = NULL;}
   if(rc!= NULL){ delete[] rc; rc = NULL;}
 #ifdef _CANTERA_VERSION
@@ -436,6 +395,13 @@ inline ostream &operator << (ostream &out_file, const Reaction_set &W) {
   return (out_file);
 }
 
+// istream &operator >> (istream &in_file, Reaction_set &W) {
+//   in_file.setf(ios::skipws);
+//   in_file >> W.react >> W.A >> W.b >> W.E;
+//   in_file.unsetf(ios::skipws);
+//   return (in_file);
+// }
+
 
 /************************************************************************
   Calculates the concentration time rate of change of species from
@@ -450,45 +416,31 @@ inline ostream &operator << (ostream &out_file, const Reaction_set &W) {
 
 ************************************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
-inline void Reaction_set::omega(SOLN_cSTATE &U, const SOLN_pSTATE &W ) const{
+inline void Reaction_set::omega(SOLN_cSTATE &U, const SOLN_pSTATE &W,  const int Flow_Type ) const{
  
-  // declares
   double Temp = W.T();  //K
   double Press= W.p;    // [Pa]
   double PressDyne = W.p*TEN; // N/m^2 -> dyne/cm^2
   double rho= W.rho/THOUSAND; //kg/m^3 -> g/cm^3 
   double a,b, ans(ZERO);
 
-  // compute individual species molar masses, copy concentrations
   for(int i=0; i<num_react_species; i++){
     M[i] = W.specdata[i].Mol_mass()*THOUSAND;  //kg/mol -> g/mol
     c[i] = W.spec[i].c;                        //unitless
   }
 
-  //
-  // Compute reaction set rates
-  //
   switch(reactset_flag){
-    
-    //-------------------------------------------
-    // NO REACTIONS   
-    //-------------------------------------------
   case NO_REACTIONS:
     cerr<<"\n You shouldn't get here, NO_REACTIONS in Reaction_set::omeag(..)";
     exit(1);
     break;
-    
     //---------------------------------//
     //------ Hardcoded ----------------//
     //---------------------------------//
-    
-    //-------------------------------------------
-    // CH4 ONE STEP   
-    //-------------------------------------------
   case CH4_1STEP: 
     //laminar case     
     a=1.0;//   a = 0.2; 
-    b=1.0;//   b = 1.3;
+    b=1.0;//     b = 1.3;
     kf[0] = reactions[0].kf(Temp)*pow((W.SpecCon(0))/MILLION,a)*pow((W.SpecCon(1)/MILLION),b);        
     for(int index =0; index<num_react_species; index++){
       switch(index) {
@@ -510,15 +462,15 @@ inline void Reaction_set::omega(SOLN_cSTATE &U, const SOLN_pSTATE &W ) const{
     }
     break;
     
-    //-------------------------------------------
-    // CH4 TWO STEP
-    //-------------------------------------------
+    //TWO STEP CH4
   case CH4_2STEP:
     kf[0] = reactions[0].kf(Temp)*pow(W.SpecCon(0)/MILLION,0.2)*pow(W.SpecCon(1)/MILLION,1.3);
     kb[0] = ZERO;
     kf[1] = reactions[1].kf(Temp)*(W.SpecCon(4)/MILLION)*pow(W.SpecCon(3)/MILLION,0.5)*pow(W.SpecCon(1)/MILLION,0.25); 
     kb[1] = reactions[1].kb(Temp)*(W.SpecCon(2)/MILLION);
-    
+   
+    //cout<<"\n Sw "<<Temp<<" "<<reactions[0].kf(Temp)<<" "<<reactions[1].kf(Temp)<<" "<<reactions[1].kb(Temp);
+
     for(int index =0; index<num_react_species; index++){
       switch(index) {
       case 0 : //CH4
@@ -541,82 +493,75 @@ inline void Reaction_set::omega(SOLN_cSTATE &U, const SOLN_pSTATE &W ) const{
       U.rhospec[index].c = M[index]*ans*THOUSAND;
     }
     break;
-    
-    //-------------------------------------------
-    // ONE STEP C3H8 mechanism
-    //-------------------------------------------
+  
+  // ONE STEP C3H8 mechanism
   case C3H8_1STEP:
     cerr<<"\nC3H8_1STEP not implemented.";
     exit(1);
     break;
-    
-    
-    //-------------------------------------------
+
+
     //ONE STEP H2&O2
-    //-------------------------------------------
   case H2O2_1STEP:
-    
-    kf[0] = reactions[0].kf(Temp);
-    
-    for(int index =0; index<num_react_species; index++){
-      switch(index) {
+   
+      kf[0] = reactions[0].kf(Temp);
+      
+      for(int index =0; index<num_react_species; index++){
+	switch(index) {
 	case 0 : //H2
 	  ans = - TWO*kf[0]*W.SpecCon(0)*W.SpecCon(0)*W.SpecCon(1);
 	  break;
-      case 1 : //O2
-	ans = - kf[0]*W.SpecCon(0)*W.SpecCon(0)*W.SpecCon(1);
-	break;
-      case 2 : //H2O
-	ans = TWO*kf[0]*W.SpecCon(0)*W.SpecCon(0)*W.SpecCon(1);
-	break;
-      };
-      //ans in kg/m^3*s   
-      U.rhospec[index].c = M[index]*ans*THOUSAND;
-    }
-    break;
-    
-    //-------------------------------------------
-    //TWO STEP H2&O2
-    //-------------------------------------------
+	case 1 : //O2
+	  ans = - kf[0]*W.SpecCon(0)*W.SpecCon(0)*W.SpecCon(1);
+	  break;
+	case 2 : //H2O
+	  ans = TWO*kf[0]*W.SpecCon(0)*W.SpecCon(0)*W.SpecCon(1);
+	  break;
+	};
+	//ans in kg/m^3*s   
+	U.rhospec[index].c = M[index]*ans*THOUSAND;
+      }
+      break;
+  
+      //TWO STEP H2&O2
   case H2O2_2STEP:
-    
-    kf[0] = reactions[0].kf(Temp,W.spec[0].c,W.spec[1].c,W.spec[4].c);
-    kb[0] = kf[0]/(reactions[0].keq(W,Temp));
-    kf[1] = reactions[1].kf(Temp,W.spec[0].c,W.spec[1].c,W.spec[4].c);
-    kb[1] = kf[1]/(reactions[1].keq(W,Temp));
-    
-    for(int index =0; index<num_react_species; index++){
-      switch(index) {
-      case 0 : //H2
-	ans = - kf[0]*W.SpecCon(0)*W.SpecCon(1)*1e-12 + kb[0]*W.SpecCon(2)*W.SpecCon(2)*1e-12
+   
+      kf[0] = reactions[0].kf(Temp,W.spec[0].c,W.spec[1].c,W.spec[4].c);
+      kb[0] = kf[0]/(reactions[0].keq(W,Temp));
+      kf[1] = reactions[1].kf(Temp,W.spec[0].c,W.spec[1].c,W.spec[4].c);
+      kb[1] = kf[1]/(reactions[1].keq(W,Temp));
+      //cout<<"\n kf1 "<< kf[0]<<" kb1 "<< kb[0]<<" kf2 "<<kf[1]<<" kb2 "<< kb[1];
+      
+      for(int index =0; index<num_react_species; index++){
+	switch(index) {
+	case 0 : //H2
+	  ans = - kf[0]*W.SpecCon(0)*W.SpecCon(1)*1e-12 + kb[0]*W.SpecCon(2)*W.SpecCon(2)*1e-12
 	    - kf[1]*W.SpecCon(2)*W.SpecCon(2)*W.SpecCon(0)*1e-18 + kb[1]*W.SpecCon(3)*W.SpecCon(3)*1e-12;
-	break;
-      case 1 : //O2
-	ans = - kf[0]*W.SpecCon(0)*W.SpecCon(1)*1e-12 + kb[0]*W.SpecCon(2)*W.SpecCon(2)*1e-12;
-	break;
-      case 2 : //OH
-	ans = TWO*(kf[0]*W.SpecCon(0)*W.SpecCon(1)*1e-12 - kb[0]*W.SpecCon(2)*W.SpecCon(2)*1e-12)
+	  break;
+	case 1 : //O2
+	  ans = - kf[0]*W.SpecCon(0)*W.SpecCon(1)*1e-12 + kb[0]*W.SpecCon(2)*W.SpecCon(2)*1e-12;
+	  break;
+	case 2 : //OH
+	  ans = TWO*(kf[0]*W.SpecCon(0)*W.SpecCon(1)*1e-12 - kb[0]*W.SpecCon(2)*W.SpecCon(2)*1e-12)
 	    + TWO*( -kf[1]*W.SpecCon(2)*W.SpecCon(2)*W.SpecCon(0)*1e-18 + kb[1]*W.SpecCon(3)*W.SpecCon(3)*1e-12);
-	break;
-      case 3 : //H2O
-	ans = TWO*(kf[1]*W.SpecCon(2)*W.SpecCon(2)*W.SpecCon(0)*1e-18 - kb[1]*W.SpecCon(3)*W.SpecCon(3)*1e-12);      
-	break;
-      };
-      //ans in kg/m^3*s   
-      U.rhospec[index].c = M[index]*ans*THOUSAND;
-    }
-    break;
-    
-    //-------------------------------------------
+	  break;
+	case 3 : //H2O
+	  ans = TWO*(kf[1]*W.SpecCon(2)*W.SpecCon(2)*W.SpecCon(0)*1e-18 - kb[1]*W.SpecCon(3)*W.SpecCon(3)*1e-12);      
+	  break;
+	};
+	//ans in kg/m^3*s   
+	U.rhospec[index].c = M[index]*ans*THOUSAND;
+      }
+      break;
+
     // 8 STEP H2 & O2
-    //-------------------------------------------
   case H2O2_8STEP: 
     
     for(int spec =0; spec<num_reactions; spec++){
       kf[spec] = reactions[spec].kf(Temp);
       kb[spec] = kf[spec]/reactions[spec].keq(W,Temp);
     }
-    
+ 
     for(int index =0; index<num_react_species; index++){
       switch(index) {
       case 0 : //O
@@ -648,12 +593,14 @@ inline void Reaction_set::omega(SOLN_cSTATE &U, const SOLN_pSTATE &W ) const{
 			 [5]*c[2]/M[2]-kf[2]*rho*rho*c[5]/M[5]*c[3]/M[3]+kb[2]*rho*rho*c[2]/M[2]*c[4]/M
 			 [4]+kf[4]*rho*rho*rho*c[2]*c[2]/(M[2]*M[2])*c[4]/M[4]-kb[4]*rho*rho*c[3]/M[3]*c
 			 [4]/M[4]);
-	break;	
+	break;
+	
       case 4 : //H2O
 	ans = (kf[2]*rho*rho*c[5]/M[5]*c[3]/M[3]-kb[2]*rho*rho*c[2]/M
 			[2]*c[4]/M[4]+kf[3]*rho*rho*c[5]*c[5]/(M[5]*M[5])-kb[3]*rho*rho*c[4]/M[4]*c[0]/
 			M[0]+kf[5]*rho*rho*rho*c[2]/M[2]*c[5]/M[5]*c[4]/M[4]-kb[5]*rho*rho*c[4]*c[4]/(M[4]*M[4]));
 	break;
+
       case 5 : // OH
 	ans = (kf[0]*rho*rho*c[2]/M[2]*c[1]/M[1]-kb[0]*rho*rho*c[5]/M
 			[5]*c[0]/M[0]+kf[1]*rho*rho*c[0]/M[0]*c[3]/M[3]-kb[1]*rho*rho*c[5]/M[5]*c[2]/M
@@ -665,13 +612,11 @@ inline void Reaction_set::omega(SOLN_cSTATE &U, const SOLN_pSTATE &W ) const{
 	break;
       };
       U.rhospec[index].c = M[index]*ans*THOUSAND;
-    }
-    break;
-    
-    
-    //-------------------------------------------
+   }
+   break;
+
+
     // 15 step CH4 based on GRI 2.11
-    //-------------------------------------------
   case CH4_15STEP_ARM2:
     // r(Wdot) - mol/(cm^3*s)
 
@@ -684,9 +629,7 @@ inline void Reaction_set::omega(SOLN_cSTATE &U, const SOLN_pSTATE &W ) const{
     break;
 
 
-    //-------------------------------------------
     // 15 step CH4 based on GRI 3
-    //-------------------------------------------
   case CH4_15STEP_ARM3:
     // r(Wdot) - mol/(cm^3*s)
 
@@ -713,9 +656,10 @@ inline void Reaction_set::omega(SOLN_cSTATE &U, const SOLN_pSTATE &W ) const{
     ct_gas->getNetProductionRates(r);
 
     // set the Chem2D_cState production rates
-    for (int i=0; i<num_species-1; i++){
+    for (int i=0; i<num_react_species; i++){
       U.rhospec[i].c = r[i]*M[i];
     }
+
     break;
 
 #endif // _CANTERA_VERSION
@@ -749,15 +693,22 @@ inline void Reaction_set::omega(SOLN_cSTATE &U, const SOLN_pSTATE &W ) const{
 ************************************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 inline void Reaction_set::dSwdU(DenseMatrix &dSwdU, const SOLN_pSTATE &W, 
-				const bool &CFL_flag, const int solver_type) const{
+				const bool &CFL_flag, const int Flow_Type,
+				const int solver_type) const{
 
   /***************** Local Variables *****************/
   double Temp = W.T();
-  double Press= W.p;    // [Pa]
   double rho= W.rho/THOUSAND; //kg/m^3 -> g/cm^3
-  double VALUE = TOLER; //sqrt(TOLER);
-  int NUM_VAR = W.NumVarSansSpecies();
 
+
+//   double Con0, Con1, Rt;
+//   double dkf0_dp, dkf0_drho;
+//   double dkf0_dc1, dkf0_dc2, dkf0_dc3, dkf0_dc4; 
+//   //BEING LAZY INSTEAD OF ANALYTICALY DETERMINING dSdU
+//   DenseMatrix dSwdW(W.NUM_VAR_CHEM2D-1,W.NUM_VAR_CHEM2D-1,ZERO);  //SHOULD BE MOVED TO TEMP AS WELL!!!
+//   DenseMatrix dWdQ(W.NUM_VAR_CHEM2D-1,W.NUM_VAR_CHEM2D-1,ZERO);
+  
+  double VALUE = TOLER; //sqrt(TOLER);
   //////////////////////////////////////////////////////////////////////////////
   // THIS HACK DOESN'T REALLY WORK, ESPECIALLY FOR 2STEP EQUATIONS !!!!!!!!!!!!!
   //////////////////////////////////////////////////////////////////////////////
@@ -777,6 +728,8 @@ inline void Reaction_set::dSwdU(DenseMatrix &dSwdU, const SOLN_pSTATE &W,
     }
   }
 
+  int NUM_VAR = W.NumVarSansSpecies();
+
   /*******************************************
    *  Reaction Mechanism Jacobians           *
    *                                         * 
@@ -793,22 +746,19 @@ inline void Reaction_set::dSwdU(DenseMatrix &dSwdU, const SOLN_pSTATE &W,
     // This is far from an elegant solution, but its easily created using maple.
     // It can probably be simplified for faster computation.
 
-    //-------------------------------------------
-    // ONE STEP CH4   
-    //-------------------------------------------
   case CH4_1STEP:
     kf[0] = reactions[0].kf(Temp); 
 
     // One forward reaction ... so only depending on the fuel and oxidize ..  
     // for coef a=0.2, b=1.3
-    // dSwdU(NUM_VAR,NUM_VAR) += -0.2*kf[0]/pow(rho*c_denom[0]/M[0],0.8)*pow(rho*c[1]/M[1],0.13E1);
-    // dSwdU(NUM_VAR+1,NUM_VAR) += -0.4*M[1]*kf[0]/pow(rho*c_denom[0]/M[0],0.8)*pow(rho*c[1]/M[1],0.13E1)/M[0];
-    // dSwdU(NUM_VAR+2,NUM_VAR) += 0.2*M[2]*kf[0]/pow(rho*c_denom[0]/M[0],0.8)*pow(rho*c[1]/M[1],0.13E1)/M[0];
-    // dSwdU(NUM_VAR+3,NUM_VAR) += 0.4*M[3]*kf[0]/pow(rho*c_denom[0]/M[0],0.8)*pow(rho*c[1]/M[1],0.13E1)/M[0];    
-    // dSwdU(NUM_VAR,NUM_VAR+1) += -0.13E1*M[0]*kf[0]*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M[1],0.3)/M[1];
-    // dSwdU(NUM_VAR+1,NUM_VAR+1) += -0.26E1*kf[0]*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M[1],0.3);
-    // dSwdU(NUM_VAR+2,NUM_VAR+1) += 0.13E1*M[2]*kf[0]*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M[1],0.3)/M[1];
-    // dSwdU(NUM_VAR+3,NUM_VAR+1) += 0.26E1*M[3]*kf[0]*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M[1],0.3)/M[1];  
+ //    dSwdU(NUM_VAR,NUM_VAR) += -0.2*kf[0]/pow(rho*c_denom[0]/M[0],0.8)*pow(rho*c[1]/M[1],0.13E1);
+//     dSwdU(NUM_VAR+1,NUM_VAR) += -0.4*M[1]*kf[0]/pow(rho*c_denom[0]/M[0],0.8)*pow(rho*c[1]/M[1],0.13E1)/M[0];
+//     dSwdU(NUM_VAR+2,NUM_VAR) += 0.2*M[2]*kf[0]/pow(rho*c_denom[0]/M[0],0.8)*pow(rho*c[1]/M[1],0.13E1)/M[0];
+//     dSwdU(NUM_VAR+3,NUM_VAR) += 0.4*M[3]*kf[0]/pow(rho*c_denom[0]/M[0],0.8)*pow(rho*c[1]/M[1],0.13E1)/M[0];    
+//     dSwdU(NUM_VAR,NUM_VAR+1) += -0.13E1*M[0]*kf[0]*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M[1],0.3)/M[1];
+//     dSwdU(NUM_VAR+1,NUM_VAR+1) += -0.26E1*kf[0]*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M[1],0.3);
+//     dSwdU(NUM_VAR+2,NUM_VAR+1) += 0.13E1*M[2]*kf[0]*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M[1],0.3)/M[1];
+//     dSwdU(NUM_VAR+3,NUM_VAR+1) += 0.26E1*M[3]*kf[0]*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M[1],0.3)/M[1];  
  
     //for coef a=b=1.0
     dSwdU(NUM_VAR,NUM_VAR) += -1.0*kf[0]*rho*c[1]/M[1];
@@ -821,6 +771,65 @@ inline void Reaction_set::dSwdU(DenseMatrix &dSwdU, const SOLN_pSTATE &W,
     dSwdU(NUM_VAR+3,NUM_VAR+1) += 2.0*M[3]*kf[0]*rho*c[0]/M[0]/M[1];
 
 
+//     /********** dSwdW ***********************/
+//     Con0 = rho*c[0]/M[0];
+//     Con1 = rho*c[1]/M[0];
+    
+//     Rt = W.Rtot(); 
+//     dkf0_dp = reactions[0].dkf_dT(Temp)/(rho*Rt); ///THOUSAND;
+//     dkf0_drho = reactions[0].dkf_dT(Temp)*(-Temp/rho);
+    
+//     //take into account kf(rho,p,and ci)
+//     dkf0_dc1 =  reactions[0].dkf_dT(Temp)*(-Temp/Rt*(W.specdata[0].Rs()-W.specdata[4].Rs()))*Con0*Con1;
+//     dkf0_dc2 =  reactions[0].dkf_dT(Temp)*(-Temp/Rt*(W.specdata[1].Rs()-W.specdata[4].Rs()))*Con0*Con1;
+//     dkf0_dc3 =  reactions[0].dkf_dT(Temp)*(-Temp/Rt*(W.specdata[2].Rs()-W.specdata[4].Rs()))*Con0*Con1;
+//     dkf0_dc4 =  reactions[0].dkf_dT(Temp)*(-Temp/Rt*(W.specdata[3].Rs()-W.specdata[4].Rs()))*Con0*Con1;
+
+//     dSwdW(NUM_VAR,NUM_VAR)  += -M[0]*dkf0_dc1;
+//     dSwdW(NUM_VAR+1,NUM_VAR) += -TWO*M[1]*dkf0_dc1;
+//     dSwdW(NUM_VAR+2,NUM_VAR) += M[2]*dkf0_dc1;
+//     dSwdW(NUM_VAR+3,NUM_VAR) += TWO*M[3]*dkf0_dc1;
+
+//     dSwdW(NUM_VAR,NUM_VAR+1)  += -M[0]*dkf0_dc2;
+//     dSwdW(NUM_VAR+1,NUM_VAR+1) += -TWO*M[1]*dkf0_dc2;
+//     dSwdW(NUM_VAR+2,NUM_VAR+1) += M[2]*dkf0_dc2;
+//     dSwdW(NUM_VAR+3,NUM_VAR+1) += TWO*M[3]*dkf0_dc2;
+    
+//     dSwdW(NUM_VAR,NUM_VAR+2)  += -M[0]*dkf0_dc3;
+//     dSwdW(NUM_VAR+1,NUM_VAR+2) += -TWO*M[1]*dkf0_dc3;
+//     dSwdW(NUM_VAR+2,NUM_VAR+2) += M[2]*dkf0_dc3;
+//     dSwdW(NUM_VAR+3,NUM_VAR+2) += TWO*M[3]*dkf0_dc3;
+
+//     dSwdW(NUM_VAR,NUM_VAR+3)  += -M[0]*dkf0_dc4;
+//     dSwdW(NUM_VAR+1,NUM_VAR+3) += -TWO*M[1]*dkf0_dc4;
+//     dSwdW(NUM_VAR+2,NUM_VAR+3) += M[2]*dkf0_dc4;
+//     dSwdW(NUM_VAR+3,NUM_VAR+3) += TWO*M[3]*dkf0_dc4;
+
+//     dSwdW(NUM_VAR,0) += -M[0]*dkf0_drho*Con0*Con1 - kf[0]*Con1*c[0] - M[0]*kf[0]*Con0*c[1]/M[1];    
+//     dSwdW(NUM_VAR+1,0) += -TWO*M[1]*dkf0_drho*Con0*Con1 - TWO*kf[0]*M[1]*Con1*c[0]/M[0] - TWO*kf[0]*Con0*c[1];    
+//     dSwdW(NUM_VAR+2,0) += M[2]*dkf0_drho*Con0*Con1 + kf[0]*M[2]*Con1*c[0]/M[0] + M[2]*kf[0]*Con0*c[1]/M[1];    
+//     dSwdW(NUM_VAR+3,0) += TWO*M[3]*dkf0_drho*Con0*Con1 + TWO*kf[0]*M[3]*Con1*c[0]/M[0] + TWO*M[3]*kf[0]*Con0*c[1]/M[1];   
+
+//     dSwdW(NUM_VAR,3) += -M[0]*dkf0_dp*Con0*Con1;
+//     dSwdW(NUM_VAR+1,3) += -TWO*M[1]*dkf0_dp*Con0*Con1;
+//     dSwdW(NUM_VAR+2,3) += M[2]*dkf0_dp*Con0*Con1;
+//     dSwdW(NUM_VAR+3,3) += TWO*M[3]*dkf0_dp*Con0*Con1;
+   
+//     dSwdW(NUM_VAR,NUM_VAR)   += -kf[0]*Con1*rho*THOUSAND;
+//     dSwdW(NUM_VAR+1,NUM_VAR) += -TWO*M[1]*kf[0]*Con1*rho/M[0]*THOUSAND;
+//     dSwdW(NUM_VAR+2,NUM_VAR) += M[2]*kf[0]*Con1*rho/M[0]*THOUSAND;
+//     dSwdW(NUM_VAR+3,NUM_VAR) += TWO*M[3]*kf[0]*Con1*rho/M[0]*THOUSAND;
+
+//     dSwdW(NUM_VAR,NUM_VAR+1)   += -M[0]*kf[0]*Con0*rho/M[1]*THOUSAND;
+//     dSwdW(NUM_VAR+1,NUM_VAR+1) += -TWO*kf[0]*Con0*rho*THOUSAND;
+//     dSwdW(NUM_VAR+2,NUM_VAR+1) += M[2]*kf[0]*Con0*rho/M[1]*THOUSAND;
+//     dSwdW(NUM_VAR+3,NUM_VAR+1) += TWO*M[3]*kf[0]*Con0*rho/M[1]*THOUSAND;
+
+//     // LAZY dSwdU = dSwdW * dWdU
+//     W.dWdU(dWdQ,Flow_Type); 
+//     dSwdU += dSwdW*dWdQ;
+//     /***************************************/
+
     //this is a work around for the delta t calculation using an unesseccarily small value
     //when c[0] -> ZERO
     if(c_denom[0] != c[0] && CFL_flag){ dSwdU(NUM_VAR,NUM_VAR)=ZERO; }
@@ -828,9 +837,7 @@ inline void Reaction_set::dSwdU(DenseMatrix &dSwdU, const SOLN_pSTATE &W,
     break;
 
 
-    //-------------------------------------------
-    // TWO STEP CH4   
-    //-------------------------------------------
+    //TWO STEP CH4   
   case CH4_2STEP:  
     /******************** ORIGINAL ****************************************/
     //still some issues with units ??? ie.  dSwdU(6,6) ??
@@ -839,6 +846,8 @@ inline void Reaction_set::dSwdU(DenseMatrix &dSwdU, const SOLN_pSTATE &W,
     kb[0] = ZERO;
     kf[1] = reactions[1].kf(Temp);  
     kb[1] = reactions[1].kb(Temp);
+
+    //cout<<"\n dSwdU "<<Temp<<" "<<reactions[0].kf(Temp)<<" "<<reactions[1].kf(Temp)<<" "<<reactions[1].kb(Temp);
 
     dSwdU(NUM_VAR,NUM_VAR) += -0.2*kf[0]/pow(rho*c_denom[0]/M[0],0.8)*rho*c[1]/M[1]*pow(rho*c[1]/M[1],0.3);
     dSwdU(NUM_VAR,NUM_VAR+1) += -0.13E1*M[0]*kf[0]*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M[1],0.3)/M[1];      
@@ -865,6 +874,38 @@ inline void Reaction_set::dSwdU(DenseMatrix &dSwdU, const SOLN_pSTATE &W,
     dSwdU(NUM_VAR+4,NUM_VAR+3) += -0.5*kf[1]*rho*c[4]/sqrt(rho*c_denom[3]/M[3])*pow(rho*c[1]/M[1],0.25)/M[3];
     dSwdU(NUM_VAR+4,NUM_VAR+4) += -1.0*kf[1]*sqrt(rho*c[3]/M[3])*pow(rho*c[1]/M[1],0.25);
 
+//     if(!CFL_flag) cout<<"\n ORIGINAL\n"<<dSwdU;
+//     dSwdU.zero();
+
+//     /******************** MODIFIED ****************************************/   
+//     //with kf(T), kb(T)
+
+//     kf[0] = reactions[0].kf(Temp);      //UNITS ISSUES due to rho and M and kf's
+//     kb[0] = ZERO;
+//     kf[1] = reactions[1].kf(Temp);  
+//     kb[1] = reactions[1].kb(Temp);
+    
+//     double dkf_dT[2], dkb_dT[2];
+//     dkf_dT[0] = reactions[0].dkf_dT(Temp);
+//     dkb_dT[0] = ZERO;
+//     dkf_dT[1] = reactions[1].dkf_dT(Temp);
+//     dkb_dT[1] = reactions[1].dkb_dT(Temp);
+
+//     double T = Temp;
+//     double Cp = W.Cp();      
+//     double u = W.v.x*HUNDRED; 
+//     double v = W.v.y*HUNDRED; 
+//     //double p = W.p;      
+//     double Rtot = W.Rtot();   
+//     double htot = W.h();      
+//     double h[6],Rs[6];
+
+//     for(int i=0; i<num_species; i++){    
+//       h[i] = (W.specdata[i].Enthalpy(Temp)+W.specdata[i].Heatofform());  
+//       Rs[i] = (W.specdata[i].Rs()); 
+//     }    
+
+//       if(!CFL_flag) cout<<"\n NEW\n"<<dSwdU;
    
     //this is a work around for the delta t calculation using an unesseccarily small value
     //when CH4 & O2 -> ZERO
@@ -877,19 +918,19 @@ inline void Reaction_set::dSwdU(DenseMatrix &dSwdU, const SOLN_pSTATE &W,
     }
     break;
   
+    //take the minum value between laminar and turbulent concentrations
+    //   if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON ||
+    // 	Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA){
+    //     }
 
-    //-------------------------------------------
-    // ONE STEP C3H8 mechanism
-    //-------------------------------------------
+
+  // ONE STEP C3H8 mechanism
   case C3H8_1STEP:
     cerr<<"\nC3H8_1STEP not implemented.";
     exit(1);
     break;
 
 
-    //-------------------------------------------
-    // TWO STEP H2 and O2
-    //-------------------------------------------
   case H2O2_1STEP:  
     kf[0] = reactions[0].kf(Temp);
     rho = rho;
@@ -906,10 +947,7 @@ inline void Reaction_set::dSwdU(DenseMatrix &dSwdU, const SOLN_pSTATE &W,
     dSwdU(NUM_VAR+2,NUM_VAR+1)= 2.0*rho*rho*M[2]*kf[0]*c[0]*c[0]/(M[0]*M[0])/M[1];
   
     break;
-
-    //-------------------------------------------
-    // TWO STEP H2 and O2
-    //-------------------------------------------
+   //TWO STEP H2 and O2
   case H2O2_2STEP:
     kf[0] = reactions[0].kf(Temp,c[0],c[1],W.spec[4].c);
     kb[0] = kf[0]/reactions[0].keq(W,Temp);
@@ -935,10 +973,7 @@ inline void Reaction_set::dSwdU(DenseMatrix &dSwdU, const SOLN_pSTATE &W,
     dSwdU(NUM_VAR+3,NUM_VAR+3) += -4.0/M[3]*kb[1]*rho*c[3];  
 
     break;
-
-    //-------------------------------------------
     // 8 STEP H2 & O2
-    //-------------------------------------------
   case H2O2_8STEP:  
 
     for(int spec =0; spec<num_reactions; spec++){
@@ -1011,17 +1046,18 @@ inline void Reaction_set::dSwdU(DenseMatrix &dSwdU, const SOLN_pSTATE &W,
     break;
 
 
-    //-------------------------------------------
     // 15 step CH4 based on GRI 2.11
-    //-------------------------------------------
   case CH4_15STEP_ARM2:
     Complex_Step_dSwdU<SOLN_pSTATE>(dSwdU, W);
+    
+    //cout << "\n Complex Step dSwdU: " << dSwdU;
+    //dSwdU.zero();
+    //Finite_Difference_dSwdU(dSwdU, W, Flow_Type, Simple_Chemistry);
+    //cout << "\n Finite Difference dSwdU: " << dSwdU;
     break;
 
 
-    //-------------------------------------------
     // 15 step CH4 based on GRI 3
-    //-------------------------------------------
   case CH4_15STEP_ARM3:
     Complex_Step_dSwdU<SOLN_pSTATE>(dSwdU, W);
     break;
@@ -1032,10 +1068,7 @@ inline void Reaction_set::dSwdU(DenseMatrix &dSwdU, const SOLN_pSTATE &W,
 #ifdef _CANTERA_VERSION
 
   case CANTERA:
-  
-    //ct_dSwdU<SOLN_pSTATE>( dSwdU, W, Temp, Press );
-    ct_dSwdU_FiniteDiff<SOLN_pSTATE>( dSwdU, W, Temp, Press );
-    //Finite_Difference_dSwdU<SOLN_pSTATE,SOLN_cSTATE>(dSwdU, W);
+    Finite_Difference_dSwdU<SOLN_pSTATE,SOLN_cSTATE>(dSwdU, W, Flow_Type);
     break;
 
 #endif // _CANTERA_VERSION
@@ -1047,7 +1080,6 @@ inline void Reaction_set::dSwdU(DenseMatrix &dSwdU, const SOLN_pSTATE &W,
     cerr<<"\nUser specified not set up yet";
     exit(1);
     break;
-
   default:
     //Do nothing (i.e. Jacobian = ZERO)
     break;
@@ -1056,6 +1088,411 @@ inline void Reaction_set::dSwdU(DenseMatrix &dSwdU, const SOLN_pSTATE &W,
     
 } //end dSwdU
 
+
+
+    /******************** ORIGINAL ****************************************/
+  //TWO STEP CH4   
+//  case CH4_2STEP:  
+//     //still some issues with units ??? ie.  dSwdU(6,6) ??
+//     //which is also on the diagonal so messes with CFL???
+//     kf[0] = reactions[0].kf(Temp);      
+//     kb[0] = ZERO;
+//     kf[1] = reactions[1].kf(Temp);  
+//     kb[1] = reactions[1].kb(Temp);
+
+//     dSwdU(NUM_VAR,NUM_VAR) += -0.2*kf[0]/pow(rho*c_denom[0]/M[0],0.8)*rho*c[1]/M[1]*pow(rho*c[1]/M[1],0.3);
+//     dSwdU(NUM_VAR,NUM_VAR+1) += -0.13E1*M[0]*kf[0]*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M[1],0.3)/M[1];      
+    
+//     dSwdU(NUM_VAR+1,NUM_VAR) += -0.3*kf[0]/pow(rho*c_denom[0]/M[0],0.8)*rho*c[1]*pow(rho*c[1]/M[1],0.3)/M[0];
+//     dSwdU(NUM_VAR+1,NUM_VAR+1) += -rho*(0.195E1*kf[0]*pow(rho*c[0]/M[0],0.2)*c[1]*pow(rho*c[1]/M[1],0.5E-1)
+// 			*M[4]+0.125*kf[1]*c[4]*sqrt(rho*c[3]/M[3])*M[1])/M[1]/M[4]/pow(rho*c_denom[1]/M[1],0.75);
+//     dSwdU(NUM_VAR+1,NUM_VAR+2) += 0.5*M[1]*kb[1]/M[2];
+//     dSwdU(NUM_VAR+1,NUM_VAR+3) += -0.25*M[1]*kf[1]*rho*c[4]/M[4]/sqrt(rho*c_denom[3]/M[3])*pow(rho*c[1]/M[1],0.25)/M[3];
+//     dSwdU(NUM_VAR+1,NUM_VAR+4) += -0.5*M[1]*kf[1]/M[4]*sqrt(rho*c[3]/M[3])*pow(rho*c[1]/M[1],0.25);      
+   
+//     dSwdU(NUM_VAR+2,NUM_VAR+1) += 0.25*M[2]*kf[1]*rho*c[4]/M[4]*sqrt(rho*c[3]/M[3])/pow(rho*c_denom[1]/M[1],0.75)/M[1];
+//     dSwdU(NUM_VAR+2,NUM_VAR+2) += -kb[1];
+//     dSwdU(NUM_VAR+2,NUM_VAR+3) += 0.5*M[2]*kf[1]*rho*c[4]/M[4]/sqrt(rho*c_denom[3]/M[3])*pow(rho*c[1]/M[1],0.25)/M[3];
+//     dSwdU(NUM_VAR+2,NUM_VAR+4) += M[2]*kf[1]/M[4]*sqrt(rho*c[3]/M[3])*pow(rho*c[1]/M[1],0.25);      
+    
+//     dSwdU(NUM_VAR+3,NUM_VAR) += 0.4*M[3]*kf[0]/pow(rho*c_denom[0]/M[0],0.8)*rho*c[1]/M[1]*pow(rho*c[1]/M[1],0.3)/M[0];
+//     dSwdU(NUM_VAR+3,NUM_VAR+1) += 0.26E1*M[3]*kf[0]*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M[1],0.3)/M[1];    
+   
+//     dSwdU(NUM_VAR+4,NUM_VAR) += 0.2*M[4]*kf[0]/pow(rho*c_denom[0]/M[0],0.8)*rho*c[1]/M[1]*pow(rho*c[1]/M[1],0.3)/M[0];
+//     dSwdU(NUM_VAR+4,NUM_VAR+1) += rho*(0.13E1*kf[0]*pow(rho*c[0]/M[0],0.2)*c[1]*pow(rho*c[1]/M[1],0.5E-1)
+// 		       *M[4]-0.25*kf[1]*c[4]*sqrt(rho*c[3]/M[3])*M[1])/(M[1]*M[1])/pow(rho*c_denom[1]/M[1],0.75);
+//     dSwdU(NUM_VAR+4,NUM_VAR+2) += M[4]*kb[1]/M[2];
+//     dSwdU(NUM_VAR+4,NUM_VAR+3) += -0.5*kf[1]*rho*c[4]/sqrt(rho*c_denom[3]/M[3])*pow(rho*c[1]/M[1],0.25)/M[3];
+//     dSwdU(NUM_VAR+4,NUM_VAR+4) += -1.0*kf[1]*sqrt(rho*c[3]/M[3])*pow(rho*c[1]/M[1],0.25);
+
+//     //this is a work around for the delta t calculation using an unesseccarily small value
+//     //when CH4 & O2 -> ZERO
+//     if( c_denom[0] != c[0] && CFL_flag ){
+//       for(int i=0; i<num_react_species; i++){
+// 	dSwdU(NUM_VAR+i,NUM_VAR+i)=ZERO; 
+//       }
+//     }
+      
+//    //take the minum value between laminar and turbulent concentrations
+// //     if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON ||
+// // 	Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA){
+// //  }
+
+//     break;
+//     dSwdU(NUM_VAR,0) += M[0]*dkf_dT[0]*T/rho*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M[1],0.13E1)+M[0]*
+//       dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M[1],0.13E1)*
+//       (-u*u-v*v+2.0*htot-2.0*Cp*p/rho/Rtot-2.0*c[0]*(h[0]-Cp*T*Rs[0]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)
+//        -2.0*c[1]*(h[1]-Cp*T*Rs[1]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)-2.0*c[2]*(h[2]-Cp*T*Rs[2]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)-2.0*c[3]*(h[3]-Cp*T*Rs[3]/Rtot-h[5]
+//       +Cp*T*Rs[5]/Rtot)-2.0*c[4]*(h[4]-Cp*T*Rs[4]/Rtot-h[5]+Cp*T*Rs[5]/Rtot))/(Cp/Rtot-1.0)/2.0;
+
+//     double top = pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M[1],0.13E1);
+
+//     double sum_cs = c[0]*(h[0]-Cp*T*Rs[0]/Rtot-h[5]+Cp*T*Rs[5]/Rtot) + c[1]*(h[1]-Cp*T*Rs[1]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)
+//       + c[2]*(h[2]-Cp*T*Rs[2]/Rtot-h[5]+Cp*T*Rs[5]/Rtot) + c[3]*(h[3]-Cp*T*Rs[3]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)
+//       + c[4]*(h[4]-Cp*T*Rs[4]/Rtot-h[5]+Cp*T*Rs[5]/Rtot);
+
+//     dSwdU(NUM_VAR,0) +=  (M[0]*dkf_dT[0]*T/rho)*top - (M[0]*dkf_dT[0]*top)*( (u*u+v*v)/2.0 - htot + Cp*T + sum_cs)/(rho*(Cp-Rtot));
+
+//     dSwdU(NUM_VAR,1) += M[0]*dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M[1],0.13E1)*u/(Cp/Rtot-1.0);
+//     dSwdU(NUM_VAR,2) += M[0]*dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M[1],0.13E1)*v/(Cp/Rtot-1.0);
+//     dSwdU(NUM_VAR,3) += -M[0]*dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M[1],0.13E1)/(Cp/Rtot-1.0);
+
+//     dSwdU(NUM_VAR,NUM_VAR) += M[0]*dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)* pow(rho*c[1]/M[1],0.13E1)*(h[0]-Cp*T*Rs[0]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)/(Cp/Rtot-1.0)
+//       -0.2*kf[0]/pow(rho*c_denom[0]/M[0],0.8)*pow(rho*c[1]/M[1],0.13E1);
+
+//     dSwdU(NUM_VAR,NUM_VAR+1) += M[0]*dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M[1],0.13E1)*(h[1]-Cp*T*Rs[1]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)/(Cp/Rtot-1.0)
+//       -0.13E1*M[0]*kf[0]*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M[1],0.3)/M[1];
+
+//     dSwdU(NUM_VAR,NUM_VAR+2) += M[0]*dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M[1],0.13E1)*(h[2]-Cp*T*Rs[2]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)/(Cp/Rtot-1.0);
+//     dSwdU(NUM_VAR,NUM_VAR+3) += M[0]*dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M[1],0.13E1)*(h[3]-Cp*T*Rs[3]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)/(Cp/Rtot-1.0);
+//     dSwdU(NUM_VAR,NUM_VAR+4) += M[0]*dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M[1],0.13E1)*(h[4]-Cp*T*Rs[4]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)/(Cp/Rtot-1.0);
+
+//     MapleGenVar2 = M[1]*(0.15E1*dkf_dT[0]*T/rho*pow(rho*c[0]/M[0],0.2)*pow(
+// rho*c[1]/M[1],0.13E1)-0.3*kf[0]/pow(rho*c_denom[0]/M[0],0.8)*pow(rho*c[1]/M[1],
+// 0.13E1)*c[0]/M[0]-0.195E1*kf[0]*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M[1],
+// 0.3)*c[1]/M[1]+0.5*dkf_dT[1]*T*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho*c[1]/M
+// [1],0.25)-0.5*kf[1]*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho*c[1]/M[1],
+// 0.25)-0.25*kf[1]*rho*c[4]/M[4]/pow(rho*c_denom[3]/M[3],0.5)*pow(rho*c[1]/M[1],
+// 0.25)*c[3]/M[3]-0.125*kf[1]*rho*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)/pow(rho*c_denom
+// [1]/M[1],0.75)*c[1]/M[1]-0.5*dkb_dT[1]*T*c[2]/M[2]+0.5*kb[1]*c[2]/M[2]);
+
+//       MapleGenVar3 = -M[1]*(-0.15E1*dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(
+// rho*c[1]/M[1],0.13E1)-0.5*dkf_dT[1]/Rtot*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho*
+// c[1]/M[1],0.25)+0.5*dkb_dT[1]/Rtot*c[2]/M[2])*(-u*u-v*v+2.0*htot-2.0*Cp*p/rho/Rtot-2.0*c[0]*(h[0]-Cp*T*Rs[0]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)-2.0*c
+// [1]*(h[1]-Cp*T*Rs[1]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)-2.0*c[2]*(h[2]-Cp*T*Rs[2]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)
+// -2.0*c[3]*(h[3]-Cp*T*Rs[3]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)-2.0*c[4]*(h[4]-Cp*T*Rs[4]/Rtot-
+// h[5]+Cp*T*Rs[5]/Rtot))/(Cp/Rtot-1.0)/2.0+0.3*M[1]*kf[0]/pow(rho*c_denom[0]/M[0],0.8)*pow(rho*c[1]/M[1],0.13E1)/M[0]*c[0];
+
+//       MapleGenVar1 = MapleGenVar2+MapleGenVar3;
+  
+//       dSwdU(NUM_VAR+1,0) += MapleGenVar1-M[1]*(-0.195E1*kf[0]*pow(rho*c[0]/M[0],
+// 0.2)*pow(rho*c[1]/M[1],0.3)*rho/M[1]-0.125*kf[1]*rho*rho*c[4]/M[4]*pow(rho
+// *c[3]/M[3],0.5)/pow(rho*c_denom[1]/M[1],0.75)/M[1])*c[1]/rho-0.5*M[1]*kb[1]/M[2]
+// *c[2]+0.25*M[1]*kf[1]*rho*c[4]/M[4]/pow(rho*c_denom[3]/M[3],0.5)*pow(rho*c[1]/M
+// [1],0.25)/M[3]*c[3]+0.5*M[1]*kf[1]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho*c
+// [1]/M[1],0.25)*c[4]; 
+      
+    
+//       dSwdU(NUM_VAR+1,1) += -M[1]*(-0.15E1*dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*
+// 				   pow(rho*c[1]/M[1],0.13E1)-0.5*dkf_dT[1]/Rtot*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*
+// 				   pow(rho*c[1]/M[1],0.25)+0.5*dkb_dT[1]/Rtot*c[2]/M[2])*u/(Cp/Rtot-1.0);
+//       dSwdU(NUM_VAR+1,2) += -M[1]*(-0.15E1*dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*
+// 				   pow(rho*c[1]/M[1],0.13E1)-0.5*dkf_dT[1]/Rtot*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*
+// 				   pow(rho*c[1]/M[1],0.25)+0.5*dkb_dT[1]/Rtot*c[2]/M[2])*v/(Cp/Rtot-1.0);
+//       dSwdU(NUM_VAR+1,3) += M[1]*(-0.15E1*dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*
+// 				  pow(rho*c[1]/M[1],0.13E1)-0.5*dkf_dT[1]/Rtot*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*
+// 				  pow(rho*c[1]/M[1],0.25)+0.5*dkb_dT[1]/Rtot*c[2]/M[2])/(Cp/Rtot-1.0);
+    
+//       dSwdU(NUM_VAR+1,NUM_VAR) += -M[1]*(-0.15E1*dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(
+// rho*c[1]/M[1],0.13E1)-0.5*dkf_dT[1]/Rtot*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho*
+// c[1]/M[1],0.25)+0.5*dkb_dT[1]/Rtot*c[2]/M[2])*(h[0]-Cp*T*Rs[0]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)/
+// (Cp/Rtot-1.0)-0.3*M[1]*kf[0]/pow(rho*c_denom[0]/M[0],0.8)*pow(rho*c[1]/M[1],0.13E1)
+// /M[0];
+//       dSwdU(NUM_VAR+1,NUM_VAR+1) += -M[1]*(-0.15E1*dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(
+// rho*c[1]/M[1],0.13E1)-0.5*dkf_dT[1]/Rtot*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho*
+// c[1]/M[1],0.25)+0.5*dkb_dT[1]/Rtot*c[2]/M[2])*(h[1]-Cp*T*Rs[1]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)/
+// (Cp/Rtot-1.0)+M[1]*(-0.195E1*kf[0]*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M[1],
+// 0.3)*rho/M[1]-0.125*kf[1]*rho*rho*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)/pow(rho
+// *c_denom[1]/M[1],0.75)/M[1])/rho;
+//       dSwdU(NUM_VAR+1,NUM_VAR+2) += -M[1]*(-0.15E1*dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(
+// rho*c[1]/M[1],0.13E1)-0.5*dkf_dT[1]/Rtot*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho*
+// c[1]/M[1],0.25)+0.5*dkb_dT[1]/Rtot*c[2]/M[2])*(h[2]-Cp*T*Rs[2]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)/
+// (Cp/Rtot-1.0)+0.5*M[1]*kb[1]/M[2];
+//       dSwdU(NUM_VAR+1,NUM_VAR+3) += -M[1]*(-0.15E1*dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(
+// rho*c[1]/M[1],0.13E1)-0.5*dkf_dT[1]/Rtot*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho*
+// c[1]/M[1],0.25)+0.5*dkb_dT[1]/Rtot*c[2]/M[2])*(h[3]-Cp*T*Rs[3]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)/
+// (Cp/Rtot-1.0)-0.25*M[1]*kf[1]*rho*c[4]/M[4]/pow(rho*c_denom[3]/M[3],0.5)*pow(rho*c
+// [1]/M[1],0.25)/M[3];
+
+//       dSwdU(NUM_VAR+1,NUM_VAR+4) += -M[1]*(-0.15E1*dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*
+// 					   pow(rho*c[1]/M[1],0.13E1)-0.5*dkf_dT[1]/Rtot*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*
+// 					   pow(rho*c[1]/M[1],0.25)+0.5*dkb_dT[1]/Rtot*c[2]/M[2])*(h[4]-Cp*T*Rs[4]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)/(Cp/Rtot-1.0) 
+// 	                             -0.5*M[1]*kf[1]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho*c[1]/M[1],0.25);
+  
+
+//     MapleGenVar2 = M[2]*(-dkf_dT[1]*T*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(
+// rho*c[1]/M[1],0.25)+kf[1]*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho*c[1]/M
+// [1],0.25)+0.5*kf[1]*rho*c[4]/M[4]/pow(rho*c_denom[3]/M[3],0.5)*pow(rho*c[1]/M[1]
+// ,0.25)*c[3]/M[3]+0.25*kf[1]*rho*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)/pow(rho*c_denom
+// [1]/M[1],0.75)*c[1]/M[1]+dkb_dT[1]*T*c[2]/M[2]-kb[1]*c[2]/M[2]);
+
+//       MapleGenVar3 = -M[2]*(dkf_dT[1]/Rtot*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(
+// rho*c[1]/M[1],0.25)-dkb_dT[1]/Rtot*c[2]/M[2])*(-u*u-v*v+2.0*htot-2.0*Cp*p/rho/Rtot-2.0*c[0]*(h[0]-Cp*T*Rs[0]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)-2.0*c
+// [1]*(h[1]-Cp*T*Rs[1]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)-2.0*c[2]*(h[2]-Cp*T*Rs[2]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)
+// -2.0*c[3]*(h[3]-Cp*T*Rs[3]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)-2.0*c[4]*(h[4]-Cp*T*Rs[4]/Rtot-
+// h[5]+Cp*T*Rs[5]/Rtot))/(Cp/Rtot-1.0)/2.0-0.25*M[2]*kf[1]*rho*c[4]/M[4]*pow(rho*c
+// [3]/M[3],0.5)/pow(rho*c_denom[1]/M[1],0.75)/M[1]*c[1];
+
+//       MapleGenVar1 = MapleGenVar2+MapleGenVar3;
+
+//       dSwdU(NUM_VAR+2,0) += MapleGenVar1+kb[1]*c[2]-0.5*M[2]*kf[1]*rho*c[4]/M
+// [4]/pow(rho*c_denom[3]/M[3],0.5)*pow(rho*c[1]/M[1],0.25)/M[3]*c[3]-M[2]*kf[1]/M
+// [4]*pow(rho*c[3]/M[3],0.5)*pow(rho*c[1]/M[1],0.25)*c[4];
+//       dSwdU(NUM_VAR+2,1) += -M[2]*(dkf_dT[1]/Rtot*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho
+// *c[1]/M[1],0.25)-dkb_dT[1]/Rtot*c[2]/M[2])*u/(Cp/Rtot-1.0);
+
+//       dSwdU(NUM_VAR+2,2) += -M[2]*(dkf_dT[1]/Rtot*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho
+// *c[1]/M[1],0.25)-dkb_dT[1]/Rtot*c[2]/M[2])*v/(Cp/Rtot-1.0);
+
+//       dSwdU(NUM_VAR+2,3) += M[2]*(dkf_dT[1]/Rtot*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho*
+// c[1]/M[1],0.25)-dkb_dT[1]/Rtot*c[2]/M[2])/(Cp/Rtot-1.0);
+//       dSwdU(NUM_VAR+2,NUM_VAR) += -M[2]*(dkf_dT[1]/Rtot*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho
+// *c[1]/M[1],0.25)-dkb_dT[1]/Rtot*c[2]/M[2])*(h[0]-Cp*T*Rs[0]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)/(Cp
+// /Rtot-1.0);
+//       dSwdU(NUM_VAR+2,NUM_VAR+1) += -M[2]*(dkf_dT[1]/Rtot*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho
+// *c[1]/M[1],0.25)-dkb_dT[1]/Rtot*c[2]/M[2])*(h[1]-Cp*T*Rs[1]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)/(Cp
+// /Rtot-1.0)+0.25*M[2]*kf[1]*rho*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)/pow(rho*c_denom[1]/
+// M[1],0.75)/M[1];
+     
+//       dSwdU(NUM_VAR+2,NUM_VAR+2) += -M[2]*(dkf_dT[1]/Rtot*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*
+// 					   pow(rho*c[1]/M[1],0.25)-dkb_dT[1]/Rtot*c[2]/M[2])*
+// 	(h[2]-Cp*T*Rs[2]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)/(Cp/Rtot-1.0)-kb[1];
+
+//       dSwdU(NUM_VAR+2,NUM_VAR+3) += -M[2]*(dkf_dT[1]/Rtot*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho
+// *c[1]/M[1],0.25)-dkb_dT[1]/Rtot*c[2]/M[2])*(h[3]-Cp*T*Rs[3]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)/(Cp
+// /Rtot-1.0)+0.5*M[2]*kf[1]*rho*c[4]/M[4]/pow(rho*c_denom[3]/M[3],0.5)*pow(rho*c[1]/M
+// [1],0.25)/M[3];
+//       dSwdU(NUM_VAR+2,NUM_VAR+4) += -M[2]*(dkf_dT[1]/Rtot*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho
+// *c[1]/M[1],0.25)-dkb_dT[1]/Rtot*c[2]/M[2])*(h[4]-Cp*T*Rs[4]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)/(Cp
+// /Rtot-1.0)+M[2]*kf[1]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho*c[1]/M[1],0.25);
+
+//       dSwdU(NUM_VAR+3,0) += -0.2E1*M[3]*dkf_dT[0]*T/rho*pow(rho*c[0]/M[0],0.2)*pow(rho*
+// c[1]/M[1],0.13E1)-0.1E1*M[3]*dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(rho*c
+// [1]/M[1],0.13E1)*(-u*u-v*v+2.0*htot-2.0*Cp*p/rho/Rtot
+// -2.0*c[0]*(h[0]-Cp*T*Rs[0]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)-2.0*c[1]*(h[1]-Cp*T*Rs[1]/Rtot-h[5]+
+// Cp*T*Rs[5]/Rtot)-2.0*c[2]*(h[2]-Cp*T*Rs[2]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)-2.0*c[3]*(h[3]-Cp*T*Rs
+// [3]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)-2.0*c[4]*(h[4]-Cp*T*Rs[4]/Rtot-h[5]+Cp*T*Rs[5]/Rtot))/(Cp/Rtot-1.0);
+//       dSwdU(NUM_VAR+3,1) += -0.2E1*M[3]*dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(rho*
+// c[1]/M[1],0.13E1)*u/(Cp/Rtot-1.0);
+//       dSwdU(NUM_VAR+3,2) += -0.2E1*M[3]*dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(rho*
+// c[1]/M[1],0.13E1)*v/(Cp/Rtot-1.0);
+//       dSwdU(NUM_VAR+3,3) += 0.2E1*M[3]*dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(rho*c
+// [1]/M[1],0.13E1)/(Cp/Rtot-1.0);
+//       dSwdU(NUM_VAR+3,NUM_VAR) += -0.2E1*M[3]*dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(rho*
+// c[1]/M[1],0.13E1)*(h[0]-Cp*T*Rs[0]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)/(Cp/Rtot-1.0)+0.4*M[3]*kf[0]/pow(rho*c_denom[0]/M[0],0.8)*pow(rho*c[1]/M[1],0.13E1)/M[0];
+//       dSwdU(NUM_VAR+3,NUM_VAR+1) += -0.2E1*M[3]*dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(rho*
+// c[1]/M[1],0.13E1)*(h[1]-Cp*T*Rs[1]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)/(Cp/Rtot-1.0)+0.26E1*M[3]*
+// kf[0]*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M[1],0.3)/M[1];
+//       dSwdU(NUM_VAR+3,NUM_VAR+2) += -0.2E1*M[3]*dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(rho*
+// c[1]/M[1],0.13E1)*(h[2]-Cp*T*Rs[2]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)/(Cp/Rtot-1.0);
+//       dSwdU(NUM_VAR+3,NUM_VAR+3) += -0.2E1*M[3]*dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(rho*
+// c[1]/M[1],0.13E1)*(h[3]-Cp*T*Rs[3]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)/(Cp/Rtot-1.0);
+//       dSwdU(NUM_VAR+3,NUM_VAR+4) += -0.2E1*M[3]*dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(rho*
+// c[1]/M[1],0.13E1)*(h[4]-Cp*T*Rs[4]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)/(Cp/Rtot-1.0);
+
+//       MapleGenVar2 = M[4]*(-dkf_dT[0]*T/rho*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]
+// /M[1],0.13E1)+0.2*kf[0]/pow(rho*c_denom[0]/M[0],0.8)*pow(rho*c[1]/M[1],0.13E1)*c
+// [0]/M[0]+0.13E1*kf[0]*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M[1],0.3)*c[1]/M
+// [1]+dkf_dT[1]*T*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho*c[1]/M[1],0.25)-kf[1]*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho*c[1]/M[1],0.25)-0.5*kf[1]*
+// rho*c[4]/M[4]/pow(rho*c_denom[3]/M[3],0.5)*pow(rho*c[1]/M[1],0.25)*c[3]/M[3]-0.25*kf[1]
+// *rho*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)/pow(rho*c_denom[1]/M[1],0.75)*c[1]/M[1]-
+// dkb_dT[1]*T*c[2]/M[2]+kb[1]*c[2]/M[2]);
+
+//       MapleGenVar3 = -M[4]*(dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]
+// /M[1],0.13E1)-dkf_dT[1]/Rtot*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho*c[1]/M[1],
+// 0.25)+dkb_dT[1]/Rtot*c[2]/M[2])*(-u*u-v*v+2.0*htot
+// -2.0*Cp*p/rho/Rtot-2.0*c[0]*(h[0]-Cp*T*Rs[0]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)-2.0*c[1]*(h[1]-Cp*
+// T*Rs[1]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)-2.0*c[2]*(h[2]-Cp*T*Rs[2]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)-2.0*c
+// [3]*(h[3]-Cp*T*Rs[3]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)-2.0*c[4]*(h[4]-Cp*T*Rs[4]/Rtot-h[5]+Cp*T*Rs
+// [5]/Rtot))/(Cp/Rtot-1.0)/2.0-0.2*M[4]*kf[0]/pow(rho*c_denom[0]/M[0],0.8)*pow(rho*c[1]/
+// M[1],0.13E1)/M[0]*c[0];
+//       MapleGenVar1 = MapleGenVar2+MapleGenVar3;
+
+//       dSwdU(NUM_VAR+4,0) += MapleGenVar1-M[4]*(0.13E1*kf[0]*pow(rho*c[0]/M[0],0.2)
+// *pow(rho*c[1]/M[1],0.3)*rho/M[1]-0.25*kf[1]*rho*rho*c[4]/M[4]*pow(rho*c[3]
+// /M[3],0.5)/pow(rho*c_denom[1]/M[1],0.75)/M[1])*c[1]/rho-M[4]*kb[1]/M[2]*c[2]+0.5
+// *kf[1]*rho*c[4]/pow(rho*c_denom[3]/M[3],0.5)*pow(rho*c[1]/M[1],0.25)/M[3]*c[3]+
+// kf[1]*pow(rho*c[3]/M[3],0.5)*pow(rho*c[1]/M[1],0.25)*c[4];
+
+//       dSwdU(NUM_VAR+4,1) += -M[4]*(dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/
+// M[1],0.13E1)-dkf_dT[1]/Rtot*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho*c[1]/M[1],
+// 0.25)+dkb_dT[1]/Rtot*c[2]/M[2])*u/(Cp/Rtot-1.0);
+//       dSwdU(NUM_VAR+4,2) += -M[4]*(dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/
+// M[1],0.13E1)-dkf_dT[1]/Rtot*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho*c[1]/M[1],
+// 0.25)+dkb_dT[1]/Rtot*c[2]/M[2])*v/(Cp/Rtot-1.0);
+//       dSwdU(NUM_VAR+4,3) += M[4]*(dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M
+// [1],0.13E1)-dkf_dT[1]/Rtot*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho*c[1]/M[1],0.25
+// )+dkb_dT[1]/Rtot*c[2]/M[2])/(Cp/Rtot-1.0);
+//       dSwdU(NUM_VAR+4,NUM_VAR) += -M[4]*(dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/
+// M[1],0.13E1)-dkf_dT[1]/Rtot*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho*c[1]/M[1],
+// 0.25)+dkb_dT[1]/Rtot*c[2]/M[2])*(h[0]-Cp*T*Rs[0]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)/(Cp/Rtot-1.0)+0.2
+// *M[4]*kf[0]/pow(rho*c_denom[0]/M[0],0.8)*pow(rho*c[1]/M[1],0.13E1)/M[0];
+   
+//       dSwdU(NUM_VAR+4,NUM_VAR+1) += -M[4]*(dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/
+// M[1],0.13E1)-dkf_dT[1]/Rtot*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho*c[1]/M[1],
+// 0.25)+dkb_dT[1]/Rtot*c[2]/M[2])*(h[1]-Cp*T*Rs[1]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)/(Cp/Rtot-1.0)+M
+// [4]*(0.13E1*kf[0]*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M[1],0.3)*rho/M[1]
+// -0.25*kf[1]*rho*rho*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)/pow(rho*c_denom[1]/M[1],
+// 0.75)/M[1])/rho;
+//       dSwdU(NUM_VAR+4,NUM_VAR+2) += -M[4]*(dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/
+// M[1],0.13E1)-dkf_dT[1]/Rtot*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho*c[1]/M[1],
+// 0.25)+dkb_dT[1]/Rtot*c[2]/M[2])*(h[2]-Cp*T*Rs[2]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)/(Cp/Rtot-1.0)+M
+// [4]*kb[1]/M[2];
+//       dSwdU(NUM_VAR+4,NUM_VAR+3) += -M[4]*(dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/
+// M[1],0.13E1)-dkf_dT[1]/Rtot*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho*c[1]/M[1],
+// 0.25)+dkb_dT[1]/Rtot*c[2]/M[2])*(h[3]-Cp*T*Rs[3]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)/(Cp/Rtot-1.0)-0.5
+// *kf[1]*rho*c[4]/pow(rho*c_denom[3]/M[3],0.5)*pow(rho*c[1]/M[1],0.25)/M[3];
+      
+//       dSwdU(NUM_VAR+4,NUM_VAR+4) += -M[4]*(dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/
+// M[1],0.13E1)-dkf_dT[1]/Rtot*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho*c[1]/M[1],
+// 0.25)+dkb_dT[1]/Rtot*c[2]/M[2])*(h[4]-Cp*T*Rs[4]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)/(Cp/Rtot-1.0)-kf[1]
+// *pow(rho*c[3]/M[3],0.5)*pow(rho*c[1]/M[1],0.25);
+
+
+//     /******************** MODIFIED ****************************************/   
+//     //with kf(T), kb(T)
+
+//     kf[0] = reactions[0].kf(Temp);
+//     kb[0] = ZERO;
+//     kf[1] = reactions[1].kf(Temp);  
+//     kb[1] = reactions[1].kb(Temp);
+    
+//     double dkf_dT[2], dkb_dT[2];
+
+//     dkf_dT[0] = reactions[0].dkf_dT(Temp);
+//     dkb_dT[0] = ZERO;
+//     dkf_dT[1] = reactions[1].dkf_dT(Temp);
+//     dkb_dT[1] = reactions[1].dkb_dT(Temp);
+
+//     rho = W.rho;
+//     double T = Temp;
+//     double Cp = W.Cp();      
+//     double u = W.v.x; 
+//     double v = W.v.y; 
+//     double p = W.p;      
+//     double Rtot = W.Rtot();   
+//     double htot = W.h();      
+//     double h[6],R[6],CC[6],CC_denom[6];
+//     double CP_Rtotm1 = Cp/T-ONE;
+//     double MapleGenVar1, MapleGenVar2, MapleGenVar3;
+
+//     double UNITS = 1e6;
+
+//     for(int i=0; i<num_species; i++){    
+//       M[i] = W.specdata[i].Mol_mass();
+//       h[i] = (W.specdata[i].Enthalpy(Temp)+W.specdata[i].Heatofform());  
+//       R[i] = (W.specdata[i].Rs()); 
+//       CC[i] = rho*c[i]/M[i]/UNITS;              //W.SpecCon(i)/UNITS;      
+//       CC_denom[i] = rho*c_denom[i]/M[i]/UNITS;
+//     }    
+
+// MOD WITH UNITS, CC, CC_denom
+//       dSwdU(NUM_VAR,0) += M[0]*dkf_dT[0]*T/rho*pow(CC[0],0.2)*pow(CC[1],0.13E1)-M[0]*dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)*(u*u+v*v-2.0*htot+2.0*Cp*p/rho/Rtot+2.0*c[0]*(h[0]-Cp*T*R[0]/Rtot-h[5]+Cp*T*R[5]/Rtot)+2.0*c[1]*(h[1]-Cp*T*R[1]/Rtot-h[5]+Cp*T*R[5]/Rtot)+2.0*c[2]*(h[2]-Cp*T*R[2]/Rtot-h[5]+Cp*T*R[5]/Rtot)+2.0*c[3]*(h[3]-Cp*T*R[3]/Rtot-h[5]+Cp*T*R[5]/Rtot)+2.0*c[4]*(h[4]-Cp*T*R[4]/Rtot-h[5]+Cp*T*R[5]/Rtot))/CP_Rtotm1/2.0;
+
+//       dSwdU(NUM_VAR,1) += M[0]*dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)*u/CP_Rtotm1;
+//       dSwdU(NUM_VAR,2) += M[0]*dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)*v/CP_Rtotm1;
+//       dSwdU(NUM_VAR,3) += -M[0]*dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)/CP_Rtotm1;
+//       dSwdU(NUM_VAR,NUM_VAR) += M[0]*dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)*(h[0]-Cp*T*R[0]/Rtot-h[5]+Cp*T*R[5]/Rtot)/CP_Rtotm1-0.2*kf[0]/pow(CC_denom[0],0.8)*pow(CC[1],0.13E1)/UNITS;
+
+//       dSwdU(NUM_VAR,NUM_VAR+1) += M[0]*dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)*(h[1]-Cp*T*R[1]/Rtot-h[5]+Cp*T*R[5]/Rtot)/CP_Rtotm1-0.13E1*M[0]*kf[0]*pow(CC[0],0.2)*pow(CC[1],0.3)/M[1]/UNITS;
+
+//       dSwdU(NUM_VAR,NUM_VAR+2) += M[0]*dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)*(h[2]-Cp*T*R[2]/Rtot-h[5]+Cp*T*R[5]/Rtot)/CP_Rtotm1;     
+//       dSwdU(NUM_VAR,NUM_VAR+3) += M[0]*dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)*(h[3]-Cp*T*R[3]/Rtot-h[5]+Cp*T*R[5]/Rtot)/CP_Rtotm1;
+//       dSwdU(NUM_VAR,NUM_VAR+4) += M[0]*dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)*(h[4]-Cp*T*R[4]/Rtot-h[5]+Cp*T*R[5]/Rtot)/CP_Rtotm1;
+
+//       MapleGenVar2 = M[1]*(0.15E1*dkf_dT[0]*T/rho*pow(CC[0],0.2)*pow(CC[1],0.13E1)-0.3*kf[0]/pow(CC_denom[0],0.8)*pow(CC[1],0.13E1)*c[0]/M[0]/UNITS-0.195E1*kf[0]*pow(CC[0],0.2)*pow(CC[1],0.3)*c[1]/M[1]/UNITS+0.5*dkf_dT[1]*T*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)-0.5*kf[1]*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)-0.25*kf[1]*rho*c[4]/M[4]/(UNITS*UNITS)/pow(CC_denom[3],0.5)*pow(CC[1],0.25)*c[3]/M[3]-0.125*kf[1]*rho*c[4]/M[4]/(UNITS*UNITS)*pow(CC[3],0.5)/pow(CC_denom[1],0.75)*c[1]/M[1]-0.5*dkb_dT[1]*T*c[2]/M[2]/UNITS+0.5*kb[1]*c[2]/M[2]/UNITS);     
+
+//       MapleGenVar3 = M[1]*(-0.15E1*dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)-0.5*dkf_dT[1]/Rtot*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)+0.5*dkb_dT[1]/Rtot*c[2]/M[2]/UNITS)*(u*u+v*v-2.0*htot+2.0*Cp*p/rho/Rtot+2.0*c[0]*(h[0]-Cp*T*R[0]/Rtot-h[5]+Cp*T*R[5]/Rtot)+2.0*c[1]*(h[1]-Cp*T*R[1]/Rtot-h[5]+Cp*T*R[5]/Rtot)+2.0*c[2]*(h[2]-Cp*T*R[2]/Rtot-h[5]+Cp*T*R[5]/Rtot)+2.0*c[3]*(h[3]-Cp*T*R[3]/Rtot-h[5]+Cp*T*R[5]/Rtot)+2.0*c[4]*(h[4]-Cp*T*R[4]/Rtot-h[5]+Cp*T*R[5]/Rtot))/CP_Rtotm1/2.0+0.3*M[1]*kf[0]/pow(CC_denom[0],0.8)*pow(CC[1],0.13E1)/M[0]/UNITS*c[0];
+
+//       MapleGenVar1 = MapleGenVar2+MapleGenVar3;
+
+//       dSwdU(NUM_VAR+1,0) += MapleGenVar1-M[1]*(-0.195E1*kf[0]*pow(CC[0],0.2)*pow(CC[1],0.3)*rho/M[1]/UNITS-0.125*kf[1]*rho*rho*c[4]/M[4]/(UNITS*UNITS)*pow(CC[3],0.5)/pow(CC_denom[1],0.75)/M[1])*c[1]/rho-0.5*M[1]*kb[1]/M[2]/UNITS*c[2]+0.25*M[1]*kf[1]*rho*c[4]/M[4]/(UNITS*UNITS)/pow(CC_denom[3],0.5)*pow(CC[1],0.25)/M[3]*c[3]+0.5*M[1]*kf[1]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)*c[4];
+
+//       dSwdU(NUM_VAR+1,1) += -M[1]*(-0.15E1*dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)-0.5*dkf_dT[1]/Rtot*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)+0.5*dkb_dT[1]/Rtot*c[2]/M[2]/UNITS)*u/CP_Rtotm1;
+
+//       dSwdU(NUM_VAR+1,2) += -M[1]*(-0.15E1*dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)-0.5*dkf_dT[1]/Rtot*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)+0.5*dkb_dT[1]/Rtot*c[2]/M[2]/UNITS)*v/CP_Rtotm1;
+
+//       dSwdU(NUM_VAR+1,3) += M[1]*(-0.15E1*dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)-0.5*dkf_dT[1]/Rtot*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)+0.5*dkb_dT[1]/Rtot*c[2]/M[2]/UNITS)/CP_Rtotm1;
+
+//       dSwdU(NUM_VAR+1,NUM_VAR) += -M[1]*(-0.15E1*dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)-0.5*dkf_dT[1]/Rtot*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)+0.5*dkb_dT[1]/Rtot*c[2]/M[2]/UNITS)*(h[0]-Cp*T*R[0]/Rtot-h[5]+Cp*T*R[5]/Rtot)/CP_Rtotm1-0.3*M[1]*kf[0]/pow(CC_denom[0],0.8)*pow(CC[1],0.13E1)/M[0]/UNITS;
+
+//       dSwdU(NUM_VAR+1,NUM_VAR+1) += -M[1]*(-0.15E1*dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)-0.5*dkf_dT[1]/Rtot*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)+0.5*dkb_dT[1]/Rtot*c[2]/M[2]/UNITS)*(h[1]-Cp*T*R[1]/Rtot-h[5]+Cp*T*R[5]/Rtot)/CP_Rtotm1+M[1]*(-0.195E1*kf[0]*pow(CC[0],0.2)*pow(CC[1],0.3)*rho/M[1]/UNITS-0.125*kf[1]*rho*rho*c[4]/M[4]/(UNITS*UNITS)*pow(CC[3],0.5)/pow(CC_denom[1],0.75)/M[1])/rho;
+
+//       dSwdU(NUM_VAR+1,NUM_VAR+2) += -M[1]*(-0.15E1*dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)-0.5*dkf_dT[1]/Rtot*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)+0.5*dkb_dT[1]/Rtot*c[2]/M[2]/UNITS)*(h[2]-Cp*T*R[2]/Rtot-h[5]+Cp*T*R[5]/Rtot)/CP_Rtotm1+0.5*M[1]*kb[1]/M[2]/UNITS;
+
+//       dSwdU(NUM_VAR+1,NUM_VAR+3) += -M[1]*(-0.15E1*dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)-0.5*dkf_dT[1]/Rtot*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)+0.5*dkb_dT[1]/Rtot*c[2]/M[2]/UNITS)*(h[3]-Cp*T*R[3]/Rtot-h[5]+Cp*T*R[5]/Rtot)/CP_Rtotm1-0.25*M[1]*kf[1]*rho*c[4]/M[4]/(UNITS*UNITS)/pow(CC_denom[3],0.5)*pow(CC[1],0.25)/M[3];
+
+//       dSwdU(NUM_VAR+1, NUM_VAR+4) += -M[1]*(-0.15E1*dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)-0.5*dkf_dT[1]/Rtot*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)+0.5*dkb_dT[1]/Rtot*c[2]/M[2]/UNITS)*(h[4]-Cp*T*R[4]/Rtot-h[5]+Cp*T*R[5]/Rtot)/CP_Rtotm1-0.5*M[1]*kf[1]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25);
+
+//       MapleGenVar2 = M[2]*(-dkf_dT[1]*T*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)+kf[1]*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)+0.5*kf[1]*rho*c[4]/M[4]/(UNITS*UNITS)/pow(CC_denom[3],0.5)*pow(CC[1],0.25)*c[3]/M[3]+0.25*kf[1]*rho*c[4]/M[4]/(UNITS*UNITS)*pow(CC[3],0.5)/pow(CC_denom[1],0.75)*c[1]/M[1]+dkb_dT[1]*T*c[2]/M[2]/UNITS-kb[1]*c[2]/M[2]/UNITS);
+
+//       MapleGenVar3 = M[2]*(dkf_dT[1]/Rtot*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)-dkb_dT[1]/Rtot*c[2]/M[2]/UNITS)*(u*u+v*v-2.0*htot+2.0*Cp*p/rho/Rtot+2.0*c[0]*(h[0]-Cp*T*R[0]/Rtot-h[5]+Cp*T*R[5]/Rtot)+2.0*c[1]*(h[1]-Cp*T*R[1]/Rtot-h[5]+Cp*T*R[5]/Rtot)+2.0*c[2]*(h[2]-Cp*T*R[2]/Rtot-h[5]+Cp*T*R[5]/Rtot)+2.0*c[3]*(h[3]-Cp*T*R[3]/Rtot-h[5]+Cp*T*R[5]/Rtot)+2.0*c[4]*(h[4]-Cp*T*R[4]/Rtot-h[5]+Cp*T*R[5]/Rtot))/CP_Rtotm1/2.0-0.25*M[2]*kf[1]*rho*c[4]/M[4]/(UNITS*UNITS)*pow(CC[3],0.5)/pow(CC_denom[1],0.75)/M[1]*c[1];
+
+//       MapleGenVar1 = MapleGenVar2+MapleGenVar3;
+
+//       dSwdU(NUM_VAR+2,0) += MapleGenVar1+kb[1]/UNITS*c[2]-0.5*M[2]*kf[1]*rho*c[4]/M[4]/(UNITS*UNITS)/pow(CC_denom[3],0.5)*pow(CC[1],0.25)/M[3]*c[3]-M[2]*kf[1]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)*c[4];
+
+//       dSwdU(NUM_VAR+2,1) += -M[2]*(dkf_dT[1]/Rtot*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)-dkb_dT[1]/Rtot*c[2]/M[2]/UNITS)*u/CP_Rtotm1;
+//       dSwdU(NUM_VAR+2,2) += -M[2]*(dkf_dT[1]/Rtot*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)-dkb_dT[1]/Rtot*c[2]/M[2]/UNITS)*v/CP_Rtotm1;
+//       dSwdU(NUM_VAR+2,3) += M[2]*(dkf_dT[1]/Rtot*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)-dkb_dT[1]/Rtot*c[2]/M[2]/UNITS)/CP_Rtotm1;
+
+//       dSwdU(NUM_VAR+2,NUM_VAR) += -M[2]*(dkf_dT[1]/Rtot*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)-dkb_dT[1]/Rtot*c[2]/M[2]/UNITS)*(h[0]-Cp*T*R[0]/Rtot-h[5]+Cp*T*R[5]/Rtot)/CP_Rtotm1;
+
+//       dSwdU(NUM_VAR+2,NUM_VAR+1) += -M[2]*(dkf_dT[1]/Rtot*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)-dkb_dT[1]/Rtot*c[2]/M[2]/UNITS)*(h[1]-Cp*T*R[1]/Rtot-h[5]+Cp*T*R[5]/Rtot)/CP_Rtotm1+0.25*M[2]*kf[1]*rho*c[4]/M[4]/(UNITS*UNITS)*pow(CC[3],0.5)/pow(CC_denom[1],0.75)/M[1];
+
+//       dSwdU(NUM_VAR+2,NUM_VAR+2) += -M[2]*(dkf_dT[1]/Rtot*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)-dkb_dT[1]/Rtot*c[2]/M[2]/UNITS)*(h[2]-Cp*T*R[2]/Rtot-h[5]+Cp*T*R[5]/Rtot)/CP_Rtotm1-kb[1]/UNITS;
+
+//       dSwdU(NUM_VAR+2,NUM_VAR+3) += -M[2]*(dkf_dT[1]/Rtot*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)-dkb_dT[1]/Rtot*c[2]/M[2]/UNITS)*(h[3]-Cp*T*R[3]/Rtot-h[5]+Cp*T*R[5]/Rtot)/CP_Rtotm1+0.5*M[2]*kf[1]*rho*c[4]/M[4]/(UNITS*UNITS)/pow(CC_denom[3],0.5)*pow(CC[1],0.25)/M[3];
+
+//       dSwdU(NUM_VAR+2,NUM_VAR+4) += -M[2]*(dkf_dT[1]/Rtot*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)-dkb_dT[1]/Rtot*c[2]/M[2]/UNITS)*(h[4]-Cp*T*R[4]/Rtot-h[5]+Cp*T*R[5]/Rtot)/CP_Rtotm1+M[2]*kf[1]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25);
+
+//       dSwdU(NUM_VAR+3,0) += -0.2E1*M[3]*dkf_dT[0]*T/rho*pow(CC[0],0.2)*pow(CC[1],0.13E1
+// )+0.1E1*M[3]*dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)*(u*u+v*v-2.0*htot+2.0*Cp*p/rho/Rtot+2.0*c[0]*(h[0]-Cp*T*R[0]/Rtot-h[5]+Cp*T*R[5]/Rtot)+2.0*c[1]*(h[1]-Cp*T*R[1]/Rtot-h[5]+Cp*T*R[5]/Rtot)+2.0*c[2]*(h[2]-Cp*T*R[2]/Rtot-h[5]+Cp*T*R[5]/Rtot)+2.0*c[3]*(h[3]-Cp*T*R[3]/Rtot-h[5]+Cp*T*R[5]/Rtot)+2.0*c[4]*(h[4]-Cp*T*R[4]/Rtot-h[5]+Cp*T*R[5]/Rtot))/CP_Rtotm1;
+
+//       dSwdU(NUM_VAR+3,1) += -0.2E1*M[3]*dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)*u/CP_Rtotm1;
+//       dSwdU(NUM_VAR+3,2) += -0.2E1*M[3]*dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)*v/CP_Rtotm1;
+//       dSwdU(NUM_VAR+3,3) += 0.2E1*M[3]*dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)/CP_Rtotm1;
+
+//       dSwdU(NUM_VAR+3,NUM_VAR) += -0.2E1*M[3]*dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)*(h[0]-Cp*T*R[0]/Rtot-h[5]+Cp*T*R[5]/Rtot)/CP_Rtotm1+0.4*M[3]*kf[0]/pow(CC_denom[0],0.8)*pow(CC[1],0.13E1)/M[0]/UNITS;
+
+//       dSwdU(NUM_VAR+3,NUM_VAR+1) += -0.2E1*M[3]*dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)*(h[1]-Cp*T*R[1]/Rtot-h[5]+Cp*T*R[5]/Rtot)/CP_Rtotm1+0.26E1*M[3]*kf[0]*pow(CC[0],0.2)*pow(CC[1],0.3)/M[1]/UNITS;
+
+//       dSwdU(NUM_VAR+3,NUM_VAR+2) += -0.2E1*M[3]*dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)*(h[2]-Cp*T*R[2]/Rtot-h[5]+Cp*T*R[5]/Rtot)/CP_Rtotm1;
+//       dSwdU(NUM_VAR+3,NUM_VAR+3) += -0.2E1*M[3]*dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)*(h[3]-Cp*T*R[3]/Rtot-h[5]+Cp*T*R[5]/Rtot)/CP_Rtotm1;
+//       dSwdU(NUM_VAR+3,NUM_VAR+4) += -0.2E1*M[3]*dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)*(h[4]-Cp*T*R[4]/Rtot-h[5]+Cp*T*R[5]/Rtot)/CP_Rtotm1;
+
+//       MapleGenVar2 = M[4]*(-dkf_dT[0]*T/rho*pow(CC[0],0.2)*pow(CC[1],0.13E1)+0.2*kf[0]/pow(CC_denom[0],0.8)*pow(CC[1],0.13E1)*c[0]/M[0]/UNITS+0.13E1*kf[0]*pow(CC[0],0.2)*pow(CC[1],0.3)*c[1]/M[1]/UNITS+dkf_dT[1]*T*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)-kf[1]*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)-0.5*kf[1]*rho*c[4]/M[4]/(UNITS*UNITS)/pow(CC_denom[3],0.5)*pow(CC[1],0.25)*c[3]/M[3]-0.25*kf[1]*rho*c[4]/M[4]/(UNITS*UNITS)*pow(CC[3],0.5)/pow(CC_denom[1],0.75)*c[1]/M[1]-dkb_dT[1]*T*c[2]/M[2]/UNITS+kb[1]*c[2]/M[2]/UNITS);
+
+//       MapleGenVar3 = M[4]*(dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)-dkf_dT[1]/Rtot*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)+dkb_dT[1]/Rtot*c[2]/M[2]/UNITS)*(u*u+v*v-2.0*htot+2.0*Cp*p/rho/Rtot+2.0*c[0]*(h[0]-Cp*T*R[0]/Rtot-h[5]+Cp*T*R[5]/Rtot)+2.0*c[1]*(h[1]-Cp*T*R[1]/Rtot-h[5]+Cp*T*R[5]/Rtot)+2.0*c[2]*(h[2]-Cp*T*R[2]/Rtot-h[5]+Cp*T*R[5]/Rtot)+2.0*c[3]*(h[3]-Cp*T*R[3]/Rtot-h[5]+Cp*T*R[5]/Rtot)+2.0*c[4]*(h[4]-Cp*T*R[4]/Rtot-h[5]+Cp*T*R[5]/Rtot))/CP_Rtotm1/2.0-0.2*M[4]*kf[0]/pow(CC_denom[0],0.8)*pow(CC[1],0.13E1)/M[0]/UNITS*c[0];
+
+//       MapleGenVar1 = MapleGenVar2+MapleGenVar3;
+//       dSwdU(NUM_VAR+4,0) += MapleGenVar1-M[4]*(0.13E1*kf[0]*pow(CC[0],0.2)*pow(CC[1],0.3)*rho/M[1]/UNITS-0.25*kf[1]*rho*rho*c[4]/M[4]/(UNITS*UNITS)*pow(CC[3],0.5)/pow(CC_denom[1],0.75)/M[1])*c[1]/rho-M[4]*kb[1]/M[2]/UNITS*c[2]+0.5*kf[1]*rho*c[4]/(UNITS*UNITS)/pow(CC_denom[3],0.5)*pow(CC[1],0.25)/M[3]*c[3]+kf[1]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)*c[4];
+
+//       dSwdU(NUM_VAR+4,1) += -M[4]*(dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)-dkf_dT[1]/Rtot*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)+dkb_dT[1]/Rtot*c[2]/M[2]/UNITS)*u/CP_Rtotm1;
+
+//       dSwdU(NUM_VAR+4,2) += -M[4]*(dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)-dkf_dT[1]/Rtot*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)+dkb_dT[1]/Rtot*c[2]/M[2]/UNITS)*v/CP_Rtotm1;
+
+//       dSwdU(NUM_VAR+4,3) += M[4]*(dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)-dkf_dT[1]/Rtot*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)+dkb_dT[1]/Rtot*c[2]/M[2]/UNITS)/CP_Rtotm1;
+
+//       dSwdU(NUM_VAR+4,NUM_VAR) += -M[4]*(dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)-dkf_dT[1]/Rtot*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)+dkb_dT[1]/Rtot*c[2]/M[2]/UNITS)*(h[0]-Cp*T*R[0]/Rtot-h[5]+Cp*T*R[5]/Rtot)/CP_Rtotm1+0.2*M[4]*kf[0]/pow(CC_denom[0],0.8)*pow(CC[1],0.13E1)/M[0]/UNITS;
+
+//       dSwdU(NUM_VAR+4,NUM_VAR+1) += -M[4]*(dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)-dkf_dT[1]/Rtot*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)+dkb_dT[1]/Rtot*c[2]/M[2]/UNITS)*(h[1]-Cp*T*R[1]/Rtot-h[5]+Cp*T*R[5]/Rtot)/CP_Rtotm1+M[4]*(0.13E1*kf[0]*pow(CC[0],0.2)*pow(CC[1],0.3)*rho/M[1]/UNITS-0.25*kf[1]*rho*rho*c[4]/M[4]/(UNITS*UNITS)*pow(CC[3],0.5)/pow(CC_denom[1],0.75)/M[1])/rho;
+
+//       dSwdU(NUM_VAR+4,NUM_VAR+2) += -M[4]*(dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)-dkf_dT[1]/Rtot*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)+dkb_dT[1]/Rtot*c[2]/M[2]/UNITS)*(h[2]-Cp*T*R[2]/Rtot-h[5]+Cp*T*R[5]/Rtot)/CP_Rtotm1+M[4]*kb[1]/M[2]/UNITS;
+
+//       dSwdU(NUM_VAR+4,NUM_VAR+3) += -M[4]*(dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)-dkf_dT[1]/Rtot*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)+dkb_dT[1]/Rtot*c[2]/M[2]/UNITS)*(h[3]-Cp*T*R[3]/Rtot-h[5]+Cp*T*R[5]/Rtot)/CP_Rtotm1-0.5*kf[1]*rho*c[4]/(UNITS*UNITS)/pow(CC_denom[3],0.5)*pow(CC[1],0.25)/M[3];
+
+//       dSwdU(NUM_VAR+4,NUM_VAR+4) += -M[4]*(dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)-dkf_dT[1]/Rtot*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)+dkb_dT[1]/Rtot*c[2]/M[2]/UNITS)*(h[4]-Cp*T*R[4]/Rtot-h[5]+Cp*T*R[5]/Rtot)/CP_Rtotm1-kf[1]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25);
 
 
 /************************************************************************
@@ -1170,7 +1607,8 @@ inline void Reaction_set::Complex_Step_dSwdU(DenseMatrix &dSwdU,
 ************************************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 inline void Reaction_set::Finite_Difference_dSwdU(DenseMatrix &dSwdU, 
-					     const SOLN_pSTATE &W) const {
+					     const SOLN_pSTATE &W,
+					     const int Flow_Type) const {
   
   static const double b = numeric_limits<double>::epsilon();  // 1.0E-12;  
   int NUM_VAR = W.NumVarSansSpecies();
@@ -1183,7 +1621,7 @@ inline void Reaction_set::Finite_Difference_dSwdU(DenseMatrix &dSwdU,
 
   // get unperturbed reaction rate
   //S.Vacuum();
-  omega<SOLN_pSTATE,SOLN_cSTATE>( S, W );
+  omega<SOLN_pSTATE,SOLN_cSTATE>( S, W, Flow_Type );
 
   // Perturbation parameter (EPSILON)
   for (int j=0; j < ns; ++j) {
@@ -1207,7 +1645,7 @@ inline void Reaction_set::Finite_Difference_dSwdU(DenseMatrix &dSwdU,
       U.rhospec[num_species-1].c -= EPS.rhospec[j].c;
 
       // compute perturbed reaction rate
-      omega<SOLN_pSTATE,SOLN_cSTATE>( S1, U.W() );
+      omega<SOLN_pSTATE,SOLN_cSTATE>( S1, U.W(), Flow_Type );
 
       // set derivative
       for (int i=0; i < ns; ++i) {
@@ -1224,529 +1662,5 @@ inline void Reaction_set::Finite_Difference_dSwdU(DenseMatrix &dSwdU,
   } // end for
 
 } // end  Finite_Difference_dSwdU
-
-
-
-/***********************************************************************
-  Use cantera to compute the Chemical Source Jacobian.  This function
-  is called from the main dSwdU().
-
-  Comment out "FROZEN TEMPERATURE BLOCKS" for dS/dT=0 assumption.
-***********************************************************************/
-template<class SOLN_pSTATE>
-void Reaction_set::ct_dSwdU( DenseMatrix &dSwdU,
-			     const SOLN_pSTATE &W,
-			     const double &Temp,            // [K]
-			     const double &Press ) const {  // [Pa]
-
-#ifdef _CANTERA_VERSION
-
-  //------------------------------------------------
-  // declares
-  //------------------------------------------------
-  // number of variables not including species
-  int NUM_VAR = W.NumVarSansSpecies();
-
-  // temporary constants
-  double fwd, rev, net;
-  double sum;
-
-  // mechanism information
-  int nreac = ct_gas->nReactions(); // num reactions
-  int nsp = ct_gas->nSpecies();     // num species
-
-  //------------------------------------------------
-  // setup
-  //------------------------------------------------
-
-  // set the gas state
-  ct_gas->setState_TPY(Temp, Press, c);
-
-  // density [kg/m^3]
-  double rho = ct_gas->density();
-
-  // compute species concentrations [kmol/m^3]
-  double* X = new double[nsp];
-  ct_gas->getConcentrations(X);
-
-  // get reaction rate coefficients
-  ct_gas->getFwdRateConstants(kf);
-  ct_gas->getRevRateConstants(kb, /* include irreversible rxns */ false);
-
- /*************************************************
-  * FROZEN TEMPERATURE ASSUMPTION
-  *************************************************
-  *
-  // constant volume specific heat [J/(kg K)]
-  double Cv = ct_gas->cv_mole()/ct_gas->meanMolecularWeight();
-
-  // get fwd/rev activation energies [k]
-  double* E = new double[nreac];
-  ct_gas->getActivationEnergies(E);
-
-  // get fwd/rev temperature exponents
-  double* b = new double[nreac];
-  ct_gas->getTemperatureExponents(b);
-
-  //
-  // get specific internal energies [J/kg]
-  // e = (h - RT)
-  //
-  double* e = new double[nsp];
-
-  // nondimensional form e / RT
-  ct_gas->getIntEnergy_RT(e);
-
-  // dimensionalize (e/RT)*RT [J/kmol] ==> (e/RT)*RT/M [j/kg]
-  for (int j=0; j<nsp; j++)
-    e[j] *= Cantera::GasConstant*Temp / ct_gas->molarMass(j);
-
-
-  //------------------------------------------------
-  // Compute \frac{ \partial S_j }{ \partial T }
-  //------------------------------------------------
-  double* dSdT = new double[nsp];
-
-  //
-  // loop over species
-  //
-  for (int j=0; j<nsp; j++) {
-
-    //
-    // loop over reactions
-    //
-    sum = 0.0;
-    for (int i=0; i<nreac; i++) {
-   
-      // intialize
-      fwd = 1.0;
-      rev = 1.0;
-   
-      // Compute product of concentration raised to reaction order
-      for (int l=0; l<nsp; l++) {
-	fwd *= pow(X[l], ct_gas->reactantStoichCoeff(l,i) );
-	rev *= pow(X[l], ct_gas->productStoichCoeff(l,i) );
-      } // endfor - reactants
-   
-      // multuply by reaction constants
-      fwd *= kf[i];
-      rev *= kb[i];
-   
-      // multiply by temperature and activation energy coefficients
-      fwd *= b[i] +  E[i]/(Cantera::GasConstant*Temp);  // fwd constants
-      rev *= b[i] +  E[i]/(Cantera::GasConstant*Temp);  // FIXME - should be rev constants
-      net = (fwd-rev)/Temp;
-
-      // multiply by stoichiometric coefficients
-      net *= ( ct_gas->productStoichCoeff(j,i) - 
-	       ct_gas->reactantStoichCoeff(j,i) );
-   
-      // sum component from each reaction together
-      sum += net;
-   
-    } // endfor - reactions
-
-    // compute dSdT
-    dSdT[j] = ct_gas->molarMass(j) * sum;
-
-  } // endfor - species
-  *
-  ***********************************************
-  * END FROZEN TEMPERATURE ASSUMPTION
-  ***********************************************
-  */
-
-
-  //------------------------------------------------
-  // Compute \frac{ \partial S_j }{ \partial \rho Y_k }
-  //------------------------------------------------
-  // double** dSdrY = new double*[nsp];
-  // for (int j=0; j<nsp; j++) dSdrY[j] = new double[nsp];
-
-  //
-  // loop over species
-  //
-  for (int j=0; j<nsp-1; j++) {
-    for (int k=0; k<nsp-1; k++) {
-
-      //
-      // loop over reactions
-      //
-      sum = 0.0;
-      for (int i=0; i<nreac; i++) {
-	
-	// intialize
-	fwd = 1.0;
-	rev = 1.0;
-	
-	// Compute product of concentration raised to reaction order
-	for (int l=0; l<nsp; l++) {
-	  fwd *= pow(X[l], ct_gas->reactantStoichCoeff(l,i) );
-	  rev *= pow(X[l], ct_gas->productStoichCoeff(l,i) );
-	} // endfor - reactants
-	
-	// multuply by reaction constants
-	fwd *= kf[i];
-	rev *= kb[i];
-	
-	// multiply by stoich coefficients
-	fwd *= ct_gas->reactantStoichCoeff(k,i);
-	rev *= ct_gas->productStoichCoeff(k,i);
-
-	// the net value
-	net = fwd-rev;
-	net /= rho * (ct_gas->massFraction(k)+PICO);
-
-	// multiply by stoichiometric coefficients
-	net *= ( ct_gas->productStoichCoeff(j,i) - 
-		 ct_gas->reactantStoichCoeff(j,i) );
-	
-	// sum component from each reaction together
-	sum += net;
-	
-      } // endfor - reactions
-      
-      // compute dSdrY
-      // dSdrY[j][k] = ct_gas->molarMass(j) * sum;
-
-      // d(rho w_dot_n) / d(rho Y_n) - frozen temperature portion
-      // = d(rho w_dot)_j/d(rho Y_k)
-      dSwdU(NUM_VAR+j,NUM_VAR+k) += ct_gas->molarMass(j) * sum;
-
-
-    } // endfor - species
-  } // endfor - species
-
-
-  //------------------------------------------------
-  // Compute \frac{ \partial S_j }{ \partial U }
-  //------------------------------------------------
-  //
-  // loop over each row in the jacobian
-  //
- /***********************************************
-  *FROZEN TEMPERATURE ASSUMPTION
-  ***********************************************
-  *
-  for (int n=0; n<nsp-1; n++) {
-    
-    // d(rho w_dot_n) / d(rho)
-    // = (1/(rho * Cv))*(0.5*u^2 +0.5*v^2 - e_N) * d(rho w_dot)_j/dT
-    dSwdU(NUM_VAR+n,0) += 
-      ( 0.5*(W.v.x*W.v.x + W.v.y*W.v.y) - e[nsp-1] ) * 
-      dSdT[n] / ( rho * Cv );
-
-    // d(rho w_dot_n) / d(rho u)
-    // = -(u/(rho * Cv)) * d(rho w_dot)_j/dT
-    dSwdU(NUM_VAR+n,1) -= W.v.x * dSdT[n] / ( rho * Cv );
-
-    // d(rho w_dot_n) / d(rho v)
-    // = -(v/(rho * Cv)) * d(rho w_dot)_j/dT
-    dSwdU(NUM_VAR+n,2) -= W.v.y * dSdT[n] / ( rho * Cv );
-
-    // d(rho w_dot_n) / d(E)
-    // = (1/(rho * Cv)) * d(rho w_dot)_j/dT
-    dSwdU(NUM_VAR+n,3) += dSdT[n] / ( rho * Cv );
-
-    // d(rho w_dot_n) / d(rho Y_n) - frozen species conc. portion
-    // = - (e_k-e_N)/(rho * Cv) * d(rho w_dot)_j/dT
-    for (int k=0; k<nsp-1; k++)
-      dSwdU(NUM_VAR+n,NUM_VAR+k) -= 
-	(e[k]-e[nsp-1]) * dSdT[n] / ( rho * Cv );
-
-    // d(rho w_dot_n) / d(rho Y_n) - frozen temperature portion
-    // = d(rho w_dot)_j/d(rho Y_k)
-    for (int k=0; k<nsp-1; k++)
-      dSwdU(NUM_VAR+n,NUM_VAR+k) += dSdrY[n][k];
-    
-  } // endfor - rows
-  *
-  ***********************************************
-  * END FROZEN TEMPERATURE ASSUMPTION
-  ***********************************************
-  */
-
-  //------------------------------------------------
-  // clean up memory
-  //------------------------------------------------
-  delete[] X; 
-  // for (int j=0; j<nsp; j++) delete[] dSdrY[j]; delete[] dSdrY;
-  // delete[] E; delete[] b; delete[] e; delete[] dSdT;
-
-
-#else
-  cout<<"\n CODE NOT COMPILED WITH CANTERA!";
-  cout<<"\n YOU SHOULD NOT BE HERE!";
-  exit(-1);
-
-#endif //_CANTERA_VERSION
-
-} // end of ct_dSwdU
-
-
-/***********************************************************************
-  Use cantera to compute the Chemical Source Jacobian.  This function
-  is called from the main dSwdU().
-
-  Comment out "FROZEN TEMPERATURE BLOCKS" for dS/dT=0 assumption.
-***********************************************************************/
-template<class SOLN_pSTATE>
-void Reaction_set::ct_dSwdU_FiniteDiff( DenseMatrix &dSwdU,
-					const SOLN_pSTATE &W,
-					const double &Temp,            // [K]
-					const double &Press ) const {  // [Pa]
-
-#ifdef _CANTERA_VERSION
-
-  //------------------------------------------------
-  // declares
-  //------------------------------------------------
-  // number of variables not including species
-  int NUM_VAR = W.NumVarSansSpecies();
-
-  // perturbation factor
-  static const double abs_tol = 1.E-6; // absolute tolerance (sqrt(machine eps))
-  static const double rel_tol = 1.E-6; // relative tolerance
-  double eps;
-  
-  //------------------------------------------------
-  // setup
-  //------------------------------------------------
-
-  // initial unperturbed values reaction rates
-  ct_gas->setMassFractions_NoNorm(c);
-  ct_gas->setTemperature(Temp);
-  ct_gas->setPressure(Press);
-  ct_gas->getNetProductionRates(r0);
-
-
-  //------------------------------------------------
-  // Compute \frac{ \partial S_j }{ \partial \rho Y_k }
-  //------------------------------------------------
-  // temporary storage
-  double csave_k, csave_N;
-
-  // some constants
-  double rho = W.rho;   // density [kg/m^3]
-
-  //
-  // iterate over the species (jac columns)
-  //
-  for (int j=0; j<num_species-1; j++) {
-    
-    // compute perturbation factor
-    eps = abs_tol + fabs(c[j])*rel_tol;
-
-    // perturb the species concetration array
-    csave_k = c[j];
-//     csave_N = c[num_species-1];
-    c[j] += eps;
-//     c[num_species-1] = max(c[num_species-1]-eps, ZERO);
-
-    // compute the perturbed reaction rates
-    ct_gas->setMassFractions_NoNorm(c);
-    ct_gas->getNetProductionRates(r);
-    
-    //
-    // iterate over the species (jac rows)
-    //
-    for (int i=0; i<num_species-1; i++) {
-      
-      // the i,j element of jacobian
-      dSwdU(NUM_VAR+i,NUM_VAR+j) += M[i]*(r[i]-r0[i]) / (rho*eps);
-
-    } // endfor - rows
-
-    // unperturb
-    c[j] = csave_k;
-//     c[num_species-1] = csave_N;
-
-  } // endfor - columns
-
-
- /***********************************************
-  *FROZEN TEMPERATURE ASSUMPTION
-  ***********************************************
-  *
-  * COMMENT OUT THIS BLOCK OF CODE FOR dS/dT=0 ASSUMPTION
-  *
-  //------------------------------------------------
-  // Compute \frac{ \partial S_j }{ \partial T }
-  //------------------------------------------------
-  // temporary storage
-  double dSdT, T0;
-
-  // some constants
-  double Cv = W.Cv();    // constant volume specific heat [J/(kg*K)]
-  double E = W.E()/rho;  // total energy [J/kg]
-
-  // internal energy species k [J/kg]
-  e[num_species-1] = 
-    ( W.specdata[num_species-1].Enthalpy(Temp) + 
-      W.specdata[num_species-1].Heatofform() - 
-      W.specdata[num_species-1].Rs()*Temp );
-  for (int k=0; k<num_species-1; k++)
-    e[k] = (W.specdata[k].Enthalpy(Temp) + 
-	    W.specdata[k].Heatofform() -
-	    W.specdata[k].Rs()*Temp ) - e[num_species-1];
-    
-  // compute perturbation factor
-  eps = abs_tol + fabs(Temp)*rel_tol;
-    
-  // perturb the species temperature
-  T0 = Temp + eps;
-
-  // compute the perturbed reaction rates
-  ct_gas->setMassFractions_NoNorm(c);
-  ct_gas->setTemperature(T0);
-  ct_gas->getNetProductionRates(r);
-  
-  //
-  // iterate over the species (jac rows)
-  //
-  for (int i=0; i<num_species-1; i++) {
-      
-    // compute the derivative => d(rho w_dot)_j/dT
-    dSdT = M[i]*(r[i]-r0[i]) / eps;
-    dSdT /= rho * Cv;
-
-    // d(rho w_dot_n) / d(rho)
-    // = (1/(rho * Cv))*(0.5*u^2 +0.5*v^2 - e_N) * d(rho w_dot)_j/dT
-    dSwdU(NUM_VAR+i,0) += 
-      ( W.v.x*W.v.x + W.v.y*W.v.y - E ) * dSdT;
-    
-    // d(rho w_dot_n) / d(rho u)
-    // = -(u/(rho * Cv)) * d(rho w_dot)_j/dT
-    dSwdU(NUM_VAR+i,1) -= W.v.x * dSdT;
-
-    // d(rho w_dot_n) / d(rho v)
-    // = -(v/(rho * Cv)) * d(rho w_dot)_j/dT
-    dSwdU(NUM_VAR+i,2) -= W.v.y * dSdT;
-    
-    // d(rho w_dot_n) / d(E)
-    // = (1/(rho * Cv)) * d(rho w_dot)_j/dT
-    dSwdU(NUM_VAR+i,3) += dSdT;
-      
-    // d(rho w_dot_n) / d(rho Y_n) - frozen species conc. portion
-    // = - (e_k-e_N)/(rho * Cv) * d(rho w_dot)_j/dT
-    for (int k=0; k<num_species-1; k++) {
-      dSwdU(NUM_VAR+i,NUM_VAR+k) -=  e[k] * dSdT;
-    } // endfor - species
-
-  } // endfor - rows
-        
-  *
-  ***********************************************
-  * END FROZEN TEMPERATURE ASSUMPTION
-  ***********************************************
-  */
-
-#else
-  cout<<"\n CODE NOT COMPILED WITH CANTERA!";
-  cout<<"\n YOU SHOULD NOT BE HERE!";
-  exit(-1);
-
-#endif //_CANTERA_VERSION
-
-} // end of ct_dSwdU
-
-
-
-/************************************************************************
-  Calculates the equilibrium composition given an unburnt mixture
-  using CANTERA.  This is only for CANTERA reaction types.  Here
-  we hold enthalpy and pressure fixed.
-
-  Wu - unburnt state
-  Wb - burnt state
-
-************************************************************************/
-
-template<class SOLN_pSTATE>
-inline void Reaction_set::ct_equilibrium_HP( SOLN_pSTATE &W ) const {
-
-#ifdef _CANTERA_VERSION
-  
-  //copy unburnt mass fractions to an array
-  for(int i=0; i<num_species; i++)
-    c[i] = W.spec[i].c;
-
-  // set state and equilibrate
-  ct_gas->setState_TPY(W.T(), W.p, c);
-  try {
-    equilibrate( *ct_gas, "HP" );
-  }
-  catch (Cantera::CanteraError) {
-    Cantera::showErrors();
-  }
-
-
-  //get burnt mass fractions
-  ct_gas->getMassFractions(c);
-  for(int i=0; i<num_species; i++)
-    W.spec[i].c = c[i];
-
-  // the density
-  W.rho = W.p / ( W.Rtot()*ct_gas->temperature() );  // [kg/m^3]
-  
-#else
-  cout<<"\n CODE NOT COMPILED WITH CANTERA!";
-  cout<<"\n YOU SHOULD NOT BE HERE!";
-  exit(-1);
-
-#endif //_CANTERA_VERSION
-
-} // end of ct_equilibrate
-
-
-/************************************************************************
-  Calculates the equilibrium composition given an unburnt mixture
-  using CANTERA.  This is only for CANTERA reaction types.  Here 
-  we hold temperature and pressure fixed.
-
-  Wu - unburnt state
-  Wb - burnt state
-
-************************************************************************/
-template<class SOLN_pSTATE>
-inline void Reaction_set::ct_equilibrium_TP( SOLN_pSTATE &W ) const {
-
-#ifdef _CANTERA_VERSION
-  
-  // get the temperature
-  double T( W.T() );
-
-  //copy unburnt mass fractions to an array
-  for(int i=0; i<num_species; i++)
-    c[i] = W.spec[i].c;
-
-  // set state and equilibrate
-  ct_gas->setState_TPY(T, W.p, c);
-  try {
-    equilibrate( *ct_gas, "TP" );
-  }
-  catch (Cantera::CanteraError) {
-    Cantera::showErrors();
-  }
-
-
-  //get burnt mass fractions
-  ct_gas->getMassFractions(c);
-  for(int i=0; i<num_species; i++)
-    W.spec[i].c = c[i];
-
-  // the density
-  W.rho = W.p / ( W.Rtot()*T );  // [kg/m^3]
-  
-#else
-  cout<<"\n CODE NOT COMPILED WITH CANTERA!";
-  cout<<"\n YOU SHOULD NOT BE HERE!";
-  exit(-1);
-
-#endif //_CANTERA_VERSION
-
-} // end of ct_equilibrate
-
-
 
 #endif // _REACTIONS_INCLUDED

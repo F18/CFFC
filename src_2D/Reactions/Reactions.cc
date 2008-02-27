@@ -8,15 +8,6 @@
 #endif // _REACTIONS_INCLUDED
 
 /***********************************************************************
-  Static object initialization.
-***********************************************************************/
-// indexes of specific species
-int Reaction_set::iCO  = -1;
-int Reaction_set::iCO2 = -1;
-int Reaction_set::iH2O = -1;
-int Reaction_set::iO2  = -1;
-
-/***********************************************************************
   Setup reaction data using hardcoded reaction mechanisms.
 ***********************************************************************/
 void Reaction_set::set_reactions(string &react){
@@ -29,12 +20,6 @@ void Reaction_set::set_reactions(string &react){
     reactset_flag = NO_REACTIONS;
     reactions = NULL;
     num_reactions = 0;
-
-    // set static indexes (-1 if does not exist)
-    iCO  = -1;
-    iH2O = -1;
-    iCO2 = -1;
-    iO2  = -1;
   }
 
   /****************** METHANE ***********************************/   
@@ -61,12 +46,6 @@ void Reaction_set::set_reactions(string &react){
     species[2] = "CO2";
     species[3] = "H2O";
     species[4] = "N2";
-
-    // set static indexes (-1 if does not exist)
-    iCO  = -1;
-    iH2O = 3;
-    iCO2 = 2;
-    iO2  = 1;
   }
    
   //-------------------------------------------//
@@ -93,13 +72,7 @@ void Reaction_set::set_reactions(string &react){
     species[3] = "H2O";
     species[4] = "CO"; 
     species[5] = "N2";
- 
-    // set static indexes (-1 if does not exist)
-    iCO  = 4;
-    iH2O = 3;
-    iCO2 = 2;
-    iO2  = 1;
- }
+  }
 
   // 1step C3H8 mechanism
   else if( react == "C3H8_1STEP" ){
@@ -157,12 +130,6 @@ void Reaction_set::set_reactions(string &react){
     species[17] = "HCN";              
     species[18] = "N2";
 
-    // set static indexes (-1 if does not exist)
-    iCO  = 9;
-    iH2O = 4;
-    iCO2 = 10;
-    iO2  = 2;
-
   /***********************
     Reactions:
 
@@ -218,12 +185,6 @@ void Reaction_set::set_reactions(string &react){
     species[17] = "HCN";              
     species[18] = "N2";
 
-    // set static indexes (-1 if does not exist)
-    iCO  = 9;
-    iH2O = 4;
-    iCO2 = 10;
-    iO2  = 2;
-
   /***********************
     Reactions:
 
@@ -268,13 +229,7 @@ void Reaction_set::set_reactions(string &react){
     species[1] = "O2";
     species[2] = "H2O"; 
     species[3] = "N2";
-
-    // set static indexes (-1 if does not exist)
-    iCO  = -1;
-    iH2O = 2;
-    iCO2 = -1;
-    iO2  = 1;
- }
+  }
 
   //-------------------------------------------//
   // 2step H2 & O2
@@ -299,12 +254,6 @@ void Reaction_set::set_reactions(string &react){
     species[2] = "OH";
     species[3] = "H2O"; 
     species[4] = "N2";
-
-    // set static indexes (-1 if does not exist)
-    iCO  = -1;
-    iH2O = 3;
-    iCO2 = -1;
-    iO2  = 1;
   }
   
   //-------------------------------------------//
@@ -338,12 +287,6 @@ void Reaction_set::set_reactions(string &react){
     species[4] = "H2O";
     species[5] = "OH";
     species[6] = "N2";
-
-    // set static indexes (-1 if does not exist)
-    iCO  = -1;
-    iH2O = 4;
-    iCO2 = -1;
-    iO2  = 1;
   }
   
   // else error  
@@ -371,18 +314,6 @@ void Reaction_set::set_species(string *spec, int num){
   for(int i=0; i<num; i++){
     species[i] = spec[i];
   }
-}
-
-/**************************************************************
-  Get the index corrensponding to the species name.  
-  If it is not found, return -1;                      
-***************************************************************/
-int Reaction_set::SpeciesIndex( const string& name ) const {
-  int index(-1);
-  for(int k=0; k<num_species; k++) {
-    if (species[k]==name) { index = k; break; }
-  }
-  return index;
 }
 
 /***********************************************************************
@@ -456,22 +387,13 @@ void Reaction_set::ct_load_mechanism(string &mechanism_file_name,
   ct_mech_file = mechanism_file_name;
   Reaction_system = "CANTERA";
 
-  // set static indexes (-1 returbed if does not exist)
-  iCO  = ct_gas->speciesIndex("CO");
-  iH2O = ct_gas->speciesIndex("H2O");
-  iCO2 = ct_gas->speciesIndex("CO2");
-  iO2  = ct_gas->speciesIndex("O2");
-
   // allocate some temporary storage
   set_storage();
-
-
 
 // _CANTERA_VERSION flag not set
 #else
   cout<<"\n CODE NOT COMPILED WITH CANTERA!";
   cout<<"\n YOU SHOULD NOT BE HERE!";
-  exit(-1);
 
 #endif //_CANTERA_VERSION
 
@@ -489,109 +411,20 @@ void Reaction_set::ct_parse_mass_string(const string& massFracStr,
 
 #ifdef _CANTERA_VERSION
 
-  //
-  // for a string of 'space' delimited mass fractions
-  //
-  if ( massFracStr.find(":",0) == string::npos ) {
-    
-    // get first position
-    string delimiters = " ";
-    string::size_type lastPos = massFracStr.find_first_not_of(delimiters, 0);
-    string::size_type pos     = massFracStr.find_first_of(delimiters, lastPos);
-
-    // parse the string and set mass fractions
-    int index = 0;
-    while (string::npos != pos || string::npos != lastPos) {
-      massFracs[index] = atof(massFracStr.substr(lastPos, pos - lastPos).c_str());
-      massFracs[index] = max(massFracs[index], ZERO);
-      lastPos = massFracStr.find_first_not_of(delimiters, pos);
-      pos = massFracStr.find_first_of(delimiters, lastPos);
-      index++;
-    } // endwhile
-
-    // normalize to unity
-    double sum(0.0);
-    for(int index=0; index<num_species; index++) sum += massFracs[index];
-    if (sum>TOLER) for(int index=0; index<num_species; index++) massFracs[index] /= sum;
-
-  //
-  // for a composition map (eg. CH4:0.5, O2:0.5)
-  //
-  } else {
-
-    // set mass fractions and make sure they sum to unity
-    ct_gas->setMassFractionsByName(massFracStr);
-    for(int index =0; index<num_species; index++)
-      massFracs[index] = ct_gas->massFraction(index);
-
-  } // endif
+  // set mass fractions and make sure they sum to unity
+  ct_gas->setMassFractionsByName(massFracStr);
+  for(int index =0; index<num_species; index++){
+    massFracs[index] = ct_gas->massFraction(index);
+  }
 
 #else
   cout<<"\n CODE NOT COMPILED WITH CANTERA!";
   cout<<"\n YOU SHOULD NOT BE HERE!";  
-  exit(-1);
 
 #endif //_CANTERA_VERSION
 
 } // end of ct_parse_mass_string
 
-/***********************************************************************
-  Use cantera to parse the input mole fraction string of the form
-      CH4:0.5, O2:0.5
-  All other species will be assumed to have 0 mole fractions.  Cantera
-  also normalizes the mole fractions to sum to unity.  Returns them in
-  an array.
-***********************************************************************/
-void Reaction_set::ct_parse_mole_string(const string& moleFracStr, 
-					double* moleFracs) {
-
-#ifdef _CANTERA_VERSION
-
-  //
-  // for a string of 'space' delimited mole fractions
-  //
-  if ( moleFracStr.find(":",0) == string::npos ) {
-    
-    // get first position
-    string delimiters = " ";
-    string::size_type lastPos = moleFracStr.find_first_not_of(delimiters, 0);
-    string::size_type pos     = moleFracStr.find_first_of(delimiters, lastPos);
-
-    // parse the string and set molar fractions
-    int index = 0;
-    while (string::npos != pos || string::npos != lastPos) {
-      moleFracs[index] = atof(moleFracStr.substr(lastPos, pos - lastPos).c_str());
-      moleFracs[index] = max(moleFracs[index], ZERO);
-      lastPos = moleFracStr.find_first_not_of(delimiters, pos);
-      pos = moleFracStr.find_first_of(delimiters, lastPos);
-      index++;
-    } // endwhile
-
-    // normalize to unity
-    double sum(0.0);
-    for(int index=0; index<num_species; index++) sum += moleFracs[index];
-    if (sum>TOLER) for(int index=0; index<num_species; index++) moleFracs[index] /= sum;
-
-  //
-  // for a composition map (eg. CH4:0.5, O2:0.5)
-  //
-  } else {
-
-    // set mole fractions and make sure they sum to unity
-    ct_gas->setMoleFractionsByName(moleFracStr);
-    for(int index =0; index<num_species; index++)
-      moleFracs[index] = ct_gas->moleFraction(index);
-
-  } // endif
-
-#else
-  cout<<"\n CODE NOT COMPILED WITH CANTERA!";
-  cout<<"\n YOU SHOULD NOT BE HERE!";  
-  exit(-1);
-
-#endif //_CANTERA_VERSION
-
-} // end of ct_parse_mass_string
 
 
 /***********************************************************************
@@ -605,136 +438,28 @@ void Reaction_set::ct_parse_schmidt_string( const string& schmidtStr,
 
 #ifdef _CANTERA_VERSION
 
-  //
-  // for a string of 'space' delimited schmidt numbers
-  //
-  if ( schmidtStr.find(":",0) == string::npos ) {
-    
-    // get first position
-    string delimiters = " ";
-    string::size_type lastPos = schmidtStr.find_first_not_of(delimiters, 0);
-    string::size_type pos     = schmidtStr.find_first_of(delimiters, lastPos);
+  // declares
+  Cantera::compositionMap xx;
+  int kk = ct_gas->nSpecies();
+  double s;
 
-    // parse the string and set schmidt numbers
-    int index = 0;
-    while (string::npos != pos || string::npos != lastPos) {
-      schmidt[index] = atof(schmidtStr.substr(lastPos, pos - lastPos).c_str());
-      if(schmidt[index]<0.0) schmidt[index] = ONE;
-      lastPos = schmidtStr.find_first_not_of(delimiters, pos);
-      pos = schmidtStr.find_first_of(delimiters, lastPos);
-      index++;
-    } // endwhile
+  // build composition map and initialize
+  for (int k = 0; k < kk; k++) xx[ct_gas->speciesName(k)] = -1.0;
 
-  //
-  // for a composition map (eg. CH4:0.5, O2:0.5)
-  //
-  } else {
+  // parse map
+  Cantera::parseCompString(schmidtStr, xx);
 
-    // declares
-    Cantera::compositionMap xx;
-    int kk = ct_gas->nSpecies();
-    double s;
-    
-    // build composition map and initialize
-    for (int k = 0; k < kk; k++) xx[ct_gas->speciesName(k)] = -1.0;
-    
-    // parse map
-    Cantera::parseCompString(schmidtStr, xx);
-    
-    // set schmidt numbers
-    for (int k = 0; k < kk; k++) { 
-      s = xx[ct_gas->speciesName(k)];
-      if (s > ZERO) schmidt[k] = s;
-      else schmidt[k] = ONE;
-    }
-    
-  } // endif
+  // set schmidt numbers
+  for (int k = 0; k < kk; k++) { 
+    s = xx[ct_gas->speciesName(k)];
+    if (s > 0.0) schmidt[k] = s;
+    else schmidt[k] = ONE;
+  }
 
 #else
   cout<<"\n CODE NOT COMPILED WITH CANTERA!";
   cout<<"\n YOU SHOULD NOT BE HERE!";
-  exit(-1);
 
 #endif //_CANTERA_VERSION
 
 } // end of ct_parse_mass_string
-
-/***********************************************************************
-  Use cantera to return the species index.  Exits in error if an
-  unidentified species is requested.
-***********************************************************************/
-int Reaction_set::ct_get_species_index(const string &sp) {
-
-#ifdef _CANTERA_VERSION
-
-  // get index
-  int index = ct_gas->speciesIndex(sp);
-
-  // if index==-1, species not found
-  if (index<0) {
-    cerr<<"\n Reaction_set::ct_get_species_index() - Index of unkown species, "
-	<<sp<<", requested.\n";
-    exit(-1);
-  } // endif
-
-  // return index
-  return index;
-
-
-#else
-  cout<<"\n CODE NOT COMPILED WITH CANTERA!";
-  cout<<"\n YOU SHOULD NOT BE HERE!";
-  exit(-1);
-
-#endif //_CANTERA_VERSION
-
-} // end of ct_get_species_index
-
-
-/***********************************************************************
-
-  This function computes the composition of a hydrocarbon (CxHy), O2, 
-  and N2 mixture.  Cantera is used to convert molar fraction to mass
-  fraction.
-
-***********************************************************************/
-void Reaction_set::ct_composition( const string& fuel_species, 
-				   const double &phi,
-				   double* massFracs ) const {
-
-#ifdef _CANTERA_VERSION
-
-  // first, compute the stoichiometric fuel air ratio
-  double C_atoms=ct_gas->nAtoms(ct_gas->speciesIndex(fuel_species), ct_gas->elementIndex("C"));
-  double H_atoms=ct_gas->nAtoms(ct_gas->speciesIndex(fuel_species), ct_gas->elementIndex("H"));
-  double ax=C_atoms+H_atoms/4.0;
-  double fa_stoic=1.0/(4.76*ax);
-
-  // determine the composition
-  int nsp = ct_gas->nSpecies();  
-  double* x = new double[nsp];
-  for(int k=0; k<nsp; k++){
-    if(k==ct_gas->speciesIndex(fuel_species)){ x[k]=phi; }
-    else if(k==ct_gas->speciesIndex("O2")){    x[k]=1.00*ax; }
-    else if(k==ct_gas->speciesIndex("N2")){    x[k]=3.76*ax; }
-    else{ x[k]=0.0; }
-  }
-
-  // compute composition 
-  // -> why do it yourself when you can get someone else to do it
-  ct_gas->setMoleFractions(x);
-  for(int k=0;k<nsp;k++) massFracs[k] = ct_gas->massFraction(k);
-
-  // clean up memory
-  delete[] x;
-
-#else
-  cout<<"\n CODE NOT COMPILED WITH CANTERA!";
-  cout<<"\n YOU SHOULD NOT BE HERE!";
-  exit(-1);
-
-#endif //_CANTERA_VERSION
-
-
-} // end of ct_composition
-

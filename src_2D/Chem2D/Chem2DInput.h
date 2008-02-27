@@ -86,9 +86,6 @@ class Chem2D_Input_Parameters{
   int Time_Accurate, Local_Time_Stepping, 
       Maximum_Number_of_Time_Steps, N_Stage;
   double CFL_Number, Time_Max;
-
-  //! source term time-step size multiplyer
-  double Source_Term_Multiplyer;
   
   // Additional input parameters for dual time stepping
   int     Max_Inner_Steps, first_step;
@@ -119,7 +116,6 @@ class Chem2D_Input_Parameters{
   int i_Limiter;
   int  Freeze_Limiter;
   int i_Residual_Variable;
-  int Number_of_Residual_Norms;
   double Freeze_Limiter_Residual_Level;
   //@}
 
@@ -152,14 +148,6 @@ class Chem2D_Input_Parameters{
   int num_species;
   Chem2D_pState Wo;
   Chem2D_cState Uo;
-  //! Fuel species
-  char Fuel_Species[INPUT_PARAMETER_LENGTH_CHEM2D];
-  //! Fuel species
-  double equivalence_ratio;
-  //!laminar flame speed [m/s]
-  double flame_speed;
-  //! Array of exit mass fractions
-  double *mass_fractions_out;
 
   //! Transport data type
   char trans_type[INPUT_PARAMETER_LENGTH_CHEM2D];
@@ -190,16 +178,13 @@ class Chem2D_Input_Parameters{
   //@{ @name Flow geometry (planar or axisymmetric):
   char Flow_Geometry_Type[INPUT_PARAMETER_LENGTH_CHEM2D];
   int Axisymmetric; //0 no, 1 yes
-  //@}
-
-  //@{ @name Flow Conditions:
   double Global_Schmidt;  //depricated, use each individual Schmidt's
-  double *Schmidt;        //individual for each species
+  double *Schmidt;  //individual for each species
   int Wall_Boundary_Treatments; //0, 1,2 , automatic, wall function, low_Reynolds number
+   
   double Reynolds_Number;
   double Kinematic_Viscosity_Wall;
   double Eddy_Viscosity_Limit_Coefficient;
-  //@}
 
   //@{ @Debug Level 0 for none, 1,2,3... level of verboseness  
   int debug_level;
@@ -207,7 +192,6 @@ class Chem2D_Input_Parameters{
 
   //@{ @name Gravity indicator (yes/no) = (1,0).
   int Gravity;
-  double gravity_z; // acceration due to gravity [m/s] (negative => acts downward)
   //@}
 
   //@{ @name Turbulence parameters:
@@ -217,15 +201,6 @@ class Chem2D_Input_Parameters{
   int i_Friction_Velocity;
   double C_constant, von_Karman_Constant;
   double yplus_sublayer, yplus_buffer_layer, yplus_outer_layer;
-  //@}
-
-  //@{ @name Radiation related input parameters.
-  //! Input file name:
-  char Rte_Input_File_Name[INPUT_PARAMETER_LENGTH_CHEM2D];
-  //! Radiation Flag (0 -> no radiation, 1 -> radiation modelled)
-  int Radiation;
-  //! Number of sequential solves
-  int Max_Number_Sequential_Solves;
   //@}
 
   //@{ @name Grid type indicator and related input parameters:
@@ -350,8 +325,7 @@ class Chem2D_Input_Parameters{
     Multispecies = NULL;
     multispecies = NULL; 
     mass_fractions = NULL;
-    mass_fractions_out = NULL;
-   ICEMCFD_FileNames = NULL;
+    ICEMCFD_FileNames = NULL;
   }
 
   //! Default constructor.
@@ -389,7 +363,6 @@ inline void Chem2D_Input_Parameters::Allocate() {
   } 
   multispecies = new string[num_species]; 
   mass_fractions = new double[num_species];
-  mass_fractions_out = new double[num_species];
   Schmidt = new double[num_species];
 }
 
@@ -404,10 +377,7 @@ inline void Chem2D_Input_Parameters::Deallocate() {
   if(multispecies != NULL){
     delete[] multispecies; multispecies=NULL;
   }
-
-  if (mass_fractions_out != NULL){
-    delete[] mass_fractions_out; mass_fractions_out=NULL;
-  }
+  
   if(mass_fractions != NULL){
     delete[] mass_fractions; mass_fractions=NULL;
     if( Schmidt != NULL) delete[] Schmidt; Schmidt = NULL;
@@ -439,10 +409,6 @@ inline ostream &operator << (ostream &out_file,
     } else { 
       out_file <<"\n on multi-block solution-adaptive quadrilateral mesh.";
     } 
-    if (IP.Radiation)
-      out_file<<"\n Radiation heat transfer modelled.";
-    else
-      out_file<<"\n Radiation Neglected.";
 
     /*********************************************************/
     if (IP.FlowType ==  FLOWTYPE_INVISCID) {
@@ -494,7 +460,7 @@ inline ostream &operator << (ostream &out_file,
     }
     /********************************************************/
     if(IP.Gravity) {
-      out_file << "\n  -> With Gravity (-z): g_z="<<IP.gravity_z<<" [m/s]";
+      out_file << "\n  -> With Gravity (-z)";
     }
     if(IP.FlowType != FLOWTYPE_INVISCID) {
       out_file << "\n  -> Viscous Reconstruction Method: "

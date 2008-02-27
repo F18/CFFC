@@ -74,13 +74,12 @@ using namespace std;
 #include "../Reactions/Reactions.h"
 #endif // _REACTIONS_INCLUDED
 
-
 //Temperature convergence tolerance in
 //Chem2D_cState::T(void)
 // these should be moved to CFD.h or Math.h
-#define CONV_TOLERANCE  1e-8   //Tolerance used for temperature convergence
-#define SPEC_TOLERANCE  1e-8   //Used in negative_speccheck for species round off (was MICRO)
-//#define TLOWERBOUNDS   200.0   //Uncoment this fix a lower bounds in T calculation
+#define CONV_TOLERANCE 1e-8  //Used for temperature convergence
+#define gravity_z -9.81      //m/s^2 acceleration due to gravity  
+#define SPEC_TOLERANCE 1e-8  //Used in negative_speccheck for species round off (was MICRO)      
 
 //number of fixed variables in the Chem2D class
 #define NUM_CHEM2D_VAR_SANS_SPECIES 6  //rho, v(2), p, k and omega
@@ -88,7 +87,6 @@ using namespace std;
 // If you define this variable, the number of species will be
 // predetermined for faster calculations.., however it is not as general 
 #define STATIC_NUMBER_OF_SPECIES 6 //2 AIR, 6 2STEP_CH4
-
 
 /*!
  * Class: Chem2D_pState
@@ -124,10 +122,6 @@ using namespace std;
 class Chem2D_pState {
 
    private:
-   //@{ @name Temporary storage:
-   static double *spec_tmp;
-   //@}
-
    //all public ....
    protected:
    public:
@@ -147,8 +141,6 @@ class Chem2D_pState {
    Tensor2D                 lambda; //!< Reynolds Stress Tensor
    Vector2D                  theta; //!< Turbulent Heat Flux Vector  
   
-
-
   //! Static Variaables 
   static int                   ns; //!< number of species
   static NASARP1311data *specdata; //!< Global Species Data
@@ -158,7 +150,6 @@ class Chem2D_pState {
   static double   high_temp_range; //!< High temp data range
   static int       NUM_VAR_CHEM2D; //!< Number of Chem2d variables (6+ns)
   static double              Mref; //!< Mref for Precondtioning (normally set to incoming freestream Mach)
-  static double         gravity_z; //!< m/s^2 acceleration due to gravity  
   //@}
 
   //@{ @name Turbulence boundary-layer constants:
@@ -181,58 +172,56 @@ class Chem2D_pState {
   static double Coeff_edm;
   static double y_sublayer;    //Xinfeng
   //@}
-
   
   //default constructors of many flavours, hopefully one is right 4U   
-  //v.zero(); tau.zero(); qflux.zero(); lambda.zero(); theta.zero();
-  //  ^ Unecessary as Vector2D and Tensor2D defaults are ZERO
+  //v.zero(); tau.zero(); qflux.zero(); lambda.zero(); theta.zero();  //Unecessary as Vector2D and Tensor2D defaults are ZERO
   //@{ @name Creation, copy, and assignment constructors.
  
-  Chem2D_pState(): rho(DENSITY_STDATM), p(PRESSURE_STDATM), k(ZERO), omega(ZERO)
+   Chem2D_pState(): rho(DENSITY_STDATM), p(PRESSURE_STDATM), k(ZERO), omega(ZERO) 
                 { specnull();  set_initial_values(); }
 
    Chem2D_pState(const double &value): rho(value), v(value), p(value),  k(ZERO), omega(ZERO)
                 { specnull(); set_initial_values(value); }
 
    Chem2D_pState(const double &d, const Vector2D &V, const double &pre):
-                 rho(d), v(V), p(pre), k(ZERO), omega(ZERO)
+                 rho(d), v(V), p(pre), k(ZERO), omega(ZERO) 
  		{ specnull();  set_initial_values(); }
 
    Chem2D_pState(const double &d, const double &vx, const double &vy, const double &pre):
-                 rho(d), v(vx,vy), p(pre), k(ZERO), omega(ZERO)
+                 rho(d), v(vx,vy), p(pre), k(ZERO), omega(ZERO) 
  		{specnull();  set_initial_values(); }
 
    Chem2D_pState(const double &d, const Vector2D &V, const double &pre, const double &kk, const double & oomega):
-                 rho(d), v(V), p(pre), k(kk), omega(oomega)
+                 rho(d), v(V), p(pre), k(kk), omega(oomega) 
  		{ specnull();  set_initial_values(); } 
 
    Chem2D_pState(const double &d, const double &vx, const double &vy, const double &pre, 
                  const double &kk, const double &oomega):
-                 rho(d), v(vx,vy), p(pre) , k(kk), omega(oomega)
+                 rho(d), v(vx,vy), p(pre) , k(kk), omega(oomega) 
  		{ specnull();  set_initial_values(); }
 
    Chem2D_pState(const double &d, const double &vx, const double &vy, const double &pre, const double &value):
-                 rho(d), v(vx,vy), p(pre), k(ZERO), omega(ZERO)
+                 rho(d), v(vx,vy), p(pre), k(ZERO), omega(ZERO)                
  		{ specnull();  set_initial_values(value); }
 
    Chem2D_pState(const double &d, const double &vx, const double &vy, const double &pre, 
                  const double &kk, const double &oomega,	const double &value):
-                 rho(d), v(vx,vy), p(pre) ,k(kk), omega(oomega)
+                 rho(d), v(vx,vy), p(pre) ,k(kk), omega(oomega) 
  		{ specnull();  set_initial_values(value); }
 
    Chem2D_pState(const double &d, const double &vx, const double &vy, const double &pre, 
                  const double &kk, const double & oomega, const Species *mfrac): 
-                 rho(d), v(vx,vy), p(pre), k(kk), omega(oomega)
+                 rho(d), v(vx,vy), p(pre), k(kk), omega(oomega) 
  		{ specnull();  set_initial_values(mfrac); }
 
    Chem2D_pState(const double &d, const Vector2D &V, const double &pre,
                  const double &kk, const double & oomega, const Species *mfrac): 
-                 rho(d), v(V), p(pre), k(kk), omega(oomega)
+                 rho(d), v(V), p(pre), k(kk), omega(oomega) 
                  { specnull(); set_initial_values(mfrac); }
 
   //this is needed for the operator overload returns!!!!
   Chem2D_pState(const Chem2D_pState &W): rho(W.rho), v(W.v), p(W.p), k(W.k), omega(W.omega),
- 					 tau(W.tau), qflux(W.qflux), lambda(W.lambda), theta(W.theta)
+ 					 tau(W.tau), qflux(W.qflux), lambda(W.lambda), theta(W.theta) 
                                         { specnull(); set_initial_values(W.spec); }      
   //@}
 
@@ -263,7 +252,7 @@ class Chem2D_pState {
        spec[i].gradc.zero();
        spec[i].diffusion_coef=ZERO;
      }
-     tau.zero(); qflux.zero(); lambda.zero(); theta.zero();
+     tau.zero(); qflux.zero(); lambda.zero(); theta.zero(); 
    }  
  
   //! Set turbulence static variables.
@@ -272,9 +261,6 @@ class Chem2D_pState {
 				const double &yplus_sub,
 				const double &yplus_buffer,
 				const double &yplus_oute);
-  
-  //! set acceleration due to gravity
-  void set_gravity(const double &g);
   //@}
 
    /******** Set Data Temperature Ranges ***************/
@@ -319,12 +305,7 @@ class Chem2D_pState {
 //    bool negative_speccheck(void) ; //-ve mass frac check and sets small -ve c's to ZERO  
 //    bool Unphysical_Properties_Check(Chem2D_cState &U, const int Flow_Type, const int n) ;   
    double SpecCon(int i) const;     //Species i concentration (rho*c/mol_mass)
-   double MoleFrac(int i) const;    //Species i mole fraction (c*mol_mass_mix/mol_mass)
    double Gibbs(int species) const; //Gibbs Free Energy (H-TS) for species
-
-   /********** radiating species related parameters ***********/
-    void MoleFracOfRadSpec( double &xCO,  double &xH2O, 
-			    double &xCO2, double &xO2 ) const;
 
    /**************** turbulence model related parameters*********/
    double eddy_viscosity(void) const;      
@@ -492,11 +473,11 @@ class Chem2D_pState {
 
    /**************** Destructors ******************************/
    //for static specdata
-   void Deallocate_static(void){ 
-     if(specdata != NULL) { delete[] specdata; specdata = NULL; }
-     if(Schmidt != NULL) { delete[] Schmidt; Schmidt = NULL; }
-     if(spec_tmp != NULL) { delete[] spec_tmp; spec_tmp = NULL; }
-   }
+   void Deallocate_static(void){ if(specdata != NULL) delete[] specdata; 
+                                           specdata = NULL; 
+ 				if(Schmidt != NULL) delete[] Schmidt; 
+ 				           Schmidt = NULL;
+                                }
 
 #ifdef STATIC_NUMBER_OF_SPECIES    
    void specnull() {}
@@ -509,9 +490,7 @@ class Chem2D_pState {
    ~Chem2D_pState(){ Deallocate(); }
 #endif
  
-   /**************** Species Resize ***************************/
-  void resize_species();
-  void resize_species(const int n_old, const string* species_old);
+
 };
 
 
@@ -522,10 +501,6 @@ class Chem2D_pState {
  ***************************************************************************/
  class Chem2D_cState {
    private: 
-   //@{ @name Temporary storage:
-   static double *spec_tmp;
-   //@}
-
    //all public .... yes I know ....
    protected:
    public:
@@ -544,7 +519,7 @@ class Chem2D_pState {
    Vector2D                  qflux; //!< Heat Flux Vector  
    Tensor2D                 lambda; //!< Reynolds Stress Tensor
    Vector2D                  theta; //!< Turbulent Heat Flux Vector  
-
+ 
    static int                   ns; //!< number of species
    static NASARP1311data *specdata; //!< Global species data 
    static double          *Schmidt; //!< Schmidt Number for each species
@@ -552,7 +527,6 @@ class Chem2D_pState {
    static double   high_temp_range; //!< High temp data range
    static int       NUM_VAR_CHEM2D; //!< Number of Chem2d variables (4+ns)
    static double              Mref; //!< Mref for Precondtioning (normally set to incoming freestream Mach)
-   static double         gravity_z; //!< m/s^2 acceleration due to gravity  
    //@}
  
    //@{ @name Turbulence boundary-layer constants:
@@ -636,7 +610,7 @@ class Chem2D_pState {
 
    //this is needed for the operator overload returns!!!!
    Chem2D_cState(const Chem2D_cState &U): rho(U.rho), rhov(U.rhov), E(U.E), rhok(U.rhok), rhoomega(U.rhoomega),
-					  tau(U.tau), qflux(U.qflux), lambda(U.lambda), theta(U.theta)
+ 					 tau(U.tau), qflux(U.qflux), lambda(U.lambda), theta(U.theta)
                                          { rhospecnull(); set_initial_values(U.rhospec); }
 
    //read in ns species data, call only once as its static
@@ -655,7 +629,7 @@ class Chem2D_pState {
    /***************** VACUUM ************************/
    void Vacuum(){ rho=ZERO; rhov.zero(); E=ZERO; rhok = ZERO; rhoomega = ZERO; 
      for(int i=0; i<ns; i++) rhospec[i].Vacuum();
-     tau.zero();  qflux.zero(); lambda.zero(); theta.zero();
+     tau.zero();  qflux.zero(); lambda.zero(); theta.zero(); 
    }  
 
    void zero_non_sol(){
@@ -663,7 +637,7 @@ class Chem2D_pState {
        rhospec[i].gradc.zero();
        rhospec[i].diffusion_coef=ZERO;
      }
-     tau.zero(); qflux.zero(); lambda.zero(); theta.zero();
+     tau.zero(); qflux.zero(); lambda.zero(); theta.zero();  
    }  
 
    //! Set turbulence static variables.
@@ -672,9 +646,6 @@ class Chem2D_pState {
 				 const double &yplus_sub,
 				 const double &yplus_buffer,
 				 const double &yplus_outer);
-
-   //! set acceleration due to gravity
-   void set_gravity(const double &g);
    //@}
 
    /******** Set Data Temperature Ranges ***************/
@@ -791,11 +762,11 @@ class Chem2D_pState {
    friend istream& operator >> (istream &in_file,  Chem2D_cState &U);
 
    /**************** Destructors ******************************/
-   void Deallocate_static(void){ 
-     if(specdata != NULL) { delete[] specdata; specdata = NULL; }
-     if(Schmidt != NULL)  { delete[] Schmidt;   Schmidt = NULL; }
-     if(spec_tmp != NULL) { delete[] spec_tmp; spec_tmp = NULL; }
-   }
+   void Deallocate_static(void){ if(specdata != NULL) delete[] specdata; 
+                                   specdata = NULL; 
+ 				if(Schmidt != NULL) delete[] Schmidt; 
+ 				  Schmidt = NULL; 
+                               }
 
 #ifdef STATIC_NUMBER_OF_SPECIES  
    void rhospecnull() {}          
@@ -808,9 +779,6 @@ class Chem2D_pState {
    ~Chem2D_cState() { Deallocate(); }
 #endif
 
-   /**************** Species Resize ***************************/
-   void resize_species();
-   void resize_species(const int n_old, const string* species_old);
 
  };
 
@@ -843,86 +811,6 @@ class Chem2D_pState {
    for(int i=0; i<ns; i++) spec[i] = mfrac[i];
  }
 
-/**************************************************************************
-  Resize the species array, and just set the new array to zero
-**************************************************************************/
-inline void Chem2D_pState::resize_species() {
-
-  // the new number of species
-  int n_new( React.num_species );
-
-  // deallocate first
-#ifdef STATIC_NUMBER_OF_SPECIES
-  if( STATIC_NUMBER_OF_SPECIES < n_new ) { 
-    cerr<<"\n WARNING USING STATIC CHEM2D BUILT WITH "<<STATIC_NUMBER_OF_SPECIES 
-	<<" SPECIES PREDEFINED, HOWEVER ASKING FOR "<<n_new<<endl; 
-    exit(1); 
-  }
-#else 
-  Deallocate();
-#endif  
-  
-  // set the new value
-  ns = n_new;
-  
-  // reallocate species array and set to zero
-  spec_memory();
-  set_initial_values(ZERO);
-  
-}
-
-/**************************************************************************
-  Resize the species array, keeping the values
-**************************************************************************/
-inline void Chem2D_pState::resize_species( const int n_old,           // the old numbre of species
-					   const string* species_old) // the old species names array
-{
-  // temporary storage
-  double* c_old = new double[n_old];
-  int index;
-
-  // the new number of species
-  int n_new( React.num_species );
-
-  // store the old values
-  for (int k=0; k<n_old; k++) c_old[k] = spec[k].c;
-
-  // deallocate
-#ifdef STATIC_NUMBER_OF_SPECIES
-  if( STATIC_NUMBER_OF_SPECIES < n_new ) { 
-    cerr<<"\n WARNING USING STATIC CHEM2D BUILT WITH "<<STATIC_NUMBER_OF_SPECIES 
-	<<" SPECIES PREDEFINED, HOWEVER ASKING FOR "<<n_new<<endl; 
-    exit(1); 
-  }
-#else 
-  Deallocate();
-#endif  
-  
-  // set the new value
-  ns = n_new;
-  
-  // reallocate species array and set to zero
-  spec_memory();
-  set_initial_values(ZERO);
-    
-  // match up the species and set their respective values
-  for (int k=0; k<n_old; k++) {
-    index = React.SpeciesIndex(species_old[k]);
-    if (index>=0) spec[index].c = c_old[k];
-    else {
-      cerr << "\n Chem2D_pState::resize_species() - Species " 
-	   << species_old[k]
-	   << " not found in current reaction mechanism.\n";
-      exit(-1);
-    }
-  }// endfor - species
-  
-  // delete temporary memory
-  delete[] c_old;
-
-}
-
-
  /**********************************************************************
   * Chem2D_pState::set_turbulence_variables -- Set the turbulence      *
   *                                            static variables.       *
@@ -947,25 +835,6 @@ inline void Chem2D_pState::set_turbulence_variables(const double &C_constant,
     yplus_o -= f/df;
   } while(fabs(f) >= 0.00000001);
 }
-
- /**********************************************************************
-  * Chem2D_pState::set_gravity -- Set the acceleration due to gravity  *
-  *                               in m/s^2.  It acts downwards in the  *
-  *                               z-dir (g <= 0)                       *
-  **********************************************************************/
-inline void Chem2D_pState::set_gravity(const double &g) { // [m/s^2]
-
-  // if gravity is acting upwards (wrong way)
-  if (g>0) {
-    cerr<<"\n Chem2D_pState::set_gravity() - Gravity acting upwards!!!! \n";
-    exit(1);
-    
-  // gravity acting downwards (-ve), OK
-  } else {
-    gravity_z = g;
-  }
-}
-
 
  /*****************  Momentum *******************************/
  inline Vector2D Chem2D_pState::rhov(void) const{
@@ -1148,13 +1017,6 @@ inline double Chem2D_pState::SpecCon(int i) const{
   //returned in kg/m^3 / kg/mol => mol/m^3
   return (rho)*spec[i].c/(specdata[i].Mol_mass());
 }
-
-/***** Species Mole Fractions ******************************/
-inline double Chem2D_pState::MoleFrac(int i) const{
-  //returned in kmol i / kmol mix
-  return spec[i].c*Mass()/(specdata[i].Mol_mass());
-}
-
 
 /******* GIBBS Free Energy ********************************
   Eqn. (10.84) (10.87) Anderson
@@ -1341,87 +1203,6 @@ inline void Chem2D_cState::set_initial_values( const Species *rhomfrac){
   for(int i=0; i<ns; i++) rhospec[i] = rhomfrac[i];
 }
 
-/**************************************************************************
-  Resize the species array, setting the new values to zero
-**************************************************************************/
-inline void Chem2D_cState::resize_species() {
-
-  // the new number of species
-  int n_new( Chem2D_pState::React.num_species );
-
-  // deallocate first
-#ifdef STATIC_NUMBER_OF_SPECIES
-  if( STATIC_NUMBER_OF_SPECIES < n_new ) { 
-    cerr<<"\n WARNING USING STATIC CHEM2D BUILT WITH "<<STATIC_NUMBER_OF_SPECIES 
-	<<" SPECIES PREDEFINED, HOWEVER ASKING FOR "<<n_new<<endl; 
-    exit(1); 
-  }
-#else 
-  Deallocate();
-#endif  
-  
-  // set the new value
-  ns = n_new;
-  
-  // reallocate species array and set to zero
-  rhospec_memory();
-  set_initial_values(ZERO);
-     
-}
-
-/**************************************************************************
-  Resize the species array, keeping the values
-**************************************************************************/
-inline void Chem2D_cState::resize_species( const int n_old,           // the old numbre of species
-					   const string* species_old) // the old species names array
-{
-
-  // temporary storage
-  double* c_old = new double[n_old];
-  int index;
-
-  // the new number of species
-  int n_new( Chem2D_pState::React.num_species );
-
-  // store the old values
-  for (int k=0; k<n_old; k++) c_old[k] = rhospec[k].c;
-
-  // deallocate
-#ifdef STATIC_NUMBER_OF_SPECIES
-  if( STATIC_NUMBER_OF_SPECIES < n_new ) { 
-    cerr<<"\n WARNING USING STATIC CHEM2D BUILT WITH "<<STATIC_NUMBER_OF_SPECIES 
-	<<" SPECIES PREDEFINED, HOWEVER ASKING FOR "<<n_new<<endl; 
-    exit(1); 
-  }
-#else 
-  Deallocate();
-#endif  
-  
-  // set the new value
-  ns = n_new;
-  
-  // reallocate species array and set to zero
-  rhospec_memory();
-  set_initial_values(ZERO);
-    
-  // match up the species and set their respective values
-  for (int k=0; k<n_old; k++) {
-    index = Chem2D_pState::React.SpeciesIndex(species_old[k]);
-    if (index>=0) rhospec[index].c = c_old[k];
-    else {
-      cerr << "\n Chem2D_cState::resize_species() - Species " 
-	   << species_old[k]
-	   << " not found in current reaction mechanism.\n";
-      exit(-1);
-    }
-  }// endfor - species
-  
-  // delete temporary memory
-  delete[] c_old;
-
-}
-
-
 /**************** Copy *************************************/
 inline void Chem2D_cState::Copy(const Chem2D_cState &U){
   rho = U.rho;
@@ -1463,25 +1244,6 @@ inline void Chem2D_cState::set_turbulence_variables(const double &C_constant,
     yplus_o -= f/df;
   } while(fabs(f) >= 0.00000001);
 }
-
- /**********************************************************************
-  * Chem2D_cState::set_gravity -- Set the acceleration due to gravity  *
-  *                               in m/s^2.  It acts downwards in the  *
-  *                               z-dir (g <= 0)                       *
-  **********************************************************************/
-inline void Chem2D_cState::set_gravity(const double &g) { // [m/s^2]
-
-  // if gravity is acting upwards (wrong way)
-  if (g>0) {
-    cerr<<"\n Chem2D_pState::set_gravity() - Gravity acting upwards!!!! \n";
-    exit(1);
-    
-  // gravity acting downwards (-ve), OK
-  } else {
-    gravity_z = g;
-  }
-}
-
 
 /**************** Velocity *********************************/
 inline Vector2D Chem2D_cState::v() const{
@@ -1627,14 +1389,14 @@ inline bool Chem2D_cState::Unphysical_Properties_Check(const int Flow_Type, cons
 
   if ((Flow_Type == FLOWTYPE_INVISCID ||
        Flow_Type == FLOWTYPE_LAMINAR) &&
-      (rho <= ZERO ||!negative_speccheck(n) /*||es() <= ZERO*/)) {
+      (rho <= ZERO ||!negative_speccheck(n) ||es() <= ZERO)) {
     cout << "\n " << CFFC_Name() 
 	 << " Chem2D ERROR: Negative Density || Energy || mass fractions: \n" << *this <<endl;
     return false;
   }
   if ((Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON ||
        Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA) &&
-      (rho <= ZERO || !negative_speccheck(n) /*||es() <= ZERO*/ ||
+      (rho <= ZERO || !negative_speccheck(n) ||es() <= ZERO ||
        rhok < ZERO ||rhoomega < ZERO)) {
     cout << "\n " << CFFC_Name() 
 	 << " Chem2D ERROR: Negative Density || Energy || mass fractions || Turbulent kinetic energy || : \n"
@@ -1716,7 +1478,7 @@ inline Chem2D_pState Chem2D_cState::W(const Chem2D_cState &U) const{
     Temp.qflux = U.qflux; 
     Temp.lambda = U.lambda;
     Temp.theta = U.theta; 
-
+   
     return Temp;
 }
 

@@ -12,9 +12,6 @@
 #include "dRdU.h"
 #endif // _CHEM2D_dRdU_INCLUDE
 
-/* Include header file to compute flame jump conditions */
-#include "../Reactions/FlameJump.h"
-
 /*************************************************************************
 * Chem2D_Quad_Block -- Single Block External Subroutines.                *
 **************************************************************************/
@@ -62,7 +59,7 @@ void Broadcast_Solution_Block(Chem2D_Quad_Block &SolnBlk) {
 
 #ifdef _MPI_VERSION
 
-  int ni, nj, ng, nr, nn, block_allocated, buffer_size;
+  int ni, nj, ng, nr, block_allocated, buffer_size;
     double *buffer;
 
     int NUM_VAR_CHEM2D = SolnBlk.NumVar(); 
@@ -73,7 +70,6 @@ void Broadcast_Solution_Block(Chem2D_Quad_Block &SolnBlk) {
       nj = SolnBlk.NCj;
       ng = SolnBlk.Nghost;
       nr = SolnBlk.residual_variable;
-      nn = SolnBlk.Number_of_Residual_Norms;
       if (SolnBlk.U != NULL) {
 	block_allocated = 1;
       } else {
@@ -85,7 +81,6 @@ void Broadcast_Solution_Block(Chem2D_Quad_Block &SolnBlk) {
     MPI::COMM_WORLD.Bcast(&nj, 1, MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&ng, 1, MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&nr, 1, MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&nn, 1, MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&block_allocated, 1, MPI::INT, 0);
 
     /* On non-primary MPI processors, allocate (re-allocate) 
@@ -98,7 +93,6 @@ void Broadcast_Solution_Block(Chem2D_Quad_Block &SolnBlk) {
       }
       // Set the block static variables if they were not previously assigned.
       if (SolnBlk.residual_variable != nr) SolnBlk.residual_variable = nr;
-      if (SolnBlk.Number_of_Residual_Norms != nn) SolnBlk.Number_of_Residual_Norms = nn;
     } 
 
     /* Broadcast the axisymmetric/planar flow, viscous, turbulent, and gravity indicators. */
@@ -253,7 +247,7 @@ void Broadcast_Solution_Block(Chem2D_Quad_Block &SolnBlk,
                              const int Source_CPU) {
 
   int Source_Rank = 0;
-  int ni, nj, ng, nr, nn, block_allocated, buffer_size;
+  int ni, nj, ng, nr, block_allocated, buffer_size;
   double *buffer;
 
   int NUM_VAR_CHEM2D = SolnBlk.NumVar();
@@ -265,7 +259,6 @@ void Broadcast_Solution_Block(Chem2D_Quad_Block &SolnBlk,
     nj = SolnBlk.NCj;
     ng = SolnBlk.Nghost; 
     nr = SolnBlk.residual_variable;
-    nn = SolnBlk.Number_of_Residual_Norms;
     if (SolnBlk.U != NULL) {
       block_allocated = 1;
     } else {
@@ -276,8 +269,7 @@ void Broadcast_Solution_Block(Chem2D_Quad_Block &SolnBlk,
   Communicator.Bcast(&ni, 1, MPI::INT, Source_Rank);
   Communicator.Bcast(&nj, 1, MPI::INT, Source_Rank); 
   Communicator.Bcast(&ng, 1, MPI::INT, Source_Rank);
-  Communicator.Bcast(&nr, 1, MPI::INT, Source_Rank);
-  Communicator.Bcast(&nn, 1, MPI::INT, Source_Rank);
+  Communicator.Bcast(&nr,1,MPI::INT,Source_Rank);
   Communicator.Bcast(&block_allocated, 1, MPI::INT, Source_Rank);
 
   /* On non-source MPI processors, allocate (re-allocate) 
@@ -290,7 +282,6 @@ void Broadcast_Solution_Block(Chem2D_Quad_Block &SolnBlk,
     } /* endif */
     //Set the block static variables if they were not previously assigned.
     if (SolnBlk.residual_variable != nr) SolnBlk.residual_variable = nr;
-    if (SolnBlk.Number_of_Residual_Norms != nn) SolnBlk.Number_of_Residual_Norms = nn;
   } /* endif */
 
     /* Broadcast the axisymmetric/planar flow indicator. */
@@ -939,14 +930,14 @@ void Output_Tecplot(Chem2D_Quad_Block &SolnBlk,
 
   Chem2D_pState W_node;
    
-  /* Ensure boundary conditions are updated before
-     evaluating solution at the nodes. */
-  BCs(SolnBlk,IP);
-
   /* Cell centered shear and qflux */
   if (SolnBlk.Flow_Type != FLOWTYPE_INVISCID) {
     Viscous_Calculations(SolnBlk);
   }
+
+  /* Ensure boundary conditions are updated before
+     evaluating solution at the nodes. */
+  BCs(SolnBlk,IP);
 
   /* Output node solution data. */
   Out_File << setprecision(14);
@@ -1058,14 +1049,13 @@ void Output_Cells_Tecplot(Chem2D_Quad_Block &SolnBlk,
 	                  ostream &Out_File) {
 
     int i, j;
-    Chem2D_cState omega;
-
-    BCs(SolnBlk,IP);
 
     /* Cell centered shear and qflux */
     if (SolnBlk.Flow_Type != FLOWTYPE_INVISCID) {
       Viscous_Calculations(SolnBlk);
     }
+
+    BCs(SolnBlk,IP);
 
     Out_File << setprecision(14);
     if (Output_Title) {
@@ -1085,64 +1075,83 @@ void Output_Cells_Tecplot(Chem2D_Quad_Block &SolnBlk,
        for(int i =0 ;i<SolnBlk.W[0][0].ns ;i++){
 	 Out_File <<"\"c"<<SolnBlk.W[0][0].specdata[i].Speciesname()<<"\" \\ \n";
        }
-       Out_File << "\"rho*u\" \\ \n"
-                << "\"rho*v\" \\ \n";
-       //Calculated values
+       //Viscous Terms 
        Out_File << "\"qflux_x\" \\ \n"  
-		<< "\"qflux_y\" \\  \n"   
-		<< "\"Tau_xx\" \\  \n"  //rr -axisymmetric
-		<< "\"Tau_xy\" \\  \n"  //rz
-		<< "\"Tau_yy\" \\  \n"  //zz
-		<< "\"Tau_zz\" \\  \n"
-		<< "\"T\" \\ \n"
+		<< "\"qflux_y\" \\ \n"   
+		<< "\"Tau_xx\" \\ \n"  //rr -axisymmetric
+		<< "\"Tau_xy\" \\ \n"  //rz
+		<< "\"Tau_yy\" \\ \n"  //zz
+		<< "\"Tau_zz\" \\ \n"  //thetatheta
+		<< "\"theta_x\" \\ \n"  
+		<< "\"theta_y\" \\ \n"   
+		<< "\"lambda_xx\" \\ \n"   //rr -axisymmetric
+		<< "\"lambda_xy\" \\ \n"   //rz
+		<< "\"lambda_yy\" \\ \n"   //zz
+		<< "\"lambda_zz\" \\ \n";  //thetatheta
+        //Calculated values
+       Out_File << "\"T\" \\ \n"
 	        << "\"M\" \\ \n"
                 << "\"R\" \\ \n"
 	        << "\"viscosity\" \\ \n"
 	        << "\"thermal conduct\" \\ \n"
-	        << "\"Prandtl\" \\ \n"
-		<< "\"rho*H\"  \\ \n"  
-		<<"\"h\" \\ \n"
-		<<"\"h_s\" \\ \n"
-		<<"\"rho*E\" \\ \n"
-		<< "\"e\" \\  \n" 
-		<< "\"e_s\" \\ \n";
-       for(int i =0 ;i<SolnBlk.W[0][0].ns ;i++){
- 	 Out_File <<"\"D_"<<SolnBlk.W[0][0].specdata[i].Speciesname()<<"\" \\ \n";
-       }
-       // reaction rates
-       for(int i =0 ;i<SolnBlk.W[0][0].ns ;i++){
- 	 Out_File <<"\"omega_c"<<SolnBlk.W[0][0].specdata[i].Speciesname()<<"\" \\ \n";
-       }
-       // Gradients
-       Out_File << "\"dWdx_rho\" \\ \n"
-		<< "\"dWdx_u\" \\ \n"
-		<< "\"dWdx_v\" \\ \n"
-		<< "\"dWdx_p\" \\ \n"
-		<< "\"dWdx_k\" \\ \n"
-		<< "\"dWdx_o\" \\ \n";
-       for(int i =0 ;i<SolnBlk.W[0][0].ns ;i++){
- 	 Out_File <<"\"dWdx_c"<<SolnBlk.W[0][0].specdata[i].Speciesname()<<"\" \\ \n";
-       }
-       Out_File << "\"dWdy_rho\" \\ \n"
-		<< "\"dWdy_u\" \\ \n"
-		<< "\"dWdy_v\" \\ \n"
- 		<< "\"dWdy_p\" \\ \n"
-		<< "\"dWdy_k\" \\ \n"
-		<< "\"dWdy_o\" \\ \n";
-       for(int i =0 ;i<SolnBlk.W[0][0].ns ;i++){
- 	 Out_File <<"\"dWdy_c"<<SolnBlk.W[0][0].specdata[i].Speciesname()<<"\" \\ \n";
-       }
-       // dUdt
-       Out_File << "\"dUdt_rho\" \\ \n"
-		<< "\"dUdt_rhou\" \\ \n"
-		<< "\"dUdt_rhov\" \\ \n"
-		<< "\"dUdt_E\" \\ \n"
-		<< "\"dUdt_rhok\" \\ \n"
-		<< "\"dUdt_rhoo\" \\ \n";
-       for(int i =0 ;i<SolnBlk.W[0][0].ns ;i++){
- 	 Out_File <<"\"dUdt_rhoc"<<SolnBlk.W[0][0].specdata[i].Speciesname()<<"\" \\ \n";
-       }
+	        << "\"Prandtl\" \\ \n";
+       //Prandtl, Schmidt, Lewis
+       for(int i =0 ;i<SolnBlk.W[0][0].ns;i++){
+	 Out_File<<"\"Sc_"<<SolnBlk.W[0][0].specdata[i].Speciesname()<<"\" \\ \n"
+		 <<"\"Le_"<<SolnBlk.W[0][0].specdata[i].Speciesname()<<"\" \\ \n"; 
+       } 
        
+       //Residuals
+       Out_File << "\"dUdt_rho\" \\ \n"
+                << "\"dUdt_rhou\" \\ \n"
+                << "\"dUdt_rhov\" \\ \n"
+		<< "\"dUdt_e\" \\ \n"
+		<< "\"dUdt_rhok\" \\ \n"
+		<< "\"dUdt_rhoomega\" \\ \n";
+       //n species mass fractions names
+       for(int i =0 ;i<SolnBlk.W[0][0].ns ;i++){
+	 Out_File <<"\"dUdt_rhoc"<<SolnBlk.W[0][0].specdata[i].Speciesname()<<"\" \\ \n";
+       }
+                   
+//        //Limiters 
+//        for(int i =1 ;i<= SolnBlk.NumVar();i++){
+// 	    Out_File<<"\"phi_"<<i<<"\" \\ \n";
+//        }       
+//        //other stored cell-center data
+//        for(int i =0 ;i<SolnBlk.W[0][0].ns;i++){
+// 	    Out_File<<"\"gradc.x_"<<SolnBlk.W[0][0].specdata[i].Speciesname()<<"\" \\ \n"
+// 		  <<"\"gradc.y_"<<SolnBlk.W[0][0].specdata[i].Speciesname()<<"\" \\ \n"
+// 		  <<"\"Dif_coef_"<<SolnBlk.W[0][0].specdata[i].Speciesname()<<"\" \\ \n"; 
+//        }       
+//        //gradients
+//        Out_File<< "\"dx_rho\" \\ \n"
+// 	       << "\"dx_u\" \\ \n"
+// 	       << "\"dx_v\" \\ \n"
+// 	       << "\"dx_p\" \\ \n";
+//        //n species mass fractions names
+//        for(int i =0 ;i<SolnBlk.W[0][0].ns ;i++){
+// 	     Out_File <<"\"dx_c"<<SolnBlk.W[0][0].specdata[i].Speciesname()<<"\" \\ \n";
+//        }  
+//        Out_File<< "\"dx_q_x\" \n"  
+// 	       << "\"dx_q_y\" \n"  
+// 	       << "\"dx_Tau_xx\" \n"  //rr -axisymmetric
+// 	       << "\"dx_Tau_xy\" \n"  //rz
+// 	       << "\"dx_Tau_yy\" \n"  //zz
+// 	       << "\"dx_Tau_zz\" \n"; //thetatheta       
+//        Out_File<< "\"dy_rho\" \\ \n"
+// 	       << "\"dy_u\" \\ \n"
+// 	       << "\"dy_v\" \\ \n"
+// 	       << "\"dy_p\" \\ \n";
+//        //n species mass fractions names
+//        for(int i =0 ;i<SolnBlk.W[0][0].ns ;i++){
+//  	     Out_File <<"\"dy_c"<<SolnBlk.W[0][0].specdata[i].Speciesname()<<"\" \\ \n";
+//        }  
+//        Out_File<< "\"dy_q_x\" \n"  
+// 	       << "\"dy_q_y\" \n"   
+// 	       << "\"dy_Tau_xx\" \n"  //rr -axisymmetric
+// 	       << "\"dy_Tau_xy\" \n"  //rz
+// 	       << "\"dy_Tau_yy\" \n"  //zz
+// 	       << "\"dy_Tau_zz\" \n"; //thetatheta
 
        // Zone details
        Out_File<< "ZONE T =  \"Block Number = " << Block_Number
@@ -1160,38 +1169,40 @@ void Output_Cells_Tecplot(Chem2D_Quad_Block &SolnBlk,
 
     for ( j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu + SolnBlk.Nghost ; ++j ) {
        for ( i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu + SolnBlk.Nghost ; ++i ) {
-	   omega = SolnBlk.W[i][j].Sw(SolnBlk.W[i][j].React.reactset_flag,SolnBlk.Flow_Type);
-	   omega /= SolnBlk.W[i][j].rho;
-	   Out_File << " "  << SolnBlk.Grid.Cell[i][j].Xc
+           Out_File << " "  << SolnBlk.Grid.Cell[i][j].Xc
                     << SolnBlk.W[i][j];
-	   Out_File << " " << SolnBlk.U[i][j].rhov.x
-		    << " " << SolnBlk.U[i][j].rhov.y;
-	   Out_File.setf(ios::scientific);
+           Out_File.setf(ios::scientific);
 	   //Temperature
-	   Out_File << " " << SolnBlk.W[i][j].qflux<< " " <<SolnBlk.W[i][j].tau
+	   Out_File << " " << SolnBlk.W[i][j].qflux<< " " << SolnBlk.W[i][j].tau
+		    << " " << SolnBlk.W[i][j].theta<< " " << SolnBlk.W[i][j].lambda
 		    << " " << SolnBlk.W[i][j].T()
 		    << " " << SolnBlk.W[i][j].v.abs()/SolnBlk.W[i][j].a() 
 		    << " " << SolnBlk.W[i][j].Rtot()
 		    << " " << SolnBlk.W[i][j].mu()
 		    << " " << SolnBlk.W[i][j].kappa()
-		    << " " << SolnBlk.W[i][j].Prandtl()
-		    << " " << SolnBlk.W[i][j].H() 
-		    << " " << SolnBlk.W[i][j].h() 
-		    << " " << SolnBlk.W[i][j].hs()
-		    << " " << SolnBlk.W[i][j].E() 
-		    << " " << SolnBlk.W[i][j].e() 
-		    << " " << SolnBlk.W[i][j].es();
-	   for(int k=0 ;k<SolnBlk.W[0][0].ns ;k++){
-	     Out_File << " " << SolnBlk.W[i][j].spec[k].diffusion_coef;
+		    << " " << SolnBlk.W[i][j].Prandtl(); 
+	   //Prandtl, Schmidt, Lewis   
+	   for(int k =0 ;k<SolnBlk.W[0][0].ns ;k++){	  
+ 	       Out_File<<" "<<SolnBlk.W[i][j].Schmidt_No(k) 
+		       <<" "<<SolnBlk.W[i][j].Lewis(k);  
 	   }
-           Out_File.unsetf(ios::scientific);
-	   for(int k=0; k<omega.ns; k++){
-	     Out_File <<" "<<omega.rhospec[k].c;
-	   }
- 	   Out_File << SolnBlk.dWdx[i][j]
- 		    << SolnBlk.dWdy[i][j];
-	   Out_File << SolnBlk.dUdt[i][j][0];
+	   //Residuals
+	   Out_File << " " << SolnBlk.dUdt[i][j][0];
+	 
+//	   //limiters
+// 	   for(int k =1; k<=SolnBlk.NumVar(); k++){
+// 	     Out_File <<" "<<SolnBlk.phi[i][j][k];
+// 	   }
+// 	   //coef..
+// 	   for(int k =0 ;k<SolnBlk.W[0][0].ns ;k++){
+// 	     Out_File <<SolnBlk.W[i][j].spec[k].gradc<<" "
+// 		      <<SolnBlk.W[i][j].spec[k].diffusion_coef;
+// 	   }
+// 	   //gradients
+// 	   Out_File <<SolnBlk.dWdx[i][j]
+// 		    <<SolnBlk.dWdy[i][j];
 	   Out_File<< "\n";
+           Out_File.unsetf(ios::scientific);
        } /* endfor */
     } /* endfor */
     Out_File << setprecision(6);
@@ -1503,8 +1514,8 @@ void ICs(Chem2D_Quad_Block &SolnBlk,
 //     case IC_VISCOUS_COUETTE_PRESSURE_GRADIENT:  
       //Couette flow with pressure gradient
       // -635.00  -423.33  -211.67  0.00  211.67  423.33  635.00
-      //total pressure change
-      delta_pres = Input_Parameters.Pressure_Gradient; // 635.54; 
+//       //total pressure change
+//       delta_pres = Input_Parameters.Pressure_Gradient; // 635.54; 
     
       //grid spacing 
       dX.x = fabs(SolnBlk.Grid.Cell[SolnBlk.ICl][0].Xc.x - SolnBlk.Grid.Cell[SolnBlk.ICl-1][0].Xc.x);
@@ -1696,14 +1707,6 @@ void ICs(Chem2D_Quad_Block &SolnBlk,
       Wl = Wo[0]; 
       Wr = Wo[0]; 
  
-      Wl.v.x = 0.41010;	
-      Wr.v.x = 3.103; 
-      Wr.spec[0] = ZERO;       //CH4
-      Wr.spec[1] = 0.0000;     //O2
-      Wr.spec[2] = 0.1511;     //CO2
-      Wr.spec[3] = 0.1242;     //H2O 
-      Wr.rho = Wr.p/(Wr.Rtot()*2320); //2234
-
       //Set downstream products, flamespeeds, Temperatures,
       if(Wo[0].React.reactset_flag == CH4_1STEP){
 	//set to phi=1.0 values from CHEMKIN
@@ -1864,45 +1867,26 @@ void ICs(Chem2D_Quad_Block &SolnBlk,
 	Wr.v.x = Wl.rho*Wl.v.x/Wr.rho;
 
 
-	//
-	// CANTERA ICs: General form
-	//
       } else if (Wo[0].React.reactset_flag == CANTERA) {
+	//set to phi=1.0 values from CHEMKIN
+	Wl.v.x = 0.4101;	
+	Wr.v.x = 3.103; 
 
-// 	// get equilibrium composition
-// 	Wo[0].React.ct_equilibrium_HP<Chem2D_pState>( Wr );
-
-// 	// set laminar flame speed
-//  	Wl.v.x = Input_Parameters.flame_speed;
-
-// 	// set exit mass fractions
-//  	//for (int k=0; k<Input_Parameters.num_species; k++)
-// 	//  Wr.spec[k].c = Input_Parameters.mass_fractions_out[k];
-
-// 	// compute flame jump conditions for T and v
-// 	if ( FlameJumpLowMach_x<Chem2D_pState>( /* unburnt */Wl, 
-// 						/*  burnt  */Wr ) ) {
-// 	  cerr << "\nChem2DQuadSingleBlock.cc::ICs() - "
-// 	       << "Error computing 1D premixed flame jump conditions.\n";
-// 	  exit(-1);
-// 	} // endif - flame
-
-// 	// fix constant pressure
-// 	double T( Wr.T() );
-// 	Wr.p = Wl.p;
-// 	Wr.rho = Wr.p/(Wr.Rtot()*T);
-
-
+	//phi = 1.0
+	Wr.spec[0] = ZERO;       //CH4
+	Wr.spec[1] = 0.0000;     //O2
+	Wr.spec[2] = 0.1511;     //CO2
+	Wr.spec[3] = 0.1242;     //H2O 
+	Wr.rho = Wr.p/(Wr.Rtot()*2320); //2234
+	
       } else {
-	cout<<"\n No 1D_Premixed Flame Initial Conditions for "
-	    <<Wo[0].React.Reaction_system; 
-	exit(1);
+	cout<<"\n No 1D_Premixed Flame Initial Conditions for "<<Wo[0].React.Reaction_system; exit(1);
       }
      
       // Set Initial condtions on 1D grid
       for (int j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
 	for ( int i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
-	  if (SolnBlk.Grid.Cell[i][j].Xc.x <= ZERO){ //spatial relation, grid independent 
+	  if (SolnBlk.Grid.Cell[i][j].Xc.x <= 0.01){ //spatial relation, grid independent 
 	    SolnBlk.W[i][j] = Wl;  
 	  } else {
  	    SolnBlk.W[i][j] = Wr;	     
@@ -1924,11 +1908,6 @@ void ICs(Chem2D_Quad_Block &SolnBlk,
     case IC_CHEM_CORE_FLAME :           
 
 //       if(Wo[0].React.reactset_flag == CH4_2STEP || Wo[0].React.reactset_flag == CH4_1STEP){
-
-      //
-      // Hardcoded ICs: General form
-      //
-      if (Wo[0].React.reactset_flag != CANTERA) {
 	fuel_spacing = 0.002;      //m
 	fuel_velocity = 0.70;      //m/s  //0.70
 	fuel_temp_inlet = 298.0;   //K 
@@ -1963,38 +1942,6 @@ void ICs(Chem2D_Quad_Block &SolnBlk,
 	Wr.rho = Wr.p/(Wr.Rtot()*air_temp_inlet);
 	Wr.v.zero();
 
-      //
-      // Cantera ICs: General form
-      //
-      } else {
-	fuel_spacing = 0.002;      //m
-	fuel_velocity = 0.70;      //m/s  //0.70
-	fuel_temp_inlet = 298.0;   //K 
-	tube_thickness =  0.00038; //m delta	
-
-	air_spacing = 0.030;       //m   //0.025
-	air_velocity = 0.35;       //m/s  0.35
-	air_temp_inlet = 298.0;    //K
-	ignition_temp = 1300.0;    //K
-	
-	Wr = Wo[0];
-	Wl = Wo[0];
-	
-	//fuel 65% FUEL & 35% N2
-	for(int q=0; q < Wl.ns; q++) Wl.spec[q].c =ZERO;
-	Wl.spec[Wo[0].React.ct_get_species_index("CH4")] = 0.5149;
-	Wl.spec[Wo[0].React.ct_get_species_index("N2")]  = 0.4851;
-	Wl.rho = Wl.p/(Wl.Rtot()*fuel_temp_inlet);
-	Wl.v.zero();
-
-	//air 21% O2 & 79% N2
-	for(int q=0; q < Wr.ns; q++) Wr.spec[q] = ZERO;
-	Wr.spec[Wo[0].React.ct_get_species_index("O2")] = 0.232;
-	Wr.spec[Wo[0].React.ct_get_species_index("N2")] = 0.768;
-	Wr.rho = Wr.p/(Wr.Rtot()*air_temp_inlet);
-	Wr.v.zero();
-
-      }
 
 //       } else if(Wo[0].React.reactset_flag == H2O2_1STEP) {
 	
@@ -3239,8 +3186,7 @@ double CFL(Chem2D_Quad_Block &SolnBlk,
 	if (SolnBlk.W[i][j].React.reactset_flag != NO_REACTIONS){
 	  dt_chem = HALF/SolnBlk.W[i][j].dSwdU_max_diagonal(Input_Parameters.Preconditioning,
 							    SolnBlk.Flow_Type,
-							    delta_n,Input_Parameters.Solver_Type);
-	  dt_chem *= Input_Parameters.Source_Term_Multiplyer; // scale source term
+							    delta_n,Input_Parameters.Solver_Type); 
 	  SolnBlk.dt[i][j] = min(dt_chem, SolnBlk.dt[i][j]);	  
 	}
 	
@@ -6113,9 +6059,6 @@ int dUdt_Residual_Evaluation(Chem2D_Quad_Block &SolnBlk,
       Input_Parameters.i_Viscous_Flux_Evaluation == VISCOUS_RECONSTRUCTION_ARITHMETIC) {
     Viscous_Calculations(SolnBlk);
   }  
-  // radiation evaluation if using opticallyt htin approx
-  if ( Input_Parameters.Radiation == RADIATION_OPTICALLY_THIN )
-    Radiation_Source_Eval( SolnBlk, Input_Parameters );
   /********************************************************/
   
   /* Evaluate the time rate of change of the solution
@@ -6397,9 +6340,13 @@ int dUdt_Residual_Evaluation(Chem2D_Quad_Block &SolnBlk,
 	  SolnBlk.dUdt[i][j][0] += SolnBlk.W[i][j].Sg();
 	}   
 	
-	/* Include source terms associated with radiation */
-	SolnBlk.dUdt[i][j][0].E += SolnBlk.Srad[i][j];
-	
+	/* Include physical time derivative for dual time stepping */
+	if (Input_Parameters.Dual_Time_Stepping) {
+	  //cout << "Source[0] dual time" << endl;
+	  SolnBlk.dUdt[i][j][0] -= SolnBlk.W[i][j].S_dual_time_stepping(SolnBlk.U[i][j], SolnBlk.Ut[i][j], 
+									SolnBlk.Uold[i][j], 
+									dTime, Input_Parameters.first_step);
+	}  
 	/*****************************************/
 	/*****************************************/
 	
@@ -6796,9 +6743,7 @@ int dUdt_Multistage_Explicit(Chem2D_Quad_Block &SolnBlk,
         Input_Parameters.i_Viscous_Flux_Evaluation == VISCOUS_RECONSTRUCTION_ARITHMETIC) {
        Viscous_Calculations(SolnBlk);
     }
-    // radiation evaluation if using opticallyt htin approx
-    if ( Input_Parameters.Radiation == RADIATION_OPTICALLY_THIN )
-      Radiation_Source_Eval( SolnBlk, Input_Parameters );
+  
     /********************************************************/
     /********************************************************/
 
@@ -7127,11 +7072,6 @@ int dUdt_Multistage_Explicit(Chem2D_Quad_Block &SolnBlk,
 	      SolnBlk.dUdt[i][j][k_residual] += (Input_Parameters.CFL_Number*SolnBlk.dt[i][j])*
                                                 SolnBlk.W[i][j].Sg();
           } /* endif */
-
-	  /* Include source terms associated with radiation */
-	  SolnBlk.dUdt[i][j][k_residual].E += 
-	    (Input_Parameters.CFL_Number*SolnBlk.dt[i][j])*SolnBlk.Srad[i][j];
-
 
 	  /* Save west and east face boundary flux. */
 	  // USED for AMR 	
@@ -7758,6 +7698,26 @@ int Update_Solution_Multistage_Explicit(Chem2D_Quad_Block &SolnBlk,
   return (0);
   
 }
+/********************************************************
+ * Routine: Update_Dual_Solution_States                 *
+ *                                                      *
+ * This routine updates solution states of the given    *
+ * solution block at different times, required in the   *
+ * dual time stepping.                                  * 
+ *                                                      *
+ ********************************************************/
+int Update_Dual_Solution_States(Chem2D_Quad_Block &SolnBlk) {
+
+  for (int j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
+    for ( int i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
+      SolnBlk.Uold[i][j] = SolnBlk.Ut[i][j];  // Solution at time t(n-1)
+      SolnBlk.Ut[i][j] = SolnBlk.U[i][j];     // Solution at time t(n)
+    }
+  }
+
+  /* Solution successfully updated. */
+  return (0);
+}
 
 /**********************************************************************
  *   Viscous Calculations - Cell Centered                             *
@@ -7834,13 +7794,7 @@ void Viscous_Calculations(Chem2D_Quad_Block &SolnBlk) {
       /****************** Thermal Diffusion ****************************/
       // q -= rho * sum ( hs * Ds *gradcs)  
       SolnBlk.U[i][j].qflux -= SolnBlk.U[i][j].rho*SolnBlk.U[i][j].thermal_diffusion(Temperature);  
-//       for(int k=0; k<SolnBlk.U[i][j].ns; k++){ 
-//  	SolnBlk.U[i][j].qflux -= SolnBlk.U[i][j].rho*
-//  	  (SolnBlk.U[i][j].specdata[k].Enthalpy(Temperature) + SolnBlk.U[i][j].specdata[k].Heatofform()) * 
-//   	  (SolnBlk.U[i][j].rhospec[k].diffusion_coef/SolnBlk.U[i][j].rho)*
-//  	  (SolnBlk.U[i][j].rhospec[k].gradc/SolnBlk.U[i][j].rho);
-//        }
-
+      
       /**************** Turbulent Heat flux Vector *********************/
       /****************** Thermal Conduction ***************************
          q = - kappa * grad(T)                                         */
@@ -7912,57 +7866,3 @@ extern void Low_ReynoldsNumber_Formulation(Chem2D_Quad_Block &SolnBlk,
  
 
 //Xinfeng: NEEDS WORK ON THIS LOW REYNOLDS NUMBER FORMULATIONS
-
-
-/**********************************************************************
- * Radiation_Source_Eval                                              *
- *                                                                    *
- * Optically thin radiation source term evaluation.  The radiation    *
- * source term is the divergence of the radiative flux vector.        *
- * Here it is evaluated using the optically thin approximation.       *
- *                                                                    *
- **********************************************************************/
-void Radiation_Source_Eval( Chem2D_Quad_Block &SolnBlk,
-			    Chem2D_Input_Parameters &Input_Parameters ) {
-
-  //
-  // declares
-  //
-  double Temperature, Pressure;
-  double xCO, xH2O, xCO2, xO2;
-  static const double fsoot = ZERO;  // no soot for now
-
-  // if SNBCK not allocated, allocate/setup a new object
-  if (Chem2D_Quad_Block::PlanckMean_data==NULL) {
-    Chem2D_Quad_Block::PlanckMean_data = new PlanckMean(Input_Parameters.CFFC_Path);
-  } // endif
-
-
-  //
-  // loop over the block
-  //
-  for (int j = SolnBlk.JCl-1; j <= SolnBlk.JCu+1; j++) {
-    for (int i = SolnBlk.ICl-1; i <= SolnBlk.ICu+1; i++) {
-
-      // get the temperature and pressure at this point
-      Temperature = SolnBlk.W[i][j].T();
-      Pressure = SolnBlk.W[i][j].p;
-
-      // first, get radiating species concentrations
-      SolnBlk.W[i][j].MoleFracOfRadSpec( xCO,  xH2O, xCO2, xO2 );
-
-      // compute the source term using optically thin approx
-      // using the SNBCK model
-      SolnBlk.Srad[i][j] = 
-	Chem2D_Quad_Block::PlanckMean_data->RadSourceOptThin( Pressure/PRESSURE_STDATM, //[atm]
-							      Temperature,              //[K]
-							      xCO,
-							      xH2O,
-							      xCO2,
-							      xO2,
-							      fsoot );
-
-    } // endfor i
-  } // endfor j
-
-} // end Radiation_Source_Eval()

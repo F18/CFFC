@@ -67,17 +67,22 @@ int Open_Time_Accurate_File(ofstream &Time_Accurate_File,
 	//	cout<<"\"c"<<Soln.specdata[i].Speciesname()<<"\" \\ \n";
       }   
       //Viscous Terms 
-      Time_Accurate_File << "\"T\" \\ \n"
-			 << "\"rho*H\"  \\ \n"  
-			 <<"\"h\" \\ \n"
-			 <<"\"h_s\" \\ \n"
-			 <<"\"rho*E\" \\ \n"
-			 << "\"e\" \\  \n" 
-			 << "\"e_s\" \\ \n";
-       // reaction rates
-       for(int i =0 ;i<Soln.ns ;i++){
- 	 Time_Accurate_File <<"\"omega_c"<<Soln.specdata[i].Speciesname()<<"\" \\ \n";
-       }
+      Time_Accurate_File << "\"qflux_x\" \\ \n"  
+			 << "\"qflux_y\" \\ \n"   
+			 << "\"Tau_xx\" \\ \n"  //rr -axisymmetric
+			 << "\"Tau_xy\" \\ \n"  //rz
+			 << "\"Tau_yy\" \\ \n"  //zz
+			 << "\"Tau_zz\" \\ \n" //thetatheta 
+			 << "\"theta_x\" \\ \n"  
+			 << "\"theta_y\" \\ \n"   
+			 << "\"lambda_xx\" \\ \n"   //rr -axisymmetric
+			 << "\"lambda_xy\" \\ \n"   //rz
+			 << "\"lambda_yy\" \\ \n"   //zz
+			 << "\"lambda_zz\" \\ \n"	
+			 << "\"T\" \\ \n"
+			 << "\"e\" \\ \n"
+			 << "\"es\" \\ \n"
+			 << "\"e_ref\" \\ \n"; 
 //       for(int i=0;i<Soln.React.num_reactions; i++){
 // 	Time_Accurate_File <<"\"kf"<<i<<"\" \\ \n";
 // 	Time_Accurate_File <<"\"kb"<<i<<"\" \\ \n";
@@ -111,21 +116,13 @@ void Output_to_Time_Accurate_File(ostream &Time_Accurate_File,
 			       const double &Time,
 			       const Chem2D_pState &Soln){
   double Temp=Soln.T();
-  Chem2D_cState omega = Soln.Sw(Soln.React.reactset_flag,0);
 
   Time_Accurate_File << setprecision(6);
   Time_Accurate_File << Time << " " <<Soln 
 		     <<" "<<Temp
-		     << " " << Soln.H() 
-		     << " " << Soln.h() 
-		     << " " << Soln.hs()
-		     << " " << Soln.E() 
-		     << " " << Soln.e()
-		     << " " << Soln.es();
-  for(int k=0; k<omega.ns; k++){
-    Time_Accurate_File <<" "<<omega.rhospec[k].c;
-  }
-
+		     <<" "<<Soln.e()
+		     <<" "<<Soln.es()
+                     <<" "<<Soln.eref();
 //   for(int i=0;i<Soln.React.num_reactions; i++){
 //     double kf = Soln.React.reactions[i].kf(Temp);
 //     Time_Accurate_File <<" "<<kf
@@ -920,44 +917,5 @@ int Output_Quasi3D_Tecplot(Chem2D_Quad_Block *Soln_ptr,
 
   // Writing of output data files complete.  Return zero value.
   return 0;
-
-}
-
-
-/********************************************************
- * Routine: Set_Equilibrium_State                       *
- *                                                      *
- * This routine loops over the solution block and sets  *
- * the equilibrium mass fractions holding T and P fixed.*
- * This is only for the CANTERA reaction case right now.*
- *                                                      *
- ********************************************************/
-int Set_Equilibrium_State(Chem2D_Quad_Block &SolnBlk) {
-
-  //
-  // Loop over the grid
-  //
-  for ( int j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
-    for ( int i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
-      SolnBlk.W[i][j].React.ct_equilibrium_TP<Chem2D_pState>( SolnBlk.W[i][j] );
-      SolnBlk.U[i][j] = SolnBlk.W[i][j].U();
-    } // endfor
-  } // endfor
-  
-  //
-  // Loop over the east and west bounrdary ref states
-  //
-  for ( int j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {
-    SolnBlk.WoW[j].React.ct_equilibrium_TP<Chem2D_pState>( SolnBlk.WoW[j] );
-    SolnBlk.WoE[j].React.ct_equilibrium_TP<Chem2D_pState>( SolnBlk.WoE[j] );
-  } // endfor
-  
-  //
-  // Loop over the north and south bounrdary ref states
-  //
-  for ( int i = SolnBlk.ICl-SolnBlk.Nghost ; i <= SolnBlk.ICu+SolnBlk.Nghost ; ++i ) {
-    SolnBlk.WoS[i].React.ct_equilibrium_TP<Chem2D_pState>( SolnBlk.WoS[i] );
-    SolnBlk.WoN[i].React.ct_equilibrium_TP<Chem2D_pState>( SolnBlk.WoN[i] );
-  } // endfor
 
 }

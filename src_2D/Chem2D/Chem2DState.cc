@@ -26,8 +26,6 @@ double Chem2D_pState::low_temp_range = 200.0;
 double Chem2D_pState::high_temp_range = 300.0;
 double Chem2D_pState::Mref=0.5;
 double* Chem2D_pState::Schmidt=NULL;
-double Chem2D_pState::gravity_z=-9.81;
-double* Chem2D_pState::spec_tmp=NULL;
 
 int Chem2D_cState::ns = 1; 
 int Chem2D_cState::NUM_VAR_CHEM2D = NUM_CHEM2D_VAR_SANS_SPECIES;   
@@ -36,8 +34,6 @@ double Chem2D_cState::low_temp_range = 200.0;
 double Chem2D_cState::high_temp_range = 300.0;
 double Chem2D_cState::Mref=0.5;
 double* Chem2D_cState::Schmidt=NULL;
-double Chem2D_cState::gravity_z=-9.81;
-double* Chem2D_cState::spec_tmp=NULL;
 
 //k-omega Turbulence model coefficients
 double Chem2D_pState::alpha = FIVE/NINE; //13.0/15.0; 
@@ -106,7 +102,6 @@ void Chem2D_pState::set_species_data(const int &n,const string *S,const char *PA
   Deallocate_static();
   specdata = new NASARP1311data[ns]; 
   Schmidt = new double[ns];
-  spec_tmp = new double[ns];
   for(int i=0; i<ns; i++){
     //overwrite default data  
     specdata[i].Getdata(S[i],PATH,trans_data);  
@@ -144,7 +139,6 @@ void Chem2D_cState::set_species_data(const int &n, const string *S, const char *
   Deallocate_static();
   specdata = new NASARP1311data[ns];
   Schmidt = new double[ns];
-  spec_tmp = new double[ns];
   for(int i=0; i<ns; i++){
     //overwrite default data  
     specdata[i].Getdata(S[i],PATH,trans_data);
@@ -401,21 +395,30 @@ double Chem2D_pState::Hs(void) const{
 double Chem2D_pState::mu() const{
   double sum =0.0; 
   double Temp = T();
+#ifdef STATIC_NUMBER_OF_SPECIES
+  double  vis[STATIC_NUMBER_OF_SPECIES];
+#else
+  double  *vis = new double[ns];
+#endif
 
   for(int i=0; i<ns; i++){
     double phi = 0.0;
     for (int j=0; j<ns; j++){
       if(i == 0){
-	spec_tmp[j] = specdata[j].Viscosity(Temp);
+	vis[j] = specdata[j].Viscosity(Temp);
       }
       phi += (spec[j].c / specdata[j].Mol_mass())*
-	pow(ONE + sqrt(spec_tmp[i]/spec_tmp[j])*
+	pow(ONE + sqrt(vis[i]/vis[j])*
 	    pow(specdata[j].Mol_mass()/specdata[i].Mol_mass(),0.25),2.0)/
 	sqrt(EIGHT*(ONE +specdata[i].Mol_mass()/specdata[j].Mol_mass()));
     }
-    sum += (spec[i].c * spec_tmp[i]) / 
+    sum += (spec[i].c * vis[i]) / 
       (specdata[i].Mol_mass() * phi);
   }  
+
+#ifndef STATIC_NUMBER_OF_SPECIES  
+  delete[] vis;
+#endif
 
   return sum;
 
@@ -431,15 +434,12 @@ double Chem2D_pState::dmudT(void) const{
   for(int i=0; i<ns; i++){
     double phi = 0.0;
     for (int j=0; j<ns; j++){
-      if(i == 0){
-	spec_tmp[j] = specdata[j].dViscositydT(Temp);
-      }
       phi += (spec[j].c / specdata[j].Mol_mass())*
-	pow(1.0 + sqrt(spec_tmp[i]/spec_tmp[j])*
+	pow(1.0 + sqrt(specdata[i].dViscositydT(Temp)/specdata[j].dViscositydT(Temp))*
 	    pow(specdata[j].Mol_mass()/specdata[i].Mol_mass(),0.25),2.0)/
        sqrt(8.0*(1.0 +specdata[i].Mol_mass()/specdata[j].Mol_mass()));
     }
-    sum += (spec[i].c * spec_tmp[i] ) / 
+    sum += (spec[i].c * specdata[i].dViscositydT(Temp) ) / 
       (specdata[i].Mol_mass() * phi);
   }  
   return sum;
@@ -449,41 +449,30 @@ double Chem2D_pState::dmudT(void) const{
   Thermal Conductivity - Mason & Saxena (1958)  W/(m*K)
 ****************************************************/
 double Chem2D_pState::kappa(void) const{
-//   double sum = 0.0;  
-//   double Temp = T();
-
-//   for(int i=0; i<ns; i++){
-//     double phi = 0.0;
-//     for (int j=0; j<ns; j++){
-//       if(i == 0){
-// 	spec_tmp[j] = specdata[j].Viscosity(Temp);
-//       }
-//       if(i != j){
-// 	phi += (spec[j].c / specdata[j].Mol_mass())*
-// 	  pow(ONE + sqrt(spec_tmp[i]/spec_tmp[j])*
-// 	      pow(specdata[j].Mol_mass()/specdata[i].Mol_mass(),0.25),2.0)/
-// 	  sqrt(EIGHT*(ONE +specdata[i].Mol_mass()/specdata[j].Mol_mass()));
-//       }
-//     }
- 
-//     sum += (specdata[i].ThermalConduct(Temp)*spec[i].c) / 
-//       (spec[i].c + (specdata[i].Mol_mass()) * 1.065 * phi);
-//   }  
-
-
-  double sum1 = 0.0;  
-  double sum2 = 0.0;  
+  double sum = 0.0;  
   double Temp = T();
-  double MW = Mass();
-  double lambda, chi;
+#ifdef STATIC_NUMBER_OF_SPECIES
+  double  vis[STATIC_NUMBER_OF_SPECIES];
+#else
+  double  *vis = new double[ns];
+#endif
 
   for(int i=0; i<ns; i++){
-
-    lambda = specdata[i].ThermalConduct(Temp);
-    chi = spec[i].c * MW / specdata[i].Mol_mass();
+    double phi = 0.0;
+    for (int j=0; j<ns; j++){
+      if(i == 0){
+	vis[j] = specdata[j].Viscosity(Temp);
+      }
+      if(i != j){
+	phi += (spec[j].c / specdata[j].Mol_mass())*
+	  pow(ONE + sqrt(vis[i]/vis[j])*
+	      pow(specdata[j].Mol_mass()/specdata[i].Mol_mass(),0.25),2.0)/
+	  sqrt(EIGHT*(ONE +specdata[i].Mol_mass()/specdata[j].Mol_mass()));
+      }
+    }
  
-    sum1 += chi / lambda;
-    sum2 += chi * lambda;
+    sum += (specdata[i].ThermalConduct(Temp)*spec[i].c) / 
+      (spec[i].c + (specdata[i].Mol_mass()) * 1.065 * phi);
   }  
 
   
@@ -494,8 +483,11 @@ double Chem2D_pState::kappa(void) const{
 //     two += spec[i].c/specdata[i].ThermalConduct(Temp,p);
 //   }
 //   sum = HALF*(one + ONE/two);
+#ifndef STATIC_NUMBER_OF_SPECIES
+  delete[] vis;
+#endif
 
-  return HALF * (sum2 + 1.0 / sum1);
+  return sum;
 
 }
 
@@ -547,91 +539,52 @@ double Chem2D_pState::gamma_guess(void) const{
    enthalpy
 ***************************************************/
 double Chem2D_pState::T(double &h_s) const{
-
-  // declares
-  double RTOT(Rtot());
-
-  // set iteration parameters
-  static const int Nmax = 20;
-
-  // determine limits
-#ifdef TLOWERBOUNDS
-  double Tmin(TLOWERBOUNDS);
-#else
-  double Tmin(low_temp_range);
-#endif
-  double Tmax(high_temp_range);
-  //double fmin(hs(Tmin) - h_s);
-  //double fmax(hs(Tmax) - h_s);
-
-
-  //------------------------------------------------
-  // Initial Guess
-  //------------------------------------------------
+  double T = ZERO;
+  //--------- Initial Guess ------------------------------//
   //using a polytropic gas assumption with gamma@200;
-  double Tguess( (h_s/Rtot())*(ONE/(ONE/(gamma_guess() - ONE) +ONE)) );
-
+  double Tguess = (h_s/Rtot())*(ONE/(ONE/(gamma_guess() - ONE) +ONE));
+  //--------- newtons method to get T --------------------//
+  int numit =0;
+  double Tmin = low_temp_range;
+  double Tmax = high_temp_range;
   //check for start value
-  double Tn;
-  if (Tguess < Tmin )
-    Tn=Tmin;
-  else if (Tguess > Tmax)
-    Tn=Tmax;
-  else
-    Tn=Tguess;
-
-  // compute function values
-  double fn( hs(Tn) - h_s );
-  double dfn( hprime(Tn) );
-  double dTn( fabs(Tmax - Tmin) );
-  double dT0( dTn );
-
-  // No need to orient search such that f(Tmin)<0,
-  // already oriented.
-
-
-  //------------------------------------------------
-  // Newton-Raphson iteration
-  //------------------------------------------------
-  int i;
-  for ( i=1; i<=Nmax; i++){
-
-    // use bisection if Newton out of range or not decreasing 
-    // fast enough
-    if ( (((Tn-Tmax)*dfn-fn)*((Tn-Tmin)*dfn-fn) >= ZERO) || 
-	 (fabs(TWO*fn) > fabs(dT0*dfn)) ) {
-      dT0 = dTn;
-      dTn = HALF*(Tmax-Tmin);
-      Tn = Tmin + dTn;
-
-    // Newton acceptable 
-    } else {
-      dT0 = dTn;
-      dTn = fn/dfn;
-      Tn -= dTn;
-    }
-
-    // evaluate new guess
-    fn = hs(Tn) - h_s;  
-    dfn = hprime(Tn); 
-
-    // Convergence test
-    if ( fabs(dTn)<CONV_TOLERANCE || fabs(fn)<CONV_TOLERANCE ) break;
-
-    // change bisection bracket
-    if ( fn < ZERO)  Tmin=Tn;
-    else Tmax = Tn;
-
-  } // end Newton-Raphson
-
-
-  if (i>Nmax){
-    cout<<"\nTemperature didn't converge in Chem2D_pState::T(double &h_s)";
-    cout<<" with polytopic Tguess "<<Tguess<<" using "<<Tn;
+  if(Tguess > Tmin && Tguess < Tmax){
+    T=Tguess;
+  } else { 
+   T=Tmin;
   }
 
-  //return value
-  return Tn;
+  double fa = hs(Tmin) - h_s;
+  double fn = hs(T) - h_s; 
+  double dfn = hprime(T);
+  
+  while( fabs(Tmax-Tmin) > CONV_TOLERANCE && fabs(fn) 
+	 > CONV_TOLERANCE && numit<20 && T >= low_temp_range){  
+    if(T >= Tmin && T <= Tmax){
+      T = T - fn/dfn;
+      if(T >= Tmax) T = HALF*(Tmax + Tmin);	
+      //Bisection
+    } else {
+      T = HALF*(Tmax + Tmin);
+    } 
+    fn = hs(T) - h_s;  
+    dfn = hprime(T); 
+    //change bisection range
+    if ( fa*fn <=ZERO){
+      Tmax = T;
+    } else {
+      Tmin = T;
+      fa = fn;
+    }
+    numit++;
+  }
+  if (numit>=19 || T <= low_temp_range){
+    T = max(Tguess,low_temp_range); 
+    cout<<"\nTemperature didn't converge in Chem2D_cState::T(void)";
+    cout<<" with polytopic Tguess "<<Tguess<<", or lower than Tmin "
+	<<low_temp_range<<" using "<<T;
+  }
+  return T;
 }
     
 /****************************************************
@@ -665,7 +618,6 @@ Vector2D Chem2D_pState::thermal_diffusion(void) const{
   Vector2D sum;
   sum.zero();
   double Temp = T();
-
   //problems with Species overloaded operators
   for(int i=0; i<ns; i++){ 
     sum  +=  (specdata[i].Enthalpy(Temp) + specdata[i].Heatofform())
@@ -673,42 +625,6 @@ Vector2D Chem2D_pState::thermal_diffusion(void) const{
   }
   return sum;
 }
-
-
-/******************************************************
- Depending on the reacting mixture type, determine the 
- molar fractions of certain species important to 
- the computat of radiation heat transfer.
-*******************************************************/
-void Chem2D_pState::MoleFracOfRadSpec( double &xCO,  double &xH2O, 
-				       double &xCO2, double &xO2 ) const {
-
-  // mixture molar mass
-  double M_mix = Mass(); // kg/mol
-
-  //
-  // the species exists, compute its mole fraction
-  //
-  xCO = ZERO;  xH2O = ZERO;  xCO2 = ZERO;  xO2 = ZERO;
-
-  //CO
-  if (React.iCO > -1) 
-    xCO = spec[React.iCO].c*M_mix/(specdata[React.iCO].Mol_mass());
-  
-  // H2O
-  if (React.iH2O > -1) 
-    xH2O = spec[React.iH2O].c*M_mix/(specdata[React.iH2O].Mol_mass());
-
-  //CO2
-  if (React.iCO2 > -1) 
-    xCO2 = spec[React.iCO2].c*M_mix/(specdata[React.iCO2].Mol_mass());
-
-  //CO
-  if (React.iO2 > -1) 
-    xO2 = spec[React.iO2].c*M_mix/(specdata[React.iO2].Mol_mass());
-
-}
-
 
 /*******************************************************************
  *************** INVISCID FLUXES ***********************************
@@ -2108,7 +2024,7 @@ Chem2D_cState Chem2D_pState::Sw(int &REACT_SET_FLAG, const int Flow_Type) const 
   //Adds concentration rate of change for species 1->N
   if( REACT_SET_FLAG != NO_REACTIONS){
     //bool test = negative_speccheck();            //FOR TESTING 
-    React.omega<Chem2D_pState,Chem2D_cState>(NEW,*this);  
+    React.omega<Chem2D_pState,Chem2D_cState>(NEW,*this,Flow_Type );  
   }
      
   return NEW;
@@ -2117,7 +2033,7 @@ Chem2D_cState Chem2D_pState::Sw(int &REACT_SET_FLAG, const int Flow_Type) const 
 
 /************* Chemical Source Term Jacobian ****************************/
 void Chem2D_pState::dSwdU(DenseMatrix &dSwdU, const int &Flow_Type,const int &solver_type) const {
-  React.dSwdU<Chem2D_pState,Chem2D_cState>(dSwdU,*this,false, solver_type);
+  React.dSwdU<Chem2D_pState,Chem2D_cState>(dSwdU,*this,false, Flow_Type,solver_type);
 }
 
 void Chem2D_pState::dSwdU_FD(DenseMatrix &dSwdU, const int Flow_Type) const{
@@ -2159,7 +2075,7 @@ double Chem2D_pState::dSwdU_max_diagonal(const int &Preconditioned,
 
   double max_diagonal =ONE;
   DenseMatrix dSwdU(NUM_VAR_CHEM2D-1,NUM_VAR_CHEM2D-1,ZERO);
-  React.dSwdU<Chem2D_pState,Chem2D_cState>(dSwdU,*this,true,solver_type);
+  React.dSwdU<Chem2D_pState,Chem2D_cState>(dSwdU,*this,true,flow_type_flag,solver_type);
 
 //   if(Preconditioned){
 //     DenseMatrix Pinv(NUM_VAR_CHEM2D-1,NUM_VAR_CHEM2D-1);
@@ -2382,90 +2298,57 @@ double Chem2D_cState::gamma_guess(void) const{
   in the header.
 **********************************************************************/
 double Chem2D_cState::T(void) const{
-
-  // declares
-  double RTOT( Rtot() );  
-  double A( (E - HALF*rhov*rhov/rho -rhok)/rho );
-
-  // set iteration parameters
-  static const int Nmax = 20;
-
-  // determine limits
-#ifdef TLOWERBOUNDS
-  double Tmin(TLOWERBOUNDS);
-#else
-  double Tmin(low_temp_range);
-#endif
-  double Tmax(high_temp_range);
-  //double fmin( h(Tmin) - Tmin*RTOT - A );
-  //double fmax( h(Tmax) - Tmax*RTOT - A );
-
-  //------------------------------------------------
-  // Initial Guess
-  //------------------------------------------------
+  double T = ZERO;
+  double RTOT = Rtot();  
+  //--------- Initial Guess ------------------------------//
   //using a polytropic gas assumption with gamma@200;
-  double Tguess( (gamma_guess() - ONE)*(E - HALF*rhov.sqr()/rho-rhok)/(rho*RTOT) );
+  double Tguess = (gamma_guess() - ONE)*(E - HALF*rhov.sqr()/rho-rhok)/(rho*RTOT);
+  //--------- global newtons method to get T ---------------//
+  double A = (E - HALF*rhov*rhov/rho -rhok)/rho;
+  //Note that there is k (turbulent kinetic energy) in above both variables 
+  //Need to set a flag for the choice of laminar and turbulent flow 
+  int numit =0;
+  double Tmin = low_temp_range;
+  double Tmax = high_temp_range;
 
   //check for start value
-  double Tn;
-  if (Tguess < Tmin )
-    Tn=Tmin;
-  else if (Tguess > Tmax)
-    Tn=Tmax;
-  else
-    Tn=Tguess;
-
-  // compute function values
-  double fn( h(Tn) - Tn*RTOT - A );
-  double dfn( hprime(Tn) - RTOT );
-  double dTn( fabs(Tmax - Tmin) );
-  double dT0( dTn );
-
-  // No need to orient search such that f(Tmin)<0,
-  // already oriented.
-
+  if(Tguess > Tmin && Tguess < Tmax){
+    T=Tguess;
+  } else {
+    T=Tmin;
+  }
   
-  //------------------------------------------------
-  // Newton-Raphson iteration
-  //------------------------------------------------
-  int i;
-  for ( i=1; i<=Nmax; i++){
-
-    // use bisection if Newton out of range or not decreasing 
-    // fast enough
-    if ( (((Tn-Tmax)*dfn-fn)*((Tn-Tmin)*dfn-fn) >= ZERO) || 
-	 (fabs(TWO*fn) > fabs(dT0*dfn)) ) {
-      dT0 = dTn;
-      dTn = HALF*(Tmax-Tmin);
-      Tn = Tmin + dTn;
-
-    // Newton acceptable 
+  double fa = h(Tmin) - Tmin*RTOT - A;
+  double fn = h(T) - T*RTOT - A;
+  double dfn = hprime(T) - RTOT;
+  while( fabs(Tmax-Tmin) > CONV_TOLERANCE && fabs(fn) > CONV_TOLERANCE && numit<20 && T >= low_temp_range){    
+    // Newton 
+    if(T >= Tmin && T <= Tmax){
+      T = T - fn/dfn;
+      if(T >= Tmax) T = HALF*(Tmax + Tmin);	
+      //Bisection
     } else {
-      dT0 = dTn;
-      dTn = fn/dfn;
-      Tn -= dTn;
+      T = HALF*(Tmax + Tmin);
+    } 
+    //evaluate function and derivative
+    fn = h(T) - T*RTOT - A;
+    dfn = hprime(T) - RTOT;  
+    //change bisection range
+    if ( fa*fn <=ZERO){
+      Tmax = T;
+    } else {
+      Tmin = T;
+      fa = fn;
     }
-
-    // evaluate new guess
-    fn = h(Tn) - Tn*RTOT - A;
-    dfn = hprime(Tn) - RTOT;
-
-    // Convergence test
-    if ( fabs(dTn)<CONV_TOLERANCE || fabs(fn)<CONV_TOLERANCE ) break;
-
-    // change bisection bracket
-    if ( fn < ZERO)  Tmin=Tn;
-    else Tmax = Tn;
-
-  } // end Newton-Raphson
-
-  if (i>Nmax){
+    numit++;
+  }  
+  if (numit>=19 || T <= low_temp_range){
+    T = max(Tguess,low_temp_range); 	
     cout<<"\nTemperature didn't converge in Chem2D_cState::T(void)";
-    cout<<" with polytopic Tguess "<<Tguess<<" using "<<Tn;
+    cout<<" with polytopic Tguess "<<Tguess<<", or lower than Tmin "<<low_temp_range<<" using "<<T;
   }
 
-  // return value
-  return Tn;
+  return T;
 } 
 
 
@@ -2517,15 +2400,12 @@ double Chem2D_cState::mu(void) const{
   for(int i=0; i<ns; i++){
     double phi = 0.0;
     for (int j=0; j<ns; j++){
-      if(i == 0){
-	spec_tmp[j] = specdata[j].Viscosity(Temp);
-      }
       phi += ((rhospec[j].c/rho) / specdata[j].Mol_mass())*
-	pow(1.0 + sqrt(spec_tmp[i]/spec_tmp[j])*
+	pow(1.0 + sqrt(specdata[i].Viscosity(Temp)/specdata[j].Viscosity(Temp))*
 	    pow(specdata[j].Mol_mass()/specdata[i].Mol_mass(),0.25),2.0)/
        sqrt(8.0*(1.0 +specdata[i].Mol_mass()/specdata[j].Mol_mass()));
     }
-    sum += ((rhospec[i].c/rho)* spec_tmp[i] ) / 
+    sum += ((rhospec[i].c/rho)* specdata[i].Viscosity(Temp) ) / 
       (specdata[i].Mol_mass() * phi);
   }  
   
@@ -2539,15 +2419,12 @@ double Chem2D_cState::dmudT(void) const{
   for(int i=0; i<ns; i++){
     double phi = 0.0;
     for (int j=0; j<ns; j++){
-      if(i == 0){
-	spec_tmp[j] = specdata[j].dViscositydT(Temp);
-      }
       phi += (rhospec[j].c/rho / specdata[j].Mol_mass())*
-	pow(1.0 + sqrt(spec_tmp[i]/spec_tmp[j])*
+	pow(1.0 + sqrt(specdata[i].dViscositydT(Temp)/specdata[j].dViscositydT(Temp))*
 	    pow(specdata[j].Mol_mass()/specdata[i].Mol_mass(),0.25),2.0)/
        sqrt(8.0*(1.0 +specdata[i].Mol_mass()/specdata[j].Mol_mass()));
     }
-    sum += (rhospec[i].c/rho * spec_tmp[i] ) / 
+    sum += (rhospec[i].c/rho * specdata[i].dViscositydT(Temp) ) / 
       (specdata[i].Mol_mass() * phi);
   }  
   return sum;
@@ -3048,7 +2925,6 @@ Chem2D_pState BC_1DFlame_Inflow(const Chem2D_pState &Wi,
   Wnew.v.x = Woutlet.rho*Woutlet.v.x/Wo.rho;
 
   if(Wnew.v.x  < 0.1 || Wnew.v.x > (Wo.v.x + 0.5)){
-    cout << "\nAdjusting Inflow\n";
     Wnew.v.x = Wo.v.x;
   }
    
@@ -3073,7 +2949,6 @@ Chem2D_pState BC_1DFlame_Outflow(const Chem2D_pState &Wi,       //ICu
   //and Wo.p == Winput.p (constant pressure initial condition)
   double sum = Wi.rho*Wi.v.x*(Wi.v.x - Winlet.v.x);
   if( sum < ZERO){
-    cout << "\nAdjusting Outflow\n";
     Wnew.p = Wo.p;
   } else {
     //no relaxation
@@ -4469,7 +4344,7 @@ Chem2D_cState Viscous_Flux_n(Chem2D_pState &W,
   U.qflux = - W.kappa()*grad_T;
   //Thermal diffusion, q -= rho * sum ( hs * Ds *gradcs)
   U.qflux -= U.rho*U.thermal_diffusion(Temperature);  
-
+  
   //Turbulent heat flux
   //Thermal conduction, q = - kappa * grad(T)
   if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA ||

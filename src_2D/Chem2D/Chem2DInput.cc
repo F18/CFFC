@@ -70,7 +70,6 @@ void Set_Default_Input_Parameters(Chem2D_Input_Parameters &IP) {
     IP.N_Stage = 1;
     IP.CFL_Number = 0.5;
     IP.Time_Max = ZERO;
-    IP.Source_Term_Multiplyer = 1.0;
     
     /* Dual time stepping */
     IP.Physical_CFL_Number = 0.9;
@@ -167,11 +166,6 @@ void Set_Default_Input_Parameters(Chem2D_Input_Parameters &IP) {
     IP.ct_mech_name = "none";
     IP.ct_mech_file = "none";
 
-    // reaction parameters
-    IP.equivalence_ratio = 1.0;
-    string_ptr = "CH4";
-    strcpy(IP.Fuel_Species, string_ptr);
-
     /***** END CHEM2D SPECFIC *****************/
     /******************************************/
     //BC
@@ -187,18 +181,10 @@ void Set_Default_Input_Parameters(Chem2D_Input_Parameters &IP) {
     string_ptr = "Planar";
     strcpy(IP.Flow_Geometry_Type, string_ptr);
     IP.Axisymmetric = 0;
-    
-    // Gravity
     IP.Gravity = 0;  //default sans gravity
-    IP.gravity_z = -9.81;  // [m/s] gravitational accel on earh
-    IP.Uo.set_gravity(IP.gravity_z);
-    IP.Wo.set_gravity(IP.gravity_z);
 
     IP.BluffBody_Data_Usage = 0; 
     IP.Wall_Boundary_Treatments = 0; 
-
-    // flame speed
-    IP.flame_speed = 0.4101; // [m/s]; methane @ 1 atm, stoich
 
     // Turbulence parameters:
     string_ptr = "Direct_Integration";
@@ -222,12 +208,6 @@ void Set_Default_Input_Parameters(Chem2D_Input_Parameters &IP) {
 				   IP.yplus_sublayer,
 				   IP.yplus_buffer_layer,
 				   IP.yplus_outer_layer);
-
-    // radiation parameters
-    string_ptr = "Chem2D_Rte.in";
-    strcpy(IP.Rte_Input_File_Name, string_ptr);
-    IP.Radiation = OFF;
-    IP.Max_Number_Sequential_Solves = 1;
 
     /* Grid Parameters */
     string_ptr = "Square";
@@ -364,7 +344,6 @@ void Set_Default_Input_Parameters(Chem2D_Input_Parameters &IP) {
     IP.Freeze_Limiter = 0;
    
     IP.i_Residual_Variable = 1; //density
-    IP.Number_of_Residual_Norms = 4; // density, (u,v)-momentum, energy
 
     // Limiter_switch
     IP.Freeze_Limiter_Residual_Level = 1e-4;
@@ -407,9 +386,6 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
                           1, 
                           MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(&(IP.CFL_Number), 
-                          1, 
-                          MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.Source_Term_Multiplyer), 
                           1, 
                           MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&(IP.Time_Max), 
@@ -522,16 +498,6 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(IP.CFFC_Path, 
 			  INPUT_PARAMETER_LENGTH_CHEM2D, 
 			  MPI::CHAR, 0);
-    // Radiation parameters:
-    MPI::COMM_WORLD.Bcast(IP.Rte_Input_File_Name, 
-                          INPUT_PARAMETER_LENGTH_CHEM2D, 
-                          MPI::CHAR, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.Radiation), 
-                          1, 
-                          MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.Max_Number_Sequential_Solves), 
-                          1, 
-                          MPI::INT, 0);
     //reaction name
     MPI::COMM_WORLD.Bcast(IP.React_Name, 
                           INPUT_PARAMETER_LENGTH_CHEM2D, 
@@ -544,17 +510,6 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(IP.ct_Mech_File,
                           INPUT_PARAMETER_LENGTH_CHEM2D,
 			  MPI::CHAR, 0);
-
-    //reaction paramters
-    MPI::COMM_WORLD.Bcast(IP.Fuel_Species, 
-                          INPUT_PARAMETER_LENGTH_CHEM2D, 
-                          MPI::CHAR, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.equivalence_ratio), 
-                          1, 
-                          MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.flame_speed), 
-                          1, 
-                          MPI::DOUBLE, 0);
 
     //delete current dynamic memory before changing num_species
     if(!CFFC_Primary_MPI_Processor()) {   
@@ -588,24 +543,19 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
       MPI::COMM_WORLD.Bcast(IP.Multispecies[i], 
 			    INPUT_PARAMETER_LENGTH_CHEM2D, 
 			    MPI::CHAR, 0);
-      MPI::COMM_WORLD.Bcast(&(IP.mass_fractions_out[i]), 
-			    1, 
-			    MPI::DOUBLE, 0);
     }
     //set recaction and species parameters
     if (!CFFC_Primary_MPI_Processor()) {      
       IP.react_name = IP.React_Name;
-      IP.ct_mech_name = IP.ct_Mech_Name;
-      IP.ct_mech_file = IP.ct_Mech_File;
       for (int i = 0; i < IP.num_species; i++) {
 	IP.multispecies[i] = IP.Multispecies[i];  
       }    
 
       //load reaction data
-      if (IP.react_name != "CANTERA")
+      if (IP.Wo.React.reactset_flag != CANTERA)
 	IP.Wo.React.set_reactions(IP.react_name);
       else
-	IP.Wo.React.ct_load_mechanism(IP.ct_mech_file, IP.ct_mech_name);
+	 IP.Wo.React.ct_load_mechanism(IP.ct_mech_file, IP.ct_mech_name);
       
       //Set species if non-reacting
       if( IP.Wo.React.reactset_flag == NO_REACTIONS){
@@ -661,9 +611,6 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.Gravity), 
                           1, 
 			  MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.gravity_z), 
-                          1, 
-			  MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&(IP.debug_level), 
                           1, 
 			  MPI::INT, 0);
@@ -1007,9 +954,6 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.i_Residual_Variable), 
 			  1, 
 			  MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(IP.Number_of_Residual_Norms), 
-			  1, 
-			  MPI::INT, 0);
     // Freeze_Limiter_Residual_Level
     MPI::COMM_WORLD.Bcast(&(IP.Freeze_Limiter_Residual_Level),
                           1, 
@@ -1026,10 +970,6 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP) {
 				   IP.yplus_sublayer,
 				   IP.yplus_buffer_layer,
 				   IP.yplus_outer_layer);
-
-    // set gravity
-    IP.Wo.set_gravity(IP.gravity_z);
-    IP.Uo.set_gravity(IP.gravity_z);
 
 #endif
 }
@@ -1077,9 +1017,6 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
                        1, 
                        MPI::INT, Source_Rank);
     Communicator.Bcast(&(IP.CFL_Number), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.Source_Term_Multiplyer), 
                        1, 
                        MPI::DOUBLE, Source_Rank);
     Communicator.Bcast(&(IP.Time_Max), 
@@ -1194,16 +1131,6 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
     Communicator.Bcast(IP.CFFC_Path, 
 			  INPUT_PARAMETER_LENGTH_CHEM2D, 
 			  MPI::CHAR, Source_Rank);
-    // Radiation parameters:
-    Communicator.Bcast(IP.Rte_Input_File_Name, 
-		       INPUT_PARAMETER_LENGTH_CHEM2D, 
-		       MPI::CHAR, Source_Rank);
-    Communicator.Bcast(&(IP.Radiation), 
-		       1, 
-		       MPI::INT, Source_Rank);
-    Communicator.Bcast(&(IP.Max_Number_Sequential_Solves), 
-		       1, 
-		       MPI::INT, Source_Rank);
     //reaction name
     Communicator.Bcast(IP.React_Name, 
                           INPUT_PARAMETER_LENGTH_CHEM2D, 
@@ -1215,17 +1142,6 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
     Communicator.Bcast(IP.ct_Mech_File,
 		       INPUT_PARAMETER_LENGTH_CHEM2D,
 		       MPI::CHAR, Source_Rank);
-    // reaction parameters
-    Communicator.Bcast(IP.Fuel_Species,
-		       INPUT_PARAMETER_LENGTH_CHEM2D,
-		       MPI::CHAR, Source_Rank);
-    Communicator.Bcast(&(IP.equivalence_ratio), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&(IP.flame_speed), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
-
     //delete orginal dynamic memory before changing num_species
     if(!CFFC_Primary_MPI_Processor()) {  
       IP.Deallocate();  
@@ -1256,24 +1172,19 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
       Communicator.Bcast(IP.Multispecies[i], 
 			 INPUT_PARAMETER_LENGTH_CHEM2D, 
 			 MPI::CHAR, Source_Rank);
-      Communicator.Bcast(&(IP.mass_fractions_out[i]), 
-			    1, 
-			    MPI::DOUBLE, Source_Rank);
     }
     //set recaction and species parameters
     if (!CFFC_Primary_MPI_Processor()) {      
       IP.react_name = IP.React_Name;
-      IP.ct_mech_name = IP.ct_Mech_Name;
-      IP.ct_mech_file = IP.ct_Mech_File;
       for (int i = 0; i < IP.num_species; i++) {
 	IP.multispecies[i] = IP.Multispecies[i];  
       }     
 
       //load reaction data
-      if (IP.react_name != "CANTERA")
+      if (IP.Wo.React.reactset_flag != CANTERA)
 	IP.Wo.React.set_reactions(IP.react_name);
       else
-	IP.Wo.React.ct_load_mechanism(IP.ct_mech_file, IP.ct_mech_name);
+	 IP.Wo.React.ct_load_mechanism(IP.ct_mech_file, IP.ct_mech_name);
       
       //Set species if non-reacting
       if( IP.Wo.React.reactset_flag == NO_REACTIONS){
@@ -1329,9 +1240,6 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.Gravity), 
                        1, 
                        MPI::INT, Source_Rank);
-    Communicator.Bcast(&(IP.gravity_z), 
-                       1, 
-                       MPI::DOUBLE, Source_Rank);
     Communicator.Bcast(&(IP.Global_Schmidt),
                        1, 
                        MPI::INT, Source_Rank);
@@ -1676,9 +1584,6 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.i_Residual_Variable), 
                        1, 
                        MPI::INT, Source_Rank);
-    Communicator.Bcast(&(IP.Number_of_Residual_Norms), 
-                       1, 
-                       MPI::INT, Source_Rank);
 
     // Freeze_Limiter_Residual_Level
     Communicator.Bcast(&(IP.Freeze_Limiter_Residual_Level), 
@@ -1697,9 +1602,6 @@ void Broadcast_Input_Parameters(Chem2D_Input_Parameters &IP,
 				   IP.yplus_buffer_layer,
 				   IP.yplus_outer_layer);
 
-    // set gravity
-    IP.Wo.set_gravity(IP.gravity_z);
-    IP.Uo.set_gravity(IP.gravity_z);
 }
 #endif
 
@@ -2203,13 +2105,6 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
        IP.Input_File.getline(buffer, sizeof(buffer));
        if (IP.CFL_Number <= ZERO) i_command = INVALID_INPUT_VALUE;
 
-    } else if (strcmp(IP.Next_Control_Parameter, "Source_Term_Multiplyer") == 0) {
-       i_command = 18;
-       IP.Line_Number = IP.Line_Number + 1;
-       IP.Input_File >> IP.Source_Term_Multiplyer;
-       IP.Input_File.getline(buffer, sizeof(buffer));
-       if (IP.Source_Term_Multiplyer <= ZERO) i_command = INVALID_INPUT_VALUE;
-
     } else if (strcmp(IP.Next_Control_Parameter, "Box_Width") == 0) {
        i_command = 19;
        IP.Line_Number = IP.Line_Number + 1;
@@ -2416,32 +2311,6 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
        IP.Input_File.getline(buffer, sizeof(buffer));
        if (IP.BluffBody_Coflow_Fuel_Velocity <ZERO) i_command = INVALID_INPUT_VALUE;       
 
-       /*************************************/
-       /******** RADIATION PARAMETERS *******/
-       /*************************************/
-    } else if (strcmp(IP.Next_Control_Parameter,"Radiation") == 0) {
-      i_command = 100;
-      Get_Next_Input_Control_Parameter(IP);
-      if (strcmp(IP.Next_Control_Parameter,"RTE") == 0)
-	IP.Radiation = RADIATION_RTE;
-      else if (strcmp(IP.Next_Control_Parameter,"Optically_Thin") == 0)
-	IP.Radiation = RADIATION_OPTICALLY_THIN;
-      else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0)
-	IP.Radiation = OFF;
-      else
-	i_command = INVALID_INPUT_VALUE;
-
-    } else if (strcmp(IP.Next_Control_Parameter, "Radiation_Input_File_Name") == 0) {
-      i_command = 101;
-      Get_Next_Input_Control_Parameter(IP);
-      strcpy(IP.Rte_Input_File_Name, IP.Next_Control_Parameter);
-
-    } else if (strcmp(IP.Next_Control_Parameter, "Max_Number_Sequential_Solves") == 0) {
-       i_command = 16;
-       IP.Line_Number = IP.Line_Number + 1;
-       IP.Input_File >> IP.Max_Number_Sequential_Solves;
-       IP.Input_File.getline(buffer, sizeof(buffer));
-       if (IP.Max_Number_Sequential_Solves < 0) i_command = INVALID_INPUT_VALUE;
 
        /***********************************************************************
         ************************ CHEM2D SPECIFIC ******************************
@@ -2454,7 +2323,6 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
 
        *************************************************************************
        *************************************************************************/
-
        
        /*************************************/
        /**** REACTIONS SET FOR HARDCODED ****/
@@ -2521,6 +2389,7 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
 	 //Set inital Values; 
 	 IP.Wo.set_initial_values(IP.mass_fractions);  
 	 IP.Uo.set_initial_values(IP.mass_fractions);  
+	 IP.Uo = U(IP.Wo);
 	 
 	 //fudge the line number and istream counters
 	 IP.Input_File.getline(buffer, sizeof(buffer));  
@@ -2534,13 +2403,10 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
 
 	 //If no mass fraction data is set to defaults (all equal to 1/num_species) 
        } else {
+	 IP.Uo = U(IP.Wo);
 	 IP.Line_Number = IP.Line_Number - 1 ;
        }
          
-       // recalculate density and initialize conserved state
-       IP.Wo.rho = IP.Pressure/(IP.Wo.Rtot()*IP.Temperature); 	
-       IP.Uo = U(IP.Wo);
-
        
        /***************************************/
        /**** REACTIONS FOR USER DEFINED *******/ 
@@ -2556,7 +2422,7 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
        /*************************************/
     } else if (strcmp(IP.Next_Control_Parameter, "Cantera_Reaction_Mechanism") == 0) {
        i_command = 202;
-       
+
        Get_Next_Input_Control_Parameter(IP);
        IP.Deallocate();  //DEALLOCATE BEFORE CHANGING num_species
        int flag =0;
@@ -2570,7 +2436,7 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
        if (strcmp(IP.Next_Control_Parameter, "Mechanism_File") == 0){
 	 Get_Next_Input_Control_Parameter(IP);
 	 IP.ct_mech_file = IP.Next_Control_Parameter;
-	 IP.Wo.React.ct_load_mechanism(IP.ct_mech_file, IP.ct_mech_name);
+	 IP.Wo.React.ct_load_mechanism(IP.ct_mech_file, IP.ct_mech_name);   
 	 IP.num_species = IP.Wo.React.num_species;      
        // if no reaction file was given, return in error
        } else {
@@ -2592,27 +2458,20 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
        //
        Get_Next_Input_Control_Parameter(IP);
        if (strcmp(IP.Next_Control_Parameter, "Schmidt_Numbers") == 0){
-
-	 // Get the schmidt numbers from user 
-	 // Here we use Cantera to parse the string of the form:
-	 //       CH4:0.5, O2:0.5
-	 // All other species will be assumed to have unity schmidt number.  
-	 // Returns them in an array.
+	 for(int i=0; i<IP.num_species; i++){
+	   IP.Input_File >> IP.Schmidt[i];	 	 
+	 }	 
+	 //fudge the line number and istream counters
 	 IP.Input_File.getline(buffer, sizeof(buffer)); 
 	 IP.Line_Number = IP.Line_Number + 1 ;
-	 IP.Wo.React.ct_parse_schmidt_string(buffer, IP.Schmidt);
 	 flag = 1;
-
-       } else {
-
-	 //Set to one value ~1
-	 for(int i=0; i<IP.num_species; i++)
-	   IP.Schmidt[i] = IP.Global_Schmidt; 
-
+       } else { //Set to one value ~1
+	 for(int i=0; i<IP.num_species; i++){
+	   IP.Schmidt[i] = IP.Global_Schmidt;	 	 
+	 }
 	 //To fix up line numbers
 	 IP.Line_Number = IP.Line_Number - 1 ;
        }
-
 
        //
        //Set appropriate species data
@@ -2628,14 +2487,14 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
        if(flag){
 	 Get_Next_Input_Control_Parameter(IP);
        }
-
-       // Get Initial Mass Fractions from user 
-       // Here we use Cantera to parse the string of the form:
-       //       CH4:0.5, O2:0.5
-       // All other species will be assumed to have 0 mass fractions.  
-       // Cantera also normalizes the mass fractions to sum to unity.  
-       // Returns them in an array.
        if (strcmp(IP.Next_Control_Parameter, "Mass_Fractions") == 0){
+
+	 // Get Initial Mass Fractions from user 
+	 // Here we use Cantera to parse the string of the form:
+	 //       CH4:0.5, O2:0.5
+	 // All other species will be assumed to have 0 mass fractions.  
+	 // Cantera also normalizes the mass fractions to sum to unity.  
+	 // Returns them in an array.
 	 IP.Input_File.getline(buffer, sizeof(buffer)); 
 	 IP.Line_Number = IP.Line_Number + 1 ;
 	 IP.Wo.React.ct_parse_mass_string(buffer, IP.mass_fractions);
@@ -2643,57 +2502,17 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
 	 //Set inital Values; 
 	 IP.Wo.set_initial_values(IP.mass_fractions);  
 	 IP.Uo.set_initial_values(IP.mass_fractions);  
-	         
-       // Get Initial Molar Fractions from user
-       // Here we use Cantera to parse the string of the form:
-       //       CH4:0.5, O2:0.5
-       // All other species will be assumed to have 0 molar fractions.
-       // Cantera also normalizes the molar fractions to sum to unity. 
-       // Returns them in an array.
-       } else if (strcmp(IP.Next_Control_Parameter, "Molar_Fractions") == 0){
-	 IP.Input_File.getline(buffer, sizeof(buffer)); 
-	 IP.Line_Number = IP.Line_Number + 1 ;
-	 IP.Wo.React.ct_parse_mole_string(buffer, IP.mass_fractions);
-
-	 // convert molar fractions to mass fractions
-	 double sum(0.0);
-	 for(int i=0; i<IP.num_species; i++) 
-	   sum += IP.mass_fractions[i]*IP.Wo.specdata[i].Mol_mass();
-	 for(int i=0; i<IP.num_species; i++) 
-	   IP.mass_fractions[i] = IP.mass_fractions[i]*IP.Wo.specdata[i].Mol_mass()/sum;
-
-	 //Set inital Values; 
-	 IP.Wo.set_initial_values(IP.mass_fractions);  
-	 IP.Uo.set_initial_values(IP.mass_fractions);  
+	 IP.Uo = U(IP.Wo);
 	 
-       // Get Initial Equivalence Ratio from user 
-       // Here we use Cantera to compute the equivalent mass fractions:
-       } else if (strcmp(IP.Next_Control_Parameter, "Equivalence_Ratio") == 0){
-	 i_command = 518;
-	 IP.Line_Number = IP.Line_Number + 1;
-	 IP.Input_File >> IP.equivalence_ratio;
-	 IP.Input_File.getline(buffer, sizeof(buffer));
-
-	 //Set inital Values; 
-	 if (IP.equivalence_ratio < 0) {
-	   i_command = INVALID_INPUT_VALUE;
-	 } else {
-	   IP.Wo.React.ct_composition(IP.Fuel_Species, 
-				      IP.equivalence_ratio, 
-				      IP.mass_fractions);
-	   IP.Wo.set_initial_values(IP.mass_fractions);  
-	   IP.Uo.set_initial_values(IP.mass_fractions);  
-	 }
-	 
+	 //fudge the line number and istream counters
+	 IP.Input_File.getline(buffer, sizeof(buffer));  
+	 IP.Line_Number = IP.Line_Number + 1; 
+        
        //If no mass fraction data is set to defaults (all equal to 1/num_species) 
        } else {
+	 IP.Uo = U(IP.Wo);
 	 IP.Line_Number = IP.Line_Number - 1 ;
        }
-
-       // recalculate density and initialize conserved state
-       IP.Wo.rho = IP.Pressure/(IP.Wo.Rtot()*IP.Temperature); 	
-       IP.Uo = U(IP.Wo);
-
 
       /******************************************/
       /**** NON REACTING, BUT MULTIPLE GASES ****/
@@ -2747,6 +2566,7 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
 	 //Set inital Values; 
 	 IP.Wo.set_initial_values(IP.mass_fractions);  
 	 IP.Uo.set_initial_values(IP.mass_fractions);
+	 IP.Uo = U(IP.Wo);
 	 
 	 //fudge the line number and istream counters
 	 IP.Input_File.getline(buffer, sizeof(buffer));  
@@ -2754,12 +2574,9 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
        } 
        //If no mass fraction data is set to defaults (all equal to 1/num_species)
        else{        
+	 IP.Uo = U(IP.Wo);
 	 IP.Line_Number = IP.Line_Number - 1 ;
        }
-
-      // recalculate density and initialize conserved state
-      IP.Wo.rho = IP.Pressure/(IP.Wo.Rtot()*IP.Temperature); 	
-      IP.Uo = U(IP.Wo);
     
       /************* TEMPERATURE *************/
     } else if (strcmp(IP.Next_Control_Parameter, "Temperature") == 0) {
@@ -2772,8 +2589,7 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
       } else {
 	IP.Wo.rho = IP.Pressure/(IP.Wo.Rtot()*IP.Temperature); 	
 	//IP.Wo.v.zero();
-	IP.Uo = U(IP.Wo);
-     } /* endif */
+      } /* endif */
    
       /************* PRESSURE ****************/
     } else if (strcmp(IP.Next_Control_Parameter, "Pressure") == 0) {
@@ -2788,7 +2604,6 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
 	 IP.Wo.rho = IP.Pressure/(IP.Wo.Rtot()*IP.Temperature); 
 	 IP.Wo.p = IP.Pressure;	
 	 //IP.Wo.v.zero();
-	 IP.Uo = U(IP.Wo);
        } /* endif */
 
        /************* HEAT SOURCE ****************/
@@ -2800,42 +2615,6 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
        IP.Heat_Source = IP.Wo.rho*(IP.Wo.h(temp+IP.Temperature) - IP.Wo.Rtot()*IP.Temperature);
 
        IP.Input_File.getline(buffer, sizeof(buffer));
-
-       /********** EXIT MASS FRACTIONS ***********/
-    } else if (strcmp(IP.Next_Control_Parameter, "Exit_Mass_Fractions") == 0){
-      i_command = 42;
-
-      // read in mass fractions
-      double temp(0.0);
-      for(int i=0; i<IP.num_species; i++) {
-	IP.Input_File  >> IP.mass_fractions_out[i];
-	temp += IP.mass_fractions_out[i];
-      }
-
-      //check to make sure it adds to 1
-      if(temp < ONE-MICRO || temp > ONE+MICRO){ 
-	cout<<"\n Exit Mass Fractions summed to "<<temp<<". Should sum to 1\n";
-	i_command = INVALID_INPUT_VALUE;
-      }
-	 
-      //fudge the line number and istream counters
-      IP.Input_File.getline(buffer, sizeof(buffer));  
-      IP.Line_Number = IP.Line_Number + 1; 
-
-       /************* FLAME SPEED ****************/
-    } else if (strcmp(IP.Next_Control_Parameter, "Flame_Speed") == 0) {
-       i_command = 518;
-       IP.Line_Number = IP.Line_Number + 1;
-       IP.Input_File >> IP.flame_speed;
-       IP.Input_File.getline(buffer, sizeof(buffer));
-       if (IP.flame_speed < 0) i_command = INVALID_INPUT_VALUE;
-
-       /************* FUEL SPECIES ***************/
-    } else if (strcmp(IP.Next_Control_Parameter, "Fuel_Species") == 0) {
-       i_command = 2;
-       Get_Next_Input_Control_Parameter(IP);
-       strcpy(IP.Fuel_Species, IP.Next_Control_Parameter);
-
 
        /********* TRANSPORT DATA **********************************************
        // Transport-Lennard-Jones  - Use Lennard-Jones potentials or 
@@ -3041,13 +2820,6 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Next_Control_Parameter, "Gravity") == 0) {
       i_command = 511; 
       IP.Gravity = 1;
-
-    } else if (strcmp(IP.Next_Control_Parameter, "Gravitational_Acceleration") == 0) {
-      i_command = 512; 
-      IP.Line_Number = IP.Line_Number + 1;
-      IP.Input_File >> IP.gravity_z; // g_z -ve => acts downwards
-      IP.Input_File.getline(buffer, sizeof(buffer));
-      if (IP.gravity_z > 0) i_command = INVALID_INPUT_VALUE;
      
     } else if (strcmp(IP.Next_Control_Parameter, "Schmidt") == 0) {
       i_command = 512; 
@@ -3141,15 +2913,6 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
       IP.Input_File >> IP.i_Residual_Variable;                     //as apposed to 1, 2, or 4
       IP.Input_File.getline(buffer, sizeof(buffer));
       if (IP.i_Residual_Variable < ZERO) i_command = INVALID_INPUT_VALUE;
-      else if (IP.i_Residual_Variable > IP.Number_of_Residual_Norms) 
-	IP.Number_of_Residual_Norms = IP.i_Residual_Variable;
-
-    } else if (strcmp(IP.Next_Control_Parameter, "Number_of_Residual_Variables") == 0) {
-      i_command = 666;
-      IP.Line_Number = IP.Line_Number + 1;
-      IP.Input_File >> IP.Number_of_Residual_Norms;
-      IP.Input_File.getline(buffer, sizeof(buffer));
-      if (IP.Number_of_Residual_Norms < ZERO) i_command = INVALID_INPUT_VALUE;
 
     } else if (strcmp(IP.Next_Control_Parameter, "Freeze_Limiter") == 0) {
       // Freeze_Limiter:
@@ -4055,9 +3818,6 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
     } else if (strcmp(IP.Next_Control_Parameter, "Fix_BCs") == 0) {
       i_command = SWITCH_BCS_TO_FIXED;
 
-    } else if (strcmp(IP.Next_Control_Parameter, "Postprocess_Radiation") == 0) {
-       i_command = POSTPROCESS_RADIATION_CODE;
-
     } else if (IP.Next_Control_Parameter[0] == '#') {
        i_command = COMMENT_CODE;
     } else {
@@ -4074,11 +3834,11 @@ int Parse_Next_Input_Control_Parameter(Chem2D_Input_Parameters &IP) {
       // This could be a bad idea if it was an unknown command 
       // as opposed to an unknown code.
 //       if (i_command == INVALID_INPUT_CODE) {
-//      cout << "\n***\n\nWarning: input file line " << IP.Line_Number << ": ";
-//      cout << "ignoring unknown input code:\n";
-//      cout << "code: " << buffer;
-//      cout << "\nvalue: " << IP.Next_Control_Parameter;
-//      cout << "\n\n***\n";
+// 	cout << "\n***\n\nWarning: input file line " << IP.Line_Number << ": ";
+// 	cout << "ignoring unknown input code:\n";
+// 	cout << "code: " << buffer;
+// 	cout << "\nvalue: " << IP.Next_Control_Parameter;
+// 	cout << "\n\n***\n";
 //       }
 //       i_command = COMMENT_CODE; // sure why not
     }
@@ -4171,8 +3931,6 @@ int Process_Input_Control_Parameter_File(Chem2D_Input_Parameters &Input_Paramete
 						 Input_Parameters.yplus_sublayer,
 						 Input_Parameters.yplus_buffer_layer,
 						 Input_Parameters.yplus_outer_layer);
-    Input_Parameters.Wo.set_gravity(Input_Parameters.gravity_z);
-    Input_Parameters.Uo.set_gravity(Input_Parameters.gravity_z);
 
     // Perform consitency checks on the refinement criteria.
     Input_Parameters.Number_of_Refinement_Criteria = 0;
