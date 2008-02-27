@@ -98,14 +98,11 @@ void Flame2D_pState::setMixture(const string &mech_name,
   // Radiation
   //-------------------------------------------------------
   // if the optically thin radiation model is to be used
-  if ( radiating = radiation ) {
-    rad = new PlanckMean( CFFC_Path );
-    kCO  = speciesIndex("CO",  false); // don't exit on error
-    kH2O = speciesIndex("H2O", false);
-    kCO2 = speciesIndex("CO2", false);
-    kCO2 = speciesIndex("O2",  false);
-  }
-
+  if ( radiating = radiation )  rad = new PlanckMean( CFFC_Path );
+  kCO  = speciesIndex("CO",  false); // don't exit on error
+  kH2O = speciesIndex("H2O", false);
+  kCO2 = speciesIndex("CO2", false);
+  kCO2 = speciesIndex("O2",  false);
 
   // the total number state variables
   n = ngas + nsc;
@@ -1354,11 +1351,9 @@ void Flame2D_pState::dSgdU(DenseMatrix &dSgdU) const {
  * thin approximation.
  ****************************************************/
 double Flame2D_pState::Srad(void) const {
-  if (radiating) {
-    static RadiatingGas gas;
-    RadGas_Quantities(gas);
-    return rad->RadSourceOptThin( gas );
-  }
+  static RadiatingGas gas;
+  RadGas_Quantities(gas);
+  return rad->RadSourceOptThin( gas );
 }
 
 

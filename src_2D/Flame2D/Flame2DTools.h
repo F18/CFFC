@@ -73,5 +73,14 @@ void Output_Driven_Cavity_Flow(Flame2D_Quad_Block &SolnBlk,
 			       const double &Vwall,
 			       const double &length);
   
+/////////////////////////////////////////////////////////////////////
+/// Helpful Postprocessing Functions
+/////////////////////////////////////////////////////////////////////
   
+int Output_2D_Flame(Flame2D_Quad_Block *Soln_ptr,
+		    AdaptiveBlock2D_List &Soln_Block_List,
+		    Flame2D_Input_Parameters &IP);
+
+
+
 #endif //_FLAME2D_DRDU_INCLUDED

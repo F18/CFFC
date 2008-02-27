@@ -953,6 +953,8 @@ void Output_Tecplot(Flame2D_Quad_Block &SolnBlk,
 	     << "\"Tau_zz\" \\  \n"
 	     << "\"Vcorr_x\" \\  \n"
 	     << "\"Vcorr_y\" \\  \n";
+    // Raditation
+    Out_File << "\"div_qrad\" \\ \n";
     // Zone details
     Out_File << "ZONE T =  \"Block Number = " << Block_Number
 	     << "\" \\ \n"
@@ -998,6 +1000,16 @@ void Output_Tecplot(Flame2D_Quad_Block &SolnBlk,
       Out_File << " " << qflux
 	       << " " << tau
 	       << " " << Vcorr;
+      // radiation
+      double Sinterp(0.0);
+      if ( Flame2D_State::isRadiating() ) Sinterp = W_node.Srad();
+      else Bilinear_Interpolation_HC(SolnBlk.Srad[i-1][j-1], SolnBlk.Grid.Cell[i-1][j-1].Xc,
+				  SolnBlk.Srad[i-1][j  ], SolnBlk.Grid.Cell[i-1][j  ].Xc,
+				  SolnBlk.Srad[i  ][j  ], SolnBlk.Grid.Cell[i  ][j  ].Xc,
+				  SolnBlk.Srad[i  ][j-1], SolnBlk.Grid.Cell[i  ][j-1].Xc,
+				  SolnBlk.Grid.Node[i][j].X, Sinterp);
+      Out_File << " " << Sinterp;
+
       Out_File.unsetf(ios::scientific);
       Out_File << endl;
     } /* endfor */
@@ -1081,12 +1093,15 @@ void Output_Cells_Tecplot(Flame2D_Quad_Block &SolnBlk,
     }
     // Raditation
     Out_File << "\"div_qrad\" \\ \n";
-    // Gradients
-    Flame2D_pState::outputTecplotVarList(Out_File, "W", "dWdx_");
-    Flame2D_pState::outputTecplotVarList(Out_File, "W", "dWdy_");
-    Flame2D_pState::outputTecplotVarList(Out_File, "W", "phi_");
-    // dUdt
-    Flame2D_pState::outputTecplotVarList(Out_File, "U", "dUdt_");
+
+//------------------------ Debug ---------------------------//
+//     // Gradients
+//     Flame2D_pState::outputTecplotVarList(Out_File, "W", "dWdx_");
+//     Flame2D_pState::outputTecplotVarList(Out_File, "W", "dWdy_");
+//     Flame2D_pState::outputTecplotVarList(Out_File, "W", "phi_");
+//     // dUdt
+//     Flame2D_pState::outputTecplotVarList(Out_File, "U", "dUdt_");
+//---------------------- End Debug -------------------------//
 
     // Zone details
     Out_File<< "ZONE T =  \"Block Number = " << Block_Number
@@ -1158,12 +1173,14 @@ void Output_Cells_Tecplot(Flame2D_Quad_Block &SolnBlk,
       Out_File << " " << SolnBlk.Srad[i][j];
 
       Out_File.unsetf(ios::scientific);
-      // Gradients
-      Out_File << SolnBlk.dWdx[i][j]
-	       << SolnBlk.dWdy[i][j]
-	       << SolnBlk.phi[i][j];
-      // dUdt
-      Out_File << SolnBlk.dUdt[i][j][0];
+//------------------------ Debug ---------------------------//
+//       // Gradients
+//       Out_File << SolnBlk.dWdx[i][j]
+// 	       << SolnBlk.dWdy[i][j]
+// 	       << SolnBlk.phi[i][j];
+//       // dUdt
+//       Out_File << SolnBlk.dUdt[i][j][0];
+//---------------------- End Debug -------------------------//
       Out_File << endl;
     } /* endfor */
   } /* endfor */

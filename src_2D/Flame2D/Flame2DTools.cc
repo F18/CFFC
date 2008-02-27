@@ -903,3 +903,22 @@ void Output_Driven_Cavity_Flow(Flame2D_Quad_Block &SolnBlk,
   }
 
 }
+
+
+/////////////////////////////////////////////////////////////////////
+/// Helpful Postprocessing Functions
+/////////////////////////////////////////////////////////////////////
+  
+/**********************************************************************
+ * Routine: Output_Driven_Cavity_Flow                                 *
+ *                                                                    *
+ * This routine outputs a comparison of the computed solution for the *
+ * driven cavity flow with the computations done by Ghia et al. (J.   *
+ * Comp. Phys. Vol. 48 1982) for a 1D array of 2D quadrilateral       *
+ * multi-block solution blocks to the specified output data file(s)   *
+ * in a format suitable for plotting with tecplot.                    *
+ *                                                                    *
+ **********************************************************************/
+int Output_2D_Flame(Flame2D_Quad_Block *Soln_ptr,
+		    AdaptiveBlock2D_List &Soln_Block_List,
+		    Flame2D_Input_Parameters &IP) {}

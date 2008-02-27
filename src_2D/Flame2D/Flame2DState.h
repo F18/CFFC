@@ -186,6 +186,9 @@ public:
   //! is the mixture reacting
   static bool isReacting(void) { return reacting; }
 
+  //! is the mixture radiating (ie internal rad solver is used, optically thin)
+  static bool isRadiating(void) { return radiating; }
+
   //! is the mixture sooting
   static bool isSooting(void) { return soot_flag; }
 

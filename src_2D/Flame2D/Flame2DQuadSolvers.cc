@@ -17,7 +17,7 @@
 #include "Flame2DQuadNKS.h"
 
 // Include Rte2D solver Sepcialization header file.
-//#include "Flame2DQuadRte.h"
+#include "Flame2DQuadRte.h"
 
 
 /////////////////////////////////////////////////////////////////////
@@ -1447,6 +1447,27 @@ int Flame2DQuadSolver(char *Input_File_Name_ptr,  int batch_flag) {
       if (error_flag) return error_flag;
       
     } 
+
+    /*************************************************************************
+     ***************** POSTPROCESS 2D FLAME CODE *****************************
+     *************************************************************************/ 
+    else if (command_flag == POSTPROCESS_2DFLAME_CODE) {
+
+      // Output solution data.
+      if (!batch_flag) cout << "\n Postprocessing 2D flame.";
+      
+
+      error_flag = Output_2D_Flame(Local_SolnBlk,
+				   List_of_Local_Solution_Blocks,
+				   Input_Parameters);
+      if (error_flag) {
+	cout << endl << "\n Chem2D ERROR: Unable to process 2D flame." << endl;
+	cout.flush();
+      }
+      CFFC_Broadcast_MPI(&error_flag,1);
+      if (error_flag) return error_flag;
+
+    }
 
     /*************************************************************************
      **************** POSTPROCESS RADIATION CODE *****************************

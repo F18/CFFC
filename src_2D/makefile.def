@@ -530,4 +530,7 @@ endif
 ifeq ($(CHEM2D_WITH_RTE),ON)
   CPPFLAGS += -D_CHEM2D_WITH_RTE
 endif
+ifeq ($(FLAME2D_WITH_RTE),ON)
+  CPPFLAGS += -D_FLAME2D_WITH_RTE
+endif
 

@@ -1213,23 +1213,25 @@ void Output_Tecplot(Rte2D_Quad_Block &SolnBlk,
 		<<"\"q.y\" \n"
 		<<"\"S\" \n";
 
-       // blackbody
-       for(int v=0 ;v<SolnBlk.U[0][0].Nband ;v++) 
-	 Out_File << "\"Ib_"<<v+1<<"\" \\ \n";
-
-       // apsorption coefficient
-       for(int v=0 ;v<SolnBlk.U[0][0].Nband ;v++) 
-	 Out_File << "\"kappa_"<<v+1<<"\" \\ \n";
-
-       // scattering coefficient
-       for(int v=0 ;v<SolnBlk.U[0][0].Nband ;v++) 
-	 Out_File << "\"sigma_"<<v+1<<"\" \\ \n";
-	   
-       // intensity
-       for(int v=0 ;v<SolnBlk.U[0][0].Nband ;v++) 
-	 for(int m=0 ;m<SolnBlk.U[0][0].Npolar ;m++)
-	   for(int l=0 ;l<SolnBlk.U[0][0].Nazim[m] ;l++)
-	     Out_File <<"\"I -> v="<<v+1<<", m="<<m+1<<", l="<<l+1<<"\" \\ \n";
+//------------------------ Debug ---------------------------//
+//        // blackbody
+//        for(int v=0 ;v<SolnBlk.U[0][0].Nband ;v++) 
+// 	 Out_File << "\"Ib_"<<v+1<<"\" \\ \n";
+// 
+//        // apsorption coefficient
+//        for(int v=0 ;v<SolnBlk.U[0][0].Nband ;v++) 
+// 	 Out_File << "\"kappa_"<<v+1<<"\" \\ \n";
+// 
+//        // scattering coefficient
+//        for(int v=0 ;v<SolnBlk.U[0][0].Nband ;v++) 
+// 	 Out_File << "\"sigma_"<<v+1<<"\" \\ \n";
+// 	   
+//        // intensity
+//        for(int v=0 ;v<SolnBlk.U[0][0].Nband ;v++) 
+// 	 for(int m=0 ;m<SolnBlk.U[0][0].Npolar ;m++)
+// 	   for(int l=0 ;l<SolnBlk.U[0][0].Nazim[m] ;l++)
+// 	     Out_File <<"\"I -> v="<<v+1<<", m="<<m+1<<", l="<<l+1<<"\" \\ \n";
+//---------------------- End Debug -------------------------//
 
        Out_File << "ZONE T =  \"Block Number = " << Block_Number
                 << "\" \\ \n"
@@ -1254,8 +1256,10 @@ void Output_Tecplot(Rte2D_Quad_Block &SolnBlk,
 		    << " " << q_node.x // /(PI*U_node.Ib)
 		    << " " << q_node.y // /(PI*U_node.Ib)
 		    << " " << U_node.Sr(M_node)
-		    << M_node
-		    << U_node
+//------------------------ Debug ---------------------------//
+// 		    << M_node
+// 		    << U_node
+//---------------------- End Debug -------------------------//
 		    << endl;
        } /* endfor */
     } /* endfor */
@@ -1297,24 +1301,27 @@ void Output_Cells_Tecplot(Rte2D_Quad_Block &SolnBlk,
 		<<"\"q.y\" \n"
 		<<"\"S\" \n";
 
-       // Blackbody intensity
-       for(int v=0 ;v<SolnBlk.U[0][0].Nband ;v++) 
-	 Out_File << "\"Ib_"<<v+1<<"\" \\ \n";
+//------------------------ Debug ---------------------------//
+//        // Blackbody intensity
+//        for(int v=0 ;v<SolnBlk.U[0][0].Nband ;v++) 
+// 	 Out_File << "\"Ib_"<<v+1<<"\" \\ \n";
+// 
+//        // absorbsion coefficient
+//        for(int v=0 ;v<SolnBlk.U[0][0].Nband ;v++) 
+// 	 Out_File << "\"kappa_"<<v+1<<"\" \\ \n";
+// 
+//        // scattering coefficient
+//        for(int v=0 ;v<SolnBlk.U[0][0].Nband ;v++) 
+// 	 Out_File << "\"sigma_"<<v+1<<"\" \\ \n";
+// 
+//        // intensity
+//        for(int v=0 ;v<SolnBlk.U[0][0].Nband ;v++) 
+// 	 for(int m=0 ;m<SolnBlk.U[0][0].Npolar ;m++)
+// 	   for(int l=0 ;l<SolnBlk.U[0][0].Nazim[m] ;l++)
+// 	     Out_File <<"\"I -> v="<<v+1<<", m="<<m+1<<", l="<<l+1<<"\" \\ \n";
+//        
+//---------------------- End Debug -------------------------//
 
-       // absorbsion coefficient
-       for(int v=0 ;v<SolnBlk.U[0][0].Nband ;v++) 
-	 Out_File << "\"kappa_"<<v+1<<"\" \\ \n";
-
-       // scattering coefficient
-       for(int v=0 ;v<SolnBlk.U[0][0].Nband ;v++) 
-	 Out_File << "\"sigma_"<<v+1<<"\" \\ \n";
-
-       // intensity
-       for(int v=0 ;v<SolnBlk.U[0][0].Nband ;v++) 
-	 for(int m=0 ;m<SolnBlk.U[0][0].Npolar ;m++)
-	   for(int l=0 ;l<SolnBlk.U[0][0].Nazim[m] ;l++)
-	     Out_File <<"\"I -> v="<<v+1<<", m="<<m+1<<", l="<<l+1<<"\" \\ \n";
-       
        // zone details
        Out_File << "ZONE T =  \"Block Number = " << Block_Number
                 << "\" \\ \n"
@@ -1338,8 +1345,10 @@ void Output_Cells_Tecplot(Rte2D_Quad_Block &SolnBlk,
 	 Out_File << " " << qc.x; // /(PI*SolnBlk.U[i][j].Ib)
 	 Out_File << " " << qc.y; // /(PI*SolnBlk.U[i][j].Ib)
 	 Out_File << " " << SolnBlk.U[i][j].Sr(SolnBlk.M[i][j]);   
-	 Out_File << SolnBlk.M[i][j];
-	 Out_File << SolnBlk.U[i][j];
+//------------------------ Debug ---------------------------//
+// 	 Out_File << SolnBlk.M[i][j];
+// 	 Out_File << SolnBlk.U[i][j];
+//---------------------- End Debug -------------------------//
 	 Out_File << "\n";
        } /* endfor */
     } /* endfor */
