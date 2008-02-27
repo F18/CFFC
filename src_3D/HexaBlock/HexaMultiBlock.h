@@ -17,12 +17,14 @@
 #include "../AMR/AdaptiveBlock3D.h"
 #endif //_ADAPTIVEBLOCK3D_INCLUDED
 
-// a list of solution blocks on a processor
-template<class HEXA_BLOCK> class Hexa_Multi_Block{
-   
+// A local list of solution blocks on a given processor.
+template<class HEXA_BLOCK> 
+class Hexa_Multi_Block {
   private:
+
+  protected:
+
   public:
-     
    HEXA_BLOCK *Soln_Blks;          // Array of hexahedral solution blocks.
    int Number_of_Soln_Blks;        // Number or size of array of hexahedral solution blocks. 
    int *Block_Used;                // Solution block usage indicator.
@@ -73,9 +75,27 @@ template<class HEXA_BLOCK> class Hexa_Multi_Block{
 
    void Deallocate(void);
 
+   int Number_of_Soln_Blks_in_Use(void);
+
    void Copy(Hexa_Multi_Block &Solution2);
 
    void Broadcast(void);
+
+   void Update_Grid_Exterior_Nodes(void);
+
+   void Update_Grid_Cells(void);
+
+   void Update_Grid_Ghost_Cells(void);
+
+   void Rotate_Grid(const double &Angle, 
+                    const double &Angle1, 
+                    const double &Angle2);
+
+   void Correct_Grid_Exterior_Nodes(AdaptiveBlock3D_List &Blk_List);
+
+   void Fix_Corner_Cells_for_3_Blks_Abutting(AdaptiveBlock3D_List &Blk_List);
+
+   void Update_Corner_Cells_for_3_Blks_Abutting(AdaptiveBlock3D_List &Blk_List);
 
    int Read_Restart_Solution(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
                                               typename HEXA_BLOCK::Soln_cState> &Input,
@@ -109,24 +129,37 @@ template<class HEXA_BLOCK> class Hexa_Multi_Block{
                             const int Number_of_Time_Steps,
                             const double &Time);
 
-   double L1_Norm_Residual(void);
+   double L1_Norm_Residual(const int &var);
 
-   double L2_Norm_Residual(void);
+   double L2_Norm_Residual(const int &var);
 
-   double Max_Norm_Residual(void);
+   double Max_Norm_Residual(const int &var);
 
-   void Set_Global_TimeStep(const double &Dt_min);
+   void Evaluate_Limiters(void);
+  
+   void Freeze_Limiters(void);
 
-   void ICs(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
-                             typename HEXA_BLOCK::Soln_cState> &Input);
+   int ICs(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
+                            typename HEXA_BLOCK::Soln_cState> &Input);
+
+   int ICs_Specializations(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
+                                            typename HEXA_BLOCK::Soln_cState> &Input);
+
+   int Interpolate_2Dto3D(FlowField_2D &Numflowfield2D,
+                          Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
+                                           typename HEXA_BLOCK::Soln_cState> &Input);
 
    void BCs(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
                              typename HEXA_BLOCK::Soln_cState> &Input);
 
-   int WtoU(void);
-
    double CFL(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
                                typename HEXA_BLOCK::Soln_cState> &Input);
+
+   void Set_Global_TimeStep(const double &Dt_min);
+
+   int Wall_Shear(void);
+
+   int WtoU(void);
 
    int dUdt_Multistage_Explicit(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
                                 typename HEXA_BLOCK::Soln_cState> &Input,
@@ -135,7 +168,6 @@ template<class HEXA_BLOCK> class Hexa_Multi_Block{
    int Update_Solution_Multistage_Explicit(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
                                                             typename HEXA_BLOCK::Soln_cState> &Input, 
                                            const int I_Stage);
-
 };
 
 /********************************************************
@@ -184,6 +216,27 @@ void Hexa_Multi_Block<HEXA_BLOCK>::Deallocate(void) {
 }
 
 /********************************************************
+ * Routine: Number_of_Soln_Blks_in_Use                  *
+ *                                                      *
+ * Returns number of solution block in current use.     *
+ *                                                      *
+ ********************************************************/
+template<class HEXA_BLOCK>
+int Hexa_Multi_Block<HEXA_BLOCK>::Number_of_Soln_Blks_in_Use(void) {
+
+  int number_in_use(0);
+
+  if (Allocated && Number_of_Soln_Blks >= 1) {
+    for (int i = 0; i < Number_of_Soln_Blks; ++i) {
+       if (Block_Used[i]) number_in_use = number_in_use+1;
+    } /* endfor */
+  } /* endif */
+
+  return (number_in_use);
+
+}
+
+/********************************************************
  * Routine: Copy                                        *
  *                                                      *
  * Make a copy of list of hexahedral solution blocks.   *
@@ -226,7 +279,7 @@ void Hexa_Multi_Block<HEXA_BLOCK>::Broadcast(void) {
 
     /* Broadcast each of the hexahedral solution blocks. */
 
-    for (int  i = 0 ; i < Number_of_Soln_Blks ; ++i ) {
+    for (int i = 0 ; i < Number_of_Soln_Blks ; ++i) {
       if (Block_Used[i]) Soln_Blks[i].Broadcast();
     } /* endfor */
 
@@ -235,33 +288,291 @@ void Hexa_Multi_Block<HEXA_BLOCK>::Broadcast(void) {
 }
 
 /********************************************************
+ * Routine: Update_Grid_Exterior_Nodes                  *
+ *                                                      *
+ * Updates the exterior nodes of each grid in the list  *
+ * of hexahedral solution blocks.                       *
+ *                                                      *
+ ********************************************************/
+template<class HEXA_BLOCK>
+void Hexa_Multi_Block<HEXA_BLOCK>::Update_Grid_Exterior_Nodes(void) {
+
+  if (Allocated) {
+
+    for (int i = 0 ; i < Number_of_Soln_Blks ; ++i) {
+      if (Block_Used[i]) Soln_Blks[i].Update_Grid_Exterior_Nodes();
+    } /* endfor */
+
+  } /* endif */
+
+}
+
+/********************************************************
+ * Routine: Update_Grid_Cells                           *
+ *                                                      *
+ * Updates the computational cells of each grid in the  *
+ * list of hexahedral solution blocks.                  *
+ *                                                      *
+ ********************************************************/
+template<class HEXA_BLOCK>
+void Hexa_Multi_Block<HEXA_BLOCK>::Update_Grid_Cells(void) {
+
+  if (Allocated) {
+
+    for (int i = 0 ; i < Number_of_Soln_Blks ; ++i) {
+      if (Block_Used[i]) Soln_Blks[i].Update_Grid_Cells();
+    } /* endfor */
+
+  } /* endif */
+
+}
+
+/********************************************************
+ * Routine: Update_Grid_Ghost_Cells                     *
+ *                                                      *
+ * Updates the ghost cells of each grid in the list     *
+ * of hexahedral solution blocks.                       *
+ *                                                      *
+ ********************************************************/
+template<class HEXA_BLOCK>
+void Hexa_Multi_Block<HEXA_BLOCK>::Update_Grid_Ghost_Cells(void) {
+
+  if (Allocated) {
+
+    for (int i = 0 ; i < Number_of_Soln_Blks ; ++i) {
+      if (Block_Used[i]) Soln_Blks[i].Update_Grid_Ghost_Cells();
+    } /* endfor */
+
+  } /* endif */
+
+}
+
+/********************************************************
+ * Routine: Rotate_Grid                                 *
+ *                                                      *
+ * Applies a rotation to each grid in the list          *
+ * of hexahedral solution blocks.                       *
+ *                                                      *
+ ********************************************************/
+template<class HEXA_BLOCK>
+void Hexa_Multi_Block<HEXA_BLOCK>::Rotate_Grid(const double &Angle, 
+                                               const double &Angle1, 
+                                               const double &Angle2) {
+
+  if (Allocated) {
+
+    for (int i = 0 ; i < Number_of_Soln_Blks ; ++i) {
+      if (Block_Used[i]) Soln_Blks[i].Rotate_Grid(Angle, 
+                                                  Angle1, 
+                                                  Angle2);
+    } /* endfor */
+
+  } /* endif */
+
+}
+
+/**********************************************************
+ * Routine: Correct_Grid_Exterior_Nodes                   *
+ *                                                        *
+ * Correct the the exterior nodes of all of the grids     *
+ * in the 1D array of 3D hexahedaral multi-block solution *
+ * blocks.                                                *
+ *                                                        *
+ **********************************************************/
+template <class HEXA_BLOCK>
+void Hexa_Multi_Block<HEXA_BLOCK>::Correct_Grid_Exterior_Nodes(AdaptiveBlock3D_List &Blk_List) {
+   
+  int i_bound_elem; // index for boundary element, face edge or vertex
+
+  if (Allocated) {
+
+     for (int i_blk = 0 ; i_blk <= Blk_List.Nblk-1 ; ++i_blk ) {
+        if (Blk_List.Block[i_blk].used) {
+           for (int ii = -1; ii <= 1; ii++){
+              for (int jj = -1; jj <= 1; jj++){
+                 for (int kk = -1; kk <= 1; kk++){
+                    i_bound_elem = 9*(ii+1) + 3*(jj+1) + (kk+1);
+                    if (Blk_List.Block[i_blk].info.be.on_grid_boundary[i_bound_elem] &&
+                        i_bound_elem != BE::ME) {
+                       Soln_Blks[i_blk].Grid.Correct_Exterior_Nodes(ii, 
+                                                                    jj, 
+                                                                    kk, 
+                                                                    Blk_List.Block[i_blk].info.be.on_grid_boundary);
+                    }/* endif */
+                 }/* end for k */
+              }/* end for j */
+           }/* end for i */
+        }/* endif */
+     }  /* endfor */
+
+  } /* endif */
+      
+  Update_Grid_Ghost_Cells();
+
+}
+
+/**********************************************************
+ * Routine: Fix_Corner_Nodes_for_3_Blks_Abutting          *
+ *                                                        *
+ * Fix the ghost cells at corners for 3 blocks abbuting   *
+ * situation.                                             * 
+ *                                                        *
+ **********************************************************/
+template <class HEXA_BLOCK>
+void Hexa_Multi_Block<HEXA_BLOCK>::Fix_Corner_Cells_for_3_Blks_Abutting(AdaptiveBlock3D_List &Blk_List) {
+   
+   int number_neighbours[MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK];
+   int i_bound_elem;
+   int error_flag(0);  
+   
+   if (Allocated) {
+      for (int i_blk = 0 ; i_blk <= Blk_List.Nblk-1 ; ++i_blk ) {
+         if (Blk_List.Block[i_blk].used) {
+
+            /* Conversion of the indices for each solution block. */
+            // Assign the boundary element information
+
+            number_neighbours[BE::BSW] = Blk_List.Block[i_blk].nBSW;
+            number_neighbours[BE::SW] = Blk_List.Block[i_blk].nSW;
+            number_neighbours[BE::TSW] = Blk_List.Block[i_blk].nTSW;
+            number_neighbours[BE::BW] = Blk_List.Block[i_blk].nBW;
+            number_neighbours[BE::W] = Blk_List.Block[i_blk].nW;
+            number_neighbours[BE::TW] = Blk_List.Block[i_blk].nTW;
+            number_neighbours[BE::BNW] = Blk_List.Block[i_blk].nBNW;
+            number_neighbours[BE::NW] = Blk_List.Block[i_blk].nNW;
+            number_neighbours[BE::TNW] = Blk_List.Block[i_blk].nTNW;
+            number_neighbours[BE::BS] = Blk_List.Block[i_blk].nBS;
+            number_neighbours[BE::S] = Blk_List.Block[i_blk].nS;
+            number_neighbours[BE::TS] = Blk_List.Block[i_blk].nTS;
+            number_neighbours[BE::B] = Blk_List.Block[i_blk].nB;
+            number_neighbours[BE::T] = Blk_List.Block[i_blk].nT;
+            number_neighbours[BE::BN] = Blk_List.Block[i_blk].nBN;
+            number_neighbours[BE::N] = Blk_List.Block[i_blk].nN;
+            number_neighbours[BE::TN] = Blk_List.Block[i_blk].nTN;
+            number_neighbours[BE::BSE] = Blk_List.Block[i_blk].nBSE;
+            number_neighbours[BE::SE] = Blk_List.Block[i_blk].nSE;
+            number_neighbours[BE::TSE] = Blk_List.Block[i_blk].nTSE;
+            number_neighbours[BE::BE] = Blk_List.Block[i_blk].nBE;
+            number_neighbours[BE::E] = Blk_List.Block[i_blk].nE;
+            number_neighbours[BE::TE] = Blk_List.Block[i_blk].nTE;
+            number_neighbours[BE::BNE] = Blk_List.Block[i_blk].nBNE;
+            number_neighbours[BE::NE] = Blk_List.Block[i_blk].nNE;
+            number_neighbours[BE::TNE] = Blk_List.Block[i_blk].nTNE;
+        
+           for (int ii = -1; ii <= 1; ii++){
+              for (int jj = -1; jj <= 1; jj++){
+                 for (int kk = -1; kk <= 1; kk++){
+                    i_bound_elem = 9*(ii+1) + 3*(jj+1) + (kk+1);
+                    error_flag = Soln_Blks[i_blk].Grid.Fix_Corner_Cells_for_3_Blks_Abutting(
+                                       ii, 
+                                       jj, 
+                                       kk, 
+                                       number_neighbours[i_bound_elem],
+                                      Blk_List.Block[i_blk].info.be.on_grid_boundary[i_bound_elem]);
+                 }/* end for k */
+              }/* end for j */
+           }/* end for i */
+
+         }/* endif */
+      }  /* endfor */
+      
+   } /* endif */
+   
+}
+
+/**********************************************************
+ * Routine: pdate_Corner_Cells_for_3_Blks_Abutting        *
+ *                                                        *
+ * Fix the solution in ghost cells at corners for 3       *
+ * blocks abbuting situation.                             *
+ *                                                        *
+ **********************************************************/
+template <class HEXA_BLOCK>
+void Hexa_Multi_Block<HEXA_BLOCK>::Update_Corner_Cells_for_3_Blks_Abutting(AdaptiveBlock3D_List &Blk_List) {
+   
+   int number_neighbours[MAX_BOUNDARY_ELEMENTS_FOR_A_BLOCK];
+   int i_bound_elem;
+   int error_flag(0);
+   
+   if (Allocated) {
+      for (int i_blk = 0 ; i_blk <= Blk_List.Nblk-1 ; ++i_blk ) {
+         if (Blk_List.Block[i_blk].used) {
+
+            /* Conversion of the indices for each solution block. */
+            // Assign the boundary element information
+
+            number_neighbours[BE::BSW] = Blk_List.Block[i_blk].nBSW;
+            number_neighbours[BE::SW] = Blk_List.Block[i_blk].nSW;
+            number_neighbours[BE::TSW] = Blk_List.Block[i_blk].nTSW;
+            number_neighbours[BE::BW] = Blk_List.Block[i_blk].nBW;
+            number_neighbours[BE::W] = Blk_List.Block[i_blk].nW;
+            number_neighbours[BE::TW] = Blk_List.Block[i_blk].nTW;
+            number_neighbours[BE::BNW] = Blk_List.Block[i_blk].nBNW;
+            number_neighbours[BE::NW] = Blk_List.Block[i_blk].nNW;
+            number_neighbours[BE::TNW] = Blk_List.Block[i_blk].nTNW;
+            number_neighbours[BE::BS] = Blk_List.Block[i_blk].nBS;
+            number_neighbours[BE::S] = Blk_List.Block[i_blk].nS;
+            number_neighbours[BE::TS] = Blk_List.Block[i_blk].nTS;
+            number_neighbours[BE::B] = Blk_List.Block[i_blk].nB;
+            number_neighbours[BE::T] = Blk_List.Block[i_blk].nT;
+            number_neighbours[BE::BN] = Blk_List.Block[i_blk].nBN;
+            number_neighbours[BE::N] = Blk_List.Block[i_blk].nN;
+            number_neighbours[BE::TN] = Blk_List.Block[i_blk].nTN;
+            number_neighbours[BE::BSE] = Blk_List.Block[i_blk].nBSE;
+            number_neighbours[BE::SE] = Blk_List.Block[i_blk].nSE;
+            number_neighbours[BE::TSE] = Blk_List.Block[i_blk].nTSE;
+            number_neighbours[BE::BE] = Blk_List.Block[i_blk].nBE;
+            number_neighbours[BE::E] = Blk_List.Block[i_blk].nE;
+            number_neighbours[BE::TE] = Blk_List.Block[i_blk].nTE;
+            number_neighbours[BE::BNE] = Blk_List.Block[i_blk].nBNE;
+            number_neighbours[BE::NE] = Blk_List.Block[i_blk].nNE;
+            number_neighbours[BE::TNE] = Blk_List.Block[i_blk].nTNE;
+        
+           for (int ii = -1; ii <= 1; ii++){
+              for (int jj = -1; jj <= 1; jj++){
+                 for (int kk = -1; kk <= 1; kk++){
+                    i_bound_elem = 9*(ii+1) + 3*(jj+1) + (kk+1);
+                    error_flag = Soln_Blks[i_blk].Update_Corner_Cells_for_3_Blks_Abutting(
+                                               ii, 
+                                               jj, 
+                                               kk, 
+                                               number_neighbours[i_bound_elem],
+                                               Blk_List.Block[i_blk].info.be.on_grid_boundary[i_bound_elem]);
+                 }/* end for k */
+              }/* end for j */
+           }/* end for i */
+
+         }/* endif */
+      }  /* endfor */
+      
+   } /* endif */
+   
+}
+
+ /********************************************************
  * Routine: L1_Norm_Residual                            *
  *                                                      *
  * Determines the L1-norm of the solution residual for  *
- * a 1D array of 3D hexahedrial multi-block solution    *
+ * a 1D array of 3D hexahedral multi-block solution     *
  * blocks.  Useful for monitoring convergence of the    *
  * solution for steady state problems.                  *
  *                                                      *
  ********************************************************/
 template<class HEXA_BLOCK>
-double Hexa_Multi_Block<HEXA_BLOCK>::L1_Norm_Residual(void) {
+double Hexa_Multi_Block<HEXA_BLOCK>::L1_Norm_Residual(const int &var) {
    
-   double l1_norm;
-   l1_norm = ZERO;
+  double l1_norm(ZERO);
+  
+  /* Calculate the L1-norm. Sum the L1-norm for each solution block. */   
+
+  for (int nblk = 0; nblk < Number_of_Soln_Blks; ++nblk) {
+    if (Block_Used[nblk]) {
+      l1_norm += Soln_Blks[nblk].L1_Norm_Residual(var);
+    } 
+  }  
+
+  return (l1_norm);
    
-   /* Calculate the L1-norm.
-      Sum the L1-norm for each solution block. */
-   
-   for (int nblk = 0; nblk < Number_of_Soln_Blks; ++nblk) {
-      if (Block_Used[nblk]) {
-         l1_norm += Soln_Blks[nblk].L1_Norm_Residual();
-      } /* endif */
-   }  /* endfor */
-
-   /* Return the L1-norm. */
-
-   return (l1_norm);
-
 }
 
 /********************************************************
@@ -274,29 +585,24 @@ double Hexa_Multi_Block<HEXA_BLOCK>::L1_Norm_Residual(void) {
  *                                                      *
  ********************************************************/
 template<class HEXA_BLOCK>
-double Hexa_Multi_Block<HEXA_BLOCK>::L2_Norm_Residual(void) {
+double Hexa_Multi_Block<HEXA_BLOCK>::L2_Norm_Residual(const int &var) {
 
+  double l2_norm(ZERO);
    
-   double l2_norm;
+  /* Sum the square of the L2-norm for each solution block. */  
 
-   l2_norm = ZERO;
-   
-   /* Sum the square of the L2-norm for each solution block. */
-      
-   for (int nblk = 0; nblk < Number_of_Soln_Blks; ++nblk) {
-      if (Block_Used[nblk]) {
-         l2_norm += Soln_Blks[nblk].L2_Norm_Residual();
-      } /* endif */
-   }  /* endfor */
-   
-   /* Calculate the L2-norm for all blocks. */
-   
-   l2_norm = sqrt(l2_norm);
-   
-   /* Return the L2-norm. */
-   
-   return (l2_norm);
-   
+  for (int nblk = 0; nblk < Number_of_Soln_Blks; ++nblk) {
+    if (Block_Used[nblk]) {
+      l2_norm += sqr(Soln_Blks[nblk].L2_Norm_Residual(var));
+    } 
+  }  
+
+  /* Calculate the L2-norm for all blocks. */  
+
+  l2_norm = sqrt(l2_norm);
+  
+  return (l2_norm);  
+
 }
 
 /********************************************************
@@ -309,45 +615,141 @@ double Hexa_Multi_Block<HEXA_BLOCK>::L2_Norm_Residual(void) {
  *                                                      *
  ********************************************************/
 template<class HEXA_BLOCK>
-double Hexa_Multi_Block<HEXA_BLOCK>::Max_Norm_Residual(void) {
+double Hexa_Multi_Block<HEXA_BLOCK>::Max_Norm_Residual(const int &var) {
    
-   double max_norm;
+  double max_norm(ZERO);
    
-   max_norm = ZERO;
-   
-   /* Find the maximum norm for all solution blocks. */
-   
-   for (int nblk = 0; nblk < Number_of_Soln_Blks; ++nblk) {
-      if(Block_Used[nblk]){
-         max_norm = max(max_norm, (Soln_Blks[nblk].Max_Norm_Residual()));
-      } /* endif */
-   }  /* endfor */
-   
-   /* Return the maximum norm. */
-   
-   return (max_norm);
-   
+  /* Find the maximum norm for all solution blocks. */   
+
+  for (int nblk = 0; nblk < Number_of_Soln_Blks; ++nblk) {
+    if (Block_Used[nblk]){
+      max_norm = max(max_norm, (Soln_Blks[nblk].Max_Norm_Residual(var)));
+    } 
+  }        
+
+  return (max_norm);  
+
+}
+
+/********************************************************
+ * Routine: Evaluate_Limiters                           *
+ *                                                      *
+ * Set conditions to evaluate the limiters for a        *
+ * 1D array of 3D hexahedral multi-block solution       *
+ * blocks.                                              *
+ *                                                      *
+ ********************************************************/
+template<class HEXA_BLOCK>
+void Hexa_Multi_Block<HEXA_BLOCK>::Evaluate_Limiters(void) {
+
+  for (int nblk = 0; nblk < Number_of_Soln_Blks; ++nblk) {
+    if(Block_Used[nblk]){
+      Soln_Blks[nblk].Evaluate_Limiters();  
+    } 
+  }  
+
+}
+
+/********************************************************
+ * Routine: Freeze_Limiters                             *
+ *                                                      *
+ * Set conditions to freeze the limiters for a          *
+ * 1D array of 3D hexahedral multi-block solution       *
+ * blocks.                                              *
+ *                                                      *
+ ********************************************************/
+template<class HEXA_BLOCK>
+void Hexa_Multi_Block<HEXA_BLOCK>::Freeze_Limiters(void) {
+
+  for (int nblk = 0; nblk < Number_of_Soln_Blks; ++nblk) {
+    if(Block_Used[nblk]){
+      Soln_Blks[nblk].Freeze_Limiters();  
+    } 
+  }    
+
 }
 
 /********************************************************
  * Routine: ICs                                         *
  *                                                      *
  * Assigns initial conditions and data to the           *
- * solution variables of a 1D array of 3D hexahedrial *
+ * solution variables of a 1D array of 3D hexahedral    *
  * multi-block solution blocks.                         *
  *                                                      *
  ********************************************************/
 template<class HEXA_BLOCK>
-void Hexa_Multi_Block<HEXA_BLOCK>::ICs(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
-                                                        typename HEXA_BLOCK::Soln_cState> &Input) {
+int Hexa_Multi_Block<HEXA_BLOCK>::ICs(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
+                                                       typename HEXA_BLOCK::Soln_cState> &Input) {
+
+   int error_flag(0);
    
    /* Assign initial data for each solution block. */
 
    for (int nblk = 0; nblk < Number_of_Soln_Blks; ++nblk) {
       if (Block_Used[nblk]) {
-         Soln_Blks[nblk].ICs(Input.i_ICs, Input);
+         error_flag = Soln_Blks[nblk].ICs(Input);
+         if (error_flag) return (error_flag);
       } /* endif */
    }  /* endfor */
+
+   /* Initializations complete, return. */
+
+   return (error_flag);
+   
+}
+
+/********************************************************
+ * Routine: ICs_Specializations                         *
+ *                                                      *
+ * Assigns specialized initial conditions and data to   *
+ * solution variables of a 1D array of 3D hexahedral    *
+ * multi-block solution blocks.                         *
+ *                                                      *
+ ********************************************************/
+template<class HEXA_BLOCK>
+int Hexa_Multi_Block<HEXA_BLOCK>::ICs_Specializations(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
+                                                                       typename HEXA_BLOCK::Soln_cState> &Input) {
+
+   int error_flag(0);
+
+   /* Assign specialized initial data for each solution block. */
+
+   for (int nblk = 0; nblk < Number_of_Soln_Blks; ++nblk) {
+      if (Block_Used[nblk]) {
+         error_flag = Soln_Blks[nblk].ICs_Specializations(Input);
+         if (error_flag) return (error_flag);
+      } /* endif */
+   }  /* endfor */
+   
+   /* Initializations complete, return. */
+
+   return (error_flag);
+
+}
+
+/********************************************************
+ * Routine: Interpolate_2Dto3D                          *
+ *                                                      *
+ * Read in a 2D numerical solution field and            *
+ * interpolates the solution to the current 3D so as    *
+ * to initialize the solution field.                    *
+ *                                                      *
+ ********************************************************/
+template<class HEXA_BLOCK>
+int Hexa_Multi_Block<HEXA_BLOCK>::Interpolate_2Dto3D(FlowField_2D &Numflowfield2D,
+                                                     Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
+						                      typename HEXA_BLOCK::Soln_cState> &Input) {
+
+   int error_flag(0);
+   
+   for (int nblk = 0; nblk < Number_of_Soln_Blks; ++nblk) { 
+      if (Block_Used[nblk]) {
+         error_flag =  Soln_Blks[nblk].Interpolate_2Dto3D(Numflowfield2D);
+         if (error_flag) return (error_flag);
+      } /* endif */
+   }  /* endfor */
+   
+   return (error_flag);
    
 }
 
@@ -405,6 +807,7 @@ double Hexa_Multi_Block<HEXA_BLOCK>::CFL(Input_Parameters<typename HEXA_BLOCK::S
    return (dtMin);
     
 }
+
 /********************************************************
  * Routine: Set_Global_TimeStep                         *
  *                                                      *
@@ -414,13 +817,37 @@ double Hexa_Multi_Block<HEXA_BLOCK>::CFL(Input_Parameters<typename HEXA_BLOCK::S
  *                                                      *
  ********************************************************/
 template<class HEXA_BLOCK>
-void Hexa_Multi_Block<HEXA_BLOCK>::Set_Global_TimeStep(const double &Dt_min){
+void Hexa_Multi_Block<HEXA_BLOCK>::Set_Global_TimeStep(const double &Dt_min) {
 
    for (int nblk = 0; nblk < Number_of_Soln_Blks; ++nblk) { 
       if (Block_Used[nblk]) {
          Soln_Blks[nblk].Set_Global_TimeStep(Dt_min);
       } /* endif */
    }  /* endfor */
+
+}
+
+/********************************************************
+ * Routine: Wall_Shear                                  *
+ *                                                      *
+ * Evaluates the wall shear stress.                     *
+ *                                                      *
+ ********************************************************/
+template<class HEXA_BLOCK>
+int Hexa_Multi_Block<HEXA_BLOCK>::Wall_Shear(void) {
+   
+   int error_flag(0);
+   
+   /* Compute wall shear for each solution block. */
+   
+   for (int nblk = 0; nblk < Number_of_Soln_Blks; ++nblk) {
+      if (Block_Used[nblk]) {
+         error_flag = Soln_Blks[nblk].Wall_Shear();
+         if (error_flag) return (error_flag);
+      } /* endif */
+   }  /* endfor */
+
+   return(error_flag);
 
 }
 
@@ -439,7 +866,7 @@ int Hexa_Multi_Block<HEXA_BLOCK>::WtoU(void){
    
    /* Convert U to W for each solution block. */
 
-   for(int nblk = 0; nblk < Number_of_Soln_Blks; ++nblk){
+   for (int nblk = 0; nblk < Number_of_Soln_Blks; ++nblk) {
       if (Block_Used[nblk]) {
          error_flag = Soln_Blks[nblk].WtoU();
          if (error_flag) return (error_flag);
@@ -462,9 +889,10 @@ int Hexa_Multi_Block<HEXA_BLOCK>::WtoU(void){
  *                                                      *
  ********************************************************/
 template<class HEXA_BLOCK>
-int Hexa_Multi_Block<HEXA_BLOCK>::dUdt_Multistage_Explicit(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
-                                                                            typename HEXA_BLOCK::Soln_cState> &Input,
-                                                           const int I_Stage) {
+int Hexa_Multi_Block<HEXA_BLOCK>::
+dUdt_Multistage_Explicit(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
+                                          typename HEXA_BLOCK::Soln_cState> &Input,
+                         const int I_Stage) {
    
    int i, error_flag;
    error_flag = 0;
@@ -494,9 +922,10 @@ int Hexa_Multi_Block<HEXA_BLOCK>::dUdt_Multistage_Explicit(Input_Parameters<type
  *                                                      *
  ********************************************************/
 template<class HEXA_BLOCK>
-int Hexa_Multi_Block<HEXA_BLOCK>::Update_Solution_Multistage_Explicit(Input_Parameters<typename HEXA_BLOCK::Soln_pState,
-                                                                                       typename HEXA_BLOCK::Soln_cState> &Input,
-                                                                      const int I_Stage) {
+int Hexa_Multi_Block<HEXA_BLOCK>::
+Update_Solution_Multistage_Explicit(Input_Parameters<typename HEXA_BLOCK::Soln_pState,
+                                                     typename HEXA_BLOCK::Soln_cState> &Input,
+                                    const int I_Stage) {
    
    int i, error_flag;
    error_flag = 0;
@@ -525,20 +954,23 @@ int Hexa_Multi_Block<HEXA_BLOCK>::Update_Solution_Multistage_Explicit(Input_Para
  *                                                      *
  ********************************************************/
 template<class HEXA_BLOCK>
-int Hexa_Multi_Block<HEXA_BLOCK>::Read_Restart_Solution(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
-                                                                         typename HEXA_BLOCK::Soln_cState> &Input,
-                                                        AdaptiveBlock3D_List &Local_Adaptive_Block_List,
-                                                        int &Number_of_Time_Steps,
-                                                        double &Time,
-                                                        CPUTime &CPU_Time) {
+int Hexa_Multi_Block<HEXA_BLOCK>::
+Read_Restart_Solution(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
+                                       typename HEXA_BLOCK::Soln_cState> &Input,
+                      AdaptiveBlock3D_List &Local_Adaptive_Block_List,
+                      int &Number_of_Time_Steps,
+                      double &Time,
+                      CPUTime &CPU_Time) {
    
-   int i, i_new_time_set, nsteps, nblk;
+   int i, i_new_time_set, nsteps;
    char prefix[256], extension[256], restart_file_name[256], line[256];
    char *restart_file_name_ptr;
    ifstream restart_file;
    double time0;
    CPUTime cpu_time0;
-   
+
+   /* Determine prefix of restart file names. */
+
    i = 0;
    while (1) {
       if (Input.Restart_File_Name[i] == ' ' ||
@@ -554,9 +986,9 @@ int Hexa_Multi_Block<HEXA_BLOCK>::Read_Restart_Solution(Input_Parameters<typenam
 
    i_new_time_set = 0;
 
-   for (nblk = 0; nblk < Local_Adaptive_Block_List.Nblk; ++nblk) { 
+   for (int nblk = 0; nblk < Local_Adaptive_Block_List.Nblk; ++nblk) { 
       if (Local_Adaptive_Block_List.Block[nblk].used == ADAPTIVEBLOCK3D_USED){
-         sprintf(extension, "%.6d", Local_Adaptive_Block_List.Block[nblk].gblknum);
+         sprintf(extension, "%.6d", Local_Adaptive_Block_List.Block[nblk].info.gblknum);
          strcat(extension, ".soln");
          strcpy(restart_file_name, prefix);
          strcat(restart_file_name, extension);
@@ -588,8 +1020,6 @@ int Hexa_Multi_Block<HEXA_BLOCK>::Read_Restart_Solution(Input_Parameters<typenam
          // Close restart file.
          restart_file.close();
 
-         Soln_Blks[nblk].Wall_Shear();
-       
        }  /* endif */
     } /* endfor */
     
@@ -609,21 +1039,25 @@ int Hexa_Multi_Block<HEXA_BLOCK>::Read_Restart_Solution(Input_Parameters<typenam
  *                                                      *
  ********************************************************/
 template<class HEXA_BLOCK>
-int Hexa_Multi_Block<HEXA_BLOCK>::Write_Restart_Solution(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
-                                                                          typename HEXA_BLOCK::Soln_cState> &Input,
-                                                         AdaptiveBlock3D_List &Local_Adaptive_Block_List,
-                                                         const int Number_of_Time_Steps,
-                                                         const double &Time,
-                                                         const CPUTime &CPU_Time) {
+int Hexa_Multi_Block<HEXA_BLOCK>::
+Write_Restart_Solution(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
+                                        typename HEXA_BLOCK::Soln_cState> &Input,
+                       AdaptiveBlock3D_List &Local_Adaptive_Block_List,
+                       const int Number_of_Time_Steps,
+                       const double &Time,
+                       const CPUTime &CPU_Time) {
    
-   int i, nblk;
+   int i;
    char prefix[256], extension[256], restart_file_name[256];
    char *restart_file_name_ptr;
    ofstream restart_file;
    
+   /* Return if there are no solution blocks to write. */
+
+   if (Number_of_Soln_Blks_in_Use() == 0) return(0);
+
    /* Determine prefix of restart file names. */
-   nblk = 0;
-     
+
    i = 0;
    while (1) {
       if (Input.Restart_File_Name[i] == ' ' ||
@@ -635,9 +1069,9 @@ int Hexa_Multi_Block<HEXA_BLOCK>::Write_Restart_Solution(Input_Parameters<typena
    prefix[i] = '\0';
    strcat(prefix, "_blk");
     
-   for (nblk = 0; nblk < Local_Adaptive_Block_List.Nblk; ++nblk){
+   for (int nblk = 0; nblk < Local_Adaptive_Block_List.Nblk; ++nblk){
       if (Local_Adaptive_Block_List.Block[nblk].used == ADAPTIVEBLOCK3D_USED){    
-         sprintf(extension, "%.6d", Local_Adaptive_Block_List.Block[nblk].gblknum);
+         sprintf(extension, "%.6d", Local_Adaptive_Block_List.Block[nblk].info.gblknum);
          strcat(extension, ".soln");
          strcpy(restart_file_name, prefix);
          strcat(restart_file_name, extension);
@@ -684,17 +1118,22 @@ int Hexa_Multi_Block<HEXA_BLOCK>::Write_Restart_Solution(Input_Parameters<typena
  *                                                      *
  ********************************************************/
 template<class HEXA_BLOCK>
-int Hexa_Multi_Block<HEXA_BLOCK>::Output_Tecplot(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
-                                                                  typename HEXA_BLOCK::Soln_cState> &Input,
-                                                 AdaptiveBlock3D_List &Local_Adaptive_Block_List,
-                                                 const int Number_of_Time_Steps,
-                                                 const double &Time) {
+int Hexa_Multi_Block<HEXA_BLOCK>::
+Output_Tecplot(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
+                                typename HEXA_BLOCK::Soln_cState> &Input,
+               AdaptiveBlock3D_List &Local_Adaptive_Block_List,
+               const int Number_of_Time_Steps,
+               const double &Time) {
    
-    int i, i_output_title, nblk;
+    int i, i_output_title;
     char prefix[256], extension[256], output_file_name[256];
     char *output_file_name_ptr;
     ofstream output_file;    
    
+    /* Return if there are no solution blocks to write. */
+
+    if (Number_of_Soln_Blks_in_Use() == 0) return(0);
+
     /* Determine prefix of output data file names. */
 
     i = 0;
@@ -724,12 +1163,12 @@ int Hexa_Multi_Block<HEXA_BLOCK>::Output_Tecplot(Input_Parameters<typename HEXA_
     /* Write the solution data for each solution block. */
 
     i_output_title = 1;
-    for (nblk = 0; nblk<Local_Adaptive_Block_List.Nblk; ++nblk) {
+    for (int nblk = 0; nblk<Local_Adaptive_Block_List.Nblk; ++nblk) {
        if (Local_Adaptive_Block_List.Block[nblk].used == ADAPTIVEBLOCK3D_USED) {    
           Soln_Blks[nblk].Output_Tecplot(Input,
                                          Number_of_Time_Steps, 
                                          Time,
-                                         Local_Adaptive_Block_List.Block[nblk].gblknum,
+                                         Local_Adaptive_Block_List.Block[nblk].info.gblknum,
                                          i_output_title,
                                          output_file);
           if (i_output_title) i_output_title = 0;
@@ -758,16 +1197,21 @@ int Hexa_Multi_Block<HEXA_BLOCK>::Output_Tecplot(Input_Parameters<typename HEXA_
  *                                                      *
  ********************************************************/
 template<class HEXA_BLOCK>
-int Hexa_Multi_Block<HEXA_BLOCK>::Output_Cells_Tecplot(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
-                                                                        typename HEXA_BLOCK::Soln_cState> &Input,
-                                                        AdaptiveBlock3D_List &Local_Adaptive_Block_List,
-                                                        const int Number_of_Time_Steps,
-                                                        const double &Time) {
+int Hexa_Multi_Block<HEXA_BLOCK>::
+Output_Cells_Tecplot(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
+                                      typename HEXA_BLOCK::Soln_cState> &Input,
+                     AdaptiveBlock3D_List &Local_Adaptive_Block_List,
+                     const int Number_of_Time_Steps,
+                     const double &Time) {
    
-    int i, i_output_title, nblk;
+    int i, i_output_title;
     char prefix[256], extension[256], output_file_name[256];
     char *output_file_name_ptr;
     ofstream output_file;    
+
+    /* Return if there are no solution blocks to write. */
+
+    if (Number_of_Soln_Blks_in_Use() == 0) return(0);
 
     /* Determine prefix of output data file names. */
  
@@ -781,7 +1225,8 @@ int Hexa_Multi_Block<HEXA_BLOCK>::Output_Cells_Tecplot(Input_Parameters<typename
     } /* endwhile */
     prefix[i] = '\0';
     strcat(prefix, "_cells_cpu");
-       /* Determine output data file name for this processor. */
+
+    /* Determine output data file name for this processor. */
 
     sprintf(extension, "%.6d", Local_Adaptive_Block_List.ThisCPU);
     strcat(extension, ".dat");
@@ -797,12 +1242,12 @@ int Hexa_Multi_Block<HEXA_BLOCK>::Output_Cells_Tecplot(Input_Parameters<typename
     /* Write the solution data for each solution block. */
 
     i_output_title = 1;
-    for (nblk = 0; nblk < Local_Adaptive_Block_List.Nblk; ++nblk) {
+    for (int nblk = 0; nblk < Local_Adaptive_Block_List.Nblk; ++nblk) {
        if (Local_Adaptive_Block_List.Block[nblk].used == ADAPTIVEBLOCK3D_USED) {    
          Soln_Blks[nblk].Output_Cells_Tecplot(Input,
                                               Number_of_Time_Steps, 
                                               Time,
-                                              Local_Adaptive_Block_List.Block[nblk].gblknum,
+                                              Local_Adaptive_Block_List.Block[nblk].info.gblknum,
                                               i_output_title,
                                               output_file);
          if (i_output_title) i_output_title = 0;
@@ -831,16 +1276,21 @@ int Hexa_Multi_Block<HEXA_BLOCK>::Output_Cells_Tecplot(Input_Parameters<typename
  *                                                      *
  ********************************************************/
 template<class HEXA_BLOCK>
-int Hexa_Multi_Block<HEXA_BLOCK>::Output_Nodes_Tecplot(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
-                                                                        typename HEXA_BLOCK::Soln_cState> &Input,
-                                                       AdaptiveBlock3D_List &Local_Adaptive_Block_List,
-                                                       const int Number_of_Time_Steps,
-                                                       const double &Time) {
+int Hexa_Multi_Block<HEXA_BLOCK>::
+Output_Nodes_Tecplot(Input_Parameters<typename HEXA_BLOCK::Soln_pState, 
+                                      typename HEXA_BLOCK::Soln_cState> &Input,
+                     AdaptiveBlock3D_List &Local_Adaptive_Block_List,
+                     const int Number_of_Time_Steps,
+                     const double &Time) {
    
-    int i, i_output_title, nblk;
+    int i, i_output_title;
     char prefix[256], extension[256], output_file_name[256];
     char *output_file_name_ptr;
     ofstream output_file;    
+
+    /* Return if there are no solution blocks to write. */
+
+    if (Number_of_Soln_Blks_in_Use() == 0) return(0);
 
     /* Determine prefix of output data file names. */
  
@@ -871,12 +1321,12 @@ int Hexa_Multi_Block<HEXA_BLOCK>::Output_Nodes_Tecplot(Input_Parameters<typename
     /* Write the solution data for each solution block. */
 
     i_output_title = 1;
-    for (nblk = 0; nblk < Local_Adaptive_Block_List.Nblk; ++nblk) {
+    for (int nblk = 0; nblk < Local_Adaptive_Block_List.Nblk; ++nblk) {
        if (Local_Adaptive_Block_List.Block[nblk].used == ADAPTIVEBLOCK3D_USED) {    
          Soln_Blks[nblk].Output_Nodes_Tecplot(Input,
                                               Number_of_Time_Steps, 
                                               Time,
-                                              Local_Adaptive_Block_List.Block[nblk].gblknum,
+                                              Local_Adaptive_Block_List.Block[nblk].info.gblknum,
                                               i_output_title,
                                               output_file);
          if (i_output_title) i_output_title = 0;

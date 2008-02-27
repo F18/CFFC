@@ -38,7 +38,8 @@ double Turbulence_Model_k_omega::f_beta(const Tensor3D &rotation,
 //      |Omega_ij Omega_jk S_ki|
 // Xw = |----------------------| 
 //      |  (beta_o* omega)^3   |
-   kai_w_numerator = rotation.xy*(-rotation.xy)*strain_rate.xx + 
+   kai_w_numerator = 
+      rotation.xy*(-rotation.xy)*strain_rate.xx + 
       rotation.xy*rotation.yz*strain_rate.xz + 
       rotation.xz*(-rotation.xz)*strain_rate.xx +  
       rotation.xz*(-rotation.yz)*strain_rate.xy + 
@@ -152,11 +153,15 @@ int Turbulence_Model_k_omega::low_Reynolds_number_formulation(
                              grid.BCtypeT[i][j]  == BC_WALL_VISCOUS_ISOTHERMAL ||
                              grid.BCtypeT[i][j] == BC_WALL_VISCOUS_HEATFLUX ||
                              grid.BCtypeT[i][j] == BC_ADIABATIC_WALL))){
+    
+   
+      if(wall.ywall !=0){
+         domega =  d*6.0*(mu/d)/(beta*sqr(wall.ywall));
+      }else{
+         domega = MILLION;
+      }
       
-      domega =  d*6.0*(mu/d)/(beta*sqr(wall.ywall));
-      
-        
-   }// end of checking
+    }// end of checking
     
    return 0;
       
@@ -367,4 +372,3 @@ int Turbulence_Model_k_omega::automatic_wall_treatment_residual_evaluaton(
   
 }
 
-   

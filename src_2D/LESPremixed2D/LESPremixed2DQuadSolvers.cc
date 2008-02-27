@@ -1694,7 +1694,7 @@ int LESPremixed2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
           Average(Local_SolnBlk, List_of_Local_Solution_Blocks, 
                  Input_Parameters, u_ave, v_ave, sqr_u);
 	  	   
-          // if (Time == 0.0) { 
+//           if (Time == 0.0) { 
 // 	  error_flag = Longitudinal_Correlation(QuadTree, 
 //                                                 List_of_Global_Solution_Blocks,  
 //                                                 List_of_Local_Solution_Blocks,

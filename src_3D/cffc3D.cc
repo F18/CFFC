@@ -1,7 +1,10 @@
-/*******************************************************************
+/*! \mainpage
+
+\verbatim
+ *******************************************************************
  *******************************************************************
  **********                                               **********
- ******                 CFFC3D Version 1.00                  *******
+ ******                 CFFC3D Version 0.01                  *******
  ****                       (07/19/07)                          ****
  ****                                                           ****
  ****  Computational Framework for Fluids and Combustion (CFFC) ****
@@ -12,7 +15,23 @@
  *******************************************************************
  ******************************************************************* 
  
- Include the header files defining various variable types and data
+\endverbatim
+*/
+
+/*! \file cffc3D.cc
+
+    \brief Main executable for CFFC3D framework.
+
+ This computer program can be used to solve a selected
+ set of linear and non-linear partial differential equations (PDEs)
+ on  three-dimensional spatial domains using a
+ variety of solution techniques appropriate for the problem.
+
+ The program is built using the CFFC library.
+
+ */
+
+/* Include the header files defining various variable types and data
    structures, classes, functions, operators, global variables,
    etc.. */
 
@@ -29,6 +48,7 @@ using namespace std;
 #include "Euler/Euler3DThermallyPerfect.h"
 #include "NavierStokes/NavierStokes3DThermallyPerfect.h"
 #include "FANS/FANS3DThermallyPerfect.h"
+#include "LES/LES_FSD/LES3DFsd.h"
 #include "UnitTesting/UnitTesting.h"
 
 /* Begin CFFC3D program. */
@@ -263,6 +283,11 @@ int main(int num_arg, char *arg_ptr[]) {
    } else if(strcmp(Equation_Type, "FANS3DThermallyPerfect") == 0) {
       error_flag = HexaSolver< FANS3D_ThermallyPerfect_KOmega_pState, FANS3D_ThermallyPerfect_KOmega_cState>
                    (Input_File_Name_ptr, batch_flag);
+
+   } else if(strcmp(Equation_Type, "LES3DFsd") == 0) {
+      error_flag = HexaSolver< LES3DFsd_pState, LES3DFsd_cState>
+                   (Input_File_Name_ptr, batch_flag);
+
    } /* endif */
  
    if (error_flag) {
@@ -281,7 +306,7 @@ int main(int num_arg, char *arg_ptr[]) {
     ********************************************************/
 
    if (CFFC_Primary_MPI_Processor() && !batch_flag) 
-      cout << "\n\nCFFC3D: Execution complete.\n";
+      cout << "\n\nCFFC3D: Execution complete.\n\n";
 
    //Ending properly
    return (0);

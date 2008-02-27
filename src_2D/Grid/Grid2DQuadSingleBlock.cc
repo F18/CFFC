@@ -4226,7 +4226,7 @@ void Read_Quad_Block(Grid2D_Quad_Block &Grid,
  *                                                      *
  ********************************************************/
 void Copy_Quad_Block(Grid2D_Quad_Block &Grid1,
-                     Grid2D_Quad_Block &Grid2) {
+                     const Grid2D_Quad_Block &Grid2) {
 
     int i, j, ni, nj;
  

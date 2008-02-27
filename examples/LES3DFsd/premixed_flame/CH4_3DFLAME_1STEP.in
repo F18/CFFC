@@ -1,0 +1,91 @@
+Time_Integration_Type =
+Explicit_Runge_Kutta
+#Multistage_Optimal_Smoothing
+#Explicit_Euler
+N_Stage = 
+4
+Time_Accurate = 
+ON
+Local_Time_Stepping =
+0
+Reconstruction_Type =
+Least_Squares
+Limiter_Type = 
+Barth_Jespersen
+Flux_Function_Type =
+AUSM_plus_up
+ICs_Type = 
+Turbulent_Premixed_Flame
+Flow_Type = 
+Turbulent-LES-C-Fsd-k
+#Turbulent-LES-C-Fsd-Smagorinsky
+#Species=
+#5
+#CH4 O2 CO2 H2O N2
+Reaction_Mechanism=
+CH4_1STEP
+Schmidt_Numbers=
+0.73 0.8 1.0 0.66 1.0 
+Mass_Fractions=
+0.05518 0.22015 0.0 0.0 0.72467
+#Laminar_Flame_Speed=
+#0.3837
+#Laminar_Flame_Thickness=
+#4.46E-04
+#Adiabatic_Temperature=
+#2218.13
+#Equivalence_Ratio=
+#1.0
+#Reactants_Density=
+#1.13
+Grid_Type =
+#Cube
+Periodic_Box_With_Inflow
+Number_of_Cells_Idir = 
+8
+Number_of_Cells_Jdir =
+8
+Number_of_Cells_Kdir =
+8
+Number_of_Blocks_Idir = 
+2
+Number_of_Blocks_Jdir =
+2
+Number_of_Blocks_Kdir =
+2
+###############################
+# Set time stepping parameters
+###############################
+CFL_Number =
+0.1
+Box_Length=
+0.0366
+Box_Width=
+0.0366
+Box_Height=
+0.0366
+Time_Max = 
+0.001
+Maximum_Number_of_Time_Steps =
+0
+Number_of_Blocks_Per_Processor =
+20
+Output_File_Name = 
+Turbulent_Premixed_Flame
+Restart_Solution_Save_Frequency=
+10
+#######################
+# Execute program
+#######################
+Execute
+#######################
+# Write output
+#######################
+Write_Output_Cells
+Write_Output
+Write_Restart
+#######################
+# Terminate program
+#######################
+Terminate
+#########################

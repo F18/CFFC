@@ -16,7 +16,26 @@
 #include "FANS3DThermallyPerfectState.h"
 #endif // _FANS3D_THERMALLYPERFECT_STATE_INCLUDED   
 
+#ifndef _BLUFFBODY_DATABASE_INCLUDED
+#include "BluffBodyBurner.h"
+#endif // _BLUFFBODY_DATABASE_INCLUDE
+
+/* Include 2D to 3D solution interpolation header file. */
+
+#ifndef _INTERPOLATION2DTO3D_INCLUDED
+#include "Interpolation2Dto3D.h"
+#endif// _INTERPOLATION2DTO3D_INCLUDED
+
 /* Define required specializations. */
+
+template<>
+int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState,
+	        FANS3D_ThermallyPerfect_KOmega_cState>::
+Update_Corner_Cells_for_3_Blks_Abutting(const int i_elem, 
+                                        const int j_elem, 
+                                        const int k_elem, 
+                                        const int numNeigh,
+                                        const int be);
 
 template<>
 void Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState,
@@ -54,9 +73,13 @@ Output_Nodes_Tecplot(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState,
 template<>
 int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState, 
                FANS3D_ThermallyPerfect_KOmega_cState>::
-ICs(const int i_ICtype,
-    Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState, 
+ICs(Input_Parameters<FANS3D_ThermallyPerfect_KOmega_pState, 
                      FANS3D_ThermallyPerfect_KOmega_cState> &IPs);
+
+template<>
+int Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState,
+               FANS3D_ThermallyPerfect_KOmega_cState>::
+Interpolate_2Dto3D(const FlowField_2D &Numflowfield2D);
 
 template<>
 void Hexa_Block<FANS3D_ThermallyPerfect_KOmega_pState, 

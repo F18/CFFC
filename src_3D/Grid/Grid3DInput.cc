@@ -88,6 +88,17 @@ void Grid3D_Input_Parameters::Broadcast(void) {
                          1,
                          MPI::DOUBLE, 0);
 
+   // Grid cube and box dimensions:
+   MPI::COMM_WORLD.Bcast(&(Box_Length),
+                         1,
+                         MPI::DOUBLE, 0);
+   MPI::COMM_WORLD.Bcast(&(Box_Width),
+                         1,
+                         MPI::DOUBLE, 0);
+   MPI::COMM_WORLD.Bcast(&(Box_Height),
+                         1,
+                         MPI::DOUBLE, 0);
+
    // Pipe parameters:
    MPI::COMM_WORLD.Bcast(&(Pipe_Radius),
                          1,
@@ -158,28 +169,77 @@ int Grid3D_Input_Parameters::Parse_Next_Input_Control_Parameter(char *code,
         Box_Width = ONE;
         Box_Height = ONE;
 
+     } else if (strcmp(Grid_Type, "Periodic_Box") == 0) {
+        i_Grid = GRID_PERIODIC_BOX;
+        Box_Length = ONE;
+        Box_Width = ONE;
+        Box_Height = ONE;
+
+     } else if (strcmp(Grid_Type, "Periodic_Box_With_Inflow") == 0) {
+        i_Grid = GRID_PERIODIC_BOX_WITH_INFLOW;
+        Box_Length = ONE;
+        Box_Width = ONE;
+        Box_Height = ONE;
+
      } else if (strcmp(Grid_Type, "Channel") == 0) {
-        i_Grid = GRID_CHANNEL;
+        i_Grid = GRID_CHANNEL_ZDIR;
+        Box_Length = 0.2;
+        Box_Width = 0.001;
+        Box_Height = 0.001;
+
+     } else if (strcmp(Grid_Type, "Channel_X") == 0) {
+        i_Grid = GRID_CHANNEL_XDIR;
+        Box_Length = 0.001;
+        Box_Width = 0.2;
+        Box_Height = 0.001;
+
+     } else if (strcmp(Grid_Type, "Channel_Y") == 0) {
+        i_Grid = GRID_CHANNEL_YDIR;
+        Box_Length = 0.001;
+        Box_Width = 0.001;
+        Box_Height = 0.2;
+
+     } else if (strcmp(Grid_Type, "Channel_Z") == 0) {
+        i_Grid = GRID_CHANNEL_ZDIR;
+        Box_Length = 0.2;
+        Box_Width = 0.001;
+        Box_Height = 0.001;
+
+     } else if (strcmp(Grid_Type, "Couette") == 0) {
+        i_Grid = GRID_COUETTE_ZDIR;
+        Box_Length = 0.2;
+        Box_Width  = 0.001;
+        Box_Height = 0.001;
+
+     } else if (strcmp(Grid_Type, "Couette_X") == 0) {
+        i_Grid = GRID_COUETTE_XDIR;
+        Box_Length = 0.001;
+        Box_Width = 0.2;
+        Box_Height = 0.001;
+
+     } else if (strcmp(Grid_Type, "Couette_Y") == 0) {
+        i_Grid = GRID_COUETTE_YDIR;
+        Box_Length = 0.001;
+        Box_Width = 0.001;
+        Box_Height = 0.2;
+
+     } else if (strcmp(Grid_Type, "Couette_Z") == 0) {
+        i_Grid = GRID_COUETTE_ZDIR;
         Box_Length = 0.2;
         Box_Width = 0.001;
         Box_Height = 0.001;
 
      } else if (strcmp(Grid_Type, "Turbulent_Channel") == 0) {
-        i_Grid = GRID_CHANNEL;
+        i_Grid = GRID_CHANNEL_ZDIR;
         Box_Length = 1.524;
         Box_Width  = 0.127;
         Box_Height = 0.127;
-        i_Grid = GRID_CHANNEL_ZDIR;
-
-     } else if (strcmp(Grid_Type, "Couette") == 0) {
-        i_Grid = GRID_COUETTE;
-        Box_Length = 0.2;
-        Box_Width  = 0.001;
-        Box_Height = 0.001;
-        i_Grid = GRID_COUETTE_ZDIR;
 
      } else if (strcmp(Grid_Type, "Pipe") == 0) {
         i_Grid = GRID_PIPE;
+
+     } else if (strcmp(Grid_Type, "Bump_Channel_Flow") == 0) {
+       i_Grid = GRID_BUMP_CHANNEL_FLOW;
 
      } else if (strcmp(Grid_Type, "Bluff_Body_Burner") == 0) {
         i_Grid = GRID_BLUFF_BODY_BURNER;
@@ -320,6 +380,21 @@ int Grid3D_Input_Parameters::Parse_Next_Input_Control_Parameter(char *code,
      value >> value_string;
      strcpy(ICEMCFD_FileNames[2], value_string.c_str());
 
+  } else if (strcmp(code, "Box_Length") == 0) {
+     i_command = 3028;
+     value >> Box_Length;
+     if (Box_Length <= ZERO) i_command = INVALID_INPUT_VALUE;
+
+  } else if (strcmp(code, "Box_Width") == 0) {
+     i_command = 3029;
+     value >> Box_Width;
+     if (Box_Width <= ZERO) i_command = INVALID_INPUT_VALUE;
+
+  } else if (strcmp(code, "Box_Height") == 0) {
+     i_command = 3030;
+     value >> Box_Height;
+     if (Box_Height <= ZERO) i_command = INVALID_INPUT_VALUE;
+    
   } else {
      i_command = INVALID_INPUT_CODE;
 
@@ -372,6 +447,8 @@ void Grid3D_Input_Parameters::Output(ostream &out_file) const {
         out_file << "\n  -> family_topo file : " << ICEMCFD_FileNames[2];
         break;
      case GRID_CUBE : 
+     case GRID_PERIODIC_BOX : 
+     case GRID_PERIODIC_BOX_WITH_INFLOW : 
         out_file << "\n  -> Length of Solution Domain (m): "
                  << Box_Length;
         out_file << "\n  -> Width of Solution Domain (m): "

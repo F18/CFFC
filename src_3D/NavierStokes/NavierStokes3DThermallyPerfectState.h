@@ -1,610 +1,759 @@
-/****************** NAVIERSTOKES3D_ThermallyPerfectState.h *************
-  This class defines the state variables and constructors for the 
-  NavierStokes3D thermally perfect gaseous mixture class.
- ***********************************************************************/
+/*! \file NavierStokes3DThermallyPerfectState.h
+ * 	\brief	Header file defining the Navier-Stokes solution state classes 
+ *              associated with solution of compressible viscous flows 
+ *              of a thermally perfect non-reactive or combusting mixture.
+ */
 
 #ifndef _NAVIERSTOKES3D_THERMALLYPERFECT_STATE_INCLUDED 
 #define _NAVIERSTOKES3D_THERMALLYPERFECT_STATE_INCLUDED
 
-class NavierStokes3D_ThermallyPerfect_cState;
-class NavierStokes3D_ThermallyPerfect_pState;
-
-// Required C++ libraries
-#include <cstdio>
-#include <iostream>
-#include <iomanip>
-#include <fstream>
-#include <cassert>
-#include <cstdlib>
-
-using namespace std;
-
-// Include required CFFC header files
+/* Include header file for base solution classes from which the classes are derived. */
 
 #ifndef _EULER3D_THERMALLYPERFECT_STATE_INCLUDED
 #include "../Euler/Euler3DThermallyPerfectState.h"
 #endif  //EULER3D_THERMALLYPERFECT_STATE_INCLUDED
 
-/********************************************************
- * Class: NavierStokes3D_ThermallyPerfect_pState        *
- * (all for thermally perfect mixture                   *
- * Member functions                                     *
- *      d       -- Return density.                      *
- *      v       -- Return flow velocity.                *
- *      p       -- Return pressure.                     *
- *      g       -- Return specific heat ratio.          *
- *      gm1     -- Return g-1                           *
- *      gm1i    -- Return 1/(g-1).                      *
- *      R       -- Return gas constant.                 *
- *      setgas  -- Set gas constants.                   *
- *      T       -- Return temperature.                  *
- *      e       -- Return total  energy.                *
- *      E       -- Return interal energy.               *
- *      h       -- Return specific enthalpy.            *
- *      H       -- Return total enthalpy.               *
- *      a       -- Return sound speed.                  *
- *      a2      -- Return sound speed square.           *
- *      M       -- Return Mach number.                  *
- *      s       -- Return specific entropy.             *
- *      dv      -- Return momentum.                     *
- *      To      -- Return stagnation temperature.       *
- *      po      -- Return stagnation pressure.          *
- *      ao      -- Return stagnation sound speed.       *
- *      ho      -- Return stagnation enthalpy.          *
- *      U       -- Return conserved solution state.     *
- *      Fx      -- Return x-direction solution flux.    *
- *      Fy      -- Return y-direction solution flux.    *
- *      Fz      -- Return z-direction solution flux.    *
- *      Fn      -- Return n-direction solution flux.    *
- *      lambda  -- Return eigenvalue.                   *
- *      rp      -- Return primitive right eigenvector.  *
- *      rc      -- Return conserved right eigenvector.  *
- *      lp      -- Return primitive left eigenvector.   *
- *                                                      *
- * Member operators                                     *
- *      W -- a primitive solution state                 *
- *      c -- a scalar (double)                          *
- *                                                      *
- * W = W;                                               *
- * c = W[i];                                            *
- * W = W + W;                                           *
- * W = W - W;                                           *
- * c = W * W; (inner product)                           *
- * W = c * W;                                           *
- * W = W * c;                                           *
- * W = W / c;                                           *
- * W = +W;                                              *
- * W = -W;                                              *
- * W += W;                                              *
- * W -= W;                                              *
- * W == W;                                              *
- * W != W;                                              *
- * cout << W; (output function)                         *
- * cin  >> W; (input function)                          *
- *                                                      *
- ********************************************************/
+/* Define the classes. */
 
-/*********************************************************
-  Density:   rho  kg/m^3
-  Velocity:  v    m/s
-  Pressure:  p    Pa (N/m^2)
-  
-  Molecular Mass:          M    kg/mol
-  Species Gas Constant:    Rs   J/(kg*K)
-  
-  Temperature(Kelvin) Dependent data: f(T) 
-   
-  Heat Capacity (const Pressure):  Cp  J/(kg*K)
-  Heat Capacity (const Volume):    Cv  J/(kg*K)
-  Specific Heat Ratio:             g
-  Specific Enthalpy:               h   J/kg
-  Specific Internal Energy:        e   J/kg
-  Total Enthalpy:                  H   J/kg 
-  Total Internal Energy:           E   J/kg
+class NavierStokes3D_ThermallyPerfect_pState;
+class NavierStokes3D_ThermallyPerfect_cState;
 
-  Viscosity:                       mu  kg/(m*s) N*s/m^2  
-  Thermal Conductivity:            k   N/(s*K)  W.(m*K)
-
-  ns;                number of species
-  NASARP1311data *specdata:   Global Species Data
-
-  num_vars:         number of total variables (5+ns)
-  Reaction_set React:         Global Reaction Data
-
-  low_temp_range:      low temp data range
-  high_temp_range:     high temp data range
-***********************************************************/
-
+/*!
+ * Class: NavierStokes3D_ThermallyPerfect_pState
+ *
+ * \brief Primitive state solution class for 3D Navier-Stokes equations
+ *        governing flows of thermally perfect non-reactive and 
+ *        combusting mixtures.
+ *
+ * Member functions
+ *  - rho              -- Return density (kg/m^3)
+ *  - v                -- Return flow velocity (m/s)
+ *  - p                -- Return pressure (Pa, N/m^2)
+ *  - spec             -- Return array of species mass fraction data
+ *  - Mass             -- Return mixture molecular mass (kg/mol)
+ *  - Rtot             -- Return mixture gas constant (J/(kg*K))
+ *  - HeatofFormation  -- Return heat of formation for the mixture
+ *  - Cp               -- Return specific heat at constant pressure for mixture (J/(kg*K))
+ *  - Cv               -- Return specific heat at constant volume for mixture (J/(kg*K))
+ *  - g                -- Return specific heat ratio for mixture
+ *  - e                -- Return mixture absolute internal energy (J/kg)
+ *  - es               -- Return mixture sensible internal energy (J/kg)
+ *  - h                -- Return mixture absolute specific enthalpy (J/kg)
+ *  - hs               -- Return mixture sensible specific enthalpy (J/kg)
+ *  - E                -- Return total mixture energy (J/kg)
+ *  - H                -- Return total mixture enthalpy (J/kg)
+ *  - rhov             -- Return momentum of mixture (kg/(m^2*s))
+ *  - T                -- Return mixture temperature (K)
+ *  - a                -- Return sound speed of mixture (m/s)
+ *  - M                -- Return Mach number for mixture
+ *  - Gibbs            -- Return species Gibbs free energy
+ *  - mu               -- Return mixture dynamic viscosity
+ *  - kappa            -- Return mixture coefficient of thermal conductivity
+ *  - Ds               -- Return species mass diffusion coefficient
+ *  - Pr               -- Return mixture Prandtl number
+ *  - Sc               -- Return species Schmidt number
+ *  - Le               -- Return species Lewis number
+ *  - tau              -- Return (molecular) fluid stress tensor
+ *  - tau_x            -- Return components of (molecular) fluid stress tensor in x-direction
+ *  - tau_y            -- Return components of (molecular) fluid stress tensor in y-direction
+ *  - tau_z            -- Return components of (molecular) fluid stress tensor in z-direction
+ *  - q                -- Return (molecular) heat flux vector
+ *  - q_x              -- Return component of (molecular) heat flux vector in x-direction
+ *  - q_y              -- Return component of (molecular) heat flux vector in y-direction
+ *  - q_z              -- Return component of (molecular) heat flux vector in z-direction
+ *  - U                -- Return conserved solution state
+ *  - F, Fx            -- Return x-direction inviscid solution flux
+ *  - Fy               -- Return y-direction inviscid solution flux
+ *  - Fz               -- Return z-direction inviscid solution flux
+ *  - Fv, Fvx          -- Return x-direction viscous solution flux
+ *  - Fvy              -- Return y-direction viscous solution flux
+ *  - Fvz              -- Return z-direction viscous solution flux
+ *  - Schemistry       -- Return source terms associated with finite-rate chemistry
+ *  - lambda           -- Return x-direction eigenvalue
+ *  - rc               -- Return x-direction conserved right eigenvector
+ *  - lp               -- Return x-direction primitive left eigenvector
+ *  - lambda_x         -- Return x-direction eigenvalue
+ *  - rc_x             -- Return x-direction conserved right eigenvector
+ *  - lp_x             -- Return x-direction primitive left eigenvector
+ *  - RoeAverage       -- Return Roe-average solution state vector
+ *  - FluxHLLE_x       -- Return HLLE numerical solution flux in x-direction
+ *  - FluxHLLE_n       -- Return HLLE numerical solution flux in n-direction
+ *  - FluxRoe_x        -- Return Roe numerical solution flux in x-direction
+ *  - FluxRoe_n        -- Return Roe numerical solution flux in n-direction
+ *  - lambda_minus     -- Return negative eigenvalues, applying Harten entropy fix
+ *  - lambda_plus      -- Return positive eigenvalues, applying Harten entropy fix
+ *  - Reflect          -- Return reflected solution state after application of reflection BC
+ *  - MovingWall       -- Return wall solution state after application of moving wall BC
+ *  - NoSlip           -- Return wall solution state after application of no-slip BC
+ *  - FluxViscous_n    -- Returns viscous flux in n-direction
+ *
+ * Member operators \n
+ *      W -- a primitive solution state \n
+ *      c -- a scalar (double)
+ *
+ *  - W = W;
+ *  - c = W[i];
+ *  - W = W + W;
+ *  - W = W - W;
+ *  - c = W * W; (inner product)
+ *  - W = c * W;
+ *  - W = W * c;
+ *  - W = W / c;
+ *  - W = W ^ W;
+ *  - W = +W;
+ *  - W = -W;
+ *  - W += W;
+ *  - W -= W;
+ *  - W *= W;
+ *  - W /= W;
+ *  - W == W;
+ *  - W != W;
+ *  - cout << W; (output function)
+ *  - cin  >> W; (input function)
+ *  \nosubgrouping
+ */
 class NavierStokes3D_ThermallyPerfect_pState : public Euler3D_ThermallyPerfect_pState {
   public:
-   // constructor
-   NavierStokes3D_ThermallyPerfect_pState(): Euler3D_ThermallyPerfect_pState(){ }
+
+/** @name Constructors and destructors */
+/*        ---------------------------- */
+//@{
+   //! Default creation constructor (assign default values)
+   NavierStokes3D_ThermallyPerfect_pState(void) : Euler3D_ThermallyPerfect_pState() { }
+
+   //! Constructor from base class (allows return of derived type)
+   NavierStokes3D_ThermallyPerfect_pState(const Euler3D_ThermallyPerfect_pState &W1): 
+     Euler3D_ThermallyPerfect_pState(W1) { }
    
-   NavierStokes3D_ThermallyPerfect_pState(const double &value):
-      Euler3D_ThermallyPerfect_pState(value){ }
+   //! Assignment constructor
+   NavierStokes3D_ThermallyPerfect_pState(const double &value) :
+     Euler3D_ThermallyPerfect_pState(value) { }
    
-   NavierStokes3D_ThermallyPerfect_pState(const double &d, const Vector3D &V,
+   //! Assignment constructor
+   NavierStokes3D_ThermallyPerfect_pState(const double &d, 
+                                          const Vector3D &V,
                                           const double &pre) :
-      Euler3D_ThermallyPerfect_pState(d, V, pre){  }
+     Euler3D_ThermallyPerfect_pState(d, V, pre) { }
    
-   NavierStokes3D_ThermallyPerfect_pState(const double &d, const Vector3D &V,
-                                          const double &pre, const double &frac):
-      Euler3D_ThermallyPerfect_pState(d, V, pre, frac){ }
+   //! Assignment constructor
+   NavierStokes3D_ThermallyPerfect_pState(const double &d, 
+                                          const Vector3D &V,
+                                          const double &pre, 
+                                          const double &frac) :
+     Euler3D_ThermallyPerfect_pState(d, V, pre, frac) { }
    
-   NavierStokes3D_ThermallyPerfect_pState(const double &d, const double &vx,
-                                          const double &vy, const double &vz,
-                                          const double &pre, const double &frac):
-      Euler3D_ThermallyPerfect_pState(d, vx, vy, vz, pre, frac){ }
+   //! Assignment constructor
+   NavierStokes3D_ThermallyPerfect_pState(const double &d, 
+                                          const Vector3D &V,
+                                          const double &pre, 
+                                          const Species *mfrac) :
+     Euler3D_ThermallyPerfect_pState(d, V, pre, mfrac) { }
    
-   NavierStokes3D_ThermallyPerfect_pState(const double &d, const double &vx,
-                                          const double &vy, const double &vz,
-                                          const double &pre):
-      Euler3D_ThermallyPerfect_pState(d, vx, vy, vz, pre) { }
+   //! Assignment constructor
+   NavierStokes3D_ThermallyPerfect_pState(const double &d, 
+                                          const Vector3D &V,
+                                          const double &pre, 
+                                          const double *mfrac):
+     Euler3D_ThermallyPerfect_pState(d, V, pre, mfrac) { }
+
+   //! Assignment constructor
+   NavierStokes3D_ThermallyPerfect_pState(const double &d, 
+                                          const double &vx,
+                                          const double &vy, 
+                                          const double &vz,
+                                          const double &pre) :
+     Euler3D_ThermallyPerfect_pState(d, vx, vy, vz, pre) { }
+
+   //! Assignment constructor
+   NavierStokes3D_ThermallyPerfect_pState(const double &d, 
+                                          const double &vx,
+                                          const double &vy, 
+                                          const double &vz,
+                                          const double &pre, 
+                                          const double &frac) :
+     Euler3D_ThermallyPerfect_pState(d, vx, vy, vz, pre, frac) { }
    
-   NavierStokes3D_ThermallyPerfect_pState(const double &d, const double &vx,
-                                          const double &vy,  const double &vz,
-                                          const double &pre, Species *mfrac):
-      Euler3D_ThermallyPerfect_pState(d, vx, vy, vz, pre, mfrac){ }
+   //! Assignment constructor
+   NavierStokes3D_ThermallyPerfect_pState(const double &d, 
+                                          const double &vx,
+                                          const double &vy,  
+                                          const double &vz,
+                                          const double &pre, 
+                                          const Species *mfrac):
+     Euler3D_ThermallyPerfect_pState(d, vx, vy, vz, pre, mfrac) { }
      
-   NavierStokes3D_ThermallyPerfect_pState(const double &d, const Vector3D &V,
-                                          const double &pre, Species *mfrac):
-      Euler3D_ThermallyPerfect_pState(d, V, pre, mfrac){  }
-   
-   
-   NavierStokes3D_ThermallyPerfect_pState(const double &d, const Vector3D &V,
-                                          const double &pre, double *mfrac):
-      Euler3D_ThermallyPerfect_pState(d, V, pre, mfrac){
-      set_initial_values(mfrac); }
+   //! Copy constructor (this is needed for the operator overload returns)
+   NavierStokes3D_ThermallyPerfect_pState(const NavierStokes3D_ThermallyPerfect_pState &W) {
+     species_null(); rho = DENSITY_STDATM; set_initial_values(); Copy(W);
+   }
 
-    //this is needed for the operator overload returns!!!!
-   NavierStokes3D_ThermallyPerfect_pState(const  NavierStokes3D_ThermallyPerfect_pState &W)
-                {spec = NULL; rho = DENSITY_STDATM; set_initial_values(); Copy(W);}
+   //! Default destructor
+   ~NavierStokes3D_ThermallyPerfect_pState(void) {
+      Deallocate();
+   }
+//@}
                 
+/** @name Transport coefficients */
+/*        ---------------------- */
+//@{
+   //! Mixture dynamic viscosity
+   double mu(void);    
+   double dmudT(void);
 
-   // Conserved solution state. /
-   NavierStokes3D_ThermallyPerfect_cState U(void);
-   NavierStokes3D_ThermallyPerfect_cState U(void)const;
-   NavierStokes3D_ThermallyPerfect_cState U(const NavierStokes3D_ThermallyPerfect_pState &W);  
-    
-  //Inviscid Fluxes /
-   NavierStokes3D_ThermallyPerfect_cState F(void) ;
-   NavierStokes3D_ThermallyPerfect_cState F(void) const ;
-   NavierStokes3D_ThermallyPerfect_cState F(const NavierStokes3D_ThermallyPerfect_pState &W);
- 
-  //Viscous Fluxes x y z directions/
-  NavierStokes3D_ThermallyPerfect_cState Fv(
-     const NavierStokes3D_ThermallyPerfect_pState &dWdx,
-     const NavierStokes3D_ThermallyPerfect_pState &dWdy,
-     const NavierStokes3D_ThermallyPerfect_pState &dWdz) ;
-  NavierStokes3D_ThermallyPerfect_cState Gv(
-     const NavierStokes3D_ThermallyPerfect_pState &dWdx,
-     const NavierStokes3D_ThermallyPerfect_pState &dWdy,
-     const NavierStokes3D_ThermallyPerfect_pState &dWdz) ;
-  
-  NavierStokes3D_ThermallyPerfect_cState Hv(
-     const NavierStokes3D_ThermallyPerfect_pState &dWdx,
-     const NavierStokes3D_ThermallyPerfect_pState &dWdy,
-     const NavierStokes3D_ThermallyPerfect_pState &dWdz) ;
-  NavierStokes3D_ThermallyPerfect_cState Fv(
-     const NavierStokes3D_ThermallyPerfect_pState &dWdx,
-     const NavierStokes3D_ThermallyPerfect_pState &dWdy,
-     const NavierStokes3D_ThermallyPerfect_pState &dWdz) const;
-  NavierStokes3D_ThermallyPerfect_cState Gv(
-     const NavierStokes3D_ThermallyPerfect_pState &dWdx,
-     const NavierStokes3D_ThermallyPerfect_pState &dWdy,
-     const NavierStokes3D_ThermallyPerfect_pState &dWdz) const;
-  NavierStokes3D_ThermallyPerfect_cState Hv(
-     const NavierStokes3D_ThermallyPerfect_pState &dWdx,
-     const NavierStokes3D_ThermallyPerfect_pState &dWdy,
-     const NavierStokes3D_ThermallyPerfect_pState &dWdz) const;
-  
-  static NavierStokes3D_ThermallyPerfect_cState FluxViscous_n(
-     const NavierStokes3D_ThermallyPerfect_pState &Wl,
-     const NavierStokes3D_ThermallyPerfect_pState &Wr,
-     const NavierStokes3D_ThermallyPerfect_pState &W1 ,
-     const NavierStokes3D_ThermallyPerfect_pState &W2,
-     const NavierStokes3D_ThermallyPerfect_pState &dWdx1,
-     const NavierStokes3D_ThermallyPerfect_pState &dWdy1,
-     const NavierStokes3D_ThermallyPerfect_pState &dWdz1,
-     const NavierStokes3D_ThermallyPerfect_pState &dWdx2,
-     const NavierStokes3D_ThermallyPerfect_pState &dWdy2,
-     const NavierStokes3D_ThermallyPerfect_pState &dWdz2,
-     const Vector3D &norm, const Vector3D &ts, 
-     const double &deltad, const double &Volume, const double &Volume_Neigbor);
-  
-  static NavierStokes3D_ThermallyPerfect_cState FluxRoe_x(
-     const NavierStokes3D_ThermallyPerfect_pState &Wl, 
-     const NavierStokes3D_ThermallyPerfect_pState &Wr);
-  static NavierStokes3D_ThermallyPerfect_cState FluxRoe_n(
-     const NavierStokes3D_ThermallyPerfect_pState &Wl,
-     const NavierStokes3D_ThermallyPerfect_pState &Wr,
-     const Vector3D &norm_dir);
+   //! Mixture thermal conductivity
+   double kappa(void);
+   double dkappadT(void);
 
-  friend NavierStokes3D_ThermallyPerfect_pState HartenFixNeg(
-     const NavierStokes3D_ThermallyPerfect_pState  &lambda_a,
-     const NavierStokes3D_ThermallyPerfect_pState  &lambda_l,
-     const NavierStokes3D_ThermallyPerfect_pState  &lambda_r);
-  friend NavierStokes3D_ThermallyPerfect_pState HartenFixPos(
-     const NavierStokes3D_ThermallyPerfect_pState  &lambda_a,
-     const NavierStokes3D_ThermallyPerfect_pState  &lambda_l,
-     const NavierStokes3D_ThermallyPerfect_pState  &lambda_r);
-  /* Eigenvalue(s), Eigenvectors (x-direction). */
-  NavierStokes3D_ThermallyPerfect_pState lambda_x(void) ;
-  NavierStokes3D_ThermallyPerfect_cState rc_x(const int &index) ;
-  NavierStokes3D_ThermallyPerfect_pState lp_x(const int &index) ;
-  NavierStokes3D_ThermallyPerfect_pState lambda_x(void) const;
-  NavierStokes3D_ThermallyPerfect_cState rc_x(const int &index) const;
-  NavierStokes3D_ThermallyPerfect_pState lp_x(const int &index) const;
+   //! Species mass diffusion coefficient
+   double Ds(const int & i);
+   //! Species mass diffusion coefficient
+   double Ds(const int & i,
+             const double &mu_temp);
 
-  /* Binary arithmetic operators. */
-  NavierStokes3D_ThermallyPerfect_pState operator +(const NavierStokes3D_ThermallyPerfect_pState &W) const;
-  NavierStokes3D_ThermallyPerfect_pState operator -(const NavierStokes3D_ThermallyPerfect_pState &W) const;
-  NavierStokes3D_ThermallyPerfect_pState operator *(const double &a) const;
-  friend NavierStokes3D_ThermallyPerfect_pState operator *(const double &a, const NavierStokes3D_ThermallyPerfect_pState &W);
-  NavierStokes3D_ThermallyPerfect_pState operator /(const double &a) const;
-  double operator *(const NavierStokes3D_ThermallyPerfect_pState &W) const;
-  NavierStokes3D_ThermallyPerfect_pState operator ^(const NavierStokes3D_ThermallyPerfect_pState &W) const;
+   //! Mixture Prandtl number
+   double Pr(void);
 
-  /* Assignment Operator. */
-  NavierStokes3D_ThermallyPerfect_pState& operator =(const NavierStokes3D_ThermallyPerfect_pState &W);
+   //! Species Schmidt number
+   double Sc(const int &);
 
-  /* Shortcut arithmetic operators. */
-  NavierStokes3D_ThermallyPerfect_pState& operator +=(const NavierStokes3D_ThermallyPerfect_pState &W);
-  NavierStokes3D_ThermallyPerfect_pState& operator -=(const NavierStokes3D_ThermallyPerfect_pState &W);
-  
-  /* Relational operators. */
-  friend int operator ==(const NavierStokes3D_ThermallyPerfect_pState &W1,
-                         const NavierStokes3D_ThermallyPerfect_pState &W2);
-  friend int operator !=(const NavierStokes3D_ThermallyPerfect_pState &W1,
-                         const NavierStokes3D_ThermallyPerfect_pState &W2);
+   //! Species Lewis number
+   double Le(const int &);
+//@}
 
-  static NavierStokes3D_ThermallyPerfect_pState RoeAverage(
-     const NavierStokes3D_ThermallyPerfect_pState &Wl,
-     const NavierStokes3D_ThermallyPerfect_pState &Wr);
-  static NavierStokes3D_ThermallyPerfect_cState FluxHLLE_x(
-      const NavierStokes3D_ThermallyPerfect_pState &Wl,
-      const NavierStokes3D_ThermallyPerfect_pState &Wr);
-  static NavierStokes3D_ThermallyPerfect_cState FluxHLLE_x(
-     const NavierStokes3D_ThermallyPerfect_cState &Ul,
-     const NavierStokes3D_ThermallyPerfect_cState &Ur);
-  static NavierStokes3D_ThermallyPerfect_cState FluxHLLE_n(
-      const NavierStokes3D_ThermallyPerfect_pState &Wl,
-      const NavierStokes3D_ThermallyPerfect_pState &Wr,
-      const Vector3D &norm_dir);
-  static NavierStokes3D_ThermallyPerfect_cState FluxHLLE_n(
-      const NavierStokes3D_ThermallyPerfect_cState &Ul,
-      const NavierStokes3D_ThermallyPerfect_cState &Ur,
-      const Vector3D &norm_dir);
-  static NavierStokes3D_ThermallyPerfect_pState Reflect(
-      const NavierStokes3D_ThermallyPerfect_pState &W,
-      const Vector3D &norm_dir);
-  static NavierStokes3D_ThermallyPerfect_pState Moving_Wall(
-     const NavierStokes3D_ThermallyPerfect_pState &Win,
-     const NavierStokes3D_ThermallyPerfect_pState &Wout,
-     const Vector3D &norm_dir,				 
-     const Vector3D &wall_velocity,
-     const Vector3D &pressure_gradient,
-     const int &TEMPERATURE_BC_FLAG);
-  static NavierStokes3D_ThermallyPerfect_pState No_Slip(
-     const NavierStokes3D_ThermallyPerfect_pState &Win, 
-     const NavierStokes3D_ThermallyPerfect_pState &Wout,
-     const Vector3D &norm_dir, 
-     const Vector3D &pressure_gradient,
-     const int &TEMPERATURE_BC_FLAG);
-   
-   // shear stress tensor 
+/** @name Viscous stress tensor and heat flux vector */
+/*        ------------------------------------------ */
+//@{
+   //! Returns (molecular) fluid stress tensor 
    Tensor3D tau(const NavierStokes3D_ThermallyPerfect_pState &dWdx, 
                 const NavierStokes3D_ThermallyPerfect_pState &dWdy,
                 const NavierStokes3D_ThermallyPerfect_pState &dWdz);
-   Tensor3D tau(const NavierStokes3D_ThermallyPerfect_pState &dWdx, 
+
+   //! Returns (molecular) fluid stress tensor 
+   Tensor3D tau(const double &mu_temp,
+                const NavierStokes3D_ThermallyPerfect_pState &dWdx, 
                 const NavierStokes3D_ThermallyPerfect_pState &dWdy,
-                const NavierStokes3D_ThermallyPerfect_pState &dWdz) const;
-   // Heat flux vector 
-   Vector3D qflux(const NavierStokes3D_ThermallyPerfect_pState &dWdx, 
+                const NavierStokes3D_ThermallyPerfect_pState &dWdz);
+
+   //! Returns components of (molecular) fluid stress tensor in x-direction 
+   Tensor3D tau_x(const NavierStokes3D_ThermallyPerfect_pState &dWdx, 
                   const NavierStokes3D_ThermallyPerfect_pState &dWdy,
                   const NavierStokes3D_ThermallyPerfect_pState &dWdz);
-   Vector3D qflux(const NavierStokes3D_ThermallyPerfect_pState &dWdx, 
+
+   //! Returns components of (molecular) fluid stress tensor in x-direction
+   Tensor3D tau_x(const double &mu_temp,
+                  const NavierStokes3D_ThermallyPerfect_pState &dWdx, 
                   const NavierStokes3D_ThermallyPerfect_pState &dWdy,
-                  const NavierStokes3D_ThermallyPerfect_pState &dWdz) const;
+                  const NavierStokes3D_ThermallyPerfect_pState &dWdz);
+
+   //! Returns components of (molecular) fluid stress tensor in y-direction 
+   Tensor3D tau_y(const NavierStokes3D_ThermallyPerfect_pState &dWdx, 
+                  const NavierStokes3D_ThermallyPerfect_pState &dWdy,
+                  const NavierStokes3D_ThermallyPerfect_pState &dWdz);
+
+   //! Returns components of (molecular) fluid stress tensor in y-direction
+   Tensor3D tau_y(const double &mu_temp,
+                  const NavierStokes3D_ThermallyPerfect_pState &dWdx, 
+                  const NavierStokes3D_ThermallyPerfect_pState &dWdy,
+                  const NavierStokes3D_ThermallyPerfect_pState &dWdz);
+
+   //! Returns components of (molecular) fluid stress tensor in z-direction 
+   Tensor3D tau_z(const NavierStokes3D_ThermallyPerfect_pState &dWdx, 
+                  const NavierStokes3D_ThermallyPerfect_pState &dWdy,
+                  const NavierStokes3D_ThermallyPerfect_pState &dWdz);
+
+   //! Returns components of (molecular) fluid stress tensor in z-direction
+   Tensor3D tau_z(const double &mu_temp,
+                  const NavierStokes3D_ThermallyPerfect_pState &dWdx, 
+                  const NavierStokes3D_ThermallyPerfect_pState &dWdy,
+                  const NavierStokes3D_ThermallyPerfect_pState &dWdz);
+
+   //! Returns (molecular) heat flux vector 
+   Vector3D q(const NavierStokes3D_ThermallyPerfect_pState &dWdx, 
+              const NavierStokes3D_ThermallyPerfect_pState &dWdy,
+              const NavierStokes3D_ThermallyPerfect_pState &dWdz);
    
-   Vector3D thermal_diffusion(void) const;
-   /* Input-output operators. */
- 
+   //! Returns (molecular) heat flux vector 
+   Vector3D q(const double &kappa_temp,
+              const NavierStokes3D_ThermallyPerfect_pState &dWdx, 
+              const NavierStokes3D_ThermallyPerfect_pState &dWdy,
+              const NavierStokes3D_ThermallyPerfect_pState &dWdz);
+
+   //! Returns component of (molecular) heat flux vector in x-direction
+   Vector3D q_x(const NavierStokes3D_ThermallyPerfect_pState &dWdx, 
+                const NavierStokes3D_ThermallyPerfect_pState &dWdy,
+                const NavierStokes3D_ThermallyPerfect_pState &dWdz);
+   
+   //! Returns component of (molecular) heat flux vector in x-direction
+   Vector3D q_x(const double &kappa_temp,
+                const NavierStokes3D_ThermallyPerfect_pState &dWdx, 
+                const NavierStokes3D_ThermallyPerfect_pState &dWdy,
+                const NavierStokes3D_ThermallyPerfect_pState &dWdz);
+
+   //! Returns component of (molecular) heat flux vector in y-direction
+   Vector3D q_y(const NavierStokes3D_ThermallyPerfect_pState &dWdx, 
+                const NavierStokes3D_ThermallyPerfect_pState &dWdy,
+                const NavierStokes3D_ThermallyPerfect_pState &dWdz);
+   
+   //! Returns component of (molecular) heat flux vector in y-direction
+   Vector3D q_y(const double &kappa_temp,
+                const NavierStokes3D_ThermallyPerfect_pState &dWdx, 
+                const NavierStokes3D_ThermallyPerfect_pState &dWdy,
+                const NavierStokes3D_ThermallyPerfect_pState &dWdz);
+
+   //! Returns component of (molecular) heat flux vector in z-direction
+   Vector3D q_z(const NavierStokes3D_ThermallyPerfect_pState &dWdx, 
+                const NavierStokes3D_ThermallyPerfect_pState &dWdy,
+                const NavierStokes3D_ThermallyPerfect_pState &dWdz);
+   
+   //! Returns component of (molecular) heat flux vector in z-direction
+   Vector3D q_z(const double &kappa_temp,
+                const NavierStokes3D_ThermallyPerfect_pState &dWdx, 
+                const NavierStokes3D_ThermallyPerfect_pState &dWdy,
+                const NavierStokes3D_ThermallyPerfect_pState &dWdz);
+
+   //! Returns thermal diffusion flux vector (due to species diffusion processes) 
+   Vector3D thermal_diffusion(const NavierStokes3D_ThermallyPerfect_pState &dWdx, 
+                              const NavierStokes3D_ThermallyPerfect_pState &dWdy,
+                              const NavierStokes3D_ThermallyPerfect_pState &dWdz) const;
+
+   //! Returns components of thermal diffusion flux vector in x-direction (due to species diffusion processes) 
+   Vector3D thermal_diffusion_x(const NavierStokes3D_ThermallyPerfect_pState &dWdx, 
+                                const NavierStokes3D_ThermallyPerfect_pState &dWdy,
+                                const NavierStokes3D_ThermallyPerfect_pState &dWdz) const;
+
+   //! Returns components of thermal diffusion flux vector in y-direction (due to species diffusion processes) 
+   Vector3D thermal_diffusion_y(const NavierStokes3D_ThermallyPerfect_pState &dWdx, 
+                                const NavierStokes3D_ThermallyPerfect_pState &dWdy,
+                                const NavierStokes3D_ThermallyPerfect_pState &dWdz) const;
+
+   //! Returns components of thermal diffusion flux vector in z-direction (due to species diffusion processes) 
+   Vector3D thermal_diffusion_z(const NavierStokes3D_ThermallyPerfect_pState &dWdx, 
+                                const NavierStokes3D_ThermallyPerfect_pState &dWdy,
+                                const NavierStokes3D_ThermallyPerfect_pState &dWdz) const;
+
+   //! Returns the strain rate tensor
+   Tensor3D strain_rate(const NavierStokes3D_ThermallyPerfect_pState &dWdx, 
+                        const NavierStokes3D_ThermallyPerfect_pState &dWdy, 
+                        const NavierStokes3D_ThermallyPerfect_pState &dWdz) const;
+
+   //! Returns the rotation tensor
+   Tensor3D rotation(const NavierStokes3D_ThermallyPerfect_pState &dWdx, 
+                     const NavierStokes3D_ThermallyPerfect_pState &dWdy, 
+                     const NavierStokes3D_ThermallyPerfect_pState &dWdz) const;
+
+   //! Returns the velocity vorticity vector
+   Vector3D vorticity(const NavierStokes3D_ThermallyPerfect_pState &dWdx, 
+                      const NavierStokes3D_ThermallyPerfect_pState &dWdy, 
+                      const NavierStokes3D_ThermallyPerfect_pState &dWdz) const;
+//@}
+
+/** @name Viscous flux vectors */
+/*        --------------------- */
+//@{
+   //! x-direction viscous solution flux
+   NavierStokes3D_ThermallyPerfect_cState Fv(const NavierStokes3D_ThermallyPerfect_pState &dWdx,
+                                             const NavierStokes3D_ThermallyPerfect_pState &dWdy,
+                                             const NavierStokes3D_ThermallyPerfect_pState &dWdz);
+
+   //! x-direction viscous solution flux
+   NavierStokes3D_ThermallyPerfect_cState Fvx(const NavierStokes3D_ThermallyPerfect_pState &dWdx,
+                                              const NavierStokes3D_ThermallyPerfect_pState &dWdy,
+                                              const NavierStokes3D_ThermallyPerfect_pState &dWdz);
+
+   //! y-direction viscous solution flux
+   NavierStokes3D_ThermallyPerfect_cState Fvy(const NavierStokes3D_ThermallyPerfect_pState &dWdx,
+                                              const NavierStokes3D_ThermallyPerfect_pState &dWdy,
+                                              const NavierStokes3D_ThermallyPerfect_pState &dWdz);
+
+   //! z-direction viscous solution flux
+   NavierStokes3D_ThermallyPerfect_cState Fvz(const NavierStokes3D_ThermallyPerfect_pState &dWdx,
+                                              const NavierStokes3D_ThermallyPerfect_pState &dWdy,
+                                              const NavierStokes3D_ThermallyPerfect_pState &dWdz);
+//@}
+
+/** @name Numerical Evaluation of Viscous Fluxes */
+/*        -------------------------------------- */
+//@{
+   //! Returns viscous flux in n-direction
+   static NavierStokes3D_ThermallyPerfect_cState FluxViscous_n(const NavierStokes3D_ThermallyPerfect_pState &Wl,
+                                                               const NavierStokes3D_ThermallyPerfect_pState &Wr,
+                                                               const NavierStokes3D_ThermallyPerfect_pState &W1 ,
+                                                               const NavierStokes3D_ThermallyPerfect_pState &W2,
+                                                               const NavierStokes3D_ThermallyPerfect_pState &dWdx1,
+                                                               const NavierStokes3D_ThermallyPerfect_pState &dWdy1,
+                                                               const NavierStokes3D_ThermallyPerfect_pState &dWdz1,
+                                                               const NavierStokes3D_ThermallyPerfect_pState &dWdx2,
+                                                               const NavierStokes3D_ThermallyPerfect_pState &dWdy2,
+                                                               const NavierStokes3D_ThermallyPerfect_pState &dWdz2,
+                                                               const Vector3D &norm, 
+                                                               const Vector3D &ts, 
+                                                               const double &deltad, 
+                                                               const double &Volume, 
+                                                               const double &Volume_Neigbor);
+//@}
+  
+/** @name Operators */
+/*        --------- */
+//@{
+   //! Binary multiplication operator
+   friend NavierStokes3D_ThermallyPerfect_pState operator *(const double &a, 
+                                                            const NavierStokes3D_ThermallyPerfect_pState &W);
+  
+   //! Unary subtraction operators
+   friend NavierStokes3D_ThermallyPerfect_pState operator -(const NavierStokes3D_ThermallyPerfect_pState &W);
+
+   //! Equal relational operator
+   friend int operator ==(const NavierStokes3D_ThermallyPerfect_pState &W1,
+                          const NavierStokes3D_ThermallyPerfect_pState &W2);
+
+   //! Not equal relational operator
+   friend int operator !=(const NavierStokes3D_ThermallyPerfect_pState &W1,
+                          const NavierStokes3D_ThermallyPerfect_pState &W2);
+
+   //! Output stream operator
    friend ostream& operator << (ostream &out_file,
                                 const NavierStokes3D_ThermallyPerfect_pState &W);
+
+   //! Input stream operator
    friend istream& operator >> (istream &in_file,
                                 NavierStokes3D_ThermallyPerfect_pState &W);
-  
-   //Read in ns species data
-/*    void set_species_data(const int &n, */
-/*                          const string *S, */
-/*                          const char *PATH, */
-/*                          const int &debug,  */
-/*                          const double &Mr,  */
-/*                          const double* Sc, */
-/*                          const int &trans_data); */
-
+//@}
 };
 
-
-/***********************************************************
- *             NavierStokes3D_TheramllyPerfect_cState      *
-************************************************************/
+/*!
+ * Class: NavierStokes3D_TheramllyPerfect_cState
+ *
+ * \brief Conserved state solution class for 3D Navier-Stokes equations
+ *        governing flows of thermally perfect non-reactive and 
+ *        combusting mixtures.
+ *
+ * Member functions
+ *  - rho     -- Return mixture density (kg/m^3)
+ *  - rhov    -- Return mixture momentum (kg/(m^2-s))   
+ *  - E       -- Return mixture total energy (J/kg)
+ *  - rhospec -- Return array of species density data
+ *
+ * Member operators \n
+ *      U -- a conserved solution state \n
+ *      c -- a scalar (double)
+ *
+ *  - U = U;
+ *  - c = U[i];
+ *  - U = U + U;
+ *  - U = U - U;
+ *  - c = U * U; (inner product)
+ *  - U = c * U;
+ *  - U = U * c;
+ *  - U = U / c;
+ *  - U = U ^ U;
+ *  - U = +U;
+ *  - U = -U;
+ *  - U += U;
+ *  - U -= U;
+ *  - U *= U;
+ *  - U /= U;
+ *  - U == U;
+ *  - U != U;
+ *  - cout << U; (output function)
+ *  - cin  >> U; (input function)
+ *  \nosubgrouping
+ */
 class NavierStokes3D_ThermallyPerfect_cState : public Euler3D_ThermallyPerfect_cState {
   public:
 
-// constructors
-   
-   NavierStokes3D_ThermallyPerfect_cState(): Euler3D_ThermallyPerfect_cState(){ }
- 
-   NavierStokes3D_ThermallyPerfect_cState(const double &value): Euler3D_ThermallyPerfect_cState(value){ }
-  
-   NavierStokes3D_ThermallyPerfect_cState(const double &d, const double &vx,
-                                          const double &vy, const double &vz,
-                                          const double &En ):
-      Euler3D_ThermallyPerfect_cState(d, vx, vy, vz, En ){ }
-   
-   NavierStokes3D_ThermallyPerfect_cState(const double &d, const double &vx,
-                                          const double &vy, const double &vz,
-                                          const double &En,
-                                          Species *rhomfrac):
-      Euler3D_ThermallyPerfect_cState(d, vx, vy, vz, En, rhomfrac){ }
-   
-   NavierStokes3D_ThermallyPerfect_cState(const double &d, const Vector3D &V,
-                                          const double &En):
-      Euler3D_ThermallyPerfect_cState(d, V, En){ }
-   
-   NavierStokes3D_ThermallyPerfect_cState(const double &d, const Vector3D &V,
-                                          const double &En, const double &frac):
-      Euler3D_ThermallyPerfect_cState(d, V, En, frac){}
-   
+/** @name Constructors and destructors */
+/*        ---------------------------- */
+//@{
+   //! Default creation constructor (assign default values)
+   NavierStokes3D_ThermallyPerfect_cState(void): Euler3D_ThermallyPerfect_cState() { }
 
-   NavierStokes3D_ThermallyPerfect_cState(const double &d, const double &vx, 
-                                          const double &vy, const double &vz, 
+   //! Constructor from base class (allows return of derived type)
+   NavierStokes3D_ThermallyPerfect_cState(const Euler3D_ThermallyPerfect_cState &U1) : 
+     Euler3D_ThermallyPerfect_cState(U1) { }
+ 
+   //! Assignment constructor
+   NavierStokes3D_ThermallyPerfect_cState(const double &value) : 
+     Euler3D_ThermallyPerfect_cState(value) { }
+  
+   //! Assignment constructor
+   NavierStokes3D_ThermallyPerfect_cState(const double &d, 
+                                          const Vector3D &V,
+                                          const double &En) :
+      Euler3D_ThermallyPerfect_cState(d, V, En) { }
+
+   //! Assignment constructor
+   NavierStokes3D_ThermallyPerfect_cState(const double &d, 
+                                          const Vector3D &V,
+                                          const double &En, 
+                                          const double &frac) :
+      Euler3D_ThermallyPerfect_cState(d, V, En, frac) {}
+
+   //! Assignment constructor
+   NavierStokes3D_ThermallyPerfect_cState(const double &d, 
+                                          const Vector3D &dV,
+                                          const double &En, 
+                                          const Species *rhomfrac) :
+      Euler3D_ThermallyPerfect_cState(d, dV, En, rhomfrac) { }
+
+   //! Assignment constructor
+   NavierStokes3D_ThermallyPerfect_cState(const double &d, 
+                                          const double &vx,
+                                          const double &vy, 
+                                          const double &vz,
+                                          const double &En) :
+      Euler3D_ThermallyPerfect_cState(d, vx, vy, vz, En) { }
+   
+   //! Assignment constructor
+   NavierStokes3D_ThermallyPerfect_cState(const double &d, 
+                                          const double &vx, 
+                                          const double &vy, 
+                                          const double &vz, 
                                           const double &En,	
-                                          const double &rhomfrac):
-      Euler3D_ThermallyPerfect_cState(d, vx, vy, vz, En, rhomfrac){  }
-   
-   
-   NavierStokes3D_ThermallyPerfect_cState(const double &d, const Vector3D &dV,
-                                          const double &En, Species *rhomfrac):
-      Euler3D_ThermallyPerfect_cState(d, dV, En, rhomfrac){ }
+                                          const double &rhomfrac) :
+      Euler3D_ThermallyPerfect_cState(d, vx, vy, vz, En, rhomfrac) { }
 
- //this is needed for the operator overload returns!!!!
-       NavierStokes3D_ThermallyPerfect_cState(const NavierStokes3D_ThermallyPerfect_cState &U)
-               { rhospec = NULL; rho = DENSITY_STDATM; set_initial_values();
-                          Copy(U); }
+   //! Assignment constructor
+   NavierStokes3D_ThermallyPerfect_cState(const double &d, 
+                                          const double &vx,
+                                          const double &vy, 
+                                          const double &vz,
+                                          const double &En,
+                                          const Species *rhomfrac) :
+      Euler3D_ThermallyPerfect_cState(d, vx, vy, vz, En, rhomfrac) { }
+
+   //! Copy constructor (this is needed for the operator overload returns)
+   NavierStokes3D_ThermallyPerfect_cState(const NavierStokes3D_ThermallyPerfect_cState &U) { 
+     rhospec_null(); rho = DENSITY_STDATM; set_initial_values(); Copy(U); 
+   }
+
+   //! Default destructor
+   ~NavierStokes3D_ThermallyPerfect_cState(void) {
+      Deallocate();
+   }
+//@}
                           
+/** @name Transport coefficients */
+/*        ---------------------- */
+//@{
+   //! Mixture dynamic viscosity
+   double mu(void);    
+   double dmudT(void);
 
-   
-   NavierStokes3D_ThermallyPerfect_pState W(void) ; 
-   NavierStokes3D_ThermallyPerfect_pState W(void) const;
-   NavierStokes3D_ThermallyPerfect_pState W(const NavierStokes3D_ThermallyPerfect_cState &U) const;
-   friend NavierStokes3D_ThermallyPerfect_pState W(const NavierStokes3D_ThermallyPerfect_cState &U); 
+   //! Mixture thermal conductivity
+   double kappa(void);
+   double dkappadT(void);
 
-/*   /\* Index operators *\/ */
-/*   double &operator[](int index); */
-/*   const double &operator[](int index) const; */
- 
-  /* Binary arithmetic operators. */
-  NavierStokes3D_ThermallyPerfect_cState operator +(
-     const NavierStokes3D_ThermallyPerfect_cState &U) const;
-  NavierStokes3D_ThermallyPerfect_cState operator -(
-     const NavierStokes3D_ThermallyPerfect_cState &U) const;
-  NavierStokes3D_ThermallyPerfect_cState operator *(const double &a) const;
-  friend NavierStokes3D_ThermallyPerfect_cState operator *(
-     const double &a, const NavierStokes3D_ThermallyPerfect_cState &U);
-  NavierStokes3D_ThermallyPerfect_cState operator /(const double &a) const;
-  
-  double operator *(const NavierStokes3D_ThermallyPerfect_cState &U) const;
-  NavierStokes3D_ThermallyPerfect_cState operator ^(
-     const NavierStokes3D_ThermallyPerfect_cState &U) const;
+   //! Species mass diffusion coefficient
+   double Ds(const int &i);
+   //! Species mass diffusion coefficient
+   double Ds(const int &i,
+             const double &mu_temp);
+//@}
 
-  /* Assignment Operator. */
-   NavierStokes3D_ThermallyPerfect_cState& operator =(
-      const NavierStokes3D_ThermallyPerfect_cState &U);
-  /* Shortcut arithmetic operators. */
-  NavierStokes3D_ThermallyPerfect_cState& operator +=(
-     const NavierStokes3D_ThermallyPerfect_cState &U);
-  NavierStokes3D_ThermallyPerfect_cState& operator -=(
-     const NavierStokes3D_ThermallyPerfect_cState &U);
-      
-  /* Unary arithmetic operators. */
-  friend NavierStokes3D_ThermallyPerfect_cState operator -(
-     const NavierStokes3D_ThermallyPerfect_cState &U);
+/** @name Operators */
+/*        --------- */
+//@{
+   //! Binary multiplication operator
+   friend NavierStokes3D_ThermallyPerfect_cState operator *(const double &a, 
+                                                            const NavierStokes3D_ThermallyPerfect_cState &U);
   
-  /* Relational operators. */
-  friend int operator ==(const NavierStokes3D_ThermallyPerfect_cState &U1,
-                         const NavierStokes3D_ThermallyPerfect_cState &U2);
-  friend int operator !=(const NavierStokes3D_ThermallyPerfect_cState &U1,
-                         const NavierStokes3D_ThermallyPerfect_cState &U2);
+   //! Unary subtraction operators
+   friend NavierStokes3D_ThermallyPerfect_cState operator -(const NavierStokes3D_ThermallyPerfect_cState &U);
 
-  Vector3D thermal_diffusion(const double &T) const;
-  
-  //Read in ns species data
-/*   void set_species_data(const int &n, */
-/*                         const string *S, */
-/*                         const char *PATH, */
-/*                         const int &debug,  */
-/*                         const double &Mr,  */
-/*                         const double* Sc, */
-/*                         const int &trans_data); */
-  
+   //! Equal relational operator
+   friend int operator ==(const NavierStokes3D_ThermallyPerfect_cState &U1,
+                          const NavierStokes3D_ThermallyPerfect_cState &U2);
+
+   //! Not equal relational operator
+   friend int operator !=(const NavierStokes3D_ThermallyPerfect_cState &U1,
+                          const NavierStokes3D_ThermallyPerfect_cState &U2);
+
+   //! Output stream operator
+   friend ostream& operator << (ostream &out_file,
+                                const NavierStokes3D_ThermallyPerfect_cState &U);
+
+   //! Input stream operator
+   friend istream& operator >> (istream &in_file,
+                                NavierStokes3D_ThermallyPerfect_cState &U);
+//@}
 };
 
-// Can not use ones from NavierStokes3D _ThermallyPerfect_pState Class due to the return type  
-inline NavierStokes3D_ThermallyPerfect_cState NavierStokes3D_ThermallyPerfect_pState::U(void){
-  
-   NavierStokes3D_ThermallyPerfect_cState Temp;
-   Temp.rho = rho;
-   Temp.rhov = rhov();
-   Temp.E = E();
-   for(int i=0; i<ns; i++){
-      Temp.rhospec[i] = rho*spec[i];
-      Temp.rhospec[i].gradc = rho*spec[i].gradc;
-      Temp.rhospec[i].diffusion_coef = rho*spec[i].diffusion_coef;
-   }
- 
-   return Temp;
-  
-}
+/****************************************************************************************
+ * NavierStokes3D_ThermallyPerfect_pState member functions.                             *
+ ****************************************************************************************/
 
-
-inline NavierStokes3D_ThermallyPerfect_cState NavierStokes3D_ThermallyPerfect_pState::U(void)const{
-  
-   NavierStokes3D_ThermallyPerfect_cState Temp;
-   Temp.rho = rho;
-   Temp.rhov = rhov();
-   Temp.E = E();
-   for(int i=0; i<ns; i++){
-      Temp.rhospec[i] = rho*spec[i];
-      Temp.rhospec[i].gradc = rho*spec[i].gradc;
-      Temp.rhospec[i].diffusion_coef = rho*spec[i].diffusion_coef;
-   }
- 
-   return Temp;
-  
-}
-
-inline NavierStokes3D_ThermallyPerfect_cState NavierStokes3D_ThermallyPerfect_pState::U(const NavierStokes3D_ThermallyPerfect_pState &W){
-  if(ns == W.ns){ //check that species are equal
-    NavierStokes3D_ThermallyPerfect_cState Temp;
-    Temp.rho = W.rho;
-    Temp.rhov = W.rhov();
-    Temp.E = W.E();
-    for(int i=0; i<W.ns; i++){
-      Temp.rhospec[i] = W.rho*W.spec[i];
-      Temp.rhospec[i].gradc = W.rho*W.spec[i].gradc;
-      Temp.rhospec[i].diffusion_coef = W.rho*W.spec[i].diffusion_coef;
-    }
- 
-    return Temp;
-  } else {
-    cerr<<"\n Mismatch in number of species \n";
-    exit(1);
-  }
-}
-
-inline NavierStokes3D_ThermallyPerfect_cState U(const NavierStokes3D_ThermallyPerfect_pState &W) {
-   NavierStokes3D_ThermallyPerfect_cState Temp;
-   Temp.rho = W.rho;
-   Temp.rhov = W.rhov();
-   Temp.E = W.E();
-   for(int i=0; i<W.ns; i++){
-      Temp.rhospec[i] = W.rho*W.spec[i];
-      Temp.rhospec[i].gradc = W.rho*W.spec[i].gradc;
-      Temp.rhospec[i].diffusion_coef = W.rho*W.spec[i].diffusion_coef;
-   }
-   
-   return Temp;
-}
-
-
-
-inline NavierStokes3D_ThermallyPerfect_pState NavierStokes3D_ThermallyPerfect_cState::W(void){
-  
+/*********************************************************************************
+ * NavierStokes3D_ThermallyPerfect_pState -- Binary arithmetic operators.        *
+ *********************************************************************************/
+//---------------- Scalar Multiplication ------------------//
+inline NavierStokes3D_ThermallyPerfect_pState operator *(const double &a, 
+                                                         const NavierStokes3D_ThermallyPerfect_pState &W) {
    NavierStokes3D_ThermallyPerfect_pState Temp;
-   Temp.rho = rho;
-   Temp.v = v();  
-   Temp.p = p();
-   
-   for(int i=0; i<ns; i++){
-      Temp.spec[i] = rhospec[i]/rho;
-      Temp.spec[i].gradc = rhospec[i].gradc/rho;
-      Temp.spec[i].diffusion_coef = rhospec[i].diffusion_coef/rho;
-   }
-   
-   return Temp;
-   
-   
+   //Temp.Copy(W);
+   Temp.rho = W.rho*a;  Temp.v = W.v*a; Temp.p = W.p*a;
+   for (int i = 0; i < W.ns; i++) {
+      Temp.spec[i] = W.spec[i]*a;
+   } /* endfor */
+   return(Temp);
 }
 
-
-inline NavierStokes3D_ThermallyPerfect_pState NavierStokes3D_ThermallyPerfect_cState::W(void)const{
-  
-   NavierStokes3D_ThermallyPerfect_pState Temp;
-   Temp.rho = rho;
-   Temp.v = v();  
-   Temp.p = p();
-   
-   for(int i=0; i<ns; i++){
-      Temp.spec[i] = rhospec[i]/rho;
-      Temp.spec[i].gradc = rhospec[i].gradc/rho;
-      Temp.spec[i].diffusion_coef = rhospec[i].diffusion_coef/rho;
-   }
-   
-   return Temp;
-   
-   
+/*********************************************************************************
+ * NavierStokes3D_ThermallyPerfect_pState -- Unary arithmetic operators.         *
+ *********************************************************************************/
+inline NavierStokes3D_ThermallyPerfect_pState operator -(const NavierStokes3D_ThermallyPerfect_pState &W) {
+   Species *spt= new Species[W.ns];
+   for (int i = 0; i < W.ns; i++) {
+      spt[i] = -W.spec[i]; 
+   } /* endfor */ 
+   NavierStokes3D_ThermallyPerfect_pState Temp(-W.rho,-W.v, -W.p, spt);
+   delete[] spt;
+   return(Temp);
 }
 
-inline NavierStokes3D_ThermallyPerfect_pState NavierStokes3D_ThermallyPerfect_cState::W(
-   const NavierStokes3D_ThermallyPerfect_cState &U) const{
-  if(ns == U.ns){ //check that species are equal   
-    NavierStokes3D_ThermallyPerfect_pState Temp;
-    Temp.rho = U.rho;
-    Temp.v = U.v();  
-    Temp.p = U.p();
-  
-    for(int i=0; i<U.ns; i++){
-      Temp.spec[i] = U.rhospec[i]/U.rho;
-      Temp.spec[i].gradc = U.rhospec[i].gradc/U.rho;
-      Temp.spec[i].diffusion_coef = U.rhospec[i].diffusion_coef/U.rho;
-    }
-  
-    return Temp;
-  } else {
-    cerr<<"\n Mismatch in number of species \n";
-    exit(1);
-  } 
+/*********************************************************************************
+ * NavierStokes3D_ThermallyPerfect_pState -- Relational operators.               *
+ *********************************************************************************/
+inline int operator ==(const NavierStokes3D_ThermallyPerfect_pState &W1, 
+                       const NavierStokes3D_ThermallyPerfect_pState &W2) {
+   bool Temp;
+   for (int i = 0; i < W1.ns; i++) {
+      if (W1.spec[i] == W2.spec[i]) {
+         Temp = true;
+      } else {
+         Temp = false;
+         break;
+      } /* endif */
+   } /* endfor */
+   return (W1.rho == W2.rho && W1.v == W2.v && W1.p == W2.p && Temp == true);
 }
 
-inline NavierStokes3D_ThermallyPerfect_pState W(const NavierStokes3D_ThermallyPerfect_cState &U) {
-  NavierStokes3D_ThermallyPerfect_pState Temp;
-  Temp.rho = U.rho;
-  Temp.v = U.v();
-  Temp.p = U.p();
-
-  for(int i=0; i<U.ns; i++){
-    Temp.spec[i] = U.rhospec[i]/U.rho;
-    Temp.spec[i].gradc = U.rhospec[i].gradc/U.rho;
-    Temp.spec[i].diffusion_coef = U.rhospec[i].diffusion_coef/U.rho;
-  }
- 
-  return Temp;
+inline int operator !=(const NavierStokes3D_ThermallyPerfect_pState &W1, 
+                       const NavierStokes3D_ThermallyPerfect_pState &W2) {
+   bool Temp = true;
+   for (int i = 0; i < W1.ns; i++) {
+      if (W1.spec[i] != W2.spec[i]) {
+         Temp = false;
+         break;
+      } /* endif */
+   } /* endfor */
+   return (W1.rho != W2.rho || W1.v != W2.v || W1.p != W2.p || Temp != true);
 }
 
-// /******************************************************
-//  Calculating the thermal diffusion component of 
-//  the heat flux vector (qflux)
-//   sum( hs * Ds * grad cs)
-// *******************************************************/
-
-inline Vector3D NavierStokes3D_ThermallyPerfect_pState::thermal_diffusion(void) const{
-   Vector3D sum;
-   sum.zero();
-   double Temp = T();
-   //problems with Species overloaded operators
-   for(int i=0; i<ns; i++){
-      sum  +=  (specdata[i].Enthalpy(Temp) + specdata[i].Heatofform())
-         * spec[i].diffusion_coef * spec[i].gradc;
-   }
-   return sum;
+/*********************************************************************************
+ * NavierStokes3D_ThermallyPerfect_pState -- Input-output operators.             *
+ *********************************************************************************/
+inline ostream &operator << (ostream &out_file, 
+                             const NavierStokes3D_ThermallyPerfect_pState &W) {
+   out_file.precision(10);
+   out_file.setf(ios::scientific);
+   out_file << " " << W.rho  << " " << W.v.x << " " << W.v.y 
+            << " " << W.v.z << " " << W.p;
+   for (int i = 0; i < W.ns; i++) {
+      out_file<<" "<<W.spec[i];
+   } /* endfor */
+   out_file.unsetf(ios::scientific);
+   return (out_file);
 }
 
+inline istream &operator >> (istream &in_file, 
+                             NavierStokes3D_ThermallyPerfect_pState &W) {
+   in_file.setf(ios::skipws);
+   in_file >> W.rho >> W.v.x >> W.v.y >> W.v.z >>W.p;
+   //W.set_initial_values();
+   for (int i=0; i < W.ns; i++) {
+      in_file>>W.spec[i];
+   } /* endfor */
+   in_file.unsetf(ios::skipws);
+   return (in_file);
+}
 
-inline Vector3D NavierStokes3D_ThermallyPerfect_cState::thermal_diffusion(
-   const double &Temp) const{
-   Vector3D sum;
-   sum.zero();
-   
-   for(int i=0; i<ns; i++){
-      sum  +=   (specdata[i].Enthalpy(Temp) + specdata[i].Heatofform())
-         * rhospec[i].diffusion_coef*rhospec[i].gradc;
-      
-   }
-   return sum/(rho*rho);
-   
+/****************************************************************************************
+ * NavierStokes3D_ThermallyPerfect_cState member functions.                             *
+ ****************************************************************************************/
+
+/*********************************************************************************
+ * NavierStokes3D_ThermallyPerfect_cState -- Binary arithmetic operators.        *
+ *********************************************************************************/
+//---------------- Scalar Multiplication ------------------//
+inline NavierStokes3D_ThermallyPerfect_cState operator *(const double &a, 
+                                                         const NavierStokes3D_ThermallyPerfect_cState &U) {
+   NavierStokes3D_ThermallyPerfect_cState Temp;
+   Temp.rho = U.rho*a;  
+   Temp.rhov = U.rhov*a; 
+   Temp.E = U.E*a;
+   for (int i = 0; i < U.ns; i++) {
+      Temp.rhospec[i] = U.rhospec[i]*a;
+   } /* endfor */
+   return(Temp);
+}
+
+/*********************************************************************************
+ * NavierStokes3D_ThermallyPerfect_cState -- Unary arithmetic operators.         *
+ *********************************************************************************/
+inline NavierStokes3D_ThermallyPerfect_cState operator -(const NavierStokes3D_ThermallyPerfect_cState &U) {
+   Species *spt= new Species[U.ns];
+   for (int i = 0; i < U.ns; i++) {
+      spt[i] = -U.rhospec[i]; 
+   } /* endfor */
+   NavierStokes3D_ThermallyPerfect_cState Temp(-U.rho,-U.rhov,-U.E, spt);
+   delete[] spt;
+   return(Temp);
+}
+
+/*********************************************************************************
+ * NavierStokes3D_ThermallyPerfect_cState -- Relational operators.               *
+ *********************************************************************************/
+inline int operator ==(const NavierStokes3D_ThermallyPerfect_cState &U1, 
+                       const NavierStokes3D_ThermallyPerfect_cState &U2) {
+   bool Temp;
+   for (int i = 0; i < U1.ns; i++) {
+      if (U1.rhospec[i] == U2.rhospec[i] ){
+         Temp = true;
+      } else {
+         Temp = false;
+         break;
+      } /* endif */
+   } /* endfor */
+   return (U1.rho == U2.rho && U1.rhov == U2.rhov && U1.E == U2.E && Temp == true);
+}
+
+inline int operator !=(const NavierStokes3D_ThermallyPerfect_cState &U1, 
+                       const NavierStokes3D_ThermallyPerfect_cState &U2) {
+   bool Temp = true;
+   for (int i = 0; i < U1.ns; i++) {
+      if (U1.rhospec[i] != U2.rhospec[i] ){
+         Temp = false;
+         break;
+      } /* endif */
+    } /* endfor */
+   return (U1.rho != U2.rho || U1.rhov != U2.rhov || U1.E != U2.E || Temp != true);
+}
+
+/*********************************************************************************
+ * NavierStokes3D_ThermallyPerfect_cState -- Input-output operators.             *
+ *********************************************************************************/
+inline ostream &operator << (ostream &out_file, 
+                             const NavierStokes3D_ThermallyPerfect_cState &U) {
+   //out_file.precision(20);
+   out_file.setf(ios::scientific);
+   out_file << " " << U.rho  << " " << U.rhov.x << " " << U.rhov.y << " " << U.rhov.z << " "<< U.E;
+   for (int i = 0; i < U.ns; i++) {
+      out_file << " " << U.rhospec[i];
+   } /* endfor */
+   out_file.unsetf(ios::scientific);
+   return (out_file);
+}
+
+inline istream &operator >> (istream &in_file, 
+                             NavierStokes3D_ThermallyPerfect_cState &U) {
+   in_file.setf(ios::skipws);
+   in_file >> U.rho >> U.rhov.x >> U.rhov.y >> U.rhov.z >> U.E;
+   //U.set_initial_values();
+   for (int i = 0; i < U.ns; i++) {
+     in_file>>U.rhospec[i]; 
+   } /* endfor */
+   in_file.unsetf(ios::skipws);
+   return (in_file);
 }
 
 #endif // _NAVIERSTOKES3D_THERMALLYPERFECT_STATE_INCLUDED 

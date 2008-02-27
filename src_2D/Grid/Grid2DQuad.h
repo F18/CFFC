@@ -1,4 +1,5 @@
-/* Grid2DQuad.h:  Header file defining 2D quadrilateral block grid type. */
+/* \file Grid2DQuad.h
+   \brief Header file defining 2D quadrilateral block grid type. */
 
 #ifndef _GRID2D_QUAD_BLOCK_INCLUDED
 #define _GRID2D_QUAD_BLOCK_INCLUDED
@@ -46,6 +47,8 @@ using namespace std;
 #ifndef _LINEARSYSTEMS_INCLUDED
 #include "../Math/LinearSystems.h"
 #endif // _LINEARSYSTEMS_INCLUDED
+
+#include "Grid2DQuadIntegration.h" // Include the 2D quadrilateral domain integration class header file.
 
 /* Define the following types of 2D quadrilateral block 
    node initialization procedures. */
@@ -204,6 +207,7 @@ using namespace std;
  *                    cell east face.
  *      lfaceW     -- Return the length of the
  *                    cell west face.
+ *      cell_perimeter  -- Return Perimeter of the cell
  *      nfaceN     -- Return the unit vector in the
  *                    direction normal to the cell
  *                    north face.
@@ -246,6 +250,11 @@ using namespace std;
 class Grid2D_Quad_Block{
   private:
   public:
+  //! @name Defined datatypes
+  //@{
+  typedef Node2D NodeType;
+  //@}
+  
     int                   NNi, //!< Number of nodes in i-direction (zeta-direction).
                           INl, //!< Lower index for nodes in i-direction (zeta-direction).
                           INu; //!< Upper index for nodes in i-direction (zeta-direction).
@@ -288,43 +297,17 @@ class Grid2D_Quad_Block{
                   OrthogonalE, //!< East boundary orthogonality parameter.
                   OrthogonalW; //!< West boundary orthogonality parameter.
                                // Made public so can access them.
+
+    Grid2DQuadIntegration<Grid2D_Quad_Block> Integration; //!< Variable that provides access to integration subroutines
+  
 			
     //@{ @name Constructors.
 
     //! Creation constructor.
-    Grid2D_Quad_Block(void) {
-       NNi = 0; INl = 0; INu = 0; NNj = 0; JNl = 0; JNu = 0;
-       NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0;
-       Nghost = 0;
-       Node = NULL; Cell = NULL;
-       BCtypeN = NULL; BCtypeS = NULL; BCtypeE = NULL; BCtypeW = NULL;
-       SminN = ZERO; SmaxN = ZERO; SminS = ZERO; SmaxS = ZERO; 
-       SminE = ZERO; SmaxE = ZERO; SminW = ZERO; SmaxW = ZERO;
-       StretchI = 0; StretchJ = 0; BetaI = ONE; TauI = ONE;
-       BetaJ = ONE; TauJ = ONE;
-       OrthogonalN = 1; OrthogonalS = 1; OrthogonalE = 1; OrthogonalW = 1;
-    }
+    Grid2D_Quad_Block(void);
 
     //! Copy constructor.
-    Grid2D_Quad_Block(const Grid2D_Quad_Block &G) {
-       NNi = G.NNi; INl = G.INl; INu = G.INu; 
-       NNj = G.NNj; JNl = G.JNl; JNu = G.JNu;
-       NCi = G.NCi; ICl = G.ICl; ICu = G.ICu; 
-       NCj = G.NCj; JCl = G.JCl; JCu = G.JCu;
-       Nghost = G.Nghost;
-       Node = G.Node; Cell = G.Cell;
-       BCtypeN = G.BCtypeN; BCtypeS = G.BCtypeS; 
-       BCtypeE = G.BCtypeE; BCtypeW = G.BCtypeW;
-       BndNorthSpline = G.BndNorthSpline; BndSouthSpline = G.BndSouthSpline;
-       BndEastSpline = G.BndEastSpline; BndWestSpline = G.BndWestSpline;
-       SminN = G.SminN; SmaxN = G.SmaxN; SminS = G.SminS; SmaxS = G.SmaxS; 
-       SminE = G.SminE; SmaxE = G.SmaxE; SminW = G.SminW; SmaxW = G.SmaxW;
-       StretchI = G.StretchI; StretchJ = G.StretchJ; BetaI = G.BetaI; 
-       TauI = G.TauI; BetaJ = G.BetaJ; TauJ = G.TauJ;
-       OrthogonalN = G.OrthogonalN; OrthogonalS = G.OrthogonalS; 
-       OrthogonalE = G.OrthogonalE; OrthogonalW = G.OrthogonalW;
-    }
-
+    Grid2D_Quad_Block(const Grid2D_Quad_Block &G);
     //@}
 
     /* Destructor. */
@@ -364,6 +347,16 @@ class Grid2D_Quad_Block{
     Vector2D centroidSE(const int ii, const int jj) const;
     Vector2D centroidNW(const int ii, const int jj) const;
     Vector2D centroidNE(const int ii, const int jj) const;
+    //@}
+
+    //! @name Calculate centroid of cell.
+    //@{
+    //! Access the centroid of cell (ii,jj)
+    const Vector2D & CellCentroid(int ii, int jj) const {return Cell[ii][jj].Xc; }
+    //! Access the x-coordinate of the centroid of cell (ii,jj)
+    const double & XCellCentroid(int ii, int jj) const {return Cell[ii][jj].Xc.x; }
+    //! Access the y-coordinate of the centroid of cell (ii,jj)
+    const double & YCellCentroid(int ii, int jj) const {return Cell[ii][jj].Xc.y; }
     //@}
 
     //@{ @name Calculate cell area.
@@ -413,6 +406,10 @@ class Grid2D_Quad_Block{
     double lfaceW(const int ii, const int jj) const;
     //@}
 
+    //@{ @name Get cell perimeter.
+    double cell_perimeter(const int ii, const int jj) const;
+    //@}
+
     //@{ @name Get the unit vector normal to the cell faces.
     Vector2D nfaceN(const Cell2D &Cell) const;
     Vector2D nfaceN(const int ii, const int jj) const;
@@ -446,11 +443,6 @@ class Grid2D_Quad_Block{
     void set_BCs(const int& FACE, const int& BC);
     //@}
 
-    /* Assignment operator. */
-    // Grid2D_Quad_Block operator = 
-    //    (const Grid2D_Quad_Block &G);
-    // Use automatically generated assignment operator.
-
     //@{ @name Binary arithmetic operators.
     friend Grid2D_Quad_Block operator +(Grid2D_Quad_Block &G, const Vector2D &V);
     friend Grid2D_Quad_Block operator -(Grid2D_Quad_Block &G, const Vector2D &V);
@@ -466,6 +458,44 @@ class Grid2D_Quad_Block{
     //@}
 
 };
+
+/*************************************************************************
+ * Grid2D_Quad_Block::Grid2D_Quad_Block -- Creation constructor.         *
+ *************************************************************************/
+inline Grid2D_Quad_Block::Grid2D_Quad_Block(void): Integration(this) {
+  NNi = 0; INl = 0; INu = 0; NNj = 0; JNl = 0; JNu = 0;
+  NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0;
+  Nghost = 0;
+  Node = NULL; Cell = NULL;
+  BCtypeN = NULL; BCtypeS = NULL; BCtypeE = NULL; BCtypeW = NULL;
+  SminN = ZERO; SmaxN = ZERO; SminS = ZERO; SmaxS = ZERO; 
+  SminE = ZERO; SmaxE = ZERO; SminW = ZERO; SmaxW = ZERO;
+  StretchI = 0; StretchJ = 0; BetaI = ONE; TauI = ONE;
+  BetaJ = ONE; TauJ = ONE;
+  OrthogonalN = 1; OrthogonalS = 1; OrthogonalE = 1; OrthogonalW = 1;
+}
+
+/**********************************************************************************
+ * Grid2D_Quad_Block::Grid2D_Quad_Block(Grid2D_Quad_Block &) -- Copy constructor. *
+ *********************************************************************************/
+inline Grid2D_Quad_Block::Grid2D_Quad_Block(const Grid2D_Quad_Block &G): Integration(this) {
+  NNi = G.NNi; INl = G.INl; INu = G.INu; 
+  NNj = G.NNj; JNl = G.JNl; JNu = G.JNu;
+  NCi = G.NCi; ICl = G.ICl; ICu = G.ICu; 
+  NCj = G.NCj; JCl = G.JCl; JCu = G.JCu;
+  Nghost = G.Nghost;
+  Node = G.Node; Cell = G.Cell;
+  BCtypeN = G.BCtypeN; BCtypeS = G.BCtypeS; 
+  BCtypeE = G.BCtypeE; BCtypeW = G.BCtypeW;
+  BndNorthSpline = G.BndNorthSpline; BndSouthSpline = G.BndSouthSpline;
+  BndEastSpline = G.BndEastSpline; BndWestSpline = G.BndWestSpline;
+  SminN = G.SminN; SmaxN = G.SmaxN; SminS = G.SminS; SmaxS = G.SmaxS; 
+  SminE = G.SminE; SmaxE = G.SmaxE; SminW = G.SminW; SmaxW = G.SmaxW;
+  StretchI = G.StretchI; StretchJ = G.StretchJ; BetaI = G.BetaI; 
+  TauI = G.TauI; BetaJ = G.BetaJ; TauJ = G.TauJ;
+  OrthogonalN = G.OrthogonalN; OrthogonalS = G.OrthogonalS; 
+  OrthogonalE = G.OrthogonalE; OrthogonalW = G.OrthogonalW;
+}
 
 /*************************************************************************
  * Grid2D_Quad_Block::allocate -- Allocate memory.                       *
@@ -802,6 +832,13 @@ inline double Grid2D_Quad_Block::lfaceW(const int ii, const int jj) const {
 }
 
 /*************************************************************************
+ * Grid2D_Quad_Block::cell_perimeter -- Get cell perimeter.              *
+ *************************************************************************/
+inline double Grid2D_Quad_Block::cell_perimeter(const int ii, const int jj) const {
+  return lfaceE(ii,jj)+lfaceN(ii,jj)+lfaceW(ii,jj)+lfaceS(ii,jj);
+}
+
+/*************************************************************************
  * Grid2D_Quad_Block::nface? -- Get cell face normals.                   *
  *************************************************************************/
 inline Vector2D Grid2D_Quad_Block::nfaceN(const Cell2D &Cell) const {
@@ -809,31 +846,13 @@ inline Vector2D Grid2D_Quad_Block::nfaceN(const Cell2D &Cell) const {
 }
 
 inline Vector2D Grid2D_Quad_Block::nfaceN(const int ii, const int jj) const {
-  return (Vector2D( (Node[ii][jj+1].X.y - Node[ii+1][jj+1].X.y),
-		    -(Node[ii][jj+1].X.x - Node[ii+1][jj+1].X.x))/
-	  abs(Node[ii][jj+1].X - Node[ii+1][jj+1].X));
-//    if (lfaceN(ii,jj) > NANO) return (Vector2D( (Node[ii][jj+1].X.y - Node[ii+1][jj+1].X.y),
-//  					      -(Node[ii][jj+1].X.x - Node[ii+1][jj+1].X.x))/
-//  				    abs(Node[ii][jj+1].X - Node[ii+1][jj+1].X));
-//    if (ii > 0 && ii < NCi-1) {
-//      if (lfaceN(ii-1,jj) > ZERO && lfaceN(ii+1,jj) > ZERO) {
-//        return HALF*(nfaceN(ii-1,jj) + nfaceN(ii+1,jj));
-//      } else if (lfaceN(ii-1,jj) > ZERO) {
-//        return nfaceN(ii-1,jj);
-//      } else if (lfaceN(ii+1,jj) > ZERO) {
-//        return nfaceN(ii+1,jj);
-//      } else {
-//        assert(1==2);
-//      }
-//    } else if (ii > 0) {
-//      if (lfaceN(ii-1,jj) > ZERO) return nfaceN(ii-1,jj);
-//      else assert(1==2);
-//    } else if (ii < NCi-1) {
-//      if (lfaceN(ii+1,jj) > ZERO) return nfaceN(ii+1,jj);
-//      else assert(1==2);
-//    } else {
-//      assert(1==2);
-//    }
+  if(lfaceN(ii,jj) > NANO*cell_perimeter(ii,jj)) {
+       return (Vector2D( (Node[ii][jj+1].X.y - Node[ii+1][jj+1].X.y),
+			 -(Node[ii][jj+1].X.x - Node[ii+1][jj+1].X.x))/
+	       abs(Node[ii][jj+1].X - Node[ii+1][jj+1].X));
+     } else {
+       return ihat;
+     }
 }
 
 inline Vector2D Grid2D_Quad_Block::nfaceS(const Cell2D &Cell) const {
@@ -841,31 +860,13 @@ inline Vector2D Grid2D_Quad_Block::nfaceS(const Cell2D &Cell) const {
 }
 
 inline Vector2D Grid2D_Quad_Block::nfaceS(const int ii, const int jj) const {
-  return (Vector2D( (Node[ii+1][jj].X.y - Node[ii][jj].X.y),
-		    -(Node[ii+1][jj].X.x - Node[ii][jj].X.x))/
-	  abs(Node[ii+1][jj].X - Node[ii][jj].X));
-//    if (lfaceS(ii,jj) > NANO) return (Vector2D( (Node[ii+1][jj].X.y - Node[ii][jj].X.y),
-//  					      -(Node[ii+1][jj].X.x - Node[ii][jj].X.x))/
-//  				    abs(Node[ii+1][jj].X - Node[ii][jj].X));
-//    if (ii > 0 && ii < NCi-1) {
-//      if (lfaceS(ii-1,jj) > ZERO && lfaceS(ii+1,jj) > ZERO) {
-//        return HALF*(nfaceS(ii-1,jj) + nfaceS(ii+1,jj));
-//      } else if (lfaceS(ii-1,jj) > ZERO) {
-//        return nfaceS(ii-1,jj);
-//      } else if (lfaceS(ii+1,jj) > ZERO) {
-//        return nfaceS(ii+1,jj);
-//      } else {
-//        assert(1==2);
-//      }
-//    } else if (ii > 0) {
-//      if (lfaceS(ii-1,jj) > ZERO) return nfaceS(ii-1,jj);
-//      else assert(1==2);
-//    } else if (ii < NCi-1) {
-//      if (lfaceS(ii+1,jj) > ZERO) return nfaceS(ii+1,jj);
-//      else assert(1==2);
-//    } else {
-//      assert(1==2);
-//    }
+  if(lfaceS(ii,jj) > NANO*cell_perimeter(ii,jj)) {
+    return (Vector2D( (Node[ii+1][jj].X.y - Node[ii][jj].X.y),
+		      -(Node[ii+1][jj].X.x - Node[ii][jj].X.x))/
+	    abs(Node[ii+1][jj].X - Node[ii][jj].X));
+  } else {
+    return ihat;
+  }
 }
 
 inline Vector2D Grid2D_Quad_Block::nfaceE(const Cell2D &Cell) const {
@@ -873,31 +874,13 @@ inline Vector2D Grid2D_Quad_Block::nfaceE(const Cell2D &Cell) const {
 }
 
 inline Vector2D Grid2D_Quad_Block::nfaceE(const int ii, const int jj) const {
-  return (Vector2D( (Node[ii+1][jj+1].X.y - Node[ii+1][jj].X.y),
-		    -(Node[ii+1][jj+1].X.x - Node[ii+1][jj].X.x))/
-	  abs(Node[ii+1][jj+1].X-Node[ii+1][jj].X));
-//    if (lfaceE(ii,jj) > NANO) return (Vector2D( (Node[ii+1][jj+1].X.y - Node[ii+1][jj].X.y),
-//  					      -(Node[ii+1][jj+1].X.x - Node[ii+1][jj].X.x))/
-//  				    abs(Node[ii+1][jj+1].X-Node[ii+1][jj].X));
-//    if (jj > 0 && jj < NCj-1) {
-//      if (lfaceE(ii,jj-1) > ZERO && lfaceE(ii,jj+1) > ZERO) {
-//        return HALF*(nfaceE(ii,jj-1) + nfaceE(ii,jj+1));
-//      } else if (lfaceE(ii,jj-1) > ZERO) {
-//        return nfaceE(ii,jj-1);
-//      } else if (lfaceE(ii,jj+1) > ZERO) {
-//        return nfaceE(ii,jj+1);
-//      } else {
-//        assert(1==2);
-//      }
-//    } else if (jj > 0) {
-//      if (lfaceE(ii,jj-1) > ZERO) return nfaceE(ii,jj-1);
-//      else assert(1==2);
-//    } else if (jj < NCj-1) {
-//      if (lfaceE(ii,jj+1) > ZERO) return nfaceE(ii,jj+1);
-//      else assert(1==2);
-//    } else {
-//      assert(1==2);
-//    }
+  if(lfaceE(ii,jj) > NANO*cell_perimeter(ii,jj)) {
+    return (Vector2D( (Node[ii+1][jj+1].X.y - Node[ii+1][jj].X.y),
+		      -(Node[ii+1][jj+1].X.x - Node[ii+1][jj].X.x))/
+	    abs(Node[ii+1][jj+1].X-Node[ii+1][jj].X));
+  } else {
+    return ihat;
+  }
 }
 
 inline Vector2D Grid2D_Quad_Block::nfaceW(const Cell2D &Cell) const {
@@ -905,31 +888,13 @@ inline Vector2D Grid2D_Quad_Block::nfaceW(const Cell2D &Cell) const {
 }
 
 inline Vector2D Grid2D_Quad_Block::nfaceW(const int ii, const int jj) const {
-  return (Vector2D( (Node[ii][jj].X.y - Node[ii][jj+1].X.y),
- 		    -(Node[ii][jj].X.x - Node[ii][jj+1].X.x))/
- 	  abs(Node[ii][jj].X - Node[ii][jj+1].X));
-//    if (lfaceW(ii,jj) > NANO) return (Vector2D( (Node[ii][jj].X.y - Node[ii][jj+1].X.y),
-//  					      -(Node[ii][jj].X.x - Node[ii][jj+1].X.x))/
-//  				    abs(Node[ii][jj].X - Node[ii][jj+1].X));
-//    if (jj > 0 && jj < NCj-1) {
-//      if (lfaceW(ii,jj-1) > ZERO && lfaceW(ii,jj+1) > ZERO) {
-//        return HALF*(nfaceW(ii,jj-1) + nfaceW(ii,jj+1));
-//      } else if (lfaceW(ii,jj-1) > ZERO) {
-//        return nfaceW(ii,jj-1);
-//      } else if (lfaceW(ii,jj+1) > ZERO) {
-//        return nfaceW(ii,jj+1);
-//      } else {
-//        assert(1==2);
-//      }
-//    } else if (jj > 0) {
-//      if (lfaceW(ii,jj-1) > ZERO) return nfaceW(ii,jj-1);
-//      else assert(1==2);
-//    } else if (jj < NCj-1) {
-//      if (lfaceW(ii,jj+1) > ZERO) return nfaceW(ii,jj+1);
-//      else assert(1==2);
-//    } else {
-//      assert(1==2);
-//    }
+  if(lfaceW(ii,jj) > NANO*cell_perimeter(ii,jj)) {
+    return (Vector2D( (Node[ii][jj].X.y - Node[ii][jj+1].X.y),
+		      -(Node[ii][jj].X.x - Node[ii][jj+1].X.x))/
+	    abs(Node[ii][jj].X - Node[ii][jj+1].X));
+  } else {
+    return ihat;
+  }
 }
 
 /*************************************************************************
@@ -1781,7 +1746,7 @@ extern void Read_Quad_Block(Grid2D_Quad_Block &Grid,
 	                    istream &In_File);
 
 extern void Copy_Quad_Block(Grid2D_Quad_Block &Grid1,
-		            Grid2D_Quad_Block &Grid2);
+		            const Grid2D_Quad_Block &Grid2);
 
 extern void Translate_Quad_Block(Grid2D_Quad_Block &Grid,
 	      	                 const Vector2D &V);
@@ -2157,6 +2122,21 @@ extern Grid2D_Quad_Block** Grid_Circular_Cylinder(Grid2D_Quad_Block **Grid_ptr,
  		                                  const int Number_of_Cells_Idir,
 		                                  const int Number_of_Cells_Jdir,
 						  const int Number_of_Ghost_Cells);
+
+extern Grid2D_Quad_Block** Grid_Annulus(Grid2D_Quad_Block **Grid_ptr,
+					int &Number_of_Blocks_Idir,
+					int &Number_of_Blocks_Jdir,
+					const double &Inner_Radius,
+					const double &Outer_Radius,
+					const double &ThetaStart,
+					const double &ThetaEnd,
+					const int Stretching_Type_Idir,
+					const int Stretching_Type_Jdir,
+					const double &Stretching_Factor_Idir,
+					const double &Stretching_Factor_Jdir,
+					const int Number_of_Cells_Idir,
+					const int Number_of_Cells_Jdir,
+					const int Number_of_Ghost_Cells);
 
 extern Grid2D_Quad_Block** Grid_Ellipse(Grid2D_Quad_Block **Grid_ptr,
                                         int &Number_of_Blocks_Idir,

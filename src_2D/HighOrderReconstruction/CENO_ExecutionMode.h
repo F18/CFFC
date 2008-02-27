@@ -89,8 +89,12 @@ public:
 
   static void Print_Info(std::ostream & out_file);
 
-private:
-  CENO_Execution_Mode(void){};
+  static void Broadcast(void);
+
+protected:
+  CENO_Execution_Mode(void);   //!< Private default constructor
+  CENO_Execution_Mode(const CENO_Execution_Mode&); //!< Private copy constructor
+  CENO_Execution_Mode& operator=(const CENO_Execution_Mode&); //!< Private assignment operator
 
 };
 
@@ -112,7 +116,7 @@ void CENO_Execution_Mode::Parse_Next_Input_Control_Parameter(Input_Parameters_Ty
     } else if ( strcmp(IP.Next_Control_Parameter, "Memory_Efficient") == 0 ) {
       CENO_SPEED_EFFICIENT = OFF;
     } else {
-      i_command = INVALID_INPUT_CODE;
+      i_command = INVALID_INPUT_VALUE;
       return;
     }
     i_command = 0;

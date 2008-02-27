@@ -288,6 +288,14 @@ int CFD_Input_Parameters::Parse_Next_Input_Control_Parameter(void) {
           i_Flow_Type = FLOWTYPE_TURBULENT_RANS_K_OMEGA;
        } else if (strcmp(Flow_Type, "Turbulent-LES") == 0) {
           i_Flow_Type = FLOWTYPE_TURBULENT_LES;
+       } else if (strcmp(Flow_Type, "Turbulent-LES-C-Fsd-k") == 0) {
+	 i_Flow_Type = FLOWTYPE_TURBULENT_LES_C_FSD_K;
+       } else if (strcmp(Flow_Type, "Turbulent-LES-C-Fsd-Smagorinsky") == 0) {
+	 i_Flow_Type = FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY;
+       } else if (strcmp(Flow_Type, "Turbulent-LES-TF-k") == 0) {
+	 i_Flow_Type = FLOWTYPE_TURBULENT_LES_TF_K;
+       } else if (strcmp(Flow_Type, "Turbulent-LES-TF-Smagorinsky") == 0) {
+	 i_Flow_Type = FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY;
        } else if (strcmp(Flow_Type, "Turbulent-DES-k-omega") == 0) {
           i_Flow_Type = FLOWTYPE_TURBULENT_DES_K_OMEGA;
        } else if (strcmp(Flow_Type, "Turbulent-DNS") == 0) {
@@ -382,10 +390,15 @@ int CFD_Input_Parameters::Parse_Next_Input_Control_Parameter(void) {
        Time_Max = Time_Max/THOUSAND;
        if (Time_Max < ZERO) i_command = INVALID_INPUT_VALUE;
 
-    } else if (strcmp(code, "p_norms") == 0) {
+    } else if (strcmp(code, "Residual_Norm") == 0) {
        i_command = 47;
-       value_stream >> p_Norm_Indicator;
-       if (p_Norm_Indicator < 0) i_command = INVALID_INPUT_VALUE;
+       value_stream >> Residual_Norm;
+       if (Residual_Norm < 1) i_command = INVALID_INPUT_VALUE;
+
+    } else if (strcmp(code, "Number_of_Residual_Norms") == 0) {
+       i_command = 48;
+       value_stream >> Number_of_Residual_Norms;
+       if (Number_of_Residual_Norms < 0) i_command = INVALID_INPUT_VALUE;
 
     //
     // Reconstruction type indicator and related input parameters:
@@ -454,6 +467,8 @@ int CFD_Input_Parameters::Parse_Next_Input_Control_Parameter(void) {
           i_Flux_Function = FLUX_FUNCTION_LINDE;
        } else if (strcmp(Flux_Function_Type, "HLLC") == 0) {
           i_Flux_Function = FLUX_FUNCTION_HLLC;
+       } else if (strcmp(Flux_Function_Type, "AUSM_plus_up") == 0) {
+          i_Flux_Function = FLUX_FUNCTION_AUSM_PLUS_UP;
        } else {
           i_command = INVALID_INPUT_VALUE;
        } /* endif */
@@ -594,6 +609,8 @@ int CFD_Input_Parameters::Parse_Next_Input_Control_Parameter(void) {
           i_ICs = IC_TURBULENT_DIFFUSION_FLAME;
        } else if (strcmp(ICs_Type, "Turbulent_Free_Jet_Flame") == 0) {
           i_ICs = IC_FREE_JET_FLAME;
+       }else if (strcmp(ICs_Type, "Turbulent_Premixed_Flame") == 0) {
+          i_ICs = IC_TURBULENT_PREMIXED_FLAME;
        } else if (strcmp(ICs_Type, "Restart") == 0) {
           i_ICs = IC_RESTART;
        } else {
@@ -862,10 +879,12 @@ void CFD_Input_Parameters::Broadcast(void) {
     MPI::COMM_WORLD.Bcast(&(Time_Max),
                           1,
                           MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(p_Norm_Indicator),
+    MPI::COMM_WORLD.Bcast(&(Residual_Norm),
                           1,
                           MPI::INT, 0);
-
+    MPI::COMM_WORLD.Bcast(&(Number_of_Residual_Norms),
+                          1,
+                          MPI::INT, 0);
     // Reconstruction type indicator and related input parameters:
     MPI::COMM_WORLD.Bcast(Reconstruction_Type,
                           INPUT_PARAMETER_LENGTH,
@@ -1082,6 +1101,10 @@ void CFD_Input_Parameters::Output_Problem_Type(ostream &out_file) const {
       out_file << "\n  -> Turbulent flow: RANS with k-oemga turbulence model";
    } else if (i_Flow_Type == FLOWTYPE_TURBULENT_LES) {
       out_file << "\n  -> Turbulent flow: LES ";
+   } else if (i_Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K) {
+      out_file << "\n  -> Turbulent flow: LES with C-Fsd-k model";
+   } else if (i_Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY) {
+      out_file << "\n  -> Turbulent flow: LES with C-Fsd-Smagorinsky model";
    } else if (i_Flow_Type == FLOWTYPE_TURBULENT_DES_K_OMEGA) {
       out_file << "\n  -> Turbulent flow: DES with k-oemga SGS turbulence model ";
    } else if (i_Flow_Type == FLOWTYPE_TURBULENT_DNS) {
@@ -1154,6 +1177,8 @@ void CFD_Input_Parameters::Output_Solver_Type(ostream &out_file) const {
       out_file << "\n  -> Gauss_Seidel_Iterations: " 
                << Residual_Smoothing_Gauss_Seidel_Iterations;
    } /* endif */
+
+   out_file << "\n  -> Residual_Norm : " << Residual_Norm;
 
 }
 

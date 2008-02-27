@@ -722,20 +722,187 @@ Grid2D_Quad_Block** Grid_Rectangular_Box(Grid2D_Quad_Block **Grid_ptr,
       } else {
 	Bnd_Spline_North.setBCtype(BC_NONE);
       } /* endif */
+
       if (jBlk == 0) {
 	Bnd_Spline_South.setBCtype(BC_REFLECTION);
       } else {
 	Bnd_Spline_South.setBCtype(BC_NONE);
       } /* endif */
+
       if (iBlk == Number_of_Blocks_Idir-1) {
 	Bnd_Spline_East.setBCtype(BC_REFLECTION);
       } else {
 	Bnd_Spline_East.setBCtype(BC_NONE);
       } /* endif */
+
       if (iBlk == 0) {
 	Bnd_Spline_West.setBCtype(BC_REFLECTION);
       } else {
 	Bnd_Spline_West.setBCtype(BC_NONE);
+      } /* endif */
+
+      /* Assign values to the stretching function parameters
+	 and boundary grid line orthogonality parameters. */
+
+      if (Stretching_Flag) {
+	Stretch_I = Stretching_Type_Idir;
+	Beta_I = Stretching_Factor_Idir;
+
+        if (jBlk == Number_of_Blocks_Jdir-1 && jBlk == 0) {
+  	   Stretch_J = Stretching_Type_Jdir;
+	   Beta_J = Stretching_Factor_Jdir;
+        } else if (jBlk == Number_of_Blocks_Jdir-1) {
+  	   Stretch_J = STRETCHING_FCN_MAX_CLUSTERING;
+	   Beta_J = Stretching_Factor_Jdir;
+        } else if (jBlk == 0) {
+  	   Stretch_J = STRETCHING_FCN_MIN_CLUSTERING;
+	   Beta_J = Stretching_Factor_Jdir;
+        } else {
+  	   Stretch_J = STRETCHING_FCN_LINEAR;
+	   Beta_J = ZERO;
+        } /* endif */
+
+      } else {
+	Stretch_I = STRETCHING_FCN_LINEAR;
+	Beta_I = ZERO; 
+	Stretch_J = STRETCHING_FCN_LINEAR;
+	Beta_J = ZERO;
+
+      } /* endif */
+
+      Tau_I = ZERO;
+      Tau_J = ZERO;
+      Orthogonal_North = 0;
+      Orthogonal_South = 0;
+      Orthogonal_East = 0;
+      Orthogonal_West = 0;
+
+      /* Create the 2D quadrilateral grid block representing
+	 the mesh. */
+
+      Create_Quad_Block(Grid_ptr[iBlk][jBlk],
+			Bnd_Spline_North,
+
+			Bnd_Spline_South,
+			Bnd_Spline_East,
+			Bnd_Spline_West,
+			Number_of_Cells_Idir,
+			Number_of_Cells_Jdir,
+			Number_of_Ghost_Cells,
+			GRID2D_QUAD_BLOCK_INIT_PROCEDURE_NORTH_SOUTH,
+			Stretch_I,
+			Beta_I, 
+			Tau_I,
+			Stretch_J,
+			Beta_J,
+			Tau_J,
+			Orthogonal_North,
+			Orthogonal_South,
+			Orthogonal_East,
+			Orthogonal_West);
+
+      /* Deallocate the memory for the boundary splines. */
+
+      Bnd_Spline_North.deallocate();
+      Bnd_Spline_South.deallocate();
+      Bnd_Spline_East.deallocate();
+      Bnd_Spline_West.deallocate();
+
+    } /* endfor */
+  } /* endfor */
+
+  /* Return the grid. */
+  return(Grid_ptr);
+
+}
+
+/********************************************************
+ * Routine: Grid_Periodic_Box                           *
+ *                                                      *
+ * Generates a uniform 2D Cartesian mesh for a          *
+ * box shaped domain with periodic boundaries on all    *
+ * four boundaries.                                     *
+ *                                                      *
+ ********************************************************/
+Grid2D_Quad_Block** Grid_Periodic_Box(Grid2D_Quad_Block **Grid_ptr,
+                                      int &Number_of_Blocks_Idir,
+                                      int &Number_of_Blocks_Jdir,
+                                      const double &Width,
+                                      const double &Height,
+				      const int Stretching_Flag,
+				      const int Stretching_Type_Idir,
+				      const int Stretching_Type_Jdir,
+				      const double &Stretching_Factor_Idir,
+				      const double &Stretching_Factor_Jdir,
+ 	                              const int Number_of_Cells_Idir,
+	                              const int Number_of_Cells_Jdir,
+				      const int Number_of_Ghost_Cells) {
+
+  int iBlk, jBlk, n_cells_i, n_cells_j,
+      Stretch_I, Stretch_J,
+      Orthogonal_North, Orthogonal_South,
+      Orthogonal_East, Orthogonal_West;
+  double Beta_I, Tau_I, Beta_J, Tau_J;
+  Vector2D xc_NW, xc_NE, xc_SE, xc_SW;
+  Spline2D Bnd_Spline_North, Bnd_Spline_South,
+           Bnd_Spline_East, Bnd_Spline_West;
+
+  /* Allocate memory for grid block. */
+
+  if (Number_of_Blocks_Idir < 0) Number_of_Blocks_Idir = 1;
+  if (Number_of_Blocks_Jdir < 0) Number_of_Blocks_Jdir = 1;
+  Grid_ptr = Allocate_Multi_Block_Grid(Grid_ptr, 
+				       Number_of_Blocks_Idir, 
+				       Number_of_Blocks_Jdir);
+
+  /* Create the mesh for each block representing
+     the complete grid. */
+
+  for ( jBlk = 0; jBlk <= Number_of_Blocks_Jdir-1; ++jBlk ) {
+    for ( iBlk = 0; iBlk <= Number_of_Blocks_Idir-1; ++iBlk ) {
+
+      /* Assign values to the locations of the corners
+	 of the rectangular box shaped domain. */
+
+      xc_NW = Vector2D(-HALF*Width+double(iBlk)*Width/double(Number_of_Blocks_Idir), 
+		       -HALF*Height+double(jBlk+1)*Height/double(Number_of_Blocks_Jdir));
+      xc_NE = Vector2D(-HALF*Width+double(iBlk+1)*Width/double(Number_of_Blocks_Idir), 
+		       -HALF*Height+double(jBlk+1)*Height/double(Number_of_Blocks_Jdir));
+      xc_SE = Vector2D(-HALF*Width+double(iBlk+1)*Width/double(Number_of_Blocks_Idir), 
+		       -HALF*Height+double(jBlk)*Height/double(Number_of_Blocks_Jdir));
+      xc_SW = Vector2D(-HALF*Width+double(iBlk)*Width/double(Number_of_Blocks_Idir), 
+		       -HALF*Height+double(jBlk)*Height/double(Number_of_Blocks_Jdir));
+
+      /* Create the splines defining the north, south,
+	 east, and west boundaries of the rectangular box. */
+      
+      Create_Spline_Line(Bnd_Spline_North, xc_NW, xc_NE, 2);
+      Create_Spline_Line(Bnd_Spline_South, xc_SW, xc_SE, 2);
+      Create_Spline_Line(Bnd_Spline_East, xc_SE, xc_NE, 2);
+      Create_Spline_Line(Bnd_Spline_West, xc_SW, xc_NW, 2);
+
+      /* Set the boundary condition types for each of the
+	 boundary splines. */
+
+      if (jBlk == Number_of_Blocks_Jdir-1) {
+        Bnd_Spline_North.setBCtype(BC_NONE);
+      } else {
+        Bnd_Spline_North.setBCtype(BC_NONE);
+      } /* endif */
+      if (jBlk == 0) {
+        Bnd_Spline_South.setBCtype(BC_NONE);
+      } else {
+        Bnd_Spline_South.setBCtype(BC_NONE);
+      } /* endif */
+      if (iBlk == Number_of_Blocks_Idir-1) {
+        Bnd_Spline_East.setBCtype(BC_NONE);
+      } else {
+        Bnd_Spline_East.setBCtype(BC_NONE);
+      } /* endif */
+      if (iBlk == 0) {
+        Bnd_Spline_West.setBCtype(BC_NONE);
+      } else {
+        Bnd_Spline_West.setBCtype(BC_NONE);
       } /* endif */
 
       /* Assign values to the stretching function parameters

@@ -4,7 +4,7 @@
  *******************************************************************
  *******************************************************************
  **********                                               **********
- ******                 CFFC2D Version 1.00                  *******
+ ******                 CFFC2D Version 0.01                  *******
  ****                       (07/19/07)                          ****
  ****                                                           ****
  ****  Computational Framework for Fluids and Combustion (CFFC) ****
@@ -15,9 +15,14 @@
  *******************************************************************
  ******************************************************************* 
 \endverbatim
+*/
 
-         This computer program can be used to solve a selected
- set of linear and nonlinear partial differential equations (PDEs)
+/*! \file cffc2D.cc
+
+    \brief Main executable for CFFC2D framework.
+
+ This computer program can be used to solve a selected
+ set of linear and non-linear partial differential equations (PDEs)
  on  one- and two-dimensional spatial domains using a
  variety of solution techniques appropriate for the problem.  The
  PDEs that can be treated include:
@@ -39,7 +44,7 @@
 
  The program is built using the CFFC library.
 
- *******************************************************************/
+*/
 
 /* Include the header files defining various variable types and data
    structures, classes, functions, operators, global variables,

@@ -6,20 +6,32 @@
 #ifndef _TURBULENCE_MODELLING_INCLUDED 
 #define _TURBULENCE_MODELLING_INCLUDED
 
+/* Include required C++ header files. */
+
+#include <cmath> 
+#include <cassert>
+#include <cstdlib>     // defines the drand48() function
+#include <ctime>       // defines the time() function
+#include <limits>
+#include <complex>
 
 /* Include required CFFC header files. */
 
 #ifndef _MATH_MACROS_INCLUDED
 #include "../Math/Math.h"
-#endif //MATH_MACROS_INCLUDED
+#endif // _MATH_MACROS_INCLUDED
+
+#ifndef _VECTOR3D_INCLUDED
+#include "../Math/Vector3D.h"
+#endif // _VECTOR3D_INCLUDED
 
 #ifndef _TENSOR3D_INCLUDED
 #include "../Math/Tensor3D.h"
-#endif //_TENSOR3D_INCLUDED
+#endif // _TENSOR3D_INCLUDED
 
 #ifndef _CFD_INCLUDED
 #include "../CFD/CFD.h"
-#endif //CFD_INCLUDED
+#endif // _CFD_INCLUDED
 
 #ifndef _INPUT_INCLUDED
 #include "../CFD/Input.h"
@@ -37,12 +49,9 @@
 #include "../AMR/Octree.h"
 #endif // _OCTREE_INCLUDED
 
-#ifndef _FFTW_INCLUDED
-#include "fftw3.h"
-#endif //_FFTW_INCLUDED
-
-// Constants
-const complex<double>  I(0.0, 1.0);      // sqrt(-1.0)
+#ifndef _TURBULENT_VELOCITY_FIELD_INCLUDED
+#include "TurbulentVelocityField.h"
+#endif // _TURBULENT_VELOCITY_FIELD_INCLUDED
 
 class Turbulent3DWallData;
 class Turbulence_Model_k_omega;
@@ -194,7 +203,7 @@ inline istream &operator >> (istream &in_file, Turbulent3DWallData &W) {
  * This routine determines the normal distance to the wall for each   *
  * cell of a multiblock body-fitted quadrilateral mesh.  A direct     *
  * (exhaustive) search is performed.  The wall location, the inward   *
- * normal at the wall, and the wall boundary condition type is also   *
+ * normal at the wall, and the wall boundary condition type is also   * 
  * found and stored.                                                  *
  *                                                                    *
  **********************************************************************/
@@ -377,8 +386,7 @@ int Wall_Distance(HEXA_BLOCK *Solution_Block,
 }   
 
 /**********************************************************
- * Routine: Distance_to_Wall                              *
- *                                                        *
+ * Routine: Distance_to_Wall                               *                                                        *
  * Determines the normal distance to the wall for each    *
  * cell of a multiblock body-fitted quadrilateral mesh.   *
  * A direct search is performed.                          *
@@ -535,481 +543,6 @@ int Wall_Distance(HEXA_BLOCK *Solution_Block,
 
   return(0);
    
-}
-
-/*!
- * Class: RandomFieldRogallo
- *
- * \brief Class defined to generate random fluctuations using
- * Rogallo's procedure.
- *
- */
-template<class SOLN_pSTATE, class SOLN_cSTATE>
-class RandomFieldRogallo{
-  private:
-    int spectrum_flag;  //!< Turbulence kinetic energy spectrum flag.
-
-  public:
-
-    //! Default constructor.
-    RandomFieldRogallo() : spectrum_flag(VON_KARMAN_PAO) { }
-
-    //! Another constructor.
-    RandomFieldRogallo(const int &SPECTRUM) : spectrum_flag(SPECTRUM) { }  
-
-
-      double k_1(const int &n1, const double &L1) const { return /*2.0*PI*/double(n1); }///L1; }
-
-      double k_2(const int &n2, const double &L2) const { return /*2.0*PI*/double(n2); }///L2; }
-
-      double k_3(const int &n3, const double &L3) const { return /*2.0*PI*/double(n3); }///L3; }
-
-    double random_double() const { return  drand48(); }
-
-
-    // alpha and beta as defined by Rogallo, 1981
-    complex<double> alpha(const double &abs_wave_num, 
-			  const double &theta1, 
-			  const double &phi) const;
-
-    complex<double> beta(const double &abs_wave_num, 
-			 const double &theta2, 
-			 const double &phi) const;
-
-    double Energy_Spectrum_Value(const double &abs_wave_num) const;
-
-    int Generate_Velocity_Fluctuations(Grid3D_Hexa_Multi_Block &InitMeshBlks,
-				       Grid3D_Input_Parameters/*<SOLN_pSTATE, SOLN_cSTATE>*/ &IPs) const;
-
-    void Write_Initial_Turbulent_Fluctuations(Grid3D_Hexa_Multi_Block &InitMeshBlks,
-					      Grid3D_Input_Parameters/*<SOLN_pSTATE, SOLN_cSTATE>*/ &IPs,
-					      double *u, double *v, double *w) const;
-       
-};
-
-
-//-----------------------------------------------------//
-//         Members of RandomFieldRogallo class         //
-//-----------------------------------------------------//
-
-// alpha
-template<class SOLN_pSTATE, class SOLN_cSTATE>
-complex<double> RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>::
-alpha(const double &abs_wave_num, const double &theta1, const double &phi) const {
-
-  double E, k;
-  k = abs_wave_num;  E = Energy_Spectrum_Value(k);
-
-  return (k == 0.0)  ?  0.0 : sqrt(E/(4.0*PI*k*k)) * exp(I*theta1) * cos(phi);
-}
-
-
-// beta
-template<class SOLN_pSTATE, class SOLN_cSTATE>
-complex<double> RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>::
-beta(const double &abs_wave_num, const double &theta2, const double &phi) const {
-
-  double E, k;
-  k = abs_wave_num;  E = Energy_Spectrum_Value(k);
-
-  return (k == 0.0)  ?  0.0 : sqrt(E/(4.0*PI*k*k)) * exp(I*theta2) * sin(phi);
-}
-
-
-// Prescribed energy spectrum
-template<class SOLN_pSTATE, class SOLN_cSTATE>
-double RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>::
-Energy_Spectrum_Value(const double &abs_wave_num) const {
-
-  double k, kp, kd, eps, u, Lp, EE;
-  double C, A, alpha, a_s;
-  int s;
- 
-  k = abs_wave_num;
-  
-  switch (spectrum_flag) {
-    /*****  Lee and Reynolds  *****/
-  case LEE_REYNOLDS :
-    C = 20.0;  kp = 80.0;   
-    EE = (k <= kp)  ?  C*k*k : C*kp*kp*pow(k/kp, -5.0/3.0);
-    break;
-
-    /*****  Laval and Nazarenko paper  *****/
-  case LAVAL_NAZARENKO :
-    //double EE, kp, C;
-    C = 1.0;  kp = 4.0;
-    EE = C*k*exp(-pow(k/kp, 2.0));
-    break;
-
-    /*****   von Karman-Pao   *****/
-  case VON_KARMAN_PAO :
-    A = 1.5;    alpha = 1.5;
-    //Lp = TWO*PI/ONE;
-    kp =1.0;   kd = 300.0 /*362.0*/;
-    u = 0.8;    eps = 2.73E-3; //2.73E-03;
-    EE = (A/eps)*pow(u, 5.0);
-    EE = EE*pow(k/kp, 4.0) * exp(-3.0*alpha*pow(k/kd, 4.0/3.0)/2.0);
-    EE = EE/pow(1.0+(k/kp)*(k/kp), 17.0/6.0);
-    break;
-
-    /*****  Haworth and Poinsot paper  *****/
-  case HAWORTH_POINSOT :
-    //double EE, kp, 
-    u = 15.5;  Lp = TWO*PI/8.0;  // kp=4.0, u=2.5  kp=8
-    kp = TWO*PI/Lp;
-    EE = (32.0/3.0) * sqrt(2.0/PI)* (u*u/kp) * pow(k/kp, 4.0) * exp(-2.0*(k/kp)*(k/kp));
-    break;
-
-    /*****  Chasnov paper 1996  *****/
-  case CHASNOV :  
-    //double a_s, EE, kp = 4.0 /*8.0 20.0 4.0*/, u = 0.095; /*0.1 28.3 21.21  0.001*/  
-    //int s = 3;
-    s = 3.0;
-    kp = 4.0;
-    u = 0.009; 
-    // u = 0.001  ->  Re_lambda = 10 
-    // u = 0.009  ->  Re_lambda = 98
-    // u = 0.095  ->  Re_lambda = 950
-   
-    a_s = pow(2.0*double(s)+1.0, double(s)+1.0)/(factorial(s)*pow(2.0, double(s)));
-    EE = (HALF*a_s*u*u/kp)*pow(k/kp, 2.0*double(s)+1.0);
-    EE = EE*exp(-(double(s)+HALF)*pow(k/kp, 2.0));
-    break;
-
-    /*****   Bell & Day report   *****/
-  case BELL_DAY :
-    //  kd = 1/(2*dx)
-    kp = 3.0;   kd = ONE/0.576E-3;
-    EE = pow(k/kp, 4.0) * exp(-9.0*pow(k/kd, 4.0/3.0)/4.0);
-    EE /= pow(1.0+(k/kp)*(k/kp), 17.0/6.0);
-    break;
-
-
-    /*****   von Karman-Pao   *****/
-  default :
-    A = 1.5;    alpha = 1.5;
-    //Lp = TWO*PI/ONE;
-    kp = 3.0;   kd = 1000.0 /*362.0*/;
-    u = 0.107;    eps = 2.73E-3; //2.73E-03;
-    EE = (A/eps)*pow(u, 5.0);
-    EE = EE*pow(k/kp, 4.0) * exp(-3.0*alpha*pow(k/kd, 4.0/3.0)/2.0);
-    EE = EE/pow(1.0+(k/kp)*(k/kp), 17.0/6.0);
-    break;    
-
-  }  // end switch
-  
-
-  return (k == 0.0)  ?  0.0 : EE;
- 
-}
-
- 
-// Generate_Velocity_Fluctuations
-template<class SOLN_pSTATE, class SOLN_cSTATE>
-int RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>::
-Generate_Velocity_Fluctuations(Grid3D_Hexa_Multi_Block &InitMeshBlks,
-			       Grid3D_Input_Parameters/*<SOLN_pSTATE, SOLN_cSTATE>*/ &IPs) const {
-
-
-
-  double L1, L2, L3;
-  L1 = IPs./*IP_Grid.*/Box_Length;
-  L2 = IPs./*IP_Grid.*/Box_Width;
-  L3 = IPs./*IP_Grid.*/Box_Height;
-
-  int Nx, Ny, Nz;
-  Nx = IPs./*IP_Grid.ICells*/NCells_Idir * IPs.NBlk_Idir;//InitMeshBlks.NBlk_Idir;//->NBI;
-  Ny = IPs./*IP_Grid.JCells*/NCells_Jdir * IPs.NBlk_Jdir;//InitMeshBlks.NBlk_Jdir;//->NBJ;
-  Nz = IPs./*IP_Grid.KCells*/NCells_Kdir * IPs.NBlk_Kdir;//InitMeshBlks.NBlk_Kdir;//->NBK;
-
-
-  double        scaling_factor = 1.0/double(Nx*Ny*Nz);  // Scaling factor for the complex to real transform
-
-  double        *u, *v, *w;        // Arrays to store the velocity fluctuations in physical space
-  fftw_complex  *uu, *vv, *ww;     // Arrays to store the velocity fluctuations in Fourier space
-  fftw_plan      physical;
-    
-
-  int nz = Nz/2+1;
-
-  // Allocation of arrays used in the transforms
-  u = (double *) malloc(Nx*Ny*Nz * sizeof(double));
-  v = (double *) malloc(Nx*Ny*Nz * sizeof(double));
-  w = (double *) malloc(Nx*Ny*Nz * sizeof(double));
-
-  uu = (fftw_complex *) fftw_malloc(Nx*Ny*nz * sizeof(fftw_complex));
-  vv = (fftw_complex *) fftw_malloc(Nx*Ny*nz * sizeof(fftw_complex));
-  ww = (fftw_complex *) fftw_malloc(Nx*Ny*nz * sizeof(fftw_complex));
-
-
-  
-  int seed = 3; 
-  //int seed = time(NULL);   // assigns the current time to the seed
-  srand48(seed);             // changes the seed for drand48()
-  int iconj, jconj;          // Position of the conjugate complex for the i index
-  double k1, k2, k3;         // Wave numbers
-  
-  double theta1, theta2, phi;
-  complex<double> aa, bb;
-  double deno;
-  
-
-  for (int i=0; i<Nx; ++i) {
-    iconj = (i==0  ?  0 : Nx-i);
-
-    for (int j=0; j<Ny; ++j) {
-      jconj = (j==0  ?  0 : Ny-j);
-      
-      for (int l=0; l<Nz/2+1; ++l) {
-	//Components of the wave number vector
-	if( i<=Nx/2) {
-	  k1 = k_1(i, L1);
-	} else {
-	  k1 = k_1(i-Nx, L1);
-	}
-
-	if( j<=Ny/2) {
-	  k2 = k_2(j, L2);
-	} else {
-	  k2 = k_2(j-Ny, L2);
-	}
-
-	k3 = k_3(l, L3);
-
-	// Wave number magnitude
-	double abs_k = sqrt(k1*k1 + k2*k2 + k3*k3);
-
-	//Rogallo's function  
-	theta1 =  2.0*PI*random_double();  // Random number (0, 2*PI)
-	theta2 =  2.0*PI*random_double();  // Random number (0, 2*PI)
-	phi = 2.0*PI*random_double();      // Random number (0, 2*PI)
-
-	if ( theta1 == theta2  && theta2 == phi ) {
-	  cerr << "\n theta1, theta2 and phi are all equal.";
-	}
-
-	aa = alpha(abs_k, theta1, phi);
-	bb = beta(abs_k, theta2, phi);
-
-	deno = abs_k * sqrt(k1*k1 + k2*k2);
-
-	int index = l + nz*(j+Ny*i);
-
-	if (deno != 0.0) {
-	  uu[index][0] = real( (aa*abs_k*k2 + bb*k1*k3)/deno );
-	  uu[index][1] = imag( (aa*abs_k*k2 + bb*k1*k3)/deno );
-	  
-	  vv[index][0] = real( (bb*k2*k3 - aa*abs_k*k1)/deno );
-	  vv[index][1] = imag( (bb*k2*k3 - aa*abs_k*k1)/deno );
-
-	  ww[index][0] = real( -( bb*(k1*k1 + k2*k2) )/deno );
-	  ww[index][1] = imag( -( bb*(k1*k1 + k2*k2) )/deno );
-
-	} else {
-	  uu[index][0] = 0.0;
-	  uu[index][1] = 0.0;
-
-	  vv[index][0] = 0.0;
-	  vv[index][1] = 0.0;
-
-	  ww[index][0] = 0.0;
-	  ww[index][1] = 0.0;
-
-	}
-
- 	if ( l==0  ||  l==Nz/2) {
-	  // complex conjugates
-	  if ( j>Ny/2  ||  ( i>Nx/2  &&  (j==0 || j==Ny/2) ) ) {
-
-	    int index_conj = l + nz*(jconj+Ny*iconj);
-
-	    uu[index][0] =  uu[index_conj][0];  
-	    uu[index][1] = -uu[index_conj][1];
-
-	    vv[index][0] =  vv[index_conj][0];
-	    vv[index][1] = -vv[index_conj][1];
-
-	    ww[index][0] =  ww[index_conj][0];
-	    ww[index][1] = -ww[index_conj][1];
-
-	  // real values at 8 corners
-	  } else if ( (i==0 || i==Nx/2)  &&  (j==0 || j==Ny/2) ) {
-
-	    uu[index][1] = 0.0;
-	    vv[index][1] = 0.0;
-	    ww[index][1] = 0.0; 
-
-	  }
-
-	} // end if
-
-
-	// real values at 8 corners
-// 	if ( (i==0 || i==Nx/2)  &&  (j==0 || j==Ny/2) ) {
-	    
-// 	    uu[i][j][l].im = 0.0;
-// 	    vv[i][j][l].im = 0.0;
-// 	    ww[i][j][l].im = 0.0;
-
-// 	}
-
-
-
-
-
-
-// 	cout << "\n (" << uu[i][j][l].re << "," << uu[i][j][l].im <<") \t"
-// 	     << "(" << vv[i][j][l].re << "," << vv[i][j][l].im <<") \t"
-// 	     << "(" << ww[i][j][l].re << "," << ww[i][j][l].im <<")";
-	
-        // cout <<"("<< k1*uu[i][j][l].re + k2*vv[i][j][l].re + k3*ww[i][j][l].re <<","
-// 	     << k1*uu[i][j][l].im + k2*vv[i][j][l].im + k3*ww[i][j][l].im <<") \t";
-      
-        
-      } // end for
-      
-      //cout << endl;
-
-    } // end for
-    
-    //cout << endl;
-
-  } // end for
-  
-
-  
-  physical = fftw_plan_dft_c2r_3d(Nx, Ny, Nz, uu, u, /*FFTW_BACKWARD,*/ FFTW_ESTIMATE);
-  fftw_execute(physical); 
-  fftw_destroy_plan(physical);
-
-  
-  physical = fftw_plan_dft_c2r_3d(Nx, Ny, Nz, vv, v, /*FFTW_BACKWARD,*/ FFTW_ESTIMATE);
-  fftw_execute(physical); 
-  fftw_destroy_plan(physical);
-
-  
-  physical = fftw_plan_dft_c2r_3d(Nx, Ny, Nz, ww, w, /*FFTW_BACKWARD,*/ FFTW_ESTIMATE);
-  fftw_execute(physical); 
-  fftw_destroy_plan(physical);
-
-
-  
-  for (int i=0; i<Nx; ++i) {
-    for (int j=0; j<Ny; ++j) {
-      for (int l=0; l<Nz; ++l) {
-	int index = l + Nz*(j+Ny*i);
-	u[index] =  u[index] /*scaling_factor*/;
-	v[index] =  v[index] /*scaling_factor*/;
-	w[index] =  w[index] /*scaling_factor*/;
-
-
-      }
-    }
-  }
-
-
-  Write_Initial_Turbulent_Fluctuations(InitMeshBlks, IPs, u, v, w);
-
-
-  // Deallocations   
-  fftw_free(u);
-  fftw_free(v);
-  fftw_free(w);
-  fftw_free(uu);
-  fftw_free(vv);
-  fftw_free(ww);
-
-  return 0;
-
-}
-
-
-// Write_Initial_Turbulent_Fluctuations
-template<class SOLN_pSTATE, class SOLN_cSTATE>
-void RandomFieldRogallo<SOLN_pSTATE, SOLN_cSTATE>::
-Write_Initial_Turbulent_Fluctuations(Grid3D_Hexa_Multi_Block &InitMeshBlks,
-				     Grid3D_Input_Parameters/*<SOLN_pSTATE, SOLN_cSTATE>*/ &IPs,
-				     double *u, double *v, double *w) const {
-
-
-
-  int ii, jj, kk;
-  int Nblks_i, Nblks_j, Nblks_k;
-  int ICblk, JCblk, KCblk; 
-  
-  Nblks_i = IPs.NBlk_Idir;//InitMeshBlks.NBlk_Idir;//->NBI;
-  Nblks_j = IPs.NBlk_Jdir;//InitMeshBlks.NBlk_Jdir;//->NBJ;
-  Nblks_k = IPs.NBlk_Kdir;//InitMeshBlks.NBlk_Kdir;//->NBK;
-
-  cout << "\n\n Nblks_i: " << Nblks_i << "\t Nblks_j: " 
-       << Nblks_j << "\t Nblks_k: " << Nblks_k;
-
-  ICblk = IPs./*IP_Grid.ICells*/NCells_Idir; //  /Nblks_i;  // Cells per block in the I direction
-  JCblk = IPs./*IP_Grid.JCells*/NCells_Jdir; //  /Nblks_j;  // Cells per block in the J direction
-  KCblk = IPs./*IP_Grid.KCells*/NCells_Kdir; //  /Nblks_k;  // Cells per block in the J direction
-  
-  cout << "\n ICblk: " << ICblk << "\t JCblk: " 
-       << JCblk << "\t KCblk: " << KCblk;
-
-
-  int Nx, Ny, Nz;
-  Nx = IPs./*IP_Grid.ICells*/NCells_Idir * Nblks_i;
-  Ny = IPs./*IP_Grid.JCells*/NCells_Jdir * Nblks_j;
-  Nz = IPs./*IP_Grid.KCells*/NCells_Kdir * Nblks_k;
-/*   cout << "\n Nx: " << Nx << "\t Ny: " */
-/*        << Ny << "\t Nz: " << Nz; */
-  
-
-  ofstream out_file;
-  out_file.open("Initial_Turbulence_Fluctuations.dat", ios::out);
-  if(out_file.fail()){
-    cerr<<"\nError opening file: Initial_Turbulence_Fluctuations.dat to write" << endl;
-    exit(1);
-  }
-  
-    out_file.setf(ios::scientific);
-    //    out_file << "VARIABLES= 'x', 'y', 'z', 'velocity-x', 'velocity-y', 'velocity-z' " << endl;
-
-  for (int i_blk=0; i_blk<Nblks_i; ++i_blk) {
-    for (int j_blk=0; j_blk<Nblks_j; ++j_blk) {
-      for (int k_blk=0; k_blk<Nblks_k; ++k_blk) {
-	
-	int ICl = InitMeshBlks.Grid_Blks[i_blk][j_blk][k_blk].ICl, ICu = InitMeshBlks.Grid_Blks[i_blk][j_blk][k_blk].ICu;
-	int JCl = InitMeshBlks.Grid_Blks[i_blk][j_blk][k_blk].JCl, JCu = InitMeshBlks.Grid_Blks[i_blk][j_blk][k_blk].JCu;
-	int KCl = InitMeshBlks.Grid_Blks[i_blk][j_blk][k_blk].KCl, KCu = InitMeshBlks.Grid_Blks[i_blk][j_blk][k_blk].KCu;
-
-	if (ICu-ICl+1 != ICblk  ||  JCu-JCl+1 != JCblk  || KCu-KCl+1 != KCblk) {
-	  cout << "\nERROR: Number of cell does not match writing Initial_Turbulence_Fluctuations.dat";
-	}
-
-	//       out_file << "ZONE   I=" << Nx/Nblks_i << "\t J=" << Ny/Nblks_j << "\t K=" << Nz/Nblks_k << endl;
-
-	for (int i=0; i<ICblk; ++i) {
-	  ii = i_blk*ICblk + i;
-	  for (int j=0; j<JCblk; ++j) {
-	    jj = j_blk*JCblk + j;
-	    for (int k=0; k<KCblk; ++k) {
-	      kk = k_blk*KCblk + k;
-
-	      out_file << setprecision(10)
-		       << InitMeshBlks.Grid_Blks[i_blk][j_blk][k_blk].Cell[i+ICl][j+JCl][k+KCl].Xc
-		       << " " << u[kk + Nz*(jj+Ny*ii)]
-		       << " " << v[kk + Nz*(jj+Ny*ii)]
-		       << " " << w[kk + Nz*(jj+Ny*ii)] << "\n";
-	    }
-	  }
-	}
-
-	out_file << endl;
-
-	
-      }
-    }
-  }
-
-  out_file.close();   
-  
-
 }
 
 #endif // _TURBULENCE_MODELLING_INCLUDED 

@@ -115,13 +115,13 @@ class Grid3D_Input_Parameters{
        X_Scale = ONE;
        X_Rotate = ZERO;
        // Pipe parameters:
-       Pipe_Length = ONE; Pipe_Radius = 0.1;
+       Pipe_Length = ONE; Pipe_Radius = 0.1234;
        // Bluff body burner parameters:
-       Radius_Fuel_Line = 1.80e-03;
-       Radius_Bluff_Body = 25.04e-03;
-       Radius_Coflow_Inlet_Pipe = 0.1;
-       Length_Coflow_Inlet_Pipe = 0.127; 
-       Length_Combustor_Tube = 0.508;
+       Radius_Fuel_Line = 0.0018;
+       Radius_Bluff_Body = 0.025;
+       Radius_Coflow_Inlet_Pipe = 0.07;
+       Length_Coflow_Inlet_Pipe = 0.1; 
+       Length_Combustor_Tube = 0.3;
        //ICEM Filenames:
        ICEMCFD_FileNames = ICEMCFD_get_filenames();
     }

@@ -1406,7 +1406,6 @@ LESPremixed2D_pState LESPremixed2D_pState::lp_x(const int &index) const {
        if(index == i){
 	 LESPremixed2D_pState NEW(ZERO);
 	 NEW.scalar[i-5] = ONE;//scalar[i-5];//ONE; 
-	 cout<<NEW<<endl;
 	 return NEW;
        }
      }
@@ -4436,10 +4435,10 @@ LESPremixed2D_pState BC_1DFlame_Inflow(const LESPremixed2D_pState &Wi,
   //Calculate upstream velocity to balance flame ie. mass flow rate 
   // rho_1*u_1 = rho_2*u_2  
   //relaxation
-  //Wnew.v.x = Wi.v.x + 0.5*(Woutlet.rho*Woutlet.v.x/Wo.rho - Wi.v.x);
+    Wnew.v.x = Wi.v.x + 0.5*(Woutlet.rho*Woutlet.v.x/Wo.rho - Wi.v.x);
 
   //no relaxation
-  Wnew.v.x = Woutlet.rho*Woutlet.v.x/Wo.rho;
+  //  Wnew.v.x = Woutlet.rho*Woutlet.v.x/Wo.rho;
 
   if(Wnew.v.x  < 0.1 || Wnew.v.x > (Wo.v.x + 0.5)){
     Wnew.v.x = Wo.v.x;
@@ -4473,10 +4472,10 @@ LESPremixed2D_pState BC_1DFlame_Outflow(const LESPremixed2D_pState &Wi,       //
     Wnew.p = Wo.p;
   } else {
     //no relaxation
-    Wnew.p = Wo.p - sum;
+    //    Wnew.p = Wo.p - sum;
 
     // relaxation
-    //Wnew.p = Wi.p + 0.5*( (Wo.p-sum) - Wi.p);
+   Wnew.p = Wi.p + 0.5*( (Wo.p-sum) - Wi.p);
   }
 
   return Wnew;

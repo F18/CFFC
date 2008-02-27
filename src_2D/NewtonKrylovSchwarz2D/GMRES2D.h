@@ -1980,7 +1980,7 @@ public:
   GMRES_RightPrecon_MatrixFree(void):
     Soln_ptr(NULL), List_of_Local_Solution_Blocks(NULL), Input_Parameters(NULL),
     G(NULL), Number_of_GMRES_Iterations(0), global_time_step_size(ZERO), 
-    relative_residual(ZERO,DTS_ptr(NULL)) {}
+    relative_residual(ZERO),DTS_ptr(NULL) {}
   
   GMRES_RightPrecon_MatrixFree(SOLN_BLOCK_TYPE *Soln_ptr, 
 			       AdaptiveBlock2D_List &List_of_Local_Solution_Blocks,

@@ -109,6 +109,13 @@ SRC_GRID = $(GRID_DIR)Cell1D.cc \
 SRC_ICEMCFD = $(ICEMCFD_DIR)ICEMCFD.cc \
 	      $(ICEMCFD_DIR)ICEMCFD_ctype.c
 
+# Add Grid Testing If Required:
+SRC_GRID_TESTS := test_Grid2DQuadIntegration.cc
+SRC_GRID_TESTS := $(addprefix $(GRID_DIR)UnitTests/,$(SRC_GRID_TESTS))
+ifeq ($(TUT_TESTING),ON) 
+  SRC_GRID += $(SRC_GRID_TESTS)
+endif
+
 # AMR:
 ifeq ($(MPI_VERSION),NoMPI)
   SRC_AMR = $(AMR_DIR)AdaptiveBlock.cc \
@@ -125,7 +132,8 @@ SRC_HIGH_ORDER_RECONSTRUCTION = ReconstructionHelpers.cc \
                                 CENO_Tolerances.cc \
 				CENO_ExecutionMode.cc \
                                 ENO_ExecutionMode.cc \
-				AccuracyAssessment1D.cc
+				AccuracyAssessment1D.cc \
+				AccuracyAssessment2DMultiBlock.cc
 SRC_HIGH_ORDER_RECONSTRUCTION := $(addprefix  $(HIGH_ORDER_RECONSTRUCTION_DIR), $(SRC_HIGH_ORDER_RECONSTRUCTION))
 
 # Add High-Order Reconstruction Testing If Required:
@@ -162,7 +170,6 @@ SRC_EULER1D := $(addprefix $(EULER_1D_DIR), $(SRC_EULER1D))
 SRC_EULER1D_TESTS = test_Euler1D_Simulations.cc \
 		    test_HighOrder1D_EulerState.cc \
 		    test_HighOrder1D_Euler1DUniformMesh.cc
-
 SRC_EULER1D_TESTS := $(addprefix $(EULER_1D_DIR)UnitTests/, $(SRC_EULER1D_TESTS))
 ifeq ($(TUT_TESTING),ON) 
   SRC_EULER1D += $(SRC_EULER1D_TESTS)
@@ -178,9 +185,25 @@ SRC_ADVECTDIFFUSE = $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DState.cc \
                     $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuadMultiBlock.cc \
                     $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuadGrid.cc \
                     $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuadSolvers.cc \
-                    $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DQuad_NKS.cc \
-		    $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DExactSolutions.cc
+		    $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DExactSolutions.cc \
+		    $(ADVECTDIFFUSE_DIR)ExactSolutions.cc \
+                    $(ADVECTDIFFUSE_DIR)VelocityFields.cc \
+                    $(ADVECTDIFFUSE_DIR)DiffusionFields.cc \
+                    $(ADVECTDIFFUSE_DIR)SourceTermFields.cc \
+                    $(ADVECTDIFFUSE_DIR)SourceFields.cc \
+                    $(ADVECTDIFFUSE_DIR)AdvectDiffuse2DInflowField.cc \
+                    $(ADVECTDIFFUSE_DIR)InflowFields.cc
 SRC_ADVECTDIFFUSE_EXE = $(ADVECTDIFFUSE_DIR)AdvectDiffuse2D.cc
+
+# Add AdvectDiffuse 2D Testing If Required:
+SRC_ADVECTDIFFUSE_TESTS = test_AdvectDiffuse2DState.cc \
+                          test_SourceTermFields.cc \
+                          test_AdvectDiffuse2DQuad.cc \
+			  test_AdvectDiffuse2DExactSolutions.cc
+SRC_ADVECTDIFFUSE_TESTS := $(addprefix $(ADVECTDIFFUSE_DIR)UnitTests/, $(SRC_ADVECTDIFFUSE_TESTS))
+ifeq ($(TUT_TESTING),ON) 
+  SRC_ADVECTDIFFUSE += $(SRC_ADVECTDIFFUSE_TESTS)
+endif
 
 # Euler2D:
 SRC_EULER = $(EULER_2D_DIR)Euler2DState.cc \
@@ -576,7 +599,6 @@ EXE_ELECTROSTATIC2D = electrostatic2D
 EXE_RTE2D = rte2D
 EXE_LEVELSET2D = levelset2D
 EXE_EMBEDDEDBOUNDARIES2D = embeddedboundaries2D
-
 
 ###############################################################################
 # Define dependencies
@@ -1028,6 +1050,7 @@ clean:
 	rm -f $(MPI_DIR)*.o $(MPI_DIR)*.il $(MPI_DIR)*~
 	rm -f $(GRID_DIR)*.o $(GRID_DIR)*.il $(GRID_DIR)*~
 	rm -f $(ICEMCFD_DIR)*.o $(ICEMCFD_DIR)*.il $(ICEMCFD_DIR)*~ $(ICEMCFD_DIR)*.depend $(ICEMCFD_DIR)*.bak
+	rm -f $(GRID_DIR)UnitTests/*.o $(GRID_DIR)UnitTests/*.il $(GRID_DIR)UnitTests/*~ $(GRID_DIR)UnitTests/*.bak
 	rm -f $(AMR_DIR)*.o $(AMR_DIR)*.il $(AMR_DIR)*~
 	rm -f $(SYSTEM_DIR)*.o $(SYSTEM_DIR)*.il $(SYSTEM_DIR)*~
 	rm -f $(EULER_1D_DIR)*.o $(EULER_1D_DIR)*.il $(EULER_1D_DIR)*~ $(EULER_1D_DIR)*.bak
@@ -1035,6 +1058,7 @@ clean:
 	rm -f $(EULER_1D_DIR)UnitTests/*.o $(EULER_1D_DIR)UnitTests/*.il $(EULER_1D_DIR)UnitTests/*~ $(EULER_1D_DIR)UnitTests/*.bak
 	rm -f $(SOLVERS1D_DIR)*.o $(SOLVERS1D_DIR)*.il $(SOLVERS1D_DIR)*~ $(SOLVERS1D_DIR)*.depend
 	rm -f $(ADVECTDIFFUSE_DIR)*.o $(ADVECTDIFFUSE_DIR)*.il $(ADVECTDIFFUSE_DIR)*~ $(ADVECTDIFFUSE_DIR)*.depend $(ADVECTDIFFUSE_DIR)*.bak
+	rm -f $(ADVECTDIFFUSE_DIR)UnitTests/*.o $(ADVECTDIFFUSE_DIR)UnitTests/*.il $(ADVECTDIFFUSE_DIR)UnitTests/*~ $(ADVECTDIFFUSE_DIR)UnitTests/*.bak
 	rm -f $(EULER_2D_DIR)*.o $(EULER_2D_DIR)*.il $(EULER_2D_DIR)*~ $(EULER_2D_DIR)*.depend $(EULER_2D_DIR)*.bak
 	rm -f $(NAVIERSTOKES_DIR)*.o $(NAVIERSTOKES_DIR)*.il $(NAVIERSTOKES_DIR)*~ $(NAVIERSTOKES_DIR)*.depend $(NAVIERSTOKES_DIR)*.bak
 	rm -f $(CHEM_DIR)*.o $(CHEM_DIR)*.il $(CHEM_DIR)*~ $(CHEM_DIR)*.depend $(CHEM_DIR)*.bak

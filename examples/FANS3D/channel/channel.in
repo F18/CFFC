@@ -5,9 +5,9 @@ Multistage_Optimal_Smoothing
 N_Stage = 
 3
 Time_Accurate = 
-0
+OFF
 Local_Time_Stepping =
-0
+1
 Reconstruction_Type =
 Least_Squares
 Limiter_Type = 
@@ -16,12 +16,13 @@ Flux_Function_Type =
 Roe
 ICs_Type = 
 Turbulent_Channel_Flow
+#Restart
 Flow_Type = 
 Turbulent-k-omega
-Wall_Boundary_Treatments = 
+Near_Wall_Boundary_Treatment =
 2
-Pressure_Gradient_xdir=
-1.75
+Pressure_Gradient =
+0.00  0.00   1.75
 Reynolds_Number = 
 61600
 #Species
@@ -37,28 +38,28 @@ Temperature =
 Grid_Type =
 Turbulent_Channel
 Number_of_Cells_Idir = 
-10
+4
 Number_of_Cells_Jdir =
-4
+32
 Number_of_Cells_Kdir =
-4
+20
 Number_of_Blocks_Idir = 
-4
+1
 Number_of_Blocks_Jdir =
-2
+1
 Number_of_Blocks_Kdir =
-2
+1
 ###############################
 # Set time stepping parameters
 ###############################
 CFL_Number =
 0.1
 Time_Max = 
-0.2
+0.0
 #0.20
 # 0.91
 Maximum_Number_of_Time_Steps =
-1000
+50
 Number_of_Blocks_Per_Processor =
 10
 Output_File_Name = 

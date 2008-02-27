@@ -1,9 +1,16 @@
 /*!\file CENO_ExecutionMode.cc
   \brief Initialize the flags that control the execution of CENO high-order reconstruction. */
 
+/* Include required C++ libraries. */
+// None
+
+/* Using std namespace functions */
+// None
+
 /* Include CFFC header files */
 #include "../CFD/CFD.h"
 #include "CENO_ExecutionMode.h"
+#include "../MPI/MPI.h"
 
 short CENO_Execution_Mode::USE_CENO_ALGORITHM = OFF; // CENO scheme is not used
 short CENO_Execution_Mode::CENO_SPEED_EFFICIENT = ON; // computation time efficient mode
@@ -67,4 +74,40 @@ void CENO_Execution_Mode::Print_Info(std::ostream & out_file){
   } else {
     out_file << "\n     -> Negative interface solutions: " << "Exit with error";
   }
+}
+
+/*!
+ * Broadcast the CENO_Execution_Mode variables to all      
+ * processors associated with the specified communicator
+ * from the specified processor using the MPI broadcast 
+ * routine.
+ *
+ * \todo Switch to a user-difined datatype
+ */
+void CENO_Execution_Mode::Broadcast(void){
+#ifdef _MPI_VERSION
+  
+  MPI::COMM_WORLD.Bcast(&USE_CENO_ALGORITHM,
+ 			1, 
+ 			MPI::SHORT, 0);
+  MPI::COMM_WORLD.Bcast(&CENO_SPEED_EFFICIENT,
+ 			1, 
+ 			MPI::SHORT, 0);
+  MPI::COMM_WORLD.Bcast(&CENO_DROP_ORDER,
+ 			1, 
+ 			MPI::SHORT, 0);
+  MPI::COMM_WORLD.Bcast(&CENO_PADDING,
+ 			1, 
+ 			MPI::SHORT, 0);
+  MPI::COMM_WORLD.Bcast(&CENO_SQUARE_GEOM_WEIGHTING,
+ 			1, 
+ 			MPI::SHORT, 0);
+  MPI::COMM_WORLD.Bcast(&CENO_CONSIDER_WEIGHTS,
+ 			1, 
+ 			MPI::SHORT, 0);
+  MPI::COMM_WORLD.Bcast(&FORCE_WITH_PIECEWISE_CONSTANT_AT_INTERFACE,
+ 			1, 
+ 			MPI::SHORT, 0);
+
+#endif
 }

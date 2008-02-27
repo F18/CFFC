@@ -29,7 +29,6 @@ using namespace std;
 // Include CFFC header files.
 
 #include "AdvectDiffuse2DQuad.h"
-#include "AdvectDiffuse2DQuad_NKS.h"
 #include "../MPI/MPI.h"
 #include "../ICEM/ICEMCFD.h"
 #include "../UnitTesting/UnitTesting.h"

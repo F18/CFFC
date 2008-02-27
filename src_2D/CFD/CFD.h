@@ -56,7 +56,7 @@ inline string CFFC_Name() {
 
 // Version.
 inline string CFFC_Version() {
-  return ("CFFC, Version 0.00, UTIAS CFD & Propulsion Group, 1999-2007.");
+  return ("CFFC, Version 0.01, UTIAS CFD & Propulsion Group, 1999-2007.");
 }
 
 // Cantera Version.
@@ -164,7 +164,7 @@ inline char *Date_And_Time() {
 #define POSTPROCESS_RADIATION_CODE                       10101
 #define POSTPROCESS_2DFLAME_CODE                         10102
 
-#define WRITE_NORM_ON_SCREEN                             10105
+#define WRITE_ERROR_NORMS_TO_SCREEN                      10105
 #define WRITE_OUTPUT_EXACT_SOLUTION                      10106
 #define WRITE_OUTPUT_ACCURACY_CODE                       10107
 
@@ -230,6 +230,7 @@ inline char *Date_And_Time() {
 #define GRID_RECTANGULAR_ENCLOSURE           28
 #define GRID_CYLINDRICAL_ENCLOSURE           29
 #define GRID_JET_FLOW                        30
+#define GRID_ANNULUS                         31
 
 #define GRID_ICEMCFD                       1000
 #define GRID_READ_FROM_DEFINITION_FILE    10000
@@ -244,6 +245,7 @@ inline char *Date_And_Time() {
 #define GRID_MIXING_LAYER_BOX                56
 #define GRID_2DTURBULENT_PREMIXED_FLAME      57
 #define GRID_VORTEX_BOX                      58
+#define GRID_INTERIOR_INFLOW_OUTFLOW_BOX     59
 
 #define GRID_TEST                         12345
 
@@ -325,6 +327,8 @@ inline char *Date_And_Time() {
 #define BC_ROBIN                        10999   //      | CFFC
 #define BC_DIRICHLET                    11000   // Core | CGNS
 #define BC_FIXED                 BC_DIRICHLET   //      | Duplicate
+#define BC_EXACT_SOLUTION               11001   //      | CFFC
+#define BC_FROZEN                       11002   //      | CFFC
 
 //--Wall
 //  Speciality wall
@@ -577,17 +581,8 @@ inline char *Date_And_Time() {
 #define IC_PERIODIC_COMPLEX_MULTIWAVE 121
 #define IC_POLYNOMIAL_FUNCTION        122
 #define IC_HYPER_TANGENT              123
-#define IC_LAPLACE_1                  124
-#define IC_LAPLACE_2                  125
-#define IC_LAPLACE_3                  126
-#define IC_LAPLACE_4                  127
-#define IC_LAPLACE_5                  128
-#define IC_POISSON_1                  129
-#define IC_POISSON_2                  130
-#define IC_POISSON_3                  131
-#define IC_POISSON_4                  132
-#define IC_POISSON_5                  133
-
+#define IC_EXACT_SOLUTION             124
+#define IC_INTERIOR_UNIFORM_GHOSTCELLS_EXACT 125
 
 #define IC_ELECTRIC_FIELD_UNIFORM            200
 #define IC_ELECTRIC_FIELD_QUADRUPOLE         201
@@ -606,6 +601,36 @@ inline char *Date_And_Time() {
 
 #define IC_SPECIFIED                  400
 #define IC_DISCONTINUOUS              401
+
+/********************************************************
+ * CFD -- Velocity Field Types                          *
+ ********************************************************/
+#define VELOCITY_FIELD_QUIESCENT                                 0
+#define VELOCITY_FIELD_UNIFORM                                   1
+#define VELOCITY_FIELD_UNIFORM_X_DIRECTION                       2
+#define VELOCITY_FIELD_UNIFORM_Y_DIRECTION                       3
+#define VELOCITY_FIELD_UNIFORM_ROTATIONAL_WRT_ARBITRATY_POINT    4
+#define VELOCITY_FIELD_ROTATIONAL_WRT_ARBITRATY_POINT            5
+
+/********************************************************
+ * CFD -- Angular Velocity Field Variation Types        *
+ ********************************************************/
+#define ANGULAR_VELOCITY_CONSTANT                0
+#define ANGULAR_VELOCITY_INVERSE_PROPORTIONAL    1
+
+/********************************************************
+ * CFD -- Diffusion Field Types                         *
+ ********************************************************/
+#define DIFFUSION_FIELD_ZERO                                 0
+#define DIFFUSION_FIELD_CONSTANT                             1
+#define DIFFUSION_FIELD_LINEAR_VARIATION                     2
+
+/*****************************************************
+ * CFD -- Source Field Types                         *
+ ****************************************************/
+#define SOURCE_FIELD_ZERO                                 0
+#define SOURCE_FIELD_LINEAR_VARIATION                     1
+#define SOURCE_FIELD_EXPONENTIAL_VARIATION                2
 
 /********************************************************
  * CFD -- Time Integration (Time-Stepping) Types.       *
@@ -851,6 +876,15 @@ inline char *Date_And_Time() {
  ********************************************************/
 #define EXPLICIT                          0
 #define IMPLICIT                          1
+
+
+/********************************************************
+ * CFD -- Accuracy Assessment Modes                     *
+ ********************************************************/
+#define ACCURACY_ASSESSMENT_BASED_ON_EXACT_SOLUTION        0
+#define ACCURACY_ASSESSMENT_BASES_ON_ENTROPY_PRODUCTION    1
+#define ACCURACY_ASSESSMENT_BASES_ON_DRAG_COEFFICIENT      2
+
 
 /*************************************************************************
  *                                                                       *

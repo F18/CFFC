@@ -30,7 +30,7 @@ using namespace std;
 
 #include "mvv.h"
 
-MV_Vector_COMPLEX& operator*=(MV_Vector_COMPLEX &x, const COMPLEX &a)
+MV_Vector_COMPLEX& operator*=(MV_Vector_COMPLEX &x, const MVPP_COMPLEX &a)
 {
       int N = x.size();
       for (int i=0;i<N;i++)
@@ -38,7 +38,7 @@ MV_Vector_COMPLEX& operator*=(MV_Vector_COMPLEX &x, const COMPLEX &a)
       return x;
 }
 
-MV_Vector_COMPLEX operator*(const COMPLEX &a, const MV_Vector_COMPLEX &x)
+MV_Vector_COMPLEX operator*(const MVPP_COMPLEX &a, const MV_Vector_COMPLEX &x)
 {
       int N = x.size();
       MV_Vector_COMPLEX result(N);
@@ -47,7 +47,7 @@ MV_Vector_COMPLEX operator*(const COMPLEX &a, const MV_Vector_COMPLEX &x)
       return result;
 }
 
-MV_Vector_COMPLEX operator*(const MV_Vector_COMPLEX &x, const COMPLEX &a)
+MV_Vector_COMPLEX operator*(const MV_Vector_COMPLEX &x, const MVPP_COMPLEX &a)
 {
     // This is the other commutative case of vector*scalar.
     // It should be just defined to be
@@ -130,7 +130,7 @@ MV_Vector_COMPLEX& operator-=(MV_Vector_COMPLEX &x, const MV_Vector_COMPLEX &y)
 //  norm and dot product functions for the MV_Vector<> class
 
 
-COMPLEX dot(const MV_Vector_COMPLEX &x, const MV_Vector_COMPLEX &y)
+MVPP_COMPLEX dot(const MV_Vector_COMPLEX &x, const MV_Vector_COMPLEX &y)
 {
         
   //  Check for compatible dimensions:
@@ -140,15 +140,15 @@ COMPLEX dot(const MV_Vector_COMPLEX &x, const MV_Vector_COMPLEX &y)
          exit(1);
       }
 
-      COMPLEX temp =  0;
+      MVPP_COMPLEX temp =  0;
       for (int i=0; i<x.size();i++)
            temp += x(i)*y(i);
       return temp;
 }
 
-COMPLEX norm(const MV_Vector_COMPLEX &x)
+MVPP_COMPLEX norm(const MV_Vector_COMPLEX &x)
 {
-      COMPLEX temp = dot(x,x);
+      MVPP_COMPLEX temp = dot(x,x);
       return sqrt(temp);
 }
 

@@ -352,13 +352,13 @@ double Test_Example12(double x, double y){
 }
 
 /********************************************************
- * Function Test_Example12:                             *
+ * Function Test_Example13:                             *
  *          f(x,y) = x^3*y^5                            *
  *******************************************************/
 
 double Test_Example13(double x, double y){
 
-  return pow(x,3)*pow(y,5);
+  return x*x*x*y*y*y*y*y;
 }
 
 /********************************************************

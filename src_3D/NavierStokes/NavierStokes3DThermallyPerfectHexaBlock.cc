@@ -59,9 +59,9 @@ Output_Tecplot(Input_Parameters<NavierStokes3D_ThermallyPerfect_pState,
       
       Out_File<< "ZONE T =  \"Block Number = " << Block_Number
               << "\" \\ \n"
-              << "I = " << Grid.INu -  Grid.INl + 1 << " \\ \n"
-              << "J = " << Grid.JNu -  Grid.JNl + 1 << " \\ \n"
-              << "K = " << Grid.KNu -  Grid.KNl + 1 << " \\ \n"
+              << "I = " << Grid.INu - Grid.INl + 1 << " \\ \n"
+              << "J = " << Grid.JNu - Grid.JNl + 1 << " \\ \n"
+              << "K = " << Grid.KNu - Grid.KNl + 1 << " \\ \n"
               << "DATAPACKING = POINT \n";
    } else {
       Out_File << "ZONE T =  \"Block Number = " << Block_Number
@@ -72,9 +72,9 @@ Output_Tecplot(Input_Parameters<NavierStokes3D_ThermallyPerfect_pState,
                << "DATAPACKING = POINT \n";              
    } /* endif */
    
-   for (int k  =  Grid.KNl ; k <=  Grid.KNu ; ++k ) {
-      for (int j  =  Grid.JNl ; j <=  Grid.JNu ; ++j ) {
-         for (int i =  Grid.INl ; i <=  Grid.INu ; ++i ) {
+   for (int k = Grid.KNl ; k <= Grid.KNu ; ++k) {
+      for (int j = Grid.JNl ; j <= Grid.JNu ; ++j) {
+         for (int i = Grid.INl ; i <= Grid.INu ; ++i) {
             W_node = Wn(i, j, k);
             Out_File << " "  << Grid.Node[i][j][k].X << W_node;
             Out_File.setf(ios::scientific);
@@ -144,23 +144,23 @@ Output_Cells_Tecplot(Input_Parameters<NavierStokes3D_ThermallyPerfect_pState,
 
       Out_File << "ZONE T =  \"Block Number = " << Block_Number
                << "\" \\ \n"
-               << "I = " <<  ICu -  ICl + 2*Nghost +1 << " \\ \n"
-               << "J = " <<  JCu -  JCl + 2*Nghost +1 << " \\ \n"
-               << "K = " <<  KCu -  KCl + 2*Nghost +1 << " \\ \n"
+               << "I = " <<  ICu - ICl + 2*Nghost +1 << " \\ \n"
+               << "J = " <<  JCu - JCl + 2*Nghost +1 << " \\ \n"
+               << "K = " <<  KCu - KCl + 2*Nghost +1 << " \\ \n"
                << "DATAPACKING = POINT \n";
    } else {
       Out_File << "ZONE T =  \"Block Number = " << Block_Number
                << "\" \\ \n"
-               << "I = " <<  Grid.ICu -  Grid.ICl + 2* Nghost + 1 << " \\ \n"
-               << "J = " <<  Grid.JCu -  Grid.JCl + 2* Nghost + 1 << " \\ \n"
-               << "K = " <<  Grid.KCu -  Grid.KCl + 2* Nghost + 1 << " \\ \n"
+               << "I = " <<  ICu - ICl + 2*Nghost + 1 << " \\ \n"
+               << "J = " <<  JCu - JCl + 2*Nghost + 1 << " \\ \n"
+               << "K = " <<  KCu - KCl + 2*Nghost + 1 << " \\ \n"
                << "DATAPACKING = POINT \n";
       
    } /* endif */
 
-   for (int k =  KCl- Nghost ; k <=  KCu+ Nghost ; ++k) {
-      for (int j  =  JCl- Nghost ; j <=  JCu+ Nghost ; ++j ) {
-         for (int i =  ICl- Nghost ; i <=  ICu+ Nghost ; ++i ) {
+   for (int k = KCl-Nghost ; k <= KCu+Nghost ; ++k) {
+      for (int j  = JCl-Nghost ; j <= JCu+Nghost ; ++j) {
+         for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i) {
             Out_File << " "  << Grid.Cell[i][j][k].Xc
                      << W[i][j][k];
             Out_File.setf(ios::scientific);
@@ -229,25 +229,25 @@ Output_Nodes_Tecplot(Input_Parameters<NavierStokes3D_ThermallyPerfect_pState,
       Out_File << "\"T\" \\ \n"
                << "\"M\" \\ \n";
       
-      Out_File<< "ZONE T =  \"Block Number = " << Block_Number
-              << "\" \\ \n"
-              << "I = " << Grid.INu -  Grid.INl + 1 << " \\ \n"
-              << "J = " << Grid.JNu -  Grid.JNl + 1 << " \\ \n"
-              << "K = " << Grid.KNu -  Grid.KNl + 1 << " \\ \n"
-              << "DATAPACKING = POINT \n";
+      Out_File << "ZONE T =  \"Block Number = " << Block_Number
+               << "\" \\ \n"
+               << "I = " << Grid.INu - Grid.INl + 1 + 2 << " \\ \n"
+               << "J = " << Grid.JNu - Grid.JNl + 1 + 2 << " \\ \n"
+               << "K = " << Grid.KNu - Grid.KNl + 1 + 2 << " \\ \n"
+               << "DATAPACKING = POINT \n";
       
    } else {
       Out_File << "ZONE T =  \"Block Number = " << Block_Number
                << "\" \\ \n"
-               << "I = " << Grid.INu - Grid.INl + 1 << " \\ \n"
-               << "J = " << Grid.JNu - Grid.JNl + 1 << " \\ \n"
-               << "K = " << Grid.KNu - Grid.KNl + 1 << " \\ \n"
+               << "I = " << Grid.INu - Grid.INl + 1 + 2 << " \\ \n"
+               << "J = " << Grid.JNu - Grid.JNl + 1 + 2 << " \\ \n"
+               << "K = " << Grid.KNu - Grid.KNl + 1 + 2 << " \\ \n"
                << "DATAPACKING = POINT \n";              
    } /* endif */
    
-   for (int k  =  Grid.KNl ; k <=  Grid.KNu ; ++k ) {
-      for (int j  =  Grid.JNl ; j <=  Grid.JNu ; ++j ) {
-         for (int i =  Grid.INl ; i <=  Grid.INu ; ++i ) {
+   for (int k = Grid.KNl-1 ; k <= Grid.KNu+1 ; ++k) {
+      for (int j = Grid.JNl-1 ; j <= Grid.JNu+1 ; ++j) {
+         for (int i = Grid.INl-1 ; i <= Grid.INu+1 ; ++i) {
             W_node = Wn(i, j, k);
             Out_File << " "  << Grid.Node[i][j][k].X << W_node;
             Out_File.setf(ios::scientific);
@@ -272,8 +272,7 @@ Output_Nodes_Tecplot(Input_Parameters<NavierStokes3D_ThermallyPerfect_pState,
 template<>
 int Hexa_Block<NavierStokes3D_ThermallyPerfect_pState, 
                NavierStokes3D_ThermallyPerfect_cState>::
-ICs(const int i_ICtype,
-    Input_Parameters<NavierStokes3D_ThermallyPerfect_pState, 
+ICs(Input_Parameters<NavierStokes3D_ThermallyPerfect_pState, 
                      NavierStokes3D_ThermallyPerfect_cState> &IPs) {
 
    double dpdx, dpdy, dpdz, delta_pres;
@@ -281,20 +280,19 @@ ICs(const int i_ICtype,
       
    NavierStokes3D_ThermallyPerfect_pState Wl, Wr;
    
-   switch(i_ICtype) {
-      case IC_VISCOUS_COUETTE :
+   switch(IPs.i_ICs) {
       case IC_VISCOUS_COUETTE_PRESSURE_GRADIENT_X :
          dpdx = IPs.Pressure_Gradient.x;  
-         delta_pres = dpdx*IPs.Grid_IP.Box_Length;
+         delta_pres = dpdx*IPs.Grid_IP.Box_Width;
          for (int k = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
             for (int j = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
                for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
                   W[i][j][k] = IPs.Wo;
-                  W[i][j][k].v.x = HALF*(-dpdx)/W[i][j][k].mu()*(Grid.Cell[i][j][k].Xc.z + 
-                                   0.5*IPs.Grid_IP.Box_Height)*
-                                   (Grid.Cell[i][j][k].Xc.z - 0.5*IPs.Grid_IP.Box_Height) +
-                                   IPs.Moving_Wall_Velocity.x*(Grid.Cell[i][j][k].Xc.z/IPs.Grid_IP.Box_Height + 
-                                   HALF);
+                  W[i][j][k].v.x = HALF*(-dpdx)/W[i][j][k].mu()*
+                                   (Grid.Cell[i][j][k].Xc.y + 0.5*IPs.Grid_IP.Box_Height)*
+                                   (Grid.Cell[i][j][k].Xc.y - 0.5*IPs.Grid_IP.Box_Height) +
+                                   IPs.Moving_Wall_Velocity.x*
+                                   (Grid.Cell[i][j][k].Xc.y/IPs.Grid_IP.Box_Height+HALF);
                   W[i][j][k].p = IPs.Wo.p - (i-ICl-Nghost)*delta_pres/(ICu-ICl);	 
                   if (i == ICl-Nghost || i == ICl-Nghost+1 ) {
                     W[i][j][k].p = IPs.Wo.p;
@@ -310,17 +308,17 @@ ICs(const int i_ICtype,
 
       case IC_VISCOUS_COUETTE_PRESSURE_GRADIENT_Y :
          dpdy = IPs.Pressure_Gradient.y;  
-         delta_pres = dpdy*IPs.Grid_IP.Box_Width;
+         delta_pres = dpdy*IPs.Grid_IP.Box_Height;
          for (int k = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
             for (int j = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
                for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
                   W[i][j][k] = IPs.Wo;
-                  W[i][j][k].v.y = HALF*(-dpdy)/W[i][j][k].mu()*(Grid.Cell[i][j][k].Xc.z + 
-                                   0.5*IPs.Grid_IP.Box_Height)*(Grid.Cell[i][j][k].Xc.z - 
-                                   0.5*IPs.Grid_IP.Box_Height) +
-                                   IPs.Moving_Wall_Velocity.y*(Grid.Cell[i][j][k].Xc.z/IPs.Grid_IP.Box_Height + 
-                                   HALF);
-                  W[i][j][k].p = IPs.Wo.p - (Grid.Cell[i][j][k].Xc.y)*delta_pres/IPs.Grid_IP.Box_Width;	 
+                  W[i][j][k].v.y = HALF*(-dpdy)/W[i][j][k].mu()*
+                                   (Grid.Cell[i][j][k].Xc.x + 0.5*IPs.Grid_IP.Box_Width)*
+                                   (Grid.Cell[i][j][k].Xc.x - 0.5*IPs.Grid_IP.Box_Width) +
+                                   IPs.Moving_Wall_Velocity.y*
+                                   (Grid.Cell[i][j][k].Xc.x/IPs.Grid_IP.Box_Width+HALF);
+                  W[i][j][k].p = IPs.Wo.p - (j-JCl-Nghost)*delta_pres/(JCu-JCl);
                   if (j == JCl-Nghost || j == JCl-Nghost+1 ){
                      W[i][j][k].p = IPs.Wo.p;
                   } /* endif */
@@ -333,19 +331,20 @@ ICs(const int i_ICtype,
 	 } /* endfor */
          break; 
 
+      case IC_VISCOUS_COUETTE :
       case IC_VISCOUS_COUETTE_PRESSURE_GRADIENT_Z :
          dpdz = IPs.Pressure_Gradient.z;  
-         delta_pres = dpdz*IPs.Grid_IP.Box_Height;
+         delta_pres = dpdz*IPs.Grid_IP.Box_Length;
          for (int k = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
             for (int j = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
                for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
                   W[i][j][k] = IPs.Wo;
-                  W[i][j][k].v.z = HALF*(-dpdz)/W[i][j][k].mu()*(Grid.Cell[i][j][k].Xc.y + 
-                                   0.5*IPs.Grid_IP.Box_Width)*
-                                   (Grid.Cell[i][j][k].Xc.y - 0.5*IPs.Grid_IP.Box_Width) +
-                                   IPs.Moving_Wall_Velocity.z*(Grid.Cell[i][j][k].Xc.y/IPs.Grid_IP.Box_Width + 
-                                   HALF);
-                  W[i][j][k].p = IPs.Wo.p - (Grid.Cell[i][j][k].Xc.z)*delta_pres/IPs.Grid_IP.Box_Height;
+                  W[i][j][k].v.z = HALF*(-dpdz)/W[i][j][k].mu()*
+                                   (Grid.Cell[i][j][k].Xc.y + 0.5*IPs.Grid_IP.Box_Height)*
+                                   (Grid.Cell[i][j][k].Xc.y - 0.5*IPs.Grid_IP.Box_Height) +
+                                   IPs.Moving_Wall_Velocity.z*
+                                   (Grid.Cell[i][j][k].Xc.y/IPs.Grid_IP.Box_Height+HALF);
+                  W[i][j][k].p = IPs.Wo.p - (k-KCl-Nghost)*delta_pres/(KCu-KCl);
                   if (k == KCl-Nghost || k == KCl-Nghost+1 ) {
                      W[i][j][k].p = IPs.Wo.p;
                   } /* endif */
@@ -360,56 +359,72 @@ ICs(const int i_ICtype,
       
       case IC_PRESSURE_GRADIENT_X :
          dpdx = IPs.Pressure_Gradient.x;  
-         delta_pres = dpdx*IPs.Grid_IP.Box_Length;
-         di =  1.0/sqr(IPs.Grid_IP.Box_Height/2.0)+ 1.0/sqr(IPs.Grid_IP.Box_Width/2.0);
-         U_axi = delta_pres/(2.0*W[0][0][0].mu())/di;
+         delta_pres = dpdx*IPs.Grid_IP.Box_Width;
          for (int k = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
             for (int j = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
                for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
                   W[i][j][k] = IPs.Wo;
-                  W[i][j][k].v.x = 0.5*(-dpdx)/W[i][j][k].mu()*(Grid.Cell[i][j][k].Xc.z + 
-                                   0.5*IPs.Grid_IP.Box_Height)*
-                                   (Grid.Cell[i][j][k].Xc.z - 0.5*IPs.Grid_IP.Box_Height);
+                  W[i][j][k].v.x = -HALF*(dpdx/W[i][j][k].mu())*
+                                   (Grid.Cell[i][j][k].Xc.y + 0.5*IPs.Grid_IP.Box_Height)*
+                                   (Grid.Cell[i][j][k].Xc.y - 0.5*IPs.Grid_IP.Box_Height);
                   W[i][j][k].p = IPs.Wo.p - (i-ICl-Nghost)*delta_pres/(ICu-ICl);	 
                   if( i == ICl-Nghost || i == ICl-Nghost+1 ){
                      W[i][j][k].p = IPs.Wo.p;
-                  }
+                  } /* endif */
                   if( i == ICu+Nghost || i == ICu+Nghost-1){
                      W[i][j][k].p = IPs.Wo.p - delta_pres; 
-                  }
+                  } /* endif */
                   U[i][j][k] = W[i][j][k].U();
 	       } /* endfor */ 
 	    } /* endfor */       
 	 } /* endfor */
          break; 
 
-      case IC_CHANNEL_FLOW :
-         // this case is from John Laufer
-         // Investigation of Turbulent Flow in a Two-Dimensional Channel
-         // debugging purpose here (laminar flow)
-         dpdx = IPs.Pressure_Gradient.x;  
-         delta_pres = dpdx*IPs.Grid_IP.Box_Length;
-         Um = 22.3;
-         //Um = 7.07; // computed from Reynolds number 61600
+      case IC_PRESSURE_GRADIENT_Y :
+         dpdx = IPs.Pressure_Gradient.y;  
+         delta_pres = dpdx*IPs.Grid_IP.Box_Height;
          for (int k = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
-	    for (int j = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
+            for (int j = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
                for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
                   W[i][j][k] = IPs.Wo;
-                  W[i][j][k].p = IPs.Wo.p - (i-ICl-Nghost)*delta_pres/(ICu-ICl);	 
-                  if( i == ICl-Nghost || i == ICl-Nghost+1 ){
+                  W[i][j][k].v.y = -HALF*(dpdx/W[i][j][k].mu())*
+                                   (Grid.Cell[i][j][k].Xc.x + 0.5*IPs.Grid_IP.Box_Width)*
+                                   (Grid.Cell[i][j][k].Xc.x - 0.5*IPs.Grid_IP.Box_Width);
+                  W[i][j][k].p = IPs.Wo.p - (j-JCl-Nghost)*delta_pres/(JCu-JCl);	 
+                  if( j == JCl-Nghost || j == JCl-Nghost+1 ){
                      W[i][j][k].p = IPs.Wo.p;
                   }
-                  if( i == ICu+Nghost || i == ICu+Nghost-1){
+                  if( j == JCu+Nghost || j == JCu+Nghost-1){
                      W[i][j][k].p = IPs.Wo.p - delta_pres; 
                   }
-                  W[i][j][k].v.x = 0.5*(-dpdx)/W[i][j][k].mu()*(Grid.Cell[i][j][k].Xc.y + 
-                                   0.5*IPs.Grid_IP.Box_Width)*
-                                   (Grid.Cell[i][j][k].Xc.y - 0.5*IPs.Grid_IP.Box_Width);
                   U[i][j][k] = W[i][j][k].U();
- 	       } /* endfor */
-	    } /* endfor */
+	       } /* endfor */ 
+	    } /* endfor */       
 	 } /* endfor */
-         break; 
+         break;
+
+      case IC_PRESSURE_GRADIENT_Z :
+         dpdx = IPs.Pressure_Gradient.z;  
+         delta_pres = dpdx*IPs.Grid_IP.Box_Length;
+         for (int k = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
+            for (int j = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
+               for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
+                  W[i][j][k] = IPs.Wo;
+                  W[i][j][k].v.z = -HALF*(dpdx/W[i][j][k].mu())*
+                                   (Grid.Cell[i][j][k].Xc.y + 0.5*IPs.Grid_IP.Box_Height)*
+                                   (Grid.Cell[i][j][k].Xc.y - 0.5*IPs.Grid_IP.Box_Height);
+                  W[i][j][k].p = IPs.Wo.p - (k-KCl-Nghost)*delta_pres/(KCu-KCl);	 
+                  if( k == KCl-Nghost || k == KCl-Nghost+1 ){
+                     W[i][j][k].p = IPs.Wo.p;
+                  }
+                  if( k == KCu+Nghost || k == KCu+Nghost-1){
+                     W[i][j][k].p = IPs.Wo.p - delta_pres; 
+                  }
+                  U[i][j][k] = W[i][j][k].U();
+	       } /* endfor */ 
+	    } /* endfor */       
+	 } /* endfor */
+         break;
 
       case IC_SHOCK_BOX :
 	 Wl = NavierStokes3D_ThermallyPerfect_pState(IPs.Wo);
@@ -664,7 +679,7 @@ CFL(Input_Parameters<NavierStokes3D_ThermallyPerfect_pState,
                                      d_j/(a+fabs(v_j))),
                                      d_k/(a+fabs(v_k)));
                
-               if (IPs.i_Flow_Type != FLOWTYPE_INVISCID) {  
+               if (Flow_Type != FLOWTYPE_INVISCID) {  
                   nv = W[i][j][k].mu()/W[i][j][k].rho;
                   dt_vis = min(min((d_i*d_i)/(3.0*nv), 
                                    (d_j*d_j)/(3.0*nv)), 
@@ -674,7 +689,7 @@ CFL(Input_Parameters<NavierStokes3D_ThermallyPerfect_pState,
 
                /******** Chemical Source Term deltat calculation ************/   
                if (W[i][j][k].React.reactset_flag != NO_REACTIONS){
-                  dt_chem = HALF/W[i][j][k].dSwdU_max_diagonal();
+                  dt_chem = HALF/W[i][j][k].dSchemistrydU_max_diagonal();
                   dt[i][j][k] = min(dt_chem, dt[i][j][k]);
                } /* endif */
                
@@ -845,22 +860,23 @@ dUdt_Multistage_Explicit(const int i_stage,
                      ( phi[i+1][j][k]^dWdz[i+1][j][k])*dX.z;
                   
                   if ( Grid.BCtypeW[j][k] == BC_REFLECTION) {
-                     Wl =  NavierStokes3D_ThermallyPerfect_pState::Reflect(Wr,  Grid.nfaceW(i+1, j, k));
-                     
-                     
+                     Wl =  NavierStokes3D_ThermallyPerfect_pState::Reflect(Wr,  
+                                                                           Grid.nfaceW(i+1, j, k));
                   }
                   if ( Grid.BCtypeW[j][k] == BC_NO_SLIP) {
-                     Wl =  NavierStokes3D_ThermallyPerfect_pState::No_Slip(Wr, WoW[j][k], Grid.nfaceW(i+1, j, k), 
-                                                                           IPs.Pressure_Gradient,
-                                                                           FIXED_TEMPERATURE_WALL);
-                     
+                     Wl =  NavierStokes3D_ThermallyPerfect_pState::NoSlip(Wr, 
+                                                                          WoW[j][k], 
+                                                                          Grid.nfaceW(i+1, j, k), 
+                                                                          IPs.Pressure_Gradient,
+                                                                          FIXED_TEMPERATURE_WALL);
                   }
                   if ( Grid.BCtypeW[j][k] == BC_MOVING_WALL) {
-                     Wl =  NavierStokes3D_ThermallyPerfect_pState::Moving_Wall(Wr, WoW[j][k], Grid.nfaceW(i+1, j, k),
-                                                                               IPs.Moving_Wall_Velocity,
-                                                                               IPs.Pressure_Gradient,
-                                                                               FIXED_TEMPERATURE_WALL);
-                 
+                     Wl =  NavierStokes3D_ThermallyPerfect_pState::MovingWall(Wr, 
+                                                                              WoW[j][k], 
+                                                                              Grid.nfaceW(i+1, j, k),
+                                                                              IPs.Moving_Wall_Velocity,
+                                                                              IPs.Pressure_Gradient,
+                                                                              FIXED_TEMPERATURE_WALL);
                   }
                } else if (i ==  ICu && 
                           ( Grid.BCtypeE[j][k] == BC_REFLECTION||
@@ -873,18 +889,23 @@ dUdt_Multistage_Explicit(const int i_stage,
                      ( phi[i][j][k]^ dWdy[i][j][k])*dX.y +
                      ( phi[i][j][k]^ dWdz[i][j][k])*dX.z;
                   if ( Grid.BCtypeE[j][k] == BC_REFLECTION) {
-                     Wr =  NavierStokes3D_ThermallyPerfect_pState::Reflect(Wl,  Grid.nfaceE(i, j, k));
+                     Wr =  NavierStokes3D_ThermallyPerfect_pState::Reflect(Wl,  
+                                                                           Grid.nfaceE(i, j, k));
                   } 
                   if ( Grid.BCtypeE[j][k] == BC_NO_SLIP) {
-                     Wr =  NavierStokes3D_ThermallyPerfect_pState::No_Slip(Wl, WoE[j][k], Grid.nfaceE(i, j, k),  
-                                                                           IPs.Pressure_Gradient,
-                                                                           FIXED_TEMPERATURE_WALL);
+                     Wr =  NavierStokes3D_ThermallyPerfect_pState::NoSlip(Wl, 
+                                                                          WoE[j][k], 
+                                                                          Grid.nfaceE(i, j, k),  
+                                                                          IPs.Pressure_Gradient,
+                                                                          FIXED_TEMPERATURE_WALL);
                   } 
                   if ( Grid.BCtypeE[j][k] == BC_MOVING_WALL) {
-                     Wr =  NavierStokes3D_ThermallyPerfect_pState::Moving_Wall(Wl, WoE[j][k], Grid.nfaceE(i, j, k),  
-                                                                               IPs.Moving_Wall_Velocity,
-                                                                               IPs.Pressure_Gradient,
-                                                                               FIXED_TEMPERATURE_WALL);
+                     Wr =  NavierStokes3D_ThermallyPerfect_pState::MovingWall(Wl, 
+                                                                              WoE[j][k], 
+                                                                              Grid.nfaceE(i, j, k),  
+                                                                              IPs.Moving_Wall_Velocity,
+                                                                              IPs.Pressure_Gradient,
+                                                                              FIXED_TEMPERATURE_WALL);
                   } 
                } else {            
                   dX =  Grid.xfaceE(i, j, k)- Grid.Cell[i][j][k].Xc;
@@ -974,18 +995,23 @@ dUdt_Multistage_Explicit(const int i_stage,
                    ( phi[i][j+1][k]^ dWdy[i][j+1][k])*dX.y+
                    ( phi[i][j+1][k]^ dWdz[i][j+1][k])*dX.z;
                 if ( Grid.BCtypeS[i][k] == BC_REFLECTION) {
-                   Wl =  NavierStokes3D_ThermallyPerfect_pState::Reflect(Wr,  Grid.nfaceS(i, j+1, k));
+                   Wl =  NavierStokes3D_ThermallyPerfect_pState::Reflect(Wr,  
+                                                                         Grid.nfaceS(i, j+1, k));
                 }
                 if ( Grid.BCtypeS[i][k] == BC_NO_SLIP) {
-                   Wl =  NavierStokes3D_ThermallyPerfect_pState::No_Slip(Wr, WoS[i][k], Grid.nfaceS(i, j+1, k),
-                                                                         IPs.Pressure_Gradient,
-                                                                         FIXED_TEMPERATURE_WALL);
+                   Wl =  NavierStokes3D_ThermallyPerfect_pState::NoSlip(Wr, 
+                                                                        WoS[i][k], 
+                                                                        Grid.nfaceS(i, j+1, k),
+                                                                        IPs.Pressure_Gradient,
+                                                                        FIXED_TEMPERATURE_WALL);
                 }
                 if ( Grid.BCtypeS[i][k] == BC_MOVING_WALL) {
-                   Wl =  NavierStokes3D_ThermallyPerfect_pState::Moving_Wall(Wr, WoS[i][k], Grid.nfaceS(i, j+1, k),
-                                                                             IPs.Pressure_Gradient,
-                                                                             IPs.Moving_Wall_Velocity,
-                                                                             FIXED_TEMPERATURE_WALL);
+                   Wl =  NavierStokes3D_ThermallyPerfect_pState::MovingWall(Wr, 
+                                                                            WoS[i][k], 
+                                                                            Grid.nfaceS(i, j+1, k),
+                                                                            IPs.Pressure_Gradient,
+                                                                            IPs.Moving_Wall_Velocity,
+                                                                            FIXED_TEMPERATURE_WALL);
                 }
 
              } else if (j ==  JCu && 
@@ -999,18 +1025,23 @@ dUdt_Multistage_Explicit(const int i_stage,
                    ( phi[i][j][k]^ dWdy[i][j][k])*dX.y+
                    ( phi[i][j][k]^ dWdz[i][j][k])*dX.z;
                 if ( Grid.BCtypeN[i][k] == BC_REFLECTION) {
-                   Wr =  NavierStokes3D_ThermallyPerfect_pState::Reflect(Wl,  Grid.nfaceN(i, j, k));
+                   Wr =  NavierStokes3D_ThermallyPerfect_pState::Reflect(Wl,  
+                                                                         Grid.nfaceN(i, j, k));
                 }
                 if ( Grid.BCtypeN[i][k] == BC_NO_SLIP) {
-                   Wr =  NavierStokes3D_ThermallyPerfect_pState::No_Slip(Wl, WoN[i][k], Grid.nfaceN(i, j, k),
-                                                                         IPs.Pressure_Gradient,
-                                                                         FIXED_TEMPERATURE_WALL );
+                   Wr =  NavierStokes3D_ThermallyPerfect_pState::NoSlip(Wl, 
+                                                                        WoN[i][k],  
+                                                                        Grid.nfaceN(i, j, k),
+                                                                        IPs.Pressure_Gradient,
+                                                                        FIXED_TEMPERATURE_WALL);
                 }
                 if ( Grid.BCtypeN[i][k] == BC_MOVING_WALL) {
-                   Wr =  NavierStokes3D_ThermallyPerfect_pState::Moving_Wall(Wl, WoN[i][k], Grid.nfaceN(i, j, k),
-                                                                             IPs.Moving_Wall_Velocity,
-                                                                             IPs.Pressure_Gradient,
-                                                                             FIXED_TEMPERATURE_WALL );
+                   Wr =  NavierStokes3D_ThermallyPerfect_pState::MovingWall(Wl, 
+                                                                            WoN[i][k], 
+                                                                            Grid.nfaceN(i, j, k),
+                                                                            IPs.Moving_Wall_Velocity,
+                                                                            IPs.Pressure_Gradient,
+                                                                            FIXED_TEMPERATURE_WALL );
                 }
              } else {
                 dX =  Grid.xfaceN(i, j, k)- Grid.Cell[i][j][k].Xc;
@@ -1084,18 +1115,22 @@ dUdt_Multistage_Explicit(const int i_stage,
                    ( phi[i][j][k+1]^ dWdy[i][j][k+1])*dX.y+
                    ( phi[i][j][k+1]^ dWdz[i][j][k+1])*dX.z;
                 if ( Grid.BCtypeB[i][j] == BC_REFLECTION) {
-                   Wl =  NavierStokes3D_ThermallyPerfect_pState::Reflect(Wr, Grid.nfaceBot(i, j, k+1));
+                   Wl =  NavierStokes3D_ThermallyPerfect_pState::Reflect(Wr, 
+                                                                         Grid.nfaceBot(i, j, k+1));
                 }
                 if ( Grid.BCtypeB[i][j] == BC_NO_SLIP) {
-                   Wl =  NavierStokes3D_ThermallyPerfect_pState::No_Slip(Wr, WoB[i][j], Grid.nfaceBot(i, j, k+1), 
-                                                                         IPs.Pressure_Gradient,
-                                                                         FIXED_TEMPERATURE_WALL);
+                   Wl =  NavierStokes3D_ThermallyPerfect_pState::NoSlip(Wr, 
+                                                                        WoB[i][j], Grid.nfaceBot(i, j, k+1), 
+                                                                        IPs.Pressure_Gradient,
+                                                                        FIXED_TEMPERATURE_WALL);
                 }
                 if ( Grid.BCtypeB[i][j] == BC_MOVING_WALL) {
-                   Wl =  NavierStokes3D_ThermallyPerfect_pState::Moving_Wall(Wr, WoB[i][j], Grid.nfaceBot(i, j, k+1),
-                                                                             IPs.Moving_Wall_Velocity,
-                                                                             IPs.Pressure_Gradient,
-                                                                             FIXED_TEMPERATURE_WALL);
+                   Wl =  NavierStokes3D_ThermallyPerfect_pState::MovingWall(Wr, 
+                                                                            WoB[i][j], 
+                                                                            Grid.nfaceBot(i, j, k+1),
+                                                                            IPs.Moving_Wall_Velocity,
+                                                                            IPs.Pressure_Gradient,
+                                                                            FIXED_TEMPERATURE_WALL);
                 }
 
 
@@ -1110,18 +1145,23 @@ dUdt_Multistage_Explicit(const int i_stage,
                    ( phi[i][j][k]^ dWdy[i][j][k])*dX.y+
                    ( phi[i][j][k]^ dWdz[i][j][k])*dX.z;
                 if ( Grid.BCtypeT[i][j] == BC_REFLECTION) {
-                   Wr =  NavierStokes3D_ThermallyPerfect_pState::Reflect(Wl,  Grid.nfaceTop(i, j, k));
+                   Wr =  NavierStokes3D_ThermallyPerfect_pState::Reflect(Wl,  
+                                                                         Grid.nfaceTop(i, j, k));
                 }
                 if ( Grid.BCtypeT[i][j] == BC_NO_SLIP) {
-                   Wr =  NavierStokes3D_ThermallyPerfect_pState::No_Slip(Wl, WoT[i][j], Grid.nfaceTop(i, j, k), 
-                                
-                                                                         IPs.Pressure_Gradient,FIXED_TEMPERATURE_WALL );
+                   Wr =  NavierStokes3D_ThermallyPerfect_pState::NoSlip(Wl, 
+                                                                        WoT[i][j], 
+                                                                        Grid.nfaceTop(i, j, k),
+                                                                        IPs.Pressure_Gradient,
+                                                                        FIXED_TEMPERATURE_WALL);
                 }
                 if ( Grid.BCtypeT[i][j] == BC_MOVING_WALL) {
-                   Wr =  NavierStokes3D_ThermallyPerfect_pState::Moving_Wall(Wl, WoT[i][j], Grid.nfaceTop(i, j, k),
-                                                                             IPs.Moving_Wall_Velocity,  
-                                                                             IPs.Pressure_Gradient,
-                                                                             FIXED_TEMPERATURE_WALL );
+                   Wr =  NavierStokes3D_ThermallyPerfect_pState::MovingWall(Wl, 
+                                                                            WoT[i][j], 
+                                                                            Grid.nfaceTop(i, j, k),
+                                                                            IPs.Moving_Wall_Velocity,  
+                                                                            IPs.Pressure_Gradient,
+                                                                            FIXED_TEMPERATURE_WALL);
                 }
                 
              } else {
@@ -1263,21 +1303,33 @@ Update_Solution_Multistage_Explicit(const int i_stage,
                U[i][j][k][num_vars] = U[i][j][k].rho*(ONE - U[i][j][k].sum_species());
             } /* endif */
             
-            Uo[i][j][k].negative_speccheck(Uo[i][j][k], W[i][j][k].React.reactset_flag);
+            // Check physical validity of update solution state
+            if (IPs.Local_Time_Stepping == GLOBAL_TIME_STEPPING) {
+	      if (!U[i][j][k].Realizable_Solution_Check()) {
+		return (1);
+                cout << "\n " << CFFC_Name() 
+                     << " ERROR: Negative Density, Mass Fractions, and/or Sensible Energy: \n"
+                     << " cell = (" << i << ", " << j <<", "<< k << ") " 
+                     << " X = " <<  Grid.Cell[i][j][k].Xc 
+                     << "\n U = " <<  U[i][j][k] 
+                     << "\n dUdt = " << dUdt[i][j][k][k_residual] 
+                     << " omega = " << omega << "\n";
+              } /* endif */
 
-            if (IPs.Local_Time_Stepping == GLOBAL_TIME_STEPPING && 
-                (U[i][j][k].rho  <= ZERO ||  
-                 U[i][j][k].es() <= ZERO)) {
-               cout << "\n " << CFFC_Name() 
-                    << " ERROR: Negative Density, Mass Fractions, and/or Sensible Energy: \n"
-                    << " cell = (" << i << ", " << j <<", "<< k << ") " 
-                    << " X = " <<  Grid.Cell[i][j][k].Xc 
-                    << "\n U = " <<  U[i][j][k] 
-                    << "\n dUdt = " << dUdt[i][j][k][k_residual] 
-                    << " omega = " << omega << "\n";
-               return (i);
+            } else {
+	      if (!U[i][j][k].Realizable_Solution_Check()) {
+		return (1);
+                cout << "\n " << CFFC_Name() 
+                     << " ERROR: Negative Density, Mass Fractions, and/or Sensible Energy: \n"
+                     << " cell = (" << i << ", " << j <<", "<< k << ") " 
+                     << " X = " <<  Grid.Cell[i][j][k].Xc 
+                     << "\n U = " <<  U[i][j][k] 
+                     << "\n dUdt = " << dUdt[i][j][k][k_residual] 
+                     << " omega = " << omega << "\n";
+              } /* endif */
+
             } /* endif */
-                          
+
             W[i][j][k] = U[i][j][k].W();
 	 } /* endfor */    	 
       } /* endfor */    

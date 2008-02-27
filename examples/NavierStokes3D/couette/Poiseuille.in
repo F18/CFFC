@@ -1,10 +1,13 @@
 Time_Integration_Type =
-Explicit_Runge_Kutta
+Multistage_Optimal_Smoothing
+#Explicit_Runge_Kutta
 #Explicit_Euler
+N_Stage = 
+3
 Time_Accurate = 
-0
+OFF
 Local_Time_Stepping =
-0
+1
 Reconstruction_Type =
 Least_Squares
 Limiter_Type = 
@@ -12,12 +15,14 @@ Barth_Jespersen
 Flux_Function_Type =
 HLLE 
 ICs_Type = 
-Restart
+#Restart
 #Pressure_Gradient_x
+#Pressure_Gradient_y
+Pressure_Gradient_z
 Flow_Type = 
 Laminar
-Pressure_Gradient_xdir=
-3177.7
+Pressure_Gradient =
+3177.7  3177.7   3177.7
 #Species
 #3
 #CH4 N2 O2
@@ -29,13 +34,16 @@ Schmidt=
 Temperature = 
 298
 Grid_Type =
-Channel
+#Channel
+#Channel_X
+#Channel_Y
+Channel_Z
 Number_of_Cells_Idir = 
-20
-Number_of_Cells_Jdir =
 4
+Number_of_Cells_Jdir =
+32
 Number_of_Cells_Kdir =
-10
+20
 Number_of_Blocks_Idir = 
 1
 Number_of_Blocks_Jdir =
@@ -50,9 +58,9 @@ CFL_Number =
 Time_Max = 
 0.0
 Maximum_Number_of_Time_Steps =
-50000
+100
 Number_of_Blocks_Per_Processor =
-1
+20
 Output_File_Name = 
 Poiseuille
 #######################
@@ -63,7 +71,7 @@ Execute
 # Write output
 #######################
 Write_Output_Cells
-#Write_Output
+Write_Output
 Write_Restart
 #######################
 # Terminate program

@@ -243,7 +243,7 @@ int main(int num_arg, char *arg_ptr[]) {
     ********************************************************/
 
    if (CFFC_Primary_MPI_Processor() && !batch_flag) 
-      cout << "\n\nNavierStokes3DThermallyPerfect: Execution complete.\n";
+      cout << "\n\nNavierStokes3DThermallyPerfect: Execution complete.\n\n";
 
    //Ending properly
    return (0);

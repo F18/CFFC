@@ -281,8 +281,10 @@ ifeq ($(PLATFORM),Linux_i386)
     LDFLAGS = $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) $(CANTERA_LD_FLAGS) -lm
     # Profiling with gprof 
     ifeq ($(PROFILING),ON)
-      CXXFLAGS = -g -pg 
-      LDFLAGS = $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) $(CANTERA_LD_FLAGS) -lm -pg
+      FFLAGS   = -g -pg
+      CFLAGS   = -g -pg
+      CXXFLAGS = -g -pg
+      LDFLAGS += -pg
     endif
     LD = $(CXX)
     DEPENDSFLAGS =
@@ -338,8 +340,10 @@ ifeq ($(PLATFORM),Linux_alpha)
     CXXFLAGS = -arch host -tune host -fast -w -std gnu
     LDFLAGS = $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) $(CANTERA_LD_FLAGS) -lm 
     ifeq ($(PROFILING),ON)
-      CXXFLAGS = -pg -arch host -tune host -fast -w -std gnu 
-      LDFLAGS = $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) $(CANTERA_LD_FLAGS) -lm -pg 
+      FFLAGS   += -pg
+      CFLAGS   += -pg
+      CXXFLAGS += -pg
+      LDFLAGS  += -pg
     endif
     LD = $(CXX)	
     DEPENDSFLAGS = 
@@ -358,8 +362,10 @@ ifeq ($(PLATFORM),Linux_alpha)
     LD = $(CXX)
     LDFLAGS = $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) $(CANTERA_LD_FLAGS) -lm
     ifeq ($(PROFILING),ON)
-      CXXFLAGS = -pg -arch host -tune host -fast -w -std gnu 
-      LDFLAGS = $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) $(CANTERA_LD_FLAGS) -lm -pg 
+      FFLAGS   += -pg
+      CFLAGS   += -pg
+      CXXFLAGS += -pg
+      LDFLAGS  += -pg
     endif
     DEPENDSFLAGS = -I/usr/local/mpi/include/mpi2c++
   endif
@@ -381,7 +387,10 @@ ifeq ($(PLATFORM),Linux_ia64)
     CFLAGS = -w0 -O2 -mp -ftz 
     LDFLAGS = $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) $(CANTERA_LD_FLAGS) -limf
     ifeq ($(PROFILING),ON)
-      CXXFLAGS = -w0 -mp -ftz -g -p
+      FFLAGS   += -qp
+      CFLAGS   += -qp
+      CXXFLAGS += -qp
+      LDFLAGS  += -qp
     endif
     LD = $(CXX)
     DEPENDSFLAGS =
@@ -415,7 +424,10 @@ ifeq ($(PLATFORM),Linux_ia64)
     LD = $(CXX)
     LDFLAGS =  $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) $(CANTERA_LD_FLAGS) -limf
     ifeq ($(PROFILING),ON)
-      CXXFLAGS = -w0 -mp -ftz -g -p
+      FFLAGS   += -qp
+      CFLAGS   += -qp
+      CXXFLAGS += -qp
+      LDFLAGS  += -qp
     endif
     DEPENDSFLAGS = 
   endif
@@ -525,6 +537,15 @@ ifeq ($(NO_ASSERT),ON)
   CPPFLAGS += -DNDEBUG
 endif
 
+# Add proper precompile flag for solvers that include high-order ENO with CHARACTERISTICS
+# If you want your solver to include this feature add its name to the SOLVERS_LIST.
+SOLVERS_LIST := euler1D 
+ifdef MAKECMDGOALS
+ifneq ($(strip $(filter $(MAKECMDGOALS), $(SOLVERS_LIST)) ), )
+  CPPFLAGS += -D__INCLUDE_ENO_CHARACTERISTICS__
+endif
+endif
+
 #
 # Add 
 ifeq ($(CHEM2D_WITH_RTE),ON)
@@ -533,4 +554,3 @@ endif
 ifeq ($(FLAME2D_WITH_RTE),ON)
   CPPFLAGS += -D_FLAME2D_WITH_RTE
 endif
-

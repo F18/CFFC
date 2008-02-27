@@ -64,8 +64,8 @@ class Species {
   Species &operator =(const Species &A); 
 
   /* Shortcut arithmetic operators. */
-  Species &operator +=(Species &A);
-  Species &operator -=(Species &A);
+  Species &operator +=(const Species &A);
+  Species &operator -=(const Species &A);
   Species &operator *=(const double &a);
   Species &operator /=(const double &a);
 
@@ -143,14 +143,14 @@ inline Species &Species::operator =(const Species &A){
 }
 
 //----------- Shortcut arithmetic operators ---------------//
-inline Species &Species::operator +=(Species &A){
+inline Species &Species::operator +=(const Species &A){
   c += A.c; 
 //   diffusion_coef += A.diffusion_coef;
 //   gradc += A.gradc; 
   return(*this);
 }
 
-inline Species &Species::operator -=(Species &A){
+inline Species &Species::operator -=(const Species &A){
   c -= A.c; 
 //   diffusion_coef -= A.diffusion_coef;
 //   gradc -= A.gradc; 

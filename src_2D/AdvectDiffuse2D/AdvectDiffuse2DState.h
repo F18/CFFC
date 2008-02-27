@@ -1,11 +1,10 @@
 /*!\file AdvectDiffuse2DState.h
-  \brief Header file defining 2D Advection Diffusion Equation Solution State Class. */
+  \brief Temporary header file defining 2D Advection Diffusion Equation Solution State Class. */
 
 #ifndef _ADVECTDIFFUSE2D_STATE_INCLUDED
 #define _ADVECTDIFFUSE2D_STATE_INCLUDED
 
 /* Include required C++ libraries. */
-
 #include <cstdio>
 #include <iostream>
 #include <iomanip>
@@ -14,30 +13,22 @@
 #include <cstdlib>
 #include <cstring>
 
+/* Using std namespace functions */
 using namespace std;
 
-/* Include math macro, CFD, and 2D vector header files. */
-
-#ifndef _MATH_MACROS_INCLUDED
-#include "../Math/Math.h"
-#endif // _MATH_MACROS_INCLUDED
-
-#ifndef _CFD_INCLUDED
-#include "../CFD/CFD.h"
-#endif // _CFD_INCLUDED
-
-#ifndef _VECTOR2D_INCLUDED
-#include "../Math/Vector2D.h"
-#endif //_VECTOR2D_INCLUDED
-
-#include "AdvectDiffuse2DExactSolutions.h"
+/* Include CFFC header files */
+#include "../Math/Math.h" /* Include math macro header files. */
+#include "../CFD/CFD.h"   /* Include CFD header files. */
+#include "../Math/Vector2D.h" /* Include vector header files. */
+#include "AdvectDiffuse2DExactSolutions.h" /* Include 2D advection diffusion exact solutions header file */
+#include "AdvectDiffuse2DParameterFields.h" /* Include 2D advection diffusion parameter fields */
 
 /* Define the classes. */
 
 #define	NUM_VAR_ADVECTDIFFUSE2D    1
 
 /*!
- * Class: AdvectDiffuse2D_State
+ * \class AdvectDiffuse2D_State
  *
  * @brief Solution state class definition for the 2D advection-diffusion
  *        equation.
@@ -46,16 +37,15 @@ using namespace std;
  * equation.
  *
  * \verbatim
- * Member functions
+ * Member variables
  *     u        -- Return solution.
- *     V        -- Return advection velocity.
- *     k        -- Return diffusion coefficient.
- *     T        -- Return relaxation time.
+ *     V        -- Return advection velocity field
+ *     k        -- Return diffusion coefficient field
+ * SourceTerm   -- Return source term field
+ *
+ * Member functions
+ *    Fa        -- Return advective flux.
  *    Fd        -- Return diffusive flux.
- *     F        -- Return advective flux.
- *     s        -- Return regular source term.
- *     s_axi    -- Return axisymmetric source term.
- *    F_diff    -- Evaluates diffusive flux.
  *
  * Member operators
  *      U -- a solution state
@@ -74,316 +64,655 @@ using namespace std;
  * U -= U;
  * U *= a;
  * U /= a;
+ * U = U ^ U; (a useful product)
  * U == U;
  * U != U;
+ * U <= U;
+ * U >= U;
  * cout << U; (output function)
  * cin  >> U; (input function)
  * \endverbatim
  */
 class AdvectDiffuse2D_State{
-private:
 public:
-  //@{ @name Solution state variables and associated constants:
-  double          u;   // Solution.
-  Vector2D        V;   // Advection velocity (2D vector).
-  double          k;   // Diffusion coefficient.
-  double          T;   // Relaxation time for source terms.
-  Vector2D       Fd;   // Diffusive flux (2D vector).
+  //! @name Defined datatypes
+  //@{
+  typedef VelocityFields::VelocityFieldType AdvectionVelocityType;
+  typedef DiffusionFields::NonlinearDiffusionFieldType DiffusionFieldType;
   //@}
 
-  //@{ @name Creation, copy, and assignment constructors.
-  //! Creation constructor.
-  AdvectDiffuse2D_State(void) {
-    u = ZERO; V.zero(); k = ONE; T = ONE; Fd.zero();
-  }
+  //! @name Solution state variables and associated constants:
+  //@{
+  double  u;                            //!< Solution.
+  static AdvectionVelocityType  V;      //!< Advection velocity as function of 'x' and 'y'.
+  static DiffusionFieldType k;		//!< Non-linear diffusion coefficient as function of 'x', 'y' and 'u'
+  static SourceTermFields *SourceTerm;  //!< Non-linear source term as function of 'x', 'y' and 'u' or only '\f$\bar{u}\f$'
+  //@}
+
+  //! @name Creation and copy constructors.
+  //@{
+  //! Default constructor.
+  AdvectDiffuse2D_State(void);
+
+  //! Value Constructor
+  AdvectDiffuse2D_State(const double &uu);
 
   //! Copy constructor.
-  AdvectDiffuse2D_State(const AdvectDiffuse2D_State &U) {
-    u = U.u; V = U.V; k = U.k; T = U.T; Fd = U.Fd;
-  }
-
-  //! Assignment constructor.
-  AdvectDiffuse2D_State(const double &uu,
-			const Vector2D &VV,
-			const double &kappa,
-			const double &tau,
-			const Vector2D &FF) {
-    u = uu; V = VV; k = kappa; T = tau; Fd = FF;
-  }
-
-  //! Assignment constructor.
-  AdvectDiffuse2D_State(const double &uu,
-			const double &Vx,
-			const double &Vy,
-			const double &kappa,
-			const double &tau) {
-    u = uu; V.x = Vx; V.y = Vy; k = kappa; T = tau; Fd.zero();
-  }
-    
-  //! Assignment constructor.
-  AdvectDiffuse2D_State(const double &uu,
-			const double &Vx,
-			const double &Vy,
-			const double &kappa,
-			const double &tau,
-			const double &Fdx,
-			const double &Fdy) {
-    u = uu; V.x = Vx; V.y = Vy; k = kappa; T = tau; Fd.x = Fdx; Fd.y = Fdy;
-  }
-
-  /* Destructor. */
-  // ~AdvectDiffuse2D_State(void);
-  // Use automatically generated destructor.
+  AdvectDiffuse2D_State(const AdvectDiffuse2D_State &U){ u = U.u; }
   //@}
 
-  //@{ @name Useful operators.
+  //! Destructor.
+  ~AdvectDiffuse2D_State(void){}
+
+  //! @name Useful operators.
+  //@{
+  //! Return the number of variables.
+  int NumVar(void) { return NUM_VAR_ADVECTDIFFUSE2D; }
+
+  //! Copy operator.
+  void Copy(const AdvectDiffuse2D_State &U) { u = U.u; }
+
   //! Vacuum/zero operator.
   void Vacuum(void) { u = ZERO; }
+
+  //! Set the pointers to the fields (i.e. velocity, diffusion and source)
+  static void Set_Pointers_To_Fields(void);
   //@}
 
-  //@{ @name Advective Flux.
-  Vector2D F(void);
-  Vector2D F(void) const;
-  friend Vector2D F(const AdvectDiffuse2D_State &U);
+  //! @name Functions required for multigrid.
+  //@{
+  //! Copy variables solved by multigrid only.
+  void Copy_Multigrid_State_Variables(const AdvectDiffuse2D_State &Ufine) { Copy(Ufine); }
+
+  //! Zero variables not-solved by multigrid.
+  void Zero_Non_Multigrid_State_Variables(void){};
+
+  //! Check for unphysical state properties.
+  int Unphysical_Properties(void) const{};
   //@}
 
-  //@{ @name Regular source term.
-  double s(void);
+  //! @name Compute upwind state
+  //@{
+  friend AdvectDiffuse2D_State RiemannState(const AdvectDiffuse2D_State &Ul,
+						const AdvectDiffuse2D_State &Ur,
+						const double &x, const double &y,
+						const Vector2D & norm_dir);
+  //@}
+
+  //! @name Advective Flux.
+  //@{
+  Vector2D Fa(const double &x, const double &y) const;
+  friend Vector2D Fa(const AdvectDiffuse2D_State &U, const double &x, const double &y);
+  AdvectDiffuse2D_State Fa(const double &x, const double &y, const Vector2D & norm_dir) const;
+  friend AdvectDiffuse2D_State Fa(const AdvectDiffuse2D_State &Ul,
+				      const AdvectDiffuse2D_State &Ur,
+				      const double &x, const double &y,
+				      const Vector2D & norm_dir);
+  friend AdvectDiffuse2D_State Fa(const AdvectDiffuse2D_State &Ul,
+				      const AdvectDiffuse2D_State &Ur,
+				      const Vector2D & ComputationPoint,
+				      const Vector2D & norm_dir);
+  //@}
+
+  //! @name Computation of diffusive flux.
+  //@{
+  //! Calculate flux based on the position (x,y) and the gradient of the scalar
+  Vector2D Fd(const double &dudx, const double &dudy,
+	      const double &x, const double &y) const;
+  friend Vector2D Fd(const AdvectDiffuse2D_State &U,
+		     const double &dudx, const double &dudy,
+		     const double &x, const double &y);
+  Vector2D Fd(const Vector2D &GradU, 
+	      const double &x, const double &y) const;
+  friend Vector2D Fd(const AdvectDiffuse2D_State &U, 
+		     const Vector2D &GradU,
+		     const double &x, const double &y);
+
+  //! Calculate flux in the normal direction norm_dir
+  AdvectDiffuse2D_State Fd(const double &dudx, const double &dudy,
+			   const double &x, const double &y,
+			   const Vector2D & norm_dir) const{
+    return AdvectDiffuse2D_State(Fd(dudx,dudy,x,y)*norm_dir);
+  }
+
+  friend AdvectDiffuse2D_State Fd(const AdvectDiffuse2D_State &U,
+				  const double &dudx, const double &dudy,
+				  const double &x, const double &y,
+				  const Vector2D & norm_dir){
+    return U.Fd(dudx,dudy,x,y,norm_dir);
+  }
+
+  //! Calculate the interface flux in the normal direction norm_dir and use the mean average to estimate k(x,y,u)
+  friend AdvectDiffuse2D_State Fd(const AdvectDiffuse2D_State &Ul,
+				  const AdvectDiffuse2D_State &Ur,
+				  const double &dudx, const double &dudy,
+				  const double &x, const double &y,
+				  const Vector2D & norm_dir) {
+    return (0.5*(Ul+Ur)).Fd(dudx,dudy,x,y,norm_dir);
+  }
+
+  //! Calculate flux using the projection of the gradient on the normal direction \f$GradU_n = \nabla u \cdot \vec{n} \f$
+  AdvectDiffuse2D_State Fd(const double &GradU_n,
+			   const double &x, const double &y) const;
+
+  //! Calculate flux using a provided state, the normal gradient projection and the position of interest.
+  friend AdvectDiffuse2D_State Fd(const AdvectDiffuse2D_State &U,
+				  const double &GradU_n,
+				  const double &x, const double &y){
+    return U.Fd(GradU_n,x,y);
+  }
+
+  //! Calculate the interface flux at the position of interest in the normal direction,
+  //  based on the interface states and the scalar gradient
+  friend AdvectDiffuse2D_State Fd(const AdvectDiffuse2D_State &Ul,
+				  const AdvectDiffuse2D_State &Ur,
+				  const Vector2D & GradU,
+				  const double &x, const double &y,
+				  const Vector2D & norm_dir);
+  
+  friend AdvectDiffuse2D_State Fd(const AdvectDiffuse2D_State &U,
+				  const Vector2D & GradU,
+				  const Vector2D & ComputationPoint,
+				  const Vector2D & norm_dir);
+  
+  friend AdvectDiffuse2D_State Fd(const AdvectDiffuse2D_State &Ul,
+				  const AdvectDiffuse2D_State &Ur,
+				  const Vector2D & GradU,
+				  const Vector2D & ComputationPoint,
+				  const Vector2D & norm_dir);
+  //@}
+
+  //! @name Regular source term.
+  //@{
+  //! \brief Evaluate integral source field
   double s(void) const;
   friend double s(const AdvectDiffuse2D_State &U);
+  //! \brief Evaluate pointwise source field
+  double s(const double &x, const double &y, const double &u) const;
+  //! \brief Evaluate the source field at a given location
+  double source(const double &x, const double &y, const AdvectDiffuse2D_State &U);
   //@}
 
-  //@{ @name Axisymmetric source term.
-  double s_axi(const Vector2D &X);
+  //! @name Axisymmetric source term.
+  //@{
   double s_axi(const Vector2D &X) const;
   friend double s_axi(const AdvectDiffuse2D_State &U, const Vector2D &X);
   //@}
 
-  //@{ @name Evaluates diffusive flux.
-  Vector2D F_diff(const double &dudx, const double &dudy);
-  Vector2D F_diff(const double &dudx, const double &dudy) const;
-  friend Vector2D F_diff(const AdvectDiffuse2D_State &U, const double &dudx, const double &dudy);
+  /*! @name Assignment operator. */
+  //@{
+  AdvectDiffuse2D_State& operator= (const AdvectDiffuse2D_State &rhs);
   //@}
 
-  /* @name Assignment operator. */
-  // AdvectDiffuse2D_State operator = (const AdvectDiffuse2D_State &W);
-  // Use automatically generated assignment operator.
-
-  //@{ @name Binary arithmetic operators.
-  friend AdvectDiffuse2D_State operator +(const AdvectDiffuse2D_State &U1, const AdvectDiffuse2D_State &U2);
-  friend AdvectDiffuse2D_State operator -(const AdvectDiffuse2D_State &U1, const AdvectDiffuse2D_State &U2);
-  friend AdvectDiffuse2D_State operator *(const AdvectDiffuse2D_State &U1, const AdvectDiffuse2D_State &U2);
-  friend AdvectDiffuse2D_State operator *(const AdvectDiffuse2D_State &U, const double &a);
-  friend AdvectDiffuse2D_State operator *(const double &a, const AdvectDiffuse2D_State &U);
-  friend AdvectDiffuse2D_State operator /(const AdvectDiffuse2D_State &U, const double &a);
+  /*! @name Index operators */
+  //@{
+  double &operator[](const int & index);
+  const double &operator[](const int & index) const;
   //@}
 
-  //@{ @name Unary arithmetic operators.
+  /*! Absolute value */
+  friend AdvectDiffuse2D_State fabs(const AdvectDiffuse2D_State &U){ return AdvectDiffuse2D_State(fabs(U.u));}
+
+  //! @name Binary arithmetic operators.
+  //@{
+  AdvectDiffuse2D_State operator +(const AdvectDiffuse2D_State &U) const;
+  AdvectDiffuse2D_State operator -(const AdvectDiffuse2D_State &U) const;
+  AdvectDiffuse2D_State operator *(const AdvectDiffuse2D_State &U) const;
+  AdvectDiffuse2D_State operator *(const double &a) const;
+  friend AdvectDiffuse2D_State operator *(const double &a, const AdvectDiffuse2D_State &U){ return U*a;}
+  AdvectDiffuse2D_State operator /(const double &a){ return *this * (1.0/a); }
+  AdvectDiffuse2D_State operator ^(const AdvectDiffuse2D_State &U) const;
+  //@}
+
+  //! @name Unary arithmetic operators.
+  //@{
   friend AdvectDiffuse2D_State operator +(const AdvectDiffuse2D_State &U);
   friend AdvectDiffuse2D_State operator -(const AdvectDiffuse2D_State &U);
   //@}
 
-  //@{ @name Shortcut arithmetic operators.
-  friend AdvectDiffuse2D_State &operator +=(AdvectDiffuse2D_State &U1, const AdvectDiffuse2D_State &U2);
-  friend AdvectDiffuse2D_State &operator -=(AdvectDiffuse2D_State &U1, const AdvectDiffuse2D_State &U2);
-  AdvectDiffuse2D_State &operator *=(const double &a);
-  AdvectDiffuse2D_State &operator /=(const double &a);
+  //! @name Shortcut arithmetic operators.
+  //@{
+  AdvectDiffuse2D_State & operator +=(const AdvectDiffuse2D_State &U);
+  AdvectDiffuse2D_State & operator -=(const AdvectDiffuse2D_State &U);
+  AdvectDiffuse2D_State & operator *=(const AdvectDiffuse2D_State &U);
+  AdvectDiffuse2D_State & operator *=(const double &a);
+  AdvectDiffuse2D_State & operator /=(const double &a);
   //@}
 
-  //@{ @name Relational operators.
-  friend int operator ==(const AdvectDiffuse2D_State &U1, const AdvectDiffuse2D_State &U2);
-  friend int operator !=(const AdvectDiffuse2D_State &U1, const AdvectDiffuse2D_State &U2);
+  //! @name Relational operators.
+  //@{
+  friend bool operator ==(const AdvectDiffuse2D_State& lhs, const AdvectDiffuse2D_State& rhs);
+  friend bool operator !=(const AdvectDiffuse2D_State& lhs, const AdvectDiffuse2D_State& rhs);
+  friend bool operator >=(const AdvectDiffuse2D_State& lhs, const AdvectDiffuse2D_State& rhs);
+  friend bool operator <=(const AdvectDiffuse2D_State& lhs, const AdvectDiffuse2D_State& rhs);
   //@}
 
-  //@{ @name Input-output operators.
+  //! @name Input-output operators.
+  //@{
   friend ostream &operator << (ostream &out_file, const AdvectDiffuse2D_State &U);
   friend istream &operator >> (istream &in_file,  AdvectDiffuse2D_State &U);
   //@}
-
 };
 
-/*************************************************************
- * AdvectDiffuse2D_State::F -- Advective Flux.               *
- *************************************************************/
-inline Vector2D AdvectDiffuse2D_State::F(void) {
-    return (u*V);
+// Default constructor.
+inline AdvectDiffuse2D_State::AdvectDiffuse2D_State(void): u(0.0){
 }
 
-inline Vector2D AdvectDiffuse2D_State::F(void) const {
-    return (u*V);
+// Value Constructor
+inline AdvectDiffuse2D_State::AdvectDiffuse2D_State(const double &uu): u(uu){
 }
 
-/*************************************************************
- * AdvectDiffuse2D_State::s -- Regular source term.          *
- *************************************************************/
-inline double AdvectDiffuse2D_State::s(void) {
-  return (-u/T);
+
+inline void AdvectDiffuse2D_State::Set_Pointers_To_Fields(void){
+  // Set pointer to the velocity field
+  VelocityFields::Connect_Pointer_To_Flow_Field(V);
+
+  // Set pointer to the diffusion field
+  DiffusionFields::Connect_Pointer_To_Diffusion_Field(k);
+
+  // Get access to the SourceTermField
+  SourceTerm = &SourceTermFields::getInstance();
 }
 
-inline double AdvectDiffuse2D_State::s(void) const {
-  return (-u/T);
+/*!
+ * Compute the Riemann state
+ * 
+ * \param [in] x x-coordinate location
+ * \param [in] y y-coordinate location
+ * \return the solution to Riemann problem in the 'norm_dir'-direction (defined from left to right)
+ */
+inline AdvectDiffuse2D_State RiemannState(const AdvectDiffuse2D_State &Ul,
+					  const AdvectDiffuse2D_State &Ur,
+					  const double &x, const double &y,
+					  const Vector2D & norm_dir){
+  return (AdvectDiffuse2D_State::V(x,y)*norm_dir > 0) ? Ul : Ur;
 }
 
-inline double s(const AdvectDiffuse2D_State &U) {
-  return (-U.u/U.T);
+/*!
+ * Compute the advective flux \f$Fa=\vec{V}(x,y) \, u\f$
+ * 
+ * \param [in] x x-coordinate location
+ * \param [in] y y-coordinate location
+ * \return advective flux at a given location
+ */
+inline Vector2D AdvectDiffuse2D_State::Fa(const double &x, const double &y) const {
+  return V(x,y)*u;
 }
 
-/*************************************************************
- * AdvectDiffuse2D_State::s_axi -- Axisymmetric source term. *
- *************************************************************/
-inline double AdvectDiffuse2D_State::s_axi(const Vector2D &X) {
-    return (ZERO);
+/*!
+ * Compute the advective flux \f$Fa=\vec{V}(x,y) \, u\f$
+ *
+ * \param [in] x x-coordinate location
+ * \param [in] y y-coordinate location
+ * \param [in] U solution state used to compute the advective flux
+ * \return advective flux at a given location based on the solution state U
+ */
+inline Vector2D Fa(const AdvectDiffuse2D_State &U,
+		   const double &x, const double &y) {
+  return U.Fa(x,y);
 }
 
+/*!
+ * Compute the advective flux \f$Fa=(\vec{V}(x,y) \cdot \vec{n} )\, u\f$
+ *
+ * \param [in] x        x-coordinate location
+ * \param [in] y        y-coordinate location
+ * \param [in] norm_dir the direction used to project the flux onto
+ * \return the projection of the advective flux onto 
+ * the 'norm-dir' direction at a given location based on the solution state U
+ */
+inline AdvectDiffuse2D_State AdvectDiffuse2D_State::Fa(const double &x, const double &y,
+						       const Vector2D & norm_dir) const {
+  return AdvectDiffuse2D_State((V(x,y)*norm_dir)*u);
+}
+
+/*!
+ * Compute the upwind advective flux \f$Fa=(\vec{V}(x,y) \cdot \vec{n})\, u\f$ 
+ * at an interface between 2 states.
+ *
+ * \param [in] Ul       the state to the left of the interface
+ * \param [in] Ur       the state to the right of the interface
+ * \param [in] x        x-coordinate location
+ * \param [in] y        y-coordinate location
+ * \param [in] norm_dir the direction used to project the flux onto
+ * \return the projection of the upwind advective flux onto the 'norm-dir' direction 
+ * at a given location based on the solution state chosen by the upwinding process
+ */
+inline AdvectDiffuse2D_State Fa(const AdvectDiffuse2D_State &Ul,
+				const AdvectDiffuse2D_State &Ur,
+				const double &x, const double &y,
+				const Vector2D & norm_dir) {
+  return (Ul.V(x,y)*norm_dir > 0) ? Ul.Fa(x,y,norm_dir) : Ur.Fa(x,y,norm_dir);
+}
+
+/*!
+ * Compute the upwind advective flux \f$Fa=(\vec{V}(x,y) \cdot \vec{n})\, u\f$ 
+ * at an interface between 2 states.
+ *
+ * \param [in] Ul       the state to the left of the interface
+ * \param [in] Ur       the state to the right of the interface
+ * \param [in] ComputationPoint the Cartesian coordinates of the location where the flux is computed
+ * \param [in] norm_dir         the direction used to project the flux onto
+ * \return the projection of the upwind advective flux onto the 'norm-dir' direction 
+ * at a given location based on the solution state chosen by the upwinding process
+ */
+inline AdvectDiffuse2D_State Fa(const AdvectDiffuse2D_State &Ul,
+				const AdvectDiffuse2D_State &Ur,
+				const Vector2D & ComputationPoint,
+				const Vector2D & norm_dir){
+  return Fa(Ul,Ur,ComputationPoint.x,ComputationPoint.y,norm_dir);
+}
+
+/*!
+ * Compute the diffusive flux \f$Fd=-k(x,y,u) \, \nabla u\f$, where 'u' is the solution scalar.
+ * 
+ * \param [in] x    x-coordinate location
+ * \param [in] y    y-coordinate location
+ * \param [in] dudx solution gradient with respect to x-direction
+ * \param [in] dudy solution gradient with respect to y-direction
+ * \return diffusive flux at a given location
+ */
+inline Vector2D AdvectDiffuse2D_State::Fd(const double &dudx, const double &dudy,
+					  const double &x, const double &y) const {
+  return Vector2D(-k(x,y,u)*dudx ,-k(x,y,u)*dudy);
+}
+
+/*!
+ * Compute the diffusive flux \f$Fd=-k(x,y,u) \, \nabla u\f$, where 'u' is the solution scalar.
+ * 
+ * \param [in] x     x-coordinate location
+ * \param [in] y     y-coordinate location
+ * \param [in] GradU solution gradient vector
+ * \return diffusive flux at a given location
+ */
+inline Vector2D AdvectDiffuse2D_State::Fd(const Vector2D &GradU,
+					  const double &x, const double &y) const {
+  return Fd(GradU.x,GradU.y,x,y);
+}
+
+/*!
+ * Compute the diffusive flux \f$Fd=-k(x,y,u) \, \nabla u\f$.
+ * 
+ * \param [in] x    x-coordinate location
+ * \param [in] y    y-coordinate location
+ * \param [in] dudx solution gradient with respect to x-direction
+ * \param [in] dudy solution gradient with respect to y-direction
+ * \param [in] U    solution state used to compute the diffusive flux
+ * \return diffusive flux at a given location
+ */
+inline Vector2D Fd(const AdvectDiffuse2D_State &U,
+		   const double &dudx, const double &dudy,
+		   const double &x, const double &y) {
+  return U.Fd(dudx,dudy,x,y);
+}
+
+/*!
+ * Compute the diffusive flux \f$Fd=-k(x,y,u) \, \nabla u\f$, where 'u' is the solution scalar.
+ * 
+ * \param [in] x     x-coordinate location
+ * \param [in] y     y-coordinate location
+ * \param [in] GradU solution gradient vector
+ * \param [in] U     solution state used to compute the diffusive flux
+ * \return diffusive flux at a given location
+ */
+inline Vector2D Fd(const AdvectDiffuse2D_State &U,
+		   const Vector2D &GradU,
+		   const double &x, const double &y) {
+  return U.Fd(GradU.x,GradU.y,x,y);
+}
+
+/*!
+ * Compute the diffusive flux \f$Fd=-k(x,y,u) ( \nabla u \cdot \vec{n})\f$, where 'u' is the solution scalar.
+ * 
+ * \param [in] x        x-coordinate location
+ * \param [in] y        y-coordinate location
+ * \param [in] GradU_n  the projection of the solution gradient onto the normal direction
+ *
+ * \return diffusive flux at a given location which has the diffusion coefficient estimated based on the state scalar
+ */
+inline AdvectDiffuse2D_State AdvectDiffuse2D_State::Fd(const double &GradU_n,
+						       const double &x, const double &y) const {
+  return AdvectDiffuse2D_State(-k(x,y,u)*GradU_n);
+}
+
+/*!
+ * Compute the diffusive flux \f$Fd=-k(x,y,u) ( \nabla u \cdot \vec{n})\f$ at the interface between 2 states. \n
+ * 
+ * The diffusion coefficient is estimated based on the average of the two interface-solution states. 
+ *
+ * \param [in] Ul         the state to the left of the interface
+ * \param [in] Ur         the state to the right of the interface
+ * \param [in] GradU      solution gradient vector
+ * \param [in] x          x-coordinate location
+ * \param [in] y          y-coordinate location
+ * \param [in] norm_dir   the direction used to project the flux onto
+ *
+ * \return the projection of the diffusive flux onto the 'norm-dir' direction  at a given location 
+ *         based on the solution gradient and the mean average state at the interface.
+ */
+inline AdvectDiffuse2D_State Fd(const AdvectDiffuse2D_State &Ul,
+				const AdvectDiffuse2D_State &Ur,
+				const Vector2D & GradU,
+				const double &x, const double &y,
+				const Vector2D & norm_dir){
+  return Fd(0.5*(Ul+Ur), GradU*norm_dir, x, y);  
+}
+
+/*!
+ * Compute the diffusive flux \f$Fd=-k(x,y,u) ( \nabla u \cdot \vec{n})\f$ at the interface between 2 states. \n
+ * 
+ * \param [in] U          the state used for computing the diffusion coefficient
+ * \param [in] GradU      solution gradient vector
+ * \param [in] ComputationPoint the Cartesian coordinates of the location where the flux is computed
+ * \param [in] norm_dir   the direction used to project the flux onto
+ *
+ * \return the projection of the diffusive flux onto the 'norm-dir' direction  at a given location 
+ *         based on the solution gradient and the state U at the interface.
+ */
+inline AdvectDiffuse2D_State Fd(const AdvectDiffuse2D_State &U,
+				const Vector2D & GradU,
+				const Vector2D & ComputationPoint,
+				const Vector2D & norm_dir){
+  return Fd(U,GradU*norm_dir,ComputationPoint.x,ComputationPoint.y);  
+}
+
+/*!
+ * Compute the diffusive flux \f$Fd=-k(x,y,u) ( \nabla u \cdot \vec{n})\f$ at the interface between 2 states. \n
+ * 
+ * \param [in] Ul         the state to the left of the interface
+ * \param [in] Ur         the state to the right of the interface
+ * \param [in] GradU      solution gradient vector
+ * \param [in] ComputationPoint the Cartesian coordinates of the location where the flux is computed
+ * \param [in] norm_dir   the direction used to project the flux onto
+ *
+ * \return the projection of the diffusive flux onto the 'norm-dir' direction  at a given location 
+ *         based on the solution gradient and the mean average state at the interface.
+ */
+inline AdvectDiffuse2D_State Fd(const AdvectDiffuse2D_State &Ul,
+				const AdvectDiffuse2D_State &Ur,
+				const Vector2D & GradU,
+				const Vector2D & ComputationPoint,
+				const Vector2D & norm_dir){
+  return Fd(Ul,Ur,GradU,ComputationPoint.x,ComputationPoint.y,norm_dir);  
+}
+
+/*!
+ * Integral source term (i.e function of the average solution)
+ */
+inline double AdvectDiffuse2D_State::s(void) const{
+  return SourceTerm->operator()(u);
+}
+
+/*!
+ * Integral source term (i.e function of the average solution)
+ */
+inline double s(const AdvectDiffuse2D_State &U){
+  return U.s();
+}
+
+/*!
+ * Pointwise defined source term (i.e function of the Cartesian coordinates and the solution at the point)
+ */
+inline double AdvectDiffuse2D_State::s(const double &x, const double &y, const double &u) const{
+  return SourceTerm->operator()(x,y,u);
+}
+
+/*!
+ * Return the value of the source field at a given location.
+ * This subroutine checks if the source field is pointwise or integral.
+ */
+inline double source(const double &x, const double &y, const AdvectDiffuse2D_State &U) {
+  if (U.SourceTerm->FieldRequireIntegration()){
+    return U.SourceTerm->operator()(x,y,U.u); // compute the pointwise value
+  } else {
+    return U.SourceTerm->operator()(U.u);   // compute the integral value
+  }
+}
+
+/*!
+ * Axisymmetric source term.
+ */
 inline double AdvectDiffuse2D_State::s_axi(const Vector2D &X) const {
     return (ZERO);
 }
 
+/*!
+ * Axisymmetric source term.
+ */
 inline double s_axi(const AdvectDiffuse2D_State &U, const Vector2D &X) {
-    return (ZERO);
+  return (ZERO);
 }
 
-/*************************************************************
- * AdvectDiffuse2D_State::F_diff - Evaluate diffusive flux.  *
- *************************************************************/
-inline Vector2D AdvectDiffuse2D_State::F_diff(const double &dudx, const double &dudy) {
-    return (Vector2D(-k*dudx, -k*dudy));   
+/*!
+ * Assignment operator
+ */
+inline AdvectDiffuse2D_State& AdvectDiffuse2D_State::operator= (const AdvectDiffuse2D_State &rhs){
+  if(this == &rhs) return *this;
+  u = rhs.u;
+  return *this;
 }
 
-inline Vector2D AdvectDiffuse2D_State::F_diff(const double &dudx, const double &dudy) const {
-    return (Vector2D(-k*dudx, -k*dudy));   
+//! index operator 
+inline double & AdvectDiffuse2D_State::operator[](const int & index){
+  assert( index >= 1 && index <= NUM_VAR_ADVECTDIFFUSE2D );
+  switch(index) {
+  case 1 :
+    return (u);
+  default:
+    return (u);
+  };
 }
 
-inline Vector2D F_diff(const AdvectDiffuse2D_State &U, const double &dudx, const double &dudy) {
-    return (Vector2D(-U.k*dudx, -U.k*dudy));
+//! constant index operator 
+inline const double & AdvectDiffuse2D_State::operator[](const int & index) const {
+  assert( index >= 1 && index <= NUM_VAR_ADVECTDIFFUSE2D );
+  switch(index) {
+  case 1 :
+    return (u);
+  default:
+    return (u);
+  };
 }
 
-/*************************************************************
- * AdvectDiffuse2D_State -- Binary arithmetic operators.     *
- *************************************************************/
-inline AdvectDiffuse2D_State operator +(const AdvectDiffuse2D_State &U1, const AdvectDiffuse2D_State &U2) {
-  return (AdvectDiffuse2D_State(U1.u+U2.u,U1.V,U1.k,U1.T,U1.Fd));
+//! summation between states
+inline AdvectDiffuse2D_State AdvectDiffuse2D_State::operator +(const AdvectDiffuse2D_State &U) const {
+  return AdvectDiffuse2D_State(u + U.u);
 }
 
-inline AdvectDiffuse2D_State operator -(const AdvectDiffuse2D_State &U1, const AdvectDiffuse2D_State &U2) {
-  return (AdvectDiffuse2D_State(U1.u-U2.u,U1.V,U1.k,U1.T,U1.Fd));
+//! subtraction between states
+inline AdvectDiffuse2D_State AdvectDiffuse2D_State::operator -(const AdvectDiffuse2D_State &U) const {
+  return AdvectDiffuse2D_State(u - U.u);
 }
 
-inline AdvectDiffuse2D_State operator *(const AdvectDiffuse2D_State &U1, const AdvectDiffuse2D_State &U2) {
-  return (AdvectDiffuse2D_State(U1.u*U2.u,U1.V,U1.k,U1.T,U1.Fd));
+//! multiplication between states
+inline AdvectDiffuse2D_State AdvectDiffuse2D_State::operator *(const AdvectDiffuse2D_State &U) const {
+  return AdvectDiffuse2D_State(u * U.u);
 }
 
-inline AdvectDiffuse2D_State operator *(const AdvectDiffuse2D_State &U, const double &a) {
-  return (AdvectDiffuse2D_State(a*U.u,U.V,U.k,U.T,U.Fd));
+//! multiplication with scalar
+inline AdvectDiffuse2D_State AdvectDiffuse2D_State::operator *(const double &a) const{
+  return AdvectDiffuse2D_State(a * u);
 }
 
-inline AdvectDiffuse2D_State operator *(const double &a, const AdvectDiffuse2D_State &U) {
-  return (AdvectDiffuse2D_State(a*U.u,U.V,U.k,U.T,U.Fd));
+//! A useful solution state product operator.
+inline AdvectDiffuse2D_State AdvectDiffuse2D_State::operator ^(const AdvectDiffuse2D_State &U) const{
+  return AdvectDiffuse2D_State(u * U.u);
 }
 
-inline AdvectDiffuse2D_State operator /(const AdvectDiffuse2D_State &U, const double &a) {
-  return (AdvectDiffuse2D_State(U.u/a,U.V,U.k,U.T,U.Fd));
+//! unary arithmetic + operator
+inline AdvectDiffuse2D_State operator +(const AdvectDiffuse2D_State &U){
+  return U;
 }
 
-/*************************************************************
- * AdvectDiffuse2D_State -- Unary arithmetic operators.      *
- *************************************************************/
-inline AdvectDiffuse2D_State operator +(const AdvectDiffuse2D_State &U) {
-  return (AdvectDiffuse2D_State(U.u,U.V,U.k,U.T,U.Fd));
+//! unary arithmetic - operator
+inline AdvectDiffuse2D_State operator -(const AdvectDiffuse2D_State &U){
+  return AdvectDiffuse2D_State(-U.u);
 }
 
-inline AdvectDiffuse2D_State operator -(const AdvectDiffuse2D_State &U) {
-  return (AdvectDiffuse2D_State(-U.u,U.V,U.k,U.T,U.Fd));
+//! shortcut summation
+inline AdvectDiffuse2D_State & AdvectDiffuse2D_State::operator +=(const AdvectDiffuse2D_State &U){
+  u += U.u;
+  return *this;
 }
 
-/*************************************************************
- * AdvectDiffuse2D_State -- Shortcut arithmetic operators.   *
- *************************************************************/
-inline AdvectDiffuse2D_State &operator +=(AdvectDiffuse2D_State &U1, const AdvectDiffuse2D_State &U2) {
-  U1.u += U2.u;  
-  return (U1);
+//! shortcut subtraction
+inline AdvectDiffuse2D_State & AdvectDiffuse2D_State::operator -=(const AdvectDiffuse2D_State &U){
+  u -= U.u;
+  return *this;
 }
 
-inline AdvectDiffuse2D_State &operator -=(AdvectDiffuse2D_State &U1, const AdvectDiffuse2D_State &U2) {
-  U1.u -= U2.u;
-  return (U1);
+//! shortcut multiplication
+inline AdvectDiffuse2D_State & AdvectDiffuse2D_State::operator *=(const AdvectDiffuse2D_State &U){
+  u *= U.u;
+  return *this;
 }
 
-inline AdvectDiffuse2D_State& AdvectDiffuse2D_State::operator *=(const double &a) {
+//! shortcut multiplication with scalar
+inline AdvectDiffuse2D_State & AdvectDiffuse2D_State::operator *=(const double &a){
   u *= a;
   return *this;
 }
 
-inline AdvectDiffuse2D_State& AdvectDiffuse2D_State::operator /=(const double &a) {
+//! shortcut division with scalar
+inline AdvectDiffuse2D_State & AdvectDiffuse2D_State::operator /=(const double &a){
   u /= a;
   return *this;
 }
 
-/*************************************************************
- * AdvectDiffuse2D_State -- Relational operators.            *
- *************************************************************/
-inline int operator ==(const AdvectDiffuse2D_State &U1, const AdvectDiffuse2D_State &U2) {
-  return (U1.u == U2.u);
+//! equal operator 
+inline bool operator ==(const AdvectDiffuse2D_State &lhs, const AdvectDiffuse2D_State &rhs) {
+  return (lhs.u == rhs.u);
 }
 
-inline int operator !=(const AdvectDiffuse2D_State &U1, const AdvectDiffuse2D_State &U2) {
-  return (U1.u != U2.u);
+//! not-equal operator
+inline bool operator !=(const AdvectDiffuse2D_State& lhs, const AdvectDiffuse2D_State& rhs){
+  return !(lhs == rhs);
 }
 
-/*************************************************************
- * AdvectDiffuse2D_State -- Input-output operators.          *
- *************************************************************/
+//! greater or equal operator
+inline bool operator >=(const AdvectDiffuse2D_State& lhs, const AdvectDiffuse2D_State& rhs){
+  return (lhs.u >= rhs.u);
+}
+
+//! less or equal operator 
+inline bool operator <=(const AdvectDiffuse2D_State& lhs, const AdvectDiffuse2D_State& rhs){
+  return (lhs.u <= rhs.u);
+}
+
+//! output operator
 inline ostream &operator << (ostream &out_file, const AdvectDiffuse2D_State &U) {
   out_file.setf(ios::scientific);
-  out_file << " " << U.u  << " " << U.Fd.x << " " << U.Fd.y 
-           << " " << U.V.x << " " << U.V.y << " " << U.k << " " << U.T;
+  out_file << " " << U.u ;
   out_file.unsetf(ios::scientific);
   return (out_file);
 }
 
 inline istream &operator >> (istream &in_file, AdvectDiffuse2D_State &U) {
   in_file.setf(ios::skipws);
-  in_file >> U.u >> U.Fd.x >> U.Fd.y >> U.V.x >> U.V.y >> U.k >> U.T;
+  in_file >> U.u ;
   in_file.unsetf(ios::skipws);
   return (in_file);
 }
 
-/*************************************************************
- * AdvectDiffuse2D_State -- External subroutines.            *
- *************************************************************/
-
-extern AdvectDiffuse2D_State Riemann(const AdvectDiffuse2D_State &Ul,
-	      	                     const AdvectDiffuse2D_State &Ur);
-
-extern AdvectDiffuse2D_State Riemann_x(const AdvectDiffuse2D_State &Ul,
-	      	                       const AdvectDiffuse2D_State &Ur);
-
-extern AdvectDiffuse2D_State Riemann_y(const AdvectDiffuse2D_State &Ul,
-	      	                       const AdvectDiffuse2D_State &Ur);
-
-extern double Flux(const AdvectDiffuse2D_State &Ul,
-                   const AdvectDiffuse2D_State &Ur);
-       
-extern double Flux_x(const AdvectDiffuse2D_State &Ul,
-                     const AdvectDiffuse2D_State &Ur);
-       
-extern double Flux_y(const AdvectDiffuse2D_State &Ul,
-                     const AdvectDiffuse2D_State &Ur);
-       
-extern double Flux_n(const AdvectDiffuse2D_State &Ul,
-                     const AdvectDiffuse2D_State &Ur,
-                     const Vector2D &norm_dir);
-
-extern AdvectDiffuse2D_State BC_Dirichlet(const AdvectDiffuse2D_State &Ui,
-                                          const AdvectDiffuse2D_State &Uo,
-	      	                          const Vector2D &norm_dir);
-
-extern AdvectDiffuse2D_State BC_Neumann(const AdvectDiffuse2D_State &Ui,
-                                        const AdvectDiffuse2D_State &Uo,
-	      	                        const Vector2D &norm_dir);
-
-extern AdvectDiffuse2D_State BC_Robin(const AdvectDiffuse2D_State &Ui,
-                                      const AdvectDiffuse2D_State &Uo,
-	      	                      const Vector2D &norm_dir);
 
 #endif /* _DVECTDIFFUSE2D_STATE_INCLUDED  */

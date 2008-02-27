@@ -68,9 +68,17 @@ class NKS_Input_Parameters{
   int    Maximum_Number_of_NKS_Iterations;
   double Overall_Tolerance;
   double Relaxation_multiplier;
-  bool   Time_Accurate; 
-  double DTS_Tolerance;
-  int    Max_DTS_Steps;
+  //@}
+
+  //@{ @name Dual Time Stepping Parameters
+  bool Dual_Time_Stepping;              //!< Dual-time-stepping flag (on or off).  
+  int Physical_Time_Integration;        //!< Implicit Euler, BDF2, ESDIRK, etc.
+  double Physical_Time_CFL_Number;
+  double Physical_Time_Step;
+  int Maximum_Number_of_DTS_Steps; 
+  //@}
+  
+  //@{ @name Allistar flags
   //! True/false flag for application of convergence stall detection algorithm
   bool   Detect_Convergence_Stall;
   //! Size of the window for the detection of convergence stall 
@@ -123,16 +131,26 @@ class NKS_Input_Parameters{
   int    Output_Precision, Output_Width;
   int    NKS_Write_Output_Cells_Freq; // set to zero to turn off
   //@}
-  
+
+  //@{ @name NKS Parameters
+  int Min_Number_of_Newton_Steps_With_Zero_Limiter;            //!< force 1st order for "N" steps
+  double Min_Number_of_Newton_Steps_Requiring_Jacobian_Update; //!< force Jacobian updates for "N" Newton steps       
+  double Min_L2_Norm_Requiring_Jacobian_Update;                //!< force Jacobian update for L2 < "N"
+  double Min_Finite_Time_Step_Norm_Ratio;                      //!< ramp over to full newton over 8 orders of L2 magnitude
+  //@}
+
   //@{ @name Constructors and desctructors:
   //! Constructor (assign default values)
   NKS_Input_Parameters() {
     Maximum_Number_of_NKS_Iterations = 0;
     Overall_Tolerance = 1e-5;      
     Relaxation_multiplier = 1.0;
-    Time_Accurate = false;
-    DTS_Tolerance = 0.0;
-    Max_DTS_Steps = 0; 
+    //
+    Dual_Time_Stepping = false;         
+    Physical_Time_Integration = TIME_STEPPING_IMPLICIT_EULER;
+    Physical_Time_CFL_Number = 1.0 ;
+    Physical_Time_Step = 0.0;
+    Maximum_Number_of_DTS_Steps = 0;
     //
     Finite_Time_Step = true;
     Finite_Time_Step_Initial_CFL = 1.0; 
@@ -160,7 +178,12 @@ class NKS_Input_Parameters{
     Output_Precision = 2;
     Output_Width = Output_Precision + 9;
     Freeze_Limiter_Immediately = FLI_NOT_USED;
-    NKS_Write_Output_Cells_Freq = 0;
+    NKS_Write_Output_Cells_Freq = 0;  
+
+    Min_Number_of_Newton_Steps_With_Zero_Limiter = 0 ;           
+    Min_Number_of_Newton_Steps_Requiring_Jacobian_Update = 100; 
+    Min_L2_Norm_Requiring_Jacobian_Update = 1.0e-08 ;
+    Min_Finite_Time_Step_Norm_Ratio = 1.0e-10; 
   }
 
   //! Destructor

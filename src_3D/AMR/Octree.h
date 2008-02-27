@@ -23,7 +23,7 @@ using namespace std;
 
 /* Define the classes. */
 
-#define OCTREE_SECTOR_NONE                          -1000
+#define OCTREE_SECTOR_NONE                        -1000
 #define	OCTREE_SECTOR_BSW                             0
 #define	OCTREE_SECTOR_BSE                             1
 #define	OCTREE_SECTOR_BNW                             2
@@ -118,37 +118,38 @@ class OctreeBlock{
   public:
     AdaptiveBlock3D        block;  // Pointer to octree adaptive block.
     OctreeBlock      *parent_ptr;  // Pointer to parent of adaptive block.
-    OctreeBlock     *childTSW_ptr,  // Pointers to children of
-                    *childTSE_ptr,  // adaptive block.
-                    *childTNW_ptr,  //
-                    *childTNE_ptr,  //
-                    *childBSW_ptr,  // Pointers to children of
-                    *childBSE_ptr,  // adaptive block.
-                    *childBNW_ptr,  //
-                    *childBNE_ptr;  //	                           // Made public so can access them.
+    OctreeBlock     *childTSW_ptr, // Pointers to children of
+                    *childTSE_ptr, // adaptive block.
+                    *childTNW_ptr, //
+                    *childTNE_ptr, //
+                    *childBSW_ptr, // Pointers to children of
+                    *childBSE_ptr, // adaptive block.
+                    *childBNW_ptr, //
+                    *childBNE_ptr; // 
 
     /* Creation, copy, and assignment constructors. */
     OctreeBlock(void) {
       parent_ptr = NULL; 
       childTSW_ptr = NULL;
       childTSE_ptr = NULL;
-      childTNW_ptr = NULL;  //
-      childTNE_ptr = NULL;  //
-      childBSW_ptr = NULL;  // 
-      childBSE_ptr = NULL;  // 
-      childBNW_ptr = NULL;  //
-      childBNE_ptr = NULL;  //	
+      childTNW_ptr = NULL;
+      childTNE_ptr = NULL;
+      childBSW_ptr = NULL; 
+      childBSE_ptr = NULL; 
+      childBNW_ptr = NULL;
+      childBNE_ptr = NULL;	
     }
+
     OctreeBlock(const OctreeBlock &Block) {
        block = Block.block; parent_ptr = Block.parent_ptr; 
        childTSW_ptr = Block.childTSW_ptr;
        childTSE_ptr = Block.childTSE_ptr;
-       childTNW_ptr = Block.childTNW_ptr;  //
-       childTNE_ptr = Block.childTNE_ptr;  //
-       childBSW_ptr = Block.childBSW_ptr;  // 
-       childBSE_ptr = Block.childBSE_ptr;  // 
-       childBNW_ptr = Block.childBNW_ptr;  //
-       childBNE_ptr = Block.childBNE_ptr;  //	
+       childTNW_ptr = Block.childTNW_ptr;
+       childTNE_ptr = Block.childTNE_ptr;
+       childBSW_ptr = Block.childBSW_ptr; 
+       childBSE_ptr = Block.childBSE_ptr; 
+       childBNW_ptr = Block.childBNW_ptr;
+       childBNE_ptr = Block.childBNE_ptr;	
     }
 
     /* Destructor. */
@@ -191,7 +192,6 @@ class OctreeBlock{
 				 const OctreeBlock &Block);
     friend istream &operator >> (istream &in_file,
 				 OctreeBlock &Block);
-    
 };
 
 /*************************************************************
@@ -231,7 +231,7 @@ inline OctreeBlock *OctreeBlock::child_ptr(const int Sector) {
 }
 
 /*************************************************************
- * OctreeBlock::search_dir -- Determine search direction.  *
+ * OctreeBlock::search_dir -- Determine search direction.    *
  *************************************************************/
 inline AdaptiveBlock3D_Dimensions OctreeBlock::search_dir(const int Search_Dir_Mask) {
   int i, j, k;
@@ -359,407 +359,6 @@ inline int OctreeBlock::sibling(const int Search_Dir_Mask) {
  *************************************************************/
 inline OctreeBlock *OctreeBlock::neighbour_ptr(const int Search_Dir_Mask) {
   OctreeBlock *block_ptr; AdaptiveBlock3D_Dimensions search_direction;
-  if (parent_ptr == NULL || block.info.sector == OCTREE_SECTOR_NONE) {
-     block_ptr = NULL; // Block has no parent.  Block is a root.  Return null pointer.
- 
-//***To be CHECKED TO SEE IF CORRECTLY UPDATED into 3D for AMR
-/*
-  } else {
-     if (sibling(Search_Dir_Mask)) { // Neighbour is a sibling.  Get it.
-        search_direction = search_dir(Search_Dir_Mask);
-        block_ptr = parent_ptr->child_ptr(block.info.sector+
-                                          search_direction.i+
-                                          search_direction.j+
-					  search_direction.k);
-
-        if ((block_ptr->child_ptr(OCTREE_SECTOR_BSW-
-                                  search_direction.i-
-                                  search_direction.j-
-                                  search_direction.k+ 
-                                  (max(-search_direction.i*search_direction.j*search_direction.k, 0)/2)*
-                                  max(max(search_direction.i, search_direction.j),search_direction.k)) == NULL) ||
-            (block_ptr->block.used)) { // Sibling is used and has no children.
-	
-	block_ptr = block_ptr; // Return sibling.
-	
-	} else { // Return child of sibling.
-           block_ptr = block_ptr->child_ptr(OCTREE_SECTOR_SW-
-                                            search_direction.i-
-                                            search_direction.j-
-                                            search_direction.k+
-                                            (max(-search_direction.i*search_direction.j*search_direction.k, 0)/2)*
-                                  max(max(search_direction.i, search_direction.j),search_direction.k));
-        } // endif 
-     } else if (Search_Dir_Mask <= OCTREE_DIRECTION_MASK_WEST) { // Neighbour is not a sibling.
-        block_ptr = parent_ptr->neighbour_ptr(Search_Dir_Mask); // Move up the tree.
-        if (block_ptr == NULL) { // Parent of neighbour does not exist.
-	   block_ptr = NULL; // Return null pointer.
-        } else {
-           search_direction = search_dir(Search_Dir_Mask);
-           if ((block_ptr->child_ptr(block.info.sector-
-                                     search_direction.i-
-                                     search_direction.j-
-                                     search_direction.k) == NULL) ||
-               (block_ptr->block.used)) { // Neighbour is used and has no children.
-	      block_ptr = block_ptr; // Return neighbour.
-	   } else { // Return child of neighbour.
-              block_ptr = block_ptr->child_ptr(block.info.sector-
-                                               search_direction.i-
-                                               search_direction.j-
-					       search_direction.k);
-            } // endif
-        } // endif 
-     } else if (Search_Dir_Mask <= OCTREE_DIRECTION_MASK_SOUTHWEST){ 
-     // Neighbour is not a sibling and is a side neighbour.  Perform two-direction search.
-     
-       switch(Search_Dir_Mask) {
-          case OCTREE_DIRECTION_MASK_SOUTHWEST :
-            if (sibling(OCTREE_DIRECTION_MASK_WEST)) {
-               block_ptr = neighbour_ptr(OCTREE_DIRECTION_MASK_WEST);
-               if (block_ptr != NULL) { 
-                  block_ptr = block_ptr->neighbour_ptr(OCTREE_DIRECTION_MASK_SOUTH);
-	       }  endif 
-            } else {
-               block_ptr = neighbour_ptr(OCTREE_DIRECTION_MASK_SOUTH);
-               if (block_ptr != NULL) { 
-                  block_ptr = block_ptr->neighbour_ptr(OCTREE_DIRECTION_MASK_WEST);
-	       } // endif 
-            } // endif 
-            break;
-          case OCTREE_DIRECTION_MASK_SOUTHEAST :
-            if (sibling(OCTREE_DIRECTION_MASK_EAST)) {
-               block_ptr = neighbour_ptr(OCTREE_DIRECTION_MASK_EAST);
-               if (block_ptr != NULL) { 
-                  block_ptr = block_ptr->neighbour_ptr(OCTREE_DIRECTION_MASK_SOUTH);
-               } // endif 
-            } else {
-               block_ptr = neighbour_ptr(OCTREE_DIRECTION_MASK_SOUTH);
-               if (block_ptr != NULL) { 
-                  block_ptr = block_ptr->neighbour_ptr(OCTREE_DIRECTION_MASK_EAST);
-               } // endif 
-            } // endif 
-            break;
-          case OCTREE_DIRECTION_MASK_NORTHWEST :
-            if (sibling(OCTREE_DIRECTION_MASK_WEST)) {
-               block_ptr = neighbour_ptr(OCTREE_DIRECTION_MASK_WEST);
-               if (block_ptr != NULL) { 
-                  block_ptr = block_ptr->neighbour_ptr(OCTREE_DIRECTION_MASK_NORTH);
-               } // endif 
-            } else {
-               block_ptr = neighbour_ptr(OCTREE_DIRECTION_MASK_NORTH);
-               if (block_ptr != NULL) { 
-                  block_ptr = block_ptr->neighbour_ptr(OCTREE_DIRECTION_MASK_WEST);
-               } // endif 
-            } // endif 
-            break;
-          case OCTREE_DIRECTION_MASK_NORTHEAST :
-            if (sibling(OCTREE_DIRECTION_MASK_EAST)) {
-               block_ptr = neighbour_ptr(OCTREE_DIRECTION_MASK_EAST);
-               if (block_ptr != NULL) { 
-                  block_ptr = block_ptr->neighbour_ptr(OCTREE_DIRECTION_MASK_NORTH);
-               } // endif 
-            } else {
-               block_ptr = neighbour_ptr(OCTREE_DIRECTION_MASK_NORTH);
-               if (block_ptr != NULL) { 
-                  block_ptr = block_ptr->neighbour_ptr(OCTREE_DIRECTION_MASK_EAST);
-               } // endif 
-            } // endif 
-            break;
-          default:
-            block_ptr = NULL;
-            break;
-       } // endswitch 
-     } // endif    
-
-     else if (Search_Dir_Mask <= OCTREE_DIRECTION_MASK_TOPWEST){ 
-    // Neighbour is not a sibling and is a side neighbour.  Perform two-direction search.
-     
-       switch(Search_Dir_Mask) {
-          case OCTREE_DIRECTION_MASK_TOPWEST :
-            if (sibling(OCTREE_DIRECTION_MASK_WEST)) {
-               block_ptr = neighbour_ptr(OCTREE_DIRECTION_MASK_WEST);
-               if (block_ptr != NULL) { 
-                  block_ptr = block_ptr->neighbour_ptr(OCTREE_DIRECTION_MASK_TOP);
-	       }  endif 
-            } else {
-               block_ptr = neighbour_ptr(OCTREE_DIRECTION_MASK_TOP);
-               if (block_ptr != NULL) { 
-                  block_ptr = block_ptr->neighbour_ptr(OCTREE_DIRECTION_MASK_WEST);
-	       } // endif 
-            } // endif 
-            break;
-          case OCTREE_DIRECTION_MASK_TOPEAST :
-            if (sibling(OCTREE_DIRECTION_MASK_EAST)) {
-               block_ptr = neighbour_ptr(OCTREE_DIRECTION_MASK_EAST);
-               if (block_ptr != NULL) { 
-                  block_ptr = block_ptr->neighbour_ptr(OCTREE_DIRECTION_MASK_TOP);
-               } // endif 
-            } else {
-               block_ptr = neighbour_ptr(OCTREE_DIRECTION_MASK_TOP);
-               if (block_ptr != NULL) { 
-                  block_ptr = block_ptr->neighbour_ptr(OCTREE_DIRECTION_MASK_EAST);
-               } // endif 
-            } // endif 
-            break;
-          case OCTREE_DIRECTION_MASK_TOPNORTH :
-            if (sibling(OCTREE_DIRECTION_MASK_WEST)) {
-               block_ptr = neighbour_ptr(OCTREE_DIRECTION_MASK_NORTH);
-               if (block_ptr != NULL) { 
-                  block_ptr = block_ptr->neighbour_ptr(OCTREE_DIRECTION_MASK_TOP);
-               } // endif 
-            } else {
-               block_ptr = neighbour_ptr(OCTREE_DIRECTION_MASK_TOP);
-               if (block_ptr != NULL) { 
-                  block_ptr = block_ptr->neighbour_ptr(OCTREE_DIRECTION_MASK_NORTH);
-               } // endif 
-            } // endif 
-            break;
-          case OCTREE_DIRECTION_MASK_TOPSOUTH :
-            if (sibling(OCTREE_DIRECTION_MASK_SOUTH)) {
-               block_ptr = neighbour_ptr(OCTREE_DIRECTION_MASK_SOUTH);
-               if (block_ptr != NULL) { 
-                  block_ptr = block_ptr->neighbour_ptr(OCTREE_DIRECTION_MASK_TOP);
-               } // endif 
-            } else {
-               block_ptr = neighbour_ptr(OCTREE_DIRECTION_MASK_TOP);
-               if (block_ptr != NULL) { 
-                  block_ptr = block_ptr->neighbour_ptr(OCTREE_DIRECTION_MASK_SOUTH);
-               } // endif 
-            } // endif 
-            break;
-          default:
-            block_ptr = NULL;
-            break;
-       } // endswitch 
-     } // endif    
-
-     else if (Search_Dir_Mask <= OCTREE_DIRECTION_MASK_BOTTOMWEST){ 
-    // Neighbour is not a sibling and is a side neighbour.  Perform two-direction search.
-     
-       switch(Search_Dir_Mask) {
-          case OCTREE_DIRECTION_MASK_BOTTOMWEST :
-            if (sibling(OCTREE_DIRECTION_MASK_WEST)) {
-               block_ptr = neighbour_ptr(OCTREE_DIRECTION_MASK_WEST);
-               if (block_ptr != NULL) { 
-                  block_ptr = block_ptr->neighbour_ptr(OCTREE_DIRECTION_MASK_BOTTOM);
-	       }  endif 
-            } else {
-               block_ptr = neighbour_ptr(OCTREE_DIRECTION_MASK_BOTTOM);
-               if (block_ptr != NULL) { 
-                  block_ptr = block_ptr->neighbour_ptr(OCTREE_DIRECTION_MASK_WEST);
-	       } // endif 
-            } // endif 
-            break;
-          case OCTREE_DIRECTION_MASK_BOTTOMEAST :
-            if (sibling(OCTREE_DIRECTION_MASK_EAST)) {
-               block_ptr = neighbour_ptr(OCTREE_DIRECTION_MASK_EAST);
-               if (block_ptr != NULL) { 
-                  block_ptr = block_ptr->neighbour_ptr(OCTREE_DIRECTION_MASK_BOTTOM);
-               } // endif 
-            } else {
-               block_ptr = neighbour_ptr(OCTREE_DIRECTION_MASK_BOTTOM);
-               if (block_ptr != NULL) { 
-                  block_ptr = block_ptr->neighbour_ptr(OCTREE_DIRECTION_MASK_EAST);
-               } // endif 
-            } // endif 
-            break;
-          case OCTREE_DIRECTION_MASK_BOTTOMNORTH :
-            if (sibling(OCTREE_DIRECTION_MASK_WEST)) {
-               block_ptr = neighbour_ptr(OCTREE_DIRECTION_MASK_NORTH);
-               if (block_ptr != NULL) { 
-                  block_ptr = block_ptr->neighbour_ptr(OCTREE_DIRECTION_MASK_BOTTOM);
-               } // endif 
-            } else {
-               block_ptr = neighbour_ptr(OCTREE_DIRECTION_MASK_BOTTOM);
-               if (block_ptr != NULL) { 
-                  block_ptr = block_ptr->neighbour_ptr(OCTREE_DIRECTION_MASK_NORTH);
-               } // endif 
-            } // endif 
-            break;
-          case OCTREE_DIRECTION_MASK_BOTTOMSOUTH :
-            if (sibling(OCTREE_DIRECTION_MASK_SOUTH)) {
-               block_ptr = neighbour_ptr(OCTREE_DIRECTION_MASK_SOUTH);
-               if (block_ptr != NULL) { 
-                  block_ptr = block_ptr->neighbour_ptr(OCTREE_DIRECTION_MASK_BOTTOM);
-               } // endif 
-            } else {
-               block_ptr = neighbour_ptr(OCTREE_DIRECTION_MASK_BOTTOM);
-               if (block_ptr != NULL) { 
-                  block_ptr = block_ptr->neighbour_ptr(OCTREE_DIRECTION_MASK_SOUTH);
-               } // endif 
-            } // endif 
-            break;
-          default:
-            block_ptr = NULL;
-            break;
-       } // endswitch 
-     } // endif    
-
-     else if (Search_Dir_Mask <= OCTREE_DIRECTION_MASK_TOPSOUTHWEST){ 
-     // Neighbour is not a sibling and is a TOP corner neighbour.  Perform three - direction search.
-     
-       switch(Search_Dir_Mask) {
-          case OCTREE_DIRECTION_MASK_TOPSOUTHWEST :
-            if (sibling(OCTREE_DIRECTION_MASK_WEST)) {
-               block_ptr = neighbour_ptr(OCTREE_DIRECTION_MASK_WEST);
-               if (block_ptr != NULL) { 
-                  block_ptr = block_ptr->neighbour_ptr(OCTREE_DIRECTION_MASK_TOPSOUTH);
-	       }  //endif 
-	    }else if (sibling(OCTREE_DIRECTION_MASK_SOUTH)) {
-               block_ptr = neighbour_ptr(OCTREE_DIRECTION_MASK_SOUTH);
-               if (block_ptr != NULL) { 
-                  block_ptr = block_ptr->neighbour_ptr(OCTREE_DIRECTION_MASK_TOPWEST);
-	       }  //endif 
-            } else {
-               block_ptr = neighbour_ptr(OCTREE_DIRECTION_MASK_TOP);
-               if (block_ptr != NULL) { 
-                  block_ptr = block_ptr->neighbour_ptr(OCTREE_DIRECTION_MASK_SOUTHWEST);
-	       } // endif 
-            } // endif 
-            break;
-          case OCTREE_DIRECTION_MASK_TOPSOUTHEAST :
-            if (sibling(OCTREE_DIRECTION_MASK_EAST)) {
-               block_ptr = neighbour_ptr(OCTREE_DIRECTION_MASK_EAST);
-               if (block_ptr != NULL) { 
-                  block_ptr = block_ptr->neighbour_ptr(OCTREE_DIRECTION_MASK_TOPSOUTH);
-	       }  //endif 
-	    }else if (sibling(OCTREE_DIRECTION_MASK_SOUTH)) {
-               block_ptr = neighbour_ptr(OCTREE_DIRECTION_MASK_SOUTH);
-               if (block_ptr != NULL) { 
-                  block_ptr = block_ptr->neighbour_ptr(OCTREE_DIRECTION_MASK_TOPEAST);
-	       }  //endif 
-            } else {
-               block_ptr = neighbour_ptr(OCTREE_DIRECTION_MASK_TOP);
-               if (block_ptr != NULL) { 
-                  block_ptr = block_ptr->neighbour_ptr(OCTREE_DIRECTION_MASK_SOUTHEAST);
-	       } // endif 
-            } // endif 
-             break;
-          case OCTREE_DIRECTION_MASK_TOPNORTHWEST :
-            if (sibling(OCTREE_DIRECTION_MASK_WEST)) {
-               block_ptr = neighbour_ptr(OCTREE_DIRECTION_MASK_WEST);
-               if (block_ptr != NULL) { 
-                  block_ptr = block_ptr->neighbour_ptr(OCTREE_DIRECTION_MASK_TOPNORTH);
-	       }  //endif 
-	    } else if (sibling(OCTREE_DIRECTION_MASK_NORTH)) {
-               block_ptr = neighbour_ptr(OCTREE_DIRECTION_MASK_NORTH);
-               if (block_ptr != NULL) { 
-                  block_ptr = block_ptr->neighbour_ptr(OCTREE_DIRECTION_MASK_TOPWEST);
-	       }  //endif 
-            } else {
-               block_ptr = neighbour_ptr(OCTREE_DIRECTION_MASK_TOP);
-               if (block_ptr != NULL) { 
-                  block_ptr = block_ptr->neighbour_ptr(OCTREE_DIRECTION_MASK_NORTHWEST);
-	       } // endif 
-            } // endif 
-            break;
-          case OCTREE_DIRECTION_MASK_TOPNORTHEAST :
-            if (sibling(OCTREE_DIRECTION_MASK_EAST)) {
-               block_ptr = neighbour_ptr(OCTREE_DIRECTION_MASK_EAST);
-               if (block_ptr != NULL) { 
-                  block_ptr = block_ptr->neighbour_ptr(OCTREE_DIRECTION_MASK_TOPNORTH);
-	       }  //endif 
-	    }else if (sibling(OCTREE_DIRECTION_MASK_NORTH)) {
-	      block_ptr = neighbour_ptr(OCTREE_DIRECTION_MASK_NORTH);
-	      if (block_ptr != NULL) { 
-		block_ptr = block_ptr->neighbour_ptr(OCTREE_DIRECTION_MASK_TOPEAST);
-	      }  //endif 
-            } else {
-               block_ptr = neighbour_ptr(OCTREE_DIRECTION_MASK_TOP);
-               if (block_ptr != NULL) { 
-                  block_ptr = block_ptr->neighbour_ptr(OCTREE_DIRECTION_MASK_NORTHEAST);
-	       } // endif 
-            } // endif 
-            break;
-          default:
-            block_ptr = NULL;
-            break;
-       } // endswitch 
-     } // endif    
-
-     else { 
-     // Neighbour is not a sibling and is a BOTTOM corner neighbour.  Perform three - direction search.
-     
-       switch(Search_Dir_Mask) {
-          case OCTREE_DIRECTION_MASK_BOTTOMSOUTHWEST :
-            if (sibling(OCTREE_DIRECTION_MASK_WEST)) {
-               block_ptr = neighbour_ptr(OCTREE_DIRECTION_MASK_WEST);
-               if (block_ptr != NULL) { 
-                  block_ptr = block_ptr->neighbour_ptr(OCTREE_DIRECTION_MASK_BOTTOMSOUTH);
-	       }  //endif 
-	    }else if (sibling(OCTREE_DIRECTION_MASK_SOUTH)) {
-               block_ptr = neighbour_ptr(OCTREE_DIRECTION_MASK_SOUTH);
-               if (block_ptr != NULL) { 
-                  block_ptr = block_ptr->neighbour_ptr(OCTREE_DIRECTION_MASK_BOTTOMWEST);
-	       }  //endif 
-            } else {
-               block_ptr = neighbour_ptr(OCTREE_DIRECTION_MASK_BOTTOM);
-               if (block_ptr != NULL) { 
-                  block_ptr = block_ptr->neighbour_ptr(OCTREE_DIRECTION_MASK_SOUTHWEST);
-	       } // endif 
-            } // endif 
-            break;
-          case OCTREE_DIRECTION_MASK_BOTTOMSOUTHEAST :
-            if (sibling(OCTREE_DIRECTION_MASK_EAST)) {
-               block_ptr = neighbour_ptr(OCTREE_DIRECTION_MASK_EAST);
-               if (block_ptr != NULL) { 
-                  block_ptr = block_ptr->neighbour_ptr(OCTREE_DIRECTION_MASK_BOTTOMSOUTH);
-	       }  //endif 
-	    }else if (sibling(OCTREE_DIRECTION_MASK_SOUTH)) {
-               block_ptr = neighbour_ptr(OCTREE_DIRECTION_MASK_SOUTH);
-               if (block_ptr != NULL) { 
-                  block_ptr = block_ptr->neighbour_ptr(OCTREE_DIRECTION_MASK_BOTTOMEAST);
-	       }  //endif 
-            } else {
-               block_ptr = neighbour_ptr(OCTREE_DIRECTION_MASK_BOTTOM);
-               if (block_ptr != NULL) { 
-                  block_ptr = block_ptr->neighbour_ptr(OCTREE_DIRECTION_MASK_SOUTHEAST);
-	       } // endif 
-            } // endif 
-             break;
-          case OCTREE_DIRECTION_MASK_BOTTOMNORTHWEST :
-            if (sibling(OCTREE_DIRECTION_MASK_WEST)) {
-               block_ptr = neighbour_ptr(OCTREE_DIRECTION_MASK_WEST);
-               if (block_ptr != NULL) { 
-                  block_ptr = block_ptr->neighbour_ptr(OCTREE_DIRECTION_MASK_BOTTOMNORTH);
-	       }  //endif 
-	    } else if (sibling(OCTREE_DIRECTION_MASK_NORTH)) {
-               block_ptr = neighbour_ptr(OCTREE_DIRECTION_MASK_NORTH);
-               if (block_ptr != NULL) { 
-                  block_ptr = block_ptr->neighbour_ptr(OCTREE_DIRECTION_MASK_BOTTOMWEST);
-	       }  //endif 
-            } else {
-               block_ptr = neighbour_ptr(OCTREE_DIRECTION_MASK_BOTTOM);
-               if (block_ptr != NULL) { 
-                  block_ptr = block_ptr->neighbour_ptr(OCTREE_DIRECTION_MASK_NORTHWEST);
-	       } // endif 
-            } // endif 
-            break;
-          case OCTREE_DIRECTION_MASK_BOTTOMNORTHEAST :
-            if (sibling(OCTREE_DIRECTION_MASK_EAST)) {
-               block_ptr = neighbour_ptr(OCTREE_DIRECTION_MASK_EAST);
-               if (block_ptr != NULL) { 
-                  block_ptr = block_ptr->neighbour_ptr(OCTREE_DIRECTION_MASK_BOTTOMNORTH);
-	       }  //endif 
-	    }else if (sibling(OCTREE_DIRECTION_MASK_NORTH)) {
-	      block_ptr = neighbour_ptr(OCTREE_DIRECTION_MASK_NORTH);
-	      if (block_ptr != NULL) { 
-		block_ptr = block_ptr->neighbour_ptr(OCTREE_DIRECTION_MASK_BOTTOMEAST);
-	      }  //endif 
-            } else {
-               block_ptr = neighbour_ptr(OCTREE_DIRECTION_MASK_BOTTOM);
-               if (block_ptr != NULL) { 
-                  block_ptr = block_ptr->neighbour_ptr(OCTREE_DIRECTION_MASK_NORTHEAST);
-	       } // endif 
-            } // endif 
-            break;
-          default:
-            block_ptr = NULL;
-            break;
-       } // endswitch 
-       } // endif  */  
-
-  } // endif
   return (block_ptr);
 }
 
@@ -817,7 +416,7 @@ inline void OctreeBlock::read(istream &in_file) {
 }
 
 inline void OctreeBlock::read(istream &in_file,
-                                AdaptiveBlock3D_ResourceList &List_of_Available_Blocks) {
+                              AdaptiveBlock3D_ResourceList &List_of_Available_Blocks) {
   int number_of_children; 
   in_file >> block;
   if (block.used) {
@@ -878,7 +477,7 @@ inline void OctreeBlock::read(istream &in_file,
 }
 
 /*************************************************************
- * OctreeBlock::write -- Write octree block (recursive). *
+ * OctreeBlock::write -- Write octree block (recursive).     *
  *************************************************************/
 inline void OctreeBlock::write(ostream &out_file) {
   int number_of_children; 
@@ -900,7 +499,7 @@ inline void OctreeBlock::write(ostream &out_file) {
 }
 
 /*************************************************************
- * OctreeBlock::broadcast -- Broadcast octree block.     *
+ * OctreeBlock::broadcast -- Broadcast octree block.         *
  *************************************************************/
 inline void OctreeBlock::broadcast(void) {
 #ifdef _MPI_VERSION
@@ -955,7 +554,7 @@ inline void OctreeBlock::broadcast(void) {
 inline void OctreeBlock::broadcast(AdaptiveBlock3D_ResourceList &List_of_Available_Blocks) {
 #ifdef _MPI_VERSION
   int number_of_children; 
-   AdaptiveBlock3D::Broadcast_Adaptive_Block(block);
+  AdaptiveBlock3D::Broadcast_Adaptive_Block(block);
   if (!CFFC_Primary_MPI_Processor()) {
      if (block.used) {
         if (List_of_Available_Blocks.Nfree > 0) {
@@ -1049,7 +648,6 @@ inline istream &operator >> (istream &in_file,
   return (in_file);
 }
 
-
 /********************************************************
  * Class: Octree_DataStructure                          *
  *                                                      *
@@ -1110,8 +708,6 @@ inline istream &operator >> (istream &in_file,
  *   getNeighbour -- Return neighbour of octree block   *
  *                   in specified search direction of   *
  *                   interest.                          *
- *   findRootNeighbours -- Find neighbouring blocks of  *
- *                         all octree root blocks.      *
  *   findNeighbours -- Find neighbouring blocks of      *
  *                     octree block.                    *
  *   refineBlock   -- Refines (divides) a octree        *
@@ -1148,10 +744,11 @@ inline istream &operator >> (istream &in_file,
 class Octree_DataStructure{
   private:
   public:
+    int                     NR; // Total number of root blocks.
     int                    NRi; // Number of roots in i-direction.
     int                    NRj; // Number of roots in j-direction.
     int                    NRk; // Number of roots in k-direction.
-    OctreeBlock       ***Roots; // Roots of octree data structure.
+    OctreeBlock         *Roots; // Roots of octree data structure.
     int                   Ncpu; // Number of CPUs available.
     int                   Nblk; // Number of local blocks per CPU.
     OctreeBlock      ***Blocks; // Global list of pointers to blocks
@@ -1162,18 +759,18 @@ class Octree_DataStructure{
     int MaximumRefinementLevel; // Maximum allowable refinement level.
     int MinimumRefinementLevel; // Maximum allowable refinement level.
                                 // for blocks in data structures.
-	                        // Made public so can access them.
 
     /* Creation, copy, and assignment constructors. */
     Octree_DataStructure(void) {
-       NRi = 0; NRj = 0;NRk = 0; Roots = NULL;
+       NR = 0; NRi = 0; NRj = 0; NRk = 0; Roots = NULL;
        Ncpu = 0; Nblk = 0; Blocks = NULL; RefineFlags = NULL;
        MaximumRefinementLevel = 99; MinimumRefinementLevel = 0;
        RefineThreshold = 0.50; CoarsenThreshold = 0.10;
     }
 
     Octree_DataStructure(const Octree_DataStructure &QT) {
-       NRi = QT.NRi; NRj = QT.NRj; NRk = QT.NRk; Roots = QT.Roots;
+       NR = QT.NR; NRi = QT.NRi; NRj = QT.NRj; NRk = QT.NRk;
+       Roots = QT.Roots; 
        Ncpu = QT.Ncpu; Nblk = QT.Nblk; Blocks = QT.Blocks;
        RefineFlags = QT.RefineFlags;
        MaximumRefinementLevel = QT.MaximumRefinementLevel; 
@@ -1191,6 +788,7 @@ class Octree_DataStructure{
     // Use automatically generated assignment operator.
 
     /* Allocate memory for octree data structure. */
+    void allocate(const int n, const int ncpu, const int nblk);
     void allocate(const int ni, const int nj, const int nk, 
                   const int ncpu, const int nblk);
 
@@ -1198,6 +796,7 @@ class Octree_DataStructure{
     void deallocate(void);
 
     /* Allocate memory for octree data structure roots. */
+    void allocateRoots(const int n);
     void allocateRoots(const int ni, const int nj, const int nk);
 
     /* Deallocate memory for octree data structure roots. */
@@ -1225,12 +824,12 @@ class Octree_DataStructure{
     /* Octree block root indices. */
     AdaptiveBlock3D_Dimensions getRoot(OctreeBlock *Block_Ptr);
 
+    /* Reassign neighbour information for root blocks. */
+    void reassignRootNeighbours(void);
+
     /* Find neighbour of octree block in specified search direction. */
     OctreeBlock *getNeighbour(OctreeBlock *Block_Ptr,
-                                const int Search_Dir_Mask);
-
-    /* Find neighbouring blocks of all octree root blocks. */
-    void findRootNeighbours(void);
+                              const int Search_Dir_Mask);
 
     /* Find neighbouring blocks. */
     void findNeighbours(void);
@@ -1270,17 +869,10 @@ class Octree_DataStructure{
     static void Renumber_Solution_Blocks(Octree_DataStructure &Octree,
                                          AdaptiveBlock3D_List &LocalSolnBlockList);
 
-    static void Find_Neighbours_of_Root_Solution_Blocks(Octree_DataStructure &Octree);
+    static void Reassign_Root_Neighbours(Octree_DataStructure &Octree);
 
-    static void Find_Neighbours_of_Root_Solution_Blocks(Octree_DataStructure &Octree,
-                                                        AdaptiveBlock3D_List &LocalSolnBlockList);
-
-    static void Modify_Neighbours_of_Root_Solution_Blocks(Octree_DataStructure &Octree,
-                                                          const int Grid_Type);
-
-    static void Modify_Neighbours_of_Root_Solution_Blocks(Octree_DataStructure &Octree,
-                                                          AdaptiveBlock3D_List &LocalSolnBlockList,
-                                                          const int Grid_Type);
+    static void Reassign_Root_Neighbours(Octree_DataStructure &Octree,
+                                         AdaptiveBlock3D_List &LocalSolnBlockList);
 
     static void Find_Neighbours(Octree_DataStructure &Octree);
 
@@ -1301,51 +893,64 @@ class Octree_DataStructure{
 /*********************************************************************
  * Octree_DataStructure::allocate -- Allocate memory.                *
  *********************************************************************/
+inline void Octree_DataStructure::allocate(const int n, 
+                                           const int ncpu, 
+                                           const int nblk) {
+   assert( n > 0 && ncpu > 0 && nblk > 0 ); 
+   NR = n; NRi = n; NRj = 1; NRk = 1; Ncpu = ncpu; Nblk = nblk;
+   Roots = new OctreeBlock[NR];
+   Blocks = new OctreeBlock**[Ncpu];
+   for (int i = 0; i <= Ncpu-1 ; ++i) {
+      Blocks[i] = new OctreeBlock*[Nblk];
+      for (int j = 0; j <= Nblk-1; ++j) Blocks[i][j] = NULL; 
+   } /* endfor */
+   RefineFlags = new int*[Ncpu];
+   for (int i = 0; i <= Ncpu-1 ; ++i ) RefineFlags[i] = new int[Nblk];
+   nochangeAll();
+}
+
 inline void Octree_DataStructure::allocate(const int ni, 
                                            const int nj, 
                                            const int nk, 
                                            const int ncpu, 
                                            const int nblk) {
-   int i, j,k ; 
    assert( ni > 0 && nj > 0 && nk > 0 && ncpu > 0 && nblk > 0 );
-   NRi = ni; NRj = nj; NRk = nk; Ncpu = ncpu; Nblk = nblk;
-   Roots = new OctreeBlock**[NRi];
-   for ( i = 0; i <= NRi-1 ; ++i ) {
-     Roots[i] = new OctreeBlock*[NRj];
-     for ( j = 0; j <= NRj-1 ; ++j ) Roots[i][j] = new OctreeBlock[NRk];
-   } 
-  Blocks = new OctreeBlock**[Ncpu];
-   for ( i = 0; i <= Ncpu-1 ; ++i ) {
+   NR = ni*nj*nk; NRi = ni; NRj = nj; NRk = nk; Ncpu = ncpu; Nblk = nblk;
+   Roots = new OctreeBlock[NR];
+   Blocks = new OctreeBlock**[Ncpu];
+   for (int i = 0; i <= Ncpu-1 ; ++i) {
       Blocks[i] = new OctreeBlock*[Nblk];
-      for ( j = 0; j <= Nblk-1; ++j) Blocks[i][j] = NULL; 
+      for (int j = 0; j <= Nblk-1; ++j) Blocks[i][j] = NULL; 
    } /* endfor */
    RefineFlags = new int*[Ncpu];
-   for ( i = 0; i <= Ncpu-1 ; ++i ) RefineFlags[i] = new int[Nblk];
+   for (int i = 0; i <= Ncpu-1 ; ++i) RefineFlags[i] = new int[Nblk];
    nochangeAll();
+}
+
+inline void Octree_DataStructure::allocateRoots(const int n) {
+   assert( n > 0 );
+   NR = n; NRi = n; NRj = 1; NRk = 1;
+   Roots = new OctreeBlock[NR];
 }
 
 inline void Octree_DataStructure::allocateRoots(const int ni, 
 						const int nk,
                                                 const int nj) {
-   int i,j; assert( ni > 0 && nj > 0 && nk > 0 );
-   NRi = ni; NRj = nj; NRk = nk; Roots = new OctreeBlock**[NRi];
-   for ( i = 0; i <= NRi-1 ; ++i ) {
-     Roots[i] = new OctreeBlock*[NRj];
-     for ( j = 0; j <= NRj-1 ; ++j ) 
-       Roots[i][j] = new OctreeBlock[NRk];
-   }
+   assert( ni > 0 && nj > 0 && nk > 0 );
+   NR = ni*nj*nk; NRi = ni; NRj = nj; NRk = nk;
+   Roots = new OctreeBlock[NR];
 }
 
 inline void Octree_DataStructure::allocateBlocks(const int ncpu, 
                                                  const int nblk) {
-   int i, j; assert( ncpu > 0 && nblk > 0 );
+   assert( ncpu > 0 && nblk > 0 );
    Ncpu = ncpu; Nblk = nblk; Blocks = new OctreeBlock**[Ncpu];
-   for ( i = 0; i <= Ncpu-1 ; ++i ) {
+   for (int i = 0; i <= Ncpu-1 ; ++i) {
       Blocks[i] = new OctreeBlock*[Nblk];
-      for ( j = 0; j <= Nblk-1; ++j) Blocks[i][j] = NULL; 
+      for (int j = 0; j <= Nblk-1; ++j) Blocks[i][j] = NULL; 
    } /* endfor */
    RefineFlags = new int*[Ncpu];
-   for ( i = 0; i <= Ncpu-1 ; ++i ) RefineFlags[i] = new int[Nblk];
+   for (int i = 0; i <= Ncpu-1 ; ++i) RefineFlags[i] = new int[Nblk];
    nochangeAll();
 }
 
@@ -1353,19 +958,13 @@ inline void Octree_DataStructure::allocateBlocks(const int ncpu,
  * Octree_DataStructure::deallocate -- Deallocate memory.            *
  *********************************************************************/
 inline void Octree_DataStructure::deallocate(void) {
-   int i, j;
-   for ( i = 0; i <= NRi-1 ; ++i ) {
-     for ( j = 0; j <= NRj-1 ; ++j ) delete []Roots[i][j]; 
-     delete []Roots[i]; 
-     Roots[i] = NULL;
-   } /* endfor */
    delete []Roots; Roots = NULL;
-   NRi = 0; NRj = 0; NRk = 0;
-   for ( i = 0; i <= Ncpu-1 ; ++i ) {
+   NR = 0; NRi = 0; NRj = 0; NRk = 0;
+   for (int i = 0; i <= Ncpu-1 ; ++i) {
       delete []Blocks[i]; Blocks[i] = NULL;
    } /* endfor */
    delete []Blocks; Blocks = NULL;
-   for ( i = 0; i <= Ncpu-1 ; ++i ) {
+   for (int i = 0; i <= Ncpu-1 ; ++i) {
       delete []RefineFlags[i]; RefineFlags[i] = NULL;
    } /* endfor */
    delete []RefineFlags; RefineFlags = NULL;
@@ -1373,23 +972,16 @@ inline void Octree_DataStructure::deallocate(void) {
 }
 
 inline void Octree_DataStructure::deallocateRoots(void) {
-   int i,j;
-  for ( i = 0; i <= NRi-1 ; ++i ) {
-     for ( j = 0; j <= NRj-1 ; ++j ) delete []Roots[i][j]; 
-     delete []Roots[i]; 
-     Roots[i] = NULL;
-   } /* endfor */
   delete []Roots; Roots = NULL;
-  NRi = 0; NRj = 0; NRk = 0;
+  NR = 0; NRi = 0; NRj = 0; NRk = 0;
 }
 
 inline void Octree_DataStructure::deallocateBlocks(void) {
-   int i;
-   for ( i = 0; i <= Ncpu-1 ; ++i ) {
+   for (int i = 0; i <= Ncpu-1 ; ++i) {
       delete []Blocks[i]; Blocks[i] = NULL;
    } /* endfor */
    delete []Blocks; Blocks = NULL;
-   for ( i = 0; i <= Ncpu-1 ; ++i ) {
+   for (int i = 0; i <= Ncpu-1 ; ++i) {
       delete []RefineFlags[i]; RefineFlags[i] = NULL;
    } /* endfor */
    delete []RefineFlags; RefineFlags = NULL;
@@ -1428,31 +1020,27 @@ inline void Octree_DataStructure::assign_block_ptr(OctreeBlock *Block_Ptr) {
 }
 
 inline void Octree_DataStructure::assign_block_pointers(void) {
-   int iBLK, jBLK,kBLK;
-   for ( jBLK = 0; jBLK <= Nblk-1; ++jBLK) 
-     for ( iBLK = 0; iBLK <= Ncpu-1 ; ++iBLK ) {
+   for (int jBLK = 0; jBLK <= Nblk-1; ++jBLK) {
+      for (int iBLK = 0; iBLK <= Ncpu-1; ++iBLK) {
          Blocks[iBLK][jBLK] = NULL;
-       } /* endfor */
-   for ( kBLK = 0 ; kBLK <= NRk-1 ; ++kBLK ) 
-     for ( jBLK = 0 ; jBLK <= NRj-1 ; ++jBLK ) 
-      for ( iBLK = 0 ; iBLK <= NRi-1 ; ++iBLK ) {
- 	 assign_block_ptr(&(Roots[iBLK][jBLK][kBLK]));
       } /* endfor */
+   } /* endfor */
+   for (int iBLK = 0 ; iBLK <= NR-1; ++iBLK ) {
+      assign_block_ptr(&(Roots[iBLK]));
+   } /* endfor */
 }
 
 /****************************************************************************
  * Octree_DataStructure::renumber -- Renumber octree blocks.                *
  ****************************************************************************/
 inline void Octree_DataStructure::renumber(void) {
-   int iCPU, nBLK, global_block_number;
-   global_block_number = 0;
-   for ( nBLK = 0 ; nBLK <= Nblk-1 ; ++nBLK ) {
-      for ( iCPU = 0 ; iCPU <= Ncpu-1 ; ++iCPU ) {
+   int global_block_number(0);
+   for (int nBLK = 0 ; nBLK <= Nblk-1 ; ++nBLK) {
+      for (int iCPU = 0 ; iCPU <= Ncpu-1 ; ++iCPU) {
          if (Blocks[iCPU][nBLK] != NULL) {
             if (Blocks[iCPU][nBLK]->block.used) {
-               Blocks[iCPU][nBLK]->block.gblknum = global_block_number;
+               Blocks[iCPU][nBLK]->block.info.gblknum = global_block_number;
                ++global_block_number;
-             
             } /* endif */
          } /* endif */
       } /* endfor */
@@ -1463,10 +1051,9 @@ inline void Octree_DataStructure::renumber(void) {
  * Octree_DataStructure::countUsedBlocks -- Number of used blocks.          *
  ****************************************************************************/
 inline int Octree_DataStructure::countUsedBlocks(void) {
-  int iCPU, nBLK, number_of_used_blocks;
-  number_of_used_blocks = 0;
-  for ( nBLK = 0 ; nBLK <= Nblk-1 ; ++nBLK ) {
-      for ( iCPU = 0 ; iCPU <= Ncpu-1 ; ++iCPU ) {
+  int number_of_used_blocks(0);
+  for (int nBLK = 0 ; nBLK <= Nblk-1 ; ++nBLK ) {
+      for (int iCPU = 0 ; iCPU <= Ncpu-1 ; ++iCPU ) {
          if (Blocks[iCPU][nBLK] != NULL) {
             if (Blocks[iCPU][nBLK]->block.used) {
                ++number_of_used_blocks;
@@ -1481,10 +1068,9 @@ inline int Octree_DataStructure::countUsedBlocks(void) {
  * Octree_DataStructure::countUsedCells -- Number of used cells.            *
  ****************************************************************************/
 inline int Octree_DataStructure::countUsedCells(void) {
-  int iCPU, nBLK, number_of_used_cells;
-  number_of_used_cells = 0;
-  for ( nBLK = 0 ; nBLK <= Nblk-1 ; ++nBLK ) {
-      for ( iCPU = 0 ; iCPU <= Ncpu-1 ; ++iCPU ) {
+  int number_of_used_cells(0);
+  for (int nBLK = 0 ; nBLK <= Nblk-1 ; ++nBLK) {
+      for (int iCPU = 0 ; iCPU <= Ncpu-1 ; ++iCPU) {
          if (Blocks[iCPU][nBLK] != NULL) {
             if (Blocks[iCPU][nBLK]->block.used) {
                number_of_used_cells += Blocks[iCPU][nBLK]->block.info.dimen.i*
@@ -1501,18 +1087,17 @@ inline int Octree_DataStructure::countUsedCells(void) {
  * Octree_DataStructure::efficiencyRefinement -- Refinment efficiency.        *
  ******************************************************************************/
 inline double Octree_DataStructure::efficiencyRefinement(void) {
-  int iCPU, nBLK, number_of_used_cells, number_of_cells_with_uniform_mesh, max_level;
-  number_of_used_cells = 0; number_of_cells_with_uniform_mesh = 0;
+  int number_of_used_cells(0), number_of_cells_with_uniform_mesh(0), max_level;
   max_level = highestRefinementLevel();
-  for ( nBLK = 0 ; nBLK <= Nblk-1 ; ++nBLK ) {
-      for ( iCPU = 0 ; iCPU <= Ncpu-1 ; ++iCPU ) {
+  for (int nBLK = 0 ; nBLK <= Nblk-1 ; ++nBLK) {
+      for (int iCPU = 0 ; iCPU <= Ncpu-1 ; ++iCPU) {
          if (Blocks[iCPU][nBLK] != NULL) {
             if (Blocks[iCPU][nBLK]->block.used) {
                number_of_used_cells += Blocks[iCPU][nBLK]->block.info.dimen.i*
                                        Blocks[iCPU][nBLK]->block.info.dimen.j*
                                        Blocks[iCPU][nBLK]->block.info.dimen.k;
                number_of_cells_with_uniform_mesh +=
-                                       int(pow(double(4), double(max_level-Blocks[iCPU][nBLK]->block.info.level)))*
+                                       int(pow(double(8), double(max_level-Blocks[iCPU][nBLK]->block.info.level)))*
                                        (Blocks[iCPU][nBLK]->block.info.dimen.i*
                                         Blocks[iCPU][nBLK]->block.info.dimen.j*
                                         Blocks[iCPU][nBLK]->block.info.dimen.k);
@@ -1527,15 +1112,313 @@ inline double Octree_DataStructure::efficiencyRefinement(void) {
  * Octree_DataStructure::getRoot -- Get root indices.                       *
  ****************************************************************************/
 inline AdaptiveBlock3D_Dimensions Octree_DataStructure::getRoot(OctreeBlock *Block_Ptr) {
-  int iBLK, jBLK, kBLK;
-  for ( kBLK = 0 ; kBLK <= NRk-1 ; ++kBLK ) 
-    for ( jBLK = 0 ; jBLK <= NRj-1 ; ++jBLK ) 
-      for ( iBLK = 0 ; iBLK <= NRi-1 ; ++iBLK ) {
-         if (Block_Ptr == &(Roots[iBLK][jBLK][kBLK])) {
-            return (AdaptiveBlock3D_Dimensions(iBLK, jBLK, kBLK, 0));
-         } /* endif */
-      } /* endfor */
+  for (int kBLK = 0 ; kBLK <= NRk-1 ; ++kBLK) {
+    for (int jBLK = 0 ; jBLK <= NRj-1 ; ++jBLK) {
+       for (int iBLK = 0 ; iBLK <= NRi-1 ; ++iBLK) {
+          if (Block_Ptr == &(Roots[iBLK*jBLK*kBLK])) {
+             return (AdaptiveBlock3D_Dimensions(iBLK, jBLK, kBLK, 0));
+          } /* endif */
+       } /* endfor */
+    } /* endfor */
+  } /* endfor */
   return (AdaptiveBlock3D_Dimensions(-1, -1, -1, 0));
+}
+
+/****************************************************************************
+ * Octree_DataStructure::reassignRootNeighbours -- Reassign root neighbours.*
+ ****************************************************************************/
+inline void Octree_DataStructure::reassignRootNeighbours(void) {
+
+   int nr_neighbour;
+
+   for (int nr = 0; nr <= NR-1; ++nr) {
+      if (Roots[nr].block.nT > 0) {
+         for (int nr_search = 0; nr_search <= NR-1; ++nr_search) {
+            if (Roots[nr_search].block.info.gblknum == Roots[nr].block.infoT[0].gblknum) {
+	       nr_neighbour = nr_search;
+	       break;
+	    } /* endif */
+         } /* endfor */
+         Roots[nr].block.infoT[0].blknum = Roots[nr_neighbour].block.info.blknum;
+         Roots[nr].block.infoT[0].cpu = Roots[nr_neighbour].block.info.cpu;
+      } /* endif */
+
+      if (Roots[nr].block.nB > 0) {
+         for (int nr_search = 0; nr_search <= NR-1; ++nr_search) {
+            if (Roots[nr_search].block.info.gblknum == Roots[nr].block.infoB[0].gblknum) {
+	       nr_neighbour = nr_search;
+	       break;
+	    } /* endif */
+         } /* endfor */
+         Roots[nr].block.infoB[0].blknum = Roots[nr_neighbour].block.info.blknum;
+         Roots[nr].block.infoB[0].cpu = Roots[nr_neighbour].block.info.cpu;
+      } /* endif */
+   
+      if (Roots[nr].block.nN > 0) {
+         for (int nr_search = 0; nr_search <= NR-1; ++nr_search) {
+            if (Roots[nr_search].block.info.gblknum == Roots[nr].block.infoN[0].gblknum) {
+	       nr_neighbour = nr_search;
+	       break;
+	    } /* endif */
+         } /* endfor */
+         Roots[nr].block.infoN[0].blknum = Roots[nr_neighbour].block.info.blknum;
+         Roots[nr].block.infoN[0].cpu = Roots[nr_neighbour].block.info.cpu;
+      } /* endif */
+   
+      if (Roots[nr].block.nS > 0) {
+         for (int nr_search = 0; nr_search <= NR-1; ++nr_search) {
+            if (Roots[nr_search].block.info.gblknum == Roots[nr].block.infoS[0].gblknum) {
+	       nr_neighbour = nr_search;
+	       break;
+	    } /* endif */
+         } /* endfor */
+         Roots[nr].block.infoS[0].blknum = Roots[nr_neighbour].block.info.blknum;
+         Roots[nr].block.infoS[0].cpu = Roots[nr_neighbour].block.info.cpu;
+      } /* endif */
+ 
+      if (Roots[nr].block.nE > 0) {
+         for (int nr_search = 0; nr_search <= NR-1; ++nr_search) {
+            if (Roots[nr_search].block.info.gblknum == Roots[nr].block.infoE[0].gblknum) {
+	       nr_neighbour = nr_search;
+	       break;
+	    } /* endif */
+         } /* endfor */
+         Roots[nr].block.infoE[0].blknum = Roots[nr_neighbour].block.info.blknum;
+         Roots[nr].block.infoE[0].cpu = Roots[nr_neighbour].block.info.cpu;
+      } /* endif */
+
+      if (Roots[nr].block.nW > 0) {
+         for (int nr_search = 0; nr_search <= NR-1; ++nr_search) {
+            if (Roots[nr_search].block.info.gblknum == Roots[nr].block.infoW[0].gblknum) {
+	       nr_neighbour = nr_search;
+	       break;
+	    } /* endif */
+         } /* endfor */
+         Roots[nr].block.infoW[0].blknum = Roots[nr_neighbour].block.info.blknum;
+         Roots[nr].block.infoW[0].cpu = Roots[nr_neighbour].block.info.cpu;
+      } /* endif */
+      
+      if (Roots[nr].block.nNW > 0) {
+         for (int nr_search = 0; nr_search <= NR-1; ++nr_search) {
+            if (Roots[nr_search].block.info.gblknum == Roots[nr].block.infoNW[0].gblknum) {
+	       nr_neighbour = nr_search;
+	       break;
+	    } /* endif */
+         } /* endfor */
+         Roots[nr].block.infoNW[0].blknum = Roots[nr_neighbour].block.info.blknum;
+         Roots[nr].block.infoNW[0].cpu = Roots[nr_neighbour].block.info.cpu;
+      } /* endif */
+
+      if (Roots[nr].block.nNE > 0) {
+         for (int nr_search = 0; nr_search <= NR-1; ++nr_search) {
+            if (Roots[nr_search].block.info.gblknum == Roots[nr].block.infoNE[0].gblknum) {
+	       nr_neighbour = nr_search;
+	       break;
+	    } /* endif */
+         } /* endfor */
+         Roots[nr].block.infoNE[0].blknum = Roots[nr_neighbour].block.info.blknum;
+         Roots[nr].block.infoNE[0].cpu = Roots[nr_neighbour].block.info.cpu;
+      } /* endif */
+   
+      if (Roots[nr].block.nSE > 0) {
+         for (int nr_search = 0; nr_search <= NR-1; ++nr_search) {
+            if (Roots[nr_search].block.info.gblknum == Roots[nr].block.infoSE[0].gblknum) {
+	       nr_neighbour = nr_search;
+	       break;
+	    } /* endif */
+         } /* endfor */
+         Roots[nr].block.infoSE[0].blknum = Roots[nr_neighbour].block.info.blknum;
+         Roots[nr].block.infoSE[0].cpu = Roots[nr_neighbour].block.info.cpu;
+      } /* endif */
+
+      if (Roots[nr].block.nSW > 0) {
+         for (int nr_search = 0; nr_search <= NR-1; ++nr_search) {
+            if (Roots[nr_search].block.info.gblknum == Roots[nr].block.infoSW[0].gblknum) {
+	       nr_neighbour = nr_search;
+	       break;
+	    } /* endif */
+         } /* endfor */
+         Roots[nr].block.infoSW[0].blknum = Roots[nr_neighbour].block.info.blknum;
+         Roots[nr].block.infoSW[0].cpu = Roots[nr_neighbour].block.info.cpu;
+      } /* endif */
+
+      if (Roots[nr].block.nTN > 0) {
+         for (int nr_search = 0; nr_search <= NR-1; ++nr_search) {
+            if (Roots[nr_search].block.info.gblknum == Roots[nr].block.infoTN[0].gblknum) {
+	       nr_neighbour = nr_search;
+	       break;
+	    } /* endif */
+         } /* endfor */
+         Roots[nr].block.infoTN[0].blknum = Roots[nr_neighbour].block.info.blknum;
+         Roots[nr].block.infoTN[0].cpu = Roots[nr_neighbour].block.info.cpu;
+      } /* endif */
+
+      if (Roots[nr].block.nTS > 0) {
+         for (int nr_search = 0; nr_search <= NR-1; ++nr_search) {
+            if (Roots[nr_search].block.info.gblknum == Roots[nr].block.infoTS[0].gblknum) {
+	       nr_neighbour = nr_search;
+	       break;
+	    } /* endif */
+         } /* endfor */
+         Roots[nr].block.infoTS[0].blknum = Roots[nr_neighbour].block.info.blknum;
+         Roots[nr].block.infoTS[0].cpu = Roots[nr_neighbour].block.info.cpu;
+      } /* endif */
+   
+      if (Roots[nr].block.nTE > 0) {
+         for (int nr_search = 0; nr_search <= NR-1; ++nr_search) {
+            if (Roots[nr_search].block.info.gblknum == Roots[nr].block.infoTE[0].gblknum) {
+	       nr_neighbour = nr_search;
+	       break;
+	    } /* endif */
+         } /* endfor */
+         Roots[nr].block.infoTE[0].blknum = Roots[nr_neighbour].block.info.blknum;
+         Roots[nr].block.infoTE[0].cpu = Roots[nr_neighbour].block.info.cpu;
+      } /* endif */
+
+      if (Roots[nr].block.nTW > 0) {
+         for (int nr_search = 0; nr_search <= NR-1; ++nr_search) {
+            if (Roots[nr_search].block.info.gblknum == Roots[nr].block.infoTW[0].gblknum) {
+	       nr_neighbour = nr_search;
+	       break;
+	    } /* endif */
+         } /* endfor */
+         Roots[nr].block.infoTW[0].blknum = Roots[nr_neighbour].block.info.blknum;
+         Roots[nr].block.infoTW[0].cpu = Roots[nr_neighbour].block.info.cpu;
+      } /* endif */
+
+      if (Roots[nr].block.nBN > 0) {
+         for (int nr_search = 0; nr_search <= NR-1; ++nr_search) {
+            if (Roots[nr_search].block.info.gblknum == Roots[nr].block.infoBN[0].gblknum) {
+	       nr_neighbour = nr_search;
+	       break;
+	    } /* endif */
+         } /* endfor */
+         Roots[nr].block.infoBN[0].blknum = Roots[nr_neighbour].block.info.blknum;
+         Roots[nr].block.infoBN[0].cpu = Roots[nr_neighbour].block.info.cpu;
+      } /* endif */
+
+      if (Roots[nr].block.nBS > 0) {
+         for (int nr_search = 0; nr_search <= NR-1; ++nr_search) {
+            if (Roots[nr_search].block.info.gblknum == Roots[nr].block.infoBS[0].gblknum) {
+	       nr_neighbour = nr_search;
+	       break;
+	    } /* endif */
+         } /* endfor */
+         Roots[nr].block.infoBS[0].blknum = Roots[nr_neighbour].block.info.blknum;
+         Roots[nr].block.infoBS[0].cpu = Roots[nr_neighbour].block.info.cpu;;
+      } /* endif */
+
+      if (Roots[nr].block.nBE > 0) {
+         for (int nr_search = 0; nr_search <= NR-1; ++nr_search) {
+            if (Roots[nr_search].block.info.gblknum == Roots[nr].block.infoBE[0].gblknum) {
+	       nr_neighbour = nr_search;
+	       break;
+	    } /* endif */
+         } /* endfor */
+         Roots[nr].block.infoBE[0].blknum = Roots[nr_neighbour].block.info.blknum;
+         Roots[nr].block.infoBE[0].cpu = Roots[nr_neighbour].block.info.cpu;
+      } /* endif */
+ 
+      if (Roots[nr].block.nBW > 0) {
+         for (int nr_search = 0; nr_search <= NR-1; ++nr_search) {
+            if (Roots[nr_search].block.info.gblknum == Roots[nr].block.infoBW[0].gblknum) {
+	       nr_neighbour = nr_search;
+	       break;
+	    } /* endif */
+         } /* endfor */
+         Roots[nr].block.infoBW[0].blknum = Roots[nr_neighbour].block.info.blknum;
+         Roots[nr].block.infoBW[0].cpu = Roots[nr_neighbour].block.info.cpu;
+      } /* endif */
+
+      if (Roots[nr].block.nTNW > 0) {
+         for (int nr_search = 0; nr_search <= NR-1; ++nr_search) {
+            if (Roots[nr_search].block.info.gblknum == Roots[nr].block.infoTNW[0].gblknum) {
+	       nr_neighbour = nr_search;
+	       break;
+	    } /* endif */
+         } /* endfor */
+         Roots[nr].block.infoTNW[0].blknum = Roots[nr_neighbour].block.info.blknum;
+         Roots[nr].block.infoTNW[0].cpu = Roots[nr_neighbour].block.info.cpu;
+      } /* endif */
+
+      if (Roots[nr].block.nTSW > 0) {
+         for (int nr_search = 0; nr_search <= NR-1; ++nr_search) {
+            if (Roots[nr_search].block.info.gblknum == Roots[nr].block.infoTSW[0].gblknum) {
+	       nr_neighbour = nr_search;
+	       break;
+	    } /* endif */
+         } /* endfor */
+         Roots[nr].block.infoTSW[0].blknum = Roots[nr_neighbour].block.info.blknum;
+         Roots[nr].block.infoTSW[0].cpu = Roots[nr_neighbour].block.info.cpu;
+      } /* endif */
+
+      if (Roots[nr].block.nTNE > 0) {
+         for (int nr_search = 0; nr_search <= NR-1; ++nr_search) {
+            if (Roots[nr_search].block.info.gblknum == Roots[nr].block.infoTNE[0].gblknum) {
+	       nr_neighbour = nr_search;
+	       break;
+	    } /* endif */
+         } /* endfor */
+         Roots[nr].block.infoTNE[0].blknum = Roots[nr_neighbour].block.info.blknum;
+         Roots[nr].block.infoTNE[0].cpu = Roots[nr_neighbour].block.info.cpu;
+      } /* endif */
+
+      if (Roots[nr].block.nTSE > 0) {
+         for (int nr_search = 0; nr_search <= NR-1; ++nr_search) {
+            if (Roots[nr_search].block.info.gblknum == Roots[nr].block.infoTSE[0].gblknum) {
+	       nr_neighbour = nr_search;
+	       break;
+	    } /* endif */
+         } /* endfor */
+         Roots[nr].block.infoTSE[0].blknum = Roots[nr_neighbour].block.info.blknum;
+         Roots[nr].block.infoTSE[0].cpu = Roots[nr_neighbour].block.info.cpu;
+      } /* endif */
+
+      if (Roots[nr].block.nBNW > 0) {
+         for (int nr_search = 0; nr_search <= NR-1; ++nr_search) {
+            if (Roots[nr_search].block.info.gblknum == Roots[nr].block.infoBNW[0].gblknum) {
+	       nr_neighbour = nr_search;
+	       break;
+	    } /* endif */
+         } /* endfor */
+         Roots[nr].block.infoBNW[0].blknum = Roots[nr_neighbour].block.info.blknum;
+         Roots[nr].block.infoBNW[0].cpu = Roots[nr_neighbour].block.info.cpu;
+      } /* endif */
+
+      if (Roots[nr].block.nBSW > 0) {
+         for (int nr_search = 0; nr_search <= NR-1; ++nr_search) {
+            if (Roots[nr_search].block.info.gblknum == Roots[nr].block.infoBSW[0].gblknum) {
+	       nr_neighbour = nr_search;
+	       break;
+	    } /* endif */
+         } /* endfor */
+         Roots[nr].block.infoBSW[0].blknum = Roots[nr_neighbour].block.info.blknum;
+         Roots[nr].block.infoBSW[0].cpu = Roots[nr_neighbour].block.info.cpu;
+      } /* endif */
+
+      if (Roots[nr].block.nBNE > 0) {
+         for (int nr_search = 0; nr_search <= NR-1; ++nr_search) {
+            if (Roots[nr_search].block.info.gblknum == Roots[nr].block.infoBNE[0].gblknum) {
+	       nr_neighbour = nr_search;
+	       break;
+	    } /* endif */
+         } /* endfor */
+         Roots[nr].block.infoBNE[0].blknum = Roots[nr_neighbour].block.info.blknum;
+         Roots[nr].block.infoBNE[0].cpu = Roots[nr_neighbour].block.info.cpu;
+      } /* endif */
+
+      if (Roots[nr].block.nBSE > 0) {
+         for (int nr_search = 0; nr_search <= NR-1; ++nr_search) {
+            if (Roots[nr_search].block.info.gblknum == Roots[nr].block.infoBSE[0].gblknum) {
+	       nr_neighbour = nr_search;
+	       break;
+	    } /* endif */
+         } /* endfor */
+         Roots[nr].block.infoBSE[0].blknum = Roots[nr_neighbour].block.info.blknum;
+         Roots[nr].block.infoBSE[0].cpu = Roots[nr_neighbour].block.info.cpu;
+      } /* endif */
+   } /* endfor */
+
 }
 
 /****************************************************************************
@@ -1543,2522 +1426,19 @@ inline AdaptiveBlock3D_Dimensions Octree_DataStructure::getRoot(OctreeBlock *Blo
  ****************************************************************************/
 inline OctreeBlock *Octree_DataStructure::getNeighbour(OctreeBlock *Block_Ptr,
                                                        const int Search_Dir_Mask) {
-  int iBLK, jBLK, kBLK;
   assert(Block_Ptr!=NULL);//used for debugging
-  OctreeBlock *neighbour_block_ptr; AdaptiveBlock3D_Dimensions index; 
-  AdaptiveBlock3D_Dimensions search_direction;
-  // if (Block_Ptr->parent_ptr != NULL) cout<<" BLOCK HAS A PARENT"
-
-  if (Block_Ptr->parent_ptr == NULL || // Block has no parent.  Block is a root.  
-      Block_Ptr->block.info.sector == OCTREE_SECTOR_NONE) {
-     index = getRoot(Block_Ptr);  // Get indices of root block.
-     //cout<<"\nFor Block_Ptr= "<<Block_Ptr->block.info<<"Index of getRoot(Block_Ptr) is "<<index;
-     switch(Search_Dir_Mask) { // Find neighbouring root block.  Check each direction.
-     case OCTREE_DIRECTION_MASK_EAST :
-         if (index.i < NRi-1) {
-            if (Block_Ptr->block.nE > 0) {
-               neighbour_block_ptr = &(Roots[index.i+1][index.j][index.k]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else {
-	    if (Block_Ptr->block.nE > 0) {
-               neighbour_block_ptr = &(Roots[0][index.j][index.k]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } /* endif */
-         break;
-       case OCTREE_DIRECTION_MASK_WEST :
-         if (index.i > 0) {
-            if (Block_Ptr->block.nW > 0) {
-               neighbour_block_ptr = &(Roots[index.i-1][index.j][index.k]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else {
-	    if (Block_Ptr->block.nW > 0) {
-               neighbour_block_ptr = &(Roots[NRi-1][index.j][index.k]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } /* endif */
-         break;
-       case OCTREE_DIRECTION_MASK_NORTH :
-         if (index.j < NRj-1) {
-            if (Block_Ptr->block.nN > 0) {
-               neighbour_block_ptr = &(Roots[index.i][index.j+1][index.k]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else {
-            if (Block_Ptr->block.nN > 0) {
-               neighbour_block_ptr = &(Roots[index.i][0][index.k]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } /* endif */
-         break;
-       case OCTREE_DIRECTION_MASK_SOUTH :
-         if (index.j > 0) {
-            if (Block_Ptr->block.nS > 0) {
-               neighbour_block_ptr = &(Roots[index.i][index.j-1][index.k]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else {
-            if (Block_Ptr->block.nS > 0) {
-               neighbour_block_ptr = &(Roots[index.i][NRj-1][index.k]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } /* endif */
-         break;
-       case OCTREE_DIRECTION_MASK_TOP :
-         if (index.k < NRk-1) {
-            if (Block_Ptr->block.nT > 0) {
-	      neighbour_block_ptr = &(Roots[index.i][index.j][index.k+1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else {
-            if (Block_Ptr->block.nT > 0) {
-               neighbour_block_ptr = &(Roots[index.i][index.j][0]);
-            } else {
-	      neighbour_block_ptr = NULL;
-            } /* endif */
-         } /* endif */
-         break;
-       case OCTREE_DIRECTION_MASK_BOTTOM :
-         if (index.k > 0) {
-            if (Block_Ptr->block.nB > 0) {
-               neighbour_block_ptr = &(Roots[index.i][index.j][index.k-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else {
-            if (Block_Ptr->block.nB > 0) {
-               neighbour_block_ptr = &(Roots[index.i][index.j][NRk-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } /* endif */
-         break;
-
-       case OCTREE_DIRECTION_MASK_SOUTHWEST :
-         if (index.i > 0 && index.j > 0) {
-            if (Block_Ptr->block.nSW > 0) {
-               neighbour_block_ptr = &(Roots[index.i-1][index.j-1][index.k]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.j > 0) {
-            if (Block_Ptr->block.nSW > 0) {
-               neighbour_block_ptr = &(Roots[NRi-1][index.j-1][index.k]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.i > 0) {
-            if (Block_Ptr->block.nSW > 0) {
-               neighbour_block_ptr = &(Roots[index.i-1][NRj-1][index.k]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else {
-            if (Block_Ptr->block.nSW > 0) {
-               neighbour_block_ptr = &(Roots[NRi-1][NRj-1][index.k]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } /* endif */
-         break;
-       case OCTREE_DIRECTION_MASK_SOUTHEAST :
-         if (index.i < NRi-1 && index.j > 0) {
-           if (Block_Ptr->block.nSE > 0) {
-               neighbour_block_ptr = &(Roots[index.i+1][index.j-1][index.k]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.j > 0) {
-           if (Block_Ptr->block.nSE > 0) {
-               neighbour_block_ptr = &(Roots[0][index.j-1][index.k]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.i < NRi-1) {
-           if (Block_Ptr->block.nSE > 0) {
-               neighbour_block_ptr = &(Roots[index.i+1][NRj-1][index.k]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else {
-           if (Block_Ptr->block.nSE > 0) {
-               neighbour_block_ptr = &(Roots[0][NRj-1][index.k]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } /* endif */
-         break;
-       case OCTREE_DIRECTION_MASK_NORTHWEST :
-         if (index.i > 0 && index.j < NRj-1) {
-           if (Block_Ptr->block.nNW > 0) {
-               neighbour_block_ptr = &(Roots[index.i-1][index.j+1][index.k]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.j < NRj-1) {
-           if (Block_Ptr->block.nNW > 0) {
-               neighbour_block_ptr = &(Roots[NRi-1][index.j+1][index.k]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.i > 0) {
-           if (Block_Ptr->block.nNW > 0) {
-               neighbour_block_ptr = &(Roots[index.i-1][0][index.k]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else {
-           if (Block_Ptr->block.nNW > 0) {
-               neighbour_block_ptr = &(Roots[NRi-1][0][index.k]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } /* endif */
-         break;
-       case OCTREE_DIRECTION_MASK_NORTHEAST :
-         if (index.i < NRi-1 && index.j < NRj-1) {
-           if (Block_Ptr->block.nNE > 0) {
-               neighbour_block_ptr = &(Roots[index.i+1][index.j+1][index.k]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.j < NRj-1) {
-           if (Block_Ptr->block.nNE > 0) {
-               neighbour_block_ptr = &(Roots[0][index.j+1][index.k]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-	 } else if (index.i < NRi-1) {
-           if (Block_Ptr->block.nNE > 0) {
-               neighbour_block_ptr = &(Roots[index.i+1][0][index.k]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else {
-           if (Block_Ptr->block.nNE > 0) {
-               neighbour_block_ptr = &(Roots[0][0][index.k]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } /* endif */
-         break;
-
-
-       case OCTREE_DIRECTION_MASK_BOTTOMWEST :
-         if (index.i > 0 && index.k > 0) {
-            if (Block_Ptr->block.nBW > 0) {
-               neighbour_block_ptr = &(Roots[index.i-1][index.j][index.k-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.k > 0) {
-            if (Block_Ptr->block.nBW > 0) {
-               neighbour_block_ptr = &(Roots[NRi-1][index.j][index.k-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.i > 0) {
-            if (Block_Ptr->block.nBW > 0) {
-               neighbour_block_ptr = &(Roots[index.i-1][index.j][NRk-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else {
-            if (Block_Ptr->block.nBW > 0) {
-               neighbour_block_ptr = &(Roots[NRi-1][index.j][NRk-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } /* endif */
-         break;
-       case OCTREE_DIRECTION_MASK_BOTTOMEAST :
-         if (index.i < NRi-1 && index.k > 0) {
-           if (Block_Ptr->block.nBE > 0) {
-               neighbour_block_ptr = &(Roots[index.i+1][index.j][index.k-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.k > 0) {
-           if (Block_Ptr->block.nBE > 0) {
-               neighbour_block_ptr = &(Roots[0][index.j][index.k-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.i < NRi-1) {
-           if (Block_Ptr->block.nBE > 0) {
-               neighbour_block_ptr = &(Roots[index.i+1][index.j][NRk-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else {
-           if (Block_Ptr->block.nBE > 0) {
-               neighbour_block_ptr = &(Roots[0][index.j][NRk-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } /* endif */
-         break;
-       case OCTREE_DIRECTION_MASK_BOTTOMNORTH :
-         if (index.k > 0 && index.j < NRj-1) {
-           if (Block_Ptr->block.nBN > 0) {
-               neighbour_block_ptr = &(Roots[index.i][index.j+1][index.k-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.j < NRj-1) {
-           if (Block_Ptr->block.nBN > 0) {
-               neighbour_block_ptr = &(Roots[index.i][index.j+1][NRk-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.k > 0) {
-           if (Block_Ptr->block.nBN > 0) {
-               neighbour_block_ptr = &(Roots[index.i][0][index.k-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else {
-           if (Block_Ptr->block.nBN > 0) {
-               neighbour_block_ptr = &(Roots[index.i][0][NRk-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } /* endif */
-         break;
-       case OCTREE_DIRECTION_MASK_BOTTOMSOUTH :
-         if (index.k > 0 && index.j > 0) {
-           if (Block_Ptr->block.nBS > 0) {
-               neighbour_block_ptr = &(Roots[index.i][index.j-1][index.k-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.j > 0) {
-           if (Block_Ptr->block.nBS > 0) {
-               neighbour_block_ptr = &(Roots[index.i][index.j-1][NRk-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-	 } else if (index.k > 0) {
-           if (Block_Ptr->block.nBS > 0) {
-               neighbour_block_ptr = &(Roots[index.i][NRj-1][index.k-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else {
-           if (Block_Ptr->block.nBS > 0) {
-               neighbour_block_ptr = &(Roots[index.i][NRj-1][NRk-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } /* endif */
-         break;
-
-       case OCTREE_DIRECTION_MASK_TOPWEST :
-         if (index.i > 0 && index.k < NRk-1) {
-            if (Block_Ptr->block.nTW > 0) {
-               neighbour_block_ptr = &(Roots[index.i-1][index.j][index.k+1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.k < NRk-1) {
-            if (Block_Ptr->block.nTW > 0) {
-               neighbour_block_ptr = &(Roots[NRi-1][index.j][index.k+1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.j > 0) {
-            if (Block_Ptr->block.nTW > 0) {
-               neighbour_block_ptr = &(Roots[index.i-1][index.j][0]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else {
-            if (Block_Ptr->block.nTW > 0) {
-               neighbour_block_ptr = &(Roots[NRi-1][index.j][0]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } /* endif */
-         break;
-       case OCTREE_DIRECTION_MASK_TOPEAST :
-         if (index.i < NRi-1 && index.k < NRk-1) {
-           if (Block_Ptr->block.nTE > 0) {
-               neighbour_block_ptr = &(Roots[index.i+1][index.j][index.k+1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.k < NRk-1) {
-           if (Block_Ptr->block.nTE > 0) {
-               neighbour_block_ptr = &(Roots[0][index.j][index.k+1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.i < NRi-1) {
-           if (Block_Ptr->block.nTE > 0) {
-               neighbour_block_ptr = &(Roots[index.i+1][index.j][0]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else {
-           if (Block_Ptr->block.nTE > 0) {
-               neighbour_block_ptr = &(Roots[0][index.j][0]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } /* endif */
-         break;
-       case OCTREE_DIRECTION_MASK_TOPNORTH :
-         if (index.k < NRk-1 && index.j < NRj-1) {
-           if (Block_Ptr->block.nTN > 0) {
-               neighbour_block_ptr = &(Roots[index.i][index.j+1][index.k+1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.j < NRj-1) {
-           if (Block_Ptr->block.nTN > 0) {
-               neighbour_block_ptr = &(Roots[index.i][index.j+1][0]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.k < NRk-1) {
-           if (Block_Ptr->block.nTN > 0) {
-               neighbour_block_ptr = &(Roots[index.i][0][index.k+1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else {
-           if (Block_Ptr->block.nTN > 0) {
-               neighbour_block_ptr = &(Roots[index.i][0][0]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } /* endif */
-         break;
-       case OCTREE_DIRECTION_MASK_TOPSOUTH :
-         if (index.k < NRk-1 && index.j > 0) {
-           if (Block_Ptr->block.nTS > 0) {
-               neighbour_block_ptr = &(Roots[index.i][index.j-1][index.k+1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.j > 0) {
-           if (Block_Ptr->block.nTS > 0) {
-               neighbour_block_ptr = &(Roots[index.i][index.j-1][0]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-	 } else if (index.k < NRk-1) {
-           if (Block_Ptr->block.nTS > 0) {
-               neighbour_block_ptr = &(Roots[index.i][NRj-1][index.k+1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else {
-           if (Block_Ptr->block.nTS > 0) {
-               neighbour_block_ptr = &(Roots[index.i][NRj-1][0]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } /* endif */
-         break;
-
-       case OCTREE_DIRECTION_MASK_BOTTOMSOUTHWEST :
-         if (index.i > 0 && index.j > 0 && index.k > 0) {
-            if (Block_Ptr->block.nBSW > 0) {
-               neighbour_block_ptr = &(Roots[index.i-1][index.j-1][index.k-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-	 } else if (index.i > 0 && index.j > 0) {
-            if (Block_Ptr->block.nBSW > 0) {
-               neighbour_block_ptr = &(Roots[index.i-1][index.j-1][NRk-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-	 } else if (index.j > 0 && index.k > 0) {
-            if (Block_Ptr->block.nBSW > 0) {
-               neighbour_block_ptr = &(Roots[NRi-1][index.j-1][index.k-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-	 } else if (index.i > 0 && index.k > 0) {
-            if (Block_Ptr->block.nBSW > 0) {
-               neighbour_block_ptr = &(Roots[index.i-1][NRj-1][index.k-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.j > 0) {
-            if (Block_Ptr->block.nBSW > 0) {
-               neighbour_block_ptr = &(Roots[NRi-1][index.j-1][NRk-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.i > 0) {
-            if (Block_Ptr->block.nBSW > 0) {
-               neighbour_block_ptr = &(Roots[index.i-1][NRj-1][NRk-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.k > 0) {
-            if (Block_Ptr->block.nBSW > 0) {
-               neighbour_block_ptr = &(Roots[NRi-1][NRj-1][index.k-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else {
-            if (Block_Ptr->block.nBSW > 0) {
-               neighbour_block_ptr = &(Roots[NRi-1][NRj-1][NRk-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } /* endif */
-         break;
-
-       case OCTREE_DIRECTION_MASK_BOTTOMSOUTHEAST :
-         if (index.i < NRi-1 && index.j > 0 && index.k > 0) {
-           if (Block_Ptr->block.nBSE > 0) {
-               neighbour_block_ptr = &(Roots[index.i+1][index.j-1][index.k-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.i < NRi-1 && index.j > 0 ) {
-           if (Block_Ptr->block.nBSE > 0) {
-               neighbour_block_ptr = &(Roots[index.i+1][index.j-1][NRk-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if ( index.j > 0 && index.k > 0) {
-           if (Block_Ptr->block.nBSE > 0) {
-               neighbour_block_ptr = &(Roots[0][index.j-1][index.k-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.i < NRi-1  && index.k > 0) {
-           if (Block_Ptr->block.nBSE > 0) {
-               neighbour_block_ptr = &(Roots[index.i+1][NRj-1][index.k-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.k > 0) {
-           if (Block_Ptr->block.nBSE > 0) {
-               neighbour_block_ptr = &(Roots[0][0][index.k-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.j > 0) {
-           if (Block_Ptr->block.nBSE > 0) {
-               neighbour_block_ptr = &(Roots[0][index.j-1][NRk-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.i < NRi-1) {
-           if (Block_Ptr->block.nBSE > 0) {
-               neighbour_block_ptr = &(Roots[index.i+1][NRj-1][NRk-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else {
-           if (Block_Ptr->block.nBSE > 0) {
-               neighbour_block_ptr = &(Roots[0][NRj-1][NRk-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } /* endif */
-         break;
-       case OCTREE_DIRECTION_MASK_BOTTOMNORTHWEST :
-         if (index.i > 0 && index.j < NRj-1 && index.k > 0) {
-           if (Block_Ptr->block.nBNW > 0) {
-               neighbour_block_ptr = &(Roots[index.i-1][index.j+1][index.k-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.i > 0 && index.j < NRj-1 ) {
-           if (Block_Ptr->block.nBNW > 0) {
-               neighbour_block_ptr = &(Roots[index.i-1][index.j+1][NRk-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if ( index.j < NRj-1 && index.k > 0) {
-           if (Block_Ptr->block.nBNW > 0) {
-               neighbour_block_ptr = &(Roots[NRi-1][index.j+1][index.k-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.i > 0  && index.k > 0) {
-           if (Block_Ptr->block.nBNW > 0) {
-               neighbour_block_ptr = &(Roots[index.i-1][0][index.k-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-        } else if (index.k > 0) {
-           if (Block_Ptr->block.nBNW > 0) {
-               neighbour_block_ptr = &(Roots[NRi-1][0][index.k-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.j < NRj-1) {
-           if (Block_Ptr->block.nBNW > 0) {
-               neighbour_block_ptr = &(Roots[NRi-1][index.j+1][NRk-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.i > 0) {
-           if (Block_Ptr->block.nBNW > 0) {
-               neighbour_block_ptr = &(Roots[index.i-1][0][NRk-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else {
-           if (Block_Ptr->block.nBNW > 0) {
-               neighbour_block_ptr = &(Roots[NRi-1][0][NRk-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } /* endif */
-         break;
-       case OCTREE_DIRECTION_MASK_BOTTOMNORTHEAST :
-         if (index.i < NRi-1 && index.j < NRj-1 && index.k > 0) {
-           if (Block_Ptr->block.nBNE > 0) {
-               neighbour_block_ptr = &(Roots[index.i+1][index.j+1][index.k-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.i < NRi-1 && index.j < NRj-1 ) {
-           if (Block_Ptr->block.nBNE > 0) {
-               neighbour_block_ptr = &(Roots[index.i+1][index.j+1][NRk-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if ( index.j < NRj-1 && index.k > 0) {
-           if (Block_Ptr->block.nBNE > 0) {
-               neighbour_block_ptr = &(Roots[0][index.j+1][index.k-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.i < NRi-1  && index.k > 0) {
-           if (Block_Ptr->block.nBNE > 0) {
-               neighbour_block_ptr = &(Roots[index.i+1][0][index.k-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.k > 0) {
-           if (Block_Ptr->block.nBNE > 0) {
-               neighbour_block_ptr = &(Roots[0][0][index.k-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.j < NRj-1) {
-           if (Block_Ptr->block.nBNE > 0) {
-               neighbour_block_ptr = &(Roots[0][index.j+1][NRk-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-	 } else if (index.i < NRi-1) {
-           if (Block_Ptr->block.nBNE > 0) {
-               neighbour_block_ptr = &(Roots[index.i+1][0][NRk-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-	 } else {
-           if (Block_Ptr->block.nBNE > 0) {
-               neighbour_block_ptr = &(Roots[0][0][NRk-1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } /* endif */
-         break;
-
-	 //***UPDATE FROM HERE*******//
-
-      case OCTREE_DIRECTION_MASK_TOPSOUTHWEST :
-         if (index.i > 0 && index.j > 0 && index.k < NRk-1) {
-            if (Block_Ptr->block.nTSW > 0) {
-               neighbour_block_ptr = &(Roots[index.i-1][index.j-1][index.k+1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-	 } else if (index.i > 0 && index.j > 0) {
-            if (Block_Ptr->block.nTSW > 0) {
-               neighbour_block_ptr = &(Roots[index.i-1][index.j-1][0]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-	 } else if (index.j > 0 && index.k < NRk-1) {
-            if (Block_Ptr->block.nTSW > 0) {
-               neighbour_block_ptr = &(Roots[NRi-1][index.j-1][index.k+1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-	 } else if (index.i > 0 && index.k < NRk-1) {
-            if (Block_Ptr->block.nTSW > 0) {
-               neighbour_block_ptr = &(Roots[index.i-1][NRj-1][index.k+1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.j > 0) {
-            if (Block_Ptr->block.nTSW > 0) {
-               neighbour_block_ptr = &(Roots[NRi-1][index.j-1][0]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.i > 0) {
-            if (Block_Ptr->block.nTSW > 0) {
-               neighbour_block_ptr = &(Roots[index.i-1][NRj-1][0]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.k < NRk-1) {
-            if (Block_Ptr->block.nTSW > 0) {
-               neighbour_block_ptr = &(Roots[NRi-1][NRj-1][index.k+1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else {
-            if (Block_Ptr->block.nTSW > 0) {
-               neighbour_block_ptr = &(Roots[NRi-1][NRj-1][0]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } /* endif */
-         break;
-       case OCTREE_DIRECTION_MASK_TOPSOUTHEAST :
-         if (index.i < NRi-1 && index.j > 0 && index.k < NRk-1) {
-           if (Block_Ptr->block.nTSE > 0) {
-               neighbour_block_ptr = &(Roots[index.i+1][index.j-1][index.k+1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.i < NRi-1 && index.j > 0 ) {
-           if (Block_Ptr->block.nTSE > 0) {
-               neighbour_block_ptr = &(Roots[index.i+1][index.j-1][0]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if ( index.j > 0 && index.k < NRk-1) {
-           if (Block_Ptr->block.nTSE > 0) {
-               neighbour_block_ptr = &(Roots[0][index.j-1][index.k+1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.i < NRi-1  && index.k < NRk-1) {
-           if (Block_Ptr->block.nTSE > 0) {
-               neighbour_block_ptr = &(Roots[index.i+1][NRj-1][index.k+1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.k < NRk-1) {
-           if (Block_Ptr->block.nTSE > 0) {
-               neighbour_block_ptr = &(Roots[0][0][index.k+1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.j > 0) {
-           if (Block_Ptr->block.nTSE > 0) {
-               neighbour_block_ptr = &(Roots[0][index.j-1][0]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.i < NRi-1) {
-           if (Block_Ptr->block.nTSE > 0) {
-               neighbour_block_ptr = &(Roots[index.i+1][NRj-1][0]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else {
-           if (Block_Ptr->block.nTSE > 0) {
-               neighbour_block_ptr = &(Roots[0][NRj-1][0]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } /* endif */
-         break;
-       case OCTREE_DIRECTION_MASK_TOPNORTHWEST :
-         if (index.i > 0 && index.j < NRj-1 && index.k < NRk-1) {
-           if (Block_Ptr->block.nTNW > 0) {
-               neighbour_block_ptr = &(Roots[index.i-1][index.j+1][index.k+1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.i > 0 && index.j < NRj-1 ) {
-           if (Block_Ptr->block.nTNW > 0) {
-               neighbour_block_ptr = &(Roots[index.i-1][index.j+1][0]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if ( index.j < NRj-1 && index.k < NRk-1) {
-           if (Block_Ptr->block.nTNW > 0) {
-               neighbour_block_ptr = &(Roots[NRi-1][index.j+1][index.k+1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.i > 0  && index.k < NRk-1) {
-           if (Block_Ptr->block.nTNW > 0) {
-               neighbour_block_ptr = &(Roots[index.i-1][0][index.k+1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-        } else if (index.k < NRk-1) {
-           if (Block_Ptr->block.nTNW > 0) {
-               neighbour_block_ptr = &(Roots[NRi-1][0][index.k+1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.j < NRj-1) {
-           if (Block_Ptr->block.nTNW > 0) {
-               neighbour_block_ptr = &(Roots[NRi-1][index.j+1][0]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.i > 0) {
-           if (Block_Ptr->block.nTNW > 0) {
-               neighbour_block_ptr = &(Roots[index.i-1][0][0]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else {
-           if (Block_Ptr->block.nTNW > 0) {
-               neighbour_block_ptr = &(Roots[NRi-1][0][0]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } /* endif */
-         break;
-       case OCTREE_DIRECTION_MASK_TOPNORTHEAST :
-         if (index.i < NRi-1 && index.j < NRj-1 && index.k < NRk-1) {
-           if (Block_Ptr->block.nTNE > 0) {
-               neighbour_block_ptr = &(Roots[index.i+1][index.j+1][index.k+1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.i < NRi-1 && index.j < NRj-1 ) {
-           if (Block_Ptr->block.nTNE > 0) {
-               neighbour_block_ptr = &(Roots[index.i+1][index.j+1][0]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if ( index.j < NRj-1 && index.k < NRk-1) {
-           if (Block_Ptr->block.nTNE > 0) {
-               neighbour_block_ptr = &(Roots[0][index.j+1][index.k+1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.i < NRi-1  && index.k < NRk-1) {
-           if (Block_Ptr->block.nTNE > 0) {
-               neighbour_block_ptr = &(Roots[index.i+1][0][index.k+1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.k < NRk-1) {
-           if (Block_Ptr->block.nTNE > 0) {
-               neighbour_block_ptr = &(Roots[0][0][index.k+1]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else if (index.j < NRj-1) {
-           if (Block_Ptr->block.nTNE > 0) {
-               neighbour_block_ptr = &(Roots[0][index.j+1][0]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-	 } else if (index.i < NRi-1) {
-           if (Block_Ptr->block.nTNE > 0) {
-               neighbour_block_ptr = &(Roots[index.i+1][0][0]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } else {
-           if (Block_Ptr->block.nTNE > 0) {
-               neighbour_block_ptr = &(Roots[0][0][0]);
-            } else {
-               neighbour_block_ptr = NULL;
-            } /* endif */
-         } /* endif */
-         break;
-
-       default:
-         neighbour_block_ptr = NULL;
-         break;
-     } /* endswitch */
-
-
-     if (Block_Ptr->block.used &&
-         neighbour_block_ptr != NULL) { 
-
-       // Descend neigbouring root block until used children are encountered.
-
-        search_direction = Block_Ptr->search_dir(Search_Dir_Mask);
-        while ((neighbour_block_ptr->
-		child_ptr(OCTREE_SECTOR_BSW-
-			  search_direction.i-
-			  search_direction.j-
-			  search_direction.k+
-			  (max(-search_direction.i*search_direction.j*search_direction.k, 0)/2)*
-			  max(max(search_direction.i, search_direction.j),search_direction.k)) != NULL) 
-	       && !(neighbour_block_ptr->block.used)) {
-
-           neighbour_block_ptr = 
-	     neighbour_block_ptr->child_ptr(OCTREE_SECTOR_BSW-
-					    search_direction.i-
-					    search_direction.j-
-					    search_direction.k+
-					    (max(-search_direction.i*search_direction.j*search_direction.k, 0)/2)
-					    *max(max(search_direction.i, search_direction.j),search_direction.k));
-	   
-        } /* endwhile */
-    } /* endif */ // Finally, return resulting neighbour.
-  } else { // Block has a parent.  Block is not a root. */
-    cout<<"\nError **** Octree Roots not yet defined to have children\n";cout.flush();
-  }  
-//********************************************************
-//********************************************************
-//**********Needs to be checked for 3D AMR****************
-//********************************************************
-//********************************************************
-  /*    if (Block_Ptr->sibling(Search_Dir_Mask)) { // Neighbour is a sibling.  Get it. */
-/*         search_direction = Block_Ptr->search_dir(Search_Dir_Mask); */
-/*         neighbour_block_ptr = Block_Ptr->parent_ptr->child_ptr(Block_Ptr->block.info.sector+ */
-/*                                                                search_direction.i+ */
-/*                                                                search_direction.j); */
-/*         if (Block_Ptr->block.used) { // If block is not used, don't descend any further! */
-/*            if ((neighbour_block_ptr->child_ptr(OCTREE_SECTOR_SW- */
-/*                                                search_direction.i- */
-/*                                                search_direction.j+ */
-/*                                                (max(-search_direction.i*search_direction.j, 0)/2)* */
-/*                                                max(search_direction.i, search_direction.j)) == NULL) || */
-/*                (neighbour_block_ptr->block.used)) { // Sibling is used and has no children. */
-/* 	      neighbour_block_ptr = neighbour_block_ptr; // Return sibling. */
-/* 	   } else { // Return child of sibling. */
-/*               neighbour_block_ptr = neighbour_block_ptr->child_ptr(OCTREE_SECTOR_SW- */
-/*                                                                    search_direction.i- */
-/*                                                                    search_direction.j+ */
-/*                                                                    (max(-search_direction.i*search_direction.j, 0)/2)* */
-/*                                                                    max(search_direction.i, search_direction.j)); */
-/*            } /\* endif *\/ */
-/*         } /\* endif *\/ */
-/*      } else if (Search_Dir_Mask <= OCTREE_DIRECTION_MASK_WEST) { // Neighbour is not a sibling. */
-/*         neighbour_block_ptr = getNeighbour(Block_Ptr->parent_ptr, Search_Dir_Mask); // Move up the tree. */
-/*         if (neighbour_block_ptr == NULL) { // Parent of neighbour does not exist. */
-/* 	   neighbour_block_ptr = NULL; // Return null pointer. */
-/*         } else { */
-/*  	   if (neighbour_block_ptr->block.info.level > Block_Ptr->parent_ptr->block.info.level) { // If neighbour is more refined than parent, get parent of neighbour. */
-/*               neighbour_block_ptr = neighbour_block_ptr->parent_ptr; */
-/*            } /\* endif *\/ */
-/*            search_direction = Block_Ptr->search_dir(Search_Dir_Mask); */
-/*            if ((neighbour_block_ptr->child_ptr(Block_Ptr->block.info.sector- */
-/*                                                search_direction.i- */
-/*                                                search_direction.j) == NULL) || */
-/*                (neighbour_block_ptr->block.used)) { // Neighbour is used and has no children. */
-/* 	      neighbour_block_ptr = neighbour_block_ptr; // Return neighbour. */
-/*            } else { // Return child of neighbour. */
-/*               neighbour_block_ptr = neighbour_block_ptr->child_ptr(Block_Ptr->block.info.sector- */
-/*                                                                    search_direction.i- */
-/*                                                                    search_direction.j); */
-/*               if ((!neighbour_block_ptr->block.used) && */
-/*                   (neighbour_block_ptr->child_ptr(OCTREE_SECTOR_SW- */
-/*                                                   search_direction.i- */
-/*                                                   search_direction.j) != NULL)) { // Child of neighbour is not used, return child of child. */
-/*                  neighbour_block_ptr = neighbour_block_ptr->child_ptr(OCTREE_SECTOR_SW- */
-/*                                                                       search_direction.i- */
-/*                                                                       search_direction.j); */
-/*               } /\* endif *\/ */
-/*            } /\* endif *\/ */
-/*         } /\* endif *\/ */
-/*      } else { // Neighbour is not a sibling and is a corner neighbour.  Perform two-direction search. */
-/*         switch(Search_Dir_Mask) { */
-/* 	  case OCTREE_DIRECTION_MASK_SOUTHWEST : // SOUTHWEST CORNER NEIGHBOUR */
-/*             if (Block_Ptr->sibling(OCTREE_DIRECTION_MASK_WEST)) { */
-/*                neighbour_block_ptr = getNeighbour(Block_Ptr, OCTREE_DIRECTION_MASK_WEST); */
-/*                if (neighbour_block_ptr != NULL) {  */
-/* 		  if (neighbour_block_ptr->block.info.level > Block_Ptr->block.info.level) { // If more refined, get parent. */
-/*                      neighbour_block_ptr = neighbour_block_ptr->parent_ptr; */
-/*                   } /\* endif *\/ */
-/*                   neighbour_block_ptr = getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_SOUTH); */
-/*                   if (neighbour_block_ptr != NULL) { */
-/*                      if ((neighbour_block_ptr->block.info.level > Block_Ptr->block.info.level) && */
-/*                          (neighbour_block_ptr->sibling(OCTREE_DIRECTION_MASK_EAST))) { */
-/*                         neighbour_block_ptr = getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_EAST); */
-/*                      } /\* endif *\/ */
-/*                   } /\* endif *\/ */
-/*                } /\* endif *\/ */
-/*             } else if (Block_Ptr->sibling(OCTREE_DIRECTION_MASK_SOUTH)) { */
-/*                neighbour_block_ptr = getNeighbour(Block_Ptr, OCTREE_DIRECTION_MASK_SOUTH); */
-/*                if (neighbour_block_ptr != NULL) {  */
-/*                   if (neighbour_block_ptr->block.info.level > Block_Ptr->block.info.level) { // If more refined, get parent. */
-/*                      neighbour_block_ptr = neighbour_block_ptr->parent_ptr; */
-/*                   } /\* endif *\/ */
-/*                   neighbour_block_ptr = getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_WEST); */
-/*                   if (neighbour_block_ptr != NULL) { */
-/*                      if ((neighbour_block_ptr->block.info.level > Block_Ptr->block.info.level) && */
-/*                          (neighbour_block_ptr->sibling(OCTREE_DIRECTION_MASK_NORTH))) { */
-/*                         neighbour_block_ptr = getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_NORTH); */
-/*                      } /\* endif *\/ */
-/*                   } /\* endif *\/ */
-/*                } /\* endif *\/ */
-/*             } else { */
-/* 	       // Usual approach */
-/*                neighbour_block_ptr = getNeighbour(Block_Ptr, OCTREE_DIRECTION_MASK_SOUTH); */
-/*                if (neighbour_block_ptr != NULL) { */
-/*                   if (neighbour_block_ptr->block.info.level > Block_Ptr->block.info.level) { // If more refined, get parent. */
-/*                      neighbour_block_ptr = neighbour_block_ptr->parent_ptr; */
-/*                   } /\* endif *\/ */
-/*                   neighbour_block_ptr = getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_WEST); */
-/*                   if (neighbour_block_ptr != NULL) { */
-/*                      if ((neighbour_block_ptr->block.info.level >= Block_Ptr->block.info.level) && */
-/*                          (neighbour_block_ptr->sibling(OCTREE_DIRECTION_MASK_NORTH))) { */
-/*                         neighbour_block_ptr = getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_NORTH); */
-/*                      } /\* endif *\/ */
-/*                   } /\* endif *\/ */
-/*                } else { */
-/*                   neighbour_block_ptr = getNeighbour(Block_Ptr, OCTREE_DIRECTION_MASK_WEST); */
-/*                   if (neighbour_block_ptr != NULL) { */
-/*                      if (neighbour_block_ptr->block.info.level > Block_Ptr->block.info.level) { // If more refined, get parent. */
-/*                         neighbour_block_ptr = neighbour_block_ptr->parent_ptr; */
-/*                      } /\* endif *\/ */
-/*                      neighbour_block_ptr = getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_SOUTH); */
-/*                      if (neighbour_block_ptr != NULL) { */
-/*                         if ((neighbour_block_ptr->block.info.level >= Block_Ptr->block.info.level) && */
-/*                             (neighbour_block_ptr->sibling(OCTREE_DIRECTION_MASK_EAST))) { */
-/*                            neighbour_block_ptr = getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_EAST); */
-/*                         } /\* endif *\/ */
-/*                      } /\* endif *\/ */
-/*                   } /\* endif *\/ */
-/*                } /\* endif *\/ */
-
-/*             } /\* endif *\/ */
-/*             break; */
-/* 	  case OCTREE_DIRECTION_MASK_SOUTHEAST : // SOUTHEAST CORNER NEIGHBOUR */
-/*             if (Block_Ptr->sibling(OCTREE_DIRECTION_MASK_EAST)) { */
-/*                neighbour_block_ptr = getNeighbour(Block_Ptr, OCTREE_DIRECTION_MASK_EAST); */
-/*                if (neighbour_block_ptr != NULL) {  */
-/*                   if (neighbour_block_ptr->block.info.level > Block_Ptr->block.info.level) { // If more refined, get parent. */
-/*                      neighbour_block_ptr = neighbour_block_ptr->parent_ptr; */
-/*                   } /\* endif *\/ */
-/*                   neighbour_block_ptr = getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_SOUTH); */
-/*                   if (neighbour_block_ptr != NULL) { */
-/*                      if ((neighbour_block_ptr->block.info.level > Block_Ptr->block.info.level) && */
-/*                          (neighbour_block_ptr->sibling(OCTREE_DIRECTION_MASK_WEST))) { */
-/*                         neighbour_block_ptr = getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_WEST); */
-/*                      } /\* endif *\/ */
-/*                   } /\* endif *\/ */
-/*                } /\* endif *\/ */
-/*             } else if (Block_Ptr->sibling(OCTREE_DIRECTION_MASK_SOUTH)) { */
-/*                neighbour_block_ptr = getNeighbour(Block_Ptr, OCTREE_DIRECTION_MASK_SOUTH); */
-/*                if (neighbour_block_ptr != NULL) {  */
-/*                   if (neighbour_block_ptr->block.info.level > Block_Ptr->block.info.level) { // If more refined, get parent. */
-/*                      neighbour_block_ptr = neighbour_block_ptr->parent_ptr; */
-/*                   } /\* endif *\/ */
-/*                   neighbour_block_ptr = getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_EAST); */
-/*                   if (neighbour_block_ptr != NULL) { */
-/*                      if ((neighbour_block_ptr->block.info.level > Block_Ptr->block.info.level) && */
-/*                          (neighbour_block_ptr->sibling(OCTREE_DIRECTION_MASK_NORTH))) { */
-/*                         neighbour_block_ptr = getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_NORTH); */
-/*                      } /\* endif *\/ */
-/*                   } /\* endif *\/ */
-/*                } /\* endif *\/ */
-/*             } else { */
-/* 	       // Usual approach */
-/*                neighbour_block_ptr = getNeighbour(Block_Ptr, OCTREE_DIRECTION_MASK_SOUTH); */
-/*                if (neighbour_block_ptr != NULL) { */
-/*                   if (neighbour_block_ptr->block.info.level > Block_Ptr->block.info.level) { // If more refined, get parent. */
-/*                      neighbour_block_ptr = neighbour_block_ptr->parent_ptr; */
-/*                   } /\* endif *\/ */
-/*                   neighbour_block_ptr = getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_EAST); */
-/*                   if (neighbour_block_ptr != NULL) { */
-/*                      if ((neighbour_block_ptr->block.info.level >= Block_Ptr->block.info.level) && */
-/*                          (neighbour_block_ptr->sibling(OCTREE_DIRECTION_MASK_NORTH))) { */
-/*                         neighbour_block_ptr = getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_NORTH); */
-/*                      } /\* endif *\/ */
-/*                   } /\* endif *\/ */
-/*                } else { */
-/*                   neighbour_block_ptr = getNeighbour(Block_Ptr, OCTREE_DIRECTION_MASK_EAST); */
-/*                   if (neighbour_block_ptr != NULL) { */
-/*                      if (neighbour_block_ptr->block.info.level > Block_Ptr->block.info.level) { // If more refined, get parent. */
-/*                         neighbour_block_ptr = neighbour_block_ptr->parent_ptr; */
-/*                      } /\* endif *\/ */
-/*                      neighbour_block_ptr = getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_SOUTH); */
-/*                      if (neighbour_block_ptr != NULL) { */
-/*                         if ((neighbour_block_ptr->block.info.level >= Block_Ptr->block.info.level) && */
-/*                             (neighbour_block_ptr->sibling(OCTREE_DIRECTION_MASK_WEST))) { */
-/*                            neighbour_block_ptr = getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_WEST); */
-/*                         } /\* endif *\/ */
-/*                      } /\* endif *\/ */
-/*                   } /\* endif *\/ */
-/*                } /\* endif *\/ */
-
-/*             } /\* endif *\/ */
-/*             break; */
-/* 	  case OCTREE_DIRECTION_MASK_NORTHWEST : // NORTHWEST CORNER NEIGHBOUR */
-/*             if (Block_Ptr->sibling(OCTREE_DIRECTION_MASK_WEST)) { */
-/*                neighbour_block_ptr = getNeighbour(Block_Ptr, OCTREE_DIRECTION_MASK_WEST); */
-/*                if (neighbour_block_ptr != NULL) {  */
-/*                   if (neighbour_block_ptr->block.info.level > Block_Ptr->block.info.level) { // If more refined, get parent. */
-/*                      neighbour_block_ptr = neighbour_block_ptr->parent_ptr; */
-/*                   } /\* endif *\/ */
-/*                   neighbour_block_ptr = getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_NORTH); */
-/*                   if (neighbour_block_ptr != NULL) { */
-/*                      if ((neighbour_block_ptr->block.info.level > Block_Ptr->block.info.level) && */
-/*                          (neighbour_block_ptr->sibling(OCTREE_DIRECTION_MASK_EAST))) { */
-/*                         neighbour_block_ptr = getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_EAST); */
-/*                      } /\* endif *\/ */
-/*                   } /\* endif *\/ */
-/*                } /\* endif *\/ */
-/*             } else if (Block_Ptr->sibling(OCTREE_DIRECTION_MASK_NORTH)) { */
-/*                neighbour_block_ptr = getNeighbour(Block_Ptr, OCTREE_DIRECTION_MASK_NORTH); */
-/*                if (neighbour_block_ptr != NULL) {  */
-/*                   if (neighbour_block_ptr->block.info.level > Block_Ptr->block.info.level) { // If more refined, get parent. */
-/*                      neighbour_block_ptr = neighbour_block_ptr->parent_ptr; */
-/*                   } /\* endif *\/ */
-/*                   neighbour_block_ptr = getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_WEST); */
-/*                   if (neighbour_block_ptr != NULL) { */
-/*                      if ((neighbour_block_ptr->block.info.level > Block_Ptr->block.info.level) && */
-/*                          (neighbour_block_ptr->sibling(OCTREE_DIRECTION_MASK_SOUTH))) { */
-/*                         neighbour_block_ptr = getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_SOUTH); */
-/*                      } /\* endif *\/ */
-/*                   } /\* endif *\/ */
-/*                } /\* endif *\/ */
-/*             } else { */
-/* 	       // Usual approach */
-/*                neighbour_block_ptr = getNeighbour(Block_Ptr, OCTREE_DIRECTION_MASK_NORTH); */
-/*                if (neighbour_block_ptr != NULL) { */
-/*                   if (neighbour_block_ptr->block.info.level > Block_Ptr->block.info.level) { // If more refined, get parent. */
-/*                      neighbour_block_ptr = neighbour_block_ptr->parent_ptr; */
-/*                   } /\* endif *\/ */
-/*                   neighbour_block_ptr = getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_WEST); */
-/*                   if (neighbour_block_ptr != NULL) { */
-/*                      if ((neighbour_block_ptr->block.info.level >= Block_Ptr->block.info.level) && */
-/*                          (neighbour_block_ptr->sibling(OCTREE_DIRECTION_MASK_SOUTH))) { */
-/*                         neighbour_block_ptr = getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_SOUTH); */
-/*                      } /\* endif *\/ */
-/*                   } /\* endif *\/ */
-/*                } else { */
-/*                   neighbour_block_ptr = getNeighbour(Block_Ptr, OCTREE_DIRECTION_MASK_WEST); */
-/*                   if (neighbour_block_ptr != NULL) { */
-/*                      if (neighbour_block_ptr->block.info.level > Block_Ptr->block.info.level) { // If more refined, get parent. */
-/*                         neighbour_block_ptr = neighbour_block_ptr->parent_ptr; */
-/*                      } /\* endif *\/ */
-/*                      neighbour_block_ptr = getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_NORTH); */
-/*                      if (neighbour_block_ptr != NULL) { */
-/*                         if ((neighbour_block_ptr->block.info.level >= Block_Ptr->block.info.level) && */
-/*                             (neighbour_block_ptr->sibling(OCTREE_DIRECTION_MASK_EAST))) { */
-/*                            neighbour_block_ptr = getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_EAST); */
-/*                         } /\* endif *\/ */
-/*                      } /\* endif *\/ */
-/*                   } /\* endif *\/ */
-/*                } /\* endif *\/ */
-
-/*             } /\* endif *\/ */
-/*             break; */
-/*  	  case OCTREE_DIRECTION_MASK_NORTHEAST : // NORTHEAST CORNER NEIGHBOUR */
-/*             if (Block_Ptr->sibling(OCTREE_DIRECTION_MASK_EAST)) { */
-/*                neighbour_block_ptr = getNeighbour(Block_Ptr, OCTREE_DIRECTION_MASK_EAST); */
-/*                if (neighbour_block_ptr != NULL) { */
-/*                   if (neighbour_block_ptr->block.info.level > Block_Ptr->block.info.level) { // If more refined, get parent. */
-/*                      neighbour_block_ptr = neighbour_block_ptr->parent_ptr; */
-/*                   } /\* endif *\/ */
-/*                   neighbour_block_ptr = getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_NORTH); */
-/*                   if (neighbour_block_ptr != NULL) {  */
-/*                      if ((neighbour_block_ptr->block.info.level > Block_Ptr->block.info.level) && */
-/*                          (neighbour_block_ptr->sibling(OCTREE_DIRECTION_MASK_WEST))) { */
-/*                         neighbour_block_ptr = getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_WEST); */
-/*                      } /\* endif *\/ */
-/*                   } /\* endif *\/ */
-/*                } /\* endif *\/ */
-/*             } else if (Block_Ptr->sibling(OCTREE_DIRECTION_MASK_NORTH)) { */
-/*                neighbour_block_ptr = getNeighbour(Block_Ptr, OCTREE_DIRECTION_MASK_NORTH); */
-/*                if (neighbour_block_ptr != NULL) {  */
-/*                   if (neighbour_block_ptr->block.info.level > Block_Ptr->block.info.level) { // If more refined, get parent. */
-/*                      neighbour_block_ptr = neighbour_block_ptr->parent_ptr; */
-/*                   } /\* endif *\/ */
-/*                   neighbour_block_ptr = getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_EAST); */
-/*                   if (neighbour_block_ptr != NULL) {  */
-/*                      if ((neighbour_block_ptr->block.info.level > Block_Ptr->block.info.level) && */
-/*                          (neighbour_block_ptr->sibling(OCTREE_DIRECTION_MASK_SOUTH))) { */
-/*                         neighbour_block_ptr = getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_SOUTH); */
-/*                      } /\* endif *\/ */
-/*                   } /\* endif *\/ */
-/*                } /\* endif *\/ */
-/*             } else { */
-/* 	       // Usual approach */
-/*                neighbour_block_ptr = getNeighbour(Block_Ptr, OCTREE_DIRECTION_MASK_NORTH); */
-/*                if (neighbour_block_ptr != NULL) { */
-/*                   if (neighbour_block_ptr->block.info.level > Block_Ptr->block.info.level) { // If more refined, get parent. */
-/*                      neighbour_block_ptr = neighbour_block_ptr->parent_ptr; */
-/*                   } /\* endif *\/ */
-/*                   neighbour_block_ptr = getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_EAST); */
-/*                   if (neighbour_block_ptr != NULL) { */
-/*                      if ((neighbour_block_ptr->block.info.level >= Block_Ptr->block.info.level) && */
-/*                          (neighbour_block_ptr->sibling(OCTREE_DIRECTION_MASK_SOUTH))) { */
-/*                         neighbour_block_ptr = getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_SOUTH); */
-/*                      } /\* endif *\/ */
-/*                   } /\* endif *\/ */
-/*                } else { */
-/*                   neighbour_block_ptr = getNeighbour(Block_Ptr, OCTREE_DIRECTION_MASK_EAST); */
-/*                   if (neighbour_block_ptr != NULL) { */
-/*                      if (neighbour_block_ptr->block.info.level > Block_Ptr->block.info.level) { // If more refined, get parent. */
-/*                         neighbour_block_ptr = neighbour_block_ptr->parent_ptr; */
-/*                      } /\* endif *\/ */
-/*                      neighbour_block_ptr = getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_NORTH); */
-/*                      if (neighbour_block_ptr != NULL) { */
-/*                         if ((neighbour_block_ptr->block.info.level >= Block_Ptr->block.info.level) && */
-/*                             (neighbour_block_ptr->sibling(OCTREE_DIRECTION_MASK_WEST))) { */
-/*                            neighbour_block_ptr = getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_WEST); */
-/*                         } /\* endif *\/ */
-/*                      } /\* endif *\/ */
-/*                   } /\* endif *\/ */
-/*                } /\* endif *\/ */
-
-/*             } /\* endif *\/ */
-/*             break; */
-/*           default: */
-/*             neighbour_block_ptr = NULL; */
-/*             break; */
-/*         } /\* endswitch *\/ */
-/*      } /\* endif *\/ */
-/*   } /\* endif *\/ */
-  return (neighbour_block_ptr); 
+  OctreeBlock *neighbour_block_ptr;
+  return (neighbour_block_ptr);
 }
 
-/****************************************************************************
- * Octree_DataStructure::findRootNeighbours -- Find root neighbours.        *
- ****************************************************************************/
-inline void Octree_DataStructure::findRootNeighbours(void) {
-  int iBLK, jBLK, kBLK;
-  for ( kBLK = 0 ; kBLK <= NRk-1 ; ++kBLK ) 
-  for ( jBLK = 0 ; jBLK <= NRj-1 ; ++jBLK ) 
-      for ( iBLK = 0 ; iBLK <= NRi-1 ; ++iBLK ) {
-	  // First determine the number of neighbours based
-	  // on (i,j,k) index location of the block.
-          if (iBLK == 0 && iBLK == NRi-1) {
-	    Roots[iBLK][jBLK][kBLK].block.nW = 0;//number to the west
-	    Roots[iBLK][jBLK][kBLK].block.nTW = 0;//number to the west
-	    Roots[iBLK][jBLK][kBLK].block.nBW = 0;//number to the west
-	    Roots[iBLK][jBLK][kBLK].block.nNW = 0;
-	    Roots[iBLK][jBLK][kBLK].block.nSW = 0;
-	    Roots[iBLK][jBLK][kBLK].block.nTNW = 0;
-	    Roots[iBLK][jBLK][kBLK].block.nTSW = 0;
- 	    Roots[iBLK][jBLK][kBLK].block.nBNW = 0;
-	    Roots[iBLK][jBLK][kBLK].block.nBSW = 0;
-	    Roots[iBLK][jBLK][kBLK].block.nE = 0;
-	    Roots[iBLK][jBLK][kBLK].block.nTE = 0;
-	    Roots[iBLK][jBLK][kBLK].block.nBE = 0;
-	    Roots[iBLK][jBLK][kBLK].block.nNE = 0;
-	    Roots[iBLK][jBLK][kBLK].block.nSE = 0;
-	    Roots[iBLK][jBLK][kBLK].block.nTNE = 0;
-	    Roots[iBLK][jBLK][kBLK].block.nTSE = 0;
-	    Roots[iBLK][jBLK][kBLK].block.nBNE = 0;
-	    Roots[iBLK][jBLK][kBLK].block.nBSE = 0;
-          } else if (iBLK == 0) {
-             Roots[iBLK][jBLK][kBLK].block.nW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nNW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nSW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTNW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTSW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBNW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBSW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nE = 1;
-             Roots[iBLK][jBLK][kBLK].block.nTE = 1;
-             Roots[iBLK][jBLK][kBLK].block.nBE = 1;
-             Roots[iBLK][jBLK][kBLK].block.nNE = 1;
-             Roots[iBLK][jBLK][kBLK].block.nSE = 1;
-             Roots[iBLK][jBLK][kBLK].block.nTNE = 1;
-             Roots[iBLK][jBLK][kBLK].block.nTSE = 1;
-             Roots[iBLK][jBLK][kBLK].block.nBNE = 1;
-             Roots[iBLK][jBLK][kBLK].block.nBSE = 1;
-          } else if (iBLK == NRi-1) {
-             Roots[iBLK][jBLK][kBLK].block.nW = 1;
-             Roots[iBLK][jBLK][kBLK].block.nTW = 1;
-             Roots[iBLK][jBLK][kBLK].block.nBW = 1;
-             Roots[iBLK][jBLK][kBLK].block.nNW = 1;
-             Roots[iBLK][jBLK][kBLK].block.nSW = 1;
-             Roots[iBLK][jBLK][kBLK].block.nTNW = 1;
-             Roots[iBLK][jBLK][kBLK].block.nTSW = 1;
-             Roots[iBLK][jBLK][kBLK].block.nBNW = 1;
-             Roots[iBLK][jBLK][kBLK].block.nBSW = 1;
-             Roots[iBLK][jBLK][kBLK].block.nE = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTE = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBE = 0;
-             Roots[iBLK][jBLK][kBLK].block.nNE = 0;
-             Roots[iBLK][jBLK][kBLK].block.nSE = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTNE = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTSE = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBNE = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBSE = 0;
-          } else {
-             Roots[iBLK][jBLK][kBLK].block.nW = 1;
-             Roots[iBLK][jBLK][kBLK].block.nTW = 1;
-             Roots[iBLK][jBLK][kBLK].block.nBW = 1;
-             Roots[iBLK][jBLK][kBLK].block.nNW = 1;
-             Roots[iBLK][jBLK][kBLK].block.nSW = 1;
-             Roots[iBLK][jBLK][kBLK].block.nTNW = 1;
-             Roots[iBLK][jBLK][kBLK].block.nTSW = 1;
-             Roots[iBLK][jBLK][kBLK].block.nBNW = 1;
-             Roots[iBLK][jBLK][kBLK].block.nBSW = 1;
-             Roots[iBLK][jBLK][kBLK].block.nE = 1;
-             Roots[iBLK][jBLK][kBLK].block.nTE = 1;
-             Roots[iBLK][jBLK][kBLK].block.nBE = 1;
-             Roots[iBLK][jBLK][kBLK].block.nNE = 1;
-             Roots[iBLK][jBLK][kBLK].block.nSE = 1;
-             Roots[iBLK][jBLK][kBLK].block.nTNE = 1;
-             Roots[iBLK][jBLK][kBLK].block.nTSE = 1;
-             Roots[iBLK][jBLK][kBLK].block.nBNE = 1;
-             Roots[iBLK][jBLK][kBLK].block.nBSE = 1;
-          } /* endif */
-          if (jBLK == 0 && jBLK == NRj-1) {
-             Roots[iBLK][jBLK][kBLK].block.nS = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTS = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBS = 0;
-             Roots[iBLK][jBLK][kBLK].block.nSW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nSE = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTSW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTSE = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBSW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBSE = 0;
-             Roots[iBLK][jBLK][kBLK].block.nN = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTN = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBN = 0;
-             Roots[iBLK][jBLK][kBLK].block.nNW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nNE = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTNW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTNE = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBNW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBNE = 0;
-          } else if (jBLK == 0) {
-            Roots[iBLK][jBLK][kBLK].block.nS = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTS = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBS = 0;
-             Roots[iBLK][jBLK][kBLK].block.nSW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nSE = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTSW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTSE = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBSW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBSE = 0;
-             Roots[iBLK][jBLK][kBLK].block.nN = 1;
-             Roots[iBLK][jBLK][kBLK].block.nTN = 1 ;//* Roots[iBLK][jBLK][kBLK].block.nTN;
-             Roots[iBLK][jBLK][kBLK].block.nBN = 1 ;//* Roots[iBLK][jBLK][kBLK].block.nBN;
-             Roots[iBLK][jBLK][kBLK].block.nNW = 1 * Roots[iBLK][jBLK][kBLK].block.nNW;
-             Roots[iBLK][jBLK][kBLK].block.nNE = 1 * Roots[iBLK][jBLK][kBLK].block.nNE;
-             Roots[iBLK][jBLK][kBLK].block.nTNW = 1 * Roots[iBLK][jBLK][kBLK].block.nTNW;
-             Roots[iBLK][jBLK][kBLK].block.nTNE = 1 * Roots[iBLK][jBLK][kBLK].block.nTNE;
-             Roots[iBLK][jBLK][kBLK].block.nBNW = 1 * Roots[iBLK][jBLK][kBLK].block.nBNW;
-             Roots[iBLK][jBLK][kBLK].block.nBNE = 1 * Roots[iBLK][jBLK][kBLK].block.nBNE;
-	    } else if (jBLK == NRj-1) {
-             Roots[iBLK][jBLK][kBLK].block.nS = 1;
-             Roots[iBLK][jBLK][kBLK].block.nTS = 1;//* Roots[iBLK][jBLK][kBLK].block.nTS;
-             Roots[iBLK][jBLK][kBLK].block.nBS = 1;//* Roots[iBLK][jBLK][kBLK].block.nBS;
-             Roots[iBLK][jBLK][kBLK].block.nSW = 1 * Roots[iBLK][jBLK][kBLK].block.nSW;
-             Roots[iBLK][jBLK][kBLK].block.nSE = 1 * Roots[iBLK][jBLK][kBLK].block.nSE;
-             Roots[iBLK][jBLK][kBLK].block.nTSW = 1 * Roots[iBLK][jBLK][kBLK].block.nTSW;
-             Roots[iBLK][jBLK][kBLK].block.nTSE = 1 * Roots[iBLK][jBLK][kBLK].block.nTSE;
-             Roots[iBLK][jBLK][kBLK].block.nBSW = 1 * Roots[iBLK][jBLK][kBLK].block.nBSW;
-             Roots[iBLK][jBLK][kBLK].block.nBSE = 1 * Roots[iBLK][jBLK][kBLK].block.nBSE;
-             Roots[iBLK][jBLK][kBLK].block.nN = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTN = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBN = 0;
-             Roots[iBLK][jBLK][kBLK].block.nNW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nNE = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTNW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTNE = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBNW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBNE = 0;
-          } else {
-             Roots[iBLK][jBLK][kBLK].block.nS = 1;
-             Roots[iBLK][jBLK][kBLK].block.nTS = 1;//* Roots[iBLK][jBLK][kBLK].block.nTS;
-             Roots[iBLK][jBLK][kBLK].block.nBS = 1;//* Roots[iBLK][jBLK][kBLK].block.nBS;
-             Roots[iBLK][jBLK][kBLK].block.nSW = 1 * Roots[iBLK][jBLK][kBLK].block.nSW;
-             Roots[iBLK][jBLK][kBLK].block.nSE = 1 * Roots[iBLK][jBLK][kBLK].block.nSE;
-             Roots[iBLK][jBLK][kBLK].block.nTSW = 1 * Roots[iBLK][jBLK][kBLK].block.nTSW;
-             Roots[iBLK][jBLK][kBLK].block.nTSE = 1 * Roots[iBLK][jBLK][kBLK].block.nTSE;
-             Roots[iBLK][jBLK][kBLK].block.nBSW = 1 * Roots[iBLK][jBLK][kBLK].block.nBSW;
-             Roots[iBLK][jBLK][kBLK].block.nBSE = 1 * Roots[iBLK][jBLK][kBLK].block.nBSE;
-             Roots[iBLK][jBLK][kBLK].block.nN = 1;
-             Roots[iBLK][jBLK][kBLK].block.nTN = 1 ;//* Roots[iBLK][jBLK][kBLK].block.nTN;
-             Roots[iBLK][jBLK][kBLK].block.nBN = 1;// * Roots[iBLK][jBLK][kBLK].block.nBN;
-             Roots[iBLK][jBLK][kBLK].block.nNW = 1 * Roots[iBLK][jBLK][kBLK].block.nNW;
-             Roots[iBLK][jBLK][kBLK].block.nNE = 1 * Roots[iBLK][jBLK][kBLK].block.nNE;
-             Roots[iBLK][jBLK][kBLK].block.nTNW = 1 * Roots[iBLK][jBLK][kBLK].block.nTNW;
-             Roots[iBLK][jBLK][kBLK].block.nTNE = 1 * Roots[iBLK][jBLK][kBLK].block.nTNE;
-             Roots[iBLK][jBLK][kBLK].block.nBNW = 1 * Roots[iBLK][jBLK][kBLK].block.nBNW;
-             Roots[iBLK][jBLK][kBLK].block.nBNE = 1 * Roots[iBLK][jBLK][kBLK].block.nBNE;
-          } /* endif */
-
-          if (kBLK == 0 && kBLK == NRk-1) {
-             Roots[iBLK][jBLK][kBLK].block.nT = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTS = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTN = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTE = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTNW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTNE = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTSW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTSE = 0;
-             Roots[iBLK][jBLK][kBLK].block.nB = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBS = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBN = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBE = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBNW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBNE = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBSW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBSE = 0;
-          } else if (kBLK == 0) {
-             Roots[iBLK][jBLK][kBLK].block.nB = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBS = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBN = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBE = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBNW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBNE = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBSW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nBSE = 0;
-             Roots[iBLK][jBLK][kBLK].block.nT = 1;
-             Roots[iBLK][jBLK][kBLK].block.nTN = 1 * Roots[iBLK][jBLK][kBLK].block.nTN;
-             Roots[iBLK][jBLK][kBLK].block.nTS = 1 * Roots[iBLK][jBLK][kBLK].block.nTS;
-             Roots[iBLK][jBLK][kBLK].block.nTE = 1 * Roots[iBLK][jBLK][kBLK].block.nTE;
-             Roots[iBLK][jBLK][kBLK].block.nTW = 1 * Roots[iBLK][jBLK][kBLK].block.nTW;
-             Roots[iBLK][jBLK][kBLK].block.nTNW = 1 * Roots[iBLK][jBLK][kBLK].block.nTNW;
-             Roots[iBLK][jBLK][kBLK].block.nTNE = 1 * Roots[iBLK][jBLK][kBLK].block.nTNE;
-             Roots[iBLK][jBLK][kBLK].block.nTSW = 1 * Roots[iBLK][jBLK][kBLK].block.nTSW;
-             Roots[iBLK][jBLK][kBLK].block.nTSE = 1 * Roots[iBLK][jBLK][kBLK].block.nTSE;
-	    } else if (kBLK == NRk-1) {
-             Roots[iBLK][jBLK][kBLK].block.nB = 1;
-             Roots[iBLK][jBLK][kBLK].block.nBN = 1* Roots[iBLK][jBLK][kBLK].block.nBN;
-             Roots[iBLK][jBLK][kBLK].block.nBS = 1* Roots[iBLK][jBLK][kBLK].block.nBS;
-             Roots[iBLK][jBLK][kBLK].block.nBE = 1 * Roots[iBLK][jBLK][kBLK].block.nBE;
-             Roots[iBLK][jBLK][kBLK].block.nBW = 1 * Roots[iBLK][jBLK][kBLK].block.nBW;
-             Roots[iBLK][jBLK][kBLK].block.nBNW = 1 * Roots[iBLK][jBLK][kBLK].block.nBNW;
-             Roots[iBLK][jBLK][kBLK].block.nBNE = 1 * Roots[iBLK][jBLK][kBLK].block.nBNE;
-             Roots[iBLK][jBLK][kBLK].block.nBSW = 1 * Roots[iBLK][jBLK][kBLK].block.nBSW;
-             Roots[iBLK][jBLK][kBLK].block.nBSE = 1 * Roots[iBLK][jBLK][kBLK].block.nBSE;
-             Roots[iBLK][jBLK][kBLK].block.nT = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTN = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTS = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTE = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTNW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTNE = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTSW = 0;
-             Roots[iBLK][jBLK][kBLK].block.nTSE = 0;
-          } else {
-             Roots[iBLK][jBLK][kBLK].block.nT = 1;
-             Roots[iBLK][jBLK][kBLK].block.nTN = 1 * Roots[iBLK][jBLK][kBLK].block.nTN;
-             Roots[iBLK][jBLK][kBLK].block.nTS = 1 * Roots[iBLK][jBLK][kBLK].block.nTS;
-             Roots[iBLK][jBLK][kBLK].block.nTE = 1 * Roots[iBLK][jBLK][kBLK].block.nTE;
-             Roots[iBLK][jBLK][kBLK].block.nTW = 1 * Roots[iBLK][jBLK][kBLK].block.nTW;
-             Roots[iBLK][jBLK][kBLK].block.nTNW = 1 * Roots[iBLK][jBLK][kBLK].block.nTNW;
-             Roots[iBLK][jBLK][kBLK].block.nTNE = 1 * Roots[iBLK][jBLK][kBLK].block.nTNE;
-             Roots[iBLK][jBLK][kBLK].block.nTSW = 1 * Roots[iBLK][jBLK][kBLK].block.nTSW;
-             Roots[iBLK][jBLK][kBLK].block.nTSE = 1 * Roots[iBLK][jBLK][kBLK].block.nTSE;
-             Roots[iBLK][jBLK][kBLK].block.nB = 1;
-             Roots[iBLK][jBLK][kBLK].block.nBN = 1* Roots[iBLK][jBLK][kBLK].block.nBN;
-             Roots[iBLK][jBLK][kBLK].block.nBS = 1* Roots[iBLK][jBLK][kBLK].block.nBS;
-             Roots[iBLK][jBLK][kBLK].block.nBE = 1 * Roots[iBLK][jBLK][kBLK].block.nBE;
-             Roots[iBLK][jBLK][kBLK].block.nBW = 1 * Roots[iBLK][jBLK][kBLK].block.nBW;
-             Roots[iBLK][jBLK][kBLK].block.nBNW = 1 * Roots[iBLK][jBLK][kBLK].block.nBNW;
-             Roots[iBLK][jBLK][kBLK].block.nBNE = 1 * Roots[iBLK][jBLK][kBLK].block.nBNE;
-             Roots[iBLK][jBLK][kBLK].block.nBSW = 1 * Roots[iBLK][jBLK][kBLK].block.nBSW;
-             Roots[iBLK][jBLK][kBLK].block.nBSE = 1 * Roots[iBLK][jBLK][kBLK].block.nBSE;
-          } /* endif */
-
-	  
-          // Check to see if the neighbour numbers are valid.
-	  if (Roots[iBLK][jBLK][kBLK].block.nW == 1 &&
-	      !Roots[iBLK-1][jBLK][kBLK].block.used && 
-              Roots[iBLK-1][jBLK][kBLK].childTNW_ptr == NULL &&
-              Roots[iBLK-1][jBLK][kBLK].childTNE_ptr == NULL &&
-              Roots[iBLK-1][jBLK][kBLK].childTSE_ptr == NULL &&
-              Roots[iBLK-1][jBLK][kBLK].childTSW_ptr == NULL &&
-              Roots[iBLK-1][jBLK][kBLK].childBNW_ptr == NULL &&
-              Roots[iBLK-1][jBLK][kBLK].childBNE_ptr == NULL &&
-              Roots[iBLK-1][jBLK][kBLK].childBSE_ptr == NULL &&
-              Roots[iBLK-1][jBLK][kBLK].childBSW_ptr == NULL) {
-             Roots[iBLK][jBLK][kBLK].block.nW = 0;
-          } /* endif */
-	  if (Roots[iBLK][jBLK][kBLK].block.nE == 1 &&
-              !Roots[iBLK+1][jBLK][kBLK].block.used && 
-              Roots[iBLK+1][jBLK][kBLK].childTNW_ptr == NULL &&
-              Roots[iBLK+1][jBLK][kBLK].childTNE_ptr == NULL &&
-              Roots[iBLK+1][jBLK][kBLK].childTSE_ptr == NULL &&
-              Roots[iBLK+1][jBLK][kBLK].childTSW_ptr == NULL && 
-              Roots[iBLK+1][jBLK][kBLK].childBNW_ptr == NULL &&
-              Roots[iBLK+1][jBLK][kBLK].childBNE_ptr == NULL &&
-              Roots[iBLK+1][jBLK][kBLK].childBSE_ptr == NULL &&
-              Roots[iBLK+1][jBLK][kBLK].childBSW_ptr == NULL) { 
-             Roots[iBLK][jBLK][kBLK].block.nE = 0;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nS == 1 &&
-              !Roots[iBLK][jBLK-1][kBLK].block.used && 
-              Roots[iBLK][jBLK-1][kBLK].childTNW_ptr == NULL &&
-              Roots[iBLK][jBLK-1][kBLK].childTNE_ptr == NULL &&
-              Roots[iBLK][jBLK-1][kBLK].childTSE_ptr == NULL &&
-              Roots[iBLK][jBLK-1][kBLK].childTSW_ptr == NULL && 
-              Roots[iBLK][jBLK-1][kBLK].childBNW_ptr == NULL &&
-              Roots[iBLK][jBLK-1][kBLK].childBNE_ptr == NULL &&
-              Roots[iBLK][jBLK-1][kBLK].childBSE_ptr == NULL &&
-              Roots[iBLK][jBLK-1][kBLK].childBSW_ptr == NULL) { 
-             Roots[iBLK][jBLK][kBLK].block.nS = 0;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nN == 1 &&
-              !Roots[iBLK][jBLK+1][kBLK].block.used && 
-              Roots[iBLK][jBLK+1][kBLK].childTNW_ptr == NULL &&
-              Roots[iBLK][jBLK+1][kBLK].childTNE_ptr == NULL &&
-              Roots[iBLK][jBLK+1][kBLK].childTSE_ptr == NULL &&
-              Roots[iBLK][jBLK+1][kBLK].childTSW_ptr == NULL &&
-              Roots[iBLK][jBLK+1][kBLK].childBNW_ptr == NULL &&
-              Roots[iBLK][jBLK+1][kBLK].childBNE_ptr == NULL &&
-              Roots[iBLK][jBLK+1][kBLK].childBSE_ptr == NULL &&
-              Roots[iBLK][jBLK+1][kBLK].childBSW_ptr == NULL) { 
-            Roots[iBLK][jBLK][kBLK].block.nN = 0;
-          } /* endif */
-
-	  if (Roots[iBLK][jBLK][kBLK].block.nB == 1 &&
-              !Roots[iBLK][jBLK][kBLK-1].block.used && 
-              Roots[iBLK][jBLK][kBLK-1].childTNW_ptr == NULL &&
-              Roots[iBLK][jBLK][kBLK-1].childTNE_ptr == NULL &&
-              Roots[iBLK][jBLK][kBLK-1].childTSE_ptr == NULL &&
-              Roots[iBLK][jBLK][kBLK-1].childTSW_ptr == NULL &&
-              Roots[iBLK][jBLK][kBLK-1].childBNW_ptr == NULL &&
-              Roots[iBLK][jBLK][kBLK-1].childBNE_ptr == NULL &&
-              Roots[iBLK][jBLK][kBLK-1].childBSE_ptr == NULL &&
-              Roots[iBLK][jBLK][kBLK-1].childBSW_ptr == NULL) { 
-             Roots[iBLK][jBLK][kBLK].block.nB = 0;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nT == 1 &&
-              !Roots[iBLK][jBLK][kBLK+1].block.used && 
-              Roots[iBLK][jBLK][kBLK+1].childTNW_ptr == NULL &&
-              Roots[iBLK][jBLK][kBLK+1].childTNE_ptr == NULL &&
-              Roots[iBLK][jBLK][kBLK+1].childTSE_ptr == NULL &&
-              Roots[iBLK][jBLK][kBLK+1].childTSW_ptr == NULL && 
-              Roots[iBLK][jBLK][kBLK+1].childBNW_ptr == NULL &&
-              Roots[iBLK][jBLK][kBLK+1].childBNE_ptr == NULL &&
-              Roots[iBLK][jBLK][kBLK+1].childBSE_ptr == NULL &&
-              Roots[iBLK][jBLK][kBLK+1].childBSW_ptr == NULL) { 
-             Roots[iBLK][jBLK][kBLK].block.nT = 0;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nNW == 1 &&
-              !Roots[iBLK-1][jBLK+1][kBLK].block.used && 
-              Roots[iBLK-1][jBLK+1][kBLK].childTNW_ptr == NULL &&
-              Roots[iBLK-1][jBLK+1][kBLK].childTNE_ptr == NULL &&
-              Roots[iBLK-1][jBLK+1][kBLK].childTSE_ptr == NULL &&
-              Roots[iBLK-1][jBLK+1][kBLK].childTSW_ptr == NULL && 
-              Roots[iBLK-1][jBLK+1][kBLK].childBNW_ptr == NULL &&
-              Roots[iBLK-1][jBLK+1][kBLK].childBNE_ptr == NULL &&
-              Roots[iBLK-1][jBLK+1][kBLK].childBSE_ptr == NULL &&
-              Roots[iBLK-1][jBLK+1][kBLK].childBSW_ptr == NULL) { 
-              Roots[iBLK][jBLK][kBLK].block.nNW = 0;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nSW == 1 &&
-              !Roots[iBLK-1][jBLK-1][kBLK].block.used && 
-              Roots[iBLK-1][jBLK-1][kBLK].childTNW_ptr == NULL &&
-              Roots[iBLK-1][jBLK-1][kBLK].childTNE_ptr == NULL &&
-              Roots[iBLK-1][jBLK-1][kBLK].childTSE_ptr == NULL &&
-              Roots[iBLK-1][jBLK-1][kBLK].childTSW_ptr == NULL &&
-              Roots[iBLK-1][jBLK-1][kBLK].childBNW_ptr == NULL &&
-              Roots[iBLK-1][jBLK-1][kBLK].childBNE_ptr == NULL &&
-              Roots[iBLK-1][jBLK-1][kBLK].childBSE_ptr == NULL &&
-              Roots[iBLK-1][jBLK-1][kBLK].childBSW_ptr == NULL) { 
-             Roots[iBLK][jBLK][kBLK].block.nSW = 0;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nNE == 1 &&
-              !Roots[iBLK+1][jBLK+1][kBLK].block.used && 
-              Roots[iBLK+1][jBLK+1][kBLK].childTNW_ptr == NULL &&
-              Roots[iBLK+1][jBLK+1][kBLK].childTNE_ptr == NULL &&
-              Roots[iBLK+1][jBLK+1][kBLK].childTSE_ptr == NULL &&
-              Roots[iBLK+1][jBLK+1][kBLK].childTSW_ptr == NULL && 
-              Roots[iBLK+1][jBLK+1][kBLK].childBNW_ptr == NULL &&
-              Roots[iBLK+1][jBLK+1][kBLK].childBNE_ptr == NULL &&
-              Roots[iBLK+1][jBLK+1][kBLK].childBSE_ptr == NULL &&
-              Roots[iBLK+1][jBLK+1][kBLK].childBSW_ptr == NULL) { 
-             Roots[iBLK][jBLK][kBLK].block.nNE = 0;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nSE == 1 &&
-              !Roots[iBLK+1][jBLK-1][kBLK].block.used && 
-              Roots[iBLK+1][jBLK-1][kBLK].childTNW_ptr == NULL &&
-              Roots[iBLK+1][jBLK-1][kBLK].childTNE_ptr == NULL &&
-              Roots[iBLK+1][jBLK-1][kBLK].childTSE_ptr == NULL &&
-              Roots[iBLK+1][jBLK-1][kBLK].childTSW_ptr == NULL &&
-              Roots[iBLK+1][jBLK-1][kBLK].childBNW_ptr == NULL &&
-              Roots[iBLK+1][jBLK-1][kBLK].childBNE_ptr == NULL &&
-              Roots[iBLK+1][jBLK-1][kBLK].childBSE_ptr == NULL &&
-              Roots[iBLK+1][jBLK-1][kBLK].childBSW_ptr == NULL) {
-             Roots[iBLK][jBLK][kBLK].block.nSE = 0;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nTN == 1 &&
-              !Roots[iBLK][jBLK+1][kBLK+1].block.used && 
-              Roots[iBLK][jBLK+1][kBLK+1].childTNW_ptr == NULL &&
-              Roots[iBLK][jBLK+1][kBLK+1].childTNE_ptr == NULL &&
-              Roots[iBLK][jBLK+1][kBLK+1].childTSE_ptr == NULL &&
-              Roots[iBLK][jBLK+1][kBLK+1].childTSW_ptr == NULL && 
-              Roots[iBLK][jBLK+1][kBLK+1].childBNW_ptr == NULL &&
-              Roots[iBLK][jBLK+1][kBLK+1].childBNE_ptr == NULL &&
-              Roots[iBLK][jBLK+1][kBLK+1].childBSE_ptr == NULL &&
-              Roots[iBLK][jBLK+1][kBLK+1].childBSW_ptr == NULL) { 
-             Roots[iBLK][jBLK][kBLK].block.nTN = 0;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nTS == 1 &&
-              !Roots[iBLK][jBLK-1][kBLK+1].block.used && 
-              Roots[iBLK][jBLK-1][kBLK+1].childTNW_ptr == NULL &&
-              Roots[iBLK][jBLK-1][kBLK+1].childTNE_ptr == NULL &&
-              Roots[iBLK][jBLK-1][kBLK+1].childTSE_ptr == NULL &&
-              Roots[iBLK][jBLK-1][kBLK+1].childTSW_ptr == NULL &&
-              Roots[iBLK][jBLK-1][kBLK+1].childBNW_ptr == NULL &&
-              Roots[iBLK][jBLK-1][kBLK+1].childBNE_ptr == NULL &&
-              Roots[iBLK][jBLK-1][kBLK+1].childBSE_ptr == NULL &&
-              Roots[iBLK][jBLK-1][kBLK+1].childBSW_ptr == NULL) { 
-             Roots[iBLK][jBLK][kBLK].block.nTS = 0;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nTE == 1 &&
-              !Roots[iBLK+1][jBLK][kBLK+1].block.used && 
-              Roots[iBLK+1][jBLK][kBLK+1].childTNW_ptr == NULL &&
-              Roots[iBLK+1][jBLK][kBLK+1].childTNE_ptr == NULL &&
-              Roots[iBLK+1][jBLK][kBLK+1].childTSE_ptr == NULL &&
-              Roots[iBLK+1][jBLK][kBLK+1].childTSW_ptr == NULL &&
-              Roots[iBLK+1][jBLK][kBLK+1].childBNW_ptr == NULL &&
-              Roots[iBLK+1][jBLK][kBLK+1].childBNE_ptr == NULL &&
-              Roots[iBLK+1][jBLK][kBLK+1].childBSE_ptr == NULL &&
-              Roots[iBLK+1][jBLK][kBLK+1].childBSW_ptr == NULL) { 
-             Roots[iBLK][jBLK][kBLK].block.nTE = 0;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nTW == 1 &&
-              !Roots[iBLK-1][jBLK][kBLK+1].block.used && 
-              Roots[iBLK-1][jBLK][kBLK+1].childTNW_ptr == NULL &&
-              Roots[iBLK-1][jBLK][kBLK+1].childTNE_ptr == NULL &&
-              Roots[iBLK-1][jBLK][kBLK+1].childTSE_ptr == NULL &&
-              Roots[iBLK-1][jBLK][kBLK+1].childTSW_ptr == NULL &&
-              Roots[iBLK-1][jBLK][kBLK+1].childBNW_ptr == NULL &&
-              Roots[iBLK-1][jBLK][kBLK+1].childBNE_ptr == NULL &&
-              Roots[iBLK-1][jBLK][kBLK+1].childBSE_ptr == NULL &&
-              Roots[iBLK-1][jBLK][kBLK+1].childBSW_ptr == NULL) {
-             Roots[iBLK][jBLK][kBLK].block.nTW = 0;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nBN == 1 &&
-              !Roots[iBLK][jBLK+1][kBLK-1].block.used && 
-              Roots[iBLK][jBLK+1][kBLK-1].childTNW_ptr == NULL &&
-              Roots[iBLK][jBLK+1][kBLK-1].childTNE_ptr == NULL &&
-              Roots[iBLK][jBLK+1][kBLK-1].childTSE_ptr == NULL &&
-              Roots[iBLK][jBLK+1][kBLK-1].childTSW_ptr == NULL && 
-              Roots[iBLK][jBLK+1][kBLK-1].childBNW_ptr == NULL &&
-              Roots[iBLK][jBLK+1][kBLK-1].childBNE_ptr == NULL &&
-              Roots[iBLK][jBLK+1][kBLK-1].childBSE_ptr == NULL &&
-              Roots[iBLK][jBLK+1][kBLK-1].childBSW_ptr == NULL) { 
-             Roots[iBLK][jBLK][kBLK].block.nBN = 0;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nBS == 1 &&
-              !Roots[iBLK][jBLK-1][kBLK-1].block.used && 
-              Roots[iBLK][jBLK-1][kBLK-1].childTNW_ptr == NULL &&
-              Roots[iBLK][jBLK-1][kBLK-1].childTNE_ptr == NULL &&
-              Roots[iBLK][jBLK-1][kBLK-1].childTSE_ptr == NULL &&
-              Roots[iBLK][jBLK-1][kBLK-1].childTSW_ptr == NULL &&
-              Roots[iBLK][jBLK-1][kBLK-1].childBNW_ptr == NULL &&
-              Roots[iBLK][jBLK-1][kBLK-1].childBNE_ptr == NULL &&
-              Roots[iBLK][jBLK-1][kBLK-1].childBSE_ptr == NULL &&
-              Roots[iBLK][jBLK-1][kBLK-1].childBSW_ptr == NULL) { 
-             Roots[iBLK][jBLK][kBLK].block.nBS = 0;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nBE == 1 &&
-              !Roots[iBLK+1][jBLK][kBLK-1].block.used && 
-              Roots[iBLK+1][jBLK][kBLK-1].childTNW_ptr == NULL &&
-              Roots[iBLK+1][jBLK][kBLK-1].childTNE_ptr == NULL &&
-              Roots[iBLK+1][jBLK][kBLK-1].childTSE_ptr == NULL &&
-              Roots[iBLK+1][jBLK][kBLK-1].childTSW_ptr == NULL && 
-              Roots[iBLK+1][jBLK][kBLK-1].childBNW_ptr == NULL &&
-              Roots[iBLK+1][jBLK][kBLK-1].childBNE_ptr == NULL &&
-              Roots[iBLK+1][jBLK][kBLK-1].childBSE_ptr == NULL &&
-              Roots[iBLK+1][jBLK][kBLK-1].childBSW_ptr == NULL) { 
-             Roots[iBLK][jBLK][kBLK].block.nBE = 0;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nBW == 1 &&
-              !Roots[iBLK-1][jBLK][kBLK-1].block.used && 
-              Roots[iBLK-1][jBLK][kBLK-1].childTNW_ptr == NULL &&
-              Roots[iBLK-1][jBLK][kBLK-1].childTNE_ptr == NULL &&
-              Roots[iBLK-1][jBLK][kBLK-1].childTSE_ptr == NULL &&
-              Roots[iBLK-1][jBLK][kBLK-1].childTSW_ptr == NULL &&
-              Roots[iBLK-1][jBLK][kBLK-1].childBNW_ptr == NULL &&
-              Roots[iBLK-1][jBLK][kBLK-1].childBNE_ptr == NULL &&
-              Roots[iBLK-1][jBLK][kBLK-1].childBSE_ptr == NULL &&
-              Roots[iBLK-1][jBLK][kBLK-1].childBSW_ptr == NULL) {
-             Roots[iBLK][jBLK][kBLK].block.nBW = 0;
-          } /* endif */
-
-	  if (Roots[iBLK][jBLK][kBLK].block.nTNW == 1 &&
-              !Roots[iBLK-1][jBLK+1][kBLK+1].block.used && 
-              Roots[iBLK-1][jBLK+1][kBLK+1].childTNW_ptr == NULL &&
-              Roots[iBLK-1][jBLK+1][kBLK+1].childTNE_ptr == NULL &&
-              Roots[iBLK-1][jBLK+1][kBLK+1].childTSE_ptr == NULL &&
-              Roots[iBLK-1][jBLK+1][kBLK+1].childTSW_ptr == NULL && 
-              Roots[iBLK-1][jBLK+1][kBLK+1].childBNW_ptr == NULL &&
-              Roots[iBLK-1][jBLK+1][kBLK+1].childBNE_ptr == NULL &&
-              Roots[iBLK-1][jBLK+1][kBLK+1].childBSE_ptr == NULL &&
-              Roots[iBLK-1][jBLK+1][kBLK+1].childBSW_ptr == NULL) { 
-             Roots[iBLK][jBLK][kBLK].block.nTNW = 0;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nTNE == 1 &&
-              !Roots[iBLK+1][jBLK+1][kBLK+1].block.used && 
-              Roots[iBLK+1][jBLK+1][kBLK+1].childTNW_ptr == NULL &&
-              Roots[iBLK+1][jBLK+1][kBLK+1].childTNE_ptr == NULL &&
-              Roots[iBLK+1][jBLK+1][kBLK+1].childTSE_ptr == NULL &&
-              Roots[iBLK+1][jBLK+1][kBLK+1].childTSW_ptr == NULL &&
-              Roots[iBLK+1][jBLK+1][kBLK+1].childBNW_ptr == NULL &&
-              Roots[iBLK+1][jBLK+1][kBLK+1].childBNE_ptr == NULL &&
-              Roots[iBLK+1][jBLK+1][kBLK+1].childBSE_ptr == NULL &&
-              Roots[iBLK+1][jBLK+1][kBLK+1].childBSW_ptr == NULL) { 
-             Roots[iBLK][jBLK][kBLK].block.nTNE = 0;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nTSW == 1 &&
-              !Roots[iBLK-1][jBLK-1][kBLK+1].block.used && 
-              Roots[iBLK-1][jBLK-1][kBLK+1].childTNW_ptr == NULL &&
-              Roots[iBLK-1][jBLK-1][kBLK+1].childTNE_ptr == NULL &&
-              Roots[iBLK-1][jBLK-1][kBLK+1].childTSE_ptr == NULL &&
-              Roots[iBLK-1][jBLK-1][kBLK+1].childTSW_ptr == NULL && 
-              Roots[iBLK-1][jBLK-1][kBLK+1].childBNW_ptr == NULL &&
-              Roots[iBLK-1][jBLK-1][kBLK+1].childBNE_ptr == NULL &&
-              Roots[iBLK-1][jBLK-1][kBLK+1].childBSE_ptr == NULL &&
-              Roots[iBLK-1][jBLK-1][kBLK+1].childBSW_ptr == NULL) { 
-             Roots[iBLK][jBLK][kBLK].block.nTSW = 0;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nTSE == 1 &&
-              !Roots[iBLK+1][jBLK-1][kBLK+1].block.used && 
-              Roots[iBLK+1][jBLK-1][kBLK+1].childTNW_ptr == NULL &&
-              Roots[iBLK+1][jBLK-1][kBLK+1].childTNE_ptr == NULL &&
-              Roots[iBLK+1][jBLK-1][kBLK+1].childTSE_ptr == NULL &&
-              Roots[iBLK+1][jBLK-1][kBLK+1].childTSW_ptr == NULL &&
-              Roots[iBLK+1][jBLK-1][kBLK+1].childBNW_ptr == NULL &&
-              Roots[iBLK+1][jBLK-1][kBLK+1].childBNE_ptr == NULL &&
-              Roots[iBLK+1][jBLK-1][kBLK+1].childBSE_ptr == NULL &&
-              Roots[iBLK+1][jBLK-1][kBLK+1].childBSW_ptr == NULL) {
-             Roots[iBLK][jBLK][kBLK].block.nTSE = 0;
-          } /* endif */
-
-	  if (Roots[iBLK][jBLK][kBLK].block.nBNW == 1 &&
-              !Roots[iBLK-1][jBLK+1][kBLK-1].block.used && 
-              Roots[iBLK-1][jBLK+1][kBLK-1].childTNW_ptr == NULL &&
-              Roots[iBLK-1][jBLK+1][kBLK-1].childTNE_ptr == NULL &&
-              Roots[iBLK-1][jBLK+1][kBLK-1].childTSE_ptr == NULL &&
-              Roots[iBLK-1][jBLK+1][kBLK-1].childTSW_ptr == NULL && 
-              Roots[iBLK-1][jBLK+1][kBLK-1].childBNW_ptr == NULL &&
-              Roots[iBLK-1][jBLK+1][kBLK-1].childBNE_ptr == NULL &&
-              Roots[iBLK-1][jBLK+1][kBLK-1].childBSE_ptr == NULL &&
-              Roots[iBLK-1][jBLK+1][kBLK-1].childBSW_ptr == NULL) { 
-             Roots[iBLK][jBLK][kBLK].block.nBNW = 0;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nBNE == 1 &&
-              !Roots[iBLK+1][jBLK+1][kBLK-1].block.used && 
-              Roots[iBLK+1][jBLK+1][kBLK-1].childTNW_ptr == NULL &&
-              Roots[iBLK+1][jBLK+1][kBLK-1].childTNE_ptr == NULL &&
-              Roots[iBLK+1][jBLK+1][kBLK-1].childTSE_ptr == NULL &&
-              Roots[iBLK+1][jBLK+1][kBLK-1].childTSW_ptr == NULL &&
-              Roots[iBLK+1][jBLK+1][kBLK-1].childBNW_ptr == NULL &&
-              Roots[iBLK+1][jBLK+1][kBLK-1].childBNE_ptr == NULL &&
-              Roots[iBLK+1][jBLK+1][kBLK-1].childBSE_ptr == NULL &&
-              Roots[iBLK+1][jBLK+1][kBLK-1].childBSW_ptr == NULL) { 
-             Roots[iBLK][jBLK][kBLK].block.nBNE = 0;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nBSW == 1 &&
-              !Roots[iBLK-1][jBLK-1][kBLK-1].block.used && 
-              Roots[iBLK-1][jBLK-1][kBLK-1].childTNW_ptr == NULL &&
-              Roots[iBLK-1][jBLK-1][kBLK-1].childTNE_ptr == NULL &&
-              Roots[iBLK-1][jBLK-1][kBLK-1].childTSE_ptr == NULL &&
-              Roots[iBLK-1][jBLK-1][kBLK-1].childTSW_ptr == NULL && 
-              Roots[iBLK-1][jBLK-1][kBLK-1].childBNW_ptr == NULL &&
-              Roots[iBLK-1][jBLK-1][kBLK-1].childBNE_ptr == NULL &&
-              Roots[iBLK-1][jBLK-1][kBLK-1].childBSE_ptr == NULL &&
-              Roots[iBLK-1][jBLK-1][kBLK-1].childBSW_ptr == NULL) { 
-             Roots[iBLK][jBLK][kBLK].block.nBSW = 0;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nBSE == 1 &&
-              !Roots[iBLK+1][jBLK-1][kBLK-1].block.used && 
-              Roots[iBLK+1][jBLK-1][kBLK-1].childTNW_ptr == NULL &&
-              Roots[iBLK+1][jBLK-1][kBLK-1].childTNE_ptr == NULL &&
-              Roots[iBLK+1][jBLK-1][kBLK-1].childTSE_ptr == NULL &&
-              Roots[iBLK+1][jBLK-1][kBLK-1].childTSW_ptr == NULL &&
-              Roots[iBLK+1][jBLK-1][kBLK-1].childBNW_ptr == NULL &&
-              Roots[iBLK+1][jBLK-1][kBLK-1].childBNE_ptr == NULL &&
-              Roots[iBLK+1][jBLK-1][kBLK-1].childBSE_ptr == NULL &&
-              Roots[iBLK+1][jBLK-1][kBLK-1].childBSW_ptr == NULL) {
-             Roots[iBLK][jBLK][kBLK].block.nBSE = 0;
-          } /* endif */
-
-          // Finally, assign neighbour information.
-	  if (Roots[iBLK][jBLK][kBLK].block.nW == 1) {
-             Roots[iBLK][jBLK][kBLK].block.infoW[0] = Roots[iBLK-1][jBLK][kBLK].block.info;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nE == 1) {
-             Roots[iBLK][jBLK][kBLK].block.infoE[0] = Roots[iBLK+1][jBLK][kBLK].block.info;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nS == 1) {
-             Roots[iBLK][jBLK][kBLK].block.infoS[0] = Roots[iBLK][jBLK-1][kBLK].block.info;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nN == 1) {
-             Roots[iBLK][jBLK][kBLK].block.infoN[0] = Roots[iBLK][jBLK+1][kBLK].block.info;
-          } /* endif */
-
-	  if (Roots[iBLK][jBLK][kBLK].block.nT == 1) {
-             Roots[iBLK][jBLK][kBLK].block.infoT[0] = Roots[iBLK][jBLK][kBLK+1].block.info;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nB == 1) {
-             Roots[iBLK][jBLK][kBLK].block.infoB[0] = Roots[iBLK][jBLK][kBLK-1].block.info;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nNW == 1) {
-             Roots[iBLK][jBLK][kBLK].block.infoNW[0] = Roots[iBLK-1][jBLK+1][kBLK].block.info;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nSW == 1) {
-             Roots[iBLK][jBLK][kBLK].block.infoSW[0] = Roots[iBLK-1][jBLK-1][kBLK].block.info;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nNE == 1) {
-             Roots[iBLK][jBLK][kBLK].block.infoNE[0] = Roots[iBLK+1][jBLK+1][kBLK].block.info;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nSE == 1) {
-             Roots[iBLK][jBLK][kBLK].block.infoSE[0] = Roots[iBLK+1][jBLK-1][kBLK].block.info;
-          } /* endif */
-
-	  if (Roots[iBLK][jBLK][kBLK].block.nTN == 1) {
-             Roots[iBLK][jBLK][kBLK].block.infoTN[0] = Roots[iBLK][jBLK+1][kBLK+1].block.info;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nTS == 1) {
-             Roots[iBLK][jBLK][kBLK].block.infoTS[0] = Roots[iBLK][jBLK-1][kBLK+1].block.info;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nTE == 1) {
-             Roots[iBLK][jBLK][kBLK].block.infoTE[0] = Roots[iBLK+1][jBLK][kBLK+1].block.info;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nTW == 1) {
-             Roots[iBLK][jBLK][kBLK].block.infoTW[0] = Roots[iBLK-1][jBLK][kBLK+1].block.info;
-          } /* endif */
-
-	  if (Roots[iBLK][jBLK][kBLK].block.nBN == 1) {
-             Roots[iBLK][jBLK][kBLK].block.infoBN[0] = Roots[iBLK][jBLK+1][kBLK-1].block.info;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nBS == 1) {
-             Roots[iBLK][jBLK][kBLK].block.infoBS[0] = Roots[iBLK][jBLK-1][kBLK-1].block.info;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nBE == 1) {
-             Roots[iBLK][jBLK][kBLK].block.infoBE[0] = Roots[iBLK+1][jBLK][kBLK-1].block.info;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nBW == 1) {
-             Roots[iBLK][jBLK][kBLK].block.infoBW[0] = Roots[iBLK-1][jBLK][kBLK-1].block.info;
-          } /* endif */
-
-	  if (Roots[iBLK][jBLK][kBLK].block.nTNW == 1) {
-             Roots[iBLK][jBLK][kBLK].block.infoTNW[0] = Roots[iBLK-1][jBLK+1][kBLK+1].block.info;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nTSE == 1) {
-             Roots[iBLK][jBLK][kBLK].block.infoTSE[0] = Roots[iBLK+1][jBLK-1][kBLK+1].block.info;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nTNE == 1) {
-             Roots[iBLK][jBLK][kBLK].block.infoTNE[0] = Roots[iBLK+1][jBLK+1][kBLK+1].block.info;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nTSW == 1) {
-             Roots[iBLK][jBLK][kBLK].block.infoTSW[0] = Roots[iBLK-1][jBLK-1][kBLK+1].block.info;
-          } /* endif */
-
-	  if (Roots[iBLK][jBLK][kBLK].block.nBNW == 1) {
-             Roots[iBLK][jBLK][kBLK].block.infoBNW[0] = Roots[iBLK-1][jBLK+1][kBLK-1].block.info;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nBSE == 1) {
-             Roots[iBLK][jBLK][kBLK].block.infoBSE[0] = Roots[iBLK+1][jBLK-1][kBLK-1].block.info;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nBNE == 1) {
-             Roots[iBLK][jBLK][kBLK].block.infoBNE[0] = Roots[iBLK+1][jBLK+1][kBLK-1].block.info;
-          } /* endif */
-	  
-	  if (Roots[iBLK][jBLK][kBLK].block.nBSW == 1) {
-             Roots[iBLK][jBLK][kBLK].block.infoBSW[0] = Roots[iBLK-1][jBLK-1][kBLK-1].block.info;
-          } /* endif */
-  } /* endfor */
-}
 
 /****************************************************************************
  * Octree_DataStructure::findNeighbours -- Find block neighbours.           *
  ****************************************************************************/
 inline void Octree_DataStructure::findNeighbours(void) {
-  int i_blk, j_blk; 
-  OctreeBlock *neighbour_block_ptr;
-  for ( j_blk = 0 ; j_blk <= Nblk-1 ; ++j_blk ) {
-    for ( i_blk = 0 ; i_blk <= Ncpu-1 ; ++i_blk ) {
-      if (Blocks[i_blk][j_blk] != NULL) {
-	   if (Blocks[i_blk][j_blk]->block.used) {
-	      // Find neighbours to the top. 
-	     neighbour_block_ptr = getNeighbour(Blocks[i_blk][j_blk], 
-                                                 OCTREE_DIRECTION_MASK_TOP);
-              if (neighbour_block_ptr != NULL) {
-                 if (neighbour_block_ptr->block.used) {
-                    Blocks[i_blk][j_blk]->block.nT = 1;
-                    Blocks[i_blk][j_blk]->block.infoT[0] = neighbour_block_ptr->block.info;
-                    if (neighbour_block_ptr->block.info.level > 
-                        Blocks[i_blk][j_blk]->block.info.level) {
-                       Blocks[i_blk][j_blk]->block.nT += 3;
-                       Blocks[i_blk][j_blk]->block.infoT[1] = 
-			 getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_EAST)->block.info;
-                       Blocks[i_blk][j_blk]->block.infoT[2] = 
-			 getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_NORTH)->block.info;
-                       Blocks[i_blk][j_blk]->block.infoT[3] = 
-			 getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_NORTHEAST)->block.info;
-                    } /* endif */
-		 } else {
-                    Blocks[i_blk][j_blk]->block.nT = 0;
-                 } /* endif */
-              } else {
-                 Blocks[i_blk][j_blk]->block.nT = 0;
-              } /* endif */ 
-	      // Find neighbours to the bottom. 
-	      
-	      neighbour_block_ptr = getNeighbour(Blocks[i_blk][j_blk], 
-                                                 OCTREE_DIRECTION_MASK_BOTTOM);
-              if (neighbour_block_ptr != NULL) {
-                 if (neighbour_block_ptr->block.used) {
-                    Blocks[i_blk][j_blk]->block.nB = 1;
-                    Blocks[i_blk][j_blk]->block.infoB[0] = neighbour_block_ptr->block.info;
-                    if (neighbour_block_ptr->block.info.level > 
-                        Blocks[i_blk][j_blk]->block.info.level) {
-                       Blocks[i_blk][j_blk]->block.nB += 3;
-                       Blocks[i_blk][j_blk]->block.infoB[1] = 
-			 getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_EAST)->block.info;
-                       Blocks[i_blk][j_blk]->block.infoB[2] = 
-			 getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_NORTH)->block.info;
-                       Blocks[i_blk][j_blk]->block.infoB[3] = 
-			 getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_NORTHEAST)->block.info;
-                    } /* endif */
-		 } else {
-                    Blocks[i_blk][j_blk]->block.nB = 0;
-                 } /* endif */
-              } else {
-                 Blocks[i_blk][j_blk]->block.nB = 0;
-              } /* endif */              
 
-	      // Find neighbours to the north. 
-	      neighbour_block_ptr = getNeighbour(Blocks[i_blk][j_blk], 
-                                                 OCTREE_DIRECTION_MASK_NORTH);
-              if (neighbour_block_ptr != NULL) {
-                 if (neighbour_block_ptr->block.used) {
-                    Blocks[i_blk][j_blk]->block.nN = 1;
-                    Blocks[i_blk][j_blk]->block.infoN[0] = neighbour_block_ptr->block.info;
-                    if (neighbour_block_ptr->block.info.level > 
-                        Blocks[i_blk][j_blk]->block.info.level) {
-                       Blocks[i_blk][j_blk]->block.nN += 3;
-                       Blocks[i_blk][j_blk]->block.infoN[1] = 
-			 getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_EAST)->block.info;
-                       Blocks[i_blk][j_blk]->block.infoN[2] = 
-			 getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_TOP)->block.info;
-                       Blocks[i_blk][j_blk]->block.infoN[3] = 
-			 getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_TOPEAST)->block.info;
-                    } /* endif */
-		 } else {
-                    Blocks[i_blk][j_blk]->block.nN = 0;
-                 } /* endif */
-              } else {
-                 Blocks[i_blk][j_blk]->block.nN = 0;
-              } /* endif */
+  cout << "\nOctree_DataStructure::findNeighbours() NOT YET IMPLEMENTED\n";
 
-	      // Find neighbours to the south. 
-              neighbour_block_ptr = getNeighbour(Blocks[i_blk][j_blk], 
-                                                 OCTREE_DIRECTION_MASK_SOUTH);
-              if (neighbour_block_ptr != NULL) {
-                 if (neighbour_block_ptr->block.used) {
-                    Blocks[i_blk][j_blk]->block.nS = 1;
-                    Blocks[i_blk][j_blk]->block.infoS[0] = neighbour_block_ptr->block.info;
-                    if (neighbour_block_ptr->block.info.level > 
-                        Blocks[i_blk][j_blk]->block.info.level) {
-                       Blocks[i_blk][j_blk]->block.nS += 3;
-                       Blocks[i_blk][j_blk]->block.infoS[1] =
-                          getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_EAST)->block.info;
-                       Blocks[i_blk][j_blk]->block.infoS[2] =
-                          getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_TOP)->block.info;
-                      Blocks[i_blk][j_blk]->block.infoS[3] =
-                          getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_TOPEAST)->block.info;
-                    } /* endif */
-		 } else {
-                    Blocks[i_blk][j_blk]->block.nS = 0;
-                 } /* endif */
-              } else {
-                 Blocks[i_blk][j_blk]->block.nS = 0;
-              } /* endif */
-
-	      // Find neighbours to the east. 
-              neighbour_block_ptr = getNeighbour(Blocks[i_blk][j_blk], 
-                                                 OCTREE_DIRECTION_MASK_EAST);
-              if (neighbour_block_ptr != NULL) {
-                 if (neighbour_block_ptr->block.used) {
-                    Blocks[i_blk][j_blk]->block.nE = 1;
-                    Blocks[i_blk][j_blk]->block.infoE[0] = neighbour_block_ptr->block.info;
-                    if (neighbour_block_ptr->block.info.level > 
-                        Blocks[i_blk][j_blk]->block.info.level) {
-                       Blocks[i_blk][j_blk]->block.nE += 3;
-                       Blocks[i_blk][j_blk]->block.infoE[1] =
-                          getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_NORTH)->block.info;
-                       Blocks[i_blk][j_blk]->block.infoE[2] =
-                          getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_TOP)->block.info;
-                       Blocks[i_blk][j_blk]->block.infoE[3] =
-                          getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_TOPNORTH)->block.info;
-                    } /* endif */
-		 } else {
-                    Blocks[i_blk][j_blk]->block.nE = 0;
-                 } /* endif */
-              } else {
-                 Blocks[i_blk][j_blk]->block.nE = 0;
-              } /* endif */
-
-	      // Find neighbours to the west. 
-              neighbour_block_ptr = getNeighbour(Blocks[i_blk][j_blk], 
-                                                 OCTREE_DIRECTION_MASK_WEST);
-              if (neighbour_block_ptr != NULL) {
-                 if (neighbour_block_ptr->block.used) {
-                    Blocks[i_blk][j_blk]->block.nW = 1;
-                    Blocks[i_blk][j_blk]->block.infoW[0] = neighbour_block_ptr->block.info;
-                    if (neighbour_block_ptr->block.info.level > 
-                        Blocks[i_blk][j_blk]->block.info.level) {
-                       Blocks[i_blk][j_blk]->block.nW += 3;
-                       Blocks[i_blk][j_blk]->block.infoW[1] =
-                          getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_NORTH)->block.info;
-                       Blocks[i_blk][j_blk]->block.infoW[2] =
-                          getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_TOP)->block.info;
-                       Blocks[i_blk][j_blk]->block.infoW[3] =
-                          getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_TOPNORTH)->block.info;
-                    } /* endif */
-		 } else {
-                    Blocks[i_blk][j_blk]->block.nW = 0;
-                 } /* endif */
-              } else {
-                 Blocks[i_blk][j_blk]->block.nW = 0;
-              } /* endif */
-
-	      // Find neighbours to the north west. 
-	      neighbour_block_ptr = getNeighbour(Blocks[i_blk][j_blk], 
-                                                 OCTREE_DIRECTION_MASK_NORTHWEST);
-              if (neighbour_block_ptr != NULL) {
-                 if (neighbour_block_ptr->block.used) {
-                    Blocks[i_blk][j_blk]->block.nNW = 1;
-                    Blocks[i_blk][j_blk]->block.infoNW[0] = neighbour_block_ptr->block.info;
-                    if (neighbour_block_ptr->block.info.level > 
-                        Blocks[i_blk][j_blk]->block.info.level) {
-                       Blocks[i_blk][j_blk]->block.nNW += 1;
-                       Blocks[i_blk][j_blk]->block.infoNW[1] = 
-			 getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_TOP)->block.info;
-                    } /* endif */
-		 } else {
-                    Blocks[i_blk][j_blk]->block.nNW = 0;
-                 } /* endif */
-              } else {
-                 Blocks[i_blk][j_blk]->block.nNW = 0;
-              } /* endif */
-
-	      // Find neighbours to the north east. 
-	      neighbour_block_ptr = getNeighbour(Blocks[i_blk][j_blk], 
-                                                 OCTREE_DIRECTION_MASK_NORTHEAST);
-              if (neighbour_block_ptr != NULL) {
-                 if (neighbour_block_ptr->block.used) {
-                    Blocks[i_blk][j_blk]->block.nNE = 1;
-                    Blocks[i_blk][j_blk]->block.infoNE[0] = neighbour_block_ptr->block.info;
-                    if (neighbour_block_ptr->block.info.level > 
-                        Blocks[i_blk][j_blk]->block.info.level) {
-                       Blocks[i_blk][j_blk]->block.nNE += 1;
-                       Blocks[i_blk][j_blk]->block.infoNE[1] = 
-			 getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_TOP)->block.info;
-                    } /* endif */
-		 } else {
-                    Blocks[i_blk][j_blk]->block.nNE = 0;
-                 } /* endif */
-              } else {
-                 Blocks[i_blk][j_blk]->block.nNE = 0;
-              } /* endif */
-
-	      // Find neighbours to the south west. 
-	      neighbour_block_ptr = getNeighbour(Blocks[i_blk][j_blk], 
-                                                 OCTREE_DIRECTION_MASK_SOUTHWEST);
-              if (neighbour_block_ptr != NULL) {
-                 if (neighbour_block_ptr->block.used) {
-                    Blocks[i_blk][j_blk]->block.nSW = 1;
-                    Blocks[i_blk][j_blk]->block.infoSW[0] = neighbour_block_ptr->block.info;
-                    if (neighbour_block_ptr->block.info.level > 
-                        Blocks[i_blk][j_blk]->block.info.level) {
-                       Blocks[i_blk][j_blk]->block.nSW += 1;
-                       Blocks[i_blk][j_blk]->block.infoSW[1] = 
-			 getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_TOP)->block.info;
-                    } /* endif */
-		 } else {
-                    Blocks[i_blk][j_blk]->block.nSW = 0;
-                 } /* endif */
-              } else {
-                 Blocks[i_blk][j_blk]->block.nSW = 0;
-              } /* endif */
-
-	      // Find neighbours to the south east. 
-	      neighbour_block_ptr = getNeighbour(Blocks[i_blk][j_blk], 
-                                                 OCTREE_DIRECTION_MASK_SOUTHEAST);
-              if (neighbour_block_ptr != NULL) {
-                 if (neighbour_block_ptr->block.used) {
-                    Blocks[i_blk][j_blk]->block.nSE = 1;
-                    Blocks[i_blk][j_blk]->block.infoSE[0] = neighbour_block_ptr->block.info;
-                    if (neighbour_block_ptr->block.info.level > 
-                        Blocks[i_blk][j_blk]->block.info.level) {
-                       Blocks[i_blk][j_blk]->block.nSE += 1;
-                       Blocks[i_blk][j_blk]->block.infoSE[1] = 
-			 getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_TOP)->block.info;
-                    } /* endif */
-		 } else {
-                    Blocks[i_blk][j_blk]->block.nSE = 0;
-                 } /* endif */
-              } else {
-                 Blocks[i_blk][j_blk]->block.nSE = 0;
-              } /* endif */
-
-
-	      // Find neighbours to the top north. 
-	      neighbour_block_ptr = getNeighbour(Blocks[i_blk][j_blk], 
-                                                 OCTREE_DIRECTION_MASK_TOPNORTH);
-              if (neighbour_block_ptr != NULL) {
-                 if (neighbour_block_ptr->block.used) {
-                    Blocks[i_blk][j_blk]->block.nTN = 1;
-                    Blocks[i_blk][j_blk]->block.infoTN[0] = neighbour_block_ptr->block.info;
-                    if (neighbour_block_ptr->block.info.level > 
-                        Blocks[i_blk][j_blk]->block.info.level) {
-                       Blocks[i_blk][j_blk]->block.nTN += 1;
-                       Blocks[i_blk][j_blk]->block.infoTN[1] = 
-			 getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_EAST)->block.info;
-                    } /* endif */
-		 } else {
-                    Blocks[i_blk][j_blk]->block.nTN = 0;
-                 } /* endif */
-              } else {
-                 Blocks[i_blk][j_blk]->block.nTN = 0;
-              } /* endif */
-
-	      // Find neighbours to the top south. 
-	      neighbour_block_ptr = getNeighbour(Blocks[i_blk][j_blk], 
-                                                 OCTREE_DIRECTION_MASK_TOPSOUTH);
-              if (neighbour_block_ptr != NULL) {
-                 if (neighbour_block_ptr->block.used) {
-                    Blocks[i_blk][j_blk]->block.nTS = 1;
-                    Blocks[i_blk][j_blk]->block.infoTS[0] = neighbour_block_ptr->block.info;
-                    if (neighbour_block_ptr->block.info.level > 
-                        Blocks[i_blk][j_blk]->block.info.level) {
-                       Blocks[i_blk][j_blk]->block.nTS += 1;
-                       Blocks[i_blk][j_blk]->block.infoTS[1] = 
-			 getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_EAST)->block.info;
-                    } /* endif */
-		 } else {
-                    Blocks[i_blk][j_blk]->block.nTS = 0;
-                 } /* endif */
-              } else {
-                 Blocks[i_blk][j_blk]->block.nTS = 0;
-              } /* endif */
-
-	      // Find neighbours to the top west. 
-	      neighbour_block_ptr = getNeighbour(Blocks[i_blk][j_blk], 
-                                                 OCTREE_DIRECTION_MASK_TOPWEST);
-              if (neighbour_block_ptr != NULL) {
-                 if (neighbour_block_ptr->block.used) {
-                    Blocks[i_blk][j_blk]->block.nTW = 1;
-                    Blocks[i_blk][j_blk]->block.infoTW[0] = neighbour_block_ptr->block.info;
-                    if (neighbour_block_ptr->block.info.level > 
-                        Blocks[i_blk][j_blk]->block.info.level) {
-                       Blocks[i_blk][j_blk]->block.nTW += 1;
-                       Blocks[i_blk][j_blk]->block.infoTW[1] = 
-			 getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_NORTH)->block.info;
-                    } /* endif */
-		 } else {
-                    Blocks[i_blk][j_blk]->block.nTW = 0;
-                 } /* endif */
-              } else {
-                 Blocks[i_blk][j_blk]->block.nTW = 0;
-              } /* endif */
-
-	      // Find neighbours to the top east. 
-	      neighbour_block_ptr = getNeighbour(Blocks[i_blk][j_blk], 
-                                                 OCTREE_DIRECTION_MASK_TOPEAST);
-              if (neighbour_block_ptr != NULL) {
-                 if (neighbour_block_ptr->block.used) {
-                    Blocks[i_blk][j_blk]->block.nTE = 1;
-                    Blocks[i_blk][j_blk]->block.infoTE[0] = neighbour_block_ptr->block.info;
-                    if (neighbour_block_ptr->block.info.level > 
-                        Blocks[i_blk][j_blk]->block.info.level) {
-                       Blocks[i_blk][j_blk]->block.nTE += 1;
-                       Blocks[i_blk][j_blk]->block.infoTE[1] = 
-			 getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_NORTH)->block.info;
-                    } /* endif */
-		 } else {
-                    Blocks[i_blk][j_blk]->block.nTE = 0;
-                 } /* endif */
-              } else {
-                 Blocks[i_blk][j_blk]->block.nTE = 0;
-              } /* endif */
-
-	      // Find neighbours to the bottom north. 
-	      neighbour_block_ptr = getNeighbour(Blocks[i_blk][j_blk], 
-                                                 OCTREE_DIRECTION_MASK_BOTTOMNORTH);
-              if (neighbour_block_ptr != NULL) {
-                 if (neighbour_block_ptr->block.used) {
-                    Blocks[i_blk][j_blk]->block.nBN = 1;
-                    Blocks[i_blk][j_blk]->block.infoBN[0] = neighbour_block_ptr->block.info;
-                    if (neighbour_block_ptr->block.info.level > 
-                        Blocks[i_blk][j_blk]->block.info.level) {
-                       Blocks[i_blk][j_blk]->block.nBN += 1;
-                       Blocks[i_blk][j_blk]->block.infoBN[1] = 
-			 getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_EAST)->block.info;
-                    } /* endif */
-		 } else {
-                    Blocks[i_blk][j_blk]->block.nBN = 0;
-                 } /* endif */
-              } else {
-                 Blocks[i_blk][j_blk]->block.nBN = 0;
-              } /* endif */
-
-	      // Find neighbours to the bottom south. 
-	      neighbour_block_ptr = getNeighbour(Blocks[i_blk][j_blk], 
-                                                 OCTREE_DIRECTION_MASK_BOTTOMSOUTH);
-              if (neighbour_block_ptr != NULL) {
-                 if (neighbour_block_ptr->block.used) {
-                    Blocks[i_blk][j_blk]->block.nBS = 1;
-                    Blocks[i_blk][j_blk]->block.infoBS[0] = neighbour_block_ptr->block.info;
-                    if (neighbour_block_ptr->block.info.level > 
-                        Blocks[i_blk][j_blk]->block.info.level) {
-                       Blocks[i_blk][j_blk]->block.nBS += 1;
-                       Blocks[i_blk][j_blk]->block.infoBS[1] = 
-			 getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_EAST)->block.info;
-                    } /* endif */
-		 } else {
-                    Blocks[i_blk][j_blk]->block.nBS = 0;
-                 } /* endif */
-              } else {
-                 Blocks[i_blk][j_blk]->block.nBS = 0;
-              } /* endif */
-
-	      // Find neighbours to the bottom west. 
-	      neighbour_block_ptr = getNeighbour(Blocks[i_blk][j_blk], 
-                                                 OCTREE_DIRECTION_MASK_BOTTOMWEST);
-              if (neighbour_block_ptr != NULL) {
-                 if (neighbour_block_ptr->block.used) {
-                    Blocks[i_blk][j_blk]->block.nBW = 1;
-                    Blocks[i_blk][j_blk]->block.infoBW[0] = neighbour_block_ptr->block.info;
-                    if (neighbour_block_ptr->block.info.level > 
-                        Blocks[i_blk][j_blk]->block.info.level) {
-                       Blocks[i_blk][j_blk]->block.nBW += 1;
-                       Blocks[i_blk][j_blk]->block.infoBW[1] = 
-			 getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_NORTH)->block.info;
-                    } /* endif */
-		 } else {
-                    Blocks[i_blk][j_blk]->block.nBW = 0;
-                 } /* endif */
-              } else {
-                 Blocks[i_blk][j_blk]->block.nBW = 0;
-              } /* endif */
-
-	      // Find neighbours to the bottom east. 
-	      neighbour_block_ptr = getNeighbour(Blocks[i_blk][j_blk], 
-                                                 OCTREE_DIRECTION_MASK_BOTTOMEAST);
-              if (neighbour_block_ptr != NULL) {
-                 if (neighbour_block_ptr->block.used) {
-                    Blocks[i_blk][j_blk]->block.nBE = 1;
-                    Blocks[i_blk][j_blk]->block.infoBE[0] = neighbour_block_ptr->block.info;
-                    if (neighbour_block_ptr->block.info.level > 
-                        Blocks[i_blk][j_blk]->block.info.level) {
-                       Blocks[i_blk][j_blk]->block.nBE += 1;
-                       Blocks[i_blk][j_blk]->block.infoBE[1] = 
-			 getNeighbour(neighbour_block_ptr, OCTREE_DIRECTION_MASK_NORTH)->block.info;
-                    } /* endif */
-		 } else {
-                    Blocks[i_blk][j_blk]->block.nBE = 0;
-                 } /* endif */
-              } else {
-                 Blocks[i_blk][j_blk]->block.nBE = 0;
-              } /* endif */
-
-	      // Find neighbours to the top north west corner. 
-              neighbour_block_ptr = getNeighbour(Blocks[i_blk][j_blk], 
-                                                 OCTREE_DIRECTION_MASK_TOPNORTHWEST);
-              if (neighbour_block_ptr != NULL) {
-                 if (neighbour_block_ptr->block.used) {
-                    if (neighbour_block_ptr->block.info.level >= 
-                        Blocks[i_blk][j_blk]->block.info.level) {
-                       Blocks[i_blk][j_blk]->block.nTNW = 1;
-                       Blocks[i_blk][j_blk]->block.infoTNW[0] = neighbour_block_ptr->block.info;
-                    } else if ((neighbour_block_ptr != 
-                                getNeighbour(Blocks[i_blk][j_blk]->parent_ptr, 
-                                             OCTREE_DIRECTION_MASK_TOP)) &&
-			       (neighbour_block_ptr != 
-                                getNeighbour(Blocks[i_blk][j_blk]->parent_ptr, 
-                                             OCTREE_DIRECTION_MASK_NORTH)) &&
-                               (neighbour_block_ptr != 
-                                getNeighbour(Blocks[i_blk][j_blk]->parent_ptr, 
-                                             OCTREE_DIRECTION_MASK_WEST))) {
-                       Blocks[i_blk][j_blk]->block.nTNW = 1;
-                       Blocks[i_blk][j_blk]->block.infoTNW[0] = neighbour_block_ptr->block.info;
-                    } else {
-                       Blocks[i_blk][j_blk]->block.nTNW = 0;
-                    } /* endif */
-		 } else {
-                    Blocks[i_blk][j_blk]->block.nTNW = 0;
-                 } /* endif */
-              } else {
-                 Blocks[i_blk][j_blk]->block.nTNW = 0;
-              } /* endif */
-
-	      // Find neighbours to the top north east. 
-              neighbour_block_ptr = getNeighbour(Blocks[i_blk][j_blk], 
-                                                 OCTREE_DIRECTION_MASK_TOPNORTHEAST);
-              if (neighbour_block_ptr != NULL) {
-                 if (neighbour_block_ptr->block.used) {
-                    if (neighbour_block_ptr->block.info.level >= 
-                        Blocks[i_blk][j_blk]->block.info.level) {
-                       Blocks[i_blk][j_blk]->block.nTNE = 1;
-                       Blocks[i_blk][j_blk]->block.infoTNE[0] = neighbour_block_ptr->block.info;
-                    } else if ((neighbour_block_ptr != 
-                                getNeighbour(Blocks[i_blk][j_blk]->parent_ptr, 
-                                             OCTREE_DIRECTION_MASK_TOP)) &&
-			       (neighbour_block_ptr != 
-                                getNeighbour(Blocks[i_blk][j_blk]->parent_ptr, 
-                                             OCTREE_DIRECTION_MASK_NORTH)) &&
-                               (neighbour_block_ptr != 
-                                getNeighbour(Blocks[i_blk][j_blk]->parent_ptr, 
-                                             OCTREE_DIRECTION_MASK_EAST))) {
-                       Blocks[i_blk][j_blk]->block.nTNE = 1;
-                       Blocks[i_blk][j_blk]->block.infoTNE[0] = neighbour_block_ptr->block.info;
-                    } else {
-                       Blocks[i_blk][j_blk]->block.nTNE = 0;
-                    } /* endif */
-		 } else {
-                    Blocks[i_blk][j_blk]->block.nTNE = 0;
-                 } /* endif */
-              } else {
-                 Blocks[i_blk][j_blk]->block.nTNE = 0;
-              } /* endif */
-
-	      // Find neighbours to the top south east. 
-              neighbour_block_ptr = getNeighbour(Blocks[i_blk][j_blk], 
-                                                 OCTREE_DIRECTION_MASK_TOPSOUTHEAST);
-              if (neighbour_block_ptr != NULL) {
-                 if (neighbour_block_ptr->block.used) {
-                    if (neighbour_block_ptr->block.info.level >= 
-                        Blocks[i_blk][j_blk]->block.info.level) {
-                       Blocks[i_blk][j_blk]->block.nTSE = 1;
-                       Blocks[i_blk][j_blk]->block.infoTSE[0] = neighbour_block_ptr->block.info;
-                    } else if ((neighbour_block_ptr != 
-                                getNeighbour(Blocks[i_blk][j_blk]->parent_ptr, 
-                                             OCTREE_DIRECTION_MASK_TOP)) &&
-			       (neighbour_block_ptr != 
-                                getNeighbour(Blocks[i_blk][j_blk]->parent_ptr, 
-                                             OCTREE_DIRECTION_MASK_SOUTH)) &&
-                               (neighbour_block_ptr != 
-                                getNeighbour(Blocks[i_blk][j_blk]->parent_ptr, 
-                                             OCTREE_DIRECTION_MASK_EAST))) {
-                       Blocks[i_blk][j_blk]->block.nTSE = 1;
-                       Blocks[i_blk][j_blk]->block.infoTSE[0] = neighbour_block_ptr->block.info;
-                    } else {
-                       Blocks[i_blk][j_blk]->block.nTSE = 0;
-                    } /* endif */
-		 } else {
-                    Blocks[i_blk][j_blk]->block.nTSE = 0;
-                 } /* endif */
-              } else {
-                 Blocks[i_blk][j_blk]->block.nTSE = 0;
-              } /* endif */
-
-	      // Find neighbours to the top south west. 
-              neighbour_block_ptr = getNeighbour(Blocks[i_blk][j_blk], 
-                                                 OCTREE_DIRECTION_MASK_TOPSOUTHWEST);
-              if (neighbour_block_ptr != NULL) {
-                 if (neighbour_block_ptr->block.used) {
-                    if (neighbour_block_ptr->block.info.level >= 
-                        Blocks[i_blk][j_blk]->block.info.level) {
-                       Blocks[i_blk][j_blk]->block.nTSW = 1;
-                       Blocks[i_blk][j_blk]->block.infoTSW[0] = neighbour_block_ptr->block.info;
-		    } else if ((neighbour_block_ptr != 
-                                getNeighbour(Blocks[i_blk][j_blk]->parent_ptr, 
-                                             OCTREE_DIRECTION_MASK_TOP)) &&
-			       (neighbour_block_ptr != 
-                                getNeighbour(Blocks[i_blk][j_blk]->parent_ptr, 
-                                             OCTREE_DIRECTION_MASK_SOUTH)) &&
-                               (neighbour_block_ptr != 
-                                getNeighbour(Blocks[i_blk][j_blk]->parent_ptr, 
-                                             OCTREE_DIRECTION_MASK_WEST))) {
-                       Blocks[i_blk][j_blk]->block.nTSW = 1;
-                       Blocks[i_blk][j_blk]->block.infoTSW[0] = neighbour_block_ptr->block.info;
-                    } else {
-                       Blocks[i_blk][j_blk]->block.nTSW = 0;
-                    } /* endif */
-		 } else {
-                    Blocks[i_blk][j_blk]->block.nTSW = 0;
-                 } /* endif */
-              } else {
-                 Blocks[i_blk][j_blk]->block.nTSW = 0;
-              } /* endif */
-
-
-	      // Find neighbours to the bottom north west corner. 
-              neighbour_block_ptr = getNeighbour(Blocks[i_blk][j_blk], 
-                                                 OCTREE_DIRECTION_MASK_BOTTOMNORTHWEST);
-              if (neighbour_block_ptr != NULL) {
-                 if (neighbour_block_ptr->block.used) {
-                    if (neighbour_block_ptr->block.info.level >= 
-                        Blocks[i_blk][j_blk]->block.info.level) {
-                       Blocks[i_blk][j_blk]->block.nBNW = 1;
-                       Blocks[i_blk][j_blk]->block.infoBNW[0] = neighbour_block_ptr->block.info;
-                    } else if ((neighbour_block_ptr != 
-                                getNeighbour(Blocks[i_blk][j_blk]->parent_ptr, 
-                                             OCTREE_DIRECTION_MASK_BOTTOM)) &&
-			       (neighbour_block_ptr != 
-                                getNeighbour(Blocks[i_blk][j_blk]->parent_ptr, 
-                                             OCTREE_DIRECTION_MASK_NORTH)) &&
-                               (neighbour_block_ptr != 
-                                getNeighbour(Blocks[i_blk][j_blk]->parent_ptr, 
-                                             OCTREE_DIRECTION_MASK_WEST))) {
-                       Blocks[i_blk][j_blk]->block.nBNW = 1;
-                       Blocks[i_blk][j_blk]->block.infoBNW[0] = neighbour_block_ptr->block.info;
-                    } else {
-                       Blocks[i_blk][j_blk]->block.nBNW = 0;
-                    } /* endif */
-		 } else {
-                    Blocks[i_blk][j_blk]->block.nBNW = 0;
-                 } /* endif */
-              } else {
-                 Blocks[i_blk][j_blk]->block.nBNW = 0;
-              } /* endif */
-
-	      // Find neighbours to the bottom north east. 
-              neighbour_block_ptr = getNeighbour(Blocks[i_blk][j_blk], 
-                                                 OCTREE_DIRECTION_MASK_BOTTOMNORTHEAST);
-              if (neighbour_block_ptr != NULL) {
-                 if (neighbour_block_ptr->block.used) {
-                    if (neighbour_block_ptr->block.info.level >= 
-                        Blocks[i_blk][j_blk]->block.info.level) {
-                       Blocks[i_blk][j_blk]->block.nBNE = 1;
-                       Blocks[i_blk][j_blk]->block.infoBNE[0] = neighbour_block_ptr->block.info;
-                    } else if ((neighbour_block_ptr != 
-                                getNeighbour(Blocks[i_blk][j_blk]->parent_ptr, 
-                                             OCTREE_DIRECTION_MASK_BOTTOM)) &&
-			       (neighbour_block_ptr != 
-                                getNeighbour(Blocks[i_blk][j_blk]->parent_ptr, 
-                                             OCTREE_DIRECTION_MASK_NORTH)) &&
-                               (neighbour_block_ptr != 
-                                getNeighbour(Blocks[i_blk][j_blk]->parent_ptr, 
-                                             OCTREE_DIRECTION_MASK_EAST))) {
-                       Blocks[i_blk][j_blk]->block.nBNE = 1;
-                       Blocks[i_blk][j_blk]->block.infoBNE[0] = neighbour_block_ptr->block.info;
-                    } else {
-                       Blocks[i_blk][j_blk]->block.nBNE = 0;
-                    } /* endif */
-		 } else {
-                    Blocks[i_blk][j_blk]->block.nBNE = 0;
-                 } /* endif */
-              } else {
-                 Blocks[i_blk][j_blk]->block.nBNE = 0;
-              } /* endif */
-
-	      // Find neighbours to the bottom south east. 
-              neighbour_block_ptr = getNeighbour(Blocks[i_blk][j_blk], 
-                                                 OCTREE_DIRECTION_MASK_BOTTOMSOUTHEAST);
-              if (neighbour_block_ptr != NULL) {
-                 if (neighbour_block_ptr->block.used) {
-                    if (neighbour_block_ptr->block.info.level >= 
-                        Blocks[i_blk][j_blk]->block.info.level) {
-                       Blocks[i_blk][j_blk]->block.nBSE = 1;
-                       Blocks[i_blk][j_blk]->block.infoBSE[0] = neighbour_block_ptr->block.info;
-                    } else if ((neighbour_block_ptr != 
-                                getNeighbour(Blocks[i_blk][j_blk]->parent_ptr, 
-                                             OCTREE_DIRECTION_MASK_BOTTOM)) &&
-			       (neighbour_block_ptr != 
-                                getNeighbour(Blocks[i_blk][j_blk]->parent_ptr, 
-                                             OCTREE_DIRECTION_MASK_SOUTH)) &&
-                               (neighbour_block_ptr != 
-                                getNeighbour(Blocks[i_blk][j_blk]->parent_ptr, 
-                                             OCTREE_DIRECTION_MASK_EAST))) {
-                       Blocks[i_blk][j_blk]->block.nBSE = 1;
-                       Blocks[i_blk][j_blk]->block.infoBSE[0] = neighbour_block_ptr->block.info;
-                    } else {
-                       Blocks[i_blk][j_blk]->block.nBSE = 0;
-                    } /* endif */
-		 } else {
-                    Blocks[i_blk][j_blk]->block.nBSE = 0;
-                 } /* endif */
-              } else {
-                 Blocks[i_blk][j_blk]->block.nBSE = 0;
-              } /* endif */
-
-	      // Find neighbours to the bottom south west. 
-              neighbour_block_ptr = getNeighbour(Blocks[i_blk][j_blk], 
-                                                 OCTREE_DIRECTION_MASK_BOTTOMSOUTHWEST);
-              if (neighbour_block_ptr != NULL) {
-                 if (neighbour_block_ptr->block.used) {
-                    if (neighbour_block_ptr->block.info.level >= 
-                        Blocks[i_blk][j_blk]->block.info.level) {
-                       Blocks[i_blk][j_blk]->block.nBSW = 1;
-                       Blocks[i_blk][j_blk]->block.infoBSW[0] = neighbour_block_ptr->block.info;
-		    } else if ((neighbour_block_ptr != 
-                                getNeighbour(Blocks[i_blk][j_blk]->parent_ptr, 
-                                             OCTREE_DIRECTION_MASK_BOTTOM)) &&
-			       (neighbour_block_ptr != 
-                                getNeighbour(Blocks[i_blk][j_blk]->parent_ptr, 
-                                             OCTREE_DIRECTION_MASK_SOUTH)) &&
-                               (neighbour_block_ptr != 
-                                getNeighbour(Blocks[i_blk][j_blk]->parent_ptr, 
-                                             OCTREE_DIRECTION_MASK_WEST))) {
-                       Blocks[i_blk][j_blk]->block.nBSW = 1;
-                       Blocks[i_blk][j_blk]->block.infoBSW[0] = neighbour_block_ptr->block.info;
-                    } else {
-                       Blocks[i_blk][j_blk]->block.nBSW = 0;
-                    } /* endif */
-		 } else {
-                    Blocks[i_blk][j_blk]->block.nBSW = 0;
-                 } /* endif */
-              } else {
-                 Blocks[i_blk][j_blk]->block.nBSW = 0;
-              } /* endif */
-
-
-           } /* endif */
-        } /* endif */
-     } /* endfor */
-  } /* endfor */
 }
  
 /****************************************************************************
@@ -4069,7 +1449,6 @@ inline void Octree_DataStructure::refineBlock(int *new_blocks_CPU,
                                               int *new_blocks_SECTOR) {
 
   cout << "\nOctree_DataStructure::refineBlock() NOT YET IMPLEMENTED\n";
-  assert(1==2);
 
 }
 
@@ -4081,7 +1460,6 @@ inline void Octree_DataStructure::coarsenBlocks(int *old_blocks_CPU,
                                                 int *old_blocks_SECTOR) {
 
   cout << "\nOctree_DataStructure::coarsenBlock() NOT YET IMPLEMENTED\n";
-  assert(1==2);
 
 }
 
@@ -4089,9 +1467,8 @@ inline void Octree_DataStructure::coarsenBlocks(int *old_blocks_CPU,
  * Octree_DataStructure::nochangeAll -- Set no refinement flags.            *
  ****************************************************************************/
 inline void Octree_DataStructure::nochangeAll(void) {
-   int i, j; 
-   for ( i = 0; i <= Ncpu-1 ; ++i ) {
-      for ( j = 0; j <= Nblk-1 ; ++j ) {
+   for (int i = 0; i <= Ncpu-1 ; ++i) {
+      for (int j = 0; j <= Nblk-1 ; ++j) {
          RefineFlags[i][j] = ADAPTIVEBLOCK3D_NOCHANGE;
       } /* endfor */
    } /* endfor */
@@ -4101,9 +1478,8 @@ inline void Octree_DataStructure::nochangeAll(void) {
  * Octree_DataStructure::refineAll -- Set refinement flags.                 *
  ****************************************************************************/
 inline void Octree_DataStructure::refineAll(void) {
-   int i, j; 
-   for ( i = 0; i <= Ncpu-1 ; ++i ) {
-      for ( j = 0; j <= Nblk-1 ; ++j ) {
+   for (int i = 0; i <= Ncpu-1 ; ++i) {
+      for (int j = 0; j <= Nblk-1 ; ++j) {
          if (Blocks[i][j] != NULL) {
             if (Blocks[i][j]->block.used) {
                RefineFlags[i][j] = ADAPTIVEBLOCK3D_REFINE;
@@ -4117,9 +1493,8 @@ inline void Octree_DataStructure::refineAll(void) {
  * Octree_DataStructure::coarsenAll -- Set coarsening flags.                *
  ****************************************************************************/
 inline void Octree_DataStructure::coarsenAll(void) {
-   int i, j; 
-   for ( i = 0; i <= Ncpu-1 ; ++i ) {
-      for ( j = 0; j <= Nblk-1 ; ++j ) {
+   for (int i = 0; i <= Ncpu-1 ; ++i) {
+      for (int j = 0; j <= Nblk-1 ; ++j) {
          if (Blocks[i][j] != NULL) {
             if (Blocks[i][j]->block.used) {
                RefineFlags[i][j] = ADAPTIVEBLOCK3D_COARSEN;
@@ -4133,9 +1508,8 @@ inline void Octree_DataStructure::coarsenAll(void) {
  * Octree_DataStructure::setRefineAll -- Set refinement flags.              *
  ****************************************************************************/
 inline void Octree_DataStructure::setRefineAll(const int Flag) {
-   int i, j; 
-   for ( i = 0; i <= Ncpu-1 ; ++i ) {
-      for ( j = 0; j <= Nblk-1 ; ++j ) {
+   for (int i = 0; i <= Ncpu-1 ; ++i) {
+      for (int j = 0; j <= Nblk-1 ; ++j) {
          if (Blocks[i][j] != NULL) {
             if (Blocks[i][j]->block.used) {
                RefineFlags[i][j] = Flag;
@@ -4150,9 +1524,9 @@ inline void Octree_DataStructure::setRefineAll(const int Flag) {
  *                                 refinement level of all solution blocks. *
  ****************************************************************************/
 inline int Octree_DataStructure::highestRefinementLevel(void) {
-   int i, j, level = 0;
-   for ( i = 0; i <= Ncpu-1 ; ++i ) {
-      for ( j = 0; j <= Nblk-1 ; ++j ) {
+  int level(0);
+   for (int i = 0; i <= Ncpu-1 ; ++i) {
+      for (int j = 0; j <= Nblk-1 ; ++j) {
          if (Blocks[i][j] != NULL) {
             if (Blocks[i][j]->block.used) {
                level = max(level, Blocks[i][j]->block.info.level);
@@ -4164,16 +1538,14 @@ inline int Octree_DataStructure::highestRefinementLevel(void) {
 }
 
 inline int Octree_DataStructure::highestRefinementLevel(const int use_tree) {
-   int i, j,k, level = 0;
+   int level(0);
    if (use_tree) {
-      for ( k = 0 ; k <= NRk-1 ; ++k ) 
-	for ( j = 0 ; j <= NRj-1 ; ++j ) 
-         for ( i = 0 ; i <= NRi-1 ; ++i ) {
-	    level = Roots[i][j][k].maxRefinementLevel(level);
+      for (int n = 0 ; n <= NR-1 ; ++n) {
+         level = Roots[n].maxRefinementLevel(level);
       } /* endfor */
    } else {
-      for ( i = 0; i <= Ncpu-1 ; ++i ) {
-         for ( j = 0; j <= Nblk-1 ; ++j ) {
+      for (int i = 0; i <= Ncpu-1 ; ++i) {
+         for (int j = 0; j <= Nblk-1 ; ++j) {
             if (Blocks[i][j] != NULL) {
 	       if (Blocks[i][j]->block.used) {
                   level = max(level, Blocks[i][j]->block.info.level);
@@ -4190,9 +1562,9 @@ inline int Octree_DataStructure::highestRefinementLevel(const int use_tree) {
  *                                    octree solution blocks to be refined. *
  ****************************************************************************/
 inline int Octree_DataStructure::numberToBeRefined(void) {
-   int i, j, number_to_be_refined = 0;
-   for ( i = 0; i <= Ncpu-1 ; ++i ) {
-      for ( j = 0; j <= Nblk-1 ; ++j ) {
+   int number_to_be_refined(0);
+   for (int i = 0; i <= Ncpu-1 ; ++i) {
+      for (int j = 0; j <= Nblk-1 ; ++j) {
          if (Blocks[i][j] != NULL) {
    	    if (Blocks[i][j]->block.used) {
                if (RefineFlags[i][j] == ADAPTIVEBLOCK3D_REFINE) {
@@ -4210,9 +1582,9 @@ inline int Octree_DataStructure::numberToBeRefined(void) {
  *                                  octree solution blocks to be coarsened. *
  ****************************************************************************/
 inline int Octree_DataStructure::numberToBeCoarsened(void) {
-   int i, j, number_to_be_coarsened = 0;
-   for ( i = 0; i <= Ncpu-1 ; ++i ) {
-      for ( j = 0; j <= Nblk-1 ; ++j ) {
+   int number_to_be_coarsened(0);
+   for (int i = 0; i <= Ncpu-1 ; ++i ) {
+      for (int j = 0; j <= Nblk-1 ; ++j ) {
          if (Blocks[i][j] != NULL) {
    	    if (Blocks[i][j]->block.used) {
                if (RefineFlags[i][j] == ADAPTIVEBLOCK3D_COARSEN) {
@@ -4230,19 +1602,21 @@ inline int Octree_DataStructure::numberToBeCoarsened(void) {
  ****************************************************************************/
 inline ostream &operator << (ostream &out_file,
 			     const Octree_DataStructure &QT) {
-   int iBLK, jBLK, kBLK;
-   out_file << QT.NRi << " " << QT.NRj << " " << QT.NRk << " " << QT.Ncpu << " " << QT.Nblk << "\n";
-   for ( kBLK = 0 ; kBLK <= QT.NRk-1 ; ++kBLK ) 
-     for ( jBLK = 0 ; jBLK <= QT.NRj-1 ; ++jBLK ) 
-       for ( iBLK = 0 ; iBLK <= QT.NRi-1 ; ++iBLK ) {
-	 QT.Roots[iBLK][jBLK][kBLK].write(out_file);
-       } /* endfor */
+   out_file << QT.NR << " " 
+            << QT.NRi << " " 
+            << QT.NRj << " " 
+            << QT.NRk << " " 
+            << QT.Ncpu << " " 
+            << QT.Nblk << "\n";
+   for (int n = 0 ; n <= QT.NR-1 ; ++n) {
+      QT.Roots[n].write(out_file);
+   } /* endfor */
    return (out_file);
 }
 
 inline istream &operator >> (istream &in_file,
 			     Octree_DataStructure &QT) {
-   int iBLK, jBLK, kBLK, nri, nrj,nrk, ncpu, nblk;
+   int nr, nri, nrj, nrk, ncpu, nblk;
    if (QT.Roots != NULL && QT.Blocks != NULL) {
      QT.deallocate();
    } else if (QT.Roots != NULL) {
@@ -4251,14 +1625,12 @@ inline istream &operator >> (istream &in_file,
       QT.deallocateBlocks();
    } /* endif */
    in_file.setf(ios::skipws);
-   in_file >> nri >> nrj >> nrk >> ncpu >> nblk;
+   in_file >> nr >> nri >> nrj >> nrk >> ncpu >> nblk;
    in_file.setf(ios::skipws);
    QT.allocate(nri, nrj, nrk, ncpu, nblk);
-   for ( kBLK = 0 ; kBLK <= QT.NRk-1 ; ++kBLK ) 
-     for ( jBLK = 0 ; jBLK <= QT.NRj-1 ; ++jBLK ) 
-       for ( iBLK = 0 ; iBLK <= QT.NRi-1 ; ++iBLK ) {
-	  QT.Roots[iBLK][jBLK][kBLK].read(in_file);
-       } /* endfor */
+   for (int n = 0 ; n <= QT.NR-1 ; ++n) {
+      QT.Roots[n].read(in_file);
+   } /* endfor */
    return (in_file);
 }
 

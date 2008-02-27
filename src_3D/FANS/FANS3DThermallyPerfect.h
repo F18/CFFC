@@ -25,6 +25,10 @@
 #include "FANS3DThermallyPerfectHexaBlock.h"
 #endif // _FANS3D_THERMALLYPERFECT_HEXA_BLOCK_INCLUDED
 
+#ifndef _FANS3D_THERMALLYPERFECT_HEXA_PREPROCESSING_INCLUDED
+#include "FANS3DThermallyPerfectHexaPreProcessing.h"
+#endif // _FANS3D_THERMALLYPERFECT_HEXA_PREPROCESSING_INCLUDED
+
 #ifndef _MPI_INCLUDED
 #include "../MPI/MPI.h"
 #endif // _MPI_INCLUDED
