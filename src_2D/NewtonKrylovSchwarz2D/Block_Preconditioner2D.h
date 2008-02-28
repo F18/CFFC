@@ -417,15 +417,21 @@ Update_Jacobian_and_Preconditioner(const double &DTS_dTime)
       //! Get Block Matrix locations that have components from a given Cell(i,j)
       Get_Block_Index(i,j, block_i, block_j);
       
-      //fudge for iGhost Cell reset to zero   //jGhost cell already zero                
-      if(block_i[NORTH] < TWO*SolnBlk->NCi) Jacobian_Data[NORTH].zero();
-      if(block_i[SOUTH] > block_mat_size - TWO*SolnBlk->NCi) Jacobian_Data[SOUTH].zero();
+      //fudge for Ghost Cells: reset back to zero based on TWO ghost cells   
+      if( block_i[NORTH] < TWO*SolnBlk->NCi) Jacobian_Data[NORTH].zero();
+      if( block_i[SOUTH] > block_mat_size - TWO*SolnBlk->NCi) Jacobian_Data[SOUTH].zero();
+      if( (block_j[EAST]-2)%SolnBlk->NCi == 0 ) Jacobian_Data[EAST].zero();
+      if( (block_j[WEST]+3)%SolnBlk->NCi == 0 ) Jacobian_Data[WEST].zero();
 
       if(Jacobian_stencil_size == 9){		
-	if(block_i[NORTH_EAST] < TWO*SolnBlk->NCi)    Jacobian_Data[NORTH_EAST].zero();
-	if(block_i[NORTH_WEST] < TWO*SolnBlk->NCi)    Jacobian_Data[NORTH_WEST].zero(); 
-	if(block_i[SOUTH_EAST] > block_mat_size - TWO*SolnBlk->NCi)    Jacobian_Data[SOUTH_EAST].zero();
-	if(block_i[SOUTH_WEST] > block_mat_size - TWO*SolnBlk->NCi)    Jacobian_Data[SOUTH_WEST].zero();
+	if( block_i[NORTH_EAST] < TWO*SolnBlk->NCi)    Jacobian_Data[NORTH_EAST].zero();
+	if( block_i[NORTH_WEST] < TWO*SolnBlk->NCi)    Jacobian_Data[NORTH_WEST].zero(); 
+	if( block_i[SOUTH_EAST] > block_mat_size - TWO*SolnBlk->NCi) Jacobian_Data[SOUTH_EAST].zero();
+	if( block_i[SOUTH_WEST] > block_mat_size - TWO*SolnBlk->NCi) Jacobian_Data[SOUTH_WEST].zero();
+	if( (block_j[NORTH_EAST]-2)%SolnBlk->NCi == 0 ) Jacobian_Data[NORTH_EAST].zero();
+	if( (block_j[SOUTH_EAST]-2)%SolnBlk->NCi == 0 ) Jacobian_Data[SOUTH_EAST].zero();
+	if( (block_j[NORTH_WEST]+3)%SolnBlk->NCi == 0 ) Jacobian_Data[NORTH_WEST].zero();
+	if( (block_j[SOUTH_WEST]+3)%SolnBlk->NCi == 0 ) Jacobian_Data[SOUTH_WEST].zero();
       }
       //--------------------------------------------------------------------------//
       //! Update BlockMat with Local Approximate Jacobians 
@@ -436,10 +442,12 @@ Update_Jacobian_and_Preconditioner(const double &DTS_dTime)
 	//can be sped up by more intelligent logic in bkpkit (BlockMat.cc  "setblock")
 	Block_Jacobian_approx.setblock( block_i[block], block_j[block], DenseMatrix_to_DenseMat(Jacobian_Data[block]));
 
-	Jacobian_Data[block].zero(); //Just in case to avoid +=/-= issues
+	Jacobian_Data[block].zero(); //Just in case to avoid +=/-= issues	
       }     
     }
   }
+
+  //cout<<Block_Jacobian_approx; cout.flush();
 
   //Local Memory cleanup
   delete[] Jacobian_Data; delete[] block_i; delete[] block_j;
