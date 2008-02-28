@@ -710,6 +710,8 @@ inline RowVector transpose(const ColumnVector &CVec) {
  *      ref        -- Return 1 if matrix is a view of   *
  *                             another C/C++ array      *
  *                       and 0 otherwise.               *
+ *      null       -- Return 1 if zero-length matrix    *
+ *                       and 0 if size > 0.             *
  *      zero       -- Assign zero matrix.               *
  *      identity   -- Assign identity matrix.           *
  *      trace      -- Return the trace of matrix.       *
@@ -783,6 +785,9 @@ class DenseMatrix: public MV_ColMat_double{
     /* Destructor. */
     // ~DenseMatrix(void);
     // Use automatically generated destructor.
+
+    /* Find out if the matrix has no elements. */
+    inline int null(void) const {return dim0_== 0 && dim1_==0;}
 
     /* Obtain the dimensions of the mxn matrix. */
     int get_n(void) {return dim0_;}
