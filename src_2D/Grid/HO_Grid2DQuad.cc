@@ -5605,20 +5605,37 @@ void Grid2D_Quad_Block_HO::ComputeGeometricCoefficients(const int &ii, const int
   }
 }
 
+/*!
+ * Compute geometric moments with respect to the cell centroid 
+ * (xCC,yCC) of cell (CellIndexI,CellIndexJ) up to 4th order.                  
+ * These moments are integrals over the cell domain of
+ * polynomial functions with the form ((x-xCC)^n)*((y-yCC)^m) 
+ * and divided by aria A.
+ * This subroutine is for interior boundary cells.
+ */
 void Grid2D_Quad_Block_HO::ComputeGeometricCoefficients_CurvedBoundaries(const int &CellIndexI, const int &CellIndexJ,
 									 const int &Boundary){
-
-  /***************************************************************************** 
-   * Subroutine for computing the geometric moments up to 3rd order            *
-   * with respect to the cell centroid(xCC,yCC).                               *
-   * These moments are integrals over the domain of the cell of the            *
-   * polynomial function having the form ((x-xCC)^n)*((y-yCC)^m) and divided   *
-   * by aria A.                                                                *
-   ****************************************************************************/
 
   /* Moments for quadrilateral cells with curved boundaries */
 
   switch(HighestReconstructionOrder){
+
+  case 4:  // Quartic moments
+    
+    // coefficient (4,0)
+    Cell[CellIndexI][CellIndexJ].GeomCoeffValue(4,0) = GeometricMoment_CurvedBoundaries(CellIndexI, CellIndexJ, Boundary, 4, 0);
+    
+    // coefficient (3,1)
+    Cell[CellIndexI][CellIndexJ].GeomCoeffValue(3,1) = GeometricMoment_CurvedBoundaries(CellIndexI, CellIndexJ, Boundary, 3, 1);
+    
+    // coefficient (2,2)
+    Cell[CellIndexI][CellIndexJ].GeomCoeffValue(2,2) = GeometricMoment_CurvedBoundaries(CellIndexI, CellIndexJ, Boundary, 2, 2);
+    
+    // coefficient (1,3)
+    Cell[CellIndexI][CellIndexJ].GeomCoeffValue(1,3) = GeometricMoment_CurvedBoundaries(CellIndexI, CellIndexJ, Boundary, 1, 3);
+    
+    // coefficient (0,4)
+    Cell[CellIndexI][CellIndexJ].GeomCoeffValue(0,4) = GeometricMoment_CurvedBoundaries(CellIndexI, CellIndexJ, Boundary, 0, 4);
 
   case 3:   // Cubic moments
     // coefficient (3,0)
@@ -5652,21 +5669,36 @@ void Grid2D_Quad_Block_HO::ComputeGeometricCoefficients_CurvedBoundaries(const i
   }
 }
 
+/*!
+ * Compute geometric moments with respect to the cell centroid 
+ * (xCC,yCC) of cell (CellIndexI,CellIndexJ) up to 4th order.                  
+ * These moments are integrals over the cell domain of
+ * polynomial functions with the form ((x-xCC)^n)*((y-yCC)^m) 
+ * and divided by aria A.
+ * This subroutine is for ghost boundary cells.
+ */
 void Grid2D_Quad_Block_HO::ComputeGeometricCoefficients_GhostCell_CurvedBoundaries(const int &CellIndexI, const int &CellIndexJ,
 										   const int &Boundary){
-
-  /***************************************************************************** 
-   * Subroutine for computing the geometric moments up to 3rd order            *
-   * with respect to the cell centroid(xCC,yCC).                               *
-   * These moments are integrals over the domain of the cell of the            *
-   * polynomial function having the form ((x-xCC)^n)*((y-yCC)^m) and divided   *
-   * by aria A.                                                                *
-   * This subroutine is for Ghost Cells                                        *
-   ****************************************************************************/
 
   /* Moments for quadrilateral cells with curved boundaries */
 
   switch(HighestReconstructionOrder){
+
+    // coefficient (4,0)
+    Cell[CellIndexI][CellIndexJ].GeomCoeffValue(4,0) = GeometricMoment_GhostCell_CurvedBoundaries(CellIndexI, CellIndexJ,
+												  Boundary, 4, 0);
+    // coefficient (3,1)
+    Cell[CellIndexI][CellIndexJ].GeomCoeffValue(3,1) = GeometricMoment_GhostCell_CurvedBoundaries(CellIndexI, CellIndexJ,
+												  Boundary, 3, 1);
+    // coefficient (2,2)
+    Cell[CellIndexI][CellIndexJ].GeomCoeffValue(2,2) = GeometricMoment_GhostCell_CurvedBoundaries(CellIndexI, CellIndexJ,
+												  Boundary, 2, 2);
+    // coefficient (1,3)
+    Cell[CellIndexI][CellIndexJ].GeomCoeffValue(1,3) = GeometricMoment_GhostCell_CurvedBoundaries(CellIndexI, CellIndexJ,
+												  Boundary, 1, 3);
+    // coefficient (0,4)
+    Cell[CellIndexI][CellIndexJ].GeomCoeffValue(0,4) = GeometricMoment_GhostCell_CurvedBoundaries(CellIndexI, CellIndexJ,
+												  Boundary, 0, 4);
 
   case 3:   // Cubic moments
     // coefficient (3,0)
@@ -5703,6 +5735,15 @@ void Grid2D_Quad_Block_HO::ComputeGeometricCoefficients_GhostCell_CurvedBoundari
   }
 }
 
+/*!
+ * Compute a particular geometric moment for an interior cell.
+ *
+ * \param CellIndexI i-index of the cell
+ * \param CellIndexJ j-index of the cell
+ * \param Boundary indicates which cell boundaries are curved
+ * \param OrderX the x-power of the polynomial function which is integrated
+ * \param OrderY the y-power of the polynomial function which is integrated
+ */
 double Grid2D_Quad_Block_HO::GeometricMoment_CurvedBoundaries(const int &CellIndexI, const int &CellIndexJ,
 							      const int &Boundary,
 							      const int &OrderX, const int &OrderY){
@@ -5955,6 +5996,15 @@ double Grid2D_Quad_Block_HO::GeometricMoment_CurvedBoundaries(const int &CellInd
 
 }
 
+/*!
+ * Compute a particular geometric moment for a ghost cell.
+ *
+ * \param CellIndexI i-index of the cell
+ * \param CellIndexJ j-index of the cell
+ * \param Boundary indicates which cell boundaries are curved
+ * \param OrderX the x-power of the polynomial function which is integrated
+ * \param OrderY the y-power of the polynomial function which is integrated
+ */
 double Grid2D_Quad_Block_HO::GeometricMoment_GhostCell_CurvedBoundaries(const int &CellIndexI, const int &CellIndexJ,
 									const int &Boundary,
 									const int &OrderX, const int &OrderY){

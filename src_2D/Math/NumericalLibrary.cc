@@ -82,6 +82,9 @@ double PolynomLineIntegration(const double & N1x, const double & N1y,
 		  0.3e1*xCC*N1y*N1y*DY - 0.6e1*N1x*N1y*DY*yCC)*0.5 + 
 		 (N1x*N1y*N1y*N1y - N1x*yCC*yCC*yCC - xCC*N1y*N1y*N1y + xCC*yCC*yCC*yCC + 0.3e1*xCC*N1y*N1y*yCC - 
 		  0.3e1*xCC*N1y*yCC*yCC - 0.3e1*N1x*N1y*N1y*yCC + 0.3e1*N1x*N1y*yCC*yCC));
+    case 4:
+      /* OrderX=0, OrderY=4 */
+      return 0.0;
     } /* endswitch (OrderY) */
     break;
 
@@ -108,6 +111,9 @@ double PolynomLineIntegration(const double & N1x, const double & N1y,
 		  N1x*DX*N1y*N1y - 0.2e1*N1x*DX*N1y*yCC + 0.2e1*DX*xCC*N1y*yCC - N1x*N1x*DY*yCC) + 
 		 (N1x*N1x*yCC*yCC + xCC*xCC*N1y*N1y + xCC*xCC*yCC*yCC - 0.2e1*N1x*xCC*N1y*N1y - 0.2e1*N1x*xCC*yCC*yCC + 
 		  N1x*N1x*N1y*N1y - 0.2e1*N1x*N1x*N1y*yCC - 0.2e1*xCC*xCC*N1y*yCC + 0.4e1*N1x*xCC*N1y*yCC));
+    case 3:
+      /* OrderX=1, OrderY=3 */
+      return 0.0;
     } /* endswitch (OrderY) */
     break;
 
@@ -128,19 +134,31 @@ double PolynomLineIntegration(const double & N1x, const double & N1y,
 		  0.6e1*N1x*DX*xCC*yCC + 0.3e1*N1x*N1x*DX*N1y)*0.5 + 
 		 (xCC*xCC*xCC*(yCC - N1y) + 0.3e1*N1x*N1x*xCC*(yCC - N1y) - 0.3e1*N1x*xCC*xCC*(yCC - N1y)
 		  + N1x*N1x*N1x*(N1y - yCC)));
-  
+    case 2:
+      /* OrderX=2, OrderY=2 */
+      return 0.0;
     } /* endswitch (OrderY) */
     break;
 
   case 3:
-    if (OrderY == 0){
+    switch(OrderY){
+    case 0:
       /* OrderX=3, OrderY=0 */
       return DY*(DX*DX*DX*( 0.2*DX + N1x - xCC) + 
 		 (0.2e1*DX*DX*xCC*xCC - 0.4e1*N1x*DX*DX*xCC + 0.2e1*N1x*N1x*DX*DX) + 
 		 (-0.2e1*DX*xCC*xCC*xCC - 0.6e1*N1x*N1x*DX*xCC + 0.2e1*N1x*N1x*N1x*DX + 0.6e1*N1x*DX*xCC*xCC) + 
 		 (N1x*N1x*N1x*(N1x - 0.4e1*xCC) + xCC*xCC*xCC*(xCC - 0.4e1*N1x)  + 0.6e1*N1x*N1x*xCC*xCC));
+    case 1:
+      /* OrderX=3, OrderY=1 */
+      return 0.0;
     }
     break;
+
+  case 4:
+    if (OrderY == 0){
+      /* OrderX=4, OrderY=0 */
+      return 0.0;
+    }
   } /* endswitch(OrderX) */
 
   std::cout << "PolynomLineIntegration ERROR: Power higher than the maximum allowed!\n";
