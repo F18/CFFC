@@ -289,7 +289,6 @@ namespace tut
   */
 
 
-
   /* Test 1:*/
   template<>
   template<>
@@ -3345,15 +3344,27 @@ namespace tut
 
     MasterFile = "Large_Deformed_Box.dat";
     CurrentFile = "Current_Large_Deformed_Box.dat";
+    char * MeshFile = "Large_Deformed_Box_Mesh.dat";
     
     if (RunRegression){
-      IP.IncludeHighOrderBoundariesRepresentation = ON;
+      // read the mesh
+      Open_Input_File(MeshFile);
+      in() >> MeshBlk;
+
+      // check mesh
+      MeshBlk.Check_Multi_Block_Grid_Completely();
+
+      // Set high-order flags
+      Grid2D_Quad_Block_HO::setHighOrderBoundaryRepresentation();
       Grid2D_Quad_Block_HO::setContourIntegrationBasedOnGaussQuadratures();
       Spline2DInterval_HO::setFivePointGaussQuadContourIntegration();
 
-      // Build the mesh
-      CreateMesh(MeshBlk,IP);
-      MeshBlk.Check_Multi_Block_Grid_Completely();
+      // schedule update of all cells
+      MeshBlk(0,0).Schedule_Interior_Mesh_Update();
+      MeshBlk(0,0).Schedule_Ghost_Cells_Update();
+
+      // recompute the geoemtric properties with the current method
+      MeshBlk.Update_All_Cells();
 
       // open CurrentFile
       Open_Output_File(CurrentFile);
@@ -3363,6 +3374,90 @@ namespace tut
 
       // == check geometric properties
       RunRegressionTest("Large Deformed Box", CurrentFile, MasterFile, 9.0e-7, 9.0e-7);
+
+    } else {
+      // Build the mesh
+      CreateMesh(MeshBlk,IP);
+      MeshBlk.Check_Multi_Block_Grid_Completely();
+
+      // open MasterFile
+      Open_Output_File(MasterFile);
+
+      // output cell data
+      MeshBlk.Output_Cells_Data(out());
+
+      // open MeshFile
+      Open_Output_File(MeshFile);
+      
+      // output mesh data
+      out() << MeshBlk;
+    }
+  }
+
+  // Test 49:
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<49>()
+  {
+    set_test_name("Large Deformed Box");
+
+    RunRegression = ON;
+
+    // Add test particular input parameters
+    IP.i_Grid = GRID_DEFORMED_BOX;
+    IP.Number_of_Blocks_Jdir = 1;
+    IP.Number_of_Blocks_Idir = 1;
+    IP.Number_of_Cells_Idir = 40;
+    IP.Number_of_Cells_Jdir = 40;
+    IP.Number_of_Ghost_Cells = 5;
+    IP.Space_Accuracy = 4;
+    IP.IncludeHighOrderBoundariesRepresentation = OFF;
+    IP.i_Smooth_Quad_Block = OFF;
+    IP.BCs_Specified = ON;
+    IP.BC_North = BC_CONSTANT_EXTRAPOLATION;
+    IP.BC_South = BC_CONSTANT_EXTRAPOLATION;
+    IP.BC_East = BC_CONSTANT_EXTRAPOLATION;
+    IP.BC_West = BC_CONSTANT_EXTRAPOLATION;
+    IP.IterationsOfInteriorNodesDisturbances = 300;
+
+    IP.VertexSW = Vector2D(0.0,0.0);
+    IP.VertexSE = Vector2D(4.0,1.0);
+    IP.VertexNE = Vector2D(2.5,4.0);
+    IP.VertexNW = Vector2D(0.5,5.0);
+
+    IP.X_Scale = 50;
+
+    MasterFile = "Large_Deformed_Box.dat";
+    CurrentFile = "Current_Large_Deformed_Box_LineBasedIntegration.dat";
+    char * MeshFile = "Large_Deformed_Box_Mesh.dat";
+    
+    if (RunRegression){
+      // read the mesh (which was generated in test 48)
+      Open_Input_File(MeshFile);
+      in() >> MeshBlk;
+
+      // check mesh
+      MeshBlk.Check_Multi_Block_Grid_Completely();
+
+      // Set high-order flags
+      Grid2D_Quad_Block_HO::setHighOrderBoundaryRepresentation();
+      Grid2D_Quad_Block_HO::setContourIntegrationBasedOnLinearSegments();
+
+      // schedule update of all cells
+      MeshBlk(0,0).Schedule_Interior_Mesh_Update();
+      MeshBlk(0,0).Schedule_Ghost_Cells_Update();
+
+      // recompute the geoemtric properties with the current method
+      MeshBlk.Update_All_Cells();
+
+      // open CurrentFile
+      Open_Output_File(CurrentFile);
+
+      // output cell data
+      MeshBlk.Output_Cells_Data(out());
+
+      // == check geometric properties
+      RunRegressionTest("Large Deformed Box", CurrentFile, MasterFile, 1.0e-6, 1.0e-6);
 
     } else {
       // Build the mesh
