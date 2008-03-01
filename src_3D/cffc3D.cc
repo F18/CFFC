@@ -50,6 +50,7 @@ using namespace std;
 #include "NavierStokes/NavierStokes3DThermallyPerfect.h"
 #include "FANS/FANS3DThermallyPerfect.h"
 #include "LES/LES_FSD/LES3DFsd.h"
+#include "LES/LES_ThickenedFlame/LES3DThickenedFlame.h"
 #include "UnitTesting/UnitTesting.h"
 
 /* Begin CFFC3D program. */
@@ -286,11 +287,15 @@ int main(int num_arg, char *arg_ptr[]) {
                    (Input_File_Name_ptr, batch_flag);
       
    } else if(strcmp(Equation_Type, "FANS3DThermallyPerfect") == 0) {
-      error_flag = HexaSolver< FANS3D_ThermallyPerfect_KOmega_pState, FANS3D_ThermallyPerfect_KOmega_cState>
+      error_flag = HexaSolver<FANS3D_ThermallyPerfect_KOmega_pState, FANS3D_ThermallyPerfect_KOmega_cState>
                    (Input_File_Name_ptr, batch_flag);
 
    } else if(strcmp(Equation_Type, "LES3DFsd") == 0) {
-      error_flag = HexaSolver< LES3DFsd_pState, LES3DFsd_cState>
+      error_flag = HexaSolver<LES3DFsd_pState, LES3DFsd_cState>
+                   (Input_File_Name_ptr, batch_flag);
+
+   } else if(strcmp(Equation_Type, "LES3DThickenedFlame") == 0) {
+     error_flag = HexaSolver<LES3DTF_pState, LES3DTF_cState>
                    (Input_File_Name_ptr, batch_flag);
 
    } /* endif */
