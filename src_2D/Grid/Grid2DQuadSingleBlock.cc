@@ -3550,38 +3550,6 @@ void Update_Cells(Grid2D_Quad_Block &Grid) {
         } /* endfor */
     } /* endfor */
 
-//   Vector2D X1, X2, X3, X4, Xc1, Xc2, X;
-//   double A1, A2;
-//   Polygon P;
-//   cout << setprecision(14);
-//     for ( j = Grid.JCl-Grid.Nghost ; j <= Grid.JCu+Grid.Nghost ; ++j) {
-//         for ( i = Grid.ICl-Grid.Nghost ; i <= Grid.ICu+Grid.Nghost ; ++i) {
-//   // Cell nodes in counter-clockwise order.
-//   X1 = Grid.Node[i  ][j  ].X;
-//   X2 = Grid.Node[i+1][j  ].X;
-//   X3 = Grid.Node[i+1][j+1].X;
-//   X4 = Grid.Node[i  ][j+1].X;
-//   P.convert(X1,X2,X3,X4);
-//   // Determine the centroid and area of the sub-triangles.
-//   Xc1 = (X1+X2+X3)/3.0;
-//   Xc2 = (X1+X3+X4)/3.0;
-// //   A1 = HALF*((X1^X2) + (X2^X3) + (X3^X1));
-// //   A2 = HALF*((X1^X3) + (X3^X4) + (X4^X1));
-//   A1 = HALF*((X2-X1)^(X3-X1));
-//   A2 = HALF*((X3-X4)^(X3-X2));
-//   X = (A1*Xc1 + A2*Xc2)/(A1+A2);
-// //   cout << endl << X1 << X2 << X3 << X4 << X << (A1*Xc1 + A2*Xc2) << " " << A1 << " " << A2 << 0.25*(X1+X2+X3+X4);
-// //   if (!P.point_in_polygon(X)) {
-// //     //cout << endl << X1 << X2 << X3 << X4 << Xc1 << Xc2 << X << 0.25*(X1+X2+X3+X4);
-// //     cout << " FUCK";
-// //   }
-//   if (A1 < ZERO || A2 < ZERO) {
-//     cout << endl << A1 << " " << A2 << X1 << X2 << X3 << X4 << X << 0.25*(X1+X2+X3+X4);
-//   }
-//   P.deallocate();
-//         }
-//     }
-
 }
 
 /********************************************************

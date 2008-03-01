@@ -145,7 +145,7 @@ void Input_Parameters<NavierStokes3D_ThermallyPerfect_pState,
 }
 
 /*************************************************************************************
- * NavierStokes3D_ThermallyPerfect_Input_Parameters -- Input-output operators.       *
+ * NavierStokes3D_ThermallyPerfect_Input_Parameters -- Output_Solution_Type          *
  *************************************************************************************/
 template<>
 void Input_Parameters<NavierStokes3D_ThermallyPerfect_pState, 

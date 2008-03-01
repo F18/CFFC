@@ -85,7 +85,7 @@ class Euler3D_Polytropic_cState;
  *  - ao            -- Return stagnation sound speed.
  *  - ho            -- Return stagnation enthalpy.
  *  - U             -- Return conserved solution state.
- *  - Fx            -- Return x-direction solution flux.
+ *  - F, Fx         -- Return x-direction solution flux.
  *  - Fy            -- Return y-direction solution flux.
  *  - Fz            -- Return z-direction solution flux.
  *  - dFxdU         -- Return x-direction jacobian.
@@ -93,21 +93,22 @@ class Euler3D_Polytropic_cState;
  *  - dFzdU         -- Return z-direction jacobian.
  *  - dUdW          -- Return solution variable jacobian.
  *  - dWdU          -- Return solution variable jacobian.
+ *  - lambda        -- Return x-direction eigenvalue.
  *  - lambda_x      -- Return x-direction eigenvalue.
  *  - lambda_y      -- Return y-direction eigenvalue.
  *  - lambda_z      -- Return z-direction eigenvalue.
- *  - rp_x          -- Return x-direction primitive right eigenvector.
+ *  - rp, rp_x      -- Return x-direction primitive right eigenvector.
  *  - rp_y          -- Return y-direction primitive right eigenvector.
  *  - rp_z          -- Return z-direction primitive right eigenvector.
- *  - rc_x          -- Return x-direction conserved right eigenvector.
+ *  - rc, rc_x      -- Return x-direction conserved right eigenvector.
  *  - rc_y          -- Return y-direction conserved right eigenvector.
  *  - rc_z          -- Return z-direction conserved right eigenvector.
- *  - lp_x          -- Return x-direction primitive left eigenvector.
+ *  - lp, lp_x      -- Return x-direction primitive left eigenvector.
  *  - lp_y          -- Return y-direction primitive left eigenvector.
  *  - lp_z          -- Return z-direction primitive left eigenvector.
  *  - RoeAverage    -- Return Roe average.
- *  - HartenFixPos  -- Return positive entropy fix of Harten.
- *  - HartenFixNeg  -- Return negative entropy fix of Harten.
+ *  - lambda_minus  -- Return negative eigenvalues, applying Harten entropy fix
+ *  - lambda_plus   -- Return positive eigenvalues, applying Harten entropy fix
  *  - FluxRoe_x     -- Return Roe's solution of Riemann problem in x-direction.
  *  - FluxRoe_y     -- Return Roe's solution of Riemann problem in y-direction.
  *  - FluxRoe_z     -- Return Roe's solution of Riemann problem in z-direction.
@@ -116,6 +117,10 @@ class Euler3D_Polytropic_cState;
  *  - FluxHLLE_y    -- Return HLLE solution of Riemann problem in y-direction.
  *  - FluxHLLE_z    -- Return HLLE solution of Riemann problem in z-direction.
  *  - FluxHLLE_n    -- Return HLLE solution of Riemann problem in n-direction.
+ *  - Reflect       -- Return reflected solution state after application of reflection BC
+ *  - MovingWall    -- Return wall solution state after application of moving wall BC
+ *  - NoSlip        -- Return wall solution state after application of no-slip BC
+ *
  *
  * Member operators \n
  *  W         -- a primitive solution state \n

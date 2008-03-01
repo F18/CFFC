@@ -33,7 +33,7 @@ template<>
 void Input_Parameters<NavierStokes3D_ThermallyPerfect_pState, 
                       NavierStokes3D_ThermallyPerfect_cState>::Write_Reference_Solution_States(ostream &restart_file);
 
-//! Input-output operators
+//! Write out the solution type
 template<>
 void Input_Parameters<NavierStokes3D_ThermallyPerfect_pState, 
                       NavierStokes3D_ThermallyPerfect_cState>::Output_Solution_Type(ostream &out_file) const;
