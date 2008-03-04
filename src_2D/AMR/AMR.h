@@ -407,9 +407,6 @@ void Flag_Blocks_For_Refinement(Quad_Soln_Block             *Soln_ptr,
 				       InputParameters,
 				       number_refinement_criteria,
 				       Soln_ptr[i_blk]);
-
-	 if(i_blk == 1){ cout<<"WARNING, MODIFIED AMR!"; local_block_refinement_criteria[i_blk][0]= ONE; }
-
 	 for ( i_criteria = 0; i_criteria < number_refinement_criteria; ++i_criteria ) {
 	   local_max_refinement_criteria[i_criteria] = max(local_max_refinement_criteria[i_criteria], 
 							   local_block_refinement_criteria[i_blk][i_criteria]);
