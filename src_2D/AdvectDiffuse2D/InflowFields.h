@@ -126,7 +126,7 @@ public:
 
   //! Return value of the inflow field
   double EvaluateSolutionAt(const double &x, const double &y) const {
-    return sin(PI*log(abs(Vector2D(x,y)-ReferencePoint))/log(2));
+    return sin(PI*log((double)abs(Vector2D(x,y)-ReferencePoint))/log(2.0));
   }
 
   //! Parse the input control parameters
