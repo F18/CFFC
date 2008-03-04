@@ -41,6 +41,51 @@ int Grid2D_Quad_Block_HO::Smooth_Quad_Block_Flag = ON;
  */
 int Grid2D_Quad_Block_HO::Gauss_Quad_Curvilinear_Integration = ON;
 
+/*!
+ * This switch is used to determine whether the calculation of
+ * cell geometric properties should be done in a reference system 
+ * which can minimize the numerical errors.
+ * This switch can be very useful when the ratio between cell 
+ * dimensions and the nodal values are large.
+ * In order to minimize the numerical errors, the geometric properties
+ * are computed in a reference system local to each cell and then
+ * translated in the global reference system. This operation can 
+ * increase the computational cost!
+ * If ON, the geometric properties are computed in the LOCAL reference system.
+ * If OFF, the geometric properties are computed in the GLOBAL reference system.
+ */
+int Grid2D_Quad_Block_HO::Minimize_Error_Calculation_Of_Geometric_Properties = OFF;
+
+/*!
+ * This switch is used to determine whether the Tecplot
+ * data should be plotted with single or double precision.
+ * Use double precision to get more accurate plots, however
+ * it uses more memory!
+ * If ON, the data is plotted with DOUBLE precision.
+ * If OFF, the data is plotted with SINGLE precision.
+ */
+int Grid2D_Quad_Block_HO::Use_Tecplot_With_Double_Precision = OFF;
+
+/*!
+ * Variable used for storing the South-West node position in the global coordinate system
+ */
+Vector2D Grid2D_Quad_Block_HO::_SW_ = Vector2D(0.0);
+
+/*!
+ * Variable used for storing the South-East node position in the global coordinate system
+ */
+Vector2D Grid2D_Quad_Block_HO::_SE_ = Vector2D(0.0);
+
+/*!
+ * Variable used for storing the North-East node position in the global coordinate system
+ */
+Vector2D Grid2D_Quad_Block_HO::_NE_ = Vector2D(0.0);
+
+/*!
+ * Variable used for storing the North-West node position in the global coordinate system
+ */
+Vector2D Grid2D_Quad_Block_HO::_NW_ = Vector2D(0.0);
+
 // ===== Member functions =====
 
 /*!
@@ -4389,12 +4434,16 @@ void Grid2D_Quad_Block_HO::Update_Corner_Ghost_Nodes(void) {
 
 }
 
+/*!
+ * Compute the area of an interior cell that has one or 
+ * two edges treated as high-order geometric boundaries.
+ */
 double Grid2D_Quad_Block_HO::area_CurvedBoundaries(const int &CellIndex, const int &Boundary) const{
 
   // Obs. The sides of the cell that are not curved are treated as line segments and therefore
   //      the line integral is computed exactly based on the Nodes.
   // The edges are considered in counterclockwise order (i.e. right-hand rule applied)
-  double Result;
+
   if (Gauss_Quad_Curvilinear_Integration) {
 
     // Use the SplineInfo variables to integrate along curved edges.
@@ -4598,6 +4647,10 @@ double Grid2D_Quad_Block_HO::area_CurvedBoundaries(const int &CellIndex, const i
   }// endif
 }
 
+/*!
+ * Compute the area of a ghost cell that has one  
+ * edge treated as high-order geometric boundary.
+ */
 double Grid2D_Quad_Block_HO::area_GhostCell_CurvedBoundaries(const int &CellIndex, const int &Boundary) const{
 
   // Obs. The sides of the cell that are not curved are treated as line segments and therefore
@@ -4716,7 +4769,10 @@ double Grid2D_Quad_Block_HO::area_GhostCell_CurvedBoundaries(const int &CellInde
   }// endif
 }
 
-
+/*!
+ * Compute the centroid of an interior cell that has one  
+ * or two edges treated as high-order geometric boundaries.
+ */
 Vector2D Grid2D_Quad_Block_HO::centroid_CurvedBoundaries(const int &CellIndex, const int &Boundary) const{
 
   // Obs. The sides of the cell that are not curved are treated as line segments and therefore
@@ -5216,6 +5272,10 @@ Vector2D Grid2D_Quad_Block_HO::centroid_CurvedBoundaries(const int &CellIndex, c
   }// endif
 }
 
+/*!
+ * Compute the centroid of a ghost cell that has one  
+ * edge treated as high-order geometric boundary.
+ */
 Vector2D Grid2D_Quad_Block_HO::centroid_GhostCell_CurvedBoundaries(const int &CellIndex, const int &Boundary) const{
 
   // Obs. The sides of the cell that are not curved are treated as line segments and therefore
@@ -5432,17 +5492,15 @@ Vector2D Grid2D_Quad_Block_HO::centroid_GhostCell_CurvedBoundaries(const int &Ce
   }// endif
 }
 
+/*!
+ * Compute geometric moments with respect to the cell centroid 
+ * (xCC,yCC) of cell (ii,jj) up to 4th order.                  
+ * These moments are integrals over the cell domain of
+ * polynomial functions with the form ((x-xCC)^n)*((y-yCC)^m) 
+ * and divided by aria A.
+ * This subroutine is for grid cells with straight edges.
+ */
 void Grid2D_Quad_Block_HO::ComputeGeometricCoefficients(const int &ii, const int &jj){
-
-  /***************************************************************************** 
-   * Subroutine for computing the geometric moments up to 3rd order            *
-   * with respect to the cell centroid(xCC,yCC).                               *
-   * These moments are integrals over the domain of the cell of the            *
-   * polynomial function having the form ((x-xCC)^n)*((y-yCC)^m) and divided   *
-   * by aria A.                                                                *
-   ****************************************************************************/
-
-  /* Moments for quadrilateral cells with straight boundaries */
 
   // Compute the coefficients of the bilinear interpolation for transforming
   // a quadrilatral cell into a unit lenght square
@@ -7823,6 +7881,10 @@ void Grid2D_Quad_Block_HO::Output_Tecplot(const int Block_Number,
 	     << "F = POINT \n";
   } /* endif */
 
+  if (Use_Tecplot_With_Double_Precision){
+    Out_File << "DT = (DOUBLE DOUBLE) \n";
+  }
+
   for (j  = JNl ; j <= JNu ; ++j ) {
     for ( i = INl ; i <= INu ; ++i ) {
       Out_File << " " << Node[i][j].X << "\n";
@@ -7866,6 +7928,10 @@ void Grid2D_Quad_Block_HO::Output_Nodes_Tecplot(const int Block_Number,
 	     << "F = POINT \n";
   } /* endif */
 
+  if (Use_Tecplot_With_Double_Precision){
+    Out_File << "DT = (DOUBLE DOUBLE) \n";
+  }
+
   for (j  = JNl-Nghost ; j <= JNu+Nghost ; ++j ) {
     for ( i = INl-Nghost ; i <= INu+Nghost ; ++i ) {
       Out_File << " " << Node[i][j].X << "\n";
@@ -7906,6 +7972,10 @@ void Grid2D_Quad_Block_HO::Output_Cells_Tecplot(const int Block_Number,
 	     << "J = " << JCu - JCl + 1 << " \\ \n"
 	     << "F = POINT \n";
   } /* endif */
+
+  if (Use_Tecplot_With_Double_Precision){
+    Out_File << "DT = (DOUBLE DOUBLE) \n";
+  }
 
   for (j  = JCl ; j <= JCu ; ++j ) {
     for ( i = ICl ; i <= ICu ; ++i ) {
@@ -8640,14 +8710,11 @@ void Grid2D_Quad_Block_HO::Refine_Mesh(const Grid2D_Quad_Block_HO &Grid_Original
 
 }
 
-/********************************************************
- * Routine: Coarsen_Mesh                                *
- *                                                      *
- * Returns a new quadrilateral mesh block resulting     *
- * from the coarsening of four original grid blocks     *
- * with half the original mesh resolution.              *
- *                                                      *
- ********************************************************/
+/*!
+ * Returns a new quadrilateral mesh block resulting 
+ * from the coarsening of four original grid blocks 
+ * with half the original mesh resolution.          
+ */
 void Grid2D_Quad_Block_HO::Coarsen_Mesh(const Grid2D_Quad_Block_HO &Grid_Original_SW,
 					const Grid2D_Quad_Block_HO &Grid_Original_SE,
 					const Grid2D_Quad_Block_HO &Grid_Original_NW,
@@ -9319,7 +9386,7 @@ istream &operator >> (istream &in_file,
   return (in_file);
 }
 
-/*
+/*!
  * Determine the minimum distance between the Node[i][j] 
  * and all the neighbour edges and cell diagonals,
  * for a quadrilateral mesh. 
@@ -9376,7 +9443,7 @@ double Grid2D_Quad_Block_HO::MinimumNodeEdgeDistance(const int &i, const int &j)
   return MinDistance;
 }
 
-/*
+/*!
  * Determines the distance between the point of interest
  * and a line defined by the two points. 
  *
@@ -9414,7 +9481,7 @@ double Grid2D_Quad_Block_HO::DistanceFromPointToLine(const Vector2D &Point,
   return sqrt( DeltaX*DeltaX + DeltaY*DeltaY );
 }
 
-/*
+/*!
  * Output the cell data to the specified output stream.
  */
 void Grid2D_Quad_Block_HO::Output_Cells_Data(const int &block_number, ostream &out_file){
@@ -9432,6 +9499,35 @@ void Grid2D_Quad_Block_HO::Output_Cells_Data(const int &block_number, ostream &o
     for ( j = JCl-Nghost ; j <= JCu+Nghost; ++j ) {
       for ( i = ICl-Nghost ; i <= ICu+Nghost; ++i ) {
 	out_file << Cell[i][j] << "\n";
+      } /* endfor */
+    } /* endfor */
+  } else {
+    out_file << 0 << "\n";
+  }
+  out_file.precision(15);
+}
+
+/*!
+ * Output the geometric properties that are invariant
+ * to translation and rotation of all block cells 
+ * to the specified output stream.
+ */
+void Grid2D_Quad_Block_HO::Output_Cells_Translation_Rotation_Invariant_Properties(const int &block_number,
+										  ostream &out_file){
+
+  int i,j;
+
+  out_file << "Block " << block_number << "\n";
+
+  out_file << NCi << " " << ICl << " " << ICu << "\n";
+  out_file << NCj << " " << JCl << " " << JCu << "\n";
+
+  out_file.precision(15);
+  // Output cell data
+  if (Cell != NULL){
+    for ( j = JCl-Nghost ; j <= JCu+Nghost; ++j ) {
+      for ( i = ICl-Nghost ; i <= ICu+Nghost; ++i ) {
+	Cell[i][j].Output_Translation_Rotation_Invariant_Properties(out_file);
       } /* endfor */
     } /* endfor */
   } else {

@@ -1038,6 +1038,8 @@ public:
     
   //! Output only the cell data
   void Output_Cells_Data(ostream &Out_File);
+  //! Output only the cell invariant geometric properties
+  void Output_Cells_Translation_Rotation_Invariant_Properties(ostream &Out_File);
 
   //! @name Input-output operators.
   //@{
@@ -1449,8 +1451,13 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
 
   /* Update multi-block quadrilateral mesh exterior nodes.*/
   Update_All_Exterior_Nodes();
+
+  /* First disturb the interior nodes as specified by input parameters. */
+  if (Input_Parameters.IterationsOfInteriorNodesDisturbances > 0){
+    Disturb_Interior_Nodes_Without_Update(Input_Parameters.IterationsOfInteriorNodesDisturbances);
+  }
   
-  /* First translate quadrilateral mesh as specified by input parameters. */
+  /* Next translate quadrilateral mesh as specified by input parameters. */
   if (abs(Input_Parameters.X_Shift) > TOLER) {
     Translate_Multi_Block_Grid_Without_Update(Input_Parameters.X_Shift);
   }/* endif */
@@ -1460,15 +1467,10 @@ int Grid2D_Quad_MultiBlock_HO::Multi_Block_Grid(Input_Parameters_Type &Input_Par
     Scale_Multi_Block_Grid_Without_Update(Input_Parameters.X_Scale);
   }/* endif */
 
-  /* Next rotate quadrilateral mesh as specified by input parameters. */
+  /* Finally rotate quadrilateral mesh as specified by input parameters. */
   if (fabs(Input_Parameters.X_Rotate) > TOLER) {
     Rotate_Multi_Block_Grid_Without_Update(TWO*PI*Input_Parameters.X_Rotate/360.00);
   }/* endif */
-
-  /* Finally disturb the interior nodes as specified by input parameters. */
-  if (Input_Parameters.IterationsOfInteriorNodesDisturbances > 0){
-    Disturb_Interior_Nodes_Without_Update(Input_Parameters.IterationsOfInteriorNodesDisturbances);
-  }
 
   /* Check the validity of the generated mesh. */
   if (Grid_ptr == NULL){

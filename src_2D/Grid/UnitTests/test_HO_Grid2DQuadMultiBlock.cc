@@ -27,6 +27,42 @@ namespace tut
     return 1;
   }
 
+  /******************************************************************************************
+   * Function for generating the geom coeff. for a cartesian cell
+   ******************************************************************************************/
+  
+  double GeomCoeffCartesian(int p1, int p2, double deltaX, double deltaY, double deltaXC, double deltaYC){
+
+    /* p1 -> the first power coefficient
+       p2 -> the second power coefficient
+       deltaX -> the grid size in the X direction
+       deltaY -> the grid size in the Y direction
+       deltaXC -> the X distance between the center of the reconstructed cell and that of the cell used in the reconstruction
+       deltaYC -> the Y distance between the center of the reconstructed cell and that of the cell used in the reconstruction
+
+       Obs. To compute the coefficient of the reconstructed cell, deltaXC and deltaYC must be ZERO. 
+    */
+
+    double val1, val2;
+    double coef_x1, coef_x2, coef_y1, coef_y2;
+
+    val1 = val2 = 0.0;
+    coef_x1 = deltaX/2  + deltaXC;
+    coef_x2 = -deltaX/2 + deltaXC;
+    coef_y1 = deltaY/2  + deltaYC;
+    coef_y2 = -deltaY/2 + deltaYC;
+
+    for (int m=1; m<=p1+1; m++){
+      val1 += pow(coef_x1,p1+1-m)*pow(coef_x2,m-1);
+    }
+    for (int l=1; l<=p2+1; l++){
+      val2 += pow(coef_y1,p2+1-l)*pow(coef_y2,l-1);
+    }
+
+    return val1*val2/((p1+1)*(p2+1));
+  }
+
+
   /* Define the test-specific data class and add data members 
      when tests have complex or repeating creation phase. */
   class Data_Grid2DQuadMultiBlock_HO : public TestData {
@@ -91,11 +127,15 @@ namespace tut
     GQPoints = new Vector2D [3];
 
     Grid2D_Quad_Block_HO::setContourIntegrationBasedOnGaussQuadratures();
+    Grid2D_Quad_Block_HO::setNoSpecialTreatmentForNumericalError();
+    Grid2D_Quad_Block_HO::setDefaultPrecisionTecplotPlotting();
   }
 
   Data_Grid2DQuadMultiBlock_HO::~Data_Grid2DQuadMultiBlock_HO(void){
     // reset to default value
     Grid2D_Quad_Block_HO::setDefaultBoundaryRepresentation();
+    Grid2D_Quad_Block_HO::setNoSpecialTreatmentForNumericalError();
+    Grid2D_Quad_Block_HO::setDefaultPrecisionTecplotPlotting();
   }
 
   template<class Input_Parameters>
@@ -258,7 +298,7 @@ namespace tut
    * be unique in tut:: namespace. Alternatively, you
    * you may put it into anonymous namespace.
    */
-  typedef test_group<Data_Grid2DQuadMultiBlock_HO> Grid2DQuadMultiBlock_HO_TestSuite;
+  typedef test_group<Data_Grid2DQuadMultiBlock_HO,60> Grid2DQuadMultiBlock_HO_TestSuite;
   typedef Grid2DQuadMultiBlock_HO_TestSuite::object Grid2DQuadMultiBlock_HO_object;
 
 
@@ -3469,6 +3509,500 @@ namespace tut
 
       // output cell data
       MeshBlk.Output_Cells_Data(out());
+    }
+  }
+
+  // Test 50:
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<50>()
+  {
+    set_test_name("Cartesian Box with up to 4th-order moments");
+
+    RunRegression = ON;
+
+    // Add test particular input parameters
+    IP.i_Grid = GRID_DEFORMED_BOX;
+    IP.Number_of_Blocks_Jdir = 1;
+    IP.Number_of_Blocks_Idir = 1;
+    IP.Number_of_Cells_Idir = 40;
+    IP.Number_of_Cells_Jdir = 40;
+    IP.Number_of_Ghost_Cells = 5;
+    IP.Space_Accuracy = 5;
+    IP.IncludeHighOrderBoundariesRepresentation = OFF;
+    IP.i_Smooth_Quad_Block = OFF;
+    IP.BCs_Specified = ON;
+    IP.BC_North = BC_CONSTANT_EXTRAPOLATION;
+    IP.BC_South = BC_CONSTANT_EXTRAPOLATION;
+    IP.BC_East = BC_CONSTANT_EXTRAPOLATION;
+    IP.BC_West = BC_CONSTANT_EXTRAPOLATION;
+    IP.IterationsOfInteriorNodesDisturbances = 0;
+
+    IP.VertexSW = Vector2D(0.0,0.0);
+    IP.VertexSE = Vector2D(4.0,0.0);
+    IP.VertexNE = Vector2D(4.0,2.0);
+    IP.VertexNW = Vector2D(0.0,2.0);
+
+    IP.X_Scale = 50;
+
+    MasterFile = "Cartesian_Box_4thOrder_Geom_Moments.dat";
+    CurrentFile = "Current_Cartesian_Box_4thOrder_Geom_Moments.dat";
+    
+    if (RunRegression){
+      // Build the mesh
+      CreateMesh(MeshBlk,IP);
+      MeshBlk.Check_Multi_Block_Grid_Completely();
+
+      // Set high-order flags
+      Grid2D_Quad_Block_HO::setHighOrderBoundaryRepresentation();
+      Grid2D_Quad_Block_HO::setContourIntegrationBasedOnGaussQuadratures();
+      Spline2DInterval_HO::setFivePointGaussQuadContourIntegration();
+
+      // schedule update of all cells
+      MeshBlk(0,0).Schedule_Interior_Mesh_Update();
+      MeshBlk(0,0).Schedule_Ghost_Cells_Update();
+
+      // recompute the geoemtric properties with the current method
+      MeshBlk.Update_All_Cells();
+
+      // open CurrentFile
+      Open_Output_File(CurrentFile);
+
+      // output cell data
+      MeshBlk.Output_Cells_Data(out());
+
+      // == check geometric properties
+      RunRegressionTest("Rectangular Box 4th-order moments", CurrentFile, MasterFile, 9.0e-7, 9.0e-7);
+
+    } else {
+      // Build the mesh
+      CreateMesh(MeshBlk,IP);
+      MeshBlk.Check_Multi_Block_Grid_Completely();
+
+      // open MasterFile
+      Open_Output_File(MasterFile);
+
+      // output cell data
+      MeshBlk.Output_Cells_Data(out());
+    }
+  }
+
+  // Test 51:
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<51>()
+  {
+    set_test_name("Cartesian Box with up to 4th-order moments");
+
+    RunRegression = ON;
+
+    // Add test particular input parameters
+    IP.i_Grid = GRID_DEFORMED_BOX;
+    IP.Number_of_Blocks_Jdir = 1;
+    IP.Number_of_Blocks_Idir = 1;
+    IP.Number_of_Cells_Idir = 40;
+    IP.Number_of_Cells_Jdir = 40;
+    IP.Number_of_Ghost_Cells = 5;
+    IP.Space_Accuracy = 5;
+    IP.IncludeHighOrderBoundariesRepresentation = OFF;
+    IP.i_Smooth_Quad_Block = OFF;
+    IP.BCs_Specified = ON;
+    IP.BC_North = BC_CONSTANT_EXTRAPOLATION;
+    IP.BC_South = BC_CONSTANT_EXTRAPOLATION;
+    IP.BC_East = BC_CONSTANT_EXTRAPOLATION;
+    IP.BC_West = BC_CONSTANT_EXTRAPOLATION;
+    IP.IterationsOfInteriorNodesDisturbances = 0;
+
+    IP.VertexSW = Vector2D(0.0,0.0);
+    IP.VertexSE = Vector2D(4.0,0.0);
+    IP.VertexNE = Vector2D(4.0,2.0);
+    IP.VertexNW = Vector2D(0.0,2.0);
+
+    IP.X_Scale = 50;
+
+    MasterFile = "Cartesian_Box_4thOrder_Geom_Moments.dat";
+    CurrentFile = "Current_Cartesian_Box_4thOrder_Geom_Moments_LineBasedIntegration.dat";
+    
+    if (RunRegression){
+      // Build the mesh
+      CreateMesh(MeshBlk,IP);
+      MeshBlk.Check_Multi_Block_Grid_Completely();
+
+      // Set high-order flags
+      Grid2D_Quad_Block_HO::setHighOrderBoundaryRepresentation();
+      Grid2D_Quad_Block_HO::setContourIntegrationBasedOnLinearSegments();
+
+      // schedule update of all cells
+      MeshBlk(0,0).Schedule_Interior_Mesh_Update();
+      MeshBlk(0,0).Schedule_Ghost_Cells_Update();
+
+      // recompute the geoemtric properties with the current method
+      MeshBlk.Update_All_Cells();
+
+      // open CurrentFile
+      Open_Output_File(CurrentFile);
+
+      // output cell data
+      MeshBlk.Output_Cells_Data(out());
+
+      // == check geometric properties
+      RunRegressionTest("Large Deformed Box 4th-order moments", CurrentFile, MasterFile, 1.0e-6, 1.0e-6);
+
+    } else {
+      // Build the mesh
+      CreateMesh(MeshBlk,IP);
+      MeshBlk.Check_Multi_Block_Grid_Completely();
+
+      // open MasterFile
+      Open_Output_File(MasterFile);
+
+      // output cell data
+      MeshBlk.Output_Cells_Data(out());
+    }
+  }
+
+  // Test 52:
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<52>()
+  {
+    set_test_name("Large Deformed Box with up to 4th-order moments");
+
+    RunRegression = ON;
+
+    // Add test particular input parameters
+    IP.i_Grid = GRID_DEFORMED_BOX;
+    IP.Number_of_Blocks_Jdir = 1;
+    IP.Number_of_Blocks_Idir = 1;
+    IP.Number_of_Cells_Idir = 40;
+    IP.Number_of_Cells_Jdir = 40;
+    IP.Number_of_Ghost_Cells = 5;
+    IP.Space_Accuracy = 5;
+    IP.IncludeHighOrderBoundariesRepresentation = OFF;
+    IP.i_Smooth_Quad_Block = OFF;
+    IP.BCs_Specified = ON;
+    IP.BC_North = BC_CONSTANT_EXTRAPOLATION;
+    IP.BC_South = BC_CONSTANT_EXTRAPOLATION;
+    IP.BC_East = BC_CONSTANT_EXTRAPOLATION;
+    IP.BC_West = BC_CONSTANT_EXTRAPOLATION;
+    IP.IterationsOfInteriorNodesDisturbances = 300;
+
+    IP.VertexSW = Vector2D(0.0,0.0);
+    IP.VertexSE = Vector2D(4.0,1.0);
+    IP.VertexNE = Vector2D(2.5,4.0);
+    IP.VertexNW = Vector2D(0.5,5.0);
+    
+    IP.X_Scale = 50;
+
+    MasterFile = "Large_Deformed_Box_4thOrder_Geom_Moments.dat";
+    CurrentFile = "Current_Large_Deformed_Box_4thOrder_Geom_Moments.dat";
+    char * MeshFile = "Large_Deformed_Box_Mesh_4thOrder_Geom_Moments.dat";
+    
+    if (RunRegression){
+      // read the mesh
+      Open_Input_File(MeshFile);
+      in() >> MeshBlk;
+
+      // check mesh
+      MeshBlk.Check_Multi_Block_Grid_Completely();
+
+      // Set high-order flags
+      Grid2D_Quad_Block_HO::setHighOrderBoundaryRepresentation();
+      Grid2D_Quad_Block_HO::setContourIntegrationBasedOnGaussQuadratures();
+      Spline2DInterval_HO::setFivePointGaussQuadContourIntegration();
+
+      // schedule update of all cells
+      MeshBlk(0,0).Schedule_Interior_Mesh_Update();
+      MeshBlk(0,0).Schedule_Ghost_Cells_Update();
+
+      // recompute the geoemtric properties with the current method
+      MeshBlk.Update_All_Cells();
+
+      // open CurrentFile
+      Open_Output_File(CurrentFile);
+
+      // output cell data
+      MeshBlk.Output_Cells_Data(out());
+
+      // == check geometric properties
+      RunRegressionTest("Large Deformed Box 4th-order moments", CurrentFile, MasterFile, 9.0e-7, 9.0e-7);
+
+    } else {
+      // Build the mesh
+      CreateMesh(MeshBlk,IP);
+      MeshBlk.Check_Multi_Block_Grid_Completely();
+
+      // open MasterFile
+      Open_Output_File(MasterFile);
+
+      // output cell data
+      MeshBlk.Output_Cells_Data(out());
+
+      // open MeshFile
+      Open_Output_File(MeshFile);
+      
+      // output mesh data
+      out() << MeshBlk;
+    }
+  }
+
+  // Test 53:
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<53>()
+  {
+    set_test_name("Large Deformed Box with up to 4th-order moments");
+
+    RunRegression = ON;
+
+    // Add test particular input parameters
+    IP.i_Grid = GRID_DEFORMED_BOX;
+    IP.Number_of_Blocks_Jdir = 1;
+    IP.Number_of_Blocks_Idir = 1;
+    IP.Number_of_Cells_Idir = 40;
+    IP.Number_of_Cells_Jdir = 40;
+    IP.Number_of_Ghost_Cells = 5;
+    IP.Space_Accuracy = 5;
+    IP.IncludeHighOrderBoundariesRepresentation = OFF;
+    IP.i_Smooth_Quad_Block = OFF;
+    IP.BCs_Specified = ON;
+    IP.BC_North = BC_CONSTANT_EXTRAPOLATION;
+    IP.BC_South = BC_CONSTANT_EXTRAPOLATION;
+    IP.BC_East = BC_CONSTANT_EXTRAPOLATION;
+    IP.BC_West = BC_CONSTANT_EXTRAPOLATION;
+    IP.IterationsOfInteriorNodesDisturbances = 300;
+
+    IP.VertexSW = Vector2D(0.0,0.0);
+    IP.VertexSE = Vector2D(4.0,1.0);
+    IP.VertexNE = Vector2D(2.5,4.0);
+    IP.VertexNW = Vector2D(0.5,5.0);
+
+    IP.X_Scale = 50;
+
+    MasterFile = "Large_Deformed_Box_4thOrder_Geom_Moments.dat";
+    CurrentFile = "Current_Large_Deformed_Box_4thOrder_Geom_Moments_LineBasedIntegration.dat";
+    char * MeshFile = "Large_Deformed_Box_Mesh_4thOrder_Geom_Moments.dat";
+    
+    if (RunRegression){
+      // read the mesh (which was generated in test 48)
+      Open_Input_File(MeshFile);
+      in() >> MeshBlk;
+
+      // check mesh
+      MeshBlk.Check_Multi_Block_Grid_Completely();
+
+      // Set high-order flags
+      Grid2D_Quad_Block_HO::setHighOrderBoundaryRepresentation();
+      Grid2D_Quad_Block_HO::setContourIntegrationBasedOnLinearSegments();
+
+      // schedule update of all cells
+      MeshBlk(0,0).Schedule_Interior_Mesh_Update();
+      MeshBlk(0,0).Schedule_Ghost_Cells_Update();
+
+      // recompute the geoemtric properties with the current method
+      MeshBlk.Update_All_Cells();
+
+      // open CurrentFile
+      Open_Output_File(CurrentFile);
+
+      // output cell data
+      MeshBlk.Output_Cells_Data(out());
+
+      // == check geometric properties
+      RunRegressionTest("Large Deformed Box 4th-order moments", CurrentFile, MasterFile, 1.0e-6, 1.0e-6);
+
+    } else {
+      // Build the mesh
+      CreateMesh(MeshBlk,IP);
+      MeshBlk.Check_Multi_Block_Grid_Completely();
+
+      // open MasterFile
+      Open_Output_File(MasterFile);
+
+      // output cell data
+      MeshBlk.Output_Cells_Data(out());
+    }
+  }
+
+  // Test 54:
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<54>()
+  {
+    set_test_name("Translated Cartesian Box with up to 4th-order moments");
+
+    RunRegression = ON;
+
+    // Add test particular input parameters
+    IP.i_Grid = GRID_DEFORMED_BOX;
+    IP.Number_of_Blocks_Jdir = 1;
+    IP.Number_of_Blocks_Idir = 1;
+    IP.Number_of_Cells_Idir = 40;
+    IP.Number_of_Cells_Jdir = 40;
+    IP.Number_of_Ghost_Cells = 5;
+    IP.Space_Accuracy = 5;
+    IP.IncludeHighOrderBoundariesRepresentation = OFF;
+    IP.i_Smooth_Quad_Block = OFF;
+    IP.BCs_Specified = ON;
+    IP.BC_North = BC_CONSTANT_EXTRAPOLATION;
+    IP.BC_South = BC_CONSTANT_EXTRAPOLATION;
+    IP.BC_East = BC_CONSTANT_EXTRAPOLATION;
+    IP.BC_West = BC_CONSTANT_EXTRAPOLATION;
+    IP.IterationsOfInteriorNodesDisturbances = 0;
+    IP.X_Scale = 1;
+
+    IP.VertexSW = Vector2D(0.0,0.0);
+    IP.VertexSE = Vector2D(4.0,0.0);
+    IP.VertexNE = Vector2D(4.0,2.0);
+    IP.VertexNW = Vector2D(0.0,2.0);
+
+    MasterFile = "Cartesian_Box_4thOrder_Geom_Moments_Without_Translation.dat";
+    CurrentFile = "Current_Translated_Cartesian_Box_4thOrder_Geom_Moments.dat";
+    
+    if (RunRegression){
+      // Translate the box and update the mesh without curved boundaries.
+      IP.X_Shift = Vector2D(5.5e6,0.01);
+
+      // Set special treatment for this mesh
+      Grid2D_Quad_Block_HO::setTreatMeshWithExtraCareForNumericalError();
+      Grid2D_Quad_Block_HO::setDoublePrecisionTecplotPlotting();
+
+      // Build the mesh
+      CreateMesh(MeshBlk,IP);
+      MeshBlk.Check_Multi_Block_Grid_Completely();
+
+      // open CurrentFile
+      Open_Output_File(CurrentFile);
+
+      // output cell data
+      MeshBlk.Output_Cells_Translation_Rotation_Invariant_Properties(out());
+      
+      // == check geometric properties
+      RunRegressionTest("Translated Rectangular Box 4th-order moments", CurrentFile, MasterFile, 5.0e-10, 5.0e-10);
+
+    } else {
+      // Build the mesh
+      CreateMesh(MeshBlk,IP);
+      MeshBlk.Check_Multi_Block_Grid_Completely();
+
+      // open MasterFile
+      Open_Output_File(MasterFile);
+
+      // output cell data
+      MeshBlk.Output_Cells_Translation_Rotation_Invariant_Properties(out());
+    }
+  }
+
+  // Test 55:
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<55>()
+  {
+    set_test_name("Treat mesh with extra care for numerical errors");
+    RunRegression = ON;
+ 
+    // Add test particular input parameters
+    IP.i_Grid = GRID_CIRCULAR_CYLINDER;
+    IP.Cylinder_Radius = 1;
+    IP.Cylinder_Radius2 = 32;
+    IP.Number_of_Blocks_Jdir = 1;
+    IP.Number_of_Blocks_Idir = 2;
+    IP.Number_of_Cells_Idir = 40;
+    IP.Number_of_Cells_Jdir = 20;
+    IP.Number_of_Ghost_Cells = 5;
+    IP.Space_Accuracy = 4;
+    IP.IncludeHighOrderBoundariesRepresentation = OFF;
+    IP.i_Smooth_Quad_Block = OFF;
+
+    IP.i_Mesh_Stretching = ON;
+    IP.Mesh_Stretching_Type_Idir = STRETCHING_FCN_MINMAX_CLUSTERING;
+    IP.Mesh_Stretching_Type_Jdir = STRETCHING_FCN_MIN_CLUSTERING;
+    IP.Mesh_Stretching_Factor_Idir = 1.025;
+    IP.Mesh_Stretching_Factor_Jdir = 1.001;
+
+    // Set special treatment for this mesh
+    Grid2D_Quad_Block_HO::setTreatMeshWithExtraCareForNumericalError();
+
+    // Build the mesh
+    CreateMesh(MeshBlk,IP);
+
+    MasterFile = "GridCircularCylinder_GeomProperties_InteriorCell.dat";
+    CurrentFile = "Current_GridCircularCylinder_GeomProperties_InteriorCell_SpecialTreatmentMesh.dat";
+
+    // Checked cell --> Block(0,0), Cell (16,25)
+    iCell = 16; jCell = 25;
+
+    if (RunRegression){
+      Open_Output_File(CurrentFile);
+
+      // Cell Nodes
+      Print_File(MeshBlk(0,0).nodeSW(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).nodeNW(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).nodeSE(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).nodeNE(iCell,jCell), out());
+
+      // Centroid
+      Print_File(MeshBlk(0,0).CellCentroid(iCell,jCell), out());
+
+      // Centroid, area, cell indexes, geometric moments
+      Print_File(MeshBlk(0,0).Cell[iCell][jCell], out());
+
+      // Cell face midpoints
+      Print_File(MeshBlk(0,0).xfaceN(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).xfaceS(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).xfaceE(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).xfaceW(iCell,jCell), out());
+
+      // Cell Gauss Points
+      MeshBlk(0,0).getGaussQuadPointsFaceN(iCell,jCell, GQPoints, 1);   Print_File(GQPoints[0], out());
+      MeshBlk(0,0).getGaussQuadPointsFaceS(iCell,jCell, GQPoints, 1);   Print_File(GQPoints[0], out());
+      MeshBlk(0,0).getGaussQuadPointsFaceE(iCell,jCell, GQPoints, 1);   Print_File(GQPoints[0], out());
+      MeshBlk(0,0).getGaussQuadPointsFaceW(iCell,jCell, GQPoints, 1);   Print_File(GQPoints[0], out());
+
+      MeshBlk(0,0).getGaussQuadPointsFaceN(iCell,jCell, GQPoints, 2); 
+      Print_File(GQPoints[0], out()); Print_File(GQPoints[1], out());
+
+      MeshBlk(0,0).getGaussQuadPointsFaceS(iCell,jCell, GQPoints, 2);
+      Print_File(GQPoints[0], out()); Print_File(GQPoints[1], out());
+
+      MeshBlk(0,0).getGaussQuadPointsFaceE(iCell,jCell, GQPoints, 2);
+      Print_File(GQPoints[0], out()); Print_File(GQPoints[1], out());
+
+      MeshBlk(0,0).getGaussQuadPointsFaceW(iCell,jCell, GQPoints, 2);
+      Print_File(GQPoints[0], out()); Print_File(GQPoints[1], out());
+
+      // Face Lengths
+      Print_File(MeshBlk(0,0).lfaceN(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).lfaceS(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).lfaceE(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).lfaceW(iCell,jCell), out());
+
+      // Normals
+      Print_File(MeshBlk(0,0).nfaceN(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).nfaceS(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).nfaceE(iCell,jCell), out());
+      Print_File(MeshBlk(0,0).nfaceW(iCell,jCell), out());
+
+
+      // check geometry
+      RunRegressionTest("Cell Geom Properties", CurrentFile, MasterFile, 1.0e-10, 1.0e-10);
+
+      // Check boundaries
+      ensure_equals("BndNorthSplineInfo",MeshBlk(0,0).BndNorthSplineInfo, SInfoNULL);
+      ensure_equals("BndSouthSplineInfo",MeshBlk(0,0).BndSouthSplineInfo, SInfoNULL);
+      ensure_equals("BndEastSplineInfo",MeshBlk(0,0).BndEastSplineInfo, SInfoNULL);
+      ensure_equals("BndWestSplineInfo",MeshBlk(0,0).BndWestSplineInfo, SInfoNULL);
+
+      ensure_equals("Constaints North", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_North(iCell,jCell), 0);
+      ensure_equals("Constaints South", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_South(iCell,jCell), 0);
+      ensure_equals("Constaints East", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_East(iCell,jCell), 0);
+      ensure_equals("Constaints West", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints_West(iCell,jCell), 0);
+      ensure_equals("Total Constaints", MeshBlk(0,0).NumOfConstrainedGaussQuadPoints(iCell,jCell), 0);
+
+      // Check update state
+      ensure_equals("InteriorMesh", MeshBlk(0,0).Value_InteriorMeshUpdate_Flag(), OFF);
+      ensure_equals("GhostCells", MeshBlk(0,0).Value_GhostCellsUpdate_Flag(), OFF);
+      ensure_equals("CornerGhostCells", MeshBlk(0,0).Value_CornerGhostCellsUpdate_Flag(), OFF);
     }
   }
 

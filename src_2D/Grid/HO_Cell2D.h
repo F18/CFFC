@@ -115,6 +115,9 @@ public:
   GeomMoment & GeomCoeff(const int &position){return _GeomCoeff_(position,true,true,true);}
   //@}
 
+  //! Output invariant properties to cell translation and rotation.
+  void Output_Translation_Rotation_Invariant_Properties(ostream &out_file);
+
   //! Set the container of the cell geometric coefficients for usage.
   void SetGeomCoeffContainerSize(const int OrderOfReconstruction){
     return _GeomCoeff_.GenerateContainer(OrderOfReconstruction);
@@ -233,6 +236,21 @@ inline void Cell2D_HO::setindex(const Cell2D_HO &Cell) {
  */
 inline void Cell2D_HO::setindex(const int II, const int JJ) {
     I = II; J = JJ;
+}
+
+/*!
+ * Output the cell geometric properties which are 
+ * invariant to translation and rotation operations.
+ * These properties are: 
+ * cell indexes, area, geometric moments with respect to cell centroid.
+ */
+inline void Cell2D_HO::Output_Translation_Rotation_Invariant_Properties(ostream &out_file){
+
+  out_file << " " << I << " " << J;
+  out_file.setf(ios::scientific);
+  out_file << " " << A << "\n";
+  out_file.unsetf(ios::scientific);
+  out_file << " " << GeomCoeff();
 }
 
 /*!

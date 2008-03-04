@@ -350,12 +350,12 @@ public:
   //@{
   int quadAreaAndCentroid(const int &ii, const int &jj) const;
   Vector2D quadConvexCentroid(const int &ii, const int &jj) const;
-  Vector2D centroid(const Cell2D_HO &Cell) const;
-  Vector2D centroid(const int &ii, const int &jj) const;
-  Vector2D centroidSW(const int &ii, const int &jj) const;
-  Vector2D centroidSE(const int &ii, const int &jj) const;
-  Vector2D centroidNW(const int &ii, const int &jj) const;
-  Vector2D centroidNE(const int &ii, const int &jj) const;
+  Vector2D centroid(const Cell2D_HO &Cell);
+  Vector2D centroid(const int &ii, const int &jj);
+  Vector2D centroidSW(const int &ii, const int &jj);
+  Vector2D centroidSE(const int &ii, const int &jj);
+  Vector2D centroidNW(const int &ii, const int &jj);
+  Vector2D centroidNE(const int &ii, const int &jj);
   Vector2D centroidSW_ConvexQuad(const int &ii, const int &jj) const;
   Vector2D centroidSE_ConvexQuad(const int &ii, const int &jj) const;
   Vector2D centroidNW_ConvexQuad(const int &ii, const int &jj) const;
@@ -745,6 +745,9 @@ public:
   
   //!@ Output functions for plotting.
   //@{
+  static void setDoublePrecisionTecplotPlotting(void){ Use_Tecplot_With_Double_Precision = ON; }
+  static void setSinglePrecisionTecplotPlotting(void){ Use_Tecplot_With_Double_Precision = OFF; }
+  static void setDefaultPrecisionTecplotPlotting(void){ Use_Tecplot_With_Double_Precision = OFF; }
   void Output_Tecplot(const int Block_Number,
 		      const int Output_Title,
 		      ostream &Out_File) const;
@@ -872,8 +875,15 @@ public:
   static void setContourIntegrationBasedOnLinearSegments(void) { Gauss_Quad_Curvilinear_Integration = OFF; }
   //@}
 
+  //! Set the designated switch to require computation of geometric properties with extra care for numerical errors
+  static void setTreatMeshWithExtraCareForNumericalError(void) { Minimize_Error_Calculation_Of_Geometric_Properties = ON; }
+  //! Set the designated switch to require the regular computation of geometric properties.
+  static void setNoSpecialTreatmentForNumericalError(void) { Minimize_Error_Calculation_Of_Geometric_Properties = OFF; }
+
   //! Output only the cell data
   void Output_Cells_Data(const int &block_number, ostream &out_file);
+  //! Output only the cell invariant geometric properties
+  void Output_Cells_Translation_Rotation_Invariant_Properties(const int &block_number, ostream &out_file);
 
   //! @name Input-output operators.
   //@{
@@ -883,7 +893,7 @@ public:
 
 private:
   Grid2D_Quad_Block_HO(const Grid2D_Quad_Block_HO &G);     //! Private copy constructor.
-
+  
   //! Switch for computing with high-order or low-order accuracy the geometric properties 
   static int HighOrderBoundaryRepresentation;
 
@@ -892,6 +902,12 @@ private:
 
   //! Switch for how to compute the curvilinear path integrals along curved edges.
   static int Gauss_Quad_Curvilinear_Integration;
+  
+  //! Switch for error minimization in calculating the cell geometric properties.
+  static int Minimize_Error_Calculation_Of_Geometric_Properties;
+
+  //! Switch for instructing tecplot to use double or single precision
+  static int Use_Tecplot_With_Double_Precision;
 
   //! Highest order of reconstruction that might occur in calculations with the current grid.
   int HighestReconstructionOrder;
@@ -917,6 +933,15 @@ private:
   //! Check for curved boundaries.
   bool CheckExistenceOfCurvedBoundaries(void);
 
+  //! @name Auxiliary variables/functions for translations between the global and the cell local coordinate systems.
+  //@{
+  static Vector2D _SW_, _SE_, _NE_, _NW_;
+  void TranslateVertexesIntoLocalCoordinateSystem(Vector2D &SW, Vector2D &SE,
+						  Vector2D &NE, Vector2D &NW);
+  void TranslateVertexesIntoGlobalCoordinateSystem(Vector2D &SW, Vector2D &SE,
+						   Vector2D &NE, Vector2D &NW,
+						   Vector2D &Centroid);
+  //@}
 };
 
 /*!
@@ -965,6 +990,52 @@ inline void Grid2D_Quad_Block_HO::deallocateBndSplineInfo(void) {
   delete []BndSouthSplineInfo; BndSouthSplineInfo = NULL;
   delete []BndEastSplineInfo;  BndEastSplineInfo = NULL;
   delete []BndWestSplineInfo;  BndWestSplineInfo = NULL;
+}
+
+/*!
+ * Subroutine for translating the providing vectors
+ * into a reference system with the origin in SW.
+ * The original values are stored in the static 
+ * variables _SW_, _SE_, _NE_, _NW_.
+ */
+inline void Grid2D_Quad_Block_HO::TranslateVertexesIntoLocalCoordinateSystem(Vector2D &SW, Vector2D &SE,
+									     Vector2D &NE, Vector2D &NW){
+
+  // Check if translation to local coordinate system is required
+  if (Minimize_Error_Calculation_Of_Geometric_Properties){
+    // save the current node locations 
+   _SW_ = SW;
+   _SE_ = SE;
+   _NE_ = NE;
+   _NW_ = NW;
+
+    // translate the vertexes into a local reference system with the origin in SW.
+    SW = 0.0;
+    SE -= _SW_;
+    NE -= _SW_;
+    NW -= _SW_;
+  }
+}
+
+/*!
+ * Subroutine for translating the providing vectors
+ * into the global reference system.
+ * The function assumes that _SW_, _SE_, _NE_, _NW_
+ * represent the original values of the providing vectors.
+ * This function should be used in conjunction with 
+ * "TranslateVertexesIntoLocalCoordinateSystem()".
+ */
+inline void Grid2D_Quad_Block_HO::TranslateVertexesIntoGlobalCoordinateSystem(Vector2D &SW, Vector2D &SE,
+									      Vector2D &NE, Vector2D &NW,
+									      Vector2D &Centroid){
+
+  if (Minimize_Error_Calculation_Of_Geometric_Properties){
+    SW = _SW_;
+    SE = _SE_;
+    NE = _NE_;
+    NW = _NW_;
+    Centroid += _SW_;
+  }
 }
 
 /*!
@@ -1022,7 +1093,7 @@ inline Vector2D Grid2D_Quad_Block_HO::quadConvexCentroid(const int &ii, const in
 /*!
  * Get centroid of Cell
  */
-inline Vector2D Grid2D_Quad_Block_HO::centroid(const Cell2D_HO &Cell) const {
+inline Vector2D Grid2D_Quad_Block_HO::centroid(const Cell2D_HO &Cell) {
   return centroid(Cell.I,Cell.J);
 }
 
@@ -1030,7 +1101,7 @@ inline Vector2D Grid2D_Quad_Block_HO::centroid(const Cell2D_HO &Cell) const {
  * Calculate the centroid of cell (ii,jj).
  * This is a slower subroutine because it checks for negative area.
  */
-inline Vector2D Grid2D_Quad_Block_HO::centroid(const int &ii, const int &jj) const {
+inline Vector2D Grid2D_Quad_Block_HO::centroid(const int &ii, const int &jj) {
 
   int Info;
   double area;
@@ -1042,7 +1113,13 @@ inline Vector2D Grid2D_Quad_Block_HO::centroid(const int &ii, const int &jj) con
 		    Node[ii+1][jj+1].X,
 		    Node[ii  ][jj+1].X };
   
+  // Translate the cell nodes into the local coordinate system if required
+  TranslateVertexesIntoLocalCoordinateSystem(X[0],X[1],X[2],X[3]);
+
   Info = quadCentroid(X[0],X[1],X[2],X[3],Centroid,area);
+
+  // Translate the cell nodes back to the global coordinate system.
+  TranslateVertexesIntoGlobalCoordinateSystem(X[0],X[1],X[2],X[3],Centroid);
   
   if (Info == 2){
     throw runtime_error("Grid2D_Quad_Block_HO::centroid() ERROR! Negative area encountered!");
@@ -1055,7 +1132,7 @@ inline Vector2D Grid2D_Quad_Block_HO::centroid(const int &ii, const int &jj) con
 /*!
  * Calculate the centroid of the South-West quarter of cell (ii,jj)
  */
-inline Vector2D Grid2D_Quad_Block_HO::centroidSW(const int &ii, const int &jj) const {
+inline Vector2D Grid2D_Quad_Block_HO::centroidSW(const int &ii, const int &jj) {
 
   Vector2D X1,X2,X3,X4, Centroid;
   double area;
@@ -1066,8 +1143,14 @@ inline Vector2D Grid2D_Quad_Block_HO::centroidSW(const int &ii, const int &jj) c
   X3 = 0.25*(Node[ii][jj].X + Node[ii+1][jj].X + Node[ii][jj+1].X + Node[ii+1][jj+1].X);
   X4 = HALF*(Node[ii][jj].X + Node[ii][jj+1].X);
 
+  // Translate the cell nodes into the local coordinate system if required
+  TranslateVertexesIntoLocalCoordinateSystem(X1,X2,X3,X4);
+
   // Determine the centroid
   quadCentroid(X1,X2,X3,X4,Centroid,area);
+
+  // Translate the cell nodes back to the global coordinate system.
+  TranslateVertexesIntoGlobalCoordinateSystem(X1,X2,X3,X4,Centroid);
 
   return Centroid;
 }
@@ -1100,7 +1183,7 @@ inline Vector2D Grid2D_Quad_Block_HO::centroidSW_ConvexQuad(const int &ii, const
 /*!
  * Calculate the centroid of the South-East quarter of cell (ii,jj)
  */
-inline Vector2D Grid2D_Quad_Block_HO::centroidSE(const int &ii, const int &jj) const {
+inline Vector2D Grid2D_Quad_Block_HO::centroidSE(const int &ii, const int &jj) {
   Vector2D X1, X2, X3, X4, Centroid;
   double area;
 
@@ -1110,8 +1193,14 @@ inline Vector2D Grid2D_Quad_Block_HO::centroidSE(const int &ii, const int &jj) c
   X3 = HALF*(Node[ii+1][jj].X + Node[ii+1][jj+1].X);
   X4 = 0.25*(Node[ii][jj].X + Node[ii+1][jj].X + Node[ii][jj+1].X + Node[ii+1][jj+1].X);
 
+  // Translate the cell nodes into the local coordinate system if required
+  TranslateVertexesIntoLocalCoordinateSystem(X1,X2,X3,X4);
+
   // Determine the centroid
   quadCentroid(X1,X2,X3,X4,Centroid,area);
+
+  // Translate the cell nodes back to the global coordinate system.
+  TranslateVertexesIntoGlobalCoordinateSystem(X1,X2,X3,X4,Centroid);
 
   return Centroid;
 }
@@ -1143,7 +1232,7 @@ inline Vector2D Grid2D_Quad_Block_HO::centroidSE_ConvexQuad(const int &ii, const
 /*!
  * Calculate the centroid of the North-West quarter of cell (ii,jj)
  */
-inline Vector2D Grid2D_Quad_Block_HO::centroidNW(const int &ii, const int &jj) const {
+inline Vector2D Grid2D_Quad_Block_HO::centroidNW(const int &ii, const int &jj) {
 
   Vector2D X1, X2, X3, X4, Centroid;
   double area;
@@ -1154,8 +1243,14 @@ inline Vector2D Grid2D_Quad_Block_HO::centroidNW(const int &ii, const int &jj) c
   X3 = HALF*(Node[ii][jj+1].X + Node[ii+1][jj+1].X);
   X4 = Node[ii][jj+1].X;
 
+  // Translate the cell nodes into the local coordinate system if required
+  TranslateVertexesIntoLocalCoordinateSystem(X1,X2,X3,X4);
+
   // Determine the centroid.
   quadCentroid(X1,X2,X3,X4,Centroid,area);
+
+  // Translate the cell nodes back to the global coordinate system.
+  TranslateVertexesIntoGlobalCoordinateSystem(X1,X2,X3,X4,Centroid);
 
   return Centroid;
 }
@@ -1187,7 +1282,7 @@ inline Vector2D Grid2D_Quad_Block_HO::centroidNW_ConvexQuad(const int &ii, const
 /*!
  * Calculate the centroid of the North-East quarter of cell (ii,jj)
  */
-inline Vector2D Grid2D_Quad_Block_HO::centroidNE(const int &ii, const int &jj) const {
+inline Vector2D Grid2D_Quad_Block_HO::centroidNE(const int &ii, const int &jj) {
 
   Vector2D X1, X2, X3, X4, Centroid;
   double area;
@@ -1198,8 +1293,14 @@ inline Vector2D Grid2D_Quad_Block_HO::centroidNE(const int &ii, const int &jj) c
   X3 = Node[ii+1][jj+1].X;
   X4 = HALF*(Node[ii][jj+1].X + Node[ii+1][jj+1].X);
 
+  // Translate the cell nodes into the local coordinate system if required
+  TranslateVertexesIntoLocalCoordinateSystem(X1,X2,X3,X4);
+
   // Determine the centroid.
   quadCentroid(X1,X2,X3,X4,Centroid,area);
+
+  // Translate the cell nodes back to the global coordinate system.
+  TranslateVertexesIntoGlobalCoordinateSystem(X1,X2,X3,X4,Centroid);
 
   return Centroid;
 }
@@ -1766,15 +1867,26 @@ inline void Grid2D_Quad_Block_HO::getGaussQuadPointsFaceW(const int &ii, const i
  */
 inline void Grid2D_Quad_Block_HO::Update_Cell(const int & iCell, const int & jCell){
 
+  static Vector2D Shift, SW, SE, NE, NW;
+
   // Set cell indexes
   Cell[iCell][jCell].I = iCell;
   Cell[iCell][jCell].J = jCell;
+
+  // Translate the cell nodes into the local coordinate system if required
+  TranslateVertexesIntoLocalCoordinateSystem(Node[iCell  ][jCell  ].X, Node[iCell+1][jCell  ].X,
+					     Node[iCell+1][jCell+1].X, Node[iCell  ][jCell+1].X);
 
   // Compute cell area and centroid
   quadAreaAndCentroid(iCell,jCell);
 
   // Compute geometric moments 
   ComputeGeometricCoefficients(iCell,jCell);
+
+  // Translate the cell nodes back to the global coordinate system.
+  TranslateVertexesIntoGlobalCoordinateSystem(Node[iCell  ][jCell  ].X, Node[iCell+1][jCell  ].X,
+					      Node[iCell+1][jCell+1].X, Node[iCell  ][jCell+1].X,
+					      Cell[iCell][jCell].Xc);
 }
 
 /*!

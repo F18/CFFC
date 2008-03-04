@@ -84,7 +84,28 @@ double PolynomLineIntegration(const double & N1x, const double & N1y,
 		  0.3e1*xCC*N1y*yCC*yCC - 0.3e1*N1x*N1y*N1y*yCC + 0.3e1*N1x*N1y*yCC*yCC));
     case 4:
       /* OrderX=0, OrderY=4 */
-      return 0.0;
+      return ( DX * pow(DY, 0.5e1) / 0.6e1 + DY * (N1x * pow(DY, 0.4e1) - 0.4e1 * DX * pow(DY, 0.3e1) * yCC - 
+						   xCC * pow(DY, 0.4e1) + 0.4e1 * DX * N1y * pow(DY, 0.3e1)) / 0.5e1 + 
+	       DY * (-0.4e1 * xCC * N1y * pow(DY, 0.3e1) + 0.4e1 * xCC * pow(DY, 0.3e1) * yCC + 
+		     0.6e1 * DX * N1y * N1y * DY * DY + 0.4e1 * N1x * N1y * pow(DY, 0.3e1) - 
+		     0.12e2 * DX * N1y * DY * DY * yCC - 0.4e1 * N1x * pow(DY, 0.3e1) * yCC +
+		     0.6e1 * DX * DY * DY * yCC * yCC) / 0.4e1 +
+	       DY * (0.6e1 * N1x * DY * DY * yCC * yCC - 0.6e1 * xCC * N1y * N1y * DY * DY - 
+		     0.6e1 * xCC * DY * DY * yCC * yCC + 0.4e1 * DX * pow(N1y, 0.3e1) * DY - 
+		     0.4e1 * DX * DY * pow(yCC, 0.3e1) + 0.12e2 * DX * N1y * DY * yCC * yCC + 
+		     0.6e1 * N1x * N1y * N1y * DY * DY - 0.12e2 * DX * N1y * N1y * DY * yCC - 
+		     0.12e2 * N1x * N1y * DY * DY * yCC + 0.12e2 * xCC * N1y * DY * DY * yCC) / 0.3e1 + 
+	       DY * (DX * pow(yCC, 0.4e1) - 0.4e1 * DX * N1y * pow(yCC, 0.3e1) + 0.6e1 * DX * N1y * N1y * yCC * yCC + 
+		     0.4e1 * xCC * DY * pow(yCC, 0.3e1) - 0.12e2 * xCC * N1y * DY * yCC * yCC + 
+		     0.12e2 * xCC * N1y * N1y * DY * yCC + 0.4e1 * N1x * pow(N1y, 0.3e1) * DY + 
+		     DX * pow(N1y, 0.4e1) - 0.4e1 * xCC * pow(N1y, 0.3e1) * DY - 0.4e1 * DX * pow(N1y, 0.3e1) * yCC - 
+		     0.4e1 * N1x * DY * pow(yCC, 0.3e1) - 0.12e2 * N1x * N1y * N1y * DY * yCC + 
+		     0.12e2 * N1x * N1y * DY * yCC * yCC) / 0.2e1 + 
+	       DY * (0.4e1 * xCC * N1y * pow(yCC, 0.3e1) + 0.6e1 * N1x * N1y * N1y * yCC * yCC + 
+		     N1x * pow(yCC, 0.4e1) + 0.4e1 * xCC * pow(N1y, 0.3e1) * yCC - 
+		     0.6e1 * xCC * N1y * N1y * yCC * yCC - 0.4e1 * N1x * pow(N1y, 0.3e1) * yCC - 
+		     0.4e1 * N1x * N1y * pow(yCC, 0.3e1) - xCC * pow(yCC, 0.4e1) + N1x * pow(N1y, 0.4e1) - 
+		     xCC * pow(N1y, 0.4e1)) );
     } /* endswitch (OrderY) */
     break;
 
@@ -113,7 +134,32 @@ double PolynomLineIntegration(const double & N1x, const double & N1y,
 		  N1x*N1x*N1y*N1y - 0.2e1*N1x*N1x*N1y*yCC - 0.2e1*xCC*xCC*N1y*yCC + 0.4e1*N1x*xCC*N1y*yCC));
     case 3:
       /* OrderX=1, OrderY=3 */
-      return 0.0;
+      return ((DX * DX / 0.6e1 + xCC * xCC / 0.4e1 - N1x * xCC / 0.2e1 + N1x * N1x / 0.4e1 - 
+	       0.2e1 / 0.5e1 * DX * xCC + 0.2e1 / 0.5e1 * N1x * DX) * pow(DY, 0.4e1) + 
+	      (-0.3e1 / 0.2e1 * N1x * DX * yCC + 0.3e1 / 0.2e1 * N1x * DX * N1y + 
+	       0.3e1 / 0.2e1 * DX * xCC * yCC - 0.3e1 / 0.2e1 * DX * xCC * N1y + 
+	       0.2e1 * N1x * xCC * yCC + N1x * N1x * N1y + xCC * xCC * N1y - N1x * N1x * yCC - 
+	       xCC * xCC * yCC - 0.2e1 * N1x * xCC * N1y + 0.3e1 / 0.5e1 * DX * DX * N1y - 
+	       0.3e1 / 0.5e1 * DX * DX * yCC) * pow(DY, 0.3e1) + 
+	      (0.3e1 / 0.2e1 * N1x * N1x * N1y * N1y + 0.6e1 * N1x * xCC * N1y * yCC + 
+	       0.3e1 / 0.2e1 * xCC * xCC * yCC * yCC - 0.3e1 * N1x * xCC * N1y * N1y + 
+	       0.3e1 / 0.2e1 * xCC * xCC * N1y * N1y + 0.3e1 / 0.2e1 * N1x * N1x * yCC * yCC - 
+	       0.3e1 * N1x * xCC * yCC * yCC - 0.3e1 * N1x * N1x * N1y * yCC - 0.3e1 * xCC * xCC * N1y * yCC + 
+	       0.3e1 / 0.4e1 * DX * DX * yCC * yCC + 0.3e1 / 0.4e1 * DX * DX * N1y * N1y - 
+	       0.3e1 / 0.2e1 * DX * DX * N1y * yCC + 0.4e1 * DX * xCC * N1y * yCC + 
+	       0.2e1 * N1x * DX * N1y * N1y - 0.2e1 * DX * xCC * yCC * yCC + 0.2e1 * N1x * DX * yCC * yCC - 
+	       0.2e1 * DX * xCC * N1y * N1y - 0.4e1 * N1x * DX * N1y * yCC) * DY * DY + 
+	      (DX * xCC * pow(yCC, 0.3e1) - 0.3e1 * N1x * DX * N1y * N1y * yCC + 
+	       0.3e1 * N1x * DX * N1y * yCC * yCC + 0.3e1 * DX * xCC * N1y * N1y * yCC + 
+	       N1x * DX * pow(N1y, 0.3e1) - 0.3e1 * DX * xCC * N1y * yCC * yCC - 
+	       N1x * DX * pow(yCC, 0.3e1) - DX * xCC * pow(N1y, 0.3e1) - DX * DX * pow(yCC, 0.3e1) / 0.3e1 - 
+	       DX * DX * N1y * N1y * yCC + DX * DX * pow(N1y, 0.3e1) / 0.3e1 + DX * DX * N1y * yCC * yCC - 
+	       xCC * xCC * pow(yCC, 0.3e1) + 0.3e1 * xCC * xCC * N1y * yCC * yCC - 
+	       0.2e1 * N1x * xCC * pow(N1y, 0.3e1) + 0.6e1 * N1x * xCC * N1y * N1y * yCC - 
+	       0.6e1 * N1x * xCC * N1y * yCC * yCC + 0.3e1 * N1x * N1x * N1y * yCC * yCC - 
+	       0.3e1 * N1x * N1x * N1y * N1y * yCC - 0.3e1 * xCC * xCC * N1y * N1y * yCC + 
+	       xCC * xCC * pow(N1y, 0.3e1) + 0.2e1 * N1x * xCC * pow(yCC, 0.3e1) + 
+	       N1x * N1x * pow(N1y, 0.3e1) - N1x * N1x * pow(yCC, 0.3e1)) * DY );
     } /* endswitch (OrderY) */
     break;
 
@@ -136,7 +182,31 @@ double PolynomLineIntegration(const double & N1x, const double & N1y,
 		  + N1x*N1x*N1x*(N1y - yCC)));
     case 2:
       /* OrderX=2, OrderY=2 */
-      return 0.0;
+      return ((pow(DX, 0.3e1) / 0.6e1 + N1x * xCC * xCC - N1x * N1x * xCC - pow(xCC, 0.3e1) / 0.3e1 + 
+	       pow(N1x, 0.3e1) / 0.3e1 - 0.3e1 / 0.2e1 * N1x * DX * xCC + 0.3e1 / 0.4e1 * N1x * N1x * DX + 
+	       0.3e1 / 0.4e1 * DX * xCC * xCC + 0.3e1 / 0.5e1 * N1x * DX * DX - 
+	       0.3e1 / 0.5e1 * DX * DX * xCC) * pow(DY, 0.3e1) +
+	      (-0.3e1 / 0.2e1 * N1x * DX * DX * yCC - 0.3e1 / 0.2e1 * DX * DX * xCC * N1y + 0.3e1 / 0.2e1 * N1x * DX * DX * N1y + 
+	       0.3e1 / 0.2e1 * DX * DX * xCC * yCC + 0.2e1 / 0.5e1 * pow(DX, 0.3e1) * N1y - 
+	       0.2e1 / 0.5e1 * pow(DX, 0.3e1) * yCC - 0.3e1 * N1x * xCC * xCC * yCC - pow(N1x, 0.3e1) * yCC + 
+	       0.3e1 * N1x * xCC * xCC * N1y + 0.3e1 * N1x * N1x * xCC * yCC + pow(xCC, 0.3e1) * yCC + 
+	       pow(N1x, 0.3e1) * N1y - pow(xCC, 0.3e1) * N1y - 0.3e1 * N1x * N1x * xCC * N1y - 
+	       0.2e1 * N1x * N1x * DX * yCC + 0.2e1 * N1x * N1x * DX * N1y + 0.2e1 * DX * xCC * xCC * N1y - 
+	       0.4e1 * N1x * DX * xCC * N1y + 0.4e1 * N1x * DX * xCC * yCC - 0.2e1 * DX * xCC * xCC * yCC) * DY * DY +
+	      (0.6e1 * N1x * N1x * xCC * N1y * yCC - 0.6e1 * N1x * xCC * xCC * N1y * yCC + 
+	       0.3e1 / 0.2e1 * DX * xCC * xCC * N1y * N1y - pow(xCC, 0.3e1) * N1y * N1y + 
+	       0.2e1 * DX * DX * xCC * N1y * yCC - 0.3e1 * DX * xCC * xCC * N1y * yCC - 
+	       0.3e1 * N1x * N1x * xCC * N1y * N1y + 0.2e1 * pow(xCC, 0.3e1) * N1y * yCC + 
+	       0.3e1 * N1x * xCC * xCC * yCC * yCC + 0.3e1 / 0.2e1 * N1x * N1x * DX * yCC * yCC - 
+	       0.3e1 * N1x * N1x * xCC * yCC * yCC + 0.3e1 / 0.2e1 * N1x * N1x * DX * N1y * N1y + 
+	       0.3e1 / 0.2e1 * DX * xCC * xCC * yCC * yCC - 0.2e1 * N1x * DX * DX * N1y * yCC + 
+	       0.6e1 * N1x * DX * xCC * N1y * yCC - 0.3e1 * N1x * DX * xCC * yCC * yCC - 
+	       0.3e1 * N1x * DX * xCC * N1y * N1y + N1x * DX * DX * yCC * yCC - DX * DX * xCC * N1y * N1y - 
+	       0.2e1 * pow(N1x, 0.3e1) * N1y * yCC + 0.3e1 * N1x * xCC * xCC * N1y * N1y - 
+	       DX * DX * xCC * yCC * yCC - pow(DX, 0.3e1) * N1y * yCC / 0.2e1 + pow(N1x, 0.3e1) * N1y * N1y - 
+	       0.3e1 * N1x * N1x * DX * N1y * yCC + N1x * DX * DX * N1y * N1y + pow(N1x, 0.3e1) * yCC * yCC - 
+	       pow(xCC, 0.3e1) * yCC * yCC + pow(DX, 0.3e1) * yCC * yCC / 0.4e1 + 
+	       pow(DX, 0.3e1) * N1y * N1y / 0.4e1) * DY );
     } /* endswitch (OrderY) */
     break;
 
@@ -150,14 +220,40 @@ double PolynomLineIntegration(const double & N1x, const double & N1y,
 		 (N1x*N1x*N1x*(N1x - 0.4e1*xCC) + xCC*xCC*xCC*(xCC - 0.4e1*N1x)  + 0.6e1*N1x*N1x*xCC*xCC));
     case 1:
       /* OrderX=3, OrderY=1 */
-      return 0.0;
+      return ( (pow(DX, 0.4e1) / 0.6e1 - 0.4e1 / 0.5e1 * pow(DX, 0.3e1) * xCC + 0.4e1 / 0.5e1 * N1x * pow(DX, 0.3e1) +
+		0.3e1 / 0.2e1 * N1x * N1x * DX * DX - 0.3e1 * N1x * DX * DX * xCC + 0.3e1 / 0.2e1 * DX * DX * xCC * xCC +
+		0.4e1 / 0.3e1 * pow(N1x, 0.3e1) * DX - 0.4e1 / 0.3e1 * DX * pow(xCC, 0.3e1) + 
+		0.4e1 * N1x * DX * xCC * xCC - 0.4e1 * N1x * N1x * DX * xCC + pow(xCC, 0.4e1) / 0.2e1 - 
+		0.2e1 * pow(N1x, 0.3e1) * xCC + 0.3e1 * N1x * N1x * xCC * xCC - 0.2e1 * N1x * pow(xCC, 0.3e1) + 
+		pow(N1x, 0.4e1) / 0.2e1) * DY * DY + 
+	       (0.2e1 * N1x * N1x * DX * DX * N1y - 0.4e1 * N1x * pow(xCC, 0.3e1) * N1y + 
+		pow(N1x, 0.4e1) * N1y - pow(N1x, 0.4e1) * yCC + 0.4e1 * pow(N1x, 0.3e1) * xCC * yCC - 
+		0.2e1 * DX * pow(xCC, 0.3e1) * N1y + pow(xCC, 0.4e1) * N1y - 
+		pow(xCC, 0.4e1) * yCC + pow(DX, 0.4e1) * N1y / 0.5e1 - 0.4e1 * N1x * DX * DX * xCC * N1y + 
+		0.6e1 * N1x * DX * xCC * xCC * N1y + 0.4e1 * N1x * pow(xCC, 0.3e1) * yCC + 
+		0.2e1 * DX * DX * xCC * xCC * N1y + 0.2e1 * pow(N1x, 0.3e1) * DX * N1y - 
+		0.4e1 * pow(N1x, 0.3e1) * xCC * N1y - 0.6e1 * N1x * DX * xCC * xCC * yCC - 
+		0.6e1 * N1x * N1x * DX * xCC * N1y + 0.6e1 * N1x * N1x * DX * xCC * yCC - 
+		0.2e1 * N1x * N1x * DX * DX * yCC - 0.2e1 * DX * DX * xCC * xCC * yCC + 
+		0.2e1 * DX * pow(xCC, 0.3e1) * yCC - pow(DX, 0.3e1) * xCC * N1y + pow(DX, 0.3e1) * xCC * yCC - 
+		pow(DX, 0.4e1) * yCC / 0.5e1 + N1x * pow(DX, 0.3e1) * N1y - N1x * pow(DX, 0.3e1) * yCC + 
+		0.4e1 * N1x * DX * DX * xCC * yCC + 0.6e1 * N1x * N1x * xCC * xCC * N1y - 
+		0.6e1 * N1x * N1x * xCC * xCC * yCC - 0.2e1 * pow(N1x, 0.3e1) * DX * yCC) * DY );
     }
     break;
 
   case 4:
     if (OrderY == 0){
       /* OrderX=4, OrderY=0 */
-      return 0.0;
+      return (pow(DX, 0.5e1) / 0.6e1 + N1x * pow(DX, 0.4e1) - pow(DX, 0.4e1) * xCC + 
+	      0.5e1 / 0.2e1 * N1x * N1x * pow(DX, 0.3e1) - 0.5e1 * N1x * pow(DX, 0.3e1) * xCC + 
+	      0.5e1 / 0.2e1 * pow(DX, 0.3e1) * xCC * xCC + 0.10e2 / 0.3e1 * pow(N1x, 0.3e1) * DX * DX - 
+	      0.10e2 * N1x * N1x * DX * DX * xCC + 0.10e2 * N1x * DX * DX * xCC * xCC - 
+	      0.10e2 / 0.3e1 * DX * DX * pow(xCC, 0.3e1) + 0.5e1 / 0.2e1 * pow(N1x, 0.4e1) * DX - 
+	      0.10e2 * N1x * DX * pow(xCC, 0.3e1) - 0.10e2 * pow(N1x, 0.3e1) * DX * xCC + 
+	      0.5e1 / 0.2e1 * DX * pow(xCC, 0.4e1) + 0.15e2 * N1x * N1x * DX * xCC * xCC + 
+	      0.5e1 * N1x * pow(xCC, 0.4e1) + pow(N1x, 0.5e1) + 0.10e2 * pow(N1x, 0.3e1) * xCC * xCC - 
+	      0.10e2 * N1x * N1x * pow(xCC, 0.3e1) - 0.5e1 * pow(N1x, 0.4e1) * xCC - pow(xCC, 0.5e1)) * DY;
     }
   } /* endswitch(OrderX) */
 

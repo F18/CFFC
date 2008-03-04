@@ -8505,6 +8505,25 @@ void Grid2D_Quad_MultiBlock_HO::Output_Cells_Data(ostream &Out_File){
   }  /* endfor */
 }
 
+/*
+ * Output the cell properties that are invariant to 
+ * translation and rotation to the specified output stream.
+ */
+void Grid2D_Quad_MultiBlock_HO::Output_Cells_Translation_Rotation_Invariant_Properties(ostream &Out_File){
+
+  int i, j, block_number;
+  
+  block_number = 0;
+  
+  for ( j = 0 ; j <= Number_of_Blocks_Jdir-1 ; ++j ) {
+    for ( i = 0; i <= Number_of_Blocks_Idir-1 ; ++i ) {
+      Grid_ptr[i][j].Output_Cells_Translation_Rotation_Invariant_Properties(block_number,
+									    Out_File);
+      block_number = block_number + 1;
+    }  /* endfor */
+  }  /* endfor */
+}
+
 /*!
  * Output operator
  */
