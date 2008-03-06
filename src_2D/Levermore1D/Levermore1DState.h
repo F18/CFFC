@@ -33,6 +33,11 @@ using namespace std;
 #include "../Physics/GasConstants.h"
 #endif // _GAS_CONSTANTS_INCLUDED
 
+#define STABILIZATION 1.0e-18  //positive numbers only please.
+                               //otherwise it's anti-stabilization.
+
+#define EXP_LIMIT     250.0
+
 /* Define the classes. */
 class Levermore1D_cState;
 class Levermore1D_weights;
@@ -47,13 +52,25 @@ class Levermore1D_pState : public Levermore1D_Vector{
   Levermore1D_pState(void){}
   Levermore1D_pState(const Levermore1D_pState &W) : Levermore1D_Vector(W) {}
   explicit Levermore1D_pState(const Levermore1D_cState &U) {set_from_U(U);}
-  explicit Levermore1D_pState(const Levermore1D_weights &A) {set_from_A(A);}
+  explicit Levermore1D_pState(const Levermore1D_weights &A, double us) {set_from_A(A,us);}
+  Levermore1D_pState(double rho, double u, double p) {
+    int coef;
+    zero();
+    m_values[0] = rho; m_values[1] = u; m_values[2] = p;
+    for(int i=4; i<Levermore1D_Vector::get_length(); i=i+2) {
+      coef = 1;
+      for(int j=i-1; j>0;j=j-2) {
+	coef*=j; //double factorial
+      }
+      m_values[i] = (double)coef * pow(p,i/2) / pow(rho,i/2-1);
+    }
+  }
 
   /* Functions. */
   Levermore1D_Vector& operator=(const Levermore1D_Vector &V) {return Levermore1D_Vector::operator=(V);}
   void Vacuum() {Levermore1D_Vector::zero();}
   void set_from_U(const Levermore1D_cState &U);
-  void set_from_A(const Levermore1D_weights &A);
+  void set_from_A(const Levermore1D_weights &A, double us);
   double conserved_extras(int i) const;
 
  protected:
@@ -72,21 +89,23 @@ class Levermore1D_cState : public Levermore1D_Vector{
   Levermore1D_cState(void){}
   Levermore1D_cState(const Levermore1D_cState &U) : Levermore1D_Vector(U) {}
   explicit Levermore1D_cState(const Levermore1D_pState &W) {set_from_W(W);}
-  explicit Levermore1D_cState(const Levermore1D_weights &A) {set_from_A(A);}
+  explicit Levermore1D_cState(const Levermore1D_weights &A, double us) {set_from_A(A,us);}
 
   /* Functions. */
   Levermore1D_Vector& operator=(const Levermore1D_Vector &V) {return Levermore1D_Vector::operator=(V);}
   void Vacuum() {Levermore1D_Vector::zero();}
   void set_from_W(const Levermore1D_pState &W);
-  void set_from_A(const Levermore1D_weights &A);
-  double moment(int n, const Levermore1D_weights &A) const;
-  double moment(int n, const Levermore1D_weights &A, int real_L) const;
-  double moment_series(int n, const Levermore1D_weights &A, int real_L) const;
-  DenseMatrix d2hda2(const Levermore1D_weights &A) const;
-  DenseMatrix d2jda2(const Levermore1D_weights &A) const;
+  void set_from_A(const Levermore1D_weights &A, double us);
+  double moment(int n, const Levermore1D_weights &A, const double &us) const;
+  //double moment(int n, const Levermore1D_weights &A, int real_L) const;
+  //double moment_series(int n, const Levermore1D_weights &A, int real_L) const;
+  double moment_series(int n, const Levermore1D_weights &A, const double &us) const;
+  double moment_series_L(const Levermore1D_weights &A, const double &us) const;
+  DenseMatrix d2hda2(const Levermore1D_weights &A, const double &us) const;
+  DenseMatrix d2jda2(const Levermore1D_weights &A, const double &us) const;
   Levermore1D_Vector F(const Levermore1D_weights &A) const;
   int in_sync_with(const Levermore1D_weights &A) const;
-  int find_real_L(const Levermore1D_weights &A) const;
+  //int find_real_L(const Levermore1D_weights &A) const;
   double relative_error(const Levermore1D_cState &U2) const;
 
 };
@@ -108,28 +127,30 @@ class Levermore1D_weights : public Levermore1D_Vector{
   Levermore1D_Vector& operator=(const Levermore1D_Vector &V) {return Levermore1D_Vector::operator=(V);}
   void set_from_W(const Levermore1D_pState &W);
   int set_from_U(const Levermore1D_cState &U);
-  double integrate_conserved_moment(int i) const;
-  double integrate_conserved_moment_pos(int i) const;
-  double integrate_conserved_moment_neg(int i) const;
-  double integrate_random_moment(int i, double u) const;
-  double integrate_random_moment_pos(int i, double u) const;
-  double integrate_random_moment_neg(int i, double u) const;
+  double integrate_conserved_moment(int i, double us) const;
+  double integrate_conserved_moment_pos(int i, double us) const;
+  double integrate_conserved_moment_neg(int i, double us) const;
+  double integrate_random_moment(int i, double u, double us) const;  //could us ever not equal u?
+  double integrate_random_moment_pos(int i, double u, double us) const;
+  double integrate_random_moment_neg(int i, double u, double us) const;
 
   /* Inline Functions. */
-  double value_at(double v) const {return exp(exponent_value_recursive(v,0));}
-  double velocity_weighted_value_at(double v, int i) const {
-    return pow(v,(double)i)*particle_mass*exp(exponent_value_recursive(v,0));
+  double value_at(double v, double us) const {
+    return exp(min(exponent_value_recursive(v,0)-STABILIZATION*pow((v-us),(double)(length+1)),EXP_LIMIT));
   }
-  double random_velocity_weighted_value_at(double v, double u, int i) const {
-    return pow(v-u,(double)i)*particle_mass*exp(exponent_value_recursive(v,0));
+  double velocity_weighted_value_at(double v, int i, double us) const {
+    return pow(v,(double)i)*exp(min(exponent_value_recursive(v,0)-STABILIZATION*pow((v-us),(double)(length+1)),EXP_LIMIT));
   }
+  double random_velocity_weighted_value_at(double v, double u, int i, double us) const {
+    return pow(v-u,(double)i)*exp(min(exponent_value_recursive(v,0)-STABILIZATION*pow((v-us),(double)(length+1)),EXP_LIMIT));
+  }
+
   void MaxBoltz(const Levermore1D_pState &W) {MaxBoltz(W[1], W[2], W[3]);}
   void MaxBoltz(const Levermore1D_cState &U) {MaxBoltz(U[1], U[2]/U[1], U[3]-U[2]*U[2]/U[1]);}
   void MaxBoltz(double rho, double u, double p) {
-    double n(rho/m()); //number density
     double B(rho/(2.0*p));
     zero();
-    m_values[0] = -B*u*u+log(n*sqrt(B/PI));
+    m_values[0] = -B*u*u+log(rho*sqrt(B/PI));
     m_values[1] = 2.0*B*u;
     m_values[2] = -B;
   }
@@ -187,8 +208,9 @@ inline istream& operator>>(istream &in, const Levermore1D_weights &A) {
  ********************************************************/
 inline Levermore1D_Vector Levermore1D_cState::F(const Levermore1D_weights &A) const {
   Levermore1D_Vector Flux;
+  double us = m_values[1]/m_values[0];
   for(int i=1; i<=length; ++i) {
-    Flux[i] = moment(i,A);
+    Flux[i] = moment(i,A,us);
   }
   return Flux;
 }
@@ -213,6 +235,8 @@ extern Levermore1D_Vector FluxHLLE(const Levermore1D_cState &Ul,
 				   const double &wavespeed_r);
 
 extern Levermore1D_Vector FluxKinetic(const Levermore1D_weights &Al,
-				      const Levermore1D_weights &Ar);
+				      const double &us_l,
+				      const Levermore1D_weights &Ar,
+				      const double &us_r);
 
 #endif

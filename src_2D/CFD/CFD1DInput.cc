@@ -443,6 +443,8 @@ int Parse_Next_Input_Control_Parameter(CFD1D_Input_Parameters &IP) {
           IP.i_Flux_Function = FLUX_FUNCTION_HLLC;
        } else if (strcmp(IP.Flux_Function_Type, "Osher") == 0) {
           IP.i_Flux_Function = FLUX_FUNCTION_OSHER;
+       } else if (strcmp(IP.Flux_Function_Type, "Kinetic") == 0) {
+          IP.i_Flux_Function = FLUX_FUNCTION_KINETIC;
        } else {
 	 i_command = INVALID_INPUT_CODE;
        } /* endif */

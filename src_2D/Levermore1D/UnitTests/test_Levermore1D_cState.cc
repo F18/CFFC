@@ -157,23 +157,24 @@ namespace tut
     double momentum(rho*u);
     double e(p+rho*u*u);
 
-    double m = Levermore1D_weights::m();
-    double n(rho/m); //number density
-
     double B(rho/(2.0*p));
 
     Levermore1D_weights A;
     A.zero();
 
-    A[1] = -B*u*u+log(n*sqrt(B/PI));
+    A[1] = -B*u*u+log(rho*sqrt(B/PI));
     A[2] = 2.0*B*u;
     A[3] = -B;
 
-    Levermore1D_cState U(A);
+    Levermore1D_cState U(A,u);
 
-    ensure_distance("density is equal", rho, U[1], fabs(rho)*1e-12+1e-12);
-    ensure_distance("momentum is equal", momentum, U[2], fabs(momentum)*1e-12+1e-12);
-    ensure_distance("energy is equal", e, U[3], fabs(e)*1e-12+1e-12);
+    double rho2(A.integrate_conserved_moment(0,u));
+    double momentum2(A.integrate_conserved_moment(1,u));
+    double e2(A.integrate_conserved_moment(2,u));
+
+    ensure_distance("density is equal", rho2, U[1], fabs(rho2)*1e-10+1e-10);
+    ensure_distance("momentum is equal", momentum2, U[2], fabs(momentum2)*1e-10+1e-10);
+    ensure_distance("energy is equal", e2, U[3], fabs(e2)*1e-10+1e-10);
 
   }
 
@@ -436,28 +437,25 @@ namespace tut
     double momentum(rho*u);
     double e(p+rho*u*u);
 
-    double m = Levermore1D_weights::m();
-    double n(rho/m); //number density
-
     double B(rho/(2.0*p));
 
     Levermore1D_weights A;
     A.zero();
 
-    A[1] = -B*u*u+log(n*sqrt(B/PI));
+    A[1] = -B*u*u+log(rho*sqrt(B/PI));
     A[2] = 2.0*B*u;
     A[3] = -B;
 
-    Levermore1D_cState U(A);
+    Levermore1D_cState U(A,u);
     double momentU, momentA;
     char testname[256];
 
     //check series of moments
     for(int i=0;i<15;++i) {
       sprintf(testname, "Integrate moment %d.", i);
-      momentU = U.moment(i,A);
-      momentA = A.integrate_conserved_moment(i);
-      ensure_distance(testname, momentU, momentA, fabs(momentU)*1e-10+1e-10);
+      momentU = U.moment(i,A,u);
+      momentA = A.integrate_conserved_moment(i,u);
+      ensure_distance(testname, momentU, momentA, fabs(momentU)*1e-8+1e-8);
     }
 
   }
@@ -470,7 +468,7 @@ namespace tut
     set_test_name("calculate moments (part 2)");
     //same as before, but with zero velocity.
     double rho(1.225);
-    double u(0.00);
+    double u(13.00);
     double p(101325.0);
 
     double momentum(rho*u);
@@ -481,26 +479,26 @@ namespace tut
 
     double B(rho/(2.0*p));
 
-    double reference_moment;
-
     Levermore1D_weights A;
     A.zero();
 
-    A[1] = -B*u*u+log(n*sqrt(B/PI));
+    A[1] = -B*u*u+log(rho*sqrt(B/PI));
     A[2] = 2.0*B*u;
     A[3] = -B;
+    A[4] = B*B;
+    A[5] = -B*B;
 
-    Levermore1D_cState U(A);
+    Levermore1D_cState U(A,u);
     double momentU, momentA;
     char testname[256];
 
     //check series of moments
     for(int i=0;i<15;++i) {
       sprintf(testname, "Integrate moment %d.", i);
-      momentU = U.moment(i,A);
-      momentA = A.integrate_conserved_moment(i);
-      if(i%2 == 0) reference_moment = fabs(momentU);
-      ensure_distance(testname, momentU, momentA, reference_moment*1e-10+1e-10);
+      momentU = U.moment(i,A,u);
+      momentA = A.integrate_conserved_moment(i,u);
+      cout.precision(16);
+      ensure_distance(testname, momentU, momentA, fabs(momentU)*1e-3+1e-3);
     }
 
   }

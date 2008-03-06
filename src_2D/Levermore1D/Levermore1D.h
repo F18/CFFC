@@ -121,12 +121,19 @@ public:
   void set_state(const Levermore1D_cState &U0) {
     U = U0; W = Levermore1D_pState(U); A = Levermore1D_weights(U);
   }
-  void set_state(const Levermore1D_weights &A0) {
-    A = A0; U = Levermore1D_cState(A); W = Levermore1D_pState(U);
+//  void set_state(const Levermore1D_weights &A0) {
+//    A = A0; U = Levermore1D_cState(A); W = Levermore1D_pState(U);
+//  }
+  void set_state(const Levermore1D_pState &W0,
+		 const Levermore1D_cState &U0,
+		 const Levermore1D_weights &A0) {
+    W = W0; U = U0; A = A0;
   }
+
   void calculate_Hessians() {
-    dUdA = U.d2hda2(A);
-    dFdA = U.d2jda2(A);
+    double us(U[2]/U[1]);
+    dUdA = U.d2hda2(A,us);
+    dFdA = U.d2jda2(A,us);
     dUdA_inv = dUdA.pseudo_inverse(); //Use Lucian's "pseudo_inverse"
                                       //function for now.
     dFdU = dFdA*dUdA_inv;
@@ -137,6 +144,7 @@ public:
       lambda_max = max(lambda_max,Lambda(i));
       lambda_min = min(lambda_min,Lambda(i));
     }
+
   }
 
   /* Input-output operators. */

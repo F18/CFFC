@@ -772,9 +772,10 @@ inline char *Date_And_Time() {
 #define FLUX_FUNCTION_AUSM                             9
 #define FLUX_FUNCTION_AUSMplus                        10
 #define FLUX_FUNCTION_AUSM_PLUS_UP                    11
+#define FLUX_FUNCTION_KINETIC                         12
 
-#define	FLUX_FUNCTION_ROE_PRECON_WS                   12
-#define	FLUX_FUNCTION_HLLE_PRECON_WS                  13
+#define	FLUX_FUNCTION_ROE_PRECON_WS                   13
+#define	FLUX_FUNCTION_HLLE_PRECON_WS                  14
 
 #define FLUX_FUNCTION_GODUNOV_MB                      21
 #define FLUX_FUNCTION_ROE_MB                          22

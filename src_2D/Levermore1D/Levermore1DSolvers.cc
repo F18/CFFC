@@ -267,7 +267,7 @@ int Levermore1DSolver(char *Input_File_Name_ptr,
          /* Update time and time step counter. */
          number_of_time_steps = number_of_time_steps + 1;
          time = time + Input_Parameters.CFL_Number*dtime;
-
+	 cout << "[" << time << "]";cout.flush();
      } /* endwhile */
      if (! batch_flag){
        cout << "\n\n Levermore1D computations complete.\n";

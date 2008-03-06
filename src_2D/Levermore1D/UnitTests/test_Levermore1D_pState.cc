@@ -144,23 +144,24 @@ namespace tut
     double u(-223.1);
     double p(97322.1);
 
-    double m = Levermore1D_weights::m();
-    double n(rho/m); //number density
-
     double B(rho/(2.0*p));
 
     Levermore1D_weights A;
     A.zero();
 
-    A[1] = -B*u*u+log(n*sqrt(B/PI));
+    A[1] = -B*u*u+log(rho*sqrt(B/PI));
     A[2] = 2.0*B*u;
     A[3] = -B;
 
-    Levermore1D_pState W(A);
+    Levermore1D_pState W(A,u);
 
-    ensure_distance("density is equal", rho, W[1], fabs(rho)*1e-12+1e-12);
-    ensure_distance("velocity is equal", u, W[2], fabs(u)*1e-12+1e-12);
-    ensure_distance("pressure is equal", p, W[3], fabs(p)*1e-12+1e-12);
+    double rho2(A.integrate_conserved_moment(0,u));
+    double u2(A.integrate_conserved_moment(1,u)/rho2);
+    double p2(A.integrate_random_moment(2,u2,u));
+
+    ensure_distance("density is equal", rho2, W[1], fabs(rho2)*1e-10+1e-10);
+    ensure_distance("velocity is equal", u2, W[2], fabs(u2)*1e-10+1e-10);
+    ensure_distance("pressure is equal", p2, W[3], fabs(p2)*1e-10+1e-10);
 
   }
 

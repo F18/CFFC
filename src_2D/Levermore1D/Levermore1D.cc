@@ -216,7 +216,9 @@ void ICs(Levermore1D_UniformMesh *Soln,
 	 CFD1D_Input_Parameters &IP) {
 
   int i;
-  Levermore1D_weights Al,Ar,Am;
+  Levermore1D_pState  Wl, Wr;
+  Levermore1D_cState  Ul, Ur;
+  Levermore1D_weights Al, Ar;
 
   int ICl, ICu, TC;
   double xmin, xmax;
@@ -236,24 +238,32 @@ void ICs(Levermore1D_UniformMesh *Soln,
 
   switch(i_ICtype) {
   case IC_SOD :
-    Al = Levermore1D_weights(DENSITY_STDATM, ZERO, PRESSURE_STDATM);
-    Ar = Levermore1D_weights(DENSITY_STDATM/EIGHT,
+    Wl = Levermore1D_pState(DENSITY_STDATM, ZERO, PRESSURE_STDATM);
+    Wr = Levermore1D_pState(DENSITY_STDATM/EIGHT,
 			     ZERO,
 			     PRESSURE_STDATM/TEN);
+    Ul = Levermore1D_cState(Wl);
+    Ur = Levermore1D_cState(Wr);
+    Al = Levermore1D_weights(Ul);
+    Ar = Levermore1D_weights(Ur);
+    cout << Ul << endl << Levermore1D_cState(Al,Wl[2])<< endl << Al << endl << Wl << endl << endl;
+    cout << Ur << endl << Levermore1D_cState(Ar,Wr[2])<< endl << Ar << endl << Wr << endl << endl;
     for ( i = 0 ; i <= TC-1 ; ++i ) {
       if (Soln[i].X.x <= ZERO) {
-	Soln[i].set_state(Al);
+	Soln[i].set_state(Wl,Ul,Al);
       } else {
-	Soln[i].set_state(Ar);
+	Soln[i].set_state(Wr,Ur,Ar);
       } /* end if */
     } /* endfor */
     break;
   case IC_CONSTANT :
   case IC_UNIFORM :
   default:
-    Al = Levermore1D_weights(DENSITY_STDATM, ZERO, PRESSURE_STDATM);
+    Wl = Levermore1D_pState(DENSITY_STDATM, ZERO, PRESSURE_STDATM);
+    Ul = Levermore1D_cState(Wl);
+    Al = Levermore1D_weights(Ul);
     for ( i = 0 ; i <= TC-1 ; ++i ) {
-      Soln[i].set_state(Al);
+      Soln[i].set_state(Wl, Ul, Al);
     } /* endfor */
     break;
   } /* endswitch */
@@ -555,7 +565,7 @@ int dUdt_explicitEuler_upwind(Levermore1D_UniformMesh *Soln,
 			      const double &CFL_Number,
                               const int Flux_Function_Type,
 			      const int Local_Time_Stepping) {
-    int i;
+    int i, count(0);
     Levermore1D_cState Flux;
     Levermore1D_cState Update;
 
@@ -575,6 +585,12 @@ int dUdt_explicitEuler_upwind(Levermore1D_UniformMesh *Soln,
 			    Soln[i+1].U,
 			    Soln[i+1].A,
 			    Soln[i+1].lambda_max);
+            break;
+          case FLUX_FUNCTION_KINETIC :
+            Flux = FluxKinetic(Soln[i].A,
+			       Soln[i].U[2]/Soln[i].U[1],
+			       Soln[i+1].A,
+			       Soln[i+1].U[2]/Soln[i+1].U[1]);
             break;
 	  default:
 	    cout << "Error, bad flux function." << endl;
@@ -598,10 +614,13 @@ int dUdt_explicitEuler_upwind(Levermore1D_UniformMesh *Soln,
       if ( ! Soln[i].U.in_sync_with(Soln[i].A) ) {
 	if(Soln[i].A.set_from_U(Soln[i].U)) { //returns 1 if fail
 	  cout << endl << "Error, Cannot resync:" << endl
-	       << "U = " << Soln[i].U << endl;
+	       << "U =   " << Soln[i].U << endl
+	       << "A =   " << Soln[i].A << endl
+	       << "U_A = " <<  Levermore1D_cState(Soln[i].A,Soln[i].U[2]/Soln[i].U[1]) << endl;
 	  return 1;
 	}
 	cout << "%";cout.flush();
+	++count;
       }
       Soln[i].W = Levermore1D_pState(Soln[i].U);
       Soln[i].calculate_Hessians();
@@ -617,7 +636,7 @@ int dUdt_explicitEuler_upwind(Levermore1D_UniformMesh *Soln,
     Soln[Number_of_Cells+1].U = Soln[Number_of_Cells].U;
     Soln[Number_of_Cells+1].W = Soln[Number_of_Cells].W;
     Soln[Number_of_Cells+1].A = Soln[Number_of_Cells].A;
-
+    cout << count; cout.flush();
     /* Solution successfully updated. */
 
     return (0);
@@ -782,7 +801,7 @@ int dUdt_2stage_2ndOrder_upwind(Levermore1D_UniformMesh *Soln,
                                 const int Limiter_Type,
                                 const int Flux_Function_Type,
 			        const int Local_Time_Stepping) {
-    int i, n_stage;
+    int i, n_stage, count(0);
     double omega;
     Levermore1D_pState Wl, Wr;
     Levermore1D_cState Ul, Ur;
@@ -864,10 +883,35 @@ int dUdt_2stage_2ndOrder_upwind(Levermore1D_UniformMesh *Soln,
 	    Al = Soln[i].A + Soln[i].dUdA_inv * (Ul-Soln[i].U);
 	    Ar = Soln[i+1].A + Soln[i+1].dUdA_inv * (Ur-Soln[i+1].U);
 
+	    if ( ! Ul.in_sync_with(Al) ) {
+	      if(Al.set_from_U(Ul)) { //returns 1 if fail
+		cout << endl << "Error, Cannot resync at left interface:" << endl
+		     << "U =   " << Ul << endl
+		     << "A =   " << Al << endl
+		     << "U_A = " <<  Levermore1D_cState(Al, Ul[2]/Ul[1]) << endl;
+		return 1;
+	      }
+	      cout << "L";cout.flush();
+	      ++count;
+	    }
+	    if ( ! Ur.in_sync_with(Ar) ) {
+	      if(Ar.set_from_U(Ur)) { //returns 1 if fail
+		cout << endl << "Error, Cannot resync at right interface:" << endl
+		     << "U =   " << Ur << endl
+		     << "A =   " << Ar << endl
+		     << "U_A = " <<  Levermore1D_cState(Ar, Ur[2]/Ur[1]) << endl;
+		return 1;
+	      }
+	      cout << "R";cout.flush();
+	      ++count;
+	    }
+
+
 	    /* Apply the BCs before the flux evaluation */
 	    // ***** Left boundary **********
 	    if (i == 0){
 	      // extrapolation BC (by default)
+	      Ul = Ur;
 	      Wl = Wr;
 	      Al = Ar;
 	    }
@@ -875,6 +919,7 @@ int dUdt_2stage_2ndOrder_upwind(Levermore1D_UniformMesh *Soln,
 	    // *****  Right boundary *********
 	    if (i == IP.Number_of_Cells){
 	      // extrapolation BC (by default)
+	      Ur = Ul;
 	      Wr = Wl;
 	      Ar = Al;
 	    }
@@ -887,6 +932,12 @@ int dUdt_2stage_2ndOrder_upwind(Levermore1D_UniformMesh *Soln,
 			      Ur,
 			      Ar,
 			      Soln[i+1].lambda_max);
+	      break;
+	    case FLUX_FUNCTION_KINETIC :
+	      Flux = FluxKinetic(Al,
+				 Ul[2]/Ul[1],
+				 Ar,
+				 Ur[2]/Ur[1]);
 	      break;
 	    default:
 	      cout << "Error, bad flux function." << endl;
@@ -913,17 +964,20 @@ int dUdt_2stage_2ndOrder_upwind(Levermore1D_UniformMesh *Soln,
 	  if ( ! Soln[i].U.in_sync_with(Soln[i].A) ) {
 	    if(Soln[i].A.set_from_U(Soln[i].U)) { //returns 1 if fail
 	      cout << endl << "Error, Cannot resync:" << endl
-		   << "U = " << Soln[i].U << endl;
+		   << "U =   " << Soln[i].U << endl
+		   << "A =   " << Soln[i].A << endl
+		   << "U_A = " <<  Levermore1D_cState(Soln[i].A, Soln[i].U[2]/Soln[i].U[1]) << endl;
 	      return 1;
 	    }
-	    cout << "%";
+	    cout << "%";cout.flush();
+	    ++count;
 	  }
 	  Soln[i].W = Levermore1D_pState(Soln[i].U);
 	  Soln[i].calculate_Hessians();
         } /* endfor */
 
     } /* endfor */
-
+    cout << count; cout.flush();
     /* Solution successfully updated. */
 
     return (0);
