@@ -68,6 +68,8 @@ Viscous_Flux_Evaluation_Type=
 Diamond_Path_Green_Gauss
 #
 Gravity
+Gravitational_Acceleration =
+-5.0
 #########################
 # Set initial conditions
 #########################

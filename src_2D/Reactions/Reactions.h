@@ -262,7 +262,7 @@ public:
   string ct_mech_name;     //Reaction mechanism file path
   string ct_mech_file;     //Reaction mechanism file path
 #ifdef _CANTERA_VERSION
-  IdealGasMix* ct_gas;     //the Cantera IdealGasMix object
+  Cantera::IdealGasMix* ct_gas;     //the Cantera IdealGasMix object
 #endif
 
   Reaction_set(){ 

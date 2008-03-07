@@ -1,0 +1,13 @@
+/.cvsignore/1.7/Sun Apr 30 22:08:01 2006//
+/CMakeLists.txt/1.2/Sat May 12 17:16:15 2007//
+/Makefile.in/1.58/Sat Dec 15 17:15:50 2007//
+D/base////
+D/converters////
+D/equil////
+D/kinetics////
+D/numerics////
+D/oneD////
+D/spectra////
+D/thermo////
+D/transport////
+D/zeroD////

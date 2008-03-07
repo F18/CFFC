@@ -2,9 +2,9 @@
 //
 //  reaction path diagrams
 //
-//  $Author: dggoodwin $
-//  $Revision: 1.6 $
-//  $Date: 2005/07/22 12:50:27 $
+//  $Author: hkmoffa $
+//  $Revision: 1.7 $
+//  $Date: 2007/12/04 18:10:47 $
 //
 //  copyright California Institute of Technology 2002
 //
@@ -101,7 +101,6 @@ int rxnpath_example1(int job) {
         // 3.0
         IdealGasMix gas("gri30.cti", "gri30");
         gas.setState_TPX(1001.0, OneAtm, "H2:2.0, O2:1.0, N2:4.0");
-        int nsp = gas.nSpecies();
 
         // create a reactor
         Reactor r;

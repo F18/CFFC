@@ -1,8 +1,8 @@
 #
 # $Source: /cvsroot/cantera/cantera/ext/math/Makefile.in,v $
-# $Author: hkmoffa $
-# $Revision: 1.8 $
-# $Date: 2006/03/03 20:31:49 $
+# $Author: dggoodwin $
+# $Revision: 1.10 $
+# $Date: 2007/05/11 19:29:36 $
 #
 
 .SUFFIXES :
@@ -13,9 +13,9 @@ do_ranlib = @DO_RANLIB@
 LIB = @buildlib@/libctmath.a
 
 all: $(LIB)
+PIC_FLAG=@PIC@
 
-
-F_FLAGS = @FFLAGS@ 
+F_FLAGS = @FFLAGS@ $(PIC_FLAG)
 
 OBJS = \
 mach.o \
@@ -37,7 +37,8 @@ xerhlt.o \
 xermsg.o \
 xerprn.o \
 xersve.o \
-xgetua.o 
+xgetua.o \
+printstring.o 
 
 SRCS = $(OBJS:.o=.cpp)
 all = $(LIB)
@@ -47,8 +48,12 @@ $(LIB):  $(OBJS)
 ifeq ($(do_ranlib),1)
 	@RANLIB@ $(LIB)
 endif
+
+%.o : %.c
+	@CXX@ -c $< @DEFS@  @CXXFLAGS@ @PIC@ -I../.. $(INCLUDES)
+
 %.o : %.cpp
-	@CXX@ -c $< @DEFS@  @CXXFLAGS@ $(INCLUDES)
+	@CXX@ -c $< @DEFS@  @CXXFLAGS@ @PIC@ $(INCLUDES)
 
 %.o : %.f
 	@F77@ -c $< $(F_FLAGS)

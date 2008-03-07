@@ -1,8 +1,8 @@
 #/bin/sh
 ###############################################################
-#  $Author: hkmoffa $
-#  $Date: 2006/04/30 22:10:37 $
-#  $Revision: 1.5 $
+#  $Author: dggoodwin $
+#  $Date: 2007/05/10 20:22:37 $
+#  $Revision: 1.10 $
 #
 #  Copyright 2001 California Institute of Technology
 #
@@ -12,9 +12,10 @@
 SUFFIXES=
 SUFFIXES= .cpp .d .o
 
-CXX_FLAGS = @CXXFLAGS@ $(CXX_OPT)
+PIC_FLAG=@PIC@
+CXX_FLAGS = @CXXFLAGS@ $(CXX_OPT) $(PIC_FLAG)
 
-OBJS = cxxutils.o 
+OBJS = cxxutils.o importPhase.o
 
 DEPENDS = $(OBJS:.o=.d)
 
@@ -22,9 +23,7 @@ DEPENDS = $(OBJS:.o=.d)
 CXX = @CXX@
 
 # the directory where Cantera include files may be found.
-CANTERA_INCDIR=../../src
-
-CXX_INCLUDES = -I$(CANTERA_INCDIR)  
+CXX_INCLUDES = -I../../src/base -I../../src/thermo @CXX_INCLUDES@
 
 # how to compile C++ source files to object files
 .@CXX_EXT@.@OBJ_EXT@:
@@ -48,7 +47,7 @@ install:
 	@INSTALL@ $(CXXLIB) @prefix@/lib/cantera
 
 %.d:
-	g++ -MM $(CXX_INCLUDES) $*.cpp > $*.d
+	@CXX_DEPENDS@ $(CXX_INCLUDES) $*.cpp > $*.d
 
 depends: $(DEPENDS)
 	cat *.d > .depends

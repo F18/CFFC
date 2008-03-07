@@ -7,7 +7,7 @@
  * U.S. Government retains certain rights in this software.
  */
 /*
- * $Id: WaterProps.cpp,v 1.1 2006/07/04 00:01:53 hkmoffa Exp $
+ * $Id: WaterProps.cpp,v 1.3 2007/06/01 23:44:24 hkmoffa Exp $
  */
 
 #ifndef MAX
@@ -19,7 +19,7 @@
 #include "ctml.h"
 #include "WaterPDSS.h"
 #include "WaterPropsIAPWS.h"
-
+#include <math.h>
 
 namespace Cantera {
 
@@ -50,7 +50,9 @@ namespace Cantera {
   /**
    * Copy constructor
    */
-  WaterProps::WaterProps(const WaterProps &b) 
+  WaterProps::WaterProps(const WaterProps &b)  :
+    m_waterIAPWS(0),
+    m_own_sub(false)
   {
     *this = b;
   }
@@ -69,10 +71,21 @@ namespace Cantera {
    */
   WaterProps& WaterProps::operator=(const WaterProps&b) {
     if (&b == this) return *this;
-    /*
-     * add content here.
-     */
-    
+   
+    if (m_own_sub) {
+      if (m_waterIAPWS) {
+	delete m_waterIAPWS;
+	m_waterIAPWS = 0;
+      }
+    }
+    if (b.m_own_sub) {
+      m_waterIAPWS = new WaterPropsIAPWS();
+      m_own_sub = true;
+    } else {
+      m_waterIAPWS = b.m_waterIAPWS;
+      m_own_sub = false;
+    }
+
     return *this;
   }
   

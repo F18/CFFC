@@ -1,6 +1,6 @@
 # $License$
 #
-# $Id: Makefile.in,v 1.6 2006/03/03 22:44:43 hkmoffa Exp $
+# $Id: Makefile.in,v 1.7 2007/04/13 22:39:19 hkmoffa Exp $
 #
 #/bin/sh
 .SUFFIXES :
@@ -9,8 +9,8 @@
 LIB = @buildlib@/librecipes.a
 
 do_ranlib = @DO_RANLIB@
-
-F_FLAGS = @FFLAGS@ 
+PIC_FLAG=@PIC@
+F_FLAGS = @FFLAGS@ $(PIC_FLAG)
 
 OBJS = simp1.o simp2.o simp3.o simplx.o 
 SRCS = $(OBJS:.o=.cpp)

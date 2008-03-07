@@ -7,7 +7,7 @@ from SurfacePhase import SurfacePhase, EdgePhase
 from Kinetics import Kinetics
 import XML
 
-__revision__ = "$Id: Interface.py,v 1.7 2006/05/03 19:46:28 dggoodwin Exp $"
+__revision__ = "$Id: Interface.py,v 1.8 2007/02/17 10:48:09 dggoodwin Exp $"
 
 class Interface(SurfacePhase, Kinetics):    
     """
@@ -23,7 +23,7 @@ class Interface(SurfacePhase, Kinetics):
 
     See: SurfacePhase, Kinetics, importInterface
     """
-    def __init__(self, src="", root=None, phases=[]):
+    def __init__(self, src="", root=None, phases=[], debug = 0):
         """
         src - CTML or CTI input file name. If more than one phase is
         defined in the file, src should be specified as 'filename\#id'
@@ -53,7 +53,7 @@ class Interface(SurfacePhase, Kinetics):
         # an already-built XML tree. Enable preprocessing if the film
         # is a .cti file instead of XML.
         if src and not root:
-            root = XML.XML_Node(name = 'doc', src = fn, preprocess = 1)
+            root = XML.XML_Node(name = 'doc', src = fn, preprocess = 1, debug = debug)
 
         # If an 'id' tag was specified, find the node in the tree with
         # that tag

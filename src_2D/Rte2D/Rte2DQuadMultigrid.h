@@ -26,254 +26,23 @@
 #include "../FASMultigrid2D/FASMultigrid2D.h"
 
 
-
-
-
 /**********************************************************************
- * Routine:allocate                                                   *
+ * Specialization: Additional_Solution_Block_Setup                    *
  *                                                                    *
- * This routine performs the memory allocation and initialization for *
- * all grid levels of the FAS multigrid solution class.               *
+ * Perform some additional setup on the local solution block before   *
+ * beginning Multi Grid computions.                                   *
  *                                                                    *
  **********************************************************************/
-template <> int FAS_Multigrid2D_Solver<Rte2D_State,
-                                       Rte2D_Quad_Block,
-                                       Rte2D_Input_Parameters>::
-allocate(Rte2D_Quad_Block *FinestBlks,
-	 QuadTreeBlock_DataStructure *FinestQuadTree,
-	 AdaptiveBlockResourceList *FinestGlobalList,
-	 AdaptiveBlock2D_List *FinestLocalList,
-	 Rte2D_Input_Parameters *ip) {
-
-  int error_flag;
-
-  // Point the input parameters to the given input parameters.
-  IP = ip;
-
-  // Point the quadtree to the input quadtree.
-  QuadTree = FinestQuadTree;
-
-  // Point the global solution block list to the input list.
-  List_of_Global_Solution_Blocks = FinestGlobalList;
-
-  // Create list of local solution blocks for each multigrid level.
-  List_of_Local_Solution_Blocks = new AdaptiveBlock2D_List[IP->Multigrid_IP.Levels];
-
-  // Point the list of local solution blocks for the finest level to
-  // the input list of local solution blocks.
-  List_of_Local_Solution_Blocks[FINEST_LEVEL] = *FinestLocalList;
-  // Allocate memory for the coarse grid list of local solution blocks
-  // and set the CPU number.
-  for (int level = 1; level < IP->Multigrid_IP.Levels; level++) {
-    List_of_Local_Solution_Blocks[level].allocate(IP->Number_of_Blocks_Per_Processor);
-    List_of_Local_Solution_Blocks[level].ThisCPU = List_of_Local_Solution_Blocks[FINEST_LEVEL].ThisCPU;
-  }
-
-  // Allocate memory for the local solution blocks on each level.
-  Local_SolnBlk = new Rte2D_Quad_Block*[IP->Multigrid_IP.Levels];
-  // Point the local solution block for the finest level to the input
-  // local solution block.
-  Local_SolnBlk[FINEST_LEVEL] = FinestBlks;
-  // Allocate memory for the coarse grid local solution blocks.
-  for (int level = 1; level < IP->Multigrid_IP.Levels; level++) {
-    Local_SolnBlk[level] = new Rte2D_Quad_Block[IP->Number_of_Blocks_Per_Processor];
-  }
-
-  // Allocate memory for the FAS multigrid solution blocks on each level.
-  MG_SolnBlk = new FAS_Multigrid_Quad_Block<Rte2D_State>*[IP->Multigrid_IP.Levels];
-  // Allocate memory for the coarse grid FAS multigrid solution blocks.
-  for (int level = 0; level < IP->Multigrid_IP.Levels; level++) {
-    MG_SolnBlk[level] = new FAS_Multigrid_Quad_Block<Rte2D_State>[IP->Number_of_Blocks_Per_Processor];
-  }
-
-  // Allocate memory for the DTS multigrid solution blocks on each level.
-  if (IP->i_Time_Integration == TIME_STEPPING_DUAL_TIME_STEPPING) {
-    DTS_SolnBlk = new DTS_Multigrid_Quad_Block<Rte2D_State>*[IP->Multigrid_IP.Levels];
-    // Allocate memory for the coarse grid DTS multigrid solution blocks.
-    for (int level = 0; level < IP->Multigrid_IP.Levels; level++) {
-      DTS_SolnBlk[level] = new DTS_Multigrid_Quad_Block<Rte2D_State>[IP->Number_of_Blocks_Per_Processor];
-    }
-  }
-
-  // Allocate memory and set data for all coarse mesh variables on all
-  // blocks on this processor.
-  for (int nb = 0; nb < IP->Number_of_Blocks_Per_Processor; nb++) {
-    if (List_of_Local_Solution_Blocks[FINEST_LEVEL].Block[nb].used == ADAPTIVEBLOCK2D_USED) {
-
-      // Ensure that the number of cells in each direction is even.
-      if (Local_SolnBlk[FINEST_LEVEL][nb].NCi % 2 != 0) {
-	cout << "\nFASMultigrid2D Error: block #" << nb << " on processor " 
-             << List_of_Local_Solution_Blocks[FINEST_LEVEL].Block[nb].info.cpu 
-             << ", on level 0 has " << Local_SolnBlk[FINEST_LEVEL][nb].NCi 
-             << "cells in the x-direction, which is odd; cannot coarsen any further." << endl;
-	return 1101;
-      }
-      if (Local_SolnBlk[FINEST_LEVEL][nb].NCj % 2 != 0) {
-	cout << "\nFASMultigrid2D Error: block #" << nb << " on processor " 
-             << List_of_Local_Solution_Blocks[FINEST_LEVEL].Block[nb].info.cpu 
-             << ", on level 0 has " << Local_SolnBlk[FINEST_LEVEL][nb].NCj 
-             << " cells in the y-direction, which is odd; cannot coarsen any further." << endl;
-	return 1102;
-      }
-
-      // Allocate memory for the forcing term and the uo storage on the
-      // finest level.
-      MG_SolnBlk[FINEST_LEVEL][nb].allocate(Local_SolnBlk[FINEST_LEVEL][nb].NCi,
-					    Local_SolnBlk[FINEST_LEVEL][nb].NCj);
-
-      // Allocate memory for the DTS solution block finest level.
-      if (IP->i_Time_Integration == TIME_STEPPING_DUAL_TIME_STEPPING) {
-	DTS_SolnBlk[FINEST_LEVEL][nb].allocate(Local_SolnBlk[FINEST_LEVEL][nb].NCi,
-					       Local_SolnBlk[FINEST_LEVEL][nb].NCj);
-      }
-
-      // Allocate memory and set data for the coarse mesh levels.
-      for (int level = 1; level < IP->Multigrid_IP.Levels; level++) {
-
-	// Copy the list of local solution block neighbour information
-	// and calculate the coarse grid resolution.
-	List_of_Local_Solution_Blocks[level].Block[nb] =
-	  List_of_Local_Solution_Blocks[FINEST_LEVEL].Block[nb];
-	List_of_Local_Solution_Blocks[level].Block[nb].info.dimen.i = 
-	  int (List_of_Local_Solution_Blocks[FINEST_LEVEL].Block[nb].info.dimen.i/pow(2.0,double(level)));
-	List_of_Local_Solution_Blocks[level].Block[nb].info.dimen.j = 
-	  int (List_of_Local_Solution_Blocks[FINEST_LEVEL].Block[nb].info.dimen.j/pow(2.0,double(level)));
-	
-	for (int n = 0; n < List_of_Local_Solution_Blocks[level].Block[nb].nS; n++) {
-	  List_of_Local_Solution_Blocks[level].Block[nb].infoS[n].dimen.i = 
-	    int (List_of_Local_Solution_Blocks[FINEST_LEVEL].Block[nb].infoS[n].dimen.i/pow(2.0,double(level)));
-	  List_of_Local_Solution_Blocks[level].Block[nb].infoS[n].dimen.j = 
-	    int (List_of_Local_Solution_Blocks[FINEST_LEVEL].Block[nb].infoS[n].dimen.j/pow(2.0,double(level)));
-	}
-	for (int n = 0; n < List_of_Local_Solution_Blocks[level].Block[nb].nN; n++) {
-	  List_of_Local_Solution_Blocks[level].Block[nb].infoN[n].dimen.i = 
-	    int (List_of_Local_Solution_Blocks[FINEST_LEVEL].Block[nb].infoN[n].dimen.i/pow(2.0,double(level)));
-	  List_of_Local_Solution_Blocks[level].Block[nb].infoN[n].dimen.j = 
-	    int (List_of_Local_Solution_Blocks[FINEST_LEVEL].Block[nb].infoN[n].dimen.j/pow(2.0,double(level)));
-	}
-	for (int n = 0; n < List_of_Local_Solution_Blocks[level].Block[nb].nE; n++) {
-	  List_of_Local_Solution_Blocks[level].Block[nb].infoE[n].dimen.i = 
-	    int (List_of_Local_Solution_Blocks[FINEST_LEVEL].Block[nb].infoE[n].dimen.i/pow(2.0,double(level)));
-	  List_of_Local_Solution_Blocks[level].Block[nb].infoE[n].dimen.j = 
-	    int (List_of_Local_Solution_Blocks[FINEST_LEVEL].Block[nb].infoE[n].dimen.j/pow(2.0,double(level)));
-	}
-	for (int n = 0; n < List_of_Local_Solution_Blocks[level].Block[nb].nW; n++) {
-	  List_of_Local_Solution_Blocks[level].Block[nb].infoW[n].dimen.i = 
-	    int (List_of_Local_Solution_Blocks[FINEST_LEVEL].Block[nb].infoW[n].dimen.i/pow(2.0,double(level)));
-	  List_of_Local_Solution_Blocks[level].Block[nb].infoW[n].dimen.j = 
-	    int (List_of_Local_Solution_Blocks[FINEST_LEVEL].Block[nb].infoW[n].dimen.j/pow(2.0,double(level)));
-	}
-	for (int n = 0; n < List_of_Local_Solution_Blocks[level].Block[nb].nSE; n++) {
-	  List_of_Local_Solution_Blocks[level].Block[nb].infoSE[n].dimen.i = 
-	    int (List_of_Local_Solution_Blocks[FINEST_LEVEL].Block[nb].infoSE[n].dimen.i/pow(2.0,double(level)));
-	  List_of_Local_Solution_Blocks[level].Block[nb].infoSE[n].dimen.j = 
-	    int (List_of_Local_Solution_Blocks[FINEST_LEVEL].Block[nb].infoSE[n].dimen.j/pow(2.0,double(level)));
-	}
-	for (int n = 0; n < List_of_Local_Solution_Blocks[level].Block[nb].nSW; n++) {
-	  List_of_Local_Solution_Blocks[level].Block[nb].infoSW[n].dimen.i = 
-	    int (List_of_Local_Solution_Blocks[FINEST_LEVEL].Block[nb].infoSW[n].dimen.i/pow(2.0,double(level)));
-	  List_of_Local_Solution_Blocks[level].Block[nb].infoSW[n].dimen.j = 
-	    int (List_of_Local_Solution_Blocks[FINEST_LEVEL].Block[nb].infoSW[n].dimen.j/pow(2.0,double(level)));
-	}
-	for (int n = 0; n < List_of_Local_Solution_Blocks[level].Block[nb].nNE; n++) {
-	  List_of_Local_Solution_Blocks[level].Block[nb].infoNE[n].dimen.i = 
-	    int (List_of_Local_Solution_Blocks[FINEST_LEVEL].Block[nb].infoNE[n].dimen.i/pow(2.0,double(level)));
-	  List_of_Local_Solution_Blocks[level].Block[nb].infoNE[n].dimen.j = 
-	    int (List_of_Local_Solution_Blocks[FINEST_LEVEL].Block[nb].infoNE[n].dimen.j/pow(2.0,double(level)));
-	}
-	for (int n = 0; n < List_of_Local_Solution_Blocks[level].Block[nb].nNW; n++) {
-	  List_of_Local_Solution_Blocks[level].Block[nb].infoNW[n].dimen.i = 
-	    int (List_of_Local_Solution_Blocks[FINEST_LEVEL].Block[nb].infoNW[n].dimen.i/pow(2.0,double(level)));
-	  List_of_Local_Solution_Blocks[level].Block[nb].infoNW[n].dimen.j = 
-	    int (List_of_Local_Solution_Blocks[FINEST_LEVEL].Block[nb].infoNW[n].dimen.j/pow(2.0,double(level)));
-	}
-
-	// Set-up the local block list for each level.
-	List_of_Local_Solution_Blocks[level].Block[nb].used = ADAPTIVEBLOCK2D_USED;
-	List_of_Local_Solution_Blocks[level].Block[nb].gblknum = 
-	  List_of_Local_Solution_Blocks[FINEST_LEVEL].Block[nb].gblknum;
-	List_of_Local_Solution_Blocks[level].Block[nb].info.cpu = 
-	  List_of_Local_Solution_Blocks[FINEST_LEVEL].Block[nb].info.cpu;
-	List_of_Local_Solution_Blocks[level].Block[nb].info.blknum = 
-	  List_of_Local_Solution_Blocks[FINEST_LEVEL].Block[nb].info.blknum;
-	List_of_Local_Solution_Blocks[level].Block[nb].info.dimen.i = 
-	  int (List_of_Local_Solution_Blocks[FINEST_LEVEL].Block[nb].info.dimen.i/pow(2.0,double(level)));
-	List_of_Local_Solution_Blocks[level].Block[nb].info.dimen.j = 
-	  int (List_of_Local_Solution_Blocks[FINEST_LEVEL].Block[nb].info.dimen.j/pow(2.0,double(level)));
-
-	// If the current level is not the coarsest level then ensure
-	// that the number of cells is even.
-	if (level != IP->Multigrid_IP.Levels-1) {
-	  if (List_of_Local_Solution_Blocks[level].Block[nb].info.dimen.i % 2 != 0) {
-	    cout << "\nFASMultigrid2D Error: block #" << nb << " on processor " 
-                 << List_of_Local_Solution_Blocks[level].Block[nb].info.cpu 
-                 << ", on level " << level << " has " 
-                 << List_of_Local_Solution_Blocks[level].Block[nb].info.dimen.i 
-                 << " cells in the x-direction, which is odd; cannot coarsen any further." << endl;
-	    return 1103;
-	  }
-	}
-	if (level != IP->Multigrid_IP.Levels-1) {
-	  if (List_of_Local_Solution_Blocks[level].Block[nb].info.dimen.j % 2 != 0) {
-	    cout << "\nFASMultigrid2D Error: block #" << nb << " on processor " 
-                 << List_of_Local_Solution_Blocks[level].Block[nb].info.cpu << ", on level " 
-                 << level << " has " << List_of_Local_Solution_Blocks[level].Block[nb].info.dimen.j 
-                 << " cells in the y-direction, which is odd; cannot coarsen any further." << endl;
-	    return 1104;
-	  }
-	}
-	
-	List_of_Local_Solution_Blocks[level].Block[nb].info.dimen.ghost = 
-	  List_of_Local_Solution_Blocks[FINEST_LEVEL].Block[nb].info.dimen.ghost;
-	List_of_Local_Solution_Blocks[level].Block[nb].info.sector = 
-	  List_of_Local_Solution_Blocks[FINEST_LEVEL].Block[nb].info.sector;
-	List_of_Local_Solution_Blocks[level].Block[nb].info.level = 
-	  List_of_Local_Solution_Blocks[FINEST_LEVEL].Block[nb].info.level;
-	
-	// Allocate the coarse grid local solution block.
-	Local_SolnBlk[level][nb].allocate(List_of_Local_Solution_Blocks[level].Block[nb].info.dimen.i,
-					  List_of_Local_Solution_Blocks[level].Block[nb].info.dimen.j,
-					  List_of_Local_Solution_Blocks[level].Block[nb].info.dimen.ghost);
-
-	// Create the coarse grid mesh.
-	Half_Mesh_Resolution(Local_SolnBlk[level][nb].Grid,
-			     Local_SolnBlk[level-1][nb].Grid);
-
-	/***********************************************************************
-	 *************************** RTE SPECIFIC ******************************/
-	// added call to compute 2D to Quasi-3D scaling param for each grid
-	Local_SolnBlk[level][nb].ScaleGridTo3D(ip->Axisymmetric);
-	/*************************************************************************
-	 *************************************************************************/
-
-	// Allocate the coarse grid FAS multigrid solution block.
-	MG_SolnBlk[level][nb].allocate(Local_SolnBlk[level][nb].NCi,
-				       Local_SolnBlk[level][nb].NCj);
-
-	// Allocate the coarse grid DTS multigrid solution block.
-	if (IP->i_Time_Integration == TIME_STEPPING_DUAL_TIME_STEPPING) {
-	  DTS_SolnBlk[level][nb].allocate(Local_SolnBlk[level][nb].NCi,
-					  Local_SolnBlk[level][nb].NCj);
-	}
-
-	// Allocate memory for the message passing buffers used to send solution
-	// information between neighbouring blocks for the coarse grid.
-	Allocate_Message_Buffers(List_of_Local_Solution_Blocks[level],
-				 Local_SolnBlk[level][nb].NumVar()+NUM_COMP_VECTOR2D);
-
-      }
-
-    }
-  }
-
-  // Perform distance to wall calcuation on coarse grids as required.
-  error_flag = Determine_Wall_Distance_on_Coarse_Grids();
-  if (error_flag) return error_flag;
-
-  // Solution block allocation and assignment successful.
-  return 0;
-
+template <> 
+inline void FAS_Multigrid2D_Solver<Rte2D_State,
+				   Rte2D_Quad_Block,
+				   Rte2D_Input_Parameters>::
+Additional_Solution_Block_Setup(Rte2D_Quad_Block &SolnBlk) 
+{
+  SolnBlk.ScaleGridTo3D(IP->Axisymmetric);
 }
+
+
 
 /**********************************************************************
  * Routine: Restrict_Solution_Blocks (for Multigrid)                  *
@@ -283,9 +52,10 @@ allocate(Rte2D_Quad_Block *FinestBlks,
  * coarse grid level is overwritten.                                  *
  *                                                                    *
  **********************************************************************/
-template <> void FAS_Multigrid2D_Solver<Rte2D_State,
-                                        Rte2D_Quad_Block,
-                                        Rte2D_Input_Parameters>::
+template <> 
+inline void FAS_Multigrid2D_Solver<Rte2D_State,
+				   Rte2D_Quad_Block,
+				   Rte2D_Input_Parameters>::
 Restrict_Solution_Blocks(const int &Level_Fine) {
 
   int i_fine, j_fine, Nghost, nghost;
@@ -341,8 +111,8 @@ Restrict_Solution_Blocks(const int &Level_Fine) {
 	     Local_SolnBlk[Level_Fine][nb].Sp[i_fine+1][j_fine+1]) /
 	    (Local_SolnBlk[Level_Coarse][nb].Grid.Cell[i_coarse][j_coarse].A * 
 	     Local_SolnBlk[Level_Coarse][nb].Sp[i_coarse][j_coarse]);	
-	/*************************************************************************
-	 *************************************************************************/
+	  /*************************************************************************
+	   *************************************************************************/
 
 	}
       }
@@ -363,9 +133,10 @@ Restrict_Solution_Blocks(const int &Level_Fine) {
  * overwritten by this routine.                                       *
  *                                                                    *
  **********************************************************************/
-template <> void FAS_Multigrid2D_Solver<Rte2D_State,
-		  		        Rte2D_Quad_Block,
-					Rte2D_Input_Parameters>::
+template <> 
+inline void FAS_Multigrid2D_Solver<Rte2D_State,
+				   Rte2D_Quad_Block,
+				   Rte2D_Input_Parameters>::
 Restrict_Residuals(const int &Level_Fine) {
 
   int i_fine, j_fine, Nghost, nghost;
@@ -442,9 +213,10 @@ Restrict_Residuals(const int &Level_Fine) {
  * The restriction operator used is area weighted average.            *
  *                                                                    *
  **********************************************************************/
-template <> void FAS_Multigrid2D_Solver<Rte2D_State,
-		  		        Rte2D_Quad_Block,
-				        Rte2D_Input_Parameters>::
+template <> 
+inline void FAS_Multigrid2D_Solver<Rte2D_State,
+				   Rte2D_Quad_Block,
+				   Rte2D_Input_Parameters>::
 Restrict_Boundary_Ref_States(const int &Level_Fine) {
 
   int i_fine, j_fine, ICl, ICu, JCl, JCu, Nghost;
@@ -586,6 +358,8 @@ Restrict_Boundary_Ref_States(const int &Level_Fine) {
 
 
 
+
+
 /**********************************************************************
  * Routine: CFL_Multigrid                                             *
  *                                                                    *
@@ -595,9 +369,10 @@ Restrict_Boundary_Ref_States(const int &Level_Fine) {
  * grid cells.                                                        *
  *                                                                    *
  **********************************************************************/
-template <> void FAS_Multigrid2D_Solver<Rte2D_State,
-		  		        Rte2D_Quad_Block,
-				        Rte2D_Input_Parameters>::
+template <> 
+inline void FAS_Multigrid2D_Solver<Rte2D_State,
+				   Rte2D_Quad_Block,
+				   Rte2D_Input_Parameters>::
 CFL_Multigrid(const int &Level_Coarse) {
 
   int i_fine, j_fine, Level_Fine, Nghost;
@@ -679,12 +454,137 @@ CFL_Multigrid(const int &Level_Coarse) {
  * level.                                                             *
  *                                                                    *
  **********************************************************************/
-template <> void FAS_Multigrid2D_Solver<Rte2D_State,
-			 	        Rte2D_Quad_Block,
-				        Rte2D_Input_Parameters>::
+template <> 
+inline void FAS_Multigrid2D_Solver<Rte2D_State,
+				   Rte2D_Quad_Block,
+				   Rte2D_Input_Parameters>::
 Update_Primitive_Variables(const int &Level) {  /* DO NOTHING */ }
 
 
+
+/**********************************************************************
+ * Routine: Restrict_NonSolution_Blocks                               *
+ *                                                                    *
+ * Restrict solution from Level_Fine to Level_Coarse for all blocks   *
+ * on the local solution block list.  Note that the solution at the   *
+ * coarse grid level is overwritten.  This is for the medium state    *
+ * which is not part of the overall solution state.  This function    *
+ * only called to initialize the coarse grid solutions.               *
+ *                                                                    *
+ **********************************************************************/
+inline void Restrict_NonSolution_Blocks( Rte2D_Quad_Block **Local_SolnBlk,
+					 AdaptiveBlock2D_List *List_of_Local_Solution_Blocks,
+					 const int &Level_Fine )
+{
+				  
+  //
+  // Declares
+  //
+  int i_fine, j_fine, Nghost;
+
+  // the coarse level
+  int Level_Coarse = Level_Fine + 1;
+
+  // Determine if the restriction includes the ghost cells.
+  // For the medium state, we always include the ghost cells
+  //if (IP->Multigrid_IP.Apply_Coarse_Mesh_Boundary_Conditions) nghost = 0;
+  //else nghost = 1;
+  int nghost(1);
+
+  //
+  // Loop through each solution block.
+  //
+  for (int nb = 0; nb < List_of_Local_Solution_Blocks[Level_Fine].Nblk; nb++) {
+    if (List_of_Local_Solution_Blocks[Level_Fine].Block[nb].used == ADAPTIVEBLOCK2D_USED) { 
+
+      // Get the number of ghost cells on the fine grid.
+      Nghost = Local_SolnBlk[Level_Fine][nb].Nghost;
+
+      //
+      // Loop through the coarse grid cells.
+      //
+      for (int i_coarse = Local_SolnBlk[Level_Coarse][nb].ICl-nghost; 
+	   i_coarse <= Local_SolnBlk[Level_Coarse][nb].ICu+nghost; 
+	   i_coarse++) 
+	for (int j_coarse = Local_SolnBlk[Level_Coarse][nb].JCl-nghost; 
+	     j_coarse <= Local_SolnBlk[Level_Coarse][nb].JCu+nghost; 
+	     j_coarse++) {
+
+	  // Determine the (i,j) index of the SW corner fine cell.
+	  i_fine = 2*(i_coarse-Nghost)+Nghost;
+	  j_fine = 2*(j_coarse-Nghost)+Nghost;
+
+	  // Determine the solution state of the coarse grid cell by
+	  // a area-weighted average of the associated fine grid cells.
+	  Local_SolnBlk[Level_Coarse][nb].M[i_coarse][j_coarse] = 
+	    (Local_SolnBlk[Level_Fine][nb].M[i_fine][j_fine] *
+	     Local_SolnBlk[Level_Fine][nb].Grid.Cell[i_fine][j_fine].A * 
+	     Local_SolnBlk[Level_Fine][nb].Sp[i_fine][j_fine] +
+	     Local_SolnBlk[Level_Fine][nb].M[i_fine+1][j_fine] *
+	     Local_SolnBlk[Level_Fine][nb].Grid.Cell[i_fine+1][j_fine].A * 
+	     Local_SolnBlk[Level_Fine][nb].Sp[i_fine+1][j_fine] +
+	     Local_SolnBlk[Level_Fine][nb].M[i_fine][j_fine+1] *
+	     Local_SolnBlk[Level_Fine][nb].Grid.Cell[i_fine][j_fine+1].A * 
+	     Local_SolnBlk[Level_Fine][nb].Sp[i_fine][j_fine+1] +
+	     Local_SolnBlk[Level_Fine][nb].M[i_fine+1][j_fine+1] *
+	     Local_SolnBlk[Level_Fine][nb].Grid.Cell[i_fine+1][j_fine+1].A * 
+	     Local_SolnBlk[Level_Fine][nb].Sp[i_fine+1][j_fine+1]) /
+	    (Local_SolnBlk[Level_Coarse][nb].Grid.Cell[i_coarse][j_coarse].A * 
+	     Local_SolnBlk[Level_Coarse][nb].Sp[i_coarse][j_coarse]);	
+
+	} // endfor - cells
+
+    } // endif - used
+  } // endfor - blocks
+
+}
+
+
+
+/**********************************************************************
+ * Routine: Apply_ICs                                                 *
+ *                                                                    *
+ * This routing applies the initial conditions on all coarse grid     *
+ * levels.                                                            *
+ *                                                                    *
+ **********************************************************************/
+template <> 
+inline void FAS_Multigrid2D_Solver<Rte2D_State,
+				   Rte2D_Quad_Block,
+				   Rte2D_Input_Parameters>::
+Apply_ICs(const int &level) 
+{ 
+  //
+  // conserved solution state
+  //
+  // specified ics
+  if (IP->i_ICs != IC_RESTART) {
+    ICs(Local_SolnBlk[level],
+	List_of_Local_Solution_Blocks[level],
+	*IP);
+
+  // if restart, restrict fine solution
+  } else {
+    Restrict_Solution_Blocks(level-1);
+    // Update_Primitive_Variables(level); // <- don't need it
+  } // endif
+
+
+  //
+  // medium state
+  //
+  // If this is a discretely specified medium field,
+  // then we will have to restrict it as well.
+  if ( Local_SolnBlk[level]->Medium_Field_Type == MEDIUM2D_FIELD_DISCRETE )
+    Restrict_NonSolution_Blocks(Local_SolnBlk, 
+				List_of_Local_Solution_Blocks, 
+				level-1);
+  
+  // apply coarse mesh BCs
+  if (IP->Multigrid_IP.Apply_Coarse_Mesh_Boundary_Conditions)
+    Restrict_Boundary_Ref_States(level-1);
+
+}
 
 
 

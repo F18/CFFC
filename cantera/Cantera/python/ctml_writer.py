@@ -176,7 +176,10 @@ class XMLnode:
 # constants that can be used in .cti files
 OneAtm = 1.01325e5
 OneBar = 1.0e5
-
+# Conversion from eV to J/kmol (electronCharge * Navrog)
+eV = 96.4853E6  
+# Electron Mass in kg
+ElectronMass = 9.10938188e-31
 
 import types, math, copy
 
@@ -605,6 +608,46 @@ class NASA(thermo):
         u["size"] = "7"
         u["name"] = "coeffs"
 
+        
+class NASA9(thermo):
+    """NASA9 polynomial parameterization for a single temperature region."""
+    
+    def __init__(self, range = (0.0, 0.0), 
+                 coeffs = [], p0 = -1.0):
+        self._t = range          # Range of the polynomial representation
+        self._pref = p0          # Reference pressure
+        if len(coeffs) <> 9:
+            raise CTI_Error('NASA9 coefficient list must have length = 9')
+        self._coeffs = coeffs
+
+
+    def export(self, f, fmt='CSV'):
+        if fmt == 'CSV':
+            str = 'NASA9,'+`self._t[0]`+','+`self._t[1]`+','
+            for i in  range(9):
+                str += '%17.9E, ' % self._coeffs[i]
+            f.write(str)
+            
+    def build(self, t):
+        n = t.addChild("NASA9")
+        n['Tmin'] = `self._t[0]`    
+        n['Tmax'] = `self._t[1]`
+        if self._pref <= 0.0:
+            n['P0'] = `_pref`
+        else:
+            n['P0'] = `self._pref`
+        str = ''
+        for i in  range(4):
+            str += '%17.9E, ' % self._coeffs[i]
+        str += '\n'
+        str += '%17.9E, %17.9E, %17.9E, %17.9E,' % (self._coeffs[4], self._coeffs[5],
+                                                    self._coeffs[6], self._coeffs[7])
+        str += '\n'
+        str += '%17.9E' % (self._coeffs[8])
+        u = n.addChild("floatArray", str)
+        u["size"] = "9"
+        u["name"] = "coeffs"
+
 
 class Shomate(thermo):
     """Shomate polynomial parameterization."""
@@ -635,6 +678,41 @@ class Shomate(thermo):
         u = n.addChild("floatArray", str)
         u["size"] = "7"
         u["name"] = "coeffs"
+
+
+class Adsorbate(thermo):
+    """Adsorbed species characterized by a binding energy and a set of
+    vibrational frequencies."""
+    
+    def __init__(self, range = (0.0, 0.0),
+                 binding_energy = 0.0,
+                 frequencies = [], p0 = -1.0):
+        self._t = range
+        self._pref = p0
+        self._freqs = frequencies
+        self._be = binding_energy
+
+        
+    def build(self, t):
+        n = t.addChild("adsorbate")
+        n['Tmin'] = `self._t[0]`
+        n['Tmax'] = `self._t[1]`
+        if self._pref <= 0.0:
+            n['P0'] = `_pref`
+        else:
+            n['P0'] = `self._pref`
+            
+        energy_units = _uenergy+'/'+_umol
+        addFloat(n,'binding_energy',self._be, defunits = energy_units)
+        str = ""
+        nfreq = len(self._freqs)
+        for i in  range(nfreq):
+            str += '%17.9E, ' % self._freqs[i]
+        str += '\n'
+        u = n.addChild("floatArray", str)
+        u["size"] = `nfreq`
+        u["name"] = "freqs"
+        
     
                  
 class const_cp(thermo):
@@ -1084,13 +1162,15 @@ class state:
                  mole_fractions = None,
                  mass_fractions = None,
                  density = None,
-                 coverages = None):
+                 coverages = None,
+                 solute_molalities = None):
         self._t = temperature
         self._p = pressure
         self._rho = density
         self._x = mole_fractions
         self._y = mass_fractions
         self._c = coverages
+        self._m = solute_molalities
         
     def build(self, ph):
         st = ph.addChild('state')
@@ -1100,6 +1180,7 @@ class state:
         if self._x: st.addChild('moleFractions', self._x)
         if self._y: st.addChild('massFractions', self._y)
         if self._c: st.addChild('coverages', self._c)
+        if self._m: st.addChild('soluteMolalities', self._m)        
     
 
 class phase:
@@ -1405,7 +1486,47 @@ class metal(phase):
             t = ph.addChild('transport')
             t['model'] = self._tr
         k = ph.addChild("kinetics")
-        k['model'] = 'none'        
+        k['model'] = 'none'
+
+class semiconductor(phase):
+    """A semiconductor."""
+    def __init__(self,
+                 name = '',
+                 elements = '',
+                 species = '',
+                 density = -1.0,
+                 bandgap = 1.0 * eV,
+                 effectiveMass_e = 1.0 * ElectronMass,
+                 effectiveMass_h = 1.0 * ElectronMass,
+                 transport = 'None',
+                 initial_state = None,
+                 options = []):
+        
+        phase.__init__(self, name, 3, elements, species, 'none',
+                       initial_state, options)
+        self._dens = density
+        self._pure = 0
+        self._tr = transport
+        self._emass = effectiveMass_e
+        self._hmass = effectiveMass_h
+        self._bandgap = bandgap
+
+    def conc_dim(self):
+        return (1,-3)
+        
+    def build(self, p):
+        ph = phase.build(self, p)
+        e = ph.addChild("thermo")
+        e['model'] = 'Semiconductor'
+        addFloat(e, 'density', self._dens, defunits = _umass+'/'+_ulen+'3')
+        addFloat(e, 'effectiveMass_e', self._emass, defunits = _umass)
+        addFloat(e, 'effectiveMass_h', self._hmass, defunits = _umass)
+        addFloat(e, 'bandgap', self._bandgap, defunits = 'eV')
+        if self._tr:
+            t = ph.addChild('transport')
+            t['model'] = self._tr
+        k = ph.addChild("kinetics")
+        k['model'] = 'none'                
 
 
 class incompressible_solid(phase):
@@ -1541,6 +1662,7 @@ class lattice_solid(phase):
         k['model'] = 'none'        
 
 
+
 class liquid_vapor(phase):
     """A fluid with a complete liquid/vapor equation of state.
     This entry type selects one of a set of predefined fluids with
@@ -1571,7 +1693,49 @@ class liquid_vapor(phase):
         e['model'] = 'PureFluid'
         e['fluid_type'] = `self._subflag`
         k = ph.addChild("kinetics")
-        k['model'] = 'none'        
+        k['model'] = 'none'
+
+
+
+class redlich_kwong(phase):
+    """A fluid with a complete liquid/vapor equation of state.
+    This entry type selects one of a set of predefined fluids with
+    built-in liquid/vapor equations of state. The substance_flag
+    parameter selects the fluid. See purefluids.py for the usage
+    of this entry type."""
+    
+    def __init__(self,
+                 name = '',
+                 elements = '',
+                 species = '',
+                 substance_flag = 7,
+                 initial_state = None,
+                 Tcrit = 1.0,
+                 Pcrit = 1.0,
+                 options = []):
+        
+        phase.__init__(self, name, 3, elements, species, 'none',
+                       initial_state, options)
+        self._subflag = 7
+        self._pure = 1
+        self._tc = 1
+        self._pc = 1
+
+    def conc_dim(self):
+        return (0,0)
+        
+    def build(self, p):
+        ph = phase.build(self, p)
+        e = ph.addChild("thermo")
+        e['model'] = 'PureFluid'
+        e['fluid_type'] = `self._subflag`
+        addFloat(e, 'Tc', self._tc, defunits = "K")
+        addFloat(e, 'Pc', self._pc, defunits = "Pa")
+        addFloat(e, 'MolWt', self._mw, defunits = _umass+"/"+_umol)
+        ph.addChild("kinetics")
+        k['model'] = 'none'
+
+        
 
 class ideal_interface(phase):
     """An ideal interface."""
@@ -1649,6 +1813,141 @@ class edge(phase):
 
     def conc_dim(self):
         return (1, -1)    
+
+
+## class binary_salt_parameters:
+##     def __init__(self,
+##                  cation = "",
+##                  anion = "",
+##                  beta0 = None,
+##                  beta1 = None,
+##                  beta2 = None,
+##                  Cphi = None,
+##                  Alpha1 = -1.0):
+##         self._cation = cation
+##         self._anion = anion
+##         self._beta0 = beta0
+##         self._beta1 = beta1
+##         self._Cphi = Cphi
+##         self._Alpha1 = Alpha1
+        
+##     def build(self, a):
+##         s = a.addChild("binarySaltParameters")
+##         s["cation"] = self._cation
+##         s["anion"] = self._anion
+##         s.addChild("beta0", self._beta0)
+##         s.addChild("beta1", self._beta1)
+##         s.addChild("beta2", self._beta2)
+##         s.addChild("Cphi", self._Cphi)
+##         s.addChild("Alpha1", self._Alpha1)
+
+## class theta_anion:
+##     def __init__(self,
+##                  anions = None,
+##                  theta = 0.0):
+##         self._anions = anions
+##         self._theta = theta
+        
+##     def build(self, a):
+##         s = a.addChild("thetaAnion")
+##         s["anion1"] = self._anions[0]
+##         s["anion2"] = self._anions[1]
+##         s.addChild("Theta", self._theta)
+
+## class psi_common_cation:
+##     def __init__(self,
+##                  anions = None,
+##                  cation = '',
+##                  theta = 0.0,
+##                  psi = 0.0):
+##         self._anions = anions
+##         self._cation = cation
+##         self._theta = theta
+##         self._psi = psi
+        
+##     def build(self, a):
+##         s = a.addChild("psiCommonCation")
+##         s["anion1"] = self._anions[0]
+##         s["anion2"] = self._anions[1]
+##         s["cation"] = self._cation
+##         s.addChild("Theta", self._theta)
+##         s.addChild("Psi", self._psi)                
+
+## class psi_common_anion:
+##     def __init__(self,
+##                  anion = '',
+##                  cations = None,
+##                  theta = 0.0,
+##                  psi = 0.0):
+##         self._anion = anion
+##         self._cations = cations
+##         self._theta = theta
+##         self._psi = psi
+        
+##     def build(self, a):
+##         s = a.addChild("psiCommonAnion")
+##         s["anion1"] = self._cations[0]
+##         s["anion2"] = self._cations[1]
+##         s["cation"] = self._anion
+##         s.addChild("Theta", self._theta)
+##         s.addChild("Psi", self._psi)                
+
+        
+## class theta_cation:
+##     def __init__(self,
+##                  cations = None,
+##                  theta = 0.0):
+##         self._cations = cations
+##         self._theta = theta
+        
+##     def build(self, a):
+##         s = a.addChild("thetaCation")
+##         s["cation1"] = self._anions[0]
+##         s["cation2"] = self._anions[1]
+##         s.addChild("Theta", self._theta)
+                 
+## class pitzer:
+##     def __init__(self,
+##                  temp_model = "",
+##                  A_Debye = "",
+##                  default_ionic_radius = -1.0,
+        
+## class electrolyte(phase):
+##     """An electrolye solution obeying the HMW model."""
+##     def __init__(self,
+##                  name = '',
+##                  elements = '',
+##                  species = '',
+##                  transport = 'None',
+##                  initial_state = None,
+##                  solvent = '',
+##                  standard_concentration = '',
+##                  activity_coefficients = None,
+##                  options = []):
+        
+##         phase.__init__(self, name, 3, elements, species, 'none',
+##                        initial_state, options)
+##         self._pure = 0
+##         self._solvent = solvent
+##         self._stdconc = standard_concentration
+
+##     def conc_dim(self):
+##         return (1,-3)
+        
+##     def build(self, p):
+##         ph = phase.build(self, p)
+##         e = ph.addChild("thermo")
+##         sc = e.addChild("standardConc")
+##         sc['model'] = self._stdconc
+##         e['model'] = 'HMW'
+##         e.addChild("activity_coefficients")
+        
+##         addFloat(e, 'density', self._dens, defunits = _umass+'/'+_ulen+'3')
+##         if self._tr:
+##             t = ph.addChild('transport')
+##             t['model'] = self._tr
+##         k = ph.addChild("kinetics")
+##         k['model'] = 'none'        
 
         
 #-------------------------------------------------------------------

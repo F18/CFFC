@@ -38,8 +38,6 @@ double*     Rte2D_State :: delta_theta     = NULL;  // polar angle grid size
 double**    Rte2D_State :: delta_psi       = NULL;  // azimuthal angle grid size
 double***** Rte2D_State :: Phi             = NULL;  // phase function
 double      Rte2D_State :: Symmetry_Factor = ONE;   // symmetry multiplyer
-SNBCK*      Rte2D_State :: SNBCKdata       = NULL;  // SNBCK data object
-double      Rte2D_State :: Absorb_Type     = RTE2D_ABSORB_GRAY; // absorbsion model
 
 
 /**************************************************************************
@@ -160,7 +158,8 @@ void Rte2D_State :: SetDirsDOM(const int Quad_Type,
     in >> Nazim[i];
     NUM_VAR_RTE2D += Nazim[i];
   }
-  
+  NUM_VAR_RTE2D *= Nband;
+
   // now allocate the cosine arrays
   AllocateCosines(RTE2D_SOLVER_DOM);
 
@@ -232,8 +231,23 @@ void Rte2D_State :: SetDirsDOM(const int Quad_Type,
       xi[m][l]  *= omega[m][l];
     } // endfor
 
+  // the symmetry factor (not used, already accounted for in quadrature)
+  Symmetry_Factor = ONE;
+
   // close the file
   in.close();
+
+  // check to make sure we are not asking for too much memory
+#ifdef RTE2D_STATIC_NUMBER_OF_VARS
+  if( RTE2D_STATIC_NUMBER_OF_VARS < NUM_VAR_RTE2D ) {
+    cerr <<"\n WARNING USING STATIC RTE2D BUILT WITH " 
+	 << RTE2D_STATIC_NUMBER_OF_VARS
+	 <<" VARS PREDEFINED, HOWEVER ASKING FOR "
+	 << NUM_VAR_RTE2D << endl; 
+    exit(1); 
+  }
+#endif
+
 }
 
 /********************************************************
@@ -252,9 +266,6 @@ void Rte2D_State :: SetDirsFVM(const int NumPolarDirs,
   // DECLARES
   //------------------------------------------------
 
-  // a temporary storage variable
-  double temp, temp1, temp2;
-  
   // Plolar angle limits (0 < theta < pi)
   // For 2D cartesion cases, only need theta->[0,pi/2] due to symmetry.
   double theta_min;
@@ -286,7 +297,7 @@ void Rte2D_State :: SetDirsFVM(const int NumPolarDirs,
 
   // compute the total number of directions x total number of bands
   NUM_VAR_RTE2D = NumAzimDirs * NumPolarDirs * Nband;
-  
+
   // now allocate the cosine arrays
   AllocateCosines(RTE2D_SOLVER_FVM);
   
@@ -304,7 +315,7 @@ void Rte2D_State :: SetDirsFVM(const int NumPolarDirs,
   // (1968) pp. 171-266                              *
   if (Axisymmetric) {
     psi_min = PI; 
-    psi_max = 2*PI;
+    psi_max = 2.0*PI;
     theta_min = 0;
     theta_max = PI;
  
@@ -312,9 +323,9 @@ void Rte2D_State :: SetDirsFVM(const int NumPolarDirs,
   // Note that only a half hemisphere has been modelled
   } else {
     psi_min = 0; 
-    psi_max = 2*PI;
+    psi_max = 2.0*PI;
     theta_min = 0;
-    theta_max = PI/2;
+    theta_max = PI/2.0;
   } // endif
 
   // the symmetry factor
@@ -346,40 +357,47 @@ void Rte2D_State :: SetDirsFVM(const int NumPolarDirs,
   // of the size of solid angle element size.
   
   //
-  // polar direction
+  // loop over all directions
   //
-  for (int m=0; m<Npolar; m++) {
-    
-    //
-    // azimuthal direction
-    //
-    for (int l=0; l<Nazim[m]; l++) { 
+  for (int m=0; m<Npolar; m++) { // polar direction
+    for (int l=0; l<Nazim[m]; l++) { // azimuthal direction
       
-      
-      // integrate over the polar angle
-      temp1 = 0.5*(theta[m+1]-theta[m]) 
-	- 0.25*( sin(2*theta[m+1]) - sin(2*theta[m]) );
-      temp2 = -0.25*( cos(2.0*theta[m+1]) - cos(2.0*theta[m]) );
-
       // compute the directional vector components 
       if (Axisymmetric == AXISYMMETRIC_Y) {
-	mu[m][l]  = temp2 * ( psi[m][l+1] - psi[m][l]  );             //axial
-	eta[m][l]  = temp1 * ( sin(psi[m][l+1]) - sin(psi[m][l])  );  //radial
- 	xi[m][l] = - temp1 * ( cos(psi[m][l+1]) - cos(psi[m][l])  );  //angular
+
+	Control_Angle_Avg( theta[m],     // lower polar angle
+			   theta[m+1],   // upper polar angle
+			   psi[m][l],    // lower azimuthal angle
+			   psi[m][l+1],  // upper azimuthal angle
+			   eta[m][l],    // radial-direction cosine
+			   xi[m][l],     // angular-direction cosine
+			   mu[m][l],     // axial-direction cosine
+			   omega[m][l] );// solid angle element size
+
      } else if (Axisymmetric == AXISYMMETRIC_X) {
-	mu[m][l]  = temp1 * ( sin(psi[m][l+1]) - sin(psi[m][l])  );   //radial
-	eta[m][l]  = temp2 * ( psi[m][l+1] - psi[m][l]  );            //axial
-	xi[m][l] = - temp1 * ( cos(psi[m][l+1]) - cos(psi[m][l])  );  //angular
+
+	Control_Angle_Avg( theta[m],     // lower polar angle
+			   theta[m+1],   // upper polar angle
+			   psi[m][l],    // lower azimuthal angle
+			   psi[m][l+1],  // upper azimuthal angle
+			   mu[m][l],     // radial-direction cosine
+			   xi[m][l],     // angular-direction cosine
+			   eta[m][l],    // axial-direction cosine
+			   omega[m][l] );// solid angle element size
+
       } else {
-	mu[m][l]  = temp1 * ( sin(psi[m][l+1]) - sin(psi[m][l])  );   //x
-	eta[m][l] = - temp1 * ( cos(psi[m][l+1]) - cos(psi[m][l])  ); //y
-	xi[m][l]  = temp2 * ( psi[m][l+1] - psi[m][l]  );             //z
+
+	Control_Angle_Avg( theta[m],     // lower polar angle
+			   theta[m+1],   // upper polar angle
+			   psi[m][l],    // lower azimuthal angle
+			   psi[m][l+1],  // upper azimuthal angle
+			   mu[m][l],     // x-direction cosine
+			   eta[m][l],    // y-direction cosine
+			   xi[m][l],     // z-direction cosine
+			   omega[m][l] );// solid angle element size
+
       }
       
-      // solid angles
-      omega[m][l] = - ( cos(theta[m+1]) - cos(theta[m]) ) *
-	              ( psi[m][l+1] - psi[m][l] );
-
       // multiply by the symmetry factor
       mu[m][l]    *= Symmetry_Factor;
       eta[m][l]   *= Symmetry_Factor;
@@ -411,6 +429,17 @@ void Rte2D_State :: SetDirsFVM(const int NumPolarDirs,
 //   }
 //-------------   DEBUG    ------------------
   
+  // check to make sure we are not asking for too much memory
+#ifdef RTE2D_STATIC_NUMBER_OF_VARS
+  if( RTE2D_STATIC_NUMBER_OF_VARS < NUM_VAR_RTE2D ) {
+    cerr <<"\n WARNING USING STATIC RTE2D BUILT WITH " 
+	 << RTE2D_STATIC_NUMBER_OF_VARS
+	 <<" VARS PREDEFINED, HOWEVER ASKING FOR "
+	 << NUM_VAR_RTE2D << endl; 
+    exit(1); 
+  }
+#endif
+
 }
 
 
@@ -488,20 +517,15 @@ void Rte2D_State :: SetupPhaseDOM( const int type ) {
       for(int p=0 ; p<Npolar ; p++) 
 	for(int q=0 ; q<Nazim[p] ; q++) {
 	  
-	  // initialize
-	  Phi[v][m][l][p][q] = ZERO;
-
-	  // incoming ray
-	  in_dir = Vector3D( mu[m][l],eta[m][l],xi[m][l] );
-	  // outgoing ray
-	  out_dir = Vector3D( mu[p][q],eta[p][q],xi[p][q] );
+	  // incoming ray (divide out omega)
+	  in_dir = Vector3D( mu[m][l],eta[m][l],xi[m][l] )/omega[m][l];
+	  // outgoing ray (divide out omega)
+	  out_dir = Vector3D( mu[p][q],eta[p][q],xi[p][q] )/omega[p][q];
 	  // Compute the dot product between the incoming 
-	  dprod = dot(in_dir,out_dir) / abs(in_dir) / abs(out_dir);
+	  dprod = dot(in_dir,out_dir);
 
 	  // compute the phase function for the current directions
-	  for (int i=0; i<Mn; i++)
-	    Phi[v][m][l][p][q] += An[i]*Legendre( dprod, i );
-
+	  Phi[v][m][l][p][q] = PhaseEval(An, Mn, dprod);
 	  
 	} //end for out-dirs
     } // end for in-dirs
@@ -510,41 +534,11 @@ void Rte2D_State :: SetupPhaseDOM( const int type ) {
   //------------------------------------------------
   // Normalize the phase function.
   //------------------------------------------------
-  //
-  // Loop over incoming dirs
-  //
-  for(int m=0 ; m<Npolar ; m++) 
-    for(int l=0 ; l<Nazim[m] ; l++) {
-      
-      // initialize
-      g = 0;
-      
-      //
-      // sum outgoing portion
-      //
-      for(int p=0 ; p<Npolar ; p++)
-	for(int q=0 ; q<Nazim[p] ; q++) 
-	  g += Phi[v][m][l][p][q]*omega[p][q]; 
-      
-      // if this is zero, don't divide by zero
-      if (g<TOLER) continue;
-      
-      // compute the constant
-      g = g/(4.0*PI);
-
-      // if this is already one, no need to normalize
-      if (fabs(g-ONE)<TOLER) continue;
-
-      //
-      // normalize
-      //
-      for(int p=0 ; p<Npolar ; p++)
-	for(int q=0 ; q<Nazim[p] ; q++) 
-	  Phi[v][m][l][p][q] = Phi[v][m][l][p][q]/g;
-	
-    }  // end for -in-dirs-
-  
-
+  NormalizePhase( Phi[0],   // phase function array (m,l,p,q)
+		  Npolar,   // number polar angles
+		  Nazim,    // number azim angles
+		  omega );  // control angle element size
+    
   //------------------------------------------------
   // now copy the phase function over all bands
   //------------------------------------------------
@@ -594,14 +588,12 @@ double phase_func(int ndim, double *x, void *params) {
   out_dir.z =           cos(x[3]);
 
   // the dot product
-  dprod = dot(in_dir,out_dir) / abs(in_dir) / abs(out_dir);
+  dprod = dot(in_dir,out_dir);
 
   //
-  // compute 
+  // compute the phase function for the current directions
   //
-  Phi = ZERO;
-  for (int i=0; i<P.Mn; i++)
-    Phi += P.An[i]*Legendre( dprod, i );
+  Phi = PhaseEval(P.An, P.Mn, dprod);
 
   // return the integrand
   return Phi * sin(x[0]) * sin(x[2]);
@@ -618,27 +610,58 @@ double phase_func(int ndim, double *x, void *params) {
  * Heat MAss Transfer 31 (8) (1988) pp 1711-1721 are    *
  * used.  Note that the phase function is assummed      *
  * independant of wavenumber.                           *
+ *                                                      *
+ * For anisotropic scattering, analytic integration may *
+ * be used to determine an average phase function.      *
+ * However, this can be computationally intensive       *
+ * for complex phase functions.  Analytic integration   *
+ * should only be used for accuracy tests. The method   *
+ * proposed by Chai, Lee, and Patankar, J. Thermophys   *
+ * Heat Transfer 8 (3) (1994) pp. 419-425 is also       *
+ * implemented.  It is an approximate evaluation of the *
+ * integral using the panel method.                     *
+ *                                                      *
+ * FIXME - Analytic integration takes too long.  And I  *
+ * had some problems obtaining similar results to those *
+ * computed using the approximate panel method.  This   *
+ * should be checked in more detail.                    *
+ *                                                      *
  ********************************************************/
 void Rte2D_State :: SetupPhaseFVM( const int type ) {
 
   //
   // initialize
   //
+  // common parameters
+  double val;   // value of integration
+  double g;     // constant for the normalization of the phase function
+  int v;        // band index
+  bool analytic_integration(false);  // true->use analytic integration
+                                     // false->use discrete approximation
+
+  // panel method integration parameters
+  int Nsub(1);  // break each control angle into Nsub x Nsub smaller ones
+  double delta_theta_in, delta_theta_out; // incoming / outgoing sub polar angle size
+  double delta_psi_in, delta_psi_out;     // incoming / outgoing sub azim angle size
+  Vector3D in_dir, out_dir;               // incoming / outgoing direction cosines
+  double dprod;                           // dot product
+  double omega_in, omega_out;             // solid angle element sizes
+  double tsub_lo, tsub_hi;                // polar angle limits
+  double psub_lo, psub_hi;                // azimuthal anlge limits
+
+  // Analytic integration parameters
   double* An;   // the polynomial expansion coefficients array
   int Mn;       // the degree of legendre polynomial
-  double g;     // constant for the normalization of the phase function
   simp_function F;    // function struct for integration
   legendre_param lp;  // function parameters struct for integration
   simp_state S;       // simpson state struct for integration
   simp_params P;      // simpson params struct for integration
   int fevals;         // number of function evaluations
-  double val;         // value of integration
   int err;            // error flag returned by adaptsim
-  int v;
 
   // setup integration parameters
   P.maxevals = 100000000;
-  P.tol = MILLI;
+  P.tol = MICRO;
 
   //------------------------------------------------
   // linear isotropic scattering
@@ -658,112 +681,191 @@ void Rte2D_State :: SetupPhaseFVM( const int type ) {
   } // endif
   
 
-  //------------------------------------------------
+  //================================================
+  //
   // anisotropic scatering
+  //
+  //================================================
+
   //------------------------------------------------
   // Setup anisotropic scattering by integrating the phase
   // function over the total solid angles.  Use an adaptive simpsons
   // quadrature rule for multidimensional integration
+  //------------------------------------------------
+  if (analytic_integration) {
 
-  // get the phase function constants and
-  // initialize the legendre parameter struct
-  An = PhaseFunc( type, Mn);
-  lp.An = An;
-  lp.Mn = Mn;
+    // get the phase function constants and
+    // initialize the legendre parameter struct
+    An = PhaseFunc( type, Mn);
+    lp.An = An;
+    lp.Mn = Mn;
 
-  // setup integration ( allocate memory and set parameters )
-  malloc_simp_struc( 4, F, S );
-  init_simp_struc( F, S );
-  
-  // setup function struct and params
-  F.f = phase_func;
-  F.params = &lp;
-
-  cout << "\nIntegrating Phase Funcion..." << flush;
-  
-
-  // For now, we make the phase function independant of wavelength
-  v = 0;
-  
-  //
-  // loop over incoming (m,l) and outgoing (p,q) directions
-  //
-  for(int m=0 ; m<Npolar ; m++) {
-    for(int l=0 ; l<Nazim[m] ; l++) {
-      
-      for(int p=0 ; p<Npolar ; p++) {
-	for(int q=0 ; q<Nazim[p] ; q++) {
-	  
-	  // initialize before integration
-	  init_simp_struc( F, S );
-	  
-	  // set new integration limits
-	  F.xmin[0] = theta[m];  F.xmax[0] = theta[m+1];
-	  F.xmin[1] = psi[m][l]; F.xmax[1] = psi[m][l+1];
-	  F.xmin[2] = theta[p];  F.xmax[2] = theta[p+1];;
-	  F.xmin[3] = psi[p][q]; F.xmax[3] = psi[p][q+1];
-	    
-	  
-	  // compute the integrated phase function
-	  err = adaptsim( F, S, P, fevals, val );
-	  if (err) { 
-	    cerr << "RteState.cc::SetupPhaseFVM() - "
-		 << "Error integrating phase function\n";
-	    cerr << "Error flag: " << err << endl;
-	    exit (-1);
-	  }
-	  
-	  // set
-	  Phi[v][m][l][p][q] = val 
-	    / (omega[m][l]/Symmetry_Factor)
-	    / (omega[p][q]/Symmetry_Factor);
-	  // IMPORTANT - THE FACTOR 4 COMES FROM SYMMETRY
-	  // WE ARE ONLY MODELLING HALF THE SOLID ANGLE RANGE,
-	  // THUS OMEGA HAS BEEN MULTIPLIED BY 2.  NEED TO
-	  // DIVIDE OUT THIS FACTOR WHEN AVERAGING PHI.
-	  
-	  
-	} //end for -q-
-      } // end for -p-
-    } // end for -l-
-  } // end for -m-
-  
+    // setup integration ( allocate memory and set parameters )
+    malloc_simp_struc( 4, F, S );
+    init_simp_struc( F, S );
     
+    // setup function struct and params
+    F.f = phase_func;
+    F.params = &lp;
+    
+    cout << "\nIntegrating Phase Function Analytically..." << flush;
+    
+    // For now, we make the phase function independant of wavelength
+    v = 0;
+    
+    //
+    // loop over incoming (m,l) and outgoing (p,q) directions
+    //
+    for(int m=0 ; m<Npolar ; m++) {
+      for(int l=0 ; l<Nazim[m] ; l++) {
+	
+	for(int p=0 ; p<Npolar ; p++) {
+	  for(int q=0 ; q<Nazim[p] ; q++) {
+	    
+	    // initialize before integration
+	    init_simp_struc( F, S );
+	    
+	    // set new integration limits
+	    F.xmin[0] = theta[m];  F.xmax[0] = theta[m+1];
+	    F.xmin[1] = psi[m][l]; F.xmax[1] = psi[m][l+1];
+	    F.xmin[2] = theta[p];  F.xmax[2] = theta[p+1];;
+	    F.xmin[3] = psi[p][q]; F.xmax[3] = psi[p][q+1];
+	  
+	    // compute the integrated phase function
+	    err = adaptsim( F, S, P, fevals, val );
+	    if (err) { 
+	      cerr << "RteState.cc::SetupPhaseFVM() - "
+		   << "Error integrating phase function\n";
+	      cerr << "Error flag: " << err << endl;
+	      exit (-1);
+	    }
+	    
+	    // set
+	    // IMPORTANT - We are only modelling a section (typically
+	    // half) of the solid anlge range.  Omega hass been weighed 
+	    // accordingly.  Thus need to divide out this factor when
+	    // averaging phi.
+	    Phi[v][m][l][p][q] = val 
+ 	      / (omega[m][l]/Symmetry_Factor)
+ 	      / (omega[p][q]/Symmetry_Factor);
+	  
+	    
+	  } //end for -q-
+	} // end for -p-
+      } // end for -l-
+    } // end for -m-
+    
+    // clean case specific memory
+    free_simp_struc( F, S );
+
+  //------------------------------------------------
+  // Setup anisotropic scattering by integrating the phase
+  // function over the total solid angles.  Use a type
+  // of panel method multidimensional integration
+  // See Chai et al. (1994).
+  //------------------------------------------------
+  } else {
+    
+    // get the phase function constants
+    An = PhaseFunc( type, Mn);
+
+    // For now, we make the phase function independant of wavelength
+    v = 0;
+    
+    //
+    // loop over incoming (m,l) and outgoing (p,q) directions
+    //
+    for(int m=0 ; m<Npolar ; m++) {
+      for(int l=0 ; l<Nazim[m] ; l++) {
+	
+	for(int p=0 ; p<Npolar ; p++) {
+	  for(int q=0 ; q<Nazim[p] ; q++) {
+	    	    
+	    // break control angles up into Nsub x Nsub sections
+	    delta_theta_in  = ( theta[m+1]  - theta[m]  ) / double(Nsub);
+	    delta_psi_in    = ( psi[m][l+1] - psi[m][l] ) / double(Nsub);
+	    delta_theta_out = ( theta[p+1]  - theta[p]  ) / double(Nsub);
+	    delta_psi_out   = ( psi[p][q+1] - psi[p][q] ) / double(Nsub);
+
+	    //
+	    // loop over the sub control angles
+	    //
+	    val = ZERO;
+	    for(int r=0 ; r<Nsub ; r++) // -> theta_sub_in
+	      for(int s=0 ; s<Nsub ; s++) // -> psi_sub_in
+		for(int t=0 ; t<Nsub ; t++) // -> theta_sub_out
+		  for(int u=0 ; u<Nsub ; u++) {// -> psi_sub_out
+
+		    // Compute the control angle element limits
+		    // and the incoming and outgoing cosines/element size.
+		    // Note: cosines are thos at the element centroid.
+
+		    // incoming
+		    tsub_lo = theta[m] + delta_theta_in*r;
+		    tsub_hi = theta[m] + delta_theta_in*(r+1);
+		    psub_lo = psi[m][l] + delta_psi_in*s;
+		    psub_hi = psi[m][l] + delta_psi_in*(s+1);
+
+		    Control_Angle_Ctr( tsub_lo,    // lower polar angle
+				       tsub_hi,    // upper polar angle
+				       psub_lo,    // lower azimuthal angle
+				       psub_hi,    // upper azimuthal angle
+				       in_dir.x,   // x-direction cosine
+				       in_dir.y,   // y-direction cosine
+				       in_dir.z,   // z-direction cosine
+				       omega_in ); // solid angle element size
+
+		    // outgoing
+		    tsub_lo = theta[p] + delta_theta_out*t;
+		    tsub_hi = theta[p] + delta_theta_out*(t+1);
+		    psub_lo = psi[p][q] + delta_psi_out*u;
+		    psub_hi = psi[p][q] + delta_psi_out*(u+1);
+
+		    Control_Angle_Ctr( tsub_lo,     // lower polar angle
+				       tsub_hi,     // upper polar angle
+				       psub_lo,     // lower azimuthal angle
+				       psub_hi,     // upper azimuthal angle
+				       out_dir.x,   // x-direction cosine
+				       out_dir.y,   // y-direction cosine
+				       out_dir.z,   // z-direction cosine
+				       omega_out ); // solid angle element size
+
+		    // the dot product
+		    dprod = dot(in_dir,out_dir);
+
+		    // compute the phase function
+		    val += PhaseEval(An, Mn, dprod)*omega_in*omega_out;
+		    
+		  } // endfor - Nsub
+
+	    
+	    // set
+	    // IMPORTANT - We are only modelling a section (typically
+	    // half) of the solid anlge range.  Omega hass been weighed 
+	    // accordingly.  Thus need to divide out this factor when
+	    // averaging phi.
+	    Phi[v][m][l][p][q] = val 
+	      / (omega[m][l]/Symmetry_Factor)
+	      / (omega[p][q]/Symmetry_Factor);
+	  
+	    
+	  } //end for -q-
+	} // end for -p-
+      } // end for -l-
+    } // end for -m-
+
+  //================================================
+  } //endif - integration type
+  //================================================
+
+
   //------------------------------------------------
   // Normalize the phase function.
   //------------------------------------------------
-  // 
-  // loop over incoming directions
-  //
-  for(int m=0 ; m<Npolar ; m++) {
-    for(int l=0 ; l<Nazim[m] ; l++) {
-      
-      // initialize
-      g = 0;
-      
-      //
-      // sum component from outgoing directions
-      //
-      for(int p=0 ; p<Npolar ; p++)
-	for(int q=0 ; q<Nazim[p] ; q++) 
-	  g += Phi[v][m][l][p][q]*omega[p][q]; 
-      
-      // if this is zero, don't divide by zero
-      if (g<TOLER) continue;
-      
-      // compute the constant
-      g = g/(4.0*PI);
-
-      // if this is already one, no need to normalize
-      if (fabs(g-ONE)<TOLER) continue;
-
-      // normalize
-      for(int p=0 ; p<Npolar ; p++)
-	for(int q=0 ; q<Nazim[p] ; q++) 
-	  Phi[v][m][l][p][q] = Phi[v][m][l][p][q]/g;
-	
-    }  // end for -l-
-  } // end for -m-
+  NormalizePhase( Phi[0],   // phase function array (m,l,p,q)
+		  Npolar,   // number polar angles
+		  Nazim,    // number azim angles
+		  omega );  // control angle element size
   
   //------------------------------------------------
   // now copy the phase function over all bands
@@ -775,12 +877,9 @@ void Rte2D_State :: SetupPhaseFVM( const int type ) {
 	  for(int q=0 ; q<Nazim[p] ; q++) 
 	    Phi[v][m][l][p][q] = Phi[0][m][l][p][q];
 
-  cout << " norm = " << g << "...done.\n" << flush;
-
 
   // clean up memory
   delete[] An;
-  free_simp_struc( F, S );
 
   return;
 
@@ -824,10 +923,7 @@ void Rte2D_State :: SetupART_DOM( const Vector2D &nfaceE, const double &AfaceE,
 				  const Vector2D &nfaceS, const double &AfaceS ) {
 
   // allocate the ART array
-  if (alpha==NULL) {
-    alpha = new double*[Npolar];
-    for (int i=0; i<Npolar; i++) alpha[i] = new double[ Nazim[i]+1 ];	
-  } /* endif */
+  AllocateART();
 
   // Allocate storage for intensity in the special directions.
   // These directions are those with no angular distribution.
@@ -896,14 +992,6 @@ Rte2D_State Riemann_n(const Rte2D_State &Ul,
   cos_angle = norm_dir.x; 
   sin_angle = norm_dir.y;
 
-  // average the state properties
-  for (int v=0; v<Ul.Nband; v++) {
-    Um.Ib[v] = HALF*(Ul.Ib[v]+Ur.Ib[v]);
-    Um.kappa[v] = HALF*(Ul.kappa[v]+Ur.kappa[v]);
-    Um.sigma[v] = HALF*(Ul.sigma[v]+Ur.sigma[v]);
-  }
-
-
   //
   // Compute the Rieman state
   //
@@ -946,7 +1034,6 @@ Rte2D_State Flux_n(const Rte2D_State &Ul,
   Rte2D_State Um, Flux;
   Um = Riemann_n(Ul, Ur, norm_dir);
   Flux = Um.Fn(norm_dir);
-  Flux.ZeroNonSol();
   return (Flux);
 
 }
@@ -1015,20 +1102,27 @@ Rte2D_State Gray_Wall(const Rte2D_State &U,
     //------------------------------------------------
     // For a black wall, the blackbody intensity
     //------------------------------------------------
-    if (U.Absorb_Type == RTE2D_ABSORB_GRAY)
-      In = wall_emissivity * BlackBody(wall_temperature);
-    else if (U.Absorb_Type == RTE2D_ABSORB_SNBCK) {
-      wn = U.SNBCKdata->WaveNo[ U.SNBCKdata->band_index[v] ];
-      In = wall_emissivity * BlackBody(wall_temperature, wn);
-      // Note: band_index[v] relates 1D Rte2D_State(v) array to 2D SNBCK(v,i) array
-    } else
-      In = ZERO; // shouldn't get here
-      
+    In = ZERO;
+    if (wall_emissivity>MICRO) {
+
+      if (Medium2D_State::Absorb_Type == MEDIUM2D_ABSORB_GRAY) {
+	In = wall_emissivity * BlackBody(wall_temperature);
+      } else if (Medium2D_State::Absorb_Type == MEDIUM2D_ABSORB_SNBCK) {
+	wn = Medium2D_State::SNBCKdata->WaveNo[ Medium2D_State::SNBCKdata->band_index[v] ];
+	In = wall_emissivity * BlackBody(wall_temperature, wn);
+	// Note: band_index[v] relates 1D Rte2D_State(v) array to 2D SNBCK(v,i) array
+      } else {
+	cerr << "\nRte2D_State.cc::Gray_Wall(): Invalid value for absorbsion type flag.\n";
+	exit(-1);
+      } // endif
+
+    } // endif - emiss>0
+
+
     //------------------------------------------------
     // For grey wall.
     //------------------------------------------------
     if ( fabs(1.0-wall_emissivity)>MICRO ) {
-      
       
       // Iterate, summing the first moment over the half range for all
       // outgoing directions.  Note that for consistency, sum should
@@ -1136,20 +1230,28 @@ void Gray_Wall_Space_March(Rte2D_State &Uwall,
     //------------------------------------------------
     // for a black wall
     //------------------------------------------------
-    if (Uwall.Absorb_Type == RTE2D_ABSORB_GRAY)
-      In = wall_emissivity * BlackBody(wall_temperature);
-    else if (Uwall.Absorb_Type == RTE2D_ABSORB_SNBCK) {
-      wn = Uwall.SNBCKdata->WaveNo[ Uwall.SNBCKdata->band_index[v] ];
-      In = wall_emissivity * BlackBody(wall_temperature, wn);
-      // Note: band_index[v] relates 1D Rte2D_State(v) array to 2D SNBCK(v,i) array
-    } else 
-      In = ZERO;  // shouldn't get here
+    In = ZERO;
+    if (wall_emissivity>MICRO) {
+
+      if (Medium2D_State::Absorb_Type == MEDIUM2D_ABSORB_GRAY)
+	In = wall_emissivity * BlackBody(wall_temperature);
+      else if (Medium2D_State::Absorb_Type == MEDIUM2D_ABSORB_SNBCK) {
+	wn = Medium2D_State::SNBCKdata->WaveNo[ Medium2D_State::SNBCKdata->band_index[v] ];
+	In = wall_emissivity * BlackBody(wall_temperature, wn);
+	// Note: band_index[v] relates 1D Rte2D_State(v) array to 2D SNBCK(v,i) array
+      } else {
+	cerr << "\nRte2D_State.cc::Gray_Wall_Space_March(): Invalid "
+	     << "value for absorbsion type flag.\n";
+	exit(-1);
+      } // endif
+
+    } // endif - emiss>0
+
 
     //------------------------------------------------
     // For grey wall.
     //------------------------------------------------
     if ( fabs(1.0-wall_emissivity)>MICRO ) {
-      
       
       // Iterate, summing the first moment over the half range for all
       // outgoing directions.  Note that for consistency, sum should
@@ -1241,7 +1343,7 @@ Rte2D_State Reflect(const Rte2D_State &U, const Vector2D &norm_dir) {
   Vector3D out_dir, dir, in_dir;
   double cos_angle, sin_angle;
   double dcn, dct;
-  Rte2D_State Temp(U);  Temp.ZeroIntensity();
+  Rte2D_State Temp(U);  Temp.Zero();
   bool exact_match;
   double cos_phi, dotp;
   int mm, ll;
@@ -1472,161 +1574,136 @@ void Reflect_Space_March(Rte2D_State &U, const Vector2D &norm_dir) {
 }
 
 
- /**************************************************************************
-  ************************* SCATTER FUNCTIONS  *****************************
-  **************************************************************************/
+/**************************************************************************
+ ******************** RESTRICT/PROLONG FUNCTIONS  *************************
+ **************************************************************************/
+
 
 /********************************************************
- * Routine: Legendre                                    *
+ * Routine: Restrict_NonSol                             *
  *                                                      *
- * Compute the nth degree legendre polynomial at x      *
+ * This function restricts coefficients that are not    *
+ * part of the solution state from a fine grid to a     *
+ * coarse one.  This is required for the Multigrid      *
+ * specializations.                                     *
  *                                                      *
  ********************************************************/
-double Legendre( const double &x, const int &n) { 
+/********************************************************
+COMMENTED OUT FOR NOW
 
-  // initialize
-  double P0, P1, Pn;
+void Restrict_NonSol( Rte2D_State &Uc, const double &Ac,          // coarse cell state, volume
+		      const Rte2D_State &Uf1, const double &Af1,  // fine cell state, volume
+		      const Rte2D_State &Uf2, const double &Af2,  // fine cell state, volume
+		      const Rte2D_State &Uf3, const double &Af3,  // fine cell state, volume
+		      const Rte2D_State &Uf4, const double &Af4 ) // fine cell state, volume
+{
+  //
+  // Loop over each band
+  //
+  for ( int v=0; v<Uc.Nband; v++) {
+    
+    Uc.kappa[v] = 
+      ( Uf1.kappa[v] * Af1 + Uf2.kappa[v] * Af2 +
+        Uf3.kappa[v] * Af3 + Uf4.kappa[v] * Af4 ) / Ac;	
+	  
+    Uc.sigma[v] = 
+      ( Uf1.sigma[v] * Af1 + Uf2.sigma[v] * Af2 +
+        Uf3.sigma[v] * Af3 + Uf4.sigma[v] * Af4 ) / Ac;		  
+    
+    Uc.Ib[v] = ( Uf1.Ib[v] * Af1 + Uf2.Ib[v] * Af2 +
+		 Uf3.Ib[v] * Af3 + Uf4.Ib[v] * Af4 ) / Ac;		  
 
-  // 0th degree
-  P0 = 1;
-  if (n == 0) return P0;
+  } // endfor Nband 
 
-  // 1st degree
-  P1 = x;
-  if (n==1) return P1;
-
-  //recursively compute the nth degree
-  for (int i=2; i<=n; i++) {
-    Pn = ( (2*i-1) * x * P1 - (i-1) * P0 ) / i;
-    P0 = P1;
-    P1 = Pn;
-  }
-
-  // return the value
-  return Pn;
   
+}
 
-} 
+********************************************************/
 
 
 /********************************************************
- * Routine: PhaseFunc                                   *  
+ * Routine: Restrict_NonSol _Boundary_Ref_States        *
  *                                                      *
- * Setup the constants for the phase function.          *
- * Currently, 2 forward scattering (F2 and F3) and 2    *
- * backward scattering (B2 and B3) phase functions have *
- * been implemented.  See Kim and Lee (1988) for more   *
- * information on these.                                *
+ * This function restricts coefficients that are not    *
+ * part of the solution state from a fine grid to a     *
+ * coarse one.  This is required for the Multigrid      *
+ * specializations.                                     *
  *                                                      *
  ********************************************************/
-double* PhaseFunc( const int type, int &n) {
+/********************************************************
+COMMENTED OUT FOR NOW
 
-  // declares
-  double* An;
-
+void Restrict_NonSol_Boundary_Ref_States( 
+		      Rte2D_State &Uc,                              // coarse cell state, volume
+		      const Rte2D_State &Uf_l, const double &Af_l,  // left fine cell state, volume
+		      const Rte2D_State &Uf_r, const double &Af_r ) // right fine cell state, volume
+{
   //
-  // setup the expansion coefficients
+  // Loop over each band
   //
-  switch (type) {
-	    
-    //------------------------------------------------
-    // for Linear isotropic scattering
-    //------------------------------------------------
-    case (RTE2D_SCATTER_ISO):
-    default:      
-      // the degree
-      n = 1;
-      // create the array and set the constants
-      An = new double[n];
-      An[0]  = 1.00000;
-     break;
+  for ( int v=0; v<Uc.Nband; v++) {
+    
+    Uc.kappa[v] = 
+      ( Uf_l.kappa[v] * Af_l + Uf_r.kappa[v] * Af_r ) / ( Af_r+Af_l );	
+	  
+    Uc.sigma[v] = 
+      ( Uf_l.sigma[v] * Af_l + Uf_r.sigma[v] * Af_r ) / ( Af_r+Af_l );	
+    
+    Uc.Ib[v] = ( Uf_l.Ib[v] * Af_l + Uf_r.Ib[v] * Af_r ) / ( Af_r+Af_l );
+	
+  } // endfor Nband 
 
-    //
-    // Forward scattering with the F1 phase function of Kim and Lee (1988)
-    case (RTE2D_SCATTER_F1):
-      // the degree
-      n = 13;
-      // create the array and set the constants
-      An = new double[n];
-      An[0]  = 1.00000;
-      An[1]  = 2.53602;
-      An[2]  = 3.56549;
-      An[3]  = 3.97976;
-      An[4]  = 4.00292;
-      An[5]  = 3.66401;
-      An[6]  = 3.01601;
-      An[7]  = 1.23304;
-      An[8]  = 1.30351;
-      An[9]  = 0.53463;
-      An[10] = 0.20136;
-      An[11] = 0.05480;
-      An[12] = 0.01099;
-      break;
-
-    //------------------------------------------------
-    // Forward scattering with the F2 phase function of Kim and Lee (1988)
-    //------------------------------------------------
-    case (RTE2D_SCATTER_F2):     
-      // the degree
-      n = 9;
-      // create the array and set the constants
-      An = new double[n];
-      An[0] = 1.00000;
-      An[1] = 2.00917;
-      An[2] = 1.56339;
-      An[3] = 0.67407;
-      An[4] = 0.22215;
-      An[5] = 0.04725;
-      An[6] = 0.00671;
-      An[7] = 0.00068;
-      An[8] = 0.00005;
-      break;
-
-    //------------------------------------------------
-    // Forward scattering with the F3 phase function of Kim and Lee (1988)
-    //------------------------------------------------
-    case (RTE2D_SCATTER_F3):
-      // the degree
-      n = 3;
-      // create the array and set the constants
-      An = new double[n];
-      An[0] = 1.00000;
-      An[1] = 1.20000;
-      An[2] = 0.50000;
-      break;
-
-    //------------------------------------------------
-    // Backward scattering with the B1 phase function of Kim and Lee (1988)
-    //------------------------------------------------
-    case (RTE2D_SCATTER_B1):
-      // the degree
-      n = 6;
-      // create the array and set the constants
-      An = new double[n];
-      An[0] =  1.00000;
-      An[1] = -0.56524;
-      An[2] =  0.29783;
-      An[3] =  0.08571;
-      An[4] =  0.01003;
-      An[5] =  0.00063;
-      break;
-
-    //------------------------------------------------
-    // Backward scattering with the B2 phase function of Kim and Lee (1988)
-    //------------------------------------------------
-    case (RTE2D_SCATTER_B2):
-      // the degree
-      n = 3;
-      // create the array and set the constants
-      An = new double[n];
-      An[0] =  1.00000;
-      An[1] = -1.20000;
-      An[2] =  0.50000;
-      break;
-
-  } // endswitch
-
-  // return the array
-  return An;
 
 }
+
+********************************************************/
+
+
+/********************************************************
+ * Routine: Prolong_NonSol                              *
+ *                                                      *
+ * This function prolongs coefficients that are not     *
+ * part of the solution state from a fine grid to a     *
+ * coarse one.  This is required for the Multigrid      *
+ * specializations. Bilinear interpolation is used.     *
+ *                                                      *
+ ********************************************************/
+/********************************************************
+COMMENTED OUT FOR NOW
+
+int Prolong_NonSol( const Rte2D_State &Uc1, const Vector2D &Xc1,  // fine cell state, cell center
+		    const Rte2D_State &Uc2, const Vector2D &Xc2,  // fine cell state, cell center
+		    const Rte2D_State &Uc3, const Vector2D &Xc3,  // fine cell state, cell center
+		    const Rte2D_State &Uc4, const Vector2D &Xc4,  // fine cell state, cell center
+		    const Vector2D XcP, Rte2D_State &Uf )         // coarse cell state, cell center
+{
+  int tmp;
+  int error_flag = 0;
+
+  //
+  // Loop over each band
+  //
+  for ( int v=0; v<Uf.Nband && error_flag==0; v++) {
+    
+    error_flag = Bilinear_Interpolation( Uc1.kappa[v], Xc1, Uc2.kappa[v], Xc2, 
+					 Uc3.kappa[v], Xc3, Uc4.kappa[v], Xc4,
+					 XcP, Uf.kappa[v] );
+
+    if (error_flag == 0)
+      error_flag = Bilinear_Interpolation( Uc1.sigma[v], Xc1, Uc2.sigma[v], Xc2, 
+					   Uc3.sigma[v], Xc3, Uc4.sigma[v], Xc4,
+					   XcP, Uf.sigma[v] );
+    
+    if (error_flag == 0)
+      error_flag = Bilinear_Interpolation( Uc1.Ib[v], Xc1, Uc2.Ib[v], Xc2, 
+					   Uc3.Ib[v], Xc3, Uc4.Ib[v], Xc4,
+					   XcP, Uf.Ib[v] );
+  } // endfor Nband 
+
+
+  return error_flag;
+}
+
+
+********************************************************/
+

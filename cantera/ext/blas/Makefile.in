@@ -1,7 +1,7 @@
 #/bin/sh
 # $License$
 #
-# $Id: Makefile.in,v 1.6 2006/03/03 20:39:27 hkmoffa Exp $
+# $Id: Makefile.in,v 1.7 2007/04/13 22:39:19 hkmoffa Exp $
 #
 do_ranlib = @DO_RANLIB@                                                                                                                     
 BLASLIB = @buildlib@/libctblas.a
@@ -9,7 +9,9 @@ BLASLIB = @buildlib@/libctblas.a
 SUFFIXES=
 SUFFIXES= .f .o
 
-F_FLAGS = @FFLAGS@ 
+PIC_FLAG=@PIC@
+
+F_FLAGS = @FFLAGS@ $(PIC_FLAG)
 
 OBJS = \
 dasum.o \

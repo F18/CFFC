@@ -4,9 +4,9 @@
  */
 
 /*
- *  $Author: hkmoffa $
- *  $Date: 2006/07/07 16:31:52 $
- *  $Revision: 1.2 $
+ *  $Author: dggoodwin $
+ *  $Date: 2007/05/04 15:18:43 $
+ *  $Revision: 1.4 $
  */
 #include <stdio.h>
 
@@ -19,15 +19,15 @@
 #else
 #include "ThermoPhase.h"
 
-#include "cantera/Cantera.h"
-#include "cantera/kernel/logger.h"
-#include "cantera/thermo.h"
-#include "cantera/kernel/thermo/HMWSoln.h"
+#include "Cantera.h"
+#include "kernel/logger.h"
+#include "thermo.h"
+#include "kernel/HMWSoln.h"
 #endif
 
 #include "TemperatureTable.h"
 
-
+using namespace std;
 using namespace Cantera;
 
 class fileLog: public Logger {

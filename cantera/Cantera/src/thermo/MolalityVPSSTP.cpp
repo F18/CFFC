@@ -1,6 +1,15 @@
 /**
- *
  *  @file MolalityVPSSTP.cpp
+ *   Definitions for intermediate ThermoPhase object for phases which
+ *   employ molality based activity coefficient formulations
+ *  (see \ref thermoprops 
+ * and class \link Cantera::MolalityVPSSTP MolalityVPSSTP\endlink).
+ *
+ * Header file for a derived class of ThermoPhase that handles
+ * variable pressure standard state methods for calculating
+ * thermodynamic properties that are further based upon activities
+ * based on the molality scale.  These include most of the methods for
+ * calculating liquid electrolyte thermodynamics.
  */
 /*
  * Copywrite (2005) Sandia Corporation. Under the terms of 
@@ -9,16 +18,13 @@
  */
 /*
  *  $Author: hkmoffa $
- *  $Date: 2006/06/19 23:14:12 $
- *  $Revision: 1.5 $
+ *  $Date: 2007/06/13 00:08:35 $
+ *  $Revision: 1.16 $
  */
-#ifndef MAX
-#define MAX(x,y)    (( (x) > (y) ) ? (x) : (y))
-#endif
 
 
 #include "MolalityVPSSTP.h"
-
+using namespace std;
 
 namespace Cantera {
 
@@ -39,9 +45,15 @@ namespace Cantera {
     m_xmolSolventMIN(0.01),
     m_Mnaught(18.01528E-3)
   {
+    /*
+     * Change the default to be that charge neutrality in the
+     * phase is necessary condition for the proper specification
+     * of thermodynamic functions within the phase
+     */
+    m_chargeNeutralityNecessary = true;
   }
 
-  /**
+  /*
    * Copy Constructor:
    *
    *  Note this stuff will not work until the underlying phase
@@ -54,8 +66,6 @@ namespace Cantera {
     m_Mnaught(b.m_Mnaught),
     m_molalities(b.m_molalities)
   {
-    throw CanteraError("MolalityVPSSTP::operator=()",
-		       "Not Implemented Fully");
     *this = operator=(b);
   }
 
@@ -75,8 +85,6 @@ namespace Cantera {
       m_Mnaught          = b.m_Mnaught;
       m_molalities       = b.m_molalities;
     }
-    throw CanteraError("MolalityVPSSTP::operator=()",
-		       "Not Implemented Fully");
     return *this;
   }
 
@@ -90,12 +98,12 @@ namespace Cantera {
   MolalityVPSSTP::~MolalityVPSSTP() {
   }
 
-  /**
+  /*
    * This routine duplicates the current object and returns
    * a pointer to ThermoPhase.
    */
   ThermoPhase* 
-  MolalityVPSSTP::duplMyselfAsThermoPhase() {
+  MolalityVPSSTP::duplMyselfAsThermoPhase() const {
     MolalityVPSSTP* mtp = new MolalityVPSSTP(*this);
     return (ThermoPhase *) mtp;
   }
@@ -128,7 +136,7 @@ namespace Cantera {
     return m_indexSolvent;
   }
 
-  /**
+  /*
    * Sets the minimum mole fraction in the molality formulation. The
    * minimum mole fraction must be in the range 0 to 0.9.
    */
@@ -149,7 +157,7 @@ namespace Cantera {
     return m_xmolSolventMIN;
   }
 
-  /**
+  /*
    * calcMolalities():
    *   We calculate the vector of molalities of the species
    *   in the phase and store the result internally:
@@ -176,7 +184,7 @@ namespace Cantera {
     }
   }
 
-  /**
+  /*
    * getMolalities():
    *   We calculate the vector of molalities of the species
    *   in the phase
@@ -198,7 +206,7 @@ namespace Cantera {
     }
   }
 
-  /**
+  /*
    * setMolalities():
    *   We are supplied with the molalities of all of the
    *   solute species. We then calculate the mole fractions of all
@@ -340,7 +348,7 @@ namespace Cantera {
    *
    *   Set the molalities of the solutes by name
    */
-  void MolalityVPSSTP::setMolalitiesByName(const string& x) {
+  void MolalityVPSSTP::setMolalitiesByName(const std::string& x) {
     compositionMap xx;
     int kk = nSpecies();
     for (int k = 0; k < kk; k++) {
@@ -360,7 +368,7 @@ namespace Cantera {
    * - Activities, Standard States, Activity Concentrations -----------
    */
 
-  /**
+  /*
    * This method returns the activity convention.
    * Currently, there are two activity conventions
    *  Molar-based activities
@@ -383,7 +391,7 @@ namespace Cantera {
     return cAC_CONVENTION_MOLALITY;
   }
 
-  /**
+  /*
    * Get the array of non-dimensional activity coefficients at
    * the current solution temperature, pressure, and
    * solution concentration.
@@ -409,7 +417,7 @@ namespace Cantera {
     }
   }
     
-  /**
+  /*
    * osmotic coefficient:
    * 
    *  Calculate the osmotic coefficient of the solvent. Note there
@@ -433,7 +441,7 @@ namespace Cantera {
     double sum = 0;
     for (int k = 0; k < m_kk; k++) {
       if (k != m_indexSolvent) {
-	sum += MAX(m_molalities[k], 0.0);
+	sum += fmaxx(m_molalities[k], 0.0);
       }
     }
     double oc = 1.0;
@@ -449,13 +457,13 @@ namespace Cantera {
    */
 
 
-  doublereal MolalityVPSSTP::err(string msg) const {
+  doublereal MolalityVPSSTP::err(std::string msg) const {
     throw CanteraError("MolalityVPSSTP","Base class method "
 		       +msg+" called. Equation of state type: "+int2str(eosType()));
     return 0;
   }
 
-  /**
+  /*
    * Returns the units of the standard and general concentrations
    * Note they have the same units, as their divisor is 
    * defined to be equal to the activity of the kth species
@@ -477,7 +485,7 @@ namespace Cantera {
    *  uA[4] = Temperature units - default = 0;
    *  uA[5] = time units - default = 0
    */
-  void MolalityVPSSTP::getUnitsStandardConc(double *uA, int k, int sizeUA) {
+  void MolalityVPSSTP::getUnitsStandardConc(double *uA, int k, int sizeUA) const {
     for (int i = 0; i < sizeUA; i++) {
       if (i == 0) uA[0] = 1.0;
       if (i == 1) uA[1] = -nDim();
@@ -488,7 +496,6 @@ namespace Cantera {
     }
   }
     
-
   /*
    * Set the thermodynamic state.
    */
@@ -504,7 +511,7 @@ namespace Cantera {
     }
   }
 
-  /** 
+  /*
    * Set the temperature (K), pressure (Pa), and molalities
    * (gmol kg-1) of the solutes
    */
@@ -515,22 +522,26 @@ namespace Cantera {
     setPressure(p);
   }
 
-  /** Set the temperature (K), pressure (Pa), and molalities.  */
+  /*
+   * Set the temperature (K), pressure (Pa), and molalities.
+   */
   void MolalityVPSSTP::setState_TPM(doublereal t, doublereal p, compositionMap& m) {
     setMolalitiesByName(m);
     setTemperature(t);
     setPressure(p);
   }
 
-  /** Set the temperature (K), pressure (Pa), and molality.  */
-  void MolalityVPSSTP::setState_TPM(doublereal t, doublereal p, const string& m) {
+  /*
+   * Set the temperature (K), pressure (Pa), and molality.  
+   */
+  void MolalityVPSSTP::setState_TPM(doublereal t, doublereal p, const std::string& m) {
     setMolalitiesByName(m);
     setTemperature(t);
     setPressure(p);
   }
 
 
-  /**
+  /*
    * @internal Initialize. This method is provided to allow
    * subclasses to perform any initialization required after all
    * species have been added. For example, it might be used to
@@ -554,11 +565,11 @@ namespace Cantera {
   }
 
   void  MolalityVPSSTP::initLengths() {
-    int m_kk = nSpecies();
+    m_kk = nSpecies();
     m_molalities.resize(m_kk);
   }
 
-  /**
+  /*
    * initThermoXML()                (virtual from ThermoPhase)
    *   Import and initialize a ThermoPhase object
    *
@@ -573,7 +584,7 @@ namespace Cantera {
    *             to see if phaseNode is pointing to the phase
    *             with the correct id. 
    */
-  void MolalityVPSSTP::initThermoXML(XML_Node& phaseNode, string id) {
+  void MolalityVPSSTP::initThermoXML(XML_Node& phaseNode, std::string id) {
 
     initLengths();
     /*

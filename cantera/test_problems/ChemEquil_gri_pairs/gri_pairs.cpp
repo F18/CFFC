@@ -1,7 +1,7 @@
 /*
- *  $Author: hkmoffa $
- *  $Date: 2006/10/20 21:09:58 $
- *  $Revision: 1.1 $
+ *  $Author: dggoodwin $
+ *  $Date: 2006/11/27 21:43:35 $
+ *  $Revision: 1.2 $
  *
  *  Copyright 2002 California Institute of Technology
  *
@@ -17,6 +17,9 @@
 #include "IdealGasMix.h"
 #include "equilibrium.h"
 #endif
+
+using namespace std;
+using namespace Cantera;
 
 int main(int argc, char **argv) {
   try {

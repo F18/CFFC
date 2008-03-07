@@ -1,11 +1,11 @@
 /**
  *  @file IdealSolidSolnPhase.cpp
- *      Code for the class IdealSolidSolnPhase,
- *      which implements an ideal solid solution model
- *      with incompressible thermodynamics.
+ *      Implementation file for an ideal solid solution model
+ *      with incompressible thermodynamics (see \ref thermoprops and
+ *      \link Cantera::IdealSolidSolnPhase IdealSolidSolnPhase\endlink).
  */
 /*
- * $Id: IdealSolidSolnPhase.cpp,v 1.2 2006/06/23 20:31:12 hkmoffa Exp $
+ * $Id: IdealSolidSolnPhase.cpp,v 1.8 2007/06/13 00:08:35 hkmoffa Exp $
  */
 /*
  * Copywrite 2006 Sandia Corporation. Under the terms of Contract
@@ -40,7 +40,7 @@ namespace Cantera {
     }
   }
 
-  IdealSolidSolnPhase::IdealSolidSolnPhase(string inputFile, string id,
+  IdealSolidSolnPhase::IdealSolidSolnPhase(std::string inputFile, std::string id,
 					   int formGC) :
     ThermoPhase(),
     m_formGC(formGC),
@@ -58,7 +58,7 @@ namespace Cantera {
     constructPhaseFile(inputFile, id);
   }
 
-  IdealSolidSolnPhase::IdealSolidSolnPhase(XML_Node& root, string id,
+  IdealSolidSolnPhase::IdealSolidSolnPhase(XML_Node& root, std::string id,
 					   int formGC) :
     ThermoPhase(),
     m_formGC(formGC),
@@ -113,7 +113,7 @@ namespace Cantera {
    *     not the copy constructor, because it has to be
    *     a virtual function)
    */
-  ThermoPhase* IdealSolidSolnPhase::duplMyselfAsThermoPhase() {
+  ThermoPhase* IdealSolidSolnPhase::duplMyselfAsThermoPhase() const {
     IdealSolidSolnPhase *ii = new IdealSolidSolnPhase(*this);
     return (ThermoPhase*) ii;
   }
@@ -351,7 +351,7 @@ namespace Cantera {
    *
    * Sets the mole fractions and adjusts the internal density.
    */
-  void IdealSolidSolnPhase::setMoleFractions(doublereal *x) {
+  void IdealSolidSolnPhase::setMoleFractions(const doublereal *x) {
     State::setMoleFractions(x);
     calcDensity();
   }
@@ -361,7 +361,7 @@ namespace Cantera {
    *
    * Sets the mole fractions and adjusts the internal density.
    */
-  void IdealSolidSolnPhase::setMoleFractions_NoNorm(doublereal *x) {
+  void IdealSolidSolnPhase::setMoleFractions_NoNorm(const doublereal *x) {
     State::setMoleFractions(x);
     calcDensity();
   }
@@ -371,7 +371,7 @@ namespace Cantera {
    *
    * Sets the mass fractions and adjusts the internal density.
    */
-  void IdealSolidSolnPhase::setMassFractions(doublereal *y) {
+  void IdealSolidSolnPhase::setMassFractions(const doublereal *y) {
     State::setMassFractions(y);
     calcDensity();
   }
@@ -381,7 +381,7 @@ namespace Cantera {
    *
    * Sets the mass fractions and adjusts the internal density.
    */
-  void IdealSolidSolnPhase::setMassFractions_NoNorm(doublereal *y) {
+  void IdealSolidSolnPhase::setMassFractions_NoNorm(const doublereal *y) {
     State::setMassFractions_NoNorm(y);
     calcDensity();
   }
@@ -391,7 +391,7 @@ namespace Cantera {
    *
    * Sets the concentrations and adjusts the internal density
    */
-  void IdealSolidSolnPhase::setConcentrations(doublereal *c) {
+  void IdealSolidSolnPhase::setConcentrations(const doublereal *c) {
     State::setConcentrations(c);
     calcDensity();
   }
@@ -578,7 +578,7 @@ namespace Cantera {
    *  unitless.
    */
   void IdealSolidSolnPhase::
-  getUnitsStandardConc(double *uA, int, int sizeUA) {
+  getUnitsStandardConc(double *uA, int, int sizeUA) const {
     int eos = eosType();
     if (eos == cIdealSolidSolnPhase0) {
       for (int i = 0; i < sizeUA; i++) {
@@ -850,7 +850,7 @@ namespace Cantera {
     copy(_s.begin(), _s.end(), sr);
   }
 
-  /**
+  /*
    *  Returns the vector of nondimensional
    *  internal Energies of the standard state at the current temperature
    *  of the solution and current pressure for each species.
@@ -870,7 +870,7 @@ namespace Cantera {
     }
   }
 
-  /**
+  /*
    * Get the nondimensional heat capacity at constant pressure
    * function for the species
    * standard states at the current T and P of the solution.
@@ -891,7 +891,7 @@ namespace Cantera {
     copy(_cpr.begin(), _cpr.end(), cpr);
   }
 
-  /**
+  /*
    * Get the molar volumes of each species in their standard
    * states at the current
    * <I>T</I> and <I>P</I> of the solution.
@@ -907,7 +907,7 @@ namespace Cantera {
    *     Thermodynamic Values for the Species Reference States
    *********************************************************************/
 
-  /**
+  /*
    *  Returns the vector of non-dimensional Enthalpy function
    *  of the reference state at the current temperature
    *  of the solution and the reference pressure for the species.
@@ -1062,7 +1062,7 @@ namespace Cantera {
    *             with the correct id. 
    */
   void IdealSolidSolnPhase::
-  constructPhaseXML(XML_Node& phaseNode, string id) {
+  constructPhaseXML(XML_Node& phaseNode, std::string id) {
     string subname = "IdealSolidSolnPhase::constructPhaseXML";
     if (id.size() > 0) {
       string idp = phaseNode.id();
@@ -1136,7 +1136,7 @@ namespace Cantera {
    *            phase element will be used.
    */
   void IdealSolidSolnPhase::
-  constructPhaseFile(string inputFile, string id) {
+  constructPhaseFile(std::string inputFile, std::string id) {
     if (inputFile.size() == 0) {
       throw CanteraError("IdealSolidSolnPhase::constructPhaseFile",
 			 "input file is null");
@@ -1192,7 +1192,7 @@ namespace Cantera {
    *             to see if phaseNode is pointing to the phase
    *             with the correct id.
    */
-  void IdealSolidSolnPhase::initThermoXML(XML_Node& phaseNode, string id) {
+  void IdealSolidSolnPhase::initThermoXML(XML_Node& phaseNode, std::string id) {
     /*
      * Initialize all of the lengths now that we know how many species
      * there are in the phase.

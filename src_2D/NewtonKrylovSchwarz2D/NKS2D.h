@@ -846,10 +846,14 @@ int Internal_Newton_Krylov_Schwarz_Solver(CPUTime &processor_cpu_time,
       /************* PRECONDTIONER "BLOCK" JACOBIANS ****************************/      
       /**************************************************************************/
       // Create/Update Jacobian Matrix(s) using Uo = U  
-      if ( ( !Input_Parameters.NKS_IP.Dual_Time_Stepping &&
-	     (Number_of_Newton_Steps < Input_Parameters.NKS_IP.Min_Number_of_Newton_Steps_Requiring_Jacobian_Update || 
-	      L2norm_current_n > Input_Parameters.NKS_IP.Min_L2_Norm_Requiring_Jacobian_Update) ) ||                          
-	   ( Input_Parameters.NKS_IP.Dual_Time_Stepping && GMRES_Iters_increaseing) ) {
+      bool update;
+      if (!Input_Parameters.NKS_IP.Dual_Time_Stepping)
+	update = ( (Number_of_Newton_Steps < Input_Parameters.NKS_IP.Min_Number_of_Newton_Steps_Requiring_Jacobian_Update) || 
+		   (L2norm_current_n > Input_Parameters.NKS_IP.Min_L2_Norm_Requiring_Jacobian_Update &&
+		    Number_of_Newton_Steps%Input_Parameters.NKS_IP.Jacobian_Update_Frequency==0) );
+      else 
+	update = GMRES_Iters_increaseing;
+      if ( update ) {
 
         if (CFFC_Primary_MPI_Processor() ) {	
 	    switch (Input_Parameters.NKS_IP.output_format) {

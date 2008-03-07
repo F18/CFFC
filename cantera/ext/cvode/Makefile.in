@@ -1,8 +1,8 @@
 #
 # $Source: /cvsroot/cantera/cantera/ext/cvode/Makefile.in,v $
 # $Author: hkmoffa $
-# $Revision: 1.6 $
-# $Date: 2006/08/14 22:01:37 $
+# $Revision: 1.8 $
+# $Date: 2007/04/13 22:39:19 $
 #
 #----------------------------------------------------------------------------
 #                                CVODE                                      
@@ -22,10 +22,12 @@
 do_ranlib = @DO_RANLIB@
 
 all: @buildlib@/libcvode.a
+
+PIC_FLAG=@PIC@
    
 COMPILER = @CC@
 
-OPTS = -I../include @CXXFLAGS@ $(CXX_OPT)
+OPTS = -I../include @CFLAGS@ $(CXX_OPT) $(PIC_FLAG)
 
 OBJS = source/cvode.o source/cvdense.o source/dense.o source/cvband.o \
        source/band.o source/cvdiag.o source/cvspgmr.o source/spgmr.o  \

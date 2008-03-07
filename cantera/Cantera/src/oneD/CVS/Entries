@@ -1,0 +1,25 @@
+/.cvsignore/1.2/Tue Mar  7 20:52:16 2006//
+/Domain1D.cpp/1.4/Thu Dec 14 20:51:48 2006//
+/Domain1D.h/1.23/Fri May  4 14:41:27 2007//
+/Inlet1D.h/1.20/Fri May  4 14:41:27 2007//
+/Makefile.in/1.12/Fri May  4 14:41:27 2007//
+/MultiJac.cpp/1.12/Fri Jul 27 03:38:24 2007//
+/MultiJac.h/1.3/Fri May  4 14:41:27 2007//
+/MultiNewton.cpp/1.19/Fri May  4 14:41:27 2007//
+/MultiNewton.h/1.2/Mon Nov 27 21:43:34 2006//
+/OneDim.cpp/1.14/Fri May  4 14:41:27 2007//
+/OneDim.h/1.7/Mon Nov 27 21:43:34 2006//
+/Resid1D.h/1.4/Mon Nov 27 21:43:34 2006//
+/Sim1D.cpp/1.25/Mon Nov 27 21:43:34 2006//
+/Sim1D.h/1.13/Fri May  4 14:41:27 2007//
+/Solid1D.cpp/1.4/Sat Aug 28 16:12:41 2004//
+/Solid1D.h/1.3/Mon Nov 27 21:43:34 2006//
+/StFlow.cpp/1.32/Fri May  4 14:41:27 2007//
+/StFlow.h/1.18/Tue May 22 20:16:47 2007//
+/Surf1D.h/1.3/Mon Nov 27 21:43:34 2006//
+/boundaries1D.cpp/1.18/Mon Nov 27 21:43:34 2006//
+/newton_utils.cpp/1.8/Fri May  4 14:41:27 2007//
+/oneD_files.cpp/1.3/Thu Sep 15 03:50:04 2005//
+/refine.cpp/1.14/Tue Mar  7 20:47:29 2006//
+/refine.h/1.7/Mon Nov 27 21:43:34 2006//
+D

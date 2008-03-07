@@ -1,8 +1,8 @@
 #/bin/sh
 ###############################################################
-#  $Author: hkmoffa $
-#  $Date: 2006/04/30 22:15:06 $
-#  $Revision: 1.11 $
+#  $Author: dggoodwin $
+#  $Date: 2007/12/18 03:04:49 $
+#  $Revision: 1.18 $
 #
 #  Copyright 2001 California Institute of Technology
 #
@@ -20,7 +20,7 @@ CXX_OBJS = fct.o fctxml.o
 INTERFACE_MODULE_OBJS = fct_interface.o fctxml_interface.o 
 
 USER_MODULE_OBJS = cantera_xml.o cantera_thermo.o cantera_kinetics.o \
-                   cantera_transport.o cantera_funcs.o cantera.o
+                   cantera_transport.o cantera_iface.o cantera_funcs.o cantera.o
 
 MODULES = $(INTERFACE_MODULE_OBJS:_interface.o=.mod) $(USER_MODULE_OBJS)
 OBJS = $(CXX_OBJS) $(USER_MODULE_OBJS)
@@ -43,17 +43,18 @@ EXT_LIBS = @LOCAL_LIBS@
 # the directory where the Cantera libraries are located
 CANTERA_LIBDIR=@buildlib@
 
-# ../../../lib
-LIB_DEPS = $(CANTERA_LIBDIR)/libcantera.a \
-           $(CANTERA_LIBDIR)/libtransport.a
-
-# the directory where Cantera include files may be found.
-CANTERA_INCDIR=../../src
+LIB_DEPS = $(CANTERA_LIBDIR)/libctbase.a \
+           $(CANTERA_LIBDIR)/libequil.a \
+           $(CANTERA_LIBDIR)/libtransport.a \
+           $(CANTERA_LIBDIR)/libthermo.a \
+           $(CANTERA_LIBDIR)/libctnumerics.a \
+           $(CANTERA_LIBDIR)/libzeroD.a \
+           $(CANTERA_LIBDIR)/liboneD.a 
 
 # the directory where module .mod files should be put
 MODULE_DIR = @buildinc@/cantera
 
-CXX_INCLUDES = -I$(CANTERA_INCDIR)  
+CXX_INCLUDES = -I../../src/base -I../../src/thermo -I../../src/kinetics -I../../src/transport -I../../src/numerics -I../../src/oneD -I../../src/zeroD -I../../src/equil -I../../src/converters @CXX_INCLUDES@
 
 # flags passed to the C++ compiler/linker for the linking step
 LCXX_FLAGS = -L$(CANTERA_LIBDIR) @CXXFLAGS@
@@ -75,6 +76,8 @@ LIB_NAME=libfct.a
 
 FTLIB = @buildlib@/$(LIB_NAME)
 
+all: $(FTLIB)
+
 $(FTLIB): $(MODFILES) $(USER_MODULE_OBJS) $(CXX_OBJS) $(LIB_DEPS)
 	$(RM)     $(FTLIB)
 	@ARCHIVE@ $(FTLIB) $(OBJS)
@@ -93,7 +96,7 @@ win-install:
 	@INSTALL@ ../../../lib/fct.lib @ct_libdir@
 
 %.d: %.cpp
-	g++ -MM $(CXX_INCLUDES) $*.cpp > $*.d
+	@CXX_DEPENDS@ $(CXX_INCLUDES) $*.cpp > $*.d
 
 depends: $(DEPENDS)
 	cat *.d > .depends

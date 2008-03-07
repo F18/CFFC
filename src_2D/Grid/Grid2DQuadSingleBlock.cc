@@ -5822,3 +5822,45 @@ void Unfix_Refined_Mesh_Boundaries(Grid2D_Quad_Block &Grid) {
 
 }
 
+
+/********************************************************
+ * Routine: Search_Mesh                                 *
+ *                                                      *
+ * Search a single mesh block for the cell in which     *
+ * point X lies.  Return 0 for failure, 1 for success.  *
+ ********************************************************/
+int Seach_Mesh(Grid2D_Quad_Block &Grid,
+	       const Vector2D &X,
+	       int &ii, int &jj ) 
+{
+
+  // declares
+  Polygon P;
+
+  //
+  // Loop over the grid (Dumb search)
+  //  
+  for (int j = Grid.JCl - Grid.Nghost; j <=Grid.JCu + Grid.Nghost; j++) {
+    for (int i = Grid.ICl - Grid.Nghost; i <= Grid.ICu + Grid.Nghost; i++) {
+
+      // build a polygon
+      P.convert(Grid.nodeSW(i,j).X,
+		Grid.nodeSE(i,j).X,
+		Grid.nodeNE(i,j).X,
+		Grid.nodeNW(i,j).X);
+      
+      // is the point in the polygon, get out
+      if (P.point_in_polygon(X)) { 
+	ii = i; jj = j;
+	return (0);
+      } // endif
+    
+    } // endfor - i    
+  } // endfor - j
+
+  //
+  // If you got here, you FAILED!!!
+  //
+  ii = -1; jj = -1;
+  return (1);
+}

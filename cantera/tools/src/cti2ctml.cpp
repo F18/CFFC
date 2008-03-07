@@ -18,7 +18,7 @@
 #include "xml.h"
 #include "ctml.h"
 
-
+using namespace Cantera;
 using namespace std;
 
 #ifdef DEBUG_HKM
@@ -75,7 +75,7 @@ int main(int argc, char** argv) {
     try {
       XML_Node *xc = new XML_Node();
       string path = findInputFile(infile);
-      ctml::get_CTML_Tree(xc, path); 
+      ctml::get_CTML_Tree(xc, path, 0); 
       XML_Node *xd = new XML_Node();
       xc->copy(xd);
       ofstream tout;

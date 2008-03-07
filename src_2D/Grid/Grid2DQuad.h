@@ -1803,6 +1803,10 @@ extern void Fix_Refined_Mesh_Boundaries(Grid2D_Quad_Block &Grid,
 
 extern void Unfix_Refined_Mesh_Boundaries(Grid2D_Quad_Block &Grid);
 
+extern int Seach_Mesh(Grid2D_Quad_Block &Grid,
+		      const Vector2D &X,
+		      int &ii, int &jj );
+
 /*************************************************************************
  * Grid2D_Quad_Block -- External subroutines for 2D array of grid blocks.*
  *************************************************************************/
@@ -1861,6 +1865,10 @@ extern void Reflect_Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
 extern int Check_Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
                                   const int Number_of_Blocks_Idir,
                                   const int Number_of_Blocks_Jdir);
+
+extern Grid2D_Quad_Block** Copy_Multi_Block_Grid(Grid2D_Quad_Block **Grid,  // source
+						 const int Number_of_Blocks_Idir,
+						 const int Number_of_Blocks_Jdir);
 
 extern void Output_Tecplot(Grid2D_Quad_Block **Grid_ptr,
 			   const int Number_of_Blocks_Idir,

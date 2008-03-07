@@ -7,7 +7,7 @@
  *   pointers are passed to or from the calling application.
  */
 
-/* $Id: ct.cpp,v 1.32 2006/05/03 19:45:39 dggoodwin Exp $  */
+/* $Id: ct.cpp,v 1.41 2007/08/29 20:51:33 hkmoffa Exp $  */
 
 // turn off warnings under Windows
 #ifdef WIN32
@@ -18,19 +18,26 @@
 // Cantera includes
 #include "equil.h" //"ChemEquil.h"
 #include "KineticsFactory.h"
-#include "transport/TransportFactory.h"
+#include "TransportFactory.h"
 #include "ctml.h"
-#include "importCTML.h"
-#include "converters/ck2ct.h"
+//#include "importCTML.h"
+#include "importKinetics.h"
+#include "ThermoFactory.h"
+#include "ck2ct.h"
 #include "Storage.h"
 #include "Cabinet.h"
 #include "InterfaceKinetics.h"
 #include "PureFluidPhase.h"
+//#include "xml.h"
 
 #include "clib_defs.h"
 
+using namespace std;
+using namespace Cantera;
+
+
 inline XML_Node* _xml(int i) {
-    return Cabinet<XML_Node>::cabinet(false)->item(i);
+    return Cabinet<Cantera::XML_Node>::cabinet(false)->item(i);
 }
 
 
@@ -78,6 +85,7 @@ static double pfprop(int n, int i, double v=0.0, double x=0.0) {
 }
 #endif
 
+
 inline int nThermo() {
     return Storage::storage()->nThermo();
 }
@@ -90,6 +98,11 @@ namespace Cantera {
  * Exported functions.
  */
 extern "C" {
+
+    int DLL_EXPORT ct_appdelete() {
+        appdelete();
+        return 0;
+    }
 
     //--------------- Phase ---------------------//
 
@@ -734,6 +747,18 @@ extern "C" {
 
     int DLL_EXPORT kin_nReactions(int n) {
         return kin(n)->nReactions();
+    }
+
+    int DLL_EXPORT kin_nPhases(int n) {
+        return kin(n)->nPhases();
+    }
+
+    int DLL_EXPORT kin_phaseIndex(int n, char* ph) {
+        return kin(n)->phaseIndex(string(ph));
+    }
+
+    int DLL_EXPORT kin_reactionPhaseIndex(int n) {
+        return kin(n)->reactionPhaseIndex();
     }
 
     double DLL_EXPORT kin_reactantStoichCoeff(int n, int k, int i) {

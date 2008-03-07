@@ -1,8 +1,8 @@
 #/bin/sh
 ###############################################################
 #  $Author: hkmoffa $
-#  $Date: 2006/04/30 22:09:32 $
-#  $Revision: 1.11 $
+#  $Date: 2007/07/13 14:53:51 $
+#  $Revision: 1.16 $
 #
 #  Copyright 2001 California Institute of Technology
 #
@@ -15,7 +15,9 @@
 INSTALL_TSC = ../../../bin/install_tsc
 do_ranlib = @DO_RANLIB@
 
-CXX_FLAGS = @CXXFLAGS@ $(CXX_OPT)
+PIC_FLAG=@PIC@
+
+CXX_FLAGS = @CXXFLAGS@ $(CXX_OPT) $(PIC_FLAG)
 
 OBJS = ct.o Storage.o ctsurf.o ctrpath.o \
        ctreactor.o ctfunc.o ctxml.o ctonedim.o ctmultiphase.o
@@ -39,21 +41,23 @@ EXT_LIBS = -lzeroD -loneD @LOCAL_LIBS@
 # the directory where the Cantera libraries are located
 CANTERA_LIBDIR=@buildlib@
 # ../../../lib
-LIB_DEPS = $(CANTERA_LIBDIR)/libcantera.a \
+LIB_DEPS = $(CANTERA_LIBDIR)/libctbase.a \
+           $(CANTERA_LIBDIR)/libequil.a \
+           $(CANTERA_LIBDIR)/libtransport.a \
+           $(CANTERA_LIBDIR)/libthermo.a \
+           $(CANTERA_LIBDIR)/libctnumerics.a \
            $(CANTERA_LIBDIR)/libzeroD.a \
            $(CANTERA_LIBDIR)/liboneD.a 
 
 # the directory where Cantera include files may be found.
-CANTERA_INCDIR=../../src
-
-CXX_INCLUDES = -I$(CANTERA_INCDIR)  
+CXX_INCLUDES = -I../../src/base -I../../src/thermo -I../../src/kinetics -I../../src/transport -I../../src/numerics -I../../src/oneD -I../../src/zeroD -I../../src/equil -I../../src/converters @CXX_INCLUDES@
 
 # flags passed to the C++ compiler/linker for the linking step
 LCXX_FLAGS = -L$(CANTERA_LIBDIR) @CXXFLAGS@
 
 # how to compile C++ source files to object files
 .@CXX_EXT@.@OBJ_EXT@:
-	$(CXX) -c $< $(CXX_INCLUDES) $(CXX_FLAGS) @PIC@
+	$(CXX) -c $< $(CXX_INCLUDES) $(CXX_FLAGS)
 
 LIB_NAME=lib@CT_SHARED_LIB@
 
@@ -79,7 +83,7 @@ endif
 endif
 
 clean:
-	$(RM) $(OBJS) $(CTLIB)
+	$(RM) $(OBJS) $(CTLIB) .depends
 	(if test -d SunWS_cache ; then \
            $(RM) -rf SunWS_cache ; \
          fi )
@@ -87,7 +91,7 @@ clean:
 
 install:
 	@INSTALL@ -d @ct_libdir@
-	@INSTALL@ -m 644 $(CTLIB) @ct_libdir@
+	@INSTALL@ -c -m 644 $(CTLIB) @ct_libdir@
 ifeq ($(do_ranlib),1)
 ifeq ($(shared_ctlib),0)
 	@RANLIB@ @ct_libdir@/$(LIB_NAME).a
@@ -96,11 +100,11 @@ endif
 
 
 win-install:
-	@INSTALL@ ../../../lib/clib.lib @prefix@/lib/cantera
+	@INSTALL@ -c ../../../lib/clib.lib @prefix@/lib/cantera
 
 
 %.d:
-	g++ -MM $(CXX_INCLUDES) $*.cpp > $*.d
+	@CXX_DEPENDS@ $(CXX_INCLUDES) $*.cpp > $*.d
 
 depends: $(DEPENDS)
 	cat *.d > .depends

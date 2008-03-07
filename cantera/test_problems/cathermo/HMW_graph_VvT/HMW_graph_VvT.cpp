@@ -3,9 +3,9 @@
  */
 
 /*
- *  $Author: hkmoffa $
- *  $Date: 2006/08/20 00:00:59 $
- *  $Revision: 1.3 $
+ *  $Author: dggoodwin $
+ *  $Date: 2007/05/04 15:18:43 $
+ *  $Revision: 1.5 $
  */
 #include <stdio.h>
 
@@ -16,18 +16,18 @@
 #include "HMWSoln.h"
 #include "importCTML.h"
 #else
-#include "vcsc.h"
-#include "cantera/Cantera.h"
-#include "vcs_Cantera_input.h"
-#include "vcs_Cantera_convert.h"
-#include "cantera/kernel/logger.h"
-#include "cantera/thermo.h"
+//#include "vcsc.h"
+#include "Cantera.h"
+//#include "vcs_Cantera_input.h"
+//#include "vcs_Cantera_convert.h"
+#include "kernel/logger.h"
+#include "thermo.h"
 #include "TemperatureTable.h"
-#include "ThermoPhase.h"
 #include "HMWSoln.h"
-#include "importCTML.h"
 
 #endif
+
+using namespace std;
 using namespace Cantera;
 
 class fileLog: public Logger {

@@ -4,8 +4,8 @@
  */
 
 /* $Author: dggoodwin $
- * $Revision: 1.5 $
- * $Date: 2005/11/10 15:06:33 $
+ * $Revision: 1.7 $
+ * $Date: 2007/05/04 14:41:28 $
  */
 
 // copyright 2003 California Institute of Technology
@@ -17,12 +17,13 @@
 #pragma warning(disable:4503)
 #endif
 
-#include "../ThermoPhase.h"
+#include "ThermoPhase.h"
 #include "SolidTransport.h"
 
-#include "../utilities.h"
+#include "utilities.h"
 #include <iostream>
 
+using namespace std;
 
 namespace Cantera {
 

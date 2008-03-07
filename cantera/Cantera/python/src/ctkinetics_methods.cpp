@@ -58,6 +58,28 @@ kin_nrxns(PyObject *self, PyObject *args) {
 }
 
 static PyObject*
+kin_nPhases(PyObject *self, PyObject *args) {
+    int kin;
+    if (!PyArg_ParseTuple(args, "i:kin_nPhases", &kin)) return NULL;
+    return Py_BuildValue("i",kin_nPhases(kin));        
+}
+
+static PyObject*
+kin_phaseIndex(PyObject *self, PyObject *args) {
+    int kin;
+    char* ph;
+    if (!PyArg_ParseTuple(args, "is:kin_phaseIndex", &kin, &ph)) return NULL;
+    return Py_BuildValue("i",kin_phaseIndex(kin, ph));        
+}
+
+static PyObject*
+kin_reactionPhaseIndex(PyObject *self, PyObject *args) {
+    int kin;
+    if (!PyArg_ParseTuple(args, "i:kin_reactionPhaseIndex", &kin)) return NULL;
+    return Py_BuildValue("i",kin_reactionPhaseIndex(kin));        
+}
+
+static PyObject*
 kin_isrev(PyObject *self, PyObject *args) {
     int kin, i;
     if (!PyArg_ParseTuple(args, "ii:kin_isrev", &kin, &i)) return NULL;
@@ -135,7 +157,7 @@ kin_getarray(PyObject *self, PyObject *args)
     int nrxns = kin_nReactions(kin);
     int nsp = kin_nSpecies(kin);
     int ix;
-    if (job < 45) ix = nrxns; else ix = nsp;
+    if (job < 45 || job >= 90) ix = nrxns; else ix = nsp;
  
     PyArrayObject* x = 
         (PyArrayObject*)PyArray_FromDims(1, &ix, PyArray_DOUBLE);
@@ -177,7 +199,23 @@ kin_getarray(PyObject *self, PyObject *args)
     case 80:
         iok = kin_getSourceTerms(kin, nsp, xd);
         break;
-
+    case 90:
+        iok = kin_getDelta(kin, 0, nrxns, xd);
+        break;
+    case 91:
+        iok = kin_getDelta(kin, 1, nrxns, xd);
+        break;
+    case 92:
+        iok = kin_getDelta(kin, 2, nrxns, xd);
+        break;
+    case 93:
+        iok = kin_getDelta(kin, 3, nrxns, xd);
+        break;
+    case 94:
+        iok = kin_getDelta(kin, 4, nrxns, xd);
+        break;
+    case 95:
+        iok = kin_getDelta(kin, 5, nrxns, xd);
         break;
     default:
         ;

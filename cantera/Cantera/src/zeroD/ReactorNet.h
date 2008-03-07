@@ -4,8 +4,8 @@
 
 /*
  * $Author: dggoodwin $
- * $Revision: 1.10 $
- * $Date: 2006/11/08 01:15:13 $
+ * $Revision: 1.13 $
+ * $Date: 2007/07/27 03:38:24 $
  */
 
 // Copyright 2004  California Institute of Technology
@@ -19,8 +19,9 @@
 #endif
 
 #include "Reactor.h"
-#include "../FuncEval.h"
-#include "../Integrator.h"
+#include "FuncEval.h"
+#include "Integrator.h"
+#include "Array.h"
 
 namespace CanteraZeroD {
 
@@ -119,10 +120,13 @@ namespace CanteraZeroD {
             return m_integ->sensitivity(k, p)/m_integ->solution(k);
         }
 
-        double sensitivity(string species, int p, int reactor=0) {
+        double sensitivity(std::string species, int p, int reactor=0) {
             int k = globalComponentIndex(species, reactor);
             return sensitivity(k, p);
         }
+
+        void evalJacobian(doublereal t, doublereal* y, 
+            doublereal* ydot, doublereal* p, Array2D* j);
 
         //-----------------------------------------------------
 
@@ -134,12 +138,21 @@ namespace CanteraZeroD {
             doublereal* y);
         virtual int nparams() { return m_ntotpar; }
 
-        int globalComponentIndex(string species, int reactor=0);
+        int globalComponentIndex(std::string species, int reactor=0);
+
+        void connect(int i, int j) {
+            m_connect[j*m_nr + i] = 1;
+            m_connect[i*m_nr + j] = 1;
+        }
+
+        bool connected(int i, int j) {
+            return (m_connect[m_nr*i + j] == 1);
+        }
 
     protected:
 
-        vector<ReactorBase*> m_r;
-        vector<Reactor*> m_reactors;
+        std::vector<ReactorBase*> m_r;
+        std::vector<Reactor*> m_reactors;
         int m_nr;
         int m_nreactors;
         Integrator* m_integ;
@@ -154,6 +167,8 @@ namespace CanteraZeroD {
         bool m_verbose;
         int m_ntotpar;
         vector_int m_nparams;
+        vector_int m_connect;
+        vector_fp m_ydot;
 
     private:
 

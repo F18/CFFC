@@ -1,19 +1,15 @@
 /*
- * $Id: surfdemo.cpp,v 1.7 2006/06/20 22:36:12 hkmoffa Exp $
+ * $Id: surfdemo.cpp,v 1.9 2007/05/04 15:18:45 dggoodwin Exp $
  *
  *  Sample program that solves an implicit problem for surface
  *  site fractions.
  */
-#ifdef SRCDIRTREE
-#include "ct_defs.h"
-#include "../silane_equil/IdealGasMix.h"
-#include "Interface.h"
-#else
 #include "Cantera.h"
 #include "IdealGasMix.h"
 #include "Interface.h"
-#endif
+
 using namespace Cantera;
+using namespace std;
 
 int main() {
 

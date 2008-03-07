@@ -24,7 +24,7 @@ CANTERA_VERSION = NoCANTERA
 FFTW_VERSION = V32
 
 # Set to ON in order to run the TUT unit testing on
-TUT_TESTING = ON
+TUT_TESTING = OFF
 
 # Set to ON for use with "gprof"
 # <x86  >  gprof cffc2D gmon.out > output.txt
@@ -37,13 +37,19 @@ PROFILING = OFF
 # Do Checking:
 # Set to ON for checking conditions controled by the _DO_CHECKS macro
 # Set to OFF in order to run faster (no condition checking)
-DO_CHECKS = ON
+DO_CHECKS = OFF
 
 # Use 'assert' : Set to OFF if you want to use the 'assert' macro.
 #
 #                Set to ON if you want to DEACTIVATE the 'assert' macro (runs faster)!
 #                ATTENTION: All your checks with 'assert' will be turned OFF!!!!
 NO_ASSERT = OFF
+
+# Compile Chem2D coupled with Rte2D:
+# Set to ON for coupled solver
+# Set to OFF for Chem2D without Rte capability
+CHEM2D_WITH_RTE = OFF
+FLAME2D_WITH_RTE = OFF
 
 #-----------------------------------------------------------#
 #       Platform Specific Compiler Flags                    #
@@ -204,7 +210,10 @@ ifeq ($(CANTERA_VERSION),NoCANTERA)
 endif
 ifeq ($(CANTERA_VERSION),V70)
   CANTERA_CPP_FLAGS       =  -D_CANTERA_VERSION -D_CANTERA_V70 -I$(CANTERA_INC_DIR)
-  CANTERA_LD_FLAGS        =  -L$(CANTERA_LIB_DIR) -luser -loneD -lzeroD -ltransport -lcantera -lcvode -lctlapack -lctblas -lctmath -ltpx -lctcxx
+  CANTERA_LD_FLAGS        =  -L$(CANTERA_LIB_DIR) -luser -loneD -lzeroD -lequil -lkinetics \
+                             -ltransport -lthermo -lctnumerics -lcvode -lctbase -lctlapack \
+                             -lctblas -lctmath -ltpx -lctspectra -lctf2c -lconverters \
+                             -lctcxx -lctf2c
 endif
 
 #
@@ -528,7 +537,6 @@ ifeq ($(NO_ASSERT),ON)
   CPPFLAGS += -DNDEBUG
 endif
 
-#
 # Add proper precompile flag for solvers that include high-order ENO with CHARACTERISTICS
 # If you want your solver to include this feature add its name to the SOLVERS_LIST.
 SOLVERS_LIST := euler1D 
@@ -536,4 +544,13 @@ ifdef MAKECMDGOALS
 ifneq ($(strip $(filter $(MAKECMDGOALS), $(SOLVERS_LIST)) ), )
   CPPFLAGS += -D__INCLUDE_ENO_CHARACTERISTICS__
 endif
+endif
+
+#
+# Add 
+ifeq ($(CHEM2D_WITH_RTE),ON)
+  CPPFLAGS += -D_CHEM2D_WITH_RTE
+endif
+ifeq ($(FLAME2D_WITH_RTE),ON)
+  CPPFLAGS += -D_FLAME2D_WITH_RTE
 endif
