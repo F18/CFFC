@@ -54,6 +54,18 @@ public:
      ----------------------------------------------------------------------------------------  */
   static short NUMBER_OF_POINTS_FOR_GAUSS_QUADRATURE_INTEGRATION;  
 
+
+  /* This flag sets the designated mesh switch to inform the algorithm
+     for computing cell geometric properties about the possibility of large
+     round off errors due to the presence of large mesh dimensions.
+     The numerical algorithm will try to avoid this problems by computing
+     the geometric properties in a local coordinate system correspondent 
+     to each computational cell.
+     Turn ON if you want to use the local coordinate system (LCS). 
+     Turn OFF if you want to have all calculations done in a single coordinate system. (default)
+     ----------------------------------------------------------------------------------------  */
+  static short EXERCISE_SPECIAL_CARE_TO_ROUNDOFF_ERRORS_FOR_THIS_MESH;  
+
   
   template<class Input_Parameters_Type>
   static void Parse_Next_Input_Control_Parameter(Input_Parameters_Type & IP, int & i_command);
@@ -139,6 +151,24 @@ void HO_Grid2D_Execution_Mode::Parse_Next_Input_Control_Parameter(Input_Paramete
 	break;
       }
     }
+
+  } else if (strcmp(IP.Next_Control_Parameter, "Large_Domain_Mesh") == 0) {
+    IP.Get_Next_Input_Control_Parameter();
+    if ( strcmp(IP.Next_Control_Parameter, "ON") == 0 || strcmp(IP.Next_Control_Parameter, "On") == 0 ){
+      EXERCISE_SPECIAL_CARE_TO_ROUNDOFF_ERRORS_FOR_THIS_MESH = ON;
+      // Set the affected switch
+      Grid2D_Quad_Block_HO::setTreatMeshWithExtraCareForNumericalError();
+
+    } else if ( strcmp(IP.Next_Control_Parameter, "OFF") == 0 || strcmp(IP.Next_Control_Parameter, "Off") == 0 ) {
+      EXERCISE_SPECIAL_CARE_TO_ROUNDOFF_ERRORS_FOR_THIS_MESH = OFF;
+      // Set the affected switch
+      Grid2D_Quad_Block_HO::setNoSpecialTreatmentForNumericalError();
+ 
+    } else {
+      i_command = INVALID_INPUT_VALUE;
+      return;
+    }
+    i_command = 0;
 
   } else {
     i_command = INVALID_INPUT_CODE;

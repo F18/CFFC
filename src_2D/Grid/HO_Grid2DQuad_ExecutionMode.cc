@@ -14,6 +14,7 @@
 short HO_Grid2D_Execution_Mode::USE_HIGH_ORDER_GEOMETRIC_BOUNDARY_REPRESENTATION = OFF; // High-order boundaries are not used
 short HO_Grid2D_Execution_Mode::USE_GAUSS_QUADRATURES_TO_INTEGRATE_ALONG_CURVED_EDGES = ON; // Gauss quadrature integration mode
 short HO_Grid2D_Execution_Mode::NUMBER_OF_POINTS_FOR_GAUSS_QUADRATURE_INTEGRATION = 3; // use 3-point Gauss integration
+short HO_Grid2D_Execution_Mode::EXERCISE_SPECIAL_CARE_TO_ROUNDOFF_ERRORS_FOR_THIS_MESH = OFF; // use Global Coordinate System
 
 
 //! Set all flags to default values
@@ -23,6 +24,7 @@ void HO_Grid2D_Execution_Mode::SetDefaults(void){
   USE_HIGH_ORDER_GEOMETRIC_BOUNDARY_REPRESENTATION = OFF; // High-order boundaries are not used
   USE_GAUSS_QUADRATURES_TO_INTEGRATE_ALONG_CURVED_EDGES = ON; // Gauss quadrature integration mode
   NUMBER_OF_POINTS_FOR_GAUSS_QUADRATURE_INTEGRATION = 3; // use 3-point Gauss integration
+  EXERCISE_SPECIAL_CARE_TO_ROUNDOFF_ERRORS_FOR_THIS_MESH = OFF; // use Global Coordinate System
 }
 
 //! Print the current execution mode
@@ -56,6 +58,10 @@ void HO_Grid2D_Execution_Mode::Print_Info(std::ostream & out_file){
     } // endif
 
   } // endif
+
+  if (EXERCISE_SPECIAL_CARE_TO_ROUNDOFF_ERRORS_FOR_THIS_MESH == ON){
+    out_file << "\n     -> Geometric properties: " << "Special attention to Round Offs";
+  }
 }
 
 /*!
@@ -76,7 +82,9 @@ void HO_Grid2D_Execution_Mode::Broadcast(void){
   MPI::COMM_WORLD.Bcast(&NUMBER_OF_POINTS_FOR_GAUSS_QUADRATURE_INTEGRATION,
  			1, 
  			MPI::SHORT, 0);
-
+  MPI::COMM_WORLD.Bcast(&EXERCISE_SPECIAL_CARE_TO_ROUNDOFF_ERRORS_FOR_THIS_MESH,
+ 			1, 
+ 			MPI::SHORT, 0);
 
   // Set the affected switches on all CPUs properly.
   Set_Affected_Switches();
@@ -90,7 +98,7 @@ void HO_Grid2D_Execution_Mode::Broadcast(void){
  */
 void HO_Grid2D_Execution_Mode::Set_Affected_Switches(void){
 
-  if (USE_HIGH_ORDER_GEOMETRIC_BOUNDARY_REPRESENTATION = ON){
+  if (USE_HIGH_ORDER_GEOMETRIC_BOUNDARY_REPRESENTATION == ON){
     // Set the affected switch
     Grid2D_Quad_Block_HO::setHighOrderBoundaryRepresentation();
   } else {
@@ -98,7 +106,7 @@ void HO_Grid2D_Execution_Mode::Set_Affected_Switches(void){
     Grid2D_Quad_Block_HO::setLowOrderBoundaryRepresentation();
   }
 
-  if (USE_GAUSS_QUADRATURES_TO_INTEGRATE_ALONG_CURVED_EDGES = ON){
+  if (USE_GAUSS_QUADRATURES_TO_INTEGRATE_ALONG_CURVED_EDGES == ON){
     // Set the affected switch
     Grid2D_Quad_Block_HO::setContourIntegrationBasedOnGaussQuadratures();
   } else {
@@ -114,5 +122,13 @@ void HO_Grid2D_Execution_Mode::Set_Affected_Switches(void){
   case 5:
     Spline2DInterval_HO::setFivePointGaussQuadContourIntegration();
     break;
+  }
+
+  if (EXERCISE_SPECIAL_CARE_TO_ROUNDOFF_ERRORS_FOR_THIS_MESH == ON){
+    // Set the affected switch
+    Grid2D_Quad_Block_HO::setTreatMeshWithExtraCareForNumericalError();
+  } else {
+    // Set the affected switch
+    Grid2D_Quad_Block_HO::setNoSpecialTreatmentForNumericalError();
   }
 }
