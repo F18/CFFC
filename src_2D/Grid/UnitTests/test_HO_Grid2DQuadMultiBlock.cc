@@ -3306,8 +3306,8 @@ namespace tut
     IP.Cylinder_Radius2 = 32;
     IP.Number_of_Blocks_Jdir = 1;
     IP.Number_of_Blocks_Idir = 2;
-    IP.Number_of_Cells_Idir = 160;
-    IP.Number_of_Cells_Jdir = 80;
+    IP.Number_of_Cells_Idir = 40;
+    IP.Number_of_Cells_Jdir = 20;
     IP.Number_of_Ghost_Cells = 5;
     IP.Space_Accuracy = 4;
     IP.IncludeHighOrderBoundariesRepresentation = ON;
@@ -3413,7 +3413,7 @@ namespace tut
       MeshBlk.Output_Cells_Data(out());
 
       // == check geometric properties
-      RunRegressionTest("Large Deformed Box", CurrentFile, MasterFile, 9.0e-7, 9.0e-7);
+      RunRegressionTest("Large Deformed Box", CurrentFile, MasterFile, 1.0e-9, 1.0e-9);
 
     } else {
       // Build the mesh
@@ -3497,7 +3497,7 @@ namespace tut
       MeshBlk.Output_Cells_Data(out());
 
       // == check geometric properties
-      RunRegressionTest("Large Deformed Box", CurrentFile, MasterFile, 1.0e-6, 1.0e-6);
+      RunRegressionTest("Large Deformed Box", CurrentFile, MasterFile, 1.0e-9, 1.0e-9);
 
     } else {
       // Build the mesh
@@ -3998,52 +3998,92 @@ namespace tut
     }
   }
 
-  // Test 56:
+
+  // Test 57:
   template<>
   template<>
-  void Grid2DQuadMultiBlock_HO_object::test<56>()
+  void Grid2DQuadMultiBlock_HO_object::test<57>()
   {
-    set_test_name("Treat mesh with extra care for numerical errors");
-    RunRegression = OFF;
- 
+    set_test_name("Large Large Deformed Box with up to 4th-order moments");
+
+    RunRegression = ON;
+
     // Add test particular input parameters
-    IP.i_Grid = GRID_CIRCULAR_CYLINDER;
-    IP.Cylinder_Radius = 1;
-    IP.Cylinder_Radius2 = 32;
+    IP.i_Grid = GRID_DEFORMED_BOX;
     IP.Number_of_Blocks_Jdir = 1;
-    IP.Number_of_Blocks_Idir = 2;
-    IP.Number_of_Cells_Idir = 1440;
-    IP.Number_of_Cells_Jdir = 720;
+    IP.Number_of_Blocks_Idir = 1;
+    IP.Number_of_Cells_Idir = 163;
+    IP.Number_of_Cells_Jdir = 75;
     IP.Number_of_Ghost_Cells = 5;
-    IP.Space_Accuracy = 4;
-    IP.IncludeHighOrderBoundariesRepresentation = ON;
+    IP.Space_Accuracy = 5;
+    IP.IncludeHighOrderBoundariesRepresentation = OFF;
     IP.i_Smooth_Quad_Block = OFF;
+    IP.BCs_Specified = ON;
+    IP.BC_North = BC_CONSTANT_EXTRAPOLATION;
+    IP.BC_South = BC_CONSTANT_EXTRAPOLATION;
+    IP.BC_East = BC_CONSTANT_EXTRAPOLATION;
+    IP.BC_West = BC_CONSTANT_EXTRAPOLATION;
+    IP.IterationsOfInteriorNodesDisturbances = 300;
 
-    IP.i_Mesh_Stretching = ON;
-    IP.Mesh_Stretching_Type_Idir = STRETCHING_FCN_MINMAX_CLUSTERING;
-    IP.Mesh_Stretching_Type_Jdir = STRETCHING_FCN_MIN_CLUSTERING;
-    IP.Mesh_Stretching_Factor_Idir = 1.025;
-    IP.Mesh_Stretching_Factor_Jdir = 1.001;
+    IP.VertexSW = Vector2D(0.0,0.0);
+    IP.VertexSE = Vector2D(4.0,1.0);
+    IP.VertexNE = Vector2D(2.5,4.0);
+    IP.VertexNW = Vector2D(0.5,5.0);
 
-    // Set high-order flags
-    Grid2D_Quad_Block_HO::setContourIntegrationBasedOnGaussQuadratures();
-    Spline2DInterval_HO::setFivePointGaussQuadContourIntegration();
+    IP.X_Scale = 1.0e3;
+
+    MasterFile = "Large_Large_Deformed_Box_4thOrder_Geom_Moments.dat";
+    CurrentFile = "Current_Large_Large_Deformed_Box_4thOrder_Geom_Moments_LineBasedIntegration.dat";
+    char * MeshFile = "Large_Large_Deformed_Box_Mesh_4thOrder_Geom_Moments.dat";
 
     // Set special treatment for this mesh
     Grid2D_Quad_Block_HO::setTreatMeshWithExtraCareForNumericalError();
+    
+    if (RunRegression){
+      // read the mesh (which was generated in test 48)
+      Open_Input_File(MeshFile);
+      in() >> MeshBlk;
 
-    // Build the low-order mesh
-    CreateMesh(MeshBlk,IP);
+      // check mesh
+      MeshBlk.Check_Multi_Block_Grid_Completely();
 
-#if 0
-    // Set the file names
-    MasterFile = "GridCircularCylinder_GeomProperties_InteriorCell.dat";
-    CurrentFile = "Current_GridCircularCylinder_GeomProperties_InteriorCell_SpecialTreatmentMesh.dat";
+      // Set high-order flags
+      Grid2D_Quad_Block_HO::setHighOrderBoundaryRepresentation();
+      Grid2D_Quad_Block_HO::setContourIntegrationBasedOnLinearSegments();
 
-    // Checked cell --> Block(0,0), Cell (16,25)
-    iCell = 16; jCell = 25;
-#endif
+      // schedule update of all cells
+      MeshBlk(0,0).Schedule_Interior_Mesh_Update();
+      MeshBlk(0,0).Schedule_Ghost_Cells_Update();
 
+      // recompute the geoemtric properties with the current method
+      MeshBlk.Update_All_Cells();
+
+      // open CurrentFile
+      Open_Output_File(CurrentFile);
+
+      // output cell data
+      MeshBlk.Output_Cells_Data(out());
+
+      // == check geometric properties
+      RunRegressionTest("Large Deformed Box 4th-order moments", CurrentFile, MasterFile, 8.0e-7, 8.0e-7);
+      
+    } else {
+      // Build the mesh
+      CreateMesh(MeshBlk,IP);
+      MeshBlk.Check_Multi_Block_Grid_Completely();
+
+      // open MasterFile
+      Open_Output_File(MasterFile);
+
+      // output cell data
+      MeshBlk.Output_Cells_Data(out());
+
+      // open MeshFile
+      Open_Output_File(MeshFile);
+      
+      // output mesh data
+      out() << MeshBlk;
+    }
   }
 
 

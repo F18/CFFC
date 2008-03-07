@@ -305,13 +305,13 @@ double PolynomLineIntegration2(const double & N1x, const double & N1y,
     case 1:
       /* OrderX=0, OrderY=1 */
       t1 = DY*DY;
-      return (DX/3.0 + 0.5*dXc)*t1+(0.5*DX + dXc)*dYc*DY; 
+      return (DX*ONETHIRD + 0.5*dXc)*t1+(0.5*DX + dXc)*dYc*DY; 
   
     case 2:
       /* OrderX=0, OrderY=2 */
       t1 = DY*DY;
       t2 = dYc*dYc;
-      return (dXc/3.0+0.25*DX)*DY*t1+(dXc*dYc+2.0/3.0*DX*dYc)*t1+(dXc*t2+DX*t2*0.5)*DY; 
+      return (dXc*ONETHIRD+0.25*DX)*DY*t1+(dXc+TWOTHIRDS*DX)*dYc*t1+(dXc+DX*0.5)*t2*DY; 
 
     case 3:
       /* OrderX=0, OrderY=3 */
@@ -319,7 +319,7 @@ double PolynomLineIntegration2(const double & N1x, const double & N1y,
       t2 = t1*t1;
       t3 = dYc*dYc;
       t4 = dYc*t3;
-      return (DX*0.2+dXc*0.25)*t2+(dXc*dYc+0.75*DX*dYc)*DY*t1+(1.5*dXc*t3+t3*DX)*t1+(DX*t4*0.5+dXc*t4)*DY; 
+      return (DX*0.2+dXc*0.25)*t2+(dXc+0.75*DX)*dYc*DY*t1+(1.5*dXc+DX)*t3*t1+(DX*0.5+dXc)*t4*DY; 
 
     case 4:
       /* OrderX=0, OrderY=4 */
@@ -328,8 +328,8 @@ double PolynomLineIntegration2(const double & N1x, const double & N1y,
       t3 = dYc*dYc;
       t4 = dYc*t3;
       t5 = t3*t3;
-      return ( (dXc*0.2+DX/6.0)*DY*t2+(dXc*dYc+0.8*DX*dYc)*t2+(2.0*dXc*t3+1.5*t3*DX)*DY*t1+
-	       (2.0*dXc*t4+4.0/3.0*DX*t4)*t1+(dXc*t5+DX*t5*0.5)*DY );
+      return ( (dXc*0.2+DX*ONESIXTH)*DY*t2 + (dXc+0.8*DX)*dYc*t2 + (2.0*dXc+1.5*DX)*t3*DY*t1 +
+	       (2.0*dXc+FOURTHIRDS*DX)*t4*t1+(dXc+DX*0.5)*t5*DY );
     } /* endswitch (OrderY) */
     break;
 
@@ -339,7 +339,7 @@ double PolynomLineIntegration2(const double & N1x, const double & N1y,
       /* OrderX=1, OrderY=0 */
       t1 = DX*DX;
       t2 = dXc*dXc;
-      return (t1/3.0+dXc*DX+t2)*DY;
+      return (t1*ONETHIRD+dXc*DX+t2)*DY;
   
     case 1:
       /* OrderX=1, OrderY=1 */
@@ -347,7 +347,7 @@ double PolynomLineIntegration2(const double & N1x, const double & N1y,
       t2 = dXc*DX;
       t3 = dXc*dXc;
       t4 = DY*DY;
-      return (t1*0.25+2.0/3.0*t2+t3*0.5)*t4+(t1*dYc/3.0+t2*dYc+t3*dYc)*DY;
+      return (t1*0.25+TWOTHIRDS*t2+t3*0.5)*t4 + (t1*ONETHIRD+t2+t3)*dYc*DY;
       
     case 2:
       /* OrderX=1, OrderY=2 */
@@ -356,7 +356,7 @@ double PolynomLineIntegration2(const double & N1x, const double & N1y,
       t3 = DX*DX;
       t4 = DY*DY;
       t5 = dYc*dYc;
-      return ((t1/3.0+t2*0.5+t3*0.2)*DY + (t3*0.5+4.0/3.0*t2+t1)*dYc)*t4+(t1+t2+t3/3.0)*t5*DY;
+      return ((t1*ONETHIRD+t2*0.5+t3*0.2)*DY + (t3*0.5+FOURTHIRDS*t2+t1)*dYc)*t4+(t1+t2+t3*ONETHIRD)*t5*DY;
 
     case 3:
       /* OrderX=1, OrderY=3 */
@@ -367,8 +367,8 @@ double PolynomLineIntegration2(const double & N1x, const double & N1y,
       t5 = t4*t4;
       t6 = dYc*dYc;
       t7 = dYc*t6;
-      return ( (t1/6.0+t2*0.25+0.4*t3)*t5+(1.5*t3*dYc+t2*dYc+0.6*t1*dYc)*DY*t4+
-	       (1.5*t2*t6+0.75*t1*t6+2.0*t3*t6)*t4+(t3*t7+t1*t7/3.0+t2*t7)*DY );
+      return ( (t1*ONESIXTH+t2*0.25+0.4*t3)*t5 + (1.5*t3+t2+0.6*t1)*dYc*DY*t4+
+	       (1.5*t2+0.75*t1+2.0*t3)*t6*t4 + (t3+t1*ONETHIRD+t2)*t7*DY );
     } /* endswitch (OrderY) */
     break;
 
@@ -378,7 +378,7 @@ double PolynomLineIntegration2(const double & N1x, const double & N1y,
       /* OrderX=2, OrderY=0 */
       t1 = DX*DX;
       t2 = dXc*dXc;
-      return (DX*t1*0.25+dXc*t1+1.5*t2*DX+dXc*t2)*DY;
+      return ((DX*0.25+dXc)*t1 + (1.5*DX+dXc)*t2)*DY;
   
     case 1:
       /* OrderX=2, OrderY=1 */
@@ -401,7 +401,7 @@ double PolynomLineIntegration2(const double & N1x, const double & N1y,
       t6 = dXc*t1;
       t7 = DY*DY;
       t8 = dYc*dYc;
-      return ( ( (t2/6.0+t4/3.0+0.75*t5+0.6*t6)*DY + (1.5*t6+0.4*t2+t4+2.0*t5)*dYc)*t7+
+      return ( ( (t2*ONESIXTH+t4*ONETHIRD+0.75*t5+0.6*t6)*DY + (1.5*t6+0.4*t2+t4+2.0*t5)*dYc)*t7+
 	       (1.5*t5+t6+t2*0.25+t4)*t8*DY );
     } /* endswitch (OrderY) */
     break;
@@ -426,7 +426,7 @@ double PolynomLineIntegration2(const double & N1x, const double & N1y,
       t6 = dXc*t4*DX;
       t7 = t4*t4;
       t8 = DY*DY;
-      return ( (t2/6.0+0.8*t3+1.5*t5+4.0/3.0*t6+t7*0.5)*t8 + (t2*0.2+t3+2.0*t5+2.0*t6+t7)*dYc*DY );
+      return ( (t2*ONESIXTH+0.8*t3+1.5*t5+FOURTHIRDS*t6+t7*0.5)*t8 + (t2*0.2+t3+2.0*t5+2.0*t6+t7)*dYc*DY );
     }
     break;
 
@@ -437,7 +437,7 @@ double PolynomLineIntegration2(const double & N1x, const double & N1y,
       t2 = t1*t1;
       t3 = dXc*dXc;
       t4 = t3*t3;
-      return (DX*t2/6.0+dXc*t2+2.5*DX*(t3*t1+t4)+10.0/3.0*dXc*t3*t1+dXc*t4)*DY;
+      return (DX*(t2*ONESIXTH+2.5*(t3*t1+t4)) + dXc*(t2+TENTHIRDS*t3*t1+t4) )*DY;
     }
   } /* endswitch(OrderX) */
 
