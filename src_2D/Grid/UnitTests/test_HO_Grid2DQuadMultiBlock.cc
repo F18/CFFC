@@ -3549,20 +3549,20 @@ namespace tut
     CurrentFile = "Current_Cartesian_Box_4thOrder_Geom_Moments.dat";
     
     if (RunRegression){
-      // Build the mesh
+      // Build the low-order mesh (i.e. straight boundaries)
       CreateMesh(MeshBlk,IP);
       MeshBlk.Check_Multi_Block_Grid_Completely();
 
-      // Set high-order flags
+      // Set high-order flags (i.e. treat the mesh as if it had curved boundaries)
       Grid2D_Quad_Block_HO::setHighOrderBoundaryRepresentation();
-      Grid2D_Quad_Block_HO::setContourIntegrationBasedOnGaussQuadratures();
+      Grid2D_Quad_Block_HO::setContourIntegrationBasedOnGaussQuadratures(); // treat the curved boundaries with Gauss points.
       Spline2DInterval_HO::setFivePointGaussQuadContourIntegration();
 
       // schedule update of all cells
       MeshBlk(0,0).Schedule_Interior_Mesh_Update();
       MeshBlk(0,0).Schedule_Ghost_Cells_Update();
 
-      // recompute the geoemtric properties with the current method
+      // recompute the geoemtric properties with curved boundaries
       MeshBlk.Update_All_Cells();
 
       // open CurrentFile
@@ -3572,7 +3572,7 @@ namespace tut
       MeshBlk.Output_Cells_Data(out());
 
       // == check geometric properties
-      RunRegressionTest("Rectangular Box 4th-order moments", CurrentFile, MasterFile, 9.0e-7, 9.0e-7);
+      RunRegressionTest("Large Rectangular Box 4th-order moments", CurrentFile, MasterFile, 1.0e-10, 1.0e-10);
 
     } else {
       // Build the mesh
@@ -3624,19 +3624,19 @@ namespace tut
     CurrentFile = "Current_Cartesian_Box_4thOrder_Geom_Moments_LineBasedIntegration.dat";
     
     if (RunRegression){
-      // Build the mesh
+      // Build the low-order mesh (i.e. straight boundaries)
       CreateMesh(MeshBlk,IP);
       MeshBlk.Check_Multi_Block_Grid_Completely();
 
-      // Set high-order flags
+      // Set high-order flags (i.e. treat the mesh as if it had curved boundaries)
       Grid2D_Quad_Block_HO::setHighOrderBoundaryRepresentation();
-      Grid2D_Quad_Block_HO::setContourIntegrationBasedOnLinearSegments();
+      Grid2D_Quad_Block_HO::setContourIntegrationBasedOnLinearSegments(); // treat the curved boundaries with line segments.
 
       // schedule update of all cells
       MeshBlk(0,0).Schedule_Interior_Mesh_Update();
       MeshBlk(0,0).Schedule_Ghost_Cells_Update();
 
-      // recompute the geoemtric properties with the current method
+      // recompute the geoemtric properties with curved boundaries
       MeshBlk.Update_All_Cells();
 
       // open CurrentFile
@@ -3646,7 +3646,7 @@ namespace tut
       MeshBlk.Output_Cells_Data(out());
 
       // == check geometric properties
-      RunRegressionTest("Large Deformed Box 4th-order moments", CurrentFile, MasterFile, 1.0e-6, 1.0e-6);
+      RunRegressionTest("Large Cartesian Box 4th-order moments", CurrentFile, MasterFile, 1.0e-10, 1.0e-10);
 
     } else {
       // Build the mesh
@@ -3725,7 +3725,7 @@ namespace tut
       MeshBlk.Output_Cells_Data(out());
 
       // == check geometric properties
-      RunRegressionTest("Large Deformed Box 4th-order moments", CurrentFile, MasterFile, 9.0e-7, 9.0e-7);
+      RunRegressionTest("Large Deformed Box 4th-order moments", CurrentFile, MasterFile, 1.0e-8, 1.0e-8);
 
     } else {
       // Build the mesh
@@ -3809,18 +3809,10 @@ namespace tut
       MeshBlk.Output_Cells_Data(out());
 
       // == check geometric properties
-      RunRegressionTest("Large Deformed Box 4th-order moments", CurrentFile, MasterFile, 1.0e-6, 1.0e-6);
+      RunRegressionTest("Large Deformed Box 4th-order moments", CurrentFile, MasterFile, 1.0e-8, 1.0e-8);
 
     } else {
-      // Build the mesh
-      CreateMesh(MeshBlk,IP);
-      MeshBlk.Check_Multi_Block_Grid_Completely();
-
-      // open MasterFile
-      Open_Output_File(MasterFile);
-
-      // output cell data
-      MeshBlk.Output_Cells_Data(out());
+      // The mesh and the data are generated at test<52> 
     }
   }
 
@@ -3923,9 +3915,10 @@ namespace tut
     // Set special treatment for this mesh
     Grid2D_Quad_Block_HO::setTreatMeshWithExtraCareForNumericalError();
 
-    // Build the mesh
+    // Build the low-order mesh
     CreateMesh(MeshBlk,IP);
 
+    // Set the file names
     MasterFile = "GridCircularCylinder_GeomProperties_InteriorCell.dat";
     CurrentFile = "Current_GridCircularCylinder_GeomProperties_InteriorCell_SpecialTreatmentMesh.dat";
 
@@ -3983,7 +3976,6 @@ namespace tut
       Print_File(MeshBlk(0,0).nfaceE(iCell,jCell), out());
       Print_File(MeshBlk(0,0).nfaceW(iCell,jCell), out());
 
-
       // check geometry
       RunRegressionTest("Cell Geom Properties", CurrentFile, MasterFile, 1.0e-10, 1.0e-10);
 
@@ -4005,6 +3997,55 @@ namespace tut
       ensure_equals("CornerGhostCells", MeshBlk(0,0).Value_CornerGhostCellsUpdate_Flag(), OFF);
     }
   }
+
+  // Test 56:
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<56>()
+  {
+    set_test_name("Treat mesh with extra care for numerical errors");
+    RunRegression = OFF;
+ 
+    // Add test particular input parameters
+    IP.i_Grid = GRID_CIRCULAR_CYLINDER;
+    IP.Cylinder_Radius = 1;
+    IP.Cylinder_Radius2 = 32;
+    IP.Number_of_Blocks_Jdir = 1;
+    IP.Number_of_Blocks_Idir = 2;
+    IP.Number_of_Cells_Idir = 1440;
+    IP.Number_of_Cells_Jdir = 720;
+    IP.Number_of_Ghost_Cells = 5;
+    IP.Space_Accuracy = 4;
+    IP.IncludeHighOrderBoundariesRepresentation = ON;
+    IP.i_Smooth_Quad_Block = OFF;
+
+    IP.i_Mesh_Stretching = ON;
+    IP.Mesh_Stretching_Type_Idir = STRETCHING_FCN_MINMAX_CLUSTERING;
+    IP.Mesh_Stretching_Type_Jdir = STRETCHING_FCN_MIN_CLUSTERING;
+    IP.Mesh_Stretching_Factor_Idir = 1.025;
+    IP.Mesh_Stretching_Factor_Jdir = 1.001;
+
+    // Set high-order flags
+    Grid2D_Quad_Block_HO::setContourIntegrationBasedOnGaussQuadratures();
+    Spline2DInterval_HO::setFivePointGaussQuadContourIntegration();
+
+    // Set special treatment for this mesh
+    Grid2D_Quad_Block_HO::setTreatMeshWithExtraCareForNumericalError();
+
+    // Build the low-order mesh
+    CreateMesh(MeshBlk,IP);
+
+#if 0
+    // Set the file names
+    MasterFile = "GridCircularCylinder_GeomProperties_InteriorCell.dat";
+    CurrentFile = "Current_GridCircularCylinder_GeomProperties_InteriorCell_SpecialTreatmentMesh.dat";
+
+    // Checked cell --> Block(0,0), Cell (16,25)
+    iCell = 16; jCell = 25;
+#endif
+
+  }
+
 
 }
 

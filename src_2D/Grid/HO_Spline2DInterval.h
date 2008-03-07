@@ -182,6 +182,9 @@ public:
   double AreaContribution(void){ return IntegratePolynomialTerm(Vector2D(0.0), 0, 0); }
   double XCentroidContribution(void){ return IntegratePolynomialTerm(Vector2D(0.0), 1, 0); }
   double YCentroidContribution(void){ return IntegratePolynomialTerm(Vector2D(0.0), 0, 1); }
+  double AreaContribution(const Vector2D &RefPoint){ return IntegratePolynomialTerm(RefPoint, 0, 0); }
+  double XCentroidContribution(const Vector2D &RefPoint){ return IntegratePolynomialTerm(RefPoint, 1, 0); }
+  double YCentroidContribution(const Vector2D &RefPoint){ return IntegratePolynomialTerm(RefPoint, 0, 1); }
   //@}
 
   //! @name Set the number of Gauss quadrature points for contour integration

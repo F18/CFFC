@@ -2415,9 +2415,9 @@ double Spline2D_HO::BasicOrderIntegration(const Vector2D &StartPoint, const Vect
   }
 
   // get a first estimation of the integral using StartPoint and EndPoint
-  IntLessAccurate = PolynomLineIntegration(StartPoint.x, StartPoint.y, EndPoint.x, EndPoint.y,
-					   Centroid.x ,Centroid.y,
-					   OrderX, OrderY);
+  IntLessAccurate = PolynomLineIntegration2(StartPoint.x, StartPoint.y, EndPoint.x, EndPoint.y,
+					    Centroid.x ,Centroid.y,
+					    OrderX, OrderY);
 
   while( (RelError > TOL) && (Divisions<MaxDivisions) ){
     Divisions *= 2;		// double the resolution
@@ -2428,9 +2428,9 @@ double Spline2D_HO::BasicOrderIntegration(const Vector2D &StartPoint, const Vect
     InterP1 = StartPoint;	// initialize the start of the first interval
     for (i=1; i<=Divisions; ++i){
       InterP2 = Spline(S1 + i*DeltaS);
-      IntMoreAccurate += PolynomLineIntegration(InterP1.x,InterP1.y,InterP2.x,InterP2.y,
-						Centroid.x ,Centroid.y,
-						OrderX, OrderY);
+      IntMoreAccurate += PolynomLineIntegration2(InterP1.x,InterP1.y,InterP2.x,InterP2.y,
+						 Centroid.x ,Centroid.y,
+						 OrderX, OrderY);
 
       InterP1 = InterP2;	// set the new value for InterP1
     }

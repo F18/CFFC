@@ -1334,6 +1334,31 @@ class GeneralizedPolynomialFunctionOfTwoVariables{
 double ZeroLineIntegration(const double & N1x, const double & N1y,
 			   const double & N2x, const double & N2y);
 
+/***********************************************************************//**
+ * Compute the integral \f$ I = \int x dy \f$ along a segment line
+ * in a local coordinate system (LCS).
+ * GCS = global coordinate system
+ *
+ * \param N1x the x-coordinate of the segment first end point in the GCS.
+ * \param N1y the y-coordinate of the segment first end point in the GCS.
+ * \param N2x the x-coordinate of the segment second end point in the GCS.
+ * \param N2y the y-coordinate of the segment second end point in the GCS.
+ * \param xLCS the x-coordinate of the LCS in the GCS
+ * \param yLCS the y-coordinate of the LCS in the GCS
+ * \return the value of the integral
+ ************************************************************************/
+inline double ZeroLineIntegration(const double & N1x, const double & N1y,
+				  const double & N2x, const double & N2y,
+				  const double & xLCS, const double & yLCS){
+  
+  // Calculate the coordinates in the LCS
+  double N1x_LCS(N1x-xLCS), N1y_LCS(N1y-yLCS);
+  double N2x_LCS(N2x-xLCS), N2y_LCS(N2y-yLCS);
+  
+  return ZeroLineIntegration(N1x_LCS, N1y_LCS,
+			     N2x_LCS, N2y_LCS);
+}
+
 // ZeroLineIntegration for Node input
 template< class Node>
 inline double ZeroLineIntegration(const Node& StartNode, const Node& EndNode){
@@ -1345,6 +1370,46 @@ double PolynomLineIntegration(const double & N1x, const double & N1y,
 			      const double & N2x, const double & N2y,
 			      const double & xCC, const double & yCC,
 			      const int &OrderX, const int &OrderY);
+
+// PolynomLineIntegration2()
+double PolynomLineIntegration2(const double & N1x, const double & N1y,
+			       const double & N2x, const double & N2y,
+			       const double & xCC, const double & yCC,
+			       const int &OrderX, const int &OrderY);
+
+/***********************************************************************//**
+ * Compute the integral \f$ I = \int (x - xc)^{(OrderX+1)} * (y - yc)^OrderY dy \f$
+ * along a segment line in a local coordinate system (LCS).
+ * The result of this polynomial function integration is determined with an analytic expression.
+ * GCS = global coordinate system
+ *
+ * \param N1x the x-coordinate of the line first end point in the GCS.
+ * \param N1y the y-coordinate of the line first end point in the GCS.
+ * \param N2x the x-coordinate of the line second end point in the GCS.
+ * \param N2y the y-coordinate of the line second end point in the GCS.
+ * \param xCC the xc-coordinate in the GCS
+ * \param yCC the yc-coordinate in the GCS
+ * \param xLCS the x-coordinate of the LCS in the GCS
+ * \param yLCS the y-coordinate of the LCS in the GCS
+ * \return the value of the integrals up to 4th-order (i.e. OrderX + OrderY <= 4)
+ *
+ *********************************************************************************/
+inline double PolynomLineIntegration(const double & N1x, const double & N1y,
+				     const double & N2x, const double & N2y,
+				     const double & xCC, const double & yCC,
+				     const double & xLCS, const double & yLCS,
+				     const int &OrderX, const int &OrderY){
+
+  // Calculate the coordinates in the LCS
+  double N1x_LCS(N1x-xLCS), N1y_LCS(N1y-yLCS);
+  double N2x_LCS(N2x-xLCS), N2y_LCS(N2y-yLCS);
+  double xCC_LCS(xCC-xLCS), yCC_LCS(yCC-yLCS);
+  
+  return PolynomLineIntegration(N1x_LCS, N1y_LCS,
+				N2x_LCS, N2y_LCS,
+				xCC_LCS, yCC_LCS,
+				OrderX, OrderY);
+}
 
 /*!
  * \class GaussQuadratureData

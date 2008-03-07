@@ -1679,6 +1679,78 @@ namespace tut
     ensure_equals("dYdS3",SInfo_Copy.dYdS(5),SInfo.dYdS(5));
   }
  
+  /* Test 36: */
+  template<>
+  template<>
+  void Spline2DInterval_HO_object::test<36>()
+  {
+
+    set_test_name("Invariant to shifted coordinate system");
+
+    // Set 5-point Gauss integration
+    Spline2DInterval_HO::setFivePointGaussQuadContourIntegration();
+
+    // Accepted tolerance
+    tol = 1.0e-6;
+
+    // Initialize variables
+    GeometricMoments GeomCoeff(3);
+    Vector2D Shift = Vector2D(-1.0e2, 2.0e5);
+
+    Angle1 = 0.0; Angle2 = 9.0;
+    Radius = 1.0;
+    Centroid.x = 0.0; Centroid.y = 0.0;
+
+    // Create the original Spline and the Translated Spline
+    S.Create_Spline_Circular_Arc(Centroid,Radius,Angle1,Angle2,15);
+    S1 = S + Shift;
+
+    // Initialize interval
+    SInfo.InitializeInterval(S,S.Xp[0],S.Xp[S.np-1],1);
+    SInfo1.InitializeInterval(S1,S1.Xp[0],S1.Xp[S1.np-1],1);
+
+    // Maple solution for the spline that is NOT translated
+    double MapleSolution[10];
+    MapleSolution[0] = 0.15579406493348168699;    MapleSolution[1] = 0.01216070450218491326;
+    MapleSolution[2] = 0.0012666649507964224530;  MapleSolution[3] = 0.00014848960318196448130;
+    MapleSolution[4] = 0.077579195212567692199;   MapleSolution[5] = 0.0060430771944443482419;
+    MapleSolution[6] = 0.00062866897697822820700; MapleSolution[7] = 0.051509133327561754847;
+    MapleSolution[8] = 0.004004071633000982925;   MapleSolution[9] = 0.038475263117794731996;
+
+    int i;
+
+    // check area contribution
+    ensure_distance("Check Area Contribution",
+		    SInfo1.AreaContribution(Shift),
+		    SInfo.AreaContribution(),
+		    AcceptedError(SInfo.AreaContribution(),tol));
+
+    ensure_distance("Check X Centroid Contribution",
+		    SInfo1.XCentroidContribution(Shift),
+		    SInfo.XCentroidContribution(),
+		    AcceptedError(SInfo.XCentroidContribution(),tol));
+
+    ensure_distance("Check Y Centroid Contribution",
+		    SInfo1.YCentroidContribution(Shift),
+		    SInfo.YCentroidContribution(),
+		    AcceptedError(SInfo.YCentroidContribution(),tol));
+
+    for (i=0; i<=9 ; ++i){
+      GeomCoeff(i).D() = SInfo1.IntegratePolynomialTermAndDivide(Centroid+Shift,GeomCoeff(i).P1(), GeomCoeff(i).P2());
+    }
+
+    ensure_distance("Check Coeff 0", GeomCoeff(0).D(), MapleSolution[0], AcceptedError(MapleSolution[0],tol));
+    ensure_distance("Check Coeff 1", GeomCoeff(1).D(), MapleSolution[1], AcceptedError(MapleSolution[1],tol));
+    ensure_distance("Check Coeff 2", GeomCoeff(2).D(), MapleSolution[2], AcceptedError(MapleSolution[2],tol));
+    ensure_distance("Check Coeff 3", GeomCoeff(3).D(), MapleSolution[3], AcceptedError(MapleSolution[3],tol));
+    ensure_distance("Check Coeff 4", GeomCoeff(4).D(), MapleSolution[4], AcceptedError(MapleSolution[4],tol));
+    ensure_distance("Check Coeff 5", GeomCoeff(5).D(), MapleSolution[5], AcceptedError(MapleSolution[5],tol));
+    ensure_distance("Check Coeff 6", GeomCoeff(6).D(), MapleSolution[6], AcceptedError(MapleSolution[6],tol));
+    ensure_distance("Check Coeff 7", GeomCoeff(7).D(), MapleSolution[7], AcceptedError(MapleSolution[7],tol));
+    ensure_distance("Check Coeff 8", GeomCoeff(8).D(), MapleSolution[8], AcceptedError(MapleSolution[8],tol));
+    ensure_distance("Check Coeff 9", GeomCoeff(9).D(), MapleSolution[9], AcceptedError(MapleSolution[9],tol));
+  }
+
 }
 
 

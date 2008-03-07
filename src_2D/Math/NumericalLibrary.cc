@@ -42,17 +42,16 @@ double ZeroLineIntegration(const double & N1x, const double & N1y,
  * \param N2y the y-coordinate of the line second end point
  * \param xCC the xc-coordinate
  * \param yCC the yc-coordinate
- * \return the value of the integrals up to 3rd-order (i.e. OrderX + OrderY <= 3)
+ * \return the value of the integrals up to 4th-order (i.e. OrderX + OrderY <= 4)
  *
- * \todo extend the procedure up to 4th-order (required for viscous terms)!
  *********************************************************************************/
 double PolynomLineIntegration(const double & N1x, const double & N1y,
 			      const double & N2x, const double & N2y,
 			      const double & xCC, const double & yCC,
 			      const int &OrderX,   const int &OrderY){
   
-  double DX = N2x - N1x;
-  double DY = N2y - N1y;
+  double DX(N2x - N1x);
+  double DY(N2y - N1y);
 
   switch(OrderX){
 
@@ -254,6 +253,191 @@ double PolynomLineIntegration(const double & N1x, const double & N1y,
 	      0.5e1 / 0.2e1 * DX * pow(xCC, 0.4e1) + 0.15e2 * N1x * N1x * DX * xCC * xCC + 
 	      0.5e1 * N1x * pow(xCC, 0.4e1) + pow(N1x, 0.5e1) + 0.10e2 * pow(N1x, 0.3e1) * xCC * xCC - 
 	      0.10e2 * N1x * N1x * pow(xCC, 0.3e1) - 0.5e1 * pow(N1x, 0.4e1) * xCC - pow(xCC, 0.5e1)) * DY;
+    }
+  } /* endswitch(OrderX) */
+
+  std::cout << "PolynomLineIntegration ERROR: Power higher than the maximum allowed!\n";
+  return 0.0;
+
+}
+
+/***********************************************************************//**
+ * Compute the integral \f$ I = \int (x - xc)^{(OrderX+1)} * (y - yc)^OrderY dy \f$
+ * along a segment line.
+ * The result of this polynomial function integration is determined with an analytic expression.
+ *
+ * \param N1x the x-coordinate of the line first end point
+ * \param N1y the y-coordinate of the line first end point
+ * \param N2x the x-coordinate of the line second end point
+ * \param N2y the y-coordinate of the line second end point
+ * \param xCC the xc-coordinate
+ * \param yCC the yc-coordinate
+ * \return the value of the integrals up to 4th-order (i.e. OrderX + OrderY <= 4)
+ *
+ * This subroutine is different than the PolynomLineIntegration() one in that
+ * it tries to be more accurate for line segments characterized by large ratios
+ * between the coordinates of the end points relative to the size of the segment.
+ * It does that by exploiting the fact that the difference between the point coordinates
+ * and the centroid might have the same order of magnitude as the segment sizes DX and DY.
+ * Thus, round off errors are avoided.
+ *********************************************************************************/
+double PolynomLineIntegration2(const double & N1x, const double & N1y,
+			       const double & N2x, const double & N2y,
+			       const double & xCC, const double & yCC,
+			       const int &OrderX,   const int &OrderY){
+  
+  double DX(N2x - N1x);		// DeltaX of the segment line
+  double DY(N2y - N1y);		// DeltaY of the segment line
+  double dXc(N1x - xCC);	// x-distance to centroid
+  double dYc(N1y - yCC);	// y-distance to centroid
+
+  // Temporary variables;
+  double t1, t2, t3, t4, t5, t6, t7, t8;
+
+  switch(OrderX){
+
+  case 0:
+    switch(OrderY){
+    case 0:
+      /* OrderX=0, OrderY=0 */
+      return (0.5*DX + dXc)*DY;
+
+    case 1:
+      /* OrderX=0, OrderY=1 */
+      t1 = DY*DY;
+      return (DX/3.0 + 0.5*dXc)*t1+(0.5*DX + dXc)*dYc*DY; 
+  
+    case 2:
+      /* OrderX=0, OrderY=2 */
+      t1 = DY*DY;
+      t2 = dYc*dYc;
+      return (dXc/3.0+0.25*DX)*DY*t1+(dXc*dYc+2.0/3.0*DX*dYc)*t1+(dXc*t2+DX*t2*0.5)*DY; 
+
+    case 3:
+      /* OrderX=0, OrderY=3 */
+      t1 = DY*DY;
+      t2 = t1*t1;
+      t3 = dYc*dYc;
+      t4 = dYc*t3;
+      return (DX*0.2+dXc*0.25)*t2+(dXc*dYc+0.75*DX*dYc)*DY*t1+(1.5*dXc*t3+t3*DX)*t1+(DX*t4*0.5+dXc*t4)*DY; 
+
+    case 4:
+      /* OrderX=0, OrderY=4 */
+      t1 = DY*DY;
+      t2 = t1*t1;
+      t3 = dYc*dYc;
+      t4 = dYc*t3;
+      t5 = t3*t3;
+      return ( (dXc*0.2+DX/6.0)*DY*t2+(dXc*dYc+0.8*DX*dYc)*t2+(2.0*dXc*t3+1.5*t3*DX)*DY*t1+
+	       (2.0*dXc*t4+4.0/3.0*DX*t4)*t1+(dXc*t5+DX*t5*0.5)*DY );
+    } /* endswitch (OrderY) */
+    break;
+
+  case 1:
+    switch(OrderY){
+    case 0:
+      /* OrderX=1, OrderY=0 */
+      t1 = DX*DX;
+      t2 = dXc*dXc;
+      return (t1/3.0+dXc*DX+t2)*DY;
+  
+    case 1:
+      /* OrderX=1, OrderY=1 */
+      t1 = DX*DX;
+      t2 = dXc*DX;
+      t3 = dXc*dXc;
+      t4 = DY*DY;
+      return (t1*0.25+2.0/3.0*t2+t3*0.5)*t4+(t1*dYc/3.0+t2*dYc+t3*dYc)*DY;
+      
+    case 2:
+      /* OrderX=1, OrderY=2 */
+      t1 = dXc*dXc;
+      t2 = dXc*DX;
+      t3 = DX*DX;
+      t4 = DY*DY;
+      t5 = dYc*dYc;
+      return ((t1/3.0+t2*0.5+t3*0.2)*DY + (t3*0.5+4.0/3.0*t2+t1)*dYc)*t4+(t1+t2+t3/3.0)*t5*DY;
+
+    case 3:
+      /* OrderX=1, OrderY=3 */
+      t1 = DX*DX;
+      t2 = dXc*dXc;
+      t3 = dXc*DX;
+      t4 = DY*DY;
+      t5 = t4*t4;
+      t6 = dYc*dYc;
+      t7 = dYc*t6;
+      return ( (t1/6.0+t2*0.25+0.4*t3)*t5+(1.5*t3*dYc+t2*dYc+0.6*t1*dYc)*DY*t4+
+	       (1.5*t2*t6+0.75*t1*t6+2.0*t3*t6)*t4+(t3*t7+t1*t7/3.0+t2*t7)*DY );
+    } /* endswitch (OrderY) */
+    break;
+
+  case 2:
+    switch(OrderY){
+    case 0:
+      /* OrderX=2, OrderY=0 */
+      t1 = DX*DX;
+      t2 = dXc*dXc;
+      return (DX*t1*0.25+dXc*t1+1.5*t2*DX+dXc*t2)*DY;
+  
+    case 1:
+      /* OrderX=2, OrderY=1 */
+      t1 = DX*DX;
+      t2 = DX*t1;
+      t3 = dXc*t1;
+      t4 = dXc*dXc;
+      t5 = t4*DX;
+      t6 = dXc*t4;
+      t7 = DY*DY;
+      return (t2*0.2+0.75*t3+t5+t6*0.5)*t7+(t2*0.25+t3+1.5*t5+t6)*dYc*DY;
+
+    case 2:
+      /* OrderX=2, OrderY=2 */
+      t1 = DX*DX;
+      t2 = DX*t1;
+      t3 = dXc*dXc;
+      t4 = dXc*t3;
+      t5 = t3*DX;
+      t6 = dXc*t1;
+      t7 = DY*DY;
+      t8 = dYc*dYc;
+      return ( ( (t2/6.0+t4/3.0+0.75*t5+0.6*t6)*DY + (1.5*t6+0.4*t2+t4+2.0*t5)*dYc)*t7+
+	       (1.5*t5+t6+t2*0.25+t4)*t8*DY );
+    } /* endswitch (OrderY) */
+    break;
+
+  case 3:
+    switch(OrderY){
+    case 0:
+      /* OrderX=3, OrderY=0 */
+      t1 = DX*DX;
+      t2 = t1*t1;
+      t3 = dXc*dXc;
+      t4 = t3*t3;
+      return (t2*0.2 + dXc*DX*t1 + 2.0*t3*(t1+dXc*DX) +t4)*DY;
+
+    case 1:
+      /* OrderX=3, OrderY=1 */
+      t1 = DX*DX;
+      t2 = t1*t1;
+      t3 = dXc*DX*t1;
+      t4 = dXc*dXc;
+      t5 = t4*t1;
+      t6 = dXc*t4*DX;
+      t7 = t4*t4;
+      t8 = DY*DY;
+      return ( (t2/6.0+0.8*t3+1.5*t5+4.0/3.0*t6+t7*0.5)*t8 + (t2*0.2+t3+2.0*t5+2.0*t6+t7)*dYc*DY );
+    }
+    break;
+
+  case 4:
+    if (OrderY == 0){
+      /* OrderX=4, OrderY=0 */
+      t1 = DX*DX;
+      t2 = t1*t1;
+      t3 = dXc*dXc;
+      t4 = t3*t3;
+      return (DX*t2/6.0+dXc*t2+2.5*DX*(t3*t1+t4)+10.0/3.0*dXc*t3*t1+dXc*t4)*DY;
     }
   } /* endswitch(OrderX) */
 
