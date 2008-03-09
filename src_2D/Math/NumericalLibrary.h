@@ -593,7 +593,7 @@ inline ReturnType GaussLobattoAdaptiveQuadrature(FunctionType func, double Start
 						 int digits = numeric_limits<double>::digits10)
   throw (TooShortInterval) {
   
-  ReturnType tol(0.5*pow(10.0,-digits));
+  ReturnType tol(0.5*std::pow(10.0,-digits));
   const ReturnType eps(numeric_limits<double>::epsilon());
   
   double a,b;
@@ -1293,7 +1293,7 @@ class GeneralizedPolynomialFunctionOfOneVariable{
     }
 
     double operator()(const double & x){
-      return pow((x-xi),n);
+      return std::pow((x-xi),n);
     }
 };
 
@@ -1317,7 +1317,7 @@ class GeneralizedPolynomialFunctionOfTwoVariables{
     }
 
     double operator()(const double x, const double y){
-      return pow((x-xi),n)*pow((y-yi),m);
+      return std::pow((x-xi),n)*std::pow((y-yi),m);
     }
 
     friend ostream& operator << (ostream& os, const GeneralizedPolynomialFunctionOfTwoVariables & Var){

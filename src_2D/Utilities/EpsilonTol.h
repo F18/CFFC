@@ -35,7 +35,7 @@ class EpsilonTol{
      an acceptable tolerance is around the quantity U. */
   static double ToleranceAroundValue(const double & U);
   static double SquareToleranceAroundValue(const double & U);
-  static double getAccuracyBasedOnExactDigits(const int &digits){ return 0.5*pow(10.0,-digits); }
+  static double getAccuracyBasedOnExactDigits(const int &digits){ return 0.5*std::pow(10.0,-digits); }
 
   /* Output operator. */
   static void Print_Tolerances(ostream& os = std::cout);
