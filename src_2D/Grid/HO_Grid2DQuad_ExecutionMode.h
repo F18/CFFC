@@ -16,7 +16,7 @@
 #include "HO_Grid2DQuad.h"
 
 /*!
- * Class: HO_Grid2D_Execution_Mode
+ * \class HO_Grid2D_Execution_Mode
  *
  * @brief Definition of flags that control the execution of high-order 2D grid
  *

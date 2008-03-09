@@ -75,16 +75,6 @@ int Grid2D_Quad_Block_HO::Mixed_Curvilinear_Integration = ON;
 int Grid2D_Quad_Block_HO::Minimize_Error_Calculation_Of_Geometric_Properties = OFF;
 
 /*!
- * This switch is used to determine whether the Tecplot
- * data should be plotted with single or double precision.
- * Use double precision to get more accurate plots, however
- * it uses more memory!
- * If ON, the data is plotted with DOUBLE precision.
- * If OFF, the data is plotted with SINGLE precision.
- */
-int Grid2D_Quad_Block_HO::Use_Tecplot_With_Double_Precision = OFF;
-
-/*!
  * Variable used for storing the South-West node position in the global coordinate system
  */
 Vector2D Grid2D_Quad_Block_HO::_SW_ = Vector2D(0.0);
@@ -7899,7 +7889,7 @@ void Grid2D_Quad_Block_HO::Output_Tecplot(const int Block_Number,
 	     << "F = POINT \n";
   } /* endif */
 
-  if (Use_Tecplot_With_Double_Precision){
+  if (Tecplot_Execution_Mode::IsDoublePrecision()){
     Out_File << "DT = (DOUBLE DOUBLE) \n";
   }
 
@@ -7946,7 +7936,7 @@ void Grid2D_Quad_Block_HO::Output_Nodes_Tecplot(const int Block_Number,
 	     << "F = POINT \n";
   } /* endif */
 
-  if (Use_Tecplot_With_Double_Precision){
+  if (Tecplot_Execution_Mode::IsDoublePrecision()){
     Out_File << "DT = (DOUBLE DOUBLE) \n";
   }
 
@@ -7991,7 +7981,7 @@ void Grid2D_Quad_Block_HO::Output_Cells_Tecplot(const int Block_Number,
 	     << "F = POINT \n";
   } /* endif */
 
-  if (Use_Tecplot_With_Double_Precision){
+  if (Tecplot_Execution_Mode::IsDoublePrecision()){
     Out_File << "DT = (DOUBLE DOUBLE) \n";
   }
 

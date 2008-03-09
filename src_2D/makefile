@@ -109,7 +109,8 @@ SRC_GRID = $(GRID_DIR)Cell1D.cc \
            $(GRID_DIR)HO_Spline2DInterval.cc \
 	   $(GRID_DIR)HO_Grid2DQuad.cc \
            $(GRID_DIR)HO_Grid2DQuadMultiBlock.cc \
-	   $(GRID_DIR)HO_Grid2DQuad_ExecutionMode.cc
+	   $(GRID_DIR)HO_Grid2DQuad_ExecutionMode.cc \
+	   $(GRID_DIR)Tecplot_ExecutionMode.cc
 SRC_ICEMCFD = $(ICEMCFD_DIR)ICEMCFD.cc \
 	      $(ICEMCFD_DIR)ICEMCFD_ctype.c
 # Add Grid Testing If Required:

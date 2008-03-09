@@ -26,6 +26,7 @@ using namespace std;
 #include "../MPI/MPI.h"		    // Include MPI header file
 #include "../Math/LinearSystems.h"  // Include the linear systems header file.
 #include "Grid2DQuadIntegration.h"  // Include the 2D quadrilateral domain integration class header file.
+#include "Tecplot_ExecutionMode.h" // Include Tecplot control execution class.
 
 /* Define the following types of 2D quadrilateral block 
    node initialization procedures. */
@@ -745,9 +746,6 @@ public:
   
   //!@ Output functions for plotting.
   //@{
-  static void setDoublePrecisionTecplotPlotting(void){ Use_Tecplot_With_Double_Precision = ON; }
-  static void setSinglePrecisionTecplotPlotting(void){ Use_Tecplot_With_Double_Precision = OFF; }
-  static void setDefaultPrecisionTecplotPlotting(void){ Use_Tecplot_With_Double_Precision = OFF; }
   void Output_Tecplot(const int Block_Number,
 		      const int Output_Title,
 		      ostream &Out_File) const;
@@ -916,9 +914,6 @@ private:
   
   //! Switch for error minimization in calculating the cell geometric properties.
   static int Minimize_Error_Calculation_Of_Geometric_Properties;
-
-  //! Switch for instructing tecplot to use double or single precision
-  static int Use_Tecplot_With_Double_Precision;
 
   //! Highest order of reconstruction that might occur in calculations with the current grid.
   int HighestReconstructionOrder;

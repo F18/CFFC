@@ -13,6 +13,7 @@
 #include "../HighOrderReconstruction/CENO_ExecutionMode.h" // Include high-order CENO execution mode header file
 #include "../HighOrderReconstruction/CENO_Tolerances.h"	   // Include high-order CENO tolerances header file
 #include "../Grid/HO_Grid2DQuad_ExecutionMode.h" // Include high-order 2D grid execution mode header file
+#include "../Grid/Tecplot_ExecutionMode.h" // Include Tecplot execution mode header file
 
 /*************************************************************
  * AdvectDiffuse2D_Input_Parameters -- Member functions.     *
@@ -480,6 +481,10 @@ ostream &operator << (ostream &out_file,
              << IP.Output_File_Name;
     out_file << "\n  -> Output Format: " 
              << IP.Output_Format_Type;
+    if (IP.i_Output_Format == IO_TECPLOT){
+      // output information related to Tecplot output
+      Tecplot_Execution_Mode::Print_Info(out_file);
+    }
     out_file << "\n  -> Restart Solution Save Frequency: "
              << IP.Restart_Solution_Save_Frequency
              << " steps (iterations)"; 
@@ -1160,6 +1165,9 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
 
     // HO_Grid2D_Execution_Mode variables
     HO_Grid2D_Execution_Mode::Broadcast();
+
+    // Tecplot_Execution_Mode variables
+    Tecplot_Execution_Mode::Broadcast();
 
 #endif
 
@@ -2834,6 +2842,9 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
 
   /* Parse next control parameter with HO_Grid2D_Execution_Mode parser */
   HO_Grid2D_Execution_Mode::Parse_Next_Input_Control_Parameter(IP,i_command);
+
+  /* Parse next control parameter with Tecplot_Execution_Mode parser */
+  Tecplot_Execution_Mode::Parse_Next_Input_Control_Parameter(IP,i_command);
 
   if (i_command == INVALID_INPUT_CODE){
     // that is, we have an input line which:

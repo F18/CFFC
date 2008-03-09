@@ -128,14 +128,14 @@ namespace tut
 
     Grid2D_Quad_Block_HO::setContourIntegrationBasedOnGaussQuadratures();
     Grid2D_Quad_Block_HO::setNoSpecialTreatmentForNumericalError();
-    Grid2D_Quad_Block_HO::setDefaultPrecisionTecplotPlotting();
+    Tecplot_Execution_Mode::SetDefaults();
   }
 
   Data_Grid2DQuadMultiBlock_HO::~Data_Grid2DQuadMultiBlock_HO(void){
     // reset to default value
     Grid2D_Quad_Block_HO::setDefaultBoundaryRepresentation();
     Grid2D_Quad_Block_HO::setNoSpecialTreatmentForNumericalError();
-    Grid2D_Quad_Block_HO::setDefaultPrecisionTecplotPlotting();
+    Tecplot_Execution_Mode::SetDefaults();
   }
 
   template<class Input_Parameters>
@@ -3857,7 +3857,7 @@ namespace tut
 
       // Set special treatment for this mesh
       Grid2D_Quad_Block_HO::setTreatMeshWithExtraCareForNumericalError();
-      Grid2D_Quad_Block_HO::setDoublePrecisionTecplotPlotting();
+      Tecplot_Execution_Mode::setDoublePrecisionPlotting();
 
       // Build the mesh
       CreateMesh(MeshBlk,IP);
