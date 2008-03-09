@@ -12,7 +12,7 @@
 #include "../MPI/MPI.h"
 
 short HO_Grid2D_Execution_Mode::USE_HIGH_ORDER_GEOMETRIC_BOUNDARY_REPRESENTATION = OFF; // High-order boundaries are not used
-short HO_Grid2D_Execution_Mode::USE_GAUSS_QUADRATURES_TO_INTEGRATE_ALONG_CURVED_EDGES = ON; // Gauss quadrature integration mode
+short HO_Grid2D_Execution_Mode::METHOD_TO_INTEGRATE_ALONG_CURVED_EDGES = MIXED_QUADS_AND_LINES_METHOD; // Mixed method
 short HO_Grid2D_Execution_Mode::NUMBER_OF_POINTS_FOR_GAUSS_QUADRATURE_INTEGRATION = 3; // use 3-point Gauss integration
 short HO_Grid2D_Execution_Mode::EXERCISE_SPECIAL_CARE_TO_ROUNDOFF_ERRORS_FOR_THIS_MESH = OFF; // use Global Coordinate System
 
@@ -22,7 +22,7 @@ short HO_Grid2D_Execution_Mode::EXERCISE_SPECIAL_CARE_TO_ROUNDOFF_ERRORS_FOR_THI
 void HO_Grid2D_Execution_Mode::SetDefaults(void){
 
   USE_HIGH_ORDER_GEOMETRIC_BOUNDARY_REPRESENTATION = OFF; // High-order boundaries are not used
-  USE_GAUSS_QUADRATURES_TO_INTEGRATE_ALONG_CURVED_EDGES = ON; // Gauss quadrature integration mode
+  METHOD_TO_INTEGRATE_ALONG_CURVED_EDGES = MIXED_QUADS_AND_LINES_METHOD; // Gauss quadrature integration mode
   NUMBER_OF_POINTS_FOR_GAUSS_QUADRATURE_INTEGRATION = 3; // use 3-point Gauss integration
   EXERCISE_SPECIAL_CARE_TO_ROUNDOFF_ERRORS_FOR_THIS_MESH = OFF; // use Global Coordinate System
 }
@@ -39,14 +39,17 @@ void HO_Grid2D_Execution_Mode::Print_Info(std::ostream & out_file){
     out_file << "\n  -> Boundary Accuracy: " << "High-order";
 
     // output  mode
-    if (USE_GAUSS_QUADRATURES_TO_INTEGRATE_ALONG_CURVED_EDGES == ON){
-      out_file << "\n     -> Integration Along Bnd: " << "Gauss quadrature";
-    } else {
-      out_file << "\n     -> Integration Along Bnd: " << "Adaptive linear segment based";
+    if (METHOD_TO_INTEGRATE_ALONG_CURVED_EDGES == GAUSS_QUADRATURES_METHOD ){
+      out_file << "\n     -> Integrate Along Curved Edges With: " << "Gauss quadrature";
+    } else if (METHOD_TO_INTEGRATE_ALONG_CURVED_EDGES == ADAPTIVE_LINE_SEGMENTS_METHOD) {
+      out_file << "\n     -> Integrate Along Curved Edges With: " << "Adaptive line segments";
+    } else if (METHOD_TO_INTEGRATE_ALONG_CURVED_EDGES == MIXED_QUADS_AND_LINES_METHOD) {
+      out_file << "\n     -> Integrate Along Curved Edges With: " << "Combination of Line Segments and Quads";
     } // endif
 
     // output  mode
-    if (USE_GAUSS_QUADRATURES_TO_INTEGRATE_ALONG_CURVED_EDGES == ON){
+    if (METHOD_TO_INTEGRATE_ALONG_CURVED_EDGES == GAUSS_QUADRATURES_METHOD || 
+	METHOD_TO_INTEGRATE_ALONG_CURVED_EDGES == MIXED_QUADS_AND_LINES_METHOD){
       switch(NUMBER_OF_POINTS_FOR_GAUSS_QUADRATURE_INTEGRATION){
       case 3:
 	out_file << "\n     -> Gauss points: " << "3";
@@ -76,7 +79,7 @@ void HO_Grid2D_Execution_Mode::Broadcast(void){
   MPI::COMM_WORLD.Bcast(&USE_HIGH_ORDER_GEOMETRIC_BOUNDARY_REPRESENTATION,
  			1, 
  			MPI::SHORT, 0);
-  MPI::COMM_WORLD.Bcast(&USE_GAUSS_QUADRATURES_TO_INTEGRATE_ALONG_CURVED_EDGES,
+  MPI::COMM_WORLD.Bcast(&METHOD_TO_INTEGRATE_ALONG_CURVED_EDGES,
  			1, 
  			MPI::SHORT, 0);
   MPI::COMM_WORLD.Bcast(&NUMBER_OF_POINTS_FOR_GAUSS_QUADRATURE_INTEGRATION,
@@ -106,12 +109,15 @@ void HO_Grid2D_Execution_Mode::Set_Affected_Switches(void){
     Grid2D_Quad_Block_HO::setLowOrderBoundaryRepresentation();
   }
 
-  if (USE_GAUSS_QUADRATURES_TO_INTEGRATE_ALONG_CURVED_EDGES == ON){
+  if (METHOD_TO_INTEGRATE_ALONG_CURVED_EDGES == GAUSS_QUADRATURES_METHOD){
     // Set the affected switch
     Grid2D_Quad_Block_HO::setContourIntegrationBasedOnGaussQuadratures();
-  } else {
+  } else if (METHOD_TO_INTEGRATE_ALONG_CURVED_EDGES == ADAPTIVE_LINE_SEGMENTS_METHOD){
     // Set the affected switch
     Grid2D_Quad_Block_HO::setContourIntegrationBasedOnLinearSegments();
+  } else if (METHOD_TO_INTEGRATE_ALONG_CURVED_EDGES == MIXED_QUADS_AND_LINES_METHOD){
+    // Set the affected switch
+    Grid2D_Quad_Block_HO::setMixedContourIntegration();
   }
 
   // Set the affected switch

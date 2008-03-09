@@ -3999,10 +3999,10 @@ namespace tut
   }
 
 
-  // Test 57:
+  // Test 56:
   template<>
   template<>
-  void Grid2DQuadMultiBlock_HO_object::test<57>()
+  void Grid2DQuadMultiBlock_HO_object::test<56>()
   {
     set_test_name("Large Large Deformed Box with up to 4th-order moments");
 

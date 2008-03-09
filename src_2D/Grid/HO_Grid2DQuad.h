@@ -870,9 +870,17 @@ public:
   //! Get the value of the HighOrderBoundaryRepresentation variable.
   int getHighOrderBoundaryValue(void) const {return HighOrderBoundaryRepresentation; }
   //! Set the designated switch to require the use of Gauss quadratures for evaluating curvilinear path integrals.
-  static void setContourIntegrationBasedOnGaussQuadratures(void) { Gauss_Quad_Curvilinear_Integration = ON; }
+  static void setContourIntegrationBasedOnGaussQuadratures(void) {
+    Gauss_Quad_Curvilinear_Integration = ON; Mixed_Curvilinear_Integration = OFF;
+  }
   //! Set the designated switch to require the use of summation on line segments to approximate curvilinear path integrals.
-  static void setContourIntegrationBasedOnLinearSegments(void) { Gauss_Quad_Curvilinear_Integration = OFF; }
+  static void setContourIntegrationBasedOnLinearSegments(void) {
+    Gauss_Quad_Curvilinear_Integration = OFF; Mixed_Curvilinear_Integration = OFF;
+  }
+  //! Set the designated switch to require the use of line segments to path integrals in area and centroid calculation.
+  static void setMixedContourIntegration(void) {
+    Gauss_Quad_Curvilinear_Integration = ON; Mixed_Curvilinear_Integration = ON;
+  }
   //@}
 
   //! Set the designated switch to require computation of geometric properties with extra care for numerical errors
@@ -902,6 +910,9 @@ private:
 
   //! Switch for how to compute the curvilinear path integrals along curved edges.
   static int Gauss_Quad_Curvilinear_Integration;
+
+  //! Switch for how to compute the curvilinear path integrals along curved edges.
+  static int Mixed_Curvilinear_Integration;
   
   //! Switch for error minimization in calculating the cell geometric properties.
   static int Minimize_Error_Calculation_Of_Geometric_Properties;

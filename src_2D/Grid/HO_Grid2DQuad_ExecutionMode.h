@@ -25,6 +25,9 @@ class HO_Grid2D_Execution_Mode{
   
 public:
 
+  //! Structure that defines the available methods for integrating along curved boundaries.
+  enum CurvilinearIntegrationMethod { GAUSS_QUADRATURES_METHOD, ADAPTIVE_LINE_SEGMENTS_METHOD, MIXED_QUADS_AND_LINES_METHOD };
+
   // set all flags to default values
   static void SetDefaults(void);
 
@@ -38,13 +41,19 @@ public:
 
   
   /* This flag sets the method used to integrate along curved boundaries.
-     There are two methods currently available:
-         -> integration with Gauss quadratures. (less expensive)
-	 -> adaptive integration based on approximating the curve edges with line segments. (more accurate)
-     Turn ON if you want to use Gauss quadratures. (default)
-     Turn OFF if you want to use adaptive integration based on line segments.
+     There are three methods currently available:
+         -> integration with 3-point or 5-point Gauss quadratures. (less expensive in general)
+	 -> adaptive integration based on approximating the curve edges with line segments. (tipical more accurate)
+         -> a combination of the above methods. This is a tradeoff between speed and accuracy.
+	    The accuracy of the geometric moments is strictly dependent on the accuracy with which
+            the cell area and the centroid are computed. Therefore, this method computes the area 
+            and the centroid with the adaptive line segments and the higher-order geometric moments
+            with the Gauss quadratures.
+     Set to GAUSS_QUADRATURES_METHOD if you want to use Gauss quadratures.
+     Set to ADAPTIVE_LINE_SEGMENTS_METHOD if you want to use adaptive integration based on line segments.
+     Set to MIXED_QUADS_AND_LINES_METHOD if you want to use the combination of the above methods. (default)
      ---------------------------------------------------------------------------------------- */
-  static short USE_GAUSS_QUADRATURES_TO_INTEGRATE_ALONG_CURVED_EDGES;
+  static short METHOD_TO_INTEGRATE_ALONG_CURVED_EDGES;
 
 
   /* This flag sets the number of Gauss points used to integrate along curved boundaries,
@@ -117,14 +126,19 @@ void HO_Grid2D_Execution_Mode::Parse_Next_Input_Control_Parameter(Input_Paramete
   } else if (strcmp(IP.Next_Control_Parameter, "Curved_Boundary_Integration") == 0) {
     IP.Get_Next_Input_Control_Parameter();
     if ( strcmp(IP.Next_Control_Parameter, "Gauss_Quad") == 0 ){
-      USE_GAUSS_QUADRATURES_TO_INTEGRATE_ALONG_CURVED_EDGES = ON;
-      // Set the affected switch
+      METHOD_TO_INTEGRATE_ALONG_CURVED_EDGES = GAUSS_QUADRATURES_METHOD;
+      // Set the affected switches
       Grid2D_Quad_Block_HO::setContourIntegrationBasedOnGaussQuadratures();
 
     } else if ( strcmp(IP.Next_Control_Parameter, "Line_Segments") == 0 ) {
-      USE_GAUSS_QUADRATURES_TO_INTEGRATE_ALONG_CURVED_EDGES = OFF;
-      // Set the affected switch
+      METHOD_TO_INTEGRATE_ALONG_CURVED_EDGES = ADAPTIVE_LINE_SEGMENTS_METHOD;
+      // Set the affected switches
       Grid2D_Quad_Block_HO::setContourIntegrationBasedOnLinearSegments();
+
+    } else if ( strcmp(IP.Next_Control_Parameter, "Mixed_Gauss_Quad") == 0 ) {
+      METHOD_TO_INTEGRATE_ALONG_CURVED_EDGES = MIXED_QUADS_AND_LINES_METHOD;
+      // Set the affected switches
+      Grid2D_Quad_Block_HO::setMixedContourIntegration();
  
     } else {
       i_command = INVALID_INPUT_VALUE;

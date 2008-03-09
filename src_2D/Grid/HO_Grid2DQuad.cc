@@ -42,6 +42,24 @@ int Grid2D_Quad_Block_HO::Smooth_Quad_Block_Flag = ON;
 int Grid2D_Quad_Block_HO::Gauss_Quad_Curvilinear_Integration = ON;
 
 /*!
+ * This switch is used to determine whether the curvilinear
+ * path integrals that occur in the calculation of the area and 
+ * the centroid are computed based on Gauss quadratures or
+ * on an adaptive algorithm that approximates the spline geometry
+ * with an increasing number of line segments until the desired
+ * accuracy is obtained. 
+ * The accuracy of the area and the centroid is crucial for the 
+ * accuracy of the high-order geometric moments, and therefore
+ * it is desired that these properties be calculated very accurately,
+ * even if a more expensive algorithm is used.
+ * If ON, the adaptive integration based on line segments is used for 
+ *        area and centroid calculation and the rest of the moments are
+ *        computed based on the Gauss quadratures.
+ * If OFF, the n-point Gauss quadrature integration is used everywhere.
+ */
+int Grid2D_Quad_Block_HO::Mixed_Curvilinear_Integration = ON;
+
+/*!
  * This switch is used to determine whether the calculation of
  * cell geometric properties should be done in a reference system 
  * which can minimize the numerical errors.
@@ -4444,7 +4462,7 @@ double Grid2D_Quad_Block_HO::area_CurvedBoundaries(const int &CellIndex, const i
   //      the line integral is computed exactly based on the Nodes.
   // The edges are considered in counterclockwise order (i.e. right-hand rule applied)
 
-  if (Gauss_Quad_Curvilinear_Integration) {
+  if (Gauss_Quad_Curvilinear_Integration && (!Mixed_Curvilinear_Integration) ) {
 
     // Use the SplineInfo variables to integrate along curved edges.
 
@@ -4643,7 +4661,7 @@ double Grid2D_Quad_Block_HO::area_CurvedBoundaries(const int &CellIndex, const i
     default:
       return 0.0;
     } // endswitch
-
+    
   }// endif
 }
 
@@ -4658,7 +4676,7 @@ double Grid2D_Quad_Block_HO::area_GhostCell_CurvedBoundaries(const int &CellInde
   // The edges are considered in counterclockwise order (i.e. right-hand rule applied)
   // ***! This subroutine is for the first row of ghost cells and therefore only one boundary can be curved at a time
 
-  if (Gauss_Quad_Curvilinear_Integration) {
+  if (Gauss_Quad_Curvilinear_Integration && (!Mixed_Curvilinear_Integration)) {
 
     // Use the SplineInfo variables to integrate along curved edges.
     switch(Boundary){
@@ -4779,7 +4797,7 @@ Vector2D Grid2D_Quad_Block_HO::centroid_CurvedBoundaries(const int &CellIndex, c
   //      the line integral is computed exactly based on the Nodes.
   // The edges are considered in counterclockwise order (i.e. right-hand rule applied)
 
-  if (Gauss_Quad_Curvilinear_Integration) {
+  if (Gauss_Quad_Curvilinear_Integration && (!Mixed_Curvilinear_Integration)) {
 
     // Use the SplineInfo variables to integrate along curved edges.
     switch(Boundary){
@@ -5283,7 +5301,7 @@ Vector2D Grid2D_Quad_Block_HO::centroid_GhostCell_CurvedBoundaries(const int &Ce
   // The edges are considered in counterclockwise order (i.e. right-hand rule applied)
   // ***! This subroutine is for the first row of ghost cells and therefore only one boundary can be curved at a time
 
-  if (Gauss_Quad_Curvilinear_Integration) {
+  if (Gauss_Quad_Curvilinear_Integration && (!Mixed_Curvilinear_Integration)) {
 
     // Use the SplineInfo variables to integrate along curved edges.
 
