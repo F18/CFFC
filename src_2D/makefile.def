@@ -325,8 +325,8 @@ ifeq ($(PLATFORM),Linux_alpha)
     FFLAGS = -arch host -tune host -fast -w
     F90FLAGS = $(FFLAGS) -r8
     MODFLAG = -module
-    CFLAGS = -arch host -tune host -fast -w 
-    CXXFLAGS = -arch host -tune host -fast -w -std gnu
+    CFLAGS = -arch host -tune host -fast -w -pending_instantiations 500
+    CXXFLAGS = -arch host -tune host -fast -w -std gnu -pending_instantiations 500
     LDFLAGS = $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) $(CANTERA_LD_FLAGS) -lm 
     ifeq ($(PROFILING),ON)
       CXXFLAGS = -pg -arch host -tune host -fast -w -std gnu 
@@ -344,12 +344,12 @@ ifeq ($(PLATFORM),Linux_alpha)
     FFLAGS = -arch host -tune host -fast -w
     F90FLAGS = $(FFLAGS) -r8
     MODFLAG = -module
-    CFLAGS = -arch host -tune host -fast -w
-    CXXFLAGS = -arch host -tune host -fast -w -std gnu
+    CFLAGS = -arch host -tune host -fast -w -pending_instantiations 500
+    CXXFLAGS = -arch host -tune host -fast -w -std gnu -pending_instantiations 500
     LD = $(CXX)
     LDFLAGS = $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) $(CANTERA_LD_FLAGS) -lm
     ifeq ($(PROFILING),ON)
-      CXXFLAGS = -pg -arch host -tune host -fast -w -std gnu 
+      CXXFLAGS = -pg -arch host -tune host -fast -w -std gnu -pending_instantiations 500
       LDFLAGS = $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) $(CANTERA_LD_FLAGS) -lm -pg 
     endif
     DEPENDSFLAGS = -I/usr/local/mpi/include/mpi2c++
