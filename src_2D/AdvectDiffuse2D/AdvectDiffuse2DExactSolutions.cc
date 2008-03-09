@@ -15,7 +15,7 @@
 
 // ==== Member variables ====
 ExactSolutionBasicType * AdvectDiffuse2D_ExactSolutions::ExactSoln = NULL; //!< no associated exact solution
-short AdvectDiffuse2D_ExactSolutions::i_Exact_Solution_Type = -1;          //!< value for no associated exact solution
+short AdvectDiffuse2D_ExactSolutions::i_Exact_Solution_Type = AD2D_NO_EXACT_SOLUTION; //!< value for no exact solution
 
 // ==== Member functions ====
 /*! Default constructor is used to create the unique object of this class */
@@ -25,7 +25,7 @@ AdvectDiffuse2D_ExactSolutions::AdvectDiffuse2D_ExactSolutions(void){ }
 void AdvectDiffuse2D_ExactSolutions::DestroyExactSolutionObject(void){
   delete ExactSoln;
   ExactSoln = NULL;		// set to no associated exact solution
-  i_Exact_Solution_Type = -1;	// set to value for no associated exact solution
+  i_Exact_Solution_Type = AD2D_NO_EXACT_SOLUTION;	// set to value for no associated exact solution
 }
 
 /*!
@@ -48,6 +48,9 @@ void AdvectDiffuse2D_ExactSolutions::SetExactSolution(const short &SolutionIndex
 
   // create the proper exact solution and set the index accordingly
   switch (SolutionIndex){
+  case AD2D_NO_EXACT_SOLUTION:
+    // Don't do anything. The values were set by DestroyExactSolutionObject() routine.
+    break;
   case AD2D_EXACT_SOLUTION_LAPLACE_I:
     ExactSoln = new Laplace_I_ExactSolution;
     break;
@@ -235,7 +238,7 @@ void AdvectDiffuse2D_ExactSolutions::Broadcast(void){
   // Create the same exact solution object on each CPU different than the primary one
   // using the broadcast value.
   if (!CFFC_Primary_MPI_Processor()){
-    SetExactSolution(i_Exact_Solution_Type_Copy);
+      SetExactSolution(i_Exact_Solution_Type_Copy);
   }
 
   // Broadcast the characteristic parameters for the exact solution object
