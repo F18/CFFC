@@ -242,7 +242,9 @@ void AdvectDiffuse2D_ExactSolutions::Broadcast(void){
   }
 
   // Broadcast the characteristic parameters for the exact solution object
-  ExactSoln->Broadcast();
+  if (IsExactSolutionSet()){
+    ExactSoln->Broadcast();
+  }
   
 #endif
 }
