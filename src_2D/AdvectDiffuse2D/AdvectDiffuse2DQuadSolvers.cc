@@ -133,6 +133,11 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
     if (error_flag) return (error_flag);
     MeshBlk.Broadcast_Multi_Block_Grid();
 
+    /* Set the number of blocks in I-dir and J-dir in Input_Parameters based
+       on what resulted after the mesh has been created. */
+    Input_Parameters.Number_of_Blocks_Idir = MeshBlk.Blocks_Idir();
+    Input_Parameters.Number_of_Blocks_Jdir = MeshBlk.Blocks_Jdir();
+
     /* Create (allocate) multi-block quadtree data structure, create
        (allocate) array of local 2D advection diffusion equation solution blocks, 
        assign and create (allocate) 2D advection diffusion equation solution blocks
@@ -186,7 +191,7 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
   if (error_flag) return (error_flag);
   MeshBlk = Broadcast_Multi_Block_Grid(MeshBlk, 
                                        Input_Parameters);
-  
+
   /* Create (allocate) multi-block quadtree data structure, create
      (allocate) array of local 2D advection diffusion equation solution blocks, 
      assign and create (allocate) 2D advection diffusion equation solution blocks

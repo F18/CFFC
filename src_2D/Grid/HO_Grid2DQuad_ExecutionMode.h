@@ -75,7 +75,27 @@ public:
      ----------------------------------------------------------------------------------------  */
   static short EXERCISE_SPECIAL_CARE_TO_ROUNDOFF_ERRORS_FOR_THIS_MESH;  
 
-  
+  /* This flag is used to control the behaviour of the routine that 
+     checks the validity of the mesh (i.e. presence of crossed or degenerated quadrilateral cells).
+     Turn ON if you want to check for incorrect quadrilaterals. (default)
+     Turn OFF if you don't want this subroutine to check for incorrect quadrilaterals.
+     Note: It this flag is OFF, the subroutines is not even going to report the incorrect quads!
+     ----------------------------------------------------------------------------------------  */
+  static short CHECK_FOR_INCORRECT_QUADRILATERALS;
+ 
+  /* This flag is used to control the behaviour of the routine that 
+     checks the validity of the mesh.
+     The default behavior of this subroutine when an invalid quadrilateral cell is
+     encountered is to report the cell and to stop the execution. 
+     There are moments when such a behavior is not desired (e.g. debugging), and for this
+     situations this flag can be used to modify the default behavior.
+     Turn ON if you want the subroutine to continue the execution and to report (i.e. output on screen)
+     all incorrect quadrilaterals.
+     Turn OFF if you want the mesh checking routine to report and exit at the first encountered
+     incorrect quadrilateral. (default)
+     ----------------------------------------------------------------------------------------  */
+  static short REPORT_INCORRECT_QUADRILATERALS_BUT_CONTINUE_EXECUTION;
+
   template<class Input_Parameters_Type>
   static void Parse_Next_Input_Control_Parameter(Input_Parameters_Type & IP, int & i_command);
 
@@ -178,6 +198,30 @@ void HO_Grid2D_Execution_Mode::Parse_Next_Input_Control_Parameter(Input_Paramete
       // Set the affected switch
       Grid2D_Quad_Block_HO::setNoSpecialTreatmentForNumericalError();
  
+    } else {
+      i_command = INVALID_INPUT_VALUE;
+      return;
+    }
+    i_command = 0;
+
+  } else if (strcmp(IP.Next_Control_Parameter, "Check_Mesh_Validity") == 0) {
+    IP.Get_Next_Input_Control_Parameter();
+    if ( strcmp(IP.Next_Control_Parameter, "ON") == 0 || strcmp(IP.Next_Control_Parameter, "On") == 0 ){
+      CHECK_FOR_INCORRECT_QUADRILATERALS = ON;
+    } else if ( strcmp(IP.Next_Control_Parameter, "OFF") == 0 || strcmp(IP.Next_Control_Parameter, "Off") == 0 ) {
+      CHECK_FOR_INCORRECT_QUADRILATERALS = OFF;
+    } else {
+      i_command = INVALID_INPUT_VALUE;
+      return;
+    }
+    i_command = 0;
+
+  } else if (strcmp(IP.Next_Control_Parameter, "If_Invalid_Mesh_Detected") == 0) {
+    IP.Get_Next_Input_Control_Parameter();
+    if ( strcmp(IP.Next_Control_Parameter, "Stop") == 0 ){
+      REPORT_INCORRECT_QUADRILATERALS_BUT_CONTINUE_EXECUTION = OFF;
+    } else if ( strcmp(IP.Next_Control_Parameter, "Continue") == 0 ) {
+      REPORT_INCORRECT_QUADRILATERALS_BUT_CONTINUE_EXECUTION = ON;
     } else {
       i_command = INVALID_INPUT_VALUE;
       return;

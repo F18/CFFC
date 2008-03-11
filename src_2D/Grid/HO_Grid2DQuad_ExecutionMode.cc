@@ -15,6 +15,8 @@ short HO_Grid2D_Execution_Mode::USE_HIGH_ORDER_GEOMETRIC_BOUNDARY_REPRESENTATION
 short HO_Grid2D_Execution_Mode::METHOD_TO_INTEGRATE_ALONG_CURVED_EDGES = MIXED_QUADS_AND_LINES_METHOD; // Mixed method
 short HO_Grid2D_Execution_Mode::NUMBER_OF_POINTS_FOR_GAUSS_QUADRATURE_INTEGRATION = 3; // use 3-point Gauss integration
 short HO_Grid2D_Execution_Mode::EXERCISE_SPECIAL_CARE_TO_ROUNDOFF_ERRORS_FOR_THIS_MESH = OFF; // use Global Coordinate System
+short HO_Grid2D_Execution_Mode::CHECK_FOR_INCORRECT_QUADRILATERALS = ON; // check for incorrect quads
+short HO_Grid2D_Execution_Mode::REPORT_INCORRECT_QUADRILATERALS_BUT_CONTINUE_EXECUTION = OFF; // stop on detecting incorrect quads
 
 
 //! Set all flags to default values
@@ -25,6 +27,8 @@ void HO_Grid2D_Execution_Mode::SetDefaults(void){
   METHOD_TO_INTEGRATE_ALONG_CURVED_EDGES = MIXED_QUADS_AND_LINES_METHOD; // Gauss quadrature integration mode
   NUMBER_OF_POINTS_FOR_GAUSS_QUADRATURE_INTEGRATION = 3; // use 3-point Gauss integration
   EXERCISE_SPECIAL_CARE_TO_ROUNDOFF_ERRORS_FOR_THIS_MESH = OFF; // use Global Coordinate System
+  CHECK_FOR_INCORRECT_QUADRILATERALS = ON; // check for incorrect quads
+  REPORT_INCORRECT_QUADRILATERALS_BUT_CONTINUE_EXECUTION = OFF; // stop on detecting incorrect quads
 }
 
 //! Print the current execution mode
@@ -65,6 +69,12 @@ void HO_Grid2D_Execution_Mode::Print_Info(std::ostream & out_file){
   if (EXERCISE_SPECIAL_CARE_TO_ROUNDOFF_ERRORS_FOR_THIS_MESH == ON){
     out_file << "\n     -> Geometric properties: " << "Special attention to Round Offs";
   }
+
+  if (CHECK_FOR_INCORRECT_QUADRILATERALS == OFF){
+    out_file << "\n     -> Warning: " << "Mesh validity checking was completely deactivated!!!";
+  } else if (REPORT_INCORRECT_QUADRILATERALS_BUT_CONTINUE_EXECUTION == ON){
+    out_file << "\n     -> Warning: " << "Program won't stop the execution if invalid meshes are detected!!!";
+  }
 }
 
 /*!
@@ -86,6 +96,12 @@ void HO_Grid2D_Execution_Mode::Broadcast(void){
  			1, 
  			MPI::SHORT, 0);
   MPI::COMM_WORLD.Bcast(&EXERCISE_SPECIAL_CARE_TO_ROUNDOFF_ERRORS_FOR_THIS_MESH,
+ 			1, 
+ 			MPI::SHORT, 0);
+  MPI::COMM_WORLD.Bcast(&CHECK_FOR_INCORRECT_QUADRILATERALS,
+ 			1, 
+ 			MPI::SHORT, 0);
+  MPI::COMM_WORLD.Bcast(&REPORT_INCORRECT_QUADRILATERALS_BUT_CONTINUE_EXECUTION,
  			1, 
  			MPI::SHORT, 0);
 

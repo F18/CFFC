@@ -1248,7 +1248,7 @@ void BCs(AdvectDiffuse2D_Quad_Block &SolnBlk,
 	  break;
 
 	case BC_SYMMETRY_PLANE :
-	  throw runtime_error("BCs() ERROR! Symmetry plane BC hasn't been implemented yet!");
+	  //	  throw runtime_error("BCs() ERROR! Symmetry plane BC hasn't been implemented yet!");
 	  break;
 
 	case BC_EXTRAPOLATE :
@@ -1365,7 +1365,7 @@ void BCs(AdvectDiffuse2D_Quad_Block &SolnBlk,
 	  break;
 
 	case BC_SYMMETRY_PLANE :
-	  throw runtime_error("BCs() ERROR! Symmetry plane BC hasn't been implemented yet!");
+	  // throw runtime_error("BCs() ERROR! Symmetry plane BC hasn't been implemented yet!");
 	  break;
 
 	case BC_EXTRAPOLATE :
@@ -1482,7 +1482,7 @@ void BCs(AdvectDiffuse2D_Quad_Block &SolnBlk,
       break;
       
     case BC_SYMMETRY_PLANE :
-      throw runtime_error("BCs() ERROR! Symmetry plane BC hasn't been implemented yet!");
+      //      throw runtime_error("BCs() ERROR! Symmetry plane BC hasn't been implemented yet!");
       break;
       
     case BC_EXTRAPOLATE :
@@ -1584,7 +1584,7 @@ void BCs(AdvectDiffuse2D_Quad_Block &SolnBlk,
       break;
       
     case BC_SYMMETRY_PLANE :
-      throw runtime_error("BCs() ERROR! Symmetry plane BC hasn't been implemented yet!");
+      //      throw runtime_error("BCs() ERROR! Symmetry plane BC hasn't been implemented yet!");
       break;
       
     case BC_EXTRAPOLATE :

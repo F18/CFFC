@@ -9,6 +9,7 @@
 
 /* Include CFFC header files */
 #include "HO_Grid2DQuad.h"	// Include 2D high-order block grid
+#include "HO_Grid2DQuad_ExecutionMode.h" // Include header file for the control class of the 2D high-order grid
 
 // ===== Member variables =====
 
@@ -6994,31 +6995,38 @@ int Grid2D_Quad_Block_HO::Check_Quad_Block(void) {
   int i, j;
   int QuadType;
 
-  for ( j = JCl ; j <= JCu ; ++j) {
-    for ( i = ICl ; i <= ICu ; ++i) {
-      // Determine the type of the quadrilateral cell
-      QuadType = Find_Quadrilateral_Type(Node[i  ][j  ].X,
-					 Node[i+1][j  ].X,
-					 Node[i+1][j+1].X,
-					 Node[i  ][j+1].X);
-      
-      // Test the geometry of each cell for crossed or degenerated quadrilateral
-      if ( QuadType == 4 || QuadType == 0 ){
-	cout << endl << i << " " << j;
-	cout << endl << ICl << " " << ICu;
-	cout << endl << JCl << " " << JCu;
-	cout << endl << Cell[i][j].A;
-	cout << endl << Cell[i][j].Xc;
-	cout << endl << Node[i][j].X;
-	cout << endl << Node[i+1][j].X;
-	cout << endl << Node[i+1][j+1].X;
-	cout << endl << Node[i][j+1].X;
-	cout.flush();
-	return(1);
-      } /* endif */
-    } /* endfor */
-  } /* endfor */
+  // check if user required the mesh validity check
+  if (HO_Grid2D_Execution_Mode::CHECK_FOR_INCORRECT_QUADRILATERALS){
 
+    for ( j = JCl ; j <= JCu ; ++j) {
+      for ( i = ICl ; i <= ICu ; ++i) {
+	// Determine the type of the quadrilateral cell
+	QuadType = Find_Quadrilateral_Type(Node[i  ][j  ].X,
+					   Node[i+1][j  ].X,
+					   Node[i+1][j+1].X,
+					   Node[i  ][j+1].X);
+      
+	// Test the geometry of each cell for crossed or degenerated quadrilateral
+	if ( QuadType == 4 || QuadType == 0 ){
+	  cout << endl << "\nThe following quadrilateral has been identified as crossed or degenerated:\n";
+	  Print_2(i,j);
+	  Print_2(ICl,ICu);
+	  Print_2(JCl,JCu);
+	  Print_(Cell[i][j].A);
+	  Print_(Cell[i][j].Xc);
+	  Print_(Node[i][j].X);
+	  Print_(Node[i+1][j].X);
+	  Print_(Node[i+1][j+1].X);
+	  Print_(Node[i][j+1].X);
+	  cout.flush();
+	  if (!HO_Grid2D_Execution_Mode::REPORT_INCORRECT_QUADRILATERALS_BUT_CONTINUE_EXECUTION){
+	    return(1);
+	  }
+	} /* endif */
+      } /* endfor */
+    } /* endfor */
+
+  }
   return(0);
 }
 
@@ -7034,31 +7042,38 @@ int Grid2D_Quad_Block_HO::Check_Quad_Block_Completely(void) {
   int i, j;
   int QuadType;
 
-  for ( j = JCl-Nghost ; j <= JCu+Nghost ; ++j) {
-    for ( i = ICl-Nghost ; i <= ICu+Nghost ; ++i) {
-      // Determine the type of the quadrilateral cell
-      QuadType = Find_Quadrilateral_Type(Node[i  ][j  ].X,
-					 Node[i+1][j  ].X,
-					 Node[i+1][j+1].X,
-					 Node[i  ][j+1].X);
+  // check if user required the mesh validity check
+  if (HO_Grid2D_Execution_Mode::CHECK_FOR_INCORRECT_QUADRILATERALS){
 
-      // Test the geometry of each cell for crossed or degenerated quadrilateral
-      if ( QuadType == 4 || QuadType == 0 ){
-	cout << endl << i << " " << j;
-	cout << endl << ICl << " " << ICu;
-	cout << endl << JCl << " " << JCu;
-	cout << endl << Cell[i][j].A;
-	cout << endl << Cell[i][j].Xc;
-	cout << endl << Node[i][j].X;
-	cout << endl << Node[i+1][j].X;
-	cout << endl << Node[i+1][j+1].X;
-	cout << endl << Node[i][j+1].X;
-	cout.flush();
-	return(1);
-      } /* endif */
+    for ( j = JCl-Nghost ; j <= JCu+Nghost ; ++j) {
+      for ( i = ICl-Nghost ; i <= ICu+Nghost ; ++i) {
+	// Determine the type of the quadrilateral cell
+	QuadType = Find_Quadrilateral_Type(Node[i  ][j  ].X,
+					   Node[i+1][j  ].X,
+					   Node[i+1][j+1].X,
+					   Node[i  ][j+1].X);
+
+	// Test the geometry of each cell for crossed or degenerated quadrilateral
+	if ( QuadType == 4 || QuadType == 0 ){
+	  cout << endl << "\nThe following quadrilateral has been identified as crossed or degenerated:\n";
+	  Print_2(i,j);
+	  Print_2(ICl,ICu);
+	  Print_2(JCl,JCu);
+	  Print_(Cell[i][j].A);
+	  Print_(Cell[i][j].Xc);
+	  Print_(Node[i][j].X);
+	  Print_(Node[i+1][j].X);
+	  Print_(Node[i+1][j+1].X);
+	  Print_(Node[i][j+1].X);
+	  cout.flush();
+	  if (!HO_Grid2D_Execution_Mode::REPORT_INCORRECT_QUADRILATERALS_BUT_CONTINUE_EXECUTION){
+	    return(1);
+	  }
+	} /* endif */
+      } /* endfor */
     } /* endfor */
-  } /* endfor */
 
+  }
   return(0);
 }
 
