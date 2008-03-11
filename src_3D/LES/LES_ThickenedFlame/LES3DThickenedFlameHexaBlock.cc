@@ -4,6 +4,14 @@
 #endif // _LES3DTF_HEXA_BLOCK_INCLUDED
 
 
+/******************************************************************
+ * Hexa_Block::NumVar -- Return the number of solution variables. *
+ ******************************************************************/
+template<>
+int Hexa_Block<LES3DTF_pState, LES3DTF_cState>::NumVar() {
+  return (W[0][0][0].num_vars+2);
+}
+
 /********************************************************
  * Routine: Output_Tecplot                              *
  *                                                      *
@@ -76,13 +84,10 @@ Output_Tecplot(Input_Parameters<LES3DTF_pState,LES3DTF_cState> &IPs,
    } /* endif */
 
    
-   // Hexa_Block TEMP_BLOCK;
-//    TEMP_BLOCK.Copy(*this);
    
    for (int k = Grid.KNl ; k <= Grid.KNu ; ++k) {
       for (int j = Grid.JNl ; j <= Grid.JNu ; ++j) {
          for (int i = Grid.INl ; i <= Grid.INu ; ++i) {
-	    //W_node = TEMP_BLOCK.Wn(i, j, k);
 	    W_node = Wn(i, j, k);
             Out_File << " "  << Grid.Node[i][j][k].X << W_node;
             Out_File.setf(ios::scientific);
@@ -339,9 +344,21 @@ ICs(Input_Parameters<LES3DTF_pState,LES3DTF_cState> &IPs){
       } /* endfor */
     } /* endfor */
     break;
+
+  case IC_TURBULENT_BOX :
+    for (int k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
+      for (int j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
+	for (int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
+	  W[i][j][k] = IPs.Wo;
+	  W[i][j][k].rho = IPs.Wo.p/(IPs.Wo.Rtot()*298.15);
+	  W[i][j][k].v.zero();
+	  U[i][j][k] = W[i][j][k].U();
+	} /* endfor */
+      } /* endfor */
+    } /* endfor */
+    break;
       
   case IC_TURBULENT_PREMIXED_FLAME :     
-
      for (int k  = KCl- Nghost ; k <=  KCu+ Nghost ; ++k) {
         for (int j  = JCl- Nghost ; j <=  JCu+ Nghost ; ++j) {
            for (int i = ICl- Nghost ; i <=  ICu+ Nghost ; ++i) {
@@ -368,8 +385,8 @@ ICs(Input_Parameters<LES3DTF_pState,LES3DTF_cState> &IPs){
 	     W[i][j][k].premixed_mfrac();
 
 	     W[i][j][k].p = 101325.0;
-	     W[i][j][k].rho = 1.13*Wl.Rtot()/W[i][j][k].Rtot()/(1.0+tau*C);
-	     W[i][j][k].v.x = 1.13*0.3837/W[i][j][k].rho;
+	     W[i][j][k].rho = Wl.rho*Wl.Rtot()/W[i][j][k].Rtot()/(1.0+tau*C);
+	     W[i][j][k].v.x = Wl.rho*0.3837/W[i][j][k].rho;
 	     W[i][j][k].k = 0.00;
 	     
 	     U[i][j][k] = W[i][j][k].U();
@@ -389,27 +406,33 @@ ICs(Input_Parameters<LES3DTF_pState,LES3DTF_cState> &IPs){
 	      double yy = Grid.Cell[i][j][k].Xc.y;
 	      double zz = Grid.Cell[i][j][k].Xc.z;
 	      double tau = Wr.T()/Wl.T() - ONE;
+	      double Sl = 0.38;
+	      double slot_width = 0.025;
+	      double fresh_gas_height = 0.02;
 	      
-	      if (zz <= 0.002) {
-		if (xx <= 0.0) {
-		  C = 0.5*(ONE + erf(SQRT_PI*(-xx+0.0056)/(THREE*0.44E-3)));
-		}else{
-		  C = 0.5*(ONE + erf(SQRT_PI*(xx-0.0056)/(THREE*0.44E-3)));
-		} /* endif */
-	      }else{
-		C = 1.0;
-	      } /* endif */
-	      if (zz <= 0.002 && fabs(xx) <= 0.0056) {
-		W[i][j][k].v.z = 15.58*(ONE-sqr(xx/0.0056));
-	      }else{
-		W[i][j][k].v.z = 0.0;
-	      } /* endif */
+	      if (zz <= fresh_gas_height) {
+		if (yy < 0.0) {
+		  C = 0.5*(ONE + erf(SQRT_PI*(-yy-HALF*slot_width)/(THREE*0.44E-3)));
+		} else {
+		  C = 0.5*(ONE + erf(SQRT_PI*(yy-HALF*slot_width)/(THREE*0.44E-3)));
+		}
+	      } else {
+		C = ONE;
+	      }
+
+	      if (zz <= fresh_gas_height && fabs(yy) <= HALF*slot_width) {
+		// fresh gas inflow
+		W[i][j][k].v.z = IPs.Mean_Velocity.z;  //3.0;  //15.58*(ONE-sqr(xx/0.005));
+	      } else {
+		W[i][j][k].v.z = IPs.Mean_Velocity.z + Sl*(Wl.rho/Wr.rho - ONE);  // 7.0;
+	      }
 
 	      if (C>0.02 && C<0.98) {
 	        W[i][j][k].flame.TF = 5.0;
 	      } else {
 	        W[i][j][k].flame.TF = 1.0;
 	      }
+	      W[i][j][k].flame.TF = 5.0;
 	      W[i][j][k].flame.WF =1.0;
 
 	      double Yf_u = 0.05518;
@@ -417,10 +440,22 @@ ICs(Input_Parameters<LES3DTF_pState,LES3DTF_cState> &IPs){
 	      W[i][j][k].spec[0].c = Yf_b*C + Yf_u*(ONE-C);
 	      W[i][j][k].premixed_mfrac();
               W[i][j][k].p = 101325.0;
-	      W[i][j][k].rho = 1.13*Wl.Rtot()/W[i][j][k].Rtot()/(1.0+tau*C);
-              W[i][j][k].v.x = 0.0;
-              W[i][j][k].v.y = 0.0;
+	      W[i][j][k].rho = Wl.rho*Wl.Rtot()/W[i][j][k].Rtot()/(1.0+tau*C);
 	      W[i][j][k].k = 0.0;
+	      W[i][j][k].v.x = 0.0;
+	      W[i][j][k].v.y = 0.0;
+
+	      if (zz <= fresh_gas_height) {
+		if (yy < 0.0) {
+		  W[i][j][k].v.y = -Sl*(Wl.rho/W[i][j][k].rho - ONE);
+		} else {
+		  W[i][j][k].v.y = Sl*(Wl.rho/W[i][j][k].rho - ONE);
+		}
+	      }
+
+	      if (fabs(yy) <= HALF*slot_width) {
+		W[i][j][k].v.z = IPs.Mean_Velocity.z + Sl*(Wl.rho/W[i][j][k].rho - ONE); 
+	      }
 
               U[i][j][k] = W[i][j][k].U();
 	      
@@ -438,15 +473,19 @@ ICs(Input_Parameters<LES3DTF_pState,LES3DTF_cState> &IPs){
 	     double tau = Wr.T()/Wl.T() - ONE;
 	     double C;
 
-	     if (Grid.Cell[i][j][k].Xc.z<=0.05) {
+	     if (Grid.Cell[i][j][k].Xc.z<=0.035) {
 	       C = 0.5*(ONE + erf(SQRT_PI*(rr-0.0056)/(THREE*0.44E-3)));
+	       //C = ZERO;
 	       if (rr<=0.0056){
-		 W[i][j][k].v.z = 15.58*(ONE-sqr(rr/0.0056));
+		 W[i][j][k].v.z = 0.0; //15.58*(ONE-sqr(rr/0.0056));
 	       }else{
 		 W[i][j][k].v.z = 0.0;
+		 W[i][j][k].v.x = 0.0;  //0.3837/sqrt(TWO);
+	         W[i][j][k].v.y = 0.0;  //0.3837/sqrt(TWO);
 	       } /* endif */
 	     }else{
 	       C = 1.0;
+	       //C = ZERO;
 	       W[i][j][k].v.z = 0.0;
 	     } /* endif */
 
@@ -455,6 +494,7 @@ ICs(Input_Parameters<LES3DTF_pState,LES3DTF_cState> &IPs){
 	     } else {
 	       W[i][j][k].flame.TF = 1.0;
 	     }
+	     //W[i][j][k].flame.TF = 5.0;
 	     W[i][j][k].flame.WF =1.0;
 
 	     double Yf_u = 0.05518;
@@ -464,8 +504,8 @@ ICs(Input_Parameters<LES3DTF_pState,LES3DTF_cState> &IPs){
 
 	     W[i][j][k].p = 101325.0;
 	     W[i][j][k].rho = 1.13*Wl.Rtot()/W[i][j][k].Rtot()/(1.0+tau*C);
-	     W[i][j][k].v.x = 1.13*0.3837/(W[i][j][k].rho*sqrt(TWO));
-	     W[i][j][k].v.y = 1.13*0.3837/(W[i][j][k].rho*sqrt(TWO));
+	     W[i][j][k].v.x = 0.0; //1.13*0.3837/(W[i][j][k].rho*sqrt(TWO));
+	     W[i][j][k].v.y = 0.0; //1.13*0.3837/(W[i][j][k].rho*sqrt(TWO));
 	     W[i][j][k].k = 0.0;
 
 	     U[i][j][k] = W[i][j][k].U();
@@ -828,6 +868,20 @@ BCs(Input_Parameters<LES3DTF_pState,LES3DTF_cState> &IPs) {
 	     U[ICl-2][j][k] = W[ICl-2][j][k].U();
 	     break;
 
+	   case BC_INFLOW_TURBULENCE :
+	     W[ICl-1][j][k] = WoW[j][k];
+	     W[ICl-1][j][k].v = W[ICl][j][k].v;
+	     W[ICl-1][j][k].p = W[ICl][j][k].p;
+	     W[ICl-1][j][k].k = W[ICl][j][k].k;
+	     U[ICl-1][j][k] = W[ICl-1][j][k].U();
+
+             W[ICl-2][j][k] = WoW[j][k];
+	     W[ICl-2][j][k].v = W[ICl][j][k].v;
+	     W[ICl-2][j][k].p = W[ICl][j][k].p;
+	     W[ICl-2][j][k].k = W[ICl][j][k].k;
+	     U[ICl-2][j][k] = W[ICl-2][j][k].U();
+	     break;
+
            case BC_CONSTANT_EXTRAPOLATION :
 	   default :
              W[ICl-1][j][k] = W[ICl][j][k];
@@ -920,7 +974,7 @@ BCs(Input_Parameters<LES3DTF_pState,LES3DTF_cState> &IPs) {
 	     U[ICu+1][j][k] = W[ICu+1][j][k].U();
  	     W[ICu+2][j][k] = WoE[j][k];
              W[ICu+2][j][k].p = W[ICu][j][k].p;
-	     U[ICu+2][j][k] = W[ICu+2 ][j][k].U();
+	     U[ICu+2][j][k] = W[ICu+2][j][k].U();
 	     break;
 
 	   case BC_OUTFLOW_SUBSONIC :
@@ -933,6 +987,20 @@ BCs(Input_Parameters<LES3DTF_pState,LES3DTF_cState> &IPs) {
 	     U[ICu+2][j][k] = W[ICu+2][j][k].U();
 	     break;
             
+	   case BC_INFLOW_TURBULENCE :
+	     W[ICu+1][j][k] = WoE[j][k];
+	     W[ICu+1][j][k].v = W[ICu][j][k].v;
+	     W[ICu+1][j][k].p = W[ICu][j][k].p;
+	     W[ICu+1][j][k].k = W[ICu][j][k].k;
+	     U[ICu+1][j][k] = W[ICu+1][j][k].U();
+
+ 	     W[ICu+2][j][k] = WoE[j][k];
+	     W[ICu+2][j][k].v = W[ICu][j][k].v;
+	     W[ICu+2][j][k].p = W[ICu][j][k].p;
+	     W[ICu+2][j][k].k = W[ICu][j][k].k;
+	     U[ICu+2][j][k] = W[ICu+2][j][k].U();
+	     break;
+
            case BC_CONSTANT_EXTRAPOLATION :
 	   default :
              W[ICu+1][j][k] = W[ICu][j][k];
@@ -1024,12 +1092,12 @@ BCs(Input_Parameters<LES3DTF_pState,LES3DTF_cState> &IPs) {
              break;
 
            case BC_INFLOW_SUBSONIC :
-	     // all fixed except v.x (u) which is constant extrapolation
+	     // all fixed except p which is constant extrapolation
 	     W[i][JCu+1][k] = WoN[i][k];
-	     W[i][JCu+1][k].v.y = W[i][JCu][k].v.y;
+	     W[i][JCu+1][k].p = W[i][JCu][k].p;
 	     U[i][JCu+1][k] = W[i][JCu+1][k].U();
  	     W[i][JCu+2][k] = WoN[i][k];
-	     W[i][JCu+2][k].v.y = W[i][JCu][k].v.y;
+	     W[i][JCu+2][k].p = W[i][JCu][k].p;
 	     U[i][JCu+2][k] = W[i][JCu+2][k].U();
 	     break;
 
@@ -1038,8 +1106,22 @@ BCs(Input_Parameters<LES3DTF_pState,LES3DTF_cState> &IPs) {
 	     W[i][JCu+1][k] = W[i][JCu][k];
 	     W[i][JCu+1][k].p = WoN[i][k].p;
 	     U[i][JCu+1][k] = W[i][JCu+1][k].U();
- 	     W[i][JCu+2][k] = W[i][JCl][k];
+ 	     W[i][JCu+2][k] = W[i][JCu][k];
 	     W[i][JCu+2][k].p = WoN[i][k].p;
+	     U[i][JCu+2][k] = W[i][JCu+2][k].U();
+	     break;
+
+	  case BC_INFLOW_TURBULENCE :
+	     W[i][JCu+1][k] = WoN[i][k];
+	     W[i][JCu+1][k].v = W[i][JCu][k].v;
+	     W[i][JCu+1][k].p = W[i][JCu][k].p;
+	     W[i][JCu+1][k].k = W[i][JCu][k].k;
+	     U[i][JCu+1][k] = W[i][JCu+1][k].U();
+
+ 	     W[i][JCu+2][k] = WoN[i][k];
+	     W[i][JCu+2][k].v = W[i][JCu][k].v;
+	     W[i][JCu+2][k].p = W[i][JCu][k].p;
+	     W[i][JCu+2][k].k = W[i][JCu][k].k;
 	     U[i][JCu+2][k] = W[i][JCu+2][k].U();
 	     break;
 
@@ -1129,12 +1211,12 @@ BCs(Input_Parameters<LES3DTF_pState,LES3DTF_cState> &IPs) {
              break;
 
            case BC_INFLOW_SUBSONIC :
-	     // all fixed except v.x (u) which is constant extrapolation
+	     // all fixed except p which is constant extrapolation
 	     W[i][JCl-1][k] = WoS[i][k];
-	     W[i][JCl-1][k].v.y = W[i][JCl][k].v.y;
+	     W[i][JCl-1][k].p = W[i][JCl][k].p;
 	     U[i][JCl-1][k] = W[i][JCl-1][k].U();
 	     W[i][JCl-2][k] = WoS[i][k];
-	     W[i][JCl-2][k].v.y = W[i][JCl][k].v.y;
+	     W[i][JCl-2][k].p = W[i][JCl][k].p;
 	     U[i][JCl-2][k] = W[i][JCl-2][k].U();
 	     break;
 
@@ -1148,6 +1230,20 @@ BCs(Input_Parameters<LES3DTF_pState,LES3DTF_cState> &IPs) {
 	     U[i][JCl-2][k] = W[i][JCl-2][k].U();
 	     break;
             
+	   case BC_INFLOW_TURBULENCE :
+	     W[i][JCl-1][k] = WoS[i][k];
+	     W[i][JCl-1][k].v = W[i][JCl][k].v;
+	     W[i][JCl-1][k].p = W[i][JCl][k].p; 
+	     W[i][JCl-1][k].k = W[i][JCl][k].k; 
+	     U[i][JCl-1][k] = W[i][JCl-1][k].U();
+
+	     W[i][JCl-2][k] = WoS[i][k];
+	     W[i][JCl-2][k].v = W[i][JCl][k].v;
+	     W[i][JCl-2][k].p = W[i][JCl][k].p; 
+	     W[i][JCl-2][k].k = W[i][JCl][k].k; 
+	     U[i][JCl-2][k] = W[i][JCl-2][k].U();
+	     break;
+
            case BC_CONSTANT_EXTRAPOLATION :
 	   default :
              W[i][JCl-1][k] = W[i][JCl][k];
@@ -1250,23 +1346,37 @@ BCs(Input_Parameters<LES3DTF_pState,LES3DTF_cState> &IPs) {
              break;
 
            case BC_INFLOW_SUBSONIC :
-	     // all fixed except v.x (u) which is constant extrapolation
-             W[i][j][KCl-1] = W[i][j][KCu-1];
-             W[i][j][KCl-1].v.z = WoB[i][j].v.z;
-             U[i][j][KCl-1] = W[i][j][KCu-1].U();
-             W[i][j][KCl-2] = W[i][j][KCu-2];
-             W[i][j][KCl-2].v.z = WoB[i][j].v.z;
-             U[i][j][KCl-2] = W[i][j][KCu-2].U();
+	     // all fixed except p which is constant extrapolation
+             W[i][j][KCl-1] = WoB[i][j]; 
+             W[i][j][KCl-1].p = W[i][j][KCl].p;
+             U[i][j][KCl-1] = W[i][j][KCl-1].U();
+             W[i][j][KCl-2] = WoB[i][j];
+             W[i][j][KCl-2].p = W[i][j][KCl].p;
+             U[i][j][KCl-2] = W[i][j][KCl-2].U();
              break;
 
            case BC_OUTFLOW_SUBSONIC :
 	     // all constant extrapolation except pressure which is fixed.
-             W[i][j][KCl-1] = W[i][j][KCu-1];
+             W[i][j][KCl-1] = W[i][j][KCl];
              W[i][j][KCl-1].p = WoB[i][j].p;
-             U[i][j][KCl-1] = W[i][j][KCu-1].U();
-             W[i][j][KCl-2] = W[i][j][KCu-2];
+             U[i][j][KCl-1] = W[i][j][KCl-1].U();
+             W[i][j][KCl-2] = W[i][j][KCl];
              W[i][j][KCl-2].p = WoB[i][j].p;
-             U[i][j][KCl-2] = W[i][j][KCu-2].U();
+             U[i][j][KCl-2] = W[i][j][KCl-2].U();
+             break;
+
+           case BC_INFLOW_TURBULENCE :
+             W[i][j][KCl-1] = WoB[i][j];
+	     W[i][j][KCl-1].v = W[i][j][KCl].v;
+	     W[i][j][KCl-1].p = W[i][j][KCl].p; 
+	     W[i][j][KCl-1].k = W[i][j][KCl].k; 
+             U[i][j][KCl-1] = W[i][j][KCl-1].U();
+
+             W[i][j][KCl-2] = WoB[i][j];
+	     W[i][j][KCl-2].v = W[i][j][KCl].v;  
+	     W[i][j][KCl-2].p = W[i][j][KCl].p;  
+	     W[i][j][KCl-2].k = W[i][j][KCl].k;  
+             U[i][j][KCl-2] = W[i][j][KCl-2].U();
              break;
 
            case BC_CONSTANT_EXTRAPOLATION :
@@ -1355,23 +1465,37 @@ BCs(Input_Parameters<LES3DTF_pState,LES3DTF_cState> &IPs) {
              break;
 
            case BC_INFLOW_SUBSONIC :
-	     // all fixed except v.x (u) which is constant extrapolation
-             W[i][j][KCl+1] = W[i][j][KCu+1];
-             W[i][j][KCl+1].v.z = WoT[i][j].v.z;
-             U[i][j][KCl+1] = W[i][j][KCu+1].U();
-             W[i][j][KCl+2] = W[i][j][KCu+2];
-             W[i][j][KCl+2].v.z = WoT[i][j].v.z;
-             U[i][j][KCl+2] = W[i][j][KCu+2].U();
+	     // all fixed except p which is constant extrapolation
+             W[i][j][KCu+1] = WoT[i][j];
+             W[i][j][KCu+1].p = W[i][j][KCu].p;
+             U[i][j][KCu+1] = W[i][j][KCu+1].U();
+             W[i][j][KCu+2] = WoT[i][j];
+             W[i][j][KCu+2].p = W[i][j][KCu].p;
+             U[i][j][KCu+2] = W[i][j][KCu+2].U();
              break;
 
            case BC_OUTFLOW_SUBSONIC :
 	     // all constant extrapolation except pressure which is fixed.
-             W[i][j][KCl+1] = W[i][j][KCu+1];
-             W[i][j][KCl+1].p = WoT[i][j].p;
-             U[i][j][KCl+1] = W[i][j][KCu+1].U();
-             W[i][j][KCl+2] = W[i][j][KCu+2];
-             W[i][j][KCl+2].p = WoT[i][j].p;
-             U[i][j][KCl+2] = W[i][j][KCu+2].U();
+             W[i][j][KCu+1] = W[i][j][KCu];
+             W[i][j][KCu+1].p = WoT[i][j].p;
+             U[i][j][KCu+1] = W[i][j][KCu+1].U();
+             W[i][j][KCu+2] = W[i][j][KCu];
+             W[i][j][KCu+2].p = WoT[i][j].p;
+             U[i][j][KCu+2] = W[i][j][KCu+2].U();
+             break;
+
+	   case BC_INFLOW_TURBULENCE :
+	     W[i][j][KCu+1] = WoT[i][j];
+	     W[i][j][KCu+1].v = W[i][j][KCu].v; 
+	     W[i][j][KCu+1].p = W[i][j][KCu].p; 
+	     W[i][j][KCu+1].k = W[i][j][KCu].k; 
+             U[i][j][KCu+1] = W[i][j][KCu+1].U();
+
+             W[i][j][KCu+2] = WoT[i][j];
+	     W[i][j][KCu+2].v = W[i][j][KCu].v; 
+	     W[i][j][KCu+2].p = W[i][j][KCu].p; 
+	     W[i][j][KCu+2].k = W[i][j][KCu].k; 
+             U[i][j][KCu+2] = W[i][j][KCu+2].U();
              break;
 
            case BC_CONSTANT_EXTRAPOLATION :
@@ -1400,7 +1524,7 @@ BCs(Input_Parameters<LES3DTF_pState,LES3DTF_cState> &IPs) {
  ********************************************************/
 template<>
 double Hexa_Block<LES3DTF_pState,LES3DTF_cState>::
-CFL(Input_Parameters<LES3DTF_pState,LES3DTF_cState> &IPs){
+CFL(Input_Parameters<LES3DTF_pState,LES3DTF_cState> &IPs) {
    
    double dtMin, d_i, d_j, d_k, v_i, v_j, v_k, a, dt_vis, nv, nv_t;
    double mr, aa_i, aa_j, aa_k;
@@ -2205,7 +2329,7 @@ Update_Solution_Multistage_Explicit(const int i_stage,
 
 //	  U[i][j][k].flame.TF = U[i][j][k]._TFactor; // Maximum thickening factor
 
-	  U[i][j][k].flame.TF = 5.0;  // 5.0
+	  U[i][j][k].flame.TF = 5.0; // 10.0;  // 5.0
 
 	  double lapl_vor, cell_size;
 	  cell_size = U[i][j][k].filter_width(Grid.volume(i,j,k));
@@ -2220,7 +2344,7 @@ Update_Solution_Multistage_Explicit(const int i_stage,
 
  	} else {
 	  U[i][j][k].flame.WF = ONE;
-	  U[i][j][k].flame.TF = ONE;
+	  U[i][j][k].flame.TF = 5.0; // ONE  
 
  	} /*endif */
 

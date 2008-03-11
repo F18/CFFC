@@ -186,6 +186,9 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
 	// 2. Apply boundary conditions for stage.
 	Solution_Data.Local_Solution_Blocks.BCs(Solution_Data.Input);
 	
+	error_flag = Hexa_BCs_Specializations(Data, Solution_Data);
+	if (error_flag) return (error_flag);
+	
 	 /*************** UPDATE CORNER GHOST CELLS SOLUTION *****/
         // For those 3 blocks abutting cases, this is to fix the gradient-reconstruction.
         Solution_Data.Local_Solution_Blocks.Update_Corner_Cells_for_3_Blks_Abutting(Data.Local_Adaptive_Block_List);
@@ -274,7 +277,10 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
 
   Solution_Data.Local_Solution_Blocks.BCs(Solution_Data.Input);
 
-  /*************** UPDATE CORNOR GHOST CELLS SOLUTION *****/
+  error_flag = Hexa_BCs_Specializations(Data, Solution_Data);
+  if (error_flag) return (error_flag);
+
+  /*************** UPDATE CORNER GHOST CELLS SOLUTION *****/
   // For those 3 blocks abutting cases, this is to fix the gradient-recosntruction.
   Solution_Data.Local_Solution_Blocks.Update_Corner_Cells_for_3_Blks_Abutting(Data.Local_Adaptive_Block_List);
 

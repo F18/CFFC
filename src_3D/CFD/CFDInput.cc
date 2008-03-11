@@ -615,6 +615,8 @@ int CFD_Input_Parameters::Parse_Next_Input_Control_Parameter(void) {
           i_ICs = IC_TURBULENT_BUNSEN_FLAME;
        }else if (strcmp(ICs_Type, "Turbulent_Bunsen_Box") == 0) {
           i_ICs = IC_TURBULENT_BUNSEN_BOX;
+       }else if (strcmp(ICs_Type, "Turbulent_Box") == 0) {
+          i_ICs = IC_TURBULENT_BOX;
        } else if (strcmp(ICs_Type, "Restart") == 0) {
           i_ICs = IC_RESTART;
        } else {
@@ -669,6 +671,10 @@ int CFD_Input_Parameters::Parse_Next_Input_Control_Parameter(void) {
     } else if (strcmp(code, "Pressure_Gradient") == 0) {
        i_command = 111;
        value_stream >> Pressure_Gradient;
+
+    } else if (strcmp(code, "Mean_Velocity") == 0) {
+       i_command = 112;
+       value_stream >> Mean_Velocity;
 
     //
     // Invalid input parameter code:
@@ -972,6 +978,15 @@ void CFD_Input_Parameters::Broadcast(void) {
                           1,
 			  MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&(Moving_Wall_Velocity.z),
+                          1,
+			  MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(Mean_Velocity.x),
+                          1,
+			  MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(Mean_Velocity.y),
+                          1,
+			  MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(Mean_Velocity.z),
                           1,
 			  MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&(Pressure_Gradient.x),

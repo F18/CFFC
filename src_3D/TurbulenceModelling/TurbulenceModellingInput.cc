@@ -18,6 +18,33 @@ void Turbulence_Modelling_Input_Parameters::Broadcast(void) {
     MPI::COMM_WORLD.Bcast(&(Near_Wall_Boundary_Treatment),
                           1,
                           MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(SFS_model,
+                          TURBULENCEMODEL_INPUT_PARAMETER_LENGTH,
+                          MPI::CHAR, 0);
+    MPI::COMM_WORLD.Bcast(&(i_SFS_model),
+                          1,
+                          MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(filter_type,
+                          TURBULENCEMODEL_INPUT_PARAMETER_LENGTH,
+                          MPI::CHAR, 0);
+    MPI::COMM_WORLD.Bcast(&(i_filter_type),
+                          1,
+                          MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(FGR),
+                          1,
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(spectrum,
+                          TURBULENCEMODEL_INPUT_PARAMETER_LENGTH,
+                          MPI::CHAR, 0);
+    MPI::COMM_WORLD.Bcast(&(i_spectrum),
+                          1,
+                          MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(LLR),
+                          1,
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(TKE),
+                          1,
+                          MPI::DOUBLE, 0);
 #endif
 
 }
@@ -33,13 +60,76 @@ int Turbulence_Modelling_Input_Parameters::Parse_Next_Input_Control_Parameter(ch
 //  - INVALID_INPUT_CODE  if unknown code
 
   int i_command = INVALID_INPUT_CODE;
+  string value_string;
 
   if (strcmp(code, "Near_Wall_Boundary_Treatment") == 0) {
     i_command = 6001;
     value >> Near_Wall_Boundary_Treatment;
     if  (Near_Wall_Boundary_Treatment < 0 ||
-        Near_Wall_Boundary_Treatment > 2) i_command = INVALID_INPUT_VALUE;
+	 Near_Wall_Boundary_Treatment > 2) i_command = INVALID_INPUT_VALUE;
 
+    /*
+     * LES parameters
+     * --------------
+     */
+    
+    /* ----- LES : Sub filter scale model ----- */
+  } else if (strcmp(code, "SFS_model") == 0) {
+    i_command = 120;
+    value >> value_string;
+    strcpy(SFS_model, value_string.c_str());
+    if (strcmp(SFS_model, "Smagorinsky") == 0) {
+      i_SFS_model = SFS_MODEL_SMAGORINSKY;
+    } else {
+      i_command = INVALID_INPUT_VALUE;
+    } 
+          
+    /* ---- LES : filter type ---- */
+  } else if (strcmp(code, "Filter_Type") == 0) {
+    i_command = 121;
+    value >> value_string;
+    strcpy(filter_type, value_string.c_str());
+    if (strcmp(filter_type, "Implicit") == 0) {
+      i_filter_type = FILTER_TYPE_IMPLICIT;
+    } else {
+      i_command = INVALID_INPUT_VALUE;
+    } /* endif */
+      
+  } else if (strcmp(code, "Filter_Grid_Ratio") == 0) {
+    i_command = 122;
+    value >> FGR;
+    if (FGR < 1)
+      i_command = INVALID_INPUT_VALUE;
+        
+    /* ---- Spectrum Parameters ---- */
+  } else if (strcmp(code, "Spectrum_Model") == 0) {
+    i_command = 130;
+    value >> value_string;
+    strcpy(spectrum, value_string.c_str());
+    if (strcmp(spectrum, "Von_Karman_Pao") == 0) {
+      i_spectrum = SPECTRUM_VON_KARMAN_PAO;
+    } else if(strcmp(spectrum, "Haworth_Poinsot") == 0) {
+      i_spectrum = SPECTRUM_HAWORTH_POINSOT;
+    } else if(strcmp(spectrum, "Pope") == 0) {
+      i_spectrum = SPECTRUM_POPE;
+    } else if(strcmp(spectrum, "Laval_Nazarenko") == 0) {
+      i_spectrum = SPECTRUM_LAVAL_NAZARENKO;         
+    } else {
+      i_command = INVALID_INPUT_VALUE;
+    } /* endif */
+        
+  } else if (strcmp(code, "Domain_Integral_Lengthscale_Ratio") == 0) {
+    i_command = 131;
+    value >> LLR;
+    if (LLR < 1)
+      i_command = INVALID_INPUT_VALUE;
+        
+  } else if (strcmp(code, "Turbulent_Kinetic_Energy") == 0) {
+    i_command = 131;
+    value >> TKE;
+    if (TKE <= ZERO)
+      i_command = INVALID_INPUT_VALUE;
+    
   } else {
     i_command = INVALID_INPUT_CODE;
 
@@ -88,5 +178,17 @@ void Turbulence_Modelling_Input_Parameters::Output(ostream &out_file) const {
         out_file << "\n  -> Near Wall Turbulent BC Treatment: Wall Functions";
      } /* endif */
   } /* endif */
+
+    out_file << "\n  LES parameters:";
+    out_file << "\n    -> Filter type: " << filter_type;
+    if (i_filter_type == FILTER_TYPE_IMPLICIT){
+        out_file << "\n       -> Filter Grid Ratio: " << FGR;
+    }
+    out_file << "\n    -> Sub Filter Scale model: " << SFS_model;
+    
+    out_file << "\n  Spectrum parameters:";
+    out_file << "\n    -> Spectrum model: " << spectrum;
+    out_file << "\n    -> Domain Integral length scale \"L\" ratio: " << LLR;
+    out_file << "\n    -> Turbulent Kinetic Energy: " << TKE; 
 
 }

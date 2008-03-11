@@ -1349,10 +1349,10 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Turbulence_Box(Grid3D_Input_Param
       will be extruded. */
    
    Grid2D_Box_XYplane = Grid_Rectangular_Box(Grid2D_Box_XYplane,
-                                             Input.NBlk_Idir, 
+					     Input.NBlk_Idir, 
                                              Input.NBlk_Jdir,
-                                             Input.Box_Width,
-                                             Input.Box_Height,
+                                             Input.Turbulence_Box_Width,
+                                             Input.Turbulence_Box_Height,
                                              ON,
 					     Input.Stretching_Type_Idir,
 					     Input.Stretching_Type_Jdir,
@@ -1378,10 +1378,10 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Turbulence_Box(Grid3D_Input_Param
                                             Input.NCells_Turbulence_Kdir,
            	                            Input.Stretching_Type_Kdir,
 				            Input.Stretching_Factor_Kdir,
-                                            ZERO*Input.Box_Length+  
-                                            (double(kBlk)/double(Input.NBlk_Kdir))*Input.Box_Length,
-                                            ZERO*Input.Box_Length+  
-                                            (double(kBlk+1)/double(Input.NBlk_Kdir))*Input.Box_Length);
+                                            ZERO*Input.Turbulence_Box_Length+  
+                                            (double(kBlk)/double(Input.NBlk_Kdir))*Input.Turbulence_Box_Length,
+                                            ZERO*Input.Turbulence_Box_Length+  
+                                            (double(kBlk+1)/double(Input.NBlk_Kdir))*Input.Turbulence_Box_Length);
 
 
    	        if (iBlk == Input.NBlk_Idir-1) {
@@ -1501,7 +1501,7 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Bunsen_Inflow(Grid3D_Input_Parame
 				     STRETCHING_FCN_MIN_CLUSTERING,
 				     1.25,
 				     ZERO*Input.Height_Bunsen_Burner,
-				     0.25*Input.Height_Bunsen_Burner);
+				     0.5*Input.Height_Bunsen_Burner);
 
 	      Grid_Blks[iBlk].Set_BCs(BC_NONE,
 		                      BC_NONE,
@@ -1575,30 +1575,30 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Bunsen_Box(Grid3D_Input_Parameter
                                             Input.NCells_Kdir,
            	                            Input.Stretching_Type_Kdir,
 				            Input.Stretching_Factor_Kdir,
-                                            -HALF*Input.Box_Length+
+                                            ZERO*Input.Box_Length+
                                             (double(kBlk)/double(Input.NBlk_Kdir))*Input.Box_Length,
-                                            -HALF*Input.Box_Length+
+                                            ZERO*Input.Box_Length+
                                             (double(kBlk+1)/double(Input.NBlk_Kdir))*Input.Box_Length);
 
 
    	        if (iBlk == Input.NBlk_Idir-1) {
-		  BC_east = BC_REFLECTION;
+		  BC_east = BC_OUTFLOW_SUBSONIC;  //BC_REFLECTION;
                 } else {
                    BC_east = BC_NONE;
                 } /* endif */
                 if (iBlk == 0) {
-		  BC_west = BC_REFLECTION;
+		  BC_west = BC_OUTFLOW_SUBSONIC; //BC_REFLECTION;
                 } else {
                    BC_west = BC_NONE;
                 } /* endif */
 
 	        if (jBlk == Input.NBlk_Jdir-1) {
-		  BC_north = BC_REFLECTION;
+		  BC_north = BC_OUTFLOW_SUBSONIC; //BC_REFLECTION;
                 } else {
                    BC_north = BC_NONE;
                 } /* endif */
                 if (jBlk == 0) {
-		  BC_south = BC_REFLECTION;
+		  BC_south = BC_OUTFLOW_SUBSONIC;  //BC_REFLECTION;
                 } else {
                    BC_south = BC_NONE;
                 } /* endif */
@@ -1606,12 +1606,16 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Bunsen_Box(Grid3D_Input_Parameter
             /* Assign top and bottom boundary conditions. */
 
             if (kBlk == Input.NBlk_Kdir-1) {
-               BC_top = BC_FIXED_PRESSURE;
+	       BC_top = BC_OUTFLOW_SUBSONIC;  //BC_FIXED_PRESSURE;
             } else {
                BC_top = BC_NONE;
             } /* endif */
             if (kBlk == 0) {
-               BC_bottom = BC_DIRICHLET;
+	      if (jBlk == 2  ||  jBlk == 3) {
+		BC_bottom = BC_INFLOW_TURBULENCE; 
+	      } else {
+		BC_bottom = BC_INFLOW_SUBSONIC;  //BC_DIRICHLET;
+	      }
             } else {
                BC_bottom = BC_NONE;
             } /* endif */
@@ -1723,7 +1727,7 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Bunsen_Burner(Grid3D_Input_Parame
                                       BC_NONE,
 		                      BC_NONE,
                                       BC_NONE,
-                                      BC_DIRICHLET);
+                                      BC_INFLOW_TURBULENCE /*BC_DIRICHLET*/);
 
            } else if (iBlk >= 5 && iBlk <= 9) {
              Grid_Blks[iBlk].Extrude(Grid2D_Fuel_Line_XYplane[iBlk-5][0],

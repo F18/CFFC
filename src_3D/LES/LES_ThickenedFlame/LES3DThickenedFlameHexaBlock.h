@@ -25,6 +25,10 @@
 
 /* Define required specializations. */
 
+
+template<>
+int Hexa_Block<LES3DTF_pState, LES3DTF_cState>::NumVar(void);
+
 template<>
 void Hexa_Block<LES3DTF_pState, LES3DTF_cState>::
 Output_Tecplot(Input_Parameters<LES3DTF_pState,
@@ -93,15 +97,6 @@ Linear_Reconstruction_LeastSquares(const int i,
 				   const int j,
 				   const int k,
 				   const int Limiter);
-
-/******************************************************************
- * Hexa_Block::NumVar -- Return the number of solution variables. *
- ******************************************************************/
-template<>
-int Hexa_Block<LES3DTF_pState,LES3DTF_cState>::NumVar(void){
-  return (W[0][0][0].num_vars+2);
-}
-
 
 
 /********************************************************

@@ -100,7 +100,10 @@ class Grid3D_Input_Parameters{
 
     //@{ @name Bunsen burner mesh parameters:
     double Radius_Bunsen_Burner_Fuel_Line, Radius_Bunsen_Burner, Height_Bunsen_Burner; 
+    //@}
 
+    //@{ @name Dimensions for turbulence box:
+    double Turbulence_Box_Length, Turbulence_Box_Width, Turbulence_Box_Height;
     //@}
 
     //@{ @name Constructors and desctructors:
@@ -138,6 +141,10 @@ class Grid3D_Input_Parameters{
        Radius_Bunsen_Burner_Fuel_Line = 0.0056;
        Radius_Bunsen_Burner = 0.07;
        Height_Bunsen_Burner = 0.2;
+       // Turbulence box parameters:
+       Turbulence_Box_Length = Box_Length; 
+       Turbulence_Box_Width = Box_Width; 
+       Turbulence_Box_Height = Box_Height;
        //ICEM Filenames:
        ICEMCFD_FileNames = ICEMCFD_get_filenames();
     }

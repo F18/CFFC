@@ -41,16 +41,43 @@ using namespace std;
 class Turbulence_Modelling_Input_Parameters{
  private:
  public:
-  //@{ @name Indicator for near wall treatment for turbulent flows using FANS solver:
-  //! Indicator for near wall treatment for turbulent flows (0, 1,2 , automatic, wall function, low_Reynolds number)
-  int Near_Wall_Boundary_Treatment; 
-  //! 0, 1,2 , automatic, wall function, low_Reynolds number.
-  //@}
+    //@{ @name Indicator for near wall treatment for turbulent flows using FANS solver:
+    //! Indicator for near wall treatment for turbulent flows (0, 1,2 , automatic, wall function, low_Reynolds number)
+    int Near_Wall_Boundary_Treatment; 
+    //! 0, 1,2 , automatic, wall function, low_Reynolds number.
+    //@}
+    
+    //@{ @name LES related input parameters:
+    char SFS_model[TURBULENCEMODEL_INPUT_PARAMETER_LENGTH];     //!< Sub-filter-scale model , default = Smagorinsky + Yoshizawa
+    int i_SFS_model;                                            //!< Sub-filter-scale model , default = Smagorinsky + Yoshizawa
+    char filter_type[TURBULENCEMODEL_INPUT_PARAMETER_LENGTH];   //!< Filter type : default = implicit filtering
+    int i_filter_type;                                          //!< Filter type : default = implicit filtering
+    double FGR;                                                 //!< Filter width to mesh size ratio, default : $f \bar{\Delta} = 2 \Delta x $f
+    //@}
+    
+    //@{ @name Spectrum related input parameters:
+    char spectrum[TURBULENCEMODEL_INPUT_PARAMETER_LENGTH];      //!< Spectrum function, default = Von Karman - Pao
+    int i_spectrum;                                             //!< Spectrum function, default = Von Karman - Pao
+    double LLR;                                                 //!< domainsize / (integral length scale L = k^(3/2)/eps)
+    double TKE;                                                 //!< Turbulent Kinetic Energy
+    //@}
 
   //@{ @name Constructors and desctructors:
   //! Constructor (assign default values)
   Turbulence_Modelling_Input_Parameters() {
-    Near_Wall_Boundary_Treatment = 0; 
+      Near_Wall_Boundary_Treatment = 0; 
+      // LES parameters
+      strcpy(SFS_model, "Smagorinsky");
+      i_SFS_model = SFS_MODEL_SMAGORINSKY;
+      strcpy(filter_type, "Implicit");
+      i_filter_type = FILTER_TYPE_IMPLICIT;
+      FGR = TWO;
+    
+      // Spectrum parameters
+      strcpy(spectrum,"Von_Karman_Pao");
+      i_spectrum = SPECTRUM_VON_KARMAN_PAO;
+      LLR = 6;
+      TKE = 150.0;
   }
 
   //! Destructor

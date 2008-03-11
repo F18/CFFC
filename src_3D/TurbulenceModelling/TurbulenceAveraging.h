@@ -82,7 +82,13 @@ void Time_Averaging_of_Solution(HEXA_BLOCK *Solution_Block,
                 u_p += sqr(Solution_Block[p].W[i][j][k].v.x - u_ave) * local_vol;
                 v_p += sqr(Solution_Block[p].W[i][j][k].v.y - v_ave) * local_vol;
                 w_p += sqr(Solution_Block[p].W[i][j][k].v.z - w_ave) * local_vol;
-                vis = Solution_Block[p].W[i][j][k].mu()/Solution_Block[p].W[i][j][k].rho;
+                vis = ( Solution_Block[p].W[i][j][k].mu() + 
+			Solution_Block[p].W[i][j][k].mu_t(Solution_Block[p].dWdx[i][j][k],
+							  Solution_Block[p].dWdy[i][j][k],
+							  Solution_Block[p].dWdz[i][j][k],
+							  Solution_Block[p].Flow_Type, 
+							  local_vol)
+			) / Solution_Block[p].W[i][j][k].rho;
                 vis_ave += vis*local_vol;
                 ens += Solution_Block[p].W[i][j][k].Enstrophy(Solution_Block[p].dWdx[i][j][k],
                                                               Solution_Block[p].dWdy[i][j][k],
@@ -122,16 +128,20 @@ void Time_Averaging_of_Solution(HEXA_BLOCK *Solution_Block,
   double Taylor_scale, Kolmogorov_scale, Re_Taylor, L11; 
   double l_1, l_2;
 
-  Kolmogorov_scale = pow(pow(vis_ave, THREE)/eps_w, 0.25);
+  Kolmogorov_scale = pow(pow(vis_ave, THREE)/eps_ss, 0.25);
 
   if (ens == ZERO) {
     Taylor_scale = ZERO;
   } else {
-    Taylor_scale = u_rms*sqrt(15.0)*Kolmogorov_scale;
+    // Homogeneous isotropic
+    Taylor_scale = sqrt(15.0*vis_ave*u_rms*u_rms/eps_ss);
+    //cout << "\n =======> Taylor scale based on TKE dissipation: " << Taylor_scale;
+    Taylor_scale = sqrt(TWO*u_rms*u_rms/(TWO*ens));
+    //cout << "\n =======> Taylor scale based on enstrophy: " << Taylor_scale;
   }
 
   Re_Taylor = u_rms*Taylor_scale/vis_ave;
-  L11= 0.09*pow(0.5*u_rms*u_rms, 1.5)/eps_w;
+  L11= 0.09*pow(0.5*u_rms*u_rms, 1.5)/eps_ss;
 
   if (eps_w > 0.0) {
     l_1 = 0.42*pow(u_rms, 3.0)/eps_w;
@@ -148,16 +158,14 @@ void Time_Averaging_of_Solution(HEXA_BLOCK *Solution_Block,
   if (CFFC_Primary_MPI_Processor()) {
     cout << "\n ==========================================================================\n"; 
     cout << " Turbulent Statistics of Resolved Velocity Field (in Physical Space):\n";
-    cout << "\n <u^2> = "<< u_p <<"  "<< "<v^2> = "<< v_p <<"  "<< "<v^2> = "<< w_p <<"  "
-	 << "u_rms  = " << u_rms <<"  "
-	 << "\n <u> = " << u_ave <<"  "<< "<v> = " << v_ave <<"  "<< "<w> = " << w_ave <<"  "
-	 << "ens = "<< ens <<"  " 
-	 << "\n eps_w = "<< eps_w <<"  "<< "eps_ss = "<< eps_ss <<"  "
-	 << "l_1 = "<< l_1 <<"  "<< "l_2 = " << l_2 <<"  "
-	 << "\n vis = "<< vis_ave << "  Re_Taylor = " << Re_Taylor <<"  "
-	 << "\n Taylor_scale = " << Taylor_scale <<"  " 
-	 << "Kolmogorov_scale = " << Kolmogorov_scale <<" "
-         << "\n L11 = " << L11 <<  endl;
+    cout << "\n <u> = " << u_ave <<"  "<< "\t<v> = " << v_ave <<"  "<< "\t<w> = " << w_ave;
+    cout << "\n eps_w = "<< eps_w <<"  "<< "\teps_ss = "<< eps_ss<<"  "<< "\tenstrophy = "<< ens;
+    cout << "\n l_1 = "<< l_1 <<"  "<< "\tl_2 = " << l_2;
+    cout << "\n nu = "<< vis_ave <<"  "<< "\tRe_Taylor = " << Re_Taylor << endl;
+    cout << "\n ===> u_rms            = " << u_rms;
+    cout << "\n ===> Taylor scale     = " << Taylor_scale;
+    cout << "\n ===> Kolmogorov scale = " << Kolmogorov_scale;
+    cout << "\n ===> L11              = " << L11 <<  endl;
     cout << " ==========================================================================" << endl;
   } /* endif */
 
@@ -201,8 +209,8 @@ double Total_TKE(HEXA_BLOCK *Solution_Block,
 
   u_rms = sqrt((u_p + v_p + w_p)/3.0);
   
-  // In 3D: k =  sqr(u_rms)/2
-  return (u_rms*u_rms/2.0); 
+  // In 3D: k =  3*sqr(u_rms)/2
+  return (3.0*u_rms*u_rms/2.0); 
 }
 
 
@@ -246,7 +254,7 @@ double u_rms(HEXA_BLOCK *Solution_Block,
   double TKE;
   TKE = Total_TKE(Solution_Block, LocalSolnBlockList);
 
-  return sqrt(2.0*TKE); // 3D
+  return sqrt(2.0*TKE/3.0);
 }
 
 
@@ -284,7 +292,13 @@ double Average_viscosity(HEXA_BLOCK *Solution_Block,
            for (int k = Solution_Block[p].KCl ; k <= Solution_Block[p].KCu ; k++) {
 	       local_vol = Solution_Block[p].Grid.volume(i,j,k);
 	       total_vol += local_vol;
-	       vis += Solution_Block[p].W[i][j][k].mu()*local_vol/Solution_Block[p].W[i][j][k].rho;
+	       vis += ( Solution_Block[p].W[i][j][k].mu() + 
+			Solution_Block[p].W[i][j][k].mu_t(Solution_Block[p].dWdx[i][j][k],
+							  Solution_Block[p].dWdy[i][j][k],
+							  Solution_Block[p].dWdz[i][j][k],
+							  Solution_Block[p].Flow_Type, 
+							  local_vol)
+		      ) / Solution_Block[p].W[i][j][k].rho;
 	   } /* endfor */
 	} /* endfor */
       } /* endfor */
@@ -370,13 +384,19 @@ void Conditional_Averaging_of_Solution(HEXA_BLOCK *Solution_Block,
       for (int i = Solution_Block[p].ICl; i <= Solution_Block[p].ICu; ++i) {
         for (int j  = Solution_Block[p].JCl; j <= Solution_Block[p].JCu; ++j) {
            for (int k  = Solution_Block[p].KCl; k <= Solution_Block[p].KCu; ++k) {
-              if (Solution_Block[p].W[i][j][k].spec[0].c >= Yfuel_conditional) {
+	      if (Solution_Block[p].W[i][j][k].spec[0].c >= Yfuel_conditional) {
                 local_vol = Solution_Block[p].Grid.volume(i,j,k);
                 total_vol += local_vol;
                 u_p += sqr(Solution_Block[p].W[i][j][k].v.x - u_ave) * local_vol;
                 v_p += sqr(Solution_Block[p].W[i][j][k].v.y - v_ave) * local_vol;
                 w_p += sqr(Solution_Block[p].W[i][j][k].v.z - w_ave) * local_vol;
-                vis = Solution_Block[p].W[i][j][k].mu()/Solution_Block[p].W[i][j][k].rho;
+		vis = ( Solution_Block[p].W[i][j][k].mu() + 
+			Solution_Block[p].W[i][j][k].mu_t(Solution_Block[p].dWdx[i][j][k],
+							  Solution_Block[p].dWdy[i][j][k],
+							  Solution_Block[p].dWdz[i][j][k],
+							  Solution_Block[p].Flow_Type, 
+							  local_vol)
+			) / Solution_Block[p].W[i][j][k].rho;
                 vis_ave += vis*local_vol;
                 ens += Solution_Block[p].W[i][j][k].Enstrophy(Solution_Block[p].dWdx[i][j][k],
                                                               Solution_Block[p].dWdy[i][j][k],
@@ -417,16 +437,20 @@ void Conditional_Averaging_of_Solution(HEXA_BLOCK *Solution_Block,
   double Taylor_scale, Kolmogorov_scale, Re_Taylor, L11; 
   double l_1, l_2;
 
-  Kolmogorov_scale = pow(pow(vis_ave, THREE)/eps_w, 0.25);
+  Kolmogorov_scale = pow(pow(vis_ave, THREE)/eps_ss, 0.25);
 
   if (ens == ZERO) {
     Taylor_scale = ZERO;
   } else {
-    Taylor_scale = u_rms*sqrt(15.0)*Kolmogorov_scale;
+    // Homogeneous isotropic
+    Taylor_scale = sqrt(15.0*vis_ave*u_rms*u_rms/eps_ss);
+    //cout << "\n =======> Taylor scale based on TKE dissipation: " << Taylor_scale;
+    Taylor_scale = sqrt(TWO*u_rms*u_rms/(TWO*ens));
+    //cout << "\n =======> Taylor scale based on enstrophy: " << Taylor_scale;
   }
 
   Re_Taylor = u_rms*Taylor_scale/vis_ave;
-  L11= 0.09*pow(0.5*u_rms*u_rms, 1.5)/eps_w;
+  L11= 0.09*pow(0.5*u_rms*u_rms, 1.5)/eps_ss;
 
   if (eps_w > 0.0) {
     l_1 = 0.42*pow(u_rms, 3.0)/eps_w;
@@ -442,17 +466,15 @@ void Conditional_Averaging_of_Solution(HEXA_BLOCK *Solution_Block,
 
   if (CFFC_Primary_MPI_Processor()) {
     cout << "\n ==========================================================================\n"; 
-    cout << " Conditional Turbulent Statistics of Resolved Velocity Field (in Physical Space):\n";
-    cout << "\n <u^2> = "<< u_p <<"  "<< "<v^2> = "<< v_p <<"  "<< "<v^2> = "<< w_p <<"  "
-	 << "u_rms  = " << u_rms <<"  "
-	 << "\n <u> = " << u_ave <<"  "<< "<v> = " << v_ave <<"  "<< "<w> = " << w_ave <<"  "
-	 << "ens = "<< ens <<"  " 
-	 << "\n eps_w = "<< eps_w <<"  "<< "eps_ss = "<< eps_ss <<"  "
-	 << "l_1 = "<< l_1 <<"  "<< "l_2 = " << l_2 <<"  "
-	 << "\n vis = "<< vis_ave << "  Re_Taylor = " << Re_Taylor <<"  "
-	 << "\n Taylor_scale = " << Taylor_scale <<"  " 
-	 << "Kolmogorov_scale = " << Kolmogorov_scale <<" "
-         << "\n L11 = " << L11 <<  endl;
+    cout << " Turbulent Statistics of Resolved Velocity Field (in Physical Space):\n";
+    cout << "\n <u> = " << u_ave <<"  "<< "\t<v> = " << v_ave <<"  "<< "\t<w> = " << w_ave;
+    cout << "\n eps_w = "<< eps_w <<"  "<< "\teps_ss = "<< eps_ss<<"  "<< "\tenstrophy = "<< ens;
+    cout << "\n l_1 = "<< l_1 <<"  "<< "\tl_2 = " << l_2;
+    cout << "\n nu = "<< vis_ave <<"  "<< "\tRe_Taylor = " << Re_Taylor << endl;
+    cout << "\n ===> u_rms            = " << u_rms;
+    cout << "\n ===> Taylor scale     = " << Taylor_scale;
+    cout << "\n ===> Kolmogorov scale = " << Kolmogorov_scale;
+    cout << "\n ===> L11              = " << L11 <<  endl;
     cout << " ==========================================================================" << endl;
   } /* endif */
 
@@ -502,8 +524,8 @@ double Conditional_Total_TKE(HEXA_BLOCK *Solution_Block,
 
   u_rms = sqrt((u_p + v_p + w_p)/3.0);
   
-  // In 3D: k =  sqr(u_rms)/2
-  return (u_rms*u_rms/2.0); 
+  // In 3D: k =  3*sqr(u_rms)/2
+  return (3.0*u_rms*u_rms/2.0); 
 }
 
 
@@ -553,7 +575,7 @@ double Conditional_u_rms(HEXA_BLOCK *Solution_Block,
   double TKE;
   TKE = Conditional_Total_TKE(Solution_Block, LocalSolnBlockList);
 
-  return sqrt(2.0*TKE); // 3D
+  return sqrt(2.0*TKE/3.0);
 }
 
 
@@ -596,7 +618,13 @@ double Conditional_Average_viscosity(HEXA_BLOCK *Solution_Block,
 	     if (Solution_Block[p].W[i][j][k].spec[0].c >= Yfuel_conditional) {
 	       local_vol = Solution_Block[p].Grid.volume(i,j,k);
 	       total_vol += local_vol;
-	       vis += Solution_Block[p].W[i][j][k].mu()*local_vol/Solution_Block[p].W[i][j][k].rho;
+	       vis += ( Solution_Block[p].W[i][j][k].mu() + 
+			Solution_Block[p].W[i][j][k].mu_t(Solution_Block[p].dWdx[i][j][k],
+							  Solution_Block[p].dWdy[i][j][k],
+							  Solution_Block[p].dWdz[i][j][k],
+							  Solution_Block[p].Flow_Type, 
+							  local_vol)
+		      ) / Solution_Block[p].W[i][j][k].rho;
 	     } /* endif */
 	   } /* endfor */
 	} /* endfor */

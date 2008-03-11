@@ -26,6 +26,9 @@ FFTW_VERSION = V32
 # Set to ON in order to run the TUT unit testing on
 TUT_TESTING = ON
 
+# Set to ON to get gnuplot output at runtime, default = OFF
+GNUPLOT = OFF
+
 # Set to ON for use with "gprof"
 # <x86  >  gprof cffc3D gmon.out > output.txt
 # <alpha>  gprof --demangle=compaq cffc3D gmon.out > output.txt
@@ -444,7 +447,7 @@ ifeq ($(PLATFORM),Linux_x86_64)
     F90FLAGS = $(FFLAGS) -fdefault-real-8
     MODFLAG = -M
     CFLAGS = -O2 
-    LDFLAGS = $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(BLKCLIB_CPP_FLAGS) $(FFTW_LD_FLAGS) -lm
+    LDFLAGS = $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(BLKCLIB_LD_FLAGS) $(FFTW_LD_FLAGS) -lm
     LD = $(CXX)
     DEPENDSFLAGS =
   endif
@@ -551,4 +554,10 @@ ifeq ($(TUT_TESTING),ON)
   CPPFLAGS += $(TUT_CPP_FLAGS)
 else
   CPPFLAGS += -D_NO_TUT_TESTING
+endif
+
+#
+# Add GNUPLOT flags
+ifeq ($(GNUPLOT),ON) 
+  CPPFLAGS += -D_GNUPLOT
 endif

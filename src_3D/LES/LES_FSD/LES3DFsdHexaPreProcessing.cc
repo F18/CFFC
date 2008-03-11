@@ -13,15 +13,16 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
 
   int error_flag(0);
   
-  RandomFieldRogallo<LES3DFsd_pState, LES3DFsd_cState>   Velocity_Field_Type(SPECTRUM_HAWORTH_POINSOT);
+  RandomFieldRogallo<LES3DFsd_pState, LES3DFsd_cState>   Velocity_Field_Type(Solution_Data.Input);
   Turbulent_Velocity_Field_Multi_Block_List  Velocity_Field;
 
   Velocity_Field.Create(Data.Initial_Mesh, 
                         Solution_Data.Input.Grid_IP);
 
   error_flag = Velocity_Field_Type.Create_Homogeneous_Turbulence_Velocity_Field(Data.Initial_Mesh, 
-										Velocity_Field,
-                                                                                Solution_Data.Input.Grid_IP);
+										Solution_Data.Input.Grid_IP,
+										Data.batch_flag,
+										Data.Velocity_Field);
   if (error_flag) return error_flag;
 
   Assign_Homogeneous_Turbulence_Velocity_Field(Solution_Data.Local_Solution_Blocks.Soln_Blks,

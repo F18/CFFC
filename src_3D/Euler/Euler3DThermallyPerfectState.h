@@ -71,7 +71,7 @@ class Euler3D_ThermallyPerfect_pState;
 
 /*! If you define this variable, the number of species will be 
     predetermined for faster calculations.., however it is not as general */
-#define STATIC_NUMBER_OF_SPECIES 5 // set to 2 for air, 5 for 1-step CH4, 6 for 2-setp CH4
+#define STATIC_NUMBER_OF_SPECIES 5 // set to 2 for air, 5 for 1-step CH4, 6 for 2-step CH4
 
 /*! Convergence tolerance */
 #define CONV_TOLERANCE 1e-8

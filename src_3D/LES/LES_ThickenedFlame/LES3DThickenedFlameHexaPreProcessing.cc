@@ -3,6 +3,7 @@
 #include "LES3DThickenedFlame.h"
 #endif // _LES3DTF_INCLUDED
 
+
 /********************************************************
  * Routine: Pre_Processing_Specializations              *
  ********************************************************/
@@ -13,24 +14,27 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
 
   int error_flag(0);
   
-  RandomFieldRogallo<LES3DTF_pState, LES3DTF_cState>   Velocity_Field_Type(SPECTRUM_HAWORTH_POINSOT);
-  Turbulent_Velocity_Field_Multi_Block_List  Velocity_Field;
+  RandomFieldRogallo<LES3DTF_pState, LES3DTF_cState>   Velocity_Field_Type(Solution_Data.Input); 
 
 
-  if (Solution_Data.Input.Grid_IP.i_Grid != GRID_BUNSEN_BURNER) {
-    Velocity_Field.Create(Data.Initial_Mesh, 
-			  Solution_Data.Input.Grid_IP);
+  if (Solution_Data.Input.Grid_IP.i_Grid != GRID_BUNSEN_BURNER  &&
+      Solution_Data.Input.Grid_IP.i_Grid != GRID_BUNSEN_BOX) {
+
+    Data.Velocity_Field.Create(Data.Initial_Mesh, 
+			       Solution_Data.Input.Grid_IP);
 
     error_flag = Velocity_Field_Type.Create_Homogeneous_Turbulence_Velocity_Field(Data.Initial_Mesh, 
-										  Velocity_Field,
-										  Solution_Data.Input.Grid_IP);
+										  Solution_Data.Input.Grid_IP,
+										  Data.batch_flag,
+										  Data.Velocity_Field);
   } else {
-    Velocity_Field.Create(Data.Auxiliary_Mesh, 
-			  Solution_Data.Input.Grid_IP);
+    Data.Velocity_Field.Create(Data.Auxiliary_Mesh, 
+			       Solution_Data.Input.Grid_IP);
 
     error_flag = Velocity_Field_Type.Create_Homogeneous_Turbulence_Velocity_Field(Data.Auxiliary_Mesh, 
-										  Velocity_Field,
-										  Solution_Data.Input.Grid_IP);
+										  Solution_Data.Input.Grid_IP,
+										  Data.batch_flag,
+										  Data.Velocity_Field);
   }
 
   if (error_flag) return error_flag;
@@ -38,27 +42,44 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
 
   // If required, do the interpolation of the turbulent field
 
-  if (Solution_Data.Input.Grid_IP.i_Grid == GRID_BUNSEN_BURNER) {
-    Turbulent_Velocity_Field_Multi_Block_List  Interpolated_Velocity_Field;
+//   if (Solution_Data.Input.Grid_IP.i_Grid == GRID_BUNSEN_BURNER) {
+//     Turbulent_Velocity_Field_Multi_Block_List  Interpolated_Velocity_Field;
 
-    Interpolated_Velocity_Field.Create(Data.Initial_Mesh,   
-				       Solution_Data.Input.Grid_IP);
+//     Interpolated_Velocity_Field.Create(Data.Initial_Mesh,   
+// 				       Solution_Data.Input.Grid_IP);
 
-    Velocity_Field.Interpolate_Turbulent_Field(Data.Initial_Mesh, 
-					       Interpolated_Velocity_Field);
+//     Data.Velocity_Field.Interpolate_Turbulent_Field(Data.Initial_Mesh, 
+// 						    Interpolated_Velocity_Field);
 
-    Assign_Homogeneous_Turbulence_Velocity_Field(Solution_Data.Local_Solution_Blocks.Soln_Blks,
-						 Data.Local_Adaptive_Block_List,
-						 Interpolated_Velocity_Field);
-  } else {
-    Assign_Homogeneous_Turbulence_Velocity_Field(Solution_Data.Local_Solution_Blocks.Soln_Blks,
-						 Data.Local_Adaptive_Block_List,
-						 Velocity_Field);
+//     Assign_Homogeneous_Turbulence_Velocity_Field(Solution_Data.Local_Solution_Blocks.Soln_Blks,
+// 						 Data.Local_Adaptive_Block_List,
+// 						 Interpolated_Velocity_Field);
+//   } else {
+//     Assign_Homogeneous_Turbulence_Velocity_Field(Solution_Data.Local_Solution_Blocks.Soln_Blks,
+// 						 Data.Local_Adaptive_Block_List,
+// 						 Data.Velocity_Field);
+//   }
+
+  
+  if (Solution_Data.Input.i_ICs != IC_RESTART) {
+
+    // assign turbulent velocity fluctuations to the mixture of fresh gases
+    if (Solution_Data.Input.Grid_IP.i_Grid == GRID_BUNSEN_BURNER  ||
+	Solution_Data.Input.Grid_IP.i_Grid == GRID_BUNSEN_BOX) {
+
+      error_flag = IC_Assign_Turbulence_Fresh_Gas(Solution_Data.Local_Solution_Blocks.Soln_Blks,
+						  Data.Local_Adaptive_Block_List,
+						  Data.Velocity_Field,
+						  Solution_Data.Input);
+      if (error_flag) return error_flag;
+    }
+
+    // ICs specializations
+    error_flag = Solution_Data.Local_Solution_Blocks.ICs_Specializations(Solution_Data.Input);
+
+    if (error_flag) return error_flag;    
+    
   }
-
-  error_flag = Solution_Data.Local_Solution_Blocks.ICs_Specializations(Solution_Data.Input);
-
-  if (error_flag) return error_flag;
 
   return error_flag;
 
@@ -213,5 +234,74 @@ int Output_Other_Solution_Progress_Specialization_Data(HexaSolver_Data &Data,
 
    // Return error flag
    return error_flag;
+
+}
+
+/********************************************************
+ * Routine: BCs_Specializations                         *
+ ********************************************************/
+template<>
+int Hexa_BCs_Specializations(HexaSolver_Data &Data,
+			     HexaSolver_Solution_Data<LES3DTF_pState, 
+			                              LES3DTF_cState> &Solution_Data) {
+  int error_flag(0);
+  
+  error_flag = Inflow_Turbulence_XY_Plane(Solution_Data.Local_Solution_Blocks.Soln_Blks,
+					  Data.Local_Adaptive_Block_List,
+					  Data.Velocity_Field,
+					  Solution_Data.Input,
+					  Data.Time);
+  
+  return error_flag;
+
+}
+
+
+/********************************************************
+ * Routine: Initialize_Solution_Blocks_Specializations  *
+ ********************************************************/
+template<>
+int Initialize_Solution_Blocks_Specializations(HexaSolver_Data &Data,
+					       HexaSolver_Solution_Data<LES3DTF_pState, 
+			                                                LES3DTF_cState> &Solution_Data) {
+  int error_flag(0);
+  
+  /* Create the auxiliary mesh on the primary MPI processor. */
+
+  if (CFFC_Primary_MPI_Processor()) {
+    
+    if (Solution_Data.Input.Grid_IP.i_Grid == GRID_BUNSEN_BURNER) {
+
+      Solution_Data.Input.Grid_IP.i_Grid = GRID_TURBULENCE_BOX;
+      Data.Auxiliary_Mesh.Create_Grid(Solution_Data.Input.Grid_IP);
+      Solution_Data.Input.Grid_IP.i_Grid = GRID_BUNSEN_BURNER;
+
+    } else if (Solution_Data.Input.Grid_IP.i_Grid == GRID_BUNSEN_BOX) {
+
+      Solution_Data.Input.Grid_IP.i_Grid = GRID_TURBULENCE_BOX;
+      Data.Auxiliary_Mesh.Create_Grid(Solution_Data.Input.Grid_IP);
+      Solution_Data.Input.Grid_IP.i_Grid = GRID_BUNSEN_BOX;
+    }   
+
+  } /* endif */
+
+  CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+  
+  /* Broadcast the auxiliary mesh to other MPI processors. */
+
+  if (Solution_Data.Input.Grid_IP.i_Grid == GRID_BUNSEN_BURNER) {
+
+    Solution_Data.Input.Grid_IP.i_Grid = GRID_TURBULENCE_BOX;
+    Data.Auxiliary_Mesh.Broadcast();
+    Solution_Data.Input.Grid_IP.i_Grid = GRID_BUNSEN_BURNER;
+
+  } else if(Solution_Data.Input.Grid_IP.i_Grid == GRID_BUNSEN_BOX) {
+
+    Solution_Data.Input.Grid_IP.i_Grid = GRID_TURBULENCE_BOX;
+    Data.Auxiliary_Mesh.Broadcast();
+    Solution_Data.Input.Grid_IP.i_Grid = GRID_BUNSEN_BOX;
+  }                  
+ 
+  return error_flag;
 
 }
