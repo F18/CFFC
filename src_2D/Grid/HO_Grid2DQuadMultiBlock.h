@@ -2844,6 +2844,9 @@ int Grid2D_Quad_MultiBlock_HO::Write_Multi_Block_Grid_Using_IP(const Input_Param
 
   /* Close the grid data output file. */
   mesh_file.close();
+
+  /* Writing of grid data file complete.  Return zero value. */
+  return (0);
 }
 
 /*!
@@ -2921,6 +2924,8 @@ int Grid2D_Quad_MultiBlock_HO::Output_Tecplot_Using_IP(const Input_Parameters_Ty
   /* Close the grid data output file. */
   mesh_file.close();
 
+  /* Writing of node locations file complete.  Return zero value. */
+  return (0);
 }
 
 /*!
@@ -2970,6 +2975,8 @@ int Grid2D_Quad_MultiBlock_HO::Output_Nodes_Tecplot_Using_IP(const Input_Paramet
 
   mesh_file.close();
 
+  /* Writing of node locations file complete.  Return zero value. */
+  return (0);
 }
 
 /*!
@@ -3017,6 +3024,8 @@ int Grid2D_Quad_MultiBlock_HO::Output_Cells_Tecplot_Using_IP(const Input_Paramet
   /* Close the grid data output file. */
   mesh_file.close();
 
+  /* Writing of node locations file complete.  Return zero value. */
+  return (0);
 }
 
 #endif	// _HO_GRID2D_QUAD_MULTIBLOCK_INCLUDED
