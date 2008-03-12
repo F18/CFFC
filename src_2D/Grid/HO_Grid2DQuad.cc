@@ -2147,119 +2147,118 @@ void Grid2D_Quad_Block_HO::Broadcast_Quad_Block(void) {
 #ifdef _MPI_VERSION
 
   int i, j, ni, nj, ng, Highest_Order_of_Reconstruction, mesh_allocated, buffer_size;
-    double *buffer;
+  double *buffer;
  
-    /* Broadcast the number of cells in each direction. */
+  /* Broadcast the number of cells in each direction. */
 
-    if (CFFC_Primary_MPI_Processor()) {
-      ni = NCi;
-      nj = NCj;
-      ng = Nghost;
-      Highest_Order_of_Reconstruction = HighestReconstructionOrder;
-      if (Node != NULL) {
-         mesh_allocated = 1;
-      } else {
-	 mesh_allocated = 0;
-      } /* endif */ 
-    } /* endif */
+  if (CFFC_Primary_MPI_Processor()) {
+    ni = NCi;
+    nj = NCj;
+    ng = Nghost;
+    Highest_Order_of_Reconstruction = HighestReconstructionOrder;
+    if (Node != NULL) {
+      mesh_allocated = 1;
+    } else {
+      mesh_allocated = 0;
+    } /* endif */ 
+  } /* endif */
 
-    MPI::COMM_WORLD.Bcast(&ni, 1, MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&nj, 1, MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&ng, 1, MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&mesh_allocated, 1, MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&Highest_Order_of_Reconstruction, 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&ni, 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&nj, 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&ng, 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&mesh_allocated, 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&Highest_Order_of_Reconstruction, 1, MPI::INT, 0);
 
-    /* On non-primary MPI processors, allocate (re-allocate) 
-       memory for the cells and nodes of the quadrilateral 
-       mesh block as necessary. */
+  /* On non-primary MPI processors, allocate (re-allocate) 
+     memory for the cells and nodes of the quadrilateral 
+     mesh block as necessary. */
 
-    if (!CFFC_Primary_MPI_Processor()) {
-      if (mesh_allocated) allocate(ni-2*ng, nj-2*ng, ng, Highest_Order_of_Reconstruction); 
-    } /* endif */
+  if (!CFFC_Primary_MPI_Processor()) {
+    if (mesh_allocated) allocate(ni-2*ng, nj-2*ng, ng, Highest_Order_of_Reconstruction); 
+  } /* endif */
 
     /* Broadcast the north, south, east, and west 
        boundary splines. */
 
-    BndNorthSpline.Broadcast_Spline();
-    BndSouthSpline.Broadcast_Spline();
-    BndEastSpline.Broadcast_Spline();
-    BndWestSpline.Broadcast_Spline();
+  BndNorthSpline.Broadcast_Spline();
+  BndSouthSpline.Broadcast_Spline();
+  BndEastSpline.Broadcast_Spline();
+  BndWestSpline.Broadcast_Spline();
 
-   /* Broadcast min/max pathlengths for boundary splines. */
+  /* Broadcast min/max pathlengths for boundary splines. */
 
-    MPI::COMM_WORLD.Bcast(&(SminN), 1, MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(SmaxN), 1, MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(SminS), 1, MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(SmaxS), 1, MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(SminE), 1, MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(SmaxE), 1, MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(SminW), 1, MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(SmaxW), 1, MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&(SminN), 1, MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&(SmaxN), 1, MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&(SminS), 1, MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&(SmaxS), 1, MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&(SminE), 1, MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&(SmaxE), 1, MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&(SminW), 1, MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&(SmaxW), 1, MPI::DOUBLE, 0);
 
-    /* Broadcast node control parameters. */
+  /* Broadcast node control parameters. */
 
-    MPI::COMM_WORLD.Bcast(&(StretchI), 1, MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(BetaI), 1, MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(TauI), 1, MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(StretchJ), 1, MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(BetaJ), 1, MPI::DOUBLE, 0);
-    MPI::COMM_WORLD.Bcast(&(TauJ), 1, MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&(StretchI), 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&(BetaI), 1, MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&(TauI), 1, MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&(StretchJ), 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&(BetaJ), 1, MPI::DOUBLE, 0);
+  MPI::COMM_WORLD.Bcast(&(TauJ), 1, MPI::DOUBLE, 0);
 
-    MPI::COMM_WORLD.Bcast(&(OrthogonalN), 1, MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(OrthogonalS), 1, MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(OrthogonalE), 1, MPI::INT, 0);
-    MPI::COMM_WORLD.Bcast(&(OrthogonalW), 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&(OrthogonalN), 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&(OrthogonalS), 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&(OrthogonalE), 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&(OrthogonalW), 1, MPI::INT, 0);
 
-    /* Broadcast the node locations for grid block. */
+  /* Broadcast the node locations for grid block. */
 
-    if (mesh_allocated) {
-       ni = (INu+Nghost) - (INl-Nghost) + 1;
-       nj = (JNu+Nghost) - (JNl-Nghost) + 1;
-       buffer = new double[2*ni*nj];
+  if (mesh_allocated) {
+    ni = (INu+Nghost) - (INl-Nghost) + 1;
+    nj = (JNu+Nghost) - (JNl-Nghost) + 1;
+    buffer = new double[2*ni*nj];
 
-       if (CFFC_Primary_MPI_Processor()) {
-          buffer_size = 0;
-          for (j  = JNl-Nghost; j <= JNu+Nghost; ++j ) {
-              for ( i = INl-Nghost; i <= INu+Nghost; ++i ) {
- 	          buffer[buffer_size] = Node[i][j].X.x;
- 	          buffer[buffer_size+1] = Node[i][j].X.y;
-                  buffer_size = buffer_size + 2;
-              } /* endfor */
-          } /* endfor */
-       } /* endif */
-
-       buffer_size = 2*ni*nj;
-       MPI::COMM_WORLD.Bcast(buffer, buffer_size, MPI::DOUBLE, 0);
-
-       if (!CFFC_Primary_MPI_Processor()) {
-          buffer_size = 0;
-          for (j  = JNl-Nghost; j <= JNu+Nghost; ++j ) {
-              for ( i = INl-Nghost; i <= INu+Nghost; ++i ) {
- 	          Node[i][j].X.x = buffer[buffer_size];
- 	          Node[i][j].X.y = buffer[buffer_size+1];
-                  buffer_size = buffer_size + 2;
-              } /* endfor */
-          } /* endfor */
-       } /* endif */
-
-       delete []buffer;
-       buffer = NULL;
-
+    if (CFFC_Primary_MPI_Processor()) {
+      buffer_size = 0;
+      for (j  = JNl-Nghost; j <= JNu+Nghost; ++j ) {
+	for ( i = INl-Nghost; i <= INu+Nghost; ++i ) {
+	  buffer[buffer_size] = Node[i][j].X.x;
+	  buffer[buffer_size+1] = Node[i][j].X.y;
+	  buffer_size = buffer_size + 2;
+	} /* endfor */
+      } /* endfor */
     } /* endif */
+
+    buffer_size = 2*ni*nj;
+    MPI::COMM_WORLD.Bcast(buffer, buffer_size, MPI::DOUBLE, 0);
+
+    if (!CFFC_Primary_MPI_Processor()) {
+      buffer_size = 0;
+      for (j  = JNl-Nghost; j <= JNu+Nghost; ++j ) {
+	for ( i = INl-Nghost; i <= INu+Nghost; ++i ) {
+	  Node[i][j].X.x = buffer[buffer_size];
+	  Node[i][j].X.y = buffer[buffer_size+1];
+	  buffer_size = buffer_size + 2;
+	} /* endfor */
+      } /* endfor */
+    } /* endif */
+
+    delete []buffer;
+    buffer = NULL;
+
+  } /* endif */
 
     /*  On non-primary MPI processors, set the boundary condition types
         compute the exterior nodes, and compute the cells for the 
         quadrilateral mesh block. */
 
-    if (mesh_allocated && !CFFC_Primary_MPI_Processor()) {
-      /* Require update of the whole mesh */
-      Schedule_Interior_Mesh_Update();
-      Schedule_Ghost_Cells_Update();
+  if (mesh_allocated && !CFFC_Primary_MPI_Processor()) {
+    /* Require update of the whole mesh */
+    Schedule_Interior_Mesh_Update();
+    Schedule_Ghost_Cells_Update();
 
-      Set_BCs();
-      Update_Exterior_Nodes();
-      Update_Cells();
-    } /* endif */
+    Set_BCs();
+    Update_Cells();
+  } /* endif */
 #endif
 
 }
@@ -2387,7 +2386,6 @@ void Grid2D_Quad_Block_HO::Broadcast_Quad_Block(MPI::Intracomm &Communicator,
     Schedule_Ghost_Cells_Update();
     
     Set_BCs();
-    Update_Exterior_Nodes();
     Update_Cells();
   } /* endif */
 

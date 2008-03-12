@@ -1144,12 +1144,19 @@ void Spline2D_HO::Broadcast_Spline(void) {
     if (!CFFC_Primary_MPI_Processor()) {
       if (npts >= 2){
 	allocate(npts);
-       } /* endif */
+      } else {
+	// deallocate the current spline if the broadcast spline has no memory allocated
+	deallocate();
+      } /* endif */
     } /* endif */
 
     /* Broadcast the spline type. */
 
     MPI::COMM_WORLD.Bcast(&(type), 1, MPI::INT, 0);
+
+    /* Broadcast the flux calculation method associated with this spline. */
+
+    MPI::COMM_WORLD.Bcast(&(FluxMethod), 1, MPI::INT, 0);
 
     /* Broadcast the the spline coordinates, pathlength, 
        point type, and boundary condition information. */
@@ -1227,12 +1234,19 @@ void Spline2D_HO::Broadcast_Spline(MPI::Intracomm &Communicator,
     if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
       if (npts >= 2) {
 	allocate(npts);
+      } else {
+	// deallocate the current spline if the broadcast spline has no memory allocated
+	deallocate();
       } /* endif */
     } /* endif */
 
     /* Broadcast the spline type. */
 
     Communicator.Bcast(&(type), 1, MPI::INT, Source_Rank);
+
+    /* Broadcast the flux calculation method associated with this spline. */
+
+    Communicator.Bcast(&(FluxMethod), 1, MPI::INT, Source_Rank);
 
     /* Broadcast the the spline coordinates, pathlength, 
        point type, and boundary condition information. */
