@@ -31,70 +31,79 @@ public:
   // set all flags to default values
   static void SetDefaults(void);
 
-  /* This flag controls whether cell curved edges are 
-     represented as straight lines or high-order polynomials.
-     Turn ON if you want to use the high-order representation.
-     Turn OFF if you want to approximate the edges with straight lines. (default)
-     ATTENTION: Some settings/memory allocations are done only if this flag is ON.
-     ----------------------------------------------------------------------------------------  */
+  /*! This flag controls whether cell curved edges are 
+      represented as straight lines or high-order polynomials. \n
+      Turn ON if you want to use the high-order representation. \n
+      Turn OFF if you want to approximate the edges with straight lines. (default) \n
+      ATTENTION: Some settings/memory allocations are done only if this flag is ON. \n
+      ----------------------------------------------------------------------------------------  */
   static short USE_HIGH_ORDER_GEOMETRIC_BOUNDARY_REPRESENTATION;
 
   
-  /* This flag sets the method used to integrate along curved boundaries.
-     There are three methods currently available:
-         -> integration with 3-point or 5-point Gauss quadratures. (less expensive in general)
-	 -> adaptive integration based on approximating the curve edges with line segments. (tipical more accurate)
+  /*! This flag sets the method used to integrate along curved boundaries. \n
+      There are three methods currently available: \n
+         -> integration with 3-point or 5-point Gauss quadratures. (less expensive in general) \n
+	 -> adaptive integration based on approximating the curve edges with line segments. (topically more accurate) \n
          -> a combination of the above methods. This is a tradeoff between speed and accuracy.
 	    The accuracy of the geometric moments is strictly dependent on the accuracy with which
             the cell area and the centroid are computed. Therefore, this method computes the area 
             and the centroid with the adaptive line segments and the higher-order geometric moments
-            with the Gauss quadratures.
-     Set to GAUSS_QUADRATURES_METHOD if you want to use Gauss quadratures.
-     Set to ADAPTIVE_LINE_SEGMENTS_METHOD if you want to use adaptive integration based on line segments.
-     Set to MIXED_QUADS_AND_LINES_METHOD if you want to use the combination of the above methods. (default)
+            with the Gauss quadratures. \n
+     Set to GAUSS_QUADRATURES_METHOD if you want to use Gauss quadratures. \n
+     Set to ADAPTIVE_LINE_SEGMENTS_METHOD if you want to use adaptive integration based on line segments. \n
+     Set to MIXED_QUADS_AND_LINES_METHOD if you want to use the combination of the above methods. (default) \n
      ---------------------------------------------------------------------------------------- */
   static short METHOD_TO_INTEGRATE_ALONG_CURVED_EDGES;
 
 
-  /* This flag sets the number of Gauss points used to integrate along curved boundaries,
-     if integration with Gauss quadratures is selected.
-     Use 3 points along each smooth spline segment. (default)
-     The other option currently available is 5 points.
-     ----------------------------------------------------------------------------------------  */
+  /*! This flag sets the number of Gauss points used to integrate along curved boundaries,
+      if integration with Gauss quadratures is selected. \n
+      Use 3 points along each smooth spline segment. (default) \n
+      The other option currently available is 5 points. \n
+      ----------------------------------------------------------------------------------------  */
   static short NUMBER_OF_POINTS_FOR_GAUSS_QUADRATURE_INTEGRATION;  
 
 
-  /* This flag sets the designated mesh switch to inform the algorithm
-     for computing cell geometric properties about the possibility of large
-     round off errors due to the presence of large mesh dimensions.
-     The numerical algorithm will try to avoid this problems by computing
-     the geometric properties in a local coordinate system correspondent 
-     to each computational cell.
-     Turn ON if you want to use the local coordinate system (LCS). 
-     Turn OFF if you want to have all calculations done in a single coordinate system. (default)
-     ----------------------------------------------------------------------------------------  */
+  /*! This flag sets the designated mesh switch to inform the algorithm
+      for computing cell geometric properties about the possibility of large
+      round off errors due to the presence of large mesh dimensions. \n
+      The numerical algorithm will try to avoid this problems by computing
+      the geometric properties in a local coordinate system correspondent 
+      to each computational cell. \n
+      Turn ON if you want to use the local coordinate system (LCS). \n
+      Turn OFF if you want to have all calculations done in a single coordinate system. (default) \n
+      ----------------------------------------------------------------------------------------  */
   static short EXERCISE_SPECIAL_CARE_TO_ROUNDOFF_ERRORS_FOR_THIS_MESH;  
 
-  /* This flag is used to control the behaviour of the routine that 
-     checks the validity of the mesh (i.e. presence of crossed or degenerated quadrilateral cells).
-     Turn ON if you want to check for incorrect quadrilaterals. (default)
-     Turn OFF if you don't want this subroutine to check for incorrect quadrilaterals.
-     Note: It this flag is OFF, the subroutines is not even going to report the incorrect quads!
-     ----------------------------------------------------------------------------------------  */
+  /*! This flag is used to control the behaviour of the routine that 
+      checks the validity of the mesh (i.e. presence of crossed or degenerated quadrilateral cells). \n
+      Turn ON if you want to check for incorrect quadrilaterals. (default) \n
+      Turn OFF if you don't want this subroutine to check for incorrect quadrilaterals. \n
+      Note: It this flag is OFF, the subroutines is not even going to report the incorrect quads! \n
+      ----------------------------------------------------------------------------------------  */
   static short CHECK_FOR_INCORRECT_QUADRILATERALS;
  
-  /* This flag is used to control the behaviour of the routine that 
-     checks the validity of the mesh.
-     The default behavior of this subroutine when an invalid quadrilateral cell is
-     encountered is to report the cell and to stop the execution. 
-     There are moments when such a behavior is not desired (e.g. debugging), and for this
-     situations this flag can be used to modify the default behavior.
-     Turn ON if you want the subroutine to continue the execution and to report (i.e. output on screen)
-     all incorrect quadrilaterals.
-     Turn OFF if you want the mesh checking routine to report and exit at the first encountered
-     incorrect quadrilateral. (default)
-     ----------------------------------------------------------------------------------------  */
+  /*! This flag is used to control the behaviour of the routine that 
+      checks the validity of the mesh. \n
+      The default behavior of this subroutine when an invalid quadrilateral cell is
+      encountered is to report the cell and to stop the execution. \n
+      There are moments when such a behavior is not desired (e.g. debugging), and for this
+      situations this flag can be used to modify the default behavior. \n
+      Turn ON if you want the subroutine to continue the execution and to report (i.e. output on screen)
+      all incorrect quadrilaterals. \n
+      Turn OFF if you want the mesh checking routine to report and exit at the first encountered
+      incorrect quadrilateral. (default) \n
+      ----------------------------------------------------------------------------------------  */
   static short REPORT_INCORRECT_QUADRILATERALS_BUT_CONTINUE_EXECUTION;
+
+  /*! This flag is used to control the behaviour of the routines that perform the grid broadcast
+      regarding how much information is transferred by broadcasting comparing with how much information
+      is recomputed on each of the CPUs involved in the broadcast. \n
+      Typical data that might be recomputed instead of broadcast are the cell area, centroid and geometric moments. \n
+      Turn ON if you want to use more broadcasting instead of recomputing. \n
+      Turn OFF if you want to use recomputing more than broadcasting. (default) \n
+      ----------------------------------------------------------------------------------------  */
+  static short USE_BROADCAST_MORE_THAN_RECOMPUTING;
 
   template<class Input_Parameters_Type>
   static void Parse_Next_Input_Control_Parameter(Input_Parameters_Type & IP, int & i_command);
@@ -222,6 +231,18 @@ void HO_Grid2D_Execution_Mode::Parse_Next_Input_Control_Parameter(Input_Paramete
       REPORT_INCORRECT_QUADRILATERALS_BUT_CONTINUE_EXECUTION = OFF;
     } else if ( strcmp(IP.Next_Control_Parameter, "Continue") == 0 ) {
       REPORT_INCORRECT_QUADRILATERALS_BUT_CONTINUE_EXECUTION = ON;
+    } else {
+      i_command = INVALID_INPUT_VALUE;
+      return;
+    }
+    i_command = 0;
+
+  } else if (strcmp(IP.Next_Control_Parameter, "MPI_Geometric_Properties_Transfer") == 0) {
+    IP.Get_Next_Input_Control_Parameter();
+    if ( strcmp(IP.Next_Control_Parameter, "Broadcast") == 0 ){
+      USE_BROADCAST_MORE_THAN_RECOMPUTING = ON;
+    } else if ( strcmp(IP.Next_Control_Parameter, "Recompute") == 0 ) {
+      USE_BROADCAST_MORE_THAN_RECOMPUTING = OFF;
     } else {
       i_command = INVALID_INPUT_VALUE;
       return;

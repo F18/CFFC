@@ -17,6 +17,7 @@ short HO_Grid2D_Execution_Mode::NUMBER_OF_POINTS_FOR_GAUSS_QUADRATURE_INTEGRATIO
 short HO_Grid2D_Execution_Mode::EXERCISE_SPECIAL_CARE_TO_ROUNDOFF_ERRORS_FOR_THIS_MESH = OFF; // use Global Coordinate System
 short HO_Grid2D_Execution_Mode::CHECK_FOR_INCORRECT_QUADRILATERALS = ON; // check for incorrect quads
 short HO_Grid2D_Execution_Mode::REPORT_INCORRECT_QUADRILATERALS_BUT_CONTINUE_EXECUTION = OFF; // stop on detecting incorrect quads
+short HO_Grid2D_Execution_Mode::USE_BROADCAST_MORE_THAN_RECOMPUTING = ON; // broadcast the majority of geometric properties
 
 
 //! Set all flags to default values
@@ -29,6 +30,7 @@ void HO_Grid2D_Execution_Mode::SetDefaults(void){
   EXERCISE_SPECIAL_CARE_TO_ROUNDOFF_ERRORS_FOR_THIS_MESH = OFF; // use Global Coordinate System
   CHECK_FOR_INCORRECT_QUADRILATERALS = ON; // check for incorrect quads
   REPORT_INCORRECT_QUADRILATERALS_BUT_CONTINUE_EXECUTION = OFF; // stop on detecting incorrect quads
+  USE_BROADCAST_MORE_THAN_RECOMPUTING = ON; // broadcast the majority of geometric properties
 }
 
 //! Print the current execution mode
@@ -70,6 +72,14 @@ void HO_Grid2D_Execution_Mode::Print_Info(std::ostream & out_file){
     out_file << "\n     -> Geometric properties: " << "Special attention to Round Offs";
   }
 
+#ifdef _MPI_VERSION
+  if (USE_BROADCAST_MORE_THAN_RECOMPUTING == ON){
+    out_file << "\n     -> MPI transfer of geometric properties: Broadcast";
+  } else {
+    out_file << "\n     -> MPI transfer of geometric properties: Recalculation";
+  }
+#endif
+
   if (CHECK_FOR_INCORRECT_QUADRILATERALS == OFF){
     out_file << "\n     -> Warning: " << "Mesh validity checking was completely deactivated!!!";
   } else if (REPORT_INCORRECT_QUADRILATERALS_BUT_CONTINUE_EXECUTION == ON){
@@ -102,6 +112,9 @@ void HO_Grid2D_Execution_Mode::Broadcast(void){
  			1, 
  			MPI::SHORT, 0);
   MPI::COMM_WORLD.Bcast(&REPORT_INCORRECT_QUADRILATERALS_BUT_CONTINUE_EXECUTION,
+ 			1, 
+ 			MPI::SHORT, 0);
+  MPI::COMM_WORLD.Bcast(&USE_BROADCAST_MORE_THAN_RECOMPUTING,
  			1, 
  			MPI::SHORT, 0);
 

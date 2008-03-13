@@ -2146,13 +2146,13 @@ void Grid2D_Quad_Block_HO::Broadcast_Quad_Block(void) {
 
 #ifdef _MPI_VERSION
 
-  int i, j, ni, nj, ng, Highest_Order_of_Reconstruction, mesh_allocated, buffer_size;
+  int i, j, ni, nj, ng, Highest_Order_of_Reconstruction, mesh_allocated, buffer_size, TD_Bcast, td, counter;
   double *buffer;
  
   /* Broadcast the number of cells in each direction. */
 
   if (CFFC_Primary_MPI_Processor()) {
-    ni = NCi;
+    ni = NCi; 
     nj = NCj;
     ng = Nghost;
     Highest_Order_of_Reconstruction = HighestReconstructionOrder;
@@ -2210,55 +2210,162 @@ void Grid2D_Quad_Block_HO::Broadcast_Quad_Block(void) {
   MPI::COMM_WORLD.Bcast(&(OrthogonalE), 1, MPI::INT, 0);
   MPI::COMM_WORLD.Bcast(&(OrthogonalW), 1, MPI::INT, 0);
 
-  /* Broadcast the node locations for grid block. */
+  if (HO_Grid2D_Execution_Mode::USE_BROADCAST_MORE_THAN_RECOMPUTING) {
 
-  if (mesh_allocated) {
-    ni = (INu+Nghost) - (INl-Nghost) + 1;
-    nj = (JNu+Nghost) - (JNl-Nghost) + 1;
-    buffer = new double[2*ni*nj];
+    /* Broadcast the node locations and some of the cell geometric 
+       properties for grid block. */
 
-    if (CFFC_Primary_MPI_Processor()) {
-      buffer_size = 0;
-      for (j  = JNl-Nghost; j <= JNu+Nghost; ++j ) {
-	for ( i = INl-Nghost; i <= INu+Nghost; ++i ) {
-	  buffer[buffer_size] = Node[i][j].X.x;
-	  buffer[buffer_size+1] = Node[i][j].X.y;
-	  buffer_size = buffer_size + 2;
+    if (mesh_allocated) {
+      ni = (INu+Nghost) - (INl-Nghost) + 1;
+      nj = (JNu+Nghost) - (JNl-Nghost) + 1;
+
+      /* Calculate how many geometric coefficients must be broadcast
+	 by subtracting from their total number the first values, which 
+	 is already known as being 1; 
+      */
+      TD_Bcast = CellGeomCoeff(0,0).size() - 1;
+
+      /* Calculate the size of the buffer. 
+	 First term relates to the nodal information while the second term
+	 relates to the cell geometric properties (i.e. area, centroid, geometric moments). */
+      buffer_size = 2*ni*nj + (3 + TD_Bcast)*(ni-1)*(nj-1);
+
+      buffer = new double[buffer_size];
+
+      // Load the buffer on the primary CPU
+      if (CFFC_Primary_MPI_Processor()) {
+	counter = 0;
+	// Pack all the information except for the last North and West rows of nodes
+	for (j  = JNl-Nghost ; j < JNu+Nghost ; ++j ) {
+	  for ( i = INl-Nghost ; i < INu+Nghost ; ++i ) {
+	    buffer[counter] = Node[i][j].X.x;
+	    buffer[counter+1] = Node[i][j].X.y;
+	    buffer[counter+2] = CellArea(i,j);
+	    buffer[counter+3] = XCellCentroid(i,j);
+	    buffer[counter+4] = YCellCentroid(i,j);
+	    counter += 5;  // update buffer_size
+	    for (td = 1; td<=TD_Bcast; ++td, ++counter){
+	      buffer[counter] = CellGeomCoeffValue(i,j,td);
+	    }
+	  } /* endfor */
 	} /* endfor */
-      } /* endfor */
-    } /* endif */
 
-    buffer_size = 2*ni*nj;
-    MPI::COMM_WORLD.Bcast(buffer, buffer_size, MPI::DOUBLE, 0);
+	// Pack the row of nodes with i=INu+Nghost
+	i = INu+Nghost;
+	for (j = 0; j<=JNu+Nghost; ++j){
+	  buffer[counter  ] = Node[i][j].X.x;
+	  buffer[counter+1] = Node[i][j].X.y;
+	  counter += 2;
+	}
 
-    if (!CFFC_Primary_MPI_Processor()) {
-      buffer_size = 0;
-      for (j  = JNl-Nghost; j <= JNu+Nghost; ++j ) {
-	for ( i = INl-Nghost; i <= INu+Nghost; ++i ) {
-	  Node[i][j].X.x = buffer[buffer_size];
-	  Node[i][j].X.y = buffer[buffer_size+1];
-	  buffer_size = buffer_size + 2;
+	// Pack the row of nodes with j=JNu+Nghost
+	j = JNu+Nghost;
+	for (i = 0; i<INu+Nghost; ++i){
+	  buffer[counter  ] = Node[i][j].X.x;
+	  buffer[counter+1] = Node[i][j].X.y;
+	  counter += 2;
+	}
+      } /* endif */
+
+      // Broadcast buffer
+      MPI::COMM_WORLD.Bcast(buffer, buffer_size, MPI::DOUBLE, 0);
+
+      // Unload the buffer on the receiver CPUs and set the variables
+      if (!CFFC_Primary_MPI_Processor()) {
+	counter = 0;
+	// Unpack all the information except for the last North and West rows of nodes
+	for (j  = JNl-Nghost; j < JNu+Nghost; ++j ) {
+	  for ( i = INl-Nghost; i < INu+Nghost; ++i ) {
+	    Node[i][j].X.x  = buffer[counter  ];
+	    Node[i][j].X.y  = buffer[counter+1];
+	    Cell[i][j].A    = buffer[counter+2];
+	    Cell[i][j].Xc.x = buffer[counter+3];
+	    Cell[i][j].Xc.y = buffer[counter+4];
+	    counter += 5;  // update buffer_size
+
+	    // set the first geometric moment
+	    Cell[i][j].GeomCoeffValue(0) = 1.0;
+	    // set the rest of the coefficients to the transferred values
+	    for (td = 1; td<=TD_Bcast; ++td, ++counter){
+	      Cell[i][j].GeomCoeffValue(td) = buffer[counter];
+	    }
+	  } /* endfor */
 	} /* endfor */
-      } /* endfor */
-    } /* endif */
 
-    delete []buffer;
-    buffer = NULL;
+	// Unpack the row of nodes with i=INu+Nghost
+	i = INu+Nghost;
+	for (j = 0; j<=JNu+Nghost; ++j){
+	  Node[i][j].X.x = buffer[counter  ];
+	  Node[i][j].X.y = buffer[counter+1];
+	  counter += 2;
+	}
+
+	// Unpack the row of nodes with j=JNu+Nghost
+	j = JNu+Nghost;
+	for (i = 0; i<INu+Nghost; ++i){
+	  Node[i][j].X.x = buffer[counter  ];
+	  Node[i][j].X.y = buffer[counter+1];
+	  counter += 2;
+	}
+
+	/* On non-source MPI processors, set the boundary condition types
+	   and update the 2D spline info(s) for the quadrilateral mesh block. */
+	Set_BCs();
+	Update_SplineInfos();
+      } /* endif */
+      
+      delete []buffer; 
+      buffer = NULL; 
+    }/* endif */
+
+  } else { 
+
+    /* Broadcast the node locations for grid block. */
+    if (mesh_allocated) {
+      ni = (INu+Nghost) - (INl-Nghost) + 1;
+      nj = (JNu+Nghost) - (JNl-Nghost) + 1;
+      buffer = new double[2*ni*nj];
+
+      if (CFFC_Primary_MPI_Processor()) {
+	buffer_size = 0;
+	for (j  = JNl-Nghost; j <= JNu+Nghost; ++j ) {
+	  for ( i = INl-Nghost; i <= INu+Nghost; ++i ) {
+	    buffer[buffer_size] = Node[i][j].X.x;
+	    buffer[buffer_size+1] = Node[i][j].X.y;
+	    buffer_size = buffer_size + 2;
+	  } /* endfor */
+	} /* endfor */
+      } /* endif */
+
+      buffer_size = 2*ni*nj;
+      MPI::COMM_WORLD.Bcast(buffer, buffer_size, MPI::DOUBLE, 0);
+
+      if (!CFFC_Primary_MPI_Processor()) {
+	buffer_size = 0;
+	for (j  = JNl-Nghost; j <= JNu+Nghost; ++j ) {
+	  for ( i = INl-Nghost; i <= INu+Nghost; ++i ) {
+	    Node[i][j].X.x = buffer[buffer_size];
+	    Node[i][j].X.y = buffer[buffer_size+1];
+	    buffer_size = buffer_size + 2;
+	  } /* endfor */
+	} /* endfor */
+
+	/* Require update of the whole mesh */
+	Schedule_Interior_Mesh_Update();
+	Schedule_Ghost_Cells_Update();
+
+	/* On non-primary MPI processors, set the boundary condition types
+	   and compute the cells for the quadrilateral mesh block. */
+	Set_BCs();
+	Update_Cells();
+      } /* endif */
+
+      delete []buffer;
+      buffer = NULL;
+    } /* endif */
 
   } /* endif */
 
-    /*  On non-primary MPI processors, set the boundary condition types
-        compute the exterior nodes, and compute the cells for the 
-        quadrilateral mesh block. */
-
-  if (mesh_allocated && !CFFC_Primary_MPI_Processor()) {
-    /* Require update of the whole mesh */
-    Schedule_Interior_Mesh_Update();
-    Schedule_Ghost_Cells_Update();
-
-    Set_BCs();
-    Update_Cells();
-  } /* endif */
 #endif
 
 }
@@ -2273,7 +2380,7 @@ void Grid2D_Quad_Block_HO::Broadcast_Quad_Block(MPI::Intracomm &Communicator,
 						const int Source_CPU) {
   
   int Source_Rank = 0;
-  int i, j, ni, nj, ng, Highest_Order_of_Reconstruction, mesh_allocated, buffer_size;
+  int i, j, ni, nj, ng, Highest_Order_of_Reconstruction, mesh_allocated, buffer_size, TD_Bcast, counter, td;
   double *buffer;
   
   /* Broadcast the number of cells in each direction. */
@@ -2337,58 +2444,161 @@ void Grid2D_Quad_Block_HO::Broadcast_Quad_Block(MPI::Intracomm &Communicator,
   Communicator.Bcast(&(OrthogonalE), 1, MPI::INT, Source_Rank);
   Communicator.Bcast(&(OrthogonalW), 1, MPI::INT, Source_Rank);
 
-  /* Broadcast the node locations for grid block. */
+  if (HO_Grid2D_Execution_Mode::USE_BROADCAST_MORE_THAN_RECOMPUTING) {
 
-  if (mesh_allocated) {
-    ni = (INu+Nghost) - (INl-Nghost) + 1;
-    nj = (JNu+Nghost) - (JNl-Nghost) + 1;
-    buffer = new double[2*ni*nj];
+    /* Broadcast the node locations and some of the cell geometric 
+       properties for grid block. */
 
-    if (CFFC_MPI::This_Processor_Number == Source_CPU) {
-      buffer_size = 0;
-      for (j  = JNl-Nghost ; j <= JNu+Nghost ; ++j ) {
-	for ( i = INl-Nghost ; i <= INu+Nghost ; ++i ) {
-	  buffer[buffer_size] = Node[i][j].X.x;
-	  buffer[buffer_size+1] = Node[i][j].X.y;
-	  buffer_size = buffer_size + 2;
+    if (mesh_allocated) {
+      ni = (INu+Nghost) - (INl-Nghost) + 1;
+      nj = (JNu+Nghost) - (JNl-Nghost) + 1;
+
+      /* Calculate how many geometric coefficients must be broadcast
+	 by subtracting from their total number the first values, which 
+	 is already known as being 1; 
+      */
+      TD_Bcast = CellGeomCoeff(0,0).size() - 1;
+
+      /* Calculate the size of the buffer. 
+	 First term relates to the nodal information while the second term
+	 relates to the cell geometric properties (i.e. area, centroid, geometric moments). */
+      buffer_size = 2*ni*nj + (3 + TD_Bcast)*(ni-1)*(nj-1);
+
+      buffer = new double[buffer_size];
+
+      // Load the buffer on the source CPU
+      if (CFFC_MPI::This_Processor_Number == Source_CPU) {
+	counter = 0;
+	// Pack all the information except for the last North and West rows of nodes
+	for (j  = JNl-Nghost ; j < JNu+Nghost ; ++j ) {
+	  for ( i = INl-Nghost ; i < INu+Nghost ; ++i ) {
+	    buffer[counter] = Node[i][j].X.x;
+	    buffer[counter+1] = Node[i][j].X.y;
+	    buffer[counter+2] = CellArea(i,j);
+	    buffer[counter+3] = XCellCentroid(i,j);
+	    buffer[counter+4] = YCellCentroid(i,j);
+	    counter += 5;  // update buffer_size
+	    for (td = 1; td<=TD_Bcast; ++td, ++counter){
+	      buffer[counter] = CellGeomCoeffValue(i,j,td);
+	    }
+	  } /* endfor */
 	} /* endfor */
-      } /* endfor */
-    } /* endif */
-    
-    buffer_size = 2*ni*nj;
-    Communicator.Bcast(buffer, buffer_size, MPI::DOUBLE, Source_Rank);
-    
-    if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
-      buffer_size = 0;
-      for (j  = JNl-Nghost; j <= JNu+Nghost; ++j ) {
-	for ( i = INl-Nghost; i <= INu+Nghost; ++i ) {
-	  Node[i][j].X.x = buffer[buffer_size];
-	  Node[i][j].X.y = buffer[buffer_size+1];
-	  buffer_size = buffer_size + 2;
-	} /* endfor */
-      } /* endfor */
-    } /* endif */
-    
-    delete []buffer; 
-    buffer = NULL;
-    
-  } /* endif */
-  
-    /*  On non-source MPI processors, set the boundary condition types
-        compute the exterior nodes, and compute the cells for the 
-        quadrilateral mesh block. */
-  
-  if (mesh_allocated && 
-      !(CFFC_MPI::This_Processor_Number == Source_CPU)) {
-    
-    /* Require update of the whole mesh */
-    Schedule_Interior_Mesh_Update();
-    Schedule_Ghost_Cells_Update();
-    
-    Set_BCs();
-    Update_Cells();
-  } /* endif */
 
+	// Pack the row of nodes with i=INu+Nghost
+	i = INu+Nghost;
+	for (j = 0; j<=JNu+Nghost; ++j){
+	  buffer[counter  ] = Node[i][j].X.x;
+	  buffer[counter+1] = Node[i][j].X.y;
+	  counter += 2;
+	}
+
+	// Pack the row of nodes with j=JNu+Nghost
+	j = JNu+Nghost;
+	for (i = 0; i<INu+Nghost; ++i){
+	  buffer[counter  ] = Node[i][j].X.x;
+	  buffer[counter+1] = Node[i][j].X.y;
+	  counter += 2;
+	}
+      } /* endif */
+
+      // Broadcast buffer
+      Communicator.Bcast(buffer, buffer_size, MPI::DOUBLE, Source_Rank);
+
+      // Unload the buffer on the receiver CPUs and set the variables
+      if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
+	counter = 0;
+	// Unpack all the information except for the last North and West rows of nodes
+	for (j  = JNl-Nghost; j < JNu+Nghost; ++j ) {
+	  for ( i = INl-Nghost; i < INu+Nghost; ++i ) {
+	    Node[i][j].X.x  = buffer[counter  ];
+	    Node[i][j].X.y  = buffer[counter+1];
+	    Cell[i][j].A    = buffer[counter+2];
+	    Cell[i][j].Xc.x = buffer[counter+3];
+	    Cell[i][j].Xc.y = buffer[counter+4];
+	    counter += 5;  // update buffer_size
+
+	    // set the first geometric moment
+	    Cell[i][j].GeomCoeffValue(0) = 1.0;
+	    // set the rest of the coefficients to the transferred values
+	    for (td = 1; td<=TD_Bcast; ++td, ++counter){
+	      Cell[i][j].GeomCoeffValue(td) = buffer[counter];
+	    }
+	  } /* endfor */
+	} /* endfor */
+
+	// Unpack the row of nodes with i=INu+Nghost
+	i = INu+Nghost;
+	for (j = 0; j<=JNu+Nghost; ++j){
+	  Node[i][j].X.x = buffer[counter  ];
+	  Node[i][j].X.y = buffer[counter+1];
+	  counter += 2;
+	}
+
+	// Unpack the row of nodes with j=JNu+Nghost
+	j = JNu+Nghost;
+	for (i = 0; i<INu+Nghost; ++i){
+	  Node[i][j].X.x = buffer[counter  ];
+	  Node[i][j].X.y = buffer[counter+1];
+	  counter += 2;
+	}
+
+	/* On non-source MPI processors, set the boundary condition types
+	   and update the 2D spline info(s) for the quadrilateral mesh block. */
+	Set_BCs();
+	Update_SplineInfos();
+      } /* endif */
+      
+      delete []buffer; 
+      buffer = NULL; 
+    }/* endif */
+
+  } else { 
+
+    /* Broadcast the node locations for grid block. */
+    if (mesh_allocated) {
+      ni = (INu+Nghost) - (INl-Nghost) + 1;
+      nj = (JNu+Nghost) - (JNl-Nghost) + 1;
+      buffer = new double[2*ni*nj];
+
+      if (CFFC_MPI::This_Processor_Number == Source_CPU) {
+	buffer_size = 0;
+	for (j  = JNl-Nghost ; j <= JNu+Nghost ; ++j ) {
+	  for ( i = INl-Nghost ; i <= INu+Nghost ; ++i ) {
+	    buffer[buffer_size] = Node[i][j].X.x;
+	    buffer[buffer_size+1] = Node[i][j].X.y;
+	    buffer_size = buffer_size + 2;
+	  } /* endfor */
+	} /* endfor */
+      } /* endif */
+    
+      buffer_size = 2*ni*nj;
+      Communicator.Bcast(buffer, buffer_size, MPI::DOUBLE, Source_Rank);
+    
+      if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
+	buffer_size = 0;
+	for (j  = JNl-Nghost; j <= JNu+Nghost; ++j ) {
+	  for ( i = INl-Nghost; i <= INu+Nghost; ++i ) {
+	    Node[i][j].X.x = buffer[buffer_size];
+	    Node[i][j].X.y = buffer[buffer_size+1];
+	    buffer_size = buffer_size + 2;
+	  } /* endfor */
+	} /* endfor */
+
+	/* Require update of the whole mesh */
+	Schedule_Interior_Mesh_Update();
+	Schedule_Ghost_Cells_Update();
+
+	/* On non-source MPI processors, set the boundary condition types
+	   and compute the cells for the quadrilateral mesh block. */
+	Set_BCs();
+	Update_Cells();
+      } /* endif */
+    
+      delete []buffer; 
+      buffer = NULL;
+    } /* endif */
+
+  }/* endif */
 }
 #endif
 
@@ -4442,6 +4652,143 @@ void Grid2D_Quad_Block_HO::Update_Corner_Ghost_Nodes(void) {
 }
 
 /*!
+ * Updates only the spline info(s) for the quadrilateral mesh block.
+ */
+void Grid2D_Quad_Block_HO::Update_SplineInfos(void){
+
+  int i;
+
+  if ( !CheckExistenceOfCurvedBoundaries() ){
+    // There is no need for curved boundary representation so SplineInfo(s) don't need to be updated 
+    return;
+
+  } else {
+    
+    Spline2D_HO SplineCopy;
+    
+    // Determine the geometric properties along the splines (e.g. Gauss Quadrature point locations,
+    // normals, and spline segment length at each cell)
+
+    // Check the North boundary
+    if (BndNorthSpline.Xp != NULL && BndNorthSpline.bc[0] != BC_NONE && BndNorthSpline.bc[0] != BC_PERIODIC){
+
+      // Determine the geometric properties along the splines (e.g. Gauss Quadrature point locations, normals, etc.)
+      // Update BndNorthSplineInfo[]
+      // Check if memory is allocated for BndNorthSplineInfo
+      if(BndNorthSplineInfo == NULL){ // allocate array
+	BndNorthSplineInfo = new Spline2DInterval_HO [NCi];
+      }
+
+      // Check if the North Spline is defined such that the normals at the GaussQuadratures point outside of the domain 
+      // (i.e The spline pathlength increases from INu to INl)
+      if ( BndNorthSpline.getS(Node[INl][JNu]) > BndNorthSpline.getS(Node[INu][JNu]) ){
+	// Update the geometric information 
+	for(i=ICl; i<=ICu; ++i){
+	  BndNorthSplineInfo[i].UpdateInterval(BndNorthSpline,Node[i][JNu],Node[i+1][JNu],NumGQP);
+	}
+      } else {
+	// Copy the spline
+	SplineCopy = BndNorthSpline;
+	// Change the direction of increasing the pathlength
+	SplineCopy.Reverse_Spline();
+
+	// Update the geometric information 
+	for(i=ICl; i<=ICu; ++i){
+	  BndNorthSplineInfo[i].UpdateInterval(SplineCopy,Node[i][JNu],Node[i+1][JNu],NumGQP);
+	}
+      }//endif
+    } // endif (North Boundary)
+
+    // Check the South boundary
+    if (BndSouthSpline.Xp != NULL && BndSouthSpline.bc[0] != BC_NONE && BndSouthSpline.bc[0] != BC_PERIODIC){
+
+      // Update BndSouthSplineInfo[]
+      // Check if memory is allocated for BndSouthSplineInfo
+      if(BndSouthSplineInfo == NULL){ // allocate array
+	BndSouthSplineInfo = new Spline2DInterval_HO [NCi];
+      }
+
+      // Check if the South Spline is defined such that the normals at the GaussQuadratures point outside of the domain 
+      // (i.e The spline pathlength increases from INl to INu)
+      if ( BndSouthSpline.getS(Node[INl][JNl]) < BndSouthSpline.getS(Node[INu][JNl]) ){
+	// Update the geometric information 
+	for(i=ICl; i<=ICu; ++i){
+	  BndSouthSplineInfo[i].UpdateInterval(BndSouthSpline,Node[i][JNl],Node[i+1][JNl],NumGQP);
+	}
+      } else {
+	// Copy the spline
+	SplineCopy = BndSouthSpline;
+	// Change the direction of increasing the pathlength
+	SplineCopy.Reverse_Spline();
+
+	// Update the geometric information 
+	for(i=ICl; i<=ICu; ++i){
+	  BndSouthSplineInfo[i].UpdateInterval(SplineCopy,Node[i][JNl],Node[i+1][JNl],NumGQP);
+	}
+      }//endif
+    } // endif (South Boundary)
+
+    // Check the East boundary
+    if (BndEastSpline.Xp != NULL && BndEastSpline.bc[0] != BC_NONE && BndEastSpline.bc[0] != BC_PERIODIC){
+
+      // Update BndEastSplineInfo[]
+      // Check if memory is allocated for BndEastSplineInfo
+      if(BndEastSplineInfo == NULL){ // allocate array
+	BndEastSplineInfo = new Spline2DInterval_HO [NCj];
+      }
+
+      // Check if the East Spline is defined such that the normals at the GaussQuadratures point outside of the domain 
+      // (i.e The spline pathlength increases from JNl to JNu)
+      if ( BndEastSpline.getS(Node[INu][JNl]) < BndEastSpline.getS(Node[INu][JNu]) ){
+	// Update the geometric information 
+	for(i=JCl; i<=JCu; ++i){
+	  BndEastSplineInfo[i].UpdateInterval(BndEastSpline,Node[INu][i],Node[INu][i+1],NumGQP);
+	}
+      } else {
+	// Copy the spline
+	SplineCopy = BndEastSpline;
+	// Change the direction of increasing the pathlength
+	SplineCopy.Reverse_Spline();
+
+	// Update the geometric information 
+	for(i=JCl; i<=JCu; ++i){
+	  BndEastSplineInfo[i].UpdateInterval(SplineCopy,Node[INu][i],Node[INu][i+1],NumGQP);
+	}
+      }//endif
+    } // endif (East Boundary)
+
+    // Check the West boundary
+    if (BndWestSpline.Xp != NULL && BndWestSpline.bc[0] != BC_NONE && BndWestSpline.bc[0] != BC_PERIODIC){
+
+      // Update BndWestSplineInfo[]
+      // Check if memory is allocated for BndWestSplineInfo
+      if(BndWestSplineInfo == NULL){ // allocate array
+	BndWestSplineInfo = new Spline2DInterval_HO [NCj];
+      }
+
+      // Check if the West Spline is defined such that the normals at the GaussQuadratures point outside of the domain 
+      // (i.e The spline pathlength increases from JNu to JNl)
+      if ( BndWestSpline.getS(Node[INl][JNl]) > BndWestSpline.getS(Node[INl][JNu]) ){
+	// Update the geometric information 
+	for(i=JCl; i<=JCu; ++i){
+	  BndWestSplineInfo[i].UpdateInterval(BndWestSpline,Node[INl][i],Node[INl][i+1],NumGQP);
+	}
+      } else {
+	// Copy the spline
+	SplineCopy = BndWestSpline;
+	// Change the direction of increasing the pathlength
+	SplineCopy.Reverse_Spline();
+
+	// Update the geometric information 
+	for(i=JCl; i<=JCu; ++i){
+	  BndWestSplineInfo[i].UpdateInterval(SplineCopy,Node[INl][i],Node[INl][i+1],NumGQP);
+	}
+      }//endif
+    } // endif (West Boundary)
+  }
+}
+
+/*!
  * Compute the area of an interior cell that has one or 
  * two edges treated as high-order geometric boundaries.
  */
@@ -5506,6 +5853,8 @@ Vector2D Grid2D_Quad_Block_HO::centroid_GhostCell_CurvedBoundaries(const int &Ce
  * polynomial functions with the form ((x-xCC)^n)*((y-yCC)^m) 
  * and divided by aria A.
  * This subroutine is for grid cells with straight edges.
+ *
+ * \todo Derive analytic expressions for the quartic moments to speed up the code.
  */
 void Grid2D_Quad_Block_HO::ComputeGeometricCoefficients(const int &ii, const int &jj){
 

@@ -365,7 +365,7 @@ public:
   Vector2D centroid_GhostCell_CurvedBoundaries(const int &CellIndex, const int &Boundary) const;
   //@}
 
-  //! @name Get cell centroid.
+  //! @name Get area and cell centroid.
   //@{
   //! Access the centroid of cell (ii,jj)
   const Vector2D & CellCentroid(int ii, int jj) const {return Cell[ii][jj].Xc; }
@@ -373,6 +373,8 @@ public:
   const double & XCellCentroid(int ii, int jj) const {return Cell[ii][jj].Xc.x; }
   //! Access the y-coordinate of the centroid of cell (ii,jj)
   const double & YCellCentroid(int ii, int jj) const {return Cell[ii][jj].Xc.y; }
+  //! Access the area of cell (ii,jj)
+  const double & CellArea(const int &ii, const int &jj) const {return Cell[ii][jj].A; }
   //@}
 
   //! @name Calculate cell area.
@@ -697,6 +699,7 @@ public:
   void Update_Interior_Cells(void);
   void Update_Ghost_Cells(void);
   void Update_Corner_Ghost_Cells(void);
+  void Update_SplineInfos(void);
 
   int Check_Quad_Block(void);
   int Check_Quad_Block_Completely(void);
