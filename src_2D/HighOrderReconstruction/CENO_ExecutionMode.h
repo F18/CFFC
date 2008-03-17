@@ -80,6 +80,25 @@ public:
       --------------------------------------------------------------------------------------- */
   static short FORCE_WITH_PIECEWISE_CONSTANT_AT_INTERFACE;
 
+  /*! This flag is used to switch between two methods of performing the CENO reconstruction. \n
+      The first method tries to reduce the number of necessary ghost cells by using message
+      passing to the overlapping layers of ghost cells in order to decide the smoothness properties
+      of the cells used to compute the interface flux. This method has not been explored in practice yet. \n
+      The second method uses enough layers of ghost cells to compute all necessary reconstructions
+      for either flux calculation or smoothness properties assessment. \n
+      Turn ON if the message passing is going to be used (i.e. first method). Not implemented yet!!! \n
+      Turn OFF if no message passing is used in the reconstruction process. (default) \n
+      \note Message passing might still be used for cell reconstructions at boundaries between
+      blocks with mesh resolution change! This is subject to a different flag. \n
+      --------------------------------------------------------------------------------------- */
+  static short CENO_RECONSTRUCTION_WITH_MESSAGE_PASSING;
+
+  /*! Use the only the first neighbour cells to calculate the value of the smoothness indicator,
+      instead of using all the cells used in the reconstruction process. \n
+      Turn ON if this feature is desired. \n
+      Turn OFF if you don't want to use this feature.  (default) \n
+      --------------------------------------------------------------------------------------- */
+  static short CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS;
 
   static int Limiter;   //!< the limiter used for the limited linear reconstruction performed for non-smooth solutions
 
@@ -152,6 +171,25 @@ void CENO_Execution_Mode::Parse_Next_Input_Control_Parameter(Input_Parameters_Ty
       FORCE_WITH_PIECEWISE_CONSTANT_AT_INTERFACE = OFF;
     }
     i_command = 0;
+  } else if (strcmp(IP.Next_Control_Parameter, "CENO_With_Message_Passing") == 0) {
+    IP.Get_Next_Input_Control_Parameter();
+    if ( strcmp(IP.Next_Control_Parameter, "Yes") == 0 ){
+      CENO_RECONSTRUCTION_WITH_MESSAGE_PASSING = ON;
+      throw runtime_error("CENO_Execution_Mode ERROR! CENO reconstruction with message passing has not been implemented yet!");
+    } else {
+      CENO_RECONSTRUCTION_WITH_MESSAGE_PASSING = OFF;
+    }
+    i_command = 0;
+
+  } else if (strcmp(IP.Next_Control_Parameter, "CENO_Smoothness_Indicator") == 0) {
+    IP.Get_Next_Input_Control_Parameter();
+    if ( strcmp(IP.Next_Control_Parameter, "Use_First_Neighbours") == 0 ){
+      CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS = ON;
+    } else if ( strcmp(IP.Next_Control_Parameter, "Use_All_Neighbours") == 0 ){
+      CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS = OFF;
+    }
+    i_command = 0;
+
   } else {
     i_command = INVALID_INPUT_CODE;
   } // endif
