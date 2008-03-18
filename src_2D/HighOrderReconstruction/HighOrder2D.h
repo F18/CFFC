@@ -77,9 +77,13 @@ public:
   //! @name Constructors:
   //@{
   HighOrder2D(void);		//!< Simple constructor 
-  HighOrder2D(int ReconstructionOrder, GeometryType & Block); //!< Advanced constructor
+  HighOrder2D(int ReconstructionOrder, GeometryType & Block,
+	      const bool &_pseudo_inverse_allocation_ = false); //!< Advanced constructor
   HighOrder2D( const HighOrder2D & rhs); //!< Copy constructor
-  void allocate(const int &NC_IDir, const int &NC_JDir, int ReconstructionOrder = -1);
+  void allocate(const int &NC_IDir, const int &NC_JDir,
+		const int &Nghost,
+		const bool &_pseudo_inverse_allocation_,
+		int ReconstructionOrder = -1);
   //@}
   
 
@@ -194,9 +198,11 @@ public:
   const double & Cell_LHS_Inv_Value(const int & ii, const int & jj,
 				    const int & IndexI, const int & IndexJ) const {return CENO_LHS(IndexI,IndexJ);}
   //! Return true if the pseudo-inverse has been already computed, otherwise false.
-  bool IsPseudoInversePreComputed(void) const { return (PseudoInverseFlag==ON) ? true:false; }
+  bool IsPseudoInversePreComputed(void) const { return _calculated_psinv; }
   //! Require update of the pseudo-inverse
-  void MustUpdatePseudoInverse(void) {PseudoInverseFlag = OFF;}
+  void MustUpdatePseudoInverse(void) { _calculated_psinv = false; }
+  //! Return true if the pseudo-inverse related containers has been allocated.
+  bool IsPseudoInverseAllocated(void) const { return _allocated_psinv; }
   //@}
 
   //! @name Geometric weights assigned to the cells that are part of the stencil
@@ -236,10 +242,13 @@ public:
 
   //! @name Initialize container functions.
   //@{
-  static int Nghost(int ReconstructionOrder); //!< return the required number of ghost cells
+  static int MinimumNghost(const int &ReconstructionOrder); //!< return the minimum required number of ghost cells
   void SetRings(void);
+  static int StencilSize(const int &ReconstructionOrder);
   int StencilSize(void) const;
-  int TaylorDerivativesSize(void);
+  int TaylorDerivativesSize(void) const;
+  static int NumberOfRings(int number_of_Taylor_derivatives);   //!< Return the required number of neighbour rings
+  static int TaylorDerivativesSize(const int &ReconstructionOrder);
   void ResetMonotonicityFlag(void);
   void InitializeMonotonicityVariables(const int & ii, const int & jj);
 
@@ -333,17 +342,24 @@ protected:
 private:
   int Ni;		       //!< Number of high-order objects in i-direction
   int Nj;		       //!< Number of high-order objects in j-direction
+  int Ng; 		       //!< Number of block ghost cells 
+  int ICl,		       //!< Index of first interior cell in i-direction 
+    ICu,		       //!< Index of last interior cell in i-direction 
+    JCl,		       //!< Index of first interior cell in j-direction 
+    JCu;                       //!< Index of last interior cell in j-direction 
   int OrderOfReconstruction;   //!< The order of reconstruction of the high-order object.
+  short int Nghost_HO;	       //!< Number of ghost cells in which high-order reconstruction is performed. 
 
-  short int _allocated_block;  //!< Flag indicating if the containers at block level has been allocated or not.
-  short int _allocated_cells;  //!< Flag indicating if the containers at cell level has been allocated or not.
+  bool _allocated_block;       //!< Flag indicating if the containers at block level has been allocated or not.
+  bool _allocated_cells;       //!< Flag indicating if the containers at cell level has been allocated or not.
+  bool _allocated_psinv;       //!< Flag indicating if the pseudo-inverse related containers have been allocated or not. 
 
   DerivativesContainer **TD;   //!< High-order TaylorDerivatives
   DoubleArrayType **SI;        //!< The values of the smoothness indicator calculated for each reconstructed variable
   FlagType **LimitedCell;      //!< Monotonicity flag: Values --> OFF - high-order reconstruction,
                                //                                  ON - limited linear reconstruction
   int rings;                   //!< Number of rings used to generate the reconstruction stencil
-  short PseudoInverseFlag;     //!< Flag to indicate whether the pseudo-inverse has been already computed.
+  bool _calculated_psinv;      //!< Flag to indicate whether the pseudo-inverse has been already computed or not.
 
   DenseMatrix **CENO_LHS;      //!< Storage for the pseudo-inverse of the LHS term in the CENO reconstruction.
   DoubleArrayType **CENO_Geometric_Weights;   //!< Storage for the geometric weights used in CENO reconstruction.
@@ -353,22 +369,23 @@ private:
   //! Set Geometry_Ptr to point to the same geometry as the current Geom pointer
   void set_geometry_pointer(GeometryType* & Geometry_Ptr) const { Geometry_Ptr = Geom; }
 
-  //! Return the required number of neighbour rings
-  static int NumberOfRings(int number_of_Taylor_derivatives);
-
   //! Get i-direction index of first interior cell
-  const int & ICl(void) const {return Geom->ICl; }
+  const int & ICl_Grid(void) const {return Geom->ICl; }
   //! Get i-direction index of last interior cell
-  const int & ICu(void) const {return Geom->ICu; }
+  const int & ICu_Grid(void) const {return Geom->ICu; }
   //! Get j-direction index of first interior cell
-  const int & JCl(void) const {return Geom->JCl; }
+  const int & JCl_Grid(void) const {return Geom->JCl; }
   //! Get j-direction index of last interior cell
-  const int & JCu(void) const {return Geom->JCu; }
+  const int & JCu_Grid(void) const {return Geom->JCu; }
   //! Get number of ghost cells for the associated block mesh
-  const int & Nghost(void) const {return Geom->Nghost; }
+  const int & Nghost_Grid(void) const {return Geom->Nghost; }
   //! Get the number of variables in the solution state
   int NumberOfVariables(void) const {return Soln_State::NumberOfVariables; }
 
+  //! Allocate memory at the cell level based on the order of reconstruction
+  void allocate_CellMemory(const int &ReconstructionOrder);
+
+  void setNghost_HO(void){ };
 };
 
 /******************************************************
@@ -382,31 +399,43 @@ private:
 //! Default Constructor
 template<class SOLN_STATE> inline
 HighOrder2D<SOLN_STATE>::HighOrder2D(void):
-  Ni(0), Nj(0), OrderOfReconstruction(-1),
+  Ni(0), Nj(0), Ng(0),
+  ICl(0), ICu(0), JCl(0), JCu(0),
+  OrderOfReconstruction(-1), Nghost_HO(0),
+  _allocated_block(false), _allocated_cells(false), _allocated_psinv(false),
   TD(NULL), SI(NULL), LimitedCell(NULL),
-  rings(-1), PseudoInverseFlag(OFF),
+  rings(0), _calculated_psinv(false),
   CENO_LHS(NULL), CENO_Geometric_Weights(NULL),
-  Geom(NULL), _allocated_block(OFF), _allocated_cells(OFF)
+  Geom(NULL)
 {
   //
 }
 
 //! Main Constructor
 template<class SOLN_STATE> inline
-HighOrder2D<SOLN_STATE>::HighOrder2D(int ReconstructionOrder, GeometryType & Block):
-  Ni(0), Nj(0), OrderOfReconstruction(-1),
+HighOrder2D<SOLN_STATE>::HighOrder2D(int ReconstructionOrder,
+				     GeometryType & Block,
+				     const bool &_pseudo_inverse_allocation_):
+  Ni(0), Nj(0), Ng(0),
+  ICl(0), ICu(0), JCl(0), JCu(0),
+  OrderOfReconstruction(-1), Nghost_HO(0),
+  _allocated_block(false), _allocated_cells(false), _allocated_psinv(false),
   TD(NULL), SI(NULL), LimitedCell(NULL), 
-  rings(-1), PseudoInverseFlag(OFF),
+  rings(0), _calculated_psinv(false),
   CENO_LHS(NULL), CENO_Geometric_Weights(NULL), 
-  Geom(&Block), _allocated_block(OFF), _allocated_cells(OFF)
+  Geom(&Block)
 {
-  // 
+  // Use the grid to get the data regarding the number of block cells
 }
 
 //! Copy constructor 
 template<class SOLN_STATE> inline
 HighOrder2D<SOLN_STATE>::HighOrder2D(const HighOrder2D<SOLN_STATE> & rhs): Geom(NULL)
 {
+
+  throw runtime_error("HighOrder2D() copy constructor not implemented yet!");
+
+#if 0				// This must be rewritten
   TD = rhs.TaylorDeriv();
   SI = rhs.CellSmoothnessIndicator();
   LimitedCell = rhs.CellInadequateFit();
@@ -415,16 +444,21 @@ HighOrder2D<SOLN_STATE>::HighOrder2D(const HighOrder2D<SOLN_STATE> & rhs): Geom(
   if (CENO_Execution_Mode::CENO_SPEED_EFFICIENT && (!rhs.GeomWeights().null()) ){
     CENO_LHS = rhs.LHS();
     CENO_Geometric_Weights = rhs.GeomWeights();
-    PseudoInverseFlag = ON;
+    _calculated_psinv = ON;
   }
 
   // point to the same geometry as rhs.Geom
   rhs.set_geometry_pointer(Geom);
+#endif
 }
 
 //! Assignment operator
 template<class SOLN_STATE> inline
 HighOrder2D<SOLN_STATE> & HighOrder2D<SOLN_STATE>::operator=(const HighOrder2D<SOLN_STATE> & rhs){
+
+  throw runtime_error("HighOrder2D() assignment operator not implemented yet!");
+
+#if 0				// This must be rewritten
 
   // Handle self-assignment:
   if (this == & rhs) return *this;
@@ -434,14 +468,16 @@ HighOrder2D<SOLN_STATE> & HighOrder2D<SOLN_STATE>::operator=(const HighOrder2D<S
   LimitedCell = rhs.CellInadequateFit();
   rings = rhs.Rings();
 
-  if (CENO_Execution_Mode::CENO_SPEED_EFFICIENT && (!rhs.GeomWeights().null()) ){
+  if ( rhs.IsPseudoInverseAllocated() ){
     CENO_LHS = rhs.LHS();
     CENO_Geometric_Weights = rhs.GeomWeights();
-    PseudoInverseFlag = ON;
+    _calculated_psinv = ON;
+    _allocated_psinv = ON;
   }
 
   // point to the same geometry as rhs.Geom
   rhs.set_geometry_pointer(Geom);
+#endif
 
   return *this;
 }
@@ -449,82 +485,137 @@ HighOrder2D<SOLN_STATE> & HighOrder2D<SOLN_STATE>::operator=(const HighOrder2D<S
 // allocate()
 /*! Allocate memory for the high-order object.
  *
- * \param NC_Idir total number of cells in i-direction
- * \param NC_Jdir total number of cells in j-direction
+ * \param NC_Idir number of cells in i-direction
+ * \param NC_Jdir number of cells in j-direction
+ * \param Nghost  number of block ghost cells
  * \param ReconstructionOrder the order of reconstruction for this high-order object.
  *        If this number is not specified the implicit value is -1, which corresponds to no memory allocation.
- *
+ * 
  * \todo Improve the memory allocation based on the runtime situations and reconstruction order.
  */
 template<class SOLN_STATE> inline
 void HighOrder2D<SOLN_STATE>::allocate(const int &NC_IDir,
 				       const int &NC_JDir,
+				       const int &Nghost,
+				       const bool &_pseudo_inverse_allocation_,
 				       int ReconstructionOrder){
 
   int i,j;
 
   // Check conditions
-  if (NC_IDir <= 1 || NC_JDir <= 1 || ReconstructionOrder < -1){
+  if (NC_IDir < 2 || NC_JDir < 2 || Nghost < 1 || ReconstructionOrder < -1){
     throw runtime_error("HighOrder2D<SOLN_STATE>::allocate() ERROR! Inconsistent dimensions!");
   }
 
-  // Don't allocate any memory and deallocate any previously allocated one
+  // Don't allocate any memory and deallocate any previously allocated one if reconstruction order is -1
   if (ReconstructionOrder == -1){
     deallocate();
     return;
   }
 
-  // Check if the new required memory has dimensions different than the currently allocated ones
-  if ( NC_IDir != Ni || NC_JDir != Nj || ReconstructionOrder != OrderOfReconstruction ){
+  if (CENO_Execution_Mode::CENO_RECONSTRUCTION_WITH_MESSAGE_PASSING){
+    // This method is not implemented yet but it's left as a possible development stream.
+    // In the current implementation the 'CENO_Execution_Mode' class should refuse to set this flag to ON.
 
-    // free the memory if there is memory allocated
-    deallocate();
+  } else {
 
-    // allocate new memory 
-    Ni = NC_IDir;
-    Nj = NC_JDir;
-    OrderOfReconstruction = ReconstructionOrder;
+    // Check if the new block dimensions are different than the currently allocated ones
+    if ( Ni != (NC_IDir-2*Nghost) || Nj != (NC_JDir-2*Nghost) || Ng != Nghost ){
+
+      // free the memory if there is memory allocated
+      deallocate();
+
+      /* check consistency relationship between Nghost and 
+	 the minimum number of ghost cells required for the
+	 provided ReconstructionOrder */
+      if ( Nghost < MinimumNghost(ReconstructionOrder) ){
+	throw runtime_error("HighOrder2D<SOLN_STATE>::allocate() ERROR! Too few ghost cells provided for the required reconstruction!");
+      };
+
+      // allocate new memory 
+      Ni = NC_IDir+2*Nghost; Nj = NC_JDir+2*Nghost;
+      Ng = Nghost;
+      ICl = Ng; ICu = Ni+Ng-1;
+      JCl = Ng; JCu = Nj+Ng-1;
     
-    // Allocate memory at block level
-    TD = new DerivativesContainer* [Ni];
-    SI = new DoubleArrayType* [Ni];
-    LimitedCell = new FlagType* [Ni];
-    if (CENO_Execution_Mode::CENO_SPEED_EFFICIENT){
-      CENO_LHS = new DenseMatrix* [Ni];
-      CENO_Geometric_Weights = new DoubleArrayType* [Ni];
-    }
-
-    for (i = 0; i < Ni ; ++i){
-      TD[i] = new DerivativesContainer [Nj];
-      SI[i] = new DoubleArrayType [Nj];
-      LimitedCell[i] = new FlagType [Nj];
-      if (CENO_Execution_Mode::CENO_SPEED_EFFICIENT){
-	CENO_LHS[i] = new DenseMatrix [Nj];
-	CENO_Geometric_Weights[i] = new DoubleArrayType [Nj];
+      // Allocate memory at block level
+      TD = new DerivativesContainer* [Ni];
+      SI = new DoubleArrayType* [Ni];
+      LimitedCell = new FlagType* [Ni];
+      if (_pseudo_inverse_allocation_){
+	CENO_LHS = new DenseMatrix* [Ni];
+	CENO_Geometric_Weights = new DoubleArrayType* [Ni];
       }
-    }// endfor
 
-    // Block memory allocated
-    _allocated_block = ON;
+      for (i = 0; i < Ni ; ++i){
+	TD[i] = new DerivativesContainer [Nj];
+	SI[i] = new DoubleArrayType [Nj];
+	LimitedCell[i] = new FlagType [Nj];
+	if (_pseudo_inverse_allocation_){
+	  CENO_LHS[i] = new DenseMatrix [Nj];
+	  CENO_Geometric_Weights[i] = new DoubleArrayType [Nj];
+	}
+      }// endfor
 
-    // Allocate memory and initialize at cell level
-    for (j  = 0 ; j < Nj ; ++j ) {
-      for ( i = 0 ; i < Ni ; ++i ) {    
-	// Set Taylor derivatives
-	TD[i][j].GenerateContainer(OrderOfReconstruction);
-	// Set smoothness indicator and monotonicity flag
-	InitializeMonotonicityVariables(i,j);
-      } /* endfor */
-    } /* endfor */
+      // Block memory allocated
+      _allocated_block = true;
 
-    // Cell memory allocated
-    _allocated_cells = ON;
+      // Allocate memory and initialize at cell level.
+      allocate_CellMemory(ReconstructionOrder);
+     
+    } else if ( ReconstructionOrder != OrderOfReconstruction ) { 
+
+      // re-allocate only the cell memory
+      allocate_CellMemory(ReconstructionOrder);
+ 
+    }//endif
 
   }//endif
 }
 
+// allocate_CellMemory()
+/*!
+ * Allocate memory for all cells and set the variables
+ * that depend on the order of reconstruction.
+ */
+template<class SOLN_STATE> inline
+void HighOrder2D<SOLN_STATE>::allocate_CellMemory(const int &ReconstructionOrder){
+
+  int i,j;
+
+  // Allocate new memory only if the new container dimensions are different than the currently allocated ones
+  if (ReconstructionOrder != OrderOfReconstruction){
+
+    // Deallocate memory if allocated
+    deallocate_CellMemory();
+
+    // Set the new reconstruction order
+    OrderOfReconstruction = ReconstructionOrder;
+
+    // Set the Nghost_HO based on the OrderOfReconstruction
+    setNghost_HO();
+
+    // Allocate memory and initialize containers at cell level.
+    for (j  = JCl-Nghost_HO ; j < JCu+Nghost_HO ; ++j ) {
+      for ( i = ICl-Nghost_HO ; i < ICu+Nghost_HO ; ++i ) {    
+	// Set Taylor derivatives
+	TD[i][j].GenerateContainer(OrderOfReconstruction);
+	// Set smoothness indicator and monotonicity flag
+	InitializeMonotonicityVariables(i,j);
+
+	_allocated_psinv = true;
+
+      } /* endfor */
+    }/* endfor */
+  
+    // Cell memory allocated
+    _allocated_cells = true;
+  }
+}
+
 // deallocate()
-/*! Deallocate all allocated memory.
+/*!
+ * Deallocate all allocated memory.
  */
 template<class SOLN_STATE> inline
 void HighOrder2D<SOLN_STATE>::deallocate(void){
@@ -554,16 +645,17 @@ void HighOrder2D<SOLN_STATE>::deallocate(void){
     }
 
     // Confirm the deallocation
-    _allocated_block = OFF;
-    _allocated_cells = OFF;
+    _allocated_block = false;
+    _allocated_cells = false;
   }
 }
 
 // deallocate_CellMemory()
-/*! Deallocate memory when high-order is not required.
- *  Automatic deallocation is already provided when the 
- *  variables are deleted.
- *  This routine deallocates the containers at cell level.
+/*! 
+ * Deallocate memory when high-order is not required.
+ * Automatic deallocation is already provided when the 
+ * variables are deleted.
+ * This routine deallocates the containers at cell level.
  */
 template<class SOLN_STATE> inline
 void HighOrder2D<SOLN_STATE>::deallocate_CellMemory(void){
@@ -572,20 +664,20 @@ void HighOrder2D<SOLN_STATE>::deallocate_CellMemory(void){
 
   if (_allocated_cells){     // check that memory has been allocated
 
-    for (jj  = 0 ; jj < Nj ; ++jj ) {
-      for ( ii = 0 ; ii < Ni ; ++ii ) {  
+    for (jj  = JCl-Nghost_HO ; jj < JCu+Nghost_HO ; ++jj ) {
+      for ( ii = ICl-Nghost_HO ; ii < ICu+Nghost_HO ; ++ii ) {  
   
 	// deallocate TD
 	TD[ii][jj].free_memory();
 
 	// deallocate LimitedCell
 	LimitedCell[ii][jj].reserve(0);
-
+	
 	// deallocate SmoothnessIndicator
 	SI[ii][jj].reserve(0);
 
 	// deallocate LHS matrix and GeometricWeights
-	if (CENO_LHS != NULL && PseudoInverseFlag){
+	if (CENO_LHS != NULL && _calculated_psinv){
 	  CENO_LHS[ii][jj].newsize(0,0);
 	  CENO_Geometric_Weights[ii][jj].reserve(0);
 	}
@@ -594,7 +686,7 @@ void HighOrder2D<SOLN_STATE>::deallocate_CellMemory(void){
     } /* endfor */
 
     // reset flag
-    PseudoInverseFlag = OFF;
+    _calculated_psinv = OFF;
 
     // Confirm the deallocation
     _allocated_cells = OFF;
@@ -637,7 +729,7 @@ int HighOrder2D<SOLN_STATE>::NumberOfRings(int number_of_Taylor_derivatives){
     return 3;			// it corresponds to 48 neighbour cells
 
   default:
-    return -1;
+    return 0;
   }
 }
 
@@ -648,8 +740,107 @@ int HighOrder2D<SOLN_STATE>::NumberOfRings(int number_of_Taylor_derivatives){
  * where k is the order of reconstruction.
  */
 template<class SOLN_STATE> inline
-int HighOrder2D<SOLN_STATE>::TaylorDerivativesSize(void){
-  return 0.5 * (OrderOfReconstruction + 1) * (OrderOfReconstruction + 2);
+int HighOrder2D<SOLN_STATE>::TaylorDerivativesSize(const int &ReconstructionOrder) {
+  return (ReconstructionOrder + 1) * (ReconstructionOrder + 2)/2;
+}
+
+// TaylorDerivativesSize()
+/*! Get the number of Taylor derivatives based on
+ * the reconstruction order.
+ * In 2D, this number is given by \f$ \frac{(k+1) \, (k+2)}{2} \f$,
+ * where k is the order of reconstruction.
+ */
+template<class SOLN_STATE> inline
+int HighOrder2D<SOLN_STATE>::TaylorDerivativesSize(void) const {
+  return TaylorDerivativesSize(OrderOfReconstruction);
+}
+
+// MinimumNghost()
+/*!
+ * Returns the minimum number of ghost cells for the solution domain
+ * required to carry out a reconstruction of order ReconstructionOrder.
+ * This number takes into account factors such as: \n
+ * - number of ghost cells required for flux calculation (i.e. 1). \n
+ * - stencil size for a given order of reconstruction. \n
+ * - number of cells required to compute the smoothness indicator. \n
+ * - flags set in the Execution_Mode class.
+ */
+template<class SOLN_STATE> inline
+int HighOrder2D<SOLN_STATE>::MinimumNghost(const int &ReconstructionOrder){
+
+  if (CENO_Execution_Mode::CENO_RECONSTRUCTION_WITH_MESSAGE_PASSING){
+    // This method is not implemented yet but it's left as a possible development stream.
+    // In the current implementation the 'CENO_Execution_Mode' class should refuse to set this flag to ON.
+
+  } else {
+
+    if (CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS){
+      // Return the minimum number of ghost cells when smoothness indicator computation is done with only the closes neighbours
+      switch (ReconstructionOrder){
+      case 4:
+	return 4;
+	break;
+
+      case 3:
+	return 4;
+	break;
+
+      case 2:
+	return 4;
+	break;
+
+      case 1:
+	return 3;
+	break;
+
+      case 0:
+	return 1;
+	break;
+
+      case -1:
+	return 0;
+	break;
+
+      default:
+	// require a very large number such that to generate a stop
+	return 20;
+      }	// endswitch
+
+    } else {
+      // Return the minimum number of ghost cells when smoothness indicator computation is done with all used neighbours
+      switch (ReconstructionOrder){
+      case 4:
+	return 5;
+	break;
+
+      case 3:
+	return 5;
+	break;
+
+      case 2:
+	return 5;
+	break;
+
+      case 1:
+	return 3;
+	break;
+
+      case 0:
+	return 1;
+	break;
+
+      case -1:
+	return 0;
+	break;
+
+      default:
+	// require a very large number such that to generate a stop
+	return 20;
+      }	// endswitch
+    }
+
+  }//endif  
+
 }
 
 // SetRings()
@@ -667,32 +858,26 @@ void HighOrder2D<SOLN_STATE>::SetRings(void){
 
 //!< StencilSize()
 /*!
- * Return the stencil size for CENO reconstruction.
+ * Return the stencil size for a CENO reconstruction of a given reconstruction order.
  */
 template<class SOLN_STATE> inline
-int HighOrder2D<SOLN_STATE>::StencilSize(void) const {
+int HighOrder2D<SOLN_STATE>::StencilSize(const int &ReconstructionOrder) {
   static int temp;
 
   // Calculate temp based on the number of rings
-  temp = 1 + 2*Rings();
+  temp = 1 + 2*NumberOfRings(TaylorDerivativesSize(ReconstructionOrder));
 
   return temp*temp;
 } 
 
-// Nghost(ReconstructionOrder)
-/*! Returns the minimum number of ghost cells for the solution domain
- *  required to carry out a reconstruction of order ReconstructionOrder
+//!< StencilSize()
+/*!
+ * Return the stencil size for CENO reconstruction.
  */
 template<class SOLN_STATE> inline
-int HighOrder2D<SOLN_STATE>::Nghost(int ReconstructionOrder){
-  // Compute the size of the TaylorDerivative container
-  int TD_size(ReconstructionOrder+1);
-
-  // Return final number of ghost cells
-  // --> double the number of rings: smoothness indicator requirement)
-  // --> add one extra cell: boundary flux calculation requirement
-  return 1 + 2* NumberOfRings(TD_size);
-}
+int HighOrder2D<SOLN_STATE>::StencilSize(void) const {
+  return StencilSize(OrderOfReconstruction);
+} 
 
 //! Reset the monotonicity flag throughout the block.
 template<class SOLN_STATE> inline
@@ -843,12 +1028,12 @@ void HighOrder2D<SOLN_STATE>::ComputeReconstructionPseudoInverse(Soln_Block_Type
 
   if (CENO_Execution_Mode::USE_CENO_ALGORITHM && 
       CENO_Execution_Mode::CENO_SPEED_EFFICIENT && 
-      PseudoInverseFlag == OFF){
+      _calculated_psinv == OFF){
 
     // == Check if the reconstruction polynomial is piecewise constant
     if (NumberOfTaylorDerivatives() == 1){
-      // Set properly the PseudoInverseFlag
-      PseudoInverseFlag = ON;
+      // Set properly the _calculated_psinv
+      _calculated_psinv = ON;
       return;
     }
 
@@ -870,8 +1055,8 @@ void HighOrder2D<SOLN_STATE>::ComputeReconstructionPseudoInverse(Soln_Block_Type
     }
     TaylorDeriv().ResetLimiter();
 
-    // Set properly the PseudoInverseFlag
-    PseudoInverseFlag = ON;
+    // Set properly the _calculated_psinv
+    _calculated_psinv = ON;
   }
 }
 
