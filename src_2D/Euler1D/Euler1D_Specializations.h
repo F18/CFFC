@@ -196,6 +196,7 @@ void GetRightAndLeftFluxStates<Euler1D_UniformMesh>(Euler1D_pState &Wl,
 						    (Euler1D_UniformMesh::*AccessToHighOrderVar)(void)){
 
   int ICl(SolnBlk[0].ICl), ICu(SolnBlk[0].ICu);
+  bool Left_UnphysicalValuesDetected(false), Right_UnphysicalValuesDetected(false) ;
 
   Wl = (SolnBlk[Cell].*AccessToHighOrderVar)().right_state();
   Wr = (SolnBlk[Cell+1].*AccessToHighOrderVar)().left_state();
@@ -250,32 +251,65 @@ void GetRightAndLeftFluxStates<Euler1D_UniformMesh>(Euler1D_pState &Wl,
     } // endif
   } /* endif RightBC*/
 
-  // Check validity of the interface states and if negative values occur assign the piecewise constant solution
+  // Check validity of the left interface state.
   if (Wl.d <= ZERO ||
       Wl.p <= ZERO ) {
+
+    // mark detection of unphysical values
+    Left_UnphysicalValuesDetected = true;
+
+    // output info
     cout << "\n " << CFFC_Name() << " ERROR: Negative Density and/or Pressure at the left interface: \n"
     	 << " node = " << Cell << "\n Wl = " << Wl << "\n" << " Wr = " << Wr << "\n"; 
-
-    if ( (CENO_Execution_Mode::USE_CENO_ALGORITHM && CENO_Execution_Mode::FORCE_WITH_PIECEWISE_CONSTANT_AT_INTERFACE) ||
-	 (ENO_Execution_Mode::USE_ENO_ALGORITHM   &&  ENO_Execution_Mode::FORCE_WITH_PIECEWISE_CONSTANT_AT_INTERFACE) ){
-      Wl = SolnBlk[Cell].CellSolutionPrimVar();
-      Wr = SolnBlk[Cell+1].CellSolutionPrimVar();
-      cout << "New values at the interface \n" << " Wl = " << Wl << "\n Wr = " << Wr << "\n"; 
+    if (CENO_Execution_Mode::USE_CENO_ALGORITHM) {
+      cout << " ISrho = " << (SolnBlk[Cell].*AccessToHighOrderVar)().CellInadequateFit(1)
+	   << "\t ValISrho = " << (SolnBlk[Cell].*AccessToHighOrderVar)().CellSmoothnessIndicator(1) << "\n"
+	   << " ISp = " << (SolnBlk[Cell].*AccessToHighOrderVar)().CellInadequateFit(3)
+	   << "\t ValISp = " << (SolnBlk[Cell].*AccessToHighOrderVar)().CellSmoothnessIndicator(3) << "\n";
     }
   }
 
+  // Check validity of the right interface state.
   if (Wr.d <= ZERO ||
       Wr.p <= ZERO ) {
+
+    // mark detection of unphysical values
+    Right_UnphysicalValuesDetected = true;
+
+    // output user info
     cout << "\n " << CFFC_Name() << " ERROR: Negative Density and/or Pressure at the right interface: \n"
     	 << " node = " << Cell << "\n Wl = " << Wl << "\n Wr = " << Wr << "\n"; 
+    if (CENO_Execution_Mode::USE_CENO_ALGORITHM) {
+      cout << " ISrho = " << (SolnBlk[Cell+1].*AccessToHighOrderVar)().CellInadequateFit(1)
+	   << "\t ValISrho = " << (SolnBlk[Cell+1].*AccessToHighOrderVar)().CellSmoothnessIndicator(1) << "\n"
+	   << " ISp = " << (SolnBlk[Cell+1].*AccessToHighOrderVar)().CellInadequateFit(3)
+	   << "\t ValISp = " << (SolnBlk[Cell+1].*AccessToHighOrderVar)().CellSmoothnessIndicator(3) << "\n";
+    }
+  }
 
+  if (Left_UnphysicalValuesDetected || Right_UnphysicalValuesDetected){
+
+    // Force with piecewise constant solution if required.
     if ( (CENO_Execution_Mode::USE_CENO_ALGORITHM && CENO_Execution_Mode::FORCE_WITH_PIECEWISE_CONSTANT_AT_INTERFACE) ||
 	 (ENO_Execution_Mode::USE_ENO_ALGORITHM   &&  ENO_Execution_Mode::FORCE_WITH_PIECEWISE_CONSTANT_AT_INTERFACE) ){
       Wl = SolnBlk[Cell].CellSolutionPrimVar();
       Wr = SolnBlk[Cell+1].CellSolutionPrimVar();
-      cout << "New values at the interface \n" << " Wl = " << Wl << "\n Wr = " << Wr << "\n"; 
+
+      // check positivity of the piecewise constant values
+      if (Wl.d <= ZERO || Wl.p <= ZERO || Wr.d <= ZERO || Wr.p <= ZERO  ){
+	// Throw an error
+	throw runtime_error("Euler1D::GetRightAndLeftFluxStates() ERROR! Unphysical piecewise constant values encountered!");
+      }
+
+      // output user info
+      cout << " New interface values equal to the average solution: \n" << " Wl = " << Wl << "\n Wr = " << Wr << "\n"; 
+
+    } else {
+      // Throw an error
+      throw runtime_error("Euler1D::GetRightAndLeftFluxStates() ERROR! Unphysical values encountered!");
     }
-  }
+  }//endif 
+
 }
 
 #endif
