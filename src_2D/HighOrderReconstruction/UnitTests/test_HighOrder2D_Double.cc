@@ -118,16 +118,16 @@ namespace tut
   template<>
   void HighOrder2D_object::test<2>()
   {
-    set_test_name("TaylorDerivativesSize()");
+    set_test_name("getTaylorDerivativesSize()");
 
     HighOrder2D<double> HO;
 
-    ensure_equals("k=-1", HO.TaylorDerivativesSize(-1), 0);
-    ensure_equals("k=0", HO.TaylorDerivativesSize(0), 1);
-    ensure_equals("k=1", HO.TaylorDerivativesSize(1), 3);
-    ensure_equals("k=2", HO.TaylorDerivativesSize(2), 6);
-    ensure_equals("k=3", HO.TaylorDerivativesSize(3), 10);
-    ensure_equals("k=4", HO.TaylorDerivativesSize(4), 15);
+    ensure_equals("k=-1", HO.getTaylorDerivativesSize(-1), 0);
+    ensure_equals("k=0", HO.getTaylorDerivativesSize(0), 1);
+    ensure_equals("k=1", HO.getTaylorDerivativesSize(1), 3);
+    ensure_equals("k=2", HO.getTaylorDerivativesSize(2), 6);
+    ensure_equals("k=3", HO.getTaylorDerivativesSize(3), 10);
+    ensure_equals("k=4", HO.getTaylorDerivativesSize(4), 15);
   }
 
   /* Test 3:*/
@@ -135,7 +135,7 @@ namespace tut
   template<>
   void HighOrder2D_object::test<3>()
   {
-    set_test_name("MinimumNghost()");
+    set_test_name("getMinimumNghost()");
 
     // Set execution mode
     CENO_Execution_Mode::CENO_RECONSTRUCTION_WITH_MESSAGE_PASSING = OFF;
@@ -143,13 +143,13 @@ namespace tut
 
     HighOrder2D<double> HO;
 
-    ensure_equals("k=-1", HO.MinimumNghost(-1), 0);
-    ensure_equals("k=0", HO.MinimumNghost(0), 1);
-    ensure_equals("k=1", HO.MinimumNghost(1), 3);
-    ensure_equals("k=2", HO.MinimumNghost(2), 5);
-    ensure_equals("k=3", HO.MinimumNghost(3), 5);
-    ensure_equals("k=4", HO.MinimumNghost(4), 5);
-    ensure_equals("k=10", HO.MinimumNghost(10), 20);
+    ensure_equals("k=-1", HO.getMinimumNghost(-1), 0);
+    ensure_equals("k=0", HO.getMinimumNghost(0), 1);
+    ensure_equals("k=1", HO.getMinimumNghost(1), 3);
+    ensure_equals("k=2", HO.getMinimumNghost(2), 5);
+    ensure_equals("k=3", HO.getMinimumNghost(3), 5);
+    ensure_equals("k=4", HO.getMinimumNghost(4), 5);
+    ensure_equals("k=10", HO.getMinimumNghost(10), 20);
   }
 
   /* Test 4:*/
@@ -157,7 +157,7 @@ namespace tut
   template<>
   void HighOrder2D_object::test<4>()
   {
-    set_test_name("MinimumNghost()");
+    set_test_name("getMinimumNghost()");
 
     // Set execution mode
     CENO_Execution_Mode::CENO_RECONSTRUCTION_WITH_MESSAGE_PASSING = OFF;
@@ -165,13 +165,13 @@ namespace tut
 
     HighOrder2D<double> HO;
 
-    ensure_equals("k=-1", HO.MinimumNghost(-1), 0);
-    ensure_equals("k=0", HO.MinimumNghost(0), 1);
-    ensure_equals("k=1", HO.MinimumNghost(1), 3);
-    ensure_equals("k=2", HO.MinimumNghost(2), 4);
-    ensure_equals("k=3", HO.MinimumNghost(3), 4);
-    ensure_equals("k=4", HO.MinimumNghost(4), 4);
-    ensure_equals("k=10", HO.MinimumNghost(10), 20);
+    ensure_equals("k=-1", HO.getMinimumNghost(-1), 0);
+    ensure_equals("k=0", HO.getMinimumNghost(0), 1);
+    ensure_equals("k=1", HO.getMinimumNghost(1), 3);
+    ensure_equals("k=2", HO.getMinimumNghost(2), 4);
+    ensure_equals("k=3", HO.getMinimumNghost(3), 4);
+    ensure_equals("k=4", HO.getMinimumNghost(4), 4);
+    ensure_equals("k=10", HO.getMinimumNghost(10), 20);
   }
 
   /* Test 5:*/
@@ -179,17 +179,17 @@ namespace tut
   template<>
   void HighOrder2D_object::test<5>()
   {
-    set_test_name("NumberOfRings()");
+    set_test_name("getNumberOfRings()");
 
     HighOrder2D<double> HO;
 
-    ensure_equals("k=-1",HO.NumberOfRings(0), 0);
-    ensure_equals("k=0", HO.NumberOfRings(1), 0);
-    ensure_equals("k=1", HO.NumberOfRings(3), 1);
-    ensure_equals("k=2", HO.NumberOfRings(6), 2);
-    ensure_equals("k=3", HO.NumberOfRings(10), 2);
-    ensure_equals("k=4", HO.NumberOfRings(15), 2);
-    ensure_equals("k=5", HO.NumberOfRings(21), 3);
+    ensure_equals("k=-1",HO.getNumberOfRings(0), 0);
+    ensure_equals("k=0", HO.getNumberOfRings(1), 0);
+    ensure_equals("k=1", HO.getNumberOfRings(3), 1);
+    ensure_equals("k=2", HO.getNumberOfRings(6), 2);
+    ensure_equals("k=3", HO.getNumberOfRings(10), 2);
+    ensure_equals("k=4", HO.getNumberOfRings(15), 2);
+    ensure_equals("k=5", HO.getNumberOfRings(21), 3);
   }
 
   /* Test 6:*/
@@ -197,17 +197,17 @@ namespace tut
   template<>
   void HighOrder2D_object::test<6>()
   {
-    set_test_name("StencilSize()");
+    set_test_name("getStencilSize()");
 
     HighOrder2D<double> HO;
 
-    ensure_equals("StencilSize, k=-1",HO.StencilSize(0), 1);
-    ensure_equals("StencilSize, k=0", HO.StencilSize(0), 1);
-    ensure_equals("StencilSize, k=1", HO.StencilSize(1), 9);
-    ensure_equals("StencilSize, k=2", HO.StencilSize(2), 25);
-    ensure_equals("StencilSize, k=3", HO.StencilSize(3), 25);
-    ensure_equals("StencilSize, k=4", HO.StencilSize(4), 25);
-    ensure_equals("StencilSize, k=5", HO.StencilSize(5), 49);
+    ensure_equals("getStencilSize, k=-1",HO.getStencilSize(0), 1);
+    ensure_equals("getStencilSize, k=0", HO.getStencilSize(0), 1);
+    ensure_equals("getStencilSize, k=1", HO.getStencilSize(1), 9);
+    ensure_equals("getStencilSize, k=2", HO.getStencilSize(2), 25);
+    ensure_equals("getStencilSize, k=3", HO.getStencilSize(3), 25);
+    ensure_equals("getStencilSize, k=4", HO.getStencilSize(4), 25);
+    ensure_equals("getStencilSize, k=5", HO.getStencilSize(5), 49);
   }
 
   /* Test 7:*/
@@ -219,29 +219,537 @@ namespace tut
 
     HighOrder2D<double> HO;
 
-    //    HO.allocate(2,3,2,true,1);
+    // Set execution mode
+    CENO_Execution_Mode::CENO_RECONSTRUCTION_WITH_MESSAGE_PASSING = OFF;
+    CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS = ON;
 
-    //    ensure_equals("TD value", HO.CellTaylorDerivState(1,1,0,0), 0.0);
+    try {
 
-#if 0
-    ensure_equals("TD size", HO.NumberOfTaylorDerivatives(), 1);
-    ensure_equals("TD power", HO.CellDeriv_InPosition(0).P1(), 0);
-    ensure_equals("TD value I", HO.CellDeriv_InPosition(0).D(), 0.0);
-    ensure_equals("TD value II", HO.CellDeriv(0), 0.0);
-    ensure_equals("TD value III", HO.CellDeriv(0,1), 0.0);
-    
-    ensure_equals("GeomCoeff size", HO.CellGeomCoeff().size(), 1);
-    ensure_equals("GeomCoeff power", HO.CellGeomCoeff().operator()(0,true,true,true).P1(), 0);
-    ensure_equals("GeomCoeff value I", HO.CellGeomCoeff_InPosition(0), 1.0);
-    ensure_equals("GeomCoeff value II", HO.CellGeomCoeff(0), 1.0);
-    ensure_equals("Rings", HO.CellRings(), 0);
-    ensure_equals("Monotonicity flag", HO.CellInadequateFit(1), OFF);
-    ensure_equals("Smoothness indicator I", HO.CellSmoothnessIndicator(1), 0.0);
-    ensure_equals("Smoothness indicator II", HO.CellSmoothnessIndicator(), 0.0);
-    
-    ensure("Geometry Pointer", HO.Geometry() == NULL);
-#endif
+      // allocate wrong number of cells
+      HO.allocate(2,1,3,true,1);
+
+      fail("Fail to detect inconsistent dimensions");
+
+    } catch (runtime_error){
+      // test successful
+    }
   }
+
+  /* Test 8:*/
+  template<>
+  template<>
+  void HighOrder2D_object::test<8>()
+  {
+    set_test_name("allocate()");
+
+    HighOrder2D<double> HO;
+
+    // Set execution mode
+    CENO_Execution_Mode::CENO_RECONSTRUCTION_WITH_MESSAGE_PASSING = OFF;
+    CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS = ON;
+
+    try {
+
+      // allocate wrong number of ghost cells
+      HO.allocate(2,2,2,true,1);
+
+      fail("Fail to detect inconsistent dimensions");
+
+    } catch (runtime_error){
+      // test successful
+    }
+  }
+
+  /* Test 9:*/
+  template<>
+  template<>
+  void HighOrder2D_object::test<9>()
+  {
+    set_test_name("allocate()");
+
+    HighOrder2D<double> HO;
+
+    // Set execution mode
+    CENO_Execution_Mode::CENO_RECONSTRUCTION_WITH_MESSAGE_PASSING = OFF;
+    CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS = ON;
+
+    try {
+
+      // allocate wrong reconstruction order
+      HO.allocate(2,1,3,true,-2);
+
+      fail("Fail to detect inconsistent dimensions");
+
+    } catch (runtime_error){
+      // test successful
+    }
+  }
+
+  /* Test 10:*/
+  template<>
+  template<>
+  void HighOrder2D_object::test<10>()
+  {
+    set_test_name("deallocate() with memory allocation");
+
+    HighOrder2D<double> HO;
+
+    // call
+    HO.deallocate();
+
+    // check
+    ensure("TD", HO.TaylorDeriv() == NULL);
+    ensure("SI", HO.SmoothnessIndicator() == NULL);
+    ensure("LimitedCell", HO.InadequateFit() == NULL);
+    ensure("LHS", HO.LHS_Inv() == NULL);
+    ensure("CENO_Geometric_Weights", HO.GeomWeights() == NULL);
+    ensure_equals("Order of reconstruction", HO.RecOrder(), -1);
+    ensure_equals("Rings", HO.Rings(), 0);
+    ensure_equals("PseudoInverseFlag", HO.IsPseudoInversePreComputed(), false);    
+    ensure("Geometry Pointer", HO.Geometry() == NULL);
+  }
+
+  /* Test 11:*/
+  template<>
+  template<>
+  void HighOrder2D_object::test<11>()
+  {
+    set_test_name("allocate() without pseudo-inverse");
+
+    HighOrder2D<double> HO;
+    int NCi, NCj, Nghost, RecOrder;
+    NCi = 2; NCj = 3; Nghost = 3; RecOrder = 1;
+    
+    // Set execution mode
+    CENO_Execution_Mode::CENO_RECONSTRUCTION_WITH_MESSAGE_PASSING = OFF;
+    CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS = ON;
+
+    // Allocate memory for the high-order WITHOUT pseudo-inverse
+    HO.allocate(NCi,NCj,Nghost,false,RecOrder);
+
+    // == check 
+    ensure_equals("Stencil size", HO.getStencilSize(), 9);
+    ensure_equals("Taylor deriv. size", HO.getTaylorDerivativesSize(), 3);
+
+    // == check TD containers
+    ensure("TD", HO.TaylorDeriv() != NULL);
+    ensure_equals("TD size", HO.NumberOfTaylorDerivatives(), 3);
+
+    ensure_equals("Pos. 0, TD power", HO.CellTaylorDeriv(1,1,0).P1(), 0);
+    ensure_equals("Pos. 0, TD power", HO.CellTaylorDeriv(1,1,0).P2(), 0);
+    ensure_equals("Pos. 0, TD value I", HO.CellTaylorDeriv(1,1,0).D(), 0.0);
+    ensure_equals("Pos. 1, TD power", HO.CellTaylorDeriv(1,1,1).P1(), 0);
+    ensure_equals("Pos. 1, TD power", HO.CellTaylorDeriv(1,1,1).P2(), 1);
+    ensure_equals("Pos. 1, TD value I", HO.CellTaylorDeriv(1,1,1).D(), 0.0);
+    ensure_equals("Pos. 2, TD power", HO.CellTaylorDeriv(1,1,2).P1(), 1);
+    ensure_equals("Pos. 2, TD power", HO.CellTaylorDeriv(1,1,2).P2(), 0);
+    ensure_equals("Pos. 2, TD value I", HO.CellTaylorDeriv(1,1,2).D(), 0.0);
+
+    ensure_equals("TD value II", HO.CellTaylorDerivValue(1,1,1,0,0), 0.0);
+    ensure_equals("TD value III", HO.CellTaylorDerivState(1,1,0,1), 0.0);
+
+    // check Reconstruction Order and number of rings
+    ensure_equals("Rings", HO.Rings(), 1);
+    ensure_equals("RecOrder", HO.RecOrder(), 1);
+
+    // check monotonicity containers
+    std::vector<short int> MonotonicityContainer(1); MonotonicityContainer[0] = OFF;
+    std::vector<double> MonotonicityValue(1); MonotonicityValue[0] = 0.0;
+    ensure("LimitedCell", HO.InadequateFit() != NULL);
+    ensure("Monotonicity container", HO.CellInadequateFit(1,1) == MonotonicityContainer);
+    ensure_equals("Monotonicity value", HO.CellInadequateFitValue(1,1,1), OFF);
+
+    ensure("SI", HO.SmoothnessIndicator() != NULL);
+    ensure("SI container", HO.CellSmoothnessIndicator(1,1) == MonotonicityValue);
+    ensure_equals("SI value", HO.CellSmoothnessIndicatorValue(1,1,1), 0.0);
+    
+    // check pseudo-inverse data
+    ensure("CENO_LHS", HO.LHS_Inv() == NULL);
+    ensure("CENO_Geometric_Weights", HO.GeomWeights() == NULL);
+
+    ensure("Geometry Pointer", HO.Geometry() == NULL);
+
+    // == check containers for the last cell with high-order containers
+    ensure_equals("Last Cell, Pos. 0, TD power", HO.CellTaylorDeriv(6,7,0).P1(), 0);
+    ensure_equals("Last Cell, Pos. 0, TD power", HO.CellTaylorDeriv(6,7,0).P2(), 0);
+    ensure_equals("Last Cell, Pos. 0, TD value I", HO.CellTaylorDeriv(6,7,0).D(), 0.0);
+    ensure_equals("Last Cell, Pos. 1, TD power", HO.CellTaylorDeriv(6,7,1).P1(), 0);
+    ensure_equals("Last Cell, Pos. 1, TD power", HO.CellTaylorDeriv(6,7,1).P2(), 1);
+    ensure_equals("Last Cell, Pos. 1, TD value I", HO.CellTaylorDeriv(6,7,1).D(), 0.0);
+    ensure_equals("Last Cell, Pos. 2, TD power", HO.CellTaylorDeriv(6,7,2).P1(), 1);
+    ensure_equals("Last Cell, Pos. 2, TD power", HO.CellTaylorDeriv(6,7,2).P2(), 0);
+    ensure_equals("Last Cell, Pos. 2, TD value I", HO.CellTaylorDeriv(6,7,2).D(), 0.0);
+
+    ensure_equals("Last Cell, TD value II", HO.CellTaylorDerivValue(6,7,1,0,0), 0.0);
+    ensure_equals("Last Cell, TD value III", HO.CellTaylorDerivState(6,7,0,1), 0.0);
+
+    // check monotonicity containers
+    ensure("Last Cell, Monotonicity container", HO.CellInadequateFit(6,7) == MonotonicityContainer);
+    ensure_equals("Last Cell, Monotonicity value", HO.CellInadequateFitValue(6,7,1), OFF);
+    ensure("Last Cell, SI container", HO.CellSmoothnessIndicator(6,7) == MonotonicityValue);
+    ensure_equals("Last Cell, SI value", HO.CellSmoothnessIndicatorValue(6,7,1), 0.0);
+  }
+
+  /* Test 12:*/
+  template<>
+  template<>
+  void HighOrder2D_object::test<12>()
+  {
+    set_test_name("allocate() with pseudo-inverse");
+
+    HighOrder2D<double> HO;
+    int NCi, NCj, Nghost, RecOrder;
+    NCi = 2; NCj = 3; Nghost = 3; RecOrder = 1;
+    
+    // Set execution mode
+    CENO_Execution_Mode::CENO_RECONSTRUCTION_WITH_MESSAGE_PASSING = OFF;
+    CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS = ON;
+
+    // Allocate memory for the high-order WITH pseudo-inverse
+    HO.allocate(NCi,NCj,Nghost,true,RecOrder);
+
+    // == check 
+    ensure_equals("Stencil size", HO.getStencilSize(), 9);
+    ensure_equals("Taylor deriv. size", HO.getTaylorDerivativesSize(), 3);
+
+    // == check TD containers
+    ensure("TD", HO.TaylorDeriv() != NULL);
+    ensure_equals("TD size", HO.NumberOfTaylorDerivatives(), 3);
+
+    ensure_equals("Pos. 0, TD power", HO.CellTaylorDeriv(1,1,0).P1(), 0);
+    ensure_equals("Pos. 0, TD power", HO.CellTaylorDeriv(1,1,0).P2(), 0);
+    ensure_equals("Pos. 0, TD value I", HO.CellTaylorDeriv(1,1,0).D(), 0.0);
+    ensure_equals("Pos. 1, TD power", HO.CellTaylorDeriv(1,1,1).P1(), 0);
+    ensure_equals("Pos. 1, TD power", HO.CellTaylorDeriv(1,1,1).P2(), 1);
+    ensure_equals("Pos. 1, TD value I", HO.CellTaylorDeriv(1,1,1).D(), 0.0);
+    ensure_equals("Pos. 2, TD power", HO.CellTaylorDeriv(1,1,2).P1(), 1);
+    ensure_equals("Pos. 2, TD power", HO.CellTaylorDeriv(1,1,2).P2(), 0);
+    ensure_equals("Pos. 2, TD value I", HO.CellTaylorDeriv(1,1,2).D(), 0.0);
+
+    ensure_equals("TD value II", HO.CellTaylorDerivValue(1,1,1,0,0), 0.0);
+    ensure_equals("TD value III", HO.CellTaylorDerivState(1,1,0,1), 0.0);
+
+    // check Reconstruction Order and number of rings
+    ensure_equals("Rings", HO.Rings(), 1);
+    ensure_equals("RecOrder", HO.RecOrder(), 1);
+
+    // check monotonicity containers
+    std::vector<short int> MonotonicityContainer(1); MonotonicityContainer[0] = OFF;
+    std::vector<double> MonotonicityValue(1); MonotonicityValue[0] = 0.0;
+    ensure("LimitedCell", HO.InadequateFit() != NULL);
+    ensure("Monotonicity container", HO.CellInadequateFit(1,1) == MonotonicityContainer);
+    ensure_equals("Monotonicity value", HO.CellInadequateFitValue(1,1,1), OFF);
+
+    ensure("SI", HO.SmoothnessIndicator() != NULL);
+    ensure("SI container", HO.CellSmoothnessIndicator(1,1) == MonotonicityValue);
+    ensure_equals("SI value", HO.CellSmoothnessIndicatorValue(1,1,1), 0.0);
+    
+    // check pseudo-inverse data
+    ensure("CENO_LHS", HO.LHS_Inv() != NULL);
+    ensure_equals("LHS value", HO.Cell_LHS_Inv(1,1).size(0), 8);
+    ensure_equals("LHS value", HO.Cell_LHS_Inv(1,1).size(1), 2);
+    ensure("CENO_Geometric_Weights", HO.GeomWeights() != NULL);
+    ensure_equals("CENO_Geometric_Weights", HO.GeomWeights(1,1).size(), 9);
+    ensure_equals("CENO_Geometric_Weights", HO.GeomWeightValue(1,1,8), 0.0);
+
+    ensure("Geometry Pointer", HO.Geometry() == NULL);
+
+    // == check containers for the last cell with high-order containers
+    ensure_equals("Last Cell, Pos. 0, TD power", HO.CellTaylorDeriv(6,7,0).P1(), 0);
+    ensure_equals("Last Cell, Pos. 0, TD power", HO.CellTaylorDeriv(6,7,0).P2(), 0);
+    ensure_equals("Last Cell, Pos. 0, TD value I", HO.CellTaylorDeriv(6,7,0).D(), 0.0);
+    ensure_equals("Last Cell, Pos. 1, TD power", HO.CellTaylorDeriv(6,7,1).P1(), 0);
+    ensure_equals("Last Cell, Pos. 1, TD power", HO.CellTaylorDeriv(6,7,1).P2(), 1);
+    ensure_equals("Last Cell, Pos. 1, TD value I", HO.CellTaylorDeriv(6,7,1).D(), 0.0);
+    ensure_equals("Last Cell, Pos. 2, TD power", HO.CellTaylorDeriv(6,7,2).P1(), 1);
+    ensure_equals("Last Cell, Pos. 2, TD power", HO.CellTaylorDeriv(6,7,2).P2(), 0);
+    ensure_equals("Last Cell, Pos. 2, TD value I", HO.CellTaylorDeriv(6,7,2).D(), 0.0);
+
+    ensure_equals("Last Cell, TD value II", HO.CellTaylorDerivValue(6,7,1,0,0), 0.0);
+    ensure_equals("Last Cell, TD value III", HO.CellTaylorDerivState(6,7,0,1), 0.0);
+
+    // check monotonicity containers
+    ensure("Last Cell, Monotonicity container", HO.CellInadequateFit(6,7) == MonotonicityContainer);
+    ensure_equals("Last Cell, Monotonicity value", HO.CellInadequateFitValue(6,7,1), OFF);
+    ensure("Last Cell, SI container", HO.CellSmoothnessIndicator(6,7) == MonotonicityValue);
+    ensure_equals("Last Cell, SI value", HO.CellSmoothnessIndicatorValue(6,7,1), 0.0);
+  }
+
+  /* Test 13:*/
+  template<>
+  template<>
+  void HighOrder2D_object::test<13>()
+  {
+    set_test_name("allocate(), SI with all neighbours");
+
+    HighOrder2D<double> HO;
+    int NCi, NCj, Nghost, RecOrder;
+    NCi = 2; NCj = 3; Nghost = 5; RecOrder = 4;
+    
+    // Set execution mode
+    CENO_Execution_Mode::CENO_RECONSTRUCTION_WITH_MESSAGE_PASSING = OFF;
+    CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS = OFF;
+
+    // Allocate memory for the high-order WITH pseudo-inverse
+    HO.allocate(NCi,NCj,Nghost,true,RecOrder);
+
+    // == check 
+    ensure_equals("Stencil size", HO.getStencilSize(), 25);
+    ensure_equals("Taylor deriv. size", HO.getTaylorDerivativesSize(), 15);
+
+    // == check TD containers
+    ensure("TD", HO.TaylorDeriv() != NULL);
+    ensure_equals("TD size", HO.NumberOfTaylorDerivatives(), 15);
+
+    ensure_equals("Pos. 0, TD power", HO.CellTaylorDeriv(2,2,0).P1(), 0);
+    ensure_equals("Pos. 0, TD power", HO.CellTaylorDeriv(2,2,0).P2(), 0);
+    ensure_equals("Pos. 0, TD value I", HO.CellTaylorDeriv(2,2,0).D(), 0.0);
+    ensure_equals("Pos. 1, TD power", HO.CellTaylorDeriv(2,2,1).P1(), 0);
+    ensure_equals("Pos. 1, TD power", HO.CellTaylorDeriv(2,2,1).P2(), 1);
+    ensure_equals("Pos. 1, TD value I", HO.CellTaylorDeriv(2,2,1).D(), 0.0);
+    ensure_equals("Pos. 14, TD power", HO.CellTaylorDeriv(2,2,14).P1(), 4);
+    ensure_equals("Pos. 14, TD power", HO.CellTaylorDeriv(2,2,14).P2(), 0);
+    ensure_equals("Pos. 14, TD value I", HO.CellTaylorDeriv(2,2,14).D(), 0.0);
+
+    ensure_equals("TD value II", HO.CellTaylorDerivValue(2,2,1,0,0), 0.0);
+    ensure_equals("TD value III", HO.CellTaylorDerivState(2,2,0,1), 0.0);
+
+    // check Reconstruction Order and number of rings
+    ensure_equals("Rings", HO.Rings(), 2);
+    ensure_equals("RecOrder", HO.RecOrder(), 4);
+
+    // check monotonicity containers
+    std::vector<short int> MonotonicityContainer(1); MonotonicityContainer[0] = OFF;
+    std::vector<double> MonotonicityValue(1); MonotonicityValue[0] = 0.0;
+    ensure("LimitedCell", HO.InadequateFit() != NULL);
+    ensure("Monotonicity container", HO.CellInadequateFit(2,2) == MonotonicityContainer);
+    ensure_equals("Monotonicity value", HO.CellInadequateFitValue(2,2,1), OFF);
+
+    ensure("SI", HO.SmoothnessIndicator() != NULL);
+    ensure("SI container", HO.CellSmoothnessIndicator(2,2) == MonotonicityValue);
+    ensure_equals("SI value", HO.CellSmoothnessIndicatorValue(2,2,1), 0.0);
+    
+    // check pseudo-inverse data
+    ensure("CENO_LHS", HO.LHS_Inv() != NULL);
+    ensure_equals("LHS value", HO.Cell_LHS_Inv(2,2).size(0), 24);
+    ensure_equals("LHS value", HO.Cell_LHS_Inv(2,2).size(1), 14);
+    ensure("CENO_Geometric_Weights", HO.GeomWeights() != NULL);
+    ensure_equals("CENO_Geometric_Weights", HO.GeomWeights(2,2).size(), 25);
+    ensure_equals("CENO_Geometric_Weights", HO.GeomWeightValue(2,2,24), 0.0);
+
+    ensure("Geometry Pointer", HO.Geometry() == NULL);
+
+    // == check containers for the last cell with high-order containers
+    ensure_equals("Last Cell, Pos. 0, TD power", HO.CellTaylorDeriv(9,10,0).P1(), 0);
+    ensure_equals("Last Cell, Pos. 0, TD power", HO.CellTaylorDeriv(9,10,0).P2(), 0);
+    ensure_equals("Last Cell, Pos. 0, TD value I", HO.CellTaylorDeriv(9,10,0).D(), 0.0);
+    ensure_equals("Last Cell, Pos. 1, TD power", HO.CellTaylorDeriv(9,10,1).P1(), 0);
+    ensure_equals("Last Cell, Pos. 1, TD power", HO.CellTaylorDeriv(9,10,1).P2(), 1);
+    ensure_equals("Last Cell, Pos. 1, TD value I", HO.CellTaylorDeriv(9,10,1).D(), 0.0);
+    ensure_equals("Last Cell, Pos. 14, TD power", HO.CellTaylorDeriv(9,10,14).P1(), 4);
+    ensure_equals("Last Cell, Pos. 14, TD power", HO.CellTaylorDeriv(9,10,14).P2(), 0);
+    ensure_equals("Last Cell, Pos. 14, TD value I", HO.CellTaylorDeriv(9,10,14).D(), 0.0);
+
+    ensure_equals("Last Cell, TD value II", HO.CellTaylorDerivValue(9,10,1,0,0), 0.0);
+    ensure_equals("Last Cell, TD value III", HO.CellTaylorDerivState(9,10,0,1), 0.0);
+
+    // check monotonicity containers
+    ensure("Last Cell, Monotonicity container", HO.CellInadequateFit(9,10) == MonotonicityContainer);
+    ensure_equals("Last Cell, Monotonicity value", HO.CellInadequateFitValue(9,10,1), OFF);
+    ensure("Last Cell, SI container", HO.CellSmoothnessIndicator(9,10) == MonotonicityValue);
+    ensure_equals("Last Cell, SI value", HO.CellSmoothnessIndicatorValue(9,10,1), 0.0);
+  }
+
+  /* Test 14:*/
+  template<>
+  template<>
+  void HighOrder2D_object::test<14>()
+  {
+    set_test_name("allocate(), Change execution flag");
+
+    HighOrder2D<double> HO;
+    int NCi, NCj, Nghost, RecOrder;
+    NCi = 2; NCj = 3; Nghost = 5; RecOrder = 4;
+    
+    // Set execution mode
+    CENO_Execution_Mode::CENO_RECONSTRUCTION_WITH_MESSAGE_PASSING = OFF;
+    CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS = OFF;
+
+    // Allocate memory for the high-order WITH pseudo-inverse
+    HO.allocate(NCi,NCj,Nghost,true,RecOrder);
+
+    ensure_equals("Nghost high-order", HO.NghostHO(), 3);
+
+    // Change the execution flag
+    CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS = ON;
+
+    // Re-allocate memory for the high-order WITH pseudo-inverse
+    HO.allocate(NCi,NCj,Nghost,true,RecOrder);
+
+    // == check 
+    ensure_equals("Nghost high-order", HO.NghostHO(), 2);
+    ensure_equals("Stencil size", HO.getStencilSize(), 25);
+    ensure_equals("Taylor deriv. size", HO.getTaylorDerivativesSize(), 15);
+
+
+    // == check TD containers
+    ensure("TD", HO.TaylorDeriv() != NULL);
+    ensure_equals("TD size", HO.NumberOfTaylorDerivatives(), 15);
+
+    ensure_equals("Pos. 0, TD power", HO.CellTaylorDeriv(3,3,0).P1(), 0);
+    ensure_equals("Pos. 0, TD power", HO.CellTaylorDeriv(3,3,0).P2(), 0);
+    ensure_equals("Pos. 0, TD value I", HO.CellTaylorDeriv(3,3,0).D(), 0.0);
+    ensure_equals("Pos. 1, TD power", HO.CellTaylorDeriv(3,3,1).P1(), 0);
+    ensure_equals("Pos. 1, TD power", HO.CellTaylorDeriv(3,3,1).P2(), 1);
+    ensure_equals("Pos. 1, TD value I", HO.CellTaylorDeriv(3,3,1).D(), 0.0);
+    ensure_equals("Pos. 14, TD power", HO.CellTaylorDeriv(3,3,14).P1(), 4);
+    ensure_equals("Pos. 14, TD power", HO.CellTaylorDeriv(3,3,14).P2(), 0);
+    ensure_equals("Pos. 14, TD value I", HO.CellTaylorDeriv(3,3,14).D(), 0.0);
+
+    ensure_equals("TD value II", HO.CellTaylorDerivValue(3,3,1,0,0), 0.0);
+    ensure_equals("TD value III", HO.CellTaylorDerivState(3,3,0,1), 0.0);
+
+    // check Reconstruction Order and number of rings
+    ensure_equals("Rings", HO.Rings(), 2);
+    ensure_equals("RecOrder", HO.RecOrder(), 4);
+
+    // check monotonicity containers
+    std::vector<short int> MonotonicityContainer(1); MonotonicityContainer[0] = OFF;
+    std::vector<double> MonotonicityValue(1); MonotonicityValue[0] = 0.0;
+    ensure("LimitedCell", HO.InadequateFit() != NULL);
+    ensure("Monotonicity container", HO.CellInadequateFit(3,3) == MonotonicityContainer);
+    ensure_equals("Monotonicity value", HO.CellInadequateFitValue(3,3,1), OFF);
+
+    ensure("SI", HO.SmoothnessIndicator() != NULL);
+    ensure("SI container", HO.CellSmoothnessIndicator(3,3) == MonotonicityValue);
+    ensure_equals("SI value", HO.CellSmoothnessIndicatorValue(3,3,1), 0.0);
+    
+    // check pseudo-inverse data
+    ensure("CENO_LHS", HO.LHS_Inv() != NULL);
+    ensure_equals("LHS value", HO.Cell_LHS_Inv(3,3).size(0), 24);
+    ensure_equals("LHS value", HO.Cell_LHS_Inv(3,3).size(1), 14);
+    ensure("CENO_Geometric_Weights", HO.GeomWeights() != NULL);
+    ensure_equals("CENO_Geometric_Weights", HO.GeomWeights(3,3).size(), 25);
+    ensure_equals("CENO_Geometric_Weights", HO.GeomWeightValue(3,3,24), 0.0);
+
+    ensure("Geometry Pointer", HO.Geometry() == NULL);
+
+    // == check containers for the last cell with high-order containers
+    ensure_equals("Last Cell, Pos. 0, TD power", HO.CellTaylorDeriv(8,9,0).P1(), 0);
+    ensure_equals("Last Cell, Pos. 0, TD power", HO.CellTaylorDeriv(8,9,0).P2(), 0);
+    ensure_equals("Last Cell, Pos. 0, TD value I", HO.CellTaylorDeriv(8,9,0).D(), 0.0);
+    ensure_equals("Last Cell, Pos. 1, TD power", HO.CellTaylorDeriv(8,9,1).P1(), 0);
+    ensure_equals("Last Cell, Pos. 1, TD power", HO.CellTaylorDeriv(8,9,1).P2(), 1);
+    ensure_equals("Last Cell, Pos. 1, TD value I", HO.CellTaylorDeriv(8,9,1).D(), 0.0);
+    ensure_equals("Last Cell, Pos. 14, TD power", HO.CellTaylorDeriv(8,9,14).P1(), 4);
+    ensure_equals("Last Cell, Pos. 14, TD power", HO.CellTaylorDeriv(8,9,14).P2(), 0);
+    ensure_equals("Last Cell, Pos. 14, TD value I", HO.CellTaylorDeriv(8,9,14).D(), 0.0);
+
+    ensure_equals("Last Cell, TD value II", HO.CellTaylorDerivValue(8,9,1,0,0), 0.0);
+    ensure_equals("Last Cell, TD value III", HO.CellTaylorDerivState(8,9,0,1), 0.0);
+
+    // check monotonicity containers
+    ensure("Last Cell, Monotonicity container", HO.CellInadequateFit(8,9) == MonotonicityContainer);
+    ensure_equals("Last Cell, Monotonicity value", HO.CellInadequateFitValue(8,9,1), OFF);
+    ensure("Last Cell, SI container", HO.CellSmoothnessIndicator(8,9) == MonotonicityValue);
+    ensure_equals("Last Cell, SI value", HO.CellSmoothnessIndicatorValue(8,9,1), 0.0);
+  }
+
+  /* Test 15:*/
+  template<>
+  template<>
+  void HighOrder2D_object::test<15>()
+  {
+    set_test_name("allocate(), Change reconstruction order");
+
+    HighOrder2D<double> HO;
+    int NCi, NCj, Nghost, RecOrder;
+    NCi = 2; NCj = 3; Nghost = 5; RecOrder = 4;
+    
+    // Set execution mode
+    CENO_Execution_Mode::CENO_RECONSTRUCTION_WITH_MESSAGE_PASSING = OFF;
+    CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS = ON;
+
+    // Allocate memory for the high-order WITH pseudo-inverse
+    HO.allocate(NCi,NCj,Nghost,true,RecOrder);
+
+    ensure_equals("Nghost high-order", HO.NghostHO(), 2);
+
+    // Change the reconstruction order
+    RecOrder = 2;
+
+    // Re-allocate memory for the high-order WITH pseudo-inverse
+    HO.allocate(NCi,NCj,Nghost,true,RecOrder);
+
+    // == check 
+    ensure_equals("Nghost high-order", HO.NghostHO(), 2);
+    ensure_equals("Stencil size", HO.getStencilSize(), 25);
+    ensure_equals("Taylor deriv. size", HO.getTaylorDerivativesSize(), 6);
+
+
+    // == check TD containers
+    ensure("TD", HO.TaylorDeriv() != NULL);
+    ensure_equals("TD size", HO.NumberOfTaylorDerivatives(), 6);
+
+    ensure_equals("Pos. 0, TD power", HO.CellTaylorDeriv(3,3,0).P1(), 0);
+    ensure_equals("Pos. 0, TD power", HO.CellTaylorDeriv(3,3,0).P2(), 0);
+    ensure_equals("Pos. 0, TD value I", HO.CellTaylorDeriv(3,3,0).D(), 0.0);
+    ensure_equals("Pos. 1, TD power", HO.CellTaylorDeriv(3,3,1).P1(), 0);
+    ensure_equals("Pos. 1, TD power", HO.CellTaylorDeriv(3,3,1).P2(), 1);
+    ensure_equals("Pos. 1, TD value I", HO.CellTaylorDeriv(3,3,1).D(), 0.0);
+    ensure_equals("Pos. 5, TD power", HO.CellTaylorDeriv(3,3,5).P1(), 2);
+    ensure_equals("Pos. 5, TD power", HO.CellTaylorDeriv(3,3,5).P2(), 0);
+    ensure_equals("Pos. 5, TD value I", HO.CellTaylorDeriv(3,3,5).D(), 0.0);
+
+    ensure_equals("TD value II", HO.CellTaylorDerivValue(3,3,1,0,0), 0.0);
+    ensure_equals("TD value III", HO.CellTaylorDerivState(3,3,0,1), 0.0);
+
+    // check Reconstruction Order and number of rings
+    ensure_equals("Rings", HO.Rings(), 2);
+    ensure_equals("RecOrder", HO.RecOrder(), 2);
+
+    // check monotonicity containers
+    std::vector<short int> MonotonicityContainer(1); MonotonicityContainer[0] = OFF;
+    std::vector<double> MonotonicityValue(1); MonotonicityValue[0] = 0.0;
+    ensure("LimitedCell", HO.InadequateFit() != NULL);
+    ensure("Monotonicity container", HO.CellInadequateFit(3,3) == MonotonicityContainer);
+    ensure_equals("Monotonicity value", HO.CellInadequateFitValue(3,3,1), OFF);
+
+    ensure("SI", HO.SmoothnessIndicator() != NULL);
+    ensure("SI container", HO.CellSmoothnessIndicator(3,3) == MonotonicityValue);
+    ensure_equals("SI value", HO.CellSmoothnessIndicatorValue(3,3,1), 0.0);
+    
+    // check pseudo-inverse data
+    ensure("CENO_LHS", HO.LHS_Inv() != NULL);
+    ensure_equals("LHS value", HO.Cell_LHS_Inv(3,3).size(0), 24);
+    ensure_equals("LHS value", HO.Cell_LHS_Inv(3,3).size(1), 5);
+    ensure("CENO_Geometric_Weights", HO.GeomWeights() != NULL);
+    ensure_equals("CENO_Geometric_Weights", HO.GeomWeights(3,3).size(), 25);
+    ensure_equals("CENO_Geometric_Weights", HO.GeomWeightValue(3,3,24), 0.0);
+
+    ensure("Geometry Pointer", HO.Geometry() == NULL);
+
+    // == check containers for the last cell with high-order containers
+    ensure_equals("Last Cell, Pos. 0, TD power", HO.CellTaylorDeriv(8,9,0).P1(), 0);
+    ensure_equals("Last Cell, Pos. 0, TD power", HO.CellTaylorDeriv(8,9,0).P2(), 0);
+    ensure_equals("Last Cell, Pos. 0, TD value I", HO.CellTaylorDeriv(8,9,0).D(), 0.0);
+    ensure_equals("Last Cell, Pos. 1, TD power", HO.CellTaylorDeriv(8,9,1).P1(), 0);
+    ensure_equals("Last Cell, Pos. 1, TD power", HO.CellTaylorDeriv(8,9,1).P2(), 1);
+    ensure_equals("Last Cell, Pos. 1, TD value I", HO.CellTaylorDeriv(8,9,1).D(), 0.0);
+    ensure_equals("Last Cell, Pos. 2, TD power", HO.CellTaylorDeriv(8,9,5).P1(), 2);
+    ensure_equals("Last Cell, Pos. 2, TD power", HO.CellTaylorDeriv(8,9,5).P2(), 0);
+    ensure_equals("Last Cell, Pos. 2, TD value I", HO.CellTaylorDeriv(8,9,5).D(), 0.0);
+
+    ensure_equals("Last Cell, TD value II", HO.CellTaylorDerivValue(8,9,1,0,0), 0.0);
+    ensure_equals("Last Cell, TD value III", HO.CellTaylorDerivState(8,9,0,1), 0.0);
+
+    // check monotonicity containers
+    ensure("Last Cell, Monotonicity container", HO.CellInadequateFit(8,9) == MonotonicityContainer);
+    ensure_equals("Last Cell, Monotonicity value", HO.CellInadequateFitValue(8,9,1), OFF);
+    ensure("Last Cell, SI container", HO.CellSmoothnessIndicator(8,9) == MonotonicityValue);
+    ensure_equals("Last Cell, SI value", HO.CellSmoothnessIndicatorValue(8,9,1), 0.0);
+  }
+
 
 }
 
