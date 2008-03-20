@@ -433,6 +433,10 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid(Grid3D_Input_Parameters &Input) {
        Create_Grid_Pipe(Input);
        break;
 
+     case GRID_BUMP_CHANNEL_FLOW :
+       Create_Grid_Bump_Channel_Flow(Input);
+       break;
+
      case GRID_BLUFF_BODY_BURNER :
        Create_Grid_Bluff_Body_Burner(Input);
        break;
@@ -1822,7 +1826,7 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Bump_Channel_Flow(Grid3D_Input_Pa
 	  BC_top = BC_NONE;
 	} /* endif */
 	if (kBlk == 0) {
-	  BC_bottom =BC_REFLECTION;// BC_CONSTANT_EXTRAPOLATION;
+	  BC_bottom =BC_REFLECTION;//BC_CONSTANT_EXTRAPOLATION;
 	} else {
 	  BC_bottom = BC_NONE;
 	} /* endif */
@@ -3104,8 +3108,7 @@ void Grid3D_Hexa_Multi_Block::Create_Grid(Grid3D_Input_Parameters &Input) {
     switch(Input.i_Grid) {
       case GRID_CUBE :
         Create_Grid_Cube(Input);
-        break;
-
+        break;      
       case GRID_CHANNEL_XDIR :
       case GRID_CHANNEL_YDIR:
       case GRID_CHANNEL_ZDIR:
@@ -3121,6 +3124,10 @@ void Grid3D_Hexa_Multi_Block::Create_Grid(Grid3D_Input_Parameters &Input) {
       case GRID_PIPE :
         Create_Grid_Pipe(Input);
         break;
+         
+      case GRID_BUMP_CHANNEL_FLOW :
+	Create_Grid_Bump_Channel_Flow(Input);
+	break;
 
       case GRID_BLUFF_BODY_BURNER :
         Create_Grid_Bluff_Body_Burner(Input);

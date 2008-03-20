@@ -53,9 +53,9 @@ class DTS_NKS_Quad_Block {
       Unminus1[i] = new double*[NCj];
       for (int j = 0; j < NCj ; j++ ){
 	Un[i][j] = new double[blocksize];
-	Unminus1[i][j] = new double[blocksize];
+	Unminus1[i][j] = new double[blocksize];     
       }
-    }
+    }      
   }
 
   //! Memory deallocation.

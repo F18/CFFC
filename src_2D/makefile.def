@@ -8,7 +8,7 @@
 # Set some default platform and version options
 PLATFORM = generic
 
-# NoMPI, MPICH, MPICH2, MPT (SG)
+# NoMPI, MPICH, MPICH2, MPT (SGI)
 MPI_VERSION = NoMPI
 
 # NoICEMCFD, V41, V42. V43, V50, V10, V11
@@ -24,7 +24,7 @@ CANTERA_VERSION = NoCANTERA
 FFTW_VERSION = V32
 
 # Set to ON in order to run the TUT unit testing on
-TUT_TESTING = OFF
+TUT_TESTING = ON
 
 # Set to ON for use with "gprof"
 # <x86  >  gprof cffc2D gmon.out > output.txt

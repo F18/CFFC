@@ -20,8 +20,8 @@ using std::vector;
 using std::pow;
 
 /* Include CFFC header files */
-#include "../Utilities/TypeDefinition.h"
-#include "../Utilities/Utilities.h"
+#include "../../Utilities/TypeDefinition.h"
+#include "../../Utilities/Utilities.h"
 
 // Define the object class: DerivativeObj
 template< SpaceType SpaceDimension, class T>

@@ -50,7 +50,9 @@ class NKS_Input_Parameters{
   double Physical_Time_CFL_Number;
   double Physical_Time_Step;
   int Maximum_Number_of_DTS_Steps; 
-  
+  int Time_Accurate_Plot_Frequency;
+  double Total_Physical_Time;              //!< Storage HACK for BCs
+
   //int Dual_Time_Preconditioning;  
   //@}
 
@@ -117,6 +119,7 @@ class NKS_Input_Parameters{
   int Jacobian_Update_Frequency;                               //!< update every 'n' intervals
   //@}
 
+  
   //@{ @name Default Constructor 
   NKS_Input_Parameters() {
     Maximum_Number_of_NKS_Iterations = 0;
@@ -128,6 +131,8 @@ class NKS_Input_Parameters{
     Physical_Time_CFL_Number = 1.0 ;
     Physical_Time_Step = 0.0;
     Maximum_Number_of_DTS_Steps = 0;
+    Time_Accurate_Plot_Frequency = 10000000;
+    Total_Physical_Time = 0.0;
 
     Finite_Time_Step = true;
     Finite_Time_Step_Initial_CFL = 1.0; 
@@ -190,6 +195,7 @@ class NKS_Input_Parameters{
     MPI::COMM_WORLD.Bcast(&(Physical_Time_CFL_Number), 1, MPI::DOUBLE, 0);  
     MPI::COMM_WORLD.Bcast(&(Physical_Time_Step), 1, MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&(Maximum_Number_of_DTS_Steps), 1, MPI::INT,   0);
+    MPI::COMM_WORLD.Bcast(&(Time_Accurate_Plot_Frequency), 1, MPI::INT,   0);
 
     // Finite Time Step
     MPI::COMM_WORLD.Bcast(&(Finite_Time_Step), 
@@ -272,7 +278,8 @@ class NKS_Input_Parameters{
     Communicator.Bcast(&(Physical_Time_Integration), 1, MPI::INT,   Source_Rank);
     Communicator.Bcast(&(Physical_Time_CFL_Number), 1, MPI::DOUBLE, Source_Rank); 
     Communicator.Bcast(&(Physical_Time_Step), 1, MPI::DOUBLE, Source_Rank);
-    Communicator.Bcast(&( Maximum_Number_of_DTS_Steps), 1, MPI::INT,   Source_Rank);
+    Communicator.Bcast(&(Maximum_Number_of_DTS_Steps), 1, MPI::INT,   Source_Rank); 
+    Communicator.Bcast(&(Time_Accurate_Plot_Frequency), 1, MPI::INT,   Source_Rank);
 
     // Finite Time Step
     Communicator.Bcast(&(Finite_Time_Step), 
@@ -406,6 +413,11 @@ Parse_Next_Input_Control_Parameter(char *code, char *value)
   } else if (strcmp(code, "Maximum_Number_of_NKS_DTS_Steps" ) == 0) {
     i_command = 64;
     Maximum_Number_of_DTS_Steps = static_cast<int>(strtol(value, &ptr, 10));
+    if (*ptr != '\0') { i_command = INVALID_INPUT_VALUE; }
+
+  } else if (strcmp(code, "DTS_Time_Accurate_Plot_Frequency" ) == 0) {
+    i_command = 64;
+    Time_Accurate_Plot_Frequency = static_cast<int>(strtol(value, &ptr, 10));
     if (*ptr != '\0') { i_command = INVALID_INPUT_VALUE; }
 
     // FINITE TIME
@@ -647,7 +659,8 @@ inline ostream& NKS_Input_Parameters::Output(ostream& fout) const {
      } else { 
        fout <<" DTS CFL Number        ====> " << Physical_Time_CFL_Number << endl;   
      }
-    fout <<" DTS Max Steps         ====> " << Maximum_Number_of_DTS_Steps  << endl;        
+    fout <<" DTS Max Steps         ====> " << Maximum_Number_of_DTS_Steps  << endl;    
+    fout <<" DTS Plot_Frequency    ====> " << Time_Accurate_Plot_Frequency << endl;
   } else { 
      fout << "OFF\n"; 
   }

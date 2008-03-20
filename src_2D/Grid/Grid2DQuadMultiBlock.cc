@@ -1850,6 +1850,18 @@ Grid2D_Quad_Block** Grid_1D_Flame(Grid2D_Quad_Block **Grid_ptr,
        Number_of_Blocks_Air = 0;
        Number_of_Blocks_Free = 0;
 
+       //PREMIXED GRID
+     } else if( (Flame_Type_Flag == IC_RESTART || Flame_Type_Flag == IC_CHEM_PREMIXED_FLAME) && Number_of_Blocks_Idir == 8 ){    
+
+       fuel_spacing = 0.011;                  //m 
+       tube_spacing = fuel_spacing+0.001;     //m 
+       air_spacing = 0.04 - tube_spacing;     //m 
+
+       Number_of_Blocks_Fuel = 4;
+       Number_of_Blocks_Gap  = 1;
+       Number_of_Blocks_Air = 3;
+       Number_of_Blocks_Free = 0; 
+
      } else if( Flame_Type_Flag == IC_CHEM_INVERSE_FLAME && Number_of_Blocks_Idir == 8){
   
      /******************************************************/
@@ -1913,6 +1925,10 @@ Grid2D_Quad_Block** Grid_1D_Flame(Grid2D_Quad_Block **Grid_ptr,
  	Orthogonal_North = 0;
  	Orthogonal_South = 0;
 
+	if( Flame_Type_Flag == IC_CHEM_PREMIXED_FLAME){
+	  Beta_I = 1.03; 
+	  Beta_J = 1.03; 
+	}
  	//Stretching for J Blocks
  	Top = StretchingFcn(double(jBlk + 1)/double(Number_of_Blocks_Jdir), Beta_J, Tau_J, Stretch_J);
  	Bot = StretchingFcn(double(jBlk)/double(Number_of_Blocks_Jdir), Beta_J, Tau_J, Stretch_J);  
@@ -1987,7 +2003,7 @@ Grid2D_Quad_Block** Grid_1D_Flame(Grid2D_Quad_Block **Grid_ptr,
  	  }
 	  
  	  if (jBlk == 0 && iBlk == Number_of_Blocks_Gap + Number_of_Blocks_Fuel - 1 && Number_of_Blocks_Gap!=0) {
- 	    Bnd_Spline_South.setBCtype(BC_WALL_VISCOUS_HEATFLUX);      //Gap wall
+ 	    Bnd_Spline_South.setBCtype(BC_WALL_VISCOUS_HEATFLUX);      //Gap wall //FIXED???
  	    Bnd_Spline_North.setBCtype(BC_NONE);
  	  } else if (jBlk == 0 && iBlk < Number_of_Blocks_Gap + Number_of_Blocks_Fuel + Number_of_Blocks_Air ) {
  	    Bnd_Spline_South.setBCtype(BC_2DFLAME_INFLOW);     //BC_FIXED);        //Bottom Inflow Left

@@ -1709,6 +1709,8 @@ int Rte2DSolver::SolveNKS() {
 								    number_of_time_steps, // explicit time steps
 								    Time,
 								    Local_SolnBlk, 
+								    QuadTree,
+								    List_of_Global_Solution_Blocks, 
 								    List_of_Local_Solution_Blocks,
 								    Input_Parameters);
   

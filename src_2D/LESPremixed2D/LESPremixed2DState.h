@@ -288,7 +288,6 @@ class LESPremixed2D_pState {
 
    void zero_non_sol(){
      for(int i=0; i<ns; ++i){
-       spec[i].gradc.zero();
        spec[i].diffusion_coef=ZERO;
      }
      tau.zero(); qflux.zero(); lambda.zero(); theta.zero(); 
@@ -395,7 +394,8 @@ class LESPremixed2D_pState {
   //@}
 
   //! Heat Flux vector thermal Diffusion.
-  Vector2D thermal_diffusion(void) const;
+  Vector2D thermal_diffusion(const LESPremixed2D_pState &dWdx,
+			     const LESPremixed2D_pState &dWdy) const;
 
   //! @name Conserved solution state:
   //@{
@@ -785,7 +785,6 @@ class LESPremixed2D_pState {
    {
      for(int i=0; i<W.ns; ++i){
        rhospec[i].c = W.rho*W.spec[i].c;
-       rhospec[i].gradc = W.rho*W.spec[i].gradc;
        rhospec[i].diffusion_coef = W.rho*W.spec[i].diffusion_coef;
      }
      if(nscal) for(int i=0; i<nscal; ++i) rhoscalar[i] = W.rho*W.scalar[i];    
@@ -828,7 +827,6 @@ class LESPremixed2D_pState {
 
    void zero_non_sol(){
      for(int i=0; i<ns; ++i){
-       rhospec[i].gradc.zero();
        rhospec[i].diffusion_coef=ZERO;
      }
      tau.zero(); qflux.zero(); lambda.zero(); theta.zero();  
@@ -917,7 +915,9 @@ class LESPremixed2D_pState {
 
    //! @name Heat Flux vector thermal Diffusion
    //@{
-   Vector2D thermal_diffusion(const double &Temp) const;
+   Vector2D thermal_diffusion(const double &Temp,
+			      const LESPremixed2D_pState &dWdx,
+			      const LESPremixed2D_pState &dWdy) const;
    //@}
 
    //! @name Primitive solution state.
@@ -1417,7 +1417,6 @@ inline LESPremixed2D_cState LESPremixed2D_pState::U(const LESPremixed2D_pState &
     Temp.rhov = W.rhov();
     for(int i=0; i<W.ns; ++i){
       Temp.rhospec[i].c = W.rho*W.spec[i].c;
-      Temp.rhospec[i].gradc = W.rho*W.spec[i].gradc;
       Temp.rhospec[i].diffusion_coef = W.rho*W.spec[i].diffusion_coef;
     }
     if(nscal) for(int i=0; i<nscal; ++i) Temp.rhoscalar[i] = W.rho*W.scalar[i];    
@@ -1440,7 +1439,6 @@ inline LESPremixed2D_cState U(const LESPremixed2D_pState &W) {
   Temp.rhov = W.rhov();
   for(int i=0; i<W.ns; ++i){
     Temp.rhospec[i].c = W.rho*W.spec[i].c;
-    Temp.rhospec[i].gradc = W.rho*W.spec[i].gradc;
     Temp.rhospec[i].diffusion_coef = W.rho*W.spec[i].diffusion_coef;
   }  
   if(W.nscal) for(int i=0; i<W.nscal; ++i) Temp.rhoscalar[i] = W.rho*W.scalar[i];    
@@ -1878,7 +1876,6 @@ inline LESPremixed2D_pState LESPremixed2D_cState::W(const LESPremixed2D_cState &
     Temp.v = U.v();  
     for(int i=0; i<U.ns; ++i){
       Temp.spec[i].c = U.rhospec[i].c/U.rho;
-      Temp.spec[i].gradc = U.rhospec[i].gradc/U.rho;
       Temp.spec[i].diffusion_coef = U.rhospec[i].diffusion_coef/U.rho;
     }   
     Temp.p = U.p();
@@ -1901,7 +1898,6 @@ inline LESPremixed2D_pState W(const LESPremixed2D_cState &U) {
   Temp.v = U.v();
   for(int i=0; i<U.ns; ++i){
     Temp.spec[i].c = U.rhospec[i].c/U.rho;
-    Temp.spec[i].gradc = U.rhospec[i].gradc/U.rho;
     Temp.spec[i].diffusion_coef = U.rhospec[i].diffusion_coef/U.rho;
   } 
   Temp.p = U.p();

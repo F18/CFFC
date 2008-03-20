@@ -822,6 +822,8 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
 										 number_of_time_steps, // explicit time steps
 										 Time,
 										 Local_SolnBlk, 
+										 QuadTree,
+										 List_of_Global_Solution_Blocks,
 										 List_of_Local_Solution_Blocks,
 										 Input_Parameters);
       
