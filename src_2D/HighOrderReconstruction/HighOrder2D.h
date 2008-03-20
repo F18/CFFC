@@ -30,14 +30,6 @@ class HighOrder2D;
  *     Friend Functions : HighOrder2D           *
  ************************************************/
 template<class SOLN_STATE>
-bool operator== (const HighOrder2D<SOLN_STATE> & left,
-		 const HighOrder2D<SOLN_STATE> & right);
-
-template<class SOLN_STATE>
-bool operator!= (const HighOrder2D<SOLN_STATE> & left,
-		 const HighOrder2D<SOLN_STATE> & right);
-
-template<class SOLN_STATE>
 ostream & operator<< (ostream & os, const HighOrder2D<SOLN_STATE> & Obj);
 
 template<class SOLN_STATE>
@@ -257,7 +249,7 @@ public:
   static int getNghostHighOrder(const int &ReconstructionOrder);
   //! Return the number of high-order ghost cells for the current CENO reconstruction block.
   int getNghostHighOrder(void) const { return getNghostHighOrder(OrderOfReconstruction); }
-  const int & NghostHO(void) const { return Nghost_HO; }
+  const short int & NghostHO(void) const { return Nghost_HO; }
   void ResetMonotonicityFlag(void);
   void InitializeMonotonicityVariables(const int & ii, const int & jj);
 
@@ -336,13 +328,13 @@ public:
   double ComputeSolutionErrorL2(const HighOrder2D<Soln_State> & Obj);
   //@}
 
+  //! @name Input/Output functions:
+  //@{
+  void Output_Object(ostream & out_file) const;
+  void Read_Object(istream & in_file);
+  //@}
+
   /* Friend functions */
-  friend bool operator== <Soln_State> (const HighOrder2D<Soln_State> & left,
-				       const HighOrder2D<Soln_State> & right);
-
-  friend bool operator!= <Soln_State> (const HighOrder2D<Soln_State> & left,
-				       const HighOrder2D<Soln_State> & right);
-
   friend ostream & operator<< <Soln_State> (ostream & os, const HighOrder2D<Soln_State> & Obj);
   friend istream & operator>> <Soln_State> (istream & os, HighOrder2D<Soln_State> & Obj);
 
@@ -596,47 +588,43 @@ void HighOrder2D<SOLN_STATE>::allocate_CellMemory(const int &ReconstructionOrder
 
   int i,j;
 
-  // Allocate new memory only if the new container dimensions are different than the currently allocated ones
-  if (ReconstructionOrder != OrderOfReconstruction){
+  // Set the new reconstruction order
+  OrderOfReconstruction = ReconstructionOrder;
 
-    // Set the new reconstruction order
-    OrderOfReconstruction = ReconstructionOrder;
+  // Set the Nghost_HO based on the OrderOfReconstruction
+  Nghost_HO = getNghostHighOrder();
 
-    // Set the Nghost_HO based on the OrderOfReconstruction
-    Nghost_HO = getNghostHighOrder();
+  // Set the number of neighbour rings based on the OrderOfReconstruction
+  SetRings();
 
-    // Set the number of neighbour rings based on the OrderOfReconstruction
-    SetRings();
-
-    // Allocate memory and initialize containers at cell level.
-    for (j  = JCl-Nghost_HO ; j <= JCu+Nghost_HO ; ++j ) {
-      for ( i = ICl-Nghost_HO ; i <= ICu+Nghost_HO ; ++i) {    
+  // Allocate memory and initialize containers at cell level.
+  for (j  = JCl-Nghost_HO ; j <= JCu+Nghost_HO ; ++j ) {
+    for ( i = ICl-Nghost_HO ; i <= ICu+Nghost_HO ; ++i) {    
 	
-	// Set Taylor derivatives
-	TD[i][j].GenerateContainer(OrderOfReconstruction);
+      // Set Taylor derivatives
+      TD[i][j].GenerateContainer(OrderOfReconstruction);
 
-	// Set smoothness indicator and monotonicity flag
-	InitializeMonotonicityVariables(i,j);
+      // Set smoothness indicator and monotonicity flag
+      InitializeMonotonicityVariables(i,j);
 
-	// Allocate pseudo-inverse data
-	// Note: There is no need to initialize these containers here!
-	if (_pseudo_inverse_allocation_){
-	  CENO_LHS[i][j].newsize(getStencilSize() - 1, TD[i][j].size() - 1);
-	  CENO_Geometric_Weights[i][j].assign(getStencilSize(), 0.0);
-	}
+      // Allocate pseudo-inverse data
+      // Note: There is no need to initialize these containers here!
+      if (_pseudo_inverse_allocation_){
+	CENO_LHS[i][j].newsize(getStencilSize() - 1, TD[i][j].size() - 1);
+	CENO_Geometric_Weights[i][j].assign(getStencilSize(), 0.0);
+      }
 
-      } /* endfor */
-    }/* endfor */
+    } /* endfor */
+  }/* endfor */
 
-    // Confirm allocation
-    _allocated_cells = true;
-    if (_pseudo_inverse_allocation_){
-      _allocated_psinv = true;
-    }
-    // Remember the smoothness indicator calculation method which was used for the current setup.
-    _si_calculation = CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS;
+  // Confirm allocation
+  _allocated_cells = true;
+  if (_pseudo_inverse_allocation_){
+    _allocated_psinv = true;
+  }
 
-  } // endif
+  // Remember the smoothness indicator calculation method which was used for the current setup.
+  _si_calculation = CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS;
 }
 
 // deallocate()
@@ -690,10 +678,10 @@ void HighOrder2D<SOLN_STATE>::deallocate(void){
 
 // deallocate_CellMemory()
 /*! 
- * Deallocate memory when high-order is not required.
+ * Deallocate all memory at the cell level.
  * Automatic deallocation is already provided when the 
- * variables are deleted.
- * This routine deallocates the containers at cell level.
+ * variables are deleted, so there is no need to call
+ * this function in the 'deallocate' routine.
  */
 template<class SOLN_STATE> inline
 void HighOrder2D<SOLN_STATE>::deallocate_CellMemory(void){
@@ -727,9 +715,12 @@ void HighOrder2D<SOLN_STATE>::deallocate_CellMemory(void){
     _calculated_psinv = false;
 
     // Confirm the deallocation
+    OrderOfReconstruction = -1;
+    Nghost_HO = 0;
+    rings = 0;
+
     _allocated_cells = false;
     _allocated_psinv = false;
-
   }//endif
 }
 
@@ -1363,66 +1354,119 @@ double HighOrder2D<SOLN_STATE>::ComputeSolutionErrorL2(const Function_Object_Typ
 			      10,_dummy_param);
 }
 
+#endif
 
-// Friend functions
-//! operator== 
-template<class SOLN_STATE> inline
-bool operator== (const HighOrder2D<SOLN_STATE> & left, const HighOrder2D<SOLN_STATE> & right){
-   
-  if ( CENO_Execution_Mode::CENO_SPEED_EFFICIENT && (!(left.GeomWeights().null() && right.GeomWeights().null())) ){
-    return ( (left.TaylorDeriv() == right.TaylorDeriv()) && 
-	     (left.CellSmoothnessIndicator() == right.CellSmoothnessIndicator()) &&
-	     (left.CellInadequateFit() == right.CellInadequateFit()) &&
-	     (left.Rings() == right.Rings()) && 
-	     (left.CellGeometry() == right.CellGeometry()) && 
-	     (left.LHS() == right.LHS()) &&
-	     (left.GeomWeights() == right.GeomWeights()) 
-	     );
-  } else {
-    // There is no memory allocated for pseudo-inverse data in both objects
-    return ( (left.TaylorDeriv() == right.TaylorDeriv()) && 
-	     (left.CellSmoothnessIndicator() == right.CellSmoothnessIndicator()) &&
-	     (left.CellInadequateFit() == right.CellInadequateFit()) &&
-	     (left.Rings() == right.Rings()) && 
-	     (left.CellGeometry() == right.CellGeometry()) );
+/*! 
+ * Output the current object to the 
+ * provided output stream.
+ */
+template<class SOLN_STATE>
+void HighOrder2D<SOLN_STATE>::Output_Object(ostream & out_file) const {
+
+  int i,j;
+
+  // Output allocation flags
+  out_file << _allocated_block << " "
+	   << _allocated_cells << " "
+	   << _allocated_psinv << " "
+	   << _si_calculation  << "\n";
+
+  // Output block indexes
+  if (_allocated_block) {
+    out_file << Ni << " " << Nj << " " << Ng <<"\n"
+	     << OrderOfReconstruction << "\n";
+  }
+
+  // Output Taylor derivatives
+  if (_allocated_cells){
+    for (j  = JCl-Nghost_HO ; j <= JCu+Nghost_HO ; ++j ) {
+      for ( i = ICl-Nghost_HO ; i <= ICu+Nghost_HO ; ++i) {    
+	out_file.setf(ios::skipws,ios::scientific);
+	out_file << CellTaylorDeriv(i,j);
+	out_file.unsetf(ios::skipws);
+	out_file.unsetf(ios::scientific);
+      }
+    }
   }
 }
 
-//! operator!= 
-template<class SOLN_STATE> inline
-bool operator!= (const HighOrder2D<SOLN_STATE> & left, const HighOrder2D<SOLN_STATE> & right){
-  return !(left == right);
+/*! 
+ * Read the set up of the current object
+ * from the provided input stream.
+ */
+template<class SOLN_STATE>
+void HighOrder2D<SOLN_STATE>::Read_Object(istream & in_file) {
+
+  bool _alloc_block_, _alloc_cells_, _alloc_psinv_;
+  short int _si_calc_;
+  int _Ni_, _Nj_, _Ng_, ReconstructionOrder;
+  int i,j;
+
+  // Read allocation flags
+  in_file >> _alloc_block_
+	  >> _alloc_cells_
+	  >> _alloc_psinv_
+	  >> _si_calc_;
+
+  // Make sure that the execution mode is the same 
+  // as at the time when the object was output.
+  // Otherwise, the resulting containers will be different.
+  if (_si_calc_ != CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS){
+    throw runtime_error("HighOrder2D<SOLN_STATE>::Read_Object() ERROR! The object cannot be read due to incompatibilities between the CENO_Execution_Mode class settings and the object settings");
+  }
+
+  // check if the object must be allocated
+  if (_alloc_block_){
+    // Read the block indexes
+    in_file >> _Ni_  >> _Nj_  >> _Ng_ 
+	    >> ReconstructionOrder;
+
+    // Allocate memory for the object
+    allocate(_Ni_-2*_Ng_,
+	     _Nj_-2*_Ng_,
+	     _Ng_,
+	     _alloc_psinv_,
+	     ReconstructionOrder);
+    
+    // check if the cell memory must be allocated
+    if (_alloc_cells_){
+      // Read the Taylor derivatives
+      for (j  = JCl-Nghost_HO ; j <= JCu+Nghost_HO ; ++j ) {
+	for ( i = ICl-Nghost_HO ; i <= ICu+Nghost_HO ; ++i) { 
+	  in_file.setf(ios::skipws);   
+	  in_file >> CellTaylorDeriv(i,j);
+	  in_file.unsetf(ios::skipws);
+	}
+      }
+      
+    } else {
+      // Deallocate the cell memory
+      deallocate_CellMemory();
+    }
+
+  } else {
+    // Deallocate the current object
+    deallocate();
+  }
 }
+
+// Friend functions
 
 //! operator<<
 template<class SOLN_STATE> inline
 ostream & operator<< (ostream & os, const HighOrder2D<SOLN_STATE> & Obj){
-
-  os.setf(ios::skipws,ios::scientific);
-  os << Obj.TaylorDeriv();
-  os.width(4);
-  os << Obj.CellSmoothnessIndicator() << endl;
-  os.width(4);
-  os << Obj.Rings();
-  os.unsetf(ios::skipws);
-  os.unsetf(ios::scientific);
+  Obj.Output_Object(os);
   return os;
 }
 
 //! operator>>
 template<class SOLN_STATE> inline
 istream & operator>> (istream & os, HighOrder2D<SOLN_STATE> & Obj){
-
-  os.setf(ios::skipws);
-  os >> Obj.TaylorDeriv()
-     >> Obj.CellSmoothnessIndicator();
-
-  // Set rings
-  Obj.SetRings();
-  os.unsetf(ios::skipws);
+  Obj.Read_Object(os);
   return os;
 }
 
+#if 0
 
 // HighOrderSolutionReconstructionOverDomain()
 /*! 
@@ -1548,21 +1592,10 @@ double & HighOrder2D<double>::CellTaylorDerivValue(const int & ii, const int & j
 }
 
 #if 0
-template<> inline
-const double & HighOrder2D<double>::CellSmoothnessIndicator(const int & VarPosition) const {
-  return SI;
-}
-
-template<> inline
-double & HighOrder2D<double>::CellSmoothnessIndicator(const int & VarPosition) {
-  return SI;
-}
-
 template <> inline
 double HighOrder2D<double>::SolutionAtCoordinates(const double & X_Coord, const unsigned parameter){
   return TD.ComputeSolutionFor(X_Coord - CellCenter());
 }
-
 #endif
 
 

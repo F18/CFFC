@@ -39,8 +39,8 @@ namespace tut
   Data_HighOrder2D::Data_HighOrder2D(): A(2,3), B(3){
 
     set_test_suite_path("HighOrderReconstruction/UnitTests/");
-    set_local_input_path("test_TaylorDerivatives1D");
-    set_local_output_path("test_TaylorDerivatives1D");
+    set_local_input_path("TaylorDerivatives2D_Data");
+    set_local_output_path("TaylorDerivatives2D_Data");
     
     // set CENO_Execution_Mode to default values
     CENO_Execution_Mode::SetDefaults();
@@ -750,7 +750,65 @@ namespace tut
     ensure_equals("Last Cell, SI value", HO.CellSmoothnessIndicatorValue(8,9,1), 0.0);
   }
 
+  /* Test 16:*/
+  template<>
+  template<>
+  void HighOrder2D_object::test<16>()
+  {
+    set_test_name("Output operator");
 
+    RunRegression = ON;
+
+    HighOrder2D<double> HO;
+    int NCi, NCj, Nghost, RecOrder;
+    NCi = 2; NCj = 3; Nghost = 5; RecOrder = 4;
+    
+    // Set execution mode
+    CENO_Execution_Mode::CENO_RECONSTRUCTION_WITH_MESSAGE_PASSING = OFF;
+    CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS = OFF;
+
+    // Allocate memory for the high-order WITH pseudo-inverse
+    HO.allocate(NCi,NCj,Nghost,true,RecOrder);
+
+    MasterFile = "Output_Operator.dat";
+    CurrentFile = "Current_Output_Operator.dat";
+
+    if (RunRegression){
+      Open_Output_File(CurrentFile);
+      
+      out() << HO;
+
+      RunRegressionTest("operator <<", CurrentFile, MasterFile, 1.0e-12);
+
+    } else {
+      // Generate the master file
+      Open_Output_File(MasterFile);
+
+      out() << HO;
+    }
+      
+  }
+
+  /* Test 17:*/
+  template<>
+  template<>
+  void HighOrder2D_object::test<17>()
+  {
+    set_test_name("Input-output operators");
+
+    HighOrder2D<double> HO;
+    int NCi, NCj, Nghost, RecOrder;
+    NCi = 2; NCj = 3; Nghost = 5; RecOrder = 4;
+    
+    // Set execution mode
+    CENO_Execution_Mode::CENO_RECONSTRUCTION_WITH_MESSAGE_PASSING = OFF;
+    CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS = ON;
+
+    // Allocate memory for the high-order WITH pseudo-inverse
+    HO.allocate(NCi,NCj,Nghost,true,RecOrder);
+
+    Check_Input_Output_Operator(HO);
+  }
 }
 
 
