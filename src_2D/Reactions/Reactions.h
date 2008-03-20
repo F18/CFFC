@@ -83,7 +83,7 @@ public:
   //get reaction rate coefficients
   double kf(const double &Temp) const;
   double dkf_dT(const double &Temp) const;
-  double kf(const double &Temp, const double &H2, const  double &O2, const double &N2)const; //for H2&O2
+  double kf(const double &Temp, const double &H2, const double &O2, const double &N2)const; //for H2&O2
   double kb(const double &Temp) const;
   double dkb_dT(const double &Temp) const;
 
@@ -127,9 +127,6 @@ inline double React_data::kf(const double &Temp, const double &H2, const double 
   } else if (react == "H2O2_2step_2"){ 
     Astar = A*(2.0 + (1.333/phi) - 0.833*phi)*1e64; 
   }
-
-//   cout<<endl<<phi<<" "<<A<<" "<<(-E/(R_UNIVERSAL*Temp))
-//       <<" "<<R_UNIVERSAL<<" "<<E<<" "<<Temp<<" "<<Astar*pow(Temp,n)*exp(-E/(R_UNIVERSAL*Temp));
 
   return Astar*pow(Temp,n)*exp(-E/(R_UNIVERSAL*Temp));
 }
@@ -469,8 +466,6 @@ inline void Reaction_set::omega(SOLN_cSTATE &U, const SOLN_pSTATE &W,  const int
     kf[1] = reactions[1].kf(Temp)*(W.SpecCon(4)/MILLION)*pow(W.SpecCon(3)/MILLION,0.5)*pow(W.SpecCon(1)/MILLION,0.25); 
     kb[1] = reactions[1].kb(Temp)*(W.SpecCon(2)/MILLION);
    
-    //cout<<"\n Sw "<<Temp<<" "<<reactions[0].kf(Temp)<<" "<<reactions[1].kf(Temp)<<" "<<reactions[1].kb(Temp);
-
     for(int index =0; index<num_react_species; index++){
       switch(index) {
       case 0 : //CH4
@@ -530,7 +525,6 @@ inline void Reaction_set::omega(SOLN_cSTATE &U, const SOLN_pSTATE &W,  const int
       kb[0] = kf[0]/(reactions[0].keq(W,Temp));
       kf[1] = reactions[1].kf(Temp,W.spec[0].c,W.spec[1].c,W.spec[4].c);
       kb[1] = kf[1]/(reactions[1].keq(W,Temp));
-      //cout<<"\n kf1 "<< kf[0]<<" kb1 "<< kb[0]<<" kf2 "<<kf[1]<<" kb2 "<< kb[1];
       
       for(int index =0; index<num_react_species; index++){
 	switch(index) {
@@ -1049,13 +1043,7 @@ inline void Reaction_set::dSwdU(DenseMatrix &dSwdU, const SOLN_pSTATE &W,
     // 15 step CH4 based on GRI 2.11
   case CH4_15STEP_ARM2:
     Complex_Step_dSwdU<SOLN_pSTATE>(dSwdU, W);
-    
-    //cout << "\n Complex Step dSwdU: " << dSwdU;
-    //dSwdU.zero();
-    //Finite_Difference_dSwdU(dSwdU, W, Flow_Type, Simple_Chemistry);
-    //cout << "\n Finite Difference dSwdU: " << dSwdU;
     break;
-
 
     // 15 step CH4 based on GRI 3
   case CH4_15STEP_ARM3:
@@ -1066,11 +1054,9 @@ inline void Reaction_set::dSwdU(DenseMatrix &dSwdU, const SOLN_pSTATE &W,
   //------------ CANTERA ------------//
   //---------------------------------//
 #ifdef _CANTERA_VERSION
-
   case CANTERA:
-    Finite_Difference_dSwdU<SOLN_pSTATE,SOLN_cSTATE>(dSwdU, W, Flow_Type);
+    Finite_Difference_dSwdU<SOLN_pSTATE, SOLN_cSTATE>(dSwdU, W, Flow_Type);
     break;
-
 #endif // _CANTERA_VERSION
 
     //---------------------------------//
@@ -1087,413 +1073,6 @@ inline void Reaction_set::dSwdU(DenseMatrix &dSwdU, const SOLN_pSTATE &W,
 
     
 } //end dSwdU
-
-
-
-    /******************** ORIGINAL ****************************************/
-  //TWO STEP CH4   
-//  case CH4_2STEP:  
-//     //still some issues with units ??? ie.  dSwdU(6,6) ??
-//     //which is also on the diagonal so messes with CFL???
-//     kf[0] = reactions[0].kf(Temp);      
-//     kb[0] = ZERO;
-//     kf[1] = reactions[1].kf(Temp);  
-//     kb[1] = reactions[1].kb(Temp);
-
-//     dSwdU(NUM_VAR,NUM_VAR) += -0.2*kf[0]/pow(rho*c_denom[0]/M[0],0.8)*rho*c[1]/M[1]*pow(rho*c[1]/M[1],0.3);
-//     dSwdU(NUM_VAR,NUM_VAR+1) += -0.13E1*M[0]*kf[0]*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M[1],0.3)/M[1];      
-    
-//     dSwdU(NUM_VAR+1,NUM_VAR) += -0.3*kf[0]/pow(rho*c_denom[0]/M[0],0.8)*rho*c[1]*pow(rho*c[1]/M[1],0.3)/M[0];
-//     dSwdU(NUM_VAR+1,NUM_VAR+1) += -rho*(0.195E1*kf[0]*pow(rho*c[0]/M[0],0.2)*c[1]*pow(rho*c[1]/M[1],0.5E-1)
-// 			*M[4]+0.125*kf[1]*c[4]*sqrt(rho*c[3]/M[3])*M[1])/M[1]/M[4]/pow(rho*c_denom[1]/M[1],0.75);
-//     dSwdU(NUM_VAR+1,NUM_VAR+2) += 0.5*M[1]*kb[1]/M[2];
-//     dSwdU(NUM_VAR+1,NUM_VAR+3) += -0.25*M[1]*kf[1]*rho*c[4]/M[4]/sqrt(rho*c_denom[3]/M[3])*pow(rho*c[1]/M[1],0.25)/M[3];
-//     dSwdU(NUM_VAR+1,NUM_VAR+4) += -0.5*M[1]*kf[1]/M[4]*sqrt(rho*c[3]/M[3])*pow(rho*c[1]/M[1],0.25);      
-   
-//     dSwdU(NUM_VAR+2,NUM_VAR+1) += 0.25*M[2]*kf[1]*rho*c[4]/M[4]*sqrt(rho*c[3]/M[3])/pow(rho*c_denom[1]/M[1],0.75)/M[1];
-//     dSwdU(NUM_VAR+2,NUM_VAR+2) += -kb[1];
-//     dSwdU(NUM_VAR+2,NUM_VAR+3) += 0.5*M[2]*kf[1]*rho*c[4]/M[4]/sqrt(rho*c_denom[3]/M[3])*pow(rho*c[1]/M[1],0.25)/M[3];
-//     dSwdU(NUM_VAR+2,NUM_VAR+4) += M[2]*kf[1]/M[4]*sqrt(rho*c[3]/M[3])*pow(rho*c[1]/M[1],0.25);      
-    
-//     dSwdU(NUM_VAR+3,NUM_VAR) += 0.4*M[3]*kf[0]/pow(rho*c_denom[0]/M[0],0.8)*rho*c[1]/M[1]*pow(rho*c[1]/M[1],0.3)/M[0];
-//     dSwdU(NUM_VAR+3,NUM_VAR+1) += 0.26E1*M[3]*kf[0]*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M[1],0.3)/M[1];    
-   
-//     dSwdU(NUM_VAR+4,NUM_VAR) += 0.2*M[4]*kf[0]/pow(rho*c_denom[0]/M[0],0.8)*rho*c[1]/M[1]*pow(rho*c[1]/M[1],0.3)/M[0];
-//     dSwdU(NUM_VAR+4,NUM_VAR+1) += rho*(0.13E1*kf[0]*pow(rho*c[0]/M[0],0.2)*c[1]*pow(rho*c[1]/M[1],0.5E-1)
-// 		       *M[4]-0.25*kf[1]*c[4]*sqrt(rho*c[3]/M[3])*M[1])/(M[1]*M[1])/pow(rho*c_denom[1]/M[1],0.75);
-//     dSwdU(NUM_VAR+4,NUM_VAR+2) += M[4]*kb[1]/M[2];
-//     dSwdU(NUM_VAR+4,NUM_VAR+3) += -0.5*kf[1]*rho*c[4]/sqrt(rho*c_denom[3]/M[3])*pow(rho*c[1]/M[1],0.25)/M[3];
-//     dSwdU(NUM_VAR+4,NUM_VAR+4) += -1.0*kf[1]*sqrt(rho*c[3]/M[3])*pow(rho*c[1]/M[1],0.25);
-
-//     //this is a work around for the delta t calculation using an unesseccarily small value
-//     //when CH4 & O2 -> ZERO
-//     if( c_denom[0] != c[0] && CFL_flag ){
-//       for(int i=0; i<num_react_species; i++){
-// 	dSwdU(NUM_VAR+i,NUM_VAR+i)=ZERO; 
-//       }
-//     }
-      
-//    //take the minum value between laminar and turbulent concentrations
-// //     if (Flow_Type == FLOWTYPE_TURBULENT_RANS_K_EPSILON ||
-// // 	Flow_Type == FLOWTYPE_TURBULENT_RANS_K_OMEGA){
-// //  }
-
-//     break;
-//     dSwdU(NUM_VAR,0) += M[0]*dkf_dT[0]*T/rho*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M[1],0.13E1)+M[0]*
-//       dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M[1],0.13E1)*
-//       (-u*u-v*v+2.0*htot-2.0*Cp*p/rho/Rtot-2.0*c[0]*(h[0]-Cp*T*Rs[0]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)
-//        -2.0*c[1]*(h[1]-Cp*T*Rs[1]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)-2.0*c[2]*(h[2]-Cp*T*Rs[2]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)-2.0*c[3]*(h[3]-Cp*T*Rs[3]/Rtot-h[5]
-//       +Cp*T*Rs[5]/Rtot)-2.0*c[4]*(h[4]-Cp*T*Rs[4]/Rtot-h[5]+Cp*T*Rs[5]/Rtot))/(Cp/Rtot-1.0)/2.0;
-
-//     double top = pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M[1],0.13E1);
-
-//     double sum_cs = c[0]*(h[0]-Cp*T*Rs[0]/Rtot-h[5]+Cp*T*Rs[5]/Rtot) + c[1]*(h[1]-Cp*T*Rs[1]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)
-//       + c[2]*(h[2]-Cp*T*Rs[2]/Rtot-h[5]+Cp*T*Rs[5]/Rtot) + c[3]*(h[3]-Cp*T*Rs[3]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)
-//       + c[4]*(h[4]-Cp*T*Rs[4]/Rtot-h[5]+Cp*T*Rs[5]/Rtot);
-
-//     dSwdU(NUM_VAR,0) +=  (M[0]*dkf_dT[0]*T/rho)*top - (M[0]*dkf_dT[0]*top)*( (u*u+v*v)/2.0 - htot + Cp*T + sum_cs)/(rho*(Cp-Rtot));
-
-//     dSwdU(NUM_VAR,1) += M[0]*dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M[1],0.13E1)*u/(Cp/Rtot-1.0);
-//     dSwdU(NUM_VAR,2) += M[0]*dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M[1],0.13E1)*v/(Cp/Rtot-1.0);
-//     dSwdU(NUM_VAR,3) += -M[0]*dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M[1],0.13E1)/(Cp/Rtot-1.0);
-
-//     dSwdU(NUM_VAR,NUM_VAR) += M[0]*dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)* pow(rho*c[1]/M[1],0.13E1)*(h[0]-Cp*T*Rs[0]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)/(Cp/Rtot-1.0)
-//       -0.2*kf[0]/pow(rho*c_denom[0]/M[0],0.8)*pow(rho*c[1]/M[1],0.13E1);
-
-//     dSwdU(NUM_VAR,NUM_VAR+1) += M[0]*dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M[1],0.13E1)*(h[1]-Cp*T*Rs[1]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)/(Cp/Rtot-1.0)
-//       -0.13E1*M[0]*kf[0]*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M[1],0.3)/M[1];
-
-//     dSwdU(NUM_VAR,NUM_VAR+2) += M[0]*dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M[1],0.13E1)*(h[2]-Cp*T*Rs[2]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)/(Cp/Rtot-1.0);
-//     dSwdU(NUM_VAR,NUM_VAR+3) += M[0]*dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M[1],0.13E1)*(h[3]-Cp*T*Rs[3]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)/(Cp/Rtot-1.0);
-//     dSwdU(NUM_VAR,NUM_VAR+4) += M[0]*dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M[1],0.13E1)*(h[4]-Cp*T*Rs[4]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)/(Cp/Rtot-1.0);
-
-//     MapleGenVar2 = M[1]*(0.15E1*dkf_dT[0]*T/rho*pow(rho*c[0]/M[0],0.2)*pow(
-// rho*c[1]/M[1],0.13E1)-0.3*kf[0]/pow(rho*c_denom[0]/M[0],0.8)*pow(rho*c[1]/M[1],
-// 0.13E1)*c[0]/M[0]-0.195E1*kf[0]*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M[1],
-// 0.3)*c[1]/M[1]+0.5*dkf_dT[1]*T*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho*c[1]/M
-// [1],0.25)-0.5*kf[1]*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho*c[1]/M[1],
-// 0.25)-0.25*kf[1]*rho*c[4]/M[4]/pow(rho*c_denom[3]/M[3],0.5)*pow(rho*c[1]/M[1],
-// 0.25)*c[3]/M[3]-0.125*kf[1]*rho*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)/pow(rho*c_denom
-// [1]/M[1],0.75)*c[1]/M[1]-0.5*dkb_dT[1]*T*c[2]/M[2]+0.5*kb[1]*c[2]/M[2]);
-
-//       MapleGenVar3 = -M[1]*(-0.15E1*dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(
-// rho*c[1]/M[1],0.13E1)-0.5*dkf_dT[1]/Rtot*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho*
-// c[1]/M[1],0.25)+0.5*dkb_dT[1]/Rtot*c[2]/M[2])*(-u*u-v*v+2.0*htot-2.0*Cp*p/rho/Rtot-2.0*c[0]*(h[0]-Cp*T*Rs[0]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)-2.0*c
-// [1]*(h[1]-Cp*T*Rs[1]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)-2.0*c[2]*(h[2]-Cp*T*Rs[2]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)
-// -2.0*c[3]*(h[3]-Cp*T*Rs[3]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)-2.0*c[4]*(h[4]-Cp*T*Rs[4]/Rtot-
-// h[5]+Cp*T*Rs[5]/Rtot))/(Cp/Rtot-1.0)/2.0+0.3*M[1]*kf[0]/pow(rho*c_denom[0]/M[0],0.8)*pow(rho*c[1]/M[1],0.13E1)/M[0]*c[0];
-
-//       MapleGenVar1 = MapleGenVar2+MapleGenVar3;
-  
-//       dSwdU(NUM_VAR+1,0) += MapleGenVar1-M[1]*(-0.195E1*kf[0]*pow(rho*c[0]/M[0],
-// 0.2)*pow(rho*c[1]/M[1],0.3)*rho/M[1]-0.125*kf[1]*rho*rho*c[4]/M[4]*pow(rho
-// *c[3]/M[3],0.5)/pow(rho*c_denom[1]/M[1],0.75)/M[1])*c[1]/rho-0.5*M[1]*kb[1]/M[2]
-// *c[2]+0.25*M[1]*kf[1]*rho*c[4]/M[4]/pow(rho*c_denom[3]/M[3],0.5)*pow(rho*c[1]/M
-// [1],0.25)/M[3]*c[3]+0.5*M[1]*kf[1]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho*c
-// [1]/M[1],0.25)*c[4]; 
-      
-    
-//       dSwdU(NUM_VAR+1,1) += -M[1]*(-0.15E1*dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*
-// 				   pow(rho*c[1]/M[1],0.13E1)-0.5*dkf_dT[1]/Rtot*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*
-// 				   pow(rho*c[1]/M[1],0.25)+0.5*dkb_dT[1]/Rtot*c[2]/M[2])*u/(Cp/Rtot-1.0);
-//       dSwdU(NUM_VAR+1,2) += -M[1]*(-0.15E1*dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*
-// 				   pow(rho*c[1]/M[1],0.13E1)-0.5*dkf_dT[1]/Rtot*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*
-// 				   pow(rho*c[1]/M[1],0.25)+0.5*dkb_dT[1]/Rtot*c[2]/M[2])*v/(Cp/Rtot-1.0);
-//       dSwdU(NUM_VAR+1,3) += M[1]*(-0.15E1*dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*
-// 				  pow(rho*c[1]/M[1],0.13E1)-0.5*dkf_dT[1]/Rtot*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*
-// 				  pow(rho*c[1]/M[1],0.25)+0.5*dkb_dT[1]/Rtot*c[2]/M[2])/(Cp/Rtot-1.0);
-    
-//       dSwdU(NUM_VAR+1,NUM_VAR) += -M[1]*(-0.15E1*dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(
-// rho*c[1]/M[1],0.13E1)-0.5*dkf_dT[1]/Rtot*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho*
-// c[1]/M[1],0.25)+0.5*dkb_dT[1]/Rtot*c[2]/M[2])*(h[0]-Cp*T*Rs[0]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)/
-// (Cp/Rtot-1.0)-0.3*M[1]*kf[0]/pow(rho*c_denom[0]/M[0],0.8)*pow(rho*c[1]/M[1],0.13E1)
-// /M[0];
-//       dSwdU(NUM_VAR+1,NUM_VAR+1) += -M[1]*(-0.15E1*dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(
-// rho*c[1]/M[1],0.13E1)-0.5*dkf_dT[1]/Rtot*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho*
-// c[1]/M[1],0.25)+0.5*dkb_dT[1]/Rtot*c[2]/M[2])*(h[1]-Cp*T*Rs[1]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)/
-// (Cp/Rtot-1.0)+M[1]*(-0.195E1*kf[0]*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M[1],
-// 0.3)*rho/M[1]-0.125*kf[1]*rho*rho*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)/pow(rho
-// *c_denom[1]/M[1],0.75)/M[1])/rho;
-//       dSwdU(NUM_VAR+1,NUM_VAR+2) += -M[1]*(-0.15E1*dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(
-// rho*c[1]/M[1],0.13E1)-0.5*dkf_dT[1]/Rtot*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho*
-// c[1]/M[1],0.25)+0.5*dkb_dT[1]/Rtot*c[2]/M[2])*(h[2]-Cp*T*Rs[2]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)/
-// (Cp/Rtot-1.0)+0.5*M[1]*kb[1]/M[2];
-//       dSwdU(NUM_VAR+1,NUM_VAR+3) += -M[1]*(-0.15E1*dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(
-// rho*c[1]/M[1],0.13E1)-0.5*dkf_dT[1]/Rtot*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho*
-// c[1]/M[1],0.25)+0.5*dkb_dT[1]/Rtot*c[2]/M[2])*(h[3]-Cp*T*Rs[3]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)/
-// (Cp/Rtot-1.0)-0.25*M[1]*kf[1]*rho*c[4]/M[4]/pow(rho*c_denom[3]/M[3],0.5)*pow(rho*c
-// [1]/M[1],0.25)/M[3];
-
-//       dSwdU(NUM_VAR+1,NUM_VAR+4) += -M[1]*(-0.15E1*dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*
-// 					   pow(rho*c[1]/M[1],0.13E1)-0.5*dkf_dT[1]/Rtot*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*
-// 					   pow(rho*c[1]/M[1],0.25)+0.5*dkb_dT[1]/Rtot*c[2]/M[2])*(h[4]-Cp*T*Rs[4]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)/(Cp/Rtot-1.0) 
-// 	                             -0.5*M[1]*kf[1]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho*c[1]/M[1],0.25);
-  
-
-//     MapleGenVar2 = M[2]*(-dkf_dT[1]*T*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(
-// rho*c[1]/M[1],0.25)+kf[1]*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho*c[1]/M
-// [1],0.25)+0.5*kf[1]*rho*c[4]/M[4]/pow(rho*c_denom[3]/M[3],0.5)*pow(rho*c[1]/M[1]
-// ,0.25)*c[3]/M[3]+0.25*kf[1]*rho*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)/pow(rho*c_denom
-// [1]/M[1],0.75)*c[1]/M[1]+dkb_dT[1]*T*c[2]/M[2]-kb[1]*c[2]/M[2]);
-
-//       MapleGenVar3 = -M[2]*(dkf_dT[1]/Rtot*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(
-// rho*c[1]/M[1],0.25)-dkb_dT[1]/Rtot*c[2]/M[2])*(-u*u-v*v+2.0*htot-2.0*Cp*p/rho/Rtot-2.0*c[0]*(h[0]-Cp*T*Rs[0]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)-2.0*c
-// [1]*(h[1]-Cp*T*Rs[1]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)-2.0*c[2]*(h[2]-Cp*T*Rs[2]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)
-// -2.0*c[3]*(h[3]-Cp*T*Rs[3]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)-2.0*c[4]*(h[4]-Cp*T*Rs[4]/Rtot-
-// h[5]+Cp*T*Rs[5]/Rtot))/(Cp/Rtot-1.0)/2.0-0.25*M[2]*kf[1]*rho*c[4]/M[4]*pow(rho*c
-// [3]/M[3],0.5)/pow(rho*c_denom[1]/M[1],0.75)/M[1]*c[1];
-
-//       MapleGenVar1 = MapleGenVar2+MapleGenVar3;
-
-//       dSwdU(NUM_VAR+2,0) += MapleGenVar1+kb[1]*c[2]-0.5*M[2]*kf[1]*rho*c[4]/M
-// [4]/pow(rho*c_denom[3]/M[3],0.5)*pow(rho*c[1]/M[1],0.25)/M[3]*c[3]-M[2]*kf[1]/M
-// [4]*pow(rho*c[3]/M[3],0.5)*pow(rho*c[1]/M[1],0.25)*c[4];
-//       dSwdU(NUM_VAR+2,1) += -M[2]*(dkf_dT[1]/Rtot*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho
-// *c[1]/M[1],0.25)-dkb_dT[1]/Rtot*c[2]/M[2])*u/(Cp/Rtot-1.0);
-
-//       dSwdU(NUM_VAR+2,2) += -M[2]*(dkf_dT[1]/Rtot*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho
-// *c[1]/M[1],0.25)-dkb_dT[1]/Rtot*c[2]/M[2])*v/(Cp/Rtot-1.0);
-
-//       dSwdU(NUM_VAR+2,3) += M[2]*(dkf_dT[1]/Rtot*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho*
-// c[1]/M[1],0.25)-dkb_dT[1]/Rtot*c[2]/M[2])/(Cp/Rtot-1.0);
-//       dSwdU(NUM_VAR+2,NUM_VAR) += -M[2]*(dkf_dT[1]/Rtot*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho
-// *c[1]/M[1],0.25)-dkb_dT[1]/Rtot*c[2]/M[2])*(h[0]-Cp*T*Rs[0]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)/(Cp
-// /Rtot-1.0);
-//       dSwdU(NUM_VAR+2,NUM_VAR+1) += -M[2]*(dkf_dT[1]/Rtot*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho
-// *c[1]/M[1],0.25)-dkb_dT[1]/Rtot*c[2]/M[2])*(h[1]-Cp*T*Rs[1]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)/(Cp
-// /Rtot-1.0)+0.25*M[2]*kf[1]*rho*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)/pow(rho*c_denom[1]/
-// M[1],0.75)/M[1];
-     
-//       dSwdU(NUM_VAR+2,NUM_VAR+2) += -M[2]*(dkf_dT[1]/Rtot*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*
-// 					   pow(rho*c[1]/M[1],0.25)-dkb_dT[1]/Rtot*c[2]/M[2])*
-// 	(h[2]-Cp*T*Rs[2]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)/(Cp/Rtot-1.0)-kb[1];
-
-//       dSwdU(NUM_VAR+2,NUM_VAR+3) += -M[2]*(dkf_dT[1]/Rtot*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho
-// *c[1]/M[1],0.25)-dkb_dT[1]/Rtot*c[2]/M[2])*(h[3]-Cp*T*Rs[3]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)/(Cp
-// /Rtot-1.0)+0.5*M[2]*kf[1]*rho*c[4]/M[4]/pow(rho*c_denom[3]/M[3],0.5)*pow(rho*c[1]/M
-// [1],0.25)/M[3];
-//       dSwdU(NUM_VAR+2,NUM_VAR+4) += -M[2]*(dkf_dT[1]/Rtot*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho
-// *c[1]/M[1],0.25)-dkb_dT[1]/Rtot*c[2]/M[2])*(h[4]-Cp*T*Rs[4]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)/(Cp
-// /Rtot-1.0)+M[2]*kf[1]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho*c[1]/M[1],0.25);
-
-//       dSwdU(NUM_VAR+3,0) += -0.2E1*M[3]*dkf_dT[0]*T/rho*pow(rho*c[0]/M[0],0.2)*pow(rho*
-// c[1]/M[1],0.13E1)-0.1E1*M[3]*dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(rho*c
-// [1]/M[1],0.13E1)*(-u*u-v*v+2.0*htot-2.0*Cp*p/rho/Rtot
-// -2.0*c[0]*(h[0]-Cp*T*Rs[0]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)-2.0*c[1]*(h[1]-Cp*T*Rs[1]/Rtot-h[5]+
-// Cp*T*Rs[5]/Rtot)-2.0*c[2]*(h[2]-Cp*T*Rs[2]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)-2.0*c[3]*(h[3]-Cp*T*Rs
-// [3]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)-2.0*c[4]*(h[4]-Cp*T*Rs[4]/Rtot-h[5]+Cp*T*Rs[5]/Rtot))/(Cp/Rtot-1.0);
-//       dSwdU(NUM_VAR+3,1) += -0.2E1*M[3]*dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(rho*
-// c[1]/M[1],0.13E1)*u/(Cp/Rtot-1.0);
-//       dSwdU(NUM_VAR+3,2) += -0.2E1*M[3]*dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(rho*
-// c[1]/M[1],0.13E1)*v/(Cp/Rtot-1.0);
-//       dSwdU(NUM_VAR+3,3) += 0.2E1*M[3]*dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(rho*c
-// [1]/M[1],0.13E1)/(Cp/Rtot-1.0);
-//       dSwdU(NUM_VAR+3,NUM_VAR) += -0.2E1*M[3]*dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(rho*
-// c[1]/M[1],0.13E1)*(h[0]-Cp*T*Rs[0]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)/(Cp/Rtot-1.0)+0.4*M[3]*kf[0]/pow(rho*c_denom[0]/M[0],0.8)*pow(rho*c[1]/M[1],0.13E1)/M[0];
-//       dSwdU(NUM_VAR+3,NUM_VAR+1) += -0.2E1*M[3]*dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(rho*
-// c[1]/M[1],0.13E1)*(h[1]-Cp*T*Rs[1]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)/(Cp/Rtot-1.0)+0.26E1*M[3]*
-// kf[0]*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M[1],0.3)/M[1];
-//       dSwdU(NUM_VAR+3,NUM_VAR+2) += -0.2E1*M[3]*dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(rho*
-// c[1]/M[1],0.13E1)*(h[2]-Cp*T*Rs[2]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)/(Cp/Rtot-1.0);
-//       dSwdU(NUM_VAR+3,NUM_VAR+3) += -0.2E1*M[3]*dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(rho*
-// c[1]/M[1],0.13E1)*(h[3]-Cp*T*Rs[3]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)/(Cp/Rtot-1.0);
-//       dSwdU(NUM_VAR+3,NUM_VAR+4) += -0.2E1*M[3]*dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(rho*
-// c[1]/M[1],0.13E1)*(h[4]-Cp*T*Rs[4]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)/(Cp/Rtot-1.0);
-
-//       MapleGenVar2 = M[4]*(-dkf_dT[0]*T/rho*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]
-// /M[1],0.13E1)+0.2*kf[0]/pow(rho*c_denom[0]/M[0],0.8)*pow(rho*c[1]/M[1],0.13E1)*c
-// [0]/M[0]+0.13E1*kf[0]*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M[1],0.3)*c[1]/M
-// [1]+dkf_dT[1]*T*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho*c[1]/M[1],0.25)-kf[1]*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho*c[1]/M[1],0.25)-0.5*kf[1]*
-// rho*c[4]/M[4]/pow(rho*c_denom[3]/M[3],0.5)*pow(rho*c[1]/M[1],0.25)*c[3]/M[3]-0.25*kf[1]
-// *rho*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)/pow(rho*c_denom[1]/M[1],0.75)*c[1]/M[1]-
-// dkb_dT[1]*T*c[2]/M[2]+kb[1]*c[2]/M[2]);
-
-//       MapleGenVar3 = -M[4]*(dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]
-// /M[1],0.13E1)-dkf_dT[1]/Rtot*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho*c[1]/M[1],
-// 0.25)+dkb_dT[1]/Rtot*c[2]/M[2])*(-u*u-v*v+2.0*htot
-// -2.0*Cp*p/rho/Rtot-2.0*c[0]*(h[0]-Cp*T*Rs[0]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)-2.0*c[1]*(h[1]-Cp*
-// T*Rs[1]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)-2.0*c[2]*(h[2]-Cp*T*Rs[2]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)-2.0*c
-// [3]*(h[3]-Cp*T*Rs[3]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)-2.0*c[4]*(h[4]-Cp*T*Rs[4]/Rtot-h[5]+Cp*T*Rs
-// [5]/Rtot))/(Cp/Rtot-1.0)/2.0-0.2*M[4]*kf[0]/pow(rho*c_denom[0]/M[0],0.8)*pow(rho*c[1]/
-// M[1],0.13E1)/M[0]*c[0];
-//       MapleGenVar1 = MapleGenVar2+MapleGenVar3;
-
-//       dSwdU(NUM_VAR+4,0) += MapleGenVar1-M[4]*(0.13E1*kf[0]*pow(rho*c[0]/M[0],0.2)
-// *pow(rho*c[1]/M[1],0.3)*rho/M[1]-0.25*kf[1]*rho*rho*c[4]/M[4]*pow(rho*c[3]
-// /M[3],0.5)/pow(rho*c_denom[1]/M[1],0.75)/M[1])*c[1]/rho-M[4]*kb[1]/M[2]*c[2]+0.5
-// *kf[1]*rho*c[4]/pow(rho*c_denom[3]/M[3],0.5)*pow(rho*c[1]/M[1],0.25)/M[3]*c[3]+
-// kf[1]*pow(rho*c[3]/M[3],0.5)*pow(rho*c[1]/M[1],0.25)*c[4];
-
-//       dSwdU(NUM_VAR+4,1) += -M[4]*(dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/
-// M[1],0.13E1)-dkf_dT[1]/Rtot*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho*c[1]/M[1],
-// 0.25)+dkb_dT[1]/Rtot*c[2]/M[2])*u/(Cp/Rtot-1.0);
-//       dSwdU(NUM_VAR+4,2) += -M[4]*(dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/
-// M[1],0.13E1)-dkf_dT[1]/Rtot*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho*c[1]/M[1],
-// 0.25)+dkb_dT[1]/Rtot*c[2]/M[2])*v/(Cp/Rtot-1.0);
-//       dSwdU(NUM_VAR+4,3) += M[4]*(dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M
-// [1],0.13E1)-dkf_dT[1]/Rtot*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho*c[1]/M[1],0.25
-// )+dkb_dT[1]/Rtot*c[2]/M[2])/(Cp/Rtot-1.0);
-//       dSwdU(NUM_VAR+4,NUM_VAR) += -M[4]*(dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/
-// M[1],0.13E1)-dkf_dT[1]/Rtot*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho*c[1]/M[1],
-// 0.25)+dkb_dT[1]/Rtot*c[2]/M[2])*(h[0]-Cp*T*Rs[0]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)/(Cp/Rtot-1.0)+0.2
-// *M[4]*kf[0]/pow(rho*c_denom[0]/M[0],0.8)*pow(rho*c[1]/M[1],0.13E1)/M[0];
-   
-//       dSwdU(NUM_VAR+4,NUM_VAR+1) += -M[4]*(dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/
-// M[1],0.13E1)-dkf_dT[1]/Rtot*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho*c[1]/M[1],
-// 0.25)+dkb_dT[1]/Rtot*c[2]/M[2])*(h[1]-Cp*T*Rs[1]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)/(Cp/Rtot-1.0)+M
-// [4]*(0.13E1*kf[0]*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/M[1],0.3)*rho/M[1]
-// -0.25*kf[1]*rho*rho*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)/pow(rho*c_denom[1]/M[1],
-// 0.75)/M[1])/rho;
-//       dSwdU(NUM_VAR+4,NUM_VAR+2) += -M[4]*(dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/
-// M[1],0.13E1)-dkf_dT[1]/Rtot*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho*c[1]/M[1],
-// 0.25)+dkb_dT[1]/Rtot*c[2]/M[2])*(h[2]-Cp*T*Rs[2]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)/(Cp/Rtot-1.0)+M
-// [4]*kb[1]/M[2];
-//       dSwdU(NUM_VAR+4,NUM_VAR+3) += -M[4]*(dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/
-// M[1],0.13E1)-dkf_dT[1]/Rtot*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho*c[1]/M[1],
-// 0.25)+dkb_dT[1]/Rtot*c[2]/M[2])*(h[3]-Cp*T*Rs[3]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)/(Cp/Rtot-1.0)-0.5
-// *kf[1]*rho*c[4]/pow(rho*c_denom[3]/M[3],0.5)*pow(rho*c[1]/M[1],0.25)/M[3];
-      
-//       dSwdU(NUM_VAR+4,NUM_VAR+4) += -M[4]*(dkf_dT[0]/rho/Rtot*pow(rho*c[0]/M[0],0.2)*pow(rho*c[1]/
-// M[1],0.13E1)-dkf_dT[1]/Rtot*c[4]/M[4]*pow(rho*c[3]/M[3],0.5)*pow(rho*c[1]/M[1],
-// 0.25)+dkb_dT[1]/Rtot*c[2]/M[2])*(h[4]-Cp*T*Rs[4]/Rtot-h[5]+Cp*T*Rs[5]/Rtot)/(Cp/Rtot-1.0)-kf[1]
-// *pow(rho*c[3]/M[3],0.5)*pow(rho*c[1]/M[1],0.25);
-
-
-//     /******************** MODIFIED ****************************************/   
-//     //with kf(T), kb(T)
-
-//     kf[0] = reactions[0].kf(Temp);
-//     kb[0] = ZERO;
-//     kf[1] = reactions[1].kf(Temp);  
-//     kb[1] = reactions[1].kb(Temp);
-    
-//     double dkf_dT[2], dkb_dT[2];
-
-//     dkf_dT[0] = reactions[0].dkf_dT(Temp);
-//     dkb_dT[0] = ZERO;
-//     dkf_dT[1] = reactions[1].dkf_dT(Temp);
-//     dkb_dT[1] = reactions[1].dkb_dT(Temp);
-
-//     rho = W.rho;
-//     double T = Temp;
-//     double Cp = W.Cp();      
-//     double u = W.v.x; 
-//     double v = W.v.y; 
-//     double p = W.p;      
-//     double Rtot = W.Rtot();   
-//     double htot = W.h();      
-//     double h[6],R[6],CC[6],CC_denom[6];
-//     double CP_Rtotm1 = Cp/T-ONE;
-//     double MapleGenVar1, MapleGenVar2, MapleGenVar3;
-
-//     double UNITS = 1e6;
-
-//     for(int i=0; i<num_species; i++){    
-//       M[i] = W.specdata[i].Mol_mass();
-//       h[i] = (W.specdata[i].Enthalpy(Temp)+W.specdata[i].Heatofform());  
-//       R[i] = (W.specdata[i].Rs()); 
-//       CC[i] = rho*c[i]/M[i]/UNITS;              //W.SpecCon(i)/UNITS;      
-//       CC_denom[i] = rho*c_denom[i]/M[i]/UNITS;
-//     }    
-
-// MOD WITH UNITS, CC, CC_denom
-//       dSwdU(NUM_VAR,0) += M[0]*dkf_dT[0]*T/rho*pow(CC[0],0.2)*pow(CC[1],0.13E1)-M[0]*dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)*(u*u+v*v-2.0*htot+2.0*Cp*p/rho/Rtot+2.0*c[0]*(h[0]-Cp*T*R[0]/Rtot-h[5]+Cp*T*R[5]/Rtot)+2.0*c[1]*(h[1]-Cp*T*R[1]/Rtot-h[5]+Cp*T*R[5]/Rtot)+2.0*c[2]*(h[2]-Cp*T*R[2]/Rtot-h[5]+Cp*T*R[5]/Rtot)+2.0*c[3]*(h[3]-Cp*T*R[3]/Rtot-h[5]+Cp*T*R[5]/Rtot)+2.0*c[4]*(h[4]-Cp*T*R[4]/Rtot-h[5]+Cp*T*R[5]/Rtot))/CP_Rtotm1/2.0;
-
-//       dSwdU(NUM_VAR,1) += M[0]*dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)*u/CP_Rtotm1;
-//       dSwdU(NUM_VAR,2) += M[0]*dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)*v/CP_Rtotm1;
-//       dSwdU(NUM_VAR,3) += -M[0]*dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)/CP_Rtotm1;
-//       dSwdU(NUM_VAR,NUM_VAR) += M[0]*dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)*(h[0]-Cp*T*R[0]/Rtot-h[5]+Cp*T*R[5]/Rtot)/CP_Rtotm1-0.2*kf[0]/pow(CC_denom[0],0.8)*pow(CC[1],0.13E1)/UNITS;
-
-//       dSwdU(NUM_VAR,NUM_VAR+1) += M[0]*dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)*(h[1]-Cp*T*R[1]/Rtot-h[5]+Cp*T*R[5]/Rtot)/CP_Rtotm1-0.13E1*M[0]*kf[0]*pow(CC[0],0.2)*pow(CC[1],0.3)/M[1]/UNITS;
-
-//       dSwdU(NUM_VAR,NUM_VAR+2) += M[0]*dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)*(h[2]-Cp*T*R[2]/Rtot-h[5]+Cp*T*R[5]/Rtot)/CP_Rtotm1;     
-//       dSwdU(NUM_VAR,NUM_VAR+3) += M[0]*dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)*(h[3]-Cp*T*R[3]/Rtot-h[5]+Cp*T*R[5]/Rtot)/CP_Rtotm1;
-//       dSwdU(NUM_VAR,NUM_VAR+4) += M[0]*dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)*(h[4]-Cp*T*R[4]/Rtot-h[5]+Cp*T*R[5]/Rtot)/CP_Rtotm1;
-
-//       MapleGenVar2 = M[1]*(0.15E1*dkf_dT[0]*T/rho*pow(CC[0],0.2)*pow(CC[1],0.13E1)-0.3*kf[0]/pow(CC_denom[0],0.8)*pow(CC[1],0.13E1)*c[0]/M[0]/UNITS-0.195E1*kf[0]*pow(CC[0],0.2)*pow(CC[1],0.3)*c[1]/M[1]/UNITS+0.5*dkf_dT[1]*T*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)-0.5*kf[1]*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)-0.25*kf[1]*rho*c[4]/M[4]/(UNITS*UNITS)/pow(CC_denom[3],0.5)*pow(CC[1],0.25)*c[3]/M[3]-0.125*kf[1]*rho*c[4]/M[4]/(UNITS*UNITS)*pow(CC[3],0.5)/pow(CC_denom[1],0.75)*c[1]/M[1]-0.5*dkb_dT[1]*T*c[2]/M[2]/UNITS+0.5*kb[1]*c[2]/M[2]/UNITS);     
-
-//       MapleGenVar3 = M[1]*(-0.15E1*dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)-0.5*dkf_dT[1]/Rtot*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)+0.5*dkb_dT[1]/Rtot*c[2]/M[2]/UNITS)*(u*u+v*v-2.0*htot+2.0*Cp*p/rho/Rtot+2.0*c[0]*(h[0]-Cp*T*R[0]/Rtot-h[5]+Cp*T*R[5]/Rtot)+2.0*c[1]*(h[1]-Cp*T*R[1]/Rtot-h[5]+Cp*T*R[5]/Rtot)+2.0*c[2]*(h[2]-Cp*T*R[2]/Rtot-h[5]+Cp*T*R[5]/Rtot)+2.0*c[3]*(h[3]-Cp*T*R[3]/Rtot-h[5]+Cp*T*R[5]/Rtot)+2.0*c[4]*(h[4]-Cp*T*R[4]/Rtot-h[5]+Cp*T*R[5]/Rtot))/CP_Rtotm1/2.0+0.3*M[1]*kf[0]/pow(CC_denom[0],0.8)*pow(CC[1],0.13E1)/M[0]/UNITS*c[0];
-
-//       MapleGenVar1 = MapleGenVar2+MapleGenVar3;
-
-//       dSwdU(NUM_VAR+1,0) += MapleGenVar1-M[1]*(-0.195E1*kf[0]*pow(CC[0],0.2)*pow(CC[1],0.3)*rho/M[1]/UNITS-0.125*kf[1]*rho*rho*c[4]/M[4]/(UNITS*UNITS)*pow(CC[3],0.5)/pow(CC_denom[1],0.75)/M[1])*c[1]/rho-0.5*M[1]*kb[1]/M[2]/UNITS*c[2]+0.25*M[1]*kf[1]*rho*c[4]/M[4]/(UNITS*UNITS)/pow(CC_denom[3],0.5)*pow(CC[1],0.25)/M[3]*c[3]+0.5*M[1]*kf[1]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)*c[4];
-
-//       dSwdU(NUM_VAR+1,1) += -M[1]*(-0.15E1*dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)-0.5*dkf_dT[1]/Rtot*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)+0.5*dkb_dT[1]/Rtot*c[2]/M[2]/UNITS)*u/CP_Rtotm1;
-
-//       dSwdU(NUM_VAR+1,2) += -M[1]*(-0.15E1*dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)-0.5*dkf_dT[1]/Rtot*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)+0.5*dkb_dT[1]/Rtot*c[2]/M[2]/UNITS)*v/CP_Rtotm1;
-
-//       dSwdU(NUM_VAR+1,3) += M[1]*(-0.15E1*dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)-0.5*dkf_dT[1]/Rtot*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)+0.5*dkb_dT[1]/Rtot*c[2]/M[2]/UNITS)/CP_Rtotm1;
-
-//       dSwdU(NUM_VAR+1,NUM_VAR) += -M[1]*(-0.15E1*dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)-0.5*dkf_dT[1]/Rtot*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)+0.5*dkb_dT[1]/Rtot*c[2]/M[2]/UNITS)*(h[0]-Cp*T*R[0]/Rtot-h[5]+Cp*T*R[5]/Rtot)/CP_Rtotm1-0.3*M[1]*kf[0]/pow(CC_denom[0],0.8)*pow(CC[1],0.13E1)/M[0]/UNITS;
-
-//       dSwdU(NUM_VAR+1,NUM_VAR+1) += -M[1]*(-0.15E1*dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)-0.5*dkf_dT[1]/Rtot*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)+0.5*dkb_dT[1]/Rtot*c[2]/M[2]/UNITS)*(h[1]-Cp*T*R[1]/Rtot-h[5]+Cp*T*R[5]/Rtot)/CP_Rtotm1+M[1]*(-0.195E1*kf[0]*pow(CC[0],0.2)*pow(CC[1],0.3)*rho/M[1]/UNITS-0.125*kf[1]*rho*rho*c[4]/M[4]/(UNITS*UNITS)*pow(CC[3],0.5)/pow(CC_denom[1],0.75)/M[1])/rho;
-
-//       dSwdU(NUM_VAR+1,NUM_VAR+2) += -M[1]*(-0.15E1*dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)-0.5*dkf_dT[1]/Rtot*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)+0.5*dkb_dT[1]/Rtot*c[2]/M[2]/UNITS)*(h[2]-Cp*T*R[2]/Rtot-h[5]+Cp*T*R[5]/Rtot)/CP_Rtotm1+0.5*M[1]*kb[1]/M[2]/UNITS;
-
-//       dSwdU(NUM_VAR+1,NUM_VAR+3) += -M[1]*(-0.15E1*dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)-0.5*dkf_dT[1]/Rtot*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)+0.5*dkb_dT[1]/Rtot*c[2]/M[2]/UNITS)*(h[3]-Cp*T*R[3]/Rtot-h[5]+Cp*T*R[5]/Rtot)/CP_Rtotm1-0.25*M[1]*kf[1]*rho*c[4]/M[4]/(UNITS*UNITS)/pow(CC_denom[3],0.5)*pow(CC[1],0.25)/M[3];
-
-//       dSwdU(NUM_VAR+1, NUM_VAR+4) += -M[1]*(-0.15E1*dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)-0.5*dkf_dT[1]/Rtot*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)+0.5*dkb_dT[1]/Rtot*c[2]/M[2]/UNITS)*(h[4]-Cp*T*R[4]/Rtot-h[5]+Cp*T*R[5]/Rtot)/CP_Rtotm1-0.5*M[1]*kf[1]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25);
-
-//       MapleGenVar2 = M[2]*(-dkf_dT[1]*T*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)+kf[1]*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)+0.5*kf[1]*rho*c[4]/M[4]/(UNITS*UNITS)/pow(CC_denom[3],0.5)*pow(CC[1],0.25)*c[3]/M[3]+0.25*kf[1]*rho*c[4]/M[4]/(UNITS*UNITS)*pow(CC[3],0.5)/pow(CC_denom[1],0.75)*c[1]/M[1]+dkb_dT[1]*T*c[2]/M[2]/UNITS-kb[1]*c[2]/M[2]/UNITS);
-
-//       MapleGenVar3 = M[2]*(dkf_dT[1]/Rtot*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)-dkb_dT[1]/Rtot*c[2]/M[2]/UNITS)*(u*u+v*v-2.0*htot+2.0*Cp*p/rho/Rtot+2.0*c[0]*(h[0]-Cp*T*R[0]/Rtot-h[5]+Cp*T*R[5]/Rtot)+2.0*c[1]*(h[1]-Cp*T*R[1]/Rtot-h[5]+Cp*T*R[5]/Rtot)+2.0*c[2]*(h[2]-Cp*T*R[2]/Rtot-h[5]+Cp*T*R[5]/Rtot)+2.0*c[3]*(h[3]-Cp*T*R[3]/Rtot-h[5]+Cp*T*R[5]/Rtot)+2.0*c[4]*(h[4]-Cp*T*R[4]/Rtot-h[5]+Cp*T*R[5]/Rtot))/CP_Rtotm1/2.0-0.25*M[2]*kf[1]*rho*c[4]/M[4]/(UNITS*UNITS)*pow(CC[3],0.5)/pow(CC_denom[1],0.75)/M[1]*c[1];
-
-//       MapleGenVar1 = MapleGenVar2+MapleGenVar3;
-
-//       dSwdU(NUM_VAR+2,0) += MapleGenVar1+kb[1]/UNITS*c[2]-0.5*M[2]*kf[1]*rho*c[4]/M[4]/(UNITS*UNITS)/pow(CC_denom[3],0.5)*pow(CC[1],0.25)/M[3]*c[3]-M[2]*kf[1]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)*c[4];
-
-//       dSwdU(NUM_VAR+2,1) += -M[2]*(dkf_dT[1]/Rtot*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)-dkb_dT[1]/Rtot*c[2]/M[2]/UNITS)*u/CP_Rtotm1;
-//       dSwdU(NUM_VAR+2,2) += -M[2]*(dkf_dT[1]/Rtot*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)-dkb_dT[1]/Rtot*c[2]/M[2]/UNITS)*v/CP_Rtotm1;
-//       dSwdU(NUM_VAR+2,3) += M[2]*(dkf_dT[1]/Rtot*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)-dkb_dT[1]/Rtot*c[2]/M[2]/UNITS)/CP_Rtotm1;
-
-//       dSwdU(NUM_VAR+2,NUM_VAR) += -M[2]*(dkf_dT[1]/Rtot*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)-dkb_dT[1]/Rtot*c[2]/M[2]/UNITS)*(h[0]-Cp*T*R[0]/Rtot-h[5]+Cp*T*R[5]/Rtot)/CP_Rtotm1;
-
-//       dSwdU(NUM_VAR+2,NUM_VAR+1) += -M[2]*(dkf_dT[1]/Rtot*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)-dkb_dT[1]/Rtot*c[2]/M[2]/UNITS)*(h[1]-Cp*T*R[1]/Rtot-h[5]+Cp*T*R[5]/Rtot)/CP_Rtotm1+0.25*M[2]*kf[1]*rho*c[4]/M[4]/(UNITS*UNITS)*pow(CC[3],0.5)/pow(CC_denom[1],0.75)/M[1];
-
-//       dSwdU(NUM_VAR+2,NUM_VAR+2) += -M[2]*(dkf_dT[1]/Rtot*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)-dkb_dT[1]/Rtot*c[2]/M[2]/UNITS)*(h[2]-Cp*T*R[2]/Rtot-h[5]+Cp*T*R[5]/Rtot)/CP_Rtotm1-kb[1]/UNITS;
-
-//       dSwdU(NUM_VAR+2,NUM_VAR+3) += -M[2]*(dkf_dT[1]/Rtot*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)-dkb_dT[1]/Rtot*c[2]/M[2]/UNITS)*(h[3]-Cp*T*R[3]/Rtot-h[5]+Cp*T*R[5]/Rtot)/CP_Rtotm1+0.5*M[2]*kf[1]*rho*c[4]/M[4]/(UNITS*UNITS)/pow(CC_denom[3],0.5)*pow(CC[1],0.25)/M[3];
-
-//       dSwdU(NUM_VAR+2,NUM_VAR+4) += -M[2]*(dkf_dT[1]/Rtot*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)-dkb_dT[1]/Rtot*c[2]/M[2]/UNITS)*(h[4]-Cp*T*R[4]/Rtot-h[5]+Cp*T*R[5]/Rtot)/CP_Rtotm1+M[2]*kf[1]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25);
-
-//       dSwdU(NUM_VAR+3,0) += -0.2E1*M[3]*dkf_dT[0]*T/rho*pow(CC[0],0.2)*pow(CC[1],0.13E1
-// )+0.1E1*M[3]*dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)*(u*u+v*v-2.0*htot+2.0*Cp*p/rho/Rtot+2.0*c[0]*(h[0]-Cp*T*R[0]/Rtot-h[5]+Cp*T*R[5]/Rtot)+2.0*c[1]*(h[1]-Cp*T*R[1]/Rtot-h[5]+Cp*T*R[5]/Rtot)+2.0*c[2]*(h[2]-Cp*T*R[2]/Rtot-h[5]+Cp*T*R[5]/Rtot)+2.0*c[3]*(h[3]-Cp*T*R[3]/Rtot-h[5]+Cp*T*R[5]/Rtot)+2.0*c[4]*(h[4]-Cp*T*R[4]/Rtot-h[5]+Cp*T*R[5]/Rtot))/CP_Rtotm1;
-
-//       dSwdU(NUM_VAR+3,1) += -0.2E1*M[3]*dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)*u/CP_Rtotm1;
-//       dSwdU(NUM_VAR+3,2) += -0.2E1*M[3]*dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)*v/CP_Rtotm1;
-//       dSwdU(NUM_VAR+3,3) += 0.2E1*M[3]*dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)/CP_Rtotm1;
-
-//       dSwdU(NUM_VAR+3,NUM_VAR) += -0.2E1*M[3]*dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)*(h[0]-Cp*T*R[0]/Rtot-h[5]+Cp*T*R[5]/Rtot)/CP_Rtotm1+0.4*M[3]*kf[0]/pow(CC_denom[0],0.8)*pow(CC[1],0.13E1)/M[0]/UNITS;
-
-//       dSwdU(NUM_VAR+3,NUM_VAR+1) += -0.2E1*M[3]*dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)*(h[1]-Cp*T*R[1]/Rtot-h[5]+Cp*T*R[5]/Rtot)/CP_Rtotm1+0.26E1*M[3]*kf[0]*pow(CC[0],0.2)*pow(CC[1],0.3)/M[1]/UNITS;
-
-//       dSwdU(NUM_VAR+3,NUM_VAR+2) += -0.2E1*M[3]*dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)*(h[2]-Cp*T*R[2]/Rtot-h[5]+Cp*T*R[5]/Rtot)/CP_Rtotm1;
-//       dSwdU(NUM_VAR+3,NUM_VAR+3) += -0.2E1*M[3]*dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)*(h[3]-Cp*T*R[3]/Rtot-h[5]+Cp*T*R[5]/Rtot)/CP_Rtotm1;
-//       dSwdU(NUM_VAR+3,NUM_VAR+4) += -0.2E1*M[3]*dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)*(h[4]-Cp*T*R[4]/Rtot-h[5]+Cp*T*R[5]/Rtot)/CP_Rtotm1;
-
-//       MapleGenVar2 = M[4]*(-dkf_dT[0]*T/rho*pow(CC[0],0.2)*pow(CC[1],0.13E1)+0.2*kf[0]/pow(CC_denom[0],0.8)*pow(CC[1],0.13E1)*c[0]/M[0]/UNITS+0.13E1*kf[0]*pow(CC[0],0.2)*pow(CC[1],0.3)*c[1]/M[1]/UNITS+dkf_dT[1]*T*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)-kf[1]*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)-0.5*kf[1]*rho*c[4]/M[4]/(UNITS*UNITS)/pow(CC_denom[3],0.5)*pow(CC[1],0.25)*c[3]/M[3]-0.25*kf[1]*rho*c[4]/M[4]/(UNITS*UNITS)*pow(CC[3],0.5)/pow(CC_denom[1],0.75)*c[1]/M[1]-dkb_dT[1]*T*c[2]/M[2]/UNITS+kb[1]*c[2]/M[2]/UNITS);
-
-//       MapleGenVar3 = M[4]*(dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)-dkf_dT[1]/Rtot*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)+dkb_dT[1]/Rtot*c[2]/M[2]/UNITS)*(u*u+v*v-2.0*htot+2.0*Cp*p/rho/Rtot+2.0*c[0]*(h[0]-Cp*T*R[0]/Rtot-h[5]+Cp*T*R[5]/Rtot)+2.0*c[1]*(h[1]-Cp*T*R[1]/Rtot-h[5]+Cp*T*R[5]/Rtot)+2.0*c[2]*(h[2]-Cp*T*R[2]/Rtot-h[5]+Cp*T*R[5]/Rtot)+2.0*c[3]*(h[3]-Cp*T*R[3]/Rtot-h[5]+Cp*T*R[5]/Rtot)+2.0*c[4]*(h[4]-Cp*T*R[4]/Rtot-h[5]+Cp*T*R[5]/Rtot))/CP_Rtotm1/2.0-0.2*M[4]*kf[0]/pow(CC_denom[0],0.8)*pow(CC[1],0.13E1)/M[0]/UNITS*c[0];
-
-//       MapleGenVar1 = MapleGenVar2+MapleGenVar3;
-//       dSwdU(NUM_VAR+4,0) += MapleGenVar1-M[4]*(0.13E1*kf[0]*pow(CC[0],0.2)*pow(CC[1],0.3)*rho/M[1]/UNITS-0.25*kf[1]*rho*rho*c[4]/M[4]/(UNITS*UNITS)*pow(CC[3],0.5)/pow(CC_denom[1],0.75)/M[1])*c[1]/rho-M[4]*kb[1]/M[2]/UNITS*c[2]+0.5*kf[1]*rho*c[4]/(UNITS*UNITS)/pow(CC_denom[3],0.5)*pow(CC[1],0.25)/M[3]*c[3]+kf[1]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)*c[4];
-
-//       dSwdU(NUM_VAR+4,1) += -M[4]*(dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)-dkf_dT[1]/Rtot*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)+dkb_dT[1]/Rtot*c[2]/M[2]/UNITS)*u/CP_Rtotm1;
-
-//       dSwdU(NUM_VAR+4,2) += -M[4]*(dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)-dkf_dT[1]/Rtot*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)+dkb_dT[1]/Rtot*c[2]/M[2]/UNITS)*v/CP_Rtotm1;
-
-//       dSwdU(NUM_VAR+4,3) += M[4]*(dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)-dkf_dT[1]/Rtot*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)+dkb_dT[1]/Rtot*c[2]/M[2]/UNITS)/CP_Rtotm1;
-
-//       dSwdU(NUM_VAR+4,NUM_VAR) += -M[4]*(dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)-dkf_dT[1]/Rtot*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)+dkb_dT[1]/Rtot*c[2]/M[2]/UNITS)*(h[0]-Cp*T*R[0]/Rtot-h[5]+Cp*T*R[5]/Rtot)/CP_Rtotm1+0.2*M[4]*kf[0]/pow(CC_denom[0],0.8)*pow(CC[1],0.13E1)/M[0]/UNITS;
-
-//       dSwdU(NUM_VAR+4,NUM_VAR+1) += -M[4]*(dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)-dkf_dT[1]/Rtot*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)+dkb_dT[1]/Rtot*c[2]/M[2]/UNITS)*(h[1]-Cp*T*R[1]/Rtot-h[5]+Cp*T*R[5]/Rtot)/CP_Rtotm1+M[4]*(0.13E1*kf[0]*pow(CC[0],0.2)*pow(CC[1],0.3)*rho/M[1]/UNITS-0.25*kf[1]*rho*rho*c[4]/M[4]/(UNITS*UNITS)*pow(CC[3],0.5)/pow(CC_denom[1],0.75)/M[1])/rho;
-
-//       dSwdU(NUM_VAR+4,NUM_VAR+2) += -M[4]*(dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)-dkf_dT[1]/Rtot*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)+dkb_dT[1]/Rtot*c[2]/M[2]/UNITS)*(h[2]-Cp*T*R[2]/Rtot-h[5]+Cp*T*R[5]/Rtot)/CP_Rtotm1+M[4]*kb[1]/M[2]/UNITS;
-
-//       dSwdU(NUM_VAR+4,NUM_VAR+3) += -M[4]*(dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)-dkf_dT[1]/Rtot*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)+dkb_dT[1]/Rtot*c[2]/M[2]/UNITS)*(h[3]-Cp*T*R[3]/Rtot-h[5]+Cp*T*R[5]/Rtot)/CP_Rtotm1-0.5*kf[1]*rho*c[4]/(UNITS*UNITS)/pow(CC_denom[3],0.5)*pow(CC[1],0.25)/M[3];
-
-//       dSwdU(NUM_VAR+4,NUM_VAR+4) += -M[4]*(dkf_dT[0]/rho/Rtot*pow(CC[0],0.2)*pow(CC[1],0.13E1)-dkf_dT[1]/Rtot*c[4]/M[4]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25)+dkb_dT[1]/Rtot*c[2]/M[2]/UNITS)*(h[4]-Cp*T*R[4]/Rtot-h[5]+Cp*T*R[5]/Rtot)/CP_Rtotm1-kf[1]/UNITS*pow(CC[3],0.5)*pow(CC[1],0.25);
-
 
 /************************************************************************
   Calculates the Jacobian of the Chemical Source terms with respect

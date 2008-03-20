@@ -210,7 +210,10 @@ ifeq ($(CANTERA_VERSION),NoCANTERA)
 endif
 ifeq ($(CANTERA_VERSION),V70)
   CANTERA_CPP_FLAGS       =  -D_CANTERA_VERSION -D_CANTERA_V70 -I$(CANTERA_INC_DIR)
-  CANTERA_LD_FLAGS        =  -L$(CANTERA_LIB_DIR) -luser -loneD -lzeroD -ltransport -lcantera -lcvode -lctlapack -lctblas -lctmath -ltpx -lctcxx
+  CANTERA_LD_FLAGS        =  -L$(CANTERA_LIB_DIR) -luser -loneD -lzeroD -lequil -lkinetics \
+                             -ltransport -lthermo -lctnumerics -lcvode -lctbase -lctlapack \
+                             -lctblas -lctmath -ltpx -lctspectra -lctf2c -lconverters \
+                             -lctcxx -lctf2c
 endif
 
 #
