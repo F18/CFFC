@@ -252,10 +252,6 @@ public:
   const short int & NghostHO(void) const { return Nghost_HO; }
   void ResetMonotonicityFlag(void);
   void InitializeMonotonicityVariables(const int & ii, const int & jj);
-
-  void InitializeVariable(int ReconstructionOrder, int ReconstructionMethod);
-  template<typename InputParametersType>
-  void InitializeVariable(const InputParametersType & IP);
   //@}
 
   //! @name Evaluate the polynomial interpolant.
@@ -369,9 +365,6 @@ private:
 
   GeometryType* Geom;          //!< Pointer to the associated geometry which is a 2D mesh block
 
-  //! Set Geometry_Ptr to point to the same geometry as the current Geom pointer
-  void set_geometry_pointer(GeometryType* & Geometry_Ptr) const { Geometry_Ptr = Geom; }
-
   //! Get i-direction index of first interior cell
   const int & ICl_Grid(void) const {return Geom->ICl; }
   //! Get i-direction index of last interior cell
@@ -427,59 +420,115 @@ HighOrder2D<SOLN_STATE>::HighOrder2D(int ReconstructionOrder,
   CENO_LHS(NULL), CENO_Geometric_Weights(NULL), 
   Geom(&Block), _si_calculation(CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS)
 {
-  // Use the grid to get the data regarding the number of block cells
+  // Use the grid to get the number of interior block cells and the number of available ghost cells
+  allocate(ICu_Grid()-ICl_Grid()+1,
+	   JCu_Grid()-JCl_Grid()+1,
+	   Nghost_Grid(),
+	   _pseudo_inverse_allocation_,
+	   ReconstructionOrder);
 }
 
 //! Copy constructor 
 template<class SOLN_STATE> inline
-HighOrder2D<SOLN_STATE>::HighOrder2D(const HighOrder2D<SOLN_STATE> & rhs): Geom(NULL)
+HighOrder2D<SOLN_STATE>::HighOrder2D(const HighOrder2D<SOLN_STATE> & rhs)
+  : Ni(0), Nj(0), Ng(0),
+    ICl(0), ICu(0), JCl(0), JCu(0),
+    OrderOfReconstruction(-1), Nghost_HO(0),
+    _allocated_block(false), _allocated_cells(false), _allocated_psinv(false),
+    TD(NULL), SI(NULL), LimitedCell(NULL),
+    rings(0), _calculated_psinv(false),
+    CENO_LHS(NULL), CENO_Geometric_Weights(NULL),
+    Geom(rhs.Geom), _si_calculation(rhs._si_calculation)
 {
 
-  throw runtime_error("HighOrder2D() copy constructor not implemented yet!");
+  int i,j;
 
-#if 0				// This must be rewritten
-  TD = rhs.TaylorDeriv();
-  SI = rhs.CellSmoothnessIndicator();
-  LimitedCell = rhs.CellInadequateFit();
-  rings = rhs.Rings();
+  // check if the rhs has block memory allocated
+  if (rhs._allocated_block){
 
-  if (CENO_Execution_Mode::CENO_SPEED_EFFICIENT && (!rhs.GeomWeights().null()) ){
-    CENO_LHS = rhs.LHS();
-    CENO_Geometric_Weights = rhs.GeomWeights();
-    _calculated_psinv = ON;
-  }
+    // allocate memory for the new container
+    allocate(rhs.Ni - 2*rhs.Ng,
+	     rhs.Nj - 2*rhs.Ng,
+	     rhs.Ng,
+	     rhs._allocated_psinv,
+	     rhs.OrderOfReconstruction);
+    
+    // check if the rhs has cell memory allocated
+    if (rhs._allocated_cells){
 
-  // point to the same geometry as rhs.Geom
-  rhs.set_geometry_pointer(Geom);
-#endif
+      // copy the cell containers
+      for (j  = JCl-Nghost_HO ; j <= JCu+Nghost_HO ; ++j ) {
+	for ( i = ICl-Nghost_HO ; i <= ICu+Nghost_HO ; ++i) {
+	  TD[i][j] = rhs.TD[i][j];
+	  SI[i][j] = rhs.SI[i][j];
+	  LimitedCell[i][j] = LimitedCell[i][j];
+
+	  // copy the pseudo-inverse data
+	  if (rhs._allocated_psinv){
+	    CENO_LHS[i][j] = rhs.CENO_LHS[i][j];
+	    CENO_Geometric_Weights[i][j] = rhs.CENO_Geometric_Weights[i][j];
+	  } // endif (rhs._allocated_psinv)
+	}//endfor
+      }//endfor
+
+    } else {
+      deallocate_CellMemory();
+    } //endif (rhs._allocated_cells)
+
+  }//endif (rhs._allocated_block)
 }
 
 //! Assignment operator
 template<class SOLN_STATE> inline
 HighOrder2D<SOLN_STATE> & HighOrder2D<SOLN_STATE>::operator=(const HighOrder2D<SOLN_STATE> & rhs){
 
-  throw runtime_error("HighOrder2D() assignment operator not implemented yet!");
-
-#if 0				// This must be rewritten
+  int i,j;
 
   // Handle self-assignment:
   if (this == & rhs) return *this;
 
-  TD = rhs.TaylorDeriv();
-  SI = rhs.CellSmoothnessIndicator();
-  LimitedCell = rhs.CellInadequateFit();
-  rings = rhs.Rings();
+  // check if the rhs has block memory allocated
+  if (rhs._allocated_block){
 
-  if ( rhs.IsPseudoInverseAllocated() ){
-    CENO_LHS = rhs.LHS();
-    CENO_Geometric_Weights = rhs.GeomWeights();
-    _calculated_psinv = ON;
-    _allocated_psinv = ON;
-  }
+    // allocate memory for the new container
+    allocate(rhs.Ni - 2*rhs.Ng,
+	     rhs.Nj - 2*rhs.Ng,
+	     rhs.Ng,
+	     rhs._allocated_psinv,
+	     rhs.OrderOfReconstruction);
 
-  // point to the same geometry as rhs.Geom
-  rhs.set_geometry_pointer(Geom);
-#endif
+    // make sure that the two objects have the same execution mode
+    if (_si_calculation != rhs._si_calculation){
+      deallocate();
+      throw runtime_error("HighOrder2D<SOLN_STATE>::operator=() ERROR! The object cannot be assigned due to incompatibilities between the CENO_Execution_Mode class settings and the object settings");
+    }
+    
+    // check if the rhs has cell memory allocated
+    if (rhs._allocated_cells){
+
+      // copy the cell containers
+      for (j  = JCl-Nghost_HO ; j <= JCu+Nghost_HO ; ++j ) {
+	for ( i = ICl-Nghost_HO ; i <= ICu+Nghost_HO ; ++i) {
+	  TD[i][j] = rhs.TD[i][j];
+	  SI[i][j] = rhs.SI[i][j];
+	  LimitedCell[i][j] = LimitedCell[i][j];
+
+	  // copy the pseudo-inverse data
+	  if (rhs._allocated_psinv){
+	    CENO_LHS[i][j] = rhs.CENO_LHS[i][j];
+	    CENO_Geometric_Weights[i][j] = rhs.CENO_Geometric_Weights[i][j];
+	  } // endif (rhs._allocated_psinv)
+	}//endfor
+      }//endfor
+
+    } else {
+      deallocate_CellMemory();
+    } //endif (rhs._allocated_cells)
+
+  }//endif (rhs._allocated_block)
+
+  // set geometry pointer to the same mesh
+  Geom = rhs.Geom;
 
   return *this;
 }
@@ -934,65 +983,6 @@ void HighOrder2D<SOLN_STATE>::InitializeMonotonicityVariables(const int & ii, co
 }
 
 #if 0
-// InitializeVariable()
-/*! 
- * Allocate memory and initialize the high-order variables
- * based on the ReconstructionOrder and the ReconstructionMethod.
- */
-template<class SOLN_STATE>
-void HighOrder2D<SOLN_STATE>::InitializeVariable(int ReconstructionOrder, int ReconstructionMethod){
-  const int Reconstruction_Order(ReconstructionOrder);
-  const int Reconstruction_Method(ReconstructionMethod);
-
-  // Set specific variables to each reconstruction method
-  switch(Reconstruction_Method){
-  case RECONSTRUCTION_CENO:
-    // Generate TaylorDerivatives container for the required reconstruction order
-    TaylorDeriv().GenerateContainer(Reconstruction_Order);
-    
-    // Generate Geometric Coefficients container for the required reconstruction order
-    //    CellGeomCoeff().GenerateContainer(Reconstruction_Order);
-    
-    // Set the number of rings
-    SetRings();
-    
-    // Allocate memory for the pseudo-inverse and the vector of geometric weights
-    if ( CENO_Execution_Mode::CENO_SPEED_EFFICIENT ){
-      LHS().newsize(getStencilSize() - 1, NumberOfTaylorDerivatives() - 1);
-      GeomWeights().newsize(getStencilSize() );
-    }
-    break;
-
-  default:
-    // Lower-order schemes
-    deallocate();
-
-    // Set the number of rings
-    SetRings();
-  }
-}
-
-// InitializeVariable()
-/*! 
- * Initialize the high-order variables with the parameters provided by
- * an input parameters object.
- */
-template<class SOLN_STATE>
-template<typename InputParametersType> inline
-void HighOrder2D<SOLN_STATE>::InitializeVariable(const InputParametersType & IP){
-  InitializeVariable(IP.ReconstructionOrder(), IP.i_ReconstructionMethod);
-}
-
-//! Integrate over the cell
-template<class SOLN_STATE> template<typename FO, class ReturnType> inline
-ReturnType HighOrder2D<SOLN_STATE>::IntegrateOverTheCell(const FO FuncObj,
-							 const int & digits,
-							 ReturnType _dummy_param){
-  return AdaptiveGaussianQuadrature(FuncObj,
-				    CellCenter() - 0.5* CellDelta(),
-				    CellCenter() + 0.5* CellDelta(),
-				    _dummy_param,digits);
-}
 
 // ComputeUnlimitedSolutionReconstruction()
 /*! 
@@ -1280,6 +1270,17 @@ void HighOrder2D<SOLN_STATE>::ComputeSmoothnessIndicator(Soln_Block_Type *SolnBl
   }//endfor -> parameter
 }
 
+//! Integrate over the cell
+template<class SOLN_STATE> template<typename FO, class ReturnType> inline
+ReturnType HighOrder2D<SOLN_STATE>::IntegrateOverTheCell(const int &ii, const int &jj,
+							 const FO FuncObj,
+							 const int & digits,
+							 ReturnType _dummy_param){
+  return AdaptiveGaussianQuadrature(FuncObj,
+				    CellCenter() - 0.5* CellDelta(),
+				    CellCenter() + 0.5* CellDelta(),
+				    _dummy_param,digits);
+}
 
 /*! 
  * Compute the integral over the cell geometry of the error between the

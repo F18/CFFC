@@ -32,12 +32,12 @@ public:
 
   //! Compute the integral of a general function over the domain of cell (ii,jj)
   template<typename FO, class ReturnType>
-  ReturnType IntegrateFunctionOverCell(const int ii, const int jj, const FO FuncObj,
+  ReturnType IntegrateFunctionOverCell(const int &ii, const int &jj, const FO FuncObj,
 				       int digits, ReturnType _dummy_param) const;
   
   //! Compute the integral of a polynomial function over the domain of cell (ii,jj)
   template<typename FO, class ReturnType>
-  ReturnType IntegratePolynomialOverCell(const int ii, const int jj, const FO FuncObj,
+  ReturnType IntegratePolynomialOverCell(const int &ii, const int &jj, const FO FuncObj,
 					 ReturnType _dummy_param) const;
 
 private:
@@ -66,7 +66,7 @@ Grid2DQuadIntegration<Grid2DQuadType>::Grid2DQuadIntegration(Grid2DQuadType * As
  */
 template<class Grid2DQuadType>
 template<typename FO, class ReturnType> inline
-ReturnType Grid2DQuadIntegration<Grid2DQuadType>::IntegrateFunctionOverCell(const int ii, const int jj,
+ReturnType Grid2DQuadIntegration<Grid2DQuadType>::IntegrateFunctionOverCell(const int &ii, const int &jj,
 									    const FO FuncObj, int digits, 
 									    ReturnType _dummy_param) const {
   return QuadrilateralQuadrature(FuncObj,
@@ -91,7 +91,7 @@ ReturnType Grid2DQuadIntegration<Grid2DQuadType>::IntegrateFunctionOverCell(cons
  */
 template<class Grid2DQuadType>
 template<typename FO, class ReturnType> inline
-ReturnType Grid2DQuadIntegration<Grid2DQuadType>::IntegratePolynomialOverCell(const int ii, const int jj,
+ReturnType Grid2DQuadIntegration<Grid2DQuadType>::IntegratePolynomialOverCell(const int &ii, const int &jj,
 									      const FO FuncObj,
 									      ReturnType _dummy_param) const {
   return GaussLobattoQuadrilateralQuadrature(FuncObj,

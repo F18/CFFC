@@ -809,6 +809,172 @@ namespace tut
 
     Check_Input_Output_Operator(HO);
   }
+
+  /* Test 18:*/
+  template<>
+  template<>
+  void HighOrder2D_object::test<18>()
+  {
+    set_test_name("Copy constructor I");
+
+    HighOrder2D<double> HO;
+    int NCi, NCj, Nghost, RecOrder;
+    NCi = 2; NCj = 3; Nghost = 5; RecOrder = 4;
+    int i,j;
+    
+    // Set execution mode
+    CENO_Execution_Mode::CENO_RECONSTRUCTION_WITH_MESSAGE_PASSING = OFF;
+    CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS = ON;
+
+    // Generate a geometry
+    Grid2D_Quad_Block_HO MyGrid;
+
+    // Allocate memory for the high-order WITH pseudo-inverse
+    HO.allocate(NCi,NCj,Nghost,true,RecOrder);
+    HO.AssociateGeometry(MyGrid);
+
+    // Use copy constructor
+    HighOrder2D<double> HO_Copy(HO);
+
+    // check
+    ensure_equals("Geometry", HO_Copy.Geometry(), HO.Geometry());
+    ensure_equals("RecOrder", HO_Copy.RecOrder(), HO.RecOrder());
+    ensure_equals("Rings", HO_Copy.Rings(), HO.Rings());
+
+    for (i = 3; i<= 8; ++i) {
+      for (j = 3; j<= 9; ++j) {
+	ensure_equals("TD", HO_Copy.CellTaylorDeriv(i,j), HO.CellTaylorDeriv(i,j));
+	ensure("LimitedCell", HO_Copy.CellInadequateFit(i,j) == HO.CellInadequateFit(i,j));
+	ensure("SI", HO_Copy.CellSmoothnessIndicator(i,j) == HO.CellSmoothnessIndicator(i,j));
+	ensure_equals("LHS", HO_Copy.Cell_LHS_Inv(i,j), HO.Cell_LHS_Inv(i,j));
+	ensure("GeomWeights", HO_Copy.GeomWeights(i,j) == HO.GeomWeights(i,j));
+      }
+    }
+  }
+
+  /* Test 19:*/
+  template<>
+  template<>
+  void HighOrder2D_object::test<19>()
+  {
+    set_test_name("Copy constructor II");
+
+    HighOrder2D<double> HO;
+    int NCi, NCj, Nghost, RecOrder;
+    NCi = 2; NCj = 3; Nghost = 5; RecOrder = 4;
+    int i,j;
+    
+    // Set execution mode
+    CENO_Execution_Mode::CENO_RECONSTRUCTION_WITH_MESSAGE_PASSING = OFF;
+    CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS = OFF;
+
+    // Generate a geometry
+    Grid2D_Quad_Block_HO MyGrid;
+
+    // Allocate memory for the high-order WITH pseudo-inverse
+    HO.allocate(NCi,NCj,Nghost,false,RecOrder);
+    HO.AssociateGeometry(MyGrid);
+
+    // Use copy constructor
+    HighOrder2D<double> HO_Copy(HO);
+
+    // check
+    ensure_equals("Geometry", HO_Copy.Geometry(), HO.Geometry());
+    ensure_equals("RecOrder", HO_Copy.RecOrder(), HO.RecOrder());
+    ensure_equals("Rings", HO_Copy.Rings(), HO.Rings());
+
+    for (i = 2; i<= 9; ++i) {
+      for (j = 2; j<= 10; ++j) {
+	ensure_equals("TD", HO_Copy.CellTaylorDeriv(i,j), HO.CellTaylorDeriv(i,j));
+	ensure("LimitedCell", HO_Copy.CellInadequateFit(i,j) == HO.CellInadequateFit(i,j));
+	ensure("SI", HO_Copy.CellSmoothnessIndicator(i,j) == HO.CellSmoothnessIndicator(i,j));
+      }
+    }
+  }
+
+  /* Test 20:*/
+  template<>
+  template<>
+  void HighOrder2D_object::test<20>()
+  {
+    set_test_name("Assignment operator I");
+
+    HighOrder2D<double> HO;
+    int NCi, NCj, Nghost, RecOrder;
+    NCi = 2; NCj = 3; Nghost = 5; RecOrder = 4;
+    int i,j;
+    
+    // Set execution mode
+    CENO_Execution_Mode::CENO_RECONSTRUCTION_WITH_MESSAGE_PASSING = OFF;
+    CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS = ON;
+
+    // Generate a geometry
+    Grid2D_Quad_Block_HO MyGrid;
+
+    // Allocate memory for the high-order WITH pseudo-inverse
+    HO.allocate(NCi,NCj,Nghost,true,RecOrder);
+    HO.AssociateGeometry(MyGrid);
+
+    // Use assignment operator
+    HighOrder2D<double> HO_Copy;
+    HO_Copy = HO;
+
+    // check
+    ensure_equals("Geometry", HO_Copy.Geometry(), HO.Geometry());
+    ensure_equals("RecOrder", HO_Copy.RecOrder(), HO.RecOrder());
+    ensure_equals("Rings", HO_Copy.Rings(), HO.Rings());
+
+    for (i = 3; i<= 8; ++i) {
+      for (j = 3; j<= 9; ++j) {
+	ensure_equals("TD", HO_Copy.CellTaylorDeriv(i,j), HO.CellTaylorDeriv(i,j));
+	ensure("LimitedCell", HO_Copy.CellInadequateFit(i,j) == HO.CellInadequateFit(i,j));
+	ensure("SI", HO_Copy.CellSmoothnessIndicator(i,j) == HO.CellSmoothnessIndicator(i,j));
+	ensure_equals("LHS", HO_Copy.Cell_LHS_Inv(i,j), HO.Cell_LHS_Inv(i,j));
+	ensure("GeomWeights", HO_Copy.GeomWeights(i,j) == HO.GeomWeights(i,j));
+      }
+    }
+  }
+
+  /* Test 21:*/
+  template<>
+  template<>
+  void HighOrder2D_object::test<21>()
+  {
+    set_test_name("Assignment operator II");
+
+    try {
+      HighOrder2D<double> HO;
+      int NCi, NCj, Nghost, RecOrder;
+      NCi = 2; NCj = 3; Nghost = 5; RecOrder = 4;
+      int i,j;
+      
+      // Set execution mode
+      CENO_Execution_Mode::CENO_RECONSTRUCTION_WITH_MESSAGE_PASSING = OFF;
+      CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS = ON;
+      
+      // Generate a geometry
+      Grid2D_Quad_Block_HO MyGrid;
+
+      // Allocate memory for the high-order WITH pseudo-inverse
+      HO.allocate(NCi,NCj,Nghost,true,RecOrder);
+      HO.AssociateGeometry(MyGrid);
+
+      // Change Execution_Mode class setting
+      CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS = OFF;
+
+      // Use assignment operator
+      HighOrder2D<double> HO_Copy;
+      HO_Copy = HO;
+
+      // fail
+      fail("Fail to detect different settings in Execution_Mode!");
+
+    } catch (runtime_error){
+      // test successful
+    }
+  }
+
+
 }
 
 
