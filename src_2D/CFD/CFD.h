@@ -751,6 +751,7 @@ inline char *Date_And_Time() {
 #define LIMITER_VANALBADA               7
 #define LIMITER_BARTH_JESPERSEN         8
 #define LIMITER_VENKATAKRISHNAN         9
+#define LIMITER_VENKATAKRISHNAN_CORRECTED 10
 
 /**********************************************************************
  * CFD -- Flux Function Types.                                        *
@@ -1307,6 +1308,12 @@ extern double Limiter_Venkatakrishnan(double *uQuad,
                                       const double &u0Min,
 	      	                      const double &u0Max,
 			              const int nQuad);
+
+extern double Limiter_Venkatakrishnan_Modified(double *uQuad,
+					       const double &u0,
+					       const double &u0Min,
+					       const double &u0Max,
+					       const int nQuad);
 
 extern double Limiter_VanLeer(double *uQuad,
                               const double &u0,

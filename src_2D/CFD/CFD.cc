@@ -752,6 +752,61 @@ double Limiter_Venkatakrishnan(double *uQuad,
 }
 
 /********************************************************
+ * Routine: Limiter_Venkatakrishnan_Modified            *
+ * (Slope Limiter of Venkatakrishnan modified by        *
+ *  Michalak and Ollivier-Gooch)                        *
+ *                                                      *
+ * This function returns the value of the slope or      *
+ * gradient limiter according to the formulation        *
+ * propose by Michalak and Ollivier-Gooch (2008), which *
+ * is based on Venkatakrishnan's slope limiter (1993).  *
+ * Given the minimum and maximum values of all cell     *
+ * centered values used in the reconstruction and the   *
+ * unlimited values of the solution at the flux         *
+ * quadrature points, the routine returns the computed  *
+ * value of the limiter.                                *
+ *                                                      *
+ ********************************************************/
+double Limiter_Venkatakrishnan_Modified(double *uQuad,
+					const double &u0,
+					const double &u0Min,
+					const double &u0Max,
+					const int nQuad) {
+    int i;
+    double phi, y;
+
+    // Parameters used by Ollivier-Gooch in the aforementioned paper
+    static double yt(1.5);
+    static double A((yt-2.0)/(yt*yt*yt)); // the polynomial coefficient of the cubic term
+    static double B((3.0-2*yt)/(yt*yt));  // the polynomial coefficient of the quadratic term
+
+    phi = ONE;
+
+    for (i = 0; i <= nQuad-1; i++) {
+       if (uQuad[i] - u0 > TOLER) {
+           y = (u0Max-u0)/(uQuad[i]-u0);
+	   if (y < yt){
+	     phi = min(phi,y*y*(A*y + B) + y);
+	   } else {
+	     phi = min(phi,ONE);
+	   }
+       } else if (uQuad[i] - u0 < -TOLER) {
+           y = (u0Min-u0)/(uQuad[i]-u0);
+	   if (y < yt){
+	     phi = min(phi,y*y*(A*y + B) + y);
+	   } else {
+	     phi = min(phi,ONE);
+	   }
+       } else {
+           phi = min(phi, ONE);
+       } /* endif */
+    } /* endfor */
+
+    return(phi);
+
+}
+
+/********************************************************
  * Routine: Limiter_VanLeer (Slope Limiter of Van Leer) *
  *                                                      *
  * This function returns the value of the slope or      *

@@ -757,6 +757,9 @@ void HighOrder1D<SOLN_STATE>::ComputeLowOrderReconstruction(Soln_Block_Type *Sol
       case LIMITER_VENKATAKRISHNAN :
 	phi = Limiter_Venkatakrishnan(uQuad, SolnBlk[iCell].CellSolutionPrimVar(n), u0Min, u0Max, 2);
 	break;
+      case LIMITER_VENKATAKRISHNAN_CORRECTED :
+	phi = Limiter_Venkatakrishnan_Modified(uQuad, SolnBlk[iCell].CellSolutionPrimVar(n), u0Min, u0Max, 2);
+	break;
       case LIMITER_VANLEER :
 	phi = Limiter_VanLeer(uQuad, SolnBlk[iCell].CellSolutionPrimVar(n), u0Min, u0Max, 2);
 	break;
