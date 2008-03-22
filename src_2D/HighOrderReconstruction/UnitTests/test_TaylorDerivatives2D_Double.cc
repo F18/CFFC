@@ -62,7 +62,7 @@ namespace tut
 
     // Set paths
     set_test_suite_path("HighOrderReconstruction/UnitTests");
-    set_local_output_path("test_TaylorDerivatives2D");
+    set_local_output_path("TaylorDerivatives2D_Data");
 
   }
 
@@ -252,6 +252,8 @@ namespace tut
     DObj2.Read_Derivative(in_file);
 
     ensure_equals("Read_Derivative", DObj2, DObj);
+
+    Remove_Output_File();
   }
 
 

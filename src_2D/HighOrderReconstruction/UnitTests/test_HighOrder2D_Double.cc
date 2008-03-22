@@ -39,8 +39,8 @@ namespace tut
   Data_HighOrder2D::Data_HighOrder2D(): A(2,3), B(3){
 
     set_test_suite_path("HighOrderReconstruction/UnitTests/");
-    set_local_input_path("TaylorDerivatives2D_Data");
-    set_local_output_path("TaylorDerivatives2D_Data");
+    set_local_input_path("HighOrder2D_Data");
+    set_local_output_path("HighOrder2D_Data");
     
     // set CENO_Execution_Mode to default values
     CENO_Execution_Mode::SetDefaults();
