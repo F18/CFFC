@@ -30,11 +30,7 @@ namespace tut
     
     /* Multi-block solution-adaptive quadrilateral mesh 
        solution variables. */
-#ifdef USE_HIGH_ORDER_GRID 
     Grid2D_Quad_MultiBlock_HO     MeshBlk;
-#else
-    Grid2D_Quad_Block           **MeshBlk;
-#endif
     QuadTreeBlock_DataStructure  QuadTree;
     AdaptiveBlockResourceList    GlobalList_Soln_Blocks;
     AdaptiveBlock2D_List         LocalList_Soln_Blocks;
@@ -54,21 +50,12 @@ namespace tut
     ~Data_AdvectDiffuse2D_Quad_Block(void);
 
     // Initialization of the computational domain
-#ifdef USE_HIGH_ORDER_GRID 
     void InitializeComputationalDomain(Grid2D_Quad_MultiBlock_HO & _MeshBlk_,
 				       QuadTreeBlock_DataStructure & _QuadTree_,
 				       AdaptiveBlockResourceList & _GlobalList_Soln_Blocks_,
 				       AdaptiveBlock2D_List & _LocalList_Soln_Blocks_,
 				       AdvectDiffuse2D_Quad_Block *& _SolnBlk_,
 				       AdvectDiffuse2D_Input_Parameters & _IP_) throw(std::runtime_error);
-#else
-    void InitializeComputationalDomain(Grid2D_Quad_Block **& _MeshBlk_,
-				       QuadTreeBlock_DataStructure & _QuadTree_,
-				       AdaptiveBlockResourceList & _GlobalList_Soln_Blocks_,
-				       AdaptiveBlock2D_List & _LocalList_Soln_Blocks_,
-				       AdvectDiffuse2D_Quad_Block *& _SolnBlk_,
-				       AdvectDiffuse2D_Input_Parameters & _IP_) throw(std::runtime_error);
-#endif
 
     // Output_Block()
     void Output_Block(AdvectDiffuse2D_Quad_Block & SolnBlock,
@@ -99,16 +86,10 @@ namespace tut
       LocalList_Soln_Blocks.deallocate();
       GlobalList_Soln_Blocks.deallocate();
       QuadTree.deallocate();
-#ifndef USE_HIGH_ORDER_GRID 
-      MeshBlk = Deallocate_Multi_Block_Grid(MeshBlk, 
-					    IP.Number_of_Blocks_Idir, 
-					    IP.Number_of_Blocks_Jdir);
-#endif
     }
   }
 
   // === InitializeComputationalDomain()
-#ifdef USE_HIGH_ORDER_GRID 
   void Data_AdvectDiffuse2D_Quad_Block::InitializeComputationalDomain(Grid2D_Quad_MultiBlock_HO & _MeshBlk_,
 								      QuadTreeBlock_DataStructure & _QuadTree_,
 								      AdaptiveBlockResourceList & _GlobalList_Soln_Blocks_,
@@ -136,49 +117,6 @@ namespace tut
 
     Status = ON;
   }
-
-#else
-
-  void Data_AdvectDiffuse2D_Quad_Block::InitializeComputationalDomain(Grid2D_Quad_Block **& _MeshBlk_,
-								      QuadTreeBlock_DataStructure & _QuadTree_,
-								      AdaptiveBlockResourceList & _GlobalList_Soln_Blocks_,
-								      AdaptiveBlock2D_List & _LocalList_Soln_Blocks_,
-								      AdvectDiffuse2D_Quad_Block *& _SolnBlk_,
-								      AdvectDiffuse2D_Input_Parameters & _IP_)
-    throw(std::runtime_error){
-
-    _MeshBlk_ = NULL;
-    _MeshBlk_ = Multi_Block_Grid(_MeshBlk_, 
-				 _IP_);
-
-    if (_MeshBlk_ == NULL) {
-      error_flag = 1;
-    } else if (Check_Multi_Block_Grid(_MeshBlk_,
-				      _IP_.Number_of_Blocks_Idir,
-				      _IP_.Number_of_Blocks_Jdir)) {
-      error_flag = 1;
-    } else {
-      error_flag = 0;
-    } /* endif */
-      
-    if (error_flag) {
-      throw runtime_error("CreateMesh() ERROR: Unable to create valid Euler2D multi-block mesh.");
-    }
-
-    _SolnBlk_ = Create_Initial_Solution_Blocks(_MeshBlk_,
-					       _SolnBlk_,
-					       _IP_,
-					       _QuadTree_,
-					       GlobalList_Soln_Blocks,
-					       LocalList_Soln_Blocks);
-
-    if (_SolnBlk_ == NULL) {
-      throw runtime_error("Create_Initial_Solution_Blocks() ERROR: Unable to create initial Euler2D solution blocks.");
-    }
-
-    Status = ON;
-  }
-#endif
 
   /**
    * This group of declarations is just to register

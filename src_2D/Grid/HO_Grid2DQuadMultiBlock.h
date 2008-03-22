@@ -2757,7 +2757,7 @@ inline void Grid2D_Quad_MultiBlock_HO::Grid_Annulus_2D(int &_Number_of_Blocks_Id
 template<typename Input_Parameters_Type>
 int Grid2D_Quad_MultiBlock_HO::Write_Multi_Block_Grid_Definition_Using_IP(const Input_Parameters_Type &Input_Parameters){
 
-  char *mesh_definition_file_name_ptr;
+  const char *mesh_definition_file_name_ptr;
   ofstream mesh_definition_file;
 
   /* Open the grid definition file. */

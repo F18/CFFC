@@ -1637,11 +1637,7 @@ ostream &operator << (ostream &out_file,
 istream &operator >> (istream &in_file,
 		      AdvectDiffuse2D_Quad_Block &SolnBlk) {
   int i, j, k, ni, il, iu, nj, jl, ju, ng;
-#ifdef USE_HIGH_ORDER_GRID
   Grid2D_Quad_Block_HO New_Grid;
-#else
-  Grid2D_Quad_Block New_Grid;
-#endif
   in_file >> New_Grid;
   in_file.setf(ios::skipws);
   in_file >> ni >> il >> iu;
@@ -1659,11 +1655,7 @@ istream &operator >> (istream &in_file,
   } /* endif */
 
   // Copy the temporary mesh into the grid of the current solution block
-#ifdef USE_HIGH_ORDER_GRID
   SolnBlk.Grid = New_Grid;
-#else
-  Copy_Quad_Block(SolnBlk.Grid,New_Grid); New_Grid.deallocate();
-#endif
 
   // Read the solution & Initialize some data structures
   for ( j  = SolnBlk.JCl-SolnBlk.Nghost ; j <= SolnBlk.JCu+SolnBlk.Nghost ; ++j ) {

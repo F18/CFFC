@@ -26,10 +26,6 @@
 
 #define	NUMBER_OF_RESIDUAL_VECTORS_ADVECTDIFFUSE2D    3
 
-// Switch between the high-order grid and the regular one.
-// Define the macro below to use the high-order grid
-#define USE_HIGH_ORDER_GRID
-
 /*!
  * Class: AdvectDiffuse2D_Quad_Block
  *
@@ -152,11 +148,7 @@ public:
                            JCu; //!< Final j-direction non-ghost cell counter.
   int                   Nghost; //!< Number of ghost cells.
 
-#ifdef USE_HIGH_ORDER_GRID
   Grid2D_Quad_Block_HO    Grid; //!< 2D quadrilateral grid geometry.
-#else
-  Grid2D_Quad_Block       Grid; //!< 2D quadrilateral grid geometry.
-#endif
   //@}
 
   //! @name Residual and time-stepping arrays:
@@ -475,6 +467,7 @@ private:
   AdvectDiffuse2D_Quad_Block operator = (const AdvectDiffuse2D_Quad_Block &Soln);   //!< Private assignment operator
 
   int NNi, NNj;		//!< number of nodes in i-direction and j-direction.
+
 
 };
 
