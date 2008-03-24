@@ -918,6 +918,7 @@ namespace tut
     // Use assignment operator
     HighOrder2D<double> HO_Copy;
     HO_Copy = HO;
+    HO_Copy.AssociateGeometry(MyGrid);
 
     // check
     ensure_equals("Geometry", HO_Copy.Geometry(), HO.Geometry());

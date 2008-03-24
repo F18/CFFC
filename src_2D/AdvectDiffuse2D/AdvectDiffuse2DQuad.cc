@@ -37,7 +37,8 @@ int AdvectDiffuse2D_Quad_Block::Number_of_Residual_Norms = 1;
 AdvectDiffuse2D_Quad_Block::AdvectDiffuse2D_Quad_Block(void):
   AssessAccuracy(this),
   Ref_State_BC_North(0.0), Ref_State_BC_South(0.0),
-  Ref_State_BC_East(0.0), Ref_State_BC_West(0.0)
+  Ref_State_BC_East(0.0), Ref_State_BC_West(0.0),
+  HO_Ptr(NULL), NumberOfHighOrderVariables(0)
 {
 
   Freeze_Limiter = OFF;
@@ -61,11 +62,11 @@ AdvectDiffuse2D_Quad_Block::AdvectDiffuse2D_Quad_Block(void):
   Inflow = &AdvectDiffuse2D_InflowField::getInstance();
 }
 
-/******************************************
+/****************************************\\**
  * Private copy constructor. (shallow copy)
  *****************************************/
 AdvectDiffuse2D_Quad_Block::AdvectDiffuse2D_Quad_Block(const AdvectDiffuse2D_Quad_Block &Soln):
-  AssessAccuracy(this)
+  AssessAccuracy(this), HO_Ptr(NULL)
 {
   NCi = Soln.NCi; ICl = Soln.ICl; ICu = Soln.ICu; 
   NCj = Soln.NCj; JCl = Soln.JCl; JCu = Soln.JCu; Nghost = Soln.Nghost;
@@ -79,14 +80,83 @@ AdvectDiffuse2D_Quad_Block::AdvectDiffuse2D_Quad_Block(const AdvectDiffuse2D_Qua
   Ref_State_BC_East = Soln.Ref_State_BC_East;
   Ref_State_BC_West = Soln.Ref_State_BC_West;
   Freeze_Limiter = Soln.Freeze_Limiter;
+  HO_Ptr = Soln.HO_Ptr;
+  NumberOfHighOrderVariables = Soln.NumberOfHighOrderVariables;
 }
 
-/**********************
+/*****************************************************//**
+ * Copy the solution information of quadrilateral solution 
+ * block SolnBlk to the current solution block.
+ ********************************************************/
+AdvectDiffuse2D_Quad_Block & AdvectDiffuse2D_Quad_Block::operator =(const AdvectDiffuse2D_Quad_Block &Soln){
+  
+  int i, j, k;
+
+  // Handle self-assignment:
+  if (this == & Soln) return *this;
+
+  // check if solution block Soln has memory allocated
+  if (Soln.U != NULL){
+    /* Allocate (re-allocate) memory for the solution
+       of the quadrilateral solution block as necessary. */
+    allocate(Soln.NCi-2*Soln.Nghost,
+	     Soln.NCj-2*Soln.Nghost,
+	     Soln.Nghost);
+  } else {
+    deallocate();
+  }
+
+  /* Set the axisymmetric/planar flow indicator. */
+  Axisymmetric = Soln.Axisymmetric;
+  
+  /* Copy the grid. */
+  Grid = Soln.Grid;
+  
+  /* Copy the solution information from Soln. */
+  if (Soln.U != NULL) {
+    for ( j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
+      for ( i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
+	U[i][j] = Soln.U[i][j];
+	for ( k = 0 ; k <= NUMBER_OF_RESIDUAL_VECTORS_ADVECTDIFFUSE2D-1 ; ++k ) {
+	  dUdt[i][j][k] = Soln.dUdt[i][j][k];
+	} /* endfor */
+	dUdx[i][j] = Soln.dUdx[i][j];
+	dUdy[i][j] = Soln.dUdy[i][j];
+	phi[i][j] = Soln.phi[i][j];
+	Uo[i][j] = Soln.Uo[i][j];
+	dt[i][j] = Soln.dt[i][j];
+      } /* endfor */
+    } /* endfor */
+
+    for (j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
+      UoW[j] = Soln.UoW[j];
+      UoE[j] = Soln.UoE[j];
+    }/* endfor */
+    
+    for ( i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
+      UoS[i] = Soln.UoS[i];
+      UoN[i] = Soln.UoN[i];
+    }/* endfor */
+    
+    // Copy the high-order objects
+    for (k = 1; k <= NumberOfHighOrderVariables; ++k){
+      HighOrderVariable(k-1) = Soln.HighOrderVariable(k-1);
+    }/* endfor */
+    
+  }/* endif */
+
+  // Reset accuracy assessment flag
+  AssessAccuracy.ResetForNewCalculation();
+
+  return *this;
+}
+
+/********************//**
  * Allocate memory.            
  **********************/
 void AdvectDiffuse2D_Quad_Block::allocate(const int &Ni, const int &Nj, const int &Ng) {
   int i, j, k;
-  assert(Ni > 1 && Nj > 1 && Ng > 1 && Ng > 1);
+  assert(Ni > 1 && Nj > 1 && Ng > 1 );
 
   // Check to see if the current block dimensions differ from the required ones.
   if ( (Nghost != Ng) || (NCi != Ni+2*Ng) || (NCj != Nj+2*Ng) ){ 
@@ -133,7 +203,7 @@ void AdvectDiffuse2D_Quad_Block::allocate(const int &Ni, const int &Nj, const in
   }/* endif */
 }
 
-/***********************
+/*********************//**
  * Deallocate memory.   
  ***********************/
 void AdvectDiffuse2D_Quad_Block::deallocate(void) {
@@ -156,12 +226,13 @@ void AdvectDiffuse2D_Quad_Block::deallocate(void) {
     delete []UoN; UoN = NULL; delete []UoS; UoS = NULL;
     delete []UoE; UoE = NULL; delete []UoW; UoW = NULL;
     NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0; Nghost = 0;
+    delete []HO_Ptr; HO_Ptr = NULL; NumberOfHighOrderVariables = 0;
 
     deallocate_U_Nodes();
   }
 }
 
-/***********************\\**
+/***********************//**
  * Allocate memory U_Node
  *************************/
 void AdvectDiffuse2D_Quad_Block::allocate_U_Nodes(const int &_NNi, const int &_NNj) {
@@ -179,7 +250,7 @@ void AdvectDiffuse2D_Quad_Block::allocate_U_Nodes(const int &_NNi, const int &_N
   }
 }
 
-/***********************\\**
+/***********************//**
  * Deallocate memory U_Node
  *************************/
 void AdvectDiffuse2D_Quad_Block::deallocate_U_Nodes(void){
@@ -193,7 +264,7 @@ void AdvectDiffuse2D_Quad_Block::deallocate_U_Nodes(void){
   }
 }
 
-/***********************
+/*********************//**
  * Node solution state. 
  ***********************/
 AdvectDiffuse2D_State AdvectDiffuse2D_Quad_Block::Un(const int &ii, const int &jj) {

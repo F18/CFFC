@@ -140,7 +140,7 @@ public:
   //! Get the number of rings of neighbour cells around the reconstructed cell.
   const int & Rings(void) const {return rings;}
   //! Get the order of reconstruction set for this object.
-  const int RecOrder(void) const {return OrderOfReconstruction;}
+  const int & RecOrder(void) const {return OrderOfReconstruction;}
   //@}
 
   //! @name Monotonicity info for high-order
@@ -330,6 +330,16 @@ public:
   void Read_Object(istream & in_file);
   //@}
 
+  //! @name Broadcast functions (MPI):
+  //@{
+  void Broadcast_HighOrder_Data(GeometryType & Block_Geometry);
+#ifdef _MPI_VERSION
+  void Broadcast_HighOrder_Data(MPI::Intracomm &Communicator, 
+				const int &Source_CPU,
+				GeometryType & Block_Geometry);
+#endif
+  //@}
+
   /* Friend functions */
   friend ostream & operator<< <Soln_State> (ostream & os, const HighOrder2D<Soln_State> & Obj);
   friend istream & operator>> <Soln_State> (istream & os, HighOrder2D<Soln_State> & Obj);
@@ -376,7 +386,7 @@ private:
   //! Get number of ghost cells for the associated block mesh
   const int & Nghost_Grid(void) const {return Geom->Nghost; }
   //! Get the number of variables in the solution state
-  int NumberOfVariables(void) const {return Soln_State::NumberOfVariables; }
+  int NumberOfVariables(void) const {return Soln_State::NumVar(); }
 
   //! Allocate memory at the cell level based on the order of reconstruction
   void allocate_CellMemory(const int &ReconstructionOrder, const bool &_pseudo_inverse_allocation_);
@@ -526,9 +536,6 @@ HighOrder2D<SOLN_STATE> & HighOrder2D<SOLN_STATE>::operator=(const HighOrder2D<S
     } //endif (rhs._allocated_cells)
 
   }//endif (rhs._allocated_block)
-
-  // set geometry pointer to the same mesh
-  Geom = rhs.Geom;
 
   return *this;
 }
@@ -1450,6 +1457,47 @@ void HighOrder2D<SOLN_STATE>::Read_Object(istream & in_file) {
     deallocate();
   }
 }
+
+/*!
+ * Broadcast high-order object to all            
+ * processors involved in the calculation from the      
+ * primary processor using the MPI broadcast routine.
+ * 
+ * \param Block_Geometry the grid block to which the
+ *                   high-order object is associated.
+ *
+ * \todo Implement this subroutine!
+ */
+template<class SOLN_STATE>
+void HighOrder2D<SOLN_STATE>::Broadcast_HighOrder_Data(GeometryType & Block_Geometry){
+
+#ifdef _MPI_VERSION
+
+#endif
+
+}
+
+#ifdef _MPI_VERSION
+/*!
+ * Broadcast high-order object to all processors 
+ * associated with the specified communicator from the  
+ * specified processor using the MPI broadcast routine.
+ *
+ * \param Communicator a particular MPI communicator
+ * \param Source_CPU the CPU used as source for the broadcast
+ * \param Block_Geometry the grid block to which the
+ *                   high-order object is associated. 
+ *
+ * \todo Implement this subroutine!
+ */
+template<class SOLN_STATE>
+void HighOrder2D<SOLN_STATE>::Broadcast_HighOrder_Data(MPI::Intracomm &Communicator, 
+						       const int &Source_CPU,
+						       GeometryType & Block_Geometry){
+  
+  
+}
+#endif
 
 // Friend functions
 

@@ -107,7 +107,7 @@ public:
   //! @name Useful operators.
   //@{
   //! Return the number of variables.
-  int NumVar(void) { return NUM_VAR_ADVECTDIFFUSE2D; }
+  static int NumVar(void) { return NUM_VAR_ADVECTDIFFUSE2D; }
 
   //! Copy operator.
   void Copy(const AdvectDiffuse2D_State &U) { u = U.u; }

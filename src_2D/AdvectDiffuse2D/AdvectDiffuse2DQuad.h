@@ -21,6 +21,7 @@
 #include "../ICEM/ICEMCFD.h"           /* Include ICEMCFD header file. */
 #include "../System/System_Linux.h"    /* Include System Linux header file. */
 #include "../HighOrderReconstruction/AccuracyAssessment2D.h" /* Include 2D accuracy assessment header file. */
+#include "../HighOrderReconstruction/HighOrder2D.h" /* Include 2D high-order template class header file. */
 
 /* Define the structures and classes. */
 
@@ -127,6 +128,7 @@ public:
   //@{
   typedef AdvectDiffuse2D_ExactSolutions Exact_Solution_Type;
   typedef AccuracyAssessment2D<AdvectDiffuse2D_Quad_Block> Accuracy_Assessment_Type;
+  typedef HighOrder2D<AdvectDiffuse2D_State> HighOrderType; //!< high-order variable data type
   //@}
 
 
@@ -230,6 +232,9 @@ public:
   void deallocate_U_Nodes(void);
   //@}
 
+  //! Make an identical copy of SolnBlk
+  void makeCopy(const AdvectDiffuse2D_Quad_Block &SolnBlk){ *this = SolnBlk; }
+
   //! @name Bilinear interplation (Zingg & Yarrow).
   //@{
   //! Return solution state at specified node.
@@ -252,7 +257,17 @@ public:
   //! @name Field access
   //@{
   const AdvectDiffuse2D_State& U_Node(const int &ii, const int &jj)const { return U_Nodes[ii][jj]; }
+
+  //! @name High-order variables
+  //@{
+  //! Return the array of high-order variable of the current block
+  const HighOrderType * HighOrderVariables(void) const { return HO_Ptr; }
+  //! Return the high-order variable in the "Pos" position of the current block
+  HighOrderType & HighOrderVariable(const unsigned short int & Pos) { return HO_Ptr[Pos]; }
+  const HighOrderType & HighOrderVariable(const unsigned short int & Pos) const { return HO_Ptr[Pos]; }
   //@}
+
+  //@} //end(Field access)
 
   //! @name Evaluate diffusive fluxes.
   //@{
@@ -464,11 +479,12 @@ public:
 
 private:
   AdvectDiffuse2D_Quad_Block(const AdvectDiffuse2D_Quad_Block &Soln); //!< Private copy constructor
-  AdvectDiffuse2D_Quad_Block operator = (const AdvectDiffuse2D_Quad_Block &Soln);   //!< Private assignment operator
+  AdvectDiffuse2D_Quad_Block & operator = (const AdvectDiffuse2D_Quad_Block &Soln);   //!< Private assignment operator
 
   int NNi, NNj;		//!< number of nodes in i-direction and j-direction.
 
-
+  HighOrderType* HO_Ptr;  //!< pointer to an array of high-order variables
+  unsigned short int NumberOfHighOrderVariables; //!< counter for the total number of high-order variables
 };
 
 

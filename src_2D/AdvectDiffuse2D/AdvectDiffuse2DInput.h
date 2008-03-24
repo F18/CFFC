@@ -17,6 +17,7 @@
 #include "../Utilities/TypeDefinition.h" // Include TypeDefinition header file.
 #include "AdvectDiffuse2DParameterFields.h" /* Include 2D advection diffusion parameter fields */
 #include "../NewtonKrylovSchwarz2D/NKSInput2D.h" /* Include file for NKS */
+#include "../HighOrderReconstruction/HighOrder2D_Input.h" /* Include file for high-order */
 
 /* Define the structures and classes. */
 

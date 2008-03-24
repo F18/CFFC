@@ -306,6 +306,10 @@ ostream &operator << (ostream &out_file,
       out_file << "\n     -> Reference State: "
 	       << IP.RefU;
     }
+
+    // output information related to auxiliary reconstructions.
+    HighOrder2D_Input::Print_Info(out_file);
+
     out_file << "\n  -> Limiter: " 
              << IP.Limiter_Type;
     if (IP.Limiter_Type != LIMITER_ZERO && IP.Freeze_Limiter) {
@@ -1168,6 +1172,9 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
 
     // Tecplot_Execution_Mode variables
     Tecplot_Execution_Mode::Broadcast();
+
+    // HighOrder2D_Input variables
+    HighOrder2D_Input::Broadcast();    
 
 #endif
 
@@ -2846,6 +2853,9 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
   /* Parse next control parameter with Tecplot_Execution_Mode parser */
   Tecplot_Execution_Mode::Parse_Next_Input_Control_Parameter(IP,i_command);
 
+  /* Parse next control parameter with HighOrder2D_Input parser */
+  HighOrder2D_Input::Parse_Next_Input_Control_Parameter(IP,i_command);
+
   if (i_command == INVALID_INPUT_CODE){
     // that is, we have an input line which:
     //  - is not a comment (that's COMMENT_CODE), and,
@@ -2935,6 +2945,9 @@ int Process_Input_Control_Parameter_File(AdvectDiffuse2D_Input_Parameters &Input
 
     // Perform update of the internal variables of the inflow field
     Input_Parameters.Inflow->Set_InflowField_Parameters();
+
+    // Perform update of the internal variables of the high-order input parameters
+    HighOrder2D_Input::Set_Final_Parameters(Input_Parameters);
 
     // Set reference states
     // Uo state

@@ -2141,6 +2141,7 @@ void Grid2D_Quad_Block_HO::Create_Quad_Block_Without_Update(Spline2D_HO &Bnd_Spl
  * processors involved in the calculation from the      
  * primary processor using the MPI broadcast routine.   
  *                                                      
+ * \todo Merge some of the broadcasts.
  */
 void Grid2D_Quad_Block_HO::Broadcast_Quad_Block(void) {
 
@@ -2375,6 +2376,8 @@ void Grid2D_Quad_Block_HO::Broadcast_Quad_Block(void) {
  * Broadcast quadrilateral grid block to all processors 
  * associated with the specified communicator from the  
  * specified processor using the MPI broadcast routine. 
+ *
+ * \todo Merge some of the broadcasts.
  */
 void Grid2D_Quad_Block_HO::Broadcast_Quad_Block(MPI::Intracomm &Communicator, 
 						const int Source_CPU) {

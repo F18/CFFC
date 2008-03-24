@@ -389,6 +389,37 @@ namespace tut
     ensure_distance("Gradient betwen cells (7,6) and (7,7)", U_face.u, Result, AcceptedError(Result,1.0e-8));
   }
 
+  /* Test 6:*/
+  template<>
+  template<>
+  void AdvectDiffuse2D_Quad_Block_object::test<6>()
+  {
+
+    set_test_name("Generate advection-diffusion solution block");
+    set_local_input_path("QuadBlockData");
+    set_local_output_path("QuadBlockData");
+
+    RunRegression = ON;
+ 
+    // Set input file name
+    Open_Input_File("CircularAdvectionDiffusion.in");
+
+    // Parse the input file
+    IP.Verbose() = false;
+    IP.Parse_Input_File(input_file_name);
+
+    // Create computational domain
+    InitializeComputationalDomain(MeshBlk,QuadTree,
+				  GlobalList_Soln_Blocks, LocalList_Soln_Blocks, 
+				  SolnBlk, IP);
+
+    // Apply initial condition
+    ICs(SolnBlk,LocalList_Soln_Blocks,IP);
+    
+    
+    //    Print_(SolnBlk[0].HighOrderVariable());
+    
+  }
 
 }
 

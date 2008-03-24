@@ -13,6 +13,7 @@
 #include "AdvectDiffuse2DQuadFASMultigrid.h" /* Include the multigrid header file. */
 #include "AdvectDiffuse2DQuadNKS.h"          /* Include 2D Newton-Krylov-Schwarz solver header file for advection-diffusion. */
 #include "../HighOrderReconstruction/AccuracyAssessment2DMultiBlock.h" /* Include 2D accuracy assessment for multi-block level. */
+#include "../HighOrderReconstruction/HighOrder2D_MultiBlock.h" /* Include 2D high-order header file for multi-block level. */
 
 /******************************************************//**
  * Routine: AdvectDiffuse2DQuadSolver                   
@@ -143,6 +144,11 @@ int AdvectDiffuse2DQuadSolver(char *Input_File_Name_ptr,
 						   QuadTree,
 						   List_of_Global_Solution_Blocks,
 						   List_of_Local_Solution_Blocks);
+
+    /* Create (allocate) the high-order variables in each of the
+       local 2D advection diffusion equation solution blocks */
+    HighOrder2D_MultiBlock::Create_Initial_HighOrder_Variables(Local_SolnBlk,
+							       List_of_Local_Solution_Blocks);
   } else {
     // Allocate the minimum information related to the solution blocks. (i.e. use the default constructors)
     Local_SolnBlk = Allocate(Local_SolnBlk,Input_Parameters);
