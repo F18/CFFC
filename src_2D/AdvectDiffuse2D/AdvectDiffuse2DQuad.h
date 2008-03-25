@@ -490,8 +490,15 @@ private:
 
   int NNi, NNj;		//!< number of nodes in i-direction and j-direction.
 
+
+  //! @name High-order variables and member functions
+  //@{
   HighOrderType* HO_Ptr;  //!< pointer to an array of high-order variables
   unsigned short int NumberOfHighOrderVariables; //!< counter for the total number of high-order variables
+
+  //! Allocate high-order variables array.
+  void allocate_HighOrder_Array(const int & NumberOfReconstructions);
+  //@}
 };
 
 
@@ -746,6 +753,25 @@ AdvectDiffuse2D_Quad_Block::UnlimitedPiecewiseLinearSolutionAtLocation(const int
   return UnlimitedPiecewiseLinearSolutionForDelta(ii,jj,dX.x,dX.y);
 }
 
+/*!
+ * Allocate the high-order array.
+ */
+inline void AdvectDiffuse2D_Quad_Block::allocate_HighOrder_Array(const int & NumberOfReconstructions){
+
+  if (NumberOfReconstructions != NumberOfHighOrderVariables){
+    
+    // deallocate memory
+    deallocate_HighOrder();
+    
+    // allocate new memory for high-order objects
+    HO_Ptr = new HighOrderType [NumberOfReconstructions];
+    
+    // check for successful memory allocation
+    if (HO_Ptr != NULL){
+      NumberOfHighOrderVariables = NumberOfReconstructions;
+    }
+  }
+}
 
 /**************************************************************************
  * AdvectDiffuse2D_Quad_Block -- Single Block External Subroutines.       *

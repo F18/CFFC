@@ -102,6 +102,11 @@ AdvectDiffuse2D_Quad_Block & AdvectDiffuse2D_Quad_Block::operator =(const Advect
     allocate(Soln.NCi-2*Soln.Nghost,
 	     Soln.NCj-2*Soln.Nghost,
 	     Soln.Nghost);
+
+    /* Set the same number of high-order objects
+       as that of the rhs block. */
+    allocate_HighOrder_Array(Soln.NumberOfHighOrderVariables);
+
   } else {
     deallocate();
   }
@@ -222,18 +227,10 @@ void AdvectDiffuse2D_Quad_Block::allocate_HighOrder(const int & NumberOfReconstr
 
   // Re-allocate new memory if necessary
   if (NumberOfReconstructions != NumberOfHighOrderVariables){
+
+    // allocate the high-order array
+    allocate_HighOrder_Array(NumberOfReconstructions);
     
-    // deallocate memory
-    deallocate_HighOrder();
-
-    // allocate new memory for high-order objects
-    HO_Ptr = new HighOrderType [NumberOfReconstructions];
-
-    // check for successful memory allocation
-    if (HO_Ptr != NULL){
-      NumberOfHighOrderVariables = NumberOfReconstructions;
-    }
-
     // set the reconstruction order of each high-order object
     for (i=0; i<NumberOfHighOrderVariables; ++i){
       HO_Ptr[i].InitializeVariable(ReconstructionOrders[i],

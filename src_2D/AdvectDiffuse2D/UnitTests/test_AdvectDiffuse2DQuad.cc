@@ -443,6 +443,45 @@ namespace tut
     
   }
 
+  /* Test 7:*/
+  template<>
+  template<>
+  void AdvectDiffuse2D_Quad_Block_object::test<7>()
+  {
+
+    set_test_name("Copy advection-diffusion solution block with high-order variables");
+    set_local_input_path("QuadBlockData");
+    set_local_output_path("QuadBlockData");
+
+    // Set input file name
+    Open_Input_File("CircularAdvectionDiffusion_HighOrder.in");
+
+    // Parse the input file
+    IP.Verbose() = false;
+    IP.Parse_Input_File(input_file_name);
+    HighOrder2D_Input::Set_Final_Parameters(IP);
+
+    // Create computational domain
+    InitializeComputationalDomain(MeshBlk,QuadTree,
+				  GlobalList_Soln_Blocks, LocalList_Soln_Blocks, 
+				  SolnBlk, IP);
+
+    // == check correct initialization
+    ensure("High-order variables", SolnBlk[0].HighOrderVariables() != NULL);
+    ensure_equals("Main High-order ", SolnBlk[0].HighOrderVariable(0).RecOrder(), 3);
+    ensure_equals("Second High-order ", SolnBlk[0].HighOrderVariable(1).RecOrder(), 2);
+    ensure_equals("Third High-order ", SolnBlk[0].HighOrderVariable(2).RecOrder(), 4);
+
+    // copy quad block
+    Copy_Solution_Block(Soln,SolnBlk[0]);
+
+    // == check copy
+    ensure("High-order variables", Soln.HighOrderVariables() != NULL);
+    ensure_equals("Main High-order ", Soln.HighOrderVariable(0).RecOrder(), 3);
+    ensure_equals("Second High-order ", Soln.HighOrderVariable(1).RecOrder(), 2);
+    ensure_equals("Third High-order ", Soln.HighOrderVariable(2).RecOrder(), 4);
+  }
+
   
 
 }
