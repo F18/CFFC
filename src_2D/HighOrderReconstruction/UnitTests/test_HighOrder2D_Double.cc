@@ -11,6 +11,7 @@
 #include "TestData.h"
 #include "../HighOrder2D.h"
 #include "../../Math/UnitTests/TestFunctions/TestFunctions_2D.h"
+#include "../HighOrder2D_Input.h"
 
 namespace tut
 {
@@ -44,6 +45,9 @@ namespace tut
     
     // set CENO_Execution_Mode to default values
     CENO_Execution_Mode::SetDefaults();
+
+    // set High-order parameters to default values
+    HighOrder2D_Input::SetDefaults();
 
     // set geometry
     
@@ -831,7 +835,7 @@ namespace tut
 
     // Allocate memory for the high-order WITH pseudo-inverse
     HO.allocate(NCi,NCj,Nghost,true,RecOrder);
-    HO.AssociateGeometry(MyGrid);
+    HO.SetGeometryPointer(MyGrid);
 
     // Use copy constructor
     HighOrder2D<double> HO_Copy(HO);
@@ -873,7 +877,7 @@ namespace tut
 
     // Allocate memory for the high-order WITH pseudo-inverse
     HO.allocate(NCi,NCj,Nghost,false,RecOrder);
-    HO.AssociateGeometry(MyGrid);
+    HO.SetGeometryPointer(MyGrid);
 
     // Use copy constructor
     HighOrder2D<double> HO_Copy(HO);
@@ -913,12 +917,12 @@ namespace tut
 
     // Allocate memory for the high-order WITH pseudo-inverse
     HO.allocate(NCi,NCj,Nghost,true,RecOrder);
-    HO.AssociateGeometry(MyGrid);
+    HO.SetGeometryPointer(MyGrid);
 
     // Use assignment operator
     HighOrder2D<double> HO_Copy;
     HO_Copy = HO;
-    HO_Copy.AssociateGeometry(MyGrid);
+    HO_Copy.SetGeometryPointer(MyGrid);
 
     // check
     ensure_equals("Geometry", HO_Copy.Geometry(), HO.Geometry());
@@ -958,7 +962,7 @@ namespace tut
 
       // Allocate memory for the high-order WITH pseudo-inverse
       HO.allocate(NCi,NCj,Nghost,true,RecOrder);
-      HO.AssociateGeometry(MyGrid);
+      HO.SetGeometryPointer(MyGrid);
 
       // Change Execution_Mode class setting
       CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS = OFF;

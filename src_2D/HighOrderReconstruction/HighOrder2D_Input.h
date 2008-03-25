@@ -36,6 +36,9 @@ public:
   static void Broadcast(void);
   //@}
 
+  //! Set default values
+  static void SetDefaults(void);
+
 protected:
   HighOrder2D_Input(void);   //!< Private default constructor
   HighOrder2D_Input(const HighOrder2D_Input&); //!< Private copy constructor

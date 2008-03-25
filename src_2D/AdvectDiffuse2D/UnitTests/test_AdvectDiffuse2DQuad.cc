@@ -12,6 +12,7 @@
 #include "../AdvectDiffuse2DQuad.h"
 #include "../Grid/HO_Grid2DQuadMultiBlock.h" /* Include 2D quadrilateral multiblock grid header file */
 #include "../../HighOrderReconstruction/AccuracyAssessment2DMultiBlock.h"
+#include "../../HighOrderReconstruction/HighOrder2D_MultiBlock.h" /* Include 2D high-order header file for multi-block level. */
 
 namespace tut
 {
@@ -108,8 +109,11 @@ namespace tut
 					       _SolnBlk_,
 					       _IP_,
 					       _QuadTree_,
-					       GlobalList_Soln_Blocks,
-					       LocalList_Soln_Blocks);
+					       _GlobalList_Soln_Blocks_,
+					       _LocalList_Soln_Blocks_);
+
+    HighOrder2D_MultiBlock::Create_Initial_HighOrder_Variables(_SolnBlk_,
+							       _LocalList_Soln_Blocks_);
 
     if (_SolnBlk_ == NULL) {
       throw runtime_error("Create_Initial_Solution_Blocks() ERROR: Unable to create initial Euler2D solution blocks.");
@@ -395,31 +399,51 @@ namespace tut
   void AdvectDiffuse2D_Quad_Block_object::test<6>()
   {
 
-    set_test_name("Generate advection-diffusion solution block");
+    set_test_name("Generate advection-diffusion solution block with high-order variables");
     set_local_input_path("QuadBlockData");
     set_local_output_path("QuadBlockData");
 
-    RunRegression = ON;
- 
     // Set input file name
-    Open_Input_File("CircularAdvectionDiffusion.in");
+    Open_Input_File("CircularAdvectionDiffusion_HighOrder.in");
 
     // Parse the input file
     IP.Verbose() = false;
     IP.Parse_Input_File(input_file_name);
+    HighOrder2D_Input::Set_Final_Parameters(IP);
 
     // Create computational domain
     InitializeComputationalDomain(MeshBlk,QuadTree,
 				  GlobalList_Soln_Blocks, LocalList_Soln_Blocks, 
 				  SolnBlk, IP);
 
-    // Apply initial condition
-    ICs(SolnBlk,LocalList_Soln_Blocks,IP);
+    // == check correct initialization
+    ensure("High-order variables", SolnBlk[0].HighOrderVariables() != NULL);
+    ensure_equals("Main High-order ", SolnBlk[0].HighOrderVariable(0).RecOrder(), 3);
+    ensure_equals("Second High-order ", SolnBlk[0].HighOrderVariable(1).RecOrder(), 2);
+    ensure_equals("Third High-order ", SolnBlk[0].HighOrderVariable(2).RecOrder(), 4);
+
+    // Change the reconstruction orders of the objects
+    vector<short int> RecOrders(3);
+    RecOrders[0] = 0; RecOrders[1] = 4; RecOrders[2] = 3; 
+
+    SolnBlk[0].allocate_HighOrder(3,RecOrders);
+
+    // == check correct re-initialization of the high-order objects
+    ensure_equals("Main High-order ", SolnBlk[0].HighOrderVariable(0).RecOrder(), RecOrders[0]);
+    ensure_equals("Second High-order ", SolnBlk[0].HighOrderVariable(1).RecOrder(), RecOrders[1]);
+    ensure_equals("Third High-order ", SolnBlk[0].HighOrderVariable(2).RecOrder(), RecOrders[2]);
+
+    // == check calculation of the pseudo-inverse
     
-    
-    //    Print_(SolnBlk[0].HighOrderVariable());
+
+    // associate a different grid to the third high-order object
+    SolnBlk[0].HighOrderVariable(2).AssociateGeometry(SolnBlk[1].Grid);
+
+    // == check calculation of the pseudo-inverse with the new grid
     
   }
+
+  
 
 }
 

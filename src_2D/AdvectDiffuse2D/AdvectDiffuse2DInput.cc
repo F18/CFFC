@@ -724,6 +724,8 @@ void Set_Default_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
     IP.Accuracy_Assessment_Exact_Digits = 10;
     IP.Accuracy_Assessment_Parameter = 1;
 
+    // High-order parameters:
+    HighOrder2D_Input::SetDefaults();
 }
 
 /******************************************************//**

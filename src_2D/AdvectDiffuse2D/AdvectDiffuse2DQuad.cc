@@ -203,6 +203,55 @@ void AdvectDiffuse2D_Quad_Block::allocate(const int &Ni, const int &Nj, const in
   }/* endif */
 }
 
+/*****************************************//**
+ * Allocate memory for high-order variables.
+ *
+ * \todo Add more logic for making the auxiliary
+ *       reconstructions more memory efficient.
+ ********************************************/
+void AdvectDiffuse2D_Quad_Block::allocate_HighOrder(const int & NumberOfReconstructions,
+						    const vector<short int> & ReconstructionOrders){
+
+  bool _pseudo_inverse_allocation_(false);
+  int i;
+
+  // Decide whether to allocate the pseudo-inverse
+  if (CENO_Execution_Mode::CENO_SPEED_EFFICIENT){
+    _pseudo_inverse_allocation_ = true;
+  }
+
+  // Re-allocate new memory if necessary
+  if (NumberOfReconstructions != NumberOfHighOrderVariables){
+    
+    // deallocate memory
+    deallocate_HighOrder();
+
+    // allocate new memory for high-order objects
+    HO_Ptr = new HighOrderType [NumberOfReconstructions];
+
+    // check for successful memory allocation
+    if (HO_Ptr != NULL){
+      NumberOfHighOrderVariables = NumberOfReconstructions;
+    }
+
+    // set the reconstruction order of each high-order object
+    for (i=0; i<NumberOfHighOrderVariables; ++i){
+      HO_Ptr[i].InitializeVariable(ReconstructionOrders[i],
+				   Grid,
+				   _pseudo_inverse_allocation_);
+    }
+
+  } else {
+    // check the reconstruction orders
+    for (i=0; i<ReconstructionOrders.size(); ++i){
+      if (HighOrderVariable(i).RecOrder() != ReconstructionOrders[i]){
+	// change the reconstruction order of the high-order object
+	HO_Ptr[i].SetReconstructionOrder(ReconstructionOrders[i]);
+      }
+    } // endfor
+  }// endif
+}
+
 /*********************//**
  * Deallocate memory.   
  ***********************/
@@ -226,10 +275,18 @@ void AdvectDiffuse2D_Quad_Block::deallocate(void) {
     delete []UoN; UoN = NULL; delete []UoS; UoS = NULL;
     delete []UoE; UoE = NULL; delete []UoW; UoW = NULL;
     NCi = 0; ICl = 0; ICu = 0; NCj = 0; JCl = 0; JCu = 0; Nghost = 0;
-    delete []HO_Ptr; HO_Ptr = NULL; NumberOfHighOrderVariables = 0;
 
+    deallocate_HighOrder();
     deallocate_U_Nodes();
   }
+}
+
+/******************************************//**
+ * Deallocate memory for high-order variables
+ *********************************************/
+void AdvectDiffuse2D_Quad_Block::deallocate_HighOrder(void) {
+  delete []HO_Ptr; HO_Ptr = NULL;
+  NumberOfHighOrderVariables = 0;
 }
 
 /***********************//**

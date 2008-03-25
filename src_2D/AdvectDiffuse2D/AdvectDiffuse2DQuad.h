@@ -222,8 +222,15 @@ public:
   //! Allocate memory for structured quadrilateral solution block.
   void allocate(const int &Ni, const int &Nj, const int &Ng);
 
+  //! Allocate memory for high-order variables
+  void allocate_HighOrder(const int & NumberOfReconstructions,
+			  const vector<short int> & ReconstructionOrders);
+
   //! Deallocate memory for structured quadrilateral solution block.
   void deallocate(void);
+
+  //! Deallocate high-order variable memory for structured quadrilateral solution block.
+  void deallocate_HighOrder(void);
 
   //! Allocate memory for the static memory pool U_Nodes
   void allocate_U_Nodes(const int &_NNi, const int &_NNj);

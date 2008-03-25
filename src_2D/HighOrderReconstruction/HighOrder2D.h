@@ -252,6 +252,10 @@ public:
   const short int & NghostHO(void) const { return Nghost_HO; }
   void ResetMonotonicityFlag(void);
   void InitializeMonotonicityVariables(const int & ii, const int & jj);
+  void InitializeVariable(int ReconstructionOrder, GeometryType & Block,
+			  const bool &_pseudo_inverse_allocation_ = false);
+  void SetReconstructionOrder(int ReconstructionOrder);
+
   //@}
 
   //! @name Evaluate the polynomial interpolant.
@@ -780,6 +784,40 @@ void HighOrder2D<SOLN_STATE>::deallocate_CellMemory(void){
   }//endif
 }
 
+//! Initialize the high-order object
+template<class SOLN_STATE> inline
+void HighOrder2D<SOLN_STATE>::InitializeVariable(int ReconstructionOrder, GeometryType & Block,
+						 const bool &_pseudo_inverse_allocation_){
+
+  // (Re)-Allocate memory for the high-order object.
+  allocate(Block.ICu-Block.ICl+1,
+	   Block.JCu-Block.JCl+1,
+	   Block.Nghost,
+	   _pseudo_inverse_allocation_,
+	   ReconstructionOrder);
+
+  // Associate geometry
+  SetGeometryPointer(Block);
+
+  // Compute the pseudo-inverse if required
+  if (_pseudo_inverse_allocation_){
+    // add the pseudo-inverse calculation here
+  }
+}
+
+//! Reset the reconstruction order.
+//  This function assumes that the object has already associated geometry.
+template<class SOLN_STATE> inline
+void HighOrder2D<SOLN_STATE>::SetReconstructionOrder(int ReconstructionOrder){
+
+  // Use the already associated grid and pseudo-inverse allocation flag to set the new reconstruction order
+  bool _pseudo_inverse_allocation_ = _allocated_psinv;
+
+  InitializeVariable(ReconstructionOrder,
+		     *Geom,
+		     _pseudo_inverse_allocation_);
+}
+
 // AssociateGeometry()
 /*! 
  * Perform all settings when a specific geometry is
@@ -787,8 +825,12 @@ void HighOrder2D<SOLN_STATE>::deallocate_CellMemory(void){
  */
 template<class SOLN_STATE> inline
 void HighOrder2D<SOLN_STATE>::AssociateGeometry(GeometryType & Block){
-  // Set geometry pointer
-  SetGeometryPointer(Block);
+
+  bool _pseudo_inverse_allocation_ = _allocated_psinv;
+
+  InitializeVariable(OrderOfReconstruction,
+		     Block,
+		     _pseudo_inverse_allocation_);
 }
 
 // getNumberOfRings()

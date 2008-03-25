@@ -20,6 +20,15 @@ short int HighOrder2D_Input::NumberOfHighOrderReconstructions(0); //!< Set to ZE
 
 // ===  Member functions ===
 /*!
+ * Reset class variables to default values.
+ */
+void HighOrder2D_Input::SetDefaults(void){
+  OrdersOfReconstruction = vector<short int>(1,-1); // Set to no high-order reconstruction.
+  NumberOfAuxiliaryReconstructions = 0; // Set to ZERO. No auxiliary reconstructions.
+  NumberOfHighOrderReconstructions = 0; // Set to ZERO. No high-order reconstruction.
+}
+
+/*!
  * Print the relevant parameters of the HighOrder2D_Input
  * class to the provided output stream.
  */

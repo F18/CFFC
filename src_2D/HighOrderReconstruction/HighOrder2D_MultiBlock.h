@@ -48,10 +48,10 @@ void HighOrder2D_MultiBlock::Create_Initial_HighOrder_Variables(Quad_Soln_Block 
   int i;
 
   if (HighOrder2D_Input::NumberOfHighOrderReconstructions != 0){
-
     for (i = 0 ; i <= LocalSolnBlockList.Nblk-1 ; ++i ) {
       if (LocalSolnBlockList.Block[i].used == ADAPTIVEBLOCK2D_USED) {
-	// add initialization at block level
+	Soln_ptr[i].allocate_HighOrder(HighOrder2D_Input::NumberOfHighOrderReconstructions,
+				       HighOrder2D_Input::OrdersOfReconstruction);
       } /* endif */
     }  /* endfor */
 
