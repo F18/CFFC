@@ -482,6 +482,81 @@ namespace tut
     ensure_equals("Third High-order ", Soln.HighOrderVariable(2).RecOrder(), 4);
   }
 
+  /* Test 8:*/
+  template<>
+  template<>
+  void AdvectDiffuse2D_Quad_Block_object::test<8>()
+  {
+
+    set_test_name("Output advection-diffusion solution block with high-order variables");
+    set_local_input_path("QuadBlockData");
+    set_local_output_path("QuadBlockData");
+
+    RunRegression = ON ;
+
+    // Set input file name
+    Open_Input_File("CircularAdvectionDiffusion_HighOrder.in");
+
+    // Parse the input file
+    IP.Verbose() = false;
+    IP.Parse_Input_File(input_file_name);
+    HighOrder2D_Input::Set_Final_Parameters(IP);
+
+    // Create computational domain
+    InitializeComputationalDomain(MeshBlk,QuadTree,
+				  GlobalList_Soln_Blocks, LocalList_Soln_Blocks, 
+				  SolnBlk, IP);
+
+    MasterFile = "Output_AdvectionDiffusionBlock.dat";
+    CurrentFile = "Current_Output_AdvectionDiffusionBlock.dat";
+
+    if (RunRegression){
+      
+      // open file for output
+      Open_Output_File(CurrentFile);
+
+      // generate current file
+      out() << SolnBlk[0];
+
+      // check result
+      RunRegressionTest("operator <<", CurrentFile, MasterFile, 5.0e-12, 5.0e-12);
+
+    } else {
+
+      // open file for output
+      Open_Output_File(MasterFile);
+      
+      // generate master
+      out() << SolnBlk[0];
+    }
+    
+  }
+
+  /* Test 9:*/
+  template<>
+  template<>
+  void AdvectDiffuse2D_Quad_Block_object::test<9>()
+  {
+
+    set_test_name("Check input-output operators");
+    set_local_input_path("QuadBlockData");
+
+    // Set input file name
+    Open_Input_File("CircularAdvectionDiffusion_HighOrder.in");
+
+    // Parse the input file
+    IP.Verbose() = false;
+    IP.Parse_Input_File(input_file_name);
+    HighOrder2D_Input::Set_Final_Parameters(IP);
+
+    // Create computational domain
+    InitializeComputationalDomain(MeshBlk,QuadTree,
+				  GlobalList_Soln_Blocks, LocalList_Soln_Blocks, 
+				  SolnBlk, IP);
+
+    // == check 
+    Check_Input_Output_Operator("SolnBlk[0] variable", SolnBlk[0]);
+  }
   
 
 }

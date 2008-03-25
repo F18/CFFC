@@ -1753,6 +1753,13 @@ ostream &operator << (ostream &out_file,
     out_file << SolnBlk.UoS[i] << "\n";
     out_file << SolnBlk.UoN[i] << "\n";
   } /* endfor */
+
+  // Output the high-order variables
+  out_file << SolnBlk.NumberOfHighOrderVariables << "\n";
+  for (int k = 1; k <= SolnBlk.NumberOfHighOrderVariables; ++k){
+    out_file << SolnBlk.HighOrderVariable(k-1);
+  }/* endfor */
+
   return (out_file);
 }
 
@@ -1761,7 +1768,7 @@ ostream &operator << (ostream &out_file,
  ********************/
 istream &operator >> (istream &in_file,
 		      AdvectDiffuse2D_Quad_Block &SolnBlk) {
-  int i, j, k, ni, il, iu, nj, jl, ju, ng;
+  int i, j, k, ni, il, iu, nj, jl, ju, ng, n_HO;
   Grid2D_Quad_Block_HO New_Grid;
   in_file >> New_Grid;
   in_file.setf(ios::skipws);
@@ -1805,6 +1812,18 @@ istream &operator >> (istream &in_file,
     in_file >> SolnBlk.UoS[i];
     in_file >> SolnBlk.UoN[i];
   } /* endfor */
+  in_file.setf(ios::skipws);
+
+  // Read the high-order variables
+  in_file >> n_HO;
+  SolnBlk.allocate_HighOrder_Array(n_HO);
+
+  for (int k = 1; k <= SolnBlk.NumberOfHighOrderVariables; ++k){
+    // Read the current variable
+    in_file >> SolnBlk.HighOrderVariable(k-1);
+    // Associate this variable to the current grid
+    SolnBlk.HighOrderVariable(k-1).AssociateGeometry(SolnBlk.Grid);
+  }/* endfor */
 
   in_file.setf(ios::skipws);
   return (in_file);

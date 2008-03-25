@@ -789,7 +789,7 @@ template<class SOLN_STATE> inline
 void HighOrder2D<SOLN_STATE>::InitializeVariable(int ReconstructionOrder, GeometryType & Block,
 						 const bool &_pseudo_inverse_allocation_){
 
-  // (Re)-Allocate memory for the high-order object.
+  // Allocate (re-allocate) memory for the high-order object.
   allocate(Block.ICu-Block.ICl+1,
 	   Block.JCu-Block.JCl+1,
 	   Block.Nghost,
@@ -1453,6 +1453,7 @@ void HighOrder2D<SOLN_STATE>::Read_Object(istream & in_file) {
   int i,j;
 
   // Read allocation flags
+  in_file.setf(ios::skipws);
   in_file >> _alloc_block_
 	  >> _alloc_cells_
 	  >> _alloc_psinv_
@@ -1498,6 +1499,8 @@ void HighOrder2D<SOLN_STATE>::Read_Object(istream & in_file) {
     // Deallocate the current object
     deallocate();
   }
+
+  in_file.unsetf(ios::skipws);
 }
 
 /*!
