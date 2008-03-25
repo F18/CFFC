@@ -26,6 +26,11 @@ class HighOrder2D_MultiBlock;
 class HighOrder2D_Input{
 public:
 
+  //! @name Field access
+  //@{
+  static const short int & MaximumReconstructionOrder(void) { return MaxReconstructionOrder; }
+  //@}
+
   //! @name Functions for input-output and broadcast
   //@{
   template<class Input_Parameters_Type>
@@ -47,6 +52,7 @@ protected:
   static vector<short int> OrdersOfReconstruction;
   static short int NumberOfAuxiliaryReconstructions;
   static short int NumberOfHighOrderReconstructions;
+  static short int MaxReconstructionOrder;
 
   // declaration of friend classes
   friend class HighOrder2D_MultiBlock;
@@ -102,6 +108,7 @@ void HighOrder2D_Input::Parse_Next_Input_Control_Parameter(Input_Parameters_Type
     OrdersOfReconstruction.assign(1,-1);
     NumberOfAuxiliaryReconstructions = 0;
     NumberOfHighOrderReconstructions = 0;
+    MaxReconstructionOrder = 0;
 
   } else {
     i_command = INVALID_INPUT_CODE;
@@ -141,6 +148,9 @@ void HighOrder2D_Input::Set_Final_Parameters(Input_Parameters_Type & IP){
 	Temp.push_back(OrdersOfReconstruction[i]);
 	++NumberOfAuxiliaryReconstructions;
       }	// endif
+
+      // determine the maximum reconstruction order
+      MaxReconstructionOrder = max(MaxReconstructionOrder,OrdersOfReconstruction[i]);
     } // endif
   }// endfor
 

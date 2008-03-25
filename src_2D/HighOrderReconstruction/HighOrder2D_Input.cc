@@ -16,6 +16,7 @@
 vector<short int> HighOrder2D_Input::OrdersOfReconstruction(1,-1); //!< Set to no high-order reconstruction.
 short int HighOrder2D_Input::NumberOfAuxiliaryReconstructions(0); //!< Set to ZERO. No auxiliary reconstructions.
 short int HighOrder2D_Input::NumberOfHighOrderReconstructions(0); //!< Set to ZERO. No high-order reconstruction.
+short int HighOrder2D_Input::MaxReconstructionOrder(0);		  //!< Set to ZERO (i.e piecewise constant ).
 
 
 // ===  Member functions ===
@@ -26,6 +27,7 @@ void HighOrder2D_Input::SetDefaults(void){
   OrdersOfReconstruction = vector<short int>(1,-1); // Set to no high-order reconstruction.
   NumberOfAuxiliaryReconstructions = 0; // Set to ZERO. No auxiliary reconstructions.
   NumberOfHighOrderReconstructions = 0; // Set to ZERO. No high-order reconstruction.
+  MaxReconstructionOrder = 0;		// Set to ZERO (i.e piecewise constant ).
 }
 
 /*!
