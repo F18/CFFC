@@ -410,6 +410,7 @@ namespace tut
     IP.Verbose() = false;
     IP.Parse_Input_File(input_file_name);
     HighOrder2D_Input::Set_Final_Parameters(IP);
+    CENO_Execution_Mode::CENO_SPEED_EFFICIENT = ON;
 
     // Create computational domain
     InitializeComputationalDomain(MeshBlk,QuadTree,
@@ -434,13 +435,17 @@ namespace tut
     ensure_equals("Third High-order ", SolnBlk[0].HighOrderVariable(2).RecOrder(), RecOrders[2]);
 
     // == check calculation of the pseudo-inverse
-    
+    ensure_equals("Main High-order pseudo-inv", SolnBlk[0].HighOrderVariable(0).IsPseudoInversePreComputed(), true);
+    ensure_equals("Second High-order pseudo-inv", SolnBlk[0].HighOrderVariable(1).IsPseudoInversePreComputed(), true);
+    ensure_equals("Third High-order pseudo-inv", SolnBlk[0].HighOrderVariable(2).IsPseudoInversePreComputed(), true);
 
     // associate a different grid to the third high-order object
     SolnBlk[0].HighOrderVariable(2).AssociateGeometry(SolnBlk[1].Grid);
 
     // == check calculation of the pseudo-inverse with the new grid
-    
+    ensure_equals("Main High-order pseudo-inv", SolnBlk[0].HighOrderVariable(0).IsPseudoInversePreComputed(), true);
+    ensure_equals("Second High-order pseudo-inv", SolnBlk[0].HighOrderVariable(1).IsPseudoInversePreComputed(), true);
+    ensure_equals("Third High-order pseudo-inv", SolnBlk[0].HighOrderVariable(2).IsPseudoInversePreComputed(), true);    
   }
 
   /* Test 7:*/

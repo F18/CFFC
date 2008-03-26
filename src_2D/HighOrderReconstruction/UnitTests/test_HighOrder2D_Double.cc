@@ -1070,6 +1070,73 @@ namespace tut
     ensure_distance("Area", HO.IntegrateOverTheCell(3,3,Function_Test,10, Result), Result, AcceptedError(Result));
   }
 
+  /* Test 24:*/
+  template<>
+  template<>
+  void HighOrder2D_object::test<24>()
+  {
+    set_test_name("Calculate pseudo-inverse");
+    set_local_input_path("HighOrder2D_Data");
+    set_local_output_path("HighOrder2D_Data");
+
+    RunRegression = ON;
+
+    HighOrder2D<double> HO;
+    int RecOrder(4);
+    
+    // Set execution mode
+    CENO_Execution_Mode::CENO_RECONSTRUCTION_WITH_MESSAGE_PASSING = OFF;
+    CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS = OFF;
+
+    // Generate a geometry
+    Grid2D_Quad_Block_HO Grid;
+
+    // Read the geometry from input file
+    Open_Input_File("CartesianMesh.dat");
+    in() >> Grid;
+
+    // Initialize high-order variable
+    HO.InitializeVariable(RecOrder,Grid,true);
+
+    MasterFile  = "PseudoInverse.dat";
+    CurrentFile = "Current_PseudoInverse.dat";
+
+    if (RunRegression){
+
+      // open output file
+      Open_Output_File(CurrentFile);
+
+      ensure_equals("Pseudo-inv Flag I", HO.IsPseudoInversePreComputed(), true);
+
+      // output the pseudo-inverse of cell (5,7)
+      Print_File(HO.Cell_LHS_Inv(5,7), out());
+
+      // switch order
+      HO.SetReconstructionOrder(1);
+
+      ensure_equals("Pseudo-inv Flag II", HO.IsPseudoInversePreComputed(), true);
+
+      // output the pseudo-inverse of cell (5,7)
+      Print_File(HO.Cell_LHS_Inv(5,7), out());
+
+      RunRegressionTest("Pseudo-inverse cell (5,7)", CurrentFile, MasterFile, 1.0e-10, 1.0e-10);
+
+    } else {
+
+      // open output file
+      Open_Output_File(MasterFile);
+
+      // output the pseudo-inverse of cell (5,7)
+      Print_File(HO.Cell_LHS_Inv(5,7), out());
+
+      // switch order
+      HO.SetReconstructionOrder(1);
+
+      // output the pseudo-inverse of cell (5,7)
+      Print_File(HO.Cell_LHS_Inv(5,7), out());
+    }
+  }
+
 }
 
 

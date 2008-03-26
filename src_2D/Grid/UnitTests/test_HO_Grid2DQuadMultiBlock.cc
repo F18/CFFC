@@ -4129,6 +4129,66 @@ namespace tut
     }
   }
 
+  // Test 57:
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<57>()
+  {
+    set_test_name("Check boundary reconstruction type");
+ 
+    // Add test particular input parameters
+    IP.i_Grid = GRID_RECTANGULAR_BOX;
+    IP.Number_of_Blocks_Jdir = 1;
+    IP.Number_of_Blocks_Idir = 2;
+    IP.Number_of_Cells_Idir = 10;
+    IP.Number_of_Cells_Jdir = 10;
+    IP.Number_of_Ghost_Cells = 2;
+    IP.Space_Accuracy = 4;
+    IP.Box_Width = 2;
+    IP.Box_Height = 2;
+    IP.X_Shift.x = -6;
+    IP.X_Shift.y = -6;
+    IP.X_Scale = 1.0;
+    IP.X_Rotate = 45.0;
+    IP.IncludeHighOrderBoundariesRepresentation = OFF;
+    IP.i_Smooth_Quad_Block = ON;
+    strcpy(IP.BC_North_Type, "Reflection");
+    strcpy(IP.BC_East_Type, "Reflection");
+    strcpy(IP.BC_South_Type, "Reflection");
+    strcpy(IP.BC_West_Type, "Reflection");
+    IP.BCs_Specified = ON;
+    IP.BC_North = BC_REFLECTION;
+    IP.BC_South = BC_REFLECTION;
+    IP.BC_East = BC_REFLECTION;
+    IP.BC_West = BC_REFLECTION;
+    IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
+
+    // Build the mesh without high-order representation
+    CreateMesh(MeshBlk,IP);
+
+    // == check 
+    ensure_equals("South Bnd", MeshBlk(0,0).IsSouthBoundaryReconstructionConstrained(), false);
+    ensure_equals("North Bnd", MeshBlk(0,0).IsNorthBoundaryReconstructionConstrained(), false);
+    ensure_equals("East Bnd", MeshBlk(0,0).IsEastBoundaryReconstructionConstrained(), false);
+    ensure_equals("West Bnd", MeshBlk(0,0).IsWestBoundaryReconstructionConstrained(), false);
+
+    // Switch to high-order representation but no spline type set to ReconstructionBasedFlux
+    MeshBlk(0,0).setHighOrderBoundaryRepresentation();
+    ensure_equals("South Bnd", MeshBlk(0,0).IsSouthBoundaryReconstructionConstrained(), false);
+    ensure_equals("North Bnd", MeshBlk(0,0).IsNorthBoundaryReconstructionConstrained(), false);
+    ensure_equals("East Bnd", MeshBlk(0,0).IsEastBoundaryReconstructionConstrained(), false);
+    ensure_equals("West Bnd", MeshBlk(0,0).IsWestBoundaryReconstructionConstrained(), false);
+
+    // Switch the type of the flux calculation method
+    MeshBlk(0,0).BndNorthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    MeshBlk(0,0).BndSouthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    MeshBlk(0,0).BndWestSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    MeshBlk(0,0).BndEastSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    ensure_equals("South Bnd", MeshBlk(0,0).IsSouthBoundaryReconstructionConstrained(), true);
+    ensure_equals("North Bnd", MeshBlk(0,0).IsNorthBoundaryReconstructionConstrained(), true);
+    ensure_equals("East Bnd", MeshBlk(0,0).IsEastBoundaryReconstructionConstrained(), true);
+    ensure_equals("West Bnd", MeshBlk(0,0).IsWestBoundaryReconstructionConstrained(), true);
+  }
 
 }
 

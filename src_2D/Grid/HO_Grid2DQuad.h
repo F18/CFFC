@@ -882,6 +882,14 @@ public:
   static void setMixedContourIntegration(void) {
     Gauss_Quad_Curvilinear_Integration = ON; Mixed_Curvilinear_Integration = ON;
   }
+  //! Check if the West boundary has constrained reconstruction (i.e. it is curved and set to reconstruction based flux)
+  bool IsWestBoundaryReconstructionConstrained(void) const;
+  //! Check if the East boundary has constrained reconstruction (i.e. it is curved and set to reconstruction based flux)
+  bool IsEastBoundaryReconstructionConstrained(void) const;
+  //! Check if the South boundary has constrained reconstruction (i.e. it is curved and set to reconstruction based flux)
+  bool IsSouthBoundaryReconstructionConstrained(void) const;
+  //! Check if the North boundary has constrained reconstruction (i.e. it is curved and set to reconstruction based flux)
+  bool IsNorthBoundaryReconstructionConstrained(void) const;
   //@}
 
   //! Set the designated switch to require computation of geometric properties with extra care for numerical errors
@@ -2331,5 +2339,56 @@ inline bool Grid2D_Quad_Block_HO::CheckExistenceOfCurvedBoundaries(void){
   return true;
 }
 
+/*!
+ * Check West boundary reconstruction type.
+ * Return true is the reconstruction is done
+ * with boundary constrains, otherwise return false.
+ */
+inline bool Grid2D_Quad_Block_HO::IsWestBoundaryReconstructionConstrained(void) const{
+  if ( (BndWestSpline.Xp == NULL) || (BndWestSpline.getFluxCalcMethod() == SolveRiemannProblem) ){
+    return false;
+  } else {
+    return true;
+  }
+}
+  
+/*!
+ * Check East boundary reconstruction type.
+ * Return true is the reconstruction is done
+ * with boundary constrains, otherwise return false.
+ */
+inline bool Grid2D_Quad_Block_HO::IsEastBoundaryReconstructionConstrained(void) const{
+  if ( (BndEastSpline.Xp == NULL) || (BndEastSpline.getFluxCalcMethod() == SolveRiemannProblem) ){
+    return false;
+  } else {
+    return true;
+  }
+}
+
+/*!
+ * Check South boundary reconstruction type.
+ * Return true is the reconstruction is done
+ * with boundary constrains, otherwise return false.
+ */
+inline bool Grid2D_Quad_Block_HO::IsSouthBoundaryReconstructionConstrained(void) const{
+  if ( (BndSouthSpline.Xp == NULL) || (BndSouthSpline.getFluxCalcMethod() == SolveRiemannProblem) ){
+    return false;
+  } else {
+    return true;
+  }
+}
+
+/*!
+ * Check North boundary reconstruction type.
+ * Return true is the reconstruction is done
+ * with boundary constrains, otherwise return false.
+ */
+inline bool Grid2D_Quad_Block_HO::IsNorthBoundaryReconstructionConstrained(void) const{
+  if ( (BndNorthSpline.Xp == NULL) || (BndNorthSpline.getFluxCalcMethod() == SolveRiemannProblem) ){
+    return false;
+  } else {
+    return true;
+  }
+}
 
 #endif /* _GRID2D_QUAD_BLOCK_INCLUDED  */
