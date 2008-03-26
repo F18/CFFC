@@ -260,56 +260,45 @@ public:
 
   //! @name Evaluate the polynomial interpolant.
   //@{
-  //! Evaluate the interpolant at a given location (X_Coord,Y_Coord) for a specified solution variable (i.e. parameter)
-  double SolutionAtCoordinates(const double & X_Coord, const double & Y_Coord, const unsigned & parameter){
-    return TD.ComputeSolutionFor(X_Coord - XCellCenter(), Y_Coord - YCellCenter())[parameter];
+  //! Evaluate the interpolant at a given location (X_Coord,Y_Coord) for a specified solution variable (i.e. parameter),
+  //  using the reconstruction of cell (ii,jj)
+  double SolutionAtCoordinates(const int & ii, const int & jj, 
+			       const double & X_Coord, const double & Y_Coord, const unsigned & parameter) const {
+    return TD[ii][jj].ComputeSolutionFor(X_Coord - XCellCenter(ii,jj), Y_Coord - YCellCenter(ii,jj))[parameter];
   }
-  //! Evaluate the interpolant at a given location (X_Coord,Y_Coord) for all solution variables.
-  Soln_State SolutionAtCoordinates(const double & X_Coord, const double & Y_Coord){
-    return TD.ComputeSolutionFor(X_Coord - XCellCenter(), Y_Coord - YCellCenter());
+  //! Evaluate the interpolant at a given location (X_Coord,Y_Coord) for all solution variables,
+  //  using the reconstruction of cell (ii,jj)
+  Soln_State SolutionAtCoordinates(const int & ii, const int & jj,
+				   const double & X_Coord, const double & Y_Coord) const {
+    return TD[ii][jj].ComputeSolutionFor(X_Coord - XCellCenter(ii,jj), Y_Coord - YCellCenter(ii,jj));
   }
   //@}
 
   /*! @brief Integrate over the domain of the geometry associated with this high-order solution  */
   template<typename FO, class ReturnType>
-  ReturnType IntegrateOverTheCell(const FO FuncObj, const int & digits, ReturnType _dummy_param);
+  ReturnType IntegrateOverTheCell(const int &ii, const int &jj, const FO FuncObj,
+				  const int & digits, ReturnType _dummy_param) const;
   
   //! @name Reconstructions:
   //@{
   /*! @brief Compute the unlimited high-order solution reconstruction.  */
   template<class Soln_Block_Type>
-  void ComputeUnlimitedSolutionReconstruction(Soln_Block_Type *SolnBlk,
-					      const int &iCell,
-					      const int &jCell,
-					      const int ReconstructionMethod,
-					      HighOrder2D<Soln_State> & (Soln_Block_Type::*AccessToHighOrderVar)(void) = 
-					      &Soln_Block_Type::CellHighOrder);
+  void ComputeUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk);
 
   /*! @brief Compute the pseudo-inverse corresponding to the unlimited high-order solution reconstruction.  */
   template<class Soln_Block_Type>
-  void ComputeReconstructionPseudoInverse(Soln_Block_Type *SolnBlk,
-					  const int &iCell,
-					  const int &jCell,
-					  HighOrder2D<Soln_State> & (Soln_Block_Type::*AccessToHighOrderVar)(void) = 
-					  &Soln_Block_Type::CellHighOrder);
+  void ComputeReconstructionPseudoInverse(void);
 
   /*! @brief Compute the second (low-order) reconstruction in the CENO algorithm.  */
   template<class Soln_Block_Type>
-  void ComputeLowOrderReconstruction(Soln_Block_Type *SolnBlk,
-				     const int &iCell,
-				     const int &jCell,
+  void ComputeLowOrderReconstruction(Soln_Block_Type &SolnBlk,
 				     const int &Limiter);
-
   //@}
 
   //! @name CENO Analysis:
   //@{
   template<class Soln_Block_Type>
-  void ComputeSmoothnessIndicator(Soln_Block_Type *SolnBlk,
-				  const int &iCell,
-				  const int &jCell,
-				  HighOrder2D<Soln_State> & (Soln_Block_Type::*AccessToHighOrderVar)(void) = 
-				  &Soln_Block_Type::CellHighOrder);
+  void ComputeSmoothnessIndicator(Soln_Block_Type &SolnBlk);
   //@}
 
 
@@ -1031,8 +1020,6 @@ void HighOrder2D<SOLN_STATE>::InitializeMonotonicityVariables(const int & ii, co
 
 }
 
-#if 0
-
 // ComputeUnlimitedSolutionReconstruction()
 /*! 
  * Compute the unlimited high-order reconstruction for 
@@ -1042,11 +1029,9 @@ void HighOrder2D<SOLN_STATE>::InitializeMonotonicityVariables(const int & ii, co
 template<class SOLN_STATE>
 template<class Soln_Block_Type> inline
 void HighOrder2D<SOLN_STATE>::
-ComputeUnlimitedSolutionReconstruction(Soln_Block_Type *SolnBlk,
-				       const int iCell,
-				       const int ReconstructionMethod,
-				       HighOrder2D<Soln_State> & (Soln_Block_Type::*AccessToHighOrderVar)(void)){
+ComputeUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk){
 
+#if 0
   vector<int> i_index(getStencilSize()); 
   string msg;
 
@@ -1070,6 +1055,7 @@ ComputeUnlimitedSolutionReconstruction(Soln_Block_Type *SolnBlk,
     throw runtime_error("HighOrder2D ERROR: Unknown specified reconstruction method");
 
   }
+#endif
 }
 
 // ComputeUnlimitedSolutionReconstruction()
@@ -1080,10 +1066,9 @@ ComputeUnlimitedSolutionReconstruction(Soln_Block_Type *SolnBlk,
  */
 template<class SOLN_STATE>
 template<class Soln_Block_Type> inline
-void HighOrder2D<SOLN_STATE>::ComputeReconstructionPseudoInverse(Soln_Block_Type *SolnBlk,
-								 const int iCell,
-								 HighOrder2D<Soln_State> & 
-								 (Soln_Block_Type::*AccessToHighOrderVar)(void)){
+void HighOrder2D<SOLN_STATE>::ComputeReconstructionPseudoInverse(void){
+
+#if 0
 
   if (CENO_Execution_Mode::USE_CENO_ALGORITHM && 
       CENO_Execution_Mode::CENO_SPEED_EFFICIENT && 
@@ -1117,6 +1102,8 @@ void HighOrder2D<SOLN_STATE>::ComputeReconstructionPseudoInverse(Soln_Block_Type
     // Set properly the _calculated_psinv
     _calculated_psinv = ON;
   }
+#endif
+
 }
 
 
@@ -1131,10 +1118,10 @@ void HighOrder2D<SOLN_STATE>::ComputeReconstructionPseudoInverse(Soln_Block_Type
  */
 template<class SOLN_STATE>
 template<class Soln_Block_Type>
-void HighOrder2D<SOLN_STATE>::ComputeLowOrderReconstruction(Soln_Block_Type *SolnBlk,
-							    const int iCell,
-							    const int Limiter){
+void HighOrder2D<SOLN_STATE>::ComputeLowOrderReconstruction(Soln_Block_Type &SolnBlk,
+							    const int &Limiter){
 
+#if 0
   // Local variables
   int i, n, n2, n_pts, index[2];
   double u0Min, u0Max, uQuad[2], phi;
@@ -1214,7 +1201,7 @@ void HighOrder2D<SOLN_STATE>::ComputeLowOrderReconstruction(Soln_Block_Type *Sol
       TaylorDeriv().Limiter(n) = phi;
     } // endif
   } /* endfor (n) */
-
+#endif
 }
 
 // ComputeUnlimitedSolutionReconstruction()
@@ -1225,10 +1212,9 @@ void HighOrder2D<SOLN_STATE>::ComputeLowOrderReconstruction(Soln_Block_Type *Sol
  */
 template<class SOLN_STATE>
 template<class Soln_Block_Type>
-void HighOrder2D<SOLN_STATE>::ComputeSmoothnessIndicator(Soln_Block_Type *SolnBlk,
-							 const int iCell,
-							 HighOrder2D<Soln_State> &
-							 (Soln_Block_Type::*AccessToHighOrderVar)(void)){
+void HighOrder2D<SOLN_STATE>::ComputeSmoothnessIndicator(Soln_Block_Type &SolnBlk){
+
+#if 0
 
   static double SS_Regression, SS_Residual; // regression sum of squares, residual sum of squares
   static double MeanSolution, alpha;
@@ -1317,20 +1303,22 @@ void HighOrder2D<SOLN_STATE>::ComputeSmoothnessIndicator(Soln_Block_Type *SolnBl
       (alpha/(max(CENO_Tolerances::epsilon,1.0 - alpha))) * AdjustmentCoeff;
 
   }//endfor -> parameter
+#endif
+
 }
 
 //! Integrate over the cell
-template<class SOLN_STATE> template<typename FO, class ReturnType> inline
+template<class SOLN_STATE>
+template<typename FO, class ReturnType> inline
 ReturnType HighOrder2D<SOLN_STATE>::IntegrateOverTheCell(const int &ii, const int &jj,
 							 const FO FuncObj,
 							 const int & digits,
-							 ReturnType _dummy_param){
-  return AdaptiveGaussianQuadrature(FuncObj,
-				    CellCenter() - 0.5* CellDelta(),
-				    CellCenter() + 0.5* CellDelta(),
-				    _dummy_param,digits);
+							 ReturnType _dummy_param) const {
+  return Geom->Integration.IntegrateFunctionOverCell(ii,jj, FuncObj, digits, _dummy_param);
 }
 
+
+#if 0
 /*! 
  * Compute the integral over the cell geometry of the error between the
  * reconstructed polynomial and the function provided as input. 
@@ -1685,12 +1673,12 @@ double & HighOrder2D<double>::CellTaylorDerivValue(const int & ii, const int & j
   return TD[ii][jj](p1,p2);
 }
 
-#if 0
 template <> inline
-double HighOrder2D<double>::SolutionAtCoordinates(const double & X_Coord, const unsigned parameter){
-  return TD.ComputeSolutionFor(X_Coord - CellCenter());
+double HighOrder2D<double>::SolutionAtCoordinates(const int & ii, const int & jj, 
+						  const double & X_Coord, const double & Y_Coord,
+						  const unsigned & parameter) const {
+  return TD[ii][jj].ComputeSolutionFor(X_Coord - XCellCenter(ii,jj), Y_Coord - YCellCenter(ii,jj));
 }
-#endif
 
 
 #endif // _HIGHORDER_2D_INCLUDED

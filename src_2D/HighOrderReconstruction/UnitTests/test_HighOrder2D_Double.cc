@@ -16,6 +16,10 @@
 namespace tut
 {
 
+  double Function_Test(const double &x, const double &y){
+    return 1;
+  }
+
   /* Define the test-specific data class and add data members 
      when tests have complex or repeating creation phase. */
   class Data_HighOrder2D : public TestData {
@@ -581,7 +585,7 @@ namespace tut
 
     // Allocate memory for the high-order WITH pseudo-inverse
     HO.allocate(NCi,NCj,Nghost,true,RecOrder);
-
+  
     ensure_equals("Nghost high-order", HO.NghostHO(), 3);
 
     // Change the execution flag
@@ -595,7 +599,7 @@ namespace tut
     ensure_equals("Stencil size", HO.getStencilSize(), 25);
     ensure_equals("Taylor deriv. size", HO.getTaylorDerivativesSize(), 15);
 
-
+  
     // == check TD containers
     ensure("TD", HO.TaylorDeriv() != NULL);
     ensure_equals("TD size", HO.NumberOfTaylorDerivatives(), 15);
@@ -635,12 +639,12 @@ namespace tut
     ensure("CENO_Geometric_Weights", HO.GeomWeights() != NULL);
     ensure_equals("CENO_Geometric_Weights", HO.GeomWeights(3,3).size(), 25);
     ensure_equals("CENO_Geometric_Weights", HO.GeomWeightValue(3,3,24), 0.0);
-
+  
     ensure("Geometry Pointer", HO.Geometry() == NULL);
-
+  
     // == check containers for the last cell with high-order containers
     ensure_equals("Last Cell, Pos. 0, TD power", HO.CellTaylorDeriv(8,9,0).P1(), 0);
-    ensure_equals("Last Cell, Pos. 0, TD power", HO.CellTaylorDeriv(8,9,0).P2(), 0);
+    ensure_equals("Last Cell, Pos. 0, TD power", HO.CellTaylorDeriv(8,9,0).P2(), 0); 
     ensure_equals("Last Cell, Pos. 0, TD value I", HO.CellTaylorDeriv(8,9,0).D(), 0.0);
     ensure_equals("Last Cell, Pos. 1, TD power", HO.CellTaylorDeriv(8,9,1).P1(), 0);
     ensure_equals("Last Cell, Pos. 1, TD power", HO.CellTaylorDeriv(8,9,1).P2(), 1);
@@ -648,7 +652,7 @@ namespace tut
     ensure_equals("Last Cell, Pos. 14, TD power", HO.CellTaylorDeriv(8,9,14).P1(), 4);
     ensure_equals("Last Cell, Pos. 14, TD power", HO.CellTaylorDeriv(8,9,14).P2(), 0);
     ensure_equals("Last Cell, Pos. 14, TD value I", HO.CellTaylorDeriv(8,9,14).D(), 0.0);
-
+  
     ensure_equals("Last Cell, TD value II", HO.CellTaylorDerivValue(8,9,1,0,0), 0.0);
     ensure_equals("Last Cell, TD value III", HO.CellTaylorDerivState(8,9,0,1), 0.0);
 
@@ -979,6 +983,92 @@ namespace tut
     }
   }
 
+  /* Test 22:*/
+  template<>
+  template<>
+  void HighOrder2D_object::test<22>()
+  {
+    set_test_name("Evaluate the polynomial interpolant");
+    set_local_input_path("HighOrder2D_Data");
+    set_local_output_path("HighOrder2D_Data");
+
+    HighOrder2D<double> HO;
+    int RecOrder(4);
+    
+    // Set execution mode
+    CENO_Execution_Mode::CENO_RECONSTRUCTION_WITH_MESSAGE_PASSING = OFF;
+    CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS = ON;
+
+    // Generate a geometry
+    Grid2D_Quad_Block_HO Grid;
+
+    // Read the geometry from input file
+    Open_Input_File("CartesianMesh.dat");
+    in() >> Grid;
+
+    // Initialize high-order variable
+    HO.InitializeVariable(RecOrder,Grid,true);
+
+    // Set the Taylor derivatives
+    HO.CellTaylorDerivState(3,3,0,0) = 1.0;
+    HO.CellTaylorDerivState(3,3,0,1) = 2.0;
+    HO.CellTaylorDerivState(3,3,0,2) = 3.0;
+    HO.CellTaylorDerivState(3,3,0,3) = 4.0;
+    HO.CellTaylorDerivState(3,3,0,4) = 5.0;
+    HO.CellTaylorDerivState(3,3,1,0) = 1.0;
+    HO.CellTaylorDerivState(3,3,1,1) = 2.0;
+    HO.CellTaylorDerivState(3,3,1,2) = 3.0;
+    HO.CellTaylorDerivState(3,3,1,3) = 4.0;
+    HO.CellTaylorDerivState(3,3,2,0) = 1.0;
+    HO.CellTaylorDerivState(3,3,2,1) = 2.0;
+    HO.CellTaylorDerivState(3,3,2,2) = 3.0;
+    HO.CellTaylorDerivState(3,3,3,0) = 1.0;
+    HO.CellTaylorDerivState(3,3,3,1) = 2.0;
+    HO.CellTaylorDerivState(3,3,4,0) = 1.0;
+
+    // == check solution
+    double Result = 0.59509999999999985;
+    Vector2D Point(-1.2, -1.8);	// This corresponds to DeltaX = 0.1 and DeltaY = 0.5
+
+    ensure_distance("Point value with cell (3,3)",
+		    HO.SolutionAtCoordinates(3,3,Point.x, Point.y), Result, AcceptedError(Result));
+
+    ensure_distance("Point value with cell (3,3)",
+		    HO.SolutionAtCoordinates(3,3,Point.x, Point.y, 1), Result, AcceptedError(Result));
+  }
+
+  /* Test 23:*/
+  template<>
+  template<>
+  void HighOrder2D_object::test<23>()
+  {
+    set_test_name("Integrate over the cell domain");
+    set_local_input_path("HighOrder2D_Data");
+    set_local_output_path("HighOrder2D_Data");
+
+    HighOrder2D<double> HO;
+    int RecOrder(4);
+    
+    // Set execution mode
+    CENO_Execution_Mode::CENO_RECONSTRUCTION_WITH_MESSAGE_PASSING = OFF;
+    CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS = OFF;
+
+    // Generate a geometry
+    Grid2D_Quad_Block_HO Grid;
+
+    // Read the geometry from input file
+    Open_Input_File("CartesianMesh.dat");
+    in() >> Grid;
+
+    // Initialize high-order variable
+    HO.InitializeVariable(RecOrder,Grid,true);
+
+    // Integrate over the cell (3,3)
+    double Result = Grid.CellArea(3,3);
+
+    // == check integration
+    ensure_distance("Area", HO.IntegrateOverTheCell(3,3,Function_Test,10, Result), Result, AcceptedError(Result));
+  }
 
 }
 
