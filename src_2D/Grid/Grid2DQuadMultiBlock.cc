@@ -378,7 +378,7 @@ int Check_Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
     for ( j = 0 ; j <= Number_of_Blocks_Jdir-1 ; ++j ) {
        for ( i = 0; i <= Number_of_Blocks_Idir-1 ; ++i ) {
           if (Grid_ptr[i][j].Node != NULL) {
-	     if (Check_Quad_Block(Grid_ptr[i][j])) return(1);
+	     if (Grid_ptr[i][j].Check_Quad_Block()) return(1);
           } /* endif */
        }  /* endfor */
     }  /* endfor */

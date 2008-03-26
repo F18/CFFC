@@ -167,6 +167,8 @@ inline char *Date_And_Time() {
 #define WRITE_ERROR_NORMS_TO_SCREEN                      10105
 #define WRITE_OUTPUT_EXACT_SOLUTION                      10106
 #define WRITE_OUTPUT_ACCURACY_CODE                       10107
+#define WRITE_ERROR_NORMS_TO_FILE                        10108
+#define APPEND_ERROR_NORMS_TO_FILE                       10109
 
 #define	INVALID_INPUT_CODE                              -10000
 #define	INVALID_INPUT_VALUE                             -10001
@@ -231,6 +233,7 @@ inline char *Date_And_Time() {
 #define GRID_CYLINDRICAL_ENCLOSURE           29
 #define GRID_JET_FLOW                        30
 #define GRID_ANNULUS                         31
+#define GRID_DEFORMED_BOX                    32
 
 #define GRID_ICEMCFD                       1000
 #define GRID_READ_FROM_DEFINITION_FILE    10000

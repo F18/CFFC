@@ -181,15 +181,3 @@ double Quadrilateral_Area(const Vector2D X1,
  			  const Vector2D X4) {
   return Triangle_Area(X1,X2,X3) + Triangle_Area(X4,X2,X3);
 }
-
-/**********************************************************************
- * Routine: Point_On_Line                                             *
- *                                                                    *
- * This routine returns an integer value (0 or 1) indicating if a     *
- * given point, Xp, is contained on a line defined by X1 and X2.      *
- *                                                                    *
- **********************************************************************/
-int Point_On_Line(const Vector2D X1, const Vector2D X2, const Vector2D Xp) {
-  if (fabs(abs(X2-X1) - abs(Xp-X1) - abs(Xp-X2)) < TOLER*TOLER) return 1;
-  return 0;
-}

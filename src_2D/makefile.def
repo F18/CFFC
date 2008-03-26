@@ -176,7 +176,7 @@ ifeq ($(PLATFORM),Linux_ia64)
   BLAS_LD_FLAGS   	  = -lblas -llapack -lg2c -lifcore
 endif	
 ifeq ($(PLATFORM),Linux_x86_64)
-  BLAS_LD_FLAGS           = -lblas -llapack -lg2c -lgcc
+  BLAS_LD_FLAGS           = -lblas -llapack -lgcc 
 endif
 
 #
@@ -336,8 +336,8 @@ ifeq ($(PLATFORM),Linux_alpha)
     FFLAGS = -arch host -tune host -fast -w
     F90FLAGS = $(FFLAGS) -r8
     MODFLAG = -module
-    CFLAGS = -arch host -tune host -fast -w 
-    CXXFLAGS = -arch host -tune host -fast -w -std gnu
+    CFLAGS = -arch host -tune host -fast -w -pending_instantiations 500
+    CXXFLAGS = -arch host -tune host -fast -w -std gnu -pending_instantiations 500
     LDFLAGS = $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) $(CANTERA_LD_FLAGS) -lm 
     ifeq ($(PROFILING),ON)
       FFLAGS   += -pg
@@ -357,8 +357,8 @@ ifeq ($(PLATFORM),Linux_alpha)
     FFLAGS = -arch host -tune host -fast -w
     F90FLAGS = $(FFLAGS) -r8
     MODFLAG = -module
-    CFLAGS = -arch host -tune host -fast -w
-    CXXFLAGS = -arch host -tune host -fast -w -std gnu
+    CFLAGS = -arch host -tune host -fast -w -pending_instantiations 500
+    CXXFLAGS = -arch host -tune host -fast -w -std gnu -pending_instantiations 500
     LD = $(CXX)
     LDFLAGS = $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) $(CANTERA_LD_FLAGS) -lm
     ifeq ($(PROFILING),ON)
@@ -447,7 +447,14 @@ ifeq ($(PLATFORM),Linux_x86_64)
     F90FLAGS = $(FFLAGS) -fdefault-real-8
     MODFLAG = -M
     CFLAGS = -O2 
-    LDFLAGS = $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) -lm
+    LDFLAGS = $(ICEMCFD_LD_FLAGS) $(SPARSELIB_LD_FLAGS) $(BPKIT_LD_FLAGS) $(BLAS_LD_FLAGS) $(FFTW_LD_FLAGS) $(CANTERA_LD_FLAGS) -lm
+    # Profiling with gprof 
+    ifeq ($(PROFILING),ON)
+      FFLAGS = -g -pg
+      CFLAGS = -g -pg 
+      CXXFLAGS = -g -pg 
+      LDFLAGS += -pg
+    endif
     LD = $(CXX)
     DEPENDSFLAGS =
   endif

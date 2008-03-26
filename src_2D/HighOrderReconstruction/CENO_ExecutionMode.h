@@ -27,57 +27,57 @@ public:
   // set all flags to default values
   static void SetDefaults(void);
 
-  /* This flag controls whether the CENO algorithm is used in the computation.
-     Turn ON if you want to use the high-order CENO scheme.
-     Turn OFF if you don't want to use this scheme. (default)
-     ATTENTION: Some settings/memory allocations are done only if this flag is ON.
-     ----------------------------------------------------------------------------------------  */
+  /*! This flag controls whether the CENO algorithm is used in the computation.\n
+      Turn ON if you want to use the high-order CENO scheme. \n
+      Turn OFF if you don't want to use this scheme. (default) \n
+      ATTENTION: Some settings/memory allocations are done only if this flag is ON. \n
+      ----------------------------------------------------------------------------------------  */
   static short USE_CENO_ALGORITHM;
 
   
-  /* Store the pseudo-inverse of the LHS term in the CENO reconstruction for every computational cell.
-     Turn ON if you want to run in speed efficient mode. However, the memory requirements will
-     increase considerably!!! (default)
-     Turn OFF for running in the memory efficient mode.
-     ---------------------------------------------------------------------------------------- */
+  /*! Store the pseudo-inverse of the LHS term in the CENO reconstruction for every computational cell.\n
+      Turn ON if you want to run in speed efficient mode. However, the memory requirements will
+      increase considerably!!! (default) \n
+      Turn OFF for running in the memory efficient mode. \n
+      ---------------------------------------------------------------------------------------- */
   static short CENO_SPEED_EFFICIENT;
 
 
-  /* This flag controls whether the order is dropped or not in regions detected as non-smooth.
-     Turn ON if you want the CENO scheme to produce monotone solutions in non-smooth regions. (default)
-     Turn OFF if you want to use high-order interpolant throughout the whole computational domain.
-     ATTENTION: If the flag is OFF the solution might blow up !!! 
-     ----------------------------------------------------------------------------------------  */
+  /*! This flag controls whether the order is dropped or not in regions detected as non-smooth.\n
+      Turn ON if you want the CENO scheme to produce monotone solutions in non-smooth regions. (default) \n
+      Turn OFF if you want to use high-order interpolant throughout the whole computational domain. \n
+      ATTENTION: If the flag is OFF the solution might blow up !!! \n
+      ----------------------------------------------------------------------------------------  */
   static short CENO_DROP_ORDER;  
 
 
-  /* Use CENO smoothness indicator with padding 
-     Turn ON to have the order dropped in all the cells surrounding a cell with non-smooth reconstruction
-     Turn OFF for the opposite behaviour (default)
-     ---------------------------------------------------------------------------------------- */
+  /*! Use CENO smoothness indicator with padding. \n
+      Turn ON to have the order dropped in all the cells surrounding a cell with non-smooth reconstruction. \n
+      Turn OFF for the opposite behaviour (default) \n
+      ---------------------------------------------------------------------------------------- */
   static short CENO_PADDING;
 
-  /* Turn ON this flag if the geometric weighting used in the least-squares problem is 1.0/(Distance^2)
-     Turn OFF if the geometric weighting is 1.0/fabs(Distance) (default)
-     ---------------------------------------------------------------------------------------- */
+  /*! Turn ON this flag if the geometric weighting used in the least-squares problem is 1.0/(Distance^2). \n
+      Turn OFF if the geometric weighting is 1.0/fabs(Distance) (default) \n
+      ---------------------------------------------------------------------------------------- */
   static short CENO_SQUARE_GEOM_WEIGHTING;
 
 
-  /* Turn ON if you want to include the geometric weights used in the reconstruction process
-     as part of the computation of the smoothness indicator.
-     This works only if the CENO_SUPER_FAST is turned ON (because the geometric weights are saved).
-     Turn OFF for treating all the terms in the residual sum (SS_Residual) and regression sum (SS_Regression)
-     equally (i.e. each of them has a geoemtric weight equals to 1 in the computation of the 
-     smoothness indicator). (default)
+  /*! Turn ON if you want to include the geometric weights used in the reconstruction process
+      as part of the computation of the smoothness indicator. \n
+      This works only if the CENO_SUPER_FAST is turned ON (because the geometric weights are saved). \n
+      Turn OFF for treating all the terms in the residual sum (SS_Residual) and regression sum (SS_Regression)
+      equally (i.e. each of them has a geoemtric weight equals to 1 in the computation of the 
+      smoothness indicator). (default) \n
      ---------------------------------------------------------------------------------------- */
   static short CENO_CONSIDER_WEIGHTS;
 
-  /* Use the piecewise constant state(s) to solve the Riemann problem at the interface of two cells 
-     if any/both of the interface states calculated with the reconstruction interpolant
-     has/have non-physical values (e.g. negative pressure or density).
-     Turn ON if this feature is desired. (default)
-     Turn OFF if you don't want to use this feature.
-     --------------------------------------------------------------------------------------- */
+  /*! Use the piecewise constant state(s) to solve the Riemann problem at the interface of two cells 
+      if any/both of the interface states calculated with the reconstruction interpolant
+      has/have non-physical values (e.g. negative pressure or density). \n
+      Turn ON if this feature is desired. (default) \n
+      Turn OFF if you don't want to use this feature. \n
+      --------------------------------------------------------------------------------------- */
   static short FORCE_WITH_PIECEWISE_CONSTANT_AT_INTERFACE;
 
 

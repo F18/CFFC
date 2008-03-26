@@ -38,6 +38,8 @@ using namespace std;
 #include "../Grid/Grid2DQuad.h"
 #endif // _GRID2D_QUAD_BLOCK_INCLUDED
 
+#include "../Grid/HO_Grid2DQuadMultiBlock.h"
+
 /* Include 3D hexahedral multiblock grid header file. */
 
 #ifndef _GRID3D_HEXA_BLOCK_INCLUDED
@@ -143,6 +145,13 @@ extern Grid2D_Quad_Block** ICEMCFD_Read(char **filenames,
                                         Grid2D_Quad_Block **Grid_ptr,
                                         int *domx_buf,
                                         int *domy_buf);
+
+extern void ICEMCFD_Read(char **filenames,
+			 Grid2D_Quad_MultiBlock_HO &MeshBlk,
+			 const int & Nghost,
+			 const int & HighestRecOrder,
+			 int *domx_buf,
+			 int *domy_buf);
 
 extern Grid3D_Hexa_Block*** ICEMCFD_Read(char **filenames, 
 					 Grid3D_Hexa_Block ***Grid_ptr,

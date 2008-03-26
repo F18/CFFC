@@ -661,7 +661,7 @@ int Refine_Grid(Quad_Soln_Block             *Soln_ptr,
 						 4*max(solution_block_to_be_refined.NCi-2*solution_block_to_be_refined.Nghost,
 						       solution_block_to_be_refined.NCj-2*solution_block_to_be_refined.Nghost)));
 			   } /* endif */
-                           if (Check_Quad_Block(Soln_ptr[new_blocks_BLK[iNEW]].Grid)) { 
+                           if (Soln_ptr[new_blocks_BLK[iNEW]].Grid.Check_Quad_Block()) { 
                               cout << "\n " << CFFC_Version() 
                                    << " AMR Error: Refine_Grid, Invalid refined mesh.\n";
                               return(6322);
@@ -994,7 +994,7 @@ int Coarsen_Grid(Quad_Soln_Block             *Soln_ptr,
                                                         solution_block_to_be_coarsened_SW_sibling.NCj-
 						        2*solution_block_to_be_coarsened_SW_sibling.Nghost)));
 				  } /* endif */
-                                  if (Check_Quad_Block(Soln_ptr[old_blocks_BLK[0]].Grid)) { 
+                                  if (Soln_ptr[old_blocks_BLK[0]].Grid.Check_Quad_Block()) { 
                                      cout << "\n " << CFFC_Version() 
                                           << " AMR Error: Coarsen_Grid, Invalid coarsened mesh.\n";
                                      return(7484);

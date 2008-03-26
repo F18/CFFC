@@ -1,4 +1,5 @@
-/* Cell1D.h:  Header file defining 1D cell types. */
+/*!\file Cell1D.h
+  \brief Header file defining 1D cell types. */
 
 #ifndef _CELL1D_INCLUDED
 #define _CELL1D_INCLUDED
@@ -20,77 +21,84 @@ using namespace std;
 
 /* Define the classes. */
 
-/********************************************************
- * Class: Cell1D_Uniform                                *
- *                                                      *
- * Member functions                                     *
- *      x       -- Return cell center.                  *
- *      dx      -- Return cell length.                  *
- *      setsize -- Set cell length.                     *
- *      setloc  -- Set cell center location (position). * 
- *                                                      *
- * Member operators                                     *
- *      C -- a cell                                     *
- *                                                      *
- * C = C;                                               *
- * C == C;                                              *
- * C != C;                                              *
- * cout << C; (output function)                         *
- * cin  >> C; (input function)                          *
- *                                                      *
- ********************************************************/
+/*!
+ * \class: Cell1D_Uniform                                
+ * \brief Class definition of the 1D Uniform Cell.
+ * 
+ * \verbatim
+ * Member functions                                     
+ *      x       -- Return cell center.                  
+ *      dx      -- Return cell length.                  
+ *      setsize -- Set cell length.                     
+ *      setloc  -- Set cell center location (position).  
+ *                                                      
+ * Member operators                                     
+ *      C -- a cell                                     
+ *                                                      
+ * C = C;                                               
+ * C == C;                                              
+ * C != C;                                              
+ * cout << C; (output function)                         
+ * cin  >> C; (input function)                          
+ * \endverbatim                                                     
+ */
 class Cell1D_Uniform{
-  private:
-  public:
-    double          x;   // Cell center.
-    static double  dx;   // Cell length.
-	                 // Made public so can access them.
-		      
-    /* Creation, copy, and assignment constructors. */
-    Cell1D_Uniform(void) {
-       x = ONE;
-    }
+private:
+public:
+  //! @name Cell parameters
+  //@{
+  double          x;   //!< Cell center.
+  static double  dx;   //!< Cell length.
+  //@}
 
-    Cell1D_Uniform(const Cell1D_Uniform &Cell) {
-       x = Cell.x;
-    }
+  //! @name Constructors
+  //@{
+  //! Default constructor
+  Cell1D_Uniform(void) {
+    x = ONE;
+  }
+  //! Copy constructor
+  Cell1D_Uniform(const Cell1D_Uniform &Cell) {
+    x = Cell.x;
+  }
+  //! Value constructor
+  Cell1D_Uniform(const double &location) {
+    x = location;
+  }
+  //@}
 
-    Cell1D_Uniform(const double &location) {
-       x = location;
-    }
-    
-    /* Destructor. */
-    // ~Cell1D_Uniform(void);
-    // Use automatically generated destructor.
 
-    /* Set cell size. */
-    void setsize(void);
-    void setsize(const double &length);
+  //! @name Set cell size
+  //@{
+  void setsize(void);
+  void setsize(const double &length);
+  //@}
 
-    /* Set cell center location. */
-    void setloc(void);
-    void setloc(const Cell1D_Uniform &Cell);
-    void setloc(const double &location);
+  //! @name Set cell center location.
+  //@{
+  void setloc(void);
+  void setloc(const Cell1D_Uniform &Cell);
+  void setloc(const double &location);
+  //@}
 
-    /* Assignment operator. */
-    // Cell1D_Uniform operator = (const Cell1D_Uniform &Cell);
-    // Use automatically generated assignment operator.
+  //! @name Relational operators. 
+  //@{
+  friend int operator ==(const Cell1D_Uniform &Cell1,
+			 const Cell1D_Uniform &Cell2);
+  friend int operator !=(const Cell1D_Uniform &Cell1,
+			 const Cell1D_Uniform &Cell2);
+  //@}
 
-    /* Relational operators. */
-    friend int operator ==(const Cell1D_Uniform &Cell1,
-			   const Cell1D_Uniform &Cell2);
-    friend int operator !=(const Cell1D_Uniform &Cell1,
-			   const Cell1D_Uniform &Cell2);
-    
-    /* Input-output operators. */
-    friend ostream &operator << (ostream &out_file,
-				 const Cell1D_Uniform &Cell);
-    friend istream &operator >> (istream &in_file,
-				 Cell1D_Uniform &Cell);
-    
+  //! @name Input-output operators.
+  //@{
+  friend ostream &operator << (ostream &out_file,
+			       const Cell1D_Uniform &Cell);
+  friend istream &operator >> (istream &in_file,
+			       Cell1D_Uniform &Cell);
+  //@}
 };
 
-/********************************************************
+/******************************************************//**
  * Cell1D_Uniform::setsize -- Set cell size.            *
  ********************************************************/
 inline void Cell1D_Uniform::setsize(void) {
@@ -101,7 +109,7 @@ inline void Cell1D_Uniform::setsize(const double &length) {
     dx = length;
 }
 
-/********************************************************
+/******************************************************//**
  * Cell1D_Uniform::setloc -- Set cell center location.  *
  ********************************************************/
 inline void Cell1D_Uniform::setloc(void) {
@@ -116,7 +124,7 @@ inline void Cell1D_Uniform::setloc(const double &location) {
     x = location;
 }
 
-/********************************************************
+/******************************************************//**
  * Cell1D_Uniform -- Relational operators.              *
  ********************************************************/
 inline int operator ==(const Cell1D_Uniform &Cell1,
@@ -129,7 +137,7 @@ inline int operator !=(const Cell1D_Uniform &Cell1,
     return (Cell1.x != Cell2.x);
 }
 
-/********************************************************
+/******************************************************//**
  * Cell1D_Uniform -- Input-output operators.            *
  ********************************************************/
 inline ostream &operator << (ostream &out_file,
@@ -148,111 +156,124 @@ inline istream &operator >> (istream &in_file,
     return (in_file);
 }
 
-/********************************************************
- * Class: Cell1D_NonUniform                             *
- *                                                      *
- * Member functions                                     *
- *      x       -- Return cell center.                  *
- *      dx      -- Return cell length.                  *
- *      setsize -- Set cell length.                     *
- *      setloc  -- Set cell center location (position). *
- *                                                      *
- * Member operators                                     *
- *      C -- a cell                                     *
- *      s -- a scalar (double)                          *
- *                                                      *
- * C = C;                                               *
- * C = C + s;                                           *
- * C = C - s;                                           *
- * C = s * C;                                           *
- * C = C * s;                                           *
- * C = C / s;                                           *
- * C = +C;                                              *
- * C = -C;                                              *
- * C += s;                                              *
- * C -= s;                                              *
- * C == C;                                              *
- * C != C;                                              *
- * cout << C; (output function)                         *
- * cin  >> C; (input function)                          *
- *                                                      *
- ********************************************************/
+/*!
+ * \class: Cell1D_NonUniform                             
+ * \brief Class definition of the 1D Non-Uniform Cell.
+ * \verbatim                                                      
+ * Member functions                                     
+ *      x       -- Return cell center.                  
+ *      dx      -- Return cell length.                  
+ *      setsize -- Set cell length.                     
+ *      setloc  -- Set cell center location (position). 
+ *                                                      
+ * Member operators                                     
+ *      C -- a cell                                     
+ *      s -- a scalar (double)                          
+ *                                                      
+ * C = C;                                               
+ * C = C + s;                                           
+ * C = C - s;                                           
+ * C = s * C;                                           
+ * C = C * s;                                           
+ * C = C / s;                                           
+ * C = +C;                                              
+ * C = -C;                                              
+ * C += s;                                              
+ * C -= s;                                              
+ * C == C;                                              
+ * C != C;                                              
+ * cout << C; (output function)                         
+ * cin  >> C; (input function)                          
+ *          
+ * \endverbatim
+ */
+
 class Cell1D_NonUniform{
-  private:
-  public:
-    double          x;   // Cell center.
-    double         dx;   // Cell length.
-	                 // Made public so can access them.
-		      
-    /* Creation, copy, and assignment constructors. */
-    Cell1D_NonUniform(void) {
-       x = ONE; dx = ONE;
-    }
+private:
+public:
+  //! @name Cell parameters
+  //@{
+  double          x;   //!< Cell center.
+  double         dx;   //!< Cell length.
+  //@}
+  
+  //! @name Constructors
+  // @{
+  //! Default constructor
+  Cell1D_NonUniform(void) {
+    x = ONE; dx = ONE;
+  }
+  //! Copy constructor
+  Cell1D_NonUniform(const Cell1D_NonUniform &Cell) {
+    x = Cell.x; dx = Cell.dx;
+  }
+  //! Constructor with location and length
+  Cell1D_NonUniform(const double &location,
+		    const double &length) {
+    x = location; dx = length;
+  }
+  // @}
 
-    Cell1D_NonUniform(const Cell1D_NonUniform &Cell) {
-       x = Cell.x; dx = Cell.dx;
-    }
+  //! @name Set cell size.
+  //@{
+  void setsize(void);
+  void setsize(const Cell1D_NonUniform &Cell);
+  void setsize(const double &length);
+  //@}
+  
+  //! @name Set cell center location.
+  //@{
+  void setloc(void);
+  void setloc(const Cell1D_NonUniform &Cell);
+  void setloc(const double &location);
+  //@}
+ 
+  //! @name Binary arithmetic operators.
+  //@{
+  friend Cell1D_NonUniform operator +(const Cell1D_NonUniform &Cell,
+				      const double &a);
+  friend Cell1D_NonUniform operator -(const Cell1D_NonUniform &Cell,
+				      const double &a);
+  friend Cell1D_NonUniform operator *(const Cell1D_NonUniform &Cell,
+				      const double &a);
+  friend Cell1D_NonUniform operator *(const double &a,
+				      const Cell1D_NonUniform &Cell);
+  friend Cell1D_NonUniform operator /(const Cell1D_NonUniform &Cell,
+				      const double &a);
+  //@}
 
-    Cell1D_NonUniform(const double &location,
-		      const double &length) {
-       x = location; dx = length;
-    }
-    
-    /* Destructor. */
-    // ~Cell1D_NonUniform(void);
-    // Use automatically generated destructor.
+  //! @name Unary arithmetic operators.
+  //@{
+  friend Cell1D_NonUniform operator +(const Cell1D_NonUniform &Cell);
+  friend Cell1D_NonUniform operator -(const Cell1D_NonUniform &Cell);
+  //@}
 
-    /* Set cell size. */
-    void setsize(void);
-    void setsize(const Cell1D_NonUniform &Cell);
-    void setsize(const double &length);
-
-     /* Set cell center location. */
-    void setloc(void);
-    void setloc(const Cell1D_NonUniform &Cell);
-    void setloc(const double &location);
-
-    /* Assignment operator. */
-    // Cell1D_NonUniform operator = (const Cell1D_NonUniform &Cell);
-    // Use automatically generated assignment operator.
-
-    /* Binary arithmetic operators. */
-    friend Cell1D_NonUniform operator +(const Cell1D_NonUniform &Cell,
+  //! @name Shortcut arithmetic operators.
+  //@{
+  friend Cell1D_NonUniform &operator +=(Cell1D_NonUniform &Cell,
 					const double &a);
-    friend Cell1D_NonUniform operator -(const Cell1D_NonUniform &Cell,
+  friend Cell1D_NonUniform &operator -=(Cell1D_NonUniform &Cell,
 					const double &a);
-    friend Cell1D_NonUniform operator *(const Cell1D_NonUniform &Cell,
-					const double &a);
-    friend Cell1D_NonUniform operator *(const double &a,
-					const Cell1D_NonUniform &Cell);
-    friend Cell1D_NonUniform operator /(const Cell1D_NonUniform &Cell,
-					const double &a);
-
-    /* Unary arithmetic operators. */
-    friend Cell1D_NonUniform operator +(const Cell1D_NonUniform &Cell);
-    friend Cell1D_NonUniform operator -(const Cell1D_NonUniform &Cell);
-
-    /* Shortcut arithmetic operators. */
-    friend Cell1D_NonUniform &operator +=(Cell1D_NonUniform &Cell,
-					  const double &a);
-    friend Cell1D_NonUniform &operator -=(Cell1D_NonUniform &Cell,
-					  const double &a);
-    
-    /* Relational operators. */
-    friend int operator ==(const Cell1D_NonUniform &Cell1,
-			   const Cell1D_NonUniform &Cell2);
-    friend int operator !=(const Cell1D_NonUniform &Cell1,
-			   const Cell1D_NonUniform &Cell2);
-    
-    /* Input-output operators. */
-    friend ostream &operator << (ostream &out_file,
-				 const Cell1D_NonUniform &Cell);
-    friend istream &operator >> (istream &in_file,
-				 Cell1D_NonUniform &Cell);
-    
+  //@}
+  
+  //! @name Relational operators.
+  // @{
+  friend int operator ==(const Cell1D_NonUniform &Cell1,
+			 const Cell1D_NonUniform &Cell2);
+  friend int operator !=(const Cell1D_NonUniform &Cell1,
+			 const Cell1D_NonUniform &Cell2);
+  //@}
+  
+  //! @name Input-output operators.
+  //@{
+  friend ostream &operator << (ostream &out_file,
+			       const Cell1D_NonUniform &Cell);
+  friend istream &operator >> (istream &in_file,
+			       Cell1D_NonUniform &Cell);
+  //@}
 };
 
-/********************************************************
+/******************************************************//**
  * Cell1D_NonUniform::setsize -- Set cell size.         *
  ********************************************************/
 inline void Cell1D_NonUniform::setsize(void) {
@@ -267,7 +288,7 @@ inline void Cell1D_NonUniform::setsize(const double &length) {
     dx = length;
 }
 
-/*********************************************************
+/*******************************************************//**
  * Cell1D_NonUniform::setloc -- Set cell center location.*
  *********************************************************/
 inline void Cell1D_NonUniform::setloc(void) {
@@ -282,7 +303,7 @@ inline void Cell1D_NonUniform::setloc(const double &location) {
     x = location;
 }
 
-/********************************************************
+/******************************************************//**
  * Cell1D_NonUniform -- Binary arithmetic operators.    *
  ********************************************************/
 inline Cell1D_NonUniform operator +(const Cell1D_NonUniform &Cell,
@@ -310,7 +331,7 @@ inline Cell1D_NonUniform operator /(const Cell1D_NonUniform &Cell,
     return (Cell1D_NonUniform(Cell.x,Cell.dx/a));
 }
 
-/********************************************************
+/******************************************************//**
  * Cell1D_NonUniform -- Unary arithmetic operators.     *
  ********************************************************/
 inline Cell1D_NonUniform operator +(const Cell1D_NonUniform &Cell) {
@@ -321,7 +342,7 @@ inline Cell1D_NonUniform operator -(const Cell1D_NonUniform &Cell) {
     return (Cell1D_NonUniform(-Cell.x,Cell.dx));
 }
 
-/********************************************************
+/******************************************************//**
  * Cell1D_NonUniform -- Shortcut arithmetic operators.  *
  ********************************************************/
 inline Cell1D_NonUniform &operator +=(Cell1D_NonUniform &Cell,
@@ -338,7 +359,7 @@ inline Cell1D_NonUniform &operator -=(Cell1D_NonUniform &Cell,
     return (Cell);
 }
 
-/********************************************************
+/******************************************************//**
  * Cell1D_NonUniform -- Relational operators.           *
  ********************************************************/
 inline int operator ==(const Cell1D_NonUniform &Cell1,
@@ -351,7 +372,7 @@ inline int operator !=(const Cell1D_NonUniform &Cell1,
     return (Cell1.x != Cell2.x || Cell1.dx != Cell2.dx);
 }
 
-/********************************************************
+/******************************************************//**
  * Cell1D_NonUniform -- Input-output operators.         *
  ********************************************************/
 inline ostream &operator << (ostream &out_file,
@@ -370,7 +391,7 @@ inline istream &operator >> (istream &in_file,
     return (in_file);
 }
 
-/********************************************************
+/******************************************************//**
  * Useful 1D cell constants.                            *
  ********************************************************/
 const Cell1D_Uniform Cell1D_Uniform_ONE(ONE);

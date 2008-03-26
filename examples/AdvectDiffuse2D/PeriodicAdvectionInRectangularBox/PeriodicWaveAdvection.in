@@ -1,0 +1,190 @@
+						##############################
+						# AdvectDiffuse2D input file #
+						##############################
+
+#
+# SOLVED PROBLEM: Pure periodic advection of a wave function in a rectangular box
+# 
+
+			###########################
+			# SET EQUATION PARAMETERS #
+			###########################
+
+	#####################
+	#  DEFINE GEOMETRY  #
+	#####################
+Flow_Geometry_Type = 
+		Planar
+Grid_Type =
+	 Periodic_Box
+Box_Width =
+	200.0
+Box_Height =
+	100.0
+X_Shift =
+	0.0 0.0
+
+	###############################
+	#  VELOCITY FIELD PARAMETERS  #
+	###############################
+Velocity_Field =
+	Uniform
+Flow_Angle = 
+	0.0
+Flow_Velocity =
+       200.0
+
+	################################
+	#  DIFFUSION FIELD PARAMETERS  #
+	################################
+Diffusion_Field = 
+	No_Diffusion
+
+	############################
+	#  SOURCE TERM PARAMETERS  #
+	############################
+Source_Field =
+	No_Source
+
+	#########################
+	# SET INITIAL CONDITION #
+	#########################
+ICs_Type =
+         Exact_Solution
+	# Restart
+
+
+	###########################
+	#  DEFINE EXACT SOLUTION  #
+	###########################
+Exact_Solution =
+	    Modulated_Sinusoidal_Wave
+Direction_of_Variation =
+	    X-direction
+MinCoord_Coeff =
+	       -100.0
+MaxCoord_Coeff =
+	       100.0
+
+
+			###########################################
+			# SET NUMERICAL DISCRETIZATION PARAMETERS #
+			##########################################
+
+
+	#########################
+	#  SET MESH PARAMETERS  #
+	#########################
+
+Number_of_Cells_Idir = 
+	200
+Number_of_Cells_Jdir =
+	10
+Number_of_Blocks_Idir = 
+	2
+Number_of_Blocks_Jdir =
+	4
+Number_of_Ghost_Cells =
+	2
+Number_of_Blocks_Per_Processor =
+	50
+
+
+	###########################################
+	#  SET SPATIAL DISCRETIZATION PARAMETERS  #
+	###########################################
+Reconstruction_Type =
+	Least_Squares 
+
+Limiter_Type = 
+	 One
+	# Barth_Jespersen
+	# Venkatakrishnan
+	# Zero
+
+
+	################################
+	# SET TIME STEPPING PARAMETERS #
+	################################
+Time_Integration_Type =
+	 Explicit_Predictor_Corrector
+
+Time_Accurate = 
+		1
+
+Local_Time_Stepping =
+		0
+CFL_Number =
+	0.60
+
+Maximum_Number_of_Time_Steps =
+	1200
+Time_Max = 
+	20.00
+
+
+	######################
+	# SET AMR PARAMETERS #
+	######################
+
+# INITIAL AMR PARAMETERS:
+Number_of_Initial_Mesh_Refinements =
+    0
+Number_of_Uniform_Mesh_Refinements =
+    0
+Number_of_Boundary_Mesh_Refinements =
+    0
+
+# UNSTEADY AMR PARAMETERS:
+AMR =
+     OFF
+#
+# AMR PARAMETERS:
+Maximum_Refinement_Level =
+    5
+Minimum_Refinement_Level =
+    2
+Threshold_for_Refinement =
+    0.80
+Threshold_for_Coarsening =
+    0.50
+AMR_Frequency =
+    500
+
+	#########################
+	# SET OUTPUT PARAMETERS #
+	#########################
+Output_File_Name = 
+	Multiple_Sinusoidal
+
+Restart_Solution_Save_Frequency = 
+	600
+
+	#########################
+	#  ACCURACY ASSESSMENT  #
+	#########################
+Accuracy_Assessment_Exact_Digits =
+         8
+
+
+	#######################
+	#   Execute program   #
+	#######################
+Execute
+
+#######################
+# Write output
+#######################
+Print_Accuracy
+Write_Output
+Write_Output_Cells
+#Write_Output_Mesh
+#Write_Output_Mesh_Cells
+#Write_Output_Mesh_Nodes
+#Write_Restart
+##Write_Mesh_Definition
+
+#######################
+# Terminate program
+#######################
+Terminate

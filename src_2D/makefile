@@ -105,12 +105,26 @@ SRC_GRID = $(GRID_DIR)Cell1D.cc \
            $(GRID_DIR)Grid2DQuadSingleBlock.cc \
            $(GRID_DIR)Grid2DQuadMultiBlock.cc \
            $(GRID_DIR)Grid3DHexaSingleBlock.cc \
-           $(GRID_DIR)Grid3DHexaMultiBlock.cc
+           $(GRID_DIR)Grid3DHexaMultiBlock.cc \
+           $(GRID_DIR)HO_Cell2D.cc \
+           $(GRID_DIR)HO_Spline2D.cc \
+           $(GRID_DIR)HO_Spline2DInterval.cc \
+	   $(GRID_DIR)HO_Grid2DQuad.cc \
+           $(GRID_DIR)HO_Grid2DQuadMultiBlock.cc \
+	   $(GRID_DIR)HO_Grid2DQuad_ExecutionMode.cc \
+	   $(GRID_DIR)Tecplot_ExecutionMode.cc
 SRC_ICEMCFD = $(ICEMCFD_DIR)ICEMCFD.cc \
 	      $(ICEMCFD_DIR)ICEMCFD_ctype.c
 
 # Add Grid Testing If Required:
-SRC_GRID_TESTS := test_Grid2DQuadIntegration.cc
+SRC_GRID_TESTS := test_Grid2DQuadIntegration.cc \
+		  test_HO_Grid2DQuad.cc \
+		  test_HO_Grid2DQuadMultiBlock.cc \
+		  test_HO_Spline2D.cc \
+		  test_HO_Spline2D_Integration.cc \
+		  test_HO_Spline2DInterval.cc \
+		  test_HO_Cell2D.cc \
+		  HO_Grid2DQuadMultiBlock_InputForTesting.cc
 SRC_GRID_TESTS := $(addprefix $(GRID_DIR)UnitTests/,$(SRC_GRID_TESTS))
 ifeq ($(TUT_TESTING),ON) 
   SRC_GRID += $(SRC_GRID_TESTS)
@@ -212,7 +226,8 @@ SRC_ADVECTDIFFUSE_EXE = $(ADVECTDIFFUSE_DIR)AdvectDiffuse2D.cc
 SRC_ADVECTDIFFUSE_TESTS = test_AdvectDiffuse2DState.cc \
                           test_SourceTermFields.cc \
                           test_AdvectDiffuse2DQuad.cc \
-			  test_AdvectDiffuse2DExactSolutions.cc
+			  test_AdvectDiffuse2DExactSolutions.cc \
+			  test_AdvectDiffuse2D_Simulations.cc
 SRC_ADVECTDIFFUSE_TESTS := $(addprefix $(ADVECTDIFFUSE_DIR)UnitTests/, $(SRC_ADVECTDIFFUSE_TESTS))
 ifeq ($(TUT_TESTING),ON) 
   SRC_ADVECTDIFFUSE += $(SRC_ADVECTDIFFUSE_TESTS)
@@ -906,12 +921,12 @@ $(EXE_RTE2D): $(OBJ_RTE_EXE) $(OBJ_BASE) $(OBJ_SNBCK) $(OBJ_RTE) $(OBJ_ICEMCFD)
 	@echo '---------------------------------------------------'
 	@echo ' '
 
-$(EXE_LEVELSET2D): $(OBJ_LEVELSET_EXE) $(OBJ_BASE) $(OBJ_LEVELSET) $(OBJ_INTERFACE)
+$(EXE_LEVELSET2D): $(OBJ_LEVELSET_EXE) $(OBJ_BASE) $(OBJ_LEVELSET) $(OBJ_INTERFACE) $(OBJ_ICEMCFD)
 	@echo ' '
 	@echo Building program $(EXE_LEVELSET2D) for a $(PLATFORM) platform.
 	@echo '------------------------------------------------------------------------'
 	@echo ' '
-	$(LD) -o $(EXE_LEVELSET2D) $(OBJ_LEVELSET_EXE) $(OBJ_BASE) $(OBJ_LEVELSET) $(OBJ_INTERFACE) $(LDFLAGS)
+	$(LD) -o $(EXE_LEVELSET2D) $(OBJ_LEVELSET_EXE) $(OBJ_BASE) $(OBJ_LEVELSET) $(OBJ_INTERFACE) $(OBJ_ICEMCFD) $(LDFLAGS)
 	@echo ' '
 	@echo Program $(EXE_LEVELSET2D) has been brought up to date.
 	@echo '------------------------------------------------------------------------'

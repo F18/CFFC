@@ -3553,39 +3553,6 @@ void Update_Cells(Grid2D_Quad_Block &Grid) {
 }
 
 /********************************************************
- * Routine: Check_Quad_Block                            *
- *                                                      *
- * Check the validity of the quadrilateral mesh block.  *
- * Returns a non-zero result if mesh is not valid.      *
- *                                                      *
- ********************************************************/
-int Check_Quad_Block(Grid2D_Quad_Block &Grid) {
-
-    int i, j;
-
-    for ( j = Grid.JCl ; j <= Grid.JCu ; ++j) {
-        for ( i = Grid.ICl ; i <= Grid.ICu ; ++i) {
-	  if (Grid.Cell[i][j].A <= ZERO) {
-	    cout << endl << i << " " << j;
-	    cout << endl << Grid.ICl << " " << Grid.ICu;
-	    cout << endl << Grid.JCl << " " << Grid.JCu;
-	    cout << endl << Grid.Cell[i][j].A;
-	    cout << endl << Grid.Cell[i][j].Xc;
-	    cout << endl << Grid.Node[i][j].X;
-	    cout << endl << Grid.Node[i+1][j].X;
-	    cout << endl << Grid.Node[i][j+1].X;
-	    cout << endl << Grid.Node[i+1][j+1].X;
-	    cout.flush();
-   	    return(1);
-          } /* endif */
-        } /* endfor */
-    } /* endfor */
-
-    return(0);
-
-}
-
-/********************************************************
  * Routine: Write_Quad_Block_Definition                 *
  *                                                      *
  * Writes definition file information for 2D            *
