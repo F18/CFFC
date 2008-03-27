@@ -598,6 +598,8 @@ namespace tut
     
     // Reconstruct solution
     SolnBlk[0].HighOrderVariable(0).ComputeUnlimitedSolutionReconstruction(SolnBlk[0]);
+
+    // Print_(SolnBlk[0].HighOrderVariable(0).CellTaylorDeriv(5,5));
   }
 
 }

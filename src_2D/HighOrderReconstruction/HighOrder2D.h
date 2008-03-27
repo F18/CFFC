@@ -463,6 +463,8 @@ private:
   DenseMatrix A;		     // Storage for the LHS matrix of the k-Exact reconstruction.
   DoubleArrayType GeometricWeights;  // Storage for the geometric weights calculated in the k-Exact reconstruction.
   DenseMatrix All_Delta_U;	     // Storage for the RHS matrix (i.e. solution dependent) of the k-Exact reconstruction.
+  ColumnVector Delta_U;              // Storage for a particular column of the RHS matrix.
+  ColumnVector X;                    // Storage for the solution to the least-square problem.
   //@}
 };
 
@@ -781,6 +783,8 @@ void HighOrder2D<SOLN_STATE>::allocate_CellMemory(const int &ReconstructionOrder
   A.newsize(StencilSize - 1, NumberOfTaylorDerivatives() - 1);
   GeometricWeights.assign(StencilSize, 0.0);
   All_Delta_U.newsize(StencilSize - 1, NumberOfVariables());
+  Delta_U.newsize(StencilSize - 1);
+  X.newsize(StencilSize - 1);
 
   // Confirm allocation
   _allocated_cells = true;
@@ -894,6 +898,8 @@ void HighOrder2D<SOLN_STATE>::deallocate_CellMemory(void){
     A.newsize(0,0);
     GeometricWeights.clear();
     All_Delta_U.newsize(0,0);
+    Delta_U.newsize(0);
+    X.newsize(0);
 
     // Confirm the deallocation
     OrderOfReconstruction = -1;

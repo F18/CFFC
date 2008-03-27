@@ -353,7 +353,10 @@ ComputeUnconstrainedUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk,
 						    const IndexType & j_index){
 
   // SET VARIABLES USED IN THE RECONSTRUCTION PROCESS
+
+  int StencilSize(i_index.size()); 
   int cell, i, parameter;
+  int P1, P2;
 
   // *********  Assign the average solution to D00 ***********
   CellTaylorDeriv(iCell,jCell,0).D() = (SolnBlk.*ReconstructedSoln)(iCell,jCell);
@@ -364,8 +367,194 @@ ComputeUnconstrainedUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk,
     return;
   }
 
+  // Check if the pseudo-inverse has been allocated and pre-computed
+  if ( IsPseudoInverseAllocated() && IsPseudoInversePreComputed() ){
 
-  //   Print_((SolnBlk.*ReconstructedSoln)(10,10)[1])
+    // Use the pseudo-inverse to calculate the least-squares reconstruction
+    
+    // START: Compute for every parameter the high-order approximation
+    // ***************************************************************
+    for (parameter = 1; parameter <= NumberOfVariables() ; ++parameter){
+
+      // Step 1. SET the vector Delta_U of the linear system (RHS) for the current parameter ***
+      for (cell = 1 ; cell < StencilSize; ++cell) { // for each neighbour cell in the stencil
+
+	// Compute Delta_U = U[neighbour] - U[cell] for each parameter
+	Delta_U(cell-1) = ( (SolnBlk.*ReconstructedSoln)(i_index[cell],j_index[cell])[parameter] -
+			    (SolnBlk.*ReconstructedSoln)(iCell,jCell)[parameter] );
+
+	// Apply the precomputed geometric weight to the Delta_U term
+	Delta_U(cell-1) *= GeomWeightValue(iCell,jCell,cell);
+      } 
+     
+      // Step 2. Find the solution of the linear-system for the current parameter
+      X = Cell_LHS_Inv(iCell,jCell) * Delta_U;
+      
+      // Step 3. Update the high-order derivatives for the current parameter
+      for (i = 1; i <= CellTaylorDeriv(iCell,jCell).LastElem(); ++i){
+
+	// Identify 'x' and 'y' powers of the i-th derivative
+	P1 = CellTaylorDeriv(iCell,jCell,i).P1();  // identify P1
+	P2 = CellTaylorDeriv(iCell,jCell,i).P2();  // identify P2
+
+	// Set the i-th derivative for the current parameter
+	CellTaylorDeriv(iCell,jCell,i).D(parameter) = X(i-1);
+	
+	// This equation ensures the mean conservation of the current parameter inside the reconstructed cell.
+	CellTaylorDeriv(iCell,jCell,0).D(parameter) -= Geom->CellGeomCoeffValue(iCell,jCell,P1,P2) * X(i-1);
+      }
+    }
+    // STOP: Reconstruction solution (i.e. derivatives) obtained.
+    // ************************************************************
+
+  } else {
+    
+    // Form both LHS and RHS in order to calculate the least-squares reconstruction
+
+    // SET VARIABLES USED ONLY IN THIS RECONSTRUCTION PROCESS
+
+    int krank;                        //< the final rank of matrix A is returned here
+    int IndexSumY, IndexSumX, P1, P2;
+    double CombP1X, CombP2Y;
+    double PowDistanceYC, PowDistanceXC;
+    double MaxWeight(0.0);
+    double IntSum(0.0);
+
+    // START:   Set the LHS and RHS of the linear system 
+    // ***************************************************
+
+    // ==== Set the geometric weight associated with the reconstructed cell
+    GeometricWeights[0] = 1;
+
+    // Step1. Compute the normalized geometric weights
+    for (cell=1; cell<StencilSize; ++cell){ //for each neighbour cell in the stencil
+
+      /* Compute the X and Y component of the distance between
+	 the cell centers of the neighbour and the reconstructed cell */
+      DeltaCellCenters[cell] = CellCenter(i_index[cell],j_index[cell]) - CellCenter(iCell,jCell);
+    
+      /* Compute the geometric weight based on the centroid distance */
+      CENO_Geometric_Weighting(GeometricWeights[cell], DeltaCellCenters[cell].abs());
+
+      /* Compute the maximum geometric weight (this is used for normalization) */
+      MaxWeight = max(MaxWeight, GeometricWeights[cell]);
+    }
+
+    // Step2. Set the approximate equations
+    for (cell=1 ; cell<StencilSize; ++cell){ //for each neighbour cell in the stencil
+    
+      // compute the normalized geometric weight
+      GeometricWeights[cell] /= MaxWeight;
+
+      // *** SET the matrix A of the linear system (LHS) ***
+      /* compute for each derivative the corresponding entry in the matrix of the linear system */
+      for (i=1; i<=CellTaylorDeriv(iCell,jCell).LastElem(); ++i){
+	// build the row of the matrix
+	P1 = CellTaylorDeriv(iCell,jCell,i).P1();  // identify P1
+	P2 = CellTaylorDeriv(iCell,jCell,i).P2();  // identify P2
+	A(cell-1,i-1) = 0.0;  // set sumation variable to zero
+	CombP2Y = 1.0;        // the binomial coefficient "nC k" for k=0 is 1
+	PowDistanceYC = 1.0;  // initialize PowDistanceYC
+
+	// Compute geometric integral over the neighbour's domain
+	for (IndexSumY = 0; IndexSumY<=P2; ++IndexSumY){
+	  CombP1X = 1.0;       // the binomial coefficient "nC k" for k=0 is 1
+	  PowDistanceXC = 1.0; // initialize PowDistanceXC
+	  IntSum = 0.0;	     // reset internal sumation variable
+
+	  for (IndexSumX = 0; IndexSumX<=P1; ++IndexSumX){
+	    IntSum += ( CombP1X*PowDistanceXC*
+			Geom->CellGeomCoeffValue(i_index[cell],j_index[cell],P1-IndexSumX,P2-IndexSumY) );
+	    
+	    // update the binomial coefficients
+	    CombP1X = (P1-IndexSumX)*CombP1X/(IndexSumX+1); // the index is still the old one => expression for "nC k+1"
+	    PowDistanceXC *= DeltaCellCenters[cell].x;      // Update PowDistanceXC
+	  }//endfor
+
+	  A(cell-1,i-1) += CombP2Y*PowDistanceYC*IntSum; // update the external sum
+
+	  CombP2Y = (P2-IndexSumY)*CombP2Y/(IndexSumY+1); // the index is still the old one => expression for "nC k+1"
+	  PowDistanceYC *= DeltaCellCenters[cell].y;    // Update PowDistanceYC
+	}//endfor
+
+	// subtract the corresponding geometric moment of cell (iCell,jCell) 
+	A(cell-1,i-1) -= Geom->CellGeomCoeffValue(iCell,jCell,P1,P2);
+
+	// apply geometric weighting
+	A(cell-1,i-1) *= GeometricWeights[cell];
+      }
+
+      // *** SET the matrix All_Delta_U of the linear system (RHS) ***
+      for (parameter = 1; parameter <= NumberOfVariables(); ++parameter){
+
+	// Compute Delta_U = U[neighbour] - U[cell] for each parameter
+	All_Delta_U(cell-1,parameter-1) = ( (SolnBlk.*ReconstructedSoln)(i_index[cell],j_index[cell])[parameter] -
+					    (SolnBlk.*ReconstructedSoln)(iCell,jCell)[parameter] );
+	
+	// Apply geometric weighting
+	All_Delta_U(cell-1,parameter-1) *= GeometricWeights[cell];
+      }	// endfor (parameter)
+      
+    }//endfor (cell)
+
+    // STOP:   Matrix A of the linear system (LHS) built.
+    //         Matrix All_Delta_U of the linear system (RHS) built.
+    // **********************************************************************
+
+    if (CENO_Execution_Mode::USE_LAPACK_LEAST_SQUARES) {
+      
+      // Solve the least-squares system with Lapack subroutine
+      /*********************************************************/
+      Solve_LS_Householder_F77(A, All_Delta_U, krank, NumberOfVariables(), StencilSize-1, NumberOfTaylorDerivatives()-1);
+
+      // Update the high-order derivatives
+      //***********************************
+      for (i = 1; i <= CellTaylorDeriv(iCell,jCell).LastElem(); ++i){
+
+	// Identify 'x' and 'y' powers of the i-th derivative
+	P1 = CellTaylorDeriv(iCell,jCell,i).P1();  // identify P1
+	P2 = CellTaylorDeriv(iCell,jCell,i).P2();  // identify P2
+
+	for (parameter = 1; parameter <= NumberOfVariables(); ++parameter){
+	  // Set the i-th derivative for the current parameter
+	  CellTaylorDeriv(iCell,jCell,i).D(parameter) = All_Delta_U(i-1,parameter-1);
+	  
+	  // This equation ensures the mean conservation of the current parameter inside the reconstructed cell.
+	  CellTaylorDeriv(iCell,jCell,0).D(parameter) -= Geom->CellGeomCoeffValue(iCell,jCell,P1,P2) * All_Delta_U(i-1,
+														   parameter-1);
+	} // endfor (parameter)
+      }	// endfor (i)
+
+    } else { 
+
+      ColumnVector Rnorm(NumberOfVariables());       //< store the residual norm of the LS problem for each parameter.
+      DenseMatrix Xm(NumberOfTaylorDerivatives()-1, NumberOfVariables()); //< store the solution to the least-square problem
+
+      /* Solve the overdetermined linear system of equations using the internal least-squares procedure */
+      /**************************************************************************************************/
+      Solve_LS_Householder(A,All_Delta_U,Xm,krank,Rnorm);
+
+      // Update the high-order derivatives
+      //***********************************
+      for (i = 1; i <= CellTaylorDeriv(iCell,jCell).LastElem(); ++i){
+
+	// Identify 'x' and 'y' powers of the i-th derivative
+	P1 = CellTaylorDeriv(iCell,jCell,i).P1();  // identify P1
+	P2 = CellTaylorDeriv(iCell,jCell,i).P2();  // identify P2
+
+	for (parameter = 1; parameter <= NumberOfVariables(); ++parameter){
+	  // Set the i-th derivative for the current parameter
+	  CellTaylorDeriv(iCell,jCell,i).D(parameter) = Xm(i-1,parameter-1);
+    
+	  // This equation ensures the mean conservation of the current parameter inside the reconstructed cell.
+	  CellTaylorDeriv(iCell,jCell,0).D(parameter) -= Geom->CellGeomCoeffValue(iCell,jCell,P1,P2) * Xm(i-1,parameter-1);
+
+	} // endfor (parameter)
+      } // endfor (i)
+
+    } // endif (CENO_Execution_Mode::USE_LAPACK_LEAST_SQUARES)
+
+  } // endif (IsPseudoInverseAllocated() && IsPseudoInversePreComputed())
 
 }
 

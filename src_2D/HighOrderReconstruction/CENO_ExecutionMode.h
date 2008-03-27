@@ -100,6 +100,16 @@ public:
       --------------------------------------------------------------------------------------- */
   static short CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS;
 
+  /*! The high-order k-Exact reconstruction involves the solution of a linear least-squares problem,
+      which can be obtained with different subroutines. Currently, a Lapack subroutine and an 
+      internal one (L. Ivan's implementation) can be used. The Lapack one is faster but assumes the 
+      rank of the matrix equal to the number of columns whereas the internal one can be configured to
+      detect ranks smaller than this (i.e. it still gives a solution) but it's slower. \n
+      Turn ON to use the Lapack library subroutine. (default) \n
+      Turn OFF to use the internal one.  
+      --------------------------------------------------------------------------------------- */
+  static short USE_LAPACK_LEAST_SQUARES;
+
   static int Limiter;   //!< the limiter used for the limited linear reconstruction performed for non-smooth solutions
 
   
@@ -187,6 +197,15 @@ void CENO_Execution_Mode::Parse_Next_Input_Control_Parameter(Input_Parameters_Ty
       CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS = ON;
     } else if ( strcmp(IP.Next_Control_Parameter, "Use_All_Neighbours") == 0 ){
       CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS = OFF;
+    }
+    i_command = 0;
+
+  } else if (strcmp(IP.Next_Control_Parameter, "Least_Squares_Solver") == 0) {
+    IP.Get_Next_Input_Control_Parameter();
+    if ( strcmp(IP.Next_Control_Parameter, "Lapack") == 0 ){
+      USE_LAPACK_LEAST_SQUARES = ON;
+    } else if ( strcmp(IP.Next_Control_Parameter, "Internal") == 0 ){
+      USE_LAPACK_LEAST_SQUARES = OFF;
     }
     i_command = 0;
 
