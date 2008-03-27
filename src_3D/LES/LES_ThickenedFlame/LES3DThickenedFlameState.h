@@ -154,6 +154,7 @@ class LES3DTF_pState : public NavierStokes3D_ThermallyPerfect_pState {
    static double           _laminar_flame_speed;  //!< Propagation speed of laminar premixed flame
    static double       _laminar_flame_thickness;  //!< Thickness of laminar premixed flame
    static double                       _TFactor;  //!< Maximum thickening factor
+   static double                  _filter_width;  //!< Constant filter width
 
    double                     k; //!< Subfilter scale turbulent kinetic energy (m^2/s^2)
 
@@ -276,6 +277,17 @@ class LES3DTF_pState : public NavierStokes3D_ThermallyPerfect_pState {
       num_vars = NUM_EULER3D_VAR_SANS_SPECIES + NUM_LES3DTF_VAR_EXTRA + ns;
    }
 
+   //! Assign modelling data (needs to be called only once as it is static)
+   void set_modelling_data(const double &laminar_flame_speed,
+			   const double &laminar_flame_thickness,
+			   const double &thickening_factor,
+			   const double &filter_width) {
+     _laminar_flame_speed = laminar_flame_speed;
+     _laminar_flame_thickness = laminar_flame_thickness;
+     _TFactor = thickening_factor;
+     _filter_width = filter_width;    
+   }
+
    //! Copy solution state (cheaper than = operator)
    void Copy(const LES3DTF_pState &W);
 
@@ -287,7 +299,7 @@ class LES3DTF_pState : public NavierStokes3D_ThermallyPerfect_pState {
 
    //! Check for physical validity of scalars
    void Realizable_Scalar_Check(void) {
-     if ( k < ZERO ) { k = ZERO; }
+     if ( k < NANO ) { k = ZERO; }
    }
 
    //! Check for physical validity of the solution vector
@@ -305,6 +317,9 @@ class LES3DTF_pState : public NavierStokes3D_ThermallyPerfect_pState {
 
    //! Total sensible enthalpy of mixture
    double Hs(void) const;
+
+   //! Mixture sound speed
+   double a(void) const;
 
    //! Modified pressure
    double p_t(void) const;
@@ -361,6 +376,7 @@ class LES3DTF_pState : public NavierStokes3D_ThermallyPerfect_pState {
 
    //! LES filter width
    double filter_width(const double &Volume) const;
+   double filter_width(void) const;
 //@}
 
 /** @name Subfilter scale turbulent stress tensor and heat flux vector */
@@ -833,6 +849,7 @@ class LES3DTF_cState : public NavierStokes3D_ThermallyPerfect_cState {
    static double           _laminar_flame_speed;  //!< Propagation speed of laminar premixed flame
    static double       _laminar_flame_thickness;  //!< Thickness of laminar premixed flame
    static double                       _TFactor;  //!< Maximum thickening factor
+   static double                  _filter_width;  //!< Constant filter width
 
    double                  rhok; //!< Subfilter scale turbulent kinetic energy (kg/m-s^2)
 
@@ -938,6 +955,17 @@ class LES3DTF_cState : public NavierStokes3D_ThermallyPerfect_cState {
       num_vars = NUM_EULER3D_VAR_SANS_SPECIES + NUM_LES3DTF_VAR_EXTRA + ns;
    }
 
+   //! Assign modelling data (needs to be called only once as it is static)
+   void set_modelling_data(const double &laminar_flame_speed,
+			   const double &laminar_flame_thickness,
+			   const double &thickening_factor,
+			   const double &filter_width) {
+     _laminar_flame_speed = laminar_flame_speed;
+     _laminar_flame_thickness = laminar_flame_thickness;
+     _TFactor = thickening_factor;
+     _filter_width = filter_width;    
+   }
+
    //! Copy solution state (cheaper than = operator)
    void Copy(const LES3DTF_cState &U);
 
@@ -956,7 +984,7 @@ class LES3DTF_cState : public NavierStokes3D_ThermallyPerfect_cState {
 
    //! Check for physical validity of scalars
    void Realizable_Scalar_Check(void) {
-     if ( rhok < ZERO ) { rhok = ZERO; }
+     if ( rhok < NANO ) { rhok = ZERO; }
    }
 
    //! Check for physical validity of the solution vector
@@ -988,6 +1016,9 @@ class LES3DTF_cState : public NavierStokes3D_ThermallyPerfect_cState {
    //! Turbulence modified pressure
    double p_t(void) const;
 
+   //! Mixture sound speed
+   double a(void) const;
+
    //! Mixture sound speed including turbulent kinetic energy
    double a_t(void) const;
 
@@ -1001,6 +1032,7 @@ class LES3DTF_cState : public NavierStokes3D_ThermallyPerfect_cState {
 //@{
    //! LES filter width
    double filter_width(const double &Volume) const;
+   double filter_width(void) const;
 
    //! Absolute value of strain rate
 /*    double abs_strain_rate(const LES3DTF_pState &dWdx,  */

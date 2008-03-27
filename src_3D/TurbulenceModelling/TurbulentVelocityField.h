@@ -1,3 +1,4 @@
+
 #ifndef _TURBULENT_VELOCITY_FIELD_INCLUDED 
 #define _TURBULENT_VELOCITY_FIELD_INCLUDED
 
@@ -83,7 +84,7 @@ const complex<double>  I(0.0, 1.0);      // sqrt(-1.0)
  */
 class Turbulent_Velocity_Field_Block {
   public:
-  int                   gblknum; // global turbulent velocity field number
+    int                 gblknum; // global turbulent velocity field number
     int             NCi,ICl,ICu; // i-direction turbulent velocity field cell counters
     int             NCj,JCl,JCu; // j-direction turbulent velocity field cell counters
     int             NCk,KCl,KCu; // k-direction turbulent velocity field cell counters
@@ -93,8 +94,12 @@ class Turbulent_Velocity_Field_Block {
     Vector3D   Node_INl_JNl_KNl, // diagonally opposite corners of the block 
                Node_INu_JNu_KNu;
 
+    Vector3D            ***dVdx; // array of turbulent velocity field derivatives
+    Vector3D            ***dVdy; // array of turbulent velocity field derivatives
+    Vector3D            ***dVdz; // array of turbulent velocity field derivatives
 
-    int Allocated; // Indicates whether or not the turbulent velocity field data has been allocated.
+    int  Allocated; // Indicates whether or not the turbulent velocity field data have been allocated.
+    int _Allocated; // Indicates whether or not the turbulent velocity field gradients have been allocated.
     
     /* Constructors. */
     Turbulent_Velocity_Field_Block(void) {
@@ -106,6 +111,10 @@ class Turbulent_Velocity_Field_Block {
        Allocated = TURBULENT_VELOCITY_FIELD_DATA_NOT_USED;
        Velocity = NULL;
        Position = NULL;
+       _Allocated = TURBULENT_VELOCITY_FIELD_DATA_NOT_USED;
+       dVdx = NULL;
+       dVdy = NULL;
+       dVdz = NULL;      
     }
 
     Turbulent_Velocity_Field_Block(const int Ni, 
@@ -117,7 +126,8 @@ class Turbulent_Velocity_Field_Block {
 
     /* Destructor. */
     ~Turbulent_Velocity_Field_Block(void) {
-       deallocate();
+       deallocate_gradients();
+       deallocate();        
     }
 
     /* Allocate memory for velocity field data. */
@@ -129,6 +139,12 @@ class Turbulent_Velocity_Field_Block {
     /* Deallocate memory for velocity field data. */
     void deallocate(void);
 
+    /* Allocate memory for velocity field gradients. */
+    void allocate_gradients(void);
+
+    /* Deallocate memory for velocity field gradients. */
+    void deallocate_gradients(void);
+
     /* Reconstruct velocity field data. */
     void LeastSquares_Reconstruction(const int &i,
 				     const int &j,
@@ -136,6 +152,12 @@ class Turbulent_Velocity_Field_Block {
 				     Vector3D &dVdx,
 				     Vector3D &dVdy,
 				     Vector3D &dVdz);
+
+    void LeastSquares_Reconstruction(const int &i,
+				     const int &j,
+				     const int &k);
+
+    void LeastSquares_Reconstruction(void);
 
     void Copy(Turbulent_Velocity_Field_Block &Block2);
 
@@ -185,6 +207,32 @@ inline void Turbulent_Velocity_Field_Block::allocate(const int Ni,
 	 Position[i][j] = new Vector3D[NCk];
       } /* endfor */
    } /* endfor */
+   
+}
+
+/*************************************************************************
+ * Turbulent_Velocity_Field_Block::allocate_gradients                    *
+ *                                 -- Allocate gradients memory.         * 
+ *************************************************************************/
+inline void Turbulent_Velocity_Field_Block::allocate_gradients(void) {
+  
+  assert(!_Allocated && NCi >= 1 && NCj >= 1 && NCk >= 1 && Nghost >=1);
+  _Allocated = TURBULENT_VELOCITY_FIELD_DATA_USED;
+    
+  dVdx = new Vector3D**[NCi];
+  dVdy = new Vector3D**[NCi];
+  dVdz = new Vector3D**[NCi];
+  for (int i = 0; i <= NCi-1; ++i ){
+    dVdx[i] = new Vector3D*[NCj];
+    dVdy[i] = new Vector3D*[NCj];
+    dVdz[i] = new Vector3D*[NCj];
+    for (int j = 0; j <= NCj-1; ++j ){
+      dVdx[i][j] = new Vector3D[NCk];
+      dVdy[i][j] = new Vector3D[NCk];
+      dVdz[i][j] = new Vector3D[NCk];
+    } /* endfor */
+  } /* endfor */
+
 }
 
 /*************************************************************************
@@ -210,6 +258,34 @@ inline void Turbulent_Velocity_Field_Block::deallocate(void) {
       Nghost = 0;
       Allocated = TURBULENT_VELOCITY_FIELD_DATA_NOT_USED;
    } /* endif */
+}
+
+/*************************************************************************
+ * Turbulent_Velocity_Field_Block::deallocate_gradients                  *
+ *                                 -- Deallocate gradients memory.       *
+ *************************************************************************/
+inline void Turbulent_Velocity_Field_Block::deallocate_gradients(void) {
+
+  if (_Allocated) {
+
+    assert(NCi >= 1 && NCj >= 1 && NCk >= 1);
+    for (int i = 0; i <= NCi-1 ; ++i ) {
+      for ( int j = 0 ; j <= NCj-1 ; ++j) {
+	delete []dVdx[i][j]; dVdx[i][j] = NULL;
+	delete []dVdy[i][j]; dVdy[i][j] = NULL;
+	delete []dVdz[i][j]; dVdz[i][j] = NULL;
+      } /* endfor */
+      delete []dVdx[i]; dVdx[i] = NULL;
+      delete []dVdy[i]; dVdy[i] = NULL;
+      delete []dVdz[i]; dVdz[i] = NULL;
+    }/*endfor*/
+    delete []dVdx; dVdx = NULL;
+    delete []dVdy; dVdy = NULL;
+    delete []dVdz; dVdz = NULL;
+
+    _Allocated = TURBULENT_VELOCITY_FIELD_DATA_NOT_USED;
+  }
+
 }
 
 /*************************************************************************
@@ -251,6 +327,68 @@ inline void Turbulent_Velocity_Field_Block::Copy(Turbulent_Velocity_Field_Block 
         
 }
    
+/*************************************************************************
+ * Turbulent_Velocity_Field_Block -- Input-output operators.             *
+ *************************************************************************/
+inline ostream &operator << (ostream &out_file,
+			     const Turbulent_Velocity_Field_Block &V){  
+ 
+  out_file << V.NCi << " " << V.NCj << " " << V.NCk << "\n";
+  out_file << V.Nghost << " " << V.gblknum << "\n";
+  out_file << V.Node_INl_JNl_KNl << " " << V.Node_INu_JNu_KNu << "\n";
+     
+  if (V.NCi == 0 || V.NCj == 0 || V.NCk == 0 || V.Nghost == 0)  return(out_file);
+   
+  for (int k=V.KCl-V.Nghost; k<= V.KCu+V.Nghost; ++k) {
+    for(int j= V.JCl-V.Nghost; j<= V.JCu+V.Nghost; ++j) {
+      for(int i=V.ICl-V.Nghost; i<= V.ICu+V.Nghost; ++i) {
+	out_file << V.Position[i][j][k] << " " << V.Velocity[i][j][k] << "\n";
+      } 
+    } 
+  } /* endfor */ 
+    
+  return (out_file);
+
+}
+
+inline istream &operator >> (istream &in_file,
+			     Turbulent_Velocity_Field_Block &V) {
+   
+  int ni, nj, nk, ng, gblknum;
+  Vector3D Node_l, Node_u;
+   
+  in_file.setf(ios::skipws);
+  in_file >> ni >> nj >> nk;
+  in_file >> ng >> gblknum;
+  in_file >> Node_l >> Node_u;
+  in_file.unsetf(ios::skipws);
+
+  if (ni == 0 || nj == 0 || nk == 0 || ng == 0) {
+    if (V.Allocated) V.deallocate(); 
+    return(in_file);
+  } 
+
+  if (!V.Allocated || V.NCi != ni || V.NCj != nj
+      || V.NCk != nk || V.Nghost != ng) {
+    if (V.Allocated) V.deallocate();
+    V.allocate(ni-2*ng, nj-2*ng, nk-2*ng, ng);
+  } 
+   
+  V.gblknum = gblknum;
+  V.Node_INl_JNl_KNl = Node_l;
+  V.Node_INu_JNu_KNu = Node_u;
+   
+  for (int k=V.KCl-V.Nghost; k<= V.KCu+V.Nghost ; ++k ) {
+    for (int j=V.JCl-V.Nghost; j<= V.JCu+V.Nghost; ++j) {
+      for (int i=V.ICl-V.Nghost; i<= V.ICu+V.Nghost; ++i) {
+	in_file >> V.Position[i][j][k] >> V.Velocity[i][j][k];
+      } 
+    } 
+  } /* endfor */
+   
+  return (in_file);
+
+}
 
 
 
@@ -297,11 +435,16 @@ class Turbulent_Velocity_Field_Multi_Block_List {
 
     void Deallocate(void);
 
+    void Broadcast(void);
+
     void Create(const Grid3D_Hexa_Multi_Block_List &Initial_Mesh,
                 const Grid3D_Input_Parameters &Input);
 
     void Interpolate_Turbulent_Field(const Grid3D_Hexa_Multi_Block_List &Initial_Mesh,
 				     Turbulent_Velocity_Field_Multi_Block_List &Interpolated_Velocity_Field);
+    /* Read and write turbulent velocity field */
+    int Write_Turbulent_Velocity_Field(void) const;   
+    int Read_Turbulent_Velocity_Field(void);
     
 
   private:
@@ -375,6 +518,124 @@ inline void Turbulent_Velocity_Field_Multi_Block_List::Create(const Grid3D_Hexa_
    } /* endif */
 }
 
+/*****************************************************************************
+ * Turbulent_Velocity_Field_Multi_Block_List::Broadcast --                   *
+ *     Broadcast the turbulent velocity field data from the main processor.  *
+ *****************************************************************************/
+inline void Turbulent_Velocity_Field_Multi_Block_List::Broadcast() {
+
+#ifdef _MPI_VERSION
+
+  int nblki, nblkj, nblkk, Block_allocated;
+
+  if ( CFFC_Primary_MPI_Processor() ) {
+    nblki = NBlk_Idir;
+    nblkj = NBlk_Jdir;
+    nblkk = NBlk_Kdir;
+    if (Allocated)
+      Block_allocated = 1;
+    else
+      Block_allocated = 0;  
+  }
+
+  MPI::COMM_WORLD.Bcast(&nblki, 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&nblkj, 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&nblkk, 1, MPI::INT, 0);
+  MPI::COMM_WORLD.Bcast(&Block_allocated, 1, MPI::INT, 0);
+
+  /* On non-primary MPI processors, allocate (re-allocate)
+     memory as necessary. */
+
+  if ( !CFFC_Primary_MPI_Processor() ) {
+    if (NBlk_Idir != nblki || NBlk_Jdir != nblkj ||  NBlk_Kdir != nblkk) {
+      if (Block_allocated) Allocate(nblki, nblkj, nblkk);
+    }
+  } 
+    
+  for (int nBlk = 0; nBlk < NBlk; ++nBlk) {
+    Vel_Blks[nBlk].Broadcast();
+  }
+
+#endif
+}
+
+
+/*****************************************************************************
+ * Turbulent_Velocity_Field_Multi_Block_List::Write_Turbulent_Velocity_Field *
+ *      --  Write the turbulent velocity field data to a file.               * 
+ *****************************************************************************/
+inline int Turbulent_Velocity_Field_Multi_Block_List::Write_Turbulent_Velocity_Field(void) const {
+
+  ofstream out_file;
+  
+  // Open file
+  out_file.open("Turbulent_Velocity_Field_Data.dat", ios::out);
+  if (out_file.fail()) {
+    cerr<<"\n Error opening file:  Turbulent_Velocity_Field_Data.dat to write" << endl;
+    exit(1);
+  }
+  
+  // Write number of blocks in each direction
+  out_file << NBlk_Idir << " " << NBlk_Jdir << " " << NBlk_Kdir << "\n";
+
+  // Write block data
+  for (int nBlk = 0; nBlk < NBlk; ++nBlk) {
+    out_file << setprecision(10) << Vel_Blks[nBlk];
+  }
+   
+  // Close file
+  out_file.close();
+
+  return 0;
+
+}
+
+
+/*****************************************************************************
+ * Turbulent_Velocity_Field_Multi_Block_List::Read_Turbulent_Velocity_Field  *
+ *      --  Read the turbulent velocity field data from a file.              *        
+ *****************************************************************************/
+inline int Turbulent_Velocity_Field_Multi_Block_List::Read_Turbulent_Velocity_Field(void) {
+
+  int ni, nj, nk;
+  ifstream in_file;
+  
+  // Open file
+  in_file.open("Turbulent_Velocity_Field_Data.dat", ios::in); 
+  if(in_file.fail()){ 
+    cerr<<"\n Error opening file: Turbulent_Velocity_Field_Data.dat to read" << endl;
+    exit(1); 
+  } 
+
+  // Read number of blocks in each direction
+  in_file.setf(ios::skipws);
+  in_file >> ni >> nj  >> nk;   
+  in_file.unsetf(ios::skipws);
+
+  if (ni == 0 || nj == 0 || nk == 0) {
+    if (Allocated) Deallocate(); 
+    return (1);
+  } 
+
+  if (!Allocated || NBlk_Idir != ni || NBlk_Jdir != nj || NBlk_Kdir != nk) {
+    if (Allocated) Deallocate();
+    Allocate(ni, nj, nk);
+  } 
+   
+
+  // Read data bloks
+  for (int nBlk = 0; nBlk < NBlk; ++nBlk) {
+    in_file >> Vel_Blks[nBlk];
+  }
+  
+
+  // Close file
+  in_file.close();
+
+  return 0;
+
+}
+
 
 /********************************************************
  * Routine: Inflow_Turbulence_XY_Plane                  *
@@ -383,10 +644,11 @@ inline void Turbulent_Velocity_Field_Multi_Block_List::Create(const Grid3D_Hexa_
  * of a 3D grid. It applies a turbulent inflow BC.      *
  *                                                      *
  ********************************************************/
-template<typename HEXA_BLOCK, typename SOLN_pSTATE, typename SOLN_cSTATE>
+template<typename HEXA_BLOCK>
 void Inflow_Turbulence_XY_Plane(HEXA_BLOCK &Solution_Block,
 				const Turbulent_Velocity_Field_Multi_Block_List &Velocity_Field,
-				const Input_Parameters<SOLN_pSTATE,SOLN_cSTATE> &IPs, 
+				const Input_Parameters<typename HEXA_BLOCK::Soln_pState,
+				                       typename HEXA_BLOCK::Soln_cState> &IPs, 
 				const double &Time) {
 
   int N(1);
@@ -402,7 +664,9 @@ void Inflow_Turbulence_XY_Plane(HEXA_BLOCK &Solution_Block,
   
   int nBlk, k, ii, jj, kk;
   double new_z, delta, dmin, dmin1, delta1, zmax, zmin, delta_z;  	      
-  Vector3D Position_on_Slice, dX, dVdx, dVdy, dVdz;
+  Vector3D Position_on_Slice, dX;
+
+  //Vector3D dVdx, dVdy, dVdz;
 
   for (int n_ghost = 1; n_ghost <= Solution_Block.Nghost; ++n_ghost) {
     // loop over the cells on the boundary  of the solution block
@@ -446,8 +710,16 @@ void Inflow_Turbulence_XY_Plane(HEXA_BLOCK &Solution_Block,
 	    zmin = min(Velocity_Field.Vel_Blks[nBlk].Node_INl_JNl_KNl.z, 
 		       Velocity_Field.Vel_Blks[nBlk].Node_INu_JNu_KNu.z);
 
-	    if ( new_z >= zmin  &&  new_z <= zmax ) break;
+	    if ( new_z >= zmin  &&  new_z <= zmax ) {
+	      // Reconstruct gradients of the velocity field if necessary
+	      if ( !Velocity_Field.Vel_Blks[nBlk]._Allocated ) {
+		Velocity_Field.Vel_Blks[nBlk].allocate_gradients();
+		Velocity_Field.Vel_Blks[nBlk].LeastSquares_Reconstruction();
+	      }
 
+	      break;
+	    }
+	
 	    if ( (nBlk == Velocity_Field.NBlk-1) && (new_z < zmin  ||  new_z > zmax) ) {
 	      cout << "\n --> n_ghost = " << n_ghost  << " i = " << i 
 		   << " j = " << j << " k = " << k << flush << endl;
@@ -506,13 +778,10 @@ void Inflow_Turbulence_XY_Plane(HEXA_BLOCK &Solution_Block,
 
 	  //------------------------------------------------------------------
 	  // use least squares to reconstruct the turbulent velocity field 
-	  //
-	  // ---> Gradients can be computed once and be stored!!!
-	  //
 	  //------------------------------------------------------------------
 	
-	  Velocity_Field.Vel_Blks[nBlk].LeastSquares_Reconstruction(ii, jj, kk, 
-								    dVdx, dVdy, dVdz);
+/* 	  Velocity_Field.Vel_Blks[nBlk].LeastSquares_Reconstruction(ii, jj, kk, */
+/* 								    dVdx, dVdy, dVdz); */
            
 	  Position_on_Slice.x = Solution_Block.Grid.Cell[i][j][k].Xc.x;  
 	  Position_on_Slice.y = Solution_Block.Grid.Cell[i][j][k].Xc.y;  
@@ -520,8 +789,14 @@ void Inflow_Turbulence_XY_Plane(HEXA_BLOCK &Solution_Block,
 
 	  dX = Position_on_Slice - Velocity_Field.Vel_Blks[nBlk].Position[ii][jj][kk];
 	
+/* 	  Solution_Block.W[i][j][k].v += Velocity_Field.Vel_Blks[nBlk].Velocity[ii][jj][kk] */
+/* 	                                 + dVdx*dX.x + dVdy*dX.y + dVdz*dX.z; */
+
+
 	  Solution_Block.W[i][j][k].v += Velocity_Field.Vel_Blks[nBlk].Velocity[ii][jj][kk]
-	                                 + dVdx*dX.x + dVdy*dX.y + dVdz*dX.z;
+	                                 + Velocity_Field.Vel_Blks[nBlk].dVdx[ii][jj][kk]*dX.x 
+	                                 + Velocity_Field.Vel_Blks[nBlk].dVdy[ii][jj][kk]*dX.y 
+	                                 + Velocity_Field.Vel_Blks[nBlk].dVdz[ii][jj][kk]*dX.z;
 
 	} /* end if */
       } /* end for */
@@ -637,13 +912,14 @@ void Inflow_Turbulence_XY_Plane(HEXA_BLOCK &Solution_Block,
 	  }
 	  
 	  // reconstruct gradients
-	  Solution_Block.Linear_Reconstruction_LeastSquares(i, j, k, IPs.i_Limiter);
+	  /* Solution_Block.Linear_Reconstruction_LeastSquares(i, j, k, IPs.i_Limiter); */
 
 	  // update k
-	  Solution_Block.W[i][j][k].k = 0.005*sqr(Solution_Block.W[i][j][k].filter_width(Solution_Block.Grid.volume(i,j,k))*
-						  Solution_Block.W[i][j][k].abs_strain_rate(Solution_Block.dWdx[i][j][k],
-											    Solution_Block.dWdy[i][j][k],
-											    Solution_Block.dWdz[i][j][k]));
+	  /* Solution_Block.W[i][j][k].k = 0.005*sqr(Solution_Block.W[i][j][k].filter_width()* */
+/* 						  Solution_Block.W[i][j][k].abs_strain_rate(Solution_Block.dWdx[i][j][k], */
+/* 											    Solution_Block.dWdy[i][j][k], */
+/* 											    Solution_Block.dWdz[i][j][k])); */
+
 
 	  // update the conservative state variables
 	  Solution_Block.U[i][j][k] = Solution_Block.W[i][j][k].U();
@@ -657,11 +933,12 @@ void Inflow_Turbulence_XY_Plane(HEXA_BLOCK &Solution_Block,
 }
 
 
-template<typename HEXA_BLOCK, typename SOLN_pSTATE, typename SOLN_cSTATE>
+template<typename HEXA_BLOCK>
 int Inflow_Turbulence_XY_Plane(HEXA_BLOCK *Solution_Block,
 			       const AdaptiveBlock3D_List &LocalSolnBlockList,
 			       const Turbulent_Velocity_Field_Multi_Block_List &Velocity_Field,
-			       const Input_Parameters<SOLN_pSTATE,SOLN_cSTATE> &IPs,
+			       const Input_Parameters<typename HEXA_BLOCK::Soln_pState,
+				                      typename HEXA_BLOCK::Soln_cState> &IPs,
 			       const double &Time) {
   int error_flag(0);
 
@@ -684,10 +961,11 @@ int Inflow_Turbulence_XY_Plane(HEXA_BLOCK *Solution_Block,
  * burner configurations.                               *                         
  *                                                      *
  ********************************************************/
-template<typename HEXA_BLOCK, typename SOLN_pSTATE, typename SOLN_cSTATE>
+template<typename HEXA_BLOCK>
 void IC_Assign_Turbulence_Fresh_Gas(HEXA_BLOCK &Solution_Block,
 				    const Turbulent_Velocity_Field_Multi_Block_List &Velocity_Field,
-				    const Input_Parameters<SOLN_pSTATE,SOLN_cSTATE> &IPs) {
+				    const Input_Parameters<typename HEXA_BLOCK::Soln_pState,
+				                           typename HEXA_BLOCK::Soln_cState> &IPs) {
 
   int nnBlk, ii, jj, kk, n;
   double delta, dmin;
@@ -817,11 +1095,12 @@ void IC_Assign_Turbulence_Fresh_Gas(HEXA_BLOCK &Solution_Block,
 }
 
 
-template<typename HEXA_BLOCK, typename SOLN_pSTATE, typename SOLN_cSTATE>
+template<typename HEXA_BLOCK>
 int IC_Assign_Turbulence_Fresh_Gas(HEXA_BLOCK *Solution_Block,
 				   const AdaptiveBlock3D_List &LocalSolnBlockList,
 				   const Turbulent_Velocity_Field_Multi_Block_List &Velocity_Field,
-				   const Input_Parameters<SOLN_pSTATE,SOLN_cSTATE> &IPs) {
+				   const Input_Parameters<typename HEXA_BLOCK::Soln_pState,
+				                          typename HEXA_BLOCK::Soln_cState> &IPs) {
   int error_flag(0);
 
   for (int Nblk = 0 ; Nblk <= LocalSolnBlockList.Nblk-1 ; Nblk++ ) {
@@ -1267,7 +1546,7 @@ Create_Homogeneous_Turbulence_Velocity_Field(const Grid3D_Hexa_Multi_Block_List 
 
   int errorflag;
   errorflag = Open_Turbulence_Spectrum_File( );
-  bool rescale = false;
+  bool rescale = true;
   
   Nx = IPs.NCells_Turbulence_Idir*Initial_Mesh.NBlk_Idir;
   Ny = IPs.NCells_Turbulence_Jdir*Initial_Mesh.NBlk_Jdir;
@@ -1565,6 +1844,8 @@ Create_Homogeneous_Turbulence_Velocity_Field(const Grid3D_Hexa_Multi_Block_List 
             Ek_over_k[ii-1] = K[ii].Ek/K[ii].k; 
     }
     double L11_spectral = THREE*PI/FOUR * CubicSplinesIntegration(k,Ek_over_k,nK-1) / TKE_rogallo;
+    // deallocate
+    delete[]  Ek_over_k;
     
     if (!batch_flag)      
         cout << "    -->  L11                         = " << L11_spectral << endl;
@@ -1614,10 +1895,12 @@ Create_Homogeneous_Turbulence_Velocity_Field(const Grid3D_Hexa_Multi_Block_List 
     
     
     
-    /* ---------- Longitudinal velocity correlation function fr ---------- */
-    double *Rr = new double [Nx];
-    double *fr = new double [Nx];
-    double *r = new double [Nx];
+    double *Rr, *fr, *r;
+    /* ---------- Longitudinal velocity correlation function fr ---------- */ 
+    Rr = new double [Nx];
+    fr = new double [Nx];
+    r = new double [Nx];
+
     for (int ri=0; ri<Nx; ri++){ // loop for variation in r
         Rr[ri] = 0;
     }
@@ -1643,6 +1926,83 @@ Create_Homogeneous_Turbulence_Velocity_Field(const Grid3D_Hexa_Multi_Block_List 
     double L11_physical = CubicSplinesIntegration(r,fr,Nx);
     if (!batch_flag)
         cout << "    -->  L11           = " << L11_physical << endl;
+    delete[]  Rr;
+    delete[]  fr;
+    delete[]   r;
+
+
+    /* ---------- Transversal velocity correlation function fr ---------- */
+    Rr = new double [Ny];
+    fr = new double [Ny];
+    r = new double [Ny];
+
+    for (int rj=0; rj<Ny; rj++){ // loop for variation in r
+        Rr[rj] = 0;
+    }
+    for (int l=0; l<Nz; l++) {
+        for (int i=0; i<Nx; i++) {
+	    for (int j=0; j<Ny; j++) {
+                for (int jj=j; jj<Ny; jj++) {
+                    int indexr = l + Nz*( jj + Ny*i );
+                    int index  = l + Nz*( j + Ny*i );
+                    int rj = jj-j;
+                    Rr[rj] += ONE/(Nx*Ny*Nz) * (v[indexr]*v[index]); 
+                }
+            }
+        }
+    }
+    dr = L2/(Ny-1.0);
+    for (int rj = 0; rj<Ny; rj++) {
+        r[rj] = rj*dr;
+        fr[rj] = Rr[rj]/v2;
+    }
+    
+    /* ---------------- L22 = Integral of fr ---------------- */
+    double L22_physical = CubicSplinesIntegration(r,fr,Ny);
+    if (!batch_flag)
+        cout << "    -->  L22           = " << L22_physical << endl;
+
+    delete[]  Rr;
+    delete[]  fr;
+    delete[]   r;
+
+
+    /* ---------- Transversal velocity correlation function fr ---------- */
+    Rr = new double [Nz];
+    fr = new double [Nz];
+    r = new double [Nz];
+    
+    for (int rl=0; rl<Nz; rl++){ // loop for variation in r
+        Rr[rl] = 0;
+    }
+    
+    for (int i=0; i<Nx; i++) {
+        for (int j=0; j<Ny; j++) {
+	    for (int l=0; l<Nz; l++) {
+                for (int ll=l; ll<Nz; ll++) {
+                    int indexr = ll + Nz*( j + Ny*i );
+                    int index  = l + Nz*( j + Ny*i );
+                    int rl = ll-l;
+                    Rr[rl] += ONE/(Nx*Ny*Nz) * (w[indexr]*w[index]); 
+                }
+            }
+        }
+    }
+    dr = L3/(Nz-1.0);
+    for (int rl = 0; rl<Nz; rl++) {
+        r[rl] = rl*dr;
+        fr[rl] = Rr[rl]/w2;
+    }
+    
+    /* ---------------- L33 = Integral of fr ---------------- */
+    double L33_physical = CubicSplinesIntegration(r,fr,Nz);
+    if (!batch_flag)
+        cout << "    -->  L33           = " << L33_physical << endl;
+
+    delete[]  Rr;
+    delete[]  fr;
+    delete[]   r;
+
 
     
 #ifdef _GNUPLOT
@@ -1768,6 +2128,8 @@ Create_Homogeneous_Turbulence_Velocity_Field(const Grid3D_Hexa_Multi_Block_List 
     fftw_free(uu);
     fftw_free(vv);
     fftw_free(ww);
+    // clean up accumulated data by the fftw plan
+    fftw_cleanup();  
     
     #ifdef _GNUPLOT
         delete[] dp;
@@ -1775,7 +2137,8 @@ Create_Homogeneous_Turbulence_Velocity_Field(const Grid3D_Hexa_Multi_Block_List 
        // h1.gnuplot_close();
     #endif
     
-    errorflag = Close_Turbulence_Spectrum_File( );      
+    errorflag = Close_Turbulence_Spectrum_File( );
+      
     return (0);
 }
 

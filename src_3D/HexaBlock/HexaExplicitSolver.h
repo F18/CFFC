@@ -281,7 +281,7 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
   if (error_flag) return (error_flag);
 
   /*************** UPDATE CORNER GHOST CELLS SOLUTION *****/
-  // For those 3 blocks abutting cases, this is to fix the gradient-recosntruction.
+  // For those 3 blocks abutting cases, this is to fix the gradient-reconstruction.
   Solution_Data.Local_Solution_Blocks.Update_Corner_Cells_for_3_Blks_Abutting(Data.Local_Adaptive_Block_List);
 
   return error_flag;

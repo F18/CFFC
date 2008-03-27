@@ -1550,7 +1550,7 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Bunsen_Box(Grid3D_Input_Parameter
                                              Input.NBlk_Jdir,
                                              Input.Box_Width,
                                              Input.Box_Height,
-                                             ON,
+                                             OFF, 
 					     Input.Stretching_Type_Idir,
 					     Input.Stretching_Type_Jdir,
 					     Input.Stretching_Factor_Idir,
@@ -1582,50 +1582,50 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Bunsen_Box(Grid3D_Input_Parameter
 
 
    	        if (iBlk == Input.NBlk_Idir-1) {
-		  BC_east = BC_OUTFLOW_SUBSONIC;  //BC_REFLECTION;
+		  BC_east = BC_OUTFLOW_SUBSONIC; 
                 } else {
-                   BC_east = BC_NONE;
+		  BC_east = BC_NONE;
                 } /* endif */
                 if (iBlk == 0) {
-		  BC_west = BC_OUTFLOW_SUBSONIC; //BC_REFLECTION;
+		  BC_west = BC_OUTFLOW_SUBSONIC;
                 } else {
-                   BC_west = BC_NONE;
+		  BC_west = BC_NONE;
                 } /* endif */
 
 	        if (jBlk == Input.NBlk_Jdir-1) {
-		  BC_north = BC_OUTFLOW_SUBSONIC; //BC_REFLECTION;
+		  BC_north = BC_OUTFLOW_SUBSONIC; 
                 } else {
-                   BC_north = BC_NONE;
+		  BC_north = BC_NONE;
                 } /* endif */
                 if (jBlk == 0) {
-		  BC_south = BC_OUTFLOW_SUBSONIC;  //BC_REFLECTION;
+		  BC_south = BC_OUTFLOW_SUBSONIC; 
                 } else {
-                   BC_south = BC_NONE;
+		  BC_south = BC_NONE;
                 } /* endif */
 
             /* Assign top and bottom boundary conditions. */
 
             if (kBlk == Input.NBlk_Kdir-1) {
-	       BC_top = BC_OUTFLOW_SUBSONIC;  //BC_FIXED_PRESSURE;
+	      BC_top = BC_OUTFLOW_SUBSONIC; 
             } else {
-               BC_top = BC_NONE;
+	      BC_top = BC_NONE;
             } /* endif */
             if (kBlk == 0) {
-	      if (jBlk == 2  ||  jBlk == 3) {
+	      if (jBlk == 2  ||  jBlk == 3) {  
 		BC_bottom = BC_INFLOW_TURBULENCE; 
 	      } else {
-		BC_bottom = BC_INFLOW_SUBSONIC;  //BC_DIRICHLET;
+		BC_bottom = BC_INFLOW_SUBSONIC;  
 	      }
             } else {
-               BC_bottom = BC_NONE;
+	      BC_bottom = BC_NONE;
             } /* endif */
 
-             Grid_Blks[count_blocks].Set_BCs(BC_east, 
-                                             BC_west, 
-                                             BC_north, 
-                                             BC_south, 
-                                             BC_top, 
-                                             BC_bottom);
+	    Grid_Blks[count_blocks].Set_BCs(BC_east, 
+					    BC_west, 
+					    BC_north, 
+					    BC_south, 
+					    BC_top, 
+					    BC_bottom);
 
             /* Update block counter. */
 

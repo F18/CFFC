@@ -53,6 +53,7 @@ class Turbulence_Modelling_Input_Parameters{
     char filter_type[TURBULENCEMODEL_INPUT_PARAMETER_LENGTH];   //!< Filter type : default = implicit filtering
     int i_filter_type;                                          //!< Filter type : default = implicit filtering
     double FGR;                                                 //!< Filter width to mesh size ratio, default : $f \bar{\Delta} = 2 \Delta x $f
+    double Filter_Width;                                        //!< Constant filter width
     //@}
     
     //@{ @name Spectrum related input parameters:
@@ -60,6 +61,12 @@ class Turbulence_Modelling_Input_Parameters{
     int i_spectrum;                                             //!< Spectrum function, default = Von Karman - Pao
     double LLR;                                                 //!< domainsize / (integral length scale L = k^(3/2)/eps)
     double TKE;                                                 //!< Turbulent Kinetic Energy
+    //@}
+
+    //@{ @name Reacting LES related input parameters:
+    double           Laminar_Flame_Speed;                       //!< Propagation speed of laminar premixed flame
+    double       Laminar_Flame_Thickness;                       //!< Thickness of laminar premixed flame
+    double             Thickening_Factor;                       //!< Maximum thickening factor
     //@}
 
   //@{ @name Constructors and desctructors:
@@ -72,12 +79,18 @@ class Turbulence_Modelling_Input_Parameters{
       strcpy(filter_type, "Implicit");
       i_filter_type = FILTER_TYPE_IMPLICIT;
       FGR = TWO;
+      Filter_Width = ZERO;
     
       // Spectrum parameters
       strcpy(spectrum,"Von_Karman_Pao");
       i_spectrum = SPECTRUM_VON_KARMAN_PAO;
       LLR = 6;
       TKE = 150.0;
+
+      // Reacting LES parameters
+      Laminar_Flame_Speed = 0.38;
+      Laminar_Flame_Thickness = 0.44E-3;
+      Thickening_Factor = ONE;
   }
 
   //! Destructor

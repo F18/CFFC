@@ -61,10 +61,12 @@ Output_Tecplot(Input_Parameters<LES3DTF_pState,LES3DTF_cState> &IPs,
       } /* endfor */
       
       Out_File <<"\"WF\" \\ \n" 
-	       <<"\"TF\" \\ \n";
+	       <<"\"TF\" \\ \n"
+	       <<"\"Iso_c=0.5\" \\ \n";
 
       Out_File <<"\"T\" \\ \n"
                <<"\"Q_criterion\" \\ \n"
+	       <<"\"Vorticity\" \\ \n"
                <<"\"Fuel_rrate\" \\ \n";
       
       Out_File<< "ZONE T =  \"Block Number = " << Block_Number
@@ -93,6 +95,7 @@ Output_Tecplot(Input_Parameters<LES3DTF_pState,LES3DTF_cState> &IPs,
             Out_File.setf(ios::scientific);
             Out_File << " " << W_node.T()
 		     << " " << Q_criterion_n(*this, i, j, k)
+		     << " " << vorticity_n(*this, i, j, k)
 	             << " " << -W_node.Sw(W_node.React.reactset_flag).rhospec[0].c 
 		     << "\n"; 
             Out_File.unsetf(ios::scientific);
@@ -150,6 +153,10 @@ Output_Cells_Tecplot(Input_Parameters<LES3DTF_pState,
          Out_File <<"\"c"<<W[0][0][0].specdata[i].Speciesname()<<"\" \\ \n";
       } /* endif */
      
+      Out_File <<"\"WF\" \\ \n" 
+	       <<"\"TF\" \\ \n"
+	       <<"\"Iso_c=0.5\" \\ \n";
+
       Out_File <<"\"T\" \\ \n"
                <<"\"R\" \\ \n";
       
@@ -241,7 +248,10 @@ Output_Nodes_Tecplot(Input_Parameters<LES3DTF_pState,LES3DTF_cState> &IPs,
       for(int i =0 ;i<W[0][0][0].ns ; ++i){
          Out_File <<"\"c_"<<W[0][0][0].specdata[i].Speciesname()<<"\" \\ \n";
       }
-      
+      Out_File <<"\"WF\" \\ \n" 
+	       <<"\"TF\" \\ \n"
+	       <<"\"Iso_c=0.5\" \\ \n";
+
       Out_File <<"\"T\" \\ \n";
       
       Out_File<< "ZONE T =  \"Block Number = " << Block_Number
@@ -311,7 +321,7 @@ ICs(Input_Parameters<LES3DTF_pState,LES3DTF_cState> &IPs){
     Wr.spec[3] = 0.1242;     //H2O 
     Wr.spec[4] = 0.72467;
     Wr.p = 101325.0;
-    Wr.rho = Wr.p/(Wr.Rtot()*2320); //2234
+    Wr.rho = Wr.p/(Wr.Rtot()*2230); //2234  2320
     Wr.flame.TF = 1.0;
     Wr.flame.WF =1.0;
  
@@ -352,6 +362,7 @@ ICs(Input_Parameters<LES3DTF_pState,LES3DTF_cState> &IPs){
 	  W[i][j][k] = IPs.Wo;
 	  W[i][j][k].rho = IPs.Wo.p/(IPs.Wo.Rtot()*298.15);
 	  W[i][j][k].v.zero();
+	  W[i][j][k].k = 0.0;
 	  U[i][j][k] = W[i][j][k].U();
 	} /* endfor */
       } /* endfor */
@@ -371,9 +382,9 @@ ICs(Input_Parameters<LES3DTF_pState,LES3DTF_cState> &IPs){
 
 	     double xx = Grid.Cell[i][j][k].Xc.x;
 	     double tau = Wr.T()/Wl.T() - ONE;
-	     double C = 0.5*(ONE + erf(SQRT_PI*xx/(THREE*0.44E-3)));  // (erf(xx*2000.0)+1.0)/2.0;
+	     double C = 0.5*(ONE + erf(SQRT_PI*xx/(THREE*IPs.Wo._laminar_flame_thickness)));  // (erf(xx*2000.0)+1.0)/2.0;
 	     if (C>0.02 && C<0.98) {
-	       W[i][j][k].flame.TF = 5.0;
+	       W[i][j][k].flame.TF = IPs.Wo._TFactor;  //5.0;
 	     } else {
 	       W[i][j][k].flame.TF = 1.0;
 	     }
@@ -398,23 +409,27 @@ ICs(Input_Parameters<LES3DTF_pState,LES3DTF_cState> &IPs){
      break;
 
    case IC_TURBULENT_BUNSEN_BOX :
+
+     double C, xx, yy, zz, tau, Sl, slot_width, fresh_gas_height;
+     double Yf_u = 0.05518;
+     double Yf_b = 0.0;
+
      for (int k  = KCl- Nghost ; k <=  KCu+ Nghost ; ++k) {
         for (int j  = JCl- Nghost ; j <=  JCu+ Nghost ; ++j) {
            for (int i = ICl- Nghost ; i <=  ICu+ Nghost ; ++i) {
-	      double C;
-	      double xx = Grid.Cell[i][j][k].Xc.x;
-	      double yy = Grid.Cell[i][j][k].Xc.y;
-	      double zz = Grid.Cell[i][j][k].Xc.z;
-	      double tau = Wr.T()/Wl.T() - ONE;
-	      double Sl = 0.38;
-	      double slot_width = 0.025;
-	      double fresh_gas_height = 0.02;
+	      xx = Grid.Cell[i][j][k].Xc.x;
+	      yy = Grid.Cell[i][j][k].Xc.y;
+	      zz = Grid.Cell[i][j][k].Xc.z;
+	      tau = Wr.T()/Wl.T() - ONE;
+	      Sl = IPs.Wo._laminar_flame_speed;
+	      slot_width = 0.025;
+	      fresh_gas_height = 0.02;
 	      
 	      if (zz <= fresh_gas_height) {
 		if (yy < 0.0) {
-		  C = 0.5*(ONE + erf(SQRT_PI*(-yy-HALF*slot_width)/(THREE*0.44E-3)));
+		  C = 0.5*(ONE + erf(SQRT_PI*(-yy-HALF*slot_width)/(0.7*IPs.Wo._TFactor*IPs.Wo._laminar_flame_thickness)));
 		} else {
-		  C = 0.5*(ONE + erf(SQRT_PI*(yy-HALF*slot_width)/(THREE*0.44E-3)));
+		  C = 0.5*(ONE + erf(SQRT_PI*(yy-HALF*slot_width)/(0.7*IPs.Wo._TFactor*IPs.Wo._laminar_flame_thickness)));
 		}
 	      } else {
 		C = ONE;
@@ -422,21 +437,14 @@ ICs(Input_Parameters<LES3DTF_pState,LES3DTF_cState> &IPs){
 
 	      if (zz <= fresh_gas_height && fabs(yy) <= HALF*slot_width) {
 		// fresh gas inflow
-		W[i][j][k].v.z = IPs.Mean_Velocity.z;  //3.0;  //15.58*(ONE-sqr(xx/0.005));
+		W[i][j][k].v.z = IPs.Mean_Velocity.z;  //15.58*(ONE-sqr(xx/0.005));
 	      } else {
-		W[i][j][k].v.z = IPs.Mean_Velocity.z + Sl*(Wl.rho/Wr.rho - ONE);  // 7.0;
+		W[i][j][k].v.z = IPs.Mean_Velocity.z + Sl*(Wl.rho/Wr.rho - ONE);
 	      }
 
-	      if (C>0.02 && C<0.98) {
-	        W[i][j][k].flame.TF = 5.0;
-	      } else {
-	        W[i][j][k].flame.TF = 1.0;
-	      }
-	      W[i][j][k].flame.TF = 5.0;
+	      W[i][j][k].flame.TF = IPs.Wo._TFactor;
 	      W[i][j][k].flame.WF =1.0;
 
-	      double Yf_u = 0.05518;
-	      double Yf_b = 0.0;
 	      W[i][j][k].spec[0].c = Yf_b*C + Yf_u*(ONE-C);
 	      W[i][j][k].premixed_mfrac();
               W[i][j][k].p = 101325.0;
@@ -641,11 +649,12 @@ ICs_Specializations(Input_Parameters<LES3DTF_pState,LES3DTF_cState> &IPs){
    for (int k  = KCl-Nghost ; k <= KCu+Nghost ; ++k ) {
       for ( int j  = JCl-Nghost ; j <= JCu+Nghost ; ++j ) {
           for ( int i = ICl-Nghost ; i <= ICu+Nghost ; ++i ) {
-   		W[i][j][k].k = 0.005*sqr(W[i][j][k].filter_width(Grid.volume(i,j,k))*
+	    W[i][j][k].k = 0.005*sqr(W[i][j][k].filter_width()*
                                W[i][j][k].abs_strain_rate(dWdx[i][j][k],
                                                           dWdy[i][j][k],
                                                           dWdz[i][j][k]));
-   	        U[i][j][k] = W[i][j][k].U();
+	    if (W[i][j][k].k < NANO) W[i][j][k].k = ZERO; 
+	    U[i][j][k] = W[i][j][k].U();
    	    } /* endfor */ 	  
    	} /* endfor */
    } /* endfor */
@@ -1526,9 +1535,10 @@ template<>
 double Hexa_Block<LES3DTF_pState,LES3DTF_cState>::
 CFL(Input_Parameters<LES3DTF_pState,LES3DTF_cState> &IPs) {
    
-   double dtMin, d_i, d_j, d_k, v_i, v_j, v_k, a, dt_vis, nv, nv_t;
+   double dtMin, d_i, d_j, d_k, v_i, v_j, v_k, a, dt_vis, nu, nu_t;
    double mr, aa_i, aa_j, aa_k;
    double length_n, delta_n, dTime;
+   Vector3D V;
    
    dtMin = MILLION;
    
@@ -1540,24 +1550,17 @@ CFL(Input_Parameters<LES3DTF_pState,LES3DTF_cState> &IPs) {
                 k <  KCl || k >  KCu) {
                dt[i][j][k] = ZERO;
             } else {
+	       V = W[i][j][k].rhov()/W[i][j][k].rho;
+
                d_i = TWO*(Grid.volume(i,j,k)/
                           (Grid.AfaceE(i, j, k)+ Grid.AfaceW(i, j, k)));
                d_j = TWO*( Grid.volume(i, j, k)/
                            (Grid.AfaceN(i, j, k)+ Grid.AfaceS(i, j, k)));
                d_k = TWO*( Grid.volume(i, j, k)/
                            (Grid.AfaceTop(i, j, k)+ Grid.AfaceBot(i, j, k)));
-               v_i = HALF*(W[i][j][k].rhov()/W[i][j][k].rho*
-                           (Grid.nfaceE(i, j, k)- Grid.nfaceW(i, j, k)));
-               v_j = HALF*(W[i][j][k].rhov()/W[i][j][k].rho*
-                           ( Grid.nfaceN(i, j, k)- Grid.nfaceS(i, j, k)));
-               v_k = HALF*(W[i][j][k].rhov()/W[i][j][k].rho*
-                            (Grid.nfaceTop(i, j, k)- Grid.nfaceBot(i, j, k)));
-               
-                  
-               length_n = max(max(IPs.Grid_IP.Box_Length, 
-                                  IPs.Grid_IP.Box_Width), 
-                                  IPs.Grid_IP.Box_Height);  
-	       delta_n = min(min(fabs(d_i),fabs(d_j)),fabs(d_k));
+               v_i = HALF*(V * (Grid.nfaceE(i, j, k)- Grid.nfaceW(i, j, k)));
+               v_j = HALF*(V * (Grid.nfaceN(i, j, k)- Grid.nfaceS(i, j, k)));
+               v_k = HALF*(V * (Grid.nfaceTop(i, j, k)- Grid.nfaceBot(i, j, k)));
 
   	       //no preconditioning
                if(IPs.Preconditioning == 0){
@@ -1566,7 +1569,12 @@ CFL(Input_Parameters<LES3DTF_pState,LES3DTF_cState> &IPs) {
                                    d_k/(a+fabs(v_k)));
                
 	       //Low Mach Number Preconditioning
- 	       } else if (IPs.Preconditioning == 1) { 
+ 	       } else if (IPs.Preconditioning == 1) {
+		 length_n = max(max(IPs.Grid_IP.Box_Length, 
+                                  IPs.Grid_IP.Box_Width), 
+                                  IPs.Grid_IP.Box_Height);
+		 delta_n = min(min(fabs(d_i),fabs(d_j)),fabs(d_k));
+
 	         dt[i][j][k] = min(min(d_i/W[i][j][k].u_plus_aprecon(fabs(v_i),
      		 					             delta_n,
                                                                      length_n,
@@ -1582,18 +1590,19 @@ CFL(Input_Parameters<LES3DTF_pState,LES3DTF_cState> &IPs) {
 	       } /* endif */
                      
                if (Flow_Type != FLOWTYPE_INVISCID) {  
-                  nv = W[i][j][k].mu()/W[i][j][k].rho;
+                  nu = W[i][j][k].mu()/W[i][j][k].rho;
 
-                  if (Flow_Type == FLOWTYPE_TURBULENT_LES_TF_K) {  
-		     nv_t = W[i][j][k].mu_t(dWdx[i][j][k],
+                  if (Flow_Type == FLOWTYPE_TURBULENT_LES_TF_K || 
+		      Flow_Type == FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY) {  
+		     nu_t = W[i][j][k].mu_t(dWdx[i][j][k],
                                             dWdy[i][j][k],
                                             dWdz[i][j][k],
                                             Flow_Type,
-                                           Grid.volume(i, j, k)) / W[i][j][k].rho; 
-                     nv = max(nv, nv_t);
+					    Grid.volume(i, j, k)) / W[i][j][k].rho; 
+                     nu = max(nu, nu_t);
 		  }
                   
-                  dt_vis = min(min((d_i*d_i)/(3.0*nv), (d_j*d_j)/(3.0*nv)), (d_k*d_k)/(3.0*nv)); 
+                  dt_vis = min(min((d_i*d_i)/nu, (d_j*d_j)/nu), (d_k*d_k)/nu)/3.0; 
                   dt[i][j][k]  = min(dt_vis, dt[i][j][k]);
 		  
              /*
@@ -2198,19 +2207,20 @@ Update_Solution_Multistage_Explicit(const int i_stage,
                                     Input_Parameters<LES3DTF_pState,LES3DTF_cState> &IPs){
    
   int i, j, k,  k_residual, index;
-   double omega;
-   int num_var_update = NumVar()-2;  // Don't update TF and WF using multistage scheme
+  double omega;
+  int num_var_update = NumVar()-2;  // Don't update TF and WF using multistage scheme
    
 
-   // Memory for linear system solver.
-   //   LES3DTF_cState dU_precon;
+  // Memory for linear system solver.
+  //   LES3DTF_cState dU_precon;
 
-   /* Additional variables for dual time stepping. */
-   double dTime = ZERO;          // Physical time step
-   double residual_denominator;  // Improves convergence for inner iterations
-   double length_n = max(max(IPs.Grid_IP.Box_Length, IPs.Grid_IP.Box_Width), IPs.Grid_IP.Box_Height);    
+  /* Additional variables for dual time stepping. */
+  double dTime = ZERO;          // Physical time step
+  double residual_denominator;  // Improves convergence for inner iterations
+  double length_n = max(max(IPs.Grid_IP.Box_Length, IPs.Grid_IP.Box_Width), IPs.Grid_IP.Box_Height);    
 
-   double local_progress_variable, Yf_u, Yf_b, Yf;
+  double local_progress_variable, Yf_u, Yf_b, Yf;
+  double lapl_vor, cell_size;
 
 //   if (IPs.Dual_Time_Stepping) {
 //     dTime = IPs.dTime;
@@ -2327,12 +2337,11 @@ Update_Solution_Multistage_Explicit(const int i_stage,
 
 // 	  U[i][j][k].flame.thickening_factor(Grid.volume(i,j,k), U[i][j][k]._laminar_flame_thickness);
 
-//	  U[i][j][k].flame.TF = U[i][j][k]._TFactor; // Maximum thickening factor
 
-	  U[i][j][k].flame.TF = 5.0; // 10.0;  // 5.0
 
-	  double lapl_vor, cell_size;
-	  cell_size = U[i][j][k].filter_width(Grid.volume(i,j,k));
+	  U[i][j][k].flame.TF = U[i][j][k]._TFactor; // Maximum thickening factor 
+  
+	  cell_size = pow(Grid.volume(i,j,k), 1.0/3.0);  
  	  lapl_vor = Laplacian_of_Vorticity(*this, i, j, k);
 	  U[i][j][k].flame.wrinkling_factor(U[i][j][k]._laminar_flame_speed,
 					    U[i][j][k]._laminar_flame_thickness,
@@ -2340,16 +2349,21 @@ Update_Solution_Multistage_Explicit(const int i_stage,
 					    lapl_vor,
 					    U[i][j][k].rho,
 					    U[i][j][k].mu());
-	  //U[i][j][k].flame.WF = ONE;
+
+	  if (local_progress_variable > 0.47  &&  local_progress_variable < 0.53)  {
+	    U[i][j][k].flame.iso_c_05 = true;
+	  }
 
  	} else {
 	  U[i][j][k].flame.WF = ONE;
-	  U[i][j][k].flame.TF = 5.0; // ONE  
+	  U[i][j][k].flame.TF = U[i][j][k]._TFactor;   
+	  U[i][j][k].flame.iso_c_05 = false;
 
  	} /*endif */
 
        /* Update power-law variables from the conserved solution */
 	W[i][j][k].flame = U[i][j][k].flame;
+
 
 
         /************ FORM LHS FOR DUAL TIME STEPPING SIMI-IMPLICIT WITH PRECONDITIONING ***************/

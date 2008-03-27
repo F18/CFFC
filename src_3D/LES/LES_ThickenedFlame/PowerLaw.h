@@ -54,14 +54,15 @@ class PowerLaw{
 private:
 public:
   
-  double WF;             // SFS wrinkling factor
-  double TF;             // Used for dynamic thickening
+  double     WF;             // SFS wrinkling factor
+  double     TF;             // Used for dynamic thickening
+  bool iso_c_05;            
 
   static const int n = 8;  // Number of cells across the flame front                
   
   // constructors
-  PowerLaw() : WF(ONE), TF(ONE) { }
-  PowerLaw(const double &wf, const double &tf) : WF(wf), TF(tf) { }
+  PowerLaw() : WF(ONE), TF(ONE), iso_c_05(false) { }
+  PowerLaw(const double &wf, const double &tf) : WF(wf), TF(tf), iso_c_05(false)  { }
 
 
   void unphysical_check(const double &TFactor);
@@ -347,7 +348,8 @@ inline PowerLaw PowerLaw::operator -(void) const{
 //----------------- Assignment ----------------------------//
 inline PowerLaw &PowerLaw::operator =(const PowerLaw &PL){ 
   WF = PL.WF;
-  TF = PL.TF; 
+  TF = PL.TF;
+  iso_c_05 = PL.iso_c_05;
   return(*this);
 }
 
@@ -366,25 +368,25 @@ inline PowerLaw &PowerLaw::operator -=(const PowerLaw &PL){
 
 //----------------- Relational operators ------------------// 
 inline int PowerLaw::operator ==(const PowerLaw &PL) const{
-  return (WF == PL.WF && TF == PL.TF);
+  return (WF == PL.WF && TF == PL.TF && iso_c_05 == PL.iso_c_05);
 }
 
 inline int PowerLaw::operator !=(const PowerLaw &PL) const{
-   return (WF != PL.WF || TF != PL.TF);
+   return (WF != PL.WF || TF != PL.TF || iso_c_05 != PL.iso_c_05);
 }
 
 
 //------------------ I/O operators ------------------------//
 inline ostream &operator << (ostream &out_file, const PowerLaw &PL) {
   out_file.setf(ios::scientific);
-  out_file <<" "<< PL.WF <<" "<< PL.TF;
+  out_file <<" "<< PL.WF <<" "<< PL.TF <<" "<< PL.iso_c_05;
   out_file.unsetf(ios::scientific);
   return (out_file);
 }
 
 inline istream &operator >> (istream &in_file, PowerLaw &PL) {
   in_file.setf(ios::skipws);
-  in_file >> PL.WF >> PL.TF;
+  in_file >> PL.WF >> PL.TF >> PL.iso_c_05;
   in_file.unsetf(ios::skipws);
   return (in_file);
 }

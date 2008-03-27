@@ -13,37 +13,101 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
                                                                  LES3DTF_cState> &Solution_Data) {
 
   int error_flag(0);
+  //-------------------------------------------------
+  //      RESTART
+  //-------------------------------------------------
+  if (Solution_Data.Input.i_ICs == IC_RESTART) {
   
-  RandomFieldRogallo<LES3DTF_pState, LES3DTF_cState>   Velocity_Field_Type(Solution_Data.Input); 
+    if (Solution_Data.Input.Grid_IP.i_Grid == GRID_BUNSEN_BURNER  ||
+	Solution_Data.Input.Grid_IP.i_Grid == GRID_BUNSEN_BOX) {
 
+      // Read the turbulent velocity field data (primary processor)
+      if ( CFFC_Primary_MPI_Processor() ) {
+	Data.Velocity_Field.Read_Turbulent_Velocity_Field();
+      }
 
-  if (Solution_Data.Input.Grid_IP.i_Grid != GRID_BUNSEN_BURNER  &&
-      Solution_Data.Input.Grid_IP.i_Grid != GRID_BUNSEN_BOX) {
+    }
 
-    Data.Velocity_Field.Create(Data.Initial_Mesh, 
-			       Solution_Data.Input.Grid_IP);
-
-    error_flag = Velocity_Field_Type.Create_Homogeneous_Turbulence_Velocity_Field(Data.Initial_Mesh, 
-										  Solution_Data.Input.Grid_IP,
-										  Data.batch_flag,
-										  Data.Velocity_Field);
+  //-------------------------------------------------
+  //      NON-RESTART
+  //-------------------------------------------------
   } else {
-    Data.Velocity_Field.Create(Data.Auxiliary_Mesh, 
-			       Solution_Data.Input.Grid_IP);
 
-    error_flag = Velocity_Field_Type.Create_Homogeneous_Turbulence_Velocity_Field(Data.Auxiliary_Mesh, 
-										  Solution_Data.Input.Grid_IP,
-										  Data.batch_flag,
-										  Data.Velocity_Field);
-  }
+    // the primary processor creates the initial turbulence
+    if ( CFFC_Primary_MPI_Processor() ) {
+      
+      RandomFieldRogallo<LES3DTF_pState, LES3DTF_cState>   Velocity_Field_Type(Solution_Data.Input); 
 
-  if (error_flag) return error_flag;
+      // use initial mesh
+      if (Solution_Data.Input.Grid_IP.i_Grid != GRID_BUNSEN_BURNER  &&
+	  Solution_Data.Input.Grid_IP.i_Grid != GRID_BUNSEN_BOX) {
+
+	Data.Velocity_Field.Create(Data.Initial_Mesh, 
+				   Solution_Data.Input.Grid_IP);
+
+	error_flag = Velocity_Field_Type.Create_Homogeneous_Turbulence_Velocity_Field(Data.Initial_Mesh, 
+										      Solution_Data.Input.Grid_IP,
+										      Data.batch_flag,
+      										      Data.Velocity_Field);
+      // use auxiliary mesh
+      } else {
+	
+	Data.Velocity_Field.Create(Data.Auxiliary_Mesh, 
+				   Solution_Data.Input.Grid_IP);
+
+	error_flag = Velocity_Field_Type.Create_Homogeneous_Turbulence_Velocity_Field(Data.Auxiliary_Mesh, 
+										      Solution_Data.Input.Grid_IP,
+										      Data.batch_flag,
+										      Data.Velocity_Field);
+      }
+
+      if (error_flag) return error_flag;
+
+      // Write the turbulent velocity field data
+      if (Solution_Data.Input.Grid_IP.i_Grid == GRID_BUNSEN_BURNER  ||
+	  Solution_Data.Input.Grid_IP.i_Grid == GRID_BUNSEN_BOX) {
+      
+	Data.Velocity_Field.Write_Turbulent_Velocity_Field();
+      }
+    }    
+
+  } /* endif */
   
 
-  // If required, do the interpolation of the turbulent field
+  CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
+  
+  /* Broadcast the turbulent velocity field to other MPI processors. */
+  
+  Data.Velocity_Field.Broadcast();
+ 
 
-//   if (Solution_Data.Input.Grid_IP.i_Grid == GRID_BUNSEN_BURNER) {
-//     Turbulent_Velocity_Field_Multi_Block_List  Interpolated_Velocity_Field;
+  //-------------------------------------------------
+  //  Assign turbulent velocity fluctuations
+  //-------------------------------------------------
+  if (Solution_Data.Input.i_ICs == IC_TURBULENT_BOX ||
+      Solution_Data.Input.i_ICs == IC_TURBULENT_PREMIXED_FLAME) {
+
+    // assign turbulent velocity fluctuations
+    Assign_Homogeneous_Turbulence_Velocity_Field(Solution_Data.Local_Solution_Blocks.Soln_Blks,
+						 Data.Local_Adaptive_Block_List,
+						 Data.Velocity_Field);
+
+  
+  } else if (Solution_Data.Input.i_ICs == IC_TURBULENT_BUNSEN_BOX ||
+	     Solution_Data.Input.i_ICs == IC_TURBULENT_BUNSEN_FLAME) {
+
+    // assign turbulent velocity fluctuations to the mixture of fresh gases
+    error_flag = IC_Assign_Turbulence_Fresh_Gas(Solution_Data.Local_Solution_Blocks.Soln_Blks,
+						Data.Local_Adaptive_Block_List,
+						Data.Velocity_Field,
+						Solution_Data.Input);
+      
+    if (error_flag) return error_flag;
+   
+  } else {
+    // If required, do the interpolation of the turbulent field
+   
+    // Turbulent_Velocity_Field_Multi_Block_List  Interpolated_Velocity_Field;
 
 //     Interpolated_Velocity_Field.Create(Data.Initial_Mesh,   
 // 				       Solution_Data.Input.Grid_IP);
@@ -54,33 +118,17 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
 //     Assign_Homogeneous_Turbulence_Velocity_Field(Solution_Data.Local_Solution_Blocks.Soln_Blks,
 // 						 Data.Local_Adaptive_Block_List,
 // 						 Interpolated_Velocity_Field);
-//   } else {
-//     Assign_Homogeneous_Turbulence_Velocity_Field(Solution_Data.Local_Solution_Blocks.Soln_Blks,
-// 						 Data.Local_Adaptive_Block_List,
-// 						 Data.Velocity_Field);
-//   }
 
-  
-  if (Solution_Data.Input.i_ICs != IC_RESTART) {
-
-    // assign turbulent velocity fluctuations to the mixture of fresh gases
-    if (Solution_Data.Input.Grid_IP.i_Grid == GRID_BUNSEN_BURNER  ||
-	Solution_Data.Input.Grid_IP.i_Grid == GRID_BUNSEN_BOX) {
-
-      error_flag = IC_Assign_Turbulence_Fresh_Gas(Solution_Data.Local_Solution_Blocks.Soln_Blks,
-						  Data.Local_Adaptive_Block_List,
-						  Data.Velocity_Field,
-						  Solution_Data.Input);
-      if (error_flag) return error_flag;
-    }
-
-    // ICs specializations
-    error_flag = Solution_Data.Local_Solution_Blocks.ICs_Specializations(Solution_Data.Input);
-
-    if (error_flag) return error_flag;    
-    
   }
 
+
+  //-------------------------------------------------
+  // ICs specializations
+  //-------------------------------------------------
+  error_flag = Solution_Data.Local_Solution_Blocks.ICs_Specializations(Solution_Data.Input);
+
+  if (error_flag) return error_flag;    
+    
   return error_flag;
 
 }
@@ -124,6 +172,11 @@ int Hexa_Post_Processing_Specializations(HexaSolver_Data &Data,
 				v_ave,
 				w_ave,
 				sqr_u);
+   }
+
+   if (Data.Time == 0.0  &&  Data.number_of_explicit_time_steps == 0) { 
+     Max_and_Min_Cell_Volumes(Solution_Data.Local_Solution_Blocks.Soln_Blks,
+			      Data.Local_Adaptive_Block_List);
    }
 
    return error_flag;

@@ -18,6 +18,7 @@ double LES3DTF_pState::Mref = 0.1;
 double LES3DTF_pState::_laminar_flame_speed=0.3837;
 double LES3DTF_pState::_laminar_flame_thickness=4.4E-04;
 double LES3DTF_pState::_TFactor = 1.0;
+double LES3DTF_pState::_filter_width = 0.0;
 
 /**************************************************************************************
  * LES3DTF_cState -- Create storage and assign various static values.                 *
@@ -26,6 +27,7 @@ double LES3DTF_cState::Mref = 0.1;
 double LES3DTF_cState::_laminar_flame_speed=0.3837;
 double LES3DTF_cState::_laminar_flame_thickness=4.4E-04;
 double LES3DTF_cState::_TFactor = 1.0;
+double LES3DTF_cState::_filter_width = 0.0;
 
 /**************************************************************************************
  * LESS3Dtf_pState member functions                                                   *
@@ -81,6 +83,13 @@ double LES3DTF_pState::Hs(void) const{
    return (rho*(hs()+HALF*v.sqr()+FIVE*k/THREE));   
 }
 
+/***************************************************************************************
+ * LES3DTF_pState::a -- Return mixture sound speed.                                    *
+ ***************************************************************************************/
+double LES3DTF_pState::a(void) const{
+   return sqrt(g()*p/rho);
+}
+
 /*****************************************************************************************
  * LES3DTF_pState::p_t -- Return turbulence modified pressure.                           *
  *****************************************************************************************/
@@ -92,14 +101,12 @@ double LES3DTF_pState::p_t(void) const {
  * LES3DTF_pState::a_t -- Return mixture sound speed (including turbulent kinetic energy). *
  *******************************************************************************************/
 double LES3DTF_pState::a_t(void) {
-   double aa = sqr(a());
-   aa += (TWO/THREE)*k*g();
+   double aa = g()*(p/rho + 2.0*k/3.0);
    return sqrt(aa);
 }
 
 double LES3DTF_pState::a_t(void) const {
-   double aa = sqr(a());
-   aa += (TWO/THREE)*k*g();
+   double aa = g()*(p/rho + 2.0*k/3.0);
    return sqrt(aa);
 }
 
@@ -224,12 +231,13 @@ double LES3DTF_pState::mu_t(const LES3DTF_pState &dWdx,
 			    const LES3DTF_pState &dWdz,
 			    const int Flow_Type, 
 			    const double &Volume) {
-  double filter = filter_width(Volume);
+  double filter = filter_width();
   if (Flow_Type == FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY) {
-    double Cs = 0.18;
+    static double Cs = 0.18;
     return(rho*sqr(Cs*filter)*abs_strain_rate(dWdx,dWdy,dWdz));
   } else if(Flow_Type == FLOWTYPE_TURBULENT_LES_TF_K) {
-    double Cv = 0.086;
+    static double Cv = 0.086;
+    if (k < NANO) k = ZERO;
     return(rho*Cv*sqrt(k)*filter);
   }
 }
@@ -288,6 +296,10 @@ double LES3DTF_pState::Le_t(void) {
 /************************************************************************
  * LES3DTF_pState::filter_width -- LES characteristic filter width      *
  ************************************************************************/
+double LES3DTF_pState::filter_width() const {
+  return _filter_width; 
+}
+
 double LES3DTF_pState::filter_width(const double &Volume) const {
   return (2.0*pow(Volume,1.0/3.0)); 
 }
@@ -1648,7 +1660,7 @@ LES3DTF_cState LES3DTF_pState::FluxAUSMplus_up_x(const LES3DTF_pState &Wl,
 						 const LES3DTF_pState &Wr) {
  
   LES3DTF_cState Flux;
-  double beta(0.125), sigma(0.75), Kp(0.25), Ku(0.75);
+  static double beta(0.125), sigma(0.75), Kp(0.25), Ku(0.75);
   double alpha, rhohalf, mass_flux_half;
   double ahalf, Ml, Mr, Mplus, Mminus, Mhalf, pplus, pminus, phalf;
   //double al, ar, atilde_l, atilde_r;
@@ -1714,6 +1726,7 @@ LES3DTF_cState LES3DTF_pState::FluxAUSMplus_up_x(const LES3DTF_pState &Wl,
     Flux.rho = ONE;
     Flux.rhov.x = Wl.v.x; 
     Flux.rhov.y = Wl.v.y; 
+    Flux.rhov.z = Wl.v.z; 
     Flux.E = Wl.H()/Wl.rho;
     Flux.rhok = Wl.k;
     for(int i=0; i<Wl.ns; ++i){
@@ -1722,7 +1735,8 @@ LES3DTF_cState LES3DTF_pState::FluxAUSMplus_up_x(const LES3DTF_pState &Wl,
   } else {
     Flux.rho = ONE;
     Flux.rhov.x = Wr.v.x; 
-    Flux.rhov.y = Wr.v.y; 
+    Flux.rhov.y = Wr.v.y;
+    Flux.rhov.z = Wr.v.z; 
     Flux.E = Wr.H()/Wr.rho;
     Flux.rhok = Wr.k;
     for(int i=0; i<Wr.ns; ++i){
@@ -2147,7 +2161,7 @@ double LES3DTF_pState::SFS_Kinetic_Energy(const LES3DTF_pState &dWdx,
 
   if ( Flow_Type == FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY ) {
     double CI = 0.005;
-    return (CI*sqr(filter_width(Volume)*abs_strain_rate(dWdx,dWdy,dWdz)));
+    return (CI*sqr(filter_width()*abs_strain_rate(dWdx,dWdy,dWdz)));
   } else if ( Flow_Type == FLOWTYPE_TURBULENT_LES_TF_K ) {
     return (k);
   } /* endif */
@@ -2208,7 +2222,7 @@ double LES3DTF_pState::K_equ_sources(const LES3DTF_pState &dWdx,
 
      double production, dissipation, source;
      Tensor3D subfilter_stress;
-     double Ceps = 0.845;
+     static double Ceps = 0.845;
  
      subfilter_stress = tau_t(dWdx, dWdy, dWdz, Flow_Type, Volume);
   
@@ -2219,7 +2233,7 @@ double LES3DTF_pState::K_equ_sources(const LES3DTF_pState &dWdx,
        subfilter_stress.yz*(dWdz.v.y + dWdy.v.z) +
        subfilter_stress.zz*dWdz.v.z;
 
-       dissipation = Ceps*rho*pow(k, 1.5)/filter_width(Volume);
+       dissipation = Ceps*rho*pow(k, 1.5)/filter_width();
        source = production - dissipation;
 
        return(source);
@@ -2406,12 +2420,18 @@ double LES3DTF_cState::p_t(void) const {
 }
 
 /*******************************************************************
+ * LES3DTF_cState::a -- Return mixture sound speed.                *
+ *******************************************************************/
+double LES3DTF_cState::a(void) const{
+  return sqrt(g()*p()/rho);
+}
+
+/*******************************************************************
  * LES3DTF_cState::a_t -- Return mixture sound speed (including    *
  *                         turbulent kinetic energy).              *
  *******************************************************************/
 double LES3DTF_cState::a_t(void) const {
-   double aa = sqr(a());
-   aa += (TWO/THREE)*(rhok/rho)*g();
+   double aa = g()*(p()/rho + 2.0*(rhok/rho)/3.0);
    return sqrt(aa);
 }
 
@@ -2425,6 +2445,10 @@ double LES3DTF_cState::k() const {
 /*************************************************************************
  * LES3DTF_cState::filter_width -- LES characteristic filter width       *
  *************************************************************************/
+double LES3DTF_cState::filter_width() const {
+  return _filter_width; 
+}
+
 double LES3DTF_cState::filter_width(const double &Volume) const {
   return (2.0*pow(Volume,1.0/3.0)); 
 }

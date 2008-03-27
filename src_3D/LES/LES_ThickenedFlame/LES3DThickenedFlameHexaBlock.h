@@ -138,6 +138,44 @@ double Q_criterion_n(HEXA_BLOCK &Soln_Blk,
 }
 
 /********************************************************
+ *  Return the magnitude of vorticity at specified node *
+ ********************************************************/
+template<typename HEXA_BLOCK>
+double vorticity_n(HEXA_BLOCK &Soln_Blk,
+		   const int &i, 
+		   const int &j, 
+		   const int &k){
+
+  return Trilinear_Interpolation(
+    Soln_Blk.Grid.Cell[i-1][j][k].Xc, Soln_Blk.W[i-1][j][k].vorticity(Soln_Blk.dWdx[i-1][j][k],
+								      Soln_Blk.dWdy[i-1][j][k],
+								      Soln_Blk.dWdz[i-1][j][k]).abs(),
+    Soln_Blk.Grid.Cell[i][j][k].Xc, Soln_Blk.W[i][j][k].vorticity(Soln_Blk.dWdx[i][j][k],
+								  Soln_Blk.dWdy[i][j][k],
+								  Soln_Blk.dWdz[i][j][k]).abs(),
+    Soln_Blk.Grid.Cell[i][j-1][k].Xc, Soln_Blk.W[i][j-1][k].vorticity(Soln_Blk.dWdx[i][j-1][k],
+								      Soln_Blk.dWdy[i][j-1][k],
+								      Soln_Blk.dWdz[i][j-1][k]).abs(),
+    Soln_Blk.Grid.Cell[i-1][j-1][k].Xc, Soln_Blk.W[i-1][j-1][k].vorticity(Soln_Blk.dWdx[i-1][j-1][k],
+									  Soln_Blk.dWdy[i-1][j-1][k],
+									  Soln_Blk.dWdz[i-1][j-1][k]).abs(),
+    Soln_Blk.Grid.Cell[i-1][j][k-1].Xc, Soln_Blk.W[i-1][j][k-1].vorticity(Soln_Blk.dWdx[i-1][j][k-1],
+									  Soln_Blk.dWdy[i-1][j][k-1],
+									  Soln_Blk.dWdz[i-1][j][k-1]).abs(),
+    Soln_Blk.Grid.Cell[i][j][k-1].Xc, Soln_Blk.W[i][j][k-1].vorticity(Soln_Blk.dWdx[i][j][k-1],
+								      Soln_Blk.dWdy[i][j][k-1],
+								      Soln_Blk.dWdz[i][j][k-1]).abs(),
+    Soln_Blk.Grid.Cell[i][j-1][k-1].Xc, Soln_Blk.W[i][j-1][k-1].vorticity(Soln_Blk.dWdx[i][j-1][k-1],
+									  Soln_Blk.dWdy[i][j-1][k-1],
+									  Soln_Blk.dWdz[i][j-1][k-1]).abs(),
+    Soln_Blk.Grid.Cell[i-1][j-1][k-1].Xc, Soln_Blk.W[i-1][j-1][k-1].vorticity(Soln_Blk.dWdx[i-1][j-1][k-1],
+									      Soln_Blk.dWdy[i-1][j-1][k-1],
+									      Soln_Blk.dWdz[i-1][j-1][k-1]).abs(),
+    Soln_Blk.Grid.Node[i][j][k].X);
+
+}
+
+/********************************************************
  *       Magnitude of the Laplacian of vorticity        *
  *               using finite difference                * 
  ********************************************************/
@@ -270,6 +308,62 @@ void Face_Gradient(const T &Wc,
 
 }
 
+/********************************************************
+ *      propagation_dir_area                            *
+ ********************************************************/
+template<typename HEXA_BLOCK>
+double propagation_dir_area(HEXA_BLOCK &Solution_Block,
+			    const int &i,
+			    const int &j,
+			    const int &k) {
+
+  double area, temp_dot;
+
+  Vector3D N_iso_Yfuel(Solution_Block.dWdx[i][j][k].spec[0].c,
+		       Solution_Block.dWdy[i][j][k].spec[0].c,
+		       Solution_Block.dWdz[i][j][k].spec[0].c);
+
+  // East face  
+  double dot_prod = N_iso_Yfuel.dot(Solution_Block.Grid.nfaceE(i,j,k));
+  area = Solution_Block.Grid.AfaceE(i,j,k);
+
+  // West face
+  temp_dot = N_iso_Yfuel.dot(Solution_Block.Grid.nfaceW(i,j,k));
+  if ( temp_dot > dot_prod ) { 
+    dot_prod = temp_dot;
+    area = Solution_Block.Grid.AfaceW(i,j,k);
+  }
+
+  // North face
+  temp_dot = N_iso_Yfuel.dot(Solution_Block.Grid.nfaceN(i,j,k));
+  if ( temp_dot > dot_prod ) { 
+    dot_prod = temp_dot;
+    area = Solution_Block.Grid.AfaceN(i,j,k);
+  }
+
+  // South face
+  temp_dot = N_iso_Yfuel.dot(Solution_Block.Grid.nfaceS(i,j,k));
+  if ( temp_dot > dot_prod ) { 
+    dot_prod = temp_dot;
+    area = Solution_Block.Grid.AfaceS(i,j,k);
+  }
+
+  // Top face
+  temp_dot = N_iso_Yfuel.dot(Solution_Block.Grid.nfaceTop(i,j,k));
+  if ( temp_dot > dot_prod ) { 
+    dot_prod = temp_dot;
+    area = Solution_Block.Grid.AfaceTop(i,j,k);
+  }
+
+  // Bottom
+  temp_dot = N_iso_Yfuel.dot(Solution_Block.Grid.nfaceBot(i,j,k));
+  if ( temp_dot > dot_prod ) { 
+    dot_prod = temp_dot;
+    area = Solution_Block.Grid.AfaceBot(i,j,k);
+  }
+
+  return area;
+}
 
 /********************************************************
  *       Burning rate                                   *
@@ -279,25 +373,58 @@ double Turbulent_Burning_Rate(HEXA_BLOCK *Solution_Block,
 			      AdaptiveBlock3D_List &LocalSolnBlockList,
 			      Grid3D_Input_Parameters &IPs){
 
-  double local_vol, Yf_u, rho_u, Ly, Lz, burning_rate(ZERO);
+  double local_vol, Yf_u, rho_u, burning_rate(ZERO);
+  double iso_surface_area(ZERO);
   Yf_u = 0.05518;//Fresh_Fuel_Mass_Fraction;
   rho_u = 1.13;//Fresh_Density;
-  Ly = IPs.Box_Width;
-  Lz = IPs.Box_Height;
+
+  //int count(0);
+
   for (int p = 0 ; p <= LocalSolnBlockList.Nblk-1 ; p++ ) {
     if (LocalSolnBlockList.Block[p].used == ADAPTIVEBLOCK3D_USED) {
       for (int i = Solution_Block[p].ICl ; i <= Solution_Block[p].ICu ; i++) {
         for (int j = Solution_Block[p].JCl ; j <= Solution_Block[p].JCu ; j++) {
            for (int k = Solution_Block[p].KCl ; k <= Solution_Block[p].KCu ; k++) {
 	     local_vol = Solution_Block[p].Grid.volume(i,j,k);
-	     burning_rate += Solution_Block[p].W[i][j][k].Sw(Solution_Block[p].W[i][j][k].React.reactset_flag).rhospec[0].c*local_vol;
+	     burning_rate += Solution_Block[p].W[i][j][k].Sw(Solution_Block[p].W[i][j][k].React.reactset_flag).rhospec[0].c
+	                     *local_vol;
+	     if (Solution_Block[p].W[i][j][k].flame.iso_c_05) {
+	       iso_surface_area += propagation_dir_area(Solution_Block[p], i, j, k);
+	       //count ++;
+	     }
 	   }
 	}
       }
     }
   }
+
   burning_rate = CFFC_Summation_MPI(burning_rate);
-  burning_rate = -burning_rate/(rho_u*Yf_u*Ly*Lz);
+  iso_surface_area = CFFC_Summation_MPI(iso_surface_area);
+  
+  double ref_area, Lx, Ly, Lz;
+
+  if ( IPs.i_Grid == GRID_PERIODIC_BOX_WITH_INFLOW  ||
+       IPs.i_Grid == GRID_PERIODIC_BOX) {
+    Ly = IPs.Box_Height;
+    Lz = IPs.Box_Length;
+    ref_area = Ly*Lz;
+  } else if ( IPs.i_Grid == GRID_BUNSEN_BOX ) {
+    Lx = IPs.Box_Width;
+    ref_area = (0.025 + 2.0*0.02)*Lx;
+  }
+
+  if ( iso_surface_area > ref_area ) {
+    burning_rate = -burning_rate/(rho_u*Yf_u*iso_surface_area);
+  } else {
+    burning_rate = -burning_rate/(rho_u*Yf_u*ref_area);
+  }
+  
+  /* count = CFFC_Summation_MPI(count); */
+/*   if ( CFFC_Primary_MPI_Processor() ) {   */
+/*     cout << "\n iso_surface_area: " << iso_surface_area  */
+/* 	 << "\tref_area: " << ref_area  */
+/* 	 << "\tcounter: " << count; */
+/*   } */
 
   return burning_rate;
 

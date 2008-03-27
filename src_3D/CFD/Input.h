@@ -44,7 +44,7 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
   Input_Parameters(const CFD_Input_Parameters &IP) : CFD_Input_Parameters() { }
 
   //! Destructor
-  ~Input_Parameters(void){ }
+  ~Input_Parameters(void){ Deallocate_Static(); }
   //@}
 
   //@{ @name Other Member functions:
@@ -61,6 +61,8 @@ template<class SOLN_pSTATE, class SOLN_cSTATE>
   void Read_Reference_Solution_States(istream &restart_file);
   //! Write reference solution states
   void Write_Reference_Solution_States(ostream &restart_file);
+  //! Deallocate static data of reference solution states
+  void Deallocate_Static(void);
   //@}
 
   //@{ @name Input-output operators:
@@ -215,6 +217,24 @@ void Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::
    cerr << "\n Explicit Specialization of "
         << "Input_Parameters::Write_Reference_Solution_States "
         << "in Input.h requried.\n";
+   exit(1);
+
+}
+
+/********************************************************
+ * Routine: Deallocate_Static                           *
+ *                                                      *
+ * Deallocate static data of the reference solution     * 
+ * states.                                              *
+ *                                                      *
+ ********************************************************/
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+void Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::
+                     Deallocate_Static(void) {
+
+   cerr << "\n Explicit Specialization of "
+        << "Input_Parameters::Deallocate_Static "
+        << "in Input.h required.\n";
    exit(1);
 
 }

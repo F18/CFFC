@@ -33,6 +33,9 @@ void Turbulence_Modelling_Input_Parameters::Broadcast(void) {
     MPI::COMM_WORLD.Bcast(&(FGR),
                           1,
                           MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(Filter_Width),
+                          1,
+                          MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(spectrum,
                           TURBULENCEMODEL_INPUT_PARAMETER_LENGTH,
                           MPI::CHAR, 0);
@@ -43,6 +46,15 @@ void Turbulence_Modelling_Input_Parameters::Broadcast(void) {
                           1,
                           MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&(TKE),
+                          1,
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(Laminar_Flame_Speed),
+                          1,
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(Laminar_Flame_Thickness),
+                          1,
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(Thickening_Factor),
                           1,
                           MPI::DOUBLE, 0);
 #endif
@@ -100,6 +112,12 @@ int Turbulence_Modelling_Input_Parameters::Parse_Next_Input_Control_Parameter(ch
     value >> FGR;
     if (FGR < 1)
       i_command = INVALID_INPUT_VALUE;
+
+  } else if (strcmp(code, "Filter_Width") == 0) {
+    i_command = 123;
+    value >> Filter_Width;
+    if ( Filter_Width < 0.0 )
+      i_command = INVALID_INPUT_VALUE;
         
     /* ---- Spectrum Parameters ---- */
   } else if (strcmp(code, "Spectrum_Model") == 0) {
@@ -125,11 +143,32 @@ int Turbulence_Modelling_Input_Parameters::Parse_Next_Input_Control_Parameter(ch
       i_command = INVALID_INPUT_VALUE;
         
   } else if (strcmp(code, "Turbulent_Kinetic_Energy") == 0) {
-    i_command = 131;
+    i_command = 132;
     value >> TKE;
     if (TKE <= ZERO)
       i_command = INVALID_INPUT_VALUE;
+
+
+    /* ----- Reacting LES parameters ----- */
+  } else if (strcmp(code, "Laminar_Flame_Speed") == 0) {
+    i_command = 140;
+    value >> Laminar_Flame_Speed;
+    if ( Laminar_Flame_Speed <= 0.0 )
+      i_command = INVALID_INPUT_VALUE;
+
+  } else if (strcmp(code, "Laminar_Flame_Thickness") == 0) {
+    i_command = 141;
+    value >> Laminar_Flame_Thickness;
+    if ( Laminar_Flame_Thickness <= 0.0 )
+      i_command = INVALID_INPUT_VALUE;
+
+  } else if (strcmp(code, "Thickening_Factor") == 0) {
+    i_command = 142;
+    value >> Thickening_Factor;
+    if ( Thickening_Factor < ONE )
+      i_command = INVALID_INPUT_VALUE;
     
+
   } else {
     i_command = INVALID_INPUT_CODE;
 
