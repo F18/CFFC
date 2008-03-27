@@ -252,7 +252,40 @@ public :
                  const NavierStokes3D_Polytropic_pState &dWdy,
                  const NavierStokes3D_Polytropic_pState &dWdz);
 //@}
+    //same with const
+    double mu(void) const;
+    double nu(void) const;
+    double kappa(void) const;
+    
+/** @name Boundary Conditions */
+/*        ------------------- */
+//@{ 
+    
+    //! Fixes a pressure profile to the given states depending on Input Parameters
+    template<class SOLN_pSTATE, class SOLN_cSTATE>
+    static NavierStokes3D_Polytropic_pState PressureProfile(
+                                                            const NavierStokes3D_Polytropic_pState &Wdum,
+                                                            Vector3D Xc,
+                                                            Input_Parameters<SOLN_pSTATE,SOLN_cSTATE> &IPs);
+    
+    //! Fixes a velocity profile to the given states depending on Input Parameters
+    template<class SOLN_pSTATE, class SOLN_cSTATE>
+    static NavierStokes3D_Polytropic_pState VelocityProfile(
+                                                            const NavierStokes3D_Polytropic_pState &Wdum,
+                                                            Vector3D Xc,
+                                                            Input_Parameters<SOLN_pSTATE,SOLN_cSTATE> &IPs);
+    
+    //! Fixes a Blasius profile to the given solution states
+    static NavierStokes3D_Polytropic_pState FlatPlate(const NavierStokes3D_Polytropic_pState &Winf,
+                                                      const Vector3D &X,
+                                                      const double &plate_length,
+                                                      double &eta,
+                                                      double &f,
+                                                      double &fp,
+                                                      double &fpp);
+//@}
 };
+
 
 
 
@@ -312,5 +345,100 @@ public :
 //@}
 };
 
-#endif // _NAVIERSTOKES3D_POLYTROPIC_STATE_INCLUDED
 
+/* ----------------------------------------------------------------------------- *
+ *                      Some templated functions.                                *
+ * ----------------------------------------------------------------------------- */
+
+/**
+ * Overload this function from Euler3D_Polytropic_pState::PressureProfile
+ * to add some additional Initial Conditions
+ */
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+NavierStokes3D_Polytropic_pState NavierStokes3D_Polytropic_pState::PressureProfile(
+                                                                                   const NavierStokes3D_Polytropic_pState &Wdum,
+                                                                                   Vector3D Xc,
+                                                                                   Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
+    /* first run PressureProfile from Euler classes */
+    NavierStokes3D_Polytropic_pState W = Euler3D_Polytropic_pState::PressureProfile(Wdum,Xc,IPs);
+
+    /* Newly added profiles fit for Navier-Stokes flows */
+	switch (IPs.i_Original_ICs) {
+		case IC_CHANNEL_FLOW :
+            double *Pressure_Gradient_ptr, *Length_ptr, *X_ptr;
+            switch (IPs.Grid_IP.i_Grid) {
+                case GRID_CHANNEL_ZDIR :
+                    Pressure_Gradient_ptr = &IPs.Pressure_Gradient.z;
+                    X_ptr = &Xc.z;
+                    break;
+                case GRID_CHANNEL_XDIR :
+                    Pressure_Gradient_ptr = &IPs.Pressure_Gradient.x;
+                    X_ptr = &Xc.x;
+                    break;
+                case GRID_CHANNEL_YDIR :
+                    Pressure_Gradient_ptr = &IPs.Pressure_Gradient.y;
+                    X_ptr = &Xc.y;
+                    break;
+            }
+            
+            W.p = IPs.Wo.p + (*Pressure_Gradient_ptr)*(*X_ptr);
+            break;
+	}    
+	return W;
+}
+
+
+/**
+ * Overload this function from Euler3D_Polytropic_pState::VelocityProfile
+ * to add some additional Initial Conditions
+ */
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+NavierStokes3D_Polytropic_pState NavierStokes3D_Polytropic_pState::VelocityProfile(
+                                                                                   const NavierStokes3D_Polytropic_pState &Wdum,
+                                                                                   Vector3D Xc,
+                                                                                   Input_Parameters<SOLN_pSTATE,SOLN_cSTATE> &IPs) {
+	
+    /* first run VelocityProfile from Euler classes */
+    NavierStokes3D_Polytropic_pState W = Euler3D_Polytropic_pState::VelocityProfile(Wdum,Xc,IPs);
+    
+    /* Newly added profiles fit for Navier-Stokes flows */
+	switch (IPs.i_Original_ICs) {
+		case IC_CHANNEL_FLOW :
+            double *Pressure_Gradient_ptr, *Velocity_ptr, *Length_ptr, *X_ptr;
+            switch (IPs.Grid_IP.i_Grid) {
+                case GRID_CHANNEL_ZDIR :
+                    Pressure_Gradient_ptr = &IPs.Pressure_Gradient.z;
+                    Velocity_ptr = &W.v.z;
+                    Length_ptr = &IPs.Grid_IP.Box_Height;
+                    X_ptr = &Xc.y;
+                    break;
+                case GRID_CHANNEL_XDIR :
+                    Pressure_Gradient_ptr = &IPs.Pressure_Gradient.x;
+                    Velocity_ptr = &W.v.x;
+                    Length_ptr = &IPs.Grid_IP.Box_Length;
+                    *X_ptr = Xc.z - HALF*IPs.Grid_IP.Box_Length;
+                    break;
+                case GRID_CHANNEL_YDIR :
+                    Pressure_Gradient_ptr = &IPs.Pressure_Gradient.y;
+                    Velocity_ptr = &W.v.y;
+                    Length_ptr = &IPs.Grid_IP.Box_Width;
+                    X_ptr = &Xc.x;
+                    break;
+            }
+            
+            *Velocity_ptr = -(*Pressure_Gradient_ptr)/(TWO*W.mu())*(sqr(HALF*(*Length_ptr)) - sqr(*X_ptr));
+            break;
+            
+        case IC_VISCOUS_FLAT_PLATE :
+            double eta,f,fp,fpp;
+            if (Xc.y >= 0)
+                W = FlatPlate(Wdum,Xc,IPs.Grid_IP.Plate_Length,eta,f,fp,fpp);
+            else
+                W = FlatPlate(Wdum,Vector3D(Xc.x,-Xc.y,Xc.z),IPs.Grid_IP.Plate_Length,eta,f,fp,fpp);
+            break;
+	}
+	return W;
+}
+
+
+#endif // _NAVIERSTOKES3D_POLYTROPIC_STATE_INCLUDED

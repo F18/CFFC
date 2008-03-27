@@ -495,7 +495,7 @@ inline char *Date_And_Time() {
  **********************************************************************/
 
 #define IC_RESTART                     -1
-
+#define IC_NOT_DEFINED                 -2
 #define	IC_CONSTANT                     0
 #define	IC_UNIFORM                      1
 #define	IC_SOD                          2

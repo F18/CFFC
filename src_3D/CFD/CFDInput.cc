@@ -619,7 +619,7 @@ int CFD_Input_Parameters::Parse_Next_Input_Control_Parameter(void) {
           i_ICs = IC_TURBULENT_DIFFUSION_FLAME;
        } else if (strcmp(ICs_Type, "Turbulent_Free_Jet_Flame") == 0) {
           i_ICs = IC_FREE_JET_FLAME;
-       }else if (strcmp(ICs_Type, "Turbulent_Premixed_Flame") == 0) {
+       } else if (strcmp(ICs_Type, "Turbulent_Premixed_Flame") == 0) {
           i_ICs = IC_TURBULENT_PREMIXED_FLAME;
        }else if (strcmp(ICs_Type, "Turbulent_Bunsen_Flame") == 0) {
           i_ICs = IC_TURBULENT_BUNSEN_FLAME;
@@ -632,6 +632,121 @@ int CFD_Input_Parameters::Parse_Next_Input_Control_Parameter(void) {
        } else {
           i_command = INVALID_INPUT_VALUE;
        } /* endif */
+       if (i_ICs != IC_RESTART) {
+           i_Original_ICs = i_ICs;
+           strcpy(Original_ICs_Type, ICs_Type);
+       }
+        
+    } else if (strcmp(code, "Original_ICs_Type") == 0) {
+        i_command = 100;
+        value_stream >> value_string;
+        strcpy(Original_ICs_Type, value_string.c_str());
+        if (strcmp(Original_ICs_Type, "Constant") == 0) {
+            i_Original_ICs = IC_CONSTANT;
+        } else if (strcmp(Original_ICs_Type, "Uniform") == 0) {
+            i_Original_ICs = IC_UNIFORM;
+        } else if (strcmp(Original_ICs_Type, "Sod") == 0) {
+            i_Original_ICs = IC_SOD;
+        } else if (strcmp(Original_ICs_Type, "Sod_Xdir") == 0) {
+            i_Original_ICs = IC_SOD_XDIR;
+        } else if (strcmp(Original_ICs_Type, "Sod_Ydir") == 0) {
+            i_Original_ICs = IC_SOD_YDIR;
+        } else if (strcmp(Original_ICs_Type, "Sod_Zdir") == 0) {
+            i_Original_ICs = IC_SOD_ZDIR;
+        } else if (strcmp(Original_ICs_Type, "Groth") == 0) {
+            i_Original_ICs = IC_GROTH;
+        } else if (strcmp(Original_ICs_Type, "Groth_Xdir") == 0) {
+            i_Original_ICs = IC_GROTH_XDIR;
+        } else if (strcmp(Original_ICs_Type, "Groth_Ydir") == 0) {
+            i_Original_ICs = IC_GROTH_YDIR;
+        } else if (strcmp(Original_ICs_Type, "Einfeldt") == 0) {
+            i_Original_ICs = IC_EINFELDT;
+        } else if (strcmp(Original_ICs_Type, "Einfeldt_Xdir") == 0) {
+            i_Original_ICs = IC_EINFELDT_XDIR;
+        } else if (strcmp(Original_ICs_Type, "Einfeldt_Ydir") == 0) {
+            i_Original_ICs = IC_EINFELDT_YDIR;
+        } else if (strcmp(Original_ICs_Type, "Shock_Wave_Xdir") == 0) {
+            i_Original_ICs = IC_SHOCK_WAVE_XDIR;
+        } else if (strcmp(Original_ICs_Type, "Shock_Wave_Ydir") == 0) {
+            i_Original_ICs = IC_SHOCK_WAVE_YDIR;
+        } else if (strcmp(Original_ICs_Type, "Contact_Surface_Xdir") == 0) {
+            i_Original_ICs = IC_CONTACT_SURFACE_XDIR;
+        } else if (strcmp(Original_ICs_Type, "Contact_Surface_Ydir") == 0) {
+            i_Original_ICs = IC_CONTACT_SURFACE_YDIR;
+        } else if (strcmp(Original_ICs_Type, "Rarefaction_Wave_Xdir") == 0) {
+            i_Original_ICs = IC_RAREFACTION_WAVE_XDIR;
+        } else if (strcmp(Original_ICs_Type, "Rarefaction_Wave_Ydir") == 0) {
+            i_Original_ICs = IC_RAREFACTION_WAVE_YDIR;
+        } else if (strcmp(Original_ICs_Type, "ShockBox") == 0) {
+            i_Original_ICs = IC_SHOCK_BOX;
+        } else if (strcmp(Original_ICs_Type, "ShockBox_XY") == 0) {
+            i_Original_ICs = IC_SHOCK_BOX_XY;
+        } else if (strcmp(Original_ICs_Type, "ShockBox_XZ") == 0) {
+            i_Original_ICs = IC_SHOCK_BOX_XZ;
+        } else if (strcmp(Original_ICs_Type, "ShockBox_YZ") == 0) {
+            i_Original_ICs = IC_SHOCK_BOX_YZ;
+        } else if (strcmp(Original_ICs_Type, "High_Pressure_Reservoir") == 0) {
+            i_Original_ICs = IC_HIGH_PRESSURE_RESERVOIR;
+        } else if (strcmp(Original_ICs_Type, "Low_Pressure_Reservoir") == 0) {
+            i_Original_ICs = IC_LOW_PRESSURE_RESERVOIR;
+        } else if (strcmp(Original_ICs_Type, "Riemann") == 0) {
+            i_Original_ICs = IC_RIEMANN;
+        } else if (strcmp(Original_ICs_Type, "Riemann_Xdir") == 0) {
+            i_Original_ICs = IC_RIEMANN_XDIR;
+        } else if (strcmp(Original_ICs_Type, "Riemann_Ydir") == 0) {
+            i_Original_ICs = IC_RIEMANN_YDIR;  
+        } else if (strcmp(Original_ICs_Type, "Wedge_Flow") == 0) {
+            i_Original_ICs = IC_WEDGE_FLOW;	 
+        } else if (strcmp(Original_ICs_Type, "Mix") == 0) {
+            i_Original_ICs = IC_GAS_MIX;
+        } else if (strcmp(Original_ICs_Type, "Core_Flame") == 0 ) {
+            i_Original_ICs = IC_CHEM_CORE_FLAME ;
+        } else if (strcmp(Original_ICs_Type, "Inverse_Flame") == 0 ) {
+            i_Original_ICs = IC_CHEM_INVERSE_FLAME ; 
+        } else if (strcmp(Original_ICs_Type, "Pressure_Gradient_x") == 0 ) {
+            i_Original_ICs = IC_PRESSURE_GRADIENT_X;
+        } else if (strcmp(Original_ICs_Type, "Pressure_Gradient_y") == 0 ) {
+            i_Original_ICs = IC_PRESSURE_GRADIENT_Y;
+        } else if (strcmp(Original_ICs_Type, "Pressure_Gradient_z") == 0 ) {
+            i_Original_ICs = IC_PRESSURE_GRADIENT_Z;
+        } else if (strcmp(Original_ICs_Type, "Couette") == 0 ) {
+            i_Original_ICs = IC_VISCOUS_COUETTE; 
+        } else if (strcmp(Original_ICs_Type, "Couette_Pressure_Gradient_x") == 0 ) {
+            i_Original_ICs = IC_VISCOUS_COUETTE_PRESSURE_GRADIENT_X;
+        } else if (strcmp(Original_ICs_Type, "Couette_Pressure_Gradient_y") == 0 ) {
+            i_Original_ICs = IC_VISCOUS_COUETTE_PRESSURE_GRADIENT_Y;
+        } else if (strcmp(Original_ICs_Type, "Couette_Pressure_Gradient_z") == 0 ) {
+            i_Original_ICs = IC_VISCOUS_COUETTE_PRESSURE_GRADIENT_Z;
+        } else if (strcmp(Original_ICs_Type, "1DPremixedFlame") == 0 ) {
+            i_Original_ICs = IC_CHEM_1DFLAME; 
+        } else if (strcmp(Original_ICs_Type, "Flat_Plate") == 0) {
+            i_Original_ICs = IC_VISCOUS_FLAT_PLATE;
+        } else if (strcmp(Original_ICs_Type, "Pipe_Flow") == 0) {
+            i_Original_ICs = IC_TURBULENT_PIPE_FLOW;
+        } else if (strcmp(Original_ICs_Type, "Coflow") == 0) {
+            i_Original_ICs = IC_TURBULENT_COFLOW;
+        } else if (strcmp(Original_ICs_Type, "Driven_Cavity_Flow") == 0) {
+            i_Original_ICs = IC_VISCOUS_DRIVEN_CAVITY_FLOW;
+        } else if (strcmp(Original_ICs_Type, "Turbulent_Dump_Combustor") == 0) {
+            i_Original_ICs = IC_TURBULENT_DUMP_COMBUSTOR;
+        } else if (strcmp(Original_ICs_Type, "Channel_Flow") == 0) {
+            i_Original_ICs = IC_CHANNEL_FLOW;
+        } else if (strcmp(Original_ICs_Type, "Laminar_Channel_Flow") == 0) {
+            i_Original_ICs = IC_CHANNEL_FLOW;
+        } else if (strcmp(Original_ICs_Type, "Turbulent_Channel_Flow") == 0) {
+            i_Original_ICs = IC_CHANNEL_FLOW;
+        } else if (strcmp(Original_ICs_Type, "Turbulent_Diffusion_Flame") == 0) {
+            i_Original_ICs = IC_TURBULENT_DIFFUSION_FLAME;
+        } else if (strcmp(Original_ICs_Type, "Turbulent_Free_Jet_Flame") == 0) {
+            i_Original_ICs = IC_FREE_JET_FLAME;
+        } else if (strcmp(Original_ICs_Type, "Turbulent_Premixed_Flame") == 0) {
+            i_Original_ICs = IC_TURBULENT_PREMIXED_FLAME;
+        } else if (strcmp(Original_ICs_Type, "Restart") == 0) {
+            i_Original_ICs = IC_RESTART;
+        } else {
+            i_command = INVALID_INPUT_VALUE;
+        } /* endif */
+        
 
     } else if (strcmp(code, "Gas_Type") == 0) {
        i_command = 101;

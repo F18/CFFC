@@ -20,12 +20,6 @@
 /* Define required specializations. */
 
 template<>
-int Hexa_Block<NavierStokes3D_Polytropic_pState, 
-               NavierStokes3D_Polytropic_cState>::
-ICs(Input_Parameters<NavierStokes3D_Polytropic_pState, 
-                     NavierStokes3D_Polytropic_cState> &IPs);
-
-template<>
 double Hexa_Block<NavierStokes3D_Polytropic_pState,
                   NavierStokes3D_Polytropic_cState>::
 CFL(Input_Parameters<NavierStokes3D_Polytropic_pState,

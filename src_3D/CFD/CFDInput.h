@@ -181,6 +181,8 @@ class CFD_Input_Parameters{
   //@{ @name Initial condition type indicator and related input parameters:
   char ICs_Type[INPUT_PARAMETER_LENGTH];
   int i_ICs;
+  char Original_ICs_Type[INPUT_PARAMETER_LENGTH];
+  int i_Original_ICs;
   //! Gas Type
   char Gas_Type[INPUT_PARAMETER_LENGTH];
   //! Freestream Mach number
@@ -259,6 +261,8 @@ class CFD_Input_Parameters{
     // Initial condition type indicator and related input parameters:
     strcpy(ICs_Type, "Uniform");
     i_ICs = IC_UNIFORM;
+    strcpy(Original_ICs_Type, "Not_defined");
+    i_Original_ICs = IC_NOT_DEFINED;
     strcpy(Gas_Type, "AIR");
     Mach_Number = ZERO;
     Reynolds_Number = 500000.00;

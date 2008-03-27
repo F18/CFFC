@@ -221,6 +221,9 @@ NavierStokes3D_Polytropic_cState  NavierStokes3D_Polytropic_pState::FluxViscous_
 double NavierStokes3D_Polytropic_pState::mu(void) {		
 	return (mu_gottlieb(v1,v2,v3,v4,v5,T()));
 }
+double NavierStokes3D_Polytropic_pState::mu(void) const{		
+	return (mu_gottlieb(v1,v2,v3,v4,v5,T()));
+}
 
 
 // Kinematic viscosity
@@ -230,6 +233,9 @@ double NavierStokes3D_Polytropic_pState::mu(void) {
 double NavierStokes3D_Polytropic_pState::nu(void) {		
 	return (mu()/rho);
 }
+double NavierStokes3D_Polytropic_pState::nu(void) const {		
+	return (mu()/rho);
+}
 
 // thermal conductivity
 /*!
@@ -237,6 +243,9 @@ double NavierStokes3D_Polytropic_pState::nu(void) {
  * kappa = kappa_gottlieb(v1,v2,v3,v4,v5,T,g,Cp) defined in GasConstants.h
  */
 double NavierStokes3D_Polytropic_pState::kappa(void) {
+	return kappa_gottlieb(v1,v2,v3,v4,v5,T(),g,Cp);
+}
+double NavierStokes3D_Polytropic_pState::kappa(void) const {
 	return kappa_gottlieb(v1,v2,v3,v4,v5,T(),g,Cp);
 }
 
@@ -339,6 +348,102 @@ Vector3D NavierStokes3D_Polytropic_pState::q_z(const NavierStokes3D_Polytropic_p
 	q.z = -kappa()*(dWdz.p - (p/rho)*dWdz.rho)/(rho*R);
 	return (q);
 }
+
+
+
+/*
+ * Navier-Stokes related functions
+ * -------------------------------
+ */
+
+/**
+ * Routine: FlatPlate                                                 
+ *
+ * This function returns the exact solution for the flow over a flat
+ * (adiabatic) plate (Blasius solution) at a given the position and
+ * the freestream flow velocity.
+ */
+NavierStokes3D_Polytropic_pState NavierStokes3D_Polytropic_pState::
+FlatPlate(const NavierStokes3D_Polytropic_pState &Winf,
+          const Vector3D &X,
+          const double &plate_length,
+          double &eta,
+          double &f,
+          double &fp,
+          double &fpp) {
+    
+    NavierStokes3D_Polytropic_pState W;
+    double fo, n, dn, k1, k2, k3, k4;
+    
+    /* Initialize variables. */
+    W.rho = Winf.rho; W.p = Winf.p;
+    eta = ZERO; f = ZERO; fo = ZERO; fp = ZERO; fpp = 0.33206;
+    n = ZERO; dn = 0.00005;
+    
+    /* Return upstream conditions before flat plate, including the leading edge. */
+    if (X.x < TOLER || X.y > HALF*plate_length) return Winf;
+    //if (X.x < NANO || X.x > plate_length || X.y > plate_length) return Winf;
+    
+    /* Determine the dimensionless similarity coordinate, eta: */
+    eta = X.y*sqrt(Winf.v.x/(X.x*Winf.nu()));
+    
+    /* If eta is greater than 8.4, for the sake of expediency, use linear
+     * extrapolation to determine the value of f (fp = ONE and fpp = ZERO)
+     * given the tabulated value at 8.4 (note, the analytic solution is 
+     * linear in this region).
+     */
+    if (eta > 100.0) {
+        return Winf;
+    } else if (eta > 8.4) {
+        fp = ONE; fpp = ZERO; f = 6.67923 + fp*(eta - 8.4);
+        W.v.x = fp*Winf.v.x;
+        W.v.y = sqrt(HALF*Winf.nu()*Winf.v.x/X.x)*(eta*fp-f);
+        return W;
+    }
+    
+    /* Compute the Blasius solution using a fourth-order Runge-Kutta method. */
+    while (n < eta) {
+        
+        /* Store the solution at the start of the iteration. */
+        fo = f;
+        
+        /* Increment f: */
+        k1 = dn*fp;
+        k2 = dn*(fp + k1/2.0);
+        k3 = dn*(fp + k2/2.0);
+        k4 = dn*(fp + k3);
+        f += k1/6.0 + k2/3.0 + k3/3.0 + k4/6.0;
+        
+        /* Increment fp: */
+        k1 = dn*fpp;
+        k2 = dn*(fpp + k1/2.0);
+        k3 = dn*(fpp + k2/2.0);
+        k4 = dn*(fpp + k3);
+        fp += k1/6.0 + k2/3.0 + k3/3.0 + k4/6.0;
+        
+        /* Increment fpp: */
+        k1 = -dn*fo*fpp/2.0;
+        k2 = -dn*(fo + dn/2.0)*(fpp + k1/2.0)/2.0;
+        k3 = -dn*(fo + dn/2.0)*(fpp + k2/2.0)/2.0;
+        k4 = -dn*(fo + dn)*(fpp + k3)/2.0;
+        fpp += k1/6.0 + k2/3.0 + k3/3.0 + k4/6.0;
+        
+        /* Determine the increment dn: */
+        if (n + dn > eta) dn = eta - n;
+        
+        /* Increment n: */
+        n += dn;
+    }
+    
+    /* Compute the velocity vector at point X. */
+    W.v.x = fp*Winf.v.x;
+    W.v.y = sqrt(HALF*Winf.nu()*Winf.v.x/X.x)*(eta*fp-f);
+    W.v.z = ZERO;
+    
+    /* Return the Blasius solution state. */
+    return W;
+}
+
 
 
 
