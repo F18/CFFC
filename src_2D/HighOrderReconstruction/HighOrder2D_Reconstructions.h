@@ -23,37 +23,71 @@
 /*! 
  * Compute the unlimited k-exact high-order reconstruction
  * proposed by Barth (1993) for all block computational cells.
+ *
+ * \param SolnBlk the quad block for which the solution reconstruction is done.
+ * \param ReconstructedSoln member function of Soln_Block_Type which returns the solution.
  */
 template<class SOLN_STATE>
 template<class Soln_Block_Type> inline
-void HighOrder2D<SOLN_STATE>::
-ComputeUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk){
+void HighOrder2D<SOLN_STATE>::ComputeUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk,
+     								     const Soln_State & 
+								     (Soln_Block_Type::*ReconstructedSoln)(const int &,
+													   const int &) const){
 
-#if 0
-  vector<int> i_index(getStencilSize()); 
-  string msg;
+  int i,j;
 
-  switch(ReconstructionMethod){
-  case RECONSTRUCTION_CENO:
-    // Make Stencil
-    MakeReconstructionStencil(Rings(),iCell,i_index);
+  /***************************************************************************
+   *    Perform unconstrained unlimited high-order solution reconstruction   *
+   **************************************************************************/
 
-    // Solve reconstruction for the current cell
-    kExact_Reconstruction(*this,SolnBlk,AccessToHighOrderVar,iCell,i_index,getStencilSize(),NumberOfTaylorDerivatives());
+  // Carry out the solution reconstruction for cells in the specified range.
+  for ( j  = StartJ ; j <= EndJ ; ++j ) {
+    for ( i = StartI ; i <= EndI ; ++i ) {
 
-    // Reset the CellInadequateFit flag & the limiter value in the Taylor derivatives container
-    for (int i = 0; i <= NumberOfVariables() - 1; ++i){
-      LimitedCell[i] = OFF; /* reset the flags to OFF (smooth solution)*/
-    }
-    TaylorDeriv().ResetLimiter();
-    
-    break;
-    
-  default:
-    throw runtime_error("HighOrder2D ERROR: Unknown specified reconstruction method");
+      // Reset the monotonicity data
+      ResetMonotonicityData(i,j);
+      
+      // Set the stencil of points used for reconstruction
+      SetReconstructionStencil(i, j, i_index, j_index);
 
+      // Compute the reconstruction for the current cell
+      ComputeUnconstrainedUnlimitedSolutionReconstruction(SolnBlk, ReconstructedSoln,
+							  i, j, i_index, j_index);
+      
+    } /* endfor */
+  }/* endfor */
+
+  // Check whether constrained reconstruction is required anywhere in the block.
+  if ( !_constrained_block_reconstruction ){
+    // No need to perform constrained reconstructions
+    return;
   }
-#endif
+
+
+  /***************************************************************************
+   *    Perform constrained unlimited high-order solution reconstruction     *
+   **************************************************************************/
+
+  // Check WEST boundary
+  if (_constrained_WEST_reconstruction){
+    // Add constrained reconstruction here
+  } 
+
+  // Check EAST boundary
+  if (_constrained_EAST_reconstruction){
+    // Add constrained reconstruction here
+  } 
+
+  // Check NORTH boundary
+  if (_constrained_NORTH_reconstruction){
+    // Add constrained reconstruction here
+  } 
+
+  // Check SOUTH boundary
+  if (_constrained_SOUTH_reconstruction){
+    // Add constrained reconstruction here
+  }
+
 }
 
 /*! 
@@ -67,7 +101,6 @@ ComputeUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk){
 template<class SOLN_STATE> inline
 void HighOrder2D<SOLN_STATE>::ComputeReconstructionPseudoInverse(void){
 
-  int StartI, EndI, StartJ, EndJ;
   int i,j;
 
   // == Check if the pseudo-inverse has been allocated and it hasn't been precomputed
@@ -80,9 +113,6 @@ void HighOrder2D<SOLN_STATE>::ComputeReconstructionPseudoInverse(void){
       _calculated_psinv = true;
       return;
     }
-
-    // Set the range for pseudo-inverse calculation (i.e. only for cells without constrained reconstruction)
-    SetReconstructionRangeOfStraightQuadCells(StartI,EndI,StartJ,EndJ);
 
     // Calculate the pseudo-inverse for cells in the specified range
     for ( j  = StartJ ; j <= EndJ ; ++j ) {
@@ -306,11 +336,43 @@ void HighOrderSolutionReconstructionOverDomain(Soln_Block_Type *SolnBlk,
  * ================ CELL LEVEL 2D RECONSTRUCTIONS ==================
  * ----------------------------------------------------------------*/
 
+/*! 
+ * Compute the unlimited k-exact high-order reconstruction
+ * proposed by Barth (1993) for a specified computational cell.
+ * This reconstruction doesn't account for any constrain
+ * other than the mean quantity conservation.
+ */
+template<class SOLN_STATE>
+template<class Soln_Block_Type> inline
+void HighOrder2D<SOLN_STATE>::
+ComputeUnconstrainedUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk,
+						    const Soln_State & 
+						    (Soln_Block_Type::*ReconstructedSoln)(const int &,const int &) const,
+						    const int &iCell, const int &jCell,
+						    const IndexType & i_index,
+						    const IndexType & j_index){
+
+  // SET VARIABLES USED IN THE RECONSTRUCTION PROCESS
+  int cell, i, parameter;
+
+  // *********  Assign the average solution to D00 ***********
+  CellTaylorDeriv(iCell,jCell,0).D() = (SolnBlk.*ReconstructedSoln)(iCell,jCell);
+
+  // == Check if the reconstruction polynomial is piecewise constant
+  if (RecOrder() == 0){
+    // There is no need to calculate the reconstruction
+    return;
+  }
+
+
+  //   Print_((SolnBlk.*ReconstructedSoln)(10,10)[1])
+
+}
 
 /*! 
  * Compute the pseudo-inverse of the left-hand-side term in the 
  * unlimited k-exact high-order reconstruction for a specified
- * computational cells based on the information provided by the
+ * computational cell based on the information provided by the
  * associated grid.
  */
 template<class SOLN_STATE> inline

@@ -264,6 +264,7 @@ public:
   //! @name Field access
   //@{
   const AdvectDiffuse2D_State& U_Node(const int &ii, const int &jj)const { return U_Nodes[ii][jj]; }
+  const AdvectDiffuse2D_State& CellSolution(const int &ii, const int &jj)const { return U[ii][jj]; }
 
   //! @name High-order variables
   //@{

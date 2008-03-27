@@ -1026,6 +1026,13 @@ namespace tut
     HO.CellTaylorDerivState(3,3,3,1) = 2.0;
     HO.CellTaylorDerivState(3,3,4,0) = 1.0;
 
+    // == check that constrained reconstruction is not required
+    ensure_equals("Block Flag", HO.IsConstrainedReconstructionRequired(), false);
+    ensure_equals("West Bnd Flag", HO.IsWestConstrainedReconstructionRequired(), false);
+    ensure_equals("East Bnd Flag", HO.IsEastConstrainedReconstructionRequired(), false);
+    ensure_equals("North Bnd Flag", HO.IsNorthConstrainedReconstructionRequired(), false);
+    ensure_equals("South Bnd Flag", HO.IsSouthConstrainedReconstructionRequired(), false);
+
     // == check solution
     double Result = 0.59509999999999985;
     Vector2D Point(-1.2, -1.8);	// This corresponds to DeltaX = 0.1 and DeltaY = 0.5
@@ -1068,6 +1075,28 @@ namespace tut
 
     // == check integration
     ensure_distance("Area", HO.IntegrateOverTheCell(3,3,Function_Test,10, Result), Result, AcceptedError(Result));
+
+    // == check that constrained reconstruction is not required
+    ensure_equals("Block Flag", HO.IsConstrainedReconstructionRequired(), false);
+    ensure_equals("West Bnd Flag", HO.IsWestConstrainedReconstructionRequired(), false);
+    ensure_equals("East Bnd Flag", HO.IsEastConstrainedReconstructionRequired(), false);
+    ensure_equals("North Bnd Flag", HO.IsNorthConstrainedReconstructionRequired(), false);
+    ensure_equals("South Bnd Flag", HO.IsSouthConstrainedReconstructionRequired(), false);
+
+    // Change spline type
+    Grid.BndNorthSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    Grid.BndEastSpline.setFluxCalcMethod(ReconstructionBasedFlux);
+    
+    // Update
+    HO.AssociateGeometry(Grid);
+
+    // == check that constrained reconstruction is required
+    ensure_equals("Block Flag", HO.IsConstrainedReconstructionRequired(), true);
+    ensure_equals("West Bnd Flag", HO.IsWestConstrainedReconstructionRequired(), false);
+    ensure_equals("East Bnd Flag", HO.IsEastConstrainedReconstructionRequired(), true);
+    ensure_equals("North Bnd Flag", HO.IsNorthConstrainedReconstructionRequired(), true);
+    ensure_equals("South Bnd Flag", HO.IsSouthConstrainedReconstructionRequired(), false);
+
   }
 
   /* Test 24:*/

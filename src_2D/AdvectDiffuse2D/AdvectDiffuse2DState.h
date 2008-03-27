@@ -115,6 +115,9 @@ public:
   //! Vacuum/zero operator.
   void Vacuum(void) { u = ZERO; }
 
+  //! One operator. Set the solution to ONE.
+  void One(void) { u = ONE; }
+
   //! Set the pointers to the fields (i.e. velocity, diffusion and source)
   static void Set_Pointers_To_Fields(void);
   //@}

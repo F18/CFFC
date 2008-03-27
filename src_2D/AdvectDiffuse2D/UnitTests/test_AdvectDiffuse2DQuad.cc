@@ -563,6 +563,42 @@ namespace tut
     Check_Input_Output_Operator("SolnBlk[0] variable", SolnBlk[0]);
   }
   
+  /* Test 10:*/
+  template<>
+  template<>
+  void AdvectDiffuse2D_Quad_Block_object::test<10>()
+  {
+
+    set_test_name("Compute high-order reconstruction with pseudo-inverse");
+    set_local_input_path("QuadBlockData");
+    set_local_output_path("QuadBlockData");
+
+    // Set input file name
+    Open_Input_File("CircularAdvectionDiffusion_HighOrder.in");
+
+    // Parse the input file
+    IP.Verbose() = false;
+    IP.Parse_Input_File(input_file_name);
+    HighOrder2D_Input::Set_Final_Parameters(IP);
+    CENO_Execution_Mode::CENO_SPEED_EFFICIENT = ON;
+
+    // Create computational domain
+    InitializeComputationalDomain(MeshBlk,QuadTree,
+				  GlobalList_Soln_Blocks, LocalList_Soln_Blocks, 
+				  SolnBlk, IP);
+
+    // == check correct initialization
+    ensure("High-order variables", SolnBlk[0].HighOrderVariables() != NULL);
+    ensure_equals("Main High-order ", SolnBlk[0].HighOrderVariable(0).RecOrder(), 3);
+    ensure_equals("Second High-order ", SolnBlk[0].HighOrderVariable(1).RecOrder(), 2);
+    ensure_equals("Third High-order ", SolnBlk[0].HighOrderVariable(2).RecOrder(), 4);
+
+    // Apply initial condition
+    ICs(SolnBlk,LocalList_Soln_Blocks,IP);
+    
+    // Reconstruct solution
+    SolnBlk[0].HighOrderVariable(0).ComputeUnlimitedSolutionReconstruction(SolnBlk[0]);
+  }
 
 }
 

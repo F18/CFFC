@@ -216,7 +216,7 @@ public:
 				 const int & CellPosition) const {return CENO_Geometric_Weights[ii][jj][CellPosition];}
   //@}
 
-  //! @name Cell geometry
+  //! @name Block geometry
   //@{
   //! Get the associated block mesh
   const GeometryType* Geometry(void) const {return Geom;}
@@ -233,6 +233,16 @@ public:
   //! Set the pointer to the associated geometry
   void SetGeometryPointer(GeometryType & Block){ Geom = &Block;}
   void AssociateGeometry(GeometryType & Block);
+  //! Return true if constrained reconstruction is used anywhere in the block, otherwise return false
+  const bool & IsConstrainedReconstructionRequired(void) const { return _constrained_block_reconstruction; }
+  //! Return true if constrained reconstruction is used in the proximity of West block boundary, otherwise return false
+  const bool & IsWestConstrainedReconstructionRequired(void) const { return _constrained_WEST_reconstruction; }
+  //! Return true if constrained reconstruction is used in the proximity of East block boundary, otherwise return false
+  const bool & IsEastConstrainedReconstructionRequired(void) const { return _constrained_EAST_reconstruction; }
+  //! Return true if constrained reconstruction is used in the proximity of North block boundary, otherwise return false
+  const bool & IsNorthConstrainedReconstructionRequired(void) const { return _constrained_NORTH_reconstruction; }
+  //! Return true if constrained reconstruction is used in the proximity of South block boundary, otherwise return false
+  const bool & IsSouthConstrainedReconstructionRequired(void) const { return _constrained_SOUTH_reconstruction; }
   //@}
 
   //! @name Initialize container functions.
@@ -251,6 +261,7 @@ public:
   int getNghostHighOrder(void) const { return getNghostHighOrder(OrderOfReconstruction); }
   const short int & NghostHO(void) const { return Nghost_HO; }
   void ResetMonotonicityData(void);
+  void ResetMonotonicityData(const int & ii, const int & jj);
   void InitializeMonotonicityVariables(const int & ii, const int & jj);
   void InitializeVariable(int ReconstructionOrder, GeometryType & Block,
 			  const bool &_pseudo_inverse_allocation_ = false);
@@ -286,7 +297,10 @@ public:
   //@{
   /*! @brief Compute the unlimited high-order solution reconstruction.  */
   template<class Soln_Block_Type>
-  void ComputeUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk);
+  void ComputeUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk,
+					      const Soln_State & (Soln_Block_Type::*ReconstructedSoln)(const int &,
+												       const int &) const = 
+					      &Soln_Block_Type::CellSolution);
 
   /*! @brief Compute the pseudo-inverse corresponding to the unlimited high-order solution reconstruction.  */
   void ComputeReconstructionPseudoInverse(void);
@@ -300,6 +314,14 @@ public:
 
   //! @name Cell Level Reconstructions:
   //@{
+  //! @brief Compute the unconstrained unlimited high-order solution reconstruction of cell (iCell,jCell). 
+  template<class Soln_Block_Type>
+  void ComputeUnconstrainedUnlimitedSolutionReconstruction(Soln_Block_Type &SolnBlk, 
+							   const Soln_State & 
+							   (Soln_Block_Type::*ReconstructedSoln)(const int &,const int &) const,
+							   const int &iCell, const int &jCell,
+							   const IndexType & i_index, const IndexType & j_index);
+
   /*! @brief Compute the pseudo-inverse corresponding to the unlimited high-order solution reconstruction
     of cell (iCell,jCell).  */
   void ComputeCellReconstructionPseudoInverse(const int &iCell, const int &jCell,
@@ -310,7 +332,7 @@ public:
   //! @name Helper Functions:
   //@{
   /*! @brief Set the range of cells with straight edges in which reconstruction is performed.  */
-  void SetReconstructionRangeOfStraightQuadCells(int &StartI, int &EndI, int &StartJ, int &EndJ) const;
+  void SetRangeOfQuadCellsWithoutConstrainedReconstruction(void);
   /*! @brief Set the stencil of cells used for reconstruction.  */
   void SetReconstructionStencil(const int &iCell, const int &jCell,
 				IndexType & i_index, IndexType & j_index) const;
@@ -354,13 +376,17 @@ public:
 #endif
   //@}
 
-  /* Friend functions */
+  //! @name Friend functions:
+  //@{
   friend ostream & operator<< <Soln_State> (ostream & os, const HighOrder2D<Soln_State> & Obj);
   friend istream & operator>> <Soln_State> (istream & os, HighOrder2D<Soln_State> & Obj);
+  //@}
 
 protected:
   
 private:
+  //! @name Internal indexes:
+  //@{
   int Ni;		       //!< Number of high-order objects in i-direction
   int Nj;		       //!< Number of high-order objects in j-direction
   int Ng; 		       //!< Number of block ghost cells 
@@ -370,24 +396,46 @@ private:
     JCu;                       //!< Index of last interior cell in j-direction 
   int OrderOfReconstruction;   //!< The order of reconstruction of the high-order object.
   short int Nghost_HO;	       //!< Number of ghost cells in which high-order reconstruction is performed. 
+  int StartI,		       //!< Index of the first cell in i-direction in which NO constrained reconstruction is performed. 
+    EndI,                      //!< Index of the last cell in i-direction in which NO constrained reconstruction is performed. 
+    StartJ,                    //!< Index of the first cell in j-direction in which NO constrained reconstruction is performed. 
+    EndJ;                      //!< Index of the last cell in j-direction in which NO constrained reconstruction is performed. 
+  //@}
 
+  //! @name Memory allocation flags:
+  //@{
   bool _allocated_block;       //!< Flag indicating if the containers at block level has been allocated or not.
   bool _allocated_cells;       //!< Flag indicating if the containers at cell level has been allocated or not.
   bool _allocated_psinv;       //!< Flag indicating if the pseudo-inverse related containers have been allocated or not. 
-  short int _si_calculation;   /*!< Flag to store the method for smoothness indicator calculation. Set to the 
-				* same value as CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS. */
+  //@}
 
+  //! @name Reconstruction containers:
+  //@{
   DerivativesContainer **TD;   //!< High-order TaylorDerivatives
   DoubleArrayType **SI;        //!< The values of the smoothness indicator calculated for each reconstructed variable
   FlagType **LimitedCell;      //!< Monotonicity flag: Values --> OFF - high-order reconstruction,
                                //                                  ON - limited linear reconstruction
-  int rings;                   //!< Number of rings used to generate the reconstruction stencil
-  bool _calculated_psinv;      //!< Flag to indicate whether the pseudo-inverse has been already computed or not.
-
   DenseMatrix **CENO_LHS;      //!< Storage for the pseudo-inverse of the LHS term in the CENO reconstruction.
   DoubleArrayType **CENO_Geometric_Weights;   //!< Storage for the geometric weights used in CENO reconstruction.
+  //@}
 
+  //! @name Other internal variables/flags:
+  //@{
+  int rings;                   //!< Number of rings used to generate the reconstruction stencil
+  bool _calculated_psinv;      //!< Flag to indicate whether the pseudo-inverse has been already computed or not.
+  short int _si_calculation;   /*!< Flag to store the method for smoothness indicator calculation. Set to the 
+				* same value as CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS. */
+  //@}
+
+  //! @name Internal information in conjunction with the geometry:
+  //@{
   GeometryType* Geom;          //!< Pointer to the associated geometry which is a 2D mesh block
+  bool _constrained_block_reconstruction; /*!< Flag to indicate whether constrained reconstruction is carried out for
+					   * this block on any of the block boundaries. */
+  bool _constrained_WEST_reconstruction; //!< Flag for the WEST boundary to show if constrained rec. is required.
+  bool _constrained_EAST_reconstruction; //!< Flag for the EAST boundary to show if constrained rec. is required.
+  bool _constrained_NORTH_reconstruction; //!< Flag for the NORTH boundary to show if constrained rec. is required.
+  bool _constrained_SOUTH_reconstruction; //!< Flag for the SOUTH boundary to show if constrained rec. is required.
 
   //! Get i-direction index of first interior cell
   const int & ICl_Grid(void) const {return Geom->ICl; }
@@ -399,20 +447,23 @@ private:
   const int & JCu_Grid(void) const {return Geom->JCu; }
   //! Get number of ghost cells for the associated block mesh
   const int & Nghost_Grid(void) const {return Geom->Nghost; }
+  //@}
+
   //! Get the number of variables in the solution state
   int NumberOfVariables(void) const {return Soln_State::NumVar(); }
 
   //! Allocate memory at the cell level based on the order of reconstruction
   void allocate_CellMemory(const int &ReconstructionOrder, const bool &_pseudo_inverse_allocation_);
 
-
+  //! @name Reconstruction memory pools:
+  //@{
   // === Helper variables (i.e. memory pools which are overwritten for each cell in the reconstruction process) ===
   vector<Vector2D> DeltaCellCenters; // Storage for distances between centroids.
   IndexType i_index, j_index;	     // Storage for indexes of cells that are part of the reconstruction stencil.
   DenseMatrix A;		     // Storage for the LHS matrix of the k-Exact reconstruction.
   DoubleArrayType GeometricWeights;  // Storage for the geometric weights calculated in the k-Exact reconstruction.
   DenseMatrix All_Delta_U;	     // Storage for the RHS matrix (i.e. solution dependent) of the k-Exact reconstruction.
-  
+  //@}
 };
 
 /******************************************************
@@ -429,11 +480,15 @@ HighOrder2D<SOLN_STATE>::HighOrder2D(void):
   Ni(0), Nj(0), Ng(0),
   ICl(0), ICu(0), JCl(0), JCu(0),
   OrderOfReconstruction(-1), Nghost_HO(0),
+  StartI(0), EndI(0), StartJ(0), EndJ(0),
   _allocated_block(false), _allocated_cells(false), _allocated_psinv(false),
   TD(NULL), SI(NULL), LimitedCell(NULL),
   rings(0), _calculated_psinv(false),
   CENO_LHS(NULL), CENO_Geometric_Weights(NULL),
-  Geom(NULL), _si_calculation(CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS)
+  Geom(NULL), _si_calculation(CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS),
+  _constrained_block_reconstruction(false),
+  _constrained_WEST_reconstruction(false) , _constrained_EAST_reconstruction(false),
+  _constrained_NORTH_reconstruction(false), _constrained_SOUTH_reconstruction(false)
 {
   //
 }
@@ -446,11 +501,15 @@ HighOrder2D<SOLN_STATE>::HighOrder2D(int ReconstructionOrder,
   Ni(0), Nj(0), Ng(0),
   ICl(0), ICu(0), JCl(0), JCu(0),
   OrderOfReconstruction(-1), Nghost_HO(0),
+  StartI(0), EndI(0), StartJ(0), EndJ(0),
   _allocated_block(false), _allocated_cells(false), _allocated_psinv(false),
   TD(NULL), SI(NULL), LimitedCell(NULL), 
   rings(0), _calculated_psinv(false),
   CENO_LHS(NULL), CENO_Geometric_Weights(NULL), 
-  Geom(&Block), _si_calculation(CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS)
+  Geom(&Block), _si_calculation(CENO_Execution_Mode::CENO_SMOOTHNESS_INDICATOR_COMPUTATION_WITH_ONLY_FIRST_NEIGHBOURS),
+  _constrained_block_reconstruction(false),
+  _constrained_WEST_reconstruction(false) , _constrained_EAST_reconstruction(false),
+  _constrained_NORTH_reconstruction(false), _constrained_SOUTH_reconstruction(false)
 {
   // Use the grid to get the number of interior block cells and the number of available ghost cells
   allocate(ICu_Grid()-ICl_Grid()+1,
@@ -458,6 +517,9 @@ HighOrder2D<SOLN_STATE>::HighOrder2D(int ReconstructionOrder,
 	   Nghost_Grid(),
 	   _pseudo_inverse_allocation_,
 	   ReconstructionOrder);
+
+  // Determine the range of cells in which NO constrained reconstruction is performed
+  SetRangeOfQuadCellsWithoutConstrainedReconstruction();
 }
 
 //! Copy constructor 
@@ -506,6 +568,19 @@ HighOrder2D<SOLN_STATE>::HighOrder2D(const HighOrder2D<SOLN_STATE> & rhs)
     } else {
       deallocate_CellMemory();
     } //endif (rhs._allocated_cells)
+
+    // set range of cells without constrained reconstruction
+    StartI = rhs.StartI;
+    EndI = rhs.EndI;
+    StartJ = rhs.StartJ;
+    EndJ = rhs.EndJ;
+
+    // set the type of reconstruction required by the geometry setup
+    _constrained_block_reconstruction = rhs._constrained_block_reconstruction;
+    _constrained_WEST_reconstruction = rhs._constrained_WEST_reconstruction;
+    _constrained_EAST_reconstruction = rhs._constrained_EAST_reconstruction;
+    _constrained_NORTH_reconstruction = rhs._constrained_NORTH_reconstruction;
+    _constrained_SOUTH_reconstruction = rhs._constrained_SOUTH_reconstruction;
 
   }//endif (rhs._allocated_block)
 }
@@ -755,9 +830,16 @@ void HighOrder2D<SOLN_STATE>::deallocate(void){
     OrderOfReconstruction = -1;
     Nghost_HO = 0;
     rings = 0;
+    StartI = 0; EndI = 0;
+    StartJ = 0; EndJ = 0;
 
     // Separate the high-order object from the associated geometry
     Geom = NULL;
+    _constrained_block_reconstruction = false;
+    _constrained_WEST_reconstruction  = false;
+    _constrained_EAST_reconstruction  = false;
+    _constrained_NORTH_reconstruction = false;
+    _constrained_SOUTH_reconstruction = false;
 
     // Confirm the deallocation
     _allocated_block = false;
@@ -817,6 +899,8 @@ void HighOrder2D<SOLN_STATE>::deallocate_CellMemory(void){
     OrderOfReconstruction = -1;
     Nghost_HO = 0;
     rings = 0;
+    StartI = 0; EndI = 0;
+    StartJ = 0; EndJ = 0;
 
     _allocated_cells = false;
     _allocated_psinv = false;
@@ -837,6 +921,9 @@ void HighOrder2D<SOLN_STATE>::InitializeVariable(int ReconstructionOrder, Geomet
 
   // Associate geometry
   SetGeometryPointer(Block);
+
+  // Determine the range of cells in which NO constrained reconstruction is performed
+  SetRangeOfQuadCellsWithoutConstrainedReconstruction();
 
   // Compute the pseudo-inverse if required
   ComputeReconstructionPseudoInverse();
@@ -1044,18 +1131,31 @@ int HighOrder2D<SOLN_STATE>::getStencilSize(const int &ReconstructionOrder) {
 template<class SOLN_STATE> inline
 void HighOrder2D<SOLN_STATE>::ResetMonotonicityData(void){
 
-  int i,j,k;
+  int i,j;
 
   for (j  = JCl-Nghost_HO ; j <= JCu+Nghost_HO ; ++j ) {
     for ( i = ICl-Nghost_HO ; i <= ICu+Nghost_HO ; ++i ) {    
-      for ( k = 0; k <= NumberOfVariables() - 1; ++k){
-	LimitedCell[i][j][k] = OFF; /* reset the flags to OFF (smooth solution)*/
-      } /* endfor */
-
-      TD[i][j].ResetLimiter();	// reset the limiter
+      ResetMonotonicityData(i,j);
     } /* endfor */
   } /* endfor */
 
+}
+
+/*!
+ * Reset the monotonicity data (i.e. flag + limiter)
+ * for the specified cell.
+ * \todo Add logic for when to NOT reset the monotonicity data (e.g. limiter frozen )
+ */
+template<class SOLN_STATE> inline
+void HighOrder2D<SOLN_STATE>::ResetMonotonicityData(const int & ii, const int & jj){
+
+  /* Reset the CENO smoothness indicator flag to OFF (i.e. smooth solution) */
+  for (int k = 0; k <= NumberOfVariables() - 1; ++k){
+    LimitedCell[ii][jj][k] = OFF;
+  } /* endfor */
+  
+  // Reset the limiter value (i.e. no limiting)
+  TD[ii][jj].ResetLimiter(); 
 }
 
 /*! 
@@ -1185,40 +1285,64 @@ ReturnType HighOrder2D<SOLN_STATE>::IntegrateOverTheCell(const int &ii, const in
 
 /*! 
  * Set the first and last indexes in 'I' and 'J' directions
- * which correspond to cells for which high-order reconstruction 
- * is performed without boundary constraints.
- * \param [out] StartI The i-index of the first cell.
- * \param [out] EndI   The i-index of the last cell.
- * \param [out] StartJ The j-index of the first cell.
- * \param [out] EndJ   The j-index of the last cell.
+ * which correspond to cells for which NO high-order constrained 
+ * reconstruction is performed.
+ * This type of reconstruction is typically required in the proximity
+ * of curved boundary.
+ * Flag also the boundaries for which constrained reconstruction
+ * is required.
  *
  * \note The associated grid is used to determine this information!
  */
-template<class SOLN_STATE>
-void HighOrder2D<SOLN_STATE>::SetReconstructionRangeOfStraightQuadCells(int &StartI, int &EndI,
-									int &StartJ, int &EndJ) const{
+template<class SOLN_STATE> inline
+void HighOrder2D<SOLN_STATE>::SetRangeOfQuadCellsWithoutConstrainedReconstruction(void) {
   
-  // Initialize indexes as if no curved boundaries would exist.
+  // Initialize indexes as if no constrained reconstruction would exist.
   StartI = ICl - Nghost_HO; EndI = ICu + Nghost_HO;
   StartJ = JCl - Nghost_HO; EndJ = JCu + Nghost_HO;
+
+  // Reset affected flags
+  _constrained_block_reconstruction = false;
+  _constrained_WEST_reconstruction  = false; 
+  _constrained_EAST_reconstruction  = false; 
+  _constrained_NORTH_reconstruction = false; 
+  _constrained_SOUTH_reconstruction = false; 
   
   /* Check for existence of constrained reconstruction
      at boundaries and modify the affected indexes accordingly. */
   // Check West boundary
   if (Geom->IsWestBoundaryReconstructionConstrained()) {
+    // Set StartI
     StartI = ICl + rings;
+    // Flag the boundary accordingly
+    _constrained_WEST_reconstruction = true;
   } 
   // Check East boundary
   if (Geom->IsEastBoundaryReconstructionConstrained()){
+    // Set EndI
     EndI = ICu - rings;
+    // Flag the boundary accordingly
+    _constrained_EAST_reconstruction = true;    
   } 
   // Check South boundary
   if (Geom->IsSouthBoundaryReconstructionConstrained()){
+    // Set StartJ
     StartJ = JCl + rings;
+    // Flag the boundary accordingly
+    _constrained_SOUTH_reconstruction = true;
   } 
   // Check North boundary
   if (Geom->IsNorthBoundaryReconstructionConstrained()){
+    // Set EndJ
     EndJ = JCu - rings;
+    // Flag the boundary accordingly
+    _constrained_NORTH_reconstruction = true;    
+  }
+
+  // Flag the block accordingly
+  if (_constrained_WEST_reconstruction  || _constrained_EAST_reconstruction || 
+      _constrained_SOUTH_reconstruction || _constrained_NORTH_reconstruction ){
+    _constrained_block_reconstruction = true;
   }
 }
 
@@ -1233,7 +1357,7 @@ void HighOrder2D<SOLN_STATE>::SetReconstructionRangeOfStraightQuadCells(int &Sta
  *
  * \note The first position (i_index[0],j_index[0]) corresponds to (iCell,jCell).
  */
-template<class SOLN_STATE>
+template<class SOLN_STATE> inline
 void HighOrder2D<SOLN_STATE>::SetReconstructionStencil(const int &iCell, const int &jCell,
 						       IndexType & i_index, IndexType & j_index) const{
 
