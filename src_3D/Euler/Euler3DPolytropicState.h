@@ -44,6 +44,10 @@ using namespace std;
 #include "../Physics/GasConstants.h"
 #endif // _GAS_CONSTANTS_INCLUDED
 
+#ifndef _INPUT_INCLUDED
+#include "../CFD/Input.h"
+#endif // INPUT_INCLUDED
+
 /* Define the classes. */
 
 class Euler3D_Polytropic_pState;
@@ -589,6 +593,25 @@ public:
                                             const Vector3D &pressure_gradient,
                                             const int &TEMPERATURE_BC_FLAG);
 //@}
+    
+/** @name Initial Conditions */
+/*        ------------------ */
+//@{
+    //! Return a fixed velocity profile depending on the input parameters
+    template<class SOLN_pSTATE, class SOLN_cSTATE>
+	static Euler3D_Polytropic_pState VelocityProfile(
+                                                     const Euler3D_Polytropic_pState &Wdum,
+                                                     Vector3D Xc,
+                                                     Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs);
+    
+    //! Return a fixed pressure profile depending on the input parameters
+    template<class SOLN_pSTATE, class SOLN_cSTATE>
+    static Euler3D_Polytropic_pState PressureProfile(
+                                                     const Euler3D_Polytropic_pState &Wdum,
+                                                     Vector3D Xc,
+                                                     Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs);
+//@}
+    
 };
 
 /*! 
@@ -1280,5 +1303,29 @@ const Euler3D_Polytropic_cState Euler3D_U_STDATM(Euler3D_W_STDATM);
 //! Vacuum conservative state
 const Euler3D_Polytropic_cState Euler3D_U_VACUUM(Euler3D_W_VACUUM);
 //@}
+
+
+/* ----------------------------------------------------------------------------- *
+ *                      Some templated functions.                                *
+ * ----------------------------------------------------------------------------- */
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+Euler3D_Polytropic_pState Euler3D_Polytropic_pState::PressureProfile(
+                                                                     const Euler3D_Polytropic_pState &Wdum,
+                                                                     Vector3D Xc,
+                                                                     Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
+	/* No Pressure profile implemented for Euler3D */
+	return Wdum;
+}
+
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+Euler3D_Polytropic_pState Euler3D_Polytropic_pState::VelocityProfile(
+                                                                     const Euler3D_Polytropic_pState &Wdum,
+                                                                     Vector3D Xc,
+                                                                     Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
+    /* No Velocity profile implemented for Euler3D */
+    return Wdum;
+}
+
+
 
 #endif /* _EULER3D_POLYTROPIC_STATE_INCLUDED  */

@@ -598,7 +598,9 @@ int CFD_Input_Parameters::Parse_Next_Input_Control_Parameter(void) {
        } else if (strcmp(ICs_Type, "Couette_Pressure_Gradient_z") == 0 ) {
           i_ICs = IC_VISCOUS_COUETTE_PRESSURE_GRADIENT_Z;
        } else if (strcmp(ICs_Type, "1DPremixedFlame") == 0 ) {
-          i_ICs = IC_CHEM_1DFLAME;  
+          i_ICs = IC_CHEM_1DFLAME; 
+       } else if (strcmp(ICs_Type, "Flat_Plate") == 0) {
+          i_ICs = IC_VISCOUS_FLAT_PLATE;
        } else if (strcmp(ICs_Type, "Pipe_Flow") == 0) {
           i_ICs = IC_TURBULENT_PIPE_FLOW;
        } else if (strcmp(ICs_Type, "Coflow") == 0) {
@@ -607,6 +609,8 @@ int CFD_Input_Parameters::Parse_Next_Input_Control_Parameter(void) {
           i_ICs = IC_VISCOUS_DRIVEN_CAVITY_FLOW;
        } else if (strcmp(ICs_Type, "Turbulent_Dump_Combustor") == 0) {
           i_ICs = IC_TURBULENT_DUMP_COMBUSTOR;
+       } else if (strcmp(ICs_Type, "Channel_Flow") == 0) {
+          i_ICs = IC_CHANNEL_FLOW;
        } else if (strcmp(ICs_Type, "Laminar_Channel_Flow") == 0) {
           i_ICs = IC_CHANNEL_FLOW;
        } else if (strcmp(ICs_Type, "Turbulent_Channel_Flow") == 0) {

@@ -195,6 +195,12 @@ int Grid3D_Input_Parameters::Parse_Next_Input_Control_Parameter(char *code,
         Box_Length = ONE;
         Box_Width = ONE;
         Box_Height = ONE;
+         
+     } else if (strcmp(Grid_Type, "Flat_Plate") == 0) {
+         i_Grid = GRID_FLAT_PLATE;
+         Box_Length = HALF*Plate_Length;
+         Box_Width = TWO*Plate_Length;
+         Box_Height = Plate_Length;
 
      } else if (strcmp(Grid_Type, "Periodic_Box") == 0) {
         i_Grid = GRID_PERIODIC_BOX;
@@ -392,6 +398,11 @@ int Grid3D_Input_Parameters::Parse_Next_Input_Control_Parameter(char *code,
   } else if (strcmp(code, "X_Rotate") == 0) {
      i_command = 3017;
      value >> X_Rotate;
+      
+  } else if (strcmp(code, "Plate_Length") == 0) {
+      i_command = 3040;
+      value >> Plate_Length;
+      if (Plate_Length <= ZERO) i_command = INVALID_INPUT_VALUE;
 
   } else if (strcmp(code, "Pipe_Length") == 0) {
      i_command = 3018;

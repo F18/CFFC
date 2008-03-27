@@ -89,6 +89,10 @@ class Grid3D_Input_Parameters{
     double X_Scale, X_Rotate;
     //@}
 
+    //@{ @name Flat Plate mesh parameters:
+    double Plate_Length;
+    //@}
+    
     //@{ @name Pipe mesh parameters:
     double Pipe_Length, Pipe_Radius;
     //@}
@@ -135,6 +139,8 @@ class Grid3D_Input_Parameters{
        X_Rotate = ZERO;
        // Pipe parameters:
        Pipe_Length = ONE; Pipe_Radius = 0.1234;
+       // Flat plate parameters:
+       Plate_Length = Box_Width/2;
        // Bluff body burner parameters:
        Radius_Fuel_Line = 0.0018;
        Radius_Bluff_Body = 0.025;

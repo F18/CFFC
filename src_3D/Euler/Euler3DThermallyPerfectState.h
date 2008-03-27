@@ -61,6 +61,10 @@ using namespace std;
 #include "../Reactions/Reactions.h"
 #endif // _REACTIONS_INCLUDED
 
+#ifndef _INPUT_INCLUDED
+#include "../CFD/Input.h"
+#endif // INPUT_INCLUDED
+
 /* Define the classes. */
 
 class Euler3D_ThermallyPerfect_cState;
@@ -682,6 +686,22 @@ class Euler3D_ThermallyPerfect_pState {
                                                  const Vector3D &pressure_gradient,
                                                  const int &TEMPERATURE_BC_FLAG);
 //@}
+    
+/** @name Initial Conditions */
+/*        ------------------ */
+//@{
+    //! Return a fixed velocity profile depending on the input parameters
+    template<class SOLN_pSTATE, class SOLN_cSTATE>
+	static Euler3D_ThermallyPerfect_pState VelocityProfile(const Euler3D_ThermallyPerfect_pState &Wdum,
+                                                           Vector3D Xc,
+                                                           Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs);
+    
+    //! Return a fixed pressure profile depending on the input parameters
+    template<class SOLN_pSTATE, class SOLN_cSTATE>
+    static Euler3D_ThermallyPerfect_pState PressureProfile(const Euler3D_ThermallyPerfect_pState &Wdum,
+                                                           Vector3D Xc,
+                                                           Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs);
+//@}     
 
 /** @name Finite-rate chemical kinetics */
 /*        ----------------------------- */
@@ -1671,5 +1691,29 @@ inline istream &operator >> (istream &in_file,
   in_file.unsetf(ios::skipws);
   return (in_file);
 }
+
+
+/* ----------------------------------------------------------------------------- *
+ *                      Some templated functions.                                *
+ * ----------------------------------------------------------------------------- */
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+Euler3D_ThermallyPerfect_pState Euler3D_ThermallyPerfect_pState::PressureProfile(
+                                                                                 const Euler3D_ThermallyPerfect_pState &Wdum,
+                                                                                 Vector3D Xc,
+                                                                                 Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
+	/* No Pressure profile implemented for Euler3D */
+	return Wdum;
+}
+
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+Euler3D_ThermallyPerfect_pState Euler3D_ThermallyPerfect_pState::VelocityProfile(
+                                                                                 const Euler3D_ThermallyPerfect_pState &Wdum,
+                                                                                 Vector3D Xc,
+                                                                                 Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
+    /* No Velocity profile implemented for Euler3D */
+    return Wdum;
+}
+
+
 
 #endif // _EULER3D_THERMALLYPERFECT_STATE_INCLUDED
