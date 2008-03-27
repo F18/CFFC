@@ -1,0 +1,63 @@
+#
+# Sod test case
+#
+########################
+# Set solver parameters
+########################
+Time_Integration_Type =
+Explicit_Predictor_Corrector
+#Explicit_Runge_Kutta
+#Explicit_Euler
+#Explicit_Predictor_Corrector
+# 0 no, 1 yes (explicit time accurate)
+Time_Accurate = 
+1
+#0,1
+Local_Time_Stepping =
+0
+Reconstruction_Type =
+Least_Squares
+Limiter_Type = 
+Barth_Jespersen
+Flux_Function_Type=
+Roe
+###############################
+# Set time stepping parameters
+###############################
+CFL_Number =
+.5
+Time_Max = 
+0.60
+Maximum_Number_of_Time_Steps =
+1000
+#########################
+# Set initial conditions
+#########################
+ICs_Type = 
+Sod_Xdir
+Grid_Type =
+Square    
+Number_of_Cells_Idir = 
+50
+Number_of_Cells_Jdir =
+50
+Temperature =
+300
+#######################
+Number_of_Blocks_Per_Processor =
+5
+Output_File_Name = 
+sod
+#######################
+# Execute program
+#######################
+Execute
+#######################
+# Write output
+#######################
+#Write_Output
+Write_Output_Cells
+#######################
+# Terminate program
+#######################
+Terminate

@@ -26,7 +26,7 @@
 
 // Cantera includes
 #include "TransportBase.h"
-#include "../DenseMatrix.h"
+#include "DenseMatrix.h"
 
 
 namespace Cantera {
@@ -44,7 +44,7 @@ namespace Cantera {
      * zero.
      * @ingroup transportProps
      */
-    class L_Matrix : public DenseMatrix { 
+    class L_Matrix : public DenseMatrix {
     public:
         L_Matrix() {}
         virtual ~L_Matrix(){}
@@ -79,17 +79,17 @@ namespace Cantera {
         virtual ~MultiTransport() {}
 
         // overloaded base class methods
-        virtual int model() { 
-            if (m_mode == CK_Mode) 
+        virtual int model() {
+            if (m_mode == CK_Mode)
                 return CK_Multicomponent;
-            else 
+            else
                 return cMulticomponent;
         }
 
         virtual doublereal viscosity();
 
         virtual void getSpeciesViscosities(doublereal* visc)
-            { updateViscosity_T(); copy(m_visc.begin(), m_visc.end(), visc); }
+            { updateViscosity_T(); std::copy(m_visc.begin(), m_visc.end(), visc); }
 
         virtual void getThermalDiffCoeffs(doublereal* dt);
         virtual doublereal thermalConductivity();
@@ -97,22 +97,48 @@ namespace Cantera {
         virtual void getBinaryDiffCoeffs(int ld, doublereal* d);
         virtual void getMultiDiffCoeffs(int ld, doublereal* d);
 
-        /// Although this class implements a multicomponent diffusion
-        /// model, it is convenient to be able to compute
-        /// mixture-averaged diffusion coefficients too. 
+        //! Although this class implements a multicomponent diffusion
+        //! model, it is convenient to be able to compute
+        //! mixture-averaged diffusion coefficients too.
+        /*!
+         * @param d Mixture averaged diffusion coefficients
+	 *          Length = m_msp, units = m2/sec
+         */
         virtual void getMixDiffCoeffs(doublereal* d);
 
-
-        virtual void getSpeciesFluxes(int ndim, 
-        doublereal* grad_T, int ldx, const doublereal* grad_X, 
-            int ldf, doublereal* fluxes);
+        //! Get the species diffusive mass fluxes wrt to 
+        //! the mass averaged velocity, 
+        //! given the gradients in mole fraction and temperature
+        /*!
+         *  Units for the returned fluxes are kg m-2 s-1.
+         * 
+         *  @param ndim Number of dimensions in the flux expressions
+         *  @param grad_T Gradient of the temperature
+	 *                 (length = ndim)
+	 * @param ldx  Leading dimension of the grad_X array 
+	 *              (usually equal to m_nsp but not always)
+	 * @param grad_X Gradients of the mole fraction
+	 *             Flat vector with the m_nsp in the inner loop.
+	 *             length = ldx * ndim
+	 * @param ldf  Leading dimension of the fluxes array 
+	 *              (usually equal to m_nsp but not always)
+	 * @param fluxes  Output of the diffusive mass fluxes
+	 *             Flat vector with the m_nsp in the inner loop.
+	 *             length = ldx * ndim
+	 */
+        virtual void getSpeciesFluxes(int ndim,
+				      const doublereal* grad_T, 
+				      int ldx, 
+				      const doublereal* grad_X,
+				      int ldf,
+				      doublereal* fluxes);
 
         virtual void getMolarFluxes(const doublereal* state1,
-            const doublereal* state2, doublereal delta, 
+            const doublereal* state2, doublereal delta,
             doublereal* fluxes);
 
         virtual void getMassFluxes(const doublereal* state1,
-            const doublereal* state2, doublereal delta, 
+            const doublereal* state2, doublereal delta,
             doublereal* fluxes);
 
         virtual void setSolutionMethod(int method) {
@@ -125,7 +151,7 @@ namespace Cantera {
             if (eps > 0.0) m_eps_gmres = eps;
         }
 
-        void save(string outfile);
+        void save(std::string outfile);
 
         /**
          * @internal
@@ -194,8 +220,8 @@ namespace Cantera {
         vector_fp  m_mw;
 
         // polynomial fits
-        vector<vector_fp>            m_visccoeffs;
-        vector<vector_fp>            m_diffcoeffs;
+        std::vector<vector_fp>            m_visccoeffs;
+        std::vector<vector_fp>            m_diffcoeffs;
         vector_fp                    m_polytempvec;
 
         // property values
@@ -206,11 +232,11 @@ namespace Cantera {
         array_fp                    m_molefracs;
 
 
-        vector<vector<int> > m_poly;
-        vector<vector_fp >   m_astar_poly;
-        vector<vector_fp >   m_bstar_poly;
-        vector<vector_fp >   m_cstar_poly;
-        vector<vector_fp >   m_om22_poly;
+        std::vector<std::vector<int> > m_poly;
+        std::vector<vector_fp >   m_astar_poly;
+        std::vector<vector_fp >   m_bstar_poly;
+        std::vector<vector_fp >   m_cstar_poly;
+        std::vector<vector_fp >   m_om22_poly;
         DenseMatrix          m_astar;
         DenseMatrix          m_bstar;
         DenseMatrix          m_cstar;
@@ -282,9 +308,3 @@ namespace Cantera {
     };
 }
 #endif
-
-
-
-
-
-

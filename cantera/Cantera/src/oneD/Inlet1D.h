@@ -7,8 +7,8 @@
 
 /*
  * $Author: dggoodwin $
- * $Revision: 1.17 $
- * $Date: 2006/11/09 13:58:39 $
+ * $Revision: 1.20 $
+ * $Date: 2007/05/04 14:41:27 $
  *
  * Copyright 2002-3  California Institute of Technology
  */
@@ -18,11 +18,11 @@
 #define CT_BDRY1D_H
 
 #include "Domain1D.h"
-#include "../SurfPhase.h"
-#include "../InterfaceKinetics.h"
+#include "SurfPhase.h"
+#include "InterfaceKinetics.h"
 #include "StFlow.h"
 #include "OneDim.h"
-#include "../ctml.h"
+#include "ctml.h"
 
 namespace Cantera {
 
@@ -35,7 +35,7 @@ namespace Cantera {
      * as surface species coverages.
      *
      * The boundary types are an inlet, an outlet, a symmetry plane,
-     * and a surface.  
+     * and a surface.
      *
      * The public methods are all virtual, and the base class
      * implementations throw exceptions.
@@ -44,7 +44,7 @@ namespace Cantera {
     public:
 
         Bdry1D();
- 
+
         virtual ~Bdry1D() {}
 
         /// Initialize.
@@ -56,8 +56,8 @@ namespace Cantera {
         /// Temperature [K].
         virtual doublereal temperature() {return m_temp;}
 
-        /// Set the mole fractions by specifying a string.
-        virtual void setMoleFractions(string xin){err("setMoleFractions");}
+        /// Set the mole fractions by specifying a std::string.
+        virtual void setMoleFractions(std::string xin){err("setMoleFractions");}
 
         /// Set the mole fractions by specifying an array.
         virtual void setMoleFractions(doublereal* xin){err("setMoleFractions");}
@@ -92,8 +92,8 @@ namespace Cantera {
         doublereal m_temp, m_mdot;
 
     private:
-        void err(string method) {
-            throw CanteraError("Bdry1D::"+method, 
+        void err(std::string method) {
+            throw CanteraError("Bdry1D::"+method,
                 "attempt to call base class method "+method);
         }
     };
@@ -155,15 +155,15 @@ namespace Cantera {
 
         virtual void _finalize(const doublereal* x) {}
 
-        virtual void setMoleFractions(string xin);
+        virtual void setMoleFractions(std::string xin);
         virtual void setMoleFractions(doublereal* xin);
         virtual doublereal massFraction(int k) {return m_yin[k];}
-        virtual string componentName(int n) const;
+        virtual std::string componentName(int n) const;
         virtual void init();
-        virtual void eval(int jg, doublereal* xg, doublereal* rg, 
+        virtual void eval(int jg, doublereal* xg, doublereal* rg,
             integer* diagg, doublereal rdt);
         virtual void save(XML_Node& o, doublereal* soln);
-        virtual void restore(const XML_Node& dom, doublereal* soln);    
+        virtual void restore(const XML_Node& dom, doublereal* soln);
 
     protected:
 
@@ -171,7 +171,7 @@ namespace Cantera {
         doublereal m_V0;
         int m_nsp;
         vector_fp m_yin;
-        string m_xstr;
+        std::string m_xstr;
         StFlow *m_flow;
     };
 
@@ -184,20 +184,20 @@ namespace Cantera {
     public:
 
         Empty1D() : Domain1D() {
-            m_type = cEmptyType; 
+            m_type = cEmptyType;
         }
         virtual ~Empty1D(){}
 
-        virtual string componentName(int n) const;
+        virtual std::string componentName(int n) const;
         virtual void showSolution(const doublereal* x) {}
 
         virtual void init();
 
-        virtual void eval(int jg, doublereal* xg, doublereal* rg, 
+        virtual void eval(int jg, doublereal* xg, doublereal* rg,
             integer* diagg, doublereal rdt);
 
         virtual void save(XML_Node& o, doublereal* soln);
-        virtual void restore(const XML_Node& dom, doublereal* soln);    
+        virtual void restore(const XML_Node& dom, doublereal* soln);
         virtual void _finalize(const doublereal* x) {}
         virtual void _getInitialSoln(doublereal* x) {
             x[0] = 0.0;
@@ -216,19 +216,19 @@ namespace Cantera {
     public:
 
         Symm1D() : Bdry1D() {
-            m_type = cSymmType; 
+            m_type = cSymmType;
         }
         virtual ~Symm1D(){}
 
-        virtual string componentName(int n) const;
+        virtual std::string componentName(int n) const;
 
         virtual void init();
 
-        virtual void eval(int jg, doublereal* xg, doublereal* rg, 
+        virtual void eval(int jg, doublereal* xg, doublereal* rg,
             integer* diagg, doublereal rdt);
 
         virtual void save(XML_Node& o, doublereal* soln);
-        virtual void restore(const XML_Node& dom, doublereal* soln);    
+        virtual void restore(const XML_Node& dom, doublereal* soln);
         virtual void _finalize(const doublereal* x) {
             ; //m_temp = x[0];
         }
@@ -248,19 +248,19 @@ namespace Cantera {
     public:
 
         Outlet1D() : Bdry1D() {
-            m_type = cOutletType; 
+            m_type = cOutletType;
         }
         virtual ~Outlet1D(){}
 
-        virtual string componentName(int n) const;
+        virtual std::string componentName(int n) const;
 
         virtual void init();
 
-        virtual void eval(int jg, doublereal* xg, doublereal* rg, 
+        virtual void eval(int jg, doublereal* xg, doublereal* rg,
             integer* diagg, doublereal rdt);
 
         virtual void save(XML_Node& o, doublereal* soln);
-        virtual void restore(const XML_Node& dom, doublereal* soln);    
+        virtual void restore(const XML_Node& dom, doublereal* soln);
         virtual void _finalize(const doublereal* x) {
             ; //m_temp = x[0];
         }
@@ -281,7 +281,7 @@ namespace Cantera {
     public:
 
         /**
-         * Constructor. 
+         * Constructor.
          */
         OutletRes1D() : Bdry1D(), m_nsp(0), m_flow(0) {
             m_type = cOutletResType;
@@ -299,21 +299,21 @@ namespace Cantera {
             ;
         }
 
-        virtual void setMoleFractions(string xin);
+        virtual void setMoleFractions(std::string xin);
         virtual void setMoleFractions(doublereal* xin);
         virtual doublereal massFraction(int k) {return m_yres[k];}
-        virtual string componentName(int n) const;
+        virtual std::string componentName(int n) const;
         virtual void init();
-        virtual void eval(int jg, doublereal* xg, doublereal* rg, 
+        virtual void eval(int jg, doublereal* xg, doublereal* rg,
             integer* diagg, doublereal rdt);
         virtual void save(XML_Node& o, doublereal* soln);
-        virtual void restore(const XML_Node& dom, doublereal* soln);    
+        virtual void restore(const XML_Node& dom, doublereal* soln);
 
     protected:
 
         int m_nsp;
         vector_fp m_yres;
-        string m_xstr;
+        std::string m_xstr;
         StFlow *m_flow;
     };
 
@@ -329,19 +329,19 @@ namespace Cantera {
     public:
 
         Surf1D() : Bdry1D() {
-            m_type = cSurfType; 
+            m_type = cSurfType;
         }
         virtual ~Surf1D(){}
 
-        virtual string componentName(int n) const;
+        virtual std::string componentName(int n) const;
 
         virtual void init();
 
-        virtual void eval(int jg, doublereal* xg, doublereal* rg, 
+        virtual void eval(int jg, doublereal* xg, doublereal* rg,
             integer* diagg, doublereal rdt);
 
         virtual void save(XML_Node& o, doublereal* soln);
-        virtual void restore(const XML_Node& dom, doublereal* soln);    
+        virtual void restore(const XML_Node& dom, doublereal* soln);
 
         virtual void _getInitialSoln(doublereal* x) {
             x[0] = m_temp;
@@ -351,9 +351,9 @@ namespace Cantera {
             ; //m_temp = x[0];
         }
 
-        virtual void showSolution_s(ostream& s, const doublereal* x) {
-            s << "-------------------  Surface " << domainIndex() << " ------------------- " << endl;
-            s << "  temperature: " << m_temp << " K" << "    " << x[0] << endl;
+        virtual void showSolution_s(std::ostream& s, const doublereal* x) {
+            s << "-------------------  Surface " << domainIndex() << " ------------------- " << std::endl;
+            s << "  temperature: " << m_temp << " K" << "    " << x[0] << std::endl;
         }
 
         virtual void showSolution(const doublereal* x) {
@@ -376,7 +376,7 @@ namespace Cantera {
 
     public:
 
-        ReactingSurf1D() : Bdry1D(),  
+        ReactingSurf1D() : Bdry1D(),
                            m_kin(0), m_surfindex(0), m_nsp(0) {
                 m_type = cSurfType;
             }
@@ -390,18 +390,18 @@ namespace Cantera {
         }
 
         void enableCoverageEquations(bool docov) { m_enabled = docov; }
-        
+
         virtual ~ReactingSurf1D(){}
 
-        virtual string componentName(int n) const;
+        virtual std::string componentName(int n) const;
 
         virtual void init();
 
-        virtual void eval(int jg, doublereal* xg, doublereal* rg, 
+        virtual void eval(int jg, doublereal* xg, doublereal* rg,
             integer* diagg, doublereal rdt);
 
         virtual void save(XML_Node& o, doublereal* soln);
-        virtual void restore(const XML_Node& dom, doublereal* soln);    
+        virtual void restore(const XML_Node& dom, doublereal* soln);
 
         virtual void _getInitialSoln(doublereal* x) {
             x[0] = m_temp;
@@ -410,7 +410,7 @@ namespace Cantera {
         }
 
         virtual void _finalize(const doublereal* x) {
-            copy(x+1,x+1+m_nsp,m_fixed_cov.begin());
+          std::copy(x+1,x+1+m_nsp,m_fixed_cov.begin());
         }
 
         virtual void showSolution(const doublereal* x) {

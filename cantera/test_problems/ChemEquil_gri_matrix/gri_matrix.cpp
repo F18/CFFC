@@ -1,22 +1,18 @@
 /*
  *  $Author: hkmoffa $
- *  $Date: 2006/10/20 21:12:45 $
- *  $Revision: 1.1 $
+ *  $Date: 2007/11/11 23:27:06 $
+ *  $Revision: 1.4 $
  *
  *  Copyright 2002 California Institute of Technology
  *
  */
 
-#ifdef SRCDIRTREE
-#include "ct_defs.h"
-#include "ThermoPhase.h"
-#include "IdealGasMix.h"
-#include "equil.h"
-#else
 #include "Cantera.h"
 #include "IdealGasMix.h"
 #include "equilibrium.h"
-#endif
+
+using namespace std;
+using namespace Cantera;
 
 int main(int argc, char **argv) {
   int numSucc = 0;
@@ -24,6 +20,7 @@ int main(int argc, char **argv) {
   try {
     int retnSub;
     double T = 500.;
+    int solver = -1;
 
     IdealGasMix g("gri30.xml", "gri30_mix");
     double pres = OneAtm;
@@ -43,7 +40,7 @@ int main(int argc, char **argv) {
     Xmol[iN2] = 0.4;
     g.setState_TPX(T, pres, DATA_PTR(Xmol));
     try {
-      retnSub = equilibrate(g, "TP", -1);
+      retnSub = equilibrate(g, "TP", solver);
       cout << g;
       if (retnSub != 1) {
 	cerr << "ERROR: ChemEquil equilibration step failed at " 
@@ -79,7 +76,7 @@ int main(int argc, char **argv) {
     Xmol[iN2] = 0.4;
     g.setState_TPX(T, pres, DATA_PTR(Xmol));
     try {
-      retnSub = equilibrate(g, "TP", -1);
+      retnSub = equilibrate(g, "TP", solver);
       cout << g;
       if (retnSub != 1) {
 	cerr << "ERROR: ChemEquil equilibration step failed at " 
@@ -117,7 +114,7 @@ int main(int argc, char **argv) {
     pres = OneAtm;
     g.setState_TPX(T, pres, DATA_PTR(Xmol));
     try {
-      retnSub = equilibrate(g, "TP", -1);
+      retnSub = equilibrate(g, "TP", solver);
       cout << g;
       if (retnSub != 1) {
 	cerr << "ERROR: ChemEquil equilibration step failed at " 
@@ -155,7 +152,7 @@ int main(int argc, char **argv) {
     pres = 1.0;
     g.setState_TPX(T, pres, DATA_PTR(Xmol));
     try {
-      retnSub = equilibrate(g, "TP", -1);
+      retnSub = equilibrate(g, "TP", solver);
       cout << g;
       if (retnSub != 1) {
 	cerr << "ERROR: ChemEquil equilibration step failed at " 
@@ -201,7 +198,7 @@ int main(int argc, char **argv) {
 
 	  retnSub = 0;
 	  try {
-	    retnSub = equilibrate(g, "TP", -1);
+	    retnSub = equilibrate(g, "TP", solver);
 	    if (retnSub != 1) {
 	      cerr << "ERROR: ChemEquil equilibration step failed at " 
 		   << " T    = " << T 

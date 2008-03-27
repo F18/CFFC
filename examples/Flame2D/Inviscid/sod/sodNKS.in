@@ -1,0 +1,115 @@
+#
+# Sod test case
+#
+########################
+# Set solver parameters
+########################
+Time_Integration_Type =
+Explicit_Predictor_Corrector
+# 0 no, 1 yes (explicit time accurate)
+Time_Accurate = 
+0
+#0,1
+Local_Time_Stepping =
+1
+Reconstruction_Type =
+Least_Squares
+Limiter_Type = 
+Barth_Jespersen
+Flux_Function_Type =
+HLLE
+###############################
+# Set time stepping parameters
+###############################
+CFL_Number =
+0.70
+Time_Max = 
+0.60
+Maximum_Number_of_Time_Steps =
+0 
+############################
+# IMPLICIT NKS PARAMETERS
+############################
+GMRES_Overlap =
+0
+GMRES_Initial_Tolerance =
+1.0e-01
+GMRES_Final_Tolerance =
+1.0e-01
+# Internal tolerance when using DTS
+NKS_Overall_Tolerance =
+1.0e-3
+GMRES_Block_Preconditioner = 
+ILUK
+#( ILUK, Diagonal)
+GMRES_ILUK_Level_of_Fill = 
+4
+GMRES_Check =
+OFF
+# Implict Euler Startup
+NKS_Finite_Time_Step =
+OFF
+NKS_Finite_Time_Step_Initial_CFL =
+1000.0
+# Max & Final used differently
+NKS_Finite_Time_Step_Final_CFL =
+1e12
+NKS_Finite_Time_Step_Max_CFL =
+1e12
+GMRES_Normalization = 
+ON
+Jacobian_Order =
+First_Order_Inviscid_HLLE
+#
+#################################
+# Dual-Time Stepping (Implicit Time Accurate)
+NKS_Dual_Time_Stepping =
+ON
+NKS_Physical_Time_Integration =
+Second_Order_Backwards
+#Implicit_Euler
+#Second_Order_Backwards
+#
+NKS_Physical_Time_CFL =
+1.0
+# Outer loop Max steps 
+Maximum_Number_of_NKS_DTS_Steps =
+100
+#################################
+# (Internal NKS when using DTS)
+Maximum_Number_of_NKS_Iterations =
+8
+Maximum_Number_of_GMRES_Iterations =
+80
+GMRES_Restart =
+80 
+#########################
+# Set initial conditions
+#########################
+ICs_Type = 
+Sod_Xdir
+Grid_Type =
+Square    
+Number_of_Cells_Idir = 
+50
+Number_of_Cells_Jdir =
+50
+#######################
+Number_of_Blocks_Per_Processor =
+5
+Output_File_Name = 
+sodNKS
+#######################
+# Execute program
+#######################
+Execute
+#######################
+# Write output
+#######################
+#Write_Output
+Write_Output_Cells
+#######################
+# Terminate program
+#######################
+Terminate
+

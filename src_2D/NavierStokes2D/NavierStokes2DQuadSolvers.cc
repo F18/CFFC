@@ -981,7 +981,9 @@ int NavierStokes2DQuadSolver(char *Input_File_Name_ptr, int batch_flag) {
                    residual_file,
                    number_of_time_steps,
 		   Time,
-                   Local_SolnBlk, 
+                   Local_SolnBlk,
+		   QuadTree,
+		   List_of_Global_Solution_Blocks, 
                    List_of_Local_Solution_Blocks,
                    Input_Parameters);
 

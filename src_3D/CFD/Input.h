@@ -122,7 +122,7 @@ void Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::Broadcast(void) {
  ********************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 int Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::
-                    Parse_Next_Input_Control_Parameter(void) {
+Parse_Next_Input_Control_Parameter(void) {
 
    int i_command;
 
@@ -145,8 +145,8 @@ int Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::
  ********************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 int Input_Parameters<SOLN_pSTATE,SOLN_cSTATE>::
-                    Process_Input_Control_Parameter_File(char *Input_File_Name_ptr,
-                                                         int &Command_Flag) {
+Process_Input_Control_Parameter_File(char *Input_File_Name_ptr,
+                                     int &Command_Flag) {
 
    int error_flag;
    
@@ -178,7 +178,7 @@ int Input_Parameters<SOLN_pSTATE,SOLN_cSTATE>::
  ********************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 void Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::
-                     Set_Reference_Solution_States(void) {
+Set_Reference_Solution_States(void) {
 
    cerr << "\n Explicit Specialization of "
         << "Input_Parameters::Set_Reference_Solution_States "
@@ -195,7 +195,7 @@ void Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::
  ********************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 void Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::
-                     Read_Reference_Solution_States(istream &restart_file) {
+Read_Reference_Solution_States(istream &restart_file) {
 
    cerr << "\n Explicit Specialization of "
         << "Input_Parameters::Read_Reference_Solution_States "
@@ -212,7 +212,7 @@ void Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::
  ********************************************************/
 template<class SOLN_pSTATE, class SOLN_cSTATE>
 void Input_Parameters<SOLN_pSTATE, SOLN_cSTATE>::
-                     Write_Reference_Solution_States(ostream &restart_file) {
+Write_Reference_Solution_States(ostream &restart_file) {
 
    cerr << "\n Explicit Specialization of "
         << "Input_Parameters::Write_Reference_Solution_States "

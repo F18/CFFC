@@ -1,12 +1,20 @@
 #!/bin/bash
 
-echo "Running Rte2D tests"
-
 #
 # set some paths
-RTE_EXE="$CFFC_Path/src_2D/rte2D"
-#RTE_EXE="valgrind --leak-check=full $CFFC_Path/src_2D/rte2D"
-#RTE_EXE="mpirun -np 2 $CFFC_Path/src_2D/rte2D"
+case "$1" in
+	-v)  RTE_EXE="valgrind --leak-check=full $CFFC_Path/src_2D/rte2D";;
+	-m)  RTE_EXE="mpirun -np 2 $CFFC_Path/src_2D/rte2D";;
+	-r)  RTE_EXE="$CFFC_Path/src_2D/rte2D";;
+	 *)  
+	    echo >&2 "usage: $0 [-vmr]"
+	    echo >&2 "options: -v    run using valgrind"
+	    echo >&2 "         -r    run regularly"
+	    echo >&2 "         -m    run using mpi"
+	    exit 1;;
+esac
+
+echo "Running Rte2D tests"
 
 #
 # run rectangular coordinate system tests

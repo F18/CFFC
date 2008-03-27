@@ -1,7 +1,7 @@
 /**
  *  @file ISSPTester.cpp
  *
- *  $Id: ISSPTester.cpp,v 1.1 2006/06/13 16:09:14 hkmoffa Exp $
+ *  $Id: ISSPTester.cpp,v 1.2 2007/05/04 15:18:43 dggoodwin Exp $
  */
 /*
  * Copywrite 2004 Sandia Corporation. Under the terms of Contract
@@ -29,7 +29,7 @@
 #include "IdealSolidSolnPhase.h"
 #else
 #include "Cantera.h"
-#include "kernel/thermo/IdealSolidSolnPhase.h"
+#include "kernel/IdealSolidSolnPhase.h"
 #endif
 
 using namespace std;

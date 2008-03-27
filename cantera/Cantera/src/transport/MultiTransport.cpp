@@ -5,9 +5,9 @@
  *
  * @ingroup transportProps
  *
- *  $Author: dggoodwin $
- *  $Date: 2006/04/28 17:22:24 $
- *  $Revision: 1.12 $
+ *  $Author: hkmoffa $
+ *  $Date: 2007/07/27 00:09:11 $
+ *  $Revision: 1.15 $
  *
  *  Copyright 2001 California Institute of Technology
  *  See file License.txt for licensing information
@@ -21,22 +21,22 @@
 #pragma warning(disable:4503)
 #endif
 
-#include "../ThermoPhase.h"
+#include "ThermoPhase.h"
 
 #include "MultiTransport.h"
-#include "../ctlapack.h"
-//#include "../../../ext/math/gmres.h"
+#include "ctlapack.h"
 
-#include "../DenseMatrix.h"
-#include "../polyfit.h"
-#include "../utilities.h"
+#include "DenseMatrix.h"
+#include "utilities.h"
+#include "utilities.h"
 #include "L_matrix.h"
 #include "TransportParams.h"
-#include "../IdealGasPhase.h"
+#include "IdealGasPhase.h"
 
 #include "TransportFactory.h"
 
 #include <iostream>
+using namespace std;
 
 /** 
  * Mole fractions below MIN_X will be set to MIN_X when computing
@@ -440,7 +440,7 @@ namespace Cantera {
      * 
      */
     void MultiTransport::getSpeciesFluxes(int ndim, 
-        doublereal* grad_T, int ldx, const doublereal* grad_X, 
+        const doublereal* grad_T, int ldx, const doublereal* grad_X, 
         int ldf, doublereal* fluxes) {
 
         // update the binary diffusion coefficients if necessary

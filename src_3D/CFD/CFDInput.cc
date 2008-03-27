@@ -559,6 +559,12 @@ int CFD_Input_Parameters::Parse_Next_Input_Control_Parameter(void) {
           i_ICs = IC_RAREFACTION_WAVE_YDIR;
        } else if (strcmp(ICs_Type, "ShockBox") == 0) {
           i_ICs = IC_SHOCK_BOX;
+       } else if (strcmp(ICs_Type, "ShockBox_XY") == 0) {
+           i_ICs = IC_SHOCK_BOX_XY;
+       } else if (strcmp(ICs_Type, "ShockBox_XZ") == 0) {
+           i_ICs = IC_SHOCK_BOX_XZ;
+       } else if (strcmp(ICs_Type, "ShockBox_YZ") == 0) {
+           i_ICs = IC_SHOCK_BOX_YZ;
        } else if (strcmp(ICs_Type, "High_Pressure_Reservoir") == 0) {
           i_ICs = IC_HIGH_PRESSURE_RESERVOIR;
        } else if (strcmp(ICs_Type, "Low_Pressure_Reservoir") == 0) {

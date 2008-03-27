@@ -1,0 +1,13 @@
+/.cvsignore/1.1.1.1/Mon Apr 14 17:57:55 2003//
+/Makefile.in/1.8/Sun Apr 30 22:33:54 2006//
+D/blas////
+D/cvode////
+D/f2c_blas////
+D/f2c_lapack////
+D/f2c_libs////
+D/f2c_math////
+D/f2c_recipes////
+D/lapack////
+D/math////
+D/recipes////
+D/tpx////

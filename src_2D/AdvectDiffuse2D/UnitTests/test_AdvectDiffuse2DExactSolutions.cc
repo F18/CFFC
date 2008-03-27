@@ -125,11 +125,11 @@ namespace tut
     if (IP.ExactSoln->IsExactSolutionSet()){
       // === check value
       ensure_distance("Value 1", IP.ExactSoln->Solution(0.0,0.5   ), 1.0 , AcceptedError(1.0));
-      ensure_distance("Value 2", IP.ExactSoln->Solution(1.0,0.5   ), 0.9901790367580058, AcceptedError(0.9901790367580058));
-      ensure_distance("Value 3", IP.ExactSoln->Solution(3.0,0.5   ), 0.9708255169861605, AcceptedError(0.9708255169861605));
-      ensure_distance("Value 4", IP.ExactSoln->Solution(1.0,0.25  ), 0.7001623114803496, AcceptedError(0.7001623114803496));
-      ensure_distance("Value 5", IP.ExactSoln->Solution(2.0,0.75  ), 0.6932860431558714, AcceptedError(0.6932860431558714));
-      ensure_distance("Value 6", IP.ExactSoln->Solution(3.0,0.7234), 0.7413814177002617, AcceptedError(0.7413814177002617));
+      ensure_distance("Value 2", IP.ExactSoln->Solution(1.0,0.5   ), 0.9901790367580058, AcceptedError(0.9901790367580058,1.0e-12));
+      ensure_distance("Value 3", IP.ExactSoln->Solution(3.0,0.5   ), 0.9708255169861605, AcceptedError(0.9708255169861605,1.0e-12));
+      ensure_distance("Value 4", IP.ExactSoln->Solution(1.0,0.25  ), 0.7001623114803496, AcceptedError(0.7001623114803496,1.0e-12));
+      ensure_distance("Value 5", IP.ExactSoln->Solution(2.0,0.75  ), 0.6932860431558714, AcceptedError(0.6932860431558714,1.0e-12));
+      ensure_distance("Value 6", IP.ExactSoln->Solution(3.0,0.7234), 0.7413814177002617, AcceptedError(0.7413814177002617,1.0e-12));
     }
   }
 

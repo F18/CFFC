@@ -161,10 +161,14 @@ inline char *Date_And_Time() {
 #define POSTPROCESS_1DFLAME                              10096
 
 #define WRITE_OUTPUT_BLACK_ENCLOSURE_CODE                10100
+#define POSTPROCESS_RADIATION_CODE                       10101
+#define POSTPROCESS_2DFLAME_CODE                         10102
 
 #define WRITE_ERROR_NORMS_TO_SCREEN                      10105
 #define WRITE_OUTPUT_EXACT_SOLUTION                      10106
 #define WRITE_OUTPUT_ACCURACY_CODE                       10107
+#define WRITE_ERROR_NORMS_TO_FILE                        10108
+#define APPEND_ERROR_NORMS_TO_FILE                       10109
 
 #define	INVALID_INPUT_CODE                              -10000
 #define	INVALID_INPUT_VALUE                             -10001
@@ -229,6 +233,7 @@ inline char *Date_And_Time() {
 #define GRID_CYLINDRICAL_ENCLOSURE           29
 #define GRID_JET_FLOW                        30
 #define GRID_ANNULUS                         31
+#define GRID_DEFORMED_BOX                    32
 
 #define GRID_ICEMCFD                       1000
 #define GRID_READ_FROM_DEFINITION_FILE    10000
@@ -451,6 +456,12 @@ inline char *Date_And_Time() {
 #define FRICTION_VELOCITY_PIPE                    973
 
 /**********************************************************************
+ * CFD -- Radiation evaluation types.                                 *
+ **********************************************************************/
+#define RADIATION_RTE                            800
+#define RADIATION_OPTICALLY_THIN                 801
+
+/**********************************************************************
  * CFD -- Initial Condition Types.                                    *
  **********************************************************************/
 
@@ -515,8 +526,11 @@ inline char *Date_And_Time() {
 
 #define IC_GAS_MIX		       70
 #define IC_CHEM_CORE_FLAME             71
+#define IC_CORE_FLAME                  71
+#define IC_CHEM_PREMIXED_FLAME         710
 #define IC_CHEM_INVERSE_FLAME          72
 #define IC_CHEM_1DFLAME                73
+#define IC_1DFLAME                     73
 #define IC_PRESSURE_GRADIENT_X         74
 #define IC_PRESSURE_GRADIENT_Y         75
 #define IC_HOMOGENEOUS_TURBULENCE      76
@@ -588,6 +602,9 @@ inline char *Date_And_Time() {
 #define IC_PIPE                       305
 #define IC_COUETTE                    306
 #define IC_BLUNT_BODY                 307
+
+#define IC_SPECIFIED                  400
+#define IC_DISCONTINUOUS              401
 
 /********************************************************
  * CFD -- Velocity Field Types                          *
@@ -1315,13 +1332,13 @@ extern void A_Stable_Implicit_Method_Coefficients(double &theta,
 						  double &phi,
 						  const int Time_Integration_Scheme);
 
-extern double CLAM(const double Uu,   // upstream nodal value
-		   const double Uc,   // centroid nodal value
-		   const double Ud,   // downstream nodal value
-		   const double xu,   // x upstream node
-		   const double xc,   // x centroid node
-		   const double xd,   // x downstream node
-		   const double xf);  // x downstream face
+extern double CLAM(const double &Uu,   // upstream nodal value
+		   const double &Uc,   // centroid nodal value
+		   const double &Ud,   // downstream nodal value
+		   const double &xu,   // x upstream node
+		   const double &xc,   // x centroid node
+		   const double &xd,   // x downstream node
+		   const double &xf);  // x downstream face
 
 
 /**********************************************************************

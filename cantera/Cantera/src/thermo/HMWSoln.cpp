@@ -1,7 +1,16 @@
 /**
  *  @file HMWSoln.cpp
+ *    Definitions for the %HMWSoln ThermoPhase object, which 
+ *    models concentrated electrolyte solutions
+ *    (see \ref thermoprops and \link Cantera::HMWSoln HMWSoln \endlink) .
  *
- * Member functions of Pitzer activity coefficient implementation.
+ * Class %HMWSoln represents a concentrated liquid electrolyte phase which
+ * obeys the Pitzer formulation for nonideality using molality-based
+ * standard states.
+ *
+ * This version of the code was modified to have the binary Beta2 Pitzer 
+ * parameter consistent with the temperature expansions used for Beta0, 
+ * Beta1, and Cphi.(CFJC, SNL)
  */
 /*
  * Copywrite (2006) Sandia Corporation. Under the terms of 
@@ -9,21 +18,22 @@
  * U.S. Government retains certain rights in this software.
  */
 /*
- * $Id: HMWSoln.cpp,v 1.5 2006/07/13 20:05:11 hkmoffa Exp $
+ * $Id: HMWSoln.cpp,v 1.27 2007/10/02 00:49:55 hkmoffa Exp $
  */
-
+//@{
 #ifndef MAX
 #define MAX(x,y)    (( (x) > (y) ) ? (x) : (y))
 #endif
-
+//@}
 #include "HMWSoln.h"
-#include "importCTML.h"
+#include "ThermoFactory.h"
 #include "WaterProps.h"
 #include "WaterPDSS.h"
+#include <math.h>
 
 namespace Cantera {
 
-  /**
+  /*
    * Default constructor
    */
   HMWSoln::HMWSoln() :
@@ -31,7 +41,6 @@ namespace Cantera {
     m_formPitzer(PITZERFORM_BASE),
     m_formPitzerTemp(PITZER_TEMP_CONSTANT),
     m_formGC(2),
-    m_Pcurrent(OneAtm),
     m_IionicMolality(0.0),
     m_maxIionicStrength(100.0),
     m_TempPitzerRef(298.15),
@@ -41,6 +50,7 @@ namespace Cantera {
     m_waterSS(0),
     m_densWaterSS(1000.),
     m_waterProps(0),
+    m_molalitiesAreCropped(false),
     m_debugCalc(0)
   {
     for (int i = 0; i < 17; i++) {
@@ -48,7 +58,7 @@ namespace Cantera {
       elambda1[i] = 0.0;
     }
   }
-  /**
+  /*
    * Working constructors
    *
    *  The two constructors below are the normal way
@@ -56,12 +66,11 @@ namespace Cantera {
    *  the routine initThermo(), with a reference to the
    *  XML database to get the info for the phase.
    */
-  HMWSoln::HMWSoln(string inputFile, string id) :
+  HMWSoln::HMWSoln(std::string inputFile, std::string id) :
     MolalityVPSSTP(),
     m_formPitzer(PITZERFORM_BASE),
     m_formPitzerTemp(PITZER_TEMP_CONSTANT),
     m_formGC(2),
-    m_Pcurrent(OneAtm),
     m_IionicMolality(0.0),
     m_maxIionicStrength(100.0),
     m_TempPitzerRef(298.15),
@@ -71,6 +80,7 @@ namespace Cantera {
     m_waterSS(0),
     m_densWaterSS(1000.),
     m_waterProps(0),
+    m_molalitiesAreCropped(false),
     m_debugCalc(0)
   {
     for (int i = 0; i < 17; i++) {
@@ -80,12 +90,11 @@ namespace Cantera {
     constructPhaseFile(inputFile, id);
   }
 
-  HMWSoln::HMWSoln(XML_Node& phaseRoot, string id) :
+  HMWSoln::HMWSoln(XML_Node& phaseRoot, std::string id) :
     MolalityVPSSTP(),
     m_formPitzer(PITZERFORM_BASE),
     m_formPitzerTemp(PITZER_TEMP_CONSTANT),
     m_formGC(2),
-    m_Pcurrent(OneAtm),
     m_IionicMolality(0.0),
     m_maxIionicStrength(100.0),
     m_TempPitzerRef(298.15),
@@ -95,6 +104,7 @@ namespace Cantera {
     m_waterSS(0),
     m_densWaterSS(1000.),
     m_waterProps(0),
+    m_molalitiesAreCropped(false),
     m_debugCalc(0)
   {
     for (int i = 0; i < 17; i++) {
@@ -111,7 +121,21 @@ namespace Cantera {
    *  has a working copy constructor
    */
   HMWSoln::HMWSoln(const HMWSoln &b) :
-    MolalityVPSSTP(b)
+    MolalityVPSSTP(),
+    m_formPitzer(PITZERFORM_BASE),
+    m_formPitzerTemp(PITZER_TEMP_CONSTANT),
+    m_formGC(2),
+    m_IionicMolality(0.0),
+    m_maxIionicStrength(100.0),
+    m_TempPitzerRef(298.15),
+    m_IionicMolalityStoich(0.0),
+    m_form_A_Debye(A_DEBYE_WATER),
+    m_A_Debye(1.172576),   // units = sqrt(kg/gmol)
+    m_waterSS(0),
+    m_densWaterSS(1000.),
+    m_waterProps(0),
+    m_molalitiesAreCropped(false),
+    m_debugCalc(0)
   {
     /*
      * Use the assignment operator to do the brunt
@@ -133,7 +157,6 @@ namespace Cantera {
       m_formPitzer          = b.m_formPitzer;
       m_formPitzerTemp      = b.m_formPitzerTemp;
       m_formGC              = b.m_formGC;
-      m_Pcurrent            = b.m_Pcurrent;
       m_Aionic              = b.m_Aionic;
       m_IionicMolality      = b.m_IionicMolality;
       m_maxIionicStrength   = b.m_maxIionicStrength;
@@ -175,6 +198,7 @@ namespace Cantera {
       m_Beta2MX_ij_L        = b.m_Beta2MX_ij_L;
       m_Beta2MX_ij_LL       = b.m_Beta2MX_ij_LL;
       m_Beta2MX_ij_P        = b.m_Beta2MX_ij_P;
+      m_Beta2MX_ij_coeff    = b.m_Beta2MX_ij_coeff;
       m_Alpha1MX_ij         = b.m_Alpha1MX_ij;
       m_CphiMX_ij           = b.m_CphiMX_ij;
       m_CphiMX_ij_L         = b.m_CphiMX_ij_L;
@@ -228,14 +252,16 @@ namespace Cantera {
       m_gamma               = b.m_gamma;
 
       m_CounterIJ           = b.m_CounterIJ;
+      m_molalitiesCropped   = b.m_molalitiesCropped;
+      m_molalitiesAreCropped= b.m_molalitiesAreCropped;
       m_debugCalc           = b.m_debugCalc;
     }
     return *this;
   }
 
 
-  /**
-   * Test matrix for this object
+  
+  /*  
    *
    *
    *  test problems:
@@ -265,7 +291,6 @@ namespace Cantera {
     m_formPitzer(PITZERFORM_BASE),
     m_formPitzerTemp(PITZER_TEMP_CONSTANT),
     m_formGC(2),
-    m_Pcurrent(OneAtm),
     m_IionicMolality(0.0),
     m_maxIionicStrength(30.0),
     m_TempPitzerRef(298.15),
@@ -279,7 +304,7 @@ namespace Cantera {
   {
     if (testProb != 1) {
       printf("unknown test problem\n");
-      exit(-1);
+      std::exit(-1);
     }
 
     constructPhaseFile("HMW_NaCl.xml", "");
@@ -383,7 +408,7 @@ namespace Cantera {
    *  duplicate the current object. It uses the copy constructor
    *  defined above.
    */
-  ThermoPhase* HMWSoln::duplMyselfAsThermoPhase() {
+  ThermoPhase* HMWSoln::duplMyselfAsThermoPhase() const {
     HMWSoln* mtp = new HMWSoln(*this);
     return (ThermoPhase *) mtp;
   }
@@ -408,7 +433,6 @@ namespace Cantera {
       break;
     default:
       throw CanteraError("eosType", "Unknown type");
-      break;
     }
     return res;
   }
@@ -423,15 +447,6 @@ namespace Cantera {
     getPartialMolarEnthalpies(DATA_PTR(m_tmpV));
     getMoleFractions(DATA_PTR(m_pp));
     double val = mean_X(DATA_PTR(m_tmpV));
-#ifdef DEBUG_HKM
-    double val0 = 0.0;
-    for (int k = 0; k < m_kk; k++) {
-      val0 += m_tmpV[k] * m_pp[k];
-    }
-    //if (val != val0) {
-    // printf("ERROR\n");
-    //}
-#endif
     return val;
   }
 
@@ -563,22 +578,22 @@ namespace Cantera {
 #ifdef DEBUG_MODE
     //printf("setPressure: %g\n", p);
 #endif
-    double temp = temperature();
     /*
-     * Call the water SS and set it's internal state
+     * Store the current pressure
      */
-    m_waterSS->setTempPressure(temp, p);
-
+    m_Pcurrent = p;
+    /*
+     * update the standard state thermo
+     * -> This involves calling the water function and setting the pressure
+     */
+    _updateStandardStateThermo();
+  
     /*
      * Store the internal density of the water SS.
      * Note, we would have to do this for all other
      * species if they had pressure dependent properties.
      */
     m_densWaterSS = m_waterSS->density();
-    /*
-     * Store the current pressure
-     */
-    m_Pcurrent = p;
     /*
      * Calculate all of the other standard volumes
      * -> note these are constant for now
@@ -690,12 +705,12 @@ namespace Cantera {
 		       "Density is not an independent variable");
   }
 
-  /**
+  /*
    * Overwritten setTemperature(double) from State.h. This
    * function sets the temperature, and makes sure that
    * the value propagates to underlying objects.
    */
-  void HMWSoln::setTemperature(double temp) {
+  void HMWSoln::setTemperature(doublereal temp) {
     m_waterSS->setTemperature(temp);
     State::setTemperature(temp);
   }
@@ -704,7 +719,7 @@ namespace Cantera {
   // ------- Activities and Activity Concentrations
   //
 
-  /**
+  /*
    * This method returns an array of generalized concentrations
    * \f$ C_k\f$ that are defined such that 
    * \f$ a_k = C_k / C^0_k, \f$ where \f$ C^0_k \f$ 
@@ -725,7 +740,7 @@ namespace Cantera {
     }
   }
 
-  /**
+  /*
    * The standard concentration \f$ C^0_k \f$ used to normalize
    * the generalized concentration. In many cases, this quantity
    * will be the same for all species in a phase - for example,
@@ -747,7 +762,7 @@ namespace Cantera {
     return 1.0 / mvSolvent;
   }
     
-  /**
+  /*
    * Returns the natural logarithm of the standard 
    * concentration of the kth species
    */
@@ -756,7 +771,7 @@ namespace Cantera {
     return log(c_solvent);
   }
     
-  /**
+  /*
    * Returns the units of the standard and general concentrations
    * Note they have the same units, as their divisor is 
    * defined to be equal to the activity of the kth species
@@ -778,7 +793,7 @@ namespace Cantera {
    *  uA[4] = Temperature units - default = 0;
    *  uA[5] = time units - default = 0
    */
-  void HMWSoln::getUnitsStandardConc(double *uA, int k, int sizeUA) {
+  void HMWSoln::getUnitsStandardConc(double *uA, int k, int sizeUA) const {
     for (int i = 0; i < sizeUA; i++) {
       if (i == 0) uA[0] = 1.0;
       if (i == 1) uA[1] = -nDim();
@@ -790,7 +805,7 @@ namespace Cantera {
   }    
 
 
-  /**
+  /*
    * Get the array of non-dimensional activities at
    * the current solution temperature, pressure, and
    * solution concentration.
@@ -798,6 +813,7 @@ namespace Cantera {
    *
    */
   void HMWSoln::getActivities(doublereal* ac) const {
+    _updateStandardStateThermo();
     /*
      * Update the molality array, m_molalities()
      *   This requires an update due to mole fractions
@@ -816,7 +832,7 @@ namespace Cantera {
       exp(m_lnActCoeffMolal[m_indexSolvent]) * xmolSolvent;
   }
 
-  /**
+  /*
    * getMolalityActivityCoefficients()             (virtual, const)
    *
    * Get the array of non-dimensional Molality based
@@ -829,10 +845,10 @@ namespace Cantera {
    */
   void HMWSoln::
   getMolalityActivityCoefficients(doublereal* acMolality) const {
-
+    _updateStandardStateThermo();
     A_Debye_TP(-1.0, -1.0);
     s_update_lnMolalityActCoeff();
-    copy(m_lnActCoeffMolal.begin(), m_lnActCoeffMolal.end(), acMolality);
+    std::copy(m_lnActCoeffMolal.begin(), m_lnActCoeffMolal.end(), acMolality);
     for (int k = 0; k < m_kk; k++) {
       acMolality[k] = exp(acMolality[k]);
     }
@@ -888,17 +904,24 @@ namespace Cantera {
   }
 
 
-  /**
+  /*
    * Returns an array of partial molar enthalpies for the species
    * in the mixture.
    * Units (J/kmol)
    *
-   * We calculate this quantity partially from the relation and
-   * partially by calling the standard state enthalpy function.
+   * For this phase, the partial molar enthalpies are equal to the
+   * standard state enthalpies modified by the derivative of the
+   * molality-based activity coefficent wrt temperature
    *
-   *     hbar_i = - T**2 * d(chemPot_i/T)/dT 
+   *  \f[
+   * \bar h_k(T,P) = h^{\triangle}_k(T,P) - R T^2 \frac{d \ln(\gamma_k^\triangle)}{dT}
+   * \f]
+   * The solvent partial molar enthalpy is equal to 
+   *  \f[
+   * \bar h_o(T,P) = h^{o}_o(T,P) - R T^2 \frac{d \ln(a_o)}{dT}
+   * \f]
    *
-   * We calculate 
+   *
    */
   void HMWSoln::getPartialMolarEnthalpies(doublereal* hbar) const {
     /*
@@ -925,8 +948,7 @@ namespace Cantera {
     }
   }
 
-  /**
-   *
+  /*
    * getPartialMolarEntropies()        (virtual, const)
    *
    * Returns an array of partial molar entropies of the species in the
@@ -940,10 +962,14 @@ namespace Cantera {
    * Combining this with the expression H = G + TS yields:
    *
    *  \f[
-   * \bar s_k(T,P) =  \hat s^0_k(T) - R log(M0 * molality[k] ac[k])
-   *                      - R T^2 d log(ac[k]) / dT
+   *     \bar s_k(T,P) =  s^{\triangle}_k(T,P) 
+   *             - R \ln( \gamma^{\triangle}_k \frac{m_k}{m^{\triangle}}))
+   *                    - R T \frac{d \ln(\gamma^{\triangle}_k) }{dT}
    * \f]
-   *
+   * \f[
+   *      \bar s_o(T,P) = s^o_o(T,P) - R \ln(a_o)
+   *                    - R T \frac{d \ln(a_o)}{dT}
+   * \f]  
    *
    * The reference-state pure-species entropies,\f$ \hat s^0_k(T) \f$,
    * at the reference pressure, \f$ P_{ref} \f$,  are computed by the
@@ -997,7 +1023,7 @@ namespace Cantera {
     }
   }
 
-  /**
+  /*
    * getPartialMolarVolumes()                (virtual, const)
    *
    * Returns an array of partial molar volumes of the species
@@ -1039,7 +1065,16 @@ namespace Cantera {
    *   enthalpy of the kth species in the solution at constant
    *   P and composition (p. 220 Smith and Van Ness).
    *
-   *     Cp = -T d2(chemPot_i)/dT2
+   *  \f[
+   *     \bar C_{p,k}(T,P) =  C^{\triangle}_{p,k}(T,P) 
+   *             - 2 R T \frac{d \ln( \gamma^{\triangle}_k)}{dT}
+   *                    - R T^2 \frac{d^2 \ln(\gamma^{\triangle}_k) }{{dT}^2}
+   * \f]
+   * \f[
+   *      \bar C_{p,o}(T,P) = C^o_{p,o}(T,P) 
+   *                   - 2 R T \frac{d \ln(a_o)}{dT}
+   *                    - R T^2 \frac{d^2 \ln(a_o)}{{dT}^2}
+   * \f]
    */
   void HMWSoln::getPartialMolarCp(doublereal* cpbar) const {
     /*
@@ -1072,7 +1107,7 @@ namespace Cantera {
    *           in the Solution ------------------
    */
 
-  /**
+  /*
    *  getStandardChemPotentials()      (virtual, const)
    *
    *
@@ -1089,6 +1124,7 @@ namespace Cantera {
    *  units = J / kmol
    */
   void HMWSoln::getStandardChemPotentials(doublereal* mu) const {
+    _updateStandardStateThermo();
     getGibbs_ref(mu);
     doublereal pref;
     doublereal delta_p;
@@ -1100,7 +1136,7 @@ namespace Cantera {
     mu[0] = m_waterSS->gibbs_mole();
   }
     
-  /**
+  /*
    * Get the nondimensional gibbs function for the species
    * standard states at the current T and P of the solution.
    *
@@ -1123,10 +1159,7 @@ namespace Cantera {
     }
   }
     
-  /**
-   *
-   * getPureGibbs()
-   *
+  /*
    * Get the Gibbs functions for the pure species
    * at the current <I>T</I> and <I>P</I> of the solution.
    * We assume an incompressible constant partial molar
@@ -1142,8 +1175,7 @@ namespace Cantera {
     getStandardChemPotentials(gpure);
   }
 
-  /**
-   *
+  /*
    * getEnthalpy_RT()        (virtual, const)
    *
    * Get the array of nondimensional Enthalpy functions for the ss
@@ -1159,7 +1191,19 @@ namespace Cantera {
    */
   void HMWSoln::
   getEnthalpy_RT(doublereal* hrt) const {
-    getEnthalpy_RT_ref(hrt);
+    /*
+     * Call the function that makes sure the local copy of
+     * the species reference thermo functions are up to date
+     * for the current temperature.
+     */
+    _updateStandardStateThermo();
+    /*
+     * Copy the gibbs function into return vector.
+     */
+    std::copy(m_h0_RT.begin(), m_h0_RT.end(), hrt);
+    // We don't call the reference state functions, because there may 
+    // not be a solution at 1 atm for the water equation.
+    //   getEnthalpy_RT_ref(hrt);
     doublereal pref;
     doublereal delta_p;
     double RT = _RT();
@@ -1172,7 +1216,7 @@ namespace Cantera {
     hrt[0] /= RT;
   }
     
-  /**
+  /*
    *  getEntropy_R()         (virtual, const)
    * 
    * Get the nondimensional Entropies for the species
@@ -1188,12 +1232,19 @@ namespace Cantera {
    */
   void HMWSoln::
   getEntropy_R(doublereal* sr) const {
-    getEntropy_R_ref(sr);
+    _updateStandardStateThermo();
+    /*
+     * Copy the gibbs function into return vector.
+     */
+    std::copy(m_s0_R.begin(), m_s0_R.end(), sr);
+   // We don't call the reference state functions, because there may 
+    // not be a solution at 1 atm for the water equation.
+    //getEntropy_R_ref(sr);
     sr[0] = m_waterSS->entropy_mole();
     sr[0] /= GasConstant;
   }
 
-  /**
+  /*
    * Get the nondimensional heat capacity at constant pressure
    * function for the species
    * standard states at the current T and P of the solution.
@@ -1209,12 +1260,14 @@ namespace Cantera {
    *           constant pressure heat capacity for species k. 
    */
   void HMWSoln::getCp_R(doublereal* cpr) const {
-    getCp_R_ref(cpr); 
+    _updateStandardStateThermo();
+    std::copy(m_cp0_R.begin(), m_cp0_R.end(), cpr);
+    //getCp_R_ref(cpr); 
     cpr[0] = m_waterSS->cp_mole();
     cpr[0] /= GasConstant;
   }
     
-  /**
+  /*
    * Get the molar volumes of each species in their standard
    * states at the current
    * <I>T</I> and <I>P</I> of the solution.
@@ -1223,10 +1276,137 @@ namespace Cantera {
    * The water calculation is done separately.
    */
   void HMWSoln::getStandardVolumes(doublereal *vol) const {
-    copy(m_speciesSize.begin(),
-	 m_speciesSize.end(), vol);
+    _updateStandardStateThermo();
+    std::copy(m_speciesSize.begin(), m_speciesSize.end(), vol);
     double dd = m_waterSS->density();
     vol[0] = molecularWeight(0)/dd;
+  }
+
+
+
+  void HMWSoln::getGibbs_RT_ref(doublereal *grt) const {
+    /*
+     * Call the function that makes sure the local copy of
+     * the species reference thermo functions are up to date
+     * for the current temperature.
+     */
+    _updateRefStateThermo();
+    /*
+     * Copy the gibbs function into return vector.
+     */
+    std::copy(m_g0_RT.begin(), m_g0_RT.end(), grt);
+  
+    double pnow = m_Pcurrent;
+    double tnow = temperature();
+    m_waterSS->setTempPressure(tnow, m_p0);
+    double mu0 = m_waterSS->gibbs_mole();
+    m_waterSS->setTempPressure(tnow, pnow);
+    double rt = _RT();
+    grt[0] = mu0 / rt;
+  }
+
+  void HMWSoln::getEnthalpy_RT_ref(doublereal *hrt) const {
+    /*
+     * Call the function that makes sure the local copy of
+     * the species reference thermo functions are up to date
+     * for the current temperature.
+     */
+    _updateRefStateThermo();
+    /*
+     * Copy the gibbs function into return vector.
+     */
+    std::copy(m_h0_RT.begin(), m_h0_RT.end(), hrt);
+
+    double pnow = m_Pcurrent;
+    double tnow = temperature();
+    m_waterSS->setTempPressure(tnow, m_p0);
+    double h0 = m_waterSS->enthalpy_mole();
+    m_waterSS->setTempPressure(tnow, pnow);
+    double rt = _RT();
+    hrt[0] = h0 / rt;
+  }
+
+
+  void HMWSoln::getEntropy_R_ref(doublereal *sr) const {
+    /*
+     * Call the function that makes sure the local copy of
+     * the species reference thermo functions are up to date
+     * for the current temperature.
+     */
+    _updateRefStateThermo();
+    /*
+     * Copy the gibbs function into return vector.
+     */
+    std::copy(m_s0_R.begin(), m_s0_R.end(), sr);
+   
+    double pnow = m_Pcurrent;
+    double tnow = temperature();
+    m_waterSS->setTempPressure(tnow, m_p0);
+    double s0 = m_waterSS->entropy_mole();
+    m_waterSS->setTempPressure(tnow, pnow);
+    sr[0] = s0 / GasConstant;
+  }
+
+
+  void HMWSoln::getCp_R_ref(doublereal *cpr) const {
+    /*
+     * Call the function that makes sure the local copy of
+     * the species reference thermo functions are up to date
+     * for the current temperature.
+     */
+    _updateRefStateThermo();
+    std::copy(m_cp0_R.begin(), m_cp0_R.end(), cpr); 
+    double pnow = m_Pcurrent;
+    double tnow = temperature();
+    m_waterSS->setTempPressure(tnow, m_p0);
+    double cp0 = m_waterSS->cp_mole();
+    m_waterSS->setTempPressure(tnow, pnow);
+    cpr[0] = cp0 / GasConstant;
+  }
+
+  /*
+   * Get the molar volumes of each species in their reference
+   * states at the current
+   * <I>T</I> and <I>P</I> of the solution.
+   * units = m^3 / kmol
+   */
+  void HMWSoln::getStandardVolumes_ref(doublereal *vol) const {
+    double psave = m_Pcurrent;
+    _updateStandardStateThermo(m_p0);
+    std::copy(m_speciesSize.begin(),
+	      m_speciesSize.end(), vol);
+    if (m_waterSS) {
+      double dd = m_waterSS->density();
+      vol[0] = molecularWeight(0)/dd;
+    }
+    _updateStandardStateThermo(psave);
+  }
+
+
+  /*
+   * Updates the standard state thermodynamic functions at the current T and 
+   * P of the solution.
+   *
+   * @internal
+   *
+   * This function gets called for every call to functions in this
+   * class. It checks to see whether the temperature or pressure has changed and
+   * thus the ss thermodynamics functions for all of the species
+   * must be recalculated.
+   */                    
+  void HMWSoln::_updateStandardStateThermo(doublereal pnow) const {
+    _updateRefStateThermo();
+    doublereal tnow = temperature();
+    if (pnow == -1.0) {
+      pnow = m_Pcurrent;
+    }
+    if (m_tlast != tnow || m_plast != pnow) {
+      if (m_waterSS) {
+	m_waterSS->setTempPressure(tnow, pnow);
+      }
+      m_tlast = tnow;
+      m_plast = pnow;
+    }
   }
 
   /*
@@ -1249,7 +1429,8 @@ namespace Cantera {
    */
   void HMWSoln::setParameters(int n, doublereal* c) {
   }
-  void HMWSoln::getParameters(int &n, doublereal * const c) {
+
+  void HMWSoln::getParameters(int &n, doublereal * const c) const {
   }
   /**
    * Set equation of state parameter values from XML
@@ -1268,7 +1449,7 @@ namespace Cantera {
   void HMWSoln::setParametersFromXML(const XML_Node& eosdata) {
   }
     
-  /**
+  /*
    * Get the saturation pressure for a given temperature. 
    * Note the limitations of this function. Stability considerations
    * concernting multiphase equilibrium are ignored in this 
@@ -1301,7 +1482,7 @@ namespace Cantera {
     return vol;
   }
  
-  /**
+  /*
    * A_Debye_TP()                              (virtual)
    *
    *   Returns the A_Debye parameter as a function of temperature
@@ -1342,7 +1523,7 @@ namespace Cantera {
       break;
     default:
       printf("shouldn't be here\n");
-      exit(-1);
+      std::exit(-1);
     }
     return A;
   }
@@ -1377,7 +1558,7 @@ namespace Cantera {
       break;
     default:
       printf("shouldn't be here\n");
-      exit(-1);
+      std::exit(-1);
     }
     return dAdT;
   }
@@ -1411,7 +1592,7 @@ namespace Cantera {
       break;
     default:
       printf("shouldn't be here\n");
-      exit(-1);
+      std::exit(-1);
     }
     return dAdP;
   }
@@ -1518,7 +1699,7 @@ namespace Cantera {
       break;
     default:
       printf("shouldn't be here\n");
-      exit(-1);
+      std::exit(-1);
     }
     return d2AdT2;
   }
@@ -1542,7 +1723,7 @@ namespace Cantera {
    * Bail out of functions with an error exit if they are not
    * implemented.
    */
-  doublereal HMWSoln::err(string msg) const {
+  doublereal HMWSoln::err(std::string msg) const {
     throw CanteraError("HMWSoln",
 		       "Unfinished func called: " + msg );
     return 0.0;
@@ -1573,7 +1754,7 @@ namespace Cantera {
     m_pe.resize(leng, 0.0);
     m_pp.resize(leng, 0.0);
     m_tmpV.resize(leng, 0.0);
-
+    m_molalitiesCropped.resize(leng, 0.0);
 
     int maxCounterIJlen = 1 + (leng-1) * (leng-2) / 2;
 
@@ -1604,6 +1785,7 @@ namespace Cantera {
     m_Beta2MX_ij_L.resize(maxCounterIJlen, 0.0);
     m_Beta2MX_ij_LL.resize(maxCounterIJlen, 0.0);
     m_Beta2MX_ij_P.resize(maxCounterIJlen, 0.0);
+    m_Beta2MX_ij_coeff.resize(TCoeffLength, maxCounterIJlen, 0.0);
 
     m_CphiMX_ij.resize(maxCounterIJlen, 0.0);
     m_CphiMX_ij_L.resize(maxCounterIJlen, 0.0);
@@ -1664,6 +1846,7 @@ namespace Cantera {
 
     m_gamma.resize(leng, 0.0);
 
+
     counterIJ_setup();
   }
 
@@ -1680,6 +1863,11 @@ namespace Cantera {
      * State objects' data.
      */
     calcMolalities();
+    /*
+     *  Calculate a cropped set of molalities that will be used
+     *  in all activity coefficent calculations.
+     */
+    calcMolalitiesCropped();
     /*
      * Calculate the stoichiometric ionic charge. This isn't used in the
      * Pitzer formulation.
@@ -1713,9 +1901,134 @@ namespace Cantera {
     s_updatePitzerSublnMolalityActCoeff();
   }
 
+
+  /*
+   * Calculate cropped molalities
+   */
+  void HMWSoln::calcMolalitiesCropped() const {
+    int i, j, k;
+    doublereal Imax = 0.0, Itmp;
+    doublereal Iac_max;
+    m_molalitiesAreCropped = false;
+
+    for (k = 0; k < m_kk; k++) {
+      m_molalitiesCropped[k] = m_molalities[k];
+      double charge = m_speciesCharge[k];
+      Itmp = m_molalities[k] * charge * charge;
+      if (Itmp > Imax) {
+	Imax = Itmp;
+      }
+    }
+    /*
+     * Quick return
+     */
+    if (Imax < m_maxIionicStrength) {
+      return;
+    }
+
+    m_molalitiesAreCropped = true;
+
+    for (i = 1; i < (m_kk - 1); i++) {
+      double charge_i = m_speciesCharge[i];
+      double abs_charge_i = fabs(charge_i);
+      if (charge_i == 0.0) {
+	continue;
+      }
+      for (j = (i+1); j < m_kk; j++) {
+	double charge_j = m_speciesCharge[j];
+	double abs_charge_j = fabs(charge_j);
+	/*
+	 * Find the counterIJ for the symmetric binary interaction
+	 */
+	//n = m_kk*i + j;
+	//counterIJ = m_CounterIJ[n];
+	/*
+	 * Only loop over oppositely charge species
+	 */
+	if (charge_i * charge_j < 0) {
+	  Iac_max = m_maxIionicStrength;
+
+	  if (m_molalitiesCropped[i] > m_molalitiesCropped[j]) {
+	    Imax = m_molalitiesCropped[i] * abs_charge_i * abs_charge_i;
+	    if (Imax > Iac_max) {
+	      m_molalitiesCropped[i] = Iac_max / (abs_charge_i * abs_charge_i);
+	    }
+	    Imax = m_molalitiesCropped[j] * fabs(abs_charge_j * abs_charge_i);
+	    if (Imax > Iac_max) {
+	      m_molalitiesCropped[j] = Iac_max / (abs_charge_j * abs_charge_i);
+	    }
+	  } else {
+	    Imax = m_molalitiesCropped[j] * abs_charge_j * abs_charge_j; 
+	    if (Imax > Iac_max) {
+	      m_molalitiesCropped[j] = Iac_max / (abs_charge_j * abs_charge_j);
+	    }
+	    Imax = m_molalitiesCropped[i] * abs_charge_j * abs_charge_i;
+	    if (Imax > Iac_max) {
+	      m_molalitiesCropped[i] = Iac_max / (abs_charge_j * abs_charge_i);
+	    }
+	  }
+	}
+      }
+    }
+
+    /*
+     * Do this loop 10 times until we have achieved charge neutrality
+     * in the cropped molalities
+     */
+    for (int times = 0; times< 10; times++) {
+      double anion_charge = 0.0;
+      double cation_charge = 0.0;
+      int anion_contrib_max_i = -1;
+      double anion_contrib_max = -1.0;
+      int cation_contrib_max_i = -1;
+      double cation_contrib_max = -1.0;
+      for (i = 0; i < m_kk; i++) {
+	double charge_i = m_speciesCharge[i];
+	if (charge_i < 0.0) {
+	  double anion_contrib =  - m_molalitiesCropped[i] * charge_i;
+	  anion_charge += anion_contrib ;
+	  if (anion_contrib > anion_contrib_max) {
+	    anion_contrib_max = anion_contrib;
+	    anion_contrib_max_i = i;
+	  }
+	} else if (charge_i > 0.0) {
+	  double cation_contrib = m_molalitiesCropped[i] * charge_i;
+	  cation_charge += cation_contrib ;
+	  if (cation_contrib > cation_contrib_max) {
+	    cation_contrib_max = cation_contrib;
+	    cation_contrib_max_i = i;
+	  }
+	}
+      }
+      double total_charge = cation_charge - anion_charge;
+      if (total_charge > 1.0E-8) {
+	double desiredCrop = total_charge/m_speciesCharge[cation_contrib_max_i];
+	double maxCrop =  0.66 * m_molalitiesCropped[cation_contrib_max_i];
+	if (desiredCrop < maxCrop) {
+	  m_molalitiesCropped[cation_contrib_max_i] -= desiredCrop;
+	  break;
+	} else {
+	  m_molalitiesCropped[cation_contrib_max_i] -= maxCrop;
+	}
+      } else if (total_charge < -1.0E-8) {
+	double desiredCrop = total_charge/m_speciesCharge[anion_contrib_max_i];
+	double maxCrop =  0.66 * m_molalitiesCropped[anion_contrib_max_i];
+	if (desiredCrop < maxCrop) {
+	  m_molalitiesCropped[anion_contrib_max_i] -= desiredCrop;
+	  break;
+	} else {
+	  m_molalitiesCropped[anion_contrib_max_i] -= maxCrop;
+	}
+      } else {
+	break;
+      }
+    }
+    
+  }
+
   /*
    * Set up a counter variable for keeping track of symmetric binary
-   * interactactions amongst the solute species.
+   * interactions amongst the solute species.
    *
    * n = m_kk*i + j 
    * m_Counter[n] = counter
@@ -1743,7 +2056,7 @@ namespace Cantera {
     }
   }
 
-  /**
+  /*
    * Calculates the Pitzer coefficients' dependence on the
    * temperature. It will also calculate the temperature
    * derivatives of the coefficients, as they are important
@@ -1761,6 +2074,7 @@ namespace Cantera {
     int i, j, n, counterIJ;
     const double *beta0MX_coeff;
     const double *beta1MX_coeff;
+    const double *beta2MX_coeff;
     const double *CphiMX_coeff;
     double T = temperature();
     double Tr = m_TempPitzerRef;
@@ -1786,6 +2100,7 @@ namespace Cantera {
 	    
 	beta0MX_coeff = m_Beta0MX_ij_coeff.ptrColumn(counterIJ);
 	beta1MX_coeff = m_Beta1MX_ij_coeff.ptrColumn(counterIJ);
+	beta2MX_coeff = m_Beta2MX_ij_coeff.ptrColumn(counterIJ);
 	CphiMX_coeff = m_CphiMX_ij_coeff.ptrColumn(counterIJ);
 
 	switch (m_formPitzerTemp) {
@@ -1800,6 +2115,10 @@ namespace Cantera {
 	    + beta1MX_coeff[1]*tlin;
 	  m_Beta1MX_ij_L[counterIJ] = beta1MX_coeff[1];
 	  m_Beta1MX_ij_LL[counterIJ] = 0.0;
+	  m_Beta2MX_ij[counterIJ]   = beta2MX_coeff[0]
+	    + beta2MX_coeff[1]*tlin;
+	  m_Beta2MX_ij_L[counterIJ] = beta2MX_coeff[1];
+	  m_Beta2MX_ij_LL[counterIJ] = 0.0;
 	  m_CphiMX_ij [counterIJ]   = CphiMX_coeff[0]
 	    + CphiMX_coeff[1]*tlin;
 	  m_CphiMX_ij_L[counterIJ]  = CphiMX_coeff[1];
@@ -1819,6 +2138,12 @@ namespace Cantera {
 	    + beta1MX_coeff[3]*tinv
 	    + beta1MX_coeff[4]*tln;
 
+	  m_Beta2MX_ij[counterIJ] = beta2MX_coeff[0] 
+	    + beta2MX_coeff[1]*tlin
+	    + beta2MX_coeff[2]*tquad
+	    + beta2MX_coeff[3]*tinv
+	    + beta2MX_coeff[4]*tln;
+
 	  m_CphiMX_ij[counterIJ] = CphiMX_coeff[0] 
 	    + CphiMX_coeff[1]*tlin
 	    + CphiMX_coeff[2]*tquad
@@ -1835,6 +2160,10 @@ namespace Cantera {
 	    - beta1MX_coeff[3]/(T*T)
 	    + beta1MX_coeff[4]/T;
 
+	  m_Beta2MX_ij_L[counterIJ] =  beta2MX_coeff[1]
+	    + beta2MX_coeff[2]*2.0*T
+	    - beta2MX_coeff[3]/(T*T)
+	    + beta2MX_coeff[4]/T;
 
 	  m_CphiMX_ij_L[counterIJ] =  CphiMX_coeff[1]
 	    + CphiMX_coeff[2]*2.0*T
@@ -1853,6 +2182,11 @@ namespace Cantera {
 	      + 2.0*beta1MX_coeff[3]/(T*T*T)
 	      - beta1MX_coeff[4]/(T*T);
 		  
+	    m_Beta2MX_ij_LL[counterIJ] =
+	      + beta2MX_coeff[2]*2.0
+	      + 2.0*beta2MX_coeff[3]/(T*T*T)
+	      - beta2MX_coeff[4]/(T*T);
+
 	    m_CphiMX_ij_LL[counterIJ] = 
 	      + CphiMX_coeff[2]*2.0
 	      + 2.0*CphiMX_coeff[3]/(T*T*T)
@@ -1872,14 +2206,12 @@ namespace Cantera {
 #endif
 	  break;
 	}
-	    
-	   
-
       }
     }
 
   }
-  /**
+
+  /*
    * Calculate the Pitzer portion of the activity coefficients.
    *
    * This is the main routine in the whole module. It calculates the
@@ -1895,7 +2227,7 @@ namespace Cantera {
      */
     if (m_indexSolvent != 0) {
       printf("Wrong index solvent value!\n");
-      exit(-1);
+      std::exit(-1);
     }
 
 #ifdef DEBUG_MODE
@@ -1905,12 +2237,12 @@ namespace Cantera {
     }
 #endif
     double wateract;
-    string sni,  snj, snk; 
+    std::string sni,  snj, snk; 
 
     /*
-     * This is the molality of the species in solution. 
+     * Use the CROPPED molality of the species in solution. 
      */
-    const double *molality = DATA_PTR(m_molalities);
+    const double *molality = DATA_PTR(m_molalitiesCropped);
     /*
      * These are the charges of the species accessed from Constituents.h
      */
@@ -1951,7 +2283,7 @@ namespace Cantera {
      */
     double molalitysum = 0.0;
 
-    double *g        =  DATA_PTR(m_gfunc_IJ);
+    double *gfunc    =  DATA_PTR(m_gfunc_IJ);
     double *hfunc    =  DATA_PTR(m_hfunc_IJ);
     double *BMX      =  DATA_PTR(m_BMX_IJ);
     double *BprimeMX =  DATA_PTR(m_BprimeMX_IJ);
@@ -2066,17 +2398,17 @@ namespace Cantera {
 	   */
 	  x = sqrtIs * alphaMX[counterIJ];
 	  if (x > 1.0E-100) {
-	    g[counterIJ]     =  2.0*(1.0-(1.0 + x) * exp(-x)) / (x*x);
+	    gfunc[counterIJ]     =  2.0*(1.0-(1.0 + x) * exp(-x)) / (x*x);
 	    hfunc[counterIJ] = -2.0*
 	      (1.0-(1.0 + x + 0.5*x*x) * exp(-x)) / (x*x);
 	  }
 	  else {
-	    g[counterIJ]     = 0.0;
+	    gfunc[counterIJ]     = 0.0;
 	    hfunc[counterIJ] = 0.0;
 	  }
 	} 
 	else {
-	  g[counterIJ]     = 0.0;
+	  gfunc[counterIJ]     = 0.0;
 	  hfunc[counterIJ] = 0.0;
 	}
 #ifdef DEBUG_MODE
@@ -2125,6 +2457,7 @@ namespace Cantera {
 		   speciesName(j).c_str());
 	    printf("beta0MX[%d] = %g\n", counterIJ, beta0MX[counterIJ]);
 	    printf("beta1MX[%d] = %g\n", counterIJ, beta1MX[counterIJ]);
+	    printf("beta2MX[%d] = %g\n", counterIJ, beta2MX[counterIJ]);
 	  }
 	}
 #endif
@@ -2134,13 +2467,13 @@ namespace Cantera {
 	 */
 	if (charge[i]*charge[j] < 0.0) {	
 	  BMX[counterIJ]  = beta0MX[counterIJ]
-	    + beta1MX[counterIJ] * g[counterIJ]
+	    + beta1MX[counterIJ] * gfunc[counterIJ]
 	    + beta2MX[counterIJ] * g12rooti;
 #ifdef DEBUG_MODE
 	  if (m_debugCalc) {
-	    printf("%d %g: %g %g %g\n",
+	    printf("%d %g: %g %g %g %g\n",
 		   counterIJ,  BMX[counterIJ], beta0MX[counterIJ],
-		   beta1MX[counterIJ], g[counterIJ]);
+		   beta1MX[counterIJ], beta2MX[counterIJ], gfunc[counterIJ]);
 	  }
 #endif
 	  if (Is > 1.0E-150) {
@@ -2557,7 +2890,7 @@ namespace Cantera {
 	  if (j == (m_kk-1)) {
 	    // we should never reach this step
 	    printf("logic error 1 in Step 9 of hmw_act");
-	    exit(1);
+	    std::exit(1);
 	  }
 	  if (charge[k] > 0.0) {
 	    /*
@@ -2587,7 +2920,7 @@ namespace Cantera {
 	  if (j == m_kk-1) {
 	    // we should never reach this step
 	    printf("logic error 2 in Step 9 of hmw_act");
-	    exit(1);
+	    std::exit(1);
 	  }
 	  if (charge[k] < 0) {
 	    /*
@@ -2704,7 +3037,7 @@ namespace Cantera {
 
   /*************************************************************************************/
 
-  /**
+  /*
    * Calculate the Pitzer portion of the temperature
    * derivative of the log activity coefficients.
    * This is an internal routine.
@@ -2726,13 +3059,13 @@ namespace Cantera {
 #endif
     if (m_indexSolvent != 0) {
       printf("Wrong index solvent value!\n");
-      exit(-1);
+      std::exit(-1);
     }
 
     double d_wateract_dT;
-    string sni, snj, snk; 
+    std::string sni, snj, snk; 
 
-    const double *molality  =  DATA_PTR(m_molalities);
+    const double *molality  =  DATA_PTR(m_molalitiesCropped);
     const double *charge    =  DATA_PTR(m_speciesCharge);
     const double *beta0MX_L =  DATA_PTR(m_Beta0MX_ij_L);
     const double *beta1MX_L =  DATA_PTR(m_Beta1MX_ij_L);
@@ -2741,7 +3074,7 @@ namespace Cantera {
     const double *thetaij_L =  DATA_PTR(m_Theta_ij_L);
     const double *alphaMX   =  DATA_PTR(m_Alpha1MX_ij);
     const double *psi_ijk_L =  DATA_PTR(m_Psi_ijk_L);
-    double *gamma     =  DATA_PTR(m_gamma);
+    double *gamma           =  DATA_PTR(m_gamma);
     /*
      * Local variables defined by Coltrin
      */
@@ -2761,7 +3094,7 @@ namespace Cantera {
      */
     double molalitysum = 0.0;
 
-    double *g        =  DATA_PTR(m_gfunc_IJ);
+    double *gfunc    =  DATA_PTR(m_gfunc_IJ);
     double *hfunc    =  DATA_PTR(m_hfunc_IJ);
     double *BMX_L    =  DATA_PTR(m_BMX_IJ_L);
     double *BprimeMX_L= DATA_PTR(m_BprimeMX_IJ_L);
@@ -2876,17 +3209,17 @@ namespace Cantera {
 	   */
 	  x = sqrtIs * alphaMX[counterIJ];
 	  if (x > 1.0E-100) {
-	    g[counterIJ]     =  2.0*(1.0-(1.0 + x) * exp(-x)) / (x*x);
+	    gfunc[counterIJ]     =  2.0*(1.0-(1.0 + x) * exp(-x)) / (x*x);
 	    hfunc[counterIJ] = -2.0*
 	      (1.0-(1.0 + x + 0.5*x*x) * exp(-x)) / (x*x);
 	  }
 	  else {
-	    g[counterIJ]     = 0.0;
+	    gfunc[counterIJ]     = 0.0;
 	    hfunc[counterIJ] = 0.0;
 	  }
 	} 
 	else {
-	  g[counterIJ]     = 0.0;
+	  gfunc[counterIJ]     = 0.0;
 	  hfunc[counterIJ] = 0.0;
 	}
 #ifdef DEBUG_MODE
@@ -2894,7 +3227,7 @@ namespace Cantera {
 	  sni = speciesName(i);
 	  snj = speciesName(j);
 	  printf(" %-16s %-16s %9.5f %9.5f \n", sni.c_str(), snj.c_str(), 
-		 g[counterIJ], hfunc[counterIJ]);
+		 gfunc[counterIJ], hfunc[counterIJ]);
 	}
 #endif
       }
@@ -2934,13 +3267,13 @@ namespace Cantera {
 	 */
 	if (charge[i]*charge[j] < 0.0) {	
 	  BMX_L[counterIJ]  = beta0MX_L[counterIJ]
-	    + beta1MX_L[counterIJ] * g[counterIJ]
+	    + beta1MX_L[counterIJ] * gfunc[counterIJ]
 	    + beta2MX_L[counterIJ] * g12rooti;
 #ifdef DEBUG_MODE
 	  if (m_debugCalc) {
-	    printf("%d %g: %g %g %g\n",
+	    printf("%d %g: %g %g %g %g\n",
 		   counterIJ,  BMX_L[counterIJ], beta0MX_L[counterIJ],
-		   beta1MX_L[counterIJ], g[counterIJ]);
+		   beta1MX_L[counterIJ],  beta2MX_L[counterIJ], gfunc[counterIJ]);
 	  }
 #endif
 	  if (Is > 1.0E-150) {
@@ -3355,7 +3688,7 @@ namespace Cantera {
 	  if (j == (m_kk-1)) {
 	    // we should never reach this step
 	    printf("logic error 1 in Step 9 of hmw_act");
-	    exit(1);
+	    std::exit(1);
 	  }
 	  if (charge[k] > 0.0) {
 	    /*
@@ -3385,7 +3718,7 @@ namespace Cantera {
 	  if (j == m_kk-1) {
 	    // we should never reach this step
 	    printf("logic error 2 in Step 9 of hmw_act");
-	    exit(1);
+	    std::exit(1);
 	  }
 	  if (charge[k] < 0) {
 	    /*
@@ -3476,7 +3809,7 @@ namespace Cantera {
   /*************************************************************************************/
 
 
-  /**
+  /*
    * s_update_d2lnMolalityActCoeff_dT2()         (private, const )
    *
    *   Using internally stored values, this function calculates
@@ -3506,13 +3839,12 @@ namespace Cantera {
 #endif
     if (m_indexSolvent != 0) {
       printf("Wrong index solvent value!\n");
-      exit(-1);
+      std::exit(-1);
     }
 
-    double d2_wateract_dT2;
-    string sni, snj, snk; 
+    std::string sni, snj, snk; 
 
-    const double *molality  =  DATA_PTR(m_molalities);
+    const double *molality  =  DATA_PTR(m_molalitiesCropped);
     const double *charge    =  DATA_PTR(m_speciesCharge);
     const double *beta0MX_LL=  DATA_PTR(m_Beta0MX_ij_LL);
     const double *beta1MX_LL=  DATA_PTR(m_Beta1MX_ij_LL);
@@ -3541,7 +3873,7 @@ namespace Cantera {
      */
     double molalitysum = 0.0;
 
-    double *g        =  DATA_PTR(m_gfunc_IJ);
+    double *gfunc    =  DATA_PTR(m_gfunc_IJ);
     double *hfunc    =  DATA_PTR(m_hfunc_IJ);
     double *BMX_LL   =  DATA_PTR(m_BMX_IJ_LL);
     double *BprimeMX_LL=DATA_PTR(m_BprimeMX_IJ_LL);
@@ -3638,9 +3970,9 @@ namespace Cantera {
 	
     /*
      *
-     *  calculate g(x) and hfunc(x) for each cation-anion pair MX
+     *  calculate gfunc(x) and hfunc(x) for each cation-anion pair MX
      *   In the original literature, hfunc, was called gprime. However,
-     *   it's not the derivative of g(x), so I renamed it.
+     *   it's not the derivative of gfunc(x), so I renamed it.
      */
     for (i = 1; i < (m_kk - 1); i++) {
       for (j = (i+1); j < m_kk; j++) {
@@ -3658,17 +3990,17 @@ namespace Cantera {
 	   */
 	  x = sqrtIs * alphaMX[counterIJ];
 	  if (x > 1.0E-100) {
-	    g[counterIJ]     =  2.0*(1.0-(1.0 + x) * exp(-x)) / (x*x);
+	    gfunc[counterIJ] =  2.0*(1.0-(1.0 + x) * exp(-x)) / (x*x);
 	    hfunc[counterIJ] = -2.0*
 	      (1.0-(1.0 + x + 0.5*x*x) * exp(-x)) / (x*x);
 	  }
 	  else {
-	    g[counterIJ]     = 0.0;
+	    gfunc[counterIJ] = 0.0;
 	    hfunc[counterIJ] = 0.0;
 	  }
 	} 
 	else {
-	  g[counterIJ]     = 0.0;
+	  gfunc[counterIJ] = 0.0;
 	  hfunc[counterIJ] = 0.0;
 	}
 #ifdef DEBUG_MODE
@@ -3676,7 +4008,7 @@ namespace Cantera {
 	  sni = speciesName(i);
 	  snj = speciesName(j);
 	  printf(" %-16s %-16s %9.5f %9.5f \n", sni.c_str(), snj.c_str(), 
-		 g[counterIJ], hfunc[counterIJ]);
+		 gfunc[counterIJ], hfunc[counterIJ]);
 	}
 #endif
       }
@@ -3715,13 +4047,13 @@ namespace Cantera {
 	 */
 	if (charge[i]*charge[j] < 0.0) {
 	  BMX_LL[counterIJ]  = beta0MX_LL[counterIJ]
-	    + beta1MX_LL[counterIJ] * g[counterIJ]
+	    + beta1MX_LL[counterIJ] * gfunc[counterIJ]
 	    + beta2MX_LL[counterIJ] * g12rooti;
 #ifdef DEBUG_MODE
 	  if (m_debugCalc) {
-	    printf("%d %g: %g %g %g\n",
+	    printf("%d %g: %g %g %g %g\n",
 		   counterIJ,  BMX_LL[counterIJ], beta0MX_LL[counterIJ],
-		   beta1MX_LL[counterIJ], g[counterIJ]);
+		   beta1MX_LL[counterIJ], beta2MX_LL[counterIJ], g[counterIJ]);
 	  }
 #endif
 	  if (Is > 1.0E-150) {
@@ -4143,7 +4475,7 @@ namespace Cantera {
 	  if (j == (m_kk-1)) {
 	    // we should never reach this step
 	    printf("logic error 1 in Step 9 of hmw_act");
-	    exit(1);
+	    std::exit(1);
 	  }
 	  if (charge[k] > 0.0) {
 	    /*
@@ -4173,7 +4505,7 @@ namespace Cantera {
 	  if (j == m_kk-1) {
 	    // we should never reach this step
 	    printf("logic error 2 in Step 9 of hmw_act");
-	    exit(1);
+	    std::exit(1);
 	  }
 	  if (charge[k] < 0) {
 	    /*
@@ -4263,7 +4595,7 @@ namespace Cantera {
 
   /********************************************************************************************/
 
-  /**
+  /*
    * s_Pitzer_dlnMolalityActCoeff_dP()         (private, const )
    *
    *   Using internally stored values, this function calculates
@@ -4283,7 +4615,7 @@ namespace Cantera {
     s_update_dlnMolalityActCoeff_dP();
   }
 
-  /**
+  /*
    * s_update_dlnMolalityActCoeff_dP()         (private, const )
    *
    *   Using internally stored values, this function calculates
@@ -4313,13 +4645,13 @@ namespace Cantera {
 #endif
     if (m_indexSolvent != 0) {
       printf("Wrong index solvent value!\n");
-      exit(-1);
+      std::exit(-1);
     }
 
     double d_wateract_dP;
-    string sni, snj, snk; 
+    std::string sni, snj, snk; 
 
-    const double *molality  =  DATA_PTR(m_molalities);
+    const double *molality  =  DATA_PTR(m_molalitiesCropped);
     const double *charge    =  DATA_PTR(m_speciesCharge);
     const double *beta0MX_P =  DATA_PTR(m_Beta0MX_ij_P);
     const double *beta1MX_P =  DATA_PTR(m_Beta1MX_ij_P);
@@ -4348,7 +4680,7 @@ namespace Cantera {
      */
     double molalitysum = 0.0;
 
-    double *g        =  DATA_PTR(m_gfunc_IJ);
+    double *gfunc        =  DATA_PTR(m_gfunc_IJ);
     double *hfunc    =  DATA_PTR(m_hfunc_IJ);
     double *BMX_P    =  DATA_PTR(m_BMX_IJ_P);
     double *BprimeMX_P= DATA_PTR(m_BprimeMX_IJ_P);
@@ -4468,17 +4800,17 @@ namespace Cantera {
 	   */
 	  x = sqrtIs * alphaMX[counterIJ];
 	  if (x > 1.0E-100) {
-	    g[counterIJ]     =  2.0*(1.0-(1.0 + x) * exp(-x)) / (x*x);
+	    gfunc[counterIJ]     =  2.0*(1.0-(1.0 + x) * exp(-x)) / (x*x);
 	    hfunc[counterIJ] = -2.0*
 	      (1.0-(1.0 + x + 0.5*x*x) * exp(-x)) / (x*x);
 	  }
 	  else {
-	    g[counterIJ]     = 0.0;
+	    gfunc[counterIJ]     = 0.0;
 	    hfunc[counterIJ] = 0.0;
 	  }
 	} 
 	else {
-	  g[counterIJ]     = 0.0;
+	  gfunc[counterIJ]     = 0.0;
 	  hfunc[counterIJ] = 0.0;
 	}
 #ifdef DEBUG_MODE
@@ -4486,7 +4818,7 @@ namespace Cantera {
 	  sni = speciesName(i);
 	  snj = speciesName(j);
 	  printf(" %-16s %-16s %9.5f %9.5f \n", sni.c_str(), snj.c_str(), 
-		 g[counterIJ], hfunc[counterIJ]);
+		 gfunc[counterIJ], hfunc[counterIJ]);
 	}
 #endif
       }
@@ -4527,13 +4859,13 @@ namespace Cantera {
 	 */
 	if (charge[i]*charge[j] < 0.0) {	
 	  BMX_P[counterIJ]  = beta0MX_P[counterIJ]
-	    + beta1MX_P[counterIJ] * g[counterIJ]
+	    + beta1MX_P[counterIJ] * gfunc[counterIJ]
 	    + beta2MX_P[counterIJ] * g12rooti;
 #ifdef DEBUG_MODE
 	  if (m_debugCalc) {
 	    printf("%d %g: %g %g %g\n",
 		   counterIJ,  BMX_P[counterIJ], beta0MX_P[counterIJ],
-		   beta1MX_P[counterIJ], g[counterIJ]);
+		   beta1MX_P[counterIJ], beta2MX_P[counterIJ], g[counterIJ]);
 	  }
 #endif
 	  if (Is > 1.0E-150) {
@@ -4953,7 +5285,7 @@ namespace Cantera {
 	  if (j == (m_kk-1)) {
 	    // we should never reach this step
 	    printf("logic error 1 in Step 9 of hmw_act");
-	    exit(1);
+	    std::exit(1);
 	  }
 	  if (charge[k] > 0.0) {
 	    /*
@@ -4984,7 +5316,7 @@ namespace Cantera {
 	  if (j == m_kk-1) {
 	    // we should never reach this step
 	    printf("logic error 2 in Step 9 of hmw_act");
-	    exit(1);
+	    std::exit(1);
 	  }
 	  if (charge[k] < 0) {
 	    /*
@@ -5171,13 +5503,13 @@ namespace Cantera {
 #ifdef DEBUG_MODE
     if (i > 4 || j > 4) {
       printf("we shouldn't be here\n");
-      exit(-1);
+      std::exit(-1);
     }
 #endif
 
     if ((i == 0) || (j == 0)) {
       printf("ERROR calc_thetas called with one species being neutral\n");
-      exit(-1);
+      std::exit(-1);
     }
 
     /*
@@ -5205,10 +5537,10 @@ namespace Cantera {
    */
   void HMWSoln::printCoeffs() const {
     int i, j, k;
-    string sni, snj;
+    std::string sni, snj;
     calcMolalities();
     const double *charge = DATA_PTR(m_speciesCharge);
-    double *molality = DATA_PTR(m_molalities);
+    double *molality = DATA_PTR(m_molalitiesCropped);
     double *moleF = DATA_PTR(m_tmpV);
     /*
      * Update the coefficients wrt Temperature
@@ -5217,7 +5549,7 @@ namespace Cantera {
     s_updatePitzerCoeffWRTemp(2);
     getMoleFractions(moleF);
 
-    printf("Index  Name                  MoleF      Molality      Charge\n");
+    printf("Index  Name                  MoleF   MolalityCropped  Charge\n");
     for (k = 0; k < m_kk; k++) {
       sni = speciesName(k);
       printf("%2d     %-16s %14.7le %14.7le %5.1f \n",
@@ -5249,7 +5581,7 @@ namespace Cantera {
       for (j = 1; j < m_kk; j++) {
 	snj = speciesName(j);
 	for (k = 1; k < m_kk; k++) {
-	  string snk = speciesName(k);
+	  std::string snk = speciesName(k);
 	  int n = k + j * m_kk + i * m_kk * m_kk;
 	  if (m_Psi_ijk[n] != 0.0) {
 	    printf(" %-16s %-16s %-16s %9.5f \n",
@@ -5261,6 +5593,13 @@ namespace Cantera {
     }
   }
 
+  int HMWSoln::debugPrinting() {
+#ifdef DEBUG_MODE
+   return m_debugCalc;
+#else
+   return 0;
+#endif
+  }
  
   /*****************************************************************************/
 }

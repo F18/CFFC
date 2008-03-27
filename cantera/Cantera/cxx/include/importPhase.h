@@ -4,14 +4,17 @@
 #include <string>
 
 #include "kernel/ThermoPhase.h"
-#include "kernel/importCTML.h"
+#include "kernel/ThermoFactory.h"
 
+/*
+ * The Definitions for these functions are all located in 
+ * libctxx.a
+ */
 namespace Cantera {
+   ThermoPhase* importPhase(std::string infile, std::string id="");
 
-    ThermoPhase* importPhase(string infile, string id="") {
-        ThermoPhase* p = newPhase(infile, id);
-        return p;
-    }
+   std::string report(const ThermoPhase& th, bool show_thermo);
+   std::string formatCompList(const Phase& mix, int xyc);
 }
 
 

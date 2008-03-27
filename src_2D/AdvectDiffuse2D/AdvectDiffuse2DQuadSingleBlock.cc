@@ -834,12 +834,12 @@ void Output_Tecplot(AdvectDiffuse2D_Quad_Block &SolnBlk,
 	     << "VARIABLES = \"x\" \\ \n"
 	     << "\"y\" \\ \n"
 	     << "\"u\" \\ \n"
-	     << "\"Vx\" \n"
-	     << "\"Vy\" \n"
-	     << "\"k\" \n"
-	     << "\"s\" \n";
+	     << "\"Vx\" \\ \n"
+	     << "\"Vy\" \\ \n"
+	     << "\"k\" \\ \n"
+	     << "\"s\" \\ \n";
     if (SolnBlk.ExactSoln->IsExactSolutionSet()){
-      Out_File << "\"ExactSoln\" \n";
+      Out_File << "\"ExactSoln\" \\ \n";
     }
  
     Out_File << "ZONE T =  \"Block Number = " << Block_Number
@@ -905,10 +905,10 @@ void Output_Cells_Tecplot(AdvectDiffuse2D_Quad_Block &SolnBlk,
 	     << "\"u\" \\ \n"
 	     << "\"Vx\" \\ \n"
 	     << "\"Vy\" \\ \n"
-	     << "\"k\" \n"
-	     << "\"s\" \n";
+	     << "\"k\" \\ \n"
+	     << "\"s\" \\ \n";
     if (SolnBlk.ExactSoln->IsExactSolutionSet()){
-      Out_File << "\"ExactSoln\" \n";
+      Out_File << "\"ExactSoln\" \\ \n";
     }
     Out_File << "ZONE T =  \"Block Number = " << Block_Number
 	     << "\" \\ \n"
@@ -1393,7 +1393,7 @@ void BCs(AdvectDiffuse2D_Quad_Block &SolnBlk,
 	  }
 	  break;
 	} /* endswitch */
-    } /* endif */
+      } /* endif */
   } /* endfor */
 
 
@@ -2773,16 +2773,13 @@ void Fix_Refined_Block_Boundaries(AdvectDiffuse2D_Quad_Block &SolnBlk,
     } /* endfor */
   } /* endif */
 
-    /* Reset the boundary condition types at the block boundaries. */
- 
+  /* Reset the boundary condition types at the block boundaries. */
   Set_BCs(SolnBlk.Grid);
 
   /* Recompute the exterior nodes for the block quadrilateral mesh. */
-
   Update_Exterior_Nodes(SolnBlk.Grid);
 
   /* Recompute the cells for the block quadrilateral mesh. */
-
   Update_Cells(SolnBlk.Grid);
 
 }
@@ -2892,16 +2889,13 @@ void Unfix_Refined_Block_Boundaries(AdvectDiffuse2D_Quad_Block &SolnBlk) {
     } /* endfor */
   } /* endif */
 
-    /* Reset the boundary condition types at the block boundaries. */
- 
+  /* Reset the boundary condition types at the block boundaries. */
   Set_BCs(SolnBlk.Grid);
 
   /* Recompute the exterior nodes for the block quadrilateral mesh. */
-
   Update_Exterior_Nodes(SolnBlk.Grid);
 
   /* Recompute the cells for the block quadrilateral mesh. */
-
   Update_Cells(SolnBlk.Grid);
 
 }

@@ -14,21 +14,21 @@ module cantera_thermo
   end type phase_t
 
 ! these definitions are for use with the equilibrate function.
-  integer, parameter :: TV = 100
-  integer, parameter :: HP = 101
-  integer, parameter :: SP = 102
-  integer, parameter :: PV = 103
-  integer, parameter :: TP = 104
-  integer, parameter :: UV = 105
-  integer, parameter :: SV = 107
+!  integer, parameter :: TV = 100
+!  integer, parameter :: HP = 101
+!  integer, parameter :: SP = 102
+!  integer, parameter :: PV = 103
+!  integer, parameter :: TP = 104
+!  integer, parameter :: UV = 105
+!  integer, parameter :: SV = 107
 
-  integer, parameter :: VT = -100
-  integer, parameter :: PH = -101
-  integer, parameter :: PS = -102
-  integer, parameter :: VP = -103
-  integer, parameter :: PT = -104
-  integer, parameter :: VU = -105
-  integer, parameter :: VS = -107
+!  integer, parameter :: VT = -100
+!  integer, parameter :: PH = -101
+!  integer, parameter :: PS = -102
+!  integer, parameter :: VP = -103
+!  integer, parameter :: PT = -104
+!  integer, parameter :: VU = -105
+!  integer, parameter :: VS = -107
 
 contains
 
@@ -46,11 +46,20 @@ contains
          self%nsp = phase_nspecies(self%thermo_id)
          self%nrxn = 0
          self%err = 0
+         self%kin_id = -1
+         self%tran_id = -1
       else
          call cantera_error('newThermoPhase','xml_phase or id must be specified.')
       end if
       newThermoPhase = self
     end function newThermoPhase
+
+    subroutine ctthermo_getName(self, name)
+      implicit none
+      type(phase_t), intent(inout) :: self
+      character*(*), intent(out) :: name
+      call phase_getname(self%thermo_id, name)
+    end subroutine ctthermo_getName
 
     integer function ctthermo_nElements(self)
       implicit none
@@ -402,7 +411,7 @@ contains
     subroutine ctthermo_equilibrate(self, XY)
       implicit none
       type(phase_t), intent(inout) :: self
-      integer, intent(in) :: XY
+      character*(*), intent(in) :: XY
       self%err = th_equil(self%thermo_id, XY)
     end subroutine ctthermo_equilibrate
 

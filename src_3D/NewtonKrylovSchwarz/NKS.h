@@ -385,7 +385,7 @@ Solve(){
       /**************************************************************************/
       // Error Checking 
       error_flag = CFFC_OR_MPI(error_flag);
-      if (error_flag) { break; } 
+      if (error_flag) { cerr<<"CFFC MPI ERROR"; cout.flush(); break; } 
       /**************************************************************************/
 
       /**************************************************************************/
@@ -412,10 +412,11 @@ Solve(){
     error_flag = Steady_Solve(Data->Time, DTS_Step);
   }
  
-  if (!Data->batch_flag){
+  if (CFFC_Primary_MPI_Processor() && !Data->batch_flag){
     cout << "\n\n NKS computations complete on " << Date_And_Time() << ".\n"; cout.flush();
   }
-
+  error_flag = CFFC_OR_MPI(error_flag); 
+  
   /**************************************************************************/  
   return CFFC_OR_MPI(error_flag); 
 }
@@ -669,26 +670,26 @@ Steady_Solve(const double &physical_time,const int &DTS_Step){
 
       }
       /**************************************************************************/
-
-      
       /**************************************************************************/
       /************* LINEAR SYSTEM SOLVE WITH GMRES  ****************************/      
       /**************************************************************************/
       /* Solve system with right-preconditioned matrix free GMRES */  
-      error_flag = GMRES.solve(Block_precon);
-      if (CFFC_Primary_MPI_Processor() && error_flag) cout << "\n NKS2D: Error in GMRES \n";
+      error_flag = GMRES.solve(Block_precon);      
+      
+      error_flag = CFFC_OR_MPI(error_flag);
+      if (CFFC_Primary_MPI_Processor() && error_flag){ cout << "\n NKS2D: Error in GMRES \n";}
+      if (error_flag) return (error_flag);
 
       GMRES_All_Iters[Number_of_Newton_Steps-1] = GMRES.GMRES_Iterations();
       /**************************************************************************/      
- 
-
       /**************************************************************************/      
       // Solution Update U = Uo + GMRES.deltaU
       error_flag = Newton_Update();      
-      if (CFFC_Primary_MPI_Processor() && error_flag) cout <<  "\n NKS2D: Error in Solution Update \n";
-      /**************************************************************************/
-      
+      error_flag = CFFC_OR_MPI(error_flag);
+      if (CFFC_Primary_MPI_Processor() && error_flag) { cout <<  "\n NKS2D: Error in Solution Update \n"; }      
+      if (error_flag) return (error_flag);
 
+      /**************************************************************************/
       /**************************************************************************/
       /* Exchange solution information between neighbouring blocks. */    
       error_flag = Send_Messages(Solution_Data->Local_Solution_Blocks.Soln_Blks,

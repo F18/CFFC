@@ -9,8 +9,8 @@
 
 /*
  *  $Author: dggoodwin $
- *  $Date: 2006/04/28 17:22:24 $
- *  $Revision: 1.8 $
+ *  $Date: 2007/05/04 14:41:28 $
+ *  $Revision: 1.10 $
  *
  *  Copyright 2003 California Institute of Technology
  *  See file License.txt for licensing information
@@ -24,8 +24,10 @@
 #pragma warning(disable:4503)
 #endif
 
-#include "../ThermoPhase.h"
+#include "ThermoPhase.h"
 #include "DustyGasTransport.h"
+
+using namespace std;
 
 /** 
  * Mole fractions below MIN_X will be set to MIN_X when computing
@@ -120,9 +122,9 @@ namespace Cantera {
     void DustyGasTransport::updateKnudsenDiffCoeffs() {
         if (m_knudsen_ok) return;
         doublereal K_g = m_pore_radius * m_porosity / m_tortuosity;
-        const doublereal FourThirds = 4.0/3.0;
+        const doublereal TwoThirds = 2.0/3.0;
         for (int k = 0; k < m_nsp; k++) {
-            m_dk[k] = FourThirds * K_g * sqrt((8.0 * GasConstant * m_temp)/
+            m_dk[k] = TwoThirds * K_g * sqrt((8.0 * GasConstant * m_temp)/
                 (Pi * m_mw[k]));
         }
         m_knudsen_ok = true;

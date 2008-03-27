@@ -170,7 +170,7 @@ int Read_QuadTree(QuadTreeBlock_DataStructure &QuadTree,
                   Quad_Soln_Input_Parameters  &Input_Parameters) {
 
     int i, nri, nrj, ncpu, nblk;
-    int iBLK, jBLK, iCPU;
+    int iBLK, jBLK;
     char quadtree_file_name[256];
     char *quadtree_file_name_ptr;
     ifstream quadtree_file;    
@@ -484,11 +484,6 @@ void Flag_Blocks_For_Refinement(Quad_Soln_Block             *Soln_ptr,
                          Local_Soln_Block_List.RefineFlag[i_blk] == ADAPTIVEBLOCK2D_NOCHANGE)) {
                 Local_Soln_Block_List.RefineFlag[i_blk] = ADAPTIVEBLOCK2D_COARSEN;
              } /* endif */
-/*              cout << "REFINEMENT CRITERIA: " << i_blk << " " << i_criteria << " "  */
-/*                   << local_block_refinement_criteria[i_blk][i_criteria] << " " */
-/*                   << global_min_refinement_criteria[i_criteria] << " " << global_max_refinement_criteria[i_criteria] */
-/*                   << " " << threshold_refinement[i_criteria] << " " << threshold_coarsening[i_criteria] */
-/*                   << " " << Local_Soln_Block_List.RefineFlag[i_blk] << "\n"; */
           } /* endfor */
        } /* endif */
     }  /* endfor */
@@ -637,12 +632,14 @@ int Refine_Grid(Quad_Soln_Block             *Soln_ptr,
                            LocalSolnBlockList.Block[new_blocks_BLK[iNEW]].info.level = 
                               quadtree_block_to_be_refined_ptr->block.info.level + 1;
 	   
-                           if ( (solution_block_to_be_refined.NCi-4-
-                                 2*((solution_block_to_be_refined.NCi-4)/2) != 0) || 
-                                (solution_block_to_be_refined.NCj-4-
-                                 2*((solution_block_to_be_refined.NCj-4)/2) != 0) ||
-                                (solution_block_to_be_refined.NCi-4 < 4) ||
-                                (solution_block_to_be_refined.NCj-4 < 4) ||
+                           if ( (solution_block_to_be_refined.NCi-2*solution_block_to_be_refined.Nghost-
+                                 2*((solution_block_to_be_refined.NCi-2*solution_block_to_be_refined.Nghost)/2) != 0) ||
+                                (solution_block_to_be_refined.NCj-2*solution_block_to_be_refined.Nghost-
+                                 2*((solution_block_to_be_refined.NCj-2*solution_block_to_be_refined.Nghost)/2) != 0) ||
+                                (solution_block_to_be_refined.NCi-2*solution_block_to_be_refined.Nghost <
+                                 2*solution_block_to_be_refined.Nghost) ||
+                                (solution_block_to_be_refined.NCj-2*solution_block_to_be_refined.Nghost <
+                                 2*solution_block_to_be_refined.Nghost) ||
                                 (solution_block_to_be_refined.Grid.Node == NULL) ) {
                               cout << "\n " << CFFC_Version() 
                                    << " AMR Error: Refine_Grid, Cannot refine mesh.\n";
@@ -652,47 +649,19 @@ int Refine_Grid(Quad_Soln_Block             *Soln_ptr,
                            if (Soln_ptr[new_blocks_BLK[iNEW]].U != NULL) 
                              Soln_ptr[new_blocks_BLK[iNEW]].deallocate();
                            Soln_ptr[new_blocks_BLK[iNEW]].allocate(
-                                       solution_block_to_be_refined.NCi-4,
-                                       solution_block_to_be_refined.NCj-4,
+                                       solution_block_to_be_refined.NCi-2*solution_block_to_be_refined.Nghost,
+                                       solution_block_to_be_refined.NCj-2*solution_block_to_be_refined.Nghost,
                                        solution_block_to_be_refined.Nghost);
                            Refine_Mesh(Soln_ptr[new_blocks_BLK[iNEW]].Grid,
                                        solution_block_to_be_refined.Grid,
                                        new_blocks_SECTOR[iNEW]);
-// 			   if (InputParameters.i_Smooth_Quad_Block &&
-// 			       !(InputParameters.i_Grid == GRID_ROCKET_MOTOR &&
-// 				 Soln_ptr[new_blocks_BLK[iNEW]].Grid.Node[3][2].X.x < ZERO)) {
-// 			     Smooth_Quad_Block(Soln_ptr[new_blocks_BLK[iNEW]].Grid,
-// 					       min(250, 4*max(solution_block_to_be_refined.NCi-4,
-// 							      solution_block_to_be_refined.NCj-4)));
-// 			   }
 			   if (InputParameters.i_Smooth_Quad_Block) {
-			     //if (InputParameters.i_Grid == GRID_ROCKET_MOTOR) {
-			     //dimensions = 2*QuadTree.getBlockIndices(quadtree_block_to_be_refined_ptr);
-			     //dimensions.i += LocalSolnBlockList.Block[new_blocks_BLK[iNEW]].info.sector%2;
-			     //dimensions.j += LocalSolnBlockList.Block[new_blocks_BLK[iNEW]].info.sector/2;
-			     //Smooth_Rocket_Motor(Soln_ptr[new_blocks_BLK[iNEW]].Grid,
-			     //		   InputParameters.Chamber_Length,
-			     //		   InputParameters.Chamber_Radius,
-			     //		   InputParameters.Chamber_To_Throat_Length,
-			     //		   InputParameters.Nozzle_Length,
-			     //		   InputParameters.Nozzle_Radius_Exit,
-			     //		   InputParameters.Nozzle_Radius_Throat,
-			     //		   InputParameters.Grain_Radius,
-			     //		   InputParameters.Nozzle_Type,
-			     //		   InputParameters.Mesh_Stretching_Factor_Idir,
-			     //		   InputParameters.Mesh_Stretching_Factor_Jdir,
-			     //		   LocalSolnBlockList.Block[new_blocks_BLK[iNEW]].info.sector,
-			     //		   LocalSolnBlockList.Block[new_blocks_BLK[iNEW]].info.level,
-			     //		   dimensions.i,dimensions.j,
-			     //		   root_indices.i,root_indices.j,
-			     //		   QuadTree.NRi,QuadTree.NRj);
-			     //} else {
-			       Smooth_Quad_Block(Soln_ptr[new_blocks_BLK[iNEW]].Grid,
-						 min(250, 4*max(solution_block_to_be_refined.NCi-4,
-								solution_block_to_be_refined.NCi-4)));
-			       //}
-			   }
-                           if (Check_Quad_Block(Soln_ptr[new_blocks_BLK[iNEW]].Grid)) { 
+                               Smooth_Quad_Block(Soln_ptr[new_blocks_BLK[iNEW]].Grid,
+                                                 min(250,
+						 4*max(solution_block_to_be_refined.NCi-2*solution_block_to_be_refined.Nghost,
+						       solution_block_to_be_refined.NCj-2*solution_block_to_be_refined.Nghost)));
+			   } /* endif */
+                           if (Soln_ptr[new_blocks_BLK[iNEW]].Grid.Check_Quad_Block()) { 
                               cout << "\n " << CFFC_Version() 
                                    << " AMR Error: Refine_Grid, Invalid refined mesh.\n";
                               return(6322);
@@ -701,42 +670,6 @@ int Refine_Grid(Quad_Soln_Block             *Soln_ptr,
 							       solution_block_to_be_refined,
 							       new_blocks_SECTOR[iNEW]);
 			   if (error_flag) return error_flag;
-
-/*                            if ( (solution_block_to_be_refined.NCi-2*solution_block_to_be_refined.Nghost- */
-/*                                  2*((solution_block_to_be_refined.NCi-2*solution_block_to_be_refined.Nghost)/2) != 0) ||  */
-/*                                 (solution_block_to_be_refined.NCj-2*solution_block_to_be_refined.Nghost- */
-/*                                  2*((solution_block_to_be_refined.NCj-2*solution_block_to_be_refined.Nghost)/2) != 0) || */
-/*                                 (solution_block_to_be_refined.NCi-2*solution_block_to_be_refined.Nghost < */
-/*                                  2*solution_block_to_be_refined.Nghost) || */
-/*                                 (solution_block_to_be_refined.NCj-2*solution_block_to_be_refined.Nghost < */
-/*                                  2*solution_block_to_be_refined.Nghost) || */
-/*                                 (solution_block_to_be_refined.Grid.Node == NULL) ) { */
-/*                               cout << "\n " << CFFC_Version()  */
-/*                                    << " AMR Error: Refine_Grid, Cannot refine mesh.\n"; */
-/*                               return(1); */
-/*                            } /\* endif *\/ */
-	   
-/*                            if (Soln_ptr[new_blocks_BLK[iNEW]].U != NULL)  */
-/*                              Soln_ptr[new_blocks_BLK[iNEW]].deallocate(); */
-/*                            Soln_ptr[new_blocks_BLK[iNEW]].allocate( */
-/*                                        solution_block_to_be_refined.NCi-2*solution_block_to_be_refined.Nghost, */
-/*                                        solution_block_to_be_refined.NCj-2*solution_block_to_be_refined.Nghost, */
-/*                                        2*solution_block_to_be_refined.Nghost,InputParameters.i_Time_Integration); */
-/*                            Refine_Mesh(Soln_ptr[new_blocks_BLK[iNEW]].Grid, */
-/*                                        solution_block_to_be_refined.Grid, */
-/*                                        new_blocks_SECTOR[iNEW]);  */
-/*                            Smooth_Quad_Block(Soln_ptr[new_blocks_BLK[iNEW]].Grid, */
-/*      	                                     min(250, 4*max( */
-/*                                              solution_block_to_be_refined.NCi-2*solution_block_to_be_refined.Nghost, */
-/*                                              solution_block_to_be_refined.NCi-2*solution_block_to_be_refined.Nghost))); */
-/*                            if (Check_Quad_Block(Soln_ptr[new_blocks_BLK[iNEW]].Grid)) {  */
-/*                               cout << "\n " << CFFC_Version()  */
-/*                                    << " AMR Error: Refine_Grid, Invalid refined mesh.\n"; */
-/*                               return(1); */
-/*                            } /\* endif *\/ */
-/*                            Prolong_Solution_Block(Soln_ptr[new_blocks_BLK[iNEW]], */
-/*                                                   solution_block_to_be_refined, */
-/*                                                   new_blocks_SECTOR[iNEW]); */	   
                         } /* endif */
                      } /* endfor */
                   } /* endif */
@@ -960,48 +893,80 @@ int Coarsen_Grid(Quad_Soln_Block             *Soln_ptr,
                                   LocalSolnBlockList.Block[old_blocks_BLK[0]].info.level = 
                                      QuadTree.Blocks[old_blocks_CPU[0]][old_blocks_BLK[0]]->block.info.level - 1;
 	   
-                                  if ( (solution_block_to_be_coarsened_SW_sibling.NCi-4-
-                                        2*((solution_block_to_be_coarsened_SW_sibling.NCi-4)/2) != 0) ||
-                                       (solution_block_to_be_coarsened_SW_sibling.NCj-4-
-                                        2*((solution_block_to_be_coarsened_SW_sibling.NCj-4)/2) != 0) ||
-                                       (solution_block_to_be_coarsened_SW_sibling.NCi-4 < 4) ||
-                                       (solution_block_to_be_coarsened_SW_sibling.NCj-4 < 4) ||
+                                  if ( (solution_block_to_be_coarsened_SW_sibling.NCi-
+					2*solution_block_to_be_coarsened_SW_sibling.Nghost-
+                                        2*((solution_block_to_be_coarsened_SW_sibling.NCi-
+					    2*solution_block_to_be_coarsened_SW_sibling.Nghost)/2) != 0) ||
+                                       (solution_block_to_be_coarsened_SW_sibling.NCj-
+					2*solution_block_to_be_coarsened_SW_sibling.Nghost-
+                                        2*((solution_block_to_be_coarsened_SW_sibling.NCj-
+					    2*solution_block_to_be_coarsened_SW_sibling.Nghost)/2) != 0) ||
+                                       (solution_block_to_be_coarsened_SW_sibling.NCi-
+					2*solution_block_to_be_coarsened_SW_sibling.Nghost < 
+                                        2*solution_block_to_be_coarsened_SW_sibling.Nghost) ||
+                                       (solution_block_to_be_coarsened_SW_sibling.NCj-
+					2*solution_block_to_be_coarsened_SW_sibling.Nghost < 
+                                        2*solution_block_to_be_coarsened_SW_sibling.Nghost) ||
                                        (solution_block_to_be_coarsened_SW_sibling.Grid.Node == NULL) ) {
                                      cout << "\n " << CFFC_Version()
                                           << " AMR Error: Coarsen_Grid, Cannot coarsen south-west mesh.\n";
                                      return(7480);
                                   } /* endif */
 
-                                  if ( (solution_block_to_be_coarsened_SE_sibling.NCi-4-
-                                        2*((solution_block_to_be_coarsened_SE_sibling.NCi-4)/2) != 0) ||
-                                       (solution_block_to_be_coarsened_SE_sibling.NCj-4-
-                                        2*((solution_block_to_be_coarsened_SE_sibling.NCj-4)/2) != 0) ||
-                                       (solution_block_to_be_coarsened_SE_sibling.NCi-4 < 4) ||
-                                       (solution_block_to_be_coarsened_SE_sibling.NCj-4 < 4) ||
+                                  if ( (solution_block_to_be_coarsened_SE_sibling.NCi-
+					2*solution_block_to_be_coarsened_SE_sibling.Nghost-
+                                        2*((solution_block_to_be_coarsened_SE_sibling.NCi-
+					    2*solution_block_to_be_coarsened_SE_sibling.Nghost)/2) != 0) ||
+                                       (solution_block_to_be_coarsened_SE_sibling.NCj-
+					2*solution_block_to_be_coarsened_SE_sibling.Nghost-
+                                        2*((solution_block_to_be_coarsened_SE_sibling.NCj-
+					    2*solution_block_to_be_coarsened_SE_sibling.Nghost)/2) != 0) ||
+                                       (solution_block_to_be_coarsened_SE_sibling.NCi-
+					2*solution_block_to_be_coarsened_SE_sibling.Nghost < 
+                                        2*solution_block_to_be_coarsened_SE_sibling.Nghost) ||
+                                       (solution_block_to_be_coarsened_SE_sibling.NCj-
+					2*solution_block_to_be_coarsened_SE_sibling.Nghost < 
+                                        2*solution_block_to_be_coarsened_SE_sibling.Nghost) ||
                                        (solution_block_to_be_coarsened_SE_sibling.Grid.Node == NULL) ) {
                                      cout << "\n " << CFFC_Version()
                                           << " AMR Error: Coarsen_Grid, Cannot coarsen south-east mesh.\n";
                                      return(7481);
                                   } /* endif */
 
-                                  if ( (solution_block_to_be_coarsened_NW_sibling.NCi-4-
-                                        2*((solution_block_to_be_coarsened_NW_sibling.NCi-4)/2) != 0) ||
-                                       (solution_block_to_be_coarsened_NW_sibling.NCj-4-
-                                        2*((solution_block_to_be_coarsened_NW_sibling.NCj-4)/2) != 0) ||
-                                       (solution_block_to_be_coarsened_NW_sibling.NCi-4 < 4) ||
-                                       (solution_block_to_be_coarsened_NW_sibling.NCj-4 < 4) ||
+                                  if ( (solution_block_to_be_coarsened_NW_sibling.NCi-
+					2*solution_block_to_be_coarsened_NW_sibling.Nghost-
+                                        2*((solution_block_to_be_coarsened_NW_sibling.NCi-
+					    2*solution_block_to_be_coarsened_NW_sibling.Nghost)/2) != 0) ||
+                                       (solution_block_to_be_coarsened_NW_sibling.NCj-
+					2*solution_block_to_be_coarsened_NW_sibling.Nghost-
+                                        2*((solution_block_to_be_coarsened_NW_sibling.NCj-
+					    2*solution_block_to_be_coarsened_NW_sibling.Nghost)/2) != 0) ||
+                                       (solution_block_to_be_coarsened_NW_sibling.NCi-
+					2*solution_block_to_be_coarsened_NW_sibling.Nghost < 
+                                        2*solution_block_to_be_coarsened_NW_sibling.Nghost) ||
+                                       (solution_block_to_be_coarsened_NW_sibling.NCj-
+					2*solution_block_to_be_coarsened_NW_sibling.Nghost < 
+                                        2*solution_block_to_be_coarsened_NW_sibling.Nghost) ||
                                        (solution_block_to_be_coarsened_NW_sibling.Grid.Node == NULL) ) {
                                      cout << "\n " << CFFC_Version()
                                           << " AMR Error: Coarsen_Grid, Cannot coarsen north-west mesh.\n";
                                      return(7482);
                                   } /* endif */
 
-                                  if ( (solution_block_to_be_coarsened_NE_sibling.NCi-4-
-                                        2*((solution_block_to_be_coarsened_NE_sibling.NCi-4)/2) != 0) ||
-                                       (solution_block_to_be_coarsened_NE_sibling.NCj-4-
-                                        2*((solution_block_to_be_coarsened_NE_sibling.NCj-4)/2) != 0) ||
-                                       (solution_block_to_be_coarsened_NE_sibling.NCi-4 < 4) ||
-                                       (solution_block_to_be_coarsened_NE_sibling.NCj-4 < 4) ||
+                                 if ( (solution_block_to_be_coarsened_NE_sibling.NCi-
+					2*solution_block_to_be_coarsened_NE_sibling.Nghost-
+                                        2*((solution_block_to_be_coarsened_NE_sibling.NCi-
+					    2*solution_block_to_be_coarsened_NE_sibling.Nghost)/2) != 0) ||
+                                       (solution_block_to_be_coarsened_NE_sibling.NCj-
+					2*solution_block_to_be_coarsened_NE_sibling.Nghost-
+                                        2*((solution_block_to_be_coarsened_NE_sibling.NCj-
+					    2*solution_block_to_be_coarsened_NE_sibling.Nghost)/2) != 0) ||
+                                       (solution_block_to_be_coarsened_NE_sibling.NCi-
+					2*solution_block_to_be_coarsened_NE_sibling.Nghost < 
+                                        2*solution_block_to_be_coarsened_NE_sibling.Nghost) ||
+                                       (solution_block_to_be_coarsened_NE_sibling.NCj-
+					2*solution_block_to_be_coarsened_NE_sibling.Nghost < 
+                                        2*solution_block_to_be_coarsened_NE_sibling.Nghost) ||
                                        (solution_block_to_be_coarsened_NE_sibling.Grid.Node == NULL) ) {
                                      cout << "\n " << CFFC_Version()
                                           << " AMR Error: Coarsen_Grid, Cannot coarsen north-east mesh.\n";
@@ -1011,47 +976,25 @@ int Coarsen_Grid(Quad_Soln_Block             *Soln_ptr,
                                   if (Soln_ptr[old_blocks_BLK[0]].U != NULL) 
                                      Soln_ptr[old_blocks_BLK[0]].deallocate();
                                   Soln_ptr[old_blocks_BLK[0]].allocate(
-                                           solution_block_to_be_coarsened_SW_sibling.NCi-4,
-                                           solution_block_to_be_coarsened_SW_sibling.NCj-4,
+                                           solution_block_to_be_coarsened_SW_sibling.NCi-
+					   2*solution_block_to_be_coarsened_SW_sibling.Nghost,
+                                           solution_block_to_be_coarsened_SW_sibling.NCj-
+					   2*solution_block_to_be_coarsened_SW_sibling.Nghost,
                                            solution_block_to_be_coarsened_SW_sibling.Nghost);
                                   Coarsen_Mesh(Soln_ptr[old_blocks_BLK[0]].Grid,
                                                solution_block_to_be_coarsened_SW_sibling.Grid,
                                                solution_block_to_be_coarsened_SE_sibling.Grid,
                                                solution_block_to_be_coarsened_NW_sibling.Grid,
                                                solution_block_to_be_coarsened_NE_sibling.Grid);
-// 				  if (InputParameters.i_Smooth_Quad_Block &&
-// 				      !(InputParameters.i_Grid == GRID_ROCKET_MOTOR &&
-// 					Soln_ptr[old_blocks_BLK[0]].Grid.Node[3][2].X.x < ZERO)) {
-// 				    Smooth_Quad_Block(Soln_ptr[old_blocks_BLK[0]].Grid,
-// 						      min(250, 4*max(solution_block_to_be_coarsened_SW_sibling.NCi-4,
-// 								     solution_block_to_be_coarsened_SW_sibling.NCj-4)));
-// 				  }
 				  if (InputParameters.i_Smooth_Quad_Block) {
-				    //if (InputParameters.i_Grid == GRID_ROCKET_MOTOR) {
-				    //dimensions = QuadTree.getBlockIndices(quadtree_block_to_be_coarsened_ptr->parent_ptr);
-				    //Smooth_Rocket_Motor(Soln_ptr[old_blocks_BLK[0]].Grid,
-				    //		  InputParameters.Chamber_Length,
-				    //		  InputParameters.Chamber_Radius,
-				    //		  InputParameters.Chamber_To_Throat_Length,
-				    //		  InputParameters.Nozzle_Length,
-				    //		  InputParameters.Nozzle_Radius_Exit,
-				    //		  InputParameters.Nozzle_Radius_Throat,
-				    //		  InputParameters.Grain_Radius,
-				    //		  InputParameters.Nozzle_Type,
-				    //		  InputParameters.Mesh_Stretching_Factor_Idir,
-				    //		  InputParameters.Mesh_Stretching_Factor_Jdir,
-				    //		  LocalSolnBlockList.Block[old_blocks_BLK[0]].info.sector,
-				    //		  LocalSolnBlockList.Block[old_blocks_BLK[0]].info.level,
-				    //		  dimensions.i,dimensions.j,
-				    //		  root_indices.i,root_indices.j,
-				    //		  QuadTree.NRi,QuadTree.NRj);
-				    //} else {
-				      Smooth_Quad_Block(Soln_ptr[old_blocks_BLK[0]].Grid,
-							min(250, 4*max(solution_block_to_be_coarsened_SW_sibling.NCi-4,
-								       solution_block_to_be_coarsened_SW_sibling.NCi-4)));
-				      //}
-				  }
-                                  if (Check_Quad_Block(Soln_ptr[old_blocks_BLK[0]].Grid)) { 
+                                      Smooth_Quad_Block(Soln_ptr[old_blocks_BLK[0]].Grid,
+                                                        min(250, 4*max(
+                                                        solution_block_to_be_coarsened_SW_sibling.NCi-
+						        2*solution_block_to_be_coarsened_SW_sibling.Nghost,
+                                                        solution_block_to_be_coarsened_SW_sibling.NCj-
+						        2*solution_block_to_be_coarsened_SW_sibling.Nghost)));
+				  } /* endif */
+                                  if (Soln_ptr[old_blocks_BLK[0]].Grid.Check_Quad_Block()) { 
                                      cout << "\n " << CFFC_Version() 
                                           << " AMR Error: Coarsen_Grid, Invalid coarsened mesh.\n";
                                      return(7484);

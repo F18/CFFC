@@ -8032,6 +8032,7 @@ int Send_All_Messages(Quad_Soln_Block *Soln_ptr,
       for (int nb = 0; nb < Soln_Block_List.Nblk; nb++) {
 	if (Soln_Block_List.Block[nb].used == ADAPTIVEBLOCK2D_USED) {
 	  Update_Corner_Ghost_Nodes(Soln_ptr[nb].Grid);
+	  Update_Cells(Soln_ptr[nb].Grid);
 	}
       } /* endfor */
     } /* endif */
@@ -8173,6 +8174,7 @@ int Send_All_Messages2(Quad_Soln_Block *Soln_ptr,
 	if (Soln_Block_List.Block[nb].used == ADAPTIVEBLOCK2D_USED) {
 	  dout << endl << " " << nb << " " << Soln_Block_List.Block[nb].gblknum; dout.flush();
 	  Update_Corner_Ghost_Nodes(Soln_ptr[nb].Grid);
+	  Update_Cells(Soln_ptr[nb].Grid);
 	}
       } /* endfor */
     } /* endif */

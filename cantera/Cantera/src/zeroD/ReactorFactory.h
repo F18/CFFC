@@ -4,8 +4,8 @@
 
 /*
  * $Author: dggoodwin $
- * $Revision: 1.1 $
- * $Date: 2006/05/17 15:16:00 $
+ * $Revision: 1.3 $
+ * $Date: 2007/05/10 03:28:32 $
  */
 
 // Copyright 2001  California Institute of Technology
@@ -15,27 +15,38 @@
 #define REACTOR_FACTORY_H
 
 #include "ReactorBase.h"
+#include "FactoryBase.h"
+
+#if defined(THREAD_SAFE_CANTERA)
+#include <boost/thread/mutex.hpp>
+#endif
 
 namespace CanteraZeroD {
 
 
-    class ReactorFactory {
+    class ReactorFactory : FactoryBase {
 
     public:
 
         static ReactorFactory* factory() {
+            #if defined(THREAD_SAFE_CANTERA)
+               boost::mutex::scoped_lock   lock(reactor_mutex) ;
+            #endif
             if (!s_factory) s_factory = new ReactorFactory;
             return s_factory;
         }
 
-	static void deleteFactory() {
-	    if (s_factory) {
-	      delete s_factory;
-	      s_factory = 0;
-	    }
-	}
+        virtual void deleteFactory() {
+       #if defined(THREAD_SAFE_CANTERA)
+         boost::mutex::scoped_lock   lock(reactor_mutex) ;
+       #endif
+        if (s_factory) {
+          delete s_factory;
+          s_factory = 0;
+        }
+    }
 
-	/**
+    /**
          * Destructor doesn't do anything. 
          */
         virtual ~ReactorFactory() {}
@@ -45,15 +56,18 @@ namespace CanteraZeroD {
          * @param n the type to be created.
          */
         virtual ReactorBase* newReactor(int n);
-        virtual ReactorBase* newReactor(string reactorType);
+        virtual ReactorBase* newReactor(std::string reactorType);
 
     private:
 
         static ReactorFactory* s_factory;
+         #if defined(THREAD_SAFE_CANTERA)
+            static boost::mutex reactor_mutex ;
+         #endif
         ReactorFactory(){}
     };
 
-    inline ReactorBase* newReactor(string model,  
+    inline ReactorBase* newReactor(std::string model,  
         ReactorFactory* f=0) {
         if (f == 0) {
             f = ReactorFactory::factory();
@@ -64,5 +78,6 @@ namespace CanteraZeroD {
 }
 
 #endif
+
 
 

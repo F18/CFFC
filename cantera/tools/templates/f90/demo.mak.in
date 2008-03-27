@@ -33,7 +33,7 @@ CXX = @CXX@
 CXX_FLAGS = @CXXFLAGS@
 
 # external libraries
-EXT_LIBS = -lfct -lclib @LOCAL_LIBS@ -lctcxx -lstdc++ @FLIBS@
+EXT_LIBS = -lfct -lclib @LOCAL_LIBS@ -lctcxx -lstdc++ @F90LIBS@
 
 # the Fortran 90/95 compiler
 F90 = @F90@
@@ -68,7 +68,7 @@ DEPENDS = $(OBJS:.o=.d)
 all: $(PROGRAM)
 
 $(PROGRAM): $(OBJS)
-	$(F90) -o $(PROGRAM) $(OBJS) $(LCXXFLAGS) $(CANTERA_LIBS) $(LINK_OPTIONS) $(EXT_LIBS) @LIBS@ 
+	$(CXX) -o $(PROGRAM) $(OBJS) $(LCXXFLAGS) $(CANTERA_LIBS) $(LINK_OPTIONS) $(EXT_LIBS) @FLIBS@ @LIBS@ 
 
 %.d : %.cpp
 	g++ -MM -I$(CANTERA_INCDIR) $*.cpp > $*.d

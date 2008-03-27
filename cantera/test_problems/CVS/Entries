@@ -1,0 +1,25 @@
+/.cvsignore/1.1.1.1/Mon Apr 14 17:57:59 2003//
+/Makefile.in/1.29/Tue Dec  4 17:45:04 2007//
+D/ChemEquil_gri_matrix////
+D/ChemEquil_gri_pairs////
+D/ChemEquil_ionizedGas////
+D/ChemEquil_red1////
+D/CpJump////
+D/NASA9poly_test////
+D/cathermo////
+D/ck2cti_test////
+D/cxx_ex////
+D/diamondSurf////
+D/diamondSurf_dupl////
+D/fracCoeff////
+D/min_python////
+D/mixGasTransport////
+D/multiGasTransport////
+D/nasa9_reader////
+D/negATest////
+D/pureFluidTest////
+D/python////
+D/silane_equil////
+D/spectroscopy////
+D/surfSolverTest////
+D/surfkin////

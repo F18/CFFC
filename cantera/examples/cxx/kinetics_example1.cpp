@@ -3,8 +3,8 @@
 //  zero-dimensional kinetics example program
 //
 //  $Author: hkmoffa $
-//  $Revision: 1.9 $
-//  $Date: 2006/06/23 21:04:31 $
+//  $Revision: 1.11 $
+//  $Date: 2007/12/04 18:10:47 $
 //
 //  copyright California Institute of Technology 2002
 //
@@ -21,6 +21,8 @@
 #include <cantera/IdealGasMix.h>
 #include <time.h>
 #include "example_utils.h"
+using namespace Cantera;
+using namespace std;
 
 // Kinetics example. This is written as a function so that one 
 // driver program can run multiple examples.
@@ -124,10 +126,7 @@ int kinetics_example1(int job) {
              << "  kin1.csv    (Excel CSV file)" << endl
              << "  kin1.dat    (Tecplot data file)" << endl;
 
-#define DEBUG_HKM
-#ifdef DEBUG_HKM
 	delete gg;
-#endif
         return 0;
     }
 

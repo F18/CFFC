@@ -1,7 +1,8 @@
 /********************************************************************
  * Program:  SplineFit.h                                            *
  *                                                                  *
- * Description:  This program generates a cubic spline interpolant. *
+ * Description:  This program generates a cubic spline interpolants *
+ *               or polynomial interpolants.                        *
  *               See:                                               *   
  *                 Numerical Recipes in C, Second Edition (1992).   *
  *                 Available at http://www.nr.com/                  *
@@ -223,6 +224,156 @@ inline void splint( const double *xa, const double *ya, const double *y2a,
   y = a*ya[klo]+b*ya[khi]+((a*a*a-a)*y2a[klo]+(b*b*b-b)*y2a[khi])*(h*h)/6.0;
 }
 
+/********************************************************************
+ * polyint
+ *
+ * Given the arrays xa[1..n] and ya[1..n] and given a value x,
+ * this routine returns a value y, and an error estimate dy.  If P(x) 
+ * is the polynomial of degree N0a such that P(xa_i) = ya_i, i=1..n,
+ * then the returned value y=P(x). 
+ ********************************************************************/
+inline void polint(const double* xa, const double* ya, const int n, 
+		   const double x,  double &y, double &dy)
+{
+  // declares
+  int i, m, ns=0;
+  double den,dif,dift,ho,hp,w;
+  double *c,*d;
+
+  // allocate temporary storage
+  c = new double[n];
+  d = new double[n];
+
+  // here we find the index ns of the closest table entry
+  dif=fabs(x-xa[0]);
+  for (i=0; i<n; i++) {
+    
+    if ( (dift=fabs(x-xa[i])) < dif) {
+      ns=i;
+      dif=dift;
+    } // endif
+
+    // initialize the tableau of c's and d's
+    c[i]=ya[i];
+    d[i]=ya[i];
+
+  } // endfor
+
+  // this is the initial approximation to y
+  y=ya[ns--];
+
+  // For each column of the tableau, we loop over the
+  // current c's and d's and update them
+  for (m=1; m<n; m++) {
+    for (i=0; i<n-m; i++) {
+
+      ho=xa[i]-x;
+      hp=xa[i+m]-x;
+      w=c[i+1]-d[i];
+
+      // this error can only occur if two input xa's are 
+      // identical within roundoff.
+      if ( (den=ho-hp) == 0.0) {
+	cerr << "Error in routine polint\n";
+	exit(-1);
+      } // endif
+
+      // update the c's and d's
+      den=w/den;
+      d[i]=hp*den;
+      c[i]=ho*den;
+
+    } // endfor
+
+    // After each column in the tableau is completed, we decide 
+    // which correction, c or d, we want to add to our accumulating 
+    // value of y, ie. which path to take through the tableau - 
+    // forking up or down.  We do this in such a way as to take the 
+    // most "straight line" route through the tableau to its apex, 
+    // updating ns accordingly to keep track of where we are.
+    // this route keeps the partial approximatinos centered 
+    // (insofar as possible) on the target x.  The last dy added 
+    // is thus the error indication.
+    y += (dy=(2*ns < (n-m) ? c[ns+1] : d[ns--]));
+
+  } // endfor
+
+  // clean up memory
+  delete[] c;  c = NULL;
+  delete[] d;  d = NULL;
+}
 
 
-#endif //_SPLINE1D_INCLUDED
+/********************************************************************
+ * polcof
+ *
+ * Given arrays xa[0..n] and ya[0..n] containting a tabulated 
+ * function ya_i=f(xa_i), this routine returns an array of coefficients
+ * cof[0..n] such that ya_i = sum_j cof_j*xa_i^j.                   
+ ********************************************************************/
+inline void polcof(const double* xa, const double* ya, const int n, 
+		   double *cof)
+{
+  // declares
+  int k,j,i;
+  double xmin,dy,*x,*y;
+
+  // allocate temporary storage
+  x = new double[n];
+  y = new double[n];
+
+  // initialize
+  for (j=0;j<n;j++) {
+    x[j]=xa[j];
+    y[j]=ya[j];
+  } // endfor
+
+  for (j=0;j<n;j++) {
+
+    // generate coefficients.  We extrapolate to x=0.0
+    polint(x, y, n-j, 0.0, cof[j], dy);
+    
+    // Find the remaining x_i of smallest absolute vlaue
+    xmin=1.0e38;
+    k = -1;
+    for (i=0; i<n-j; i++) {
+
+      if (fabs(x[i]) < xmin) {
+	xmin=fabs(x[i]);
+	k=i;
+      }
+
+      // reducing all the terms
+      if (x[i]) y[i]=(y[i]-cof[j])/x[i];
+
+    } // endfor
+
+    // Eliminate it
+    for (i=k+1;i<n-j;i++) {
+      y[i-1]=y[i];
+      x[i-1]=x[i];
+    } // endfor
+
+  } // endfor
+
+  // clean up memory
+  delete[] x;  x = NULL;
+  delete[] y;  y = NULL;
+}
+
+
+/********************************************************************
+ * polval
+ *
+ * Given an array of coefficients  cof[0..n] such that 
+ * ya_i = sum_j cof_j*xa_i^j, evaluate the value of y at x.
+ ********************************************************************/
+inline void polval(const double* cof, const int n, const double x,
+		   double &y)
+{
+  y = 0.0;
+  for (int i=0; i<n; i++ ) y += cof[i] * pow(x,i);
+}
+
+
+#endif //_SPLINEFIT_INCLUDED

@@ -109,7 +109,7 @@ void CENO_Tolerances::SetDefaults(void){
  * from the specified processor using the MPI broadcast 
  * routine.
  *
- * \todo Switch to a user-difined datatype
+ * \todo Switch to a user-defined datatype
  */
 void CENO_Tolerances::Broadcast(void){
 #ifdef _MPI_VERSION

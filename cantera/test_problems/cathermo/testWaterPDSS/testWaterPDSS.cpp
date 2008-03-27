@@ -1,5 +1,5 @@
 /*
- * $Id: testWaterPDSS.cpp,v 1.2 2006/07/11 17:13:44 hkmoffa Exp $
+ * $Id: testWaterPDSS.cpp,v 1.3 2006/11/28 20:13:02 hkmoffa Exp $
  */
 #include "stdio.h"
 #include "ct_defs.h"
@@ -23,12 +23,10 @@ double tvalue(double val, double atol = 1.0E-9) {
 
 int main () {
 
-    double dens, u, s, h, cv, cp, pres;
+    double pres;
     try {
       Cantera::ThermoPhase *nnn = 0;
       Cantera::WaterPDSS *w = new Cantera::WaterPDSS(nnn, 0);
-
-      double rho;
 
       /* 
        * Print out the triple point conditions

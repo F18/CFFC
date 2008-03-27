@@ -382,6 +382,85 @@ int Output_Tecplot(Chem2D_Quad_Block *Soln_ptr,
     return(0);
 
 }
+/********************************************************
+ * Routine: Output_Tecplot_Periodic                     *
+ *                                                      *
+ * Writes the solution values at the nodes for a 1D     *
+ * array of 2D quadrilateral multi-block solution       *
+ * blocks to the specified output data file(s) in a     *
+ * format suitable for plotting with TECPLOT.           *
+ * Returns a non-zero value if cannot write any of the  *
+ * TECPLOT solution files.                              *
+ *                                                      *
+ ********************************************************/
+int Output_Tecplot_Periodic(Chem2D_Quad_Block *Soln_ptr,
+			    AdaptiveBlock2D_List &Soln_Block_List,
+			    Chem2D_Input_Parameters &Input_Parameters,
+			    const int Number_of_Time_Steps,
+			    const double &Time) {
+
+    int i, i_output_title;
+    char prefix[256], extension[256], output_file_name[256];
+    char *output_file_name_ptr;
+    ofstream output_file;    
+
+    /* Determine prefix of output data file names. */
+
+    i = 0;
+    while (1) {
+       if (Input_Parameters.Output_File_Name[i] == ' ' ||
+           Input_Parameters.Output_File_Name[i] == '.') break;
+       prefix[i]=Input_Parameters.Output_File_Name[i];
+       i = i + 1;
+       if (i > strlen(Input_Parameters.Output_File_Name) ) break;
+    } /* endwhile */
+    prefix[i] = '\0';
+    
+    strcat(prefix,"_Step");
+    /* Add Number of Steps to name */
+    sprintf(extension, "%.6d", Number_of_Time_Steps);
+    strcat(prefix,extension);
+    strcat(prefix, "_cpu");
+
+    /* Determine output data file name for this processor. */
+    sprintf(extension, "%.6d", Soln_Block_List.ThisCPU);
+    strcat(extension, ".dat");
+    strcpy(output_file_name, prefix);
+    strcat(output_file_name, extension);
+    output_file_name_ptr = output_file_name;
+
+    /* Open the output data file. */
+
+    output_file.open(output_file_name_ptr, ios::out);
+    if (output_file.fail()) return (1);
+
+    /* Write the solution data for each solution block. */
+
+    i_output_title = 1;
+    for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
+      if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
+      
+	Output_Tecplot(Soln_ptr[i], Input_Parameters,
+		       Number_of_Time_Steps, 
+		       Time,
+		       Soln_Block_List.Block[i].gblknum,
+		       i_output_title,
+		       output_file);
+	//cout<<" \n Returned to Multi \n";
+          
+	if (i_output_title) i_output_title = 0;
+      } /* endif */
+    }  /* endfor */
+ 
+    /* Close the output data file. */
+
+    output_file.close();
+
+    /* Writing of output data files complete.  Return zero value. */
+
+    return(0);
+
+}
 
 /********************************************************
  * Routine: Output_Cells_Tecplot                        *
@@ -395,10 +474,10 @@ int Output_Tecplot(Chem2D_Quad_Block *Soln_ptr,
  *                                                      *
  ********************************************************/
 int Output_Cells_Tecplot(Chem2D_Quad_Block *Soln_ptr,
-                         AdaptiveBlock2D_List &Soln_Block_List,
-                         Chem2D_Input_Parameters &Input_Parameters,
-                         const int Number_of_Time_Steps,
-                         const double &Time) {
+			 AdaptiveBlock2D_List &Soln_Block_List,
+			 Chem2D_Input_Parameters &Input_Parameters,
+			 const int Number_of_Time_Steps,
+			 const double &Time) {
 
   
     int i, i_output_title;
@@ -420,7 +499,6 @@ int Output_Cells_Tecplot(Chem2D_Quad_Block *Soln_ptr,
     strcat(prefix, "_cells_cpu");
 
     /* Determine output data file name for this processor. */
-
     sprintf(extension, "%.6d", Soln_Block_List.ThisCPU);
     strcat(extension, ".dat");
     strcpy(output_file_name, prefix);
