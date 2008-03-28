@@ -611,6 +611,12 @@ int CFD_Input_Parameters::Parse_Next_Input_Control_Parameter(void) {
           i_ICs = IC_FREE_JET_FLAME;
        }else if (strcmp(ICs_Type, "Turbulent_Premixed_Flame") == 0) {
           i_ICs = IC_TURBULENT_PREMIXED_FLAME;
+       }else if (strcmp(ICs_Type, "Turbulent_Bunsen_Flame") == 0) {
+          i_ICs = IC_TURBULENT_BUNSEN_FLAME;
+       }else if (strcmp(ICs_Type, "Turbulent_Bunsen_Box") == 0) {
+          i_ICs = IC_TURBULENT_BUNSEN_BOX;
+       }else if (strcmp(ICs_Type, "Turbulent_Box") == 0) {
+          i_ICs = IC_TURBULENT_BOX;
        } else if (strcmp(ICs_Type, "Restart") == 0) {
           i_ICs = IC_RESTART;
        } else {
@@ -665,6 +671,14 @@ int CFD_Input_Parameters::Parse_Next_Input_Control_Parameter(void) {
     } else if (strcmp(code, "Pressure_Gradient") == 0) {
        i_command = 111;
        value_stream >> Pressure_Gradient;
+
+    } else if (strcmp(code, "Mean_Velocity") == 0) {
+       i_command = 112;
+       value_stream >> Mean_Velocity;
+
+    } else if (strcmp(code, "Fresh_Gas_Height") == 0) {
+       i_command = 113;
+       value_stream >> Fresh_Gas_Height;
 
     //
     // Invalid input parameter code:
@@ -970,6 +984,18 @@ void CFD_Input_Parameters::Broadcast(void) {
     MPI::COMM_WORLD.Bcast(&(Moving_Wall_Velocity.z),
                           1,
 			  MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(Mean_Velocity.x),
+                          1,
+			  MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(Mean_Velocity.y),
+                          1,
+			  MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(Mean_Velocity.z),
+                          1,
+			  MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(Fresh_Gas_Height),
+                          1,
+			  MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&(Pressure_Gradient.x),
                           1,
 			  MPI::DOUBLE, 0);
@@ -1105,8 +1131,12 @@ void CFD_Input_Parameters::Output_Problem_Type(ostream &out_file) const {
       out_file << "\n  -> Turbulent flow: LES with C-Fsd-k model";
    } else if (i_Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY) {
       out_file << "\n  -> Turbulent flow: LES with C-Fsd-Smagorinsky model";
+   } else if (i_Flow_Type == FLOWTYPE_TURBULENT_LES_TF_K) {
+      out_file << "\n  -> Turbulent flow: LES with TF-k model";
+   } else if (i_Flow_Type == FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY) {
+      out_file << "\n  -> Turbulent flow: LES with TF-Smagorinsky model";	 
    } else if (i_Flow_Type == FLOWTYPE_TURBULENT_DES_K_OMEGA) {
-      out_file << "\n  -> Turbulent flow: DES with k-oemga SGS turbulence model ";
+      out_file << "\n  -> Turbulent flow: DES with k-omega SGS turbulence model ";
    } else if (i_Flow_Type == FLOWTYPE_TURBULENT_DNS) {
       out_file << "\n  -> Turbulent flow: DNS ";
    } /* endif */
@@ -1200,6 +1230,35 @@ void CFD_Input_Parameters::Output_ICsBCs_Types(ostream &out_file) const {
    out_file << "\n  -> Flow Angle: " 
             << Flow_Angle;
 
+   if (i_Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_SMAGORINSKY ||
+       i_Flow_Type == FLOWTYPE_TURBULENT_LES_C_FSD_K ) {
+      out_file << "\n\n Laminar Flame Parameters";
+      out_file << "\n  -> Fuel Equivalence Ratio: " 
+               << Turbulence_IP.Fuel_Equivalence_Ratio;
+      out_file << "\n  -> Unburnt Fuel Mass Fraction: " 
+               << Turbulence_IP.Unburnt_Fuel_Mass_Fraction;
+      out_file << "\n  -> Reactants Density: " 
+               << Turbulence_IP.Reactants_Density;
+      out_file << "\n  -> Laminar Flame Speed: " 
+               << Turbulence_IP.Laminar_Flame_Speed;
+      out_file << "\n  -> Laminar Flame Thickness: " 
+               << Turbulence_IP.Laminar_Flame_Thickness;
+      out_file << "\n  -> Adiabatic Flame Temperature: " 
+               << Turbulence_IP.Adiabatic_Flame_Temperature;
+      out_file << "\n  -> Filter Width: " 
+               << Turbulence_IP.Filter_Width;
+   }
+   if (i_ICs == IC_TURBULENT_BUNSEN_FLAME) {
+      out_file << "\n\n Flame Parameters";
+      out_file << "\n  -> Mean Flow Velocity -- X Direction: " 
+               << Mean_Velocity.x;
+      out_file << "\n  -> Mean Flow Velocity -- Y Direction: " 
+               << Mean_Velocity.y;
+      out_file << "\n  -> Mean Flow Velocity -- Z Direction: " 
+               << Mean_Velocity.z;
+      out_file << "\n  -> Initial Flame Height: " 
+               << Fresh_Gas_Height;
+   }
 }
 
 void CFD_Input_Parameters::Output_Solution_Type(ostream &out_file) const {

@@ -15,6 +15,14 @@
 #include "LES3DThickenedFlameState.h"
 #endif // LES3DTF_STATE_INCLUDED   
 
+#ifndef _TURBULENT_VELOCITY_FIELD_INCLUDED 
+#include "../../TurbulenceModelling/TurbulentVelocityField.h"
+#endif // TURBULENT_VELOCITY_FIELD_INCLUDED
+
+#ifndef _TURBULENCE_AVERAGING_INCLUDED
+#include "../../TurbulenceModelling/TurbulenceAveraging.h"
+#endif // TURBULENCE_AVERAGING_INCLUDED
+
 /* Define required specializations. */
 
 template<>

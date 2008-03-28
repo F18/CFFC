@@ -37,6 +37,10 @@ double NavierStokes3D_ThermallyPerfect_pState::mu(void) {
   return sum;
 }
 
+double NavierStokes3D_ThermallyPerfect_pState::nu(void) {
+  return mu()/rho;
+}
+
 /********************************************************************************************
  * NavierStokes3D_ThermallyPerfect_pState::kappa -- Return mixture thermal conductivity.    *
  ********************************************************************************************/
@@ -816,6 +820,10 @@ double NavierStokes3D_ThermallyPerfect_cState::mu(void) {
      sum += ((rhospec[i].c/rho)* specdata[i].Viscosity(Temp))/(specdata[i].Mol_mass()*phi);
    } /* endfor */
    return sum;
+}
+
+double NavierStokes3D_ThermallyPerfect_cState::nu(void) {
+  return mu()/rho;
 }
 
 /********************************************************************************************

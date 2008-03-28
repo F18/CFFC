@@ -218,6 +218,10 @@ inline char *Date_And_Time() {
 #define GRID_BLUFF_BODY_BURNER               30
 #define GRID_PERIODIC_BOX                    31
 #define GRID_PERIODIC_BOX_WITH_INFLOW        32
+#define GRID_BUNSEN_BURNER                   33
+#define GRID_BUNSEN_BOX                      34
+#define GRID_BUNSEN_INFLOW                   35
+#define GRID_TURBULENCE_BOX                  36
 
 #define GRID_ICEMCFD                       1000
 #define GRID_READ_FROM_DEFINITION_FILE    10000
@@ -288,6 +292,7 @@ inline char *Date_And_Time() {
 #define BC_FLAME_INFLOW                  9003   //      | CFFC 
 #define	BC_CHANNEL_INFLOW                9004   //      | CFFC
 #define BC_INFLOW_EXTRAPOLATION          9005   //      | CFFC 
+#define BC_INFLOW_TURBULENCE             9006   //      | CFFC 
 
 //--Outflow
 #define BC_OUTFLOW                      10000   // Core | CGNS
@@ -439,6 +444,14 @@ inline char *Date_And_Time() {
 #define FLOWTYPE_TURBULENT_LES_TF_SMAGORINSKY         15
 
 /**********************************************************************
+ * CFD -- LES: SFS model   and   filter types                         *
+ **********************************************************************/
+/* ---------- SFS model ----------- */
+#define SFS_MODEL_SMAGORINSKY                         0
+/* --------- filter type -----------*/
+#define FILTER_TYPE_IMPLICIT                          10
+
+/**********************************************************************
  * CFD -- Particle-phase formulation.                                 *
  **********************************************************************/
 
@@ -475,6 +488,7 @@ inline char *Date_And_Time() {
 #define SPECTRUM_HAWORTH_POINSOT                 3
 #define SPECTRUM_CHASNOV                         4
 #define SPECTRUM_BELL_DAY                        5
+#define SPECTRUM_POPE                            6
 
 /**********************************************************************
  * CFD -- Initial Condition Types.                                    *
@@ -594,6 +608,9 @@ inline char *Date_And_Time() {
 #define IC_ELECTRIC_FIELD_DOUBLE_OCTAPOLE    204
 
 #define IC_TURBULENT_PREMIXED_FLAME   300
+#define IC_TURBULENT_BUNSEN_FLAME     301
+#define IC_TURBULENT_BUNSEN_BOX       302
+#define IC_TURBULENT_BOX              303
 
 /********************************************************
  * CFD -- Time Integration (Time-Stepping) Types.       *
@@ -1514,7 +1531,7 @@ int Green_Gauss_Integration(const Vector2D X1, const T U1,
   U = HALF*(U1+U2);
   dUdx = U*n21.x;
   dUdy = U*n21.y;
-  U = HALF*(U2+U3);
+  U = HALF*(U2+U3); 
   dUdx += U*n32.x;
   dUdy += U*n32.y;
   U = HALF*(U3+U4);

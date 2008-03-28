@@ -198,6 +198,10 @@ class CFD_Input_Parameters{
   //@{ @name Other initial and boundary condition related input parameters:
   //! Wall velocity 
   Vector3D Moving_Wall_Velocity;
+  //! Mean velocity 
+  Vector3D Mean_Velocity;
+  //! Fresh gas height 
+  double Fresh_Gas_Height;
   //! Pressure gradient 
   Vector3D Pressure_Gradient;
   //@}
@@ -262,7 +266,9 @@ class CFD_Input_Parameters{
     Temperature = TEMPERATURE_STDATM;
     Flow_Angle = ZERO;
     // Other initial and boundary condition related input parameters:
-    Moving_Wall_Velocity.zero(); 
+    Moving_Wall_Velocity.zero();
+    Mean_Velocity.zero();
+    Fresh_Gas_Height = ZERO;
     Pressure_Gradient.zero(); 
   }
 

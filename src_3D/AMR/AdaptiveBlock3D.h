@@ -150,6 +150,7 @@ class AdaptiveBlock3D_ResourceList {
     /* Destructor. */
     // ~AdaptiveBlock3D_ResourceList(void);
     // Use automatically generated destructor.
+    ~AdaptiveBlock3D_ResourceList(void) { deallocate(); }
 
     /* Assignment operator. */
     AdaptiveBlock3D_ResourceList & operator =(const AdaptiveBlock3D_ResourceList &R);
@@ -1235,6 +1236,7 @@ class AdaptiveBlock3D_List {
     /* Destructor. */
     // ~AdaptiveBlock3D_List(void);
     // Use automatically generated destructor.
+    ~AdaptiveBlock3D_List(void){ deallocate(); }
 
     /* Assignment operator. */
 

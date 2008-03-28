@@ -184,6 +184,8 @@ class Hexa_Block {
 
    void Copy(Hexa_Block &Block2);
 
+   void Copy_static(Hexa_Block &Block2);
+
    void Broadcast(void);
 
 #ifdef _MPI_VERSION
@@ -787,7 +789,7 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Copy(Hexa_Block<SOLN_pSTATE, SOLN_cST
       Flow_Type = Block2.Flow_Type;
 
       // Copy the freeze limite indicator.
-      Freeze_Limiter = Block2.Freeze_Limter;
+      Freeze_Limiter = Block2.Freeze_Limiter;
 
       // Copy the solution, solutioon residuals, gradients, limiters, and 
       // other stored values.
@@ -843,6 +845,63 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Copy(Hexa_Block<SOLN_pSTATE, SOLN_cST
          } /* endfor */
       } /* endif */
 
+   } /* endif */
+
+}
+
+/********************************************************
+ * Routine: Copy_static                                 *
+ *                                                      *
+ * Make a copy of solution block contents contained in  *
+ * the hexahedral solution block Block2.                *
+ *                                                      *
+ ********************************************************/
+template<class SOLN_pSTATE, class SOLN_cSTATE>
+void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Copy_static(Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> &Block2) {
+
+   if (Block2.Allocated) {
+      //  Allocate memory as required.
+      if (NCi != Block2.NCi ||
+          NCj != Block2.NCj ||
+          NCk != Block2.NCk ||
+          Nghost != Block2.Nghost) {
+	 if (Allocated) {
+           deallocate(); 
+         } /*endif */
+	 if (_Allocated) {
+           deallocate_static(); 
+         } /*endif */
+
+         allocate(Block2.NCi-2*Block2.Nghost, 
+                  Block2.NCj-2*Block2.Nghost, 
+                  Block2.NCk-2*Block2.Nghost, 
+                  Block2.Nghost);
+      } /* endif */
+
+      // Copy the grid.
+      Grid.Copy(Block2.Grid);
+
+      // Assign flow type.
+      Flow_Type = Block2.Flow_Type;
+
+      // Copy the solution, solutioon residuals, gradients, limiters, and 
+      // other stored values.
+      for (int k  = KCl ; k <= KCu ; ++k) {
+         for (int j  = JCl ; j <= JCu ; ++j) {
+            for (int i = ICl ; i <= ICu ; ++i) {
+               W[i][j][k] = Block2.W[i][j][k];
+               dWdx[i][j][k] = Block2.dWdx[i][j][k];
+               dWdy[i][j][k] = Block2.dWdy[i][j][k];
+               dWdz[i][j][k] = Block2.dWdz[i][j][k];
+	       _d2Wdx2[i][j][k] = Block2._d2Wdx2[i][j][k];
+	       _d2Wdy2[i][j][k] = Block2._d2Wdy2[i][j][k];
+	       _d2Wdz2[i][j][k] = Block2._d2Wdz2[i][j][k];
+	       _d2Wdxdy[i][j][k] = Block2._d2Wdxdy[i][j][k];
+	       _d2Wdxdz[i][j][k] = Block2._d2Wdxdz[i][j][k];
+	       _d2Wdydz[i][j][k] = Block2._d2Wdydz[i][j][k];
+            } /* endfor */
+         } /* endfor */
+      } /* endfor */
    } /* endif */
 
 }
@@ -2421,7 +2480,7 @@ void Hexa_Block<SOLN_pSTATE, SOLN_cSTATE>::Linear_Reconstruction_LeastSquares(co
    SOLN_pSTATE Temp1, Temp2, Temp3;
    
    int num_vars = NumVar();
-   
+
    Vector3D dX_neigbor;
 
    int num=0;

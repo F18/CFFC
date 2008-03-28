@@ -182,7 +182,8 @@ SRC_LESTF_EXE = $(LESTF_DIR)LES3DThickenedFlame.cc
 # Physics, Turbulence, Thermodynamics, and Chemistry:
 SRC_PHYSICS = $(PHYSICS_DIR)SpeciesInput.cc
 SRC_TURBULENCE = $(TURBULENCE_DIR)TurbulenceModellingInput.cc \
-                 $(TURBULENCE_DIR)TurbulenceModelling.cc 
+                 $(TURBULENCE_DIR)TurbulenceModelling.cc \
+                 $(TURBULENCE_DIR)TurbulentVelocityField.cc
 SRC_EOS = $(EOS_DIR)tgas.f \
           $(EOS_DIR)ugas.f
 SRC_NASADATA = $(NASADATA_DIR)NASARP1311data.cc

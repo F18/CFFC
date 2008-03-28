@@ -56,6 +56,10 @@ class Grid3D_Input_Parameters{
     int Nghost;
     //@}
 
+    //@{ @name Default number of cells in turbulence multiblock mesh in each direction:
+    int NCells_Turbulence_Idir, NCells_Turbulence_Jdir, NCells_Turbulence_Kdir;
+    //@}
+
     //@{ @name Grid type indicator:
     int i_Grid;
     char Grid_Type[GRID_INPUT_PARAMETER_LENGTH];
@@ -94,6 +98,14 @@ class Grid3D_Input_Parameters{
            Length_Coflow_Inlet_Pipe, Length_Combustor_Tube; 
     //@}
 
+    //@{ @name Bunsen burner mesh parameters:
+    double Radius_Bunsen_Burner_Fuel_Line, Radius_Bunsen_Burner, Height_Bunsen_Burner;
+    //@}
+
+    //@{ @name Dimensions for turbulence box:
+    double Turbulence_Box_Length, Turbulence_Box_Width, Turbulence_Box_Height;
+    //@}
+
     //@{ @name Constructors and desctructors:
     //! Constructor (assign default values)
     Grid3D_Input_Parameters(void){
@@ -101,6 +113,9 @@ class Grid3D_Input_Parameters{
        NBlk_Idir = 1; NBlk_Jdir = 1; NBlk_Kdir = 1;
        NCells_Idir = 10; NCells_Jdir = 10; NCells_Kdir = 10; 
        Nghost = 2;
+       NCells_Turbulence_Idir = NCells_Idir;  
+       NCells_Turbulence_Jdir = NCells_Jdir;
+       NCells_Turbulence_Kdir = NCells_Kdir;
        Box_Length = ONE; Box_Width = ONE; Box_Height = ONE;
        strcpy(Grid_Type,"Cube");
        i_Grid = GRID_CUBE; 
@@ -122,6 +137,14 @@ class Grid3D_Input_Parameters{
        Radius_Coflow_Inlet_Pipe = 0.07;
        Length_Coflow_Inlet_Pipe = 0.1; 
        Length_Combustor_Tube = 0.3;
+       // Bunsen burner parameters:
+       Radius_Bunsen_Burner_Fuel_Line = 0.0056;
+       Radius_Bunsen_Burner = 0.025;
+       Height_Bunsen_Burner = 0.075;
+       // Turbulence box parameters:
+       Turbulence_Box_Length = Box_Length; 
+       Turbulence_Box_Width = Box_Width; 
+       Turbulence_Box_Height = Box_Height;
        //ICEM Filenames:
        ICEMCFD_FileNames = ICEMCFD_get_filenames();
     }

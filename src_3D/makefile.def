@@ -26,6 +26,9 @@ FFTW_VERSION = V32
 # Set to ON in order to run the TUT unit testing on
 TUT_TESTING = ON
 
+# Set to ON to get gnuplot output at runtime, default = OFF
+GNUPLOT = OFF
+
 # Set to ON for use with "gprof"
 # <x86  >  gprof cffc3D gmon.out > output.txt
 # <alpha>  gprof --demangle=compaq cffc3D gmon.out > output.txt
@@ -551,4 +554,10 @@ ifeq ($(TUT_TESTING),ON)
   CPPFLAGS += $(TUT_CPP_FLAGS)
 else
   CPPFLAGS += -D_NO_TUT_TESTING
+endif
+
+#
+# Add GNUPLOT flags
+ifeq ($(GNUPLOT),ON) 
+  CPPFLAGS += -D_GNUPLOT
 endif

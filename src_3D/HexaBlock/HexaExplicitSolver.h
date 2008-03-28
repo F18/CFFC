@@ -181,13 +181,16 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
 	} /* endif */
 	error_flag = CFFC_OR_MPI(error_flag);        
 	if (error_flag) return (error_flag);
-	
+
 	/************* BOUNDARY CONDITIONS *********************************/
 	// 2. Apply boundary conditions for stage.
 	Solution_Data.Local_Solution_Blocks.BCs(Solution_Data.Input);
 	
-	 /*************** UPDATE CORNOR GHOST CELLS SOLUTION *****/
-        // For those 3 blocks abutting cases, this is to fix the gradient-recosntruction.
+	error_flag = Hexa_BCs_Specializations(Data, Solution_Data);
+	if (error_flag) return (error_flag);
+
+	 /*************** UPDATE CORNER GHOST CELLS SOLUTION *****/
+        // For those 3 blocks abutting cases, this is to fix the gradient-reconstruction.
         Solution_Data.Local_Solution_Blocks.Update_Corner_Cells_for_3_Blks_Abutting(Data.Local_Adaptive_Block_List);
 
 	 /*************** UPDATE SOLUTION **********************************/
@@ -216,7 +219,7 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
 	// 7. Update solution for stage.
 	error_flag = 
            Solution_Data.Local_Solution_Blocks.Update_Solution_Multistage_Explicit(Solution_Data.Input, 
-                                                                                   i_stage);
+                                                                                           i_stage);
 	if (error_flag) {	  
 	  cout << "\n ERROR: Solution update error on processor "
 	       << CFFC_MPI::This_Processor_Number
@@ -274,7 +277,10 @@ int Hexa_MultiStage_Explicit_Solver(HexaSolver_Data &Data,
 
   Solution_Data.Local_Solution_Blocks.BCs(Solution_Data.Input);
 
-  /*************** UPDATE CORNOR GHOST CELLS SOLUTION *****/
+  error_flag = Hexa_BCs_Specializations(Data, Solution_Data);
+  if (error_flag) return (error_flag);
+
+  /*************** UPDATE CORNER GHOST CELLS SOLUTION *****/
   // For those 3 blocks abutting cases, this is to fix the gradient-recosntruction.
   Solution_Data.Local_Solution_Blocks.Update_Corner_Cells_for_3_Blks_Abutting(Data.Local_Adaptive_Block_List);
 

@@ -22,18 +22,25 @@ int Initialize_Solution_Blocks(HexaSolver_Data &Data,
 
   if (CFFC_Primary_MPI_Processor()) {
     Data.Initial_Mesh.Create_Grid(Solution_Data.Input.Grid_IP);
+
     //Outputting solution input parameters
     if (!Data.batch_flag) {
       cout << Solution_Data.Input << "\n";
       cout.flush(); 
     } /* endif */
   } /* endif */
+
   CFFC_Barrier_MPI(); // MPI barrier to ensure processor synchronization.
   
   /* Broadcast the mesh to other MPI processors. */
 
   Data.Initial_Mesh.Broadcast();                    
   
+  /* Initialize solution blocks specializations. */
+
+  error_flag = Initialize_Solution_Blocks_Specializations(Data, Solution_Data);
+  if (error_flag) return (error_flag);
+
   /* Create (allocate) list of hexahedral solution blocks on each processor. */
 
   if (!Data.batch_flag) {
@@ -147,6 +154,16 @@ int Initial_Conditions(HexaSolver_Data &Data,
     error_flag = CFFC_OR_MPI(error_flag);
     if (error_flag) return (error_flag);
 
+    // Call specializations:
+    error_flag = Hexa_Pre_Processing_Specializations(Data,
+                                                     Solution_Data);
+    if (!Data.batch_flag && error_flag) {
+      cout << "\n ERROR: Issues with pre-processing specializations "
+           << "on processor "<< CFFC_MPI::This_Processor_Number
+           << ".\n";
+      cout.flush();
+    } /* endif */
+
     // Ensure each processor has the correct number of steps and time!!!
     Data.number_of_explicit_time_steps = CFFC_Maximum_MPI(Data.number_of_explicit_time_steps); 
     Data.number_of_implicit_time_steps = CFFC_Maximum_MPI(Data.number_of_implicit_time_steps);
@@ -243,6 +260,9 @@ int Initial_Conditions(HexaSolver_Data &Data,
 
   Solution_Data.Local_Solution_Blocks.BCs(Solution_Data.Input);
 
+  error_flag = Hexa_BCs_Specializations(Data, Solution_Data);
+  if (error_flag) return (error_flag);
+
   /* Output multi-block solution-adaptive quadrilateral mesh statistics. */
 
   if (!Data.batch_flag) {
@@ -286,6 +306,35 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
   // Call ICs_Specializations:
   error_flag = Solution_Data.Local_Solution_Blocks.ICs_Specializations(Solution_Data.Input);
   if (error_flag) return (error_flag);
+
+  return error_flag;
+
+}
+
+/********************************************************
+ * Routine: Initialize_Solution_Blocks_Specializations  *
+ *                                                      *
+ *                                                      *
+ ********************************************************/
+template<typename SOLN_pSTATE, typename SOLN_cSTATE>
+int Initialize_Solution_Blocks_Specializations(HexaSolver_Data &Data,
+					       HexaSolver_Solution_Data<SOLN_pSTATE, SOLN_cSTATE> &Solution_Data) {
+  int error_flag(0);
+
+  return error_flag;
+
+}
+
+/********************************************************
+ * Routine: BCs_Specializations                         *
+ *                                                      *
+ *                                                      *
+ ********************************************************/
+template<typename SOLN_pSTATE, typename SOLN_cSTATE>
+int Hexa_BCs_Specializations(HexaSolver_Data &Data,
+			     HexaSolver_Solution_Data<SOLN_pSTATE, SOLN_cSTATE> &Solution_Data) {
+
+  int error_flag(0);
 
   return error_flag;
 

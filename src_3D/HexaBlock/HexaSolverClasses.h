@@ -21,11 +21,14 @@ class HexaSolver_Data {
   protected: 
   public:
 
-  Grid3D_Hexa_Multi_Block_List        Initial_Mesh;  
+  Grid3D_Hexa_Multi_Block_List        Initial_Mesh, Auxiliary_Mesh;  
   AdaptiveBlock3D_List                Local_Adaptive_Block_List; 
   AdaptiveBlock3D_ResourceList        Global_Adaptive_Block_List;
   Octree_DataStructure                Octree;
   
+  // turbulent velocity field list
+  Turbulent_Velocity_Field_Multi_Block_List        Velocity_Field;
+
   // cpu time variables
   CPUTime processor_cpu_time, total_cpu_time;  
   
