@@ -1,6 +1,17 @@
 /**
  *
  *  @file IdealMolalSoln.cpp
+ *   ThermoPhase object for the ideal molal equation of
+ * state (see \ref thermoprops 
+ * and class \link Cantera::IdealMolalSoln IdealMolalSoln\endlink).
+ *
+ * Definition file for a derived class of ThermoPhase that handles
+ * variable pressure standard state methods for calculating
+ * thermodynamic properties that are further based upon 
+ * activities on the molality scale. The Ideal molal
+ * solution assumes that all molality-based activity
+ * coefficients are equal to one. This turns out, actually, to be
+ * highly nonlinear when the solvent densities get low.
  */
 /*
  * Copywrite (2006) Sandia Corporation. Under the terms of 
@@ -9,17 +20,14 @@
  */
 /*
  *  $Author: hkmoffa $
- *  $Date: 2006/08/14 19:18:34 $
- *  $Revision: 1.6 $
+ *  $Date: 2007/06/13 00:08:35 $
+ *  $Revision: 1.18 $
  */
 
-
-#ifndef MAX
-#define MAX(x,y)    (( (x) > (y) ) ? (x) : (y))
-#endif
-
 #include "IdealMolalSoln.h"
-#include "importCTML.h"
+//#include "importCTML.h"
+#include "ThermoFactory.h"
+#include <math.h>
 
 namespace Cantera {
 
@@ -28,9 +36,9 @@ namespace Cantera {
    */
   IdealMolalSoln::IdealMolalSoln() :
     MolalityVPSSTP(),
-    m_Pcurrent(OneAtm),
     m_formGC(2)
   {
+    m_useTmpRefStateStorage = true;
   }
 
   /**
@@ -60,7 +68,6 @@ namespace Cantera {
     if (&b != this) {
       MolalityVPSSTP::operator=(b);
       m_speciesMolarVolume  = b.m_speciesMolarVolume;
-      m_Pcurrent            = b.m_Pcurrent;
       m_formGC              = b.m_formGC;
       m_expg0_RT            = b.m_expg0_RT;
       m_pe                  = b.m_pe;
@@ -70,15 +77,19 @@ namespace Cantera {
     return *this;
   }
 
-  IdealMolalSoln::IdealMolalSoln(string inputFile, string id) :
-    MolalityVPSSTP()
+  IdealMolalSoln::IdealMolalSoln(std::string inputFile, std::string id) :
+    MolalityVPSSTP(),
+    m_formGC(2)
   {
+    m_useTmpRefStateStorage = true;
     constructPhaseFile(inputFile, id);
   }
 
-  IdealMolalSoln::IdealMolalSoln(XML_Node& root, string id) :
-    MolalityVPSSTP()
+  IdealMolalSoln::IdealMolalSoln(XML_Node& root, std::string id) :
+    MolalityVPSSTP(),
+    m_formGC(2)
   {
+    m_useTmpRefStateStorage = true;
     constructPhaseXML(root, id);
   }
 
@@ -95,7 +106,7 @@ namespace Cantera {
   /**
    *
    */
-  ThermoPhase* IdealMolalSoln::duplMyselfAsThermoPhase() {
+  ThermoPhase* IdealMolalSoln::duplMyselfAsThermoPhase() const {
     IdealMolalSoln* mtp = new IdealMolalSoln(*this);
     return (ThermoPhase *) mtp;
   }
@@ -103,7 +114,7 @@ namespace Cantera {
   //
   // -------- Molar Thermodynamic Properties of the Solution --------------- 
   //
-  /**
+  /*
    * Molar enthalpy of the solution: Units: J/kmol.
    *
    * Returns the amount of enthalpy per mole of solution.
@@ -125,7 +136,7 @@ namespace Cantera {
     return val;
   }
 
-  /**
+  /*
    * Molar internal energy of the solution: Units: J/kmol.
    *
    * Returns the amount of internal energy per mole of solution.
@@ -141,7 +152,7 @@ namespace Cantera {
     return mean_X(DATA_PTR(m_tmpV));
   }
 
-  /**
+  /*
    * Molar entropy of the solution: Units J/kmol/K.
    *
    * Returns the amount of entropy per mole of solution.
@@ -161,7 +172,7 @@ namespace Cantera {
     return mean_X(DATA_PTR(m_tmpV));
   }
 
-  /**
+  /*
    * Molar Gibbs function for the solution: Units J/kmol. 
    *
    * Returns the gibbs free energy of the solution per mole
@@ -178,7 +189,7 @@ namespace Cantera {
     return mean_X(DATA_PTR(m_tmpV));
   }
 
-  /**
+  /*
    * Molar heat capacity at constant pressure: Units: J/kmol/K. 
    *  * \f[
    * \bar{c}_p(T, P, X_k) = \sum_k X_k \bar{c}_{p,k}(T)  
@@ -192,7 +203,7 @@ namespace Cantera {
     return val;
   }
 
-  /**
+  /*
    * Molar heat capacity at constant volume: Units: J/kmol/K. 
    * NOT IMPLEMENTED.
    * Units: J/kmol/K
@@ -205,7 +216,7 @@ namespace Cantera {
   // ------- Mechanical Equation of State Properties ------------------------
   //
 
-  /**
+  /*
    * Pressure. Units: Pa.
    * For this incompressible system, we return the internally storred
    * independent value of the pressure.
@@ -214,7 +225,64 @@ namespace Cantera {
     return m_Pcurrent;
   }
 
-  /**
+  /*
+   * Set the pressure at constant temperature. Units: Pa.
+   * This method sets a constant within the object.
+   * The mass density is not a function of pressure.
+   */
+  void IdealMolalSoln::setPressure(doublereal p) {
+
+#ifdef DEBUG_MODE
+    //printf("setPressure: %g\n", p);
+#endif
+    /*
+     * Store the current pressure
+     */
+    m_Pcurrent = p;
+
+    /*
+     * update the standard state thermo
+     * -> This involves calling the water function and setting the pressure
+     */
+    _updateStandardStateThermo();
+
+    /*
+     * Calculate all of the other standard volumes
+     * -> note these are constant for now
+     */
+    /*
+     * Get the partial molar volumes of all of the
+     * species. -> note this is a lookup for 
+     * water, here since it was done above.
+     */
+    double *vbar = &m_pp[0];
+    getPartialMolarVolumes(vbar);
+
+    /*
+     * Get mole fractions of all species.
+     */
+    double *x = &m_tmpV[0];
+    getMoleFractions(x);
+	
+    /*
+     * Calculate the solution molar volume and the 
+     * solution density.
+     */
+    doublereal vtotal = 0.0;
+    for (int i = 0; i < m_kk; i++) {
+      vtotal += vbar[i] * x[i];
+    }
+    doublereal dd = meanMolecularWeight() / vtotal;
+
+    /*
+     * Now, update the State class with the results. This
+     * stores the density.
+     */
+    State::setDensity(dd);
+
+  }
+
+  /*
    * The isothermal compressibility. Units: 1/Pa.
    * The isothermal compressibility is defined as
    * \f[
@@ -228,7 +296,7 @@ namespace Cantera {
     return 0.0;
   }
 
-  /**
+  /*
    * The thermal expansion coefficient. Units: 1/K.
    * The thermal expansion coefficient is defined as
    *
@@ -243,7 +311,7 @@ namespace Cantera {
     return 0.0;
   }
     
-  /**
+  /*
    * Overwritten setDensity() function is necessary because the
    * density is not an indendent variable.
    *
@@ -267,7 +335,7 @@ namespace Cantera {
     }
   }
 
-  /**
+  /*
    * Overwritten setMolarDensity() function is necessary because the
    * density is not an indendent variable.
    *
@@ -288,7 +356,7 @@ namespace Cantera {
   // ------- Activities and Activity Concentrations
   //
 
-  /**
+  /*
    * This method returns an array of activity concentrations \f$ C^a_k\f$.
    * \f$ C^a_k\f$ are defined such that 
    * \f$ a_k = C^a_k / C^s_k, \f$ where \f$ C^s_k \f$ 
@@ -317,7 +385,7 @@ namespace Cantera {
     }
   }
 
-  /**
+  /*
    * The standard concentration \f$ C^s_k \f$ used to normalize
    * the activity concentration. In many cases, this quantity
    * will be the same for all species in a phase - for example,
@@ -345,7 +413,7 @@ namespace Cantera {
     return c0;
   }
     
-  /**
+  /*
    * Returns the natural logarithm of the standard 
    * concentration of the kth species
    */
@@ -354,7 +422,7 @@ namespace Cantera {
     return log(c0);
   }
     
-  /**
+  /*
    * Returns the units of the standard and general concentrations
    * Note they have the same units, as their divisor is 
    * defined to be equal to the activity of the kth species
@@ -376,7 +444,7 @@ namespace Cantera {
    *  uA[4] = Temperature units - default = 0;
    *  uA[5] = time units - default = 0
    */
-  void IdealMolalSoln::getUnitsStandardConc(double *uA, int k, int sizeUA) {
+  void IdealMolalSoln::getUnitsStandardConc(double *uA, int k, int sizeUA) const {
     int eos = eosType();
     if (eos == 0) {
       for (int i = 0; i < sizeUA; i++) {
@@ -394,7 +462,7 @@ namespace Cantera {
     }
   }
 
-  /**
+  /*
    * Get the array of non-dimensional molality-based
    * activities at the current solution temperature, 
    * pressure, and solution concentration.
@@ -402,7 +470,8 @@ namespace Cantera {
    *  The max against 8.689E-3 is to limit the activity
    *  coefficient to be greater than 1.0E-50.
    */
-  void IdealMolalSoln::getActivities(doublereal* ac) const {
+  void IdealMolalSoln::getActivities(doublereal* ac) const {  
+    _updateStandardStateThermo();
     /*
      * Update the molality array, m_molalities()
      *   This requires an update due to mole fractions
@@ -412,12 +481,12 @@ namespace Cantera {
       ac[k] = m_molalities[k];
     }
     double xmolSolvent = moleFraction(m_indexSolvent);
-    xmolSolvent = MAX(8.689E-3, xmolSolvent);
+    xmolSolvent = fmaxx(8.689E-3, xmolSolvent);
     ac[m_indexSolvent] = 
       exp((xmolSolvent - 1.0)/xmolSolvent);
   }
 
-  /**
+  /*
    * Get the array of non-dimensional Molality based
    * activity coefficients at
    * the current solution temperature, pressure, and
@@ -434,7 +503,7 @@ namespace Cantera {
       acMolality[k] = 1.0;
     }
     double xmolSolvent = moleFraction(m_indexSolvent);
-    xmolSolvent = MAX(8.689E-3, xmolSolvent);
+    xmolSolvent = fmaxx(8.689E-3, xmolSolvent);
     acMolality[m_indexSolvent] = 
       exp((xmolSolvent - 1.0)/xmolSolvent) / xmolSolvent;
   }
@@ -443,7 +512,7 @@ namespace Cantera {
   // ------ Partial Molar Properties of the Solution -----------------
   //
 
-  /**
+  /*
    * Get the species chemical potentials: Units: J/kmol.
    *
    * This function returns a vector of chemical potentials of the 
@@ -485,7 +554,7 @@ namespace Cantera {
     doublereal RT = GasConstant * temperature();
     for (int k = 0; k < m_kk; k++) {
       if (k != m_indexSolvent) {
-	xx = MAX(m_molalities[k], xxSmall);
+	xx = fmaxx(m_molalities[k], xxSmall);
 	mu[k] += RT * log(xx);
       }
     }
@@ -494,23 +563,15 @@ namespace Cantera {
      *  -> see my notes
      */
     double xmolSolvent = moleFraction(m_indexSolvent);
-    xx = MAX(xmolSolvent, xxSmall);
+    xx = fmaxx(xmolSolvent, xxSmall);
     mu[m_indexSolvent] += 
       (RT * (xmolSolvent - 1.0) / xx);
   }
 
-  /**
+  /*
    * Returns an array of partial molar enthalpies for the species
    * in the mixture: Units (J/kmol).
    *
-   * For this phase, the partial molar enthalpies are equal to the
-   * SS species enthalpies
-   *  \f[
-   * \bar{h}_k(T,P) = \hat h^{0}_k(T,P) 
-   * \f]
-   *     
-   *   note hbar = ubar + T d(ubar/dT)
-   *   see note about partial molar entropies.
    */
   void IdealMolalSoln::getPartialMolarEnthalpies(doublereal* hbar) const {
     getEnthalpy_RT(hbar);
@@ -520,7 +581,7 @@ namespace Cantera {
     }
   }
 
-  /**
+  /*
    * Returns an array of partial molar entropies of the species in the
    * solution: Units: J/kmol.
    *
@@ -563,7 +624,7 @@ namespace Cantera {
     sbar[m_indexSolvent] -= (R * (xmolSolvent - 1.0) / xmolSolvent);
   }
 
-  /**
+  /*
    * Returns an array of partial molar volumes of the species
    * in the solution: Units: m^3 kmol-1.
    *
@@ -576,7 +637,7 @@ namespace Cantera {
     getStandardVolumes(vbar);
   }
 
-  /**
+  /*
    * Partial molar heat capacity of the solution: Units: J/kmol/K.
    *
    *   The kth partial molar heat capacity is equal to 
@@ -609,7 +670,7 @@ namespace Cantera {
    *           in the Solution ------------------
    */
 
-  /** 
+  /*
    *  Get the standard state chemical potentials of the species.
    *  This is the array of chemical potentials at unit activity 
    *  (Mole fraction scale)
@@ -623,6 +684,7 @@ namespace Cantera {
    *  units = J / kmol
    */
   void IdealMolalSoln::getStandardChemPotentials(doublereal* mu) const {
+    _updateStandardStateThermo();
     getGibbs_ref(mu);
     doublereal pref;
     doublereal delta_p;
@@ -633,7 +695,7 @@ namespace Cantera {
     }
   }
     
-  /**
+  /*
    * Get the nondimensional gibbs function for the species
    * standard states at the current T and P of the solution.
    *
@@ -656,7 +718,7 @@ namespace Cantera {
     }
   }
     
-  /**
+  /*
    * Get the Gibbs functions for the pure species
    * at the current <I>T</I> and <I>P</I> of the solution.
    * We assume an incompressible constant partial molar
@@ -671,6 +733,7 @@ namespace Cantera {
    * Units: J/kmol
    */
   void IdealMolalSoln::getPureGibbs(doublereal* gpure) const {
+    _updateStandardStateThermo();
     getGibbs_ref(gpure);
     doublereal pref;
     doublereal delta_p;
@@ -681,7 +744,7 @@ namespace Cantera {
     }
   }
 
-  /**
+  /*
    * Get the array of nondimensional Enthalpy functions for the ss
    * species at the current <I>T</I> and <I>P</I> of the solution.
    * We assume an incompressible constant partial molar
@@ -697,6 +760,7 @@ namespace Cantera {
    */
   void IdealMolalSoln::
   getEnthalpy_RT(doublereal* hrt) const {
+    _updateStandardStateThermo();
     getEnthalpy_RT_ref(hrt);
     doublereal pref;
     doublereal delta_p;
@@ -708,7 +772,7 @@ namespace Cantera {
     }
   }
     
-  /**
+  /*
    * Get the nondimensional Entropies for the species
    * standard states: Units: J/kmol/K
    *
@@ -728,10 +792,11 @@ namespace Cantera {
    */
   void IdealMolalSoln::
   getEntropy_R(doublereal* sr) const {
+    _updateStandardStateThermo();
     getEntropy_R_ref(sr);
   }
 
-  /**
+  /*
    * Get the nondimensional heat capacity at constant pressure
    * function for the species
    * standard states: Units J/kmol/K
@@ -747,10 +812,11 @@ namespace Cantera {
    *           constant pressure heat capacity for species k. 
    */
   void IdealMolalSoln::getCp_R(doublereal* cpr) const {
+    _updateStandardStateThermo();
     getCp_R_ref(cpr); 
   }
     
-  /**
+  /*
    * Get the molar volumes of each species in their standard
    * states at the current
    * <I>T</I> and <I>P</I> of the solution.
@@ -762,10 +828,32 @@ namespace Cantera {
    * Units = m^3 / kmol
    */
   void IdealMolalSoln::getStandardVolumes(doublereal *vol) const {
-    copy(m_speciesMolarVolume.begin(),
-	 m_speciesMolarVolume.end(), vol);
+    _updateStandardStateThermo();
+    std::copy(m_speciesMolarVolume.begin(),
+	      m_speciesMolarVolume.end(), vol);
   }
-    
+
+  /*
+   * Updates the standard state thermodynamic functions at the current T and P of the solution.
+   *
+   * @internal
+   *
+   * This function gets called for every call to functions in this
+   * class. It checks to see whether the temperature or pressure has changed and
+   * thus the ss thermodynamics functions for all of the species
+   * must be recalculated.
+   */                    
+  void IdealMolalSoln::_updateStandardStateThermo(doublereal pnow) const {
+    _updateRefStateThermo();
+    doublereal tnow = temperature();
+    if (pnow == -1.0) {
+      pnow = m_Pcurrent;
+    }
+    if (m_tlast != tnow || m_plast != pnow) {
+      m_tlast = tnow;
+      m_plast = pnow;
+    }
+  } 
 
   /*
    * ------ Thermodynamic Values for the Species Reference States ---
@@ -777,7 +865,7 @@ namespace Cantera {
    *  -------------- Utilities -------------------------------
    */
 
-  /**
+  /*
    *  Initialization routine for an IdealMolalSoln phase.
    *
    * This is a virtual routine. This routine will call initThermo()
@@ -788,7 +876,7 @@ namespace Cantera {
     MolalityVPSSTP::initThermo();
   }
 
-  /**
+  /*
    * Initialization of an IdealMolalSoln phase using an
    * xml file
    *
@@ -802,14 +890,15 @@ namespace Cantera {
    *            phase. If none is given, the first XML
    *            phase element will be used.
    */
-  void IdealMolalSoln::constructPhaseFile(string inputFile, string id) {
+  void IdealMolalSoln::constructPhaseFile(std::string inputFile, 
+					  std::string id) {
 
     if (inputFile.size() == 0) {
       throw CanteraError("IdealMolalSoln::constructPhaseFile",
 			 "input file is null");
     }
-    string path = findInputFile(inputFile);
-    ifstream fin(path.c_str());
+    std::string path = findInputFile(inputFile);
+    std::ifstream fin(path.c_str());
     if (!fin) {
       throw CanteraError("IdealMolalSoln::constructPhaseFile",
 			 "could not open "
@@ -833,7 +922,7 @@ namespace Cantera {
     delete fxml;
   }
    	
-  /**
+  /*
    *   Import and initialize an IdealMolalSoln phase 
    *   specification in an XML tree into the current object.
    *   Here we read an XML description of the phase.
@@ -857,9 +946,10 @@ namespace Cantera {
    *             to see if phaseNode is pointing to the phase
    *             with the correct id. 
    */
-  void IdealMolalSoln::constructPhaseXML(XML_Node& phaseNode, string id) {
+  void IdealMolalSoln::constructPhaseXML(XML_Node& phaseNode, 
+					 std::string id) {
     if (id.size() > 0) {
-      string idp = phaseNode.id();
+      std::string idp = phaseNode.id();
       if (idp != id) {
 	throw CanteraError("IdealMolalSoln::constructPhaseXML", 
 			   "phasenode and Id are incompatible");
@@ -885,7 +975,7 @@ namespace Cantera {
     }
   }
 
-  /**
+  /*
    *   Import and initialize an IdealMolalSoln phase 
    *   specification in an XML tree into the current object.
    *
@@ -904,7 +994,7 @@ namespace Cantera {
    *             to see if phaseNode is pointing to the phase
    *             with the correct id.
    */
-  void IdealMolalSoln::initThermoXML(XML_Node& phaseNode, string id) {
+  void IdealMolalSoln::initThermoXML(XML_Node& phaseNode, std::string id) {
 
     /*
      * Initialize the whole thermo object, using a virtual function.
@@ -912,7 +1002,7 @@ namespace Cantera {
     initThermo();
 
     if (id.size() > 0) {
-      string idp = phaseNode.id();
+      std::string idp = phaseNode.id();
       if (idp != id) {
 	throw CanteraError("IdealMolalSoln::initThermo", 
 			   "phasenode and Id are incompatible");
@@ -934,7 +1024,7 @@ namespace Cantera {
     if (thermoNode.hasChild("standardConc")) {
       XML_Node& scNode = thermoNode.child("standardConc");
       m_formGC = 2;
-      string formString = scNode.attrib("model");
+      std::string formString = scNode.attrib("model");
       if (formString != "") {
 	if (formString == "unity") {
 	  m_formGC = 0;
@@ -953,10 +1043,10 @@ namespace Cantera {
      * Get the Name of the Solvent:
      *      <solvent> solventName </solvent>
      */
-    string solventName = "";
+    std::string solventName = "";
     if (thermoNode.hasChild("solvent")) {
       XML_Node& scNode = thermoNode.child("solvent");
-      vector<string> nameSolventa;
+      std::vector<std::string> nameSolventa;
       getStringArray(scNode, nameSolventa);
       int nsp = static_cast<int>(nameSolventa.size());
       if (nsp != 1) {
@@ -971,15 +1061,15 @@ namespace Cantera {
      * Reconcile the solvent name and index.
      */
     for (int k = 0; k < m_kk; k++) {
-      string sname = speciesName(k);
+      std::string sname = speciesName(k);
       if (solventName == sname) {
 	m_indexSolvent = k;
 	break;
       }
     }
     if (m_indexSolvent == -1) {
-      cout << "IdealMolalSoln::initThermo: Solvent Name not found" 
-	   << endl;
+      std::cout << "IdealMolalSoln::initThermo: Solvent Name not found" 
+	   << std::endl;
       throw CanteraError("IdealMolalSoln::initThermo",
 			 "Solvent name not found");
     }
@@ -996,7 +1086,7 @@ namespace Cantera {
     XML_Node* speciesDB =
       get_XML_NameID("speciesData", speciesList["datasrc"],
 		     &phaseNode.root());
-    const vector<string>&sss = speciesNames();
+    const std::vector<std::string> &sss = speciesNames();
 
     for (int k = 0; k < m_kk; k++) {
       XML_Node* s =  speciesDB->findByAttr("name", sss[k]);
@@ -1014,7 +1104,7 @@ namespace Cantera {
     
   }
 
-  /**
+  /*
    * @internal
    * Set equation of state parameters. The number and meaning of
    * these depends on the subclass. 
@@ -1024,9 +1114,11 @@ namespace Cantera {
    */
   void IdealMolalSoln::setParameters(int n, doublereal* c) {
   }
-  void IdealMolalSoln::getParameters(int &n, doublereal * const c) {
+
+  void IdealMolalSoln::getParameters(int &n, doublereal * const c) const {
   }
-  /**
+
+  /*
    * Set equation of state parameter values from XML
    * entries. This method is called by function importPhase in
    * file importCTML.cpp when processing a phase definition in
@@ -1051,17 +1143,17 @@ namespace Cantera {
    * ------------ Private and Restricted Functions ------------------
    */
 
-  /**
+  /*
    * Bail out of functions with an error exit if they are not
    * implemented.
    */
-  doublereal IdealMolalSoln::err(string msg) const {
+  doublereal IdealMolalSoln::err(std::string msg) const {
     throw CanteraError("IdealMolalSoln",
 		       "Unfinished func called: " + msg );
     return 0.0;
   }
 
-  /**
+  /*
    * This internal function adjusts the lengths of arrays.
    *
    * This function is not virtual nor is it inherited

@@ -4,7 +4,6 @@
 #endif // _TURBULENT_VELOCITY_FIELD_INCLUDED
 
 
-
 /***********************************************************************
  * Turbulent_Velocity_Field_Block::LeastSquares_Reconstruction         *
  *                                 -- Reconstruct the velocity field.  *

@@ -135,9 +135,8 @@ void Time_Averaging_of_Solution(HEXA_BLOCK *Solution_Block,
   } else {
     // Homogeneous isotropic
     Taylor_scale = sqrt(15.0*vis_ave*u_rms*u_rms/eps_ss);
-/*     cout << "\n =======> Taylor scale based on TKE dissipation: " << Taylor_scale; */
-    Taylor_scale = sqrt(TWO*u_rms*u_rms/(TWO*ens));
-/*     cout << "\n =======> Taylor scale based on enstrophy: " << Taylor_scale; */
+    //cout << "\n =======> Taylor scale based on TKE dissipation: " << Taylor_scale;
+    //cout << "\n =======> Taylor scale based on enstrophy: " << Taylor_scale;
   }
 
   Re_Taylor = u_rms*Taylor_scale/vis_ave;
@@ -384,7 +383,7 @@ void Conditional_Averaging_of_Solution(HEXA_BLOCK *Solution_Block,
       for (int i = Solution_Block[p].ICl; i <= Solution_Block[p].ICu; ++i) {
         for (int j  = Solution_Block[p].JCl; j <= Solution_Block[p].JCu; ++j) {
            for (int k  = Solution_Block[p].KCl; k <= Solution_Block[p].KCu; ++k) {
-              if (Solution_Block[p].W[i][j][k].spec[0].c >= Yfuel_conditional) {
+	      if (Solution_Block[p].W[i][j][k].spec[0].c >= Yfuel_conditional) {
                 local_vol = Solution_Block[p].Grid.volume(i,j,k);
                 total_vol += local_vol;
                 u_p += sqr(Solution_Block[p].W[i][j][k].v.x - u_ave) * local_vol;
@@ -444,9 +443,8 @@ void Conditional_Averaging_of_Solution(HEXA_BLOCK *Solution_Block,
   } else {
     // Homogeneous isotropic
     Taylor_scale = sqrt(15.0*vis_ave*u_rms*u_rms/eps_ss);
-/*     cout << "\n =======> Taylor scale based on TKE dissipation: " << Taylor_scale; */
-    Taylor_scale = sqrt(TWO*u_rms*u_rms/(TWO*ens));
-/*     cout << "\n =======> Taylor scale based on enstrophy: " << Taylor_scale; */
+    //cout << "\n =======> Taylor scale based on TKE dissipation: " << Taylor_scale;
+    //cout << "\n =======> Taylor scale based on enstrophy: " << Taylor_scale;
   }
 
   Re_Taylor = u_rms*Taylor_scale/vis_ave;
@@ -674,5 +672,21 @@ void Max_and_Min_Cell_Volumes(HEXA_BLOCK *Solution_Block,
   }
 
 }
+
+/********************************************************
+ *       Burning rate                                   *
+ ********************************************************/
+template<typename SOLN_pSTATE, typename SOLN_cSTATE>
+double Turbulent_Burning_Rate(Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> *Solution_Block,
+			      AdaptiveBlock3D_List &LocalSolnBlockList,
+			      Grid3D_Input_Parameters &IPs) {
+
+  cout << "\n Explicit Specialization of "
+       << "Turbulent_Burning_Rate() "
+       << "required.\n";
+
+  return ZERO;
+}
+
 
 #endif // _TURBULENCE_AVERAGING_INCLUDED

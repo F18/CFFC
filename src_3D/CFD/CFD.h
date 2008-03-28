@@ -503,6 +503,9 @@ inline char *Date_And_Time() {
 #define	IC_SOD_YDIR                     3
 #define IC_SOD_ZDIR                     4
 #define	IC_SHOCK_BOX                    5
+#define IC_SHOCK_BOX_XY                 400
+#define IC_SHOCK_BOX_YZ                 401
+#define IC_SHOCK_BOX_XZ                 402
 #define	IC_GROTH                        6
 #define	IC_GROTH_XDIR                   6
 #define	IC_GROTH_YDIR                   7

@@ -12,7 +12,6 @@
 
 /* Include CFFC header files */
 #include "AdvectDiffuse2DState.h" // Include 2D advection diffusion equation solution state header file
-#include "../Grid/Grid2DQuad.h"   // Include 2D quadrilateral multiblock grid header file
 #include "../FASMultigrid2D/FASMultigrid2DInput.h" // Include multigrid input header file.
 #include "../ICEM/ICEMCFD.h"      // Include ICEMCFD input header file.
 #include "../Utilities/TypeDefinition.h" // Include TypeDefinition header file.
@@ -22,6 +21,7 @@
 /* Define the structures and classes. */
 
 #define	INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D    128
+#define	LONG_INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D    256
 
 // Enviroment flag for CFFC root directory path
 #define PATHVAR_ADVECTDIFFUSE2D "CFFC_Path"
@@ -40,7 +40,7 @@ public:
   //! CFFC root directory path:
   char CFFC_Path[INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
   //! Input file name:
-  char Input_File_Name[INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
+  char Input_File_Name[LONG_INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
   //! Input file stream:
   ifstream Input_File;
   //! Input file line number:
@@ -137,6 +137,7 @@ public:
          Ellipse_Length_Y_Axis, Chord_Length, Orifice_Radius,
          Annulus_Theta_Start, Annulus_Theta_End;
   int Nozzle_Type;
+  Vector2D VertexSW, VertexSE, VertexNE, VertexNW;
   double X_Scale, X_Rotate;
   Vector2D X_Shift;
   char **ICEMCFD_FileNames;
@@ -202,14 +203,14 @@ public:
   //! @name Output parameters:
   //@{
   //! Output file name:
-  char Output_File_Name[INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
+  char Output_File_Name[LONG_INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
   //! Multi-block mesh definition input file names:
-  char Grid_File_Name[INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
-  char Grid_Definition_File_Name[INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
+  char Grid_File_Name[LONG_INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
+  char Grid_Definition_File_Name[LONG_INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
   //! Restart file name:
-  char Restart_File_Name[INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
+  char Restart_File_Name[LONG_INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
   //! Gnuplot file name:
-  char Gnuplot_File_Name[INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
+  char Gnuplot_File_Name[LONG_INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
   //! Next_Control_Parameter:
   char Next_Control_Parameter[INPUT_PARAMETER_LENGTH_ADVECTDIFFUSE2D];
   //! Output format type indicator:

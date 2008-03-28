@@ -5,7 +5,7 @@
 
 #include "kernel/EdgePhase.h"
 #include "kernel/EdgeKinetics.h"
-#include "kernel/importCTML.h"
+#include "kernel/importKinetics.h"
 
 namespace Cantera {
 
@@ -13,7 +13,7 @@ namespace Cantera {
         public EdgePhase, public EdgeKinetics
     {
     public:
-        Edge(string infile, string id, vector<ThermoPhase*> phases) 
+        Edge(std::string infile, std::string id, std::vector<ThermoPhase*> phases) 
             : m_ok(false), m_r(0) {
 
             m_r = get_XML_File(infile); 
@@ -33,7 +33,7 @@ namespace Cantera {
         virtual ~Edge() {}
 
         bool operator!() { return !m_ok;}
-        bool ready() { return m_ok; }
+        bool ready() const { return m_ok; }
 
     protected:
         bool m_ok;

@@ -4,8 +4,8 @@
 
 /*
  * $Author: dggoodwin $
- * $Revision: 1.11 $
- * $Date: 2006/11/07 21:02:21 $
+ * $Revision: 1.14 $
+ * $Date: 2007/07/27 03:38:24 $
  */
 
 // Copyright 2001  California Institute of Technology
@@ -18,7 +18,7 @@
 #pragma warning(disable:4503)
 #endif
 
-#include "../ThermoPhase.h"
+#include "ThermoPhase.h"
 
 using namespace Cantera;
 
@@ -45,14 +45,14 @@ namespace CanteraZeroD {
 
     public:
 
-        ReactorBase(string name = "(none)");
+        ReactorBase(std::string name = "(none)");
         virtual ~ReactorBase(){}
 
         //-----------------------------------------------------
 
         virtual int type() const { return 0; }
-        string name() const { return m_name; }
-        void setName(string name) { m_name = name; }
+        std::string name() const { return m_name; }
+        void setName(std::string name) { m_name = name; }
 
         /** @name Methods to set up a simulation. */
         //@{
@@ -88,6 +88,10 @@ namespace CanteraZeroD {
         void addOutlet(FlowDevice& outlet);
         FlowDevice& inlet(int n = 0);
         FlowDevice& outlet(int n = 0);
+
+        int nInlets() { return m_inlet.size(); }
+        int nOutlets() { return m_outlet.size(); }
+        int nWalls() { return m_wall.size(); }
 
         void addWall(Wall& w, int lr);
         Wall& wall(int n);
@@ -143,7 +147,7 @@ namespace CanteraZeroD {
 
         //@}
 
-        int error(string msg) const {
+        int error(std::string msg) const {
             writelog("Error: "+msg);
             return 1;
         }
@@ -161,16 +165,16 @@ namespace CanteraZeroD {
         doublereal m_intEnergy;
         doublereal m_pressure;
         vector_fp m_state;
-        vector<FlowDevice*> m_inlet, m_outlet;
-        vector<Wall*> m_wall;
+        std::vector<FlowDevice*> m_inlet, m_outlet;
+        std::vector<Wall*> m_wall;
         vector_int m_lr;
         int m_nwalls;
-        string m_name;
+        std::string m_name;
         double m_rho0;
 
     private:
 
-        void tilt(string method="") const { 
+        void tilt(std::string method="") const { 
         throw CanteraError("ReactorBase::"+method,
             "ReactorBase method called!"); }
     };

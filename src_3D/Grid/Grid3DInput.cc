@@ -229,6 +229,15 @@ int Grid3D_Input_Parameters::Parse_Next_Input_Control_Parameter(char *code,
         Turbulence_Box_Width = 0.14;
         Turbulence_Box_Height = 0.14;
 
+     } else if (strcmp(Grid_Type, "Bunsen_Inflow") == 0) {
+        i_Grid = GRID_BUNSEN_INFLOW;
+        Radius_Bunsen_Burner_Fuel_Line = 0.0056;
+        Radius_Bunsen_Burner = 0.07;
+        Height_Bunsen_Burner = 0.2;
+	Turbulence_Box_Length = 0.2;
+        Turbulence_Box_Width = 0.14;
+        Turbulence_Box_Height = 0.14;
+
      } else if (strcmp(Grid_Type, "Turbulence_Box") == 0) {
         i_Grid = GRID_TURBULENCE_BOX;
         Turbulence_Box_Length = ONE;
@@ -450,6 +459,51 @@ int Grid3D_Input_Parameters::Parse_Next_Input_Control_Parameter(char *code,
      i_command = 3030;
      value >> Box_Height;
      if (Box_Height <= ZERO) i_command = INVALID_INPUT_VALUE;
+
+  } else if (strcmp(code, "Radius_Bunsen_Burner_Fuel_Line") == 0) {
+     i_command = 3031;
+     value >> Radius_Bunsen_Burner;
+     if (Radius_Bunsen_Burner <ZERO) i_command = INVALID_INPUT_VALUE;
+
+  } else if (strcmp(code, "Radius_Bunsen_Burner") == 0) {
+     i_command = 3032;
+     value >> Radius_Bunsen_Burner;
+     if (Radius_Bunsen_Burner <ZERO) i_command = INVALID_INPUT_VALUE;
+
+  } else if (strcmp(code, "Height_Bunsen_Burner") == 0) {
+     i_command = 3033;
+     value >> Height_Bunsen_Burner;
+     if (Height_Bunsen_Burner <ZERO) i_command = INVALID_INPUT_VALUE;
+
+  } else if (strcmp(code, "Number_of_Cells_Turbulence_Idir") == 0) {
+     i_command = 3034;
+     value >> NCells_Turbulence_Idir;
+     if (NCells_Turbulence_Idir < 1) i_command = INVALID_INPUT_VALUE;
+
+  } else if (strcmp(code, "Number_of_Cells_Turbulence_Jdir") == 0) {
+     i_command = 3035;
+     value >> NCells_Turbulence_Jdir;
+     if (NCells_Turbulence_Jdir <1) i_command = INVALID_INPUT_VALUE;
+
+  } else if (strcmp(code, "Number_of_Cells_Turbulence_Kdir") == 0) {
+     i_command = 3036;
+     value >> NCells_Turbulence_Kdir;
+     if (NCells_Turbulence_Kdir < 1) i_command = INVALID_INPUT_VALUE;
+
+  } else if (strcmp(code, "Turbulence_Box_Length") == 0) {
+     i_command = 3037;
+     value >> Turbulence_Box_Length;
+     if (Turbulence_Box_Length <= ZERO) i_command = INVALID_INPUT_VALUE;
+
+  } else if (strcmp(code, "Turbulence_Box_Width") == 0) {
+     i_command = 3038;
+     value >> Turbulence_Box_Width;
+     if (Turbulence_Box_Width <= ZERO) i_command = INVALID_INPUT_VALUE;
+
+  } else if (strcmp(code, "Turbulence_Box_Height") == 0) {
+     i_command = 3039;
+     value >> Turbulence_Box_Height;
+     if (Turbulence_Box_Height <= ZERO) i_command = INVALID_INPUT_VALUE;
     
   } else if (strcmp(code, "Radius_Bunsen_Burner_Fuel_Line") == 0) {
      i_command = 3031;

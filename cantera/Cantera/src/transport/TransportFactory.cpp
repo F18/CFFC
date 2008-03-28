@@ -13,7 +13,7 @@
 #pragma warning(disable:4503)
 #endif
 
-#include "../ThermoPhase.h"
+#include "ThermoPhase.h"
 
 // known transport models
 #include "MultiTransport.h"
@@ -24,16 +24,17 @@
 
 #include "TransportFactory.h"
 
-#include "../polyfit.h"
+#include "polyfit.h"
 #include "MMCollisionInt.h"
 #include <stdio.h>
-#include "../xml.h"
-#include "../XML_Writer.h"
+#include "xml.h"
+#include "XML_Writer.h"
 #include "TransportParams.h"
-#include "../global.h"
-#include "../IdealGasPhase.h"
-#include "../ctml.h"
+#include "global.h"
+#include "IdealGasPhase.h"
+#include "ctml.h"
 
+using namespace std;
 
 /**
  * polynomial degree used for fitting collision integrals
@@ -45,6 +46,9 @@
 namespace Cantera {
 
     TransportFactory* TransportFactory::s_factory = 0;
+#if defined(THREAD_SAFE_CANTERA)
+    boost::mutex  TransportFactory::transport_mutex;
+#endif
 
     
     ////////////////////////// exceptions /////////////////////////
@@ -230,23 +234,29 @@ namespace Cantera {
         f_eps = xi*xi;
     }
 
-    /**
-     * TransportFactory(): default constructor
-     *     
-     *   The default constructor for this class sets up 
-     *   m_models[], a mapping between the string name
-     *   for a transport model and the integer name.
-     */
-    TransportFactory::TransportFactory() : m_integrals(0) {
-        m_models["Mix"] = cMixtureAveraged;
-        m_models["Multi"] = cMulticomponent;
-        m_models["Solid"] = cSolidTransport;
-        m_models["DustyGas"] = cDustyGasTransport;
-        m_models["CK_Multi"] = CK_Multicomponent;
-        m_models["CK_Mix"] = CK_MixtureAveraged;
-        m_models["User"] = cUserTransport;
-        m_models["None"] = 0;
-    }
+  /**
+   * TransportFactory(): default constructor
+   *     
+   *   The default constructor for this class sets up 
+   *   m_models[], a mapping between the string name
+   *   for a transport model and the integer name.
+   */
+  TransportFactory::TransportFactory() :
+    m_verbose(false),
+    m_integrals(0)
+    
+  {
+    m_models["Mix"] = cMixtureAveraged;
+    m_models["Multi"] = cMulticomponent;
+    m_models["Solid"] = cSolidTransport;
+    m_models["DustyGas"] = cDustyGasTransport;
+    m_models["CK_Multi"] = CK_Multicomponent;
+    m_models["CK_Mix"] = CK_MixtureAveraged;
+    m_models["User"] = cUserTransport;
+    m_models["None"] = None;
+    //m_models["Radiative"] = cRadiative;
+
+  }
 
      /**
       * Destructor 
@@ -258,20 +268,23 @@ namespace Cantera {
       * explicitly deleted.
       */
     TransportFactory::~TransportFactory() {
-	if (m_integrals) {
+    if (m_integrals) {
             delete m_integrals;
             m_integrals = 0;
-	}
     }
-	
+    }
+    
      /**
       * This static function deletes the statically allocated instance.
       */
-    void TransportFactory::deleteTransportFactory() {
-	if (s_factory) {
-	  delete s_factory;
-	  s_factory = 0;
-	}
+    void TransportFactory::deleteFactory() {
+      #if defined(THREAD_SAFE_CANTERA)
+         boost::mutex::scoped_lock   lock(transport_mutex) ;
+      #endif
+    if (s_factory) {
+      delete s_factory;
+      s_factory = 0;
+    }
     }
 
     /**
@@ -421,25 +434,28 @@ namespace Cantera {
         // Chemkin fits the entire T* range in the Monchick and Mason tables,
         // so modify tstar_min and tstar_max if in Chemkin compatibility mode
 
-        // NOTE: the 'if' was commented out DGG 11/12/03
-        if (mode == CK_Mode) {  // uncommented
+        if (mode == CK_Mode) {  
             tstar_min = 0.101; 
             tstar_max = 99.9;
-        }                       // uncommented
+        }                       
 
 
         // initialize the collision integral calculator for the desired
         // T* range
-        tr.xml->XML_open(flog, "collision_integrals");
+        if (m_verbose) 
+            tr.xml->XML_open(flog, "collision_integrals");
         m_integrals = new MMCollisionInt;
         m_integrals->init(tr.xml, tstar_min, tstar_max, log_level);
         fitCollisionIntegrals(flog, tr);
-        tr.xml->XML_close(flog, "collision_integrals");
+        if (m_verbose)
+            tr.xml->XML_close(flog, "collision_integrals");
 
         // make polynomial fits
-        tr.xml->XML_open(flog, "property fits");
+        if (m_verbose)
+            tr.xml->XML_open(flog, "property fits");
         fitProperties(tr,flog);
-        tr.xml->XML_close(flog, "property fits");
+        if (m_verbose)
+            tr.xml->XML_close(flog, "property fits");
     }
 
 
@@ -450,17 +466,19 @@ namespace Cantera {
         
         TransportParams tr;
         ofstream flog("transport_log.xml");
+
         tr.xml = new XML_Writer(flog);
-        tr.xml->XML_open(flog, "transport");
+        if (m_verbose) {
+            tr.xml->XML_open(flog, "transport");
+        }
 
         // set up Monchick and Mason collision integrals
         setupMM(flog, transport_database, thermo, mode, log_level, tr);
 
         // do model-specific initialization
         tran->init(tr);
-
-        tr.xml->XML_close(flog, "transport");
-        flog.close();
+        if (m_verbose)
+            tr.xml->XML_close(flog, "transport");
 
         // finished with log file
         flog.close();
@@ -491,12 +509,13 @@ namespace Cantera {
         // Chemkin fits to sixth order polynomials
         int degree = (mode == CK_Mode ? 6 : COLL_INT_POLY_DEGREE);
 
-        tr.xml->XML_open(logfile, "tstar_fits");
-        tr.xml->XML_comment(logfile, "fits to A*, B*, and C* vs. log(T*).\n"
-            "These are done only for the required dstar(j,k) values."); 
-        if (tr.log_level < 3) 
-            tr.xml->XML_comment(logfile, "*** polynomial coefficients not printed (log_level < 3) ***");
-
+        if (m_verbose) {
+            tr.xml->XML_open(logfile, "tstar_fits");
+            tr.xml->XML_comment(logfile, "fits to A*, B*, and C* vs. log(T*).\n"
+                "These are done only for the required dstar(j,k) values."); 
+            if (tr.log_level < 3) 
+                tr.xml->XML_comment(logfile, "*** polynomial coefficients not printed (log_level < 3) ***");
+        }
         for (i = 0; i < nsp; i++) 
         {
             for (j = i; j < nsp; j++) 
@@ -526,7 +545,7 @@ namespace Cantera {
                     tr.astar_poly.push_back(ca);
                     tr.bstar_poly.push_back(cb);
                     tr.cstar_poly.push_back(cc);
-					tr.poly[i][j] = static_cast<int>(tr.astar_poly.size()) - 1;
+                    tr.poly[i][j] = static_cast<int>(tr.astar_poly.size()) - 1;
                     tr.fitlist.push_back(dstar);
                 }
 
@@ -538,7 +557,8 @@ namespace Cantera {
                 tr.poly[j][i] = tr.poly[i][j];
             } 
         }
-        tr.xml->XML_close(logfile, "tstar_fits");
+        if (m_verbose)
+            tr.xml->XML_close(logfile, "tstar_fits");
     }
 
 
@@ -735,23 +755,26 @@ namespace Cantera {
         // fit the pure-species viscosity and thermal conductivity for
         // each species
 
-        if (tr.log_level < 2)
+        if (tr.log_level < 2 && m_verbose)
             tr.xml->XML_comment(logfile, 
-                "*** polynomial coefficients not printed (log_level < 3) ***");
+                "*** polynomial coefficients not printed (log_level < 2) ***");
 
         int ipoly;
         doublereal sqrt_T, visc, err, relerr, 
             mxerr = 0.0, mxrelerr = 0.0, mxerr_cond = 0.0, mxrelerr_cond = 0.0;
-        tr.xml->XML_open(logfile, "viscosity");
-        tr.xml->XML_comment(logfile,"Polynomial fits for viscosity");
-        if (mode == CK_Mode) {
-            tr.xml->XML_comment(logfile,"log(viscosity) fit to cubic "
-                "polynomial in log(T)");
-        }
-        else {
-            sprintf(s, "viscosity/sqrt(T) fit to "
-                "polynomial of degree %d in log(T)",degree);
-            tr.xml->XML_comment(logfile,s);
+
+        if (m_verbose) {
+            tr.xml->XML_open(logfile, "viscosity");
+            tr.xml->XML_comment(logfile,"Polynomial fits for viscosity");
+            if (mode == CK_Mode) {
+                tr.xml->XML_comment(logfile,"log(viscosity) fit to cubic "
+                    "polynomial in log(T)");
+            }
+            else {
+                sprintf(s, "viscosity/sqrt(T) fit to "
+                    "polynomial of degree %d in log(T)",degree);
+                tr.xml->XML_comment(logfile,s);
+            }
         }
 
 
@@ -869,52 +892,55 @@ namespace Cantera {
             tr.visccoeffs.push_back(c);
             tr.condcoeffs.push_back(c2);
 
-            if (tr.log_level >= 2) {
+            if (tr.log_level >= 2 && m_verbose) {
                 tr.xml->XML_writeVector(logfile, "    ", tr.thermo->speciesName(k), 
                     c.size(), DATA_PTR(c));
             }
         }
 
-        sprintf(s, "Maximum viscosity absolute error:  %12.6g", mxerr);
-        tr.xml->XML_comment(logfile,s);
-        sprintf(s, "Maximum viscosity relative error:  %12.6g", mxrelerr);
-        tr.xml->XML_comment(logfile,s);        
-        tr.xml->XML_close(logfile, "viscosity");
-
-
-        tr.xml->XML_open(logfile, "conductivity");
-        tr.xml->XML_comment(logfile,"Polynomial fits for conductivity");
-        if (mode == CK_Mode) 
-            tr.xml->XML_comment(logfile,"log(conductivity) fit to cubic "
-                "polynomial in log(T)");
-        else {
-            sprintf(s, "conductivity/sqrt(T) fit to "
-                "polynomial of degree %d in log(T)",degree);
+        if (m_verbose) {
+            sprintf(s, "Maximum viscosity absolute error:  %12.6g", mxerr);
             tr.xml->XML_comment(logfile,s);
-        }
-        if (tr.log_level >= 2) 
-            for (k = 0; k < tr.nsp; k++) {
-                tr.xml->XML_writeVector(logfile, "    ", tr.thermo->speciesName(k), 
-                    degree+1, DATA_PTR(tr.condcoeffs[k]));
-            }            
-        sprintf(s, "Maximum conductivity absolute error:  %12.6g", mxerr_cond);
-        tr.xml->XML_comment(logfile,s);
-        sprintf(s, "Maximum conductivity relative error:  %12.6g", mxrelerr_cond);
-        tr.xml->XML_comment(logfile,s);        
-        tr.xml->XML_close(logfile, "conductivity");
+            sprintf(s, "Maximum viscosity relative error:  %12.6g", mxrelerr);
+            tr.xml->XML_comment(logfile,s);        
+            tr.xml->XML_close(logfile, "viscosity");
 
-        // fit the binary diffusion coefficients for each species pair
 
-        tr.xml->XML_open(logfile, "binary_diffusion_coefficients");
-        tr.xml->XML_comment(logfile, "binary diffusion coefficients");
-        if (mode == CK_Mode) 
-            tr.xml->XML_comment(logfile,"log(D) fit to cubic "
-                "polynomial in log(T)");
-        else {
-            sprintf(s, "D/T**(3/2) fit to "
-                "polynomial of degree %d in log(T)",degree);
+            tr.xml->XML_open(logfile, "conductivity");
+            tr.xml->XML_comment(logfile,"Polynomial fits for conductivity");
+            if (mode == CK_Mode) 
+                tr.xml->XML_comment(logfile,"log(conductivity) fit to cubic "
+                    "polynomial in log(T)");
+            else {
+                sprintf(s, "conductivity/sqrt(T) fit to "
+                    "polynomial of degree %d in log(T)",degree);
+                tr.xml->XML_comment(logfile,s);
+            }
+            if (tr.log_level >= 2) 
+                for (k = 0; k < tr.nsp; k++) {
+                    tr.xml->XML_writeVector(logfile, "    ", tr.thermo->speciesName(k), 
+                        degree+1, DATA_PTR(tr.condcoeffs[k]));
+                }            
+            sprintf(s, "Maximum conductivity absolute error:  %12.6g", mxerr_cond);
             tr.xml->XML_comment(logfile,s);
+            sprintf(s, "Maximum conductivity relative error:  %12.6g", mxrelerr_cond);
+            tr.xml->XML_comment(logfile,s);        
+            tr.xml->XML_close(logfile, "conductivity");
+            
+            // fit the binary diffusion coefficients for each species pair
+            
+            tr.xml->XML_open(logfile, "binary_diffusion_coefficients");
+            tr.xml->XML_comment(logfile, "binary diffusion coefficients");
+            if (mode == CK_Mode) 
+                tr.xml->XML_comment(logfile,"log(D) fit to cubic "
+                    "polynomial in log(T)");
+            else {
+                sprintf(s, "D/T**(3/2) fit to "
+                    "polynomial of degree %d in log(T)",degree);
+                tr.xml->XML_comment(logfile,s);
+            }
         }
+
         mxerr = 0.0, mxrelerr = 0.0;
         vector_fp diff(np + 1);
         doublereal eps, sigma;
@@ -975,17 +1001,20 @@ namespace Cantera {
                     if (fabs(relerr) > mxrelerr) mxrelerr = fabs(relerr);               
                 }
                 tr.diffcoeffs.push_back(c);
-                if (tr.log_level >= 2)
+                if (tr.log_level >= 2 && m_verbose)
                     tr.xml->XML_writeVector(logfile, "    ", tr.thermo->speciesName(k)
                         + "__"+tr.thermo->speciesName(j), c.size(), DATA_PTR(c));
             }
         }
-        sprintf(s,"Maximum binary diffusion coefficient absolute error:"
-            "  %12.6g", mxerr);
-        tr.xml->XML_comment(logfile,s);
-        sprintf(s, "Maximum binary diffusion coefficient relative error:"
-            "%12.6g", mxrelerr);
-        tr.xml->XML_comment(logfile,s);
-        tr.xml->XML_close(logfile, "binary_diffusion_coefficients");
+        if (m_verbose) {
+            sprintf(s,"Maximum binary diffusion coefficient absolute error:"
+                "  %12.6g", mxerr);
+            tr.xml->XML_comment(logfile,s);
+            sprintf(s, "Maximum binary diffusion coefficient relative error:"
+                "%12.6g", mxrelerr);
+            tr.xml->XML_comment(logfile,s);
+            tr.xml->XML_close(logfile, "binary_diffusion_coefficients");
+        }
     }
 }
+

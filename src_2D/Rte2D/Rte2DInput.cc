@@ -88,11 +88,6 @@ void Set_Default_Input_Parameters(Rte2D_Input_Parameters &IP) {
     strcpy(IP.Flux_Function_Type, string_ptr);
     IP.i_Flux_Function = FLUX_FUNCTION_HLLE;
 
-    // Initial conditions:
-    string_ptr = "Uniform";
-    strcpy(IP.ICs_Type, string_ptr);
-    IP.i_ICs = IC_UNIFORM;
-
     /* Directory Path */
     IP.get_cffc_path();
 
@@ -123,7 +118,7 @@ void Set_Default_Input_Parameters(Rte2D_Input_Parameters &IP) {
     IP.Number_of_Angles_Ldir = 4;
 
     // set gas Absorption model
-    IP.i_AbsorptionModel = RTE2D_ABSORB_GRAY;
+    IP.i_AbsorptionModel = MEDIUM2D_ABSORB_GRAY;
     string_ptr = "Gray";
     strcpy(IP.AbsorptionModel, string_ptr);
 
@@ -132,13 +127,8 @@ void Set_Default_Input_Parameters(Rte2D_Input_Parameters &IP) {
     string_ptr = "Isotropic";
     strcpy(IP.ScatteringFunc, string_ptr);
 
-    // allocate and zero solution state
-    IP.Uo.Deallocate();
-    SetupStateStatic( IP );
-    IP.Uo.Allocate();
-    IP.Uo.Zero();
-
     // set gas constants
+    IP.Intensity      = ZERO;
     IP.AbsorptionCoef = ONE;
     IP.ScatteringCoef = ZERO;
     IP.Temperature    = THOUSAND;       //[K]
@@ -148,9 +138,17 @@ void Set_Default_Input_Parameters(Rte2D_Input_Parameters &IP) {
     IP.xco2           = 0.1;
     IP.xo2            = 0.0;
     IP.fsoot          = 0.0;
-    IP.Uo.SetAbsorption( IP.AbsorptionCoef );
-    IP.Uo.SetScattering( IP.ScatteringCoef );
-    IP.Uo.SetBlackbody( BlackBody(IP.Temperature) );
+
+    // Initial conditions:
+    string_ptr = "Uniform";
+    strcpy(IP.ICs_Type, string_ptr);
+    IP.i_ICs = IC_UNIFORM;
+
+    // Medium initial conditions:
+    string_ptr = "Uniform";
+    strcpy(IP.ICs_Medium, string_ptr);
+    IP.i_ICs_Medium = IC_UNIFORM;
+    IP.Medium_Field_Type = MEDIUM2D_FIELD_ANALYTIC;
 
     // boundary conditions
     IP.NorthWallTemp = ZERO;
@@ -160,7 +158,15 @@ void Set_Default_Input_Parameters(Rte2D_Input_Parameters &IP) {
     IP.NorthWallEmiss = ZERO;      
     IP.SouthWallEmiss = ZERO;      
     IP.EastWallEmiss = ZERO;      
-    IP.WestWallEmiss = ZERO;     
+    IP.WestWallEmiss = ZERO;  
+
+    // Setup conserved and medium state
+    IP.SetupInputState();
+
+    // NKS defaults
+    // Force no jacobian updates.
+    IP.NKS_IP.Min_Number_of_Newton_Steps_Requiring_Jacobian_Update = 2; // <- SIGSEGV if < 2
+    IP.NKS_IP.Min_L2_Norm_Requiring_Jacobian_Update = 1.0e+10;
 
     /***********************************************************************
      ***********************************************************************/
@@ -391,6 +397,15 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP) {
                           MPI::INT, 0);
     /***********************************************************************
      *************************** RTE SPECIFIC ******************************/
+    MPI::COMM_WORLD.Bcast(IP.ICs_Medium, 
+                          INPUT_PARAMETER_LENGTH_RTE2D, 
+                          MPI::CHAR, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.i_ICs_Medium), 
+                          1, 
+                          MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Medium_Field_Type), 
+                          1, 
+                          MPI::INT, 0);
     MPI::COMM_WORLD.Bcast(IP.RTE_Solver, 
                           INPUT_PARAMETER_LENGTH_RTE2D, 
                           MPI::CHAR, 0);
@@ -409,6 +424,9 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.i_DOM_Quadrature), 
                           1, 
                           MPI::INT, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.Intensity), 
+                          1, 
+                          MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&(IP.Temperature), 
                           1, 
                           MPI::DOUBLE, 0);
@@ -482,13 +500,6 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP) {
    // SNBCK Parameters
    IP.SNBCK_IP.Broadcast_Input_Parameters();
 
-   if (!CFFC_Primary_MPI_Processor()) {
-     IP.Uo.Deallocate();
-     SetupStateStatic( IP );
-     IP.Uo.Allocate();
-     IP.Uo.Zero();
-     SetInitialValues( IP.Uo, IP );
-   } /* endif */
    /***********************************************************************
     ***********************************************************************/
     MPI::COMM_WORLD.Bcast(IP.Flow_Geometry_Type, 
@@ -815,6 +826,12 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP) {
                           1, 
                           MPI::DOUBLE, 0);
 
+    //
+    // Setup conserved/medium states
+    //
+    if (!CFFC_Primary_MPI_Processor())
+      IP.SetupInputState();
+
 #endif
 
 }
@@ -913,6 +930,15 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP,
                        MPI::INT, Source_Rank);
     /***********************************************************************
      *************************** RTE SPECIFIC ******************************/
+    Communicator.Bcast(IP.ICs_Medium, 
+		       INPUT_PARAMETER_LENGTH_RTE2D, 
+		       MPI::CHAR, Source_Rank);
+    Communicator.Bcast(&(IP.i_ICs_Medium), 
+		       1, 
+		       MPI::INT, Source_Rank);
+    Communicator.Bcast(&(IP.Medium_Field_Type), 
+		       1, 
+		       MPI::INT, Source_Rank);
     Communicator.Bcast(IP.RTE_Solver, 
                        INPUT_PARAMETER_LENGTH_RTE2D, 
                        MPI::CHAR, Source_Rank);
@@ -931,6 +957,9 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.i_DOM_Quadrature), 
                        1, 
                        MPI::INT, Source_Rank);
+    Communicator.Bcast(&(IP.Intensity), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
     Communicator.Bcast(&(IP.Temperature), 
                        1, 
                        MPI::DOUBLE, Source_Rank);
@@ -1004,13 +1033,6 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP,
     // SNBCK Parameters
     IP.SNBCK_IP.Broadcast_Input_Parameters(Communicator, Source_CPU);
 
-    if (!(CFFC_MPI::This_Processor_Number == Source_CPU)) {
-      IP.Uo.Deallocate();
-      SetupStateStatic( IP );
-      IP.Uo.Allocate();
-      IP.Uo.Zero();
-      SetInitialValues( IP.Uo, IP );
-    } /* endif */
     /***********************************************************************
      ***********************************************************************/
     Communicator.Bcast(IP.Flow_Geometry_Type, 
@@ -1337,6 +1359,12 @@ void Broadcast_Input_Parameters(Rte2D_Input_Parameters &IP,
     Communicator.Bcast(&(IP.Freeze_Limiter_Residual_Level), 
                        1, 
                        MPI::DOUBLE, Source_Rank);
+
+    //
+    // Setup conserved and medium states
+    //
+    if (!(CFFC_MPI::This_Processor_Number == Source_CPU))
+      IP.SetupInputState();
 
 }
 #endif
@@ -2076,6 +2104,16 @@ int Parse_Next_Input_Control_Parameter(Rte2D_Input_Parameters &IP) {
           i_command = INVALID_INPUT_VALUE;
        } 
 
+    } else if (strcmp(IP.Next_Control_Parameter, "Intensity") == 0) {
+       i_command = 46;
+       IP.Line_Number = IP.Line_Number + 1;
+       IP.Input_File >> IP.Intensity;
+       IP.Input_File.getline(buffer, sizeof(buffer));
+       if (IP.Intensity < ZERO) {
+          i_command = INVALID_INPUT_VALUE;
+       }  
+
+
     } else if (strcmp(IP.Next_Control_Parameter, "Absorption_Coefficient") == 0) {
        i_command = 46;
        IP.Line_Number = IP.Line_Number + 1;
@@ -2090,9 +2128,9 @@ int Parse_Next_Input_Control_Parameter(Rte2D_Input_Parameters &IP) {
       Get_Next_Input_Control_Parameter(IP);
       strcpy(IP.AbsorptionModel, IP.Next_Control_Parameter);
        if (strcmp(IP.AbsorptionModel, "Gray") == 0) {
-	 IP.i_AbsorptionModel = RTE2D_ABSORB_GRAY;
+	 IP.i_AbsorptionModel = MEDIUM2D_ABSORB_GRAY;
        } else if (strcmp(IP.AbsorptionModel, "SNBCK") == 0) {
-	 IP.i_AbsorptionModel = RTE2D_ABSORB_SNBCK;
+	 IP.i_AbsorptionModel = MEDIUM2D_ABSORB_SNBCK;
        } else {
 	 i_command = INVALID_INPUT_VALUE;
        } /* endif */
@@ -2172,6 +2210,32 @@ int Parse_Next_Input_Control_Parameter(Rte2D_Input_Parameters &IP) {
       IP.Input_File >> IP.EastWallEmiss;  if (IP.EastWallEmiss < ZERO)  i_command = INVALID_INPUT_VALUE;
       IP.Input_File >> IP.WestWallEmiss;  if (IP.WestWallEmiss < ZERO)  i_command = INVALID_INPUT_VALUE;
       IP.Input_File.getline(buffer, sizeof(buffer));
+
+    } else if (strcmp(IP.Next_Control_Parameter, "ICs_Medium") == 0) {
+      i_command = 5;
+      Get_Next_Input_Control_Parameter(IP);
+      strcpy(IP.ICs_Medium, 
+	     IP.Next_Control_Parameter);
+      if (strcmp(IP.ICs_Medium, "Constant") == 0) {
+	IP.i_ICs_Medium = IC_CONSTANT;
+	IP.Medium_Field_Type = MEDIUM2D_FIELD_ANALYTIC;
+      } else if (strcmp(IP.ICs_Medium, "Uniform") == 0) {
+	IP.i_ICs_Medium = IC_UNIFORM;
+	IP.Medium_Field_Type = MEDIUM2D_FIELD_ANALYTIC;
+      } else if (strcmp(IP.ICs_Medium, "Discontinuous") == 0) {
+	IP.i_ICs_Medium = IC_DISCONTINUOUS;
+	IP.Medium_Field_Type = MEDIUM2D_FIELD_ANALYTIC;
+      } else if (strcmp(IP.ICs_Medium, "Restart") == 0) {
+	IP.i_ICs_Medium = IC_RESTART;
+	IP.Medium_Field_Type = MEDIUM2D_FIELD_DISCRETE;
+      } else if (strcmp(IP.ICs_Medium, "Specified") == 0) {
+	IP.i_ICs_Medium = IC_SPECIFIED;
+	IP.Medium_Field_Type = MEDIUM2D_FIELD_DISCRETE;    
+      } else {
+	IP.i_ICs_Medium = IC_UNIFORM;
+ 	IP.Medium_Field_Type = MEDIUM2D_FIELD_ANALYTIC;
+      } /* endif */
+	
 
     /***********************************************************************
      ***********************************************************************/
@@ -3107,12 +3171,8 @@ int Process_Input_Control_Parameter_File(Rte2D_Input_Parameters &Input_Parameter
        if (Command_Flag == EXECUTE_CODE) {
 	 /***********************************************************************
 	  *************************** RTE SPECIFIC ******************************/
-	 // now setup Rte2D_State
-	 Input_Parameters.Uo.Deallocate();
-	 SetupStateStatic( Input_Parameters );
-	 Input_Parameters.Uo.Allocate();
-	 Input_Parameters.Uo.Zero();
-	 SetInitialValues( Input_Parameters.Uo, Input_Parameters );
+	 // Setup conserved and medium state
+	 Input_Parameters.SetupInputState();
 	 /***********************************************************************
 	  ***********************************************************************/
 	 break;

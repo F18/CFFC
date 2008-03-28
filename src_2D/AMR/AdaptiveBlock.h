@@ -211,6 +211,7 @@ inline void AdaptiveBlockResourceList::initialize(void) {
  *******************************************************************/
 inline void AdaptiveBlockResourceList::copy(const AdaptiveBlockResourceList &R) {
   int nused;
+  if (CPU==NULL && Block==NULL) deallocate();
   allocate(R.Ncpu,R.Nblk);
   ThisCPU = R.ThisCPU;
   Nused = R.Nused;
@@ -342,6 +343,12 @@ class AdaptiveBlock2D_Dimensions{
     // ~AdaptiveBlock2D_Dimensions(void);
     // Use automatically generated destructor.
 
+    /* copy function */
+    void copy(const AdaptiveBlock2D_Dimensions &Blk_Dimen) {
+      i = Blk_Dimen.i; j = Blk_Dimen.j; ghost = Blk_Dimen.ghost;
+    }
+
+
     /* Assignment operator. */
     // AdaptiveBlock2D_Dimensions operator = (const AdaptiveBlock2D_Dimensions &Blk_Dimen);
     // Use automatically generated assignment operator.
@@ -456,6 +463,12 @@ class AdaptiveBlock2D_Info{
     /* Destructor. */
     // ~AdaptiveBlock2D_Info(void);
     // Use automatically generated destructor.
+
+    /* copy function */
+    void copy(const AdaptiveBlock2D_Info &Blk_Info) {
+       cpu = Blk_Info.cpu; blknum = Blk_Info.blknum;
+       dimen.copy(Blk_Info.dimen); sector = Blk_Info.sector; level = Blk_Info.level;
+    }
 
     /* Assignment operator. */
     // AdaptiveBlock2D_Info operator = (const AdaptiveBlock2D_Info &Blk_Info);
@@ -637,6 +650,22 @@ class AdaptiveBlock2D{
     /* Assignment operator. */
     // AdaptiveBlock2D operator =(const AdaptiveBlock2D &Blk);
     // Use automatically generated assignment operator.
+
+    /* copy function */
+    void copy(const AdaptiveBlock2D &Blk) {
+      int i;
+      used = Blk.used; gblknum = Blk.gblknum; info.copy(Blk.info);
+       nN = Blk.nN; nS = Blk.nS; nE = Blk.nE; nW = Blk.nW;
+       for (i = 0; i <= ADAPTIVEBLOCK2D_NUMBER_NEIGHBOURS_MAX-1; ++i) {
+	 infoN[i].copy(Blk.infoN[i]); infoS[i].copy(Blk.infoS[i]);
+	 infoE[i].copy(Blk.infoE[i]); infoW[i].copy(Blk.infoW[i]);
+       } /* endfor */
+       nNW = Blk.nNW; nNE = Blk.nNE; nSE = Blk.nSE; nSW = Blk.nSW;
+       for (i = 0; i <= ADAPTIVEBLOCK2D_NUMBER_CORNER_NEIGHBOURS_MAX-1; ++i) {
+	 infoNW[i].copy(Blk.infoNW[i]); infoNE[i].copy(Blk.infoNE[i]);
+	 infoSE[i].copy(Blk.infoSE[i]); infoSW[i].copy(Blk.infoSW[i]);
+       } /* endfor */
+    }
 
     /* Input-output operators. */
     friend ostream &operator << (ostream &out_file,

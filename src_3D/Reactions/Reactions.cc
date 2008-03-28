@@ -365,9 +365,9 @@ void Reaction_set::ct_load_mechanism(string &mechanism_file_name,
   
   //create a new ideal gas mixture class
   try {
-    ct_gas = new IdealGasMix(mechanism_file_name, mechanism_name);
+    ct_gas = new Cantera::IdealGasMix(mechanism_file_name, mechanism_name);
   }
-  catch (CanteraError) {
+  catch (Cantera::CanteraError) {
     Cantera::showErrors();
   }
 
@@ -439,7 +439,7 @@ void Reaction_set::ct_parse_schmidt_string(const string& schmidtStr,
 #ifdef _CANTERA_VERSION
 
   // declares
-  compositionMap xx;
+  Cantera::compositionMap xx;
   int kk = ct_gas->nSpecies();
   double s;
 
@@ -447,7 +447,7 @@ void Reaction_set::ct_parse_schmidt_string(const string& schmidtStr,
   for (int k = 0; k < kk; k++) xx[ct_gas->speciesName(k)] = -1.0;
 
   // parse map
-  parseCompString(schmidtStr, xx);
+  Cantera::parseCompString(schmidtStr, xx);
 
   // set schmidt numbers
   for (int k = 0; k < kk; k++) { 

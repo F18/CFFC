@@ -99,12 +99,14 @@ void ICs(Rte2D_Quad_Block *Soln_ptr,
 
     int i;
 
+
     /* Assign initial data for each solution block. */
 
     for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
        if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
 	  // Set flow geometry indicator (planar/axisymmetric) flow block.
  	  Soln_ptr[i].Axisymmetric = Input_Parameters.Axisymmetric;
+	  Soln_ptr[i].Medium_Field_Type = Input_Parameters.Medium_Field_Type;
 	  Soln_ptr[i].NorthWallTemp  = Input_Parameters.NorthWallTemp;   
 	  Soln_ptr[i].SouthWallTemp  = Input_Parameters.SouthWallTemp;  
 	  Soln_ptr[i].EastWallTemp   = Input_Parameters.EastWallTemp;   
@@ -115,8 +117,19 @@ void ICs(Rte2D_Quad_Block *Soln_ptr,
 	  Soln_ptr[i].WestWallEmiss  = Input_Parameters.WestWallEmiss;
 
           // Set initial data.
-          ICs(Soln_ptr[i], 
-              Input_Parameters);
+          ICs(Soln_ptr[i], Input_Parameters);
+
+	  //
+          // Set initial data for medium
+	  //
+	  // For an analytically prescribed field
+	  if (Soln_ptr[i].Medium_Field_Type == MEDIUM2D_FIELD_ANALYTIC)
+	    PrescribeFields(Soln_ptr[i]);
+
+	  //
+	  // for a discrete field specified by the user
+	  // do nothing
+	  
        } /* endif */
     }  /* endfor */
 
@@ -182,26 +195,23 @@ int Read_Restart_Solution(Rte2D_Quad_Block *Soln_ptr,
           restart_file.unsetf(ios::skipws);
 
 	  //------------------------ Rte2D Specific -------------------------//
-
           restart_file.setf(ios::skipws);
 	  restart_file >> Input_Parameters.i_RTE_Solver;	    
 	  restart_file >> Input_Parameters.Number_of_Angles_Mdir;	    
 	  restart_file >> Input_Parameters.Number_of_Angles_Ldir;	    
 	  restart_file >> Input_Parameters.i_DOM_Quadrature;	    
-	  restart_file >> Input_Parameters.i_AbsorptionModel;	    
-	  restart_file >> Input_Parameters.SNBCK_IP;	    
-	  restart_file >> Input_Parameters.Axisymmetric;	    
+	  restart_file >> Input_Parameters.i_AbsorptionModel;
+	  restart_file >> Input_Parameters.SNBCK_IP;
+	  restart_file >> Input_Parameters.Axisymmetric;
           restart_file.unsetf(ios::skipws);
-	  Input_Parameters.Uo.Deallocate();
-	  SetupStateStatic( Input_Parameters );
-	  Input_Parameters.Uo.Allocate();
-	  Input_Parameters.Uo.Zero();
 
+	  // Setup conserved and medium state
+	  Input_Parameters.SetupInputState();
 	  //---------------------- End Rte2D Specific -----------------------//
 
           if (!i_new_time_set) {
              Number_of_Time_Steps = nsteps;
-             Input_Parameters.Maximum_Number_of_Time_Steps += Number_of_Time_Steps;
+             //Input_Parameters.Maximum_Number_of_Time_Steps += Number_of_Time_Steps;
 	     Time = time0;
              CPU_Time.cput = cpu_time0.cput;
 
@@ -213,6 +223,19 @@ int Read_Restart_Solution(Rte2D_Quad_Block *Soln_ptr,
 
           // Close restart file.
           restart_file.close();
+
+	  //------------------------ Rte2D Specific -------------------------//
+	  //OVERIDE Restart File settings with Input File Settings (may have changed)
+	  // Soln_ptr[i].Flow_Type = Input_Parameters.FlowType; // <-- not used (static)
+	  Soln_ptr[i].Axisymmetric = Input_Parameters.Axisymmetric;
+	  Soln_ptr[i].Medium_Field_Type = Input_Parameters.Medium_Field_Type;
+
+          // Prescribe the medium field data if we have an analytic 
+	  // function specifying it.
+          if (Soln_ptr[i].Medium_Field_Type == MEDIUM2D_FIELD_ANALYTIC)
+	    PrescribeFields(Soln_ptr[i]);
+	  //---------------------- End Rte2D Specific -----------------------//
+
        } /* endif */
     }  /* endfor */
 
@@ -281,7 +304,7 @@ int Write_Restart_Solution(Rte2D_Quad_Block *Soln_ptr,
 	  restart_file << Input_Parameters.i_RTE_Solver << "\n";	    
 	  restart_file << Input_Parameters.Number_of_Angles_Mdir << "\n";	    
 	  restart_file << Input_Parameters.Number_of_Angles_Ldir << "\n";	    
-	  restart_file << Input_Parameters.DOM_Quadrature << "\n";	    
+	  restart_file << Input_Parameters.i_DOM_Quadrature << "\n";	    
 	  restart_file << Input_Parameters.i_AbsorptionModel << "\n";
 	  restart_file << Input_Parameters.SNBCK_IP << "\n";	    
 	  restart_file << Input_Parameters.Axisymmetric << "\n";	    
@@ -775,31 +798,6 @@ void BCs_Space_March(Rte2D_Quad_Block *Soln_ptr,
     }  /* endfor */
 
 }
-
-
-/********************************************************
- * Routine: Prescribe_NonSol                            *
- *                                                      *
- * This routine prescribes constants and coefficients   *
- * that are part of the state class but not part of the *
- * overall solution vector.                             *
- *                                                      *
- ********************************************************/
-// void Prescribe_NonSol(Rte2D_Quad_Block *Soln_ptr,
-// 		      AdaptiveBlock2D_List &Soln_Block_List,
-// 		      Rte2D_Input_Parameters &Input_Parameters) {
-
-//     int i;
-
-//     /* Prescribe data for each solution block. */
-
-//     for ( i = 0 ; i <= Soln_Block_List.Nblk-1 ; ++i ) {
-//        if (Soln_Block_List.Block[i].used == ADAPTIVEBLOCK2D_USED) {
-// 	 Prescribe_NonSol(Soln_ptr[i], Input_Parameters);
-//        } /* endif */
-//     }  /* endfor */
-
-// }
 
 
 /********************************************************

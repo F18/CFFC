@@ -5,8 +5,8 @@
 
 /*
  *  $Author: dggoodwin $
- *  $Date: 2003/08/28 14:22:20 $
- *  $Revision: 1.2 $
+ *  $Date: 2007/05/04 14:41:27 $
+ *  $Revision: 1.3 $
  *
  *  Copyright 2002 California Institute of Technology
  *
@@ -15,7 +15,7 @@
 #ifndef CT_MULTIJAC_H
 #define CT_MULTIJAC_H
 
-#include "../BandMatrix.h"
+#include "BandMatrix.h"
 #include "OneDim.h"
 #include "time.h"
 

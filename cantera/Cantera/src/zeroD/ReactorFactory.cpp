@@ -4,8 +4,8 @@
 
 /*
  * $Author: dggoodwin $
- * $Revision: 1.1 $
- * $Date: 2006/05/17 15:16:00 $
+ * $Revision: 1.3 $
+ * $Date: 2007/05/10 03:28:32 $
  */
 
 // Copyright 2006  California Institute of Technology
@@ -22,9 +22,13 @@
 #include "FlowReactor.h"
 #include "ConstPressureReactor.h"
 
+using namespace std;
 namespace CanteraZeroD {
 
     ReactorFactory* ReactorFactory::s_factory = 0;
+   #ifdef THREAD_SAFE_CANTERA
+    boost::mutex ReactorFactory::reactor_mutex ;
+   #endif
 
     static int ntypes = 4;
     static string _types[] = {"Reservoir", "Reactor", "ConstPressureReactor",
@@ -66,3 +70,4 @@ namespace CanteraZeroD {
     }
 
 }
+

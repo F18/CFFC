@@ -22,9 +22,9 @@
  * 2D solution blocks).                                 *
  *                                                      *
  ********************************************************/
-int Load_Send_Message_Buffers_NoResChange(Rte2D_Quad_Block *Soln_ptr,
-                                          AdaptiveBlock2D_List &Soln_Block_List,
-                                          const int Number_of_Solution_Variables) {
+inline int Load_Send_Message_Buffers_NoResChange(Rte2D_Quad_Block *Soln_ptr,
+						 AdaptiveBlock2D_List &Soln_Block_List,
+						 const int Number_of_Solution_Variables) {
 
     int i_blk, buffer_size_neighbour, 
         i_min, i_max, i_inc, i, 
@@ -260,9 +260,9 @@ int Load_Send_Message_Buffers_NoResChange(Rte2D_Quad_Block *Soln_ptr,
  * blocks).                                                    *
  *                                                             *
  ***************************************************************/
-int Load_Send_Message_Buffers_ResChange_FineToCoarse(Rte2D_Quad_Block *Soln_ptr,
-                                                     AdaptiveBlock2D_List &Soln_Block_List,
-                                                     const int Number_of_Solution_Variables) {
+inline int Load_Send_Message_Buffers_ResChange_FineToCoarse(Rte2D_Quad_Block *Soln_ptr,
+							    AdaptiveBlock2D_List &Soln_Block_List,
+							    const int Number_of_Solution_Variables) {
 
     int i_blk, buffer_size_neighbour, 
         i_min, i_max, i_inc, i, 
@@ -502,9 +502,9 @@ int Load_Send_Message_Buffers_ResChange_FineToCoarse(Rte2D_Quad_Block *Soln_ptr,
  * blocks).                                                    *
  *                                                             *
  ***************************************************************/
-int Load_Send_Message_Buffers_ResChange_CoarseToFine(Rte2D_Quad_Block *Soln_ptr,
-                                                     AdaptiveBlock2D_List &Soln_Block_List,
-                                                     const int Number_of_Solution_Variables) {
+inline int Load_Send_Message_Buffers_ResChange_CoarseToFine(Rte2D_Quad_Block *Soln_ptr,
+							    AdaptiveBlock2D_List &Soln_Block_List,
+							    const int Number_of_Solution_Variables) {
 
     int i_blk, buffer_size_neighbour, 
         i_min0, i_max0, i_min1, i_max1, i_inc, i, 
@@ -855,9 +855,9 @@ int Load_Send_Message_Buffers_ResChange_CoarseToFine(Rte2D_Quad_Block *Soln_ptr,
  * 2D solution blocks).                                 *
  *                                                      *
  ********************************************************/
-int Unload_Receive_Message_Buffers_NoResChange(Rte2D_Quad_Block *Soln_ptr,
-                                               AdaptiveBlock2D_List &Soln_Block_List,
-                                               const int Number_of_Solution_Variables) {
+inline int Unload_Receive_Message_Buffers_NoResChange(Rte2D_Quad_Block *Soln_ptr,
+						      AdaptiveBlock2D_List &Soln_Block_List,
+						      const int Number_of_Solution_Variables) {
 
     int i_blk, buffer_size, 
         i_min, i_max, i_inc, i, 
@@ -991,9 +991,9 @@ int Unload_Receive_Message_Buffers_NoResChange(Rte2D_Quad_Block *Soln_ptr,
  * 2D solution blocks).                                           *
  *                                                                *
  ******************************************************************/
-int Unload_Receive_Message_Buffers_ResChange_FineToCoarse(Rte2D_Quad_Block *Soln_ptr,
-                                                          AdaptiveBlock2D_List &Soln_Block_List,
-                                                          const int Number_of_Solution_Variables) {
+inline int Unload_Receive_Message_Buffers_ResChange_FineToCoarse(Rte2D_Quad_Block *Soln_ptr,
+								 AdaptiveBlock2D_List &Soln_Block_List,
+								 const int Number_of_Solution_Variables) {
 
     int i_blk, buffer_size, 
         i_min, i_max, i_inc, i, 
@@ -1175,9 +1175,9 @@ int Unload_Receive_Message_Buffers_ResChange_FineToCoarse(Rte2D_Quad_Block *Soln
  * of 2D solution blocks).                                        *
  *                                                                *
  ******************************************************************/
-int Unload_Receive_Message_Buffers_ResChange_CoarseToFine(Rte2D_Quad_Block *Soln_ptr,
-                                                          AdaptiveBlock2D_List &Soln_Block_List,
-                                                          const int Number_of_Solution_Variables) {
+inline int Unload_Receive_Message_Buffers_ResChange_CoarseToFine(Rte2D_Quad_Block *Soln_ptr,
+								 AdaptiveBlock2D_List &Soln_Block_List,
+								 const int Number_of_Solution_Variables) {
 
     int i_blk, buffer_size, 
         i_min, i_max, i_inc, i, 
@@ -1355,9 +1355,9 @@ int Unload_Receive_Message_Buffers_ResChange_CoarseToFine(Rte2D_Quad_Block *Soln
  * neighboring blocks.                                  *
  *                                                      *
  ********************************************************/
-int Send_Boundary_Ref_States(Rte2D_Quad_Block *Soln_ptr,
-			     AdaptiveBlock2D_List &Soln_Block_List,
-			     const int Number_of_Solution_Variables) {
+inline int Send_Boundary_Ref_States(Rte2D_Quad_Block *Soln_ptr,
+				    AdaptiveBlock2D_List &Soln_Block_List,
+				    const int Number_of_Solution_Variables) {
 
     int error_flag;
 

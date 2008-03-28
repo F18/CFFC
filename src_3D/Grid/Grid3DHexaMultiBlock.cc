@@ -449,6 +449,10 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid(Grid3D_Input_Parameters &Input) {
        Create_Grid_Pipe(Input);
        break;
 
+     case GRID_BUMP_CHANNEL_FLOW :
+       Create_Grid_Bump_Channel_Flow(Input);
+       break;
+
      case GRID_BLUFF_BODY_BURNER :
        Create_Grid_Bluff_Body_Burner(Input);
        break;
@@ -1346,6 +1350,7 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Turbulence_Box(Grid3D_Input_Param
 
    /* Creat 2D cross-section grids from which the 3D grid
       will be extruded. */
+
    Grid2D_Box_XYplane = Grid_Rectangular_Box(Grid2D_Box_XYplane,
                                              Input.NBlk_Idir, 
                                              Input.NBlk_Jdir,
@@ -1359,6 +1364,7 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Turbulence_Box(Grid3D_Input_Param
                                              Input.NCells_Turbulence_Idir,
                                              Input.NCells_Turbulence_Jdir,
 					     Input.Nghost);
+
    /* Create the mesh for each block representing
       the complete grid. */
 
@@ -1440,6 +1446,7 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Turbulence_Box(Grid3D_Input_Param
 
    /* Call the function Find_Neighbours to obtain the neighbour block information
       and assign values to data members in the grid block connectivity data structure. */
+
    //Find_Neighbours(Input);
    Input.NBlk_Idir = NBlk_Idir;
    Input.NBlk_Jdir = NBlk_Jdir;
@@ -1458,15 +1465,16 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Bunsen_Inflow(Grid3D_Input_Parame
 
     int nBlk, numblk_idir_fuel, numblk_jdir_fuel;
     int NBlk_Idir, NBlk_Jdir, NBlk_Kdir;
+
     Grid2D_Quad_Block **Grid2D_Fuel_Line_XYplane;
+
+    NBlk_Idir = 5;
+    NBlk_Jdir = 1;
+    NBlk_Kdir = 1;
 
     /* Allocate required memory. */
 
-   NBlk_Idir = 5;
-   NBlk_Jdir = 1;
-   NBlk_Kdir = 1;
-
-    Allocate(Input.NBlk_Idir, Input.NBlk_Jdir, Input.NBlk_Kdir);
+    Allocate(NBlk_Idir, NBlk_Jdir, NBlk_Kdir);
 
     /* Creat 2D cross-section grids from which the 3D grid
        will be extruded. */
@@ -1484,7 +1492,7 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Bunsen_Inflow(Grid3D_Input_Parame
     /* Create the mesh for each block representing
        the complete grid. */
 
-          for (int iBlk = 0; iBlk <= Input.NBlk_Idir-1; ++iBlk) {
+          for (int iBlk = 0; iBlk <= NBlk_Idir-1; ++iBlk) {
 
              /* Extrude each of the grid blocks from the
                 appropriate 2D grid in XY-plane. */
@@ -1536,7 +1544,6 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Bunsen_Box(Grid3D_Input_Parameter
 
    /* Creat 2D cross-section grids from which the 3D grid
       will be extruded. */
-    
    Grid2D_Box_XYplane = Grid_Rectangular_Box(Grid2D_Box_XYplane,
                                              Input.NBlk_Idir, 
                                              Input.NBlk_Jdir,
@@ -1550,20 +1557,6 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Bunsen_Box(Grid3D_Input_Parameter
                                              Input.NCells_Idir,
                                              Input.NCells_Jdir,
 					     Input.Nghost);
-
-//    Grid2D_Box_XYplane = Grid_Periodic_Box(Grid2D_Box_XYplane,
-// 					  Input.NBlk_Idir, 
-// 					  Input.NBlk_Jdir,
-// 					  Input.Box_Width,
-// 					  Input.Box_Height,
-// 					  OFF, 
-// 					  Input.Stretching_Type_Idir,
-// 					  Input.Stretching_Type_Jdir,
-// 					  Input.Stretching_Factor_Idir,
-// 					  Input.Stretching_Factor_Jdir,
-// 					  Input.NCells_Idir,
-// 					  Input.NCells_Jdir,
-// 					  Input.Nghost);
 
    /* Create the mesh for each block representing
       the complete grid. */
@@ -1612,7 +1605,7 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Bunsen_Box(Grid3D_Input_Parameter
             /* Assign top and bottom boundary conditions. */
 
             if (kBlk == Input.NBlk_Kdir-1) {
-	      BC_top = BC_OUTFLOW_SUBSONIC;  //BC_FIXED_PRESSURE;
+	      BC_top = BC_OUTFLOW_SUBSONIC; 
             } else {
 	      BC_top = BC_NONE;
             } /* endif */
@@ -1650,7 +1643,7 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Bunsen_Box(Grid3D_Input_Parameter
 
    /* Call the function Find_Neighbours to obtain the neighbour block information
       and assign values to data members in the grid block connectivity data structure. */
-    
+
    Find_Neighbours(Input);
 
 }
@@ -1707,6 +1700,7 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Bunsen_Burner(Grid3D_Input_Parame
 							 numblk_jdir_bunsenburner,
 							 0.1*Input.Radius_Bunsen_Burner+Input.Radius_Bunsen_Burner_Fuel_Line,
 							 0.45*Input.Radius_Bunsen_Burner+Input.Radius_Bunsen_Burner_Fuel_Line,
+							 HALF*Input.Radius_Bunsen_Burner,
 							 Input.NCells_Idir,
 							 Input.NCells_Jdir,
 							 Input.Nghost,
@@ -1718,6 +1712,8 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Bunsen_Burner(Grid3D_Input_Parame
 							 numblk_jdir_bunsenburner,
 							 0.5*Input.Radius_Bunsen_Burner+Input.Radius_Bunsen_Burner_Fuel_Line,
 							 Input.Radius_Bunsen_Burner+Input.Radius_Bunsen_Burner_Fuel_Line,
+							 HALF*Input.Radius_Bunsen_Burner,
+							 Input.Radius_Bunsen_Burner,
 							 Input.NCells_Idir,
 							 Input.NCells_Jdir,
 							 Input.Nghost,
@@ -1902,7 +1898,6 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Bunsen_Burner(Grid3D_Input_Parame
               Grid_Blks[iBlk].Extrude(Grid2D_Bunsen_Burner_XYplane[iBlk-48][0],
 				      Input.NCells_Kdir,
 				      STRETCHING_FCN_LINEAR,
-				      ZERO,//1.10,//1.25,
 				      0.25*Input.Height_Bunsen_Burner,
 				      0.375*Input.Height_Bunsen_Burner);
 
@@ -1917,7 +1912,6 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Bunsen_Burner(Grid3D_Input_Parame
               Grid_Blks[iBlk].Extrude(Grid2D_Bunsen_Burner_XYplane[iBlk-52][0],
 				      Input.NCells_Kdir,
 				      STRETCHING_FCN_LINEAR,
-				      ZERO,//1.10,//1.25,
 				      0.375*Input.Height_Bunsen_Burner,
 				      0.5*Input.Height_Bunsen_Burner);
 
@@ -1987,6 +1981,7 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Bunsen_Burner(Grid3D_Input_Parame
 				       BC_NONE,
 				       BC_OUTFLOW_SUBSONIC,
 				       BC_NONE);
+
             // iBlk = 90;
 	    /* fuel lines */
 
@@ -2885,8 +2880,8 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Bunsen_Burner(Grid3D_Input_Parame
 // 				       BC_NONE,
 // 				       BC_FIXED_PRESSURE,
 // 				       BC_NONE);
-           } /* endif */
-       } /* endfor */
+	  } /* endif */
+	} /* endfor */
 
     /* Deallocate 2D grid. */
 
@@ -3439,7 +3434,7 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Bump_Channel_Flow(Grid3D_Input_Pa
 	  BC_top = BC_NONE;
 	} /* endif */
 	if (kBlk == 0) {
-	  BC_bottom =BC_REFLECTION;// BC_CONSTANT_EXTRAPOLATION;
+	  BC_bottom =BC_REFLECTION;//BC_CONSTANT_EXTRAPOLATION;
 	} else {
 	  BC_bottom = BC_NONE;
 	} /* endif */
@@ -4721,8 +4716,7 @@ void Grid3D_Hexa_Multi_Block::Create_Grid(Grid3D_Input_Parameters &Input) {
     switch(Input.i_Grid) {
       case GRID_CUBE :
         Create_Grid_Cube(Input);
-        break;
-
+        break;      
       case GRID_CHANNEL_XDIR :
       case GRID_CHANNEL_YDIR:
       case GRID_CHANNEL_ZDIR:
@@ -4738,6 +4732,10 @@ void Grid3D_Hexa_Multi_Block::Create_Grid(Grid3D_Input_Parameters &Input) {
       case GRID_PIPE :
         Create_Grid_Pipe(Input);
         break;
+         
+      case GRID_BUMP_CHANNEL_FLOW :
+	Create_Grid_Bump_Channel_Flow(Input);
+	break;
 
       case GRID_BLUFF_BODY_BURNER :
         Create_Grid_Bluff_Body_Burner(Input);

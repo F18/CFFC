@@ -1,0 +1,56 @@
+! GRI-Mech Version 3.0 7/30/99  CHEMKIN-II format
+! See README30 file at anonymous FTP site unix.sri.com, directory gri;
+! WorldWideWeb home page http://www.me.berkeley.edu/gri_mech/ or
+! through http://www.gri.org , under 'Basic  Research', 
+! for additional information, contacts, and disclaimer
+ELEMENTS
+O  H  AR
+END
+SPECIES
+H2      H       O       O2      OH      H2O     HO2     H2O2    AR
+END
+!THERMO
+! Insert GRI-Mech thermodynamics here or use in default file
+!END
+REACTIONS
+2O+M<=>O2+M                              1.200E+17   -1.000        .00
+H2/ 2.40/ H2O/15.40/ CH4/ 2.00/ CO/ 1.75/ CO2/ 3.60/ C2H6/ 3.00/ AR/  .83/ 
+O+H+M<=>OH+M                             5.000E+17   -1.000        .00
+H2/2.00/ H2O/6.00/ CH4/2.00/ CO/1.50/ CO2/2.00/ C2H6/3.00/ AR/ .70/ 
+O+H2<=>H+OH                              3.870E+04    2.700    6260.00
+O+HO2<=>OH+O2                            2.000E+13     .000        .00
+O+H2O2<=>OH+HO2                          9.630E+06    2.000    4000.00
+H+2O2<=>HO2+O2                           2.080E+19   -1.240        .00
+H+O2+H2O<=>HO2+H2O                       11.26E+18    -.760        .00
+H+O2+AR<=>HO2+AR                         7.000E+17    -.800        .00
+H+O2<=>O+OH                              2.650E+16    -.6707  17041.00
+2H+M<=>H2+M                              1.000E+18   -1.000        .00
+H2/ .00/ H2O/ .00/ CH4/2.00/ CO2/ .00/ C2H6/3.00/ AR/ .63/ 
+2H+H2<=>2H2                              9.000E+16    -.600        .00
+2H+H2O<=>H2+H2O                          6.000E+19   -1.250        .00
+H+OH+M<=>H2O+M                           2.200E+22   -2.000        .00
+H2/ .73/ H2O/3.65/ CH4/2.00/ C2H6/3.00/ AR/ .38/ 
+H+HO2<=>O+H2O                            3.970E+12     .000     671.00
+H+HO2<=>O2+H2                            4.480E+13     .000    1068.00
+H+HO2<=>2OH                              0.840E+14     .000     635.00
+H+H2O2<=>HO2+H2                          1.210E+07    2.000    5200.00
+H+H2O2<=>OH+H2O                          1.000E+13     .000    3600.00
+OH+H2<=>H+H2O                            2.160E+08    1.510    3430.00
+2OH(+M)<=>H2O2(+M)                       7.400E+13    -.370        .00
+     LOW  /  2.300E+18    -.900  -1700.00/
+     TROE/   .7346   94.00  1756.00  5182.00 /
+H2/2.00/ H2O/6.00/ CH4/2.00/ CO/1.50/ CO2/2.00/ C2H6/3.00/ AR/ .70/ 
+2OH<=>O+H2O                              3.570E+04    2.400   -2110.00
+OH+HO2<=>O2+H2O                          1.450E+13     .000    -500.00
+ DUPLICATE
+OH+H2O2<=>HO2+H2O                        2.000E+12     .000     427.00
+ DUPLICATE
+OH+H2O2<=>HO2+H2O                        1.700E+18     .000   29410.00
+ DUPLICATE
+2HO2<=>O2+H2O2                           1.300E+11     .000   -1630.00
+ DUPLICATE
+2HO2<=>O2+H2O2                           4.200E+14     .000   12000.00
+ DUPLICATE
+OH+HO2<=>O2+H2O                          0.500E+16     .000   17330.00
+  DUPLICATE
+END

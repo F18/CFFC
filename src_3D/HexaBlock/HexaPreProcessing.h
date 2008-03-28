@@ -22,7 +22,6 @@ int Initialize_Solution_Blocks(HexaSolver_Data &Data,
 
   if (CFFC_Primary_MPI_Processor()) {
     Data.Initial_Mesh.Create_Grid(Solution_Data.Input.Grid_IP);
-
     //Outputting solution input parameters
     if (!Data.batch_flag) {
       cout << Solution_Data.Input << "\n";
@@ -34,7 +33,14 @@ int Initialize_Solution_Blocks(HexaSolver_Data &Data,
   
   /* Broadcast the mesh to other MPI processors. */
 
-  Data.Initial_Mesh.Broadcast();                    
+  Data.Initial_Mesh.Broadcast();
+
+  
+  /* Initialize solution blocks specializations. */
+
+  error_flag = Initialize_Solution_Blocks_Specializations(Data, Solution_Data);
+  if (error_flag) return (error_flag);
+
   
   /* Initialize solution blocks specializations. */
 

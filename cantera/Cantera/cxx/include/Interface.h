@@ -3,9 +3,10 @@
 
 #include <string>
 
+#include "thermo.h"
 #include "kernel/SurfPhase.h"
 #include "kernel/InterfaceKinetics.h"
-#include "kernel/importCTML.h"
+#include "kernel/importKinetics.h"
 
 namespace Cantera {
 
@@ -13,7 +14,7 @@ namespace Cantera {
         public SurfPhase, public InterfaceKinetics
     {
     public:
-        Interface(string infile, string id, vector<ThermoPhase*> phases) 
+        Interface(std::string infile, std::string id, std::vector<ThermoPhase*> phases) 
             : m_ok(false), m_r(0) {
 
             m_r = get_XML_File(infile); 
@@ -32,7 +33,7 @@ namespace Cantera {
         virtual ~Interface() {}
 
         bool operator!() { return !m_ok;}
-        bool ready() { return m_ok; }
+        bool ready() const { return m_ok; }
 
     protected:
         bool m_ok;
@@ -41,8 +42,8 @@ namespace Cantera {
     private:
     };
 
-    inline Interface* importInterface(string infile, string id, 
-        vector<ThermoPhase*> phases) {
+    inline Interface* importInterface(std::string infile, std::string id, 
+        std::vector<ThermoPhase*> phases) {
         return new Interface(infile, id, phases);
     }
 

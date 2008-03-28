@@ -322,7 +322,7 @@ void Reaction_set::set_species(string *spec, int num){
   NOT FINISHED!!!!
 ***********************************************************************/
 void Reaction_set::set_reactions(int &num_react,string* name, double* A,
-			   double* b, double* E){  
+			         double* b, double* E){  
   
 //   //flag for user defined
 //   reactset_flag=USER;
@@ -365,9 +365,9 @@ void Reaction_set::ct_load_mechanism(string &mechanism_file_name,
   
   //create a new ideal gas mixture class
   try {
-    ct_gas = new IdealGasMix(mechanism_file_name, mechanism_name);
+    ct_gas = new Cantera::IdealGasMix(mechanism_file_name, mechanism_name);
   }
-  catch (CanteraError) {
+  catch (Cantera::CanteraError) {
     Cantera::showErrors();
   }
 
@@ -433,13 +433,13 @@ void Reaction_set::ct_parse_mass_string(const string& massFracStr,
   All other species will be assumed to have unity Schmidt number.  
   Returns them in an array.
 ***********************************************************************/
-void Reaction_set::ct_parse_schmidt_string( const string& schmidtStr, 
-					    double* schmidt) {
+void Reaction_set::ct_parse_schmidt_string(const string& schmidtStr, 
+					   double* schmidt) {
 
 #ifdef _CANTERA_VERSION
 
   // declares
-  compositionMap xx;
+  Cantera::compositionMap xx;
   int kk = ct_gas->nSpecies();
   double s;
 
@@ -447,7 +447,7 @@ void Reaction_set::ct_parse_schmidt_string( const string& schmidtStr,
   for (int k = 0; k < kk; k++) xx[ct_gas->speciesName(k)] = -1.0;
 
   // parse map
-  parseCompString(schmidtStr, xx);
+  Cantera::parseCompString(schmidtStr, xx);
 
   // set schmidt numbers
   for (int k = 0; k < kk; k++) { 

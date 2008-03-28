@@ -10,6 +10,7 @@
 /* Include CFFC header files */
 #include "TestData.h"
 #include "../AdvectDiffuse2DQuad.h"
+#include "../Grid/HO_Grid2DQuadMultiBlock.h" /* Include 2D quadrilateral multiblock grid header file */
 #include "../../HighOrderReconstruction/AccuracyAssessment2DMultiBlock.h"
 
 namespace tut
@@ -29,7 +30,11 @@ namespace tut
     
     /* Multi-block solution-adaptive quadrilateral mesh 
        solution variables. */
-    Grid2D_Quad_Block          **MeshBlk;
+#ifdef USE_HIGH_ORDER_GRID 
+    Grid2D_Quad_MultiBlock_HO     MeshBlk;
+#else
+    Grid2D_Quad_Block           **MeshBlk;
+#endif
     QuadTreeBlock_DataStructure  QuadTree;
     AdaptiveBlockResourceList    GlobalList_Soln_Blocks;
     AdaptiveBlock2D_List         LocalList_Soln_Blocks;
@@ -49,12 +54,21 @@ namespace tut
     ~Data_AdvectDiffuse2D_Quad_Block(void);
 
     // Initialization of the computational domain
+#ifdef USE_HIGH_ORDER_GRID 
+    void InitializeComputationalDomain(Grid2D_Quad_MultiBlock_HO & _MeshBlk_,
+				       QuadTreeBlock_DataStructure & _QuadTree_,
+				       AdaptiveBlockResourceList & _GlobalList_Soln_Blocks_,
+				       AdaptiveBlock2D_List & _LocalList_Soln_Blocks_,
+				       AdvectDiffuse2D_Quad_Block *& _SolnBlk_,
+				       AdvectDiffuse2D_Input_Parameters & _IP_) throw(std::runtime_error);
+#else
     void InitializeComputationalDomain(Grid2D_Quad_Block **& _MeshBlk_,
 				       QuadTreeBlock_DataStructure & _QuadTree_,
 				       AdaptiveBlockResourceList & _GlobalList_Soln_Blocks_,
 				       AdaptiveBlock2D_List & _LocalList_Soln_Blocks_,
 				       AdvectDiffuse2D_Quad_Block *& _SolnBlk_,
 				       AdvectDiffuse2D_Input_Parameters & _IP_) throw(std::runtime_error);
+#endif
 
     // Output_Block()
     void Output_Block(AdvectDiffuse2D_Quad_Block & SolnBlock,
@@ -85,13 +99,46 @@ namespace tut
       LocalList_Soln_Blocks.deallocate();
       GlobalList_Soln_Blocks.deallocate();
       QuadTree.deallocate();
+#ifndef USE_HIGH_ORDER_GRID 
       MeshBlk = Deallocate_Multi_Block_Grid(MeshBlk, 
 					    IP.Number_of_Blocks_Idir, 
 					    IP.Number_of_Blocks_Jdir);
+#endif
     }
   }
 
   // === InitializeComputationalDomain()
+#ifdef USE_HIGH_ORDER_GRID 
+  void Data_AdvectDiffuse2D_Quad_Block::InitializeComputationalDomain(Grid2D_Quad_MultiBlock_HO & _MeshBlk_,
+								      QuadTreeBlock_DataStructure & _QuadTree_,
+								      AdaptiveBlockResourceList & _GlobalList_Soln_Blocks_,
+								      AdaptiveBlock2D_List & _LocalList_Soln_Blocks_,
+								      AdvectDiffuse2D_Quad_Block *& _SolnBlk_,
+								      AdvectDiffuse2D_Input_Parameters & _IP_)
+    throw(std::runtime_error){
+
+    error_flag = _MeshBlk_.Multi_Block_Grid(_IP_);
+      
+    if (error_flag) {
+      throw runtime_error("CreateMesh() ERROR: Unable to create valid Euler2D multi-block mesh.");
+    }
+
+    _SolnBlk_ = Create_Initial_Solution_Blocks(_MeshBlk_.Grid_ptr,
+					       _SolnBlk_,
+					       _IP_,
+					       _QuadTree_,
+					       GlobalList_Soln_Blocks,
+					       LocalList_Soln_Blocks);
+
+    if (_SolnBlk_ == NULL) {
+      throw runtime_error("Create_Initial_Solution_Blocks() ERROR: Unable to create initial Euler2D solution blocks.");
+    }
+
+    Status = ON;
+  }
+
+#else
+
   void Data_AdvectDiffuse2D_Quad_Block::InitializeComputationalDomain(Grid2D_Quad_Block **& _MeshBlk_,
 								      QuadTreeBlock_DataStructure & _QuadTree_,
 								      AdaptiveBlockResourceList & _GlobalList_Soln_Blocks_,
@@ -131,7 +178,7 @@ namespace tut
 
     Status = ON;
   }
-
+#endif
 
   /**
    * This group of declarations is just to register
@@ -207,7 +254,7 @@ namespace tut
       CurrentFile = "Current_Circular_Advection_In_Rectangular_Box_cpu000000.dat";
       
       // check
-      RunRegressionTest("Multiblock Tecplot Output", CurrentFile, MasterFile, 5.0e-12, 5.0e-12);
+      RunRegressionTest("Multiblock Tecplot Output", CurrentFile, MasterFile, 5.0e-7, 5.0e-7);
     }
   }
 
@@ -251,7 +298,7 @@ namespace tut
       Print_File(SolnBlk[3],out());
 
       // === check data
-      RunRegressionTest("operator <<", CurrentFile, MasterFile, 5.0e-12, 5.0e-12);
+      RunRegressionTest("operator <<", CurrentFile, MasterFile, 5.0e-7, 5.0e-7);
 
 
       // === check input-output operator
@@ -300,9 +347,9 @@ namespace tut
 
     // == check errors
     ensure_equals("Number of cells", AccuracyAssessment2D_MultiBlock::TotalNumberOfCells(), 144);
-    ensure_distance("L1_Norm", AccuracyAssessment2D_MultiBlock::L1(), 0.06550436942, AcceptedError(0.06550436942,1.0e-10) );
-    ensure_distance("L2_Norm", AccuracyAssessment2D_MultiBlock::L2(), 0.1153247286, AcceptedError(0.1153247286,1.0e-10) );
-    ensure_distance("LMax_Norm", AccuracyAssessment2D_MultiBlock::LMax(), 0.1961452823, AcceptedError(0.1961452823,1.0e-10) );
+    ensure_distance("L1_Norm", AccuracyAssessment2D_MultiBlock::L1(), 0.06550436942, AcceptedError(0.06550436942,1.0e-7) );
+    ensure_distance("L2_Norm", AccuracyAssessment2D_MultiBlock::L2(), 0.1153247286, AcceptedError(0.1153247286,1.0e-7) );
+    ensure_distance("LMax_Norm", AccuracyAssessment2D_MultiBlock::LMax(), 0.1961452823, AcceptedError(0.1961452823,1.0e-7) );
   }
 
   /* Test 4:*/

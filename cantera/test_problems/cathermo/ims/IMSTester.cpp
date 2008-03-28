@@ -1,7 +1,7 @@
 /**
  *  @file IMSTester.cpp
  *
- *  $Id: IMSTester.cpp,v 1.1 2006/06/19 23:19:11 hkmoffa Exp $
+ *  $Id: IMSTester.cpp,v 1.2 2007/05/04 15:18:43 dggoodwin Exp $
  */
 /*
  * Copywrite 2005 Sandia Corporation. Under the terms of Contract
@@ -29,7 +29,7 @@
 #include "IdealMolalSoln.h"
 #else
 #include "Cantera.h"
-#include "kernel/thermo/IdealMolalSoln.h"
+#include "kernel/IdealMolalSoln.h"
 #endif
 
 using namespace std;

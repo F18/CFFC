@@ -268,6 +268,121 @@ Grid2D_Quad_Block** Multi_Block_Grid(Grid2D_Quad_Block **Grid_ptr,
 }
 
 /********************************************************
+ * Routine: Set_Multi_Block_Grid_BCs                    *
+ *                                                      *
+ * Sets the BCs of a multiblock mesh.  This is used to  *
+ * redefine the BCs after a mesh has been copied from   *
+ * another solver.                                      *
+ *                                                      *
+ ********************************************************/
+Grid2D_Quad_Block** Set_Multi_Block_Grid_BCs(Grid2D_Quad_Block **Grid_ptr,
+					     Rte2D_Input_Parameters &Input_Parameters) 
+{
+
+  
+  //--------------------------------------------------
+  // Black, rectangular enclosure
+  //--------------------------------------------------
+  if (Input_Parameters.i_Grid == GRID_RECTANGULAR_ENCLOSURE) {
+    
+    //
+    // loop over the grid
+    //
+    for ( int jBlk = 0; jBlk < Input_Parameters.Number_of_Blocks_Jdir; ++jBlk ) {
+      for ( int iBlk = 0; iBlk < Input_Parameters.Number_of_Blocks_Idir; ++iBlk ) {
+
+	// NORTH
+	if (jBlk == Input_Parameters.Number_of_Blocks_Jdir-1)
+	  Grid_ptr[iBlk][jBlk].BndNorthSpline.setBCtype(BC_GRAY_WALL);
+	else
+	  Grid_ptr[iBlk][jBlk].BndNorthSpline.setBCtype(BC_NONE);
+	
+	// SOUTH
+	if (jBlk == 0)
+	  Grid_ptr[iBlk][jBlk].BndSouthSpline.setBCtype(BC_GRAY_WALL);
+	else
+	  Grid_ptr[iBlk][jBlk].BndSouthSpline.setBCtype(BC_NONE);
+
+	// EAST
+	if (iBlk == Input_Parameters.Number_of_Blocks_Idir-1)
+	  Grid_ptr[iBlk][jBlk].BndEastSpline.setBCtype(BC_GRAY_WALL);
+	else
+	  Grid_ptr[iBlk][jBlk].BndEastSpline.setBCtype(BC_NONE);
+
+	// WEST
+	if (iBlk == 0)
+	  Grid_ptr[iBlk][jBlk].BndWestSpline.setBCtype(BC_GRAY_WALL);
+	else
+	  Grid_ptr[iBlk][jBlk].BndWestSpline.setBCtype(BC_NONE);
+
+	// update BCs, nodes, and cells
+	Set_BCs(Grid_ptr[iBlk][jBlk]);
+	Update_Exterior_Nodes(Grid_ptr[iBlk][jBlk]);
+	Update_Cells(Grid_ptr[iBlk][jBlk]);
+
+      } // endfor
+    } // endfor
+
+  //--------------------------------------------------
+  // Black, cylindrical enclosure
+  //--------------------------------------------------
+  } else if (Input_Parameters.i_Grid == GRID_CYLINDRICAL_ENCLOSURE) {
+
+    //
+    // loop over the grid
+    //
+    for ( int jBlk = 0; jBlk < Input_Parameters.Number_of_Blocks_Jdir; ++jBlk ) {
+      for ( int iBlk = 0; iBlk < Input_Parameters.Number_of_Blocks_Idir; ++iBlk ) {
+
+	// NORTH
+	if (jBlk == Input_Parameters.Number_of_Blocks_Jdir-1)
+	  Grid_ptr[iBlk][jBlk].BndNorthSpline.setBCtype(BC_GRAY_WALL);
+	else
+	  Grid_ptr[iBlk][jBlk].BndNorthSpline.setBCtype(BC_NONE);
+	
+	// SOUTH
+	if (jBlk == 0 && Input_Parameters.Axisymmetric == AXISYMMETRIC_Y)
+	  Grid_ptr[iBlk][jBlk].BndSouthSpline.setBCtype(BC_REFLECTION);
+	else if (jBlk == 0)
+	  Grid_ptr[iBlk][jBlk].BndSouthSpline.setBCtype(BC_GRAY_WALL);
+	else
+	  Grid_ptr[iBlk][jBlk].BndSouthSpline.setBCtype(BC_NONE);
+
+	// EAST
+	if (iBlk == Input_Parameters.Number_of_Blocks_Idir-1)
+	  Grid_ptr[iBlk][jBlk].BndEastSpline.setBCtype(BC_GRAY_WALL);
+	else
+	  Grid_ptr[iBlk][jBlk].BndEastSpline.setBCtype(BC_NONE);
+
+	// WEST
+	if (iBlk == 0 && Input_Parameters.Axisymmetric == AXISYMMETRIC_X)
+	  Grid_ptr[iBlk][jBlk].BndWestSpline.setBCtype(BC_REFLECTION);
+	else if (iBlk == 0)
+	  Grid_ptr[iBlk][jBlk].BndWestSpline.setBCtype(BC_GRAY_WALL);
+	else
+	  Grid_ptr[iBlk][jBlk].BndWestSpline.setBCtype(BC_NONE);
+
+	// update BCs, nodes, and cells
+	Set_BCs(Grid_ptr[iBlk][jBlk]);
+	Update_Exterior_Nodes(Grid_ptr[iBlk][jBlk]);
+	Update_Cells(Grid_ptr[iBlk][jBlk]);
+
+      } // endfor
+    } // endfor
+
+
+
+  } // endif - grid type
+
+
+  // Return the multi-block quadilateral mesh.
+  return(Grid_ptr);
+
+
+}
+
+
+/********************************************************
  * Routine: Broadcast_Multi_Block_Grid                  *
  *                                                      *
  * Broadcast multi-block quadilateral mesh to all       *

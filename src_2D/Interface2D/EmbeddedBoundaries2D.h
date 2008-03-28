@@ -4634,7 +4634,7 @@ Mesh_Adjustment_Finalize(const int &nb) {
   //Update_Cells(Local_SolnBlk[nb].Grid);
 
   // Check to see if all cell areas are positive.
-  error_flag = Check_Quad_Block(Local_SolnBlk[nb].Grid);
+  error_flag = Local_SolnBlk[nb].Grid.Check_Quad_Block();
   if (error_flag) return error_flag;
 
   // Special case for Ringleb's Flow.
@@ -7643,7 +7643,7 @@ Refine_Grid(const int &Perform_Mesh_Adjustment) {
 		Refine_Mesh(Local_SolnBlk[new_blocks_BLK[iNEW]].Grid,
 			    solution_block_to_be_refined.Grid,
 			    new_blocks_SECTOR[iNEW]);
-		if (Check_Quad_Block(Local_SolnBlk[new_blocks_BLK[iNEW]].Grid)) { 
+		if (Local_SolnBlk[new_blocks_BLK[iNEW]].Grid.Check_Quad_Block()) { 
 		  cout << "\n " << CFFC_Version() 
 		       << " AMR Error: Refine_Grid, Invalid refined mesh.\n";
 		  return 6322;
@@ -7980,7 +7980,7 @@ Coarsen_Grid(const int &Perform_Mesh_Adjustment) {
 				 solution_block_to_be_coarsened_SE_sibling.Grid,
 				 solution_block_to_be_coarsened_NW_sibling.Grid,
 				 solution_block_to_be_coarsened_NE_sibling.Grid);
-		    if (Check_Quad_Block(Local_SolnBlk[old_blocks_BLK[0]].Grid)) { 
+		    if (Local_SolnBlk[old_blocks_BLK[0]].Grid.Check_Quad_Block()) { 
 		      cout << "\n " << CFFC_Version() 
 			   << " AMR Error: Coarsen_Grid, Invalid coarsened mesh.\n";
 		      return 7484;

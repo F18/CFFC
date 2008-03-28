@@ -8,14 +8,16 @@
  * U.S. Government retains certain rights in this software.
  */
 /*
- * $Id: WaterPDSS.cpp,v 1.1 2006/07/04 00:01:53 hkmoffa Exp $
+ * $Id: WaterPDSS.cpp,v 1.6 2007/06/01 23:44:24 hkmoffa Exp $
  */
 #include "ct_defs.h"
 #include "xml.h"
 #include "ctml.h"
 #include "WaterPDSS.h"
 #include "WaterPropsIAPWS.h"
-#include "importCTML.h"
+//#include "importCTML.h"
+#include "ThermoFactory.h"
+#include <math.h>
 
 
 #include "ThermoPhase.h"
@@ -24,61 +26,86 @@ namespace Cantera {
   /**
    * Basic list of constructors and duplicators
    */
+  WaterPDSS::WaterPDSS() :
+    PDSS(),
+    m_sub(0),
+    m_temp(0.0),
+    m_dens(0.0),
+    m_iState(-3000),
+    EW_Offset(0.0),
+    SW_Offset(0.0),
+    m_verbose(0),
+    m_allowGasPhase(false)
+  {
+    m_sub = new WaterPropsIAPWS();  
+    m_spthermo = 0;
+  }
 
   WaterPDSS::WaterPDSS(ThermoPhase *tp, int spindex) :
     PDSS(tp, spindex),
     m_sub(0),
-    m_iState(-1),
+    m_temp(0.0),
+    m_dens(0.0),
+    m_iState(-3000),
     EW_Offset(0.0),
     SW_Offset(0.0),
     m_verbose(0),
     m_allowGasPhase(false)
   {
+    m_sub = new WaterPropsIAPWS();  
     constructPDSS(tp, spindex);
+    m_spthermo = 0;
   }
 
 
   WaterPDSS::WaterPDSS(ThermoPhase *tp, int spindex, 
-		       string inputFile, string id) :
+		       std::string inputFile, std::string id) :
     PDSS(tp, spindex),
     m_sub(0),
-    m_iState(-1),
-    m_mw(0.0),
+    m_temp(0.0),
+    m_dens(0.0),
+    m_iState(-3000),
     EW_Offset(0.0),
     SW_Offset(0.0),
     m_verbose(0),
     m_allowGasPhase(false)
   {
+    m_sub = new WaterPropsIAPWS();  
     constructPDSSFile(tp, spindex, inputFile, id);
+    m_spthermo = 0;
   }
 
   WaterPDSS::WaterPDSS(ThermoPhase *tp, int spindex,
-		       XML_Node& phaseRoot, string id) :
+		       XML_Node& phaseRoot, std::string id) :
     PDSS(tp, spindex),
     m_sub(0),
-    m_iState(-1),
-    m_mw(0.0),
+    m_temp(0.0),
+    m_dens(0.0),
+    m_iState(-3000),
     EW_Offset(0.0),
     SW_Offset(0.0),
     m_verbose(0),
     m_allowGasPhase(false)
   {
+    m_sub = new WaterPropsIAPWS();  
     constructPDSSXML(tp, spindex, phaseRoot, id) ;
+    m_spthermo = 0;
   }
 
 
 
   WaterPDSS::WaterPDSS(const WaterPDSS &b) :
-    PDSS(b),
+    PDSS(),
     m_sub(0),
-    m_iState(-1),
-    m_mw(b.m_mw),
+    m_temp(0.0),
+    m_dens(0.0),
+    m_iState(-3000),
     EW_Offset(b.EW_Offset),
     SW_Offset(b.SW_Offset),
     m_verbose(b.m_verbose),
     m_allowGasPhase(b.m_allowGasPhase)
   {
-    m_sub = new WaterPropsIAPWS(*(b.m_sub));  
+    m_sub = new WaterPropsIAPWS();  
     /*
      * Use the assignment operator to do the brunt
      * of the work for the copy construtor.
@@ -91,9 +118,18 @@ namespace Cantera {
    */
   WaterPDSS& WaterPDSS::operator=(const WaterPDSS&b) {
     if (&b == this) return *this;
-    m_sub->operator=(*(b.m_sub));
+    /*
+     * Call the base class operator
+     */
     PDSS::operator=(b);
-    m_verbose = b.m_verbose;
+
+    m_sub->operator=(*(b.m_sub));
+    m_temp          = b.m_temp;
+    m_dens          = b.m_dens;
+    m_iState        = b.m_iState;
+    EW_Offset       = b.EW_Offset;
+    SW_Offset       = b.SW_Offset;
+    m_verbose       = b.m_verbose;
     m_allowGasPhase = b.m_allowGasPhase;
     return *this;
   }
@@ -123,7 +159,7 @@ namespace Cantera {
    *            phase element will be used.
    */
   void WaterPDSS::constructPDSSXML(ThermoPhase *tp, int spindex,
-				   XML_Node& phaseNode, string id) {
+				   XML_Node& phaseNode, std::string id) {
     initThermo();
   }
    
@@ -144,14 +180,14 @@ namespace Cantera {
    *            phase element will be used.
    */
   void WaterPDSS::constructPDSSFile(ThermoPhase *tp, int spindex,
-				    string inputFile, string id) {
+				    std::string inputFile, std::string id) {
 
     if (inputFile.size() == 0) {
       throw CanteraError("WaterTp::initThermo",
 			 "input file is null");
     }
-    string path = findInputFile(inputFile);
-    ifstream fin(path.c_str());
+    std::string path = findInputFile(inputFile);
+    std::ifstream fin(path.c_str());
     if (!fin) {
       throw CanteraError("WaterPDSS::initThermo","could not open "
 			 +path+" for reading.");
@@ -174,7 +210,7 @@ namespace Cantera {
   }
 
   void WaterPDSS::
-  initThermoXML(XML_Node& phaseNode, string id) {
+  initThermoXML(XML_Node& phaseNode, std::string id) {
     initThermo();
   }
 
@@ -342,8 +378,10 @@ namespace Cantera {
 #endif
     doublereal dd = m_sub->density(T, p, waterState, dens);
     if (dd <= 0.0) {
-      printf("throw an error\n");
-      throw CanteraError("WaterPDSS:pressure", "Failed to set water state");
+      std::string stateString = "T = " +
+	fp2str(T) + " K and p = " + fp2str(p) + " Pa";
+      throw CanteraError("WaterPDSS:setPressure()", 
+			 "Failed to set water SS state: " + stateString);
     }
     m_dens = dd;
   }

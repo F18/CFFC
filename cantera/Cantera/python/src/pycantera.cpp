@@ -11,7 +11,7 @@
 #pragma warning(disable:4503)
 #endif
 
-#include "../../src/config.h"
+#include "cantera/config.h"
 
 #include "Python.h"
 
@@ -20,6 +20,8 @@
 #else
 //#ifdef HAS_NUMARRAY
 #include "numarray/arrayobject.h"
+//#include "numpy/libnumarray.h"
+
 //#else 
 //#include "numpy/arrayobject.h"
 //#endif
@@ -63,6 +65,10 @@ static PyObject *ErrorObject;
 #include "ctuser_methods.cpp"
 #endif
 
+static PyObject*
+pyct_appdelete(PyObject *self, PyObject *args) {
+    return Py_BuildValue("i",ct_appdelete());        
+}
 
 #include "methods.h"
 #include "pylogger.h"

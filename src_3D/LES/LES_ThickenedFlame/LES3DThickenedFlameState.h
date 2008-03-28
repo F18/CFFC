@@ -150,18 +150,18 @@ class LES3DTF_pState;
  *  \nosubgrouping
  */
 class LES3DTF_pState : public NavierStokes3D_ThermallyPerfect_pState {
-  //protected:
   public:
    static double           _laminar_flame_speed;  //!< Propagation speed of laminar premixed flame
    static double       _laminar_flame_thickness;  //!< Thickness of laminar premixed flame
    static double                       _TFactor;  //!< Maximum thickening factor
+   static double                  _filter_width;  //!< Constant filter width
 
-   //public:
    double                     k; //!< Subfilter scale turbulent kinetic energy (m^2/s^2)
 
    PowerLaw               flame; //!< Object containing the thickening and wrinkling factors. 
  
-   static double           Mref; //!< Reference Mach number for low-Mach-number precondtioning (normally set to incoming freestream Mach)
+   static double           Mref; //!< Reference Mach number for low-Mach-number precondtioning (normally set to incoming freestream Mach)  
+
 
 /** @name Constructors and destructors */
 /*        ---------------------------- */
@@ -277,6 +277,17 @@ class LES3DTF_pState : public NavierStokes3D_ThermallyPerfect_pState {
       num_vars = NUM_EULER3D_VAR_SANS_SPECIES + NUM_LES3DTF_VAR_EXTRA + ns;
    }
 
+   //! Assign modelling data (needs to be called only once as it is static)
+   void set_modelling_data(const double &laminar_flame_speed,
+			   const double &laminar_flame_thickness,
+			   const double &thickening_factor,
+			   const double &filter_width) {
+     _laminar_flame_speed = laminar_flame_speed;
+     _laminar_flame_thickness = laminar_flame_thickness;
+     _TFactor = thickening_factor;
+     _filter_width = filter_width;    
+   }
+
    //! Copy solution state (cheaper than = operator)
    void Copy(const LES3DTF_pState &W);
 
@@ -288,7 +299,7 @@ class LES3DTF_pState : public NavierStokes3D_ThermallyPerfect_pState {
 
    //! Check for physical validity of scalars
    void Realizable_Scalar_Check(void) {
-     if ( k < ZERO ) { k = ZERO; }
+     if ( k < NANO ) { k = ZERO; }
    }
 
    //! Check for physical validity of the solution vector
@@ -307,6 +318,9 @@ class LES3DTF_pState : public NavierStokes3D_ThermallyPerfect_pState {
    //! Total sensible enthalpy of mixture
    double Hs(void) const;
 
+   //! Mixture sound speed
+   double a(void) const;
+
    //! Modified pressure
    double p_t(void) const;
 
@@ -315,6 +329,9 @@ class LES3DTF_pState : public NavierStokes3D_ThermallyPerfect_pState {
 
    //! Mixture sound speed including turbulent kinetic energy 
    double a_t(void) const;
+
+   //! Species mass fractions
+   void premixed_mfrac(void);
 
 //@}
   
@@ -333,19 +350,20 @@ class LES3DTF_pState : public NavierStokes3D_ThermallyPerfect_pState {
                   const LES3DTF_pState &dWdy, 
                   const LES3DTF_pState &dWdz,
                   const int Flow_Type, 
-                  const double &Volume);      
+                  const double &Volume);
+
+   //! Turbulent thermal conductivity
+   double kappa_t(const double &mu_t_temp);
 
    //! Species turbulent diffusion coefficient
-   double Ds_t(const int i,
-               const LES3DTF_pState &dWdx, 
+   double Ds_t(const LES3DTF_pState &dWdx, 
                const LES3DTF_pState &dWdy, 
                const LES3DTF_pState &dWdz,
                const int Flow_Type, 
                const double &Volume);
 
    //! Species turbulent diffusion coefficient
-   double Ds_t(const int i,
-               const double &mu_t_temp);
+   double Ds_t(const double &mu_t_temp);
 
    //! Turbulent Prandtl number
    double Pr_t(void);
@@ -358,16 +376,17 @@ class LES3DTF_pState : public NavierStokes3D_ThermallyPerfect_pState {
 
    //! LES filter width
    double filter_width(const double &Volume) const;
+   double filter_width(void) const;
 //@}
 
 /** @name Subfilter scale turbulent stress tensor and heat flux vector */
 /*        ------------------------------------------------------------ */
 //@{
    //! Returns subfilter scale turbulent stress tensor 
-   Tensor3D tau_t(const LES3DTF_pState &dWdx, 
+   Tensor3D tau_t(const LES3DTF_pState &dWdx,
                   const LES3DTF_pState &dWdy,
                   const LES3DTF_pState &dWdz,
-                  const int Flow_Type, 
+                  const int Flow_Type,
                   const double &Volume);
 
    //! Returns subfilter scale turbulent stress tensor 
@@ -378,13 +397,6 @@ class LES3DTF_pState : public NavierStokes3D_ThermallyPerfect_pState {
                   const int Flow_Type, 
                   const double &Volume);
 
-   //! Returns components of subfilter scale turbulent stress tensor in x-direction 
-   Tensor3D tau_t_x(const LES3DTF_pState &dWdx, 
-                    const LES3DTF_pState &dWdy,
-                    const LES3DTF_pState &dWdz,
-                    const int Flow_Type, 
-                    const double &Volume);
-
    //! Returns components of subfilter scale turbulent stress tensor in x-direction
    Tensor3D tau_t_x(const double &mu_t_temp, 
                     const LES3DTF_pState &dWdx, 
@@ -393,23 +405,9 @@ class LES3DTF_pState : public NavierStokes3D_ThermallyPerfect_pState {
                     const int Flow_Type, 
                     const double &Volume);
 
-   //! Returns components of subfilter scale turbulent stress tensor in y-direction 
-   Tensor3D tau_t_y(const LES3DTF_pState &dWdx, 
-                    const LES3DTF_pState &dWdy,
-                    const LES3DTF_pState &dWdz,
-                    const int Flow_Type, 
-                    const double &Volume);
-
    //! Returns components of subfilter scale turbulent stress tensor in y-direction
    Tensor3D tau_t_y(const double &mu_t_temp, 
                     const LES3DTF_pState &dWdx, 
-                    const LES3DTF_pState &dWdy,
-                    const LES3DTF_pState &dWdz,
-                    const int Flow_Type, 
-                    const double &Volume);
-
-   //! Returns components of subfilter scale turbulent stress tensor in z-direction 
-   Tensor3D tau_t_z(const LES3DTF_pState &dWdx, 
                     const LES3DTF_pState &dWdy,
                     const LES3DTF_pState &dWdz,
                     const int Flow_Type, 
@@ -424,13 +422,6 @@ class LES3DTF_pState : public NavierStokes3D_ThermallyPerfect_pState {
                     const double &Volume);
 
    //! Returns subfilter scale turbulent heat flux vector 
-   Vector3D q_t(const LES3DTF_pState &dWdx, 
-                const LES3DTF_pState &dWdy,
-                const LES3DTF_pState &dWdz,
-                const int Flow_Type, 
-                const double &Volume);
-
-   //! Returns subfilter scale turbulent heat flux vector 
    Vector3D q_t(const double &kappa_t_temp,
                 const LES3DTF_pState &dWdx, 
                 const LES3DTF_pState &dWdy,
@@ -439,22 +430,8 @@ class LES3DTF_pState : public NavierStokes3D_ThermallyPerfect_pState {
                 const double &Volume);
 
    //! Returns component of subfilter scale turbulent heat flux vector in x-direction
-   Vector3D q_t_x(const LES3DTF_pState &dWdx, 
-                  const LES3DTF_pState &dWdy,
-                  const LES3DTF_pState &dWdz,
-                  const int Flow_Type, 
-                  const double &Volume);
-
-   //! Returns component of subfilter scale turbulent heat flux vector in x-direction
    Vector3D q_t_x(const double &kappa_t_temp,
                   const LES3DTF_pState &dWdx, 
-                  const LES3DTF_pState &dWdy,
-                  const LES3DTF_pState &dWdz,
-                  const int Flow_Type, 
-                  const double &Volume);
-
-   //! Returns component of subfilter scale turbulent heat flux vector in y-direction
-   Vector3D q_t_y(const LES3DTF_pState &dWdx, 
                   const LES3DTF_pState &dWdy,
                   const LES3DTF_pState &dWdz,
                   const int Flow_Type, 
@@ -469,13 +446,6 @@ class LES3DTF_pState : public NavierStokes3D_ThermallyPerfect_pState {
                   const double &Volume);
 
    //! Returns component of subfilter scale turbulent heat flux vector in z-direction
-   Vector3D q_t_z(const LES3DTF_pState &dWdx, 
-                  const LES3DTF_pState &dWdy,
-                  const LES3DTF_pState &dWdz,
-                  const int Flow_Type, 
-                  const double &Volume);
-
-   //! Returns component of subfilter scale turbulent heat flux vector in z-direction
    Vector3D q_t_z(const double &kappa_t_temp,
                   const LES3DTF_pState &dWdx, 
                   const LES3DTF_pState &dWdy,
@@ -483,7 +453,7 @@ class LES3DTF_pState : public NavierStokes3D_ThermallyPerfect_pState {
                   const int Flow_Type, 
                   const double &Volume);
 
-//! Returns subfilter thermal diffusion flux vector (due to species diffusion processes) 
+   //! Returns subfilter thermal diffusion flux vector (due to species diffusion processes) 
    Vector3D thermal_diffusion_t(const double &mu_t_temp,
 				const LES3DTF_pState &dWdx, 
 				const LES3DTF_pState &dWdy,
@@ -507,7 +477,6 @@ class LES3DTF_pState : public NavierStokes3D_ThermallyPerfect_pState {
 				  const LES3DTF_pState &dWdy,
 				  const LES3DTF_pState &dWdz);
 
-
 //@}
 
 /** @name Conserved solution state */ 
@@ -525,22 +494,14 @@ class LES3DTF_pState : public NavierStokes3D_ThermallyPerfect_pState {
 /*        --------------------- */
 //@{
    //! x-direction inviscid solution flux
-   LES3DTF_cState F(void) ;
-   //! x-direction inviscid solution flux
    LES3DTF_cState F(void) const ;
 
-   //! x-direction inviscid solution flux
-   LES3DTF_cState Fx(void);
    //! x-direction inviscid solution flux
    LES3DTF_cState Fx(void) const;
 
    //! y-direction inviscid solution flux
-   LES3DTF_cState Fy(void);
-   //! y-direction inviscid solution flux
    LES3DTF_cState Fy(void) const;
 
-   //! z-direction inviscid solution flux
-   LES3DTF_cState Fz(void);
    //! z-direction inviscid solution flux
    LES3DTF_cState Fz(void) const;
 //@}
@@ -581,32 +542,20 @@ class LES3DTF_pState : public NavierStokes3D_ThermallyPerfect_pState {
 /*        ---------------------------------------------- */
 //@{
    //! x-direction eigenvalues
-   LES3DTF_pState lambda(void);
-   //! x-direction eigenvalues
    LES3DTF_pState lambda(void) const;
-
-   //! x-direction eigenvalues
-   LES3DTF_pState lambda_x(void);
+   
    //! x-direction eigenvalues
    LES3DTF_pState lambda_x(void) const;
 
    //! x-direction conservative eigenvectors
-   LES3DTF_cState rc(const int &index) ;
-   //! x-direction conservative eigenvectors
    LES3DTF_cState rc(const int &index) const;
 
-   //! x-direction conservative eigenvectors
-   LES3DTF_cState rc_x(const int &index) ;
    //! x-direction conservative eigenvectors
    LES3DTF_cState rc_x(const int &index) const;
 
    //! x-direction primitive eignenvectors
-   LES3DTF_pState lp(const int &index) ;
-   //! x-direction primitive eignenvectors
    LES3DTF_pState lp(const int &index) const;
 
-   //! x-direction primitive eignenvectors
-   LES3DTF_pState lp_x(const int &index) ;
    //! x-direction primitive eignenvectors
    LES3DTF_pState lp_x(const int &index) const;  
 //@}
@@ -725,7 +674,7 @@ class LES3DTF_pState : public NavierStokes3D_ThermallyPerfect_pState {
                                        const Vector3D &ts, 
                                        const double &deltad, 
                                        const double &Volume, 
-                                       const double &Volume_Neigbor, 
+                                       const double &Volume_Neighbour, 
                                        const int Flow_Type);
 //@}
 
@@ -759,6 +708,11 @@ class LES3DTF_pState : public NavierStokes3D_ThermallyPerfect_pState {
    double Enstrophy(const LES3DTF_pState &dWdx, 
                     const LES3DTF_pState &dWdy, 
                     const LES3DTF_pState &dWdz) const;
+
+   //! Q-criterion to detect coherent structures of turbulence
+   double Q_criterion(const LES3DTF_pState &dWdx, 
+		      const LES3DTF_pState &dWdy, 
+		      const LES3DTF_pState &dWdz) const;
 
    //! Absolute value of strain rate
    double abs_strain_rate(const LES3DTF_pState &dWdx, 
@@ -891,18 +845,18 @@ class LES3DTF_pState : public NavierStokes3D_ThermallyPerfect_pState {
  *  \nosubgrouping
  */
 class LES3DTF_cState : public NavierStokes3D_ThermallyPerfect_cState {
-  //protected:
   public:
    static double           _laminar_flame_speed;  //!< Propagation speed of laminar premixed flame
    static double       _laminar_flame_thickness;  //!< Thickness of laminar premixed flame
    static double                       _TFactor;  //!< Maximum thickening factor
+   static double                  _filter_width;  //!< Constant filter width
 
-   //public:
    double                  rhok; //!< Subfilter scale turbulent kinetic energy (kg/m-s^2)
 
    PowerLaw               flame; //!< Object containing the thickening and wrinkling factors. 
 
    static double           Mref; //!< Reference Mach number for low-Mach-number precondtioning (normally set to incoming freestream Mach)
+
 
 /** @name Constructors and destructors */
 /*        ---------------------------- */
@@ -1001,6 +955,17 @@ class LES3DTF_cState : public NavierStokes3D_ThermallyPerfect_cState {
       num_vars = NUM_EULER3D_VAR_SANS_SPECIES + NUM_LES3DTF_VAR_EXTRA + ns;
    }
 
+   //! Assign modelling data (needs to be called only once as it is static)
+   void set_modelling_data(const double &laminar_flame_speed,
+			   const double &laminar_flame_thickness,
+			   const double &thickening_factor,
+			   const double &filter_width) {
+     _laminar_flame_speed = laminar_flame_speed;
+     _laminar_flame_thickness = laminar_flame_thickness;
+     _TFactor = thickening_factor;
+     _filter_width = filter_width;    
+   }
+
    //! Copy solution state (cheaper than = operator)
    void Copy(const LES3DTF_cState &U);
 
@@ -1010,9 +975,16 @@ class LES3DTF_cState : public NavierStokes3D_ThermallyPerfect_cState {
      for(int i=0; i<ns; ++i) rhospec[i].Vacuum();
    }
 
+   //! Sum N-1 species
+   double sum_species(void) {
+     double sum(ZERO);
+     for(int i=0; i<ns-1; ++i) sum += rhospec[i].c;
+     return sum/rho;
+   }
+
    //! Check for physical validity of scalars
    void Realizable_Scalar_Check(void) {
-     if ( rhok < ZERO ) { rhok = ZERO; }
+     if ( rhok < NANO ) { rhok = ZERO; }
    }
 
    //! Check for physical validity of the solution vector
@@ -1044,6 +1016,9 @@ class LES3DTF_cState : public NavierStokes3D_ThermallyPerfect_cState {
    //! Turbulence modified pressure
    double p_t(void) const;
 
+   //! Mixture sound speed
+   double a(void) const;
+
    //! Mixture sound speed including turbulent kinetic energy
    double a_t(void) const;
 
@@ -1055,47 +1030,14 @@ class LES3DTF_cState : public NavierStokes3D_ThermallyPerfect_cState {
 /** @name Turbulent transport coefficients */
 /*        -------------------------------- */
 //@{
-   //! Eddy (turbulent) viscosity
-   double mu_t(const LES3DTF_pState &dWdx, 
-               const LES3DTF_pState &dWdy, 
-               const LES3DTF_pState &dWdz,
-               const int Flow_Type, 
-               const double &Volume);
-
-   //! Turbulent) thermal conductivity
-   double kappa_t(const LES3DTF_pState &dWdx, 
-                  const LES3DTF_pState &dWdy, 
-                  const LES3DTF_pState &dWdz,
-                  const int Flow_Type, 
-                  const double &Volume);     
-
-   //! Species turbulent diffusion coefficient
-   double Ds_t(const int i,
-               const LES3DTF_pState &dWdx, 
-               const LES3DTF_pState &dWdy, 
-               const LES3DTF_pState &dWdz,
-               const int Flow_Type, 
-               const double &Volume);
-   //! Species turbulent diffusion coefficient
-   double Ds_t(const int i,
-               const double &mu_t_temp);
-
-   //! Turbulent Prandtl number
-   double Pr_t(void);
-
-   //! Turbulent Schmidt number
-   double Sc_t(void);
-
-   //! Turbulent Lewis number
-   double Le_t(void);
- 
    //! LES filter width
    double filter_width(const double &Volume) const;
+   double filter_width(void) const;
 
    //! Absolute value of strain rate
-   double abs_strain_rate(const LES3DTF_pState &dWdx, 
-                          const LES3DTF_pState &dWdy, 
-                          const LES3DTF_pState &dWdz) const;
+/*    double abs_strain_rate(const LES3DTF_pState &dWdx,  */
+/*                           const LES3DTF_pState &dWdy,  */
+/*                           const LES3DTF_pState &dWdz) const; */
 //@}
 
 /** @name Primitive solution state */ 
@@ -1198,7 +1140,7 @@ inline double& LES3DTF_pState::operator[](int index) {
       return k;
    default :
      if (index <= num_vars) {
-        return spec[index-(NUM_EULER3D_VAR_SANS_SPECIES+NUM_LES3DTF_VAR_EXTRA+1)].c;
+        return spec[index-(NUM_EULER3D_VAR_SANS_SPECIES + NUM_LES3DTF_VAR_EXTRA+1)].c;
       } else if (index == num_vars+1) {
 	return flame.WF;
       } else {
@@ -1223,7 +1165,7 @@ inline const double& LES3DTF_pState::operator[](int index) const {
       return k;
    default :
      if (index <= num_vars) {
-        return spec[index-(NUM_EULER3D_VAR_SANS_SPECIES+NUM_LES3DTF_VAR_EXTRA+1)].c;     
+        return spec[index-(NUM_EULER3D_VAR_SANS_SPECIES + NUM_LES3DTF_VAR_EXTRA+1)].c;     
       } else if (index == num_vars+1) {
 	return flame.WF;
       } else {
@@ -1233,7 +1175,7 @@ inline const double& LES3DTF_pState::operator[](int index) const {
 }
 
 /***************************************************************************
- * LES3DTF_pState -- Binary arithmetic operators.   *
+ * LES3DTF_pState -- Binary arithmetic operators.                          *
  ***************************************************************************/
 //------------------ Addition ------------------------//
 inline LES3DTF_pState LES3DTF_pState::operator +(const LES3DTF_pState &W) const { 
@@ -1259,7 +1201,7 @@ inline LES3DTF_pState LES3DTF_pState::operator *(const double &a) const {
    Temp.v = v*a; 
    Temp.p = p*a;
    Temp.k = k*a; 
-   for (int i = 0; i < ns; i++) {
+   for (int i = 0; i < ns; ++i) {
       Temp.spec[i] = spec[i]*a;
    } /* endfor */
    Temp.flame = flame*a; 
@@ -1274,7 +1216,7 @@ inline LES3DTF_pState operator *(const double &a,
    Temp.v = W.v*a; 
    Temp.p = W.p*a;
    Temp.k = W.k*a; 
-   for(int i = 0; i < W.ns; i++) {
+   for(int i = 0; i < W.ns; ++i) {
       Temp.spec[i] = W.spec[i]*a;
    } /* endfor */
    Temp.flame = W.flame*a;
@@ -1289,7 +1231,7 @@ inline LES3DTF_pState LES3DTF_pState::operator /(const double &a) const {
    Temp.v = v/a; 
    Temp.p = p/a; 
    Temp.k = k/a; 
-   for (int i = 0; i < ns; i++) {
+   for (int i = 0; i < ns; ++i) {
       Temp.spec[i] = spec[i]/a; 
    } /* endfor */
    Temp.flame = flame/a;
@@ -1299,7 +1241,7 @@ inline LES3DTF_pState LES3DTF_pState::operator /(const double &a) const {
 //----------------- Inner Product ------------------------//
 inline double LES3DTF_pState::operator *(const LES3DTF_pState &W) const {
    double sum=0.0;
-   for (int i=0; i < ns; i++) {
+   for (int i=0; i < ns; ++i) {
       sum += spec[i]*W.spec[i];
    } /* endfor */
    return (rho*W.rho + v*W.v + p*W.p + k*W.k  + sum);
@@ -1315,7 +1257,7 @@ inline LES3DTF_pState LES3DTF_pState::operator ^(const LES3DTF_pState &W) const 
    Temp.v.z = v.z*W.v.z;
    Temp.p = p*W.p;
    Temp.k = k*W.k;
-   for (int i = 0; i < ns; i++){
+   for (int i = 0; i < ns; ++i){
       Temp.spec[i] = spec[i]*W.spec[i];
    } /* endfor */
    Temp.flame.WF = flame.WF*W.flame.WF;
@@ -1332,7 +1274,7 @@ inline LES3DTF_pState& LES3DTF_pState::operator =(const LES3DTF_pState &W) {
       v = W.v; 
       p = W.p; 
       k = W.k;
-      for (int i = 0; i < ns; i++) {
+      for (int i = 0; i < ns; ++i) {
          spec[i] = W.spec[i];
       } /* endfor */ 
    } /* endif */
@@ -1341,17 +1283,17 @@ inline LES3DTF_pState& LES3DTF_pState::operator =(const LES3DTF_pState &W) {
 }
 
 /***************************************************************************
- * LES3DTF_pState -- Shortcut arithmetic operators. *
+ * LES3DTF_pState -- Shortcut arithmetic operators.                        *
  ***************************************************************************/
 inline LES3DTF_pState& LES3DTF_pState::operator +=(const LES3DTF_pState &W) {
    rho += W.rho;
    v += W.v; 
    p += W.p; 
    k += W.k;
-   for (int i = 0; i < ns; i++) {
+   for (int i = 0; i < ns; ++i) {
       spec[i].c += W.spec[i].c;
    } /* endfor */
-  flame += W.flame;
+   flame += W.flame;
    return (*this);
 }
 
@@ -1360,19 +1302,19 @@ inline LES3DTF_pState& LES3DTF_pState::operator -=(const LES3DTF_pState &W) {
    v -= W.v;
    p -= W.p;
    k -= W.k;
-   for (int i = 0; i < ns; i++) {
+   for (int i = 0; i < ns; ++i) {
       spec[i].c -= W.spec[i].c;
    } /* endfor */
-  flame -= W.flame;
+   flame -= W.flame;
    return (*this); 
 }
 
 /***************************************************************************
- * LES3DTF_pState -- Unary arithmetic operators.    *
+ * LES3DTF_pState -- Unary arithmetic operators.                           *
  ***************************************************************************/
 inline LES3DTF_pState operator -(const LES3DTF_pState &W) {
    Species *spt= new Species[W.ns];
-   for (int i = 0; i < W.ns; i++) {
+   for (int i = 0; i < W.ns; ++i) {
       spt[i] = -W.spec[i]; 
    } /* endfor */ 
    LES3DTF_pState Temp(-W.rho, -W.v, -W.p, W.k, spt);
@@ -1382,12 +1324,12 @@ inline LES3DTF_pState operator -(const LES3DTF_pState &W) {
 }
 
 /***************************************************************************
- * LES3DTF_pState -- Relational operators.          *
+ * LES3DTF_pState -- Relational operators.                                 *
  ***************************************************************************/
 inline int operator ==(const LES3DTF_pState &W1, 
                        const LES3DTF_pState &W2) {
    bool Temp;
-   for (int i = 0; i < W1.ns; i++) {
+   for (int i = 0; i < W1.ns; ++i) {
       if (W1.spec[i] == W2.spec[i]) {
          Temp = true;
       } else {
@@ -1405,7 +1347,7 @@ inline int operator ==(const LES3DTF_pState &W1,
 inline int operator !=(const LES3DTF_pState &W1, 
                        const LES3DTF_pState &W2) {
    bool Temp = true;
-   for (int i = 0; i < W1.ns; i++) {
+   for (int i = 0; i < W1.ns; ++i) {
       if (W1.spec[i] != W2.spec[i]) {
          Temp = false;
          break;
@@ -1427,7 +1369,7 @@ inline ostream &operator << (ostream &out_file,
    out_file.setf(ios::scientific);
    out_file << " " << W.rho  << " " << W.v.x << " " << W.v.y 
             << " " << W.v.z << " " << W.p << " "<<W.k;
-   for (int i = 0; i < W.ns; i++) {
+   for (int i = 0; i < W.ns; ++i) {
       out_file<<" "<<W.spec[i];
    } /* endfor */
    out_file << " " << W.flame;
@@ -1440,7 +1382,7 @@ inline istream &operator >> (istream &in_file,
    in_file.setf(ios::skipws);
    in_file >> W.rho >> W.v.x >> W.v.y >> W.v.z >> W.p>> W.k;
    //W.set_initial_values();
-   for (int i = 0; i < W.ns; i++) {
+   for (int i = 0; i < W.ns; ++i) {
       in_file>>W.spec[i];
    } /* endfor */
    in_file >> W.flame;
@@ -1472,7 +1414,7 @@ inline double& LES3DTF_cState::operator[](int index) {
       return rhok;
    default :
      if (index <= num_vars) {
-        return rhospec[index-(NUM_EULER3D_VAR_SANS_SPECIES+NUM_LES3DTF_VAR_EXTRA+1)].c;     
+        return rhospec[index-(NUM_EULER3D_VAR_SANS_SPECIES + NUM_LES3DTF_VAR_EXTRA+1)].c;     
       } else if (index == num_vars+1) {
 	return flame.WF;
       } else {
@@ -1497,7 +1439,7 @@ inline const double& LES3DTF_cState::operator[](int index) const {
       return rhok;
    default :
      if (index <= num_vars) {
-        return rhospec[index-(NUM_EULER3D_VAR_SANS_SPECIES+NUM_LES3DTF_VAR_EXTRA+1)].c; 
+        return rhospec[index-(NUM_EULER3D_VAR_SANS_SPECIES + NUM_LES3DTF_VAR_EXTRA+1)].c; 
       } else if (index == num_vars+1) {
 	return flame.WF;
       } else {
@@ -1507,7 +1449,7 @@ inline const double& LES3DTF_cState::operator[](int index) const {
 }
 
 /***************************************************************************
- * LES3DTF_cState -- Binary arithmetic operators.   *
+ * LES3DTF_cState -- Binary arithmetic operators.                          *
  ***************************************************************************/
 //------------------ Addition ------------------------//
 inline LES3DTF_cState LES3DTF_cState::operator +(const LES3DTF_cState &U) const { 
@@ -1533,7 +1475,7 @@ inline LES3DTF_cState LES3DTF_cState::operator *(const double &a) const {
    Temp.rhov = rhov*a; 
    Temp.E = E*a;
    Temp.rhok = rhok*a; 
-   for (int i = 0; i < ns; i++) {
+   for (int i = 0; i < ns; ++i) {
       Temp.rhospec[i] = rhospec[i]*a;
    } /* endfor */
    Temp.flame = flame*a;
@@ -1545,7 +1487,7 @@ inline LES3DTF_cState operator *(const double &a,
    LES3DTF_cState Temp;
    Temp.rho = U.rho*a;  Temp.rhov = U.rhov*a; Temp.E = U.E*a;
    Temp.rhok = U.rhok*a; 
-   for (int i = 0; i < U.ns; i++) {
+   for (int i = 0; i < U.ns; ++i) {
       Temp.rhospec[i] = U.rhospec[i]*a;
    } /* endfor */
    Temp.flame = U.flame*a;
@@ -1558,7 +1500,7 @@ inline LES3DTF_cState LES3DTF_cState::operator /(const double &a) const {
    Temp.Copy(*this);
    Temp.rho = rho/a; Temp.rhov = rhov/a; Temp.E = E/a;
    Temp.rhok = rhok/a; 
-   for (int i = 0; i < ns; i++) {
+   for (int i = 0; i < ns; ++i) {
       Temp.rhospec[i] = rhospec[i]/a; 
    } /* endfor */
    Temp.flame = flame/a;
@@ -1568,7 +1510,7 @@ inline LES3DTF_cState LES3DTF_cState::operator /(const double &a) const {
 //----------------- Inner Product ------------------------//
 inline double LES3DTF_cState::operator *(const LES3DTF_cState &U) const {
    double sum=0.0;
-   for (int i = 0; i < ns; i++) {
+   for (int i = 0; i < ns; ++i) {
       sum += rhospec[i]*U.rhospec[i];
    } /* endfor */
    return (rho*U.rho + rhov*U.rhov + E*U.E + rhok*U.rhok + sum);
@@ -1584,7 +1526,7 @@ inline LES3DTF_cState LES3DTF_cState::operator ^(const LES3DTF_cState &U) const 
    Temp.rhov.z = rhov.z*U.rhov.z;
    Temp.E = E*U.E;
    Temp.rhok = rhok*U.rhok;
-   for (int i = 0; i < ns; i++) {
+   for (int i = 0; i < ns; ++i) {
       Temp.rhospec[i] = rhospec[i]*U.rhospec[i];
    } /* endfor */
    Temp.flame.WF = flame.WF*U.flame.WF;
@@ -1601,7 +1543,7 @@ inline LES3DTF_cState& LES3DTF_cState::operator =(const LES3DTF_cState &U) {
       rhov = U.rhov; 
       E = U.E; 
       rhok = U.rhok;
-      for (int i = 0; i < ns; i++) {
+      for (int i = 0; i < ns; ++i) {
          rhospec[i] = U.rhospec[i];
       } /* endfor */
       flame = U.flame;
@@ -1617,10 +1559,10 @@ inline LES3DTF_cState& LES3DTF_cState::operator +=(const LES3DTF_cState &U) {
    rhov += U.rhov; 
    E += U.E;
    rhok += U.rhok;
-   for (int i = 0; i < ns; i++) {
+   for (int i = 0; i < ns; ++i) {
       rhospec[i].c += U.rhospec[i].c;
    } /* endfor */
-  flame += U.flame;
+   flame += U.flame;
    return (*this);
 }
 
@@ -1629,10 +1571,10 @@ inline LES3DTF_cState& LES3DTF_cState::operator -=(const LES3DTF_cState &U) {
    rhov -= U.rhov;
    E -= U.E;
    rhok -= U.rhok;
-   for (int i = 0; i < ns; i++) {
+   for (int i = 0; i < ns; ++i) {
      rhospec[i].c -= U.rhospec[i].c;
    } /* endfor */
-  flame -= U.flame;
+   flame -= U.flame;
    return (*this); 
 }
 
@@ -1641,7 +1583,7 @@ inline LES3DTF_cState& LES3DTF_cState::operator -=(const LES3DTF_cState &U) {
  ****************************************************/
 inline LES3DTF_cState operator -(const LES3DTF_cState &U) {
    Species *spt= new Species[U.ns];
-   for (int i=0; i < U.ns; i++) {
+   for (int i=0; i < U.ns; ++i) {
       spt[i] = -U.rhospec[i]; 
    } /* endfor */
    LES3DTF_cState Temp(-U.rho,-U.rhov,-U.E, -U.rhok, spt);
@@ -1656,7 +1598,7 @@ inline LES3DTF_cState operator -(const LES3DTF_cState &U) {
 inline int operator ==(const LES3DTF_cState &U1, 
                        const LES3DTF_cState &U2) {
    bool Temp;
-   for (int i = 0; i < U1.ns; i++) {
+   for (int i = 0; i < U1.ns; ++i) {
       if (U1.rhospec[i] == U2.rhospec[i] ) {
          Temp = true;
       } else {
@@ -1674,7 +1616,7 @@ inline int operator ==(const LES3DTF_cState &U1,
 inline int operator !=(const LES3DTF_cState &U1, 
                        const LES3DTF_cState &U2) {
    bool Temp = true;
-   for (int i = 0; i < U1.ns; i++) {
+   for (int i = 0; i < U1.ns; ++i) {
       if( U1.rhospec[i] != U2.rhospec[i] ){
          Temp = false;
          break;
@@ -1696,7 +1638,7 @@ inline ostream &operator << (ostream &out_file,
   out_file.setf(ios::scientific);
   out_file << " " << U.rho  << " " << U.rhov.x << " " << U.rhov.y << " " 
            << U.rhov.z << " " << U.E << " " << U.rhok;
-  for (int i = 0; i < U.ns; i++) {
+  for (int i = 0; i < U.ns; ++i) {
      out_file<<" "<<U.rhospec[i];
   } /* endfor */
   out_file << " " << U.flame;
@@ -1708,7 +1650,7 @@ inline istream &operator >> (istream &in_file,
                              LES3DTF_cState &U) {
    in_file.setf(ios::skipws);
    in_file >> U.rho >> U.rhov.x >> U.rhov.y >> U.rhov.z >> U.E >> U.rhok;
-   for (int i = 0; i < U.ns; i++) {
+   for (int i = 0; i < U.ns; ++i) {
      in_file>>U.rhospec[i]; 
    } /* endfor */
    in_file >> U.flame;

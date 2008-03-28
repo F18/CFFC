@@ -2,8 +2,8 @@
  *  @file Reactor.h
  *
  * $Author: dggoodwin $
- * $Revision: 1.2 $
- * $Date: 2006/05/08 15:43:21 $
+ * $Revision: 1.3 $
+ * $Date: 2006/11/27 21:43:34 $
  */
 
 // Copyright 2001  California Institute of Technology
@@ -60,7 +60,7 @@ namespace CanteraZeroD {
 
         virtual void updateState(doublereal* y);
 
-        virtual int componentIndex(string nm) const;
+        virtual int componentIndex(std::string nm) const;
 
     protected:
         

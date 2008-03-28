@@ -1,8 +1,8 @@
 /* ======================================================================= */
 /* $RCSfile: HMW_test_3.cpp,v $ */
-/* $Author: hkmoffa $ */
-/* $Date: 2006/08/14 21:00:14 $ */
-/* $Revision: 1.2 $ */
+/* $Author: dggoodwin $ */
+/* $Date: 2007/05/04 15:18:43 $ */
+/* $Revision: 1.5 $ */
 /* ======================================================================= */
 
 #include <stdio.h>
@@ -11,12 +11,14 @@
 #include "ct_defs.h"
 #include "HMWSoln.h"
 #else
-#include "cantera/Cantera.h"
+#include "Cantera.h"
 #include "HMWSoln.h"
 #endif
 
+using namespace std;
 using namespace Cantera;
 
+int CHECK_DEBUG_MODE = 0;
 
 void printUsage() {
     cout << "usage: HMW_test_1 " <<  endl;
@@ -78,9 +80,20 @@ int main(int argc, char **argv)
      moll[1] += sum;
      
      HMW->setState_TPM(Temp, OneAtm, moll);
+
 #ifdef DEBUG_MODE
-     HMW->m_debugCalc = true;
+     CHECK_DEBUG_MODE = 1;
 #endif
+     if (CHECK_DEBUG_MODE == 1) {
+       HMW->m_debugCalc = 1;
+       if (HMW->debugPrinting()) {
+         FILE *ff = fopen("CheckDebug.txt", "w");
+         fprintf(ff,"%1d\n", 1);
+         fclose(ff);
+       }
+       HMW->m_debugCalc = 1;
+     }
+
      printf("       Temperature = %g K\n", Temp);
      HMW->printCoeffs();
      pAtable(HMW);

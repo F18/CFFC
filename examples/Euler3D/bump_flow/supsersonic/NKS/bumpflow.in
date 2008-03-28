@@ -1,0 +1,177 @@
+# 3D
+# Blunt body test case
+#
+########################
+# Set solver parameters
+########################
+Time_Integration_Type =
+Multistage_Optimal_Smoothing 
+N_Stage =
+3
+#########################################
+Time_Accurate = 
+OFF
+Local_Time_Stepping =
+1
+Reconstruction_Type =
+Least_Squares 
+#Green_Gauss
+Limiter_Type =
+Venkatakrishnan
+Flux_Function_Type =
+HLLE
+Freeze_Limiter =
+1
+Freeze_Limiter_Residual_Level = 
+100.0 
+# 1 density
+#Residual_Variable =
+#1
+#p_norms= //stupid name
+#1
+#Number_of_Residual_Norms=
+#2
+############################
+# NKS PARAMETERS
+############################
+GMRES_Overlap =
+0
+GMRES_Initial_Tolerance =
+1.0e-01
+#GMRES_Final_Tolerance =
+#2.0e-03
+NKS_Overall_Tolerance =
+1.0e-10
+GMRES_Block_Preconditioner = 
+ILUK
+#( ILUK, Diagonal)
+GMRES_ILUK_Level_of_Fill = 
+2
+GMRES_Check
+ON
+# Implict Euler Startup
+NKS_Finite_Time_Step =
+ON
+NKS_Finite_Time_Step_Initial_CFL =
+100
+NKS_Finite_Time_Step_Max_CFL =
+1e12
+GMRES_Normalization = 
+ON
+Jacobian_Order =
+First_Order_Inviscid_HLLE
+#Source_Terms_Only
+#First_Order_Inviscid_HLLE
+GMRES_Check=
+ON
+#########################
+# Set initial conditions
+#########################
+ICs_Type = 
+Uniform
+Mach_Number = 
+1.4
+#0.5
+#Number_of_Ghost_Cells=
+#2
+########################
+# Set mesh info
+########################
+Grid_Type =
+Bump_Channel_Flow
+#Channel_X
+# X
+#Box_Width = 
+#1.0
+# Y 
+#Box_Height =
+#1.0
+# Z
+#Box_Length =
+#1.0
+Number_of_Cells_Idir = 
+32
+Number_of_Cells_Jdir =
+32
+Number_of_Cells_Kdir =
+2
+#Smooth_Quad_Block =
+#ON
+AMR =
+OFF
+#AMR_Frequency =
+#8
+Number_of_Initial_Mesh_Refinements =
+0
+Number_of_Uniform_Mesh_Refinements =
+0
+Number_of_Boundary_Mesh_Refinements =
+0
+Maximum_Refinement_Level
+5
+Minimum_Refinement_Level
+1
+Threshold_for_Refinement =
+0.50
+Threshold_for_Coarsening =
+0.10
+################################
+# Set Morton ordering parameters
+################################
+#Morton =
+#0
+#Morton_Reordering_Frequency =
+#1000
+Temperature=
+287.085
+###############################
+# Set time stepping parameters
+###############################
+CFL_Number= 
+0.75
+# 1000,300
+Maximum_Number_of_Time_Steps =
+150
+##### IMPLICIT PARAMETERS ###############
+Maximum_Number_of_NKS_Iterations =
+50
+Maximum_Number_of_GMRES_Iterations =
+40
+GMRES_Restart =
+40
+Restart_Solution_Save_Frequency=
+5000
+########################################
+Number_of_Blocks_Per_Processor =
+16
+Output_File_Name = 
+bump3D
+# Execute program
+#######################
+Execute
+##############################
+# Apply Morton Ordering
+##############################
+#Morton_Ordering
+#############################
+#
+#Refine_Grid
+##############################
+# Restart program
+##############################
+#Continue
+#######################
+# Write output
+#######################
+Write_Output
+Write_Output_Cells
+#Write_Output_Mesh
+#Write_Output_Mesh_Cells
+#Write_Output_Mesh_Nodes
+#Write_Restart
+#Write_Mesh_Definition
+#######################
+# Terminate program
+#######################
+Terminate
+

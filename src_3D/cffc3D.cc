@@ -46,9 +46,11 @@ using namespace std;
 
 #include "Euler/Euler3DPolytropic.h"
 #include "Euler/Euler3DThermallyPerfect.h"
+#include "NavierStokes/NavierStokes3DPolytropic.h"
 #include "NavierStokes/NavierStokes3DThermallyPerfect.h"
 #include "FANS/FANS3DThermallyPerfect.h"
 #include "LES/LES_FSD/LES3DFsd.h"
+#include "LES/LES_ThickenedFlame/LES3DThickenedFlame.h"
 #include "UnitTesting/UnitTesting.h"
 
 /* Begin CFFC3D program. */
@@ -276,16 +278,24 @@ int main(int num_arg, char *arg_ptr[]) {
       error_flag = HexaSolver<Euler3D_ThermallyPerfect_pState, Euler3D_ThermallyPerfect_cState>
 	           (Input_File_Name_ptr, batch_flag);
 		
+   } else if (strcmp(Equation_Type, "NavierStokes3DPolytropic") == 0) {
+      error_flag = HexaSolver<NavierStokes3D_Polytropic_pState, NavierStokes3D_Polytropic_cState>
+                   (Input_File_Name_ptr, batch_flag);
+
    } else if (strcmp(Equation_Type, "NavierStokes3DThermallyPerfect") == 0) {
       error_flag = HexaSolver<NavierStokes3D_ThermallyPerfect_pState, NavierStokes3D_ThermallyPerfect_cState>
                    (Input_File_Name_ptr, batch_flag);
       
    } else if(strcmp(Equation_Type, "FANS3DThermallyPerfect") == 0) {
-      error_flag = HexaSolver< FANS3D_ThermallyPerfect_KOmega_pState, FANS3D_ThermallyPerfect_KOmega_cState>
+      error_flag = HexaSolver<FANS3D_ThermallyPerfect_KOmega_pState, FANS3D_ThermallyPerfect_KOmega_cState>
                    (Input_File_Name_ptr, batch_flag);
 
    } else if(strcmp(Equation_Type, "LES3DFsd") == 0) {
-      error_flag = HexaSolver< LES3DFsd_pState, LES3DFsd_cState>
+      error_flag = HexaSolver<LES3DFsd_pState, LES3DFsd_cState>
+                   (Input_File_Name_ptr, batch_flag);
+
+   } else if(strcmp(Equation_Type, "LES3DThickenedFlame") == 0) {
+     error_flag = HexaSolver<LES3DTF_pState, LES3DTF_cState>
                    (Input_File_Name_ptr, batch_flag);
 
    } /* endif */

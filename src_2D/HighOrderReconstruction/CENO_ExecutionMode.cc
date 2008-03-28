@@ -82,7 +82,7 @@ void CENO_Execution_Mode::Print_Info(std::ostream & out_file){
  * from the specified processor using the MPI broadcast 
  * routine.
  *
- * \todo Switch to a user-difined datatype
+ * \todo Switch to a user-defined datatype
  */
 void CENO_Execution_Mode::Broadcast(void){
 #ifdef _MPI_VERSION

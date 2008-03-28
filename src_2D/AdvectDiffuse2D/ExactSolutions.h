@@ -26,6 +26,7 @@
  *      Advection-diffusion Exact Solution Type Indexes            *
  *                                                                 *
  *******************************************************************/
+#define AD2D_NO_EXACT_SOLUTION              -1
 // ========== PARTICULAR SOLUTIONS FOR LAPLACE EQUATION ===========
 #define AD2D_EXACT_SOLUTION_LAPLACE_I        0
 #define AD2D_EXACT_SOLUTION_LAPLACE_II       1

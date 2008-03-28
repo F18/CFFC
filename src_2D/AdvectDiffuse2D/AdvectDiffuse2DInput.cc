@@ -12,6 +12,8 @@
 #include "AdvectDiffuse2DQuad.h"  /* Include AdvectDiffuse2D_Quad_Block header file. */
 #include "../HighOrderReconstruction/CENO_ExecutionMode.h" // Include high-order CENO execution mode header file
 #include "../HighOrderReconstruction/CENO_Tolerances.h"	   // Include high-order CENO tolerances header file
+#include "../Grid/HO_Grid2DQuad_ExecutionMode.h" // Include high-order 2D grid execution mode header file
+#include "../Grid/Tecplot_ExecutionMode.h" // Include Tecplot execution mode header file
 
 /*************************************************************
  * AdvectDiffuse2D_Input_Parameters -- Member functions.     *
@@ -313,11 +315,8 @@ ostream &operator << (ostream &out_file,
     if (IP.i_ReconstructionMethod != RECONSTRUCTION_CENO ){
       out_file << "\n  -> Elliptic Flux Evaluation: " << IP.Viscous_Reconstruction_Type;
     }
-    if (IP.IncludeHighOrderBoundariesRepresentation == OFF){
-      out_file << "\n  -> Boundary Accuracy: " << "2nd-Order";
-    } else {
-      out_file << "\n  -> Boundary Accuracy: " << "high-order";
-    }
+    // output information related to the treatment of curved boundaries.
+    HO_Grid2D_Execution_Mode::Print_Info(out_file);
 
     // ==== Grid parameters ====
     out_file << "\n  -> Grid: " 
@@ -332,6 +331,16 @@ ostream &operator << (ostream &out_file,
                  << IP.Box_Width;
         out_file << "\n     -> Height of Solution Domain: " 
                  << IP.Box_Height;
+        break;
+      case GRID_DEFORMED_BOX :
+        out_file << "\n     -> SW Corner: " 
+                 << IP.VertexSW;
+        out_file << "\n     -> SE Corner: " 
+                 << IP.VertexSE;
+        out_file << "\n     -> NE Corner: " 
+                 << IP.VertexNE;
+        out_file << "\n     -> NW Corner: " 
+                 << IP.VertexNW;
         break;
       case GRID_FLAT_PLATE :
         out_file << "\n     -> Plate Length: " 
@@ -472,6 +481,10 @@ ostream &operator << (ostream &out_file,
              << IP.Output_File_Name;
     out_file << "\n  -> Output Format: " 
              << IP.Output_Format_Type;
+    if (IP.i_Output_Format == IO_TECPLOT){
+      // output information related to Tecplot output
+      Tecplot_Execution_Mode::Print_Info(out_file);
+    }
     out_file << "\n  -> Restart Solution Save Frequency: "
              << IP.Restart_Solution_Save_Frequency
              << " steps (iterations)"; 
@@ -625,6 +638,10 @@ void Set_Default_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
     IP.Ellipse_Length_Y_Axis = HALF;
     IP.Chord_Length = ONE;
     IP.Orifice_Radius = ONE;
+    IP.VertexSW = Vector2D(-0.5,-0.5);
+    IP.VertexSE = Vector2D( 0.5,-0.5);
+    IP.VertexNE = Vector2D( 0.5, 0.5);
+    IP.VertexNW = Vector2D(-0.5, 0.5);
     IP.X_Shift = Vector2D_ZERO;
     IP.X_Scale = ONE;
     IP.X_Rotate = ZERO;
@@ -907,6 +924,30 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
     MPI::COMM_WORLD.Bcast(&(IP.Orifice_Radius), 
                           1, 
                           MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.VertexSW.x), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.VertexSW.y), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.VertexSE.x), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.VertexSE.y), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.VertexNW.x), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.VertexNW.y), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.VertexNE.x), 
+                          1, 
+                          MPI::DOUBLE, 0);
+    MPI::COMM_WORLD.Bcast(&(IP.VertexNE.y), 
+                          1, 
+                          MPI::DOUBLE, 0);
     MPI::COMM_WORLD.Bcast(&(IP.X_Shift.x), 
                           1, 
                           MPI::DOUBLE, 0);
@@ -1122,6 +1163,12 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP) {
     // Inflow field variables
     IP.Inflow->Broadcast();
 
+    // HO_Grid2D_Execution_Mode variables
+    HO_Grid2D_Execution_Mode::Broadcast();
+
+    // Tecplot_Execution_Mode variables
+    Tecplot_Execution_Mode::Broadcast();
+
 #endif
 
 }
@@ -1330,6 +1377,30 @@ void Broadcast_Input_Parameters(AdvectDiffuse2D_Input_Parameters &IP,
                        1, 
                        MPI::DOUBLE, Source_Rank);
     Communicator.Bcast(&(IP.Orifice_Radius), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.VertexSW.x), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.VertexSW.y), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.VertexSE.x), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.VertexSE.y), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.VertexNE.x), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.VertexNE.y), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.VertexNW.x), 
+                       1, 
+                       MPI::DOUBLE, Source_Rank);
+    Communicator.Bcast(&(IP.VertexNW.y), 
                        1, 
                        MPI::DOUBLE, Source_Rank);
     Communicator.Bcast(&(IP.X_Shift.x), 
@@ -1686,6 +1757,8 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
       IP.i_Grid = GRID_RECTANGULAR_BOX;
       IP.Box_Width = ONE;
       IP.Box_Height = ONE;
+    } else if (strcmp(IP.Grid_Type, "Deformed_Box") == 0) {
+      IP.i_Grid = GRID_DEFORMED_BOX;
     } else if (strcmp(IP.Grid_Type, "Periodic_Box") == 0) {
       IP.i_Grid = GRID_PERIODIC_BOX;
     } else if (strcmp(IP.Grid_Type, "Interior_Inflow_Outflow_Box") == 0) {
@@ -2038,6 +2111,34 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
     IP.Line_Number = IP.Line_Number + 1;
     IP.Input_File >> IP.Grain_Radius;
     IP.Input_File.getline(buffer,sizeof(buffer));
+
+  } else if (strcmp(IP.Next_Control_Parameter, "VertexSW") == 0) {
+    i_command = 0;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.VertexSW;
+    IP.Input_File.setf(ios::skipws);
+    IP.Input_File.getline(buffer, sizeof(buffer));
+
+  } else if (strcmp(IP.Next_Control_Parameter, "VertexSE") == 0) {
+    i_command = 0;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.VertexSE;
+    IP.Input_File.setf(ios::skipws);
+    IP.Input_File.getline(buffer, sizeof(buffer));
+
+  } else if (strcmp(IP.Next_Control_Parameter, "VertexNE") == 0) {
+    i_command = 0;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.VertexNE;
+    IP.Input_File.setf(ios::skipws);
+    IP.Input_File.getline(buffer, sizeof(buffer));
+
+  } else if (strcmp(IP.Next_Control_Parameter, "VertexNW") == 0) {
+    i_command = 0;
+    IP.Line_Number = IP.Line_Number + 1;
+    IP.Input_File >> IP.VertexNW;
+    IP.Input_File.setf(ios::skipws);
+    IP.Input_File.getline(buffer, sizeof(buffer));
 
   } else if (strcmp(IP.Next_Control_Parameter, "Time_Max") == 0) {
     i_command = 39;
@@ -2656,17 +2757,6 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
 	   << "Space Accuracy set to 1" << endl;
     }/* endif */
 
-  } else if (strcmp(IP.Next_Control_Parameter, "High_Order_Boundary") == 0) {
-    i_command = 0;
-    Get_Next_Input_Control_Parameter(IP);
-    if (strcmp(IP.Next_Control_Parameter,"ON") == 0 || strcmp(IP.Next_Control_Parameter,"On") == 0) {
-      IP.IncludeHighOrderBoundariesRepresentation = ON;
-    } else if (strcmp(IP.Next_Control_Parameter,"OFF") == 0 || strcmp(IP.Next_Control_Parameter,"Off") == 0) {
-      IP.IncludeHighOrderBoundariesRepresentation = OFF;
-    } else {
-      i_command = INVALID_INPUT_VALUE;
-    }
-
   } else if (strcmp(IP.Next_Control_Parameter, "Accuracy_Assessment_Exact_Digits") == 0) {
     i_command = 0;
     IP.Line_Number = IP.Line_Number + 1;
@@ -2710,6 +2800,12 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
   } else if (strcmp(IP.Next_Control_Parameter,"Print_Accuracy") == 0) {
     i_command = WRITE_ERROR_NORMS_TO_SCREEN;
 
+  } else if (strcmp(IP.Next_Control_Parameter,"Write_Accuracy_To_File") == 0) {
+    i_command = WRITE_ERROR_NORMS_TO_FILE;
+
+  } else if (strcmp(IP.Next_Control_Parameter,"Append_Accuracy_To_File") == 0) {
+    i_command = APPEND_ERROR_NORMS_TO_FILE;
+
   } else if (strcmp(IP.Next_Control_Parameter, "Refine_Grid") == 0) {
     i_command = REFINE_GRID_CODE;
 
@@ -2743,6 +2839,12 @@ int Parse_Next_Input_Control_Parameter(AdvectDiffuse2D_Input_Parameters &IP) {
   
   /* Parse next control parameter with CENO_Tolerances parser */
   CENO_Tolerances::Parse_Next_Input_Control_Parameter(IP,i_command);
+
+  /* Parse next control parameter with HO_Grid2D_Execution_Mode parser */
+  HO_Grid2D_Execution_Mode::Parse_Next_Input_Control_Parameter(IP,i_command);
+
+  /* Parse next control parameter with Tecplot_Execution_Mode parser */
+  Tecplot_Execution_Mode::Parse_Next_Input_Control_Parameter(IP,i_command);
 
   if (i_command == INVALID_INPUT_CODE){
     // that is, we have an input line which:

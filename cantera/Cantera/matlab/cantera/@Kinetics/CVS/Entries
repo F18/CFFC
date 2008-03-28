@@ -1,0 +1,26 @@
+/Kinetics.m/1.5/Tue May 25 21:56:39 2004//
+/advanceCoverages.m/1.1/Tue Aug 26 03:36:28 2003//
+/clear.m/1.1.1.1/Mon Apr 14 17:57:49 2003//
+/creationRates.m/1.1.1.1/Mon Apr 14 17:57:49 2003//
+/destructionRates.m/1.1.1.1/Mon Apr 14 17:57:49 2003//
+/destruction_rates.m/1.1.1.1/Mon Apr 14 17:57:49 2003//
+/equil_Kc.m/1.1.1.1/Mon Apr 14 17:57:49 2003//
+/hndl.m/1.1.1.1/Mon Apr 14 17:57:49 2003//
+/isReversible.m/1.1.1.1/Mon Apr 14 17:57:49 2003//
+/kinetics_hndl.m/1.1.1.1/Mon Apr 14 17:57:49 2003//
+/multiplier.m/1.1.1.1/Mon Apr 14 17:57:49 2003//
+/nReactions.m/1.1.1.1/Mon Apr 14 17:57:49 2003//
+/nTotalSpecies.m/1.1.1.1/Mon Apr 14 17:57:49 2003//
+/netProdRates.m/1.1.1.1/Mon Apr 14 17:57:49 2003//
+/reactionEqn.m/1.1.1.1/Mon Apr 14 17:57:49 2003//
+/rop.m/1.1.1.1/Mon Apr 14 17:57:49 2003//
+/rop_f.m/1.1.1.1/Mon Apr 14 17:57:49 2003//
+/rop_net.m/1.1.1.1/Mon Apr 14 17:57:49 2003//
+/rop_r.m/1.1.1.1/Mon Apr 14 17:57:49 2003//
+/rxnEqs.m/1.1.1.1/Mon Apr 14 17:57:49 2003//
+/setMultiplier.m/1.2/Tue Aug 26 03:36:28 2003//
+/stoich_net.m/1.1.1.1/Mon Apr 14 17:57:49 2003//
+/stoich_p.m/1.1.1.1/Mon Apr 14 17:57:49 2003//
+/stoich_r.m/1.1.1.1/Mon Apr 14 17:57:49 2003//
+/ydot.m/1.1.1.1/Mon Apr 14 17:57:49 2003//
+D/private////

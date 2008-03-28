@@ -593,7 +593,7 @@ inline ReturnType GaussLobattoAdaptiveQuadrature(FunctionType func, double Start
 						 int digits = numeric_limits<double>::digits10)
   throw (TooShortInterval) {
   
-  ReturnType tol(0.5*pow(10.0,-digits));
+  ReturnType tol(0.5*std::pow(10.0,-digits));
   const ReturnType eps(numeric_limits<double>::epsilon());
   
   double a,b;
@@ -1275,10 +1275,10 @@ inline ReturnType Gauss5PointQuadrilateralQuadrature(FunctionType func,
 			       0.0,1.0,0.0,1.0,dummy);
 }
 
-/******************************************************************************************
- * Generalized polynomial function of ONE-variable                                        *
- * is a class of functions which have the form (x-xi)^n                                   *
- ******************************************************************************************/
+/**
+ * Generalized polynomial function of ONE-variable                                        
+ * is a class of functions which have the form (x-xi)^n                                   
+ ********************************************************/
 class GeneralizedPolynomialFunctionOfOneVariable{
  private:
   double xi;
@@ -1293,14 +1293,14 @@ class GeneralizedPolynomialFunctionOfOneVariable{
     }
 
     double operator()(const double & x){
-      return pow((x-xi),n);
+      return std::pow((x-xi),n);
     }
 };
 
-/******************************************************************************************
- * Generalized polynomial function of TWO-variables                                       *
- * is a class of functions which have the form (x-xi)^n * (y-yi)^m                        *
- ******************************************************************************************/
+/**
+ * Generalized polynomial function of TWO-variables                                      
+ * is a class of functions which have the form (x-xi)^n * (y-yi)^m                       
+ ********************************************************************/
 class GeneralizedPolynomialFunctionOfTwoVariables{
  private:
   double xi, yi;
@@ -1317,7 +1317,7 @@ class GeneralizedPolynomialFunctionOfTwoVariables{
     }
 
     double operator()(const double x, const double y){
-      return pow((x-xi),n)*pow((y-yi),m);
+      return std::pow((x-xi),n)*std::pow((y-yi),m);
     }
 
     friend ostream& operator << (ostream& os, const GeneralizedPolynomialFunctionOfTwoVariables & Var){
@@ -1334,6 +1334,31 @@ class GeneralizedPolynomialFunctionOfTwoVariables{
 double ZeroLineIntegration(const double & N1x, const double & N1y,
 			   const double & N2x, const double & N2y);
 
+/***********************************************************************//**
+ * Compute the integral \f$ I = \int x dy \f$ along a segment line
+ * in a local coordinate system (LCS).
+ * GCS = global coordinate system
+ *
+ * \param N1x the x-coordinate of the segment first end point in the GCS.
+ * \param N1y the y-coordinate of the segment first end point in the GCS.
+ * \param N2x the x-coordinate of the segment second end point in the GCS.
+ * \param N2y the y-coordinate of the segment second end point in the GCS.
+ * \param xLCS the x-coordinate of the LCS in the GCS
+ * \param yLCS the y-coordinate of the LCS in the GCS
+ * \return the value of the integral
+ ************************************************************************/
+inline double ZeroLineIntegration(const double & N1x, const double & N1y,
+				  const double & N2x, const double & N2y,
+				  const double & xLCS, const double & yLCS){
+  
+  // Calculate the coordinates in the LCS
+  double N1x_LCS(N1x-xLCS), N1y_LCS(N1y-yLCS);
+  double N2x_LCS(N2x-xLCS), N2y_LCS(N2y-yLCS);
+  
+  return ZeroLineIntegration(N1x_LCS, N1y_LCS,
+			     N2x_LCS, N2y_LCS);
+}
+
 // ZeroLineIntegration for Node input
 template< class Node>
 inline double ZeroLineIntegration(const Node& StartNode, const Node& EndNode){
@@ -1344,7 +1369,90 @@ inline double ZeroLineIntegration(const Node& StartNode, const Node& EndNode){
 double PolynomLineIntegration(const double & N1x, const double & N1y,
 			      const double & N2x, const double & N2y,
 			      const double & xCC, const double & yCC,
-			      const int OrderX,   const int OrderY);
+			      const int &OrderX, const int &OrderY);
+
+// PolynomLineIntegration2()
+double PolynomLineIntegration2(const double & N1x, const double & N1y,
+			       const double & N2x, const double & N2y,
+			       const double & xCC, const double & yCC,
+			       const int &OrderX, const int &OrderY);
+
+/***********************************************************************//**
+ * Compute the integral \f$ I = \int (x - xc)^{(OrderX+1)} * (y - yc)^OrderY dy \f$
+ * along a segment line in a local coordinate system (LCS).
+ * The result of this polynomial function integration is determined with an analytic expression.
+ * GCS = global coordinate system
+ *
+ * \param N1x the x-coordinate of the line first end point in the GCS.
+ * \param N1y the y-coordinate of the line first end point in the GCS.
+ * \param N2x the x-coordinate of the line second end point in the GCS.
+ * \param N2y the y-coordinate of the line second end point in the GCS.
+ * \param xCC the xc-coordinate in the GCS
+ * \param yCC the yc-coordinate in the GCS
+ * \param xLCS the x-coordinate of the LCS in the GCS
+ * \param yLCS the y-coordinate of the LCS in the GCS
+ * \return the value of the integrals up to 4th-order (i.e. OrderX + OrderY <= 4)
+ *
+ *********************************************************************************/
+inline double PolynomLineIntegration(const double & N1x, const double & N1y,
+				     const double & N2x, const double & N2y,
+				     const double & xCC, const double & yCC,
+				     const double & xLCS, const double & yLCS,
+				     const int &OrderX, const int &OrderY){
+
+  // Calculate the coordinates in the LCS
+  double N1x_LCS(N1x-xLCS), N1y_LCS(N1y-yLCS);
+  double N2x_LCS(N2x-xLCS), N2y_LCS(N2y-yLCS);
+  double xCC_LCS(xCC-xLCS), yCC_LCS(yCC-yLCS);
+  
+  return PolynomLineIntegration(N1x_LCS, N1y_LCS,
+				N2x_LCS, N2y_LCS,
+				xCC_LCS, yCC_LCS,
+				OrderX, OrderY);
+}
+
+/*!
+ * \class GaussQuadratureData
+ *
+ * @brief Collection of absissae and weights 
+ *        for n-point Gauss quadrature formula
+ * 
+ * The integral that can be computed with this data
+ * is defined as follows:
+ * 
+ * \f$ I = \int_{a}^{b} f(x) dx = m \int_{-1}^{+1}f(c+mt) dt \f$
+ * where \f$x=c+mt\f$, \f$c=\frac{1}{2}(b+a)\f$ and \f$m=\frac{1}{2}(b-a)\f$ ,
+ *        'a' and 'b' are the integration limits. \n
+ *
+ * This integral can be writen as follows: \n
+ * \f$ I = m \int_{-1}^{+1}f(c+mt) dt = m \sum_{i=i}^{n} \omega_{i} 
+ *         f(c+mt_{i}) = (b-a) \sum_{i=i}^{n} GQn\_Weight[i]* f(a + GQn\_Abscissa[i]*(b-a)) \f$
+ ***********************************************************************************************/
+class GaussQuadratureData{
+public:
+  // Abscissae and weights for 1-point Gaussian method
+  static const double GQ1_Abscissa[1];
+  static const double GQ1_Weight[1];
+
+  // Abscissae and weights for 2-point Gaussian method
+  static const double GQ2_Abscissa[2];
+  static const double GQ2_Weight[2];
+
+  // Abscissae and weights for 3-point Gaussian method
+  static const double GQ3_Abscissa[3];
+  static const double GQ3_Weight[3];
+
+  // Abscissae and weights for 5-point Gaussian method
+  static const double GQ5_Abscissa[5];
+  static const double GQ5_Weight[5];  
+
+protected:
+  GaussQuadratureData(void); //!< Private default constructor
+  GaussQuadratureData(const GaussQuadratureData&); //!< Private copy constructor
+  GaussQuadratureData& operator=(const GaussQuadratureData&); //!< Private assignment operator
+  
+};
+
 
 
 /**************** Function Prototypes ********************/

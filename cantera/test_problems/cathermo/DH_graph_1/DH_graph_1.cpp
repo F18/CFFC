@@ -4,9 +4,9 @@
  */
 
 /*
- *  $Author: hkmoffa $
- *  $Date: 2006/08/14 20:32:05 $
- *  $Revision: 1.2 $
+ *  $Author: dggoodwin $
+ *  $Date: 2007/05/04 15:18:42 $
+ *  $Revision: 1.4 $
  */
 #include <stdio.h>
 
@@ -15,11 +15,12 @@
 #include "logger.h"
 #include "DebyeHuckel.h"
 #else
-#include "cantera/Cantera.h"
-#include "cantera/kernel/logger.h"
-#include "cantera/kernel/thermo/DebyeHuckel.h"
+#include "Cantera.h"
+#include "kernel/logger.h"
+#include "kernel/DebyeHuckel.h"
 #endif
 
+using namespace std;
 using namespace Cantera;
 
 class fileLog: public Logger {

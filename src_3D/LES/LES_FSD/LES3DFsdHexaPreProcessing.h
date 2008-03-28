@@ -51,4 +51,10 @@ int Output_Other_Solution_Progress_Specialization_Data(HexaSolver_Data &Data,
                                                        HexaSolver_Solution_Data<LES3DFsd_pState,
 						                                LES3DFsd_cState> &Solution_Data);
 
+//! Burning rate
+template<>
+double Turbulent_Burning_Rate(Hexa_Block<LES3DFsd_pState, LES3DFsd_cState> *Solution_Block,
+			      AdaptiveBlock3D_List &LocalSolnBlockList,
+			      Grid3D_Input_Parameters &IPs);
+
 #endif // _LES3DFSD_HEXA_PREPROCESSING_INCLUDED

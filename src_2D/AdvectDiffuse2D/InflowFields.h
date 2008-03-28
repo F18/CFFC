@@ -25,6 +25,7 @@
  *         Inflow Field Types             *
  *                                        *
  *****************************************/
+#define NO_INFLOW_FIELD             -1
 #define SINUSOIDAL_I                 0
 #define SINUSOIDAL_II                1
 #define SINUSOIDAL_III               2

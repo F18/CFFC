@@ -53,28 +53,18 @@ using namespace std;
 #include "../Math/Simpson.h"
 #include "../CFD/CFD.h"
 #include "../Physics/GasConstants.h"
-#include "SNBCK.h"
-#include "Planck.h"
+#include "../Physics/Planck.h"
+#include "Medium2DState.h"
+#include "Scatter.h"
+#include "ControlAngle.h"
 
 /********************************************************
  * Necessary Rte2D Specific Constants                   *
  ********************************************************/
 
-// Absorbsion model type 
-enum Gas_Models { RTE2D_ABSORB_GRAY,
-                  RTE2D_ABSORB_SNBCK };
-
 // RTE discretization Type (DOM or FVM)
 enum RTE_Discretization { RTE2D_SOLVER_FVM,
 			  RTE2D_SOLVER_DOM };
-
-// Scatter Phase Functions
-enum Scatter_Models { RTE2D_SCATTER_ISO,  // isotropic scattering
-		      RTE2D_SCATTER_F1,   // Kim and Lee (1988)   
-		      RTE2D_SCATTER_F2,   // Kim and Lee (1988)
-		      RTE2D_SCATTER_F3,   // Kim and Lee (1988) 
-		      RTE2D_SCATTER_B1,   // Kim and Lee (1988)
-		      RTE2D_SCATTER_B2 }; // Kim and Lee (1988)
 
 // DOM quadrature Type 
 enum DOM_Qauad { RTE2D_DOM_S2,   // S2 NONSYMMETRIC from LATHROP and CARLSON
@@ -84,43 +74,10 @@ enum DOM_Qauad { RTE2D_DOM_S2,   // S2 NONSYMMETRIC from LATHROP and CARLSON
 		 RTE2D_DOM_S12,  // S12 SYMMETRIC from LATHROP and CARLSON
 		 RTE2D_DOM_T3 }; // T3 SYMMETRIC from Truelove
 
-
-/********************************************************
- * STRUCTS REQUIRED FOR INTEGRATION                     *
- ********************************************************/
-
-// Struct needed to integrate the phase function over the solid angle.
-// Contains information for legendre polynomials.
-struct legendre_param {
-  double *An; // the expansion coefficient array
-  int Mn;     // degree of Legendre polynomial 
-};
-
-// Struct needed to integrate the exact solution for radiative
-// heat transfer in a cylindrical enclosure.
-struct exact_cyl_param {
-  double z;       // the non-dimensional axial distance
-  double r;       // the non-dimensional radial distance 
-  double c;       // the half length divided by the outer radius
-  double kappa;   // non-dimensional absorbsion coefficient
-  int term_flag;  // a flag for which parameter we are computing
-  int coord_flag; // a flag for which coordinate this is for
-};
-
-// Struct needed to integrate the exact solution for radiative
-// heat transfer in a rectangular enclosure.
-struct exact_rect_param {
-  double x;       // the dimensional x location
-  double y;       // the dimensional y location 
-  double a1;      // west wall location
-  double a2;      // east wall location
-  double b1;      // south wall location
-  double b2;      // north wall location
-  double kappa;   // absorbsion coefficient
-  int term_flag;  // a flag for which parameter we are computing
-  int coord_flag; // a flag for which coordinate this is for
-};
-
+// Set fixed static number of directions x bands.
+// If you define this variable, the number of species will be
+// predetermined for faster calculations.., however it is not as general.
+//#define RTE2D_STATIC_NUMBER_OF_VARS  100
 
 /***********************************************************************/
 /*!
@@ -137,9 +94,6 @@ struct exact_rect_param {
  * \verbatim
  * Member functions
  *     I        -- Return array of spectral, directional intensities
- *     kappa    -- Return array of spectral absorbsion coefficient
- *     sigma    -- Return array of spectral scattering coefficient
- *     Ib       -- Return array of spectral blackbody intensity.
  *     Npolar   -- Return the number of polar directions.
  *     Nazim    -- Return array of the number of azimuthal directions in each polar direction
  *     Nbands   -- Return the number of spectral frequency bands.
@@ -170,7 +124,6 @@ struct exact_rect_param {
  *     dSadU_FVM-- Return axisymmetric source term jacobian (FVM Space-marching case).
  *     dSadU_DOM-- Return axisymmetric source term jacobian (DOM Space-marching case).
  *     In       -- Return intensity at spectral/directional location.
- *     beta     -- Return extinction coefficient.
  *     G        -- Return total directional integrated radiation.
  *     q        -- Return heat flux vector.
  *
@@ -203,10 +156,11 @@ class Rte2D_State {
  public:
 
   //@{ @name Conserved variables and associated constants:
-  double* kappa;               //!< absorbsion coefficient [m^-1]
-  double* sigma;               //!< scattering coefficient [m^-1]
-  double* Ib;                  //!< blackbody intentsity [W/m^2 or W/(m^2 cm)]
+#ifdef RTE2D_STATIC_NUMBER_OF_VARS
+  double  I[RTE2D_STATIC_NUMBER_OF_VARS];
+#else 
   double* I;                   //!< directional intentsity [W/m^2 or W/(m^2 cm)]
+#endif
   //@}
 
   //@{ @name DOM space marching parameters (See Carlson and Lathrop (1968)):
@@ -219,7 +173,7 @@ class Rte2D_State {
   static int*   Nazim;         //!< number of azimuthal directions
   static int    Nband;         //!< the total number of frequency bands (and quadrature points for SNBCK)
   static int*** Index;         //!< array relating 3D indexing (v,m,l) to 1D index (n)
-  static int    NUM_VAR_RTE2D; //!< total number of Rte2D variables
+  static int    NUM_VAR_RTE2D; //!< total number of Rte2D state variables
   //@}
 
   //@{ @name Static variables related to angular discretization:
@@ -235,22 +189,27 @@ class Rte2D_State {
   //@{ @name Miscillaneous static variables:
   static double***** Phi;        //!< scattering phase function
   static double Symmetry_Factor; //!< solid angle range symmetry factor
-  static SNBCK* SNBCKdata;       //!< statistical narrow band model 
-  static double Absorb_Type;     //!< flag for absorption model
   //@}
 
 
   //@{ @name Creation, copy, and assignment constructors.
   //! Creation constructor.
-  Rte2D_State() : kappa(NULL), sigma(NULL), I(NULL), Ib(NULL), 
-                  alpha(NULL), I_half(NULL)
-    { Allocate(); }
+#ifdef RTE2D_STATIC_NUMBER_OF_VARS
+  Rte2D_State() : alpha(NULL), I_half(NULL) {}
+#else 
+  Rte2D_State() : I(NULL), alpha(NULL), I_half(NULL)
+  { Allocate(); }
+#endif
 
   //! Copy constructor.
-  Rte2D_State( const Rte2D_State &U ) : kappa(NULL), sigma(NULL), I(NULL), 
-                                        Ib(NULL),    alpha(NULL), I_half(NULL)
-    { Allocate(); if( this != &U) Copy(U); }
-  
+#ifdef RTE2D_STATIC_NUMBER_OF_VARS
+  Rte2D_State( const Rte2D_State &U ) : alpha(NULL), I_half(NULL)
+  { if( this != &U) Copy(U); }
+#else 
+  Rte2D_State( const Rte2D_State &U ) : I(NULL), alpha(NULL), I_half(NULL)
+  { Allocate(); if( this != &U) Copy(U); }
+#endif
+
   //! Destructor.
   ~Rte2D_State() { Deallocate(); }
   //@}
@@ -259,44 +218,18 @@ class Rte2D_State {
   //@{ @name Useful operators.
   //! Copy solution state operator.
   void Copy( const Rte2D_State &U ) {
-    Copy_NonSol( U );
     for ( int i=0; i<NUM_VAR_RTE2D; i++ ) I[i] = U.I[i];
-  }
-
-  //! Copy non solution state operator.
-  void Copy_NonSol( const Rte2D_State &U ) {
-    for ( int i=0; i<Nband; i++ )   { 
-      Ib[i] = U.Ib[i];
-      kappa[i] = U.kappa[i];
-      sigma[i] = U.sigma[i];
-    }
   }
 
   //! Vacuum operator.
   void Vacuum() {
-    ZeroIntensity();
-    ZeroNonSol();
+    for ( int i=0; i<NUM_VAR_RTE2D; i++ ) I[i] = ZERO;
   }
 
   //! Zero state operator.
   void Zero() {
-    ZeroIntensity();
-    ZeroNonSol();
-  }
-
-  //! Zero solution only operator
-  void ZeroIntensity() {
     for ( int i=0; i<NUM_VAR_RTE2D; i++ ) I[i] = ZERO;
   }
-
-  //! Zero non-solution operator.
-  void ZeroNonSol() {
-    for(int i=0; i<Nband; i++) {
-      kappa[i] = ZERO;  
-      sigma[i] = ZERO;
-      Ib[i]    = ZERO;  
-    }
-  }  
 
   //! Check for unphysical state properties (i.e. negative, NAN).
   int Unphysical_Properties(void) const {
@@ -309,16 +242,7 @@ class Rte2D_State {
 
   //@{ @name Initialization functions
   //! Set the spectral/directional intensity to a constant value.
-  void SetIntensity(const double &val);
-
-  //! Set the spectral absorbsion coefficient.
-  void SetAbsorption(const double &val);
-
-  //! Set the spectral scattering coefficient.
-  void SetScattering(const double &val);
-
-  //! Set the spectral blackbody intensity.
-  void SetBlackbody(const double &val);
+  void SetInitialValues(const double &val);
 
   //! Compute DOM angular redistribution coefficients
   void SetupART_DOM( const Vector2D &nfaceE, const double &AfaceE,
@@ -327,10 +251,15 @@ class Rte2D_State {
 		     const Vector2D &nfaceS, const double &AfaceS );
   //@}
 
-  //@{ @name Functions to setup the absoorption coefficient model.
-  //! Initialize model type.
-  static void SetupAbsorb( const SNBCK_Input_Parameters &IP, 
-			   const char* CFFC_PATH );
+  //@{ @name Setup state static variables
+  static void SetupStatic( const int &Solver_Type, 
+			   const int &Number_of_Bands,
+			   const int &Number_of_Angles_Mdir, 
+			   const int &Number_of_Angles_Ldir,
+			   const int &DOM_Quadrature,
+			   const int &Axisymmetric,
+			   const int &ScatteringFunc,
+			   const char* PATH );
   //@}
 
 
@@ -357,6 +286,10 @@ class Rte2D_State {
   void Allocate();
   void Deallocate();
 
+  //! memory allocation / deallocation for temporary ART variables
+  void AllocateART();
+  void DeallocateART();
+
   //! memory allocation / deallocation for the directional arrays
   static void AllocateDirs( );
   static void DeallocateDirs();
@@ -365,13 +298,9 @@ class Rte2D_State {
   static void AllocateCosines( const int RTE_Type );
   static void DeallocateCosines();
 
-  //! memory allocation / deallocation for the SNBCKdata object
-  static void AllocateSNBCK();
-  static void DeallocateSNBCK();
-
   //! deallocate all static objects
   static void DeallocateStatic() 
-    { DeallocateCosines(); DeallocateDirs(); DeallocateSNBCK(); }
+    { DeallocateCosines(); DeallocateDirs(); }
 
   //@}
 
@@ -389,20 +318,17 @@ class Rte2D_State {
 
   //@{ @name State functions.
   //! access intensity using 2D indexes 
-  double& In( const int &v, const int &m, const int &l ) const;
+  const double& In( const int &v, const int &m, const int &l ) const;
   double& In( const int &v, const int &m, const int &l );
 
-  //! Return extinction coefficient
-  double beta(const int &v) const;
-
   //! Return directional integrated intensity [W/m^2]
-  double G();        
+  double G(const Medium2D_State &M);        
 
   //! Return heat flux vector [W/m^2]
-  Vector2D q();
+  Vector2D q(const Medium2D_State &M);
 
   //! Return radiation source term [W/m^3]
-  Vector2D Qr();
+  double Sr(const Medium2D_State &M);
   //@}
 
   //@{ @name Solution flux and Jacobian (n-direction).
@@ -420,13 +346,14 @@ class Rte2D_State {
 
   //@{ @name Source vector (regular terms).
   //! Source - For time-marching.
-  Rte2D_State S(void) const;
+  Rte2D_State S(const Medium2D_State &M) const;
   //! Source - For space-marching.
-  double S(const int &v, const int &m, const int &l) const;
+  double S(const Medium2D_State &M,
+	   const int &v, const int &m, const int &l) const;
   //! Source Jac. - For time-marching.
-  void dSdU(DenseMatrix &dSdU) const;
+  void dSdU(DenseMatrix &dSdU, const Medium2D_State &M) const;
   //! Source Jac. - For space-marching.
-  double dSdU(const int &v, const int &m, const int &l ) const;
+  double dSdU(const Medium2D_State &M, const int &v, const int &m, const int &l ) const;
   //@}
 
   //@{ @name Source vector (axisymmetric terms).
@@ -474,7 +401,9 @@ class Rte2D_State {
   Rte2D_State& operator +=(const Rte2D_State &U);
   Rte2D_State& operator -=(const Rte2D_State &U);
   Rte2D_State &operator *=(const double &a);
+  Rte2D_State &operator *=(const Rte2D_State &U);
   Rte2D_State &operator /=(const double &a);
+  Rte2D_State &operator /=(const Rte2D_State &U);
   //@}
       
   //@{ @name Unary arithmetic operators.
@@ -503,18 +432,11 @@ class Rte2D_State {
 /********************************************************
  * Access intensity array using 3D indexing.            *
  ********************************************************/
-inline double& Rte2D_State :: In( const int &v, const int &m, const int &l ) const
+inline const double& Rte2D_State :: In( const int &v, const int &m, const int &l ) const
 { return I[ Index[v][m][l] ]; }
 
 inline double& Rte2D_State :: In( const int &v, const int &m, const int &l )
 { return I[ Index[v][m][l] ]; }
-
-
-/********************************************************
- * Return extinction coefficient.                       *
- ********************************************************/
-inline double Rte2D_State :: beta(const int &v) const
-{ return (kappa[v] + sigma[v]); }
 
 
 /*************************************************************
@@ -523,7 +445,7 @@ inline double Rte2D_State :: beta(const int &v) const
  * (2003) for a definition of this term.                     *
  *    G = \int_{4\pi} I(r,s) {d\Omega}                       *
  *************************************************************/
-inline double Rte2D_State :: G( ) 
+inline double Rte2D_State :: G( const Medium2D_State &M ) 
 {
   double sum = ZERO;
   int vv, ii;
@@ -533,11 +455,10 @@ inline double Rte2D_State :: G( )
   //------------------------------------------------
   // Absorbsion coefficient is constant -> easy
   // Nband should be = 1 for gray
-  if (Absorb_Type == RTE2D_ABSORB_GRAY) {
-    for ( int v=0; v<Nband; v++ )
-      for ( int m=0; m<Npolar; m++ ) 
-	for ( int l=0; l<Nazim[m]; l++ ) 
-	  sum += omega[m][l] * In(v,m,l);
+  if (M.Absorb_Type == MEDIUM2D_ABSORB_GRAY) {
+    for ( int m=0; m<Npolar; m++ ) 
+      for ( int l=0; l<Nazim[m]; l++ ) 
+	sum += omega[m][l] * In(0,m,l);
 
   //------------------------------------------------
   // SNBCK 
@@ -545,7 +466,7 @@ inline double Rte2D_State :: G( )
   // See Liu et al. Combust Flame 138 (2004) 136-154
   //    G = \sum_v {\Delta v} \sum_i w_i  * 
   //        \sum_m \sum_l ( {\Delta \Omega}_{m,l} * I_{m,l} )
-  } else if (Absorb_Type == RTE2D_ABSORB_SNBCK) {
+  } else if (M.Absorb_Type == MEDIUM2D_ABSORB_SNBCK) {
 
     //
     // loop over every quad point of every band
@@ -564,10 +485,10 @@ inline double Rte2D_State :: G( )
       
       // add the total radiation component for this quadrature point
       // Note: band_index[v] relates 1D Rte2D_State(v) array to 2D SNBCK(v,i) array
-      vv = SNBCKdata->band_index[v]; // SNBCK band index
-      ii = SNBCKdata->quad_index[v]; // SNBCK quad index
-      sum += SNBCKdata->BandWidth[vv] * 
-	     SNBCKdata->Weight(vv,ii) * dir_sum;
+      vv = M.SNBCKdata->band_index[v]; // SNBCK band index
+      ii = M.SNBCKdata->quad_index[v]; // SNBCK quad index
+      sum += M.SNBCKdata->BandWidth[vv] * 
+	     M.SNBCKdata->Weight(vv,ii) * dir_sum;
       
     } // endfor - bands 
 
@@ -584,7 +505,7 @@ inline double Rte2D_State :: G( )
  * (2003) for a definition of this term.                     *
  *    \vec{q} = \int_{4\pi} \vec{s} I(r,s) {d\Omega}         *
  *************************************************************/
-inline Vector2D Rte2D_State :: q( )
+inline Vector2D Rte2D_State :: q( const Medium2D_State &M )
 {
   Vector2D Temp(ZERO);
   int vv, ii;
@@ -594,13 +515,12 @@ inline Vector2D Rte2D_State :: q( )
   //------------------------------------------------
   // Absorbsion coefficient is constant -> easy
   // Nband should be = 1 for gray
-  if (Absorb_Type == RTE2D_ABSORB_GRAY) {
-    for ( int v=0; v<Nband; v++ ) 
-      for ( int m=0; m<Npolar; m++ ) 
-	for ( int l=0; l<Nazim[m]; l++ ) {
-	  Temp.x +=  mu[m][l] * In(v,m,l);
-	  Temp.y += eta[m][l] * In(v,m,l);
-	}
+  if (M.Absorb_Type == MEDIUM2D_ABSORB_GRAY) {
+    for ( int m=0; m<Npolar; m++ ) 
+      for ( int l=0; l<Nazim[m]; l++ ) {
+	Temp.x +=  mu[m][l] * In(0,m,l);
+	Temp.y += eta[m][l] * In(0,m,l);
+      }
 
   //------------------------------------------------
   // SNBCK 
@@ -608,7 +528,7 @@ inline Vector2D Rte2D_State :: q( )
   // See Liu et al. Combust Flame 138 (2004) 136-154
   //    q.x = \sum_v {\Delta v} \sum_i w_i \sum_m \sum_l (  \mu_{m,l} * I_{m,l} )
   //    q.y = \sum_v {\Delta v} \sum_i w_i \sum_m \sum_l ( \eta_{m,l} * I_{m,l} )
-  } else if (Absorb_Type == RTE2D_ABSORB_SNBCK) {
+  } else if (M.Absorb_Type == MEDIUM2D_ABSORB_SNBCK) {
 
     //
     // loop over every quad point of every band
@@ -629,9 +549,9 @@ inline Vector2D Rte2D_State :: q( )
 
 	// add the total radiation component for this quadrature point
 	// Note: band_index[v] relates 1D Rte2D_State(v) array to 2D SNBCK(v,i) array
-	vv = SNBCKdata->band_index[v]; // SNBCK band index
-	ii = SNBCKdata->quad_index[v]; // SNBCK quad index
-	dir_sum *= SNBCKdata->BandWidth[vv]*SNBCKdata->Weight(vv,ii);
+	vv = M.SNBCKdata->band_index[v]; // SNBCK band index
+	ii = M.SNBCKdata->quad_index[v]; // SNBCK quad index
+	dir_sum *= M.SNBCKdata->BandWidth[vv]*M.SNBCKdata->Weight(vv,ii);
 	Temp += dir_sum;
 
     } // endfor - bands 
@@ -650,7 +570,7 @@ inline Vector2D Rte2D_State :: q( )
  * Qr= \int_{0->infty} {d\eta} kappa ( 4\pi*Ib  -            *
  *                            \int_{4\pi} I(r,s) {d\Omega} ) *
  *************************************************************/
-inline Vector2D Rte2D_State :: Qr( )
+inline double Rte2D_State :: Sr( const Medium2D_State &M )
 {
   double source = ZERO;
   double sum;
@@ -661,26 +581,20 @@ inline Vector2D Rte2D_State :: Qr( )
   //------------------------------------------------
   // Absorbsion coefficient is constant -> easy
   // Nband should be = 1 for gray
-  if (Absorb_Type == RTE2D_ABSORB_GRAY) {
+  if (M.Absorb_Type == MEDIUM2D_ABSORB_GRAY) {
 
-    //
-    // loop over bands 
-    //
-    for ( int v=0; v<Nband; v++ ) { 
+    // Subtract G()
+    sum = ZERO;
+    for ( int m=0; m<Npolar; m++ ) 
+      for ( int l=0; l<Nazim[m]; l++ ) 
+	sum -= omega[m][l] * In(0,m,l);
+    
+    // add blackbody
+    sum += FOUR*PI*M.Ib[0];
 
-      // Subtract G()
-      sum = ZERO;
-      for ( int m=0; m<Npolar; m++ ) 
-	for ( int l=0; l<Nazim[m]; l++ ) 
-	  sum -= omega[m][l] * In(v,m,l);
+    // the radiation source term
+    source += sum*M.kappa[0];
 
-      // add blackbody
-      sum += FOUR*PI*Ib[v];
-
-      // the radiation source term
-      source += sum*kappa[v];
-
-    } // endfor - bands
 
   //------------------------------------------------
   // SNBCK 
@@ -688,7 +602,7 @@ inline Vector2D Rte2D_State :: Qr( )
   // See Liu et al. Combust Flame 138 (2004) 136-154
   //    G = \sum_v {\Delta v} \sum_i w_i *
   //        \sum_m \sum_l ( 4\pi*Ib - {\Delta \Omega}_{m,l} * I_{m,l} )
-  } else if (Absorb_Type == RTE2D_ABSORB_SNBCK) {
+  } else if (M.Absorb_Type == MEDIUM2D_ABSORB_SNBCK) {
 
     //
     // loop over every quad point of every band
@@ -703,14 +617,14 @@ inline Vector2D Rte2D_State :: Qr( )
 	    sum -= omega[m][l] * In(v,m,l);
 	
 	// add blackbody
-	sum += FOUR*PI*Ib[v];
+	sum += FOUR*PI*M.Ib[v];
 	
 	// the contribution of the source term at this point
 	// Note: band_index[v] relates 1D Rte2D_State(v) array to 2D SNBCK(v,i) array
-	vv = SNBCKdata->band_index[v]; // SNBCK band index
-	ii = SNBCKdata->quad_index[v]; // SNBCK quad index
-	source += SNBCKdata->BandWidth[vv]*SNBCKdata->Weight(vv,ii) * 
-	          kappa[ v ] * sum;
+	vv = M.SNBCKdata->band_index[v]; // SNBCK band index
+	ii = M.SNBCKdata->quad_index[v]; // SNBCK quad index
+	source += M.SNBCKdata->BandWidth[vv]*M.SNBCKdata->Weight(vv,ii) * 
+	          M.kappa[v]* sum;
 
     } // endfor - bands 
 
@@ -719,7 +633,8 @@ inline Vector2D Rte2D_State :: Qr( )
   } // endif
   //------------------------------------------------
 
-  return source;
+  // heat generated is lost
+  return -source;
 }
 
  /**************************************************************************
@@ -729,23 +644,9 @@ inline Vector2D Rte2D_State :: Qr( )
 /********************************************************
  * Set initial values.                                  *
  ********************************************************/
-
-inline void Rte2D_State :: SetIntensity(const double &val) {
+inline void Rte2D_State :: SetInitialValues(const double &val) {
   for ( int i=0; i<NUM_VAR_RTE2D; i++ ) I[i] = val;
 }
-
-inline void Rte2D_State :: SetAbsorption(const double &val) {
-  for ( int i=0; i<Nband; i++ ) kappa[i] = val;
-}
-
-inline void Rte2D_State :: SetScattering(const double &val) {
-  for ( int i=0; i<Nband; i++ ) sigma[i] = val;
-}
-
-inline void Rte2D_State :: SetBlackbody(const double &val) {
-  for ( int i=0; i<Nband; i++ ) Ib[i] = val;
-}
-
 
 
 /********************************************************
@@ -753,26 +654,47 @@ inline void Rte2D_State :: SetBlackbody(const double &val) {
  ********************************************************/
 inline void Rte2D_State :: Allocate()
 {
+#ifndef RTE2D_STATIC_NUMBER_OF_VARS
+
   // deallocate first
   Deallocate();
 
   // create the jagged array
   if (NUM_VAR_RTE2D>0)  { I = new double[NUM_VAR_RTE2D]; }
-  if (Nband>0) {
-    Ib = new double[Nband];
-    kappa = new double[Nband];
-    sigma = new double[Nband];
-  }
 
+#endif
 }
 
 
 inline void Rte2D_State :: Deallocate()
 {
-  if (     I != NULL ) { delete[] I;           I = NULL; }
-  if ( kappa != NULL ) { delete[] kappa;   kappa = NULL; }
-  if ( sigma != NULL ) { delete[] sigma;   sigma = NULL; }
-  if (    Ib != NULL ) { delete[] Ib;         Ib = NULL; }
+
+#ifndef RTE2D_STATIC_NUMBER_OF_VARS
+  if ( I != NULL ) { delete[] I; I = NULL; }
+#endif
+
+  DeallocateART();
+}
+
+/********************************************************
+ * Array allocator and deallocator for angular          *
+ * redistribution term and temporary storage.           *
+ *                                                      *
+ * Don't worry about this, it only gets allocated       *
+ * once at the beginning of the first dUdt_SpaceMarch   *
+ * and it never gets copied.                            *
+ *                                                      *
+ ********************************************************/
+inline void Rte2D_State :: AllocateART()
+{
+  if (alpha==NULL) {
+    alpha = new double*[Npolar];
+    for (int i=0; i<Npolar; i++) alpha[i] = new double[ Nazim[i]+1 ];	
+  } /* endif */
+}
+
+inline void Rte2D_State :: DeallocateART()
+{
   if ( alpha != NULL ) { 
     for (int i=0; i<Npolar; i++ ) delete[] alpha[i];
     delete[] alpha; 
@@ -784,7 +706,6 @@ inline void Rte2D_State :: Deallocate()
     I_half = NULL; 
   }
 }
-
 
 /********************************************************
  * Array allocator and deallocator for directional      *
@@ -949,18 +870,53 @@ inline void Rte2D_State :: DeallocateCosines()
 
 }
 
-/********************************************************
- * Object allocator and deallocator for SNBCK object.   *
- ********************************************************/
-inline void Rte2D_State :: AllocateSNBCK()
-{ 
-  if ( SNBCKdata == NULL ) SNBCKdata = new SNBCK; 
-}
 
-inline void Rte2D_State :: DeallocateSNBCK()
-{ 
-  if ( SNBCKdata != NULL ) { delete SNBCKdata; SNBCKdata = NULL;}  
+/********************************************************
+ * Setup static variables                               *
+ ********************************************************/
+inline void Rte2D_State :: SetupStatic( const int &Solver_Type, 
+					const int &Number_of_Bands,
+					const int &Number_of_Angles_Mdir, 
+					const int &Number_of_Angles_Ldir,
+					const int &DOM_Quadrature,
+					const int &Axisymmetric,
+					const int &ScatteringFunc,
+					const char* PATH ) 
+{
+
+  // deallocate static vars first, just to be safe
+  Rte2D_State::DeallocateStatic();
+  Rte2D_State::Nband = Number_of_Bands;
+
+
+  //------------------------------------------------
+  // Set Directions, Phase function 
+  //------------------------------------------------
+  // FVM
+  if (Solver_Type == RTE2D_SOLVER_FVM) {
+    SetDirsFVM(Number_of_Angles_Mdir, 
+			    Number_of_Angles_Ldir, 
+			    Axisymmetric );
+    SetupPhaseFVM( ScatteringFunc );
+
+  // DOM
+  } else if (Solver_Type == RTE2D_SOLVER_DOM) {
+    Rte2D_State::SetDirsDOM(DOM_Quadrature,
+			    Axisymmetric, 
+			    PATH );
+    SetupPhaseDOM( ScatteringFunc );
+
+  // ERROR
+  } else {
+    cerr << "SetupStateStatic() - Invalid flag for RTE solver\n";
+    exit(1);
+  } // endif
+
+
+  
 }
+  
+
 
  /**************************************************************************
   ************************** OPERATOR OVERLOADS  ***************************
@@ -986,27 +942,27 @@ inline Rte2D_State Rte2D_State :: operator -(const Rte2D_State &U) const {
 // scalar multiplication
 inline Rte2D_State Rte2D_State :: operator *(const double &a) const {
   Rte2D_State Temp(*this);
-  for ( int i=0; i<NUM_VAR_RTE2D; i++ ) Temp.I[i] = a*I[i];
+  Temp *= a;
   return(Temp);
 }
 
 inline Rte2D_State operator *(const double &a, const Rte2D_State &U) {
   Rte2D_State Temp(U);
-  for ( int i=0; i<U.NUM_VAR_RTE2D; i++ ) Temp.I[i] = a*U.I[i];
+  Temp *= a;
   return(Temp);
 }
 
 // scalar division
 inline Rte2D_State Rte2D_State :: operator /(const double &a) const {
   Rte2D_State Temp(*this);
-  for ( int i=0; i<NUM_VAR_RTE2D; i++ ) Temp.I[i]= I[i]/a;
+  Temp /= a;
   return(Temp);
 }
 
 // solution state division operator
 inline Rte2D_State Rte2D_State :: operator /(const Rte2D_State &U) const {
   Rte2D_State Temp(*this);
-  for ( int i=0; i<NUM_VAR_RTE2D; i++ ) Temp.I[i]= I[i]/U.I[i];
+  Temp /= U;
   return(Temp);
 }
 
@@ -1020,7 +976,7 @@ inline double Rte2D_State :: operator   *(const Rte2D_State &U) const {
 // solution state product operator
 inline Rte2D_State Rte2D_State :: operator ^(const Rte2D_State &U) const {
   Rte2D_State Temp(*this);
-  for ( int i=0; i<NUM_VAR_RTE2D; i++ ) Temp.I[i] = I[i]*U.I[i];
+  Temp *= U;
   return(Temp);
 }
 
@@ -1050,8 +1006,20 @@ inline Rte2D_State& Rte2D_State::operator *=(const double &a) {
   return (*this);
 }
 
+inline Rte2D_State& Rte2D_State::operator *=(const Rte2D_State &U) {
+  for ( int i=0; i<NUM_VAR_RTE2D; i++ ) I[i] *= U.I[i];
+  return (*this);
+}
+
+
 inline Rte2D_State& Rte2D_State::operator /=(const double &a) {
   for ( int i=0; i<NUM_VAR_RTE2D; i++ ) I[i] /= a;
+  return (*this);
+}
+
+
+inline Rte2D_State& Rte2D_State::operator /=(const Rte2D_State &U) {
+  for ( int i=0; i<NUM_VAR_RTE2D; i++ ) I[i] /= U.I[i];
   return (*this);
 }
 
@@ -1117,11 +1085,8 @@ inline int operator <(const Rte2D_State &U1, const double &d) {
  ********************************************************/
 inline ostream& operator << (ostream &out_file, const Rte2D_State &U) 
 {
-  out_file.precision(10);
+  //out_file.precision(10);
   out_file.setf(ios::scientific);
-  for( int i=0; i<U.Nband; i++) out_file<<" "<<U.Ib[i];
-  for( int i=0; i<U.Nband; i++) out_file<<" "<<U.kappa[i];
-  for( int i=0; i<U.Nband; i++) out_file<<" "<<U.sigma[i];
   for( int i=0; i<U.NUM_VAR_RTE2D; i++)  out_file<<" "<<U.I[i]; 
   out_file.unsetf(ios::scientific);
   return (out_file);
@@ -1130,9 +1095,6 @@ inline ostream& operator << (ostream &out_file, const Rte2D_State &U)
 inline istream& operator >> (istream &in_file,  Rte2D_State &U) 
 {
   in_file.setf(ios::skipws);
-  for( int i=0; i<U.Nband; i++) in_file >> U.Ib[i];
-  for( int i=0; i<U.Nband; i++) in_file >> U.kappa[i];
-  for( int i=0; i<U.Nband; i++) in_file >> U.sigma[i];
   for( int i=0; i<U.NUM_VAR_RTE2D; i++)  in_file >> U.I[i]; 
   in_file.unsetf(ios::skipws);
   return (in_file);
@@ -1157,7 +1119,6 @@ inline Rte2D_State Rte2D_State :: Fn( const Vector2D &norm_dir ) const
 
   double cos_angle, sin_angle, cosine;
   Rte2D_State Temp;  
-  Temp.ZeroNonSol();
 
   // Determine the direction cosine's for the frame rotation. 
   cos_angle = norm_dir.x; 
@@ -1273,11 +1234,11 @@ inline double Rte2D_State :: dFndU(const Vector2D &norm_dir,
  *     \sigma/(4\pi) \int_{4\pi} I(s_i) \Phi(s_i,s){d\Omega} *
  *                                                           *
  *************************************************************/
-inline Rte2D_State Rte2D_State :: S(void) const 
+inline Rte2D_State Rte2D_State :: S(const Medium2D_State &M) const 
 {
   // declares
   double temp, beta;
-  Rte2D_State Temp; Temp.ZeroNonSol();
+  Rte2D_State Temp;
 
   //
   // loop along bands
@@ -1285,7 +1246,7 @@ inline Rte2D_State Rte2D_State :: S(void) const
   for (int v=0; v<Nband; v++ ) {
 
     // the extinction coefficient
-    beta = kappa[v] + sigma[v];
+    beta = M.beta(v);
     
     //
     // loop over outgoing directions
@@ -1294,7 +1255,7 @@ inline Rte2D_State Rte2D_State :: S(void) const
       for (int l=0; l<Nazim[m]; l++) {
 
 	// add blackbody emission
-	Temp.In(v,m,l)  = kappa[v] * Ib[v];
+	Temp.In(v,m,l)  = M.kappa[v] * M.Ib[v];
 
 	// subtract absorbsion and out-scattering
 	Temp.In(v,m,l) -= beta * In(v,m,l);
@@ -1302,13 +1263,13 @@ inline Rte2D_State Rte2D_State :: S(void) const
 	//
 	// add in-scattering (loop over incoming dirs)
 	//
-	if (sigma[v]>TOLER) {
+	if (M.sigma[v]>TOLER) {
 	  temp = ZERO;
 	  for (int p=0; p<Npolar; p++) 
 	    for (int q=0; q<Nazim[p]; q++) {
 	      temp += In(v,p,q) * Phi[v][p][q][m][l] * omega[p][q];
 	    } // endfor - in-dirs
-	  temp *= sigma[v] / (FOUR * PI);
+	  temp *= M.sigma[v] / (FOUR * PI);
 	  Temp.In(v,m,l) += temp;
 	} // endif - in-scat 
 	  
@@ -1335,41 +1296,39 @@ inline Rte2D_State Rte2D_State :: S(void) const
  *     \sigma/(4\pi) \int_{4\pi} I(s_i) \Phi(s_i,s){d\Omega} *
  *                                                           *
  *************************************************************/
-inline double Rte2D_State :: S(const int &v, const int &m, const int &l) const 
+inline double Rte2D_State :: S(const Medium2D_State &M,
+			       const int &v, const int &m, const int &l) const 
 {
   // declares
-  double temp, temp2;
+  double temp, sum;
 
   // add blackbody emission
-  temp = kappa[v] * Ib[v];
+  temp = M.kappa[v] * M.Ib[v];
 
   // add in-scattering
-  if (sigma[v]>TOLER) {
+  if (M.sigma[v]>TOLER) {
 
     //
     // loop over incoming directions
     //
-    temp2 = ZERO;
+    sum = ZERO;
     for (int p=0; p<Npolar; p++) 
       for (int q=0; q<Nazim[p]; q++) {
 
 	// skip forward scattering, it is acoundted for in dSdU
 	if(p==m && l==q) continue;
-	temp2 += In(v,p,q) * Phi[v][p][q][m][l] * omega[p][q];
+	sum += In(v,p,q) * Phi[v][p][q][m][l] * omega[p][q];
 
       } // endfor - in-dirs
 
     // compute
-    temp2 *= sigma[v] / (FOUR * PI);
-    temp += temp2;
+    sum *= M.sigma[v] / (FOUR * PI);
+    temp += sum;
 
   } // endif - in-scat
-	  
-  // multiply
-  temp *= omega[m][l];
 
 
-  return (temp);
+  return (temp*omega[m][l]);
 }
 
 
@@ -1379,7 +1338,8 @@ inline double Rte2D_State :: S(const int &v, const int &m, const int &l) const
  * Regular source term jacobian for DOM/FVM.  This is the    *
  * Time-march version.                                       *
  *************************************************************/
-inline void Rte2D_State :: dSdU(DenseMatrix &dSdU) const
+inline void Rte2D_State :: dSdU(DenseMatrix &dSdU, 
+				const Medium2D_State &M) const
 { 
   // declares
   double temp, beta;
@@ -1390,7 +1350,7 @@ inline void Rte2D_State :: dSdU(DenseMatrix &dSdU) const
   for (int v=0; v<Nband; v++ ) {
 
     // the extinction coefficient
-    beta = kappa[v] + sigma[v];
+    beta = M.beta(v);
     
     //
     // loop over outgoing directions
@@ -1404,8 +1364,8 @@ inline void Rte2D_State :: dSdU(DenseMatrix &dSdU) const
 	//
 	// in-scattering (loop over incoming directions)
 	//
-	if (sigma[v]>TOLER) {
-	  temp = sigma[v] * omega[m][l] / (FOUR * PI);
+	if (M.sigma[v]>TOLER) {
+	  temp = M.sigma[v] * omega[m][l] / (FOUR * PI);
 	  for (int p=0; p<Npolar; p++) 
 	    for (int q=0; q<Nazim[p]; q++){
 	      dSdU(Index[v][m][l],Index[v][p][q]) += Phi[v][p][q][m][l] * omega[p][q] * temp;
@@ -1424,13 +1384,14 @@ inline void Rte2D_State :: dSdU(DenseMatrix &dSdU) const
  * Regular source term jacobian for DOM/FVM.  This is the    *
  * Space-march version.                                      *
  *************************************************************/
-inline double Rte2D_State :: dSdU(const int &v, const int &m, const int &l) const
+inline double Rte2D_State :: dSdU(const Medium2D_State &M,
+				  const int &v, const int &m, const int &l) const
 { 
   // declares
   double temp, beta;
 
   // the extinction coefficient
-  beta = kappa[v] + sigma[v];
+  beta = M.beta(v);
     
   // absorbsion and out-scattering
   temp = omega[m][l] * beta;
@@ -1438,10 +1399,10 @@ inline double Rte2D_State :: dSdU(const int &v, const int &m, const int &l) cons
   //
   // in-scattering
   //
-  if (sigma[v]>TOLER) {
+  if (M.sigma[v]>TOLER) {
     
     // add forward scattering
-    temp -= sigma[v] * omega[m][l] / (FOUR * PI) *
+    temp -= M.sigma[v] * omega[m][l] / (FOUR * PI) *
             Phi[v][m][l][m][l] * omega[m][l];
     
   } /* endif - in-scat */
@@ -1482,7 +1443,7 @@ inline Rte2D_State Rte2D_State :: Sa(const Rte2D_State &dUdpsi,
 {
   int l_m1, l_p1;
   double It, Ib, Dt, Db;
-  Rte2D_State Temp;  Temp.ZeroNonSol();
+  Rte2D_State Temp;
 
   // assume constant angular spacing
   // in azimuthal angle
@@ -1766,18 +1727,30 @@ extern void Reflect_Space_March(Rte2D_State &U,
 				const Vector2D &norm_dir);
 
 extern Rte2D_State Gray_Wall(const Rte2D_State &U, 
-		      const Vector2D &norm_dir, 
-		      const double &wall_temperature,
-		      const double &wall_emissivity );
+			     const Vector2D &norm_dir, 
+			     const double &wall_temperature,
+			     const double &wall_emissivity );
 extern void Gray_Wall_Space_March(Rte2D_State &Uwall, 
-		      const Vector2D &norm_dir, 
-		      const double &wall_temperature,
-		      const double &wall_emissivity );
+				  const Vector2D &norm_dir, 
+				  const double &wall_temperature,
+				  const double &wall_emissivity );
 
 /********************************************************
- * Miscellaneous Scattering Functions                   *
+ * External Restriction/Prolongation Functions          *
  ********************************************************/
-extern double Legendre( const double &x, const int &n);
-extern double* PhaseFunc( const int type, int &n);
+extern void Restrict_NonSol( Rte2D_State &Uc, const double &Ac,
+			     const Rte2D_State &Uf_SW, const double &Af_SW,
+			     const Rte2D_State &Uf_SE, const double &Af_SE,
+			     const Rte2D_State &Uf_NW, const double &Af_NW,
+			     const Rte2D_State &Uf_NE, const double &Af_NE );
+extern void Restrict_NonSol_Boundary_Ref_States( 
+			     Rte2D_State &Uc,
+			     const Rte2D_State &Uf_l, const double &Af_l,
+			     const Rte2D_State &Uf_r, const double &Af_r );
+extern int Prolong_NonSol( const Rte2D_State &Uc1, const Vector2D &Xc1,
+			   const Rte2D_State &Uc2, const Vector2D &Xc2,
+			   const Rte2D_State &Uc3, const Vector2D &Xc3,
+			   const Rte2D_State &Uc4, const Vector2D &Xc4,
+			   const Vector2D XcP, Rte2D_State &Uf );
 
 #endif //end _RTE2D_STATE_INCLUDED 

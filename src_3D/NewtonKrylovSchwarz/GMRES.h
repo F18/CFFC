@@ -543,7 +543,6 @@ Dotproduct(const double *v1, const double *v2) {
 template <typename SOLN_pSTATE, typename SOLN_cSTATE> 
 inline int GMRES_Block<SOLN_pSTATE, SOLN_cSTATE>::
 NumVar(void) {
-
    return (blocksize);
 
 }
