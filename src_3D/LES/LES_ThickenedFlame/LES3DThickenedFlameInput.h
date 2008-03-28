@@ -16,13 +16,12 @@
 
 /* Define the specializations. */
 
-
-//! Deallocates static data of reference solution states
+//! Deallocate static data of reference solution states
 template<>
 void Input_Parameters<LES3DTF_pState, 
                       LES3DTF_cState>::Deallocate_Static(void);
 
-//! Sets values of reference solution states
+//! Set values of reference solution states
 template<>
 void Input_Parameters<LES3DTF_pState, 
                       LES3DTF_cState>::Set_Reference_Solution_States(void);

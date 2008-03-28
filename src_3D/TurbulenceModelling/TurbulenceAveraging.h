@@ -676,4 +676,20 @@ void Max_and_Min_Cell_Volumes(HEXA_BLOCK *Solution_Block,
 
 }
 
+/********************************************************
+ *       Burning rate                                   *
+ ********************************************************/
+template<typename SOLN_pSTATE, typename SOLN_cSTATE>
+double Turbulent_Burning_Rate(Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> *Solution_Block,
+			      AdaptiveBlock3D_List &LocalSolnBlockList,
+			      Grid3D_Input_Parameters &IPs) {
+
+  cout << "\n Explicit Specialization of "
+       << "Turbulent_Burning_Rate() "
+       << "required.\n";
+
+  return ZERO;
+}
+
+
 #endif // _TURBULENCE_AVERAGING_INCLUDED

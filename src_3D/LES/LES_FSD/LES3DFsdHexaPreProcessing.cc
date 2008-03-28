@@ -60,10 +60,6 @@ int Hexa_Post_Processing_Specializations(HexaSolver_Data &Data,
                               w_ave,
                               sqr_u);
 
-   Turbulent_Burning_Rate(Solution_Data.Local_Solution_Blocks.Soln_Blks,
-			  Data.Local_Adaptive_Block_List,
-			  Solution_Data.Input.Grid_IP);
-
    return error_flag;
 
 }
@@ -128,9 +124,10 @@ int Output_Other_Solution_Progress_Specialization_Data(HexaSolver_Data &Data,
    viscosity = Average_viscosity<Hexa_Block<LES3DFsd_pState, LES3DFsd_cState> >(Solution_Data.Local_Solution_Blocks.Soln_Blks,
    					                                        Data.Local_Adaptive_Block_List);
 
-   turb_burning_rate = Turbulent_Burning_Rate<Hexa_Block<LES3DFsd_pState, LES3DFsd_cState> >(Solution_Data.Local_Solution_Blocks.Soln_Blks,
-											     Data.Local_Adaptive_Block_List,
-											     Solution_Data.Input.Grid_IP);
+
+   turb_burning_rate = Turbulent_Burning_Rate(Solution_Data.Local_Solution_Blocks.Soln_Blks,
+					      Data.Local_Adaptive_Block_List,
+					      Solution_Data.Input.Grid_IP);
 
    // Output turbulence statistics data to turbulence progress variable file
    if (CFFC_Primary_MPI_Processor()) {
@@ -150,4 +147,35 @@ int Output_Other_Solution_Progress_Specialization_Data(HexaSolver_Data &Data,
    // Return error flag
    return error_flag;
 
+}
+
+/********************************************************
+ *       Burning rate                                   *
+ ********************************************************/
+template<>
+double Turbulent_Burning_Rate(Hexa_Block<LES3DFsd_pState, LES3DFsd_cState> *Solution_Block,
+			      AdaptiveBlock3D_List &LocalSolnBlockList,
+			      Grid3D_Input_Parameters &IPs) {
+
+  double local_vol, Yf_u, rho_u, Ly, Lz, burning_rate(ZERO);
+  Yf_u = 0.05518;//Fresh_Fuel_Mass_Fraction;
+  rho_u = 1.13;//Fresh_Density;
+  Ly = IPs.Box_Width;
+  Lz = IPs.Box_Height;
+  for (int p = 0 ; p <= LocalSolnBlockList.Nblk-1 ; p++ ) {
+    if (LocalSolnBlockList.Block[p].used == ADAPTIVEBLOCK3D_USED) {
+      for (int i = Solution_Block[p].ICl ; i <= Solution_Block[p].ICu ; i++) {
+        for (int j = Solution_Block[p].JCl ; j <= Solution_Block[p].JCu ; j++) {
+           for (int k = Solution_Block[p].KCl ; k <= Solution_Block[p].KCu ; k++) {
+	     local_vol = Solution_Block[p].Grid.volume(i,j,k);
+ 	     burning_rate +=  Solution_Block[p].W[i][j][k].Fsd*local_vol*Solution_Block[p].W[i][j][k].rho; 
+	   }
+	}
+      }
+    }
+  }
+  burning_rate = CFFC_Summation_MPI(burning_rate);
+  burning_rate = burning_rate*0.3837/(PI*0.0056*0.0056);//(Ly*Lz); //laminar_flame_speed/Ly;//(rho_u*Ly);  //(rho_u*Yf_u*Ly);
+
+  return burning_rate;
 }

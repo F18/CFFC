@@ -3,6 +3,23 @@
 #include "NavierStokes3DThermallyPerfectInput.h"
 #endif // _NAVIERSTOKES3D_THERMALLYPERFECT_STATE_INCLUDED
 
+
+/********************************************************
+ * Routine: Deallocate_Static                           *
+ *                                                      *
+ * Deallocate static data of the reference solution     * 
+ * states.                                              *
+ *                                                      *
+ ********************************************************/
+template<>
+void Input_Parameters<NavierStokes3D_ThermallyPerfect_pState, 
+                      NavierStokes3D_ThermallyPerfect_cState>::Deallocate_Static(void) {
+
+  Wo.Deallocate_static(); 
+  Uo.Deallocate_static();
+
+}
+
 /********************************************************
  * Routine: Set_Reference_Solution_States               *
  *                                                      *

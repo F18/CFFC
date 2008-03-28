@@ -3028,3 +3028,4 @@ void Gradient_of_Vorticity(const HEXA_BLOCK &Solution_Block,
    } /* endif */
    
 }
+

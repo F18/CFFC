@@ -264,9 +264,10 @@ int Output_Other_Solution_Progress_Specialization_Data(HexaSolver_Data &Data,
    					                                        Data.Local_Adaptive_Block_List);
    }
 
-   turb_burning_rate = Turbulent_Burning_Rate<Hexa_Block<LES3DTF_pState, LES3DTF_cState> >(Solution_Data.Local_Solution_Blocks.Soln_Blks,
-											   Data.Local_Adaptive_Block_List,
-											   Solution_Data.Input.Grid_IP);
+
+   turb_burning_rate = Turbulent_Burning_Rate(Solution_Data.Local_Solution_Blocks.Soln_Blks,
+					      Data.Local_Adaptive_Block_List,
+					      Solution_Data.Input.Grid_IP);
 
 
    // Output turbulence statistics data to turbulence progress variable file
@@ -356,5 +357,61 @@ int Initialize_Solution_Blocks_Specializations(HexaSolver_Data &Data,
   }                  
  
   return error_flag;
+
+}
+
+
+/********************************************************
+ *       Burning rate                                   *
+ ********************************************************/
+template<>
+double Turbulent_Burning_Rate(Hexa_Block<LES3DTF_pState, LES3DTF_cState> *Solution_Block,
+			      AdaptiveBlock3D_List &LocalSolnBlockList,
+			      Grid3D_Input_Parameters &IPs) {
+
+  double local_vol, Yf_u, rho_u, burning_rate(ZERO);
+  double iso_surface_area(ZERO);
+  Yf_u = 0.05518;//Fresh_Fuel_Mass_Fraction;
+  rho_u = 1.13;//Fresh_Density;
+
+  for (int p = 0 ; p <= LocalSolnBlockList.Nblk-1 ; p++ ) {
+    if (LocalSolnBlockList.Block[p].used == ADAPTIVEBLOCK3D_USED) {
+      for (int i = Solution_Block[p].ICl ; i <= Solution_Block[p].ICu ; i++) {
+        for (int j = Solution_Block[p].JCl ; j <= Solution_Block[p].JCu ; j++) {
+           for (int k = Solution_Block[p].KCl ; k <= Solution_Block[p].KCu ; k++) {
+	     local_vol = Solution_Block[p].Grid.volume(i,j,k);
+	     burning_rate += Solution_Block[p].W[i][j][k].Sw(Solution_Block[p].W[i][j][k].React.reactset_flag).rhospec[0].c
+	                     *local_vol;
+	     if (Solution_Block[p].W[i][j][k].flame.iso_c_05) {
+	       iso_surface_area += propagation_dir_area(Solution_Block[p], i, j, k);
+	     }
+	   }
+	}
+      }
+    }
+  }
+
+  burning_rate = CFFC_Summation_MPI(burning_rate);
+  iso_surface_area = CFFC_Summation_MPI(iso_surface_area);
+  
+  double ref_area, Lx, Ly, Lz;
+
+  if ( IPs.i_Grid == GRID_PERIODIC_BOX_WITH_INFLOW  ||
+       IPs.i_Grid == GRID_PERIODIC_BOX) {
+    Ly = IPs.Box_Height;
+    Lz = IPs.Box_Length;
+    ref_area = Ly*Lz;
+  } else if ( IPs.i_Grid == GRID_BUNSEN_BOX ) {
+    Lx = IPs.Box_Width;
+    ref_area = (0.025 + 2.0*0.02)*Lx;
+  }
+
+  if ( iso_surface_area > ref_area ) {
+    burning_rate = -burning_rate/(rho_u*Yf_u*iso_surface_area);
+  } else {
+    burning_rate = -burning_rate/(rho_u*Yf_u*ref_area);
+  }
+  
+  return burning_rate;
 
 }
