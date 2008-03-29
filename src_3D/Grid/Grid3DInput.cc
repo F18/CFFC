@@ -135,6 +135,11 @@ void Grid3D_Input_Parameters::Broadcast(void) {
                           1,
                           MPI::DOUBLE, 0);
 
+   // Slot burner parameters:
+   MPI::COMM_WORLD.Bcast(&(Slot_Width),
+                          1,
+                          MPI::DOUBLE, 0);
+
    // Turbulence box parameters:
    MPI::COMM_WORLD.Bcast(&(Turbulence_Box_Length),
                          1,
@@ -217,6 +222,7 @@ int Grid3D_Input_Parameters::Parse_Next_Input_Control_Parameter(char *code,
         Box_Length = 0.2;
         Box_Width = 0.2;
         Box_Height = 0.2;
+	Slot_Width = 0.025;
 	Turbulence_Box_Length = 0.2;
         Turbulence_Box_Width = 0.14;
         Turbulence_Box_Height = 0.14;
@@ -497,50 +503,10 @@ int Grid3D_Input_Parameters::Parse_Next_Input_Control_Parameter(char *code,
      value >> Turbulence_Box_Height;
      if (Turbulence_Box_Height <= ZERO) i_command = INVALID_INPUT_VALUE;
     
-  } else if (strcmp(code, "Radius_Bunsen_Burner_Fuel_Line") == 0) {
-     i_command = 3031;
-     value >> Radius_Bunsen_Burner_Fuel_Line;
-     if (Radius_Bunsen_Burner <ZERO) i_command = INVALID_INPUT_VALUE;
-
-  } else if (strcmp(code, "Radius_Bunsen_Burner") == 0) {
-     i_command = 3032;
-     value >> Radius_Bunsen_Burner;
-     if (Radius_Bunsen_Burner <ZERO) i_command = INVALID_INPUT_VALUE;
-
-  } else if (strcmp(code, "Height_Bunsen_Burner") == 0) {
-     i_command = 3033;
-     value >> Height_Bunsen_Burner;
-     if (Height_Bunsen_Burner <ZERO) i_command = INVALID_INPUT_VALUE;
-
-  } else if (strcmp(code, "Number_of_Cells_Turbulence_Idir") == 0) {
-     i_command = 3034;
-     value >> NCells_Turbulence_Idir;
-     if (NCells_Turbulence_Idir < 1) i_command = INVALID_INPUT_VALUE;
-
-  } else if (strcmp(code, "Number_of_Cells_Turbulence_Jdir") == 0) {
-     i_command = 3035;
-     value >> NCells_Turbulence_Jdir;
-     if (NCells_Turbulence_Jdir <1) i_command = INVALID_INPUT_VALUE;
-
-  } else if (strcmp(code, "Number_of_Cells_Turbulence_Kdir") == 0) {
-     i_command = 3036;
-     value >> NCells_Turbulence_Kdir;
-     if (NCells_Turbulence_Kdir < 1) i_command = INVALID_INPUT_VALUE;
-
-  } else if (strcmp(code, "Turbulence_Box_Length") == 0) {
-     i_command = 3037;
-     value >> Turbulence_Box_Length;
-     if (Turbulence_Box_Length <= ZERO) i_command = INVALID_INPUT_VALUE;
-
-  } else if (strcmp(code, "Turbulence_Box_Width") == 0) {
-     i_command = 3038;
-     value >> Turbulence_Box_Width;
-     if (Turbulence_Box_Width <= ZERO) i_command = INVALID_INPUT_VALUE;
-
-  } else if (strcmp(code, "Turbulence_Box_Height") == 0) {
-     i_command = 3039;
-     value >> Turbulence_Box_Height;
-     if (Turbulence_Box_Height <= ZERO) i_command = INVALID_INPUT_VALUE;
+  } else if (strcmp(code, "Slot_Width") == 0) {
+     i_command = 3040;
+     value >> Slot_Width;
+     if (Slot_Width <= ZERO) i_command = INVALID_INPUT_VALUE;
 
   } else {
      i_command = INVALID_INPUT_CODE;
@@ -642,6 +608,8 @@ void Grid3D_Input_Parameters::Output(ostream &out_file) const {
                  << Turbulence_Box_Width;
         out_file << "\n  -> Height of Bunsen Box Turbulence Domain (m): "
                  << Turbulence_Box_Height;
+        out_file << "\n  -> Slot Width of Slot Burner (m): "
+                 << Slot_Width;
         break;
      case GRID_COUETTE :
         out_file << "\n  -> Length of Solution Domain (m): "

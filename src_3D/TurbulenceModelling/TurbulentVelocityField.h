@@ -975,10 +975,10 @@ void IC_Assign_Turbulence_Fresh_Gas(HEXA_BLOCK &Solution_Block,
 	
 	if (// Slot burner
 	    (IPs.Grid_IP.i_Grid == GRID_BUNSEN_BOX  &&  
-	     (local_X.z <= 0.02  &&  fabs(local_X.y) <= 0.0125)) ||
+	     (local_X.z <= IPs.Fresh_Gas_Height  &&  fabs(local_X.y) <= 0.0125)) ||
 	    // Bunsen burner
 	    (IPs.Grid_IP.i_Grid == GRID_BUNSEN_BURNER  &&  
-	     (local_X.z <= 0.035  &&  (sqr(local_X.x) + sqr(local_X.y) <= sqr(0.0056))))
+	     (local_X.z <= IPs.Fresh_Gas_Height  &&  (sqr(local_X.x) + sqr(local_X.y) <= sqr(0.0056))))
 	    ) {
 	 
 	  // find  nnBlk, ii, jj and kk to perform the interpolation

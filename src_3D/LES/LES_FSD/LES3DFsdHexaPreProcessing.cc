@@ -104,12 +104,19 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
     if (error_flag) return error_flag;
    
   } else {
-    // If required, do the interpolation of the turbulent field
-   
-    // Turbulent_Velocity_Field_Multi_Block_List  Interpolated_Velocity_Field;
 
   RandomFieldRogallo<LES3DFsd_pState, LES3DFsd_cState>   Velocity_Field_Type(Solution_Data.Input);
   Turbulent_Velocity_Field_Multi_Block_List  Velocity_Field;
+
+  error_flag = Velocity_Field_Type.Create_Homogeneous_Turbulence_Velocity_Field(Data.Initial_Mesh, 
+										Solution_Data.Input.Grid_IP,
+										Data.batch_flag,
+										Data.Velocity_Field);
+
+  if (error_flag) return error_flag;
+
+// If required, do the interpolation of the turbulent field
+//     Turbulent_Velocity_Field_Multi_Block_List  Interpolated_Velocity_Field;
 
 //     Interpolated_Velocity_Field.Create(Data.Initial_Mesh,   
 // 				       Solution_Data.Input.Grid_IP);
@@ -117,18 +124,11 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
 //     Data.Velocity_Field.Interpolate_Turbulent_Field(Data.Initial_Mesh, 
 // 						    Interpolated_Velocity_Field);
 
-  error_flag = Velocity_Field_Type.Create_Homogeneous_Turbulence_Velocity_Field(Data.Initial_Mesh, 
-										Solution_Data.Input.Grid_IP,
-										Data.batch_flag,
-										Data.Velocity_Field);
-  if (error_flag) return error_flag;
-
 //     Assign_Homogeneous_Turbulence_Velocity_Field(Solution_Data.Local_Solution_Blocks.Soln_Blks,
 // 						 Data.Local_Adaptive_Block_List,
 // 						 Interpolated_Velocity_Field);
 
   }
-
 
   //-------------------------------------------------
   // ICs specializations
@@ -187,19 +187,6 @@ int Hexa_Post_Processing_Specializations(HexaSolver_Data &Data,
 			      Data.Local_Adaptive_Block_List);
    }
    
-   Time_Averaging_of_Velocity_Field(Solution_Data.Local_Solution_Blocks.Soln_Blks,
-                                    Data.Local_Adaptive_Block_List,
-                                    u_ave,
-                                    v_ave,
-                                    w_ave);
-
-   Time_Averaging_of_Solution(Solution_Data.Local_Solution_Blocks.Soln_Blks,
-                              Data.Local_Adaptive_Block_List,
-                              u_ave,
-                              v_ave,
-                              w_ave,
-                              sqr_u);
-
    return error_flag;
 
 }
@@ -387,7 +374,7 @@ double Turbulent_Burning_Rate(Hexa_Block<LES3DFsd_pState, LES3DFsd_cState> *Solu
 			      Grid3D_Input_Parameters &IPs) {
 
   double local_vol, Yf_u, rho_u, burning_rate(ZERO), iso_surface_area(ZERO);
-  double flame_height = 0.004;
+  double flame_height = 0.005;
   Yf_u = 0.05518;//Fresh_Fuel_Mass_Fraction;
   rho_u = 1.13;//Fresh_Density;
 
@@ -410,6 +397,26 @@ double Turbulent_Burning_Rate(Hexa_Block<LES3DFsd_pState, LES3DFsd_cState> *Solu
   }
   burning_rate = CFFC_Summation_MPI(burning_rate);
   burning_rate = burning_rate*0.403/(PI*0.0056*(0.0056+2.0*flame_height));
+//   iso_surface_area = CFFC_Summation_MPI(iso_surface_area);
+  
+//   double ref_area, Lx, Ly, Lz;
+
+//   if ( IPs.i_Grid == GRID_PERIODIC_BOX_WITH_INFLOW  ||
+//        IPs.i_Grid == GRID_PERIODIC_BOX) {
+//     Ly = IPs.Box_Height;
+//     Lz = IPs.Box_Length;
+//     ref_area = Ly*Lz;
+//   } else if ( IPs.i_Grid == GRID_BUNSEN_BOX ) {
+//     Lx = IPs.Box_Width;
+//     ref_area = (0.025 + 2.0*0.02)*Lx;
+//   }
+
+//   if ( iso_surface_area > ref_area ) {
+//     burning_rate = -burning_rate/(rho_u*Yf_u*iso_surface_area);
+//   } else {
+//     burning_rate = -burning_rate/(rho_u*Yf_u*ref_area);
+//   }
+
 
   return burning_rate;
 }

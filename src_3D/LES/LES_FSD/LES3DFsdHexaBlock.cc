@@ -156,6 +156,7 @@ Output_Tecplot(Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs,
       
       Out_File <<"\"T\" \\ \n"
                <<"\"FSD\" \\ \n"
+               <<"\"Q_criterion\" \\ \n"
                <<"\"Vorticity\" \\ \n"
                <<"\"Mx\" \\ \n"
                <<"\"My\" \\ \n"  
@@ -205,6 +206,7 @@ Output_Tecplot(Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs,
             Out_File << " " << W_node.T() 
                      << " " << W_node.Fsd*W_node.rho
 		     << " " << Q_criterion_n(*this, i, j, k)
+		     << " " << vorticity_n(*this, i, j, k)
                      << " " << Node_Fsd.M_x_n(i, j, k)
                      << " " << Node_Fsd.M_y_n(i, j, k) 
                      << " " << Node_Fsd.M_z_n(i, j, k) 
@@ -521,6 +523,7 @@ Output_Nodes_Tecplot(Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs,
       
       Out_File <<"\"T\" \\ \n"
                <<"\"FSD\" \\ \n"
+               <<"\"Q_criterion\" \\ \n"
                <<"\"Vorticity\" \\ \n"
                <<"\"Mx\" \\ \n"
                <<"\"My\" \\ \n"  
@@ -569,6 +572,7 @@ Output_Nodes_Tecplot(Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs,
             Out_File << " " << W_node.T() 
                      << " " << W_node.Fsd*W_node.rho
 		     << " " << Q_criterion_n(*this, i, j, k)
+		     << " " << vorticity_n(*this, i, j, k)
                      << " " << Node_Fsd.M_x_n(i, j, k)
                      << " " << Node_Fsd.M_y_n(i, j, k) 
                      << " " << Node_Fsd.M_z_n(i, j, k) 
@@ -685,61 +689,43 @@ ICs(Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs){
      for (int k  = KCl- Nghost ; k <=  KCu+ Nghost ; ++k) {
         for (int j  = JCl- Nghost ; j <=  JCu+ Nghost ; ++j) {
            for (int i = ICl- Nghost ; i <=  ICu+ Nghost ; ++i) {
-// 	      double C;
 	      double xx = Grid.Cell[i][j][k].Xc.x;
 	      double yy = Grid.Cell[i][j][k].Xc.y;
 	      double zz = Grid.Cell[i][j][k].Xc.z;
 	      double tau = Wr.T()/Wl.T() - ONE;
-	      double Sl = 0.3837;//IPs.Wo._laminar_flame_speed;
-	      double slot_width = 0.025;
-	      double fresh_gas_height = 0.02;
-	      
-	      if (zz <= fresh_gas_height) {
+	      double Sl = IPs.Turbulence_IP.Laminar_Flame_Speed;
+
+	      if (zz <= IPs.Fresh_Gas_Height) {
 		if (yy < 0.0) {
-		  W[i][j][k].C = (erf((-yy-HALF*slot_width)*4000.0)+1.0)/2.0;//0.5*(ONE + erf(SQRT_PI*(-yy-HALF*slot_width)/(SEVEN*IPs.Wo._laminar_flame_thickness)));
+		  W[i][j][k].C = (erf((-yy-HALF*IPs.Grid_IP.Slot_Width)*4000.0)+1.0)/2.0;
 	          W[i][j][k].premixed_mfrac();
- 	          W[i][j][k].rho = 1.13*Wl.Rtot()/W[i][j][k].Rtot()/(1.0+tau*W[i][j][k].C);
-       	          W[i][j][k].Fsd = 400*4000.0*exp(-sqr((-yy-HALF*slot_width)*4000.0))/sqrt(PI)/W[i][j][k].rho;
+ 	          W[i][j][k].rho = IPs.Turbulence_IP.Reactants_Density*Wl.Rtot()/W[i][j][k].Rtot()/(1.0+tau*W[i][j][k].C);
+       	          W[i][j][k].Fsd = 400*4000.0*exp(-sqr((-yy-HALF*IPs.Grid_IP.Slot_Width)*4000.0))/sqrt(PI)/W[i][j][k].rho;
 		} else {
-		  W[i][j][k].C = (erf((yy-HALF*slot_width)*4000.0)+1.0)/2.0;//0.5*(ONE + erf(SQRT_PI*(yy-HALF*slot_width)/(SEVEN*IPs.Wo._laminar_flame_thickness)));
+		  W[i][j][k].C = (erf((yy-HALF*IPs.Grid_IP.Slot_Width)*4000.0)+1.0)/2.0;
 	          W[i][j][k].premixed_mfrac();
- 	          W[i][j][k].rho = 1.13*Wl.Rtot()/W[i][j][k].Rtot()/(1.0+tau*W[i][j][k].C);
-       	          W[i][j][k].Fsd = 400*4000.0*exp(-sqr((yy-HALF*slot_width)*4000.0))/sqrt(PI)/W[i][j][k].rho;
+ 	          W[i][j][k].rho = IPs.Turbulence_IP.Reactants_Density*Wl.Rtot()/W[i][j][k].Rtot()/(1.0+tau*W[i][j][k].C);
+       	          W[i][j][k].Fsd = 400*4000.0*exp(-sqr((yy-HALF*IPs.Grid_IP.Slot_Width)*4000.0))/sqrt(PI)/W[i][j][k].rho;
 		}
 	      } else {
 		W[i][j][k].C = ONE;
 	        W[i][j][k].premixed_mfrac();
- 	        W[i][j][k].rho = 1.13*Wl.Rtot()/W[i][j][k].Rtot()/(1.0+tau*W[i][j][k].C);
-     	        W[i][j][k].Fsd = 0.0;//
+ 	        W[i][j][k].rho = IPs.Turbulence_IP.Reactants_Density*Wl.Rtot()/W[i][j][k].Rtot()/(1.0+tau*W[i][j][k].C);
+     	        W[i][j][k].Fsd = 0.0;
 	      }
 
-	      if (zz <= fresh_gas_height && fabs(yy) <= HALF*slot_width) {
+	      if (zz <= IPs.Fresh_Gas_Height && fabs(yy) <= HALF*IPs.Grid_IP.Slot_Width) {
 		// fresh gas inflow
-		W[i][j][k].v.z = IPs.Mean_Velocity.z;  //3.0;  //15.58*(ONE-sqr(xx/0.005));
+		W[i][j][k].v.z = IPs.Mean_Velocity.z;  
 	      } else {
-		W[i][j][k].v.z = IPs.Mean_Velocity.z + Sl*(Wl.rho/Wr.rho - ONE);  // 7.0;
+		W[i][j][k].v.z = IPs.Mean_Velocity.z + Sl*(Wl.rho/Wr.rho - ONE);  
 	      }
-
-// 	      if (C>0.02 && C<0.98) {
-// 	        W[i][j][k].flame.TF = IPs.Wo._TFactor; //10.0;
-// 	      } else {
-// 	        W[i][j][k].flame.TF = 1.0;
-// 	      }
-// 	      W[i][j][k].flame.TF = IPs.Wo._TFactor;  //10.0;
-// 	      W[i][j][k].flame.WF =1.0;
-
-// 	      double Yf_u = 0.05518;
-// 	      double Yf_b = 0.0;
-// 	      W[i][j][k].spec[0].c = Yf_b*C + Yf_u*(ONE-C);
-// 	      W[i][j][k].premixed_mfrac();
               W[i][j][k].p = 101325.0;
-// 	      W[i][j][k].rho = Wl.rho*Wl.Rtot()/W[i][j][k].Rtot()/(1.0+tau*W[i][j][k].C);
-//            W[i][j][k].Fsd = 4000.0*exp(-sqr((rr-0.0056)*4000.0))/sqrt(PI)/W[i][j][k].rho;
 	      W[i][j][k].k = 0.0;
 	      W[i][j][k].v.x = 0.0;
 	      W[i][j][k].v.y = 0.0;
 
-	      if (zz <= fresh_gas_height) {
+	      if (zz <= IPs.Fresh_Gas_Height) {
 		if (yy < 0.0) {
 		  W[i][j][k].v.y = -Sl*(Wl.rho/W[i][j][k].rho - ONE);
 		} else {
@@ -747,11 +733,8 @@ ICs(Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs){
 		}
 	      }
 
-	      if (fabs(yy) <= HALF*slot_width) {
-//                 W[i][j][k].C = (erf((zz-fresh_gas_height)*4000.0)+1.0)/2.0;
-// 		W[i][j][k].premixed_mfrac();
-// 		W[i][j][k].rho = 1.13*W[i][j][k].Rtot()/(1.0+tau*W[i][j][k].C);
-		W[i][j][k].Fsd = 400*4000.0*exp(-sqr((zz-fresh_gas_height)*4000.0))/sqrt(PI)/W[i][j][k].rho;
+	      if (fabs(yy) <= HALF*IPs.Grid_IP.Slot_Width) {
+		W[i][j][k].Fsd = 400*4000.0*exp(-sqr((zz-IPs.Fresh_Gas_Height)*4000.0))/sqrt(PI)/W[i][j][k].rho;
 		W[i][j][k].v.z = IPs.Mean_Velocity.z + Sl*(Wl.rho/W[i][j][k].rho - ONE); 
 	      }
 
@@ -760,38 +743,6 @@ ICs(Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs){
 	   } /* endfor */
 	} /* endfor */
      } /* endfor */
-// 	      double xx = Grid.Cell[i][j][k].Xc.x;
-// 	      double yy = Grid.Cell[i][j][k].Xc.y;
-// 	      double zz = Grid.Cell[i][j][k].Xc.z;
-// 	      double tau_fsd = W[i][j][k].HeatRelease_Parameter();
-// 	      if (zz <= 0.002) {
-// 		if (xx <= 0.0) {
-// 		W[i][j][k].C = (erf((-xx+0.0056)*4000.0)+1.0)/2.0;
-// 		}else{
-// 		W[i][j][k].C = (erf((xx-0.0056)*4000.0)+1.0)/2.0;
-// 		} /* endif */
-//        	      W[i][j][k].rho = 1.13*W[ICu][j][k].Rtot()/W[i][j][k].Rtot()/(1.0+tau_fsd*W[i][j][k].C);
-//        	      W[i][j][k].Fsd = 4000.0*exp(-sqr(xx*4000.0))/sqrt(PI)/W[i][j][k].rho;
-// 	      }else{
-// 	      W[i][j][k].C = 1.0;
-//        	      W[i][j][k].rho = 1.13*W[ICu][j][k].Rtot()/W[i][j][k].Rtot()/(1.0+tau_fsd);
-// 	      W[i][j][k].Fsd = 0.0;
-// 	      } /* endif */
-// 	      if (zz <= 0.002 && fabs(xx) <= 0.0056) {
-// 		W[i][j][k].v.z = 15.58*(ONE-sqr(xx/0.0056));
-// 	      }else{
-// 	      W[i][j][k].v.z = 0.0;
-// 	      } /* endif */
-//               W[i][j][k].p = 101325.0;
-// 	      W[i][j][k].premixed_mfrac();
-//               W[i][j][k].v.x = 0.0;
-//               W[i][j][k].v.y = 0.0;
-// 	      W[i][j][k].k = 0.0;
-//               U[i][j][k] = W[i][j][k].U();
-// 	      U[i][j][k].premixed_mfrac();
-// 	   } /* endfor */
-// 	} /* endfor */
-//      } /* endfor */
 
      break;  
 
@@ -805,33 +756,33 @@ ICs(Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs){
 	      double tau_fsd = W[i][j][k].HeatRelease_Parameter();
 
 	      if (Grid.Cell[i][j][k].Xc.z <=IPs.Fresh_Gas_Height) {
-       	      W[i][j][k].C = (erf((rr-0.0056)*4000.0)+1.0)/2.0;
+       	      W[i][j][k].C = (erf((rr-IPs.Grid_IP.Radius_Bunsen_Burner_Fuel_Line)*4000.0)+1.0)/2.0;
        	      W[i][j][k].rho = IPs.Turbulence_IP.Reactants_Density/(1.0+tau_fsd*W[i][j][k].C);
-       	      W[i][j][k].Fsd = 4000.0*exp(-sqr((rr-0.0056)*4000.0))/sqrt(PI)/W[i][j][k].rho;
+       	      W[i][j][k].Fsd = 4000.0*exp(-sqr((rr-IPs.Grid_IP.Radius_Bunsen_Burner_Fuel_Line)*4000.0))/sqrt(PI)/W[i][j][k].rho;
 	      W[i][j][k].v.x = IPs.Turbulence_IP.Reactants_Density*IPs.Turbulence_IP.Laminar_Flame_Speed/W[i][j][k].rho*cos_theta;
 	      W[i][j][k].v.y = IPs.Turbulence_IP.Reactants_Density*IPs.Turbulence_IP.Laminar_Flame_Speed/W[i][j][k].rho*sin_theta;
 
-              if (rr<=0.0056) {
+              if (rr<=IPs.Grid_IP.Radius_Bunsen_Burner_Fuel_Line) {
 		W[i][j][k].v.z = IPs.Mean_Velocity.z+IPs.Turbulence_IP.Laminar_Flame_Speed;
 	      }else{
 		W[i][j][k].v.z = IPs.Mean_Velocity.z+IPs.Turbulence_IP.Laminar_Flame_Speed*(1.0+tau_fsd);
 	      }
 
-              }else if (rr<=0.0056) {
+              }else if (rr<=IPs.Grid_IP.Radius_Bunsen_Burner_Fuel_Line) {
        	      W[i][j][k].C = (erf((Grid.Cell[i][j][k].Xc.z-IPs.Fresh_Gas_Height)*4000.0)+1.0)/2.0;
        	      W[i][j][k].rho = IPs.Turbulence_IP.Reactants_Density/(1.0+tau_fsd*W[i][j][k].C);
        	      W[i][j][k].Fsd = 1.5*4000.0*exp(-sqr((Grid.Cell[i][j][k].Xc.z-IPs.Fresh_Gas_Height)*4000.0))/sqrt(PI)/W[i][j][k].rho;
-	      W[i][j][k].v.x = 0.0;//1.13*0.3837/W[i][j][k].rho;
-	      W[i][j][k].v.y = 0.0;//1.13*0.3837/W[i][j][k].rho;
-	      W[i][j][k].v.z = IPs.Mean_Velocity.z+1.13*IPs.Turbulence_IP.Laminar_Flame_Speed/W[i][j][k].rho;
+	      W[i][j][k].v.x = 0.0;
+	      W[i][j][k].v.y = 0.0;
+	      W[i][j][k].v.z = IPs.Mean_Velocity.z+IPs.Turbulence_IP.Reactants_Density*IPs.Turbulence_IP.Laminar_Flame_Speed/W[i][j][k].rho;
 
 	      }else if (Grid.Cell[i][j][k].Xc.z > IPs.Fresh_Gas_Height || 
-                       (Grid.Cell[i][j][k].Xc.z <= IPs.Fresh_Gas_Height && rr > 0.0056)) {
+                       (Grid.Cell[i][j][k].Xc.z <= IPs.Fresh_Gas_Height && rr > IPs.Grid_IP.Radius_Bunsen_Burner_Fuel_Line)) {
 	      W[i][j][k].C = 1.0;
        	      W[i][j][k].rho = IPs.Turbulence_IP.Reactants_Density/(1.0+tau_fsd);
        	      W[i][j][k].Fsd = 0.0;
-	      W[i][j][k].v.x = 0.0;//1.13*0.3837/W[i][j][k].rho;
-	      W[i][j][k].v.y = 0.0;//1.13*0.3837/W[i][j][k].rho;
+	      W[i][j][k].v.x = 0.0;
+	      W[i][j][k].v.y = 0.0;
 	      W[i][j][k].v.z = IPs.Mean_Velocity.z+IPs.Turbulence_IP.Laminar_Flame_Speed*(1.0+tau_fsd);
 	      }
 	     

@@ -102,6 +102,10 @@ class Grid3D_Input_Parameters{
     double Radius_Bunsen_Burner_Fuel_Line, Radius_Bunsen_Burner, Height_Bunsen_Burner;
     //@}
 
+    //@{ @name Dimensions for slot burner mesh parameters:
+    double Slot_Width;
+    //@}
+
     //@{ @name Dimensions for turbulence box:
     double Turbulence_Box_Length, Turbulence_Box_Width, Turbulence_Box_Height;
     //@}
@@ -141,6 +145,8 @@ class Grid3D_Input_Parameters{
        Radius_Bunsen_Burner_Fuel_Line = 0.0056;
        Radius_Bunsen_Burner = 0.025;
        Height_Bunsen_Burner = 0.075;
+       // Slot burner parameters:
+       Slot_Width = 0.025;
        // Turbulence box parameters:
        Turbulence_Box_Length = Box_Length; 
        Turbulence_Box_Width = Box_Width; 

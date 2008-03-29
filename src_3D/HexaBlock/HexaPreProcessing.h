@@ -41,12 +41,6 @@ int Initialize_Solution_Blocks(HexaSolver_Data &Data,
   error_flag = Initialize_Solution_Blocks_Specializations(Data, Solution_Data);
   if (error_flag) return (error_flag);
 
-  
-  /* Initialize solution blocks specializations. */
-
-  error_flag = Initialize_Solution_Blocks_Specializations(Data, Solution_Data);
-  if (error_flag) return (error_flag);
-
   /* Create (allocate) list of hexahedral solution blocks on each processor. */
 
   if (!Data.batch_flag) {
