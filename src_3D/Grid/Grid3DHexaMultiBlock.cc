@@ -1669,11 +1669,15 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Bunsen_Burner(Grid3D_Input_Parame
 
     /* Allocate required memory. */
 
+    Input.NBlk_Idir = 72;
+    Input.NBlk_Jdir = 1;
+    Input.NBlk_Kdir = 1;
+
     Allocate(Input.NBlk_Idir, Input.NBlk_Jdir, Input.NBlk_Kdir);
 
     /* Creat 2D cross-section grids from which the 3D grid
        will be extruded. */
-    
+
     Grid2D_Fuel_Line_XYplane = Grid_Tube_2D(Grid2D_Fuel_Line_XYplane,
                                             numblk_idir_fuel,
 		                            numblk_jdir_fuel,
@@ -1684,41 +1688,41 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Bunsen_Burner(Grid3D_Input_Parame
                                             STRETCHING_FCN_LINEAR,//MAX_CLUSTERING,
                                             ZERO);//1.25);
 
-    Grid2D_Bunsen_Burner_Inner_XYplane = Grid_Annulus_2D(Grid2D_Bunsen_Burner_Inner_XYplane,
-							 numblk_idir_bunsenburner,
-							 numblk_jdir_bunsenburner,
-							 Input.Radius_Bunsen_Burner_Fuel_Line,
-							 0.5*Input.Radius_Bunsen_Burner+Input.Radius_Bunsen_Burner_Fuel_Line,
-							 Input.NCells_Idir,
-							 Input.NCells_Jdir,
-							 Input.Nghost,
-							 STRETCHING_FCN_MIN_CLUSTERING,
-							 1.10);
+//     Grid2D_Bunsen_Burner_Inner_XYplane = Grid_Annulus_2D(Grid2D_Bunsen_Burner_Inner_XYplane,
+// 							 numblk_idir_bunsenburner,
+// 							 numblk_jdir_bunsenburner,
+// 							 Input.Radius_Bunsen_Burner_Fuel_Line,
+// 							 0.5*Input.Radius_Bunsen_Burner+Input.Radius_Bunsen_Burner_Fuel_Line,
+// 							 Input.NCells_Idir,
+// 							 Input.NCells_Jdir,
+// 							 Input.Nghost,
+// 							 STRETCHING_FCN_MIN_CLUSTERING,
+// 							 1.10);
 
-    Grid2D_Bunsen_Burner_Middle_XYplane = Grid_Annulus_2D(Grid2D_Bunsen_Burner_Middle_XYplane,
-							 numblk_idir_bunsenburner,
-							 numblk_jdir_bunsenburner,
-							 0.1*Input.Radius_Bunsen_Burner+Input.Radius_Bunsen_Burner_Fuel_Line,
-							 0.45*Input.Radius_Bunsen_Burner+Input.Radius_Bunsen_Burner_Fuel_Line,
-							 HALF*Input.Radius_Bunsen_Burner,
-							 Input.NCells_Idir,
-							 Input.NCells_Jdir,
-							 Input.Nghost,
-							 STRETCHING_FCN_MIN_CLUSTERING,
-							 1.10);
+//     Grid2D_Bunsen_Burner_Middle_XYplane = Grid_Annulus_2D(Grid2D_Bunsen_Burner_Middle_XYplane,
+// 							 numblk_idir_bunsenburner,
+// 							 numblk_jdir_bunsenburner,
+// 							 0.1*Input.Radius_Bunsen_Burner+Input.Radius_Bunsen_Burner_Fuel_Line,
+// 							 0.45*Input.Radius_Bunsen_Burner+Input.Radius_Bunsen_Burner_Fuel_Line,
+// 							 HALF*Input.Radius_Bunsen_Burner,
+// 							 Input.NCells_Idir,
+// 							 Input.NCells_Jdir,
+// 							 Input.Nghost,
+// 							 STRETCHING_FCN_MIN_CLUSTERING,
+// 							 1.10);
 
-    Grid2D_Bunsen_Burner_Outer_XYplane = Grid_Annulus_2D(Grid2D_Bunsen_Burner_Outer_XYplane,
-							 numblk_idir_bunsenburner,
-							 numblk_jdir_bunsenburner,
-							 0.5*Input.Radius_Bunsen_Burner+Input.Radius_Bunsen_Burner_Fuel_Line,
-							 Input.Radius_Bunsen_Burner+Input.Radius_Bunsen_Burner_Fuel_Line,
-							 HALF*Input.Radius_Bunsen_Burner,
-							 Input.Radius_Bunsen_Burner,
-							 Input.NCells_Idir,
-							 Input.NCells_Jdir,
-							 Input.Nghost,
-							 STRETCHING_FCN_MAX_CLUSTERING,
-							 1.10);
+//     Grid2D_Bunsen_Burner_Outer_XYplane = Grid_Annulus_2D(Grid2D_Bunsen_Burner_Outer_XYplane,
+// 							 numblk_idir_bunsenburner,
+// 							 numblk_jdir_bunsenburner,
+// 							 0.5*Input.Radius_Bunsen_Burner+Input.Radius_Bunsen_Burner_Fuel_Line,
+// 							 Input.Radius_Bunsen_Burner+Input.Radius_Bunsen_Burner_Fuel_Line,
+// 							 HALF*Input.Radius_Bunsen_Burner,
+// 							 Input.Radius_Bunsen_Burner,
+// 							 Input.NCells_Idir,
+// 							 Input.NCells_Jdir,
+// 							 Input.Nghost,
+// 							 STRETCHING_FCN_MAX_CLUSTERING,
+// 							 1.10);
 
     Grid2D_Bunsen_Burner_XYplane = Grid_Annulus_2D(Grid2D_Bunsen_Burner_XYplane,
 						   numblk_idir_bunsenburner,
@@ -1741,7 +1745,6 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Bunsen_Burner(Grid3D_Input_Parame
 
             // iBlk = 72;
 	    /* fuel lines */
-
           if (iBlk <= 4) {
              Grid_Blks[iBlk].Extrude(Grid2D_Fuel_Line_XYplane[iBlk][0],
 				     Input.NCells_Kdir,
@@ -1898,6 +1901,7 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Bunsen_Burner(Grid3D_Input_Parame
               Grid_Blks[iBlk].Extrude(Grid2D_Bunsen_Burner_XYplane[iBlk-48][0],
 				      Input.NCells_Kdir,
 				      STRETCHING_FCN_LINEAR,
+				      ZERO,//1.10,//1.25,
 				      0.25*Input.Height_Bunsen_Burner,
 				      0.375*Input.Height_Bunsen_Burner);
 
@@ -1912,6 +1916,7 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Bunsen_Burner(Grid3D_Input_Parame
               Grid_Blks[iBlk].Extrude(Grid2D_Bunsen_Burner_XYplane[iBlk-52][0],
 				      Input.NCells_Kdir,
 				      STRETCHING_FCN_LINEAR,
+				      ZERO,//1.10,//1.25,
 				      0.375*Input.Height_Bunsen_Burner,
 				      0.5*Input.Height_Bunsen_Burner);
 
@@ -2893,17 +2898,17 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Bunsen_Burner(Grid3D_Input_Parame
 							       numblk_idir_bunsenburner,
 							       numblk_jdir_bunsenburner);
 
-    Grid2D_Bunsen_Burner_Inner_XYplane = Deallocate_Multi_Block_Grid(Grid2D_Bunsen_Burner_Inner_XYplane,
-								     numblk_idir_bunsenburner,
-								     numblk_jdir_bunsenburner);
+//     Grid2D_Bunsen_Burner_Inner_XYplane = Deallocate_Multi_Block_Grid(Grid2D_Bunsen_Burner_Inner_XYplane,
+// 								     numblk_idir_bunsenburner,
+// 								     numblk_jdir_bunsenburner);
 
-    Grid2D_Bunsen_Burner_Middle_XYplane = Deallocate_Multi_Block_Grid(Grid2D_Bunsen_Burner_Middle_XYplane,
-								      numblk_idir_bunsenburner,
-								      numblk_jdir_bunsenburner);
+//     Grid2D_Bunsen_Burner_Middle_XYplane = Deallocate_Multi_Block_Grid(Grid2D_Bunsen_Burner_Middle_XYplane,
+// 								      numblk_idir_bunsenburner,
+// 								      numblk_jdir_bunsenburner);
 
-    Grid2D_Bunsen_Burner_Outer_XYplane = Deallocate_Multi_Block_Grid(Grid2D_Bunsen_Burner_Outer_XYplane,
-								     numblk_idir_bunsenburner,
-								     numblk_jdir_bunsenburner);
+//     Grid2D_Bunsen_Burner_Outer_XYplane = Deallocate_Multi_Block_Grid(Grid2D_Bunsen_Burner_Outer_XYplane,
+// 								     numblk_idir_bunsenburner,
+// 								     numblk_jdir_bunsenburner);
 
    /* Call the function Find_Neighbours to obtain the neighbour block information
       and assign values to data members in the grid block connectivity data structure. */
@@ -3490,7 +3495,6 @@ void Grid3D_Hexa_Multi_Block_List::Create_Grid_Bluff_Body_Burner(Grid3D_Input_Pa
 
     /* Creat 2D cross-section grids from which the 3D grid
        will be extruded. */
-
     Grid2D_Fuel_Line_XYplane = Grid_Tube_2D(Grid2D_Fuel_Line_XYplane,
                                             numblk_idir_fuel,
 		                            numblk_jdir_fuel,

@@ -203,14 +203,6 @@ int Grid3D_Input_Parameters::Parse_Next_Input_Control_Parameter(char *code,
         Box_Width = ONE;
         Box_Height = ONE;
 
-     } else if (strcmp(Grid_Type, "Bunsen_Inflow") == 0) {
-        i_Grid = GRID_BUNSEN_INFLOW;
-        Radius_Bunsen_Burner_Fuel_Line = 0.0056;
-        Height_Bunsen_Burner = 0.035;
-	Turbulence_Box_Length = 0.2;
-        Turbulence_Box_Width = 0.14;
-        Turbulence_Box_Height = 0.14;
-
      } else if (strcmp(Grid_Type, "Bunsen_Burner") == 0) {
         i_Grid = GRID_BUNSEN_BURNER;
         Radius_Bunsen_Burner_Fuel_Line = 0.0056;

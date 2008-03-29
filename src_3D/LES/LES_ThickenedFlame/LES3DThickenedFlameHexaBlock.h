@@ -100,44 +100,6 @@ Linear_Reconstruction_LeastSquares(const int i,
 
 
 /********************************************************
- *        Return Q_criterion at specified node          *
- ********************************************************/
-template<typename HEXA_BLOCK>
-double Q_criterion_n(HEXA_BLOCK &Soln_Blk,
-		     const int &i, 
-		     const int &j, 
-		     const int &k){
-
-  return Trilinear_Interpolation(
-    Soln_Blk.Grid.Cell[i-1][j][k].Xc, Soln_Blk.W[i-1][j][k].Q_criterion(Soln_Blk.dWdx[i-1][j][k],
-									Soln_Blk.dWdy[i-1][j][k],
-									Soln_Blk.dWdz[i-1][j][k]),
-    Soln_Blk.Grid.Cell[i][j][k].Xc, Soln_Blk.W[i][j][k].Q_criterion(Soln_Blk.dWdx[i][j][k],
-								    Soln_Blk.dWdy[i][j][k],
-								    Soln_Blk.dWdz[i][j][k]),
-    Soln_Blk.Grid.Cell[i][j-1][k].Xc, Soln_Blk.W[i][j-1][k].Q_criterion(Soln_Blk.dWdx[i][j-1][k],
-									Soln_Blk.dWdy[i][j-1][k],
-									Soln_Blk.dWdz[i][j-1][k]),
-    Soln_Blk.Grid.Cell[i-1][j-1][k].Xc, Soln_Blk.W[i-1][j-1][k].Q_criterion(Soln_Blk.dWdx[i-1][j-1][k],
-									    Soln_Blk.dWdy[i-1][j-1][k],
-									    Soln_Blk.dWdz[i-1][j-1][k]),
-    Soln_Blk.Grid.Cell[i-1][j][k-1].Xc, Soln_Blk.W[i-1][j][k-1].Q_criterion(Soln_Blk.dWdx[i-1][j][k-1],
-									    Soln_Blk.dWdy[i-1][j][k-1],
-									    Soln_Blk.dWdz[i-1][j][k-1]),
-    Soln_Blk.Grid.Cell[i][j][k-1].Xc, Soln_Blk.W[i][j][k-1].Q_criterion(Soln_Blk.dWdx[i][j][k-1],
-									Soln_Blk.dWdy[i][j][k-1],
-									Soln_Blk.dWdz[i][j][k-1]),
-    Soln_Blk.Grid.Cell[i][j-1][k-1].Xc, Soln_Blk.W[i][j-1][k-1].Q_criterion(Soln_Blk.dWdx[i][j-1][k-1],
-									    Soln_Blk.dWdy[i][j-1][k-1],
-									    Soln_Blk.dWdz[i][j-1][k-1]),
-    Soln_Blk.Grid.Cell[i-1][j-1][k-1].Xc, Soln_Blk.W[i-1][j-1][k-1].Q_criterion(Soln_Blk.dWdx[i-1][j-1][k-1],
-										Soln_Blk.dWdy[i-1][j-1][k-1],
-										Soln_Blk.dWdz[i-1][j-1][k-1]),
-    Soln_Blk.Grid.Node[i][j][k].X);
-
-}
-
-/********************************************************
  *  Return the magnitude of vorticity at specified node *
  ********************************************************/
 template<typename HEXA_BLOCK>

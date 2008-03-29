@@ -21,22 +21,6 @@ void Input_Parameters<LES3DFsd_pState,
 }
 
 /********************************************************
- * Routine: Deallocate_Static                           *
- *                                                      *
- * Deallocate static data of the reference solution     * 
- * states.                                              *
- *                                                      *
- ********************************************************/
-template<>
-void Input_Parameters<LES3DFsd_pState, 
-                      LES3DFsd_cState>::Deallocate_Static(void) {
-
-  Wo.Deallocate_static(); 
-  Uo.Deallocate_static();
-
-}
-
-/********************************************************
  * Routine: Set_Reference_Solution_States               *
  *                                                      *
  * Assigns default values to the reference solution     *

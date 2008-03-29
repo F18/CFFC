@@ -378,6 +378,10 @@ int Initialize_Solution_Blocks_Specializations(HexaSolver_Data &Data,
   return error_flag;
 }
 
+/********************************************************
+ *       Burning rate                                   *
+ ********************************************************/
+template<>
 double Turbulent_Burning_Rate(Hexa_Block<LES3DFsd_pState, LES3DFsd_cState> *Solution_Block,
 			      AdaptiveBlock3D_List &LocalSolnBlockList,
 			      Grid3D_Input_Parameters &IPs) {
