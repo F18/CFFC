@@ -4190,6 +4190,70 @@ namespace tut
     ensure_equals("West Bnd", MeshBlk(0,0).IsWestBoundaryReconstructionConstrained(), true);
   }
 
+
+  // Test 58:
+  template<>
+  template<>
+  void Grid2DQuadMultiBlock_HO_object::test<58>()
+  {
+    set_test_name("Check geometric moments on Cartesian mesh");
+ 
+    // Add test particular input parameters
+    IP.i_Grid = GRID_INTERIOR_INFLOW_OUTFLOW_BOX;
+    IP.Number_of_Blocks_Jdir = 2;
+    IP.Number_of_Blocks_Idir = 2;
+    IP.Number_of_Cells_Idir = 12;
+    IP.Number_of_Cells_Jdir = 12;
+    IP.Number_of_Ghost_Cells = 5;
+    IP.Space_Accuracy = 5;
+    IP.Box_Width = 2;
+    IP.Box_Height = 2;
+    IP.X_Shift.x = 0.0;
+    IP.X_Shift.y = 0.0;
+    IP.X_Scale = 1.0;
+    IP.X_Rotate = 0.0;
+    IP.IncludeHighOrderBoundariesRepresentation = OFF;
+    IP.i_Smooth_Quad_Block = OFF;
+    strcpy(IP.BC_North_Type, "Reflection");
+    strcpy(IP.BC_East_Type, "Reflection");
+    strcpy(IP.BC_South_Type, "Reflection");
+    strcpy(IP.BC_West_Type, "Reflection");
+    IP.BCs_Specified = ON;
+    IP.BC_North = BC_FARFIELD;
+    IP.BC_South = BC_FARFIELD;
+    IP.BC_East = BC_FARFIELD;
+    IP.BC_West = BC_FARFIELD;
+    IP.i_Reconstruction = RECONSTRUCTION_HIGH_ORDER;
+
+    // Build the mesh without high-order representation
+    CreateMesh(MeshBlk,IP);
+
+    // Get geometric moments based on analytic expressions for Cartesian meshes.
+    double DeltaX, DeltaY, AnalyticGeomMoment;
+    int p1,p2,i,j;
+
+    DeltaX = MeshBlk(0,0).nodeSE(5,5).x() - MeshBlk(0,0).nodeSW(5,5).x();
+    DeltaY = MeshBlk(0,0).nodeNW(5,5).y() - MeshBlk(0,0).nodeSW(5,5).y();
+    
+    // == check all cells of MeshBlk(0,0)
+    for (i = 0; i<= MeshBlk(0,0).ICu + MeshBlk(0,0).Nghost; ++i){
+      for (j = 0; j<= MeshBlk(0,0).JCu + MeshBlk(0,0).Nghost; ++j){
+	for (p1 = 0; p1 <= MeshBlk(0,0).MaxRecOrder(); ++p1){
+	  for (p2 = 0; p2 <= MeshBlk(0,0).MaxRecOrder(); ++p2){
+	    if ( p1 + p2 <= MeshBlk(0,0).MaxRecOrder() ){
+	      // Compute the geometric moment
+	      AnalyticGeomMoment = GeomCoeffCartesian(p1, p2, DeltaX, DeltaY, 0.0, 0.0);
+	      
+	      // == check the mesh value
+	      ensure_distance("Geom moment", MeshBlk(0,0).Cell[5][5].GeomCoeffValue(p1,p2), AnalyticGeomMoment,
+			      AcceptedError(AnalyticGeomMoment) );
+	    }
+	  }
+	}
+      }
+    }
+  }
+
 }
 
 
