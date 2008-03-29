@@ -700,12 +700,12 @@ ICs(Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs){
 		  W[i][j][k].C = (erf((-yy-HALF*IPs.Grid_IP.Slot_Width)*4000.0)+1.0)/2.0;
 	          W[i][j][k].premixed_mfrac();
  	          W[i][j][k].rho = IPs.Turbulence_IP.Reactants_Density*Wl.Rtot()/W[i][j][k].Rtot()/(1.0+tau*W[i][j][k].C);
-       	          W[i][j][k].Fsd = 400*4000.0*exp(-sqr((-yy-HALF*IPs.Grid_IP.Slot_Width)*4000.0))/sqrt(PI)/W[i][j][k].rho;
+       	          W[i][j][k].Fsd = 2.0*4000.0*exp(-sqr((-yy-HALF*IPs.Grid_IP.Slot_Width)*4000.0))/sqrt(PI)/W[i][j][k].rho;
 		} else {
 		  W[i][j][k].C = (erf((yy-HALF*IPs.Grid_IP.Slot_Width)*4000.0)+1.0)/2.0;
 	          W[i][j][k].premixed_mfrac();
  	          W[i][j][k].rho = IPs.Turbulence_IP.Reactants_Density*Wl.Rtot()/W[i][j][k].Rtot()/(1.0+tau*W[i][j][k].C);
-       	          W[i][j][k].Fsd = 400*4000.0*exp(-sqr((yy-HALF*IPs.Grid_IP.Slot_Width)*4000.0))/sqrt(PI)/W[i][j][k].rho;
+       	          W[i][j][k].Fsd = 2.0*4000.0*exp(-sqr((yy-HALF*IPs.Grid_IP.Slot_Width)*4000.0))/sqrt(PI)/W[i][j][k].rho;
 		}
 	      } else {
 		W[i][j][k].C = ONE;
@@ -734,7 +734,7 @@ ICs(Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs){
 	      }
 
 	      if (fabs(yy) <= HALF*IPs.Grid_IP.Slot_Width) {
-		W[i][j][k].Fsd = 400*4000.0*exp(-sqr((zz-IPs.Fresh_Gas_Height)*4000.0))/sqrt(PI)/W[i][j][k].rho;
+		W[i][j][k].Fsd = 6000.0*exp(-sqr((zz-IPs.Fresh_Gas_Height)*4000.0))/sqrt(PI)/W[i][j][k].rho;
 		W[i][j][k].v.z = IPs.Mean_Velocity.z + Sl*(Wl.rho/W[i][j][k].rho - ONE); 
 	      }
 
@@ -771,7 +771,7 @@ ICs(Input_Parameters<LES3DFsd_pState,LES3DFsd_cState> &IPs){
               }else if (rr<=IPs.Grid_IP.Radius_Bunsen_Burner_Fuel_Line) {
        	      W[i][j][k].C = (erf((Grid.Cell[i][j][k].Xc.z-IPs.Fresh_Gas_Height)*4000.0)+1.0)/2.0;
        	      W[i][j][k].rho = IPs.Turbulence_IP.Reactants_Density/(1.0+tau_fsd*W[i][j][k].C);
-       	      W[i][j][k].Fsd = 1.5*4000.0*exp(-sqr((Grid.Cell[i][j][k].Xc.z-IPs.Fresh_Gas_Height)*4000.0))/sqrt(PI)/W[i][j][k].rho;
+       	      W[i][j][k].Fsd = 2500.0*exp(-sqr((Grid.Cell[i][j][k].Xc.z-IPs.Fresh_Gas_Height)*4000.0))/sqrt(PI)/W[i][j][k].rho;
 	      W[i][j][k].v.x = 0.0;
 	      W[i][j][k].v.y = 0.0;
 	      W[i][j][k].v.z = IPs.Mean_Velocity.z+IPs.Turbulence_IP.Reactants_Density*IPs.Turbulence_IP.Laminar_Flame_Speed/W[i][j][k].rho;

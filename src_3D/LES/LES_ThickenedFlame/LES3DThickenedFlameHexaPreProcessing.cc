@@ -267,7 +267,7 @@ int Output_Other_Solution_Progress_Specialization_Data(HexaSolver_Data &Data,
 
    turb_burning_rate = Turbulent_Burning_Rate(Solution_Data.Local_Solution_Blocks.Soln_Blks,
 					      Data.Local_Adaptive_Block_List,
-					      Solution_Data.Input.Grid_IP);
+					      Solution_Data.Input);
 
 
    // Output turbulence statistics data to turbulence progress variable file
@@ -367,7 +367,7 @@ int Initialize_Solution_Blocks_Specializations(HexaSolver_Data &Data,
 template<>
 double Turbulent_Burning_Rate(Hexa_Block<LES3DTF_pState, LES3DTF_cState> *Solution_Block,
 			      AdaptiveBlock3D_List &LocalSolnBlockList,
-			      Grid3D_Input_Parameters &IPs) {
+			      Input_Parameters<LES3DTF_pState, LES3DTF_cState> &IPs) {
 
   double local_vol, Yf_u, rho_u, burning_rate(ZERO);
   double iso_surface_area(ZERO);
@@ -396,13 +396,13 @@ double Turbulent_Burning_Rate(Hexa_Block<LES3DTF_pState, LES3DTF_cState> *Soluti
   
   double ref_area, Lx, Ly, Lz;
 
-  if ( IPs.i_Grid == GRID_PERIODIC_BOX_WITH_INFLOW  ||
-       IPs.i_Grid == GRID_PERIODIC_BOX) {
-    Ly = IPs.Box_Height;
-    Lz = IPs.Box_Length;
+  if ( IPs.Grid_IP.i_Grid == GRID_PERIODIC_BOX_WITH_INFLOW  ||
+       IPs.Grid_IP.i_Grid == GRID_PERIODIC_BOX) {
+    Ly = IPs.Grid_IP.Box_Height;
+    Lz = IPs.Grid_IP.Box_Length;
     ref_area = Ly*Lz;
-  } else if ( IPs.i_Grid == GRID_BUNSEN_BOX ) {
-    Lx = IPs.Box_Width;
+  } else if ( IPs.Grid_IP.i_Grid == GRID_BUNSEN_BOX ) {
+    Lx = IPs.Grid_IP.Box_Width;
     ref_area = (0.025 + 2.0*0.02)*Lx;
   }
 

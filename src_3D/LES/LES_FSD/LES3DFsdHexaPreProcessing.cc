@@ -274,7 +274,7 @@ int Output_Other_Solution_Progress_Specialization_Data(HexaSolver_Data &Data,
 
    turb_burning_rate = Turbulent_Burning_Rate(Solution_Data.Local_Solution_Blocks.Soln_Blks,
 					      Data.Local_Adaptive_Block_List,
-					      Solution_Data.Input.Grid_IP);
+					      Solution_Data.Input);
 
    // Output turbulence statistics data to turbulence progress variable file
    if (CFFC_Primary_MPI_Processor()) {
@@ -371,12 +371,9 @@ int Initialize_Solution_Blocks_Specializations(HexaSolver_Data &Data,
 template<>
 double Turbulent_Burning_Rate(Hexa_Block<LES3DFsd_pState, LES3DFsd_cState> *Solution_Block,
 			      AdaptiveBlock3D_List &LocalSolnBlockList,
-			      Grid3D_Input_Parameters &IPs) {
+			      Input_Parameters<LES3DFsd_pState, LES3DFsd_cState> &IPs) {
 
   double local_vol, Yf_u, rho_u, burning_rate(ZERO), iso_surface_area(ZERO);
-  double flame_height = 0.005;
-  Yf_u = 0.05518;//Fresh_Fuel_Mass_Fraction;
-  rho_u = 1.13;//Fresh_Density;
 
   for (int p = 0 ; p <= LocalSolnBlockList.Nblk-1 ; p++ ) {
     if (LocalSolnBlockList.Block[p].used == ADAPTIVEBLOCK3D_USED) {
@@ -385,10 +382,8 @@ double Turbulent_Burning_Rate(Hexa_Block<LES3DFsd_pState, LES3DFsd_cState> *Solu
            for (int k = Solution_Block[p].KCl ; k <= Solution_Block[p].KCu ; k++) {
 	     local_vol = Solution_Block[p].Grid.volume(i,j,k);
  	     burning_rate +=  Solution_Block[p].W[i][j][k].Fsd*Solution_Block[p].W[i][j][k].rho*local_vol; 
-	     if (Solution_Block[p].W[i][j][k].C <= 0.5 && 
-                 Solution_Block[p].Grid.Cell[i][j][k].Xc.z > flame_height) {
-	         flame_height = Solution_Block[p].Grid.Cell[i][j][k].Xc.z;
-/* 	       iso_surface_area += propagation_dir_area(Solution_Block[p], i, j, k); */
+	     if (Solution_Block[p].W[i][j][k].C <= 0.53 && Solution_Block[p].W[i][j][k].C >= 0.47) {
+	       iso_surface_area += propagation_dir_area(Solution_Block[p], i, j, k);
 	     }
 	   }
 	}
@@ -396,26 +391,27 @@ double Turbulent_Burning_Rate(Hexa_Block<LES3DFsd_pState, LES3DFsd_cState> *Solu
     }
   }
   burning_rate = CFFC_Summation_MPI(burning_rate);
-  burning_rate = burning_rate*0.403/(PI*0.0056*(0.0056+2.0*flame_height));
-//   iso_surface_area = CFFC_Summation_MPI(iso_surface_area);
+  iso_surface_area = CFFC_Summation_MPI(iso_surface_area);
   
-//   double ref_area, Lx, Ly, Lz;
+  double ref_area, Lx, Ly, Lz;
 
-//   if ( IPs.i_Grid == GRID_PERIODIC_BOX_WITH_INFLOW  ||
-//        IPs.i_Grid == GRID_PERIODIC_BOX) {
-//     Ly = IPs.Box_Height;
-//     Lz = IPs.Box_Length;
-//     ref_area = Ly*Lz;
-//   } else if ( IPs.i_Grid == GRID_BUNSEN_BOX ) {
-//     Lx = IPs.Box_Width;
-//     ref_area = (0.025 + 2.0*0.02)*Lx;
-//   }
+  if ( IPs.Grid_IP.i_Grid == GRID_PERIODIC_BOX_WITH_INFLOW  ||
+       IPs.Grid_IP.i_Grid == GRID_PERIODIC_BOX) {
+    Ly = IPs.Grid_IP.Box_Height;
+    Lz = IPs.Grid_IP.Box_Length;
+    ref_area = Ly*Lz;
+  } else if ( IPs.Grid_IP.i_Grid == GRID_BUNSEN_BOX ) {
+    Lx = IPs.Grid_IP.Box_Width;
+    ref_area = (0.025 + 2.0*0.02)*Lx;
+  } else if ( IPs.Grid_IP.i_Grid == GRID_BUNSEN_BURNER ) {
+    ref_area = PI*IPs.Grid_IP.Radius_Bunsen_Burner_Fuel_Line*(IPs.Grid_IP.Radius_Bunsen_Burner_Fuel_Line + 2.0*IPs.Fresh_Gas_Height);
+  }
 
-//   if ( iso_surface_area > ref_area ) {
-//     burning_rate = -burning_rate/(rho_u*Yf_u*iso_surface_area);
-//   } else {
-//     burning_rate = -burning_rate/(rho_u*Yf_u*ref_area);
-//   }
+  if ( iso_surface_area > ref_area ) {
+    burning_rate = burning_rate*IPs.Turbulence_IP.Laminar_Flame_Speed/iso_surface_area;
+  } else {
+    burning_rate = burning_rate*IPs.Turbulence_IP.Laminar_Flame_Speed/ref_area;
+  }
 
 
   return burning_rate;

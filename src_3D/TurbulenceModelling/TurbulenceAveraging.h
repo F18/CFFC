@@ -679,7 +679,7 @@ void Max_and_Min_Cell_Volumes(HEXA_BLOCK *Solution_Block,
 template<typename SOLN_pSTATE, typename SOLN_cSTATE>
 double Turbulent_Burning_Rate(Hexa_Block<SOLN_pSTATE, SOLN_cSTATE> *Solution_Block,
 			      AdaptiveBlock3D_List &LocalSolnBlockList,
-			      Grid3D_Input_Parameters &IPs) {
+			      Input_Parameters<SOLN_pSTATE, SOLN_cSTATE> &IPs) {
 
   cout << "\n Explicit Specialization of "
        << "Turbulent_Burning_Rate() "
@@ -763,6 +763,63 @@ double vorticity_n(HEXA_BLOCK &Soln_Blk,
 									      Soln_Blk.dWdz[i-1][j-1][k-1]).abs(),
     Soln_Blk.Grid.Node[i][j][k].X);
 
+}
+
+/********************************************************
+ *      propagation_dir_area                            *
+ ********************************************************/
+template<typename HEXA_BLOCK>
+double propagation_dir_area(HEXA_BLOCK &Solution_Block,
+			    const int &i,
+			    const int &j,
+			    const int &k) {
+
+  double area, temp_dot;
+
+  Vector3D N_iso_Yfuel(Solution_Block.dWdx[i][j][k].spec[0].c,
+		       Solution_Block.dWdy[i][j][k].spec[0].c,
+		       Solution_Block.dWdz[i][j][k].spec[0].c);
+
+  // East face  
+  double dot_prod = N_iso_Yfuel.dot(Solution_Block.Grid.nfaceE(i,j,k));
+  area = Solution_Block.Grid.AfaceE(i,j,k);
+
+  // West face
+  temp_dot = N_iso_Yfuel.dot(Solution_Block.Grid.nfaceW(i,j,k));
+  if ( temp_dot > dot_prod ) { 
+    dot_prod = temp_dot;
+    area = Solution_Block.Grid.AfaceW(i,j,k);
+  }
+
+  // North face
+  temp_dot = N_iso_Yfuel.dot(Solution_Block.Grid.nfaceN(i,j,k));
+  if ( temp_dot > dot_prod ) { 
+    dot_prod = temp_dot;
+    area = Solution_Block.Grid.AfaceN(i,j,k);
+  }
+
+  // South face
+  temp_dot = N_iso_Yfuel.dot(Solution_Block.Grid.nfaceS(i,j,k));
+  if ( temp_dot > dot_prod ) { 
+    dot_prod = temp_dot;
+    area = Solution_Block.Grid.AfaceS(i,j,k);
+  }
+
+  // Top face
+  temp_dot = N_iso_Yfuel.dot(Solution_Block.Grid.nfaceTop(i,j,k));
+  if ( temp_dot > dot_prod ) { 
+    dot_prod = temp_dot;
+    area = Solution_Block.Grid.AfaceTop(i,j,k);
+  }
+
+  // Bottom
+  temp_dot = N_iso_Yfuel.dot(Solution_Block.Grid.nfaceBot(i,j,k));
+  if ( temp_dot > dot_prod ) { 
+    dot_prod = temp_dot;
+    area = Solution_Block.Grid.AfaceBot(i,j,k);
+  }
+
+  return area;
 }
 
 #endif // _TURBULENCE_AVERAGING_INCLUDED
