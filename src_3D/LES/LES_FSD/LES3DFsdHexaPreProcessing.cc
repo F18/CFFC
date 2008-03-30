@@ -105,15 +105,15 @@ int Hexa_Pre_Processing_Specializations(HexaSolver_Data &Data,
    
   } else {
 
-  RandomFieldRogallo<LES3DFsd_pState, LES3DFsd_cState>   Velocity_Field_Type(Solution_Data.Input);
-  Turbulent_Velocity_Field_Multi_Block_List  Velocity_Field;
+//   RandomFieldRogallo<LES3DFsd_pState, LES3DFsd_cState>   Velocity_Field_Type(Solution_Data.Input);
+//   Turbulent_Velocity_Field_Multi_Block_List  Velocity_Field;
 
-  error_flag = Velocity_Field_Type.Create_Homogeneous_Turbulence_Velocity_Field(Data.Initial_Mesh, 
-										Solution_Data.Input.Grid_IP,
-										Data.batch_flag,
-										Data.Velocity_Field);
+//   error_flag = Velocity_Field_Type.Create_Homogeneous_Turbulence_Velocity_Field(Data.Initial_Mesh, 
+// 										Solution_Data.Input.Grid_IP,
+// 										Data.batch_flag,
+// 										Data.Velocity_Field);
 
-  if (error_flag) return error_flag;
+//   if (error_flag) return error_flag;
 
 // If required, do the interpolation of the turbulent field
 //     Turbulent_Velocity_Field_Multi_Block_List  Interpolated_Velocity_Field;
