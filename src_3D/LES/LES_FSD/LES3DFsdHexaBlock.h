@@ -180,7 +180,7 @@ class HexaBlock_Node : public Hexa_Block<LES3DFsd_pState, LES3DFsd_cState> {
 
    //constructors
 
-   HexaBlock_Node(void){ Hexa_Block(); }
+   HexaBlock_Node(void){ Hexa_Block<LES3DFsd_pState, LES3DFsd_cState>(); }
    HexaBlock_Node(Hexa_Block<LES3DFsd_pState, LES3DFsd_cState> &Soln_Blk){ Copy_static(Soln_Blk); }
 
    //destructors

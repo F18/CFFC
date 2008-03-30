@@ -221,7 +221,7 @@ void dFIdW_Inviscid(DenseMatrix &dRdW, LESPremixed2D_Quad_Block &SolnBlk, LESPre
 }
 
 /*********************************************************
- * Routine: Rotation_Matrix2                             *
+ * Routine: Rotation_Matrix_PM2D                         *
  *                                                       *
  * This function returns either the rotation matrix, A,  *
  * or the inverse of A.                                  *
@@ -231,7 +231,7 @@ void dFIdW_Inviscid(DenseMatrix &dRdW, LESPremixed2D_Quad_Block &SolnBlk, LESPre
  *                                                       *
  *********************************************************/
 /*The rotation matrix is used for the inviscid flux calculations */
-DenseMatrix Rotation_Matrix2(Vector2D nface, int Size,  int A_matrix) 
+DenseMatrix Rotation_Matrix_PM2D(Vector2D nface, int Size,  int A_matrix) 
 {
   double cos_angle = nface.x; 
   double sin_angle = nface.y;
@@ -316,8 +316,8 @@ void dFIdW_Inviscid_HLLE(DenseMatrix &dRdW, LESPremixed2D_Quad_Block &SolnBlk,
 			       SolnBlk.Uo[ii][jj].W(), nface);
    }
 
-   DenseMatrix A( Rotation_Matrix2(nface,NUM_VAR_LESPREMIXED2D, 1));
-   DenseMatrix AI( Rotation_Matrix2(nface,NUM_VAR_LESPREMIXED2D, 0));
+   DenseMatrix A(Rotation_Matrix_PM2D(nface, NUM_VAR_LESPREMIXED2D, 1));
+   DenseMatrix AI(Rotation_Matrix_PM2D(nface, NUM_VAR_LESPREMIXED2D, 0));
    DenseMatrix II(NUM_VAR_LESPREMIXED2D, NUM_VAR_LESPREMIXED2D,ZERO); 
    II.identity();
    
@@ -407,8 +407,8 @@ void dFIdW_Inviscid_ROE(DenseMatrix& dRdW, LESPremixed2D_Quad_Block &SolnBlk,
        lface = SolnBlk.Grid.lfaceW(Ri, Rj);
      }
      
-     DenseMatrix A( Rotation_Matrix2(nface,NUM_VAR_LESPREMIXED2D, 1));
-     DenseMatrix AI( Rotation_Matrix2(nface,NUM_VAR_LESPREMIXED2D, 0));
+     DenseMatrix A(Rotation_Matrix_PM2D(nface,NUM_VAR_LESPREMIXED2D, 1));
+     DenseMatrix AI(Rotation_Matrix_PM2D(nface,NUM_VAR_LESPREMIXED2D, 0));
      
      //Left and Right States                                                       ///Ri ,Rj fixed not ii, jj 
      Inviscid_Flux_Used_Reconstructed_LeftandRight_States(Wl, Wr, DX, SolnBlk, Orient, Ri, Rj );   
@@ -545,8 +545,8 @@ void dFIdW_Inviscid_ROE_FD(DenseMatrix& dRdW, LESPremixed2D_Quad_Block &SolnBlk,
        lface = SolnBlk.Grid.lfaceW(Ri, Rj);
      }
      
-     DenseMatrix A( Rotation_Matrix2(nface,NUM_VAR_LESPREMIXED2D, 1));
-     DenseMatrix AI( Rotation_Matrix2(nface,NUM_VAR_LESPREMIXED2D, 0));
+     DenseMatrix A(Rotation_Matrix_PM2D(nface,NUM_VAR_LESPREMIXED2D, 1));
+     DenseMatrix AI(Rotation_Matrix_PM2D(nface,NUM_VAR_LESPREMIXED2D, 0));
      
      //Left and Right States 
      Inviscid_Flux_Used_Reconstructed_LeftandRight_States(Wl, Wr, DX, SolnBlk, Orient, Ri, Rj );   
@@ -851,8 +851,8 @@ void dFIdW_Inviscid_AUSM_plus_up(DenseMatrix& dRdW, LESPremixed2D_Quad_Block &So
        lface = SolnBlk.Grid.lfaceW(Ri, Rj);
      }
      
-     DenseMatrix A( Rotation_Matrix2(nface,NUM_VAR_LESPREMIXED2D, 1));
-     DenseMatrix AI( Rotation_Matrix2(nface,NUM_VAR_LESPREMIXED2D, 0));
+     DenseMatrix A(Rotation_Matrix_PM2D(nface,NUM_VAR_LESPREMIXED2D, 1));
+     DenseMatrix AI(Rotation_Matrix_PM2D(nface,NUM_VAR_LESPREMIXED2D, 0));
           
      //********** FILL IN AUSM SPECIFIC STUFF HERE ********************//
      Left  = Rotate(Wl, nface);

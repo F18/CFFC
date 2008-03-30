@@ -373,13 +373,6 @@ ICs(Input_Parameters<LES3DTF_pState,LES3DTF_cState> &IPs){
      for (int k  = KCl- Nghost ; k <=  KCu+ Nghost ; ++k) {
         for (int j  = JCl- Nghost ; j <=  JCu+ Nghost ; ++j) {
            for (int i = ICl- Nghost ; i <=  ICu+ Nghost ; ++i) {
-
-// 	     if (Grid.Cell[i][j][k].Xc.x <= 0.0){
-// 	       W[i][j][k] = Wl;  
-// 	     } else {
-// 	       W[i][j][k] = Wr;	     
-// 	     } /* end if */
-
 	     double xx = Grid.Cell[i][j][k].Xc.x;
 	     double tau = Wr.T()/Wl.T() - ONE;
 	     double C = 0.5*(ONE + erf(SQRT_PI*xx/(THREE*IPs.Wo._laminar_flame_thickness)));  // (erf(xx*2000.0)+1.0)/2.0;
@@ -405,15 +398,13 @@ ICs(Input_Parameters<LES3DTF_pState,LES3DTF_cState> &IPs){
 	   } /* endfor */
 	} /* endfor */
      } /* endfor */
-
      break;
 
    case IC_TURBULENT_BUNSEN_BOX :
-
+     {
      double C, xx, yy, zz, tau, Sl, slot_width, fresh_gas_height;
      double Yf_u = 0.05518;
      double Yf_b = 0.0;
-
      for (int k  = KCl- Nghost ; k <=  KCu+ Nghost ; ++k) {
         for (int j  = JCl- Nghost ; j <=  JCu+ Nghost ; ++j) {
            for (int i = ICl- Nghost ; i <=  ICu+ Nghost ; ++i) {
@@ -470,7 +461,7 @@ ICs(Input_Parameters<LES3DTF_pState,LES3DTF_cState> &IPs){
 	   } /* endfor */
 	} /* endfor */
      } /* endfor */
-
+     }
      break;  
 
    case IC_TURBULENT_BUNSEN_FLAME :

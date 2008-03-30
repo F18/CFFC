@@ -134,7 +134,7 @@ void SemiImplicitBlockJacobi_dSdU(DenseMatrix &dSdU,
 /////////////////////////////////////////////////////////////////////
 
 /*********************************************************
- * Routine: Rotation_Matrix2                             *
+ * Routine: RotationMatrix                               *
  *                                                       *
  * This function returns either the rotation matrix, A,  *
  * or the inverse of A.                                  *
